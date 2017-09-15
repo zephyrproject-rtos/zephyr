@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_pcd_ex.c
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   Extended PCD HAL module driver.
   *          This file provides firmware functions to manage the following
   *          functionalities of the USB Peripheral Controller:
@@ -85,12 +83,12 @@
 
 /**
   * @brief Configure PMA for EP
-  * @param  hpcd: PCD handle
-  * @param  ep_addr: endpoint address
-  * @param  ep_kind: endpoint Kind
+  * @param  hpcd PCD handle
+  * @param  ep_addr endpoint address
+  * @param  ep_kind endpoint Kind
   *                @arg USB_SNG_BUF: Single Buffer used
   *                @arg USB_DBL_BUF: Double Buffer used
-  * @param  pmaadress: EP address in The PMA: In case of single buffer endpoint
+  * @param  pmaadress EP address in The PMA: In case of single buffer endpoint
   *                   this parameter is 16-bit value providing the address
   *                   in PMA allocated to endpoint.
   *                   In case of double buffer endpoint this parameter
@@ -191,20 +189,24 @@ void PCD_WritePMA(USB_TypeDef  *USBx, uint8_t *pbUsrBuf, uint16_t wPMABufAddr, u
   */
 void PCD_ReadPMA(USB_TypeDef  *USBx, uint8_t *pbUsrBuf, uint16_t wPMABufAddr, uint16_t wNBytes)
 {
-  uint32_t n =  ((uint32_t)((uint32_t)wNBytes + 1U)) >> 1U;
+  uint32_t n = (uint32_t)wNBytes >> 1U;
   uint32_t i;
-  uint32_t *pdwVal;
+  uint16_t *pdwVal;
+  uint32_t temp;
+  pdwVal = (uint16_t *)((uint32_t)(wPMABufAddr * 2 + (uint32_t)USBx + 0x400U));
 
-  pdwVal = (uint32_t *)((uint32_t)(wPMABufAddr * 2 + (uint32_t)USBx + 0x400U));
-  uint32_t tmp = *pdwVal++;
-  *pbUsrBuf++ = (uint16_t)((tmp >> 0) & 0xFF);
-  *pbUsrBuf++ = (uint16_t)((tmp >> 8) & 0xFF);
-
-
-  for (i = n; i != 0; i--)
+  for (i = n; i != 0U; i--)
   {
-    *(uint16_t*)((uint32_t)pbUsrBuf++) = *pdwVal++;
-    pbUsrBuf++;
+    temp = *pdwVal++;
+    *pbUsrBuf++ = ((temp >> 0) & 0xFF);
+    *pbUsrBuf++ = ((temp >> 8) & 0xFF);
+    pdwVal++;
+  }
+
+  if (wNBytes % 2)
+  {
+    temp = *pdwVal++;
+    *pbUsrBuf++ = ((temp >> 0) & 0xFF);
   }
 }
 #endif /* STM32F303xC                || */
@@ -249,14 +251,23 @@ void PCD_WritePMA(USB_TypeDef  *USBx, uint8_t *pbUsrBuf, uint16_t wPMABufAddr, u
   */
 void PCD_ReadPMA(USB_TypeDef  *USBx, uint8_t *pbUsrBuf, uint16_t wPMABufAddr, uint16_t wNBytes)
 {
-  uint32_t n =  ((uint32_t)((uint32_t)wNBytes + 1U)) >> 1U;
+  uint32_t n = (uint32_t)wNBytes >> 1U;
   uint32_t i;
   uint16_t *pdwVal;
+  uint32_t temp;
   pdwVal = (uint16_t *)((uint32_t)(wPMABufAddr + (uint32_t)USBx + 0x400U));
+
   for (i = n; i != 0U; i--)
   {
-    *(uint16_t*)((uint32_t)pbUsrBuf++) = *pdwVal++;
-    pbUsrBuf++;
+    temp = *pdwVal++;
+    *pbUsrBuf++ = ((temp >> 0) & 0xFF);
+    *pbUsrBuf++ = ((temp >> 8) & 0xFF);
+  }
+
+  if (wNBytes % 2)
+  {
+    temp = *pdwVal++;
+    *pbUsrBuf++ = ((temp >> 0) & 0xFF);
   }
 }
 #endif /* STM32F302xE || STM32F303xE || */
@@ -276,8 +287,8 @@ void PCD_ReadPMA(USB_TypeDef  *USBx, uint8_t *pbUsrBuf, uint16_t wPMABufAddr, ui
   */
 /**
   * @brief  Software Device Connection
-  * @param  hpcd: PCD handle
-  * @param  state: Device state
+  * @param  hpcd PCD handle
+  * @param  state Device state
   * @retval None
   */
  __weak void HAL_PCDEx_SetConnectionState(PCD_HandleTypeDef *hpcd, uint8_t state)

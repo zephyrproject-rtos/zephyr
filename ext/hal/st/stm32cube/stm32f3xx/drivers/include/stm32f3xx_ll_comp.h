@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_ll_comp.h
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   Header file of COMP LL module.
   ******************************************************************************
   * @attention
@@ -219,7 +217,7 @@ typedef struct
 #else
 #define LL_COMP_INPUT_MINUS_IO1         (COMP_CSR_COMPxINSEL_2 | COMP_CSR_COMPxINSEL_1                        ) /*!< Comparator input minus connected to IO1 (pin PA0 for COMP1, pin PA2 for COMP2, PD15 for COMP3, PE8 for COMP4, PD13 for COMP5, PD10 for COMP6, PC0 for COMP7 (COMP instance availability depends on the selected device)) */
 #endif
-#define LL_COMP_INPUT_MINUS_IO2         (COMP_CSR_COMPxINSEL_2 | COMP_CSR_COMPxINSEL_1 | COMP_CSR_COMPxINSEL_0) /*!< Comparator input minus connected to IO2 (                                      PB12 for COMP3, PB2 for COMP4, PB10 for COMP5, PB15 for COMP6                (COMP instance availability depends on the selected device)) */
+#define LL_COMP_INPUT_MINUS_IO2         (COMP_CSR_COMPxINSEL_2 | COMP_CSR_COMPxINSEL_1 | COMP_CSR_COMPxINSEL_0) /*!< Comparator input minus connected to IO2 (PB12 for COMP3, PB2 for COMP4, PB10 for COMP5, PB15 for COMP6 (COMP instance availability depends on the selected device)) */
 #if defined(STM32F301x8) || defined(STM32F318xx) || defined(STM32F334x8) || defined(STM32F302x8) || defined(STM32F303x8) || defined(STM32F328xx)
 /* This device has no comparator input minus IO3 */
 #else

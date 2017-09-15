@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_irda.h
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   This file contains all the functions prototypes for the IRDA
   *          firmware library.
   ******************************************************************************
@@ -400,7 +398,7 @@ typedef enum
   */
 
 /** @brief  Reset IRDA handle state.
-  * @param  __HANDLE__: IRDA handle.
+  * @param  __HANDLE__ IRDA handle.
   * @retval None
   */
 #define __HAL_IRDA_RESET_HANDLE_STATE(__HANDLE__)  do{                                                   \
@@ -409,7 +407,7 @@ typedef enum
                                                      } while(0U)
 
 /** @brief  Flush the IRDA DR register.
-  * @param  __HANDLE__: specifies the IRDA Handle.
+  * @param  __HANDLE__ specifies the IRDA Handle.
   * @retval None
   */
 #define __HAL_IRDA_FLUSH_DRREGISTER(__HANDLE__)                            \
@@ -419,8 +417,8 @@ typedef enum
       } while(0U)
 
 /** @brief  Clear the specified IRDA pending flag.
-  * @param  __HANDLE__: specifies the IRDA Handle.
-  * @param  __FLAG__: specifies the flag to check.
+  * @param  __HANDLE__ specifies the IRDA Handle.
+  * @param  __FLAG__ specifies the flag to check.
   *          This parameter can be any combination of the following values:
   *            @arg @ref IRDA_CLEAR_PEF
   *            @arg @ref IRDA_CLEAR_FEF
@@ -433,39 +431,39 @@ typedef enum
 #define __HAL_IRDA_CLEAR_FLAG(__HANDLE__, __FLAG__) ((__HANDLE__)->Instance->ICR = (__FLAG__))
 
 /** @brief  Clear the IRDA PE pending flag.
-  * @param  __HANDLE__: specifies the IRDA Handle.
+  * @param  __HANDLE__ specifies the IRDA Handle.
   * @retval None
   */
 #define __HAL_IRDA_CLEAR_PEFLAG(__HANDLE__)    __HAL_IRDA_CLEAR_FLAG((__HANDLE__), IRDA_CLEAR_PEF)
 
 
 /** @brief  Clear the IRDA FE pending flag.
-  * @param  __HANDLE__: specifies the IRDA Handle.
+  * @param  __HANDLE__ specifies the IRDA Handle.
   * @retval None
   */
 #define __HAL_IRDA_CLEAR_FEFLAG(__HANDLE__)    __HAL_IRDA_CLEAR_FLAG((__HANDLE__), IRDA_CLEAR_FEF)
 
 /** @brief  Clear the IRDA NE pending flag.
-  * @param  __HANDLE__: specifies the IRDA Handle.
+  * @param  __HANDLE__ specifies the IRDA Handle.
   * @retval None
   */
 #define __HAL_IRDA_CLEAR_NEFLAG(__HANDLE__)    __HAL_IRDA_CLEAR_FLAG((__HANDLE__), IRDA_CLEAR_NEF)
 
 /** @brief  Clear the IRDA ORE pending flag.
-  * @param  __HANDLE__: specifies the IRDA Handle.
+  * @param  __HANDLE__ specifies the IRDA Handle.
   * @retval None
   */
 #define __HAL_IRDA_CLEAR_OREFLAG(__HANDLE__)    __HAL_IRDA_CLEAR_FLAG((__HANDLE__), IRDA_CLEAR_OREF)
 
 /** @brief  Clear the IRDA IDLE pending flag.
-  * @param  __HANDLE__: specifies the IRDA Handle.
+  * @param  __HANDLE__ specifies the IRDA Handle.
   * @retval None
   */
 #define __HAL_IRDA_CLEAR_IDLEFLAG(__HANDLE__)   __HAL_IRDA_CLEAR_FLAG((__HANDLE__), IRDA_CLEAR_IDLEF)
 
 /** @brief  Check whether the specified IRDA flag is set or not.
-  * @param  __HANDLE__: specifies the IRDA Handle.
-  * @param  __FLAG__: specifies the flag to check.
+  * @param  __HANDLE__ specifies the IRDA Handle.
+  * @param  __FLAG__ specifies the flag to check.
   *        This parameter can be one of the following values:
   *            @arg @ref IRDA_FLAG_REACK Receive enable acknowledge flag
   *            @arg @ref IRDA_FLAG_TEACK Transmit enable acknowledge flag
@@ -485,8 +483,8 @@ typedef enum
 
 
 /** @brief  Enable the specified IRDA interrupt.
-  * @param  __HANDLE__: specifies the IRDA Handle.
-  * @param  __INTERRUPT__: specifies the IRDA interrupt source to enable.
+  * @param  __HANDLE__ specifies the IRDA Handle.
+  * @param  __INTERRUPT__ specifies the IRDA interrupt source to enable.
   *          This parameter can be one of the following values:
   *            @arg @ref IRDA_IT_TXE  Transmit Data Register empty interrupt
   *            @arg @ref IRDA_IT_TC   Transmission complete interrupt
@@ -501,8 +499,8 @@ typedef enum
                                                            ((__HANDLE__)->Instance->CR3 |= (1U << ((__INTERRUPT__) & IRDA_IT_MASK))))
 
 /** @brief  Disable the specified IRDA interrupt.
-  * @param  __HANDLE__: specifies the IRDA Handle.
-  * @param  __INTERRUPT__: specifies the IRDA interrupt source to disable.
+  * @param  __HANDLE__ specifies the IRDA Handle.
+  * @param  __INTERRUPT__ specifies the IRDA interrupt source to disable.
   *          This parameter can be one of the following values:
   *            @arg @ref IRDA_IT_TXE  Transmit Data Register empty interrupt
   *            @arg @ref IRDA_IT_TC   Transmission complete interrupt
@@ -518,8 +516,8 @@ typedef enum
 
 
 /** @brief  Check whether the specified IRDA interrupt has occurred or not.
-  * @param  __HANDLE__: specifies the IRDA Handle.
-  * @param  __IT__: specifies the IRDA interrupt source to check.
+  * @param  __HANDLE__ specifies the IRDA Handle.
+  * @param  __IT__ specifies the IRDA interrupt source to check.
   *          This parameter can be one of the following values:
   *            @arg @ref IRDA_IT_TXE Transmit Data Register empty interrupt
   *            @arg @ref IRDA_IT_TC  Transmission complete interrupt
@@ -534,8 +532,8 @@ typedef enum
 #define __HAL_IRDA_GET_IT(__HANDLE__, __IT__) ((__HANDLE__)->Instance->ISR & (1U << ((__IT__)>> 0x08U)))
 
 /** @brief  Check whether the specified IRDA interrupt source is enabled or not.
-  * @param  __HANDLE__: specifies the IRDA Handle.
-  * @param  __IT__: specifies the IRDA interrupt source to check.
+  * @param  __HANDLE__ specifies the IRDA Handle.
+  * @param  __IT__ specifies the IRDA interrupt source to check.
   *          This parameter can be one of the following values:
   *            @arg @ref IRDA_IT_TXE Transmit Data Register empty interrupt
   *            @arg @ref IRDA_IT_TC  Transmission complete interrupt
@@ -550,8 +548,8 @@ typedef enum
 
 
 /** @brief  Clear the specified IRDA ISR flag, in setting the proper ICR register flag.
-  * @param  __HANDLE__: specifies the IRDA Handle.
-  * @param  __IT_CLEAR__: specifies the interrupt clear register flag that needs to be set
+  * @param  __HANDLE__ specifies the IRDA Handle.
+  * @param  __IT_CLEAR__ specifies the interrupt clear register flag that needs to be set
   *                       to clear the corresponding interrupt
   *          This parameter can be one of the following values:
   *            @arg @ref IRDA_CLEAR_PEF Parity Error Clear Flag
@@ -565,8 +563,8 @@ typedef enum
 
 
 /** @brief  Set a specific IRDA request flag.
-  * @param  __HANDLE__: specifies the IRDA Handle.
-  * @param  __REQ__: specifies the request flag to set
+  * @param  __HANDLE__ specifies the IRDA Handle.
+  * @param  __REQ__ specifies the request flag to set
   *          This parameter can be one of the following values:
   *            @arg @ref IRDA_AUTOBAUD_REQUEST Auto-Baud Rate Request
   *            @arg @ref IRDA_RXDATA_FLUSH_REQUEST Receive Data flush Request
@@ -577,25 +575,25 @@ typedef enum
 #define __HAL_IRDA_SEND_REQ(__HANDLE__, __REQ__) ((__HANDLE__)->Instance->RQR |= (uint16_t)(__REQ__))
 
 /** @brief  Enable the IRDA one bit sample method.
-  * @param  __HANDLE__: specifies the IRDA Handle.
+  * @param  __HANDLE__ specifies the IRDA Handle.
   * @retval None
   */
 #define __HAL_IRDA_ONE_BIT_SAMPLE_ENABLE(__HANDLE__) ((__HANDLE__)->Instance->CR3|= USART_CR3_ONEBIT)
 
 /** @brief  Disable the IRDA one bit sample method.
-  * @param  __HANDLE__: specifies the IRDA Handle.
+  * @param  __HANDLE__ specifies the IRDA Handle.
   * @retval None
   */
 #define __HAL_IRDA_ONE_BIT_SAMPLE_DISABLE(__HANDLE__) ((__HANDLE__)->Instance->CR3 &= (uint32_t)~((uint32_t)USART_CR3_ONEBIT))
 
 /** @brief  Enable UART/USART associated to IRDA Handle.
-  * @param  __HANDLE__: specifies the IRDA Handle.
+  * @param  __HANDLE__ specifies the IRDA Handle.
   * @retval None
   */
 #define __HAL_IRDA_ENABLE(__HANDLE__)                   ((__HANDLE__)->Instance->CR1 |=  USART_CR1_UE)
 
 /** @brief  Disable UART/USART associated to IRDA Handle.
-  * @param  __HANDLE__: specifies the IRDA Handle.
+  * @param  __HANDLE__ specifies the IRDA Handle.
   * @retval None
   */
 #define __HAL_IRDA_DISABLE(__HANDLE__)                  ((__HANDLE__)->Instance->CR1 &=  ~USART_CR1_UE)
@@ -610,20 +608,20 @@ typedef enum
   */
 
 /** @brief  Ensure that IRDA Baud rate is less or equal to maximum value.
-  * @param  __BAUDRATE__: specifies the IRDA Baudrate set by the user.
+  * @param  __BAUDRATE__ specifies the IRDA Baudrate set by the user.
   * @retval True or False
   */
 #define IS_IRDA_BAUDRATE(__BAUDRATE__) ((__BAUDRATE__) < 115201U)
 
 /** @brief  Ensure that IRDA prescaler value is strictly larger than 0.
-  * @param  __PRESCALER__: specifies the IRDA prescaler value set by the user.
+  * @param  __PRESCALER__ specifies the IRDA prescaler value set by the user.
   * @retval True or False
   */
 #define IS_IRDA_PRESCALER(__PRESCALER__) ((__PRESCALER__) > 0U)
 
 /**
   * @brief Ensure that IRDA frame parity is valid.
-  * @param __PARITY__: IRDA frame parity.
+  * @param __PARITY__ IRDA frame parity.
   * @retval SET (__PARITY__ is valid) or RESET (__PARITY__ is invalid)
   */
 #define IS_IRDA_PARITY(__PARITY__) (((__PARITY__) == IRDA_PARITY_NONE) || \
@@ -632,14 +630,14 @@ typedef enum
 
 /**
   * @brief Ensure that IRDA communication mode is valid.
-  * @param __MODE__: IRDA communication mode.
+  * @param __MODE__ IRDA communication mode.
   * @retval SET (__MODE__ is valid) or RESET (__MODE__ is invalid)
   */
 #define IS_IRDA_TX_RX_MODE(__MODE__) ((((__MODE__) & (~((uint32_t)(IRDA_MODE_TX_RX)))) == 0x00U) && ((__MODE__) != 0x00U))
 
 /**
   * @brief Ensure that IRDA power mode is valid.
-  * @param __MODE__: IRDA power mode.
+  * @param __MODE__ IRDA power mode.
   * @retval SET (__MODE__ is valid) or RESET (__MODE__ is invalid)
   */
 #define IS_IRDA_POWERMODE(__MODE__) (((__MODE__) == IRDA_POWERMODE_LOWPOWER) || \
@@ -647,7 +645,7 @@ typedef enum
 
 /**
   * @brief Ensure that IRDA state is valid.
-  * @param __STATE__: IRDA state mode.
+  * @param __STATE__ IRDA state mode.
   * @retval SET (__STATE__ is valid) or RESET (__STATE__ is invalid)
   */
 #define IS_IRDA_STATE(__STATE__) (((__STATE__) == IRDA_STATE_DISABLE) || \
@@ -655,7 +653,7 @@ typedef enum
 
 /**
   * @brief Ensure that IRDA associated UART/USART mode is valid.
-  * @param __MODE__: IRDA associated UART/USART mode.
+  * @param __MODE__ IRDA associated UART/USART mode.
   * @retval SET (__MODE__ is valid) or RESET (__MODE__ is invalid)
   */
 #define IS_IRDA_MODE(__MODE__)  (((__MODE__) == IRDA_MODE_DISABLE) || \
@@ -663,7 +661,7 @@ typedef enum
 
 /**
   * @brief Ensure that IRDA sampling rate is valid.
-  * @param __ONEBIT__: IRDA sampling rate.
+  * @param __ONEBIT__ IRDA sampling rate.
   * @retval SET (__ONEBIT__ is valid) or RESET (__ONEBIT__ is invalid)
   */
 #define IS_IRDA_ONE_BIT_SAMPLE(__ONEBIT__)      (((__ONEBIT__) == IRDA_ONE_BIT_SAMPLE_DISABLE) || \
@@ -671,7 +669,7 @@ typedef enum
 
 /**
   * @brief Ensure that IRDA DMA TX mode is valid.
-  * @param __DMATX__: IRDA DMA TX mode.
+  * @param __DMATX__ IRDA DMA TX mode.
   * @retval SET (__DMATX__ is valid) or RESET (__DMATX__ is invalid)
   */
 #define IS_IRDA_DMA_TX(__DMATX__)     (((__DMATX__) == IRDA_DMA_TX_DISABLE) || \
@@ -679,7 +677,7 @@ typedef enum
 
 /**
   * @brief Ensure that IRDA DMA RX mode is valid.
-  * @param __DMARX__: IRDA DMA RX mode.
+  * @param __DMARX__ IRDA DMA RX mode.
   * @retval SET (__DMARX__ is valid) or RESET (__DMARX__ is invalid)
   */
 #define IS_IRDA_DMA_RX(__DMARX__) (((__DMARX__) == IRDA_DMA_RX_DISABLE) || \
@@ -687,7 +685,7 @@ typedef enum
 
 /**
   * @brief Ensure that IRDA request is valid.
-  * @param __PARAM__: IRDA request.
+  * @param __PARAM__ IRDA request.
   * @retval SET (__PARAM__ is valid) or RESET (__PARAM__ is invalid)
   */
 #define IS_IRDA_REQUEST_PARAMETER(__PARAM__) (((__PARAM__) == IRDA_AUTOBAUD_REQUEST) || \

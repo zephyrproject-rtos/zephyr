@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_i2c_ex.h
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   Header file of I2C HAL Extended module.
   ******************************************************************************
   * @attention
@@ -40,7 +38,7 @@
 #define __STM32F3xx_HAL_I2C_EX_H
 
 #ifdef __cplusplus
- extern "C" {
+extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/

@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_adc.h
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   Header file containing functions prototypes of ADC HAL library.
   ******************************************************************************
   * @attention
@@ -142,7 +140,7 @@ typedef struct __ADC_HandleTypeDef
   * @{
   */
 /** @brief  Reset ADC handle state
-  * @param  __HANDLE__: ADC handle
+  * @param  __HANDLE__ ADC handle
   * @retval None
   */
 #define __HAL_ADC_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = HAL_ADC_STATE_RESET)

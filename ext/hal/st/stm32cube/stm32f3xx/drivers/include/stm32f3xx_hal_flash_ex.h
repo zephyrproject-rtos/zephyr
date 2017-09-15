@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_flash_ex.h
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   Header file of Flash HAL Extended module.
   ******************************************************************************
   * @attention
@@ -497,3 +495,4 @@ uint32_t           HAL_FLASHEx_OBGetUserData(uint32_t DATAAdress);
 #endif /* __STM32F3xx_HAL_FLASH_EX_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+

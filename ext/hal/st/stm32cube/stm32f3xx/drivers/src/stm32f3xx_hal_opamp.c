@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_opamp.c
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   OPAMP HAL module driver.
   *          This file provides firmware functions to manage the following
   *          functionalities of the operational amplifiers (OPAMP1,...OPAMP4)
@@ -170,14 +168,14 @@
     |-----------------|--------|--------|--------|--------|--------|
     |                 | No conn|   X    |   X    |   X    |   X    |
     | Inverting Input | VM0    |  PC5   |  PC5   |  PB10  |  PB10  |
-    | (1U)             | VM1    |  PA3   |  PA5   |  PB2   |  PD8   |
+    | (1)             | VM1    |  PA3   |  PA5   |  PB2   |  PD8   |
     |-----------------|--------|--------|--------|--------|--------|
     |                 | VP0    |  PA1   |  PA7   |  PB0   |  PB13  |
     |  Non Inverting  | VP1    |  PA7   |  PD14  |  PB13  |  PD11  |
     |    Input        | VP2    |  PA3   |  PB0   |  PA1   |  PA4   |
     |                 | VP3    |  PA5   |  PB14  |  PA5   |  PB11  |
     +--------------------------------------------------------------+
-    (1U): NA in follower mode.
+    (1): NA in follower mode.
 
     Table 2.  OPAMPs outputs for the STM32F3 devices:
     +--------------------------------------------------------------+
@@ -245,7 +243,7 @@
   *         parameters in the OPAMP_InitTypeDef and create the associated handle.
   * @note   If the selected opamp is locked, initialization can't be performed.
   *         To unlock the configuration, perform a system reset.
-  * @param  hopamp: OPAMP handle
+  * @param  hopamp OPAMP handle
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_OPAMP_Init(OPAMP_HandleTypeDef *hopamp)
@@ -376,7 +374,7 @@ HAL_StatusTypeDef HAL_OPAMP_Init(OPAMP_HandleTypeDef *hopamp)
   * @brief  DeInitializes the OPAMP peripheral
   * @note   Deinitialization can't be performed if the OPAMP configuration is locked.
   *         To unlock the configuration, perform a system reset.
-  * @param  hopamp: OPAMP handle
+  * @param  hopamp OPAMP handle
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_OPAMP_DeInit(OPAMP_HandleTypeDef *hopamp)
@@ -416,17 +414,17 @@ HAL_StatusTypeDef HAL_OPAMP_DeInit(OPAMP_HandleTypeDef *hopamp)
 
       /* The OPAMP state is NOT updated */
     }
-  }
 
-  /* Process unlocked */
-  __HAL_UNLOCK(hopamp);
+    /* Process unlocked */
+    __HAL_UNLOCK(hopamp);
+  }
 
   return status;
 }
 
 /**
   * @brief  Initializes the OPAMP MSP.
-  * @param  hopamp: OPAMP handle
+  * @param  hopamp OPAMP handle
   * @retval None
   */
 __weak void HAL_OPAMP_MspInit(OPAMP_HandleTypeDef *hopamp)
@@ -443,7 +441,7 @@ __weak void HAL_OPAMP_MspInit(OPAMP_HandleTypeDef *hopamp)
 
 /**
   * @brief  DeInitializes OPAMP MSP.
-  * @param  hopamp: OPAMP handle
+  * @param  hopamp OPAMP handle
   * @retval None
   */
 __weak void HAL_OPAMP_MspDeInit(OPAMP_HandleTypeDef *hopamp)
@@ -479,7 +477,7 @@ __weak void HAL_OPAMP_MspDeInit(OPAMP_HandleTypeDef *hopamp)
 
 /**
   * @brief  Start the opamp
-  * @param  hopamp: OPAMP handle
+  * @param  hopamp OPAMP handle
   * @retval HAL status
   */
 
@@ -520,7 +518,7 @@ HAL_StatusTypeDef HAL_OPAMP_Start(OPAMP_HandleTypeDef *hopamp)
 
 /**
   * @brief  Stop the opamp
-  * @param  hopamp: OPAMP handle
+  * @param  hopamp OPAMP handle
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_OPAMP_Stop(OPAMP_HandleTypeDef *hopamp)
@@ -760,7 +758,7 @@ HAL_StatusTypeDef HAL_OPAMP_SelfCalibrate(OPAMP_HandleTypeDef *hopamp)
 
 /**
   * @brief  Lock the selected opamp configuration.
-  * @param  hopamp: OPAMP handle
+  * @param  hopamp OPAMP handle
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_OPAMP_Lock(OPAMP_HandleTypeDef *hopamp)
@@ -815,7 +813,7 @@ HAL_StatusTypeDef HAL_OPAMP_Lock(OPAMP_HandleTypeDef *hopamp)
 
 /**
   * @brief  Return the OPAMP state
-  * @param  hopamp: OPAMP handle
+  * @param  hopamp OPAMP handle
   * @retval HAL state
   */
 HAL_OPAMP_StateTypeDef HAL_OPAMP_GetState(OPAMP_HandleTypeDef *hopamp)
@@ -834,8 +832,8 @@ HAL_OPAMP_StateTypeDef HAL_OPAMP_GetState(OPAMP_HandleTypeDef *hopamp)
 
 /**
   * @brief  Return the OPAMP factory trimming value
-  * @param  hopamp: OPAMP handle
-  * @param  trimmingoffset: Trimming offset (P or N)
+  * @param  hopamp OPAMP handle
+  * @param  trimmingoffset Trimming offset (P or N)
   * @retval Trimming value (P or N): range: 0->31
   *         or OPAMP_FACTORYTRIMMING_DUMMY if trimming value is not available
  */

@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_ll_fmc.h
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   Header file of FMC HAL module.
   ******************************************************************************
   * @attention
@@ -1081,3 +1079,4 @@ HAL_StatusTypeDef  FMC_PCCARD_DeInit(FMC_PCCARD_TypeDef *Device);
 #endif /* __STM32F3xx_LL_FMC_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+

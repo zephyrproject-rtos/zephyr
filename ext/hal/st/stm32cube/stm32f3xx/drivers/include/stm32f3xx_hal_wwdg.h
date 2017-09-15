@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_wwdg.h
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   Header file of WWDG HAL module.
   ******************************************************************************
   * @attention
@@ -176,7 +174,7 @@ typedef struct
 
 /**
   * @brief  Enable the WWDG early wakeup interrupt.
-  * @param  __HANDLE__: WWDG handle
+  * @param  __HANDLE__ WWDG handle
   * @param  __INTERRUPT__  specifies the interrupt to enable.
   *         This parameter can be one of the following values:
   *            @arg WWDG_IT_EWI: Early wakeup interrupt

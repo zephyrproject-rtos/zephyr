@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_opamp.h
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   Header file of OPAMP HAL module.
   ******************************************************************************
   * @attention
@@ -308,10 +306,10 @@ typedef  uint32_t OPAMP_TrimmingValueTypeDef;
   * @{
   */
 
-#define OPAMP_PGA_GAIN_2                (0x00000000U)                        /*!< PGA gain =  2U */
-#define OPAMP_PGA_GAIN_4                OPAMP_CSR_PGGAIN_0                            /*!< PGA gain =  4U */
-#define OPAMP_PGA_GAIN_8                OPAMP_CSR_PGGAIN_1                            /*!< PGA gain =  8U */
-#define OPAMP_PGA_GAIN_16              (OPAMP_CSR_PGGAIN_0 | OPAMP_CSR_PGGAIN_1)      /*!< PGA gain = 16U */
+#define OPAMP_PGA_GAIN_2                (0x00000000U)                        /*!< PGA gain =  2 */
+#define OPAMP_PGA_GAIN_4                OPAMP_CSR_PGGAIN_0                            /*!< PGA gain =  4 */
+#define OPAMP_PGA_GAIN_8                OPAMP_CSR_PGGAIN_1                            /*!< PGA gain =  8 */
+#define OPAMP_PGA_GAIN_16              (OPAMP_CSR_PGGAIN_0 | OPAMP_CSR_PGGAIN_1)      /*!< PGA gain = 16 */
 
 #define IS_OPAMP_PGA_GAIN(GAIN) (((GAIN) == OPAMP_PGA_GAIN_2) || \
                                  ((GAIN) == OPAMP_PGA_GAIN_4) || \
@@ -416,7 +414,7 @@ typedef  uint32_t OPAMP_TrimmingValueTypeDef;
   */
 
 /** @brief Reset OPAMP handle state
-  * @param  __HANDLE__: OPAMP handle.
+  * @param  __HANDLE__ OPAMP handle.
   * @retval None
   */
 #define __HAL_OPAMP_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = HAL_OPAMP_STATE_RESET)

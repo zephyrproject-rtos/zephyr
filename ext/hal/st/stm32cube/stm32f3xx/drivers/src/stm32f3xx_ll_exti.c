@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_ll_exti.c
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   EXTI LL module driver.
   ******************************************************************************
   * @attention
@@ -110,7 +108,7 @@ uint32_t LL_EXTI_DeInit(void)
   LL_EXTI_WriteReg(FTSR,  0x00000000U);
   /* Software interrupt event register set to default reset values */
   LL_EXTI_WriteReg(SWIER, 0x00000000U);
-  /* Pending register set to default reset values */
+  /* Pending register clear */
   LL_EXTI_WriteReg(PR,    0x007FFFFFU);
 
 #if defined(EXTI_32_63_SUPPORT)
@@ -128,7 +126,7 @@ uint32_t LL_EXTI_DeInit(void)
   LL_EXTI_WriteReg(FTSR2,       0x00000000U);
   /* Software interrupt event register 2 set to default reset values */
   LL_EXTI_WriteReg(SWIER2,      0x00000000U);
-  /* Pending register 2 set to default reset values */
+  /* Pending register 2 clear */
   LL_EXTI_WriteReg(PR2,         0x00000003U);
 
 #endif

@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_i2s_ex.h
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   Header file of I2S HAL Extended module.
   ******************************************************************************
   * @attention
@@ -69,15 +67,15 @@
 #define I2SxEXT(__INSTANCE__) ((__INSTANCE__) == (SPI2)? (SPI_TypeDef *)(I2S2ext_BASE): (SPI_TypeDef *)(I2S3ext_BASE))
 
 /** @brief  Enable or disable the specified I2SExt peripheral.
-  * @param  __HANDLE__: specifies the I2S Handle.
+  * @param  __HANDLE__ specifies the I2S Handle.
   * @retval None
   */
 #define __HAL_I2SEXT_ENABLE(__HANDLE__) (I2SxEXT((__HANDLE__)->Instance)->I2SCFGR |= SPI_I2SCFGR_I2SE)
 #define __HAL_I2SEXT_DISABLE(__HANDLE__) (I2SxEXT((__HANDLE__)->Instance)->I2SCFGR &= ~SPI_I2SCFGR_I2SE)
 
 /** @brief  Enable or disable the specified I2SExt interrupts.
-  * @param  __HANDLE__: specifies the I2S Handle.
-  * @param  __INTERRUPT__: specifies the interrupt source to enable or disable.
+  * @param  __HANDLE__ specifies the I2S Handle.
+  * @param  __INTERRUPT__ specifies the interrupt source to enable or disable.
   *        This parameter can be one of the following values:
   *            @arg I2S_IT_TXE: Tx buffer empty interrupt enable
   *            @arg I2S_IT_RXNE: RX buffer not empty interrupt enable
@@ -88,9 +86,9 @@
 #define __HAL_I2SEXT_DISABLE_IT(__HANDLE__, __INTERRUPT__) (I2SxEXT((__HANDLE__)->Instance)->CR2 &= ~(__INTERRUPT__))
 
 /** @brief  Checks if the specified I2SExt interrupt source is enabled or disabled.
-  * @param  __HANDLE__: specifies the I2S Handle.
+  * @param  __HANDLE__ specifies the I2S Handle.
   *         This parameter can be I2S where x: 1, 2, or 3 to select the I2S peripheral.
-  * @param  __INTERRUPT__: specifies the I2S interrupt source to check.
+  * @param  __INTERRUPT__ specifies the I2S interrupt source to check.
   *          This parameter can be one of the following values:
   *            @arg I2S_IT_TXE: Tx buffer empty interrupt enable
   *            @arg I2S_IT_RXNE: RX buffer not empty interrupt enable
@@ -100,8 +98,8 @@
 #define __HAL_I2SEXT_GET_IT_SOURCE(__HANDLE__, __INTERRUPT__) (((I2SxEXT((__HANDLE__)->Instance)->CR2 & (__INTERRUPT__)) == (__INTERRUPT__)) ? SET : RESET)
 
 /** @brief  Checks whether the specified I2SExt flag is set or not.
-  * @param  __HANDLE__: specifies the I2S Handle.
-  * @param  __FLAG__: specifies the flag to check.
+  * @param  __HANDLE__ specifies the I2S Handle.
+  * @param  __FLAG__ specifies the flag to check.
   *        This parameter can be one of the following values:
   *            @arg I2S_FLAG_RXNE: Receive buffer not empty flag
   *            @arg I2S_FLAG_TXE: Transmit buffer empty flag
@@ -115,13 +113,13 @@
 #define __HAL_I2SEXT_GET_FLAG(__HANDLE__, __FLAG__) (((I2SxEXT((__HANDLE__)->Instance)->SR) & (__FLAG__)) == (__FLAG__))
 
 /** @brief Clears the I2SExt OVR pending flag.
-  * @param  __HANDLE__: specifies the I2S Handle.
+  * @param  __HANDLE__ specifies the I2S Handle.
   * @retval None
   */
 #define __HAL_I2SEXT_CLEAR_OVRFLAG(__HANDLE__) do{(I2SxEXT((__HANDLE__)->Instance)->DR;\
                                                   (I2SxEXT((__HANDLE__)->Instance)->SR;}while(0U)
 /** @brief Clears the I2SExt UDR pending flag.
-  * @param  __HANDLE__: specifies the I2S Handle.
+  * @param  __HANDLE__ specifies the I2S Handle.
   * @retval None
   */
 #define __HAL_I2SEXT_CLEAR_UDRFLAG(__HANDLE__)(I2SxEXT((__HANDLE__)->Instance)->SR)
@@ -176,6 +174,8 @@ HAL_StatusTypeDef HAL_I2SEx_TransmitReceive_DMA(I2S_HandleTypeDef *hi2s, uint16_
 /* I2S IRQHandler and Callbacks used in non blocking modes (Interrupt and DMA) */
 void HAL_I2S_FullDuplex_IRQHandler(I2S_HandleTypeDef *hi2s);
 void HAL_I2S_TxRxCpltCallback(I2S_HandleTypeDef *hi2s);
+/* Callback used in non blocking modes (DMA only) */
+void HAL_I2S_TxRxHalfCpltCallback(I2S_HandleTypeDef *hi2s);
 /**
   * @}
   */

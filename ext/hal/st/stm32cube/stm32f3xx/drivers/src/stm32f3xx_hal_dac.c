@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_dac.c
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   DAC HAL module driver.
   *         This file provides firmware functions to manage the following
   *         functionalities of the Digital to Analog Converter (DAC) peripheral:
@@ -274,7 +272,7 @@
 /**
   * @brief  Initialize the DAC peripheral according to the specified parameters
   *         in the DAC_InitStruct and initialize the associated handle.
-  * @param  hdac: pointer to a DAC_HandleTypeDef structure that contains
+  * @param  hdac pointer to a DAC_HandleTypeDef structure that contains
   *         the configuration information for the specified DAC.
   * @retval HAL status
   */
@@ -312,7 +310,7 @@ HAL_StatusTypeDef HAL_DAC_Init(DAC_HandleTypeDef* hdac)
 
 /**
   * @brief  Deinitialize the DAC peripheral registers to their default reset values.
-  * @param  hdac: pointer to a DAC_HandleTypeDef structure that contains
+  * @param  hdac pointer to a DAC_HandleTypeDef structure that contains
   *         the configuration information for the specified DAC.
   * @retval HAL status
   */
@@ -348,7 +346,7 @@ HAL_StatusTypeDef HAL_DAC_DeInit(DAC_HandleTypeDef* hdac)
 
 /**
   * @brief  Initialize the DAC MSP.
-  * @param  hdac: pointer to a DAC_HandleTypeDef structure that contains
+  * @param  hdac pointer to a DAC_HandleTypeDef structure that contains
   *         the configuration information for the specified DAC.
   * @retval None
   */
@@ -364,7 +362,7 @@ __weak void HAL_DAC_MspInit(DAC_HandleTypeDef* hdac)
 
 /**
   * @brief  DeInitialize the DAC MSP.
-  * @param  hdac: pointer to a DAC_HandleTypeDef structure that contains
+  * @param  hdac pointer to a DAC_HandleTypeDef structure that contains
   *         the configuration information for the specified DAC.
   * @retval None
   */
@@ -403,9 +401,9 @@ __weak void HAL_DAC_MspDeInit(DAC_HandleTypeDef* hdac)
 
 /**
   * @brief  Enables DAC and starts conversion of channel.
-  * @param  hdac: pointer to a DAC_HandleTypeDef structure that contains
+  * @param  hdac pointer to a DAC_HandleTypeDef structure that contains
   *         the configuration information for the specified DAC.
-  * @param  Channel: The selected DAC channel.
+  * @param  Channel The selected DAC channel.
   *          This parameter can be one of the following values:
   *            @arg DAC_CHANNEL_1: DAC1 Channel1 selected
   *            @arg DAC_CHANNEL_2: DAC1 Channel2 selected
@@ -427,9 +425,9 @@ __weak HAL_StatusTypeDef HAL_DAC_Start(DAC_HandleTypeDef* hdac, uint32_t Channel
 
 /**
   * @brief  Disables DAC and stop conversion of channel.
-  * @param  hdac: pointer to a DAC_HandleTypeDef structure that contains
+  * @param  hdac pointer to a DAC_HandleTypeDef structure that contains
   *         the configuration information for the specified DAC.
-  * @param  Channel: The selected DAC channel.
+  * @param  Channel The selected DAC channel.
   *          This parameter can be one of the following values:
   *            @arg DAC_CHANNEL_1: DAC1 Channel1 selected
   *            @arg DAC_CHANNEL_2: DAC1 Channel2 selected
@@ -453,9 +451,9 @@ HAL_StatusTypeDef HAL_DAC_Stop(DAC_HandleTypeDef* hdac, uint32_t Channel)
 
 /**
   * @brief  Disables DAC and stop conversion of channel.
-  * @param  hdac: pointer to a DAC_HandleTypeDef structure that contains
+  * @param  hdac pointer to a DAC_HandleTypeDef structure that contains
   *         the configuration information for the specified DAC.
-  * @param  Channel: The selected DAC channel.
+  * @param  Channel The selected DAC channel.
   *          This parameter can be one of the following values:
   *            @arg DAC_CHANNEL_1: DAC1 Channel1 selected
   *            @arg DAC_CHANNEL_2: DAC1 Channel2 selected
@@ -520,9 +518,9 @@ HAL_StatusTypeDef HAL_DAC_Stop_DMA(DAC_HandleTypeDef* hdac, uint32_t Channel)
 
 /**
   * @brief  Returns the last data output value of the selected DAC channel.
-  * @param  hdac: pointer to a DAC_HandleTypeDef structure that contains
+  * @param  hdac pointer to a DAC_HandleTypeDef structure that contains
   *         the configuration information for the specified DAC.
-  * @param  Channel: The selected DAC channel.
+  * @param  Channel The selected DAC channel.
   *          This parameter can be one of the following values:
   *            @arg DAC_CHANNEL_1: DAC1 Channel1 selected
   *            @arg DAC_CHANNEL_2: DAC1 Channel2 selected
@@ -544,7 +542,7 @@ __weak uint32_t HAL_DAC_GetValue(DAC_HandleTypeDef* hdac, uint32_t Channel)
 
 /**
   * @brief  Returns the last data output value of the selected DAC channel.
-  * @param  hdac: pointer to a DAC_HandleTypeDef structure that contains
+  * @param  hdac pointer to a DAC_HandleTypeDef structure that contains
   *         the configuration information for the specified DAC.
   * @retval The selected DAC channel data output value.
   */
@@ -584,10 +582,10 @@ __weak uint32_t HAL_DACEx_DualGetValue(DAC_HandleTypeDef* hdac)
 
 /**
   * @brief  Configures the selected DAC channel.
-  * @param  hdac: pointer to a DAC_HandleTypeDef structure that contains
+  * @param  hdac pointer to a DAC_HandleTypeDef structure that contains
   *         the configuration information for the specified DAC.
-  * @param  sConfig: DAC configuration structure.
-  * @param  Channel: The selected DAC channel.
+  * @param  sConfig DAC configuration structure.
+  * @param  Channel The selected DAC channel.
   *          This parameter can be one of the following values:
   *            @arg DAC_CHANNEL_1: DAC1 Channel1 selected
   *            @arg DAC_CHANNEL_2: DAC1 Channel2 selected
@@ -659,7 +657,7 @@ __weak HAL_StatusTypeDef HAL_DACEx_DualSetValue(DAC_HandleTypeDef* hdac, uint32_
 
 /**
   * @brief  return the DAC handle state
-  * @param  hdac: pointer to a DAC_HandleTypeDef structure that contains
+  * @param  hdac pointer to a DAC_HandleTypeDef structure that contains
   *         the configuration information for the specified DAC.
   * @retval HAL state
   */
@@ -671,7 +669,7 @@ HAL_DAC_StateTypeDef HAL_DAC_GetState(DAC_HandleTypeDef* hdac)
 
 /**
   * @brief  Return the DAC error code
-  * @param  hdac: pointer to a DAC_HandleTypeDef structure that contains
+  * @param  hdac pointer to a DAC_HandleTypeDef structure that contains
   *         the configuration information for the specified DAC.
   * @retval DAC Error Code
   */
@@ -690,7 +688,7 @@ uint32_t HAL_DAC_GetError(DAC_HandleTypeDef *hdac)
 
 /**
   * @brief  Conversion complete callback in non blocking mode for Channel1
-  * @param  hdac: pointer to a DAC_HandleTypeDef structure that contains
+  * @param  hdac pointer to a DAC_HandleTypeDef structure that contains
   *         the configuration information for the specified DAC.
   * @retval None
   */
@@ -706,7 +704,7 @@ __weak void HAL_DAC_ConvCpltCallbackCh1(DAC_HandleTypeDef* hdac)
 
 /**
   * @brief  Conversion half DMA transfer callback in non blocking mode for Channel1
-  * @param  hdac: pointer to a DAC_HandleTypeDef structure that contains
+  * @param  hdac pointer to a DAC_HandleTypeDef structure that contains
   *         the configuration information for the specified DAC.
   * @retval None
   */
@@ -722,7 +720,7 @@ __weak void HAL_DAC_ConvHalfCpltCallbackCh1(DAC_HandleTypeDef* hdac)
 
 /**
   * @brief  Error DAC callback for Channel1.
-  * @param  hdac: pointer to a DAC_HandleTypeDef structure that contains
+  * @param  hdac pointer to a DAC_HandleTypeDef structure that contains
   *         the configuration information for the specified DAC.
   * @retval None
   */
@@ -739,7 +737,7 @@ __weak void HAL_DAC_ErrorCallbackCh1(DAC_HandleTypeDef *hdac)
 
 /**
   * @brief  DMA underrun DAC callback for Channel1.
-  * @param  hdac: pointer to a DAC_HandleTypeDef structure that contains
+  * @param  hdac pointer to a DAC_HandleTypeDef structure that contains
   *         the configuration information for the specified DAC.
   * @retval None
   */

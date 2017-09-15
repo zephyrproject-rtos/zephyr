@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_uart_ex.h
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   Header file of UART HAL Extended module.
   ******************************************************************************
   * @attention
@@ -127,8 +125,8 @@ void HAL_UARTEx_WakeupCallback(UART_HandleTypeDef *huart);
   */
 
 /** @brief  Report the UART clock source.
-  * @param  __HANDLE__: specifies the UART Handle.
-  * @param  __CLOCKSOURCE__: output variable.
+  * @param  __HANDLE__ specifies the UART Handle.
+  * @param  __CLOCKSOURCE__ output variable.
   * @retval UART clocking source, written in __CLOCKSOURCE__.
   */
 #if defined(STM32F302xE) || defined(STM32F303xE) || defined(STM32F398xx) || \
@@ -364,7 +362,7 @@ void HAL_UARTEx_WakeupCallback(UART_HandleTypeDef *huart);
   *         by the reception API().
   *         This masking operation is not carried out in the case of
   *         DMA transfers.
-  * @param  __HANDLE__: specifies the UART Handle.
+  * @param  __HANDLE__ specifies the UART Handle.
   * @retval None, the mask to apply to UART RDR register is stored in (__HANDLE__)->Mask field.
   */
 #if defined(STM32F302xE) || defined(STM32F303xE) || defined(STM32F398xx) || \
@@ -438,7 +436,7 @@ void HAL_UARTEx_WakeupCallback(UART_HandleTypeDef *huart);
 
 /**
   * @brief Ensure that UART frame length is valid.
-  * @param __LENGTH__: UART frame length.
+  * @param __LENGTH__ UART frame length.
   * @retval SET (__LENGTH__ is valid) or RESET (__LENGTH__ is invalid)
   */
 #if defined(STM32F302xE) || defined(STM32F303xE) || defined(STM32F398xx) || \
@@ -474,3 +472,4 @@ void HAL_UARTEx_WakeupCallback(UART_HandleTypeDef *huart);
 #endif /* __STM32F3xx_HAL_UART_EX_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+
