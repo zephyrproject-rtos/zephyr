@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_dfsdm.c
   * @author  MCD Application Team
-  * @version V1.7.0
-  * @date    17-February-2017
+  * @version V1.7.1
+  * @date    14-April-2017
   * @brief   This file provides firmware functions to manage the following 
   *          functionalities of the Digital Filter for Sigma-Delta Modulators
   *          (DFSDM) peripherals:
@@ -2140,7 +2140,7 @@ int32_t HAL_DFSDM_FilterGetRegularValue(DFSDM_Filter_HandleTypeDef *hdfsdm_filte
                                         uint32_t                   *Channel)
 {
   uint32_t reg = 0U;
-  int32_t  value = 0U;
+  int32_t  value = 0;
   
   /* Check parameters */
   assert_param(IS_DFSDM_FILTER_ALL_INSTANCE(hdfsdm_filter->Instance));
@@ -2151,7 +2151,7 @@ int32_t HAL_DFSDM_FilterGetRegularValue(DFSDM_Filter_HandleTypeDef *hdfsdm_filte
   
   /* Extract channel and regular conversion value */
   *Channel = (reg & DFSDM_FLTRDATAR_RDATACH);
-  value = ((reg & DFSDM_FLTRDATAR_RDATA) >> DFSDM_FLTRDATAR_DATA_OFFSET);
+  value = ((int32_t)(reg & DFSDM_FLTRDATAR_RDATA) >> DFSDM_FLTRDATAR_DATA_OFFSET);
 
   /* return regular conversion value */
   return value;
@@ -2550,7 +2550,7 @@ int32_t HAL_DFSDM_FilterGetInjectedValue(DFSDM_Filter_HandleTypeDef *hdfsdm_filt
                                          uint32_t                   *Channel)
 {
   uint32_t reg = 0U;
-  int32_t  value = 0U;
+  int32_t  value = 0;
   
   /* Check parameters */
   assert_param(IS_DFSDM_FILTER_ALL_INSTANCE(hdfsdm_filter->Instance));
@@ -2561,7 +2561,7 @@ int32_t HAL_DFSDM_FilterGetInjectedValue(DFSDM_Filter_HandleTypeDef *hdfsdm_filt
   
   /* Extract channel and injected conversion value */
   *Channel = (reg & DFSDM_FLTJDATAR_JDATACH);
-  value = ((reg & DFSDM_FLTJDATAR_JDATA) >> DFSDM_FLTJDATAR_DATA_OFFSET);
+  value = ((int32_t)(reg & DFSDM_FLTJDATAR_JDATA) >> DFSDM_FLTJDATAR_DATA_OFFSET);
 
   /* return regular conversion value */
   return value;
@@ -2735,7 +2735,7 @@ int32_t HAL_DFSDM_FilterGetExdMaxValue(DFSDM_Filter_HandleTypeDef *hdfsdm_filter
                                        uint32_t                   *Channel)
 {
   uint32_t reg = 0U;
-  int32_t  value = 0U;
+  int32_t  value = 0;
   
   /* Check parameters */
   assert_param(IS_DFSDM_FILTER_ALL_INSTANCE(hdfsdm_filter->Instance));
@@ -2746,7 +2746,7 @@ int32_t HAL_DFSDM_FilterGetExdMaxValue(DFSDM_Filter_HandleTypeDef *hdfsdm_filter
   
   /* Extract channel and extreme detector maximum value */
   *Channel = (reg & DFSDM_FLTEXMAX_EXMAXCH);
-  value = ((reg & DFSDM_FLTEXMAX_EXMAX) >> DFSDM_FLTEXMAX_DATA_OFFSET);
+  value = ((int32_t)(reg & DFSDM_FLTEXMAX_EXMAX) >> DFSDM_FLTEXMAX_DATA_OFFSET);
 
   /* return extreme detector maximum value */
   return value;
@@ -2763,7 +2763,7 @@ int32_t HAL_DFSDM_FilterGetExdMinValue(DFSDM_Filter_HandleTypeDef *hdfsdm_filter
                                        uint32_t                   *Channel)
 {
   uint32_t reg = 0U;
-  int32_t  value = 0U;
+  int32_t  value = 0;
   
   /* Check parameters */
   assert_param(IS_DFSDM_FILTER_ALL_INSTANCE(hdfsdm_filter->Instance));
@@ -2774,7 +2774,7 @@ int32_t HAL_DFSDM_FilterGetExdMinValue(DFSDM_Filter_HandleTypeDef *hdfsdm_filter
   
   /* Extract channel and extreme detector minimum value */
   *Channel = (reg & DFSDM_FLTEXMIN_EXMINCH);
-  value = ((reg & DFSDM_FLTEXMIN_EXMIN) >> DFSDM_FLTEXMIN_DATA_OFFSET);
+  value = ((int32_t)(reg & DFSDM_FLTEXMIN_EXMIN) >> DFSDM_FLTEXMIN_DATA_OFFSET);
 
   /* return extreme detector minimum value */
   return value;

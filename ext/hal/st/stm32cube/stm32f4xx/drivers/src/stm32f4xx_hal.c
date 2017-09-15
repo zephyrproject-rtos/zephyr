@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal.c
   * @author  MCD Application Team
-  * @version V1.7.0
-  * @date    17-February-2017
+  * @version V1.7.1
+  * @date    14-April-2017
   * @brief   HAL module driver.
   *          This is the common part of the HAL initialization
   *
@@ -68,11 +68,11 @@
   * @{
   */
 /**
-  * @brief STM32F4xx HAL Driver version number V1.5.0
+  * @brief STM32F4xx HAL Driver version number V1.7.1
   */
 #define __STM32F4xx_HAL_VERSION_MAIN   (0x01U) /*!< [31:24] main version */
-#define __STM32F4xx_HAL_VERSION_SUB1   (0x05U) /*!< [23:16] sub1 version */
-#define __STM32F4xx_HAL_VERSION_SUB2   (0x00U) /*!< [15:8]  sub2 version */
+#define __STM32F4xx_HAL_VERSION_SUB1   (0x07U) /*!< [23:16] sub1 version */
+#define __STM32F4xx_HAL_VERSION_SUB2   (0x01U) /*!< [15:8]  sub2 version */
 #define __STM32F4xx_HAL_VERSION_RC     (0x00U) /*!< [7:0]  release candidate */ 
 #define __STM32F4xx_HAL_VERSION         ((__STM32F4xx_HAL_VERSION_MAIN << 24U)\
                                         |(__STM32F4xx_HAL_VERSION_SUB1 << 16U)\
@@ -272,7 +272,7 @@ __weak HAL_StatusTypeDef HAL_InitTick(uint32_t TickPriority)
   HAL_SYSTICK_Config(SystemCoreClock/1000U);
 
   /*Configure the SysTick IRQ priority */
-  HAL_NVIC_SetPriority(SysTick_IRQn, TickPriority ,0U);
+  HAL_NVIC_SetPriority(SysTick_IRQn, TickPriority, 0U);
 
   /* Return function status */
   return HAL_OK;
