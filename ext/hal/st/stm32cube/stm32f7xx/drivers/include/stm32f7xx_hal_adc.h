@@ -2,13 +2,11 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_adc.h
   * @author  MCD Application Team
-  * @version V1.2.0
-  * @date    30-December-2016
   * @brief   Header file of ADC HAL extension module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -490,7 +488,7 @@ typedef struct
 /** @defgroup ADC_Exported_Macros ADC Exported Macros
   * @{
   */
-	
+
 /** @brief Reset ADC handle state
   * @param  __HANDLE__: ADC handle
   * @retval None
@@ -854,7 +852,7 @@ uint32_t HAL_ADC_GetError(ADC_HandleTypeDef *hadc);
   * @param  _NBR_DISCONTINUOUSCONV_: Number of discontinuous conversions.
   * @retval None
   */
-#define ADC_CR1_DISCONTINUOUS(_NBR_DISCONTINUOUSCONV_) (((_NBR_DISCONTINUOUSCONV_) - 1) << POSITION_VAL(ADC_CR1_DISCNUM))
+#define ADC_CR1_DISCONTINUOUS(_NBR_DISCONTINUOUSCONV_) (((_NBR_DISCONTINUOUSCONV_) - 1) << ADC_CR1_DISCNUM_Pos)
 
 /**
   * @brief  Enable ADC scan mode.

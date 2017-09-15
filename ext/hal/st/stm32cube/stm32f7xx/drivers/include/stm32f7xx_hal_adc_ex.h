@@ -2,13 +2,11 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_adc.h
   * @author  MCD Application Team
-  * @version V1.2.0
-  * @date    30-December-2016
   * @brief   Header file of ADC HAL module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -126,9 +124,6 @@ typedef struct
                                                Caution: this setting impacts the entire injected group. Therefore, call of HAL_ADCEx_InjectedConfigChannel() to 
                                                         configure a channel on injected group can impact the configuration of other channels previously set. */
 }ADC_InjectionConfTypeDef; 
-/**
-  * @}
-  */
 
 /** 
   * @brief ADC Configuration multi-mode structure definition  
@@ -252,7 +247,7 @@ typedef struct
 /** @addtogroup ADCEx_Exported_Functions
   * @{
   */
-	
+
 /** @addtogroup ADCEx_Exported_Functions_Group1
   * @{
   */
@@ -290,7 +285,7 @@ HAL_StatusTypeDef HAL_ADCEx_MultiModeConfigChannel(ADC_HandleTypeDef* hadc, ADC_
 /**
   * @}
   */
-	
+
 /* Private macros ------------------------------------------------------------*/
 /** @defgroup ADCEx_Private_Macros ADC Private Macros
   * @{
@@ -333,7 +328,7 @@ HAL_StatusTypeDef HAL_ADCEx_MultiModeConfigChannel(ADC_HandleTypeDef* hadc, ADC_
                                             ((__INJTRIG__) == ADC_EXTERNALTRIGINJECCONV_T5_TRGO)  || \
                                             ((__INJTRIG__) == ADC_EXTERNALTRIGINJECCONV_T3_CC1)   || \
                                             ((__INJTRIG__) == ADC_EXTERNALTRIGINJECCONV_T6_TRGO)  || \
-					    ((__INJTRIG__) == ADC_INJECTED_SOFTWARE_START))
+                                            ((__INJTRIG__) == ADC_INJECTED_SOFTWARE_START))
 #define IS_ADC_INJECTED_RANK(__RANK__) (((__RANK__) == ADC_INJECTED_RANK_1) || \
                                        ((__RANK__) == ADC_INJECTED_RANK_2) || \
                                        ((__RANK__) == ADC_INJECTED_RANK_3) || \
@@ -351,7 +346,7 @@ HAL_StatusTypeDef HAL_ADCEx_MultiModeConfigChannel(ADC_HandleTypeDef* hadc, ADC_
 /**
   * @}
   */
-	
+
 /* Private functions ---------------------------------------------------------*/
 /** @defgroup ADCEx_Private_Functions ADC Private Functions
   * @{
@@ -364,7 +359,7 @@ HAL_StatusTypeDef HAL_ADCEx_MultiModeConfigChannel(ADC_HandleTypeDef* hadc, ADC_
 /**
   * @}
   */
-	
+
 /**
   * @}
   */

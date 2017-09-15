@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_timebase_tim_template.c 
   * @author  MCD Application Team
-  * @version V1.2.0
-  * @date    30-December-2016
   * @brief   HAL time base based on the hardware TIM Template.
   *    
   *          This file overrides the native HAL time base functions (defined as weak)
@@ -14,7 +12,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
