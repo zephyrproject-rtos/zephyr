@@ -42,32 +42,32 @@
 
 		boot_partition: partition@0 {
 			label = "mcuboot";
-			reg = <0x000000000 0x00008000>;
+			reg = <0x000000000 0x0000C000>;
 		};
-		slot0_partition: partition@8000 {
+		slot0_partition: partition@c000 {
 			label = "image-0";
-			reg = <0x00008000 0x00006c000>;
+			reg = <0x0000C000 0x000069000>;
 		};
-		slot1_partition: partition@74000 {
+		slot1_partition: partition@75000 {
 			label = "image-1";
-			reg = <0x00074000 0x00006c000>;
+			reg = <0x00075000 0x000069000>;
 		};
-		scratch_partition: partition@e0000 {
+		scratch_partition: partition@de000 {
 			label = "image-scratch";
-			reg = <0x000e0000 0x0001d000>;
+			reg = <0x000de000 0x0001e000>;
 		};
 
 		/*
-		 * The flash starting at 0x000fd000 and ending at 0x000fffff
-		 * (sectors 253 through 255) is reserved for use by the
+		 * The flash starting at 0x000fc000 and ending at 0x000fffff
+		 * (sectors 252 through 255) is reserved for use by the
 		 * application. If enabled, partition for NFFS will be created
 		 * in this area.
 		 */
 
 #if defined(CONFIG_FILE_SYSTEM_NFFS)
-		nffs_partition: partition@fd000 {
+		nffs_partition: partition@fc000 {
 			label = "nffs";
-			reg = <0x000fd000 0x00003000>;
+			reg = <0x000fc000 0x00004000>;
 		};
 #endif
 	};
