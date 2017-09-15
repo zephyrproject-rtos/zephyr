@@ -5,12 +5,12 @@
  */
 
 /* Include esp-idf headers first to avoid redefining BIT() macro */
-#include <rom/ets_sys.h>
 #include <soc/dport_reg.h>
 #include <soc/gpio_reg.h>
 #include <soc/io_mux_reg.h>
 #include <soc/soc.h>
 
+#include <soc.h>
 #include <errno.h>
 #include <device.h>
 #include <gpio.h>
@@ -272,8 +272,8 @@ static int gpio_esp32_init(struct device *device)
 		IRQ_CONNECT(CONFIG_GPIO_ESP32_IRQ, 1, gpio_esp32_isr,
 			    NULL, 0);
 
-		intr_matrix_set(0, ETS_GPIO_INTR_SOURCE,
-				CONFIG_GPIO_ESP32_IRQ);
+		esp32_rom_intr_matrix_set(0, ETS_GPIO_INTR_SOURCE,
+					  CONFIG_GPIO_ESP32_IRQ);
 
 		irq_enable(CONFIG_GPIO_ESP32_IRQ);
 

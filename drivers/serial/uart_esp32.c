@@ -5,9 +5,9 @@
  */
 
 /* Include esp-idf headers first to avoid redefining BIT() macro */
-#include <rom/uart.h>
 #include <rom/ets_sys.h>
 
+#include <soc.h>
 #include <uart.h>
 #include <errno.h>
 
@@ -16,7 +16,7 @@ static unsigned char esp32_uart_tx(struct device *dev,
 {
 	ARG_UNUSED(dev);
 
-	uart_tx_one_char(c);
+	esp32_rom_uart_tx_one_char(c);
 
 	return c;
 }
@@ -25,7 +25,7 @@ static int esp32_uart_rx(struct device *dev, unsigned char *p_char)
 {
 	ARG_UNUSED(dev);
 
-	switch (uart_rx_one_char(p_char)) {
+	switch (esp32_rom_uart_rx_one_char(p_char)) {
 	case OK:
 		return 0;
 	case PENDING:
@@ -43,7 +43,7 @@ static int esp32_uart_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	uartAttach();
+	esp32_rom_uart_attach();
 
 	return 0;
 }
