@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_i2s.c
   * @author  MCD Application Team
-  * @version V1.7.0
-  * @date    17-February-2017
+  * @version V1.7.1
+  * @date    14-April-2017
   * @brief   I2S HAL module driver.
   *          This file provides firmware functions to manage the following
   *          functionalities of the Integrated Interchip Sound (I2S) peripheral:
@@ -145,7 +145,7 @@
 
 #ifdef HAL_I2S_MODULE_ENABLED
 
-/** @addtogroup I2S I2S
+/** @defgroup I2S I2S
   * @brief I2S HAL module driver
   * @{
   */
@@ -1496,7 +1496,7 @@ static void I2S_IRQHandler(I2S_HandleTypeDef *hi2s)
   * @param  hi2s: pointer to a I2S_HandleTypeDef structure that contains
   *         the configuration information for I2S module
   * @param Flag: Flag checked
-  * @param Status: Value of the flag expected
+  * @param State: Value of the flag expected
   * @param Timeout: Duration of the timeout
   * @retval HAL status
   */
