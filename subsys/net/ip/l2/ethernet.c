@@ -170,6 +170,8 @@ static inline bool check_if_dst_is_broadcast_or_mcast(struct net_if *iface,
 		hdr->dst.addr[4] = NET_IPV4_HDR(pkt)->dst.s4_addr[2];
 		hdr->dst.addr[5] = NET_IPV4_HDR(pkt)->dst.s4_addr[3];
 
+		hdr->dst.addr[3] = hdr->dst.addr[3] & 0x7f;
+
 		net_pkt_ll_dst(pkt)->len = sizeof(struct net_eth_addr);
 		net_pkt_ll_src(pkt)->addr = net_if_get_link_addr(iface)->addr;
 		net_pkt_ll_src(pkt)->len = sizeof(struct net_eth_addr);
@@ -192,6 +194,9 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 		struct net_pkt *arp_pkt;
 
 		if (check_if_dst_is_broadcast_or_mcast(iface, pkt)) {
+			struct net_eth_addr *dst = &NET_ETH_HDR(pkt)->dst;
+
+			net_pkt_ll_dst(pkt)->addr = (u8_t *)dst->addr;
 			goto setup_hdr;
 		}
 
