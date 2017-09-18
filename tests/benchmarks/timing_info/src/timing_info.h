@@ -42,6 +42,7 @@ extern u64_t __end_tick_time;
 #define CYCLES_TO_NS(x) ((x) * (NANOSECS_PER_SEC/CYCLES_PER_SEC))
 #define PRINT_STATS(x, y, z)   PRINT_F(x, (y*((SystemCoreClock)/	\
 							CYCLES_PER_SEC)), z)
+#define GET_TIMER_VALUE()	GET_CURRENT_TIME()
 
 /* Configure Timer parameters */
 static inline void benchmark_timer_init(void)
@@ -73,6 +74,7 @@ static inline u32_t get_core_freq_MHz(void)
 #else
 #define GET_CURRENT_TIME()  OS_GET_TIME()
 #define CYCLES_TO_NS(x) SYS_CLOCK_HW_CYCLES_TO_NS(x)
+#define GET_TIMER_VALUE()	SysTick->VAL
 /* Dummy functions for timer */
 static inline void benchmark_timer_init(void)  {       }
 static inline void benchmark_timer_stop(void)  {       }

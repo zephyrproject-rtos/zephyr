@@ -93,7 +93,7 @@ u32_t benchmarking_overhead_swap(void)
 #if CONFIG_ARM
 void read_timer_start_of_swap(void)
 {
-	__start_swap_time = GET_CURRENT_TIME();
+	__start_swap_time = (u32_t) GET_TIMER_VALUE();
 }
 
 void read_timer_end_of_swap(void)
@@ -109,22 +109,22 @@ void read_timer_end_of_swap(void)
  */
 void read_timer_start_of_isr(void)
 {
-	__start_intr_time  = (u32_t)SysTick->VAL;
+	__start_intr_time  = (u32_t) GET_TIMER_VALUE();
 }
 
 void read_timer_end_of_isr(void)
 {
-	__end_intr_time  = (u32_t)SysTick->VAL;
+	__end_intr_time  = (u32_t) GET_TIMER_VALUE();
 }
 
 void read_timer_start_of_tick_handler(void)
 {
-	__start_tick_time  = (u32_t)SysTick->VAL;
+	__start_tick_time  = (u32_t)GET_TIMER_VALUE();
 }
 
 void read_timer_end_of_tick_handler(void)
 {
-	 __end_tick_time  = (u32_t)SysTick->VAL;
+	 __end_tick_time  = (u32_t) GET_TIMER_VALUE();
 }
 
 #endif /* CONFIG_ARM */
