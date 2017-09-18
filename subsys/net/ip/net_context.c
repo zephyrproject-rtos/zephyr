@@ -1008,7 +1008,8 @@ static void print_send_info(struct net_pkt *pkt, const char *msg)
 	}
 }
 
-static inline int send_control_segment(struct net_context *context,
+/* Send SYN or SYN/ACK. */
+static inline int send_syn_segment(struct net_context *context,
 				       const struct sockaddr_ptr *local,
 				       const struct sockaddr *remote,
 				       int flags, const char *msg)
@@ -1025,7 +1026,10 @@ static inline int send_control_segment(struct net_context *context,
 	ret = net_send_data(pkt);
 	if (ret < 0) {
 		net_pkt_unref(pkt);
+		return ret;
 	}
+
+	context->tcp->send_seq++;
 
 	print_send_info(pkt, msg);
 
@@ -1037,14 +1041,14 @@ static inline int send_syn(struct net_context *context,
 {
 	net_tcp_change_state(context->tcp, NET_TCP_SYN_SENT);
 
-	return send_control_segment(context, NULL, remote, NET_TCP_SYN, "SYN");
+	return send_syn_segment(context, NULL, remote, NET_TCP_SYN, "SYN");
 }
 
 static inline int send_syn_ack(struct net_context *context,
 			       struct sockaddr_ptr *local,
 			       struct sockaddr *remote)
 {
-	return send_control_segment(context, local, remote,
+	return send_syn_segment(context, local, remote,
 				    NET_TCP_SYN | NET_TCP_ACK,
 				    "SYN_ACK");
 }
