@@ -50,7 +50,7 @@ static inline void benchmark_timer_init(void)
 	NRF_TIMER2->TASKS_CLEAR = 1;	/* Clear Timer */
 	NRF_TIMER2->MODE = 0;		/* Timer Mode */
 	NRF_TIMER2->PRESCALER = 0;	/* 16M Hz */
-	NRF_TIMER2->BITMODE = 2;	/* 24 - bit */
+	NRF_TIMER2->BITMODE = 3;	/* 32 - bit */
 }
 
 /* Stop the timer */
