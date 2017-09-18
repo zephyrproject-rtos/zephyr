@@ -81,15 +81,8 @@ prep: doxy content kconfig
 
 html: content kconfig
 	$(Q)$(SPHINXBUILD) -t $(DOC_TAG) -b html $(ALLSPHINXOPTS) \
-      $(BUILDDIR)/html > /tmp/doc-$(TMP_EXT) 2>&1;
-	$(Q)../scripts/filter-known-issues.py --config-dir \
-      ../.known-issues/doc /tmp/doc-$(TMP_EXT) > /tmp/doc-warnings-$(TMP_EXT) || \
-      (echo " ==> Error running filter-known-issues"; exit 1); \
-      if [ -s /tmp/doc-warnings-$(TMP_EXT) ]; then \
-        echo " => New documentation warnings/errors"; \
-        cat /tmp/doc-warnings-$(TMP_EXT); \
-        exit 1; \
-      fi;
+             $(BUILDDIR)/html > /tmp/doc-$(TMP_EXT) 2>&1;
+	$(Q)scripts/filter-doc-log.sh /tmp/doc-$(TMP_EXT)
 	@rm -rf samples
 	@rm -rf boards
 
