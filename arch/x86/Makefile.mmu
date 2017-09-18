@@ -13,7 +13,8 @@ quiet_cmd_gen_mmu = GMMU    $@
       cmd_gen_mmu =								\
 (										\
 	$(OBJCOPY) -I $(OUTPUT_FORMAT)  -O binary -j mmulist $< mmulist.bin &&	\
-	$(GENMMU) -i mmulist.bin -o mmu_tables.bin $(GENMMU_EXTRA_ARGS)\
+	$(GENMMU) -i mmulist.bin -k $(PREBUILT_KERNEL)                      	\
+		  -o mmu_tables.bin $(GENMMU_EXTRA_ARGS)                 	\
 )
 
 
