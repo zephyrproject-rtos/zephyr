@@ -3374,6 +3374,11 @@ static inline void isr_rx_conn(u8_t crc_ok, u8_t trx_done,
 
 isr_rx_conn_exit:
 
+	/* Save the AA captured for the first Rx in connection event */
+	if (!radio_tmr_aa_restore()) {
+		radio_tmr_aa_save(radio_tmr_aa_get());
+	}
+
 #if defined(CONFIG_BT_CTLR_PROFILE_ISR)
 	/* get the ISR latency sample */
 	sample = radio_tmr_sample_get();
@@ -3707,7 +3712,8 @@ static inline void isr_close_conn(void)
 			u32_t preamble_to_addr_us;
 
 			/* calculate the drift in ticks */
-			start_to_address_actual_us = radio_tmr_aa_get();
+			start_to_address_actual_us = radio_tmr_aa_restore() -
+						     radio_tmr_ready_get();
 			window_widening_event_us =
 				_radio.conn_curr->slave.window_widening_event_us;
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -7828,7 +7834,10 @@ static void event_slave(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 		radio_tmr_start(0, ticks_at_expire +
 				TICKER_US_TO_TICKS(RADIO_TICKER_START_PART_US),
 				_radio.remainder_anchor);
+
 	radio_tmr_aa_capture();
+	radio_tmr_aa_save(0);
+
 	hcto = remainder_us + RADIO_TICKER_JITTER_US +
 	       (RADIO_TICKER_JITTER_US << 2) +
 	       (conn->slave.window_widening_event_us << 1) +
@@ -8003,7 +8012,9 @@ static void event_master(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 			radio_tmr_start(0, ticks_at_expire +
 					TICKER_US_TO_TICKS(RADIO_TICKER_START_PART_US),
 					_radio.remainder_anchor);
+
 		radio_tmr_aa_capture();
+		radio_tmr_aa_save(0);
 
 		hcto = remainder_us + RADIO_TIFS;
 #if defined(CONFIG_BT_CTLR_PHY)
