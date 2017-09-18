@@ -866,6 +866,17 @@ struct net_buf *net_app_get_net_buf(struct net_app_ctx *ctx,
 int net_app_close(struct net_app_ctx *ctx);
 
 /**
+ * @brief Close a specific network connection.
+ *
+ * @param ctx Network application context.
+ * @param net_ctx Network context.
+ *
+ * @return 0 if ok, <0 if error.
+ */
+int net_app_close2(struct net_app_ctx *ctx,
+		   struct net_context *net_ctx);
+
+/**
  * @brief Release this network application context.
  *
  * @details No network data will be received via this context after this
