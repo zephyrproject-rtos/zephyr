@@ -50,6 +50,21 @@ void radio_isr_set(radio_isr_fp fp_radio_isr)
 
 void radio_setup(void)
 {
+#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
+	NRF_GPIO->DIRSET = BIT(CONFIG_BT_CTLR_GPIO_PA_PIN);
+#if defined(CONFIG_BT_CTLR_GPIO_PA_POL_INV)
+	NRF_GPIO->OUTSET = BIT(CONFIG_BT_CTLR_GPIO_PA_PIN);
+#else
+	NRF_GPIO->OUTCLR = BIT(CONFIG_BT_CTLR_GPIO_PA_PIN);
+#endif
+#endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
+
+#if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
+	NRF_GPIO->DIRSET = BIT(CONFIG_BT_CTLR_GPIO_LNA_PIN);
+
+	radio_gpio_lna_off();
+#endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
+
 #if defined(CONFIG_SOC_SERIES_NRF52X)
 	struct {
 		u32_t volatile reserved_0[0x5a0 >> 2];
@@ -719,6 +734,38 @@ void radio_tmr_start_us(u8_t trx, u32_t us)
 	NRF_PPI->CHENSET = PPI_CHEN_CH0_Msk;
 }
 
+u32_t radio_tmr_start_now(u8_t trx)
+{
+	u32_t now, start;
+
+	/* Setup PPI for Radio start */
+	NRF_PPI->CH[0].EEP = (u32_t)&(NRF_TIMER0->EVENTS_COMPARE[0]);
+	NRF_PPI->CH[0].TEP = (trx) ? (u32_t)&(NRF_RADIO->TASKS_TXEN) :
+				     (u32_t)&(NRF_RADIO->TASKS_RXEN);
+	NRF_PPI->CHENSET = PPI_CHEN_CH0_Msk;
+
+	/* Capture the current time */
+	NRF_TIMER0->TASKS_CAPTURE[1] = 1;
+	now = NRF_TIMER0->CC[1];
+	start = now;
+
+	/* Setup PPI while determining the latency in doing so */
+	do {
+		/* Set start to be, now plus the determined latency */
+		start = (now << 1) - start;
+
+		/* Setup compare event with min. 1 us offset */
+		NRF_TIMER0->CC[0] = start + 1;
+		NRF_TIMER0->EVENTS_COMPARE[0] = 0;
+
+		/* Capture the current time */
+		NRF_TIMER0->TASKS_CAPTURE[1] = 1;
+		now = NRF_TIMER0->CC[1];
+	} while (now > start);
+
+	return start;
+}
+
 void radio_tmr_stop(void)
 {
 	NRF_TIMER0->TASKS_STOP = 1;
@@ -795,6 +842,88 @@ u32_t radio_tmr_sample_get(void)
 {
 	return NRF_TIMER0->CC[3];
 }
+
+#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN) || \
+    defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
+#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
+void radio_gpio_pa_setup(void)
+{
+	NRF_GPIOTE->CONFIG[CONFIG_BT_CTLR_PA_LNA_GPIOTE_CHAN] =
+		(GPIOTE_CONFIG_MODE_Task <<
+		 GPIOTE_CONFIG_MODE_Pos) |
+		(CONFIG_BT_CTLR_GPIO_PA_PIN <<
+		 GPIOTE_CONFIG_PSEL_Pos) |
+		(GPIOTE_CONFIG_POLARITY_Toggle <<
+		 GPIOTE_CONFIG_POLARITY_Pos) |
+#if defined(CONFIG_BT_CTLR_GPIO_PA_POL_INV)
+		(GPIOTE_CONFIG_OUTINIT_High <<
+		 GPIOTE_CONFIG_OUTINIT_Pos);
+#else
+		(GPIOTE_CONFIG_OUTINIT_Low <<
+		 GPIOTE_CONFIG_OUTINIT_Pos);
+#endif
+}
+#endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
+
+#if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
+void radio_gpio_lna_setup(void)
+{
+	NRF_GPIOTE->CONFIG[CONFIG_BT_CTLR_PA_LNA_GPIOTE_CHAN] =
+		(GPIOTE_CONFIG_MODE_Task <<
+		 GPIOTE_CONFIG_MODE_Pos) |
+		(CONFIG_BT_CTLR_GPIO_LNA_PIN <<
+		 GPIOTE_CONFIG_PSEL_Pos) |
+		(GPIOTE_CONFIG_POLARITY_Toggle <<
+		 GPIOTE_CONFIG_POLARITY_Pos) |
+#if defined(CONFIG_BT_CTLR_GPIO_LNA_POL_INV)
+		(GPIOTE_CONFIG_OUTINIT_High <<
+		 GPIOTE_CONFIG_OUTINIT_Pos);
+#else
+		(GPIOTE_CONFIG_OUTINIT_Low <<
+		 GPIOTE_CONFIG_OUTINIT_Pos);
+#endif
+}
+
+void radio_gpio_lna_on(void)
+{
+#if defined(CONFIG_BT_CTLR_GPIO_LNA_POL_INV)
+	NRF_GPIO->OUTCLR = BIT(CONFIG_BT_CTLR_GPIO_LNA_PIN);
+#else
+	NRF_GPIO->OUTSET = BIT(CONFIG_BT_CTLR_GPIO_LNA_PIN);
+#endif
+}
+
+void radio_gpio_lna_off(void)
+{
+#if defined(CONFIG_BT_CTLR_GPIO_LNA_POL_INV)
+	NRF_GPIO->OUTSET = BIT(CONFIG_BT_CTLR_GPIO_LNA_PIN);
+#else
+	NRF_GPIO->OUTCLR = BIT(CONFIG_BT_CTLR_GPIO_LNA_PIN);
+#endif
+}
+#endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
+
+void radio_gpio_pa_lna_enable(u32_t trx_us)
+{
+	NRF_TIMER0->CC[2] = trx_us;
+	NRF_TIMER0->EVENTS_COMPARE[2] = 0;
+
+	NRF_PPI->CH[7].EEP = (u32_t)&(NRF_TIMER0->EVENTS_COMPARE[2]);
+	NRF_PPI->CH[7].TEP = (u32_t)
+		&(NRF_GPIOTE->TASKS_OUT[CONFIG_BT_CTLR_PA_LNA_GPIOTE_CHAN]);
+
+	NRF_PPI->CH[8].EEP = (u32_t)&(NRF_RADIO->EVENTS_DISABLED);
+	NRF_PPI->CH[8].TEP = (u32_t)
+		&(NRF_GPIOTE->TASKS_OUT[CONFIG_BT_CTLR_PA_LNA_GPIOTE_CHAN]);
+
+	NRF_PPI->CHENSET = PPI_CHEN_CH7_Msk | PPI_CHEN_CH8_Msk;
+}
+
+void radio_gpio_pa_lna_disable(void)
+{
+	NRF_PPI->CHENCLR = PPI_CHEN_CH7_Msk | PPI_CHEN_CH8_Msk;
+}
+#endif /* CONFIG_BT_CTLR_GPIO_PA_PIN || CONFIG_BT_CTLR_GPIO_LNA_PIN */
 
 static u8_t MALIGN(4) _ccm_scratch[(RADIO_PDU_LEN_MAX - 4) + 16];
 
