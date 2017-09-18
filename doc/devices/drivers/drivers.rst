@@ -239,15 +239,15 @@ Then when the particular instance is declared:
 
   DEVICE_DECLARE(my_driver_0);
 
-  static void my_driver_config_irq_0
+  static void my_driver_config_irq_0(void)
   {
         IRQ_CONNECT(MY_DRIVER_0_IRQ, MY_DRIVER_0_PRI, my_driver_isr,
                     DEVICE_GET(my_driver_0), MY_DRIVER_0_FLAGS);
   }
 
   const static struct my_driver_config my_driver_config_0 = {
-        .base_addr = MY_DRIVER_0_BASE_ADDR;
-        .config_func = my_driver_config_irq_0;
+        .base_addr = MY_DRIVER_0_BASE_ADDR,
+        .config_func = my_driver_config_irq_0
   }
 
   static struct my_driver_data_0;
