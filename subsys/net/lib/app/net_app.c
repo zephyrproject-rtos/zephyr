@@ -979,6 +979,48 @@ int net_app_close(struct net_app_ctx *ctx)
 	return 0;
 }
 
+int net_app_close2(struct net_app_ctx *ctx, struct net_context *net_ctx)
+{
+	if (!ctx || !net_ctx) {
+		return -EINVAL;
+	}
+
+	if (!ctx->is_init) {
+		return -ENOENT;
+	}
+
+	if (ctx->cb.close) {
+		ctx->cb.close(ctx, 0, ctx->user_data);
+	}
+
+#if defined(CONFIG_NET_APP_SERVER) && defined(CONFIG_NET_TCP)
+	if (ctx->app_type == NET_APP_SERVER) {
+		int i;
+
+		for (i = 0; i < CONFIG_NET_APP_SERVER_NUM_CONN; i++) {
+			if (ctx->server.net_ctxs[i] == net_ctx) {
+				ctx->server.net_ctxs[i] = NULL;
+				break;
+			}
+		}
+	}
+#endif
+
+#if defined(CONFIG_NET_APP_CLIENT)
+	if (ctx->app_type == NET_APP_CLIENT) {
+		if (net_ctx != _net_app_select_net_ctx(ctx, NULL)) {
+			return -ENOENT;
+		}
+	}
+#endif
+
+	net_ctx->net_app = NULL;
+
+	net_context_put(net_ctx);
+
+	return 0;
+}
+
 #if defined(CONFIG_NET_APP_TLS) || defined(CONFIG_NET_APP_DTLS)
 #if defined(MBEDTLS_DEBUG_C) && defined(CONFIG_NET_DEBUG_APP)
 static void my_debug(void *ctx, int level,
