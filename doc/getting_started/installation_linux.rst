@@ -92,6 +92,8 @@ following architectures:
 
 * :abbr:`Xtensa`
 
+* :abbr:`RISC-V`
+
 Follow these steps to install the SDK on your Linux host system.
 
 #. Download the latest SDK self-extractable binary.
