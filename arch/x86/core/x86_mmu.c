@@ -21,7 +21,7 @@ MMU_BOOT_REGION((u32_t)&_image_rom_start, (u32_t)&_image_rom_size,
 #ifdef CONFIG_APPLICATION_MEMORY
 /* User threads by default can read/write app-level memory. */
 MMU_BOOT_REGION((u32_t)&__app_ram_start, (u32_t)&__app_ram_size,
-		MMU_ENTRY_WRITE | MMU_ENTRY_USER);
+		MMU_ENTRY_WRITE | MMU_ENTRY_USER | MMU_ENTRY_EXECUTE_DISABLE);
 #endif
 
 /* __kernel_ram_size includes all unused memory, which is used for heaps.
@@ -29,15 +29,22 @@ MMU_BOOT_REGION((u32_t)&__app_ram_start, (u32_t)&__app_ram_size,
  * automatically for stacks.
  */
 MMU_BOOT_REGION((u32_t)&__kernel_ram_start, (u32_t)&__kernel_ram_size,
-		MMU_ENTRY_WRITE | MMU_ENTRY_RUNTIME_USER);
+		MMU_ENTRY_WRITE |
+		MMU_ENTRY_RUNTIME_USER |
+		MMU_ENTRY_EXECUTE_DISABLE);
 
 
-void _x86_mmu_get_flags(void *addr, u32_t *pde_flags, u32_t *pte_flags)
+void _x86_mmu_get_flags(void *addr,
+			x86_page_entry_data_t *pde_flags,
+			x86_page_entry_data_t *pte_flags)
 {
+	*pde_flags = (x86_page_entry_data_t)(X86_MMU_GET_PDE(addr)->value &
+				~(x86_page_entry_data_t)MMU_PDE_PAGE_TABLE_MASK);
 
-	*pde_flags = X86_MMU_GET_PDE(addr)->value & ~MMU_PDE_PAGE_TABLE_MASK;
 	if (*pde_flags & MMU_ENTRY_PRESENT) {
-		*pte_flags = X86_MMU_GET_PTE(addr)->value & ~MMU_PTE_PAGE_MASK;
+		*pte_flags = (x86_page_entry_data_t)
+			(X86_MMU_GET_PTE(addr)->value &
+			 ~(x86_page_entry_data_t)MMU_PTE_PAGE_MASK);
 	} else {
 		*pte_flags = 0;
 	}
@@ -50,62 +57,107 @@ int _arch_buffer_validate(void *addr, size_t size, int write)
 	u32_t end_pde_num;
 	u32_t starting_pte_num;
 	u32_t ending_pte_num;
-	struct x86_mmu_page_table *pte_address;
 	u32_t pde;
 	u32_t pte;
+#ifdef CONFIG_X86_PAE_MODE
+	union x86_mmu_pae_pte pte_value;
+	u32_t start_pdpte_num = MMU_PDPTE_NUM(addr);
+	u32_t end_pdpte_num = MMU_PDPTE_NUM((char *)addr + size - 1);
+	u32_t pdpte;
+#else
 	union x86_mmu_pte pte_value;
+#endif
+	struct x86_mmu_page_table *pte_address;
+
 
 	start_pde_num = MMU_PDE_NUM(addr);
 	end_pde_num = MMU_PDE_NUM((char *)addr + size - 1);
 	starting_pte_num = MMU_PAGE_NUM((char *)addr);
 
-	/* Iterate for all the pde's the buffer might take up.
-	 * (depends on the size of the buffer and start address of the buff)
-	 */
-	for (pde = start_pde_num; pde <= end_pde_num; pde++) {
-		union x86_mmu_pde_pt pde_value = X86_MMU_PD->entry[pde].pt;
-
-		if (!pde_value.p || !pde_value.us || (write && !pde_value.rw)) {
-			return -EPERM;
+#ifdef CONFIG_X86_PAE_MODE
+	for (pdpte = start_pdpte_num; pdpte <= end_pdpte_num; pdpte++) {
+		if (pdpte != start_pdpte_num) {
+			start_pde_num = 0;
 		}
 
-		pte_address = X86_MMU_GET_PT_ADDR(addr);
-
-		/* loop over all the possible page tables for the required
-		 * size. If the pde is not the last one then the last pte
-		 * would be 1023. So each pde will be using all the
-		 * page table entires except for the last pde.
-		 * For the last pde, pte is calculated using the last
-		 * memory address of the buffer.
-		 */
-		if (pde != end_pde_num) {
-			ending_pte_num = 1023;
+		if (pdpte != end_pdpte_num) {
+			end_pde_num = 0;
 		} else {
-			ending_pte_num = MMU_PAGE_NUM((char *)addr + size - 1);
+			end_pde_num = MMU_PDE_NUM((char *)addr + size - 1);
 		}
 
-		/* For all the pde's appart from the starting pde, will have
-		 * the start pte number as zero.
+		struct x86_mmu_page_directory *pd_address =
+			X86_MMU_GET_PD_ADDR_INDEX(pdpte);
+#endif
+		/* Iterate for all the pde's the buffer might take up.
+		 * (depends on the size of the buffer and start address
+		 * of the buff)
 		 */
-		if (pde != start_pde_num) {
-			starting_pte_num = 0;
-		}
+		for (pde = start_pde_num; pde <= end_pde_num; pde++) {
+#ifdef CONFIG_X86_PAE_MODE
+			union x86_mmu_pae_pde pde_value =
+				pd_address->entry[pde];
+#else
+			union x86_mmu_pde_pt pde_value =
+				X86_MMU_PD->entry[pde].pt;
+#endif
 
-		pte_value.value = 0xFFFFFFFF;
+			if (!pde_value.p ||
+			    !pde_value.us ||
+			    (write && !pde_value.rw)) {
+				return -EPERM;
+			}
 
-		/* Bitwise AND all the pte values. */
-		for (pte = starting_pte_num; pte <= ending_pte_num; pte++) {
-			pte_value.value &= pte_address->entry[pte].value;
-		}
+			pte_address = (struct x86_mmu_page_table *)
+				(pde_value.page_table << MMU_PAGE_SHIFT);
 
-		if (!pte_value.p || !pte_value.us || (write && !pte_value.rw)) {
-			return -EPERM;
+			/* loop over all the possible page tables for the
+			 * required size. If the pde is not the last one
+			 * then the last pte would be 1023. So each pde
+			 * will be using all the page table entires except
+			 * for the last pde. For the last pde, pte is
+			 * calculated using the last memory address
+			 * of the buffer.
+			 */
+			if (pde != end_pde_num) {
+				ending_pte_num = 1023;
+			} else {
+				ending_pte_num =
+					MMU_PAGE_NUM((char *)addr + size - 1);
+			}
+
+			/* For all the pde's appart from the starting pde,
+			 * will have the start pte number as zero.
+			 */
+			if (pde != start_pde_num) {
+				starting_pte_num = 0;
+			}
+
+			pte_value.value = 0xFFFFFFFF;
+
+			/* Bitwise AND all the pte values.
+			 * An optimization done to make sure a compare is
+			 * done only once.
+			 */
+			for (pte = starting_pte_num;
+			     pte <= ending_pte_num;
+			     pte++) {
+				pte_value.value &=
+					pte_address->entry[pte].value;
+			}
+
+			if (!pte_value.p ||
+			    !pte_value.us ||
+			    (write && !pte_value.rw)) {
+				return -EPERM;
+			}
 		}
+#ifdef CONFIG_X86_PAE_MODE
 	}
+#endif
 
 	return 0;
 }
-
 
 static inline void tlb_flush_page(void *addr)
 {
@@ -113,13 +165,21 @@ static inline void tlb_flush_page(void *addr)
 	 * specified address
 	 */
 	char *page = (char *)addr;
+
 	__asm__ ("invlpg %0" :: "m" (*page));
 }
 
 
-void _x86_mmu_set_flags(void *ptr, size_t size, u32_t flags, u32_t mask)
+void _x86_mmu_set_flags(void *ptr,
+			size_t size,
+			x86_page_entry_data_t flags,
+			x86_page_entry_data_t mask)
 {
+#ifdef CONFIG_X86_PAE_MODE
+	union x86_mmu_pae_pte *pte;
+#else
 	union x86_mmu_pte *pte;
+#endif
 
 	u32_t addr = (u32_t)ptr;
 
@@ -128,9 +188,13 @@ void _x86_mmu_set_flags(void *ptr, size_t size, u32_t flags, u32_t mask)
 
 	while (size) {
 
+#ifdef CONFIG_X86_PAE_MODE
+		/* TODO we're not generating 2MB entries at the moment */
+		__ASSERT(X86_MMU_GET_PDE(addr)->ps != 1, "2MB PDE found");
+#else
 		/* TODO we're not generating 4MB entries at the moment */
 		__ASSERT(X86_MMU_GET_4MB_PDE(addr)->ps != 1, "4MB PDE found");
-
+#endif
 		pte = X86_MMU_GET_PTE(addr);
 
 		pte->value = (pte->value & ~mask) | flags;

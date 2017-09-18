@@ -754,11 +754,18 @@ static inline int _arch_is_user_context(void)
 extern const NANO_ESF _default_esf;
 
 #ifdef CONFIG_X86_MMU
-/* Linker variable. It needed to access the start of the Page directory */
-extern u32_t __mmu_tables_start;
+/* Linker variable. It is needed to access the start of the Page directory */
 
+
+#ifdef CONFIG_X86_PAE_MODE
+extern u64_t __mmu_tables_start;
+#define X86_MMU_PDPT ((struct x86_mmu_page_directory_pointer *)\
+		      (u32_t *)(void *)&__mmu_tables_start)
+#else
+extern u32_t __mmu_tables_start;
 #define X86_MMU_PD ((struct x86_mmu_page_directory *)\
 		    (void *)&__mmu_tables_start)
+#endif
 
 
 /**
@@ -771,7 +778,9 @@ extern u32_t __mmu_tables_start;
  * @param pde_flags Output parameter for page directory entry flags
  * @param pte_flags Output parameter for page table entry flags
  */
-void _x86_mmu_get_flags(void *addr, u32_t *pde_flags, u32_t *pte_flags);
+void _x86_mmu_get_flags(void *addr,
+			x86_page_entry_data_t *pde_flags,
+			x86_page_entry_data_t *pte_flags);
 
 
 /**
@@ -786,7 +795,11 @@ void _x86_mmu_get_flags(void *addr, u32_t *pde_flags, u32_t *pte_flags);
  * @mask Mask indicating which particular bits in the page table entries to
  *	 modify
  */
-void _x86_mmu_set_flags(void *ptr, size_t size, u32_t flags, u32_t mask);
+void _x86_mmu_set_flags(void *ptr,
+			size_t size,
+			x86_page_entry_data_t flags,
+			x86_page_entry_data_t mask);
+
 #endif /* CONFIG_X86_MMU */
 
 #endif /* !_ASMLANGUAGE */
