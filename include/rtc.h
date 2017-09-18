@@ -50,14 +50,16 @@ enum clk_rtc_div {
 
 
 struct rtc_config {
+	/** Initial RTC ticks */
 	u32_t init_val;
-	/*!< enable/disable alarm  */
+	/** Enable/disable alarm */
 	u8_t alarm_enable;
-	/*!< initial configuration value for the 32bit RTC alarm value  */
+	/** RTC ticks of alarm */
 	u32_t alarm_val;
-	/*!< Pointer to function to call when alarm value
-	 * matches current RTC value */
+	/** Callback when alarm ticks matches current RTC ticks */
 	void (*cb_fn)(struct device *dev);
+	/** RTC ticks per seconds */
+	u32_t ticks_per_sec;
 };
 
 typedef void (*rtc_api_enable)(struct device *dev);
@@ -68,6 +70,7 @@ typedef int (*rtc_api_set_alarm)(struct device *dev,
 				 const u32_t alarm_val);
 typedef u32_t (*rtc_api_read)(struct device *dev);
 typedef u32_t (*rtc_api_get_pending_int)(struct device *dev);
+typedef u32_t (*rtc_api_get_ticks_per_sec)(struct device *dev);
 
 struct rtc_driver_api {
 	rtc_api_enable enable;
@@ -76,6 +79,7 @@ struct rtc_driver_api {
 	rtc_api_set_config set_config;
 	rtc_api_set_alarm set_alarm;
 	rtc_api_get_pending_int get_pending_int;
+	rtc_api_get_ticks_per_sec get_ticks_per_sec;
 };
 
 static inline u32_t rtc_read(struct device *dev)
@@ -135,6 +139,25 @@ static inline int rtc_get_pending_int(struct device *dev)
 
 	api = (struct rtc_driver_api *)dev->driver_api;
 	return api->get_pending_int(dev);
+}
+
+/**
+ * @brief Function to get RTC ticks per second
+ *
+ * The function is to return the RTC ticks per seconds.
+ * The caller can use the return value to convert RTC ticks to the desired time
+ * spec.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ *
+ * @retval How many RTC ticks in one second.
+ */
+static inline int rtc_get_ticks_per_sec(struct device *dev)
+{
+	struct rtc_driver_api *api;
+
+	api = (struct rtc_driver_api *)dev->driver_api;
+	return api->get_ticks_per_sec(dev);
 }
 
 #ifdef __cplusplus

@@ -127,6 +127,11 @@ static u32_t rtc_qmsi_get_pending_int(struct device *dev)
 	return QM_RTC[QM_RTC_0]->rtc_stat;
 }
 
+static u32_t rtc_qmsi_get_ticks_per_sec(struct device *dev)
+{
+	return 32768 / (1 << RTC_DIVIDER);
+}
+
 static const struct rtc_driver_api api = {
 	.enable = rtc_qmsi_enable,
 	.disable = rtc_qmsi_disable,
@@ -134,6 +139,7 @@ static const struct rtc_driver_api api = {
 	.set_config = rtc_qmsi_set_config,
 	.set_alarm = rtc_qmsi_set_alarm,
 	.get_pending_int = rtc_qmsi_get_pending_int,
+	.get_ticks_per_sec = rtc_qmsi_get_ticks_per_sec,
 };
 
 static int rtc_qmsi_init(struct device *dev)
