@@ -68,6 +68,7 @@ void radio_tmr_status_reset(void);
 void radio_tmr_tifs_set(u32_t tifs);
 u32_t radio_tmr_start(u8_t trx, u32_t ticks_start, u32_t remainder);
 void radio_tmr_start_us(u8_t trx, u32_t us);
+u32_t radio_tmr_start_now(u8_t trx);
 void radio_tmr_stop(void);
 void radio_tmr_hcto_configure(u32_t hcto);
 void radio_tmr_aa_capture(void);
@@ -79,6 +80,13 @@ void radio_tmr_end_capture(void);
 u32_t radio_tmr_end_get(void);
 void radio_tmr_sample(void);
 u32_t radio_tmr_sample_get(void);
+
+void radio_gpio_pa_setup(void);
+void radio_gpio_lna_setup(void);
+void radio_gpio_lna_on(void);
+void radio_gpio_lna_off(void);
+void radio_gpio_pa_lna_enable(u32_t trx_us);
+void radio_gpio_pa_lna_disable(void);
 
 void *radio_ccm_rx_pkt_set(struct ccm *ccm, void *pkt);
 void *radio_ccm_tx_pkt_set(struct ccm *ccm, void *pkt);

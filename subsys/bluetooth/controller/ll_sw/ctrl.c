@@ -605,6 +605,10 @@ static inline void isr_radio_state_tx(void)
 
 	radio_tmr_tifs_set(RADIO_TIFS);
 
+#if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
+	radio_gpio_lna_setup();
+#endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
+
 	switch (_radio.role) {
 	case ROLE_ADV:
 		radio_switch_complete_and_tx(0, 0, 0, 0);
@@ -636,6 +640,11 @@ static inline void isr_radio_state_tx(void)
 		radio_rssi_measure();
 #endif /* CONFIG_BT_CTLR_SCAN_REQ_RSSI */
 
+#if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
+		radio_gpio_pa_lna_enable(radio_tmr_end_get() + RADIO_TIFS - 4 -
+					 radio_tx_chain_delay_get(0, 0) -
+					 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
+#endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
 		break;
 
 	case ROLE_SCAN:
@@ -661,6 +670,11 @@ static inline void isr_radio_state_tx(void)
 		radio_tmr_hcto_configure(hcto);
 		radio_rssi_measure();
 
+#if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
+		radio_gpio_pa_lna_enable(radio_tmr_end_get() + RADIO_TIFS - 4 -
+					 radio_tx_chain_delay_get(0, 0) -
+					 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
+#endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
 		break;
 
 	case ROLE_MASTER:
@@ -693,7 +707,7 @@ static inline void isr_radio_state_tx(void)
 		hcto += radio_rx_chain_delay_get(_radio.conn_curr->phy_rx,
 						 _radio.conn_curr->phy_flags);
 		hcto += addr_us_get(_radio.conn_curr->phy_rx);
-		hcto -= radio_tx_chain_delay_get(_radio.conn_curr->phy_rx,
+		hcto -= radio_tx_chain_delay_get(_radio.conn_curr->phy_tx,
 						 _radio.conn_curr->phy_flags);
 #else /* !CONFIG_BT_CTLR_PHY */
 		hcto += radio_rx_chain_delay_get(0, 0);
@@ -703,7 +717,22 @@ static inline void isr_radio_state_tx(void)
 
 		radio_tmr_hcto_configure(hcto);
 
-#if defined(CONFIG_BT_CTLR_PROFILE_ISR)
+#if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
+#if defined(CONFIG_BT_CTLR_PHY)
+		radio_gpio_pa_lna_enable(radio_tmr_end_get() + RADIO_TIFS - 4 -
+					 radio_tx_chain_delay_get(
+						 _radio.conn_curr->phy_tx,
+						 _radio.conn_curr->phy_flags) -
+					 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
+#else /* !CONFIG_BT_CTLR_PHY */
+		radio_gpio_pa_lna_enable(radio_tmr_end_get() + RADIO_TIFS - 4 -
+					 radio_tx_chain_delay_get(0, 0) -
+					 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
+#endif /* !CONFIG_BT_CTLR_PHY */
+#endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
+
+#if defined(CONFIG_BT_CTLR_PROFILE_ISR) || \
+    defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
 		radio_tmr_end_capture();
 #endif /* CONFIG_BT_CTLR_PROFILE_ISR */
 
@@ -878,6 +907,13 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 
 		radio_pkt_tx_set(&_radio.advertiser.scan_data.
 		     data[_radio.advertiser.scan_data.first][0]);
+
+#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
+		radio_gpio_pa_setup();
+		radio_gpio_pa_lna_enable(radio_tmr_end_get() + RADIO_TIFS -
+					 radio_rx_chain_delay_get(0, 0) -
+					 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
+#endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
 
 		/* assert if radio packet ptr is not set and radio started tx */
 		LL_ASSERT(!radio_is_ready());
@@ -1409,6 +1445,13 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 
 		radio_pkt_tx_set(pdu_adv_tx);
 
+#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
+		radio_gpio_pa_setup();
+		radio_gpio_pa_lna_enable(radio_tmr_end_get() + RADIO_TIFS -
+					 radio_rx_chain_delay_get(0, 0) -
+					 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
+#endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
+
 		/* assert if radio packet ptr is not set and radio started tx */
 		LL_ASSERT(!radio_is_ready());
 
@@ -1612,6 +1655,13 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 
 		/* capture end of Tx-ed PDU, used to calculate HCTO. */
 		radio_tmr_end_capture();
+
+#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
+		radio_gpio_pa_setup();
+		radio_gpio_pa_lna_enable(radio_tmr_end_get() + RADIO_TIFS -
+					 radio_rx_chain_delay_get(0, 0) -
+					 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
+#endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
 
 		/* assert if radio packet ptr is not set and radio started tx */
 		LL_ASSERT(!radio_is_ready());
@@ -3246,14 +3296,16 @@ static inline void isr_rx_conn(u8_t crc_ok, u8_t trx_done,
 	u8_t crc_close = 0;
 
 #if defined(CONFIG_BT_CTLR_PROFILE_ISR)
-	static u8_t s_lmax;
 	static u8_t s_lmin = (u8_t) -1;
+	static u8_t s_min = (u8_t) -1;
+	static u8_t s_lmax;
 	static u8_t s_lprv;
 	static u8_t s_max;
-	static u8_t s_min = (u8_t) -1;
 	static u8_t s_prv;
-	u32_t sample;
+
 	u8_t latency, elapsed, prv;
+	u32_t radio_tmr_end = 0;
+	u32_t sample;
 	u8_t chg = 0;
 #endif /* CONFIG_BT_CTLR_PROFILE_ISR */
 
@@ -3369,6 +3421,30 @@ static inline void isr_rx_conn(u8_t crc_ok, u8_t trx_done,
 	/* setup the radio tx packet buffer */
 	tx_packet_set(_radio.conn_curr, pdu_data_tx);
 
+#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
+
+#if defined(CONFIG_BT_CTLR_PROFILE_ISR)
+	/* PA enable is overwriting packet end used in ISR profiling, hence
+	 * back it up for later use.
+	 */
+	radio_tmr_end = radio_tmr_end_get();
+#endif /* CONFIG_BT_CTLR_PROFILE_ISR */
+
+	radio_gpio_pa_setup();
+
+#if defined(CONFIG_BT_CTLR_PHY)
+	radio_gpio_pa_lna_enable(radio_tmr_end_get() + RADIO_TIFS -
+				 radio_rx_chain_delay_get(
+					 _radio.conn_curr->phy_rx,
+					 _radio.conn_curr->phy_flags) -
+				 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
+#else /* !CONFIG_BT_CTLR_PHY */
+	radio_gpio_pa_lna_enable(radio_tmr_end_get() + RADIO_TIFS -
+				 radio_rx_chain_delay_get(0, 0) -
+				 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
+#endif /* !CONFIG_BT_CTLR_PHY */
+#endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
+
 	/* assert if radio packet ptr is not set and radio started tx */
 	LL_ASSERT(!radio_is_ready());
 
@@ -3439,7 +3515,13 @@ isr_rx_conn_terminate_exit:
 	/* calculate the elapsed time in us since on-air radio packet end
 	 * to ISR entry
 	 */
+#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
+	latency = sample - radio_tmr_end;
+#else /* !CONFIG_BT_CTLR_GPIO_PA_PIN */
+	ARG_UNUSED(radio_tmr_end);
+
 	latency = sample - radio_tmr_end_get();
+#endif /* !CONFIG_BT_CTLR_GPIO_PA_PIN */
 
 	/* check changes in min, avg and max of latency */
 	if (latency > s_lmax) {
@@ -3575,11 +3657,24 @@ static inline u32_t isr_close_adv(void)
 
 	if ((_radio.state == STATE_CLOSE) &&
 	    (_radio.advertiser.chan_map_current != 0)) {
+		u32_t start_us;
+
 		dont_close = 1;
 
 		adv_setup();
 
+#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
+		start_us = radio_tmr_start_now(1);
+
+		radio_gpio_pa_setup();
+		radio_gpio_pa_lna_enable(start_us +
+					 radio_tx_ready_delay_get(0, 0) -
+					 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
+#else /* !CONFIG_BT_CTLR_GPIO_PA_PIN */
+		ARG_UNUSED(start_us);
+
 		radio_tx_enable();
+#endif /* !CONFIG_BT_CTLR_GPIO_PA_PIN */
 
 		/* capture end of Tx-ed PDU, used to calculate HCTO. */
 		radio_tmr_end_capture();
@@ -3629,6 +3724,8 @@ static inline u32_t isr_close_scan(void)
 	u32_t dont_close = 0;
 
 	if (_radio.state == STATE_CLOSE) {
+		u32_t start_us;
+
 		dont_close = 1;
 
 		radio_tmr_tifs_set(RADIO_TIFS);
@@ -3645,7 +3742,18 @@ static inline u32_t isr_close_scan(void)
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 		_radio.state = STATE_RX;
 
+#if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
+		start_us = radio_tmr_start_now(0);
+
+		radio_gpio_lna_setup();
+		radio_gpio_pa_lna_enable(start_us +
+					 radio_rx_ready_delay_get(0) -
+					 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
+#else /* !CONFIG_BT_CTLR_GPIO_LNA_PIN */
+		ARG_UNUSED(start_us);
+
 		radio_rx_enable();
+#endif /* !CONFIG_BT_CTLR_GPIO_LNA_PIN */
 
 		/* capture end of Rx-ed PDU, for initiator to calculate first
 		 * master event.
@@ -4072,6 +4180,11 @@ static void isr(void)
 	radio_filter_status_reset();
 	radio_ar_status_reset();
 	radio_rssi_status_reset();
+
+#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN) || \
+    defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
+	radio_gpio_pa_lna_disable();
+#endif /* CONFIG_BT_CTLR_GPIO_PA_PIN || CONFIG_BT_CTLR_GPIO_LNA_PIN */
 
 	switch (_radio.state) {
 	case STATE_TX:
@@ -5670,6 +5783,8 @@ static void adv_setup(void)
 static void event_adv(u32_t ticks_at_expire, u32_t remainder,
 		      u16_t lazy, void *context)
 {
+	u32_t remainder_us;
+
 	ARG_UNUSED(remainder);
 	ARG_UNUSED(lazy);
 	ARG_UNUSED(context);
@@ -5719,13 +5834,22 @@ static void event_adv(u32_t ticks_at_expire, u32_t remainder,
 				       (u8_t *)wl->bdaddr);
 	}
 
-	radio_tmr_start(1,
-			ticks_at_expire +
-			TICKER_US_TO_TICKS(RADIO_TICKER_START_PART_US),
-			_radio.remainder_anchor);
+	remainder_us = radio_tmr_start(1,
+				ticks_at_expire +
+				TICKER_US_TO_TICKS(RADIO_TICKER_START_PART_US),
+				_radio.remainder_anchor);
 
 	/* capture end of Tx-ed PDU, used to calculate HCTO. */
 	radio_tmr_end_capture();
+
+#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
+	radio_gpio_pa_setup();
+	radio_gpio_pa_lna_enable(remainder_us +
+				 radio_tx_ready_delay_get(0, 0) -
+				 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
+#else /* !CONFIG_BT_CTLR_GPIO_PA_PIN */
+	ARG_UNUSED(remainder_us);
+#endif /* !CONFIG_BT_CTLR_GPIO_PA_PIN */
 
 #if (defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
      (RADIO_TICKER_PREEMPT_PART_US <= RADIO_TICKER_PREEMPT_PART_MIN_US))
@@ -6018,6 +6142,7 @@ static void event_scan(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 		      void *context)
 {
 	u32_t ticker_status;
+	u32_t remainder_us;
 
 	ARG_UNUSED(remainder);
 	ARG_UNUSED(lazy);
@@ -6077,15 +6202,24 @@ static void event_scan(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 				       (u8_t *)wl->bdaddr);
 	}
 
-	radio_tmr_start(0,
-			ticks_at_expire +
-			TICKER_US_TO_TICKS(RADIO_TICKER_START_PART_US),
-			_radio.remainder_anchor);
+	remainder_us = radio_tmr_start(0,
+				ticks_at_expire +
+				TICKER_US_TO_TICKS(RADIO_TICKER_START_PART_US),
+				_radio.remainder_anchor);
 
 	/* capture end of Rx-ed PDU, for initiator to calculate first
 	 * master event.
 	 */
 	radio_tmr_end_capture();
+
+#if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
+	radio_gpio_lna_setup();
+	radio_gpio_pa_lna_enable(remainder_us +
+				 radio_rx_ready_delay_get(0) -
+				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
+#else /* !CONFIG_BT_CTLR_GPIO_LNA_PIN */
+	ARG_UNUSED(remainder_us);
+#endif /* !CONFIG_BT_CTLR_GPIO_LNA_PIN */
 
 #if (defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
      (RADIO_TICKER_PREEMPT_PART_US <= RADIO_TICKER_PREEMPT_PART_MIN_US))
@@ -7853,7 +7987,22 @@ static void event_slave(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 
 	radio_tmr_hcto_configure(hcto);
 
-#if defined(CONFIG_BT_CTLR_PROFILE_ISR)
+#if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
+	radio_gpio_lna_setup();
+
+#if defined(CONFIG_BT_CTLR_PHY)
+	radio_gpio_pa_lna_enable(remainder_us +
+				 radio_rx_ready_delay_get(conn->phy_rx) -
+				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
+#else /* !CONFIG_BT_CTLR_PHY */
+	radio_gpio_pa_lna_enable(remainder_us +
+				 radio_rx_ready_delay_get(0) -
+				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
+#endif /* !CONFIG_BT_CTLR_PHY */
+#endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
+
+#if defined(CONFIG_BT_CTLR_PROFILE_ISR) || \
+    defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
 	radio_tmr_end_capture();
 #endif /* CONFIG_BT_CTLR_PROFILE_ISR */
 
@@ -7904,9 +8053,10 @@ static void event_master_prepare(u32_t ticks_at_expire, u32_t remainder,
 static void event_master(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 			 void *context)
 {
-	u8_t data_chan_use = 0;
 	struct pdu_data *pdu_data_tx;
 	struct connection *conn;
+	u8_t data_chan_use = 0;
+	u32_t remainder_us;
 
 	ARG_UNUSED(remainder);
 	ARG_UNUSED(lazy);
@@ -7979,12 +8129,31 @@ static void event_master(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 	    (conn->supervision_expire && (conn->supervision_expire <= 6)) ||
 	    (conn->connect_expire && (conn->connect_expire <= 6))) {
 #endif
-		radio_tmr_start(1, ticks_at_expire +
+		remainder_us = radio_tmr_start(1,
+				ticks_at_expire +
 				TICKER_US_TO_TICKS(RADIO_TICKER_START_PART_US),
 				_radio.remainder_anchor);
 
 		/* capture end of Tx-ed PDU, used to calculate HCTO. */
 		radio_tmr_end_capture();
+
+#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
+		radio_gpio_pa_setup();
+
+#if defined(CONFIG_BT_CTLR_PHY)
+		radio_gpio_pa_lna_enable(remainder_us +
+			radio_tx_ready_delay_get(conn->phy_tx,
+						 conn->phy_flags) -
+			CONFIG_BT_CTLR_GPIO_PA_OFFSET);
+#else /* !CONFIG_BT_CTLR_PHY */
+		radio_gpio_pa_lna_enable(remainder_us +
+					 radio_tx_ready_delay_get(0, 0) -
+					 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
+#endif /* !CONFIG_BT_CTLR_PHY */
+#else /* !CONFIG_BT_CTLR_GPIO_PA_PIN */
+		ARG_UNUSED(remainder_us);
+#endif /* !CONFIG_BT_CTLR_GPIO_PA_PIN */
+
 #if SILENT_CONNECTION
 	/* silent connection! */
 	} else {
@@ -8031,6 +8200,20 @@ static void event_master(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 		hcto += 256;
 
 		radio_tmr_hcto_configure(hcto);
+
+#if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
+		radio_gpio_lna_setup();
+
+#if defined(CONFIG_BT_CTLR_PHY)
+		radio_gpio_pa_lna_enable(remainder_us +
+			radio_rx_ready_delay_get(conn->phy_rx) -
+			CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
+#else /* !CONFIG_BT_CTLR_PHY */
+		radio_gpio_pa_lna_enable(remainder_us +
+					 radio_rx_ready_delay_get(0) -
+					 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
+#endif /* !CONFIG_BT_CTLR_PHY */
+#endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
 	}
 #endif
 

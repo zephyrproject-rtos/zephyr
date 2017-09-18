@@ -9,8 +9,10 @@
 
 #include <toolchain.h>
 #include <zephyr/types.h>
+#include <soc.h>
 #include <clock_control.h>
 
+#include "hal/cpu.h"
 #include "hal/cntr.h"
 #include "hal/ccm.h"
 #include "hal/radio.h"
@@ -72,20 +74,25 @@ static const u8_t prbs9[] = {
 /* TODO: fill correct prbs15 */
 static const u8_t prbs15[255] = { 0x00, };
 
+static u8_t tx_req;
+static u8_t volatile tx_ack;
+
 static void isr_tx(void)
 {
-	u8_t trx_done;
 	u32_t l, i, s, t;
-
-	/* Read radio status and events */
-	trx_done = radio_is_done();
 
 	/* Clear radio status and events */
 	radio_status_reset();
 	radio_tmr_status_reset();
 
+#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
+	radio_gpio_pa_lna_disable();
+#endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
+
 	/* Exit if radio disabled */
-	if (!trx_done) {
+	if (((tx_req - tx_ack) & 0x01) == 0) {
+		tx_ack = tx_req;
+
 		return;
 	}
 
@@ -108,7 +115,14 @@ static void isr_tx(void)
 	radio_tmr_aa_capture();
 	radio_tmr_end_capture();
 
-	/* TODO: check for probable stall timer capture being set */
+	/* TODO: check for probable stale timer capture being set */
+
+#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
+	radio_gpio_pa_setup();
+	radio_gpio_pa_lna_enable(t + radio_tx_ready_delay_get(test_phy,
+							      test_phy_flags) -
+				 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
+#endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
 }
 
 static void isr_rx(void)
@@ -171,6 +185,7 @@ static u32_t init(u8_t chan, u8_t phy, void (*isr)(void))
 	/* Setup Radio in Tx/Rx */
 	/* NOTE: No whitening in test mode. */
 	radio_phy_set(test_phy, test_phy_flags);
+	radio_tmr_tifs_set(150);
 	radio_tx_power_set(0);
 	radio_freq_chan_set((chan << 1) + 2);
 	radio_aa_set((u8_t *)&test_sync_word);
@@ -182,6 +197,7 @@ static u32_t init(u8_t chan, u8_t phy, void (*isr)(void))
 
 u32_t ll_test_tx(u8_t chan, u8_t len, u8_t type, u8_t phy)
 {
+	u32_t start_us;
 	u8_t *payload;
 	u8_t *pdu;
 	u32_t err;
@@ -194,6 +210,8 @@ u32_t ll_test_tx(u8_t chan, u8_t len, u8_t type, u8_t phy)
 	if (err) {
 		return err;
 	}
+
+	tx_req++;
 
 	pdu = radio_pkt_scratch_get();
 	payload = &pdu[2];
@@ -237,9 +255,19 @@ u32_t ll_test_tx(u8_t chan, u8_t len, u8_t type, u8_t phy)
 
 	radio_pkt_tx_set(pdu);
 	radio_switch_complete_and_disable();
-	radio_tmr_start(1, cntr_cnt_get() + CNTR_MIN_DELTA, 0);
+	start_us = radio_tmr_start(1, cntr_cnt_get() + CNTR_MIN_DELTA, 0);
 	radio_tmr_aa_capture();
 	radio_tmr_end_capture();
+
+#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
+	radio_gpio_pa_setup();
+	radio_gpio_pa_lna_enable(start_us +
+				 radio_tx_ready_delay_get(test_phy,
+							  test_phy_flags) -
+				 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
+#else /* !CONFIG_BT_CTLR_GPIO_PA_PIN */
+	ARG_UNUSED(start_us);
+#endif /* !CONFIG_BT_CTLR_GPIO_PA_PIN */
 
 	started = true;
 
@@ -263,6 +291,10 @@ u32_t ll_test_rx(u8_t chan, u8_t phy, u8_t mod_idx)
 	radio_switch_complete_and_rx(test_phy);
 	radio_tmr_start(0, cntr_cnt_get() + CNTR_MIN_DELTA, 0);
 
+#if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
+	radio_gpio_lna_on();
+#endif /* !CONFIG_BT_CTLR_GPIO_LNA_PIN */
+
 	started = true;
 
 	return 0;
@@ -271,6 +303,7 @@ u32_t ll_test_rx(u8_t chan, u8_t phy, u8_t mod_idx)
 u32_t ll_test_end(u16_t *num_rx)
 {
 	struct device *hf_clock;
+	u8_t ack;
 
 	if (!started) {
 		return 1;
@@ -280,8 +313,17 @@ u32_t ll_test_end(u16_t *num_rx)
 	*num_rx = test_num_rx;
 	test_num_rx = 0;
 
-	/* Disable Radio */
-	radio_disable();
+	/* Disable Radio, if in Rx test */
+	ack = tx_ack;
+	if (tx_req == ack) {
+		radio_disable();
+	} else {
+		/* Wait for Tx to complete */
+		tx_req = ack + 2;
+		while (tx_req != tx_ack) {
+			cpu_sleep();
+		}
+	}
 
 	/* Stop packet timer */
 	radio_tmr_stop();
@@ -292,6 +334,10 @@ u32_t ll_test_end(u16_t *num_rx)
 
 	/* Stop coarse timer */
 	cntr_stop();
+
+#if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
+	radio_gpio_lna_off();
+#endif /* !CONFIG_BT_CTLR_GPIO_LNA_PIN */
 
 	started = false;
 
