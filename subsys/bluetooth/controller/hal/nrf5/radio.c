@@ -644,7 +644,7 @@ void radio_tmr_status_reset(void)
 	NRF_PPI->CHENCLR =
 	    (PPI_CHEN_CH0_Msk | PPI_CHEN_CH1_Msk | PPI_CHEN_CH2_Msk |
 	     PPI_CHEN_CH3_Msk | PPI_CHEN_CH4_Msk | PPI_CHEN_CH5_Msk |
-	     PPI_CHEN_CH6_Msk | PPI_CHEN_CH7_Msk);
+	     PPI_CHEN_CH6_Msk);
 }
 
 void radio_tmr_tifs_set(u32_t tifs)
@@ -732,14 +732,14 @@ void radio_tmr_stop(void)
 
 void radio_tmr_hcto_configure(u32_t hcto)
 {
-	NRF_TIMER0->CC[2] = hcto;
-	NRF_TIMER0->EVENTS_COMPARE[2] = 0;
+	NRF_TIMER0->CC[1] = hcto;
+	NRF_TIMER0->EVENTS_COMPARE[1] = 0;
 
-	NRF_PPI->CH[4].EEP = (u32_t)&(NRF_RADIO->EVENTS_ADDRESS);
-	NRF_PPI->CH[4].TEP = (u32_t)&(NRF_TIMER0->TASKS_CAPTURE[2]);
-	NRF_PPI->CH[5].EEP = (u32_t)&(NRF_TIMER0->EVENTS_COMPARE[2]);
-	NRF_PPI->CH[5].TEP = (u32_t)&(NRF_RADIO->TASKS_DISABLE);
-	NRF_PPI->CHENSET = (PPI_CHEN_CH4_Msk | PPI_CHEN_CH5_Msk);
+	NRF_PPI->CH[3].EEP = (u32_t)&(NRF_RADIO->EVENTS_ADDRESS);
+	NRF_PPI->CH[3].TEP = (u32_t)&(NRF_TIMER0->TASKS_CAPTURE[1]);
+	NRF_PPI->CH[4].EEP = (u32_t)&(NRF_TIMER0->EVENTS_COMPARE[1]);
+	NRF_PPI->CH[4].TEP = (u32_t)&(NRF_RADIO->TASKS_DISABLE);
+	NRF_PPI->CHENSET = (PPI_CHEN_CH3_Msk | PPI_CHEN_CH4_Msk);
 }
 
 void radio_tmr_aa_capture(void)
@@ -751,21 +751,34 @@ void radio_tmr_aa_capture(void)
 	NRF_PPI->CHENSET = (PPI_CHEN_CH2_Msk | PPI_CHEN_CH3_Msk);
 }
 
+u32_t radio_tmr_aa_get(void)
+{
+	return NRF_TIMER0->CC[1];
+}
+
+static u32_t radio_tmr_aa;
+
+void radio_tmr_aa_save(u32_t aa)
+{
+	radio_tmr_aa = aa;
+}
+
+u32_t radio_tmr_aa_restore(void)
+{
+	/* NOTE: we dont need to restore for now, but return the saved value. */
+	return radio_tmr_aa;
+}
+
 u32_t radio_tmr_ready_get(void)
 {
 	return NRF_TIMER0->CC[0];
 }
 
-u32_t radio_tmr_aa_get(void)
-{
-	return (NRF_TIMER0->CC[1] - NRF_TIMER0->CC[0]);
-}
-
 void radio_tmr_end_capture(void)
 {
-	NRF_PPI->CH[7].EEP = (u32_t)&(NRF_RADIO->EVENTS_END);
-	NRF_PPI->CH[7].TEP = (u32_t)&(NRF_TIMER0->TASKS_CAPTURE[2]);
-	NRF_PPI->CHENSET = PPI_CHEN_CH7_Msk;
+	NRF_PPI->CH[5].EEP = (u32_t)&(NRF_RADIO->EVENTS_END);
+	NRF_PPI->CH[5].TEP = (u32_t)&(NRF_TIMER0->TASKS_CAPTURE[2]);
+	NRF_PPI->CHENSET = PPI_CHEN_CH5_Msk;
 }
 
 u32_t radio_tmr_end_get(void)
