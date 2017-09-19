@@ -1,3 +1,4 @@
+zephyr_link_interface_ifdef(CONFIG_MBEDTLS mbedTLS)
 zephyr_library()
 zephyr_library_include_directories(.)
 zephyr_library_compile_definitions_ifdef(CONFIG_NEWLIB_LIBC __LINUX_ERRNO_EXTENSIONS__)
@@ -42,3 +43,5 @@ if(CONFIG_NET_L2_IEEE802154)
   zephyr_library_sources_ifdef(CONFIG_NET_L2_IEEE802154_SECURITY       l2/ieee802154/ieee802154_security.c)
   zephyr_library_sources_ifdef(CONFIG_NET_L2_IEEE802154_SHELL          l2/ieee802154/ieee802154_shell.c)
 endif()
+
+zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
