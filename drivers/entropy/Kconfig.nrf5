@@ -1,0 +1,25 @@
+# Kconfig.nrf5 - nRF5 entropy generator driver configuration
+#
+# Copyright (c) 2017 Nordic Semiconductor ASA
+# Copyright (c) 2017 Exati Tecnologia Ltda.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ENTROPY_NRF5_RNG
+	bool "nRF5 RNG driver"
+	# FIXME: nRF5 RNG driver can't co-exist with Bluetooth's HAL
+	# implementation yet
+	depends on ENTROPY_GENERATOR && !BT
+	select ENTROPY_HAS_DRIVER
+	help
+	  This option enables the RNG peripheral, which is a random number
+	  generator, based on internal thermal noise, that provides a
+	  random 8-bit value to the host when read.
+
+config ENTROPY_NRF5_BIAS_CORRECTION
+	bool "Enable bias correction (uniform distribution)"
+	depends on ENTROPY_NRF5_RNG
+	help
+	  This option enables the RNG bias correction, which guarantees a
+	  uniform distribution of 0 and 1. When this option is enabled, the time
+	  to generate a byte cannot be guaranteed.
