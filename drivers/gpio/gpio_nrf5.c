@@ -8,15 +8,17 @@
 /**
  * @file Driver for the Nordic Semiconductor nRF5X GPIO module.
  */
+#define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
+#include <logging/sys_log.h>
 
 #include <errno.h>
-
 #include <kernel.h>
 #include <device.h>
 #include <init.h>
 #include <gpio.h>
 #include <soc.h>
 #include <sys_io.h>
+#include <nrf_gpiote.h>
 #include "nrf5_common.h"
 #include "gpio_utils.h"
 
@@ -98,8 +100,13 @@ struct gpio_nrf5_data {
 	((volatile struct _gpiote *)(DEV_GPIO_CFG(dev))->gpiote_base_addr)
 
 
-#define GPIO_SENSE_DISABLE    (GPIO_PIN_CNF_SENSE_Disabled << GPIO_PIN_CNF_SENSE_Pos)
-#define GPIO_SENSE_ENABLE     (GPIO_PIN_CNF_SENSE_Enabled << GPIO_PIN_CNF_SENSE_Pos)
+#define GPIO_SENSE_DISABLE	(GPIO_PIN_CNF_SENSE_Disabled	\
+					<< GPIO_PIN_CNF_SENSE_Pos)
+#define GPIO_SENSE_LOW		(GPIO_PIN_CNF_SENSE_Low		\
+					<< GPIO_PIN_CNF_SENSE_Pos)
+#define GPIO_SENSE_HIGH		(GPIO_PIN_CNF_SENSE_High	\
+					<< GPIO_PIN_CNF_SENSE_Pos)
+#define GPIO_SENSE_INVALID	(0x01 << GPIO_PIN_CNF_SENSE_Pos)
 #define GPIO_PULL_DISABLE     (GPIO_PIN_CNF_PULL_Disabled << GPIO_PIN_CNF_PULL_Pos)
 #define GPIO_PULL_DOWN        (GPIO_PIN_CNF_PULL_Pulldown << GPIO_PIN_CNF_PULL_Pos)
 #define GPIO_PULL_UP          (GPIO_PIN_CNF_PULL_Pullup << GPIO_PIN_CNF_PULL_Pos)
@@ -165,6 +172,7 @@ static int gpio_nrf5_config(struct device *dev,
 		u8_t pull = GPIO_PULL_DISABLE;
 		int ds_low = (flags & GPIO_DS_LOW_MASK) >> GPIO_DS_LOW_POS;
 		int ds_high = (flags & GPIO_DS_HIGH_MASK) >> GPIO_DS_HIGH_POS;
+		unsigned int sense = (flags & GPIO_PIN_CNF_SENSE_Msk);
 
 		__ASSERT_NO_MSG(ds_low != 2);
 		__ASSERT_NO_MSG(ds_high != 2);
@@ -173,6 +181,12 @@ static int gpio_nrf5_config(struct device *dev,
 			pull = GPIO_PULL_UP;
 		} else if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_DOWN) {
 			pull = GPIO_PULL_DOWN;
+		}
+
+		if (sense == GPIO_SENSE_INVALID) {
+			SYS_LOG_ERR("Invalid parameter for sense,"
+						"setting SENSE disable\n");
+			sense = GPIO_SENSE_DISABLE;
 		}
 
 		if ((flags & GPIO_DIR_MASK) == GPIO_DIR_OUT) {
@@ -190,7 +204,7 @@ static int gpio_nrf5_config(struct device *dev,
 					      GPIO_DIR_OUTPUT);
 		} else {
 			/* Config as input */
-			gpio->PIN_CNF[pin] = (GPIO_SENSE_DISABLE |
+			gpio->PIN_CNF[pin] = (sense |
 					      drive_strength[ds_low][ds_high] |
 					      pull |
 					      GPIO_INPUT_CONNECT |
