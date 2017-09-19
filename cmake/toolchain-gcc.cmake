@@ -74,4 +74,16 @@ set(LIBC_LIBRARY_DIR ${SYSROOT_DIR}/usr/lib/${NEWLIB_DIR})
 # wrap with target_cc_option() in extentions.cmake)
 set(CMAKE_REQUIRED_FLAGS "-nostartfiles -nostdlib --sysroot=${SYSROOT_DIR} -Wl,--unresolved-symbols=ignore-in-object-files")
 
+execute_process(
+  COMMAND ${CMAKE_C_COMPILER} --print-file-name=include
+  OUTPUT_VARIABLE _OUTPUT
+)
+string(REGEX REPLACE "\n" "" _OUTPUT ${_OUTPUT})
+set(NOSTDINC ${_OUTPUT})
 
+execute_process(
+  COMMAND ${CMAKE_C_COMPILER} --print-file-name=include-fixed
+  OUTPUT_VARIABLE _OUTPUT
+)
+string(REGEX REPLACE "\n" "" _OUTPUT ${_OUTPUT})
+list(APPEND NOSTDINC ${_OUTPUT})
