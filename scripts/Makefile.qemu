@@ -21,7 +21,6 @@ else
 endif
 endif
 
-qemu: run
 run: zephyr
 	$(if $(QEMU_PIPE),,@echo "To exit from QEMU enter: 'CTRL+a, x'")
 	@echo '[QEMU] CPU: $(QEMU_CPU_TYPE_$(ARCH))'
