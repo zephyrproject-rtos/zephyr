@@ -626,6 +626,10 @@ static inline void isr_radio_state_tx(void)
 		hcto -= radio_tx_chain_delay_get(0, 0);
 
 		radio_tmr_hcto_configure(hcto);
+
+		/* capture end of CONNECT_IND PDU, used for calculating first
+		 * slave event.
+		 */
 		radio_tmr_end_capture();
 
 #if defined(CONFIG_BT_CTLR_SCAN_REQ_RSSI)
@@ -698,7 +702,10 @@ static inline void isr_radio_state_tx(void)
 #endif /* !CONFIG_BT_CTLR_PHY */
 
 		radio_tmr_hcto_configure(hcto);
+
+#if defined(CONFIG_BT_CTLR_PROFILE_ISR)
 		radio_tmr_end_capture();
+#endif /* CONFIG_BT_CTLR_PROFILE_ISR */
 
 		/* Route the tx packet to respective connections */
 		/* TODO: use timebox for tx enqueue (instead of 1 packet
@@ -1405,8 +1412,6 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 		/* assert if radio packet ptr is not set and radio started tx */
 		LL_ASSERT(!radio_is_ready());
 
-		radio_tmr_end_capture();
-
 		/* block CPU so that there is no CRC error on pdu tx,
 		 * this is only needed if we want the CPU to sleep.
 		 * while(!radio_has_disabled())
@@ -1604,6 +1609,8 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 		radio_tmr_tifs_set(RADIO_TIFS);
 		radio_switch_complete_and_rx(0);
 		radio_pkt_tx_set(pdu_adv_tx);
+
+		/* capture end of Tx-ed PDU, used to calculate HCTO. */
 		radio_tmr_end_capture();
 
 		/* assert if radio packet ptr is not set and radio started tx */
@@ -3351,6 +3358,7 @@ static inline void isr_rx_conn(u8_t crc_ok, u8_t trx_done,
 		radio_switch_complete_and_rx(0);
 #endif /* !CONFIG_BT_CTLR_PHY */
 
+		/* capture end of Tx-ed PDU, used to calculate HCTO. */
 		radio_tmr_end_capture();
 	}
 
@@ -3568,6 +3576,7 @@ static inline u32_t isr_close_adv(void)
 
 		radio_tx_enable();
 
+		/* capture end of Tx-ed PDU, used to calculate HCTO. */
 		radio_tmr_end_capture();
 	} else {
 		struct pdu_adv *pdu_adv;
@@ -3633,6 +3642,9 @@ static inline u32_t isr_close_scan(void)
 
 		radio_rx_enable();
 
+		/* capture end of Rx-ed PDU, for initiator to calculate first
+		 * master event.
+		 */
 		radio_tmr_end_capture();
 	} else {
 		radio_filter_disable();
@@ -5705,6 +5717,8 @@ static void event_adv(u32_t ticks_at_expire, u32_t remainder,
 			ticks_at_expire +
 			TICKER_US_TO_TICKS(RADIO_TICKER_START_PART_US),
 			_radio.remainder_anchor);
+
+	/* capture end of Tx-ed PDU, used to calculate HCTO. */
 	radio_tmr_end_capture();
 
 #if (defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
@@ -6061,6 +6075,10 @@ static void event_scan(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 			ticks_at_expire +
 			TICKER_US_TO_TICKS(RADIO_TICKER_START_PART_US),
 			_radio.remainder_anchor);
+
+	/* capture end of Rx-ed PDU, for initiator to calculate first
+	 * master event.
+	 */
 	radio_tmr_end_capture();
 
 #if (defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
@@ -7825,7 +7843,10 @@ static void event_slave(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 #endif /* !CONFIG_BT_CTLR_PHY */
 
 	radio_tmr_hcto_configure(hcto);
+
+#if defined(CONFIG_BT_CTLR_PROFILE_ISR)
 	radio_tmr_end_capture();
+#endif /* CONFIG_BT_CTLR_PROFILE_ISR */
 
 #if defined(CONFIG_BT_CTLR_CONN_RSSI)
 	radio_rssi_measure();
@@ -7952,6 +7973,8 @@ static void event_master(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 		radio_tmr_start(1, ticks_at_expire +
 				TICKER_US_TO_TICKS(RADIO_TICKER_START_PART_US),
 				_radio.remainder_anchor);
+
+		/* capture end of Tx-ed PDU, used to calculate HCTO. */
 		radio_tmr_end_capture();
 #if SILENT_CONNECTION
 	/* silent connection! */
