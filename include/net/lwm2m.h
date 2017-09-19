@@ -9,7 +9,7 @@
 
 #include <net/net_pkt.h>
 #include <net/net_app.h>
-#include <net/zoap.h>
+#include <net/coap.h>
 
 /* LWM2M Objects defined by OMA */
 
@@ -47,11 +47,11 @@ struct lwm2m_message {
 	struct lwm2m_ctx *ctx;
 
 	/** ZoAP packet data related to this message */
-	struct zoap_packet zpkt;
+	struct coap_packet cpkt;
 
 	/** Message configuration */
-	const u8_t *token;
-	zoap_reply_t reply_cb;
+	u8_t *token;
+	coap_reply_t reply_cb;
 	lwm2m_message_timeout_cb_t message_timeout_cb;
 	u16_t mid;
 	u8_t type;
@@ -59,8 +59,8 @@ struct lwm2m_message {
 	u8_t tkl;
 
 	/** ZoAP transmission handling structures */
-	struct zoap_pending *pending;
-	struct zoap_reply *reply;
+	struct coap_pending *pending;
+	struct coap_reply *reply;
 	u8_t send_attempts;
 };
 
@@ -87,9 +87,9 @@ struct lwm2m_ctx {
 	net_pkt_get_pool_func_t data_pool;
 #endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 
-	/** Private ZoAP and networking structures */
-	struct zoap_pending pendings[CONFIG_LWM2M_ENGINE_MAX_PENDING];
-	struct zoap_reply replies[CONFIG_LWM2M_ENGINE_MAX_REPLIES];
+	/** Private CoAP and networking structures */
+	struct coap_pending pendings[CONFIG_LWM2M_ENGINE_MAX_PENDING];
+	struct coap_reply replies[CONFIG_LWM2M_ENGINE_MAX_REPLIES];
 	struct lwm2m_message messages[CONFIG_LWM2M_ENGINE_MAX_MESSAGES];
 	struct k_delayed_work retransmit_work;
 };
