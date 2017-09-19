@@ -8,7 +8,7 @@
 #define __LWM2M_H__
 
 #include <net/net_app.h>
-#include <net/zoap.h>
+#include <net/coap.h>
 
 /* LWM2M Objects defined by OMA */
 
@@ -52,9 +52,9 @@ struct lwm2m_ctx {
 	net_pkt_get_pool_func_t data_pool;
 #endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 
-	/** Private ZoAP and networking structures */
-	struct zoap_pending pendings[CONFIG_LWM2M_ENGINE_MAX_PENDING];
-	struct zoap_reply replies[CONFIG_LWM2M_ENGINE_MAX_REPLIES];
+	/** Private CoAP and networking structures */
+	struct coap_pending pendings[CONFIG_LWM2M_ENGINE_MAX_PENDING];
+	struct coap_reply replies[CONFIG_LWM2M_ENGINE_MAX_REPLIES];
 	struct k_delayed_work retransmit_work;
 };
 

@@ -37,7 +37,7 @@
 #include <net/net_ip.h>
 #include <net/net_pkt.h>
 #include <net/udp.h>
-#include <net/zoap.h>
+#include <net/coap.h>
 #include <net/lwm2m.h>
 
 #include "lwm2m_object.h"
@@ -110,7 +110,7 @@ static sys_slist_t engine_observer_list;
 #define GET_MORE(v)		(!!((v) & 0x08))
 
 struct block_context {
-	struct zoap_block_context ctx;
+	struct coap_block_context ctx;
 	s64_t timestamp;
 	u8_t token[8];
 	u8_t tkl;
@@ -178,26 +178,26 @@ static char *sprint_token(const u8_t *token, u8_t tkl)
 
 /* block-wise transfer functions */
 
-enum zoap_block_size lwm2m_default_block_size(void)
+enum coap_block_size lwm2m_default_block_size(void)
 {
 	switch (CONFIG_LWM2M_COAP_BLOCK_SIZE) {
 	case 16:
-		return ZOAP_BLOCK_16;
+		return COAP_BLOCK_16;
 	case 32:
-		return ZOAP_BLOCK_32;
+		return COAP_BLOCK_32;
 	case 64:
-		return ZOAP_BLOCK_64;
+		return COAP_BLOCK_64;
 	case 128:
-		return ZOAP_BLOCK_128;
+		return COAP_BLOCK_128;
 	case 256:
-		return ZOAP_BLOCK_256;
+		return COAP_BLOCK_256;
 	case 512:
-		return ZOAP_BLOCK_512;
+		return COAP_BLOCK_512;
 	case 1024:
-		return ZOAP_BLOCK_1024;
+		return COAP_BLOCK_1024;
 	}
 
-	return ZOAP_BLOCK_256;
+	return COAP_BLOCK_256;
 }
 
 static int
@@ -231,7 +231,7 @@ init_block_ctx(const u8_t *token, u8_t tkl, struct block_context **ctx)
 
 	(*ctx)->tkl = tkl;
 	memcpy((*ctx)->token, token, tkl);
-	zoap_block_transfer_init(&(*ctx)->ctx, lwm2m_default_block_size(), 0);
+	coap_block_transfer_init(&(*ctx)->ctx, lwm2m_default_block_size(), 0);
 	(*ctx)->timestamp = timestamp;
 
 	return 0;
@@ -641,18 +641,18 @@ int lwm2m_delete_obj_inst(u16_t obj_id, u16_t obj_inst_id)
 
 /* utility functions */
 
-static int get_option_int(const struct zoap_packet *zpkt, u8_t opt)
+static int get_option_int(const struct coap_packet *cpkt, u8_t opt)
 {
-	struct zoap_option option = {};
+	struct coap_option option = {};
 	u16_t count = 1;
 	int r;
 
-	r = zoap_find_options(zpkt, opt, &option, count);
+	r = coap_find_options(cpkt, opt, &option, count);
 	if (r <= 0) {
 		return -ENOENT;
 	}
 
-	return zoap_option_value_to_int(&option);
+	return coap_option_value_to_int(&option);
 }
 
 static void engine_clear_context(struct lwm2m_engine_context *context)
@@ -687,8 +687,8 @@ static u16_t atou16(u8_t *buf, u16_t buflen, u16_t *len)
 	return val;
 }
 
-static int zoap_options_to_path(struct zoap_option *opt, int options_count,
-				 struct lwm2m_obj_path *path)
+static int coap_options_to_path(struct coap_option *opt, int options_count,
+				struct lwm2m_obj_path *path)
 {
 	u16_t len;
 
@@ -722,8 +722,8 @@ static int zoap_options_to_path(struct zoap_option *opt, int options_count,
 	return options_count == path->level ? 0 : -EINVAL;
 }
 
-static struct lwm2m_message *find_msg(struct zoap_pending *pending,
-				      struct zoap_reply *reply)
+static struct lwm2m_message *find_msg(struct coap_pending *pending,
+				      struct coap_reply *reply)
 {
 	size_t i;
 
@@ -765,12 +765,12 @@ void lwm2m_release_message(struct lwm2m_message *msg)
 	}
 
 	if (msg->pending) {
-		zoap_pending_clear(msg->pending);
+		coap_pending_clear(msg->pending);
 	}
 
 	if (msg->reply) {
 		/* make sure we want to clear the reply */
-		zoap_reply_clear(msg->reply);
+		coap_reply_clear(msg->reply);
 	}
 
 	memset(msg, 0, sizeof(*msg));
@@ -781,7 +781,9 @@ int lwm2m_init_message(struct lwm2m_message *msg)
 	struct net_pkt *pkt;
 	struct net_app_ctx *app_ctx;
 	struct net_buf *frag;
-	int r;
+	u8_t tokenlen = 0;
+	u8_t *token = NULL;
+	int r = 0;
 
 	if (!msg || !msg->ctx) {
 		SYS_LOG_ERR("LwM2M message is invalid.");
@@ -802,40 +804,32 @@ int lwm2m_init_message(struct lwm2m_message *msg)
 		goto cleanup;
 	}
 
-	r = zoap_packet_init(&msg->zpkt, pkt);
+	/*
+	 * msg->tkl == 0 is for a new TOKEN
+	 * msg->tkl == LWM2M_MSG_TOKEN_LEN_SKIP means dont set
+	 */
+	if (msg->tkl == 0) {
+		tokenlen = 0;
+		token = coap_next_token();
+	} else if (msg->token && msg->tkl != LWM2M_MSG_TOKEN_LEN_SKIP) {
+		tokenlen = msg->tkl;
+		token = msg->token;
+	}
+
+	r = coap_packet_init(&msg->cpkt, pkt, 1, msg->type,
+			     tokenlen, token, msg->code,
+			     (msg->mid > 0 ? msg->mid : coap_next_id()));
 	if (r < 0) {
-		SYS_LOG_ERR("zoap packet init error (err:%d)", r);
+		SYS_LOG_ERR("coap packet init error (err:%d)", r);
 		goto cleanup;
 	}
 
-	/* FIXME: Could be that zoap_packet_init() sets some defaults */
-	zoap_header_set_version(&msg->zpkt, 1);
-	zoap_header_set_type(&msg->zpkt, msg->type);
-	zoap_header_set_code(&msg->zpkt, msg->code);
-
-	if (msg->mid > 0) {
-		zoap_header_set_id(&msg->zpkt, msg->mid);
-	} else {
-		zoap_header_set_id(&msg->zpkt, zoap_next_id());
-	}
-
-	/*
-	 * tkl == 0 is for a new TOKEN
-	 * tkl == LWM2M_MSG_TOKEN_LEN_SKIP means dont set
-	 */
-	if (msg->tkl == 0) {
-		zoap_header_set_token(&msg->zpkt, zoap_next_token(),
-				      MAX_TOKEN_LEN);
-	} else if (msg->token && msg->tkl != LWM2M_MSG_TOKEN_LEN_SKIP) {
-		zoap_header_set_token(&msg->zpkt, msg->token, msg->tkl);
-	}
-
 	/* only TYPE_CON messages need pending tracking / reply handling */
-	if (msg->type != ZOAP_TYPE_CON) {
+	if (msg->type != COAP_TYPE_CON) {
 		return 0;
 	}
 
-	msg->pending = zoap_pending_next_unused(
+	msg->pending = coap_pending_next_unused(
 				msg->ctx->pendings,
 				CONFIG_LWM2M_ENGINE_MAX_PENDING);
 	if (!msg->pending) {
@@ -845,7 +839,7 @@ int lwm2m_init_message(struct lwm2m_message *msg)
 		goto cleanup;
 	}
 
-	r = zoap_pending_init(msg->pending, &msg->zpkt,
+	r = coap_pending_init(msg->pending, &msg->cpkt,
 			      &app_ctx->default_ctx->remote);
 	if (r < 0) {
 		SYS_LOG_ERR("Unable to initialize a pending "
@@ -853,11 +847,8 @@ int lwm2m_init_message(struct lwm2m_message *msg)
 		goto cleanup;
 	}
 
-	/* clear out pkt to avoid double unref */
-	pkt = NULL;
-
 	if (msg->reply_cb) {
-		msg->reply = zoap_reply_next_unused(
+		msg->reply = coap_reply_next_unused(
 				msg->ctx->replies,
 				CONFIG_LWM2M_ENGINE_MAX_REPLIES);
 		if (!msg->reply) {
@@ -867,7 +858,7 @@ int lwm2m_init_message(struct lwm2m_message *msg)
 			goto cleanup;
 		}
 
-		zoap_reply_init(msg->reply, &msg->zpkt);
+		coap_reply_init(msg->reply, &msg->cpkt);
 		msg->reply->reply = msg->reply_cb;
 	}
 
@@ -892,19 +883,19 @@ int lwm2m_send_message(struct lwm2m_message *msg)
 	}
 
 	msg->send_attempts++;
-	ret = net_app_send_pkt(&msg->ctx->net_app_ctx, msg->zpkt.pkt,
+	ret = net_app_send_pkt(&msg->ctx->net_app_ctx, msg->cpkt.pkt,
 			       &msg->ctx->net_app_ctx.default_ctx->remote,
 			       NET_SOCKADDR_MAX_SIZE, K_NO_WAIT, NULL);
 	if (ret < 0) {
 		return ret;
 	}
 
-	if (msg->type == ZOAP_TYPE_CON) {
+	if (msg->type == COAP_TYPE_CON) {
 		if (msg->send_attempts > 1) {
 			return 0;
 		}
 
-		zoap_pending_cycle(msg->pending);
+		coap_pending_cycle(msg->pending);
 		k_delayed_work_submit(&msg->ctx->retransmit_work,
 				      msg->pending->timeout);
 	} else {
@@ -1833,7 +1824,7 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 	size_t total_size = 0;
 	int ret = 0;
 	u8_t tkl = 0;
-	const u8_t *token;
+	u8_t token[8];
 	bool last_block = true;
 	struct block_context *block_ctx = NULL;
 
@@ -1945,12 +1936,12 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 
 	if (res->post_write_cb) {
 		/* Get block1 option for checking MORE block flag */
-		ret = get_option_int(in->in_zpkt, ZOAP_OPTION_BLOCK1);
+		ret = get_option_int(in->in_cpkt, COAP_OPTION_BLOCK1);
 		if (ret >= 0) {
 			last_block = !GET_MORE(ret);
 
 			/* Get block_ctx for total_size (might be zero) */
-			token = zoap_header_get_token(in->in_zpkt, &tkl);
+			tkl = coap_header_get_token(in->in_cpkt, token);
 			if (token != NULL &&
 			    !get_block_ctx(token, tkl, &block_ctx)) {
 				total_size = block_ctx->ctx.total_size;
@@ -2023,15 +2014,88 @@ static int lwm2m_delete_handler(struct lwm2m_engine_obj *obj,
 				     context->path->obj_inst_id);
 }
 
+static int get_coap_packet_len(struct net_pkt *pkt)
+{
+	struct net_buf *frag;
+	u16_t offset;
+	u16_t len;
+
+	frag = net_frag_read_be16(pkt->frags,
+				  net_pkt_ip_hdr_len(pkt) +
+				  net_pkt_ipv6_ext_len(pkt) +
+				  4, &offset, &len);
+	if (!frag && offset == 0xffff) {
+		return -1;
+	}
+
+	return len - NET_UDPH_LEN;
+}
+
+#define COAP_MARKER 0xFF
+
+/* TODO: Remove in favor of using net_buf pointer to payload */
+u8_t *coap_packet_get_payload_ptr(struct coap_packet *cpkt, u16_t *len,
+				  bool start_marker)
+{
+	u8_t *appdata = cpkt->pkt->frags->data;
+	u16_t appdatalen = cpkt->pkt->frags->len;
+	u8_t *start = NULL; /* Start of the payload */
+	s32_t payload_size = 0;
+
+	if (!cpkt || !len) {
+		return NULL;
+	}
+
+	*len = 0;
+	if (start_marker) {
+		if (appdatalen + 1 >= net_buf_tailroom(cpkt->pkt->frags)) {
+			return NULL;
+		}
+
+		appdata[appdatalen] = COAP_MARKER;
+		cpkt->pkt->frags->len += 1;
+		start = appdata + appdatalen + 1;
+		payload_size = appdata + net_buf_tailroom(cpkt->pkt->frags) - start;
+	} else {
+		payload_size = get_coap_packet_len(cpkt->pkt);
+		payload_size -= (cpkt->hdr_len + cpkt->opt_len);
+		if (payload_size > 0) {
+			start = appdata;
+			start += net_pkt_ip_hdr_len(cpkt->pkt);
+			start += net_pkt_ipv6_ext_len(cpkt->pkt);
+			start += NET_UDPH_LEN;
+			start += cpkt->hdr_len + cpkt->opt_len;
+		} else {
+			payload_size = 0;
+		}
+	}
+
+	*len = payload_size;
+	return start;
+}
+
+/* TODO: Remove in favor of using net_pkt APIs to add data to payload */
+int coap_packet_set_used(struct coap_packet *cpkt, u16_t len)
+{
+	if ((cpkt->pkt->frags->len + len) >
+	    net_buf_tailroom(cpkt->pkt->frags)) {
+		return -ENOMEM;
+	}
+
+	cpkt->pkt->frags->len += len;
+
+	return 0;
+}
+
 /*
- * ZoAP API needs to create the net_pkt buffer in the correct order.
+ * CoAP API needs to create the net_pkt buffer in the correct order.
  * This function performs last minute verification that outbuf is initialized.
  */
 static void outbuf_init_check(struct lwm2m_output_context *out)
 {
 	if (!out->outbuf) {
-		out->outbuf = zoap_packet_get_payload(out->out_zpkt,
-						      &out->outsize);
+		out->outbuf = coap_packet_get_payload_ptr(out->out_cpkt,
+							  &out->outsize, true);
 	}
 }
 
@@ -2158,16 +2222,19 @@ static int do_discover_op(struct lwm2m_engine_context *context)
 {
 	struct lwm2m_output_context *out = context->out;
 	struct lwm2m_engine_obj_inst *obj_inst;
-	int i = 0;
+	int i = 0, ret;
 
 	/* set output content-format */
-	zoap_add_option_int(out->out_zpkt,
-			    ZOAP_OPTION_CONTENT_FORMAT,
-			    LWM2M_FORMAT_APP_LINK_FORMAT);
+	ret = coap_append_option_int(out->out_cpkt,
+				     COAP_OPTION_CONTENT_FORMAT,
+				     LWM2M_FORMAT_APP_LINK_FORMAT);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/* init the outbuffer */
-	out->outbuf = zoap_packet_get_payload(out->out_zpkt,
-					      &out->outsize);
+	out->outbuf = coap_packet_get_payload_ptr(out->out_cpkt,
+						  &out->outsize, true);
 
 	/* </.well-known/core>,**;ct=40 */
 	memcpy(out->outbuf, DISCOVER_PREFACE, strlen(DISCOVER_PREFACE));
@@ -2217,8 +2284,6 @@ int lwm2m_get_or_create_engine_obj(struct lwm2m_engine_context *context,
 			return ret;
 		}
 
-		zoap_header_set_code(context->in->in_zpkt,
-				     ZOAP_RESPONSE_CODE_CREATED);
 		/* set created flag to one */
 		if (created) {
 			*created = 1;
@@ -2255,14 +2320,14 @@ static int do_write_op(struct lwm2m_engine_obj *obj,
 	}
 }
 
-static int handle_request(struct zoap_packet *request,
+static int handle_request(struct coap_packet *request,
 			  struct lwm2m_message *msg)
 {
 	int r;
 	u8_t code;
-	struct zoap_option options[4];
+	struct coap_option options[4];
 	struct lwm2m_engine_obj *obj;
-	const u8_t *token;
+	u8_t token[8];
 	u8_t tkl = 0;
 	u16_t format, accept;
 	struct lwm2m_input_context in;
@@ -2273,7 +2338,7 @@ static int handle_request(struct zoap_packet *request,
 	bool discover = false;
 	struct block_context *block_ctx = NULL;
 	size_t block_offset = 0;
-	enum zoap_block_size block_size;
+	enum coap_block_size block_size;
 
 	/* setup engine context */
 	memset(&context, 0, sizeof(struct lwm2m_engine_context));
@@ -2282,18 +2347,18 @@ static int handle_request(struct zoap_packet *request,
 	context.path = &path;
 	engine_clear_context(&context);
 
-	/* set ZoAP request / message */
-	in.in_zpkt = request;
-	out.out_zpkt = &msg->zpkt;
+	/* set CoAP request / message */
+	in.in_cpkt = request;
+	out.out_cpkt = &msg->cpkt;
 
 	/* set default reader/writer */
 	in.reader = &plain_text_reader;
 	out.writer = &plain_text_writer;
 
-	code = zoap_header_get_code(in.in_zpkt);
+	code = coap_header_get_code(in.in_cpkt);
 
 	/* parse the URL path into components */
-	r = zoap_find_options(in.in_zpkt, ZOAP_OPTION_URI_PATH, options, 4);
+	r = coap_find_options(in.in_cpkt, COAP_OPTION_URI_PATH, options, 4);
 	if (r <= 0) {
 		/* '/' is used by bootstrap-delete only */
 
@@ -2311,14 +2376,14 @@ static int handle_request(struct zoap_packet *request,
 	     strncmp(options[0].value, ".well-known", 11) == 0) &&
 	    (options[1].len == 4 &&
 	     strncmp(options[1].value, "core", 4) == 0)) {
-		if ((code & ZOAP_REQUEST_MASK) != ZOAP_METHOD_GET) {
+		if ((code & COAP_REQUEST_MASK) != COAP_METHOD_GET) {
 			r = -EPERM;
 			goto error;
 		}
 
 		discover = true;
 	} else {
-		r = zoap_options_to_path(options, r, &path);
+		r = coap_options_to_path(options, r, &path);
 		if (r < 0) {
 			r = -ENOENT;
 			goto error;
@@ -2326,19 +2391,19 @@ static int handle_request(struct zoap_packet *request,
 	}
 
 	/* read Content Format */
-	r = zoap_find_options(in.in_zpkt, ZOAP_OPTION_CONTENT_FORMAT,
+	r = coap_find_options(in.in_cpkt, COAP_OPTION_CONTENT_FORMAT,
 			      options, 1);
 	if (r > 0) {
-		format = zoap_option_value_to_int(&options[0]);
+		format = coap_option_value_to_int(&options[0]);
 	} else {
 		SYS_LOG_DBG("No content-format given. Assume text plain.");
 		format = LWM2M_FORMAT_PLAIN_TEXT;
 	}
 
 	/* read Accept */
-	r = zoap_find_options(in.in_zpkt, ZOAP_OPTION_ACCEPT, options, 1);
+	r = coap_find_options(in.in_cpkt, COAP_OPTION_ACCEPT, options, 1);
 	if (r > 0) {
-		accept = zoap_option_value_to_int(&options[0]);
+		accept = coap_option_value_to_int(&options[0]);
 	} else {
 		SYS_LOG_DBG("No accept option given. Assume OMA TLV.");
 		accept = LWM2M_FORMAT_OMA_TLV;
@@ -2356,9 +2421,9 @@ static int handle_request(struct zoap_packet *request,
 	accept = select_writer(&out, accept);
 
 	/* set the operation */
-	switch (code & ZOAP_REQUEST_MASK) {
+	switch (code & COAP_REQUEST_MASK) {
 
-	case ZOAP_METHOD_GET:
+	case COAP_METHOD_GET:
 		if (discover || format == LWM2M_FORMAT_APP_LINK_FORMAT) {
 			context.operation = LWM2M_OP_DISCOVER;
 			accept = LWM2M_FORMAT_APP_LINK_FORMAT;
@@ -2366,50 +2431,51 @@ static int handle_request(struct zoap_packet *request,
 			context.operation = LWM2M_OP_READ;
 		}
 		/* check for observe */
-		observe = get_option_int(in.in_zpkt, ZOAP_OPTION_OBSERVE);
-		zoap_header_set_code(out.out_zpkt, ZOAP_RESPONSE_CODE_CONTENT);
+		observe = get_option_int(in.in_cpkt, COAP_OPTION_OBSERVE);
+		msg->code = COAP_RESPONSE_CODE_CONTENT;
 		break;
 
-	case ZOAP_METHOD_POST:
+	case COAP_METHOD_POST:
 		if (path.level < 2) {
 			/* write/create a object instance */
 			context.operation = LWM2M_OP_CREATE;
 		} else {
 			context.operation = LWM2M_OP_EXECUTE;
 		}
-		zoap_header_set_code(out.out_zpkt, ZOAP_RESPONSE_CODE_CHANGED);
+		msg->code = COAP_RESPONSE_CODE_CHANGED;
 		break;
 
-	case ZOAP_METHOD_PUT:
+	case COAP_METHOD_PUT:
 		context.operation = LWM2M_OP_WRITE;
-		zoap_header_set_code(out.out_zpkt, ZOAP_RESPONSE_CODE_CHANGED);
+		msg->code = COAP_RESPONSE_CODE_CHANGED;
 		break;
 
-	case ZOAP_METHOD_DELETE:
+	case COAP_METHOD_DELETE:
 		context.operation = LWM2M_OP_DELETE;
-		zoap_header_set_code(out.out_zpkt, ZOAP_RESPONSE_CODE_DELETED);
+		msg->code = COAP_RESPONSE_CODE_DELETED;
 		break;
 
 	default:
 		break;
 	}
 
-	/* set response token */
-	token = zoap_header_get_token(in.in_zpkt, &tkl);
+	/* setup response token */
+	tkl = coap_header_get_token(in.in_cpkt, token);
 	if (tkl) {
-		zoap_header_set_token(out.out_zpkt, token, tkl);
+		msg->tkl = tkl;
+		msg->token = token;
 	}
 
 	in.inpos = 0;
-	in.inbuf = zoap_packet_get_payload(in.in_zpkt, &in.insize);
+	in.inbuf = coap_packet_get_payload_ptr(in.in_cpkt, &in.insize, false);
 
 	/* Check for block transfer */
-	r = get_option_int(in.in_zpkt, ZOAP_OPTION_BLOCK1);
+	r = get_option_int(in.in_cpkt, COAP_OPTION_BLOCK1);
 	if (r > 0) {
 		/* RFC7252: 4.6. Message Size */
 		block_size = GET_BLOCK_SIZE(r);
 		if (GET_MORE(r) &&
-		    zoap_block_size_to_bytes(block_size) > in.insize) {
+		    coap_block_size_to_bytes(block_size) > in.insize) {
 			SYS_LOG_DBG("Trailing payload is discarded!");
 			r = -EFBIG;
 			goto error;
@@ -2426,17 +2492,31 @@ static int handle_request(struct zoap_packet *request,
 		}
 
 		/* 0 will be returned if it's the last block */
-		block_offset = zoap_next_block(in.in_zpkt, &block_ctx->ctx);
+		block_offset = coap_next_block(in.in_cpkt, &block_ctx->ctx);
 	}
+
+	/* Handle blockwise 1 (Part 1): Set response code / free context */
+	if (block_ctx) {
+		if (block_offset > 0) {
+			msg->code = COAP_RESPONSE_CODE_CONTINUE;
+		} else {
+			/* Free context when finished */
+			free_block_ctx(block_ctx);
+		}
+	}
+
+	/* render CoAP packet header */
+	lwm2m_init_message(msg);
 
 	switch (context.operation) {
 
 	case LWM2M_OP_READ:
 		if (observe == 0) {
 			/* add new observer */
-			if (token) {
-				r = zoap_add_option_int(out.out_zpkt,
-							ZOAP_OPTION_OBSERVE, 1);
+			if (msg->token) {
+				r = coap_append_option_int(out.out_cpkt,
+							   COAP_OPTION_OBSERVE,
+							   1);
 				if (r) {
 					SYS_LOG_ERR("OBSERVE option error: %d",
 						    r);
@@ -2451,8 +2531,6 @@ static int handle_request(struct zoap_packet *request,
 				SYS_LOG_ERR("OBSERVE request missing token");
 			}
 		} else if (observe == 1) {
-			/* use token from this request */
-			token = zoap_header_get_token(in.in_zpkt, &tkl);
 			/* remove observer */
 			r = engine_remove_observer(token, tkl);
 			if (r < 0) {
@@ -2461,8 +2539,9 @@ static int handle_request(struct zoap_packet *request,
 		}
 
 		/* set output content-format */
-		r = zoap_add_option_int(out.out_zpkt,
-					ZOAP_OPTION_CONTENT_FORMAT, accept);
+		r = coap_append_option_int(out.out_cpkt,
+					   COAP_OPTION_CONTENT_FORMAT,
+					   accept);
 		if (r > 0) {
 			SYS_LOG_ERR("Error setting response content-format: %d",
 				    r);
@@ -2501,30 +2580,24 @@ static int handle_request(struct zoap_packet *request,
 		goto error;
 	}
 
-	/* Handle blockwise 1 */
+	/* Handle blockwise 1 (Part 2): Append BLOCK1 option */
 	if (block_ctx) {
 		if (block_offset > 0) {
 			/* More to come, ack with correspond block # */
-			r = zoap_add_block1_option(
-					out.out_zpkt, &block_ctx->ctx);
+			r = coap_append_block1_option(out.out_cpkt,
+						      &block_ctx->ctx);
 			if (r) {
 				/* report as internal server error */
 				SYS_LOG_ERR("Fail adding block1 option: %d", r);
 				r = -EINVAL;
 				goto error;
-			} else {
-				zoap_header_set_code(out.out_zpkt,
-						ZOAP_RESPONSE_CODE_CONTINUE);
 			}
-		} else {
-			/* Free context when finished */
-			free_block_ctx(block_ctx);
 		}
 	}
 
 	if (out.outlen > 0) {
 		SYS_LOG_DBG("replying with %u bytes", out.outlen);
-		zoap_packet_set_used(out.out_zpkt, out.outlen);
+		coap_packet_set_used(out.out_cpkt, out.outlen);
 	} else {
 		SYS_LOG_DBG("no data in reply");
 	}
@@ -2532,22 +2605,18 @@ static int handle_request(struct zoap_packet *request,
 	return 0;
 
 error:
+	/* TODO: reset CoAP packet and empty payload */
 	if (r == -ENOENT) {
-		zoap_header_set_code(out.out_zpkt,
-				     ZOAP_RESPONSE_CODE_NOT_FOUND);
+		msg->code = COAP_RESPONSE_CODE_NOT_FOUND;
 	} else if (r == -EPERM) {
-		zoap_header_set_code(out.out_zpkt,
-				     ZOAP_RESPONSE_CODE_NOT_ALLOWED);
+		msg->code = COAP_RESPONSE_CODE_NOT_ALLOWED;
 	} else if (r == -EEXIST) {
-		zoap_header_set_code(out.out_zpkt,
-				     ZOAP_RESPONSE_CODE_BAD_REQUEST);
+		msg->code = COAP_RESPONSE_CODE_BAD_REQUEST;
 	} else if (r == -EFBIG) {
-		zoap_header_set_code(out.out_zpkt,
-				     ZOAP_RESPONSE_CODE_REQUEST_TOO_LARGE);
+		msg->code = COAP_RESPONSE_CODE_REQUEST_TOO_LARGE;
 	} else {
 		/* Failed to handle the request */
-		zoap_header_set_code(out.out_zpkt,
-				     ZOAP_RESPONSE_CODE_INTERNAL_ERROR);
+		msg->code = COAP_RESPONSE_CODE_INTERNAL_ERROR;
 	}
 
 	/* Free block context when error happened */
@@ -2562,12 +2631,13 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
 {
 	struct lwm2m_message *msg = NULL;
 	struct net_udp_hdr hdr, *udp_hdr;
-	struct zoap_pending *pending;
-	struct zoap_reply *reply;
-	struct zoap_packet response;
+	struct coap_pending *pending;
+	struct coap_reply *reply;
+	struct coap_packet response;
 	struct sockaddr from_addr;
-	int header_len, r;
-	const u8_t *token;
+	struct coap_option options[4];
+	int r;
+	u8_t token[8];
 	u8_t tkl;
 
 	udp_hdr = net_udp_get_hdr(pkt, &hdr);
@@ -2595,26 +2665,19 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
 	}
 #endif
 
-	/*
-	 * zoap expects that buffer->data starts at the
-	 * beginning of the CoAP header
-	 */
-	header_len = net_pkt_appdata(pkt) - pkt->frags->data;
-	net_buf_pull(pkt->frags, header_len);
-
-	r = zoap_packet_parse(&response, pkt);
+	r = coap_packet_parse(&response, pkt, options, 4);
 	if (r < 0) {
 		SYS_LOG_ERR("Invalid data received (err:%d)", r);
 		goto cleanup;
 	}
 
-	token = zoap_header_get_token(&response, &tkl);
-	pending = zoap_pending_received(&response, client_ctx->pendings,
+	tkl = coap_header_get_token(&response, token);
+	pending = coap_pending_received(&response, client_ctx->pendings,
 					CONFIG_LWM2M_ENGINE_MAX_PENDING);
 	/*
-	 * Clear pending pointer because zoap_pending_received() calls
-	 * zoap_pending_clear, and later when we call lwm2m_release_message()
-	 * it will try and call zoap_pending_clear() again if msg->pending
+	 * Clear pending pointer because coap_pending_received() calls
+	 * coap_pending_clear, and later when we call lwm2m_release_message()
+	 * it will try and call coap_pending_clear() again if msg->pending
 	 * is != NULL.
 	 */
 	if (pending) {
@@ -2626,7 +2689,7 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
 
 	SYS_LOG_DBG("checking for reply from [%s]",
 		    lwm2m_sprint_ip_addr(&from_addr));
-	reply = zoap_response_received(&response, &from_addr,
+	reply = coap_response_received(&response, &from_addr,
 				       client_ctx->replies,
 				       CONFIG_LWM2M_ENGINE_MAX_REPLIES);
 	if (reply) {
@@ -2641,7 +2704,7 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
 		 * additional flag to decide when to clear the reply callback.
 		 */
 		if (handle_separate_response && !tkl &&
-			zoap_header_get_type(&response) == ZOAP_TYPE_ACK) {
+			coap_header_get_type(&response) == COAP_TYPE_ACK) {
 			SYS_LOG_DBG("separated response, not removing reply");
 			goto cleanup;
 		}
@@ -2667,7 +2730,7 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
 	 * at registered objects to find a handler.
 	 */
 	if (udp_request_handler &&
-	    zoap_header_get_type(&response) == ZOAP_TYPE_CON) {
+	    coap_header_get_type(&response) == COAP_TYPE_CON) {
 		msg = lwm2m_get_message(client_ctx);
 		if (!msg) {
 			SYS_LOG_ERR("Unable to get a lwm2m message!");
@@ -2675,28 +2738,23 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
 		}
 
 		/* Create a response message if we reach this point */
-		msg->type = ZOAP_TYPE_ACK;
-		msg->code = zoap_header_get_code(&response);
-		msg->mid = zoap_header_get_id(&response);
+		msg->type = COAP_TYPE_ACK;
+		msg->code = coap_header_get_code(&response);
+		msg->mid = coap_header_get_id(&response);
 		/* skip token generation by default */
 		msg->tkl = LWM2M_MSG_TOKEN_LEN_SKIP;
-
-		r = lwm2m_init_message(msg);
-		if (r < 0) {
-			goto cleanup;
-		}
 
 		/* process the response to this request */
 		r = udp_request_handler(&response, msg);
 		if (r < 0) {
-			SYS_LOG_ERR("Request handler error: %d", r);
-		} else {
-			r = lwm2m_send_message(msg);
-			if (r < 0) {
-				SYS_LOG_ERR("Err sending response: %d",
-					    r);
-				lwm2m_release_message(msg);
-			}
+			goto cleanup;
+		}
+
+		r = lwm2m_send_message(msg);
+		if (r < 0) {
+			SYS_LOG_ERR("Err sending response: %d",
+				    r);
+			lwm2m_release_message(msg);
 		}
 	} else {
 		SYS_LOG_ERR("No handler for response");
@@ -2722,11 +2780,11 @@ static void retransmit_request(struct k_work *work)
 {
 	struct lwm2m_ctx *client_ctx;
 	struct lwm2m_message *msg;
-	struct zoap_pending *pending;
+	struct coap_pending *pending;
 	int r;
 
 	client_ctx = CONTAINER_OF(work, struct lwm2m_ctx, retransmit_work);
-	pending = zoap_pending_next_to_expire(client_ctx->pendings,
+	pending = coap_pending_next_to_expire(client_ctx->pendings,
 					      CONFIG_LWM2M_ENGINE_MAX_PENDING);
 	if (!pending) {
 		return;
@@ -2738,7 +2796,7 @@ static void retransmit_request(struct k_work *work)
 		return;
 	}
 
-	if (!zoap_pending_cycle(pending)) {
+	if (!coap_pending_cycle(pending)) {
 		/* pending request has expired */
 		if (msg->message_timeout_cb) {
 			msg->message_timeout_cb(msg);
@@ -2759,24 +2817,24 @@ static void retransmit_request(struct k_work *work)
 	k_delayed_work_submit(&client_ctx->retransmit_work, pending->timeout);
 }
 
-static int notify_message_reply_cb(const struct zoap_packet *response,
-				   struct zoap_reply *reply,
+static int notify_message_reply_cb(const struct coap_packet *response,
+				   struct coap_reply *reply,
 				   const struct sockaddr *from)
 {
 	int ret = 0;
 	u8_t type, code;
 
-	type = zoap_header_get_type(response);
-	code = zoap_header_get_code(response);
+	type = coap_header_get_type(response);
+	code = coap_header_get_code(response);
 
 	SYS_LOG_DBG("NOTIFY ACK type:%u code:%d.%d reply_token:'%s'",
 		type,
-		ZOAP_RESPONSE_CODE_CLASS(code),
-		ZOAP_RESPONSE_CODE_DETAIL(code),
+		COAP_RESPONSE_CODE_CLASS(code),
+		COAP_RESPONSE_CODE_DETAIL(code),
 		sprint_token(reply->token, reply->tkl));
 
-	/* remove observer on ZOAP_TYPE_RESET */
-	if (type == ZOAP_TYPE_RESET) {
+	/* remove observer on COAP_TYPE_RESET */
+	if (type == COAP_TYPE_RESET) {
 		if (reply->tkl > 0) {
 			ret = engine_remove_observer(reply->token, reply->tkl);
 			if (ret) {
@@ -2840,24 +2898,25 @@ static int generate_notify_message(struct observe_node *obs,
 		return -ENOMEM;
 	}
 
-	out.out_zpkt = &msg->zpkt;
-	msg->type = ZOAP_TYPE_CON;
-	msg->code = ZOAP_RESPONSE_CODE_CONTENT;
+	msg->type = COAP_TYPE_CON;
+	msg->code = COAP_RESPONSE_CODE_CONTENT;
 	msg->mid = 0;
 	msg->token = obs->token;
 	msg->tkl = obs->tkl;
 	msg->reply_cb = notify_message_reply_cb;
+	out.out_cpkt = &msg->cpkt;
 
 	ret = lwm2m_init_message(msg);
-	if (ret) {
-		return ret;
+	if (ret < 0) {
+		SYS_LOG_ERR("Unable to init lwm2m message! (err: %d)", ret);
+		goto cleanup;
 	}
 
 	/* each notification should increment the obs counter */
 	obs->counter++;
-	ret = zoap_add_option_int(out.out_zpkt, ZOAP_OPTION_OBSERVE,
-				  obs->counter);
-	if (ret) {
+	ret = coap_append_option_int(&msg->cpkt, COAP_OPTION_OBSERVE,
+				     obs->counter);
+	if (ret < 0) {
 		SYS_LOG_ERR("OBSERVE option error: %d", ret);
 		goto cleanup;
 	}
@@ -2866,9 +2925,9 @@ static int generate_notify_message(struct observe_node *obs,
 	select_writer(&out, obs->format);
 
 	/* set response content-format */
-	ret = zoap_add_option_int(out.out_zpkt, ZOAP_OPTION_CONTENT_FORMAT,
-				  obs->format);
-	if (ret > 0) {
+	ret = coap_append_option_int(&msg->cpkt, COAP_OPTION_CONTENT_FORMAT,
+				     obs->format);
+	if (ret < 0) {
 		SYS_LOG_ERR("error setting content-format (err:%d)", ret);
 		goto cleanup;
 	}
@@ -2876,7 +2935,7 @@ static int generate_notify_message(struct observe_node *obs,
 	ret = do_read_op(obj_inst->obj, &context);
 	if (ret == 0) {
 		if (out.outlen > 0) {
-			zoap_packet_set_used(out.out_zpkt, out.outlen);
+			coap_packet_set_used(out.out_cpkt, out.outlen);
 		} else {
 			SYS_LOG_DBG("no data in reply");
 		}
