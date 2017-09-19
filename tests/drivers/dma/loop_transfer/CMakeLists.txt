@@ -1,7 +1,7 @@
 if(DEFINED ENV{BOARD})
   set(BOARD $ENV{BOARD})
 else()
-  set(BOARD quark_se_c1000_ss_devboard)
+  set(BOARD arduino_101)
 endif()
 
 include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
