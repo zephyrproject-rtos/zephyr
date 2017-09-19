@@ -11,7 +11,7 @@
  * @}
  */
 
-#include <test_uart.h>
+#include "test_uart.h"
 
 #ifdef CONFIG_CONSOLE_SHELL
 TC_CMD_DEFINE(test_uart_fifo_read)

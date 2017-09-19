@@ -24,7 +24,7 @@
  * @}
  */
 
-#include <test_aon.h>
+#include "test_aon.h"
 
 #define ALARM_CNT 32768 /* about 1s */
 #define SLEEP_TIME 3050 /* a little longer than 3s */
