@@ -48,12 +48,26 @@ foreach(kconfig_target ${kconfig_target_list})
 endforeach()
 
 if(NOT EXISTS ${DOTCONFIG})
+  set(
+    merge_config_files
+    ${BOARD_DEFCONFIG}
+    ${OVERLAY_CONFIG}
+    ${CONF_FILE_AS_LIST}
+    )
+  foreach(merge_config_input ${merge_config_files})
+    if(NOT EXISTS ${merge_config_input})
+      message(FATAL_ERROR "File not found: ${merge_config_input}")
+    endif()
+  endforeach()
+
   execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/kconfig/merge_config.py -m -q
-      -O ${PROJECT_BINARY_DIR}
-      ${BOARD_DEFCONFIG}
-      ${OVERLAY_CONFIG}
-      ${CONF_FILE_AS_LIST}
+    COMMAND
+    ${PYTHON_EXECUTABLE}
+    ${PROJECT_SOURCE_DIR}/scripts/kconfig/merge_config.py
+    -m
+    -q
+    -O ${PROJECT_BINARY_DIR}
+    ${merge_config_files}
     WORKING_DIRECTORY ${APPLICATION_SOURCE_DIR}
     # The working directory is set to the app dir such that the user
     # can use relative paths in CONF_FILE, e.g. CONF_FILE=nrf5.conf
@@ -76,10 +90,8 @@ if(NOT EXISTS ${DOTCONFIG})
 endif()
 
 # Force CMAKE configure when the configuration files changes.
-set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${BOARD_DEFCONFIG})
-set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${DOTCONFIG})
-foreach(CONF_FILE_ITEM ${CONF_FILE_AS_LIST})
-  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${CONF_FILE_ITEM})
+foreach(merge_config_input ${merge_config_files} ${DOTCONFIG})
+  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${merge_config_input})
 endforeach()
 
 message(STATUS "Generating zephyr/include/generated/autoconf.h")
