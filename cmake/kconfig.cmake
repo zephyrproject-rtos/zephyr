@@ -55,8 +55,14 @@ if(NOT EXISTS ${DOTCONFIG})
     ${CONF_FILE_AS_LIST}
     )
   foreach(merge_config_input ${merge_config_files})
-    if(NOT EXISTS ${merge_config_input})
-      message(FATAL_ERROR "File not found: ${merge_config_input}")
+    if(IS_ABSOLUTE ${merge_config_input})
+      set(path ${merge_config_input})
+    else()
+      set(path ${APPLICATION_SOURCE_DIR}/${merge_config_input})
+    endif()
+
+    if(NOT EXISTS ${path})
+      message(FATAL_ERROR "File not found: ${path}")
     endif()
   endforeach()
 
