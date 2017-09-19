@@ -1245,9 +1245,9 @@ static bool test_v6_seq_check(void)
 		NET_TCP_HDR(pkt)->seq[1] << 16 |
 		NET_TCP_HDR(pkt)->seq[2] << 8 |
 		NET_TCP_HDR(pkt)->seq[3];
-	if (seq != (tcp->send_seq - 1)) {
+	if (seq != tcp->send_seq) {
 		DBG("Seq does not match (%u vs %u)\n",
-		    seq + 1, tcp->send_seq);
+		    seq, tcp->send_seq);
 		return false;
 	}
 
@@ -1277,9 +1277,9 @@ static bool test_v4_seq_check(void)
 		NET_TCP_HDR(pkt)->seq[1] << 16 |
 		NET_TCP_HDR(pkt)->seq[2] << 8 |
 		NET_TCP_HDR(pkt)->seq[3];
-	if (seq != (tcp->send_seq - 1)) {
+	if (seq != tcp->send_seq) {
 		DBG("Seq does not match (%u vs %u)\n",
-		    seq + 1, tcp->send_seq);
+		    seq, tcp->send_seq);
 		return false;
 	}
 
