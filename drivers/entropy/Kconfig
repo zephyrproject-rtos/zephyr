@@ -18,6 +18,7 @@ if ENTROPY_GENERATOR
 source "drivers/entropy/Kconfig.mcux"
 source "drivers/entropy/Kconfig.stm32"
 source "drivers/entropy/Kconfig.esp32"
+source "drivers/entropy/Kconfig.nrf5"
 
 config ENTROPY_HAS_DRIVER
 	bool
