@@ -31,8 +31,8 @@
  * - Many kernel calls do no sanity checking of parameters other than
  *   assertions. The handler must check all of these conditions using
  *   _SYSCALL_ASSERT()
- * - If the system call has more then 5 arguments, then arg5 will be a pointer
- *   to some struct containing arguments 5+. The struct itself needs to be
+ * - If the system call has more than 6 arguments, then arg6 will be a pointer
+ *   to some struct containing arguments 6+. The struct itself needs to be
  *   validated like any other buffer passed in from userspace, and its members
  *   individually validated (if necessary) and then passed to the real
  *   implementation like normal arguments
@@ -47,6 +47,7 @@
  * @param arg3 system call argument 3
  * @param arg4 system call argument 4
  * @param arg5 system call argument 5
+ * @param arg6 system call argument 6
  * @param ssf System call stack frame pointer. Used to generate kernel oops
  *            via _arch_syscall_oops_at(). Contents are arch-specific.
  * @return system call return value, or 0 if the system call implementation
@@ -54,7 +55,8 @@
  *
  */
 typedef u32_t (*_k_syscall_handler_t)(u32_t arg1, u32_t arg2, u32_t arg3,
-				      u32_t arg4, u32_t arg5, void *ssf);
+				      u32_t arg4, u32_t arg5, u32_t arg6,
+				      void *ssf);
 
 
 extern const _k_syscall_handler_t _k_syscall_table[K_SYSCALL_LIMIT];
@@ -94,18 +96,20 @@ extern const _k_syscall_handler_t _k_syscall_table[K_SYSCALL_LIMIT];
 
 /* Convenience macros for handler implementations */
 #define _SYSCALL_ARG0	ARG_UNUSED(arg1); ARG_UNUSED(arg2); ARG_UNUSED(arg3); \
-			ARG_UNUSED(arg4); ARH_UNUSED(arg5)
+			ARG_UNUSED(arg4); ARH_UNUSED(arg5); ARG_UNUSED(arg6)
 
 #define _SYSCALL_ARG1	ARG_UNUSED(arg2); ARG_UNUSED(arg3); ARG_UNUSED(arg4); \
-			ARG_UNUSED(arg5)
+			ARG_UNUSED(arg5); ARG_UNUSED(arg6)
 
-#define _SYSCALL_ARG2	ARG_UNUSED(arg3); ARG_UNUSED(arg4); ARG_UNUSED(arg5)
+#define _SYSCALL_ARG2	ARG_UNUSED(arg3); ARG_UNUSED(arg4); ARG_UNUSED(arg5); \
+			ARG_UNUSED(arg6)
 
-#define _SYSCALL_ARG3	ARG_UNUSED(arg4); ARG_UNUSED(arg5)
-
-#define _SYSCALL_ARG4	ARG_UNUSED(arg5)
+#define _SYSCALL_ARG3	ARG_UNUSED(arg4); ARG_UNUSED(arg5); ARG_UNUSED(arg6)
 
 
+#define _SYSCALL_ARG4	ARG_UNUSED(arg5); ARG_UNUSED(arg6)
+
+#define _SYSCALL_ARG5	ARG_UNUSED(arg6)
 #endif /* _ASMLANGUAGE */
 
 #endif /* _ZEPHYR_SYSCALL_H_ */

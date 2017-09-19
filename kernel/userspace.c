@@ -183,7 +183,7 @@ void _k_object_init(void *object)
 }
 
 static u32_t _syscall_bad_handler(u32_t bad_id, u32_t arg2, u32_t arg3,
-				  u32_t arg4, u32_t arg5, void *ssf)
+				  u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
 {
 	printk("Bad system call id %u invoked\n", bad_id);
 	_arch_syscall_oops(ssf);

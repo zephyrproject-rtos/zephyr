@@ -35,6 +35,7 @@ _id_ok:
 	 * for _k_syscall_handler_t functions
 	 */
 	push	%esp		/* ssf */
+	push	%ebp		/* arg6 */
 	push	%edi		/* arg5 */
 	push	%ebx		/* arg4 */
 #ifndef CONFIG_X86_IAMCU
@@ -63,11 +64,11 @@ _id_ok:
 	pop	%ebx
 	pop	%edi
 #ifndef CONFIG_X86_IAMCU
-	/* Discard ssf, no free register to pop it into so we add instead  */
-	add	$4, %esp
+	/* Discard ssf and arg6 */
+	add	$8, %esp
 #else
-	xor	%edx, %edx	/* Clean EDX */
-	pop	%ecx		/* Clean ECX and get ssf arg off the stack */
+	pop	%ecx		/* Clean ECX and get arg6 off the stack */
+	pop	%edx		/* Clean EDX and get ssf off the stack */
 #endif
 	iret
 
