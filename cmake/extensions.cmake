@@ -168,6 +168,11 @@ macro(zephyr_library_named name)
   target_link_libraries(${name} zephyr_interface)
 endmacro()
 
+
+function(zephyr_link_interface interface)
+  target_link_libraries(interface INTERFACE zephyr_interface)
+endfunction()
+
 #
 # zephyr_library versions of normal CMake target_<func> functions
 #
@@ -417,6 +422,19 @@ function(zephyr_library_compile_definitions_ifdef feature_toggle item)
     zephyr_library_compile_definitions(${item} ${ARGN})
   endif()
 endfunction()
+
+function(zephyr_link_interface_ifdef feature_toggle interface)
+  if(${${feature_toggle}})
+    target_link_libraries(${interface} INTERFACE zephyr_interface)
+  endif()
+endfunction()
+
+function(zephyr_library_link_libraries_ifdef feature_toggle item)
+  if(${${feature_toggle}})
+     zephyr_library_link_libraries(${item})
+  endif()
+endfunction()
+
 
 # 3.2. *_ifndef
 # See 3.1 *_ifdef
