@@ -2,12 +2,25 @@
 # GCC-based toolchains
 
 set(CMAKE_C_COMPILER   ${CROSS_COMPILE}gcc     CACHE INTERNAL " " FORCE)
-set(CMAKE_CXX_COMPILER ${CROSS_COMPILE}g++     CACHE INTERNAL " " FORCE)
 set(CMAKE_OBJCOPY      ${CROSS_COMPILE}objcopy CACHE INTERNAL " " FORCE)
 set(CMAKE_OBJDUMP      ${CROSS_COMPILE}objdump CACHE INTERNAL " " FORCE)
 #set(CMAKE_LINKER      ${CROSS_COMPILE}ld      CACHE INTERNAL " " FORCE) # Not in use yet
 set(CMAKE_AR           ${CROSS_COMPILE}ar      CACHE INTERNAL " " FORCE)
 set(CMAKE_RANLILB      ${CROSS_COMPILE}ranlib  CACHE INTERNAL " " FORCE)
+
+if(CONFIG_CPLUSPLUS)
+  set(cplusplus_compiler ${CROSS_COMPILE}g++)
+else()
+  if(EXISTS ${CROSS_COMPILE}g++)
+    set(cplusplus_compiler ${CROSS_COMPILE}g++)
+  else()
+    # When the toolchain doesn't support C++, and we aren't building
+    # with C++ support just set it to something so CMake doesn't
+    # crash, it won't actually be called
+    set(cplusplus_compiler ${CMAKE_C_COMPILER})
+  endif()
+endif()
+set(CMAKE_CXX_COMPILER ${cplusplus_compiler}     CACHE INTERNAL " " FORCE)
 
 include($ENV{ZEPHYR_BASE}/cmake/gcc-m-cpu.cmake)
 
