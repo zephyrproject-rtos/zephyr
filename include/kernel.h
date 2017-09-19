@@ -3917,6 +3917,10 @@ static inline int _is_user_context(void)
 }
 
 /* Interfaces for invoking system calls */
+static inline u32_t _arch_syscall_invoke6(u32_t arg1, u32_t arg2, u32_t arg3,
+					  u32_t arg4, u32_t arg5, u32_t arg6,
+					  u32_t call_id);
+
 static inline u32_t _arch_syscall_invoke5(u32_t arg1, u32_t arg2, u32_t arg3,
 					  u32_t arg4, u32_t arg5,
 					  u32_t call_id);

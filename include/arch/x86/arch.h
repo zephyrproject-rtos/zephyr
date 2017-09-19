@@ -560,6 +560,26 @@ extern struct task_state_segment _main_tss;
  * the entry stub clobbers EDX and ECX on IAMCU systems
  */
 
+static inline u32_t _arch_syscall_invoke6(u32_t arg1, u32_t arg2, u32_t arg3,
+					  u32_t arg4, u32_t arg5, u32_t arg6,
+					  u32_t call_id)
+{
+	u32_t ret;
+
+	__asm__ volatile("push %%ebp\n\t"
+			 "mov %[arg6], %%ebp\n\t"
+			 "int $0x80\n\t"
+			 "pop %%ebp\n\t"
+			 : "=a" (ret)
+#ifdef CONFIG_X86_IAMCU
+			   , "=d" (arg2), "=c" (arg3)
+#endif
+			 : "S" (call_id), "a" (arg1), "d" (arg2),
+			   "c" (arg3), "b" (arg4), "D" (arg5),
+			   [arg6] "r" (arg6));
+	return ret;
+}
+
 static inline u32_t _arch_syscall_invoke5(u32_t arg1, u32_t arg2, u32_t arg3,
 					  u32_t arg4, u32_t arg5, u32_t call_id)
 {
