@@ -100,6 +100,10 @@ function(zephyr_cc_option_fallback option1 option2)
     target_cc_option_fallback(zephyr_interface INTERFACE ${option1} ${option2})
 endfunction()
 
+function(zephyr_ld_options)
+    target_ld_options(zephyr_interface INTERFACE ${ARGV})
+endfunction()
+
 macro(zephyr_get_include_directories includes)
   # With cmake 3.8 this should be possible with generator expressions.
   get_property(__l TARGET zephyr_interface PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
@@ -465,13 +469,12 @@ function(target_cc_option_fallback target scope option1 option2)
   endif()
 endfunction()
 
-function(ld_option option)
-  # TODO: figure out how to test linker flags
-  # string(MAKE_C_IDENTIFIER check${option} check)
-  # check_c_compiler_flag(${option} ${check})
-  # if(${check})
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${option}" PARENT_SCOPE)
-  # endif()
+function(target_ld_options target scope ${ARGV})
+  foreach(option ${ARGV})
+    string(MAKE_C_IDENTIFIER check${option} check)
+    check_c_compiler_flag(${option} ${check})
+    target_link_libraries_ifdef(${check} ${target} ${scope} ${option})
+  endforeach()
 endfunction()
 
 # 3.4. Debugging CMake
