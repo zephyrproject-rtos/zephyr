@@ -325,9 +325,10 @@ static struct net_nbr *nbr_add(struct net_if *iface,
 		return NULL;
 	}
 
-	NET_DBG("[%d] nbr %p IPv6 %s ll %s",
+	NET_DBG("[%d] nbr %p IPv6 %s ll %s iface %p",
 		nbr->idx, nbr, net_sprint_ipv6_addr(addr),
-		net_sprint_ll_addr(lladdr->addr, lladdr->len));
+		net_sprint_ll_addr(lladdr->addr, lladdr->len),
+		nbr->iface);
 
 	return nbr;
 }

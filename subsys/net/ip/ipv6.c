@@ -457,10 +457,11 @@ struct net_nbr *net_ipv6_nbr_add(struct net_if *iface,
 		net_ipv6_send_ns(iface, NULL, NULL, NULL, addr, false);
 	}
 
-	NET_DBG("[%d] nbr %p state %d router %d IPv6 %s ll %s",
+	NET_DBG("[%d] nbr %p state %d router %d IPv6 %s ll %s iface %p",
 		nbr->idx, nbr, state, is_router,
 		net_sprint_ipv6_addr(addr),
-		net_sprint_ll_addr(lladdr->addr, lladdr->len));
+		net_sprint_ll_addr(lladdr->addr, lladdr->len),
+		nbr->iface);
 
 	return nbr;
 }
