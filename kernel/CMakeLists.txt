@@ -31,6 +31,7 @@ target_sources_ifdef(CONFIG_LEGACY_KERNEL         kernel PRIVATE legacy_timer.c)
 target_sources_ifdef(CONFIG_ATOMIC_OPERATIONS_C   kernel PRIVATE atomic_c.c)
 target_sources_ifdef(CONFIG_PTHREAD_IPC           kernel PRIVATE pthread.c)
 target_sources_if_kconfig(                        kernel PRIVATE poll.c)
+target_sources_if_kconfig(                        kernel PRIVATE userspace.c)
 
 add_dependencies(kernel offsets_h)
 
