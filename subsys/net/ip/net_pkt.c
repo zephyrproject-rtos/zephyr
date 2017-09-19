@@ -1474,8 +1474,14 @@ static inline bool insert_data(struct net_pkt *pkt, struct net_buf *frag,
 	do {
 		u16_t count = min(len, net_buf_tailroom(frag));
 
-		/* Copy insert data */
-		memcpy(frag->data + offset, data, count);
+		if (data) {
+			/* Copy insert data */
+			memcpy(frag->data + offset, data, count);
+		} else {
+			/* If there is no data, just clear the area */
+			memset(frag->data + offset, 0, count);
+		}
+
 		net_buf_add(frag, count);
 
 		len -= count;
@@ -1496,7 +1502,10 @@ static inline bool insert_data(struct net_pkt *pkt, struct net_buf *frag,
 			return true;
 		}
 
-		data += count;
+		if (data) {
+			data += count;
+		}
+
 		offset = 0;
 
 		insert = net_pkt_get_frag(pkt, timeout);

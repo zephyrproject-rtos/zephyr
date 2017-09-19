@@ -1242,6 +1242,8 @@ static inline struct net_buf *net_pkt_write_be32(struct net_pkt *pkt,
  * is based on fragment length (only user written data length, any tailroom
  * in fragments does not come to consideration unlike net_pkt_write()) and
  * calculates from input fragment starting position.
+ * If the data pointer is NULL, insert a sequence of zeros with the given
+ * length.
  *
  * Offset examples can be considered from net_pkt_write() api.
  * If the offset is more than already allocated fragments length then it is an
@@ -1251,7 +1253,7 @@ static inline struct net_buf *net_pkt_write_be32(struct net_pkt *pkt,
  * @param frag   Network buffer fragment.
  * @param offset Offset of fragment where insertion will start.
  * @param len    Length of the data to be inserted.
- * @param data   Data to be inserted
+ * @param data   Data to be inserted, can be NULL.
  * @param timeout Affects the action taken should the net buf pool be empty.
  *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
  *        wait as long as necessary. Otherwise, wait up to the specified
