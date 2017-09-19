@@ -25,8 +25,8 @@
 #define LWM2M_FORMAT_OMA_JSON		11543
 
 
-#define ZOAP_RESPONSE_CODE_CLASS(x)	(x >> 5)
-#define ZOAP_RESPONSE_CODE_DETAIL(x)	(x & 0x1F)
+#define COAP_RESPONSE_CODE_CLASS(x)	(x >> 5)
+#define COAP_RESPONSE_CODE_DETAIL(x)	(x & 0x1F)
 
 /* TODO: */
 #define NOTIFY_OBSERVER(o, i, r)	lwm2m_notify_observer(o, i, r)
@@ -45,16 +45,16 @@ struct lwm2m_message {
 	/** LwM2M context related to this message */
 	struct lwm2m_ctx *ctx;
 
-	/** ZoAP packet data related to this message */
-	struct zoap_packet zpkt;
+	/** CoAP packet data related to this message */
+	struct coap_packet cpkt;
 
 	/** Message transmission handling for TYPE_CON */
-	struct zoap_pending *pending;
-	struct zoap_reply *reply;
+	struct coap_pending *pending;
+	struct coap_reply *reply;
 
 	/** Message configuration */
-	const u8_t *token;
-	zoap_reply_t reply_cb;
+	u8_t *token;
+	coap_reply_t reply_cb;
 	lwm2m_message_timeout_cb_t message_timeout_cb;
 	u16_t mid;
 	u8_t type;
@@ -66,7 +66,7 @@ struct lwm2m_message {
 };
 
 /* Establish a request handler callback type */
-typedef int (*udp_request_handler_cb_t)(struct zoap_packet *request,
+typedef int (*udp_request_handler_cb_t)(struct coap_packet *request,
 					struct lwm2m_message *msg);
 
 char *lwm2m_sprint_ip_addr(const struct sockaddr *addr);
@@ -101,11 +101,16 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 			struct lwm2m_engine_obj_field *obj_field,
 			struct lwm2m_engine_context *context);
 
+/* CoAP payload functions */
+u8_t *coap_packet_get_payload_ptr(struct coap_packet *cpkt, u16_t *len,
+				  bool start_marker);
+int coap_packet_set_used(struct coap_packet *cpkt, u16_t len);
+
 void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
 		       bool handle_separate_response,
 		       udp_request_handler_cb_t udp_request_handler);
 
-enum zoap_block_size lwm2m_default_block_size(void);
+enum coap_block_size lwm2m_default_block_size(void);
 
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT)
 u8_t lwm2m_firmware_get_update_state(void);

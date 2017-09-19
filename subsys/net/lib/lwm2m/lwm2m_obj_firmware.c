@@ -7,7 +7,7 @@
 #define SYS_LOG_DOMAIN "lwm2m_obj_firmware"
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_LWM2M_LEVEL
 #include <logging/sys_log.h>
-#include <net/zoap.h>
+#include <net/coap.h>
 #include <string.h>
 #include <init.h>
 

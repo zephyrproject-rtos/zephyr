@@ -716,8 +716,8 @@ int do_write_op_tlv(struct lwm2m_engine_obj *obj,
 				pos += len2;
 			}
 
-			zoap_header_set_code(context->out->out_zpkt,
-					     ZOAP_RESPONSE_CODE_CREATED);
+			/* TODO: Fix me */
+			/* context->out->out_msg->code = COAP_RESPONSE_CODE_CREATED; */
 		} else if (tlv.type == OMA_TLV_TYPE_RESOURCE) {
 			path->res_id = tlv.id;
 			path->level = 3;

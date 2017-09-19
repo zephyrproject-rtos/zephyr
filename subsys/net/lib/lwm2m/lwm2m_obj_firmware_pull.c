@@ -11,7 +11,7 @@
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
-#include <net/zoap.h>
+#include <net/coap.h>
 #include <net/net_app.h>
 #include <net/net_core.h>
 #include <net/http_parser.h>
@@ -33,7 +33,7 @@ static char firmware_uri[PACKAGE_URI_LEN];
 static struct http_parser_url parsed_uri;
 static struct lwm2m_ctx firmware_ctx;
 static int firmware_retry;
-static struct zoap_block_context firmware_block_ctx;
+static struct coap_block_context firmware_block_ctx;
 
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
 #define PROXY_URI_LEN		255
@@ -49,9 +49,9 @@ firmware_udp_receive(struct net_app_ctx *app_ctx, struct net_pkt *pkt,
 	lwm2m_udp_receive(&firmware_ctx, pkt, true, NULL);
 }
 
-static int transfer_request(struct zoap_block_context *ctx,
-			    const u8_t *token, u8_t tkl,
-			    zoap_reply_t reply_cb)
+static int transfer_request(struct coap_block_context *ctx,
+			    u8_t *token, u8_t tkl,
+			    coap_reply_t reply_cb)
 {
 	struct lwm2m_message *msg;
 	int ret;
@@ -72,8 +72,8 @@ static int transfer_request(struct zoap_block_context *ctx,
 		return -ENOMEM;
 	}
 
-	msg->type = ZOAP_TYPE_CON;
-	msg->code = ZOAP_METHOD_GET;
+	msg->type = COAP_TYPE_CON;
+	msg->code = COAP_METHOD_GET;
 	msg->mid = 0;
 	msg->token = token;
 	msg->tkl = tkl;
@@ -86,8 +86,8 @@ static int transfer_request(struct zoap_block_context *ctx,
 	}
 
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
-	ret = zoap_add_option(&msg->zpkt, ZOAP_OPTION_URI_PATH,
-			uri_path, strlen(uri_path));
+	ret = coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_PATH,
+					uri_path, strlen(uri_path));
 	if (ret < 0) {
 		SYS_LOG_ERR("Error adding URI_PATH '%s'", uri_path);
 		goto cleanup;
@@ -102,8 +102,8 @@ static int transfer_request(struct zoap_block_context *ctx,
 	for (i = 0; i < len; i++) {
 		if (firmware_uri[off + i] == '/') {
 			if (path_len > 0) {
-				ret = zoap_add_option(&msg->zpkt,
-						      ZOAP_OPTION_URI_PATH,
+				ret = coap_packet_append_option(&msg->cpkt,
+						      COAP_OPTION_URI_PATH,
 						      cursor, path_len);
 				if (ret < 0) {
 					SYS_LOG_ERR("Error adding URI_PATH");
@@ -121,8 +121,9 @@ static int transfer_request(struct zoap_block_context *ctx,
 
 		if (i == len - 1) {
 			/* flush the rest */
-			ret = zoap_add_option(&msg->zpkt, ZOAP_OPTION_URI_PATH,
-					      cursor, path_len + 1);
+			ret = coap_packet_append_option(&msg->cpkt,
+							COAP_OPTION_URI_PATH,
+							cursor, path_len + 1);
 			if (ret < 0) {
 				SYS_LOG_ERR("Error adding URI_PATH");
 				goto cleanup;
@@ -133,22 +134,22 @@ static int transfer_request(struct zoap_block_context *ctx,
 	}
 #endif
 
-	ret = zoap_add_block2_option(&msg->zpkt, ctx);
+	ret = coap_append_block2_option(&msg->cpkt, ctx);
 	if (ret) {
 		SYS_LOG_ERR("Unable to add block2 option.");
 		goto cleanup;
 	}
 
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
-	ret = zoap_add_option(&msg->zpkt, ZOAP_OPTION_PROXY_URI,
-			firmware_uri, strlen(firmware_uri));
+	ret = coap_packet_append_option(&msg->cpkt, COAP_OPTION_PROXY_URI,
+					firmware_uri, strlen(firmware_uri));
 	if (ret < 0) {
 		SYS_LOG_ERR("Error adding PROXY_URI '%s'", firmware_uri);
 		goto cleanup;
 	}
 #else
 	/* Ask the server to provide a size estimate */
-	ret = zoap_add_option_int(&msg->zpkt, ZOAP_OPTION_SIZE2, 0);
+	ret = coap_append_option_int(&msg->cpkt, COAP_OPTION_SIZE2, 0);
 	if (ret) {
 		SYS_LOG_ERR("Unable to add size2 option.");
 		goto cleanup;
@@ -187,8 +188,8 @@ static int transfer_empty_ack(u16_t mid)
 		return -ENOMEM;
 	}
 
-	msg->type = ZOAP_TYPE_ACK;
-	msg->code = ZOAP_CODE_EMPTY;
+	msg->type = COAP_TYPE_ACK;
+	msg->code = COAP_CODE_EMPTY;
 	msg->mid = mid;
 
 	ret = lwm2m_init_message(msg);
@@ -211,30 +212,30 @@ cleanup:
 }
 
 static int
-do_firmware_transfer_reply_cb(const struct zoap_packet *response,
-			      struct zoap_reply *reply,
+do_firmware_transfer_reply_cb(const struct coap_packet *response,
+			      struct coap_reply *reply,
 			      const struct sockaddr *from)
 {
 	int ret;
 	size_t transfer_offset = 0;
-	const u8_t *token;
+	u8_t token[8];
 	u8_t tkl;
 	u16_t payload_len;
 	u8_t *payload;
-	struct zoap_packet *check_response = (struct zoap_packet *)response;
+	struct coap_packet *check_response = (struct coap_packet *)response;
 	lwm2m_engine_set_data_cb_t callback;
 	u8_t resp_code;
-	struct zoap_block_context received_block_ctx;
+	struct coap_block_context received_block_ctx;
 
 	/* token is used to determine a valid ACK vs a separated response */
-	token = zoap_header_get_token(check_response, &tkl);
+	tkl = coap_header_get_token(check_response, token);
 
 	/* If separated response (ACK) return and wait for response */
-	if (!tkl && zoap_header_get_type(response) == ZOAP_TYPE_ACK) {
+	if (!tkl && coap_header_get_type(response) == COAP_TYPE_ACK) {
 		return 0;
-	} else if (zoap_header_get_type(response) == ZOAP_TYPE_CON) {
+	} else if (coap_header_get_type(response) == COAP_TYPE_CON) {
 		/* Send back ACK so the server knows we received the pkt */
-		ret = transfer_empty_ack(zoap_header_get_id(check_response));
+		ret = transfer_empty_ack(coap_header_get_id(check_response));
 		if (ret < 0) {
 			SYS_LOG_ERR("Error transmitting ACK");
 			return ret;
@@ -242,11 +243,11 @@ do_firmware_transfer_reply_cb(const struct zoap_packet *response,
 	}
 
 	/* Check response code from server. Expecting (2.05) */
-	resp_code = zoap_header_get_code(check_response);
-	if (resp_code != ZOAP_RESPONSE_CODE_CONTENT) {
+	resp_code = coap_header_get_code(check_response);
+	if (resp_code != COAP_RESPONSE_CODE_CONTENT) {
 		SYS_LOG_ERR("Unexpected response from server: %d.%d",
-			    ZOAP_RESPONSE_CODE_CLASS(resp_code),
-			    ZOAP_RESPONSE_CODE_DETAIL(resp_code));
+			    COAP_RESPONSE_CODE_CLASS(resp_code),
+			    COAP_RESPONSE_CODE_DETAIL(resp_code));
 		lwm2m_firmware_set_update_result(RESULT_CONNECTION_LOST);
 		return -ENOENT;
 	}
@@ -255,7 +256,7 @@ do_firmware_transfer_reply_cb(const struct zoap_packet *response,
 	memcpy(&received_block_ctx, &firmware_block_ctx,
 	       sizeof(firmware_block_ctx));
 
-	ret = zoap_update_from_block(check_response, &firmware_block_ctx);
+	ret = coap_update_from_block(check_response, &firmware_block_ctx);
 	if (ret < 0) {
 		SYS_LOG_ERR("Error from block update: %d", ret);
 		lwm2m_firmware_set_update_result(RESULT_INTEGRITY_FAILED);
@@ -273,10 +274,11 @@ do_firmware_transfer_reply_cb(const struct zoap_packet *response,
 	}
 
 	/* Reach last block if transfer_offset equals to 0 */
-	transfer_offset = zoap_next_block(check_response, &firmware_block_ctx);
+	transfer_offset = coap_next_block(check_response, &firmware_block_ctx);
 
 	/* Process incoming data */
-	payload = zoap_packet_get_payload(check_response, &payload_len);
+	payload = coap_packet_get_payload_ptr(check_response, &payload_len,
+					      false);
 	if (payload_len > 0) {
 		SYS_LOG_DBG("total: %zd, current: %zd",
 			    firmware_block_ctx.total_size,
@@ -317,13 +319,13 @@ do_firmware_transfer_reply_cb(const struct zoap_packet *response,
 
 static void do_transmit_timeout_cb(struct lwm2m_message *msg)
 {
-	const u8_t *token;
+	u8_t token[8];
 	u8_t tkl;
 
 	if (firmware_retry < PACKET_TRANSFER_RETRY_MAX) {
 		/* retry block */
 		SYS_LOG_WRN("TIMEOUT - Sending a retry packet!");
-		token = zoap_header_get_token(&msg->zpkt, &tkl);
+		tkl = coap_header_get_token(&msg->cpkt, token);
 
 		transfer_request(&firmware_block_ctx, token, tkl,
 				 do_firmware_transfer_reply_cb);
@@ -432,9 +434,9 @@ static void firmware_transfer(struct k_work *work)
 	}
 
 	/* reset block transfer context */
-	zoap_block_transfer_init(&firmware_block_ctx,
+	coap_block_transfer_init(&firmware_block_ctx,
 				 lwm2m_default_block_size(), 0);
-	transfer_request(&firmware_block_ctx, zoap_next_token(), 8,
+	transfer_request(&firmware_block_ctx, coap_next_token(), 8,
 			 do_firmware_transfer_reply_cb);
 	return;
 
