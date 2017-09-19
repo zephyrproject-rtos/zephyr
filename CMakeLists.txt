@@ -95,7 +95,7 @@ zephyr_compile_options(
   $<$<COMPILE_LANGUAGE:ASM>:-D_ASMLANGUAGE>
 )
 
-zephyr_link_libraries(
+zephyr_ld_options(
   -nostartfiles
   -nodefaultlibs
   -nostdlib
@@ -201,7 +201,7 @@ if(IS_TEST)
 endif()
 
 set_ifndef(LINKERFLAGPREFIX -Wl)
-zephyr_link_libraries(
+zephyr_ld_options(
   ${LINKERFLAGPREFIX},-X
   ${LINKERFLAGPREFIX},-N
   ${LINKERFLAGPREFIX},--gc-sections
