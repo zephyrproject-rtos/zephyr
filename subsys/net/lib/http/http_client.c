@@ -65,44 +65,47 @@ int http_request(struct http_client_ctx *ctx,
 	struct net_pkt *pkt;
 	int ret = -ENOMEM;
 
-	pkt = net_pkt_get_tx(ctx->tcp.ctx, timeout);
+	pkt = net_pkt_get_tx(ctx->tcp.ctx, BUF_ALLOC_TIMEOUT);
 	if (!pkt) {
 		return -ENOMEM;
 	}
 
 	if (!net_pkt_append_all(pkt, strlen(method), (u8_t *)method,
-				timeout)) {
+				BUF_ALLOC_TIMEOUT)) {
 		goto out;
 	}
 
 	/* Space after method string. */
-	if (!net_pkt_append_all(pkt, 1, (u8_t *)" ", timeout)) {
+	if (!net_pkt_append_all(pkt, 1, (u8_t *)" ", BUF_ALLOC_TIMEOUT)) {
 		goto out;
 	}
 
 	if (!net_pkt_append_all(pkt, strlen(req->url), (u8_t *)req->url,
-				timeout)) {
+				BUF_ALLOC_TIMEOUT)) {
 		goto out;
 	}
 
 	if (!net_pkt_append_all(pkt, strlen(req->protocol),
-				(u8_t *)req->protocol, timeout)) {
+				(u8_t *)req->protocol, BUF_ALLOC_TIMEOUT)) {
 		goto out;
 	}
 
 	if (req->host) {
 		if (!net_pkt_append_all(pkt, strlen(HTTP_HOST),
-					(u8_t *)HTTP_HOST, timeout)) {
+					(u8_t *)HTTP_HOST,
+					BUF_ALLOC_TIMEOUT)) {
 			goto out;
 		}
 
 		if (!net_pkt_append_all(pkt, strlen(req->host),
-					(u8_t *)req->host, timeout)) {
+					(u8_t *)req->host,
+					BUF_ALLOC_TIMEOUT)) {
 			goto out;
 		}
 
 		if (!net_pkt_append_all(pkt, strlen(HTTP_CRLF),
-					(u8_t *)HTTP_CRLF, timeout)) {
+					(u8_t *)HTTP_CRLF,
+					BUF_ALLOC_TIMEOUT)) {
 			goto out;
 		}
 	}
@@ -110,7 +113,7 @@ int http_request(struct http_client_ctx *ctx,
 	if (req->header_fields) {
 		if (!net_pkt_append_all(pkt, strlen(req->header_fields),
 					(u8_t *)req->header_fields,
-					timeout)) {
+					BUF_ALLOC_TIMEOUT)) {
 			goto out;
 		}
 	}
@@ -118,13 +121,13 @@ int http_request(struct http_client_ctx *ctx,
 	if (req->content_type_value) {
 		if (!net_pkt_append_all(pkt, strlen(HTTP_CONTENT_TYPE),
 					(u8_t *)HTTP_CONTENT_TYPE,
-					timeout)) {
+					BUF_ALLOC_TIMEOUT)) {
 			goto out;
 		}
 
 		if (!net_pkt_append_all(pkt, strlen(req->content_type_value),
 					(u8_t *)req->content_type_value,
-					timeout)) {
+					BUF_ALLOC_TIMEOUT)) {
 			goto out;
 		}
 	}
@@ -142,21 +145,21 @@ int http_request(struct http_client_ctx *ctx,
 		}
 
 		if (!net_pkt_append_all(pkt, ret, (u8_t *)content_len_str,
-					timeout)) {
+					BUF_ALLOC_TIMEOUT)) {
 			ret = -ENOMEM;
 			goto out;
 		}
 
 		if (!net_pkt_append_all(pkt, req->payload_size,
 					(u8_t *)req->payload,
-					timeout)) {
+					BUF_ALLOC_TIMEOUT)) {
 			ret = -ENOMEM;
 			goto out;
 		}
 	} else {
 		if (!net_pkt_append_all(pkt, strlen(HTTP_EOF),
 					(u8_t *)HTTP_EOF,
-					timeout)) {
+					BUF_ALLOC_TIMEOUT)) {
 			goto out;
 		}
 	}
@@ -1344,7 +1347,7 @@ int http_client_send_req(struct http_client_ctx *ctx,
 	{
 		print_info(ctx, ctx->req.method);
 
-		ret = http_request(ctx, req, BUF_ALLOC_TIMEOUT);
+		ret = http_request(ctx, req, timeout);
 		if (ret < 0) {
 			NET_DBG("Send error (%d)", ret);
 			goto out;
