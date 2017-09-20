@@ -21,8 +21,8 @@
 
 #include <net/buf.h>
 
-#include <usb_device.h>
-#include <usb_common.h>
+#include <usb/usb_device.h>
+#include <usb/usb_common.h>
 
 #include <net/ieee802154_radio.h>
 #include <net_private.h>
