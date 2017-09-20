@@ -22,20 +22,50 @@ software continues to be available under the terms that the author desired.
 
 .. _GitHub repo: https://github.com/zephyrproject-rtos/zephyr
 
-Zephyr uses the `Apache 2.0 license`_ (as found in the LICENSE file in the
-project's `GitHub repo`_) to strike a balance between open contribution and
-allowing you to use the software however you would like to. There are some
-imported or reused components of the Zephyr project that use other licensing,
-as described in `Zephyr Licensing`_.
+Zephyr uses the `Apache 2.0 license`_ (as found in the LICENSE file in
+the project's `GitHub repo`_) to strike a balance between open
+contribution and allowing you to use the software however you would like
+to.  The Apache 2.0 license is a permisive open source license that
+allows you to freely use, modify, distribute and sell your own products
+that include Apache 2.0 licensed software.  (For more information about
+this, check out articles such as `Why choose Apache 2.0 licensing`_ and
+`Top 10 Apache License Questions Answered`_).
 
-.. _Zephyr Licensing:
-   https://www.zephyrproject.org/doc/LICENSING.html
+.. _Why choose Apache 2.0 licensing:
+   https://www.zephyrproject.org/about/faq/what-rationale-choosing-apache-20-license
 
-The license tells you what rights you have as a developer, provided by the
+.. _Top 10 Apache License Questions Answered:
+   https://www.whitesourcesoftware.com/whitesource-blog/top-10-apache-license-questions-answered/
+
+A license tells you what rights you have as a developer, as provided by the
 copyright holder. It is important that the contributor fully understands the
 licensing rights and agrees to them. Sometimes the copyright holder isn't the
 contributor, such as when the contributor is doing work on behalf of a
 company.
+
+Components using other Licenses
+===============================
+
+There are some imported or reused components of the Zephyr project that
+use other licensing, as described in `Zephyr Licensing`_.
+
+.. _Zephyr Licensing:
+   https://www.zephyrproject.org/doc/LICENSING.html
+
+Importing code into the Zephyr OS from other projects that use a license
+other than the Apache 2.0 license needs to be fully understood in
+context and approved by the Zephyr governing board.
+
+By carefully reviewing potential contributions and also enforcing
+`developer attestations <DCO>`_ for contributed code, we can ensure that
+the Zephyr community can develop products with the Zephyr Project
+without concerns over patent or copyright issues.
+
+See `Contributing non-Apache 2.0 components`_ for more information about
+this contributing and review process for imported components.
+
+.. _Contributing non-Apache 2.0 components:
+   https://www.zephyrproject.org/doc/contribute/contribute_non-apache.html
 
 .. _DCO:
 
@@ -247,6 +277,8 @@ it when committing code, edit your *.git/hooks/pre-commit* file to contain:
     #!/bin/sh
     set -e exec
     exec git diff --cached | ${ZEPHYR_BASE}/scripts/checkpatch.pl - || true
+
+.. _Contribution workflow:
 
 Contribution Workflow
 *********************
