@@ -17,6 +17,20 @@
 
 static char cwd[MAX_PATH_LEN] = "/";
 
+static void create_abs_path(const char *name, char *path, size_t len)
+{
+	if (name[0] == '/') {
+		strncpy(path, name, len - 1);
+		path[len - 1] = '\0';
+	} else {
+		if (strcmp(cwd, "/") == 0) {
+			snprintf(path, len, "/%s", name);
+		} else {
+			snprintf(path, len, "%s/%s", cwd, name);
+		}
+	}
+}
+
 static int cmd_mkdir(int argc, char *argv[])
 {
 	int res;
@@ -27,16 +41,8 @@ static int cmd_mkdir(int argc, char *argv[])
 		return 0;
 	}
 
-	if (argv[1][0] == '/') {
-		strncpy(path, argv[1], sizeof(path) - 1);
-		path[MAX_PATH_LEN - 1] = '\0';
-	} else {
-		if (strcmp(cwd, "/") == 0) {
-			snprintf(path, sizeof(path), "/%s", argv[1]);
-		} else {
-			snprintf(path, sizeof(path), "%s/%s", cwd, argv[1]);
-		}
-	}
+	create_abs_path(argv[1], path, sizeof(path));
+
 	res = fs_mkdir(path);
 	if (res) {
 		printk("Error creating dir[%d]\n", res);
@@ -54,15 +60,8 @@ static int cmd_ls(int argc, char *argv[])
 
 	if (argc < 2) {
 		strcpy(path, cwd);
-	} else if (argv[1][0] == '/') {
-		strncpy(path, argv[1], sizeof(path) - 1);
-		path[MAX_PATH_LEN - 1] = '\0';
 	} else {
-		if (strcmp(cwd, "/") == 0) {
-			snprintf(path, sizeof(path), "/%s", argv[1]);
-		} else {
-			snprintf(path, sizeof(path), "%s/%s", cwd, argv[1]);
-		}
+		create_abs_path(argv[1], path, sizeof(path));
 	}
 
 	err = fs_opendir(&dir, path);
@@ -127,16 +126,7 @@ static int cmd_cd(int argc, char *argv[])
 		return 0;
 	}
 
-	if (argv[1][0] == '/') {
-		strncpy(path, argv[1], sizeof(path) - 1);
-		path[MAX_PATH_LEN - 1] = '\0';
-	} else {
-		if (strcmp(cwd, "/") == 0) {
-			snprintf(path, sizeof(path), "/%s", argv[1]);
-		} else {
-			snprintf(path, sizeof(path), "%s/%s", cwd, argv[1]);
-		}
-	}
+	create_abs_path(argv[1], path, sizeof(path));
 
 	err = fs_stat(path, &entry);
 	if (err) {
