@@ -22,6 +22,20 @@ else()
 endif()
 set(CMAKE_CXX_COMPILER ${cplusplus_compiler}     CACHE INTERNAL " " FORCE)
 
+execute_process(
+  COMMAND ${CMAKE_C_COMPILER} --print-file-name=include
+  OUTPUT_VARIABLE _OUTPUT
+)
+string(REGEX REPLACE "\n" "" _OUTPUT ${_OUTPUT})
+set(NOSTDINC ${_OUTPUT})
+
+execute_process(
+  COMMAND ${CMAKE_C_COMPILER} --print-file-name=include-fixed
+  OUTPUT_VARIABLE _OUTPUT
+)
+string(REGEX REPLACE "\n" "" _OUTPUT ${_OUTPUT})
+list(APPEND NOSTDINC ${_OUTPUT})
+
 include($ENV{ZEPHYR_BASE}/cmake/gcc-m-cpu.cmake)
 
 if("${ARCH}" STREQUAL "arm")
@@ -47,13 +61,13 @@ elseif("${ARCH}" STREQUAL "arc")
 endif()
 
 execute_process(
-  COMMAND ${CMAKE_C_COMPILER} ${TOOLCHAIN_C_FLAGS} --sysroot ${SYSROOT_DIR} --print-libgcc-file-name
+  COMMAND ${CMAKE_C_COMPILER} ${TOOLCHAIN_C_FLAGS} --print-libgcc-file-name
   OUTPUT_VARIABLE LIBGCC_DIR
   OUTPUT_STRIP_TRAILING_WHITESPACE
   )
 
 execute_process(
-  COMMAND ${CMAKE_C_COMPILER} ${TOOLCHAIN_C_FLAGS} --sysroot ${SYSROOT_DIR} --print-multi-directory
+  COMMAND ${CMAKE_C_COMPILER} ${TOOLCHAIN_C_FLAGS} --print-multi-directory
   OUTPUT_VARIABLE NEWLIB_DIR
   OUTPUT_STRIP_TRAILING_WHITESPACE
   )
@@ -65,8 +79,8 @@ assert(LIBGCC_DIR "LIBGCC_DIR not found")
 LIST(APPEND LIB_INCLUDE_DIR -L${LIBGCC_DIR})
 LIST(APPEND TOOLCHAIN_LIBS gcc)
 
-set(LIBC_INCLUDE_DIR ${SYSROOT_DIR}/usr/include)
-set(LIBC_LIBRARY_DIR ${SYSROOT_DIR}/usr/lib/${NEWLIB_DIR})
+set(LIBC_INCLUDE_DIR ${SYSROOT_DIR}/include)
+set(LIBC_LIBRARY_DIR ${SYSROOT_DIR}/lib/${NEWLIB_DIR})
 
 # For CMake to be able to test if a compiler flag is supported by the
 # toolchain we need to give CMake the necessary flags to compile and
@@ -74,18 +88,8 @@ set(LIBC_LIBRARY_DIR ${SYSROOT_DIR}/usr/lib/${NEWLIB_DIR})
 #
 # CMake checks compiler flags with check_c_compiler_flag() (Which we
 # wrap with target_cc_option() in extentions.cmake)
-set(CMAKE_REQUIRED_FLAGS "-nostartfiles -nostdlib --sysroot=${SYSROOT_DIR} -Wl,--unresolved-symbols=ignore-in-object-files")
-
-execute_process(
-  COMMAND ${CMAKE_C_COMPILER} --print-file-name=include
-  OUTPUT_VARIABLE _OUTPUT
-)
-string(REGEX REPLACE "\n" "" _OUTPUT ${_OUTPUT})
-set(NOSTDINC ${_OUTPUT})
-
-execute_process(
-  COMMAND ${CMAKE_C_COMPILER} --print-file-name=include-fixed
-  OUTPUT_VARIABLE _OUTPUT
-)
-string(REGEX REPLACE "\n" "" _OUTPUT ${_OUTPUT})
-list(APPEND NOSTDINC ${_OUTPUT})
+foreach(isystem_include_dir ${NOSTDINC})
+  list(APPEND isystem_include_flags -isystem ${isystem_include_dir})
+endforeach()
+set(CMAKE_REQUIRED_FLAGS -nostartfiles -nostdlib ${isystem_include_flags} -Wl,--unresolved-symbols=ignore-in-object-files)
+string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
