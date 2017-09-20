@@ -8,8 +8,13 @@
 #include <errno.h>
 #include <stdio.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <linker/linker-defs.h>
 #include <misc/util.h>
+
+#if CONFIG_EPOCH_TIME
+#include <time/epoch_time.h>
+#endif
 
 #define USED_RAM_END_ADDR   POINTER_TO_UINT(&_end)
 
@@ -157,3 +162,42 @@ void *_sbrk(int count)
 	}
 }
 FUNC_ALIAS(_sbrk, sbrk, void *);
+
+int _gettimeofday(struct timeval *tv, void *tz)
+{
+#if CONFIG_EPOCH_TIME
+	struct epoch_time time;
+
+	epoch_time_get(&time);
+	if (tv) {
+		tv->tv_sec = time.secs;
+		tv->tv_usec = time.usecs;
+	}
+
+	return 0;
+#else
+	errno = -ENOTSUP;
+	return -1;
+#endif
+}
+FUNC_ALIAS(_gettimeofday, gettimeofday, int);
+
+int _settimeofday(const struct timeval *tv, const struct timezone *tz)
+{
+#if CONFIG_EPOCH_TIME
+	struct epoch_time time;
+
+	if (!tv) {
+		errno = EFAULT;
+		return -1;
+	}
+
+	time.secs = tv->tv_sec;
+	time.usecs = tv->tv_usec;
+	return epoch_time_set(&time);
+#else
+	errno = -ENOTSUP;
+	return -1;
+#endif
+}
+FUNC_ALIAS(_settimeofday, settimeofday, int);

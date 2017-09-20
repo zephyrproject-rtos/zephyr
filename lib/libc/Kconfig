@@ -11,6 +11,7 @@ menu "C Library"
 config NEWLIB_LIBC
 	bool
 	prompt "Build with newlib c library"
+	select EPOCH_TIME
 	help
 	Build with newlib library. The newlib library is expected to be
 	part of the SDK in this case.
