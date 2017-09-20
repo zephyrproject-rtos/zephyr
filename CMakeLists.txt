@@ -3,6 +3,11 @@ cmake_minimum_required(VERSION 3.7)
 project(Zephyr-Kernel VERSION ${PROJECT_VERSION})
 enable_language(C CXX ASM)
 
+# Verify that the toolchain can compile a dummy file, if it is not we
+# won't be able to test test for compatiblity with certain C flags.
+check_c_compiler_flag("" toolchain_is_ok)
+assert(toolchain_is_ok "The toolchain is unable to build a dummy C file. See CMakeError.log.")
+
 # Do not generate make install target.
 set(CMAKE_SKIP_INSTALL_RULES ON)
 
