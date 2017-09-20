@@ -36,7 +36,7 @@
 static u32_t seq_buffer[2][BUFFER_SIZE];
 
 static struct adc_seq_entry sample = {
-	.sampling_delay = 12,
+	.sampling_delay = 30,
 	.channel_id = CHANNEL,
 	.buffer_length = BUFFER_SIZE * sizeof(seq_buffer[0][0])
 };
