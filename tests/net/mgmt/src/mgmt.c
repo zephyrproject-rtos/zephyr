@@ -170,10 +170,10 @@ static int test_synchronous_event_listener(u32_t times, bool on_iface)
 
 	if (on_iface) {
 		ret = net_mgmt_event_wait_on_iface(net_if_get_default(),
-						   event_mask, NULL,
+						   event_mask, NULL, NULL,
 						   K_SECONDS(1));
 	} else {
-		ret = net_mgmt_event_wait(event_mask, NULL, NULL,
+		ret = net_mgmt_event_wait(event_mask, NULL, NULL, NULL,
 					  K_SECONDS(1));
 	}
 

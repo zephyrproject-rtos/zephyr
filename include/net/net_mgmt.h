@@ -134,6 +134,10 @@ struct net_mgmt_event_callback {
 		struct k_sem *sync_call;
 	};
 
+#ifdef CONFIG_NET_MGMT_EVENT_INFO
+	const void *info;
+#endif
+
 	/** A mask of network events on which the above handler should be
 	 * called in case those events come. Such mask can be modified
 	 * whenever necessary by the owner, and thus will affect the handler
@@ -189,8 +193,21 @@ void net_mgmt_del_event_callback(struct net_mgmt_event_callback *cb);
  * @param mgmt_event The actual network event code to notify
  * @param iface a valid pointer on a struct net_if if only the event is
  *        based on an iface. NULL otherwise.
+ * @param info a valid pointer on the information you want to pass along
+ *        with the event. NULL otherwise. Note the data pointed there is
+ *        normalized by the related event.
+ * @param length size of the data pointed by info pointer.
+ *
+ * Note: info and length are disabled if CONFIG_NET_MGMT_EVENT_INFO
+ *       is not defined.
  */
-void net_mgmt_event_notify(u32_t mgmt_event, struct net_if *iface);
+void net_mgmt_event_notify_with_info(u32_t mgmt_event, struct net_if *iface,
+				     void *info, size_t length);
+
+static inline void net_mgmt_event_notify(u32_t mgmt_event, struct net_if *iface)
+{
+	net_mgmt_event_notify_with_info(mgmt_event, iface, NULL, 0);
+}
 
 /**
  * @brief Used to wait synchronously on an event mask
@@ -202,6 +219,8 @@ void net_mgmt_event_notify(u32_t mgmt_event, struct net_if *iface);
  *        event has originated from. This is valid if only the event mask
  *        has bit NET_MGMT_IFACE_BIT set relevantly, depending on events
  *        the caller wants to listen to.
+ * @param info a valid pointer if user wants to get the information the
+ *        event might bring along. NULL otherwise.
  * @param timeout a delay in milliseconds. K_FOREVER can be used to wait
  *        indefinitely.
  *
@@ -212,6 +231,7 @@ void net_mgmt_event_notify(u32_t mgmt_event, struct net_if *iface);
 int net_mgmt_event_wait(u32_t mgmt_event_mask,
 			u32_t *raised_event,
 			struct net_if **iface,
+			const void **info,
 			int timeout);
 
 /**
@@ -223,6 +243,8 @@ int net_mgmt_event_wait(u32_t mgmt_event_mask,
  * @param raised_event a pointer on a u32_t to get which event from
  *        the mask generated the event. Can be NULL if the caller is not
  *        interested in that information.
+ * @param info a valid pointer if user wants to get the information the
+ *        event might bring along. NULL otherwise.
  * @param timeout a delay in milliseconds. K_FOREVER can be used to wait
  *        indefinitely.
  *
@@ -233,6 +255,7 @@ int net_mgmt_event_wait(u32_t mgmt_event_mask,
 int net_mgmt_event_wait_on_iface(struct net_if *iface,
 				 u32_t mgmt_event_mask,
 				 u32_t *raised_event,
+				 const void **info,
 				 int timeout);
 
 /**
@@ -249,6 +272,7 @@ void net_mgmt_event_init(void);
 static inline int net_mgmt_event_wait(u32_t mgmt_event_mask,
 				      u32_t *raised_event,
 				      struct net_if **iface,
+				      const void **info,
 				      int timeout)
 {
 	return 0;
@@ -257,6 +281,7 @@ static inline int net_mgmt_event_wait(u32_t mgmt_event_mask,
 static inline int net_mgmt_event_wait_on_iface(struct net_if *iface,
 					       u32_t mgmt_event_mask,
 					       u32_t *raised_event,
+					       const void **info,
 					       int timeout)
 {
 	return 0;
