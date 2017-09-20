@@ -223,10 +223,8 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt)
 				       &NET_IPV4_HDR(pkt)->dst)) {
 		addr = &net_pkt_iface(pkt)->ipv4.gw;
 		if (net_is_ipv4_addr_unspecified(addr)) {
-			if (IS_ENABLED(CONFIG_NET_DEBUG_ARP)) {
-				NET_ERR("Gateway not set for iface %p",
-					net_pkt_iface(pkt));
-			}
+			NET_ERR("Gateway not set for iface %p",
+				net_pkt_iface(pkt));
 
 			return NULL;
 		}
