@@ -112,6 +112,12 @@ static int rtc_qmsi_set_config(struct device *dev, struct rtc_config *cfg)
 	return result;
 }
 
+static int rtc_qmsi_set_time(struct device *dev, const u32_t ticks)
+{
+	/* TODO: implementation */
+	return -ENOTSUP;
+}
+
 static int rtc_qmsi_set_alarm(struct device *dev, const u32_t alarm_val)
 {
 	return qm_rtc_set_alarm(QM_RTC_0, alarm_val);
@@ -137,6 +143,7 @@ static const struct rtc_driver_api api = {
 	.disable = rtc_qmsi_disable,
 	.read = rtc_qmsi_read,
 	.set_config = rtc_qmsi_set_config,
+	.set_time = rtc_qmsi_set_time,
 	.set_alarm = rtc_qmsi_set_alarm,
 	.get_pending_int = rtc_qmsi_get_pending_int,
 	.get_ticks_per_sec = rtc_qmsi_get_ticks_per_sec,

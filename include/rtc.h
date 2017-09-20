@@ -66,6 +66,8 @@ typedef void (*rtc_api_enable)(struct device *dev);
 typedef void (*rtc_api_disable)(struct device *dev);
 typedef int (*rtc_api_set_config)(struct device *dev,
 				  struct rtc_config *config);
+typedef int (*rtc_api_set_time)(struct device *dev,
+				const u32_t ticks);
 typedef int (*rtc_api_set_alarm)(struct device *dev,
 				 const u32_t alarm_val);
 typedef u32_t (*rtc_api_read)(struct device *dev);
@@ -77,6 +79,7 @@ struct rtc_driver_api {
 	rtc_api_disable disable;
 	rtc_api_read read;
 	rtc_api_set_config set_config;
+	rtc_api_set_time set_time;
 	rtc_api_set_alarm set_alarm;
 	rtc_api_get_pending_int get_pending_int;
 	rtc_api_get_ticks_per_sec get_ticks_per_sec;
@@ -110,6 +113,14 @@ static inline int rtc_set_config(struct device *dev,
 	const struct rtc_driver_api *api = dev->driver_api;
 
 	return api->set_config(dev, cfg);
+}
+
+static inline int rtc_set_time(struct device *dev,
+			       const u32_t ticks)
+{
+	const struct rtc_driver_api *api = dev->driver_api;
+
+	return api->set_time(dev, ticks);
 }
 
 static inline int rtc_set_alarm(struct device *dev,
