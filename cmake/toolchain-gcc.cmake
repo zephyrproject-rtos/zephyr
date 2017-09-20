@@ -60,6 +60,8 @@ execute_process(
 
 get_filename_component(LIBGCC_DIR ${LIBGCC_DIR} DIRECTORY)
 
+assert(LIBGCC_DIR "LIBGCC_DIR not found")
+
 LIST(APPEND LIB_INCLUDE_DIR -L${LIBGCC_DIR})
 LIST(APPEND TOOLCHAIN_LIBS gcc)
 
