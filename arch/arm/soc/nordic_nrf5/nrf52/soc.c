@@ -69,6 +69,24 @@ static bool ftpan_36(void)
 	return false;
 }
 
+static bool errata_136_nrf52832(void)
+{
+	if ((((*(u32_t *)0xF0000FE0) & 0x000000FF) == 0x6) &&
+	    (((*(u32_t *)0xF0000FE4) & 0x0000000F) == 0x0)) {
+		if (((*(u32_t *)0xF0000FE8) & 0x000000F0) == 0x30) {
+			return true;
+		}
+		if (((*(u32_t *)0xF0000FE8) & 0x000000F0) == 0x40) {
+			return true;
+		}
+		if (((*(u32_t *)0xF0000FE8) & 0x000000F0) == 0x50) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static void nordicsemi_nrf52832_init(void)
 {
 	/* Workaround for FTPAN-32 "DIF: Debug session automatically
@@ -95,6 +113,17 @@ static void nordicsemi_nrf52832_init(void)
 		NRF_CLOCK->EVENTS_DONE = 0;
 		NRF_CLOCK->EVENTS_CTTO = 0;
 	}
+
+	/* Workaround for Errata 136 "System: Bits in RESETREAS are set when
+	 * they should not be" found at the Errata document for your device
+	 * located at https://infocenter.nordicsemi.com/
+	 */
+	if (errata_136_nrf52832()) {
+		if (NRF_POWER->RESETREAS & POWER_RESETREAS_RESETPIN_Msk) {
+			NRF_POWER->RESETREAS = ~POWER_RESETREAS_RESETPIN_Msk;
+		}
+	}
+
 	/* Configure GPIO pads as pPin Reset pin if Pin Reset
 	* capabilities desired. If CONFIG_GPIO_AS_PINRESET is not
 	* defined, pin reset will not be available. One GPIO (see
@@ -160,7 +189,6 @@ static bool errata_36(void)
 	return false;
 }
 
-
 static bool errata_98(void)
 {
 	if ((*(u32_t *)0x10000130ul == 0x8ul) &&
@@ -170,7 +198,6 @@ static bool errata_98(void)
 
 	return false;
 }
-
 
 static bool errata_103(void)
 {
@@ -182,7 +209,6 @@ static bool errata_103(void)
 	return false;
 }
 
-
 static bool errata_115(void)
 {
 	if ((*(u32_t *)0x10000130ul == 0x8ul) &&
@@ -193,8 +219,17 @@ static bool errata_115(void)
 	return false;
 }
 
-
 static bool errata_120(void)
+{
+	if ((*(u32_t *)0x10000130ul == 0x8ul) &&
+	    (*(u32_t *)0x10000134ul == 0x0ul)) {
+		return true;
+	}
+
+	return false;
+}
+
+static bool errata_136_nrf52840(void)
 {
 	if ((*(u32_t *)0x10000130ul == 0x8ul) &&
 	    (*(u32_t *)0x10000134ul == 0x0ul)) {
@@ -251,6 +286,16 @@ static void nordicsemi_nrf52840_init(void)
 		*(volatile u32_t *)0x40029640ul = 0x200ul;
 	}
 
+	/* Workaround for Errata 136 "System: Bits in RESETREAS are set when
+	 * they should not be" found at the Errata document for your device
+	 * located at https://infocenter.nordicsemi.com/
+	 */
+	if (errata_136_nrf52840()) {
+		if (NRF_POWER->RESETREAS & POWER_RESETREAS_RESETPIN_Msk) {
+			NRF_POWER->RESETREAS = ~POWER_RESETREAS_RESETPIN_Msk;
+		}
+	}
+
 	/* Configure GPIO pads as pPin Reset pin if Pin Reset capabilities
 	 * desired.
 	 * If CONFIG_GPIO_AS_PINRESET is not defined, pin reset will not be
@@ -288,6 +333,7 @@ static void nordicsemi_nrf52840_init(void)
 		| (GPIO_PIN_CNF_INPUT_Connect << GPIO_PIN_CNF_INPUT_Pos) |
 		(GPIO_PIN_CNF_DIR_Output << GPIO_PIN_CNF_DIR_Pos);
 #endif
+
 	/* Enable Trace functionality. If ENABLE_TRACE is not defined, TRACE
 	 * pins will be used as GPIOs (see Product Specification to see which
 	 * ones).
