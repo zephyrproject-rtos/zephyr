@@ -2045,7 +2045,7 @@ static const struct shell_cmd bt_commands[] = {
 #endif /* CONFIG_BT_RFCOMM */
 #endif
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-	{ "advx", cmd_advx, "<on off> [coded] [anon] [txp]" },
+	{ "advx", cmd_advx, "<on off> [coded] [anon] [txp] [ad]" },
 	{ "scanx", cmd_scanx, "<on passive off> [coded]" },
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 	{ NULL, NULL, NULL }
