@@ -127,6 +127,11 @@ extern "C" {
 #include <misc/util.h>
 #include <drivers/rand32.h>
 
+/* For IMG_MANAGER */
+#if defined(CONFIG_SOC_FLASH_MCUX)
+#define FLASH_DRIVER_NAME	CONFIG_SOC_FLASH_MCUX_DEV_NAME
+#endif
+
 #endif /* !_ASMLANGUAGE */
 
 #ifdef __cplusplus
