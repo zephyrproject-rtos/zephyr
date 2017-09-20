@@ -1,5 +1,6 @@
 add_subdirectory_ifdef(CONFIG_BT		bluetooth)
 add_subdirectory_ifdef(CONFIG_CONSOLE_PULL 	console)
+add_subdirectory_ifdef(CONFIG_CPLUSPLUS 	cpp)
 add_subdirectory(debug)
 add_subdirectory_ifdef(CONFIG_DISK_ACCESS 	disk)
 add_subdirectory_ifdef(CONFIG_FILE_SYSTEM 	fs)
