@@ -127,7 +127,7 @@ Implementation
 Defining a regular ISR
 ======================
 
-An ISR is defined at run-time by calling :c:macro:`IRQ_CONNECT`. It must
+An ISR is defined at runtime by calling :c:macro:`IRQ_CONNECT`. It must
 then be enabled by calling :cpp:func:`irq_enable()`.
 
 .. important::

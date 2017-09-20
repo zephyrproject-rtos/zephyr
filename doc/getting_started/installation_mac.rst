@@ -132,7 +132,7 @@ Setting the Toolchain Options
 =============================
 
 In the Zephyr kernel source tree we provide two configurations for
-both ARM and X86 that can be used to pre-select the options needed
+both ARM and X86 that can be used to preselect the options needed
 for building the toolchain.
 The configuration files can be found in :file:`${ZEPHYR_BASE}/scripts/cross_compiler/`.
 

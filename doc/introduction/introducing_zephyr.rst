@@ -44,7 +44,7 @@ small-footprint OSes:
    to be defined at compile-time, which reduces code size and
    increases performance.
 
-#. **Minimal error checking**. Provides minimal run-time error checking
+#. **Minimal error checking**. Provides minimal runtime error checking
    to reduce code size and increase performance. An optional error-checking
    infrastructure is provided to assist in debugging during application
    development.

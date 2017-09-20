@@ -405,9 +405,9 @@ The quality assurance part encompasses the following criteria:
    possible.
 
 -  **Automation:** the review process and checks for coding rule
-       adherence are a mandatory part of the pre-commit checks. To
+       adherence are a mandatory part of the precommit checks. To
        ensure consistent application, they shall be automated as part of
-       the pre-commit procedure. Prior to merging large pieces of code
+       the precommit procedure. Prior to merging large pieces of code
        in from subsystems, in addition to review process and coding rule
        adherence, all static code analysis must have been run and issues
        resolved.
@@ -708,7 +708,7 @@ In general, the steps towards a certification or precertification
    protect the assets against exploits of vulnerabilities of the
    system. As a complete threat model includes the overall product
    including the hardware platform, this might be realized by a
-   split model containing a pre-certified secure branch of Zephyr
+   split model containing a precertified secure branch of Zephyr
    which the vendor could use to certify their Zephyr-enabled
    product.
 
@@ -733,7 +733,7 @@ Certification Options
 For the security certification as such, the following options can be
 pursued:
 
-1. **Abstract (pre-)certification of Zephyr as a pure software system:**
+1. **Abstract precertification of Zephyr as a pure software system:**
    this option requires assumptions on the underlying hardware
    platform and the final application running on top of Zephyr. If
    these assumptions are met by the hardware and the application, a
