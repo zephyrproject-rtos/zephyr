@@ -194,9 +194,13 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 		struct net_pkt *arp_pkt;
 
 		if (check_if_dst_is_broadcast_or_mcast(iface, pkt)) {
-			struct net_eth_addr *dst = &NET_ETH_HDR(pkt)->dst;
+			if (!net_pkt_ll_dst(pkt)->addr) {
+				struct net_eth_addr *dst;
 
-			net_pkt_ll_dst(pkt)->addr = (u8_t *)dst->addr;
+				dst = &NET_ETH_HDR(pkt)->dst;
+				net_pkt_ll_dst(pkt)->addr = (u8_t *)dst->addr;
+			}
+
 			goto setup_hdr;
 		}
 
