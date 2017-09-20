@@ -15,7 +15,7 @@
 #include <string.h>
 #include <errno.h>
 #include <flash.h>
-#include "boot/mcuboot_constraints.h"
+#include <board.h>
 #include "flash_img.h"
 
 BUILD_ASSERT_MSG((CONFIG_IMG_BLOCK_BUF_SIZE % FLASH_ALIGN == 0),
