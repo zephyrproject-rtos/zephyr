@@ -25,14 +25,14 @@ set(CMAKE_CXX_COMPILER ${cplusplus_compiler}     CACHE INTERNAL " " FORCE)
 execute_process(
   COMMAND ${CMAKE_C_COMPILER} --print-file-name=include
   OUTPUT_VARIABLE _OUTPUT
-)
+  )
 string(REGEX REPLACE "\n" "" _OUTPUT ${_OUTPUT})
 set(NOSTDINC ${_OUTPUT})
 
 execute_process(
   COMMAND ${CMAKE_C_COMPILER} --print-file-name=include-fixed
   OUTPUT_VARIABLE _OUTPUT
-)
+  )
 string(REGEX REPLACE "\n" "" _OUTPUT ${_OUTPUT})
 list(APPEND NOSTDINC ${_OUTPUT})
 
