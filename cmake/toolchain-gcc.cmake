@@ -25,7 +25,7 @@ set(CMAKE_CXX_COMPILER ${cplusplus_compiler}     CACHE INTERNAL " " FORCE)
 include($ENV{ZEPHYR_BASE}/cmake/gcc-m-cpu.cmake)
 
 if("${ARCH}" STREQUAL "arm")
-  set(TOOLCHAIN_C_FLAGS
+  list(APPEND TOOLCHAIN_C_FLAGS
     -mthumb
     -mcpu=${GCC_M_CPU}
     )
@@ -41,7 +41,7 @@ if("${ARCH}" STREQUAL "arm")
     endif()
   endif()
 elseif("${ARCH}" STREQUAL "arc")
-  set(TOOLCHAIN_C_FLAGS
+  list(APPEND TOOLCHAIN_C_FLAGS
 	  -mcpu=${GCC_M_CPU}
     )
 endif()
