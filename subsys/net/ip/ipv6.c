@@ -146,19 +146,38 @@ static inline struct net_nbr *get_nbr_from_data(struct net_ipv6_nbr_data *data)
 	return NULL;
 }
 
-void net_ipv6_nbr_foreach(net_nbr_cb_t cb, void *user_data)
+struct iface_cb_data {
+	net_nbr_cb_t cb;
+	void *user_data;
+};
+
+static void iface_cb(struct net_if *iface, void *user_data)
 {
+	struct iface_cb_data *data = user_data;
 	int i;
 
 	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
 		struct net_nbr *nbr = get_nbr(i);
 
-		if (!nbr->ref) {
+		if (!nbr->ref || nbr->iface != iface) {
 			continue;
 		}
 
-		cb(nbr, user_data);
+		data->cb(nbr, data->user_data);
 	}
+}
+
+void net_ipv6_nbr_foreach(net_nbr_cb_t cb, void *user_data)
+{
+	struct iface_cb_data cb_data = {
+		.cb = cb,
+		.user_data = user_data,
+	};
+
+	/* Return the neighbors according to network interface. This makes it
+	 * easier in the callback to use the neighbor information.
+	 */
+	net_if_foreach(iface_cb, &cb_data);
 }
 
 #if NET_DEBUG_NBR
