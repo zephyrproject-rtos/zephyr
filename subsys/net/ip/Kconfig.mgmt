@@ -50,6 +50,23 @@ config NET_MGMT_EVENT_QUEUE_SIZE
 	notification. Thus the size of this queue has to be tweaked depending
 	on the load of the system, planned for the usage.
 
+config NET_MGMT_EVENT_INFO
+	bool "Enable passing information along with an event"
+	default n
+	help
+	Event notifier will be able to provide information to an event,
+	and listeners will then be able to get it. Such information depends
+	on the type of event and can be an IP address, etc...
+
+config NET_MGMT_EVENT_INFO_SIZE
+	int "Maximum size in bytes of event information"
+	default 17
+	depends on NET_MGMT_EVENT_INFO
+	help
+	Maximum size of the information - whatever it is - that can be passed
+	along with an event. Note this will grow each entries in the event
+	queue. Do not touch this unless you know what you are doing.
+
 config NET_DEBUG_MGMT_EVENT
 	bool "Enable debug output on Net MGMT event core"
 	default n

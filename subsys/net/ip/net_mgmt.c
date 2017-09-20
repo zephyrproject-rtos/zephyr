@@ -20,6 +20,11 @@
 struct mgmt_event_entry {
 	u32_t event;
 	struct net_if *iface;
+
+#ifdef CONFIG_NET_MGMT_EVENT_INFO
+	u8_t info[CONFIG_NET_MGMT_EVENT_INFO_SIZE];
+	size_t info_length;
+#endif /* CONFIG_NET_MGMT_EVENT_INFO */
 };
 
 struct mgmt_event_wait {
@@ -38,10 +43,33 @@ static sys_slist_t event_callbacks;
 static u16_t in_event;
 static u16_t out_event;
 
-static inline void mgmt_push_event(u32_t mgmt_event, struct net_if *iface)
+static inline void mgmt_push_event(u32_t mgmt_event, struct net_if *iface,
+				   void *info, size_t length)
 {
 	events[in_event].event = mgmt_event;
 	events[in_event].iface = iface;
+
+#ifdef CONFIG_NET_MGMT_EVENT_INFO
+	/* Let's put the info length to 0 by default as it will be the most
+	 * common case. Also, it makes code a bit cleaner below as there is
+	 * to need of this line as an else or on error
+	 */
+	events[in_event].info_length = 0;
+
+	if (info && length) {
+		if (length <= CONFIG_NET_MGMT_EVENT_INFO_SIZE) {
+			memcpy(events[in_event].info, info, length);
+			events[in_event].info_length = length;
+		} else {
+			NET_ERR("Event info length %u > max size %u",
+				length, CONFIG_NET_MGMT_EVENT_INFO_SIZE);
+		}
+	}
+
+#else
+	ARG_UNUSED(info);
+	ARG_UNUSED(length);
+#endif /* CONFIG_NET_MGMT_EVENT_INFO */
 
 	in_event++;
 
@@ -129,6 +157,15 @@ static inline void mgmt_run_callbacks(struct mgmt_event_entry *mgmt_event)
 			continue;
 		}
 
+
+#ifdef CONFIG_NET_MGMT_EVENT_INFO
+		if (mgmt_event->info_length) {
+			cb->info = (void *)mgmt_event->info;
+		} else {
+			cb->info = NULL;
+		}
+#endif /* CONFIG_NET_MGMT_EVENT_INFO */
+
 		if (NET_MGMT_EVENT_SYNCHRONOUS(cb->event_mask)) {
 			struct mgmt_event_wait *sync_data =
 				CONTAINER_OF(cb->sync_call,
@@ -198,6 +235,7 @@ static int mgmt_event_wait_call(struct net_if *iface,
 				u32_t mgmt_event_mask,
 				u32_t *raised_event,
 				struct net_if **event_iface,
+				const void **info,
 				int timeout)
 {
 	struct mgmt_event_wait sync_data = {
@@ -229,6 +267,12 @@ static int mgmt_event_wait_call(struct net_if *iface,
 			if (event_iface) {
 				*event_iface = sync_data.iface;
 			}
+
+#ifdef CONFIG_NET_MGMT_EVENT_INFO
+			if (info) {
+				*info = sync.info;
+			}
+#endif /* CONFIG_NET_MGMT_EVENT_INFO */
 		}
 	}
 
@@ -253,7 +297,8 @@ void net_mgmt_del_event_callback(struct net_mgmt_event_callback *cb)
 	mgmt_rebuild_global_event_mask();
 }
 
-void net_mgmt_event_notify(u32_t mgmt_event, struct net_if *iface)
+void net_mgmt_event_notify_with_info(u32_t mgmt_event, struct net_if *iface,
+				     void *info, size_t length)
 {
 	if (mgmt_is_event_handled(mgmt_event)) {
 		NET_DBG("Notifying Event layer %u code %u type %u",
@@ -261,7 +306,7 @@ void net_mgmt_event_notify(u32_t mgmt_event, struct net_if *iface)
 			NET_MGMT_GET_LAYER_CODE(mgmt_event),
 			NET_MGMT_GET_COMMAND(mgmt_event));
 
-		mgmt_push_event(mgmt_event, iface);
+		mgmt_push_event(mgmt_event, iface, info, length);
 		k_sem_give(&network_event);
 	}
 }
@@ -269,22 +314,24 @@ void net_mgmt_event_notify(u32_t mgmt_event, struct net_if *iface)
 int net_mgmt_event_wait(u32_t mgmt_event_mask,
 			u32_t *raised_event,
 			struct net_if **iface,
+			const void **info,
 			int timeout)
 {
 	return mgmt_event_wait_call(NULL, mgmt_event_mask,
-				    raised_event, iface, timeout);
+				    raised_event, iface, info, timeout);
 }
 
 int net_mgmt_event_wait_on_iface(struct net_if *iface,
 				 u32_t mgmt_event_mask,
 				 u32_t *raised_event,
+				 const void **info,
 				 int timeout)
 {
 	NET_ASSERT(NET_MGMT_ON_IFACE(mgmt_event_mask));
 	NET_ASSERT(iface);
 
 	return mgmt_event_wait_call(iface, mgmt_event_mask,
-				    raised_event, NULL, timeout);
+				    raised_event, NULL, info, timeout);
 }
 
 void net_mgmt_event_init(void)
