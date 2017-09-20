@@ -1,0 +1,50 @@
+[Code Component Name]
+#####################
+
+Origin:
+   [Name of project hosting the original open source code]
+   [Provide a link to the source]
+
+Status:
+   [Current version of this component, supported by Zephyr]
+
+Purpose:
+   [Brief description of what this software does]
+
+Description:
+   [Long description that will help reviewers discuss suitability of the
+   package to solve the problem at hand (there may be a better package
+   available.)
+
+   What is its primary functionality (e.g., SQLLite is a lightweight
+   database)?
+
+   What problem are you trying to solve? (e.g., a state store is
+   required to maintain ...)
+
+   Why is this the right package to solve it (e.g., SQLite is small,
+   easy to use, and has a very liberal license.)]
+
+Dependencies:
+   [What other components does this package depend on? Does the software
+   include any dynamic or static linking, or automatic downloading of any
+   code?
+
+   Will the Zephyr project have a direct dependency on the component, or
+   will it be included via an abstraction layer with this component as a
+   replacable implementation?]
+
+URL:
+   [location to the project's home, e.g., a github repo]
+
+commit:
+   [08ded7f21529c39e5133688ffb9a9d0c94e5c6e]
+
+Maintained-by:
+   [External]
+
+License:
+   [use SPDX identifier (https://spdx.org/licenses/), such as BSD-3-Clause]
+
+License Link:
+   [link to the project's LICENSE file, e.g., https://github.com/xyz/LICENSE]
