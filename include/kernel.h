@@ -169,7 +169,7 @@ struct _k_object {
  * @return 0 If the object is valid
  *         -EBADF if not a valid object of the specified type
  *         -EPERM If the caller does not have permissions
- *         -EINVAL Object is not intitialized
+ *         -EINVAL Object is not initialized
  */
 int _k_object_validate(void *obj, enum k_objects otype, int init);
 
