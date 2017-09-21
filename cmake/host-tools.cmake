@@ -24,6 +24,14 @@ if(${KCONFIG_CONF} STREQUAL KCONFIG_CONF-NOTFOUND)
   message(FATAL_ERROR "Unable to find the Kconfig program 'conf'")
 endif()
 
+find_program(
+  GPERF
+  gperf
+  )
+if(${GPERF} STREQUAL GPERF-NOTFOUND)
+  message(FATAL_ERROR "Unable to find gperf")
+endif()
+
 # mconf is an optional dependency
 find_program(
   KCONFIG_MCONF
