@@ -8,7 +8,7 @@
 
 menuconfig BMM150
 	bool "BMM150 I2C Geomagnetic Chip"
-	depends on SENSOR && I2C
+	depends on I2C
 	default n
 	help
 	  Enable driver for BMM150 I2C-based Geomagnetic sensor.

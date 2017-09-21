@@ -8,7 +8,7 @@
 menuconfig MAX30101
 	bool
 	prompt "MAX30101 Pulse Oximeter and Heart Rate Sensor"
-	depends on SENSOR && I2C
+	depends on I2C
 	default n
 
 if MAX30101
