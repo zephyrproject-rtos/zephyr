@@ -1623,6 +1623,97 @@ bool net_if_ipv4_addr_rm(struct net_if *iface, struct in_addr *addr)
 
 	return false;
 }
+
+static struct net_if_mcast_addr *ipv4_maddr_find(struct net_if *iface,
+						 bool is_used,
+						 const struct in_addr *addr)
+{
+	int i;
+
+	for (i = 0; i < NET_IF_MAX_IPV4_MADDR; i++) {
+		if ((is_used && !iface->ipv4.mcast[i].is_used) ||
+		    (!is_used && iface->ipv4.mcast[i].is_used)) {
+			continue;
+		}
+
+		if (addr) {
+			if (!net_ipv4_addr_cmp(
+				    &iface->ipv4.mcast[i].address.in_addr,
+				    addr)) {
+				continue;
+			}
+		}
+
+		return &iface->ipv4.mcast[i];
+	}
+
+	return NULL;
+}
+
+struct net_if_mcast_addr *net_if_ipv4_maddr_add(struct net_if *iface,
+						const struct in_addr *addr)
+{
+	struct net_if_mcast_addr *maddr;
+
+	if (!net_is_ipv4_addr_mcast(addr)) {
+		NET_DBG("Address %s is not a multicast address.",
+			net_sprint_ipv4_addr(addr));
+		return NULL;
+	}
+
+	maddr = ipv4_maddr_find(iface, false, NULL);
+	if (maddr) {
+		maddr->is_used = true;
+		maddr->address.family = AF_INET;
+		maddr->address.in_addr.s4_addr32[0] = addr->s4_addr32[0];
+
+		NET_DBG("interface %p address %s added", iface,
+			net_sprint_ipv4_addr(addr));
+	}
+
+	return maddr;
+}
+
+bool net_if_ipv4_maddr_rm(struct net_if *iface, const struct in_addr *addr)
+{
+	struct net_if_mcast_addr *maddr;
+
+	maddr = ipv4_maddr_find(iface, true, addr);
+	if (maddr) {
+		maddr->is_used = false;
+
+		NET_DBG("interface %p address %s removed",
+			iface, net_sprint_ipv4_addr(addr));
+
+		return true;
+	}
+
+	return false;
+}
+
+struct net_if_mcast_addr *net_if_ipv4_maddr_lookup(const struct in_addr *maddr,
+						   struct net_if **ret)
+{
+	struct net_if_mcast_addr *addr;
+	struct net_if *iface;
+
+	for (iface = __net_if_start; iface != __net_if_end; iface++) {
+		if (ret && *ret && iface != *ret) {
+			continue;
+		}
+
+		addr = ipv4_maddr_find(iface, true, maddr);
+		if (addr) {
+			if (ret) {
+				*ret = iface;
+			}
+
+			return addr;
+		}
+	}
+
+	return NULL;
+}
 #endif /* CONFIG_NET_IPV4 */
 
 void net_if_register_link_cb(struct net_if_link_cb *link,
