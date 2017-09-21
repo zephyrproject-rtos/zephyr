@@ -1103,6 +1103,39 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
  */
 bool net_if_ipv4_addr_rm(struct net_if *iface,  struct in_addr *addr);
 
+/**
+ * @brief Add a IPv4 multicast address to an interface
+ *
+ * @param iface Network interface
+ * @param addr IPv4 multicast address
+ *
+ * @return Pointer to interface multicast address, NULL if cannot be added
+ */
+struct net_if_mcast_addr *net_if_ipv4_maddr_add(struct net_if *iface,
+						const struct in_addr *addr);
+
+/**
+ * @brief Remove an IPv4 multicast address from an interface
+ *
+ * @param iface Network interface
+ * @param addr IPv4 multicast address
+ *
+ * @return True if successfully removed, false otherwise
+ */
+bool net_if_ipv4_maddr_rm(struct net_if *iface, const struct in_addr *addr);
+
+/**
+ * @brief Check if this IPv4 multicast address belongs to a specific interface
+ * or one of the interfaces.
+ *
+ * @param addr IPv4 address
+ * @param iface If *iface is null, then pointer to interface is returned,
+ * otherwise the *iface value needs to be matched.
+ *
+ * @return Pointer to interface multicast address, NULL if not found.
+ */
+struct net_if_mcast_addr *net_if_ipv4_maddr_lookup(const struct in_addr *addr,
+						   struct net_if **iface);
 
 /**
  * @brief Check if IPv4 address is one of the routers configured
