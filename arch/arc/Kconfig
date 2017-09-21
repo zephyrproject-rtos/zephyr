@@ -201,6 +201,7 @@ source "arch/arc/core/mpu/Kconfig"
 
 endmenu
 
+if !HAS_DTS
 config ICCM_SIZE
 	int "ICCM Size in kB"
 	help
@@ -256,6 +257,7 @@ config FLASH_BASE_ADDRESS
 	This option specifies the base address of the flash on the board.  It is
 	normally set by the board's defconfig file and the user should generally
 	avoid modifying it via the menu configuration.
+endif
 
 config CACHE_LINE_SIZE_DETECT
 	bool
