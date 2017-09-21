@@ -205,6 +205,32 @@ int flash_get_page_info_by_idx(struct device *dev, u32_t page_index,
  *  @return  Number of flash pages.
  */
 size_t flash_get_page_count(struct device *dev);
+
+/**
+ * @brief Callback type for iterating over flash pages present on a device.
+ *
+ * The callback should return true to continue iterating, and false to halt.
+ *
+ * @param info Information for current page
+ * @param data Private data for callback
+ * @return True to continue iteration, false to halt iteration.
+ * @see flash_page_foreach()
+ */
+typedef bool (*flash_page_cb)(const struct flash_pages_info *info, void *data);
+
+/**
+ * @brief Iterate over flash pages on a device
+ *
+ * This routine iterates over all flash pages on the given device,
+ * ordered by increasing start offset. For each page, it invokes the
+ * given callback, passing it the page's information and a private
+ * data object.
+ *
+ * @param dev Device whose pages to iterate over
+ * @param cb Callback to invoke for each flash page
+ * @param data Private data for callback function
+ */
+void flash_page_foreach(struct device *dev, flash_page_cb cb, void *data);
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
 
 #ifdef __cplusplus
