@@ -4,8 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "dns_pack.h"
 #include <string.h>
+#include <net/buf.h>
+
+#include "dns_pack.h"
 
 /* This is the label's length octet, see 4.1.2. Question section format */
 #define DNS_LABEL_LEN_SIZE	1
@@ -21,6 +23,8 @@
 #define DNS_ANCOUNT_LEN		2
 #define DNS_NSCOUNT_LEN		2
 #define DNS_ARCOUNT_LEN		2
+
+#define NS_CMPRSFLGS    0xc0   /* DNS name compression */
 
 /* RFC 1035 '4.1.1. Header section format' defines the following flags:
  * QR, Opcode, AA, TC, RD, RA, Z and RCODE.
@@ -403,4 +407,167 @@ int dns_copy_qname(u8_t *buf, u16_t *len, u16_t size,
 	}
 
 	return rc;
+}
+
+int mdns_unpack_query_header(struct dns_msg_t *msg, u16_t *src_id)
+{
+	u8_t *dns_header;
+	u16_t size;
+	int qdcount;
+
+	dns_header = msg->msg;
+	size = msg->msg_size;
+
+	if (size < DNS_MSG_HEADER_SIZE) {
+		return -ENOMEM;
+	}
+
+	if (dns_header_qr(dns_header) != DNS_QUERY) {
+		return -EINVAL;
+	}
+
+	if (dns_header_opcode(dns_header) != DNS_QUERY) {
+		return -EINVAL;
+	}
+
+	if (dns_header_opcode(dns_header) != 0) {
+		return -EINVAL;
+	}
+
+	if (dns_header_rcode(dns_header) != 0) {
+		return -EINVAL;
+	}
+
+	qdcount = dns_unpack_header_qdcount(dns_header);
+	if (qdcount < 1) {
+		return -EINVAL;
+	}
+
+	if (src_id) {
+		*src_id = dns_unpack_header_id(dns_header);
+	}
+
+	msg->query_offset = DNS_MSG_HEADER_SIZE;
+
+	return qdcount;
+}
+
+/* Returns the length of the unpacked name */
+static int dns_unpack_name(const u8_t *msg, int maxlen, const u8_t *src,
+			   struct net_buf *buf, const u8_t **eol)
+{
+	int dest_size = net_buf_tailroom(buf);
+	const u8_t *end_of_label = NULL;
+	const u8_t *curr_src = src;
+	int loop_check = 0, len = -1;
+	int label_len;
+	int val;
+
+	if (curr_src < msg || curr_src >= (msg + maxlen)) {
+		return -EMSGSIZE;
+	}
+
+	while ((val = *curr_src++)) {
+		if (val & NS_CMPRSFLGS) {
+			/* Follow pointer */
+			int pos;
+
+			if (curr_src >= (msg + maxlen)) {
+				return -EMSGSIZE;
+			}
+
+			if (len < 0) {
+				len = curr_src - src + 1;
+			}
+
+			end_of_label = curr_src + 1;
+
+			/* Strip compress bits from length calculation */
+			pos = ((val & 0x3f) << 8) | (*curr_src & 0xff);
+
+			curr_src = msg + pos;
+			if (curr_src >= (msg + maxlen)) {
+				return -EMSGSIZE;
+			}
+
+			loop_check += 2;
+			if (loop_check >= maxlen) {
+				return -EMSGSIZE;
+			}
+		} else {
+			/* Max label length is 64 bytes (because 2 bits are
+			 * used for pointer)
+			 */
+			label_len = val;
+			if (label_len > 63) {
+				return -EMSGSIZE;
+			}
+
+			if (((buf->data + label_len + 1) >=
+			     (buf->data + dest_size)) ||
+			    ((curr_src + label_len) >= (msg + maxlen))) {
+				return -EMSGSIZE;
+			}
+
+			loop_check += label_len + 1;
+
+			net_buf_add_u8(buf, '.');
+			net_buf_add_mem(buf, curr_src, label_len);
+
+			curr_src += label_len;
+		}
+	}
+
+	buf->data[buf->len] = '\0';
+
+	if (eol) {
+		if (!end_of_label) {
+			end_of_label = curr_src;
+		}
+
+		*eol = end_of_label;
+	}
+
+	return buf->len;
+}
+
+int dns_unpack_query(struct dns_msg_t *dns_msg, struct net_buf *buf,
+		     enum dns_rr_type *qtype, enum dns_class *qclass)
+{
+	const u8_t *end_of_label;
+	u8_t *dns_query;
+	int remaining_size;
+	int ret;
+	int query_type, query_class;
+
+	dns_query = dns_msg->msg + dns_msg->query_offset;
+	remaining_size = dns_msg->msg_size - dns_msg->query_offset;
+
+	ret = dns_unpack_name(dns_msg->msg, dns_msg->msg_size, dns_query,
+			      buf, &end_of_label);
+	if (ret < 0) {
+		return ret;
+	}
+
+	query_type = dns_unpack_query_qtype(end_of_label);
+	if (query_type != DNS_RR_TYPE_A && query_type != DNS_RR_TYPE_AAAA) {
+		return -EINVAL;
+	}
+
+	query_class = dns_unpack_query_qclass(end_of_label);
+	if (query_class != DNS_CLASS_IN) {
+		return -EINVAL;
+	}
+
+	if (qtype) {
+		*qtype = query_type;
+	}
+
+	if (qclass) {
+		*qclass = query_class;
+	}
+
+	dns_msg->query_offset = end_of_label - dns_msg->msg + 2 + 2;
+
+	return ret;
 }
