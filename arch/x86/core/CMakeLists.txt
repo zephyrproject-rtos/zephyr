@@ -21,10 +21,11 @@ zephyr_sources(
   thread.c
   )
 
-zephyr_sources_if_kconfig(             irq_offload.c)
-zephyr_sources_if_kconfig(             x86_mmu.c)
-zephyr_sources_if_kconfig(             reboot_rst_cnt.c)
-zephyr_sources_ifdef(CONFIG_FP_SHARING float.c)
+zephyr_sources_if_kconfig(                irq_offload.c)
+zephyr_sources_if_kconfig(                x86_mmu.c)
+zephyr_sources_if_kconfig(                reboot_rst_cnt.c)
+zephyr_sources_ifdef(CONFIG_FP_SHARING    float.c)
+zephyr_sources_ifdef(CONFIG_X86_USERSPACE userspace.S)
 
 # Last since we declare default exception handlers here
 zephyr_sources(fatal.c)
