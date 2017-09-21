@@ -1,0 +1,39 @@
+# Kconfig - Hostname config
+
+#
+# Copyright (c) 2017 Intel Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config NET_HOSTNAME_ENABLE
+	bool "Add hostname to the device"
+	default n
+	help
+	This is used for example in mDNS to respond to <hostname>.local
+	mDNS queries.
+
+if NET_HOSTNAME_ENABLE
+
+config NET_HOSTNAME
+	string "The hostname of this device"
+	default "zephyr"
+	help
+	The string should be a valid hostname.
+
+config NET_HOSTNAME_UNIQUE
+	bool "Make hostname unique"
+	default n
+	help
+	This will append link address to hostname to create a unique
+	hostname. For example, zephyr00005e005357 could be the hostname
+	if this	setting is enabled.
+
+config  NET_DEBUG_HOSTNAME
+	bool "Debug hostname configuration"
+	default n
+	depends on NET_LOG
+	help
+	Enables hostname configuration functions to output debug messages
+
+endif
