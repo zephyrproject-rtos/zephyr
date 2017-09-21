@@ -8,7 +8,7 @@
 
 menuconfig BMC150_MAGN
 	bool "BMC150_MAGN I2C Magnetometer Chip"
-	depends on SENSOR && I2C
+	depends on I2C
 	default n
 	help
 	  Enable driver for BMC150 I2C-based magnetometer sensor.

@@ -7,7 +7,7 @@
 
 menuconfig FXAS21002
 	bool "FXAS21002 gyroscope driver"
-	depends on SENSOR && I2C
+	depends on I2C
 	default n
 	help
 	  Enable driver for the FXAS21002 gyroscope

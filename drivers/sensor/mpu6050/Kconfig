@@ -9,7 +9,7 @@
 menuconfig MPU6050
 	bool
 	prompt "MPU6050 Six-Axis Motion Tracking Device"
-	depends on SENSOR && I2C
+	depends on I2C
 	default n
 	help
 	  Enable driver for MPU6050 I2C-based six-axis motion tracking device.

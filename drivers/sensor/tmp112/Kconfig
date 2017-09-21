@@ -9,7 +9,7 @@
 menuconfig TMP112
 	bool
 	prompt "TMP112 Temperature Sensor"
-	depends on SENSOR && I2C
+	depends on I2C
 	default n
 	help
 	Enable driver for TMP112 infrared thermopile sensors.
