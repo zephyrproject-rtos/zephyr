@@ -117,3 +117,47 @@ config NET_DEBUG_DNS_RESOLVE
 	Enables DNS resolver code to output debug messages
 
 endif # DNS_RESOLVER
+
+config MDNS_RESPONDER
+	bool "mDNS responder"
+	default n
+	select NET_IPV6_MLD if NET_IPV6
+	depends on NET_HOSTNAME_ENABLE
+	help
+	This option enables the mDNS responder support for Zephyr.
+	It will listen well-known address ff02::fb and 224.0.0.251.
+	Currently this only returns IP address information.
+	You must set CONFIG_NET_HOSTNAME to some meaningful value and
+	then mDNS will start to respond to <hostname>.local mDNS queries.
+	See RFC 6762 for more details about mDNS.
+
+if MDNS_RESPONDER
+
+config MDNS_RESPONDER_TTL
+	int "Time-to-Live of returned DNS name"
+	default 600
+	help
+	DNS answers will use the TTL (in seconds).
+
+config MDNS_RESPONDER_INIT_PRIO
+	int "Startup priority for the mDNS responder init"
+	default 96
+	help
+	Note that if NET_APP_AUTO_INIT is enabled, then this value
+	should be bigger than its value.
+
+config NET_DEBUG_MDNS_RESPONDER
+	bool "Debug mDNS responder"
+	default n
+	default y if NET_LOG_GLOBAL
+	help
+	Enables mDNS responder code to output debug messages
+
+config MDNS_RESOLVER_ADDITIONAL_BUF_CTR
+	int
+	prompt "Additional DNS buffers"
+	default 0
+	help
+	Number of additional buffers available for the mDNS responder.
+
+endif # MDNS_RESPONDER

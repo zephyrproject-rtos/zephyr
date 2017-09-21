@@ -8,6 +8,7 @@
 #define _DNS_PACK_H_
 
 #include <net/net_ip.h>
+#include <net/buf.h>
 
 #include <zephyr/types.h>
 #include <stddef.h>
@@ -185,7 +186,7 @@ static inline int dns_query_qtype(u8_t *question)
 	return htons(UNALIGNED_GET((u16_t *)(question + 0)));
 }
 
-static inline int dns_unpack_query_qtype(u8_t *question)
+static inline int dns_unpack_query_qtype(const u8_t *question)
 {
 	return ntohs(UNALIGNED_GET((u16_t *)(question + 0)));
 }
@@ -195,7 +196,7 @@ static inline int dns_query_qclass(u8_t *question)
 	return htons(UNALIGNED_GET((u16_t *)(question + 2)));
 }
 
-static inline int dns_unpack_query_qclass(u8_t *question)
+static inline int dns_unpack_query_qclass(const u8_t *question)
 {
 	return ntohs(UNALIGNED_GET((u16_t *)(question + 2)));
 }
@@ -327,5 +328,40 @@ int dns_unpack_response_query(struct dns_msg_t *dns_msg);
  */
 int dns_copy_qname(u8_t *buf, u16_t *len, u16_t size,
 		   struct dns_msg_t *dns_msg, u16_t pos);
+
+/**
+ * @brief Unpacks the mDNS query. This is special version for multicast DNS
+ * as it skips checks to various fields as described in RFC 6762 chapter 18.
+ *
+ * @param msg Structure containing the response.
+ * @param src_id Transaction id, this is returned to the caller.
+ * @retval 0 on success, <0 if error
+ * @retval -ENOMEM if the buffer in msg has no enough space to store the header.
+ * The header is always 12 bytes length.
+ * @retval -EINVAL if the src_id does not match the header's id, or if the
+ * header's QR value is not DNS_RESPONSE or if the header's OPCODE value is not
+ * DNS_QUERY, or if the header's Z value is not 0 or if the question counter
+ * is not 1 or the answer counter is less than 1.
+ * @retval RFC 1035 RCODEs (> 0) 1 Format error, 2 Server failure, 3 Name Error,
+ * 4 Not Implemented and 5 Refused.
+ */
+int mdns_unpack_query_header(struct dns_msg_t *msg, u16_t *src_id);
+
+/**
+ * Unpacks the query.
+ *
+ * @param dns_msg Structure containing the message.
+ * @param buf Result buf
+ * @param qtype Query type is returned to caller
+ * @param qclass Query class is returned to caller
+ * @retval 0 on success
+ * @retval -ENOMEM if the null label is not found after traversing the buffer
+ * or if QCLASS and QTYPE are not found.
+ * @retval -EINVAL if QTYPE is not "A" (IPv4) or "AAAA" (IPv6) or if QCLASS
+ * is not "IN".
+ */
+int dns_unpack_query(struct dns_msg_t *dns_msg, struct net_buf *buf,
+		     enum dns_rr_type *qtype,
+		     enum dns_class *qclass);
 
 #endif
