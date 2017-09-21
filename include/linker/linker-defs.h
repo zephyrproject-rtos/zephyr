@@ -21,6 +21,7 @@
 
 #include <toolchain.h>
 #include <linker/sections.h>
+#include <misc/util.h>
 
 /* include platform dependent linker-defs */
 #ifdef CONFIG_X86
@@ -102,9 +103,19 @@
 		__shell_cmd_end = .;
 
 #ifdef CONFIG_APPLICATION_MEMORY
-#define KERNEL_INPUT_SECTION(sect)	libzephyr.a (sect) kernel/lib.a (sect)
+
+#ifndef NUM_KERNEL_OBJECT_FILES
+#error "Expected NUM_KERNEL_OBJECT_FILES to be defined"
+#endif
+
+#define X(i, j)  KERNEL_OBJECT_FILE_##i (j)
+#define Y(i, j) *KERNEL_OBJECT_FILE_##i
+
+#define KERNEL_INPUT_SECTION(sect) \
+    UTIL_LISTIFY(NUM_KERNEL_OBJECT_FILES, X, sect)
 #define APP_INPUT_SECTION(sect)	\
-	*(EXCLUDE_FILE (*libzephyr.a *kernel/lib.a) sect)
+    *(EXCLUDE_FILE (UTIL_LISTIFY(NUM_KERNEL_OBJECT_FILES, Y, ~)) sect)
+
 #else
 #define KERNEL_INPUT_SECTION(sect)	*(sect)
 #define APP_INPUT_SECTION(sect)		*(sect)
