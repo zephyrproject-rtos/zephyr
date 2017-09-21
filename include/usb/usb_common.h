@@ -67,6 +67,8 @@
 /* Useful define */
 #define USB_1_1                         0x0110
 #define USB_2_0                         0x0200
+/* Set USB version to 2.1 so that the host will request the BOS descriptor */
+#define USB_2_1				0x0210
 
 #define BCDDEVICE_RELNUM                0x0100
 
