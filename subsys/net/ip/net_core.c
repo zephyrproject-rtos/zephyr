@@ -381,6 +381,8 @@ static int net_init(struct device *unused)
 {
 	int status = 0;
 
+	net_hostname_init();
+
 	NET_DBG("Priority %d", CONFIG_NET_INIT_PRIO);
 
 	net_pkt_init();

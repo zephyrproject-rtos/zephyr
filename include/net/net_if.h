@@ -22,6 +22,7 @@
 #include <misc/slist.h>
 
 #include <net/net_core.h>
+#include <net/hostname.h>
 #include <net/net_linkaddr.h>
 #include <net/net_ip.h>
 #include <net/net_l2.h>
@@ -452,6 +453,8 @@ static inline int net_if_set_link_addr(struct net_if *iface,
 	iface->link_addr.addr = addr;
 	iface->link_addr.len = len;
 	iface->link_addr.type = type;
+
+	net_hostname_set_postfix(addr, len);
 
 	return 0;
 }

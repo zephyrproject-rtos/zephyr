@@ -1,4 +1,5 @@
 obj-$(CONFIG_NET_BUF) += buf.o
+obj-$(CONFIG_NET_HOSTNAME_ENABLE) += hostname.o
 
 ifeq ($(CONFIG_NETWORKING),y)
 ifeq ($(CONFIG_NET_L2_RAW_CHANNEL),y)

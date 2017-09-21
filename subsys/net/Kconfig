@@ -81,6 +81,8 @@ config  NETWORKING
 
 if NETWORKING
 
+source "subsys/net/Kconfig.hostname"
+
 source "subsys/net/ip/Kconfig"
 
 source "subsys/net/lib/Kconfig"
