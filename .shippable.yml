@@ -40,17 +40,11 @@ build:
             echo "Building a Pull Request";
             echo "- Building Documentation";
             echo "Commit range:" ${COMMIT_RANGE}
-            make htmldocs > doc.log 2>&1;
-            ./scripts/filter-known-issues.py --config-dir .known-issues/doc/ doc.log > doc.warnings;
-
-            if [ "$?" != 0 ]; then
-              echo " ==> Error running filter script"
-              exit 1
-            fi;
+            make htmldocs > doc.warnings 2>&1;
             if [ -s doc.warnings ]; then
               echo " => New documentation warnings/errors";
             fi;
-            echo "- Verify commit message and coding style";
+            echo "- Verify commit message, coding style, doc build";
             ./scripts/ci/check-compliance.py --commits ${COMMIT_RANGE} || true;
           fi;
       - >
