@@ -33,6 +33,10 @@
 
 #include "soc_irq.h"
 
+#ifdef CONFIG_SERIAL_HAS_DRIVER
+#include <stm32f1xx_ll_usart.h>
+#endif
+
 #ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
 #include <stm32f1xx_ll_utils.h>
 #include <stm32f1xx_ll_bus.h>
