@@ -2,3 +2,4 @@
 config BOARD_QUARK_SE_C1000_DEVBOARD_SS
 	bool "Quark SE C1000 - Sensor Sub System"
 	depends on SOC_QUARK_SE_C1000_SS
+	select HAS_DTS
