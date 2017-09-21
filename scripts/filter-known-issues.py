@@ -185,54 +185,55 @@ def report_warning(data):
         warnings.write(data)
 
 for filename in args.FILENAMEs:
-    try:
-        with open(filename, "r+b") as f:
-            logging.info("%s: filtering", filename)
-            # Yeah, this should be more protected in case of exception
-            # and such, but this is a short running program...
-            mm = mmap.mmap(f.fileno(), 0)
-            for ex, origin, flags in exclude_regexs:
-                logging.info("%s: searching from %s: %s",
-                             filename, origin, ex.pattern)
-                for m in re.finditer(ex.pattern, mm, re.MULTILINE):
-                    logging.info("%s: %s-%s: match from from %s %s",
-                                  filename, m.start(), m.end(), origin, flags)
-                    if 'warning' in flags:
-                        exclude_ranges.append((m.start(), m.end(), True))
-                    else:
-                        exclude_ranges.append((m.start(), m.end(), False))
+    if os.stat(filename).st_size > 0:
+        try:
+            with open(filename, "r+b") as f:
+                logging.info("%s: filtering", filename)
+                # Yeah, this should be more protected in case of exception
+                # and such, but this is a short running program...
+                mm = mmap.mmap(f.fileno(), 0)
+                for ex, origin, flags in exclude_regexs:
+                    logging.info("%s: searching from %s: %s",
+                                 filename, origin, ex.pattern)
+                    for m in re.finditer(ex.pattern, mm, re.MULTILINE):
+                        logging.info("%s: %s-%s: match from from %s %s",
+                                      filename, m.start(), m.end(), origin, flags)
+                        if 'warning' in flags:
+                            exclude_ranges.append((m.start(), m.end(), True))
+                        else:
+                            exclude_ranges.append((m.start(), m.end(), False))
 
-            exclude_ranges = sorted(exclude_ranges, key=lambda r: r[0])
-            logging.warning("%s: ranges excluded: %s", filename, exclude_ranges)
+                exclude_ranges = sorted(exclude_ranges, key=lambda r: r[0])
+                logging.warning("%s: ranges excluded: %s", filename, exclude_ranges)
 
-            # Decide what to do with what has been filtered; warnings
-            # go to stderr and warnings file, errors to stdout, what
-            # is ignored is just dumped.
-            offset = 0
-            for b, e, warning in exclude_ranges:
+                # Decide what to do with what has been filtered; warnings
+                # go to stderr and warnings file, errors to stdout, what
+                # is ignored is just dumped.
+                offset = 0
+                for b, e, warning in exclude_ranges:
+                    mm.seek(offset)
+                    if b > offset:
+                        # We have something not caught by a filter, an error
+                        logging.info("%s: error range (%d, %d), from %d %dB",
+                                      filename, offset, b, offset, b - offset)
+                        report_error(mm.read(b - offset))
+                        mm.seek(b)
+                    if warning == True:		# A warning, print it
+                        mm.seek(b)
+                        logging.info("%s: warning range (%d, %d), from %d %dB",
+                                      filename, b, e, offset, e - b)
+                        report_warning(mm.read(e - b))
+                    else:				# Exclude, ignore it
+                        d = b - offset
+                        logging.info("%s: exclude range (%d, %d), from %d %dB",
+                                      filename, b, e, offset, d)
+                    offset = e
                 mm.seek(offset)
-                if b > offset:
-                    # We have something not caught by a filter, an error
-                    logging.info("%s: error range (%d, %d), from %d %dB",
-                                  filename, offset, b, offset, b - offset)
-                    report_error(mm.read(b - offset))
-                    mm.seek(b)
-                if warning == True:		# A warning, print it
-                    mm.seek(b)
-                    logging.info("%s: warning range (%d, %d), from %d %dB",
-                                  filename, b, e, offset, e - b)
-                    report_warning(mm.read(e - b))
-                else:				# Exclude, ignore it
-                    d = b - offset
-                    logging.info("%s: exclude range (%d, %d), from %d %dB",
-                                  filename, b, e, offset, d)
-                offset = e
-            mm.seek(offset)
-            if len(mm) != offset:
-                logging.info("%s: error final range from %d %dB",
-                             filename, offset, len(mm))
-                report_error(mm.read(len(mm) - offset - 1))
-            del mm
-    except Exception as e:
-        logging.error("%s: cannot load: %s", filename, e)
-        raise
+                if len(mm) != offset:
+                    logging.info("%s: error final range from %d %dB",
+                                 filename, offset, len(mm))
+                    report_error(mm.read(len(mm) - offset - 1))
+                del mm
+        except Exception as e:
+            logging.error("%s: cannot load: %s", filename, e)
+            raise

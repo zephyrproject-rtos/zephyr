@@ -10,6 +10,7 @@ SPHINXBUILD   = sphinx-build
 PAPER         =
 BUILDDIR     ?= _build
 DOC_TAG      ?= development
+TMP_EXT       = $$PPID.log
 
 # User-friendly check for sphinx-build
 ifeq ($(shell which $(SPHINXBUILD) >/dev/null 2>&1; echo $$?), 1)
@@ -79,7 +80,9 @@ kconfig: scripts/genrest/genrest.py
 prep: doxy content kconfig
 
 html: content kconfig
-	$(Q)$(SPHINXBUILD) -t $(DOC_TAG) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
+	$(Q)$(SPHINXBUILD) -t $(DOC_TAG) -b html $(ALLSPHINXOPTS) \
+             $(BUILDDIR)/html > /tmp/doc-$(TMP_EXT) 2>&1;
+	$(Q)scripts/filter-doc-log.sh /tmp/doc-$(TMP_EXT)
 	@rm -rf samples
 	@rm -rf boards
 
