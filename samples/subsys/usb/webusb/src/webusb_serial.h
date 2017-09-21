@@ -43,9 +43,6 @@
 #include <device.h>
 #include "usb_device.h"
 
-/* Set USB version to 2.1 so that the host will request the BOS descriptor. */
-#define USB_2_1     0x0210
-
 /* BOS descriptor type */
 #define DESCRIPTOR_TYPE_BOS     0x0f
 
