@@ -28,6 +28,7 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config HARVARD
 	def_bool n
 
+if !HAS_DTS
 config FLASH_BASE_ADDRESS
 	default 0x40000000
 
@@ -53,6 +54,7 @@ config DCCM_BASE_ADDRESS
 
 config DCCM_SIZE
 	default 8
+endif
 
 config QMSI
 	def_bool y
@@ -266,7 +268,7 @@ endif # UART_QMSI_1
 
 endif # UART_QMSI
 
-if UART_CONSOLE
+if UART_CONSOLE && !HAS_DTS
 
 config UART_CONSOLE_ON_DEV_NAME
 	default "UART_1"
