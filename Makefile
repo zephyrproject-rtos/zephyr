@@ -1017,6 +1017,14 @@ endif
 
 dts: include/generated/generated_dts_board.h
 
+GEN_SYSCALL_HEADER := $(srctree)/scripts/gen_syscall_header.py
+
+include/generated/syscall_macros.h: $(GEN_SYSCALL_HEADER)
+	$(Q)mkdir -p $(dir $@)
+	$(Q)$(GEN_SYSCALL_HEADER) > $@
+
+syscall_macros: include/generated/syscall_macros.h
+
 define filechk_.config-sanitycheck
 	(cat .config; \
 	 grep -e '^CONFIG' include/generated/generated_dts_board.conf | cat; \
@@ -1085,7 +1093,7 @@ archprepare = $(strip \
 		)
 
 # All the preparing..
-prepare: $(archprepare) dts FORCE
+prepare: $(archprepare) dts syscall_macros FORCE
 	$(Q)$(MAKE) $(build)=.
 
 # Generate some files
