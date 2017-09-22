@@ -310,38 +310,40 @@ endif()
 
 get_property(LINKER_SCRIPT_DEFINES GLOBAL PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES)
 
-# Objects default to being in kernel space, and then we exclude
-# certain items.
-set(kernel_object_file_list
-  ${ZEPHYR_LIBS_PROPERTY}
-  kernel
-  )
-list(
-  REMOVE_ITEM
-  kernel_object_file_list
-  app
-  )
+if(CONFIG_APPLICATION_MEMORY)
+  # Objects default to being in kernel space, and then we exclude
+  # certain items.
+  set(kernel_object_file_list
+    ${ZEPHYR_LIBS_PROPERTY}
+    kernel
+    )
+  list(
+    REMOVE_ITEM
+    kernel_object_file_list
+    app
+    )
 
-# The libraries in the zephyr/lib/* directory belong in userspace
-foreach(f ${kernel_object_file_list})
-  if(${f} MATCHES "^lib") # Begins with lib, e.g. lib__libc
-    list(
-      REMOVE_ITEM
-      kernel_object_file_list
-      ${f}
-      )
-  endif()
-endforeach()
+  # The libraries in the zephyr/lib/* directory belong in userspace
+  foreach(f ${kernel_object_file_list})
+    if(${f} MATCHES "^lib") # Begins with lib, e.g. lib__libc
+      list(
+        REMOVE_ITEM
+        kernel_object_file_list
+        ${f}
+        )
+    endif()
+  endforeach()
 
-# We are done constructing kernel_object_file_list, now we inject this
-# information into the linker script through -D's
-list(LENGTH kernel_object_file_list NUM_KERNEL_OBJECT_FILES)
-list(APPEND LINKER_SCRIPT_DEFINES -DNUM_KERNEL_OBJECT_FILES=${NUM_KERNEL_OBJECT_FILES})
-set(i 0)
-foreach(f ${kernel_object_file_list})
-  list(APPEND LINKER_SCRIPT_DEFINES -DKERNEL_OBJECT_FILE_${i}=$<TARGET_FILE:${f}>)
-  math(EXPR i "${i}+1")
-endforeach()
+  # We are done constructing kernel_object_file_list, now we inject this
+  # information into the linker script through -D's
+  list(LENGTH kernel_object_file_list NUM_KERNEL_OBJECT_FILES)
+  list(APPEND LINKER_SCRIPT_DEFINES -DNUM_KERNEL_OBJECT_FILES=${NUM_KERNEL_OBJECT_FILES})
+  set(i 0)
+  foreach(f ${kernel_object_file_list})
+    list(APPEND LINKER_SCRIPT_DEFINES -DKERNEL_OBJECT_FILE_${i}=$<TARGET_FILE:${f}>)
+    math(EXPR i "${i}+1")
+  endforeach()
+endif() # CONFIG_APPLICATION_MEMORY
 
 get_filename_component(BASE_NAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 add_custom_command(
