@@ -1,5 +1,4 @@
 add_library(subsys__bluetooth INTERFACE)
-zephyr_append_cmake_library(subsys__bluetooth)
 
 target_include_directories(subsys__bluetooth INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
 
