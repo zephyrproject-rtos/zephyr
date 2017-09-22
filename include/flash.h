@@ -78,6 +78,7 @@ struct flash_driver_api {
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	flash_api_pages_layout page_layout;
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
+	const size_t write_block_size;
 };
 
 /**
@@ -232,6 +233,24 @@ typedef bool (*flash_page_cb)(const struct flash_pages_info *info, void *data);
  */
 void flash_page_foreach(struct device *dev, flash_page_cb cb, void *data);
 #endif /* CONFIG_FLASH_PAGE_LAYOUT */
+
+/**
+ *  @brief  Get the minimum write block size supported by the driver
+ *
+ *  The Write block size supported by the driver might defer from the write
+ *  block size of memory used because the driver might implements write-modify
+ *  algorithm.
+ *
+ *  @param  dev flash device
+ *
+ *  @return  write block size in Bytes.
+ */
+static inline size_t flash_get_write_block_size(struct device *dev)
+{
+	const struct flash_driver_api *api = dev->driver_api;
+
+	return api->write_block_size;
+}
 
 #ifdef __cplusplus
 }
