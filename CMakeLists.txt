@@ -277,6 +277,18 @@ zephyr_include_directories(${TOOLCHAIN_INCLUDES})
 
 zephyr_get_include_directories(ZEPHYR_INCLUDES)
 
+add_subdirectory(kernel)
+
+# Read list content
+get_property(ZEPHYR_LIBS_PROPERTY GLOBAL PROPERTY ZEPHYR_LIBS)
+
+foreach(zephyr_lib ${ZEPHYR_LIBS_PROPERTY})
+  # TODO: Could this become an INTERFACE property of zephyr_interface?
+  add_dependencies(${zephyr_lib} offsets_h)
+endforeach()
+
+get_property(OUTPUT_FORMAT        GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT)
+
 # Run the pre-processor on the linker script
 #
 # Deal with the un-preprocessed linker scripts differently with
@@ -323,18 +335,6 @@ add_custom_target(
   linker.cmd
   offsets_h
 )
-
-add_subdirectory(kernel)
-
-# Read list content
-get_property(ZEPHYR_LIBS_PROPERTY GLOBAL PROPERTY ZEPHYR_LIBS)
-
-foreach(zephyr_lib ${ZEPHYR_LIBS_PROPERTY})
-  # TODO: Could this become an INTERFACE property of zephyr_interface?
-  add_dependencies(${zephyr_lib} offsets_h)
-endforeach()
-
-get_property(OUTPUT_FORMAT        GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT)
 
 set(zephyr_lnk
   ${LINKERFLAGPREFIX},-Map=${PROJECT_BINARY_DIR}/${KERNEL_MAP_NAME}
