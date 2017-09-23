@@ -27,7 +27,7 @@ SECTION_FUNC(TEXT, _x86_syscall_entry_stub)
 	/* call_id is in ESI. bounds-check it, must be less than
 	 * K_SYSCALL_LIMIT
 	 */
-	cmp	$K_SYSCALL_LIMIT, %esi
+	cmp	$_SYSCALL_LIMIT, %esi
 	jae	_bad_syscall
 
 _id_ok:
@@ -79,7 +79,7 @@ _bad_syscall:
 	 * anyway, it's going to generate a kernel oops
 	 */
 	mov	%esi, %eax
-	mov	$K_SYSCALL_BAD, %esi
+	mov	$_SYSCALL_BAD, %esi
 	jmp	_id_ok
 
 
