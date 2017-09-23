@@ -192,4 +192,10 @@ static u32_t _handler_bad_syscall(u32_t bad_id, u32_t arg2, u32_t arg3,
 
 const _k_syscall_handler_t _k_syscall_table[K_SYSCALL_LIMIT] = {
 	[K_SYSCALL_BAD] = _handler_bad_syscall,
+
+	[K_SYSCALL_SEM_INIT] = _handler_k_sem_init,
+	[K_SYSCALL_SEM_GIVE] = _handler_k_sem_give,
+	[K_SYSCALL_SEM_TAKE] = _handler_k_sem_take,
+	[K_SYSCALL_SEM_RESET] = _handler_k_sem_reset,
+	[K_SYSCALL_SEM_COUNT_GET] = _handler_k_sem_count_get,
 };
