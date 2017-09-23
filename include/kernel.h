@@ -2477,8 +2477,13 @@ struct k_sem {
  *
  * @return N/A
  */
-extern void k_sem_init(struct k_sem *sem, unsigned int initial_count,
-			unsigned int limit);
+static inline void k_sem_init(struct k_sem *sem, unsigned int initial_count,
+			      unsigned int limit);
+
+K_SYSCALL_DECLARE3_VOID(K_SYSCALL_SEM_INIT, k_sem_init,
+			struct k_sem *, sem,
+			unsigned int, initial_count,
+			unsigned int, limit);
 
 /**
  * @brief Take a semaphore.
@@ -2501,7 +2506,11 @@ extern void k_sem_init(struct k_sem *sem, unsigned int initial_count,
  * @retval -EBUSY Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
  */
-extern int k_sem_take(struct k_sem *sem, s32_t timeout);
+static inline int k_sem_take(struct k_sem *sem, s32_t timeout);
+
+K_SYSCALL_DECLARE2(K_SYSCALL_SEM_TAKE, k_sem_take, int,
+		   struct k_sem *, sem,
+		   s32_t, timeout);
 
 /**
  * @brief Give a semaphore.
@@ -2515,7 +2524,10 @@ extern int k_sem_take(struct k_sem *sem, s32_t timeout);
  *
  * @return N/A
  */
-extern void k_sem_give(struct k_sem *sem);
+static inline void k_sem_give(struct k_sem *sem);
+
+K_SYSCALL_DECLARE1_VOID(K_SYSCALL_SEM_GIVE, k_sem_give,
+			struct k_sem *, sem);
 
 /**
  * @brief Reset a semaphore's count to zero.
@@ -2526,10 +2538,15 @@ extern void k_sem_give(struct k_sem *sem);
  *
  * @return N/A
  */
-static inline void k_sem_reset(struct k_sem *sem)
+static inline void k_sem_reset(struct k_sem *sem);
+
+static inline void _impl_k_sem_reset(struct k_sem *sem)
 {
 	sem->count = 0;
 }
+
+K_SYSCALL_DECLARE1_VOID_INLINE(K_SYSCALL_SEM_RESET, k_sem_reset,
+			       struct k_sem *, sem);
 
 /**
  * @brief Get a semaphore's count.
@@ -2540,10 +2557,15 @@ static inline void k_sem_reset(struct k_sem *sem)
  *
  * @return Current semaphore count.
  */
-static inline unsigned int k_sem_count_get(struct k_sem *sem)
+static inline unsigned int k_sem_count_get(struct k_sem *sem);
+
+static inline unsigned int _impl_k_sem_count_get(struct k_sem *sem)
 {
 	return sem->count;
 }
+
+K_SYSCALL_DECLARE1_INLINE(K_SYSCALL_SEM_COUNT_GET, k_sem_count_get,
+			  unsigned int, struct k_sem *, sem);
 
 /**
  * @brief Statically define and initialize a semaphore.
