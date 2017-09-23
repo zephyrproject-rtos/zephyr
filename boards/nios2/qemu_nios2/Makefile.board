@@ -8,4 +8,4 @@ QEMU_nios2 = qemu-system-nios2
 DEBUG_SCRIPT = qemu.sh
 
 debugserver: QEMU_EXTRA_FLAGS += -s -S
-debugserver: qemu
+debugserver: run
