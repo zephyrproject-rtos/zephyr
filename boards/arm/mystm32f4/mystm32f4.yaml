@@ -1,0 +1,7 @@
+identifier: mystm32f4
+name: MYSTM32F4
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb
