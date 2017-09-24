@@ -12,23 +12,22 @@
 #include <shell/shell.h>
 #include <flash.h>
 #include <device.h>
+#include <soc.h>
 
 #define THIS_MODULE_NAME "flash"
 
 /*
- * Additional SoC families can be added here, but it's not required to
- * do so to use these commands on them. The flash device can also be
- * specified at runtime with the set_device command.
+ * When soc.h provides a FLASH_DRIVER_NAME, we use it here. Otherwise,
+ * the device can be set at runtime with the set_device command.
  */
-#ifdef CONFIG_SOC_FAMILY_STM32
-#define FLASH_DEV_NAME CONFIG_SOC_FLASH_STM32_DEV_NAME
-#elif defined(CONFIG_SOC_FAMILY_NRF5)
-#define FLASH_DEV_NAME CONFIG_SOC_FLASH_NRF5_DEV_NAME
-#else
-#define FLASH_DEV_NAME ""
+#ifndef FLASH_DRIVER_NAME
+#define FLASH_DRIVER_NAME ""
 #endif
 
 /* Command usage info. */
+#define WRITE_BLOCK_SIZE_HELP \
+	("Print the device's write block size. This is the smallest amount\n" \
+	 "of data which may be written to the device, in bytes.")
 #define READ_HELP \
 	("<off> <len>\n\n" \
 	 "Read <len> bytes from device offset <off>.")
@@ -225,6 +224,26 @@ static int do_write(off_t offset, u8_t *buf, size_t len, bool read_back)
 	return ret;
 }
 
+static int flash_shell_write_block_size(int argc, char *argv[])
+{
+	if (check_flash_device()) {
+		return 0;
+	}
+
+	CANONICALIZE_ARGS(argc, argv);
+	if (argc) {
+		printk("No arguments expected.\n");
+		return 0;
+	}
+
+#if defined FLASH_WRITE_BLOCK_SIZE
+	printk("%d\n", FLASH_WRITE_BLOCK_SIZE);
+#else
+	printk("Flash write block size is unknown.\n");
+#endif
+	return 0;
+}
+
 static int flash_shell_read(int argc, char *argv[])
 {
 	long unsigned int offset, len;
@@ -329,11 +348,32 @@ static int flash_shell_page_count(int argc, char *argv[])
 	return -EINVAL;
 }
 
+struct page_layout_data {
+	long unsigned int start_page;
+	long unsigned int end_page;
+};
+
+static bool page_layout_cb(const struct flash_pages_info *info, void *datav)
+{
+	struct page_layout_data *data = datav;
+	long unsigned int sz;
+
+	if (info->index < data->start_page) {
+		return true;
+	} else if (info->index > data->end_page) {
+		return false;
+	}
+
+	sz = info->size;
+	printk("\tPage %u: start 0x%08x, length 0x%lx (%lu, %lu KB)\n",
+	       info->index, info->start_offset, sz, sz, sz / KB(1));
+	return true;
+}
+
 static int flash_shell_page_layout(int argc, char *argv[])
 {
-	struct flash_pages_info info;
-	long unsigned int start_page, end_page, i, tmp;
-	int ret;
+	long unsigned int start_page, end_page;
+	struct page_layout_data data;
 
 	if (check_flash_device()) {
 		return 0;
@@ -361,21 +401,9 @@ static int flash_shell_page_layout(int argc, char *argv[])
 		goto bail;
 	}
 
-	for (i = start_page; i <= end_page; i++) {
-		ret = flash_get_page_info_by_idx(flash_device, i, &info);
-		if (ret) {
-			printk("flash_get_page_info_by_index: %d\n", ret);
-			return 0;
-		} else if (i != info.index) {
-			tmp = info.index;
-			printk("Error: got page=%lu, but was expecting %lu\n",
-			       tmp, i);
-			return 0;
-		}
-		tmp = info.size;
-		printk("\tPage %lu: start 0x%08x, length 0x%lx (%lu, %lu KB)\n",
-		       i, info.start_offset, tmp, tmp, tmp / KB(1));
-	}
+	data.start_page = start_page;
+	data.end_page = end_page;
+	flash_page_foreach(flash_device, page_layout_cb, &data);
 	return 0;
 
  bail:
@@ -532,6 +560,8 @@ static int flash_shell_set_device(int argc, char *argv[])
 }
 
 static struct shell_cmd commands[] = {
+	{ "write_block_size", flash_shell_write_block_size,
+	  WRITE_BLOCK_SIZE_HELP },
 	{ "read", flash_shell_read, READ_HELP },
 	{ "erase", flash_shell_erase, ERASE_HELP },
 	{ "write", flash_shell_write, WRITE_HELP },
@@ -548,9 +578,9 @@ static struct shell_cmd commands[] = {
 
 void main(void)
 {
-	flash_device = device_get_binding(FLASH_DEV_NAME);
+	flash_device = device_get_binding(FLASH_DRIVER_NAME);
 	if (flash_device) {
-		printk("Found flash device %s.\n", FLASH_DEV_NAME);
+		printk("Found flash device %s.\n", FLASH_DRIVER_NAME);
 		printk("Flash I/O commands can be run.\n");
 	} else {
 		printk("**No flash device found!**\n");
