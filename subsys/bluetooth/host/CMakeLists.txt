@@ -53,5 +53,4 @@ if(CONFIG_BT_HCI_HOST)
   endif()
 endif()
 
-# TODO
-# add_subdirectory_ifdef(CONFIG_BT_MESH mesh)
+add_subdirectory_ifdef(CONFIG_BT_MESH mesh)
