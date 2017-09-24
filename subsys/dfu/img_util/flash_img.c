@@ -18,8 +18,9 @@
 #include <board.h>
 #include <dfu/flash_img.h>
 
-BUILD_ASSERT_MSG((CONFIG_IMG_BLOCK_BUF_SIZE % FLASH_ALIGN == 0),
-		 "CONFIG_IMG_BLOCK_BUF_SIZE is not multiple of FLASH_ALIGN");
+BUILD_ASSERT_MSG((CONFIG_IMG_BLOCK_BUF_SIZE % FLASH_WRITE_BLOCK_SIZE == 0),
+		 "CONFIG_IMG_BLOCK_BUF_SIZE is not a multiple of "
+		 "FLASH_WRITE_BLOCK_SIZE");
 
 static bool flash_verify(struct device *dev, off_t offset,
 			 u8_t *data, size_t len)
