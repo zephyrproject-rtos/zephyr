@@ -19,6 +19,7 @@ dtb-$(CONFIG_BOARD_NUCLEO_F412ZG)	=	nucleo_f412zg.dts_compiled
 dtb-$(CONFIG_BOARD_NUCLEO_F413ZH)	=	nucleo_f413zh.dts_compiled
 dtb-$(CONFIG_BOARD_NUCLEO_F103RB)	=	nucleo_f103rb.dts_compiled
 dtb-$(CONFIG_BOARD_STM3210C_EVAL)	=	stm3210c_eval.dts_compiled
+dtb-$(CONFIG_BOARD_STM3210E_EVAL)	=	stm3210e_eval.dts_compiled
 dtb-$(CONFIG_BOARD_STM32_MINI_A15)	=	stm32_mini_a15.dts_compiled
 dtb-$(CONFIG_BOARD_STM32L496G_DISCO)	=	stm32l496g_disco.dts_compiled
 dtb-$(CONFIG_BOARD_NUCLEO_F334R8)	=	nucleo_f334r8.dts_compiled
