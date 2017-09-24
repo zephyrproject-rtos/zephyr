@@ -6,6 +6,7 @@ add_compile_options(
   -fomit-frame-pointer
   -std=gnu89
   -Wno-format-security
+  -DKBUILD_NO_NLS
 )
 
 # TODO: fix these warnings
