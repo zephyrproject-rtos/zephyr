@@ -23,13 +23,15 @@ void main(void)
 	int cnt = 0;
 	struct device *dev;
 
-	dev = device_get_binding(PORT);
+	dev = device_get_binding(LED0_GPIO_PORT);
 	/* Set LED pin as output */
-	gpio_pin_configure(dev, LED, GPIO_DIR_OUT);
+	gpio_pin_configure(dev, LED0_GPIO_PIN, GPIO_DIR_OUT);
+	gpio_pin_configure(dev, LED1_GPIO_PIN, GPIO_DIR_OUT);
 
 	while (1) {
 		/* Set pin to HIGH/LOW every 1 second */
-		gpio_pin_write(dev, LED, cnt % 2);
+		gpio_pin_write(dev, LED0_GPIO_PIN, cnt % 2);
+		gpio_pin_write(dev, LED1_GPIO_PIN, !(cnt % 2));
 		cnt++;
 		k_sleep(SLEEP_TIME);
 	}
