@@ -37,6 +37,17 @@ config BT_CTLR_HCI_VS_EXT
 	  Enable support for the Zephyr HCI Vendor-Specific Extensions in the
 	  Controller.
 
+config BT_CTLR_HCI_VS_BUILD_INFO
+	string "Zephyr HCI VS Build Info string"
+	default ""
+	depends on BT_CTLR_HCI_VS_EXT
+	help
+	  User-defined string that will be returned by the Zephyr VS Read Build
+	  Information command after the Zephyr version and build time. When
+	  setting this to a value different from an empty string, a space
+	  character is required at the beginning to separate it from the
+	  already included information.
+
 config BT_CTLR_DUP_FILTER_LEN
 	prompt "Number of addresses in the scan duplicate filter"
 	int
