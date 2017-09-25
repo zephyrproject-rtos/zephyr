@@ -578,5 +578,6 @@ add_custom_command(
 )
 
 add_subdirectory(cmake/qemu)
+add_subdirectory(cmake/flash)
 
 include(cmake/ccache.cmake)
