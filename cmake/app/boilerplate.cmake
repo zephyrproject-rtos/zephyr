@@ -135,7 +135,7 @@ add_subdirectory($ENV{ZEPHYR_BASE} ${__build_dir})
 
 define_property(GLOBAL PROPERTY ZEPHYR_LIBS
     BRIEF_DOCS "Global list of all Zephyr CMake libs that should be linked in"
-    FULL_DOCS "Global list of all Zephyr CMake libs that should be linked in. zephyr_library() appends libs to this list.")
+    FULL_DOCS  "Global list of all Zephyr CMake libs that should be linked in. zephyr_library() appends libs to this list.")
 set_property(GLOBAL PROPERTY ZEPHYR_LIBS "")
 
 define_property(GLOBAL PROPERTY GENERATED_KERNEL_OBJECT_FILES
