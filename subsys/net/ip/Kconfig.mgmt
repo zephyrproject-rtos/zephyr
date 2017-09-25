@@ -23,10 +23,11 @@ config NET_MGMT_EVENT
 	(or else) needs to be notified on a specific network event
 	(ip address change for instance) to trigger some related work.
 
+if NET_MGMT_EVENT
+
 config NET_MGMT_EVENT_STACK_SIZE
 	int "Stack size for the inner thread handling event callbacks"
 	default 512
-	depends on NET_MGMT_EVENT
 	help
 	Set the internal stack size for NM to run registered callbacks
 	on events.
@@ -34,7 +35,6 @@ config NET_MGMT_EVENT_STACK_SIZE
 config NET_MGMT_EVENT_THREAD_PRIO
 	int "Inner thread priority (use with care)"
 	default 7
-	depends on NET_MGMT_EVENT
 	help
 	Set the network management event core's inner thread priority.
 	Do not change this unless you know what you are doing.
@@ -43,7 +43,6 @@ config NET_MGMT_EVENT_QUEUE_SIZE
 	int "Size of event queue"
 	default 2
 	range 1 8
-	depends on NET_MGMT_EVENT
 	help
 	Numbers of events which can be queued at same time. Note that if a
 	3rd event comes in, the first will be removed without generating any
@@ -70,7 +69,6 @@ config NET_MGMT_EVENT_INFO_SIZE
 config NET_DEBUG_MGMT_EVENT
 	bool "Enable debug output on Net MGMT event core"
 	default n
-	depends on NET_MGMT_EVENT
 	help
 	Add debug messages output on how Net MGMT events are handled.
 
@@ -78,8 +76,8 @@ config NET_DEBUG_MGMT_EVENT_STACK
 	bool "Enable stack analysis output on Net MGMT event core"
 	default n
 	select INIT_STACKS
-	depends on NET_MGMT_EVENT
 	help
 	Add debug messages output on how much Net MGMT event stack is used.
 
-endif
+endif # NET_MGMT_EVENT
+endif # NET_MGMT
