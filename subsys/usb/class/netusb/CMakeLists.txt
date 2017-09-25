@@ -19,3 +19,8 @@ zephyr_library_sources_ifdef(
   CONFIG_USB_DEVICE_NETWORK_ECM
   function_ecm.c
   )
+
+zephyr_library_sources_ifdef(
+  CONFIG_USB_DEVICE_NETWORK_RNDIS
+  function_rndis.c
+  )
