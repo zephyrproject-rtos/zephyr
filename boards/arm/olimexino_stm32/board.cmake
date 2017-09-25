@@ -1,4 +1,5 @@
 set(FLASH_SCRIPT openocd.sh)
+set(DEBUG_SCRIPT openocd.sh)
 
 set(FLASH_BASE_ADDRESS 0x08000000)
 
