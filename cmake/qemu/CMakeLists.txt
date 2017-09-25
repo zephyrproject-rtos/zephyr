@@ -32,19 +32,25 @@ if(EMU_PLATFORM)
   separate_arguments(env_qemu)
   list(APPEND QEMU_EXTRA_FLAGS ${env_qemu})
 
-  add_custom_target(run
-    ${IAMCU_HACK}
-    COMMAND
-    ${QEMU}
-    ${QEMU_FLAGS_${ARCH}}
-    -pidfile qemu${QEMU_INSTANCE}.pid
-    ${QEMU_FLAGS}
-    ${QEMU_EXTRA_FLAGS}
-    -kernel $<TARGET_FILE:${logical_target_for_zephyr_elf}>
-    WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
-    COMMENT "${QEMU_PIPE_COMMENT}[QEMU] CPU: ${QEMU_CPU_TYPE_${ARCH}}"
-    USES_TERMINAL
-    )
+  foreach(target run debugserver)
+    if(${target} STREQUAL debugserver)
+      list(APPEND QEMU_EXTRA_FLAGS -s -S)
+    endif()
+
+    add_custom_target(${target}
+      ${IAMCU_HACK}
+      COMMAND
+      ${QEMU}
+      ${QEMU_FLAGS_${ARCH}}
+      -pidfile qemu${QEMU_INSTANCE}.pid
+      ${QEMU_FLAGS}
+      ${QEMU_EXTRA_FLAGS}
+      -kernel $<TARGET_FILE:${logical_target_for_zephyr_elf}>
+      WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
+      COMMENT "${QEMU_PIPE_COMMENT}[QEMU] CPU: ${QEMU_CPU_TYPE_${ARCH}}"
+      USES_TERMINAL
+      )
+  endforeach()
 else()
   add_custom_target(run
     COMMAND
