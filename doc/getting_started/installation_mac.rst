@@ -1,12 +1,12 @@
 .. _installing_zephyr_mac:
 
-Development Environment Setup on Mac OS
-#######################################
+Development Environment Setup on macOS
+######################################
 
-This section describes how to set up a Mac OS development system.
+This section describes how to set up a macOS development system.
 
 After completing these steps, you will be able to compile and run your Zephyr
-applications on the following Mac OS version:
+applications on the following macOS version:
 
 * Mac OS X 10.11 (El Capitan)
 * macOS Sierra 10.12
@@ -132,7 +132,7 @@ Setting the Toolchain Options
 =============================
 
 In the Zephyr kernel source tree we provide two configurations for
-both ARM and X86 that can be used to pre-select the options needed
+both ARM and X86 that can be used to preselect the options needed
 for building the toolchain.
 The configuration files can be found in :file:`${ZEPHYR_BASE}/scripts/cross_compiler/`.
 

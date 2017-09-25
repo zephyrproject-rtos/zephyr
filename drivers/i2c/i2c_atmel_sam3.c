@@ -60,7 +60,7 @@ struct i2c_sam3_dev_config {
 
 struct i2c_sam3_dev_data {
 	struct k_sem		device_sync_sem;
-	union dev_config	dev_config;
+	u32_t dev_config;
 
 	volatile u32_t	state;
 
@@ -85,7 +85,7 @@ static u32_t clk_div_calc(struct device *dev)
 	 */
 	struct i2c_sam3_dev_data * const dev_data = dev->driver_data;
 
-	switch ((dev_data->dev_config.bits.speed)) {
+	switch (I2C_SPEED_GET(dev_data->dev_config)) {
 	case I2C_SPEED_STANDARD:
 		/* CKDIV = 1
 		 * CHDIV = CLDIV = 208 = 0xD0
@@ -125,7 +125,7 @@ static u32_t clk_div_calc(struct device *dev)
 	 *
 	 * So use these to calculate chdiv_min and cldiv_min.
 	 */
-	switch ((dev_data->dev_config.bits.speed)) {
+	switch (I2C_SPEED_GET(dev_data->dev_config)) {
 	case I2C_SPEED_STANDARD:
 		i2c_clk = 100000 * 2;
 		i2c_h_min_time = 4000;
@@ -191,7 +191,7 @@ static int i2c_sam3_runtime_configure(struct device *dev, u32_t config)
 	u32_t reg;
 	u32_t clk;
 
-	dev_data->dev_config.raw = config;
+	dev_data->dev_config = config;
 	reg = 0;
 
 	/* Calculate clock dividers */
@@ -271,7 +271,7 @@ static inline void transfer_setup(struct device *dev, u16_t slave_address)
 	u32_t iadr;
 
 	/* Set slave address */
-	if (dev_data->dev_config.bits.use_10_bit_addr) {
+	if (I2C_ADDR_10_BITS & dev_data->dev_config) {
 		/* 10-bit slave addressing:
 		 * first two bits goes to MMR/DADR, other 8 to IADR.
 		 *
@@ -545,7 +545,7 @@ static int i2c_sam3_transfer(struct device *dev,
 					    | TWI_CR_SVDIS;
 
 			i2c_sam3_runtime_configure(dev,
-						   dev_data->dev_config.raw);
+						   dev_data->dev_config);
 
 			ret = -EIO;
 			goto done;
@@ -582,10 +582,10 @@ static int i2c_sam3_init(struct device *dev)
 
 	cfg->config_func(dev);
 
-	if (i2c_sam3_runtime_configure(dev, dev_data->dev_config.raw)
+	if (i2c_sam3_runtime_configure(dev, dev_data->dev_config)
 	    != 0) {
 		SYS_LOG_DBG("I2C: Cannot set default configuration 0x%x",
-		    dev_data->dev_config.raw);
+		    dev_data->dev_config);
 		return -EINVAL;
 	}
 
@@ -602,7 +602,7 @@ static const struct i2c_sam3_dev_config dev_config_0 = {
 };
 
 static struct i2c_sam3_dev_data dev_data_0 = {
-	.dev_config.raw = CONFIG_I2C_0_DEFAULT_CFG,
+	.dev_config = CONFIG_I2C_0_DEFAULT_CFG,
 };
 
 DEVICE_AND_API_INIT(i2c_sam3_0, CONFIG_I2C_0_NAME, &i2c_sam3_init,
@@ -632,7 +632,7 @@ static const struct i2c_sam3_dev_config dev_config_1 = {
 };
 
 static struct i2c_sam3_dev_data dev_data_1 = {
-	.dev_config.raw = CONFIG_I2C_1_DEFAULT_CFG,
+	.dev_config = CONFIG_I2C_1_DEFAULT_CFG,
 };
 
 DEVICE_AND_API_INIT(i2c_sam3_1, CONFIG_I2C_1_NAME, &i2c_sam3_init,

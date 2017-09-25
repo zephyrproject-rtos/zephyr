@@ -25,6 +25,7 @@ config NET_L2_ETHERNET
 config NET_DEBUG_L2_ETHERNET
 	bool "Debug Ethernet L2 layer"
 	default n
+	default y if NET_LOG_GLOBAL
 	depends on NET_LOG
 	help
 	Enables Ethernet L2 output debug messages
@@ -38,6 +39,7 @@ config NET_OFFLOAD
 config NET_DEBUG_NET_OFFLOAD
 	bool "Debug Net Offload Layer"
 	default n
+	default y if NET_LOG_GLOBAL
 	depends on NET_LOG
 	depends on NET_OFFLOAD
 	help
@@ -83,6 +85,7 @@ config NET_L2_BT_SEC_LEVEL
 config NET_DEBUG_L2_BT
 	bool "Debug Bluetooth L2 layer"
 	default n
+	default y if NET_LOG_GLOBAL
 	depends on NET_LOG
 	depends on NET_L2_BT
 	help
@@ -125,6 +128,7 @@ config NET_DEBUG_ARP
 	bool "Debug IPv4 ARP"
 	depends on NET_ARP && NET_LOG
 	default n
+	default y if NET_LOG_GLOBAL
 	help
 	Enables core ARP code part to output debug messages
 

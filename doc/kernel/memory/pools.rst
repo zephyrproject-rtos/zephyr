@@ -112,7 +112,7 @@ Defining a Memory Pool
 A memory pool is defined using a variable of type :c:type:`struct k_mem_pool`.
 However, since a memory pool also requires a number of variable-size data
 structures to represent its block sets and the status of its quad-blocks,
-the kernel does not support the run-time definition of a memory pool.
+the kernel does not support the runtime definition of a memory pool.
 A memory pool can only be defined and initialized at compile time
 by calling :c:macro:`K_MEM_POOL_DEFINE`.
 

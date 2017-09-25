@@ -21,6 +21,7 @@ config NET_L2_IEEE802154_MGMT
 config NET_DEBUG_L2_IEEE802154
 	bool "Enable IEEE 802.15.4 stack debug messages"
 	default n
+	default y if NET_LOG_GLOBAL
 	depends on NET_LOG
 	help
 	  Enable it if you want to see what's happening. Only useful
@@ -90,6 +91,7 @@ config  NET_DEBUG_L2_IEEE802154_FRAGMENT
 	bool "Enable debug support for IEEE 802.15.4 fragmentation"
 	depends on NET_L2_IEEE802154_FRAGMENT && NET_LOG
 	default n
+	default y if NET_LOG_GLOBAL
 
 config NET_L2_IEEE802154_SECURITY
 	bool "Enable IEEE 802.15.4 security [EXPERIMENTAL]"

@@ -39,3 +39,8 @@ then be used as following:
 .. code-block:: console
 
    $ echo-client -i bt0 <ip>
+
+.. note::
+
+   For hosts using kernels released before 4.12 CONFIG_NET_L2_BT_ZEP1656
+   shall be selected: https://jira.zephyrproject.org/browse/ZEP-1656

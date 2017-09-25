@@ -222,6 +222,12 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt)
 	if (!net_if_ipv4_addr_mask_cmp(net_pkt_iface(pkt),
 				       &NET_IPV4_HDR(pkt)->dst)) {
 		addr = &net_pkt_iface(pkt)->ipv4.gw;
+		if (net_is_ipv4_addr_unspecified(addr)) {
+			NET_ERR("Gateway not set for iface %p",
+				net_pkt_iface(pkt));
+
+			return NULL;
+		}
 	} else {
 		addr = &NET_IPV4_HDR(pkt)->dst;
 	}

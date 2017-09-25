@@ -549,9 +549,11 @@ static struct usb_ep_cfg_data btusb_ep[] = {
 #endif
 };
 
-static void btusb_status_cb(enum usb_dc_status_code status)
+static void btusb_status_cb(enum usb_dc_status_code status, u8_t *param)
 {
 	struct btusb_dev_data_t * const dev_data = DEV_DATA(btusb_dev);
+
+	ARG_UNUSED(param);
 
 	/* Store the new status */
 	dev_data->usb_status = status;

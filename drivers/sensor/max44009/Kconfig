@@ -9,7 +9,7 @@
 menuconfig MAX44009
 	bool
 	prompt "MAX44009 Light Sensor"
-	depends on SENSOR && I2C
+	depends on I2C
 	default n
 	help
 	Enable driver for MAX44009 light sensors.

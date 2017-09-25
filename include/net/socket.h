@@ -23,6 +23,7 @@
 #include <sys/types.h>
 #include <zephyr/types.h>
 #include <net/net_ip.h>
+#include <net/dns_resolve.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,6 +39,20 @@ struct zsock_pollfd {
 #define ZSOCK_POLLIN 1
 #define ZSOCK_POLLOUT 4
 
+struct zsock_addrinfo {
+	struct zsock_addrinfo *ai_next;
+	int ai_flags;
+	int ai_family;
+	int ai_socktype;
+	int ai_protocol;
+	socklen_t ai_addrlen;
+	struct sockaddr *ai_addr;
+	char *ai_canonname;
+
+	struct sockaddr _ai_addr;
+	char _ai_canonname[DNS_MAX_NAME_SIZE + 1];
+};
+
 int zsock_socket(int family, int type, int proto);
 int zsock_close(int sock);
 int zsock_bind(int sock, const struct sockaddr *addr, socklen_t addrlen);
@@ -49,6 +64,9 @@ ssize_t zsock_recv(int sock, void *buf, size_t max_len, int flags);
 int zsock_fcntl(int sock, int cmd, int flags);
 int zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout);
 int zsock_inet_pton(sa_family_t family, const char *src, void *dst);
+int zsock_getaddrinfo(const char *host, const char *service,
+		      const struct zsock_addrinfo *hints,
+		      struct zsock_addrinfo **res);
 
 #if defined(CONFIG_NET_SOCKETS_POSIX_NAMES)
 #define socket zsock_socket
@@ -68,6 +86,14 @@ int zsock_inet_pton(sa_family_t family, const char *src, void *dst);
 
 #define inet_ntop net_addr_ntop
 #define inet_pton zsock_inet_pton
+
+#define getaddrinfo zsock_getaddrinfo
+#define addrinfo zsock_addrinfo
+#define EAI_BADFLAGS DNS_EAI_BADFLAGS
+#define EAI_NONAME DNS_EAI_NONAME
+#define EAI_AGAIN DNS_EAI_AGAIN
+#define EAI_FAIL DNS_EAI_FAIL
+#define EAI_NODATA DNS_EAI_NODATA
 #endif
 
 #ifdef __cplusplus

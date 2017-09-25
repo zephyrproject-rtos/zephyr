@@ -28,7 +28,7 @@ static inline void msg_init(struct device *dev, struct i2c_msg *msg,
 	I2C_TypeDef *i2c = cfg->i2c;
 	unsigned int len = msg->len;
 
-	if (data->dev_config.bits.use_10_bit_addr) {
+	if (I2C_ADDR_10_BITS & data->dev_config) {
 		LL_I2C_SetMasterAddressingMode(i2c,
 						LL_I2C_ADDRESSING_MODE_10BIT);
 		LL_I2C_SetSlaveAddr(i2c, (uint32_t) slave);
@@ -264,7 +264,7 @@ int stm32_i2c_configure_timing(struct device *dev, u32_t clock)
 	u32_t presc = 1;
 	u32_t timing = 0;
 
-	switch (data->dev_config.bits.speed) {
+	switch (I2C_SPEED_GET(data->dev_config)) {
 	case I2C_SPEED_STANDARD:
 		i2c_h_min_time = 4000;
 		i2c_l_min_time = 4700;

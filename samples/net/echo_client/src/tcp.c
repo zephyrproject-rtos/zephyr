@@ -348,7 +348,7 @@ int start_tcp(void)
 				  K_THREAD_STACK_SIZEOF(
 					  net_app_tls_stack_ipv4));
 		if (ret < 0) {
-			NET_ERR("Cannot init IPv6 TCP client (%d)", ret);
+			NET_ERR("Cannot init IPv4 TCP client (%d)", ret);
 		}
 	}
 

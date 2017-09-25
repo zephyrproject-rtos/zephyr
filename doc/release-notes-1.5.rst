@@ -102,7 +102,7 @@ Documentation
 - Moved all the boards documentation to the wiki.
 - Moved Code Contribution documentation to the wiki.
 - Added package "ncurses" to the list of requirements.
-- Updated Mac OS X instructions.
+- Updated macOS instructions.
 
 Test and Samples
 ****************

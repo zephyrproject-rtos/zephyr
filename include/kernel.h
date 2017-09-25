@@ -169,7 +169,7 @@ struct _k_object {
  * @return 0 If the object is valid
  *         -EBADF if not a valid object of the specified type
  *         -EPERM If the caller does not have permissions
- *         -EINVAL Object is not intitialized
+ *         -EINVAL Object is not initialized
  */
 int _k_object_validate(void *obj, enum k_objects otype, int init);
 
@@ -3917,6 +3917,10 @@ static inline int _is_user_context(void)
 }
 
 /* Interfaces for invoking system calls */
+static inline u32_t _arch_syscall_invoke6(u32_t arg1, u32_t arg2, u32_t arg3,
+					  u32_t arg4, u32_t arg5, u32_t arg6,
+					  u32_t call_id);
+
 static inline u32_t _arch_syscall_invoke5(u32_t arg1, u32_t arg2, u32_t arg3,
 					  u32_t arg4, u32_t arg5,
 					  u32_t call_id);

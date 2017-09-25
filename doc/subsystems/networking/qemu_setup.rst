@@ -130,8 +130,16 @@ To stop the daemons, just press Ctrl+C in the corresponding terminal windows
 (you need to stop both ``loop-slip-tap.sh`` and ``loop-socat.sh``).
 
 
-Setting up NAT/masquerading to access Internet
-**********************************************
+Setting up Zephyr and NAT/masquerading on QEMU host to access Internet
+**********************************************************************
+
+To access the Internet from a Zephyr application using IPv4,
+a gateway should be set via DHCP or configured manually.
+For applications using the :ref:`net_app_api` facility (with the config option
+:option:`CONFIG_NET_APP` enabled),
+set the :option:`CONFIG_NET_APP_MY_IPV4_GW` option to the IP address
+of the gateway. For apps not using the :ref:`net_app_api` facility, set up the
+gateway by calling the :c:func:`net_if_ipv4_set_gw` at runtime.
 
 To access Internet from a custom application running in a QEMU, NAT
 (masquerading) should be set up for QEMU's source address. Assuming 192.0.2.1 is

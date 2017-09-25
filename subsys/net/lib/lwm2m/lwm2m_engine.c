@@ -35,6 +35,7 @@
 #include <errno.h>
 #include <init.h>
 #include <misc/printk.h>
+#include <net/net_app.h>
 #include <net/net_ip.h>
 #include <net/net_pkt.h>
 #include <net/udp.h>
@@ -80,8 +81,7 @@
 
 struct observe_node {
 	sys_snode_t node;
-	struct net_context *net_ctx;
-	struct sockaddr addr;
+	struct lwm2m_ctx *ctx;
 	struct lwm2m_obj_path path;
 	u8_t  token[8];
 	s64_t event_timestamp;
@@ -93,13 +93,6 @@ struct observe_node {
 	bool used;
 	u8_t  tkl;
 };
-
-#define NUM_PENDINGS	CONFIG_LWM2M_ENGINE_MAX_PENDING
-#define NUM_REPLIES	CONFIG_LWM2M_ENGINE_MAX_REPLIES
-
-struct zoap_pending pendings[NUM_PENDINGS];
-struct zoap_reply replies[NUM_REPLIES];
-struct k_delayed_work retransmit_work;
 
 static struct observe_node observe_node_data[CONFIG_LWM2M_ENGINE_MAX_OBSERVER];
 
@@ -185,20 +178,18 @@ int lwm2m_notify_observer_path(struct lwm2m_obj_path *path)
 				     path->res_id);
 }
 
-static int engine_add_observer(struct net_context *net_ctx,
-			       struct sockaddr *addr,
+static int engine_add_observer(struct net_app_ctx *app_ctx,
 			       const u8_t *token, u8_t tkl,
 			       struct lwm2m_obj_path *path,
 			       u16_t format)
 {
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;
 	struct observe_node *obs;
+	struct sockaddr *addr;
 	int i;
 
-	if (!addr) {
-		SYS_LOG_ERR("sockaddr is required");
-		return -EINVAL;
-	}
+	/* remote addr */
+	addr = &app_ctx->default_ctx->remote;
 
 	/* check if object exists */
 	if (!get_engine_obj(path->obj_id)) {
@@ -235,7 +226,7 @@ static int engine_add_observer(struct net_context *net_ctx,
 
 	/* make sure this observer doesn't exist already */
 	SYS_SLIST_FOR_EACH_CONTAINER(&engine_observer_list, obs, node) {
-		if (memcmp(&obs->addr, addr, sizeof(addr)) == 0 &&
+		if (&obs->ctx->net_app_ctx == app_ctx &&
 		    memcmp(&obs->path, path, sizeof(*path)) == 0) {
 			/* quietly update the token information */
 			memcpy(obs->token, token, tkl);
@@ -264,8 +255,8 @@ static int engine_add_observer(struct net_context *net_ctx,
 
 	/* copy the values and add it to the list */
 	observe_node_data[i].used = true;
-	observe_node_data[i].net_ctx = net_ctx;
-	memcpy(&observe_node_data[i].addr, addr, sizeof(*addr));
+	observe_node_data[i].ctx = CONTAINER_OF(app_ctx,
+						struct lwm2m_ctx, net_app_ctx);
 	memcpy(&observe_node_data[i].path, path, sizeof(*path));
 	memcpy(observe_node_data[i].token, token, tkl);
 	observe_node_data[i].tkl = tkl;
@@ -580,28 +571,27 @@ static void zoap_options_to_path(struct zoap_option *opt, int options_count,
 	}
 }
 
-int lwm2m_init_message(struct net_context *net_ctx, struct zoap_packet *zpkt,
+int lwm2m_init_message(struct net_app_ctx *app_ctx, struct zoap_packet *zpkt,
 		       struct net_pkt **pkt, u8_t type, u8_t code, u16_t mid,
 		       const u8_t *token, u8_t tkl)
 {
 	struct net_buf *frag;
 	int r;
 
-	*pkt = net_pkt_get_tx(net_ctx, BUF_ALLOC_TIMEOUT);
+	*pkt = net_app_get_net_pkt(app_ctx, AF_UNSPEC, BUF_ALLOC_TIMEOUT);
 	if (!*pkt) {
 		SYS_LOG_ERR("Unable to get TX packet, not enough memory.");
 		return -ENOMEM;
 	}
 
-	frag = net_pkt_get_data(net_ctx, BUF_ALLOC_TIMEOUT);
+	frag = net_app_get_net_buf(app_ctx, *pkt,
+				   BUF_ALLOC_TIMEOUT);
 	if (!frag) {
 		SYS_LOG_ERR("Unable to get DATA buffer, not enough memory.");
 		net_pkt_unref(*pkt);
 		*pkt = NULL;
 		return -ENOMEM;
 	}
-
-	net_pkt_frag_add(*pkt, frag);
 
 	r = zoap_packet_init(zpkt, *pkt);
 	if (r < 0) {
@@ -630,22 +620,22 @@ int lwm2m_init_message(struct net_context *net_ctx, struct zoap_packet *zpkt,
 	return 0;
 }
 
-struct zoap_pending *lwm2m_init_message_pending(struct zoap_packet *zpkt,
-						struct sockaddr *addr,
-						struct zoap_pending *zpendings,
-						int num_zpendings)
+struct zoap_pending *lwm2m_init_message_pending(struct lwm2m_ctx *client_ctx,
+						struct zoap_packet *zpkt)
 {
 	struct zoap_pending *pending = NULL;
 	int ret;
 
-	pending = zoap_pending_next_unused(zpendings, num_zpendings);
+	pending = zoap_pending_next_unused(client_ctx->pendings,
+					   CONFIG_LWM2M_ENGINE_MAX_PENDING);
 	if (!pending) {
 		SYS_LOG_ERR("Unable to find a free pending to track "
 			    "retransmissions.");
 		return NULL;
 	}
 
-	ret = zoap_pending_init(pending, zpkt, addr);
+	ret = zoap_pending_init(pending, zpkt,
+				&client_ctx->net_app_ctx.default_ctx->remote);
 	if (ret < 0) {
 		SYS_LOG_ERR("Unable to initialize a pending "
 			    "retransmission (err:%d).", ret);
@@ -2004,9 +1994,9 @@ static int get_observe_option(const struct zoap_packet *zpkt)
 	return zoap_option_value_to_int(&option);
 }
 
-static int handle_request(struct zoap_packet *request,
-			  struct zoap_packet *response,
-			  struct sockaddr *from_addr)
+static int handle_request(struct net_app_ctx *app_ctx,
+			  struct zoap_packet *request,
+			  struct zoap_packet *response)
 {
 	int r;
 	u8_t code;
@@ -2148,9 +2138,9 @@ static int handle_request(struct zoap_packet *request,
 						    r);
 				}
 
-				r = engine_add_observer(
-					net_pkt_context(in.in_zpkt->pkt),
-					from_addr, token, tkl, &path, accept);
+				r = engine_add_observer(app_ctx,
+							token, tkl, &path,
+							accept);
 				if (r < 0) {
 					SYS_LOG_ERR("add OBSERVE error: %d", r);
 				}
@@ -2237,19 +2227,17 @@ static int handle_request(struct zoap_packet *request,
 	return r;
 }
 
-int lwm2m_udp_sendto(struct net_pkt *pkt, const struct sockaddr *dst_addr)
+int lwm2m_udp_sendto(struct net_app_ctx *app_ctx, struct net_pkt *pkt)
 {
-	return net_context_sendto(pkt, dst_addr, NET_SOCKADDR_MAX_SIZE,
-				  NULL, K_NO_WAIT, NULL, NULL);
+	return net_app_send_pkt(app_ctx, pkt, &app_ctx->default_ctx->remote,
+				NET_SOCKADDR_MAX_SIZE, K_NO_WAIT, NULL);
 }
 
-void lwm2m_udp_receive(struct net_context *ctx, struct net_pkt *pkt,
-		       struct zoap_pending *zpendings, int num_zpendings,
-		       struct zoap_reply *zreplies, int num_zreplies,
+void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
 		       bool handle_separate_response,
-		       int (*udp_request_handler)(struct zoap_packet *,
+		       int (*udp_request_handler)(struct net_app_ctx *app_ctx,
 						  struct zoap_packet *,
-						  struct sockaddr *))
+						  struct zoap_packet *))
 {
 	struct net_udp_hdr hdr, *udp_hdr;
 	struct zoap_pending *pending;
@@ -2301,7 +2289,8 @@ void lwm2m_udp_receive(struct net_context *ctx, struct net_pkt *pkt,
 	}
 
 	token = zoap_header_get_token(&response, &tkl);
-	pending = zoap_pending_received(&response, zpendings, num_zpendings);
+	pending = zoap_pending_received(&response, client_ctx->pendings,
+					CONFIG_LWM2M_ENGINE_MAX_PENDING);
 	if (pending) {
 		/* TODO: If necessary cancel retransmissions */
 	}
@@ -2309,7 +2298,8 @@ void lwm2m_udp_receive(struct net_context *ctx, struct net_pkt *pkt,
 	SYS_LOG_DBG("checking for reply from [%s]",
 		    lwm2m_sprint_ip_addr(&from_addr));
 	reply = zoap_response_received(&response, &from_addr,
-				       zreplies, num_zreplies);
+				       client_ctx->replies,
+				       CONFIG_LWM2M_ENGINE_MAX_REPLIES);
 	if (!reply) {
 		/*
 		 * If no normal response handler is found, then this is
@@ -2319,7 +2309,8 @@ void lwm2m_udp_receive(struct net_context *ctx, struct net_pkt *pkt,
 		if (udp_request_handler &&
 		    zoap_header_get_type(&response) == ZOAP_TYPE_CON) {
 			/* Create a response packet if we reach this point */
-			r = lwm2m_init_message(ctx, &response2, &pkt2,
+			r = lwm2m_init_message(&client_ctx->net_app_ctx,
+					       &response2, &pkt2,
 					       ZOAP_TYPE_ACK,
 					       zoap_header_get_code(&response),
 					       zoap_header_get_id(&response),
@@ -2334,12 +2325,13 @@ void lwm2m_udp_receive(struct net_context *ctx, struct net_pkt *pkt,
 			/*
 			 * The "response" here is actually a new request
 			 */
-			r = udp_request_handler(&response, &response2,
-						&from_addr);
+			r = udp_request_handler(&client_ctx->net_app_ctx,
+						&response, &response2);
 			if (r < 0) {
 				SYS_LOG_ERR("Request handler error: %d", r);
 			} else {
-				r = lwm2m_udp_sendto(pkt2, &from_addr);
+				r = lwm2m_udp_sendto(&client_ctx->net_app_ctx,
+						     pkt2);
 				if (r < 0) {
 					SYS_LOG_ERR("Err sending response: %d",
 						    r);
@@ -2374,24 +2366,31 @@ cleanup:
 	}
 }
 
-static void udp_receive(struct net_context *ctx, struct net_pkt *pkt,
+static void udp_receive(struct net_app_ctx *app_ctx, struct net_pkt *pkt,
 			int status, void *user_data)
 {
-	lwm2m_udp_receive(ctx, pkt, pendings, NUM_PENDINGS,
-			  replies, NUM_REPLIES, false, handle_request);
+	struct lwm2m_ctx *client_ctx = CONTAINER_OF(app_ctx,
+						    struct lwm2m_ctx,
+						    net_app_ctx);
+
+	lwm2m_udp_receive(client_ctx, pkt, false, handle_request);
 }
 
 static void retransmit_request(struct k_work *work)
 {
+	struct lwm2m_ctx *client_ctx;
 	struct zoap_pending *pending;
 	int r;
 
-	pending = zoap_pending_next_to_expire(pendings, NUM_PENDINGS);
+	client_ctx = CONTAINER_OF(work, struct lwm2m_ctx, retransmit_work);
+	pending = zoap_pending_next_to_expire(client_ctx->pendings,
+					      CONFIG_LWM2M_ENGINE_MAX_PENDING);
 	if (!pending) {
 		return;
 	}
 
-	r = lwm2m_udp_sendto(pending->pkt, &pending->addr);
+	r = lwm2m_udp_sendto(&client_ctx->net_app_ctx,
+			     pending->pkt);
 	if (r < 0) {
 		return;
 	}
@@ -2401,7 +2400,7 @@ static void retransmit_request(struct k_work *work)
 		return;
 	}
 
-	k_delayed_work_submit(&retransmit_work, pending->timeout);
+	k_delayed_work_submit(&client_ctx->retransmit_work, pending->timeout);
 }
 
 static int notify_message_reply_cb(const struct zoap_packet *response,
@@ -2448,6 +2447,11 @@ static int generate_notify_message(struct observe_node *obs,
 	struct lwm2m_obj_path path;
 	int ret = 0;
 
+	if (!obs->ctx) {
+		SYS_LOG_ERR("observer has no valid LwM2M ctx!");
+		return -EINVAL;
+	}
+
 	/* setup engine context */
 	memset(&context, 0, sizeof(struct lwm2m_engine_context));
 	context.out = &out;
@@ -2465,7 +2469,8 @@ static int generate_notify_message(struct observe_node *obs,
 		    obs->path.res_id,
 		    obs->path.level,
 		    sprint_token(obs->token, obs->tkl),
-		    lwm2m_sprint_ip_addr(&obs->addr),
+		    lwm2m_sprint_ip_addr(
+				&obs->ctx->net_app_ctx.default_ctx->remote),
 		    k_uptime_get());
 
 	obj_inst = get_engine_obj_inst(obs->path.obj_id,
@@ -2477,7 +2482,7 @@ static int generate_notify_message(struct observe_node *obs,
 		return -EINVAL;
 	}
 
-	ret = lwm2m_init_message(obs->net_ctx, out.out_zpkt, &pkt,
+	ret = lwm2m_init_message(&obs->ctx->net_app_ctx, out.out_zpkt, &pkt,
 				 ZOAP_TYPE_CON, ZOAP_RESPONSE_CODE_CONTENT,
 				 0, obs->token, obs->tkl);
 	if (ret) {
@@ -2516,15 +2521,14 @@ static int generate_notify_message(struct observe_node *obs,
 		goto cleanup;
 	}
 
-	pending = lwm2m_init_message_pending(out.out_zpkt,
-					     &obs->addr,
-					     pendings, NUM_PENDINGS);
+	pending = lwm2m_init_message_pending(obs->ctx, out.out_zpkt);
 	if (!pending) {
 		ret = -ENOMEM;
 		goto cleanup;
 	}
 
-	reply = zoap_reply_next_unused(replies, NUM_REPLIES);
+	reply = zoap_reply_next_unused(obs->ctx->replies,
+				       CONFIG_LWM2M_ENGINE_MAX_REPLIES);
 	if (!reply) {
 		SYS_LOG_ERR("No resources for waiting for replies.");
 		ret = -ENOMEM;
@@ -2534,7 +2538,7 @@ static int generate_notify_message(struct observe_node *obs,
 	zoap_reply_init(reply, &request);
 	reply->reply = notify_message_reply_cb;
 
-	ret = lwm2m_udp_sendto(pkt, &obs->addr);
+	ret = lwm2m_udp_sendto(&obs->ctx->net_app_ctx, pkt);
 	if (ret < 0) {
 		SYS_LOG_ERR("Error sending LWM2M packet (err:%d).", ret);
 		goto cleanup;
@@ -2542,7 +2546,7 @@ static int generate_notify_message(struct observe_node *obs,
 	SYS_LOG_DBG("NOTIFY MSG: SENT");
 
 	zoap_pending_cycle(pending);
-	k_delayed_work_submit(&retransmit_work, pending->timeout);
+	k_delayed_work_submit(&obs->ctx->retransmit_work, pending->timeout);
 	return ret;
 
 cleanup:
@@ -2592,17 +2596,62 @@ static void lwm2m_engine_service(void)
 	}
 }
 
-int lwm2m_engine_start(struct net_context *net_ctx)
+#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
+int lwm2m_engine_set_net_pkt_pool(struct lwm2m_ctx *ctx,
+				  net_pkt_get_slab_func_t tx_slab,
+				  net_pkt_get_pool_func_t data_pool)
+{
+	ctx->tx_slab = tx_slab;
+	ctx->data_pool = data_pool;
+
+	return 0;
+}
+#endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
+
+int lwm2m_engine_start(struct lwm2m_ctx *client_ctx,
+		       char *peer_str, u16_t peer_port)
 {
 	int ret = 0;
 
-	/* set callback */
-	ret = net_context_recv(net_ctx, udp_receive, 0, NULL);
+	/* TODO: use security object for initial setup */
+	ret = net_app_init_udp_client(&client_ctx->net_app_ctx,
+				      NULL, NULL,
+				      peer_str,
+				      peer_port,
+				      client_ctx->net_init_timeout,
+				      client_ctx);
 	if (ret) {
-		SYS_LOG_ERR("Could not set receive for net context (err:%d)",
-			    ret);
+		SYS_LOG_ERR("net_app_init_udp_client err:%d", ret);
+		goto error_start;
 	}
 
+	k_delayed_work_init(&client_ctx->retransmit_work, retransmit_request);
+
+#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
+	net_app_set_net_pkt_pool(&client_ctx->net_app_ctx,
+				 client_ctx->tx_slab, client_ctx->data_pool);
+#endif
+
+	/* set net_app callbacks */
+	ret = net_app_set_cb(&client_ctx->net_app_ctx,
+			     NULL, udp_receive, NULL, NULL);
+	if (ret) {
+		SYS_LOG_ERR("Could not set receive callback (err:%d)", ret);
+		goto error_start;
+	}
+
+	ret = net_app_connect(&client_ctx->net_app_ctx,
+			      client_ctx->net_timeout);
+	if (ret < 0) {
+		SYS_LOG_ERR("Cannot connect UDP (%d)", ret);
+		goto error_start;
+	}
+
+	return 0;
+
+error_start:
+	net_app_close(&client_ctx->net_app_ctx);
+	net_app_release(&client_ctx->net_app_ctx);
 	return ret;
 }
 
@@ -2614,7 +2663,6 @@ static int lwm2m_engine_init(struct device *dev)
 			K_THREAD_STACK_SIZEOF(engine_thread_stack),
 			(k_thread_entry_t) lwm2m_engine_service,
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
-	k_delayed_work_init(&retransmit_work, retransmit_request);
 	SYS_LOG_DBG("LWM2M engine thread started");
 	return 0;
 }

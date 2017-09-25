@@ -347,7 +347,7 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 	irq_unlock(imask);
 
 	if (status) {
-		SYS_LOG_ERR("ENET_SendFrame error: %d\n", status);
+		SYS_LOG_ERR("ENET_SendFrame error: %d", (int)status);
 		return -1;
 	}
 
@@ -370,7 +370,7 @@ static void eth_rx(struct device *iface)
 	if (status) {
 		enet_data_error_stats_t error_stats;
 
-		SYS_LOG_ERR("ENET_GetRxFrameSize return: %d", status);
+		SYS_LOG_ERR("ENET_GetRxFrameSize return: %d", (int)status);
 
 		ENET_GetRxErrBeforeReadFrame(&context->enet_handle,
 					     &error_stats);
@@ -399,7 +399,7 @@ static void eth_rx(struct device *iface)
 	}
 
 	if (sizeof(context->frame_buf) < frame_length) {
-		SYS_LOG_ERR("frame too large (%d)\n", frame_length);
+		SYS_LOG_ERR("frame too large (%d)", frame_length);
 		net_pkt_unref(pkt);
 		status = ENET_ReadFrame(ENET, &context->enet_handle, NULL, 0);
 		assert(status == kStatus_Success);
@@ -415,7 +415,7 @@ static void eth_rx(struct device *iface)
 				context->frame_buf, frame_length);
 	if (status) {
 		irq_unlock(imask);
-		SYS_LOG_ERR("ENET_ReadFrame failed: %d\n", status);
+		SYS_LOG_ERR("ENET_ReadFrame failed: %d", (int)status);
 		net_pkt_unref(pkt);
 		return;
 	}
@@ -429,7 +429,7 @@ static void eth_rx(struct device *iface)
 		pkt_buf = net_pkt_get_frag(pkt, K_NO_WAIT);
 		if (!pkt_buf) {
 			irq_unlock(imask);
-			SYS_LOG_ERR("Failed to get fragment buf\n");
+			SYS_LOG_ERR("Failed to get fragment buf");
 			net_pkt_unref(pkt);
 			assert(status == kStatus_Success);
 			return;

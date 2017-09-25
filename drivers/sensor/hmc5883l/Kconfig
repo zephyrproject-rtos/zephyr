@@ -7,7 +7,7 @@
 menuconfig HMC5883L
 	bool
 	prompt "HMC5883L magnetometer"
-	depends on SENSOR && I2C
+	depends on I2C
 	default n
 	help
 	Enable driver for HMC5883L I2C-based magnetometer.

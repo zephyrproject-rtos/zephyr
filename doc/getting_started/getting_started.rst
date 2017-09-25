@@ -12,7 +12,7 @@ Set Up the Development Environment
 The Zephyr project supports these operating systems:
 
 * Linux
-* Mac OS
+* macOS
 * Windows 8.1
 
 Use the following procedures to create a new development environment.
@@ -49,7 +49,7 @@ section will describe the pieces necessary for creating a Zephyr application.
 The processes to build and run a Zephyr application are the same across
 operating systems. Nevertheless, the commands needed do differ from one OS to
 the next. The following sections contain the commands used in a Linux
-development environment. If you are using Mac OS please use the appropriate
+development environment. If you are using macOS please use the appropriate
 commands for your OS.
 
 Building a Sample Application

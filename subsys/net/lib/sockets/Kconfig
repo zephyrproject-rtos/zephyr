@@ -35,6 +35,7 @@ config NET_SOCKETS_POLL_MAX
 config NET_DEBUG_SOCKETS
 	bool "Debug BSD Sockets compatible API calls"
 	default n
+	default y if NET_LOG_GLOBAL
 	help
 	Enables logging for sockets code. (Logging level is defined by
 	SYS_LOG_NET_LEVEL setting).
