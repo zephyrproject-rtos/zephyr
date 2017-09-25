@@ -116,6 +116,17 @@ include($ENV{ZEPHYR_BASE}/cmake/host-tools.cmake)
 include($ENV{ZEPHYR_BASE}/cmake/kconfig.cmake)
 include($ENV{ZEPHYR_BASE}/cmake/toolchain.cmake)
 
+set(KERNEL_NAME ${CONFIG_KERNEL_BIN_NAME})
+
+set(KERNEL_ELF_NAME   ${KERNEL_NAME}.elf)
+set(KERNEL_BIN_NAME   ${KERNEL_NAME}.bin)
+set(KERNEL_HEX_NAME   ${KERNEL_NAME}.hex)
+set(KERNEL_MAP_NAME   ${KERNEL_NAME}.map)
+set(KERNEL_LST_NAME   ${KERNEL_NAME}.lst)
+set(KERNEL_S19_NAME   ${KERNEL_NAME}.s19)
+set(KERNEL_STAT_NAME  ${KERNEL_NAME}.stat) # TODO: Port this
+set(KERNEL_STRIP_NAME ${KERNEL_NAME}.strip)
+
 include(${BOARD_DIR}/board.cmake OPTIONAL)
 
 zephyr_library_named(app)
