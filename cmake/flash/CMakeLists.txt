@@ -52,3 +52,26 @@ else()
     )
 endif()
 
+if(NOT EMU_PLATFORM)
+  if(DEBUG_SCRIPT)
+    add_custom_target(debugserver
+      COMMAND
+
+      ${CMAKE_COMMAND} -E env
+      ${ENV_VARS}
+
+      ${CONFIG_SHELL}
+      $ENV{ZEPHYR_BASE}/scripts/support/${DEBUG_SCRIPT}
+      debugserver
+
+      WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
+      )
+  else()
+    add_custom_target(debugserver
+      COMMAND
+      ${CMAKE_COMMAND} -E echo
+	  "Debugserver not supported with this board."
+	  "Please check the documentation for alternate instructions."
+      )
+  endif()
+endif()
