@@ -89,7 +89,7 @@ void test_requesting_nm(void)
 	TC_PRINT("- Request Net MGMT\n");
 
 	zassert_false(net_mgmt(TEST_MGMT_REQUEST, NULL, &data, sizeof(data)),
-		"Requesting Net MGMT failed");
+		      "Requesting Net MGMT failed");
 }
 
 static void thrower_thread(void)
@@ -140,9 +140,7 @@ static inline int test_sending_event(u32_t times, bool receiver)
 		TC_PRINT("\tReceived 0x%08X %u times\n",
 			 rx_event, rx_calls);
 
-		/**TESTPOINTS: Check rx events*/
 		zassert_equal(rx_event, event2throw, "rx_event check failed");
-
 		zassert_equal(rx_calls, times, "rx_calls check failed");
 
 		net_mgmt_del_event_callback(&rx_cb);
@@ -221,9 +219,7 @@ static int test_core_event(u32_t event, bool (*func)(void))
 
 	k_yield();
 
-	/**TESTPOINTS: Check rx events*/
 	zassert_true(rx_calls, "rx_calls empty");
-
 	zassert_equal(rx_event, event, "rx_event check failed");
 
 	net_mgmt_del_event_callback(&rx_cb);
@@ -259,35 +255,33 @@ void test_mgmt(void)
 
 	initialize_event_tests();
 
-	/**TESTPOINTS: Check events results*/
 	zassert_false(test_sending_event(1, false),
-			"test_sending_event failed");
+		      "test_sending_event failed");
 
 	zassert_false(test_sending_event(2, false),
-			"test_sending_event failed");
+		      "test_sending_event failed");
 
 	zassert_false(test_sending_event(1, true),
-			"test_sending_event failed");
+		      "test_sending_event failed");
 
 	zassert_false(test_sending_event(2, true),
-			"test_sending_event failed");
+		      "test_sending_event failed");
 
-	zassert_false(test_core_event(NET_EVENT_IPV6_ADDR_ADD,
-			    _iface_ip6_add), "test_core_event failed");
+	zassert_false(test_core_event(NET_EVENT_IPV6_ADDR_ADD, _iface_ip6_add),
+		      "test_core_event failed");
 
-	zassert_false(test_core_event(NET_EVENT_IPV6_ADDR_DEL,
-			    _iface_ip6_del), "test_core_event failed");
+	zassert_false(test_core_event(NET_EVENT_IPV6_ADDR_DEL, _iface_ip6_del),
+		      "test_core_event failed");
 
 	zassert_false(test_synchronous_event_listener(2, false),
-			"test_synchronous_event_listener failed");
+		      "test_synchronous_event_listener failed");
 
 	zassert_false(test_synchronous_event_listener(2, true),
-			"test_synchronous_event_listener failed");
+		      "test_synchronous_event_listener failed");
 }
 
 void test_main(void)
 {
-	ztest_test_suite(test_mgmt_fn,
-		ztest_unit_test(test_mgmt));
+	ztest_test_suite(test_mgmt_fn, ztest_unit_test(test_mgmt));
 	ztest_run_test_suite(test_mgmt_fn);
 }
