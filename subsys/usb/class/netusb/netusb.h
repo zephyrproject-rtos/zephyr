@@ -22,7 +22,12 @@ struct netusb_function {
 void netusb_recv(struct net_pkt *pkt);
 int try_write(u8_t ep, u8_t *data, u16_t len);
 
-#ifdef CONFIG_USB_DEVICE_NETWORK_ECM
+#if defined(CONFIG_USB_DEVICE_NETWORK_ECM)
 #define NETUSB_IFACE_IDX FIRST_IFACE_CDC_ECM
 struct netusb_function ecm_function;
+#elif defined(CONFIG_USB_DEVICE_NETWORK_RNDIS)
+#define NETUSB_IFACE_IDX FIRST_IFACE_RNDIS
+struct netusb_function rndis_function;
+#else
+#error Unknown USB Device Networking function
 #endif
