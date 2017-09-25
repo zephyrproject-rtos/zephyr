@@ -8,7 +8,4 @@ set(QEMU_FLAGS_${ARCH}
   -machine sifive
   )
 
-# TODO: Support debug
-# set(DEBUG_SCRIPT qemu.sh)
-# debugserver: QEMU_EXTRA_FLAGS += -s -S
-# debugserver: qemu
+set(DEBUG_SCRIPT qemu.sh)
