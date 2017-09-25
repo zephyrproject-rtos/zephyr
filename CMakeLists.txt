@@ -602,15 +602,6 @@ add_custom_command(
   # NB: COMMENT only works for some CMake-Generators
 )
 
-if(EMU_PLATFORM)
-  # TODO: Support more emulators
-  add_subdirectory(cmake/qemu)
-else()
-  add_custom_target(run COMMENT "\
-    ===================================================\
-	Emulation/Simulation not supported with this board.\
-	===================================================\
-    ")
-endif()
+add_subdirectory(cmake/qemu)
 
 include(cmake/ccache.cmake)
