@@ -1,12 +1,29 @@
-#!/bin/sh
+#!/bin/bash
+
+if [ -z "$NRF_FAMILY" ]
+then
+    echo "NRF_FAMILY was not set"
+    exit 1
+fi
 
 HEX_NAME=${O}/${KERNEL_HEX_NAME}
+
+if [ ! -f ${HEX_NAME} ]; then
+    echo "File not found, HEX_NAME:'$HEX_NAME'"
+    exit 1
+fi
 
 command -v nrfjprog >/dev/null 2>&1 || { echo >&2 "Can't flash nRF board,"\
 						  "nrfjprog is not installed."\
 						  "Aborting."; exit 1; }
 
 CONNECTED_BOARDS=`nrfjprog --ids`
+if [ -z "$CONNECTED_BOARDS" ]
+then
+    echo "nrfjprog --ids did not show any connected boards"
+    exit 1
+fi
+
 read -s -a BOARD_LIST <<< $CONNECTED_BOARDS
 
 BOARDS_NUM=`echo "$CONNECTED_BOARDS" | wc -l`
@@ -34,7 +51,7 @@ else
 	BOARD_SNR=${BOARD_LIST[$ANS - 1]}
 fi
 
-echo "Flashing file: "${HEX_NAME}
+echo "Flashing file: ${HEX_NAME} of family '$NRF_FAMILY'"
 
 nrfjprog --eraseall -f $NRF_FAMILY --snr $BOARD_SNR &&
 nrfjprog --program $HEX_NAME -f $NRF_FAMILY --snr $BOARD_SNR &&
