@@ -11,3 +11,4 @@ Developer Guides
    ../samples/samples.rst
    ../reference/kconfig/index.rst
    ../api/api.rst
+   ../README.rst
