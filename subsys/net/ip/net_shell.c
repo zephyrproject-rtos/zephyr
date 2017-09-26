@@ -1454,6 +1454,10 @@ int net_shell_cmd_iface(int argc, char *argv[])
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
+#if defined(CONFIG_NET_HOSTNAME_ENABLE)
+	printk("Hostname: %s\n\n", net_hostname_get());
+#endif
+
 	net_if_foreach(iface_cb, NULL);
 
 	return 0;
