@@ -1,0 +1,16 @@
+#
+# Copyright (c) 2017 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menu "GATT Profiles"
+
+config BT_BAS
+	bool
+	prompt "Bluetooth BAS support"
+	default n
+	help
+	This option enable the GATT Battery Service.
+
+endmenu

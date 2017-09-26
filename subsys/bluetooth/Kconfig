@@ -148,6 +148,7 @@ config BT_CTLR_TO_HOST_SPI_IRQ_PIN
 	  Controller.
 
 source "subsys/bluetooth/common/Kconfig"
+source "subsys/bluetooth/lib/Kconfig"
 source "subsys/bluetooth/host/Kconfig"
 source "subsys/bluetooth/controller/Kconfig"
 source "subsys/bluetooth/shell/Kconfig"

@@ -19,10 +19,10 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
+#include <bluetooth/bas.h>
 
 #include <gatt/hrs.h>
 #include <gatt/dis.h>
-#include <gatt/bas.h>
 #include <gatt/cts.h>
 
 #define DEVICE_NAME		CONFIG_BT_DEVICE_NAME
