@@ -1,3 +1,3 @@
 ccflags-y +=-I${ZEPHYR_BASE}/samples/bluetooth
 
-obj-y = main.o hrs.o dis.o cts.o
+obj-y = main.o hrs.o dis.o

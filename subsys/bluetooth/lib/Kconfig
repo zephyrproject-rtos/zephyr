@@ -13,4 +13,11 @@ config BT_BAS
 	help
 	This option enable the GATT Battery Service.
 
+config BT_CTS
+	bool
+	prompt "Bluetooth CTS support"
+	default n
+	help
+	This option enable the GATT Current Time Service.
+
 endmenu
