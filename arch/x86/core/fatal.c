@@ -109,6 +109,23 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 	_SysFatalErrorHandler(reason, pEsf);
 }
 
+FUNC_NORETURN void _arch_syscall_oops(void *ssf_ptr)
+{
+	struct _x86_syscall_stack_frame *ssf =
+		(struct _x86_syscall_stack_frame *)ssf_ptr;
+	NANO_ESF oops_esf = {
+		.eip = ssf->eip,
+		.cs = ssf->cs,
+		.eflags = ssf->eflags
+	};
+
+	if (oops_esf.cs == USER_CODE_SEG) {
+		oops_esf.esp = ssf->esp;
+	}
+
+	_NanoFatalErrorHandler(_NANO_ERR_KERNEL_OOPS, &oops_esf);
+}
+
 #ifdef CONFIG_X86_KERNEL_OOPS
 /* The reason code gets pushed onto the stack right before the exception is
  * triggered, so it would be after the nano_esf data

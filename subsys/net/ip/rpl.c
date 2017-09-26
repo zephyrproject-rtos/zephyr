@@ -325,9 +325,10 @@ static struct net_nbr *nbr_add(struct net_if *iface,
 		return NULL;
 	}
 
-	NET_DBG("[%d] nbr %p IPv6 %s ll %s",
+	NET_DBG("[%d] nbr %p IPv6 %s ll %s iface %p",
 		nbr->idx, nbr, net_sprint_ipv6_addr(addr),
-		net_sprint_ll_addr(lladdr->addr, lladdr->len));
+		net_sprint_ll_addr(lladdr->addr, lladdr->len),
+		nbr->iface);
 
 	return nbr;
 }
@@ -3336,7 +3337,7 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 	struct net_rpl_dag *dag;
 	struct net_buf *frag;
 	struct in6_addr addr;
-	struct net_nbr *nbr;
+	struct net_nbr *ipv6_nbr, *rpl_nbr;
 	u16_t offset;
 	u16_t pos;
 	u8_t sequence;
@@ -3502,9 +3503,9 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 		NET_DBG("No-Path DAO received");
 
 		route = net_route_lookup(net_pkt_iface(pkt), &addr);
-		nbr = net_route_get_nbr(route);
-		if (nbr) {
-			extra = net_nbr_extra_data(nbr);
+		rpl_nbr = net_route_get_nbr(route);
+		if (rpl_nbr) {
+			extra = net_nbr_extra_data(rpl_nbr);
 		}
 
 		nexthop = net_route_get_nexthop(route);
@@ -3542,17 +3543,17 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 		return NET_DROP;
 	}
 
-	NET_DBG("Adding DAO route");
+	NET_DBG("Adding DAO route to %s", net_sprint_ipv6_addr(dao_sender));
 
-	nbr = net_ipv6_nbr_lookup(net_pkt_iface(pkt), dao_sender);
-	if (!nbr) {
-		nbr = net_ipv6_nbr_add(net_pkt_iface(pkt), dao_sender,
-				       net_pkt_ll_src(pkt), false,
-				       NET_IPV6_NBR_STATE_REACHABLE);
-		if (nbr) {
+	ipv6_nbr = net_ipv6_nbr_lookup(net_pkt_iface(pkt), dao_sender);
+	if (!ipv6_nbr) {
+		ipv6_nbr = net_ipv6_nbr_add(net_pkt_iface(pkt), dao_sender,
+					    net_pkt_ll_src(pkt), false,
+					    NET_IPV6_NBR_STATE_REACHABLE);
+		if (ipv6_nbr) {
 			/* Set reachable timer */
 			net_ipv6_nbr_set_reachable_timer(net_pkt_iface(pkt),
-							 nbr);
+							 ipv6_nbr);
 
 			NET_DBG("Neighbor %s [%s] added to neighbor cache",
 				net_sprint_ipv6_addr(dao_sender),
@@ -3581,7 +3582,9 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 		return NET_DROP;
 	}
 
-	extra = net_nbr_extra_data(nbr);
+	rpl_nbr = net_route_get_nbr(route);
+
+	extra = net_nbr_extra_data(rpl_nbr);
 	if (extra) {
 		extra->lifetime = net_rpl_lifetime(instance, lifetime);
 		extra->route_source = learned_from;

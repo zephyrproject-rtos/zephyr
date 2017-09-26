@@ -1,4 +1,4 @@
-/* -- Extra CSS styles for Zephyr content ----------------------------------- */
+/* -- Extra CSS styles for Zephyr content (RTD theme) ----------------------- */
 
 /*  make .. hlist:: tables fill the page */
 table.hlist {
@@ -8,4 +8,24 @@ table.hlist {
 /*  override rtd theme white-space no-wrap in table heading and content  */
 th,td {
     white-space: normal !important;
+}
+
+/* dbk tweak for doxygen-generated API headings (for RTD theme) */
+.rst-content dl.group>dt, .rst-content dl.group>dd>p {
+   display:none !important;
+}
+.rst-content dl.group {
+  margin: 0 0 12px 0px;
+}
+.rst-content dl.group>dd {
+  margin-left: 0  !important;
+}
+.rst-content p.breathe-sectiondef-title {
+  text-decoration: underline;  /* dbk for API sub-headings */
+  font-size: 1.25rem;
+  font-weight: bold;
+  margin-bottom: 12px;
+}
+.rst-content div.breathe-sectiondef {
+  padding-left: 0 !important;
 }

@@ -170,6 +170,8 @@ static inline bool check_if_dst_is_broadcast_or_mcast(struct net_if *iface,
 		hdr->dst.addr[4] = NET_IPV4_HDR(pkt)->dst.s4_addr[2];
 		hdr->dst.addr[5] = NET_IPV4_HDR(pkt)->dst.s4_addr[3];
 
+		hdr->dst.addr[3] = hdr->dst.addr[3] & 0x7f;
+
 		net_pkt_ll_dst(pkt)->len = sizeof(struct net_eth_addr);
 		net_pkt_ll_src(pkt)->addr = net_if_get_link_addr(iface)->addr;
 		net_pkt_ll_src(pkt)->len = sizeof(struct net_eth_addr);
@@ -192,6 +194,13 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 		struct net_pkt *arp_pkt;
 
 		if (check_if_dst_is_broadcast_or_mcast(iface, pkt)) {
+			if (!net_pkt_ll_dst(pkt)->addr) {
+				struct net_eth_addr *dst;
+
+				dst = &NET_ETH_HDR(pkt)->dst;
+				net_pkt_ll_dst(pkt)->addr = (u8_t *)dst->addr;
+			}
+
 			goto setup_hdr;
 		}
 
@@ -200,10 +209,20 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 			return NET_DROP;
 		}
 
-		NET_DBG("Sending arp pkt %p (orig %p) to iface %p",
-			arp_pkt, pkt, iface);
+		if (pkt != arp_pkt) {
+			NET_DBG("Sending arp pkt %p (orig %p) to iface %p",
+				arp_pkt, pkt, iface);
 
-		pkt = arp_pkt;
+			/* Either pkt went to ARP pending queue
+			 * or there was not space in the queue anymore
+			 */
+			net_pkt_unref(pkt);
+
+			pkt = arp_pkt;
+		} else {
+			NET_DBG("Found ARP entry, sending pkt %p to iface %p",
+				pkt, iface);
+		}
 
 		net_pkt_ll_src(pkt)->addr = (u8_t *)&NET_ETH_HDR(pkt)->src;
 		net_pkt_ll_src(pkt)->len = sizeof(struct net_eth_addr);

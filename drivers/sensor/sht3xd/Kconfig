@@ -9,7 +9,7 @@
 menuconfig SHT3XD
 	bool
 	prompt "SHT3xD Temperature and Humidity Sensor"
-	depends on SENSOR && I2C
+	depends on I2C
 	default n
 	help
 	  Enable driver for SHT3xD temperature and humidity sensors.

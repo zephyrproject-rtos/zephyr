@@ -232,11 +232,16 @@ static void tx_thread(void *p1, void *p2, void *p3)
 {
 	while (1) {
 		struct net_buf *buf;
+		int err;
 
 		/* Wait until a buffer is available */
 		buf = net_buf_get(&tx_queue, K_FOREVER);
 		/* Pass buffer to the stack */
-		bt_send(buf);
+		err = bt_send(buf);
+		if (err) {
+			SYS_LOG_ERR("Unable to send (err %d)", err);
+			net_buf_unref(buf);
+		}
 
 		/* Give other threads a chance to run if tx_queue keeps getting
 		 * new data all the time.

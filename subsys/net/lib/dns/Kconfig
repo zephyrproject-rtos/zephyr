@@ -13,6 +13,13 @@ config DNS_RESOLVER
 
 if DNS_RESOLVER
 
+config MDNS_RESOLVER
+	bool "Enable mDNS support"
+	default n
+	help
+	This option enables multicast DNS client side support.
+	See RFC 6762 for details.
+
 config DNS_RESOLVER_ADDITIONAL_BUF_CTR
 	int
 	prompt "Additional DNS buffers"
@@ -105,6 +112,7 @@ config DNS_NUM_CONCUR_QUERIES
 config NET_DEBUG_DNS_RESOLVE
 	bool "Debug DNS resolver"
 	default n
+	default y if NET_LOG_GLOBAL
 	help
 	Enables DNS resolver code to output debug messages
 

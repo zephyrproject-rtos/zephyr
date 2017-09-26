@@ -323,6 +323,17 @@ typedef struct nanoEsf {
 	unsigned int eflags;
 } NANO_ESF;
 
+
+struct _x86_syscall_stack_frame {
+	u32_t eip;
+	u32_t cs;
+	u32_t eflags;
+
+	/* These are only present if cs = USER_CODE_SEG */
+	u32_t esp;
+	u32_t ss;
+};
+
 /**
  * @brief "interrupt stack frame" (ISF)
  *
@@ -545,7 +556,29 @@ extern struct task_state_segment _main_tss;
 /* Syscall invocation macros. x86-specific machine constraints used to ensure
  * args land in the proper registers, see implementation of
  * _x86_syscall_entry_stub in userspace.S
+ *
+ * the entry stub clobbers EDX and ECX on IAMCU systems
  */
+
+static inline u32_t _arch_syscall_invoke6(u32_t arg1, u32_t arg2, u32_t arg3,
+					  u32_t arg4, u32_t arg5, u32_t arg6,
+					  u32_t call_id)
+{
+	u32_t ret;
+
+	__asm__ volatile("push %%ebp\n\t"
+			 "mov %[arg6], %%ebp\n\t"
+			 "int $0x80\n\t"
+			 "pop %%ebp\n\t"
+			 : "=a" (ret)
+#ifdef CONFIG_X86_IAMCU
+			   , "=d" (arg2), "=c" (arg3)
+#endif
+			 : "S" (call_id), "a" (arg1), "d" (arg2),
+			   "c" (arg3), "b" (arg4), "D" (arg5),
+			   [arg6] "r" (arg6));
+	return ret;
+}
 
 static inline u32_t _arch_syscall_invoke5(u32_t arg1, u32_t arg2, u32_t arg3,
 					  u32_t arg4, u32_t arg5, u32_t call_id)
@@ -554,6 +587,9 @@ static inline u32_t _arch_syscall_invoke5(u32_t arg1, u32_t arg2, u32_t arg3,
 
 	__asm__ volatile("int $0x80"
 			 : "=a" (ret)
+#ifdef CONFIG_X86_IAMCU
+			   , "=d" (arg2), "=c" (arg3)
+#endif
 			 : "S" (call_id), "a" (arg1), "d" (arg2),
 			   "c" (arg3), "b" (arg4), "D" (arg5));
 	return ret;
@@ -566,8 +602,11 @@ static inline u32_t _arch_syscall_invoke4(u32_t arg1, u32_t arg2, u32_t arg3,
 
 	__asm__ volatile("int $0x80"
 			 : "=a" (ret)
-			 : "S" (call_id), "a" (arg1), "d" (arg2),
-			   "c" (arg3), "b" (arg4));
+#ifdef CONFIG_X86_IAMCU
+			   , "=d" (arg2), "=c" (arg3)
+#endif
+			 : "S" (call_id), "a" (arg1), "d" (arg2), "c" (arg3),
+			   "b" (arg4));
 	return ret;
 }
 
@@ -578,6 +617,9 @@ static inline u32_t _arch_syscall_invoke3(u32_t arg1, u32_t arg2, u32_t arg3,
 
 	__asm__ volatile("int $0x80"
 			 : "=a" (ret)
+#ifdef CONFIG_X86_IAMCU
+			   , "=d" (arg2), "=c" (arg3)
+#endif
 			 : "S" (call_id), "a" (arg1), "d" (arg2), "c" (arg3));
 	return ret;
 }
@@ -588,7 +630,14 @@ static inline u32_t _arch_syscall_invoke2(u32_t arg1, u32_t arg2, u32_t call_id)
 
 	__asm__ volatile("int $0x80"
 			 : "=a" (ret)
-			 : "S" (call_id), "a" (arg1), "d" (arg2));
+#ifdef CONFIG_X86_IAMCU
+			   , "=d" (arg2)
+#endif
+			 : "S" (call_id), "a" (arg1), "d" (arg2)
+#ifdef CONFIG_X86_IAMCU
+			 : "ecx"
+#endif
+			 );
 	return ret;
 }
 
@@ -598,7 +647,11 @@ static inline u32_t _arch_syscall_invoke1(u32_t arg1, u32_t call_id)
 
 	__asm__ volatile("int $0x80"
 			 : "=a" (ret)
-			 : "S" (call_id), "a" (arg1));
+			 : "S" (call_id), "a" (arg1)
+#ifdef CONFIG_X86_IAMCU
+			 : "edx", "ecx"
+#endif
+			 );
 	return ret;
 }
 
@@ -608,7 +661,11 @@ static inline u32_t _arch_syscall_invoke0(u32_t call_id)
 
 	__asm__ volatile("int $0x80"
 			 : "=a" (ret)
-			 : "S" (call_id));
+			 : "S" (call_id)
+#ifdef CONFIG_X86_IAMCU
+			 : "edx", "ecx"
+#endif
+			 );
 	return ret;
 }
 

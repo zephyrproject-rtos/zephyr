@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_cryp.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    21-April-2017
   * @brief   Header file of CRYP HAL module.
   ******************************************************************************
   * @attention
@@ -43,7 +41,7 @@
  extern "C" {
 #endif
 
-#if defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L462xx) || defined(STM32L485xx) || defined(STM32L486xx) || defined(STM32L4A6xx)
+#if defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L462xx) || defined(STM32L485xx) || defined(STM32L486xx) || defined(STM32L4A6xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32l4xx_hal_def.h"
@@ -457,7 +455,7 @@ typedef struct
 
 
 /**
-  * @brief  Enable the CRYP interrupt.  
+  * @brief  Enable the CRYP interrupt. 
   * @param  __HANDLE__: specifies the CRYP handle.   
   * @param  __INTERRUPT__: CRYP Interrupt.
   *         This parameter can be one of the following values:  
@@ -687,7 +685,7 @@ uint32_t              HAL_CRYP_GetError(CRYP_HandleTypeDef *hcryp);
   * @}
   */ 
   
-#endif /* defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L462xx) || defined(STM32L485xx) || defined(STM32L486xx) || defined(STM32L4A6xx) */  
+#endif /* defined (STM32L442xx) || defined (STM32L443xx) || defined (STM32L462xx) || defined(STM32L485xx) || defined(STM32L486xx) || defined(STM32L4A6xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx) */  
   
 #ifdef __cplusplus
 }

@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_spi.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    21-April-2017
   * @brief   Header file of SPI HAL module.
   ******************************************************************************
   * @attention
@@ -610,6 +608,8 @@ typedef struct __SPI_HandleTypeDef
                                    ((LENGTH) == SPI_CRC_LENGTH_16BIT))
 
 #define IS_SPI_CRC_POLYNOMIAL(POLYNOMIAL) (((POLYNOMIAL) >= 0x1U) && ((POLYNOMIAL) <= 0xFFFFU) && (((POLYNOMIAL)&0x1U) != 0U))
+
+#define IS_SPI_DMA_HANDLE(HANDLE) ((HANDLE) != NULL)
 
 
 /**

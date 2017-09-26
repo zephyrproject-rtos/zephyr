@@ -5,8 +5,8 @@ compiler: gcc
 env:
     global:
         - SDK=0.9.1
-        - SANITYCHECK_OPTIONS=" -R -p nrf52_pca10040 -p qemu_riscv32 -p qemu_cortex_m3 -p qemu_x86_iamcu -p qemu_x86 -p arduino_101 -p arduino_due -p cc3220sf_launchxl -p qemu_nios2 -p em_starterkit -p qemu_xtensa"
-        - SANITYCHECK_OPTIONS_RETRY=" -R --only-failed --outdir=out-2nd-pass"
+        - SANITYCHECK_OPTIONS="--inline-logs -R -p nrf52_pca10040 -p qemu_riscv32 -p qemu_cortex_m3 -p qemu_x86_iamcu -p qemu_x86 -p arduino_101 -p arduino_due -p cc3220sf_launchxl -p qemu_nios2 -p em_starterkit -p qemu_xtensa"
+        - SANITYCHECK_OPTIONS_RETRY="${SANITYCHECK_OPTIONS} --only-failed --outdir=out-2nd-pass"
         - ZEPHYR_SDK_INSTALL_DIR=/opt/sdk/zephyr-sdk-0.9.1
         - ZEPHYR_GCC_VARIANT=zephyr
         - USE_CCACHE=1
@@ -29,7 +29,7 @@ build:
 
     ci:
       - export CCACHE_DIR=${SHIPPABLE_BUILD_DIR}/ccache/.ccache
-      - git rebase origin/${PULL_REQUEST_BASE_BRANCH}
+      - git merge origin/${PULL_REQUEST_BASE_BRANCH}
       - source zephyr-env.sh
       - cd $ZEPHYR_BASE/scripts
       - mkdir build && cd build
@@ -43,17 +43,11 @@ build:
             echo "Building a Pull Request";
             echo "- Building Documentation";
             echo "Commit range:" ${COMMIT_RANGE}
-            make htmldocs > doc.log 2>&1;
-            ./scripts/filter-known-issues.py --config-dir .known-issues/doc/ doc.log > doc.warnings;
-
-            if [ "$?" != 0 ]; then
-              echo " ==> Error running filter script"
-              exit 1
-            fi;
+            make htmldocs > doc.warnings 2>&1;
             if [ -s doc.warnings ]; then
               echo " => New documentation warnings/errors";
             fi;
-            echo "- Verify commit message and coding style";
+            echo "- Verify commit message, coding style, doc build";
             ./scripts/ci/check-compliance.py --commits ${COMMIT_RANGE} || true;
           fi;
       - >

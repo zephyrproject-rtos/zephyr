@@ -66,7 +66,7 @@ static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 	}
 	LL_SPI_TransmitData8(spi, tx_frame);
 	/* The update is ignored if TX is off. */
-	spi_context_update_tx(&data->ctx, 1);
+	spi_context_update_tx(&data->ctx, 1, 1);
 
 	while (!LL_SPI_IsActiveFlag_RXNE(spi)) {
 		/* NOP */
@@ -74,7 +74,7 @@ static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 	rx_frame = LL_SPI_ReceiveData8(spi);
 	if (spi_context_rx_on(&data->ctx)) {
 		*data->ctx.rx_buf = rx_frame;
-		spi_context_update_rx(&data->ctx, 1);
+		spi_context_update_rx(&data->ctx, 1, 1);
 	}
 }
 
@@ -88,14 +88,14 @@ static void spi_stm32_shift_s(SPI_TypeDef *spi, struct spi_stm32_data *data)
 	if (LL_SPI_IsActiveFlag_TXE(spi)) {
 		LL_SPI_TransmitData8(spi, tx_frame);
 		/* The update is ignored if TX is off. */
-		spi_context_update_tx(&data->ctx, 1);
+		spi_context_update_tx(&data->ctx, 1, 1);
 	}
 
 	if (LL_SPI_IsActiveFlag_RXNE(spi)) {
 		rx_frame = LL_SPI_ReceiveData8(spi);
 		if (spi_context_rx_on(&data->ctx)) {
 			*data->ctx.rx_buf = rx_frame;
-			spi_context_update_rx(&data->ctx, 1);
+			spi_context_update_rx(&data->ctx, 1, 1);
 		}
 	}
 }

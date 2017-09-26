@@ -786,8 +786,6 @@ ifdef MAKEFILE_TOOLCHAIN_DO_PASS2
 include $(srctree)/scripts/Makefile.toolchain.$(ZEPHYR_GCC_VARIANT)
 endif
 
-QEMU		= $(addsuffix /,$(QEMU_BIN_PATH))$(QEMU_$(ARCH))
-
 # The all: target is the default when no target is given on the
 # command line.
 # This allow a user to issue only 'make' to build a kernel including modules

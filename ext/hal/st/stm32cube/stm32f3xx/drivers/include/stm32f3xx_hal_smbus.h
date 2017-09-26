@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_smbus.h
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   Header file of SMBUS HAL module.
   ******************************************************************************
   * @attention
@@ -40,7 +38,7 @@
 #define __STM32F3xx_HAL_SMBUS_H
 
 #ifdef __cplusplus
- extern "C" {
+extern "C" {
 #endif
 
 /* Includes ------------------------------------------------------------------*/
@@ -99,7 +97,7 @@ typedef struct
                                      This parameter can be a value of @ref SMBUS_peripheral_mode */
 
   uint32_t SMBusTimeout;           /*!< Specifies the content of the 32 Bits SMBUS_TIMEOUT_register value.
-  																		(Enable bits and different timeout values)
+                                      (Enable bits and different timeout values)
                                      This parameter calculated by referring to SMBUS initialization
                                          section in Reference manual */
 } SMBUS_InitTypeDef;
@@ -168,7 +166,7 @@ typedef struct
 
   __IO uint32_t                ErrorCode;       /*!< SMBUS Error code                   */
 
-}SMBUS_HandleTypeDef;
+} SMBUS_HandleTypeDef;
 /**
   * @}
   */
@@ -429,17 +427,17 @@ typedef struct
   * @param  __HANDLE__ specifies the SMBUS Handle.
   * @param  __FLAG__ specifies the flag to check.
   *        This parameter can be one of the following values:
-  *            @arg @ref SMBUS_FLAG_TXE	    Transmit data register empty
+  *            @arg @ref SMBUS_FLAG_TXE     Transmit data register empty
   *            @arg @ref SMBUS_FLAG_TXIS    Transmit interrupt status
   *            @arg @ref SMBUS_FLAG_RXNE    Receive data register not empty
   *            @arg @ref SMBUS_FLAG_ADDR    Address matched (slave mode)
-  *            @arg @ref SMBUS_FLAG_AF 	    NACK received flag
+  *            @arg @ref SMBUS_FLAG_AF      NACK received flag
   *            @arg @ref SMBUS_FLAG_STOPF   STOP detection flag
-  *            @arg @ref SMBUS_FLAG_TC	    Transfer complete (master mode)
-  *            @arg @ref SMBUS_FLAG_TCR	    Transfer complete reload
+  *            @arg @ref SMBUS_FLAG_TC      Transfer complete (master mode)
+  *            @arg @ref SMBUS_FLAG_TCR     Transfer complete reload
   *            @arg @ref SMBUS_FLAG_BERR    Bus error
   *            @arg @ref SMBUS_FLAG_ARLO    Arbitration lost
-  *            @arg @ref SMBUS_FLAG_OVR	    Overrun/Underrun
+  *            @arg @ref SMBUS_FLAG_OVR     Overrun/Underrun
   *            @arg @ref SMBUS_FLAG_PECERR  PEC error in reception
   *            @arg @ref SMBUS_FLAG_TIMEOUT Timeout or Tlow detection flag
   *            @arg @ref SMBUS_FLAG_ALERT   SMBus alert
@@ -456,11 +454,11 @@ typedef struct
   * @param  __FLAG__ specifies the flag to clear.
   *          This parameter can be any combination of the following values:
   *            @arg @ref SMBUS_FLAG_ADDR    Address matched (slave mode)
-  *            @arg @ref SMBUS_FLAG_AF 	    NACK received flag
+  *            @arg @ref SMBUS_FLAG_AF      NACK received flag
   *            @arg @ref SMBUS_FLAG_STOPF   STOP detection flag
   *            @arg @ref SMBUS_FLAG_BERR    Bus error
   *            @arg @ref SMBUS_FLAG_ARLO    Arbitration lost
-  *            @arg @ref SMBUS_FLAG_OVR	    Overrun/Underrun
+  *            @arg @ref SMBUS_FLAG_OVR     Overrun/Underrun
   *            @arg @ref SMBUS_FLAG_PECERR  PEC error in reception
   *            @arg @ref SMBUS_FLAG_TIMEOUT Timeout or Tlow detection flag
   *            @arg @ref SMBUS_FLAG_ALERT   SMBus alert
@@ -501,6 +499,8 @@ typedef struct
 
 #define IS_SMBUS_ANALOG_FILTER(FILTER)                  (((FILTER) == SMBUS_ANALOGFILTER_ENABLE) || \
                                                           ((FILTER) == SMBUS_ANALOGFILTER_DISABLE))
+
+#define IS_SMBUS_DIGITAL_FILTER(FILTER)                 ((FILTER) <= 0x0000000FU)
 
 #define IS_SMBUS_ADDRESSING_MODE(MODE)                  (((MODE) == SMBUS_ADDRESSINGMODE_7BIT)  || \
                                                           ((MODE) == SMBUS_ADDRESSINGMODE_10BIT))
@@ -592,9 +592,11 @@ typedef struct
 
 /* Initialization and de-initialization functions  **********************************/
 HAL_StatusTypeDef HAL_SMBUS_Init(SMBUS_HandleTypeDef *hsmbus);
-HAL_StatusTypeDef HAL_SMBUS_DeInit (SMBUS_HandleTypeDef *hsmbus);
+HAL_StatusTypeDef HAL_SMBUS_DeInit(SMBUS_HandleTypeDef *hsmbus);
 void HAL_SMBUS_MspInit(SMBUS_HandleTypeDef *hsmbus);
 void HAL_SMBUS_MspDeInit(SMBUS_HandleTypeDef *hsmbus);
+HAL_StatusTypeDef HAL_SMBUS_ConfigAnalogFilter(SMBUS_HandleTypeDef *hsmbus, uint32_t AnalogFilter);
+HAL_StatusTypeDef HAL_SMBUS_ConfigDigitalFilter(SMBUS_HandleTypeDef *hsmbus, uint32_t DigitalFilter);
 
 /**
   * @}

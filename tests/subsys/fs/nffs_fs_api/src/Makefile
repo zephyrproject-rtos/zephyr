@@ -1,0 +1,32 @@
+obj-y += main.o
+obj-y += nffs_test_system_01.o
+obj-y += nffs_test_utils.o
+obj-y += test_mkdir.o
+obj-y += test_gc_on_oom.o
+obj-y += test_incomplete_block.o
+obj-y += test_lost_found.o
+obj-y += test_readdir.o
+obj-y += test_large_system.o
+obj-y += test_corrupt_block.o
+obj-y += test_split_file.o
+obj-y += test_large_unlink.o
+obj-y += test_corrupt_scratch.o
+obj-y += test_unlink.o
+obj-y += test_append.o
+obj-y += test_rename.o
+obj-y += test_open.o
+obj-y += test_wear_level.o
+obj-y += test_long_filename.o
+obj-y += test_overwrite_one.o
+obj-y += test_many_children.o
+obj-y += test_gc.o
+obj-y += test_overwrite_many.o
+obj-y += test_overwrite_two.o
+obj-y += test_overwrite_three.o
+obj-y += test_read.o
+obj-y += test_cache_large_file.o
+obj-y += test_large_write.o
+obj-y += test_performance.o
+obj-$(CONFIG_BOARD_QEMU_X86) += test_ram_backend.o
+
+include $(ZEPHYR_BASE)/tests/Makefile.test

@@ -70,6 +70,9 @@ struct dma_stm32_config {
 	void (*config)(struct dma_stm32_device *);
 };
 
+/* DMA burst length */
+#define BURST_TRANS_LENGTH_1			0
+
 /* DMA direction */
 #define DMA_STM32_DEV_TO_MEM			0
 #define DMA_STM32_MEM_TO_DEV			1

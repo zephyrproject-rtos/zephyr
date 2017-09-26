@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_rcc_ex.c
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   Extended RCC HAL module driver.
   *          This file provides firmware functions to manage the following
   *          functionalities RCC extension peripheral:
@@ -959,10 +957,12 @@ void HAL_RCCEx_GetPeriphCLKConfig(RCC_PeriphCLKInitTypeDef  *PeriphClkInit)
   */
 uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk)
 {
+  /* frequency == 0 : means that no available frequency for the peripheral */
   uint32_t frequency = 0U;
+
   uint32_t srcclk = 0U;
 #if defined(RCC_CFGR2_ADC1PRES) || defined(RCC_CFGR2_ADCPRE12) || defined(RCC_CFGR2_ADCPRE34)
-  uint16_t adc_pll_prediv_table[12] = { 1U,  2U,  4U,  6U, 8U, 10U, 12U, 16U, 32U, 64U, 128U, 256U};
+  uint16_t adc_pll_prediv_table[16] = { 1U,  2U,  4U,  6U, 8U, 10U, 12U, 16U, 32U, 64U, 128U, 256U, 256U, 256U, 256U, 256U};
 #endif /* RCC_CFGR2_ADC1PRES || RCC_CFGR2_ADCPRE12 || RCC_CFGR2_ADCPRE34 */
 #if defined(RCC_CFGR_SDPRE)
   uint8_t sdadc_prescaler_table[16] = { 2U,  4U,  6U, 8U, 10U, 12U, 14U, 16U, 20U, 24U, 28U, 32U, 36U, 40U, 44U, 48U};
@@ -992,11 +992,6 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk)
       else if ((srcclk == RCC_RTCCLKSOURCE_HSE_DIV32) && (HAL_IS_BIT_SET(RCC->CR, RCC_CR_HSERDY)))
       {
         frequency = HSE_VALUE / 32U;
-      }
-      /* Clock not enabled for RTC*/
-      else
-      {
-        frequency = 0U;
       }
       break;
     }
@@ -1032,11 +1027,6 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk)
       {
         frequency = LSE_VALUE;
       }
-      /* Clock not enabled for USART1*/
-      else
-      {
-        frequency = 0U;
-      }
       break;
     }
 #if defined(RCC_CFGR3_USART2SW)
@@ -1064,11 +1054,6 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk)
       else if ((srcclk == RCC_USART2CLKSOURCE_LSE) && (HAL_IS_BIT_SET(RCC->BDCR, RCC_BDCR_LSERDY)))
       {
         frequency = LSE_VALUE;
-      }
-      /* Clock not enabled for USART2*/
-      else
-      {
-        frequency = 0U;
       }
       break;
     }
@@ -1099,12 +1084,7 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk)
       {
         frequency = LSE_VALUE;
       }
-      /* Clock not enabled for USART3*/
-      else
-      {
-        frequency = 0U;
-      }
-      break;
+     break;
     }
 #endif /* RCC_CFGR3_USART3SW */
 #if defined(RCC_CFGR3_UART4SW)
@@ -1132,11 +1112,6 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk)
       else if ((srcclk == RCC_UART4CLKSOURCE_LSE) && (HAL_IS_BIT_SET(RCC->BDCR, RCC_BDCR_LSERDY)))
       {
         frequency = LSE_VALUE;
-      }
-      /* Clock not enabled for UART4*/
-      else
-      {
-        frequency = 0U;
       }
       break;
     }
@@ -1167,11 +1142,6 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk)
       {
         frequency = LSE_VALUE;
       }
-      /* Clock not enabled for UART5*/
-      else
-      {
-        frequency = 0U;
-      }
       break;
     }
 #endif /* RCC_CFGR3_UART5SW */
@@ -1190,11 +1160,6 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk)
       {
         frequency = HAL_RCC_GetSysClockFreq();
       }
-      /* Clock not enabled for I2C1*/
-      else
-      {
-        frequency = 0U;
-      }
       break;
     }
 #if defined(RCC_CFGR3_I2C2SW)
@@ -1212,11 +1177,6 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk)
       else if (srcclk == RCC_I2C2CLKSOURCE_SYSCLK)
       {
         frequency = HAL_RCC_GetSysClockFreq();
-      }
-      /* Clock not enabled for I2C2*/
-      else
-      {
-        frequency = 0U;
       }
       break;
     }
@@ -1237,11 +1197,6 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk)
       {
         frequency = HAL_RCC_GetSysClockFreq();
       }
-      /* Clock not enabled for I2C3*/
-      else
-      {
-        frequency = 0U;
-      }
       break;
     }
 #endif /* RCC_CFGR3_I2C3SW */
@@ -1261,11 +1216,6 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk)
       else if (srcclk == RCC_I2SCLKSOURCE_SYSCLK)
       {
         frequency = HAL_RCC_GetSysClockFreq();
-      }
-      /* Clock not enabled for I2S*/
-      else
-      {
-        frequency = 0U;
       }
       break;
     }
@@ -1290,11 +1240,6 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk)
           frequency = (RCC_GetPLLCLKFreq() * 3U) / 2U;
         }
       }
-      /* Clock not enabled for USB*/
-      else
-      {
-        frequency = 0U;
-      }
       break;
     }
 #endif /* RCC_CFGR_USBPRE */
@@ -1317,11 +1262,6 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk)
         {
           /* Frequency is the PLL frequency divided by ADC prescaler (1U/2U/4U/6U/8U/10U/12U/16U/32U/64U/128U/256U) */
           frequency = RCC_GetPLLCLKFreq() / adc_pll_prediv_table[(srcclk >> POSITION_VAL(RCC_CFGR2_ADC1PRES)) & 0xFU];
-        }
-        /* Clock not enabled for ADC1*/
-        else
-        {
-          frequency = 0U;
         }
       }
 #else /* RCC_CFGR_ADCPRE */
@@ -1350,11 +1290,6 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk)
           /* Frequency is the PLL frequency divided by ADC prescaler (1U/2U/4U/6/8U/10U/12U/16U/32U/64U/128U/256U) */
           frequency = RCC_GetPLLCLKFreq() / adc_pll_prediv_table[(srcclk >> POSITION_VAL(RCC_CFGR2_ADCPRE12)) & 0xF];
         }
-        /* Clock not enabled for ADC12*/
-        else
-        {
-          frequency = 0U;
-        }
       }
       break;
     }
@@ -1378,11 +1313,6 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk)
           /* Frequency is the PLL frequency divided by ADC prescaler (1U/2U/4U/6U/8U/10U/12U/16U/32U/64U/128U/256U) */
           frequency = RCC_GetPLLCLKFreq() / adc_pll_prediv_table[(srcclk >> POSITION_VAL(RCC_CFGR2_ADCPRE34)) & 0xF];
         }
-        /* Clock not enabled for ADC34*/
-        else
-        {
-          frequency = 0U;
-        }
       }
       break;
     }
@@ -1403,11 +1333,6 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk)
       {
         frequency = SystemCoreClock;
       }
-      /* Clock not enabled for TIM1*/
-      else
-      {
-        frequency = 0U;
-      }
       break;
     }
 #endif /* RCC_CFGR3_TIM1SW */
@@ -1426,11 +1351,6 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk)
       else if (srcclk == RCC_TIM2CLK_HCLK)
       {
         frequency = SystemCoreClock;
-      }
-      /* Clock not enabled for TIM2*/
-      else
-      {
-        frequency = 0U;
       }
       break;
     }
@@ -1451,11 +1371,6 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk)
       {
         frequency = SystemCoreClock;
       }
-      /* Clock not enabled for TIM8*/
-      else
-      {
-        frequency = 0U;
-      }
       break;
     }
 #endif /* RCC_CFGR3_TIM8SW */
@@ -1474,11 +1389,6 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk)
       else if (srcclk == RCC_TIM15CLK_HCLK)
       {
         frequency = SystemCoreClock;
-      }
-      /* Clock not enabled for TIM15*/
-      else
-      {
-        frequency = 0U;
       }
       break;
     }
@@ -1499,11 +1409,6 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk)
       {
         frequency = SystemCoreClock;
       }
-      /* Clock not enabled for TIM16*/
-      else
-      {
-        frequency = 0U;
-      }
       break;
     }
 #endif /* RCC_CFGR3_TIM16SW */
@@ -1522,11 +1427,6 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk)
       else if (srcclk == RCC_TIM17CLK_HCLK)
       {
         frequency = SystemCoreClock;
-      }
-      /* Clock not enabled for TIM17*/
-      else
-      {
-        frequency = 0U;
       }
       break;
     }
@@ -1547,11 +1447,6 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk)
       {
         frequency = SystemCoreClock;
       }
-      /* Clock not enabled for TIM20*/
-      else
-      {
-        frequency = 0U;
-      }
       break;
     }
 #endif /* RCC_CFGR3_TIM20SW */
@@ -1570,11 +1465,6 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk)
       else if (srcclk == RCC_TIM34CLK_HCLK)
       {
         frequency = SystemCoreClock;
-      }
-      /* Clock not enabled for TIM34*/
-      else
-      {
-        frequency = 0U;
       }
       break;
     }
@@ -1595,12 +1485,7 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk)
       {
         frequency = SystemCoreClock;
       }
-      /* Clock not enabled for HRTIM1*/
-      else
-      {
-        frequency = 0U;
-      }
-      break;
+     break;
     }
 #endif /* RCC_CFGR3_HRTIM1SW */
 #if defined(RCC_CFGR_SDPRE)
@@ -1628,11 +1513,6 @@ uint32_t HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk)
       else if ((srcclk == RCC_CECCLKSOURCE_LSE) && (HAL_IS_BIT_SET(RCC->BDCR, RCC_BDCR_LSERDY)))
       {
         frequency = LSE_VALUE;
-      }
-      /* Clock not enabled for CEC*/
-      else
-      {
-        frequency = 0U;
       }
       break;
     }

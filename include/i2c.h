@@ -48,6 +48,8 @@ extern "C" {
 /** @cond INTERNAL_HIDDEN */
 #define I2C_SPEED_SHIFT			(1)
 #define I2C_SPEED_MASK			(0x7 << I2C_SPEED_SHIFT) /* 3 bits */
+#define I2C_SPEED_GET(cfg) 		(((cfg) & I2C_SPEED_MASK) \
+						>> I2C_SPEED_SHIFT)
 /** @endcond  */
 
 /** Use 10-bit addressing. */

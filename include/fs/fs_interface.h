@@ -43,6 +43,8 @@ extern "C" {
 
 #ifdef CONFIG_FILE_SYSTEM_FAT
 #include <fs/fat_fs.h>
+#elif CONFIG_FILE_SYSTEM_NFFS
+#include <fs/nffs_fs.h>
 #endif
 
 #ifdef __cplusplus

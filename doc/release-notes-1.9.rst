@@ -210,7 +210,7 @@ JIRA Related Items
 * :jira:`ZEP-2151` - Move Quark D2000 to device tree
 * :jira:`ZEP-2156` - Build warnings [-Wformat] with LLVM/icx (tests/kernel/sprintf)
 * :jira:`ZEP-2168` - Timers seem to be broken with TICKLESS_KERNEL on nRF51 (Cortex M0)
-* :jira:`ZEP-2171` - Move all board pinmux code from drivers/pinmux/stm32 to the corrosponding board/soc locations
+* :jira:`ZEP-2171` - Move all board pinmux code from drivers/pinmux/stm32 to the corresponding board/soc locations
 * :jira:`ZEP-2184` - Split data, bss, noinit sections into application and kernel areas
 * :jira:`ZEP-2188` - x86: Implement simple stack memory protection
 * :jira:`ZEP-2217` - schedule_api test fails on ARM with tickless kernel enabled

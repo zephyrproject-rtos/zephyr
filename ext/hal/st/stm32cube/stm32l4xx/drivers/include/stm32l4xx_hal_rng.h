@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_rng.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    21-April-2017
   * @brief   Header file of RNG HAL module.
   ******************************************************************************
   * @attention
@@ -59,6 +57,21 @@
   * @{
   */
 
+#if defined(RNG_CR_CED) || defined(RNG_CR_BYP)
+/**
+  * @brief  RNG Configuration Structure definition
+  */
+typedef struct
+{
+#if defined(RNG_CR_CED)
+  uint32_t                    ClockErrorDetection; /*!< Clock error detection */
+#endif /* defined(RNG_CR_CED) */
+#if defined(RNG_CR_BYP)
+  uint32_t                    BypassMode;          /*!< Bypass mode */
+#endif /* defined(RNG_CR_BYP) */
+}RNG_InitTypeDef;
+#endif /* defined(RNG_CR_CED) || defined(RNG_CR_BYP) */
+
 /** 
   * @brief  RNG HAL State Structure definition  
   */ 
@@ -77,11 +90,15 @@ typedef enum
   */ 
 typedef struct
 {
-  RNG_TypeDef                 *Instance;  /*!< Register base address   */ 
+  RNG_TypeDef                 *Instance;  /*!< Register base address        */
   
-  HAL_LockTypeDef             Lock;       /*!< RNG locking object      */
+#if defined(RNG_CR_CED) || defined(RNG_CR_BYP)
+  RNG_InitTypeDef             Init;       /*!< RNG configuration parameters */
+#endif /* defined(RNG_CR_CED) || defined(RNG_CR_BYP) */
+
+  HAL_LockTypeDef             Lock;       /*!< RNG locking object           */
   
-  __IO HAL_RNG_StateTypeDef   State;      /*!< RNG communication state */
+  __IO HAL_RNG_StateTypeDef   State;      /*!< RNG communication state      */
   
   uint32_t               RandomNumber;    /*!< Last Generated RNG Data */
   
@@ -115,6 +132,28 @@ typedef struct
 /**
   * @}
   */
+
+#if defined(RNG_CR_CED)
+/** @defgroup RNG_Clock_Error_Detection RNG Clock Error Detection
+  * @{
+  */
+#define RNG_CED_ENABLE         ((uint32_t)0x00000000) /*!< Clock error detection enabled  */
+#define RNG_CED_DISABLE        RNG_CR_CED             /*!< Clock error detection disabled */
+/**
+  * @}
+  */
+#endif /* defined(RNG_CR_CED) */
+
+#if defined(RNG_CR_BYP)
+/** @defgroup RNG_Bypass_Mode RNG Bypass Mode
+  * @{
+  */
+#define RNG_BYP_DISABLE        ((uint32_t)0x00000000) /*!< Bypass mode disabled */
+#define RNG_BYP_ENABLE         RNG_CR_BYP             /*!< Bypass mode enabled */
+/**
+  * @}
+  */
+#endif /* defined(RNG_CR_BYP) */
 
 /**
   * @}
@@ -266,6 +305,33 @@ HAL_RNG_StateTypeDef HAL_RNG_GetState(RNG_HandleTypeDef *hrng);
 /* Private variables ---------------------------------------------------------*/
 /* Private constants ---------------------------------------------------------*/
 /* Private macros ------------------------------------------------------------*/
+/** @addtogroup  RNG_Private_Macros   RNG Private Macros
+  * @{
+  */
+
+#if defined(RNG_CR_CED)
+/**
+  * @brief Verify the RNG Clock Error Detection mode.
+  * @param __MODE__: RNG Clock Error Detection mode
+  * @retval SET (__MODE__ is valid) or RESET (__MODE__ is invalid)
+  */
+#define IS_RNG_CED(__MODE__) (((__MODE__) == RNG_CED_ENABLE) || \
+                              ((__MODE__) == RNG_CED_DISABLE))
+#endif /* defined(RNG_CR_CED) */
+      
+#if defined(RNG_CR_BYP)
+/**
+  * @brief Verify the RNG Bypass mode.
+  * @param __MODE__: RNG Bypass mode
+  * @retval SET (__MODE__ is valid) or RESET (__MODE__ is invalid)
+  */
+#define IS_RNG_BYPASS(__MODE__) (((__MODE__) == RNG_BYP_ENABLE) || \
+                                 ((__MODE__) == RNG_BYP_DISABLE))
+#endif /* defined(RNG_CR_BYP) */
+                                                                                         
+/**
+  * @}
+  */
 /* Private functions prototypes ----------------------------------------------*/
 
 /**

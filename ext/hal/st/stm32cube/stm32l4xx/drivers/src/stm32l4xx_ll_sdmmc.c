@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32l4xx_ll_sdmmc.c
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    21-April-2017
   * @brief   SDMMC Low Layer HAL module driver.  
   *    
   *          This file provides firmware functions to manage the following 
@@ -234,7 +232,9 @@ HAL_StatusTypeDef SDMMC_Init(SDMMC_TypeDef *SDMMCx, SDMMC_InitTypeDef Init)
   /* Check the parameters */
   assert_param(IS_SDMMC_ALL_INSTANCE(SDMMCx));
   assert_param(IS_SDMMC_CLOCK_EDGE(Init.ClockEdge)); 
+#if !defined(STM32L4R5xx) && !defined(STM32L4R7xx) && !defined(STM32L4R9xx) && !defined(STM32L4S5xx) && !defined(STM32L4S7xx) && !defined(STM32L4S9xx)
   assert_param(IS_SDMMC_CLOCK_BYPASS(Init.ClockBypass));
+#endif /* !STM32L4R5xx && !STM32L4R7xx && !STM32L4R9xx && !STM32L4S5xx && !STM32L4S7xx && !STM32L4S9xx */
   assert_param(IS_SDMMC_CLOCK_POWER_SAVE(Init.ClockPowerSave));
   assert_param(IS_SDMMC_BUS_WIDE(Init.BusWide));
   assert_param(IS_SDMMC_HARDWARE_FLOW_CONTROL(Init.HardwareFlowControl));
@@ -242,12 +242,20 @@ HAL_StatusTypeDef SDMMC_Init(SDMMC_TypeDef *SDMMCx, SDMMC_InitTypeDef Init)
   
   /* Set SDMMC configuration parameters */
   /* Write to SDMMC CLKCR */
+#if defined(STM32L4R5xx) || defined(STM32L4R7xx) || defined(STM32L4R9xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
+  MODIFY_REG(SDMMCx->CLKCR, CLKCR_CLEAR_MASK, Init.ClockEdge           |\
+                                              Init.ClockPowerSave      |\
+                                              Init.BusWide             |\
+                                              Init.HardwareFlowControl |\
+                                              Init.ClockDiv);  
+#else
   MODIFY_REG(SDMMCx->CLKCR, CLKCR_CLEAR_MASK, Init.ClockEdge           |\
                                               Init.ClockBypass         |\
                                               Init.ClockPowerSave      |\
                                               Init.BusWide             |\
                                               Init.HardwareFlowControl |\
                                               Init.ClockDiv);  
+#endif /* STM32L4R5xx || STM32L4R7xx || STM32L4R9xx || STM32L4S5xx || STM32L4S7xx || STM32L4S9xx */
 
   return HAL_OK;
 }
@@ -324,10 +332,31 @@ HAL_StatusTypeDef SDMMC_WriteFIFO(SDMMC_TypeDef *SDMMCx, uint32_t *pWriteData)
 HAL_StatusTypeDef SDMMC_PowerState_ON(SDMMC_TypeDef *SDMMCx)
 {  
   /* Set power state to ON */ 
+#if defined(STM32L4R5xx) || defined(STM32L4R7xx) || defined(STM32L4R9xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
+  SDMMCx->POWER |= SDMMC_POWER_PWRCTRL;
+
+#else
   SDMMCx->POWER = SDMMC_POWER_PWRCTRL;
+
+#endif /* STM32L4R5xx || STM32L4R7xx || STM32L4R9xx || STM32L4S5xx || STM32L4S7xx || STM32L4S9xx */
   
   return HAL_OK; 
 }
+
+#if defined(STM32L4R5xx) || defined(STM32L4R7xx) || defined(STM32L4R9xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
+/**
+  * @brief  Set SDMMC Power state to Power-Cycle. 
+  * @param  SDMMCx: Pointer to SDMMC register base
+  * @retval HAL status
+  */
+HAL_StatusTypeDef SDMMC_PowerState_Cycle(SDMMC_TypeDef *SDMMCx)
+{  
+  /* Set power state to Power Cycle*/ 
+  SDMMCx->POWER |= SDMMC_POWER_PWRCTRL_1;
+  
+  return HAL_OK; 
+}
+#endif /* STM32L4R5xx || STM32L4R7xx || STM32L4R9xx || STM32L4S5xx || STM32L4S7xx || STM32L4S9xx */
 
 /**
   * @brief  Set SDMMC Power state to OFF. 
@@ -337,7 +366,13 @@ HAL_StatusTypeDef SDMMC_PowerState_ON(SDMMC_TypeDef *SDMMCx)
 HAL_StatusTypeDef SDMMC_PowerState_OFF(SDMMC_TypeDef *SDMMCx)
 {
   /* Set power state to OFF */
+#if defined(STM32L4R5xx) || defined(STM32L4R7xx) || defined(STM32L4R9xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
+  SDMMCx->POWER &= ~(SDMMC_POWER_PWRCTRL);
+
+#else
   SDMMCx->POWER = (uint32_t)0x00000000;
+
+#endif /* STM32L4R5xx || STM32L4R7xx || STM32L4R9xx || STM32L4S5xx || STM32L4S7xx || STM32L4S9xx */
   
   return HAL_OK;
 }
@@ -894,7 +929,11 @@ uint32_t SDMMC_CmdAppOperCommand(SDMMC_TypeDef *SDMMCx, uint32_t Argument)
   SDMMC_CmdInitTypeDef  sdmmc_cmdinit;
   uint32_t errorstate = SDMMC_ERROR_NONE;
   
+#if defined(STM32L4R5xx) || defined(STM32L4R7xx) || defined(STM32L4R9xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
+  sdmmc_cmdinit.Argument         = Argument;
+#else
   sdmmc_cmdinit.Argument         = SDMMC_VOLTAGE_WINDOW_SD | Argument;
+#endif /* STM32L4R5xx || STM32L4R7xx || STM32L4R9xx || STM32L4S5xx || STM32L4S7xx || STM32L4S9xx */
   sdmmc_cmdinit.CmdIndex         = SDMMC_CMD_SD_APP_OP_COND;
   sdmmc_cmdinit.Response         = SDMMC_RESPONSE_SHORT;
   sdmmc_cmdinit.WaitForInterrupt = SDMMC_WAIT_NO;
@@ -1124,6 +1163,32 @@ uint32_t SDMMC_CmdSwitch(SDMMC_TypeDef *SDMMCx, uint32_t Argument)
 
   return errorstate;
 }
+
+#if defined(STM32L4R5xx) || defined(STM32L4R7xx) || defined(STM32L4R9xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
+/**
+  * @brief  Send the command asking the accessed card to send its operating 
+  *         condition register (OCR)
+  * @param  None
+  * @retval HAL status
+  */
+uint32_t SDMMC_CmdVoltageSwitch(SDMMC_TypeDef *SDMMCx)
+{
+  SDMMC_CmdInitTypeDef  sdmmc_cmdinit;
+  uint32_t errorstate = SDMMC_ERROR_NONE;
+  
+  sdmmc_cmdinit.Argument         = 0x00000000;
+  sdmmc_cmdinit.CmdIndex         = SDMMC_CMD_VOLTAGE_SWITCH;
+  sdmmc_cmdinit.Response         = SDMMC_RESPONSE_SHORT;
+  sdmmc_cmdinit.WaitForInterrupt = SDMMC_WAIT_NO;
+  sdmmc_cmdinit.CPSM             = SDMMC_CPSM_ENABLE;
+  SDMMC_SendCommand(SDMMCx, &sdmmc_cmdinit);
+  
+  /* Check for error conditions */
+  errorstate = SDMMC_GetCmdResp1(SDMMCx, SDMMC_CMD_VOLTAGE_SWITCH, SDMMC_CMDTIMEOUT);
+
+  return errorstate;
+}
+#endif /* STM32L4R5xx || STM32L4R7xx || STM32L4R9xx || STM32L4S5xx || STM32L4S7xx || STM32L4S9xx */
 
 
 /**
@@ -1465,7 +1530,7 @@ static uint32_t SDMMC_GetCmdResp7(SDMMC_TypeDef *SDMMCx)
   if(__SDMMC_GET_FLAG(SDMMCx, SDMMC_FLAG_CTIMEOUT))
   {
     /* Card is SD V2.0 compliant */
-    __SDMMC_CLEAR_FLAG(SDMMCx, SDMMC_FLAG_CMDREND);
+    __SDMMC_CLEAR_FLAG(SDMMCx, SDMMC_FLAG_CTIMEOUT);
     
     return SDMMC_ERROR_CMD_RSP_TIMEOUT;
   }

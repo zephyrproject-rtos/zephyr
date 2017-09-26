@@ -13,7 +13,7 @@
 #include <init.h>
 
 #include <misc/__assert.h>
-#include "boot/mcuboot_constraints.h"
+#include <board.h>
 #include "mcuboot.h"
 
 /*

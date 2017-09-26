@@ -51,15 +51,13 @@ static const u32_t delays_standard[] = {
 
 int i2c_bitbang_configure(struct i2c_bitbang *context, u32_t dev_config)
 {
-	union dev_config config = { .raw = dev_config };
-
 	/* Check for features we don't support */
-	if (config.bits.use_10_bit_addr) {
+	if (I2C_ADDR_10_BITS & dev_config) {
 		return -ENOTSUP;
 	}
 
 	/* Setup speed to use */
-	switch (config.bits.speed) {
+	switch (I2C_SPEED_GET(dev_config)) {
 	case I2C_SPEED_STANDARD:
 		context->delays = delays_standard;
 		break;
@@ -268,9 +266,7 @@ finish:
 void i2c_bitbang_init(struct i2c_bitbang *context,
 			const struct i2c_bitbang_io *io, void *io_context)
 {
-	union dev_config dev_config = { .bits.speed = I2C_SPEED_STANDARD };
-
 	context->io = io;
 	context->io_context = io_context;
-	i2c_bitbang_configure(context, dev_config.raw);
+	i2c_bitbang_configure(context, I2C_SPEED_STANDARD << I2C_SPEED_SHIFT);
 }

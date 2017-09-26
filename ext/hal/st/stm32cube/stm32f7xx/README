@@ -1,1 +1,17 @@
-The current version supported in Zephyr for STM32F7 Cube is V1.6.0
+The current version supported in Zephyr for STM32F7 Cube is V1.8.0
+
+
+Patch List:
+===========
+
+*Current implementation of LL_SPI_TransmitData16 on F3/F7/L4 family
+  generates following warning:
+  "warning: dereferencing type-punned pointer will break strict-aliasing
+  rules [-Wstrict-aliasing]"
+  Besides being forbidden by rule, this cast is not needed, as register is
+  16 bits wide. Modification has been tested on L4 SoC.
+  stm32yyxx_ll_spi.h being included in soc.h file, warning is generated
+  at each compiled object, this commit allows a clean build.
+Impacted files:
+  drivers/include/stm32f7xx_ll_spi.h
+ST Bug tracker ID: 13359

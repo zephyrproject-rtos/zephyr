@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    system_stm32l4xx.h
   * @author  MCD Application Team
-  * @version V1.3.1
-  * @date    21-April-2017
   * @brief   CMSIS Cortex-M4 Device System Source File for STM32L4xx devices.
   ******************************************************************************
   * @attention

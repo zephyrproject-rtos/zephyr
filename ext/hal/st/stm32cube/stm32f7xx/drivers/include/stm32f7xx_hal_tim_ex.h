@@ -2,13 +2,11 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_tim_ex.h
   * @author  MCD Application Team
-  * @version V1.2.0
-  * @date    30-December-2016
   * @brief   Header file of TIM HAL Extension module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -130,6 +128,9 @@ typedef struct {
                                 This parameter can be a value of @ref TIMEx_Break_Input_Source */
   uint32_t Enable;         /*!< Specifies whether or not the break input source is enabled.
                                 This parameter can be a value of @ref TIMEx_Break_Input_Source_Enable */
+  uint32_t Polarity;       /*!< Specifies the break input source polarity.
+                                This parameter can be a value of @ref TIMEx_Break_Input_Source_Polarity
+                                Not relevant when analog watchdog output of the DFSDM1 used as break input source */
 } TIMEx_BreakInputConfigTypeDef;
 #endif /* STM32F767xx || STM32F769xx || STM32F777xx || STM32F779xx */
 /**
@@ -284,7 +285,7 @@ typedef struct {
   * @{
   */
 #define TIM_BREAKINPUTSOURCE_BKIN     ((uint32_t)0x00000001U) /* !< An external source (GPIO) is connected to the BKIN pin  */
-#define TIM_BREAKINPUTSOURCE_DFSDM1    ((uint32_t)0x00000008U) /* !< The analog watchdog output of the DFSDM1 peripheral is connected to the break input */
+#define TIM_BREAKINPUTSOURCE_DFSDM1   ((uint32_t)0x00000008U) /* !< The analog watchdog output of the DFSDM1 peripheral is connected to the break input */
 /**
   * @}
   */ 
@@ -297,6 +298,15 @@ typedef struct {
 /**
   * @}
   */ 
+
+/** @defgroup TIMEx_Break_Input_Source_Polarity TIM  Extended Break input polarity
+  * @{
+  */
+#define TIM_BREAKINPUTSOURCE_POLARITY_LOW     ((uint32_t)(0x00000001)) /* !< Break input source is active low */
+#define TIM_BREAKINPUTSOURCE_POLARITY_HIGH    ((uint32_t)(0x00000000)) /* !< Break input source is active_high */
+/**
+  * @}
+  */
 
 /**
   * @}
@@ -616,7 +626,10 @@ HAL_TIM_StateTypeDef HAL_TIMEx_HallSensor_GetState(TIM_HandleTypeDef* htim);
 
 #define IS_TIM_BREAKINPUTSOURCE_STATE(__STATE__)  (((__STATE__) == TIM_BREAKINPUTSOURCE_DISABLE)  || \
                                                    ((__STATE__) == TIM_BREAKINPUTSOURCE_ENABLE))
-                                                   
+                                   
+#define IS_TIM_BREAKINPUTSOURCE_POLARITY(__POLARITY__)  (((__POLARITY__) == TIM_BREAKINPUTSOURCE_POLARITY_LOW)  || \
+                                                         ((__POLARITY__) == TIM_BREAKINPUTSOURCE_POLARITY_HIGH))
+
 #endif /* STM32F767xx || STM32F769xx || STM32F777xx || STM32F779xx */
 /**
   * @}

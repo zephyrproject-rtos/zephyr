@@ -95,9 +95,10 @@ static inline u32_t counter_read(struct device *dev)
 /**
  * @brief Set an alarm.
  * @param dev Pointer to the device structure for the driver instance.
- * @param callback Pointer to the callback function. if this is NULL,
+ * @param callback Pointer to the callback function. If this is NULL,
  *                 this function unsets the alarm.
- * @param count Number of counter ticks.
+ * @param count Number of counter ticks. This is relative value, meaning
+ *              an alarm will be triggered count ticks in the future.
  * @param user_data Pointer to user data.
  *
  * @retval 0 If successful.

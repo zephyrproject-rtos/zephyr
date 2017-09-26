@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_timebase_rtc_wakeup_template.c 
   * @author  MCD Application Team
-  * @version V1.2.0
-  * @date    30-December-2016
   * @brief   HAL time base based on the hardware RTC_WAKEUP Template.
   *    
   *          This file overrides the native HAL time base functions (defined as weak)
@@ -24,7 +22,7 @@
        HAL_RTC_MODULE_ENABLED define in stm32f7xx_hal_conf.h 
 
     [..]
-    (@) HAL RTC alarm and HAL RTC wakeup drivers can’t be used with low power modes:
+    (@) HAL RTC alarm and HAL RTC wakeup drivers canÂ’t be used with low power modes:
         The wake up capability of the RTC may be intrusive in case of prior low power mode
         configuration requiring different wake up sources.
         Application/Example behavior is no more guaranteed 
@@ -35,7 +33,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:

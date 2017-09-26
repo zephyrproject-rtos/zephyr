@@ -54,7 +54,7 @@ struct twihs_msg {
 /* Device run time data */
 struct twihs_sam_dev_data {
 	struct k_sem sem;
-	union dev_config mode_config;
+	u32_t mode_config;
 	struct twihs_msg msg;
 };
 
@@ -103,10 +103,10 @@ static int twihs_sam_configure(struct device *dev, u32_t config)
 		return -EIO;
 	}
 
-	dev_data->mode_config.raw = config;
+	dev_data->mode_config = config;
 
 	/* Configure clock */
-	switch ((dev_data->mode_config.bits.speed)) {
+	switch (I2C_SPEED_GET(dev_data->dev_config)) {
 	case I2C_SPEED_STANDARD:
 		i2c_speed = BUS_SPEED_STANDARD_HZ;
 		break;
@@ -275,7 +275,7 @@ static int twihs_sam_initialize(struct device *dev)
 	/* Reset TWI module */
 	twihs->TWIHS_CR = TWIHS_CR_SWRST;
 
-	result = twihs_sam_configure(dev, dev_data->mode_config.raw);
+	result = twihs_sam_configure(dev, dev_data->mode_config);
 	if (result < 0) {
 		return result;
 	}
@@ -314,7 +314,7 @@ static const struct twihs_sam_dev_cfg i2c0_sam_config = {
 };
 
 static struct twihs_sam_dev_data i2c0_sam_data = {
-	.mode_config.raw = CONFIG_I2C_0_DEFAULT_CFG,
+	.mode_config = CONFIG_I2C_0_DEFAULT_CFG,
 };
 
 DEVICE_AND_API_INIT(i2c0_sam, CONFIG_I2C_0_NAME, &twihs_sam_initialize,
@@ -345,7 +345,7 @@ static const struct twihs_sam_dev_cfg i2c1_sam_config = {
 };
 
 static struct twihs_sam_dev_data i2c1_sam_data = {
-	.mode_config.raw = CONFIG_I2C_1_DEFAULT_CFG,
+	.mode_config = CONFIG_I2C_1_DEFAULT_CFG,
 };
 
 DEVICE_AND_API_INIT(i2c1_sam, CONFIG_I2C_1_NAME, &twihs_sam_initialize,
@@ -376,7 +376,7 @@ static const struct twihs_sam_dev_cfg i2c2_sam_config = {
 };
 
 static struct twihs_sam_dev_data i2c2_sam_data = {
-	.mode_config.raw = CONFIG_I2C_2_DEFAULT_CFG,
+	.mode_config = CONFIG_I2C_2_DEFAULT_CFG,
 };
 
 DEVICE_AND_API_INIT(i2c2_sam, CONFIG_I2C_2_NAME, &twihs_sam_initialize,

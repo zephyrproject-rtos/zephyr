@@ -13,7 +13,7 @@ quiet_cmd_gen_mmu = GMMU    $@
       cmd_gen_mmu =								\
 (										\
 	$(OBJCOPY) -I $(OUTPUT_FORMAT)  -O binary -j mmulist $< mmulist.bin &&	\
-	python $(GENMMU) -i mmulist.bin -o mmu_tables.bin $(GENMMU_EXTRA_ARGS)\
+	$(GENMMU) -i mmulist.bin -o mmu_tables.bin $(GENMMU_EXTRA_ARGS)\
 )
 
 

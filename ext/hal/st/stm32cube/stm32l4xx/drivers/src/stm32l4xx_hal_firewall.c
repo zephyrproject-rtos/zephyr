@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_firewall.c
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    21-April-2017
   * @brief   FIREWALL HAL module driver.
   *          This file provides firmware functions to manage the Firewall
   *          Peripheral initialization and enabling.

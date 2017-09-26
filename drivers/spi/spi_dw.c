@@ -63,8 +63,6 @@ out:
 	while (test_bit_sr_busy(info->regs)) {
 	}
 
-	spi->error = error;
-
 	/* Disabling interrupts */
 	write_imr(DW_SPI_IMR_MASK, info->regs);
 	/* Disabling the controller */
@@ -129,7 +127,7 @@ static void push_data(struct device *dev)
 
 		write_dr(data, info->regs);
 
-		spi_context_update_tx(&spi->ctx, spi->dfs);
+		spi_context_update_tx(&spi->ctx, spi->dfs, 1);
 		spi->fifo_diff++;
 
 		f_tx--;
@@ -173,7 +171,7 @@ static void pull_data(struct device *dev)
 			}
 		}
 
-		spi_context_update_rx(&spi->ctx, spi->dfs);
+		spi_context_update_rx(&spi->ctx, spi->dfs, 1);
 		spi->fifo_diff--;
 	}
 
@@ -308,11 +306,7 @@ static int transceive(struct spi_config *config,
 	/* Enable the controller */
 	set_bit_ssienr(info->regs);
 
-	spi_context_wait_for_completion(&spi->ctx);
-
-	if (spi->error) {
-		ret = -EIO;
-	}
+	ret = spi_context_wait_for_completion(&spi->ctx);
 out:
 	spi_context_release(&spi->ctx, ret);
 

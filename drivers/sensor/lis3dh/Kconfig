@@ -9,7 +9,7 @@
 menuconfig LIS3DH
 	bool
 	prompt "LIS3DH Three Axis Accelerometer"
-	depends on SENSOR && I2C
+	depends on I2C
 	default n
 	help
 	  Enable driver for LIS3DH I2C-based triaxial accelerometer sensor.

@@ -222,6 +222,12 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt)
 	if (!net_if_ipv4_addr_mask_cmp(net_pkt_iface(pkt),
 				       &NET_IPV4_HDR(pkt)->dst)) {
 		addr = &net_pkt_iface(pkt)->ipv4.gw;
+		if (net_is_ipv4_addr_unspecified(addr)) {
+			NET_ERR("Gateway not set for iface %p",
+				net_pkt_iface(pkt));
+
+			return NULL;
+		}
 	} else {
 		addr = &NET_IPV4_HDR(pkt)->dst;
 	}
@@ -299,16 +305,8 @@ static inline void send_pending(struct net_if *iface, struct net_pkt **pkt)
 	*pkt = NULL;
 
 	if (net_if_send_data(iface, pending) == NET_DROP) {
-		/* This is to unref the original ref */
 		net_pkt_unref(pending);
 	}
-
-	/* The pending pkt was referenced when
-	 * it was added to cache so we need to
-	 * unref it now when it is removed from
-	 * the cache.
-	 */
-	net_pkt_unref(pending);
 }
 
 static inline void arp_update(struct net_if *iface,

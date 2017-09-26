@@ -488,10 +488,13 @@ static void webusb_serial_int_in(u8_t ep,
  *
  * @return  N/A.
  */
-static void webusb_serial_dev_status_cb(enum usb_dc_status_code status)
+static void webusb_serial_dev_status_cb(enum usb_dc_status_code status,
+					u8_t *param)
 {
 	struct webusb_serial_dev_data_t * const dev_data =
 	    DEV_DATA(webusb_serial_dev);
+
+	ARG_UNUSED(param);
 
 	/* Store the new status */
 	dev_data->usb_status = status;

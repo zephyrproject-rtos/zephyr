@@ -617,7 +617,8 @@ static int prov_auth(u8_t method, u8_t action, u8_t size)
 		}
 
 		if (output == BT_MESH_DISPLAY_STRING) {
-			u8_t i, str[9];
+			char str[9];
+			u8_t i;
 
 			bt_rand(str, size);
 

@@ -13,32 +13,30 @@ menuconfig SENSOR
 	help
 	  Include sensor drivers in system config
 
+if SENSOR
+
 config SYS_LOG_SENSOR_LEVEL
 	int "Sensor Log level"
-	depends on SYS_LOG && SENSOR
+	depends on SYS_LOG
 	default 0
 	range 0 4
 	help
-	Sets log level for sensor driver.
-	Levels are:
-
-	- 0 OFF: do not write
-
-	- 1 ERROR: only write SYS_LOG_ERR
-
-	- 2 WARNING: write SYS_LOG_WRN in addition to previous level
-
-	- 3 INFO: write SYS_LOG_INF in addition to previous levels
-
-	- 4 DEBUG: write SYS_LOG_DBG in addition to previous levels
+	  Sets log level for Sensor Device Drivers.
+	  Levels are:
+	  0 OFF, do not write
+	  1 ERROR, only write SYS_LOG_ERR
+	  2 WARNING, write SYS_LOG_WRN in addition to previous level
+	  3 INFO, write SYS_LOG_INF in addition to previous levels
+	  4 DEBUG, write SYS_LOG_DBG in addition to previous levels
 
 config SENSOR_INIT_PRIORITY
 	int
 	prompt "Sensor init priority"
-	depends on SENSOR
 	default 90
 	help
-	 Sensor initialization priority.
+	  Sensor initialization priority.
+
+comment "Device Drivers"
 
 source "drivers/sensor/adxl362/Kconfig"
 
@@ -111,3 +109,5 @@ source "drivers/sensor/th02/Kconfig"
 source "drivers/sensor/tmp007/Kconfig"
 
 source "drivers/sensor/tmp112/Kconfig"
+
+endif # SENSOR

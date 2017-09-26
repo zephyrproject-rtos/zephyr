@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_ll_adc.h
   * @author  MCD Application Team
-  * @version V1.7.0
-  * @date    17-February-2017
+  * @version V1.7.1
+  * @date    14-April-2017
   * @brief   Header file of ADC LL module.
   ******************************************************************************
   * @attention
@@ -98,8 +98,6 @@ extern "C" {
 #define ADC_REG_RANK_15_SQRX_BITOFFSET_POS (10U) /* Value equivalent to POSITION_VAL(ADC_SQR1_SQ15) */
 #define ADC_REG_RANK_16_SQRX_BITOFFSET_POS (15U) /* Value equivalent to POSITION_VAL(ADC_SQR1_SQ16) */
 
-
-
 /* Internal mask for ADC group injected sequencer:                            */
 /* To select into literal LL_ADC_INJ_RANK_x the relevant bits for:            */
 /* - data register offset                                                     */
@@ -123,15 +121,6 @@ extern "C" {
 #define ADC_INJ_JDRX_REGOFFSET_MASK        (ADC_JDR1_REGOFFSET | ADC_JDR2_REGOFFSET | ADC_JDR3_REGOFFSET | ADC_JDR4_REGOFFSET)
 #define ADC_INJ_JOFRX_REGOFFSET_MASK       (ADC_JOFR1_REGOFFSET | ADC_JOFR2_REGOFFSET | ADC_JOFR3_REGOFFSET | ADC_JOFR4_REGOFFSET)
 #define ADC_INJ_RANK_ID_JSQR_MASK          (ADC_CHANNEL_ID_NUMBER_MASK_POSBIT0)
-
-/* Definition of ADC group injected sequencer bits information to be inserted */
-/* into ADC group injected sequencer ranks literals definition.               */
-#define ADC_INJ_RANK_1_JSQR_BITOFFSET_POS  ( 0U) /* Value equivalent to POSITION_VAL(ADC_JSQR_JSQ1) */
-#define ADC_INJ_RANK_2_JSQR_BITOFFSET_POS  ( 5U) /* Value equivalent to POSITION_VAL(ADC_JSQR_JSQ2) */
-#define ADC_INJ_RANK_3_JSQR_BITOFFSET_POS  (10U) /* Value equivalent to POSITION_VAL(ADC_JSQR_JSQ3) */
-#define ADC_INJ_RANK_4_JSQR_BITOFFSET_POS  (15U) /* Value equivalent to POSITION_VAL(ADC_JSQR_JSQ4) */
-
-
 
 /* Internal mask for ADC group regular trigger:                               */
 /* To select into literal LL_ADC_REG_TRIG_x the relevant bits for:            */
@@ -186,11 +175,6 @@ extern "C" {
 /* Definition of ADC group injected trigger bits information.                 */
 #define ADC_INJ_TRIG_EXTSEL_BITOFFSET_POS  (16U) /* Value equivalent to POSITION_VAL(ADC_CR2_JEXTSEL) */
 #define ADC_INJ_TRIG_EXTEN_BITOFFSET_POS   (20U) /* Value equivalent to POSITION_VAL(ADC_CR2_JEXTEN) */
-
-
-
-
-
 
 /* Internal mask for ADC channel:                                             */
 /* To select into literal LL_ADC_CHANNEL_x the relevant bits for:             */
@@ -264,7 +248,6 @@ extern "C" {
 #define ADC_CHANNEL_17_SMP                 (ADC_SMPR1_REGOFFSET | ((21U) << ADC_CHANNEL_SMPx_BITOFFSET_POS)) /* Value shifted is equivalent to POSITION_VAL(ADC_SMPR1_SMP17) */
 #define ADC_CHANNEL_18_SMP                 (ADC_SMPR1_REGOFFSET | ((24U) << ADC_CHANNEL_SMPx_BITOFFSET_POS)) /* Value shifted is equivalent to POSITION_VAL(ADC_SMPR1_SMP18) */
 
-
 /* Internal mask for ADC analog watchdog:                                     */
 /* To select into literals LL_ADC_AWD_CHANNELx_xxx the relevant bits for:     */
 /* (concatenation of multiple bits used in different analog watchdogs,        */
@@ -285,14 +268,9 @@ extern "C" {
 #define ADC_AWD_TR1_LOW_REGOFFSET          0x00000001U
 #define ADC_AWD_TRX_REGOFFSET_MASK         (ADC_AWD_TR1_HIGH_REGOFFSET | ADC_AWD_TR1_LOW_REGOFFSET)
 
-
 /* ADC registers bits positions */
 #define ADC_CR1_RES_BITOFFSET_POS          (24U) /* Value equivalent to POSITION_VAL(ADC_CR1_RES) */
 #define ADC_TR_HT_BITOFFSET_POS            (16U) /* Value equivalent to POSITION_VAL(ADC_TR_HT) */
-
-
-
-
 /**
   * @}
   */
@@ -869,10 +847,10 @@ typedef struct
 /** @defgroup ADC_LL_EC_INJ_SEQ_RANKS  ADC group injected - Sequencer ranks
   * @{
   */
-#define LL_ADC_INJ_RANK_1                  (ADC_JDR1_REGOFFSET | ADC_JOFR1_REGOFFSET | ADC_INJ_RANK_1_JSQR_BITOFFSET_POS) /*!< ADC group injected sequencer rank 1 */
-#define LL_ADC_INJ_RANK_2                  (ADC_JDR2_REGOFFSET | ADC_JOFR2_REGOFFSET | ADC_INJ_RANK_2_JSQR_BITOFFSET_POS) /*!< ADC group injected sequencer rank 2 */
-#define LL_ADC_INJ_RANK_3                  (ADC_JDR3_REGOFFSET | ADC_JOFR3_REGOFFSET | ADC_INJ_RANK_3_JSQR_BITOFFSET_POS) /*!< ADC group injected sequencer rank 3 */
-#define LL_ADC_INJ_RANK_4                  (ADC_JDR4_REGOFFSET | ADC_JOFR4_REGOFFSET | ADC_INJ_RANK_4_JSQR_BITOFFSET_POS) /*!< ADC group injected sequencer rank 4 */
+#define LL_ADC_INJ_RANK_1                  (ADC_JDR1_REGOFFSET | ADC_JOFR1_REGOFFSET | 0x00000001U) /*!< ADC group injected sequencer rank 1 */
+#define LL_ADC_INJ_RANK_2                  (ADC_JDR2_REGOFFSET | ADC_JOFR2_REGOFFSET | 0x00000002U) /*!< ADC group injected sequencer rank 2 */
+#define LL_ADC_INJ_RANK_3                  (ADC_JDR3_REGOFFSET | ADC_JOFR3_REGOFFSET | 0x00000003U) /*!< ADC group injected sequencer rank 3 */
+#define LL_ADC_INJ_RANK_4                  (ADC_JDR4_REGOFFSET | ADC_JOFR4_REGOFFSET | 0x00000004U) /*!< ADC group injected sequencer rank 4 */
 /**
   * @}
   */
@@ -2944,9 +2922,11 @@ __STATIC_INLINE void LL_ADC_INJ_SetSequencerRanks(ADC_TypeDef *ADCx, uint32_t Ra
   /* in register depending on parameter "Rank".                               */
   /* Parameters "Rank" and "Channel" are used with masks because containing   */
   /* other bits reserved for other purpose.                                   */
+  register uint32_t tmpreg1 = (READ_BIT(ADCx->JSQR, ADC_JSQR_JL) >> ADC_JSQR_JL_Pos) + 1U;
+  
   MODIFY_REG(ADCx->JSQR,
-             ADC_CHANNEL_ID_NUMBER_MASK << (Rank & ADC_INJ_RANK_ID_JSQR_MASK),
-             (Channel & ADC_CHANNEL_ID_NUMBER_MASK) << (Rank & ADC_INJ_RANK_ID_JSQR_MASK));
+             ADC_CHANNEL_ID_NUMBER_MASK << (5U * (uint8_t)(((Rank) + 3U) - (tmpreg1))),
+             (Channel & ADC_CHANNEL_ID_NUMBER_MASK) << (5U * (uint8_t)(((Rank) + 3U) - (tmpreg1))));
 }
 
 /**
@@ -3007,9 +2987,11 @@ __STATIC_INLINE void LL_ADC_INJ_SetSequencerRanks(ADC_TypeDef *ADCx, uint32_t Ra
   */
 __STATIC_INLINE uint32_t LL_ADC_INJ_GetSequencerRanks(ADC_TypeDef *ADCx, uint32_t Rank)
 {
+  register uint32_t tmpreg1 = (READ_BIT(ADCx->JSQR, ADC_JSQR_JL) >> ADC_JSQR_JL_Pos)  + 1U;
+  
   return (uint32_t)(READ_BIT(ADCx->JSQR,
-                             ADC_CHANNEL_ID_NUMBER_MASK << (Rank & ADC_INJ_RANK_ID_JSQR_MASK))
-                    >> (Rank & ADC_INJ_RANK_ID_JSQR_MASK)
+                             ADC_CHANNEL_ID_NUMBER_MASK << (5U * (uint8_t)(((Rank) + 3U) - (tmpreg1))))
+                    >> (5U * (uint8_t)(((Rank) + 3U) - (tmpreg1)))
                    );
 }
 

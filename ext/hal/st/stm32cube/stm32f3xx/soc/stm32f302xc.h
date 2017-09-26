@@ -2,14 +2,12 @@
   ******************************************************************************
   * @file    stm32f302xc.h
   * @author  MCD Application Team
-  * @version V2.3.1
-  * @date    16-December-2016
   * @brief   CMSIS STM32F302xC Devices Peripheral Access Layer Header File.
   *
   *          This file contains:
   *           - Data structures and the address mapping for all peripherals
   *           - Peripheral's registers declarations and bits definition
-  *           - Macros to access peripheralï¿½s registers hardware
+  *           - Macros to access peripheral’s registers hardware
   *
   ******************************************************************************
   * @attention
@@ -7343,9 +7341,15 @@ typedef struct
 #define EXTI_IMR2_IM34 EXTI_IMR2_MR34
 #define EXTI_IMR2_IM35 EXTI_IMR2_MR35
 
+#if defined(EXTI_IMR2_MR33)
 #define EXTI_IMR2_IM_Pos           (0U)
 #define EXTI_IMR2_IM_Msk           (0xFU << EXTI_IMR2_IM_Pos)                  /*!< 0x0000000F */
 #define EXTI_IMR2_IM               EXTI_IMR2_IM_Msk
+#else
+#define EXTI_IMR2_IM_Pos           (0U)
+#define EXTI_IMR2_IM_Msk           (0xDU << EXTI_IMR2_IM_Pos)                  /*!< 0x0000000D */
+#define EXTI_IMR2_IM               EXTI_IMR2_IM_Msk
+#endif
 
 /*******************  Bit definition for EXTI_EMR2 ****************************/
 #define EXTI_EMR2_MR32_Pos         (0U)
@@ -7365,6 +7369,16 @@ typedef struct
 #endif
 #define EXTI_EMR2_EM34 EXTI_EMR2_MR34
 #define EXTI_EMR2_EM35 EXTI_EMR2_MR35
+
+#if defined(EXTI_EMR2_MR33)
+#define EXTI_EMR2_EM_Pos           (0U)
+#define EXTI_EMR2_EM_Msk           (0xFU << EXTI_EMR2_EM_Pos)                  /*!< 0x0000000F */
+#define EXTI_EMR2_EM               EXTI_EMR2_EM_Msk
+#else
+#define EXTI_EMR2_EM_Pos           (0U)
+#define EXTI_EMR2_EM_Msk           (0xDU << EXTI_EMR2_EM_Pos)                  /*!< 0x0000000D */
+#define EXTI_EMR2_EM               EXTI_EMR2_EM_Msk
+#endif
 
 /******************  Bit definition for EXTI_RTSR2 register ********************/
 #define EXTI_RTSR2_TR32_Pos        (0U)
@@ -9295,9 +9309,9 @@ typedef struct
 #define RTC_CR_COSEL_Pos             (19U)
 #define RTC_CR_COSEL_Msk             (0x1U << RTC_CR_COSEL_Pos)                /*!< 0x00080000 */
 #define RTC_CR_COSEL                 RTC_CR_COSEL_Msk
-#define RTC_CR_BCK_Pos               (18U)
-#define RTC_CR_BCK_Msk               (0x1U << RTC_CR_BCK_Pos)                  /*!< 0x00040000 */
-#define RTC_CR_BCK                   RTC_CR_BCK_Msk
+#define RTC_CR_BKP_Pos               (18U)
+#define RTC_CR_BKP_Msk               (0x1U << RTC_CR_BKP_Pos)                  /*!< 0x00040000 */
+#define RTC_CR_BKP                   RTC_CR_BKP_Msk
 #define RTC_CR_SUB1H_Pos             (17U)
 #define RTC_CR_SUB1H_Msk             (0x1U << RTC_CR_SUB1H_Pos)                /*!< 0x00020000 */
 #define RTC_CR_SUB1H                 RTC_CR_SUB1H_Msk
@@ -9346,6 +9360,11 @@ typedef struct
 #define RTC_CR_WUCKSEL_0             (0x1U << RTC_CR_WUCKSEL_Pos)              /*!< 0x00000001 */
 #define RTC_CR_WUCKSEL_1             (0x2U << RTC_CR_WUCKSEL_Pos)              /*!< 0x00000002 */
 #define RTC_CR_WUCKSEL_2             (0x4U << RTC_CR_WUCKSEL_Pos)              /*!< 0x00000004 */
+
+/* Legacy defines */
+#define RTC_CR_BCK_Pos               RTC_CR_BKP_Pos
+#define RTC_CR_BCK_Msk               RTC_CR_BKP_Msk
+#define RTC_CR_BCK                   RTC_CR_BKP
 
 /********************  Bits definition for RTC_ISR register  ******************/
 #define RTC_ISR_RECALPF_Pos          (16U)

@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32l4xx_ll_rng.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    21-April-2017
   * @brief   Header file of RNG LL module.
   ******************************************************************************
   * @attention
@@ -62,11 +60,65 @@ extern "C" {
 /* Private macros ------------------------------------------------------------*/
 
 /* Exported types ------------------------------------------------------------*/
+#if defined(USE_FULL_LL_DRIVER)
+/** @defgroup RNG_LL_ES_Init_Struct RNG Exported Init structures
+  * @{
+  */
+  
+
+#if defined(RNG_CR_CED) || defined(RNG_CR_BYP)
+/**
+  * @brief LL RNG Init Structure Definition
+  */
+typedef struct
+{
+#if defined(RNG_CR_CED)
+  uint32_t         ClockErrorDetection; /*!< Clock error detection.
+                                      This parameter can be one value of @ref RNG_LL_CED.
+                                      
+                                      This parameter can be modified using unitary functions @ref LL_RNG_EnableClkErrorDetect(). */
+#endif /* defined(RNG_CR_CED) */
+#if defined(RNG_CR_BYP)
+  uint32_t         BypassMode;          /*!< Bypass mode.
+                                      This parameter can be one value of @ref RNG_LL_Bypass.
+                                      
+                                      This parameter can be modified using unitary functions @ref LL_RNG_EnableBypassMode(). */
+#endif /* defined(RNG_CR_BYP) */
+}LL_RNG_InitTypeDef;
+#endif /* defined(RNG_CR_CED) || defined(RNG_CR_BYP) */
+
+/**
+  * @}
+  */
+#endif /* USE_FULL_LL_DRIVER */
+  
 /* Exported constants --------------------------------------------------------*/
 /** @defgroup RNG_LL_Exported_Constants RNG Exported Constants
   * @{
   */
-
+  
+#if defined(RNG_CR_CED)
+/** @defgroup RNG_LL_CED Clock Error Detection
+  * @{
+  */
+#define LL_RNG_CED_ENABLE         0x00000000U              /*!< Clock error detection enabled  */
+#define LL_RNG_CED_DISABLE        RNG_CR_CED               /*!< Clock error detection disabled */
+/**
+  * @}
+  */
+#endif /* defined(RNG_CR_CED) */
+  
+#if defined(RNG_CR_BYP)
+/** @defgroup RNG_LL_Bypass Bypass Mode
+  * @{
+  */
+#define LL_RNG_BYP_DISABLE        ((uint32_t)0x00000000)   /*!< Bypass mode disabled */
+#define LL_RNG_BYP_ENABLE         RNG_CR_BYP               /*!< Bypass mode enabled */
+/**
+  * @}
+  */
+#endif /* defined(RNG_CR_BYP) */
+  
 /** @defgroup RNG_LL_EC_GET_FLAG Get Flags Defines
   * @brief    Flags defines which can be used with LL_RNG_ReadReg function
   * @{
@@ -167,6 +219,76 @@ __STATIC_INLINE uint32_t LL_RNG_IsEnabled(RNG_TypeDef *RNGx)
 {
   return (READ_BIT(RNGx->CR, RNG_CR_RNGEN) == (RNG_CR_RNGEN));
 }
+
+#if defined(RNG_CR_CED)
+/**
+  * @brief  Enable RNG Clock Error Detection
+  * @rmtoll CR           CED         LL_RNG_EnableClkErrorDetect
+  * @param  RNGx RNG Instance
+  * @retval None
+  */
+__STATIC_INLINE void LL_RNG_EnableClkErrorDetect(RNG_TypeDef *RNGx)
+{
+  CLEAR_BIT(RNGx->CR, RNG_CR_CED);
+}
+
+/**
+  * @brief  Disable RNG Clock Error Detection
+  * @rmtoll CR           CED         LL_RNG_DisableClkErrorDetect
+  * @param  RNGx RNG Instance
+  * @retval None
+  */
+__STATIC_INLINE void LL_RNG_DisableClkErrorDetect(RNG_TypeDef *RNGx)
+{
+  SET_BIT(RNGx->CR, RNG_CR_CED);
+}
+
+/**
+  * @brief  Check if RNG Clock Error Detection is enabled
+  * @rmtoll CR           CED         LL_RNG_IsEnabledClkErrorDetect
+  * @param  RNGx RNG Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t LL_RNG_IsEnabledClkErrorDetect(RNG_TypeDef *RNGx)
+{
+  return (!(READ_BIT(RNGx->CR, RNG_CR_CED) == (RNG_CR_CED)));
+}
+#endif /* defined(RNG_CR_CED) */
+
+#if defined(RNG_CR_BYP)
+/**
+  * @brief  Enable RNG Bypass mode
+  * @rmtoll CR           BYP         LL_RNG_EnableBypassMode
+  * @param  RNGx RNG Instance
+  * @retval None
+  */
+__STATIC_INLINE void LL_RNG_EnableBypassMode(RNG_TypeDef *RNGx)
+{
+  SET_BIT(RNGx->CR, RNG_CR_BYP);
+}
+
+/**
+  * @brief  Disable RNG Clock Error Detection
+  * @rmtoll CR           BYP         LL_RNG_DisableBypassMode
+  * @param  RNGx RNG Instance
+  * @retval None
+  */
+__STATIC_INLINE void LL_RNG_DisableBypassMode(RNG_TypeDef *RNGx)
+{
+  CLEAR_BIT(RNGx->CR, RNG_CR_BYP);
+}
+
+/**
+  * @brief  Check if RNG Clock Error Detection is enabled
+  * @rmtoll CR           BYP         LL_RNG_IsEnabledBypassMode
+  * @param  RNGx RNG Instance
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t LL_RNG_IsEnabledBypassMode(RNG_TypeDef *RNGx)
+{
+  return (READ_BIT(RNGx->CR, RNG_CR_BYP) == (RNG_CR_BYP));
+}
+#endif /* defined(RNG_CR_BYP) */
 
 /**
   * @}
@@ -324,7 +446,9 @@ __STATIC_INLINE uint32_t LL_RNG_ReadRandData32(RNG_TypeDef *RNGx)
 /** @defgroup RNG_LL_EF_Init Initialization and de-initialization functions
   * @{
   */
-
+#if defined(RNG_CR_CED) || defined(RNG_CR_BYP)
+ErrorStatus LL_RNG_Init(RNG_TypeDef *RNGx, LL_RNG_InitTypeDef *RNG_InitStruct);
+#endif /* defined(RNG_CR_CED) || defined(RNG_CR_BYP) */
 ErrorStatus LL_RNG_DeInit(RNG_TypeDef *RNGx);
 
 /**

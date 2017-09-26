@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32l4xx_ll_exti.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    21-April-2017
   * @brief   Header file of EXTI LL module.
   ******************************************************************************
   * @attention
@@ -187,6 +185,9 @@ typedef struct
 #if defined(EXTI_IMR2_IM39)
 #define LL_EXTI_LINE_39                EXTI_IMR2_IM39          /*!< Extended line 39 */
 #endif
+#if defined(EXTI_IMR2_IM40)
+#define LL_EXTI_LINE_40                EXTI_IMR2_IM40          /*!< Extended line 40 */
+#endif
 #define LL_EXTI_LINE_ALL_32_63         EXTI_IMR2_IM            /*!< All Extended line not reserved*/
 
 
@@ -329,13 +330,15 @@ __STATIC_INLINE void LL_EXTI_EnableIT_0_31(uint32_t ExtiLine)
   * @param  ExtiLine This parameter can be one of the following values:
   *         @arg @ref LL_EXTI_LINE_32
   *         @arg @ref LL_EXTI_LINE_33
-  *         @arg @ref LL_EXTI_LINE_34
+  *         @arg @ref LL_EXTI_LINE_34(*)
   *         @arg @ref LL_EXTI_LINE_35
   *         @arg @ref LL_EXTI_LINE_36
   *         @arg @ref LL_EXTI_LINE_37
   *         @arg @ref LL_EXTI_LINE_38
-  *         @arg @ref LL_EXTI_LINE_39
+  *         @arg @ref LL_EXTI_LINE_39(*)
+  *         @arg @ref LL_EXTI_LINE_40(*)
   *         @arg @ref LL_EXTI_LINE_ALL_32_63
+  * @note   (*): Available in some devices
   * @retval None
   */
 __STATIC_INLINE void LL_EXTI_EnableIT_32_63(uint32_t ExtiLine)
@@ -400,13 +403,15 @@ __STATIC_INLINE void LL_EXTI_DisableIT_0_31(uint32_t ExtiLine)
   * @param  ExtiLine This parameter can be one of the following values:
   *         @arg @ref LL_EXTI_LINE_32
   *         @arg @ref LL_EXTI_LINE_33
-  *         @arg @ref LL_EXTI_LINE_34
+  *         @arg @ref LL_EXTI_LINE_34(*)
   *         @arg @ref LL_EXTI_LINE_35
   *         @arg @ref LL_EXTI_LINE_36
   *         @arg @ref LL_EXTI_LINE_37
   *         @arg @ref LL_EXTI_LINE_38
-  *         @arg @ref LL_EXTI_LINE_39
+  *         @arg @ref LL_EXTI_LINE_39(*)
+  *         @arg @ref LL_EXTI_LINE_40(*)
   *         @arg @ref LL_EXTI_LINE_ALL_32_63
+  * @note   (*): Available in some devices
   * @retval None
   */
 __STATIC_INLINE void LL_EXTI_DisableIT_32_63(uint32_t ExtiLine)
@@ -471,13 +476,15 @@ __STATIC_INLINE uint32_t LL_EXTI_IsEnabledIT_0_31(uint32_t ExtiLine)
   * @param  ExtiLine This parameter can be one of the following values:
   *         @arg @ref LL_EXTI_LINE_32
   *         @arg @ref LL_EXTI_LINE_33
-  *         @arg @ref LL_EXTI_LINE_34
+  *         @arg @ref LL_EXTI_LINE_34(*)
   *         @arg @ref LL_EXTI_LINE_35
   *         @arg @ref LL_EXTI_LINE_36
   *         @arg @ref LL_EXTI_LINE_37
   *         @arg @ref LL_EXTI_LINE_38
-  *         @arg @ref LL_EXTI_LINE_39
+  *         @arg @ref LL_EXTI_LINE_39(*)
+  *         @arg @ref LL_EXTI_LINE_40(*)
   *         @arg @ref LL_EXTI_LINE_ALL_32_63
+  * @note   (*): Available in some devices
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_EXTI_IsEnabledIT_32_63(uint32_t ExtiLine)
@@ -545,13 +552,15 @@ __STATIC_INLINE void LL_EXTI_EnableEvent_0_31(uint32_t ExtiLine)
   * @param  ExtiLine This parameter can be a combination of the following values:
   *         @arg @ref LL_EXTI_LINE_32
   *         @arg @ref LL_EXTI_LINE_33
-  *         @arg @ref LL_EXTI_LINE_34
+  *         @arg @ref LL_EXTI_LINE_34(*)
   *         @arg @ref LL_EXTI_LINE_35
   *         @arg @ref LL_EXTI_LINE_36
   *         @arg @ref LL_EXTI_LINE_37
   *         @arg @ref LL_EXTI_LINE_38
-  *         @arg @ref LL_EXTI_LINE_39
+  *         @arg @ref LL_EXTI_LINE_39(*)
+  *         @arg @ref LL_EXTI_LINE_40(*)
   *         @arg @ref LL_EXTI_LINE_ALL_32_63
+  * @note   (*): Available in some devices
   * @retval None
   */
 __STATIC_INLINE void LL_EXTI_EnableEvent_32_63(uint32_t ExtiLine)
@@ -610,13 +619,15 @@ __STATIC_INLINE void LL_EXTI_DisableEvent_0_31(uint32_t ExtiLine)
   * @param  ExtiLine This parameter can be a combination of the following values:
   *         @arg @ref LL_EXTI_LINE_32
   *         @arg @ref LL_EXTI_LINE_33
-  *         @arg @ref LL_EXTI_LINE_34
+  *         @arg @ref LL_EXTI_LINE_34(*)
   *         @arg @ref LL_EXTI_LINE_35
   *         @arg @ref LL_EXTI_LINE_36
   *         @arg @ref LL_EXTI_LINE_37
   *         @arg @ref LL_EXTI_LINE_38
-  *         @arg @ref LL_EXTI_LINE_39
+  *         @arg @ref LL_EXTI_LINE_39(*)
+  *         @arg @ref LL_EXTI_LINE_40(*)
   *         @arg @ref LL_EXTI_LINE_ALL_32_63
+  * @note   (*): Available in some devices
   * @retval None
   */
 __STATIC_INLINE void LL_EXTI_DisableEvent_32_63(uint32_t ExtiLine)
@@ -676,13 +687,15 @@ __STATIC_INLINE uint32_t LL_EXTI_IsEnabledEvent_0_31(uint32_t ExtiLine)
   * @param  ExtiLine This parameter can be a combination of the following values:
   *         @arg @ref LL_EXTI_LINE_32
   *         @arg @ref LL_EXTI_LINE_33
-  *         @arg @ref LL_EXTI_LINE_34
+  *         @arg @ref LL_EXTI_LINE_34(*)
   *         @arg @ref LL_EXTI_LINE_35
   *         @arg @ref LL_EXTI_LINE_36
   *         @arg @ref LL_EXTI_LINE_37
   *         @arg @ref LL_EXTI_LINE_38
-  *         @arg @ref LL_EXTI_LINE_39
+  *         @arg @ref LL_EXTI_LINE_39(*)
+  *         @arg @ref LL_EXTI_LINE_40(*)
   *         @arg @ref LL_EXTI_LINE_ALL_32_63
+  * @note   (*): Available in some devices
   * @retval State of bit (1 or 0).
   */
 __STATIC_INLINE uint32_t LL_EXTI_IsEnabledEvent_32_63(uint32_t ExtiLine)
