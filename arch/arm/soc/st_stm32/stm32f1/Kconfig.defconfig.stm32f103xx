@@ -29,15 +29,3 @@ config NUM_IRQS
 
 endif # SOC_STM32F103XE
 
-if SOC_STM32F103XG
-
-config SOC
-	string
-	default stm32f103xg
-
-config NUM_IRQS
-	int
-	default 60
-
-endif # SOC_STM32F103XG
-
