@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_tim.c
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    21-April-2017
   * @brief   TIM HAL module driver.
   *          This file provides firmware functions to manage the following
   *          functionalities of the Timer (TIM) peripheral:
@@ -207,6 +205,7 @@ HAL_StatusTypeDef HAL_TIM_Base_Init(TIM_HandleTypeDef *htim)
   assert_param(IS_TIM_INSTANCE(htim->Instance));
   assert_param(IS_TIM_COUNTER_MODE(htim->Init.CounterMode));
   assert_param(IS_TIM_CLOCKDIVISION_DIV(htim->Init.ClockDivision));
+  assert_param(IS_TIM_AUTORELOAD_PRELOAD(htim->Init.AutoReloadPreload));
 
   if(htim->State == HAL_TIM_STATE_RESET)
   {
@@ -484,6 +483,7 @@ HAL_StatusTypeDef HAL_TIM_OC_Init(TIM_HandleTypeDef* htim)
   assert_param(IS_TIM_INSTANCE(htim->Instance));
   assert_param(IS_TIM_COUNTER_MODE(htim->Init.CounterMode));
   assert_param(IS_TIM_CLOCKDIVISION_DIV(htim->Init.ClockDivision));
+  assert_param(IS_TIM_AUTORELOAD_PRELOAD(htim->Init.AutoReloadPreload));
 
   if(htim->State == HAL_TIM_STATE_RESET)
   {
@@ -1002,6 +1002,7 @@ HAL_StatusTypeDef HAL_TIM_PWM_Init(TIM_HandleTypeDef *htim)
   assert_param(IS_TIM_INSTANCE(htim->Instance));
   assert_param(IS_TIM_COUNTER_MODE(htim->Init.CounterMode));
   assert_param(IS_TIM_CLOCKDIVISION_DIV(htim->Init.ClockDivision));
+  assert_param(IS_TIM_AUTORELOAD_PRELOAD(htim->Init.AutoReloadPreload));
 
   if(htim->State == HAL_TIM_STATE_RESET)
   {
@@ -1515,6 +1516,7 @@ HAL_StatusTypeDef HAL_TIM_IC_Init(TIM_HandleTypeDef *htim)
   assert_param(IS_TIM_INSTANCE(htim->Instance));
   assert_param(IS_TIM_COUNTER_MODE(htim->Init.CounterMode));
   assert_param(IS_TIM_CLOCKDIVISION_DIV(htim->Init.ClockDivision));
+  assert_param(IS_TIM_AUTORELOAD_PRELOAD(htim->Init.AutoReloadPreload));
 
   if(htim->State == HAL_TIM_STATE_RESET)
   {
@@ -1881,7 +1883,7 @@ HAL_StatusTypeDef HAL_TIM_IC_Start_DMA(TIM_HandleTypeDef *htim, uint32_t Channel
 }
 
 /**
-  * @brief  Stops the TIM Input Capture measurement on in DMA mode.
+  * @brief  Stops the TIM Input Capture measurement in DMA mode.
   * @param  htim : TIM Input Capture handle
   * @param  Channel : TIM Channels to be disabled
   *          This parameter can be one of the following values:
@@ -1991,6 +1993,7 @@ HAL_StatusTypeDef HAL_TIM_OnePulse_Init(TIM_HandleTypeDef *htim, uint32_t OnePul
   assert_param(IS_TIM_COUNTER_MODE(htim->Init.CounterMode));
   assert_param(IS_TIM_CLOCKDIVISION_DIV(htim->Init.ClockDivision));
   assert_param(IS_TIM_OPM_MODE(OnePulseMode));
+  assert_param(IS_TIM_AUTORELOAD_PRELOAD(htim->Init.AutoReloadPreload));
 
   if(htim->State == HAL_TIM_STATE_RESET)
   {
@@ -2276,6 +2279,9 @@ HAL_StatusTypeDef HAL_TIM_Encoder_Init(TIM_HandleTypeDef *htim,  TIM_Encoder_Ini
 
   /* Check the parameters */
   assert_param(IS_TIM_CC2_INSTANCE(htim->Instance));
+  assert_param(IS_TIM_COUNTER_MODE(htim->Init.CounterMode));
+  assert_param(IS_TIM_CLOCKDIVISION_DIV(htim->Init.ClockDivision));
+  assert_param(IS_TIM_AUTORELOAD_PRELOAD(htim->Init.AutoReloadPreload));
   assert_param(IS_TIM_ENCODER_MODE(sConfig->EncoderMode));
   assert_param(IS_TIM_IC_SELECTION(sConfig->IC1Selection));
   assert_param(IS_TIM_IC_SELECTION(sConfig->IC2Selection));
@@ -2433,7 +2439,7 @@ HAL_StatusTypeDef HAL_TIM_Encoder_Start(TIM_HandleTypeDef *htim, uint32_t Channe
       TIM_CCxChannelCmd(htim->Instance, TIM_CHANNEL_2, TIM_CCx_ENABLE);
     }
     break;
-    
+
     default :
     {
       TIM_CCxChannelCmd(htim->Instance, TIM_CHANNEL_1, TIM_CCx_ENABLE);
@@ -2461,9 +2467,9 @@ HAL_StatusTypeDef HAL_TIM_Encoder_Start(TIM_HandleTypeDef *htim, uint32_t Channe
 HAL_StatusTypeDef HAL_TIM_Encoder_Stop(TIM_HandleTypeDef *htim, uint32_t Channel)
 {
   /* Check the parameters */
-    assert_param(IS_TIM_CC2_INSTANCE(htim->Instance));
+  assert_param(IS_TIM_CC2_INSTANCE(htim->Instance));
 
-   /* Disable the Input Capture channels 1 and 2
+  /* Disable the Input Capture channels 1 and 2
     (in the EncoderInterface the two possible channels that can be used are TIM_CHANNEL_1 and TIM_CHANNEL_2) */
   switch (Channel)
   {
@@ -2472,13 +2478,13 @@ HAL_StatusTypeDef HAL_TIM_Encoder_Stop(TIM_HandleTypeDef *htim, uint32_t Channel
       TIM_CCxChannelCmd(htim->Instance, TIM_CHANNEL_1, TIM_CCx_DISABLE);
     }
     break;
-    
+
     case TIM_CHANNEL_2:
     {
       TIM_CCxChannelCmd(htim->Instance, TIM_CHANNEL_2, TIM_CCx_DISABLE);
     }
     break;
-    
+
     default :
     {
       TIM_CCxChannelCmd(htim->Instance, TIM_CHANNEL_1, TIM_CCx_DISABLE);
@@ -2519,14 +2525,14 @@ HAL_StatusTypeDef HAL_TIM_Encoder_Start_IT(TIM_HandleTypeDef *htim, uint32_t Cha
       __HAL_TIM_ENABLE_IT(htim, TIM_IT_CC1);
     }
     break;
-    
+
     case TIM_CHANNEL_2:
     {
       TIM_CCxChannelCmd(htim->Instance, TIM_CHANNEL_2, TIM_CCx_ENABLE);
       __HAL_TIM_ENABLE_IT(htim, TIM_IT_CC2);
     }
     break;
-    
+
     default :
     {
       TIM_CCxChannelCmd(htim->Instance, TIM_CHANNEL_1, TIM_CCx_ENABLE);
@@ -2973,7 +2979,7 @@ HAL_StatusTypeDef HAL_TIM_OC_ConfigChannel(TIM_HandleTypeDef *htim,
       /* Check the parameters */
       assert_param(IS_TIM_CC1_INSTANCE(htim->Instance));
 
-     /* Configure the TIM Channel 1 in Output Compare */
+      /* Configure the TIM Channel 1 in Output Compare */
       TIM_OC1_SetConfig(htim->Instance, sConfig);
     }
     break;
@@ -2991,7 +2997,7 @@ HAL_StatusTypeDef HAL_TIM_OC_ConfigChannel(TIM_HandleTypeDef *htim,
     case TIM_CHANNEL_3:
     {
       /* Check the parameters */
-      assert_param(IS_TIM_CC3_INSTANCE(htim->Instance));
+       assert_param(IS_TIM_CC3_INSTANCE(htim->Instance));
 
       /* Configure the TIM Channel 3 in Output Compare */
       TIM_OC3_SetConfig(htim->Instance, sConfig);
@@ -3306,89 +3312,90 @@ HAL_StatusTypeDef HAL_TIM_OnePulse_ConfigChannel(TIM_HandleTypeDef *htim,  TIM_O
 
   if(OutputChannel != InputChannel)
   {
-  /* Process Locked */
-  __HAL_LOCK(htim);
+    /* Process Locked */
+    __HAL_LOCK(htim);
 
-  htim->State = HAL_TIM_STATE_BUSY;
+    htim->State = HAL_TIM_STATE_BUSY;
 
-  /* Extract the Ouput compare configuration from sConfig structure */
-  temp1.OCMode = sConfig->OCMode;
-  temp1.Pulse = sConfig->Pulse;
-  temp1.OCPolarity = sConfig->OCPolarity;
-  temp1.OCNPolarity = sConfig->OCNPolarity;
-  temp1.OCIdleState = sConfig->OCIdleState;
-  temp1.OCNIdleState = sConfig->OCNIdleState;
+    /* Extract the Ouput compare configuration from sConfig structure */
+    temp1.OCMode = sConfig->OCMode;
+    temp1.Pulse = sConfig->Pulse;
+    temp1.OCPolarity = sConfig->OCPolarity;
+    temp1.OCNPolarity = sConfig->OCNPolarity;
+    temp1.OCIdleState = sConfig->OCIdleState;
+    temp1.OCNIdleState = sConfig->OCNIdleState;
 
     switch (OutputChannel)
-  {
-    case TIM_CHANNEL_1:
     {
+      case TIM_CHANNEL_1:
+      {
         assert_param(IS_TIM_CC1_INSTANCE(htim->Instance));
 
-      TIM_OC1_SetConfig(htim->Instance, &temp1);
-    }
-    break;
-    case TIM_CHANNEL_2:
-    {
+        TIM_OC1_SetConfig(htim->Instance, &temp1);
+      }
+      break;
+      case TIM_CHANNEL_2:
+      {
         assert_param(IS_TIM_CC2_INSTANCE(htim->Instance));
 
-      TIM_OC2_SetConfig(htim->Instance, &temp1);
+        TIM_OC2_SetConfig(htim->Instance, &temp1);
+      }
+      break;
+      default:
+      break;
     }
-    break;
-    default:
-    break;
-  }
+
     switch (InputChannel)
-  {
-    case TIM_CHANNEL_1:
     {
+      case TIM_CHANNEL_1:
+      {
         assert_param(IS_TIM_CC1_INSTANCE(htim->Instance));
 
-      TIM_TI1_SetConfig(htim->Instance, sConfig->ICPolarity,
-                        sConfig->ICSelection, sConfig->ICFilter);
+        TIM_TI1_SetConfig(htim->Instance, sConfig->ICPolarity,
+                          sConfig->ICSelection, sConfig->ICFilter);
 
-    /* Reset the IC1PSC Bits */
-    htim->Instance->CCMR1 &= ~TIM_CCMR1_IC1PSC;
+        /* Reset the IC1PSC Bits */
+        htim->Instance->CCMR1 &= ~TIM_CCMR1_IC1PSC;
 
-    /* Select the Trigger source */
+        /* Select the Trigger source */
         htim->Instance->SMCR &= ~TIM_SMCR_TS;
-    htim->Instance->SMCR |= TIM_TS_TI1FP1;
+        htim->Instance->SMCR |= TIM_TS_TI1FP1;
 
-    /* Select the Slave Mode */
+        /* Select the Slave Mode */
         htim->Instance->SMCR &= ~TIM_SMCR_SMS;
-    htim->Instance->SMCR |= TIM_SLAVEMODE_TRIGGER;
-    }
-    break;
-    case TIM_CHANNEL_2:
-    {
+        htim->Instance->SMCR |= TIM_SLAVEMODE_TRIGGER;
+      }
+      break;
+      case TIM_CHANNEL_2:
+      {
         assert_param(IS_TIM_CC2_INSTANCE(htim->Instance));
 
-      TIM_TI2_SetConfig(htim->Instance, sConfig->ICPolarity,
-                 sConfig->ICSelection, sConfig->ICFilter);
+        TIM_TI2_SetConfig(htim->Instance, sConfig->ICPolarity,
+                          sConfig->ICSelection, sConfig->ICFilter);
 
-      /* Reset the IC2PSC Bits */
+        /* Reset the IC2PSC Bits */
         htim->Instance->CCMR1 &= ~TIM_CCMR1_IC2PSC;
 
-      /* Select the Trigger source */
+        /* Select the Trigger source */
         htim->Instance->SMCR &= ~TIM_SMCR_TS;
-      htim->Instance->SMCR |= TIM_TS_TI2FP2;
+        htim->Instance->SMCR |= TIM_TS_TI2FP2;
 
-      /* Select the Slave Mode */
+        /* Select the Slave Mode */
         htim->Instance->SMCR &= ~TIM_SMCR_SMS;
-      htim->Instance->SMCR |= TIM_SLAVEMODE_TRIGGER;
+        htim->Instance->SMCR |= TIM_SLAVEMODE_TRIGGER;
+      }
+      break;
+
+      default:
+      break;
     }
-    break;
 
-    default:
-    break;
+    htim->State = HAL_TIM_STATE_READY;
+
+    __HAL_UNLOCK(htim);
+
+    return HAL_OK;
   }
-
-  htim->State = HAL_TIM_STATE_READY;
-
-  __HAL_UNLOCK(htim);
-
-  return HAL_OK;
-}
   else
   {
     return HAL_ERROR;
@@ -3856,7 +3863,7 @@ HAL_StatusTypeDef HAL_TIM_DMABurst_ReadStop(TIM_HandleTypeDef *htim, uint32_t Bu
   *            @arg TIM_EVENTSOURCE_TRIGGER: Timer Trigger Event source
   *            @arg TIM_EVENTSOURCE_BREAK: Timer Break event source
   *            @arg TIM_EVENTSOURCE_BREAK2: Timer Break2 event source
-  * @retval None
+  * @retval HAL status
   */
 
 HAL_StatusTypeDef HAL_TIM_GenerateEvent(TIM_HandleTypeDef *htim, uint32_t EventSource)
@@ -3917,7 +3924,7 @@ HAL_StatusTypeDef HAL_TIM_ConfigOCrefClear(TIM_HandleTypeDef *htim,
     {
       /* Get the TIMx SMCR register value */
       tmpsmcr = htim->Instance->SMCR;
-      
+
       /* Clear the OCREF clear selection bit */
       tmpsmcr &= ~TIM_SMCR_OCCS;
 
@@ -3952,7 +3959,7 @@ HAL_StatusTypeDef HAL_TIM_ConfigOCrefClear(TIM_HandleTypeDef *htim,
       htim->Instance->SMCR |= TIM_SMCR_OCCS;
     }
     break;
-    
+
   default:
     break;
   }
@@ -4096,7 +4103,7 @@ HAL_StatusTypeDef HAL_TIM_ConfigClockSource(TIM_HandleTypeDef *htim, TIM_ClockCo
       assert_param(IS_TIM_CLOCKPRESCALER(sClockSourceConfig->ClockPrescaler));
       assert_param(IS_TIM_CLOCKPOLARITY(sClockSourceConfig->ClockPolarity));
       assert_param(IS_TIM_CLOCKFILTER(sClockSourceConfig->ClockFilter));
-      
+
       /* Configure the ETR Clock source */
       TIM_ETR_SetConfig(htim->Instance,
                         sClockSourceConfig->ClockPrescaler,
@@ -4122,7 +4129,7 @@ HAL_StatusTypeDef HAL_TIM_ConfigClockSource(TIM_HandleTypeDef *htim, TIM_ClockCo
       assert_param(IS_TIM_CLOCKPRESCALER(sClockSourceConfig->ClockPrescaler));
       assert_param(IS_TIM_CLOCKPOLARITY(sClockSourceConfig->ClockPolarity));
       assert_param(IS_TIM_CLOCKFILTER(sClockSourceConfig->ClockFilter));
-      
+
       /* Configure the ETR Clock source */
       TIM_ETR_SetConfig(htim->Instance,
                         sClockSourceConfig->ClockPrescaler,
@@ -4141,20 +4148,20 @@ HAL_StatusTypeDef HAL_TIM_ConfigClockSource(TIM_HandleTypeDef *htim, TIM_ClockCo
       /* Check TI1 input conditioning related parameters */
       assert_param(IS_TIM_CLOCKPOLARITY(sClockSourceConfig->ClockPolarity));
       assert_param(IS_TIM_CLOCKFILTER(sClockSourceConfig->ClockFilter));
-      
+
       TIM_TI1_ConfigInputStage(htim->Instance,
                                sClockSourceConfig->ClockPolarity,
                                sClockSourceConfig->ClockFilter);
       TIM_ITRx_SetConfig(htim->Instance, TIM_CLOCKSOURCE_TI1);
     }
     break;
-    
+
   case TIM_CLOCKSOURCE_TI2:
     {
       /* Check whether or not the timer instance supports external clock mode 1 (ETRF)*/
       assert_param(IS_TIM_CLOCKSOURCE_TIX_INSTANCE(htim->Instance));
 
-       /* Check TI2 input conditioning related parameters */
+      /* Check TI2 input conditioning related parameters */
       assert_param(IS_TIM_CLOCKPOLARITY(sClockSourceConfig->ClockPolarity));
       assert_param(IS_TIM_CLOCKFILTER(sClockSourceConfig->ClockFilter));
 
@@ -4180,7 +4187,7 @@ HAL_StatusTypeDef HAL_TIM_ConfigClockSource(TIM_HandleTypeDef *htim, TIM_ClockCo
       TIM_ITRx_SetConfig(htim->Instance, TIM_CLOCKSOURCE_TI1ED);
     }
     break;
-    
+
   case TIM_CLOCKSOURCE_ITR0:
     {
       /* Check whether or not the timer instance supports internal trigger input */
@@ -4189,7 +4196,7 @@ HAL_StatusTypeDef HAL_TIM_ConfigClockSource(TIM_HandleTypeDef *htim, TIM_ClockCo
       TIM_ITRx_SetConfig(htim->Instance, TIM_CLOCKSOURCE_ITR0);
     }
     break;
-    
+
   case TIM_CLOCKSOURCE_ITR1:
     {
       /* Check whether or not the timer instance supports internal trigger input */
@@ -4198,7 +4205,7 @@ HAL_StatusTypeDef HAL_TIM_ConfigClockSource(TIM_HandleTypeDef *htim, TIM_ClockCo
       TIM_ITRx_SetConfig(htim->Instance, TIM_CLOCKSOURCE_ITR1);
     }
     break;
-    
+
   case TIM_CLOCKSOURCE_ITR2:
     {
       /* Check whether or not the timer instance supports internal trigger input */
@@ -4207,7 +4214,7 @@ HAL_StatusTypeDef HAL_TIM_ConfigClockSource(TIM_HandleTypeDef *htim, TIM_ClockCo
       TIM_ITRx_SetConfig(htim->Instance, TIM_CLOCKSOURCE_ITR2);
     }
     break;
-    
+
   case TIM_CLOCKSOURCE_ITR3:
     {
       /* Check whether or not the timer instance supports internal trigger input */
@@ -4283,7 +4290,7 @@ HAL_StatusTypeDef HAL_TIM_SlaveConfigSynchronization(TIM_HandleTypeDef *htim, TI
   htim->State = HAL_TIM_STATE_BUSY;
 
   TIM_SlaveTimer_SetConfig(htim, sSlaveConfig);
-  
+
   /* Disable Trigger Interrupt */
   __HAL_TIM_DISABLE_IT(htim, TIM_IT_TRIGGER);
 
@@ -4292,7 +4299,7 @@ HAL_StatusTypeDef HAL_TIM_SlaveConfigSynchronization(TIM_HandleTypeDef *htim, TI
 
   htim->State = HAL_TIM_STATE_READY;
 
-  __HAL_UNLOCK(htim);  
+  __HAL_UNLOCK(htim);
 
   return HAL_OK;
     }
@@ -4302,18 +4309,18 @@ HAL_StatusTypeDef HAL_TIM_SlaveConfigSynchronization(TIM_HandleTypeDef *htim, TI
   * @param  htim: TIM handle.
   * @param  sSlaveConfig: pointer to a TIM_SlaveConfigTypeDef structure that
   *         contains the selected trigger (internal trigger input, filtered
-  *         timer input or external trigger input) and the ) and the Slave 
-  *         mode (Disable, Reset, Gated, Trigger, External clock mode 1). 
+  *         timer input or external trigger input) and the ) and the Slave
+  *         mode (Disable, Reset, Gated, Trigger, External clock mode 1).
   * @retval HAL status
   */
-HAL_StatusTypeDef HAL_TIM_SlaveConfigSynchronization_IT(TIM_HandleTypeDef *htim, 
+HAL_StatusTypeDef HAL_TIM_SlaveConfigSynchronization_IT(TIM_HandleTypeDef *htim,
                                                         TIM_SlaveConfigTypeDef * sSlaveConfig)
     {
       /* Check the parameters */
   assert_param(IS_TIM_SLAVE_INSTANCE(htim->Instance));
   assert_param(IS_TIM_SLAVE_MODE(sSlaveConfig->SlaveMode));
   assert_param(IS_TIM_TRIGGER_SELECTION(sSlaveConfig->InputTrigger));
-  
+
   __HAL_LOCK(htim);
 
   htim->State = HAL_TIM_STATE_BUSY;
@@ -4328,7 +4335,7 @@ HAL_StatusTypeDef HAL_TIM_SlaveConfigSynchronization_IT(TIM_HandleTypeDef *htim,
 
   htim->State = HAL_TIM_STATE_READY;
 
-  __HAL_UNLOCK(htim);  
+  __HAL_UNLOCK(htim);
 
   return HAL_OK;
     }
@@ -4730,6 +4737,10 @@ void TIM_Base_SetConfig(TIM_TypeDef *TIMx, TIM_Base_InitTypeDef *Structure)
     tmpcr1 &= ~TIM_CR1_CKD;
     tmpcr1 |= (uint32_t)Structure->ClockDivision;
   }
+
+  /* Set the auto-reload preload */
+  tmpcr1 &= ~TIM_CR1_ARPE;
+  tmpcr1 |= (uint32_t)Structure->AutoReloadPreload;
 
   TIMx->CR1 = tmpcr1;
 
@@ -5161,7 +5172,7 @@ static void TIM_SlaveTimer_SetConfig(TIM_HandleTypeDef *htim,
 
   /* Write to TIMx SMCR */
   htim->Instance->SMCR = tmpsmcr;
- 
+
   /* Configure the trigger prescaler, filter, and polarity */
   switch (sSlaveConfig->InputTrigger)
   {
@@ -5173,91 +5184,91 @@ static void TIM_SlaveTimer_SetConfig(TIM_HandleTypeDef *htim,
       assert_param(IS_TIM_TRIGGERPOLARITY(sSlaveConfig->TriggerPolarity));
       assert_param(IS_TIM_TRIGGERFILTER(sSlaveConfig->TriggerFilter));
       /* Configure the ETR Trigger source */
-      TIM_ETR_SetConfig(htim->Instance, 
-                        sSlaveConfig->TriggerPrescaler, 
-                        sSlaveConfig->TriggerPolarity, 
+      TIM_ETR_SetConfig(htim->Instance,
+                        sSlaveConfig->TriggerPrescaler,
+                        sSlaveConfig->TriggerPolarity,
                         sSlaveConfig->TriggerFilter);
     }
     break;
-    
+
   case TIM_TS_TI1F_ED:
     {
       /* Check the parameters */
       assert_param(IS_TIM_CC1_INSTANCE(htim->Instance));
       assert_param(IS_TIM_TRIGGERFILTER(sSlaveConfig->TriggerFilter));
-  
+
       /* Disable the Channel 1: Reset the CC1E Bit */
       tmpccer = htim->Instance->CCER;
       htim->Instance->CCER &= ~TIM_CCER_CC1E;
-      tmpccmr1 = htim->Instance->CCMR1;    
-      
+      tmpccmr1 = htim->Instance->CCMR1;
+
       /* Set the filter */
       tmpccmr1 &= ~TIM_CCMR1_IC1F;
       tmpccmr1 |= ((sSlaveConfig->TriggerFilter) << 4);
-      
+
       /* Write to TIMx CCMR1 and CCER registers */
       htim->Instance->CCMR1 = tmpccmr1;
-      htim->Instance->CCER = tmpccer;                               
-                               
+      htim->Instance->CCER = tmpccer;
+
     }
     break;
-    
+
   case TIM_TS_TI1FP1:
     {
       /* Check the parameters */
       assert_param(IS_TIM_CC1_INSTANCE(htim->Instance));
       assert_param(IS_TIM_TRIGGERPOLARITY(sSlaveConfig->TriggerPolarity));
       assert_param(IS_TIM_TRIGGERFILTER(sSlaveConfig->TriggerFilter));
-  
+
       /* Configure TI1 Filter and Polarity */
       TIM_TI1_ConfigInputStage(htim->Instance,
                                sSlaveConfig->TriggerPolarity,
                                sSlaveConfig->TriggerFilter);
     }
     break;
-    
+
   case TIM_TS_TI2FP2:
     {
       /* Check the parameters */
       assert_param(IS_TIM_CC2_INSTANCE(htim->Instance));
       assert_param(IS_TIM_TRIGGERPOLARITY(sSlaveConfig->TriggerPolarity));
       assert_param(IS_TIM_TRIGGERFILTER(sSlaveConfig->TriggerFilter));
-  
+
       /* Configure TI2 Filter and Polarity */
       TIM_TI2_ConfigInputStage(htim->Instance,
                                 sSlaveConfig->TriggerPolarity,
                                 sSlaveConfig->TriggerFilter);
     }
     break;
-    
+
   case TIM_TS_ITR0:
     {
       /* Check the parameter */
       assert_param(IS_TIM_CC2_INSTANCE(htim->Instance));
     }
     break;
-    
+
   case TIM_TS_ITR1:
     {
       /* Check the parameter */
       assert_param(IS_TIM_CC2_INSTANCE(htim->Instance));
     }
     break;
-    
+
   case TIM_TS_ITR2:
     {
       /* Check the parameter */
       assert_param(IS_TIM_CC2_INSTANCE(htim->Instance));
     }
     break;
-    
+
   case TIM_TS_ITR3:
     {
       /* Check the parameter */
       assert_param(IS_TIM_CC2_INSTANCE(htim->Instance));
     }
     break;
-       
+
   default:
     break;
   }

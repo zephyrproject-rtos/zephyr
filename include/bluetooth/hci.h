@@ -1438,6 +1438,15 @@ struct bt_hci_evt_link_key_notify {
 	u8_t      key_type;
 } __packed;
 
+/* Overflow link types */
+#define BT_OVERFLOW_LINK_SYNCH                  0x00
+#define BT_OVERFLOW_LINK_ACL                    0x01
+
+#define BT_HCI_EVT_DATA_BUF_OVERFLOW            0x1a
+struct bt_hci_evt_data_buf_overflow {
+	u8_t      link_type;
+} __packed;
+
 #define BT_HCI_EVT_INQUIRY_RESULT_WITH_RSSI     0x22
 struct bt_hci_evt_inquiry_result_with_rssi {
 	bt_addr_t addr;

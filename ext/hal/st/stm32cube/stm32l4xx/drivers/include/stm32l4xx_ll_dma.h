@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32l4xx_ll_dma.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    21-April-2017
   * @brief   Header file of DMA LL module.
   ******************************************************************************
   * @attention
@@ -45,6 +43,9 @@ extern "C" {
 
 /* Includes ------------------------------------------------------------------*/
 #include "stm32l4xx.h"
+#if defined(DMAMUX1)
+#include "stm32l4xx_ll_dmamux.h"
+#endif /* DMAMUX1 */
 
 /** @addtogroup STM32L4xx_LL_Driver
   * @{
@@ -77,6 +78,8 @@ static const uint8_t CHANNEL_OFFSET_TAB[] =
   */
 
 /* Private constants ---------------------------------------------------------*/
+#if defined(DMAMUX1)
+#else
 /** @defgroup DMA_LL_Private_Constants DMA Private Constants
   * @{
   */
@@ -88,8 +91,27 @@ static const uint8_t CHANNEL_OFFSET_TAB[] =
 /**
   * @}
   */
+#endif /* DMAMUX1 */
 
 /* Private macros ------------------------------------------------------------*/
+#if defined(DMAMUX1)
+/** @defgroup DMA_LL_Private_Macros DMA Private Macros
+  * @{
+  */
+/**
+  * @brief  Helper macro to convert DMA Instance DMAx into DMAMUX channel
+  * @note   DMAMUX channel 0 to 6 are mapped to DMA1 channel 1 to 7.
+  *         DMAMUX channel 7 to 13 are mapped to DMA2 channel 1 to 7.
+  * @param  __DMA_INSTANCE__ DMAx
+  * @retval Channel_Offset (LL_DMA_CHANNEL_7 or 0).
+  */
+#define __LL_DMA_INSTANCE_TO_DMAMUX_CHANNEL(__DMA_INSTANCE__)   \
+(((uint32_t)(__DMA_INSTANCE__) == ((uint32_t)DMA1)) ? 0 : LL_DMA_CHANNEL_7)
+
+/**
+  * @}
+  */
+#else
 #if defined(USE_FULL_LL_DRIVER)
 /** @defgroup DMA_LL_Private_Macros DMA Private Macros
   * @{
@@ -98,6 +120,7 @@ static const uint8_t CHANNEL_OFFSET_TAB[] =
   * @}
   */
 #endif /*USE_FULL_LL_DRIVER*/
+#endif /* DMAMUX1 */
 
 /* Exported types ------------------------------------------------------------*/
 #if defined(USE_FULL_LL_DRIVER)
@@ -159,11 +182,19 @@ typedef struct
                                         This parameter must be a value between Min_Data = 0 and Max_Data = 0x0000FFFF
 
                                         This feature can be modified afterwards using unitary function @ref LL_DMA_SetDataLength(). */
+#if defined(DMAMUX1)
+
+  uint32_t PeriphRequest;          /*!< Specifies the peripheral request.
+                                        This parameter can be a value of @ref DMAMUX_LL_EC_REQUEST
+
+                                        This feature can be modified afterwards using unitary function @ref LL_DMA_SetPeriphRequest(). */
+#else
 
   uint32_t PeriphRequest;          /*!< Specifies the peripheral request.
                                         This parameter can be a value of @ref DMA_LL_EC_REQUEST
 
                                         This feature can be modified afterwards using unitary function @ref LL_DMA_SetPeriphRequest(). */
+#endif /* DMAMUX1 */
 
   uint32_t Priority;               /*!< Specifies the channel priority level.
                                         This parameter can be a value of @ref DMA_LL_EC_PRIORITY
@@ -266,15 +297,15 @@ typedef struct
 /** @defgroup DMA_LL_EC_CHANNEL CHANNEL
   * @{
   */
-#define LL_DMA_CHANNEL_1                  ((uint32_t)0x00000001U) /*!< DMA Channel 1 */
-#define LL_DMA_CHANNEL_2                  ((uint32_t)0x00000002U) /*!< DMA Channel 2 */
-#define LL_DMA_CHANNEL_3                  ((uint32_t)0x00000003U) /*!< DMA Channel 3 */
-#define LL_DMA_CHANNEL_4                  ((uint32_t)0x00000004U) /*!< DMA Channel 4 */
-#define LL_DMA_CHANNEL_5                  ((uint32_t)0x00000005U) /*!< DMA Channel 5 */
-#define LL_DMA_CHANNEL_6                  ((uint32_t)0x00000006U) /*!< DMA Channel 6 */
-#define LL_DMA_CHANNEL_7                  ((uint32_t)0x00000007U) /*!< DMA Channel 7 */
+#define LL_DMA_CHANNEL_1                  0x00000001U /*!< DMA Channel 1 */
+#define LL_DMA_CHANNEL_2                  0x00000002U /*!< DMA Channel 2 */
+#define LL_DMA_CHANNEL_3                  0x00000003U /*!< DMA Channel 3 */
+#define LL_DMA_CHANNEL_4                  0x00000004U /*!< DMA Channel 4 */
+#define LL_DMA_CHANNEL_5                  0x00000005U /*!< DMA Channel 5 */
+#define LL_DMA_CHANNEL_6                  0x00000006U /*!< DMA Channel 6 */
+#define LL_DMA_CHANNEL_7                  0x00000007U /*!< DMA Channel 7 */
 #if defined(USE_FULL_LL_DRIVER)
-#define LL_DMA_CHANNEL_ALL                ((uint32_t)0xFFFF0000U) /*!< DMA Channel all (used only for function @ref LL_DMA_DeInit(). */
+#define LL_DMA_CHANNEL_ALL                0xFFFF0000U /*!< DMA Channel all (used only for function @ref LL_DMA_DeInit(). */
 #endif /*USE_FULL_LL_DRIVER*/
 /**
   * @}
@@ -283,7 +314,7 @@ typedef struct
 /** @defgroup DMA_LL_EC_DIRECTION Transfer Direction
   * @{
   */
-#define LL_DMA_DIRECTION_PERIPH_TO_MEMORY ((uint32_t)0x00000000U) /*!< Peripheral to memory direction */
+#define LL_DMA_DIRECTION_PERIPH_TO_MEMORY 0x00000000U             /*!< Peripheral to memory direction */
 #define LL_DMA_DIRECTION_MEMORY_TO_PERIPH DMA_CCR_DIR             /*!< Memory to peripheral direction */
 #define LL_DMA_DIRECTION_MEMORY_TO_MEMORY DMA_CCR_MEM2MEM         /*!< Memory to memory direction     */
 /**
@@ -293,7 +324,7 @@ typedef struct
 /** @defgroup DMA_LL_EC_MODE Transfer mode
   * @{
   */
-#define LL_DMA_MODE_NORMAL                ((uint32_t)0x00000000U) /*!< Normal Mode                  */
+#define LL_DMA_MODE_NORMAL                0x00000000U             /*!< Normal Mode                  */
 #define LL_DMA_MODE_CIRCULAR              DMA_CCR_CIRC            /*!< Circular Mode                */
 /**
   * @}
@@ -303,7 +334,7 @@ typedef struct
   * @{
   */
 #define LL_DMA_PERIPH_INCREMENT           DMA_CCR_PINC            /*!< Peripheral increment mode Enable */
-#define LL_DMA_PERIPH_NOINCREMENT         ((uint32_t)0x00000000U) /*!< Peripheral increment mode Disable */
+#define LL_DMA_PERIPH_NOINCREMENT         0x00000000U             /*!< Peripheral increment mode Disable */
 /**
   * @}
   */
@@ -312,7 +343,7 @@ typedef struct
   * @{
   */
 #define LL_DMA_MEMORY_INCREMENT           DMA_CCR_MINC            /*!< Memory increment mode Enable  */
-#define LL_DMA_MEMORY_NOINCREMENT         ((uint32_t)0x00000000U) /*!< Memory increment mode Disable */
+#define LL_DMA_MEMORY_NOINCREMENT         0x00000000U             /*!< Memory increment mode Disable */
 /**
   * @}
   */
@@ -320,7 +351,7 @@ typedef struct
 /** @defgroup DMA_LL_EC_PDATAALIGN Peripheral data alignment
   * @{
   */
-#define LL_DMA_PDATAALIGN_BYTE            ((uint32_t)0x00000000U) /*!< Peripheral data alignment : Byte     */
+#define LL_DMA_PDATAALIGN_BYTE            0x00000000U             /*!< Peripheral data alignment : Byte     */
 #define LL_DMA_PDATAALIGN_HALFWORD        DMA_CCR_PSIZE_0         /*!< Peripheral data alignment : HalfWord */
 #define LL_DMA_PDATAALIGN_WORD            DMA_CCR_PSIZE_1         /*!< Peripheral data alignment : Word     */
 /**
@@ -330,7 +361,7 @@ typedef struct
 /** @defgroup DMA_LL_EC_MDATAALIGN Memory data alignment
   * @{
   */
-#define LL_DMA_MDATAALIGN_BYTE            ((uint32_t)0x00000000U) /*!< Memory data alignment : Byte     */
+#define LL_DMA_MDATAALIGN_BYTE            0x00000000U             /*!< Memory data alignment : Byte     */
 #define LL_DMA_MDATAALIGN_HALFWORD        DMA_CCR_MSIZE_0         /*!< Memory data alignment : HalfWord */
 #define LL_DMA_MDATAALIGN_WORD            DMA_CCR_MSIZE_1         /*!< Memory data alignment : Word     */
 /**
@@ -340,7 +371,7 @@ typedef struct
 /** @defgroup DMA_LL_EC_PRIORITY Transfer Priority level
   * @{
   */
-#define LL_DMA_PRIORITY_LOW               ((uint32_t)0x00000000U) /*!< Priority level : Low       */
+#define LL_DMA_PRIORITY_LOW               0x00000000U             /*!< Priority level : Low       */
 #define LL_DMA_PRIORITY_MEDIUM            DMA_CCR_PL_0            /*!< Priority level : Medium    */
 #define LL_DMA_PRIORITY_HIGH              DMA_CCR_PL_1            /*!< Priority level : High      */
 #define LL_DMA_PRIORITY_VERYHIGH          DMA_CCR_PL              /*!< Priority level : Very_High */
@@ -348,20 +379,123 @@ typedef struct
   * @}
   */
 
-/** @defgroup DMA_LL_EC_REQUEST Transfer peripheral request
+#if defined(DMAMUX1)
+/** @defgroup DMAMUX_LL_EC_REQUEST Transfer request
   * @{
   */
-#define LL_DMA_REQUEST_0                  ((uint32_t)0x00000000U) /*!< DMA peripheral request 0  */
-#define LL_DMA_REQUEST_1                  ((uint32_t)0x00000001U) /*!< DMA peripheral request 1  */
-#define LL_DMA_REQUEST_2                  ((uint32_t)0x00000002U) /*!< DMA peripheral request 2  */
-#define LL_DMA_REQUEST_3                  ((uint32_t)0x00000003U) /*!< DMA peripheral request 3  */
-#define LL_DMA_REQUEST_4                  ((uint32_t)0x00000004U) /*!< DMA peripheral request 4  */
-#define LL_DMA_REQUEST_5                  ((uint32_t)0x00000005U) /*!< DMA peripheral request 5  */
-#define LL_DMA_REQUEST_6                  ((uint32_t)0x00000006U) /*!< DMA peripheral request 6  */
-#define LL_DMA_REQUEST_7                  ((uint32_t)0x00000007U) /*!< DMA peripheral request 7  */
+#define LL_DMAMUX_REQUEST_MEM2MEM          0U   /*!< Memory to memory transfer  */
+#define LL_DMAMUX_REQUEST_GENERATOR0       1U   /*!< DMAMUX request generator 0 */
+#define LL_DMAMUX_REQUEST_GENERATOR1       2U   /*!< DMAMUX request generator 1 */
+#define LL_DMAMUX_REQUEST_GENERATOR2       3U   /*!< DMAMUX request generator 2 */
+#define LL_DMAMUX_REQUEST_GENERATOR3       4U   /*!< DMAMUX request generator 3 */
+#define LL_DMAMUX_REQUEST_ADC1             5U   /*!< DMAMUX ADC1 request        */
+#define LL_DMAMUX_REQUEST_DAC1_CH1         6U   /*!< DMAMUX DAC1 CH1 request    */
+#define LL_DMAMUX_REQUEST_DAC1_CH2         7U   /*!< DMAMUX DAC1 CH2 request    */
+#define LL_DMAMUX_REQUEST_TIM6_UP          8U   /*!< DMAMUX TIM6 UP request     */
+#define LL_DMAMUX_REQUEST_TIM7_UP          9U   /*!< DMAMUX TIM7 UP request     */
+#define LL_DMAMUX_REQUEST_SPI1_RX         10U   /*!< DMAMUX SPI1 RX request     */
+#define LL_DMAMUX_REQUEST_SPI1_TX         11U   /*!< DMAMUX SPI1 TX request     */
+#define LL_DMAMUX_REQUEST_SPI2_RX         12U   /*!< DMAMUX SPI2 RX request     */
+#define LL_DMAMUX_REQUEST_SPI2_TX         13U   /*!< DMAMUX SPI2 TX request     */
+#define LL_DMAMUX_REQUEST_SPI3_RX         14U   /*!< DMAMUX SPI3 RX request     */
+#define LL_DMAMUX_REQUEST_SPI3_TX         15U   /*!< DMAMUX SPI3 TX request     */
+#define LL_DMAMUX_REQUEST_I2C1_RX         16U   /*!< DMAMUX I2C1 RX request     */
+#define LL_DMAMUX_REQUEST_I2C1_TX         17U   /*!< DMAMUX I2C1 TX request     */
+#define LL_DMAMUX_REQUEST_I2C2_RX         18U   /*!< DMAMUX I2C2 RX request     */
+#define LL_DMAMUX_REQUEST_I2C2_TX         19U   /*!< DMAMUX I2C2 TX request     */
+#define LL_DMAMUX_REQUEST_I2C3_RX         20U   /*!< DMAMUX I2C3 RX request     */
+#define LL_DMAMUX_REQUEST_I2C3_TX         21U   /*!< DMAMUX I2C3 TX request     */
+#define LL_DMAMUX_REQUEST_I2C4_RX         22U   /*!< DMAMUX I2C4 RX request     */
+#define LL_DMAMUX_REQUEST_I2C4_TX         23U   /*!< DMAMUX I2C4 TX request     */
+#define LL_DMAMUX_REQUEST_USART1_RX       24U   /*!< DMAMUX USART1 RX request   */
+#define LL_DMAMUX_REQUEST_USART1_TX       25U   /*!< DMAMUX USART1 TX request   */
+#define LL_DMAMUX_REQUEST_USART2_RX       26U   /*!< DMAMUX USART2 RX request   */
+#define LL_DMAMUX_REQUEST_USART2_TX       27U   /*!< DMAMUX USART2 TX request   */
+#define LL_DMAMUX_REQUEST_USART3_RX       28U   /*!< DMAMUX USART3 RX request   */
+#define LL_DMAMUX_REQUEST_USART3_TX       29U   /*!< DMAMUX USART3 TX request   */
+#define LL_DMAMUX_REQUEST_UART4_RX        30U   /*!< DMAMUX UART4 RX request    */
+#define LL_DMAMUX_REQUEST_UART4_TX        31U   /*!< DMAMUX UART4 TX request    */
+#define LL_DMAMUX_REQUEST_UART5_RX        32U   /*!< DMAMUX UART5 RX request    */
+#define LL_DMAMUX_REQUEST_UART5_TX        33U   /*!< DMAMUX UART5 TX request    */
+#define LL_DMAMUX_REQUEST_LPUART1_RX      34U   /*!< DMAMUX LPUART1 RX request  */
+#define LL_DMAMUX_REQUEST_LPUART1_TX      35U   /*!< DMAMUX LPUART1 TX request  */
+#define LL_DMAMUX_REQUEST_SAI1_A          36U   /*!< DMAMUX SAI1 A request      */
+#define LL_DMAMUX_REQUEST_SAI1_B          37U   /*!< DMAMUX SAI1 B request      */
+#define LL_DMAMUX_REQUEST_SAI2_A          38U   /*!< DMAMUX SAI2 A request      */
+#define LL_DMAMUX_REQUEST_SAI2_B          39U   /*!< DMAMUX SAI2 B request      */
+#define LL_DMAMUX_REQUEST_OSPI1           40U   /*!< DMAMUX OCTOSPI1 request    */
+#define LL_DMAMUX_REQUEST_OSPI2           41U   /*!< DMAMUX OCTOSPI2 request    */
+#define LL_DMAMUX_REQUEST_TIM1_CH1        42U   /*!< DMAMUX TIM1 CH1 request    */
+#define LL_DMAMUX_REQUEST_TIM1_CH2        43U   /*!< DMAMUX TIM1 CH2 request    */
+#define LL_DMAMUX_REQUEST_TIM1_CH3        44U   /*!< DMAMUX TIM1 CH3 request    */
+#define LL_DMAMUX_REQUEST_TIM1_CH4        45U   /*!< DMAMUX TIM1 CH4 request    */
+#define LL_DMAMUX_REQUEST_TIM1_UP         46U   /*!< DMAMUX TIM1 UP request     */
+#define LL_DMAMUX_REQUEST_TIM1_TRIG       47U   /*!< DMAMUX TIM1 TRIG request   */
+#define LL_DMAMUX_REQUEST_TIM1_COM        48U   /*!< DMAMUX TIM1 COM request    */
+#define LL_DMAMUX_REQUEST_TIM8_CH1        49U   /*!< DMAMUX TIM8 CH1 request    */
+#define LL_DMAMUX_REQUEST_TIM8_CH2        50U   /*!< DMAMUX TIM8 CH2 request    */
+#define LL_DMAMUX_REQUEST_TIM8_CH3        51U   /*!< DMAMUX TIM8 CH3 request    */
+#define LL_DMAMUX_REQUEST_TIM8_CH4        52U   /*!< DMAMUX TIM8 CH4 request    */
+#define LL_DMAMUX_REQUEST_TIM8_UP         53U   /*!< DMAMUX TIM8 UP request     */
+#define LL_DMAMUX_REQUEST_TIM8_TRIG       54U   /*!< DMAMUX TIM8 TRIG request   */
+#define LL_DMAMUX_REQUEST_TIM8_COM        55U   /*!< DMAMUX TIM8 COM request    */
+#define LL_DMAMUX_REQUEST_TIM2_CH1        56U   /*!< DMAMUX TIM2 CH1 request    */
+#define LL_DMAMUX_REQUEST_TIM2_CH2        57U   /*!< DMAMUX TIM2 CH2 request    */
+#define LL_DMAMUX_REQUEST_TIM2_CH3        58U   /*!< DMAMUX TIM2 CH3 request    */
+#define LL_DMAMUX_REQUEST_TIM2_CH4        59U   /*!< DMAMUX TIM2 CH4 request    */
+#define LL_DMAMUX_REQUEST_TIM2_UP         60U   /*!< DMAMUX TIM2 UP request     */
+#define LL_DMAMUX_REQUEST_TIM3_CH1        61U   /*!< DMAMUX TIM3 CH1 request    */
+#define LL_DMAMUX_REQUEST_TIM3_CH2        62U   /*!< DMAMUX TIM3 CH2 request    */
+#define LL_DMAMUX_REQUEST_TIM3_CH3        63U   /*!< DMAMUX TIM3 CH3 request    */
+#define LL_DMAMUX_REQUEST_TIM3_CH4        64U   /*!< DMAMUX TIM3 CH4 request    */
+#define LL_DMAMUX_REQUEST_TIM3_UP         65U   /*!< DMAMUX TIM3 UP request     */
+#define LL_DMAMUX_REQUEST_TIM3_TRIG       66U   /*!< DMAMUX TIM3 TRIG request   */
+#define LL_DMAMUX_REQUEST_TIM4_CH1        67U   /*!< DMAMUX TIM4 CH1 request    */
+#define LL_DMAMUX_REQUEST_TIM4_CH2        68U   /*!< DMAMUX TIM4 CH2 request    */
+#define LL_DMAMUX_REQUEST_TIM4_CH3        69U   /*!< DMAMUX TIM4 CH3 request    */
+#define LL_DMAMUX_REQUEST_TIM4_CH4        70U   /*!< DMAMUX TIM4 CH4 request    */
+#define LL_DMAMUX_REQUEST_TIM4_UP         71U   /*!< DMAMUX TIM4 UP request     */
+#define LL_DMAMUX_REQUEST_TIM5_CH1        72U   /*!< DMAMUX TIM5 CH1 request    */
+#define LL_DMAMUX_REQUEST_TIM5_CH2        73U   /*!< DMAMUX TIM5 CH2 request    */
+#define LL_DMAMUX_REQUEST_TIM5_CH3        74U   /*!< DMAMUX TIM5 CH3 request    */
+#define LL_DMAMUX_REQUEST_TIM5_CH4        75U   /*!< DMAMUX TIM5 CH4 request    */
+#define LL_DMAMUX_REQUEST_TIM5_UP         76U   /*!< DMAMUX TIM5 UP request     */
+#define LL_DMAMUX_REQUEST_TIM5_TRIG       77U   /*!< DMAMUX TIM5 TRIG request   */
+#define LL_DMAMUX_REQUEST_TIM15_CH1       78U   /*!< DMAMUX TIM15 CH1 request   */
+#define LL_DMAMUX_REQUEST_TIM15_UP        79U   /*!< DMAMUX TIM15 UP request    */
+#define LL_DMAMUX_REQUEST_TIM15_TRIG      80U   /*!< DMAMUX TIM15 TRIG request  */
+#define LL_DMAMUX_REQUEST_TIM15_COM       81U   /*!< DMAMUX TIM15 COM request   */
+#define LL_DMAMUX_REQUEST_TIM16_CH1       82U   /*!< DMAMUX TIM16 CH1 request   */
+#define LL_DMAMUX_REQUEST_TIM16_UP        83U   /*!< DMAMUX TIM16 UP request    */
+#define LL_DMAMUX_REQUEST_TIM17_CH1       84U   /*!< DMAMUX TIM17 CH1 request   */
+#define LL_DMAMUX_REQUEST_TIM17_UP        85U   /*!< DMAMUX TIM17 UP request    */
+#define LL_DMAMUX_REQUEST_DFSDM1_FLT0     86U   /*!< DMAMUX DFSDM1_FLT0 request */
+#define LL_DMAMUX_REQUEST_DFSDM1_FLT1     87U   /*!< DMAMUX DFSDM1_FLT1 request */
+#define LL_DMAMUX_REQUEST_DFSDM1_FLT2     88U   /*!< DMAMUX DFSDM1_FLT2 request */
+#define LL_DMAMUX_REQUEST_DFSDM1_FLT3     89U   /*!< DMAMUX DFSDM1_FLT3 request */
+#define LL_DMAMUX_REQUEST_DCMI            90U   /*!< DMAMUX DCMI request        */
+#define LL_DMAMUX_REQUEST_AES_IN          91U   /*!< DMAMUX AES_IN request      */
+#define LL_DMAMUX_REQUEST_AES_OUT         92U   /*!< DMAMUX AES_OUT request     */
+#define LL_DMAMUX_REQUEST_HASH_IN         93U   /*!< DMAMUX HASH_IN request     */
 /**
   * @}
   */
+#else
+/** @defgroup DMA_LL_EC_REQUEST Transfer peripheral request
+  * @{
+  */
+#define LL_DMA_REQUEST_0                  0x00000000U /*!< DMA peripheral request 0  */
+#define LL_DMA_REQUEST_1                  0x00000001U /*!< DMA peripheral request 1  */
+#define LL_DMA_REQUEST_2                  0x00000002U /*!< DMA peripheral request 2  */
+#define LL_DMA_REQUEST_3                  0x00000003U /*!< DMA peripheral request 3  */
+#define LL_DMA_REQUEST_4                  0x00000004U /*!< DMA peripheral request 4  */
+#define LL_DMA_REQUEST_5                  0x00000005U /*!< DMA peripheral request 5  */
+#define LL_DMA_REQUEST_6                  0x00000006U /*!< DMA peripheral request 6  */
+#define LL_DMA_REQUEST_7                  0x00000007U /*!< DMA peripheral request 7  */
+/**
+  * @}
+  */
+#endif /* DMAMUX1 */
 
 /**
   * @}
@@ -1198,6 +1332,238 @@ __STATIC_INLINE uint32_t LL_DMA_GetM2MDstAddress(DMA_TypeDef *DMAx, uint32_t Cha
   return (READ_REG(((DMA_Channel_TypeDef *)((uint32_t)((uint32_t)DMAx + CHANNEL_OFFSET_TAB[Channel - 1U])))->CMAR));
 }
 
+#if defined(DMAMUX1)
+/**
+  * @brief  Set DMA request for DMA Channels on DMAMUX Channel x.
+  * @note   DMAMUX channel 0 to 6 are mapped to DMA1 channel 1 to 7.
+  *         DMAMUX channel 7 to 13 are mapped to DMA2 channel 1 to 7.
+  * @rmtoll CxCR         DMAREQ_ID     LL_DMA_SetPeriphRequest
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref LL_DMA_CHANNEL_1
+  *         @arg @ref LL_DMA_CHANNEL_2
+  *         @arg @ref LL_DMA_CHANNEL_3
+  *         @arg @ref LL_DMA_CHANNEL_4
+  *         @arg @ref LL_DMA_CHANNEL_5
+  *         @arg @ref LL_DMA_CHANNEL_6
+  *         @arg @ref LL_DMA_CHANNEL_7
+  * @param  Request This parameter can be one of the following values:
+  *         @arg @ref LL_DMAMUX_REQUEST_MEM2MEM
+  *         @arg @ref LL_DMAMUX_REQUEST_GENERATOR0
+  *         @arg @ref LL_DMAMUX_REQUEST_GENERATOR1
+  *         @arg @ref LL_DMAMUX_REQUEST_GENERATOR2
+  *         @arg @ref LL_DMAMUX_REQUEST_GENERATOR3
+  *         @arg @ref LL_DMAMUX_REQUEST_ADC1
+  *         @arg @ref LL_DMAMUX_REQUEST_DAC1_CH1
+  *         @arg @ref LL_DMAMUX_REQUEST_DAC1_CH2
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM6_UP
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM7_UP
+  *         @arg @ref LL_DMAMUX_REQUEST_SPI1_RX
+  *         @arg @ref LL_DMAMUX_REQUEST_SPI1_TX
+  *         @arg @ref LL_DMAMUX_REQUEST_SPI2_RX
+  *         @arg @ref LL_DMAMUX_REQUEST_SPI2_TX
+  *         @arg @ref LL_DMAMUX_REQUEST_SPI3_RX
+  *         @arg @ref LL_DMAMUX_REQUEST_SPI3_TX
+  *         @arg @ref LL_DMAMUX_REQUEST_I2C1_RX
+  *         @arg @ref LL_DMAMUX_REQUEST_I2C1_TX
+  *         @arg @ref LL_DMAMUX_REQUEST_I2C2_RX
+  *         @arg @ref LL_DMAMUX_REQUEST_I2C2_TX
+  *         @arg @ref LL_DMAMUX_REQUEST_I2C3_RX
+  *         @arg @ref LL_DMAMUX_REQUEST_I2C3_TX
+  *         @arg @ref LL_DMAMUX_REQUEST_I2C4_RX
+  *         @arg @ref LL_DMAMUX_REQUEST_I2C4_TX
+  *         @arg @ref LL_DMAMUX_REQUEST_USART1_RX
+  *         @arg @ref LL_DMAMUX_REQUEST_USART1_TX
+  *         @arg @ref LL_DMAMUX_REQUEST_USART2_RX
+  *         @arg @ref LL_DMAMUX_REQUEST_USART2_TX
+  *         @arg @ref LL_DMAMUX_REQUEST_USART3_RX
+  *         @arg @ref LL_DMAMUX_REQUEST_USART3_TX
+  *         @arg @ref LL_DMAMUX_REQUEST_UART4_RX
+  *         @arg @ref LL_DMAMUX_REQUEST_UART4_TX
+  *         @arg @ref LL_DMAMUX_REQUEST_UART5_RX
+  *         @arg @ref LL_DMAMUX_REQUEST_UART5_TX
+  *         @arg @ref LL_DMAMUX_REQUEST_LPUART1_RX
+  *         @arg @ref LL_DMAMUX_REQUEST_LPUART1_TX
+  *         @arg @ref LL_DMAMUX_REQUEST_SAI1_A
+  *         @arg @ref LL_DMAMUX_REQUEST_SAI1_B
+  *         @arg @ref LL_DMAMUX_REQUEST_SAI2_A
+  *         @arg @ref LL_DMAMUX_REQUEST_SAI2_B
+  *         @arg @ref LL_DMAMUX_REQUEST_OSPI1
+  *         @arg @ref LL_DMAMUX_REQUEST_OSPI2
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM1_CH1
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM1_CH2
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM1_CH3
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM1_CH4
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM1_UP
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM1_TRIG
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM1_COM
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM8_CH1
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM8_CH2
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM8_CH3
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM8_CH4
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM8_UP
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM8_TRIG
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM8_COM
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM2_CH1
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM2_CH2
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM2_CH3
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM2_CH4
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM2_UP
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM3_CH1
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM3_CH2
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM3_CH3
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM3_CH4
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM3_UP
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM3_TRIG
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM4_CH1
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM4_CH2
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM4_CH3
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM4_CH4
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM4_UP
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM5_CH1
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM5_CH2
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM5_CH3
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM5_CH4
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM5_UP
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM5_TRIG
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM15_CH1
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM15_UP
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM15_TRIG
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM15_COM
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM16_CH1
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM16_UP
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM17_CH1
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM17_UP
+  *         @arg @ref LL_DMAMUX_REQUEST_DFSDM1_FLT0
+  *         @arg @ref LL_DMAMUX_REQUEST_DFSDM1_FLT1
+  *         @arg @ref LL_DMAMUX_REQUEST_DFSDM1_FLT2
+  *         @arg @ref LL_DMAMUX_REQUEST_DFSDM1_FLT3
+  *         @arg @ref LL_DMAMUX_REQUEST_DCMI
+  *         @arg @ref LL_DMAMUX_REQUEST_AES_IN
+  *         @arg @ref LL_DMAMUX_REQUEST_AES_OUT
+  *         @arg @ref LL_DMAMUX_REQUEST_HASH_IN
+  * @retval None
+  */
+__STATIC_INLINE void LL_DMA_SetPeriphRequest(DMA_TypeDef *DMAx, uint32_t Channel, uint32_t Request)
+{
+  MODIFY_REG(((DMAMUX_Channel_TypeDef*)(uint32_t)((uint32_t)DMAMUX1_Channel0 + (DMAMUX_CCR_SIZE*(Channel-1U)) + (uint32_t)(DMAMUX_CCR_SIZE*__LL_DMA_INSTANCE_TO_DMAMUX_CHANNEL(DMAx))))->CCR, DMAMUX_CxCR_DMAREQ_ID, Request);
+}
+
+/**
+  * @brief  Get DMA request for DMA Channels on DMAMUX Channel x.
+  * @note   DMAMUX channel 0 to 6 are mapped to DMA1 channel 1 to 7.
+  *         DMAMUX channel 7 to 13 are mapped to DMA2 channel 1 to 7.
+  * @rmtoll CxCR         DMAREQ_ID     LL_DMA_GetPeriphRequest
+  * @param  DMAx DMAx Instance
+  * @param  Channel This parameter can be one of the following values:
+  *         @arg @ref LL_DMA_CHANNEL_1
+  *         @arg @ref LL_DMA_CHANNEL_2
+  *         @arg @ref LL_DMA_CHANNEL_3
+  *         @arg @ref LL_DMA_CHANNEL_4
+  *         @arg @ref LL_DMA_CHANNEL_5
+  *         @arg @ref LL_DMA_CHANNEL_6
+  *         @arg @ref LL_DMA_CHANNEL_7
+  * @retval Returned value can be one of the following values:
+  *         @arg @ref LL_DMAMUX_REQUEST_MEM2MEM
+  *         @arg @ref LL_DMAMUX_REQUEST_GENERATOR0
+  *         @arg @ref LL_DMAMUX_REQUEST_GENERATOR1
+  *         @arg @ref LL_DMAMUX_REQUEST_GENERATOR2
+  *         @arg @ref LL_DMAMUX_REQUEST_GENERATOR3
+  *         @arg @ref LL_DMAMUX_REQUEST_ADC1
+  *         @arg @ref LL_DMAMUX_REQUEST_DAC1_CH1
+  *         @arg @ref LL_DMAMUX_REQUEST_DAC1_CH2
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM6_UP
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM7_UP
+  *         @arg @ref LL_DMAMUX_REQUEST_SPI1_RX
+  *         @arg @ref LL_DMAMUX_REQUEST_SPI1_TX
+  *         @arg @ref LL_DMAMUX_REQUEST_SPI2_RX
+  *         @arg @ref LL_DMAMUX_REQUEST_SPI2_TX
+  *         @arg @ref LL_DMAMUX_REQUEST_SPI3_RX
+  *         @arg @ref LL_DMAMUX_REQUEST_SPI3_TX
+  *         @arg @ref LL_DMAMUX_REQUEST_I2C1_RX
+  *         @arg @ref LL_DMAMUX_REQUEST_I2C1_TX
+  *         @arg @ref LL_DMAMUX_REQUEST_I2C2_RX
+  *         @arg @ref LL_DMAMUX_REQUEST_I2C2_TX
+  *         @arg @ref LL_DMAMUX_REQUEST_I2C3_RX
+  *         @arg @ref LL_DMAMUX_REQUEST_I2C3_TX
+  *         @arg @ref LL_DMAMUX_REQUEST_I2C4_RX
+  *         @arg @ref LL_DMAMUX_REQUEST_I2C4_TX
+  *         @arg @ref LL_DMAMUX_REQUEST_USART1_RX
+  *         @arg @ref LL_DMAMUX_REQUEST_USART1_TX
+  *         @arg @ref LL_DMAMUX_REQUEST_USART2_RX
+  *         @arg @ref LL_DMAMUX_REQUEST_USART2_TX
+  *         @arg @ref LL_DMAMUX_REQUEST_USART3_RX
+  *         @arg @ref LL_DMAMUX_REQUEST_USART3_TX
+  *         @arg @ref LL_DMAMUX_REQUEST_UART4_RX
+  *         @arg @ref LL_DMAMUX_REQUEST_UART4_TX
+  *         @arg @ref LL_DMAMUX_REQUEST_UART5_RX
+  *         @arg @ref LL_DMAMUX_REQUEST_UART5_TX
+  *         @arg @ref LL_DMAMUX_REQUEST_LPUART1_RX
+  *         @arg @ref LL_DMAMUX_REQUEST_LPUART1_TX
+  *         @arg @ref LL_DMAMUX_REQUEST_SAI1_A
+  *         @arg @ref LL_DMAMUX_REQUEST_SAI1_B
+  *         @arg @ref LL_DMAMUX_REQUEST_SAI2_A
+  *         @arg @ref LL_DMAMUX_REQUEST_SAI2_B
+  *         @arg @ref LL_DMAMUX_REQUEST_OSPI1
+  *         @arg @ref LL_DMAMUX_REQUEST_OSPI2
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM1_CH1
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM1_CH2
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM1_CH3
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM1_CH4
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM1_UP
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM1_TRIG
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM1_COM
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM8_CH1
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM8_CH2
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM8_CH3
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM8_CH4
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM8_UP
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM8_TRIG
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM8_COM
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM2_CH1
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM2_CH2
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM2_CH3
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM2_CH4
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM2_UP
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM3_CH1
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM3_CH2
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM3_CH3
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM3_CH4
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM3_UP
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM3_TRIG
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM4_CH1
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM4_CH2
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM4_CH3
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM4_CH4
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM4_UP
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM5_CH1
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM5_CH2
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM5_CH3
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM5_CH4
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM5_UP
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM5_TRIG
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM15_CH1
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM15_UP
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM15_TRIG
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM15_COM
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM16_CH1
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM16_UP
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM17_CH1
+  *         @arg @ref LL_DMAMUX_REQUEST_TIM17_UP
+  *         @arg @ref LL_DMAMUX_REQUEST_DFSDM1_FLT0
+  *         @arg @ref LL_DMAMUX_REQUEST_DFSDM1_FLT1
+  *         @arg @ref LL_DMAMUX_REQUEST_DFSDM1_FLT2
+  *         @arg @ref LL_DMAMUX_REQUEST_DFSDM1_FLT3
+  *         @arg @ref LL_DMAMUX_REQUEST_DCMI
+  *         @arg @ref LL_DMAMUX_REQUEST_AES_IN
+  *         @arg @ref LL_DMAMUX_REQUEST_AES_OUT
+  *         @arg @ref LL_DMAMUX_REQUEST_HASH_IN
+  */
+__STATIC_INLINE uint32_t LL_DMA_GetPeriphRequest(DMA_TypeDef *DMAx, uint32_t Channel)
+{
+  return (READ_BIT(((DMAMUX_Channel_TypeDef*)((uint32_t)((uint32_t)DMAMUX1_Channel0 + (DMAMUX_CCR_SIZE*(Channel-1U)) + (uint32_t)(DMAMUX_CCR_SIZE*__LL_DMA_INSTANCE_TO_DMAMUX_CHANNEL(DMAx)))))->CCR, DMAMUX_CxCR_DMAREQ_ID));
+}
+#else
 /**
   * @brief  Set DMA request for DMA instance on Channel x.
   * @note   Please refer to Reference Manual to get the available mapping of Request value link to Channel Selection.
@@ -1267,6 +1633,7 @@ __STATIC_INLINE uint32_t LL_DMA_GetPeriphRequest(DMA_TypeDef *DMAx, uint32_t Cha
   return (READ_BIT(((DMA_Request_TypeDef *)((uint32_t)((uint32_t)DMAx + DMA_CSELR_OFFSET)))->CSELR,
                    DMA_CSELR_C1S << ((Channel - 1U) * 4U)) >> DMA_POSITION_CSELR_CXS);
 }
+#endif /* DMAMUX1 */
 
 /**
   * @}

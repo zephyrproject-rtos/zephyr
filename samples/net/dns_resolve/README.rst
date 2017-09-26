@@ -13,6 +13,10 @@ If a CNAME is received, the DNS resolver will create another DNS query.
 The number of additional queries is controlled by the
 DNS_RESOLVER_ADDITIONAL_QUERIES Kconfig variable.
 
+The multicast DNS (mDNS) client resolver support can be enabled by setting
+CONFIG_MDNS_RESOLVER Kconfig variable.
+See https://tools.ietf.org/html/rfc6762 for more details about mDNS.
+
 For more information about DNS configuration variables, see:
 :file:`subsys/net/lib/dns/Kconfig`. The DNS resolver API can be found at
 :file:`include/net/dns_resolve.h`. The sample code can be found at:
@@ -33,28 +37,6 @@ Requirements
 
     dnsmasq -v
     Dnsmasq version 2.76  Copyright (c) 2000-2016 Simon Kelley
-
-
-
-Wiring
-******
-
-The ENC28J60 module is an Ethernet device with SPI interface.
-The following pins must be connected from the ENC28J60 device to the
-Arduino 101 board:
-
-===========	===================================
-Arduino 101	ENC28J60 (pin numbers on the board)
-===========	===================================
-D13		SCK  (1)
-D12		SO   (3)
-D11		SI   (2)
-D10		CS   (7)
-D04		INT  (5)
-3.3V		VCC  (10)
-GDN		GND  (9)
-===========	===================================
-
 
 Building and Running
 ********************
@@ -90,9 +72,7 @@ Open a terminal window and type:
 .. code-block:: console
 
     $ cd net-tools
-    $ ./dnsmasq.sh
-
-('su' or 'sudo' may be required.)
+    $ sudo ./dnsmasq.sh
 
 The default project configurations settings for this sample uses the public
 Google DNS servers.  In order to use the local dnsmasq server, please edit
@@ -122,8 +102,14 @@ Open a terminal window and type:
 
     $ killall -s KILL dnsmasq
 
-
 Try to launch the dnsmasq application again.
+
+For testing mDNS, use Avahi script in net-tools project:
+
+.. code-block:: console
+
+    $ cd net-tools
+    $ ./avahi-daemon.sh
 
 QEMU x86
 ========
@@ -186,3 +172,19 @@ Open a terminal window and type:
 Use 'dmesg' to find the right USB device.
 
 Once the binary is loaded into the Arduino 101 board, press the RESET button.
+
+The ENC28J60 module is an Ethernet device with SPI interface.
+The following pins must be connected from the ENC28J60 device to the
+Arduino 101 board:
+
+===========    ===================================
+Arduino 101    ENC28J60 (pin numbers on the board)
+===========    ===================================
+D13            SCK  (1)
+D12            SO   (3)
+D11            SI   (2)
+D10            CS   (7)
+D04            INT  (5)
+3.3V           VCC  (10)
+GDN            GND  (9)
+===========    ===================================

@@ -2,22 +2,20 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_adc_ex.c
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    21-April-2017
   * @brief   This file provides firmware functions to manage the following 
   *          functionalities of the Analog to Digital Convertor (ADC)
   *          peripheral:
   *           + Operation functions
-  *             ++ Start, stop, get result of conversions of injected
-  *                group, using 2 possible modes: polling, interruption.
+  *             ++ Start, stop, get result of conversions of ADC group injected,
+  *                using 2 possible modes: polling, interruption.
   *             ++ Calibration
   *               +++ ADC automatic self-calibration
   *               +++ Calibration factors get or set
   *             ++ Multimode feature when available
   *           + Control functions
-  *             ++ Channels configuration on injected group
+  *             ++ Channels configuration on ADC group injected
   *           + State functions
-  *             ++ Injected group queues management
+  *             ++ ADC group injected contexts queue management
   *          Other functions (generic functions) are available in file 
   *          "stm32l4xx_hal_adc.c".
   *
@@ -87,6 +85,9 @@
                                        ADC_CFGR2_OVSS ))     /*!< ADC_CFGR2 injected oversampling parameters that can be updated
                                                                   when no conversion is on-going (neither regular nor injected) */
                                        
+#define ADC_OFR_INJ_FIELDS  ((uint32_t)(ADC_OFR1_OFFSET1 | ADC_OFR1_OFFSET1_CH | ADC_OFR1_OFFSET1_EN)) /*!< ADC_OFR fields of parameters that can be updated when no conversion
+                                                                                                        (neither regular nor injected) is on-going */
+
 /* Fixed timeout value for ADC calibration.                                   */
 /* Values defined to be higher than worst cases: low clock frequency,         */
 /* maximum prescalers.                                                        */
@@ -122,13 +123,13 @@
       (+) Perform the ADC self-calibration for single or differential ending.
       (+) Get calibration factors for single or differential ending.
       (+) Set calibration factors for single or differential ending.
-      
-      (+) Start conversion of injected group.
-      (+) Stop conversion of injected group.
-      (+) Poll for conversion complete on injected group.
-      (+) Get result of injected channel conversion.
-      (+) Start conversion of injected group and enable interruptions.
-      (+) Stop conversion of injected group and disable interruptions.
+
+      (+) Start conversion of ADC group injected.
+      (+) Stop conversion of ADC group injected.
+      (+) Poll for conversion complete on ADC group injected.
+      (+) Get result of ADC group injected channel conversion.
+      (+) Start conversion of ADC group injected and enable interruptions.
+      (+) Stop conversion of ADC group injected and disable interruptions.
       
       (+) When multimode feature is available, start multimode and enable DMA transfer.
       (+) Stop multimode and disable ADC DMA transfer.
@@ -144,9 +145,9 @@
   *         function before HAL_ADC_Start() or after HAL_ADC_Stop() ).
   * @param  hadc       ADC handle
   * @param  SingleDiff Selection of single-ended or differential input
-  *          This parameter can be one of the following values:
-  *            @arg @ref ADC_SINGLE_ENDED       Channel in mode input single ended
-  *            @arg @ref ADC_DIFFERENTIAL_ENDED Channel in mode input differential ended
+  *         This parameter can be one of the following values:
+  *           @arg @ref ADC_SINGLE_ENDED       Channel in mode input single ended
+  *           @arg @ref ADC_DIFFERENTIAL_ENDED Channel in mode input differential ended
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_ADCEx_Calibration_Start(ADC_HandleTypeDef* hadc, uint32_t SingleDiff)
@@ -169,10 +170,13 @@ HAL_StatusTypeDef HAL_ADCEx_Calibration_Start(ADC_HandleTypeDef* hadc, uint32_t 
   /* Check if ADC is effectively disabled */
   if (tmp_hal_status == HAL_OK)
   {
-    /* Change ADC state */
-    /* Clear HAL_ADC_STATE_REG_BUSY and HAL_ADC_STATE_INJ_BUSY bits, set HAL_ADC_STATE_BUSY_INTERNAL bit */
-    ADC_STATE_CLR_SET(hadc->State, (HAL_ADC_STATE_REG_BUSY|HAL_ADC_STATE_INJ_BUSY), HAL_ADC_STATE_BUSY_INTERNAL);
+    /* Set ADC state */
+    ADC_STATE_CLR_SET(hadc->State, 
+                      HAL_ADC_STATE_REG_BUSY | HAL_ADC_STATE_INJ_BUSY,
+                      HAL_ADC_STATE_BUSY_INTERNAL);
+
     
+
     /* Select calibration mode single ended or differential ended */
     MODIFY_REG(hadc->Instance->CR, ADC_CR_ADCALDIF, SingleDiff);
     
@@ -186,8 +190,9 @@ HAL_StatusTypeDef HAL_ADCEx_Calibration_Start(ADC_HandleTypeDef* hadc, uint32_t 
       if (WaitLoopIndex >= ADC_CALIBRATION_TIMEOUT)
       {
         /* Update ADC state machine to error */
-        /* Clear HAL_ADC_STATE_BUSY_INTERNAL bit, set HAL_ADC_STATE_ERROR_INTERNAL bit */
-        ADC_STATE_CLR_SET(hadc->State, HAL_ADC_STATE_BUSY_INTERNAL, HAL_ADC_STATE_ERROR_INTERNAL);
+        ADC_STATE_CLR_SET(hadc->State,
+                          HAL_ADC_STATE_BUSY_INTERNAL,
+                          HAL_ADC_STATE_ERROR_INTERNAL);
         
         /* Process unlocked */
         __HAL_UNLOCK(hadc);
@@ -196,8 +201,10 @@ HAL_StatusTypeDef HAL_ADCEx_Calibration_Start(ADC_HandleTypeDef* hadc, uint32_t 
       }
     }
     
-    /* Clear HAL_ADC_STATE_BUSY_INTERNAL bit, set HAL_ADC_STATE_READY bit */
-    ADC_STATE_CLR_SET(hadc->State, HAL_ADC_STATE_BUSY_INTERNAL, HAL_ADC_STATE_READY);
+    /* Set ADC state */
+    ADC_STATE_CLR_SET(hadc->State,
+                      HAL_ADC_STATE_BUSY_INTERNAL,
+                      HAL_ADC_STATE_READY);
   }
   else
   {
@@ -215,13 +222,12 @@ HAL_StatusTypeDef HAL_ADCEx_Calibration_Start(ADC_HandleTypeDef* hadc, uint32_t 
 }
 
 /**
-  * @brief  Get the calibration factor from automatic conversion result.
-  * @param  hadc: ADC handle.
-  * @param  SingleDiff: Selection of single-ended or differential input
-  *          This parameter can be one of the following values:
-  *            @arg @ref ADC_SINGLE_ENDED       Channel in mode input single ended
-  *            @arg @ref ADC_DIFFERENTIAL_ENDED Channel in mode input differential ended
-  * @retval Converted value
+  * @brief  Get the calibration factor.
+  * @param hadc ADC handle.
+  * @param SingleDiff This parameter can be only:
+  *           @arg @ref ADC_SINGLE_ENDED Channel in mode input single ended
+  *           @arg @ref ADC_DIFFERENTIAL_ENDED Channel in mode input differential ended
+  * @retval Calibration value.
   */
 uint32_t HAL_ADCEx_Calibration_GetValue(ADC_HandleTypeDef* hadc, uint32_t SingleDiff)
 {
@@ -229,7 +235,7 @@ uint32_t HAL_ADCEx_Calibration_GetValue(ADC_HandleTypeDef* hadc, uint32_t Single
   assert_param(IS_ADC_ALL_INSTANCE(hadc->Instance));
   assert_param(IS_ADC_SINGLE_DIFFERENTIAL(SingleDiff)); 
   
-  /* Return the selected ADC calibration value */ 
+  /* Return the selected ADC calibration value */
   if (SingleDiff == ADC_DIFFERENTIAL_ENDED)
   {
     return ADC_CALFACT_DIFF_GET(hadc->Instance->CALFACT);
@@ -241,13 +247,13 @@ uint32_t HAL_ADCEx_Calibration_GetValue(ADC_HandleTypeDef* hadc, uint32_t Single
 }
 
 /**
-  * @brief  Set the calibration factor to overwrite automatic conversion result. ADC must be enabled and no conversion on going.
-  * @param  hadc: ADC handle.
-  * @param  SingleDiff: Selection of single-ended or differential input.
-  *          This parameter can be one of the following values:
-  *            @arg @ref ADC_SINGLE_ENDED       Channel in mode input single ended
-  *            @arg @ref ADC_DIFFERENTIAL_ENDED Channel in mode input differential ended
-  * @param  CalibrationFactor: Calibration factor (coded on 7 bits maximum)
+  * @brief  Set the calibration factor to overwrite automatic conversion result.
+  *         ADC must be enabled and no conversion is ongoing.
+  * @param hadc ADC handle
+  * @param SingleDiff This parameter can be only:
+  *           @arg @ref ADC_SINGLE_ENDED Channel in mode input single ended
+  *           @arg @ref ADC_DIFFERENTIAL_ENDED Channel in mode input differential ended
+  * @param CalibrationFactor Calibration factor (coded on 7 bits maximum)
   * @retval HAL state
   */
 HAL_StatusTypeDef HAL_ADCEx_Calibration_SetValue(ADC_HandleTypeDef* hadc, uint32_t SingleDiff, uint32_t CalibrationFactor)
@@ -281,6 +287,8 @@ HAL_StatusTypeDef HAL_ADCEx_Calibration_SetValue(ADC_HandleTypeDef* hadc, uint32
   {
     /* Update ADC state machine */
     SET_BIT(hadc->State, HAL_ADC_STATE_ERROR_CONFIG);
+    /* Update ADC error code */
+    SET_BIT(hadc->ErrorCode, HAL_ADC_ERROR_INTERNAL);
     
     /* Update ADC state machine to error */
     tmp_hal_status = HAL_ERROR;
@@ -301,7 +309,7 @@ HAL_StatusTypeDef HAL_ADCEx_Calibration_SetValue(ADC_HandleTypeDef* hadc, uint32
   *         then for ADC master. 
   *         For ADC slave, ADC is enabled only (conversion is not started).  
   *         For ADC master, ADC is enabled and multimode conversion is started.
-  * @param  hadc: ADC handle.
+  * @param hadc ADC handle.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_ADCEx_InjectedStart(ADC_HandleTypeDef* hadc)
@@ -353,9 +361,13 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedStart(ADC_HandleTypeDef* hadc)
         /* Set ADC error code to none */
         ADC_CLEAR_ERRORCODE(hadc);
       }
-      /* Update ADC state */
-      /* Clear HAL_ADC_STATE_READY and HAL_ADC_STATE_INJ_EOC bits, set HAL_ADC_STATE_INJ_BUSY bit */
-      ADC_STATE_CLR_SET(hadc->State, (HAL_ADC_STATE_READY|HAL_ADC_STATE_INJ_EOC), HAL_ADC_STATE_INJ_BUSY);
+      
+      /* Set ADC state                                                        */
+      /* - Clear state bitfield related to injected group conversion results  */
+      /* - Set state bitfield related to injected operation                   */
+      ADC_STATE_CLR_SET(hadc->State,
+                        HAL_ADC_STATE_READY | HAL_ADC_STATE_INJ_EOC,
+                        HAL_ADC_STATE_INJ_BUSY);
       
       /* Reset HAL_ADC_STATE_MULTIMODE_SLAVE bit
         - by default if ADC is Master or Independent or if multimode feature is not available
@@ -365,10 +377,14 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedStart(ADC_HandleTypeDef* hadc)
         CLEAR_BIT(hadc->State, HAL_ADC_STATE_MULTIMODE_SLAVE);
       }
       
-      
-      /* Clear injected group conversion flag */
+      /* Clear ADC group injected group conversion flag */
       /* (To ensure of no unknown state from potential previous ADC operations) */
       __HAL_ADC_CLEAR_FLAG(hadc, (ADC_FLAG_JEOC | ADC_FLAG_JEOS));
+      
+      /* Process unlocked */
+      /* Unlock before starting ADC conversions: in case of potential         */
+      /* interruption, to let the process to ADC IRQ Handler.                 */
+      __HAL_UNLOCK(hadc);
       
       /* Enable conversion of injected group, if automatic injected conversion  */
       /* is disabled.                                                           */
@@ -388,8 +404,6 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedStart(ADC_HandleTypeDef* hadc)
       {
         /* hadc is not the handle of a Slave ADC with dual injected conversions enabled:
            set ADSTART only if JAUTO is cleared */
-        /* Process unlocked */
-        __HAL_UNLOCK(hadc);            
         if (HAL_IS_BIT_CLR(hadc->Instance->CFGR, ADC_CFGR_JAUTO))
         {
           SET_BIT(hadc->Instance->CR, ADC_CR_JADSTART) ;
@@ -400,19 +414,17 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedStart(ADC_HandleTypeDef* hadc)
         /* hadc is the handle of a Slave ADC with dual injected conversions enabled:
            ADSTART is not set */
           SET_BIT(hadc->State, HAL_ADC_STATE_MULTIMODE_SLAVE);
-        /* Process unlocked */
-        __HAL_UNLOCK(hadc);
       }
     } 
     else
     {
       /* Process unlocked */
       __HAL_UNLOCK(hadc);    
-    } /* if (tmp_hal_status == HAL_OK) */
+    }
   
     /* Return function status */
     return tmp_hal_status;
-  } /*  if (ADC_IS_CONVERSION_ONGOING_INJECTED(hadc)) */
+  }
 }
 
 /**
@@ -428,7 +440,7 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedStart(ADC_HandleTypeDef* hadc)
   *         For ADC master, conversion is stopped and ADC is disabled. 
   *         For ADC slave, ADC is disabled only (conversion stop of ADC master
   *         has already stopped conversion of ADC slave).
-  * @param  hadc: ADC handle.
+  * @param hadc ADC handle.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_ADCEx_InjectedStop(ADC_HandleTypeDef* hadc)
@@ -456,16 +468,17 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedStop(ADC_HandleTypeDef* hadc)
       /* Check if ADC is effectively disabled */
       if (tmp_hal_status == HAL_OK)
       {
-        /* Change ADC state */
-      /* Clear HAL_ADC_STATE_REG_BUSY and HAL_ADC_STATE_INJ_BUSY bits, set HAL_ADC_STATE_READY bit */
-      ADC_STATE_CLR_SET(hadc->State, (HAL_ADC_STATE_REG_BUSY|HAL_ADC_STATE_INJ_BUSY), HAL_ADC_STATE_READY);
+        /* Set ADC state */
+        ADC_STATE_CLR_SET(hadc->State,
+                          HAL_ADC_STATE_REG_BUSY | HAL_ADC_STATE_INJ_BUSY,
+                          HAL_ADC_STATE_READY);
       }
     }
     /* Conversion on injected group is stopped, but ADC not disabled since    */
     /* conversion on regular group is still running.                          */
     else
     {
-      /* Clear HAL_ADC_STATE_INJ_BUSY bit */
+      /* Set ADC state */
       CLEAR_BIT(hadc->State, HAL_ADC_STATE_INJ_BUSY);
     }
   }
@@ -479,23 +492,19 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedStop(ADC_HandleTypeDef* hadc)
 
 /**
   * @brief  Wait for injected group conversion to be completed.
-  * @param  hadc: ADC handle
-  * @param  Timeout: Timeout value in millisecond.
+  * @param hadc ADC handle
+  * @param Timeout Timeout value in millisecond.
   * @note   Depending on hadc->Init.EOCSelection, JEOS or JEOC is
   *         checked and cleared depending on AUTDLY bit status.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_ADCEx_InjectedPollForConversion(ADC_HandleTypeDef* hadc, uint32_t Timeout)
 {
-  uint32_t           tickstart;
-  uint32_t           tmp_Flag_End        = 0x00;
-  ADC_TypeDef        *tmpADC_Master;
-  uint32_t           tmp_cfgr            = 0x00;
-  uint32_t           tmp_cfgr_jqm_autdly = 0x00;
-  uint32_t           tmp_jeos_raised     = 0x01; /* by default, assume that JEOS is set, 
-                                                    tmp_jeos_raised will be corrected
-                                                    accordingly during API execution */       
- 
+  uint32_t tickstart = 0U;
+  uint32_t tmp_Flag_End = 0U;
+  uint32_t tmp_cfgr = 0U;
+  ADC_TypeDef *tmpADC_Master;
+  
   /* Check the parameters */
   assert_param(IS_ADC_ALL_INSTANCE(hadc->Instance));
 
@@ -531,47 +540,51 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedPollForConversion(ADC_HandleTypeDef* hadc, u
     }
   }
   
-  /* Next, to clear the polled flag as well as to update the handle State,
-     JEOS is checked and the relevant configuration registers are retrieved.
-     JQM, JAUTO and CONT bits will have to be read for the State update,
-     AUTDLY for JEOS clearing. */
-  /*   1. Check whether or not JEOS is set */
-  if (HAL_IS_BIT_CLR(hadc->Instance->ISR, ADC_FLAG_JEOS))
+  /* Get relevant register CFGR in ADC instance of ADC master or slave  */
+  /* in function of multimode state (for devices with multimode         */
+  /* available).                                                        */
+  if (ADC_INDEPENDENT_OR_NONMULTIMODEINJECTED_SLAVE(hadc) == SET)
   {
-    tmp_jeos_raised = 0;   
-  }
-  /*  2. Check whether or not hadc is the handle of a Slave ADC with dual
-        injected conversions enabled. */
-  if (ADC_INDEPENDENT_OR_NONMULTIMODEINJECTED_SLAVE(hadc) == RESET)
-  {
-    /* hadc is not the handle of a Slave ADC with dual injected conversions enabled:
-        check JQM and AUTDLY bits directly in ADC CFGR register */
-    tmp_cfgr_jqm_autdly = READ_REG(hadc->Instance->CFGR);  
-  }
-  else
-  {
-    /* hadc is the handle of a Slave ADC with dual injected conversions enabled:
-        need to check JQM and AUTDLY bits of Master ADC CFGR register */
-    tmpADC_Master = ADC_MASTER_REGISTER(hadc);
-    tmp_cfgr_jqm_autdly = READ_REG(tmpADC_Master->CFGR);
-  }  
-  /* 3. Check whether or not hadc is the handle of a Slave ADC with dual
-        regular conversions enabled. */ 
-  if (ADC_INDEPENDENT_OR_NONMULTIMODEREGULAR_SLAVE(hadc))
-  {
-    /* hadc is not the handle of a Slave ADC with dual regular conversions enabled:
-       check JAUTO and CONT bits directly in ADC CFGR register */
     tmp_cfgr = READ_REG(hadc->Instance->CFGR); 
   }
   else
   {
-    /* hadc is not the handle of a Slave ADC with dual regular conversions enabled:
-      check JAUTO and CONT bits of Master ADC CFGR register */  
     tmpADC_Master = ADC_MASTER_REGISTER(hadc);
     tmp_cfgr = READ_REG(tmpADC_Master->CFGR); 
   }
   
+  /* Update ADC state machine */
+  SET_BIT(hadc->State, HAL_ADC_STATE_INJ_EOC);
   
+  /* Determine whether any further conversion upcoming on group injected      */
+  /* by external trigger or by automatic injected conversion                  */
+  /* from group regular.                                                      */
+  if(ADC_IS_SOFTWARE_START_INJECTED(hadc)                   ||
+     ((READ_BIT (tmp_cfgr, ADC_CFGR_JAUTO) == RESET)    &&
+      (ADC_IS_SOFTWARE_START_REGULAR(hadc)          &&
+      (READ_BIT (tmp_cfgr, ADC_CFGR_CONT) == RESET)   )   )   )
+  {
+    /* Check whether end of sequence is reached */
+    if( __HAL_ADC_GET_FLAG(hadc, ADC_FLAG_JEOS) )
+    {
+      /* Particular case if injected contexts queue is enabled:             */
+      /* when the last context has been fully processed, JSQR is reset      */
+      /* by the hardware. Even if no injected conversion is planned to come */
+      /* (queue empty, triggers are ignored), it can start again            */
+      /* immediately after setting a new context (JADSTART is still set).   */
+      /* Therefore, state of HAL ADC injected group is kept to busy.        */
+      if(READ_BIT(tmp_cfgr, ADC_CFGR_JQM) == RESET)
+      {
+        /* Set ADC state */
+        CLEAR_BIT(hadc->State, HAL_ADC_STATE_INJ_BUSY);
+        
+        if (HAL_IS_BIT_CLR(hadc->State, HAL_ADC_STATE_REG_BUSY))
+        {
+          SET_BIT(hadc->State, HAL_ADC_STATE_READY);
+        }
+      }
+    }
+  }
   
   /* Clear polled flag */
   if (tmp_Flag_End == ADC_FLAG_JEOS)
@@ -580,45 +593,15 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedPollForConversion(ADC_HandleTypeDef* hadc, u
     /* "LowPowerAutoWait " is disabled, to not interfere with this feature.   */
     /* For injected groups, no new conversion will start before JEOS is       */
     /* cleared.                                                               */
-    /* Note that 1. reading ADCx_JDRy clears JEOC.                            */
-    /*           2. in multimode with dual injected conversions enabled (when */
-    /*              multimode feature is available), Master AUTDLY bit is     */
-    /*              checked.                                                  */
-    if (READ_BIT (tmp_cfgr_jqm_autdly, ADC_CFGR_AUTDLY) == RESET)
+    if (READ_BIT (tmp_cfgr, ADC_CFGR_AUTDLY) == RESET)
     {
-      __HAL_ADC_CLEAR_FLAG(hadc, ADC_FLAG_EOC);
+      __HAL_ADC_CLEAR_FLAG(hadc, (ADC_FLAG_JEOC | ADC_FLAG_JEOS));
     }
   }
   else
   {
-    __HAL_ADC_CLEAR_FLAG(hadc, ADC_FLAG_JEOC);    
+    __HAL_ADC_CLEAR_FLAG(hadc, ADC_FLAG_JEOC);
   }
-  
-  
-  /* Update ADC state machine */
-  SET_BIT(hadc->State, HAL_ADC_STATE_INJ_EOC);
-  /* Are injected conversions over ? This is the case if JEOS is set AND
-        - injected conversions are software-triggered when injected queue management is disabled
-        OR
-        - auto-injection is enabled, continuous mode is disabled,
-          and regular conversions are software-triggered */
-  
-  if (tmp_jeos_raised)
-  {
-    if ((ADC_IS_SOFTWARE_START_INJECTED(hadc) && (READ_BIT(tmp_cfgr_jqm_autdly, ADC_CFGR_JQM) != ADC_CFGR_JQM))  
-       && (!((READ_BIT(tmp_cfgr, (ADC_CFGR_JAUTO|ADC_CFGR_CONT)) == (ADC_CFGR_JAUTO|ADC_CFGR_CONT)) &&    
-           (ADC_IS_SOFTWARE_START_REGULAR(hadc)))    ))
-    {
-      /* Clear HAL_ADC_STATE_INJ_BUSY bit */
-      CLEAR_BIT(hadc->State, HAL_ADC_STATE_INJ_BUSY); 
-      /* If no regular conversion on-going, set HAL_ADC_STATE_READY bit */
-      if (HAL_IS_BIT_CLR(hadc->State, HAL_ADC_STATE_REG_BUSY))
-      {
-        SET_BIT(hadc->State, HAL_ADC_STATE_READY);
-      }
-    }
-  }
-  
   
   /* Return API HAL status */
   return HAL_OK;
@@ -633,7 +616,7 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedPollForConversion(ADC_HandleTypeDef* hadc, u
   *         then for ADC master. 
   *         For ADC slave, ADC is enabled only (conversion is not started).  
   *         For ADC master, ADC is enabled and multimode conversion is started.
-  * @param  hadc: ADC handle.
+  * @param hadc ADC handle.
   * @retval HAL status.
   */
 HAL_StatusTypeDef HAL_ADCEx_InjectedStart_IT(ADC_HandleTypeDef* hadc)
@@ -649,7 +632,6 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedStart_IT(ADC_HandleTypeDef* hadc)
   }
   else
   {
-
     /* In case of software trigger detection enabled, JQDIS must be set 
       (which can be done only if ADSTART and JADSTART are both cleared).
        If JQDIS is not set at that point, returns an error
@@ -684,8 +666,13 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedStart_IT(ADC_HandleTypeDef* hadc)
         /* Set ADC error code to none */
         ADC_CLEAR_ERRORCODE(hadc);
       }
-      /* Clear HAL_ADC_STATE_READY and HAL_ADC_STATE_INJ_EOC bits, set HAL_ADC_STATE_INJ_BUSY bit */
-      ADC_STATE_CLR_SET(hadc->State, (HAL_ADC_STATE_READY|HAL_ADC_STATE_INJ_EOC), HAL_ADC_STATE_INJ_BUSY);
+      
+      /* Set ADC state                                                        */
+      /* - Clear state bitfield related to injected group conversion results  */
+      /* - Set state bitfield related to injected operation                   */
+      ADC_STATE_CLR_SET(hadc->State,
+                        HAL_ADC_STATE_READY | HAL_ADC_STATE_INJ_EOC,
+                        HAL_ADC_STATE_INJ_BUSY);
       
       /* Reset HAL_ADC_STATE_MULTIMODE_SLAVE bit
         - by default if ADC is Master or Independent or if multimode feature is not available
@@ -694,10 +681,15 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedStart_IT(ADC_HandleTypeDef* hadc)
       {
         CLEAR_BIT(hadc->State, HAL_ADC_STATE_MULTIMODE_SLAVE);
       }
-      
-      /* Clear injected group conversion flag */
+
+      /* Clear ADC group injected group conversion flag */
       /* (To ensure of no unknown state from potential previous ADC operations) */
       __HAL_ADC_CLEAR_FLAG(hadc, (ADC_FLAG_JEOC | ADC_FLAG_JEOS));
+      
+      /* Process unlocked */
+      /* Unlock before starting ADC conversions: in case of potential         */
+      /* interruption, to let the process to ADC IRQ Handler.                 */
+      __HAL_UNLOCK(hadc);
       
       /* Enable ADC Injected context queue overflow interrupt if this feature   */
       /* is enabled.                                                            */
@@ -738,8 +730,6 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedStart_IT(ADC_HandleTypeDef* hadc)
       {
         /* hadc is not the handle of a Slave ADC with dual injected conversions enabled:
            set ADSTART only if JAUTO is cleared */
-        /* Process unlocked */
-        __HAL_UNLOCK(hadc);            
         if (HAL_IS_BIT_CLR(hadc->Instance->CFGR, ADC_CFGR_JAUTO))
         {
           SET_BIT(hadc->Instance->CR, ADC_CR_JADSTART) ;
@@ -750,8 +740,6 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedStart_IT(ADC_HandleTypeDef* hadc)
         /* hadc is the handle of a Slave ADC with dual injected conversions enabled:
            ADSTART is not set */
           SET_BIT(hadc->State, HAL_ADC_STATE_MULTIMODE_SLAVE);
-        /* Process unlocked */
-        __HAL_UNLOCK(hadc);          
       }
     }
     else
@@ -762,7 +750,7 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedStart_IT(ADC_HandleTypeDef* hadc)
     
     /* Return function status */
     return tmp_hal_status;
-}
+  }
 }
 
 /**
@@ -781,7 +769,7 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedStart_IT(ADC_HandleTypeDef* hadc)
   *         For ADC slave, ADC is disabled only (conversion stop of ADC master
   *         has already stopped conversion of ADC slave).
   * @note   In case of auto-injection mode, HAL_ADC_Stop() must be used.
-  * @param  hadc: ADC handle
+  * @param hadc ADC handle
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_ADCEx_InjectedStop_IT(ADC_HandleTypeDef* hadc)
@@ -805,7 +793,7 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedStop_IT(ADC_HandleTypeDef* hadc)
     /* Disable ADC end of conversion interrupt for injected channels */
     __HAL_ADC_DISABLE_IT(hadc, (ADC_IT_JEOC | ADC_IT_JEOS | ADC_FLAG_JQOVF));
     
-    if ((ADC_IS_CONVERSION_ONGOING_REGULAR(hadc) == RESET))
+    if (ADC_IS_CONVERSION_ONGOING_REGULAR(hadc) == RESET)
     {
       /* 2. Disable the ADC peripheral */
       tmp_hal_status = ADC_Disable(hadc);
@@ -813,17 +801,18 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedStop_IT(ADC_HandleTypeDef* hadc)
       /* Check if ADC is effectively disabled */
       if (tmp_hal_status == HAL_OK)
       {
-        /* Change ADC state */
-        /* Clear HAL_ADC_STATE_REG_BUSY and HAL_ADC_STATE_INJ_BUSY bits, set HAL_ADC_STATE_READY bit */
-        ADC_STATE_CLR_SET(hadc->State, (HAL_ADC_STATE_REG_BUSY|HAL_ADC_STATE_INJ_BUSY), HAL_ADC_STATE_READY);
+        /* Set ADC state */
+        ADC_STATE_CLR_SET(hadc->State,
+                          HAL_ADC_STATE_REG_BUSY | HAL_ADC_STATE_INJ_BUSY,
+                          HAL_ADC_STATE_READY);
       }
     }
     /* Conversion on injected group is stopped, but ADC not disabled since    */
     /* conversion on regular group is still running.                          */
     else
     {
-      /* Clear HAL_ADC_STATE_INJ_BUSY bit */
-      CLEAR_BIT(hadc->State, HAL_ADC_STATE_INJ_BUSY); 
+      /* Set ADC state */
+      CLEAR_BIT(hadc->State, HAL_ADC_STATE_INJ_BUSY);
     }
   }
 
@@ -834,8 +823,7 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedStop_IT(ADC_HandleTypeDef* hadc)
   return tmp_hal_status;
 }
 
-
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || defined (STM32L496xx) || defined (STM32L4A6xx)
+#if defined(ADC_MULTIMODE_SUPPORT)
 /**
   * @brief  Enable ADC, start MultiMode conversion and transfer regular results through DMA.
   * @note   Multimode must have been previously configured using 
@@ -846,9 +834,9 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedStop_IT(ADC_HandleTypeDef* hadc)
   * @note   State field of Slave ADC handle is not updated in this configuration: 
   *          user should not rely on it for information related to Slave regular 
   *         conversions.                                                                          
-  * @param  hadc: ADC handle of ADC master (handle of ADC slave must not be used)
-  * @param  pData: Destination Buffer address.
-  * @param  Length: Length of data to be transferred from ADC peripheral to memory (in bytes).
+  * @param hadc ADC handle of ADC master (handle of ADC slave must not be used)
+  * @param pData Destination Buffer address.
+  * @param Length Length of data to be transferred from ADC peripheral to memory (in bytes).
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_ADCEx_MultiModeStart_DMA(ADC_HandleTypeDef* hadc, uint32_t* pData, uint32_t Length)
@@ -877,7 +865,7 @@ HAL_StatusTypeDef HAL_ADCEx_MultiModeStart_DMA(ADC_HandleTypeDef* hadc, uint32_t
   
     if (tmphadcSlave.Instance == NULL)
     {
-      /* Update ADC state machine to error */
+      /* Set ADC state */
       SET_BIT(hadc->State, HAL_ADC_STATE_ERROR_CONFIG);
     
       /* Process unlocked */
@@ -886,7 +874,6 @@ HAL_StatusTypeDef HAL_ADCEx_MultiModeStart_DMA(ADC_HandleTypeDef* hadc, uint32_t
       return HAL_ERROR;
     }
     
-  
     /* Enable the ADC peripherals: master and slave (in case if not already   */
     /* enabled previously)                                                    */
     tmp_hal_status = ADC_Enable(hadc);
@@ -898,14 +885,13 @@ HAL_StatusTypeDef HAL_ADCEx_MultiModeStart_DMA(ADC_HandleTypeDef* hadc, uint32_t
     /* Start multimode conversion of ADCs pair */
     if (tmp_hal_status == HAL_OK)
     {
-      /* Update Master State */
-      /* Clear HAL_ADC_STATE_READY and regular conversion results bits, set HAL_ADC_STATE_REG_BUSY bit */
-      ADC_STATE_CLR_SET(hadc->State, (HAL_ADC_STATE_READY|HAL_ADC_STATE_REG_EOC|HAL_ADC_STATE_REG_OVR|HAL_ADC_STATE_REG_EOSMP), HAL_ADC_STATE_REG_BUSY);
-
-       
+      /* Set ADC state */
+      ADC_STATE_CLR_SET(hadc->State,
+                        (HAL_ADC_STATE_READY | HAL_ADC_STATE_REG_EOC | HAL_ADC_STATE_REG_OVR | HAL_ADC_STATE_REG_EOSMP),
+                        HAL_ADC_STATE_REG_BUSY);
+      
       /* Set ADC error code to none */
       ADC_CLEAR_ERRORCODE(hadc);
-      
       
       /* Set the DMA transfer complete callback */
       hadc->DMA_Handle->XferCpltCallback = ADC_DMAConvCplt;
@@ -919,7 +905,6 @@ HAL_StatusTypeDef HAL_ADCEx_MultiModeStart_DMA(ADC_HandleTypeDef* hadc, uint32_t
       /* Pointer to the common control register  */
       tmpADC_Common = ADC_COMMON_REGISTER(hadc);
       
-      
       /* Manage ADC and DMA start: ADC overrun interruption, DMA start, ADC     */
       /* start (in case of SW start):                                           */
   
@@ -927,15 +912,18 @@ HAL_StatusTypeDef HAL_ADCEx_MultiModeStart_DMA(ADC_HandleTypeDef* hadc, uint32_t
       /* (To ensure of no unknown state from potential previous ADC operations) */
       __HAL_ADC_CLEAR_FLAG(hadc, (ADC_FLAG_EOC | ADC_FLAG_EOS | ADC_FLAG_OVR));
       
+      /* Process unlocked */
+      /* Unlock before starting ADC conversions: in case of potential         */
+      /* interruption, to let the process to ADC IRQ Handler.                 */
+      __HAL_UNLOCK(hadc);
+      
       /* Enable ADC overrun interrupt */
       __HAL_ADC_ENABLE_IT(hadc, ADC_IT_OVR);
-  
+      
       /* Start the DMA channel */
       HAL_DMA_Start_IT(hadc->DMA_Handle, (uint32_t)&tmpADC_Common->CDR, (uint32_t)pData, Length);
           
       /* Enable conversion of regular group.                                    */
-      /* Process unlocked */
-      __HAL_UNLOCK(hadc);      
       /* If software start has been selected, conversion starts immediately.    */
       /* If external trigger has been selected, conversion will start at next   */
       /* trigger event.                                                         */
@@ -963,7 +951,7 @@ HAL_StatusTypeDef HAL_ADCEx_MultiModeStart_DMA(ADC_HandleTypeDef* hadc, uint32_t
   * @note   In case of DMA configured in circular mode, function 
   *         HAL_ADC_Stop_DMA() must be called after this function with handle of
   *         ADC slave, to properly disable the DMA channel.
-  * @param  hadc: ADC handle of ADC master (handle of ADC slave must not be used)
+  * @param hadc ADC handle of ADC master (handle of ADC slave must not be used)
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_ADCEx_MultiModeStop_DMA(ADC_HandleTypeDef* hadc)
@@ -1053,10 +1041,11 @@ HAL_StatusTypeDef HAL_ADCEx_MultiModeStop_DMA(ADC_HandleTypeDef* hadc)
       ADC_Disable(hadc);
       ADC_Disable(&tmphadcSlave);
     }
-    /* Change ADC state (ADC master) */
-    /* Clear HAL_ADC_STATE_REG_BUSY and HAL_ADC_STATE_INJ_BUSY bits, set HAL_ADC_STATE_READY bit */
-    ADC_STATE_CLR_SET(hadc->State, (HAL_ADC_STATE_REG_BUSY|HAL_ADC_STATE_INJ_BUSY), HAL_ADC_STATE_READY);
     
+    /* Set ADC state (ADC master) */
+    ADC_STATE_CLR_SET(hadc->State,
+                      HAL_ADC_STATE_REG_BUSY | HAL_ADC_STATE_INJ_BUSY,
+                      HAL_ADC_STATE_READY);
   }
   
   /* Process unlocked */
@@ -1068,7 +1057,7 @@ HAL_StatusTypeDef HAL_ADCEx_MultiModeStop_DMA(ADC_HandleTypeDef* hadc)
 
 /**
   * @brief  Return the last ADC Master and Slave regular conversions results when in multimode configuration.
-  * @param  hadc: ADC handle of ADC Master (handle of ADC Slave must not be used)
+  * @param hadc ADC handle of ADC Master (handle of ADC Slave must not be used)
   * @retval The converted data values.
   */
 uint32_t HAL_ADCEx_MultiModeGetValue(ADC_HandleTypeDef* hadc)
@@ -1084,7 +1073,7 @@ uint32_t HAL_ADCEx_MultiModeGetValue(ADC_HandleTypeDef* hadc)
   /* Return the multi mode conversion value */
   return tmpADC_Common->CDR;
 }
-#endif /* defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || defined (STM32L496xx) || defined (STM32L4A6xx) */
+#endif /* ADC_MULTIMODE_SUPPORT */
 
 /**
   * @brief  Get ADC injected group conversion result.
@@ -1105,8 +1094,8 @@ uint32_t HAL_ADCEx_MultiModeGetValue(ADC_HandleTypeDef* hadc)
   *         in programming model IT: @ref HAL_ADC_IRQHandler(), in programming
   *         model polling: @ref HAL_ADCEx_InjectedPollForConversion() 
   *         or @ref __HAL_ADC_CLEAR_FLAG(&hadc, ADC_FLAG_JEOS).
-  * @param  hadc: ADC handle
-  * @param  InjectedRank: the converted ADC injected rank.
+  * @param hadc ADC handle
+  * @param InjectedRank the converted ADC injected rank.
   *          This parameter can be one of the following values:
   *            @arg @ref ADC_INJECTED_RANK_1 ADC group injected rank 1
   *            @arg @ref ADC_INJECTED_RANK_2 ADC group injected rank 2
@@ -1146,7 +1135,7 @@ uint32_t HAL_ADCEx_InjectedGetValue(ADC_HandleTypeDef* hadc, uint32_t InjectedRa
 
 /**
   * @brief  Injected conversion complete callback in non-blocking mode.
-  * @param  hadc: ADC handle
+  * @param hadc ADC handle
   * @retval None
   */
 __weak void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef* hadc)
@@ -1165,7 +1154,7 @@ __weak void HAL_ADCEx_InjectedConvCpltCallback(ADC_HandleTypeDef* hadc)
             (parameter "QueueInjectedContext" in injected channel configuration)
             and if a new injected context is set when queue is full (maximum 2
             contexts).
-  * @param  hadc: ADC handle
+  * @param hadc ADC handle
   * @retval None
   */
 __weak void HAL_ADCEx_InjectedQueueOverflowCallback(ADC_HandleTypeDef* hadc)
@@ -1180,7 +1169,7 @@ __weak void HAL_ADCEx_InjectedQueueOverflowCallback(ADC_HandleTypeDef* hadc)
 
 /**
   * @brief  Analog watchdog 2 callback in non-blocking mode.
-  * @param  hadc: ADC handle
+  * @param hadc ADC handle
   * @retval None
   */
 __weak void HAL_ADCEx_LevelOutOfWindow2Callback(ADC_HandleTypeDef* hadc)
@@ -1195,7 +1184,7 @@ __weak void HAL_ADCEx_LevelOutOfWindow2Callback(ADC_HandleTypeDef* hadc)
 
 /**
   * @brief  Analog watchdog 3 callback in non-blocking mode.
-  * @param  hadc: ADC handle
+  * @param hadc ADC handle
   * @retval None
   */
 __weak void HAL_ADCEx_LevelOutOfWindow3Callback(ADC_HandleTypeDef* hadc)
@@ -1211,7 +1200,7 @@ __weak void HAL_ADCEx_LevelOutOfWindow3Callback(ADC_HandleTypeDef* hadc)
 
 /**
   * @brief  End Of Sampling callback in non-blocking mode.
-  * @param  hadc: ADC handle
+  * @param hadc ADC handle
   * @retval None
   */
 __weak void HAL_ADCEx_EndOfSamplingCallback(ADC_HandleTypeDef* hadc)
@@ -1225,12 +1214,11 @@ __weak void HAL_ADCEx_EndOfSamplingCallback(ADC_HandleTypeDef* hadc)
 }
 
 
-
 /**
   * @brief  Stop ADC conversion of regular group (and injected channels in 
   *         case of auto_injection mode), disable ADC peripheral if no 
   *         conversion is on going on injected group.
-  * @param  hadc: ADC handle
+  * @param hadc ADC handle
   * @retval HAL status.
   */
 HAL_StatusTypeDef HAL_ADCEx_RegularStop(ADC_HandleTypeDef* hadc)
@@ -1261,9 +1249,10 @@ HAL_StatusTypeDef HAL_ADCEx_RegularStop(ADC_HandleTypeDef* hadc)
       /* Check if ADC is effectively disabled */
       if (tmp_hal_status == HAL_OK)
       {
-        /* Change ADC state */
-        /* Clear HAL_ADC_STATE_INJ_BUSY bit, set HAL_ADC_STATE_READY bit */
-        ADC_STATE_CLR_SET(hadc->State, HAL_ADC_STATE_INJ_BUSY, HAL_ADC_STATE_READY);
+        /* Set ADC state */
+        ADC_STATE_CLR_SET(hadc->State,
+                          HAL_ADC_STATE_INJ_BUSY,
+                          HAL_ADC_STATE_READY);
       }
     }
     /* Conversion on injected group is stopped, but ADC not disabled since    */
@@ -1287,7 +1276,7 @@ HAL_StatusTypeDef HAL_ADCEx_RegularStop(ADC_HandleTypeDef* hadc)
   *         disable interrution of end-of-conversion,
   *         disable ADC peripheral if no conversion is on going
   *         on injected group.
-  * @param  hadc: ADC handle
+  * @param hadc ADC handle
   * @retval HAL status.
   */
 HAL_StatusTypeDef HAL_ADCEx_RegularStop_IT(ADC_HandleTypeDef* hadc)
@@ -1320,9 +1309,10 @@ HAL_StatusTypeDef HAL_ADCEx_RegularStop_IT(ADC_HandleTypeDef* hadc)
       /* if no issue reported */
       if (tmp_hal_status == HAL_OK)
       {
-        /* Change ADC state */
-        /* Clear HAL_ADC_STATE_INJ_BUSY bit, set HAL_ADC_STATE_READY bit */
-        ADC_STATE_CLR_SET(hadc->State, HAL_ADC_STATE_INJ_BUSY, HAL_ADC_STATE_READY);
+        /* Set ADC state */
+        ADC_STATE_CLR_SET(hadc->State,
+                          HAL_ADC_STATE_INJ_BUSY,
+                          HAL_ADC_STATE_READY);
       }
     }
     else
@@ -1346,7 +1336,7 @@ HAL_StatusTypeDef HAL_ADCEx_RegularStop_IT(ADC_HandleTypeDef* hadc)
   * @note   HAL_ADCEx_RegularStop_DMA() function is dedicated to single-ADC mode only. 
   *         For multimode (when multimode feature is available), 
   *         HAL_ADCEx_RegularMultiModeStop_DMA() API must be used.
-  * @param  hadc: ADC handle
+  * @param hadc ADC handle
   * @retval HAL status.
   */
 HAL_StatusTypeDef HAL_ADCEx_RegularStop_DMA(ADC_HandleTypeDef* hadc)
@@ -1403,9 +1393,10 @@ HAL_StatusTypeDef HAL_ADCEx_RegularStop_DMA(ADC_HandleTypeDef* hadc)
       /* Check if ADC is effectively disabled */
       if (tmp_hal_status == HAL_OK)
       {
-        /* Change ADC state */
-        /* Clear HAL_ADC_STATE_INJ_BUSY bit, set HAL_ADC_STATE_READY bit */
-        ADC_STATE_CLR_SET(hadc->State, HAL_ADC_STATE_INJ_BUSY, HAL_ADC_STATE_READY);      
+        /* Set ADC state */
+        ADC_STATE_CLR_SET(hadc->State,
+                          HAL_ADC_STATE_INJ_BUSY,
+                          HAL_ADC_STATE_READY);
       }
     }
     else
@@ -1421,8 +1412,7 @@ HAL_StatusTypeDef HAL_ADCEx_RegularStop_DMA(ADC_HandleTypeDef* hadc)
   return tmp_hal_status;
 }
 
-
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || defined (STM32L496xx) || defined (STM32L4A6xx)  
+#if defined(ADC_MULTIMODE_SUPPORT)
 /**
   * @brief  Stop DMA-based multimode ADC conversion, disable ADC DMA transfer, disable ADC peripheral if no injected conversion is on-going.
   * @note   Multimode is kept enabled after this function. Multimode DMA bits
@@ -1433,7 +1423,7 @@ HAL_StatusTypeDef HAL_ADCEx_RegularStop_DMA(ADC_HandleTypeDef* hadc)
   * @note   In case of DMA configured in circular mode, function 
   *         HAL_ADCEx_RegularStop_DMA() must be called after this function with handle of
   *         ADC slave, to properly disable the DMA channel.
-  * @param  hadc: ADC handle of ADC master (handle of ADC slave must not be used)
+  * @param hadc ADC handle of ADC master (handle of ADC slave must not be used)
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_ADCEx_RegularMultiModeStop_DMA(ADC_HandleTypeDef* hadc)
@@ -1547,7 +1537,7 @@ HAL_StatusTypeDef HAL_ADCEx_RegularMultiModeStop_DMA(ADC_HandleTypeDef* hadc)
   /* Return function status */
   return tmp_hal_status;
 }
-#endif /* defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || defined (STM32L496xx) || defined (STM32L4A6xx) */
+#endif /* ADC_MULTIMODE_SUPPORT */
 
 /**
   * @}
@@ -1600,8 +1590,8 @@ HAL_StatusTypeDef HAL_ADCEx_RegularMultiModeStop_DMA(ADC_HandleTypeDef* hadc)
   *    for each context (3 channels x 2 contexts = 6 calls). Conversion can  
   *    start once the 1st context is set, that is after the first three 
   *    HAL_ADCEx_InjectedConfigChannel() calls. The 2nd context can be set on the fly.
-  * @param  hadc: ADC handle
-  * @param  sConfigInjected: Structure of ADC injected group and ADC channel for
+  * @param hadc ADC handle
+  * @param sConfigInjected Structure of ADC injected group and ADC channel for
   *         injected group.
   * @retval HAL status
   */
@@ -1621,7 +1611,7 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedConfigChannel(ADC_HandleTypeDef* hadc, ADC_I
   assert_param(IS_FUNCTIONAL_STATE(sConfigInjected->AutoInjectedConv));
   assert_param(IS_FUNCTIONAL_STATE(sConfigInjected->QueueInjectedContext));
   assert_param(IS_ADC_EXTTRIGINJEC_EDGE(sConfigInjected->ExternalTrigInjecConvEdge));
-  assert_param(IS_ADC_EXTTRIGINJEC(sConfigInjected->ExternalTrigInjecConv));
+  assert_param(IS_ADC_EXTTRIGINJEC(hadc, sConfigInjected->ExternalTrigInjecConv));
   assert_param(IS_ADC_OFFSET_NUMBER(sConfigInjected->InjectedOffsetNumber));
   assert_param(IS_ADC_RANGE(ADC_GET_RESOLUTION(hadc), sConfigInjected->InjectedOffset));
   assert_param(IS_FUNCTIONAL_STATE(sConfigInjected->InjecOversamplingMode));
@@ -1758,7 +1748,7 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedConfigChannel(ADC_HandleTypeDef* hadc, ADC_I
         tmp_JSQR_ContextQueueBeingBuilt = ((sConfigInjected->InjectedNbrOfConversion - (uint32_t)1) );
       }
       
-    } /* if (hadc->InjectionConfig.ChannelCount == 0) */
+    }
     
 
     /* 2. Continue setting of context under definition with parameter       */
@@ -1903,7 +1893,7 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedConfigChannel(ADC_HandleTypeDef* hadc, ADC_I
       /* - Set channel number                                                 */
       /* - Set offset value                                                   */
       MODIFY_REG(hadc->Instance->OFR1, 
-                ADC_OFR1_OFFSET1 | ADC_OFR1_OFFSET1_CH | ADC_OFR1_OFFSET1_EN, 
+                ADC_OFR_INJ_FIELDS,
                 ADC_OFR1_OFFSET1_EN | ADC_OFR_CHANNEL(sConfigInjected->InjectedChannel) | tmpOffsetShifted);                                    
       break;
     
@@ -1913,7 +1903,7 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedConfigChannel(ADC_HandleTypeDef* hadc, ADC_I
       /* - Set channel number                                                 */
       /* - Set offset value                                                   */
       MODIFY_REG(hadc->Instance->OFR2, 
-                ADC_OFR2_OFFSET2 | ADC_OFR2_OFFSET2_CH | ADC_OFR2_OFFSET2_EN, 
+                ADC_OFR_INJ_FIELDS,
                 ADC_OFR2_OFFSET2_EN | ADC_OFR_CHANNEL(sConfigInjected->InjectedChannel) | tmpOffsetShifted);                                     
       break;
     
@@ -1923,7 +1913,7 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedConfigChannel(ADC_HandleTypeDef* hadc, ADC_I
       /* - Set channel number                                                 */
       /* - Set offset value                                                   */
       MODIFY_REG(hadc->Instance->OFR3, 
-                ADC_OFR3_OFFSET3 | ADC_OFR3_OFFSET3_CH | ADC_OFR3_OFFSET3_EN, 
+                ADC_OFR_INJ_FIELDS,
                 ADC_OFR3_OFFSET3_EN | ADC_OFR_CHANNEL(sConfigInjected->InjectedChannel) | tmpOffsetShifted);                                   
       break;
     
@@ -1933,7 +1923,7 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedConfigChannel(ADC_HandleTypeDef* hadc, ADC_I
       /* - Set channel number                                                 */
       /* - Set offset value                                                   */
       MODIFY_REG(hadc->Instance->OFR4, 
-                ADC_OFR4_OFFSET4 | ADC_OFR4_OFFSET4_CH | ADC_OFR4_OFFSET4_EN, 
+                ADC_OFR_INJ_FIELDS,
                 ADC_OFR4_OFFSET4_EN | ADC_OFR_CHANNEL(sConfigInjected->InjectedChannel) | tmpOffsetShifted);                                  
       break;
     
@@ -1963,7 +1953,7 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedConfigChannel(ADC_HandleTypeDef* hadc, ADC_I
       break;
     }
   
-  } /* if (ADC_IS_CONVERSION_ONGOING_REGULAR_INJECTED(hadc) == RESET) */
+  }
   
   /* Parameters update conditioned to ADC state:                              */
   /* Parameters that can be updated only when ADC is disabled:                */
@@ -2065,7 +2055,7 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedConfigChannel(ADC_HandleTypeDef* hadc, ADC_I
       }
     }
     
-  } /* if (ADC_IS_ENABLE(hadc) == RESET) */
+  }
   
   /* Process unlocked */
   __HAL_UNLOCK(hadc);
@@ -2074,7 +2064,7 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedConfigChannel(ADC_HandleTypeDef* hadc, ADC_I
   return tmp_hal_status;
 }
 
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || defined (STM32L496xx) || defined (STM32L4A6xx)
+#if defined(ADC_MULTIMODE_SUPPORT)
 /**
   * @brief  Enable ADC multimode and configure multimode parameters
   * @note   Possibility to update parameters on the fly:
@@ -2087,8 +2077,8 @@ HAL_StatusTypeDef HAL_ADCEx_InjectedConfigChannel(ADC_HandleTypeDef* hadc, ADC_I
   *         "ADC_MultiModeTypeDef".
   * @note   To move back configuration from multimode to single mode, ADC must
   *         be reset (using function HAL_ADC_Init() ).
-  * @param  hadc: Master ADC handle
-  * @param  multimode : Structure of ADC multimode configuration
+  * @param hadc Master ADC handle
+  * @param multimode Structure of ADC multimode configuration
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_ADCEx_MultiModeConfigChannel(ADC_HandleTypeDef* hadc, ADC_MultiModeTypeDef* multimode)
@@ -2190,7 +2180,7 @@ HAL_StatusTypeDef HAL_ADCEx_MultiModeConfigChannel(ADC_HandleTypeDef* hadc, ADC_
   /* Return function status */
   return tmp_hal_status;
 } 
-#endif /* defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || defined (STM32L496xx) || defined (STM32L4A6xx) */
+#endif /* ADC_MULTIMODE_SUPPORT */
 
 /**
   * @brief  Enable Injected Queue
@@ -2198,7 +2188,7 @@ HAL_StatusTypeDef HAL_ADCEx_MultiModeConfigChannel(ADC_HandleTypeDef* hadc, ADC_
   *         Injected Queue. JQDIS can be written only when ADSTART and JDSTART
   *         are both equal to 0 to ensure that no regular nor injected 
   *         conversion is ongoing. 
-  * @param  hadc: ADC handle
+  * @param hadc ADC handle
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_ADCEx_EnableInjectedQueue(ADC_HandleTypeDef* hadc)
@@ -2225,7 +2215,7 @@ HAL_StatusTypeDef HAL_ADCEx_EnableInjectedQueue(ADC_HandleTypeDef* hadc)
   *         Injected Queue. JQDIS can be written only when ADSTART and JDSTART
   *         are both equal to 0 to ensure that no regular nor injected 
   *         conversion is ongoing. 
-  * @param  hadc: ADC handle
+  * @param hadc ADC handle
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_ADCEx_DisableInjectedQueue(ADC_HandleTypeDef* hadc)
@@ -2248,7 +2238,7 @@ HAL_StatusTypeDef HAL_ADCEx_DisableInjectedQueue(ADC_HandleTypeDef* hadc)
   *         be carried out only when ADC is disabled.
   * @note   To enable again the voltage regulator, the user is expected to 
   *         resort to HAL_ADC_Init() API.           
-  * @param  hadc: ADC handle
+  * @param hadc ADC handle
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_ADCEx_DisableVoltageRegulator(ADC_HandleTypeDef* hadc)
@@ -2278,7 +2268,7 @@ HAL_StatusTypeDef HAL_ADCEx_DisableVoltageRegulator(ADC_HandleTypeDef* hadc)
   *         resort to HAL_ADC_Init() API as well as to relaunch a calibration
   *         with HAL_ADCEx_Calibration_Start() API or to re-apply a previously
   *         saved calibration factor.
-  * @param  hadc: ADC handle
+  * @param hadc ADC handle
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_ADCEx_EnterADCDeepPowerDownMode(ADC_HandleTypeDef* hadc)

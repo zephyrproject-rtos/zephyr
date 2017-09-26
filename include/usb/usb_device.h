@@ -61,7 +61,8 @@ struct usb_setup_packet {
 /**
  * Callback function signature for the device
  */
-typedef void (*usb_status_callback)(enum usb_dc_status_code status_code);
+typedef void (*usb_status_callback)(enum usb_dc_status_code status_code,
+				    u8_t *param);
 
 /**
  * Callback function signature for the USB Endpoint status

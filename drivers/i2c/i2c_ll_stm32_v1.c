@@ -30,7 +30,7 @@ static inline void handle_sb(I2C_TypeDef *i2c, struct i2c_stm32_data *data)
 	u16_t saddr = data->slave_address;
 	u8_t slave;
 
-	if (data->dev_config.bits.use_10_bit_addr) {
+	if (I2C_ADDR_10_BITS & data->dev_config) {
 		slave = (((saddr & 0x0300) >> 7) & 0xFF);
 		u8_t header = slave | HEADER;
 
@@ -54,7 +54,7 @@ static inline void handle_sb(I2C_TypeDef *i2c, struct i2c_stm32_data *data)
 
 static inline void handle_addr(I2C_TypeDef *i2c, struct i2c_stm32_data *data)
 {
-	if (data->dev_config.bits.use_10_bit_addr) {
+	if (I2C_ADDR_10_BITS & data->dev_config) {
 		if (!data->current.is_write && data->current.is_restart) {
 			data->current.is_restart = 0;
 			LL_I2C_ClearFlag_ADDR(i2c);
@@ -307,7 +307,8 @@ s32_t stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 	while (!LL_I2C_IsActiveFlag_SB(i2c)) {
 		;
 	}
-	if (data->dev_config.bits.use_10_bit_addr) {
+
+	if (I2C_ADDR_10_BITS & data->dev_config) {
 		u8_t slave = (((saddr & 0x0300) >> 7) & 0xFF);
 		u8_t header = slave | HEADER;
 
@@ -366,7 +367,8 @@ s32_t stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 	while (!LL_I2C_IsActiveFlag_SB(i2c)) {
 		;
 	}
-	if (data->dev_config.bits.use_10_bit_addr) {
+
+	if (I2C_ADDR_10_BITS & data->dev_config) {
 		u8_t slave = (((saddr &	0x0300) >> 7) & 0xFF);
 		u8_t header = slave | HEADER;
 
@@ -457,7 +459,7 @@ s32_t stm32_i2c_configure_timing(struct device *dev, u32_t clock)
 	struct i2c_stm32_data *data = DEV_DATA(dev);
 	I2C_TypeDef *i2c = cfg->i2c;
 
-	switch (data->dev_config.bits.speed) {
+	switch (I2C_SPEED_GET(data->dev_config)) {
 	case I2C_SPEED_STANDARD:
 		LL_I2C_ConfigSpeed(i2c, clock, 100000, LL_I2C_DUTYCYCLE_2);
 		break;

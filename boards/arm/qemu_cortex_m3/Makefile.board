@@ -9,6 +9,6 @@ QEMU_arm = qemu-system-arm
 DEBUG_SCRIPT = qemu.sh
 
 debugserver: QEMU_EXTRA_FLAGS += -s -S
-debugserver: qemu
+debugserver: run
 
 export QEMU_FLAGS_arm QEMU_arm

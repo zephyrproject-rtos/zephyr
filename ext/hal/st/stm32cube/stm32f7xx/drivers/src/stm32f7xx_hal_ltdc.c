@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_ltdc.c
   * @author  MCD Application Team
-  * @version V1.2.0
-  * @date    30-December-2016
   * @brief   LTDC HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the LTDC peripheral:
@@ -82,7 +80,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -391,7 +389,7 @@ void HAL_LTDC_IRQHandler(LTDC_HandleTypeDef *hltdc)
       __HAL_UNLOCK(hltdc);
 
       /* Line interrupt Callback */
-      HAL_LTDC_LineEvenCallback(hltdc);
+      HAL_LTDC_LineEventCallback(hltdc);
     }
   }
   /* Register reload Interrupt management ***************************************/
@@ -439,13 +437,13 @@ __weak void HAL_LTDC_ErrorCallback(LTDC_HandleTypeDef *hltdc)
   *                the configuration information for the LTDC.
   * @retval None
   */
-__weak void HAL_LTDC_LineEvenCallback(LTDC_HandleTypeDef *hltdc)
+__weak void HAL_LTDC_LineEventCallback(LTDC_HandleTypeDef *hltdc)
 {
   /* Prevent unused argument(s) compilation warning */
   UNUSED(hltdc);
   
   /* NOTE : This function Should not be modified, when the callback is needed,
-            the HAL_LTDC_LineEvenCallback could be implemented in the user file
+            the HAL_LTDC_LineEventCallback could be implemented in the user file
    */
 }
 

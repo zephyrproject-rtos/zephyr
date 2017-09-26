@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32l4xx_ll_adc.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    21-April-2017
   * @brief   Header file of ADC LL module.
   ******************************************************************************
   * @attention
@@ -77,6 +75,9 @@ extern "C" {
 #define ADC_SQR4_REGOFFSET                 (0x00000300U)
 
 #define ADC_REG_SQRX_REGOFFSET_MASK        (ADC_SQR1_REGOFFSET | ADC_SQR2_REGOFFSET | ADC_SQR3_REGOFFSET | ADC_SQR4_REGOFFSET)
+#if defined(CORE_CM0PLUS)
+#define ADC_SQRX_REGOFFSET_POS             (8U) /* Position of bits ADC_SQRx_REGOFFSET in ADC_REG_SQRX_REGOFFSET_MASK */
+#endif
 #define ADC_REG_RANK_ID_SQRX_MASK          (ADC_CHANNEL_ID_NUMBER_MASK_POSBIT0)
 
 /* Definition of ADC group regular sequencer bits information to be inserted  */
@@ -114,6 +115,9 @@ extern "C" {
 
 #define ADC_INJ_JDRX_REGOFFSET_MASK        (ADC_JDR1_REGOFFSET | ADC_JDR2_REGOFFSET | ADC_JDR3_REGOFFSET | ADC_JDR4_REGOFFSET)
 #define ADC_INJ_RANK_ID_JSQR_MASK          (ADC_CHANNEL_ID_NUMBER_MASK_POSBIT0)
+#if defined(CORE_CM0PLUS)
+#define ADC_JDRX_REGOFFSET_POS             (8U) /* Position of bits ADC_JDRx_REGOFFSET in ADC_INJ_JDRX_REGOFFSET_MASK */
+#endif
 
 /* Definition of ADC group injected sequencer bits information to be inserted */
 /* into ADC group injected sequencer ranks literals definition.               */
@@ -208,6 +212,9 @@ extern "C" {
 #define ADC_SMPR1_REGOFFSET                (0x00000000U)
 #define ADC_SMPR2_REGOFFSET                (0x02000000U)
 #define ADC_CHANNEL_SMPRX_REGOFFSET_MASK   (ADC_SMPR1_REGOFFSET | ADC_SMPR2_REGOFFSET)
+#if defined(CORE_CM0PLUS)
+#define ADC_SMPRX_REGOFFSET_POS            (25U) /* Position of bits ADC_SMPRx_REGOFFSET in ADC_CHANNEL_SMPRX_REGOFFSET_MASK */
+#endif
 
 #define ADC_CHANNEL_SMPx_BITOFFSET_MASK    (0x01F00000U)
 #define ADC_CHANNEL_SMPx_BITOFFSET_POS     (20U)           /* Value equivalent to POSITION_VAL(ADC_CHANNEL_SMPx_BITOFFSET_MASK) */
@@ -289,7 +296,11 @@ extern "C" {
 #define ADC_SINGLEDIFF_CALIB_FACTOR_MASK   (ADC_CALFACT_CALFACT_D | ADC_CALFACT_CALFACT_S)
 #define ADC_SINGLEDIFF_CHANNEL_MASK        (ADC_CHANNEL_ID_BITFIELD_MASK) /* Equivalent to ADC_DIFSEL_DIFSEL */
 #define ADC_SINGLEDIFF_CHANNEL_SHIFT_MASK  (ADC_CALFACT_CALFACT_S_5) /* Bit chosen to perform of shift when single mode is selected, shift value out of channels bits range. */
-
+#if defined(CORE_CM0PLUS)
+#define ADC_SINGLEDIFF_CALIB_F_BIT_D_MASK   (0x00010000U)                           /* Selection of 1 bit to discriminate differential mode: mask of bit */
+#define ADC_SINGLEDIFF_CALIB_F_BIT_D_POS    (16U)                                   /* Selection of 1 bit to discriminate differential mode: position of bit */
+#define ADC_SINGLEDIFF_CALIB_F_BIT_D_SHIFT4 (ADC_SINGLEDIFF_CALIB_F_BIT_D_POS - 4U) /* Shift of bit ADC_SINGLEDIFF_CALIB_F_BIT_D to position to perform a shift of 4 ranks */
+#endif
 
 /* Internal mask for ADC analog watchdog:                                     */
 /* To select into literals LL_ADC_AWD_CHANNELx_xxx the relevant bits for:     */
@@ -316,12 +327,19 @@ extern "C" {
 #define ADC_AWD_CR23_CHANNEL_MASK          (ADC_AWD2CR_AWD2CH)
 #define ADC_AWD_CR_ALL_CHANNEL_MASK        (ADC_AWD_CR1_CHANNEL_MASK | ADC_AWD_CR23_CHANNEL_MASK)
 
+#define ADC_AWD_CRX_REGOFFSET_POS          (20U) /* Position of bits ADC_AWD_CRx_REGOFFSET in ADC_AWD_CRX_REGOFFSET_MASK */
+
 /* Internal register offset for ADC analog watchdog threshold configuration */
 #define ADC_AWD_TR1_REGOFFSET              (ADC_AWD_CR1_REGOFFSET)
 #define ADC_AWD_TR2_REGOFFSET              (ADC_AWD_CR2_REGOFFSET)
 #define ADC_AWD_TR3_REGOFFSET              (ADC_AWD_CR3_REGOFFSET)
 #define ADC_AWD_TRX_REGOFFSET_MASK         (ADC_AWD_TR1_REGOFFSET | ADC_AWD_TR2_REGOFFSET | ADC_AWD_TR3_REGOFFSET)
-
+#if defined(CORE_CM0PLUS)
+#define ADC_AWD_TRX_REGOFFSET_POS          (ADC_AWD_CRX_REGOFFSET_POS)     /* Position of bits ADC_SQRx_REGOFFSET in ADC_AWD_TRX_REGOFFSET_MASK */
+#define ADC_AWD_TRX_BIT_HIGH_MASK          (0x00010000U)                   /* Selection of 1 bit to discriminate threshold high: mask of bit */
+#define ADC_AWD_TRX_BIT_HIGH_POS           (16U)                           /* Selection of 1 bit to discriminate threshold high: position of bit */
+#define ADC_AWD_TRX_BIT_HIGH_SHIFT4        (ADC_AWD_TRX_BIT_HIGH_POS - 4U) /* Shift of bit ADC_AWD_TRX_BIT_HIGH to position to perform a shift of 4 ranks */
+#endif
 
 /* Internal mask for ADC offset:                                              */
 /* Internal register offset for ADC offset number configuration */
@@ -846,7 +864,7 @@ typedef struct
 /** @defgroup ADC_LL_EC_REG_CONTINUOUS_MODE  ADC group regular - Continuous mode
 * @{
 */
-#define LL_ADC_REG_CONV_SINGLE             (0x00000000U) /*!< ADC conversions are performed in single mode: one conversion per trigger */
+#define LL_ADC_REG_CONV_SINGLE             (0x00000000U)           /*!< ADC conversions are performed in single mode: one conversion per trigger */
 #define LL_ADC_REG_CONV_CONTINUOUS         (ADC_CFGR_CONT)         /*!< ADC conversions are performed in continuous mode: after the first trigger, following conversions launched successively automatically */
 /**
   * @}
@@ -855,23 +873,23 @@ typedef struct
 /** @defgroup ADC_LL_EC_REG_DMA_TRANSFER  ADC group regular - DMA transfer of ADC conversion data
   * @{
   */
-#define LL_ADC_REG_DMA_TRANSFER_NONE       (0x00000000U)              /*!< ADC conversions are not transferred by DMA */
+#define LL_ADC_REG_DMA_TRANSFER_NONE       (0x00000000U)                        /*!< ADC conversions are not transferred by DMA */
 #define LL_ADC_REG_DMA_TRANSFER_LIMITED    (                  ADC_CFGR_DMAEN)   /*!< ADC conversion data are transferred by DMA, in limited mode (one shot mode): DMA transfer requests are stopped when number of DMA data transfers (number of ADC conversions) is reached. This ADC mode is intended to be used with DMA mode non-circular. */
 #define LL_ADC_REG_DMA_TRANSFER_UNLIMITED  (ADC_CFGR_DMACFG | ADC_CFGR_DMAEN)   /*!< ADC conversion data are transferred by DMA, in unlimited mode: DMA transfer requests are unlimited, whatever number of DMA data transferred (number of ADC conversions). This ADC mode is intended to be used with DMA mode circular. */
 /**
   * @}
   */
 
-#if defined(ADC_CFGR_DFSDMCFG)
+#if defined(ADC_CFGR_DFSDMCFG) &&defined(DFSDM1_Channel0)
 /** @defgroup ADC_LL_EC_REG_DFSDM_TRANSFER ADC group regular - DFSDM transfer of ADC conversion data
   * @{
   */
-#define LL_ADC_REG_DFSDM_TRANSFER_NONE     (0x00000000U) /*!< ADC conversions are not transferred by DFSDM. */
+#define LL_ADC_REG_DFSDM_TRANSFER_NONE     (0x00000000U)           /*!< ADC conversions are not transferred by DFSDM. */
 #define LL_ADC_REG_DFSDM_TRANSFER_ENABLE   (ADC_CFGR_DFSDMCFG)     /*!< ADC conversion data are transfered to DFSDM for post processing. The ADC conversion data format must be 16-bit signed and right aligned, refer to reference manual. DFSDM transfer cannot be used if DMA transfer is enabled. */
 /**
   * @}
   */
-#endif /* ADC_CFGR_DFSDMCFG */
+#endif
 
 #if defined(ADC_SMPR1_SMPPLUS)
 /** @defgroup ADC_LL_EC_SAMPLINGTIME_COMMON_CONFIG ADC instance - ADC sampling time common configuration
@@ -882,12 +900,12 @@ typedef struct
 /**
   * @}
   */
-#endif /* ADC_SMPR1_SMPPLUS */
+#endif
 
 /** @defgroup ADC_LL_EC_REG_OVR_DATA_BEHAVIOR  ADC group regular - Overrun behavior on conversion data
 * @{
 */
-#define LL_ADC_REG_OVR_DATA_PRESERVED      (0x00000000U)/*!< ADC group regular behavior in case of overrun: data preserved */
+#define LL_ADC_REG_OVR_DATA_PRESERVED      (0x00000000U)          /*!< ADC group regular behavior in case of overrun: data preserved */
 #define LL_ADC_REG_OVR_DATA_OVERWRITTEN    (ADC_CFGR_OVRMOD)      /*!< ADC group regular behavior in case of overrun: data overwritten */
 /**
   * @}
@@ -896,7 +914,7 @@ typedef struct
 /** @defgroup ADC_LL_EC_REG_SEQ_SCAN_LENGTH  ADC group regular - Sequencer scan length
   * @{
   */
-#define LL_ADC_REG_SEQ_SCAN_DISABLE        (0x00000000U)                                     /*!< ADC group regular sequencer disable (equivalent to sequencer of 1 rank: ADC conversion on only 1 channel) */
+#define LL_ADC_REG_SEQ_SCAN_DISABLE        (0x00000000U)                                               /*!< ADC group regular sequencer disable (equivalent to sequencer of 1 rank: ADC conversion on only 1 channel) */
 #define LL_ADC_REG_SEQ_SCAN_ENABLE_2RANKS  (                                             ADC_SQR1_L_0) /*!< ADC group regular sequencer enable with 2 ranks in the sequence */
 #define LL_ADC_REG_SEQ_SCAN_ENABLE_3RANKS  (                              ADC_SQR1_L_1               ) /*!< ADC group regular sequencer enable with 3 ranks in the sequence */
 #define LL_ADC_REG_SEQ_SCAN_ENABLE_4RANKS  (                              ADC_SQR1_L_1 | ADC_SQR1_L_0) /*!< ADC group regular sequencer enable with 4 ranks in the sequence */
@@ -919,7 +937,7 @@ typedef struct
 /** @defgroup ADC_LL_EC_REG_SEQ_DISCONT_MODE  ADC group regular - Sequencer discontinuous mode
   * @{
   */
-#define LL_ADC_REG_SEQ_DISCONT_DISABLE     (0x00000000U)                                                          /*!< ADC group regular sequencer discontinuous mode disable */
+#define LL_ADC_REG_SEQ_DISCONT_DISABLE     (0x00000000U)                                                                /*!< ADC group regular sequencer discontinuous mode disable */
 #define LL_ADC_REG_SEQ_DISCONT_1RANK       (                                                               ADC_CFGR_DISCEN) /*!< ADC group regular sequencer discontinuous mode enable with sequence interruption every rank */
 #define LL_ADC_REG_SEQ_DISCONT_2RANKS      (                                          ADC_CFGR_DISCNUM_0 | ADC_CFGR_DISCEN) /*!< ADC group regular sequencer discontinuous mode enabled with sequence interruption every 2 ranks */
 #define LL_ADC_REG_SEQ_DISCONT_3RANKS      (                     ADC_CFGR_DISCNUM_1                      | ADC_CFGR_DISCEN) /*!< ADC group regular sequencer discontinuous mode enable with sequence interruption every 3 ranks */
@@ -992,7 +1010,7 @@ typedef struct
 /** @defgroup ADC_LL_EC_INJ_TRIG_AUTO  ADC group injected - Automatic trigger mode
 * @{
 */
-#define LL_ADC_INJ_TRIG_INDEPENDENT        (0x00000000U)/*!< ADC group injected conversion trigger independent. Setting mandatory if ADC group injected injected trigger source is set to an external trigger. */
+#define LL_ADC_INJ_TRIG_INDEPENDENT        (0x00000000U)          /*!< ADC group injected conversion trigger independent. Setting mandatory if ADC group injected injected trigger source is set to an external trigger. */
 #define LL_ADC_INJ_TRIG_FROM_GRP_REGULAR   (ADC_CFGR_JAUTO)       /*!< ADC group injected conversion trigger from ADC group regular. Setting compliant only with group injected trigger source set to SW start, without any further action on  ADC group injected conversion start or stop: in this case, ADC group injected is controlled only from ADC group regular. */
 /**
   * @}
@@ -1001,7 +1019,7 @@ typedef struct
 /** @defgroup ADC_LL_EC_INJ_CONTEXT_QUEUE  ADC group injected - Context queue mode
   * @{
   */
-#define LL_ADC_INJ_QUEUE_2CONTEXTS_LAST_ACTIVE (0x00000000U)/* Group injected sequence context queue is enabled and can contain up to 2 contexts. When all contexts have been processed, the queue maintains the last context active perpetually. */
+#define LL_ADC_INJ_QUEUE_2CONTEXTS_LAST_ACTIVE (0x00000000U)          /* Group injected sequence context queue is enabled and can contain up to 2 contexts. When all contexts have been processed, the queue maintains the last context active perpetually. */
 #define LL_ADC_INJ_QUEUE_2CONTEXTS_END_EMPTY   (ADC_CFGR_JQM)         /* Group injected sequence context queue is enabled and can contain up to 2 contexts. When all contexts have been processed, the queue is empty and injected group triggers are disabled. */
 #define LL_ADC_INJ_QUEUE_DISABLE               (ADC_CFGR_JQDIS)       /* Group injected sequence context queue is disabled: only 1 sequence can be configured and is active perpetually. */
 /**
@@ -1011,7 +1029,7 @@ typedef struct
 /** @defgroup ADC_LL_EC_INJ_SEQ_SCAN_LENGTH  ADC group injected - Sequencer scan length
   * @{
   */
-#define LL_ADC_INJ_SEQ_SCAN_DISABLE        (0x00000000U)         /*!< ADC group injected sequencer disable (equivalent to sequencer of 1 rank: ADC conversion on only 1 channel) */
+#define LL_ADC_INJ_SEQ_SCAN_DISABLE        (0x00000000U)                   /*!< ADC group injected sequencer disable (equivalent to sequencer of 1 rank: ADC conversion on only 1 channel) */
 #define LL_ADC_INJ_SEQ_SCAN_ENABLE_2RANKS  (                ADC_JSQR_JL_0) /*!< ADC group injected sequencer enable with 2 ranks in the sequence */
 #define LL_ADC_INJ_SEQ_SCAN_ENABLE_3RANKS  (ADC_JSQR_JL_1                ) /*!< ADC group injected sequencer enable with 3 ranks in the sequence */
 #define LL_ADC_INJ_SEQ_SCAN_ENABLE_4RANKS  (ADC_JSQR_JL_1 | ADC_JSQR_JL_0) /*!< ADC group injected sequencer enable with 4 ranks in the sequence */
@@ -1022,7 +1040,7 @@ typedef struct
 /** @defgroup ADC_LL_EC_INJ_SEQ_DISCONT_MODE  ADC group injected - Sequencer discontinuous mode
   * @{
   */
-#define LL_ADC_INJ_SEQ_DISCONT_DISABLE     (0x00000000U)/*!< ADC group injected sequencer discontinuous mode disable */
+#define LL_ADC_INJ_SEQ_DISCONT_DISABLE     (0x00000000U)          /*!< ADC group injected sequencer discontinuous mode disable */
 #define LL_ADC_INJ_SEQ_DISCONT_1RANK       (ADC_CFGR_JDISCEN)     /*!< ADC group injected sequencer discontinuous mode enable with sequence interruption every rank */
 /**
   * @}
@@ -1077,7 +1095,7 @@ typedef struct
 /** @defgroup ADC_LL_EC_AWD_CHANNELS  Analog watchdog - Monitored channels
   * @{
   */
-#define LL_ADC_AWD_DISABLE                 (0x00000000U)                                                                             /*!< ADC analog watchdog monitoring disabled */
+#define LL_ADC_AWD_DISABLE                 (0x00000000U)                                                                                       /*!< ADC analog watchdog monitoring disabled */
 #define LL_ADC_AWD_ALL_CHANNELS_REG        (ADC_AWD_CR23_CHANNEL_MASK                                    | ADC_CFGR_AWD1EN                   ) /*!< ADC analog watchdog monitoring of all channels, converted by group regular only */
 #define LL_ADC_AWD_ALL_CHANNELS_INJ        (ADC_AWD_CR23_CHANNEL_MASK                 | ADC_CFGR_JAWD1EN                                     ) /*!< ADC analog watchdog monitoring of all channels, converted by group injected only */
 #define LL_ADC_AWD_ALL_CHANNELS_REG_INJ    (ADC_AWD_CR23_CHANNEL_MASK                 | ADC_CFGR_JAWD1EN | ADC_CFGR_AWD1EN                   ) /*!< ADC analog watchdog monitoring of all channels, converted by either group regular or injected */
@@ -1187,7 +1205,7 @@ typedef struct
 /** @defgroup ADC_LL_EC_OVS_SCOPE  Oversampling - Oversampling scope
   * @{
   */
-#define LL_ADC_OVS_DISABLE                 (0x00000000U)                               /*!< ADC oversampling disabled. */
+#define LL_ADC_OVS_DISABLE                 (0x00000000U)                                         /*!< ADC oversampling disabled. */
 #define LL_ADC_OVS_GRP_REGULAR_CONTINUED   (                                    ADC_CFGR2_ROVSE) /*!< ADC oversampling on conversions of ADC group regular. If group injected interrupts group regular: when ADC group injected is triggered, the oversampling on ADC group regular is temporary stopped and continued afterwards. */
 #define LL_ADC_OVS_GRP_REGULAR_RESUMED     (ADC_CFGR2_ROVSM |                   ADC_CFGR2_ROVSE) /*!< ADC oversampling on conversions of ADC group regular. If group injected interrupts group regular: when ADC group injected is triggered, the oversampling on ADC group regular is resumed from start (oversampler buffer reset). */
 #define LL_ADC_OVS_GRP_INJECTED            (                  ADC_CFGR2_JOVSE                  ) /*!< ADC oversampling on conversions of ADC group injected. */
@@ -1199,7 +1217,7 @@ typedef struct
 /** @defgroup ADC_LL_EC_OVS_DISCONT_MODE  Oversampling - Discontinuous mode
   * @{
   */
-#define LL_ADC_OVS_REG_CONT                (0x00000000U)/*!< ADC oversampling discontinuous mode: continuous mode (all conversions of oversampling ratio are done from 1 trigger) */
+#define LL_ADC_OVS_REG_CONT                (0x00000000U)          /*!< ADC oversampling discontinuous mode: continuous mode (all conversions of oversampling ratio are done from 1 trigger) */
 #define LL_ADC_OVS_REG_DISCONT             (ADC_CFGR2_TROVS)      /*!< ADC oversampling discontinuous mode: discontinuous mode (each conversion of oversampling ratio needs a trigger) */
 /**
   * @}
@@ -1208,7 +1226,7 @@ typedef struct
 /** @defgroup ADC_LL_EC_OVS_RATIO  Oversampling - Ratio
   * @{
   */
-#define LL_ADC_OVS_RATIO_2                 (0x00000000U)                                  /*!< ADC oversampling ratio of 2 (2 ADC conversions are performed, sum of these conversions data is computed to result as the ADC oversampling conversion data (before potential shift) */
+#define LL_ADC_OVS_RATIO_2                 (0x00000000U)                                            /*!< ADC oversampling ratio of 2 (2 ADC conversions are performed, sum of these conversions data is computed to result as the ADC oversampling conversion data (before potential shift) */
 #define LL_ADC_OVS_RATIO_4                 (                                      ADC_CFGR2_OVSR_0) /*!< ADC oversampling ratio of 4 (4 ADC conversions are performed, sum of these conversions data is computed to result as the ADC oversampling conversion data (before potential shift) */
 #define LL_ADC_OVS_RATIO_8                 (                   ADC_CFGR2_OVSR_1                   ) /*!< ADC oversampling ratio of 8 (8 ADC conversions are performed, sum of these conversions data is computed to result as the ADC oversampling conversion data (before potential shift) */
 #define LL_ADC_OVS_RATIO_16                (                   ADC_CFGR2_OVSR_1 | ADC_CFGR2_OVSR_0) /*!< ADC oversampling ratio of 16 (16 ADC conversions are performed, sum of these conversions data is computed to result as the ADC oversampling conversion data (before potential shift) */
@@ -1223,7 +1241,7 @@ typedef struct
 /** @defgroup ADC_LL_EC_OVS_SHIFT  Oversampling - Data shift
   * @{
   */
-#define LL_ADC_OVS_SHIFT_NONE              (0x00000000U)                                                     /*!< ADC oversampling no shift (sum of the ADC conversions data is not divided to result as the ADC oversampling conversion data) */
+#define LL_ADC_OVS_SHIFT_NONE              (0x00000000U)                                                               /*!< ADC oversampling no shift (sum of the ADC conversions data is not divided to result as the ADC oversampling conversion data) */
 #define LL_ADC_OVS_SHIFT_RIGHT_1           (                                                         ADC_CFGR2_OVSS_0) /*!< ADC oversampling shift of 1 (sum of the ADC conversions data is divided by 2 to result as the ADC oversampling conversion data) */
 #define LL_ADC_OVS_SHIFT_RIGHT_2           (                                      ADC_CFGR2_OVSS_1                   ) /*!< ADC oversampling shift of 2 (sum of the ADC conversions data is divided by 4 to result as the ADC oversampling conversion data) */
 #define LL_ADC_OVS_SHIFT_RIGHT_3           (                                      ADC_CFGR2_OVSS_1 | ADC_CFGR2_OVSS_0) /*!< ADC oversampling shift of 3 (sum of the ADC conversions data is divided by 8 to result as the ADC oversampling conversion data) */
@@ -1240,7 +1258,7 @@ typedef struct
 /** @defgroup ADC_LL_EC_MULTI_MODE  Multimode - Mode
   * @{
   */
-#define LL_ADC_MULTI_INDEPENDENT           (0x00000000U)                                             /*!< ADC dual mode disabled (ADC independent mode) */
+#define LL_ADC_MULTI_INDEPENDENT           (0x00000000U)                                                       /*!< ADC dual mode disabled (ADC independent mode) */
 #define LL_ADC_MULTI_DUAL_REG_SIMULT       (                 ADC_CCR_DUAL_2 | ADC_CCR_DUAL_1                 ) /*!< ADC dual mode enabled: group regular simultaneous */
 #define LL_ADC_MULTI_DUAL_REG_INTERL       (                 ADC_CCR_DUAL_2 | ADC_CCR_DUAL_1 | ADC_CCR_DUAL_0) /*!< ADC dual mode enabled: Combined group regular interleaved */
 #define LL_ADC_MULTI_DUAL_INJ_SIMULT       (                 ADC_CCR_DUAL_2                  | ADC_CCR_DUAL_0) /*!< ADC dual mode enabled: group injected simultaneous */
@@ -1255,7 +1273,7 @@ typedef struct
 /** @defgroup ADC_LL_EC_MULTI_DMA_TRANSFER  Multimode - DMA transfer
   * @{
   */
-#define LL_ADC_MULTI_REG_DMA_EACH_ADC        (0x00000000U)                            /*!< ADC multimode group regular conversions are transferred by DMA: each ADC uses its own DMA channel, with its individual DMA transfer settings */
+#define LL_ADC_MULTI_REG_DMA_EACH_ADC        (0x00000000U)                                      /*!< ADC multimode group regular conversions are transferred by DMA: each ADC uses its own DMA channel, with its individual DMA transfer settings */
 #define LL_ADC_MULTI_REG_DMA_LIMIT_RES12_10B (                 ADC_CCR_MDMA_1                 ) /*!< ADC multimode group regular conversions are transferred by DMA, one DMA channel for both ADC (DMA of ADC master), in limited mode (one shot mode): DMA transfer requests are stopped when number of DMA data transfers (number of ADC conversions) is reached. This ADC mode is intended to be used with DMA mode non-circular. Setting for ADC resolution of 12 and 10 bits */
 #define LL_ADC_MULTI_REG_DMA_LIMIT_RES8_6B   (                 ADC_CCR_MDMA_1 | ADC_CCR_MDMA_0) /*!< ADC multimode group regular conversions are transferred by DMA, one DMA channel for both ADC (DMA of ADC master), in limited mode (one shot mode): DMA transfer requests are stopped when number of DMA data transfers (number of ADC conversions) is reached. This ADC mode is intended to be used with DMA mode non-circular. Setting for ADC resolution of 8 and 6 bits */
 #define LL_ADC_MULTI_REG_DMA_UNLMT_RES12_10B (ADC_CCR_DMACFG | ADC_CCR_MDMA_1                 ) /*!< ADC multimode group regular conversions are transferred by DMA, one DMA channel for both ADC (DMA of ADC master), in unlimited mode: DMA transfer requests are unlimited, whatever number of DMA data transferred (number of ADC conversions). This ADC mode is intended to be used with DMA mode circular. Setting for ADC resolution of 12 and 10 bits */
@@ -1267,7 +1285,7 @@ typedef struct
 /** @defgroup ADC_LL_EC_MULTI_TWOSMP_DELAY  Multimode - Delay between two sampling phases
   * @{
   */
-#define LL_ADC_MULTI_TWOSMP_DELAY_1CYCLE   (0x00000000U)                                                 /*!< ADC multimode delay between two sampling phases: 1 ADC clock cycle */
+#define LL_ADC_MULTI_TWOSMP_DELAY_1CYCLE   (0x00000000U)                                                           /*!< ADC multimode delay between two sampling phases: 1 ADC clock cycle */
 #define LL_ADC_MULTI_TWOSMP_DELAY_2CYCLES  (                                                      ADC_CCR_DELAY_0) /*!< ADC multimode delay between two sampling phases: 2 ADC clock cycles */
 #define LL_ADC_MULTI_TWOSMP_DELAY_3CYCLES  (                                    ADC_CCR_DELAY_1                  ) /*!< ADC multimode delay between two sampling phases: 3 ADC clock cycles */
 #define LL_ADC_MULTI_TWOSMP_DELAY_4CYCLES  (                                    ADC_CCR_DELAY_1 | ADC_CCR_DELAY_0) /*!< ADC multimode delay between two sampling phases: 4 ADC clock cycles */
@@ -1490,7 +1508,7 @@ typedef struct
   * @note   Example:
   *           __LL_ADC_DECIMAL_NB_TO_CHANNEL(4)
   *           will return a data equivalent to "LL_ADC_CHANNEL_4".
-  * @param  __DECIMAL_NB__: Value between Min_Data=0 and Max_Data=18
+  * @param  __DECIMAL_NB__ Value between Min_Data=0 and Max_Data=18
   * @retval Returned value can be one of the following values:
   *         @arg @ref LL_ADC_CHANNEL_0
   *         @arg @ref LL_ADC_CHANNEL_1            (7)
@@ -1993,8 +2011,13 @@ typedef struct
   * @param  __AWD_THRESHOLDS__ Value between Min_Data=0x00000000 and Max_Data=0xFFFFFFFF
   * @retval Value between Min_Data=0x000 and Max_Data=0xFFF
   */
+#if defined(CORE_CM0PLUS)
+#define __LL_ADC_ANALOGWD_THRESHOLDS_HIGH_LOW(__AWD_THRESHOLD_TYPE__, __AWD_THRESHOLDS__)       \
+  (((__AWD_THRESHOLDS__) >> (((__AWD_THRESHOLD_TYPE__) & ADC_AWD_TRX_BIT_HIGH_MASK) >> ADC_AWD_TRX_BIT_HIGH_SHIFT4)) & LL_ADC_AWD_THRESHOLD_LOW)
+#else
 #define __LL_ADC_ANALOGWD_THRESHOLDS_HIGH_LOW(__AWD_THRESHOLD_TYPE__, __AWD_THRESHOLDS__)       \
   (((__AWD_THRESHOLDS__) >> POSITION_VAL((__AWD_THRESHOLD_TYPE__))) & LL_ADC_AWD_THRESHOLD_LOW)
+#endif
 
 /**
   * @brief  Helper macro to set the ADC calibration value with both single ended
@@ -2009,8 +2032,13 @@ typedef struct
   * @param  __CALIB_FACTOR_DIFFERENTIAL__ Value between Min_Data=0x00 and Max_Data=0x7F
   * @retval Value between Min_Data=0x00000000 and Max_Data=0xFFFFFFFF
   */
+#if defined(CORE_CM0PLUS)
+#define __LL_ADC_CALIB_FACTOR_SINGLE_DIFF(__CALIB_FACTOR_SINGLE_ENDED__, __CALIB_FACTOR_DIFFERENTIAL__)        \
+  (((__CALIB_FACTOR_DIFFERENTIAL__) << ADC_CALFACT_CALFACT_D_Pos) | (__CALIB_FACTOR_SINGLE_ENDED__))
+#else
 #define __LL_ADC_CALIB_FACTOR_SINGLE_DIFF(__CALIB_FACTOR_SINGLE_ENDED__, __CALIB_FACTOR_DIFFERENTIAL__)        \
   (((__CALIB_FACTOR_DIFFERENTIAL__) << POSITION_VAL(ADC_CALFACT_CALFACT_D)) | (__CALIB_FACTOR_SINGLE_ENDED__))
+#endif
 
 #if defined(ADC_MULTIMODE_SUPPORT)
 /**
@@ -2166,7 +2194,7 @@ typedef struct
   *         internal voltage reference VrefInt.
   *         Otherwise, this macro performs the processing to scale
   *         ADC conversion data to 12 bits.
-  * @param  __VREFINT_ADC_DATA__: ADC conversion data (resolution 12 bits)
+  * @param  __VREFINT_ADC_DATA__ ADC conversion data (resolution 12 bits)
   *         of internal voltage reference VrefInt (unit: digital value).
   * @param  __ADC_RESOLUTION__ This parameter can be one of the following values:
   *         @arg @ref LL_ADC_RESOLUTION_12B
@@ -2559,9 +2587,15 @@ __STATIC_INLINE uint32_t LL_ADC_GetCommonPathInternalCh(ADC_Common_TypeDef *ADCx
   */
 __STATIC_INLINE void LL_ADC_SetCalibrationFactor(ADC_TypeDef *ADCx, uint32_t SingleDiff, uint32_t CalibrationFactor)
 {
+#if defined(CORE_CM0PLUS)
+  MODIFY_REG(ADCx->CALFACT,
+             SingleDiff & ADC_SINGLEDIFF_CALIB_FACTOR_MASK,
+             CalibrationFactor << (((SingleDiff & ADC_SINGLEDIFF_CALIB_F_BIT_D_MASK) >> ADC_SINGLEDIFF_CALIB_F_BIT_D_SHIFT4) & ~(SingleDiff & ADC_CALFACT_CALFACT_S)));
+#else
   MODIFY_REG(ADCx->CALFACT,
              SingleDiff & ADC_SINGLEDIFF_CALIB_FACTOR_MASK,
              CalibrationFactor << POSITION_VAL(SingleDiff & ADC_SINGLEDIFF_CALIB_FACTOR_MASK));
+#endif
 }
 
 /**
@@ -2586,7 +2620,11 @@ __STATIC_INLINE uint32_t LL_ADC_GetCalibrationFactor(ADC_TypeDef *ADCx, uint32_t
   /* "SingleDiff".                                                            */
   /* Parameter used with mask "ADC_SINGLEDIFF_CALIB_FACTOR_MASK" because      */
   /* containing other bits reserved for other purpose.                        */
+#if defined(CORE_CM0PLUS)
+  return (uint32_t)(READ_BIT(ADCx->CALFACT, (SingleDiff & ADC_SINGLEDIFF_CALIB_FACTOR_MASK)) >> ((SingleDiff & ADC_SINGLEDIFF_CALIB_F_BIT_D_MASK) >> ADC_SINGLEDIFF_CALIB_F_BIT_D_SHIFT4));
+#else
   return (uint32_t)(READ_BIT(ADCx->CALFACT, (SingleDiff & ADC_SINGLEDIFF_CALIB_FACTOR_MASK)) >> POSITION_VAL(SingleDiff & ADC_SINGLEDIFF_CALIB_FACTOR_MASK));
+#endif
 }
 
 /**
@@ -3204,7 +3242,6 @@ __STATIC_INLINE uint32_t LL_ADC_REG_GetTriggerEdge(ADC_TypeDef *ADCx)
   return (uint32_t)(READ_BIT(ADCx->CFGR, ADC_CFGR_EXTEN));
 }
 
-
 /**
   * @brief  Set ADC group regular sequencer length and scan direction.
   * @note   Description of ADC group regular sequencer features:
@@ -3473,11 +3510,15 @@ __STATIC_INLINE void LL_ADC_REG_SetSequencerRanks(ADC_TypeDef *ADCx, uint32_t Ra
   /* in register and register position depending on parameter "Rank".         */
   /* Parameters "Rank" and "Channel" are used with masks because containing   */
   /* other bits reserved for other purpose.                                   */
+#if defined(CORE_CM0PLUS)
+  register uint32_t *preg = __ADC_PTR_REG_OFFSET(ADCx->SQR1, ((Rank & ADC_REG_SQRX_REGOFFSET_MASK) >> ADC_SQRX_REGOFFSET_POS));
+#else
   register uint32_t *preg = __ADC_PTR_REG_OFFSET(ADCx->SQR1, __ADC_MASK_SHIFT(Rank, ADC_REG_SQRX_REGOFFSET_MASK));
+#endif
   
   MODIFY_REG(*preg,
              ADC_CHANNEL_ID_NUMBER_MASK_POSBIT0 << (Rank & ADC_REG_RANK_ID_SQRX_MASK),
-             (Channel & ADC_CHANNEL_ID_NUMBER_MASK) >> (ADC_CHANNEL_ID_NUMBER_BITOFFSET_POS - (Rank & ADC_REG_RANK_ID_SQRX_MASK)));
+             ((Channel & ADC_CHANNEL_ID_NUMBER_MASK) >> ADC_CHANNEL_ID_NUMBER_BITOFFSET_POS) << (Rank & ADC_REG_RANK_ID_SQRX_MASK));
 }
 
 /**
@@ -3578,11 +3619,15 @@ __STATIC_INLINE void LL_ADC_REG_SetSequencerRanks(ADC_TypeDef *ADCx, uint32_t Ra
   */
 __STATIC_INLINE uint32_t LL_ADC_REG_GetSequencerRanks(ADC_TypeDef *ADCx, uint32_t Rank)
 {
+#if defined(CORE_CM0PLUS)
+  register uint32_t *preg = __ADC_PTR_REG_OFFSET(ADCx->SQR1, ((Rank & ADC_REG_SQRX_REGOFFSET_MASK) >> ADC_SQRX_REGOFFSET_POS));
+#else
   register uint32_t *preg = __ADC_PTR_REG_OFFSET(ADCx->SQR1, __ADC_MASK_SHIFT(Rank, ADC_REG_SQRX_REGOFFSET_MASK));
+#endif
   
-  return (uint32_t) (READ_BIT(*preg,
+  return (uint32_t) ((READ_BIT(*preg,
                               ADC_CHANNEL_ID_NUMBER_MASK_POSBIT0 << (Rank & ADC_REG_RANK_ID_SQRX_MASK))
-                     << (ADC_CHANNEL_ID_NUMBER_BITOFFSET_POS - (Rank & ADC_REG_RANK_ID_SQRX_MASK))
+                     >> (Rank & ADC_REG_RANK_ID_SQRX_MASK)) << ADC_CHANNEL_ID_NUMBER_BITOFFSET_POS
                     );
 }
 
@@ -3702,7 +3747,7 @@ __STATIC_INLINE uint32_t LL_ADC_REG_GetDMATransfer(ADC_TypeDef *ADCx)
   return (uint32_t)(READ_BIT(ADCx->CFGR, ADC_CFGR_DMAEN | ADC_CFGR_DMACFG));
 }
 
-#if defined(ADC_CFGR_DFSDMCFG)
+#if defined(ADC_CFGR_DFSDMCFG) &&defined(DFSDM1_Channel0)
 /**
   * @brief  Set ADC group regular conversion data transfer to DFSDM.
   * @note   DFSDM transfer cannot be used if DMA transfer is enabled.
@@ -3737,7 +3782,7 @@ __STATIC_INLINE uint32_t LL_ADC_REG_GetDFSDMTransfer(ADC_TypeDef *ADCx)
 {
   return (uint32_t)(READ_BIT(ADCx->CFGR, ADC_CFGR_DFSDMCFG));
 }
-#endif /* ADC_CFGR_DFSDMCFG */
+#endif
 
 /**
   * @brief  Set ADC group regular behavior in case of overrun:
@@ -4020,7 +4065,7 @@ __STATIC_INLINE uint32_t LL_ADC_INJ_GetSequencerDiscont(ADC_TypeDef *ADCx)
   *         TempSensor, ...), measurement paths to internal channels must be
   *         enabled separately.
   *         This can be done using function @ref LL_ADC_SetCommonPathInternalCh().
-  * @note   On this STM32 serie, some fast channels are available: fast analog inputs
+  * @note   On STM32L4, some fast channels are available: fast analog inputs
   *         coming from GPIO pads (ADC_IN1..5).
   * @note   On this STM32 serie, setting of this feature is conditioned to
   *         ADC state:
@@ -4083,8 +4128,8 @@ __STATIC_INLINE void LL_ADC_INJ_SetSequencerRanks(ADC_TypeDef *ADCx, uint32_t Ra
   /* Parameters "Rank" and "Channel" are used with masks because containing   */
   /* other bits reserved for other purpose.                                   */
   MODIFY_REG(ADCx->JSQR,
-             ADC_CHANNEL_ID_NUMBER_MASK >> (ADC_CHANNEL_ID_NUMBER_BITOFFSET_POS - (Rank & ADC_INJ_RANK_ID_JSQR_MASK)),
-             (Channel & ADC_CHANNEL_ID_NUMBER_MASK) >> (ADC_CHANNEL_ID_NUMBER_BITOFFSET_POS - (Rank & ADC_INJ_RANK_ID_JSQR_MASK)));
+             (ADC_CHANNEL_ID_NUMBER_MASK >> ADC_CHANNEL_ID_NUMBER_BITOFFSET_POS) << (Rank & ADC_INJ_RANK_ID_JSQR_MASK),
+             ((Channel & ADC_CHANNEL_ID_NUMBER_MASK) >> ADC_CHANNEL_ID_NUMBER_BITOFFSET_POS) << (Rank & ADC_INJ_RANK_ID_JSQR_MASK));
 }
 
 /**
@@ -4157,9 +4202,9 @@ __STATIC_INLINE void LL_ADC_INJ_SetSequencerRanks(ADC_TypeDef *ADCx, uint32_t Ra
   */
 __STATIC_INLINE uint32_t LL_ADC_INJ_GetSequencerRanks(ADC_TypeDef *ADCx, uint32_t Rank)
 {
-  return (uint32_t)(READ_BIT(ADCx->JSQR,
-                             ADC_CHANNEL_ID_NUMBER_MASK >> (ADC_CHANNEL_ID_NUMBER_BITOFFSET_POS - (Rank & ADC_INJ_RANK_ID_JSQR_MASK)))
-                    << (ADC_CHANNEL_ID_NUMBER_BITOFFSET_POS - (Rank & ADC_INJ_RANK_ID_JSQR_MASK))
+  return (uint32_t)((READ_BIT(ADCx->JSQR,
+                             (ADC_CHANNEL_ID_NUMBER_MASK >> ADC_CHANNEL_ID_NUMBER_BITOFFSET_POS) << (Rank & ADC_INJ_RANK_ID_JSQR_MASK))
+                    >> (Rank & ADC_INJ_RANK_ID_JSQR_MASK)) << ADC_CHANNEL_ID_NUMBER_BITOFFSET_POS
                    );
 }
 
@@ -4294,7 +4339,7 @@ __STATIC_INLINE uint32_t LL_ADC_INJ_GetQueueMode(ADC_TypeDef *ADCx)
   *         TempSensor, ...), measurement paths to internal channels must be
   *         enabled separately.
   *         This can be done using function @ref LL_ADC_SetCommonPathInternalCh().
-  * @note   On this STM32 serie, some fast channels are available: fast analog inputs
+  * @note   On STM32L4, some fast channels are available: fast analog inputs
   *         coming from GPIO pads (ADC_IN1..5).
   * @note   On this STM32 serie, setting of this feature is conditioned to
   *         ADC state:
@@ -4517,10 +4562,10 @@ __STATIC_INLINE void LL_ADC_INJ_ConfigQueueContext(ADC_TypeDef *ADCx,
              ADC_JSQR_JL          ,
              TriggerSource       |
              (ExternalTriggerEdge * ((TriggerSource != LL_ADC_INJ_TRIG_SOFTWARE))) |
-             ((Rank4_Channel & ADC_CHANNEL_ID_NUMBER_MASK) >> (ADC_CHANNEL_ID_NUMBER_BITOFFSET_POS - (LL_ADC_INJ_RANK_4 & ADC_INJ_RANK_ID_JSQR_MASK))) |
-             ((Rank3_Channel & ADC_CHANNEL_ID_NUMBER_MASK) >> (ADC_CHANNEL_ID_NUMBER_BITOFFSET_POS - (LL_ADC_INJ_RANK_3 & ADC_INJ_RANK_ID_JSQR_MASK))) |
-             ((Rank2_Channel & ADC_CHANNEL_ID_NUMBER_MASK) >> (ADC_CHANNEL_ID_NUMBER_BITOFFSET_POS - (LL_ADC_INJ_RANK_2 & ADC_INJ_RANK_ID_JSQR_MASK))) |
-             ((Rank1_Channel & ADC_CHANNEL_ID_NUMBER_MASK) >> (ADC_CHANNEL_ID_NUMBER_BITOFFSET_POS - (LL_ADC_INJ_RANK_1 & ADC_INJ_RANK_ID_JSQR_MASK))) |
+             (((Rank4_Channel & ADC_CHANNEL_ID_NUMBER_MASK) >> ADC_CHANNEL_ID_NUMBER_BITOFFSET_POS) << (LL_ADC_INJ_RANK_4 & ADC_INJ_RANK_ID_JSQR_MASK)) |
+             (((Rank3_Channel & ADC_CHANNEL_ID_NUMBER_MASK) >> ADC_CHANNEL_ID_NUMBER_BITOFFSET_POS) << (LL_ADC_INJ_RANK_3 & ADC_INJ_RANK_ID_JSQR_MASK)) |
+             (((Rank2_Channel & ADC_CHANNEL_ID_NUMBER_MASK) >> ADC_CHANNEL_ID_NUMBER_BITOFFSET_POS) << (LL_ADC_INJ_RANK_2 & ADC_INJ_RANK_ID_JSQR_MASK)) |
+             (((Rank1_Channel & ADC_CHANNEL_ID_NUMBER_MASK) >> ADC_CHANNEL_ID_NUMBER_BITOFFSET_POS) << (LL_ADC_INJ_RANK_1 & ADC_INJ_RANK_ID_JSQR_MASK)) |
              SequencerNbRanks
             );
 }
@@ -4638,11 +4683,19 @@ __STATIC_INLINE void LL_ADC_SetChannelSamplingTime(ADC_TypeDef *ADCx, uint32_t C
   /* in register and register position depending on parameter "Channel".      */
   /* Parameter "Channel" is used with masks because containing                */
   /* other bits reserved for other purpose.                                   */
+#if defined(CORE_CM0PLUS)
+  register uint32_t *preg = __ADC_PTR_REG_OFFSET(ADCx->SMPR1, ((Channel & ADC_CHANNEL_SMPRX_REGOFFSET_MASK) >> ADC_SMPRX_REGOFFSET_POS));
+  
+  MODIFY_REG(*preg,
+             ADC_SMPR1_SMP0 << ((Channel & ADC_CHANNEL_SMPx_BITOFFSET_MASK) >> ADC_CHANNEL_SMPx_BITOFFSET_POS),
+             SamplingTime   << ((Channel & ADC_CHANNEL_SMPx_BITOFFSET_MASK) >> ADC_CHANNEL_SMPx_BITOFFSET_POS));
+#else
   register uint32_t *preg = __ADC_PTR_REG_OFFSET(ADCx->SMPR1, __ADC_MASK_SHIFT(Channel, ADC_CHANNEL_SMPRX_REGOFFSET_MASK));
   
   MODIFY_REG(*preg,
              ADC_SMPR1_SMP0 << __ADC_MASK_SHIFT(Channel, ADC_CHANNEL_SMPx_BITOFFSET_MASK),
              SamplingTime   << __ADC_MASK_SHIFT(Channel, ADC_CHANNEL_SMPx_BITOFFSET_MASK));
+#endif
 }
 
 /**
@@ -4730,12 +4783,21 @@ __STATIC_INLINE void LL_ADC_SetChannelSamplingTime(ADC_TypeDef *ADCx, uint32_t C
   */
 __STATIC_INLINE uint32_t LL_ADC_GetChannelSamplingTime(ADC_TypeDef *ADCx, uint32_t Channel)
 {
+#if defined(CORE_CM0PLUS)
+  register uint32_t *preg = __ADC_PTR_REG_OFFSET(ADCx->SMPR1, ((Channel & ADC_CHANNEL_SMPRX_REGOFFSET_MASK) >> ADC_SMPRX_REGOFFSET_POS));
+  
+  return (uint32_t)(READ_BIT(*preg,
+                             ADC_SMPR1_SMP0 << ((Channel & ADC_CHANNEL_SMPx_BITOFFSET_MASK) >> ADC_CHANNEL_SMPx_BITOFFSET_POS))
+                    >> ((Channel & ADC_CHANNEL_SMPx_BITOFFSET_MASK) >> ADC_CHANNEL_SMPx_BITOFFSET_POS)
+                   );
+#else
   register uint32_t *preg = __ADC_PTR_REG_OFFSET(ADCx->SMPR1, __ADC_MASK_SHIFT(Channel, ADC_CHANNEL_SMPRX_REGOFFSET_MASK));
   
   return (uint32_t)(READ_BIT(*preg,
                              ADC_SMPR1_SMP0 << __ADC_MASK_SHIFT(Channel, ADC_CHANNEL_SMPx_BITOFFSET_MASK))
                     >> __ADC_MASK_SHIFT(Channel, ADC_CHANNEL_SMPx_BITOFFSET_MASK)
                    );
+#endif
 }
 
 /**
@@ -4818,7 +4880,6 @@ __STATIC_INLINE void LL_ADC_SetChannelSingleDiff(ADC_TypeDef *ADCx, uint32_t Cha
   * @rmtoll DIFSEL   DIFSEL         LL_ADC_GetChannelSamplingTime
   * @param  ADCx ADC instance
   * @param  Channel This parameter can be a combination of the following values:
-  *         @arg @ref LL_ADC_CHANNEL_0
   *         @arg @ref LL_ADC_CHANNEL_1
   *         @arg @ref LL_ADC_CHANNEL_2
   *         @arg @ref LL_ADC_CHANNEL_3
@@ -4998,12 +5059,21 @@ __STATIC_INLINE void LL_ADC_SetAnalogWDMonitChannels(ADC_TypeDef *ADCx, uint32_t
   /* in register and register position depending on parameter "AWDy".         */
   /* Parameters "AWDChannelGroup" and "AWDy" are used with masks because      */
   /* containing other bits reserved for other purpose.                        */
+#if defined(CORE_CM0PLUS)
+  register uint32_t *preg = __ADC_PTR_REG_OFFSET(ADCx->CFGR, ((AWDy & ADC_AWD_CRX_REGOFFSET_MASK) >> ADC_AWD_CRX_REGOFFSET_POS)
+                                                             + ((AWDy & ADC_AWD_CR12_REGOFFSETGAP_MASK) * ADC_AWD_CR12_REGOFFSETGAP_VAL));
+  
+  MODIFY_REG(*preg,
+             (AWDy & ADC_AWD_CR_ALL_CHANNEL_MASK),
+             AWDChannelGroup & AWDy);
+#else
   register uint32_t *preg = __ADC_PTR_REG_OFFSET(ADCx->CFGR, __ADC_MASK_SHIFT(AWDy, ADC_AWD_CRX_REGOFFSET_MASK)
                                                              + ((AWDy & ADC_AWD_CR12_REGOFFSETGAP_MASK) * ADC_AWD_CR12_REGOFFSETGAP_VAL));
   
   MODIFY_REG(*preg,
              (AWDy & ADC_AWD_CR_ALL_CHANNEL_MASK),
              AWDChannelGroup & AWDy);
+#endif
 }
 
 /**
@@ -5130,51 +5200,59 @@ __STATIC_INLINE void LL_ADC_SetAnalogWDMonitChannels(ADC_TypeDef *ADCx, uint32_t
   */
 __STATIC_INLINE uint32_t LL_ADC_GetAnalogWDMonitChannels(ADC_TypeDef *ADCx, uint32_t AWDy)
 {
-  register uint32_t *preg = __ADC_PTR_REG_OFFSET(ADCx->CFGR, __ADC_MASK_SHIFT(AWDy, ADC_AWD_CRX_REGOFFSET_MASK)
+  register uint32_t *preg = __ADC_PTR_REG_OFFSET(ADCx->CFGR, ((AWDy & ADC_AWD_CRX_REGOFFSET_MASK) >> ADC_AWD_CRX_REGOFFSET_POS)
                                                              + ((AWDy & ADC_AWD_CR12_REGOFFSETGAP_MASK) * ADC_AWD_CR12_REGOFFSETGAP_VAL));
   
-  /* Variable "AWDy" used to retrieve appropriate bitfield corresponding to   */
-  /* ADC_AWD_CR1_CHANNEL_MASK or ADC_AWD_CR23_CHANNEL_MASK.                   */
-  register uint32_t AWD123ChannelGroup = READ_BIT(*preg, (AWDy | ADC_AWD_CR_ALL_CHANNEL_MASK));
+  register uint32_t AnalogWDMonitChannels = (READ_BIT(*preg, AWDy) & AWDy & ADC_AWD_CR_ALL_CHANNEL_MASK);
   
-  /* Set variable of AWD1 monitored channel according to AWD1 features        */
-  /* and ADC channel definition:                                              */
-  /* - channel ID with number                                                 */
-  /* - channel ID with bitfield                                               */
-  /* - AWD1 single or all channels                                            */
-  /* - AWD1 enable or disable (also used to discard AWD1 bitfield in case of  */
-  /*   AWD2 or AWD3 selected).                                                */
-  register uint32_t AWD1ChannelSingle = ((AWD123ChannelGroup & ADC_CFGR_AWD1SGL) >> ADC_CFGR_AWD1SGL_BITOFFSET_POS);
+  /* If "AnalogWDMonitChannels" == 0, then the selected AWD is disabled       */
+  /* (parameter value LL_ADC_AWD_DISABLE).                                    */
+  /* Else, the selected AWD is enabled and is monitoring a group of channels  */
+  /* or a single channel.                                                     */
+  if(AnalogWDMonitChannels != 0)
+  {
+    if(AWDy == LL_ADC_AWD1)
+    {
+      if((AnalogWDMonitChannels & ADC_CFGR_AWD1SGL) == 0)
+      {
+        /* AWD monitoring a group of channels */
+        AnalogWDMonitChannels = ((  AnalogWDMonitChannels
+                                  | (ADC_AWD_CR23_CHANNEL_MASK)
+                                 )
+                                 & (~(ADC_CFGR_AWD1CH))
+                                );
+      }
+      else
+      {
+        /* AWD monitoring a single channel */
+        AnalogWDMonitChannels = (AnalogWDMonitChannels
+                                 | (ADC_AWD2CR_AWD2CH_0 << (AnalogWDMonitChannels >> ADC_CFGR_AWD1CH_Pos))
+                                );
+      }
+    }
+    else
+    {
+      if((AnalogWDMonitChannels & ADC_AWD_CR23_CHANNEL_MASK) == ADC_AWD_CR23_CHANNEL_MASK)
+      {
+        /* AWD monitoring a group of channels */
+        AnalogWDMonitChannels = (  ADC_AWD_CR23_CHANNEL_MASK
+                                 | ((ADC_CFGR_JAWD1EN | ADC_CFGR_AWD1EN))
+                                );
+      }
+      else
+      {
+        /* AWD monitoring a single channel */
+        /* AWD monitoring a group of channels */
+        AnalogWDMonitChannels = (  AnalogWDMonitChannels
+                                 | (ADC_CFGR_JAWD1EN | ADC_CFGR_AWD1EN | ADC_CFGR_AWD1SGL)
+                                 | (__LL_ADC_CHANNEL_TO_DECIMAL_NB(AnalogWDMonitChannels) << ADC_CFGR_AWD1CH_Pos)
+                                );
+      }
+    }
+  }
   
-  register uint32_t AWD1ChannelGroup = ( (  AWD123ChannelGroup
-                                          | ((ADC_CHANNEL_0_BITFIELD << ((AWD123ChannelGroup & ADC_CHANNEL_ID_NUMBER_MASK) >> ADC_CHANNEL_ID_NUMBER_BITOFFSET_POS)) * AWD1ChannelSingle)
-                                          | (ADC_CHANNEL_ID_BITFIELD_MASK * (~AWD1ChannelSingle & 0x00000001U))
-                                         )
-                                        * (((AWD123ChannelGroup & ADC_CFGR_JAWD1EN) >> ADC_CFGR_JAWD1EN_BITOFFSET_POS) | ((AWD123ChannelGroup & ADC_CFGR_AWD1EN) >> ADC_CFGR_AWD1EN_BITOFFSET_POS))
-                                       );
-  
-  /* Set variable of AWD2 and AWD3 monitored channel according to AWD2-3      */
-  /* features and ADC channel definition:                                     */
-  /* - channel ID with number                                                 */
-  /* - channel ID with bitfield                                               */
-  /* - AWD2-3 single or all channels (shift value 32 (0x1 shift 5) used to    */
-  /*   shift AWD1 equivalent single-all channels out of register)             */
-  /* - AWD2-3 enable or disable                                               */
-  /* Note: Use modulo 3 to avoid a shift value too long. On AWD2 and AWD3,    */
-  /*       channel can be read back if only 1 channel monitoring              */
-  /*       is activated, therefore the channel monitoring value channel "3"   */
-  /*       is not not supported by this function, there is no risk of         */
-  /*       conflict.                                                          */
-  register uint32_t AWD23Enabled = ((0x00000001U >> (AWD123ChannelGroup % 3U)) << 6U); /* Value "0" if AWD2-3 is enabled, value "32" if AWD2-3 is disabled */
-  
-  register uint32_t AWD23ChannelGroup = (((  AWD123ChannelGroup
-                                           | ((uint32_t)POSITION_VAL(AWD123ChannelGroup) << ADC_CHANNEL_ID_NUMBER_BITOFFSET_POS)
-                                           | ((ADC_CFGR_AWD1SGL) >> ((0x00000001U >> (ADC_AWD_CR23_CHANNEL_MASK - AWD123ChannelGroup)) << 5U))
-                                           | (ADC_CFGR_JAWD1EN | ADC_CFGR_AWD1EN)
-                                          ) >> AWD23Enabled
-                                         ) >> (((AWDy & ADC_CFGR_AWD1SGL) >> ADC_CFGR_AWD1SGL_BITOFFSET_POS) << 5U));
-  
-  return (AWD1ChannelGroup | AWD23ChannelGroup);
+  return AnalogWDMonitChannels;
+
 }
 
 /**
@@ -5232,7 +5310,11 @@ __STATIC_INLINE void LL_ADC_ConfigAnalogWDThresholds(ADC_TypeDef *ADCx, uint32_t
   /* "AWDy".                                                                  */
   /* Parameters "AWDy" and "AWDThresholdxxxValue" are used with masks because */
   /* containing other bits reserved for other purpose.                        */
+#if defined(CORE_CM0PLUS)
+  register uint32_t *preg = __ADC_PTR_REG_OFFSET(ADCx->TR1, ((AWDy & ADC_AWD_TRX_REGOFFSET_MASK) >> ADC_AWD_TRX_REGOFFSET_POS));
+#else
   register uint32_t *preg = __ADC_PTR_REG_OFFSET(ADCx->TR1, __ADC_MASK_SHIFT(AWDy, ADC_AWD_TRX_REGOFFSET_MASK));
+#endif
   
   MODIFY_REG(*preg,
              ADC_TR1_HT1 | ADC_TR1_LT1,
@@ -5271,7 +5353,7 @@ __STATIC_INLINE void LL_ADC_ConfigAnalogWDThresholds(ADC_TypeDef *ADCx, uint32_t
   * @note   On this STM32 serie, setting of this feature is conditioned to
   *         ADC state:
   *         ADC must be disabled or enabled without conversion on going
-  *         on either groups regular or injected.
+  *         on either ADC groups regular or injected.
   * @rmtoll TR1      HT1            LL_ADC_SetAnalogWDThresholds\n
   *         TR2      HT2            LL_ADC_SetAnalogWDThresholds\n
   *         TR3      HT3            LL_ADC_SetAnalogWDThresholds\n
@@ -5286,7 +5368,7 @@ __STATIC_INLINE void LL_ADC_ConfigAnalogWDThresholds(ADC_TypeDef *ADCx, uint32_t
   * @param  AWDThresholdsHighLow This parameter can be one of the following values:
   *         @arg @ref LL_ADC_AWD_THRESHOLD_HIGH
   *         @arg @ref LL_ADC_AWD_THRESHOLD_LOW
-  * @param  AWDThresholdValue: Value between Min_Data=0x000 and Max_Data=0xFFF
+  * @param  AWDThresholdValue Value between Min_Data=0x000 and Max_Data=0xFFF
   * @retval None
   */
 __STATIC_INLINE void LL_ADC_SetAnalogWDThresholds(ADC_TypeDef *ADCx, uint32_t AWDy, uint32_t AWDThresholdsHighLow, uint32_t AWDThresholdValue)
@@ -5296,11 +5378,19 @@ __STATIC_INLINE void LL_ADC_SetAnalogWDThresholds(ADC_TypeDef *ADCx, uint32_t AW
   /* "AWDThresholdsHighLow" and "AWDy".                                       */
   /* Parameters "AWDy" and "AWDThresholdValue" are used with masks because    */
   /* containing other bits reserved for other purpose.                        */
+#if defined(CORE_CM0PLUS)
+  register uint32_t *preg = __ADC_PTR_REG_OFFSET(ADCx->TR1, ((AWDy & ADC_AWD_TRX_REGOFFSET_MASK) >> ADC_AWD_TRX_REGOFFSET_POS));
+  
+  MODIFY_REG(*preg,
+             AWDThresholdsHighLow,
+             AWDThresholdValue << ((AWDThresholdsHighLow & ADC_AWD_TRX_BIT_HIGH_MASK) >> ADC_AWD_TRX_BIT_HIGH_SHIFT4));
+#else
   register uint32_t *preg = __ADC_PTR_REG_OFFSET(ADCx->TR1, __ADC_MASK_SHIFT(AWDy, ADC_AWD_TRX_REGOFFSET_MASK));
   
   MODIFY_REG(*preg,
              AWDThresholdsHighLow,
              AWDThresholdValue << POSITION_VAL(AWDThresholdsHighLow));
+#endif
 }
 
 /**
@@ -5333,12 +5423,21 @@ __STATIC_INLINE void LL_ADC_SetAnalogWDThresholds(ADC_TypeDef *ADCx, uint32_t AW
 */
 __STATIC_INLINE uint32_t LL_ADC_GetAnalogWDThresholds(ADC_TypeDef *ADCx, uint32_t AWDy, uint32_t AWDThresholdsHighLow)
 {
+#if defined(CORE_CM0PLUS)
+  register uint32_t *preg = __ADC_PTR_REG_OFFSET(ADCx->TR1, ((AWDy & ADC_AWD_TRX_REGOFFSET_MASK) >> ADC_AWD_TRX_REGOFFSET_POS));
+  
+  return (uint32_t)(READ_BIT(*preg,
+                             (AWDThresholdsHighLow | ADC_TR1_LT1))
+                    >> (((AWDThresholdsHighLow & ADC_AWD_TRX_BIT_HIGH_MASK) >> ADC_AWD_TRX_BIT_HIGH_SHIFT4) & ~(AWDThresholdsHighLow & ADC_TR1_LT1))
+                   );
+#else
   register uint32_t *preg = __ADC_PTR_REG_OFFSET(ADCx->TR1, __ADC_MASK_SHIFT(AWDy, ADC_AWD_TRX_REGOFFSET_MASK));
   
   return (uint32_t)(READ_BIT(*preg,
                              (AWDThresholdsHighLow | ADC_TR1_LT1))
                     >> POSITION_VAL(AWDThresholdsHighLow)
                    );
+#endif
 }
 
 /**
@@ -6284,7 +6383,11 @@ __STATIC_INLINE uint32_t LL_ADC_INJ_IsStopConversionOngoing(ADC_TypeDef *ADCx)
   */
 __STATIC_INLINE uint32_t LL_ADC_INJ_ReadConversionData32(ADC_TypeDef *ADCx, uint32_t Rank)
 {
+#if defined(CORE_CM0PLUS)
+  register uint32_t *preg = __ADC_PTR_REG_OFFSET(ADCx->JDR1, ((Rank & ADC_INJ_JDRX_REGOFFSET_MASK) >> ADC_JDRX_REGOFFSET_POS));
+#else
   register uint32_t *preg = __ADC_PTR_REG_OFFSET(ADCx->JDR1, __ADC_MASK_SHIFT(Rank, ADC_INJ_JDRX_REGOFFSET_MASK));
+#endif
   
   return (uint32_t)(READ_BIT(*preg,
                              ADC_JDR1_JDATA)
@@ -6311,7 +6414,11 @@ __STATIC_INLINE uint32_t LL_ADC_INJ_ReadConversionData32(ADC_TypeDef *ADCx, uint
   */
 __STATIC_INLINE uint16_t LL_ADC_INJ_ReadConversionData12(ADC_TypeDef *ADCx, uint32_t Rank)
 {
+#if defined(CORE_CM0PLUS)
+  register uint32_t *preg = __ADC_PTR_REG_OFFSET(ADCx->JDR1, ((Rank & ADC_INJ_JDRX_REGOFFSET_MASK) >> ADC_JDRX_REGOFFSET_POS));
+#else
   register uint32_t *preg = __ADC_PTR_REG_OFFSET(ADCx->JDR1, __ADC_MASK_SHIFT(Rank, ADC_INJ_JDRX_REGOFFSET_MASK));
+#endif
   
   return (uint16_t)(READ_BIT(*preg,
                              ADC_JDR1_JDATA)
@@ -6338,7 +6445,11 @@ __STATIC_INLINE uint16_t LL_ADC_INJ_ReadConversionData12(ADC_TypeDef *ADCx, uint
   */
 __STATIC_INLINE uint16_t LL_ADC_INJ_ReadConversionData10(ADC_TypeDef *ADCx, uint32_t Rank)
 {
+#if defined(CORE_CM0PLUS)
+  register uint32_t *preg = __ADC_PTR_REG_OFFSET(ADCx->JDR1, ((Rank & ADC_INJ_JDRX_REGOFFSET_MASK) >> ADC_JDRX_REGOFFSET_POS));
+#else
   register uint32_t *preg = __ADC_PTR_REG_OFFSET(ADCx->JDR1, __ADC_MASK_SHIFT(Rank, ADC_INJ_JDRX_REGOFFSET_MASK));
+#endif
   
   return (uint16_t)(READ_BIT(*preg,
                              ADC_JDR1_JDATA)
@@ -6365,7 +6476,11 @@ __STATIC_INLINE uint16_t LL_ADC_INJ_ReadConversionData10(ADC_TypeDef *ADCx, uint
   */
 __STATIC_INLINE uint8_t LL_ADC_INJ_ReadConversionData8(ADC_TypeDef *ADCx, uint32_t Rank)
 {
+#if defined(CORE_CM0PLUS)
+  register uint32_t *preg = __ADC_PTR_REG_OFFSET(ADCx->JDR1, ((Rank & ADC_INJ_JDRX_REGOFFSET_MASK) >> ADC_JDRX_REGOFFSET_POS));
+#else
   register uint32_t *preg = __ADC_PTR_REG_OFFSET(ADCx->JDR1, __ADC_MASK_SHIFT(Rank, ADC_INJ_JDRX_REGOFFSET_MASK));
+#endif
   
   return (uint8_t)(READ_BIT(*preg,
                             ADC_JDR1_JDATA)
@@ -6392,7 +6507,11 @@ __STATIC_INLINE uint8_t LL_ADC_INJ_ReadConversionData8(ADC_TypeDef *ADCx, uint32
   */
 __STATIC_INLINE uint8_t LL_ADC_INJ_ReadConversionData6(ADC_TypeDef *ADCx, uint32_t Rank)
 {
+#if defined(CORE_CM0PLUS)
+  register uint32_t *preg = __ADC_PTR_REG_OFFSET(ADCx->JDR1, ((Rank & ADC_INJ_JDRX_REGOFFSET_MASK) >> ADC_JDRX_REGOFFSET_POS));
+#else
   register uint32_t *preg = __ADC_PTR_REG_OFFSET(ADCx->JDR1, __ADC_MASK_SHIFT(Rank, ADC_INJ_JDRX_REGOFFSET_MASK));
+#endif
   
   return (uint8_t)(READ_BIT(*preg,
                             ADC_JDR1_JDATA)

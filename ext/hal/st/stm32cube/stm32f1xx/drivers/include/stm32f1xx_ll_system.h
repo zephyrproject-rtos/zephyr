@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f1xx_ll_system.h
   * @author  MCD Application Team
-  * @version V1.1.0
-  * @date    14-April-2017
+  * @version V1.1.1
+  * @date    12-May-2017
   * @brief   Header file of SYSTEM LL module.
   @verbatim
   ==============================================================================
@@ -126,11 +126,12 @@ extern "C" {
 #if defined(DBGMCU_CR_DBG_TIM14_STOP)
 #define LL_DBGMCU_APB1_GRP1_TIM14_STOP     DBGMCU_CR_DBG_TIM14_STOP         /*!< TIM14 counter stopped when core is halted */
 #endif /* DBGMCU_CR_DBG_TIM14_STOP */
-#define LL_DBGMCU_APB1_GRP1_RTC_STOP       DBGMCU_CR_DBG_RTC_STOP           /*!< RTC counter stopped when core is halted */
 #define LL_DBGMCU_APB1_GRP1_WWDG_STOP      DBGMCU_CR_DBG_WWDG_STOP          /*!< Debug Window Watchdog stopped when Core is halted */
 #define LL_DBGMCU_APB1_GRP1_IWDG_STOP      DBGMCU_CR_DBG_IWDG_STOP          /*!< Debug Independent Watchdog stopped when Core is halted */
-#define LL_DBGMCU_APB1_GRP1_I2C1_STOP      DBGMCU_CR_DBG_I2C1_STOP          /*!< I2C1 SMBUS timeout mode stopped when Core is halted */
-#define LL_DBGMCU_APB1_GRP1_I2C2_STOP      DBGMCU_CR_DBG_I2C2_STOP          /*!< I2C2 SMBUS timeout mode stopped when Core is halted */
+#define LL_DBGMCU_APB1_GRP1_I2C1_STOP      DBGMCU_CR_DBG_I2C1_SMBUS_TIMEOUT /*!< I2C1 SMBUS timeout mode stopped when Core is halted */
+#if defined(DBGMCU_CR_DBG_I2C2_SMBUS_TIMEOUT)
+#define LL_DBGMCU_APB1_GRP1_I2C2_STOP      DBGMCU_CR_DBG_I2C2_SMBUS_TIMEOUT /*!< I2C2 SMBUS timeout mode stopped when Core is halted */
+#endif /* DBGMCU_CR_DBG_I2C2_SMBUS_TIMEOUT */
 #if defined(DBGMCU_CR_DBG_CAN1_STOP)
 #define LL_DBGMCU_APB1_GRP1_CAN1_STOP      DBGMCU_CR_DBG_CAN1_STOP          /*!< CAN1 debug stopped when Core is halted  */
 #endif /* DBGMCU_CR_DBG_CAN1_STOP */
@@ -352,11 +353,10 @@ __STATIC_INLINE uint32_t LL_DBGMCU_GetTracePinAssignment(void)
   *         @arg @ref LL_DBGMCU_APB1_GRP1_TIM12_STOP
   *         @arg @ref LL_DBGMCU_APB1_GRP1_TIM13_STOP
   *         @arg @ref LL_DBGMCU_APB1_GRP1_TIM14_STOP
-  *         @arg @ref LL_DBGMCU_APB1_GRP1_RTC_STOP
   *         @arg @ref LL_DBGMCU_APB1_GRP1_WWDG_STOP
   *         @arg @ref LL_DBGMCU_APB1_GRP1_IWDG_STOP
   *         @arg @ref LL_DBGMCU_APB1_GRP1_I2C1_STOP
-  *         @arg @ref LL_DBGMCU_APB1_GRP1_I2C2_STOP
+  *         @arg @ref LL_DBGMCU_APB1_GRP1_I2C2_STOP (*)
   *         @arg @ref LL_DBGMCU_APB1_GRP1_CAN1_STOP (*)
   *         @arg @ref LL_DBGMCU_APB1_GRP1_CAN2_STOP (*)
   *
@@ -400,7 +400,7 @@ __STATIC_INLINE void LL_DBGMCU_APB1_GRP1_FreezePeriph(uint32_t Periphs)
   *         @arg @ref LL_DBGMCU_APB1_GRP1_WWDG_STOP
   *         @arg @ref LL_DBGMCU_APB1_GRP1_IWDG_STOP
   *         @arg @ref LL_DBGMCU_APB1_GRP1_I2C1_STOP
-  *         @arg @ref LL_DBGMCU_APB1_GRP1_I2C2_STOP
+  *         @arg @ref LL_DBGMCU_APB1_GRP1_I2C2_STOP (*)
   *         @arg @ref LL_DBGMCU_APB1_GRP1_CAN1_STOP (*)
   *         @arg @ref LL_DBGMCU_APB1_GRP1_CAN2_STOP (*)
   *

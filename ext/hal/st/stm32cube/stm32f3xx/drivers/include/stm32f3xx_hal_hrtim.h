@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_hrtim.h
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   Header file of HRTIM HAL module.
   ******************************************************************************
   * @attention
@@ -1330,8 +1328,9 @@ typedef struct {
   * @brief Constants defining whether or not an external event is programmed in
            fast mode
   */
-#define HRTIM_EVENTFASTMODE_DISABLE         (0x00000000U)            /*!< External Event is acting asynchronously on outputs (low latency mode) */
-#define HRTIM_EVENTFASTMODE_ENABLE          (HRTIM_EECR1_EE1FAST)    /*!< External Event is re-synchronized by the HRTIM logic before acting on outputs */
+
+#define HRTIM_EVENTFASTMODE_ENABLE 	(0x00000000U) 		/*!< External Event is re-synchronized by the HRTIM logic before acting on outputs */
+#define HRTIM_EVENTFASTMODE_DISABLE 	(HRTIM_EECR1_EE1FAST) 	/*!< External Event is acting asynchronously on outputs (low latency mode) */
 /**
   * @}
   */
@@ -2363,7 +2362,7 @@ typedef struct {
                  ((TIMEVENTFILTER) == HRTIM_TIMEVENTFILTER_WINDOWINGCMP2)  || \
                  ((TIMEVENTFILTER) == HRTIM_TIMEVENTFILTER_WINDOWINGCMP3)  || \
                  ((TIMEVENTFILTER) == HRTIM_TIMEVENTFILTER_WINDOWINGTIM))
-
+				 				
 #define IS_HRTIM_TIMEVENTLATCH(TIMEVENTLATCH)\
               (((TIMEVENTLATCH) == HRTIM_TIMEVENTLATCH_DISABLED) || \
                ((TIMEVENTLATCH) == HRTIM_TIMEVENTLATCH_ENABLED))
@@ -2377,11 +2376,11 @@ typedef struct {
                  ((PRESCALERRATIO) == HRTIM_TIMDEADTIME_PRESCALERRATIO_DIV4) || \
                  ((PRESCALERRATIO) == HRTIM_TIMDEADTIME_PRESCALERRATIO_DIV8) || \
                  ((PRESCALERRATIO) == HRTIM_TIMDEADTIME_PRESCALERRATIO_DIV16))
-
+				
 #define IS_HRTIM_TIMDEADTIME_RISINGSIGN(RISINGSIGN)\
                 (((RISINGSIGN) == HRTIM_TIMDEADTIME_RISINGSIGN_POSITIVE)    || \
                  ((RISINGSIGN) == HRTIM_TIMDEADTIME_RISINGSIGN_NEGATIVE))
-
+				
 #define IS_HRTIM_TIMDEADTIME_RISINGLOCK(RISINGLOCK)\
                     (((RISINGLOCK) == HRTIM_TIMDEADTIME_RISINGLOCK_WRITE)    || \
                      ((RISINGLOCK) == HRTIM_TIMDEADTIME_RISINGLOCK_READONLY))
@@ -2529,7 +2528,7 @@ typedef struct {
         ((FILTER) == HRTIM_EVENTFILTER_13)    || \
         ((FILTER) == HRTIM_EVENTFILTER_14)    || \
         ((FILTER) == HRTIM_EVENTFILTER_15))))
-
+		
 #define IS_HRTIM_EVENTPRESCALER(EVENTPRESCALER)\
              (((EVENTPRESCALER) == HRTIM_EVENTPRESCALER_DIV1)  || \
               ((EVENTPRESCALER) == HRTIM_EVENTPRESCALER_DIV2)   || \
@@ -2670,11 +2669,11 @@ typedef struct {
     (((TIMER) == HRTIM_TIMERINDEX_TIMER_D) && (((BURSTDMA) & 0xFFE00000U) == 0x00000000U)) \
     ||                                                                                 \
     (((TIMER) == HRTIM_TIMERINDEX_TIMER_E) && (((BURSTDMA) & 0xFFE00000U) == 0x00000000U)))
-
+	
 #define IS_HRTIM_BURSTMODECTL(BURSTMODECTL)\
     (((BURSTMODECTL) == HRTIM_BURSTMODECTL_DISABLED)  || \
      ((BURSTMODECTL) == HRTIM_BURSTMODECTL_ENABLED))
-
+	
 #define IS_HRTIM_TIMERUPDATE(TIMERUPDATE) (((TIMERUPDATE) & 0xFFFFFFC0U) == 0x00000000U)
 
 #define IS_HRTIM_TIMERRESET(TIMERRESET) (((TIMERRESET) & 0xFFFFC0FFU) == 0x00000000U)
@@ -2701,14 +2700,14 @@ typedef struct {
   */
 
 /** @brief Reset HRTIM handle state
-  * @param  __HANDLE__: HRTIM handle.
+  * @param  __HANDLE__ HRTIM handle.
   * @retval None
   */
 #define __HAL_HRTIM_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = HAL_HRTIM_STATE_RESET)
 
 /** @brief  Enables or disables the timer counter(s)
-  * @param  __HANDLE__: specifies the HRTIM Handle.
-  * @param  __TIMERS__: timers to enable/disable
+  * @param  __HANDLE__ specifies the HRTIM Handle.
+  * @param  __TIMERS__ timers to enable/disable
   *        This parameter can be any combinations of the following values:
   *            @arg HRTIM_TIMERID_MASTER: Master timer identifier
   *            @arg HRTIM_TIMERID_TIMER_A: Timer A identifier
@@ -2771,8 +2770,8 @@ typedef struct {
   } while(0U)
 
 /** @brief  Enables or disables the specified HRTIM common interrupts.
-  * @param  __HANDLE__: specifies the HRTIM Handle.
-  * @param  __INTERRUPT__: specifies the interrupt source to enable or disable.
+  * @param  __HANDLE__ specifies the HRTIM Handle.
+  * @param  __INTERRUPT__ specifies the interrupt source to enable or disable.
   *        This parameter can be one of the following values:
   *            @arg HRTIM_IT_FLT1: Fault 1 interrupt enable
   *            @arg HRTIM_IT_FLT2: Fault 2 interrupt enable
@@ -2788,8 +2787,8 @@ typedef struct {
 #define __HAL_HRTIM_DISABLE_IT(__HANDLE__, __INTERRUPT__) ((__HANDLE__)->Instance->sCommonRegs.IER &= ~(__INTERRUPT__))
 
 /** @brief  Enables or disables the specified HRTIM Master timer interrupts.
-  * @param  __HANDLE__: specifies the HRTIM Handle.
-  * @param  __INTERRUPT__: specifies the interrupt source to enable or disable.
+  * @param  __HANDLE__ specifies the HRTIM Handle.
+  * @param  __INTERRUPT__ specifies the interrupt source to enable or disable.
   *        This parameter can be one of the following values:
   *            @arg HRTIM_MASTER_IT_MCMP1: Master compare 1 interrupt enable
   *            @arg HRTIM_MASTER_IT_MCMP2: Master compare 2 interrupt enable
@@ -2804,9 +2803,9 @@ typedef struct {
 #define __HAL_HRTIM_MASTER_DISABLE_IT(__HANDLE__, __INTERRUPT__) ((__HANDLE__)->Instance->sMasterRegs.MDIER &= ~(__INTERRUPT__))
 
 /** @brief  Enables or disables the specified HRTIM Timerx interrupts.
-  * @param  __HANDLE__: specifies the HRTIM Handle.
-  * @param  __TIMER__: specified the timing unit (Timer A to E)
-  * @param  __INTERRUPT__: specifies the interrupt source to enable or disable.
+  * @param  __HANDLE__ specifies the HRTIM Handle.
+  * @param  __TIMER__ specified the timing unit (Timer A to E)
+  * @param  __INTERRUPT__ specifies the interrupt source to enable or disable.
   *        This parameter can be one of the following values:
   *            @arg HRTIM_TIM_IT_CMP1: Timer compare 1 interrupt enable
   *            @arg HRTIM_TIM_IT_CMP2: Timer compare 2 interrupt enable
@@ -2828,8 +2827,8 @@ typedef struct {
 #define __HAL_HRTIM_TIMER_DISABLE_IT(__HANDLE__, __TIMER__, __INTERRUPT__) ((__HANDLE__)->Instance->sTimerxRegs[(__TIMER__)].TIMxDIER &= ~(__INTERRUPT__))
 
 /** @brief  Checks if the specified HRTIM common interrupt  source  is enabled or disabled.
-  * @param  __HANDLE__: specifies the HRTIM Handle.
-  * @param  __INTERRUPT__: specifies the interrupt source to check.
+  * @param  __HANDLE__ specifies the HRTIM Handle.
+  * @param  __INTERRUPT__ specifies the interrupt source to check.
   *        This parameter can be one of the following values:
   *            @arg HRTIM_IT_FLT1: Fault 1 interrupt enable
   *            @arg HRTIM_IT_FLT2: Fault 2 interrupt enable
@@ -2844,8 +2843,8 @@ typedef struct {
 #define __HAL_HRTIM_GET_ITSTATUS(__HANDLE__, __INTERRUPT__)     ((((__HANDLE__)->Instance->sCommonRegs.IER & (__INTERRUPT__)) == (__INTERRUPT__)) ? SET : RESET)
 
 /** @brief  Checks if the specified HRTIM Master interrupt source  is enabled or disabled.
-  * @param  __HANDLE__: specifies the HRTIM Handle.
-  * @param  __INTERRUPT__: specifies the interrupt source to check.
+  * @param  __HANDLE__ specifies the HRTIM Handle.
+  * @param  __INTERRUPT__ specifies the interrupt source to check.
   *        This parameter can be one of the following values:
   *            @arg HRTIM_MASTER_IT_MCMP1: Master compare 1 interrupt enable
   *            @arg HRTIM_MASTER_IT_MCMP2: Master compare 2 interrupt enable
@@ -2859,9 +2858,9 @@ typedef struct {
 #define __HAL_HRTIM_MASTER_GET_ITSTATUS(__HANDLE__, __INTERRUPT__)     ((((__HANDLE__)->Instance->sMasterRegs.MDIER & (__INTERRUPT__)) == (__INTERRUPT__)) ? SET : RESET)
 
 /** @brief  Checks if the specified HRTIM Timerx interrupt source  is enabled or disabled.
-  * @param  __HANDLE__: specifies the HRTIM Handle.
-  * @param  __TIMER__: specified the timing unit (Timer A to E)
-  * @param  __INTERRUPT__: specifies the interrupt source to check.
+  * @param  __HANDLE__ specifies the HRTIM Handle.
+  * @param  __TIMER__ specified the timing unit (Timer A to E)
+  * @param  __INTERRUPT__ specifies the interrupt source to check.
   *        This parameter can be one of the following values:
   *            @arg HRTIM_MASTER_IT_MCMP1: Master compare 1 interrupt enable
   *            @arg HRTIM_MASTER_IT_MCMP2: Master compare 2 interrupt enable
@@ -2889,8 +2888,8 @@ typedef struct {
 #define __HAL_HRTIM_TIMER_GET_ITSTATUS(__HANDLE__, __TIMER__, __INTERRUPT__)     ((((__HANDLE__)->Instance->sTimerxRegs[(__TIMER__)].TIMxDIER & (__INTERRUPT__)) == (__INTERRUPT__)) ? SET : RESET)
 
 /** @brief  Clears the specified HRTIM common pending flag.
-  * @param  __HANDLE__: specifies the HRTIM Handle.
-  * @param  __INTERRUPT__: specifies the interrupt pending bit to clear.
+  * @param  __HANDLE__ specifies the HRTIM Handle.
+  * @param  __INTERRUPT__ specifies the interrupt pending bit to clear.
   *        This parameter can be one of the following values:
   *            @arg HRTIM_IT_FLT1: Fault 1 interrupt clear flag
   *            @arg HRTIM_IT_FLT2: Fault 2 interrupt clear flag
@@ -2905,8 +2904,8 @@ typedef struct {
 #define __HAL_HRTIM_CLEAR_IT(__HANDLE__, __INTERRUPT__)   ((__HANDLE__)->Instance->sCommonRegs.ICR = (__INTERRUPT__))
 
 /** @brief  Clears the specified HRTIM Master pending flag.
-  * @param  __HANDLE__: specifies the HRTIM Handle.
-  * @param  __INTERRUPT__: specifies the interrupt pending bit to clear.
+  * @param  __HANDLE__ specifies the HRTIM Handle.
+  * @param  __INTERRUPT__ specifies the interrupt pending bit to clear.
   *        This parameter can be one of the following values:
   *            @arg HRTIM_MASTER_IT_MCMP1: Master compare 1 interrupt clear flag
   *            @arg HRTIM_MASTER_IT_MCMP2: Master compare 2 interrupt clear flag
@@ -2920,9 +2919,9 @@ typedef struct {
 #define __HAL_HRTIM_MASTER_CLEAR_IT(__HANDLE__, __INTERRUPT__)   ((__HANDLE__)->Instance->sMasterRegs.MICR = (__INTERRUPT__))
 
 /** @brief  Clears the specified HRTIM Timerx pending flag.
-  * @param  __HANDLE__: specifies the HRTIM Handle.
-  * @param  __TIMER__: specified the timing unit (Timer A to E)
-  * @param  __INTERRUPT__: specifies the interrupt pending bit to clear.
+  * @param  __HANDLE__ specifies the HRTIM Handle.
+  * @param  __TIMER__ specified the timing unit (Timer A to E)
+  * @param  __INTERRUPT__ specifies the interrupt pending bit to clear.
   *        This parameter can be one of the following values:
   *            @arg HRTIM_TIM_IT_CMP1: Timer compare 1 interrupt clear flag
   *            @arg HRTIM_TIM_IT_CMP2: Timer compare 2 interrupt clear flag
@@ -2944,8 +2943,8 @@ typedef struct {
 
 /* DMA HANDLING */
 /** @brief  Enables or disables the specified HRTIM common interrupts.
-  * @param  __HANDLE__: specifies the HRTIM Handle.
-  * @param  __INTERRUPT__: specifies the interrupt source to enable or disable.
+  * @param  __HANDLE__ specifies the HRTIM Handle.
+  * @param  __INTERRUPT__ specifies the interrupt source to enable or disable.
   *        This parameter can be one of the following values:
   *            @arg HRTIM_IT_FLT1: Fault 1 interrupt enable
   *            @arg HRTIM_IT_FLT2: Fault 2 interrupt enable
@@ -2961,8 +2960,8 @@ typedef struct {
 #define __HAL_HRTIM_DISABLE_IT(__HANDLE__, __INTERRUPT__) ((__HANDLE__)->Instance->sCommonRegs.IER &= ~(__INTERRUPT__))
 
 /** @brief  Enables or disables the specified HRTIM Master timer DMA requets.
-  * @param  __HANDLE__: specifies the HRTIM Handle.
-  * @param  __DMA__: specifies the DMA request to enable or disable.
+  * @param  __HANDLE__ specifies the HRTIM Handle.
+  * @param  __DMA__ specifies the DMA request to enable or disable.
   *        This parameter can be one of the following values:
   *            @arg HRTIM_MASTER_DMA_MCMP1: Master compare 1 DMA resquest enable
   *            @arg HRTIM_MASTER_DMA_MCMP2: Master compare 2 DMA resquest enable
@@ -2977,9 +2976,9 @@ typedef struct {
 #define __HAL_HRTIM_MASTER_DISABLE_DMA(__HANDLE__, __DMA__) ((__HANDLE__)->Instance->sMasterRegs.MDIER &= ~(__DMA__))
 
 /** @brief  Enables or disables the specified HRTIM Timerx DMA requests.
-  * @param  __HANDLE__: specifies the HRTIM Handle.
-  * @param  __TIMER__: specified the timing unit (Timer A to E)
-  * @param  __DMA__: specifies the DMA request to enable or disable.
+  * @param  __HANDLE__ specifies the HRTIM Handle.
+  * @param  __TIMER__ specified the timing unit (Timer A to E)
+  * @param  __DMA__ specifies the DMA request to enable or disable.
   *        This parameter can be one of the following values:
   *            @arg HRTIM_TIM_DMA_CMP1: Timer compare 1 DMA resquest enable
   *            @arg HRTIM_TIM_DMA_CMP2: Timer compare 2 DMA resquest enable
@@ -3010,12 +3009,12 @@ typedef struct {
 #define __HAL_HRTIM_TIMER_CLEAR_FLAG(__HANDLE__,  __TIMER__, __FLAG__)      ((__HANDLE__)->Instance->sTimerxRegs[(__TIMER__)].TIMxICR = (__FLAG__))
 
 /** @brief  Sets the HRTIM timer Counter Register value on runtime
-  * @param  __HANDLE__: HRTIM Handle.
-  * @param  __TIMER__: HRTIM timer
+  * @param  __HANDLE__ HRTIM Handle.
+  * @param  __TIMER__ HRTIM timer
   *                   This parameter can be one of the following values:
   *                   @arg 0x5 for master timer
   *                   @arg 0x0 to 0x4 for timers A to E
-  * @param  __COUNTER__: specifies the Counter Register new value.
+  * @param  __COUNTER__ specifies the Counter Register new value.
   * @retval None
   */
 #define __HAL_HRTIM_SETCOUNTER(__HANDLE__, __TIMER__, __COUNTER__) \
@@ -3023,8 +3022,8 @@ typedef struct {
    ((__HANDLE__)->Instance->sTimerxRegs[(__TIMER__)].CNTxR = (__COUNTER__)))
 
 /** @brief  Gets the HRTIM timer Counter Register value on runtime
-  * @param  __HANDLE__: HRTIM Handle.
-  * @param  __TIMER__: HRTIM timer
+  * @param  __HANDLE__ HRTIM Handle.
+  * @param  __TIMER__ HRTIM timer
   *                   This parameter can be one of the following values:
   *                   @arg 0x5 for master timer
   *                   @arg 0x0 to 0x4 for timers A to E
@@ -3035,12 +3034,12 @@ typedef struct {
    ((__HANDLE__)->Instance->sTimerxRegs[(__TIMER__)].CNTxR))
 
 /** @brief  Sets the HRTIM timer Period value on runtime
-  * @param  __HANDLE__: HRTIM Handle.
-  * @param  __TIMER__: HRTIM timer
+  * @param  __HANDLE__ HRTIM Handle.
+  * @param  __TIMER__ HRTIM timer
   *                   This parameter can be one of the following values:
   *                   @arg 0x5 for master timer
   *                   @arg 0x0 to 0x4 for timers A to E
-  * @param  __PERIOD__: specifies the Period Register new value.
+  * @param  __PERIOD__ specifies the Period Register new value.
   * @retval None
   */
 #define __HAL_HRTIM_SETPERIOD(__HANDLE__, __TIMER__, __PERIOD__) \
@@ -3048,8 +3047,8 @@ typedef struct {
    ((__HANDLE__)->Instance->sTimerxRegs[(__TIMER__)].PERxR = (__PERIOD__)))
 
 /** @brief  Gets the HRTIM timer Period Register value on runtime
-  * @param  __HANDLE__: HRTIM Handle.
-  * @param  __TIMER__: HRTIM timer
+  * @param  __HANDLE__ HRTIM Handle.
+  * @param  __TIMER__ HRTIM timer
   *                   This parameter can be one of the following values:
   *                   @arg 0x5 for master timer
   *                   @arg 0x0 to 0x4 for timers A to E
@@ -3060,12 +3059,12 @@ typedef struct {
    ((__HANDLE__)->Instance->sTimerxRegs[(__TIMER__)].PERxR))
 
 /** @brief  Sets the HRTIM timer clock prescaler value on runtime
-  * @param  __HANDLE__: HRTIM Handle.
-  * @param  __TIMER__: HRTIM timer
+  * @param  __HANDLE__ HRTIM Handle.
+  * @param  __TIMER__ HRTIM timer
   *                   This parameter can be one of the following values:
   *                   @arg 0x5 for master timer
   *                   @arg 0x0 to 0x4 for timers A to E
-  * @param  __PRESCALER__: specifies the clock prescaler new value.
+  * @param  __PRESCALER__ specifies the clock prescaler new value.
   *                   This parameter can be one of the following values:
   *                   @arg HRTIM_PRESCALERRATIO_MUL32: fHRCK: 4.608 GHz - Resolution: 217 ps - Min PWM frequency: 70.3 kHz (fHRTIM=144MHz)
   *                   @arg HRTIM_PRESCALERRATIO_MUL16: fHRCK: 2.304 GHz - Resolution: 434 ps - Min PWM frequency: 35.1 KHz (fHRTIM=144MHz)
@@ -3078,12 +3077,12 @@ typedef struct {
   * @retval None
   */
 #define __HAL_HRTIM_SETCLOCKPRESCALER(__HANDLE__, __TIMER__, __PRESCALER__) \
-  (((__TIMER__) == HRTIM_TIMERINDEX_MASTER) ? ((__HANDLE__)->Instance->sMasterRegs.MCR |= (__PRESCALER__)) :\
-   ((__HANDLE__)->Instance->sTimerxRegs[(__TIMER__)].TIMxCR |= (__PRESCALER__)))
+  (((__TIMER__) == HRTIM_TIMERINDEX_MASTER) ? (MODIFY_REG((__HANDLE__)->Instance->sMasterRegs.MCR, HRTIM_MCR_CK_PSC, (__PRESCALER__))) :\
+   (MODIFY_REG((__HANDLE__)->Instance->sTimerxRegs[(__TIMER__)].TIMxCR, HRTIM_TIMCR_CK_PSC, (__PRESCALER__))))
 
 /** @brief  Gets the HRTIM timer clock prescaler value on runtime
-  * @param  __HANDLE__: HRTIM Handle.
-  * @param  __TIMER__: HRTIM timer
+  * @param  __HANDLE__ HRTIM Handle.
+  * @param  __TIMER__ HRTIM timer
   *                   This parameter can be one of the following values:
   *                   @arg 0x5 for master timer
   *                   @arg 0x0 to 0x4 for timers A to E
@@ -3094,17 +3093,17 @@ typedef struct {
    ((__HANDLE__)->Instance->sTimerxRegs[(__TIMER__)].TIMxCR  & HRTIM_TIMCR_CK_PSC))
 
 /** @brief  Sets the HRTIM timer Compare Register value on runtime
-  * @param  __HANDLE__: HRTIM Handle.
-  * @param  __TIMER__: HRTIM timer
+  * @param  __HANDLE__ HRTIM Handle.
+  * @param  __TIMER__ HRTIM timer
   *                   This parameter can be one of the following values:
   *                   @arg 0x0 to 0x4 for timers A to E
-  * @param  __COMPAREUNIT__: timer compare unit
+  * @param  __COMPAREUNIT__ timer compare unit
   *                   This parameter can be one of the following values:
   *                   @arg HRTIM_COMPAREUNIT_1: Compare unit 1
   *                   @arg HRTIM_COMPAREUNIT_2: Compare unit 2
   *                   @arg HRTIM_COMPAREUNIT_3: Compare unit 3
   *                   @arg HRTIM_COMPAREUNIT_4: Compare unit 4
-  * @param  __COMPARE__: specifies the Compare new value.
+  * @param  __COMPARE__ specifies the Compare new value.
   * @retval None
   */
 #define __HAL_HRTIM_SETCOMPARE(__HANDLE__, __TIMER__, __COMPAREUNIT__, __COMPARE__) \
@@ -3120,11 +3119,11 @@ typedef struct {
          ((__HANDLE__)->Instance->sTimerxRegs[(__TIMER__)].CMP4xR = (__COMPARE__))))
 
 /** @brief  Gets the HRTIM timer Compare Register value on runtime
-  * @param  __HANDLE__: HRTIM Handle.
-  * @param  __TIMER__: HRTIM timer
+  * @param  __HANDLE__ HRTIM Handle.
+  * @param  __TIMER__ HRTIM timer
   *                   This parameter can be one of the following values:
   *                   @arg 0x0 to 0x4 for timers A to E
-  * @param  __COMPAREUNIT__: timer compare unit
+  * @param  __COMPAREUNIT__ timer compare unit
   *                   This parameter can be one of the following values:
   *                   @arg HRTIM_COMPAREUNIT_1: Compare unit 1
   *                   @arg HRTIM_COMPAREUNIT_2: Compare unit 2

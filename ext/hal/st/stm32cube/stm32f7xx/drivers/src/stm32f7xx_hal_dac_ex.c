@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_dac_ex.c
   * @author  MCD Application Team
-  * @version V1.2.0
-  * @date    30-December-2016
   * @brief   Extended DAC HAL module driver.
   *         This file provides firmware functions to manage the following 
   *         functionalities of DAC extension peripheral:
@@ -25,7 +23,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:

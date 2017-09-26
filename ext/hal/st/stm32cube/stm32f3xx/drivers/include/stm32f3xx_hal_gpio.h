@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_gpio.h
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   Header file of GPIO HAL module.
   ******************************************************************************
   * @attention
@@ -181,7 +179,7 @@ typedef enum
 
 /**
   * @brief  Check whether the specified EXTI line flag is set or not.
-  * @param  __EXTI_LINE__: specifies the EXTI line flag to check.
+  * @param  __EXTI_LINE__ specifies the EXTI line flag to check.
   *         This parameter can be GPIO_PIN_x where x can be(0..15)
   * @retval The new state of __EXTI_LINE__ (SET or RESET).
   */
@@ -189,7 +187,7 @@ typedef enum
 
 /**
   * @brief  Clear the EXTI's line pending flags.
-  * @param  __EXTI_LINE__: specifies the EXTI lines flags to clear.
+  * @param  __EXTI_LINE__ specifies the EXTI lines flags to clear.
   *         This parameter can be any combination of GPIO_PIN_x where x can be (0..15)
   * @retval None
   */
@@ -197,7 +195,7 @@ typedef enum
 
 /**
   * @brief  Check whether the specified EXTI line is asserted or not.
-  * @param  __EXTI_LINE__: specifies the EXTI line to check.
+  * @param  __EXTI_LINE__ specifies the EXTI line to check.
   *          This parameter can be GPIO_PIN_x where x can be(0..15)
   * @retval The new state of __EXTI_LINE__ (SET or RESET).
   */
@@ -205,7 +203,7 @@ typedef enum
 
 /**
   * @brief  Clear the EXTI's line pending bits.
-  * @param  __EXTI_LINE__: specifies the EXTI lines to clear.
+  * @param  __EXTI_LINE__ specifies the EXTI lines to clear.
   *          This parameter can be any combination of GPIO_PIN_x where x can be (0..15)
   * @retval None
   */
@@ -213,7 +211,7 @@ typedef enum
 
 /**
   * @brief  Generate a Software interrupt on selected EXTI line.
-  * @param  __EXTI_LINE__: specifies the EXTI line to check.
+  * @param  __EXTI_LINE__ specifies the EXTI line to check.
   *          This parameter can be GPIO_PIN_x where x can be(0..15)
   * @retval None
   */

@@ -2,13 +2,11 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_can.h
   * @author  MCD Application Team
-  * @version V1.2.0
-  * @date    30-December-2016
   * @brief   Header file of CAN HAL module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -68,9 +66,13 @@ typedef enum
   HAL_CAN_STATE_READY             = 0x01U,  /*!< CAN initialized and ready for use   */
   HAL_CAN_STATE_BUSY              = 0x02U,  /*!< CAN process is ongoing              */
   HAL_CAN_STATE_BUSY_TX           = 0x12U,  /*!< CAN process is ongoing              */
-  HAL_CAN_STATE_BUSY_RX           = 0x22U,  /*!< CAN process is ongoing              */
-  HAL_CAN_STATE_BUSY_TX_RX        = 0x32U,  /*!< CAN process is ongoing              */
-  HAL_CAN_STATE_TIMEOUT           = 0x03U,  /*!< Timeout state                       */
+  HAL_CAN_STATE_BUSY_RX0          = 0x22U,  /*!< CAN process is ongoing              */
+  HAL_CAN_STATE_BUSY_RX1          = 0x32U,  /*!< CAN process is ongoing              */
+  HAL_CAN_STATE_BUSY_TX_RX0       = 0x42U,  /*!< CAN process is ongoing              */
+  HAL_CAN_STATE_BUSY_TX_RX1       = 0x52U,  /*!< CAN process is ongoing              */
+  HAL_CAN_STATE_BUSY_RX0_RX1      = 0x62U,  /*!< CAN process is ongoing              */
+  HAL_CAN_STATE_BUSY_TX_RX0_RX1   = 0x72U,  /*!< CAN process is ongoing              */
+  HAL_CAN_STATE_TIMEOUT           = 0x03U,  /*!< CAN in Timeout state                */
   HAL_CAN_STATE_ERROR             = 0x04U   /*!< CAN error state                     */
 
 }HAL_CAN_StateTypeDef;
@@ -220,17 +222,19 @@ typedef struct
   */
 typedef struct
 {
-  CAN_TypeDef                 *Instance;  /*!< Register base address          */
+  CAN_TypeDef                 *Instance;  /*!< Register base address                                */
 
-  CAN_InitTypeDef             Init;       /*!< CAN required parameters        */
+  CAN_InitTypeDef             Init;       /*!< CAN required parameters                              */
 
-  CanTxMsgTypeDef*            pTxMsg;     /*!< Pointer to transmit structure  */
+  CanTxMsgTypeDef*            pTxMsg;     /*!< Pointer to transmit structure                        */
 
-  CanRxMsgTypeDef*            pRxMsg;     /*!< Pointer to reception structure */
+  CanRxMsgTypeDef*            pRxMsg;     /*!< Pointer to reception structure for RX FIFO0 msg      */
 
-  __IO HAL_CAN_StateTypeDef   State;      /*!< CAN communication state        */
+  CanRxMsgTypeDef*            pRx1Msg;    /*!< Pointer to reception structure for RX FIFO1 msg      */
 
-  HAL_LockTypeDef             Lock;       /*!< CAN locking object             */
+  __IO HAL_CAN_StateTypeDef   State;      /*!< CAN communication state                              */
+
+  HAL_LockTypeDef             Lock;       /*!< CAN locking object                                   */
 
   __IO uint32_t               ErrorCode;  /*!< CAN Error code
                                                This parameter can be a value of @ref CAN_Error_Code */
@@ -248,16 +252,19 @@ typedef struct
 /** @defgroup CAN_Error_Code CAN Error Code
   * @{
   */
-#define   HAL_CAN_ERROR_NONE      0x00U    /*!< No error             */
-#define   HAL_CAN_ERROR_EWG       0x01U    /*!< EWG error            */
-#define   HAL_CAN_ERROR_EPV       0x02U    /*!< EPV error            */
-#define   HAL_CAN_ERROR_BOF       0x04U    /*!< BOF error            */
-#define   HAL_CAN_ERROR_STF       0x08U    /*!< Stuff error          */
-#define   HAL_CAN_ERROR_FOR       0x10U    /*!< Form error           */
-#define   HAL_CAN_ERROR_ACK       0x20U    /*!< Acknowledgment error */
-#define   HAL_CAN_ERROR_BR        0x40U    /*!< Bit recessive        */
-#define   HAL_CAN_ERROR_BD        0x80U    /*!< LEC dominant         */
-#define   HAL_CAN_ERROR_CRC       0x100U   /*!< LEC transfer error   */
+#define   HAL_CAN_ERROR_NONE      0x00000000U    /*!< No error             */
+#define   HAL_CAN_ERROR_EWG       0x00000001U    /*!< EWG error            */
+#define   HAL_CAN_ERROR_EPV       0x00000002U    /*!< EPV error            */
+#define   HAL_CAN_ERROR_BOF       0x00000004U    /*!< BOF error            */
+#define   HAL_CAN_ERROR_STF       0x00000008U    /*!< Stuff error          */
+#define   HAL_CAN_ERROR_FOR       0x00000010U    /*!< Form error           */
+#define   HAL_CAN_ERROR_ACK       0x00000020U    /*!< Acknowledgment error */
+#define   HAL_CAN_ERROR_BR        0x00000040U    /*!< Bit recessive        */
+#define   HAL_CAN_ERROR_BD        0x00000080U    /*!< LEC dominant         */
+#define   HAL_CAN_ERROR_CRC       0x00000100U    /*!< LEC transfer error   */
+#define   HAL_CAN_ERROR_FOV0      0x00000200U    /*!< FIFO0 overrun error  */
+#define   HAL_CAN_ERROR_FOV1      0x00000400U    /*!< FIFO1 overrun error  */
+#define   HAL_CAN_ERROR_TXFAIL    0x00000800U    /*!< Transmit failure     */
 /**
   * @}
   */

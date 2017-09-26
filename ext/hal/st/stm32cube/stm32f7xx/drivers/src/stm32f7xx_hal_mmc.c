@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_mmc.c
   * @author  MCD Application Team
-  * @version V1.2.0
-  * @date    30-December-2016
   * @brief   MMC card HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the Secure Digital (MMC) peripheral:
@@ -192,7 +190,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -364,6 +362,9 @@ HAL_StatusTypeDef HAL_MMC_InitCard(MMC_HandleTypeDef *hmmc)
   
   /* Enable MMC Clock */
   __HAL_MMC_ENABLE(hmmc);
+  
+  /* Required power up waiting time before starting the SD initialization sequence */
+  HAL_Delay(2);
   
   /* Identify card operating voltage */
   errorstate = MMC_PowerON(hmmc);
@@ -2154,26 +2155,30 @@ static void MMC_DMAError(DMA_HandleTypeDef *hdma)
   MMC_HandleTypeDef* hmmc = (MMC_HandleTypeDef* )(hdma->Parent);
   HAL_MMC_CardStateTypeDef CardState;
   
-  if((hmmc->hdmarx->ErrorCode == HAL_DMA_ERROR_TE) || (hmmc->hdmatx->ErrorCode == HAL_DMA_ERROR_TE))
+  /* if DMA error is FIFO error ignore it */
+  if(HAL_DMA_GetError(hdma) != HAL_DMA_ERROR_FE)
   {
-    /* Clear All flags */
-    __HAL_MMC_CLEAR_FLAG(hmmc, SDMMC_STATIC_FLAGS);
-    
-    /* Disable All interrupts */
-    __HAL_MMC_DISABLE_IT(hmmc, SDMMC_IT_DATAEND | SDMMC_IT_DCRCFAIL | SDMMC_IT_DTIMEOUT|\
-      SDMMC_IT_TXUNDERR| SDMMC_IT_RXOVERR);
-    
-    hmmc->ErrorCode |= HAL_MMC_ERROR_DMA;
-    CardState = HAL_MMC_GetCardState(hmmc);
-    if((CardState == HAL_MMC_CARD_RECEIVING) || (CardState == HAL_MMC_CARD_SENDING))
+    if((hmmc->hdmarx->ErrorCode == HAL_DMA_ERROR_TE) || (hmmc->hdmatx->ErrorCode == HAL_DMA_ERROR_TE))
     {
-      hmmc->ErrorCode |= SDMMC_CmdStopTransfer(hmmc->Instance);
+      /* Clear All flags */
+      __HAL_MMC_CLEAR_FLAG(hmmc, SDMMC_STATIC_FLAGS);
+      
+      /* Disable All interrupts */
+      __HAL_MMC_DISABLE_IT(hmmc, SDMMC_IT_DATAEND | SDMMC_IT_DCRCFAIL | SDMMC_IT_DTIMEOUT|\
+        SDMMC_IT_TXUNDERR| SDMMC_IT_RXOVERR);
+      
+      hmmc->ErrorCode |= HAL_MMC_ERROR_DMA;
+      CardState = HAL_MMC_GetCardState(hmmc);
+      if((CardState == HAL_MMC_CARD_RECEIVING) || (CardState == HAL_MMC_CARD_SENDING))
+      {
+        hmmc->ErrorCode |= SDMMC_CmdStopTransfer(hmmc->Instance);
+      }
+      
+      hmmc->State= HAL_MMC_STATE_READY;
     }
     
-    hmmc->State= HAL_MMC_STATE_READY;
+    HAL_MMC_ErrorCallback(hmmc);
   }
-
-  HAL_MMC_ErrorCallback(hmmc);
 }
 
 /**

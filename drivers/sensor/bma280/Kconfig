@@ -9,7 +9,7 @@
 menuconfig BMA280
 	bool
 	prompt "BMA280 Three Axis Accelerometer Family"
-	depends on SENSOR && I2C
+	depends on I2C
 	default n
 	help
 	  Enable driver for BMA280 I2C-based triaxial accelerometer sensor

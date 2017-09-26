@@ -539,8 +539,10 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
  *
  * @return  N/A.
  */
-static void dfu_status_cb(enum usb_dc_status_code status)
+static void dfu_status_cb(enum usb_dc_status_code status, u8_t *param)
 {
+	ARG_UNUSED(param);
+
 	/* Check the USB status and do needed action if required */
 	switch (status) {
 	case USB_DC_ERROR:

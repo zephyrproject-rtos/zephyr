@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_adc_ex.h
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   Header file containing functions prototypes of ADC HAL library.
   ******************************************************************************
   * @attention
@@ -797,7 +795,6 @@ typedef struct
   */
 #define ADC_EOC_SINGLE_CONV         ((uint32_t) ADC_ISR_EOC)
 #define ADC_EOC_SEQ_CONV            ((uint32_t) ADC_ISR_EOS)
-#define ADC_EOC_SINGLE_SEQ_CONV     ((uint32_t)(ADC_ISR_EOC | ADC_ISR_EOS))  /*!< reserved for future use */
 /**
   * @}
   */
@@ -1345,7 +1342,7 @@ typedef struct
 /* External triggers of regular group for ADC1 */
 #define ADC_EXTERNALTRIGCONV_T2_CC2      ADC_EXTERNALTRIG_T2_CC2
 #define ADC_EXTERNALTRIGCONV_T3_TRGO     ADC_EXTERNALTRIG_T3_TRGO
-#define ADC_EXTERNALTRIGCONV_T4_CC2      ADC_EXTERNALTRIG_T4_CC2
+#define ADC_EXTERNALTRIGCONV_T4_CC4      ADC_EXTERNALTRIG_T4_CC4
 #define ADC_EXTERNALTRIGCONV_T19_TRGO    ADC_EXTERNALTRIG_T19_TRGO
 #define ADC_EXTERNALTRIGCONV_T19_CC3     ADC_EXTERNALTRIG_T19_CC3
 #define ADC_EXTERNALTRIGCONV_T19_CC4     ADC_EXTERNALTRIG_T19_CC4
@@ -1824,7 +1821,7 @@ typedef struct
 #define ADC_EXTERNALTRIG_T19_CC4           ((uint32_t)ADC_CR2_EXTSEL_1)
 #define ADC_EXTERNALTRIG_T2_CC2            ((uint32_t)(ADC_CR2_EXTSEL_1 | ADC_CR2_EXTSEL_0))
 #define ADC_EXTERNALTRIG_T3_TRGO           ((uint32_t)ADC_CR2_EXTSEL_2)
-#define ADC_EXTERNALTRIG_T4_CC2            ((uint32_t)(ADC_CR2_EXTSEL_2 | ADC_CR2_EXTSEL_0))
+#define ADC_EXTERNALTRIG_T4_CC4            ((uint32_t)(ADC_CR2_EXTSEL_2 | ADC_CR2_EXTSEL_0))
 #define ADC_EXTERNALTRIG_EXT_IT11          ((uint32_t)(ADC_CR2_EXTSEL_2 | ADC_CR2_EXTSEL_1))
 #define ADC_SWSTART                        ((uint32_t)(ADC_CR2_EXTSEL_2 | ADC_CR2_EXTSEL_1 | ADC_CR2_EXTSEL_0))
 /**
@@ -1922,7 +1919,7 @@ typedef struct
 
 /**
   * @brief Enable the ADC peripheral
-  * @param __HANDLE__: ADC handle
+  * @param __HANDLE__ ADC handle
   * @note ADC enable requires a delay for ADC stabilization time
   *       (refer to device datasheet, parameter tSTAB)
   * @note On STM32F3 devices, some hardware constraints must be strictly
@@ -1939,7 +1936,7 @@ typedef struct
 
 /**
   * @brief Disable the ADC peripheral
-  * @param __HANDLE__: ADC handle
+  * @param __HANDLE__ ADC handle
   * @note On STM32F3 devices, some hardware constraints must be strictly
   *       respected before using this macro:
   *        - ADC state requirements: ADC must be enabled, no conversion on
@@ -1955,8 +1952,8 @@ typedef struct
 
 /**
   * @brief Enable the ADC end of conversion interrupt.
-  * @param __HANDLE__: ADC handle
-  * @param __INTERRUPT__: ADC Interrupt
+  * @param __HANDLE__ ADC handle
+  * @param __INTERRUPT__ ADC Interrupt
   *          This parameter can be any combination of the following values:
   *            @arg ADC_IT_RDY:   ADC Ready (ADRDY) interrupt source
   *            @arg ADC_IT_EOSMP: ADC End of Sampling interrupt source
@@ -1976,8 +1973,8 @@ typedef struct
 
 /**
   * @brief Disable the ADC end of conversion interrupt.
-  * @param __HANDLE__: ADC handle
-  * @param __INTERRUPT__: ADC Interrupt
+  * @param __HANDLE__ ADC handle
+  * @param __INTERRUPT__ ADC Interrupt
   *          This parameter can be any combination of the following values:
   *            @arg ADC_IT_RDY:   ADC Ready (ADRDY) interrupt source
   *            @arg ADC_IT_EOSMP: ADC End of Sampling interrupt source
@@ -1996,8 +1993,8 @@ typedef struct
   (CLEAR_BIT((__HANDLE__)->Instance->IER, (__INTERRUPT__)))
 
 /** @brief  Checks if the specified ADC interrupt source is enabled or disabled.
-  * @param __HANDLE__: ADC handle
-  * @param __INTERRUPT__: ADC interrupt source to check
+  * @param __HANDLE__ ADC handle
+  * @param __INTERRUPT__ ADC interrupt source to check
   *          This parameter can be any combination of the following values:
   *            @arg ADC_IT_RDY:   ADC Ready (ADRDY) interrupt source
   *            @arg ADC_IT_EOSMP: ADC End of Sampling interrupt source
@@ -2017,8 +2014,8 @@ typedef struct
 
 /**
   * @brief Get the selected ADC's flag status.
-  * @param __HANDLE__: ADC handle
-  * @param __FLAG__: ADC flag
+  * @param __HANDLE__ ADC handle
+  * @param __FLAG__ ADC flag
   *          This parameter can be any combination of the following values:
   *            @arg ADC_FLAG_RDY:   ADC Ready (ADRDY) flag
   *            @arg ADC_FLAG_EOSMP: ADC End of Sampling flag
@@ -2038,8 +2035,8 @@ typedef struct
 
 /**
   * @brief Clear the ADC's pending flags
-  * @param __HANDLE__: ADC handle
-  * @param __FLAG__: ADC flag
+  * @param __HANDLE__ ADC handle
+  * @param __FLAG__ ADC flag
   *          This parameter can be any combination of the following values:
   *            @arg ADC_FLAG_RDY:   ADC Ready (ADRDY) flag
   *            @arg ADC_FLAG_EOSMP: ADC End of Sampling flag
@@ -2060,7 +2057,7 @@ typedef struct
   (WRITE_REG((__HANDLE__)->Instance->ISR, (__FLAG__)))
 
 /** @brief  Reset ADC handle state
-  * @param  __HANDLE__: ADC handle
+  * @param  __HANDLE__ ADC handle
   * @retval None
   */
 #define __HAL_ADC_RESET_HANDLE_STATE(__HANDLE__)                               \
@@ -2079,7 +2076,7 @@ typedef struct
   *       (refer to device datasheet, parameter tSTAB)
   * @note On STM32F37x devices, if ADC is already enabled this macro trigs
   *       a conversion SW start on regular group.
-  * @param __HANDLE__: ADC handle
+  * @param __HANDLE__ ADC handle
   * @retval None
   */
 #define __HAL_ADC_ENABLE(__HANDLE__)                                           \
@@ -2087,15 +2084,15 @@ typedef struct
 
 /**
   * @brief Disable the ADC peripheral
-  * @param __HANDLE__: ADC handle
+  * @param __HANDLE__ ADC handle
   * @retval None
   */
 #define __HAL_ADC_DISABLE(__HANDLE__)                                          \
   (CLEAR_BIT((__HANDLE__)->Instance->CR2, (ADC_CR2_ADON)))
 
 /** @brief Enable the ADC end of conversion interrupt.
-  * @param __HANDLE__: ADC handle
-  * @param __INTERRUPT__: ADC Interrupt
+  * @param __HANDLE__ ADC handle
+  * @param __INTERRUPT__ ADC Interrupt
   *          This parameter can be any combination of the following values:
   *            @arg ADC_IT_EOC: ADC End of Regular Conversion interrupt source
   *            @arg ADC_IT_JEOC: ADC End of Injected Conversion interrupt source
@@ -2106,8 +2103,8 @@ typedef struct
   (SET_BIT((__HANDLE__)->Instance->CR1, (__INTERRUPT__)))
 
 /** @brief Disable the ADC end of conversion interrupt.
-  * @param __HANDLE__: ADC handle
-  * @param __INTERRUPT__: ADC Interrupt
+  * @param __HANDLE__ ADC handle
+  * @param __INTERRUPT__ ADC Interrupt
   *          This parameter can be any combination of the following values:
   *            @arg ADC_IT_EOC: ADC End of Regular Conversion interrupt source
   *            @arg ADC_IT_JEOC: ADC End of Injected Conversion interrupt source
@@ -2118,8 +2115,8 @@ typedef struct
   (CLEAR_BIT((__HANDLE__)->Instance->CR1, (__INTERRUPT__)))
 
 /** @brief  Checks if the specified ADC interrupt source is enabled or disabled.
-  * @param __HANDLE__: ADC handle
-  * @param __INTERRUPT__: ADC interrupt source to check
+  * @param __HANDLE__ ADC handle
+  * @param __INTERRUPT__ ADC interrupt source to check
   *          This parameter can be any combination of the following values:
   *            @arg ADC_IT_EOC: ADC End of Regular Conversion interrupt source
   *            @arg ADC_IT_JEOC: ADC End of Injected Conversion interrupt source
@@ -2130,8 +2127,8 @@ typedef struct
   (((__HANDLE__)->Instance->CR1 & (__INTERRUPT__)) == (__INTERRUPT__))
 
 /** @brief Get the selected ADC's flag status.
-  * @param __HANDLE__: ADC handle
-  * @param __FLAG__: ADC flag
+  * @param __HANDLE__ ADC handle
+  * @param __FLAG__ ADC flag
   *          This parameter can be any combination of the following values:
   *            @arg ADC_FLAG_STRT: ADC Regular group start flag
   *            @arg ADC_FLAG_JSTRT: ADC Injected group start flag
@@ -2144,8 +2141,8 @@ typedef struct
   ((((__HANDLE__)->Instance->SR) & (__FLAG__)) == (__FLAG__))
 
 /** @brief Clear the ADC's pending flags
-  * @param __HANDLE__: ADC handle
-  * @param __FLAG__: ADC flag
+  * @param __HANDLE__ ADC handle
+  * @param __FLAG__ ADC flag
   *          This parameter can be any combination of the following values:
   *            @arg ADC_FLAG_STRT: ADC Regular group start flag
   *            @arg ADC_FLAG_JSTRT: ADC Injected group start flag
@@ -2158,7 +2155,7 @@ typedef struct
   (WRITE_REG((__HANDLE__)->Instance->SR, ~(__FLAG__)))
 
 /** @brief  Reset ADC handle state
-  * @param  __HANDLE__: ADC handle
+  * @param  __HANDLE__ ADC handle
   * @retval None
   */
 #define __HAL_ADC_RESET_HANDLE_STATE(__HANDLE__)                               \
@@ -2184,7 +2181,7 @@ typedef struct
 
 /**
   * @brief Verification of hardware constraints before ADC can be enabled
-  * @param __HANDLE__: ADC handle
+  * @param __HANDLE__ ADC handle
   * @retval SET (ADC can be enabled) or RESET (ADC cannot be enabled)
   */
 #define ADC_ENABLING_CONDITIONS(__HANDLE__)                                    \
@@ -2196,7 +2193,7 @@ typedef struct
 
 /**
   * @brief Verification of ADC state: enabled or disabled
-  * @param __HANDLE__: ADC handle
+  * @param __HANDLE__ ADC handle
   * @retval SET (ADC enabled) or RESET (ADC disabled)
   */
 #define ADC_IS_ENABLE(__HANDLE__)                                                      \
@@ -2207,7 +2204,7 @@ typedef struct
 /**
   * @brief Test if conversion trigger of regular group is software start
   *        or external trigger.
-  * @param __HANDLE__: ADC handle
+  * @param __HANDLE__ ADC handle
   * @retval SET (software start) or RESET (external trigger)
   */
 #define ADC_IS_SOFTWARE_START_REGULAR(__HANDLE__)                              \
@@ -2216,7 +2213,7 @@ typedef struct
 /**
   * @brief Test if conversion trigger of injected group is software start
   *        or external trigger.
-  * @param __HANDLE__: ADC handle
+  * @param __HANDLE__ ADC handle
   * @retval SET (software start) or RESET (external trigger)
   */
 #define ADC_IS_SOFTWARE_START_INJECTED(__HANDLE__)                             \
@@ -2224,7 +2221,7 @@ typedef struct
 
 /**
   * @brief Check if no conversion on going on regular and/or injected groups
-  * @param __HANDLE__: ADC handle
+  * @param __HANDLE__ ADC handle
   * @retval SET (conversion is on going) or RESET (no conversion is on going)
   */
 #define ADC_IS_CONVERSION_ONGOING_REGULAR_INJECTED(__HANDLE__)                     \
@@ -2233,7 +2230,7 @@ typedef struct
 
 /**
   * @brief Check if no conversion on going on regular group
-  * @param __HANDLE__: ADC handle
+  * @param __HANDLE__ ADC handle
   * @retval SET (conversion is on going) or RESET (no conversion is on going)
   */
 #define ADC_IS_CONVERSION_ONGOING_REGULAR(__HANDLE__)                          \
@@ -2242,7 +2239,7 @@ typedef struct
 
 /**
   * @brief Check if no conversion on going on injected group
-  * @param __HANDLE__: ADC handle
+  * @param __HANDLE__ ADC handle
   * @retval SET (conversion is on going) or RESET (no conversion is on going)
   */
 #define ADC_IS_CONVERSION_ONGOING_INJECTED(__HANDLE__)                         \
@@ -2252,7 +2249,7 @@ typedef struct
 /**
   * @brief Returns resolution bits in CFGR1 register: RES[1:0].
   *        Returned value is among parameters to @ref ADCEx_Resolution.
-  * @param __HANDLE__: ADC handle
+  * @param __HANDLE__ ADC handle
   * @retval None
   */
 #define ADC_GET_RESOLUTION(__HANDLE__) (((__HANDLE__)->Instance->CFGR) & ADC_CFGR_RES)
@@ -2268,63 +2265,63 @@ typedef struct
 
 /**
   * @brief Clear ADC error code (set it to error code: "no error")
-  * @param __HANDLE__: ADC handle
+  * @param __HANDLE__ ADC handle
   * @retval None
   */
 #define ADC_CLEAR_ERRORCODE(__HANDLE__) ((__HANDLE__)->ErrorCode = HAL_ADC_ERROR_NONE)
 
 /**
   * @brief Set the ADC's sample time for Channels numbers between 0 and 9.
-  * @param _SAMPLETIME_: Sample time parameter.
-  * @param _CHANNELNB_: Channel number.
+  * @param _SAMPLETIME_ Sample time parameter.
+  * @param _CHANNELNB_ Channel number.
   * @retval None
   */
 #define ADC_SMPR1(_SAMPLETIME_, _CHANNELNB_) ((_SAMPLETIME_) << (3U * (_CHANNELNB_)))
 
 /**
   * @brief Set the ADC's sample time for Channels numbers between 10 and 18.
-  * @param _SAMPLETIME_: Sample time parameter.
-  * @param _CHANNELNB_: Channel number.
+  * @param _SAMPLETIME_ Sample time parameter.
+  * @param _CHANNELNB_ Channel number.
   * @retval None
   */
 #define ADC_SMPR2(_SAMPLETIME_, _CHANNELNB_) ((_SAMPLETIME_) << (3U * ((_CHANNELNB_) - 10U)))
 
 /**
   * @brief Set the selected regular Channel rank for rank between 1 and 4.
-  * @param _CHANNELNB_: Channel number.
-  * @param _RANKNB_: Rank number.
+  * @param _CHANNELNB_ Channel number.
+  * @param _RANKNB_ Rank number.
   * @retval None
   */
 #define ADC_SQR1_RK(_CHANNELNB_, _RANKNB_) ((_CHANNELNB_) << (6U * (_RANKNB_)))
 
 /**
   * @brief Set the selected regular Channel rank for rank between 5 and 9.
-  * @param _CHANNELNB_: Channel number.
-  * @param _RANKNB_: Rank number.
+  * @param _CHANNELNB_ Channel number.
+  * @param _RANKNB_ Rank number.
   * @retval None
   */
 #define ADC_SQR2_RK(_CHANNELNB_, _RANKNB_) ((_CHANNELNB_) << (6U * ((_RANKNB_) - 5U)))
 
 /**
   * @brief Set the selected regular Channel rank for rank between 10 and 14.
-  * @param _CHANNELNB_: Channel number.
-  * @param _RANKNB_: Rank number.
+  * @param _CHANNELNB_ Channel number.
+  * @param _RANKNB_ Rank number.
   * @retval None
   */
 #define ADC_SQR3_RK(_CHANNELNB_, _RANKNB_) ((_CHANNELNB_) << (6U * ((_RANKNB_) - 10U)))
 
 /**
   * @brief Set the selected regular Channel rank for rank between 15 and 16.
-  * @param _CHANNELNB_: Channel number.
-  * @param _RANKNB_: Rank number.
+  * @param _CHANNELNB_ Channel number.
+  * @param _RANKNB_ Rank number.
   * @retval None
   */
 #define ADC_SQR4_RK(_CHANNELNB_, _RANKNB_) ((_CHANNELNB_) << (6U * ((_RANKNB_) - 15U)))
 
 /**
   * @brief Set the selected injected Channel rank.
-  * @param _CHANNELNB_: Channel number.
-  * @param _RANKNB_: Rank number.
+  * @param _CHANNELNB_ Channel number.
+  * @param _RANKNB_ Rank number.
   * @retval None
   */
 #define ADC_JSQR_RK(_CHANNELNB_, _RANKNB_) ((_CHANNELNB_) << (6U * (_RANKNB_) +2U))
@@ -2332,70 +2329,70 @@ typedef struct
 
 /**
   * @brief Set the Analog Watchdog 1 channel.
-  * @param _CHANNEL_: channel to be monitored by Analog Watchdog 1.
+  * @param _CHANNEL_ channel to be monitored by Analog Watchdog 1.
   * @retval None
   */
 #define ADC_CFGR_AWD1CH_SHIFT(_CHANNEL_) ((_CHANNEL_) << 26U)
 
 /**
   * @brief Configure the channel number into Analog Watchdog 2 or 3.
-  * @param _CHANNEL_: ADC Channel
+  * @param _CHANNEL_ ADC Channel
   * @retval None
   */
 #define ADC_CFGR_AWD23CR(_CHANNEL_) (1U << (_CHANNEL_))
 
 /**
   * @brief Enable automatic conversion of injected group
-  * @param _INJECT_AUTO_CONVERSION_: Injected automatic conversion.
+  * @param _INJECT_AUTO_CONVERSION_ Injected automatic conversion.
   * @retval None
   */
 #define ADC_CFGR_INJECT_AUTO_CONVERSION(_INJECT_AUTO_CONVERSION_) ((_INJECT_AUTO_CONVERSION_) << 25U)
 
 /**
   * @brief Enable ADC injected context queue
-  * @param _INJECT_CONTEXT_QUEUE_MODE_: Injected context queue mode.
+  * @param _INJECT_CONTEXT_QUEUE_MODE_ Injected context queue mode.
   * @retval None
   */
 #define ADC_CFGR_INJECT_CONTEXT_QUEUE(_INJECT_CONTEXT_QUEUE_MODE_) ((_INJECT_CONTEXT_QUEUE_MODE_) << 21U)
 
 /**
   * @brief Enable ADC discontinuous conversion mode for injected group
-  * @param _INJECT_DISCONTINUOUS_MODE_: Injected discontinuous mode.
+  * @param _INJECT_DISCONTINUOUS_MODE_ Injected discontinuous mode.
   * @retval None
   */
 #define ADC_CFGR_INJECT_DISCCONTINUOUS(_INJECT_DISCONTINUOUS_MODE_) ((_INJECT_DISCONTINUOUS_MODE_) << 20U)
 
 /**
   * @brief Enable ADC discontinuous conversion mode for regular group
-  * @param _REG_DISCONTINUOUS_MODE_: Regular discontinuous mode.
+  * @param _REG_DISCONTINUOUS_MODE_ Regular discontinuous mode.
   * @retval None
   */
 #define ADC_CFGR_REG_DISCCONTINUOUS(_REG_DISCONTINUOUS_MODE_) ((_REG_DISCONTINUOUS_MODE_) << 16U)
 
 /**
   * @brief Configures the number of discontinuous conversions for regular group.
-  * @param _NBR_DISCONTINUOUS_CONV_: Number of discontinuous conversions.
+  * @param _NBR_DISCONTINUOUS_CONV_ Number of discontinuous conversions.
   * @retval None
   */
 #define ADC_CFGR_DISCONTINUOUS_NUM(_NBR_DISCONTINUOUS_CONV_) (((_NBR_DISCONTINUOUS_CONV_) - 1U) << 17U)
 
 /**
   * @brief Enable the ADC auto delay mode.
-  * @param _AUTOWAIT_: Auto delay bit enable or disable.
+  * @param _AUTOWAIT_ Auto delay bit enable or disable.
   * @retval None
   */
 #define ADC_CFGR_AUTOWAIT(_AUTOWAIT_) ((_AUTOWAIT_) << 14U)
 
 /**
   * @brief Enable ADC continuous conversion mode.
-  * @param _CONTINUOUS_MODE_: Continuous mode.
+  * @param _CONTINUOUS_MODE_ Continuous mode.
   * @retval None
   */
 #define ADC_CFGR_CONTINUOUS(_CONTINUOUS_MODE_) ((_CONTINUOUS_MODE_) << 13U)
 
 /**
   * @brief Enable ADC overrun mode.
-  * @param _OVERRUN_MODE_: Overrun mode.
+  * @param _OVERRUN_MODE_ Overrun mode.
   * @retval Overrun bit setting to be programmed into CFGR register
   */
 /* Note: Bit ADC_CFGR_OVRMOD not used directly in constant                    */
@@ -2408,7 +2405,7 @@ typedef struct
 
 /**
   * @brief Enable the ADC DMA continuous request.
-  * @param _DMACONTREQ_MODE_: DMA continuous request mode.
+  * @param _DMACONTREQ_MODE_ DMA continuous request mode.
   * @retval None
   */
 #define ADC_CFGR_DMACONTREQ(_DMACONTREQ_MODE_) ((_DMACONTREQ_MODE_) << 1U)
@@ -2423,8 +2420,8 @@ typedef struct
   *        exceptions below are circular and do not point to any other trigger
   *        with direct treatment.
   *        For devices with 2 ADCs or less: this macro makes no change.
-  * @param __HANDLE__: ADC handle
-  * @param __EXT_TRIG_CONV__: External trigger selected for regular group.
+  * @param __HANDLE__ ADC handle
+  * @param __EXT_TRIG_CONV__ External trigger selected for regular group.
   * @retval External trigger to be programmed into EXTSEL bits of CFGR register
   */
 #if defined(STM32F303xE) || defined(STM32F398xx) || \
@@ -2513,8 +2510,8 @@ typedef struct
   *        with direct treatment, except trigger
   *        ADC_EXTERNALTRIGINJECCONV_T4_CC3 differentiated with SW offset.
   *        For devices with 2 ADCs or less: this macro makes no change.
-  * @param __HANDLE__: ADC handle
-  * @param __EXT_TRIG_INJECTCONV__: External trigger selected for injected group
+  * @param __HANDLE__ ADC handle
+  * @param __EXT_TRIG_INJECTCONV__ External trigger selected for injected group
   * @retval External trigger to be programmed into JEXTSEL bits of JSQR register
   */
 #if defined(STM32F303xC) || defined(STM32F303xE) || defined(STM32F398xx) || defined(STM32F358xx)
@@ -2599,49 +2596,49 @@ typedef struct
 
 /**
   * @brief Configure the channel number into offset OFRx register
-  * @param _CHANNEL_: ADC Channel
+  * @param _CHANNEL_ ADC Channel
   * @retval None
   */
 #define ADC_OFR_CHANNEL(_CHANNEL_) ((_CHANNEL_) << 26U)
 
 /**
   * @brief Configure the channel number into differential mode selection register
-  * @param _CHANNEL_: ADC Channel
+  * @param _CHANNEL_ ADC Channel
   * @retval None
   */
 #define ADC_DIFSEL_CHANNEL(_CHANNEL_) (1U << (_CHANNEL_))
 
 /**
   * @brief Calibration factor in differential mode to be set into calibration register
-  * @param _Calibration_Factor_: Calibration factor value
+  * @param _Calibration_Factor_ Calibration factor value
   * @retval None
   */
 #define ADC_CALFACT_DIFF_SET(_Calibration_Factor_) ((_Calibration_Factor_) << 16U)
 
 /**
   * @brief Calibration factor in differential mode to be retrieved from calibration register
-  * @param _Calibration_Factor_: Calibration factor value
+  * @param _Calibration_Factor_ Calibration factor value
   * @retval None
   */
 #define ADC_CALFACT_DIFF_GET(_Calibration_Factor_) ((_Calibration_Factor_) >> 16U)
 
 /**
   * @brief Configure the analog watchdog high threshold into registers TR1, TR2 or TR3.
-  * @param _Threshold_: Threshold value
+  * @param _Threshold_ Threshold value
   * @retval None
   */
 #define ADC_TRX_HIGHTHRESHOLD(_Threshold_) ((_Threshold_) << 16U)
 
 /**
   * @brief Enable the ADC DMA continuous request for ADC multimode.
-  * @param _DMAContReq_MODE_: DMA continuous request mode.
+  * @param _DMAContReq_MODE_ DMA continuous request mode.
   * @retval None
   */
 #define ADC_CCR_MULTI_DMACONTREQ(_DMAContReq_MODE_) ((_DMAContReq_MODE_) << 13U)
 
 /**
   * @brief Verification of hardware constraints before ADC can be disabled
-  * @param __HANDLE__: ADC handle
+  * @param __HANDLE__ ADC handle
   * @retval SET (ADC can be disabled) or RESET (ADC cannot be disabled)
   */
 #define ADC_DISABLING_CONDITIONS(__HANDLE__)                                   \
@@ -2658,8 +2655,8 @@ typedef struct
   *        If resolution 8 bits, shift of 4 ranks on the left.
   *        If resolution 6 bits, shift of 6 ranks on the left.
   *        therefore, shift = (12 - resolution) = 12 - (12- (((RES[1:0]) >> 3)*2))
-  * @param __HANDLE__: ADC handle
-  * @param _Offset_: Value to be shifted
+  * @param __HANDLE__ ADC handle
+  * @param _Offset_ Value to be shifted
   * @retval None
   */
 #define ADC_OFFSET_SHIFT_RESOLUTION(__HANDLE__, _Offset_)                      \
@@ -2673,8 +2670,8 @@ typedef struct
   *        If resolution 8 bits, shift of 4 ranks on the left.
   *        If resolution 6 bits, shift of 6 ranks on the left.
   *        therefore, shift = (12 - resolution) = 12 - (12- (((RES[1:0]) >> 3)*2))
-  * @param __HANDLE__: ADC handle
-  * @param _Threshold_: Value to be shifted
+  * @param __HANDLE__ ADC handle
+  * @param _Threshold_ Value to be shifted
   * @retval None
   */
 #define ADC_AWD1THRESHOLD_SHIFT_RESOLUTION(__HANDLE__, _Threshold_)            \
@@ -2687,8 +2684,8 @@ typedef struct
   *        If resolution 10 bits, shift of 2 ranks on the right (the 2 LSB are discarded)
   *        If resolution 8 bits, no shift.
   *        If resolution 6 bits, shift of 2 ranks on the left (the 2 LSB are set to 0)
-  * @param __HANDLE__: ADC handle
-  * @param _Threshold_: Value to be shifted
+  * @param __HANDLE__ ADC handle
+  * @param _Threshold_ Value to be shifted
   * @retval None
   */
 #define ADC_AWD23THRESHOLD_SHIFT_RESOLUTION(__HANDLE__, _Threshold_)           \
@@ -2699,7 +2696,7 @@ typedef struct
 /**
   * @brief Defines if the selected ADC is within ADC common register ADC1_2 or ADC3_4
   * if available (ADC2, ADC3, ADC4 availability depends on STM32 product)
-  * @param __HANDLE__: ADC handle
+  * @param __HANDLE__ ADC handle
   * @retval Common control register ADC1_2 or ADC3_4
   */
 #if defined(STM32F303xE) || defined(STM32F398xx) || \
@@ -2728,7 +2725,7 @@ typedef struct
 /**
   * @brief Defines if the selected ADC is within ADC common register ADC1_2 or ADC3_4
   * if available (ADC2, ADC3, ADC4 availability depends on STM32 product)
-  * @param __HANDLE__: ADC handle
+  * @param __HANDLE__ ADC handle
   * @retval Common control register ADC1_2 or ADC3_4
   */
 #if defined(STM32F303xE) || defined(STM32F398xx) || \
@@ -2756,7 +2753,7 @@ typedef struct
 
 /**
   * @brief Selection of ADC common register CCR bits MULTI[4:0]corresponding to the selected ADC (applicable for devices with several ADCs)
-  * @param __HANDLE__: ADC handle
+  * @param __HANDLE__ ADC handle
   * @retval None
   */
 #if defined(STM32F303xE) || defined(STM32F398xx) || \
@@ -2787,7 +2784,7 @@ typedef struct
 
 /**
   * @brief Verification of condition for ADC start conversion: ADC must be in non-multimode, or multimode with handle of ADC master (applicable for devices with several ADCs)
-  * @param __HANDLE__: ADC handle
+  * @param __HANDLE__ ADC handle
   * @retval None
   */
 #if defined(STM32F302xE) || defined(STM32F303xE) || defined(STM32F398xx) || \
@@ -2807,7 +2804,7 @@ typedef struct
 
 /**
   * @brief Verification of condition for ADC group regular start conversion: ADC must be in non-multimode or multimode on group injected only, or multimode with handle of ADC master (applicable for devices with several ADCs)
-  * @param __HANDLE__: ADC handle.
+  * @param __HANDLE__ ADC handle.
   * @retval None
   */
 #if defined(STM32F302xE) || defined(STM32F303xE) || defined(STM32F398xx) || \
@@ -2829,7 +2826,7 @@ typedef struct
 
 /**
   * @brief Verification of condition for ADC group injected start conversion: ADC must be in non-multimode or multimode on group regular only, or multimode with handle of ADC master (applicable for devices with several ADCs)
-  * @param __HANDLE__: ADC handle.
+  * @param __HANDLE__ ADC handle.
   * @retval None
   */
 #if defined(STM32F302xE) || defined(STM32F303xE) || defined(STM32F398xx) || \
@@ -2851,7 +2848,7 @@ typedef struct
 
 /**
   * @brief Check ADC multimode setting: In case of multimode, check whether ADC master of the selected ADC has feature auto-injection enabled (applicable for devices with several ADCs)
-  * @param __HANDLE__: ADC handle
+  * @param __HANDLE__ ADC handle
   * @retval None
   */
 #if defined(STM32F303xE) || defined(STM32F398xx) || \
@@ -2881,8 +2878,8 @@ typedef struct
 /**
   * @brief Set handle of the other ADC sharing the same common register ADC1_2 or ADC3_4
   * if available (ADC2, ADC3, ADC4 availability depends on STM32 product)
-  * @param __HANDLE__: ADC handle
-  * @param __HANDLE_OTHER_ADC__: other ADC handle
+  * @param __HANDLE__ ADC handle
+  * @param __HANDLE_OTHER_ADC__ other ADC handle
   * @retval None
   */
 #if defined(STM32F303xE) || defined(STM32F398xx) || \
@@ -2934,8 +2931,8 @@ typedef struct
 /**
   * @brief Set handle of the ADC slave associated to the ADC master
   * if available (ADC2, ADC3, ADC4 availability depends on STM32 product)
-  * @param __HANDLE_MASTER__: ADC master handle
-  * @param __HANDLE_SLAVE__: ADC slave handle
+  * @param __HANDLE_MASTER__ ADC master handle
+  * @param __HANDLE_SLAVE__ ADC slave handle
   * @retval None
   */
 #if defined(STM32F303xE) || defined(STM32F398xx) || \
@@ -2986,8 +2983,7 @@ typedef struct
                                      ((SCAN_MODE) == ADC_SCAN_ENABLE)    )
 
 #define IS_ADC_EOC_SELECTION(EOC_SELECTION) (((EOC_SELECTION) == ADC_EOC_SINGLE_CONV)    || \
-                                             ((EOC_SELECTION) == ADC_EOC_SEQ_CONV)       || \
-                                             ((EOC_SELECTION) == ADC_EOC_SINGLE_SEQ_CONV)  )
+                                             ((EOC_SELECTION) == ADC_EOC_SEQ_CONV)   )
 
 #define IS_ADC_OVERRUN(OVR) (((OVR) == ADC_OVR_DATA_PRESERVED)  || \
                              ((OVR) == ADC_OVR_DATA_OVERWRITTEN)  )
@@ -3497,7 +3493,7 @@ typedef struct
   */
 /**
   * @brief Calibration factor length verification (7 bits maximum)
-  * @param _Calibration_Factor_: Calibration factor value
+  * @param _Calibration_Factor_ Calibration factor value
   * @retval None
   */
 #define IS_ADC_CALFACT(_Calibration_Factor_) ((_Calibration_Factor_) <= (0x7FU))
@@ -3515,7 +3511,7 @@ typedef struct
 
 /**
   * @brief Verification of ADC state: enabled or disabled
-  * @param __HANDLE__: ADC handle
+  * @param __HANDLE__ ADC handle
   * @retval SET (ADC enabled) or RESET (ADC disabled)
   */
 #define ADC_IS_ENABLE(__HANDLE__)                                              \
@@ -3525,7 +3521,7 @@ typedef struct
 /**
   * @brief Test if conversion trigger of regular group is software start
   *        or external trigger.
-  * @param __HANDLE__: ADC handle
+  * @param __HANDLE__ ADC handle
   * @retval SET (software start) or RESET (external trigger)
   */
 #define ADC_IS_SOFTWARE_START_REGULAR(__HANDLE__)                              \
@@ -3534,7 +3530,7 @@ typedef struct
 /**
   * @brief Test if conversion trigger of injected group is software start
   *        or external trigger.
-  * @param __HANDLE__: ADC handle
+  * @param __HANDLE__ ADC handle
   * @retval SET (software start) or RESET (external trigger)
   */
 #define ADC_IS_SOFTWARE_START_INJECTED(__HANDLE__)                             \
@@ -3551,7 +3547,7 @@ typedef struct
 
 /**
   * @brief Clear ADC error code (set it to error code: "no error")
-  * @param __HANDLE__: ADC handle
+  * @param __HANDLE__ ADC handle
   * @retval None
   */
 #define ADC_CLEAR_ERRORCODE(__HANDLE__)                                        \
@@ -3559,7 +3555,7 @@ typedef struct
 
 /**
   * @brief Set ADC number of conversions into regular channel sequence length.
-  * @param _NbrOfConversion_: Regular channel sequence length
+  * @param _NbrOfConversion_ Regular channel sequence length
   * @retval None
   */
 #define ADC_SQR1_L_SHIFT(_NbrOfConversion_)                                    \
@@ -3567,8 +3563,8 @@ typedef struct
 
 /**
   * @brief Set the ADC's sample time for channel numbers between 10 and 18.
-  * @param _SAMPLETIME_: Sample time parameter.
-  * @param _CHANNELNB_: Channel number.
+  * @param _SAMPLETIME_ Sample time parameter.
+  * @param _CHANNELNB_ Channel number.
   * @retval None
   */
 #define ADC_SMPR1(_SAMPLETIME_, _CHANNELNB_)                                   \
@@ -3576,8 +3572,8 @@ typedef struct
 
 /**
   * @brief Set the ADC's sample time for channel numbers between 0 and 9.
-  * @param _SAMPLETIME_: Sample time parameter.
-  * @param _CHANNELNB_: Channel number.
+  * @param _SAMPLETIME_ Sample time parameter.
+  * @param _CHANNELNB_ Channel number.
   * @retval None
   */
 #define ADC_SMPR2(_SAMPLETIME_, _CHANNELNB_)                                   \
@@ -3585,8 +3581,8 @@ typedef struct
 
 /**
   * @brief Set the selected regular channel rank for rank between 1 and 6.
-  * @param _CHANNELNB_: Channel number.
-  * @param _RANKNB_: Rank number.
+  * @param _CHANNELNB_ Channel number.
+  * @param _RANKNB_ Rank number.
   * @retval None
   */
 #define ADC_SQR3_RK(_CHANNELNB_, _RANKNB_)                                     \
@@ -3594,8 +3590,8 @@ typedef struct
 
 /**
   * @brief Set the selected regular channel rank for rank between 7 and 12.
-  * @param _CHANNELNB_: Channel number.
-  * @param _RANKNB_: Rank number.
+  * @param _CHANNELNB_ Channel number.
+  * @param _RANKNB_ Rank number.
   * @retval None
   */
 #define ADC_SQR2_RK(_CHANNELNB_, _RANKNB_)                                     \
@@ -3603,8 +3599,8 @@ typedef struct
 
 /**
   * @brief Set the selected regular channel rank for rank between 13 and 16.
-  * @param _CHANNELNB_: Channel number.
-  * @param _RANKNB_: Rank number.
+  * @param _CHANNELNB_ Channel number.
+  * @param _RANKNB_ Rank number.
   * @retval None
   */
 #define ADC_SQR1_RK(_CHANNELNB_, _RANKNB_)                                     \
@@ -3612,7 +3608,7 @@ typedef struct
 
 /**
   * @brief Set the injected sequence length.
-  * @param _JSQR_JL_: Sequence length.
+  * @param _JSQR_JL_ Sequence length.
   * @retval None
   */
 #define ADC_JSQR_JL_SHIFT(_JSQR_JL_)                                           \
@@ -3623,9 +3619,9 @@ typedef struct
   *        Note: on STM32F37x devices, channel rank position in JSQR register
   *              is depending on total number of ranks selected into
   *              injected sequencer (ranks sequence starting from 4-JL)
-  * @param _CHANNELNB_: Channel number.
-  * @param _RANKNB_: Rank number.
-  * @param _JSQR_JL_: Sequence length.
+  * @param _CHANNELNB_ Channel number.
+  * @param _RANKNB_ Rank number.
+  * @param _JSQR_JL_ Sequence length.
   * @retval None
   */
 #define ADC_JSQR_RK_JL(_CHANNELNB_, _RANKNB_, _JSQR_JL_)                       \
@@ -3633,7 +3629,7 @@ typedef struct
 
 /**
   * @brief Enable ADC continuous conversion mode.
-  * @param _CONTINUOUS_MODE_: Continuous mode.
+  * @param _CONTINUOUS_MODE_ Continuous mode.
   * @retval None
   */
 #define ADC_CR2_CONTINUOUS(_CONTINUOUS_MODE_)                                  \
@@ -3641,7 +3637,7 @@ typedef struct
 
 /**
   * @brief Configures the number of discontinuous conversions for the regular group channels.
-  * @param _NBR_DISCONTINUOUS_CONV_: Number of discontinuous conversions.
+  * @param _NBR_DISCONTINUOUS_CONV_ Number of discontinuous conversions.
   * @retval None
   */
 #define ADC_CR1_DISCONTINUOUS_NUM(_NBR_DISCONTINUOUS_CONV_)                    \
@@ -3649,7 +3645,7 @@ typedef struct
 
 /**
   * @brief Enable ADC scan mode to convert multiple ranks with sequencer.
-  * @param _SCAN_MODE_: Scan conversion mode.
+  * @param _SCAN_MODE_ Scan conversion mode.
   * @retval None
   */
 /* Note: Scan mode is compared to ENABLE for legacy purpose, this parameter   */
@@ -3661,7 +3657,7 @@ typedef struct
 
 /**
   * @brief Calibration factor in differential mode to be set into calibration register
-  * @param _Calibration_Factor_: Calibration factor value
+  * @param _Calibration_Factor_ Calibration factor value
   * @retval None
   */
 #define ADC_CALFACT_DIFF_SET(_Calibration_Factor_)                             \
@@ -3669,7 +3665,7 @@ typedef struct
 
 /**
   * @brief Calibration factor in differential mode to be retrieved from calibration register
-  * @param _Calibration_Factor_: Calibration factor value
+  * @param _Calibration_Factor_ Calibration factor value
   * @retval None
   */
 #define ADC_CALFACT_DIFF_GET(_Calibration_Factor_)                             \
@@ -3685,7 +3681,7 @@ typedef struct
   *   between 41.5 cycles and 71.5 cycles {41.5 cycles; 55.5 cycles; 71.5cycles}
   *   equal to 239.5 cycles
   * Unit: ADC clock cycles
-  * @param __HANDLE__: ADC handle
+  * @param __HANDLE__ ADC handle
   * @retval ADC conversion cycles on all channels
   */
 #define ADC_CONVCYCLES_MAX_RANGE(__HANDLE__)                                                                     \
@@ -3784,7 +3780,7 @@ typedef struct
 
 #define IS_ADC_EXTTRIG(REGTRIG) (((REGTRIG) == ADC_EXTERNALTRIGCONV_T2_CC2)   || \
                                  ((REGTRIG) == ADC_EXTERNALTRIGCONV_T3_TRGO)  || \
-                                 ((REGTRIG) == ADC_EXTERNALTRIGCONV_T4_CC2)   || \
+                                 ((REGTRIG) == ADC_EXTERNALTRIGCONV_T4_CC4)   || \
                                  ((REGTRIG) == ADC_EXTERNALTRIGCONV_T19_TRGO) || \
                                  ((REGTRIG) == ADC_EXTERNALTRIGCONV_T19_CC3)  || \
                                  ((REGTRIG) == ADC_EXTERNALTRIGCONV_T19_CC4)  || \

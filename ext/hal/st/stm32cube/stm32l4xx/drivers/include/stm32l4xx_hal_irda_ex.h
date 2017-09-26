@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_irda_ex.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    21-April-2017
   * @brief   Header file of IRDA HAL Extended module.
   ******************************************************************************
   * @attention
@@ -66,11 +64,13 @@
   */
 
 /** @brief  Report the IRDA clock source.
-  * @param  __HANDLE__: specifies the IRDA Handle.
-  * @param  __CLOCKSOURCE__: output variable.
+  * @param  __HANDLE__ specifies the IRDA Handle.
+  * @param  __CLOCKSOURCE__ output variable.
   * @retval IRDA clocking source, written in __CLOCKSOURCE__.
   */
-#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || defined (STM32L496xx) || defined (STM32L4A6xx)  
+#if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || \
+    defined (STM32L496xx) || defined (STM32L4A6xx) || \
+    defined (STM32L4R5xx) || defined (STM32L4R7xx) || defined (STM32L4R9xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined (STM32L4S9xx)
 #define IRDA_GETCLOCKSOURCE(__HANDLE__,__CLOCKSOURCE__)       \
   do {                                                        \
     if((__HANDLE__)->Instance == USART1)                      \

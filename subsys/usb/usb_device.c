@@ -82,6 +82,7 @@
 #define CONF_DESC_bmAttributes      7 /** configuration characteristics */
 
 /* interface descriptor field offsets */
+#define INTF_DESC_bInterfaceNumber  2 /** Interface number offset */
 #define INTF_DESC_bAlternateSetting 3 /** Alternate setting offset */
 
 /* endpoint descriptor field offsets */
@@ -464,8 +465,64 @@ static bool usb_set_configuration(u8_t config_index, u8_t alt_setting)
 		/* skip to next descriptor */
 		p += p[DESC_bLength];
 	}
-	if (usb_dev.status_callback)
-		usb_dev.status_callback(USB_DC_CONFIGURED);
+
+	if (usb_dev.status_callback) {
+		usb_dev.status_callback(USB_DC_CONFIGURED, &config_index);
+	}
+
+	return true;
+}
+
+/*
+ * @brief set USB interface
+ *
+ * @param [in] iface Interface index
+ * @param [in] alt_setting  Alternate setting number
+ *
+ * @return true if successfully configured false if error or unconfigured
+ */
+static bool usb_set_interface(u8_t iface, u8_t alt_setting)
+{
+	const u8_t *p = usb_dev.descriptors;
+	u8_t cur_iface = 0xFF;
+	u8_t cur_alt_setting = 0xFF;
+	struct usb_dc_ep_cfg_data ep_cfg;
+
+	SYS_LOG_DBG("iface %u alt_setting %u\n", iface, alt_setting);
+
+	while (p[DESC_bLength] != 0) {
+		switch (p[DESC_bDescriptorType]) {
+		case DESC_INTERFACE:
+			/* remember current alternate setting */
+			cur_alt_setting = p[INTF_DESC_bAlternateSetting];
+			cur_iface = p[INTF_DESC_bInterfaceNumber];
+			break;
+		case DESC_ENDPOINT:
+			if ((cur_iface != iface) ||
+			    (cur_alt_setting != alt_setting)) {
+				break;
+			}
+
+			/* Endpoint is found for desired interface and
+			 * alternate setting
+			 */
+			ep_cfg.ep_type = p[ENDP_DESC_bmAttributes];
+			ep_cfg.ep_mps = (p[ENDP_DESC_wMaxPacketSize]) |
+				(p[ENDP_DESC_wMaxPacketSize + 1] << 8);
+			ep_cfg.ep_addr = p[ENDP_DESC_bEndpointAddress];
+			usb_dc_ep_configure(&ep_cfg);
+			usb_dc_ep_enable(ep_cfg.ep_addr);
+
+			SYS_LOG_DBG("Found: ep_addr 0x%x\n", ep_cfg.ep_addr);
+			break;
+		default:
+			break;
+		}
+
+		/* skip to next descriptor */
+		p += p[DESC_bLength];
+		SYS_LOG_DBG("p %p\n", p);
+	}
 
 	return true;
 }
@@ -591,6 +648,7 @@ static bool usb_handle_std_interface_req(struct usb_setup_packet *setup,
 
 	case REQ_SET_INTERFACE:
 		SYS_LOG_DBG("REQ_SET_INTERFACE\n");
+		usb_set_interface(setup->wIndex, setup->wValue);
 		*len = 0;
 		break;
 

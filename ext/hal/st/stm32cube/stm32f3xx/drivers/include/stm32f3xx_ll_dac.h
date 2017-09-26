@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_ll_dac.h
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   Header file of DAC LL module.
   ******************************************************************************
   * @attention

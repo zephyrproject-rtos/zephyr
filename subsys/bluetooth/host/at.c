@@ -92,7 +92,7 @@ static int get_cmd_value(struct at_client *at, struct net_buf *buf,
 {
 	int cmd_len = 0;
 	u8_t pos = at->pos;
-	const unsigned char *str = buf->data;
+	const char *str = (char *)buf->data;
 
 	while (cmd_len < buf->len && at->pos != at->buf_max_len) {
 		if (*str != stop_byte) {
@@ -122,7 +122,7 @@ static int get_response_string(struct at_client *at, struct net_buf *buf,
 {
 	int cmd_len = 0;
 	u8_t pos = at->pos;
-	const unsigned char *str = buf->data;
+	const char *str = (char *)buf->data;
 
 	while (cmd_len < buf->len && at->pos != at->buf_max_len) {
 		if (*str != stop_byte) {

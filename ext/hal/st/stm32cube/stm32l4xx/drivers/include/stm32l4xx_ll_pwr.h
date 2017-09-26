@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32l4xx_ll_pwr.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    21-April-2017
   * @brief   Header file of PWR LL module.
   ******************************************************************************
   * @attention
@@ -185,7 +183,7 @@ extern "C" {
 /** @defgroup PWR_LL_EC_BATT_CHARG_RESISTOR BATT CHARG RESISTOR
   * @{
   */
-#define LL_PWR_BATT_CHARG_RESISTOR_5K      ((uint32_t)0x00000000)
+#define LL_PWR_BATT_CHARG_RESISTOR_5K      (0x00000000U)
 #define LL_PWR_BATT_CHARGRESISTOR_1_5K     (PWR_CR4_VBRS)
 /**
   * @}
@@ -218,22 +216,22 @@ extern "C" {
 /** @defgroup PWR_LL_EC_GPIO_BIT GPIO BIT
   * @{
   */
-#define LL_PWR_GPIO_BIT_0                  ((uint32_t)0x00000001)
-#define LL_PWR_GPIO_BIT_1                  ((uint32_t)0x00000002)
-#define LL_PWR_GPIO_BIT_2                  ((uint32_t)0x00000004)
-#define LL_PWR_GPIO_BIT_3                  ((uint32_t)0x00000008)
-#define LL_PWR_GPIO_BIT_4                  ((uint32_t)0x00000010)
-#define LL_PWR_GPIO_BIT_5                  ((uint32_t)0x00000020)
-#define LL_PWR_GPIO_BIT_6                  ((uint32_t)0x00000040)
-#define LL_PWR_GPIO_BIT_7                  ((uint32_t)0x00000080)
-#define LL_PWR_GPIO_BIT_8                  ((uint32_t)0x00000100)
-#define LL_PWR_GPIO_BIT_9                  ((uint32_t)0x00000200)
-#define LL_PWR_GPIO_BIT_10                 ((uint32_t)0x00000400)
-#define LL_PWR_GPIO_BIT_11                 ((uint32_t)0x00000800)
-#define LL_PWR_GPIO_BIT_12                 ((uint32_t)0x00001000)
-#define LL_PWR_GPIO_BIT_13                 ((uint32_t)0x00002000)
-#define LL_PWR_GPIO_BIT_14                 ((uint32_t)0x00004000)
-#define LL_PWR_GPIO_BIT_15                 ((uint32_t)0x00008000)
+#define LL_PWR_GPIO_BIT_0                  (0x00000001U)
+#define LL_PWR_GPIO_BIT_1                  (0x00000002U)
+#define LL_PWR_GPIO_BIT_2                  (0x00000004U)
+#define LL_PWR_GPIO_BIT_3                  (0x00000008U)
+#define LL_PWR_GPIO_BIT_4                  (0x00000010U)
+#define LL_PWR_GPIO_BIT_5                  (0x00000020U)
+#define LL_PWR_GPIO_BIT_6                  (0x00000040U)
+#define LL_PWR_GPIO_BIT_7                  (0x00000080U)
+#define LL_PWR_GPIO_BIT_8                  (0x00000100U)
+#define LL_PWR_GPIO_BIT_9                  (0x00000200U)
+#define LL_PWR_GPIO_BIT_10                 (0x00000400U)
+#define LL_PWR_GPIO_BIT_11                 (0x00000800U)
+#define LL_PWR_GPIO_BIT_12                 (0x00001000U)
+#define LL_PWR_GPIO_BIT_13                 (0x00002000U)
+#define LL_PWR_GPIO_BIT_14                 (0x00004000U)
+#define LL_PWR_GPIO_BIT_15                 (0x00008000U)
 /**
   * @}
   */
@@ -304,16 +302,6 @@ __STATIC_INLINE void LL_PWR_DisableLowPowerRunMode(void)
 }
 
 /**
-  * @brief  Check if the regulator is in low-power mode
-  * @rmtoll CR1          LPR           LL_PWR_IsEnabledLowPowerRunMode
-  * @retval State of bit (1 or 0).
-  */
-__STATIC_INLINE uint32_t LL_PWR_IsEnabledLowPowerRunMode(void)
-{
-  return (READ_BIT(PWR->CR1, PWR_CR1_LPR) == (PWR_CR1_LPR));
-}
-
-/**
   * @brief  Switch from run main mode to run low-power mode.
   * @rmtoll CR1          LPR           LL_PWR_EnterLowPowerRunMode
   * @retval None
@@ -334,7 +322,18 @@ __STATIC_INLINE void LL_PWR_ExitLowPowerRunMode(void)
 }
 
 /**
+  * @brief  Check if the regulator is in low-power mode
+  * @rmtoll CR1          LPR           LL_PWR_IsEnabledLowPowerRunMode
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t LL_PWR_IsEnabledLowPowerRunMode(void)
+{
+  return (READ_BIT(PWR->CR1, PWR_CR1_LPR) == (PWR_CR1_LPR));
+}
+
+/**
   * @brief  Set the main internal regulator output voltage
+  * @note   This configuration may be completed with LL_PWR_EnableRange1BoostMode() on STM32L4Rx/STM32L4Sx devices.
   * @rmtoll CR1          VOS           LL_PWR_SetRegulVoltageScaling
   * @param  VoltageScaling This parameter can be one of the following values:
   *         @arg @ref LL_PWR_REGU_VOLTAGE_SCALE1
@@ -357,6 +356,38 @@ __STATIC_INLINE uint32_t LL_PWR_GetRegulVoltageScaling(void)
 {
   return (uint32_t)(READ_BIT(PWR->CR1, PWR_CR1_VOS));
 }
+
+#if defined(PWR_CR5_R1MODE)
+/**
+  * @brief  Enable main regulator voltage range 1 boost mode 
+  * @rmtoll CR5          R1MODE        LL_PWR_EnableRange1BoostMode
+  * @retval None
+  */
+__STATIC_INLINE void LL_PWR_EnableRange1BoostMode(void)
+{
+  CLEAR_BIT(PWR->CR5, PWR_CR5_R1MODE);
+}
+
+/**
+  * @brief  Disable main regulator voltage range 1 boost mode 
+  * @rmtoll CR5          R1MODE        LL_PWR_DisableRange1BoostMode
+  * @retval None
+  */
+__STATIC_INLINE void LL_PWR_DisableRange1BoostMode(void)
+{
+  SET_BIT(PWR->CR5, PWR_CR5_R1MODE);
+}
+
+/**
+  * @brief  Check if the main regulator voltage range 1 boost mode is enabled
+  * @rmtoll CR5          R1MODE        LL_PWR_IsEnabledRange1BoostMode
+  * @retval Inverted state of bit (0 or 1).
+  */
+__STATIC_INLINE uint32_t LL_PWR_IsEnabledRange1BoostMode(void)
+{
+  return (READ_BIT(PWR->CR5, PWR_CR5_R1MODE) == RESET);
+}
+#endif /* PWR_CR5_R1MODE */
 
 /**
   * @brief  Enable access to the backup domain
@@ -418,6 +449,70 @@ __STATIC_INLINE uint32_t LL_PWR_GetPowerMode(void)
 {
   return (uint32_t)(READ_BIT(PWR->CR1, PWR_CR1_LPMS));
 }
+
+#if defined(PWR_CR1_RRSTP)
+/**
+  * @brief  Enable SRAM3 content retention in Stop mode
+  * @rmtoll CR1          RRSTP           LL_PWR_EnableSRAM3Retention
+  * @retval None
+  */
+__STATIC_INLINE void LL_PWR_EnableSRAM3Retention(void)
+{
+  SET_BIT(PWR->CR1, PWR_CR1_RRSTP);
+}
+
+/**
+  * @brief  Disable SRAM3 content retention in Stop mode
+  * @rmtoll CR1          RRSTP           LL_PWR_DisableSRAM3Retention
+  * @retval None
+  */
+__STATIC_INLINE void LL_PWR_DisableSRAM3Retention(void)
+{
+  CLEAR_BIT(PWR->CR1, PWR_CR1_RRSTP);
+}
+
+/**
+  * @brief  Check if SRAM3 content retention in Stop mode is enabled
+  * @rmtoll CR1          RRSTP           LL_PWR_IsEnabledSRAM3Retention
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t LL_PWR_IsEnabledSRAM3Retention(void)
+{
+  return (READ_BIT(PWR->CR1, PWR_CR1_RRSTP) == (PWR_CR1_RRSTP));
+}
+#endif /* PWR_CR1_RRSTP */
+
+#if defined(PWR_CR3_DSIPDEN)
+/**
+  * @brief  Enable pull-down activation on DSI pins
+  * @rmtoll CR3          DSIPDEN           LL_PWR_EnableDSIPinsPDActivation
+  * @retval None
+  */
+__STATIC_INLINE void LL_PWR_EnableDSIPinsPDActivation(void)
+{
+  SET_BIT(PWR->CR3, PWR_CR3_DSIPDEN);
+}
+
+/**
+  * @brief  Disable pull-down activation on DSI pins
+  * @rmtoll CR3          DSIPDEN           LL_PWR_DisableDSIPinsPDActivation
+  * @retval None
+  */
+__STATIC_INLINE void LL_PWR_DisableDSIPinsPDActivation(void)
+{
+  CLEAR_BIT(PWR->CR3, PWR_CR3_DSIPDEN);
+}
+
+/**
+  * @brief  Check if pull-down activation on DSI pins is enabled
+  * @rmtoll CR3          DSIPDEN           LL_PWR_IsEnabledDSIPinsPDActivation
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t LL_PWR_IsEnabledDSIPinsPDActivation(void)
+{
+  return (READ_BIT(PWR->CR3, PWR_CR3_DSIPDEN) == (PWR_CR3_DSIPDEN));
+}
+#endif /* PWR_CR3_DSIPDEN */
 
 #if defined(PWR_CR2_PVME1)
 /**
@@ -661,7 +756,7 @@ __STATIC_INLINE void LL_PWR_DisablePUPDCfg(void)
 }
 
 /**
-  * @brief  Check if pull-up and pull-down configuration  is enabled
+  * @brief  Check if pull-up and pull-down configuration is enabled
   * @rmtoll CR3          APC           LL_PWR_IsEnabledPUPDCfg
   * @retval State of bit (1 or 0).
   */
@@ -669,6 +764,38 @@ __STATIC_INLINE uint32_t LL_PWR_IsEnabledPUPDCfg(void)
 {
   return (READ_BIT(PWR->CR3, PWR_CR3_APC) == (PWR_CR3_APC));
 }
+
+#if defined(PWR_CR3_DSIPDEN)
+/**
+  * @brief  Enable pull-down activation on DSI pins
+  * @rmtoll CR3          DSIPDEN       LL_PWR_EnableDSIPullDown
+  * @retval None
+  */
+__STATIC_INLINE void LL_PWR_EnableDSIPullDown(void)
+{
+  SET_BIT(PWR->CR3, PWR_CR3_DSIPDEN);
+}
+
+/**
+  * @brief  Disable pull-down activation on DSI pins
+  * @rmtoll CR3          DSIPDEN       LL_PWR_DisableDSIPullDown
+  * @retval None
+  */
+__STATIC_INLINE void LL_PWR_DisableDSIPullDown(void)
+{
+  CLEAR_BIT(PWR->CR3, PWR_CR3_DSIPDEN);
+}
+
+/**
+  * @brief  Check if pull-down activation on DSI pins is enabled
+  * @rmtoll CR3          DSIPDEN       LL_PWR_IsEnabledDSIPullDown
+  * @retval State of bit (1 or 0).
+  */
+__STATIC_INLINE uint32_t LL_PWR_IsEnabledDSIPullDown(void)
+{
+  return (READ_BIT(PWR->CR3, PWR_CR3_DSIPDEN) == (PWR_CR3_DSIPDEN));
+}
+#endif /* PWR_CR3_DSIPDEN */
 
 /**
   * @brief  Enable SRAM2 content retention in Standby mode
@@ -691,7 +818,7 @@ __STATIC_INLINE void LL_PWR_DisableSRAM2Retention(void)
 }
 
 /**
-  * @brief  Check if SRAM2 content retention in Standby mode  is enabled
+  * @brief  Check if SRAM2 content retention in Standby mode is enabled
   * @rmtoll CR3          RRS           LL_PWR_IsEnabledSRAM2Retention
   * @retval State of bit (1 or 0).
   */
@@ -1374,7 +1501,7 @@ __STATIC_INLINE uint32_t LL_PWR_IsActiveFlag_VOS(void)
 
 /**
   * @brief  Indicate whether the regulator is ready in main mode or is in low-power mode
-  * @note: Take care, return value "0" means the regulator is ready.  Return value "1" means the output voltage range is still changing.
+  * @note   Take care, return value "0" means the regulator is ready. Return value "1" means the output voltage range is still changing.
   * @rmtoll SR2          REGLPF        LL_PWR_IsActiveFlag_REGLPF
   * @retval State of bit (1 or 0).
   */
@@ -1407,14 +1534,14 @@ ErrorStatus LL_PWR_DeInit(void);
   */
 #endif /* USE_FULL_LL_DRIVER */
 
-/** Legacy definitions for compatibility purpose
-@cond 0
-*/
+/** @defgroup PWR_LL_EF_Legacy_Functions Legacy functions name
+  * @{
+  */
 /* Old functions name kept for legacy purpose, to be replaced by the          */
 /* current functions name.                                                    */
 #define LL_PWR_IsActiveFlag_VOSF  LL_PWR_IsActiveFlag_VOS
 /**
-@endcond
+  * @}
   */
 
 /**

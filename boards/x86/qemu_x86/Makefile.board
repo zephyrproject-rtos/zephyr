@@ -17,6 +17,6 @@ QEMU_x86 = qemu-system-i386
 DEBUG_SCRIPT = qemu.sh
 
 debugserver: QEMU_EXTRA_FLAGS += -s -S
-debugserver: qemu
+debugserver: run
 
 export QEMU_FLAGS_x86 QEMU_x86 QEMU_CPU_TYPE_x86

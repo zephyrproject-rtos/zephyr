@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_rcc_ex.h
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   Header file of RCC HAL Extension module.
   ******************************************************************************
   * @attention
@@ -598,7 +596,7 @@ typedef struct
 
   uint32_t Tim34ClockSelection;   /*!< TIM3 & TIM4 clock source
                                        This parameter can be a value of @ref RCCEx_TIM34_Clock_Source */
-
+				
   uint32_t Tim15ClockSelection;  /*!< TIM15 clock source
                                       This parameter can be a value of @ref RCCEx_TIM15_Clock_Source */
 
@@ -3842,3 +3840,4 @@ uint32_t          HAL_RCCEx_GetPeriphCLKFreq(uint32_t PeriphClk);
 #endif /* __STM32F3xx_HAL_RCC_EX_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+

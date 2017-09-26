@@ -1,0 +1,15 @@
+# Kconfig - ADC configuration options
+
+#
+# Copyright (c) 2015 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config ADC_MCUX_ADC16
+	bool "MCUX ADC16 driver"
+	depends on HAS_MCUX_ADC16
+	select HAS_DTS_ADC
+	default n
+	help
+	  Enable the MCUX ADC16 driver.

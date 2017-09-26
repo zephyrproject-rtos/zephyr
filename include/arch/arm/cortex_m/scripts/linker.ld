@@ -230,6 +230,8 @@ SECTIONS
 	KERNEL_INPUT_SECTION(.bss)
 	KERNEL_INPUT_SECTION(".bss.*")
 	KERNEL_INPUT_SECTION(COMMON)
+	*(".kernel_bss.*")
+
         /*
          * As memory is cleared in words only, it is simpler to ensure the BSS
          * section ends on a 4 byte boundary. This wastes a maximum of 3 bytes.
@@ -245,6 +247,7 @@ SECTIONS
          */
         KERNEL_INPUT_SECTION(.noinit)
         KERNEL_INPUT_SECTION(".noinit.*")
+	*(".kernel_noinit.*")
 
         } GROUP_LINK_IN(RAMABLE_REGION)
 
@@ -253,6 +256,7 @@ SECTIONS
 	__data_ram_start = .;
 	KERNEL_INPUT_SECTION(.data)
 	KERNEL_INPUT_SECTION(".data.*")
+	*(".kernel.*")
 
 #ifdef CONFIG_CUSTOM_RWDATA_LD
 /* Located in project source directory */

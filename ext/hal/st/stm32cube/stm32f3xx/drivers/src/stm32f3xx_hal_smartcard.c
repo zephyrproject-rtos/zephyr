@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_smartcard.c
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   SMARTCARD HAL module driver.
   *          This file provides firmware functions to manage the following
   *          functionalities of the SMARTCARD peripheral:
@@ -1298,7 +1296,7 @@ HAL_StatusTypeDef HAL_SMARTCARD_AbortReceive_IT(SMARTCARD_HandleTypeDef *hsmartc
 
 /**
   * @brief Handle SMARTCARD interrupt requests.
-  * @param hsmartcard: Pointer to a SMARTCARD_HandleTypeDef structure that contains
+  * @param hsmartcard Pointer to a SMARTCARD_HandleTypeDef structure that contains
   *                    the configuration information for the specified SMARTCARD module.
   * @retval None
   */
@@ -1662,7 +1660,7 @@ uint32_t HAL_SMARTCARD_GetError(SMARTCARD_HandleTypeDef *hsmartcard)
 
 /**
   * @brief  Configure the SMARTCARD associated USART peripheral.
-  * @param  hsmartcard: Pointer to a SMARTCARD_HandleTypeDef structure that contains
+  * @param  hsmartcard Pointer to a SMARTCARD_HandleTypeDef structure that contains
   *                     the configuration information for the specified SMARTCARD module.
   * @retval HAL status
   */
@@ -1760,7 +1758,7 @@ static HAL_StatusTypeDef SMARTCARD_SetConfig(SMARTCARD_HandleTypeDef *hsmartcard
 
 /**
   * @brief  Configure the SMARTCARD associated USART peripheral advanced features.
-  * @param  hsmartcard: Pointer to a SMARTCARD_HandleTypeDef structure that contains
+  * @param  hsmartcard Pointer to a SMARTCARD_HandleTypeDef structure that contains
   *                     the configuration information for the specified SMARTCARD module.
   * @retval None
   */
@@ -1822,7 +1820,7 @@ static void SMARTCARD_AdvFeatureConfig(SMARTCARD_HandleTypeDef *hsmartcard)
 
 /**
   * @brief  Check the SMARTCARD Idle State.
-  * @param  hsmartcard: Pointer to a SMARTCARD_HandleTypeDef structure that contains
+  * @param  hsmartcard Pointer to a SMARTCARD_HandleTypeDef structure that contains
   *                     the configuration information for the specified SMARTCARD module.
   * @retval HAL status
   */
@@ -2162,7 +2160,7 @@ static void SMARTCARD_DMARxOnlyAbortCallback(DMA_HandleTypeDef *hdma)
 
 /**
   * @brief Send an amount of data in non-blocking mode.
-  * @param hsmartcard: Pointer to a SMARTCARD_HandleTypeDef structure that contains
+  * @param hsmartcard Pointer to a SMARTCARD_HandleTypeDef structure that contains
   *                the configuration information for the specified SMARTCARD module.
   *         Function called under interruption only, once
   *         interruptions have been enabled by HAL_SMARTCARD_Transmit_IT()
@@ -2235,7 +2233,7 @@ static HAL_StatusTypeDef SMARTCARD_EndTransmit_IT(SMARTCARD_HandleTypeDef *hsmar
 
 /**
   * @brief Receive an amount of data in non-blocking mode.
-  * @param hsmartcard: Pointer to a SMARTCARD_HandleTypeDef structure that contains
+  * @param hsmartcard Pointer to a SMARTCARD_HandleTypeDef structure that contains
   *                the configuration information for the specified SMARTCARD module.
   *         Function called under interruption only, once
   *         interruptions have been enabled by HAL_SMARTCARD_Receive_IT().

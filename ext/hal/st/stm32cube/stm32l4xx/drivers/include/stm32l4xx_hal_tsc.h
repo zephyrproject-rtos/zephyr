@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_tsc.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    21-April-2017
   * @brief   Header file of TSC HAL module.
   ******************************************************************************
   * @attention

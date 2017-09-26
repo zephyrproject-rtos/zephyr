@@ -71,6 +71,7 @@ enum net_ipv6_nbr_state {
 	NET_IPV6_NBR_STATE_STALE,
 	NET_IPV6_NBR_STATE_DELAY,
 	NET_IPV6_NBR_STATE_PROBE,
+	NET_IPV6_NBR_STATE_STATIC,
 };
 
 const char *net_ipv6_nbr_state2str(enum net_ipv6_nbr_state state);
