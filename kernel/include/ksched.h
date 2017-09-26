@@ -526,7 +526,18 @@ static inline struct k_thread *_unpend_first_thread(_wait_q_t *wait_q)
  */
 static inline int _is_thread_user(void)
 {
+#ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
+	/* the _current might be NULL before the first thread is scheduled if
+	 * CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN is enabled.
+	 */
+	if (!_current) {
+		return 0;
+	}
+
 	return _current->base.user_options & K_USER;
+#else
+	return _current->base.user_options & K_USER;
+#endif
 }
 #endif /* CONFIG_USERSPACE */
 #endif /* _ksched__h_ */
