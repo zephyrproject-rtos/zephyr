@@ -20,9 +20,9 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 #include <bluetooth/bas.h>
+#include <bluetooth/dis.h>
 
 #include <gatt/hrs.h>
-#include <gatt/dis.h>
 
 #define DEVICE_NAME		CONFIG_BT_DEVICE_NAME
 #define DEVICE_NAME_LEN		(sizeof(DEVICE_NAME) - 1)

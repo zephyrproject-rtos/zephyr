@@ -20,4 +20,11 @@ config BT_CTS
 	help
 	This option enable the GATT Current Time Service.
 
+config BT_DIS
+	bool
+	prompt "Bluetooth DIS support"
+	default n
+	help
+	This option enable the GATT Device Information Service.
+
 endmenu
