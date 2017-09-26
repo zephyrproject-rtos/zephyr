@@ -397,7 +397,7 @@ static u32_t adv_timeout(void)
 {
 	u32_t timeout;
 
-	if (bt_rand(&timeout, sizeof(timeout) < 0)) {
+	if (bt_rand(&timeout, sizeof(timeout)) < 0) {
 		return K_SECONDS(10);
 	}
 
