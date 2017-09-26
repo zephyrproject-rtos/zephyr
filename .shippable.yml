@@ -29,7 +29,7 @@ build:
 
     ci:
       - export CCACHE_DIR=${SHIPPABLE_BUILD_DIR}/ccache/.ccache
-      - git rebase origin/${PULL_REQUEST_BASE_BRANCH}
+      - git merge origin/${PULL_REQUEST_BASE_BRANCH}
       - source zephyr-env.sh
       - cd $ZEPHYR_BASE/scripts
       - mkdir build && cd build
