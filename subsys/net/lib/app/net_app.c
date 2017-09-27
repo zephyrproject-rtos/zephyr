@@ -1709,6 +1709,18 @@ reset:
 			if (ctx->tls.mbedtls.ssl_ctx.hdr) {
 				net_pkt_frag_add(pkt,
 						 ctx->tls.mbedtls.ssl_ctx.hdr);
+#if defined(CONFIG_NET_IPV6)
+				if (net_pkt_family(pkt) == AF_INET6) {
+					net_pkt_set_ip_hdr_len(pkt,
+						sizeof(struct net_ipv6_hdr));
+				}
+#endif
+#if defined(CONFIG_NET_IPV4)
+				if (net_pkt_family(pkt) == AF_INET) {
+					net_pkt_set_ip_hdr_len(pkt,
+						sizeof(struct net_ipv4_hdr));
+				}
+#endif
 				ctx->tls.mbedtls.ssl_ctx.hdr = NULL;
 			}
 
