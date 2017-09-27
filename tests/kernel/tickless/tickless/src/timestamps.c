@@ -241,15 +241,10 @@ void _timestamp_close(void)
 	_TIMESTAMP_CTRL = 0x0;  /* disable oscillator */
 }
 
-#elif defined(CONFIG_SOC_SERIES_SAM3X)
-/* Atmel SAM3 family processor - use RTT (Real-time Timer) */
+#elif defined(CONFIG_SOC_FAMILY_SAM)
+/* Atmel SAM family processor - use RTT (Real-time Timer) */
 
 #include <soc.h>
-
-#define _TIMESTAMP_ADDR (0x400E1A30)
-
-#define _TIMESTAMP_MODE (*((volatile u32_t *)(_TIMESTAMP_ADDR + 0x00)))
-#define _TIMESTAMP_VAL (*((volatile u32_t *)(_TIMESTAMP_ADDR + 0x08)))
 
 /**
  *
@@ -264,8 +259,8 @@ void _timestamp_open(void)
 	/* enable RTT clock from PMC */
 	soc_pmc_peripheral_enable(ID_RTT);
 
-	/* Reset RTT and set prescaler to 1 */
-	_TIMESTAMP_MODE = (1 << 18) | (1 << 0);
+	/* Reset RTT and set prescaler to 3, minimum required by SAM E70 SoC */
+	RTT->RTT_MR = RTT_MR_RTTRST | RTT_MR_RTPRES(3);
 }
 
 /**
@@ -278,20 +273,19 @@ void _timestamp_open(void)
  */
 u32_t _timestamp_read(void)
 {
-	static u32_t last_val;
-	u32_t tmr_val = _TIMESTAMP_VAL;
-	u32_t ticks;
+	u32_t timer_val_0;
+	u32_t timer_val_1;
 
-	/* handle rollover */
-	if (tmr_val < last_val) {
-		ticks =  ((0xFFFFFFFF - last_val)) + 1 + tmr_val;
-	} else {
-		ticks = tmr_val - last_val;
-	}
+	/* As RTT_VR can be updated asynchronously with the Master Clock, it
+	 * must be read twice at the same value to ensure the read value is
+	 * correct.
+	 */
+	do {
+		timer_val_0 = RTT->RTT_VR;
+		timer_val_1 = RTT->RTT_VR;
+	} while (timer_val_0 != timer_val_1);
 
-	last_val = tmr_val;
-
-	return ticks;
+	return timer_val_0;
 }
 
 /**
