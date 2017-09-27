@@ -103,14 +103,14 @@ static void mod_publish(struct k_work *work)
 
 	BT_DBG("");
 
-	if (pub->func) {
-		pub->func(pub->mod);
-	}
-
 	period_ms = bt_mesh_model_pub_period_get(pub->mod);
 	BT_DBG("period %u ms", period_ms);
 	if (period_ms) {
 		k_delayed_work_submit(&pub->timer, period_ms);
+	}
+
+	if (pub->func) {
+		pub->func(pub->mod);
 	}
 }
 
