@@ -95,8 +95,15 @@ struct net_pkt {
 	u8_t family     : 4;	/* IPv4 vs IPv6 */
 	u8_t _unused    : 3;
 
+	union {
+		/* IPv6 hop limit or IPv4 ttl for this network packet.
+		 * The value is shared between IPv6 and IPv4.
+		 */
+		u8_t ipv6_hop_limit;
+		u8_t ipv4_ttl;
+	};
+
 #if defined(CONFIG_NET_IPV6)
-	u8_t ipv6_hop_limit;	/* IPv6 hop limit for this network packet. */
 	u8_t ipv6_ext_len;	/* length of extension headers */
 	u8_t ipv6_ext_opt_len; /* IPv6 ND option length */
 
@@ -246,6 +253,19 @@ static inline void net_pkt_set_forwarding(struct net_pkt *pkt, bool forward)
 static inline bool net_pkt_forwarding(struct net_pkt *pkt)
 {
 	return false;
+}
+#endif
+
+#if defined(CONFIG_NET_IPV4)
+static inline u8_t net_pkt_ipv4_ttl(struct net_pkt *pkt)
+{
+	return pkt->ipv4_ttl;
+}
+
+static inline void net_pkt_set_ipv4_ttl(struct net_pkt *pkt,
+					u8_t ttl)
+{
+	pkt->ipv4_ttl = ttl;
 }
 #endif
 
