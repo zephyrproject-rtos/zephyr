@@ -2048,6 +2048,11 @@ static const struct shell_cmd bt_commands[] = {
 	{ "advx", cmd_advx, "<on off> [coded] [anon] [txp]" },
 	{ "scanx", cmd_scanx, "<on passive off> [coded]" },
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
+#if defined(CONFIG_BT_CTLR_DTM)
+	{ "test_tx", cmd_test_tx, "<chan> <len> <type> <phy>" },
+	{ "test_rx", cmd_test_rx, "<chan> <phy> <mod_idx>" },
+	{ "test_end", cmd_test_end, HELP_NONE},
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
 	{ NULL, NULL, NULL }
 };
 
