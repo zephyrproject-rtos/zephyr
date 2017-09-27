@@ -166,11 +166,9 @@ struct bt_mesh_net {
 
 	s64_t last_update;       /* Time since last IV Update change */
 
-#if defined(CONFIG_BT_MESH_LOCAL_INTERFACE)
 	/* Local network interface */
 	struct k_work local_work;
 	struct k_fifo local_queue;
-#endif
 
 #if defined(CONFIG_BT_MESH_FRIEND)
 	struct bt_mesh_friend frnd;  /* Friend state */
