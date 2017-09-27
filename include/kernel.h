@@ -124,7 +124,12 @@ struct k_timer;
 struct k_poll_event;
 struct k_poll_signal;
 
+/* This enumeration needs to be kept in sync with the lists of kernel objects
+ * and subsystems in scripts/gen_kobject_list.py, as well as the otype_to_str()
+ * function in kernel/userspace.c
+ */
 enum k_objects {
+	/* Core kernel objects */
 	K_OBJ_ALERT,
 	K_OBJ_DELAYED_WORK,
 	K_OBJ_MEM_SLAB,
@@ -137,6 +142,29 @@ enum k_objects {
 	K_OBJ_TIMER,
 	K_OBJ_WORK,
 	K_OBJ_WORK_Q,
+
+	/* Driver subsystems */
+	K_OBJ_DRIVER_ADC,
+	K_OBJ_DRIVER_AIO_CMP,
+	K_OBJ_DRIVER_CLOCK_CONTROL,
+	K_OBJ_DRIVER_COUNTER,
+	K_OBJ_DRIVER_CRYPTO,
+	K_OBJ_DRIVER_DMA,
+	K_OBJ_DRIVER_ETH,
+	K_OBJ_DRIVER_FLASH,
+	K_OBJ_DRIVER_GPIO,
+	K_OBJ_DRIVER_I2C,
+	K_OBJ_DRIVER_I2S,
+	K_OBJ_DRIVER_IPM,
+	K_OBJ_DRIVER_PINMUX,
+	K_OBJ_DRIVER_PWM,
+	K_OBJ_DRIVER_RANDOM,
+	K_OBJ_DRIVER_RTC,
+	K_OBJ_DRIVER_SENSOR,
+	K_OBJ_DRIVER_SHARED_IRQ,
+	K_OBJ_DRIVER_SPI,
+	K_OBJ_DRIVER_UART,
+	K_OBJ_DRIVER_WDT,
 
 	K_OBJ_LAST
 };
