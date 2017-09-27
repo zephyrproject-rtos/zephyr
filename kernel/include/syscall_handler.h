@@ -69,7 +69,7 @@ extern const _k_syscall_handler_t _k_syscall_table[K_SYSCALL_LIMIT];
 
 /* Convenience macros for handler implementations */
 #define _SYSCALL_ARG0	ARG_UNUSED(arg1); ARG_UNUSED(arg2); ARG_UNUSED(arg3); \
-			ARG_UNUSED(arg4); ARH_UNUSED(arg5); ARG_UNUSED(arg6)
+			ARG_UNUSED(arg4); ARG_UNUSED(arg5); ARG_UNUSED(arg6)
 
 #define _SYSCALL_ARG1	ARG_UNUSED(arg2); ARG_UNUSED(arg3); ARG_UNUSED(arg4); \
 			ARG_UNUSED(arg5); ARG_UNUSED(arg6)
