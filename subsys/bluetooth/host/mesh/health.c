@@ -79,6 +79,7 @@ static size_t health_get_current(struct bt_mesh_model *mod,
 				 struct net_buf_simple *msg)
 {
 	struct bt_mesh_health *srv = mod->user_data;
+	const struct bt_mesh_comp *comp;
 	u8_t *test_id, *company_ptr;
 	u16_t company_id;
 	u8_t fault_count;
@@ -88,6 +89,7 @@ static size_t health_get_current(struct bt_mesh_model *mod,
 
 	test_id = net_buf_simple_add(msg, 1);
 	company_ptr = net_buf_simple_add(msg, sizeof(company_id));
+	comp = bt_mesh_comp_get();
 
 	fault_count = net_buf_simple_tailroom(msg) - 4;
 
@@ -97,7 +99,7 @@ static size_t health_get_current(struct bt_mesh_model *mod,
 					 &fault_count);
 		if (err) {
 			BT_ERR("Failed to get faults (err %d)", err);
-			sys_put_le16(0, company_ptr);
+			sys_put_le16(comp->cid, company_ptr);
 			*test_id = HEALTH_TEST_STANDARD;
 			fault_count = 0;
 		} else {
@@ -105,7 +107,7 @@ static size_t health_get_current(struct bt_mesh_model *mod,
 		}
 	} else {
 		BT_WARN("No callback for getting faults");
-		sys_put_le16(0, company_ptr);
+		sys_put_le16(comp->cid, company_ptr);
 		*test_id = HEALTH_TEST_STANDARD;
 		fault_count = 0;
 	}
