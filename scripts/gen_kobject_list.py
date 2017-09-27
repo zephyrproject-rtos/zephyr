@@ -20,20 +20,52 @@ if LooseVersion(elftools.__version__) < LooseVersion('0.24'):
     sys.stderr.write("pyelftools is out of date, need version 0.24 or later\n")
     sys.exit(1)
 
-kobjects = {
-        "k_alert"           : "K_OBJ_ALERT",
-        "k_delayed_work"    : "K_OBJ_DELAYED_WORK",
-        "k_mem_slab"        : "K_OBJ_MEM_SLAB",
-        "k_msgq"            : "K_OBJ_MSGQ",
-        "k_mutex"           : "K_OBJ_MUTEX",
-        "k_pipe"            : "K_OBJ_PIPE",
-        "k_sem"             : "K_OBJ_SEM",
-        "k_stack"           : "K_OBJ_STACK",
-        "k_thread"          : "K_OBJ_THREAD",
-        "k_timer"           : "K_OBJ_TIMER",
-        "k_work"            : "K_OBJ_WORK",
-        "k_work_q"          : "K_OBJ_WORK_Q",
-        }
+kobjects = [
+        "k_alert",
+        "k_delayed_work",
+        "k_mem_slab",
+        "k_msgq",
+        "k_mutex",
+        "k_pipe",
+        "k_sem",
+        "k_stack",
+        "k_thread",
+        "k_timer",
+        "k_work",
+        "k_work_q",
+        "device"
+        ]
+
+subsystems = [
+        "adc_driver_api",
+        "aio_cmp_driver_api",
+        "clock_control_driver_api",
+        "counter_driver_api",
+        "crypto_driver_api",
+        "dma_driver_api",
+        "eth_driver_api",
+        "flash_driver_api",
+        "gpio_driver_api",
+        "i2c_driver_api",
+        "i2s_driver_api",
+        "ipm_driver_api",
+        "pinmux_driver_api",
+        "pwm_driver_api",
+        "random_driver_api",
+        "rtc_driver_api",
+        "sensor_driver_api",
+        "shared_irq_driver_api",
+        "spi_driver_api",
+        "uart_driver_api",
+        "wdt_driver_api",
+        ]
+
+
+def subsystem_to_enum(subsys):
+    return "K_OBJ_DRIVER_" + subsys[:-11].upper()
+
+def kobject_to_enum(ko):
+    return "K_OBJ_" + ko[2:].upper()
 
 DW_OP_addr = 0x3
 DW_OP_fbreg = 0x91
@@ -43,7 +75,7 @@ type_env = {}
 
 # --- debug stuff ---
 
-scr = os.path.basename(sys.argv[0]) 
+scr = os.path.basename(sys.argv[0])
 
 def debug(text):
     if not args.verbose:
@@ -81,10 +113,10 @@ class ArrayType:
 
     def get_kobjects(self, addr):
         mt = type_env[self.member_type]
-        objs = []
+        objs = {}
 
         for i in range(self.num_members):
-            objs.extend(mt.get_kobjects(addr + (i * mt.size)))
+            objs.update(mt.get_kobjects(addr + (i * mt.size)))
         return objs
 
 
@@ -107,6 +139,23 @@ class AggregateTypeMember:
     def get_kobjects(self, addr):
         mt = type_env[self.member_type]
         return mt.get_kobjects(addr + self.member_offset)
+
+
+class ConstType:
+    def __init__(self, child_type):
+        self.child_type = child_type
+
+    def __repr__(self):
+        return "<const %d>" % self.child_type
+
+    def has_kobject(self):
+        if self.child_type not in type_env:
+            return False
+
+        return type_env[self.child_type].has_kobject()
+
+    def get_kobjects(self, addr):
+        return type_env[self.child_type].get_kobjects(addr)
 
 
 class AggregateType:
@@ -140,17 +189,18 @@ class AggregateType:
         return result
 
     def get_kobjects(self, addr):
-        objs = []
+        objs = {}
         for member in self.members:
-            objs.extend(member.get_kobjects(addr))
+            objs.update(member.get_kobjects(addr))
         return objs
 
 
 class KobjectType:
-    def __init__(self, offset, name, size):
+    def __init__(self, offset, name, size, api=False):
         self.name = name
         self.size = size
         self.offset = offset
+        self.api = api
 
     def __repr__(self):
         return "<kobject %s>" % self.name
@@ -159,7 +209,7 @@ class KobjectType:
         return True
 
     def get_kobjects(self, addr):
-        return [(addr, kobjects[self.name])]
+        return {addr: self}
 
 # --- helper functions for getting data from DIEs ---
 
@@ -170,6 +220,9 @@ def die_get_name(die):
 
 
 def die_get_type_offset(die):
+    if not 'DW_AT_type' in die.attributes:
+        return 0
+
     return die.attributes["DW_AT_type"].value + die.cu.cu_offset
 
 
@@ -188,7 +241,11 @@ def analyze_die_struct(die):
     if not size:
         return
 
-    if name not in kobjects:
+    if name in kobjects:
+        type_env[offset] = KobjectType(offset, name, size)
+    elif name in subsystems:
+        type_env[offset] = KobjectType(offset, name, size, api=True)
+    else:
         at = AggregateType(offset, name, size)
         type_env[offset] = at
 
@@ -204,7 +261,13 @@ def analyze_die_struct(die):
 
         return
 
-    type_env[offset] = KobjectType(offset, name, size)
+
+def analyze_die_const(die):
+    type_offset = die_get_type_offset(die)
+    if not type_offset:
+        return
+
+    type_env[die.offset] = ConstType(type_offset)
 
 
 def analyze_die_array(die):
@@ -231,6 +294,24 @@ def analyze_die_array(die):
     type_env[die.offset] = ArrayType(die.offset, elements, type_offset)
 
 
+def addr_deref(elf, addr):
+    for section in elf.iter_sections():
+        start = section['sh_addr']
+        end = start + section['sh_size']
+
+        if addr >= start and addr < end:
+            data = section.data()
+            offset = addr - start
+            return struct.unpack("<I" if args.little_endian else ">I",
+                    data[offset:offset+4])[0]
+
+    return 0
+
+
+def device_get_api_addr(elf, addr):
+    return addr_deref(elf, addr + 4)
+
+
 def get_filename_lineno(die):
     lp_header = die.dwarfinfo.line_program_for_CU(die.cu).header
     files = lp_header["file_entry"]
@@ -252,6 +333,8 @@ def find_kobjects(elf, syms):
 
     kram_start = syms["__kernel_ram_start"]
     kram_end = syms["__kernel_ram_end"]
+    krom_start = syms["_image_rom_start"]
+    krom_end = syms["_image_rom_end"]
 
     di = elf.get_dwarf_info()
 
@@ -268,6 +351,8 @@ def find_kobjects(elf, syms):
             # could be something else
             if die.tag == "DW_TAG_structure_type":
                 analyze_die_struct(die)
+            elif die.tag == "DW_TAG_const_type":
+                analyze_die_const(die)
             elif die.tag == "DW_TAG_array_type":
                 analyze_die_array(die)
             elif die.tag == "DW_TAG_variable":
@@ -285,7 +370,7 @@ def find_kobjects(elf, syms):
 
     # Step 3: Now that we know all the types we are looking for, examine
     # all variables
-    all_objs = []
+    all_objs = {}
 
     # Gross hack, see below
     work_q_found = False
@@ -336,7 +421,8 @@ def find_kobjects(elf, syms):
             addr = (loc.value[1] | (loc.value[2] << 8) | (loc.value[3] << 16) |
                     (loc.value[4] << 24))
 
-        if addr < kram_start or addr >= kram_end:
+        if ((addr < kram_start or addr >= kram_end)
+                and (addr < krom_start or addr >= krom_end)):
             if addr == 0:
                 # Never linked; gc-sections deleted it
                 continue
@@ -347,13 +433,38 @@ def find_kobjects(elf, syms):
 
         type_obj = type_env[type_offset]
         objs = type_obj.get_kobjects(addr)
-        all_objs.extend(objs)
+        all_objs.update(objs)
 
         debug("symbol '%s' at %s contains %d object(s)" % (name, hex(addr),
-            len(objs)))
+              len(objs)))
 
-    debug("found %d kernel object instances total" % len(all_objs))
-    return all_objs
+    # Step 4: objs is a dictionary mapping variable memory addresses to their
+    # associated type objects. Now that we have seen all variables and can
+    # properly look up API structs, convert this into a dictionary mapping
+    # variables to the C enumeration of what kernel object type it is.
+    ret = {}
+    for addr, ko in all_objs.items():
+        # API structs don't get into the gperf table
+        if ko.api:
+            continue
+
+        if ko.name != "device":
+            # Not a device struct so we immediately know its type
+            ret[addr] = kobject_to_enum(ko.name)
+            continue
+
+        # Device struct. Need to get the address of its API struct, if it has
+        # one.
+        apiaddr = device_get_api_addr(elf, addr)
+        if apiaddr not in all_objs:
+            # API struct does not correspond to a known subsystem, skip it
+            continue
+
+        apiobj = all_objs[apiaddr]
+        ret[addr] = subsystem_to_enum(apiobj.name)
+
+    debug("found %d kernel object instances total" % len(ret))
+    return ret
 
 
 header = """%compare-lengths
@@ -383,7 +494,7 @@ struct _k_object *_k_object_find(void *obj)
 def write_gperf_table(fp, objs, static_begin, static_end):
     fp.write(header)
 
-    for obj_addr, obj_type in objs:
+    for obj_addr, obj_type in objs.items():
         # pre-initialized objects fall within this memory range, they are
         # either completely initialized at build time, or done automatically
         # at boot during some PRE_KERNEL_* phase

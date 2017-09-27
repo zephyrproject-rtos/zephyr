@@ -33,6 +33,7 @@ const char *otype_to_str(enum k_objects otype)
 	 */
 #ifdef CONFIG_PRINTK
 	switch (otype) {
+	/* Core kernel objects */
 	case K_OBJ_ALERT:
 		return "k_alert";
 	case K_OBJ_DELAYED_WORK:
@@ -57,6 +58,50 @@ const char *otype_to_str(enum k_objects otype)
 		return "k_work";
 	case K_OBJ_WORK_Q:
 		return "k_work_q";
+
+	/* Driver subsystems */
+	case K_OBJ_DRIVER_ADC:
+		return "adc driver";
+	case K_OBJ_DRIVER_AIO_CMP:
+		return "aio comparator driver";
+	case K_OBJ_DRIVER_CLOCK_CONTROL:
+		return "clock control driver";
+	case K_OBJ_DRIVER_COUNTER:
+		return "counter driver";
+	case K_OBJ_DRIVER_CRYPTO:
+		return "crypto driver";
+	case K_OBJ_DRIVER_DMA:
+		return "dma driver";
+	case K_OBJ_DRIVER_ETH:
+		return "ethernet driver";
+	case K_OBJ_DRIVER_FLASH:
+		return "flash driver";
+	case K_OBJ_DRIVER_GPIO:
+		return "gpio driver";
+	case K_OBJ_DRIVER_I2C:
+		return "i2c driver";
+	case K_OBJ_DRIVER_I2S:
+		return "i2s driver";
+	case K_OBJ_DRIVER_IPM:
+		return "ipm driver";
+	case K_OBJ_DRIVER_PINMUX:
+		return "pinmux driver";
+	case K_OBJ_DRIVER_PWM:
+		return "pwm driver";
+	case K_OBJ_DRIVER_RANDOM:
+		return "random driver";
+	case K_OBJ_DRIVER_RTC:
+		return "realtime clock driver";
+	case K_OBJ_DRIVER_SENSOR:
+		return "sensor driver";
+	case K_OBJ_DRIVER_SHARED_IRQ:
+		return "shared irq driver";
+	case K_OBJ_DRIVER_SPI:
+		return "spi driver";
+	case K_OBJ_DRIVER_UART:
+		return "uart driver";
+	case K_OBJ_DRIVER_WDT:
+		return "watchdog timer driver";
 	default:
 		return "?";
 	}
