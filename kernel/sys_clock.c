@@ -12,6 +12,7 @@
 #include <linker/sections.h>
 #include <wait_q.h>
 #include <drivers/system_timer.h>
+#include <syscall_handler.h>
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 #ifdef _NON_OPTIMIZED_TICKS_PER_SEC
@@ -68,7 +69,7 @@ u32_t _tick_get_32(void)
 }
 FUNC_ALIAS(_tick_get_32, sys_tick_get_32, u32_t);
 
-u32_t k_uptime_get_32(void)
+u32_t _impl_k_uptime_get_32(void)
 {
 #ifdef CONFIG_TICKLESS_KERNEL
 	__ASSERT(_sys_clock_always_on,
@@ -76,6 +77,19 @@ u32_t k_uptime_get_32(void)
 #endif
 	return __ticks_to_ms(_tick_get_32());
 }
+
+#ifdef CONFIG_USERSPACE
+u32_t _handler_k_uptime_get_32(u32_t arg1, u32_t arg2, u32_t arg3,
+			       u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+{
+	_SYSCALL_ARG0;
+
+#ifdef CONFIG_TICKLESS_KERNEL
+	_SYSCALL_VERIFY(_sys_clock_always_on, ssf);
+#endif
+	return _impl_k_uptime_get_32();
+}
+#endif
 
 /**
  *
