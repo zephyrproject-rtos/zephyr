@@ -1195,12 +1195,6 @@ static void prov_msg_recv(void)
 
 	BT_DBG("type 0x%02x len %u", type, link.rx.buf->len);
 
-	if (type != PROV_FAILED && type != link.expect) {
-		BT_WARN("Unexpected msg 0x%02x != 0x%02x", type, link.expect);
-		prov_send_fail_msg(PROV_ERR_UNEXP_PDU);
-		return;
-	}
-
 	if (!bt_mesh_fcs_check(link.rx.buf, link.rx.fcs)) {
 		BT_ERR("Incorrect FCS");
 		return;
@@ -1209,6 +1203,12 @@ static void prov_msg_recv(void)
 	gen_prov_ack_send(link.rx.id);
 	link.rx.prev_id = link.rx.id;
 	link.rx.id = 0;
+
+	if (type != PROV_FAILED && type != link.expect) {
+		BT_WARN("Unexpected msg 0x%02x != 0x%02x", type, link.expect);
+		prov_send_fail_msg(PROV_ERR_UNEXP_PDU);
+		return;
+	}
 
 	if (type >= ARRAY_SIZE(prov_handlers)) {
 		BT_ERR("Unknown provisioning PDU type 0x%02x", type);
