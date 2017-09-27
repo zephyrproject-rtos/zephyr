@@ -27,4 +27,11 @@ config BT_DIS
 	help
 	This option enable the GATT Device Information Service.
 
+config BT_HOG
+	bool
+	prompt "Bluetooth HoG support"
+	default n
+	help
+	This option enable the HID over GATT Service.
+
 endmenu
