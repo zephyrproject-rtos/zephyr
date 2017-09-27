@@ -677,7 +677,6 @@ int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
 	return 0;
 }
 
-#if defined(CONFIG_BT_MESH_LOCAL_INTERFACE)
 static void bt_mesh_net_local(struct k_work *work)
 {
 	struct net_buf *buf;
@@ -688,7 +687,6 @@ static void bt_mesh_net_local(struct k_work *work)
 		net_buf_unref(buf);
 	}
 }
-#endif
 
 int bt_mesh_net_encode(struct bt_mesh_net_tx *tx, struct net_buf_simple *buf,
 		       bool proxy)
@@ -801,7 +799,6 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
 		}
 	}
 
-#if defined(CONFIG_BT_MESH_LOCAL_INTERFACE)
 	/* Deliver to local network interface if necessary */
 	if (bt_mesh_fixed_group_match(tx->ctx->addr) ||
 	    bt_mesh_elem_find(tx->ctx->addr)) {
@@ -813,9 +810,6 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
 	} else {
 		bt_mesh_adv_send(buf, cb);
 	}
-#else
-	bt_mesh_adv_send(buf, cb);
-#endif
 
 done:
 	net_buf_unref(buf);
@@ -975,9 +969,6 @@ static int net_find_and_decrypt(const u8_t *data, size_t data_len,
 	return false;
 }
 
-#if (defined(CONFIG_BT_MESH_RELAY) || \
-     defined(CONFIG_BT_MESH_FRIEND) || \
-     defined(CONFIG_BT_MESH_GATT_PROXY))
 static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 			      struct bt_mesh_net_rx *rx)
 {
@@ -1081,7 +1072,6 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 done:
 	net_buf_unref(buf);
 }
-#endif /* RELAY || FRIEND || GATT_PROXY */
 
 int bt_mesh_net_decode(struct net_buf_simple *data, enum bt_mesh_net_if net_if,
 		       struct bt_mesh_net_rx *rx, struct net_buf_simple *buf,
@@ -1191,12 +1181,8 @@ void bt_mesh_net_recv(struct net_buf_simple *data, s8_t rssi,
 		}
 	}
 
-#if (defined(CONFIG_BT_MESH_RELAY) || \
-     defined(CONFIG_BT_MESH_FRIEND) || \
-     defined(CONFIG_BT_MESH_GATT_PROXY))
 	net_buf_simple_restore(buf, &state);
 	bt_mesh_net_relay(buf, &rx);
-#endif /* CONFIG_BT_MESH_RELAY  || FRIEND || GATT_PROXY */
 }
 
 static void ivu_complete(struct k_work *work)
@@ -1211,7 +1197,5 @@ void bt_mesh_net_init(void)
 {
 	k_delayed_work_init(&bt_mesh.ivu_complete, ivu_complete);
 
-#if defined(CONFIG_BT_MESH_LOCAL_INTERFACE)
 	k_work_init(&bt_mesh.local_work, bt_mesh_net_local);
-#endif
 }
