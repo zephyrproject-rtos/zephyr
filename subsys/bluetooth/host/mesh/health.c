@@ -105,8 +105,8 @@ static size_t health_get_current(struct bt_mesh_model *mod,
 		}
 	} else {
 		BT_WARN("No callback for getting faults");
-		net_buf_simple_push_u8(msg, HEALTH_TEST_STANDARD);
-		net_buf_simple_push_le16(msg, 0);
+		sys_put_le16(0, company_ptr);
+		*test_id = HEALTH_TEST_STANDARD;
 		fault_count = 0;
 	}
 
