@@ -34,4 +34,11 @@ config BT_HOG
 	help
 	This option enable the HID over GATT Service.
 
+config BT_HRS
+	bool
+	prompt "Bluetooth HRS support"
+	default n
+	help
+	This option enable the GATT Heart Rate Service.
+
 endmenu
