@@ -988,7 +988,7 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 	BT_DBG("TTL %u CTL %u dst 0x%04x", rx->ctx.recv_ttl, CTL(sbuf->data),
 	       rx->dst);
 
-	if (rx->ctx.recv_ttl <= 1) {
+	if (rx->net_if != BT_MESH_NET_IF_LOCAL && rx->ctx.recv_ttl <= 1) {
 		return;
 	}
 
