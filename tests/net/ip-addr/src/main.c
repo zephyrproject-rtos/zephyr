@@ -155,10 +155,17 @@ static struct net_if_api net_test_if_api = {
 #define _ETH_L2_LAYER DUMMY_L2
 #define _ETH_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(DUMMY_L2)
 
-NET_DEVICE_INIT(net_addr_test, "net_addr_test",
-		net_test_init, &net_test_context_data, NULL,
-		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		&net_test_if_api, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE, 127);
+NET_DEVICE_INIT_INSTANCE(net_addr_test1, "net_addr_test1", iface1,
+			 net_test_init, &net_test_context_data, NULL,
+			 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+			 &net_test_if_api, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE,
+			 127);
+
+NET_DEVICE_INIT_INSTANCE(net_addr_test2, "net_addr_test2", iface2,
+			 net_test_init, &net_test_context_data, NULL,
+			 CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+			 &net_test_if_api, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE,
+			 127);
 
 void run_tests(void)
 {
@@ -181,13 +188,15 @@ void run_tests(void)
 	struct net_if_addr *ifaddr1, *ifaddr2;
 	struct net_if_mcast_addr *ifmaddr1;
 	struct in_addr addr4 = { { { 192, 168, 0, 1 } } };
+	struct in_addr maddr4a = { { { 224, 0, 0, 1 } } };
+	struct in_addr maddr4b = { { { 224, 0, 0, 2 } } };
 	struct in_addr match_addr = { { { 192, 168, 0, 2 } } };
 	struct in_addr fail_addr = { { { 10, 1, 0, 2 } } };
 	struct in_addr netmask = { { { 255, 255, 255, 0 } } };
 	struct in_addr gw = { { { 192, 168, 0, 42 } } };
 	struct in_addr loopback4 = { { { 127, 0, 0, 1 } } };
-	struct net_if *iface;
-	int i;
+	struct net_if *iface, *iface1, *iface2;
+	int i, ret;
 
 	TEST_BYTE_1(0xde, "DE");
 	TEST_BYTE_1(0x09, "09");
@@ -390,6 +399,51 @@ void run_tests(void)
 
 	zassert_true(net_ipv4_addr_mask_cmp(iface, &match_addr),
 		"IPv4 match failed");
+
+	zassert_true(net_is_ipv4_addr_mcast(&maddr4a),
+		     "IPv4 multicast address");
+
+	zassert_true(net_is_ipv4_addr_mcast(&maddr4b),
+		     "IPv4 multicast address");
+
+	zassert_false(net_is_ipv4_addr_mcast(&addr4), "IPv4 address");
+
+	ifmaddr1 = net_if_ipv4_maddr_add(net_if_get_default(), &maddr4a);
+	zassert_not_null(ifmaddr1, "IPv4 multicast address add failed");
+
+	ifmaddr1 = net_if_ipv4_maddr_add(net_if_get_default(), &maddr4b);
+	zassert_not_null(ifmaddr1, "IPv4 multicast address add failed");
+
+	iface = NULL;
+
+	iface1 = net_if_get_by_index(0);
+	iface2 = net_if_get_by_index(1);
+
+	ifmaddr1 = net_if_ipv4_maddr_lookup(&maddr4a, &iface);
+	zassert_not_null(ifmaddr1, "IPv4 multicast address lookup failed");
+	zassert_equal(iface, iface1, "Interface not found");
+
+	ifmaddr1 = net_if_ipv4_maddr_lookup(&maddr4b, &iface);
+	zassert_not_null(ifmaddr1, "IPv4 multicast address lookup failed");
+	zassert_equal(iface, iface1, "Interface not found");
+
+	ifmaddr1 = net_if_ipv4_maddr_lookup(&maddr4a, &iface2);
+	zassert_is_null(ifmaddr1, "IPv4 multicast address lookup succeed");
+
+	ret = net_if_ipv4_maddr_rm(iface2, &maddr4a);
+	zassert_false(ret, "IPv4 rm succeed");
+
+	ret = net_if_ipv4_maddr_rm(iface1, &maddr4a);
+	zassert_true(ret, "IPv4 rm failed");
+
+	ifmaddr1 = net_if_ipv4_maddr_lookup(&maddr4a, &iface1);
+	zassert_is_null(ifmaddr1, "IPv4 multicast address lookup succeed");
+
+	ret = net_if_ipv4_maddr_rm(iface1, &maddr4b);
+	zassert_true(ret, "IPv4 rm failed");
+
+	ifmaddr1 = net_if_ipv4_maddr_lookup(&maddr4b, &iface1);
+	zassert_is_null(ifmaddr1, "IPv4 multicast address lookup succeed");
 
 	printk("IP address checks passed\n");
 }
