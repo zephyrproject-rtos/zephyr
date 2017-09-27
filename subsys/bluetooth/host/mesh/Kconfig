@@ -67,14 +67,6 @@ endif # BT_MESH_PROXY
 
 endif # BT_CONN
 
-config BT_MESH_LOCAL_INTERFACE
-	bool "Local network interface"
-	default y
-	help
-	  This is needed in order to send messages between two local Mesh
-	  elements. Only disable it if you're sure this will not be needed
-	  (which helps save a little bit of memory).
-
 config BT_MESH_SELF_TEST
 	bool "Perform self-tests"
 	help
