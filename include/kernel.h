@@ -599,7 +599,7 @@ extern FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
  *
  * @return N/A
  */
-extern void k_sleep(s32_t duration);
+__syscall void k_sleep(s32_t duration);
 
 /**
  * @brief Cause the current thread to busy wait.
@@ -640,7 +640,7 @@ extern void k_wakeup(k_tid_t thread);
  *
  * @return ID of current thread.
  */
-extern k_tid_t k_current_get(void);
+__syscall k_tid_t k_current_get(void);
 
 /**
  * @brief Cancel thread performing a delayed start.
@@ -779,7 +779,7 @@ struct _static_thread_data {
  *
  * @return Priority of @a thread.
  */
-extern int  k_thread_priority_get(k_tid_t thread);
+__syscall int k_thread_priority_get(k_tid_t thread);
 
 /**
  * @brief Set a thread's priority.
@@ -1414,7 +1414,7 @@ static inline void k_disable_sys_clock_always_on(void)
  *
  * @return Current uptime.
  */
-extern u32_t k_uptime_get_32(void);
+__syscall u32_t k_uptime_get_32(void);
 
 /**
  * @brief Get elapsed time.

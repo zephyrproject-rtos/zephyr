@@ -10,6 +10,7 @@
 #include <ksched.h>
 #include <wait_q.h>
 #include <misc/util.h>
+#include <syscall_handler.h>
 
 /* the only struct _kernel instance */
 struct _kernel _kernel = {0};
@@ -257,10 +258,25 @@ int __must_switch_threads(void)
 #endif
 }
 
-int  k_thread_priority_get(k_tid_t thread)
+int _impl_k_thread_priority_get(k_tid_t thread)
 {
 	return thread->base.prio;
 }
+
+#ifdef CONFIG_USERSPACE
+u32_t _handler_k_thread_priority_get(u32_t arg1, u32_t arg2, u32_t arg3,
+				     u32_t arg4, u32_t arg5, u32_t arg6,
+				     void *ssf)
+{
+	struct k_thread *thread;
+
+	_SYSCALL_ARG1;
+
+	thread = (struct k_thread *)arg1;
+	_SYSCALL_IS_OBJ(thread, K_OBJ_THREAD, 0, ssf);
+	return (u32_t)_impl_k_thread_priority_get(thread);
+}
+#endif
 
 void k_thread_priority_set(k_tid_t tid, int prio)
 {
@@ -322,7 +338,7 @@ void k_yield(void)
 	}
 }
 
-void k_sleep(s32_t duration)
+void _impl_k_sleep(s32_t duration)
 {
 #ifdef CONFIG_MULTITHREADING
 	/* volatile to guarantee that irq_lock() is executed after ticks is
@@ -352,6 +368,19 @@ void k_sleep(s32_t duration)
 #endif
 }
 
+#ifdef CONFIG_USERSPACE
+u32_t _handler_k_sleep(u32_t arg1, u32_t arg2, u32_t arg3,
+		       u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+{
+	_SYSCALL_ARG1;
+
+	_SYSCALL_VERIFY(arg1 != K_FOREVER, ssf);
+	_impl_k_sleep(arg1);
+
+	return 0;
+}
+#endif
+
 void k_wakeup(k_tid_t thread)
 {
 	int key = irq_lock();
@@ -376,10 +405,20 @@ void k_wakeup(k_tid_t thread)
 	}
 }
 
-k_tid_t k_current_get(void)
+k_tid_t _impl_k_current_get(void)
 {
 	return _current;
 }
+
+#ifdef CONFIG_USERSPACE
+u32_t _handler_k_current_get(u32_t arg1, u32_t arg2, u32_t arg3, u32_t arg4,
+			     u32_t arg5, u32_t arg6, void *ssf)
+{
+	_SYSCALL_ARG0;
+
+	return (u32_t)_impl_k_current_get();
+}
+#endif
 
 #ifdef CONFIG_TIMESLICING
 extern s32_t _time_slice_duration;    /* Measured in ms */
