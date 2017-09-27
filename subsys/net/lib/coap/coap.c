@@ -59,19 +59,15 @@ static void option_header_set_len(u8_t *opt, u8_t len)
 
 static int get_coap_packet_len(struct net_pkt *pkt)
 {
-	struct net_buf *frag;
-	u16_t offset;
 	u16_t len;
 
-	frag = net_frag_read_be16(pkt->frags,
-				  net_pkt_ip_hdr_len(pkt) +
-				  net_pkt_ipv6_ext_len(pkt) +
-				  4, &offset, &len);
-	if (!frag && offset == 0xffff) {
-		return -1;
-	}
+	/* TODO: verify with smaller packets */
+	len = net_pkt_get_len(pkt)
+	      - net_pkt_ip_hdr_len(pkt)
+	      - net_pkt_ipv6_ext_len(pkt)
+	      - NET_UDPH_LEN;
 
-	return len - NET_UDPH_LEN;
+	return len;
 }
 
 static int decode_delta(u16_t num, struct option_context *context,
