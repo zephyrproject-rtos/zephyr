@@ -88,7 +88,7 @@ static void bt_ready(int err)
 
 	printk("Bluetooth initialized\n");
 
-	bas_init();
+	bt_bas_register(100, NULL);
 	dis_init(CONFIG_SOC, "Manufacturer");
 	hog_init();
 

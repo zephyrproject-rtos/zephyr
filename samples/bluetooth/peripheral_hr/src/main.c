@@ -72,7 +72,7 @@ static void bt_ready(int err)
 	printk("Bluetooth initialized\n");
 
 	hrs_init(0x01);
-	bas_init();
+	bt_bas_register(100, NULL);
 	dis_init(CONFIG_SOC, "Manufacturer");
 
 	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad),
@@ -121,6 +121,6 @@ void main(void)
 		hrs_notify();
 
 		/* Battery level simulation */
-		bas_notify();
+		bt_bas_simulate();
 	}
 }

@@ -384,7 +384,7 @@ static void bt_ready(int err)
 
 	printk("Bluetooth initialized\n");
 
-	bas_init();
+	bt_bas_register(100, NULL);
 	dis_init(CONFIG_SOC, "ACME");
 	bt_gatt_service_register(&csc_svc);
 
@@ -419,6 +419,6 @@ void main(void)
 		}
 
 		/* Battery level simulation */
-		bas_notify();
+		bt_bas_simulate();
 	}
 }

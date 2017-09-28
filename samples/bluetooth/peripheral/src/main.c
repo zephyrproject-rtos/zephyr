@@ -236,7 +236,7 @@ static void bt_ready(int err)
 	printk("Bluetooth initialized\n");
 
 	hrs_init(0x01);
-	bas_init();
+	bt_bas_register(100, NULL);
 	cts_init();
 	dis_init(CONFIG_SOC, "Manufacturer");
 	bt_gatt_service_register(&vnd_svc);
@@ -301,7 +301,7 @@ void main(void)
 		hrs_notify();
 
 		/* Battery level simulation */
-		bas_notify();
+		bt_bas_simulate();
 
 		/* Vendor indication simulation */
 		if (simulate_vnd) {
