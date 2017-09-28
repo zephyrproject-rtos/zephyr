@@ -56,9 +56,6 @@ def gen_defines_inner(ret, argc, kernel_only=False, user_only=False):
     gen_macro(ret, argc, inline=True)
     newline()
 
-    if not user_only:
-        sys.stdout.write("\textern u32_t _handler_##name(u32_t, u32_t, u32_t, u32_t, u32_t, u32_t, void *); \\\n")
-
     gen_fn(ret, argc, "name");
     newline()
     sys.stdout.write("\t{")

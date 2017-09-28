@@ -8,6 +8,8 @@
 #ifndef _kernel_offsets__h_
 #define _kernel_offsets__h_
 
+#include <syscall_list.h>
+
 /*
  * The final link step uses the symbol _OffsetAbsSyms to force the linkage of
  * offsets.o into the ELF image.
