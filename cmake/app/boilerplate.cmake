@@ -1,7 +1,3 @@
-cmake_minimum_required(VERSION 3.7)
-cmake_policy(SET CMP0000 OLD)
-cmake_policy(SET CMP0002 NEW)
-
 # This file must be included into the toplevel CMakeLists.txt file of
 # Zephyr applications, e.g. zephyr/samples/hello_world/CMakeLists.txt
 # must start with the line:
@@ -17,6 +13,16 @@ cmake_policy(SET CMP0002 NEW)
 # app is a CMake library containing all the application code and is
 # modified by the entry point ${APPLICATION_SOURCE_DIR}/CMakeLists.txt
 # that was specified when cmake was called.
+
+# CMake version 3.8.2 is the only supported version. Version 3.9 is
+# not supported because it introduced a warning that we do not wish to
+# show to users. Specifically, it displays a warning when an OLD
+# policy is used, but we need policy CMP0000 set to OLD to avoid
+# copy-pasting cmake_minimum_required across application
+# CMakeLists.txt files.
+cmake_minimum_required(VERSION 3.8.2)
+cmake_policy(SET CMP0000 OLD)
+cmake_policy(SET CMP0002 NEW)
 
 set(APPLICATION_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR} CACHE PATH "Application Source Directory")
 set(APPLICATION_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE PATH "Application Binary Directory")
