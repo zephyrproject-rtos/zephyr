@@ -1023,7 +1023,28 @@ include/generated/syscall_macros.h: $(GEN_SYSCALL_HEADER)
 	$(Q)mkdir -p $(dir $@)
 	$(Q)$(GEN_SYSCALL_HEADER) > $@
 
-syscall_macros: include/generated/syscall_macros.h
+GEN_SYSCALLS := $(srctree)/scripts/gen_syscalls.py
+
+define filechk_syscall_list.h
+	$(GEN_SYSCALLS) \
+		--include $(ZEPHYR_BASE)/include \
+		--base-output include/generated/syscalls \
+		--syscall-dispatch include/generated/dispatch.c.tmp
+endef
+
+include/generated/syscall_list.h: include/config/auto.conf FORCE
+	$(call filechk,syscall_list.h)
+
+define filechk_syscall_dispatch.c
+	cat include/generated/dispatch.c.tmp
+endef
+
+include/generated/syscall_dispatch.c: include/generated/syscall_list.h FORCE
+	$(call filechk,syscall_dispatch.c)
+
+syscall_generated: include/generated/syscall_macros.h \
+		   include/generated/syscall_dispatch.c \
+		   include/generated/syscall_list.h
 
 define filechk_.config-sanitycheck
 	(cat .config; \
@@ -1093,7 +1114,7 @@ archprepare = $(strip \
 		)
 
 # All the preparing..
-prepare: $(archprepare) dts syscall_macros FORCE
+prepare: $(archprepare) dts syscall_generated FORCE
 	$(Q)$(MAKE) $(build)=.
 
 # Generate some files
