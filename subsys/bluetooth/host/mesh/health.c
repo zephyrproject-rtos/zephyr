@@ -104,6 +104,7 @@ static size_t health_get_current(struct bt_mesh_model *mod,
 			fault_count = 0;
 		} else {
 			sys_put_le16(company_id, company_ptr);
+			net_buf_simple_add(msg, fault_count);
 		}
 	} else {
 		BT_WARN("No callback for getting faults");
