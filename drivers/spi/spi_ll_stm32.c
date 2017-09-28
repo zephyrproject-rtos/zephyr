@@ -16,8 +16,7 @@
 #include <clock_control/stm32_clock_control.h>
 #include <clock_control.h>
 
-#include <drivers/spi/spi_ll_stm32.h>
-#include "spi_ll_stm32.h"
+#include <spi_ll_stm32.h>
 
 #define CONFIG_CFG(cfg)						\
 ((const struct spi_stm32_config * const)(cfg)->dev->config->config_info)
@@ -252,7 +251,7 @@ static int spi_stm32_configure(struct spi_config *config)
 		LL_SPI_SetMode(spi, LL_SPI_MODE_MASTER);
 	}
 
-	if (config->vendor & STM32_SPI_NSS_IGNORE) {
+	if (config->cs) {
 		LL_SPI_SetNSSMode(spi, LL_SPI_NSS_SOFT);
 	} else {
 		if (config->operation & SPI_OP_MODE_SLAVE) {
