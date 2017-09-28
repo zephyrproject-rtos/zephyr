@@ -7,11 +7,11 @@ generated_inc_files = $(foreach f,$(generate_inc_file),$(notdir $(f)).inc)
 generated_inc_gz_files = \
         $(foreach f,$(generate_inc_gz_file),$(notdir $(f)).gz.inc)
 
-$(notdir %).inc: $(generate_inc_file)
-	$(Q)${ZEPHYR_BASE}/scripts/file2hex.py --file $* > $@
-
 $(notdir %).gz.inc: $(generate_inc_gz_file)
 	$(Q)${ZEPHYR_BASE}/scripts/file2hex.py --gzip --file $* > $@
+
+$(notdir %).inc: $(generate_inc_file)
+	$(Q)${ZEPHYR_BASE}/scripts/file2hex.py --file $* > $@
 
 PHONY += embed_inc_files
 embed_inc_files: $(generated_inc_files)
