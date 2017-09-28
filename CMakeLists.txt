@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 3.7)
-
 project(Zephyr-Kernel VERSION ${PROJECT_VERSION})
 enable_language(C CXX ASM)
 
