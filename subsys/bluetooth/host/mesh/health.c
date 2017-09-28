@@ -282,11 +282,10 @@ static void send_health_period_status(struct bt_mesh_model *model,
 {
 	/* Needed size: opcode (2 bytes) + msg + MIC */
 	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 1 + 4);
-	struct bt_mesh_health *srv = model->user_data;
 
 	bt_mesh_model_msg_init(msg, OP_HEALTH_PERIOD_STATUS);
 
-	net_buf_simple_add_u8(msg, srv->period);
+	net_buf_simple_add_u8(msg, model->pub->period_div);
 
 	bt_mesh_model_send(model, ctx, msg, NULL, NULL);
 }
@@ -304,7 +303,6 @@ static void health_period_set_unrel(struct bt_mesh_model *model,
 				    struct bt_mesh_msg_ctx *ctx,
 				    struct net_buf_simple *buf)
 {
-	struct bt_mesh_health *srv = model->user_data;
 	u8_t period;
 
 	period = net_buf_simple_pull_u8(buf);
@@ -315,7 +313,7 @@ static void health_period_set_unrel(struct bt_mesh_model *model,
 
 	BT_DBG("period %u", period);
 
-	srv->period = period;
+	model->pub->period_div = period;
 }
 
 static void health_period_set(struct bt_mesh_model *model,
@@ -347,16 +345,13 @@ const struct bt_mesh_model_op bt_mesh_health_op[] = {
 static void health_pub(struct bt_mesh_model *mod)
 {
 	struct net_buf_simple *msg = NET_BUF_SIMPLE(HEALTH_STATUS_SIZE);
-	struct bt_mesh_health *srv = mod->user_data;
 	size_t count;
 	int err;
 
 	BT_DBG("");
 
 	count = health_get_current(mod, msg);
-	if (count) {
-		mod->pub->period_div = srv->period;
-	} else {
+	if (!count) {
 		mod->pub->period_div = 0;
 	}
 
