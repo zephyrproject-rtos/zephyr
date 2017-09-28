@@ -216,7 +216,13 @@ static void health_fault_test(struct bt_mesh_model *model,
 	BT_DBG("test 0x%02x company 0x%04x", test_id, company_id);
 
 	if (srv->fault_test) {
-		srv->fault_test(model, test_id, company_id);
+		int err;
+
+		err = srv->fault_test(model, test_id, company_id);
+		if (err) {
+			BT_WARN("Running fault test failed with err %d", err);
+			return;
+		}
 	}
 
 	health_get_registered(model, company_id, msg);
