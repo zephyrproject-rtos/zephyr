@@ -2652,18 +2652,18 @@ send:
 	bt_mesh_model_send(model, ctx, msg, NULL, NULL);
 }
 
-static void hearbeat_pub_get(struct bt_mesh_model *model,
-			     struct bt_mesh_msg_ctx *ctx,
-			     struct net_buf_simple *buf)
+static void heartbeat_pub_get(struct bt_mesh_model *model,
+			      struct bt_mesh_msg_ctx *ctx,
+			      struct net_buf_simple *buf)
 {
 	BT_DBG("src 0x%04x", ctx->addr);
 
 	hb_pub_send_status(model, ctx, STATUS_SUCCESS, NULL);
 }
 
-static void hearbeat_pub_set(struct bt_mesh_model *model,
-			     struct bt_mesh_msg_ctx *ctx,
-			     struct net_buf_simple *buf)
+static void heartbeat_pub_set(struct bt_mesh_model *model,
+			      struct bt_mesh_msg_ctx *ctx,
+			      struct net_buf_simple *buf)
 {
 	struct hb_pub_param *param = (void *)buf->data;
 	struct bt_mesh_cfg *cfg = model->user_data;
@@ -2772,18 +2772,18 @@ static void hb_sub_send_status(struct bt_mesh_model *model,
 	bt_mesh_model_send(model, ctx, msg, NULL, NULL);
 }
 
-static void hearbeat_sub_get(struct bt_mesh_model *model,
-			     struct bt_mesh_msg_ctx *ctx,
-			     struct net_buf_simple *buf)
+static void heartbeat_sub_get(struct bt_mesh_model *model,
+			      struct bt_mesh_msg_ctx *ctx,
+			      struct net_buf_simple *buf)
 {
 	BT_DBG("src 0x%04x", ctx->addr);
 
 	hb_sub_send_status(model, ctx, STATUS_SUCCESS);
 }
 
-static void hearbeat_sub_set(struct bt_mesh_model *model,
-			     struct bt_mesh_msg_ctx *ctx,
-			     struct net_buf_simple *buf)
+static void heartbeat_sub_set(struct bt_mesh_model *model,
+			      struct bt_mesh_msg_ctx *ctx,
+			      struct net_buf_simple *buf)
 {
 	struct bt_mesh_cfg *cfg = model->user_data;
 	u16_t sub_src, sub_dst;
@@ -2884,10 +2884,10 @@ const struct bt_mesh_model_op bt_mesh_cfg_op[] = {
 	{ OP_LPN_TIMEOUT_GET,          2,   lpn_timeout_get },
 	{ OP_KRP_GET,                  2,   krp_get },
 	{ OP_KRP_SET,                  3,   krp_set },
-	{ OP_HEARTBEAT_PUB_GET,        0,   hearbeat_pub_get },
-	{ OP_HEARTBEAT_PUB_SET,        9,   hearbeat_pub_set },
-	{ OP_HEARTBEAT_SUB_GET,        0,   hearbeat_sub_get },
-	{ OP_HEARTBEAT_SUB_SET,        5,   hearbeat_sub_set },
+	{ OP_HEARTBEAT_PUB_GET,        0,   heartbeat_pub_get },
+	{ OP_HEARTBEAT_PUB_SET,        9,   heartbeat_pub_set },
+	{ OP_HEARTBEAT_SUB_GET,        0,   heartbeat_sub_get },
+	{ OP_HEARTBEAT_SUB_SET,        5,   heartbeat_sub_set },
 	BT_MESH_MODEL_OP_END,
 };
 
