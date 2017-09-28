@@ -2837,6 +2837,8 @@ static void heartbeat_sub_set(struct bt_mesh_model *model,
 
 	if (period_ms) {
 		cfg->hb_sub.expiry = k_uptime_get() + period_ms;
+	} else {
+		cfg->hb_sub.expiry = 0;
 	}
 
 	hb_sub_send_status(model, ctx, STATUS_SUCCESS);
