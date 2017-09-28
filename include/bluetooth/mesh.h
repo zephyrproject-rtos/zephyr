@@ -292,9 +292,6 @@ extern const struct bt_mesh_model_op bt_mesh_cfg_op[];
 struct bt_mesh_health {
 	struct bt_mesh_model *model;
 
-	/* Health Period (divider) */
-	u8_t period;
-
 	/* Fetch current faults */
 	int (*fault_get_cur)(struct bt_mesh_model *model, u8_t *test_id,
 			     u16_t *company_id, u8_t *faults,
