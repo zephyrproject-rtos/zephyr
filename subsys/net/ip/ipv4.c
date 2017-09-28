@@ -174,7 +174,8 @@ enum net_verdict net_ipv4_process_pkt(struct net_pkt *pkt)
 
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
 
-	if (!net_is_my_ipv4_addr(&hdr->dst)) {
+	if (!net_is_my_ipv4_addr(&hdr->dst) &&
+	    !net_is_ipv4_addr_mcast(&hdr->dst)) {
 #if defined(CONFIG_NET_DHCPV4)
 		if (hdr->proto == IPPROTO_UDP &&
 		    net_ipv4_addr_cmp(&hdr->dst,
