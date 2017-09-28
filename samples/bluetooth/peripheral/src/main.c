@@ -237,7 +237,7 @@ static void bt_ready(int err)
 
 	hrs_init(0x01);
 	bt_bas_register(100, NULL);
-	cts_init();
+	bt_cts_register(NULL, NULL);
 	dis_init(CONFIG_SOC, "Manufacturer");
 	bt_gatt_service_register(&vnd_svc);
 
@@ -295,7 +295,7 @@ void main(void)
 		k_sleep(MSEC_PER_SEC);
 
 		/* Current Time Service updates only when time is changed */
-		cts_notify();
+		bt_cts_simulate();
 
 		/* Heartrate measurements simulation */
 		hrs_notify();
