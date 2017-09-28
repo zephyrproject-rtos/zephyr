@@ -231,7 +231,7 @@ static inline int dns_answer_rdlength(u16_t dname_size,
 }
 
 /**
- * Packs a QNAME
+ * @brief Packs a QNAME
  *
  * @param len Bytes used by this function
  * @param buf Buffer
@@ -245,11 +245,11 @@ int dns_msg_pack_qname(u16_t *len, u8_t *buf, u16_t size,
 		       const char *domain_name);
 
 /**
- * Unpacks an answer message
+ * @brief Unpacks an answer message
  *
  * @param dns_msg Structure
  * @param dname_ptr An index to the previous CNAME. For example for the
- * first answer, ptr must be 0x0c, the DNAME at the question.
+ *        first answer, ptr must be 0x0c, the DNAME at the question.
  * @param ttl TTL answer parameter.
  * @retval 0 on success
  * @retval -ENOMEM on error
@@ -257,65 +257,65 @@ int dns_msg_pack_qname(u16_t *len, u8_t *buf, u16_t size,
 int dns_unpack_answer(struct dns_msg_t *dns_msg, int dname_ptr, u32_t *ttl);
 
 /**
- * Unpacks the header's response.
+ * @brief Unpacks the header's response.
  *
  * @param msg Structure containing the response.
  * @param src_id Transaction id, it must match the id used in the query
- * datagram sent to the DNS server.
+ *        datagram sent to the DNS server.
  * @retval 0 on success
  * @retval -ENOMEM if the buffer in msg has no enough space to store the header.
- * The header is always 12 bytes length.
+ *         The header is always 12 bytes length.
  * @retval -EINVAL if the src_id does not match the header's id, or if the
- * header's QR value is not DNS_RESPONSE or if the header's OPCODE value is not
- * DNS_QUERY, or if the header's Z value is not 0 or if the question counter
- * is not 1 or the answer counter is less than 1.
+ *         header's QR value is not DNS_RESPONSE or if the header's OPCODE
+ *         value is not DNS_QUERY, or if the header's Z value is not 0 or if
+ *         the question counter is not 1 or the answer counter is less than 1.
  * @retval RFC 1035 RCODEs (> 0) 1 Format error, 2 Server failure, 3 Name Error,
- * 4 Not Implemented and 5 Refused.
+ *         4 Not Implemented and 5 Refused.
  */
 int dns_unpack_response_header(struct dns_msg_t *msg, int src_id);
 
 /**
- * Packs the query message
+ * @brief Packs the query message
  *
  * @param buf Buffer that will contain the resultant query
  * @param len Number of bytes used to encode the query
  * @param size Buffer size
  * @param qname Domain name represented as a sequence of labels.
- * See RFC 1035, 4.1.2. Question section format.
+ *        See RFC 1035, 4.1.2. Question section format.
  * @param qname_len Number of octets in qname.
  * @param id Transaction Identifier
  * @param qtype Query type: AA, AAAA. See enum dns_rr_type
  * @retval 0 on success
  * @retval On error, a negative value is returned.
- * See: dns_msg_pack_query_header and  dns_msg_pack_qname.
+ *         See: dns_msg_pack_query_header and  dns_msg_pack_qname.
  */
 int dns_msg_pack_query(u8_t *buf, u16_t *len, u16_t size,
 		       u8_t *qname, u16_t qname_len, u16_t id,
 		       enum dns_rr_type qtype);
 
 /**
- * Unpacks the response's query.
+ * @brief Unpacks the response's query.
  *
- * RFC 1035 states that the response's query comes after the first 12 bytes,
- * i.e. after the message's header. This function computes the answer_offset
- * field.
+ * @details RFC 1035 states that the response's query comes after the first
+ *          12 bytes i.e., after the message's header. This function computes
+ *          the answer_offset field.
  *
  * @param dns_msg Structure containing the message.
  * @retval 0 on success
  * @retval -ENOMEM if the null label is not found after traversing the buffer
- * or if QCLASS and QTYPE are not found.
+ *         or if QCLASS and QTYPE are not found.
  * @retval -EINVAL if QTYPE is not "A" (IPv4) or "AAAA" (IPv6) or if QCLASS
- * is not "IN".
+ *         is not "IN".
  */
 int dns_unpack_response_query(struct dns_msg_t *dns_msg);
 
 /**
- * Copies the qname from dns_msg to buf
+ * @brief Copies the qname from dns_msg to buf
  *
- * This routine implements the algorithm described in RFC 1035, 4.1.4. Message
- * compression to copy the qname (perhaps containing pointers with offset)
- * to the linear buffer buf. Pointers are removed and only the "true" labels
- * are copied.
+ * @details This routine implements the algorithm described in RFC 1035, 4.1.4.
+ *          Message compression to copy the qname (perhaps containing pointers
+ *          with offset) to the linear buffer buf. Pointers are removed and
+ *          only the "true" labels are copied.
  *
  * @param buf Output buffer
  * @param len Output buffer's length
@@ -331,24 +331,25 @@ int dns_copy_qname(u8_t *buf, u16_t *len, u16_t size,
 
 /**
  * @brief Unpacks the mDNS query. This is special version for multicast DNS
- * as it skips checks to various fields as described in RFC 6762 chapter 18.
+ *        as it skips checks to various fields as described in RFC 6762
+ *        chapter 18.
  *
  * @param msg Structure containing the response.
  * @param src_id Transaction id, this is returned to the caller.
  * @retval 0 on success, <0 if error
  * @retval -ENOMEM if the buffer in msg has no enough space to store the header.
- * The header is always 12 bytes length.
+ *         The header is always 12 bytes length.
  * @retval -EINVAL if the src_id does not match the header's id, or if the
- * header's QR value is not DNS_RESPONSE or if the header's OPCODE value is not
- * DNS_QUERY, or if the header's Z value is not 0 or if the question counter
- * is not 1 or the answer counter is less than 1.
+ *         header's QR value is not DNS_RESPONSE or if the header's OPCODE
+ *         value is not DNS_QUERY, or if the header's Z value is not 0 or if
+ *         the question counter is not 1 or the answer counter is less than 1.
  * @retval RFC 1035 RCODEs (> 0) 1 Format error, 2 Server failure, 3 Name Error,
- * 4 Not Implemented and 5 Refused.
+ *         4 Not Implemented and 5 Refused.
  */
 int mdns_unpack_query_header(struct dns_msg_t *msg, u16_t *src_id);
 
 /**
- * Unpacks the query.
+ * @brief Unpacks the query.
  *
  * @param dns_msg Structure containing the message.
  * @param buf Result buf
@@ -356,9 +357,9 @@ int mdns_unpack_query_header(struct dns_msg_t *msg, u16_t *src_id);
  * @param qclass Query class is returned to caller
  * @retval 0 on success
  * @retval -ENOMEM if the null label is not found after traversing the buffer
- * or if QCLASS and QTYPE are not found.
+ *         or if QCLASS and QTYPE are not found.
  * @retval -EINVAL if QTYPE is not "A" (IPv4) or "AAAA" (IPv6) or if QCLASS
- * is not "IN".
+ *         is not "IN".
  */
 int dns_unpack_query(struct dns_msg_t *dns_msg, struct net_buf *buf,
 		     enum dns_rr_type *qtype,
