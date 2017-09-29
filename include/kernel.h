@@ -1243,8 +1243,8 @@ extern void k_timer_init(struct k_timer *timer,
  *
  * @return N/A
  */
-extern void k_timer_start(struct k_timer *timer,
-			  s32_t duration, s32_t period);
+__syscall void k_timer_start(struct k_timer *timer,
+			     s32_t duration, s32_t period);
 
 /**
  * @brief Stop a timer.
@@ -1262,7 +1262,7 @@ extern void k_timer_start(struct k_timer *timer,
  *
  * @return N/A
  */
-extern void k_timer_stop(struct k_timer *timer);
+__syscall void k_timer_stop(struct k_timer *timer);
 
 /**
  * @brief Read timer status.
@@ -1276,7 +1276,7 @@ extern void k_timer_stop(struct k_timer *timer);
  *
  * @return Timer status.
  */
-extern u32_t k_timer_status_get(struct k_timer *timer);
+__syscall u32_t k_timer_status_get(struct k_timer *timer);
 
 /**
  * @brief Synchronize thread to timer expiration.
@@ -1295,7 +1295,7 @@ extern u32_t k_timer_status_get(struct k_timer *timer);
  *
  * @return Timer status.
  */
-extern u32_t k_timer_status_sync(struct k_timer *timer);
+__syscall u32_t k_timer_status_sync(struct k_timer *timer);
 
 /**
  * @brief Get time remaining before a timer next expires.
@@ -1307,7 +1307,9 @@ extern u32_t k_timer_status_sync(struct k_timer *timer);
  *
  * @return Remaining time (in milliseconds).
  */
-static inline s32_t k_timer_remaining_get(struct k_timer *timer)
+__syscall s32_t k_timer_remaining_get(struct k_timer *timer);
+
+static inline s32_t _impl_k_timer_remaining_get(struct k_timer *timer)
 {
 	return _timeout_remaining_get(&timer->timeout);
 }
@@ -1326,8 +1328,10 @@ static inline s32_t k_timer_remaining_get(struct k_timer *timer)
  *
  * @return N/A
  */
-static inline void k_timer_user_data_set(struct k_timer *timer,
-					 void *user_data)
+__syscall void k_timer_user_data_set(struct k_timer *timer, void *user_data);
+
+static inline void _impl_k_timer_user_data_set(struct k_timer *timer,
+					       void *user_data)
 {
 	timer->user_data = user_data;
 }
@@ -1339,7 +1343,9 @@ static inline void k_timer_user_data_set(struct k_timer *timer,
  *
  * @return The user data.
  */
-static inline void *k_timer_user_data_get(struct k_timer *timer)
+__syscall void *k_timer_user_data_get(struct k_timer *timer);
+
+static inline void *_impl_k_timer_user_data_get(struct k_timer *timer)
 {
 	return timer->user_data;
 }
