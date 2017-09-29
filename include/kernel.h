@@ -2747,7 +2747,7 @@ extern void k_alert_init(struct k_alert *alert, k_alert_handler_t handler,
  * @retval -EBUSY Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
  */
-extern int k_alert_recv(struct k_alert *alert, s32_t timeout);
+__syscall int k_alert_recv(struct k_alert *alert, s32_t timeout);
 
 /**
  * @brief Signal an alert.
@@ -2763,7 +2763,7 @@ extern int k_alert_recv(struct k_alert *alert, s32_t timeout);
  *
  * @return N/A
  */
-extern void k_alert_send(struct k_alert *alert);
+__syscall void k_alert_send(struct k_alert *alert);
 
 /**
  * @} end addtogroup alert_apis

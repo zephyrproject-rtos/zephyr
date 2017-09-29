@@ -16,6 +16,7 @@
 #include <init.h>
 #include <toolchain.h>
 #include <linker/sections.h>
+#include <syscall_handler.h>
 
 extern struct k_alert _k_alert_list_start[];
 extern struct k_alert _k_alert_list_end[];
@@ -73,7 +74,7 @@ void k_alert_init(struct k_alert *alert, k_alert_handler_t handler,
 	_k_object_init(alert);
 }
 
-void k_alert_send(struct k_alert *alert)
+void _impl_k_alert_send(struct k_alert *alert)
 {
 	if (alert->handler == K_ALERT_IGNORE) {
 		/* ignore the alert */
@@ -90,7 +91,31 @@ void k_alert_send(struct k_alert *alert)
 	}
 }
 
-int k_alert_recv(struct k_alert *alert, s32_t timeout)
+#ifdef CONFIG_USERSPACE
+u32_t _handler_k_alert_send(u32_t alert, u32_t arg2, u32_t arg3,
+			    u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+{
+	_SYSCALL_ARG1;
+
+	_SYSCALL_IS_OBJ(alert, K_OBJ_ALERT, 0, ssf);
+	_impl_k_alert_send((struct k_alert *)alert);
+
+	return 0;
+}
+#endif
+
+int _impl_k_alert_recv(struct k_alert *alert, s32_t timeout)
 {
 	return k_sem_take(&alert->sem, timeout);
 }
+
+#ifdef CONFIG_USERSPACE
+u32_t _handler_k_alert_recv(u32_t alert, u32_t timeout, u32_t arg3,
+			    u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+{
+	_SYSCALL_ARG2;
+
+	_SYSCALL_IS_OBJ(alert, K_OBJ_ALERT, 0, ssf);
+	return _impl_k_alert_recv((struct k_alert *)alert, timeout);
+}
+#endif
