@@ -342,13 +342,21 @@ breathe_projects = {
 }
 breathe_default_project = "Zephyr"
 
+# Qualifiers to a function are causing Sphihx/Breathe to warn about
+# Error when parsing function declaration and more.  This is a list
+# of strings that the parser additionally should accept as
+# attributes.
+cpp_id_attributes = ['__syscall', '__syscall_inline', '__deprecated' ]
+
 # docs_title is used in the breadcrumb title in the zephyr docs theme
 html_context = {
     'show_license': html_show_license,
     'docs_title': docs_title,
 }
 
-extlinks = {'jira': ('https://jira.zephyrproject.org/browse/%s', '')}
+extlinks = {'jira': ('https://jira.zephyrproject.org/browse/%s', ''),
+            'github': ('https://github.com/zephyrproject-rtos/zephyr/issues/%s', '')
+           }
 
 # some configuration for linkcheck builder
 #   noticed that we're getting false-positive link errors on JIRA, I suspect
