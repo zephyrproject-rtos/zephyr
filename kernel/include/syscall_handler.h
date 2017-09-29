@@ -51,7 +51,7 @@ extern const _k_syscall_handler_t _k_syscall_table[K_SYSCALL_LIMIT];
  * @param ssf Syscall stack frame argument passed to the handler function
  */
 #define _SYSCALL_MEMORY(ptr, size, write, ssf) \
-	_SYSCALL_VERIFY(!_arch_buffer_validate(ptr, size, write), ssf)
+	_SYSCALL_VERIFY(!_arch_buffer_validate((void *)ptr, size, write), ssf)
 
 /**
  * @brief Runtime check that a pointer is a kernel object of expected type
