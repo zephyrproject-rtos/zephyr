@@ -2454,7 +2454,7 @@ struct k_mutex {
  *
  * @return N/A
  */
-extern void k_mutex_init(struct k_mutex *mutex);
+__syscall void k_mutex_init(struct k_mutex *mutex);
 
 /**
  * @brief Lock a mutex.
@@ -2474,7 +2474,7 @@ extern void k_mutex_init(struct k_mutex *mutex);
  * @retval -EBUSY Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
  */
-extern int k_mutex_lock(struct k_mutex *mutex, s32_t timeout);
+__syscall int k_mutex_lock(struct k_mutex *mutex, s32_t timeout);
 
 /**
  * @brief Unlock a mutex.
@@ -2490,7 +2490,7 @@ extern int k_mutex_lock(struct k_mutex *mutex, s32_t timeout);
  *
  * @return N/A
  */
-extern void k_mutex_unlock(struct k_mutex *mutex);
+__syscall void k_mutex_unlock(struct k_mutex *mutex);
 
 /**
  * @} end defgroup mutex_apis
