@@ -90,7 +90,7 @@ static void bt_ready(int err)
 
 	bt_bas_register(100, NULL);
 	bt_dis_register(CONFIG_SOC, "Manufacturer");
-	hog_init();
+	bt_hog_register();
 
 	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad),
 			      sd, ARRAY_SIZE(sd));
