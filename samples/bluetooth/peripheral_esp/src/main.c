@@ -397,7 +397,7 @@ static void bt_ready(int err)
 
 	bt_gatt_service_register(&ess_svc);
 	bt_bas_register(100, NULL);
-	dis_init(CONFIG_SOC, "ACME");
+	bt_dis_register(CONFIG_SOC, "ACME");
 
 	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad),
 			      sd, ARRAY_SIZE(sd));

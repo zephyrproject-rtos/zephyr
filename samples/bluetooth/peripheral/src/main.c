@@ -238,7 +238,7 @@ static void bt_ready(int err)
 	hrs_init(0x01);
 	bt_bas_register(100, NULL);
 	bt_cts_register(NULL, NULL);
-	dis_init(CONFIG_SOC, "Manufacturer");
+	bt_dis_register(CONFIG_SOC, "Manufacturer");
 	bt_gatt_service_register(&vnd_svc);
 
 	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad),

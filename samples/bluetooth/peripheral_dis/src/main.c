@@ -64,7 +64,7 @@ void main(void)
 
 	printk("Bluetooth initialized\n");
 
-	dis_init(CONFIG_SOC, "Manufacturer");
+	bt_dis_register(CONFIG_SOC, "Manufacturer");
 
 	bt_conn_cb_register(&conn_callbacks);
 
