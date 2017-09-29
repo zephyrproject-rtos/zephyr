@@ -209,8 +209,9 @@ static const struct flash_driver_api flash_nrf5_api = {
 	.erase = flash_nrf5_erase,
 	.write_protection = flash_nrf5_write_protection,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
-	.page_layout = flash_nrf5_pages_layout
+	.page_layout = flash_nrf5_pages_layout,
 #endif
+	.write_block_size = 1,
 };
 
 static int nrf5_flash_init(struct device *dev)
