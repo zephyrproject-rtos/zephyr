@@ -13,6 +13,10 @@
 #include <syscall_list.h>
 #include <syscall_macros.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * System Call Declaration macros
  *
@@ -240,6 +244,11 @@ static inline u32_t _syscall_invoke10(u32_t arg1, u32_t arg2, u32_t arg3,
 }
 
 #endif /* CONFIG_USERSPACE */
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* _ASMLANGUAGE */
 
 #endif
