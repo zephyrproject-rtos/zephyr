@@ -9428,29 +9428,37 @@ static inline void role_active_disable(u8_t ticker_id_stop,
 			LL_ASSERT(0);
 		}
 	} else if (ret_cb == TICKER_STATUS_FAILURE) {
-		u32_t volatile ret_cb = TICKER_STATUS_BUSY;
-		u32_t ret;
-
 		/* Step 3: Caller inside Event, handle graceful stop of Event
 		 * (role dependent)
 		 */
+
 		/* Stop ticker "may" be in use for direct adv or scanner,
 		 * hence stop may fail if ticker not used.
+		 *
+		 * Connection instances do not use a stop ticker, hence do not
+		 * try to stop an invalid ticker id.
 		 */
-		ret = ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
-				  RADIO_TICKER_USER_ID_APP, ticker_id_stop,
-				  ticker_if_done, (void *)&ret_cb);
+		if (ticker_id_stop != TICKER_NULL) {
+			u32_t volatile ret_cb = TICKER_STATUS_BUSY;
+			u32_t ret;
 
-		if (ret == TICKER_STATUS_BUSY) {
-			mayfly_enable(RADIO_TICKER_USER_ID_APP,
-				      RADIO_TICKER_USER_ID_JOB, 1);
+			ret = ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
+					  RADIO_TICKER_USER_ID_APP,
+					  ticker_id_stop, ticker_if_done,
+					  (void *)&ret_cb);
 
-			LL_ASSERT(ret_cb != TICKER_STATUS_BUSY);
+			if (ret == TICKER_STATUS_BUSY) {
+				mayfly_enable(RADIO_TICKER_USER_ID_APP,
+					      RADIO_TICKER_USER_ID_JOB, 1);
+
+				LL_ASSERT(ret_cb != TICKER_STATUS_BUSY);
+			}
+
+			LL_ASSERT((ret_cb == TICKER_STATUS_SUCCESS) ||
+				  (ret_cb == TICKER_STATUS_FAILURE));
 		}
 
-		LL_ASSERT((ret_cb == TICKER_STATUS_SUCCESS) ||
-			  (ret_cb == TICKER_STATUS_FAILURE));
-
+		/* Force Radio ISR execution and wait for role to stop */
 		if (_radio.role != ROLE_NONE) {
 			static void *s_link[2];
 			static struct mayfly s_mfy_radio_stop = {0, 0, s_link,
