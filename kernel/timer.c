@@ -8,6 +8,7 @@
 #include <debug/object_tracing_common.h>
 #include <init.h>
 #include <wait_q.h>
+#include <syscall_handler.h>
 
 extern struct k_timer _k_timer_list_start[];
 extern struct k_timer _k_timer_list_end[];
@@ -108,7 +109,7 @@ void k_timer_init(struct k_timer *timer,
 }
 
 
-void k_timer_start(struct k_timer *timer, s32_t duration, s32_t period)
+void _impl_k_timer_start(struct k_timer *timer, s32_t duration, s32_t period)
 {
 	__ASSERT(duration >= 0 && period >= 0 &&
 		 (duration != 0 || period != 0), "invalid parameters\n");
@@ -130,8 +131,25 @@ void k_timer_start(struct k_timer *timer, s32_t duration, s32_t period)
 	irq_unlock(key);
 }
 
+#ifdef CONFIG_USERSPACE
+u32_t _handler_k_timer_start(u32_t timer, u32_t duration_p, u32_t period_p,
+			     u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+{
+	s32_t duration, period;
+	_SYSCALL_ARG3;
 
-void k_timer_stop(struct k_timer *timer)
+	duration = (s32_t)duration_p;
+	period = (s32_t)period_p;
+
+	_SYSCALL_VERIFY(duration >= 0 && period >= 0 &&
+			(duration != 0 || period != 0), ssf);
+	_SYSCALL_IS_OBJ(timer, K_OBJ_TIMER, 0, ssf);
+	_impl_k_timer_start((struct k_timer *)timer, duration, period);
+	return 0;
+}
+#endif
+
+void _impl_k_timer_stop(struct k_timer *timer)
 {
 	int key = irq_lock();
 	int inactive = (_abort_timeout(&timer->timeout) == _INACTIVE);
@@ -160,8 +178,19 @@ void k_timer_stop(struct k_timer *timer)
 	}
 }
 
+#ifdef CONFIG_USERSPACE
+u32_t _handler_k_timer_stop(u32_t timer, u32_t arg2, u32_t arg3,
+			    u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+{
+	_SYSCALL_ARG1;
 
-u32_t k_timer_status_get(struct k_timer *timer)
+	_SYSCALL_IS_OBJ(timer, K_OBJ_TIMER, 0, ssf);
+	_impl_k_timer_stop((struct k_timer *)timer);
+	return 0;
+}
+#endif
+
+u32_t _impl_k_timer_status_get(struct k_timer *timer)
 {
 	unsigned int key = irq_lock();
 	u32_t result = timer->status;
@@ -172,8 +201,19 @@ u32_t k_timer_status_get(struct k_timer *timer)
 	return result;
 }
 
+#ifdef CONFIG_USERSPACE
+u32_t _handler_k_timer_status_get(u32_t timer, u32_t arg2, u32_t arg3,
+				  u32_t arg4, u32_t arg5, u32_t arg6,
+				  void *ssf)
+{
+	_SYSCALL_ARG1;
 
-u32_t k_timer_status_sync(struct k_timer *timer)
+	_SYSCALL_IS_OBJ(timer, K_OBJ_TIMER, 0, ssf);
+	return _impl_k_timer_status_get((struct k_timer *)timer);
+}
+#endif
+
+u32_t _impl_k_timer_status_sync(struct k_timer *timer)
 {
 	__ASSERT(!_is_in_isr(), "");
 
@@ -201,6 +241,18 @@ u32_t k_timer_status_sync(struct k_timer *timer)
 
 	return result;
 }
+
+#ifdef CONFIG_USERSPACE
+u32_t _handler_k_timer_status_sync(u32_t timer, u32_t arg2, u32_t arg3,
+				   u32_t arg4, u32_t arg5, u32_t arg6,
+				   void *ssf)
+{
+	_SYSCALL_ARG1;
+
+	_SYSCALL_IS_OBJ(timer, K_OBJ_TIMER, 0, ssf);
+	return _impl_k_timer_status_sync((struct k_timer *)timer);
+}
+#endif
 
 s32_t _timeout_remaining_get(struct _timeout *timeout)
 {
