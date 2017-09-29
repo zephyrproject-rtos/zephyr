@@ -38,6 +38,15 @@ set_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT "elf32-i386")
 
 # Use gen_idt.py and objcopy to generate irq_int_vector_map.o and
 # staticIdt.o from the elf file zephyr_prebuilt
+set(gen_idt_output_files
+  ${CMAKE_CURRENT_BINARY_DIR}/irq_int_vector_map.bin
+  ${CMAKE_CURRENT_BINARY_DIR}/staticIdt.bin
+  )
+add_custom_target(
+  gen_idt_output
+  DEPENDS
+  ${gen_idt_output_files}
+  )
 add_custom_command(
   OUTPUT irq_int_vector_map.bin staticIdt.bin
   COMMAND
@@ -70,7 +79,7 @@ add_custom_command(
   --rename-section .data=irq_int_vector_map
   irq_int_vector_map.bin
   irq_int_vector_map.o
-  DEPENDS irq_int_vector_map.bin
+  DEPENDS gen_idt_output irq_int_vector_map.bin
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
 add_custom_command(
@@ -83,7 +92,7 @@ add_custom_command(
   --rename-section .data=staticIdt
   staticIdt.bin
   staticIdt.o
-  DEPENDS staticIdt.bin
+  DEPENDS gen_idt_output staticIdt.bin
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
 
