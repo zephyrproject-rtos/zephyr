@@ -253,6 +253,7 @@ static const struct flash_driver_api flash_qmsi_api = {
 	.write = flash_qmsi_write,
 	.erase = flash_qmsi_erase,
 	.write_protection = flash_qmsi_write_protection,
+	.write_block_size = 4,
 };
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT

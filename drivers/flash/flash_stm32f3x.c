@@ -129,6 +129,7 @@ static const struct flash_driver_api flash_stm32_api = {
 	.write = flash_stm32_write,
 	.erase = flash_stm32_erase,
 	.write_protection = flash_stm32_protection_set,
+	.write_block_size = 2,
 };
 
 static const struct flash_stm32_dev_config flash_device_config = {
