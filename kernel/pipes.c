@@ -18,6 +18,7 @@
 #include <wait_q.h>
 #include <misc/dlist.h>
 #include <init.h>
+#include <syscall_handler.h>
 
 struct k_pipe_desc {
 	unsigned char *buffer;           /* Position in src/dest buffer */
@@ -126,7 +127,7 @@ SYS_INIT(init_pipes_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 #endif /* CONFIG_NUM_PIPE_ASYNC_MSGS or CONFIG_OBJECT_TRACING */
 
-void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
+void _impl_k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
 {
 	pipe->buffer = buffer;
 	pipe->size = size;
@@ -138,6 +139,21 @@ void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
 	SYS_TRACING_OBJ_INIT(k_pipe, pipe);
 	_k_object_init(pipe);
 }
+
+#ifdef CONFIG_USERSPACE
+u32_t _handler_k_pipe_init(u32_t pipe, u32_t buffer, u32_t size,
+			   u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+{
+	_SYSCALL_ARG3;
+
+	_SYSCALL_IS_OBJ(pipe, K_OBJ_PIPE, 1, ssf);
+	_SYSCALL_MEMORY(buffer, size, 1, ssf);
+
+	_impl_k_pipe_init((struct k_pipe *)pipe, (unsigned char *)buffer,
+			  size);
+	return 0;
+}
+#endif
 
 /**
  * @brief Copy bytes from @a src to @a dest
@@ -527,8 +543,8 @@ int _k_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 				 bytes_to_write);
 }
 
-int k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
-	       size_t *bytes_read, size_t min_xfer, s32_t timeout)
+int _impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
+		     size_t *bytes_read, size_t min_xfer, s32_t timeout)
 {
 	struct k_thread    *writer;
 	struct k_pipe_desc *desc;
@@ -670,8 +686,27 @@ int k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 				 bytes_to_read);
 }
 
-int k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
-	       size_t *bytes_written, size_t min_xfer, s32_t timeout)
+#ifdef CONFIG_USERSPACE
+u32_t _handler_k_pipe_get(u32_t pipe, u32_t data, u32_t bytes_to_read,
+			  u32_t bytes_read_p, u32_t min_xfer_p,
+			  u32_t timeout, void *ssf)
+{
+	size_t *bytes_read = (size_t *)bytes_read_p;
+	size_t min_xfer = (size_t)min_xfer_p;
+
+	_SYSCALL_IS_OBJ(pipe, K_OBJ_PIPE, 0, ssf);
+	_SYSCALL_MEMORY(bytes_read, sizeof(*bytes_read), 1, ssf);
+	_SYSCALL_MEMORY((void *)data, bytes_to_read, 1, ssf);
+	_SYSCALL_VERIFY(min_xfer <= bytes_to_read, ssf);
+
+	return _impl_k_pipe_get((struct k_pipe *)pipe, (void *)data,
+				bytes_to_read, bytes_read, min_xfer,
+				timeout);
+}
+#endif
+
+int _impl_k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
+		     size_t *bytes_written, size_t min_xfer, s32_t timeout)
 {
 	__ASSERT(min_xfer <= bytes_to_write, "");
 	__ASSERT(bytes_written != NULL, "");
@@ -680,6 +715,25 @@ int k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
 				    bytes_to_write, bytes_written,
 				    min_xfer, timeout);
 }
+
+#ifdef CONFIG_USERSPACE
+u32_t _handler_k_pipe_put(u32_t pipe, u32_t data, u32_t bytes_to_write,
+			  u32_t bytes_written_p, u32_t min_xfer_p,
+			  u32_t timeout, void *ssf)
+{
+	size_t *bytes_written = (size_t *)bytes_written_p;
+	size_t min_xfer = (size_t)min_xfer_p;
+
+	_SYSCALL_IS_OBJ(pipe, K_OBJ_PIPE, 0, ssf);
+	_SYSCALL_MEMORY(bytes_written, sizeof(*bytes_written), 1, ssf);
+	_SYSCALL_MEMORY((void *)data, bytes_to_write, 0, ssf);
+	_SYSCALL_VERIFY(min_xfer <= bytes_to_write, ssf);
+
+	return _impl_k_pipe_put((struct k_pipe *)pipe, (void *)data,
+				bytes_to_write, bytes_written, min_xfer,
+				timeout);
+}
+#endif
 
 #if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0)
 void k_pipe_block_put(struct k_pipe *pipe, struct k_mem_block *block,
