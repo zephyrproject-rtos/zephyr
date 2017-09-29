@@ -61,4 +61,8 @@ source "drivers/gpio/Kconfig.pulpino"
 
 source "drivers/gpio/Kconfig.fe310"
 
+source "drivers/gpio/Kconfig.cc2650"
+
+source "drivers/gpio/Kconfig.esp32"
+
 endif # GPIO

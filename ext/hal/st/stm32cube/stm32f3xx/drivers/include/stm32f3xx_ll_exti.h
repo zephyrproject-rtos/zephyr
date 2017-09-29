@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_ll_exti.h
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   Header file of EXTI LL module.
   ******************************************************************************
   * @attention
@@ -190,14 +188,17 @@ typedef struct
 #if defined(EXTI_IMR2_IM39)
 #define LL_EXTI_LINE_39                EXTI_IMR2_IM39          /*!< Extended line 39 */
 #endif
+#if defined(EXTI_IMR2_IM40)
+#define LL_EXTI_LINE_40                EXTI_IMR2_IM40          /*!< Extended line 40 */
+#endif
 #define LL_EXTI_LINE_ALL_32_63         EXTI_IMR2_IM            /*!< All Extended line not reserved*/
 
 #endif
 
-#define LL_EXTI_LINE_ALL               ((uint32_t)0xFFFFFFFFU)  /*!< All Extended line */
+#define LL_EXTI_LINE_ALL               (0xFFFFFFFFU)  /*!< All Extended line */
 
 #if defined(USE_FULL_LL_DRIVER)
-#define LL_EXTI_LINE_NONE              ((uint32_t)0x00000000U)  /*!< None Extended line */
+#define LL_EXTI_LINE_NONE              (0x00000000U)  /*!< None Extended line */
 #endif /*USE_FULL_LL_DRIVER*/
 
 /**
@@ -1154,10 +1155,10 @@ __STATIC_INLINE void LL_EXTI_GenerateSWI_0_31(uint32_t ExtiLine)
 #if defined(EXTI_32_63_SUPPORT)
 /**
   * @brief  Generate a software Interrupt Event for Lines in range 32 to 63
-  * @note If the interrupt is enabled on this line inthe EXTI_IMR, writing a 1 to
-  *       this bit when it is at '0' sets the corresponding pending bit in EXTI_PR
+  * @note If the interrupt is enabled on this line inthe EXTI_IMR2, writing a 1 to
+  *       this bit when it is at '0' sets the corresponding pending bit in EXTI_PR2
   *       resulting in an interrupt request generation.
-  *       This bit is cleared by clearing the corresponding bit in the EXTI_PR
+  *       This bit is cleared by clearing the corresponding bit in the EXTI_PR2
   *       register (by writing a 1 into the bit)
   * @rmtoll SWIER2       SWIx          LL_EXTI_GenerateSWI_32_63
   * @param  ExtiLine This parameter can be a combination of the following values:

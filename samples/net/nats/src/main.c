@@ -70,9 +70,6 @@ static bool fake_led;
 /* Default server */
 #define DEFAULT_PORT		4222
 
-static u8_t stack[2048];
-static struct k_thread thread_data;
-
 static void panic(const char *msg)
 {
 	NET_ERR("Panic: %s", msg);
@@ -88,7 +85,7 @@ static int in_addr_set(sa_family_t family,
 {
 	int rc = 0;
 
-	_sockaddr->family = family;
+	_sockaddr->sa_family = family;
 
 	if (ip_addr) {
 		if (family == AF_INET6) {
@@ -321,7 +318,5 @@ static void nats_client(void)
 
 void main(void)
 {
-	k_thread_create(&thread_data, stack, sizeof(stack),
-			(k_thread_entry_t)nats_client,
-			NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
+	nats_client();
 }

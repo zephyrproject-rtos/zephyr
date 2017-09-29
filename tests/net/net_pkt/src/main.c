@@ -12,10 +12,17 @@
 #include <errno.h>
 #include <misc/printk.h>
 
-#include <tc_util.h>
+#include <ztest.h>
 
 #include <net/net_pkt.h>
 #include <net/net_ip.h>
+
+#if defined(CONFIG_NET_DEBUG_NET_PKT)
+#define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
+#define NET_LOG_ENABLED 1
+#else
+#define DBG(fmt, ...)
+#endif
 
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
@@ -55,7 +62,7 @@ static const char example_data[] =
 	"0123456789abcdefghijklmnopqrstuvxyz!#¤%&/()=?"
 	"0123456789abcdefghijklmnopqrstuvxyz!#¤%&/()=?";
 
-static int test_ipv6_multi_frags(void)
+static void test_ipv6_multi_frags(void)
 {
 	struct net_pkt *pkt;
 	struct net_buf *frag;
@@ -75,7 +82,7 @@ static int test_ipv6_multi_frags(void)
 			printk("Not enough space for IPv6 header, "
 			       "needed %zd bytes, has %zd bytes\n",
 			       sizeof(ipv6), net_buf_tailroom(frag));
-			return -EINVAL;
+			zassert_true(false, "No space for IPv6 header");
 		}
 		net_buf_add(frag, sizeof(ipv6));
 
@@ -83,7 +90,7 @@ static int test_ipv6_multi_frags(void)
 			printk("Not enough space for UDP header, "
 			       "needed %zd bytes, has %zd bytes\n",
 			       sizeof(udp), net_buf_tailroom(frag));
-			return -EINVAL;
+			zassert_true(false, "No space for UDP header");
 		}
 
 		net_pkt_set_appdata(pkt, (void *)udp + sizeof(*udp));
@@ -100,7 +107,7 @@ static int test_ipv6_multi_frags(void)
 		       "should be 0 but was %zd - %d\n",
 		       net_buf_tailroom(frag),
 		       CONFIG_NET_BUF_DATA_SIZE - LL_RESERVE);
-		return -EINVAL;
+		zassert_true(false, "Invalid byte count");
 	}
 
 	if (((int)net_buf_tailroom(frag) - remaining) > 0) {
@@ -108,7 +115,7 @@ static int test_ipv6_multi_frags(void)
 		       "tailroom %zd user data len %zd\n",
 		       net_buf_tailroom(frag),
 		       strlen(example_data));
-		return -EINVAL;
+		zassert_true(false, "Still space");
 	}
 
 	while (remaining > 0) {
@@ -118,8 +125,7 @@ static int test_ipv6_multi_frags(void)
 		copy = remaining > bytes ? bytes : remaining;
 		memcpy(net_buf_add(frag, copy), &example_data[pos], copy);
 
-		printk("Remaining %d left %d copy %d\n", remaining, bytes,
-		       copy);
+		DBG("Remaining %d left %d copy %d\n", remaining, bytes, copy);
 
 		pos += bytes;
 		remaining -= bytes;
@@ -127,7 +133,7 @@ static int test_ipv6_multi_frags(void)
 			printk("There should have not been any tailroom left, "
 			       "tailroom %zd\n",
 			       net_buf_tailroom(frag) - (bytes - copy));
-			return -EINVAL;
+			zassert_true(false, "There is still tailroom left");
 		}
 
 		net_pkt_frag_add(pkt, frag);
@@ -141,7 +147,7 @@ static int test_ipv6_multi_frags(void)
 	if (bytes != strlen(example_data)) {
 		printk("Invalid number of bytes in message, %zd vs %d\n",
 		       strlen(example_data), bytes);
-		return -EINVAL;
+		zassert_true(false, "Invalid number of bytes");
 	}
 
 	/* Normally one should not unref the fragment list like this
@@ -149,15 +155,12 @@ static int test_ipv6_multi_frags(void)
 	 * freed fragment.
 	 */
 	net_pkt_frag_unref(pkt->frags);
-	if (!pkt->frags) {
-		printk("Fragment list should not be empty.\n");
-		return -EINVAL;
-	}
+
+	zassert_not_null(pkt->frags, "Frag list empty");
+
 	pkt->frags = NULL; /* to prevent double free */
 
 	net_pkt_unref(pkt);
-
-	return 0;
 }
 
 static char buf_orig[200];
@@ -180,7 +183,7 @@ static void linearize(struct net_pkt *pkt, char *buffer, int len)
 	}
 }
 
-static int test_fragment_copy(void)
+static void test_fragment_copy(void)
 {
 	struct net_pkt *pkt, *new_pkt;
 	struct net_buf *frag, *new_frag;
@@ -200,7 +203,7 @@ static int test_fragment_copy(void)
 			printk("Not enough space for IPv6 header, "
 			       "needed %zd bytes, has %zd bytes\n",
 			       sizeof(ipv6), net_buf_tailroom(frag));
-			return -EINVAL;
+			zassert_true(false, "No space for IPv6 header");
 		}
 		net_buf_add(frag, sizeof(*ipv6));
 
@@ -208,7 +211,7 @@ static int test_fragment_copy(void)
 			printk("Not enough space for UDP header, "
 			       "needed %zd bytes, has %zd bytes\n",
 			       sizeof(udp), net_buf_tailroom(frag));
-			return -EINVAL;
+			zassert_true(false, "No space for UDP header");
 		}
 
 		net_buf_add(frag, sizeof(*udp));
@@ -223,7 +226,7 @@ static int test_fragment_copy(void)
 
 	orig_len = net_pkt_get_len(pkt);
 
-	printk("Total copy data len %zd\n", orig_len);
+	DBG("Total copy data len %zd\n", orig_len);
 
 	linearize(pkt, buf_orig, orig_len);
 
@@ -232,15 +235,12 @@ static int test_fragment_copy(void)
 	 */
 	reserve = sizeof(struct ipv6_hdr) + sizeof(struct icmp_hdr);
 	new_frag = net_pkt_copy_all(pkt, reserve, K_FOREVER);
-	if (!new_frag) {
-		printk("Cannot copy fragment list.\n");
-		return -EINVAL;
-	}
+	zassert_not_null(new_frag, "Cannot copy fragment list");
 
 	new_pkt = net_pkt_get_reserve_tx(0, K_FOREVER);
 	new_pkt->frags = net_buf_frag_add(new_pkt->frags, new_frag);
 
-	printk("Total new data len %zd\n", net_pkt_get_len(new_pkt));
+	DBG("Total new data len %zd\n", net_pkt_get_len(new_pkt));
 
 	if ((net_pkt_get_len(pkt) + reserve) != net_pkt_get_len(new_pkt)) {
 		int diff;
@@ -252,7 +252,7 @@ static int test_fragment_copy(void)
 		       "(%zd vs %zd)\n", diff,
 		       net_pkt_get_len(pkt) + reserve,
 		       net_pkt_get_len(new_pkt));
-		return -EINVAL;
+		zassert_true(false, "Frag list missing");
 	}
 
 	if (net_pkt_get_len(new_pkt) != (orig_len + sizeof(struct ipv6_hdr) +
@@ -261,91 +261,54 @@ static int test_fragment_copy(void)
 		       "should be %zd\n", net_pkt_get_len(new_pkt),
 		       orig_len + sizeof(struct ipv6_hdr) +
 		       sizeof(struct icmp_hdr));
-		return -EINVAL;
+		zassert_true(false, "Frag list missing data");
 	}
 
 	linearize(new_pkt, buf_copy, sizeof(buf_copy));
 
-	if (!memcmp(buf_orig, buf_copy, sizeof(buf_orig))) {
-		printk("Buffer copy failed, buffers are same!\n");
-		return -EINVAL;
-	}
+	zassert_true(memcmp(buf_orig, buf_copy, sizeof(buf_orig)),
+		     "Buffer copy failed, buffers are same");
 
 	pos = memcmp(buf_orig, buf_copy + sizeof(struct ipv6_hdr) +
 		     sizeof(struct icmp_hdr), orig_len);
 	if (pos) {
 		printk("Buffer copy failed at pos %d\n", pos);
-		return -EINVAL;
+		zassert_true(false, "Buf copy failed");
 	}
-
-	return 0;
 }
 
 /* Empty data and test data must be the same size in order the test to work */
 static const char test_data[] = { '0', '1', '2', '3', '4',
 				  '5', '6', '7' };
 
-#if HEXDUMP
-static void hexdump(const char *str, const u8_t *packet, size_t length)
-{
-	int n = 0;
-
-	if (!length) {
-		SYS_LOG_DBG("%s zero-length packet", str);
-		return;
-	}
-
-	while (length--) {
-		if (n % 16 == 0) {
-			printk("%s %08X ", str, n);
-		}
-
-		printk("%02X ", *packet++);
-
-		n++;
-		if (n % 8 == 0) {
-			if (n % 16 == 0) {
-				printk("\n");
-			} else {
-				printk(" ");
-			}
-		}
-	}
-
-	if (n % 16) {
-		printk("\n");
-	}
-}
-#endif
-
 static const char sample_data[] =
-	"abcdefghijklmnopqrstuvxyz"
-	"abcdefghijklmnopqrstuvxyz"
-	"abcdefghijklmnopqrstuvxyz"
-	"abcdefghijklmnopqrstuvxyz"
-	"abcdefghijklmnopqrstuvxyz"
-	"abcdefghijklmnopqrstuvxyz"
-	"abcdefghijklmnopqrstuvxyz"
-	"abcdefghijklmnopqrstuvxyz"
-	"abcdefghijklmnopqrstuvxyz"
-	"abcdefghijklmnopqrstuvxyz"
-	"abcdefghijklmnopqrstuvxyz"
-	"abcdefghijklmnopqrstuvxyz"
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
+	"abcdefghijklmnopqrstuvxyz "
 	"abcdefghijklmnopqrstuvxyz";
 
 static char test_rw_short[] =
 	"abcdefghijklmnopqrstuvwxyz";
 
 static char test_rw_long[] =
-	"abcdefghijklmnopqrstuvwxyz"
-	"abcdefghijklmnopqrstuvwxyz"
-	"abcdefghijklmnopqrstuvwxyz"
-	"abcdefghijklmnopqrstuvwxyz"
-	"abcdefghijklmnopqrstuvwxyz"
-	"abcdefghijklmnopqrstuvwxyz"
-	"abcdefghijklmnopqrstuvwxyz";
+	"abcdefghijklmnopqrstuvwxyz "
+	"abcdefghijklmnopqrstuvwxyz "
+	"abcdefghijklmnopqrstuvwxyz "
+	"abcdefghijklmnopqrstuvwxyz "
+	"abcdefghijklmnopqrstuvwxyz "
+	"abcdefghijklmnopqrstuvwxyz "
+	"abcdefghijklmnopqrstuvwxyz ";
 
-static int test_pkt_read_append(void)
+static void test_pkt_read_append(void)
 {
 	int remaining = strlen(sample_data);
 	u8_t verify_rw_short[sizeof(test_rw_short)];
@@ -374,7 +337,7 @@ static int test_pkt_read_append(void)
 			printk("Not enough space for IPv6 header, "
 			       "needed %zd bytes, has %zd bytes\n",
 			       sizeof(ipv6), net_buf_tailroom(frag));
-			return -EINVAL;
+			zassert_true(false, "No space for IPv6 header");
 		}
 		net_buf_add(frag, sizeof(ipv6));
 
@@ -382,7 +345,7 @@ static int test_pkt_read_append(void)
 			printk("Not enough space for UDP header, "
 			       "needed %zd bytes, has %zd bytes\n",
 			       sizeof(udp), net_buf_tailroom(frag));
-			return -EINVAL;
+			zassert_true(false, "No space for UDP header");
 		}
 
 		net_pkt_set_appdata(pkt, (void *)udp + sizeof(*udp));
@@ -399,7 +362,7 @@ static int test_pkt_read_append(void)
 		       "should be 0 but was %zd - %d\n",
 		       net_buf_tailroom(frag),
 		       CONFIG_NET_BUF_DATA_SIZE - LL_RESERVE);
-		return -EINVAL;
+		zassert_true(false, "Invalid number of bytes avail");
 	}
 
 	if (((int)net_buf_tailroom(frag) - remaining) > 0) {
@@ -407,7 +370,7 @@ static int test_pkt_read_append(void)
 		       "tailroom %zd user data len %zd\n",
 		       net_buf_tailroom(frag),
 		       strlen(sample_data));
-		return -EINVAL;
+		zassert_true(false, "Not out of space");
 	}
 
 	while (remaining > 0) {
@@ -417,8 +380,7 @@ static int test_pkt_read_append(void)
 		copy = remaining > bytes ? bytes : remaining;
 		memcpy(net_buf_add(frag, copy), &sample_data[pos], copy);
 
-		printk("Remaining %d left %d copy %d\n", remaining, bytes,
-		       copy);
+		DBG("Remaining %d left %d copy %d\n", remaining, bytes, copy);
 
 		pos += bytes;
 		remaining -= bytes;
@@ -426,7 +388,7 @@ static int test_pkt_read_append(void)
 			printk("There should have not been any tailroom left, "
 			       "tailroom %zd\n",
 			       net_buf_tailroom(frag) - (bytes - copy));
-			return -EINVAL;
+			zassert_true(false, "Still tailroom left");
 		}
 
 		net_pkt_frag_add(pkt, frag);
@@ -440,16 +402,13 @@ static int test_pkt_read_append(void)
 	if (bytes != strlen(sample_data)) {
 		printk("Invalid number of bytes in message, %zd vs %d\n",
 		       strlen(sample_data), bytes);
-		return -EINVAL;
+		zassert_true(false, "Message size wrong");
 	}
 
 	/* Failure cases */
 	/* Invalid buffer */
 	tfrag = net_frag_skip(NULL, 10, &fail_pos, 10);
-	if (!(!tfrag && fail_pos == 0xffff)) {
-		printk("Invalid case NULL buffer\n");
-		return -EINVAL;
-	}
+	zassert_true(!tfrag && fail_pos == 0xffff, "Invalid case NULL buffer");
 
 	/* Invalid: Skip more than a buffer length.*/
 	tfrag = net_buf_frag_last(pkt->frags);
@@ -458,7 +417,7 @@ static int test_pkt_read_append(void)
 		printk("Invalid case offset %d length to skip %d,"
 		       "frag length %d\n",
 		       tfrag->len - 1, tfrag->len + 2, tfrag->len);
-		return -EINVAL;
+		zassert_true(false, "Invalid offset");
 	}
 
 	/* Invalid offset */
@@ -468,7 +427,7 @@ static int test_pkt_read_append(void)
 		printk("Invalid case offset %d length to skip %d,"
 		       "frag length %d\n",
 		       tfrag->len + 10, 10, tfrag->len);
-		return -EINVAL;
+		zassert_true(false, "Invalid offset");
 	}
 
 	/* Valid cases */
@@ -481,10 +440,10 @@ static int test_pkt_read_append(void)
 	tfrag = net_frag_read(tfrag, off + 10, &tpos, 10, data);
 	if (!tfrag ||
 	    memcmp(sample_data + off + 10, data, 10)) {
-		printk("Failed to read from offset %d, frag length %d"
+		printk("Failed to read from offset %d, frag length %d "
 		       "read length %d\n",
 		       tfrag->len + 10, tfrag->len, 10);
-		return -EINVAL;
+		zassert_true(false, "Fail offset read");
 	}
 
 	/* Skip till end of all fragments */
@@ -492,10 +451,8 @@ static int test_pkt_read_append(void)
 	tfrag = pkt->frags;
 	tfrag = tfrag->frags;
 	tfrag = net_frag_skip(tfrag, 0, &tpos, strlen(sample_data));
-	if (!(!tfrag && tpos == 0)) {
-		printk("Invalid skip till end of all fragments");
-		return -EINVAL;
-	}
+	zassert_true(!tfrag && tpos == 0,
+		     "Invalid skip till end of all fragments");
 
 	/* Short data test case */
 	/* Test case scenario:
@@ -508,32 +465,25 @@ static int test_pkt_read_append(void)
 	tfrag = net_buf_frag_last(pkt->frags);
 	off = tfrag->len;
 
-	if (!net_pkt_append_all(pkt, (u16_t)sizeof(test_rw_short),
-			    test_rw_short, K_FOREVER)) {
-		printk("net_pkt_append failed\n");
-		return -EINVAL;
-	}
+	zassert_true(net_pkt_append_all(pkt, (u16_t)sizeof(test_rw_short),
+					test_rw_short, K_FOREVER),
+		     "net_pkt_append failed");
 
-	if (!net_pkt_append_all(pkt, (u16_t)sizeof(test_rw_short),
-			    test_rw_short, K_FOREVER)) {
-		printk("net_pkt_append failed\n");
-		return -EINVAL;
-	}
+	zassert_true(net_pkt_append_all(pkt, (u16_t)sizeof(test_rw_short),
+					test_rw_short, K_FOREVER),
+		     "net_pkt_append failed");
 
 	tfrag = net_frag_skip(tfrag, off, &tpos,
 			     (u16_t)sizeof(test_rw_short));
-	if (!tfrag) {
-		printk("net_frag_skip failed\n");
-		return -EINVAL;
-	}
+	zassert_not_null(tfrag, "net_frag_skip failed");
 
 	tfrag = net_frag_read(tfrag, tpos, &tpos,
 			     (u16_t)sizeof(test_rw_short),
 			     verify_rw_short);
-	if (memcmp(test_rw_short, verify_rw_short, sizeof(test_rw_short))) {
-		printk("net_frag_read failed with mismatch data");
-		return -EINVAL;
-	}
+	zassert_true(!tfrag && tpos == 0, "net_frag_read failed");
+	zassert_false(memcmp(test_rw_short, verify_rw_short,
+			     sizeof(test_rw_short)),
+		      "net_frag_read failed with mismatch data");
 
 	/* Long data test case */
 	/* Test case scenario:
@@ -546,41 +496,32 @@ static int test_pkt_read_append(void)
 	tfrag = net_buf_frag_last(pkt->frags);
 	off = tfrag->len;
 
-	if (!net_pkt_append_all(pkt, (u16_t)sizeof(test_rw_long),
-				test_rw_long, K_FOREVER)) {
-		printk("net_pkt_append failed\n");
-		return -EINVAL;
-	}
+	zassert_true(net_pkt_append_all(pkt, (u16_t)sizeof(test_rw_long),
+					test_rw_long, K_FOREVER),
+		     "net_pkt_append failed");
 
-	if (!net_pkt_append_all(pkt, (u16_t)sizeof(test_rw_long),
-				test_rw_long, K_FOREVER)) {
-		printk("net_pkt_append failed\n");
-		return -EINVAL;
-	}
+	zassert_true(net_pkt_append_all(pkt, (u16_t)sizeof(test_rw_long),
+					test_rw_long, K_FOREVER),
+		     "net_pkt_append failed");
 
 	tfrag = net_frag_skip(tfrag, off, &tpos,
 			      (u16_t)sizeof(test_rw_long));
-	if (!tfrag) {
-		printk("net_frag_skip failed\n");
-		return -EINVAL;
-	}
+	zassert_not_null(tfrag, "net_frag_skip failed");
 
 	tfrag = net_frag_read(tfrag, tpos, &tpos,
 			     (u16_t)sizeof(test_rw_long),
 			     verify_rw_long);
-	if (memcmp(test_rw_long, verify_rw_long, sizeof(test_rw_long))) {
-		printk("net_frag_read failed with mismatch data");
-		return -EINVAL;
-	}
+	zassert_true(!tfrag && tpos == 0, "net_frag_read failed");
+	zassert_false(memcmp(test_rw_long, verify_rw_long,
+			     sizeof(test_rw_long)),
+		      "net_frag_read failed with mismatch data");
 
 	net_pkt_unref(pkt);
 
-	printk("test_pkt_read_append passed\n");
-
-	return 0;
+	DBG("test_pkt_read_append passed\n");
 }
 
-static int test_pkt_read_write_insert(void)
+static void test_pkt_read_write_insert(void)
 {
 	struct net_buf *read_frag;
 	struct net_buf *temp_frag;
@@ -606,22 +547,15 @@ static int test_pkt_read_write_insert(void)
 	 */
 	frag = net_pkt_write(pkt, frag, NET_IPV6UDPH_LEN, &pos, 10,
 			     (u8_t *)sample_data, K_FOREVER);
-	if (!frag || pos != 58) {
-		printk("Usecase 1: Write failed\n");
-		return -EINVAL;
-	}
+	zassert_false(!frag || pos != 58, "Usecase 1: Write failed");
 
 	read_frag = net_frag_read(frag, NET_IPV6UDPH_LEN, &read_pos, 10,
 				 read_data);
-	if (!read_frag && read_pos == 0xffff) {
-		printk("Usecase 1: Read failed\n");
-		return -EINVAL;
-	}
+	zassert_false(!read_frag && read_pos == 0xffff,
+		      "Usecase 1: Read failed");
 
-	if (memcmp(read_data, sample_data, 10)) {
-		printk("Usecase 1: Read data mismatch\n");
-		return -EINVAL;
-	}
+	zassert_false(memcmp(read_data, sample_data, 10),
+		      "Usecase 1: Read data mismatch");
 
 	/* 2) Write IPv6 and UDP header at offset 0. (Empty space is created
 	 * already in Usecase 1, just need to fill the header, at this point
@@ -629,24 +563,16 @@ static int test_pkt_read_write_insert(void)
 	 */
 	frag = net_pkt_write(pkt, frag, 0, &pos, NET_IPV6UDPH_LEN,
 			     (u8_t *)sample_data, K_FOREVER);
-	if (!frag || pos != 48) {
-		printk("Usecase 2: Write failed\n");
-		return -EINVAL;
-	}
+	zassert_false(!frag || pos != 48, "Usecase 2: Write failed");
 
 	read_frag = net_frag_read(frag, 0, &read_pos, NET_IPV6UDPH_LEN,
 				 read_data);
-	if (!read_frag && read_pos == 0xffff) {
-		printk("Usecase 2: Read failed\n");
-		return -EINVAL;
-	}
+	zassert_false(!read_frag && read_pos == 0xffff,
+		     "Usecase 2: Read failed");
 
-	if (memcmp(read_data, sample_data, NET_IPV6UDPH_LEN)) {
-		printk("Usecase 2: Read data mismatch\n");
-		return -EINVAL;
-	}
+	zassert_false(memcmp(read_data, sample_data, NET_IPV6UDPH_LEN),
+		      "Usecase 2: Read data mismatch");
 
-	/* Unref */
 	net_pkt_unref(pkt);
 
 	pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
@@ -658,21 +584,15 @@ static int test_pkt_read_write_insert(void)
 	 */
 	frag = net_pkt_write(pkt, pkt->frags, 200, &pos, 10,
 			     (u8_t *)sample_data + 10, K_FOREVER);
-	if (!frag) {
-		printk("Usecase 3: Write failed");
-	}
+	zassert_not_null(frag, "Usecase 3: Write failed");
 
 	read_frag = net_frag_read(frag, pos - 10, &read_pos, 10,
 				 read_data);
-	if (!read_frag && read_pos == 0xffff) {
-		printk("Usecase 3: Read failed\n");
-		return -EINVAL;
-	}
+	zassert_false(!read_frag && read_pos == 0xffff,
+		     "Usecase 3: Read failed");
 
-	if (memcmp(read_data, sample_data + 10, 10)) {
-		printk("Usecase 3: Read data mismatch\n");
-		return -EINVAL;
-	}
+	zassert_false(memcmp(read_data, sample_data + 10, 10),
+		      "Usecase 3: Read data mismatch");
 
 	/* 4) Offset is in next to next fragment (overwrite).
 	 * Write app data after 2 fragments. (Space is already available from
@@ -681,24 +601,16 @@ static int test_pkt_read_write_insert(void)
 	 */
 	frag = net_pkt_write(pkt, pkt->frags, 190, &pos, 10,
 			     (u8_t *)sample_data, K_FOREVER);
-	if (!frag) {
-		printk("Usecase 4: Write failed\n");
-		return -EINVAL;
-	}
+	zassert_not_null(frag, "Usecase 4: Write failed");
 
 	read_frag = net_frag_read(frag, pos - 10, &read_pos, 20,
 				 read_data);
-	if (!read_frag && read_pos == 0xffff) {
-		printk("Usecase 4: Read failed\n");
-		return -EINVAL;
-	}
+	zassert_false(!read_frag && read_pos == 0xffff,
+		      "Usecase 4: Read failed");
 
-	if (memcmp(read_data, sample_data, 20)) {
-		printk("Usecase 4: Read data mismatch\n");
-		return -EINVAL;
-	}
+	zassert_false(memcmp(read_data, sample_data, 20),
+		      "Usecase 4: Read data mismatch");
 
-	/* Unref */
 	net_pkt_unref(pkt);
 
 	/* 5) Write 20 bytes in fragment which has only 10 bytes space.
@@ -717,23 +629,15 @@ static int test_pkt_read_write_insert(void)
 
 	frag = net_pkt_write(pkt, frag, 0, &pos, 20, (u8_t *)sample_data,
 			     K_FOREVER);
-	if (!frag && pos != 20) {
-		printk("Usecase 5: Write failed\n");
-		return -EINVAL;
-	}
+	zassert_false(!frag && pos != 20, "Usecase 5: Write failed");
 
 	read_frag = net_frag_read(frag, 0, &read_pos, 20, read_data);
-	if (!read_frag && read_pos == 0xffff) {
-		printk("Usecase 5: Read failed\n");
-		return -EINVAL;
-	}
+	zassert_false(!read_frag && read_pos == 0xffff,
+		     "Usecase 5: Read failed");
 
-	if (memcmp(read_data, sample_data, 20)) {
-		printk("USecase 5: Read data mismatch\n");
-		return -EINVAL;
-	}
+	zassert_false(memcmp(read_data, sample_data, 20),
+		      "USecase 5: Read data mismatch");
 
-	/* Unref */
 	net_pkt_unref(pkt);
 
 	/* 6) First fragment is full, second fragment has 10 bytes tail room,
@@ -774,24 +678,16 @@ static int test_pkt_read_write_insert(void)
 
 	temp_frag = net_pkt_write(pkt, temp_frag, temp_frag->len - 10, &pos,
 				  30, (u8_t *) sample_data, K_FOREVER);
-	if (!temp_frag) {
-		printk("Use case 6: Write failed\n");
-		return -EINVAL;
-	}
+	zassert_not_null(temp_frag, "Use case 6: Write failed");
 
 	read_frag = net_frag_read(read_frag, read_pos, &read_pos, 30,
 				 read_data);
-	if (!read_frag && read_pos == 0xffff) {
-		printk("Usecase 6: Read failed\n");
-		return -EINVAL;
-	}
+	zassert_false(!read_frag && read_pos == 0xffff,
+		      "Usecase 6: Read failed");
 
-	if (memcmp(read_data, sample_data, 30)) {
-		printk("Usecase 6: Read data mismatch\n");
-		return -EINVAL;
-	}
+	zassert_false(memcmp(read_data, sample_data, 30),
+		      "Usecase 6: Read data mismatch");
 
-	/* Unref */
 	net_pkt_unref(pkt);
 
 	/* 7) Offset is with in input fragment.
@@ -811,49 +707,33 @@ static int test_pkt_read_write_insert(void)
 
 	frag = net_pkt_write(pkt, frag, NET_IPV6UDPH_LEN, &pos, 10,
 			     (u8_t *)sample_data + 10, K_FOREVER);
-	if (!frag || pos != 58) {
-		printk("Usecase 7: Write failed\n");
-		return -EINVAL;
-	}
+	zassert_false(!frag || pos != 58, "Usecase 7: Write failed");
 
 	read_frag = net_frag_read(frag, NET_IPV6UDPH_LEN, &read_pos, 10,
 				 read_data);
-	if (!read_frag && read_pos == 0xffff) {
-		printk("Usecase 7: Read failed\n");
-		return -EINVAL;
-	}
+	zassert_false(!read_frag && read_pos == 0xffff,
+		      "Usecase 7: Read failed");
 
-	if (memcmp(read_data, sample_data + 10, 10)) {
-		printk("Usecase 7: Read data mismatch\n");
-		return -EINVAL;
-	}
+	zassert_false(memcmp(read_data, sample_data + 10, 10),
+		     "Usecase 7: Read data mismatch");
 
-	if (!net_pkt_insert(pkt, frag, NET_IPV6UDPH_LEN, 10,
-			    (u8_t *)sample_data, K_FOREVER)) {
-		printk("Usecase 7: Insert failed\n");
-		return -EINVAL;
-	}
+	zassert_true(net_pkt_insert(pkt, frag, NET_IPV6UDPH_LEN, 10,
+				    (u8_t *)sample_data, K_FOREVER),
+		     "Usecase 7: Insert failed");
 
 	read_frag = net_frag_read(frag, NET_IPV6UDPH_LEN, &read_pos, 20,
 				 read_data);
-	if (!read_frag && read_pos == 0xffff) {
-		printk("Usecase 7: Read after failed\n");
-		return -EINVAL;
-	}
+	zassert_false(!read_frag && read_pos == 0xffff,
+		      "Usecase 7: Read after failed");
 
-	if (memcmp(read_data, sample_data, 20)) {
-		printk("Usecase 7: Read data mismatch after insertion\n");
-		return -EINVAL;
-	}
+	zassert_false(memcmp(read_data, sample_data, 20),
+		      "Usecase 7: Read data mismatch after insertion");
 
 	/* Insert data outside input fragment length, error case. */
-	if (net_pkt_insert(pkt, frag, 70, 10, (u8_t *)sample_data,
-			   K_FOREVER)) {
-		printk("Usecase 7: False insert failed\n");
-		return -EINVAL;
-	}
+	zassert_false(net_pkt_insert(pkt, frag, 70, 10, (u8_t *)sample_data,
+				     K_FOREVER),
+		      "Usecase 7: False insert failed");
 
-	/* Unref */
 	net_pkt_unref(pkt);
 
 	/* 8) Offset is with in input fragment.
@@ -873,47 +753,31 @@ static int test_pkt_read_write_insert(void)
 
 	frag = net_pkt_write(pkt, frag, NET_IPV6UDPH_LEN, &pos, 10,
 			     (u8_t *)sample_data + 60, K_FOREVER);
-	if (!frag || pos != 58) {
-		printk("Usecase 8: Write failed\n");
-		return -EINVAL;
-	}
+	zassert_false(!frag || pos != 58, "Usecase 8: Write failed");
 
 	read_frag = net_frag_read(frag, NET_IPV6UDPH_LEN, &read_pos, 10,
 				 read_data);
-	if (!read_frag && read_pos == 0xffff) {
-		printk("Usecase 8: Read failed\n");
-		return -EINVAL;
-	}
+	zassert_false(!read_frag && read_pos == 0xffff,
+		      "Usecase 8: Read failed");
 
-	if (memcmp(read_data, sample_data + 60, 10)) {
-		printk("Usecase 8: Read data mismatch\n");
-		return -EINVAL;
-	}
+	zassert_false(memcmp(read_data, sample_data + 60, 10),
+		      "Usecase 8: Read data mismatch");
 
-	if (!net_pkt_insert(pkt, frag, NET_IPV6UDPH_LEN, 60,
-			    (u8_t *)sample_data, K_FOREVER)) {
-		printk("Usecase 8: Insert failed\n");
-		return -EINVAL;
-	}
+	zassert_true(net_pkt_insert(pkt, frag, NET_IPV6UDPH_LEN, 60,
+				    (u8_t *)sample_data, K_FOREVER),
+		     "Usecase 8: Insert failed");
 
 	read_frag = net_frag_read(frag, NET_IPV6UDPH_LEN, &read_pos, 70,
 				 read_data);
-	if (!read_frag && read_pos == 0xffff) {
-		printk("Usecase 8: Read after failed\n");
-		return -EINVAL;
-	}
+	zassert_false(!read_frag && read_pos == 0xffff,
+		      "Usecase 8: Read after failed");
 
-	if (memcmp(read_data, sample_data, 70)) {
-		printk("Usecase 8: Read data mismatch after insertion\n");
-		return -EINVAL;
-	}
+	zassert_false(memcmp(read_data, sample_data, 70),
+		      "Usecase 8: Read data mismatch after insertion");
 
-	/* Unref */
 	net_pkt_unref(pkt);
 
-	printk("test_pkt_read_write_insert passed\n");
-
-	return 0;
+	DBG("test_pkt_read_write_insert passed\n");
 }
 
 static int calc_fragments(struct net_pkt *pkt)
@@ -964,7 +828,7 @@ static bool net_pkt_is_compact(struct net_pkt *pkt)
 	return false;
 }
 
-static int test_fragment_compact(void)
+static void test_fragment_compact(void)
 {
 	struct net_pkt *pkt;
 	struct net_buf *frags[FRAG_COUNT], *frag;
@@ -996,10 +860,10 @@ static int test_fragment_compact(void)
 	if (total != FRAG_COUNT) {
 		printk("There should be %d fragments but was %d\n",
 		       FRAG_COUNT, total);
-		return -1;
+		zassert_true(false, "Invalid fragment count");
 	}
 
-	printk("step 1\n");
+	DBG("step 1\n");
 
 	pkt->frags = net_buf_frag_add(pkt->frags, frags[0]);
 
@@ -1008,32 +872,26 @@ static int test_fragment_compact(void)
 		printk("Compact test failed, fragments had %d bytes but "
 		       "should have had %zd\n", bytes,
 		       FRAG_COUNT * sizeof(test_data) * 2);
-		return -1;
+		zassert_true(false, "Invalid fragment bytes");
 	}
 
-	if (net_pkt_is_compact(pkt)) {
-		printk("The pkt is definitely not compact. Test fails\n");
-		return -1;
-	}
+	zassert_false(net_pkt_is_compact(pkt),
+		      "The pkt is definitely not compact");
 
-	printk("step 2\n");
+	DBG("step 2\n");
 
 	net_pkt_compact(pkt);
 
-	if (!net_pkt_is_compact(pkt)) {
-		printk("The pkt should be in compact form. Test fails\n");
-		return -1;
-	}
+	zassert_true(net_pkt_is_compact(pkt),
+		     "The pkt should be in compact form");
 
-	printk("step 3\n");
+	DBG("step 3\n");
 
 	/* Try compacting again, nothing should happen */
 	net_pkt_compact(pkt);
 
-	if (!net_pkt_is_compact(pkt)) {
-		printk("The pkt should be compacted now. Test fails\n");
-		return -1;
-	}
+	zassert_true(net_pkt_is_compact(pkt),
+		     "The pkt should be compacted now");
 
 	total = calc_fragments(pkt);
 
@@ -1046,7 +904,7 @@ static int test_fragment_compact(void)
 
 	count = calc_fragments(pkt);
 
-	printk("step 4\n");
+	DBG("step 4\n");
 
 	net_pkt_compact(pkt);
 
@@ -1055,13 +913,13 @@ static int test_fragment_compact(void)
 	if (count != (i + 1)) {
 		printk("Last fragment removal failed, chain should have %d "
 		       "fragments but had %d\n", i-1, i);
-		return -1;
+		zassert_true(false, "Last frag rm fails");
 	}
 
 	if (i != total) {
 		printk("Fragments missing, expecting %d but got %d\n",
 		       total, i);
-		return -1;
+		zassert_true(false, "Frags missing");
 	}
 
 	/* Add two empty fragments at the end and compact, the last two
@@ -1077,7 +935,7 @@ static int test_fragment_compact(void)
 
 	count = calc_fragments(pkt);
 
-	printk("step 5\n");
+	DBG("step 5\n");
 
 	net_pkt_compact(pkt);
 
@@ -1086,13 +944,13 @@ static int test_fragment_compact(void)
 	if (count != (i + 2)) {
 		printk("Last two fragment removal failed, chain should have "
 		       "%d fragments but had %d\n", i-2, i);
-		return -1;
+		zassert_true(false, "Last two frag rm fails");
 	}
 
 	if (i != total) {
 		printk("Fragments missing, expecting %d but got %d\n",
 		       total, i);
-		return -1;
+		zassert_true(false, "Frags missing");
 	}
 
 	/* Add empty fragment at the beginning and at the end, and then
@@ -1108,7 +966,7 @@ static int test_fragment_compact(void)
 
 	count = calc_fragments(pkt);
 
-	printk("step 6\n");
+	DBG("step 6\n");
 
 	net_pkt_compact(pkt);
 
@@ -1117,31 +975,31 @@ static int test_fragment_compact(void)
 	if (count != (i + 2)) {
 		printk("Two fragment removal failed, chain should have "
 		       "%d fragments but had %d\n", i-2, i);
-		return -1;
+		zassert_true(false, "Two frag rm fails");
 	}
 
 	if (i != total) {
 		printk("Fragments missing, expecting %d but got %d\n",
 		       total, i);
-		return -1;
+		zassert_true(false, "Frags missing");
 	}
 
-	printk("test_fragment_compact passed\n");
-
-	return 0;
+	DBG("test_fragment_compact passed\n");
 }
 
 static const char frag_data[CONFIG_NET_BUF_DATA_SIZE] = { 42 };
 
-static int test_fragment_split(void)
+static void test_fragment_split(void)
 {
 #define TEST_FRAG_COUNT (FRAG_COUNT - 2)
 #define FRAGA (FRAG_COUNT - 2)
 #define FRAGB (FRAG_COUNT - 1)
 	struct net_pkt *pkt;
-	struct net_buf *frags[FRAG_COUNT], *frag, *fragA, *fragB;
-	int i, total, splitA, splitB;
-	int ret;
+	struct net_buf *frags[FRAG_COUNT], *frag, *frag_a, *frag_b;
+	int i, total, split_a, split_b;
+	int ret, frag_size;
+
+	memset(frags, 0, FRAG_COUNT * sizeof(void *));
 
 	pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
 	frag = NULL;
@@ -1165,100 +1023,65 @@ static int test_fragment_split(void)
 	if (total != TEST_FRAG_COUNT) {
 		printk("There should be %d fragments but was %d\n",
 		       TEST_FRAG_COUNT, total);
-		return -1;
+		zassert_true(false, "Frags missing");
 	}
+
+	frag_size = frags[0]->size;
+	zassert_true(frag_size > 0, "Invalid frag size");
 
 	net_pkt_frag_add(pkt, frags[0]);
 
-	fragA = frags[FRAGA];
-	fragB = frags[FRAGB];
+	frag_a = frags[FRAGA];
+	frag_b = frags[FRAGB];
 
-	splitA = fragA->size * 2 / 3;
-	splitB = fragB->size - splitA;
+	zassert_is_null(frag_a, "frag_a is not NULL");
+	zassert_is_null(frag_b, "frag_b is not NULL");
+
+	split_a = frag_size * 2 / 3;
+	split_b = frag_size - split_a;
+
+	zassert_true(split_a > 0, "A size is 0");
+	zassert_true(split_a > split_b, "A is smaller than B");
 
 	/* Test some error cases first */
-	ret = net_pkt_split(NULL, NULL, 1024, &fragA, &fragB, K_NO_WAIT);
-	if (!ret) {
-		printk("Invalid buf pointers\n");
-		return -1;
-	}
-
-	ret = net_pkt_split(pkt, pkt->frags, 1024, &fragA, &fragB, K_NO_WAIT);
-	if (!ret) {
-		printk("Too long frag length %d\n", 1024);
-		return -1;
-	}
+	ret = net_pkt_split(NULL, NULL, 1024, &frag_a, &frag_b, K_NO_WAIT);
+	zassert_equal(ret, -EINVAL, "Invalid buf pointers");
 
 	ret = net_pkt_split(pkt, pkt->frags, CONFIG_NET_BUF_DATA_SIZE + 1,
-			    &fragA, &fragB, K_NO_WAIT);
-	if (!ret) {
-		printk("Too long frag size %d vs %d\n",
-		       CONFIG_NET_BUF_DATA_SIZE,
-		       CONFIG_NET_BUF_DATA_SIZE + 1);
-		return -1;
+			    &frag_a, &frag_b, K_NO_WAIT);
+	zassert_equal(ret, 0, "Split failed");
+
+	ret = net_pkt_split(pkt, pkt->frags, split_a,
+			     &frag_a, &frag_b, K_NO_WAIT);
+	zassert_equal(ret, 0, "Cannot split frag");
+
+	if (frag_a->len != split_a) {
+		printk("Frag_a len %d not %d\n", frag_a->len, split_a);
+		zassert_equal(frag_a->len, split_a, "Frag_a len wrong");
 	}
 
-	ret = net_pkt_split(pkt, pkt->frags, splitA,
-			     &fragA, &fragB, K_NO_WAIT);
-	if (ret < 0) {
-		printk("Cannot split into %d and %d parts\n", splitA, splitB);
-		return -1;
+	if (frag_b->len != split_b) {
+		printk("Frag_b len %d not %d\n", frag_b->len, split_b);
+		zassert_true(false, "Frag_b len wrong");
 	}
 
-	if (fragA->len != splitA) {
-		printk("Frag A len %d not %d\n", fragA->len, splitA);
-		return -1;
-	}
+	zassert_false(memcmp(pkt->frags->data, frag_a->data, split_a),
+		      "Frag_a data mismatch");
 
-	if (fragB->len != splitB) {
-		printk("Frag B len %d not %d\n", fragB->len, splitB);
-		return -1;
-	}
-
-	if (memcmp(pkt->frags->data, fragA->data, splitA)) {
-		printk("Frag A data mismatch\n");
-		return -1;
-	}
-
-	if (memcmp(pkt->frags->data + splitA, fragB->data, splitB)) {
-		printk("Frag B data mismatch\n");
-		return -1;
-	}
-
-	return 0;
+	zassert_false(memcmp(pkt->frags->data + split_a, frag_b->data, split_b),
+		      "Frag_b data mismatch");
 }
 
-void main(void)
+void test_main(void)
 {
-	if (test_ipv6_multi_frags() < 0) {
-		goto fail;
-	}
+	ztest_test_suite(net_pkt_tests,
+			 ztest_unit_test(test_ipv6_multi_frags),
+			 ztest_unit_test(test_fragment_copy),
+			 ztest_unit_test(test_pkt_read_append),
+			 ztest_unit_test(test_pkt_read_write_insert),
+			 ztest_unit_test(test_fragment_compact),
+			 ztest_unit_test(test_fragment_split)
+			 );
 
-	if (test_fragment_copy() < 0) {
-		goto fail;
-	}
-
-	if (test_pkt_read_append() < 0) {
-		goto fail;
-	}
-
-	if (test_pkt_read_write_insert() < 0) {
-		goto fail;
-	}
-
-	if (test_fragment_compact() < 0) {
-		goto fail;
-	}
-
-	if (test_fragment_split() < 0) {
-		goto fail;
-	}
-
-	printk("net pkt tests passed\n");
-
-	TC_END_REPORT(TC_PASS);
-	return;
-
-fail:
-	TC_END_REPORT(TC_FAIL);
+	ztest_run_test_suite(net_pkt_tests);
 }

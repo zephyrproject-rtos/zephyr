@@ -188,13 +188,12 @@ void _pend_thread(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
 {
 #ifdef CONFIG_MULTITHREADING
 	sys_dlist_t *wait_q_list = (sys_dlist_t *)wait_q;
-	sys_dnode_t *node;
+	struct k_thread *pending;
 
-	SYS_DLIST_FOR_EACH_NODE(wait_q_list, node) {
-		struct k_thread *pending = (struct k_thread *)node;
-
+	SYS_DLIST_FOR_EACH_CONTAINER(wait_q_list, pending, base.k_q_node) {
 		if (_is_t1_higher_prio_than_t2(thread, pending)) {
-			sys_dlist_insert_before(wait_q_list, node,
+			sys_dlist_insert_before(wait_q_list,
+						&pending->base.k_q_node,
 						&thread->base.k_q_node);
 			goto inserted;
 		}
@@ -397,7 +396,6 @@ void k_sched_time_slice_set(s32_t duration_in_ms, int prio)
 	_time_slice_prio_ceiling = prio;
 }
 
-#ifdef CONFIG_TICKLESS_KERNEL
 int _is_thread_time_slicing(struct k_thread *thread)
 {
 	/*
@@ -424,21 +422,26 @@ int _is_thread_time_slicing(struct k_thread *thread)
 /* Should be called only immediately before a thread switch */
 void _update_time_slice_before_swap(void)
 {
+#ifdef CONFIG_TICKLESS_KERNEL
 	if (!_is_thread_time_slicing(_get_next_ready_thread())) {
 		return;
 	}
-
-	/* Restart time slice count at new thread switch */
-	_time_slice_elapsed = 0;
 
 	u32_t remaining = _get_remaining_program_time();
 
 	if (!remaining || (_time_slice_duration < remaining)) {
 		_set_time(_time_slice_duration);
+	} else {
+		/* Account previous elapsed time and reprogram
+		 * timer with remaining time
+		 */
+		_set_time(remaining);
 	}
-}
-#endif
 
+#endif
+	/* Restart time slice count at new thread switch */
+	_time_slice_elapsed = 0;
+}
 #endif /* CONFIG_TIMESLICING */
 
 int k_is_preempt_thread(void)

@@ -18,6 +18,12 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Network Layer 2 abstraction layer
+ * @defgroup net_l2 Network L2 Abstraction Layer
+ * @{
+ */
+
 struct net_if;
 
 struct net_l2 {
@@ -74,14 +80,16 @@ NET_L2_DECLARE_PUBLIC(ETHERNET_L2);
 NET_L2_DECLARE_PUBLIC(IEEE802154_L2);
 #endif /* CONFIG_NET_L2_IEEE802154 */
 
-#ifdef CONFIG_NET_L2_BLUETOOTH
+#ifdef CONFIG_NET_L2_BT
 #define BLUETOOTH_L2		BLUETOOTH
 #define BLUETOOTH_L2_CTX_TYPE	void*
-#endif /* CONFIG_NET_L2_BLUETOOTH */
+NET_L2_DECLARE_PUBLIC(BLUETOOTH_L2);
+#endif /* CONFIG_NET_L2_BT */
 
 #ifdef CONFIG_NET_OFFLOAD
 #define OFFLOAD_IP_L2		OFFLOAD_IP
 #define OFFLOAD_IP_L2_CTX_TYPE	void*
+NET_L2_DECLARE_PUBLIC(OFFLOAD_IP);
 #endif /* CONFIG_NET_OFFLOAD */
 
 extern struct net_l2 __net_l2_end[];
@@ -100,6 +108,10 @@ extern struct net_l2 __net_l2_end[];
 #define NET_L2_DATA_INIT(name, sfx, ctx_type)				\
 	static ctx_type NET_L2_GET_DATA(name, sfx) __used		\
 	__attribute__((__section__(".net_l2.data")));
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

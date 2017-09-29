@@ -132,7 +132,7 @@ struct bt_rfcomm_rpn {
  * Length in rfcomm header can be two bytes depending on user data length.
  * One byte in the tail should be reserved for FCS.
  */
-#define BT_RFCOMM_BUF_SIZE(mtu) (CONFIG_BLUETOOTH_HCI_RESERVE + \
+#define BT_RFCOMM_BUF_SIZE(mtu) (CONFIG_BT_HCI_RESERVE + \
 				 BT_HCI_ACL_HDR_SIZE + BT_L2CAP_HDR_SIZE + \
 				 sizeof(struct bt_rfcomm_hdr) + 1 + (mtu) + \
 				 BT_RFCOMM_FCS_SIZE)

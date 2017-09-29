@@ -20,14 +20,11 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
+#include <bluetooth/bas.h>
+#include <bluetooth/dis.h>
 
-#include <gatt/gap.h>
-#include <gatt/dis.h>
-#include <gatt/bas.h>
-
-#define DEVICE_NAME			CONFIG_BLUETOOTH_DEVICE_NAME
+#define DEVICE_NAME			CONFIG_BT_DEVICE_NAME
 #define DEVICE_NAME_LEN			(sizeof(DEVICE_NAME) - 1)
-#define CSC_APPEARANCE			0x0485
 #define CSC_SUPPORTED_LOCATIONS		{ CSC_LOC_OTHER, \
 					  CSC_LOC_FRONT_WHEEL, \
 					  CSC_LOC_REAR_WHEEL, \
@@ -82,8 +79,8 @@
 
 /* Cycling Speed and Cadence Service declaration */
 
-static struct bt_gatt_ccc_cfg csc_meas_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED];
-static struct bt_gatt_ccc_cfg ctrl_point_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED];
+static struct bt_gatt_ccc_cfg csc_meas_ccc_cfg[BT_GATT_CCC_MAX];
+static struct bt_gatt_ccc_cfg ctrl_point_ccc_cfg[BT_GATT_CCC_MAX];
 static u32_t cwr; /* Cumulative Wheel Revolutions */
 static u8_t supported_locations[] = CSC_SUPPORTED_LOCATIONS;
 static u8_t sensor_location; /* Current Sensor Location */
@@ -223,6 +220,8 @@ static struct bt_gatt_attr csc_attrs[] = {
 			   write_ctrl_point, &sensor_location),
 	BT_GATT_CCC(ctrl_point_ccc_cfg, ctrl_point_ccc_cfg_changed),
 };
+
+static struct bt_gatt_service csc_svc = BT_GATT_SERVICE(csc_attrs);
 
 struct sc_ctrl_point_ind {
 	u8_t op;
@@ -385,10 +384,9 @@ static void bt_ready(int err)
 
 	printk("Bluetooth initialized\n");
 
-	gap_init(DEVICE_NAME, CSC_APPEARANCE);
-	bas_init();
-	dis_init(CONFIG_SOC, "ACME");
-	bt_gatt_register(csc_attrs, ARRAY_SIZE(csc_attrs));
+	bt_bas_register(100, NULL);
+	bt_dis_register(CONFIG_SOC, "ACME");
+	bt_gatt_service_register(&csc_svc);
 
 	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad),
 			      sd, ARRAY_SIZE(sd));
@@ -421,6 +419,6 @@ void main(void)
 		}
 
 		/* Battery level simulation */
-		bas_notify();
+		bt_bas_simulate();
 	}
 }

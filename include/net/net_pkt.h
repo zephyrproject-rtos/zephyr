@@ -31,8 +31,17 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Network packet management library
+ * @defgroup net_pkt Network Packet Library
+ * @{
+ */
+
 struct net_context;
 
+/* Note that if you add new fields into net_pkt, remember to update
+ * net_pkt_clone() function.
+ */
 struct net_pkt {
 	/** FIFO uses first 4 bytes itself, reserve space */
 	int _reserved;
@@ -71,17 +80,30 @@ struct net_pkt {
 	sys_snode_t sent_list;
 #endif
 
-	u8_t sent       : 1;	/* Is this sent or not
+	u8_t sent_or_eof: 1;	/* For outgoing packet: is this sent or not
+				 * For incoming packet of a socket: last
+				 * packet before EOF
 				 * Used only if defined(CONFIG_NET_TCP)
+				 */
+	u8_t pkt_queued: 1;	/* For outgoing packet: is this packet queued
+				 * to be sent but has not reached the driver
+				 * yet. Used only if defined(CONFIG_NET_TCP)
 				 */
 	u8_t forwarding : 1;	/* Are we forwarding this pkt
 				 * Used only if defined(CONFIG_NET_ROUTE)
 				 */
 	u8_t family     : 4;	/* IPv4 vs IPv6 */
-	u8_t _unused    : 4;
+	u8_t _unused    : 3;
+
+	union {
+		/* IPv6 hop limit or IPv4 ttl for this network packet.
+		 * The value is shared between IPv6 and IPv4.
+		 */
+		u8_t ipv6_hop_limit;
+		u8_t ipv4_ttl;
+	};
 
 #if defined(CONFIG_NET_IPV6)
-	u8_t ipv6_hop_limit;	/* IPv6 hop limit for this network packet. */
 	u8_t ipv6_ext_len;	/* length of extension headers */
 	u8_t ipv6_ext_opt_len; /* IPv6 ND option length */
 
@@ -123,7 +145,7 @@ static inline struct net_context *net_pkt_context(struct net_pkt *pkt)
 }
 
 static inline void net_pkt_set_context(struct net_pkt *pkt,
-					struct net_context *ctx)
+				       struct net_context *ctx)
 {
 	pkt->context = ctx;
 }
@@ -185,15 +207,35 @@ static inline void net_pkt_set_next_hdr(struct net_pkt *pkt, u8_t *hdr)
 	pkt->next_hdr = hdr;
 }
 
-#if defined(CONFIG_NET_TCP)
 static inline u8_t net_pkt_sent(struct net_pkt *pkt)
 {
-	return pkt->sent;
+	return pkt->sent_or_eof;
 }
 
 static inline void net_pkt_set_sent(struct net_pkt *pkt, bool sent)
 {
-	pkt->sent = sent;
+	pkt->sent_or_eof = sent;
+}
+
+static inline u8_t net_pkt_queued(struct net_pkt *pkt)
+{
+	return pkt->pkt_queued;
+}
+
+static inline void net_pkt_set_queued(struct net_pkt *pkt, bool send)
+{
+	pkt->pkt_queued = send;
+}
+
+#if defined(CONFIG_NET_SOCKETS)
+static inline u8_t net_pkt_eof(struct net_pkt *pkt)
+{
+	return pkt->sent_or_eof;
+}
+
+static inline void net_pkt_set_eof(struct net_pkt *pkt, bool eof)
+{
+	pkt->sent_or_eof = eof;
 }
 #endif
 
@@ -211,6 +253,19 @@ static inline void net_pkt_set_forwarding(struct net_pkt *pkt, bool forward)
 static inline bool net_pkt_forwarding(struct net_pkt *pkt)
 {
 	return false;
+}
+#endif
+
+#if defined(CONFIG_NET_IPV4)
+static inline u8_t net_pkt_ipv4_ttl(struct net_pkt *pkt)
+{
+	return pkt->ipv4_ttl;
+}
+
+static inline void net_pkt_set_ipv4_ttl(struct net_pkt *pkt,
+					u8_t ttl)
+{
+	pkt->ipv4_ttl = ttl;
 }
 #endif
 
@@ -307,24 +362,6 @@ static inline u8_t *net_pkt_ip_data(struct net_pkt *pkt)
 	return pkt->frags->data;
 }
 
-static inline u8_t *net_pkt_udp_data(struct net_pkt *pkt)
-{
-	return &pkt->frags->data[net_pkt_ip_hdr_len(pkt) +
-				 net_pkt_ipv6_ext_len(pkt)];
-}
-
-static inline u8_t *net_pkt_tcp_data(struct net_pkt *pkt)
-{
-	return &pkt->frags->data[net_pkt_ip_hdr_len(pkt) +
-				 net_pkt_ipv6_ext_len(pkt)];
-}
-
-static inline u8_t *net_pkt_icmp_data(struct net_pkt *pkt)
-{
-	return &pkt->frags->data[net_pkt_ip_hdr_len(pkt) +
-				 net_pkt_ipv6_ext_len(pkt)];
-}
-
 static inline u8_t *net_pkt_appdata(struct net_pkt *pkt)
 {
 	return pkt->appdata;
@@ -392,7 +429,7 @@ static inline u8_t net_pkt_ieee802154_rssi(struct net_pkt *pkt)
 }
 
 static inline void net_pkt_set_ieee802154_rssi(struct net_pkt *pkt,
-						u8_t rssi)
+					       u8_t rssi)
 {
 	pkt->ieee802154_rssi = rssi;
 }
@@ -400,9 +437,6 @@ static inline void net_pkt_set_ieee802154_rssi(struct net_pkt *pkt,
 
 #define NET_IPV6_HDR(pkt) ((struct net_ipv6_hdr *)net_pkt_ip_data(pkt))
 #define NET_IPV4_HDR(pkt) ((struct net_ipv4_hdr *)net_pkt_ip_data(pkt))
-#define NET_ICMP_HDR(pkt) ((struct net_icmp_hdr *)net_pkt_icmp_data(pkt))
-#define NET_UDP_HDR(pkt)  ((struct net_udp_hdr *)(net_pkt_udp_data(pkt)))
-#define NET_TCP_HDR(pkt)  ((struct net_tcp_hdr *)(net_pkt_tcp_data(pkt)))
 
 static inline void net_pkt_set_src_ipv6_addr(struct net_pkt *pkt)
 {
@@ -1208,6 +1242,8 @@ static inline struct net_buf *net_pkt_write_be32(struct net_pkt *pkt,
  * is based on fragment length (only user written data length, any tailroom
  * in fragments does not come to consideration unlike net_pkt_write()) and
  * calculates from input fragment starting position.
+ * If the data pointer is NULL, insert a sequence of zeros with the given
+ * length.
  *
  * Offset examples can be considered from net_pkt_write() api.
  * If the offset is more than already allocated fragments length then it is an
@@ -1217,7 +1253,7 @@ static inline struct net_buf *net_pkt_write_be32(struct net_pkt *pkt,
  * @param frag   Network buffer fragment.
  * @param offset Offset of fragment where insertion will start.
  * @param len    Length of the data to be inserted.
- * @param data   Data to be inserted
+ * @param data   Data to be inserted, can be NULL.
  * @param timeout Affects the action taken should the net buf pool be empty.
  *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
  *        wait as long as necessary. Otherwise, wait up to the specified
@@ -1297,6 +1333,42 @@ int net_pkt_split(struct net_pkt *pkt, struct net_buf *orig_frag,
 		  struct net_buf **fragB, s32_t timeout);
 
 /**
+ * @brief Return the fragment and offset within it according to network
+ * packet offset.
+ *
+ * @details This is typically used to get the protocol header pointer when
+ * we know the offset. According to this information, the corresponding fragment
+ * and position within that fragment is returned.
+ *
+ * @param pkt Network packet
+ * @param offset Offset of desired location in network packet. For example, if
+ * we want to know where UDP header is located after the IPv6 header,
+ * the offset could have a value of sizeof(struct net_ipv6_hdr). Note that this
+ * is a simplified example that does not take into account the possible IPv6
+ * extension headers.
+ * @param pos Pointer to position within result fragment corresponding to
+ * offset param. For example, if the IPv6 header is split between two fragments,
+ * then if we want to know the start of UDP header, the returned pos variable
+ * would indicate how many bytes from second fragment the UDP header starts.
+ *
+ * @return Pointer to the fragment where the the offset is located or
+ *         NULL if there is not enough bytes in the packet
+ */
+struct net_buf *net_frag_get_pos(struct net_pkt *pkt,
+				 u16_t offset,
+				 u16_t *pos);
+
+/**
+ * @brief Clone pkt and its fragment chain.
+ *
+ * @param pkt Original pkt to be cloned
+ * @param timeout Timeout to wait for free net_buf
+ *
+ * @return NULL if error, clone fragment chain otherwise.
+ */
+struct net_pkt *net_pkt_clone(struct net_pkt *pkt, s32_t timeout);
+
+/**
  * @brief Get information about predefined RX, TX and DATA pools.
  *
  * @param rx Pointer to RX pool is returned.
@@ -1332,6 +1404,10 @@ const char *net_pkt_pool2str(struct net_buf_pool *pool);
 #else
 #define net_pkt_print(...)
 #endif /* CONFIG_NET_DEBUG_NET_PKT */
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

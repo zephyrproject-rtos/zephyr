@@ -105,6 +105,16 @@ enum {
 	 * providing SCAN_RSP data and/or enabling local privacy support.
 	 */
 	BT_LE_ADV_OPT_CONNECTABLE = BIT(0),
+
+	/** Don't try to resume connectable advertising after a connection.
+	 *  This option is only meaningful when used together with
+	 *  BT_LE_ADV_OPT_CONNECTABLE. If set the advertising will be stopped
+	 *  when bt_le_adv_stop() is called or when an incoming (slave)
+	 *  connection happens. If this option is not set the stack will
+	 *  take care of keeping advertising enabled even as connections
+	 *  occur.
+	 */
+	BT_LE_ADV_OPT_ONE_TIME = BIT(1),
 };
 
 /** LE Advertising Parameters. */
@@ -225,7 +235,7 @@ struct bt_le_scan_param {
 /** Helper macro to enable passive scanning to discover new devices.
  *
  * This macro should be used if information required for device identification
- * (eg UUID) are known to be placed in Advertising Data.
+ * (e.g., UUID) are known to be placed in Advertising Data.
  */
 #define BT_LE_SCAN_PASSIVE BT_LE_SCAN_PARAM(BT_HCI_LE_SCAN_PASSIVE, \
 					    BT_HCI_LE_SCAN_FILTER_DUP_ENABLE, \
@@ -268,7 +278,7 @@ struct bt_le_oob {
  * pairing or connection creation process.
  *
  * If privacy is enabled this will result in generating new Resolvable Private
- * Address that is valid for CONFIG_BLUETOOTH_RPA_TIMEOUT seconds. This address
+ * Address that is valid for CONFIG_BT_RPA_TIMEOUT seconds. This address
  * will be used for advertising, active scanning and connection creation.
  *
  * @param oob LE related information

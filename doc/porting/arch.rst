@@ -21,7 +21,7 @@ some are optional:
   take when the CPU comes out of reset (required).
 
 * **Interrupt and exception handling**: each architecture handles asynchronous
-  and un-requested events in a specific manner (required).
+  and unrequested events in a specific manner (required).
 
 * **Thread context switching**: the Zephyr context switch is dependent on the
   ABI and each ISA has a different set of registers to save (required).

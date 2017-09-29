@@ -8,7 +8,7 @@
  * @addtogroup t_gpio_basic_api
  * @{
  * @defgroup t_gpio_callback_manage test_gpio_callback_manage
- * @brief TestPurpose: verify zephyr gpio callback add/remvoe and enable/disable
+ * @brief TestPurpose: verify zephyr gpio callback add/remove and enable/disable
  * @}
  */
 

@@ -15,10 +15,10 @@
 #define _ASMLANGUAGE
 
 #include <autoconf.h>
-#include <sections.h>
+#include <linker/sections.h>
 
-#include <linker-defs.h>
-#include <linker-tool.h>
+#include <linker/linker-defs.h>
+#include <linker/linker-tool.h>
 
 #define ROMABLE_REGION              DATARAM
 #define RAMABLE_REGION              DATARAM
@@ -90,6 +90,8 @@ SECTIONS
 		*(.gnu.linkonce.r.*)
 	} GROUP_LINK_IN(RAMABLE_REGION)
 
+    _image_ram_start = .;
+
 #include <linker/common-ram.ld>
 
     SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
@@ -134,6 +136,7 @@ SECTIONS
 		 *(".noinit.*")
 	} GROUP_LINK_IN(RAMABLE_REGION)
 
+     _image_ram_end = .;
      _end = .; /* end of image */
 
 #ifdef CONFIG_GEN_ISR_TABLES

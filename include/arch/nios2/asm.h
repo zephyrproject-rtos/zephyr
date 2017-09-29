@@ -8,7 +8,7 @@
 #define _NIOS2_ASM_H
 
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 
 
 

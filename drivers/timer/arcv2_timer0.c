@@ -44,7 +44,7 @@
 #include <kernel.h>
 #include <arch/cpu.h>
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <misc/__assert.h>
 #include <arch/arc/v2/aux_regs.h>
 #include <sys_clock.h>

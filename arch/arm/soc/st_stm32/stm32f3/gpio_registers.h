@@ -26,8 +26,7 @@ struct stm32f3x_gpio {
 	u32_t odr;
 	u32_t bsrr;
 	u32_t lckr;
-	u32_t afrl;
-	u32_t afrh;
+	u32_t afr[2];
 	u32_t brr;
 };
 

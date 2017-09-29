@@ -1,0 +1,9 @@
+identifier: frdm_kw41z
+name: NXP FRDM-KW41Z
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb
+supported:
+  - ieee802154

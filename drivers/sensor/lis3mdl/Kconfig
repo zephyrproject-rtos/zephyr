@@ -7,7 +7,7 @@
 menuconfig LIS3MDL
 	bool
 	prompt "LIS3MDL magnetometer"
-	depends on SENSOR && I2C
+	depends on I2C
 	default n
 	help
 	  Enable driver for LIS3MDL I2C-based magnetometer.

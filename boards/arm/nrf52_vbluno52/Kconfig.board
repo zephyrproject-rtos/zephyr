@@ -1,0 +1,9 @@
+# Kconfig - nRF52 VBLUno52 board configuration
+#
+# Copyright (c) 2017 VNG IoT Lab
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config  BOARD_NRF52_VBLUNO52
+	bool "nRF52 VBLUno52"
+	depends on SOC_NRF52832_QFAA

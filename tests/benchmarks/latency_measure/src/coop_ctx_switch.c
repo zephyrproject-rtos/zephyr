@@ -27,8 +27,8 @@
 #endif
 
 /* stack used by the fibers */
-static char __stack thread_one_stack[STACKSIZE];
-static char __stack thread_two_stack[STACKSIZE];
+static K_THREAD_STACK_DEFINE(thread_one_stack, STACKSIZE);
+static K_THREAD_STACK_DEFINE(thread_two_stack, STACKSIZE);
 static struct k_thread thread_one_data;
 static struct k_thread thread_two_data;
 

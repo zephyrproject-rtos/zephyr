@@ -26,11 +26,93 @@
 
 static sys_slist_t handlers;
 
+struct net_icmp_hdr *net_icmpv4_set_hdr(struct net_pkt *pkt,
+					struct net_icmp_hdr *hdr)
+{
+	struct net_icmp_hdr *icmp_hdr;
+	struct net_buf *frag;
+	u16_t pos;
+
+	icmp_hdr = net_pkt_icmp_data(pkt);
+	if (net_icmp_header_fits(pkt, icmp_hdr)) {
+		return icmp_hdr;
+	}
+
+	frag = net_pkt_write_u8(pkt, pkt->frags,
+				net_pkt_ip_hdr_len(pkt),
+				&pos, hdr->type);
+	frag = net_pkt_write_u8(pkt, frag, pos, &pos, hdr->code);
+	frag = net_pkt_write(pkt, frag, pos, &pos, sizeof(hdr->chksum),
+			     (u8_t *)&hdr->chksum, PKT_WAIT_TIME);
+	if (!frag) {
+		NET_ASSERT(frag);
+		return NULL;
+	}
+
+	return hdr;
+}
+
+struct net_icmp_hdr *net_icmpv4_get_hdr(struct net_pkt *pkt,
+					struct net_icmp_hdr *hdr)
+{
+	struct net_icmp_hdr *icmp_hdr;
+	struct net_buf *frag;
+	u16_t pos;
+
+	icmp_hdr = net_pkt_icmp_data(pkt);
+	if (net_icmp_header_fits(pkt, icmp_hdr)) {
+		return icmp_hdr;
+	}
+
+	frag = net_frag_read_u8(pkt->frags, net_pkt_ip_hdr_len(pkt), &pos,
+				&hdr->type);
+	frag = net_frag_read_u8(frag, pos, &pos, &hdr->code);
+	frag = net_frag_read(frag, pos, &pos, sizeof(hdr->chksum),
+			     (u8_t *)&hdr->chksum);
+	if (!frag) {
+		NET_ASSERT(frag);
+		return NULL;
+	}
+
+	return hdr;
+}
+
+struct net_buf *net_icmpv4_set_chksum(struct net_pkt *pkt,
+				      struct net_buf *frag)
+{
+	struct net_icmp_hdr *icmp_hdr;
+	u16_t chksum = 0;
+	u16_t pos;
+
+	icmp_hdr = net_pkt_icmp_data(pkt);
+	if (net_icmp_header_fits(pkt, icmp_hdr)) {
+		icmp_hdr->chksum = 0;
+		icmp_hdr->chksum = ~net_calc_chksum_icmpv4(pkt);
+
+		return frag;
+	}
+
+	frag = net_pkt_write(pkt, frag,
+			     net_pkt_ip_hdr_len(pkt) +
+			     1 + 1 /* type + code */, &pos,
+			     sizeof(chksum), (u8_t *)&chksum, PKT_WAIT_TIME);
+
+	chksum = ~net_calc_chksum_icmpv4(pkt);
+
+	frag = net_pkt_write(pkt, frag, pos - 2, &pos, sizeof(chksum),
+			     (u8_t *)&chksum, PKT_WAIT_TIME);
+
+	NET_ASSERT(frag);
+
+	return frag;
+}
+
 static inline enum net_verdict handle_echo_request(struct net_pkt *pkt)
 {
 	/* Note that we send the same data packets back and just swap
 	 * the addresses etc.
 	 */
+	struct net_icmp_hdr hdr, *icmp_hdr;
 	struct in_addr addr;
 
 #if defined(CONFIG_NET_DEBUG_ICMPV4)
@@ -47,10 +129,12 @@ static inline enum net_verdict handle_echo_request(struct net_pkt *pkt)
 			&NET_IPV4_HDR(pkt)->dst);
 	net_ipaddr_copy(&NET_IPV4_HDR(pkt)->dst, &addr);
 
-	NET_ICMP_HDR(pkt)->type = NET_ICMPV4_ECHO_REPLY;
-	NET_ICMP_HDR(pkt)->code = 0;
-	NET_ICMP_HDR(pkt)->chksum = 0;
-	NET_ICMP_HDR(pkt)->chksum = ~net_calc_chksum_icmpv4(pkt);
+	icmp_hdr = net_icmpv4_get_hdr(pkt, &hdr);
+	icmp_hdr->type = NET_ICMPV4_ECHO_REPLY;
+	icmp_hdr->code = 0;
+	icmp_hdr->chksum = 0;
+	net_icmpv4_set_hdr(pkt, icmp_hdr);
+	net_icmpv4_set_chksum(pkt, pkt->frags);
 
 #if defined(CONFIG_NET_DEBUG_ICMPV4)
 	snprintk(out, sizeof(out), "%s",
@@ -75,6 +159,9 @@ static inline void setup_ipv4_header(struct net_pkt *pkt, u8_t extra_len,
 				     u8_t ttl, u8_t icmp_type,
 				     u8_t icmp_code)
 {
+	struct net_buf *frag = pkt->frags;
+	u16_t pos;
+
 	NET_IPV4_HDR(pkt)->vhl = 0x45;
 	NET_IPV4_HDR(pkt)->tos = 0x00;
 	NET_IPV4_HDR(pkt)->len[0] = 0;
@@ -91,11 +178,10 @@ static inline void setup_ipv4_header(struct net_pkt *pkt, u8_t extra_len,
 	NET_IPV4_HDR(pkt)->chksum = 0;
 	NET_IPV4_HDR(pkt)->chksum = ~net_calc_chksum_ipv4(pkt);
 
-	NET_ICMP_HDR(pkt)->type = icmp_type;
-	NET_ICMP_HDR(pkt)->code = icmp_code;
-
-	memset(net_pkt_icmp_data(pkt) + sizeof(struct net_icmp_hdr), 0,
-	       NET_ICMPV4_UNUSED_LEN);
+	frag = net_pkt_write_u8(pkt, frag, net_pkt_ip_hdr_len(pkt), &pos,
+				icmp_type);
+	frag = net_pkt_write_u8(pkt, frag, pos, &pos, icmp_code);
+	net_pkt_write_be32(pkt, frag, pos, &pos, 0);
 }
 
 int net_icmpv4_send_echo_request(struct net_if *iface,
@@ -116,13 +202,17 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 	 */
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface,
 					      (const struct in6_addr *)dst),
-				      K_FOREVER);
+				     K_FOREVER);
 
 	frag = net_pkt_get_frag(pkt, K_FOREVER);
 
 	net_pkt_frag_add(pkt, frag);
 	net_pkt_set_family(pkt, AF_INET);
 	net_pkt_set_iface(pkt, iface);
+
+	net_buf_add(pkt->frags, sizeof(struct net_ipv4_hdr) +
+		    sizeof(struct net_icmp_hdr) +
+		    sizeof(struct net_icmpv4_echo_req));
 
 	setup_ipv4_header(pkt, 0, net_if_ipv4_get_ttl(iface),
 			  NET_ICMPV4_ECHO_REQUEST, 0);
@@ -132,9 +222,6 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 
 	NET_ICMPV4_ECHO_REQ(pkt)->identifier = htons(identifier);
 	NET_ICMPV4_ECHO_REQ(pkt)->sequence = htons(sequence);
-
-	NET_ICMP_HDR(pkt)->chksum = 0;
-	NET_ICMP_HDR(pkt)->chksum = ~net_calc_chksum_icmpv4(pkt);
 
 #if defined(CONFIG_NET_DEBUG_ICMPV4)
 	do {
@@ -149,9 +236,7 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 	} while (0);
 #endif /* CONFIG_NET_DEBUG_ICMPV4 */
 
-	net_buf_add(pkt->frags, sizeof(struct net_ipv4_hdr) +
-		    sizeof(struct net_icmp_hdr) +
-		    sizeof(struct net_icmpv4_echo_req));
+	net_icmpv4_set_chksum(pkt, pkt->frags);
 
 	if (net_send_data(pkt) >= 0) {
 		net_stats_update_icmp_sent();
@@ -174,7 +259,10 @@ int net_icmpv4_send_error(struct net_pkt *orig, u8_t type, u8_t code)
 	int err = -EIO;
 
 	if (NET_IPV4_HDR(orig)->proto == IPPROTO_ICMP) {
-		if (NET_ICMP_HDR(orig)->code < 8) {
+		struct net_icmp_hdr icmp_hdr[1];
+
+		if (!net_icmpv4_get_hdr(orig, icmp_hdr) ||
+		    icmp_hdr->code < 8) {
 			/* We must not send ICMP errors back */
 			err = -EINVAL;
 			goto drop_no_pkt;
@@ -241,8 +329,7 @@ int net_icmpv4_send_error(struct net_pkt *orig, u8_t type, u8_t code)
 	net_pkt_ll_dst(pkt)->addr = net_pkt_ll_src(orig)->addr;
 	net_pkt_ll_dst(pkt)->len = net_pkt_ll_src(orig)->len;
 
-	NET_ICMP_HDR(pkt)->chksum = 0;
-	NET_ICMP_HDR(pkt)->chksum = ~net_calc_chksum_icmpv4(pkt);
+	net_icmpv4_set_chksum(pkt, pkt->frags);
 
 #if defined(CONFIG_NET_DEBUG_ICMPV4)
 	do {

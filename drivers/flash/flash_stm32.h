@@ -10,10 +10,6 @@
 
 #include <flash_registers.h>
 
-#if defined(CONFIG_SOC_SERIES_STM32F4X)
-#include <flash_map.h>
-#endif
-
 #if defined(CONFIG_SOC_SERIES_STM32L4X)
 #include <clock_control.h>
 #include <clock_control/stm32_clock_control.h>
@@ -30,23 +26,36 @@ struct flash_stm32_priv {
 	struct k_sem sem;
 };
 
-bool flash_stm32_valid_range(off_t offset, u32_t len);
+#define FLASH_STM32_PRIV(dev) ((struct flash_stm32_priv *)((dev)->driver_data))
+#define FLASH_STM32_REGS(dev) (FLASH_STM32_PRIV(dev)->regs)
 
-int flash_stm32_write_range(unsigned int offset, const void *data,
-			    unsigned int len, struct flash_stm32_priv *p);
+#ifdef CONFIG_FLASH_PAGE_LAYOUT
+static inline bool flash_stm32_range_exists(struct device *dev,
+					    off_t offset,
+					    u32_t len)
+{
+	struct flash_pages_info info;
 
-int flash_stm32_block_erase_loop(unsigned int offset, unsigned int len,
-				 struct flash_stm32_priv *p);
+	return !(flash_get_page_info_by_offs(dev, offset, &info) ||
+		 flash_get_page_info_by_offs(dev, offset + len - 1, &info));
+}
+#endif	/* CONFIG_FLASH_PAGE_LAYOUT */
 
-void flash_stm32_flush_caches(struct flash_stm32_priv *p);
+bool flash_stm32_valid_range(struct device *dev, off_t offset,
+			     u32_t len, bool write);
 
-int flash_stm32_wait_flash_idle(struct flash_stm32_priv *p);
+int flash_stm32_write_range(struct device *dev, unsigned int offset,
+			    const void *data, unsigned int len);
 
-int flash_stm32_check_status(struct flash_stm32_priv *p);
+int flash_stm32_block_erase_loop(struct device *dev, unsigned int offset,
+				 unsigned int len);
 
-int flash_stm32_erase(struct device *dev, off_t offset, size_t len);
+int flash_stm32_wait_flash_idle(struct device *dev);
 
-int flash_stm32_write(struct device *dev, off_t offset,
-		      const void *data, size_t len);
+#ifdef CONFIG_FLASH_PAGE_LAYOUT
+void flash_stm32_page_layout(struct device *dev,
+			     const struct flash_pages_layout **layout,
+			     size_t *layout_size);
+#endif
 
 #endif /* DRIVERS_FLASH_STM32_H */

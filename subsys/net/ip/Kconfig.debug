@@ -21,6 +21,7 @@ config SYS_LOG_NET_LEVEL
 	int
 	prompt "Network Stack Logging level"
 	default 1
+	depends on SYS_LOG
 	range 0 4
 	help
 	  Sets log level for the network stack.
@@ -90,7 +91,16 @@ config NET_DEBUG_NET_PKT
 	default n
 	select NET_BUF_POOL_USAGE
 	help
-	Enables printing of network packet and buffer allocations and frees.
+	Enables collection of network packet and buffer allocations and frees.
+
+config NET_DEBUG_NET_PKT_ALL
+	bool "Debug network packet and buffer individual allocation"
+	default n
+	depends on NET_DEBUG_NET_PKT
+	help
+	Enables printing of network packet and buffer allocations and frees for
+	each allocation. This can produce lot of output so it is disabled by
+	default.
 
 config NET_DEBUG_NET_PKT_EXTERNALS
 	int "How many external network packet allocations"

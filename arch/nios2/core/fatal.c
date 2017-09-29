@@ -56,11 +56,6 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 	case _NANO_ERR_SPURIOUS_INT:
 		break;
 
-	case _NANO_ERR_INVALID_TASK_EXIT:
-		printk("***** Invalid Exit Software Error! *****\n");
-		break;
-
-
 	case _NANO_ERR_ALLOCATION_FAIL:
 		printk("**** Kernel Allocation Failure! ****\n");
 		break;
@@ -220,12 +215,17 @@ FUNC_NORETURN void _Fault(const NANO_ESF *esf)
  *
  * @return N/A
  */
-FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
-					 const NANO_ESF *pEsf)
+FUNC_NORETURN __weak void _SysFatalErrorHandler(unsigned int reason,
+						const NANO_ESF *pEsf)
 {
 	ARG_UNUSED(pEsf);
 
 #if !defined(CONFIG_SIMPLE_FATAL_ERROR_HANDLER)
+#ifdef CONFIG_STACK_SENTINEL
+	if (reason == _NANO_ERR_STACK_CHK_FAIL) {
+		goto hang_system;
+	}
+#endif
 	if (reason == _NANO_ERR_KERNEL_PANIC) {
 		goto hang_system;
 	}

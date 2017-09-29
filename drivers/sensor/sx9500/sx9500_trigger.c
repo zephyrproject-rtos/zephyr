@@ -14,7 +14,7 @@
 #include "sx9500.h"
 
 #ifdef CONFIG_SX9500_TRIGGER_OWN_THREAD
-static char __stack sx9500_thread_stack[CONFIG_SX9500_THREAD_STACK_SIZE];
+static K_THREAD_STACK_DEFINE(sx9500_thread_stack, CONFIG_SX9500_THREAD_STACK_SIZE);
 static struct k_thread sx9500_thread;
 #endif
 

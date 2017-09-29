@@ -35,7 +35,7 @@ fi
 # .zephyrrc in your home directory. It will be automatically
 # run (if it exists) by this script.
 
-if uname | grep -q -P "MINGW"; then
+if uname | grep -q "MINGW"; then
     win_build=1
     PWD_OPT="-W"
 else

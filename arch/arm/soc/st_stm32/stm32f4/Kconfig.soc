@@ -12,14 +12,26 @@ depends on SOC_SERIES_STM32F4X
 config SOC_STM32F401XE
 	bool "STM32F401XE"
 
+config SOC_STM32F405XG
+	bool "STM32F405XG"
+
 config SOC_STM32F407XG
 	bool "STM32F407XG"
 
 config SOC_STM32F411XE
 	bool "STM32F411XE"
 
+config SOC_STM32F412ZG
+	bool "STM32F412ZG"
+
 config SOC_STM32F413XH
 	bool "STM32F413XH"
+
+config SOC_STM32F417XE
+	bool "STM32F417XE"
+
+config SOC_STM32F417XG
+	bool "STM32F417XG"
 
 config SOC_STM32F429XI
 	bool "STM32F429XI"
@@ -29,13 +41,6 @@ config SOC_STM32F469XI
 
 endchoice
 
-config STM32_ARM_MPU_ENABLE
-	bool "Enable MPU"
-	depends on CPU_HAS_MPU
-	select ARM_MPU
-	default n
-	help
-	  Enable MPU
 
 choice
 prompt "Configure Bootloader Options"

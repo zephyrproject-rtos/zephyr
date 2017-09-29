@@ -37,11 +37,13 @@
 extern "C" {
 #endif
 
-/**x
+/**
  * @brief SPI operational mode
  */
 #define SPI_OP_MODE_MASTER	0
-#define SPI_OP_MODE_SLAVE	1
+#define SPI_OP_MODE_SLAVE	BIT(0)
+#define SPI_OP_MODE_MASK	0x1
+#define SPI_OP_MODE_GET(_operation_) ((_operation_) & SPI_OP_MODE_MASK)
 
 /**
  * @brief SPI Polarity & Phase Modes
@@ -57,7 +59,7 @@ extern "C" {
 /**
  * Clock Phase: this dictates when is the data captured, and depends
  * clock's polarity. When SPI_MODE_CPOL is set and this bit as well,
- * capture will occure on low to high transition and high to low if
+ * capture will occur on low to high transition and high to low if
  * this bit is not set (default). This is fully reversed if CPOL is
  * not set.
  */
@@ -126,10 +128,10 @@ extern "C" {
  * This can be used to control a CS line via a GPIO line, instead of
  * using the controller inner CS logic.
  *
- * gpio_dev is a valid pointer to an actual GPIO device
- * gpio_pin is a number representing the gpio PIN that will be used
+ * @param gpio_dev is a valid pointer to an actual GPIO device
+ * @param gpio_pin is a number representing the gpio PIN that will be used
  *    to act as a CS line
- * delay is a delay in microseconds to wait before starting the
+ * @param delay is a delay in microseconds to wait before starting the
  *    transmission and before releasing the CS line
  */
 struct spi_cs_control {
@@ -141,24 +143,24 @@ struct spi_cs_control {
 /**
  * @brief SPI controller configuration structure
  *
- * dev is a valid pointer to an actual SPI device
- * frequency is the bus frequency in Hertz
- * operation is a bit field with the following parts:
- *    operational mode    [ 0 ]       - master or slave.
- *    mode                [ 1 : 3 ]   - Polarity, phase and loop mode.
- *    transfer            [ 4 ]       - LSB or MSB first.
- *    word_size           [ 5 : 10 ]  - Size of a data frame in bits.
- *    lines               [ 11 : 12 ] - MISO lines: Single/Dual/Quad.
- *    cs_hold             [ 13 ]      - Hold on the CS line if possible.
- *    lock_on             [ 14 ]      - Keep ressource locked for the caller.
- *    eeprom              [ 15 ]      - EEPROM mode.
+ * @param dev is a valid pointer to an actual SPI device
+ * @param frequency is the bus frequency in Hertz
+ * @param operation is a bit field with the following parts:
  *
- * slave is the slave number from 0 to host constoller slave limit.
- *
- * cs is a valid pointer on a struct spi_cs_control is CS line is
+ *     operational mode    [ 0 ]       - master or slave.
+ *     mode                [ 1 : 3 ]   - Polarity, phase and loop mode.
+ *     transfer            [ 4 ]       - LSB or MSB first.
+ *     word_size           [ 5 : 10 ]  - Size of a data frame in bits.
+ *     lines               [ 11 : 12 ] - MISO lines: Single/Dual/Quad.
+ *     cs_hold             [ 13 ]      - Hold on the CS line if possible.
+ *     lock_on             [ 14 ]      - Keep resource locked for the caller.
+ *     eeprom              [ 15 ]      - EEPROM mode.
+ * @param vendor is a vendor specific bitfield
+ * @param slave is the slave number from 0 to host controller slave limit.
+ * @param cs is a valid pointer on a struct spi_cs_control is CS line is
  *    emulated through a gpio line, or NULL otherwise.
  *
- * Note: cs_hold, lock_on and eeprom_rx can be changed between consecutive
+ * @note cs_hold, lock_on and eeprom_rx can be changed between consecutive
  * transceive call.
  */
 struct spi_config {
@@ -166,6 +168,7 @@ struct spi_config {
 
 	u32_t		frequency;
 	u16_t		operation;
+	u16_t		vendor;
 	u16_t		slave;
 
 	struct spi_cs_control *cs;
@@ -174,10 +177,10 @@ struct spi_config {
 /**
  * @brief SPI buffer structure
  *
- * buf is a valid pointer on a data buffer, or NULL otherwise.
- * len is the length of the buffer or, if buf is NULL, will be the
- *     length which as to be sent as dummy bytes (as TX buffer) or
- *     the length of bytes that should be skipped (as RX buffer).
+ * @param buf is a valid pointer on a data buffer, or NULL otherwise.
+ * @param len is the length of the buffer or, if buf is NULL, will be the
+ *    length which as to be sent as dummy bytes (as TX buffer) or
+ *    the length of bytes that should be skipped (as RX buffer).
  */
 struct spi_buf {
 	void *buf;
@@ -190,8 +193,10 @@ struct spi_buf {
  * See spi_transceive() for argument descriptions
  */
 typedef int (*spi_api_io)(struct spi_config *config,
-			  const struct spi_buf **tx_bufs,
-			  struct spi_buf **rx_bufs);
+			  const struct spi_buf *tx_bufs,
+			  size_t tx_count,
+			  struct spi_buf *rx_bufs,
+			  size_t rx_count);
 
 /**
  * @typedef spi_api_io
@@ -199,8 +204,10 @@ typedef int (*spi_api_io)(struct spi_config *config,
  * See spi_transceive_async() for argument descriptions
  */
 typedef int (*spi_api_io_async)(struct spi_config *config,
-				const struct spi_buf **tx_bufs,
-				struct spi_buf **rx_bufs,
+				const struct spi_buf *tx_bufs,
+				size_t tx_count,
+				struct spi_buf *rx_bufs,
+				size_t rx_count,
 				struct k_poll_signal *async);
 
 /**
@@ -229,20 +236,24 @@ struct spi_driver_api {
  * Note: This function is synchronous.
  *
  * @param config Pointer to a valid spi_config structure instance.
- * @param tx_bufs NULL terminated buffer array where data to be sent
- *        originates from, or NULL if none.
- * @param rx_bufs NULL terminated buffer array where data to be read
- *        will be written to, or NULL if none.
+ * @param tx_bufs Buffer array where data to be sent originates from,
+ *        or NULL if none.
+ * @param tx_count Number of element in the tx_bufs array.
+ * @param rx_bufs Buffer array where data to be read will be written to,
+ *        or NULL if none.
+ * @param rx_count Number of element in the rx_bufs array.
  *
  * @retval 0 If successful, negative errno code otherwise.
  */
 static inline int spi_transceive(struct spi_config *config,
-				 const struct spi_buf **tx_bufs,
-				 struct spi_buf **rx_bufs)
+				 const struct spi_buf *tx_bufs,
+				 size_t tx_count,
+				 struct spi_buf *rx_bufs,
+				 size_t rx_count)
 {
 	const struct spi_driver_api *api = config->dev->driver_api;
 
-	return api->transceive(config, tx_bufs, rx_bufs);
+	return api->transceive(config, tx_bufs, tx_count, rx_bufs, rx_count);
 }
 
 /**
@@ -251,17 +262,18 @@ static inline int spi_transceive(struct spi_config *config,
  * Note: This function is synchronous.
  *
  * @param config Pointer to a valid spi_config structure instance.
- * @param rx_bufs NULL terminated buffer array where data to be read
- *        will be written to.
+ * @param rx_bufs Buffer array where data to be read will be written to.
+ * @param rx_count Number of element in the rx_bufs array.
  *
  * @retval 0 If successful, negative errno code otherwise.
  */
 static inline int spi_read(struct spi_config *config,
-			   struct spi_buf **rx_bufs)
+			   struct spi_buf *rx_bufs,
+			   size_t rx_count)
 {
 	const struct spi_driver_api *api = config->dev->driver_api;
 
-	return api->transceive(config, NULL, rx_bufs);
+	return api->transceive(config, NULL, 0, rx_bufs, rx_count);
 }
 
 /**
@@ -270,17 +282,18 @@ static inline int spi_read(struct spi_config *config,
  * Note: This function is synchronous.
  *
  * @param config Pointer to a valid spi_config structure instance.
- * @param tx_bufs NULL terminated buffer array where data to be sent
- *        originates from.
+ * @param tx_bufs Buffer array where data to be sent originates from.
+ * @param tx_count Number of element in the tx_bufs array.
  *
  * @retval 0 If successful, negative errno code otherwise.
  */
 static inline int spi_write(struct spi_config *config,
-			    const struct spi_buf **tx_bufs)
+			    const struct spi_buf *tx_bufs,
+			    size_t tx_count)
 {
 	const struct spi_driver_api *api = config->dev->driver_api;
 
-	return api->transceive(config, tx_bufs, NULL);
+	return api->transceive(config, tx_bufs, tx_count, NULL, 0);
 }
 
 #ifdef CONFIG_POLL
@@ -290,10 +303,12 @@ static inline int spi_write(struct spi_config *config,
  * Note: This function is asynchronous.
  *
  * @param config Pointer to a valid spi_config structure instance.
- * @param tx_bufs NULL terminated buffer array where data to be sent
- *        originates from, or NULL if none.
- * @param rx_bufs NULL terminated buffer array where data to be read
- *        will be written to, or NULL if none.
+ * @param tx_bufs Buffer array where data to be sent originates from,
+ *        or NULL if none.
+ * @param tx_count Number of element in the tx_bufs array.
+ * @param rx_bufs Buffer array where data to be read will be written to,
+ *        or NULL if none.
+ * @param rx_count Number of element in the rx_bufs array.
  * @param async A pointer to a valid and ready to be signaled
  *        struct k_poll_signal. (Note: if NULL this function will not
  *        notify the end of the transaction, and whether it went
@@ -302,13 +317,16 @@ static inline int spi_write(struct spi_config *config,
  * @retval 0 If successful, negative errno code otherwise.
  */
 static inline int spi_transceive_async(struct spi_config *config,
-				       const struct spi_buf **tx_bufs,
-				       struct spi_buf **rx_bufs,
+				       const struct spi_buf *tx_bufs,
+				       size_t tx_count,
+				       struct spi_buf *rx_bufs,
+				       size_t rx_count,
 				       struct k_poll_signal *async)
 {
 	const struct spi_driver_api *api = config->dev->driver_api;
 
-	return api->transceive_async(config, tx_bufs, rx_bufs, async);
+	return api->transceive_async(config, tx_bufs, tx_count,
+				     rx_bufs, rx_count, async);
 }
 
 /**
@@ -317,8 +335,8 @@ static inline int spi_transceive_async(struct spi_config *config,
  * Note: This function is asynchronous.
  *
  * @param config Pointer to a valid spi_config structure instance.
- * @param rx_bufs NULL terminated buffer array where data to be read
- *        will be written to.
+ * @param rx_bufs Buffer array where data to be read will be written to.
+ * @param rx_count Number of element in the rx_bufs array.
  * @param async A pointer to a valid and ready to be signaled
  *        struct k_poll_signal. (Note: if NULL this function will not
  *        notify the end of the transaction, and whether it went
@@ -327,12 +345,14 @@ static inline int spi_transceive_async(struct spi_config *config,
  * @retval 0 If successful, negative errno code otherwise.
  */
 static inline int spi_read_async(struct spi_config *config,
-				 struct spi_buf **rx_bufs,
+				 struct spi_buf *rx_bufs,
+				 size_t rx_count,
 				 struct k_poll_signal *async)
 {
 	const struct spi_driver_api *api = config->dev->driver_api;
 
-	return api->transceive_async(config, NULL, rx_bufs, async);
+	return api->transceive_async(config, NULL, 0,
+				     rx_bufs, rx_count, async);
 }
 
 /**
@@ -341,8 +361,8 @@ static inline int spi_read_async(struct spi_config *config,
  * Note: This function is asynchronous.
  *
  * @param config Pointer to a valid spi_config structure instance.
- * @param tx_bufs NULL terminated buffer array where data to be sent
- *        originates from.
+ * @param tx_bufs Buffer array where data to be sent originates from.
+ * @param tx_count Number of element in the tx_bufs array.
  * @param async A pointer to a valid and ready to be signaled
  *        struct k_poll_signal. (Note: if NULL this function will not
  *        notify the end of the transaction, and whether it went
@@ -351,12 +371,14 @@ static inline int spi_read_async(struct spi_config *config,
  * @retval 0 If successful, negative errno code otherwise.
  */
 static inline int spi_write_async(struct spi_config *config,
-				  const struct spi_buf **tx_bufs,
+				  const struct spi_buf *tx_bufs,
+				  size_t tx_count,
 				  struct k_poll_signal *async)
 {
 	const struct spi_driver_api *api = config->dev->driver_api;
 
-	return api->transceive_async(config, tx_bufs, NULL, async);
+	return api->transceive_async(config, tx_bufs, tx_count,
+				     NULL, 0, async);
 }
 #endif /* CONFIG_POLL */
 

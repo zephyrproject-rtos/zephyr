@@ -56,11 +56,17 @@ static void run_test_functions(struct unit_test *test)
 #define FAIL_FAST 0
 
 static jmp_buf test_fail;
+static jmp_buf test_pass;
 static jmp_buf stack_fail;
 
 void ztest_test_fail(void)
 {
 	raise(SIGABRT);
+}
+
+void ztest_test_pass(void)
+{
+	longjmp(test_pass, 1);
 }
 
 static void handle_signal(int sig)
@@ -106,6 +112,11 @@ static int run_test(struct unit_test *test)
 		goto out;
 	}
 
+	if (setjmp(test_pass)) {
+		ret = TC_PASS;
+		goto out;
+	}
+
 	run_test_functions(test);
 out:
 	ret |= cleanup_test(test);
@@ -129,8 +140,8 @@ out:
     #error "CONFIG_ZTEST_STACKSIZE must be a multiple of the stack alignment"
 #endif
 static struct k_thread ztest_thread;
-static char __stack __noinit thread_stack[CONFIG_ZTEST_STACKSIZE +
-					  CONFIG_TEST_EXTRA_STACKSIZE];
+static K_THREAD_STACK_DEFINE(thread_stack, CONFIG_ZTEST_STACKSIZE +
+			     CONFIG_TEST_EXTRA_STACKSIZE);
 
 static int test_result;
 static struct k_sem test_end_signal;
@@ -138,6 +149,13 @@ static struct k_sem test_end_signal;
 void ztest_test_fail(void)
 {
 	test_result = -1;
+	k_sem_give(&test_end_signal);
+	k_thread_abort(k_current_get());
+}
+
+void ztest_test_pass(void)
+{
+	test_result = 0;
 	k_sem_give(&test_end_signal);
 	k_thread_abort(k_current_get());
 }
@@ -166,9 +184,10 @@ static int run_test(struct unit_test *test)
 	int ret = TC_PASS;
 
 	TC_START(test->name);
-	k_thread_create(&ztest_thread, thread_stack, sizeof(thread_stack),
-			 (k_thread_entry_t) test_cb, (struct unit_test *)test,
-			 NULL, NULL, -1, 0, 0);
+	k_thread_create(&ztest_thread, thread_stack,
+			K_THREAD_STACK_SIZEOF(thread_stack),
+			(k_thread_entry_t) test_cb, (struct unit_test *)test,
+			NULL, NULL, -1, 0, 0);
 
 	/*
 	 * There is an implicit expectation here that the thread that was
@@ -210,6 +229,7 @@ void _ztest_run_test_suite(const char *name, struct unit_test *suite)
 	init_testing();
 
 	PRINT("Running test suite %s\n", name);
+	PRINT_LINE;
 	while (suite->test) {
 		fail += run_test(suite);
 		suite++;

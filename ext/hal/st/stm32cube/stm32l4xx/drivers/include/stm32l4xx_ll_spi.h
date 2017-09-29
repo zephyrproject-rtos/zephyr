@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32l4xx_ll_spi.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    21-April-2017
   * @brief   Header file of SPI LL module.
   ******************************************************************************
   * @attention
@@ -1387,7 +1385,7 @@ __STATIC_INLINE void LL_SPI_TransmitData8(SPI_TypeDef *SPIx, uint8_t TxData)
   */
 __STATIC_INLINE void LL_SPI_TransmitData16(SPI_TypeDef *SPIx, uint16_t TxData)
 {
-  *((__IO uint16_t *)&SPIx->DR) = TxData;
+  SPIx->DR = TxData;
 }
 
 /**

@@ -19,6 +19,12 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Network buffer library
+ * @defgroup net_buf Network Buffer Library
+ * @{
+ */
+
 /* Alignment needed for various parts of the buffer definition */
 #define __net_buf_align __aligned(sizeof(int))
 
@@ -408,7 +414,7 @@ struct net_buf {
 	u8_t flags;
 
 	/** Where the buffer should go when freed up. */
-	struct net_buf_pool *pool;
+	u8_t pool_id;
 
 	/* Union for convenience access to the net_buf_simple members, also
 	 * preserving the old API.
@@ -480,12 +486,12 @@ struct net_buf_pool {
 #define NET_BUF_POOL_INITIALIZER(_pool, _bufs, _count, _size, _ud_size,      \
 				 _destroy)                                   \
 	{                                                                    \
-		.free = K_LIFO_INITIALIZER(_pool.free),                      \
+		.free = _K_LIFO_INITIALIZER(_pool.free),                      \
 		.__bufs = (struct net_buf *)_bufs,                           \
 		.buf_count = _count,                                         \
 		.uninit_count = _count,                                      \
 		.avail_count = _count,                                       \
-		.pool_size = sizeof(_net_buf_pool_##_pool),                  \
+		.pool_size = sizeof(_net_buf_##_pool),                  \
 		.buf_size = _size,                                           \
 		.user_data_size = _ud_size,                                  \
 		.destroy = _destroy,                                         \
@@ -495,7 +501,7 @@ struct net_buf_pool {
 #define NET_BUF_POOL_INITIALIZER(_pool, _bufs, _count, _size, _ud_size,      \
 				 _destroy)                                   \
 	{                                                                    \
-		.free = K_LIFO_INITIALIZER(_pool.free),                      \
+		.free = _K_LIFO_INITIALIZER(_pool.free),                      \
 		.__bufs = (struct net_buf *)_bufs,                           \
 		.buf_count = _count,                                         \
 		.uninit_count = _count,                                      \
@@ -529,11 +535,22 @@ struct net_buf_pool {
 	static struct {                                                      \
 		struct net_buf buf;                                          \
 		u8_t data[_size] __net_buf_align;	                     \
-		u8_t ud[ROUND_UP(_ud_size, 4)] __net_buf_align;           \
-	} _net_buf_pool_##_name[_count] __noinit;                            \
-	static struct net_buf_pool _name =                                   \
-		NET_BUF_POOL_INITIALIZER(_name, _net_buf_pool_##_name,       \
+		u8_t ud[ROUND_UP(_ud_size, 4)] __net_buf_align;              \
+	} _net_buf_##_name[_count] __noinit;                                 \
+	struct net_buf_pool _name __net_buf_align                            \
+			__in_section(_net_buf_pool, static, _name) =         \
+		NET_BUF_POOL_INITIALIZER(_name, _net_buf_##_name,            \
 					 _count, _size, _ud_size, _destroy)
+
+
+/**
+ *  @brief Looks up a pool based on its ID.
+ *
+ *  @param id Pool ID (e.g. from buf->pool_id).
+ *
+ *  @return Pointer to pool.
+ */
+struct net_buf_pool *net_buf_pool_get(int id);
 
 /**
  *  @brief Allocate a new buffer from a pool.
@@ -590,7 +607,9 @@ struct net_buf *net_buf_get(struct k_fifo *fifo, s32_t timeout);
  */
 static inline void net_buf_destroy(struct net_buf *buf)
 {
-	k_lifo_put(&buf->pool->free, buf);
+	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
+
+	k_lifo_put(&pool->free, buf);
 }
 
 /**
@@ -1008,6 +1027,10 @@ static inline size_t net_buf_frags_len(struct net_buf *buf)
 
 	return bytes;
 }
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

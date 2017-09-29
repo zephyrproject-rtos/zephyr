@@ -2,10 +2,8 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_i2c_ex.c
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    21-April-2017
   * @brief   I2C Extended HAL module driver.
-  *          This file provides firmware functions to manage the following 
+  *          This file provides firmware functions to manage the following
   *          functionalities of I2C Extended peripheral:
   *           + Extended features functions
   *
@@ -96,7 +94,7 @@
                       ##### Extended features functions #####
  ===============================================================================
     [..] This section provides functions allowing to:
-      (+) Configure Noise Filters 
+      (+) Configure Noise Filters
       (+) Configure Wake Up Feature
 
 @endverbatim
@@ -116,7 +114,7 @@ HAL_StatusTypeDef HAL_I2CEx_ConfigAnalogFilter(I2C_HandleTypeDef *hi2c, uint32_t
   assert_param(IS_I2C_ALL_INSTANCE(hi2c->Instance));
   assert_param(IS_I2C_ANALOG_FILTER(AnalogFilter));
 
-  if(hi2c->State == HAL_I2C_STATE_READY)
+  if (hi2c->State == HAL_I2C_STATE_READY)
   {
     /* Process Locked */
     __HAL_LOCK(hi2c);
@@ -162,7 +160,7 @@ HAL_StatusTypeDef HAL_I2CEx_ConfigDigitalFilter(I2C_HandleTypeDef *hi2c, uint32_
   assert_param(IS_I2C_ALL_INSTANCE(hi2c->Instance));
   assert_param(IS_I2C_DIGITAL_FILTER(DigitalFilter));
 
-  if(hi2c->State == HAL_I2C_STATE_READY)
+  if (hi2c->State == HAL_I2C_STATE_READY)
   {
     /* Process Locked */
     __HAL_LOCK(hi2c);
@@ -205,12 +203,12 @@ HAL_StatusTypeDef HAL_I2CEx_ConfigDigitalFilter(I2C_HandleTypeDef *hi2c, uint32_
   *                the configuration information for the specified I2Cx peripheral.
   * @retval HAL status
   */
-HAL_StatusTypeDef HAL_I2CEx_EnableWakeUp (I2C_HandleTypeDef *hi2c)
+HAL_StatusTypeDef HAL_I2CEx_EnableWakeUp(I2C_HandleTypeDef *hi2c)
 {
   /* Check the parameters */
   assert_param(IS_I2C_WAKEUP_FROMSTOP_INSTANCE(hi2c->Instance));
 
-  if(hi2c->State == HAL_I2C_STATE_READY)
+  if (hi2c->State == HAL_I2C_STATE_READY)
   {
     /* Process Locked */
     __HAL_LOCK(hi2c);
@@ -244,12 +242,12 @@ HAL_StatusTypeDef HAL_I2CEx_EnableWakeUp (I2C_HandleTypeDef *hi2c)
   *                the configuration information for the specified I2Cx peripheral.
   * @retval HAL status
   */
-HAL_StatusTypeDef HAL_I2CEx_DisableWakeUp (I2C_HandleTypeDef *hi2c)
+HAL_StatusTypeDef HAL_I2CEx_DisableWakeUp(I2C_HandleTypeDef *hi2c)
 {
   /* Check the parameters */
   assert_param(IS_I2C_WAKEUP_FROMSTOP_INSTANCE(hi2c->Instance));
 
-  if(hi2c->State == HAL_I2C_STATE_READY)
+  if (hi2c->State == HAL_I2C_STATE_READY)
   {
     /* Process Locked */
     __HAL_LOCK(hi2c);
@@ -262,7 +260,7 @@ HAL_StatusTypeDef HAL_I2CEx_DisableWakeUp (I2C_HandleTypeDef *hi2c)
     /* Enable wakeup from stop mode */
     hi2c->Instance->CR1 &= ~(I2C_CR1_WUPEN);
 
-    __HAL_I2C_ENABLE(hi2c); 
+    __HAL_I2C_ENABLE(hi2c);
 
     hi2c->State = HAL_I2C_STATE_READY;
 

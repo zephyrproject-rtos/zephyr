@@ -14,4 +14,14 @@ source "subsys/net/lib/mqtt/Kconfig"
 
 source "subsys/net/lib/http/Kconfig"
 
+source "subsys/net/lib/lwm2m/Kconfig"
+
+endmenu
+
+menu "Network Application Support"
+
+source "subsys/net/lib/app/Kconfig"
+
+source "subsys/net/lib/sockets/Kconfig"
+
 endmenu

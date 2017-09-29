@@ -18,6 +18,30 @@ menuconfig NET_RPL
 
 if NET_RPL
 
+config NET_RPL_PREFIX
+	string "Network IPv6 prefix"
+	help
+	What is the DAG id (prefix) of the RPL network. This is only used
+	if you are creating a root node. You should specify here the full
+	IPv6 address as that is used as a root node address.
+	Example: 2001:db8::1/64
+
+choice
+	prompt "Network type"
+	default NET_RPL_L2_ANY
+	default NET_RPL_L2_IEEE802154 if NET_L2_IEEE802154
+	help
+	The type of the network that this RPL device is supporting.
+	Currently all the nodes in the network need to be the same type
+	like IEEE 802.15.4.
+
+config NET_RPL_L2_ANY
+	bool "Any network type"
+
+config NET_RPL_L2_IEEE802154
+	bool "IEEE 802.15.4"
+endchoice
+
 choice
 	prompt "Objective function"
 	default NET_RPL_MRHOF
@@ -49,7 +73,7 @@ choice
 config NET_RPL_MC_NONE
 	bool "No routing metric"
 
-config NET_RPL_MC_EXT
+config NET_RPL_MC_ETX
 	bool "Estimated number of transmissions (ETX)"
 
 config NET_RPL_MC_ENERGY
@@ -98,6 +122,12 @@ config	NET_RPL_MAX_DAG_PER_INSTANCE
 	default 2
 	help
 	This determines how many DAG to allocate within one RPL instance.
+
+config	NET_RPL_MAX_PARENTS
+	int "Maximum number of parents for one node"
+	default NET_IPV6_MAX_NEIGHBORS
+	help
+	This determines how many RPL parents each node can have.
 
 config	NET_RPL_DAO_SPECIFY_DAG
 	bool "Specify DAG when sending a DAO message."

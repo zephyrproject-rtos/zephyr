@@ -1,0 +1,35 @@
+#
+# Copyright (c) 2017, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: Kinetis FTM
+id: nxp,kinetis-ftm
+version: 0.1
+
+description: >
+    This binding gives a base representation of the Kinetis FTM
+
+inherits:
+  - !include pwm.yaml
+
+properties:
+  - compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "nxp,kinetis-ftm"
+
+  - reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+  - interrupts:
+      type: array
+      category: required
+      description: required interrupts
+      generation: define
+...

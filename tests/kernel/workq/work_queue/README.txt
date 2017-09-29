@@ -95,6 +95,7 @@ Starting delayed resubmit from coop thread test
 Starting delayed cancel test
  - Cancel delayed work from preempt thread
  - Cancel delayed work from coop thread
+ - Cancel pending delayed work from coop thread
  - Waiting for work to finish
  - Checking results
 ===================================================================

@@ -13,17 +13,15 @@ choice
 	source "arch/x86/soc/*/Kconfig.soc"
 endchoice
 
-menu "x86 Options"
+menu "X86 Architecture Options"
 	depends on X86
 
 config ARCH
 	default "x86"
 
-
 config ARCH_DEFCONFIG
 	string
 	default "arch/x86/defconfig"
-
 
 source "arch/x86/core/Kconfig"
 
@@ -36,11 +34,15 @@ config CPU_ATOM
 	bool
 	select CMOV
 	select CPU_HAS_FPU
+	select ARCH_HAS_STACK_PROTECTION if X86_MMU
+	select ARCH_HAS_USERSPACE if X86_MMU
 	help
 	This option signifies the use of a CPU from the Atom family.
 
 config CPU_MINUTEIA
 	# Hidden
+	select ARCH_HAS_STACK_PROTECTION if X86_MMU
+	select ARCH_HAS_USERSPACE if X86_MMU
 	bool
 	help
 	This option signifies the use of a CPU from the Minute IA family.
@@ -69,6 +71,33 @@ config X86_IAMCU
 	that will be called from C or C code called from assembly code, the
 	assembly code will need to be updated to conform to the new calling
 	convention.  If in doubt say N
+
+config X86_MMU
+	bool
+	default n
+	prompt "Memory Management Unit"
+	help
+	This options enables the memory management unit present in x86. Enabling
+	this will create boot time page table structure.
+
+config X86_STACK_PROTECTION
+	bool
+	default y if HW_STACK_PROTECTION
+	select SET_GDT
+	select GDT_DYNAMIC
+	help
+	This option leverages the MMU to cause a system fatal error if the
+	bounds of the current process stack are overflowed. This is done
+	by preceding all stack areas with a 4K guard page.
+
+config X86_USERSPACE
+	bool
+	default y if USERSPACE
+	select THREAD_STACK_INFO
+	help
+	This option enables APIs to drop a thread's privileges down to ring 3,
+	supporting user-level threads that are protected from each other and
+	from crashing the kernel.
 
 menu "Floating Point Options"
 depends on CPU_HAS_FPU
@@ -227,9 +256,7 @@ config CACHE_FLUSHING
 	This links in the sys_cache_flush() function. A mechanism for flushing the
 	cache must be selected as well. By default, that mechanism is discovered at
 	runtime.
-endmenu
 
-menu "Board Capabilities"
 config PIC_DISABLE
 	bool "Disable PIC"
 	default n
@@ -287,8 +314,6 @@ config X86_FIXED_IRQ_MAPPING
 	mapping between IDT vectors and IRQ lines.
 
 endmenu
-
-
 
 source "arch/x86/soc/*/Kconfig"
 

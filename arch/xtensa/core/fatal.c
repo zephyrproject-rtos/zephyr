@@ -52,9 +52,6 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 	case _NANO_ERR_RESERVED_IRQ:
 		break;
 
-	case _NANO_ERR_INVALID_TASK_EXIT:
-		printk("***** Invalid Exit Software Error! *****\n");
-		break;
 #if defined(CONFIG_STACK_CANARIES) || defined(CONFIG_STACK_SENTINEL)
 	case _NANO_ERR_STACK_CHK_FAIL:
 		printk("***** Stack Check Fail! *****\n");
@@ -235,12 +232,17 @@ void exit(int return_code)
  *
  * @return N/A
  */
-FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
+FUNC_NORETURN __weak void _SysFatalErrorHandler(unsigned int reason,
 					 const NANO_ESF *pEsf)
 {
 	ARG_UNUSED(pEsf);
 
 #if !defined(CONFIG_SIMPLE_FATAL_ERROR_HANDLER)
+#ifdef CONFIG_STACK_SENTINEL
+	if (reason == _NANO_ERR_STACK_CHK_FAIL) {
+		goto hang_system;
+	}
+#endif
 	if (reason == _NANO_ERR_KERNEL_PANIC) {
 		goto hang_system;
 	}

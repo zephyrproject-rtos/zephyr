@@ -3,56 +3,18 @@
 Supported Boards
 ################
 
+Zephyr project developers are continually adding board-specific support as
+documented below.
 
-X86 Boards
-**********
+To add support documentation for a new board, please use the template available
+under :file:`doc/templates/board.tmpl`
+
 
 .. toctree::
-   :maxdepth: 1
-   :glob:
+   :maxdepth: 2
 
-   x86/**/*
-
-ARM Boards
-**********
-
-.. toctree::
-   :maxdepth: 1
-   :glob:
-
-   arm/**/*
-
-ARC Boards
-**********
-
-.. toctree::
-   :maxdepth: 1
-   :glob:
-
-   arc/**/*
-
-NIOS II Boards
-**************
-
-.. toctree::
-   :maxdepth: 1
-   :glob:
-
-   nios2/**/*
-
-XTENSA Boards
-*************
-
-.. toctree::
-   :maxdepth: 1
-   :glob:
-
-   xtensa/**/*
-
-A list of additional supported boards can be found on the `Zephyr project wiki`_.
-
-To add a new board, please use the template available under
-:file:`doc/templates/board.tmpl`
-
-
-.. _Zephyr project wiki: https://wiki.zephyrproject.org/view/Supported_Boards
+   x86/index.rst
+   arm/index.rst
+   arc/index.rst
+   nios2/index.rst
+   xtensa/index.rst

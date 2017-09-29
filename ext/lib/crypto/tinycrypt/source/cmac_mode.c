@@ -1,7 +1,7 @@
 /* cmac_mode.c - TinyCrypt CMAC mode implementation */
 
 /*
- *  Copyright (C) 2015 by Intel Corporation, All Rights Reserved.
+ *  Copyright (C) 2017 by Intel Corporation, All Rights Reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -36,7 +36,7 @@
 #include <tinycrypt/utils.h>
 
 /* max number of calls until change the key (2^48).*/
-static uint64_t MAX_CALLS = ((uint64_t)1 << 48);
+const static uint64_t MAX_CALLS = ((uint64_t)1 << 48);
 
 /*
  *  gf_wrap -- In our implementation, GF(2^128) is represented as a 16 byte
@@ -94,7 +94,7 @@ void gf_double(uint8_t *out, uint8_t *in)
 	}
 }
 
-int32_t tc_cmac_setup(TCCmacState_t s, const uint8_t *key, TCAesKeySched_t sched)
+int tc_cmac_setup(TCCmacState_t s, const uint8_t *key, TCAesKeySched_t sched)
 {
 
 	/* input sanity check: */
@@ -122,7 +122,7 @@ int32_t tc_cmac_setup(TCCmacState_t s, const uint8_t *key, TCAesKeySched_t sched
 	return TC_CRYPTO_SUCCESS;
 }
 
-int32_t tc_cmac_erase(TCCmacState_t s)
+int tc_cmac_erase(TCCmacState_t s)
 {
 	if (s == (TCCmacState_t) 0) {
 		return TC_CRYPTO_FAIL;
@@ -134,7 +134,7 @@ int32_t tc_cmac_erase(TCCmacState_t s)
 	return TC_CRYPTO_SUCCESS;
 }
 
-int32_t tc_cmac_init(TCCmacState_t s)
+int tc_cmac_init(TCCmacState_t s)
 {
 	/* input sanity check: */
 	if (s == (TCCmacState_t) 0) {
@@ -154,9 +154,9 @@ int32_t tc_cmac_init(TCCmacState_t s)
 	return TC_CRYPTO_SUCCESS;
 }
 
-int32_t tc_cmac_update(TCCmacState_t s, const uint8_t *data, size_t data_length)
+int tc_cmac_update(TCCmacState_t s, const uint8_t *data, size_t data_length)
 {
-	uint32_t i;
+	unsigned int i;
 
 	/* input sanity check: */
 	if (s == (TCCmacState_t) 0) {
@@ -219,10 +219,10 @@ int32_t tc_cmac_update(TCCmacState_t s, const uint8_t *data, size_t data_length)
 	return TC_CRYPTO_SUCCESS;
 }
 
-int32_t tc_cmac_final(uint8_t *tag, TCCmacState_t s)
+int tc_cmac_final(uint8_t *tag, TCCmacState_t s)
 {
 	uint8_t *k;
-	uint32_t i;
+	unsigned int i;
 
 	/* input sanity check: */
 	if (tag == (uint8_t *) 0 ||

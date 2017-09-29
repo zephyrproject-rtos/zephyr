@@ -1,0 +1,51 @@
+---
+title: <Title should describe what node you are describing>
+version: 0.1
+
+description: >
+    Describe in free form text w/ spanning lines what you
+    are describing
+
+# properties will be the contents of the device tree node
+# property names must match the property names in the DT
+
+properties:
+
+# A typical property entry will look like the following
+# - <name of property as it is in device tree>
+#     category: <required | optional>
+#     type: <string | int | array>
+#     description: <description of property>
+#     generation: <define | structure>
+
+# At a minimum, the compatible is required for matching nodes
+  - compatible: <list of string compatible matches>
+      category: required
+      type: string
+      description: compatible of node
+
+# reg is used to denote mmio registers
+  - reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+# interrupts specifies the interrupts that the driver may utilize
+  - interrupts:
+      type: array
+      category: required
+      description: required interrupts
+      generation: define
+
+# If a node is a interrupt controller, gpio controller, pinmux device
+# or any device which is referenced via phandle plus some number of cells
+# then the cell fiels below must be present.
+cell_string: <cell string prefix>
+
+"#cells":
+  - cell0    # name of first cell
+  - cell1    # name of second cell
+  - cell2    # name of third cell
+  - and so on and so forth
+...

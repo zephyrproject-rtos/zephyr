@@ -1,0 +1,11 @@
+identifier: arduino_101_ble
+name: Ardunio 101 (nRF51)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb
+ram: 16
+testing:
+  ignore_tags:
+    - net

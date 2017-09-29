@@ -5,7 +5,7 @@
  */
 
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <kernel_structs.h>
 #include <offsets_short.h>
 
@@ -35,6 +35,10 @@ GTEXT(_sys_k_event_logger_interrupt)
 
 #ifdef CONFIG_IRQ_OFFLOAD
 GTEXT(_offload_routine)
+#endif
+
+#ifdef CONFIG_TIMESLICING
+GTEXT(_update_time_slice_before_swap)
 #endif
 
 /* exports */
@@ -270,14 +274,14 @@ on_thread_stack:
 	addi t2, t2, -1
 	sw t2, _kernel_offset_to_nested(t1)
 
+	/* Restore thread stack pointer */
+	lw t0, 0x00(sp)
+	addi sp, t0, 0
+
 #ifdef CONFIG_STACK_SENTINEL
 	call _check_stack_sentinel
 	la t1, _kernel
 #endif
-
-	/* Restore thread stack pointer */
-	lw t0, 0x00(sp)
-	addi sp, t0, 0
 
 #ifdef CONFIG_PREEMPT_ENABLED
 	/*
@@ -306,12 +310,12 @@ on_thread_stack:
 #endif /* CONFIG_PREEMPT_ENABLED */
 
 reschedule:
+#if CONFIG_TIMESLICING
+	call _update_time_slice_before_swap
+#endif
 #if CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
 	call _sys_k_event_logger_context_switch
 #endif /* CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH */
-#ifdef CONFIG_STACK_SENTINEL
-	call _check_stack_sentinel
-#endif
 	/* Get reference to _kernel */
 	la t0, _kernel
 
@@ -374,6 +378,15 @@ no_reschedule:
 	/* Restore context at SOC level */
 	jal ra, __soc_restore_context
 #endif /* CONFIG_RISCV_SOC_CONTEXT_SAVE */
+
+	/* Restore MEPC register */
+	lw t0, __NANO_ESF_mepc_OFFSET(sp)
+	csrw mepc, t0
+
+	/* Restore SOC-specific MSTATUS register */
+	lw t0, __NANO_ESF_mstatus_OFFSET(sp)
+	csrw SOC_MSTATUS_REG, t0
+
 	/* Restore caller-saved registers from thread stack */
 	lw ra, __NANO_ESF_ra_OFFSET(sp)
 	lw gp, __NANO_ESF_gp_OFFSET(sp)
@@ -393,14 +406,6 @@ no_reschedule:
 	lw a5, __NANO_ESF_a5_OFFSET(sp)
 	lw a6, __NANO_ESF_a6_OFFSET(sp)
 	lw a7, __NANO_ESF_a7_OFFSET(sp)
-
-	/* Restore MEPC register */
-	lw t0, __NANO_ESF_mepc_OFFSET(sp)
-	csrw mepc, t0
-
-	/* Restore SOC-specific MSTATUS register */
-	lw t0, __NANO_ESF_mstatus_OFFSET(sp)
-	csrw SOC_MSTATUS_REG, t0
 
 	/* Release stack space */
 	addi sp, sp, __NANO_ESF_SIZEOF

@@ -126,7 +126,7 @@ static void mcp9808_thread_main(int arg1, int arg2)
 	}
 }
 
-static char __stack mcp9808_thread_stack[CONFIG_MCP9808_THREAD_STACK_SIZE];
+static K_THREAD_STACK_DEFINE(mcp9808_thread_stack, CONFIG_MCP9808_THREAD_STACK_SIZE);
 static struct k_thread mcp9808_thread;
 #else /* CONFIG_MCP9808_TRIGGER_GLOBAL_THREAD */
 

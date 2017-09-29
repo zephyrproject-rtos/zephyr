@@ -15,8 +15,8 @@
 #define  THIRD_SECOND               (333)
 #define  FOURTH_SECOND              (250)
 
-#define COOP_STACKSIZE   1024
-#define PREEM_STACKSIZE  2048
+#define COOP_STACKSIZE   512
+#define PREEM_STACKSIZE  1024
 
 #define FIFO_TEST_START       10
 #define FIFO_TEST_END         20
@@ -30,7 +30,8 @@
 #define NON_NULL_PTR          ((void *)0x12345678)
 
 static struct k_work_q offload_work_q;
-static char __stack offload_work_q_stack[CONFIG_OFFLOAD_WORKQUEUE_STACK_SIZE];
+static K_THREAD_STACK_DEFINE(offload_work_q_stack,
+			     CONFIG_OFFLOAD_WORKQUEUE_STACK_SIZE);
 
 struct fifo_data {
 	u32_t reserved;
@@ -47,7 +48,7 @@ struct offload_work {
 	struct k_sem *sem;
 };
 
-static char __stack coop_stack[2][COOP_STACKSIZE];
+static K_THREAD_STACK_ARRAY_DEFINE(coop_stack, 2, COOP_STACKSIZE);
 static struct k_thread coop_thread[2];
 
 static struct k_fifo fifo;
@@ -59,13 +60,13 @@ static struct k_sem sync_test_sem;
 static struct k_sem end_test_sem;
 
 struct fifo_data fifo_test_data[4] = {
-	{0, FIFO_TEST_END + 1}, {0, FIFO_TEST_END + 2},
-	{0, FIFO_TEST_END + 3}, {0, FIFO_TEST_END + 4}
+	{ 0, FIFO_TEST_END + 1 }, { 0, FIFO_TEST_END + 2 },
+	{ 0, FIFO_TEST_END + 3 }, { 0, FIFO_TEST_END + 4 }
 };
 
 struct lifo_data lifo_test_data[4] = {
-	{0, LIFO_TEST_END + 1}, {0, LIFO_TEST_END + 2},
-	{0, LIFO_TEST_END + 3}, {0, LIFO_TEST_END + 4}
+	{ 0, LIFO_TEST_END + 1 }, { 0, LIFO_TEST_END + 2 },
+	{ 0, LIFO_TEST_END + 3 }, { 0, LIFO_TEST_END + 4 }
 };
 
 static u32_t timer_start_tick;
@@ -103,7 +104,7 @@ static int increment_counter(void)
 static void sync_threads(struct k_work *work)
 {
 	struct offload_work *offload =
-	    CONTAINER_OF(work, struct offload_work, work_item);
+		CONTAINER_OF(work, struct offload_work, work_item);
 
 	k_sem_give(offload->sem);
 	k_sem_give(offload->sem);
@@ -243,7 +244,7 @@ void task_high(void)
 
 	k_work_q_start(&offload_work_q,
 		       offload_work_q_stack,
-		       sizeof(offload_work_q_stack),
+		       K_THREAD_STACK_SIZEOF(offload_work_q_stack),
 		       CONFIG_OFFLOAD_WORKQUEUE_PRIORITY);
 
 	counter = SEM_TEST_START;
@@ -397,7 +398,7 @@ void task_monitor(void)
 	k_work_submit_to_queue(&offload_work_q, &offload2.work_item);
 
 	timer_end_tick = 0;
-	k_sem_give(&start_test_sem);	/* start timer tests */
+	k_sem_give(&start_test_sem);    /* start timer tests */
 
 	/*
 	 * NOTE: The timer test is running in the context of high_task().

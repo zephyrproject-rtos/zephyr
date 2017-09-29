@@ -284,7 +284,7 @@ exit:
 }
 
 #define STACK_SIZE		8192
-u8_t stack[STACK_SIZE];
+K_THREAD_STACK_DEFINE(stack, STACK_SIZE);
 static struct k_thread dtls_thread;
 
 static inline int init_app(void)

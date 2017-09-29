@@ -1,0 +1,8 @@
+identifier: stm32f3_disco
+name: STM32F3DISCOVERY
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb
+ram: 40

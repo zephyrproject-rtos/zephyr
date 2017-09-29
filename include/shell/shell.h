@@ -6,6 +6,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef _SHELL_H_
+#define _SHELL_H_
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -119,6 +122,22 @@ void shell_register_prompt_handler(shell_prompt_function_t handler);
  */
 void shell_register_default_module(const char *name);
 
+/** @brief Execute command line.
+ *
+ *  Pass command line to shell to execute. The line cannot be a C string literal
+ *  since it will be modified in place, instead a variable can be used:
+ *
+ *    char cmd[] = "command";
+ *    shell_exec(cmd);
+ *
+ *  Note: This by no means makes any of the commands a stable interface, so
+ *  this function should only be used for debugging/diagnostic.
+ *
+ *  @param line Command line to be executed
+ *  @returns Result of the execution
+ */
+int shell_exec(char *line);
+
 /**
 * @}
 */
@@ -140,3 +159,4 @@ static inline int shell_run(struct device *dev)
 }
 #endif
 
+#endif /* _SHELL_H_ */

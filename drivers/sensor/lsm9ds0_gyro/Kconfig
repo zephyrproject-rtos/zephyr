@@ -8,7 +8,7 @@
 
 menuconfig LSM9DS0_GYRO
 	bool "LSM9DS0 I2C gyroscope Chip"
-	depends on SENSOR && I2C
+	depends on I2C
 	default n
 	help
 	  Enable driver for LSM9DS0 I2C-based gyroscope sensor.

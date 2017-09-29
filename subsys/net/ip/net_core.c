@@ -19,7 +19,7 @@
 #include <init.h>
 #include <kernel.h>
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <string.h>
 #include <errno.h>
 
@@ -46,7 +46,7 @@
 #include "rpl.h"
 
 #include "connection.h"
-#include "udp.h"
+#include "udp_internal.h"
 #include "tcp.h"
 
 #include "net_stats.h"
@@ -142,7 +142,8 @@ static void net_rx_thread(void)
 {
 	struct net_pkt *pkt;
 
-	NET_DBG("Starting RX thread (stack %zu bytes)", sizeof(rx_stack));
+	NET_DBG("Starting RX thread (stack %zu bytes)",
+		K_THREAD_STACK_SIZEOF(rx_stack));
 
 	/* Starting TX side. The ordering is important here and the TX
 	 * can only be started when RX side is ready to receive packets.
@@ -164,7 +165,8 @@ static void net_rx_thread(void)
 
 		pkt = k_fifo_get(&rx_queue, K_FOREVER);
 
-		net_analyze_stack("RX thread", rx_stack, sizeof(rx_stack));
+		net_analyze_stack("RX thread", K_THREAD_STACK_BUFFER(rx_stack),
+				  K_THREAD_STACK_SIZEOF(rx_stack));
 
 #if defined(CONFIG_NET_STATISTICS) || defined(CONFIG_NET_DEBUG_CORE)
 		pkt_len = net_pkt_get_len(pkt);
@@ -186,7 +188,8 @@ static void init_rx_queue(void)
 {
 	k_fifo_init(&rx_queue);
 
-	rx_tid = k_thread_create(&rx_thread_data, rx_stack, sizeof(rx_stack),
+	rx_tid = k_thread_create(&rx_thread_data, rx_stack,
+				 K_THREAD_STACK_SIZEOF(rx_stack),
 				 (k_thread_entry_t)net_rx_thread,
 				 NULL, NULL, NULL, K_PRIO_COOP(8),
 				 K_ESSENTIAL, K_NO_WAIT);
@@ -238,6 +241,7 @@ static inline int check_ip_addr(struct net_pkt *pkt)
 	if (net_pkt_family(pkt) == AF_INET) {
 		if (net_ipv4_addr_cmp(&NET_IPV4_HDR(pkt)->dst,
 				      net_ipv4_unspecified_address())) {
+			NET_DBG("IPv4 dst address missing");
 			return -EADDRNOTAVAIL;
 		}
 
@@ -378,8 +382,6 @@ static int net_init(struct device *unused)
 	int status = 0;
 
 	NET_DBG("Priority %d", CONFIG_NET_INIT_PRIO);
-
-	net_shell_init();
 
 	net_pkt_init();
 

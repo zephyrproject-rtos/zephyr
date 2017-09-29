@@ -57,7 +57,7 @@ SECTION_FUNC(exception.other, __swap)
 
 
 /*
- * void _thread_entry_wrapper(_thread_entry_t, void *, void *, void *)
+ * void _thread_entry_wrapper(k_thread_entry_t, void *, void *, void *)
  */
 SECTION_FUNC(TEXT, _thread_entry_wrapper)
 	/*

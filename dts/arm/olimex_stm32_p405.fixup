@@ -1,0 +1,15 @@
+/* This file is a temporary workaround for mapping of the generated information
+ * to the current driver definitions.  This will be removed when the drivers
+ * are modified to handle the generated information, or the mapping of
+ * generated data matches the driver definitions.
+ */
+
+
+#define CONFIG_NUM_IRQ_PRIO_BITS	ARM_V7M_NVIC_E000E100_ARM_NUM_IRQ_PRIORITY_BITS
+
+#define CONFIG_UART_STM32_PORT_2_NAME		ST_STM32_USART_40004400_LABEL
+#define CONFIG_UART_STM32_PORT_2_BASE_ADDRESS	ST_STM32_USART_40004400_BASE_ADDRESS
+#define CONFIG_UART_STM32_PORT_2_BAUD_RATE	ST_STM32_USART_40004400_CURRENT_SPEED
+#define CONFIG_UART_STM32_PORT_2_IRQ_PRI	ST_STM32_USART_40004400_IRQ_0_PRIORITY
+#define PORT_2_IRQ				ST_STM32_USART_40004400_IRQ_0
+

@@ -9,6 +9,11 @@
 
 #include <net/mqtt_types.h>
 #include <net/net_context.h>
+#include <net/net_app.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @brief MQTT library
@@ -57,10 +62,36 @@ enum mqtt_app {
  * the state of the received and sent messages.</b>
  */
 struct mqtt_ctx {
-	/** IP stack context structure */
-	struct net_context *net_ctx;
-	/** Network timeout for tx and rx routines */
+	/** Net app context structure */
+	struct net_app_ctx net_app_ctx;
+	s32_t net_init_timeout;
 	s32_t net_timeout;
+
+	/** Connectivity */
+	char *peer_addr_str;
+	u16_t peer_port;
+
+#if defined(CONFIG_MQTT_LIB_TLS)
+	/** TLS parameters */
+	u8_t *request_buf;
+	size_t request_buf_len;
+	u8_t *personalization_data;
+	size_t personalization_data_len;
+	char *cert_host;
+
+	/** TLS thread parameters */
+	struct k_mem_pool *tls_mem_pool;
+	k_thread_stack_t tls_stack;
+	size_t tls_stack_size;
+
+	/** TLS callback */
+	net_app_ca_cert_cb_t cert_cb;
+	net_app_entropy_src_cb_t entropy_src_cb;
+
+	/** TLS handshake */
+	struct k_sem tls_hs_wait;
+	s32_t tls_hs_timeout;
+#endif
 
 	/** Callback executed when a MQTT CONNACK msg is received and validated.
 	 * If this function pointer is not used, must be set to NULL.
@@ -168,9 +199,26 @@ struct mqtt_ctx {
  *
  * @param ctx MQTT context structure
  * @param app_type See enum mqtt_app
- * @retval 0, always.
+ * @retval 0 always
  */
 int mqtt_init(struct mqtt_ctx *ctx, enum mqtt_app app_type);
+
+/**
+ * Release the MQTT context structure
+ *
+ * @param ctx MQTT context structure
+ * @retval 0 on success, and <0 if error
+ */
+int mqtt_close(struct mqtt_ctx *ctx);
+
+/**
+ * Connect to an MQTT broker
+ *
+ * @param ctx MQTT context structure
+ * @retval 0 on success, and <0 if error
+ */
+
+int mqtt_connect(struct mqtt_ctx *ctx);
 
 /**
  * Sends the MQTT CONNECT message
@@ -418,4 +466,8 @@ int mqtt_rx_publish(struct mqtt_ctx *ctx, struct net_buf *rx);
  * @}
  */
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* _MQTT_H_ */

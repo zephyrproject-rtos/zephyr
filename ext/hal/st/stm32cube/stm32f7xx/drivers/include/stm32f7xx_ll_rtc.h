@@ -2,13 +2,11 @@
   ******************************************************************************
   * @file    stm32f7xx_ll_rtc.h
   * @author  MCD Application Team
-  * @version V1.2.0
-  * @date    30-December-2016
   * @brief   Header file of RTC LL module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -588,8 +586,8 @@ typedef struct
   * @{
   */
 #define LL_RTC_CALIB_OUTPUT_NONE           0x00000000U                 /*!< Calibration output disabled */
-#define LL_RTC_CALIB_OUTPUT_1HZ            (RTC_CR_COE | RTC_CR_COSEL) /*!< Calibration output is 512 Hz */
-#define LL_RTC_CALIB_OUTPUT_512HZ          (RTC_CR_COE)                /*!< Calibration output is 1 Hz */
+#define LL_RTC_CALIB_OUTPUT_1HZ            (RTC_CR_COE | RTC_CR_COSEL) /*!< Calibration output is 1 Hz */
+#define LL_RTC_CALIB_OUTPUT_512HZ          (RTC_CR_COE)                /*!< Calibration output is 512 Hz */
 /**
   * @}
   */
@@ -1245,7 +1243,12 @@ __STATIC_INLINE void LL_RTC_TIME_Config(RTC_TypeDef *RTCx, uint32_t Format12_24,
   */
 __STATIC_INLINE uint32_t LL_RTC_TIME_Get(RTC_TypeDef *RTCx)
 {
-  return (uint32_t)((LL_RTC_TIME_GetHour(RTCx) << RTC_OFFSET_HOUR) | (LL_RTC_TIME_GetMinute(RTCx) << RTC_OFFSET_MINUTE) | LL_RTC_TIME_GetSecond(RTCx));
+  register uint32_t temp = 0U;
+  
+  temp = READ_BIT(RTCx->TR, (RTC_TR_HT | RTC_TR_HU | RTC_TR_MNT | RTC_TR_MNU | RTC_TR_ST | RTC_TR_SU));
+  return (uint32_t)((((((temp & RTC_TR_HT) >> RTC_TR_HT_Pos) << 4U) | ((temp & RTC_TR_HU) >> RTC_TR_HU_Pos)) << RTC_OFFSET_HOUR) |  \
+                    (((((temp & RTC_TR_MNT) >> RTC_TR_MNT_Pos) << 4U) | ((temp & RTC_TR_MNU) >> RTC_TR_MNU_Pos)) << RTC_OFFSET_MINUTE) | \
+                    ((((temp & RTC_TR_ST) >> RTC_TR_ST_Pos) << 4U) | ((temp & RTC_TR_SU) >> RTC_TR_SU_Pos)));
 }
 
 /**
@@ -1579,7 +1582,13 @@ __STATIC_INLINE void LL_RTC_DATE_Config(RTC_TypeDef *RTCx, uint32_t WeekDay, uin
   */
 __STATIC_INLINE uint32_t LL_RTC_DATE_Get(RTC_TypeDef *RTCx)
 {
-  return (uint32_t)((LL_RTC_DATE_GetWeekDay(RTCx) << RTC_OFFSET_WEEKDAY) | (LL_RTC_DATE_GetDay(RTCx) << RTC_OFFSET_DAY) | (LL_RTC_DATE_GetMonth(RTCx) << RTC_OFFSET_MONTH) | LL_RTC_DATE_GetYear(RTCx));
+  register uint32_t temp = 0U;
+  
+  temp = READ_BIT(RTCx->DR, (RTC_DR_WDU | RTC_DR_MT | RTC_DR_MU | RTC_DR_DT | RTC_DR_DU | RTC_DR_YT | RTC_DR_YU));
+  return (uint32_t)((((temp & RTC_DR_WDU) >> RTC_DR_WDU_Pos) << RTC_OFFSET_WEEKDAY) | \
+                    (((((temp & RTC_DR_DT) >> RTC_DR_DT_Pos) << 4U) | ((temp & RTC_DR_DU) >> RTC_DR_DU_Pos)) << RTC_OFFSET_DAY) | \
+                    (((((temp & RTC_DR_MT) >> RTC_DR_MT_Pos) << 4U) | ((temp & RTC_DR_MU) >> RTC_DR_MU_Pos)) << RTC_OFFSET_MONTH) | \
+                    ((((temp & RTC_DR_YT) >> RTC_DR_YT_Pos) << 4U) | ((temp & RTC_DR_YU) >> RTC_DR_YU_Pos)));
 }
 
 /**

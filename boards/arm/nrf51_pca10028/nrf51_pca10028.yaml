@@ -1,0 +1,10 @@
+identifier: nrf51_pca10028
+name: nRF51-PCA10028
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb
+ram: 32
+supported:
+  - ble

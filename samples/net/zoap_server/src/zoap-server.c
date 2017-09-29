@@ -20,18 +20,10 @@
 #include <net/buf.h>
 #include <net/net_pkt.h>
 #include <net/net_ip.h>
+#include <net/udp.h>
 
 #include <net/zoap.h>
 #include <net/zoap_link_format.h>
-
-#if defined(CONFIG_NET_L2_BLUETOOTH)
-#include <bluetooth/bluetooth.h>
-#include <gatt/ipss.h>
-#endif
-
-#if defined(CONFIG_NET_L2_IEEE802154)
-#include <ieee802154_settings.h>
-#endif
 
 #define MY_COAP_PORT 5683
 
@@ -225,8 +217,11 @@ static int test_post(struct zoap_resource *resource,
 	zoap_header_set_token(&response, token, tkl);
 
 	for (p = location_path; *p; p++) {
-		zoap_add_option(&response, ZOAP_OPTION_LOCATION_PATH,
-				*p, strlen(*p));
+		r = zoap_add_option(&response, ZOAP_OPTION_LOCATION_PATH,
+				    *p, strlen(*p));
+		if (r < 0) {
+			return -EINVAL;
+		}
 	}
 
 	return net_context_sendto(pkt, from, sizeof(struct sockaddr_in6),
@@ -288,8 +283,11 @@ static int location_query_post(struct zoap_resource *resource,
 	zoap_header_set_token(&response, token, tkl);
 
 	for (p = location_query; *p; p++) {
-		zoap_add_option(&response, ZOAP_OPTION_LOCATION_QUERY,
-				*p, strlen(*p));
+		r = zoap_add_option(&response, ZOAP_OPTION_LOCATION_QUERY,
+				    *p, strlen(*p));
+		if (r < 0) {
+			return -EINVAL;
+		}
 	}
 
 	return net_context_sendto(pkt, from, sizeof(struct sockaddr_in6),
@@ -655,7 +653,7 @@ static int large_get(struct zoap_resource *resource,
 		return -EINVAL;
 	}
 
-	r = zoap_next_block(&ctx);
+	r = zoap_next_block(&response, &ctx);
 	if (!r) {
 		/* Will return 0 when it's the last block. */
 		memset(&ctx, 0, sizeof(ctx));
@@ -868,7 +866,10 @@ static int send_notification_packet(const struct sockaddr *addr, u16_t age,
 	zoap_header_set_token(&response, token, tkl);
 
 	if (age >= 2) {
-		zoap_add_option_int(&response, ZOAP_OPTION_OBSERVE, age);
+		r = zoap_add_option_int(&response, ZOAP_OPTION_OBSERVE, age);
+		if (r < 0) {
+			return -EINVAL;
+		}
 	}
 
 	r = zoap_add_option(&response, ZOAP_OPTION_CONTENT_FORMAT,
@@ -1115,10 +1116,19 @@ static void udp_receive(struct net_context *context,
 	struct zoap_packet request;
 	struct zoap_pending *pending;
 	struct sockaddr_in6 from;
+	struct net_udp_hdr hdr, *udp_hdr;
 	int r, header_len;
 
 	net_ipaddr_copy(&from.sin6_addr, &NET_IPV6_HDR(pkt)->src);
-	from.sin6_port = NET_UDP_HDR(pkt)->src_port;
+
+	udp_hdr = net_udp_get_hdr(pkt, &hdr);
+	if (!udp_hdr) {
+		printk("Invalid UDP data received\n");
+		net_pkt_unref(pkt);
+		return;
+	}
+
+	from.sin6_port = udp_hdr->src_port;
 	from.sin6_family = AF_INET6;
 
 	/*
@@ -1199,6 +1209,11 @@ static bool join_coap_multicast_group(void)
 #endif
 
 	ifaddr = net_if_ipv6_addr_add(iface, &my_addr, NET_ADDR_MANUAL, 0);
+	if (!ifaddr) {
+		NET_ERR("Could not add unicast address to interface");
+		return false;
+	}
+
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
 
 	mcast = net_if_ipv6_maddr_add(iface, &mcast_addr.sin6_addr);
@@ -1242,23 +1257,6 @@ void main(void)
 		.sin6_addr = IN6ADDR_ANY_INIT,
 		.sin6_port = htons(MY_COAP_PORT) };
 	int r;
-
-#if defined(CONFIG_NET_L2_BLUETOOTH)
-	if (bt_enable(NULL)) {
-		NET_ERR("Bluetooth init failed");
-		return;
-	}
-	ipss_init();
-
-	ipss_advertise();
-#endif
-
-#if defined(CONFIG_NET_L2_IEEE802154)
-	if (ieee802154_sample_setup()) {
-		NET_ERR("IEEE 802.15.4 setup failed");
-		return;
-	}
-#endif
 
 	if (!join_coap_multicast_group()) {
 		NET_ERR("Could not join CoAP multicast group\n");

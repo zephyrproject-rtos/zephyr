@@ -2,3 +2,4 @@
 config BOARD_ARDUINO_101
 	bool "Arduino 101 Board"
 	depends on SOC_SERIES_QUARK_SE
+	select HAS_DTS

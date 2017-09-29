@@ -1,0 +1,7 @@
+identifier: stm32f429i_disc1
+name: STM32F429I_DISC1
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb

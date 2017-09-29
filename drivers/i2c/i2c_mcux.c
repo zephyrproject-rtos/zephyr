@@ -10,6 +10,7 @@
 #include <fsl_i2c.h>
 #include <fsl_clock.h>
 #include <misc/util.h>
+#include "i2c-priv.h"
 
 #define DEV_CFG(dev) \
 	((const struct i2c_mcux_config * const)(dev)->config->config_info)
@@ -22,7 +23,7 @@ struct i2c_mcux_config {
 	I2C_Type *base;
 	clock_name_t clock_source;
 	void (*irq_config_func)(struct device *dev);
-	union dev_config default_cfg;
+	u32_t bitrate;
 };
 
 struct i2c_mcux_data {
@@ -35,23 +36,18 @@ static int i2c_mcux_configure(struct device *dev, u32_t dev_config_raw)
 {
 	I2C_Type *base = DEV_BASE(dev);
 	const struct i2c_mcux_config *config = DEV_CFG(dev);
-	union dev_config dev_config = (union dev_config)dev_config_raw;
 	u32_t clock_freq;
 	u32_t baudrate;
 
-	if (!dev_config.bits.is_master_device) {
+	if (!(I2C_MODE_MASTER & dev_config_raw)) {
 		return -EINVAL;
 	}
 
-	if (dev_config.bits.is_slave_read) {
+	if (I2C_ADDR_10_BITS & dev_config_raw) {
 		return -EINVAL;
 	}
 
-	if (dev_config.bits.use_10_bit_addr) {
-		return -EINVAL;
-	}
-
-	switch (dev_config.bits.speed) {
+	switch (I2C_SPEED_GET(dev_config_raw)) {
 	case I2C_SPEED_STANDARD:
 		baudrate = KHZ(100);
 		break;
@@ -159,7 +155,7 @@ static int i2c_mcux_init(struct device *dev)
 	I2C_Type *base = DEV_BASE(dev);
 	const struct i2c_mcux_config *config = DEV_CFG(dev);
 	struct i2c_mcux_data *data = DEV_DATA(dev);
-	u32_t clock_freq;
+	u32_t clock_freq, bitrate_cfg;
 	i2c_master_config_t master_config;
 	int error;
 
@@ -171,7 +167,9 @@ static int i2c_mcux_init(struct device *dev)
 	I2C_MasterTransferCreateHandle(base, &data->handle,
 			i2c_mcux_master_transfer_callback, dev);
 
-	error = i2c_mcux_configure(dev, config->default_cfg.raw);
+	bitrate_cfg = _i2c_map_dt_bitrate(config->bitrate);
+
+	error = i2c_mcux_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
 	if (error) {
 		return error;
 	}
@@ -190,10 +188,10 @@ static const struct i2c_driver_api i2c_mcux_driver_api = {
 static void i2c_mcux_config_func_0(struct device *dev);
 
 static const struct i2c_mcux_config i2c_mcux_config_0 = {
-	.base = I2C0,
+	.base = (I2C_Type *)CONFIG_I2C_MCUX_0_BASE_ADDRESS,
 	.clock_source = I2C0_CLK_SRC,
 	.irq_config_func = i2c_mcux_config_func_0,
-	.default_cfg.raw = CONFIG_I2C_0_DEFAULT_CFG,
+	.bitrate = CONFIG_I2C_MCUX_0_BITRATE,
 };
 
 static struct i2c_mcux_data i2c_mcux_data_0;
@@ -207,10 +205,10 @@ static void i2c_mcux_config_func_0(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	IRQ_CONNECT(IRQ_I2C0, CONFIG_I2C_0_IRQ_PRI,
+	IRQ_CONNECT(CONFIG_I2C_MCUX_0_IRQ, CONFIG_I2C_MCUX_0_IRQ_PRI,
 		    i2c_mcux_isr, DEVICE_GET(i2c_mcux_0), 0);
 
-	irq_enable(I2C0_IRQn);
+	irq_enable(CONFIG_I2C_MCUX_0_IRQ);
 }
 #endif /* CONFIG_I2C_0 */
 
@@ -218,10 +216,10 @@ static void i2c_mcux_config_func_0(struct device *dev)
 static void i2c_mcux_config_func_1(struct device *dev);
 
 static const struct i2c_mcux_config i2c_mcux_config_1 = {
-	.base = I2C1,
+	.base = (I2C_Type *)CONFIG_I2C_MCUX_1_BASE_ADDRESS,
 	.clock_source = I2C1_CLK_SRC,
 	.irq_config_func = i2c_mcux_config_func_1,
-	.default_cfg.raw = CONFIG_I2C_1_DEFAULT_CFG,
+	.bitrate = CONFIG_I2C_MCUX_1_BITRATE,
 };
 
 static struct i2c_mcux_data i2c_mcux_data_1;
@@ -233,9 +231,9 @@ DEVICE_AND_API_INIT(i2c_mcux_1, CONFIG_I2C_1_NAME, &i2c_mcux_init,
 
 static void i2c_mcux_config_func_1(struct device *dev)
 {
-	IRQ_CONNECT(IRQ_I2C1, CONFIG_I2C_1_IRQ_PRI,
+	IRQ_CONNECT(CONFIG_I2C_MCUX_1_IRQ, CONFIG_I2C_MCUX_1_IRQ_PRI,
 		    i2c_mcux_isr, DEVICE_GET(i2c_mcux_1), 0);
 
-	irq_enable(I2C1_IRQn);
+	irq_enable(CONFIG_I2C_MCUX_1_IRQ);
 }
 #endif /* CONFIG_I2C_1 */

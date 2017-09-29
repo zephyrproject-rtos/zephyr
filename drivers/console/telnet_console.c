@@ -66,7 +66,7 @@ struct line_buf_rb {
 
 static struct line_buf_rb telnet_rb;
 
-static char __noinit __stack telnet_stack[TELNET_STACK_SIZE];
+static K_THREAD_STACK_DEFINE(telnet_stack, TELNET_STACK_SIZE);
 static struct k_thread telnet_thread_data;
 static K_SEM_DEFINE(send_lock, 0, UINT_MAX);
 
@@ -235,7 +235,8 @@ static inline bool telnet_send(void)
 	struct line_buf *lb = telnet_rb_get_line_out();
 
 	if (lb) {
-		net_pkt_append_all(out_pkt, lb->len, lb->buf, K_FOREVER);
+		net_pkt_append_all(out_pkt, lb->len, (u8_t *)lb->buf,
+				   K_FOREVER);
 
 		/* We reinitialize the line buffer */
 		lb->len = 0;
@@ -376,7 +377,7 @@ static inline void telnet_handle_input(struct net_pkt *pkt)
 	}
 
 	offset = net_pkt_get_len(pkt) - len;
-	net_frag_read(pkt->frags, offset, &pos, len, input->line);
+	net_frag_read(pkt->frags, offset, &pos, len, (u8_t *)input->line);
 
 	/* LF/CR will be removed if only the line is not NUL terminated */
 	if (input->line[len-1] != NVT_NUL) {
@@ -484,7 +485,7 @@ static void telnet_setup_server(struct net_context **ctx, sa_family_t family,
 		goto error;
 	}
 
-	if (net_context_accept(*ctx, telnet_accept, 0, NULL)) {
+	if (net_context_accept(*ctx, telnet_accept, K_NO_WAIT, NULL)) {
 		SYS_LOG_ERR("Cannot accept");
 		goto error;
 	}

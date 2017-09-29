@@ -14,7 +14,7 @@
 #endif
 
 #include <zephyr.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <errno.h>
 #include <stdio.h>
 
@@ -22,10 +22,6 @@
 #include <net/net_core.h>
 #include <net/net_context.h>
 #include <net/net_mgmt.h>
-
-#define STACKSIZE 2000
-char __noinit __stack thread_stack[STACKSIZE];
-static struct k_thread thread_data;
 
 static struct net_mgmt_event_callback mgmt_cb;
 
@@ -60,7 +56,7 @@ static void handler(struct net_mgmt_event_callback *cb,
 	}
 }
 
-static void main_thread(void)
+void main(void)
 {
 	struct net_if *iface;
 
@@ -73,13 +69,4 @@ static void main_thread(void)
 	iface = net_if_get_default();
 
 	net_dhcpv4_start(iface);
-}
-
-void main(void)
-{
-	NET_INFO("In main");
-
-	k_thread_create(&thread_data, &thread_stack[0], STACKSIZE,
-			(k_thread_entry_t)main_thread,
-			NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 }

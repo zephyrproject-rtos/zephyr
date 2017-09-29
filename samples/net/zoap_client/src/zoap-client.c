@@ -14,12 +14,8 @@
 #include <net/net_pkt.h>
 #include <net/net_mgmt.h>
 #include <net/net_ip.h>
+#include <net/udp.h>
 #include <net/zoap.h>
-
-#if defined(CONFIG_NET_L2_BLUETOOTH)
-#include <bluetooth/bluetooth.h>
-#include <gatt/ipss.h>
-#endif
 
 #define MY_COAP_PORT 5683
 
@@ -76,6 +72,7 @@ static void udp_receive(struct net_context *context,
 	struct zoap_reply *reply;
 	struct zoap_packet response;
 	struct sockaddr_in6 from;
+	struct net_udp_hdr hdr, *udp_hdr;
 	int header_len, r;
 
 	/*
@@ -98,7 +95,14 @@ static void udp_receive(struct net_context *context,
 	}
 
 	net_ipaddr_copy(&from.sin6_addr, &NET_IPV6_HDR(pkt)->src);
-	from.sin6_port = NET_UDP_HDR(pkt)->src_port;
+
+	udp_hdr = net_udp_get_hdr(pkt, &hdr);
+	if (!udp_hdr) {
+		printk("Invalid UDP data received\n");
+		return;
+	}
+
+	from.sin6_port = udp_hdr->src_port;
 
 	reply = zoap_response_received(&response,
 				       (const struct sockaddr *) &from,
@@ -251,13 +255,6 @@ static void event_iface_up(struct net_mgmt_event_callback *cb,
 void main(void)
 {
 	struct net_if *iface = net_if_get_default();
-
-#if defined(CONFIG_NET_L2_BLUETOOTH)
-	if (bt_enable(NULL)) {
-		NET_ERR("Bluetooth init failed\n");
-		return;
-	}
-#endif
 
 #if defined(CONFIG_NET_MGMT_EVENT)
 	/* Subscribe to NET_IF_UP if interface is not ready */

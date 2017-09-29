@@ -1,9 +1,9 @@
 The mbed TLS library in Zephyr is a downstream of an externally maintained
 open source project.  The original upstream code can be found at:
 
-https://tls.mbed.org/download/start/mbedtls-2.4.2-apache.tgz
+https://tls.mbed.org/download/start/mbedtls-2.6.0-apache.tgz
 
-At version 2.4.2
+At version 2.6.0
 
 The following is the license information for this code:
 

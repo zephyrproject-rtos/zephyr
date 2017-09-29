@@ -1,0 +1,14 @@
+sample:
+    description: TBD
+    name: TBD
+tests:
+-   test:
+        build_only: true
+        platform_whitelist: quark_se_c1000_devboard
+            galileo frdm_k64f
+        tags: net
+-   test_bt:
+        build_only: true
+        extra_args: CONF_FILE="prj_bt.conf"
+        platform_whitelist: qemu_x86
+        tags: net bluetooth

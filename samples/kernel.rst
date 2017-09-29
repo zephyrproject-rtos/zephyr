@@ -4,7 +4,7 @@ Kernel Samples
 ##############
 
 The following are kernel samples that can be run on any of the supported
-plaforms:
+platforms:
 
 .. toctree::
    :maxdepth: 1

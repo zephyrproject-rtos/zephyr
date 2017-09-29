@@ -9,6 +9,11 @@ Overview
 The SAM E70 Xplained evaluation kit is a development platform to evaluate the
 Atmel SAM E70 series microcontrollers.
 
+.. image:: img/sam_e70_xplained.png
+     :width: 500px
+     :align: center
+     :alt: SAM E70 Xplained
+
 Hardware
 ********
 
@@ -135,6 +140,16 @@ Flashing
 
    The command will also verify that the image was programmed correctly, reset
    the board and run the Zephyr application.
+
+   You can flash the image using an external debug adapter such as J-Link or
+   ULINK, connected to the 20-pin JTAG header. Supply the name of the debug
+   adapter (e.g., ``jlink``) to the make command via an OPENOCD_INTERFACE
+   variable. OpenOCD will look for the appropriate interface configuration in an
+   ``interface/$(OPENOCD_INTERFACE).cfg`` file on its internal search path.
+
+   .. code-block:: console
+
+      $ make BOARD=sam_e70_xplained OPENOCD_INTERFACE=jlink flash
 
    You should see "Hello World!" in your terminal.
 

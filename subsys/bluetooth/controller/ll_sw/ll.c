@@ -14,8 +14,9 @@
 #ifdef CONFIG_CLOCK_CONTROL_NRF5
 #include <drivers/clock_control/nrf5_clock_control.h>
 #endif
+#include <bluetooth/hci.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #include "common/log.h"
 
 #include "hal/cpu.h"
@@ -35,14 +36,40 @@
 #include "ctrl.h"
 #include "ctrl_internal.h"
 #include "ll.h"
+#include "ll_filter.h"
 
 /* Global singletons */
-static u8_t MALIGN(4) _rand_context[3 + 4 + 1];
-static u8_t MALIGN(4) _ticker_nodes[RADIO_TICKER_NODES][TICKER_NODE_T_SIZE];
-static u8_t MALIGN(4) _ticker_users[MAYFLY_CALLER_COUNT]
-						[TICKER_USER_T_SIZE];
-static u8_t MALIGN(4) _ticker_user_ops[RADIO_TICKER_USER_OPS]
-						[TICKER_USER_OP_T_SIZE];
+
+/* memory for storing Random number */
+#define RAND_THREAD_THRESHOLD 4  /* atleast access address */
+#define RAND_ISR_THRESHOLD    12 /* atleast encryption div. and iv */
+static u8_t MALIGN(4) rand_context[4 + RAND_THREAD_THRESHOLD + 1];
+static u8_t MALIGN(4) rand_isr_context[4 + RAND_ISR_THRESHOLD + 1];
+
+#if defined(CONFIG_SOC_FLASH_NRF5_RADIO_SYNC)
+#define FLASH_TICKER_NODES        1 /* No. of tickers reserved for flashing */
+#define FLASH_TICKER_USER_APP_OPS 1 /* No. of additional ticker operations */
+#else
+#define FLASH_TICKER_NODES        0
+#define FLASH_TICKER_USER_APP_OPS 0
+#endif
+
+#define TICKER_NODES              (RADIO_TICKER_NODES + FLASH_TICKER_NODES)
+#define TICKER_USER_APP_OPS       (RADIO_TICKER_USER_APP_OPS + \
+				   FLASH_TICKER_USER_APP_OPS)
+#define TICKER_USER_OPS           (RADIO_TICKER_USER_OPS + \
+				   FLASH_TICKER_USER_APP_OPS)
+
+/* memory for ticker nodes/instances */
+static u8_t MALIGN(4) _ticker_nodes[TICKER_NODES][TICKER_NODE_T_SIZE];
+
+/* memory for users/contexts operating on ticker module */
+static u8_t MALIGN(4) _ticker_users[MAYFLY_CALLER_COUNT][TICKER_USER_T_SIZE];
+
+/* memory for user/context simultaneous API operations */
+static u8_t MALIGN(4) _ticker_user_ops[TICKER_USER_OPS][TICKER_USER_OP_T_SIZE];
+
+/* memory for Bluetooth Controller (buffers, queues etc.) */
 static u8_t MALIGN(4) _radio[LL_MEM_TOTAL];
 
 static struct k_sem *sem_recv;
@@ -82,11 +109,15 @@ u32_t mayfly_is_enabled(u8_t caller_id, u8_t callee_id)
 
 u32_t mayfly_prio_is_equal(u8_t caller_id, u8_t callee_id)
 {
+#if (RADIO_TICKER_USER_ID_WORKER_PRIO == RADIO_TICKER_USER_ID_JOB_PRIO)
 	return (caller_id == callee_id) ||
 	       ((caller_id == MAYFLY_CALL_ID_0) &&
 		(callee_id == MAYFLY_CALL_ID_1)) ||
 	       ((caller_id == MAYFLY_CALL_ID_1) &&
 		(callee_id == MAYFLY_CALL_ID_0));
+#else
+	return caller_id == callee_id;
+#endif
 }
 
 void mayfly_pend(u8_t caller_id, u8_t callee_id)
@@ -170,7 +201,9 @@ int ll_init(struct k_sem *sem_rx)
 	sem_recv = sem_rx;
 
 	/* TODO: bind and use RNG driver */
-	rand_init(_rand_context, sizeof(_rand_context));
+	rand_init(rand_context, sizeof(rand_context), RAND_THREAD_THRESHOLD);
+	rand_isr_init(rand_isr_context, sizeof(rand_isr_context),
+		      RAND_ISR_THRESHOLD);
 
 	clk_k32 = device_get_binding(CONFIG_CLOCK_CONTROL_NRF5_K32SRC_DRV_NAME);
 	if (!clk_k32) {
@@ -187,11 +220,11 @@ int ll_init(struct k_sem *sem_rx)
 	_ticker_users[MAYFLY_CALL_ID_0][0] = RADIO_TICKER_USER_WORKER_OPS;
 	_ticker_users[MAYFLY_CALL_ID_1][0] = RADIO_TICKER_USER_JOB_OPS;
 	_ticker_users[MAYFLY_CALL_ID_2][0] = 0;
-	_ticker_users[MAYFLY_CALL_ID_PROGRAM][0] = RADIO_TICKER_USER_APP_OPS;
+	_ticker_users[MAYFLY_CALL_ID_PROGRAM][0] = TICKER_USER_APP_OPS;
 
-	ticker_init(RADIO_TICKER_INSTANCE_ID_RADIO, RADIO_TICKER_NODES,
+	ticker_init(RADIO_TICKER_INSTANCE_ID_RADIO, TICKER_NODES,
 		    &_ticker_nodes[0], MAYFLY_CALLER_COUNT, &_ticker_users[0],
-		    RADIO_TICKER_USER_OPS, &_ticker_user_ops[0]);
+		    TICKER_USER_OPS, &_ticker_user_ops[0]);
 
 	clk_m16 = device_get_binding(CONFIG_CLOCK_CONTROL_NRF5_M16SRC_DRV_NAME);
 	if (!clk_m16) {
@@ -210,13 +243,14 @@ int ll_init(struct k_sem *sem_rx)
 		return -ENOMEM;
 	}
 
-	IRQ_DIRECT_CONNECT(NRF5_IRQ_RADIO_IRQn,
-			   CONFIG_BLUETOOTH_CONTROLLER_WORKER_PRIO,
+	ll_filter_reset(true);
+
+	IRQ_DIRECT_CONNECT(NRF5_IRQ_RADIO_IRQn, CONFIG_BT_CTLR_WORKER_PRIO,
 			   radio_nrf5_isr, 0);
-	IRQ_CONNECT(NRF5_IRQ_RTC0_IRQn, CONFIG_BLUETOOTH_CONTROLLER_WORKER_PRIO,
+	IRQ_CONNECT(NRF5_IRQ_RTC0_IRQn, CONFIG_BT_CTLR_WORKER_PRIO,
 		    rtc0_nrf5_isr, NULL, 0);
-	IRQ_CONNECT(NRF5_IRQ_SWI4_IRQn, CONFIG_BLUETOOTH_CONTROLLER_JOB_PRIO,
-		    swi4_nrf5_isr, NULL, 0);
+	IRQ_CONNECT(NRF5_IRQ_SWI4_IRQn, CONFIG_BT_CTLR_JOB_PRIO, swi4_nrf5_isr,
+		    NULL, 0);
 	IRQ_CONNECT(NRF5_IRQ_RNG_IRQn, 1, rng_nrf5_isr, NULL, 0);
 
 	irq_enable(NRF5_IRQ_RADIO_IRQn);
@@ -227,8 +261,18 @@ int ll_init(struct k_sem *sem_rx)
 	return 0;
 }
 
+void ll_timeslice_ticker_id_get(u8_t * const instance_index, u8_t * const user_id)
+{
+	*user_id = (TICKER_NODES - FLASH_TICKER_NODES); /* The last index in the total tickers */
+	*instance_index = RADIO_TICKER_INSTANCE_ID_RADIO;
+}
+
 u8_t *ll_addr_get(u8_t addr_type, u8_t *bdaddr)
 {
+	if (addr_type > 1) {
+		return NULL;
+	}
+
 	if (addr_type) {
 		if (bdaddr) {
 			memcpy(bdaddr, _ll_context.rnd_addr, BDADDR_SIZE);

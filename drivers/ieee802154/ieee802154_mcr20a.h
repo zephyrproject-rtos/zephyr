@@ -10,7 +10,7 @@
 #ifndef __IEEE802154_MCR20A_H__
 #define __IEEE802154_MCR20A_H__
 
-#include <sections.h>
+#include <linker/sections.h>
 #include <atomic.h>
 #include <spi.h>
 
@@ -42,7 +42,8 @@ struct mcr20a_context {
 	struct k_sem seq_sync;
 	atomic_t seq_retval;
 	/************RX************/
-	char __stack mcr20a_rx_stack[CONFIG_IEEE802154_MCR20A_RX_STACK_SIZE];
+	K_THREAD_STACK_MEMBER(mcr20a_rx_stack,
+			      CONFIG_IEEE802154_MCR20A_RX_STACK_SIZE);
 	struct k_thread mcr20a_rx_thread;
 	u8_t lqi;
 };
@@ -154,6 +155,7 @@ DEFINE_BITS_SET(phy_ctrl4_ccatype, MCR20A_PHY_CTRL4, _CCATYPE)
 DEFINE_BITS_SET(pll_int0_val, MCR20A_PLL_INT0, _VAL)
 DEFINE_BITS_SET(pa_pwr_val, MCR20A_PA_PWR, _VAL)
 DEFINE_BITS_SET(tmr_prescale, MCR20A_TMR_PRESCALE, _VAL)
+DEFINE_BITS_SET(clk_out_div, MCR20A_CLK_OUT, _DIV)
 
 #define DEFINE_BURST_WRITE(__reg_addr, __addr, __sz, __dreg)		    \
 	static inline bool write_burst_##__reg_addr(struct mcr20a_spi *spi, \

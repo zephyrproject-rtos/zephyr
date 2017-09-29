@@ -26,13 +26,16 @@ static void work_q_main(void *work_q_ptr, void *p2, void *p3)
 		struct k_work *work;
 		k_work_handler_t handler;
 
-		work = k_fifo_get(&work_q->fifo, K_FOREVER);
+		work = k_queue_get(&work_q->queue, K_FOREVER);
+		if (!work) {
+			continue;
+		}
 
 		handler = work->handler;
 
 		/* Reset pending state so it can be resubmitted by handler */
 		if (atomic_test_and_clear_bit(work->flags,
-					       K_WORK_STATE_PENDING)) {
+					      K_WORK_STATE_PENDING)) {
 			handler(work);
 		}
 
@@ -43,13 +46,13 @@ static void work_q_main(void *work_q_ptr, void *p2, void *p3)
 	}
 }
 
-void k_work_q_start(struct k_work_q *work_q, char *stack,
+void k_work_q_start(struct k_work_q *work_q, k_thread_stack_t stack,
 		    size_t stack_size, int prio)
 {
-	k_fifo_init(&work_q->fifo);
-
+	k_queue_init(&work_q->queue);
 	k_thread_create(&work_q->thread, stack, stack_size, work_q_main,
 			work_q, 0, 0, prio, 0, 0);
+	_k_object_init(work_q);
 }
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
@@ -60,8 +63,6 @@ static void work_timeout(struct _timeout *t)
 
 	/* submit work to workqueue */
 	k_work_submit_to_queue(w->work_q, &w->work);
-	/* detach from workqueue, for cancel to return appropriate status */
-	w->work_q = NULL;
 }
 
 void k_delayed_work_init(struct k_delayed_work *work, k_work_handler_t handler)
@@ -69,6 +70,8 @@ void k_delayed_work_init(struct k_delayed_work *work, k_work_handler_t handler)
 	k_work_init(&work->work, handler);
 	_init_timeout(&work->timeout, work_timeout);
 	work->work_q = NULL;
+
+	_k_object_init(work);
 }
 
 int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
@@ -116,18 +119,20 @@ int k_delayed_work_cancel(struct k_delayed_work *work)
 {
 	int key = irq_lock();
 
-	if (k_work_pending(&work->work)) {
-		irq_unlock(key);
-		return -EINPROGRESS;
-	}
-
 	if (!work->work_q) {
 		irq_unlock(key);
 		return -EINVAL;
 	}
 
-	/* Abort timeout, if it has expired this will do nothing */
-	_abort_timeout(&work->timeout);
+	if (k_work_pending(&work->work)) {
+		/* Remove from the queue if already submitted */
+		if (!k_queue_remove(&work->work_q->queue, &work->work)) {
+			irq_unlock(key);
+			return -EINVAL;
+		}
+	} else {
+		_abort_timeout(&work->timeout);
+	}
 
 	/* Detach from workqueue */
 	work->work_q = NULL;

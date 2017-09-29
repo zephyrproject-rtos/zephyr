@@ -9,7 +9,7 @@
 menuconfig TMP007
 	bool
 	prompt "TMP007 Infrared Thermopile Sensor"
-	depends on SENSOR && I2C
+	depends on I2C
 	default n
 	help
 	  Enable driver for TMP007 infrared thermopile sensors.

@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f1xx_hal_mmc.c
   * @author  MCD Application Team
-  * @version V1.1.0
-  * @date    14-April-2017
+  * @version V1.1.1
+  * @date    12-May-2017
   * @brief   MMC card HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the Secure Digital (MMC) peripheral:
@@ -1312,7 +1312,7 @@ HAL_StatusTypeDef HAL_MMC_Erase(MMC_HandleTypeDef *hmmc, uint32_t BlockStartAdd,
     hmmc->State = HAL_MMC_STATE_BUSY;
     
     /* Check if the card command class supports erase command */
-    if((hmmc->MmcCard.Class) & SDIO_CCCC_ERASE == 0U)
+    if(((hmmc->MmcCard.Class) & SDIO_CCCC_ERASE) == 0U)
     {
       /* Clear all the static flags */
       __HAL_MMC_CLEAR_FLAG(hmmc, SDIO_STATIC_FLAGS);

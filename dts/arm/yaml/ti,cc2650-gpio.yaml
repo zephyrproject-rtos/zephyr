@@ -1,0 +1,27 @@
+---
+# SPDX-License-Identifier: Apache-2.0
+title: TI CC2650 GPIO
+version: 0.1
+
+description: >
+    This is a representation of the TI CC2650 GPIO node
+
+properties:
+  - compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "ti,cc2650-gpio"
+
+  - reg:
+      type: int
+      description: mmio register space
+      generation: define
+      category: required
+
+  - interrupts:
+      type: compound
+      category: required
+      description: required interrupts
+      generation: define
+...

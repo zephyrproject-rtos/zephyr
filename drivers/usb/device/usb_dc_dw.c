@@ -22,7 +22,7 @@
 #include "usb_dw_registers.h"
 #include "clk.h"
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_DW_LEVEL
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_DRIVER_LEVEL
 #include <logging/sys_log.h>
 
 /* convert from endpoint address to hardware endpoint index */
@@ -65,7 +65,7 @@ static inline void _usb_dw_int_unmask(void)
 #endif
 }
 
-#if (CONFIG_SYS_LOG_USB_DW_LEVEL >= SYS_LOG_LEVEL_DEBUG)
+#if (CONFIG_SYS_LOG_USB_DRIVER_LEVEL >= SYS_LOG_LEVEL_DEBUG)
 static void usb_dw_reg_dump(void)
 {
 	u8_t i;
@@ -402,7 +402,7 @@ static int usb_dw_tx(u8_t ep, const u8_t *const data,
 	}
 	irq_unlock(key);
 
-	SYS_LOG_DBG("USB IN EP%d write %x bytes", ep_idx, data_len);
+	SYS_LOG_DBG("USB IN EP%d write %u bytes", ep_idx, data_len);
 
 	return data_len;
 }
@@ -452,7 +452,7 @@ static void usb_dw_handle_reset(void)
 
 	/* Inform upper layers */
 	if (usb_dw_ctrl.status_cb) {
-		usb_dw_ctrl.status_cb(USB_DC_RESET);
+		usb_dw_ctrl.status_cb(USB_DC_RESET, NULL);
 	}
 
 	/* Clear device address during reset. */
@@ -476,7 +476,7 @@ static void usb_dw_handle_enum_done(void)
 
 	/* Inform upper layers */
 	if (usb_dw_ctrl.status_cb) {
-		usb_dw_ctrl.status_cb(USB_DC_CONNECTED);
+		usb_dw_ctrl.status_cb(USB_DC_CONNECTED, NULL);
 	}
 }
 
@@ -513,7 +513,7 @@ static void usb_dw_isr_handler(void)
 			USB_DW->gintsts = USB_DW_GINTSTS_USB_SUSP;
 
 			if (usb_dw_ctrl.status_cb) {
-				usb_dw_ctrl.status_cb(USB_DC_SUSPEND);
+				usb_dw_ctrl.status_cb(USB_DC_SUSPEND, NULL);
 			}
 		}
 
@@ -522,7 +522,7 @@ static void usb_dw_isr_handler(void)
 			USB_DW->gintsts = USB_DW_GINTSTS_WK_UP_INT;
 
 			if (usb_dw_ctrl.status_cb) {
-				usb_dw_ctrl.status_cb(USB_DC_RESUME);
+				usb_dw_ctrl.status_cb(USB_DC_RESUME, NULL);
 			}
 		}
 

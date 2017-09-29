@@ -12,7 +12,7 @@
 #include <string.h>
 #include <errno.h>
 #include <misc/printk.h>
-#include <sections.h>
+#include <linker/sections.h>
 
 #include <tc_util.h>
 
@@ -25,7 +25,7 @@
 
 #include "net_private.h"
 
-#if defined(CONFIG_NET_DEBUG_CONTEXT)
+#if defined(CONFIG_NET_DEBUG_TRICKLE)
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
 #else
 #define DBG(fmt, ...)
@@ -38,7 +38,7 @@ static bool cb_1_called;
 static bool cb_2_called;
 static bool test_failed;
 
-#define WAIT_TIME (2 * MSEC_PER_SEC)
+#define WAIT_TIME K_SECONDS(3)
 
 /* Set CHECK_LONG_TIMEOUT to 1 if you want to check longer timeout.
  * Do not do this for automated tests as those need to finish asap.
@@ -49,11 +49,11 @@ static bool test_failed;
 #endif
 
 #define T1_IMIN 30
-#define T1_IMAX 100
+#define T1_IMAX 5
 #define T1_K 20
 
 #define T2_IMIN 80
-#define T2_IMAX 200
+#define T2_IMAX 3
 #define T2_K 40
 
 static struct net_trickle t1;

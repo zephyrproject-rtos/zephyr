@@ -16,6 +16,9 @@ menuconfig RANDOM_GENERATOR
 if RANDOM_GENERATOR
 
 source "drivers/random/Kconfig.mcux"
+source "drivers/random/Kconfig.stm32"
+
+source "drivers/random/Kconfig.esp32"
 
 config RANDOM_HAS_DRIVER
 	bool

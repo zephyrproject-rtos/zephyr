@@ -113,8 +113,96 @@
 #define MMU_ENTRY_NOT_ALLOC         0x00000000
 #define MMU_ENTRY_ALLOC             0x00000200
 
+
+/* Special flag argument for MMU_BOOT region invocations */
+
+/* Indicates that pages within this region may have their user/supervisor
+ * permissions adjusted at runtime. Unnecessary if MMU_ENTRY_USER is already
+ * set.
+ *
+ * The result of this is a guarantee that the 'user' bit for all PDEs referring
+ * to the region will be set, even if the boot configuration has no user pages
+ * in it.
+ */
+#define MMU_ENTRY_RUNTIME_USER      0x10000000
+
+/* Indicates that pages within this region may have their read/write
+ * permissions adjusted at runtime. Unnecessary if MMU_ENTRY_WRITE is already
+ * set.
+ *
+ * The result of this is a guarantee that the 'write' bit for all PDEs
+ * referring to the region will be set, even if the boot configuration has no
+ * writable pages in it.
+ */
+#define MMU_ENTRY_RUNTIME_WRITE	    0x20000000
+
+
+
+/* Helper macros to ease the usage of the MMU page table structures.
+ * Returns the Page table address for the particular address.
+ * Page Table address(returned value) is always 4KBytes aligned.
+ */
+#define X86_MMU_GET_PT_ADDR(addr) \
+	((struct x86_mmu_page_table *)\
+	 (X86_MMU_PD->entry[MMU_PDE_NUM(addr)].pt.page_table \
+	  << MMU_PAGE_SHIFT))
+
+/* Returns the page table entry for the addr
+ * use the union to extract page entry related information.
+ */
+#define X86_MMU_GET_PTE(addr)\
+	((union x86_mmu_pte *)\
+	 (&X86_MMU_GET_PT_ADDR(addr)->entry[MMU_PAGE_NUM(addr)]))
+
+/* Returns the page directory entry for the addr
+ * use the union to extract page directory entry related information.
+ */
+#define X86_MMU_GET_PDE(addr)\
+	((union x86_mmu_pde_pt *)\
+	 (&X86_MMU_PD->entry[MMU_PDE_NUM(addr)].pt))
+
+/* Returns the 4 MB page directory entry for the addr
+ * use the union to extract page directory entry related information.
+ */
+#define X86_MMU_GET_4MB_PDE(addr)\
+	((union x86_mmu_pde_4mb *)\
+	 (&X86_MMU_PD->entry[MMU_PDE_NUM(addr)].fourmb))
+
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
+
+/* Structure used by gen_mmu.py to create page directories and page tables.
+ * In order to populate this structure use macro MMU_BOOT_REGION.
+ */
+struct mmu_region {
+	u32_t address; /*Start address of the memory region */
+	u32_t size; /* Size of the memory region*/
+	u32_t flags; /* Permissions needed for this region*/
+};
+
+/* permission_flags are calculated using the macros
+ * region_size has to be provided in bytes
+ * for read write access = MMU_ENTRY_READ/MMU_ENTRY_WRITE
+ * for supervisor/user mode access = MMU_ENTRY_SUPERVISOR/MMU_ENTRY_USER
+ *
+ * Preprocessor indirection layers used to ensure __COUNTER__ is expanded
+ * properly.
+ */
+
+#define __MMU_BOOT_REGION(id, addr, region_size, permission_flags)	\
+	static struct mmu_region region_##id				\
+	__attribute__((__section__(".mmulist"), used))  =		\
+	{								\
+		.address = addr,					\
+		.size = region_size,					\
+		.flags = permission_flags,				\
+	}
+
+#define _MMU_BOOT_REGION(id, addr, region_size, permission_flags)	\
+	__MMU_BOOT_REGION(id, addr, region_size, permission_flags)
+
+#define MMU_BOOT_REGION(addr, region_size, permission_flags)		\
+	_MMU_BOOT_REGION(__COUNTER__, addr, region_size, permission_flags)
 
 /*
  * The following defines the format of a 32-bit page directory entry

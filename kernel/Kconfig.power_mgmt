@@ -93,7 +93,7 @@ config TICKLESS_KERNEL_TIME_UNIT_IN_MICRO_SECS
 	depends on TICKLESS_KERNEL
 	help
 	This option makes the system clock and scheduling granularity.
-	The default will be one mili second. This option also determines
+	The default will be one millisecond. This option also determines
 	the time unit passed in functions like _sys_soc_suspend. The
 	value should be determined based what the timer hardware and driver
 	can support. Specifying too small a time unit than what the overall

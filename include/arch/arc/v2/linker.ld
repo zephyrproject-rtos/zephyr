@@ -12,14 +12,14 @@
 #define _ASMLANGUAGE
 
 #include <autoconf.h>
-#include <sections.h>
+#include <linker/sections.h>
 
 #if defined(CONFIG_NSIM)
 	EXTERN(_VectorTable)
 #endif
 
-#include <linker-defs.h>
-#include <linker-tool.h>
+#include <linker/linker-defs.h>
+#include <linker/linker-tool.h>
 
 /* physical address of RAM */
 #ifdef CONFIG_HARVARD

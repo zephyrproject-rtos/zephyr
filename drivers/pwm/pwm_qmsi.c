@@ -206,8 +206,7 @@ static int pwm_qmsi_init(struct device *dev)
 	clk_periph_enable(CLK_PERIPH_PWM_REGISTER | CLK_PERIPH_CLK);
 
 	if (IS_ENABLED(CONFIG_PWM_QMSI_API_REENTRANCY)) {
-		k_sem_init(RP_GET(dev), 0, UINT_MAX);
-		k_sem_give(RP_GET(dev));
+		k_sem_init(RP_GET(dev), 1, UINT_MAX);
 	}
 
 	pwm_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);

@@ -1,0 +1,9 @@
+identifier: frdm_k64f
+name: NXP FRDM-K64F
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb
+supported:
+  - netif:eth

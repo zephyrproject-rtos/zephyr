@@ -40,30 +40,6 @@ config HAS_MCG
 	help
 	  Set if the multipurpose clock generator (MCG) module is present in the SoC.
 
-config HAS_RNGA
-	bool
-	default n
-	help
-	  Set if the random number generator accelerator (RNGA) module is present in the SoC.
-
-config HAS_TRNG
-	bool
-	default n
-	help
-	  Set if the true random number generator (TRNG) module is present in the SoC.
-
-config HAS_LPUART
-	bool
-	default n
-	help
-	  Set if the low power uart (LPUART) module is present in the SoC.
-
-config HAS_LPSCI
-	bool
-	default n
-	help
-	  Set if the low power uart (LPSCI) module is present in the SoC.
-
 config HAS_SYSMPU
 	bool "Enable MPU"
 	depends on CPU_HAS_MPU

@@ -18,7 +18,7 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/hci_driver.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_L2CAP)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_L2CAP)
 #include "common/log.h"
 
 #include "hci_core.h"
@@ -80,7 +80,7 @@ static sys_slist_t br_servers;
 static sys_slist_t br_fixed_channels;
 
 /* Pool for outgoing BR/EDR signaling packets, min MTU is 48 */
-NET_BUF_POOL_DEFINE(br_sig_pool, CONFIG_BLUETOOTH_MAX_CONN,
+NET_BUF_POOL_DEFINE(br_sig_pool, CONFIG_BT_MAX_CONN,
 		    BT_L2CAP_BUF_SIZE(L2CAP_BR_MIN_MTU),
 		    BT_BUF_USER_DATA_MIN, NULL);
 
@@ -93,7 +93,7 @@ struct bt_l2cap_br {
 	u32_t			info_feat_mask;
 };
 
-static struct bt_l2cap_br bt_l2cap_br_pool[CONFIG_BLUETOOTH_MAX_CONN];
+static struct bt_l2cap_br bt_l2cap_br_pool[CONFIG_BT_MAX_CONN];
 
 struct bt_l2cap_chan *bt_l2cap_br_lookup_rx_cid(struct bt_conn *conn,
 						u16_t cid)
@@ -1566,17 +1566,17 @@ void bt_l2cap_br_init(void)
 
 	bt_l2cap_br_fixed_chan_register(&chan_br);
 
-	if (IS_ENABLED(CONFIG_BLUETOOTH_RFCOMM)) {
+	if (IS_ENABLED(CONFIG_BT_RFCOMM)) {
 		bt_rfcomm_init();
 	}
 
-	if (IS_ENABLED(CONFIG_BLUETOOTH_AVDTP)) {
+	if (IS_ENABLED(CONFIG_BT_AVDTP)) {
 		bt_avdtp_init();
 	}
 
 	bt_sdp_init();
 
-	if (IS_ENABLED(CONFIG_BLUETOOTH_A2DP)) {
+	if (IS_ENABLED(CONFIG_BT_A2DP)) {
 		bt_a2dp_init();
 	}
 }

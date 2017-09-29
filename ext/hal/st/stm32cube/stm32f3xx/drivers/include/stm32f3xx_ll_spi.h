@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_ll_spi.h
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   Header file of SPI LL module.
   ******************************************************************************
   * @attention
@@ -141,7 +139,6 @@ typedef struct
 #define LL_SPI_SR_RXNE                     SPI_SR_RXNE               /*!< Rx buffer not empty flag         */
 #define LL_SPI_SR_TXE                      SPI_SR_TXE                /*!< Tx buffer empty flag             */
 #define LL_SPI_SR_BSY                      SPI_SR_BSY                /*!< Busy flag                        */
-#define LL_SPI_SR_UDR                      SPI_SR_UDR                /*!< Underrun flag                    */
 #define LL_SPI_SR_CRCERR                   SPI_SR_CRCERR             /*!< CRC error flag                   */
 #define LL_SPI_SR_MODF                     SPI_SR_MODF               /*!< Mode fault flag                  */
 #define LL_SPI_SR_OVR                      SPI_SR_OVR                /*!< Overrun flag                     */
@@ -1283,7 +1280,7 @@ __STATIC_INLINE uint32_t LL_SPI_IsEnabledDMAReq_TX(SPI_TypeDef *SPIx)
   */
 __STATIC_INLINE void LL_SPI_SetDMAParity_RX(SPI_TypeDef *SPIx, uint32_t Parity)
 {
-  MODIFY_REG(SPIx->CR2, SPI_CR2_LDMARX, (Parity << POSITION_VAL(SPI_CR2_LDMARX)));
+  MODIFY_REG(SPIx->CR2, SPI_CR2_LDMARX, (Parity << SPI_CR2_LDMARX_Pos));
 }
 
 /**
@@ -1296,7 +1293,7 @@ __STATIC_INLINE void LL_SPI_SetDMAParity_RX(SPI_TypeDef *SPIx, uint32_t Parity)
   */
 __STATIC_INLINE uint32_t LL_SPI_GetDMAParity_RX(SPI_TypeDef *SPIx)
 {
-  return (uint32_t)(READ_BIT(SPIx->CR2, SPI_CR2_LDMARX) >> POSITION_VAL(SPI_CR2_LDMARX));
+  return (uint32_t)(READ_BIT(SPIx->CR2, SPI_CR2_LDMARX) >> SPI_CR2_LDMARX_Pos);
 }
 
 /**
@@ -1310,7 +1307,7 @@ __STATIC_INLINE uint32_t LL_SPI_GetDMAParity_RX(SPI_TypeDef *SPIx)
   */
 __STATIC_INLINE void LL_SPI_SetDMAParity_TX(SPI_TypeDef *SPIx, uint32_t Parity)
 {
-  MODIFY_REG(SPIx->CR2, SPI_CR2_LDMATX, (Parity << POSITION_VAL(SPI_CR2_LDMATX)));
+  MODIFY_REG(SPIx->CR2, SPI_CR2_LDMATX, (Parity << SPI_CR2_LDMATX_Pos));
 }
 
 /**
@@ -1323,7 +1320,7 @@ __STATIC_INLINE void LL_SPI_SetDMAParity_TX(SPI_TypeDef *SPIx, uint32_t Parity)
   */
 __STATIC_INLINE uint32_t LL_SPI_GetDMAParity_TX(SPI_TypeDef *SPIx)
 {
-  return (uint32_t)(READ_BIT(SPIx->CR2, SPI_CR2_LDMATX) >> POSITION_VAL(SPI_CR2_LDMATX));
+  return (uint32_t)(READ_BIT(SPIx->CR2, SPI_CR2_LDMATX) >> SPI_CR2_LDMATX_Pos);
 }
 
 /**
@@ -1388,7 +1385,7 @@ __STATIC_INLINE void LL_SPI_TransmitData8(SPI_TypeDef *SPIx, uint8_t TxData)
   */
 __STATIC_INLINE void LL_SPI_TransmitData16(SPI_TypeDef *SPIx, uint16_t TxData)
 {
-  *((__IO uint16_t *)&SPIx->DR) = TxData;
+  SPIx->DR = TxData;
 }
 
 /**
@@ -1490,7 +1487,7 @@ typedef struct
 #define LL_I2S_SR_RXNE                     LL_SPI_SR_RXNE            /*!< Rx buffer not empty flag         */
 #define LL_I2S_SR_TXE                      LL_SPI_SR_TXE             /*!< Tx buffer empty flag             */
 #define LL_I2S_SR_BSY                      LL_SPI_SR_BSY             /*!< Busy flag                        */
-#define LL_I2S_SR_UDR                      LL_SPI_SR_UDR             /*!< Underrun flag                    */
+#define LL_I2S_SR_UDR                      SPI_SR_UDR                /*!< Underrun flag                    */
 #define LL_I2S_SR_OVR                      LL_SPI_SR_OVR             /*!< Overrun flag                     */
 #define LL_I2S_SR_FRE                      LL_SPI_SR_FRE             /*!< TI mode frame format error flag  */
 /**

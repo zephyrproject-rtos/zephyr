@@ -11,7 +11,7 @@
 
 
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 
 /* offsets from stack pointer to function arguments */
 

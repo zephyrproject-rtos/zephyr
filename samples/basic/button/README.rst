@@ -24,7 +24,7 @@ header file. The :file:`board.h` must define the following variables:
 The following boards currently define the above variables:
 
 - bbc_microbit
-- cc3200_launchxl
+- cc3220sf_launchxl
 - frdm_k64f
 - nrf51_pca10028
 - nrf52840_pca10056

@@ -18,7 +18,7 @@ if GPIO_PCAL9535A
 config SYS_LOG_GPIO_PCAL9535A_LEVEL
 	int
 	prompt "PCAL9535A driver log level"
-	depends on GPIO_PCAL9535A
+	depends on GPIO_PCAL9535A && SYS_LOG
 	default 0
 	help
 	Sets log level for clock PCAL9535A driver

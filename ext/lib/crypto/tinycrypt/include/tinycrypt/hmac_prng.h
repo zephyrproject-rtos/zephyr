@@ -1,7 +1,7 @@
 /* hmac_prng.h - TinyCrypt interface to an HMAC-PRNG implementation */
 
 /*
- *  Copyright (C) 2015 by Intel Corporation, All Rights Reserved.
+ *  Copyright (C) 2017 by Intel Corporation, All Rights Reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -85,7 +85,7 @@ struct tc_hmac_prng_struct {
 	/* PRNG state */
 	uint8_t v[TC_SHA256_DIGEST_SIZE];
 	/* calls to tc_hmac_prng_generate left before re-seed */
-	uint32_t countdown;
+	unsigned int countdown;
 };
 
 typedef struct tc_hmac_prng_struct *TCHmacPrng_t;
@@ -112,15 +112,15 @@ typedef struct tc_hmac_prng_struct *TCHmacPrng_t;
  *  @param personalization IN -- personalization string
  *  @param plen IN -- personalization length in bytes
  */
-int32_t tc_hmac_prng_init(TCHmacPrng_t prng,
-			  const uint8_t *personalization,
-			  uint32_t plen);
+int tc_hmac_prng_init(TCHmacPrng_t prng,
+		      const uint8_t *personalization,
+		      unsigned int plen);
 
 /**
  *  @brief HMAC-PRNG reseed procedure
  *  Mixes seed into prng, enables tc_hmac_prng_generate
  *  @return returns  TC_CRYPTO_SUCCESS (1)
- *  returns TC_CRYPTO_FAIL (0) if:
+ *  	    returns TC_CRYPTO_FAIL (0) if:
  *          prng == NULL,
  *          seed == NULL,
  *          seedlen < MIN_SLEN,
@@ -136,16 +136,16 @@ int32_t tc_hmac_prng_init(TCHmacPrng_t prng,
  *  @param additional_input IN -- additional input to the prng
  *  @param additionallen IN -- additional input length in bytes
  */
-int32_t tc_hmac_prng_reseed(TCHmacPrng_t prng, const uint8_t *seed,
-			    uint32_t seedlen, const uint8_t *additional_input,
-			    uint32_t additionallen);
+int tc_hmac_prng_reseed(TCHmacPrng_t prng, const uint8_t *seed,
+			unsigned int seedlen, const uint8_t *additional_input,
+			unsigned int additionallen);
 
 /**
  *  @brief HMAC-PRNG generate procedure
  *  Generates outlen pseudo-random bytes into out buffer, updates prng
  *  @return returns TC_CRYPTO_SUCCESS (1)
  *          returns TC_HMAC_PRNG_RESEED_REQ (-1) if a reseed is needed
- *             returns TC_CRYPTO_FAIL (0) if:
+ *          returns TC_CRYPTO_FAIL (0) if:
  *                out == NULL,
  *                prng == NULL,
  *                outlen == 0,
@@ -155,10 +155,10 @@ int32_t tc_hmac_prng_reseed(TCHmacPrng_t prng, const uint8_t *seed,
  *  @param outlen IN -- size of out buffer in bytes
  *  @param prng IN/OUT -- the PRNG state
  */
-int32_t tc_hmac_prng_generate(uint8_t *out, uint32_t outlen, TCHmacPrng_t prng);
+int tc_hmac_prng_generate(uint8_t *out, unsigned int outlen, TCHmacPrng_t prng);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif /* __TC_HMAC_PRNG_H__ */

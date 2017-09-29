@@ -369,8 +369,7 @@ static int gpio_qmsi_init(struct device *port)
 	const struct gpio_qmsi_config *gpio_config = port->config->config_info;
 
 	if (IS_ENABLED(CONFIG_GPIO_QMSI_API_REENTRANCY)) {
-		k_sem_init(RP_GET(port), 0, UINT_MAX);
-		k_sem_give(RP_GET(port));
+		k_sem_init(RP_GET(port), 1, UINT_MAX);
 	}
 
 	switch (gpio_config->gpio) {

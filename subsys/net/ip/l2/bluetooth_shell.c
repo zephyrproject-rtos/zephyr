@@ -6,7 +6,7 @@
 
 #include <kernel.h>
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <string.h>
 #include <errno.h>
 
@@ -130,7 +130,26 @@ static int shell_cmd_disconnect(int argc, char *argv[])
 	return 0;
 }
 
+static int shell_cmd_advertise(int argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_default();
+
+	if (argc < 2) {
+		return -EINVAL;
+	}
+
+	if (net_mgmt(NET_REQUEST_BT_ADVERTISE, iface, argv[1],
+		     strlen(argv[1]))) {
+		printk("Advertise failed\n");
+	} else {
+		printk("Advertise in progress\n");
+	}
+
+	return 0;
+}
+
 static struct shell_cmd bt_commands[] = {
+	{ "advertise",  shell_cmd_advertise, "on/off" },
 	{ "connect", shell_cmd_connect,
 		"<address: XX:XX:XX:XX:XX:XX> <type: (public|random)>" },
 	{ "scan", shell_cmd_scan, "<on/off/active/passive>" },

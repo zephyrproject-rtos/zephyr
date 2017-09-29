@@ -19,7 +19,7 @@ void test_crc16(void)
 	zassert(crc16_ccitt(test2, sizeof(test2)) == 0xe5cc, "pass", "fail");
 }
 
-void test_main(void *p1, void *p2, void *p3)
+void test_main(void)
 {
 	ztest_test_suite(test_crc16, ztest_unit_test(test_crc16));
 	ztest_run_test_suite(test_crc16);

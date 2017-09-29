@@ -25,7 +25,6 @@ extern "C" {
 #define STACK_ALIGN  4
 
 #define _NANO_ERR_CPU_EXCEPTION (0)     /* Any unhandled exception */
-#define _NANO_ERR_INVALID_TASK_EXIT (1) /* Invalid task exit */
 #define _NANO_ERR_STACK_CHK_FAIL (2)    /* Stack corruption detected */
 #define _NANO_ERR_ALLOCATION_FAIL (3)   /* Kernel Allocation Failure */
 #define _NANO_ERR_SPURIOUS_INT (4)	/* Spurious interrupt */
@@ -159,6 +158,8 @@ extern const NANO_ESF _default_esf;
 FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
 					 const NANO_ESF *esf);
 
+FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
+					  const NANO_ESF *esf);
 
 enum nios2_exception_cause {
 	NIOS2_EXCEPTION_UNKNOWN                      = -1,

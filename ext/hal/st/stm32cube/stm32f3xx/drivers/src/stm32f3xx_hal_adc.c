@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_adc.c
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   This file provides firmware functions to manage the following
   *          functionalities of the Analog to Digital Convertor (ADC)
   *          peripheral:
@@ -416,7 +414,7 @@
   *         bypassed without error reporting: it can be the intended behaviour in
   *         case of update of a parameter of ADC_InitTypeDef on the fly,
   *         without  disabling the other ADCs sharing the same common group.
-  * @param  hadc: ADC handle
+  * @param  hadc ADC handle
   * @retval HAL status
   */
 __weak HAL_StatusTypeDef HAL_ADC_Init(ADC_HandleTypeDef* hadc)
@@ -447,7 +445,7 @@ __weak HAL_StatusTypeDef HAL_ADC_Init(ADC_HandleTypeDef* hadc)
   *         let commented below.
   *         If needed, the example code can be copied and uncommented into
   *         function HAL_ADC_MspDeInit().
-  * @param  hadc: ADC handle
+  * @param  hadc ADC handle
   * @retval HAL status
   */
 __weak HAL_StatusTypeDef HAL_ADC_DeInit(ADC_HandleTypeDef* hadc)
@@ -464,7 +462,7 @@ __weak HAL_StatusTypeDef HAL_ADC_DeInit(ADC_HandleTypeDef* hadc)
 
 /**
   * @brief  Initializes the ADC MSP.
-  * @param  hadc: ADC handle
+  * @param  hadc ADC handle
   * @retval None
   */
 __weak void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
@@ -479,7 +477,7 @@ __weak void HAL_ADC_MspInit(ADC_HandleTypeDef* hadc)
 
 /**
   * @brief  DeInitializes the ADC MSP.
-  * @param  hadc: ADC handle
+  * @param  hadc ADC handle
   * @retval None
   */
 __weak void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc)
@@ -525,7 +523,7 @@ __weak void HAL_ADC_MspDeInit(ADC_HandleTypeDef* hadc)
   *         function must be called for ADC slave first, then ADC master.
   *         For ADC slave, ADC is enabled only (conversion is not started).
   *         For ADC master, ADC is enabled and multimode conversion is started.
-  * @param  hadc: ADC handle
+  * @param  hadc ADC handle
   * @retval HAL status
   */
 __weak HAL_StatusTypeDef HAL_ADC_Start(ADC_HandleTypeDef* hadc)
@@ -548,7 +546,7 @@ __weak HAL_StatusTypeDef HAL_ADC_Start(ADC_HandleTypeDef* hadc)
   *         For ADC master, converson is stopped and ADC is disabled.
   *         For ADC slave, ADC is disabled only (conversion stop of ADC master
   *         has already stopped conversion of ADC slave).
-  * @param  hadc: ADC handle
+  * @param  hadc ADC handle
   * @retval HAL status.
   */
 __weak HAL_StatusTypeDef HAL_ADC_Stop(ADC_HandleTypeDef* hadc)
@@ -565,8 +563,8 @@ __weak HAL_StatusTypeDef HAL_ADC_Stop(ADC_HandleTypeDef* hadc)
 
 /**
   * @brief  Wait for regular group conversion to be completed.
-  * @param  hadc: ADC handle
-  * @param  Timeout: Timeout value in millisecond.
+  * @param  hadc ADC handle
+  * @param  Timeout Timeout value in millisecond.
   * @retval HAL status
   */
 __weak HAL_StatusTypeDef HAL_ADC_PollForConversion(ADC_HandleTypeDef* hadc, uint32_t Timeout)
@@ -584,15 +582,15 @@ __weak HAL_StatusTypeDef HAL_ADC_PollForConversion(ADC_HandleTypeDef* hadc, uint
 
 /**
   * @brief  Poll for conversion event.
-  * @param  hadc: ADC handle
-  * @param  EventType: the ADC event type.
+  * @param  hadc ADC handle
+  * @param  EventType the ADC event type.
   *          This parameter can be one of the following values:
   *            @arg ADC_AWD_EVENT: ADC Analog watchdog 1 event (main analog watchdog, present on all STM32 devices)
   *            @arg ADC_AWD2_EVENT: ADC Analog watchdog 2 event (additional analog watchdog, present only on STM32F3 devices)
   *            @arg ADC_AWD3_EVENT: ADC Analog watchdog 3 event (additional analog watchdog, present only on STM32F3 devices)
   *            @arg ADC_OVR_EVENT: ADC Overrun event
   *            @arg ADC_JQOVF_EVENT: ADC Injected context queue overflow event
-  * @param  Timeout: Timeout value in millisecond.
+  * @param  Timeout Timeout value in millisecond.
   * @retval HAL status
   */
 __weak HAL_StatusTypeDef HAL_ADC_PollForEvent(ADC_HandleTypeDef* hadc, uint32_t EventType, uint32_t Timeout)
@@ -621,7 +619,7 @@ __weak HAL_StatusTypeDef HAL_ADC_PollForEvent(ADC_HandleTypeDef* hadc, uint32_t 
   *         function must be called for ADC slave first, then ADC master.
   *         For ADC slave, ADC is enabled only (conversion is not started).
   *         For ADC master, ADC is enabled and multimode conversion is started.
-  * @param  hadc: ADC handle
+  * @param  hadc ADC handle
   * @retval HAL status
   */
 __weak HAL_StatusTypeDef HAL_ADC_Start_IT(ADC_HandleTypeDef* hadc)
@@ -648,7 +646,7 @@ __weak HAL_StatusTypeDef HAL_ADC_Start_IT(ADC_HandleTypeDef* hadc)
   *         For ADC master, conversion is stopped and ADC is disabled.
   *         For ADC slave, ADC is disabled only (conversion stop of ADC master
   *         has already stopped conversion of ADC slave).
-  * @param  hadc: ADC handle
+  * @param  hadc ADC handle
   * @retval HAL status.
   */
 __weak HAL_StatusTypeDef HAL_ADC_Stop_IT(ADC_HandleTypeDef* hadc)
@@ -674,9 +672,9 @@ __weak HAL_StatusTypeDef HAL_ADC_Stop_IT(ADC_HandleTypeDef* hadc)
   * @note:  Case of multimode enabled (for devices with several ADCs): This
   *         function is for single-ADC mode only. For multimode, use the
   *         dedicated MultimodeStart function.
-  * @param  hadc: ADC handle
-  * @param  pData: The destination Buffer address.
-  * @param  Length: The length of data to be transferred from ADC peripheral to memory.
+  * @param  hadc ADC handle
+  * @param  pData The destination Buffer address.
+  * @param  Length The length of data to be transferred from ADC peripheral to memory.
   * @retval None
   */
 __weak HAL_StatusTypeDef HAL_ADC_Start_DMA(ADC_HandleTypeDef* hadc, uint32_t* pData, uint32_t Length)
@@ -703,7 +701,7 @@ __weak HAL_StatusTypeDef HAL_ADC_Start_DMA(ADC_HandleTypeDef* hadc, uint32_t* pD
   * @note:  Case of multimode enabled (for devices with several ADCs): This
   *         function is for single-ADC mode only. For multimode, use the
   *         dedicated MultimodeStop function.
-  * @param  hadc: ADC handle
+  * @param  hadc ADC handle
   * @retval HAL status.
   */
 __weak HAL_StatusTypeDef HAL_ADC_Stop_DMA(ADC_HandleTypeDef* hadc)
@@ -724,7 +722,7 @@ __weak HAL_StatusTypeDef HAL_ADC_Stop_DMA(ADC_HandleTypeDef* hadc)
   *         regular group) flag.
   *         Additionally, this functions clears EOS (end of sequence of
   *         regular group) flag, in case of the end of the sequence is reached.
-  * @param  hadc: ADC handle
+  * @param  hadc ADC handle
   * @retval Converted value
   */
 __weak uint32_t HAL_ADC_GetValue(ADC_HandleTypeDef* hadc)
@@ -738,7 +736,7 @@ __weak uint32_t HAL_ADC_GetValue(ADC_HandleTypeDef* hadc)
 
 /**
   * @brief  Handles ADC interrupt request.
-  * @param  hadc: ADC handle
+  * @param  hadc ADC handle
   * @retval None
   */
 __weak void HAL_ADC_IRQHandler(ADC_HandleTypeDef* hadc)
@@ -752,7 +750,7 @@ __weak void HAL_ADC_IRQHandler(ADC_HandleTypeDef* hadc)
 
 /**
   * @brief  Conversion complete callback in non blocking mode
-  * @param  hadc: ADC handle
+  * @param  hadc ADC handle
   * @retval None
   */
 __weak void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
@@ -767,7 +765,7 @@ __weak void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 
 /**
   * @brief  Conversion DMA half-transfer callback in non blocking mode
-  * @param  hadc: ADC handle
+  * @param  hadc ADC handle
   * @retval None
   */
 __weak void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc)
@@ -782,7 +780,7 @@ __weak void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc)
 
 /**
   * @brief  Analog watchdog callback in non blocking mode.
-  * @param  hadc: ADC handle
+  * @param  hadc ADC handle
   * @retval None
   */
 __weak void HAL_ADC_LevelOutOfWindowCallback(ADC_HandleTypeDef* hadc)
@@ -798,7 +796,7 @@ __weak void HAL_ADC_LevelOutOfWindowCallback(ADC_HandleTypeDef* hadc)
 /**
   * @brief  ADC error callback in non blocking mode
   *        (ADC conversion with interruption or transfer by DMA)
-  * @param  hadc: ADC handle
+  * @param  hadc ADC handle
   * @retval None
   */
 __weak void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)
@@ -849,8 +847,8 @@ __weak void HAL_ADC_ErrorCallback(ADC_HandleTypeDef *hadc)
   *         The setting of these parameters is conditioned to ADC state.
   *         For parameters constraints, see comments of structure
   *         "ADC_ChannelConfTypeDef".
-  * @param  hadc: ADC handle
-  * @param  sConfig: Structure of ADC channel for regular group.
+  * @param  hadc ADC handle
+  * @param  sConfig Structure of ADC channel for regular group.
   * @retval HAL status
   */
 __weak HAL_StatusTypeDef HAL_ADC_ConfigChannel(ADC_HandleTypeDef* hadc, ADC_ChannelConfTypeDef* sConfig)
@@ -876,8 +874,8 @@ __weak HAL_StatusTypeDef HAL_ADC_ConfigChannel(ADC_HandleTypeDef* hadc, ADC_Chan
   *         The setting of these parameters is conditioned to ADC state.
   *         For parameters constraints, see comments of structure
   *         "ADC_AnalogWDGConfTypeDef".
-  * @param  hadc: ADC handle
-  * @param  AnalogWDGConfig: Structure of ADC analog watchdog configuration
+  * @param  hadc ADC handle
+  * @param  AnalogWDGConfig Structure of ADC analog watchdog configuration
   * @retval HAL status
   */
 __weak HAL_StatusTypeDef HAL_ADC_AnalogWDGConfig(ADC_HandleTypeDef* hadc, ADC_AnalogWDGConfTypeDef* AnalogWDGConfig)
@@ -921,7 +919,7 @@ __weak HAL_StatusTypeDef HAL_ADC_AnalogWDGConfig(ADC_HandleTypeDef* hadc, ADC_An
   *         For example:
   *           " if (HAL_IS_BIT_SET(HAL_ADC_GetState(hadc1), HAL_ADC_STATE_REG_BUSY)) "
   *           " if (HAL_IS_BIT_SET(HAL_ADC_GetState(hadc1), HAL_ADC_STATE_AWD1)    ) "
-  * @param  hadc: ADC handle
+  * @param  hadc ADC handle
   * @retval HAL state
   */
 uint32_t HAL_ADC_GetState(ADC_HandleTypeDef* hadc)
@@ -935,7 +933,7 @@ uint32_t HAL_ADC_GetState(ADC_HandleTypeDef* hadc)
 
 /**
   * @brief  Return the ADC error code
-  * @param  hadc: ADC handle
+  * @param  hadc ADC handle
   * @retval ADC Error Code
   */
 uint32_t HAL_ADC_GetError(ADC_HandleTypeDef *hadc)

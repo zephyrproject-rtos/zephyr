@@ -72,7 +72,7 @@ struct net_nbr *net_nbr_get(struct net_nbr_table *table)
 {
 	int i;
 
-	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
+	for (i = 0; i < table->nbr_count; i++) {
 		struct net_nbr *nbr = get_nbr(table->nbr, i);
 
 		if (!nbr->ref) {
@@ -164,7 +164,7 @@ struct net_nbr *net_nbr_lookup(struct net_nbr_table *table,
 {
 	int i;
 
-	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
+	for (i = 0; i < table->nbr_count; i++) {
 		struct net_nbr *nbr = get_nbr(table->nbr, i);
 
 		if (nbr->ref && nbr->iface == iface &&
@@ -191,7 +191,7 @@ void net_nbr_clear_table(struct net_nbr_table *table)
 {
 	int i;
 
-	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
+	for (i = 0; i < table->nbr_count; i++) {
 		struct net_nbr *nbr = get_nbr(table->nbr, i);
 		struct net_linkaddr lladdr = {
 			.addr = net_neighbor_lladdr[i].lladdr.addr,
@@ -211,7 +211,7 @@ void net_nbr_print(struct net_nbr_table *table)
 {
 	int i;
 
-	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
+	for (i = 0; i < table->nbr_count; i++) {
 		struct net_nbr *nbr = get_nbr(table->nbr, i);
 
 		if (!nbr->ref) {

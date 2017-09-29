@@ -46,7 +46,8 @@ You will need the Altera Quartus SDK in order to work with this device. The
 `Altera Lite Distribution`_ of Quartus may be obtained without
 charge.
 
-For convenience, once installed you should put the binaries provided by the SDK
+For your convenience using the SDK tools (such as ``nios2-configure-sof``),
+you should put the binaries provided by the SDK
 in your path. Below is an example, adjust ALTERA_BASE to where you installed the
 SDK:
 
@@ -92,11 +93,12 @@ like:
 Reference CPU
 =============
 
-A reference CPU design of a Nios II/f core is included in the Zephyr tree. The
-CPU may be found in the :file:`arch/nios2/soc/nios2f-zephyr/cpu` directory.
+A reference CPU design of a Nios II/f core is included in the Zephyr tree
+in the :file:`arch/nios2/soc/nios2f-zephyr/cpu` directory.
 
-To flash this CPU, use the :file:`arch/nios2/soc/nios2f-zephyr/cpu/nios2-configure-sof`
-tool:
+Flash this CPU using the ``nios2-configure-sof`` SDK tool with the FPGA
+configuration file
+:file:`arch/nios2/soc/nios2f-zephyr/cpu/ghrd_10m50da.sof`:
 
 .. code-block:: console
 
@@ -282,7 +284,7 @@ nios2-configure-sof. You can leave this process running.
 
    $ nios2-gdb-server --tcpport 1234 --tcppersist --init-cache --reset-target
 
-Build your zephyr kernel, and load it into a GDB built for Nios II (included in
+Build your Zephyr kernel, and load it into a GDB built for Nios II (included in
 the Zephyr SDK):
 
 .. code-block:: console

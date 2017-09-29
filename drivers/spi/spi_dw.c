@@ -44,7 +44,7 @@
 #include "spi_dw.h"
 #include "spi_context.h"
 
-static void completed(struct device *dev, uint8_t error)
+static void completed(struct device *dev, u8_t error)
 {
 	const struct spi_dw_config *info = dev->config->config_info;
 	struct spi_dw_data *spi = dev->driver_data;
@@ -62,8 +62,6 @@ out:
 	/* need to give time for FIFOs to drain before issuing more commands */
 	while (test_bit_sr_busy(info->regs)) {
 	}
-
-	spi->error = error;
 
 	/* Disabling interrupts */
 	write_imr(DW_SPI_IMR_MASK, info->regs);
@@ -129,7 +127,7 @@ static void push_data(struct device *dev)
 
 		write_dr(data, info->regs);
 
-		spi_context_update_tx(&spi->ctx, spi->dfs);
+		spi_context_update_tx(&spi->ctx, spi->dfs, 1);
 		spi->fifo_diff++;
 
 		f_tx--;
@@ -173,7 +171,7 @@ static void pull_data(struct device *dev)
 			}
 		}
 
-		spi_context_update_rx(&spi->ctx, spi->dfs);
+		spi_context_update_rx(&spi->ctx, spi->dfs, 1);
 		spi->fifo_diff--;
 	}
 
@@ -251,8 +249,10 @@ static int spi_dw_configure(const struct spi_dw_config *info,
 }
 
 static int transceive(struct spi_config *config,
-		      const struct spi_buf **tx_bufs,
-		      struct spi_buf **rx_bufs,
+		      const struct spi_buf *tx_bufs,
+		      size_t tx_count,
+		      struct spi_buf *rx_bufs,
+		      size_t rx_count,
 		      bool asynchronous,
 		      struct k_poll_signal *signal)
 {
@@ -277,7 +277,8 @@ static int transceive(struct spi_config *config,
 	}
 
 	/* Set buffers info */
-	spi_context_buffers_setup(&spi->ctx, tx_bufs, rx_bufs, spi->dfs);
+	spi_context_buffers_setup(&spi->ctx, tx_bufs, tx_count,
+				  rx_bufs, rx_count, spi->dfs);
 
 	spi->fifo_diff = 0;
 
@@ -305,11 +306,7 @@ static int transceive(struct spi_config *config,
 	/* Enable the controller */
 	set_bit_ssienr(info->regs);
 
-	spi_context_wait_for_completion(&spi->ctx);
-
-	if (spi->error) {
-		ret = -EIO;
-	}
+	ret = spi_context_wait_for_completion(&spi->ctx);
 out:
 	spi_context_release(&spi->ctx, ret);
 
@@ -317,23 +314,31 @@ out:
 }
 
 static int spi_dw_transceive(struct spi_config *config,
-			     const struct spi_buf **tx_bufs,
-			     struct spi_buf **rx_bufs)
+			     const struct spi_buf *tx_bufs,
+			     size_t tx_count,
+			     struct spi_buf *rx_bufs,
+			     size_t rx_count)
 {
-	SYS_LOG_DBG("%p, %p, %p", config->dev, tx_bufs, rx_bufs);
+	SYS_LOG_DBG("%p, %p (%zu), %p (%zu)",
+		    config->dev, tx_bufs, tx_count, rx_bufs, rx_count);
 
-	return transceive(config, tx_bufs, rx_bufs, false, NULL);
+	return transceive(config, tx_bufs, tx_count,
+			  rx_bufs, rx_count, false, NULL);
 }
 
 #ifdef CONFIG_POLL
 static int spi_dw_transceive_async(struct spi_config *config,
-				   const struct spi_buf **tx_bufs,
-				   struct spi_buf **rx_bufs,
+				   const struct spi_buf *tx_bufs,
+				   size_t tx_count,
+				   struct spi_buf *rx_bufs,
+				   size_t rx_count,
 				   struct k_poll_signal *async)
 {
-	SYS_LOG_DBG("%p, %p, %p, %p", config->dev, tx_bufs, rx_bufs, async);
+	SYS_LOG_DBG("%p, %p (%zu), %p (%zu), %p",
+		    config->dev, tx_bufs, tx_count, rx_bufs, rx_count, async);
 
-	return transceive(config, tx_bufs, rx_bufs, true, async);
+	return transceive(config, tx_bufs, tx_count,
+			  rx_bufs, rx_count, true, async);
 }
 #endif /* CONFIG_POLL */
 
@@ -407,7 +412,7 @@ int spi_dw_init(struct device *dev)
 
 	SYS_LOG_DBG("Designware SPI driver initialized on device: %p", dev);
 
-	spi_context_release(&spi->ctx, 0);
+	spi_context_unlock_unconditionally(&spi->ctx);
 
 	return 0;
 }

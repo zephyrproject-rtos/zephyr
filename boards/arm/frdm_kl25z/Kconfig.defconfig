@@ -78,17 +78,14 @@ if I2C
 config I2C_0
 	def_bool y
 
-if I2C_0
-
-config I2C_0_DEFAULT_CFG
-	default 0x12
-
-config I2C_0_IRQ_PRI
-	default 0
-
-endif # I2C_0
-
 endif # I2C
+
+if ADC
+
+config ADC_0
+	def_bool y
+
+endif # ADC
 
 if SPI
 

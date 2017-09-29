@@ -59,6 +59,11 @@ void trigger_irq(int irq)
 			  : "=r" (mip)
 			  : "r" (1 << irq));
 }
+#elif defined(CONFIG_CPU_ARCV2)
+void trigger_irq(int irq)
+{
+	_arc_v2_aux_reg_write(_ARC_V2_AUX_IRQ_HINT, irq);
+}
 #else
 /* So far, Nios II does not support this */
 #define NO_TRIGGER_FROM_SW
@@ -93,6 +98,15 @@ void isr4(void *param)
 	trigger_check[ISR4_OFFSET]++;
 }
 
+/* Need to turn optimization off. Otherwise compiler may generate incorrect
+ * code, not knowing that trigger_irq() affects the value of trigger_check,
+ * even if declared volatile.
+ *
+ * A memory barrier does not help, we need an 'instruction barrier' but GCC
+ * doesn't support this; we need to tell the compiler not to reorder memory
+ * accesses to trigger_check around calls to trigger_irq.
+ */
+__attribute__((optimize("-O0")))
 int test_irq(int offset)
 {
 #ifndef NO_TRIGGER_FROM_SW

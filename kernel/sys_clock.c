@@ -9,7 +9,7 @@
 
 #include <kernel_structs.h>
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <wait_q.h>
 #include <drivers/system_timer.h>
 
@@ -203,8 +203,6 @@ u32_t k_uptime_delta_32(s64_t *reftime)
 /* handle the expired timeouts in the nano timeout queue */
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
-#include <wait_q.h>
-
 /*
  * Handle timeouts by dequeuing the expired ones from _timeout_q and queue
  * them on a local one, then doing the real handling from that queue. This
@@ -307,18 +305,10 @@ static void handle_time_slicing(s32_t ticks)
 {
 #ifdef CONFIG_TICKLESS_KERNEL
 	next_ts = 0;
+#endif
 	if (!_is_thread_time_slicing(_current)) {
 		return;
 	}
-#else
-	if (_time_slice_duration == 0) {
-		return;
-	}
-
-	if (_is_prio_higher(_current->base.prio, _time_slice_prio_ceiling)) {
-		return;
-	}
-#endif
 
 	_time_slice_elapsed += __ticks_to_ms(ticks);
 	if (_time_slice_elapsed >= _time_slice_duration) {

@@ -1,0 +1,32 @@
+---
+title: Kinetis GPIO
+version: 0.1
+
+description: >
+    This is a representation of the Kinetis GPIO nodes
+
+properties:
+  - compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "nxp,kinetis-gpio"
+
+  - reg:
+      type: int
+      description: mmio register space
+      generation: define
+      category: required
+
+  - interrupts:
+      type: compound
+      category: required
+      description: required interrupts
+      generation: define
+
+cell_string: GPIO
+
+"#cells":
+  - pin
+  - flags
+...

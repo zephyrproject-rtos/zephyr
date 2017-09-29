@@ -12,6 +12,8 @@
  */
 
 #include <arch/x86/asm.h>
+#include <kernel_arch_data.h>
+#include <arch/cpu.h>
 
 	/* exports (private APIs) */
 
@@ -33,7 +35,7 @@
 #endif
 
 #if defined(CONFIG_BOOT_TIME_MEASUREMENT)
-	GDATA(__start_tsc)
+	GDATA(__start_time_stamp)
 #endif
 
 #ifdef CONFIG_SYS_POWER_DEEP_SLEEP
@@ -83,17 +85,19 @@ SECTION_FUNC(TEXT_START, __start)
 	lidt	_Idt		/* load 32-bit operand size IDT */
 
 
+
 #ifdef CONFIG_SET_GDT
 	/* If we set our own GDT, update the segment registers as well.
 	 */
-	movw	$0x10, %ax	/* data segment selector (entry = 3) */
+	movw	$DATA_SEG, %ax	/* data segment selector (entry = 3) */
 	movw	%ax, %ds	/* set DS */
 	movw	%ax, %es	/* set ES */
-	movw	%ax, %fs	/* set FS */
-	movw	%ax, %gs	/* set GS */
 	movw	%ax, %ss	/* set SS */
+	xorw	%ax, %ax	/* AX = 0 */
+	movw	%ax, %fs	/* Zero FS */
+	movw	%ax, %gs	/* Zero GS */
 
-	ljmp	$0x08, $__csSet	/* set CS = 0x08 */
+	ljmp	$CODE_SEG, $__csSet	/* set CS = 0x08 */
 
 __csSet:
 #endif /* CONFIG_SET_GDT */
@@ -103,8 +107,8 @@ __csSet:
 	/*
 	 * Store rdtsc result from temporary regiter ESI & EDI into memory.
 	 */
-        mov  %esi, __start_tsc    	/* low  value */
-        mov  %edi, __start_tsc+4    	/* high value */
+        mov  %esi, __start_time_stamp  	/* low  value */
+        mov  %edi, __start_time_stamp+4    	/* high value */
 #endif
 
 #if !defined(CONFIG_FLOAT)
@@ -173,14 +177,23 @@ __csSet:
 #ifdef CONFIG_INIT_STACKS
 	movl $0xAAAAAAAA, %eax
 	leal _interrupt_stack, %edi
+#ifdef CONFIG_X86_STACK_PROTECTION
+	addl $4096, %edi
+#endif
 	stack_size_dwords = (CONFIG_ISR_STACK_SIZE / 4)
 	movl $stack_size_dwords, %ecx
 	rep  stosl
 #endif
 
 	movl	$_interrupt_stack, %esp
+#ifdef CONFIG_X86_STACK_PROTECTION
+	/* In this configuration, all stacks, including IRQ stack, are declared
+	 * with a 4K non-present guard page preceding the stack buffer
+	 */
+	addl	$(CONFIG_ISR_STACK_SIZE + 4096), %esp
+#else
 	addl	$CONFIG_ISR_STACK_SIZE, %esp
-
+#endif
 #if defined(CONFIG_SYS_POWER_DEEP_SLEEP) && \
              !defined(CONFIG_BOOTLOADER_CONTEXT_RESTORE)
 	/*
@@ -209,27 +222,15 @@ __csSet:
 	movl	$__data_rom_start, %esi /* DATA in ROM (src) */
 	movl	$__data_num_words, %ecx /* Size of DATA in quad bytes */
 
-  #ifdef CONFIG_SSE
-	/* copy 16 bytes at a time using XMM until < 16 bytes remain */
+	call	_x86_data_copy
 
-	movl	%ecx ,%edx		/* save number of quad bytes */
-	shrl	$2, %ecx		/* How many 16 bytes? */
-	je	dataWords
+#ifdef CONFIG_APPLICATION_MEMORY
+	movl	$__app_data_ram_start, %edi /* DATA in RAM (dest) */
+	movl	$__app_data_rom_start, %esi /* DATA in ROM (src) */
+	movl	$__app_data_num_words, %ecx /* Size of DATA in quad bytes */
 
-dataDQ:
-	movdqu	(%esi), %xmm0
-	movdqu	%xmm0, (%edi)
-	addl	$16, %esi
-	addl	$16, %edi
-	loop	dataDQ
-
-dataWords:
-	movl	%edx, %ecx	/* restore # quad bytes */
-	andl	$0x3, %ecx	/* only need to copy at most 3 quad bytes */
-  #endif /* CONFIG_SSE */
-
-	rep
-	movsl				/* copy data 4 bytes at a time */
+	call	_x86_data_copy
+#endif /* CONFIG_APPLICATION_MEMORY */
 
 #endif /* CONFIG_XIP */
 
@@ -239,14 +240,54 @@ dataWords:
 	 * It's assumed that BSS size will be a multiple of a long (4 bytes),
 	 * and aligned on a double word (32-bit) boundary
 	 */
-
-#ifdef CONFIG_SSE
-
-	/* use XMM register to clear 16 bytes at a time */
-
-	pxor	%xmm0, %xmm0		/* zero out xmm0 register */
 	movl	$__bss_start, %edi	/* load BSS start address */
 	movl	$__bss_num_words, %ecx	/* number of quad bytes in .bss */
+	call	_x86_bss_zero
+
+#ifdef CONFIG_APPLICATION_MEMORY
+	movl	$__app_bss_start, %edi		/* load app BSS start address */
+	movl	$__app_bss_num_words, %ecx	/* number of quad bytes */
+	call	_x86_bss_zero
+#endif
+
+#ifdef CONFIG_GDT_DYNAMIC
+	/* activate RAM-based Global Descriptor Table (GDT) */
+	lgdt	%ds:_gdt
+#endif
+
+#ifdef CONFIG_X86_MMU
+
+	/* load the page directory address into the registers*/
+	movl $__mmu_tables_start, %eax
+	movl %eax, %cr3
+
+	/*Set CR4.PAE = 0 (5th bit in CR4*/
+	movl %cr4, %eax
+	andl $CR4_PAE_DISABLE, %eax
+	movl %eax, %cr4
+
+	/* set CR0.PG bit (31st bit in CR0)*/
+	movl %cr0, %eax
+	orl $CR0_PAGING_ENABLE, %eax
+	movl %eax, %cr0
+
+#endif /* CONFIG_X86_MMU */
+
+#ifdef CONFIG_X86_STACK_PROTECTION
+	mov $MAIN_TSS, %ax
+	ltr %ax
+#endif
+	/* Jump to C portion of kernel initialization and never return */
+
+	jmp	_Cstart
+
+
+_x86_bss_zero:
+	/* ECX = size, EDI = starting address */
+#ifdef CONFIG_SSE
+	/* use XMM register to clear 16 bytes at a time */
+	pxor	%xmm0, %xmm0		/* zero out xmm0 register */
+
 	movl	%ecx, %edx		/* make a copy of # quad bytes */
 	shrl	$2, %ecx		/* How many multiples of 16 byte ? */
 	je	bssWords
@@ -270,22 +311,39 @@ bssWords:
 	/* clear out BSS double words (32-bits at a time) */
 
 	xorl	%eax, %eax		/* fill memory with 0 */
-	movl	$__bss_start, %edi	/* load BSS start address */
-	movl	$__bss_num_words, %ecx	/* number of quad bytes */
 	cld
 	rep
 	stosl				/* zero memory per 4 bytes */
 
 #endif /* CONFIG_SSE */
+	ret
 
-#ifdef CONFIG_GDT_DYNAMIC
-	/* activate RAM-based Global Descriptor Table (GDT) */
-	lgdt	%ds:_gdt
-#endif
+#ifdef CONFIG_XIP
+_x86_data_copy:
+	/* EDI = dest, ESI = source, ECX = size in 32-bit chunks */
+  #ifdef CONFIG_SSE
+	/* copy 16 bytes at a time using XMM until < 16 bytes remain */
 
-	/* Jump to C portion of kernel initialization and never return */
+	movl	%ecx ,%edx		/* save number of quad bytes */
+	shrl	$2, %ecx		/* How many 16 bytes? */
+	je	dataWords
 
-	jmp	_Cstart
+dataDQ:
+	movdqu	(%esi), %xmm0
+	movdqu	%xmm0, (%edi)
+	addl	$16, %esi
+	addl	$16, %edi
+	loop	dataDQ
+
+dataWords:
+	movl	%edx, %ecx	/* restore # quad bytes */
+	andl	$0x3, %ecx	/* only need to copy at most 3 quad bytes */
+  #endif /* CONFIG_SSE */
+
+	rep
+	movsl				/* copy data 4 bytes at a time */
+	ret
+#endif /* CONFIG_XIP */
 
 #if defined(CONFIG_SSE)
 

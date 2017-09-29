@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_ll_gpio.c
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   GPIO LL module driver.
   ******************************************************************************
   * @attention
@@ -62,7 +60,7 @@
 /** @addtogroup GPIO_LL_Private_Macros
   * @{
   */
-#define IS_LL_GPIO_PIN(__VALUE__)          ((((uint32_t)0x00000000U) < (__VALUE__)) && ((__VALUE__) <= (LL_GPIO_PIN_ALL)))
+#define IS_LL_GPIO_PIN(__VALUE__)          (((0x00000000U) < (__VALUE__)) && ((__VALUE__) <= (LL_GPIO_PIN_ALL)))
 
 #define IS_LL_GPIO_MODE(__VALUE__)         (((__VALUE__) == LL_GPIO_MODE_INPUT)     ||\
                                             ((__VALUE__) == LL_GPIO_MODE_OUTPUT)    ||\
@@ -187,7 +185,7 @@ ErrorStatus LL_GPIO_DeInit(GPIO_TypeDef *GPIOx)
 /**
   * @brief  Initialize GPIO registers according to the specified parameters in GPIO_InitStruct.
   * @param  GPIOx GPIO Port
-  * @param  GPIO_InitStruct: pointer to a @ref LL_GPIO_InitTypeDef structure
+  * @param  GPIO_InitStruct pointer to a @ref LL_GPIO_InitTypeDef structure
   *         that contains the configuration information for the specified GPIO peripheral.
   * @retval An ErrorStatus enumeration value:
   *          - SUCCESS: GPIO registers are initialized according to GPIO_InitStruct content
@@ -264,7 +262,7 @@ ErrorStatus LL_GPIO_Init(GPIO_TypeDef *GPIOx, LL_GPIO_InitTypeDef *GPIO_InitStru
 
 /**
   * @brief Set each @ref LL_GPIO_InitTypeDef field to default value.
-  * @param GPIO_InitStruct: pointer to a @ref LL_GPIO_InitTypeDef structure
+  * @param GPIO_InitStruct pointer to a @ref LL_GPIO_InitTypeDef structure
   *                          whose fields will be set to default values.
   * @retval None
   */

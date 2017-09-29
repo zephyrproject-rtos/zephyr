@@ -1,0 +1,6 @@
+identifier: xt-sim_D_212GP
+name: XT Simulator D_212GP
+type: sim
+arch: xtensa
+toolchain:
+  - xcc

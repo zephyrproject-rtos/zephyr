@@ -16,3 +16,5 @@ obj-$(CONFIG_IRQ_OFFLOAD) += irq_offload.o
 # Some ARC cores like the EM4 lack the atomic LLOCK/SCOND and
 # can't use these.
 obj-$(CONFIG_ATOMIC_OPERATIONS_CUSTOM) += atomic.o
+
+obj-$(CONFIG_CPU_HAS_MPU) += mpu/

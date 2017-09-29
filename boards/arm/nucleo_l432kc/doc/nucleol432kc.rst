@@ -34,14 +34,17 @@ Hardware
 
 The STM32L432KC SoC provides the following hardware IPs:
 
-- Ultra-low-power with FlexPowerControl (down to 28 nA Standby mode and 84 μA/MHz run mode)
-- Core: ARM® 32-bit Cortex®-M4 CPU with FPU, frequency up to 80 MHz, 100DMIPS/1.25DMIPS/MHz (Dhrystone 2.1)
+- Ultra-low-power with FlexPowerControl (down to 28 nA Standby mode and 84
+  |micro| A/MHz run mode)
+- Core: ARM |reg| 32-bit Cortex |reg| -M4 CPU with FPU, frequency up to 80 MHz,
+  100DMIPS/1.25DMIPS/MHz (Dhrystone 2.1)
 - Clock Sources:
 
         - 32 kHz crystal oscillator for RTC (LSE)
-        - Internal 16 MHz factory-trimmed RC (±1%)
-        - Internal low-power 32 kHz RC (±5%)
-        - Internal multispeed 100 kHz to 48 MHz oscillator, auto-trimmed by LSE (better than ±0.25 % accuracy)
+        - Internal 16 MHz factory-trimmed RC ( |plusminus| 1%)
+        - Internal low-power 32 kHz RC ( |plusminus| 5%)
+        - Internal multispeed 100 kHz to 48 MHz oscillator, auto-trimmed by
+          LSE (better than |plusminus| 0.25 % accuracy)
         - 2 PLLs for system clock, USB, audio, ADC
 
 - RTC with HW calendar, alarms and calibration
@@ -64,7 +67,8 @@ The STM32L432KC SoC provides the following hardware IPs:
 
 - Rich analog peripherals (independent supply)
 
-        - 1× 12-bit ADC 5 MSPS, up to 16-bit with hardware oversampling, 200 μA/MSPS
+        - 1x 12-bit ADC 5 MSPS, up to 16-bit with hardware oversampling, 200
+          |micro| A/MSPS
         - 2x 12-bit DAC, low-power sample and hold
         - 1x operational amplifiers with built-in PGA
         - 2x ultra-low-power comparators
@@ -83,7 +87,7 @@ The STM32L432KC SoC provides the following hardware IPs:
 - 14-channel DMA controller
 - True random number generator
 - CRC calculation unit, 96-bit unique ID
-- Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell™
+- Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell*
 
 
 More information about STM32L432KC can be found here:

@@ -345,8 +345,7 @@ static int fxos8700_init(struct device *dev)
 		return -EIO;
 	}
 
-	k_sem_init(&data->sem, 0, UINT_MAX);
-	k_sem_give(&data->sem);
+	k_sem_init(&data->sem, 1, UINT_MAX);
 
 	SYS_LOG_DBG("Init complete");
 

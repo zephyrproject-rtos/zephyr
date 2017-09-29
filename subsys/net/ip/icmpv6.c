@@ -78,6 +78,10 @@ static inline void setup_ipv6_header(struct net_pkt *pkt, u16_t extra_len,
 				     u8_t hop_limit, u8_t icmp_type,
 				     u8_t icmp_code)
 {
+	struct net_buf *frag = pkt->frags;
+	const u32_t unused = 0;
+	u16_t pos;
+
 	NET_IPV6_HDR(pkt)->vtc = 0x60;
 	NET_IPV6_HDR(pkt)->tcflow = 0;
 	NET_IPV6_HDR(pkt)->flow = 0;
@@ -90,13 +94,14 @@ static inline void setup_ipv6_header(struct net_pkt *pkt, u16_t extra_len,
 
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 
-	NET_ICMP_HDR(pkt)->type = icmp_type;
-	NET_ICMP_HDR(pkt)->code = icmp_code;
+	frag = net_pkt_write(pkt, frag, net_pkt_ip_hdr_len(pkt), &pos,
+			     sizeof(icmp_type), &icmp_type, PKT_WAIT_TIME);
+	frag = net_pkt_write(pkt, frag, pos, &pos, sizeof(icmp_code),
+			     &icmp_code, PKT_WAIT_TIME);
 
 	/* ICMPv6 header has 4 unused bytes that must be zero, RFC 4443 ch 3.1
 	 */
-	memset(net_pkt_icmp_data(pkt) + sizeof(struct net_icmp_hdr), 0,
-	       NET_ICMPV6_UNUSED_LEN);
+	net_pkt_write(pkt, frag, pos, &pos, 4, (u8_t *)&unused, PKT_WAIT_TIME);
 }
 
 #if defined(CONFIG_NET_DEBUG_ICMPV6)
@@ -124,8 +129,270 @@ static inline void echo_reply_debug(struct net_pkt *pkt)
 #define echo_reply_debug(pkt)
 #endif /* CONFIG_NET_DEBUG_ICMPV6 */
 
+struct net_buf *net_icmpv6_set_chksum(struct net_pkt *pkt,
+				      struct net_buf *frag)
+{
+	struct net_icmp_hdr *icmp_hdr;
+	u16_t chksum = 0;
+	u16_t pos;
+
+	icmp_hdr = net_pkt_icmp_data(pkt);
+	if (net_icmp_header_fits(pkt, icmp_hdr)) {
+		icmp_hdr->chksum = 0;
+		icmp_hdr->chksum = ~net_calc_chksum_icmpv6(pkt);
+
+		return frag;
+	}
+
+	frag = net_pkt_write(pkt, frag, net_pkt_ip_hdr_len(pkt) +
+			     net_pkt_ipv6_ext_len(pkt) +
+			     1 + 1 /* type + code */,
+			     &pos, sizeof(chksum), (u8_t *)&chksum,
+			     PKT_WAIT_TIME);
+
+	chksum = ~net_calc_chksum_icmpv6(pkt);
+
+	frag = net_pkt_write(pkt, frag, pos - 2, &pos, sizeof(chksum),
+			     (u8_t *)&chksum, PKT_WAIT_TIME);
+
+	NET_ASSERT(frag);
+
+	return frag;
+}
+
+struct net_icmp_hdr *net_icmpv6_get_hdr(struct net_pkt *pkt,
+					struct net_icmp_hdr *hdr)
+{
+	struct net_icmp_hdr *icmp_hdr;
+	struct net_buf *frag;
+	u16_t pos;
+
+	/* If the ICMP header can fit the first fragment, then access it
+	 * directly (fast path), otherwise read the values one by one
+	 * using net_frag_read*() functions (slow path).
+	 */
+
+	icmp_hdr = net_pkt_icmp_data(pkt);
+	if (net_icmp_header_fits(pkt, icmp_hdr)) {
+		return icmp_hdr;
+	}
+
+	frag = net_frag_read_u8(pkt->frags, net_pkt_ip_hdr_len(pkt) +
+				net_pkt_ipv6_ext_len(pkt), &pos, &hdr->type);
+	frag = net_frag_read_u8(frag, pos, &pos, &hdr->code);
+	frag = net_frag_read(frag, pos, &pos, sizeof(hdr->chksum),
+			     (u8_t *)&hdr->chksum);
+	if (!frag) {
+		NET_ASSERT(frag);
+		return NULL;
+	}
+
+	return hdr;
+}
+
+struct net_icmp_hdr *net_icmpv6_set_hdr(struct net_pkt *pkt,
+					struct net_icmp_hdr *hdr)
+{
+	struct net_buf *frag;
+	u16_t pos;
+
+	if (net_icmp_header_fits(pkt, hdr)) {
+		return hdr;
+	}
+
+	frag = net_pkt_write(pkt, pkt->frags, net_pkt_ip_hdr_len(pkt) +
+			     net_pkt_ipv6_ext_len(pkt), &pos,
+			     sizeof(hdr->type), &hdr->type, PKT_WAIT_TIME);
+	frag = net_pkt_write(pkt, frag, pos, &pos, sizeof(hdr->code),
+			     &hdr->code, PKT_WAIT_TIME);
+	frag = net_pkt_write(pkt, frag, pos, &pos, sizeof(hdr->chksum),
+			     (u8_t *)&hdr->chksum, PKT_WAIT_TIME);
+	if (!frag) {
+		NET_ASSERT(frag);
+		return NULL;
+	}
+
+	return hdr;
+}
+
+struct net_icmpv6_ns_hdr *net_icmpv6_get_ns_hdr(struct net_pkt *pkt,
+						struct net_icmpv6_ns_hdr *hdr)
+{
+	struct net_buf *frag;
+	u8_t *opt_data;
+	u16_t pos;
+
+	/* No helpers for various ICMP sub-options. First get the pointer
+	 * where the sub-option is located, then check if it is located in
+	 * first fragment (fast path). If the header is not in first fragment,
+	 * then read the values separately (slow path).
+	 */
+
+	opt_data = net_pkt_icmp_opt_data(pkt, sizeof(struct net_icmp_hdr));
+	if (net_header_fits(pkt, opt_data, sizeof(*hdr))) {
+		return (struct net_icmpv6_ns_hdr *)opt_data;
+	}
+
+	frag = net_frag_read(pkt->frags,
+			     net_pkt_ip_hdr_len(pkt) +
+			     net_pkt_ipv6_ext_len(pkt) +
+			     sizeof(struct net_icmp_hdr) + 4 /* reserved */,
+			     &pos, sizeof(struct in6_addr), (u8_t *)&hdr->tgt);
+	if (!frag) {
+		NET_ASSERT(frag);
+		return NULL;
+	}
+
+	return hdr;
+}
+
+struct net_icmpv6_ns_hdr *net_icmpv6_set_ns_hdr(struct net_pkt *pkt,
+						struct net_icmpv6_ns_hdr *hdr)
+{
+	const u32_t reserved = 0;
+	struct net_buf *frag;
+	u8_t *opt_data;
+	u16_t pos;
+
+	opt_data = net_pkt_icmp_opt_data(pkt, sizeof(struct net_icmp_hdr));
+	if (net_header_fits(pkt, opt_data, sizeof(*hdr))) {
+		return (struct net_icmpv6_ns_hdr *)opt_data;
+	}
+
+	frag = net_pkt_write(pkt, pkt->frags, net_pkt_ip_hdr_len(pkt) +
+			     net_pkt_ipv6_ext_len(pkt) +
+			     sizeof(struct net_icmp_hdr), &pos,
+			     sizeof(reserved), (u8_t *)&reserved,
+			     PKT_WAIT_TIME);
+	frag = net_pkt_write(pkt, frag, pos, &pos, sizeof(struct in6_addr),
+			     (u8_t *)&hdr->tgt, PKT_WAIT_TIME);
+	if (!frag) {
+		NET_ASSERT(frag);
+		return NULL;
+	}
+
+	return hdr;
+}
+
+struct net_icmpv6_nd_opt_hdr *net_icmpv6_get_nd_opt_hdr(struct net_pkt *pkt,
+					    struct net_icmpv6_nd_opt_hdr *hdr)
+{
+	struct net_buf *frag;
+	u8_t *opt_data;
+	u16_t pos;
+
+	opt_data = net_pkt_icmp_opt_data(pkt, sizeof(struct net_icmp_hdr) +
+					 net_pkt_ipv6_ext_opt_len(pkt));
+	if (net_header_fits(pkt, opt_data, sizeof(*hdr))) {
+		return (struct net_icmpv6_nd_opt_hdr *)opt_data;
+	}
+
+	frag = net_frag_read_u8(pkt->frags,
+				net_pkt_ip_hdr_len(pkt) +
+				net_pkt_ipv6_ext_len(pkt) +
+				sizeof(struct net_icmp_hdr) +
+				net_pkt_ipv6_ext_opt_len(pkt),
+				&pos, &hdr->type);
+	frag = net_frag_read_u8(frag, pos, &pos, &hdr->len);
+	if (!frag) {
+		return NULL;
+	}
+
+	return hdr;
+}
+
+struct net_icmpv6_na_hdr *net_icmpv6_get_na_hdr(struct net_pkt *pkt,
+						struct net_icmpv6_na_hdr *hdr)
+{
+	struct net_buf *frag;
+	u8_t *opt_data;
+	u16_t pos;
+
+	opt_data = net_pkt_icmp_opt_data(pkt, sizeof(struct net_icmp_hdr));
+	if (net_header_fits(pkt, opt_data, sizeof(*hdr))) {
+		return (struct net_icmpv6_na_hdr *)opt_data;
+	}
+
+	frag = net_frag_read_u8(pkt->frags, net_pkt_ip_hdr_len(pkt) +
+				net_pkt_ipv6_ext_len(pkt) +
+				sizeof(struct net_icmp_hdr),
+				&pos, &hdr->flags);
+	frag = net_frag_skip(frag, pos, &pos, 3); /* reserved */
+	frag = net_frag_read(frag, pos, &pos, sizeof(struct in6_addr),
+			     (u8_t *)&hdr->tgt);
+	if (!frag) {
+		NET_ASSERT(frag);
+		return NULL;
+	}
+
+	return hdr;
+}
+
+struct net_icmpv6_na_hdr *net_icmpv6_set_na_hdr(struct net_pkt *pkt,
+						struct net_icmpv6_na_hdr *hdr)
+{
+	const u8_t reserved[3] = { 0 };
+	struct net_buf *frag;
+	u8_t *opt_data;
+	u16_t pos;
+
+	opt_data = net_pkt_icmp_opt_data(pkt, sizeof(struct net_icmp_hdr));
+	if (net_header_fits(pkt, opt_data, sizeof(*hdr))) {
+		return (struct net_icmpv6_na_hdr *)opt_data;
+	}
+
+	frag = net_pkt_write(pkt, pkt->frags,
+			     net_pkt_ip_hdr_len(pkt) +
+			     net_pkt_ipv6_ext_len(pkt) +
+			     sizeof(struct net_icmp_hdr),
+			     &pos, sizeof(hdr->flags), &hdr->flags,
+			     PKT_WAIT_TIME);
+	frag = net_pkt_write(pkt, frag, pos, &pos, sizeof(reserved),
+			     (u8_t *)reserved, PKT_WAIT_TIME);
+	frag = net_pkt_write(pkt, frag, pos, &pos, sizeof(struct in6_addr),
+			     (u8_t *)&hdr->tgt, PKT_WAIT_TIME);
+	if (!frag) {
+		NET_ASSERT(frag);
+		return NULL;
+	}
+
+	return hdr;
+}
+
+struct net_icmpv6_ra_hdr *net_icmpv6_get_ra_hdr(struct net_pkt *pkt,
+						struct net_icmpv6_ra_hdr *hdr)
+{
+	struct net_buf *frag;
+	u8_t *opt_data;
+	u16_t pos;
+
+	opt_data = net_pkt_icmp_opt_data(pkt, sizeof(struct net_icmp_hdr));
+	if (net_header_fits(pkt, opt_data, sizeof(*hdr))) {
+		return (struct net_icmpv6_ra_hdr *)opt_data;
+	}
+
+	frag = net_frag_read_u8(pkt->frags, net_pkt_ip_hdr_len(pkt) +
+				net_pkt_ipv6_ext_len(pkt) +
+				sizeof(struct net_icmp_hdr),
+				&pos, &hdr->cur_hop_limit);
+	frag = net_frag_read_u8(frag, pos, &pos, &hdr->flags);
+	frag = net_frag_read(frag, pos, &pos, sizeof(hdr->router_lifetime),
+			     (u8_t *)&hdr->router_lifetime);
+	frag = net_frag_read(frag, pos, &pos, sizeof(hdr->reachable_time),
+			     (u8_t *)&hdr->reachable_time);
+	frag = net_frag_read(frag, pos, &pos, sizeof(hdr->retrans_timer),
+			     (u8_t *)&hdr->retrans_timer);
+	if (!frag) {
+		NET_ASSERT(frag);
+		return NULL;
+	}
+
+	return hdr;
+}
+
 static enum net_verdict handle_echo_request(struct net_pkt *orig)
 {
+	struct net_icmp_hdr hdr, *icmp_hdr;
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 	struct net_if *iface;
@@ -166,11 +433,6 @@ static enum net_verdict handle_echo_request(struct net_pkt *orig)
 	NET_IPV6_HDR(pkt)->flow = 0;
 	NET_IPV6_HDR(pkt)->hop_limit = net_if_ipv6_get_hop_limit(iface);
 
-	/* ICMPv6 fields */
-	NET_ICMP_HDR(pkt)->type = NET_ICMPV6_ECHO_REPLY;
-	NET_ICMP_HDR(pkt)->code = 0;
-	NET_ICMP_HDR(pkt)->chksum = 0;
-
 	if (net_is_ipv6_addr_mcast(&NET_IPV6_HDR(pkt)->dst)) {
 		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst,
 				&NET_IPV6_HDR(orig)->src);
@@ -206,8 +468,13 @@ static enum net_verdict handle_echo_request(struct net_pkt *orig)
 	 */
 	net_pkt_ll_dst(pkt)->addr = NULL;
 
-	NET_ICMP_HDR(pkt)->chksum = 0;
-	NET_ICMP_HDR(pkt)->chksum = ~net_calc_chksum_icmpv6(pkt);
+	/* ICMPv6 fields */
+	icmp_hdr = net_icmpv6_get_hdr(pkt, &hdr);
+	icmp_hdr->type = NET_ICMPV6_ECHO_REPLY;
+	icmp_hdr->code = 0;
+	icmp_hdr->chksum = 0;
+	net_icmpv6_set_hdr(pkt, icmp_hdr);
+	net_icmpv6_set_chksum(pkt, pkt->frags);
 
 	echo_reply_debug(pkt);
 
@@ -239,7 +506,10 @@ int net_icmpv6_send_error(struct net_pkt *orig, u8_t type, u8_t code,
 	int err = -EIO;
 
 	if (NET_IPV6_HDR(orig)->nexthdr == IPPROTO_ICMPV6) {
-		if (NET_ICMP_HDR(orig)->code < 128) {
+		struct net_icmp_hdr icmp_hdr[1];
+
+		if (!net_icmpv6_get_hdr(orig, icmp_hdr) ||
+		    icmp_hdr->code < 128) {
 			/* We must not send ICMP errors back */
 			err = -EINVAL;
 			goto drop_no_pkt;
@@ -299,7 +569,7 @@ int net_icmpv6_send_error(struct net_pkt *orig, u8_t type, u8_t code,
 	/* Depending on error option, we store the param into the ICMP message.
 	 */
 	if (type == NET_ICMPV6_PARAM_PROBLEM) {
-		sys_put_be32(param, net_pkt_icmp_data(pkt) +
+		sys_put_be32(param, (u8_t *)net_pkt_icmp_data(pkt) +
 			     sizeof(struct net_icmp_hdr));
 	}
 
@@ -324,8 +594,9 @@ int net_icmpv6_send_error(struct net_pkt *orig, u8_t type, u8_t code,
 	net_pkt_ll_dst(pkt)->addr = net_pkt_ll_src(orig)->addr;
 	net_pkt_ll_dst(pkt)->len = net_pkt_ll_src(orig)->len;
 
-	NET_ICMP_HDR(pkt)->chksum = 0;
-	NET_ICMP_HDR(pkt)->chksum = ~net_calc_chksum_icmpv6(pkt);
+	/* Clear and then set the chksum */
+	frag = net_icmpv6_set_chksum(pkt, pkt->frags);
+	NET_ASSERT(frag);
 
 #if defined(CONFIG_NET_DEBUG_ICMPV6)
 	do {
@@ -363,7 +634,7 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 	src = net_if_ipv6_select_src_addr(iface, dst);
 
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, dst),
-				      K_FOREVER);
+				     K_FOREVER);
 
 	pkt = net_ipv6_create_raw(pkt, src, dst, iface, IPPROTO_ICMPV6);
 
@@ -379,8 +650,8 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 	net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src, src);
 	net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst, dst);
 
-	NET_ICMP_HDR(pkt)->chksum = 0;
-	NET_ICMP_HDR(pkt)->chksum = ~net_calc_chksum_icmpv6(pkt);
+	/* Clear and then set the chksum */
+	net_icmpv6_set_chksum(pkt, pkt->frags);
 
 	if (net_ipv6_finalize_raw(pkt, IPPROTO_ICMPV6) < 0) {
 		goto drop;

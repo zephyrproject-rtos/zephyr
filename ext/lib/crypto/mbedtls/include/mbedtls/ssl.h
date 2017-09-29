@@ -185,6 +185,9 @@
 #define MBEDTLS_SSL_PRESET_DEFAULT              0
 #define MBEDTLS_SSL_PRESET_SUITEB               2
 
+#define MBEDTLS_SSL_CERT_REQ_CA_LIST_ENABLED       1
+#define MBEDTLS_SSL_CERT_REQ_CA_LIST_DISABLED      0
+
 /*
  * Default range for DTLS retransmission timer value, in milliseconds.
  * RFC 6347 4.2.4.1 says from 1 second to 60 seconds.
@@ -531,6 +534,7 @@ typedef struct mbedtls_ssl_config  mbedtls_ssl_config;
 /* Defined in ssl_internal.h */
 typedef struct mbedtls_ssl_transform mbedtls_ssl_transform;
 typedef struct mbedtls_ssl_handshake_params mbedtls_ssl_handshake_params;
+typedef struct mbedtls_ssl_sig_hash_set_t mbedtls_ssl_sig_hash_set_t;
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
 typedef struct mbedtls_ssl_key_cert mbedtls_ssl_key_cert;
 #endif
@@ -749,6 +753,10 @@ struct mbedtls_ssl_config
 #if defined(MBEDTLS_SSL_FALLBACK_SCSV) && defined(MBEDTLS_SSL_CLI_C)
     unsigned int fallback : 1;      /*!< is this a fallback?                */
 #endif
+#if defined(MBEDTLS_SSL_SRV_C)
+    unsigned int cert_req_ca_list : 1;  /*!< enable sending CA list in
+                                          Certificate Request messages?     */
+#endif
 };
 
 
@@ -837,7 +845,9 @@ struct mbedtls_ssl_context
     size_t in_hslen;            /*!< current handshake message length,
                                      including the handshake header   */
     int nb_zero;                /*!< # of 0-length encrypted messages */
-    int record_read;            /*!< record is already present        */
+
+    int keep_current_message;   /*!< drop or reuse current message
+                                     on next call to record layer? */
 
     /*
      * Record layer (outgoing data)
@@ -1042,7 +1052,7 @@ void mbedtls_ssl_conf_authmode( mbedtls_ssl_config *conf, int authmode );
  *
  *                 If set, the verify callback is called for each
  *                 certificate in the chain. For implementation
- *                 information, please see \c x509parse_verify()
+ *                 information, please see \c mbedtls_x509_crt_verify()
  *
  * \param conf     SSL configuration
  * \param f_vrfy   verification function
@@ -2030,6 +2040,20 @@ void mbedtls_ssl_conf_extended_master_secret( mbedtls_ssl_config *conf, char ems
  */
 void mbedtls_ssl_conf_arc4_support( mbedtls_ssl_config *conf, char arc4 );
 #endif /* MBEDTLS_ARC4_C */
+
+#if defined(MBEDTLS_SSL_SRV_C)
+/**
+ * \brief          Whether to send a list of acceptable CAs in
+ *                 CertificateRequest messages.
+ *                 (Default: do send)
+ *
+ * \param conf     SSL configuration
+ * \param cert_req_ca_list   MBEDTLS_SSL_CERT_REQ_CA_LIST_ENABLED or
+ *                          MBEDTLS_SSL_CERT_REQ_CA_LIST_DISABLED
+ */
+void mbedtls_ssl_conf_cert_req_ca_list( mbedtls_ssl_config *conf,
+                                          char cert_req_ca_list );
+#endif /* MBEDTLS_SSL_SRV_C */
 
 #if defined(MBEDTLS_SSL_MAX_FRAGMENT_LENGTH)
 /**

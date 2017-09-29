@@ -6,7 +6,7 @@
 #ifndef __ZPERF_SESSION_H
 #define __ZPERF_SESSION_H
 
-#include <sections.h>
+#include <linker/sections.h>
 #include <toolchain.h>
 
 #include <zephyr.h>

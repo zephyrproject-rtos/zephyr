@@ -12,7 +12,7 @@
 #include <string.h>
 #include <errno.h>
 #include <misc/printk.h>
-#include <sections.h>
+#include <linker/sections.h>
 
 #include <tc_util.h>
 
@@ -118,6 +118,8 @@ static void set_pkt_ll_addr(struct device *dev, struct net_pkt *pkt)
 	src->len = sizeof(rpl->mac_addr);
 	src->addr = rpl->mac_addr;
 }
+
+#define NET_ICMP_HDR(pkt) ((struct net_icmp_hdr *)net_pkt_icmp_data(pkt))
 
 static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 {

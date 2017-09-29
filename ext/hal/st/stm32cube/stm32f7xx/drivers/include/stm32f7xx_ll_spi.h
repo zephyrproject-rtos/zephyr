@@ -2,13 +2,11 @@
   ******************************************************************************
   * @file    stm32f7xx_ll_spi.h
   * @author  MCD Application Team
-  * @version V1.2.0
-  * @date    30-December-2016
   * @brief   Header file of SPI LL module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -1387,7 +1385,7 @@ __STATIC_INLINE void LL_SPI_TransmitData8(SPI_TypeDef *SPIx, uint8_t TxData)
   */
 __STATIC_INLINE void LL_SPI_TransmitData16(SPI_TypeDef *SPIx, uint16_t TxData)
 {
-  *((__IO uint16_t *)&SPIx->DR) = TxData;
+  SPIx->DR = TxData;
 }
 
 /**

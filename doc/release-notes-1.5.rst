@@ -92,7 +92,7 @@ Libraries
 
 - File system: Imported Open Source FAT FS 0.12a code.
 - Encryption: Imported mbedTLS library.
-- Encryption: Updated tinycrypt library to 2.0.
+- Encryption: Updated TinyCrypt library to 2.0.
 
 Documentation
 *************
@@ -102,7 +102,7 @@ Documentation
 - Moved all the boards documentation to the wiki.
 - Moved Code Contribution documentation to the wiki.
 - Added package "ncurses" to the list of requirements.
-- Updated Mac OS X instructions.
+- Updated macOS instructions.
 
 Test and Samples
 ****************
@@ -165,14 +165,14 @@ Stories
 * :jira:`ZEP-441` - Add driver API reentrancy support to GPIO shim drivers
 * :jira:`ZEP-489` - nios2: handle unimplemented multiply/divide instructions
 * :jira:`ZEP-500` - Domain Name System client library
-* :jira:`ZEP-506` - nios2: support baremetal boot and XIP on Altera MAX10
+* :jira:`ZEP-506` - nios2: support bare metal boot and XIP on Altera MAX10
 * :jira:`ZEP-511` - Add Deep Sleep support in PMA
 * :jira:`ZEP-512` - Add suspend/resume support for some core devices to enable Deep Sleep support in PMA
 * :jira:`ZEP-541` - Integrate QMSI releases to Zephyr
 * :jira:`ZEP-567` - netz sample code
 * :jira:`ZEP-568` - MQTT QoS sample app
 * :jira:`ZEP-573` - IoT applications must use netz API
-* :jira:`ZEP-590` - Update Zephyr's tinycrypt to version 2.0
+* :jira:`ZEP-590` - Update Zephyr's TinyCrypt to version 2.0
 * :jira:`ZEP-643` - Add file system API documentation
 * :jira:`ZEP-650` - Quark SE: Implement PM reference application
 * :jira:`ZEP-652` - QMSI shim driver: RTC: Implement suspend and resume callbacks
@@ -206,7 +206,7 @@ Bug
 * :jira:`ZEP-401` - PWM driver turns off pin if off time is 0 in set_values
 * :jira:`ZEP-423` - Quark D2000 CRB documentation should include instructions to flash bootloader
 * :jira:`ZEP-435` - Ethernet/IPv4/TCP: ip_buf_appdatalen returns wrong values
-* :jira:`ZEP-456` - doc: `IDT security` section dissapeared
+* :jira:`ZEP-456` - doc: ``IDT security`` section disappeared
 * :jira:`ZEP-457` - doc: contribute/doxygen/typedefs.rst: examples files are broken
 * :jira:`ZEP-459` - doc: kconfig reference entries in HTML are lacking a title
 * :jira:`ZEP-460` - doc: document parameters of DEVICE* macros
@@ -229,7 +229,7 @@ Bug
 * :jira:`ZEP-537` - doc: create external wiki page "Maintainers"
 * :jira:`ZEP-545` - Wrong default value of CONFIG_ADC_QMSI_SAMPLE_WIDTH for x86 QMSI ADC
 * :jira:`ZEP-547` - [nble] Failed to start encryption after reconnection
-* :jira:`ZEP-554` - samples/drivers/aon_counter check readme file
+* :jira:`ZEP-554` - samples/drivers/aon_counter check README file
 * :jira:`ZEP-555` - correct libgcc not getting linked for CONFIG_FLOAT=y on ARM
 * :jira:`ZEP-556` - System hangs during I2C transfer
 * :jira:`ZEP-565` - Ethernet/IPv4/TCP: last commits are breaking network support

@@ -22,71 +22,29 @@
 #include <gpio.h>
 #include <gpio/gpio_stm32.h>
 
-/**
- * @brief map pin function to MODE register value
- */
-static u32_t func_to_mode(int func)
-{
-	switch (func) {
-	case STM32F3X_PIN_CONFIG_ANALOG:
-		return 0x3;
-	case STM32F3X_PIN_CONFIG_BIAS_HIGH_IMPEDANCE:
-	case STM32F3X_PIN_CONFIG_BIAS_PULL_UP:
-	case STM32F3X_PIN_CONFIG_BIAS_PULL_DOWN:
-		return 0x0;
-	case STM32F3X_PIN_CONFIG_DRIVE_OPEN_DRAIN:
-	case STM32F3X_PIN_CONFIG_DRIVE_PUSH_PULL:
-	case STM32F3X_PIN_CONFIG_DRIVE_PUSH_PULL_PU:
-	case STM32F3X_PIN_CONFIG_DRIVE_PUSH_PULL_PD:
-	case STM32F3X_PIN_CONFIG_DRIVE_OPEN_DRAIN_PU:
-	case STM32F3X_PIN_CONFIG_DRIVE_OPEN_DRAIN_PD:
-		return 0x1;
-	case STM32F3X_PIN_CONFIG_AF:
-		return 0x2;
-	}
-	return 0;
-}
 
 int stm32_gpio_flags_to_conf(int flags, int *pincfg)
 {
 	int direction = flags & GPIO_DIR_MASK;
+	int pud = flags & GPIO_PUD_MASK;
 
 	if (!pincfg) {
 		return -EINVAL;
 	}
 
-	int pud = flags & GPIO_PUD_MASK;
-
 	if (direction == GPIO_DIR_OUT) {
-		int type = flags & GPIO_DS_HIGH_MASK;
-
-		if (type == GPIO_DS_DISCONNECT_HIGH) {
-			*pincfg = STM32F3X_PIN_CONFIG_DRIVE_OPEN_DRAIN;
-			if (pud == GPIO_PUD_PULL_UP) {
-				*pincfg =
-					STM32F3X_PIN_CONFIG_DRIVE_OPEN_DRAIN_PU;
-			} else if (pud == GPIO_PUD_PULL_DOWN) {
-				*pincfg =
-					STM32F3X_PIN_CONFIG_DRIVE_OPEN_DRAIN_PD;
-			}
-		} else {
-			*pincfg = STM32F3X_PIN_CONFIG_DRIVE_PUSH_PULL;
-			if (pud == GPIO_PUD_PULL_UP) {
-				*pincfg =
-					STM32F3X_PIN_CONFIG_DRIVE_PUSH_PULL_PU;
-			} else if (pud == GPIO_PUD_PULL_DOWN) {
-				*pincfg =
-					STM32F3X_PIN_CONFIG_DRIVE_PUSH_PULL_PD;
-			}
-		}
+		*pincfg = STM32_MODER_OUTPUT_MODE;
 	} else {
+		/* pull-{up,down} maybe? */
+		*pincfg = STM32_MODER_INPUT_MODE;
+
 		if (pud == GPIO_PUD_PULL_UP) {
-			*pincfg = STM32F3X_PIN_CONFIG_BIAS_PULL_UP;
+			*pincfg = *pincfg | STM32_PUPDR_PULL_UP;
 		} else if (pud == GPIO_PUD_PULL_DOWN) {
-			*pincfg = STM32F3X_PIN_CONFIG_BIAS_PULL_DOWN;
+			*pincfg = *pincfg | STM32_PUPDR_PULL_DOWN;
 		} else {
 			/* floating */
-			*pincfg = STM32F3X_PIN_CONFIG_BIAS_HIGH_IMPEDANCE;
+			*pincfg = *pincfg | STM32_PUPDR_NO_PULL;
 		}
 	}
 
@@ -97,59 +55,31 @@ int stm32_gpio_configure(u32_t *base_addr, int pin, int conf, int altf)
 {
 	volatile struct stm32f3x_gpio *gpio =
 		(struct stm32f3x_gpio *)(base_addr);
-	int mode, cmode;
+	unsigned int mode, otype, ospeed, pupd;
+	unsigned int pin_shift = pin << 1;
+	unsigned int afr_bank = pin / 8;
+	unsigned int afr_shift = (pin % 8) << 2;
+	u32_t scratch;
 
-	cmode = STM32_MODE(conf);
-	mode = func_to_mode(cmode);
+	mode = (conf >> STM32_MODER_SHIFT) & STM32_MODER_MASK;
+	otype = (conf >> STM32_OTYPER_SHIFT) & STM32_OTYPER_MASK;
+	ospeed = (conf >> STM32_OSPEEDR_SHIFT) & STM32_OSPEEDR_MASK;
+	pupd = (conf >> STM32_PUPDR_SHIFT) & STM32_PUPDR_MASK;
 
-	/* clear bits */
-	gpio->moder &= ~(0x3 << (pin * 2));
-	/* set bits */
-	gpio->moder |= (mode << (pin * 2));
+	scratch = gpio->moder & ~(STM32_MODER_MASK << pin_shift);
+	gpio->moder = scratch | (mode << pin_shift);
 
-	if (cmode == STM32F3X_PIN_CONFIG_AF) {
-		/* alternate function setup */
-		int af = STM32_AF(conf);
-		volatile u32_t *afr = &gpio->afrl;
-		int crpin = pin;
+	scratch = gpio->ospeedr & ~(STM32_OSPEEDR_MASK << pin_shift);
+	gpio->ospeedr = scratch | (ospeed << pin_shift);
 
-		if (crpin > 7) {
-			afr = &gpio->afrh;
-			crpin -= 8;
-		}
+	scratch = gpio->otyper & ~(STM32_OTYPER_MASK << pin);
+	gpio->otyper = scratch | (otype << pin);
 
-		/* clear AF bits */
-		*afr &= ~(0xf << (crpin * 4));
-		/* set AF */
-		*afr |= (af << (crpin * 4));
-	} else if (cmode == STM32F3X_PIN_CONFIG_ANALOG) {
-		gpio->pupdr &= ~(0x3 << (pin * 2));
-	} else {
-		/* clear typer */
-		gpio->otyper &= ~(1 << pin);
+	scratch = gpio->pupdr & ~(STM32_PUPDR_MASK << pin_shift);
+	gpio->pupdr = scratch | (pupd << pin_shift);
 
-		if (cmode == STM32F3X_PIN_CONFIG_DRIVE_OPEN_DRAIN ||
-		    cmode == STM32F3X_PIN_CONFIG_DRIVE_OPEN_DRAIN_PU ||
-		    cmode == STM32F3X_PIN_CONFIG_DRIVE_OPEN_DRAIN_PD) {
-			/* configure pin as output open-drain */
-			gpio->otyper |= 1 << pin;
-		}
-
-		/* configure pin as floating by clearing pupd flags */
-		gpio->pupdr &= ~(0x3 << (pin * 2));
-
-		if (cmode == STM32F3X_PIN_CONFIG_BIAS_PULL_UP ||
-		    cmode == STM32F3X_PIN_CONFIG_DRIVE_PUSH_PULL_PU ||
-		    cmode == STM32F3X_PIN_CONFIG_DRIVE_OPEN_DRAIN_PU) {
-			/* enable pull up */
-			gpio->pupdr |= (1 << (pin * 2));
-		} else if (cmode == STM32F3X_PIN_CONFIG_BIAS_PULL_DOWN ||
-			   cmode == STM32F3X_PIN_CONFIG_DRIVE_PUSH_PULL_PD ||
-			   cmode == STM32F3X_PIN_CONFIG_DRIVE_OPEN_DRAIN_PD) {
-			/* or pull down */
-			gpio->pupdr |= (2 << (pin * 2));
-		}
-	}
+	scratch = gpio->afr[afr_bank] & ~(STM32_AFR_MASK << afr_shift);
+	gpio->afr[afr_bank] = scratch | (altf << afr_shift);
 
 	return 0;
 }

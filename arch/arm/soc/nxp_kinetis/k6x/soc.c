@@ -18,7 +18,7 @@
 #include <init.h>
 #include <soc.h>
 #include <uart.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <fsl_common.h>
 #include <fsl_clock.h>
 #include <arch/cpu.h>

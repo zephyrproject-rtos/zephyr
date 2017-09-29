@@ -18,7 +18,7 @@
 
 #include <board.h>
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <drivers/system_timer.h>
 #include "vector_table.h"
 
@@ -47,7 +47,7 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
     .word __reserved
     .word __reserved
     .word __reserved
-    .word __reserved	/* SVC not used for now (PendSV used instead) */
+    .word __svc
     .word __reserved
 #elif defined(CONFIG_ARMV7_M)
     .word __mpu_fault

@@ -347,7 +347,7 @@ static inline enum net_verdict net_if_recv_data(struct net_if *iface,
  * @return Return the link layer header size
  */
 static inline u16_t net_if_get_ll_reserve(struct net_if *iface,
-					     const struct in6_addr *dst_ip6)
+					  const struct in6_addr *dst_ip6)
 {
 	return iface->l2->reserve(iface, (void *)dst_ip6);
 }
@@ -529,6 +529,29 @@ static inline void net_if_router_rm(struct net_if_router *router)
  */
 struct net_if *net_if_get_default(void);
 
+/**
+ * @brief Get the first network interface according to its type.
+ *
+ * @param l2 Layer 2 type of the network interface.
+ *
+ * @return First network interface of a given type or NULL if no such
+ * interfaces was found.
+ */
+struct net_if *net_if_get_first_by_type(const struct net_l2 *l2);
+
+#if defined(CONFIG_NET_L2_IEEE802154)
+/**
+ * @brief Get the first IEEE 802.15.4 network interface.
+ *
+ * @return First IEEE 802.15.4 network interface or NULL if no such
+ * interfaces was found.
+ */
+static inline struct net_if *net_if_get_ieee802154(void)
+{
+	return net_if_get_first_by_type(&NET_L2_GET_NAME(IEEE802154));
+}
+#endif /* CONFIG_NET_L2_IEEE802154 */
+
 #if defined(CONFIG_NET_IPV6)
 /**
  * @brief Check if this IPv6 address belongs to one of the interfaces.
@@ -639,6 +662,69 @@ bool net_if_ipv6_maddr_rm(struct net_if *iface, const struct in6_addr *addr);
  */
 struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(const struct in6_addr *addr,
 						   struct net_if **iface);
+
+/**
+ * @typedef net_if_mcast_callback_t
+
+ * @brief Define callback that is called whenever IPv6 multicast address group
+ * is joined or left.
+
+ * @param "struct net_if *iface" A pointer to a struct net_if to which the
+ *        multicast address is attached.
+ * @param "const struct in6_addr *addr" IPv6 multicast address.
+ * @param "bool is_joined" True if the address is joined, false if left.
+ */
+typedef void (*net_if_mcast_callback_t)(struct net_if *iface,
+					const struct in6_addr *addr,
+					bool is_joined);
+
+/**
+ * @brief Multicast monitor handler struct.
+ *
+ * Stores the multicast callback information. Caller must make sure that
+ * the variable pointed by this is valid during the lifetime of
+ * registration. Typically this means that the variable cannot be
+ * allocated from stack.
+ */
+struct net_if_mcast_monitor {
+	/** Node information for the slist. */
+	sys_snode_t node;
+
+	/** Network interface */
+	struct net_if *iface;
+
+	/** Multicast callback */
+	net_if_mcast_callback_t cb;
+};
+
+/**
+ * @brief Register a multicast monitor
+ *
+ * @param mon Monitor handle. This is a pointer to a monitor storage structure
+ * which should be allocated by caller, but does not need to be initialized.
+ * @param iface Network interface
+ * @param cb Monitor callback
+ */
+void net_if_mcast_mon_register(struct net_if_mcast_monitor *mon,
+			       struct net_if *iface,
+			       net_if_mcast_callback_t cb);
+
+/**
+ * @brief Unregister a multicast monitor
+ *
+ * @param mon Monitor handle
+ */
+void net_if_mcast_mon_unregister(struct net_if_mcast_monitor *mon);
+
+/**
+ * @brief Call registered multicast monitors
+ *
+ * @param iface Network interface
+ * @param addr Multicast address
+ * @param is_joined Is this multicast address joined (true) or not (false)
+ */
+void net_if_mcast_monitor(struct net_if *iface, const struct in6_addr *addr,
+			  bool is_joined);
 
 /**
  * @brief Mark a given multicast address to be joined.
@@ -1017,6 +1103,39 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
  */
 bool net_if_ipv4_addr_rm(struct net_if *iface,  struct in_addr *addr);
 
+/**
+ * @brief Add a IPv4 multicast address to an interface
+ *
+ * @param iface Network interface
+ * @param addr IPv4 multicast address
+ *
+ * @return Pointer to interface multicast address, NULL if cannot be added
+ */
+struct net_if_mcast_addr *net_if_ipv4_maddr_add(struct net_if *iface,
+						const struct in_addr *addr);
+
+/**
+ * @brief Remove an IPv4 multicast address from an interface
+ *
+ * @param iface Network interface
+ * @param addr IPv4 multicast address
+ *
+ * @return True if successfully removed, false otherwise
+ */
+bool net_if_ipv4_maddr_rm(struct net_if *iface, const struct in_addr *addr);
+
+/**
+ * @brief Check if this IPv4 multicast address belongs to a specific interface
+ * or one of the interfaces.
+ *
+ * @param addr IPv4 address
+ * @param iface If *iface is null, then pointer to interface is returned,
+ * otherwise the *iface value needs to be matched.
+ *
+ * @return Pointer to interface multicast address, NULL if not found.
+ */
+struct net_if_mcast_addr *net_if_ipv4_maddr_lookup(const struct in_addr *addr,
+						   struct net_if **iface);
 
 /**
  * @brief Check if IPv4 address is one of the routers configured
@@ -1169,7 +1288,7 @@ typedef void (*net_if_cb_t)(struct net_if *iface, void *user_data);
  * @brief Go through all the network interfaces and call callback
  * for each interface.
  *
- * @param cb User supplied callback function to call
+ * @param cb User-supplied callback function to call
  * @param user_data User specified data
  */
 void net_if_foreach(net_if_cb_t cb, void *user_data);
@@ -1182,6 +1301,20 @@ void net_if_foreach(net_if_cb_t cb, void *user_data);
  * @return 0 on success
  */
 int net_if_up(struct net_if *iface);
+
+/**
+ * @brief Check if interface is up.
+ *
+ * @param iface Pointer to network interface
+ *
+ * @return True if interface is up, False if it is down.
+ */
+static inline bool net_if_is_up(struct net_if *iface)
+{
+	NET_ASSERT(iface);
+
+	return atomic_test_bit(iface->flags, NET_IF_UP);
+}
 
 /**
  * @brief Bring interface down

@@ -9,10 +9,11 @@
 #include <errno.h>
 #include <limits.h>
 #include <misc/printk.h>
+#include <misc/util.h>
 #include <stdbool.h>
-#include <zephyr/types.h>
 #include <stdlib.h>
 #include <string.h>
+#include <zephyr/types.h>
 
 #include "json.h"
 
@@ -24,9 +25,9 @@ struct token {
 
 struct lexer {
 	void *(*state)(struct lexer *lexer);
-	unsigned char *start;
-	unsigned char *pos;
-	unsigned char *end;
+	char *start;
+	char *pos;
+	char *end;
 	struct token token;
 };
 
@@ -76,7 +77,7 @@ static void emit(struct lexer *lexer, enum json_tokens token)
 	lexer->start = lexer->pos;
 }
 
-static unsigned char next(struct lexer *lexer)
+static char next(struct lexer *lexer)
 {
 	if (lexer->pos >= lexer->end) {
 		lexer->pos = lexer->end + 1;
@@ -97,9 +98,9 @@ static void backup(struct lexer *lexer)
 	lexer->pos--;
 }
 
-static unsigned char peek(struct lexer *lexer)
+static char peek(struct lexer *lexer)
 {
-	unsigned char chr = next(lexer);
+	char chr = next(lexer);
 
 	backup(lexer);
 
@@ -111,7 +112,7 @@ static void *lexer_string(struct lexer *lexer)
 	ignore(lexer);
 
 	while (true) {
-		unsigned char chr = next(lexer);
+		char chr = next(lexer);
 
 		if (chr == '\0') {
 			emit(lexer, JSON_TOK_ERROR);
@@ -216,7 +217,7 @@ static void *lexer_null(struct lexer *lexer)
 static void *lexer_number(struct lexer *lexer)
 {
 	while (true) {
-		unsigned char chr = next(lexer);
+		char chr = next(lexer);
 
 		if (isdigit(chr) || chr == '.') {
 			continue;
@@ -232,7 +233,7 @@ static void *lexer_number(struct lexer *lexer)
 static void *lexer_json(struct lexer *lexer)
 {
 	while (true) {
-		unsigned char chr = next(lexer);
+		char chr = next(lexer);
 
 		switch (chr) {
 		case '\0':
@@ -441,12 +442,12 @@ static int decode_value(struct json_obj *obj,
 
 	switch (descr->type) {
 	case JSON_TOK_OBJECT_START:
-		return obj_parse(obj, descr->sub_descr,
-				 descr->sub_descr_len,
+		return obj_parse(obj, descr->object.sub_descr,
+				 descr->object.sub_descr_len,
 				 field);
 	case JSON_TOK_LIST_START:
-		return arr_parse(obj, descr->element_descr,
-				 descr->n_elements, field, val);
+		return arr_parse(obj, descr->array.element_descr,
+				 descr->array.n_elements, field, val);
 	case JSON_TOK_FALSE:
 	case JSON_TOK_TRUE: {
 		bool *v = field;
@@ -475,6 +476,8 @@ static int decode_value(struct json_obj *obj,
 
 static ptrdiff_t get_elem_size(const struct json_obj_descr *descr)
 {
+	assert(descr->alignment);
+
 	switch (descr->type) {
 	case JSON_TOK_NUMBER:
 		return sizeof(s32_t);
@@ -484,13 +487,15 @@ static ptrdiff_t get_elem_size(const struct json_obj_descr *descr)
 	case JSON_TOK_FALSE:
 		return sizeof(bool);
 	case JSON_TOK_LIST_START:
-		return descr->n_elements * get_elem_size(descr->element_descr);
+		return descr->array.n_elements * get_elem_size(descr->array.element_descr);
 	case JSON_TOK_OBJECT_START: {
 		ptrdiff_t total = 0;
 		size_t i;
 
-		for (i = 0; i < descr->sub_descr_len; i++) {
-			total += get_elem_size(&descr->sub_descr[i]);
+		for (i = 0; i < descr->object.sub_descr_len; i++) {
+			ptrdiff_t s = get_elem_size(&descr->object.sub_descr[i]);
+
+			total += ROUND_UP(s, descr->alignment);
 		}
 
 		return total;
@@ -518,16 +523,16 @@ static int arr_parse(struct json_obj *obj,
 			return 0;
 		}
 
+		if (field == last_elem) {
+			return -ENOSPC;
+		}
+
 		if (decode_value(obj, elem_descr, &value, field, val) < 0) {
 			return -EINVAL;
 		}
 
 		(*elements)++;
-
 		field = (char *)field + elem_size;
-		if (field == last_elem) {
-			return -ENOSPC;
-		}
 	}
 
 	return -EINVAL;
@@ -596,7 +601,7 @@ int json_obj_parse(char *payload, size_t len,
 	return obj_parse(&obj, descr, descr_len, val);
 }
 
-static u8_t escape_as(u8_t chr)
+static char escape_as(char chr)
 {
 	switch (chr) {
 	case '"':
@@ -626,10 +631,10 @@ static int json_escape_internal(const char *str,
 	int ret = 0;
 
 	for (cur = str; ret == 0 && *cur; cur++) {
-		u8_t escaped = escape_as(*cur);
+		char escaped = escape_as(*cur);
 
 		if (escaped) {
-			u8_t bytes[2] = { '\\', escaped };
+			char bytes[2] = { '\\', escaped };
 
 			ret = append_bytes(bytes, 2, data);
 		} else {
@@ -697,13 +702,18 @@ ssize_t json_escape(char *str, size_t *len, size_t buf_size)
 static int encode(const struct json_obj_descr *descr, const void *val,
 		  json_append_bytes_t append_bytes, void *data);
 
-static int arr_encode(const struct json_obj_descr *descr, const void *field,
-		      const void *val, json_append_bytes_t append_bytes,
-		      void *data)
+static int arr_encode(const struct json_obj_descr *elem_descr,
+		      const void *field, const void *val,
+		      json_append_bytes_t append_bytes, void *data)
 {
-	struct json_obj_descr elem_descr = { .type = descr->type };
-	ptrdiff_t elem_size = get_elem_size(descr);
-	size_t n_elem = *(size_t *)((char *)val + descr->offset);
+	ptrdiff_t elem_size = get_elem_size(elem_descr);
+	/*
+	 * NOTE: Since an element descriptor's offset isn't meaningful
+	 * (array elements occur at multiple offsets in `val'), we use
+	 * its space in elem_descr to store the offset to the field
+	 * containing the number of elements.
+	 */
+	size_t n_elem = *(size_t *)((char *)val + elem_descr->offset);
 	size_t i;
 	int ret;
 
@@ -713,7 +723,23 @@ static int arr_encode(const struct json_obj_descr *descr, const void *field,
 	}
 
 	for (i = 0; i < n_elem; i++) {
-		ret = encode(&elem_descr, field, append_bytes, data);
+		/*
+		 * Though "field" points at the next element in the
+		 * array which we need to encode, the value in
+		 * elem_descr->offset is actually the offset of the
+		 * length field in the "parent" struct containing the
+		 * array.
+		 *
+		 * To patch things up, we lie to encode() about where
+		 * the field is by exactly the amount it will offset
+		 * it. This is a size optimization for struct
+		 * json_obj_descr: the alternative is to keep a
+		 * separate field next to element_descr which is an
+		 * offset to the length field in the parent struct,
+		 * but that would add a size_t to every descriptor.
+		 */
+		ret = encode(elem_descr, (char *)field - elem_descr->offset,
+			     append_bytes, data);
 		if (ret < 0) {
 			return ret;
 		}
@@ -776,10 +802,6 @@ static int bool_encode(const bool *value, json_append_bytes_t append_bytes,
 	return append_bytes("false", 5, data);
 }
 
-static int obj_encode(const struct json_obj_descr *descr, size_t descr_len,
-		      const void *val, json_append_bytes_t append_bytes,
-		      void *data);
-
 static int encode(const struct json_obj_descr *descr, const void *val,
 		  json_append_bytes_t append_bytes, void *data)
 {
@@ -792,11 +814,12 @@ static int encode(const struct json_obj_descr *descr, const void *val,
 	case JSON_TOK_STRING:
 		return str_encode(ptr, append_bytes, data);
 	case JSON_TOK_LIST_START:
-		return arr_encode(descr->element_descr, ptr,
+		return arr_encode(descr->array.element_descr, ptr,
 				  val, append_bytes, data);
 	case JSON_TOK_OBJECT_START:
-		return obj_encode(descr->sub_descr, descr->sub_descr_len,
-				  ptr, append_bytes, data);
+		return json_obj_encode(descr->object.sub_descr,
+				       descr->object.sub_descr_len,
+				       ptr, append_bytes, data);
 	case JSON_TOK_NUMBER:
 		return num_encode(ptr, append_bytes, data);
 	default:
@@ -804,9 +827,9 @@ static int encode(const struct json_obj_descr *descr, const void *val,
 	}
 }
 
-static int obj_encode(const struct json_obj_descr *descr, size_t descr_len,
-		      const void *val, json_append_bytes_t append_bytes,
-		      void *data)
+int json_obj_encode(const struct json_obj_descr *descr, size_t descr_len,
+		    const void *val, json_append_bytes_t append_bytes,
+		    void *data)
 {
 	size_t i;
 	int ret;
@@ -844,27 +867,13 @@ static int obj_encode(const struct json_obj_descr *descr, size_t descr_len,
 	return append_bytes("}", 1, data);
 }
 
-int json_obj_encode(const struct json_obj_descr *descr, size_t descr_len,
-		    const void *val, json_append_bytes_t append_bytes,
-		    void *data)
-{
-	int ret;
-
-	ret = obj_encode(descr, descr_len, val, append_bytes, data);
-	if (ret < 0) {
-		return ret;
-	}
-
-	return append_bytes("", 1, data);
-}
-
 struct appender {
 	char *buffer;
 	size_t used;
 	size_t size;
 };
 
-static int append_bytes_to_buf(const u8_t *bytes, size_t len, void *data)
+static int append_bytes_to_buf(const char *bytes, size_t len, void *data)
 {
 	struct appender *appender = data;
 
@@ -888,11 +897,13 @@ int json_obj_encode_buf(const struct json_obj_descr *descr, size_t descr_len,
 			       &appender);
 }
 
-static int measure_bytes(const u8_t *bytes, size_t len, void *data)
+static int measure_bytes(const char *bytes, size_t len, void *data)
 {
 	ssize_t *total = data;
 
 	*total += (ssize_t)len;
+
+	ARG_UNUSED(bytes);
 
 	return 0;
 }

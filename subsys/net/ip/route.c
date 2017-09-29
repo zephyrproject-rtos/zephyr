@@ -465,6 +465,10 @@ int net_route_del_by_nexthop(struct net_if *iface, struct in6_addr *nexthop)
 		struct net_nbr *nbr = get_nbr(i);
 		struct net_route_entry *route = net_route_data(nbr);
 
+		if (!route) {
+			continue;
+		}
+
 		SYS_SLIST_FOR_EACH_CONTAINER(&route->nexthop, nexthop_route,
 					     node) {
 			if (nexthop_route->nbr == nbr_nexthop) {
@@ -550,7 +554,9 @@ struct in6_addr *net_route_get_nexthop(struct net_route_entry *route)
 	struct net_route_nexthop *nexthop_route;
 	struct net_ipv6_nbr_data *ipv6_nbr_data;
 
-	NET_ASSERT(route);
+	if (!route) {
+		return NULL;
+	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&route->nexthop, nexthop_route, node) {
 		struct in6_addr *addr;
@@ -578,8 +584,18 @@ int net_route_foreach(net_route_cb_t cb, void *user_data)
 	int i, ret = 0;
 
 	for (i = 0; i < CONFIG_NET_MAX_ROUTES; i++) {
-		struct net_nbr *nbr = get_nbr(i);
-		struct net_route_entry *route = net_route_data(nbr);
+		struct net_route_entry *route;
+		struct net_nbr *nbr;
+
+		nbr = get_nbr(i);
+		if (!nbr) {
+			continue;
+		}
+
+		route = net_route_data(nbr);
+		if (!route) {
+			continue;
+		}
 
 		cb(route, user_data);
 
@@ -733,6 +749,11 @@ int net_route_packet(struct net_pkt *pkt, struct in6_addr *nexthop)
 		NET_DBG("Cannot find %s neighbor link layer address.",
 			net_sprint_ipv6_addr(nexthop));
 		return -ESRCH;
+	}
+
+	if (!net_pkt_ll_src(pkt)->addr) {
+		NET_DBG("Link layer source address not set");
+		return -EINVAL;
 	}
 
 	/* Sanitycheck: If src and dst ll addresses are going to be same,

@@ -46,7 +46,7 @@ Supported Features
 +-----------+------------+-------------------------------------+
 | SPIS      | on-chip    | SPI slave                           |
 +-----------+------------+-------------------------------------+
-| RADIO     | on-chip    | bluetooth                           |
+| RADIO     | on-chip    | Bluetooth                           |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
@@ -58,6 +58,8 @@ Connections and IOs
 
 The SWD debug pins are broken out to an external header; all other
 connected pins are to the main STM32F401RET chip.
+
+.. _96b_carbon_nrf51_programming:
 
 Programming and Debugging
 *************************
@@ -116,6 +118,28 @@ As an aid to debugging, this board configuration directs a console
 output to a currently unused pin connected to the STM32F401RET. Users
 who are experienced in electronics rework can remove a resistor (R22)
 on the board and attach a wire to the nRF51822's UART output.
+
+.. _96b_carbon_nrf51_bluetooth:
+
+Providing Bluetooth to 96b_carbon
+*********************************
+
+This 96b_carbon_nrf51 Zephyr configuration can be used to provide
+Bluetooth functionality from the secondary nRF51822 chip to the
+primary STM32F401RE chip on the :ref:`96b_carbon_board`.
+
+To do this, build the ``samples/bluetooth/hci_spi/`` application
+provided with Zephyr with ``BOARD=96b_carbon_nrf51``, then flash it to
+the nRF51822 chip using the instructions :ref:`above
+<96b_carbon_nrf51_programming>`. (For instructions on how to build a
+Zephyr application, see :ref:`build_an_application`.)
+
+.. warning::
+
+   Be sure to flash the hci_spi application to the nRF51822 chip and
+   not to the main STM32F401RET chip.  While both chips are supported
+   by Zephyr, the hci_spi application providing Bluetooth support will
+   only run on the nRF51822 chip.
 
 References
 **********

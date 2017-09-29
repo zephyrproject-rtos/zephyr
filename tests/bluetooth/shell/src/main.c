@@ -23,14 +23,12 @@
 
 #include <shell/shell.h>
 
-#include <gatt/gap.h>
-#include <gatt/hrs.h>
+#include <bluetooth/hrs.h>
 
-#define DEVICE_NAME CONFIG_BLUETOOTH_DEVICE_NAME
+#define DEVICE_NAME CONFIG_BT_DEVICE_NAME
 
 #define MY_SHELL_MODULE "btshell"
 
-static u16_t appearance_value = 0x0001;
 static bool hrs_simulate;
 
 static int cmd_hrs_simulate(int argc, char *argv[])
@@ -44,8 +42,7 @@ static int cmd_hrs_simulate(int argc, char *argv[])
 
 		if (!hrs_registered) {
 			printk("Registering HRS Service\n");
-			gap_init(DEVICE_NAME, appearance_value);
-			hrs_init(0x01);
+			bt_hrs_register(0x01, NULL);
 			hrs_registered = true;
 		}
 
@@ -85,7 +82,7 @@ void main(void)
 
 		/* Heartrate measurements simulation */
 		if (hrs_simulate) {
-			hrs_notify();
+			bt_hrs_simulate();
 		}
 	}
 }

@@ -1,0 +1,12 @@
+identifier: arduino_101_sss
+name: Arduino 101 - Sensor Subsystem
+type: mcu
+arch: arc
+toolchain:
+  - zephyr
+ram: 24
+testing:
+        default: true
+        ignore_tags:
+          - net
+          - bluetooth

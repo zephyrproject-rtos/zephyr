@@ -83,13 +83,6 @@ __swap:
 	call4 _sys_k_event_logger_context_switch
 #endif
 #endif
-#ifdef CONFIG_STACK_SENTINEL
-#ifdef __XTENSA_CALL0_ABI__
-	call0 _check_stack_sentinel
-#else
-	call4 _check_stack_sentinel
-#endif
-#endif
 	/* _thread := _kernel.ready_q.cache */
 	l32i a3, a2, KERNEL_OFFSET(ready_q_cache)
 	/*

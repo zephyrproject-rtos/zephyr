@@ -28,10 +28,6 @@
 #error "CONFIG_NET_IPV6 or CONFIG_NET_IPV4 must be enabled for irc_bot"
 #endif
 
-#define STACK_SIZE	2048
-u8_t stack[STACK_SIZE];
-static struct k_thread bot_thread;
-
 #define CMD_BUFFER_SIZE 256
 static u8_t cmd_buf[CMD_BUFFER_SIZE];
 
@@ -146,7 +142,7 @@ transmit(struct net_context *ctx, char buffer[], size_t len)
 		return -ENOMEM;
 	}
 
-	if (!net_pkt_append_all(send_pkt, len, buffer, K_FOREVER)) {
+	if (!net_pkt_append_all(send_pkt, len, (u8_t *)buffer, K_FOREVER)) {
 		return -EINVAL;
 	}
 
@@ -325,7 +321,7 @@ on_context_recv(struct net_context *ctx, struct net_pkt *pkt,
 			}
 
 			cmd_buf[cmd_len] = '\0';
-			process_command(irc, cmd_buf, cmd_len);
+			process_command(irc, (char *)cmd_buf, cmd_len);
 			cmd_len = 0;
 		}
 	}
@@ -434,6 +430,7 @@ zirc_chan_part(struct zirc_chan *chan)
 	return -ENOENT;
 }
 
+#if defined(CONFIG_NET_IPV6)
 static int in_addr_set(sa_family_t family,
 		       const char *ip_addr,
 		       int port,
@@ -470,6 +467,7 @@ static int in_addr_set(sa_family_t family,
 
 	return rc;
 }
+#endif
 
 #if defined(CONFIG_DNS_RESOLVER)
 static void resolve_cb(enum dns_resolve_status status,
@@ -494,7 +492,7 @@ static void resolve_cb(enum dns_resolve_status status,
 				&net_sin6(&info->ai_addr)->sin6_addr);
 		net_sin6(&irc->remote_addr)->sin6_port = htons(DEFAULT_PORT);
 		net_sin6(&irc->remote_addr)->sin6_family = AF_INET6;
-		irc->remote_addr.family = AF_INET6;
+		irc->remote_addr.sa_family = AF_INET6;
 	} else
 #endif
 #if defined(CONFIG_NET_IPV4)
@@ -503,7 +501,7 @@ static void resolve_cb(enum dns_resolve_status status,
 				&net_sin(&info->ai_addr)->sin_addr);
 		net_sin(&irc->remote_addr)->sin_port = htons(DEFAULT_PORT);
 		net_sin(&irc->remote_addr)->sin_family = AF_INET;
-		irc->remote_addr.family = AF_INET;
+		irc->remote_addr.sa_family = AF_INET;
 	} else
 #endif
 	{
@@ -849,13 +847,12 @@ on_msg_rcvd(void *data, struct zirc_chan *chan, char *umask, char *msg)
 #define DHCPV4_TIMEOUT K_SECONDS(30)
 
 static struct net_mgmt_event_callback mgmt4_cb;
-static struct k_sem dhcpv4_ok = K_SEM_INITIALIZER(dhcpv4_ok, 0, UINT_MAX);
+static K_SEM_DEFINE(dhcpv4_ok, 0, UINT_MAX);
 
 static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
 				  u32_t mgmt_event,
 				  struct net_if *iface)
 {
-	char hr_addr[NET_IPV4_ADDR_LEN];
 	int i;
 
 	if (mgmt_event != NET_EVENT_IPV4_ADDR_ADD) {
@@ -869,16 +866,24 @@ static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
 			continue;
 		}
 
-		NET_INFO("IPv4 address: %s",
-			 net_addr_ntop(AF_INET, &if_addr->address.in_addr,
-				       hr_addr, NET_IPV4_ADDR_LEN));
-		NET_INFO("Lease time: %u seconds", iface->dhcpv4.lease_time);
-		NET_INFO("Subnet: %s",
-			 net_addr_ntop(AF_INET, &iface->ipv4.netmask,
-				       hr_addr, NET_IPV4_ADDR_LEN));
-		NET_INFO("Router: %s",
-			 net_addr_ntop(AF_INET, &iface->ipv4.gw,
-				       hr_addr, NET_IPV4_ADDR_LEN));
+#if CONFIG_SYS_LOG_NET_LEVEL > 2
+		{
+			char hr_addr[NET_IPV4_ADDR_LEN];
+
+			NET_INFO("IPv4 address: %s",
+				 net_addr_ntop(AF_INET,
+					       &if_addr->address.in_addr,
+					       hr_addr, NET_IPV4_ADDR_LEN));
+			NET_INFO("Lease time: %u seconds",
+				 iface->dhcpv4.lease_time);
+			NET_INFO("Subnet: %s",
+				 net_addr_ntop(AF_INET, &iface->ipv4.netmask,
+					       hr_addr, NET_IPV4_ADDR_LEN));
+			NET_INFO("Router: %s",
+				 net_addr_ntop(AF_INET, &iface->ipv4.gw,
+					       hr_addr, NET_IPV4_ADDR_LEN));
+		}
+#endif
 		break;
 	}
 
@@ -901,7 +906,7 @@ static void setup_dhcpv4(struct zirc *irc, struct net_if *iface)
 
 	net_ipaddr_copy(&net_sin(&irc->local_addr)->sin_addr,
 			&iface->dhcpv4.requested_ip);
-	irc->local_addr.family = AF_INET;
+	irc->local_addr.sa_family = AF_INET;
 	net_sin(&irc->local_addr)->sin_family = AF_INET;
 	net_sin(&irc->local_addr)->sin_port = 0;
 
@@ -915,7 +920,9 @@ static void setup_dhcpv4(struct zirc *irc, struct net_if *iface)
 
 static void setup_ipv4(struct zirc *irc, struct net_if *iface)
 {
+#if CONFIG_SYS_LOG_NET_LEVEL > 2
 	char hr_addr[NET_IPV4_ADDR_LEN];
+#endif
 	struct in_addr addr;
 
 	if (net_addr_pton(AF_INET, ZIRC_LOCAL_IP_ADDR, &addr)) {
@@ -945,7 +952,7 @@ static void setup_ipv4(struct zirc *irc, struct net_if *iface)
 #define DAD_TIMEOUT K_SECONDS(3)
 
 static struct net_mgmt_event_callback mgmt6_cb;
-static struct k_sem dad_ok = K_SEM_INITIALIZER(dad_ok, 0, UINT_MAX);
+static K_SEM_DEFINE(dad_ok, 0, UINT_MAX);
 static struct in6_addr laddr;
 
 static void ipv6_dad_ok_handler(struct net_mgmt_event_callback *cb,
@@ -971,7 +978,9 @@ static void ipv6_dad_ok_handler(struct net_mgmt_event_callback *cb,
 
 static void setup_ipv6(struct zirc *irc, struct net_if *iface)
 {
+#if CONFIG_SYS_LOG_NET_LEVEL > 2
 	char hr_addr[NET_IPV6_ADDR_LEN];
+#endif
 
 	if (net_addr_pton(AF_INET6, ZIRC_LOCAL_IP_ADDR, &laddr)) {
 		NET_ERR("Invalid address: %s", ZIRC_LOCAL_IP_ADDR);
@@ -1046,7 +1055,7 @@ initialize_hardware(void)
 	}
 }
 
-static void irc_bot(void)
+void main(void)
 {
 	struct zirc irc = { };
 	struct zirc_chan chan = { };
@@ -1065,11 +1074,4 @@ static void irc_bot(void)
 	for (;;) {
 		k_sleep(K_FOREVER);
 	}
-}
-
-void main(void)
-{
-	k_thread_create(&bot_thread, stack, STACK_SIZE,
-			(k_thread_entry_t)irc_bot,
-			NULL, NULL, NULL, K_PRIO_COOP(7), 0, 0);
 }

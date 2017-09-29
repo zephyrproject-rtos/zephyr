@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32l4xx_ll_dma2d.c
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    21-April-2017
   * @brief   DMA2D LL module driver.
   ******************************************************************************
   * @attention
@@ -202,6 +200,12 @@ ErrorStatus LL_DMA2D_Init(DMA2D_TypeDef *DMA2Dx, LL_DMA2D_InitTypeDef *DMA2D_Ini
   assert_param(IS_LL_DMA2D_RED(DMA2D_InitStruct->OutputRed));
   assert_param(IS_LL_DMA2D_BLUE(DMA2D_InitStruct->OutputBlue));
   assert_param(IS_LL_DMA2D_ALPHA(DMA2D_InitStruct->OutputAlpha));
+#if defined(DMA2D_OUTPUT_TWO_BY_TWO_SWAP_SUPPORT)
+  assert_param(IS_LL_DMA2D_SWAP_MODE(DMA2D_InitStruct->OutputSwapMode));
+#endif /* DMA2D_OUTPUT_TWO_BY_TWO_SWAP_SUPPORT */
+#if defined(DMA2D_LINE_OFFSET_MODE_SUPPORT)
+  assert_param(IS_LL_DMA2D_OFFSET_MODE(DMA2D_InitStruct->LineOffsetMode));
+#endif /* DMA2D_LINE_OFFSET_MODE_SUPPORT */
   assert_param(IS_LL_DMA2D_OFFSET(DMA2D_InitStruct->LineOffset));
   assert_param(IS_LL_DMA2D_ALPHAINV(DMA2D_InitStruct->AlphaInversionMode));
   assert_param(IS_LL_DMA2D_RBSWAP(DMA2D_InitStruct->RBSwapMode));
@@ -213,11 +217,21 @@ ErrorStatus LL_DMA2D_Init(DMA2D_TypeDef *DMA2Dx, LL_DMA2D_InitTypeDef *DMA2D_Ini
   if ((tmp == 0U) && (tmp1 == 0U) && (tmp2 == 0U))
   {
     /* DMA2D CR register configuration -------------------------------------------*/
+#if defined(DMA2D_LINE_OFFSET_MODE_SUPPORT)
+    MODIFY_REG(DMA2Dx->CR, (DMA2D_CR_MODE | DMA2D_CR_LOM), \
+               (DMA2D_InitStruct->Mode | DMA2D_InitStruct->LineOffsetMode));
+#else
     LL_DMA2D_SetMode(DMA2Dx, DMA2D_InitStruct->Mode);
+#endif /* DMA2D_LINE_OFFSET_MODE_SUPPORT */
 
     /* DMA2D OPFCCR register configuration ---------------------------------------*/
+#if defined(DMA2D_OUTPUT_TWO_BY_TWO_SWAP_SUPPORT)
+    MODIFY_REG(DMA2Dx->OPFCCR, (DMA2D_OPFCCR_CM | DMA2D_OPFCCR_SB | DMA2D_OPFCCR_AI | DMA2D_OPFCCR_RBS), \
+               (DMA2D_InitStruct->ColorMode | DMA2D_InitStruct->OutputSwapMode | DMA2D_InitStruct->AlphaInversionMode | DMA2D_InitStruct->RBSwapMode));
+#else
     MODIFY_REG(DMA2Dx->OPFCCR, (DMA2D_OPFCCR_CM | DMA2D_OPFCCR_RBS | DMA2D_OPFCCR_AI), \
                (DMA2D_InitStruct->ColorMode | DMA2D_InitStruct->AlphaInversionMode | DMA2D_InitStruct->RBSwapMode));
+#endif /* DMA2D_OUTPUT_TWO_BY_TWO_SWAP_SUPPORT */
 
     /* DMA2D OOR register configuration ------------------------------------------*/
     LL_DMA2D_SetLineOffset(DMA2Dx, DMA2D_InitStruct->LineOffset);
@@ -256,12 +270,18 @@ void LL_DMA2D_StructInit(LL_DMA2D_InitTypeDef *DMA2D_InitStruct)
   DMA2D_InitStruct->ColorMode           = LL_DMA2D_OUTPUT_MODE_ARGB8888;
   DMA2D_InitStruct->NbrOfLines          = 0x0U;
   DMA2D_InitStruct->NbrOfPixelsPerLines = 0x0U;
+#if defined(DMA2D_LINE_OFFSET_MODE_SUPPORT)
+  DMA2D_InitStruct->LineOffset          = LL_DMA2D_LINE_OFFSET_PIXELS;
+#endif /* DMA2D_LINE_OFFSET_MODE_SUPPORT */
   DMA2D_InitStruct->LineOffset          = 0x0U;
   DMA2D_InitStruct->OutputBlue          = 0x0U;
   DMA2D_InitStruct->OutputGreen         = 0x0U;
   DMA2D_InitStruct->OutputRed           = 0x0U;
   DMA2D_InitStruct->OutputAlpha         = 0x0U;
   DMA2D_InitStruct->OutputMemoryAddress = 0x0U;
+#if defined(DMA2D_OUTPUT_TWO_BY_TWO_SWAP_SUPPORT)
+  DMA2D_InitStruct->OutputSwapMode      = LL_DMA2D_SWAP_MODE_REGULAR;
+#endif /* DMA2D_OUTPUT_TWO_BY_TWO_SWAP_SUPPORT */
   DMA2D_InitStruct->AlphaInversionMode  = LL_DMA2D_ALPHA_REGULAR;
   DMA2D_InitStruct->RBSwapMode          = LL_DMA2D_RB_MODE_REGULAR;
 }

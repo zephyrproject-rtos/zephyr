@@ -7,6 +7,7 @@
 #include <zephyr.h>
 
 #include <net/net_pkt.h>
+#include <net/udp.h>
 
 #include "zperf_session.h"
 
@@ -21,6 +22,7 @@ struct session *get_session(struct net_pkt *pkt, enum session_proto proto)
 	struct session *free = NULL;
 	struct in6_addr ipv6 = { };
 	struct in_addr ipv4 = { };
+	struct net_udp_hdr hdr, *udp_hdr;
 	int i = 0;
 	u16_t port;
 
@@ -34,8 +36,14 @@ struct session *get_session(struct net_pkt *pkt, enum session_proto proto)
 		return NULL;
 	}
 
+	udp_hdr = net_udp_get_hdr(pkt, &hdr);
+	if (!udp_hdr) {
+		printk("Invalid UDP data\n");
+		return NULL;
+	}
+
 	/* Get tuple of the remote connection */
-	port = NET_UDP_HDR(pkt)->src_port;
+	port = udp_hdr->src_port;
 
 	if (net_pkt_family(pkt) == AF_INET6) {
 		net_ipaddr_copy(&ipv6, &NET_IPV6_HDR(pkt)->src);

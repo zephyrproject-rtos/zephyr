@@ -1,16 +1,5 @@
-CC3200 Board and Bootloader info taken from:
-* http://www.ti.com.cn/cn/lit/ug/swru367c/swru367c.pdf
-* http://www.ti.com/lit/ug/swru369c/swru369c.pdf
-
 CC3220 Info taken from:
 * http://www.ti.com/lit/ug/swru465/swru465.pdf
-
-Notes for CC3200:
- * CC3200 has no integrated flash Memory.
- * TI bootloader takes first 16Kb of the 256Kb SRAM, so app must start at
-   0x20004000.  CC3200 Kconfig must set SRAM size to 240Kb or less, since
-   Zephyr computes TOP_OF_MEMORY (used for stack) based on SRAM_BASE_ADDRESS
-   + SRAM_SIZE.
 
 Notes for CC3220SF:
  * Text must start at 0x800 offset in flash.  The first 0x800 bytes are

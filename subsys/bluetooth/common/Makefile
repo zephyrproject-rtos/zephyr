@@ -1,4 +1,5 @@
 ccflags-y += -I$(srctree)/subsys/bluetooth
 
-obj-$(CONFIG_BLUETOOTH_DEBUG) += log.o
-obj-$(CONFIG_BLUETOOTH_RPA) += rpa.o
+obj-y += dummy.o
+obj-$(CONFIG_BT_DEBUG) += log.o
+obj-$(CONFIG_BT_RPA) += rpa.o

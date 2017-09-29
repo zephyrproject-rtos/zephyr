@@ -10,34 +10,27 @@
 # Bluetooth options
 #
 
-if BLUETOOTH
+# Controller support is an HCI driver in itself, so these HCI driver
+# options are only applicable if controller support hasn't been enabled.
+if BT && ! BT_CTLR
 
 menu "Bluetooth Drivers"
 
-if BLUETOOTH_HCI
+if BT_HCI
 source "drivers/bluetooth/hci/Kconfig"
 endif
 
-if BLUETOOTH_CUSTOM
+if BT_CUSTOM
 # Insert here any custom (non-HCI) offload drives
 endif
 
-config BLUETOOTH_NRF51_PM
+config BT_NRF51_PM
 	bool "nRF51 Power Management [EXPERIMENTAL]"
-	depends on BLUETOOTH_H4
+	depends on BT_H4
 	help
 	  Power Management support for Nordic BLE nRF51 chip. Allows to enable,
 	  disable the chip and handle wakeups.
 
-config BLUETOOTH_WAIT_NOP
-	bool "Wait for \"NOP\" Command Complete event during init"
-	depends on BLUETOOTH_HCI
-	help
-	  Some controllers emit a Command Complete event for the NOP
-	  opcode to indicate that they're ready to receive commands.
-	  This option should be selected if the controller used
-	  exhibits such behavior.
-
 endmenu
 
-endif # BLUETOOTH
+endif # BT && ! BT_CTLR

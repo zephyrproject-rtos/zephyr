@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- #include <sensor.h>
- #include <kernel.h>
- #include <device.h>
- #include <init.h>
- #include <i2c.h>
- #include <misc/byteorder.h>
- #include <misc/__assert.h>
+#include <sensor.h>
+#include <kernel.h>
+#include <device.h>
+#include <init.h>
+#include <i2c.h>
+#include <misc/byteorder.h>
+#include <misc/__assert.h>
 
- #include <gpio.h>
+#include <gpio.h>
 
- #include "lsm9ds0_gyro.h"
+#include "lsm9ds0_gyro.h"
 
 extern struct lsm9ds0_gyro_data lsm9ds0_gyro_data;
 

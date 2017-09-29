@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_crc_ex.c
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   Extended CRC HAL module driver.
   *          This file provides firmware functions to manage the extended
   *          functionalities of the CRC peripheral.
@@ -91,12 +89,12 @@
 
 /**
   * @brief  Initialize the CRC polynomial if different from default one.
-  * @param  hcrc: CRC handle
-  * @param  Pol: CRC generating polynomial (7, 8, 16 or 32-bit long).
+  * @param  hcrc CRC handle
+  * @param  Pol CRC generating polynomial (7, 8, 16 or 32-bit long).
   *         This parameter is written in normal representation, e.g.
   *         @arg for a polynomial of degree 7, X^7 + X^6 + X^5 + X^2 + 1 is written 0x65
   *         @arg for a polynomial of degree 16, X^16 + X^12 + X^5 + 1 is written 0x1021
-  * @param  PolyLength: CRC polynomial length.
+  * @param  PolyLength CRC polynomial length.
   *         This parameter can be one of the following values:
   *          @arg CRC_POLYLENGTH_7B: 7-bit long CRC (generating polynomial of degree 7)
   *          @arg CRC_POLYLENGTH_8B: 8-bit long CRC (generating polynomial of degree 8)
@@ -159,8 +157,8 @@ HAL_StatusTypeDef HAL_CRCEx_Polynomial_Set(CRC_HandleTypeDef *hcrc, uint32_t Pol
 
 /**
   * @brief  Set the Reverse Input data mode.
-  * @param  hcrc: CRC handle
-  * @param  InputReverseMode: Input Data inversion mode.
+  * @param  hcrc CRC handle
+  * @param  InputReverseMode Input Data inversion mode.
   *         This parameter can be one of the following values:
   *          @arg CRC_INPUTDATA_NOINVERSION: no change in bit order (default value)
   *          @arg CRC_INPUTDATA_INVERSION_BYTE: Byte-wise bit reversal
@@ -187,8 +185,8 @@ HAL_StatusTypeDef HAL_CRCEx_Input_Data_Reverse(CRC_HandleTypeDef *hcrc, uint32_t
 
 /**
   * @brief  Set the Reverse Output data mode.
-  * @param  hcrc: CRC handle
-  * @param  OutputReverseMode: Output Data inversion mode.
+  * @param  hcrc CRC handle
+  * @param  OutputReverseMode Output Data inversion mode.
   *         This parameter can be one of the following values:
   *          @arg CRC_OUTPUTDATA_INVERSION_DISABLE: no CRC inversion (default value)
   *          @arg CRC_OUTPUTDATA_INVERSION_ENABLE: bit-level inversion (e.g. for a 8-bit CRC: 0xB5 becomes 0xAD)

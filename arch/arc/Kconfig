@@ -55,6 +55,7 @@ menu "ARCv2 Family Options"
 
 config	CPU_ARCV2
 	bool
+	select		ARCH_HAS_STACK_PROTECTION
 	default y
 	help
 	  This option signifies the use of a CPU of the ARCv2 family.
@@ -103,20 +104,10 @@ config	RGF_NUM_BANKS
 	register bank, the fast interrupt handler must save
 	and restore general purpose registers.
 
-config	FIRQ_STACK_SIZE
-	int
-	prompt "Size of stack for FIRQs (in bytes)"
-	depends on CPU_ARCV2
-	default 1024
-	help
-	  FIRQs and regular IRQs have different stacks so that a FIRQ can start
-	  running without doing stack switching in software.
-
 config	ARC_STACK_CHECKING
-	bool "Enable Stack Checking"
-	depends on CPU_ARCV2
+	bool
+	default y if HW_STACK_PROTECTION
 	select THREAD_STACK_INFO
-	default n
 	help
 	  ARCV2 has a special feature allowing to check stack overflows. This
 	  enables code that allows using this debug feature
@@ -168,7 +159,7 @@ config CODE_DENSITY
 	bool
 	default n
 	help
-	Enbale code density option to get better code desntiy
+	Enable code density option to get better code density
 
 menu "Floating Point Options"
 depends on CPU_HAS_FPU
@@ -192,6 +183,21 @@ config FP_SHARING
 	help
 	This option allows multiple tasks and fibers to use the floating point
 	registers.
+
+endmenu
+
+menu "ARC MPU Options"
+depends on CPU_HAS_MPU
+
+config ARC_MPU_ENABLE
+	bool "Enable MPU"
+	depends on CPU_HAS_MPU
+	select ARC_MPU
+	default n
+	help
+	  Enable MPU
+
+source "arch/arc/core/mpu/Kconfig"
 
 endmenu
 

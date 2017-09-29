@@ -24,12 +24,14 @@
 	/* exports (internal APIs) */
 
 	GTEXT(__swap)
+	GTEXT(_x86_thread_entry_wrapper)
+	GTEXT(_x86_user_thread_entry_wrapper)
 
 	/* externs */
-	GDATA(_k_neg_eagain)
-#ifdef CONFIG_STACK_SENTINEL
-	GTEXT(_check_stack_sentinel)
+#ifdef CONFIG_X86_USERSPACE
+	GTEXT(_x86_swap_update_page_tables)
 #endif
+	GDATA(_k_neg_eagain)
 
 /**
  *
@@ -97,8 +99,8 @@ SECTION_FUNC(TEXT, __swap)
 	push %eax
 	push %edx
 	rdtsc
-	mov %eax,__start_swap_tsc
-	mov %edx,__start_swap_tsc+4
+	mov %eax,__start_swap_time
+	mov %edx,__start_swap_time+4
 	pop %edx
 	pop %eax
 #endif
@@ -136,22 +138,36 @@ SECTION_FUNC(TEXT, __swap)
 
 	/* save esp into k_thread structure */
 
-	movl	_kernel_offset_to_current(%edi), %ecx
-	movl	%esp, _thread_offset_to_esp(%ecx)
+	movl	_kernel_offset_to_current(%edi), %edx
+	movl	%esp, _thread_offset_to_esp(%edx)
 
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
 	/* Register the context switch */
 	call	_sys_k_event_logger_context_switch
 #endif
-#ifdef CONFIG_STACK_SENTINEL
-	call	_check_stack_sentinel
-#endif
 	movl	_kernel_offset_to_ready_q_cache(%edi), %eax
 
 	/*
 	 * At this point, the %eax register contains the 'k_thread *' of the
-	 * thread to be swapped in, and %edi still contains &_kernel.
+	 * thread to be swapped in, and %edi still contains &_kernel. %edx
+	 * has the pointer to the outgoing thread.
 	 */
+#ifdef CONFIG_X86_USERSPACE
+
+#ifdef CONFIG_X86_IAMCU
+	push	%eax
+#else
+	push	%edx
+	push	%eax
+#endif
+	call	_x86_swap_update_page_tables
+#ifdef CONFIG_X86_IAMCU
+	pop	%eax
+#else
+	pop	%eax
+	pop	%edx
+#endif
+#endif
 
 #ifdef CONFIG_FP_SHARING
 	/*
@@ -334,8 +350,7 @@ CROHandlingDone:
 	 *
 	 * - the return value for __swap() that was set up by a call to
 	 * _set_thread_return_value()
-	 * - in legacy kernel, same value as %ebx, which is non-volatile
-	 * - in unified kernel, -EINVAL
+	 * - -EINVAL
 	 */
 
 	/* Utilize the 'eflags' parameter to __swap() */
@@ -368,10 +383,88 @@ skipIntLatencyStop:
 	/* Save the eax and edx registers before reading the time stamp
 	* once done pop the values.
 	*/
-	cmp $0x1,__read_swap_end_tsc_value
+	cmp $0x1,__read_swap_end_time_value
 	jne time_read_not_needed
-	movw $0x2,__read_swap_end_tsc_value
-	read_tsc __common_var_swap_end_tsc
+	movw $0x2,__read_swap_end_time_value
+	read_tsc __common_var_swap_end_time
 time_read_not_needed:
 #endif
 	ret
+
+#if defined(CONFIG_GDB_INFO) || defined(CONFIG_DEBUG_INFO) \
+	|| defined(CONFIG_X86_IAMCU)
+/**
+ *
+ * @brief Adjust stack/parameters before invoking thread entry function
+ *
+ * This function adjusts the initial stack frame created by _new_thread() such
+ * that the GDB stack frame unwinders recognize it as the outermost frame in
+ * the thread's stack.  For targets that use the IAMCU calling convention, the
+ * first three arguments are popped into eax, edx, and ecx. The function then
+ * jumps to _thread_entry().
+ *
+ * GDB normally stops unwinding a stack when it detects that it has
+ * reached a function called main().  Kernel tasks, however, do not have
+ * a main() function, and there does not appear to be a simple way of stopping
+ * the unwinding of the stack.
+ *
+ * SYS V Systems:
+ *
+ * Given the initial thread created by _new_thread(), GDB expects to find a
+ * return address on the stack immediately above the thread entry routine
+ * _thread_entry, in the location occupied by the initial EFLAGS.
+ * GDB attempts to examine the memory at this return address, which typically
+ * results in an invalid access to page 0 of memory.
+ *
+ * This function overwrites the initial EFLAGS with zero.  When GDB subsequently
+ * attempts to examine memory at address zero, the PeekPoke driver detects
+ * an invalid access to address zero and returns an error, which causes the
+ * GDB stack unwinder to stop somewhat gracefully.
+ *
+ * The initial EFLAGS cannot be overwritten until after _Swap() has swapped in
+ * the new thread for the first time.  This routine is called by _Swap() the
+ * first time that the new thread is swapped in, and it jumps to
+ * _thread_entry after it has done its work.
+ *
+ * IAMCU Systems:
+ *
+ * There is no EFLAGS on the stack when we get here. _thread_entry() takes
+ * four arguments, and we need to pop off the first three into the
+ * appropriate registers. Instead of using the 'call' instruction, we push
+ * a NULL return address onto the stack and jump into _thread_entry,
+ * ensuring the stack won't be unwound further. Placing some kind of return
+ * address on the stack is mandatory so this isn't conditionally compiled.
+ *
+ *       __________________
+ *      |      param3      |   <------ Top of the stack
+ *      |__________________|
+ *      |      param2      |           Stack Grows Down
+ *      |__________________|                  |
+ *      |      param1      |                  V
+ *      |__________________|
+ *      |      pEntry      |  <----   ESP when invoked by _Swap() on IAMCU
+ *      |__________________|
+ *      | initial EFLAGS   |  <----   ESP when invoked by _Swap() on Sys V
+ *      |__________________|             (Zeroed by this routine on Sys V)
+ *
+ * The address of the thread entry function needs to be in %edi when this is
+ * invoked. It will either be _thread_entry, or if userspace is enabled,
+ * _arch_drop_to_user_mode if this is a user thread.
+ *
+ * @return this routine does NOT return.
+ */
+
+SECTION_FUNC(TEXT, _x86_thread_entry_wrapper)
+#ifdef CONFIG_X86_IAMCU
+	/* IAMCU calling convention has first 3 arguments supplied in
+	 * registers not the stack
+	 */
+	pop	%eax
+	pop	%edx
+	pop	%ecx
+	push	$0	 /* Null return address */
+#elif defined(CONFIG_GDB_INFO) || defined(CONFIG_DEBUG_INFO)
+	mov	$0, (%esp) /* zero initialEFLAGS location */
+#endif
+	jmp	*%edi
+#endif

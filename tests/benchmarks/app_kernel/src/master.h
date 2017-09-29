@@ -48,12 +48,12 @@
 #define NR_OF_EVENT_RUNS  1000
 #define NR_OF_MBOX_RUNS 128
 #define NR_OF_PIPE_RUNS 256
-//#define SEMA_WAIT_TIME (5 * sys_clock_ticks_per_sec)
+/* #define SEMA_WAIT_TIME (5 * sys_clock_ticks_per_sec) */
 #define SEMA_WAIT_TIME (5000)
 /* global data */
-extern char Msg[MAX_MSG];
+extern char msg[MAX_MSG];
 extern char data_bench[OCTET_TO_SIZEOFUNIT(MESSAGE_SIZE)];
-extern struct k_pipe *TestPipes[];
+extern struct k_pipe *test_pipes[];
 extern FILE *output_file;
 extern const char newline[];
 extern char sline[];
@@ -65,11 +65,11 @@ extern char sline[];
 
 
 /* pipe amount of content to receive (0+, 1+, all) */
-typedef enum {
+enum pipe_options {
 	_0_TO_N = 0x0,
 	_1_TO_N = 0x1,
 	_ALL_N  = 0x2,
-} pipe_options;
+};
 
 /* dummy_test is a function that is mapped when we */
 /* do not want to test a specific Benchmark */
@@ -77,7 +77,7 @@ extern void dummy_test(void);
 
 /* other external functions */
 
-extern void BenchTask(void *p1, void *p2, void *p3);
+extern void bench_task(void *p1, void *p2, void *p3);
 extern void recvtask(void *p1, void *p2, void *p3);
 
 #ifdef MAILBOX_BENCH
@@ -189,12 +189,12 @@ static inline u32_t BENCH_START(void)
 	return et;
 }
 
-#define check_result()				\
-{									\
-	if (bench_test_end() < 0) {		\
-		PRINT_OVERFLOW_ERROR();		\
-		return; /* error */			\
-	}								\
+static inline void check_result(void)
+{
+	if (bench_test_end() < 0) {
+		PRINT_OVERFLOW_ERROR();
+		return; /* error */
+	}
 }
 
 

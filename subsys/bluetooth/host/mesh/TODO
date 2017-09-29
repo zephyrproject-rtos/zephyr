@@ -1,0 +1,15 @@
+Bluetooth Mesh implementation tasks
+===================================
+
+ * Friend support
+
+ * PB-GATT (Node)
+
+ * GATT Proxy
+
+ * Any generally useful models from the Model Specification
+
+ * Mesh shell
+
+ * Find a way to overlay provisioning memory with network memory
+   (linker magic?)

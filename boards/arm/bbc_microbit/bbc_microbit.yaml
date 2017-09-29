@@ -1,0 +1,14 @@
+identifier: bbc_microbit
+name: BBC Micro:Bit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb
+ram: 16
+testing:
+  default: true
+  ignore_tags:
+    - net
+supported:
+  - ble

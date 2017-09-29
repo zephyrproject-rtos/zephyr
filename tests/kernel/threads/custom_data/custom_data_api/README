@@ -1,0 +1,10 @@
+$make run
+Running test suite test_customdata_api
+tc_start() - test_customdata_get_set_coop
+===================================================================
+PASS - test_customdata_get_set_coop.
+tc_start() - test_customdata_get_set_preempt
+===================================================================
+PASS - test_customdata_get_set_preempt.
+===================================================================
+PROJECT EXECUTION SUCCESSFUL

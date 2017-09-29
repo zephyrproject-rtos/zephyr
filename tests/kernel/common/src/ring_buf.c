@@ -13,10 +13,10 @@
 SYS_RING_BUF_DECLARE_POW2(ring_buf, 8);
 
 char data[] = "ABCDEFGHIJKLMNOPQRSTUVWX";
-#define TYPE	1
-#define VALUE	2
+#define TYPE    1
+#define VALUE   2
 
-#define INITIAL_SIZE	2
+#define INITIAL_SIZE    2
 
 void ring_buffer_test(void)
 {
@@ -35,7 +35,7 @@ void ring_buffer_test(void)
 			break;
 		}
 		SYS_LOG_DBG("inserted %d chunks, %d remaining", dsize,
-		       sys_ring_buf_space_get(&ring_buf));
+			    sys_ring_buf_space_get(&ring_buf));
 		dsize = (dsize + 1) % SIZE32_OF(data);
 		put_count++;
 	}
@@ -53,8 +53,8 @@ void ring_buffer_test(void)
 				       &getsize);
 		zassert_true((ret == 0), "Couldn't retrieve a stored value");
 		SYS_LOG_DBG("got %u chunks of type %u and val %u, %u remaining",
-		       getsize, gettype, getval,
-		       sys_ring_buf_space_get(&ring_buf));
+			    getsize, gettype, getval,
+			    sys_ring_buf_space_get(&ring_buf));
 
 		zassert_true((memcmp((char *)getdata, data, getsize * sizeof(u32_t)) == 0),
 			     "data corrupted");

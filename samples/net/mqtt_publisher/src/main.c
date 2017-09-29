@@ -13,13 +13,14 @@
 #include <string.h>
 #include <errno.h>
 
-#if defined(CONFIG_NET_L2_BLUETOOTH)
+#if defined(CONFIG_NET_L2_BT)
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
-#include <gatt/ipss.h>
 #endif
 
 #include "config.h"
+
+#define CONN_TRIES 20
 
 /* Container for some structures used by the MQTT publisher app. */
 struct mqtt_client_ctx {
@@ -59,15 +60,69 @@ struct mqtt_client_ctx {
 	void *publish_data;
 };
 
-/* This is the network context structure. */
-static struct net_context *net_ctx;
-
 /* The mqtt client struct */
 static struct mqtt_client_ctx client_ctx;
 
 /* This routine sets some basic properties for the network context variable */
-static int network_setup(struct net_context **net_ctx, const char *local_addr,
-			 const char *server_addr, u16_t server_port);
+static int network_setup(void);
+
+#if defined(CONFIG_MQTT_LIB_TLS)
+
+#include "test_certs.h"
+
+/* TLS */
+#define TLS_SNI_HOSTNAME "localhost"
+#define TLS_REQUEST_BUF_SIZE 1500
+#define TLS_PRIVATE_DATA "Zephyr TLS mqtt publisher"
+
+static u8_t tls_request_buf[TLS_REQUEST_BUF_SIZE];
+
+NET_STACK_DEFINE(mqtt_tls_stack, tls_stack,
+		CONFIG_NET_APP_TLS_STACK_SIZE, CONFIG_NET_APP_TLS_STACK_SIZE);
+
+NET_APP_TLS_POOL_DEFINE(tls_mem_pool, 30);
+
+int setup_cert(struct net_app_ctx *ctx, void *cert)
+{
+#if defined(MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED)
+	mbedtls_ssl_conf_psk(&ctx->tls.mbedtls.conf,
+			client_psk, sizeof(client_psk),
+			(const unsigned char *)client_psk_id,
+			sizeof(client_psk_id) - 1);
+#endif
+
+#if defined(MBEDTLS_X509_CRT_PARSE_C)
+	{
+		mbedtls_x509_crt *ca_cert = cert;
+		int ret;
+
+		ret = mbedtls_x509_crt_parse_der(ca_cert,
+				ca_certificate,
+				sizeof(ca_certificate));
+		if (ret != 0) {
+			NET_ERR("mbedtls_x509_crt_parse_der failed "
+					"(-0x%x)", -ret);
+			return ret;
+		}
+
+		/* mbedtls_x509_crt_verify() should be called to verify the
+		 * cerificate in the real cases
+		 */
+
+		mbedtls_ssl_conf_ca_chain(&ctx->tls.mbedtls.conf,
+				ca_cert, NULL);
+
+		mbedtls_ssl_conf_authmode(&ctx->tls.mbedtls.conf,
+				MBEDTLS_SSL_VERIFY_REQUIRED);
+
+		mbedtls_ssl_conf_cert_profile(&ctx->tls.mbedtls.conf,
+				&mbedtls_x509_crt_profile_default);
+	}
+#endif /* MBEDTLS_X509_CRT_PARSE_C */
+
+	return 0;
+}
+#endif
 
 /* The signature of this routine must match the connect callback declared at
  * the mqtt.h header.
@@ -241,21 +296,8 @@ static void publisher(void)
 {
 	int i, rc;
 
-	/* The net_ctx variable must be ready BEFORE passing it to the MQTT API.
-	 */
-	rc = network_setup(&net_ctx, ZEPHYR_ADDR, SERVER_ADDR, SERVER_PORT);
-	PRINT_RESULT("network_setup", rc);
-	if (rc != 0) {
-		goto exit_app;
-	}
-
 	/* Set everything to 0 and later just assign the required fields. */
 	memset(&client_ctx, 0x00, sizeof(client_ctx));
-
-	/* The network context is the only field that must be set BEFORE
-	 * calling the mqtt_init routine.
-	 */
-	client_ctx.mqtt_ctx.net_ctx = net_ctx;
 
 	/* connect, disconnect and malformed may be set to NULL */
 	client_ctx.mqtt_ctx.connect = connect_cb;
@@ -263,16 +305,28 @@ static void publisher(void)
 	client_ctx.mqtt_ctx.disconnect = disconnect_cb;
 	client_ctx.mqtt_ctx.malformed = malformed_cb;
 
+	client_ctx.mqtt_ctx.net_init_timeout = APP_NET_INIT_TIMEOUT;
 	client_ctx.mqtt_ctx.net_timeout = APP_TX_RX_TIMEOUT;
+
+	client_ctx.mqtt_ctx.peer_addr_str = SERVER_ADDR;
+	client_ctx.mqtt_ctx.peer_port = SERVER_PORT;
+
+#if defined(CONFIG_MQTT_LIB_TLS)
+	/** TLS setup */
+	client_ctx.mqtt_ctx.request_buf = tls_request_buf;
+	client_ctx.mqtt_ctx.request_buf_len = TLS_REQUEST_BUF_SIZE;
+	client_ctx.mqtt_ctx.personalization_data = TLS_PRIVATE_DATA;
+	client_ctx.mqtt_ctx.personalization_data_len = strlen(TLS_PRIVATE_DATA);
+	client_ctx.mqtt_ctx.cert_host = TLS_SNI_HOSTNAME;
+	client_ctx.mqtt_ctx.tls_mem_pool = &tls_mem_pool;
+	client_ctx.mqtt_ctx.tls_stack = tls_stack;
+	client_ctx.mqtt_ctx.tls_stack_size = K_THREAD_STACK_SIZEOF(tls_stack);
+	client_ctx.mqtt_ctx.cert_cb = setup_cert;
+	client_ctx.mqtt_ctx.entropy_src_cb = NULL;
+#endif
 
 	/* Publisher apps TX the MQTT PUBLISH msg */
 	client_ctx.mqtt_ctx.publish_tx = publish_cb;
-
-	rc = mqtt_init(&client_ctx.mqtt_ctx, MQTT_APP_PUBLISHER);
-	PRINT_RESULT("mqtt_init", rc);
-	if (rc != 0) {
-		goto exit_app;
-	}
 
 	/* The connect message will be sent to the MQTT server (broker).
 	 * If clean_session here is 0, the mqtt_ctx clean_session variable
@@ -286,6 +340,30 @@ static void publisher(void)
 	client_ctx.connect_data = "CONNECTED";
 	client_ctx.disconnect_data = "DISCONNECTED";
 	client_ctx.publish_data = "PUBLISH";
+
+	rc = network_setup();
+	PRINT_RESULT("network_setup", rc);
+	if (rc < 0) {
+		return;
+	}
+
+	rc = mqtt_init(&client_ctx.mqtt_ctx, MQTT_APP_PUBLISHER);
+	PRINT_RESULT("mqtt_init", rc);
+	if (rc != 0) {
+		return;
+	}
+
+	for (i = 0; i < CONN_TRIES; i++) {
+		rc = mqtt_connect(&client_ctx.mqtt_ctx);
+		PRINT_RESULT("mqtt_connect", rc);
+		if (!rc) {
+			goto connected;
+		}
+	}
+
+	goto exit_app;
+
+connected:
 
 	rc = try_to_connect(&client_ctx);
 	PRINT_RESULT("try_to_connect", rc);
@@ -319,35 +397,13 @@ static void publisher(void)
 	PRINT_RESULT("mqtt_tx_disconnect", rc);
 
 exit_app:
-	net_context_put(net_ctx);
+
+	mqtt_close(&client_ctx.mqtt_ctx);
+
 	printk("\nBye!\n");
 }
 
-static int set_addr(struct sockaddr *sock_addr, const char *addr, u16_t port)
-{
-	void *ptr;
-	int rc;
-
-#ifdef CONFIG_NET_IPV6
-	net_sin6(sock_addr)->sin6_port = htons(port);
-	sock_addr->family = AF_INET6;
-	ptr = &(net_sin6(sock_addr)->sin6_addr);
-	rc = net_addr_pton(AF_INET6, addr, ptr);
-#else
-	net_sin(sock_addr)->sin_port = htons(port);
-	sock_addr->family = AF_INET;
-	ptr = &(net_sin(sock_addr)->sin_addr);
-	rc = net_addr_pton(AF_INET, addr, ptr);
-#endif
-
-	if (rc) {
-		printk("Invalid IP address: %s\n", addr);
-	}
-
-	return rc;
-}
-
-#if defined(CONFIG_NET_L2_BLUETOOTH)
+#if defined(CONFIG_NET_L2_BT)
 static bool bt_connected;
 
 static
@@ -370,24 +426,13 @@ struct bt_conn_cb bt_conn_cb = {
 };
 #endif
 
-static int network_setup(struct net_context **net_ctx, const char *local_addr,
-			 const char *server_addr, u16_t server_port)
+static int network_setup(void)
 {
-#ifdef CONFIG_NET_IPV6
-	socklen_t addr_len = sizeof(struct sockaddr_in6);
-	sa_family_t family = AF_INET6;
 
-#else
-	socklen_t addr_len = sizeof(struct sockaddr_in);
-	sa_family_t family = AF_INET;
-#endif
-	struct sockaddr server_sock, local_sock;
-	void *p;
-	int rc;
-
-#if defined(CONFIG_NET_L2_BLUETOOTH)
+#if defined(CONFIG_NET_L2_BT)
 	const char *progress_mark = "/-\\|";
 	int i = 0;
+	int rc;
 
 	rc = bt_enable(NULL);
 	if (rc) {
@@ -395,13 +440,7 @@ static int network_setup(struct net_context **net_ctx, const char *local_addr,
 		return rc;
 	}
 
-	ipss_init();
 	bt_conn_cb_register(&bt_conn_cb);
-	rc = ipss_advertise();
-	if (rc) {
-		printk("advertising failed to start\n");
-		return rc;
-	}
 
 	printk("\nwaiting for bt connection: ");
 	while (bt_connected == false) {
@@ -412,58 +451,7 @@ static int network_setup(struct net_context **net_ctx, const char *local_addr,
 	printk("\n");
 #endif
 
-	rc = set_addr(&local_sock, local_addr, 0);
-	if (rc) {
-		printk("set_addr (local) error\n");
-		return rc;
-	}
-
-#ifdef CONFIG_NET_IPV6
-	p = net_if_ipv6_addr_add(net_if_get_default(),
-				 &net_sin6(&local_sock)->sin6_addr,
-				 NET_ADDR_MANUAL, 0);
-#else
-	p = net_if_ipv4_addr_add(net_if_get_default(),
-				 &net_sin(&local_sock)->sin_addr,
-				 NET_ADDR_MANUAL, 0);
-#endif
-
-	if (!p) {
-		return -EINVAL;
-	}
-
-	rc = net_context_get(family, SOCK_STREAM, IPPROTO_TCP, net_ctx);
-	if (rc) {
-		printk("net_context_get error\n");
-		return rc;
-	}
-
-	rc = net_context_bind(*net_ctx, &local_sock, addr_len);
-	if (rc) {
-		printk("net_context_bind error\n");
-		goto lb_exit;
-	}
-
-	rc = set_addr(&server_sock, server_addr, server_port);
-	if (rc) {
-		printk("set_addr (server) error\n");
-		goto lb_exit;
-	}
-
-	rc = net_context_connect(*net_ctx, &server_sock, addr_len, NULL,
-				 APP_SLEEP_MSECS, NULL);
-	if (rc) {
-		printk("net_context_connect error\n"
-		       "Is the server (broker) up and running?\n");
-		goto lb_exit;
-	}
-
 	return 0;
-
-lb_exit:
-	net_context_put(*net_ctx);
-
-	return rc;
 }
 
 void main(void)

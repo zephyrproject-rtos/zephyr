@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_ll_system.h
   * @author  MCD Application Team
-  * @version V1.7.0
-  * @date    17-February-2017
+  * @version V1.7.1
+  * @date    14-April-2017
   * @brief   Header file of SYSTEM LL module.
   @verbatim
   ==============================================================================
@@ -346,14 +346,6 @@ extern "C" {
   * @}
   */ 
 #endif /* SYSCFG_MCHDLYCR_BSCKSEL */  
-/**
-  * @}
-  */
-
-/**
-  * @}
-  */
-
 
 /** @defgroup SYSTEM_LL_EC_TRACE DBGMCU TRACE Pin Assignment
   * @{

@@ -20,6 +20,9 @@ Windows system with the latest updates installed.
 Installing Requirements and Dependencies
 ****************************************
 
+Using MSYS2
+===========
+
 The Zephyr development environment on Windows relies on MSYS2, a modern UNIX
 environment for Windows. Follow the steps below to set it up:
 
@@ -34,7 +37,11 @@ environment for Windows. Follow the steps below to set it up:
 
 #. Launch the ``MSYS2 MSYS Shell`` desktop app from your start menu (if it's not still open).
 
-     .. note::
+   .. note::
+
+        Make sure you start ``MSYS2 MSYS Shell``, not ``MSYS2 MinGW Shell``.
+
+   .. note::
         There are multiple ``export`` statements in this tutorial. You can avoid
         typing them every time by placing them at the bottom of your
         ``~/.bash_profile`` file.
@@ -49,42 +56,14 @@ environment for Windows. Follow the steps below to set it up:
 
    .. code-block:: console
 
-      $ pacman -S git make gcc diffutils ncurses-devel python3
+      $ pacman -S git make gcc dtc diffutils ncurses-devel python3 gperf
 
 #. Install pip and the required Python modules::
 
       $ curl -O 'https://bootstrap.pypa.io/get-pip.py'
       $ ./get-pip.py
       $ rm get-pip.py
-
-      $ pip install pyaml
-
-#. Build the Device Tree Compiler (DTC)
-
-   For the architectures and boards listed in the ``dts/`` folder of the Zephyr
-   source tree, the DTC is required to be able to build Zephyr.
-   To set up the DTC follow the instructions below:
-
-   * Install the required build tools::
-
-        $ pacman -S bison
-        $ pacman -R flex
-        $ pacman -U http://repo.msys2.org/msys/x86_64/flex-2.6.0-1-x86_64.pkg.tar.xz
-
-   .. note::
-        At this time we need to pin the ``flex`` version to an older one due
-        to an issue with the latest available.
-
-   * Clone and build the DTC::
-
-        $ cd ~
-        $ git clone https://git.kernel.org/pub/scm/utils/dtc/dtc.git
-        $ cd dtc
-        $ make
-
-   * Export the location of the DTC::
-
-        $ export DTC=~/dtc/dtc
+      $ pip install --user -r scripts/requirements.txt
 
 #. The build system should now be ready to work with any toolchain installed in
    your system. In the next step you'll find instructions for installing
@@ -116,7 +95,7 @@ environment for Windows. Follow the steps below to set it up:
    * For ARM, install GNU ARM Embedded from the ARM developer website:
      `GNU ARM Embedded`_ (install to :file:`c:\\gccarmemb`).
 
-#. From within the `MSYS2 MSYS Shell`, clone a copy of the Zephyr source into
+#. From within the MSYS2 MSYS Shell, clone a copy of the Zephyr source into
    your home directory using Git:
 
    .. code-block:: console
@@ -172,8 +151,29 @@ environment for Windows. Follow the steps below to set it up:
     This should check that all the tools and toolchain are set up correctly for
     your own Zephyr development.
 
+Using Windows 10 WSL (Windows Subsystem for Linux)
+==================================================
+
+If you are running a recent version of Windows 10 you can make use of the
+built-in functionality to natively run Ubuntu binaries directly on a standard
+command-prompt. This allows you to install the standard Zephyr SDK and build
+for all supported architectures without the need for a Virtual Machine.
+
+#. Install Windows Subsystem for Linux (WSL) following the instructions on the
+   official Microsoft website: `WSL Installation`_
+
+   .. note::
+         For the Zephyr SDK to function properly you will need Windows 10
+         build 15002 or greater. You can check which Windows 10 build you are
+         running in the "About your PC" section of the System Settings.
+         If you are running an older Windows 10 build you might need to install
+         the Creator's Update.
+
+#. Follow the instructions for Ubuntu detailed in the Zephyr Linux Getting
+   Started Guide which can be found here: :ref:`installation_linux`
 
 .. _GNU ARM Embedded: https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads
 .. _MSYS2 website: http://www.msys2.org/
 .. _ISSM Toolchain: https://software.intel.com/en-us/articles/issm-toolchain-only-download
 .. _Getting Started on Arduino 101 with ISSM: https://software.intel.com/en-us/articles/getting-started-arduino-101genuino-101-with-intel-system-studio-for-microcontrollers
+.. _WSL Installation: https://msdn.microsoft.com/en-us/commandline/wsl/install_guide

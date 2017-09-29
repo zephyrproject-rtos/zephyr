@@ -33,7 +33,7 @@ static void thread(void *p1, void *p2, void *p3)
 
 #define STACKSIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 
-static __noinit __stack char stacks[NUM_TIMEOUTS][STACKSIZE];
+static K_THREAD_STACK_ARRAY_DEFINE(stacks, NUM_TIMEOUTS, STACKSIZE);
 static struct k_thread threads[NUM_TIMEOUTS];
 
 void timeout_order_test(void)
@@ -75,7 +75,7 @@ void timeout_order_test(void)
 
 	for (ii = 0; ii < NUM_TIMEOUTS; ii++) {
 		zassert_equal(poll_events[ii].state,
-			     K_POLL_STATE_SEM_AVAILABLE, "");
+			      K_POLL_STATE_SEM_AVAILABLE, "");
 	}
 	for (ii = 0; ii < NUM_TIMEOUTS; ii++) {
 		zassert_equal(results[ii], ii, "");

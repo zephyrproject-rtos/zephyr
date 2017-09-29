@@ -15,11 +15,11 @@
 #define _ASMLANGUAGE
 
 #include <autoconf.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <generated_dts_board.h>
 
-#include <linker-defs.h>
-#include <linker-tool.h>
+#include <linker/linker-defs.h>
+#include <linker/linker-tool.h>
 
 /* physical address of RAM */
 #ifdef CONFIG_XIP
@@ -41,10 +41,17 @@
 #endif
 
 #define ROM_ADDR (CONFIG_FLASH_BASE_ADDRESS + CONFIG_FLASH_LOAD_OFFSET)
+#ifdef CONFIG_TI_CCFG_PRESENT
+  #define CCFG_SIZE 88
+  #define ROM_SIZE (CONFIG_FLASH_SIZE*1K - CONFIG_FLASH_LOAD_OFFSET - \
+		    CCFG_SIZE)
+  #define CCFG_ADDR (ROM_ADDR + ROM_SIZE)
+#else
 #if CONFIG_FLASH_LOAD_SIZE > 0
   #define ROM_SIZE CONFIG_FLASH_LOAD_SIZE
 #else
   #define ROM_SIZE (CONFIG_FLASH_SIZE*1K - CONFIG_FLASH_LOAD_OFFSET)
+#endif
 #endif
 
 #if defined(CONFIG_XIP)
@@ -53,7 +60,7 @@
 		#define RAM_ADDR (CONFIG_SRAM_BASE_ADDRESS + \
 			(CONFIG_SRAM_SIZE * 1K - RAM_SIZE))
 	#else
-		#define RAM_SIZE CONFIG_SRAM_SIZE * 1K
+		#define RAM_SIZE (CONFIG_SRAM_SIZE * 1K)
 		#define RAM_ADDR CONFIG_SRAM_BASE_ADDRESS
 	#endif
 #else
@@ -64,6 +71,9 @@
 MEMORY
     {
     FLASH                 (rx) : ORIGIN = ROM_ADDR, LENGTH = ROM_SIZE
+#ifdef CONFIG_TI_CCFG_PRESENT
+    FLASH_CCFG            (rwx): ORIGIN = CCFG_ADDR, LENGTH = CCFG_SIZE
+#endif
     SRAM                  (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
 
     /* Used by and documented in include/linker/intlist.ld */
@@ -84,7 +94,7 @@ SECTIONS
 	KEEP(*(.dbghdr))
 	KEEP(*(".dbghdr.*"))
 #endif
-
+	_vector_start = .;
 	. = CONFIG_TEXT_SECTION_OFFSET;
 	KEEP(*(.exc_vector_table))
 	KEEP(*(".exc_vector_table.*"))
@@ -102,11 +112,14 @@ SECTIONS
 #ifdef CONFIG_GEN_SW_ISR_TABLE
 	KEEP(*(SW_ISR_TABLE))
 #endif
-
+	_vector_end = .;
 	_image_text_start = .;
 	*(.text)
 	*(".text.*")
 	*(.gnu.linkonce.t.*)
+
+#include <linker/kobject-text.ld>
+
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 	_image_text_end = .;
@@ -138,6 +151,9 @@ SECTIONS
 /* Located in project source directory */
 #include <custom-rodata.ld>
 #endif
+
+#include <linker/kobject-rom.ld>
+
 	/*
 	 * For XIP images, in order to avoid the situation when __data_rom_start
 	 * is 32-bit aligned, but the actual data is placed right after rodata
@@ -152,31 +168,51 @@ SECTIONS
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 	_image_rom_end = .;
-    __data_rom_start = .;    /* XIP imaged DATA ROM start addr */
 
     GROUP_END(ROMABLE_REGION)
 
-    GROUP_START(RAMABLE_REGION)
-
-    SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
-	{
-	_image_ram_start = .;
-	__data_ram_start = .;
-	*(.top_of_image_ram)
-	*(.top_of_image_ram.*)
-	*(.data)
-	*(".data.*")
-
-#ifdef CONFIG_CUSTOM_RWDATA_LD
-/* Located in project source directory */
-#include <custom-rwdata.ld>
+/* Some TI SoCs have a special configuration footer, at the end of flash. */
+#ifdef CONFIG_TI_CCFG_PRESENT
+    SECTION_PROLOGUE(.ti_ccfg,,)
+    {
+    KEEP(*(TI_CCFG))
+    } > FLASH_CCFG
 #endif
 
+    GROUP_START(RAMABLE_REGION)
+
+#ifdef CONFIG_APPLICATION_MEMORY
+	SECTION_DATA_PROLOGUE(_APP_DATA_SECTION_NAME, (OPTIONAL),)
+	{
+		__app_ram_start = .;
+		__app_data_ram_start = .;
+		_image_ram_start = .;
+		APP_INPUT_SECTION(.data)
+		APP_INPUT_SECTION(".data.*")
+		__app_data_ram_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-#include <linker/common-ram.ld>
+	__app_data_rom_start = LOADADDR(_APP_DATA_SECTION_NAME);
 
-    __data_ram_end = .;
+	SECTION_PROLOGUE(_APP_BSS_SECTION_NAME, (NOLOAD OPTIONAL),)
+	{
+		__app_bss_start = .;
+		APP_INPUT_SECTION(.bss)
+		APP_INPUT_SECTION(".bss.*")
+		APP_INPUT_SECTION(COMMON)
+		__app_bss_end = .;
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+
+	__app_bss_num_words = (__app_bss_end - __app_bss_start) >> 2;
+
+	SECTION_PROLOGUE(_APP_NOINIT_SECTION_NAME, (NOLOAD OPTIONAL),)
+	{
+		APP_INPUT_SECTION(.noinit)
+		APP_INPUT_SECTION(".noinit.*")
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+
+	__app_ram_end = .;
+#endif /* CONFIG_APPLICATION_MEMORY */
 
     SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
 	{
@@ -186,9 +222,16 @@ SECTIONS
          */
         . = ALIGN(4);
 	__bss_start = .;
-	*(.bss)
-	*(".bss.*")
-	COMMON_SYMBOLS
+#ifndef CONFIG_APPLICATION_MEMORY
+	_image_ram_start = .;
+#endif
+	__kernel_ram_start = .;
+
+	KERNEL_INPUT_SECTION(.bss)
+	KERNEL_INPUT_SECTION(".bss.*")
+	KERNEL_INPUT_SECTION(COMMON)
+	*(".kernel_bss.*")
+
         /*
          * As memory is cleared in words only, it is simpler to ensure the BSS
          * section ends on a 4 byte boundary. This wastes a maximum of 3 bytes.
@@ -202,16 +245,41 @@ SECTIONS
          * This section is used for non-initialized objects that
          * will not be cleared during the boot process.
          */
-        *(.noinit)
-        *(".noinit.*")
-        *(.bottom_of_image_ram)
-        *(.bottom_of_image_ram.*)
+        KERNEL_INPUT_SECTION(.noinit)
+        KERNEL_INPUT_SECTION(".noinit.*")
+	*(".kernel_noinit.*")
+
         } GROUP_LINK_IN(RAMABLE_REGION)
+
+    SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
+	{
+	__data_ram_start = .;
+	KERNEL_INPUT_SECTION(.data)
+	KERNEL_INPUT_SECTION(".data.*")
+	*(".kernel.*")
+
+#ifdef CONFIG_CUSTOM_RWDATA_LD
+/* Located in project source directory */
+#include <custom-rwdata.ld>
+#endif
+
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+    __data_rom_start = LOADADDR(_DATA_SECTION_NAME);
+
+#include <linker/common-ram.ld>
+#include <linker/kobject.ld>
+
+    __data_ram_end = .;
+
 
     /* Define linker symbols */
 
-	_image_ram_end = .;
+    _image_ram_end = .;
     _end = .; /* end of image */
+
+    __kernel_ram_end = RAM_ADDR + RAM_SIZE;
+    __kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
 
     GROUP_END(RAMABLE_REGION)
 

@@ -61,31 +61,37 @@
 #define MCR20A_CLK_OUT_CONFIG	(MCR20A_CLK_OUT_HIZ)
 
 #elif CONFIG_MCR20A_CLK_OUT_32MHZ
-#define MCR20A_CLK_OUT_CONFIG	(MCR20A_CLK_OUT_DIV(0) | MCR20A_CLK_OUT_DS |\
+#define MCR20A_CLK_OUT_CONFIG	(set_bits_clk_out_div(0) | MCR20A_CLK_OUT_DS |\
 				 MCR20A_CLK_OUT_EN)
 
 #elif CONFIG_MCR20A_CLK_OUT_16MHZ
-#define MCR20A_CLK_OUT_CONFIG	(MCR20A_CLK_OUT_DIV(1) | MCR20A_CLK_OUT_DS |\
+#define MCR20A_CLK_OUT_CONFIG	(set_bits_clk_out_div(1) | MCR20A_CLK_OUT_DS |\
 				 MCR20A_CLK_OUT_EN)
 
 #elif CONFIG_MCR20A_CLK_OUT_8MHZ
-#define MCR20A_CLK_OUT_CONFIG	(MCR20A_CLK_OUT_DIV(2) | MCR20A_CLK_OUT_EN)
+#define MCR20A_CLK_OUT_CONFIG	(set_bits_clk_out_div(2) | MCR20A_CLK_OUT_EN)
 
 #elif CONFIG_MCR20A_CLK_OUT_4MHZ
-#define MCR20A_CLK_OUT_CONFIG	(MCR20A_CLK_OUT_DIV(3) | MCR20A_CLK_OUT_EN)
+#define MCR20A_CLK_OUT_CONFIG	(set_bits_clk_out_div(3) | MCR20A_CLK_OUT_EN)
 
 #elif CONFIG_MCR20A_CLK_OUT_1MHZ
-#define MCR20A_CLK_OUT_CONFIG	(MCR20A_CLK_OUT_DIV(4) | MCR20A_CLK_OUT_EN)
+#define MCR20A_CLK_OUT_CONFIG	(set_bits_clk_out_div(4) | MCR20A_CLK_OUT_EN)
 
 #elif CONFIG_MCR20A_CLK_OUT_250KHZ
-#define MCR20A_CLK_OUT_CONFIG	(MCR20A_CLK_OUT_DIV(5) | MCR20A_CLK_OUT_EN)
+#define MCR20A_CLK_OUT_CONFIG	(set_bits_clk_out_div(5) | MCR20A_CLK_OUT_EN)
 
 #elif CONFIG_MCR20A_CLK_OUT_62500HZ
-#define MCR20A_CLK_OUT_CONFIG	(MCR20A_CLK_OUT_DIV(6) | MCR20A_CLK_OUT_EN)
+#define MCR20A_CLK_OUT_CONFIG	(set_bits_clk_out_div(6) | MCR20A_CLK_OUT_EN)
 
 #elif CONFIG_MCR20A_CLK_OUT_32768HZ
-#define MCR20A_CLK_OUT_CONFIG	(MCR20A_CLK_OUT_DIV(7) | MCR20A_CLK_OUT_EN)
+#define MCR20A_CLK_OUT_CONFIG	(set_bits_clk_out_div(7) | MCR20A_CLK_OUT_EN)
 
+#endif
+
+#ifdef CONFIG_MCR20A_IS_PART_OF_KW2XD_SIP
+#define PART_OF_KW2XD_SIP	1
+#else
+#define PART_OF_KW2XD_SIP	0
 #endif
 
 /* Values for the power mode (PM) configuration */
@@ -591,8 +597,8 @@ static inline void mcr20a_rx(struct mcr20a_context *mcr20a, u8_t len)
 	}
 
 	net_analyze_stack("MCR20A Rx Fiber stack",
-			  mcr20a->mcr20a_rx_stack,
-			  CONFIG_IEEE802154_MCR20A_RX_STACK_SIZE);
+			  K_THREAD_STACK_BUFFER(mcr20a->mcr20a_rx_stack),
+			  K_THREAD_STACK_SIZEOF(mcr20a->mcr20a_rx_stack));
 	return;
 out:
 	if (pkt) {
@@ -853,6 +859,7 @@ static int mcr20a_set_cca_mode(struct device *dev, u8_t mode)
 static int mcr20a_cca(struct device *dev)
 {
 	struct mcr20a_context *mcr20a = dev->driver_data;
+	int retval;
 
 	k_mutex_lock(&mcr20a->phy_mutex, K_FOREVER);
 
@@ -881,7 +888,12 @@ static int mcr20a_cca(struct device *dev)
 	}
 
 	k_mutex_unlock(&mcr20a->phy_mutex);
-	k_sem_take(&mcr20a->seq_sync, MCR20A_SEQ_SYNC_TIMEOUT);
+	retval = k_sem_take(&mcr20a->seq_sync, MCR20A_SEQ_SYNC_TIMEOUT);
+	if (retval) {
+		SYS_LOG_ERR("Timeout occurred, %d", retval);
+		return retval;
+	}
+
 	SYS_LOG_DBG("done");
 
 	return mcr20a->seq_retval;
@@ -1071,6 +1083,7 @@ static int mcr20a_tx(struct device *dev,
 	struct mcr20a_context *mcr20a = dev->driver_data;
 	u8_t seq = MCR20A_AUTOACK_ENABLED ? MCR20A_XCVSEQ_TX_RX :
 					       MCR20A_XCVSEQ_TX;
+	int retval;
 
 	k_mutex_lock(&mcr20a->phy_mutex, K_FOREVER);
 
@@ -1105,7 +1118,12 @@ static int mcr20a_tx(struct device *dev,
 	}
 
 	k_mutex_unlock(&mcr20a->phy_mutex);
-	k_sem_take(&mcr20a->seq_sync, MCR20A_SEQ_SYNC_TIMEOUT);
+	retval = k_sem_take(&mcr20a->seq_sync, MCR20A_SEQ_SYNC_TIMEOUT);
+	if (retval) {
+		SYS_LOG_ERR("Timeout occurred, %d", retval);
+		return retval;
+	}
+
 	SYS_LOG_DBG("done");
 
 	return mcr20a->seq_retval;
@@ -1176,6 +1194,7 @@ error:
 static int mcr20a_stop(struct device *dev)
 {
 	struct mcr20a_context *mcr20a = dev->driver_data;
+	u8_t power_mode;
 
 	k_mutex_lock(&mcr20a->phy_mutex, K_FOREVER);
 
@@ -1191,7 +1210,13 @@ static int mcr20a_stop(struct device *dev)
 
 	enable_irqb_interrupt(mcr20a, false);
 
-	if (!write_reg_pwr_modes(&mcr20a->spi, MCR20A_PM_HIBERNATE)) {
+	if (PART_OF_KW2XD_SIP) {
+		power_mode = MCR20A_PM_DOZE;
+	} else {
+		power_mode = MCR20A_PM_HIBERNATE;
+	}
+
+	if (!write_reg_pwr_modes(&mcr20a->spi, power_mode)) {
 		goto error;
 	}
 
@@ -1256,20 +1281,23 @@ static int power_on_and_setup(struct device *dev)
 	u32_t status;
 	u8_t tmp = 0;
 
-	set_reset(dev, 0);
-	_usleep(150);
-	set_reset(dev, 1);
+	if (!PART_OF_KW2XD_SIP) {
+		set_reset(dev, 0);
+		_usleep(150);
+		set_reset(dev, 1);
 
-	do {
-		_usleep(50);
-		timeout--;
-		gpio_pin_read(mcr20a->irq_gpio,
-			      CONFIG_MCR20A_GPIO_IRQ_B_PIN, &status);
-	} while (status && timeout);
+		do {
+			_usleep(50);
+			timeout--;
+			gpio_pin_read(mcr20a->irq_gpio,
+				      CONFIG_MCR20A_GPIO_IRQ_B_PIN, &status);
+		} while (status && timeout);
 
-	if (status) {
-		SYS_LOG_ERR("Timeout, failed to get WAKE IRQ");
-		return -EIO;
+		if (status) {
+			SYS_LOG_ERR("Timeout, failed to get WAKE IRQ");
+			return -EIO;
+		}
+
 	}
 
 	tmp = MCR20A_CLK_OUT_CONFIG | MCR20A_CLK_OUT_EXTEND;
@@ -1340,7 +1368,7 @@ static inline int configure_gpios(struct device *dev)
 
 	gpio_pin_configure(mcr20a->reset_gpio, CONFIG_MCR20A_GPIO_RESET_PIN,
 			   GPIO_DIR_OUT);
-	set_reset(dev, 0);
+	set_reset(dev, 1);
 
 	return 0;
 }
@@ -1380,8 +1408,7 @@ static int mcr20a_init(struct device *dev)
 {
 	struct mcr20a_context *mcr20a = dev->driver_data;
 
-	k_sem_init(&mcr20a->spi.spi_sem, 0, UINT_MAX);
-	k_sem_give(&mcr20a->spi.spi_sem);
+	k_sem_init(&mcr20a->spi.spi_sem, 1, UINT_MAX);
 
 	k_mutex_init(&mcr20a->phy_mutex);
 	k_sem_init(&mcr20a->isr_sem, 0, 1);

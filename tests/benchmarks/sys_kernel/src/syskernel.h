@@ -17,8 +17,8 @@
 #define STACK_SIZE 2048
 #define NUMBER_OF_LOOPS 5000
 
-extern char thread_stack1[STACK_SIZE];
-extern char thread_stack2[STACK_SIZE];
+extern K_THREAD_STACK_DEFINE(thread_stack1, STACK_SIZE);
+extern K_THREAD_STACK_DEFINE(thread_stack2, STACK_SIZE);
 extern struct k_thread thread_data1;
 extern struct k_thread thread_data2;
 

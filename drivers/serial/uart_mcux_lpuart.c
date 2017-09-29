@@ -297,10 +297,11 @@ DEVICE_AND_API_INIT(uart_0, CONFIG_UART_MCUX_LPUART_0_NAME,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void mcux_lpuart_config_func_0(struct device *dev)
 {
-	IRQ_CONNECT(IRQ_LPUART0, CONFIG_UART_MCUX_LPUART_0_IRQ_PRI,
+	IRQ_CONNECT(CONFIG_UART_MCUX_LPUART_0_IRQ,
+		    CONFIG_UART_MCUX_LPUART_0_IRQ_PRI,
 		    mcux_lpuart_isr, DEVICE_GET(uart_0), 0);
 
-	irq_enable(IRQ_LPUART0);
+	irq_enable(CONFIG_UART_MCUX_LPUART_0_IRQ);
 }
 #endif
 

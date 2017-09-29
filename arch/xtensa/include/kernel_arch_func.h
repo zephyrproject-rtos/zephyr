@@ -76,9 +76,6 @@ static inline void _IntLibInit(void)
 {
 }
 
-FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
-					  const NANO_ESF *pEsf);
-
 #include <stddef.h> /* For size_t */
 
 #ifdef __cplusplus

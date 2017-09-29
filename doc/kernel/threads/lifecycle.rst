@@ -20,7 +20,8 @@ A thread has the following key properties:
 
 * A **stack area**, which is a region of memory used for the thread's stack.
   The **size** of the stack area can be tailored to conform to the actual needs
-  of the thread's processing.
+  of the thread's processing. Special macros exist to create and work with
+  stack memory regions.
 
 * A **thread control block** for private kernel bookkeeping of the thread's
   metadata. This is an instance of type :c:type:`struct k_thread`.
@@ -149,7 +150,8 @@ Spawning a Thread
 
 A thread is spawned by defining its stack area and its thread control block,
 and then calling :cpp:func:`k_thread_create()`. The stack area must be defined
-using the :c:macro:`__stack` attribute to ensure it is properly aligned.
+using :c:macro:`K_THREAD_STACK_DEFINE` to ensure it is properly set up in
+memory.
 
 The thread spawning function returns its thread id, which can be used
 to reference the thread.
@@ -163,11 +165,12 @@ The following code spawns a thread that starts immediately.
 
     extern void my_entry_point(void *, void *, void *);
 
-    char __noinit __stack my_stack_area[MY_STACK_SIZE];
+    K_THREAD_STACK_DEFINE(my_stack_area, MY_STACK_SIZE);
     struct k_thread my_thread_data;
 
     k_tid_t my_tid = k_thread_create(&my_thread_data, my_stack_area,
-                                     MY_STACK_SIZE, my_entry_point,
+                                     K_THREAD_STACK_SIZEOF(my_stack_area),
+                                     my_entry_point,
                                      NULL, NULL, NULL,
                                      MY_PRIORITY, 0, K_NO_WAIT);
 
@@ -237,3 +240,8 @@ The following thread APIs are provided by :file:`kernel.h`:
 * :cpp:func:`k_thread_abort()`
 * :cpp:func:`k_thread_suspend()`
 * :cpp:func:`k_thread_resume()`
+* :c:macro:`K_THREAD_STACK_DEFINE`
+* :c:macro:`K_THREAD_STACK_ARRAY_DEFINE`
+* :c:macro:`K_THREAD_STACK_MEMBER`
+* :c:macro:`K_THREAD_STACK_SIZEOF`
+* :c:macro:`K_THREAD_STACK_BUFFER`

@@ -20,7 +20,7 @@
 #include <tinycrypt/aes.h>
 #include <tinycrypt/utils.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_CORE)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_CORE)
 #include "common/log.h"
 
 #include "hci_core.h"
@@ -65,6 +65,11 @@ int prng_init(void)
 	struct bt_hci_rp_le_rand *rp;
 	struct net_buf *rsp;
 	int ret;
+
+	/* Check first that HCI_LE_Rand is supported */
+	if (!(bt_dev.supported_commands[27] & BIT(7))) {
+		return -ENOTSUP;
+	}
 
 	ret = bt_hci_cmd_send_sync(BT_HCI_OP_LE_RAND, NULL, &rsp);
 	if (ret) {

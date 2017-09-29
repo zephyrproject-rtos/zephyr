@@ -47,5 +47,6 @@
 #include <ztest_mock.h>
 #include <ztest_test.h>
 #include <tc_util.h>
+#include <logging/sys_log.h>
 
 #endif /* __ZTEST_H__ */

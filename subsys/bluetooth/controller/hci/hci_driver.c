@@ -28,7 +28,7 @@
 #include <drivers/clock_control/nrf5_clock_control.h>
 #endif
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #include "common/log.h"
 
 #include "util/util.h"
@@ -49,17 +49,18 @@ static K_FIFO_DEFINE(recv_fifo);
 
 struct k_thread prio_recv_thread_data;
 static BT_STACK_NOINIT(prio_recv_thread_stack,
-		       CONFIG_BLUETOOTH_CONTROLLER_RX_PRIO_STACK_SIZE);
+		       CONFIG_BT_CTLR_RX_PRIO_STACK_SIZE);
 struct k_thread recv_thread_data;
-static BT_STACK_NOINIT(recv_thread_stack, CONFIG_BLUETOOTH_RX_STACK_SIZE);
+static BT_STACK_NOINIT(recv_thread_stack, CONFIG_BT_RX_STACK_SIZE);
 
 #if defined(CONFIG_INIT_STACKS)
 static u32_t prio_ts;
 static u32_t rx_ts;
 #endif
 
-#if defined(CONFIG_BLUETOOTH_HCI_ACL_FLOW_CONTROL)
-static struct k_poll_signal hbuf_signal = K_POLL_SIGNAL_INITIALIZER();
+#if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
+static struct k_poll_signal hbuf_signal =
+		K_POLL_SIGNAL_INITIALIZER(hbuf_signal);
 static sys_slist_t hbuf_pend;
 static s32_t hbuf_count;
 #endif
@@ -72,7 +73,7 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 		u16_t handle;
 
 		while ((num_cmplt = radio_rx_get(&node_rx, &handle))) {
-#if defined(CONFIG_BLUETOOTH_CONN)
+#if defined(CONFIG_BT_CONN)
 			struct net_buf *buf;
 
 			buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
@@ -99,9 +100,8 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 
 #if defined(CONFIG_INIT_STACKS)
 		if (k_uptime_get_32() - prio_ts > K_SECONDS(5)) {
-			stack_analyze("prio recv thread stack",
-				      prio_recv_thread_stack,
-				      sizeof(prio_recv_thread_stack));
+			STACK_ANALYZE("prio recv thread stack",
+				      prio_recv_thread_stack);
 			prio_ts = k_uptime_get_32();
 		}
 #endif
@@ -127,7 +127,7 @@ static inline struct net_buf *encode_node(struct radio_pdu_node_rx *node_rx,
 			hci_evt_encode(node_rx, buf);
 		}
 		break;
-#if defined(CONFIG_BLUETOOTH_CONN)
+#if defined(CONFIG_BT_CONN)
 	case HCI_CLASS_ACL_DATA:
 		/* generate ACL data */
 		buf = bt_buf_get_rx(BT_BUF_ACL_IN, K_FOREVER);
@@ -151,7 +151,7 @@ static inline struct net_buf *process_node(struct radio_pdu_node_rx *node_rx)
 	s8_t class = hci_get_class(node_rx);
 	struct net_buf *buf = NULL;
 
-#if defined(CONFIG_BLUETOOTH_HCI_ACL_FLOW_CONTROL)
+#if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 	if (hbuf_count != -1) {
 		bool pend = !sys_slist_is_empty(&hbuf_pend);
 
@@ -185,7 +185,7 @@ static inline struct net_buf *process_node(struct radio_pdu_node_rx *node_rx)
 	return buf;
 }
 
-#if defined(CONFIG_BLUETOOTH_HCI_ACL_FLOW_CONTROL)
+#if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 static inline struct net_buf *process_hbuf(void)
 {
 	/* shadow total count in case of preemption */
@@ -268,7 +268,7 @@ static inline struct net_buf *process_hbuf(void)
 
 static void recv_thread(void *p1, void *p2, void *p3)
 {
-#if defined(CONFIG_BLUETOOTH_HCI_ACL_FLOW_CONTROL)
+#if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 	/* @todo: check if the events structure really needs to be static */
 	static struct k_poll_event events[2] = {
 		K_POLL_EVENT_STATIC_INITIALIZER(K_POLL_TYPE_SIGNAL,
@@ -285,7 +285,7 @@ static void recv_thread(void *p1, void *p2, void *p3)
 		struct net_buf *buf = NULL;
 
 		BT_DBG("blocking");
-#if defined(CONFIG_BLUETOOTH_HCI_ACL_FLOW_CONTROL)
+#if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 		int err;
 
 		err = k_poll(events, 2, K_FOREVER);
@@ -327,8 +327,7 @@ static void recv_thread(void *p1, void *p2, void *p3)
 
 #if defined(CONFIG_INIT_STACKS)
 		if (k_uptime_get_32() - rx_ts > K_SECONDS(5)) {
-			stack_analyze("recv thread stack", recv_thread_stack,
-				      sizeof(recv_thread_stack));
+			STACK_ANALYZE("recv thread stack", recv_thread_stack);
 			rx_ts = k_uptime_get_32();
 		}
 #endif
@@ -348,6 +347,22 @@ static int cmd_handle(struct net_buf *buf)
 	return 0;
 }
 
+#if defined(CONFIG_BT_CONN)
+static int acl_handle(struct net_buf *buf)
+{
+	struct net_buf *evt;
+	int err;
+
+	err = hci_acl_handle(buf, &evt);
+	if (evt) {
+		BT_DBG("Replying with event of %u bytes", evt->len);
+		bt_recv_prio(evt);
+	}
+
+	return err;
+}
+#endif /* CONFIG_BT_CONN */
+
 static int hci_driver_send(struct net_buf *buf)
 {
 	u8_t type;
@@ -362,11 +377,11 @@ static int hci_driver_send(struct net_buf *buf)
 
 	type = bt_buf_get_type(buf);
 	switch (type) {
-#if defined(CONFIG_BLUETOOTH_CONN)
+#if defined(CONFIG_BT_CONN)
 	case BT_BUF_ACL_OUT:
-		err = hci_acl_handle(buf);
+		err = acl_handle(buf);
 		break;
-#endif
+#endif /* CONFIG_BT_CONN */
 	case BT_BUF_CMD:
 		err = cmd_handle(buf);
 		break;
@@ -396,19 +411,21 @@ static int hci_driver_open(void)
 		return err;
 	}
 
-#if defined(CONFIG_BLUETOOTH_HCI_ACL_FLOW_CONTROL)
+#if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 	hci_init(&hbuf_signal);
 #else
 	hci_init(NULL);
 #endif
 
 	k_thread_create(&prio_recv_thread_data, prio_recv_thread_stack,
-			sizeof(prio_recv_thread_stack), prio_recv_thread,
-			NULL, NULL, NULL, K_PRIO_COOP(6), 0, K_NO_WAIT);
+			K_THREAD_STACK_SIZEOF(prio_recv_thread_stack),
+			prio_recv_thread, NULL, NULL, NULL,
+			K_PRIO_COOP(CONFIG_BT_CTLR_RX_PRIO), 0, K_NO_WAIT);
 
 	k_thread_create(&recv_thread_data, recv_thread_stack,
-			sizeof(recv_thread_stack), recv_thread,
-			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+			K_THREAD_STACK_SIZEOF(recv_thread_stack),
+			recv_thread, NULL, NULL, NULL,
+			K_PRIO_COOP(CONFIG_BT_RX_PRIO), 0, K_NO_WAIT);
 
 	BT_DBG("Success.");
 

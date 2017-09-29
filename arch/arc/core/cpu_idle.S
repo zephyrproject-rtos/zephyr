@@ -14,15 +14,15 @@
 #include <kernel_structs.h>
 #include <offsets_short.h>
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <arch/cpu.h>
 
 GTEXT(k_cpu_idle)
 GTEXT(k_cpu_atomic_idle)
 GDATA(k_cpu_sleep_mode)
 
-	.balign 4
 SECTION_VAR(BSS, k_cpu_sleep_mode)
+	.balign 4
 	.word 0
 
 /*

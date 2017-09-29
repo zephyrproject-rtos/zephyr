@@ -1,0 +1,74 @@
+# Kconfig - BMM150 Geomagnetic sensor configuration options
+
+#
+# Copyright (c) 2017 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig BMM150
+	bool "BMM150 I2C Geomagnetic Chip"
+	depends on I2C
+	default n
+	help
+	  Enable driver for BMM150 I2C-based Geomagnetic sensor.
+if BMM150
+
+config BMM150_DEV_NAME
+	string "BMM150 device name"
+	default "bmm150"
+
+config BMM150_I2C_ADDR
+	hex "BMM150 I2C slave address"
+	default 0x10
+	help
+	  Specify the I2C slave address for the BMM150.
+	  Possible addresses are 0x10,0x11,0x12,0x13.
+
+config BMM150_I2C_MASTER_DEV_NAME
+	string "I2C master where BMM150 is connected"
+	default "I2C_0"
+	help
+	  Specify the device name of the I2C master device to which BMM150
+	  is connected.
+
+choice
+	prompt "Default preset"
+	default BMM150_PRESET_REGULAR
+	help
+	  Specify the default preset (x/y oversampling, z oversampling, sampling
+	  frequency).
+
+config BMM150_PRESET_LOW_POWER
+	bool "Low power (3, 3, 10)"
+
+config BMM150_PRESET_REGULAR
+	bool "Regular (9, 15, 10)"
+
+config BMM150_PRESET_ENHANCED_REGULAR
+	bool "Enhanced regular (15, 27, 10)"
+
+config BMM150_PRESET_HIGH_ACCURACY
+	bool "High accuracy (47, 83, 20)"
+
+endchoice
+
+config BMM150_SAMPLING_RATE_RUNTIME
+	bool "Enable dynamic sampling rate"
+	default n
+	help
+	  Enable alteration of sampling rate attribute at runtime.
+
+config BMM150_SAMPLING_REP_XY
+	bool "Enable dynamic XY oversampling"
+	default n
+	help
+	  Enable alteration of XY oversampling at runtime.
+
+config BMM150_SAMPLING_REP_Z
+	bool "Enable dynamic Z oversampling"
+	default n
+	help
+	  Enable alteration of Z oversampling at runtime.
+
+endif # BMM150

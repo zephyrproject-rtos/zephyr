@@ -50,13 +50,13 @@ struct bt_keys {
 	u16_t			keys;
 	struct bt_ltk		ltk;
 	struct bt_irk		irk;
-#if defined(CONFIG_BLUETOOTH_SIGNING)
+#if defined(CONFIG_BT_SIGNING)
 	struct bt_csrk		local_csrk;
 	struct bt_csrk		remote_csrk;
-#endif /* BLUETOOTH_SIGNING */
-#if !defined(CONFIG_BLUETOOTH_SMP_SC_ONLY)
+#endif /* BT_SIGNING */
+#if !defined(CONFIG_BT_SMP_SC_ONLY)
 	struct bt_ltk		slave_ltk;
-#endif /* CONFIG_BLUETOOTH_SMP_SC_ONLY */
+#endif /* CONFIG_BT_SMP_SC_ONLY */
 };
 
 struct bt_keys *bt_keys_get_addr(const bt_addr_le_t *addr);

@@ -31,9 +31,6 @@ extern void _update_time_slice_before_swap(void);
 extern s32_t _ms_to_ticks(s32_t ms);
 #endif
 extern void idle(void *, void *, void *);
-#ifdef CONFIG_STACK_SENTINEL
-extern void _check_stack_sentinel(void);
-#endif
 
 /* find which one is the next thread to run */
 /* must be called with interrupts locked */
@@ -519,4 +516,28 @@ static inline struct k_thread *_unpend_first_thread(_wait_q_t *wait_q)
 	return thread;
 }
 
+#ifdef CONFIG_USERSPACE
+/**
+ * Indicate whether the currently running thread has been configured to be
+ * a user thread.
+ *
+ * @return nonzero if the current thread is a user thread, regardless of what
+ *         mode the CPU is currently in
+ */
+static inline int _is_thread_user(void)
+{
+#ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
+	/* the _current might be NULL before the first thread is scheduled if
+	 * CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN is enabled.
+	 */
+	if (!_current) {
+		return 0;
+	}
+
+	return _current->base.user_options & K_USER;
+#else
+	return _current->base.user_options & K_USER;
+#endif
+}
+#endif /* CONFIG_USERSPACE */
 #endif /* _ksched__h_ */

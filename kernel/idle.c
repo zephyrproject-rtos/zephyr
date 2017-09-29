@@ -7,7 +7,7 @@
 #include <kernel.h>
 #include <kernel_structs.h>
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <drivers/system_timer.h>
 #include <wait_q.h>
 #include <power.h>
@@ -159,9 +159,9 @@ void idle(void *unused1, void *unused2, void *unused3)
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
 	/* record timestamp when idling begins */
 
-	extern u64_t __idle_tsc;
+	extern u64_t __idle_time_stamp;
 
-	__idle_tsc = _tsc_read();
+	__idle_time_stamp = (u64_t)k_cycle_get_32();
 #endif
 
 	for (;;) {

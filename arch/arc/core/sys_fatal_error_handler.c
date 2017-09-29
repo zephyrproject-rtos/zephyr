@@ -13,7 +13,7 @@
 
 #include <kernel.h>
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <kernel_structs.h>
 #include <misc/printk.h>
 
@@ -37,8 +37,8 @@
  *
  * @return N/A
  */
-FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
-					 const NANO_ESF *pEsf)
+FUNC_NORETURN __weak void _SysFatalErrorHandler(unsigned int reason,
+						const NANO_ESF *pEsf)
 {
 	ARG_UNUSED(pEsf);
 

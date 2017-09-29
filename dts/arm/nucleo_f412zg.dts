@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2017 Florian Vaussard, HEIG-VD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/stm32f412.dtsi>
+
+/ {
+	model = "STMicroelectronics STM32F412ZG-NUCLEO board";
+	compatible = "st,stm32f412zg-nucleo", "st,stm32f412";
+
+	chosen {
+		zephyr,console = &usart3;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
+
+&usart3 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart3_pins_b>;
+	pinctrl-names = "default";
+	status = "ok";
+};

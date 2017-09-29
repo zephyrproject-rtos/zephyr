@@ -1,0 +1,26 @@
+---
+title: Flash base node description
+id: soc-nv-flash
+version: 0.1
+
+description: >
+    This binding gives a base FLASH description
+
+properties:
+  - compatible:
+      type: string
+      category: optional
+      description: compatible strings
+      constraint: "soc-nv-flash"
+
+  - write-block-size:
+     type: int
+     description: address alignment required by flash write operations
+     generation: define
+     category: optional
+     label: alignment
+
+base_label: FLASH
+use-property-label: yes
+
+...

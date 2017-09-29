@@ -1,0 +1,14 @@
+# Kconfig - Hexiwear K64 board
+#
+# Copyright (c) 2017, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_HEXIWEAR_K64
+
+config BATTERY_SENSE
+	bool "Enable the battery sense circuit"
+	default n
+
+endif # BOARD_HEXIWEAR_K64

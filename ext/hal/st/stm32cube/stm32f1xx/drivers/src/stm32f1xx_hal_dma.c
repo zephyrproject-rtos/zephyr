@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f1xx_hal_dma.c
   * @author  MCD Application Team
-  * @version V1.1.0
-  * @date    14-April-2017
+  * @version V1.1.1
+  * @date    12-May-2017
   * @brief   DMA HAL module driver.
   *         This file provides firmware functions to manage the following
   *         functionalities of the Direct Memory Access (DMA) peripheral:
@@ -869,7 +869,7 @@ static void DMA_SetConfig(DMA_HandleTypeDef *hdma, uint32_t SrcAddress, uint32_t
   /* Configure DMA Channel data length */
   hdma->Instance->CNDTR = DataLength;
 
-  /* Peripheral to Memory */
+  /* Memory to Peripheral */
   if((hdma->Init.Direction) == DMA_MEMORY_TO_PERIPH)
   {
     /* Configure DMA Channel destination address */
@@ -878,7 +878,7 @@ static void DMA_SetConfig(DMA_HandleTypeDef *hdma, uint32_t SrcAddress, uint32_t
     /* Configure DMA Channel source address */
     hdma->Instance->CMAR = SrcAddress;
   }
-  /* Memory to Peripheral */
+  /* Peripheral to Memory */
   else
   {
     /* Configure DMA Channel source address */

@@ -35,7 +35,7 @@ The BLE Nano v2 board configuration supports the following hardware features:
 +-----------+------------+--------------------------------------+
 | FLASH     | on-chip    | flash                                |
 +-----------+------------+--------------------------------------+
-| RADIO     | on-chip    | bluetooth                            |
+| RADIO     | on-chip    | Bluetooth                            |
 +-----------+------------+--------------------------------------+
 | I2C       | on-chip    | i2c                                  |
 +-----------+------------+--------------------------------------+

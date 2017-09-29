@@ -23,6 +23,7 @@ example; you may need to do things differently in your own application.)
     :linenos:
     :language: c
     :lines: 2-54
+    :lineno-start: 2
 
 After initialization, first thing application needs to create a context.
 Context is similar to a socket.
@@ -31,6 +32,7 @@ Context is similar to a socket.
     :linenos:
     :language: c
     :lines: 57-66
+    :lineno-start: 57
 
 Then you need to define the local end point for a connection.
 
@@ -38,6 +40,7 @@ Then you need to define the local end point for a connection.
     :linenos:
     :language: c
     :lines: 69-83
+    :lineno-start: 69
 
 Wait until the connection data is received.
 
@@ -45,13 +48,15 @@ Wait until the connection data is received.
     :linenos:
     :language: c
     :lines: 86-202
+    :lineno-start: 86
 
 Close the context when finished.
 
 .. literalinclude:: connectivity-example-app.c
     :linenos:
     :language: c
-    :lines: 204-215
+    :lines: 204-214
+    :lineno-start: 204
 
 .. toctree::
    :maxdepth: 1

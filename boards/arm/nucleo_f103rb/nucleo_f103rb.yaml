@@ -1,0 +1,8 @@
+identifier: nucleo_f103rb
+name: NUCLEO-F103RB
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb
+ram: 20

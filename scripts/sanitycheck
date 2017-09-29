@@ -1,65 +1,81 @@
 #!/usr/bin/env python3
+# vim: set syntax=python ts=4 :
 """Zephyr Sanity Tests
 
 This script scans for the set of unit test applications in the git
 repository and attempts to execute them. By default, it tries to
 build each test case on one platform per architecture, using a precedence
-list defined in an archtecture configuration file, and if possible
+list defined in an architecture configuration file, and if possible
 run the tests in the QEMU emulator.
 
-Test cases are detected by the presence of a 'testcase.ini' file in
-the application's project directory. This file may contain one or
-more blocks, each identifying a test scenario. The title of the block
-is a name for the test case, which only needs to be unique for the
-test cases specified in that testcase.ini file. The full canonical
-name for each test case is <path to test case under samples/>/<block>.
+Test cases are detected by the presence of a 'testcase.yaml' or a sample.yaml
+files in the application's project directory. This file may contain one or more
+blocks, each identifying a test scenario. The title of the block is a name for
+the test case, which only needs to be unique for the test cases specified in
+that testcase meta-data. The full canonical name for each test case is <path to
+test case>/<block>.
 
-Each testcase.ini block can define the following key/value pairs:
+Each test block in the testcase meta data can define the following key/value pairs:
 
- tags = <list of tags> (required)
+ tags: <list of tags> (required)
     A set of string tags for the testcase. Usually pertains to
     functional domains but can be anything. Command line invocations
     of this script can filter the set of tests to run based on tag.
 
-  skip = <True|False> (default False)
+  skip: <True|False> (default False)
     skip testcase unconditionally. This can be used for broken tests.
 
-  slow = <True|False> (default False)
+  slow: <True|False> (default False)
     Don't run this test case unless --enable-slow was passed in on the
     command line. Intended for time-consuming test cases that are only
     run under certain circumstances, like daily builds. These test cases
     are still compiled.
 
-  extra_args = <list of extra arguments>
+  extra_args: <list of extra arguments>
     Extra arguments to pass to Make when building or running the
     test case.
 
-  build_only = <True|False> (default False)
+  build_only: <True|False> (default False)
     If true, don't try to run the test under QEMU even if the
     selected platform supports it.
 
-  timeout = <number of seconds>
+  build_on_all: <True|False> (default False)
+    If true, attempt to build test on all available platforms.
+
+  depends_on: <list of features>
+    A board or platform can announce what features it supports, this option
+    will enable the test only those platforms that provide this feature.
+
+  min_ram: <integer>
+    minimum amount of RAM needed for this test to build and run. This is
+    compared with information provided by the board metadata.
+
+  min_flash: <integer>
+    minimum amount of ROM needed for this test to build and run. This is
+    compared with information provided by the board metadata.
+
+  timeout: <number of seconds>
     Length of time to run test in QEMU before automatically killing it.
     Default to 60 seconds.
 
-  arch_whitelist = <list of arches, such as x86, arm, arc>
+  arch_whitelist: <list of arches, such as x86, arm, arc>
     Set of architectures that this test case should only be run for.
 
-  arch_exclude = <list of arches, such as x86, arm, arc>
+  arch_exclude: <list of arches, such as x86, arm, arc>
     Set of architectures that this test case should not run on.
 
-  platform_whitelist = <list of platforms>
+  platform_whitelist: <list of platforms>
     Set of platforms that this test case should only be run for.
 
-  platform_exclude = <list of platforms>
+  platform_exclude: <list of platforms>
     Set of platforms that this test case should not run on.
 
-  extra_sections = <list of extra binary sections>
+  extra_sections: <list of extra binary sections>
     When computing sizes, sanitycheck will report errors if it finds
     extra, unexpected sections in the Zephyr binary unless they are named
     here. They will not be included in the size calculation.
 
-  filter = <expression>
+  filter: <expression>
     Filter whether the testcase should be run by evaluating an expression
     against an environment containing the following values:
 
@@ -121,28 +137,10 @@ Each testcase.ini block can define the following key/value pairs:
 
     Would match it.
 
-Architectures and platforms are defined in an archtecture configuration
-file which are stored by default in scripts/sanity_chk/arches/. These
-each define an [arch] block with the following key/value pairs:
-
-  name = <arch name>
-    The name of the arch. Example: x86
-
-  platforms = <list of supported platforms in order of precedence>
-    List of supported platforms for this arch. The ordering here
-    is used to select a default platform to build for that arch.
-
-For every platform defined, there must be a corresponding block for it
-in the arch configuration file. This block can be empty if there are
-no special definitions for that arch. Options are:
-
-  qemu_support = <True|False> (default False)
-    Indicates whether binaries for this platform can run under QEMU
-
-The set of test cases that actually run depends on directives in the
-testcase and architecture .ini file and options passed in on the command
-line. If there is any confusion, running with -v or --discard-report
-can help show why particular test cases were skipped.
+The set of test cases that actually run depends on directives in the testcase
+filed and options passed in on the command line. If there is any confusion,
+running with -v or --discard-report can help show why particular test cases
+were skipped.
 
 Metrics (such as pass/fail state and binary size) for the last code
 release are stored in scripts/sanity_chk/sanity_last_release.csv.
@@ -176,15 +174,22 @@ import xml.etree.ElementTree as ET
 from xml.sax.saxutils import escape
 from collections import OrderedDict
 from itertools import islice
+import yaml
+
+import logging
+log_format = "%(levelname)s %(name)s::%(module)s.%(funcName)s():%(lineno)d: %(message)s"
+logging.basicConfig(format = log_format, level = 30)
 
 if "ZEPHYR_BASE" not in os.environ:
     sys.stderr.write("$ZEPHYR_BASE environment variable undefined.\n")
     exit(1)
 ZEPHYR_BASE = os.environ["ZEPHYR_BASE"]
 
+from sanity_chk import scl
+
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/"))
 
-import expr_parser
+from sanity_chk import expr_parser
 
 VERBOSE = 0
 LAST_SANITY = os.path.join(ZEPHYR_BASE, "scripts", "sanity_chk",
@@ -339,7 +344,7 @@ class UnitHandler(Handler):
 class QEMUHandler(Handler):
     """Spawns a thread to monitor QEMU output from pipes
 
-    We pass QEMU_PIPE to 'make qemu' and monitor the pipes for output.
+    We pass QEMU_PIPE to 'make run' and monitor the pipes for output.
     We need to do this as once qemu starts, it runs forever until killed.
     Test cases emit special messages to the console as they run, we check
     for these to collect whether the test passed or failed.
@@ -468,16 +473,17 @@ class QEMUHandler(Handler):
 
 class SizeCalculator:
 
-    alloc_sections = ["bss", "noinit"]
+    alloc_sections = ["bss", "noinit", "app_bss", "app_noinit"]
     rw_sections = ["datas", "initlevel", "_k_task_list", "_k_event_list",
                    "_k_memory_pool", "exceptions", "initshell",
-		   "_static_thread_area", "_k_timer_area",
-		   "_k_mem_slab_area", "_k_mem_pool_area",
-		   "_k_sem_area", "_k_mutex_area", "_k_alert_area",
-		   "_k_fifo_area", "_k_lifo_area", "_k_stack_area",
-		   "_k_msgq_area", "_k_mbox_area", "_k_pipe_area",
+                   "_static_thread_area", "_k_timer_area", "_k_work_area",
+                   "_k_mem_slab_area", "_k_mem_pool_area",
+                   "_k_sem_area", "_k_mutex_area", "_k_alert_area",
+                   "_k_fifo_area", "_k_lifo_area", "_k_stack_area",
+                   "_k_msgq_area", "_k_mbox_area", "_k_pipe_area",
                    "net_if", "net_if_event", "net_stack", "net_l2_data",
-                   "_k_queue_area"]
+                   "_k_queue_area", "_net_buf_pool_area", "app_datas",
+                   "kobject_data", "mmu_tables"]
     # These get copied into RAM only on non-XIP
     ro_sections = ["text", "ctors", "init_array", "reset",
                    "rodata", "devconfig", "net_l2", "vector"]
@@ -529,7 +535,7 @@ class SizeCalculator:
     def unrecognized_sections(self):
         """Get a list of sections inside the binary that weren't recognized
 
-        @return list of unrecogized section names
+        @return list of unrecognized section names
         """
         slist = []
         for v in self.sections:
@@ -595,7 +601,7 @@ class SizeCalculator:
 class MakeGoal:
     """Metadata class representing one of the sub-makes called by MakeGenerator
 
-    MakeGenerator returns a dictionary of these which can then be associdated
+    MakeGenerator returns a dictionary of these which can then be associated
     with TestInstances to get a complete picture of what happened during a test.
     MakeGenerator is used for tasks outside of building tests (such as
     defconfigs) which is why MakeGoal is a separate class from TestInstance.
@@ -623,7 +629,7 @@ class MakeGoal:
             # Failure when calling the sub-make to build the code
             return self.build_log
         elif self.make_state == "running":
-            # Failure in sub-make for "make qemu", qemu probably failed to start
+            # Failure in sub-make for "make run", qemu probably failed to start
             return self.run_log
         elif self.make_state == "finished":
             # QEMU finished, but timed out or otherwise wasn't successful
@@ -717,7 +723,7 @@ class MakeGenerator:
         if not os.path.exists(outdir):
             os.makedirs(outdir)
 
-    def add_build_goal(self, name, directory, outdir, args):
+    def add_build_goal(self, name, directory, outdir, args, buildlog):
         """Add a goal to invoke a Kbuild session
 
         @param name A unique string name for this build goal. The results
@@ -730,7 +736,7 @@ class MakeGenerator:
             environment variables or specific Make goals
         """
         self._add_goal(outdir)
-        build_logfile = os.path.join(outdir, "build.log")
+        build_logfile = os.path.join(outdir, buildlog)
         text = (self._get_rule_header(name) +
                 self._get_sub_make(name, "building", directory,
                                    outdir, build_logfile, args) +
@@ -803,7 +809,7 @@ class MakeGenerator:
             by execute() will be keyed by its .name field.
         """
         args = ti.test.extra_args[:]
-        args.extend(["ARCH=%s" % ti.platform.arch.name,
+        args.extend(["ARCH=%s" % ti.platform.arch,
                      "BOARD=%s" % ti.platform.name])
         args.extend(extra_args)
         if (ti.platform.qemu_support and (not ti.build_only) and
@@ -814,7 +820,8 @@ class MakeGenerator:
             self.add_unit_goal(ti.name, ti.test.code_location, ti.outdir,
                                args, ti.test.timeout, coverage)
         else:
-            self.add_build_goal(ti.name, ti.test.code_location, ti.outdir, args)
+            self.add_build_goal(ti.name, ti.test.code_location, ti.outdir,
+                    args, "build.log")
 
     def execute(self, callback_fn=None, context=None):
         """Execute all the registered build goals
@@ -861,7 +868,7 @@ class MakeGenerator:
 
                 if error:
                     # Sometimes QEMU will run an image and then crash out, which
-                    # will cause the 'make qemu' invocation to exit with
+                    # will cause the 'make run' invocation to exit with
                     # nonzero status.
                     # Need to distinguish this case from a compilation failure.
                     if goal.qemu:
@@ -916,49 +923,50 @@ testcase_valid_keys = {"tags" : {"type" : "set", "required" : True},
                        "type" : {"type" : "str", "default": "integration"},
                        "extra_args" : {"type" : "list"},
                        "build_only" : {"type" : "bool", "default" : False},
+                       "build_on_all" : {"type" : "bool", "default" : False},
                        "skip" : {"type" : "bool", "default" : False},
                        "slow" : {"type" : "bool", "default" : False},
                        "timeout" : {"type" : "int", "default" : 60},
+                       "min_ram" : {"type" : "int", "default" : 8},
+                       "depends_on": {"type" : "set"},
+                       "min_flash" : {"type" : "int", "default" : 32},
                        "arch_whitelist" : {"type" : "set"},
                        "arch_exclude" : {"type" : "set"},
                        "extra_sections" : {"type" : "list", "default" : []},
                        "platform_exclude" : {"type" : "set"},
                        "platform_whitelist" : {"type" : "set"},
+                       "toolchain_exclude" : {"type" : "set"},
+                       "toolchain_whitelist" : {"type" : "set"},
                        "filter" : {"type" : "str"}}
 
 
 class SanityConfigParser:
-    """Class to read architecture and test case .ini files with semantic checking
+    """Class to read test case files with semantic checking
     """
-    def __init__(self, filename):
+    def __init__(self, filename, schema):
         """Instantiate a new SanityConfigParser object
 
-        @param filename Source .ini file to read
+        @param filename Source .yaml file to read
         """
-        cp = configparser.SafeConfigParser()
-        cp.readfp(open(filename))
+        cp = scl.yaml_load_verify(filename, schema)
         self.filename = filename
         self.cp = cp
 
     def _cast_value(self, value, typestr):
-        v = value.strip()
+
+        if type(value) is str:
+            v = value.strip()
         if typestr == "str":
             return v
 
         elif typestr == "float":
-            return float(v)
+            return float(value)
 
         elif typestr == "int":
-            return int(v)
+            return int(value)
 
         elif typestr == "bool":
-            v = v.lower()
-            if v == "true" or v == "1":
-                return True
-            elif v == "" or v == "false" or v == "0":
-                return False
-            raise ConfigurationError(self.filename,
-                                     "bad value for boolean: '%s'" % value)
+            return value
 
         elif typestr.startswith("list"):
             vs = v.split()
@@ -977,20 +985,24 @@ class SanityConfigParser:
         else:
             raise ConfigurationError(self.filename, "unknown type '%s'" % value)
 
+    def section(self,name):
+        for s in self.sections():
+            if name in s:
+                return s.get(name, {})
 
     def sections(self):
-        """Get the set of sections within the .ini file
+        """Get the set of test sections within the .yaml file
 
         @return a list of string section names"""
-        return self.cp.sections()
+        return self.cp['tests']
 
     def get_section(self, section, valid_keys):
         """Get a dictionary representing the keys/values within a section
 
-        @param section The section in the .ini file to retrieve data from
+        @param section The section in the .yaml file to retrieve data from
         @param valid_keys A dictionary representing the intended semantics
             for this section. Each key in this dictionary is a key that could
-            be specified, if a key is given in the .ini file which isn't in
+            be specified, if a key is given in the .yaml file which isn't in
             here, it will generate an error. Each value in this dictionary
             is another dictionary containing metadata:
 
@@ -1010,17 +1022,11 @@ class SanityConfigParser:
         """
 
         d = {}
-        cp = self.cp
-
-        if not cp.has_section(section):
-            # Just fill it with defaults
-            cp.add_section(section)
-
-        for k, v in cp.items(section):
+        for k, v in self.section(section).items():
             if k not in valid_keys:
                 raise ConfigurationError(self.filename,
-                                         "Unknown config key '%s' in defintiion for '%s'"
-                                         % (k, section))
+                        "Unknown config key '%s' in definition for '%s'"
+                        % (k, section))
             d[k] = v
 
         for k, kinfo in valid_keys.items():
@@ -1055,7 +1061,12 @@ class Platform:
     """Class representing metadata for a particular platform
 
     Maps directly to BOARD when building"""
-    def __init__(self, arch, name, plat_dict):
+
+    yaml_platform_schema = scl.yaml_load(
+        os.path.join(os.environ['ZEPHYR_BASE'],
+                     "scripts", "sanity_chk", "sanitycheck-platform-schema.yaml"))
+
+    def __init__(self, cfile):
         """Constructor.
 
         @param arch Architecture object for this platform
@@ -1064,41 +1075,44 @@ class Platform:
             in the architecture configuration file which has lots of metadata.
             See the Architecture class.
         """
-        self.name = name
-        self.qemu_support = plat_dict["qemu_support"]
-        self.arch = arch
-        self.supported_toolchains = arch.supported_toolchains
-        if plat_dict["supported_toolchains"]:
-            self.supported_toolchains = plat_dict["supported_toolchains"]
-        # Gets populated in a separate step
+        scp = SanityConfigParser(cfile, self.yaml_platform_schema)
+        cp = scp.cp
+
+        self.name = cp['identifier']
+        # if no RAM size is specified by the board, take a default of 128K
+        self.ram = cp.get("ram", 128)
+        testing = cp.get("testing", {})
+        self.ignore_tags = testing.get("ignore_tags", [])
+        self.default = testing.get("default", False)
+        # if no flash size is specified by the board, take a default of 512K
+        self.flash = cp.get("flash", 512)
+        self.supported = set()
+        for supp_feature in cp.get("supported", []):
+            for item in supp_feature.split(":"):
+                self.supported.add(item)
+
+        self.qemu_support = True if cp.get('type', "na") == 'qemu' else False
+        self.arch = cp['arch']
+        self.supported_toolchains = cp.get("toolchain", [])
         self.defconfig = None
         pass
 
     def __repr__(self):
-        return "<%s on %s>" % (self.name, self.arch.name)
+        return "<%s on %s>" % (self.name, self.arch)
 
 
 class Architecture:
     """Class representing metadata for a particular architecture
     """
-    def __init__(self, cfile):
+    def __init__(self, name, platforms):
         """Architecture constructor
 
         @param cfile Path to Architecture configuration file, which gives
             info about the arch and all the platforms for it
         """
-        cp = SanityConfigParser(cfile)
-        self.platforms = []
+        self.platforms = platforms
 
-        arch = cp.get_section("arch", arch_valid_keys)
-
-        self.name = arch["name"]
-        self.supported_toolchains = arch["supported_toolchains"]
-
-        for plat_name in arch["platforms"]:
-            verbose("Platform: %s" % plat_name)
-            plat_dict = cp.get_section(plat_name, platform_valid_keys)
-            self.platforms.append(Platform(self, plat_name, plat_dict))
+        self.name = name
 
     def __repr__(self):
         return "<arch %s>" % self.name
@@ -1110,12 +1124,12 @@ class TestCase:
     def __init__(self, testcase_root, workdir, name, tc_dict, inifile):
         """TestCase constructor.
 
-        This gets called by TestSuite as it finds and reads testcase.ini files.
-        Multiple TestCase instances may be generated from a single testcase.ini,
+        This gets called by TestSuite as it finds and reads test yaml  files.
+        Multiple TestCase instances may be generated from a single testcase.yaml,
         each one corresponds to a section within that file.
 
         We need to have a unique name for every single test case. Since
-        a testcase.ini can define multiple tests, the canonical name for
+        a testcase.yaml can define multiple tests, the canonical name for
         the test case is <workdir>/<name>.
 
         @param testcase_root Absolute path to the root directory where
@@ -1126,9 +1140,9 @@ class TestCase:
             in the test case configuration file. For many test cases that just
             define one test, can be anything and is usually "test". This is
             really only used to distinguish between different cases when
-            the testcase.ini defines multiple tests
+            the testcase.yaml defines multiple tests
         @param tc_dict Dictionary with section values for this test case
-            from the testcase.ini file
+            from the testcase.yaml file
         """
         self.code_location = os.path.join(testcase_root, workdir)
         self.type = tc_dict["type"]
@@ -1139,14 +1153,20 @@ class TestCase:
         self.skip = tc_dict["skip"]
         self.platform_exclude = tc_dict["platform_exclude"]
         self.platform_whitelist = tc_dict["platform_whitelist"]
+        self.toolchain_exclude = tc_dict["toolchain_exclude"]
+        self.toolchain_whitelist = tc_dict["toolchain_whitelist"]
         self.tc_filter = tc_dict["filter"]
         self.timeout = tc_dict["timeout"]
         self.build_only = tc_dict["build_only"]
+        self.build_on_all = tc_dict["build_on_all"]
         self.slow = tc_dict["slow"]
+        self.min_ram = tc_dict["min_ram"]
+        self.depends_on = tc_dict["depends_on"]
+        self.min_flash = tc_dict["min_flash"]
         self.extra_sections = tc_dict["extra_sections"]
-        self.path = os.path.join(os.path.basename(os.path.abspath(testcase_root)),
-                                 workdir, name)
-        self.name = self.path # for now
+
+        self.path = os.path.normpath(os.path.join(os.path.abspath(testcase_root).replace(ZEPHYR_BASE + "/",''), workdir, name))
+        self.name = os.path.join(self.path)
         self.defconfig = {}
         self.inifile = inifile
 
@@ -1167,7 +1187,7 @@ class TestInstance:
                  slow=False, coverage=False):
         self.test = test
         self.platform = platform
-        self.name = os.path.join(platform.name, test.path)
+        self.name = os.path.join(platform.name, test.name)
         self.outdir = os.path.join(base_outdir, platform.name, test.path)
         self.build_only = build_only or test.build_only
 
@@ -1209,7 +1229,11 @@ def defconfig_cb(context, goals, goal):
 class TestSuite:
     config_re = re.compile('(CONFIG_[A-Za-z0-9_]+)[=]\"?([^\"]*)\"?$')
 
-    def __init__(self, arch_root, testcase_roots, outdir, coverage):
+    yaml_tc_schema = scl.yaml_load(
+        os.path.join(os.environ['ZEPHYR_BASE'],
+                     "scripts", "sanity_chk", "sanitycheck-tc-schema.yaml"))
+
+    def __init__(self, board_root, testcase_roots, outdir, coverage):
         # Keep track of which test cases we've filtered out and why
         discards = {}
         self.arches = {}
@@ -1221,7 +1245,7 @@ class TestSuite:
         self.discards = None
         self.coverage = coverage
 
-        arch_root = os.path.abspath(arch_root)
+        board_root = os.path.abspath(board_root)
 
         for testcase_root in testcase_roots:
             testcase_root = os.path.abspath(testcase_root)
@@ -1231,41 +1255,49 @@ class TestSuite:
             for dirpath, dirnames, filenames in os.walk(testcase_root,
                                                         topdown=True):
                 verbose("scanning %s" % dirpath)
-                if "testcase.ini" in filenames:
-                    verbose("Found test case in " + dirpath)
-                    dirnames[:] = []
-                    ini_path = os.path.join(dirpath, "testcase.ini")
-                    cp = SanityConfigParser(ini_path)
-                    workdir = os.path.relpath(dirpath, testcase_root)
+                if 'sample.yaml' in filenames:
+                    filename = 'sample.yaml'
+                elif 'testcase.yaml' in filenames:
+                    filename = 'testcase.yaml'
+                else:
+                    continue
+                verbose("Found possible test case in " + dirpath)
+                dirnames[:] = []
+                yaml_path = os.path.join(dirpath, filename)
+                try:
+                    cp = SanityConfigParser(yaml_path, self.yaml_tc_schema)
+                except RuntimeError as e:
+                    error("E: %s: can't load: %s" % (yaml_path, e))
 
-                    for section in cp.sections():
-                        tc_dict = cp.get_section(section, testcase_valid_keys)
-                        tc = TestCase(testcase_root, workdir, section, tc_dict,
-                                      ini_path)
-                        self.testcases[tc.name] = tc
+                workdir = os.path.relpath(dirpath, testcase_root)
 
-        debug("Reading architecture configuration files under %s..." % arch_root)
-        for dirpath, dirnames, filenames in os.walk(arch_root):
+                for section in cp.sections():
+                    name = list(section.keys())[0]
+                    tc_dict = cp.get_section(name, testcase_valid_keys)
+                    tc = TestCase(testcase_root, workdir, name, tc_dict,
+                                  yaml_path)
+                    self.testcases[tc.name] = tc
+
+        debug("Reading platform configuration files under %s..." % board_root)
+        for dirpath, dirnames, filenames in os.walk(board_root):
             for filename in filenames:
-                if filename.endswith(".ini"):
+                if filename.endswith(".yaml"):
                     fn = os.path.join(dirpath, filename)
-                    verbose("Found arch configuration " + fn)
-                    arch = Architecture(fn)
-                    self.arches[arch.name] = arch
-                    self.platforms.extend(arch.platforms)
+                    verbose("Found plaform configuration " + fn)
+                    try:
+                        platform = Platform(fn)
+                        self.platforms.append(platform)
+                    except RuntimeError as e:
+                        error("E: %s: can't load: %s" % (fn, e))
 
-        # Build up a list of boards based on the presence of
-        # boards/*/*_defconfig files. We want to make sure that the arch.ini
-        # files are not missing any boards
-        all_plats = [plat.name for plat in self.platforms]
-        for dirpath, dirnames, filenames in os.walk(os.path.join(ZEPHYR_BASE,
-                                                                 "boards")):
-            for filename in filenames:
-                if filename.endswith("_defconfig"):
-                    board_name = filename.replace("_defconfig", "")
-                    if board_name not in all_plats:
-                        error("Platform '%s' not specified in any arch .ini file and will not be tested"
-                                % board_name)
+        arches = []
+        for p in self.platforms:
+            arches.append(p.arch)
+        for a in list(set(arches)):
+            aplatforms = [ p for p in self.platforms if p.arch == a ]
+            arch = Architecture(a, aplatforms)
+            self.arches[a] = arch
+
         self.instances = {}
 
     def get_last_failed(self):
@@ -1281,6 +1313,26 @@ class TestSuite:
                 platform = row["platform"]
                 result.append((test, platform))
         return result
+
+    def load_from_file(self, file):
+        if not os.path.exists(file):
+            raise SanityRuntimeError("Couldn't find input file with list of tests.")
+        result = []
+        with open(file, "r") as fp:
+            cr = csv.reader(fp)
+            instance_list = []
+            for row in cr:
+                name = os.path.join(row[0], row[1])
+                platforms = self.arches[row[3]].platforms
+                myp = None
+                for p in platforms:
+                    if p.name == row[2]:
+                        myp = p
+                        break
+                instance = TestInstance(self.testcases[name], myp, self.outdir)
+                instance_list.append(instance)
+            self.add_instances(instance_list)
+
 
     def apply_filters(self, platform_filter, arch_filter, tag_filter, exclude_tag,
                       config_filter, testcase_filter, last_failed, all_plats,
@@ -1311,12 +1363,14 @@ class TestSuite:
         dlist = {}
         for tc_name, tc in self.testcases.items():
             for arch_name, arch in self.arches.items():
-                instance_list = []
                 for plat in arch.platforms:
                     instance = TestInstance(tc, plat, self.outdir)
 
                     if (arch_name == "unit") != (tc.type == "unit"):
                         continue
+
+                    if tc.build_on_all and not platform_filter:
+                        platform_filter = []
 
                     if tc.skip:
                         continue
@@ -1345,26 +1399,48 @@ class TestSuite:
                     if tc.platform_exclude and plat.name in tc.platform_exclude:
                         continue
 
+                    if tc.toolchain_exclude and toolchain in tc.toolchain_exclude:
+                        continue
+
                     if platform_filter and plat.name not in platform_filter:
+                        continue
+
+                    if plat.ram < tc.min_ram:
+                        continue
+
+                    if set(plat.ignore_tags) & tc.tags:
+                        continue
+
+                    if tc.depends_on:
+                        dep_intersection = tc.depends_on.intersection(set(plat.supported))
+                        if dep_intersection != set(tc.depends_on):
+                            continue
+
+                    if plat.flash < tc.min_flash:
                         continue
 
                     if tc.platform_whitelist and plat.name not in tc.platform_whitelist:
                         continue
 
-                    if tc.tc_filter and (plat in arch.platforms[:platform_limit] or all_plats or platform_filter):
+                    if tc.toolchain_whitelist and toolchain not in tc.toolchain_whitelist:
+                        continue
+
+                    if (tc.tc_filter and (plat.default or all_plats or platform_filter) and
+                        toolchain in plat.supported_toolchains):
                         args = tc.extra_args[:]
-                        args.extend(["ARCH=" + plat.arch.name,
-                                "BOARD=" + plat.name, "initconfig"])
+                        args.extend(["ARCH=" + plat.arch,
+                                "BOARD=" + plat.name, "config-sanitycheck"])
                         args.extend(extra_args)
                         # FIXME would be nice to use a common outdir for this so that
                         # conf, gen_idt, etc aren't rebuilt for every  combination,
-                        # need a way to avoid different Make processe from clobbering
+                        # need a way to avoid different Make processes from clobbering
                         # each other since they all try to build them simultaneously
 
                         o = os.path.join(self.outdir, plat.name, tc.path)
-                        dlist[tc, plat, tc.name.split("/")[-1]] = os.path.join(o,".config")
-                        goal = "_".join([plat.name, "_".join(tc.name.split("/")), "initconfig"])
-                        mg.add_build_goal(goal, os.path.join(ZEPHYR_BASE, tc.code_location), o, args)
+                        dlist[tc, plat, tc.name.split("/")[-1]] = os.path.join(o,".config-sanitycheck")
+                        goal = "_".join([plat.name, "_".join(tc.name.split("/")), "config-sanitycheck"])
+                        mg.add_build_goal(goal, os.path.join(ZEPHYR_BASE, tc.code_location), o,
+                                args, "config-sanitycheck.log")
 
         info("Building testcase defconfigs...")
         results = mg.execute(defconfig_cb)
@@ -1400,6 +1476,9 @@ class TestSuite:
                         discards[instance] = "Skip filter"
                         continue
 
+                    if tc.build_on_all and not platform_filter:
+                        platform_filter = []
+
                     if tag_filter and not tc.tags.intersection(tag_filter):
                         discards[instance] = "Command line testcase tag filter"
                         continue
@@ -1432,6 +1511,10 @@ class TestSuite:
                         discards[instance] = "In test case platform exclude"
                         continue
 
+                    if tc.toolchain_exclude and toolchain in tc.toolchain_exclude:
+                        discards[instance] = "In test case toolchain exclude"
+                        continue
+
                     if platform_filter and plat.name not in platform_filter:
                         discards[instance] = "Command line platform filter"
                         continue
@@ -1440,8 +1523,30 @@ class TestSuite:
                         discards[instance] = "Not in testcase platform whitelist"
                         continue
 
+                    if tc.toolchain_whitelist and toolchain not in tc.toolchain_whitelist:
+                        discards[instance] = "Not in testcase toolchain whitelist"
+                        continue
+
                     if toolchain and toolchain not in plat.supported_toolchains:
                         discards[instance] = "Not supported by the toolchain"
+                        continue
+
+                    if plat.ram < tc.min_ram:
+                        discards[instance] = "Not enough RAM"
+                        continue
+
+                    if tc.depends_on:
+                        dep_intersection = tc.depends_on.intersection(set(plat.supported))
+                        if dep_intersection != set(tc.depends_on):
+                            discards[instance] = "No hardware support"
+                            continue
+
+                    if plat.flash < tc.min_flash:
+                        discards[instance] = "Not enough FLASH"
+                        continue
+
+                    if set(plat.ignore_tags) & tc.tags:
+                        discards[instance] = "Excluded tags per platform"
                         continue
 
                     defconfig = {"ARCH" : arch.name, "PLATFORM" : plat.name}
@@ -1468,10 +1573,15 @@ class TestSuite:
                     # Every platform in this arch was rejected already
                     continue
 
-                if default_platforms:
-                    self.add_instances(instance_list[:platform_limit])
-                    for instance in instance_list[platform_limit:]:
-                        discards[instance] = "Not in first %d platform(s) for arch" % platform_limit
+                if default_platforms and not tc.build_on_all:
+                    if not tc.platform_whitelist:
+                        instances = list(filter(lambda tc: tc.platform.default, instance_list))
+                        self.add_instances(instances)
+                    else:
+                        self.add_instances(instance_list[:platform_limit])
+
+                    for instance in list(filter(lambda tc: not tc.platform.default, instance_list)):
+                        discards[instance] = "Not a default test platform"
                 else:
                     self.add_instances(instance_list)
         self.discards = discards
@@ -1506,18 +1616,31 @@ class TestSuite:
 
         return self.goals
 
+    def run_report(self, filename):
+        with open(filename, "at") as csvfile:
+            fieldnames = ['path', 'test', 'platform', 'arch']
+            cw = csv.DictWriter(csvfile, fieldnames, lineterminator=os.linesep)
+            for instance in self.instances.values():
+                rowdict = {
+                           "path": os.path.dirname(instance.test.name),
+                           "test" : os.path.basename(instance.test.name),
+                           "platform" : instance.platform.name,
+                           "arch" : instance.platform.arch
+                           }
+                cw.writerow(rowdict)
+
     def discard_report(self, filename):
         if self.discards == None:
             raise SanityRuntimeException("apply_filters() hasn't been run!")
 
-        with open(filename, "wb") as csvfile:
+        with open(filename, "wt") as csvfile:
             fieldnames = ["test", "arch", "platform", "reason"]
             cw = csv.DictWriter(csvfile, fieldnames, lineterminator=os.linesep)
             cw.writeheader()
             for instance, reason in self.discards.items():
-                rowdict = {"test" : i.test.name,
-                           "arch" : i.platform.arch.name,
-                           "platform" : i.platform.name,
+                rowdict = {"test" : instance.test.name,
+                           "arch" : instance.platform.arch,
+                           "platform" : instance.platform.name,
                            "reason" : reason}
                 cw.writerow(rowdict)
 
@@ -1636,7 +1759,7 @@ class TestSuite:
             for name, goal in self.goals.items():
                 i = self.instances[name]
                 rowdict = {"test" : i.test.name,
-                           "arch" : i.platform.arch.name,
+                           "arch" : i.platform.arch,
                            "platform" : i.platform.name,
                            "extra_args" : " ".join(i.test.extra_args),
                            "qemu" : i.platform.qemu_support}
@@ -1661,15 +1784,15 @@ def parse_arguments():
     parser.add_argument("-p", "--platform", action="append",
             help="Platform filter for testing. This option may be used multiple "
                  "times. Testcases will only be built/run on the platforms "
-                 "specified. If this option is not used, then N platforms will "
-                 "automatically be chosen from each arch to build and test, "
-                 "where N is provided by the --platform-limit option.")
+                 "specified. If this option is not used, then platforms marked "
+                 "as default in the platform metadata file will be chosen "
+                 "to build and test. ")
     parser.add_argument("-L", "--platform-limit", action="store", type=int,
             metavar="N", default=1,
             help="Controls what platforms are tested if --platform or "
                  "--all are not used. For each architecture specified by "
                  "--arch (defaults to all of them), choose the first "
-                 "N platforms to test in the arch-specific .ini file "
+                 "N platforms to test in the arch-specific .yaml file "
                  "'platforms' list. Defaults to 1.")
     parser.add_argument("-a", "--arch", action="append",
             help="Arch filter for testing. Takes precedence over --platform. "
@@ -1680,7 +1803,7 @@ def parse_arguments():
                  "Default is to not do any tag filtering. Multiple invocations "
                  "are treated as a logical 'or' relationship")
     parser.add_argument("-e", "--exclude-tag", action="append",
-            help="Specify tags of tests that should not run."
+            help="Specify tags of tests that should not run. "
                  "Default is to run all tests with all tags.")
     parser.add_argument("-f", "--only-failed", action="store_true",
             help="Run only those tests that failed the previous sanity check "
@@ -1696,7 +1819,7 @@ def parse_arguments():
     parser.add_argument("-s", "--test", action="append",
             help="Run only the specified test cases. These are named by "
                  "<path to test project relative to "
-                 "--testcase-root>/<testcase.ini section name>")
+                 "--testcase-root>/<testcase.yaml section name>")
     parser.add_argument("-l", "--all", action="store_true",
             help="Build/test on all platforms. Any --platform arguments "
                  "ignored.")
@@ -1704,10 +1827,10 @@ def parse_arguments():
     parser.add_argument("-o", "--testcase-report",
             help="Output a CSV spreadsheet containing results of the test run")
     parser.add_argument("-d", "--discard-report",
-            help="Output a CSV spreadhseet showing tests that were skipped "
+            help="Output a CSV spreadsheet showing tests that were skipped "
                  "and why")
     parser.add_argument("--compare-report",
-            help="Use this report file for size comparision")
+            help="Use this report file for size comparison")
 
     parser.add_argument("--ccache", action="store_const", const=1, default=0,
             help="Enable the use of ccache when building")
@@ -1744,6 +1867,12 @@ def parse_arguments():
     parser.add_argument("-u", "--no-update", action="store_true",
             help="do not update the results of the last run of the sanity "
                  "checks")
+    parser.add_argument("-F", "--load-tests", metavar="FILENAME", action="store",
+            help="Load list of tests to be run from file.")
+
+    parser.add_argument("-E", "--save-tests", metavar="FILENAME", action="store",
+            help="Save list of tests to be run to file.")
+
     parser.add_argument("-b", "--build-only", action="store_true",
             help="Only build the code, do not execute any of it in QEMU")
     parser.add_argument("-j", "--jobs", type=int,
@@ -1765,12 +1894,12 @@ def parse_arguments():
                  "faster compilation since builds will be incremental")
     parser.add_argument("-T", "--testcase-root", action="append", default=[],
             help="Base directory to recursively search for test cases. All "
-                 "testcase.ini files under here will be processed. May be "
+                 "testcase.yaml files under here will be processed. May be "
                  "called multiple times. Defaults to the 'samples' and "
                  "'tests' directories in the Zephyr tree.")
-    parser.add_argument("-A", "--arch-root",
-            default="%s/scripts/sanity_chk/arches" % ZEPHYR_BASE,
-            help="Directory to search for arch configuration files. All .ini "
+    parser.add_argument("-A", "--board-root",
+            default="%s/boards" % ZEPHYR_BASE,
+            help="Directory to search for board configuration files. All .yaml "
                  "files in the directory will be processed.")
     parser.add_argument("-z", "--size", action="append",
             help="Don't run sanity  checks. Instead, produce a report to "
@@ -1778,7 +1907,7 @@ def parse_arguments():
                  "All other command line arguments ignored.")
     parser.add_argument("-S", "--enable-slow", action="store_true",
             help="Execute time-consuming test cases that have been marked "
-                 "as 'slow' in testcase.ini. Normally these are only built.")
+                 "as 'slow' in testcase.yaml. Normally these are only built.")
     parser.add_argument("-R", "--enable-asserts", action="store_true",
             help="Build all test cases with assertions enabled.")
     parser.add_argument("-Q", "--error-on-deprecations", action="store_false",
@@ -1923,8 +2052,13 @@ def main():
         args.testcase_root = [os.path.join(ZEPHYR_BASE, "tests"),
                               os.path.join(ZEPHYR_BASE, "samples")]
 
-    ts = TestSuite(args.arch_root, args.testcase_root, args.outdir, args.coverage)
-    discards = ts.apply_filters(args.platform, args.arch, args.tag, args.exclude_tag, args.config,
+    ts = TestSuite(args.board_root, args.testcase_root, args.outdir, args.coverage)
+
+    discards = []
+    if args.load_tests:
+        ts.load_from_file(args.load_tests)
+    else:
+        discards = ts.apply_filters(args.platform, args.arch, args.tag, args.exclude_tag, args.config,
                                 args.test, args.only_failed, args.all,
                                 args.platform_limit, toolchain, args.extra_args, args.ccache)
 
@@ -1936,11 +2070,17 @@ def main():
             debug("{:<25} {:<50} {}SKIPPED{}: {}".format(i.platform.name,
                   i.test.name, COLOR_YELLOW, COLOR_NORMAL, reason))
 
-    ts.instancets = OrderedDict(sorted(ts.instances.items(), key=lambda t: t[0]))
+    ts.instances = OrderedDict(sorted(ts.instances.items(), key=lambda t: t[0]))
+
+
+    if args.save_tests:
+        ts.run_report(args.save_tests)
+        return
+
 
     if args.subset:
         subset, sets = args.subset.split("/")
-        total = len(ts.instancets)
+        total = len(ts.instances)
         per_set = round(total / int(sets))
         start = (int(subset) - 1 ) * per_set
         if subset == sets:
@@ -1948,7 +2088,7 @@ def main():
         else:
             end = start + per_set
 
-        sliced_instances = islice(ts.instancets.items(),start, end)
+        sliced_instances = islice(ts.instances.items(),start, end)
         ts.instances = OrderedDict(sliced_instances)
 
     info("%d tests selected, %d tests discarded due to filters" %

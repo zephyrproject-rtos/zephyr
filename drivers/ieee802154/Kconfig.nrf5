@@ -1,5 +1,10 @@
 # Kconfig.nrf5 - Nordic Semiconductor nRF5 802.15.4 configuration options
 #
+#
+# Copyright (c) 2017 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
 
 choice IEEE802154_NRF5_DRIVER_SUPPORT
 	prompt "nRF52 series IEEE 802.15.4 Driver support"

@@ -25,10 +25,15 @@
 #endif
 #endif
 
+#ifdef CONFIG_MQTT_LIB_TLS
+#define SERVER_PORT		8883
+#else
 #define SERVER_PORT		1883
+#endif
 
 #define APP_SLEEP_MSECS		500
 #define APP_TX_RX_TIMEOUT       300
+#define APP_NET_INIT_TIMEOUT    10000
 
 #define APP_CONNECT_TRIES	10
 

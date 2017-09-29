@@ -28,12 +28,9 @@ config UART_MCUX_0
 	def_bool y if UART_CONSOLE
 
 config UART_MCUX_3
-	def_bool y if BLUETOOTH_UART
+	def_bool y if BT_UART
 
 endif # UART_MCUX
-
-config BLUETOOTH_UART_ON_DEV_NAME
-	default "UART_3" if BLUETOOTH_UART
 
 config PINMUX
 	def_bool y
@@ -81,35 +78,19 @@ if I2C
 config I2C_0
 	def_bool y
 
-if I2C_0
-
-config I2C_0_DEFAULT_CFG
-	default 0x12
-
-config I2C_0_IRQ_PRI
-	default 0
-
-endif # I2C_0
-
 config I2C_1
 	def_bool n
 
-if I2C_1
-
-config I2C_1_DEFAULT_CFG
-	default 0x12
-
-config I2C_1_IRQ_PRI
-	default 0
-
-endif # I2C_1
-
 endif # I2C
 
-if FXOS8700
+if ADC
 
-config FXOS8700_I2C_NAME
-	default I2C_0_NAME
+config ADC_1
+	def_bool y
+
+endif # ADC
+
+if FXOS8700
 
 config FXOS8700_I2C_ADDRESS
 	default 0x1d
@@ -122,12 +103,12 @@ config FXOS8700_GPIO_PIN
 
 endif # FXOS8700
 
-if PWM_K64_FTM
+if PWM_MCUX_FTM
 
-config PWM_K64_FTM_0
+config PWM_3
 	def_bool y
 
-endif # PWM_K64_FTM
+endif # PWM_MCUX_FTM
 
 if SPI
 
@@ -151,11 +132,14 @@ config SPI_2_IRQ_PRI
 
 endif # SPI
 
-if NET_L2_ETHERNET
+if NETWORKING
+
+config NET_L2_ETHERNET
+	def_bool y
 
 config ETH_MCUX_0
 	def_bool y
 
-endif # NET_L2_ETHERNET
+endif # NETWORKING
 
 endif # BOARD_FRDM_K64F

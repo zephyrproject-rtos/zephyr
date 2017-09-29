@@ -2,3 +2,4 @@ ccflags-$(CONFIG_HAS_CC3220SDK) += -D$(COMPILER)
 # Need to build prcm and utils for PRCMCC3220MCUInit, which is not in ROM
 obj-$(CONFIG_HAS_CC3220SDK) += source/ti/devices/cc32xx/driverlib/utils.o
 obj-$(CONFIG_HAS_CC3220SDK) += source/ti/devices/cc32xx/driverlib/prcm.o
+obj-$(CONFIG_HAS_CC3220SDK) += source/ti/devices/cc32xx/driverlib/pin.o

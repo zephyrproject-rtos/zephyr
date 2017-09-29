@@ -1,0 +1,7 @@
+/*
+ * Copyright (c) 2017 I-SENSE group of ICCS
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/stm32f3.dtsi>

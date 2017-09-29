@@ -1,6 +1,0 @@
-# Kconfig - TI SimpleLink CC3200 LaunchXL Board
-#
-
-config  BOARD_CC3200_LAUNCHXL
-	bool "TI CC3200 LAUNCHXL"
-	depends on SOC_CC3200

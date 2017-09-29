@@ -1,0 +1,31 @@
+---
+title: Atmel SAM Family USART
+id: atmel,sam-usart
+version: 0.1
+
+description: >
+    This binding gives a base representation of the Atmel SAM USART
+
+inherits:
+  - !include uart.yaml
+
+properties:
+  - compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "atmel,sam-usart"
+
+  - reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+  - interrupts:
+      type: array
+      category: required
+      description: required interrupts
+      generation: define
+
+...

@@ -15,6 +15,7 @@ config HAS_FLASH_LOAD_OFFSET
 	This option is selected by targets having a FLASH_LOAD_OFFSET
 	and FLASH_LOAD_SIZE.
 
+if !HAS_DTS
 config FLASH_LOAD_OFFSET
 	hex "Kernel load offset"
 	default 0
@@ -38,6 +39,7 @@ config FLASH_LOAD_SIZE
 	the device.
 
 	If unsure, leave at the default value 0.
+endif
 
 config TEXT_SECTION_OFFSET
 	hex "TEXT section offset"
@@ -127,12 +129,6 @@ config TOOLCHAIN_VARIANT
 
 endmenu
 
-config CPLUSPLUS
-	bool "Enable C++ support for the application"
-	default n
-	help
-	This option enables the use of applications built with C++.
-
 config GDB_INFO
 	bool
 	prompt "Task-aware debugging with GDB"
@@ -166,9 +162,9 @@ config BOOT_TIME_MEASUREMENT
 	depends on PERFORMANCE_METRICS
 	help
 	This option enables the recording of timestamps during system start
-	up. The global variable __start_tsc records the time kernel begins
-	executing, while __main_tsc records when main() begins executing,
-	and __idle_tsc records when the CPU becomes idle. All values are
+	up. The global variable __start_time_stamp records the time kernel begins
+	executing, while __main_time_stamp records when main() begins executing,
+	and __idle_time_stamp records when the CPU becomes idle. All values are
 	recorded in terms of CPU clock cycles since system reset.
 
 config CPU_CLOCK_FREQ_MHZ

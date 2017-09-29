@@ -1,9 +1,17 @@
+/*
+ * Copyright (c) 2017 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #ifndef __DT_BINDING_ST_MEM_H
 #define __DT_BINDING_ST_MEM_H
 
 #define __SIZE_K(x) (x * 1024)
 
-#if defined(CONFIG_SOC_STM32F103XB)
+#if defined(CONFIG_SOC_STM32F103X8)
+#define DT_FLASH_SIZE		__SIZE_K(64)
+#define DT_SRAM_SIZE		__SIZE_K(20)
+#elif defined(CONFIG_SOC_STM32F103XB)
 #define DT_FLASH_SIZE		__SIZE_K(128)
 #define DT_SRAM_SIZE		__SIZE_K(20)
 #elif defined(CONFIG_SOC_STM32F103XE)
@@ -24,15 +32,27 @@
 #elif defined(CONFIG_SOC_STM32F401XE)
 #define DT_FLASH_SIZE		__SIZE_K(512)
 #define DT_SRAM_SIZE		__SIZE_K(96)
+#elif defined(CONFIG_SOC_STM32F405XG)
+#define DT_FLASH_SIZE		__SIZE_K(1024)
+#define DT_SRAM_SIZE		__SIZE_K(192)
 #elif defined(CONFIG_SOC_STM32F407XG)
 #define DT_FLASH_SIZE		__SIZE_K(1024)
 #define DT_SRAM_SIZE		__SIZE_K(192)
 #elif defined(CONFIG_SOC_STM32F411XE)
 #define DT_FLASH_SIZE		__SIZE_K(512)
 #define DT_SRAM_SIZE		__SIZE_K(128)
+#elif defined(CONFIG_SOC_STM32F412ZG)
+#define DT_FLASH_SIZE		__SIZE_K(1024)
+#define DT_SRAM_SIZE		__SIZE_K(256)
 #elif defined(CONFIG_SOC_STM32F413XH)
 #define DT_FLASH_SIZE		__SIZE_K(1536)
 #define DT_SRAM_SIZE		__SIZE_K(320)
+#elif defined(CONFIG_SOC_STM32F417XE)
+#define DT_FLASH_SIZE		__SIZE_K(512)
+#define DT_SRAM_SIZE		__SIZE_K(192)
+#elif defined(CONFIG_SOC_STM32F417XG)
+#define DT_FLASH_SIZE		__SIZE_K(1024)
+#define DT_SRAM_SIZE		__SIZE_K(192)
 #elif defined(CONFIG_SOC_STM32F429XI)
 #define DT_FLASH_SIZE		__SIZE_K(2048)
 #define DT_SRAM_SIZE		__SIZE_K(256)

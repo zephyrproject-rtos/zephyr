@@ -7,7 +7,10 @@
 	compatible = "nxp,frdm-kl25z", "nxp,kl25z", "nxp,mkl25z4";
 
 	aliases {
+		adc_0 = &adc0;
 		uart_0 = &uart0;
+		i2c_0 = &i2c0;
+		i2c_1 = &i2c1;
 	};
 
 	chosen {
@@ -15,6 +18,14 @@
 		zephyr,flash = &flash0;
 		zephyr,console = &uart0;
 	};
+};
+
+&adc0 {
+	status = "ok";
+};
+
+&i2c0 {
+	status = "ok";
 };
 
 &uart0 {

@@ -1,0 +1,10 @@
+identifier: nrf52840_pca10056
+name: nRF52840-PCA10056
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb
+supported:
+  - ble
+  - ieee802154

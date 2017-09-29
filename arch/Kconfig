@@ -35,33 +35,34 @@ config XTENSA
 
 endchoice
 
-#
-# Hidden PM feature configs which are to be selected by
-# individual SoC.
-#
-config SYS_POWER_LOW_POWER_STATE_SUPPORTED
-	# Hidden
-	bool
-	default n
-	help
-	This option signifies that the target supports the SYS_POWER_LOW_POWER_STATE
-	configuration option.
 
-config SYS_POWER_DEEP_SLEEP_SUPPORTED
-	# Hidden
-	bool
-	default n
-	help
-	This option signifies that the target supports the SYS_POWER_DEEP_SLEEP
-	configuration option.
+menu "General Architecture Options"
 
-config BOOTLOADER_CONTEXT_RESTORE_SUPPORTED
-	# Hidden
-	bool
-	default n
+config HW_STACK_PROTECTION
+	bool "Hardware Stack Protection"
+	depends on ARCH_HAS_STACK_PROTECTION
 	help
-	This option signifies that the target has options of bootloaders
-	that support context restore upon resume from deep sleep
+	  Select this option to enable hardware stack protection.
+
+config USERSPACE
+	bool "User mode threads"
+	depends on ARCH_HAS_USERSPACE
+	depends on HW_STACK_PROTECTION
+	help
+	When enabled, threads may be created or dropped down to user mode,
+	which has significantly restricted permissions and must interact
+	with the kernel via system calls. See Zephyr documentation for more
+	details	about this feature.
+
+config MAX_THREAD_BYTES
+	int "Bytes to use when tracking object thread permissions"
+	default 2
+	depends on USERSPACE
+	help
+	Every kernel object will have an associated bitfield to store
+	thread permissions for that object. This controls the size of the
+	bitfield (in bytes) and imposes a limit on how many threads can
+	be created in the system.
 
 config SIMPLE_FATAL_ERROR_HANDLER
 	prompt "Simple system fatal error handler"
@@ -74,50 +75,10 @@ config SIMPLE_FATAL_ERROR_HANDLER
 	for footprint-concerned systems. Only enable this option if you do not
 	want debug capabilities in case of system fatal error.
 
-#
-# End hidden PM feature configs
-#
-
-config ARCH
-	string
-	help
-	System architecture string.
-
-config SOC
-	string
-	help
-	SoC name which can be found under arch/<arch>/soc/<soc name>.
-	This option holds the directory name used by the build system to locate
-	the correct linker and header files for the SoC. This option will go away
-	once all SoCs are using family/series structure.
-
-config SOC_SERIES
-	string
-	help
-	SoC series name which can be found under arch/<arch>/soc/<family>/<series>.
-	This option holds the directory name used by the build system to locate
-	the correct linker and header files.
-
-config SOC_FAMILY
-	string
-	help
-	SoC family name which can be found under arch/<arch>/soc/<family>.
-	This option holds the directory name used by the build system to locate
-	the correct linker and header files.
-
-config BOARD
-	string
-	help
-	This option holds the name of the board and is used to locate the files
-	related to the board in the source tree (under boards/).
-	The Board is the first location where we search for a linker.ld file,
-	if not found we look for the linker file in
-	arch/<arch>/soc/<family>/<series>
-
+menu "Interrupt Configuration"
 #
 # Interrupt related configs
 #
-
 config GEN_ISR_TABLES
 	bool
 	prompt "Use generated IRQ tables"
@@ -162,6 +123,88 @@ config GEN_IRQ_START_VECTOR
 	will be subtracted from CONFIG_NUM_IRQS to properly size them.
 	This is a hidden option which needs to be set per architecture and
 	left alone.
+
+endmenu # Interrupt configuration
+
+endmenu
+
+#
+# Architecture Capabilities
+#
+config ARCH_HAS_STACK_PROTECTION
+	bool
+
+config ARCH_HAS_USERSPACE
+	bool
+
+#
+# Hidden PM feature configs which are to be selected by
+# individual SoC.
+#
+config SYS_POWER_LOW_POWER_STATE_SUPPORTED
+	# Hidden
+	bool
+	default n
+	help
+	This option signifies that the target supports the SYS_POWER_LOW_POWER_STATE
+	configuration option.
+
+config SYS_POWER_DEEP_SLEEP_SUPPORTED
+	# Hidden
+	bool
+	default n
+	help
+	This option signifies that the target supports the SYS_POWER_DEEP_SLEEP
+	configuration option.
+
+config BOOTLOADER_CONTEXT_RESTORE_SUPPORTED
+	# Hidden
+	bool
+	default n
+	help
+	This option signifies that the target has options of bootloaders
+	that support context restore upon resume from deep sleep
+
+#
+# End hidden PM feature configs
+#
+
+config ARCH
+	string
+	help
+	System architecture string.
+
+config SOC
+	string
+	help
+	SoC name which can be found under arch/<arch>/soc/<soc name>.
+	This option holds the directory name used by the build system to locate
+	the correct linker and header files for the SoC. This option will go away
+	once all SoCs are using family/series structure.
+
+config SOC_SERIES
+	string
+	help
+	SoC series name which can be found under arch/<arch>/soc/<family>/<series>.
+	This option holds the directory name used by the build system to locate
+	the correct linker and header files.
+
+config SOC_FAMILY
+	string
+	help
+	SoC family name which can be found under arch/<arch>/soc/<family>.
+	This option holds the directory name used by the build system to locate
+	the correct linker and header files.
+
+config BOARD
+	string
+	help
+	This option holds the name of the board and is used to locate the files
+	related to the board in the source tree (under boards/).
+	The Board is the first location where we search for a linker.ld file,
+	if not found we look for the linker file in
+	arch/<arch>/soc/<family>/<series>
+
 
 source "arch/*/Kconfig"
 

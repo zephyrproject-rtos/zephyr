@@ -27,7 +27,7 @@
 
 #define CHAR_SIZE_MAX           512
 
-#if defined(CONFIG_BLUETOOTH_GATT_CLIENT)
+#if defined(CONFIG_BT_GATT_CLIENT)
 static void exchange_func(struct bt_conn *conn, u8_t err,
 			  struct bt_gatt_exchange_params *params)
 {
@@ -103,7 +103,7 @@ static u8_t discover_func(struct bt_conn *conn,
 			     const struct bt_gatt_attr *attr,
 			     struct bt_gatt_discover_params *params)
 {
-	struct bt_gatt_service *gatt_service;
+	struct bt_gatt_service_val *gatt_service;
 	struct bt_gatt_chrc *gatt_chrc;
 	struct bt_gatt_include *gatt_include;
 	char uuid[37];
@@ -235,6 +235,7 @@ int cmd_gatt_read(int argc, char *argv[])
 
 	read_params.handle_count = 1;
 	read_params.single.handle = strtoul(argv[1], NULL, 16);
+	read_params.single.offset = 0;
 
 	if (argc > 2) {
 		read_params.single.offset = strtoul(argv[2], NULL, 16);
@@ -350,10 +351,11 @@ int cmd_gatt_write(int argc, char *argv[])
 
 int cmd_gatt_write_without_rsp(int argc, char *argv[])
 {
-	int err;
-	bool sign;
 	u16_t handle;
+	u16_t repeat;
+	int err = 0;
 	u16_t len;
+	bool sign;
 
 	if (!default_conn) {
 		printk("Not connected\n");
@@ -379,8 +381,24 @@ int cmd_gatt_write_without_rsp(int argc, char *argv[])
 		}
 	}
 
-	err = bt_gatt_write_without_response(default_conn, handle,
-					     gatt_write_buf, len, sign);
+	repeat = 0;
+
+	if (argc > 4) {
+		repeat = strtoul(argv[4], NULL, 16);
+	}
+
+	if (!repeat) {
+		repeat = 1;
+	}
+
+	while (repeat--) {
+		err = bt_gatt_write_without_response(default_conn, handle,
+						     gatt_write_buf, len, sign);
+		if (err) {
+			break;
+		}
+	}
+
 	printk("Write Complete (err %d)\n", err);
 
 	return 0;
@@ -464,7 +482,22 @@ int cmd_gatt_unsubscribe(int argc, char *argv[])
 
 	return 0;
 }
-#endif /* CONFIG_BLUETOOTH_GATT_CLIENT */
+#endif /* CONFIG_BT_GATT_CLIENT */
+
+static u8_t print_attr(const struct bt_gatt_attr *attr, void *user_data)
+{
+	printk("attr %p handle 0x%04x uuid %s perm 0x%02x\n",
+		attr, attr->handle, bt_uuid_str(attr->uuid), attr->perm);
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
+int cmd_gatt_show_db(int argc, char *argv[])
+{
+	bt_gatt_foreach_attr(0x0001, 0xffff, print_attr, NULL);
+
+	return 0;
+}
 
 /* Custom Service Variables */
 static struct bt_uuid_128 vnd_uuid = BT_UUID_INIT_128(
@@ -481,6 +514,34 @@ static const struct bt_uuid_128 vnd_long_uuid2 = BT_UUID_INIT_128(
 	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
 
 static u8_t vnd_value[] = { 'V', 'e', 'n', 'd', 'o', 'r' };
+
+static struct bt_uuid_128 vnd1_uuid = BT_UUID_INIT_128(
+	0xf4, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
+	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
+
+static const struct bt_uuid_128 vnd1_echo_uuid = BT_UUID_INIT_128(
+	0xf5, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
+	0x78, 0x56, 0x34, 0x12, 0x78, 0x56, 0x34, 0x12);
+
+static struct bt_gatt_ccc_cfg vnd1_ccc_cfg[BT_GATT_CCC_MAX] = {};
+static u8_t echo_enabled;
+
+static void vnd1_ccc_cfg_changed(const struct bt_gatt_attr *attr, u16_t value)
+{
+	echo_enabled = (value == BT_GATT_CCC_NOTIFY) ? 1 : 0;
+}
+
+static ssize_t write_vnd1(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			  const void *buf, u16_t len, u16_t offset,
+			  u8_t flags)
+{
+	if (echo_enabled) {
+		printk("Echo attr len %u\n", len);
+		bt_gatt_notify(conn, attr, buf, len);
+	}
+
+	return len;
+}
 
 static ssize_t read_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			void *buf, u16_t len, u16_t offset)
@@ -568,11 +629,38 @@ static struct bt_gatt_attr vnd_attrs[] = {
 				&vnd_long_value2),
 };
 
+static struct bt_gatt_service vnd_svc = BT_GATT_SERVICE(vnd_attrs);
+
+static struct bt_gatt_attr vnd1_attrs[] = {
+	/* Vendor Primary Service Declaration */
+	BT_GATT_PRIMARY_SERVICE(&vnd1_uuid),
+
+	BT_GATT_CHARACTERISTIC(&vnd1_echo_uuid.uuid,
+			       BT_GATT_CHRC_WRITE_WITHOUT_RESP |
+			       BT_GATT_CHRC_NOTIFY),
+	BT_GATT_DESCRIPTOR(&vnd1_echo_uuid.uuid,
+			   BT_GATT_PERM_WRITE, NULL, write_vnd1, NULL),
+	BT_GATT_CCC(vnd1_ccc_cfg, vnd1_ccc_cfg_changed),
+};
+
+static struct bt_gatt_service vnd1_svc = BT_GATT_SERVICE(vnd1_attrs);
+
 int cmd_gatt_register_test_svc(int argc, char *argv[])
 {
-	bt_gatt_register(vnd_attrs, ARRAY_SIZE(vnd_attrs));
+	bt_gatt_service_register(&vnd_svc);
+	bt_gatt_service_register(&vnd1_svc);
 
-	printk("Registering test vendor service\n");
+	printk("Registering test vendor services\n");
+
+	return 0;
+}
+
+int cmd_gatt_unregister_test_svc(int argc, char *argv[])
+{
+	bt_gatt_service_unregister(&vnd_svc);
+	bt_gatt_service_unregister(&vnd1_svc);
+
+	printk("Unregistering test vendor services\n");
 
 	return 0;
 }
@@ -648,6 +736,8 @@ static struct bt_gatt_attr met_attrs[] = {
 			   read_met, write_met, met_char_value),
 };
 
+static struct bt_gatt_service met_svc = BT_GATT_SERVICE(met_attrs);
+
 int cmd_gatt_write_cmd_metrics(int argc, char *argv[])
 {
 	int err = 0;
@@ -664,13 +754,12 @@ int cmd_gatt_write_cmd_metrics(int argc, char *argv[])
 
 		if (!registered) {
 			printk("Registering GATT metrics test Service.\n");
-			err = bt_gatt_register(met_attrs,
-					       ARRAY_SIZE(met_attrs));
+			err = bt_gatt_service_register(&met_svc);
 			registered = true;
 		}
 	} else if (!strcmp(argv[1], "off")) {
-		printk("Not supported.\n");
-		err = -EINVAL;
+		printk("Unregistering GATT metrics test Service.\n");
+		err = bt_gatt_service_unregister(&met_svc);
 	} else {
 		printk("Incorrect value: %s\n", argv[1]);
 		return -EINVAL;

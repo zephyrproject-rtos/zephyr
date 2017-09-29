@@ -103,30 +103,23 @@ static int net_rpl_mrhof_neighbor_link_cb(struct net_if *iface,
 {
 	u16_t packet_etx = numtx * NET_RPL_MC_ETX_DIVISOR;
 	u16_t recorded_etx = 0;
-	struct net_nbr *nbr = NULL;
-	struct net_nbr *ipv6_nbr;
+	struct net_ipv6_nbr_data *data;
 	u16_t new_etx;
 
-	nbr = net_rpl_get_nbr(parent);
-	if (!nbr) {
-		/* No neighbor for this parent - something bad has occurred */
+	data = net_rpl_get_ipv6_nbr_data(parent);
+	if (!data) {
+		/* No neighbor data for this parent,
+		 * something bad has occurred.
+		 */
 		return -ENOENT;
 	}
 
-	ipv6_nbr = net_ipv6_get_nbr(iface, nbr->idx);
-	if (!ipv6_nbr) {
-		/* No neighbor for this index, this definitely should not have
-		 * happened.
-		 */
-		return -EINVAL;
-	}
-
-	recorded_etx = net_ipv6_nbr_data(ipv6_nbr)->link_metric;
+	recorded_etx = data->link_metric;
 
 	/* Do not penalize the ETX when collisions or transmission errors
 	 * occur.
 	 */
-	if (!status) {
+	if (status < 0) {
 		/* FIXME - The status values need to be set properly */
 		if (status == -EIO) {
 			packet_etx = MRHOF_MAX_LINK_METRIC *
@@ -157,7 +150,7 @@ static int net_rpl_mrhof_neighbor_link_cb(struct net_if *iface,
 			packet_etx / NET_RPL_MC_ETX_DIVISOR);
 
 		/* Update the link metric for this IPv6 nbr */
-		net_ipv6_nbr_data(ipv6_nbr)->link_metric = new_etx;
+		data->link_metric = new_etx;
 	}
 
 	return 0;
@@ -170,6 +163,7 @@ int net_rpl_of_neighbor_link_cb(struct net_if *iface,
 
 static u16_t calculate_path_metric(struct net_rpl_parent *parent)
 {
+	struct net_ipv6_nbr_data *data;
 	struct net_nbr *nbr;
 
 	if (!parent) {
@@ -181,15 +175,22 @@ static u16_t calculate_path_metric(struct net_rpl_parent *parent)
 		return MRHOF_MAX_PATH_COST * NET_RPL_MC_ETX_DIVISOR;
 	}
 
+	data = net_rpl_get_ipv6_nbr_data(parent);
+	if (!data) {
+		/* No neighbor data for this parent,
+		 * something bad has occurred.
+		 */
+		return 0;
+	}
+
 #if defined(CONFIG_NET_RPL_MC_NONE)
-	return parent->rank + net_ipv6_nbr_data(nbr)->link_metric;
+	return parent->rank + data->link_metric;
 
 #elif defined(CONFIG_NET_RPL_MC_ETX)
-	return parent->mc.obj.etx + net_ipv6_nbr_data(nbr)->link_metric;
+	return parent->mc.obj.etx + data->link_metric;
 
 #elif defined(CONFIG_NET_RPL_MC_ENERGY)
-	return parent->mc.obj.energy.estimation +
-		net_ipv6_nbr_data(nbr)->link_metric;
+	return parent->mc.obj.energy.estimation + data->link_metric;
 #else
 #error "Unsupported routing metric configured"
 #endif
@@ -259,22 +260,27 @@ struct net_rpl_dag *net_rpl_of_best_dag(struct net_rpl_dag *dag1,
 	ALIAS_OF(net_rpl_mrhof_best_dag);
 
 static u16_t net_rpl_mrhof_calc_rank(struct net_rpl_parent *parent,
-					u16_t base_rank)
+				     u16_t base_rank)
 {
 	u16_t new_rank;
-	u16_t rank_increase;
-	struct net_nbr *nbr;
+	u16_t rank_increase = 0;
+	struct net_ipv6_nbr_data *data;
 
-	nbr = net_rpl_get_nbr(parent);
+	if (!parent) {
+		return NET_RPL_INFINITE_RANK;
+	}
 
-	if (!parent || !nbr) {
+	data = net_rpl_get_ipv6_nbr_data(parent);
+	if (!data) {
 		if (base_rank == 0) {
 			return NET_RPL_INFINITE_RANK;
 		}
+
 		rank_increase = CONFIG_NET_RPL_INIT_LINK_METRIC *
 			NET_RPL_MC_ETX_DIVISOR;
 	} else {
-		rank_increase = net_ipv6_nbr_data(nbr)->link_metric;
+		rank_increase = data->link_metric;
+
 		if (base_rank == 0) {
 			base_rank = parent->rank;
 		}
@@ -294,7 +300,7 @@ static u16_t net_rpl_mrhof_calc_rank(struct net_rpl_parent *parent,
 }
 
 u16_t net_rpl_of_calc_rank(struct net_rpl_parent *parent,
-			      u16_t base_rank)
+			   u16_t base_rank)
 	ALIAS_OF(net_rpl_mrhof_calc_rank);
 
 static int net_rpl_mrhof_update_mc(struct net_rpl_instance *instance)

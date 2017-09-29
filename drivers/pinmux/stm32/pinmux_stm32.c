@@ -23,7 +23,6 @@
 
 #include "pinmux.h"
 
-#if defined(CONFIG_CLOCK_CONTROL_STM32_CUBE)
 static const u32_t ports_enable[STM32_PORTS_MAX] = {
 	STM32_PERIPH_GPIOA,
 	STM32_PERIPH_GPIOB,
@@ -44,7 +43,6 @@ static const u32_t ports_enable[STM32_PORTS_MAX] = {
 	STM32_PERIPH_GPIOH,
 #endif
 };
-#endif
 
 /**
  * @brief enable IO port clock
@@ -61,20 +59,12 @@ static int enable_port(u32_t port, struct device *clk)
 		clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
 	}
 
-	/* TODO: Merge this and move the port clock to the soc file */
-#if defined(CONFIG_CLOCK_CONTROL_STM32_CUBE)
 	struct stm32_pclken pclken;
 
 	pclken.bus = STM32_CLOCK_BUS_GPIO;
 	pclken.enr = ports_enable[port];
 
 	return clock_control_on(clk, (clock_control_subsys_t *) &pclken);
-#else
-	/* TODO: Clean once F1 series moved to LL Clock control */
-	clock_control_subsys_t subsys = stm32_get_port_clock(port);
-
-	return clock_control_on(clk, subsys);
-#endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 }
 
 static int stm32_pin_configure(int pin, int func, int altf)
@@ -102,17 +92,12 @@ static int stm32_pin_configure(int pin, int func, int altf)
 int _pinmux_stm32_set(u32_t pin, u32_t func,
 				struct device *clk)
 {
-	int config;
-
 	/* make sure to enable port clock first */
 	if (enable_port(STM32_PORT(pin), clk)) {
 		return -EIO;
 	}
 
-	/* determine config for alternate function */
-	config = stm32_get_pin_config(pin, func);
-
-	return stm32_pin_configure(pin, config, func);
+	return stm32_pin_configure(pin, func, func & STM32_AFR_MASK);
 }
 
 /**
@@ -131,6 +116,7 @@ void stm32_setup_pins(const struct pin_config *pinconf,
 
 	for (i = 0; i < pins; i++) {
 		_pinmux_stm32_set(pinconf[i].pin_num,
-				  pinconf[i].mode, clk);
+				  pinconf[i].mode,
+				  clk);
 	}
 }

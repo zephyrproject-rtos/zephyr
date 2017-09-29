@@ -12,7 +12,7 @@
  */
 
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <arch/cpu.h>
 #include <swap_macros.h>
 
@@ -33,18 +33,7 @@ GTEXT(__ev_div_zero)
 GTEXT(__ev_dc_error)
 GTEXT(__ev_maligned)
 
-	.balign 4
-SECTION_VAR(BSS, saved_stack_pointer)
-	.word 0
-
-#if CONFIG_RGF_NUM_BANKS == 1
-GDATA(_exception_stack)
-SECTION_VAR(NOINIT, _exception_stack)
-	.space 512
-/* note: QUARK_SE_C1000_SS can't afford 512B */
-#else
-GDATA(_firq_stack)
-#endif
+GDATA(exc_nest_count)
 
 /*
  * @brief Fault handler installed in the fault and reserved vectors
@@ -82,15 +71,6 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_maligned)
 	pop_s r2
 #endif
 
-	st sp, [saved_stack_pointer]
-#if CONFIG_RGF_NUM_BANKS == 1
-	mov_s sp, _exception_stack
-	add sp, sp, 512
-#else
-	mov_s sp, _firq_stack
-	add sp, sp, CONFIG_FIRQ_STACK_SIZE
-#endif
-
 	/* save caller saved registers */
 	_create_irq_stack_frame
 
@@ -99,13 +79,32 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_maligned)
 	lr r0,[_ARC_V2_ERET]
 	st_s r0, [sp, ___isf_t_pc_OFFSET] /* eret into pc */
 
+
+	ld r1, [exc_nest_count]
+	add r0, r1, 1
+	st r0, [exc_nest_count]
+	cmp r1, 0
+
+	bgt.d  exc_nest_handle
+	mov r0, sp
+
+	mov r1, _kernel
+	ld sp, [r1, _kernel_offset_to_irq_stack]
+exc_nest_handle:
+	push_s r0
+
 	jl _Fault
+
+	pop sp
+
+	mov	r1, exc_nest_count
+	ld	r0, [r1]
+	sub	r0, r0, 1
+	st 	r0, [r1]
 
 	/* if _Fault returns, restore the registers */
 	_pop_irq_stack_frame
 
-	/* now restore the stack */
-	ld sp,[saved_stack_pointer]
 	rtie
 
 #ifdef CONFIG_IRQ_OFFLOAD
@@ -136,26 +135,41 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_trap)
 	lr r0,[_ARC_V2_ERET]
 	st_s r0, [sp, ___isf_t_pc_OFFSET] /* eret into pc */
 
+	ld r1, [exc_nest_count]
+	add r0, r1, 1
+	st r0, [exc_nest_count]
+	cmp r1, 0
+
+	bgt.d  trap_nest_handle
+	mov r0, sp
+
+	mov r1, _kernel
+	ld sp, [r1, _kernel_offset_to_irq_stack]
+trap_nest_handle:
+	push_s r0
+
 	jl _irq_do_offload
 
-	mov_s r1, _kernel
-	ld_s r2, [r1, _kernel_offset_to_current]
+	pop sp
+
 	/* check if we're a nested interrupt: if so, let the
 	 * interrupted interrupt handle the reschedule
 	 */
-	lr r3, [_ARC_V2_AUX_IRQ_ACT]
-	/* the OS on ARCv2 always runs in kernel mode, so assume bit31 [U] in
-	 * AUX_IRQ_ACT is always 0: if the contents of AUX_IRQ_ACT is 0, it
-	 * means trap was taken from outside an interrupt handler.
-	 * But if it was inside, let that handler do the swap.
-	 */
-	breq r3, 0, _trap_check_for_swap
+	mov	r1, exc_nest_count
+	ld	r0, [r1]
+	sub	r0, r0, 1
+	cmp	r0, 0
+	beq.d	_trap_check_for_swap
+	st 	r0, [r1]
+
 _trap_return:
 	_pop_irq_stack_frame
 	rtie
 
 .balign 4
 _trap_check_for_swap:
+	mov_s r1, _kernel
+	ld_s r2, [r1, _kernel_offset_to_current]
 	/*
 	 * Non-preemptible thread ? Do not schedule (see explanation of
 	 * preempt field in kernel_struct.h).

@@ -43,7 +43,7 @@ end of the logging message.
 Global Kconfig Options
 **********************
 
-These options can be found in the following path :file:`misc/Kconfig`.
+These options can be found in the following path :file:`subsys/logging/Kconfig`.
 
 :option:`CONFIG_SYS_LOG`: Global switch, turns on/off all system logging.
 
@@ -88,5 +88,3 @@ APIs
 
 .. doxygengroup:: system_log
    :project: Zephyr
-   :content-only:
-

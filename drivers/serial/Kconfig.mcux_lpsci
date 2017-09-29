@@ -7,9 +7,10 @@
 
 menuconfig UART_MCUX_LPSCI
 	bool "MCUX LPSCI driver"
-	depends on HAS_MCUX && HAS_LPSCI
+	depends on HAS_MCUX_LPSCI
 	default n
 	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
 	help
 	  Enable the MCUX LPSCI driver.
 

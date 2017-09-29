@@ -41,7 +41,7 @@ QUARK_SE_IPM_DEFINE(quark_se_ipm4, 4, QUARK_SE_IPM_INBOUND);
 #define QUARK_SE_IPM_CONSOLE_LINE_BUF_SIZE	80
 
 static u32_t ipm_console_ring_buf_data[CONFIG_QUARK_SE_IPM_CONSOLE_RING_BUF_SIZE32];
-static char __stack ipm_console_thread_stack[CONFIG_IPM_CONSOLE_STACK_SIZE];
+static K_THREAD_STACK_DEFINE(ipm_console_thread_stack, CONFIG_IPM_CONSOLE_STACK_SIZE);
 static char ipm_console_line_buf[QUARK_SE_IPM_CONSOLE_LINE_BUF_SIZE];
 
 static struct ipm_console_receiver_config_info quark_se_ipm_receiver_config = {

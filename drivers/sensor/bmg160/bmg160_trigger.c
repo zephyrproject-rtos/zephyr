@@ -163,7 +163,7 @@ static void bmg160_handle_int(void *arg)
 }
 
 #ifdef CONFIG_BMG160_TRIGGER_OWN_THREAD
-static char __stack bmg160_thread_stack[CONFIG_BMG160_THREAD_STACK_SIZE];
+static K_THREAD_STACK_DEFINE(bmg160_thread_stack, CONFIG_BMG160_THREAD_STACK_SIZE);
 static struct k_thread bmg160_thread;
 
 static void bmg160_thread_main(void *arg1, void *arg2, void *arg3)

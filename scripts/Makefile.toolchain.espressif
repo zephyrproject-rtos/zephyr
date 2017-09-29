@@ -1,0 +1,21 @@
+ifndef ESPRESSIF_TOOLCHAIN_PATH
+$(error ESPRESSIF_TOOLCHAIN_PATH is not set)
+endif
+
+ifndef ESP_IDF_PATH
+$(error ESP_IDF_PATH is not set)
+endif
+
+CROSS_COMPILE = ${ESPRESSIF_TOOLCHAIN_PATH}/bin/xtensa-esp32-elf-
+
+TOOLCHAIN_LIBS = gcc hal
+LIBGCC_DIR = $(shell dirname `$(CROSS_COMPILE)gcc ${KBUILD_CFLAGS} -print-libgcc-file-name`)
+
+LIB_INCLUDE_DIR += -L${ESP_IDF_PATH}/components/esp32 -L${LIBGCC_DIR}
+TOOLCHAIN_CFLAGS = -I${ESPRESSIF_TOOLCHAIN_PATH}/xtensa-esp32-elf/include
+
+ZEPHYRINCLUDE += -I${ESP_IDF_PATH}/components/esp32/include
+ZEPHYRINCLUDE += -I${ESP_IDF_PATH}/components/soc/esp32/include
+
+export CROSS_COMPILE TOOLCHAIN_LIBS TOOLCHAIN_CFLAGS LIB_INCLUDE_DIR
+

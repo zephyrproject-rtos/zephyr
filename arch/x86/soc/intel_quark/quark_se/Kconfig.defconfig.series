@@ -16,11 +16,15 @@ config TOOLCHAIN_VARIANT
 	default "iamcu" if X86_IAMCU
 	default "" if !X86_IAMCU
 
+if !HAS_DTS
 config PHYS_RAM_ADDR
 	default 0xA8006400
+endif
 
+if !HAS_DTS
 config PHYS_LOAD_ADDR
 	default 0x40030000 if XIP
+endif
 
 config RAM_SIZE
 	default 55
@@ -192,21 +196,25 @@ config RTC_0_IRQ_PRI
 	default 2
 endif # RTC
 
-if BLUETOOTH_H4
+if BT_H4
 
-config BLUETOOTH_UART_ON_DEV_NAME
+if !HAS_DTS
+config BT_UART_ON_DEV_NAME
 	default UART_QMSI_0_NAME
+endif
 
 config UART_QMSI_0
 	def_bool y
 
+if !HAS_DTS
 config UART_QMSI_0_BAUDRATE
 	default 1000000
+endif
 
 config UART_QMSI_0_HW_FC
 	def_bool y
 
-endif # BLUETOOTH_H4
+endif # BT_H4
 
 if UART_QMSI
 
@@ -229,7 +237,7 @@ endif # UART_QMSI_1
 
 endif # UART_QMSI
 
-if UART_CONSOLE
+if UART_CONSOLE && !HAS_DTS
 
 config UART_CONSOLE_ON_DEV_NAME
 	default "UART_1"  if USB_UART_CONSOLE = n
@@ -248,6 +256,8 @@ config DMA_QMSI
 endif
 
 if USB
+config USB_DW
+	def_bool y
 config USB_DW_IRQ_PRI
 	default 3
 endif # USB

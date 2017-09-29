@@ -7,7 +7,7 @@
  */
 
 #include <zephyr.h>
-#include <sections.h>
+#include <linker/sections.h>
 
 #include <zephyr/types.h>
 #include <stddef.h>
@@ -22,8 +22,10 @@
 #include <net/dhcpv4.h>
 #include <net/ethernet.h>
 #include <net/net_mgmt.h>
+#include <net/udp.h>
 
 #include <tc_util.h>
+#include <ztest.h>
 
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
@@ -153,10 +155,8 @@ struct dhcp_msg {
 static void test_result(bool pass)
 {
 	if (pass) {
-		TC_END(PASS, "passed\n");
 		TC_END_REPORT(TC_PASS);
 	} else {
-		TC_END(FAIL, "failed\n");
 		TC_END_REPORT(TC_PASS);
 	}
 }
@@ -250,7 +250,9 @@ static void set_udp_header(struct net_pkt *pkt)
 	struct net_udp_hdr *udp;
 	u16_t length;
 
-	udp = NET_UDP_HDR(pkt);
+	udp = (struct net_udp_hdr *)((u8_t *)(NET_IPV4_HDR(pkt)) +
+				     sizeof(struct net_ipv4_hdr));
+
 	udp->src_port = htons(SERVER_PORT);
 	udp->dst_port = htons(CLIENT_PORT);
 
@@ -474,7 +476,6 @@ static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 	}
 
 	parse_dhcp_message(pkt, &msg);
-	net_pkt_unref(pkt);
 
 	if (msg.type == DISCOVER) {
 		/* Reply with DHCPv4 offer message */
@@ -500,6 +501,7 @@ static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 		return -EINVAL;
 	}
 
+	net_pkt_unref(pkt);
 	return NET_OK;
 }
 
@@ -524,10 +526,11 @@ static void receiver_cb(struct net_mgmt_event_callback *cb,
 	test_result(true);
 }
 
-void main_thread(void)
+void test_dhcp(void)
 {
 	struct net_if *iface;
 
+	k_thread_priority_set(k_current_get(), K_PRIO_COOP(7));
 	net_mgmt_init_event_callback(&rx_cb, receiver_cb,
 				     NET_EVENT_IPV4_ADDR_ADD);
 
@@ -544,13 +547,10 @@ void main_thread(void)
 	k_yield();
 }
 
-#define STACKSIZE 3000
-char __noinit __stack thread_stack[STACKSIZE];
-static struct k_thread thread_data;
-
-void main(void)
+/**test case main entry */
+void test_main(void)
 {
-	k_thread_create(&thread_data, thread_stack, STACKSIZE,
-			(k_thread_entry_t)main_thread, NULL, NULL, NULL,
-			K_PRIO_COOP(7), 0, 0);
+	ztest_test_suite(test_dhcpv4,
+			ztest_unit_test(test_dhcp));
+	ztest_run_test_suite(test_dhcpv4);
 }

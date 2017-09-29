@@ -36,6 +36,8 @@
 #include "tcp.h"
 #include "net_stats.h"
 
+#define ALLOC_TIMEOUT 500
+
 /*
  * Each TCP connection needs to be tracked by net_context, so
  * we need to allocate equal number of control structures here.
@@ -75,10 +77,17 @@ static char upper_if_set(char chr, bool set)
 
 static void net_tcp_trace(struct net_pkt *pkt, struct net_tcp *tcp)
 {
-	u8_t flags = NET_TCP_FLAGS(pkt);
+	struct net_tcp_hdr hdr, *tcp_hdr;
 	u32_t rel_ack, ack;
+	u8_t flags;
 
-	ack = sys_get_be32(NET_TCP_HDR(pkt)->ack);
+	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
+	if (!tcp_hdr) {
+		return;
+	}
+
+	flags = NET_TCP_FLAGS(tcp_hdr);
+	ack = sys_get_be32(tcp_hdr->ack);
 
 	if (!tcp->sent_ack) {
 		rel_ack = 0;
@@ -86,13 +95,13 @@ static void net_tcp_trace(struct net_pkt *pkt, struct net_tcp *tcp)
 		rel_ack = ack ? ack - tcp->sent_ack : 0;
 	}
 
-	NET_DBG("pkt %p src %u dst %u seq 0x%04x (%u) ack 0x%04x (%u/%u) "
+	NET_DBG("[%p] pkt %p src %u dst %u seq 0x%04x (%u) ack 0x%04x (%u/%u) "
 		"flags %c%c%c%c%c%c win %u chk 0x%04x",
-		pkt,
-		ntohs(NET_TCP_HDR(pkt)->src_port),
-		ntohs(NET_TCP_HDR(pkt)->dst_port),
-		sys_get_be32(NET_TCP_HDR(pkt)->seq),
-		sys_get_be32(NET_TCP_HDR(pkt)->seq),
+		tcp, pkt,
+		ntohs(tcp_hdr->src_port),
+		ntohs(tcp_hdr->dst_port),
+		sys_get_be32(tcp_hdr->seq),
+		sys_get_be32(tcp_hdr->seq),
 		ack,
 		ack,
 		/* This tells how many bytes we are acking now */
@@ -103,18 +112,12 @@ static void net_tcp_trace(struct net_pkt *pkt, struct net_tcp *tcp)
 		upper_if_set('r', flags & NET_TCP_RST),
 		upper_if_set('s', flags & NET_TCP_SYN),
 		upper_if_set('f', flags & NET_TCP_FIN),
-		sys_get_be16(NET_TCP_HDR(pkt)->wnd),
-		ntohs(NET_TCP_HDR(pkt)->chksum));
+		sys_get_be16(tcp_hdr->wnd),
+		ntohs(tcp_hdr->chksum));
 }
 #else
 #define net_tcp_trace(...)
 #endif /* CONFIG_NET_DEBUG_TCP */
-
-static inline u32_t init_isn(void)
-{
-	/* Randomise initial seq number */
-	return sys_rand32_get();
-}
 
 static inline u32_t retry_timeout(const struct net_tcp *tcp)
 {
@@ -123,22 +126,42 @@ static inline u32_t retry_timeout(const struct net_tcp *tcp)
 
 #define is_6lo_technology(pkt)						    \
 	(IS_ENABLED(CONFIG_NET_IPV6) &&	net_pkt_family(pkt) == AF_INET6 &&  \
-	 ((IS_ENABLED(CONFIG_NET_L2_BLUETOOTH) &&			    \
+	 ((IS_ENABLED(CONFIG_NET_L2_BT) &&			    \
 	   net_pkt_ll_dst(pkt)->type == NET_LINK_BLUETOOTH) ||		    \
 	  (IS_ENABLED(CONFIG_NET_L2_IEEE802154) &&			    \
 	   net_pkt_ll_dst(pkt)->type == NET_LINK_IEEE802154)))
 
-static inline void do_ref_if_needed(struct net_pkt *pkt)
+/* The ref should not be done for Bluetooth and IEEE 802.15.4 which use
+ * IPv6 header compression (6lo). For BT and 802.15.4 we copy the pkt
+ * chain we are about to send so it is fine if the network driver
+ * releases it. As we have our own copy of the sent data, we do not
+ * need to take a reference of it. See also net_tcp_send_pkt().
+ *
+ * Note that this is macro so that we get information who called the
+ * net_pkt_ref() if memory debugging is active.
+ */
+#define do_ref_if_needed(tcp, pkt)					\
+	do {								\
+		if (!is_6lo_technology(pkt)) {				\
+			NET_DBG("[%p] ref pkt %p new ref %d (%s:%d)",	\
+				tcp, pkt, pkt->ref + 1, __func__,	\
+				__LINE__);				\
+			pkt = net_pkt_ref(pkt);				\
+		}							\
+	} while (0)
+
+static void abort_connection(struct net_tcp *tcp)
 {
-	/* The ref should not be done for Bluetooth and IEEE 802.15.4 which use
-	 * IPv6 header compression (6lo). For BT and 802.15.4 we copy the pkt
-	 * chain we are about to send so it is fine if the network driver
-	 * releases it. As we have our own copy of the sent data, we do not
-	 * need to take a reference of it. See also net_tcp_send_pkt().
-	 */
-	if (!is_6lo_technology(pkt)) {
-		pkt = net_pkt_ref(pkt);
+	struct net_context *ctx = tcp->context;
+
+	NET_DBG("[%p] segment retransmission exceeds %d, resetting context %p",
+		tcp, CONFIG_NET_TCP_RETRY_COUNT, ctx);
+
+	if (ctx->recv_cb) {
+		ctx->recv_cb(ctx, NULL, -ECONNRESET, tcp->recv_user_data);
 	}
+
+	net_context_unref(ctx);
 }
 
 static void tcp_retry_expired(struct k_timer *timer)
@@ -151,15 +174,29 @@ static void tcp_retry_expired(struct k_timer *timer)
 	 */
 	if (!sys_slist_is_empty(&tcp->sent_list)) {
 		tcp->retry_timeout_shift++;
+
+		if (tcp->retry_timeout_shift > CONFIG_NET_TCP_RETRY_COUNT) {
+			abort_connection(tcp);
+			return;
+		}
+
 		k_timer_start(&tcp->retry_timer, retry_timeout(tcp), 0);
 
 		pkt = CONTAINER_OF(sys_slist_peek_head(&tcp->sent_list),
 				   struct net_pkt, sent_list);
 
-		do_ref_if_needed(pkt);
+		if (net_pkt_sent(pkt)) {
+			do_ref_if_needed(tcp, pkt);
+			net_pkt_set_sent(pkt, false);
+		}
+
+		net_pkt_set_queued(pkt, true);
+
 		if (net_tcp_send_pkt(pkt) < 0 && !is_6lo_technology(pkt)) {
+			NET_DBG("[%p] pkt %p send failed", tcp, pkt);
 			net_pkt_unref(pkt);
 		} else {
+			NET_DBG("[%p] sent pkt %p", tcp, pkt);
 			if (IS_ENABLED(CONFIG_NET_STATISTICS_TCP) &&
 			    !is_6lo_technology(pkt)) {
 				net_stats_update_tcp_seg_rexmit();
@@ -167,6 +204,8 @@ static void tcp_retry_expired(struct k_timer *timer)
 		}
 	} else if (IS_ENABLED(CONFIG_NET_TCP_TIME_WAIT)) {
 		if (tcp->fin_sent && tcp->fin_rcvd) {
+			NET_DBG("[%p] Closing connection (context %p)",
+				tcp, tcp->context);
 			net_context_unref(tcp->context);
 		}
 	}
@@ -195,8 +234,9 @@ struct net_tcp *net_tcp_alloc(struct net_context *context)
 	tcp_context[i].state = NET_TCP_CLOSED;
 	tcp_context[i].context = context;
 
-	tcp_context[i].send_seq = init_isn();
+	tcp_context[i].send_seq = tcp_init_isn();
 	tcp_context[i].recv_max_ack = tcp_context[i].send_seq + 1u;
+	tcp_context[i].recv_wnd = min(NET_TCP_MAX_WIN, NET_TCP_BUF_MAX_LEN);
 
 	tcp_context[i].accept_cb = NULL;
 
@@ -204,6 +244,16 @@ struct net_tcp *net_tcp_alloc(struct net_context *context)
 	k_sem_init(&tcp_context[i].connect_wait, 0, UINT_MAX);
 
 	return &tcp_context[i];
+}
+
+static void ack_timer_cancel(struct net_tcp *tcp)
+{
+	k_delayed_work_cancel(&tcp->ack_timer);
+}
+
+static void fin_timer_cancel(struct net_tcp *tcp)
+{
+	k_delayed_work_cancel(&tcp->fin_timer);
 }
 
 int net_tcp_release(struct net_tcp *tcp)
@@ -222,10 +272,11 @@ int net_tcp_release(struct net_tcp *tcp)
 		net_pkt_unref(pkt);
 	}
 
-	tcp->ack_timer_cancelled = true;
-	k_delayed_work_cancel(&tcp->ack_timer);
 	k_timer_stop(&tcp->retry_timer);
 	k_sem_reset(&tcp->connect_wait);
+
+	ack_timer_cancel(tcp);
+	fin_timer_cancel(tcp);
 
 	net_tcp_change_state(tcp, NET_TCP_CLOSED);
 	tcp->context = NULL;
@@ -234,13 +285,13 @@ int net_tcp_release(struct net_tcp *tcp)
 	tcp->flags &= ~(NET_TCP_IN_USE | NET_TCP_RECV_MSS_SET);
 	irq_unlock(key);
 
-	NET_DBG("Disposed of TCP connection state");
+	NET_DBG("[%p] Disposed of TCP connection state", tcp);
 
 	return 0;
 }
 
 static inline u8_t net_tcp_add_options(struct net_buf *header, size_t len,
-					  void *data)
+				       void *data)
 {
 	u8_t optlen;
 
@@ -279,8 +330,8 @@ static struct net_pkt *prepare_segment(struct net_tcp *tcp,
 				       struct net_pkt *pkt)
 {
 	struct net_buf *header, *tail = NULL;
-	struct net_tcp_hdr *tcphdr;
 	struct net_context *context = tcp->context;
+	struct net_tcp_hdr *tcp_hdr;
 	u16_t dst_port, src_port;
 	u8_t optlen = 0;
 
@@ -295,7 +346,10 @@ static struct net_pkt *prepare_segment(struct net_tcp *tcp,
 		tail = pkt->frags;
 		pkt->frags = NULL;
 	} else {
-		pkt = net_pkt_get_tx(context, K_FOREVER);
+		pkt = net_pkt_get_tx(context, ALLOC_TIMEOUT);
+		if (!pkt) {
+			return NULL;
+		}
 	}
 
 #if defined(CONFIG_NET_IPV4)
@@ -321,32 +375,37 @@ static struct net_pkt *prepare_segment(struct net_tcp *tcp,
 	} else
 #endif
 	{
-		NET_DBG("Protocol family %d not supported",
+		NET_DBG("[%p] Protocol family %d not supported", tcp,
 			net_pkt_family(pkt));
 		net_pkt_unref(pkt);
 		return NULL;
 	}
 
-	header = net_pkt_get_data(context, K_FOREVER);
+	header = net_pkt_get_data(context, ALLOC_TIMEOUT);
+	if (!header) {
+		net_pkt_unref(pkt);
+		return NULL;
+	}
+
 	net_pkt_frag_add(pkt, header);
 
-	tcphdr = (struct net_tcp_hdr *)net_buf_add(header, NET_TCPH_LEN);
+	tcp_hdr = (struct net_tcp_hdr *)net_buf_add(header, NET_TCPH_LEN);
 
 	if (segment->options && segment->optlen) {
 		optlen = net_tcp_add_options(header, segment->optlen,
 					segment->options);
 	}
 
-	tcphdr->offset = (NET_TCPH_LEN + optlen) << 2;
+	tcp_hdr->offset = (NET_TCPH_LEN + optlen) << 2;
 
-	tcphdr->src_port = src_port;
-	tcphdr->dst_port = dst_port;
-	sys_put_be32(segment->seq, tcphdr->seq);
-	sys_put_be32(segment->ack, tcphdr->ack);
-	tcphdr->flags = segment->flags;
-	sys_put_be16(segment->wnd, tcphdr->wnd);
-	tcphdr->urg[0] = 0;
-	tcphdr->urg[1] = 0;
+	tcp_hdr->src_port = src_port;
+	tcp_hdr->dst_port = dst_port;
+	sys_put_be32(segment->seq, tcp_hdr->seq);
+	sys_put_be32(segment->ack, tcp_hdr->ack);
+	tcp_hdr->flags = segment->flags;
+	sys_put_be16(segment->wnd, tcp_hdr->wnd);
+	tcp_hdr->urg[0] = 0;
+	tcp_hdr->urg[1] = 0;
 
 	if (tail) {
 		net_pkt_frag_add(pkt, tail);
@@ -362,17 +421,9 @@ static struct net_pkt *prepare_segment(struct net_tcp *tcp,
 	return pkt;
 }
 
-static inline u32_t get_recv_wnd(struct net_tcp *tcp)
+u32_t net_tcp_get_recv_wnd(const struct net_tcp *tcp)
 {
-	ARG_UNUSED(tcp);
-
-	/* We don't queue received data inside the stack, we hand off
-	 * packets to synchronous callbacks (who can queue if they
-	 * want, but it's not our business).  So the available window
-	 * size is always the same.  There are two configurables to
-	 * check though.
-	 */
-	return min(NET_TCP_MAX_WIN, NET_TCP_BUF_MAX_LEN);
+	return tcp->recv_wnd;
 }
 
 int net_tcp_prepare_segment(struct net_tcp *tcp, u8_t flags,
@@ -438,7 +489,7 @@ int net_tcp_prepare_segment(struct net_tcp *tcp, u8_t flags,
 		seq++;
 	}
 
-	wnd = get_recv_wnd(tcp);
+	wnd = net_tcp_get_recv_wnd(tcp);
 
 	segment.src_addr = (struct sockaddr_ptr *)local;
 	segment.dst_addr = remote;
@@ -601,7 +652,7 @@ int net_tcp_prepare_reset(struct net_tcp *tcp,
 	return 0;
 }
 
-const char * const net_tcp_state_str(enum net_tcp_state state)
+const char *net_tcp_state_str(enum net_tcp_state state)
 {
 #if defined(CONFIG_NET_DEBUG_TCP)
 	switch (state) {
@@ -641,6 +692,8 @@ int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 	size_t data_len = net_pkt_get_len(pkt);
 	int ret;
 
+	NET_DBG("[%p] Queue %p len %zd", context->tcp, pkt, data_len);
+
 	/* Set PSH on all packets, our window is so small that there's
 	 * no point in the remote side trying to finesse things and
 	 * coalesce packets.
@@ -663,7 +716,7 @@ int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 			      retry_timeout(context->tcp), 0);
 	}
 
-	do_ref_if_needed(pkt);
+	do_ref_if_needed(context->tcp, pkt);
 
 	return 0;
 }
@@ -671,26 +724,44 @@ int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 int net_tcp_send_pkt(struct net_pkt *pkt)
 {
 	struct net_context *ctx = net_pkt_context(pkt);
-	struct net_tcp_hdr *tcphdr = NET_TCP_HDR(pkt);
+	struct net_tcp_hdr hdr, *tcp_hdr;
+	bool calc_chksum = false;
 
-	sys_put_be32(ctx->tcp->send_ack, tcphdr->ack);
+	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
+	if (!tcp_hdr) {
+		NET_ERR("Packet %p does not contain TCP header", pkt);
+		return -EMSGSIZE;
+	}
+
+	if (sys_get_be32(tcp_hdr->ack) != ctx->tcp->send_ack) {
+		sys_put_be32(ctx->tcp->send_ack, tcp_hdr->ack);
+		calc_chksum = true;
+	}
 
 	/* The data stream code always sets this flag, because
 	 * existing stacks (Linux, anyway) seem to ignore data packets
 	 * without a valid-but-already-transmitted ACK.  But set it
 	 * anyway if we know we need it just to sanify edge cases.
 	 */
-	if (ctx->tcp->sent_ack != ctx->tcp->send_ack) {
-		tcphdr->flags |= NET_TCP_ACK;
+	if (ctx->tcp->sent_ack != ctx->tcp->send_ack &&
+		(tcp_hdr->flags & NET_TCP_ACK) == 0) {
+		tcp_hdr->flags |= NET_TCP_ACK;
+		calc_chksum = true;
 	}
 
-	if (tcphdr->flags & NET_TCP_FIN) {
+	if (calc_chksum) {
+		net_tcp_set_chksum(pkt, pkt->frags);
+	}
+
+	if (tcp_hdr->flags & NET_TCP_FIN) {
 		ctx->tcp->fin_sent = 1;
 	}
 
 	ctx->tcp->sent_ack = ctx->tcp->send_ack;
 
-	net_pkt_set_sent(pkt, true);
+	/* As we modified the header, we need to write it back.
+	 */
+	net_tcp_set_hdr(pkt, tcp_hdr);
 
 	/* We must have special handling for some network technologies that
 	 * tweak the IP protocol headers during packet sending. This happens
@@ -720,13 +791,10 @@ int net_tcp_send_pkt(struct net_pkt *pkt)
 		}
 
 		if (pkt_in_slist) {
-			new_pkt = net_pkt_get_tx(ctx, K_FOREVER);
-
-			memcpy(new_pkt, pkt, sizeof(struct net_pkt));
-			new_pkt->frags = net_pkt_copy_all(pkt, 0, K_FOREVER);
-
-			NET_DBG("Copied %zu bytes from %p to %p",
-				net_pkt_get_len(new_pkt), pkt, new_pkt);
+			new_pkt = net_pkt_clone(pkt, ALLOC_TIMEOUT);
+			if (!new_pkt) {
+				return -ENOMEM;
+			}
 
 			/* This function is called from net_context.c and if we
 			 * return < 0, the caller will unref the original pkt.
@@ -774,11 +842,27 @@ int net_tcp_send_data(struct net_context *context)
 	 * add window handling and retry/ACK logic.
 	 */
 	SYS_SLIST_FOR_EACH_CONTAINER(&context->tcp->sent_list, pkt, sent_list) {
+		/* Do not resend packets that were sent by expire timer */
+		if (net_pkt_queued(pkt)) {
+			NET_DBG("[%p] Skipping pkt %p because it was already "
+				"sent.", context->tcp, pkt);
+			continue;
+		}
+
 		if (!net_pkt_sent(pkt)) {
-			if (net_tcp_send_pkt(pkt) < 0 &&
-			    !is_6lo_technology(pkt)) {
+			int ret;
+
+			NET_DBG("[%p] Sending pkt %p (%zd bytes)", context->tcp,
+				pkt, net_pkt_get_len(pkt));
+
+			ret = net_tcp_send_pkt(pkt);
+			if (ret < 0 && !is_6lo_technology(pkt)) {
+				NET_DBG("[%p] pkt %p not sent (%d)",
+					context->tcp, pkt, ret);
 				net_pkt_unref(pkt);
 			}
+
+			net_pkt_set_queued(pkt, true);
 		}
 	}
 
@@ -791,7 +875,6 @@ void net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 	sys_slist_t *list = &ctx->tcp->sent_list;
 	sys_snode_t *head;
 	struct net_pkt *pkt;
-	struct net_tcp_hdr *tcphdr;
 	u32_t seq;
 	bool valid_ack = false;
 
@@ -801,18 +884,30 @@ void net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 	}
 
 	while (!sys_slist_is_empty(list)) {
+		struct net_tcp_hdr hdr, *tcp_hdr;
+
 		head = sys_slist_peek_head(list);
 		pkt = CONTAINER_OF(head, struct net_pkt, sent_list);
-		tcphdr = NET_TCP_HDR(pkt);
 
-		seq = sys_get_be32(tcphdr->seq) + net_pkt_appdatalen(pkt) - 1;
+		tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
+		if (!tcp_hdr) {
+			/* The pkt does not contain TCP header, this should
+			 * not happen.
+			 */
+			NET_ERR("pkt %p has no TCP header", pkt);
+			sys_slist_remove(list, NULL, head);
+			net_pkt_unref(pkt);
+			continue;
+		}
+
+		seq = sys_get_be32(tcp_hdr->seq) + net_pkt_appdatalen(pkt) - 1;
 
 		if (!net_tcp_seq_greater(ack, seq)) {
 			net_stats_update_tcp_seg_ackerr();
 			break;
 		}
 
-		if (tcphdr->flags & NET_TCP_FIN) {
+		if (tcp_hdr->flags & NET_TCP_FIN) {
 			enum net_tcp_state s = net_tcp_get_state(tcp);
 
 			if (s == NET_TCP_FIN_WAIT_1) {
@@ -827,7 +922,8 @@ void net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 		valid_ack = true;
 	}
 
-	if (valid_ack) {
+	/* No need to re-send stuff we are closing down */
+	if (valid_ack && net_tcp_get_state(tcp) == NET_TCP_ESTABLISHED) {
 		/* Restart the timer on a valid inbound ACK.  This
 		 * isn't quite the same behavior as per-packet retry
 		 * timers, but is close in practice (it starts retries
@@ -842,12 +938,10 @@ void net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 		 * pipe is uncorked again.
 		 */
 		if (ctx->tcp->flags & NET_TCP_RETRYING) {
-			struct net_pkt *pkt;
-
 			SYS_SLIST_FOR_EACH_CONTAINER(&ctx->tcp->sent_list, pkt,
 						     sent_list) {
 				if (net_pkt_sent(pkt)) {
-					do_ref_if_needed(pkt);
+					do_ref_if_needed(ctx->tcp, pkt);
 					net_pkt_set_sent(pkt, false);
 				}
 			}
@@ -915,7 +1009,7 @@ void net_tcp_change_state(struct net_tcp *tcp,
 	NET_ASSERT(new_state >= NET_TCP_CLOSED &&
 		   new_state <= NET_TCP_CLOSING);
 
-	NET_DBG("state@%p %s (%d) => %s (%d)",
+	NET_DBG("[%p] state %s (%d) => %s (%d)",
 		tcp, net_tcp_state_str(tcp->state), tcp->state,
 		net_tcp_state_str(new_state), new_state);
 
@@ -971,6 +1065,152 @@ void net_tcp_foreach(net_tcp_cb_t cb, void *user_data)
 
 bool net_tcp_validate_seq(struct net_tcp *tcp, struct net_pkt *pkt)
 {
-	return !net_tcp_seq_greater(tcp->send_ack + get_recv_wnd(tcp),
-				    sys_get_be32(NET_TCP_HDR(pkt)->seq));
+	struct net_tcp_hdr hdr, *tcp_hdr;
+
+	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
+	if (!tcp_hdr) {
+		return false;
+	}
+
+	return (net_tcp_seq_cmp(sys_get_be32(tcp_hdr->seq),
+				tcp->send_ack) >= 0) &&
+		(net_tcp_seq_cmp(sys_get_be32(tcp_hdr->seq),
+				 tcp->send_ack
+					+ net_tcp_get_recv_wnd(tcp)) < 0);
+}
+
+struct net_tcp_hdr *net_tcp_get_hdr(struct net_pkt *pkt,
+				    struct net_tcp_hdr *hdr)
+{
+	struct net_tcp_hdr *tcp_hdr;
+	struct net_buf *frag;
+	u16_t pos;
+
+	tcp_hdr = net_pkt_tcp_data(pkt);
+	if (net_tcp_header_fits(pkt, tcp_hdr)) {
+		return tcp_hdr;
+	}
+
+	frag = net_frag_read(pkt->frags, net_pkt_ip_hdr_len(pkt) +
+			     net_pkt_ipv6_ext_len(pkt),
+			     &pos, sizeof(hdr->src_port),
+			     (u8_t *)&hdr->src_port);
+	frag = net_frag_read(frag, pos, &pos, sizeof(hdr->dst_port),
+			     (u8_t *)&hdr->dst_port);
+	frag = net_frag_read(frag, pos, &pos, sizeof(hdr->seq), hdr->seq);
+	frag = net_frag_read(frag, pos, &pos, sizeof(hdr->ack), hdr->ack);
+	frag = net_frag_read_u8(frag, pos, &pos, &hdr->offset);
+	frag = net_frag_read_u8(frag, pos, &pos, &hdr->flags);
+	frag = net_frag_read(frag, pos, &pos, sizeof(hdr->wnd), hdr->wnd);
+	frag = net_frag_read(frag, pos, &pos, sizeof(hdr->chksum),
+			     (u8_t *)&hdr->chksum);
+	frag = net_frag_read(frag, pos, &pos, sizeof(hdr->urg), hdr->urg);
+
+	if (!frag && pos == 0xffff) {
+		/* If the pkt is compressed, then this is the typical outcome
+		 * so no use printing error in this case.
+		 */
+		if (IS_ENABLED(CONFIG_NET_DEBUG_TCP) &&
+		    !is_6lo_technology(pkt)) {
+			NET_ASSERT(frag);
+		}
+
+		return NULL;
+	}
+
+	return hdr;
+}
+
+struct net_tcp_hdr *net_tcp_set_hdr(struct net_pkt *pkt,
+				    struct net_tcp_hdr *hdr)
+{
+	struct net_buf *frag;
+	u16_t pos;
+
+	if (net_tcp_header_fits(pkt, hdr)) {
+		return hdr;
+	}
+
+	frag = net_pkt_write(pkt, pkt->frags, net_pkt_ip_hdr_len(pkt) +
+			     net_pkt_ipv6_ext_len(pkt),
+			     &pos, sizeof(hdr->src_port),
+			     (u8_t *)&hdr->src_port, ALLOC_TIMEOUT);
+	frag = net_pkt_write(pkt, frag, pos, &pos, sizeof(hdr->dst_port),
+			     (u8_t *)&hdr->dst_port, ALLOC_TIMEOUT);
+	frag = net_pkt_write(pkt, frag, pos, &pos, sizeof(hdr->seq), hdr->seq,
+			     ALLOC_TIMEOUT);
+	frag = net_pkt_write(pkt, frag, pos, &pos, sizeof(hdr->ack), hdr->ack,
+			     ALLOC_TIMEOUT);
+	frag = net_pkt_write(pkt, frag, pos, &pos, sizeof(hdr->offset),
+			     &hdr->offset, ALLOC_TIMEOUT);
+	frag = net_pkt_write(pkt, frag, pos, &pos, sizeof(hdr->flags),
+			     &hdr->flags, ALLOC_TIMEOUT);
+	frag = net_pkt_write(pkt, frag, pos, &pos, sizeof(hdr->wnd), hdr->wnd,
+			     ALLOC_TIMEOUT);
+	frag = net_pkt_write(pkt, frag, pos, &pos, sizeof(hdr->chksum),
+			     (u8_t *)&hdr->chksum, ALLOC_TIMEOUT);
+	frag = net_pkt_write(pkt, frag, pos, &pos, sizeof(hdr->urg), hdr->urg,
+			     ALLOC_TIMEOUT);
+
+	if (!frag) {
+		NET_ASSERT(frag);
+		return NULL;
+	}
+
+	return hdr;
+}
+
+u16_t net_tcp_get_chksum(struct net_pkt *pkt, struct net_buf *frag)
+{
+	struct net_tcp_hdr *hdr;
+	u16_t chksum;
+	u16_t pos;
+
+	hdr = net_pkt_tcp_data(pkt);
+	if (net_tcp_header_fits(pkt, hdr)) {
+		return hdr->chksum;
+	}
+
+	frag = net_frag_read(frag,
+			     net_pkt_ip_hdr_len(pkt) +
+			     net_pkt_ipv6_ext_len(pkt) +
+			     2 + 2 + 4 + 4 + /* src + dst + seq + ack */
+			     1 + 1 + 2 /* offset + flags + wnd */,
+			     &pos, sizeof(chksum), (u8_t *)&chksum);
+	NET_ASSERT(frag);
+
+	return chksum;
+}
+
+struct net_buf *net_tcp_set_chksum(struct net_pkt *pkt, struct net_buf *frag)
+{
+	struct net_tcp_hdr *hdr;
+	u16_t chksum = 0;
+	u16_t pos;
+
+	hdr = net_pkt_tcp_data(pkt);
+	if (net_tcp_header_fits(pkt, hdr)) {
+		hdr->chksum = 0;
+		hdr->chksum = ~net_calc_chksum_tcp(pkt);
+
+		return frag;
+	}
+
+	/* We need to set the checksum to 0 first before the calc */
+	frag = net_pkt_write(pkt, frag,
+			     net_pkt_ip_hdr_len(pkt) +
+			     net_pkt_ipv6_ext_len(pkt) +
+			     2 + 2 + 4 + 4 + /* src + dst + seq + ack */
+			     1 + 1 + 2 /* offset + flags + wnd */,
+			     &pos, sizeof(chksum), (u8_t *)&chksum,
+			     ALLOC_TIMEOUT);
+
+	chksum = ~net_calc_chksum_tcp(pkt);
+
+	frag = net_pkt_write(pkt, frag, pos - 2, &pos, sizeof(chksum),
+			     (u8_t *)&chksum, ALLOC_TIMEOUT);
+
+	NET_ASSERT(frag);
+
+	return frag;
 }

@@ -64,8 +64,8 @@ enum net_sock_type {
 struct in6_addr {
 	union {
 		u8_t		u6_addr8[16];
-		u16_t	u6_addr16[8]; /* In big endian */
-		u32_t	u6_addr32[4]; /* In big endian */
+		u16_t		u6_addr16[8]; /* In big endian */
+		u32_t		u6_addr32[4]; /* In big endian */
 	} in6_u;
 #define s6_addr			in6_u.u6_addr8
 #define s6_addr16		in6_u.u6_addr16
@@ -76,14 +76,14 @@ struct in6_addr {
 struct in_addr {
 	union {
 		u8_t		u4_addr8[4];
-		u16_t	u4_addr16[2]; /* In big endian */
-		u32_t	u4_addr32[1]; /* In big endian */
+		u16_t		u4_addr16[2]; /* In big endian */
+		u32_t		u4_addr32[1]; /* In big endian */
 	} in4_u;
 #define s4_addr			in4_u.u4_addr8
 #define s4_addr16		in4_u.u4_addr16
 #define s4_addr32		in4_u.u4_addr32
 
-#define s_addr			s4_addr32
+#define s_addr			s4_addr32[0]
 };
 
 typedef unsigned short int sa_family_t;
@@ -95,27 +95,27 @@ typedef size_t socklen_t;
  */
 struct sockaddr_in6 {
 	sa_family_t		sin6_family;   /* AF_INET6               */
-	u16_t		sin6_port;     /* Port number            */
+	u16_t			sin6_port;     /* Port number            */
 	struct in6_addr		sin6_addr;     /* IPv6 address           */
 	u8_t			sin6_scope_id; /* interfaces for a scope */
 };
 
 struct sockaddr_in6_ptr {
 	sa_family_t		sin6_family;   /* AF_INET6               */
-	u16_t		sin6_port;     /* Port number            */
+	u16_t			sin6_port;     /* Port number            */
 	struct in6_addr		*sin6_addr;    /* IPv6 address           */
 	u8_t			sin6_scope_id; /* interfaces for a scope */
 };
 
 struct sockaddr_in {
 	sa_family_t		sin_family;    /* AF_INET      */
-	u16_t		sin_port;      /* Port number  */
+	u16_t			sin_port;      /* Port number  */
 	struct in_addr		sin_addr;      /* IPv4 address */
 };
 
 struct sockaddr_in_ptr {
 	sa_family_t		sin_family;    /* AF_INET      */
-	u16_t		sin_port;      /* Port number  */
+	u16_t			sin_port;      /* Port number  */
 	struct in_addr		*sin_addr;     /* IPv4 address */
 };
 
@@ -135,13 +135,19 @@ struct sockaddr_in_ptr {
 #endif
 
 struct sockaddr {
-	sa_family_t family;
+	sa_family_t sa_family;
 	char data[NET_SOCKADDR_MAX_SIZE - sizeof(sa_family_t)];
 };
 
 struct sockaddr_ptr {
 	sa_family_t family;
 	char data[NET_SOCKADDR_PTR_MAX_SIZE - sizeof(sa_family_t)];
+};
+
+/* Same as sockaddr in our case */
+struct sockaddr_storage {
+	sa_family_t ss_family;
+	char data[NET_SOCKADDR_MAX_SIZE - sizeof(sa_family_t)];
 };
 
 struct net_addr {
@@ -351,8 +357,8 @@ static inline bool net_is_my_ipv6_addr(struct in6_addr *addr)
 	return net_if_ipv6_addr_lookup(addr, NULL) != NULL;
 }
 
-extern struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(const struct in6_addr *addr,
-							  struct net_if **iface);
+extern struct net_if_mcast_addr *net_if_ipv6_maddr_lookup(
+	const struct in6_addr *addr, struct net_if **iface);
 
 /**
  * @brief Check if IPv6 multicast address is found in one of the
@@ -427,7 +433,7 @@ static inline bool net_is_ipv4_addr_loopback(struct in_addr *addr)
  */
 static inline bool net_is_ipv4_addr_unspecified(const struct in_addr *addr)
 {
-	return addr->s_addr[0] == 0;
+	return addr->s_addr == 0;
 }
 
 /**
@@ -439,7 +445,7 @@ static inline bool net_is_ipv4_addr_unspecified(const struct in_addr *addr)
  */
 static inline bool net_is_ipv4_addr_mcast(const struct in_addr *addr)
 {
-	return (addr->s_addr[0] & 0xE0000000) == 0xE0000000;
+	return (ntohl(addr->s_addr) & 0xE0000000) == 0xE0000000;
 }
 
 extern struct net_if_addr *net_if_ipv4_addr_lookup(const struct in_addr *addr,
@@ -482,7 +488,7 @@ static inline bool net_is_my_ipv4_addr(const struct in_addr *addr)
 static inline bool net_ipv4_addr_cmp(const struct in_addr *addr1,
 				     const struct in_addr *addr2)
 {
-	return addr1->s_addr[0] == addr2->s_addr[0];
+	return UNALIGNED_GET(&addr1->s_addr) == UNALIGNED_GET(&addr2->s_addr);
 }
 
 /**
@@ -696,7 +702,7 @@ static inline void net_ipv6_addr_create_iid(struct in6_addr *addr,
 		addr->s6_addr[12] = 0xfe;
 		memcpy(&addr->s6_addr[13], lladdr->addr + 3, 3);
 
-#if defined(CONFIG_NET_L2_BLUETOOTH_ZEP1656)
+#if defined(CONFIG_NET_L2_BT_ZEP1656)
 		/* Workaround against older Linux kernel BT IPSP code.
 		 * This will be removed eventually.
 		 */
@@ -755,7 +761,7 @@ static inline bool net_ipv6_addr_based_on_ll(const struct in6_addr *addr,
 			    !memcmp(&addr->s6_addr[13], &lladdr->addr[3], 3) &&
 			    addr->s6_addr[11] == 0xff &&
 			    addr->s6_addr[12] == 0xfe
-#if defined(CONFIG_NET_L2_BLUETOOTH_ZEP1656)
+#if defined(CONFIG_NET_L2_BT_ZEP1656)
 			    /* Workaround against older Linux kernel BT IPSP
 			     * code. This will be removed eventually.
 			     */
@@ -862,6 +868,30 @@ int net_addr_pton(sa_family_t family, const char *src, void *dst);
  */
 char *net_addr_ntop(sa_family_t family, const void *src,
 		    char *dst, size_t size);
+
+/**
+ * @brief Parse a string that contains either IPv4 or IPv6 address
+ * and optional port, and store the information in user supplied
+ * sockaddr struct.
+ *
+ * @details Syntax of the IP address string:
+ *   192.0.2.1:80
+ *   192.0.2.42
+ *   [2001:db8::1]:8080
+ *   [2001:db8::2]
+ *   2001:db::42
+ * Note that the str_len parameter is used to restrict the amount of
+ * characters that are checked. If the string does not contain port
+ * number, then the port number in sockaddr is not modified.
+ *
+ * @param str String that contains the IP address.
+ * @param str_len Length of the string to be parsed.
+ * @param addr Pointer to user supplied struct sockaddr.
+ *
+ * @return True if parsing could be done, false otherwise.
+ */
+bool net_ipaddr_parse(const char *str, size_t str_len,
+		      struct sockaddr *addr);
 
 /**
  * @brief Compare TCP sequence numbers.

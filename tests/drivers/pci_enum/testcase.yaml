@@ -1,0 +1,4 @@
+tests:
+-   test:
+        depends_on: pci
+        tags: samples

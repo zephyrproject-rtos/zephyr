@@ -1,0 +1,10 @@
+# Kconfig - OLIMEX-STM32-P405 board configuration
+#
+# Copyright (c) 2017, Erwin Rol <erwin@erwinrol.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+config BOARD_OLIMEX_STM32_P405
+	bool "OLIMEX-STM32-P405 Development Board"
+	depends on SOC_STM32F405XG
+

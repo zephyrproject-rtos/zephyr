@@ -7,6 +7,18 @@
 /**
  * @file Sample app to utilize GPIO on Arduino 101 and Arduino Due.
  *
+ * Sensortag CC2650 - ARM
+ * --------------------
+ *
+ * LED1 is on DIO_10
+ * LED2 is on DIO_15
+ * BUTTON1 is on DIO_4
+ * BUTTON2 is on DIO_0
+ *
+ * This sample toogles LED1 and wait interrupt on BUTTON1.
+ * Note that an internet pull-up is set on BUTTON1 as the button
+ * only drives low when pressed.
+ *
  * Arduino 101 - x86
  * --------------------
  *
@@ -96,6 +108,12 @@
  * Toggling GPIO_8
  * GPIO_24 triggered
  * "
+ *
+ * ESP32
+ * -----
+ *
+ * An LED should be connected to pin IO4, and either a jumper cable or
+ * button should be connected between IO2 and GND.
  */
 
 #include <zephyr.h>
@@ -122,6 +140,14 @@
 #define GPIO_OUT_PIN	8
 #define GPIO_INT_PIN	24
 #define GPIO_NAME	"GPIO_"
+#elif defined(CONFIG_SOC_CC2650)
+#define GPIO_OUT_PIN	10
+#define GPIO_INT_PIN	4
+#define GPIO_NAME	"GPIO_"
+#elif defined(CONFIG_SOC_ESP32)
+#define GPIO_OUT_PIN	4
+#define GPIO_INT_PIN	2
+#define GPIO_NAME	"GPIO_"
 #endif
 
 #if defined(CONFIG_GPIO_DW_0)
@@ -132,6 +158,8 @@
 #define GPIO_DRV_NAME CONFIG_GPIO_QMSI_SS_0_NAME
 #elif defined(CONFIG_GPIO_ATMEL_SAM3)
 #define GPIO_DRV_NAME CONFIG_GPIO_ATMEL_SAM3_PORTB_DEV_NAME
+#elif defined(CONFIG_GPIO_ESP32)
+#define GPIO_DRV_NAME CONFIG_GPIO_ESP32_0_NAME
 #else
 #define GPIO_DRV_NAME "GPIO_0"
 #endif
@@ -163,9 +191,17 @@ void main(void)
 	}
 
 	/* Setup GPIO input, and triggers on rising edge. */
+#ifdef CONFIG_SOC_CC2650
 	ret = gpio_pin_configure(gpio_dev, GPIO_INT_PIN,
-			(GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE
-			 | GPIO_INT_ACTIVE_HIGH | GPIO_INT_DEBOUNCE));
+				 (GPIO_DIR_IN | GPIO_INT |
+				  GPIO_INT_EDGE | GPIO_INT_ACTIVE_HIGH |
+				  GPIO_INT_DEBOUNCE | GPIO_PUD_PULL_UP));
+#else
+	ret = gpio_pin_configure(gpio_dev, GPIO_INT_PIN,
+				 (GPIO_DIR_IN | GPIO_INT |
+				  GPIO_INT_EDGE | GPIO_INT_ACTIVE_HIGH |
+				  GPIO_INT_DEBOUNCE));
+#endif
 	if (ret) {
 		printk("Error configuring " GPIO_NAME "%d!\n", GPIO_INT_PIN);
 	}

@@ -1,0 +1,4 @@
+tests:
+-   test:
+        arch_exclude: nios2 xtensa
+        tags: bat_commit core ignore_faults

@@ -3,7 +3,6 @@
 Application Development Primer
 ##############################
 
-
 Overview
 ********
 The Zephyr Kernel's build system is based on the Kbuild system used in the
@@ -221,7 +220,7 @@ Directories can also be conditionally added:
 
 .. code-block:: none
 
-   obj-y-$(CONFIG_VAR) += <directory_name>/
+   obj-$(CONFIG_VAR) += <directory_name>/
 
 The subdirectory must contain its own Makefile following the rules described in
 :ref:`makefile_conventions`.
@@ -276,6 +275,8 @@ Below is an example Makefile:
 
    include ${ZEPHYR_BASE}/Makefile.inc
 
+.. _application_configuration:
+
 Application Configuration
 *************************
 
@@ -306,8 +307,7 @@ An application's :file:`.conf` file defines its default kernel configuration.
 The settings in this file override or augment the board configuration settings.
 
 The board configuration settings can be viewed
-LENGTHlWRONGEPHY
-_BASE/boards/ARCHITECTURE/BOARD/BOARD_defconfig`.
+in :file:`$ZEPHYR_BASE/boards/ARCHITECTURE/BOARD/BOARD_defconfig`.
 
 .. note::
 
@@ -502,7 +502,8 @@ depth is needed. The developer must supply a :file:`Makefile` for the
 Application-specific source code should not use symbol name prefixes that have
 been reserved by the kernel for its own use. For more information, see
 
-`Naming Conventions <https://wiki.zephyrproject.org/view/Coding_conventions#Naming_Conventions>`_.
+`Naming Conventions
+<https://github.com/zephyrproject-rtos/zephyr/wiki/Naming-Conventions>`_.
 
 
 The following requirements apply to all Makefiles in the :file:`src`
@@ -589,8 +590,10 @@ The following variables are recommended for use within the third-party build
 * All kconfig variables, allowing features of the library code to be
   enabled/disabled automatically based on the Zephyr kernel configuration.
 
-:file:`samples/static_lib` is a sample project that demonstrates
+:file:`samples/application_development/static_lib` is a sample project that demonstrates
 some of these features.
+
+.. _build_an_application:
 
 Build an Application
 ********************
@@ -701,6 +704,8 @@ hardware.
 
    The application stops running and the terminal console prompt
    redisplays.
+
+.. _application_debugging:
 
 Application Debugging
 *********************

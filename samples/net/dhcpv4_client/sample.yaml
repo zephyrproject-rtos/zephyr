@@ -1,0 +1,7 @@
+sample:
+    name: DHCP Client
+tests:
+-   test:
+        build_only: true
+        tags: net http
+        depends_on: netif

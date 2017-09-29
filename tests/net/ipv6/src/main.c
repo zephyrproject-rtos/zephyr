@@ -11,7 +11,7 @@
 #include <stddef.h>
 #include <string.h>
 #include <errno.h>
-#include <sections.h>
+#include <linker/sections.h>
 
 #include <tc_util.h>
 
@@ -74,7 +74,7 @@ static const unsigned char icmpv6_ns_no_sllao[] = {
 /* */
 static const unsigned char icmpv6_ra[] = {
 /* IPv6 header starts here */
-0x60, 0x00, 0x00, 0x00, 0x00, 0x58, 0x3a, 0xff,
+0x60, 0x00, 0x00, 0x00, 0x00, 0x40, 0x3a, 0xff,
 0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 0x02, 0x60, 0x97, 0xff, 0xfe, 0x07, 0x69, 0xea,
 0xff, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -89,10 +89,6 @@ static const unsigned char icmpv6_ra[] = {
 /* Prefix info*/
 0x03, 0x04, 0x40, 0xc0, 0xFF, 0xFF, 0xFF, 0xFF,
 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x00,
-0x3f, 0xfe, 0x05, 0x07, 0x00, 0x00, 0x00, 0x01,
-0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-/* 6CO */
-0x22, 0x03, 0x40, 0x11, 0x00, 0x00, 0x12, 0x34,
 0x3f, 0xfe, 0x05, 0x07, 0x00, 0x00, 0x00, 0x01,
 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 };
@@ -192,6 +188,8 @@ static struct net_pkt *prepare_ra_message(void)
 	return pkt;
 }
 
+#define NET_ICMP_HDR(pkt) ((struct net_icmp_hdr *)net_pkt_icmp_data(pkt))
+
 static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct net_icmp_hdr *icmp;
@@ -242,20 +240,41 @@ NET_DEVICE_INIT(net_test_ipv6, "net_test_ipv6",
 
 static bool test_init(void)
 {
-	struct net_if_addr *ifaddr;
+	struct net_if_addr *ifaddr = NULL, *ifaddr2;
 	struct net_if_mcast_addr *maddr;
 	struct net_if *iface = net_if_get_default();
+	struct net_if *iface2 = NULL;
+	int i;
 
 	if (!iface) {
 		TC_ERROR("Interface is NULL\n");
 		return false;
 	}
 
-	ifaddr = net_if_ipv6_addr_add(iface, &my_addr,
-				      NET_ADDR_MANUAL, 0);
-	if (!ifaddr) {
-		TC_ERROR("Cannot add IPv6 address %s\n",
-		       net_sprint_ipv6_addr(&my_addr));
+	/* We cannot use net_if_ipv6_addr_add() to add the address to
+	 * network interface in this case as that would trigger DAD which
+	 * we are not prepared to handle here. So instead add the address
+	 * manually in this special case so that subsequent tests can
+	 * pass.
+	 */
+	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
+		if (iface->ipv6.unicast[i].is_used) {
+			continue;
+		}
+
+		ifaddr = &iface->ipv6.unicast[i];
+
+		ifaddr->is_used = true;
+		ifaddr->address.family = AF_INET6;
+		ifaddr->addr_type = NET_ADDR_MANUAL;
+		ifaddr->addr_state = NET_ADDR_PREFERRED;
+		net_ipaddr_copy(&ifaddr->address.in6_addr, &my_addr);
+		break;
+	}
+
+	ifaddr2 = net_if_ipv6_addr_lookup(&my_addr, &iface2);
+	if (ifaddr2 != ifaddr) {
+		TC_ERROR("Invalid ifaddr (%p vs %p)\n", ifaddr, ifaddr2);
 		return false;
 	}
 
@@ -339,39 +358,28 @@ static bool net_test_cmp_prefix(void)
 	return true;
 }
 
-static bool net_test_send_ns_mcast(void)
+static bool net_test_add_neighbor(void)
 {
-	int ret;
-	struct in6_addr tgt;
+	struct net_nbr *nbr;
+	struct net_linkaddr_storage llstorage;
+	struct net_linkaddr lladdr;
 
-	net_ipv6_addr_create_solicited_node(&my_addr, &tgt);
+	llstorage.addr[0] = 0x01;
+	llstorage.addr[1] = 0x02;
+	llstorage.addr[2] = 0x33;
+	llstorage.addr[3] = 0x44;
+	llstorage.addr[4] = 0x05;
+	llstorage.addr[5] = 0x06;
 
-	ret = net_ipv6_send_ns(net_if_get_default(),
-			       NULL,
-			       &peer_addr,
-			       &my_addr,
-			       &tgt,
-			       false);
-	if (ret < 0) {
-		TC_ERROR("Cannot send NS (%d)\n", ret);
-		return false;
-	}
+	lladdr.len = 6;
+	lladdr.addr = llstorage.addr;
+	lladdr.type = NET_LINK_ETHERNET;
 
-	return true;
-}
-
-static bool net_test_send_ns(void)
-{
-	int ret;
-
-	ret = net_ipv6_send_ns(net_if_get_default(),
-			       NULL,
-			       &peer_addr,
-			       &my_addr,
-			       &peer_addr,
-			       false);
-	if (ret < 0) {
-		TC_ERROR("Cannot send NS (%d)\n", ret);
+	nbr = net_ipv6_nbr_add(net_if_get_default(), &peer_addr, &lladdr,
+			       false, NET_IPV6_NBR_STATE_REACHABLE);
+	if (!nbr) {
+		TC_ERROR("Cannot add peer %s to neighbor cache\n",
+			 net_sprint_ipv6_addr(&peer_addr));
 		return false;
 	}
 
@@ -673,9 +681,8 @@ static const struct {
 } tests[] = {
 	{ "test init", test_init },
 	{ "IPv6 compare prefix", net_test_cmp_prefix },
-	{ "IPv6 send NS mcast", net_test_send_ns_mcast },
 	{ "IPv6 neighbor lookup fail", net_test_nbr_lookup_fail },
-	{ "IPv6 send NS", net_test_send_ns },
+	{ "IPv6 add neighbor", net_test_add_neighbor },
 	{ "IPv6 neighbor lookup ok", net_test_nbr_lookup_ok },
 	{ "IPv6 send NS extra options", net_test_send_ns_extra_options },
 	{ "IPv6 send NS no options", net_test_send_ns_no_options },

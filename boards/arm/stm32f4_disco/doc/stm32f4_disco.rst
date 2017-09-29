@@ -46,7 +46,7 @@ Hardware
 STM32F4DISCOVERY Discovery kit provides the following hardware components:
 
 - STM32F407VGT6 in LQFP100 package
-- ARM®32-bit Cortex®-M4 CPU with FPU
+- ARM |reg| 32-bit Cortex |reg| -M4 CPU with FPU
 - 168 MHz max CPU frequency
 - VDD from 1.8 V to 3.6 V
 - 1 MB Flash
@@ -105,7 +105,7 @@ The default configuration can be found in the defconfig file:
 Pin Mapping
 ===========
 
-STM32F4DISCOVERY Discovry kit has 8 GPIO controllers. These controllers are responsible for pin muxing,
+STM32F4DISCOVERY Discovery kit has 8 GPIO controllers. These controllers are responsible for pin muxing,
 input/output, pull-up, etc.
 
 For mode details please refer to `STM32F4DISCOVERY board User Manual`_.

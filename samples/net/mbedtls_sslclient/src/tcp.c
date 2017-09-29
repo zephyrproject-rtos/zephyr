@@ -110,12 +110,12 @@ static int set_addr(struct sockaddr *sock_addr, const char *addr,
 
 #ifdef CONFIG_NET_IPV6
 	net_sin6(sock_addr)->sin6_port = htons(server_port);
-	sock_addr->family = AF_INET6;
+	sock_addr->sa_family = AF_INET6;
 	ptr = &(net_sin6(sock_addr)->sin6_addr);
 	rc = net_addr_pton(AF_INET6, addr, ptr);
 #else
 	net_sin(sock_addr)->sin_port = htons(server_port);
-	sock_addr->family = AF_INET;
+	sock_addr->sa_family = AF_INET;
 	ptr = &(net_sin(sock_addr)->sin_addr);
 	rc = net_addr_pton(AF_INET, addr, ptr);
 #endif

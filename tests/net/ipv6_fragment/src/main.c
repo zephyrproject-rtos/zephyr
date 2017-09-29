@@ -12,7 +12,7 @@
 #include <string.h>
 #include <errno.h>
 #include <misc/printk.h>
-#include <sections.h>
+#include <linker/sections.h>
 
 #include <ztest.h>
 
@@ -25,7 +25,7 @@
 #include "net_private.h"
 
 #include "ipv6.h"
-#include "udp.h"
+#include "udp_internal.h"
 
 #if defined(CONFIG_NET_DEBUG_IPV6)
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
@@ -430,10 +430,10 @@ static void setup_udp_handler(const struct in6_addr *raddr,
 	int ret;
 
 	net_ipaddr_copy(&net_sin6(&local_addr)->sin6_addr, laddr);
-	local_addr.family = AF_INET6;
+	local_addr.sa_family = AF_INET6;
 
 	net_ipaddr_copy(&net_sin6(&remote_addr)->sin6_addr, raddr);
-	remote_addr.family = AF_INET6;
+	remote_addr.sa_family = AF_INET6;
 
 	ret = net_udp_register(&remote_addr, &local_addr, remote_port,
 			       local_port, udp_data_received,
@@ -519,12 +519,13 @@ static void find_last_ipv6_fragment_udp(void)
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 	net_pkt_set_ipv6_ext_len(pkt, sizeof(ipv6_udp) -
 				 sizeof(struct net_ipv6_hdr));
-	net_pkt_ll_clear(pkt);
 
 	/* Add IPv6 header + UDP */
 	ret = net_pkt_append_all(pkt, sizeof(ipv6_udp), ipv6_udp,
 				 ALLOC_TIMEOUT);
 	zassert_true(ret, "IPv6 header append failed");
+
+	net_pkt_ll_clear(pkt);
 
 	ret = net_ipv6_find_last_ext_hdr(pkt, &next_hdr_idx, &last_hdr_pos);
 	zassert_equal(ret, 0, "Cannot find last header");
@@ -555,12 +556,12 @@ static void find_last_ipv6_fragment_hbho_udp(void)
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 	net_pkt_set_ipv6_ext_len(pkt, sizeof(ipv6_hbho) -
 				 sizeof(struct net_ipv6_hdr));
-	net_pkt_ll_clear(pkt);
-
 	/* Add IPv6 header + HBH option */
 	ret = net_pkt_append_all(pkt, sizeof(ipv6_hbho), ipv6_hbho,
 				 ALLOC_TIMEOUT);
 	zassert_true(ret, "IPv6 header append failed");
+
+	net_pkt_ll_clear(pkt);
 
 	ret = net_ipv6_find_last_ext_hdr(pkt, &next_hdr_idx, &last_hdr_pos);
 	zassert_equal(ret, 0, "Cannot find last header");
@@ -592,12 +593,12 @@ static void find_last_ipv6_fragment_hbho_frag(void)
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 	net_pkt_set_ipv6_ext_len(pkt, sizeof(ipv6_hbho_frag) -
 				 sizeof(struct net_ipv6_hdr));
-	net_pkt_ll_clear(pkt);
-
 	/* Add IPv6 header + HBH option + fragment header */
 	ret = net_pkt_append_all(pkt, sizeof(ipv6_hbho_frag), ipv6_hbho_frag,
 				 ALLOC_TIMEOUT);
 	zassert_true(ret, "IPv6 header append failed");
+
+	net_pkt_ll_clear(pkt);
 
 	ret = net_ipv6_find_last_ext_hdr(pkt, &next_hdr_idx, &last_hdr_pos);
 	zassert_equal(ret, 0, "Cannot find last header");
@@ -633,16 +634,17 @@ static void send_ipv6_fragment(void)
 	net_pkt_set_family(pkt, AF_INET6);
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 	net_pkt_set_ipv6_ext_len(pkt, 8 + 8); /* hbho + udp */
-	net_pkt_ll_clear(pkt);
 
 	/* Add IPv6 header + HBH option */
 	ret = net_pkt_append_all(pkt, sizeof(ipv6_hbho), ipv6_hbho,
 				 ALLOC_TIMEOUT);
 	zassert_true(ret, "IPv6 header append failed");
 
+	net_pkt_ll_clear(pkt);
+
 	/* Then add some data that is over 1280 bytes long */
 	for (i = 0; i < count; i++) {
-		bool written = net_pkt_append_all(pkt, data_len, data,
+		bool written = net_pkt_append_all(pkt, data_len, (u8_t *)data,
 						  ALLOC_TIMEOUT);
 		zassert_true(written, "Cannot append data");
 
@@ -664,8 +666,7 @@ static void send_ipv6_fragment(void)
 	NET_IPV6_HDR(pkt)->len[1] = total_len -
 		NET_IPV6_HDR(pkt)->len[0] * 256;
 
-	NET_UDP_HDR(pkt)->chksum = 0;
-	NET_UDP_HDR(pkt)->chksum = ~net_calc_chksum_udp(pkt);
+	net_udp_set_chksum(pkt, pkt->frags);
 
 	test_failed = false;
 

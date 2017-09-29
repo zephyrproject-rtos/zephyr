@@ -24,7 +24,7 @@ _ASM_FILE_PROLOGUE
 GTEXT(_ExcExit)
 GTEXT(_IntExit)
 GDATA(_kernel)
-#ifdef CONFIG_TICKLESS_KERNEL
+#ifdef CONFIG_TIMESLICING
 GTEXT(_update_time_slice_before_swap)
 #endif
 
@@ -58,12 +58,6 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, _IntExit)
 
 /* _IntExit falls through to _ExcExit (they are aliases of each other) */
 
-#ifdef CONFIG_TICKLESS_KERNEL
-    push {lr}
-    bl _update_time_slice_before_swap
-    pop {lr}
-#endif
-
 /**
  *
  * @brief Kernel housekeeping when exiting exception handler installed
@@ -92,6 +86,17 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, _ExcExit)
     ldr r0, [r0, _kernel_offset_to_ready_q_cache]
     cmp r0, r1
     beq _EXIT_EXC
+
+#ifdef CONFIG_TIMESLICING
+    push {lr}
+    bl _update_time_slice_before_swap
+#if defined(CONFIG_ARMV6_M)
+    pop {r0}
+    mov lr, r0
+#else
+    pop {lr}
+#endif /* CONFIG_ARMV6_M */
+#endif /* CONFIG_TIMESLICING */
 
     /* context switch required, pend the PendSV exception */
     ldr r1, =_SCS_ICSR

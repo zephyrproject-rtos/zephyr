@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_ll_rcc.h
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   Header file of RCC LL module.
   ******************************************************************************
   * @attention
@@ -58,14 +56,6 @@ extern "C" {
 
 /* Private types -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-/** @defgroup RCC_LL_Private_Variables RCC Private Variables
-  * @{
-  */
-
-/**
-  * @}
-  */
-
 /* Private constants ---------------------------------------------------------*/
 /** @defgroup RCC_LL_Private_Constants RCC Private Constants
   * @{
@@ -144,19 +134,19 @@ typedef struct
   * @{
   */
 #if !defined  (HSE_VALUE)
-#define HSE_VALUE    ((uint32_t)8000000U)  /*!< Value of the HSE oscillator in Hz */
+#define HSE_VALUE    8000000U  /*!< Value of the HSE oscillator in Hz */
 #endif /* HSE_VALUE */
 
 #if !defined  (HSI_VALUE)
-#define HSI_VALUE    ((uint32_t)8000000U) /*!< Value of the HSI oscillator in Hz */
+#define HSI_VALUE    8000000U  /*!< Value of the HSI oscillator in Hz */
 #endif /* HSI_VALUE */
 
 #if !defined  (LSE_VALUE)
-#define LSE_VALUE    ((uint32_t)32768U)    /*!< Value of the LSE oscillator in Hz */
+#define LSE_VALUE    32768U    /*!< Value of the LSE oscillator in Hz */
 #endif /* LSE_VALUE */
 
 #if !defined  (LSI_VALUE)
-#define LSI_VALUE    ((uint32_t)32000U)    /*!< Value of the LSI oscillator in Hz */
+#define LSI_VALUE    32000U    /*!< Value of the LSI oscillator in Hz */
 #endif /* LSI_VALUE */
 /**
   * @}
@@ -323,8 +313,8 @@ typedef struct
 /** @defgroup RCC_LL_EC_PERIPH_FREQUENCY Peripheral clock frequency
   * @{
   */
-#define LL_RCC_PERIPH_FREQUENCY_NO         (uint32_t)0x00000000U      /*!< No clock enabled for the peripheral            */
-#define LL_RCC_PERIPH_FREQUENCY_NA         (uint32_t)0xFFFFFFFFU      /*!< Frequency cannot be provided as external clock */
+#define LL_RCC_PERIPH_FREQUENCY_NO         0x00000000U      /*!< No clock enabled for the peripheral            */
+#define LL_RCC_PERIPH_FREQUENCY_NA         0xFFFFFFFFU      /*!< Frequency cannot be provided as external clock */
 /**
   * @}
   */
@@ -767,7 +757,7 @@ typedef struct
 /** @defgroup RCC_LL_EC_RTC_CLKSOURCE  RTC clock source selection
   * @{
   */
-#define LL_RCC_RTC_CLKSOURCE_NONE          (uint32_t)0x00000000U         /*!< No clock used as RTC clock */
+#define LL_RCC_RTC_CLKSOURCE_NONE          0x00000000U                   /*!< No clock used as RTC clock */
 #define LL_RCC_RTC_CLKSOURCE_LSE           RCC_BDCR_RTCSEL_0       /*!< LSE oscillator clock used as RTC clock */
 #define LL_RCC_RTC_CLKSOURCE_LSI           RCC_BDCR_RTCSEL_1       /*!< LSI oscillator clock used as RTC clock */
 #define LL_RCC_RTC_CLKSOURCE_HSE_DIV32     RCC_BDCR_RTCSEL         /*!< HSE oscillator clock divided by 32 used as RTC clock */
@@ -890,7 +880,7 @@ typedef struct
   * @note ex: @ref __LL_RCC_CALC_PLLCLK_FREQ (HSE_VALUE, @ref LL_RCC_PLL_GetMultiplicator()
   *             , @ref LL_RCC_PLL_GetPrediv());
   * @param  __INPUTFREQ__ PLL Input frequency (based on HSE/HSI)
-  * @param  __PLLMUL__: This parameter can be one of the following values:
+  * @param  __PLLMUL__ This parameter can be one of the following values:
   *         @arg @ref LL_RCC_PLL_MUL_2
   *         @arg @ref LL_RCC_PLL_MUL_3
   *         @arg @ref LL_RCC_PLL_MUL_4
@@ -906,7 +896,7 @@ typedef struct
   *         @arg @ref LL_RCC_PLL_MUL_14
   *         @arg @ref LL_RCC_PLL_MUL_15
   *         @arg @ref LL_RCC_PLL_MUL_16
-  * @param  __PLLPREDIV__: This parameter can be one of the following values:
+  * @param  __PLLPREDIV__ This parameter can be one of the following values:
   *         @arg @ref LL_RCC_PREDIV_DIV_1
   *         @arg @ref LL_RCC_PREDIV_DIV_2
   *         @arg @ref LL_RCC_PREDIV_DIV_3
@@ -933,7 +923,7 @@ typedef struct
   * @brief  Helper macro to calculate the PLLCLK frequency
   * @note ex: @ref __LL_RCC_CALC_PLLCLK_FREQ (HSE_VALUE / (@ref LL_RCC_PLL_GetPrediv () + 1), @ref LL_RCC_PLL_GetMultiplicator());
   * @param  __INPUTFREQ__ PLL Input frequency (based on HSE div Prediv / HSI div 2)
-  * @param  __PLLMUL__: This parameter can be one of the following values:
+  * @param  __PLLMUL__ This parameter can be one of the following values:
   *         @arg @ref LL_RCC_PLL_MUL_2
   *         @arg @ref LL_RCC_PLL_MUL_3
   *         @arg @ref LL_RCC_PLL_MUL_4
@@ -959,7 +949,7 @@ typedef struct
   * @note: __AHBPRESCALER__ be retrieved by @ref LL_RCC_GetAHBPrescaler
   *        ex: __LL_RCC_CALC_HCLK_FREQ(LL_RCC_GetAHBPrescaler())
   * @param  __SYSCLKFREQ__ SYSCLK frequency (based on HSE/HSI/PLLCLK)
-  * @param  __AHBPRESCALER__: This parameter can be one of the following values:
+  * @param  __AHBPRESCALER__ This parameter can be one of the following values:
   *         @arg @ref LL_RCC_SYSCLK_DIV_1
   *         @arg @ref LL_RCC_SYSCLK_DIV_2
   *         @arg @ref LL_RCC_SYSCLK_DIV_4
@@ -971,7 +961,7 @@ typedef struct
   *         @arg @ref LL_RCC_SYSCLK_DIV_512
   * @retval HCLK clock frequency (in Hz)
   */
-#define __LL_RCC_CALC_HCLK_FREQ(__SYSCLKFREQ__, __AHBPRESCALER__) ((__SYSCLKFREQ__) >> AHBPrescTable[((__AHBPRESCALER__) & RCC_CFGR_HPRE) >>  RCC_POSITION_HPRE])
+#define __LL_RCC_CALC_HCLK_FREQ(__SYSCLKFREQ__, __AHBPRESCALER__) ((__SYSCLKFREQ__) >> AHBPrescTable[((__AHBPRESCALER__) & RCC_CFGR_HPRE) >>  RCC_CFGR_HPRE_Pos])
 
 /**
   * @brief  Helper macro to calculate the PCLK1 frequency (ABP1)
@@ -986,7 +976,7 @@ typedef struct
   *         @arg @ref LL_RCC_APB1_DIV_16
   * @retval PCLK1 clock frequency (in Hz)
   */
-#define __LL_RCC_CALC_PCLK1_FREQ(__HCLKFREQ__, __APB1PRESCALER__) ((__HCLKFREQ__) >> APBPrescTable[(__APB1PRESCALER__) >>  RCC_POSITION_PPRE1])
+#define __LL_RCC_CALC_PCLK1_FREQ(__HCLKFREQ__, __APB1PRESCALER__) ((__HCLKFREQ__) >> APBPrescTable[(__APB1PRESCALER__) >>  RCC_CFGR_PPRE1_Pos])
 
 /**
   * @brief  Helper macro to calculate the PCLK2 frequency (ABP2)
@@ -1001,7 +991,7 @@ typedef struct
   *         @arg @ref LL_RCC_APB2_DIV_16
   * @retval PCLK2 clock frequency (in Hz)
   */
-#define __LL_RCC_CALC_PCLK2_FREQ(__HCLKFREQ__, __APB2PRESCALER__) ((__HCLKFREQ__) >> APBPrescTable[(__APB2PRESCALER__) >>  RCC_POSITION_PPRE2])
+#define __LL_RCC_CALC_PCLK2_FREQ(__HCLKFREQ__, __APB2PRESCALER__) ((__HCLKFREQ__) >> APBPrescTable[(__APB2PRESCALER__) >>  RCC_CFGR_PPRE2_Pos])
 
 /**
   * @}
@@ -1138,7 +1128,7 @@ __STATIC_INLINE uint32_t LL_RCC_HSI_IsReady(void)
   */
 __STATIC_INLINE uint32_t LL_RCC_HSI_GetCalibration(void)
 {
-  return (uint32_t)(READ_BIT(RCC->CR, RCC_CR_HSICAL) >> RCC_POSITION_HSICAL);
+  return (uint32_t)(READ_BIT(RCC->CR, RCC_CR_HSICAL) >> RCC_CR_HSICAL_Pos);
 }
 
 /**
@@ -1152,7 +1142,7 @@ __STATIC_INLINE uint32_t LL_RCC_HSI_GetCalibration(void)
   */
 __STATIC_INLINE void LL_RCC_HSI_SetCalibTrimming(uint32_t Value)
 {
-  MODIFY_REG(RCC->CR, RCC_CR_HSITRIM, Value << RCC_POSITION_HSITRIM);
+  MODIFY_REG(RCC->CR, RCC_CR_HSITRIM, Value << RCC_CR_HSITRIM_Pos);
 }
 
 /**
@@ -1162,7 +1152,7 @@ __STATIC_INLINE void LL_RCC_HSI_SetCalibTrimming(uint32_t Value)
   */
 __STATIC_INLINE uint32_t LL_RCC_HSI_GetCalibTrimming(void)
 {
-  return (uint32_t)(READ_BIT(RCC->CR, RCC_CR_HSITRIM) >> RCC_POSITION_HSITRIM);
+  return (uint32_t)(READ_BIT(RCC->CR, RCC_CR_HSITRIM) >> RCC_CR_HSITRIM_Pos);
 }
 
 /**

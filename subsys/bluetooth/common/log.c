@@ -46,7 +46,7 @@ const char *bt_hex(const void *buf, size_t len)
 	return str;
 }
 
-#if defined(CONFIG_BLUETOOTH_DEBUG)
+#if defined(CONFIG_BT_DEBUG)
 const char *bt_addr_str(const bt_addr_t *addr)
 {
 	static char bufs[2][18];
@@ -72,5 +72,5 @@ const char *bt_addr_le_str(const bt_addr_le_t *addr)
 
 	return str;
 }
-#endif /* CONFIG_BLUETOOTH_DEBUG */
+#endif /* CONFIG_BT_DEBUG */
 

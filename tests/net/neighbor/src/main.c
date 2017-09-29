@@ -6,6 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <ztest.h>
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <string.h>
@@ -17,7 +18,7 @@
 #include <net/net_core.h>
 #include <net/net_ip.h>
 #include <net/ethernet.h>
-#include <sections.h>
+#include <linker/sections.h>
 
 #include <tc_util.h>
 
@@ -33,8 +34,6 @@ static void net_neighbor_data_remove(struct net_nbr *nbr)
 	printk("Neighbor %p removed\n", nbr);
 
 	remove_count++;
-
-	return;
 }
 
 static void net_neighbor_table_clear(struct net_nbr_table *table)
@@ -359,22 +358,17 @@ static bool run_tests(void)
 }
 
 
-void main_thread(void)
+void test_neighbor(void)
 {
-	if (run_tests()) {
-		TC_END_REPORT(TC_PASS);
-	} else {
-		TC_END_REPORT(TC_FAIL);
-	}
+	k_thread_priority_set(k_current_get(), K_PRIO_COOP(7));
+
+	zassert_true(run_tests(), NULL);
 }
 
-#define STACKSIZE 2000
-char __noinit __stack thread_stack[STACKSIZE];
-static struct k_thread thread_data;
-
-void main(void)
+/*test case main entry*/
+void test_main(void)
 {
-	k_thread_create(&thread_data, thread_stack, STACKSIZE,
-			(k_thread_entry_t)main_thread, NULL, NULL, NULL,
-			K_PRIO_COOP(7), 0, 0);
+	ztest_test_suite(test_neighbor,
+			 ztest_unit_test(test_neighbor));
+	ztest_run_test_suite(test_neighbor);
 }

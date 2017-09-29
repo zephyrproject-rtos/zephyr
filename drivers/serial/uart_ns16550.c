@@ -29,7 +29,7 @@
 #include <board.h>
 #include <init.h>
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <uart.h>
 #include <sys_io.h>
 
@@ -254,7 +254,7 @@ static void set_baud_rate(struct device *dev, u32_t baud_rate)
 
 		/* set the DLAB to access the baud rate divisor registers */
 		lcr_cache = INBYTE(LCR(dev));
-		OUTBYTE(LCR(dev), LCR_DLAB);
+		OUTBYTE(LCR(dev), LCR_DLAB | lcr_cache);
 		OUTBYTE(BRDL(dev), (unsigned char)(divisor & 0xff));
 		OUTBYTE(BRDH(dev), (unsigned char)((divisor >> 8) & 0xff));
 
@@ -401,7 +401,7 @@ static unsigned char uart_ns16550_poll_out(struct device *dev,
 					   unsigned char c)
 {
 	/* wait for transmitter to ready to accept a character */
-	while ((INBYTE(LSR(dev)) & LSR_TEMT) == 0)
+	while ((INBYTE(LSR(dev)) & LSR_THRE) == 0)
 		;
 
 	OUTBYTE(THR(dev), c);

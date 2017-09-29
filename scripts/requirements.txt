@@ -1,0 +1,12 @@
+breathe==4.6.0
+sphinx==1.5.5
+docutils==0.13.1
+sphinx_rtd_theme
+junit2html
+PyYAML==3.12
+ply==3.10
+hub==2.0
+pyocd
+gitlint
+pyelftools==0.24
+pykwalify

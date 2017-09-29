@@ -7,8 +7,8 @@
  */
 
 /*
-DESCRIPTION
-This module contains the code for testing sprintf() functionality.
+ * DESCRIPTION
+ * This module contains the code for testing sprintf() functionality.
  */
 
 #include <tc_util.h>
@@ -32,22 +32,28 @@ This module contains the code for testing sprintf() functionality.
  * The underlying sprintf() architecture will truncate it.
  */
 #define REALLY_LONG_STRING \
-		"11111111111111111111111111111111111111111111111111111111111111111" \
-		"22222222222222222222222222222222222222222222222222222222222222222" \
-		"33333333333333333333333333333333333333333333333333333333333333333" \
-		"44444444444444444444444444444444444444444444444444444444444444444" \
-		"55555555555555555555555555555555555555555555555555555555555555555" \
-		"66666666666666666666666666666666666666666666666666666666666666666"
+		"1111111111111111111111111111111111" \
+		"1111111111111111111111111111111" \
+		"22222222222222222222222222222222" \
+		"222222222222222222222222222222222" \
+		"333333333333333333333333333333333" \
+		"33333333333333333333333333333333" \
+		"44444444444444444444444444444444" \
+		"444444444444444444444444444444444" \
+		"555555555555555555555555555555555" \
+		"55555555555555555555555555555555" \
+		"66666666666666666666666666666666" \
+		"666666666666666666666666666666666"
 
 #define PRINTF_MAX_STRING_LENGTH   200
 
-typedef union {
+union raw_double_u {
 	double  d;
 	struct {
 		u32_t  u1;    /* This part contains the exponent */
 		u32_t  u2;    /* This part contains the fraction */
 	};
-} raw_double_u;
+};
 
 #ifdef CONFIG_FLOAT
 /**
@@ -57,10 +63,10 @@ typedef union {
  * @return TC_PASS on success, TC_FAIL otherwise
  */
 
-int sprintfDoubleTest(void)
+int sprintf_double_test(void)
 {
 	char buffer[100];
-	raw_double_u var;
+	union raw_double_u var;
 	int  status = TC_PASS;
 
 	var.u1 = 0x00000000;
@@ -108,25 +114,29 @@ int sprintfDoubleTest(void)
 
 	sprintf(buffer, "%.*f", 11, var.d);
 	if (strcmp(buffer, "1.00000000000") != 0) {
-		TC_ERROR("sprintf(1.00000000000) - incorrect output '%s'\n", buffer);
+		TC_ERROR("sprintf(1.00000000000) - incorrect "
+			"output '%s'\n", buffer);
 		status = TC_FAIL;
 	}
 
 	sprintf(buffer, "%12f", var.d);
 	if (strcmp(buffer, "    1.000000") != 0) {
-		TC_ERROR("sprintf(    1.000000) - incorrect output '%s'\n", buffer);
+		TC_ERROR("sprintf(    1.000000) - incorrect "
+			"output '%s'\n", buffer);
 		status = TC_FAIL;
 	}
 
 	sprintf(buffer, "%-12f", var.d);
 	if (strcmp(buffer, "1.000000    ") != 0) {
-		TC_ERROR("sprintf(1.000000    ) - incorrect output '%s'\n", buffer);
+		TC_ERROR("sprintf(1.000000    ) - incorrect "
+			"output '%s'\n", buffer);
 		status = TC_FAIL;
 	}
 
 	sprintf(buffer, "%012f", var.d);
 	if (strcmp(buffer, "00001.000000") != 0) {
-		TC_ERROR("sprintf(00001.000000) - incorrect output '%s'\n", buffer);
+		TC_ERROR("sprintf(00001.000000) - incorrect "
+			"output '%s'\n", buffer);
 		status = TC_FAIL;
 	}
 
@@ -148,13 +158,15 @@ int sprintfDoubleTest(void)
 	var.d = 1234.0;
 	sprintf(buffer, "%e", var.d);
 	if (strcmp(buffer, "1.234000e+003") != 0) {
-		TC_ERROR("sprintf(1.234000e+003) - incorrect output '%s'\n", buffer);
+		TC_ERROR("sprintf(1.234000e+003) - incorrect "
+			"output '%s'\n", buffer);
 		status = TC_FAIL;
 	}
 
 	sprintf(buffer, "%E", var.d);
 	if (strcmp(buffer, "1.234000E+003") != 0) {
-		TC_ERROR("sprintf(1.234000E+003) - incorrect output '%s'\n", buffer);
+		TC_ERROR("sprintf(1.234000E+003) - incorrect "
+			"output '%s'\n", buffer);
 		status = TC_FAIL;
 	}
 
@@ -162,13 +174,15 @@ int sprintfDoubleTest(void)
 	var.d = 0.1234;
 	sprintf(buffer, "%e", var.d);
 	if (strcmp(buffer, "1.234000e-001") != 0) {
-		TC_ERROR("sprintf(1.234000e-001) - incorrect output '%s'\n", buffer);
+		TC_ERROR("sprintf(1.234000e-001) - incorrect "
+			"output '%s'\n", buffer);
 		status = TC_FAIL;
 	}
 
 	sprintf(buffer, "%E", var.d);
 	if (strcmp(buffer, "1.234000E-001") != 0) {
-		TC_ERROR("sprintf(1.234000E-001) - incorrect output '%s'\n", buffer);
+		TC_ERROR("sprintf(1.234000E-001) - incorrect "
+			"output '%s'\n", buffer);
 		status = TC_FAIL;
 	}
 
@@ -176,13 +190,15 @@ int sprintfDoubleTest(void)
 	var.d = 1234000000.0;
 	sprintf(buffer, "%g", var.d);
 	if (strcmp(buffer, "1.234e+009") != 0) {
-		TC_ERROR("sprintf(1.234e+009) - incorrect output '%s'\n", buffer);
+		TC_ERROR("sprintf(1.234e+009) - incorrect "
+			"output '%s'\n", buffer);
 		status = TC_FAIL;
 	}
 
 	sprintf(buffer, "%G", var.d);
 	if (strcmp(buffer, "1.234E+009") != 0) {
-		TC_ERROR("sprintf(1.234E+009) - incorrect output '%s'\n", buffer);
+		TC_ERROR("sprintf(1.234E+009) - incorrect "
+			"output '%s'\n", buffer);
 		status = TC_FAIL;
 	}
 
@@ -220,7 +236,7 @@ int tvsnprintf(char *s, size_t len, const char *format, ...)
  * @return TC_PASS on success, TC_FAIL otherwise
  */
 
-int vsnprintfTest(void)
+int vsnprintf_test(void)
 {
 	int  len;
 	int  status = TC_PASS;
@@ -286,7 +302,7 @@ int tvsprintf(char *s, const char *format, ...)
  * @return TC_PASS on success, TC_FAIL otherwise
  */
 
-int vsprintfTest(void)
+int vsprintf_test(void)
 {
 	int  len;
 	int  status = TC_PASS;
@@ -320,7 +336,7 @@ int vsprintfTest(void)
  * @return TC_PASS on success, TC_FAIL otherwise
  */
 
-int snprintfTest(void)
+int snprintf_test(void)
 {
 	int  len;
 	int  status = TC_PASS;
@@ -366,7 +382,7 @@ int snprintfTest(void)
  * @return TC_PASS on success, TC_FAIL otherwise
  */
 
-int sprintfMiscTest(void)
+int sprintf_misc_test(void)
 {
 	int  status = TC_PASS;
 	int  count;
@@ -419,7 +435,7 @@ int sprintfMiscTest(void)
 	}
 
 	/*******************/
-	sprintf(buffer, "%hx", 1234);
+	sprintf(buffer, "%hx", (unsigned short)1234);
 	if (strcmp("4d2", buffer) != 0) {
 		TC_ERROR("sprintf(%%hx).  Expected '4d2', got '%s'\n", buffer);
 		status = TC_FAIL;
@@ -442,7 +458,7 @@ int sprintfMiscTest(void)
  * @return TC_PASS on success, TC_FAIL otherwise
  */
 
-int sprintfIntegerTest(void)
+int sprintf_integer_test(void)
 {
 	int  status = TC_PASS;
 	int  len;
@@ -453,12 +469,14 @@ int sprintfIntegerTest(void)
 	/* Note: prints hex numbers in 8 characters */
 	len = sprintf(buffer, "%x", 0x11);
 	if (len != 2) {
-		TC_ERROR("sprintf(%%x).  Expected 2 bytes written, not %d\n", len);
+		TC_ERROR("sprintf(%%x). "
+			"Expected 2 bytes written, not %d\n", len);
 		status = TC_FAIL;
 	}
 
 	if (strcmp(buffer, "11") != 0) {
-		TC_ERROR("sprintf(%%x).  Expected '%s', got '%s'\n", "11", buffer);
+		TC_ERROR("sprintf(%%x). "
+			"Expected '%s', got '%s'\n", "11", buffer);
 		status = TC_FAIL;
 	}
 
@@ -595,7 +613,7 @@ int sprintfIntegerTest(void)
  * @return TC_PASS on success, TC_FAIL otherwise
  */
 
-int sprintfStringTest(void)
+int sprintf_stringtest(void)
 {
 	int  len;
 	int  status = TC_PASS;
@@ -615,20 +633,24 @@ int sprintfStringTest(void)
 
 	sprintf(buffer, "%s", "short string");
 	if (strcmp(buffer, "short string") != 0) {
-		TC_ERROR("sprintf(%%s).  Expected 'short string', got '%s'\n", buffer);
+		TC_ERROR("sprintf(%%s). "
+			"Expected 'short string', got '%s'\n", buffer);
 		status = TC_FAIL;
 	}
 
 	len = sprintf(buffer, "%s", REALLY_LONG_STRING);
 #ifndef CONFIG_NEWLIB_LIBC
 	if (len != PRINTF_MAX_STRING_LENGTH) {
-		TC_ERROR("Internals changed.  Max string length no longer %d got %d\n",
+		TC_ERROR("Internals changed. "
+			"Max string length no longer %d got %d\n",
 				 PRINTF_MAX_STRING_LENGTH, len);
 		status = TC_FAIL;
 	}
 #endif
-	if (strncmp(buffer, REALLY_LONG_STRING, PRINTF_MAX_STRING_LENGTH) != 0) {
-		TC_ERROR("First %d characters of REALLY_LONG_STRING not printed!\n",
+	if (strncmp(buffer, REALLY_LONG_STRING,
+			PRINTF_MAX_STRING_LENGTH) != 0) {
+		TC_ERROR("First %d characters of REALLY_LONG_STRING "
+			"not printed!\n",
 				 PRINTF_MAX_STRING_LENGTH);
 		status = TC_FAIL;
 	}
@@ -652,38 +674,38 @@ void main(void)
 	PRINT_LINE;
 
 	TC_PRINT("Testing sprintf() with integers ....\n");
-	if (sprintfIntegerTest() != TC_PASS) {
+	if (sprintf_integer_test() != TC_PASS) {
 		status = TC_FAIL;
 	}
 
 	TC_PRINT("Testing snprintf() ....\n");
-	if (snprintfTest() != TC_PASS) {
+	if (snprintf_test() != TC_PASS) {
 		status = TC_FAIL;
 	}
 
 	TC_PRINT("Testing vsprintf() ....\n");
-	if (vsprintfTest() != TC_PASS) {
+	if (vsprintf_test() != TC_PASS) {
 		status = TC_FAIL;
 	}
 
 	TC_PRINT("Testing vsnprintf() ....\n");
-	if (vsnprintfTest() != TC_PASS) {
+	if (vsnprintf_test() != TC_PASS) {
 		status = TC_FAIL;
 	}
 
 	TC_PRINT("Testing sprintf() with strings ....\n");
-	if (sprintfStringTest() != TC_PASS) {
+	if (sprintf_stringtest() != TC_PASS) {
 		status = TC_FAIL;
 	}
 
 	TC_PRINT("Testing sprintf() with misc options ....\n");
-	if (sprintfMiscTest() != TC_PASS) {
+	if (sprintf_misc_test() != TC_PASS) {
 		status = TC_FAIL;
 	}
 
 #ifdef CONFIG_FLOAT
 	TC_PRINT("Testing sprintf() with doubles ....\n");
-	if (sprintfDoubleTest() != TC_PASS) {
+	if (sprintf_double_test() != TC_PASS) {
 		status = TC_FAIL;
 	}
 #endif /* CONFIG_FLOAT */

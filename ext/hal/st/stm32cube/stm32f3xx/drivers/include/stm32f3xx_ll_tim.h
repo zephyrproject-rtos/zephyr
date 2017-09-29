@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_ll_tim.h
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   Header file of TIM LL module.
   ******************************************************************************
   * @attention
@@ -136,22 +134,22 @@ static const uint8_t SHIFT_TAB_OISx[] =
   */
 
 
-#define TIMx_OR_RMP_SHIFT (16U)
-#define TIMx_OR_RMP_MASK (0x0000FFFFU)
+#define TIMx_OR_RMP_SHIFT 16U
+#define TIMx_OR_RMP_MASK  0x0000FFFFU
 #if defined(TIM1)
-#define TIM1_OR_RMP_MASK ((uint32_t)(TIM1_OR_ETR_RMP << TIMx_OR_RMP_SHIFT))
+#define TIM1_OR_RMP_MASK   (TIM1_OR_ETR_RMP << TIMx_OR_RMP_SHIFT)
 #endif /* TIM1 */
 #if defined (TIM8)
-#define TIM8_OR_RMP_MASK ((uint32_t)(TIM8_OR_ETR_RMP << TIMx_OR_RMP_SHIFT))
+#define TIM8_OR_RMP_MASK   (TIM8_OR_ETR_RMP << TIMx_OR_RMP_SHIFT)
 #endif /* TIM8 */
 #if defined(TIM14)
-#define TIM14_OR_RMP_MASK  ((uint32_t)(TIM14_OR_TI1_RMP  << TIMx_OR_RMP_SHIFT))
+#define TIM14_OR_RMP_MASK  (TIM14_OR_TI1_RMP << TIMx_OR_RMP_SHIFT)
 #endif /* TIM14 */
 #if defined(TIM16)
-#define TIM16_OR_RMP_MASK  ((uint32_t)(TIM16_OR_TI1_RMP << TIMx_OR_RMP_SHIFT))
+#define TIM16_OR_RMP_MASK  (TIM16_OR_TI1_RMP << TIMx_OR_RMP_SHIFT)
 #endif /* TIM16 */
 #if defined(TIM20)
-#define TIM20_OR_RMP_MASK   ((uint32_t)(TIM20_OR_ETR_RMP << TIMx_OR_RMP_SHIFT))
+#define TIM20_OR_RMP_MASK  (TIM20_OR_ETR_RMP << TIMx_OR_RMP_SHIFT)
 #endif /* TIM20 */
 
 /* Mask used to set the TDG[x:0] of the DTG bits of the TIMx_BDTR register */
@@ -170,7 +168,6 @@ static const uint8_t SHIFT_TAB_OISx[] =
 /**
   * @}
   */
-
 
 /* Private macros ------------------------------------------------------------*/
 /** @defgroup TIM_LL_Private_Macros TIM Private Macros
@@ -556,7 +553,7 @@ typedef struct
 /** @defgroup TIM_LL_EC_BREAK_ENABLE Break Enable
   * @{
   */
-#define LL_TIM_BREAK_DISABLE            ((uint32_t)0x00000000U) /*!< Break function disabled */
+#define LL_TIM_BREAK_DISABLE            0x00000000U             /*!< Break function disabled */
 #define LL_TIM_BREAK_ENABLE             TIM_BDTR_BKE            /*!< Break function enabled */
 /**
   * @}
@@ -566,7 +563,7 @@ typedef struct
 /** @defgroup TIM_LL_EC_BREAK2_ENABLE Break2 Enable
   * @{
   */
-#define LL_TIM_BREAK2_DISABLE            ((uint32_t)0x00000000U) /*!< Break2 function disabled */
+#define LL_TIM_BREAK2_DISABLE            0x00000000U              /*!< Break2 function disabled */
 #define LL_TIM_BREAK2_ENABLE             TIM_BDTR_BK2E            /*!< Break2 function enabled */
 /**
   * @}
@@ -576,7 +573,7 @@ typedef struct
 /** @defgroup TIM_LL_EC_AUTOMATICOUTPUT_ENABLE Automatic output enable
   * @{
   */
-#define LL_TIM_AUTOMATICOUTPUT_DISABLE         ((uint32_t)0x00000000U) /*!< MOE can be set only by software */
+#define LL_TIM_AUTOMATICOUTPUT_DISABLE         0x00000000U             /*!< MOE can be set only by software */
 #define LL_TIM_AUTOMATICOUTPUT_ENABLE          TIM_BDTR_AOE            /*!< MOE can be set by software or automatically at the next update event */
 /**
   * @}
@@ -721,7 +718,7 @@ typedef struct
 #define LL_TIM_OCMODE_ACTIVE                   TIM_CCMR1_OC1M_0                                         /*!<OCyREF is forced high on compare match*/
 #define LL_TIM_OCMODE_INACTIVE                 TIM_CCMR1_OC1M_1                                         /*!<OCyREF is forced low on compare match*/
 #define LL_TIM_OCMODE_TOGGLE                   (TIM_CCMR1_OC1M_1 | TIM_CCMR1_OC1M_0)                    /*!<OCyREF toggles on compare match*/
-#define LL_TIM_OCMODE_FORCED_INACTIVE          (TIM_CCMR1_OC1M_2)                                       /*!<OCyREF is forced low*/
+#define LL_TIM_OCMODE_FORCED_INACTIVE          TIM_CCMR1_OC1M_2                                       /*!<OCyREF is forced low*/
 #define LL_TIM_OCMODE_FORCED_ACTIVE            (TIM_CCMR1_OC1M_2 | TIM_CCMR1_OC1M_0)                    /*!<OCyREF is forced high*/
 #define LL_TIM_OCMODE_PWM1                     (TIM_CCMR1_OC1M_2 | TIM_CCMR1_OC1M_1)                    /*!<In upcounting, channel y is active as long as TIMx_CNT<TIMx_CCRy else inactive.  In downcounting, channel y is inactive as long as TIMx_CNT>TIMx_CCRy else active.*/
 #define LL_TIM_OCMODE_PWM2                     (TIM_CCMR1_OC1M_2 | TIM_CCMR1_OC1M_1 | TIM_CCMR1_OC1M_0) /*!<In upcounting, channel y is inactive as long as TIMx_CNT<TIMx_CCRy else active.  In downcounting, channel y is active as long as TIMx_CNT>TIMx_CCRy else inactive*/
@@ -775,9 +772,9 @@ typedef struct
 /** @defgroup TIM_LL_EC_ACTIVEINPUT Active Input Selection
   * @{
   */
-#define LL_TIM_ACTIVEINPUT_DIRECTTI            TIM_CCMR1_CC1S_0 << 16U /*!< ICx is mapped on TIx */
-#define LL_TIM_ACTIVEINPUT_INDIRECTTI          TIM_CCMR1_CC1S_1 << 16U /*!< ICx is mapped on TIy */
-#define LL_TIM_ACTIVEINPUT_TRC                 TIM_CCMR1_CC1S << 16U   /*!< ICx is mapped on TRC */
+#define LL_TIM_ACTIVEINPUT_DIRECTTI            (TIM_CCMR1_CC1S_0 << 16U) /*!< ICx is mapped on TIx */
+#define LL_TIM_ACTIVEINPUT_INDIRECTTI          (TIM_CCMR1_CC1S_1 << 16U) /*!< ICx is mapped on TIy */
+#define LL_TIM_ACTIVEINPUT_TRC                 (TIM_CCMR1_CC1S << 16U)   /*!< ICx is mapped on TRC */
 /**
   * @}
   */
@@ -786,9 +783,9 @@ typedef struct
   * @{
   */
 #define LL_TIM_ICPSC_DIV1                      0x00000000U                              /*!< No prescaler, capture is done each time an edge is detected on the capture input */
-#define LL_TIM_ICPSC_DIV2                      TIM_CCMR1_IC1PSC_0 << 16U    /*!< Capture is done once every 2 events */
-#define LL_TIM_ICPSC_DIV4                      TIM_CCMR1_IC1PSC_1 << 16U    /*!< Capture is done once every 4 events */
-#define LL_TIM_ICPSC_DIV8                      TIM_CCMR1_IC1PSC << 16U      /*!< Capture is done once every 8 events */
+#define LL_TIM_ICPSC_DIV2                      (TIM_CCMR1_IC1PSC_0 << 16U)    /*!< Capture is done once every 2 events */
+#define LL_TIM_ICPSC_DIV4                      (TIM_CCMR1_IC1PSC_1 << 16U)    /*!< Capture is done once every 4 events */
+#define LL_TIM_ICPSC_DIV8                      (TIM_CCMR1_IC1PSC << 16U)      /*!< Capture is done once every 8 events */
 /**
   * @}
   */
@@ -796,22 +793,22 @@ typedef struct
 /** @defgroup TIM_LL_EC_IC_FILTER Input Configuration Filter
   * @{
   */
-#define LL_TIM_IC_FILTER_FDIV1                 0x00000000U                                                                  /*!< No filter, sampling is done at fDTS */
-#define LL_TIM_IC_FILTER_FDIV1_N2              TIM_CCMR1_IC1F_0 << 16U                                          /*!< fSAMPLING=fCK_INT, N=2 */
-#define LL_TIM_IC_FILTER_FDIV1_N4              TIM_CCMR1_IC1F_1 << 16U                                          /*!< fSAMPLING=fCK_INT, N=4 */
-#define LL_TIM_IC_FILTER_FDIV1_N8              (TIM_CCMR1_IC1F_1 | TIM_CCMR1_IC1F_0) << 16U                     /*!< fSAMPLING=fCK_INT, N=8 */
-#define LL_TIM_IC_FILTER_FDIV2_N6              TIM_CCMR1_IC1F_2 << 16U                                          /*!< fSAMPLING=fDTS/2, N=6 */
-#define LL_TIM_IC_FILTER_FDIV2_N8              (TIM_CCMR1_IC1F_2 | TIM_CCMR1_IC1F_0) << 16U                     /*!< fSAMPLING=fDTS/2, N=8 */
-#define LL_TIM_IC_FILTER_FDIV4_N6              (TIM_CCMR1_IC1F_2 | TIM_CCMR1_IC1F_1) << 16U                     /*!< fSAMPLING=fDTS/4, N=6 */
-#define LL_TIM_IC_FILTER_FDIV4_N8              (TIM_CCMR1_IC1F_2 | TIM_CCMR1_IC1F_1 | TIM_CCMR1_IC1F_0) << 16U  /*!< fSAMPLING=fDTS/4, N=8 */
-#define LL_TIM_IC_FILTER_FDIV8_N6              TIM_CCMR1_IC1F_3 << 16U                                          /*!< fSAMPLING=fDTS/8, N=6 */
-#define LL_TIM_IC_FILTER_FDIV8_N8              (TIM_CCMR1_IC1F_3 | TIM_CCMR1_IC1F_0) << 16U                     /*!< fSAMPLING=fDTS/8, N=8 */
-#define LL_TIM_IC_FILTER_FDIV16_N5             (TIM_CCMR1_IC1F_3 | TIM_CCMR1_IC1F_1) << 16U                     /*!< fSAMPLING=fDTS/16, N=5 */
-#define LL_TIM_IC_FILTER_FDIV16_N6             (TIM_CCMR1_IC1F_3 | TIM_CCMR1_IC1F_1 | TIM_CCMR1_IC1F_0) << 16U  /*!< fSAMPLING=fDTS/16, N=6 */
-#define LL_TIM_IC_FILTER_FDIV16_N8             (TIM_CCMR1_IC1F_3 | TIM_CCMR1_IC1F_2) << 16U                     /*!< fSAMPLING=fDTS/16, N=8 */
-#define LL_TIM_IC_FILTER_FDIV32_N5             (TIM_CCMR1_IC1F_3 | TIM_CCMR1_IC1F_2 | TIM_CCMR1_IC1F_0) << 16U  /*!< fSAMPLING=fDTS/32, N=5 */
-#define LL_TIM_IC_FILTER_FDIV32_N6             (TIM_CCMR1_IC1F_3 | TIM_CCMR1_IC1F_2 | TIM_CCMR1_IC1F_1) << 16U  /*!< fSAMPLING=fDTS/32, N=6 */
-#define LL_TIM_IC_FILTER_FDIV32_N8             TIM_CCMR1_IC1F << 16U                                            /*!< fSAMPLING=fDTS/32, N=8 */
+#define LL_TIM_IC_FILTER_FDIV1                 0x00000000U                                                        /*!< No filter, sampling is done at fDTS */
+#define LL_TIM_IC_FILTER_FDIV1_N2              (TIM_CCMR1_IC1F_0 << 16U)                                          /*!< fSAMPLING=fCK_INT, N=2 */
+#define LL_TIM_IC_FILTER_FDIV1_N4              (TIM_CCMR1_IC1F_1 << 16U)                                          /*!< fSAMPLING=fCK_INT, N=4 */
+#define LL_TIM_IC_FILTER_FDIV1_N8              ((TIM_CCMR1_IC1F_1 | TIM_CCMR1_IC1F_0) << 16U)                     /*!< fSAMPLING=fCK_INT, N=8 */
+#define LL_TIM_IC_FILTER_FDIV2_N6              (TIM_CCMR1_IC1F_2 << 16U)                                          /*!< fSAMPLING=fDTS/2, N=6 */
+#define LL_TIM_IC_FILTER_FDIV2_N8              ((TIM_CCMR1_IC1F_2 | TIM_CCMR1_IC1F_0) << 16U)                     /*!< fSAMPLING=fDTS/2, N=8 */
+#define LL_TIM_IC_FILTER_FDIV4_N6              ((TIM_CCMR1_IC1F_2 | TIM_CCMR1_IC1F_1) << 16U)                     /*!< fSAMPLING=fDTS/4, N=6 */
+#define LL_TIM_IC_FILTER_FDIV4_N8              ((TIM_CCMR1_IC1F_2 | TIM_CCMR1_IC1F_1 | TIM_CCMR1_IC1F_0) << 16U)  /*!< fSAMPLING=fDTS/4, N=8 */
+#define LL_TIM_IC_FILTER_FDIV8_N6              (TIM_CCMR1_IC1F_3 << 16U)                                          /*!< fSAMPLING=fDTS/8, N=6 */
+#define LL_TIM_IC_FILTER_FDIV8_N8              ((TIM_CCMR1_IC1F_3 | TIM_CCMR1_IC1F_0) << 16U)                     /*!< fSAMPLING=fDTS/8, N=8 */
+#define LL_TIM_IC_FILTER_FDIV16_N5             ((TIM_CCMR1_IC1F_3 | TIM_CCMR1_IC1F_1) << 16U)                     /*!< fSAMPLING=fDTS/16, N=5 */
+#define LL_TIM_IC_FILTER_FDIV16_N6             ((TIM_CCMR1_IC1F_3 | TIM_CCMR1_IC1F_1 | TIM_CCMR1_IC1F_0) << 16U)  /*!< fSAMPLING=fDTS/16, N=6 */
+#define LL_TIM_IC_FILTER_FDIV16_N8             ((TIM_CCMR1_IC1F_3 | TIM_CCMR1_IC1F_2) << 16U)                     /*!< fSAMPLING=fDTS/16, N=8 */
+#define LL_TIM_IC_FILTER_FDIV32_N5             ((TIM_CCMR1_IC1F_3 | TIM_CCMR1_IC1F_2 | TIM_CCMR1_IC1F_0) << 16U)  /*!< fSAMPLING=fDTS/32, N=5 */
+#define LL_TIM_IC_FILTER_FDIV32_N6             ((TIM_CCMR1_IC1F_3 | TIM_CCMR1_IC1F_2 | TIM_CCMR1_IC1F_1) << 16U)  /*!< fSAMPLING=fDTS/32, N=6 */
+#define LL_TIM_IC_FILTER_FDIV32_N8             (TIM_CCMR1_IC1F << 16U)                                            /*!< fSAMPLING=fDTS/32, N=8 */
 /**
   * @}
   */
@@ -830,8 +827,8 @@ typedef struct
   * @{
   */
 #define LL_TIM_CLOCKSOURCE_INTERNAL            0x00000000U                                          /*!< The timer is clocked by the internal clock provided from the RCC */
-#define LL_TIM_CLOCKSOURCE_EXT_MODE1           (TIM_SMCR_SMS_2 | TIM_SMCR_SMS_1 | TIM_SMCR_SMS_0 ) /*!< Counter counts at each rising or falling edge on a selected inpu t*/
-#define LL_TIM_CLOCKSOURCE_EXT_MODE2           TIM_SMCR_ECE                                        /*!< Counter counts at each rising or falling edge on the external trigger input ETR */
+#define LL_TIM_CLOCKSOURCE_EXT_MODE1           (TIM_SMCR_SMS_2 | TIM_SMCR_SMS_1 | TIM_SMCR_SMS_0)   /*!< Counter counts at each rising or falling edge on a selected inpu t*/
+#define LL_TIM_CLOCKSOURCE_EXT_MODE2           TIM_SMCR_ECE                                         /*!< Counter counts at each rising or falling edge on the external trigger input ETR */
 /**
   * @}
   */
@@ -944,15 +941,15 @@ typedef struct
 #define LL_TIM_ETR_FILTER_FDIV1_N8             (TIM_SMCR_ETF_1 | TIM_SMCR_ETF_0)                    /*!< fSAMPLING=fCK_INT, N=8 */
 #define LL_TIM_ETR_FILTER_FDIV2_N6             TIM_SMCR_ETF_2                                       /*!< fSAMPLING=fDTS/2, N=6 */
 #define LL_TIM_ETR_FILTER_FDIV2_N8             (TIM_SMCR_ETF_2 | TIM_SMCR_ETF_0)                    /*!< fSAMPLING=fDTS/2, N=8 */
-#define LL_TIM_ETR_FILTER_FDIV4_N6             (TIM_SMCR_ETF_2 | TIM_SMCR_ETF_1 )                   /*!< fSAMPLING=fDTS/4, N=6 */
+#define LL_TIM_ETR_FILTER_FDIV4_N6             (TIM_SMCR_ETF_2 | TIM_SMCR_ETF_1)                    /*!< fSAMPLING=fDTS/4, N=6 */
 #define LL_TIM_ETR_FILTER_FDIV4_N8             (TIM_SMCR_ETF_2 | TIM_SMCR_ETF_1 | TIM_SMCR_ETF_0)   /*!< fSAMPLING=fDTS/4, N=8 */
 #define LL_TIM_ETR_FILTER_FDIV8_N6             TIM_SMCR_ETF_3                                       /*!< fSAMPLING=fDTS/8, N=8 */
 #define LL_TIM_ETR_FILTER_FDIV8_N8             (TIM_SMCR_ETF_3 | TIM_SMCR_ETF_0)                    /*!< fSAMPLING=fDTS/16, N=5 */
-#define LL_TIM_ETR_FILTER_FDIV16_N5            (TIM_SMCR_ETF_3 | TIM_SMCR_ETF_1 )                   /*!< fSAMPLING=fDTS/16, N=6 */
+#define LL_TIM_ETR_FILTER_FDIV16_N5            (TIM_SMCR_ETF_3 | TIM_SMCR_ETF_1)                    /*!< fSAMPLING=fDTS/16, N=6 */
 #define LL_TIM_ETR_FILTER_FDIV16_N6            (TIM_SMCR_ETF_3 | TIM_SMCR_ETF_1 | TIM_SMCR_ETF_0)   /*!< fSAMPLING=fDTS/16, N=8 */
-#define LL_TIM_ETR_FILTER_FDIV16_N8            (TIM_SMCR_ETF_3 | TIM_SMCR_ETF_2 )                   /*!< fSAMPLING=fDTS/16, N=5 */
-#define LL_TIM_ETR_FILTER_FDIV32_N5            (TIM_SMCR_ETF_3 | TIM_SMCR_ETF_2  | TIM_SMCR_ETF_0)  /*!< fSAMPLING=fDTS/32, N=5 */
-#define LL_TIM_ETR_FILTER_FDIV32_N6            (TIM_SMCR_ETF_3 | TIM_SMCR_ETF_2  | TIM_SMCR_ETF_1)  /*!< fSAMPLING=fDTS/32, N=6 */
+#define LL_TIM_ETR_FILTER_FDIV16_N8            (TIM_SMCR_ETF_3 | TIM_SMCR_ETF_2)                    /*!< fSAMPLING=fDTS/16, N=5 */
+#define LL_TIM_ETR_FILTER_FDIV32_N5            (TIM_SMCR_ETF_3 | TIM_SMCR_ETF_2 | TIM_SMCR_ETF_0)   /*!< fSAMPLING=fDTS/32, N=5 */
+#define LL_TIM_ETR_FILTER_FDIV32_N6            (TIM_SMCR_ETF_3 | TIM_SMCR_ETF_2 | TIM_SMCR_ETF_1)   /*!< fSAMPLING=fDTS/32, N=6 */
 #define LL_TIM_ETR_FILTER_FDIV32_N8            TIM_SMCR_ETF                                         /*!< fSAMPLING=fDTS/32, N=8 */
 /**
   * @}
@@ -1008,7 +1005,7 @@ typedef struct
 /** @defgroup TIM_LL_EC_BREAK2_FILTER BREAK2 FILTER
   * @{
   */
-#define LL_TIM_BREAK2_FILTER_FDIV1             0x00000000U               /*!< No filter, BRK acts asynchronously */
+#define LL_TIM_BREAK2_FILTER_FDIV1             0x00000000U   /*!< No filter, BRK acts asynchronously */
 #define LL_TIM_BREAK2_FILTER_FDIV1_N2          0x00100000U   /*!< fSAMPLING=fCK_INT, N=2 */
 #define LL_TIM_BREAK2_FILTER_FDIV1_N4          0x00200000U   /*!< fSAMPLING=fCK_INT, N=4 */
 #define LL_TIM_BREAK2_FILTER_FDIV1_N8          0x00300000U   /*!< fSAMPLING=fCK_INT, N=8 */
@@ -1106,33 +1103,33 @@ typedef struct
 
 #if defined(TIM1)
 /** @defgroup TIM_LL_EC_TIM1_ETR_ADC1_RMP  TIM1 External Trigger ADC1 Remap
-* @{
-*/
-#define LL_TIM_TIM1_ETR_ADC1_RMP_NC   (0x00000000U | TIM1_OR_RMP_MASK)   /*!< TIM1_ETR is not connected to ADC1 analog watchdog x */
-#define LL_TIM_TIM1_ETR_ADC1_RMP_AWD1 (TIM1_OR_ETR_RMP_0 | TIM1_OR_RMP_MASK) /*!< TIM1_ETR is connected to ADC1 analog watchdog 1 */
-#define LL_TIM_TIM1_ETR_ADC1_RMP_AWD2 (TIM1_OR_ETR_RMP_1 | TIM1_OR_RMP_MASK) /*!< TIM1_ETR is connected to ADC1 analog watchdog 2 */
+  * @{
+  */
+#define LL_TIM_TIM1_ETR_ADC1_RMP_NC   TIM1_OR_RMP_MASK                                            /*!< TIM1_ETR is not connected to ADC1 analog watchdog x */
+#define LL_TIM_TIM1_ETR_ADC1_RMP_AWD1 (TIM1_OR_ETR_RMP_0 | TIM1_OR_RMP_MASK)                      /*!< TIM1_ETR is connected to ADC1 analog watchdog 1 */
+#define LL_TIM_TIM1_ETR_ADC1_RMP_AWD2 (TIM1_OR_ETR_RMP_1 | TIM1_OR_RMP_MASK)                      /*!< TIM1_ETR is connected to ADC1 analog watchdog 2 */
 #define LL_TIM_TIM1_ETR_ADC1_RMP_AWD3 (TIM1_OR_ETR_RMP_0 | TIM1_OR_ETR_RMP_1| TIM1_OR_RMP_MASK)   /*!< TIM1_ETR is connected to ADC1 analog watchdog 3 */
 /**
   * @}
   */
 #if defined(ADC4)
-/** @defgroup TIM_LL_EC_TIM1_ETR_ADC3_RMP  TIM1 External Trigger ADC4 Remap
-* @{
-*/
-#define LL_TIM_TIM1_ETR_ADC4_RMP_NC   (0x00000000U | TIM1_OR_RMP_MASK)   /*!< TIM1_ETR is not connected to ADC4 analog watchdog  x*/
-#define LL_TIM_TIM1_ETR_ADC4_RMP_AWD1 (TIM1_OR_ETR_RMP_2 | TIM1_OR_RMP_MASK) /*!< TIM1_ETR is connected to ADC4 analog watchdog 1 */
-#define LL_TIM_TIM1_ETR_ADC4_RMP_AWD2 (TIM1_OR_ETR_RMP_3 | TIM1_OR_RMP_MASK) /*!< TIM1_ETR is connected to ADC4 analog watchdog 2 */
+/** @defgroup TIM_LL_EC_TIM1_ETR_ADC4_RMP  TIM1 External Trigger ADC4 Remap
+  * @{
+  */
+#define LL_TIM_TIM1_ETR_ADC4_RMP_NC   TIM1_OR_RMP_MASK                                             /*!< TIM1_ETR is not connected to ADC4 analog watchdog  x*/
+#define LL_TIM_TIM1_ETR_ADC4_RMP_AWD1 (TIM1_OR_ETR_RMP_2 | TIM1_OR_RMP_MASK)                       /*!< TIM1_ETR is connected to ADC4 analog watchdog 1 */
+#define LL_TIM_TIM1_ETR_ADC4_RMP_AWD2 (TIM1_OR_ETR_RMP_3 | TIM1_OR_RMP_MASK)                       /*!< TIM1_ETR is connected to ADC4 analog watchdog 2 */
 #define LL_TIM_TIM1_ETR_ADC4_RMP_AWD3 (TIM1_OR_ETR_RMP_3 | TIM1_OR_ETR_RMP_2 | TIM1_OR_RMP_MASK)   /*!< TIM1_ETR is connected to ADC4 analog watchdog 3 */
 /**
   * @}
   */
 #else
 /** @defgroup TIM_LL_EC_TIM1_ETR_ADC2_RMP  TIM1 External Trigger ADC3 Remap
-* @{
-*/
-#define LL_TIM_TIM1_ETR_ADC2_RMP_NC   (0x00000000U | TIM1_OR_RMP_MASK)   /*!< TIM1_ETR is not connected to ADC2 analog watchdog  x*/
-#define LL_TIM_TIM1_ETR_ADC2_RMP_AWD1 (TIM1_OR_ETR_RMP_2 | TIM1_OR_RMP_MASK) /*!< TIM1_ETR is connected to ADC2 analog watchdog 1 */
-#define LL_TIM_TIM1_ETR_ADC2_RMP_AWD2 (TIM1_OR_ETR_RMP_3 | TIM1_OR_RMP_MASK) /*!< TIM1_ETR is connected to ADC2 analog watchdog 2 */
+  * @{
+  */
+#define LL_TIM_TIM1_ETR_ADC2_RMP_NC   TIM1_OR_RMP_MASK                                             /*!< TIM1_ETR is not connected to ADC2 analog watchdog  x*/
+#define LL_TIM_TIM1_ETR_ADC2_RMP_AWD1 (TIM1_OR_ETR_RMP_2 | TIM1_OR_RMP_MASK)                       /*!< TIM1_ETR is connected to ADC2 analog watchdog 1 */
+#define LL_TIM_TIM1_ETR_ADC2_RMP_AWD2 (TIM1_OR_ETR_RMP_3 | TIM1_OR_RMP_MASK)                       /*!< TIM1_ETR is connected to ADC2 analog watchdog 2 */
 #define LL_TIM_TIM1_ETR_ADC2_RMP_AWD3 (TIM1_OR_ETR_RMP_3 | TIM1_OR_ETR_RMP_2 | TIM1_OR_RMP_MASK)   /*!< TIM1_ETR is connected to ADC2 analog watchdog 3 */
 /**
   * @}
@@ -1141,22 +1138,22 @@ typedef struct
 #endif /* TIM1 */
 #if defined(TIM8)
 /** @defgroup TIM_LL_EC_TIM8_ETR_ADC2_RMP  TIM8 External Trigger ADC2 Remap
-* @{
-*/
-#define LL_TIM_TIM8_ETR_ADC2_RMP_NC   (0x00000000U | TIM8_OR_RMP_MASK)   /*!< TIM8_ETR is not connected to ADC2 analog watchdog x */
-#define LL_TIM_TIM8_ETR_ADC2_RMP_AWD1 (TIM8_OR_ETR_RMP_0 | TIM8_OR_RMP_MASK) /*!< TIM8_ETR is connected to ADC2 analog watchdog */
-#define LL_TIM_TIM8_ETR_ADC2_RMP_AWD2 (TIM8_OR_ETR_RMP_1 | TIM8_OR_RMP_MASK) /*!< TIM8_ETR is connected to ADC2 analog watchdog 2 */
+  * @{
+  */
+#define LL_TIM_TIM8_ETR_ADC2_RMP_NC   TIM8_OR_RMP_MASK                                             /*!< TIM8_ETR is not connected to ADC2 analog watchdog x */
+#define LL_TIM_TIM8_ETR_ADC2_RMP_AWD1 (TIM8_OR_ETR_RMP_0 | TIM8_OR_RMP_MASK)                       /*!< TIM8_ETR is connected to ADC2 analog watchdog */
+#define LL_TIM_TIM8_ETR_ADC2_RMP_AWD2 (TIM8_OR_ETR_RMP_1 | TIM8_OR_RMP_MASK)                       /*!< TIM8_ETR is connected to ADC2 analog watchdog 2 */
 #define LL_TIM_TIM8_ETR_ADC2_RMP_AWD3 (TIM8_OR_ETR_RMP_0 | TIM8_OR_ETR_RMP_1 | TIM8_OR_RMP_MASK)   /*!< TIM8_ETR is connected to ADC2 analog watchdog 3 */
 /**
   * @}
   */
 
 /** @defgroup TIM_LL_EC_TIM8_ETR_ADC3_RMP  TIM8 External Trigger ADC3 Remap
-* @{
-*/
-#define LL_TIM_TIM8_ETR_ADC3_RMP_NC   (0x00000000U | TIM8_OR_RMP_MASK)   /*!< TIM8_ETR is not connected to ADC3 analog watchdog x */
-#define LL_TIM_TIM8_ETR_ADC3_RMP_AWD1 (TIM8_OR_ETR_RMP_2 | TIM8_OR_RMP_MASK) /*!< TIM8_ETR is connected to ADC3 analog watchdog 1 */
-#define LL_TIM_TIM8_ETR_ADC3_RMP_AWD2 (TIM8_OR_ETR_RMP_3 | TIM8_OR_RMP_MASK) /*!< TIM8_ETR is connected to ADC3 analog watchdog 2 */
+  * @{
+  */
+#define LL_TIM_TIM8_ETR_ADC3_RMP_NC   TIM8_OR_RMP_MASK                                             /*!< TIM8_ETR is not connected to ADC3 analog watchdog x */
+#define LL_TIM_TIM8_ETR_ADC3_RMP_AWD1 (TIM8_OR_ETR_RMP_2 | TIM8_OR_RMP_MASK)                       /*!< TIM8_ETR is connected to ADC3 analog watchdog 1 */
+#define LL_TIM_TIM8_ETR_ADC3_RMP_AWD2 (TIM8_OR_ETR_RMP_3 | TIM8_OR_RMP_MASK)                       /*!< TIM8_ETR is connected to ADC3 analog watchdog 2 */
 #define LL_TIM_TIM8_ETR_ADC3_RMP_AWD3 (TIM8_OR_ETR_RMP_2 | TIM8_OR_ETR_RMP_3 | TIM8_OR_RMP_MASK)   /*!< TIM8_ETR is connected to ADC3 analog watchdog 3 */
 /**
   * @}
@@ -1164,21 +1161,21 @@ typedef struct
 #endif /* TIM8 */
 #if defined(TIM16)
 /** @defgroup TIM_LL_EC_TIM16_TI1_RMP  TIM16 External Input Ch1 Remap
-* @{
-*/
-#define LL_TIM_TIM16_TI1_RMP_GPIO    0x00000000U                                                      /*!< TIM16 input capture 1 is connected to GPIO */
-#define LL_TIM_TIM16_TI1_RMP_RTC     (TIM16_OR_TI1_RMP_0 | TIM16_OR_RMP_MASK)                         /*!< TIM16 input capture 1 is connected to RTC wakeup interrupt */
-#define LL_TIM_TIM16_TI1_RMP_HSE_32  (TIM16_OR_TI1_RMP_1 | TIM16_OR_RMP_MASK)                         /*!< TIM16 input capture 1 is connected to HSE/32 clock */
-#define LL_TIM_TIM16_TI1_RMP_MCO     (TIM16_OR_TI1_RMP_1 | TIM16_OR_TI1_RMP_0 | TIM16_OR_RMP_MASK)    /*!< TIM16 input capture 1 is connected to MCO */
+  * @{
+  */
+#define LL_TIM_TIM16_TI1_RMP_GPIO    0x00000000U                                                   /*!< TIM16 input capture 1 is connected to GPIO */
+#define LL_TIM_TIM16_TI1_RMP_RTC     (TIM16_OR_TI1_RMP_0 | TIM16_OR_RMP_MASK)                      /*!< TIM16 input capture 1 is connected to RTC wakeup interrupt */
+#define LL_TIM_TIM16_TI1_RMP_HSE_32  (TIM16_OR_TI1_RMP_1 | TIM16_OR_RMP_MASK)                      /*!< TIM16 input capture 1 is connected to HSE/32 clock */
+#define LL_TIM_TIM16_TI1_RMP_MCO     (TIM16_OR_TI1_RMP_1 | TIM16_OR_TI1_RMP_0 | TIM16_OR_RMP_MASK) /*!< TIM16 input capture 1 is connected to MCO */
 /**
   * @}
   */
 #endif /* TIM16 */
 #if defined(TIM20)
 /** @defgroup TIM_LL_EC_TIM20_ETR_ADC3_RMP  TIM20 External Trigger ADC3 Remap
-* @{
-*/
-#define LL_TIM_TIM20_ETR_ADC3_RMP_NC   (0x00000000U | TIM20_OR_RMP_MASK)                     /*!< TIM20_ETR is not connected to ADC3 analog watchdog x */
+  * @{
+  */
+#define LL_TIM_TIM20_ETR_ADC3_RMP_NC   TIM20_OR_RMP_MASK                                               /*!< TIM20_ETR is not connected to ADC3 analog watchdog x */
 #define LL_TIM_TIM20_ETR_ADC3_RMP_AWD1 (TIM20_OR_ETR_RMP_0 | TIM20_OR_RMP_MASK)                        /*!< TIM20_ETR is connected to ADC3 analog watchdog */
 #define LL_TIM_TIM20_ETR_ADC3_RMP_AWD2 (TIM20_OR_ETR_RMP_1 | TIM20_OR_RMP_MASK)                        /*!< TIM20_ETR is connected to ADC3 analog watchdog 2 */
 #define LL_TIM_TIM20_ETR_ADC3_RMP_AWD3 (TIM20_OR_ETR_RMP_0 | TIM20_OR_ETR_RMP_1 | TIM20_OR_RMP_MASK)   /*!< TIM20_ETR is connected to ADC3 analog watchdog 3 */
@@ -1187,9 +1184,9 @@ typedef struct
   */
 
 /** @defgroup TIM_LL_EC_TIM20_ETR_ADC4_RMP  TIM20 External Trigger ADC4 Remap
-* @{
-*/
-#define LL_TIM_TIM20_ETR_ADC4_RMP_NC   (0x00000000U | TIM20_OR_RMP_MASK)                     /*!< TIM20_ETR is not connected to ADC4 analog watchdog x */
+  * @{
+  */
+#define LL_TIM_TIM20_ETR_ADC4_RMP_NC   TIM20_OR_RMP_MASK                                               /*!< TIM20_ETR is not connected to ADC4 analog watchdog x */
 #define LL_TIM_TIM20_ETR_ADC4_RMP_AWD1 (TIM20_OR_ETR_RMP_2 | TIM20_OR_RMP_MASK)                        /*!< TIM20_ETR is connected to ADC4 analog watchdog 1 */
 #define LL_TIM_TIM20_ETR_ADC4_RMP_AWD2 (TIM20_OR_ETR_RMP_3 | TIM20_OR_RMP_MASK)                        /*!< TIM20_ETR is connected to ADC4 analog watchdog 2 */
 #define LL_TIM_TIM20_ETR_ADC4_RMP_AWD3 (TIM20_OR_ETR_RMP_2 | TIM20_OR_ETR_RMP_3 | TIM20_OR_RMP_MASK)   /*!< TIM20_ETR is connected to ADC4 analog watchdog 3 */
@@ -1199,12 +1196,12 @@ typedef struct
 #endif /* TIM20 */
 #if defined(TIM14)
 /** @defgroup TIM_LL_EC_TIM14_TI1_RMP  TIM14 Timer Input1 Remap
-* @{
-*/
-#define LL_TIM_TIM14_TI1_RMP_GPIO   (0x00000000U | TIM14_OR_RMP_MASK)                  /*!< TIM14_TI1 is connected to GPIO */
-#define LL_TIM_TIM14_TI1_RMP_RTC_CLK (TIM14_OR_TI1_RMP_0 | TIM14_OR_RMP_MASK)                    /*!< TIM14_TI1 is connected to RTC Clock */
-#define LL_TIM_TIM14_TI1_RMP_HSE (TIM14_OR_TI1_RMP_1 | TIM14_OR_RMP_MASK)                        /*!< TIM14_TI1 is connected to HSE/32 */
-#define LL_TIM_TIM14_TI1_RMP_MCO (TIM14_OR_TI1_RMP_0 | TIM14_OR_TI1_RMP_1 | TIM14_OR_RMP_MASK)   /*!< TIM14_TI1 is connected to MCO */
+  * @{
+  */
+#define LL_TIM_TIM14_TI1_RMP_GPIO    TIM14_OR_RMP_MASK                                               /*!< TIM14_TI1 is connected to GPIO */
+#define LL_TIM_TIM14_TI1_RMP_RTC_CLK (TIM14_OR_TI1_RMP_0 | TIM14_OR_RMP_MASK)                        /*!< TIM14_TI1 is connected to RTC Clock */
+#define LL_TIM_TIM14_TI1_RMP_HSE     (TIM14_OR_TI1_RMP_1 | TIM14_OR_RMP_MASK)                        /*!< TIM14_TI1 is connected to HSE/32 */
+#define LL_TIM_TIM14_TI1_RMP_MCO     (TIM14_OR_TI1_RMP_0 | TIM14_OR_TI1_RMP_1 | TIM14_OR_RMP_MASK)   /*!< TIM14_TI1 is connected to MCO */
 /**
   * @}
   */
@@ -1215,7 +1212,7 @@ typedef struct
   * @{
   */
 #define LL_TIM_OCREF_CLR_INT_OCREF_CLR     0x00000000U         /*!< OCREF_CLR_INT is connected to the OCREF_CLR input */
-#define LL_TIM_OCREF_CLR_INT_ETR           TIM_SMCR_OCCS  /*!< OCREF_CLR_INT is connected to ETRF */
+#define LL_TIM_OCREF_CLR_INT_ETR           TIM_SMCR_OCCS       /*!< OCREF_CLR_INT is connected to ETRF */
 /**
   * @}
   */
@@ -1342,7 +1339,7 @@ typedef struct
   * @retval Input capture prescaler ratio (1, 2, 4 or 8)
   */
 #define __LL_TIM_GET_ICPSC_RATIO(__ICPSC__)  \
-   ((uint32_t)((uint32_t)0x01U << (((__ICPSC__) >> 16U) >> TIM_CCMR1_IC1PSC_Pos)))
+   ((uint32_t)(0x01U << (((__ICPSC__) >> 16U) >> TIM_CCMR1_IC1PSC_Pos)))
 
 
 /**
@@ -1403,7 +1400,7 @@ __STATIC_INLINE uint32_t LL_TIM_IsEnabledCounter(TIM_TypeDef *TIMx)
   */
 __STATIC_INLINE void LL_TIM_EnableUpdateEvent(TIM_TypeDef *TIMx)
 {
-  SET_BIT(TIMx->CR1, TIM_CR1_UDIS);
+  CLEAR_BIT(TIMx->CR1, TIM_CR1_UDIS);
 }
 
 /**
@@ -1414,7 +1411,7 @@ __STATIC_INLINE void LL_TIM_EnableUpdateEvent(TIM_TypeDef *TIMx)
   */
 __STATIC_INLINE void LL_TIM_DisableUpdateEvent(TIM_TypeDef *TIMx)
 {
-  CLEAR_BIT(TIMx->CR1, TIM_CR1_UDIS);
+  SET_BIT(TIMx->CR1, TIM_CR1_UDIS);
 }
 
 /**
@@ -3520,7 +3517,13 @@ __STATIC_INLINE void LL_TIM_ConfigETR(TIM_TypeDef *TIMx, uint32_t ETRPolarity, u
   */
 __STATIC_INLINE void LL_TIM_EnableBRK(TIM_TypeDef *TIMx)
 {
+  __IO uint32_t tmpreg;
+
   SET_BIT(TIMx->BDTR, TIM_BDTR_BKE);
+
+  /* Note: Any write operation to this bit takes a delay of 1 APB clock cycle to become effective. */
+  tmpreg = READ_REG(TIMx->BDTR);
+  (void)(tmpreg);
 }
 
 /**
@@ -3533,7 +3536,13 @@ __STATIC_INLINE void LL_TIM_EnableBRK(TIM_TypeDef *TIMx)
   */
 __STATIC_INLINE void LL_TIM_DisableBRK(TIM_TypeDef *TIMx)
 {
+  __IO uint32_t tmpreg;
+
   CLEAR_BIT(TIMx->BDTR, TIM_BDTR_BKE);
+
+  /* Note: Any write operation to this bit takes a delay of 1 APB clock cycle to become effective. */
+  tmpreg = READ_REG(TIMx->BDTR);
+  (void)(tmpreg);
 }
 
 #if defined(TIM_BDTR_BKF)
@@ -3585,7 +3594,13 @@ __STATIC_INLINE void LL_TIM_ConfigBRK(TIM_TypeDef *TIMx, uint32_t BreakPolarity,
   */
 __STATIC_INLINE void LL_TIM_ConfigBRK(TIM_TypeDef *TIMx, uint32_t BreakPolarity)
 {
+  __IO uint32_t tmpreg;
+
   MODIFY_REG(TIMx->BDTR, TIM_BDTR_BKP, BreakPolarity);
+
+  /* Note: Any write operation to this bit takes a delay of 1 APB clock cycle to become effective. */
+  tmpreg = READ_REG(TIMx->BDTR);
+  (void)(tmpreg);
 }
 
 #endif /* TIM_BDTR_BKF */

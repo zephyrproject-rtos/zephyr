@@ -16,16 +16,20 @@ The source code for this sample application can be found at:
 Requirements
 ************
 
-- QEMU
+- :ref:`networking_with_qemu`
 - Terminal emulator software
 - HTTP Server
 - DNS server (optional)
+
 
 Building and Running
 ********************
 
 Open the project configuration file for your platform, for example:
 :file:`prj_qemu_x86.conf` is the configuration file for QEMU.
+
+To use QEMU for testing, follow the :ref:`networking_with_qemu` guide.
+
 For IPv4 networks, set the following variables:
 
 .. code-block:: console
@@ -69,12 +73,9 @@ port is 8000.
 HTTP Server
 ===========
 
-A very simple HTTP server is provided in net-tool project.
-
-The net-tools can be downloaded from
-
-    https://github.com/zephyrproject-rtos/net-tools
-
+Sample code for a very simple HTTP server can be downloaded from the
+zephyrproject-rtos/net-tools project area:
+https://github.com/zephyrproject-rtos/net-tools
 
 Open a terminal window and type:
 
@@ -87,7 +88,7 @@ Open a terminal window and type:
 DNS setup
 =========
 
-The net-tool project provides a simple DNS resolver. You can activate
+The net-tools project provides a simple DNS resolver. You can activate
 it like this if you want to test the DNS resolving with HTTP client.
 
 Open a terminal window and type:

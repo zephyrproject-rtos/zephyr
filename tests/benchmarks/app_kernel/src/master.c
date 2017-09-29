@@ -17,11 +17,11 @@
 #include <tc_util.h>
 #include "master.h"
 
-char Msg[MAX_MSG];
+char msg[MAX_MSG];
 char data_bench[OCTET_TO_SIZEOFUNIT(MESSAGE_SIZE)];
 
 #ifdef PIPE_BENCH
-struct k_pipe *TestPipes[] = {&PIPE_NOBUFF, &PIPE_SMALLBUFF, &PIPE_BIGBUFF};
+struct k_pipe *test_pipes[] = {&PIPE_NOBUFF, &PIPE_SMALLBUFF, &PIPE_BIGBUFF};
 #endif
 char sline[SLINE_LEN + 1];
 const char newline[] = "\n";
@@ -38,7 +38,6 @@ u32_t tm_off;
 /********************************************************************/
 /* static allocation  */
 K_THREAD_DEFINE(RECVTASK, 1024, recvtask, NULL, NULL, NULL, 5, 0, K_NO_WAIT);
-K_THREAD_DEFINE(BENCHTASK, 1024, BenchTask, NULL, NULL, NULL, 6, 0, K_NO_WAIT);
 
 K_MSGQ_DEFINE(DEMOQX1, 1, 500, 4);
 K_MSGQ_DEFINE(DEMOQX4, 4, 500, 4);
@@ -120,7 +119,7 @@ void output_close(void)
  *
  * @return N/A
  */
-void BenchTask(void *p1, void *p2, void *p3)
+void main(void)
 {
 	int autorun = 0, continuously = 0;
 
@@ -166,5 +165,4 @@ void BenchTask(void *p1, void *p2, void *p3)
  */
 void dummy_test(void)
 {
-	return;
 }

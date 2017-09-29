@@ -40,10 +40,10 @@ The STM32L476RG SoC provides the following hardware IPs:
 - Clock Sources:
         - 4 to 48 MHz crystal oscillator
         - 32 kHz crystal oscillator for RTC (LSE)
-        - Internal 16 MHz factory-trimmed RC (±1%)
-        - Internal low-power 32 kHz RC (±5%)
+        - Internal 16 MHz factory-trimmed RC ( |plusminus| 1%)
+        - Internal low-power 32 kHz RC ( |plusminus| 5%)
         - Internal multispeed 100 kHz to 48 MHz oscillator, auto-trimmed by
-          LSE (better than ±0.25 % accuracy)
+          LSE (better than  |plusminus| 0.25 % accuracy)
         - 3 PLLs for system clock, USB, audio, ADC
 - RTC with HW calendar, alarms and calibration
 - LCD 8 x 40 or 4 x 44 with step-up converter
@@ -106,6 +106,8 @@ The Zephyr nucleo_l476rg board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
 +-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -146,6 +148,18 @@ Default Zephyr Peripheral Mapping:
 - UART_3_RX : PB11
 - I2C_1_SCL : PB6
 - I2C_1_SDA : PB7
+- SPI_1_NSS : PA4
+- SPI_1_SCK : PB3
+- SPI_1_MISO : PA6
+- SPI_1_MOSI : PA7
+- SPI_2_NSS : PB12
+- SPI_2_SCK : PB13
+- SPI_2_MISO : PB14
+- SPI_2_MOSI : PB15
+- SPI_3_NSS : PB12
+- SPI_3_SCK : PC10
+- SPI_3_MISO : PC11
+- SPI_3_MOSI : PC12
 - PWM_2_CH1 : PA0
 - USER_PB : PC13
 - LD2 : PA5

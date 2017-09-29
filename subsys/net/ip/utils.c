@@ -401,21 +401,28 @@ static u16_t calc_chksum(u16_t sum, const u8_t *ptr, u16_t len)
 }
 
 static inline u16_t calc_chksum_pkt(u16_t sum, struct net_pkt *pkt,
-				       u16_t upper_layer_len)
+				    u16_t upper_layer_len)
 {
-	struct net_buf *frag = pkt->frags;
 	u16_t proto_len = net_pkt_ip_hdr_len(pkt) +
 		net_pkt_ipv6_ext_len(pkt);
-	s16_t len = frag->len - proto_len;
-	u8_t *ptr = frag->data + proto_len;
+	struct net_buf *frag;
+	u16_t offset;
+	s16_t len;
+	u8_t *ptr;
 
 	ARG_UNUSED(upper_layer_len);
 
-	if (len < 0) {
-		NET_DBG("1st fragment len %u < IP header len %u",
-			frag->len, proto_len);
+	frag = net_frag_skip(pkt->frags, proto_len, &offset, 0);
+	if (!frag) {
+		NET_DBG("Trying to read past pkt len (proto len %d)",
+			proto_len);
 		return 0;
 	}
+
+	NET_ASSERT(offset <= frag->len);
+
+	ptr = frag->data + offset;
+	len = frag->len - offset;
 
 	while (frag) {
 		sum = calc_chksum(sum, ptr, len);
@@ -446,7 +453,7 @@ static inline u16_t calc_chksum_pkt(u16_t sum, struct net_pkt *pkt,
 u16_t net_calc_chksum(struct net_pkt *pkt, u8_t proto)
 {
 	u16_t upper_layer_len;
-	u16_t sum;
+	u16_t sum = 0;
 
 	switch (net_pkt_family(pkt)) {
 #if defined(CONFIG_NET_IPV4)
@@ -456,11 +463,7 @@ u16_t net_calc_chksum(struct net_pkt *pkt, u8_t proto)
 			net_pkt_ipv6_ext_len(pkt) -
 			net_pkt_ip_hdr_len(pkt);
 
-		if (proto == IPPROTO_ICMP) {
-			return htons(calc_chksum(0, net_pkt_ip_data(pkt) +
-						 net_pkt_ip_hdr_len(pkt),
-						 upper_layer_len));
-		} else {
+		if (proto != IPPROTO_ICMP) {
 			sum = calc_chksum(upper_layer_len + proto,
 					  (u8_t *)&NET_IPV4_HDR(pkt)->src,
 					  2 * sizeof(struct in_addr));
@@ -500,3 +503,230 @@ u16_t net_calc_chksum_ipv4(struct net_pkt *pkt)
 	return sum;
 }
 #endif /* CONFIG_NET_IPV4 */
+
+/* Check if the first fragment of the packet can hold certain size
+ * memory area. The start of the said area must be inside the first
+ * fragment. This helper is used when checking whether various protocol
+ * headers are split between two fragments.
+ */
+bool net_header_fits(struct net_pkt *pkt, u8_t *hdr, size_t hdr_size)
+{
+	if (hdr && hdr > pkt->frags->data &&
+	    (hdr + hdr_size) <= (pkt->frags->data + pkt->frags->len)) {
+		return true;
+	}
+
+	return false;
+}
+
+#if defined(CONFIG_NET_IPV6) || defined(CONFIG_NET_IPV4)
+static bool convert_port(const char *buf, u16_t *port)
+{
+	unsigned long tmp;
+	char *endptr;
+
+	tmp = strtoul(buf, &endptr, 10);
+	if ((endptr == buf && tmp == 0) ||
+	    !(*buf != '\0' && *endptr == '\0') ||
+	    ((unsigned long)(unsigned short)tmp != tmp)) {
+		return false;
+	}
+
+	*port = tmp;
+
+	return true;
+}
+#endif /* CONFIG_NET_IPV6 || CONFIG_NET_IPV4 */
+
+#if defined(CONFIG_NET_IPV6)
+static bool parse_ipv6(const char *str, size_t str_len,
+		       struct sockaddr *addr, bool has_port)
+{
+	char *ptr = NULL;
+	struct in6_addr *addr6;
+	char ipaddr[INET6_ADDRSTRLEN + 1];
+	int end, len, ret, i;
+	u16_t port;
+
+	len = min(INET6_ADDRSTRLEN, str_len);
+
+	for (i = 0; i < len; i++) {
+		if (!str[i]) {
+			len = i;
+			break;
+		}
+	}
+
+	if (has_port) {
+		/* IPv6 address with port number */
+		ptr = memchr(str, ']', len);
+		if (!ptr) {
+			return false;
+		}
+
+		end = min(len, ptr - (str + 1));
+		memcpy(ipaddr, str + 1, end);
+	} else {
+		end = len;
+		memcpy(ipaddr, str, end);
+	}
+
+	ipaddr[end] = '\0';
+
+	addr6 = &net_sin6(addr)->sin6_addr;
+
+	ret = net_addr_pton(AF_INET6, ipaddr, addr6);
+	if (ret < 0) {
+		return false;
+	}
+
+	net_sin6(addr)->sin6_family = AF_INET6;
+
+	if (!has_port) {
+		return true;
+	}
+
+	if ((ptr + 1) < (str + str_len) && *(ptr + 1) == ':') {
+		len = str_len - end;
+
+		/* Re-use the ipaddr buf for port conversion */
+		memcpy(ipaddr, ptr + 2, len);
+		ipaddr[len] = '\0';
+
+		ret = convert_port(ipaddr, &port);
+		if (!ret) {
+			return false;
+		}
+
+		net_sin6(addr)->sin6_port = htons(port);
+
+		NET_DBG("IPv6 host %s port %d",
+			net_addr_ntop(AF_INET6, addr6,
+				      ipaddr, sizeof(ipaddr) - 1),
+			port);
+	} else {
+		NET_DBG("IPv6 host %s",
+			net_addr_ntop(AF_INET6, addr6,
+				      ipaddr, sizeof(ipaddr) - 1));
+	}
+
+	return true;
+}
+#endif /* CONFIG_NET_IPV6 */
+
+#if defined(CONFIG_NET_IPV4)
+static bool parse_ipv4(const char *str, size_t str_len,
+		       struct sockaddr *addr, bool has_port)
+{
+	char *ptr = NULL;
+	char ipaddr[NET_IPV4_ADDR_LEN + 1];
+	struct in_addr *addr4;
+	int end, len, ret, i;
+	u16_t port;
+
+	len = min(NET_IPV4_ADDR_LEN, str_len);
+
+	for (i = 0; i < len; i++) {
+		if (!str[i]) {
+			len = i;
+			break;
+		}
+	}
+
+	if (has_port) {
+		/* IPv4 address with port number */
+		ptr = memchr(str, ':', len);
+		if (!ptr) {
+			return false;
+		}
+
+		end = min(len, ptr - str);
+	} else {
+		end = len;
+	}
+
+	memcpy(ipaddr, str, end);
+	ipaddr[end] = '\0';
+
+	addr4 = &net_sin(addr)->sin_addr;
+
+	ret = net_addr_pton(AF_INET, ipaddr, addr4);
+	if (ret < 0) {
+		return false;
+	}
+
+	net_sin(addr)->sin_family = AF_INET;
+
+	if (!has_port) {
+		return true;
+	}
+
+	memcpy(ipaddr, ptr + 1, str_len - end);
+	ipaddr[str_len - end] = '\0';
+
+	ret = convert_port(ipaddr, &port);
+	if (!ret) {
+		return false;
+	}
+
+	net_sin(addr)->sin_port = htons(port);
+
+	NET_DBG("IPv4 host %s port %d",
+		net_addr_ntop(AF_INET, addr4,
+			      ipaddr, sizeof(ipaddr) - 1),
+		port);
+	return true;
+}
+#endif /* CONFIG_NET_IPV4 */
+
+bool net_ipaddr_parse(const char *str, size_t str_len, struct sockaddr *addr)
+{
+	int i, count;
+
+	if (!str || str_len == 0) {
+		return false;
+	}
+
+	/* We cannot accept empty string here */
+	if (*str == '\0') {
+		return false;
+	}
+
+	if (*str == '[') {
+#if defined(CONFIG_NET_IPV6)
+		return parse_ipv6(str, str_len, addr, true);
+#else
+		return false;
+#endif /* CONFIG_NET_IPV6 */
+	}
+
+	for (count = i = 0; str[i] && i < str_len; i++) {
+		if (str[i] == ':') {
+			count++;
+		}
+	}
+
+	if (count == 1) {
+#if defined(CONFIG_NET_IPV4)
+		return parse_ipv4(str, str_len, addr, true);
+#else
+		return false;
+#endif /* CONFIG_NET_IPV4 */
+	}
+
+#if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_IPV6)
+	if (!parse_ipv4(str, str_len, addr, false)) {
+		return parse_ipv6(str, str_len, addr, false);
+	}
+
+	return true;
+#endif
+
+#if defined(CONFIG_NET_IPV4) && !defined(CONFIG_NET_IPV6)
+	return parse_ipv4(str, str_len, addr, false);
+#endif
+
+#if defined(CONFIG_NET_IPV6) && !defined(CONFIG_NET_IPV4)
+	return parse_ipv6(str, str_len, addr, false);
+#endif
+}

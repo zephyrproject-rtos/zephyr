@@ -1,3 +1,3 @@
 ccflags-y +=-I${ZEPHYR_BASE}/samples/bluetooth
 
-obj-y = main.o ble.o ../../../../bluetooth/gatt/gap.o
+obj-y = main.o ble.o

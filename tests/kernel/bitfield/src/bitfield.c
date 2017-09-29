@@ -9,14 +9,14 @@
 
 #include <tc_util.h>
 
-#define BIT_INDEX(bit)	(bit >> 3)
-#define BIT_VAL(bit)	(1 << (bit & 0x7))
-#define BITFIELD_SIZE	512
+#define BIT_INDEX(bit)  (bit >> 3)
+#define BIT_VAL(bit)    (1 << (bit & 0x7))
+#define BITFIELD_SIZE   512
 
 void main(void)
 {
 	u32_t b1 = 0;
-	unsigned char b2[BITFIELD_SIZE >> 3] = {0};
+	unsigned char b2[BITFIELD_SIZE >> 3] = { 0 };
 	int failed = 0;
 	int test_rv;
 	unsigned int bit;

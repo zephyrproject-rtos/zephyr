@@ -19,9 +19,11 @@ config TOOLCHAIN_VARIANT
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 32000000
 
+if !HAS_DTS
 config PHYS_LOAD_ADDR
 	default 0x00180000 if XIP
 	default 0x00280000 if !XIP
+endif
 
 config RAM_SIZE
 	default 8
@@ -41,10 +43,12 @@ config LOAPIC_TIMER_IRQ
 config LOAPIC_TIMER_IRQ_PRIORITY
 	default 2
 
+if !HAS_DTS
 config PHYS_RAM_ADDR
 	default 0x00280000
 	help
 	This option specifies the physical SRAM address of this Soc.
+endif
 
 config QMSI
 	def_bool y

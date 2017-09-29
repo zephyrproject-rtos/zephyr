@@ -31,6 +31,8 @@
 
 #include <string.h>
 
+#if !defined(MBEDTLS_ECP_ALT)
+
 #if ( defined(__ARMCC_VERSION) || defined(_MSC_VER) ) && \
     !defined(inline) && !defined(__cplusplus)
 #define inline __inline
@@ -1321,5 +1323,7 @@ static int ecp_mod_p256k1( mbedtls_mpi *N )
     return( ecp_mod_koblitz( N, Rp, 256 / 8 / sizeof( mbedtls_mpi_uint ), 0, 0, 0 ) );
 }
 #endif /* MBEDTLS_ECP_DP_SECP256K1_ENABLED */
+
+#endif /* !MBEDTLS_ECP_ALT */
 
 #endif /* MBEDTLS_ECP_C */

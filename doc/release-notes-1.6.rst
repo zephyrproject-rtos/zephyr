@@ -160,7 +160,7 @@ Test and Samples
 * Added philosophers unified sample.
 * Removed printf/printk wrappers.
 * Added Unified kernel API samples.
-* Imported tinycrypt test cases for CTR, ECC DSA and ECC DH algorithm.
+* Imported TinyCrypt test cases for CTR, ECC DSA and ECC DH algorithm.
 
 Deprecations
 ************
@@ -190,7 +190,7 @@ JIRA Related Items
 * :jira:`ZEP-584` - warn user if SDK is out of date
 * :jira:`ZEP-592` - Sanitycheck support for multiple toolchains
 * :jira:`ZEP-605` - SMP over BR/EDR
-* :jira:`ZEP-614` - Port tinycrypt 2.0 test cases to Zephyr
+* :jira:`ZEP-614` - Port TinyCrypt 2.0 test cases to Zephyr
 * :jira:`ZEP-622` - Add FS API to truncate/shrink a file
 * :jira:`ZEP-627` - Port Trickle support from Contiki into current stack
 * :jira:`ZEP-635` - Add FS API to grow a file
@@ -322,9 +322,9 @@ JIRA Related Items
 * :jira:`ZEP-1130` - region 'RAM' overflowed occurs while building test_hmac_prng
 * :jira:`ZEP-1138` - Received packets not being passed to upper layer from IP stack when using ENC28J60 driver
 * :jira:`ZEP-1139` - Fix build error when power management is built with unified kernel
-* :jira:`ZEP-1141` - Tinycrypt SHA256 test fails with system crash using unified kernel type
-* :jira:`ZEP-1144` - Tinycrypt AES128 fixed-key with variable-text test fails using unified kernel type
-* :jira:`ZEP-1145` - system hang after tinycrypt HMAC test
+* :jira:`ZEP-1141` - TinyCrypt SHA256 test fails with system crash using unified kernel type
+* :jira:`ZEP-1144` - TinyCrypt AES128 fixed-key with variable-text test fails using unified kernel type
+* :jira:`ZEP-1145` - system hang after TinyCrypt HMAC test
 * :jira:`ZEP-1146` - zephyrproject.org home page needs technical scrub for 1.6 release
 * :jira:`ZEP-1149` - port ztest framework to unified kernel
 * :jira:`ZEP-1154` - tests/samples failing with unified kernel

@@ -9,6 +9,7 @@ menuconfig UART_NRF5
 	bool "Nordic Semiconductor NRF5 family processor UART driver"
 	default n
 	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
 	depends on SOC_FAMILY_NRF5
 	select GPIO_NRF5
 	help

@@ -108,11 +108,11 @@ static inline void _handle_one_expired_timeout(struct _timeout *timeout)
 
 static inline void _handle_expired_timeouts(sys_dlist_t *expired)
 {
-	sys_dnode_t *timeout, *next;
+	struct _timeout *timeout, *next;
 
-	SYS_DLIST_FOR_EACH_NODE_SAFE(expired, timeout, next) {
-		sys_dlist_remove(timeout);
-		_handle_one_expired_timeout((struct _timeout *)timeout);
+	SYS_DLIST_FOR_EACH_CONTAINER_SAFE(expired, timeout, next, node) {
+		sys_dlist_remove(&timeout->node);
+		_handle_one_expired_timeout(timeout);
 	}
 }
 
@@ -161,13 +161,13 @@ static inline void _dump_timeout(struct _timeout *timeout, int extra_tab)
 static inline void _dump_timeout_q(void)
 {
 #ifdef CONFIG_KERNEL_DEBUG
-	sys_dnode_t *node;
+	struct _timeout *timeout;
 
 	K_DEBUG("_timeout_q: %p, head: %p, tail: %p\n",
 		&_timeout_q, _timeout_q.head, _timeout_q.tail);
 
-	SYS_DLIST_FOR_EACH_NODE(&_timeout_q, node) {
-		_dump_timeout((struct _timeout *)node, 1);
+	SYS_DLIST_FOR_EACH_CONTAINER(&_timeout_q, timeout, node) {
+		_dump_timeout(timeout, 1);
 	}
 #endif
 }
@@ -197,7 +197,7 @@ static inline void _add_timeout(struct k_thread *thread,
 				_wait_q_t *wait_q,
 				s32_t timeout_in_ticks)
 {
-	__ASSERT(timeout_in_ticks > 0, "");
+	__ASSERT(timeout_in_ticks >= 0, "");
 
 	timeout->delta_ticks_from_prev = timeout_in_ticks;
 	timeout->thread = thread;
@@ -206,6 +206,16 @@ static inline void _add_timeout(struct k_thread *thread,
 	K_DEBUG("before adding timeout %p\n", timeout);
 	_dump_timeout(timeout, 0);
 	_dump_timeout_q();
+
+	/* If timer is submitted to expire ASAP with
+	 * timeout_in_ticks (duration) as zero value,
+	 * then handle timeout immedately without going
+	 * through timeout queue.
+	 */
+	if (!timeout_in_ticks) {
+		_handle_one_expired_timeout(timeout);
+		return;
+	}
 
 	s32_t *delta = &timeout->delta_ticks_from_prev;
 	struct _timeout *in_q;

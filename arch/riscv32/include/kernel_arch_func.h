@@ -27,7 +27,8 @@ void k_cpu_atomic_idle(unsigned int key);
 
 static ALWAYS_INLINE void kernel_arch_init(void)
 {
-	_kernel.irq_stack = _interrupt_stack + CONFIG_ISR_STACK_SIZE;
+	_kernel.irq_stack =
+		K_THREAD_STACK_BUFFER(_interrupt_stack) + CONFIG_ISR_STACK_SIZE;
 }
 
 static ALWAYS_INLINE void

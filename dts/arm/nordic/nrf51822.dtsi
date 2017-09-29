@@ -3,16 +3,33 @@
 
 / {
 	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
 		cpu@0 {
+			device_type = "cpu";
 			compatible = "arm,cortex-m0";
+			reg = <0>;
 		};
 	};
 
-	flash0: flash {
-		reg = <0x00000000 DT_FLASH_SIZE>;
+	flash-controller@4001E000 {
+			compatible = "nrf,nrf51-flash-controller";
+			reg = <0x4001E000 0x518>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				reg = <0x00000000 DT_FLASH_SIZE>;
+				write-block-size = <4>;
+			};
 	};
 
-	sram0: memory {
+	sram0: memory@20000000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
 		reg = <0x20000000 DT_SRAM_SIZE>;
 	};
 

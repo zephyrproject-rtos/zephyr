@@ -77,6 +77,8 @@ The Zephyr nucleo_401re board configuration supports the following hardware feat
 +-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
 +-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
 
@@ -129,6 +131,13 @@ Serial Port
 Nucleo F401RE board has 3 UARTs. The Zephyr console output is assigned to UART2.
 Default settings are 115200 8N1.
 
+I2C
+===
+
+Nucleo F401RE board has up to 3 I2Cs. The default I2C mapping for Zephyr is:
+
+- I2C1_SCL : PB8
+- I2C1_SDA : PB9
 
 Programming and Debugging
 *************************

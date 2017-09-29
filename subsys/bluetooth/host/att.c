@@ -20,7 +20,7 @@
 #include <bluetooth/gatt.h>
 #include <bluetooth/hci_driver.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_ATT)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_ATT)
 #include "common/log.h"
 
 #include "hci_core.h"
@@ -59,16 +59,16 @@ typedef enum __packed {
 
 static att_type_t att_op_get_type(u8_t op);
 
-#if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
+#if CONFIG_BT_ATT_PREPARE_COUNT > 0
 struct bt_attr_data {
 	u16_t handle;
 	u16_t offset;
 };
 
 /* Pool for incoming ATT packets */
-NET_BUF_POOL_DEFINE(prep_pool, CONFIG_BLUETOOTH_ATT_PREPARE_COUNT, BT_ATT_MTU,
+NET_BUF_POOL_DEFINE(prep_pool, CONFIG_BT_ATT_PREPARE_COUNT, BT_ATT_MTU,
 		    sizeof(struct bt_attr_data), NULL);
-#endif /* CONFIG_BLUETOOTH_ATT_PREPARE_COUNT */
+#endif /* CONFIG_BT_ATT_PREPARE_COUNT */
 
 enum {
 	ATT_PENDING_RSP,
@@ -88,12 +88,12 @@ struct bt_att {
 	sys_slist_t		reqs;
 	struct k_delayed_work	timeout_work;
 	struct k_sem            tx_sem;
-#if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
+#if CONFIG_BT_ATT_PREPARE_COUNT > 0
 	struct k_fifo		prep_queue;
 #endif
 };
 
-static struct bt_att bt_req_pool[CONFIG_BLUETOOTH_MAX_CONN];
+static struct bt_att bt_req_pool[CONFIG_BT_MAX_CONN];
 
 static void att_req_destroy(struct bt_att_req *req)
 {
@@ -126,9 +126,9 @@ static void att_cfm_sent(struct bt_conn *conn)
 
 	BT_DBG("conn %p att %p", conn, att);
 
-#if defined(CONFIG_BLUETOOTH_ATT_ENFORCE_FLOW)
+#if defined(CONFIG_BT_ATT_ENFORCE_FLOW)
 	atomic_clear_bit(att->flags, ATT_PENDING_CFM);
-#endif /* CONFIG_BLUETOOTH_ATT_ENFORCE_FLOW */
+#endif /* CONFIG_BT_ATT_ENFORCE_FLOW */
 
 	k_sem_give(&att->tx_sem);
 }
@@ -139,9 +139,9 @@ static void att_rsp_sent(struct bt_conn *conn)
 
 	BT_DBG("conn %p att %p", conn, att);
 
-#if defined(CONFIG_BLUETOOTH_ATT_ENFORCE_FLOW)
+#if defined(CONFIG_BT_ATT_ENFORCE_FLOW)
 	atomic_clear_bit(att->flags, ATT_PENDING_RSP);
-#endif /* CONFIG_BLUETOOTH_ATT_ENFORCE_FLOW */
+#endif /* CONFIG_BT_ATT_ENFORCE_FLOW */
 
 	k_sem_give(&att->tx_sem);
 }
@@ -155,7 +155,9 @@ static void att_req_sent(struct bt_conn *conn)
 	k_sem_give(&att->tx_sem);
 
 	/* Start timeout work */
-	k_delayed_work_submit(&att->timeout_work, ATT_TIMEOUT);
+	if (att->req) {
+		k_delayed_work_submit(&att->timeout_work, ATT_TIMEOUT);
+	}
 }
 
 static void att_pdu_sent(struct bt_conn *conn)
@@ -677,23 +679,23 @@ static u8_t check_perm(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 	mask &= attr->perm;
 	if (mask & BT_GATT_PERM_AUTHEN_MASK) {
-#if defined(CONFIG_BLUETOOTH_SMP)
+#if defined(CONFIG_BT_SMP)
 		if (conn->sec_level < BT_SECURITY_HIGH) {
 			return BT_ATT_ERR_AUTHENTICATION;
 		}
 #else
 		return BT_ATT_ERR_AUTHENTICATION;
-#endif /* CONFIG_BLUETOOTH_SMP */
+#endif /* CONFIG_BT_SMP */
 	}
 
 	if ((mask & BT_GATT_PERM_ENCRYPT_MASK)) {
-#if defined(CONFIG_BLUETOOTH_SMP)
+#if defined(CONFIG_BT_SMP)
 		if (!conn->encrypt) {
 			return BT_ATT_ERR_INSUFFICIENT_ENCRYPTION;
 		}
 #else
 		return BT_ATT_ERR_INSUFFICIENT_ENCRYPTION;
-#endif /* CONFIG_BLUETOOTH_SMP */
+#endif /* CONFIG_BT_SMP */
 	}
 
 	return 0;
@@ -1270,7 +1272,7 @@ static u8_t att_write_req(struct bt_att *att, struct net_buf *buf)
 			     handle, 0, buf->data, buf->len);
 }
 
-#if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
+#if CONFIG_BT_ATT_PREPARE_COUNT > 0
 struct prep_data {
 	struct bt_conn *conn;
 	struct net_buf *buf;
@@ -1374,11 +1376,11 @@ static u8_t att_prep_write_rsp(struct bt_att *att, u16_t handle, u16_t offset,
 
 	return 0;
 }
-#endif /* CONFIG_BLUETOOTH_ATT_PREPARE_COUNT */
+#endif /* CONFIG_BT_ATT_PREPARE_COUNT */
 
 static u8_t att_prepare_write_req(struct bt_att *att, struct net_buf *buf)
 {
-#if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT == 0
+#if CONFIG_BT_ATT_PREPARE_COUNT == 0
 	return BT_ATT_ERR_NOT_SUPPORTED;
 #else
 	struct bt_att_prepare_write_req *req;
@@ -1393,10 +1395,10 @@ static u8_t att_prepare_write_req(struct bt_att *att, struct net_buf *buf)
 	BT_DBG("handle 0x%04x offset %u", handle, offset);
 
 	return att_prep_write_rsp(att, handle, offset, buf->data, buf->len);
-#endif /* CONFIG_BLUETOOTH_ATT_PREPARE_COUNT */
+#endif /* CONFIG_BT_ATT_PREPARE_COUNT */
 }
 
-#if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
+#if CONFIG_BT_ATT_PREPARE_COUNT > 0
 static u8_t att_exec_write_rsp(struct bt_att *att, u8_t flags)
 {
 	struct bt_conn *conn = att->chan.chan.conn;
@@ -1438,12 +1440,12 @@ static u8_t att_exec_write_rsp(struct bt_att *att, u8_t flags)
 
 	return 0;
 }
-#endif /* CONFIG_BLUETOOTH_ATT_PREPARE_COUNT */
+#endif /* CONFIG_BT_ATT_PREPARE_COUNT */
 
 
 static u8_t att_exec_write_req(struct bt_att *att, struct net_buf *buf)
 {
-#if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT == 0
+#if CONFIG_BT_ATT_PREPARE_COUNT == 0
 	return BT_ATT_ERR_NOT_SUPPORTED;
 #else
 	struct bt_att_exec_write_req *req;
@@ -1453,7 +1455,7 @@ static u8_t att_exec_write_req(struct bt_att *att, struct net_buf *buf)
 	BT_DBG("flags 0x%02x", req->flags);
 
 	return att_exec_write_rsp(att, req->flags);
-#endif /* CONFIG_BLUETOOTH_ATT_PREPARE_COUNT */
+#endif /* CONFIG_BT_ATT_PREPARE_COUNT */
 }
 
 static u8_t att_write_cmd(struct bt_att *att, struct net_buf *buf)
@@ -1497,7 +1499,7 @@ static u8_t att_signed_write_cmd(struct bt_att *att, struct net_buf *buf)
 			     buf->len - sizeof(struct bt_att_signature));
 }
 
-#if defined(CONFIG_BLUETOOTH_SMP)
+#if defined(CONFIG_BT_SMP)
 static int att_change_security(struct bt_conn *conn, u8_t err)
 {
 	bt_security_t sec;
@@ -1557,7 +1559,7 @@ static int att_change_security(struct bt_conn *conn, u8_t err)
 
 	return bt_conn_security(conn, sec);
 }
-#endif /* CONFIG_BLUETOOTH_SMP */
+#endif /* CONFIG_BT_SMP */
 
 static u8_t att_error_rsp(struct bt_att *att, struct net_buf *buf)
 {
@@ -1580,7 +1582,7 @@ static u8_t att_error_rsp(struct bt_att *att, struct net_buf *buf)
 	}
 
 	err = rsp->error;
-#if defined(CONFIG_BLUETOOTH_SMP)
+#if defined(CONFIG_BT_SMP)
 	if (att->req->retrying) {
 		goto done;
 	}
@@ -1591,7 +1593,7 @@ static u8_t att_error_rsp(struct bt_att *att, struct net_buf *buf)
 		/* Wait security_changed: TODO: Handle fail case */
 		return 0;
 	}
-#endif /* CONFIG_BLUETOOTH_SMP */
+#endif /* CONFIG_BT_SMP */
 
 done:
 	return att_handle_rsp(att, NULL, 0, err);
@@ -1871,7 +1873,7 @@ static void bt_att_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return;
 	}
 
-	if (IS_ENABLED(CONFIG_BLUETOOTH_ATT_ENFORCE_FLOW)) {
+	if (IS_ENABLED(CONFIG_BT_ATT_ENFORCE_FLOW)) {
 		if (handler->type == ATT_REQUEST &&
 		    atomic_test_and_set_bit(att->flags, ATT_PENDING_RSP)) {
 			BT_WARN("Ignoring unexpected request");
@@ -1951,7 +1953,7 @@ static void att_reset(struct bt_att *att)
 {
 	struct bt_att_req *req, *tmp;
 	int i;
-#if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
+#if CONFIG_BT_ATT_PREPARE_COUNT > 0
 	struct net_buf *buf;
 
 	/* Discard queued buffers */
@@ -1963,7 +1965,7 @@ static void att_reset(struct bt_att *att)
 	atomic_set_bit(att->flags, ATT_DISCONNECTED);
 
 	/* Ensure that any waiters are woken up */
-	for (i = 0; i < CONFIG_BLUETOOTH_ATT_TX_MAX; i++) {
+	for (i = 0; i < CONFIG_BT_ATT_TX_MAX; i++) {
 		k_sem_give(&att->tx_sem);
 	}
 
@@ -2016,7 +2018,7 @@ static void bt_att_connected(struct bt_l2cap_chan *chan)
 
 	BT_DBG("chan %p cid 0x%04x", ch, ch->tx.cid);
 
-#if CONFIG_BLUETOOTH_ATT_PREPARE_COUNT > 0
+#if CONFIG_BT_ATT_PREPARE_COUNT > 0
 	k_fifo_init(&att->prep_queue);
 #endif
 
@@ -2042,7 +2044,7 @@ static void bt_att_disconnected(struct bt_l2cap_chan *chan)
 	memset(att, 0, sizeof(*att));
 }
 
-#if defined(CONFIG_BLUETOOTH_SMP)
+#if defined(CONFIG_BT_SMP)
 static void bt_att_encrypt_change(struct bt_l2cap_chan *chan,
 				  u8_t hci_status)
 {
@@ -2084,7 +2086,7 @@ static void bt_att_encrypt_change(struct bt_l2cap_chan *chan,
 			 att_cb(att->req->buf));
 	att->req->buf = NULL;
 }
-#endif /* CONFIG_BLUETOOTH_SMP */
+#endif /* CONFIG_BT_SMP */
 
 static int bt_att_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 {
@@ -2093,9 +2095,9 @@ static int bt_att_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 		.connected = bt_att_connected,
 		.disconnected = bt_att_disconnected,
 		.recv = bt_att_recv,
-#if defined(CONFIG_BLUETOOTH_SMP)
+#if defined(CONFIG_BT_SMP)
 		.encrypt_change = bt_att_encrypt_change,
-#endif /* CONFIG_BLUETOOTH_SMP */
+#endif /* CONFIG_BT_SMP */
 	};
 
 	BT_DBG("conn %p handle %u", conn, conn->handle);
@@ -2109,8 +2111,8 @@ static int bt_att_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 
 		att->chan.chan.ops = &ops;
 		atomic_set(att->flags, 0);
-		k_sem_init(&att->tx_sem, CONFIG_BLUETOOTH_ATT_TX_MAX,
-			   CONFIG_BLUETOOTH_ATT_TX_MAX);
+		k_sem_init(&att->tx_sem, CONFIG_BT_ATT_TX_MAX,
+			   CONFIG_BT_ATT_TX_MAX);
 
 		*chan = &att->chan.chan;
 
@@ -2130,6 +2132,8 @@ void bt_att_init(void)
 	};
 
 	bt_l2cap_le_fixed_chan_register(&chan);
+
+	bt_gatt_init();
 }
 
 u16_t bt_att_get_mtu(struct bt_conn *conn)

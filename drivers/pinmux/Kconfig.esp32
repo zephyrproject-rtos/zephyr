@@ -1,0 +1,15 @@
+# Kconfig.esp32 - ESP32 Pin mux configuration options
+#
+#
+# Copyright (c) 2017 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig PINMUX_ESP32
+	bool "ESP32 Pin multiplexer driver"
+	depends on PINMUX && SOC_ESP32
+	default n
+	help
+	Enable driver for ESP32 Pin multiplexer.
+

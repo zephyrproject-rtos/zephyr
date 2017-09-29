@@ -18,14 +18,13 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/gatt.h>
 
-#include <gatt/gap.h>
 
 #include "pong.h"
 
 #define SCAN_TIMEOUT     K_SECONDS(2)
 
 #define APPEARANCE       0
-#define DEVICE_NAME      CONFIG_BLUETOOTH_DEVICE_NAME
+#define DEVICE_NAME      CONFIG_BT_DEVICE_NAME
 #define DEVICE_NAME_LEN  (sizeof(DEVICE_NAME) - 1)
 
 #define PONG_SVC_UUID	0x90, 0x6c, 0x55, 0x0f, 0xee, 0x6f, 0x4d, 0x0d, \
@@ -398,7 +397,7 @@ static u32_t adv_timeout(void)
 {
 	u32_t timeout;
 
-	if (bt_rand(&timeout, sizeof(timeout) < 0)) {
+	if (bt_rand(&timeout, sizeof(timeout)) < 0) {
 		return K_SECONDS(10);
 	}
 
@@ -504,7 +503,7 @@ static void ble_timeout(struct k_work *work)
 	}
 }
 
-static struct bt_gatt_ccc_cfg pong_ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED];
+static struct bt_gatt_ccc_cfg pong_ccc_cfg[BT_GATT_CCC_MAX];
 
 static void pong_ccc_cfg_changed(const struct bt_gatt_attr *attr, u16_t val)
 {
@@ -526,6 +525,8 @@ static struct bt_gatt_attr pong_attrs[] = {
 	BT_GATT_CCC(pong_ccc_cfg, pong_ccc_cfg_changed),
 };
 
+static struct bt_gatt_service pong_svc = BT_GATT_SERVICE(pong_attrs);
+
 void ble_init(void)
 {
 	int err;
@@ -540,8 +541,7 @@ void ble_init(void)
 
 	bt_conn_cb_register(&conn_callbacks);
 
-	gap_init(DEVICE_NAME, APPEARANCE);
 
 	local_attr = &pong_attrs[2];
-	bt_gatt_register(pong_attrs, ARRAY_SIZE(pong_attrs));
+	bt_gatt_service_register(&pong_svc);
 }

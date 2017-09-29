@@ -16,20 +16,16 @@
 #include <ztest.h>
 
 /*test case main entry*/
-void test_main(void *p1, void *p2, void *p3)
+void test_main(void)
 {
-	ARG_UNUSED(p1);
-	ARG_UNUSED(p2);
-	ARG_UNUSED(p3);
-
 	ztest_test_suite(test_timer_api,
-		ztest_unit_test(test_timer_duration_period),
-		ztest_unit_test(test_timer_period_0),
-		ztest_unit_test(test_timer_expirefn_null),
-		ztest_unit_test(test_timer_status_get),
-		ztest_unit_test(test_timer_status_get_anytime),
-		ztest_unit_test(test_timer_status_sync),
-		ztest_unit_test(test_timer_k_define),
-		ztest_unit_test(test_timer_user_data));
+			 ztest_unit_test(test_timer_duration_period),
+			 ztest_unit_test(test_timer_period_0),
+			 ztest_unit_test(test_timer_expirefn_null),
+			 ztest_unit_test(test_timer_status_get),
+			 ztest_unit_test(test_timer_status_get_anytime),
+			 ztest_unit_test(test_timer_status_sync),
+			 ztest_unit_test(test_timer_k_define),
+			 ztest_unit_test(test_timer_user_data));
 	ztest_run_test_suite(test_timer_api);
 }

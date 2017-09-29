@@ -19,24 +19,7 @@ config UART_SAM_PORT_0
 	depends on UART_SAM
 	default n
 	help
-	  Configure UART0 at boot depending on the additional options below.
-
-if UART_SAM_PORT_0
-
-config UART_SAM_PORT_0_NAME
-	string "UART0 Device Name"
-	default "UART_0"
-	help
-	  Device name allows user to obtain a handle to the device object
-	  required by all driver API functions. Device name has to be unique.
-
-config UART_SAM_PORT_0_BAUD_RATE
-	int "UART0 Baud Rate"
-	default 115200
-	help
-	  UART0 baud rate to be set at boot.
-
-endif # UART_SAM_PORT_0
+	  Enable UART0 at boot.
 
 # ---------- Port 1 ----------
 
@@ -45,22 +28,9 @@ config UART_SAM_PORT_1
 	depends on UART_SAM
 	default n
 	help
-	  Configure UART1 at boot depending on the additional options below.
+	  Enable UART1 at boot.
 
 if UART_SAM_PORT_1
-
-config UART_SAM_PORT_1_NAME
-	string "UART1 Device Name"
-	default "UART_1"
-	help
-	  Device name allows user to obtain a handle to the device object
-	  required by all driver API functions. Device name has to be unique.
-
-config UART_SAM_PORT_1_BAUD_RATE
-	int "UART1 Baud Rate"
-	default 115200
-	help
-	  UART1 baud rate to be set at boot.
 
 choice UART_SAME70_PORT_1_PIN_TX
 	prompt "TX pin"
@@ -85,24 +55,7 @@ config UART_SAM_PORT_2
 	depends on UART_SAM
 	default n
 	help
-	  Configure UART2 at boot depending on the additional options below.
-
-if UART_SAM_PORT_2
-
-config UART_SAM_PORT_2_NAME
-	string "UART2 Device Name"
-	default "UART_2"
-	help
-	  Device name allows user to obtain a handle to the device object
-	  required by all driver API functions. Device name has to be unique.
-
-config UART_SAM_PORT_2_BAUD_RATE
-	int "UART2 Baud Rate"
-	default 115200
-	help
-	  UART2 baud rate to be set at boot.
-
-endif # UART_SAM_PORT_2
+	  Enable UART2 at boot
 
 # ---------- Port 3 ----------
 
@@ -111,22 +64,9 @@ config UART_SAM_PORT_3
 	depends on UART_SAM
 	default n
 	help
-	  Configure UART3 at boot depending on the additional options below.
+	  Enable UART3 at boot
 
 if UART_SAM_PORT_3
-
-config UART_SAM_PORT_3_NAME
-	string "UART3 Device Name"
-	default "UART_3"
-	help
-	  Device name allows user to obtain a handle to the device object
-	  required by all driver API functions. Device name has to be unique.
-
-config UART_SAM_PORT_3_BAUD_RATE
-	int "UART3 Baud Rate"
-	default 115200
-	help
-	  UART3 baud rate to be set at boot.
 
 choice UART_SAME70_PORT_3_PIN_TX
 	prompt "TX pin"
@@ -148,22 +88,9 @@ config UART_SAM_PORT_4
 	depends on UART_SAM
 	default n
 	help
-	  Configure UART4 at boot depending on the additional options below.
+	  Enable UART4 at boot
 
 if UART_SAM_PORT_4
-
-config UART_SAM_PORT_4_NAME
-	string "UART4 Device Name"
-	default "UART_4"
-	help
-	  Device name allows user to obtain a handle to the device object
-	  required by all driver API functions. Device name has to be unique.
-
-config UART_SAM_PORT_4_BAUD_RATE
-	int "UART4 Baud Rate"
-	default 115200
-	help
-	  UART4 baud rate to be set at boot.
 
 choice UART_SAME70_PORT_4_PIN_TX
 	prompt "TX pin"

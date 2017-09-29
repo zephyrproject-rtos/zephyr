@@ -1,7 +1,7 @@
 /* ieee802154_mcr20a_regs.h - Registers definition for NXP MCR20A */
 
 /*
- * Copyright (c) 2016 Intel Corporation.
+ * Copyright (c) 2017 PHYTEC Messtechnik GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
  *

@@ -1,0 +1,8 @@
+identifier: stm32_min_dev
+name: STM32-MIN-DEV
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb
+ram: 20

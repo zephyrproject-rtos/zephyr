@@ -124,8 +124,8 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 		}
 
 		net_analyze_stack("nRF5 rx stack",
-				  (unsigned char *)nrf5_radio->rx_stack,
-				  CONFIG_IEEE802154_NRF5_RX_STACK_SIZE);
+				  K_THREAD_STACK_BUFFER(nrf5_radio->rx_stack),
+				  K_THREAD_STACK_SIZEOF(nrf5_radio->rx_stack));
 		continue;
 
 out:

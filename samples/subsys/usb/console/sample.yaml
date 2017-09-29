@@ -1,0 +1,9 @@
+sample:
+    description: TBD
+    name: TBD
+tests:
+-   test:
+        build_only: true
+        platform_whitelist: arduino_101
+        tags: usb
+        depends_on: usb_device

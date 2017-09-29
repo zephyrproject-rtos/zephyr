@@ -16,6 +16,13 @@ menuconfig FLASH
 	help
 	  Enable support for the flash hardware.
 
+config FLASH_PAGE_LAYOUT
+	bool "API for retrieving the layout of pages"
+	depends on FLASH
+	default n
+	help
+	  Enables API for retrieving the layout of flash memory pages.
+
 config SPI_FLASH_W25QXXDV
 	bool
 	prompt "SPI NOR Flash Winbond W25QXXDV"
@@ -129,6 +136,13 @@ config SOC_FLASH_NRF5_DEV_NAME
 	default "NRF5_FLASH"
 	help
 	  Specify the device name for the flash driver.
+
+config SOC_FLASH_NRF5_RADIO_SYNC
+	bool "Nordic nRF5x flash driver synchronized with radio"
+	depends on SOC_FLASH_NRF5 && BT_CTLR
+	default y
+	help
+	  Enable synchronization between flash memory driver and radio.
 
 config SOC_FLASH_MCUX
 	bool "MCUX flash shim driver"

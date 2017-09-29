@@ -56,7 +56,7 @@ static void double_interval_timeout(struct k_work *work)
 						   timer);
 	u32_t rand_time;
 
-#if defined(CONFIG_NET_DEBUG_TRICKLE)
+#if defined(CONFIG_NET_DEBUG_TRICKLE) && (CONFIG_SYS_LOG_NET_LEVEL > 2)
 	u32_t last_end = get_end(trickle);
 #endif
 
@@ -97,7 +97,7 @@ static inline void reschedule(struct net_trickle *trickle)
 	NET_DBG("now %d end in %d", now, diff);
 
 	/* Did the clock wrap */
-	if (diff > (TICK_MAX >> 1)) {
+	if ((s32_t)diff < 0) {
 		diff = 0;
 		NET_DBG("Clock wrap");
 	}
@@ -162,6 +162,8 @@ int net_trickle_create(struct net_trickle *trickle,
 	trickle->Imax = Imax;
 	trickle->Imax_abs = Imin << Imax;
 	trickle->k = k;
+
+	NET_ASSERT(trickle->Imax_abs);
 
 	NET_DBG("Imin %d Imax %u k %u Imax_abs %d",
 		trickle->Imin, trickle->Imax, trickle->k,

@@ -13,6 +13,10 @@ If a CNAME is received, the DNS resolver will create another DNS query.
 The number of additional queries is controlled by the
 DNS_RESOLVER_ADDITIONAL_QUERIES Kconfig variable.
 
+The multicast DNS (mDNS) client resolver support can be enabled by setting
+CONFIG_MDNS_RESOLVER Kconfig variable.
+See https://tools.ietf.org/html/rfc6762 for more details about mDNS.
+
 For more information about DNS configuration variables, see:
 :file:`subsys/net/lib/dns/Kconfig`. The DNS resolver API can be found at
 :file:`include/net/dns_resolve.h`. The sample code can be found at:
@@ -21,7 +25,7 @@ For more information about DNS configuration variables, see:
 Requirements
 ************
 
-- :ref:`networking with Qemu <networking_with_qemu>`
+- :ref:`networking_with_qemu`
 
 - screen terminal emulator or equivalent.
 
@@ -33,27 +37,6 @@ Requirements
 
     dnsmasq -v
     Dnsmasq version 2.76  Copyright (c) 2000-2016 Simon Kelley
-
-
-Wiring
-******
-
-The ENC28J60 module is an Ethernet device with SPI interface.
-The following pins must be connected from the ENC28J60 device to the
-Arduino 101 board:
-
-===========	===================================
-Arduino 101	ENC28J60 (pin numbers on the board)
-===========	===================================
-D13		SCK  (1)
-D12		SO   (3)
-D11		SI   (2)
-D10		CS   (7)
-D04		INT  (5)
-3.3V		VCC  (10)
-GDN		GND  (9)
-===========	===================================
-
 
 Building and Running
 ********************
@@ -74,7 +57,6 @@ for example:
 	CONFIG_NET_APP_MY_IPV6_ADDR="2001:db8::1"
 	CONFIG_NET_APP_PEER_IPV6_ADDR="2001:db8::2"
 
-
 are the IPv6 addresses for the DNS client running Zephyr and the DNS server,
 respectively.
 
@@ -82,22 +64,31 @@ DNS server
 ==========
 
 The dnsmasq tool may be used for testing purposes. Sample dnsmasq start
-script can be found in net-tools project.
-
-The net-tools can be downloaded from
-
-    https://github.com/zephyrproject-rtos/net-tools
-
+script can be downloaded from the zephyrproject-rtos/net-tools project area:
+https://github.com/zephyrproject-rtos/net-tools
 
 Open a terminal window and type:
 
 .. code-block:: console
 
     $ cd net-tools
-    $ ./dnsmasq.sh
+    $ sudo ./dnsmasq.sh
 
+The default project configurations settings for this sample uses the public
+Google DNS servers.  In order to use the local dnsmasq server, please edit
+the appropriate 'prj.conf' file and update the DNS server addresses.  For
+instance, if using the usual IP addresses assigned to testing, update them
+to the following values:
 
-NOTE: some systems may require root privileges to run dnsmaq, use sudo or su.
+.. code-block:: console
+
+    CONFIG_DNS_SERVER1="192.0.2.2:5353"
+    CONFIG_DNS_SERVER2="[2001:db8::2]:5353"
+
+.. note::
+    DNS uses port 53 by default, but the dnsmasq.conf file provided by
+    net-tools uses port 5353 to allow executing the daemon without
+    superuser privileges.
 
 If dnsmasq fails to start with an error like this:
 
@@ -105,38 +96,25 @@ If dnsmasq fails to start with an error like this:
 
     dnsmasq: failed to create listening socket for port 5353: Address already in use
 
-
 Open a terminal window and type:
 
 .. code-block:: console
 
     $ killall -s KILL dnsmasq
 
-
 Try to launch the dnsmasq application again.
 
+For testing mDNS, use Avahi script in net-tools project:
+
+.. code-block:: console
+
+    $ cd net-tools
+    $ ./avahi-daemon.sh
 
 QEMU x86
 ========
 
-Open a terminal window and type:
-
-.. code-block:: console
-
-    $ make
-
-
-Run 'loop_socat.sh' and 'loop-slip-tap.sh' as shown in the net-tools README
-at:
-
-    https://github.com/zephyrproject-rtos/net-tools
-
-
-Open a terminal where the project was build (i.e. :file:`samples/net/dns_resolve`) and type:
-
-.. code-block:: console
-
-    $ make run
+To use QEMU for testing, follow the :ref:`networking_with_qemu` guide.
 
 
 FRDM K64F
@@ -194,3 +172,19 @@ Open a terminal window and type:
 Use 'dmesg' to find the right USB device.
 
 Once the binary is loaded into the Arduino 101 board, press the RESET button.
+
+The ENC28J60 module is an Ethernet device with SPI interface.
+The following pins must be connected from the ENC28J60 device to the
+Arduino 101 board:
+
+===========    ===================================
+Arduino 101    ENC28J60 (pin numbers on the board)
+===========    ===================================
+D13            SCK  (1)
+D12            SO   (3)
+D11            SI   (2)
+D10            CS   (7)
+D04            INT  (5)
+3.3V           VCC  (10)
+GDN            GND  (9)
+===========    ===================================

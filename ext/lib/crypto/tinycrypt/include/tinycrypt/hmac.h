@@ -1,7 +1,7 @@
 /* hmac.h - TinyCrypt interface to an HMAC implementation */
 
 /*
- *  Copyright (C) 2015 by Intel Corporation, All Rights Reserved.
+ *  Copyright (C) 2017 by Intel Corporation, All Rights Reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -89,9 +89,8 @@ typedef struct tc_hmac_state_struct *TCHmacState_t;
  * @param key IN -- the HMAC key to configure
  * @param key_size IN -- the HMAC key size
  */
-int32_t tc_hmac_set_key(TCHmacState_t ctx,
-			const uint8_t *key,
-			uint32_t key_size);
+int tc_hmac_set_key(TCHmacState_t ctx, const uint8_t *key,
+		    unsigned int key_size);
 
 /**
  * @brief HMAC init procedure
@@ -100,7 +99,7 @@ int32_t tc_hmac_set_key(TCHmacState_t ctx,
  *         returns TC_CRYPTO_FAIL (0) if: ctx == NULL or key == NULL
  * @param ctx IN/OUT -- struct tc_hmac_state_struct buffer to init
  */
-int32_t tc_hmac_init(TCHmacState_t ctx);
+int tc_hmac_init(TCHmacState_t ctx);
 
 /**
  *  @brief HMAC update procedure
@@ -112,9 +111,8 @@ int32_t tc_hmac_init(TCHmacState_t ctx);
  *  @param data IN -- data to incorporate into state
  *  @param data_length IN -- size of data in bytes
  */
-int32_t tc_hmac_update(TCHmacState_t ctx,
-		       const void *data,
-		       uint32_t data_length);
+int tc_hmac_update(TCHmacState_t ctx, const void *data,
+		   unsigned int data_length);
 
 /**
  *  @brief HMAC final procedure
@@ -125,17 +123,17 @@ int32_t tc_hmac_update(TCHmacState_t ctx,
  *                ctx == NULL or
  *                key == NULL or
  *                taglen != TC_SHA256_DIGEST_SIZE
- *  @note 'ctx' is erased before exiting (this must never be changed/removed).
+ *  @note ctx is erased before exiting. This should never be changed/removed.
  *  @note Assumes the tag bufer is at least sizeof(hmac_tag_size(state)) bytes
  *  state has been initialized by tc_hmac_init
  *  @param tag IN/OUT -- buffer to receive computed HMAC tag
  *  @param taglen IN -- size of tag in bytes
  *  @param ctx IN/OUT -- the HMAC state for computing tag
  */
-int32_t tc_hmac_final(uint8_t *tag, uint32_t taglen, TCHmacState_t ctx);
+int tc_hmac_final(uint8_t *tag, unsigned int taglen, TCHmacState_t ctx);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif /*__TC_HMAC_H__*/

@@ -1,0 +1,36 @@
+/dts-v1/;
+
+#include "intel_curie.dtsi"
+
+/ {
+	model = "quark_se_c1000_devboard";
+	compatible = "intel,quark_se_c1000_devboard", "intel,quark_se_c1000";
+
+	aliases {
+		uart_0 = &uart0;
+		uart_1 = &uart1;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash1;
+#ifdef CONFIG_USB_UART_CONSOLE
+		zephyr,console = &usb_cdc;
+#else
+		zephyr,console = &uart1;
+#endif
+		zephyr,bt-uart = &uart0;
+		zephyr,uart-pipe = &uart1;
+		zephyr,bt-mon-uart = &uart1;
+	};
+};
+
+&uart0 {
+	status = "ok";
+	current-speed = <1000000>;
+};
+
+&uart1 {
+	status = "ok";
+	current-speed = <115200>;
+};

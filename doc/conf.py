@@ -136,9 +136,9 @@ rst_epilog = """
 .. |deg|    unicode:: U+000B0 .. DEGREE SIGN
    :ltrim:
 .. |plusminus|  unicode:: U+000B1 .. PLUS-MINUS SIGN
-   :trim:
+   :rtrim:
 .. |micro|  unicode:: U+000B5 .. MICRO SIGN
-   :trim:
+   :rtrim:
 """
 
 # -- Options for HTML output ----------------------------------------------
@@ -241,6 +241,8 @@ html_show_license = True
 #   'da', 'de', 'en', 'es', 'fi', 'fr', 'hu', 'it', 'ja'
 #   'nl', 'no', 'pt', 'ro', 'ru', 'sv', 'tr'
 #html_search_language = 'en'
+
+sourcelink_suffix = '.txt'
 
 # A dictionary with options for the search language support, empty by default.
 # Now only 'ja' uses this config value

@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f1xx_hal_conf.h
   * @author  MCD Application Team
-  * @version V1.1.0
-  * @date    14-April-2017
+  * @version V1.1.1
+  * @date    12-May-2017
   * @brief   HAL configuration template file.
   *          This file should be copied to the application folder and renamed
   *          to stm32f1xx_hal_conf.h.
@@ -51,6 +51,12 @@
 /* ########################## Module Selection ############################## */
 /**
   * @brief This is the list of modules to be used in the HAL driver
+  *
+  *     Note:
+  *     	HAL_I2C_MODULE_ENABLED had to be disabled due to the HAL
+  *     	redefining I2C_SPEED_STANDARD and I2C_SPEED_FAST when the
+  *     	I2C LL driver was enabled.
+  *
   */
 #define HAL_MODULE_ENABLED
 #define HAL_ADC_MODULE_ENABLED
@@ -64,7 +70,6 @@
 #define HAL_FLASH_MODULE_ENABLED
 #define HAL_GPIO_MODULE_ENABLED
 #define HAL_HCD_MODULE_ENABLED
-#define HAL_I2C_MODULE_ENABLED
 #define HAL_I2S_MODULE_ENABLED
 #define HAL_IRDA_MODULE_ENABLED
 #define HAL_IWDG_MODULE_ENABLED
@@ -84,6 +89,23 @@
 #define HAL_USART_MODULE_ENABLED
 #define HAL_WWDG_MODULE_ENABLED
 #define HAL_MMC_MODULE_ENABLED
+
+/**
+ * HAL_I2C_MODULE_ENABLED: [disabled]
+ * ----------------------------------
+ *
+ * When enabling the STM32 I2C LL driver this would otherwise trigger:
+ *
+ *  include/i2c.h:34:0: warning: "I2C_SPEED_STANDARD" redefined
+ *  stm32f1xx_hal_i2c.h:578:0: this is the location of the previous definition
+ *
+ *  include/i2c.h:37:0: warning: "I2C_SPEED_FAST" redefined
+ *  stm32f1xx_hal_i2c.h:579:0:  this is the location of the previous definition
+ *
+ */
+#if 0
+#define HAL_I2C_MODULE_ENABLED
+#endif
 
 /* ########################## Oscillator Values adaptation ####################*/
 /**

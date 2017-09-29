@@ -12,7 +12,7 @@
 #include <string.h>
 #include <errno.h>
 #include <misc/printk.h>
-#include <sections.h>
+#include <linker/sections.h>
 
 #include <tc_util.h>
 
@@ -21,6 +21,7 @@
 #include <net/net_ip.h>
 #include <net/net_if.h>
 #include <net/net_context.h>
+#include <net/udp.h>
 
 #include "net_private.h"
 
@@ -50,6 +51,7 @@ static char *test_data = "Test data to be sent";
 
 static bool test_failed;
 static bool cb_failure;
+static bool expecting_cb_failure;
 static bool data_failure;
 static bool recv_cb_called;
 static bool recv_cb_reconfig_called;
@@ -447,7 +449,7 @@ static bool net_ctx_accept_v6(void)
 {
 	int ret;
 
-	ret = net_context_accept(udp_v6_ctx, accept_cb, 0,
+	ret = net_context_accept(udp_v6_ctx, accept_cb, K_NO_WAIT,
 				 INT_TO_POINTER(AF_INET6));
 	if (ret != -EINVAL || cb_failure) {
 		TC_ERROR("Context accept IPv6 UDP test failed (%d)\n", ret);
@@ -461,7 +463,7 @@ static bool net_ctx_accept_v4(void)
 {
 	int ret;
 
-	ret = net_context_accept(udp_v4_ctx, accept_cb, 0,
+	ret = net_context_accept(udp_v4_ctx, accept_cb, K_NO_WAIT,
 				 INT_TO_POINTER(AF_INET));
 	if (ret != -EINVAL || cb_failure) {
 		TC_ERROR("Context accept IPv4 UDP test failed (%d)\n", ret);
@@ -904,7 +906,7 @@ static bool net_ctx_recv_v4_reconfig(void)
 }
 
 #define STACKSIZE 1024
-char __noinit __stack thread_stack[STACKSIZE];
+K_THREAD_STACK_DEFINE(thread_stack, STACKSIZE);
 static struct k_thread thread_data;
 
 static void recv_cb_timeout(struct net_context *context,
@@ -925,7 +927,11 @@ void timeout_thread(struct net_context *ctx, sa_family_t *family)
 	ret = net_context_recv(ctx, recv_cb_timeout, WAIT_TIME_LONG, family);
 
 	if (ret || cb_failure) {
-		TC_ERROR("Context recv UDP timeout test failed (%d)\n", ret);
+		if (!expecting_cb_failure) {
+			TC_ERROR("Context recv UDP timeout test "
+				 "failed (%d)\n", ret);
+		}
+
 		cb_failure = true;
 		return;
 	}
@@ -958,6 +964,7 @@ static void start_timeout_v4_thread(void)
 static bool net_ctx_recv_v6_timeout(void)
 {
 	cb_failure = false;
+	expecting_cb_failure = true;
 
 	/* Start a thread that will send data to receiver. */
 	start_timeout_v6_thread();
@@ -969,12 +976,15 @@ static bool net_ctx_recv_v6_timeout(void)
 
 	k_sem_take(&wait_data, K_FOREVER);
 
+	expecting_cb_failure = false;
+
 	return !cb_failure;
 }
 
 static bool net_ctx_recv_v4_timeout(void)
 {
 	cb_failure = false;
+	expecting_cb_failure = true;
 
 	/* Start a thread that will send data to receiver. */
 	start_timeout_v4_thread();
@@ -983,6 +993,8 @@ static bool net_ctx_recv_v4_timeout(void)
 	timeout_token = SENDING;
 
 	k_sem_take(&wait_data, K_FOREVER);
+
+	expecting_cb_failure = false;
 
 	return !cb_failure;
 }
@@ -1063,6 +1075,8 @@ static void net_context_iface_init(struct net_if *iface)
 
 static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 {
+	struct net_udp_hdr hdr, *udp_hdr;
+
 	if (!pkt->frags) {
 		TC_ERROR("No data to send!\n");
 		return -ENODATA;
@@ -1099,9 +1113,16 @@ static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 			net_ipaddr_copy(&NET_IPV4_HDR(pkt)->dst, &addr);
 		}
 
-		port = NET_UDP_HDR(pkt)->src_port;
-		NET_UDP_HDR(pkt)->src_port = NET_UDP_HDR(pkt)->dst_port;
-		NET_UDP_HDR(pkt)->dst_port = port;
+		udp_hdr = net_udp_get_hdr(pkt, &hdr);
+		if (!udp_hdr) {
+			TC_ERROR("UDP data receive failed.");
+			goto out;
+		}
+
+		port = udp_hdr->src_port;
+		udp_hdr->src_port = udp_hdr->dst_port;
+		udp_hdr->dst_port = port;
+		net_udp_set_hdr(pkt, udp_hdr);
 
 		if (net_recv_data(iface, pkt) < 0) {
 			TC_ERROR("Data receive failed.");

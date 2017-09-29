@@ -9,6 +9,9 @@
 #include <xtensa_api.h>
 #include <xtensa/xtruntime.h>
 
+#define CONFIG_NUM_IRQS XCHAL_NUM_INTERRUPTS
+#define CONFIG_GEN_IRQ_START_VECTOR 0
+
 /**
  *
  * @brief Enable an interrupt line

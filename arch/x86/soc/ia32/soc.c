@@ -17,3 +17,11 @@
 #include <uart.h>
 #include <device.h>
 #include <init.h>
+#include <mmustructs.h>
+#include <linker/linker-defs.h>
+
+#ifdef CONFIG_X86_MMU
+MMU_BOOT_REGION(CONFIG_LOAPIC_BASE_ADDRESS, KB(4), MMU_ENTRY_WRITE);
+MMU_BOOT_REGION(CONFIG_IOAPIC_BASE_ADDRESS, MB(1), MMU_ENTRY_WRITE);
+MMU_BOOT_REGION(CONFIG_HPET_TIMER_BASE_ADDRESS, KB(4), MMU_ENTRY_WRITE);
+#endif /* CONFIG_X86_MMU*/

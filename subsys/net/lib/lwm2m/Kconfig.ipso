@@ -1,0 +1,52 @@
+#
+# Copyright (c) 2017 Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig LWM2M_IPSO_SUPPORT
+	bool "IPSO Alliance Smart Object Support"
+	default n
+	depends on LWM2M
+	help
+	  This option adds general support for IPSO objects
+
+if LWM2M_IPSO_SUPPORT
+
+config LWM2M_IPSO_TEMP_SENSOR
+	bool "IPSO Temperature Sensor Support"
+	default n
+	help
+	  This IPSO object should be used with a temperature sensor to
+	  report a temperature measurement. It also provides resources for
+	  minimum/maximum measured values and the minimum/maximum range
+	  that can be measured by the temperature sensor.
+
+config LWM2M_IPSO_TEMP_SENSOR_INSTANCE_COUNT
+	int "Maximum # of IPSO Temperature Sensor object instances"
+	default 1
+	depends on LWM2M_IPSO_TEMP_SENSOR
+	range 1 20
+	help
+	  This setting establishes the total count of IPSO Temperature
+	  Sensor instances available to the LWM2M client.
+
+config LWM2M_IPSO_LIGHT_CONTROL
+	bool "IPSO Light Control Support"
+	default n
+	help
+	  This Object is used to control a light source, such as a LED or other
+	  light. It allows a light to be turned on or off and its dimmer
+	  setting to be controlled as a % between 0 and 100. An optional color
+	  setting enables a string to be used to indicate the desired color.
+
+config LWM2M_IPSO_LIGHT_CONTROL_INSTANCE_COUNT
+	int "Maximum # of IPSO Light Control object instances"
+	default 1
+	depends on LWM2M_IPSO_LIGHT_CONTROL
+	range 1 20
+	help
+	  This setting establishes the total count of IPSO Light Control
+	  instances available to the LWM2M client.
+
+endif # LWM2M_LWM2M_IPSO_SUPPORT

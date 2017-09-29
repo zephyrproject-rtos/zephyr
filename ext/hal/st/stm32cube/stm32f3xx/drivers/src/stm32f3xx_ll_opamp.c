@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_ll_opamp.c
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   OPAMP LL module driver
   ******************************************************************************
   * @attention

@@ -9,9 +9,12 @@
 
 #include <zephyr/types.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
- * @brief MQTT library
- * @defgroup mqtt MQTT library
+ * @addtogroup mqtt
  * @{
  */
 
@@ -86,4 +89,8 @@ struct mqtt_publish_msg {
  * @}
  */
 
+#ifdef __cplusplus
+}
 #endif
+
+#endif /* _MQTT_TYPES_H_ */

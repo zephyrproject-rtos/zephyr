@@ -3,6 +3,7 @@ menuconfig UART_QMSI
 	bool "QMSI UART driver"
 	default n
 	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
 	help
 	  This option enables the QMSI UART driver.
 
@@ -14,6 +15,7 @@ config UART_QMSI_0
 	bool "Enable UART 0 controller"
 	default n
 
+if !HAS_DTS
 config UART_QMSI_0_NAME
 	depends on UART_QMSI_0
 	string "UART_0 device name"
@@ -28,6 +30,7 @@ config UART_QMSI_0_BAUDRATE
 	default 115200
 	help
 	  This option sets the baud rate from the UART_0 device.
+endif
 
 config UART_QMSI_0_HW_FC
 	depends on UART_QMSI_0
@@ -42,6 +45,7 @@ config UART_QMSI_1
 	bool "Enable UART 1 controller"
 	default n
 
+if !HAS_DTS
 config UART_QMSI_1_NAME
 	depends on UART_QMSI_1
 	string "UART_1 device name"
@@ -56,6 +60,7 @@ config UART_QMSI_1_BAUDRATE
 	default 115200
 	help
 	  This option sets the baud rate from the UART_1 device.
+endif
 
 config UART_QMSI_1_HW_FC
 	depends on UART_QMSI_1

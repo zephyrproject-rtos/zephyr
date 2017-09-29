@@ -15,7 +15,7 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/storage.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_CORE)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_CORE)
 #include "common/log.h"
 
 #define STORAGE_ROOT          "/bt"
@@ -49,7 +49,7 @@ static int storage_open(const bt_addr_le_t *addr, u16_t key,
 		int len;
 
 		len = snprintk(path, sizeof(path),
-			       STORAGE_ROOT "/%2.2X%2.2X%2.2X%2.2X%2.2X%2.2X%u",
+			       STORAGE_ROOT "/%02X%02X%02X%02X%02X%02X%u",
 			       addr->a.val[5], addr->a.val[4], addr->a.val[3],
 			       addr->a.val[2], addr->a.val[1], addr->a.val[0],
 			       addr->type);
@@ -173,7 +173,7 @@ static int storage_clear(const bt_addr_le_t *addr)
 	if (addr) {
 #if MAX_FILE_NAME >= STORAGE_FILE_NAME_LEN
 		snprintk(path, STORAGE_PATH_MAX,
-			 STORAGE_ROOT "/%2.2X%2.2X%2.2X%2.2X%2.2X%2.2X%u",
+			 STORAGE_ROOT "/%02X%02X%02X%02X%02X%02X%u",
 			 addr->a.val[5], addr->a.val[4], addr->a.val[3],
 			 addr->a.val[2], addr->a.val[1], addr->a.val[0],
 			 addr->type);

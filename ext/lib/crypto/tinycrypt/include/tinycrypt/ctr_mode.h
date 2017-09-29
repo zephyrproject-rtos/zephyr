@@ -1,7 +1,7 @@
 /* ctr_mode.h - TinyCrypt interface to CTR mode */
 
 /*
- *  Copyright (C) 2015 by Intel Corporation, All Rights Reserved.
+ *  Copyright (C) 2017 by Intel Corporation, All Rights Reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -98,11 +98,11 @@ extern "C" {
  * @param ctr IN/OUT -- the current counter value
  * @param sched IN -- an initialized AES key schedule
  */
-int32_t tc_ctr_mode(uint8_t *out, uint32_t outlen, const uint8_t *in,
-		    uint32_t inlen, uint8_t *ctr, const TCAesKeySched_t sched);
+int tc_ctr_mode(uint8_t *out, unsigned int outlen, const uint8_t *in,
+		unsigned int inlen, uint8_t *ctr, const TCAesKeySched_t sched);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif /* __TC_CTR_MODE_H__ */

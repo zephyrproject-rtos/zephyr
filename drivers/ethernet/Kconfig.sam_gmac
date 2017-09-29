@@ -47,15 +47,15 @@ choice ETH_SAM_GMAC_MAC_SELECT
 	help
 	  Choose how to configure MAC address.
 
-	config ETH_SAM_GMAC_MAC_MANUAL
-		bool "Manual"
-		help
-		  Assign an arbitrary MAC address.
+config ETH_SAM_GMAC_MAC_MANUAL
+	bool "Manual"
+	help
+	  Assign an arbitrary MAC address.
 
-	config ETH_SAM_GMAC_MAC_I2C_EEPROM
-		bool "Read from an I2C EEPROM"
-		help
-		  Read MAC address from an I2C EEPROM.
+config ETH_SAM_GMAC_MAC_I2C_EEPROM
+	bool "Read from an I2C EEPROM"
+	help
+	  Read MAC address from an I2C EEPROM.
 
 endchoice
 

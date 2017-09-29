@@ -306,6 +306,16 @@ struct net_rpl_dag {
 struct net_nbr *net_rpl_get_nbr(struct net_rpl_parent *data);
 
 /**
+ * @brief Get related neighbor data from parent pointer.
+ *
+ * @param data Pointer to parent.
+ *
+ * @return Neighbor data pointer if found, NULL if neighbor is not found.
+ */
+struct net_ipv6_nbr_data *
+net_rpl_get_ipv6_nbr_data(struct net_rpl_parent *parent);
+
+/**
  * @brief RPL object function (OF) reset.
  *
  * @details Reset the OF state for a specific DAG. This function is called when
@@ -370,7 +380,7 @@ extern struct net_rpl_dag *net_rpl_of_best_dag(struct net_rpl_dag *dagA,
  * about parent to select an increment to the base rank.
  */
 extern u16_t net_rpl_of_calc_rank(struct net_rpl_parent *parent,
-				     u16_t rank);
+				  u16_t rank);
 
 /**
  * @brief RPL object function (OF) update metric container.
@@ -878,6 +888,21 @@ struct net_rpl_dag *net_rpl_set_root(struct net_if *iface,
 				     struct in6_addr *dag_id);
 
 /**
+ * @brief Set the root DAG with version.
+ *
+ * @param iface Network interface to use.
+ * @param instance Pointer to instance object.
+ * @param dag_id IPv6 address of the DAG.
+ * @param version Version number to use.
+ *
+ * @return DAG object or NULL if creation failed.
+ */
+struct net_rpl_dag *net_rpl_set_root_with_version(struct net_if *iface,
+						  u8_t instance_id,
+						  struct in6_addr *dag_id,
+						  u8_t version);
+
+/**
  * @brief Get first available DAG.
  *
  * @return First available DAG or NULL if none found.
@@ -905,6 +930,13 @@ bool net_rpl_set_prefix(struct net_if *iface,
  * @param route IPv6 route entry.
  */
 void net_rpl_global_repair(struct net_route_entry *route);
+
+/**
+ * @brief Do global repair for this instance.
+ *
+ * @param instance RPL instance id.
+ */
+bool net_rpl_repair_root(u8_t instance_id);
 
 /**
  * @brief Update RPL headers in IPv6 packet.
@@ -962,6 +994,20 @@ int net_rpl_revert_header(struct net_pkt *pkt, u16_t offset, u16_t *pos);
  */
 struct in6_addr *net_rpl_get_parent_addr(struct net_if *iface,
 					 struct net_rpl_parent *parent);
+
+typedef void (*net_rpl_parent_cb_t)(struct net_rpl_parent *parent,
+				    void *user_data);
+
+/**
+ * @brief Go through all the parents entries and call callback
+ * for each entry that is in use.
+ *
+ * @param cb User supplied callback function to call.
+ * @param user_data User specified data.
+ *
+ * @return Total number of parents found.
+ */
+int net_rpl_foreach_parent(net_rpl_parent_cb_t cb, void *user_data);
 
 /**
  * @brief Set the RPL mode (mesh or leaf) of this node.

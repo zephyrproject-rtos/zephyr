@@ -7,7 +7,7 @@
 
 menuconfig FXAS21002
 	bool "FXAS21002 gyroscope driver"
-	depends on SENSOR && I2C
+	depends on I2C
 	default n
 	help
 	  Enable driver for the FXAS21002 gyroscope
@@ -20,6 +20,7 @@ config FXAS21002_NAME
 
 config FXAS21002_I2C_NAME
 	string "I2C device name"
+	depends on !HAS_DTS_I2C
 	default I2C_0_NAME
 
 config FXAS21002_I2C_ADDRESS

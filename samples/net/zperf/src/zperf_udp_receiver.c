@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <sections.h>
+#include <linker/sections.h>
 #include <toolchain.h>
 
 #include <zephyr.h>
@@ -12,6 +12,7 @@
 
 #include <net/net_core.h>
 #include <net/net_pkt.h>
+#include <net/udp.h>
 
 #include "zperf.h"
 #include "zperf_internal.h"
@@ -28,7 +29,7 @@
 #define MY_SRC_PORT 50001
 
 /* Static data */
-static char __noinit __stack zperf_rx_stack[RX_THREAD_STACK_SIZE];
+static K_THREAD_STACK_DEFINE(zperf_rx_stack, RX_THREAD_STACK_SIZE);
 static struct k_thread zperf_rx_thread_data;
 
 static struct sockaddr_in6 *in6_addr_my;
@@ -40,12 +41,20 @@ static inline void set_dst_addr(sa_family_t family,
 				struct net_pkt *pkt,
 				struct sockaddr *dst_addr)
 {
+	struct net_udp_hdr hdr, *udp_hdr;
+
+	udp_hdr = net_udp_get_hdr(pkt, &hdr);
+	if (!udp_hdr) {
+		printk(TAG "Invalid UDP data\n");
+		return;
+	}
+
 #if defined(CONFIG_NET_IPV6)
 	if (family == AF_INET6) {
 		net_ipaddr_copy(&net_sin6(dst_addr)->sin6_addr,
 				&NET_IPV6_HDR(pkt)->src);
 		net_sin6(dst_addr)->sin6_family = AF_INET6;
-		net_sin6(dst_addr)->sin6_port = NET_UDP_HDR(pkt)->src_port;
+		net_sin6(dst_addr)->sin6_port = udp_hdr->src_port;
 	}
 #endif /* CONFIG_NET_IPV6 */
 
@@ -54,7 +63,7 @@ static inline void set_dst_addr(sa_family_t family,
 		net_ipaddr_copy(&net_sin(dst_addr)->sin_addr,
 				&NET_IPV4_HDR(pkt)->src);
 		net_sin(dst_addr)->sin_family = AF_INET;
-		net_sin(dst_addr)->sin_port = NET_UDP_HDR(pkt)->src_port;
+		net_sin(dst_addr)->sin_port = udp_hdr->src_port;
 	}
 #endif /* CONFIG_NET_IPV4 */
 }
@@ -385,7 +394,7 @@ void zperf_receiver_init(int port)
 #endif
 
 	k_thread_create(&zperf_rx_thread_data, zperf_rx_stack,
-			sizeof(zperf_rx_stack),
+			K_THREAD_STACK_SIZEOF(zperf_rx_stack),
 			(k_thread_entry_t)zperf_rx_thread,
 			INT_TO_POINTER(port), 0, 0,
 			K_PRIO_COOP(7), 0, K_NO_WAIT);

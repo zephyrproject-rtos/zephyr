@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_nor.h
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   Header file of NOR HAL module.
   ******************************************************************************
   * @attention
@@ -92,9 +90,9 @@
 
 /**
   * @brief  NOR memory address shifting.
-  * @param  __NOR_ADDRESS: NOR base address
-  * @param  __NOR_MEMORY_WIDTH_: NOR memory width
-  * @param  __ADDRESS__: NOR memory address
+  * @param  __NOR_ADDRESS NOR base address
+  * @param  __NOR_MEMORY_WIDTH_ NOR memory width
+  * @param  __ADDRESS__ NOR memory address
   * @retval NOR shifted address value
   */
 #define NOR_ADDR_SHIFT(__NOR_ADDRESS, __NOR_MEMORY_WIDTH_, __ADDRESS__)       \
@@ -104,8 +102,8 @@
 
 /**
   * @brief  NOR memory write data to specified address.
-  * @param  __ADDRESS__: NOR memory address
-  * @param  __DATA__: Data to write
+  * @param  __ADDRESS__ NOR memory address
+  * @param  __DATA__ Data to write
   * @retval None
   */
 #define NOR_WRITE(__ADDRESS__, __DATA__)  (*(__IO uint16_t *)((uint32_t)(__ADDRESS__)) = (__DATA__))
@@ -203,7 +201,7 @@ typedef struct
   */
 
 /** @brief Reset NOR handle state
-  * @param  __HANDLE__: NOR handle
+  * @param  __HANDLE__ NOR handle
   * @retval None
   */
 #define __HAL_NOR_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = HAL_NOR_STATE_RESET)

@@ -28,7 +28,6 @@ static union dev_config i2c_cfg = {
 		.use_10_bit_addr = 0,
 		.is_master_device = 1,
 		.speed = I2C_SPEED_STANDARD,
-		.is_slave_read = 0,
 	},
 };
 

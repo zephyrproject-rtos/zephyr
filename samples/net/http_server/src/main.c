@@ -25,11 +25,34 @@
 #include <net/net_context.h>
 #include <net/http.h>
 
-#include <net_sample_app.h>
+#include <net/net_app.h>
 
 #include "config.h"
 
 /* Sets the network parameters */
+
+#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
+NET_PKT_TX_SLAB_DEFINE(http_srv_tx, 15);
+NET_PKT_DATA_POOL_DEFINE(http_srv_data, 30);
+
+static struct k_mem_slab *tx_slab(void)
+{
+	return &http_srv_tx;
+}
+
+static struct net_buf_pool *data_pool(void)
+{
+	return &http_srv_data;
+}
+#else
+#if defined(CONFIG_NET_L2_BT)
+#error "TCP connections over Bluetooth need CONFIG_NET_CONTEXT_NET_PKT_POOL "\
+	"defined."
+#endif /* CONFIG_NET_L2_BT */
+
+#define tx_slab NULL
+#define data_pool NULL
+#endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 
 #define RESULT_BUF_SIZE 1024
 static u8_t http_result[RESULT_BUF_SIZE];
@@ -270,25 +293,7 @@ static int setup_cert(struct http_server_ctx *ctx,
 void main(void)
 {
 	struct sockaddr addr, *server_addr;
-	u32_t flags = 0;
 	int ret;
-
-	/*
-	 * If we have both IPv6 and IPv4 enabled, then set the
-	 * startup flags so that we wait until both are ready
-	 * before continuing.
-	 */
-#if defined(CONFIG_NET_IPV6)
-	flags |= NET_SAMPLE_NEED_IPV6;
-#endif
-#if defined(CONFIG_NET_IPV4)
-	flags |= NET_SAMPLE_NEED_IPV4;
-#endif
-
-	ret = net_sample_app_init(APP_BANNER, flags, APP_STARTUP_TIME);
-	if (ret < 0) {
-		panic("Application init failed");
-	}
 
 	/*
 	 * There are several options here for binding to local address.
@@ -350,12 +355,15 @@ void main(void)
 			    http_response_it_works);
 
 #if defined(CONFIG_HTTPS)
+	http_server_set_net_pkt_pool(&https_ctx, tx_slab, data_pool);
+
 	ret = https_server_init(&https_ctx, &http_urls, server_addr,
 				https_result, sizeof(https_result),
 				"Zephyr HTTPS Server",
 				INSTANCE_INFO, strlen(INSTANCE_INFO),
 				setup_cert, NULL, &ssl_rx_pool,
-				https_stack, sizeof(https_stack));
+				https_stack,
+				K_THREAD_STACK_SIZEOF(https_stack));
 	if (ret < 0) {
 		NET_ERR("Cannot initialize HTTPS server (%d)", ret);
 		panic(NULL);
@@ -363,6 +371,8 @@ void main(void)
 
 	http_server_enable(&https_ctx);
 #endif
+
+	http_server_set_net_pkt_pool(&http_ctx, tx_slab, data_pool);
 
 	ret = http_server_init(&http_ctx, &http_urls, server_addr, http_result,
 			       sizeof(http_result), "Zephyr HTTP Server");

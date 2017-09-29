@@ -1,4 +1,4 @@
-$make qemu
+$ make run
 
 Running test suite test_systhreads
 tc_start() - test_systhreads_main

@@ -12,11 +12,16 @@
 
 static struct nxp_mpu_region mpu_regions[] = {
 	/* Region 0 */
+	MPU_REGION_ENTRY("DEBUGGER_0",
+			 0,
+			 0xFFFFFFFF,
+			 REGION_DEBUG_ATTR),
+	/* Region 1 */
 	MPU_REGION_ENTRY("FLASH_0",
 			 CONFIG_FLASH_BASE_ADDRESS,
 			 0x07FFFFFF,
 			 REGION_FLASH_ATTR),
-	/* Region 1 */
+	/* Region 2 */
 	/*
 	 * This region (Flexbus + FlexNVM) is bigger than the FLEXBUS one in
 	 * order to save 1 region allocation in the MPU.
@@ -25,18 +30,18 @@ static struct nxp_mpu_region mpu_regions[] = {
 			 FLEXBUS_BASE_ADDRESS,
 			 0x1BFFFFFF,
 			 REGION_IO_ATTR),
-	/* Region 2 */
+	/* Region 3 */
 	MPU_REGION_ENTRY("RAM_L_0",
 			 SRAM_L_BASE_ADDRESS,
 			 0x1FFFFFFF,
 			 REGION_RAM_ATTR),
-	/* Region 3 */
+	/* Region 4 */
 	MPU_REGION_ENTRY("RAM_U_0",
 			 CONFIG_SRAM_BASE_ADDRESS,
 			 (CONFIG_SRAM_BASE_ADDRESS +
 				 (CONFIG_SRAM_SIZE * 1024) - 1),
 			 REGION_RAM_ATTR),
-	/* Region 4 */
+	/* Region 5 */
 	MPU_REGION_ENTRY("DEVICE_0",
 			 DEVICE_S_BASE_ADDRESS,
 			 0xFFFFFFFF,
@@ -46,5 +51,5 @@ static struct nxp_mpu_region mpu_regions[] = {
 struct nxp_mpu_config mpu_config = {
 	.num_regions = ARRAY_SIZE(mpu_regions),
 	.mpu_regions = mpu_regions,
-	.sram_region = 3,
+	.sram_region = 4,
 };

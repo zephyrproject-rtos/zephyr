@@ -71,7 +71,7 @@ NET_BUF_POOL_DEFINE(big_frags_pool, 1, 1280, 0, frag_destroy_big);
 
 static void buf_destroy(struct net_buf *buf)
 {
-	struct net_buf_pool *pool = buf->pool;
+	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
 
 	destroy_called++;
 	zassert_equal(pool, &bufs_pool, "Invalid free pointer in buffer");
@@ -80,7 +80,7 @@ static void buf_destroy(struct net_buf *buf)
 
 static void frag_destroy(struct net_buf *buf)
 {
-	struct net_buf_pool *pool = buf->pool;
+	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
 
 	frag_destroy_called++;
 	zassert_equal(pool, &frags_pool,
@@ -90,7 +90,7 @@ static void frag_destroy(struct net_buf *buf)
 
 static void frag_destroy_big(struct net_buf *buf)
 {
-	struct net_buf_pool *pool = buf->pool;
+	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
 
 	frag_destroy_called++;
 	zassert_equal(pool, &big_frags_pool,
@@ -167,9 +167,10 @@ static void test_3_thread(void *arg1, void *arg2, void *arg3)
 	k_sem_give(sema);
 }
 
+static K_THREAD_STACK_DEFINE(test_3_thread_stack, 1024);
+
 static void net_buf_test_3(void)
 {
-	static char __stack test_3_thread_stack[1024];
 	static struct k_thread test_3_thread_data;
 	struct net_buf *frag, *head;
 	struct k_fifo fifo;
@@ -190,7 +191,7 @@ static void net_buf_test_3(void)
 	k_sem_init(&sema, 0, UINT_MAX);
 
 	k_thread_create(&test_3_thread_data, test_3_thread_stack,
-			sizeof(test_3_thread_stack),
+			K_THREAD_STACK_SIZEOF(test_3_thread_stack),
 			(k_thread_entry_t) test_3_thread, &fifo, &sema, NULL,
 			K_PRIO_COOP(7), 0, 0);
 
@@ -230,7 +231,8 @@ static void net_buf_test_4(void)
 
 	frag = buf->frags;
 
-	zassert_equal(frag->pool->user_data_size, 0, "Invalid user data size");
+	zassert_equal(net_buf_pool_get(frag->pool_id)->user_data_size, 0,
+		      "Invalid user data size");
 
 	i = 0;
 	while (frag) {

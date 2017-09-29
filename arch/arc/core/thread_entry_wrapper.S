@@ -12,7 +12,7 @@
  */
 
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 
 GTEXT(_thread_entry_wrapper)
 GTEXT(_thread_entry)

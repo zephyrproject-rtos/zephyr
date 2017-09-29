@@ -20,6 +20,10 @@
 
 #include <misc/slist.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief COAP library
  * @defgroup zoap COAP Library
@@ -227,6 +231,7 @@ struct zoap_reply {
 	void *user_data;
 	int age;
 	u8_t token[8];
+	u16_t id;
 	u8_t tkl;
 };
 
@@ -393,8 +398,8 @@ struct zoap_pending *zoap_pending_received(
 	struct zoap_pending *pendings, size_t len);
 
 /**
- * @brief After a response is received, clear all pending
- * retransmissions related to that response.
+ * @brief After a response is received, call zoap_reply_t handler
+ * registered in #zoap_reply structure
  *
  * @param response A response received
  * @param from Address from which the response was received
@@ -687,12 +692,14 @@ int zoap_update_from_block(const struct zoap_packet *zpkt,
  * indicates the correct offset in the body of data being
  * transferred.
  *
+ * @param zpkt Packet in which to look for block-wise transfers options
  * @param ctx Block context to be updated
  *
  * @return The offset in the block-wise transfer, 0 if the transfer
  * has finished.
  */
-size_t zoap_next_block(struct zoap_block_context *ctx);
+size_t zoap_next_block(const struct zoap_packet *zpkt,
+		       struct zoap_block_context *ctx);
 
 /**
  * @brief Returns the version present in a CoAP packet.
@@ -808,5 +815,9 @@ u8_t *zoap_next_token(void);
 /**
  * @}
  */
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __ZOAP_H__ */

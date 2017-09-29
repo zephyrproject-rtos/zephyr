@@ -44,7 +44,7 @@ static inline bool bt_hci_evt_is_prio(u8_t evt)
 	switch (evt) {
 	case BT_HCI_EVT_CMD_COMPLETE:
 	case BT_HCI_EVT_CMD_STATUS:
-#if defined(CONFIG_BLUETOOTH_CONN)
+#if defined(CONFIG_BT_CONN)
 	case BT_HCI_EVT_NUM_COMPLETED_PACKETS:
 #endif
 		return true;
@@ -121,7 +121,7 @@ struct bt_hci_driver {
 	 * is safe to start calling the send() handler.
 	 *
 	 * If the driver uses its own RX thread, i.e.
-	 * CONFIG_BLUETOOTH_RECV_IS_RX_THREAD is set, then this
+	 * CONFIG_BT_RECV_IS_RX_THREAD is set, then this
 	 * function is expected to start that thread.
 	 *
 	 * @return 0 on success or negative error number on failure.
@@ -133,6 +133,8 @@ struct bt_hci_driver {
 	 *
 	 * Send an HCI command or ACL data to the controller. The exact
 	 * type of the data can be checked with the help of bt_buf_get_type().
+	 *
+	 * @note This function must only be called from a cooperative thread.
 	 *
 	 * @param buf Buffer containing data to be sent to the controller.
 	 *

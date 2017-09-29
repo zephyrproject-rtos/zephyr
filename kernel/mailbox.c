@@ -12,7 +12,7 @@
 #include <kernel_structs.h>
 #include <debug/object_tracing_common.h>
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <string.h>
 #include <wait_q.h>
 #include <misc/dlist.h>
@@ -240,9 +240,8 @@ static int _mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 			     s32_t timeout)
 {
 	struct k_thread *sending_thread;
-	struct k_thread *receiving_thread;
+	struct k_thread *receiving_thread, *next;
 	struct k_mbox_msg *rx_msg;
-	sys_dnode_t *wait_q_item, *next_wait_q_item;
 	unsigned int key;
 
 	/* save sender id so it can be used during message matching */
@@ -255,10 +254,8 @@ static int _mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 	/* search mailbox's rx queue for a compatible receiver */
 	key = irq_lock();
 
-	SYS_DLIST_FOR_EACH_NODE_SAFE(&mbox->rx_msg_queue, wait_q_item,
-				     next_wait_q_item) {
-
-		receiving_thread = (struct k_thread *)wait_q_item;
+	SYS_DLIST_FOR_EACH_CONTAINER_SAFE(&mbox->rx_msg_queue, receiving_thread,
+					  next, base.k_q_node) {
 		rx_msg = (struct k_mbox_msg *)receiving_thread->base.swap_data;
 
 		if (_mbox_message_match(tx_msg, rx_msg) == 0) {
@@ -428,9 +425,8 @@ static int _mbox_message_data_check(struct k_mbox_msg *rx_msg, void *buffer)
 int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
 	       s32_t timeout)
 {
-	struct k_thread *sending_thread;
+	struct k_thread *sending_thread, *next;
 	struct k_mbox_msg *tx_msg;
-	sys_dnode_t *wait_q_item, *next_wait_q_item;
 	unsigned int key;
 	int result;
 
@@ -440,10 +436,9 @@ int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
 	/* search mailbox's tx queue for a compatible sender */
 	key = irq_lock();
 
-	SYS_DLIST_FOR_EACH_NODE_SAFE(&mbox->tx_msg_queue, wait_q_item,
-				     next_wait_q_item) {
+	SYS_DLIST_FOR_EACH_CONTAINER_SAFE(&mbox->tx_msg_queue, sending_thread,
+					  next, base.k_q_node) {
 
-		sending_thread = (struct k_thread *)wait_q_item;
 		tx_msg = (struct k_mbox_msg *)sending_thread->base.swap_data;
 
 		if (_mbox_message_match(tx_msg, rx_msg) == 0) {

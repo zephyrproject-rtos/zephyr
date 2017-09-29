@@ -40,18 +40,78 @@ static inline struct net_pkt *net_udp_append_raw(struct net_pkt *pkt,
 						 u16_t src_port,
 						 u16_t dst_port)
 {
-	NET_UDP_HDR(pkt)->src_port = htons(src_port);
-	NET_UDP_HDR(pkt)->dst_port = htons(dst_port);
-
-	net_buf_add(pkt->frags, sizeof(struct net_udp_hdr));
-
-	NET_UDP_HDR(pkt)->len = htons(net_pkt_get_len(pkt) -
-				      net_pkt_ip_hdr_len(pkt));
+	net_pkt_append_be16(pkt, src_port);
+	net_pkt_append_be16(pkt, dst_port);
+	net_pkt_append_be16(pkt, net_pkt_get_len(pkt) -
+			    net_pkt_ip_hdr_len(pkt) -
+			    net_pkt_ipv6_ext_len(pkt));
 
 	net_pkt_set_appdata(pkt, net_pkt_udp_data(pkt) +
 			    sizeof(struct net_udp_hdr));
 
 	return pkt;
+}
+
+#ifndef NET_UDP_PKT_WAIT_TIME
+#define NET_UDP_PKT_WAIT_TIME K_SECONDS(1)
+#endif
+
+static inline struct net_buf *net_udp_set_chksum(struct net_pkt *pkt,
+						 struct net_buf *frag)
+{
+	u16_t chksum;
+	u16_t pos;
+
+	frag = net_pkt_write_be16(pkt, pkt->frags,
+				  net_pkt_ip_hdr_len(pkt) +
+				  net_pkt_ipv6_ext_len(pkt) +
+				  2 + 2 + 2 /* src + dst + len */,
+				  &pos, 0);
+
+	chksum = ~net_calc_chksum_udp(pkt);
+
+	frag = net_pkt_write(pkt, frag, pos - 2, &pos, sizeof(chksum),
+			     (u8_t *)&chksum, NET_UDP_PKT_WAIT_TIME);
+
+	NET_ASSERT(frag);
+
+	return frag;
+}
+
+static inline u16_t net_udp_get_chksum(struct net_pkt *pkt,
+				       struct net_buf *frag)
+{
+	u16_t chksum;
+	u16_t pos;
+
+	frag = net_frag_read_be16(pkt->frags,
+				  net_pkt_ip_hdr_len(pkt) +
+				  net_pkt_ipv6_ext_len(pkt) +
+				  2 + 2 + 2 /* src + dst + len */,
+				  &pos, &chksum);
+	NET_ASSERT(frag);
+
+	return chksum;
+}
+
+static inline struct net_udp_hdr *net_udp_get_hdr(struct net_pkt *pkt,
+						  struct net_udp_udp *hdr)
+{
+	struct net_buf *frag = pkt->frags;
+	u16_t pos;
+
+	frag = net_frag_read_be16(frag, net_pkt_ip_hdr_len(pkt) +
+				  net_pkt_ipv6_ext_len(pkt),
+				  &pos, &hdr->src_port);
+	frag = net_frag_read_be16(frag, pos, &pos, &hdr->dst_port);
+	frag = net_frag_read_be16(frag, pos, &pos, &hdr->len);
+	frag = net_frag_read_be16(frag, pos, &pos, &hdr->chksum);
+	if (!frag) {
+		NET_ASSERT(frag);
+		return NULL;
+	}
+
+	return hdr;
 }
 
 /**

@@ -33,7 +33,7 @@
 struct i2c_nrf5_config {
 	volatile NRF_TWI_Type *base;
 	void (*irq_config_func)(struct device *dev);
-	union dev_config default_cfg;
+	u32_t default_cfg;
 };
 
 
@@ -50,20 +50,15 @@ struct i2c_nrf5_data {
 static int i2c_nrf5_configure(struct device *dev, u32_t dev_config_raw)
 {
 	const struct i2c_nrf5_config *config = dev->config->config_info;
-	union dev_config dev_config = (union dev_config)dev_config_raw;
 	volatile NRF_TWI_Type *twi = config->base;
 
 	SYS_LOG_DBG("");
 
-	if (dev_config.bits.is_slave_read) {
+	if (I2C_ADDR_10_BITS & dev_config_raw) {
 		return -EINVAL;
 	}
 
-	if (dev_config.bits.use_10_bit_addr) {
-		return -EINVAL;
-	}
-
-	switch (dev_config.bits.speed) {
+	switch (I2C_SPEED_GET(dev_config_raw)) {
 	case I2C_SPEED_STANDARD:
 		twi->FREQUENCY = TWI_FREQUENCY_FREQUENCY_K100;
 		break;
@@ -315,7 +310,7 @@ static int i2c_nrf5_init(struct device *dev)
 			 | NRF5_TWI_INT_ERROR
 			 | NRF5_TWI_INT_STOPPED);
 
-	status = i2c_nrf5_configure(dev, config->default_cfg.raw);
+	status = i2c_nrf5_configure(dev, config->default_cfg);
 	if (status) {
 		return status;
 	}
@@ -337,7 +332,7 @@ static void i2c_nrf5_config_func_0(struct device *dev);
 static const struct i2c_nrf5_config i2c_nrf5_config_0 = {
 	.base = NRF_TWI0,
 	.irq_config_func = i2c_nrf5_config_func_0,
-	.default_cfg.raw = CONFIG_I2C_0_DEFAULT_CFG,
+	.default_cfg = CONFIG_I2C_0_DEFAULT_CFG,
 };
 
 static struct i2c_nrf5_data i2c_nrf5_data_0;
@@ -362,7 +357,7 @@ static void i2c_nrf5_config_func_1(struct device *dev);
 static const struct i2c_nrf5_config i2c_nrf5_config_1 = {
 	.base = NRF_TWI1,
 	.irq_config_func = i2c_nrf5_config_func_1,
-	.default_cfg.raw = CONFIG_I2C_1_DEFAULT_CFG,
+	.default_cfg = CONFIG_I2C_1_DEFAULT_CFG,
 };
 
 static struct i2c_nrf5_data i2c_nrf5_data_1;

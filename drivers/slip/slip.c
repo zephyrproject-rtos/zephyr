@@ -1,13 +1,16 @@
-/* slip.c - SLIP driver using uart_pipe. This is meant for
- * network connectivity between host and qemu. The host will
- * need to run tunslip process.
- */
-
 /*
  * Copyright (c) 2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ *
+ * SLIP driver using uart_pipe. This is meant for network connectivity between
+ * host and qemu. The host will need to run tunslip process.
+ */
+
 
 #if defined(CONFIG_SLIP_DEBUG)
 #define SYS_LOG_DOMAIN "slip"

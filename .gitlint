@@ -1,8 +1,8 @@
 # All these sections are optional, edit this file as you like.
 [general]
-ignore=title-trailing-punctuation, T3
+ignore=title-trailing-punctuation, T3, title-max-length, T1
 # verbosity should be a value between 1 and 3, the commandline -v flags take precedence over this
-verbosity = 2
+verbosity = 3
 # By default gitlint will ignore merge commits. Set to 'false' to disable.
 ignore-merge-commits=true
 # Enable debug mode (prints more output). Disabled by default
@@ -12,12 +12,11 @@ debug = false
 # See http://jorisroovers.github.io/gitlint/user_defined_rules for details
 extra-path=scripts/gitlint
 
+[title-max-length-no-revert]
+line-length=72
 
 [body-max-line-count]
 max-line-count=200
-
-[title-max-length]
-line-length=72
 
 [title-starts-with-subsystem]
 regex = ^(([^:]+):)(\s([^:]+):)*\s(.+)$
@@ -26,7 +25,7 @@ regex = ^(([^:]+):)(\s([^:]+):)*\s(.+)$
 # Comma-separated list of words that should not occur in the title. Matching is case
 # insensitive. It's fine if the keyword occurs as part of a larger word (so "WIPING"
 # will not cause a violation, but "WIP: my title" will.
-words=wip,title
+words=wip
 
 [title-match-regex]
 # python like regex (https://docs.python.org/2/library/re.html) that the
@@ -35,7 +34,7 @@ words=wip,title
 # (e.g. title-must-not-contain-word).
 #regex=^US[0-9]*
 
-[B1]
+[max-line-length-with-exceptions]
 # B1 = body-max-line-length
 line-length=72
 

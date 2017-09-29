@@ -1,0 +1,8 @@
+sample:
+    description: BSD Sockets API TCP echo server sample
+    name: socket_echo
+tests:
+-   test:
+        build_only: true
+        platform_whitelist: qemu_x86
+        tags: net

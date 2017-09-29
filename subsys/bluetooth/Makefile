@@ -1,4 +1,5 @@
 obj-y += common/
-obj-$(CONFIG_BLUETOOTH_SHELL) += shell/
-obj-$(CONFIG_BLUETOOTH_HCI) += host/
-obj-$(CONFIG_BLUETOOTH_CONTROLLER) += controller/
+obj-y += lib/
+obj-$(CONFIG_BT_SHELL) += shell/
+obj-$(CONFIG_BT_HCI) += host/
+obj-$(CONFIG_BT_CTLR) += controller/

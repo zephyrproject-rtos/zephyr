@@ -32,8 +32,8 @@ typedef struct {
 	bt_addr_t a;
 } bt_addr_le_t;
 
-#define BT_ADDR_ANY     (&(bt_addr_t) {{0, 0, 0, 0, 0, 0} })
-#define BT_ADDR_LE_ANY  (&(bt_addr_le_t) { 0, { {0, 0, 0, 0, 0, 0} } })
+#define BT_ADDR_ANY     (&(bt_addr_t) { { 0, 0, 0, 0, 0, 0 } })
+#define BT_ADDR_LE_ANY  (&(bt_addr_le_t) { 0, { { 0, 0, 0, 0, 0, 0 } } })
 #define BT_ADDR_LE_NONE (&(bt_addr_le_t) { 0, \
 			 { { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff } } })
 
@@ -57,14 +57,13 @@ static inline void bt_addr_le_copy(bt_addr_le_t *dst, const bt_addr_le_t *src)
 	memcpy(dst, src, sizeof(*dst));
 }
 
-#define BT_ADDR_IS_RPA(addr)     (((addr)->val[5] & 0xc0) == 0x40)
-#define BT_ADDR_IS_NRPA(addr)    (((addr)->val[5] & 0xc0) == 0x00)
-#define BT_ADDR_IS_STATIC(addr)  (((addr)->val[5] & 0xc0) == 0xc0)
+#define BT_ADDR_IS_RPA(a)     (((a)->val[5] & 0xc0) == 0x40)
+#define BT_ADDR_IS_NRPA(a)    (((a)->val[5] & 0xc0) == 0x00)
+#define BT_ADDR_IS_STATIC(a)  (((a)->val[5] & 0xc0) == 0xc0)
 
-#define BT_ADDR_SET_RPA(addr)    ((addr)->val[5] = \
-					(((addr)->val[5] & 0x3f) | 0x40))
-#define BT_ADDR_SET_NRPA(addr)   ((addr)->val[5] &= 0x3f)
-#define BT_ADDR_SET_STATIC(addr) ((addr)->val[5] |= 0xc0)
+#define BT_ADDR_SET_RPA(a)    ((a)->val[5] = (((a)->val[5] & 0x3f) | 0x40))
+#define BT_ADDR_SET_NRPA(a)   ((a)->val[5] &= 0x3f)
+#define BT_ADDR_SET_STATIC(a) ((a)->val[5] |= 0xc0)
 
 int bt_addr_le_create_nrpa(bt_addr_le_t *addr);
 int bt_addr_le_create_static(bt_addr_le_t *addr);
@@ -105,6 +104,7 @@ static inline bool bt_addr_le_is_identity(const bt_addr_le_t *addr)
 #define BT_HCI_ERR_UNSPECIFIED                  0x1f
 #define BT_HCI_ERR_PAIRING_NOT_SUPPORTED        0x29
 #define BT_HCI_ERR_UNACCEPT_CONN_PARAM          0x3b
+#define BT_HCI_ERR_ADV_TIMEOUT                  0x3c
 
 /* EIR/AD data type definitions */
 #define BT_DATA_FLAGS                   0x01 /* AD flags */
@@ -124,6 +124,10 @@ static inline bool bt_addr_le_is_identity(const bt_addr_le_t *addr)
 #define BT_DATA_SOLICIT32               0x1f /* Solicit UUIDs, 32-bit */
 #define BT_DATA_SVC_DATA32              0x20 /* Service data, 32-bit UUID */
 #define BT_DATA_SVC_DATA128             0x21 /* Service data, 128-bit UUID */
+#define BT_DATA_MESH_PROV               0x29 /* Mesh Provisioning PDU */
+#define BT_DATA_MESH_MESSAGE            0x2a /* Mesh Networking PDU */
+#define BT_DATA_MESH_BEACON             0x2b /* Mesh Beacon */
+
 #define BT_DATA_MANUFACTURER_DATA       0xff /* Manufacturer Specific Data */
 
 #define BT_LE_AD_LIMITED                0x01 /* Limited Discoverable */
@@ -498,6 +502,20 @@ struct bt_hci_write_local_name {
 #define BT_BREDR_SCAN_INQUIRY                   0x01
 #define BT_BREDR_SCAN_PAGE                      0x02
 
+#define BT_TX_POWER_LEVEL_CURRENT               0x00
+#define BT_TX_POWER_LEVEL_MAX                   0x01
+#define BT_HCI_OP_READ_TX_POWER_LEVEL           BT_OP(BT_OGF_BASEBAND, 0x002d)
+struct bt_hci_cp_read_tx_power_level {
+	u16_t handle;
+	u8_t  type;
+} __packed;
+
+struct bt_hci_rp_read_tx_power_level {
+	u8_t  status;
+	u16_t handle;
+	s8_t  tx_power_level;
+} __packed;
+
 #define BT_HCI_CTL_TO_HOST_FLOW_DISABLE         0x00
 #define BT_HCI_CTL_TO_HOST_FLOW_ENABLE          0x01
 #define BT_HCI_OP_SET_CTL_TO_HOST_FLOW          BT_OP(BT_OGF_BASEBAND, 0x0031)
@@ -534,6 +552,11 @@ struct bt_hci_cp_write_ssp_mode {
 	u8_t mode;
 } __packed;
 
+#define BT_HCI_OP_SET_EVENT_MASK_PAGE_2         BT_OP(BT_OGF_BASEBAND, 0x0063)
+struct bt_hci_cp_set_event_mask_page_2 {
+	u8_t  events_page_2[8];
+} __packed;
+
 #define BT_HCI_OP_LE_WRITE_LE_HOST_SUPP         BT_OP(BT_OGF_BASEBAND, 0x006d)
 struct bt_hci_cp_write_le_host_supp {
 	u8_t  le;
@@ -543,6 +566,28 @@ struct bt_hci_cp_write_le_host_supp {
 #define BT_HCI_OP_WRITE_SC_HOST_SUPP            BT_OP(BT_OGF_BASEBAND, 0x007a)
 struct bt_hci_cp_write_sc_host_supp {
 	u8_t  sc_support;
+} __packed;
+
+#define BT_HCI_OP_READ_AUTH_PAYLOAD_TIMEOUT     BT_OP(BT_OGF_BASEBAND, 0x007b)
+struct bt_hci_cp_read_auth_payload_timeout {
+	u16_t handle;
+} __packed;
+
+struct bt_hci_rp_read_auth_payload_timeout {
+	u8_t  status;
+	u16_t handle;
+	u16_t auth_payload_timeout;
+} __packed;
+
+#define BT_HCI_OP_WRITE_AUTH_PAYLOAD_TIMEOUT    BT_OP(BT_OGF_BASEBAND, 0x007c)
+struct bt_hci_cp_write_auth_payload_timeout {
+	u16_t handle;
+	u16_t auth_payload_timeout;
+} __packed;
+
+struct bt_hci_rp_write_auth_payload_timeout {
+	u8_t  status;
+	u16_t handle;
 } __packed;
 
 /* HCI version from Assigned Numbers */
@@ -603,6 +648,16 @@ struct bt_hci_rp_read_buffer_size {
 struct bt_hci_rp_read_bd_addr {
 	u8_t      status;
 	bt_addr_t bdaddr;
+} __packed;
+
+#define BT_HCI_OP_READ_RSSI                     BT_OP(BT_OGF_STATUS, 0x0005)
+struct bt_hci_cp_read_rssi {
+	u16_t handle;
+} __packed;
+struct bt_hci_rp_read_rssi {
+	u8_t  status;
+	u16_t handle;
+	s8_t  rssi;
 } __packed;
 
 #define BT_HCI_OP_READ_ENCRYPTION_KEY_SIZE      BT_OP(BT_OGF_STATUS, 0x0008)
@@ -767,7 +822,7 @@ struct bt_hci_cp_le_set_host_chan_classif {
 struct bt_hci_cp_le_read_chan_map {
 	u16_t handle;
 } __packed;
-struct bt_hci_rp_le_read_ch_map {
+struct bt_hci_rp_le_read_chan_map {
 	u8_t  status;
 	u16_t handle;
 	u8_t  ch_map[5];
@@ -949,7 +1004,7 @@ struct bt_hci_cp_le_set_addr_res_enable {
 
 #define BT_HCI_OP_LE_SET_RPA_TIMEOUT            BT_OP(BT_OGF_LE, 0x002e)
 struct bt_hci_cp_le_set_rpa_timeout {
-	u8_t  rpa_timeout;
+	u16_t rpa_timeout;
 } __packed;
 
 #define BT_HCI_OP_LE_READ_MAX_DATA_LEN          BT_OP(BT_OGF_LE, 0x002f)
@@ -1322,7 +1377,7 @@ struct bt_hci_evt_remote_version_info {
 	u16_t handle;
 	u8_t  version;
 	u16_t manufacturer;
-	u8_t  subversion;
+	u16_t subversion;
 } __packed;
 
 #define BT_HCI_EVT_CMD_COMPLETE                 0x0e
@@ -1381,6 +1436,15 @@ struct bt_hci_evt_link_key_notify {
 	bt_addr_t bdaddr;
 	u8_t      link_key[16];
 	u8_t      key_type;
+} __packed;
+
+/* Overflow link types */
+#define BT_OVERFLOW_LINK_SYNCH                  0x00
+#define BT_OVERFLOW_LINK_ACL                    0x01
+
+#define BT_HCI_EVT_DATA_BUF_OVERFLOW            0x1a
+struct bt_hci_evt_data_buf_overflow {
+	u8_t      link_type;
 } __packed;
 
 #define BT_HCI_EVT_INQUIRY_RESULT_WITH_RSSI     0x22
@@ -1576,8 +1640,8 @@ struct bt_hci_evt_le_enh_conn_complete {
 #define BT_HCI_EVT_LE_DIRECT_ADV_REPORT         0x0b
 struct bt_hci_evt_le_direct_adv_info {
 	u8_t         evt_type;
-	bt_addr_le_t dir_addr;
 	bt_addr_le_t addr;
+	bt_addr_le_t dir_addr;
 	s8_t         rssi;
 } __packed;
 struct bt_hci_evt_le_direct_adv_report {
@@ -1695,6 +1759,33 @@ struct bt_hci_evt_le_chan_sel_algo {
 #define BT_EVT_MASK_SSP_COMPLETE                 BT_EVT_BIT(53)
 #define BT_EVT_MASK_USER_PASSKEY_NOTIFY          BT_EVT_BIT(58)
 #define BT_EVT_MASK_LE_META_EVENT                BT_EVT_BIT(61)
+
+/* Page 2 */
+#define BT_EVT_MASK_PHY_LINK_COMPLETE            BT_EVT_BIT(0)
+#define BT_EVT_MASK_CH_SELECTED_COMPLETE         BT_EVT_BIT(1)
+#define BT_EVT_MASK_DISCONN_PHY_LINK_COMPLETE    BT_EVT_BIT(2)
+#define BT_EVT_MASK_PHY_LINK_LOSS_EARLY_WARN     BT_EVT_BIT(3)
+#define BT_EVT_MASK_PHY_LINK_RECOVERY            BT_EVT_BIT(4)
+#define BT_EVT_MASK_LOG_LINK_COMPLETE            BT_EVT_BIT(5)
+#define BT_EVT_MASK_DISCONN_LOG_LINK_COMPLETE    BT_EVT_BIT(6)
+#define BT_EVT_MASK_FLOW_SPEC_MODIFY_COMPLETE    BT_EVT_BIT(7)
+#define BT_EVT_MASK_NUM_COMPLETE_DATA_BLOCKS     BT_EVT_BIT(8)
+#define BT_EVT_MASK_AMP_START_TEST               BT_EVT_BIT(9)
+#define BT_EVT_MASK_AMP_TEST_END                 BT_EVT_BIT(10)
+#define BT_EVT_MASK_AMP_RX_REPORT                BT_EVT_BIT(11)
+#define BT_EVT_MASK_AMP_SR_MODE_CHANGE_COMPLETE  BT_EVT_BIT(12)
+#define BT_EVT_MASK_AMP_STATUS_CHANGE            BT_EVT_BIT(13)
+#define BT_EVT_MASK_TRIGG_CLOCK_CAPTURE          BT_EVT_BIT(14)
+#define BT_EVT_MASK_SYNCH_TRAIN_COMPLETE         BT_EVT_BIT(15)
+#define BT_EVT_MASK_SYNCH_TRAIN_RX               BT_EVT_BIT(16)
+#define BT_EVT_MASK_CL_SLAVE_BC_RX               BT_EVT_BIT(17)
+#define BT_EVT_MASK_CL_SLAVE_BC_TIMEOUT          BT_EVT_BIT(18)
+#define BT_EVT_MASK_TRUNC_PAGE_COMPLETE          BT_EVT_BIT(19)
+#define BT_EVT_MASK_SLAVE_PAGE_RSP_TIMEOUT       BT_EVT_BIT(20)
+#define BT_EVT_MASK_CL_SLAVE_BC_CH_MAP_CHANGE    BT_EVT_BIT(21)
+#define BT_EVT_MASK_INQUIRY_RSP_NOT              BT_EVT_BIT(22)
+#define BT_EVT_MASK_AUTH_PAYLOAD_TIMEOUT_EXP     BT_EVT_BIT(23)
+#define BT_EVT_MASK_SAM_STATUS_CHANGE            BT_EVT_BIT(24)
 
 #define BT_EVT_MASK_LE_CONN_COMPLETE             BT_EVT_BIT(0)
 #define BT_EVT_MASK_LE_ADVERTISING_REPORT        BT_EVT_BIT(1)

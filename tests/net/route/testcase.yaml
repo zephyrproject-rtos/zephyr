@@ -1,0 +1,10 @@
+tests:
+-   test:
+        tags: net
+        filter: not CONFIG_BT
+        min_ram: 12
+        platform_exclude: hexiwear_kw40z
+-   test_with_bt:
+        tags: net
+        filter: CONFIG_BT
+        min_ram: 16

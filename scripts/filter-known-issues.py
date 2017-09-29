@@ -1,4 +1,4 @@
-#! /usr/bin/env python2
+#! /usr/bin/env python3
 """
 Filters a file, classifying output in errors, warnings and discarding
 the rest.
@@ -43,8 +43,8 @@ exclude_regexs = []
 # first is a list of one or more comment lines
 # followed by a list of non-comments which describe a multiline regex
 config_regex = \
-    "(?P<comment>(^\s*#.*\n)+)" \
-    "(?P<regex>(^[^#].*\n)+)"
+    b"(?P<comment>(^\s*#.*\n)+)" \
+    b"(?P<regex>(^[^#].*\n)+)"
 
 def config_import_file(filename):
     """
@@ -72,7 +72,7 @@ def config_import_file(filename):
                     raise
                 logging.debug("%s: found regex at bytes %d-%d: %s",
                               filename, m.start(), m.end(), regex)
-                if '#WARNING' in comment:
+                if b'#WARNING' in comment:
                     exclude_regexs.append((r, origin, ('warning',)))
                 else:
                     exclude_regexs.append((r, origin, ()))
@@ -175,7 +175,7 @@ else:
     errors = None
 
 def report_error(data):
-    sys.stdout.write(data)
+    sys.stdout.write(data.decode('utf-8'))
     if errors:
         errors.write(data)
 
@@ -185,6 +185,8 @@ def report_warning(data):
         warnings.write(data)
 
 for filename in args.FILENAMEs:
+    if os.stat(filename).st_size == 0:
+       continue  # skip empty log files
     try:
         with open(filename, "r+b") as f:
             logging.info("%s: filtering", filename)

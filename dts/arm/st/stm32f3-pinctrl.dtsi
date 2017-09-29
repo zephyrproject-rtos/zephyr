@@ -1,0 +1,74 @@
+/*
+ * Copyright (c) 2017 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/stm32-pinctrl.h>
+
+/ {
+	soc {
+		pinctrl: pin-controller {
+			usart1_pins_a: usart1@0 {
+				rx_tx {
+					rx = <STM32_PIN_PB6 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUPDR_NO_PULL)>;
+					tx = <STM32_PIN_PB7 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUSHPULL_NOPULL)>;
+				};
+			};
+			usart1_pins_b: usart1@1 {
+				rx_tx {
+					rx = <STM32_PIN_PA10 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUPDR_NO_PULL)>;
+					tx = <STM32_PIN_PA9 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUSHPULL_NOPULL)>;
+				};
+			};
+			usart1_pins_c: usart1@2 {
+				rx_tx {
+					rx = <STM32_PIN_PG10 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUPDR_NO_PULL)>;
+					tx = <STM32_PIN_PB6 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUSHPULL_NOPULL)>;
+				};
+			};
+			usart1_pins_d: usart1@3 {
+				rx_tx {
+					rx = <STM32_PIN_PC5 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUPDR_NO_PULL)>;
+					tx = <STM32_PIN_PC4 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUSHPULL_NOPULL)>;
+				};
+			};
+			usart2_pins_a: usart2@0 {
+				rx_tx {
+					rx = <STM32_PIN_PA3 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUPDR_NO_PULL)>;
+					tx = <STM32_PIN_PA2 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUSHPULL_NOPULL)>;
+				};
+			};
+			usart2_pins_b: usart2@1 {
+				rx_tx {
+					rx = <STM32_PIN_PA15 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUPDR_NO_PULL)>;
+					tx = <STM32_PIN_PA2 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUSHPULL_NOPULL)>;
+				};
+			};
+			usart2_pins_c: usart2@2 {
+				rx_tx {
+					rx = <STM32_PIN_PD6 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUPDR_NO_PULL)>;
+					tx = <STM32_PIN_PA2 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUSHPULL_NOPULL)>;
+				};
+			};
+			usart2_pins_d: usart2@3 {
+				rx_tx {
+					rx = <STM32_PIN_PD6 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUPDR_NO_PULL)>;
+					tx = <STM32_PIN_PD5 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUSHPULL_NOPULL)>;
+				};
+			};
+			usart3_pins_a: usart3@0 {
+				rx_tx {
+					rx = <STM32_PIN_PB11 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUPDR_NO_PULL)>;
+					tx = <STM32_PIN_PB10 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUSHPULL_NOPULL)>;
+				};
+			};
+			usart3_pins_b: usart3@1 {
+				rx_tx {
+					rx = <STM32_PIN_PD9 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUPDR_NO_PULL)>;
+					tx = <STM32_PIN_PD8 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUSHPULL_NOPULL)>;
+				};
+			};
+		};
+	};
+};

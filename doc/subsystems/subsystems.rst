@@ -16,5 +16,5 @@ to applications.
    power_management.rst
    sensor
    shell
-   test/ztest
+   test/index
    usb/usb.rst

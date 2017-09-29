@@ -11,11 +11,11 @@ extern void test_call_stacks_analyze_idle(void);
 extern void test_call_stacks_analyze_workq(void);
 
 /*test case main entry*/
-void test_main(void *p1, void *p2, void *p3)
+void test_main(void)
 {
 	ztest_test_suite(test_profiling_api,
-		ztest_unit_test(test_call_stacks_analyze_main),
-		ztest_unit_test(test_call_stacks_analyze_idle),
-		ztest_unit_test(test_call_stacks_analyze_workq));
+			 ztest_unit_test(test_call_stacks_analyze_main),
+			 ztest_unit_test(test_call_stacks_analyze_idle),
+			 ztest_unit_test(test_call_stacks_analyze_workq));
 	ztest_run_test_suite(test_profiling_api);
 }

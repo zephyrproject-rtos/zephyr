@@ -128,7 +128,14 @@ int udp_rx(void *context, unsigned char *buf, size_t size)
 	}
 
 	ptr = net_pkt_appdata(ctx->rx_pkt);
+
 	rx_buf = ctx->rx_pkt->frags;
+	if (!rx_buf) {
+		net_pkt_unref(ctx->rx_pkt);
+		ctx->rx_pkt = NULL;
+		return -ENOMEM;
+	}
+
 	len = rx_buf->len - (ptr - rx_buf->data);
 	pos = 0;
 

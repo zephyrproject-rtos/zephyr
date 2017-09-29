@@ -498,7 +498,7 @@ int nats_publish(const struct nats *nats,
 	}
 
 	if (reply_to) {
-		return transmitv(nats->conn, 7, (struct io_vec[]) {
+		return transmitv(nats->conn, 9, (struct io_vec[]) {
 			TRANSMITV_LITERAL("PUB "),
 			{
 				.base = subject,
@@ -514,20 +514,21 @@ int nats_publish(const struct nats *nats,
 			TRANSMITV_LITERAL(" "),
 			{ .base = payload_len_str, .len = ret },
 			TRANSMITV_LITERAL("\r\n"),
+			{ .base = payload, .len = payload_len },
+			TRANSMITV_LITERAL("\r\n"),
 		});
 	}
 
-	return transmitv(nats->conn, 5, (struct io_vec[]) {
+	return transmitv(nats->conn, 7, (struct io_vec[]) {
 		TRANSMITV_LITERAL("PUB "),
 		{
 			.base = subject,
 			.len = subject_len ? subject_len : strlen(subject)
 		},
 		TRANSMITV_LITERAL(" "),
-		{
-			.base = reply_to,
-			.len = reply_to_len ? reply_to_len : strlen(reply_to)
-		},
+		{ .base = payload_len_str, .len = ret },
+		TRANSMITV_LITERAL("\r\n"),
+		{ .base = payload, .len = payload_len },
 		TRANSMITV_LITERAL("\r\n"),
 	});
 }
@@ -568,7 +569,8 @@ static void receive_cb(struct net_context *ctx, struct net_pkt *pkt, int status,
 			break;
 		}
 
-		tmp = net_frag_read(tmp, pos, &pos, len, cmd_buf + cmd_len);
+		tmp = net_frag_read(tmp, pos, &pos, len,
+				    (u8_t *)(cmd_buf + cmd_len));
 		cmd_len += len;
 
 		if (end_of_line) {

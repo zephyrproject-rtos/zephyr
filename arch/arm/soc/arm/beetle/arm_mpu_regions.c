@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
- #include <soc.h>
- #include <arch/arm/cortex_m/mpu/arm_mpu.h>
+#include <soc.h>
+#include <arch/arm/cortex_m/mpu/arm_mpu.h>
 
 static struct arm_mpu_region mpu_regions[] = {
 	/* Region 0 */

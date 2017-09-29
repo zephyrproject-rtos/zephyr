@@ -950,7 +950,7 @@ EOM
 		print << "EOM"
 
 NOTE: If any of the errors are false positives, please report
-      them to the maintainer, see CHECKPATCH in MAINTAINERS.
+      them to the maintainer.
 EOM
 	}
 }
@@ -961,7 +961,7 @@ sub top_of_kernel_tree {
 	my ($root) = @_;
 
 	my @tree_check = (
-		"COPYING", "CREDITS", "Kbuild", "MAINTAINERS", "Makefile",
+		"COPYING", "CREDITS", "Kbuild", "Makefile",
 		"README", "Documentation", "arch", "include", "drivers",
 		"fs", "init", "ipc", "kernel", "lib", "scripts",
 	);
@@ -2398,9 +2398,9 @@ sub process {
 			$in_commit_log = 0;
 		}
 
-# Check if MAINTAINERS is being updated.  If so, there's probably no need to
-# emit the "does MAINTAINERS need updating?" message on file add/move/delete
-		if ($line =~ /^\s*MAINTAINERS\s*\|/) {
+# Check if CODEOWNERS is being updated.  If so, there's probably no need to
+# emit the "does CODEOWNERS need updating?" message on file add/move/delete
+		if ($line =~ /^\s*CODEOWNERS\s*\|/) {
 			$reported_maintainer_file = 1;
 		}
 
@@ -2583,7 +2583,7 @@ sub process {
 		      (defined($1) || defined($2))))) {
 			$reported_maintainer_file = 1;
 			WARN("FILE_PATH_CHANGES",
-			     "added, moved or deleted file(s), does MAINTAINERS need updating?\n" . $herecurr);
+			     "added, moved or deleted file(s), does CODEOWNERS need updating?\n" . $herecurr);
 		}
 
 # Check for wrappage within a valid hunk of the file

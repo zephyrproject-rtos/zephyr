@@ -2,6 +2,7 @@ menuconfig UART_NS16550
 	bool "NS16550 serial driver"
 	default n
 	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
 	help
 	  This option enables the NS16550 serial driver.
 	  This driver can be used for the serial hardware

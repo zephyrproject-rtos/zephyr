@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_spi.c
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    21-April-2017
   * @brief   SPI HAL module driver.
   *          This file provides firmware functions to manage the following
   *          functionalities of the Serial Peripheral Interface (SPI) peripheral:
@@ -64,7 +62,7 @@
        modes. Refer to the source code (stm32xxxx_hal_spi.c header) to get a summary of the
        maximum SPI frequency that can be reached with a data size of 8 or 16 bits, depending on
        the APBx peripheral clock frequency (fPCLK) used by the SPI instance.
-     
+
 
   @endverbatim
 
@@ -689,7 +687,7 @@ HAL_StatusTypeDef HAL_SPI_Receive(SPI_HandleTypeDef *hspi, uint8_t *pData, uint1
 #endif /* USE_SPI_CRC */
   uint32_t tickstart = 0U;
   HAL_StatusTypeDef errorcode = HAL_OK;
-  
+
 
   if ((hspi->Init.Mode == SPI_MODE_MASTER) && (hspi->Init.Direction == SPI_DIRECTION_2LINES))
   {
@@ -925,7 +923,7 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive(SPI_HandleTypeDef *hspi, uint8_t *pTxD
   /* Variable used to alternate Rx and Tx during transfer */
   uint32_t txallowed = 1U;
   HAL_StatusTypeDef errorcode = HAL_OK;
-  
+
 
   /* Check Direction parameter */
   assert_param(IS_SPI_DIRECTION_2LINES(hspi->Init.Direction));
@@ -1208,7 +1206,7 @@ error :
 HAL_StatusTypeDef HAL_SPI_Transmit_IT(SPI_HandleTypeDef *hspi, uint8_t *pData, uint16_t Size)
 {
   HAL_StatusTypeDef errorcode = HAL_OK;
-  
+
 
   /* Check Direction parameter */
   assert_param(IS_SPI_DIRECTION_2LINES_OR_1LINE(hspi->Init.Direction));
@@ -1292,7 +1290,7 @@ error :
 HAL_StatusTypeDef HAL_SPI_Receive_IT(SPI_HandleTypeDef *hspi, uint8_t *pData, uint16_t Size)
 {
   HAL_StatusTypeDef errorcode = HAL_OK;
-  
+
 
   if ((hspi->Init.Direction == SPI_DIRECTION_2LINES) && (hspi->Init.Mode == SPI_MODE_MASTER))
   {
@@ -1399,7 +1397,7 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive_IT(SPI_HandleTypeDef *hspi, uint8_t *p
 {
   uint32_t tmp = 0U, tmp1 = 0U;
   HAL_StatusTypeDef errorcode = HAL_OK;
-  
+
 
   /* Check Direction parameter */
   assert_param(IS_SPI_DIRECTION_2LINES(hspi->Init.Direction));
@@ -1506,7 +1504,7 @@ error :
 HAL_StatusTypeDef HAL_SPI_Transmit_DMA(SPI_HandleTypeDef *hspi, uint8_t *pData, uint16_t Size)
 {
   HAL_StatusTypeDef errorcode = HAL_OK;
-  
+
   /* check tx dma handle */
   assert_param(IS_SPI_DMA_HANDLE(hspi->hdmatx));
 
@@ -1620,14 +1618,14 @@ error :
 HAL_StatusTypeDef HAL_SPI_Receive_DMA(SPI_HandleTypeDef *hspi, uint8_t *pData, uint16_t Size)
 {
   HAL_StatusTypeDef errorcode = HAL_OK;
-  
+
   /* check rx dma handle */
   assert_param(IS_SPI_DMA_HANDLE(hspi->hdmarx));
 
   if ((hspi->Init.Direction == SPI_DIRECTION_2LINES) && (hspi->Init.Mode == SPI_MODE_MASTER))
   {
     hspi->State = HAL_SPI_STATE_BUSY_RX;
-    
+
     /* check tx dma handle */
     assert_param(IS_SPI_DMA_HANDLE(hspi->hdmatx));
 
@@ -1756,7 +1754,7 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive_DMA(SPI_HandleTypeDef *hspi, uint8_t *
 {
   uint32_t tmp = 0U, tmp1 = 0U;
   HAL_StatusTypeDef errorcode = HAL_OK;
-  
+
   /* check rx & tx dma handles */
   assert_param(IS_SPI_DMA_HANDLE(hspi->hdmarx));
   assert_param(IS_SPI_DMA_HANDLE(hspi->hdmatx));
@@ -3751,15 +3749,15 @@ static void SPI_CloseTx_ISR(SPI_HandleTypeDef *hspi)
 static void SPI_AbortRx_ISR(SPI_HandleTypeDef *hspi)
 {
   __IO uint32_t count;
-  
+
   /* Disable SPI Peripheral */
   __HAL_SPI_DISABLE(hspi);
-  
+
   count = SPI_DEFAULT_TIMEOUT * (SystemCoreClock / 24U / 1000U);
 
   /* Disable TXEIE, RXNEIE and ERRIE(mode fault event, overrun error, TI frame error) interrupts */
   CLEAR_BIT(hspi->Instance->CR2, (SPI_CR2_TXEIE | SPI_CR2_RXNEIE | SPI_CR2_ERRIE));
-  
+
   /* Check RXNEIE is disabled */
   do
   {
@@ -3795,12 +3793,12 @@ static void SPI_AbortRx_ISR(SPI_HandleTypeDef *hspi)
 static void SPI_AbortTx_ISR(SPI_HandleTypeDef *hspi)
 {
   __IO uint32_t count;
-  
+
   count = SPI_DEFAULT_TIMEOUT * (SystemCoreClock / 24U / 1000U);
-  
+
   /* Disable TXEIE, RXNEIE and ERRIE(mode fault event, overrun error, TI frame error) interrupts */
   CLEAR_BIT(hspi->Instance->CR2, (SPI_CR2_TXEIE | SPI_CR2_RXNEIE | SPI_CR2_ERRIE));
-  
+
   /* Check TXEIE is disabled */
   do
   {

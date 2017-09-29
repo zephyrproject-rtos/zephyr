@@ -18,7 +18,7 @@
 #include <misc/util.h>
 #include <toolchain.h>
 #include <cache.h>
-#include <linker-defs.h>
+#include <linker/linker-defs.h>
 #include <arch/arc/v2/aux_regs.h>
 #include <nano_internal.h>
 #include <misc/__assert.h>

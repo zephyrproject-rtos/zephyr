@@ -587,14 +587,14 @@ done:
 
 static bool ipaddr_cmp(const struct sockaddr *a, const struct sockaddr *b)
 {
-	if (a->family != b->family) {
+	if (a->sa_family != b->sa_family) {
 		return false;
 	}
 
-	if (a->family == AF_INET6) {
+	if (a->sa_family == AF_INET6) {
 		return net_ipv6_addr_cmp(&net_sin6(a)->sin6_addr,
 					 &net_sin6(b)->sin6_addr);
-	} else if (a->family == AF_INET) {
+	} else if (a->sa_family == AF_INET) {
 		return net_ipv4_addr_cmp(&net_sin(a)->sin_addr,
 					 &net_sin(b)->sin_addr);
 	}
@@ -678,7 +678,9 @@ static int server_resource_1_get(struct zoap_resource *resource,
 			    resource->age);
 
 	p = zoap_packet_get_payload(&response, &len);
-	memcpy(p, payload, sizeof(payload));
+	if (p) {
+		memcpy(p, payload, sizeof(payload));
+	}
 
 	r = zoap_packet_set_used(&response, sizeof(payload));
 	if (r < 0) {
@@ -997,7 +999,7 @@ static int test_block_size(void)
 	net_pkt_unref(pkt);
 
 	/* Let's try the second packet */
-	zoap_next_block(&req_ctx);
+	zoap_next_block(&req, &req_ctx);
 
 	pkt = net_pkt_get_reserve(&zoap_pkt_slab, 0, K_NO_WAIT);
 	if (!pkt) {

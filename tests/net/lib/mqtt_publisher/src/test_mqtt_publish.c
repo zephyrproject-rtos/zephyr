@@ -9,6 +9,7 @@
 
 #include <net/net_context.h>
 #include <net/net_pkt.h>
+#include <net/net_app.h>
 
 #include <string.h>
 #include <errno.h>
@@ -56,15 +57,8 @@ struct mqtt_client_ctx {
 /* This is mqtt payload message. */
 char payload[] = "DOORS:OPEN_QoSx";
 
-/* This is the network context structure. */
-static struct net_context *net_ctx;
-
 /* The mqtt client struct */
 static struct mqtt_client_ctx client_ctx;
-
-/* This routine sets some basic properties for the network context variable */
-static int network_setup(struct net_context **net_ctx, const char *local_addr,
-		const char *server_addr, u16_t server_port);
 
 /* The signature of this routine must match the connect callback declared at
  * the mqtt.h header.
@@ -223,20 +217,8 @@ static int init_network(void)
 {
 	int rc;
 
-	/* The net_ctx variable must be ready BEFORE passing it to the MQTT API.
-	 */
-	rc = network_setup(&net_ctx, ZEPHYR_ADDR, SERVER_ADDR, SERVER_PORT);
-	if (rc != 0) {
-		goto exit_app;
-	}
-
 	/* Set everything to 0 and later just assign the required fields. */
 	memset(&client_ctx, 0x00, sizeof(client_ctx));
-
-	/* The network context is the only field that must be set BEFORE
-	 * calling the mqtt_init routine.
-	 */
-	client_ctx.mqtt_ctx.net_ctx = net_ctx;
 
 	/* connect, disconnect and malformed may be set to NULL */
 	client_ctx.mqtt_ctx.connect = connect_cb;
@@ -244,15 +226,14 @@ static int init_network(void)
 	client_ctx.mqtt_ctx.disconnect = disconnect_cb;
 	client_ctx.mqtt_ctx.malformed = malformed_cb;
 
+	client_ctx.mqtt_ctx.net_init_timeout = APP_NET_INIT_TIMEOUT;
 	client_ctx.mqtt_ctx.net_timeout = APP_TX_RX_TIMEOUT;
+
+	client_ctx.mqtt_ctx.peer_addr_str = SERVER_ADDR;
+	client_ctx.mqtt_ctx.peer_port = SERVER_PORT;
 
 	/* Publisher apps TX the MQTT PUBLISH msg */
 	client_ctx.mqtt_ctx.publish_tx = publish_cb;
-
-	rc = mqtt_init(&client_ctx.mqtt_ctx, MQTT_APP_PUBLISHER);
-	if (rc != 0) {
-		goto exit_app;
-	}
 
 	/* The connect message will be sent to the MQTT server (broker).
 	 * If clean_session here is 0, the mqtt_ctx clean_session variable
@@ -267,10 +248,20 @@ static int init_network(void)
 	client_ctx.disconnect_data = "DISCONNECTED";
 	client_ctx.publish_data = "PUBLISH";
 
+	rc = mqtt_init(&client_ctx.mqtt_ctx, MQTT_APP_PUBLISHER);
+	if (rc != 0) {
+		goto exit_app;
+	}
+
+	rc = mqtt_connect(&client_ctx.mqtt_ctx);
+	if (!rc) {
+		goto exit_app;
+	}
+
 	return TC_PASS;
 
 exit_app:
-	net_context_put(net_ctx);
+	mqtt_close(&client_ctx.mqtt_ctx);
 
 	return TC_FAIL;
 }
@@ -325,99 +316,6 @@ static int test_disconnect(void)
 	}
 
 	return TC_PASS;
-}
-
-static int set_addr(struct sockaddr *sock_addr, const char *addr, u16_t port)
-{
-	void *ptr;
-	int rc;
-
-#ifdef CONFIG_NET_IPV6
-	net_sin6(sock_addr)->sin6_port = htons(port);
-	sock_addr->family = AF_INET6;
-	ptr = &(net_sin6(sock_addr)->sin6_addr);
-	rc = net_addr_pton(AF_INET6, addr, ptr);
-#else
-	net_sin(sock_addr)->sin_port = htons(port);
-	sock_addr->family = AF_INET;
-	ptr = &(net_sin(sock_addr)->sin_addr);
-	rc = net_addr_pton(AF_INET, addr, ptr);
-#endif
-
-	if (rc) {
-		TC_PRINT("Invalid IP address: %s\n", addr);
-	}
-
-	return rc;
-}
-
-static int network_setup(struct net_context **net_ctx, const char *local_addr,
-		const char *server_addr, u16_t server_port)
-{
-#ifdef CONFIG_NET_IPV6
-	socklen_t addr_len = sizeof(struct sockaddr_in6);
-	sa_family_t family = AF_INET6;
-
-#else
-	socklen_t addr_len = sizeof(struct sockaddr_in);
-	sa_family_t family = AF_INET;
-#endif
-	struct sockaddr server_sock, local_sock;
-	void *p;
-	int rc;
-
-	rc = set_addr(&local_sock, local_addr, 0);
-	if (rc) {
-		TC_PRINT("set_addr (local) error\n");
-		return TC_FAIL;
-	}
-
-#ifdef CONFIG_NET_IPV6
-	p = net_if_ipv6_addr_add(net_if_get_default(),
-			&net_sin6(&local_sock)->sin6_addr,
-			NET_ADDR_MANUAL, 0);
-#else
-	p = net_if_ipv4_addr_add(net_if_get_default(),
-			&net_sin(&local_sock)->sin_addr,
-			NET_ADDR_MANUAL, 0);
-#endif
-
-	if (!p) {
-		return TC_FAIL;
-	}
-
-	rc = net_context_get(family, SOCK_STREAM, IPPROTO_TCP, net_ctx);
-	if (rc) {
-		TC_PRINT("net_context_get error\n");
-		return TC_FAIL;
-	}
-
-	rc = net_context_bind(*net_ctx, &local_sock, addr_len);
-	if (rc) {
-		TC_PRINT("net_context_bind error\n");
-		goto lb_exit;
-	}
-
-	rc = set_addr(&server_sock, server_addr, server_port);
-	if (rc) {
-		TC_PRINT("set_addr (server) error\n");
-		goto lb_exit;
-	}
-
-	rc = net_context_connect(*net_ctx, &server_sock, addr_len, NULL,
-			APP_SLEEP_MSECS, NULL);
-	if (rc) {
-		TC_PRINT("net_context_connect error\n"
-				"Is the server (broker) up and running?\n");
-		goto lb_exit;
-	}
-
-	return TC_PASS;
-
-lb_exit:
-	net_context_put(*net_ctx);
-
-	return TC_FAIL;
 }
 
 void test_mqtt_init(void)

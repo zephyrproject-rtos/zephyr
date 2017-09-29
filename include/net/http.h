@@ -7,6 +7,18 @@
 #ifndef __HTTP_H__
 #define __HTTP_H__
 
+#include <net/net_context.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @brief HTTP client and server library
+ * @defgroup http HTTP Library
+ * @{
+ */
+
 #if defined(CONFIG_HTTPS)
 #if defined(CONFIG_MBEDTLS)
 #if !defined(CONFIG_MBEDTLS_CFG_FILE)
@@ -38,6 +50,43 @@
 
 #define HTTP_CRLF "\r\n"
 
+#if defined(MBEDTLS_MEMORY_BUFFER_ALLOC_C)
+void http_heap_init(void);
+#else
+#define http_heap_init()
+#endif /* MBEDTLS_MEMORY_BUFFER_ALLOC_C */
+
+typedef int (*http_send_data_t)(struct net_pkt *pkt,
+				net_context_send_cb_t cb,
+				s32_t timeout,
+				void *token,
+				void *user_data);
+
+#if defined(CONFIG_HTTPS)
+/* Internal information for managing HTTPS data */
+struct https_context {
+	struct net_pkt *rx_pkt;
+	struct net_buf *frag;
+	struct k_sem tx_sem;
+	struct k_fifo rx_fifo;
+	struct k_fifo tx_fifo;
+	int remaining;
+};
+
+/**
+ * @typedef https_entropy_src_cb_t
+ * @brief Callback used when the API user needs to setup the entropy source.
+ * @detail This is the same as mbedtls_entropy_f_source_ptr callback.
+ *
+ * @param data Callback-specific data pointer
+ * @param output Data to fill
+ * @param len Maximum size to provide
+ * @param olen The actual amount of bytes put into the buffer (Can be 0)
+ */
+typedef int (*https_entropy_src_cb_t)(void *data, unsigned char *output,
+				      size_t len, size_t *olen);
+#endif /* CONFIG_HTTPS */
+
 #if defined(CONFIG_HTTP_CLIENT)
 
 #include <net/http_parser.h>
@@ -57,9 +106,6 @@ enum http_final_call {
 #ifndef HTTP_STATUS_STR_SIZE
 #define HTTP_STATUS_STR_SIZE	32
 #endif
-
-/* Default network activity timeout in seconds */
-#define HTTP_NETWORK_TIMEOUT	K_SECONDS(20)
 
 /* It seems enough to hold 'Content-Length' and its value */
 #define HTTP_CONTENT_LEN_SIZE	48
@@ -130,6 +176,22 @@ typedef void (*http_response_cb_t)(struct http_client_ctx *ctx,
 				   enum http_final_call final_data,
 				   void *user_data);
 
+#if defined(CONFIG_HTTPS)
+/**
+ * @typedef https_ca_cert_cb_t
+ * @brief Callback used when the API user needs to setup the
+ * HTTPS certs.
+ *
+ * @param ctx HTTPS client context.
+ * @param ca_cert MBEDTLS certificate. This is of type mbedtls_x509_crt
+ * if MBEDTLS_X509_CRT_PARSE_C is defined.
+ *
+ * @return 0 if ok, <0 if there is an error
+ */
+typedef int (*https_ca_cert_cb_t)(struct http_client_ctx *ctx,
+				  void *ca_cert);
+#endif /* CONFIG_HTTPS */
+
 /**
  * HTTP client context information. This contains all the data that is
  * needed when doing HTTP requests.
@@ -140,6 +202,22 @@ struct http_client_ctx {
 
 	/** Server name */
 	const char *server;
+
+#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
+	/** Network packet (net_pkt) memory pool for network contexts attached
+	 * to this http_client context.
+	 */
+	net_pkt_get_slab_func_t tx_slab;
+
+	/** Network data net_buf pool for network contexts attached to this
+	 * http_client context.
+	 */
+	net_pkt_get_pool_func_t data_pool;
+#endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
+
+	/** Is this instance HTTPS or not.
+	 */
+	bool is_https;
 
 #if defined(CONFIG_DNS_RESOLVER)
 	/** Remember the DNS query id so that it can be cancelled
@@ -163,9 +241,20 @@ struct http_client_ctx {
 		s32_t timeout;
 
 		/** User can define this callback if it wants to have
-		 * special handling of the received raw data.
+		 * special handling of the received raw data. Note that this
+		 * callback is not called for HTTPS data.
 		 */
 		http_receive_cb_t receive_cb;
+
+		/** Internal function that is called when HTTP data is
+		 * received from network.
+		 */
+		net_context_recv_cb_t recv_cb;
+
+		/** Internal function that is called when HTTP data is sent to
+		 * network.
+		 */
+		http_send_data_t send_data;
 	} tcp;
 
 	/** HTTP request information */
@@ -235,7 +324,44 @@ struct http_client_ctx {
 
 		u8_t cl_present:1;
 		u8_t body_found:1;
+		u8_t message_complete:1;
 	} rsp;
+
+#if defined(CONFIG_HTTPS)
+	struct {
+		/** HTTPS stack for mbedtls library. */
+		k_thread_stack_t stack;
+
+		/** HTTPS stack size. */
+		int stack_size;
+
+		/** HTTPS thread id */
+		k_tid_t tid;
+
+		/** HTTPS thread */
+		struct k_thread thread;
+
+		/** Memory pool for RX data */
+		struct k_mem_pool *pool;
+
+		/** Hostname to be used in the certificate verification */
+		const char *cert_host;
+
+		/** mbedtls related configuration. */
+		struct {
+			struct https_context ssl_ctx;
+			https_ca_cert_cb_t cert_cb;
+			https_entropy_src_cb_t entropy_src_cb;
+			mbedtls_entropy_context entropy;
+			mbedtls_ctr_drbg_context ctr_drbg;
+			mbedtls_ssl_context ssl;
+			mbedtls_ssl_config conf;
+			mbedtls_x509_crt ca_cert;
+			u8_t *personalization_data;
+			size_t personalization_data_len;
+		} mbedtls;
+	} https;
+#endif /* CONFIG_HTTPS */
 };
 
 /**
@@ -277,13 +403,14 @@ struct http_client_request {
  * @brief Generic function to send a HTTP request to the network. Normally
  * applications would not need to use this function.
  *
- * @param net_ctx Network context.
+ * @param ctx HTTP client context.
  * @param req HTTP request to perform.
  * @param timeout Timeout when doing net_buf allocations.
  *
  * @return Return 0 if ok, and <0 if error.
  */
-int http_request(struct net_context *net_ctx, struct http_client_request *req,
+int http_request(struct http_client_ctx *ctx,
+		 struct http_client_request *req,
 		 s32_t timeout);
 
 /**
@@ -292,9 +419,9 @@ int http_request(struct net_context *net_ctx, struct http_client_request *req,
  * @param http_ctx HTTP context.
  * @param req HTTP request to perform.
  * @param cb Callback to call when the response has been received from peer.
- * @param response_buf Caller supplied buffer where the HTTP response will be
+ * @param response_buf Caller-supplied buffer where the HTTP response will be
  * stored
- * @param response_buf_len Length of the caller suppied buffer.
+ * @param response_buf_len Length of the caller-supplied buffer.
  * @param user_data A valid pointer on some user data or NULL
  * @param timeout Amount of time to wait for a reply. If the timeout is 0,
  * then we return immediately and the callback (if set) will be called later.
@@ -320,9 +447,9 @@ int http_client_send_req(struct http_client_ctx *http_ctx,
  * to add. This can be set to NULL. The format is "name: value\r\n"
  * Example: "Accept: text/plain\r\nConnection: Close\r\n"
  * @param cb Callback to call when the response has been received from peer.
- * @param response_buf Caller supplied buffer where the HTTP request will be
+ * @param response_buf Caller-supplied buffer where the HTTP request will be
  * stored
- * @param response_buf_len Length of the caller suppied buffer.
+ * @param response_buf_len Length of the caller-supplied buffer.
  * @param user_data A valid pointer on some user data or NULL
  * @param timeout Amount of time to wait for a reply. If the timeout is 0,
  * then we return immediately and the callback (if set) will be called later.
@@ -364,9 +491,9 @@ static inline int http_client_send_get_req(struct http_client_ctx *http_ctx,
  * @param content_type Content type of the data.
  * @param payload Payload data.
  * @param cb Callback to call when the response has been received from peer.
- * @param response_buf Caller supplied buffer where the HTTP response will be
+ * @param response_buf Caller-supplied buffer where the HTTP response will be
  * stored
- * @param response_buf_len Length of the caller suppied buffer.
+ * @param response_buf_len Length of the caller-supplied buffer.
  * @param user_data A valid pointer on some user data or NULL
  * @param timeout Amount of time to wait for a reply. If the timeout is 0,
  * then we return immediately and the callback (if set) will be called later.
@@ -400,7 +527,7 @@ static inline int http_client_send_post_req(struct http_client_ctx *http_ctx,
 }
 
 /**
- * @brief Initialize user supplied HTTP context.
+ * @brief Initialize user-supplied HTTP context.
  *
  * @detail Caller can set the various fields in http_ctx after this call
  * if needed.
@@ -408,7 +535,7 @@ static inline int http_client_send_post_req(struct http_client_ctx *http_ctx,
  * @param http_ctx HTTP context.
  * @param server HTTP server address or host name. If host name is given,
  * then DNS resolver support (CONFIG_DNS_RESOLVER) must be enabled. If caller
- * sets the server parameter as NULL, then it no attempt is done to figure out
+ * sets the server parameter as NULL, then no attempt is done to figure out
  * the remote address and caller must set the address in http_ctx.tcp.remote
  * itself.
  * @param server_port HTTP server TCP port.
@@ -418,12 +545,79 @@ static inline int http_client_send_post_req(struct http_client_ctx *http_ctx,
 int http_client_init(struct http_client_ctx *http_ctx,
 		     const char *server, u16_t server_port);
 
+#if defined(CONFIG_HTTPS)
+/**
+ * @brief Initialize user-supplied HTTP context when using HTTPS.
+ *
+ * @detail Caller can set the various fields in http_ctx after this call
+ * if needed.
+ *
+ * @param http_ctx HTTPS context.
+ * @param server HTTPS server address or host name. If host name is given,
+ * then DNS resolver support (CONFIG_DNS_RESOLVER) must be enabled. If caller
+ * sets the server parameter as NULL, then no attempt is done to figure out
+ * the remote address and caller must set the address in http_ctx.tcp.remote
+ * itself.
+ * @param server_port HTTPS server TCP port.
+ * @param personalization_data Personalization data (Device specific
+ * identifiers) for random number generator. (Can be NULL).
+ * @param personalization_data_len Length of the personalization data.
+ * @param cert_cb User-supplied callback that setups the certificates.
+ * @param cert_host Hostname that is used to verify the server certificate.
+ * This value is used when HTTP client API calls mbedtls_ssl_set_hostname()
+ * which sets the hostname to check against the received server certificate.
+ * See https://tls.mbed.org/kb/how-to/use-sni for more details.
+ * This can be left NULL in which case mbedtls will silently skip certificate
+ * verification entirely. This option is only used if MBEDTLS_X509_CRT_PARSE_C
+ * is enabled in mbedtls config file.
+ * @param entropy_src_cb User-supplied callback that setup the entropy. This
+ * can be set to NULL, in which case default entropy source is used.
+ * @param pool Memory pool for RX data reads.
+ * @param https_stack HTTPS thread stack.
+ * @param https_stack_len HTTP thread stack size.
+ *
+ * @return Return 0 if ok, <0 if error.
+ */
+int https_client_init(struct http_client_ctx *http_ctx,
+		      const char *server, u16_t server_port,
+		      u8_t *personalization_data,
+		      size_t personalization_data_len,
+		      https_ca_cert_cb_t cert_cb,
+		      const char *cert_host,
+		      https_entropy_src_cb_t entropy_src_cb,
+		      struct k_mem_pool *pool,
+		      k_thread_stack_t https_stack,
+		      size_t https_stack_size);
+#endif /* CONFIG_HTTPS */
+
 /**
  * @brief Release all the resources allocated for HTTP context.
  *
  * @param http_ctx HTTP context.
  */
 void http_client_release(struct http_client_ctx *http_ctx);
+
+#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
+/**
+ * @brief Configure the net_pkt pool for this context.
+ *
+ * @details Use of this function is optional and if the pools are not set,
+ * then the default TX and DATA pools are used. This needs to be called before
+ * http init function, as that will setup net_context which needs the net_pkt
+ * pool information.
+ *
+ * @param ctx HTTP client context
+ * @param tx_slab Function which is used when allocating TX network packet.
+ * This can be NULL in which case default TX memory pool is used.
+ * @param data_pool Function which is used when allocating data network buffer.
+ * This can be NULL in which case default DATA net_buf pool is used.
+ */
+int http_client_set_net_pkt_pool(struct http_client_ctx *ctx,
+				 net_pkt_get_slab_func_t tx_slab,
+				 net_pkt_get_pool_func_t data_pool);
+#else
+#define http_client_set_net_pkt_pool(...)
+#endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 #endif /* CONFIG_HTTP_CLIENT */
 
 #if defined(CONFIG_HTTP_SERVER)
@@ -485,15 +679,6 @@ struct http_server_urls {
 };
 
 #if defined(CONFIG_HTTPS)
-/* Internal information for managing HTTPS data */
-struct https_context {
-	struct net_pkt *rx_pkt;
-	struct net_buf *frag;
-	struct k_sem tx_sem;
-	struct k_fifo rx_fifo;
-	int remaining;
-};
-
 /**
  * @typedef https_server_cert_cb_t
  * @brief Callback used when the API user needs to setup the
@@ -508,26 +693,7 @@ struct https_context {
 typedef int (*https_server_cert_cb_t)(struct http_server_ctx *ctx,
 				      mbedtls_x509_crt *cert,
 				      mbedtls_pk_context *pkey);
-
-/**
- * @typedef https_entropy_src_cb_t
- * @brief Callback used when the API user needs to setup the entropy source.
- * @detail This is the same as mbedtls_entropy_f_source_ptr callback.
- *
- * @param data Callback-specific data pointer
- * @param output Data to fill
- * @param len Maximum size to provide
- * @param olen The actual amount of bytes put into the buffer (Can be 0)
- */
-typedef int (*https_entropy_src_cb_t)(void *data, unsigned char *output,
-				      size_t len, size_t *olen);
 #endif /* CONFIG_HTTPS */
-
-typedef int (*http_send_data_t)(struct net_pkt *pkt,
-				net_context_send_cb_t cb,
-				s32_t timeout,
-				void *token,
-				void *user_data);
 
 /* The HTTP server context struct */
 struct http_server_ctx {
@@ -548,6 +714,22 @@ struct http_server_ctx {
 
 	/** Function that is called when data is sent to network. */
 	http_send_data_t send_data;
+
+#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
+	/** Network packet (net_pkt) memory pool for network contexts attached
+	 * to this http server context.
+	 */
+	net_pkt_get_slab_func_t tx_slab;
+
+	/** Network data net_buf pool for network contexts attached to this
+	 * http server context.
+	 */
+	net_pkt_get_pool_func_t data_pool;
+#endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
+
+#if defined(CONFIG_NET_DEBUG_HTTP_CONN)
+	sys_snode_t node;
+#endif
 
 	/** Network timeout */
 	s32_t timeout;
@@ -603,15 +785,12 @@ struct http_server_ctx {
 
 		/** URL's length */
 		u16_t url_len;
-
-		/** Has the request timer been cancelled. */
-		u8_t timer_cancelled;
 	} req;
 
 #if defined(CONFIG_HTTPS)
 	struct {
 		/** HTTPS stack for mbedtls library. */
-		u8_t *stack;
+		k_thread_stack_t stack;
 
 		/** HTTPS stack size. */
 		int stack_size;
@@ -643,8 +822,19 @@ struct http_server_ctx {
 #endif /* CONFIG_HTTPS */
 };
 
+#if defined(CONFIG_NET_DEBUG_HTTP_CONN)
+typedef void (*http_server_cb_t)(struct http_server_ctx *entry,
+				 void *user_data);
+
+void http_server_conn_foreach(http_server_cb_t cb, void *user_data);
+void http_server_conn_monitor(http_server_cb_t cb, void *user_data);
+#else
+#define http_server_conn_foreach(...)
+#define http_server_conn_monitor(...)
+#endif /* CONFIG_NET_DEBUG_HTTP_CONN */
+
 /**
- * @brief Initialize user supplied HTTP context.
+ * @brief Initialize user-supplied HTTP context.
  *
  * @detail Caller can set the various callback fields in http_ctx and
  * http_ctx.req.parser after this call if needed.
@@ -664,9 +854,9 @@ struct http_server_ctx {
  * listened. The parameter can be left NULL in which case a listener to port 80
  * using IPv4 and IPv6 is created. Note that if IPv4 or IPv6 is disabled, then
  * the corresponding disabled service listener is not created.
- * @param request_buf Caller supplied buffer where the HTTP request will be
+ * @param request_buf Caller-supplied buffer where the HTTP request will be
  * stored
- * @param request_buf_len Length of the caller suppied buffer.
+ * @param request_buf_len Length of the caller-supplied buffer.
  * @param server_banner Print information about started service. This is only
  * printed if HTTP debugging is activated. The parameter can be set to NULL if
  * no extra prints are needed.
@@ -682,7 +872,7 @@ int http_server_init(struct http_server_ctx *http_ctx,
 
 #if defined(CONFIG_HTTPS)
 /**
- * @brief Initialize user supplied HTTP context. This function must be
+ * @brief Initialize user-supplied HTTP context. This function must be
  * used if HTTPS server is created.
  *
  * @detail Caller can set the various callback fields in http_ctx and
@@ -703,17 +893,17 @@ int http_server_init(struct http_server_ctx *http_ctx,
  * listened. The parameter can be left NULL in which case a listener to port 80
  * using IPv4 and IPv6 is created. Note that if IPv4 or IPv6 is disabled, then
  * the corresponding disabled service listener is not created.
- * @param request_buf Caller supplied buffer where the HTTP request will be
+ * @param request_buf Caller-supplied buffer where the HTTP request will be
  * stored
- * @param request_buf_len Length of the caller suppied buffer.
+ * @param request_buf_len Length of the caller-supplied buffer.
  * @param server_banner Print information about started service. This is only
  * printed if HTTP debugging is activated. The parameter can be set to NULL if
  * no extra prints are needed.
  * @param personalization_data Personalization data (Device specific
  * identifiers) for random number generator. (Can be NULL).
  * @param personalization_data_len Length of the personalization data.
- * @param cert_cb User supplied callback that setups the certifacates.
- * @param entropy_src_cb User supplied callback that setup the entropy. This
+ * @param cert_cb User-supplied callback that setups the certificates.
+ * @param entropy_src_cb User-supplied callback that setup the entropy. This
  * can be set to NULL, in which case default entropy source is used.
  * @param pool Memory pool for RX data reads.
  * @param https_stack HTTPS thread stack.
@@ -732,7 +922,7 @@ int https_server_init(struct http_server_ctx *http_ctx,
 		      https_server_cert_cb_t cert_cb,
 		      https_entropy_src_cb_t entropy_src_cb,
 		      struct k_mem_pool *pool,
-		      u8_t *https_stack,
+		      k_thread_stack_t https_stack,
 		      size_t https_stack_len);
 #endif /* CONFIG_HTTPS */
 
@@ -907,6 +1097,54 @@ int http_response_403(struct http_server_ctx *ctx, const char *html_payload);
  */
 int http_response_404(struct http_server_ctx *ctx, const char *html_payload);
 
+/**
+ * @brief Send some data to the client.
+ *
+ * @detail Send a piece of data to the client. If html_payload is NULL, then
+ * we close the connection.
+ *
+ * @param ctx HTTP context.
+ * @param http_header HTTP header to be sent. Can be NULL.
+ * @param html_payload HTML payload to send.
+ * @param timeout Timeout to wait until the connection is teared down.
+ *
+ * @return 0 if ok, <0 if error.
+ */
+int http_response_send_data(struct http_server_ctx *ctx,
+			    const char *http_header,
+			    const char *html_payload,
+			    s32_t timeout);
+
+#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
+/**
+ * @brief Configure the net_pkt pool for this context.
+ *
+ * @details Use of this function is optional and if the pools are not set,
+ * then the default TX and DATA pools are used. This needs to be called before
+ * http init function, as that will setup net_context which needs the net_pkt
+ * pool information.
+ *
+ * @param ctx HTTP server context
+ * @param tx_slab Function which is used when allocating TX network packet.
+ * This can be NULL in which case default TX memory pool is used.
+ * @param data_pool Function which is used when allocating data network buffer.
+ * This can be NULL in which case default DATA net_buf pool is used.
+ */
+int http_server_set_net_pkt_pool(struct http_server_ctx *ctx,
+				 net_pkt_get_slab_func_t tx_slab,
+				 net_pkt_get_pool_func_t data_pool);
+#else
+#define http_server_set_net_pkt_pool(...)
+#endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
+
 #endif /* CONFIG_HTTP_SERVER */
+
+#ifdef __cplusplus
+}
+#endif
+
+/**
+ * @}
+ */
 
 #endif /* __HTTP_H__ */

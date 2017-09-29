@@ -31,6 +31,7 @@ config ARC_INIT
 config SYS_LOG_ARC_INIT_LEVEL
 	int
 	prompt "Quark SE Sensor Subsystem log level"
+	depends on SYS_LOG
 	default 0
 	help
 	Sets log level for the boot initialization and boot process of the sensor

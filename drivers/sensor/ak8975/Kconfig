@@ -9,7 +9,7 @@
 menuconfig AK8975
 	bool
 	prompt "AK8975 Magnetometer"
-	depends on SENSOR && I2C
+	depends on I2C
 	default n
 	help
 	  Enable driver for AK8975 magnetometer.

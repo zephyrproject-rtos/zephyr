@@ -1,0 +1,9 @@
+identifier: hexiwear_k64
+name: Hexiwear
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb
+supported:
+  - ble

@@ -450,8 +450,7 @@ static int ss_spi_qmsi_init(struct device *dev)
 	context->gpio_cs = gpio_cs_init(spi_config);
 #endif
 	k_sem_init(&context->device_sync_sem, 0, UINT_MAX);
-	k_sem_init(&context->sem, 0, UINT_MAX);
-	k_sem_give(&context->sem);
+	k_sem_init(&context->sem, 1, UINT_MAX);
 
 	ss_spi_master_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
 

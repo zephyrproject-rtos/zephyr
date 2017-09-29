@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2017 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include <zephyr.h>
 #include <misc/printk.h>
 #include <console.h>

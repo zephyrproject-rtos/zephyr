@@ -18,7 +18,7 @@
 
 #include <zephyr/types.h>
 #include <toolchain.h>
-#include <linker-defs.h>
+#include <linker/linker-defs.h>
 #include <kernel_structs.h>
 #include <nano_internal.h>
 

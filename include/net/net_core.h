@@ -17,6 +17,12 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Network core library
+ * @defgroup net_core Network Core Library
+ * @{
+ */
+
 /* Network subsystem logging helpers */
 
 #if defined(NET_LOG_ENABLED)
@@ -89,7 +95,7 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt);
 int net_send_data(struct net_pkt *pkt);
 
 struct net_stack_info {
-	char *stack;
+	k_thread_stack_t stack;
 	const char *pretty_name;
 	const char *name;
 	size_t orig_size;
@@ -115,7 +121,7 @@ struct net_stack_info {
 	NET_STACK_INFO_ADDR(_pretty_name, _name, _orig, _size, _name, 0)
 
 #define NET_STACK_DEFINE(pretty_name, name, orig, size)			\
-	static char __noinit __stack name[size];			\
+	K_THREAD_STACK_DEFINE(name, size);				\
 	NET_STACK_INFO(pretty_name, name, orig, size)
 
 #else /* CONFIG_NET_SHELL */
@@ -124,7 +130,7 @@ struct net_stack_info {
 #define NET_STACK_INFO_ADDR(...)
 
 #define NET_STACK_DEFINE(pretty_name, name, orig, size)			\
-	static char __noinit __stack name[size]
+	K_THREAD_STACK_DEFINE(name, size)
 
 #endif /* CONFIG_NET_SHELL */
 
@@ -134,7 +140,7 @@ struct net_stack_info {
 #if defined(CONFIG_INIT_STACKS)
 #include <misc/stack.h>
 
-static inline void net_analyze_stack_get_values(unsigned char *stack,
+static inline void net_analyze_stack_get_values(const char *stack,
 						size_t size,
 						unsigned *pcnt,
 						unsigned *unused)
@@ -146,7 +152,7 @@ static inline void net_analyze_stack_get_values(unsigned char *stack,
 }
 
 static inline void net_analyze_stack(const char *name,
-				     unsigned char *stack,
+				     const char *stack,
 				     size_t size)
 {
 	unsigned int pcnt, unused;
@@ -163,6 +169,10 @@ static inline void net_analyze_stack(const char *name,
 #define net_analyze_stack_get_values(...)
 #endif
 /* @endcond */
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

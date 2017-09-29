@@ -257,7 +257,7 @@ typedef enum __packed {
  *  pairing will be initiated.
  *
  *  This function may return error if required level of security is not possible
- *  to achieve due to local or remote device limitation (eg input output
+ *  to achieve due to local or remote device limitation (e.g., input output
  *  capabilities).
  *
  *  @param conn Connection object.
@@ -346,7 +346,7 @@ struct bt_conn_cb {
 	 */
 	void (*le_param_updated)(struct bt_conn *conn, u16_t interval,
 				 u16_t latency, u16_t timeout);
-#if defined(CONFIG_BLUETOOTH_SMP)
+#if defined(CONFIG_BT_SMP)
 	/** @brief Remote Identity Address has been resolved.
 	 *
 	 *  This callback notifies the application that a remote
@@ -359,8 +359,8 @@ struct bt_conn_cb {
 	void (*identity_resolved)(struct bt_conn *conn,
 				  const bt_addr_le_t *rpa,
 				  const bt_addr_le_t *identity);
-#endif /* CONFIG_BLUETOOTH_SMP */
-#if defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR)
+#endif /* CONFIG_BT_SMP */
+#if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR)
 	/** @brief The security level of a connection has changed.
 	 *
 	 *  This callback notifies the application that the security level
@@ -370,7 +370,7 @@ struct bt_conn_cb {
 	 *  @param level New security level of the connection.
 	 */
 	void (*security_changed)(struct bt_conn *conn, bt_security_t level);
-#endif /* defined(CONFIG_BLUETOOTH_SMP) || defined(CONFIG_BLUETOOTH_BREDR) */
+#endif /* defined(CONFIG_BT_SMP) || defined(CONFIG_BT_BREDR) */
 	struct bt_conn_cb *_next;
 };
 
@@ -389,7 +389,7 @@ struct bt_conn_auth_cb {
 	void (*passkey_confirm)(struct bt_conn *conn, unsigned int passkey);
 	void (*cancel)(struct bt_conn *conn);
 	void (*pairing_confirm)(struct bt_conn *conn);
-#if defined(CONFIG_BLUETOOTH_BREDR)
+#if defined(CONFIG_BT_BREDR)
 	void (*pincode_entry)(struct bt_conn *conn, bool highsec);
 #endif
 };

@@ -55,14 +55,14 @@ static inline int test_thread_monitor(void)
 	while (thread_list != NULL) {
 		if (thread_list->base.prio == -1) {
 			TC_PRINT("PREMPT: %p OPTIONS: 0x%02x, STATE: 0x%02x\n",
-			thread_list,
-			thread_list->base.user_options,
-			thread_list->base.thread_state);
+				 thread_list,
+				 thread_list->base.user_options,
+				 thread_list->base.thread_state);
 		} else {
 			TC_PRINT("COOP: %p OPTIONS: 0x%02x, STATE: 0x%02x\n",
-			thread_list,
-			thread_list->base.user_options,
-			thread_list->base.thread_state);
+				 thread_list,
+				 thread_list->base.user_options,
+				 thread_list->base.thread_state);
 		}
 		thread_list =
 			(struct k_thread *)SYS_THREAD_MONITOR_NEXT(thread_list);
@@ -92,7 +92,7 @@ void object_monitor(void)
 	while (obj_list != NULL) {
 		TC_PRINT("SEMAPHORE REF: %p\n", obj_list);
 		obj_list = SYS_TRACING_NEXT(OBJ_LIST_TYPE, OBJ_LIST_NAME,
-						obj_list);
+					    obj_list);
 		obj_counter++;
 	}
 	TC_PRINT("SEMAPHORE QUANTITY: %d\n", obj_counter);

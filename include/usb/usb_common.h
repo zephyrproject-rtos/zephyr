@@ -41,7 +41,7 @@
 #ifndef USB_COMMON_H_
 #define USB_COMMON_H_
 
-/* Decriptor size in bytes */
+/* Descriptor size in bytes */
 #define USB_DEVICE_DESC_SIZE            18
 #define USB_CONFIGURATION_DESC_SIZE     9
 #define USB_INTERFACE_DESC_SIZE         9
@@ -49,6 +49,8 @@
 #define USB_STRING_DESC_SIZE            4
 #define USB_HID_DESC_SIZE               9
 #define USB_DFU_DESC_SIZE               9
+#define USB_DEVICE_QUAL_DESC_SIZE       10
+#define USB_INTERFACE_ASSOC_DESC_SIZE   8
 
 /* Descriptor type */
 #define USB_DEVICE_DESC                 0x01
@@ -56,12 +58,17 @@
 #define USB_STRING_DESC                 0x03
 #define USB_INTERFACE_DESC              0x04
 #define USB_ENDPOINT_DESC               0x05
+#define USB_DEVICE_QUAL_DESC            0x06
+#define USB_INTERFACE_ASSOC_DESC        0x0B
 #define USB_HID_DESC                    0x21
 #define USB_HID_REPORT_DESC             0x22
 #define USB_DFU_FUNCTIONAL_DESC         0x21
 
 /* Useful define */
 #define USB_1_1                         0x0110
+#define USB_2_0                         0x0200
+/* Set USB version to 2.1 so that the host will request the BOS descriptor */
+#define USB_2_1				0x0210
 
 #define BCDDEVICE_RELNUM                0x0100
 
@@ -84,15 +91,21 @@
 #define HID_CLASS                       0x03
 #define MASS_STORAGE_CLASS              0x08
 #define WIRELESS_DEVICE_CLASS           0xE0
+#define MISC_CLASS                      0xEF
 #define CUSTOM_CLASS                    0xFF
 #define DFU_CLASS                       0xFE
 
 /* Sub-classes */
 #define ACM_SUBCLASS                    0x02
+#define CDC_ECM_SUBCLASS                0x06
+#define CDC_NCM_SUBCLASS                0x0d
 #define BOOT_INTERFACE_SUBCLASS         0x01
 #define SCSI_TRANSPARENT_SUBCLASS       0x06
 #define DFU_INTERFACE_SUBCLASS          0x01
 #define RF_SUBCLASS                     0x01
+#define CUSTOM_SUBCLASS                 0xFF
+/* Misc subclasses */
+#define MISC_RNDIS_SUBCLASS             0x04
 
 /* Protocols */
 #define V25TER_PROTOCOL                 0x01
@@ -101,5 +114,9 @@
 #define DFU_RUNTIME_PROTOCOL            0x01
 #define DFU_MODE_PROTOCOL               0x02
 #define BLUETOOTH_PROTOCOL              0x01
+/* CDC ACM protocols */
+#define ACM_VENDOR_PROTOCOL             0xFF
+/* Misc protocols */
+#define MISC_ETHERNET_PROTOCOL          0x01
 
 #endif /* USB_COMMON_H_ */

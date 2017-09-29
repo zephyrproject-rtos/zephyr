@@ -11,7 +11,7 @@
 
 #include <kernel.h>
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 
 #include <misc/util.h>
 #include <misc/slist.h>
@@ -157,8 +157,9 @@ static inline void mgmt_run_callbacks(struct mgmt_event_entry *mgmt_event)
 	}
 
 #ifdef CONFIG_NET_DEBUG_MGMT_EVENT_STACK
-	net_analyze_stack("Net MGMT event stack", mgmt_stack,
-			  CONFIG_NET_MGMT_EVENT_STACK_SIZE);
+	net_analyze_stack("Net MGMT event stack",
+			  K_THREAD_STACK_BUFFER(mgmt_stack),
+			  K_THREAD_STACK_SIZEOF(mgmt_stack));
 #endif
 }
 
@@ -200,7 +201,7 @@ static int mgmt_event_wait_call(struct net_if *iface,
 				int timeout)
 {
 	struct mgmt_event_wait sync_data = {
-		.sync_call = K_SEM_INITIALIZER(sync_data.sync_call, 0, 1),
+		.sync_call = _K_SEM_INITIALIZER(sync_data.sync_call, 0, 1),
 	};
 	struct net_mgmt_event_callback sync = {
 		.sync_call = &sync_data.sync_call,
@@ -298,7 +299,8 @@ void net_mgmt_event_init(void)
 	       CONFIG_NET_MGMT_EVENT_QUEUE_SIZE *
 	       sizeof(struct mgmt_event_entry));
 
-	k_thread_create(&mgmt_thread_data, mgmt_stack, sizeof(mgmt_stack),
+	k_thread_create(&mgmt_thread_data, mgmt_stack,
+			K_THREAD_STACK_SIZEOF(mgmt_stack),
 			(k_thread_entry_t)mgmt_thread, NULL, NULL, NULL,
 			K_PRIO_COOP(CONFIG_NET_MGMT_EVENT_THREAD_PRIO), 0, 0);
 

@@ -23,7 +23,9 @@ Requirements
 
 - Linux machine with wget and the screen terminal emulator
 - Either QEMU or real device like Freedom Board (FRDM-K64F)
+- For QEMU see this :ref:`networking_with_qemu`
 - LAN for testing purposes (Ethernet)
+
 
 Building and Running
 ********************
@@ -32,6 +34,8 @@ Currently, the HTTP Server application is configured to listen at port 80.
 If you want to modify the http-server sample application, please check
 the configuration settings in :file:`samples/net/http_server/src/main.c` file
 and also in the :file:`samples/net/http_server/src/config.h` file.
+
+To use QEMU for testing, follow the :ref:`networking_with_qemu` guide.
 
 This sample code supports both static and dynamic (DHCPv4) IP addresses that
 can be defined in the project configuration file:
@@ -248,9 +252,6 @@ In order to compile and run the code execute:
 .. code-block:: console
 
         make BOARD=qemu_x86 run
-
-The sample code supports only one hard-coded valid URL (index.html) and
-will return 404 code for other requests.
 
 Sample Output
 =============

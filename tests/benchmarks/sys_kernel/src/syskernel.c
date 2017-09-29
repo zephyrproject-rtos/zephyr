@@ -13,8 +13,8 @@
 
 #include <string.h>
 
-char __stack thread_stack1[STACK_SIZE];
-char __stack thread_stack2[STACK_SIZE];
+K_THREAD_STACK_DEFINE(thread_stack1, STACK_SIZE);
+K_THREAD_STACK_DEFINE(thread_stack2, STACK_SIZE);
 struct k_thread thread_data1;
 struct k_thread thread_data2;
 

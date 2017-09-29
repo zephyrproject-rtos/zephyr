@@ -1,0 +1,8 @@
+sample:
+    description: A simple application that demonstrates basic sanity of the kernel.
+    name: Synchronization Sample
+tests:
+-   test:
+        build_only: true
+        tags: apps
+        build_on_all: true

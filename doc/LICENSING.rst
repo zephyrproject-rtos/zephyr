@@ -1,26 +1,32 @@
+:orphan:
+
 .. _zephyr_licensing:
 
 Licensing of Zephyr Project components
 ######################################
 
 The Zephyr kernel tree imports or reuses packages, scripts and other files that
-are not covered by the :download:`Apache License <../LICENSE>`. In some places
+are not covered by the `Apache 2.0 License`_. In some places
 there is no LICENSE file or way to put a LICENSE file there, so we describe the
 licensing in this document.
 
+.. _Apache 2.0 License:
+   https://github.com/zephyrproject-rtos/zephyr/blob/master/LICENSE
 
-- *kconfig* and *kbuild*
+.. _GPLv2 License:
+   https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/plain/COPYING
 
+*kconfig* and *kbuild*
   *Origin:* Linux Kernel
-  *Licensing:* *GPLv2*
 
-- *scripts/{checkpatch.pl,checkstack.pl,get_maintainers.pl,spelling.txt}*
+  *Licensing:* `GPLv2 License`_
 
+*scripts/{checkpatch.pl,checkstack.pl,get_maintainers.pl,spelling.txt}*
   *Origin:* Linux Kernel
-  *Licensing:* *GPLv2*
 
-- *ext/fs/fat/*
+  *Licensing:* `GPLv2 License`_
 
+*ext/fs/fat/*
   *Origin:* FatFs is a file system based on the FAT file system specification.  This is
   provided by ELM Chan http://elm-chan.org/fsw/ff/00index_e.html
 
@@ -40,26 +46,34 @@ licensing in this document.
     The copyright owner or contributors be NOT LIABLE for any damages caused
     by use of this software.
 
-- *ext/hal/cmsis/*
-
+*ext/hal/cmsis/*
   *Origin:* https://github.com/ARM-software/CMSIS.git
 
-  *Licensing*: :download:`CMSIS_END_USER_LICENCE_AGREEMENT <../ext/hal/cmsis/CMSIS_END_USER_LICENCE_AGREEMENT.pdf>`
+  *Licensing*: `CMSIS END USER LICENCE AGREEMENT`_
 
-- *ext/hal/nordic/*
+.. _CMSIS END USER LICENCE AGREEMENT:
+   https://github.com/zephyrproject-rtos/zephyr/blob/master/ext/hal/cmsis/CMSIS_END_USER_LICENCE_AGREEMENT.pdf
 
+*ext/hal/nordic/*
   *Origin:*
 
-  *Licensing*: 3-clause BSD (see :download:`source <../ext/hal/nordic/mdk/nrf51.h>`)
+  *Licensing*: 3-clause BSD (see `ext/hal/nordic source`_)
 
-- *ext/hal/nxp/mcux/*
+.. _ext/hal/nordic source:
+   https://github.com/zephyrproject-rtos/zephyr/blob/master/ext/hal/nordic/mdk/nrf51.h
 
+*ext/hal/nxp/mcux/*
   *Origin:* http://mcux.nxp.com
 
-  *Licensing*: 3-clause BSD (see :download:`source <../ext/hal/nxp/mcux/drivers/fsl_rtc.h>`)
+  *Licensing*: 3-clause BSD (see `ext/hal/nxp/mcux source`_)
 
-- *ext/hal/qmsi/*
+.. _ext/hal/nxp/mcux source:
+   https://github.com/zephyrproject-rtos/zephyr/blob/master/ext/hal/nxp/mcux/drivers/fsl_rtc.h
 
+*ext/hal/qmsi/*
   *Origin:* https://github.com/quark-mcu/qmsi/releases
 
-  *Licensing*: 3-clause BSD (see :download:`source <../ext/hal/qmsi/include/qm_common.h>`)
+  *Licensing*: 3-clause BSD (see `ext/hal/qmsi source`_)
+
+.. _ext/hal/qmsi source:
+   https://github.com/zephyrproject-rtos/zephyr/blob/master/ext/hal/qmsi/include/qm_common.h

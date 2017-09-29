@@ -1,0 +1,5 @@
+tests:
+-   test_enc28j60_build:
+        build_only: true
+        platform_whitelist: arduino_101
+        tags: drivers

@@ -1,0 +1,7 @@
+identifier: stm3210c_eval
+name: STM3210C-EVAL
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb

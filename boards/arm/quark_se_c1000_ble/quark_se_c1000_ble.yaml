@@ -1,0 +1,13 @@
+identifier: quark_se_c1000_ble
+name: Quark SE C1000 Devboard (nRF51)
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb
+ram: 16
+supported:
+  - ble
+testing:
+  ignore_tags:
+    - net

@@ -1,0 +1,7 @@
+identifier: nucleo_f413zh
+name: NUCLEO-F413zh
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb

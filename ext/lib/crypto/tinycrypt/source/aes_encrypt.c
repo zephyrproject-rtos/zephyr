@@ -1,7 +1,7 @@
 /* aes_encrypt.c - TinyCrypt implementation of AES encryption procedure */
 
 /*
- *  Copyright (C) 2015 by Intel Corporation, All Rights Reserved.
+ *  Copyright (C) 2017 by Intel Corporation, All Rights Reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -59,7 +59,7 @@ static const uint8_t sbox[256] = {
 	0xb0, 0x54, 0xbb, 0x16
 };
 
-static inline uint32_t rotword(uint32_t a)
+static inline unsigned int rotword(unsigned int a)
 {
 	return (((a) >> 24)|((a) << 8));
 }
@@ -67,14 +67,14 @@ static inline uint32_t rotword(uint32_t a)
 #define subbyte(a, o)(sbox[((a) >> (o))&0xff] << (o))
 #define subword(a)(subbyte(a, 24)|subbyte(a, 16)|subbyte(a, 8)|subbyte(a, 0))
 
-int32_t tc_aes128_set_encrypt_key(TCAesKeySched_t s, const uint8_t *k)
+int tc_aes128_set_encrypt_key(TCAesKeySched_t s, const uint8_t *k)
 {
-	const uint32_t rconst[11] = {
-	0x00000000, 0x01000000, 0x02000000, 0x04000000, 0x08000000, 0x10000000,
-	0x20000000, 0x40000000, 0x80000000, 0x1b000000, 0x36000000
+	const unsigned int rconst[11] = {
+		0x00000000, 0x01000000, 0x02000000, 0x04000000, 0x08000000, 0x10000000,
+		0x20000000, 0x40000000, 0x80000000, 0x1b000000, 0x36000000
 	};
-	uint32_t i;
-	uint32_t t;
+	unsigned int i;
+	unsigned int t;
 
 	if (s == (TCAesKeySched_t) 0) {
 		return TC_CRYPTO_FAIL;
@@ -87,7 +87,7 @@ int32_t tc_aes128_set_encrypt_key(TCAesKeySched_t s, const uint8_t *k)
 			      (k[Nb*i+2]<<8) | (k[Nb*i+3]);
 	}
 
-	for (; i < (Nb*(Nr+1)); ++i) {
+	for (; i < (Nb * (Nr + 1)); ++i) {
 		t = s->words[i-1];
 		if ((i % Nk) == 0) {
 			t = subword(rotword(t)) ^ rconst[i/Nk];
@@ -98,7 +98,7 @@ int32_t tc_aes128_set_encrypt_key(TCAesKeySched_t s, const uint8_t *k)
 	return TC_CRYPTO_SUCCESS;
 }
 
-static inline void add_round_key(uint8_t *s, const uint32_t *k)
+static inline void add_round_key(uint8_t *s, const unsigned int *k)
 {
 	s[0] ^= (uint8_t)(k[0] >> 24); s[1] ^= (uint8_t)(k[0] >> 16);
 	s[2] ^= (uint8_t)(k[0] >> 8); s[3] ^= (uint8_t)(k[0]);
@@ -112,9 +112,9 @@ static inline void add_round_key(uint8_t *s, const uint32_t *k)
 
 static inline void sub_bytes(uint8_t *s)
 {
-	uint32_t i;
+	unsigned int i;
 
-	for (i = 0; i < (Nb*Nk); ++i) {
+	for (i = 0; i < (Nb * Nk); ++i) {
 		s[i] = sbox[s[i]];
 	}
 }
@@ -135,8 +135,8 @@ static inline void mix_columns(uint8_t *s)
 
 	mult_row_column(t, s);
 	mult_row_column(&t[Nb], s+Nb);
-	mult_row_column(&t[2*Nb], s+(2*Nb));
-	mult_row_column(&t[3*Nb], s+(3*Nb));
+	mult_row_column(&t[2 * Nb], s + (2 * Nb));
+	mult_row_column(&t[3 * Nb], s + (3 * Nb));
 	(void) _copy(s, sizeof(t), t, sizeof(t));
 }
 
@@ -146,7 +146,7 @@ static inline void mix_columns(uint8_t *s)
  */
 static inline void shift_rows(uint8_t *s)
 {
-	uint8_t t[Nb*Nk];
+	uint8_t t[Nb * Nk];
 
 	t[0]  = s[0]; t[1] = s[5]; t[2] = s[10]; t[3] = s[15];
 	t[4]  = s[4]; t[5] = s[9]; t[6] = s[14]; t[7] = s[3];
@@ -155,10 +155,10 @@ static inline void shift_rows(uint8_t *s)
 	(void) _copy(s, sizeof(t), t, sizeof(t));
 }
 
-int32_t tc_aes_encrypt(uint8_t *out, const uint8_t *in, const TCAesKeySched_t s)
+int tc_aes_encrypt(uint8_t *out, const uint8_t *in, const TCAesKeySched_t s)
 {
 	uint8_t state[Nk*Nb];
-	uint32_t i;
+	unsigned int i;
 
 	if (out == (uint8_t *) 0) {
 		return TC_CRYPTO_FAIL;
@@ -171,7 +171,7 @@ int32_t tc_aes_encrypt(uint8_t *out, const uint8_t *in, const TCAesKeySched_t s)
 	(void)_copy(state, sizeof(state), in, sizeof(state));
 	add_round_key(state, s->words);
 
-	for (i = 0; i < (Nr-1); ++i) {
+	for (i = 0; i < (Nr - 1); ++i) {
 		sub_bytes(state);
 		shift_rows(state);
 		mix_columns(state);

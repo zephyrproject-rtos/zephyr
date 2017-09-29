@@ -12,6 +12,15 @@
 #ifndef __NET_EVENT_H__
 #define __NET_EVENT_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/**
+ * @addtogroup net_mgmt
+ * @{
+ */
+
 /* Network Interface events */
 #define _NET_IF_LAYER		NET_MGMT_LAYER_L1
 #define _NET_IF_CORE_CODE	0x001
@@ -21,7 +30,7 @@
 				 NET_MGMT_LAYER_CODE(_NET_IF_CORE_CODE))
 
 enum net_event_if_cmd {
-	NET_EVENT_IF_CMD_DOWN = 0,
+	NET_EVENT_IF_CMD_DOWN = 1,
 	NET_EVENT_IF_CMD_UP,
 };
 
@@ -40,7 +49,7 @@ enum net_event_if_cmd {
 				 NET_MGMT_LAYER_CODE(_NET_IPV6_CORE_CODE))
 
 enum net_event_ipv6_cmd {
-	NET_EVENT_IPV6_CMD_ADDR_ADD	= 0,
+	NET_EVENT_IPV6_CMD_ADDR_ADD	= 1,
 	NET_EVENT_IPV6_CMD_ADDR_DEL,
 	NET_EVENT_IPV6_CMD_MADDR_ADD,
 	NET_EVENT_IPV6_CMD_MADDR_DEL,
@@ -107,7 +116,7 @@ enum net_event_ipv6_cmd {
 				 NET_MGMT_LAYER_CODE(_NET_IPV4_CORE_CODE))
 
 enum net_event_ipv4_cmd {
-	NET_EVENT_IPV4_CMD_ADDR_ADD	= 0,
+	NET_EVENT_IPV4_CMD_ADDR_ADD	= 1,
 	NET_EVENT_IPV4_CMD_ADDR_DEL,
 	NET_EVENT_IPV4_CMD_ROUTER_ADD,
 };
@@ -120,5 +129,13 @@ enum net_event_ipv4_cmd {
 
 #define NET_EVENT_IPV4_ROUTER_ADD				\
 	(_NET_EVENT_IPV4_BASE |	NET_EVENT_IPV4_CMD_ROUTER_ADD)
+
+#ifdef __cplusplus
+}
+#endif
+
+/**
+ * @}
+ */
 
 #endif /* __NET_EVENT_H__ */

@@ -13,12 +13,6 @@
 #ifndef __NET_SHELL_H
 #define __NET_SHELL_H
 
-#if defined(CONFIG_NET_SHELL)
-void net_shell_init(void);
-#else
-#define net_shell_init(...)
-#endif /* CONFIG_NET_SHELL */
-
 int net_shell_cmd_allocs(int argc, char *argv[]);
 int net_shell_cmd_conn(int argc, char *argv[]);
 int net_shell_cmd_dns(int argc, char *argv[]);

@@ -534,11 +534,10 @@ int _galileo_pinmux_set_pin(struct device *port, u8_t pin, u32_t func)
 					   enable->path[i].cfg);
 			break;
 		case PWM0:
-			pwm_pin_configure(drv_data->pwm0,
-				enable->path[i].pin, 0);
-			pwm_pin_set_duty_cycle(drv_data->pwm0,
-				enable->path[i].pin,
-				enable->path[i].level ? 100 : 0);
+			pwm_pin_set_cycles(drv_data->pwm0,
+					   enable->path[i].pin,
+					   100,
+					   enable->path[i].level ? 100 : 0);
 			break;
 		case G_DW:
 			gpio_pin_write(drv_data->gpio_dw,

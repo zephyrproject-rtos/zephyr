@@ -56,7 +56,8 @@ static inline void lps22hb_press_convert(struct sensor_value *val,
 	/* Pressure sensitivity is 4096 LSB/hPa */
 	/* Convert raw_val to val in kPa */
 	val->val1 = (raw_val >> 12) / 10;
-	val->val2 = ((s32_t)((raw_val) & 0x0FFF) * 1000L) >> 12;
+	val->val2 = (raw_val >> 12) % 10 * 100000 +
+		(((s32_t)((raw_val) & 0x0FFF) * 100000L) >> 12);
 }
 
 static inline void lps22hb_temp_convert(struct sensor_value *val,

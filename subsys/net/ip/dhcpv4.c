@@ -23,7 +23,8 @@
 #include <net/net_if.h>
 #include "net_private.h"
 
-#include "udp.h"
+#include <net/udp.h>
+#include "udp_internal.h"
 #include <net/dhcpv4.h>
 
 struct dhcp_msg {
@@ -250,11 +251,13 @@ static inline bool add_sname(struct net_pkt *pkt)
 static void setup_header(struct net_pkt *pkt, const struct in_addr *server_addr)
 {
 	struct net_ipv4_hdr *ipv4;
-	struct net_udp_hdr *udp;
+	struct net_udp_hdr hdr, *udp;
 	u16_t len;
 
 	ipv4 = NET_IPV4_HDR(pkt);
-	udp = NET_UDP_HDR(pkt);
+
+	udp = net_udp_get_hdr(pkt, &hdr);
+	NET_ASSERT(udp && udp != &hdr);
 
 	len = net_pkt_get_len(pkt);
 
@@ -277,6 +280,8 @@ static void setup_header(struct net_pkt *pkt, const struct in_addr *server_addr)
 	udp->len = htons(len);
 	udp->chksum = 0;
 	udp->chksum = ~net_calc_chksum_udp(pkt);
+
+	net_udp_set_hdr(pkt, udp);
 }
 
 /* Prepare initial DHCPv4 message and add options as per message type */
@@ -1018,8 +1023,8 @@ void net_dhcpv4_start(struct net_if *iface)
 		iface->dhcpv4.lease_time = 0;
 		iface->dhcpv4.renewal_time = 0;
 
-		iface->dhcpv4.server_id.s_addr[0] = 0;
-		iface->dhcpv4.requested_ip.s_addr[0] = 0;
+		iface->dhcpv4.server_id.s_addr = 0;
+		iface->dhcpv4.requested_ip.s_addr = 0;
 
 		k_delayed_work_init(&iface->dhcpv4.timer, dhcpv4_timeout);
 		k_delayed_work_init(&iface->dhcpv4.t1_timer, dhcpv4_t1_timeout);
@@ -1098,7 +1103,7 @@ int dhcpv4_init(void)
 
 	net_ipaddr_copy(&net_sin(&local_addr)->sin_addr,
 			net_ipv4_unspecified_address());
-	local_addr.family = AF_INET;
+	local_addr.sa_family = AF_INET;
 
 	/* Register UDP input callback on
 	 * DHCPV4_SERVER_PORT(67) and DHCPV4_CLIENT_PORT(68) for

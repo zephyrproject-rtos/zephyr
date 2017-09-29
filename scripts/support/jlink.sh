@@ -51,6 +51,7 @@ do_debugserver() {
 	-port ${GDB_PORT} \
 	-if ${JLINK_IF} \
 	-device ${JLINK_DEVICE} \
+	-silent \
 	-singlerun
 }
 

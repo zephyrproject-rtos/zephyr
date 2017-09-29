@@ -17,8 +17,8 @@ trying to access the device in the background.
 
 Building and Running Project:
 
-Refer to https://wiki.zephyrproject.org/view/Arduino_101 for details on flashing
-the image into an Arduno 101.
+Refer to https://www.zephyrproject.org/doc/boards/x86/arduino_101/doc/board.html
+for details on flashing the image into an Arduno 101.
 
 
 Sample Output:

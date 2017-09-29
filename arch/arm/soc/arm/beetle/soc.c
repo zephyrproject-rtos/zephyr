@@ -12,12 +12,12 @@
  * for the ARM LTD Beetle SoC.
  */
 
- #include <kernel.h>
- #include <device.h>
- #include <init.h>
- #include <soc.h>
+#include <kernel.h>
+#include <device.h>
+#include <init.h>
+#include <soc.h>
 
- #include <arch/cpu.h>
+#include <arch/cpu.h>
 
 /**
  * @brief Perform basic hardware initialization at boot.

@@ -1,7 +1,7 @@
 /* ctr_mode.c - TinyCrypt CTR mode implementation */
 
 /*
- *  Copyright (C) 2015 by Intel Corporation, All Rights Reserved.
+ *  Copyright (C) 2017 by Intel Corporation, All Rights Reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -34,14 +34,14 @@
 #include <tinycrypt/ctr_mode.h>
 #include <tinycrypt/utils.h>
 
-int32_t tc_ctr_mode(uint8_t *out, uint32_t outlen, const uint8_t *in,
-		    uint32_t inlen, uint8_t *ctr, const TCAesKeySched_t sched)
+int tc_ctr_mode(uint8_t *out, unsigned int outlen, const uint8_t *in,
+		unsigned int inlen, uint8_t *ctr, const TCAesKeySched_t sched)
 {
 
 	uint8_t buffer[TC_AES_BLOCK_SIZE];
 	uint8_t nonce[TC_AES_BLOCK_SIZE];
-	uint32_t block_num;
-	uint32_t i;
+	unsigned int block_num;
+	unsigned int i;
 
 	/* input sanity check: */
 	if (out == (uint8_t *) 0 ||

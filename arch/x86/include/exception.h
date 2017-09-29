@@ -18,6 +18,7 @@
 	".long -1\n\t"				/* ISR_LIST.priority */ \
 	".long " STRINGIFY(vector) "\n\t"	/* ISR_LIST.vec */ \
 	".long 0\n\t"				/* ISR_LIST.dpl */ \
+	".long 0\n\t"				/* ISR_LIST.tss */ \
 	".popsection\n\t" \
 
 /* Extra preprocessor indirection to ensure arguments get expanded before

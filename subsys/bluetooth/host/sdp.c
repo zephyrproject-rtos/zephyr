@@ -15,7 +15,7 @@
 
 #include <bluetooth/sdp.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_SDP)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_SDP)
 #include "common/log.h"
 
 #include "hci_core.h"
@@ -39,6 +39,9 @@
 
 #define SDP_DATA_ELEM_NEST_LEVEL_MAX 5
 
+/* Size of Cont state length */
+#define SDP_CONT_STATE_LEN_SIZE 1
+
 /* 1 byte for the no. of services searched till this response */
 /* 2 bytes for the total no. of matching records */
 #define SDP_SS_CONT_STATE_SIZE 3
@@ -61,10 +64,10 @@ struct bt_sdp {
 static struct bt_sdp_record *db;
 static u8_t num_services;
 
-static struct bt_sdp bt_sdp_pool[CONFIG_BLUETOOTH_MAX_CONN];
+static struct bt_sdp bt_sdp_pool[CONFIG_BT_MAX_CONN];
 
 /* Pool for outgoing SDP packets */
-NET_BUF_POOL_DEFINE(sdp_pool, CONFIG_BLUETOOTH_MAX_CONN,
+NET_BUF_POOL_DEFINE(sdp_pool, CONFIG_BT_MAX_CONN,
 		    BT_L2CAP_BUF_SIZE(SDP_MTU), BT_BUF_USER_DATA_MIN, NULL);
 
 #define SDP_CLIENT_CHAN(_ch) CONTAINER_OF(_ch, struct bt_sdp_client, chan.chan)
@@ -85,7 +88,7 @@ struct bt_sdp_client {
 	struct net_buf                      *rec_buf;
 };
 
-static struct bt_sdp_client bt_sdp_client_pool[CONFIG_BLUETOOTH_MAX_CONN];
+static struct bt_sdp_client bt_sdp_client_pool[CONFIG_BT_MAX_CONN];
 
 enum {
 	BT_SDP_ITER_STOP,
@@ -1750,6 +1753,11 @@ static void sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	case BT_SDP_SVC_SEARCH_ATTR_RSP:
 		/* Get number of attributes in this frame. */
 		frame_len = net_buf_pull_be16(buf);
+		/* Check valid buf len for attribute list and cont state */
+		if (buf->len < frame_len + SDP_CONT_STATE_LEN_SIZE) {
+			BT_ERR("Invalid frame payload length");
+			return;
+		}
 		/* Check valid range of attributes length */
 		if (frame_len < 2) {
 			BT_ERR("Invalid attributes data length");
@@ -1765,7 +1773,8 @@ static void sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 			return;
 		}
 
-		if ((frame_len + cstate->length) > len) {
+		if ((frame_len + SDP_CONT_STATE_LEN_SIZE + cstate->length) >
+		     buf->len) {
 			BT_ERR("Invalid frame payload length");
 			return;
 		}

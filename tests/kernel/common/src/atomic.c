@@ -91,7 +91,7 @@ void atomic_test(void)
 	for (i = 0; i < 32; i++) {
 		target = 0x0F0F0F0F;
 		zassert_true(!!(atomic_test_bit(&target, i) == !!(target & (1 << i))),
-			    "atomic_test_bit");
+			     "atomic_test_bit");
 	}
 
 	/* atomic_test_and_clear_bit() */
@@ -99,7 +99,7 @@ void atomic_test(void)
 		orig = 0x0F0F0F0F;
 		target = orig;
 		zassert_true(!!(atomic_test_and_clear_bit(&target, i)) == !!(orig & (1 << i)),
-			    "atomic_test_and_clear_bit");
+			     "atomic_test_and_clear_bit");
 		zassert_true(target == (orig & ~(1 << i)), "atomic_test_and_clear_bit");
 	}
 
@@ -108,7 +108,7 @@ void atomic_test(void)
 		orig = 0x0F0F0F0F;
 		target = orig;
 		zassert_true(!!(atomic_test_and_set_bit(&target, i)) == !!(orig & (1 << i)),
-			    "atomic_test_and_set_bit");
+			     "atomic_test_and_set_bit");
 		zassert_true(target == (orig | (1 << i)), "atomic_test_and_set_bit");
 	}
 

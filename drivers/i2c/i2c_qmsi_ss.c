@@ -22,7 +22,7 @@
 
 struct i2c_qmsi_ss_config_info {
 	qm_ss_i2c_t instance; /* Controller instance. */
-	union dev_config default_cfg;
+	u32_t default_cfg;
 	void (*irq_cfg)(void);
 };
 
@@ -113,7 +113,7 @@ static void i2c_qmsi_ss_config_irq_0(void);
 
 static const struct i2c_qmsi_ss_config_info config_info_0 = {
 	.instance = QM_SS_I2C_0,
-	.default_cfg.raw = CONFIG_I2C_SS_0_DEFAULT_CFG,
+	.default_cfg = CONFIG_I2C_SS_0_DEFAULT_CFG,
 	.irq_cfg = i2c_qmsi_ss_config_irq_0,
 };
 
@@ -170,7 +170,7 @@ static void i2c_qmsi_ss_config_irq_1(void);
 
 static const struct i2c_qmsi_ss_config_info config_info_1 = {
 	.instance = QM_SS_I2C_1,
-	.default_cfg.raw = CONFIG_I2C_SS_1_DEFAULT_CFG,
+	.default_cfg = CONFIG_I2C_SS_1_DEFAULT_CFG,
 	.irq_cfg = i2c_qmsi_ss_config_irq_1,
 };
 
@@ -223,21 +223,21 @@ static int i2c_qmsi_ss_configure(struct device *dev, u32_t config)
 {
 	qm_ss_i2c_t instance = GET_CONTROLLER_INSTANCE(dev);
 	struct i2c_qmsi_ss_driver_data *driver_data = GET_DRIVER_DATA(dev);
-	union dev_config cfg;
 	qm_ss_i2c_config_t qm_cfg;
 	u32_t i2c_base = QM_SS_I2C_0_BASE;
 
-	cfg.raw = config;
-
 	/* This driver only supports master mode. */
-	if (!cfg.bits.is_master_device) {
+	if (!(I2C_MODE_MASTER & config)) {
 		return -EINVAL;
 	}
 
-	qm_cfg.address_mode = (cfg.bits.use_10_bit_addr) ? QM_SS_I2C_10_BIT :
-							   QM_SS_I2C_7_BIT;
+	if (I2C_ADDR_10_BITS & config) {
+		qm_cfg.address_mode = QM_SS_I2C_10_BIT;
+	} else {
+		qm_cfg.address_mode = QM_SS_I2C_7_BIT;
+	}
 
-	switch (cfg.bits.speed) {
+	switch (I2C_SPEED_GET(config)) {
 	case I2C_SPEED_STANDARD:
 		qm_cfg.speed = QM_SS_I2C_SPEED_STD;
 		break;
@@ -350,10 +350,9 @@ static int i2c_qmsi_ss_init(struct device *dev)
 	config->irq_cfg();
 	ss_clk_i2c_enable(instance);
 
-	k_sem_init(&driver_data->sem, 0, UINT_MAX);
-	k_sem_give(&driver_data->sem);
+	k_sem_init(&driver_data->sem, 1, UINT_MAX);
 
-	err = i2c_qmsi_ss_configure(dev, config->default_cfg.raw);
+	err = i2c_qmsi_ss_configure(dev, config->default_cfg);
 
 	if (err < 0) {
 		return err;

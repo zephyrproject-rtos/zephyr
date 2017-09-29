@@ -1,0 +1,8 @@
+identifier: qemu_xtensa
+name: QEMU Emulation for Xtensa
+type: qemu
+arch: xtensa
+toolchain:
+  - zephyr
+testing:
+  default: true

@@ -20,17 +20,14 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
+#include <bluetooth/bas.h>
+#include <bluetooth/dis.h>
 
-#include <gatt/gap.h>
-#include <gatt/dis.h>
-#include <gatt/bas.h>
-
-#define DEVICE_NAME				CONFIG_BLUETOOTH_DEVICE_NAME
+#define DEVICE_NAME				CONFIG_BT_DEVICE_NAME
 #define DEVICE_NAME_LEN				(sizeof(DEVICE_NAME) - 1)
 #define SENSOR_1_NAME				"Temperature Sensor 1"
 #define SENSOR_2_NAME				"Temperature Sensor 2"
 #define SENSOR_3_NAME				"Humidity Sensor"
-#define APPEARANCE_THERMOMETER			0x0300
 
 /* Sensor Internal Update Interval [seconds] */
 #define SENSOR_1_UPDATE_IVAL			5
@@ -102,7 +99,7 @@ struct temperature_sensor {
 		s16_t ref_val; /* Reference temperature */
 	};
 
-	struct bt_gatt_ccc_cfg  ccc_cfg[CONFIG_BLUETOOTH_MAX_PAIRED];
+	struct bt_gatt_ccc_cfg  ccc_cfg[BT_GATT_CCC_MAX];
 	struct es_measurement meas;
 };
 
@@ -331,6 +328,8 @@ static struct bt_gatt_attr ess_attrs[] = {
 			   read_es_measurement, NULL, &sensor_3.meas),
 };
 
+static struct bt_gatt_service ess_svc = BT_GATT_SERVICE(ess_attrs);
+
 static void ess_simulate(void)
 {
 	static u8_t i;
@@ -396,10 +395,9 @@ static void bt_ready(int err)
 
 	printk("Bluetooth initialized\n");
 
-	gap_init(DEVICE_NAME, APPEARANCE_THERMOMETER);
-	bt_gatt_register(ess_attrs, ARRAY_SIZE(ess_attrs));
-	bas_init();
-	dis_init(CONFIG_SOC, "ACME");
+	bt_gatt_service_register(&ess_svc);
+	bt_bas_register(100, NULL);
+	bt_dis_register(CONFIG_SOC, "ACME");
 
 	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad),
 			      sd, ARRAY_SIZE(sd));
@@ -457,6 +455,6 @@ void main(void)
 		}
 
 		/* Battery level simulation */
-		bas_notify();
+		bt_bas_simulate();
 	}
 }

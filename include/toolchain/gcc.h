@@ -69,8 +69,17 @@ do {                                                                    \
 				"." _STRINGIFY(c))))
 #define __in_section(a, b, c) ___in_section(a, b, c)
 
-#define __in_section_unique(seg) ___in_section(seg, _FILE_PATH_HASH, \
-						      __COUNTER__)
+#define __in_section_unique(seg) ___in_section(seg, __FILE__, __COUNTER__)
+
+#ifdef CONFIG_APPLICATION_MEMORY
+#define __kernel	__in_section_unique(kernel)
+#define __kernel_noinit	__in_section_unique(kernel_noinit)
+#define __kernel_bss	__in_section_unique(kernel_bss)
+#else
+#define __kernel
+#define __kernel_noinit	__noinit
+#define __kernel_bss
+#endif
 
 #ifndef __packed
 #define __packed        __attribute__((__packed__))
@@ -93,6 +102,11 @@ do {                                                                    \
 
 #define __weak __attribute__((__weak__))
 #define __unused __attribute__((__unused__))
+
+/* Be *very* careful with this, you cannot filter out with -wno-deprecated,
+ * which has implications for -Werror
+ */
+#define __DEPRECATED_MACRO _Pragma("GCC warning \"Macro is deprecated\"")
 
 /* These macros allow having ARM asm functions callable from thumb */
 

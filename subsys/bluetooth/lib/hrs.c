@@ -1,0 +1,114 @@
+/** @file
+ *  @brief HRS Service sample
+ */
+
+/*
+ * Copyright (c) 2016 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/types.h>
+#include <stddef.h>
+#include <string.h>
+#include <errno.h>
+#include <misc/printk.h>
+#include <misc/byteorder.h>
+#include <zephyr.h>
+
+#include <bluetooth/bluetooth.h>
+#include <bluetooth/hci.h>
+#include <bluetooth/conn.h>
+#include <bluetooth/uuid.h>
+#include <bluetooth/gatt.h>
+#include <bluetooth/hrs.h>
+
+static struct bt_gatt_ccc_cfg hrmc_ccc_cfg[BT_GATT_CCC_MAX] = {};
+static bt_hrs_subscribe_func_t subscribe_func;
+static u8_t hrm_subscribed;
+static u8_t heartrate = 90;
+static u8_t hrs_blsc;
+
+static void hrmc_ccc_cfg_changed(const struct bt_gatt_attr *attr,
+				 u16_t value)
+{
+	hrm_subscribed = (value == BT_GATT_CCC_NOTIFY) ? 1 : 0;
+
+	if (subscribe_func) {
+		subscribe_func(hrm_subscribed);
+	}
+}
+
+static ssize_t read_blsc(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			 void *buf, u16_t len, u16_t offset)
+{
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, &hrs_blsc,
+				 sizeof(hrs_blsc));
+}
+
+/* Heart Rate Service Declaration */
+static struct bt_gatt_attr attrs[] = {
+	BT_GATT_PRIMARY_SERVICE(BT_UUID_HRS),
+	BT_GATT_CHARACTERISTIC(BT_UUID_HRS_MEASUREMENT, BT_GATT_CHRC_NOTIFY),
+	BT_GATT_DESCRIPTOR(BT_UUID_HRS_MEASUREMENT, BT_GATT_PERM_READ, NULL,
+			   NULL, NULL),
+	BT_GATT_CCC(hrmc_ccc_cfg, hrmc_ccc_cfg_changed),
+	BT_GATT_CHARACTERISTIC(BT_UUID_HRS_BODY_SENSOR, BT_GATT_CHRC_READ),
+	BT_GATT_DESCRIPTOR(BT_UUID_HRS_BODY_SENSOR, BT_GATT_PERM_READ,
+			   read_blsc, NULL, NULL),
+	BT_GATT_CHARACTERISTIC(BT_UUID_HRS_CONTROL_POINT, BT_GATT_CHRC_WRITE),
+	/* TODO: Add write permission and callback */
+	BT_GATT_DESCRIPTOR(BT_UUID_HRS_CONTROL_POINT, BT_GATT_PERM_READ, NULL,
+			   NULL, NULL),
+};
+
+static struct bt_gatt_service hrs_svc = BT_GATT_SERVICE(attrs);
+
+int bt_hrs_register(u8_t blsc, bt_hrs_subscribe_func_t func)
+{
+	int err;
+
+	err = bt_gatt_service_register(&hrs_svc);
+	if (err < 0) {
+		return err;
+	}
+
+	hrs_blsc = blsc;
+	subscribe_func = func;
+
+	return 0;
+}
+
+int bt_hrs_set_rate(u8_t type, u8_t heartrate)
+{
+	static u8_t hrm[2];
+
+	if (!hrm_subscribed) {
+		return 0;
+	}
+
+	hrm[0] = type;
+	hrm[1] = heartrate;
+
+	return bt_gatt_notify(NULL, &attrs[2], &hrm, sizeof(hrm));
+}
+
+int bt_hrs_simulate(void)
+{
+	static u8_t hrm[2];
+
+	/* Heartrate measurements simulation */
+	if (!hrm_subscribed) {
+		return 0;
+	}
+
+	heartrate++;
+	if (heartrate == 160) {
+		heartrate = 90;
+	}
+
+	hrm[0] = 0x06; /* uint8, sensor contact */
+	hrm[1] = heartrate;
+
+	return bt_gatt_notify(NULL, &attrs[2], &hrm, sizeof(hrm));
+}

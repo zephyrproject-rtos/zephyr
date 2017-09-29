@@ -10,4 +10,39 @@ if BOARD_96B_CARBON
 config BOARD
 	default 96b_carbon
 
+if BT
+
+config SPI
+	default y
+
+config SPI_STM32
+	default y
+
+config SPI_STM32_INTERRUPT
+	default y
+
+config SPI_1
+	default y
+
+config SPI_1_IRQ_PRI
+	default 5
+
+config SPI_LEGACY_API
+	default n
+
+endif # BT
+
+if NETWORKING
+
+# BT is the only onboard network iface, so use it for IP networking
+# if it's enabled
+
+config NET_L2_BT
+	default y
+
+config NET_L2_BT_ZEP1656
+	default y
+
+endif # NETWORKING
+
 endif # BOARD_96B_CARBON

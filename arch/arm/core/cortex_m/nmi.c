@@ -18,7 +18,7 @@
 #include <misc/printk.h>
 #include <misc/reboot.h>
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 
 extern void _SysNmiOnReset(void);
 #if !defined(CONFIG_RUNTIME_NMI)

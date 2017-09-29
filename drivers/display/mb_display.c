@@ -38,21 +38,21 @@ struct mb_display {
 
 	struct k_timer  timer;       /* Rendering timer */
 
-	u8_t         img_count;   /* Image count */
+	u8_t            img_count;   /* Image count */
 
-	u8_t         cur_img;     /* Current image or character to show */
+	u8_t            cur_img;     /* Current image or character to show */
 
-	u8_t         scroll:3,    /* Scroll shift */
+	u8_t            scroll:3,    /* Scroll shift */
 			first:1,     /* First frame of a scroll sequence */
 			loop:1,      /* Loop to beginning */
 			text:1,      /* We're showing a string (not image) */
 			img_sep:1;   /* One column image separation */
 
 	/* The following variables track the currently shown image */
-	u8_t         cur;         /* Currently rendered row */
-	u32_t        row[3];      /* Content (columns) for each row */
-	s64_t         expiry;      /* When to stop showing current image */
-	s32_t         duration;    /* Duration for each shown image */
+	u8_t            cur;         /* Currently rendered row */
+	u32_t           row[3];      /* Content (columns) for each row */
+	s64_t           expiry;      /* When to stop showing current image */
+	s32_t           duration;    /* Duration for each shown image */
 
 	union {
 		const struct mb_image *img; /* Array of images to show */
@@ -65,7 +65,7 @@ struct mb_display {
 
 struct x_y {
 	u8_t x:4,
-		y:4;
+	     y:4;
 };
 
 /* Where the X,Y coordinates of each row/col are found.
@@ -79,7 +79,7 @@ static const struct x_y map[DISPLAY_ROWS][DISPLAY_COLS] = {
 
 /* Mask of all the column bits */
 static const u32_t col_mask = (((~0UL) << LED_COL1_GPIO_PIN) &
-				  ((~0UL) >> (31 - LED_COL9_GPIO_PIN)));
+			       ((~0UL) >> (31 - LED_COL9_GPIO_PIN)));
 
 static inline const struct mb_image *get_font(char ch)
 {
@@ -282,7 +282,7 @@ static void clear_display(struct k_timer *timer)
 }
 
 static struct mb_display display = {
-	.timer = K_TIMER_INITIALIZER(display.timer, show_row, clear_display),
+	.timer = _K_TIMER_INITIALIZER(display.timer, show_row, clear_display),
 };
 
 static void start_scroll(struct mb_display *disp, s32_t duration)

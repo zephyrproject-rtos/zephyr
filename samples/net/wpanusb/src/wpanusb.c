@@ -8,7 +8,7 @@
 #define SYS_LOG_DOMAIN "wpanusb"
 #include <logging/sys_log.h>
 
-#include <sections.h>
+#include <linker/sections.h>
 #include <toolchain.h>
 #include <string.h>
 #include <misc/printk.h>
@@ -75,7 +75,7 @@ static struct k_fifo tx_queue;
 /**
  * Stack for the tx thread.
  */
-static char __noinit __stack tx_stack[1024];
+static K_THREAD_STACK_DEFINE(tx_stack, 1024);
 static struct k_thread tx_thread_data;
 
 #define DEV_DATA(dev) \
@@ -224,9 +224,11 @@ static struct usb_ep_cfg_data wpanusb_ep[] = {
 	},
 };
 
-static void wpanusb_status_cb(enum usb_dc_status_code status)
+static void wpanusb_status_cb(enum usb_dc_status_code status, u8_t *param)
 {
 	struct wpanusb_dev_data_t * const dev_data = DEV_DATA(wpanusb_dev);
+
+	ARG_UNUSED(param);
 
 	/* Store the new status */
 	dev_data->usb_status = status;
@@ -531,7 +533,8 @@ static void init_tx_queue(void)
 	/* Transmit queue init */
 	k_fifo_init(&tx_queue);
 
-	k_thread_create(&tx_thread_data, tx_stack, sizeof(tx_stack),
+	k_thread_create(&tx_thread_data, tx_stack,
+			K_THREAD_STACK_SIZEOF(tx_stack),
 			(k_thread_entry_t)tx_thread,
 			NULL, NULL, NULL, K_PRIO_COOP(8), 0, K_NO_WAIT);
 }

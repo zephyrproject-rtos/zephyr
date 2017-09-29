@@ -257,27 +257,6 @@ static void i2c_dw_isr(void *arg)
 				goto done;
 			}
 		}
-	} else { /* we must be configured as a slave device */
-
-		/* We have a read requested by the master device */
-		if (intr_stat.bits.rd_req &&
-		    (!dw->app_config.bits.is_slave_read)) {
-
-			/* data is not ready to send */
-			if (intr_stat.bits.tx_abrt) {
-				/* clear the TX_ABRT interrupt */
-				value = regs->ic_clr_tx_abrt;
-			}
-
-			_i2c_dw_data_send(port);
-			value = regs->ic_clr_rd_req;
-		}
-
-		/* The slave device is ready to receive */
-		if (intr_stat.bits.rx_full &&
-		    dw->app_config.bits.is_slave_read) {
-			_i2c_dw_data_read(port);
-		}
 	}
 
 	/* STOP detected: finish processing this message */
@@ -313,7 +292,7 @@ static int _i2c_dw_setup(struct device *dev, u16_t slave_address)
 	value = regs->ic_clr_intr;
 
 	/* Set master or slave mode - (initialization = slave) */
-	if (dw->app_config.bits.is_master_device) {
+	if (I2C_MODE_MASTER & dw->app_config) {
 		/*
 		 * Make sure to set both the master_mode and slave_disable_bit
 		 * to both 0 or both 1
@@ -321,19 +300,21 @@ static int _i2c_dw_setup(struct device *dev, u16_t slave_address)
 		SYS_LOG_DBG("I2C: host configured as Master Device");
 		ic_con.bits.master_mode = 1;
 		ic_con.bits.slave_disable = 1;
+	} else {
+		return -EINVAL;
 	}
 
 	ic_con.bits.restart_en = 1;
 
 	/* Set addressing mode - (initialization = 7 bit) */
-	if (dw->app_config.bits.use_10_bit_addr) {
+	if (I2C_ADDR_10_BITS & dw->app_config) {
 		SYS_LOG_DBG("I2C: using 10-bit address");
 		ic_con.bits.addr_master_10bit = 1;
 		ic_con.bits.addr_slave_10bit = 1;
 	}
 
 	/* Setup the clock frequency and speed mode */
-	switch (dw->app_config.bits.speed) {
+	switch (I2C_SPEED_GET(dw->app_config)) {
 	case I2C_SPEED_STANDARD:
 		SYS_LOG_DBG("I2C: speed set to STANDARD");
 		regs->ic_ss_scl_lcnt = dw->lcnt;
@@ -523,11 +504,11 @@ static int i2c_dw_runtime_configure(struct device *dev, u32_t config)
 	volatile struct i2c_dw_registers * const regs =
 		(struct i2c_dw_registers *)dw->base_address;
 
-	dw->app_config.raw = config;
+	dw->app_config = config;
 
 	/* Make sure we have a supported speed for the DesignWare model */
 	/* and have setup the clock frequency and speed mode */
-	switch (dw->app_config.bits.speed) {
+	switch (I2C_SPEED_GET(dw->app_config)) {
 	case I2C_SPEED_STANDARD:
 		/* Following the directions on DW spec page 59, IC_SS_SCL_LCNT
 		 * must have register values larger than IC_FS_SPKLEN + 7
@@ -614,7 +595,7 @@ static int i2c_dw_runtime_configure(struct device *dev, u32_t config)
 	 * currently.  This "hack" forces us to always be configured for master
 	 * mode, until we can verify that Slave mode works correctly.
 	 */
-	dw->app_config.bits.is_master_device = 1;
+	dw->app_config |= I2C_MODE_MASTER;
 
 	return rc;
 }
@@ -689,9 +670,9 @@ static int i2c_dw_initialize(struct device *port)
 
 	rom->config_func(port);
 
-	if (i2c_dw_runtime_configure(port, dev->app_config.raw) != 0) {
+	if (i2c_dw_runtime_configure(port, dev->app_config) != 0) {
 		SYS_LOG_DBG("I2C: Cannot set default configuration 0x%x",
-		    dev->app_config.raw);
+		    dev->app_config);
 		return -EIO;
 	}
 
@@ -717,7 +698,7 @@ static const struct i2c_dw_rom_config i2c_config_dw_0 = {
 
 static struct i2c_dw_dev_config i2c_0_runtime = {
 	.base_address = I2C_DW_0_BASE_ADDR,
-	.app_config.raw = CONFIG_I2C_0_DEFAULT_CFG,
+	.app_config = CONFIG_I2C_0_DEFAULT_CFG,
 #if CONFIG_PCI
 	.pci_dev.class_type = I2C_DW_PCI_CLASS,
 	.pci_dev.bus = I2C_DW_0_PCI_BUS,
@@ -766,7 +747,7 @@ static const struct i2c_dw_rom_config i2c_config_dw_1 = {
 
 static struct i2c_dw_dev_config i2c_1_runtime = {
 	.base_address = I2C_DW_1_BASE_ADDR,
-	.app_config.raw = CONFIG_I2C_1_DEFAULT_CFG,
+	.app_config = CONFIG_I2C_1_DEFAULT_CFG,
 
 #if CONFIG_PCI
 	.pci_dev.class_type = I2C_DW_PCI_CLASS,

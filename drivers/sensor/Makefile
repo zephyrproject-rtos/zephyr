@@ -2,11 +2,13 @@ ccflags-y +=-I$(srctree)/drivers
 
 obj-$(CONFIG_ADXL362) += adxl362/
 obj-$(CONFIG_AK8975) += ak8975/
+obj-$(CONFIG_APDS9960) += apds9960/
 obj-$(CONFIG_BMA280) += bma280/
 obj-$(CONFIG_BMC150_MAGN) += bmc150_magn/
 obj-$(CONFIG_BME280) += bme280/
 obj-$(CONFIG_BMG160) += bmg160/
 obj-$(CONFIG_BMI160) += bmi160/
+obj-$(CONFIG_BMM150) += bmm150/
 obj-$(CONFIG_DHT) += dht/
 obj-$(CONFIG_FXAS21002) += fxas21002/
 obj-$(CONFIG_FXOS8700) += fxos8700/

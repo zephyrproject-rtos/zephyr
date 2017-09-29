@@ -9,7 +9,7 @@ extern void test_tickless_sysclock(void);
 extern void test_tickless_slice(void);
 
 /*test case main entry*/
-void test_main(void *p1, void *p2, void *p3)
+void test_main(void)
 {
 	ztest_test_suite(test_tickless_concept,
 		ztest_unit_test(test_tickless_sysclock),

@@ -2,14 +2,12 @@
   ******************************************************************************
   * @file    stm32f7xx_hal.h
   * @author  MCD Application Team
-  * @version V1.2.0
-  * @date    30-December-2016
   * @brief   This file contains all the functions prototypes for the HAL 
   *          module driver.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -57,7 +55,7 @@
 
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
-/** @defgroup SYSCFG_Exported_Constants SYSCFG Exported Constants
+/** @defgroup HAL_Exported_Constants HAL Exported Constants
   * @{
   */
 
@@ -198,6 +196,9 @@ void HAL_ResumeTick(void);
 uint32_t HAL_GetHalVersion(void);
 uint32_t HAL_GetREVID(void);
 uint32_t HAL_GetDEVID(void);
+uint32_t HAL_GetUIDw0(void);
+uint32_t HAL_GetUIDw1(void);
+uint32_t HAL_GetUIDw2(void);
 void HAL_DBGMCU_EnableDBGSleepMode(void);
 void HAL_DBGMCU_DisableDBGSleepMode(void);
 void HAL_DBGMCU_EnableDBGStopMode(void);

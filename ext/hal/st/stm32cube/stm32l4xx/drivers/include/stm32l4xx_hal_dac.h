@@ -2,13 +2,11 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_dac.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    21-April-2017
   * @brief   Header file of DAC HAL module.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -117,6 +115,11 @@ DAC_SampleAndHoldConfTypeDef;
   */ 
 typedef struct
 {
+#if defined (STM32L4R5xx) || defined (STM32L4R7xx) || defined (STM32L4R9xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined(STM32L4S9xx)
+  uint32_t DAC_HighFrequency;            /*!< Specifies the frequency interface mode 
+                                              This parameter can be a value of @ref DAC_HighFrequency */
+#endif /* STM32L4R5xx STM32L4R7xx STM32L4R9xx STM32L4S5xx STM32L4S7xx STM32L4S9xx */
+  
   uint32_t DAC_SampleAndHold;            /*!< Specifies whether the DAC mode.
                                               This parameter can be a value of @ref DAC_SampleAndHold */
   
@@ -176,15 +179,15 @@ typedef struct
 #define DAC_TRIGGER_EXT_IT9                ((uint32_t)(DAC_CR_TSEL1_2 | DAC_CR_TSEL1_1 | DAC_CR_TEN1)) /*!< EXTI Line9 event selected as external conversion trigger for DAC channel */
 #define DAC_TRIGGER_SOFTWARE               ((uint32_t)(DAC_CR_TSEL1 | DAC_CR_TEN1)) /*!< Conversion started by software trigger for DAC channel */
 #endif     /* STM32L431xx STM32L432xx STM32L433xx STM32L442xx STM32L443xx */
-      
-#if defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx)
+
+#if defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx) 
 #define DAC_TRIGGER_NONE                   ((uint32_t)0x00000000) /*!< Conversion is automatic once the DAC_DHRxxxx register 
                                                                        has been loaded, and not by external trigger */
 #define DAC_TRIGGER_T2_TRGO                ((uint32_t)(DAC_CR_TSEL1_2 | DAC_CR_TEN1)) /*!< TIM2 TRGO selected as external conversion trigger for DAC channel */
 #define DAC_TRIGGER_T6_TRGO                ((uint32_t)DAC_CR_TEN1) /*!< TIM6 TRGO selected as external conversion trigger for DAC channel */
 #define DAC_TRIGGER_EXT_IT9                ((uint32_t)(DAC_CR_TSEL1_2 | DAC_CR_TSEL1_1 | DAC_CR_TEN1)) /*!< EXTI Line9 event selected as external conversion trigger for DAC channel */
 #define DAC_TRIGGER_SOFTWARE               ((uint32_t)(DAC_CR_TSEL1 | DAC_CR_TEN1)) /*!< Conversion started by software trigger for DAC channel */
-#endif     /* STM32L451xx STM32L452xx STM32L462xx                         */
+#endif     /* STM32L451xx STM32L452xx STM32L462xx                         */  
       
 #if defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || defined (STM32L496xx) || defined (STM32L4A6xx) 
 #define DAC_TRIGGER_NONE                   ((uint32_t)0x00000000) /*!< Conversion is automatic once the DAC_DHRxxxx register 
@@ -200,7 +203,25 @@ typedef struct
 #endif     /* STM32L471xx STM32L475xx STM32L476xx STM32L485xx STM32L486xx STM32L496xx STM32L4A6xx*/
 
 
+#if defined (STM32L4R5xx) || defined (STM32L4R7xx) || defined (STM32L4R9xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined(STM32L4S9xx)
+#define DAC_TRIGGER_NONE                   ((uint32_t)0x00000000) /*!< Conversion is automatic once the DAC_DHRxxxx register 
+                                                                       has been loaded, and not by external trigger */      
+#define DAC_TRIGGER_T1_TRGO                ((uint32_t) (DAC_CR_TSEL1_0 | DAC_CR_TEN1)) /*!< TIM1 TRGO selected as external conversion trigger for DAC channel */
+#define DAC_TRIGGER_T2_TRGO                ((uint32_t) (DAC_CR_TSEL1_1 | DAC_CR_TEN1)) /*!< TIM2 TRGO selected as external conversion trigger for DAC channel */
+#define DAC_TRIGGER_T4_TRGO                ((uint32_t) (DAC_CR_TSEL1_1 | DAC_CR_TSEL1_0 | DAC_CR_TEN1)) /*!< TIM1 TRGO selected as external conversion trigger for DAC channel */
+#define DAC_TRIGGER_T5_TRGO                ((uint32_t) (DAC_CR_TSEL1_2 | DAC_CR_TEN1)) /*!< TIM5 TRGO selected as external conversion trigger for DAC channel */
+#define DAC_TRIGGER_T6_TRGO                ((uint32_t) (DAC_CR_TSEL1_2 | DAC_CR_TSEL1_0 | DAC_CR_TEN1)) /*!< TIM6 TRGO selected as external conversion trigger for DAC channel */
+#define DAC_TRIGGER_T7_TRGO                ((uint32_t) (DAC_CR_TSEL1_2 | DAC_CR_TSEL1_1 | DAC_CR_TEN1)) /*!< TIM7 TRGO selected as external conversion trigger for DAC channel */
+#define DAC_TRIGGER_T8_TRGO                ((uint32_t) (DAC_CR_TSEL1_2 | DAC_CR_TSEL1_1 | DAC_CR_TSEL1_0 | DAC_CR_TEN1)) /*!< TIM8 TRGO selected as external conversion trigger for DAC channel */
+#define DAC_TRIGGER_T15_TRGO               ((uint32_t) (DAC_CR_TSEL1_3 | DAC_CR_TEN1)) /*!< TIM15 TRGO selected as external conversion trigger for DAC channel */
+#define DAC_TRIGGER_LPTIM1_OUT             ((uint32_t) (DAC_CR_TSEL1_3 | DAC_CR_TSEL1_1 | DAC_CR_TSEL1_0 | DAC_CR_TEN1)) /*!< LPTIM1 OUT TRGO selected as external conversion trigger for DAC channel */
+#define DAC_TRIGGER_LPTIM2_OUT             ((uint32_t) (DAC_CR_TSEL1_3 | DAC_CR_TSEL1_2 | DAC_CR_TEN1)) /*!< LPTIM2 OUT  TRGO selected as external conversion trigger for DAC channel */ 
+#define DAC_TRIGGER_EXT_IT9                ((uint32_t) (DAC_CR_TSEL1_3 | DAC_CR_TSEL1_2 | DAC_CR_TSEL1_0 | DAC_CR_TEN1)) /*!< EXTI Line9 event selected as external conversion trigger for DAC channel */
+#define DAC_TRIGGER_SOFTWARE               ((uint32_t) (DAC_CR_TEN1)) /*!< Conversion started by software trigger for DAC channel */
 
+#endif /* STM32L4R5xx STM32L4R7xx STM32L4R9xx STM32L4S5xx STM32L4S7xx STM32L4S9xx  */
+
+      
 /**
   * @}
   */   
@@ -220,10 +241,12 @@ typedef struct
   */
 #define DAC_CHANNEL_1                      ((uint32_t)0x00000000)
 #if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || \
-    defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || defined (STM32L496xx) || defined (STM32L4A6xx)
+    defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || defined (STM32L496xx) || defined (STM32L4A6xx) || \
+    defined (STM32L4R5xx) || defined (STM32L4R7xx) || defined (STM32L4R9xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined(STM32L4S9xx)
 #define DAC_CHANNEL_2                      ((uint32_t)0x00000010)
 #endif  /* STM32L431xx STM32L432xx STM32L433xx STM32L442xx STM32L443xx                         */    
         /* STM32L471xx STM32L475xx STM32L476xx STM32L485xx STM32L486xx STM32L496xx STM32L4A6xx */
+        /* STM32L4R5xx STM32L4R7xx STM32L4R9xx STM32L4S5xx STM32L4S7xx STM32L4S9xx                                     */
 
 /**
   * @}
@@ -290,6 +313,18 @@ typedef struct
 /**
   * @}
   */
+#if defined (STM32L4R5xx) || defined (STM32L4R7xx) || defined (STM32L4R9xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined(STM32L4S9xx)
+/** @defgroup DAC_HighFrequency DAC high frequency interface mode 
+  * @{
+  */
+#define DAC_HIGH_FREQUENCY_INTERFACE_MODE_DISABLE        ((uint32_t)0x00000000)           /*!< High frequency interface mode disabled */
+#define DAC_HIGH_FREQUENCY_INTERFACE_MODE_ABOVE_80MHZ    ((uint32_t)DAC_CR_HFSEL)         /*!< High frequency interface mode enabled */
+#define DAC_HIGH_FREQUENCY_INTERFACE_MODE_AUTOMATIC      ((uint32_t)0x00000002)           /*!< High frequency interface mode automatic */
+      
+/**
+  * @}
+  */
+#endif /* STM32L4R5xx STM32L4R7xx STM32L4R9xx STM32L4S5xx STM32L4S7xx STM32L4S9xx */         
       
 /**
   * @}
@@ -404,13 +439,15 @@ typedef struct
                                            ((STATE) == DAC_OUTPUTBUFFER_DISABLE))
 
 #if defined (STM32L431xx) || defined (STM32L432xx) || defined (STM32L433xx) || defined (STM32L442xx) || defined (STM32L443xx) || \
-    defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || defined (STM32L496xx) || defined (STM32L4A6xx)
+    defined (STM32L471xx) || defined (STM32L475xx) || defined (STM32L476xx) || defined (STM32L485xx) || defined (STM32L486xx) || defined (STM32L496xx) || defined (STM32L4A6xx) || \
+    defined (STM32L4R5xx) || defined (STM32L4R7xx) || defined (STM32L4R9xx) || defined (STM32L4S5xx) || defined (STM32L4S7xx) || defined(STM32L4S9xx)
 #define IS_DAC_CHANNEL(CHANNEL) (((CHANNEL) == DAC_CHANNEL_1) || \
                                 ((CHANNEL) == DAC_CHANNEL_2))
 #endif  /* STM32L431xx STM32L432xx STM32L433xx STM32L442xx STM32L443xx                         */    
         /* STM32L471xx STM32L475xx STM32L476xx STM32L485xx STM32L486xx STM32L496xx STM32L4A6xx */
+        /* STM32L4R5xx STM32L4R7xx STM32L4R9xx STM32L4S5xx STM32L4S7xx STM32L4S9xx                                     */
 
-#if defined (STM32L451xx)  || defined (STM32L452xx)  || defined (STM32L462xx) 
+#if defined (STM32L451xx) || defined (STM32L452xx) || defined (STM32L462xx) 
 #define IS_DAC_CHANNEL(CHANNEL) ((CHANNEL) == DAC_CHANNEL_1)
 #endif /* STM32L451xx STM32L452xx STM32L462xx */   
 
@@ -420,7 +457,7 @@ typedef struct
 
 #define IS_DAC_DATA(DATA) ((DATA) <= 0xFFF0)
 
-#define IS_DAC_REFRESHTIME(TIME)   ((TIME) <= 0x0000000FF)
+#define IS_DAC_REFRESHTIME(TIME)   ((TIME) <= 0x000000FF)
 
 /**
   * @}

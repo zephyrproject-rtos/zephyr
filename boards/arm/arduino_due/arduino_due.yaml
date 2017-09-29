@@ -1,0 +1,7 @@
+identifier: arduino_due
+name: Arduino Due
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb

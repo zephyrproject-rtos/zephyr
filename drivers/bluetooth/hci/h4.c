@@ -22,12 +22,12 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_driver.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #include "common/log.h"
 
 #include "../util.h"
 
-#if defined(CONFIG_BLUETOOTH_NRF51_PM)
+#if defined(CONFIG_BT_NRF51_PM)
 #include "../nrf51_pm.h"
 #endif
 
@@ -37,7 +37,7 @@
 #define H4_SCO  0x03
 #define H4_EVT  0x04
 
-static BT_STACK_NOINIT(rx_thread_stack, CONFIG_BLUETOOTH_RX_STACK_SIZE);
+static BT_STACK_NOINIT(rx_thread_stack, CONFIG_BT_RX_STACK_SIZE);
 static struct k_thread rx_thread_data;
 
 static struct {
@@ -59,7 +59,7 @@ static struct {
 		u8_t hdr[4];
 	};
 } rx = {
-	.fifo = K_FIFO_INITIALIZER(rx.fifo),
+	.fifo = _K_FIFO_INITIALIZER(rx.fifo),
 };
 
 static struct {
@@ -67,7 +67,7 @@ static struct {
 	struct net_buf *buf;
 	struct k_fifo   fifo;
 } tx = {
-	.fifo = K_FIFO_INITIALIZER(tx.fifo),
+	.fifo = _K_FIFO_INITIALIZER(tx.fifo),
 };
 
 static struct device *h4_dev;
@@ -123,7 +123,7 @@ static inline void get_evt_hdr(void)
 			rx.remaining++;
 			rx.hdr_len++;
 			break;
-#if defined(CONFIG_BLUETOOTH_BREDR)
+#if defined(CONFIG_BT_BREDR)
 		case BT_HCI_EVT_INQUIRY_RESULT_WITH_RSSI:
 		case BT_HCI_EVT_EXTENDED_INQUIRY_RESULT:
 			rx.discardable = true;
@@ -429,7 +429,7 @@ static int h4_open(void)
 	uart_irq_rx_disable(h4_dev);
 	uart_irq_tx_disable(h4_dev);
 
-#if defined(CONFIG_BLUETOOTH_NRF51_PM)
+#if defined(CONFIG_BT_NRF51_PM)
 	if (nrf51_init(h4_dev) < 0) {
 		return -EIO;
 	}
@@ -440,8 +440,10 @@ static int h4_open(void)
 	uart_irq_callback_set(h4_dev, bt_uart_isr);
 
 	k_thread_create(&rx_thread_data, rx_thread_stack,
-			sizeof(rx_thread_stack), rx_thread,
-			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+			K_THREAD_STACK_SIZEOF(rx_thread_stack),
+			rx_thread, NULL, NULL, NULL,
+			K_PRIO_COOP(CONFIG_BT_RX_PRIO),
+			0, K_NO_WAIT);
 
 	return 0;
 }
@@ -457,7 +459,7 @@ static int _bt_uart_init(struct device *unused)
 {
 	ARG_UNUSED(unused);
 
-	h4_dev = device_get_binding(CONFIG_BLUETOOTH_UART_ON_DEV_NAME);
+	h4_dev = device_get_binding(CONFIG_BT_UART_ON_DEV_NAME);
 	if (!h4_dev) {
 		return -EINVAL;
 	}

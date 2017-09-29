@@ -8,12 +8,11 @@ Overview
 
 This is a sample app which blinks a LED using PWM.
 
-The LED will start at a blinking frequency of 0.5Hz. Every 4 seconds,
+The LED will start at a blinking frequency of 1 Hz. Every 4 seconds,
 the blinking frequency will double. When the blinking frequency
-reaches 500Hz, the blinking frequency will be halved every 4 seconds
-until the blinking frequency reaches 0.5Hz. This completes a whole
-blinking cycle. From now on, the LED will repeat the blinking cycle
-for ever.
+reaches 64 Hz, the blinking frequency will be halved every 4 seconds
+until the blinking frequency reaches 1 Hz. This completes a whole
+blinking cycle. This faster-then-slower LED blinking cycle repeats forever.
 
 Wiring
 ******
@@ -30,6 +29,11 @@ Connect PWM2(PA0) to LED
 Nucleo_F103RB
 =============
 Connect PWM1(PA8) to LED
+
+Hexiwear K64
+============
+No special board setup is necessary because there is an on-board RGB LED
+connected to the K64 PWM.
 
 Building and Running
 ********************

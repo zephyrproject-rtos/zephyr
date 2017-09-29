@@ -1,33 +1,11 @@
-obj-y = echo-client.o
+#
+# Copyright (c) 2017 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
 
-ifeq ($(CONFIG_IEEE802154_CC2520),y)
+include $(ZEPHYR_BASE)/samples/net/common/Makefile.common
 
-ifeq ($(CONFIG_BOARD_ARDUINO_101),y)
-ccflags-y +=-I${ZEPHYR_BASE}/include/drivers/
-obj-y += ../../common/cc2520_a101.o
-endif
-
-ifeq ($(CONFIG_BOARD_FRDM_K64F),y)
-ccflags-y +=-I${ZEPHYR_BASE}/drivers/
-ccflags-y +=-I${ZEPHYR_BASE}/include/drivers/
-obj-y += ../../common/cc2520_frdm_k64f.o
-endif
-
-endif
-
-ifeq ($(CONFIG_NET_TESTING), y)
-ccflags-y +=-I${ZEPHYR_BASE}/samples/net/common/
-ccflags-y +=-DNET_TESTING_SERVER=0
-endif
-
-ifeq ($(CONFIG_NET_L2_BLUETOOTH), y)
-ccflags-y +=-I${ZEPHYR_BASE}/samples/bluetooth/
-obj-y += ../../../bluetooth/gatt/ipss.o
-endif
-
-ifeq ($(CONFIG_NET_L2_IEEE802154), y)
-ccflags-y +=-I${ZEPHYR_BASE}/samples/net/common/
-ifeq ($(CONFIG_NET_APP_SETTINGS), y)
-obj-y += ../../common/ieee802154_settings.o
-endif
-endif
+obj-y += echo-client.o
+obj-$(CONFIG_NET_UDP) += udp.o
+obj-$(CONFIG_NET_TCP) += tcp.o

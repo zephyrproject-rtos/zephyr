@@ -265,8 +265,7 @@ static int fxas21002_init(struct device *dev)
 	k_busy_wait(transition_time);
 
 
-	k_sem_init(&data->sem, 0, UINT_MAX);
-	k_sem_give(&data->sem);
+	k_sem_init(&data->sem, 1, UINT_MAX);
 
 	SYS_LOG_DBG("Init complete");
 

@@ -1,0 +1,44 @@
+# Kconfig.esp32 - ESP32 GPIO configuration options
+#
+#
+# Copyright (c) 2017 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig GPIO_ESP32
+	bool "ESP32 GPIO"
+	depends on GPIO && SOC_ESP32
+	default n
+	help
+	Enables the ESP32 GPIO driver
+
+if GPIO_ESP32
+
+config GPIO_ESP32_IRQ
+	int "IRQ line for ESP32 GPIO pins"
+	default 10
+
+config GPIO_ESP32_0
+	bool "ESP32 GPIO (pins 0-31)"
+	default y
+	help
+	Include support for GPIO pins 0-31 on the ESP32.
+
+config GPIO_ESP32_0_NAME
+	string "Driver name"
+	depends on GPIO_ESP32_0
+	default "GPIO_0"
+
+config GPIO_ESP32_1
+	bool "ESP32 GPIO (pins 32-39)"
+	default y
+	help
+	Include support for GPIO pins 32-39 on the ESP32.
+
+config GPIO_ESP32_1_NAME
+	string "Driver name"
+	depends on GPIO_ESP32_1
+	default "GPIO_1"
+
+endif # GPIO_ESP32

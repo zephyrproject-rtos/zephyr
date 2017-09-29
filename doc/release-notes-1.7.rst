@@ -304,7 +304,7 @@ JIRA Related Items
 * :jira:`ZEP-1419` - SYS_LOG macros cause potentially bad behavior due to printk/printf selection
 * :jira:`ZEP-1420` - Make the time spent with interrupts disabled deterministic
 * :jira:`ZEP-1421` - BMI160 gyroscope driver stops reporting after 1-5 minutes
-* :jira:`ZEP-1422` - Arduino_101 doesn't response ipv6 ping request affer enable echo_client ipv6
+* :jira:`ZEP-1422` - Arduino_101 doesn't response ipv6 ping request after enable echo_client ipv6
 * :jira:`ZEP-1427` - wpanusb dongle / 15.4 communication instability
 * :jira:`ZEP-1429` - NXP MCR20A Driver
 * :jira:`ZEP-1432` - ksdk pinmux driver should expose the public pinmux API
@@ -316,7 +316,7 @@ JIRA Related Items
 * :jira:`ZEP-1448` - Samples/net/mbedtls_sslclient:Build fail as net/ip_buf.h can not be found
 * :jira:`ZEP-1449` - samples: logger_hook
 * :jira:`ZEP-1456` - Asserts on nrf51 running Bluetooth hci_uart sample
-* :jira:`ZEP-1457` - Add SPDX Tags to Zephyr licence boilerplate
+* :jira:`ZEP-1457` - Add SPDX Tags to Zephyr license boilerplate
 * :jira:`ZEP-1460` - Sanity check reports some qemu step failures as 'build_error'
 * :jira:`ZEP-1461` - Add zephyr support to openocd upstream
 * :jira:`ZEP-1467` - Cleanup misc/ and move features to subsystems in subsys/

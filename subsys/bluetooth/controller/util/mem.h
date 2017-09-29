@@ -25,7 +25,7 @@ void *mem_get(void *mem_pool, u16_t mem_size, u16_t index);
 u16_t mem_index_get(void *mem, void *mem_pool, u16_t mem_size);
 
 void mem_rcopy(u8_t *dst, u8_t const *src, u16_t len);
-u8_t mem_is_zero(u8_t *src, u16_t len);
+u8_t mem_nz(u8_t *src, u16_t len);
 
 u32_t mem_ut(void);
 

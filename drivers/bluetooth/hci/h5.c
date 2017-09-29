@@ -24,7 +24,7 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_driver.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #include "common/log.h"
 
 #include "../util.h"
@@ -120,12 +120,10 @@ static u8_t conf_req[3] = { 0x03, 0xfc };
 static const u8_t conf_rsp[] = { 0x04, 0x7b };
 
 /* H5 signal buffers pool */
-#define CONFIG_BLUETOOTH_MAX_SIG_LEN	3
-#define CONFIG_BLUETOOTH_SIGNAL_COUNT	2
-#define SIG_BUF_SIZE (CONFIG_BLUETOOTH_HCI_RESERVE + \
-		      CONFIG_BLUETOOTH_MAX_SIG_LEN)
-NET_BUF_POOL_DEFINE(h5_pool, CONFIG_BLUETOOTH_SIGNAL_COUNT, SIG_BUF_SIZE, 0,
-		    NULL);
+#define MAX_SIG_LEN	3
+#define SIGNAL_COUNT	2
+#define SIG_BUF_SIZE (CONFIG_BT_HCI_RESERVE + MAX_SIG_LEN)
+NET_BUF_POOL_DEFINE(h5_pool, SIGNAL_COUNT, SIG_BUF_SIZE, 0, NULL);
 
 static struct device *h5_dev;
 
@@ -229,7 +227,7 @@ static void h5_print_header(const u8_t *hdr, const char *str)
 	}
 }
 
-#if defined(CONFIG_BLUETOOTH_DEBUG_HCI_DRIVER)
+#if defined(CONFIG_BT_DEBUG_HCI_DRIVER)
 static void hexdump(const char *str, const u8_t *packet, size_t length)
 {
 	int n = 0;
@@ -364,8 +362,8 @@ static void ack_timeout(struct k_work *work)
 	h5_send(NULL, HCI_3WIRE_ACK_PKT, 0);
 
 	/* Analyze stacks */
-	stack_analyze("tx_stack", tx_stack, sizeof(tx_stack));
-	stack_analyze("rx_stack", rx_stack, sizeof(rx_stack));
+	STACK_ANALYZE("tx_stack", tx_stack);
+	STACK_ANALYZE("rx_stack", rx_stack);
 }
 
 static void h5_process_complete_packet(u8_t *hdr)
@@ -717,14 +715,18 @@ static void h5_init(void)
 
 	/* TX thread */
 	k_fifo_init(&h5.tx_queue);
-	k_thread_create(&tx_thread_data, tx_stack, sizeof(tx_stack),
-			(k_thread_entry_t)tx_thread,
-			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+	k_thread_create(&tx_thread_data, tx_stack,
+			K_THREAD_STACK_SIZEOF(tx_stack),
+			(k_thread_entry_t)tx_thread, NULL, NULL, NULL,
+			K_PRIO_COOP(CONFIG_BT_HCI_TX_PRIO),
+			0, K_NO_WAIT);
 
 	k_fifo_init(&h5.rx_queue);
-	k_thread_create(&rx_thread_data, rx_stack, sizeof(rx_stack),
-			(k_thread_entry_t)rx_thread,
-			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+	k_thread_create(&rx_thread_data, rx_stack,
+			K_THREAD_STACK_SIZEOF(rx_stack),
+			(k_thread_entry_t)rx_thread, NULL, NULL, NULL,
+			K_PRIO_COOP(CONFIG_BT_RX_PRIO),
+			0, K_NO_WAIT);
 
 	/* Unack queue */
 	k_fifo_init(&h5.unack_queue);
@@ -763,7 +765,7 @@ static int _bt_uart_init(struct device *unused)
 {
 	ARG_UNUSED(unused);
 
-	h5_dev = device_get_binding(CONFIG_BLUETOOTH_UART_ON_DEV_NAME);
+	h5_dev = device_get_binding(CONFIG_BT_UART_ON_DEV_NAME);
 
 	if (h5_dev == NULL) {
 		return -EINVAL;

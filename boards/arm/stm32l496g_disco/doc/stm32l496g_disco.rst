@@ -24,15 +24,15 @@ some highlights of the STM32L496G Discovery board:
 - Two types of extension resources:
 
        - STMod+ and PMOD connectors
-       - Compatible Arduino™ Uno V3 connectors
+       - Compatible Arduino* Uno V3 connectors
 
 - On-board ST-LINK/V2-1 debugger/programmer with SWD connector
 - 5 source options for power supply
 
        - ST-LINK/V2-1 USB connector
        - User USB FS connector
-       - VIN from Arduino™ connector
-       - 5 V from Arduino™ connector
+       - VIN from Arduino connector
+       - 5 V from Arduino connector
        - USB charger
        - USB VBUS or external source(3.3V, 5V, 7 - 12V)
        - Power management access point
@@ -54,20 +54,23 @@ Hardware
 
 The STM32L496AG SoC provides the following hardware capabilities:
 
-- Ultra-low-power with FlexPowerControl (down to 108 nA Standby mode and 91 μA/MHz run mode)
-- Core: ARM® 32-bit Cortex®-M4 CPU with FPU, frequency up to 80 MHz, 100DMIPS/1.25DMIPS/MHz (Dhrystone 2.1)
+- Ultra-low-power with FlexPowerControl (down to 108 nA Standby mode and 91
+  |micro| A/MHz run mode)
+- Core: ARM |reg| 32-bit Cortex |reg| -M4 CPU with FPU, frequency up to 80 MHz,
+  100DMIPS/1.25DMIPS/MHz (Dhrystone 2.1)
 - Clock Sources:
 
         - 4 to 48 MHz crystal oscillator
         - 32 kHz crystal oscillator for RTC (LSE)
-        - Internal 16 MHz factory-trimmed RC (±1%)
-        - Internal low-power 32 kHz RC (±5%)
-        - Internal multispeed 100 kHz to 48 MHz oscillator, auto-trimmed by LSE (better than ±0.25 % accuracy)
+        - Internal 16 MHz factory-trimmed RC ( |plusminus| 1%)
+        - Internal low-power 32 kHz RC ( |plusminus| 5%)
+        - Internal multispeed 100 kHz to 48 MHz oscillator, auto-trimmed by
+          LSE (better than |plusminus| 0.25 % accuracy)
         - Internal 48 MHz with clock recovery
         - 3 PLLs for system clock, USB, audio, ADC
 
 - RTC with HW calendar, alarms and calibration
-- LCD 8 × 40 or 4 × 44 with step-up converter
+- LCD 8 x 40 or 4 x 44 with step-up converter
 - Up to 24 capacitive sensing channels: support touchkey, linear and rotary touch sensors
 - 16x timers:
 
@@ -89,7 +92,8 @@ The STM32L496AG SoC provides the following hardware capabilities:
 - 4x digital filters for sigma delta modulator
 - Rich analog peripherals (independent supply)
 
-        - 3× 12-bit ADC 5 MSPS, up to 16-bit with hardware oversampling, 200 μA/MSPS
+        - 3x 12-bit ADC 5 MSPS, up to 16-bit with hardware oversampling, 200
+          |micro| A/MSPS
         - 2x 12-bit DAC, low-power sample and hold
         - 2x operational amplifiers with built-in PGA
         - 2x ultra-low-power comparators
@@ -109,7 +113,7 @@ The STM32L496AG SoC provides the following hardware capabilities:
 - 14-channel DMA controller
 - True random number generator
 - CRC calculation unit, 96-bit unique ID
-- Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell™
+- Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell*
 
 
 More information about STM32L496AG can be found here:

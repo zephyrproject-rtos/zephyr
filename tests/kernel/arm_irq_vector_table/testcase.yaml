@@ -1,0 +1,4 @@
+tests:
+-   test:
+        filter: CONFIG_ARMV7_M
+        tags: core bat_commit

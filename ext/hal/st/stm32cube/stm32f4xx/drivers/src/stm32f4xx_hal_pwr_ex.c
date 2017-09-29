@@ -2,8 +2,8 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_pwr_ex.c
   * @author  MCD Application Team
-  * @version V1.7.0
-  * @date    17-February-2017
+  * @version V1.7.1
+  * @date    14-April-2017
   * @brief   Extended PWR HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of PWR extension peripheral:           
@@ -537,7 +537,7 @@ HAL_StatusTypeDef HAL_PWREx_DisableOverDrive(void)
 /**
   * @brief  Enters in Under-Drive STOP mode.
   *  
-  * @note   This mode is only available for STM32F42xxx/STM324F3xxx/STM32F446xx/STM32F469xx/STM32F479xx devices. 
+  * @note   This mode is only available for STM32F42xxx/STM32F43xxx/STM32F446xx/STM32F469xx/STM32F479xx devices.
   * 
   * @note    This mode can be selected only when the Under-Drive is already active 
   *   
@@ -576,8 +576,7 @@ HAL_StatusTypeDef HAL_PWREx_DisableOverDrive(void)
 HAL_StatusTypeDef HAL_PWREx_EnterUnderDriveSTOPMode(uint32_t Regulator, uint8_t STOPEntry)
 {
   uint32_t tmpreg1 = 0U;
-  uint32_t tickstart = 0U;
-  
+
   /* Check the parameters */
   assert_param(IS_PWR_REGULATOR_UNDERDRIVE(Regulator));
   assert_param(IS_PWR_STOP_ENTRY(STOPEntry));
@@ -591,18 +590,6 @@ HAL_StatusTypeDef HAL_PWREx_EnterUnderDriveSTOPMode(uint32_t Regulator, uint8_t 
   /* Enable the Under-drive */ 
   __HAL_PWR_UNDERDRIVE_ENABLE();
 
-  /* Get tick */
-  tickstart = HAL_GetTick();
-
-  /* Wait for UnderDrive mode is ready */
-  while(__HAL_PWR_GET_FLAG(PWR_FLAG_UDRDY))
-  {
-    if((HAL_GetTick() - tickstart) > PWR_UDERDRIVE_TIMEOUT_VALUE)
-    {
-      return HAL_TIMEOUT;
-    }
-  }
-  
   /* Select the regulator state in STOP mode ---------------------------------*/
   tmpreg1 = PWR->CR;
   /* Clear PDDS, LPDS, MRLUDS and LPLUDS bits */

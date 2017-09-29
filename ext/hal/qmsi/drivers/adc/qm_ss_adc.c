@@ -250,7 +250,8 @@ static void setup_seq_table(const qm_ss_adc_t adc, qm_ss_adc_xfer_t *xfer,
 	/* The sample window is the time in cycles between the start of one
 	 * sample and the start of the next. Resolution is indexed from 0 so we
 	 * need to add 1 and a further 2 for the time it takes to process. */
-	uint16_t delay = (sample_window[adc] - (resolution[adc] + 3));
+	int delay = sample_window[adc] - (resolution[adc] + 3);
+	delay = delay < 0 ? 0 : delay;  /* clamp underflows */
 
 	/* Reset the sequence table and sequence pointer. */
 	QM_SS_REG_AUX_OR(controller + QM_SS_ADC_CTRL,

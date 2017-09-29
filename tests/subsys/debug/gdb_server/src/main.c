@@ -32,7 +32,7 @@
  * @param my_sem       thread's own semaphore
  * @param other_sem    other thread's semaphore
  */
-void helloLoop(const char *my_name,
+void hello_loop(const char *my_name,
 	       struct k_sem *my_sem, struct k_sem *other_sem)
 {
 	while (1) {
@@ -50,32 +50,32 @@ void helloLoop(const char *my_name,
 
 /* define semaphores */
 
-K_SEM_DEFINE(threadA_sem, 1, 1);	/* starts off "available" */
-K_SEM_DEFINE(threadB_sem, 0, 1);	/* starts off "not available" */
+K_SEM_DEFINE(threada_sem, 1, 1);	/* starts off "available" */
+K_SEM_DEFINE(threadb_sem, 0, 1);	/* starts off "not available" */
 
 
-/* threadB is a dynamic thread that is spawned by threadA */
+/* threadb is a dynamic thread that is spawned by threadA */
 
-void threadB(void *dummy1, void *dummy2, void *dummy3)
+void threadb(void *dummy1, void *dummy2, void *dummy3)
 {
 	/* invoke routine to ping-pong hello messages with threadA */
-	helloLoop(__func__, &threadB_sem, &threadA_sem);
+	hello_loop(__func__, &threadb_sem, &threada_sem);
 }
 
-char __noinit __stack threadB_stack_area[STACKSIZE];
-static struct k_thread threadB_data;
+K_THREAD_STACK_DEFINE(threadb_stack_area, STACKSIZE);
+static struct k_thread threadb_data;
 
-/* threadA is a static thread that is spawned automatically */
+/* threada is a static thread that is spawned automatically */
 
-void threadA(void *dummy1, void *dummy2, void *dummy3)
+void threada(void *dummy1, void *dummy2, void *dummy3)
 {
 	/* spawn threadB */
-	k_thread_create(&threadB_data, threadB_stack_area, STACKSIZE, threadB,
+	k_thread_create(&threadb_data, threadb_stack_area, STACKSIZE, threadb,
 			NULL, NULL, NULL, PRIORITY, 0, K_NO_WAIT);
 
 	/* invoke routine to ping-pong hello messages with threadB */
-	helloLoop(__func__, &threadA_sem, &threadB_sem);
+	hello_loop(__func__, &threada_sem, &threadb_sem);
 }
 
-K_THREAD_DEFINE(threadA_id, STACKSIZE, threadA, NULL, NULL, NULL,
+K_THREAD_DEFINE(threada_id, STACKSIZE, threada, NULL, NULL, NULL,
 		PRIORITY, 0, K_NO_WAIT);

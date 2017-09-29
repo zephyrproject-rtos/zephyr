@@ -15,7 +15,7 @@ The kernel currently provides only a subset of C++ functionality. The
 following features are *not* supported:
 
 * Dynamic object management with the **new** and **delete** operators
-* :abbr:`RTTI (run-time type information)`
+* :abbr:`RTTI (runtime type information)`
 * Exceptions
 * Static global object destruction
 

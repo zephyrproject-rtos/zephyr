@@ -17,7 +17,7 @@ extern "C" {
  *
  *  This function should be called once to initialize pull-style
  *  access to console via console_getchar() function and buffered
- *  output using console_putchar() function. This function supercedes,
+ *  output using console_putchar() function. This function supersedes,
  *  and incompatible with, callback (push-style) console handling
  *  (via console_input_fn callback, etc.).
  *

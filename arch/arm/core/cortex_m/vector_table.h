@@ -29,7 +29,7 @@ extern "C" {
 
 #include <board.h>
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <misc/util.h>
 
 GTEXT(__start)
@@ -39,6 +39,7 @@ GTEXT(__reset)
 GTEXT(__nmi)
 GTEXT(__hard_fault)
 #if defined(CONFIG_ARMV6_M)
+GTEXT(__svc)
 #elif defined(CONFIG_ARMV7_M)
 GTEXT(__mpu_fault)
 GTEXT(__bus_fault)

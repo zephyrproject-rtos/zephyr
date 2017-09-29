@@ -35,7 +35,7 @@ struct ipm_console_receiver_config_info {
 	 * Stack for the receiver's thread, which prints out messages as
 	 * they come in. Should be sized CONFIG_IPM_CONSOLE_STACK_SIZE
 	 */
-	char *thread_stack;
+	k_thread_stack_t thread_stack;
 
 	/**
 	 * Ring buffer data area for stashing characters from the interrupt

@@ -18,6 +18,9 @@
 #define TEST_DATA_WORD_2  0xabcd
 #define TEST_DATA_WORD_3  0x1234
 
+#define FLASH_TEST_OFFSET2 0x41234
+#define FLASH_TEST_PAGE_IDX 37
+
 void main(void)
 {
 	struct device *flash_dev;
@@ -141,4 +144,45 @@ void main(void)
 		}
 	}
 	flash_write_protection_set(flash_dev, true);
+
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
+	struct flash_pages_info info;
+	int rc;
+
+	rc = flash_get_page_info_by_offs(flash_dev, FLASH_TEST_OFFSET2, &info);
+
+	printf("\nTest 7: Page layout API\n");
+
+	if (!rc) {
+		printf("   Offset  0x%08x:\n", FLASH_TEST_OFFSET2);
+		printf("     belongs to the page %u of start offset 0x%08x\n",
+		       info.index, info.start_offset);
+		printf("     and the size of 0x%08x B.\n", info.size);
+	} else {
+		printf("   Error: flash_get_page_info_by_offs returns %d\n",
+		       rc);
+	}
+
+	rc = flash_get_page_info_by_idx(flash_dev, FLASH_TEST_PAGE_IDX, &info);
+
+	if (!rc) {
+		printf("   Page of number %u has start offset 0x%08x\n",
+		       FLASH_TEST_PAGE_IDX,
+		       info.start_offset);
+		printf("     and size of 0x%08x B.\n", info.size);
+		if (info.index == FLASH_TEST_PAGE_IDX) {
+			printf("     Page index resolved properly\n");
+		} else {
+			printf("     ERROR: Page index resolved to %u\n",
+			       info.index);
+		}
+
+	} else {
+		printf("   Error: flash_get_page_info_by_idx returns %d\n", rc);
+	}
+
+	printf("   SoC flash consists of %u pages.\n",
+	       flash_get_page_count(flash_dev));
+
+#endif
 }

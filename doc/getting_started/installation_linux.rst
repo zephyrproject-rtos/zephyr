@@ -43,8 +43,6 @@ Note that having a newer version available for an installed package
 ``dnf upgrade`` will install it, because it must also ensure dependencies
 and other restrictions are satisfied.
 
-.. _linux_required_software:
-
 Installing Requirements and Dependencies
 ****************************************
 
@@ -54,17 +52,22 @@ Install the required packages in a Ubuntu host system with:
 
 .. code-block:: console
 
-   $ sudo apt-get install git make gcc g++ python3-ply ncurses-dev \
-	 python3-yaml python2.7 dfu-util
+   $ sudo apt-get install git make gcc g++ ncurses-dev gperf \
+	 doxygen dfu-util device-tree-compiler python3-ply python3-pip
 
 Install the required packages in a Fedora host system with:
 
 .. code-block:: console
 
    $ sudo dnf group install "Development Tools"
-   $ sudo dnf install git make gcc glibc-static \
-	 libstdc++-static python3-ply ncurses-devel \
-	 python-yaml python2 dfu-util
+   $ sudo dnf install git make gcc glibc-static gperf \
+	 libstdc++-static ncurses-devel \
+	 doxygen dfu-util dtc python3-pip \
+	 python3-ply python3-yaml dfu-util dtc python3-pykwalify
+
+Install additional packages required for development with Zephyr::
+
+   $ pip3 install --user -r scripts/requirements.txt
 
 .. _zephyr_sdk:
 
@@ -87,6 +90,10 @@ following architectures:
 
 * :abbr:`NIOS II`
 
+* :abbr:`Xtensa`
+
+* :abbr:`RISC-V`
+
 Follow these steps to install the SDK on your Linux host system.
 
 #. Download the latest SDK self-extractable binary.
@@ -107,14 +114,14 @@ Follow these steps to install the SDK on your Linux host system.
    .. important::
       Make sure you have installed all required packages for your host
       distribution as described in the previous section
-      `linux_required_software`_ otherwise the SDK installation will fail.
+      `Installing Requirements and Dependencies`_ otherwise the SDK installation will fail.
 
    .. code-block:: console
 
       $ chmod +x zephyr-sdk-<version>-setup.run
       $ ./zephyr-sdk-<version>-setup.run
 
-   There is no need for `sudo` if the SDK is installed in the current
+   There is no need to use ``sudo`` if the SDK is installed in the current
    user's home directory.
 
 #. Follow the installation instructions on the screen. The
@@ -141,4 +148,4 @@ Follow these steps to install the SDK on your Linux host system.
      EOF
 
 .. _Zephyr SDK archive:
-    https://zephyrproject.org/downloads/tools
+    https://www.zephyrproject.org/downloads#Zephyr_SDK_Tools

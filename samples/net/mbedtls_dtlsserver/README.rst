@@ -10,7 +10,7 @@ This sample code shows a simple DTLS server using mbedTLS on top of Zephyr.
 Building and Running
 ********************
 
-Follow the steps for testing :ref:`networking with Qemu <networking_with_qemu>`.
+Follow the steps for testing :ref:`networking_with_qemu`.
 
 In the application directory type:
 
@@ -27,12 +27,10 @@ In the application directory type:
    . Setting up ecjpake password ... ok
    . Performing the TLS handshake...
 
-In other terminal window, obtain the mbed TLS code from:
-
-	https://tls.mbed.org/download/start/mbedtls-2.3.0-apache.tgz
-
-and put it in a well known directory, in your Linux machine, this will be your
-client.
+In another terminal window, obtain the mbed TLS code from:
+https://tls.mbed.org/download-archive
+and put it in a well known directory on your Linux machine, this will be your
+client. (We're using version 2.3.0 for this example.)
 
 Move to that directory and compile the mbedTLS on your host machine
 
@@ -92,7 +90,7 @@ From the app directory type the screen should display
    . Setting up ecjpake password ... ok
    . Performing the TLS handshake...
 
-If trying to use IPv6 edit the file prj_qemu_x86.conf and chage the line from
+If trying to use IPv6 edit the file prj_qemu_x86.conf and change the line from
 CONFIG_NET_IPV6=n to CONFIG_NET_IPV6=y
 
 And run the client on mbedTLS as

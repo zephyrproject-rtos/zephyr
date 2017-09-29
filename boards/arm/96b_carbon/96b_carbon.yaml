@@ -1,0 +1,7 @@
+identifier: 96b_carbon
+name: 96Boards Carbon
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb

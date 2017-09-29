@@ -2,6 +2,7 @@ menuconfig UART_STELLARIS
 	bool "Stellaris serial driver"
 	default n
 	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
 	help
 	This option enables the Stellaris serial driver.
 	This specific driver can be used for the serial hardware

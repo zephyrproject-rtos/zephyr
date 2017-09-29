@@ -255,7 +255,8 @@ void dtls_client(void)
 	udp_tx(&ctx, payload, 32);
 
 #if defined(MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED)
-	ret = mbedtls_ssl_conf_psk(&conf, psk, strlen(psk), psk_id,
+	ret = mbedtls_ssl_conf_psk(&conf, psk, strlen((char *)psk),
+				   (unsigned char *)psk_id,
 				   strlen(psk_id));
 	if (ret != 0) {
 		mbedtls_printf("  failed\n  mbedtls_ssl_conf_psk"
@@ -411,7 +412,7 @@ exit:
 }
 
 #define STACK_SIZE		4096
-u8_t stack[STACK_SIZE];
+K_THREAD_STACK_DEFINE(stack, STACK_SIZE);
 static struct k_thread thread_data;
 
 static inline int init_app(void)

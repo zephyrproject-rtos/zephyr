@@ -1,0 +1,62 @@
+# Kconfig - DFU support configuration options
+#
+# Copyright (c) 2017 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+#
+# DFU
+#
+
+menu "DFU options"
+
+config IMG_MANAGER
+	bool
+	prompt "DFU image manager"
+	default n
+	help
+	  Enable support for managing DFU image.
+
+choice
+	prompt "Image manager"
+	default MCUBOOT_IMG_MANAGER
+	depends on IMG_MANAGER
+	help
+	  Choice support for managing DFU image.
+	  So far only mcuboot support is available.
+
+config MCUBOOT_IMG_MANAGER
+	bool "Image manager for mcuboot"
+	help
+	  Enable support for managing DFU image downloaded using mcuboot.
+endchoice
+
+config IMG_BLOCK_BUF_SIZE
+	int
+	depends on MCUBOOT_IMG_MANAGER
+	prompt "Image writer buffer size"
+	default 512
+	help
+	  Size (in Bytes) of buffer for image writer. Must be a multiple of
+	  the access alignment required by used flash driver.
+
+config SYS_LOG_IMG_MANAGER_LEVEL
+	int "Image manager Log level"
+	depends on SYS_LOG && MCUBOOT_IMG_MANAGER
+	default 0
+	range 0 4
+	help
+	Sets log level for the image manager.
+	Levels are:
+
+	- 0 OFF: do not write
+
+	- 1 ERROR: only write SYS_LOG_ERR
+
+	- 2 WARNING: write SYS_LOG_WRN in addition to previous level
+
+	- 3 INFO: write SYS_LOG_INF in addition to previous levels
+
+	- 4 DEBUG: write SYS_LOG_DBG in addition to previous levels
+endmenu

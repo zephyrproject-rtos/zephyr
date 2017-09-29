@@ -21,7 +21,7 @@
 
 #include <kernel.h>
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <misc/__assert.h>
 #include <sys_clock.h>
 #include <drivers/system_timer.h>
@@ -65,6 +65,9 @@ extern s32_t _sys_idle_elapsed_ticks;
 static u32_t __noinit default_load_value; /* default count */
 #ifndef CONFIG_TICKLESS_KERNEL
 static u32_t idle_original_count;
+#endif
+#ifdef CONFIG_TICKLESS_KERNEL
+static u32_t timer_overflow;
 #endif
 static u32_t __noinit max_system_ticks;
 static u32_t idle_original_ticks;
@@ -142,7 +145,8 @@ static ALWAYS_INLINE u32_t sysTickCurrentGet(void)
 	 * Counter can rollover if irqs are locked for too long.
 	 * Return 0 to indicate programmed cycles have expired.
 	 */
-	if (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk) {
+	if ((SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk) || (timer_overflow)) {
+		timer_overflow = 1;
 		return 0;
 	}
 #endif
@@ -212,8 +216,8 @@ void _timer_int_handler(void *unused)
 	ARG_UNUSED(unused);
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING
-	extern void read_systick_start_of_tick_handler(void);
-	read_systick_start_of_tick_handler();
+	extern void read_timer_start_of_tick_handler(void);
+	read_timer_start_of_tick_handler();
 #endif
 
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT
@@ -239,13 +243,13 @@ void _timer_int_handler(void *unused)
 
 #ifdef CONFIG_TICKLESS_IDLE
 #if defined(CONFIG_TICKLESS_KERNEL)
-
-	sysTickStop();
-
 	if (!idle_original_ticks) {
 		if (_sys_clock_always_on) {
 			_sys_clock_tick_count = _get_elapsed_clock_time();
-
+			/* clear overflow tracking flag as it is accounted */
+			timer_overflow = 0;
+			sysTickStop();
+			idle_original_ticks = max_system_ticks;
 			sysTickReloadSet(max_load_value);
 			sysTickStart();
 			sys_tick_reload();
@@ -272,6 +276,9 @@ void _timer_int_handler(void *unused)
 	/* _sys_clock_tick_announce() could cause new programming */
 	if (!idle_original_ticks && _sys_clock_always_on) {
 		_sys_clock_tick_count = _get_elapsed_clock_time();
+		/* clear overflow tracking flag as it is accounted */
+		timer_overflow = 0;
+		sysTickStop();
 		sysTickReloadSet(max_load_value);
 		sysTickStart();
 		sys_tick_reload();
@@ -343,8 +350,8 @@ void _timer_int_handler(void *unused)
 #endif /* CONFIG_SYS_POWER_MANAGEMENT */
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING
-	extern void read_systick_end_of_tick_handler(void);
-	read_systick_end_of_tick_handler();
+	extern void read_timer_end_of_tick_handler(void);
+	read_timer_end_of_tick_handler();
 #endif
 
 	extern void _ExcExit(void);
@@ -363,7 +370,8 @@ u32_t _get_remaining_program_time(void)
 		return 0;
 	}
 
-	return sysTickCurrentGet() / default_load_value;
+	return (u32_t)ceiling_fraction((u32_t)sysTickCurrentGet(),
+						default_load_value);
 }
 
 u32_t _get_elapsed_program_time(void)
@@ -377,8 +385,6 @@ u32_t _get_elapsed_program_time(void)
 
 void _set_time(u32_t time)
 {
-	sysTickStop();
-
 	if (!time) {
 		idle_original_ticks = 0;
 		return;
@@ -388,6 +394,9 @@ void _set_time(u32_t time)
 
 	_sys_clock_tick_count = _get_elapsed_clock_time();
 
+	/* clear overflow tracking flag as it is accounted */
+	timer_overflow = 0;
+	sysTickStop();
 	sysTickReloadSet(idle_original_ticks * default_load_value);
 
 	sysTickStart();
@@ -406,8 +415,12 @@ static inline u64_t get_elapsed_count(void)
 {
 	u64_t elapsed;
 
-	if (SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk) {
+	if ((SysTick->CTRL & SysTick_CTRL_COUNTFLAG_Msk) || (timer_overflow)) {
 		elapsed = SysTick->LOAD;
+		/* Keep track of overflow till it is accounted in
+		 * _sys_clock_tick_count as COUNTFLAG bit is clear on read
+		 */
+		timer_overflow = 1;
 	} else {
 		elapsed = (SysTick->LOAD - SysTick->VAL);
 	}
@@ -594,6 +607,8 @@ void _timer_idle_exit(void)
 	if (idle_mode == IDLE_TICKLESS) {
 		idle_mode = IDLE_NOT_TICKLESS;
 		if (!idle_original_ticks && _sys_clock_always_on) {
+			_sys_clock_tick_count = _get_elapsed_clock_time();
+			timer_overflow = 0;
 			sysTickReloadSet(max_load_value);
 			sysTickStart();
 			sys_tick_reload();

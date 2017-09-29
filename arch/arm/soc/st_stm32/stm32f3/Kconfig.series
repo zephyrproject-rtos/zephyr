@@ -14,5 +14,6 @@ config SOC_SERIES_STM32F3X
 	select CPU_HAS_FPU
 	select CPU_HAS_SYSTICK
 	select HAS_STM32CUBE
+	select CLOCK_CONTROL_STM32_CUBE if CLOCK_CONTROL
 	help
 	 Enable support for STM32F3 MCU series

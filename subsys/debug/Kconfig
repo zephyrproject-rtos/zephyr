@@ -151,53 +151,6 @@ config OMIT_FRAME_POINTER
 	If unsure, disable OVERRIDE_FRAME_POINTER_DEFAULT to allow the compiler
 	to adopt sensible defaults for your architecture.
 
-menu "Safe memory access"
-
-config MEM_SAFE
-	bool
-	prompt "Enable safe memory access"
-	default n
-	help
-	Add the routines available in mem_safe.h to the system. This is added
-	as a kconfig option instead of simply linking against the library
-	because some implementations might require initialization.
-
-choice
-prompt "Safe memory access implementation"
-depends on MEM_SAFE
-default MEM_SAFE_CHECK_BOUNDARIES
-
-config MEM_SAFE_CHECK_BOUNDARIES
-	bool
-	prompt "Software validation of memory access within memory regions"
-	help
-	This implementation checks the application image's text/rodata
-	boundaries for its read-only region and the data/bss/noinit boundaries
-	for its read-write region, in software.
-
-	Other regions can be added as needed by using the
-	sys_mem_safe_region_add() API. The number of regions that can be added
-	is controlled via the MEM_SAFE_NUM_EXTRA_REGIONS kconfig option.
-
-	This implementation requires initialization and thus consumes some boot
-	time.
-
-endchoice
-
-config MEM_SAFE_NUM_EXTRA_REGIONS
-	int
-	prompt "Number of safe memory access regions to be added at runtime"
-	depends on MEM_SAFE_CHECK_BOUNDARIES
-	default 0
-	help
-	The functions available in mem_safe.h check if memory is within
-	read-only or read-write regions before accessing it instead of crashing.
-	The kernel image is added as a valid region automatically, but other
-	regions can be added if the application makes access to additional
-	memory outside of the image's boundaries.
-
-endmenu
-
 #
 # Generic Debugging Options
 #
@@ -210,55 +163,6 @@ config DEBUG_INFO
 	by debuggers in debugging the system.
 
 	NOTE: Does not currently work with the x86 IAMCU ABI.
-
-#
-# GDB Server options
-#
-
-config GDB_SERVER
-	bool
-	prompt "Enable GDB Server [EXPERIMENTAL]"
-	default n
-	select CACHE_FLUSHING
-	select REBOOT
-	select MEM_SAFE
-	select DEBUG_INFO
-	select UART_CONSOLE_DEBUG_SERVER_HOOKS
-	help
-	This option enables the GDB Server support.
-
-config GDB_SERVER_MAX_SW_BP
-	int "Maximum number of GDB Server Software breakpoints"
-	default 100
-	depends on GDB_SERVER
-	help
-	This option specifies the maximum number of Software breakpoints
-
-config GDB_SERVER_INTERRUPT_DRIVEN
-	bool
-	prompt "Enable GDB interrupt mode"
-	default y
-	depends on GDB_SERVER
-	select CONSOLE_HANDLER
-	help
-	This option enables interrupt support for GDB Server.
-
-config GDB_REMOTE_SERIAL_EXT_NOTIF_PREFIX_STR
-	string
-	prompt "Trigger string for remote serial ext. via notifi. packets"
-	default "WrCons"
-	depends on GDB_SERVER
-	help
-	The value of this option depends on the string the GDB client use to
-	prefix the notification packets.
-
-config GDB_SERVER_BOOTLOADER
-	bool
-	prompt "Enable the bootloader mode"
-	default n
-	depends on GDB_SERVER
-	help
-	This option enables the bootloader mode of the GDB Server.
 
 #
 # Miscellaneous debugging options

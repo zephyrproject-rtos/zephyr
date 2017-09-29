@@ -9,12 +9,6 @@
 
 menu "General Kernel Options"
 
-config HAS_DTS
-	bool "Uses Device Tree"
-	help
-	This option specifies that the target platform supports device tree
-	configuration.
-
 config MULTITHREADING
 	bool
 	prompt "Multi-threading"
@@ -110,6 +104,7 @@ config MAIN_STACK_SIZE
 	int
 	prompt "Size of stack for initialization and main thread"
 	default 1024
+	default 512 if ZTEST
 	help
 	When the initialization is complete, the thread executing it then
 	executes the main() routine, so as to reuse the stack used by the
@@ -164,6 +159,16 @@ config ERRNO
 	symbol. The C library must access the per-thread errno via the
 	_get_errno() symbol.
 
+config APPLICATION_MEMORY
+	bool
+	prompt "Split kernel and application memory"
+	default n
+	help
+	For all read-write memory sections (namely bss, noinit, data),
+	separate them into application and kernel areas. The application area
+	will have the project-level application objects and any libraries
+	including the C library in it.
+
 menu "Kernel Debugging and Metrics"
 config KERNEL_DEBUG
 	bool
@@ -185,6 +190,20 @@ config BOOT_BANNER
 	help
 	This option outputs a banner to the console device during boot up. It
 	also embeds a date & time stamp in the kernel and in each USAP image.
+
+config BOOT_DELAY
+	int
+	prompt "Boot delay in milliseconds"
+	default 0
+	help
+	This option delays bootup for the specified amount of
+	milliseconds. This is used to allow serial ports to get ready
+	before starting to print information on them during boot, as
+	some systems might boot to fast for a receiving endpoint to
+	detect the new USB serial bus, enumerate it and get ready to
+	receive before it actually gets data. A similar effect can be
+	achieved by waiting for DCD on the serial port--however, not
+	all serial ports have DCD.
 
 config BUILD_TIMESTAMP
 	bool
@@ -335,6 +354,7 @@ config NUM_PIPE_ASYNC_MSGS
 
 	Setting this option to 0 disables support for asynchronous
 	pipe messages.
+
 endmenu
 
 menu "Memory Pool Options"
@@ -505,6 +525,15 @@ config APPLICATION_INIT_PRIORITY
 	help
 	This priority level is for end-user drivers such as sensors and display
 	which have no inward dependencies.
+
+config PTHREAD_IPC
+	bool
+	prompt "POSIX pthread IPC API"
+	default n
+	help
+        This enables a mostly-standards-compliant implementation of
+        the pthread mutex, condition variable and barrier IPC
+        mechanisms.
 endmenu
 
 menu "Security Options"

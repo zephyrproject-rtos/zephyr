@@ -1,0 +1,7 @@
+identifier: nucleo_f401re
+name: NUCLEO-F401RE
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb

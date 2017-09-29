@@ -14,16 +14,47 @@ menuconfig PWM
 
 if PWM
 
+config SYS_LOG_PWM_LEVEL
+	int
+	prompt "PWM Driver Log level"
+	depends on SYS_LOG
+	default 0
+	range 0 4
+	help
+	  Sets log level for PWM drivers.
+	  Levels are:
+	  0 OFF, do not write
+	  1 ERROR, only write SYS_LOG_ERR
+	  2 WARNING, write SYS_LOG_WRN in addition to previous level
+	  3 INFO, write SYS_LOG_INF in addition to previous levels
+	  4 DEBUG, write SYS_LOG_DBG in addition to previous levels
+
+config PWM_0
+	bool "Enable PWM port 0"
+	default n
+
+config PWM_1
+	bool "Enable PWM port 1"
+	default n
+
+config PWM_2
+	bool "Enable PWM port 2"
+	default n
+
+config PWM_3
+	bool "Enable PWM port 3"
+	default n
+
 source "drivers/pwm/Kconfig.pca9685"
 
 source "drivers/pwm/Kconfig.qmsi"
 
 source "drivers/pwm/Kconfig.dw"
 
-source "drivers/pwm/Kconfig.k64"
-
 source "drivers/pwm/Kconfig.stm32"
 
 source "drivers/pwm/Kconfig.nrf5_sw"
+
+source "drivers/pwm/Kconfig.mcux_ftm"
 
 endif # PWM

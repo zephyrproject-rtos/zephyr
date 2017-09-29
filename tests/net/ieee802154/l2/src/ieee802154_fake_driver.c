@@ -86,6 +86,10 @@ static int fake_tx(struct device *dev,
 	NET_INFO("Sending packet %p - length %zu\n",
 		 pkt, net_pkt_get_len(pkt));
 
+	if (!current_pkt) {
+		return 0;
+	}
+
 	net_pkt_set_ll_reserve(current_pkt, net_pkt_ll_reserve(pkt));
 
 	insert_frag_dummy_way(pkt);

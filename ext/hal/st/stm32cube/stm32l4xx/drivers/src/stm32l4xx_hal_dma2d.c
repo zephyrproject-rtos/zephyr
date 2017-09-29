@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32l4xx_hal_dma2d.c
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    21-April-2017
   * @brief   DMA2D HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the DMA2D peripheral:
@@ -130,7 +128,8 @@
 
 #ifdef HAL_DMA2D_MODULE_ENABLED
 
-#if defined(STM32L496xx) || defined(STM32L4A6xx)
+#if defined(STM32L496xx) || defined(STM32L4A6xx) || \
+    defined(STM32L4R5xx) || defined(STM32L4R7xx) || defined(STM32L4R9xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
 
 /** @addtogroup STM32L4xx_HAL_Driver
   * @{
@@ -243,6 +242,10 @@ HAL_StatusTypeDef HAL_DMA2D_Init(DMA2D_HandleTypeDef *hdma2d)
   assert_param(IS_DMA2D_MODE(hdma2d->Init.Mode));
   assert_param(IS_DMA2D_CMODE(hdma2d->Init.ColorMode));
   assert_param(IS_DMA2D_OFFSET(hdma2d->Init.OutputOffset));
+#if defined(STM32L4R5xx) || defined(STM32L4R7xx) || defined(STM32L4R9xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
+  assert_param(IS_DMA2D_LOM_MODE(hdma2d->Init.LineOffsetMode));
+  assert_param(IS_DMA2D_BYTES_SWAP(hdma2d->Init.BytesSwap));
+#endif /* STM32L4R5xx || STM32L4R7xx || STM32L4R9xx || STM32L4S5xx || STM32L4S7xx || STM32L4S9xx */
 
   if(hdma2d->State == HAL_DMA2D_STATE_RESET)
   {
@@ -256,13 +259,21 @@ HAL_StatusTypeDef HAL_DMA2D_Init(DMA2D_HandleTypeDef *hdma2d)
   hdma2d->State = HAL_DMA2D_STATE_BUSY;  
 
   /* DMA2D CR register configuration -------------------------------------------*/
+#if defined(STM32L4R5xx) || defined(STM32L4R7xx) || defined(STM32L4R9xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
+  MODIFY_REG(hdma2d->Instance->CR, DMA2D_CR_MODE | DMA2D_CR_LOM, hdma2d->Init.Mode | hdma2d->Init.LineOffsetMode);
+#else
   MODIFY_REG(hdma2d->Instance->CR, DMA2D_CR_MODE, hdma2d->Init.Mode);
+#endif /* STM32L4R5xx || STM32L4R7xx || STM32L4R9xx || STM32L4S5xx || STM32L4S7xx || STM32L4S9xx */
 
   /* DMA2D OPFCCR register configuration ---------------------------------------*/
+#if defined(STM32L4R5xx) || defined(STM32L4R7xx) || defined(STM32L4R9xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
+  MODIFY_REG(hdma2d->Instance->OPFCCR, DMA2D_OPFCCR_CM | DMA2D_OPFCCR_SB, hdma2d->Init.ColorMode | hdma2d->Init.BytesSwap);
+#else
   MODIFY_REG(hdma2d->Instance->OPFCCR, DMA2D_OPFCCR_CM, hdma2d->Init.ColorMode);
+#endif /* STM32L4R5xx || STM32L4R7xx || STM32L4R9xx || STM32L4S5xx || STM32L4S7xx || STM32L4S9xx */
 
-  /* DMA2D OOR register configuration ------------------------------------------*/
-  MODIFY_REG(hdma2d->Instance->OOR, DMA2D_OOR_LO, hdma2d->Init.OutputOffset);
+  /* DMA2D OOR register configuration ------------------------------------------*/  
+  MODIFY_REG(hdma2d->Instance->OOR, DMA2D_OOR_LO, hdma2d->Init.OutputOffset);  
   
   /* DMA2D OPFCCR RBS and AI fields setting */
   MODIFY_REG(hdma2d->Instance->OPFCCR, (DMA2D_OPFCCR_AI|DMA2D_OPFCCR_RBS), \
@@ -1761,7 +1772,8 @@ static void DMA2D_SetConfig(DMA2D_HandleTypeDef *hdma2d, uint32_t pdata, uint32_
   * @}
   */
 
-#endif /* STM32L496xx || STM32L4A6xx */
+#endif /* STM32L496xx || STM32L4A6xx || */
+       /* STM32L4R5xx || STM32L4R7xx || STM32L4R9xx || STM32L4S5xx || STM32L4S7xx || STM32L4S9xx */
 
 #endif /* HAL_DMA2D_MODULE_ENABLED */
 

@@ -50,6 +50,22 @@ config SPI_INTEL
 	  was formerly found on XScale chips. It can be found nowadays
 	  on CEXXXX Intel media controller and Quark CPU (2 of them).
 
+config SPI_STM32
+	bool
+	prompt "STM32 MCU SPI controller driver"
+	depends on SPI && SOC_FAMILY_STM32
+	depends on SOC_SERIES_STM32L4X || SOC_SERIES_STM32F4X || SOC_SERIES_STM32F3X
+	default n
+	help
+	  Enable SPI support on the STM32 family of processors.
+
+config SPI_STM32_INTERRUPT
+	bool
+	prompt "STM32 MCU SPI Interrupt Support"
+	depends on SPI_STM32
+	default n
+	help
+	  Enable Interrupt support for the SPI Driver of STM32 family.
 
 if SPI
 config SPI_INIT_PRIORITY
@@ -75,7 +91,7 @@ config SYS_LOG_SPI_LEVEL
 
 config SPI_CS_GPIO
 	bool "SPI port CS pin is controlled via a GPIO port"
-	select GPIO
+	depends on GPIO
 	default n
 
 config	SPI_0
@@ -195,6 +211,24 @@ config SPI_2_CS_GPIO_PIN
 	depends on SPI_2 && SPI_CS_GPIO
 	default 0
 
+config SPI_3
+	bool
+	prompt "SPI port 3"
+	default n
+	help
+	  Enable SPI controller port 3.
+
+config SPI_3_NAME
+	string
+	prompt "SPI port 3 device name"
+	depends on SPI_3
+	default "SPI_3"
+
+config SPI_3_IRQ_PRI
+	int
+	prompt "Port 3 interrupt priority"
+	depends on SPI_3
+
 config SPI_SS_INIT_PRIORITY
 	int "Init priority"
 	depends on SPI_QMSI_SS
@@ -272,6 +306,8 @@ source "drivers/spi/Kconfig.dw"
 
 source "drivers/spi/Kconfig.mcux_dspi"
 
-source "drivers/spi/Kconfig.nrf5"
+if SPI_LEGACY_API
+source "drivers/spi/Kconfig.nrf5_legacy"
+endif
 
 endif # SPI

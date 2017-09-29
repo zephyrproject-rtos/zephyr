@@ -26,7 +26,7 @@ The sample exports the following resources:
    /location-query
    /large-update
 
-These resources allow a good part of the ETSI testcases to be run
+These resources allow a good part of the ETSI test cases to be run
 against zoap-server.
 
 Building And Running
@@ -46,7 +46,7 @@ It can be built and executed on QEMU as follows:
 
 
 Use this command on the host to run the`libcoap`_ implementation of
-the ETSI testcases:
+the ETSI test cases:
 
 .. code-block:: console
 

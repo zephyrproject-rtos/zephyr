@@ -31,7 +31,6 @@ extern "C" {
 #define SIZEOFUNIT_TO_OCTET(X) (X)
 
 #define _NANO_ERR_HW_EXCEPTION (0)      /* MPU/Bus/Usage fault */
-#define _NANO_ERR_INVALID_TASK_EXIT (1) /* Invalid task exit */
 #define _NANO_ERR_STACK_CHK_FAIL (2)    /* Stack corruption detected */
 #define _NANO_ERR_ALLOCATION_FAIL (3)   /* Kernel Allocation Failure */
 #define _NANO_ERR_RESERVED_IRQ (4)	/* Reserved interrupt */
@@ -114,20 +113,18 @@ extern void _irq_priority_set(u32_t irq, u32_t prio, u32_t flags);
  */
 #define _ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 ({ \
-	enum { IRQ = irq_p }; \
-	static struct _isr_table_entry \
-		_CONCAT(_isr_irq, irq_p) \
-		__attribute__ ((used)) \
-		__attribute__ ((section(\
-			STRINGIFY(_CONCAT(.gnu.linkonce.d.isr_irq, irq_p)))\
-		)) = {isr_param_p, isr_p}; \
-	_irq_priority_set(irq_p, priority_p, flags_p); \
+	_ISR_DECLARE(irq_p, flags_p, isr_p, isr_param_p); \
 	irq_p; \
 })
 
+/* Spurious interrupt handler. Throws an error if called */
+extern void _irq_spurious(void *unused);
 
 FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
 					 const NANO_ESF *esf);
+
+FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
+					  const NANO_ESF *pEsf);
 
 extern u32_t _timer_cycle_get_32(void);
 #define _arch_k_cycle_get_32()	_timer_cycle_get_32()

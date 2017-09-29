@@ -19,12 +19,23 @@
 #include <kernel.h>
 #include <zephyr/types.h>
 #include <toolchain.h>
-#include <linker-defs.h>
+#include <linker/linker-defs.h>
 #include <nano_internal.h>
 #include <arch/arm/cortex_m/cmsis.h>
+#include <string.h>
 
 #ifdef CONFIG_ARMV6_M
-static inline void relocate_vector_table(void) { /* do nothing */ }
+
+#define VECTOR_ADDRESS 0
+static inline void relocate_vector_table(void)
+{
+#if defined(CONFIG_XIP) && (CONFIG_FLASH_BASE_ADDRESS != 0) || \
+    !defined(CONFIG_XIP) && (CONFIG_SRAM_BASE_ADDRESS != 0)
+	size_t vector_size = (size_t)_vector_end - (size_t)_vector_start;
+	memcpy(VECTOR_ADDRESS, _vector_start, vector_size);
+#endif
+}
+
 #elif defined(CONFIG_ARMV7_M)
 #ifdef CONFIG_XIP
 #define VECTOR_ADDRESS ((uintptr_t)&_image_rom_start + \
@@ -87,12 +98,18 @@ extern FUNC_NORETURN void _Cstart(void);
  * @return N/A
  */
 
+#ifdef CONFIG_BOOT_TIME_MEASUREMENT
+	extern u64_t __start_time_stamp;
+#endif
 void _PrepC(void)
 {
 	relocate_vector_table();
 	enable_floating_point();
 	_bss_zero();
 	_data_copy();
+#ifdef CONFIG_BOOT_TIME_MEASUREMENT
+	__start_time_stamp = 0;
+#endif
 	_Cstart();
 	CODE_UNREACHABLE;
 }

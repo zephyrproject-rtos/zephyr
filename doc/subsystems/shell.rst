@@ -23,34 +23,34 @@ Specific module's commands
 A shell interface exposing subsystem features is a shell module, multiple
 modules can be available at the same time.
 
-`MODULE_NAME COMMAND`
+``MODULE_NAME COMMAND``
  One of the available modules is "KERNEL", for the Kernel module.  More
  information can be found in :c:macro:`SHELL_REGISTER`.
 
 Help commands
 =============
 
-`help`
+``help``
  Prints the list of available modules.
 
-`help MODULE_NAME`
+``help MODULE_NAME``
  Prints the names of the available commands for the module.
 
-`help MODULE_NAME COMMAND`
+``help MODULE_NAME COMMAND``
  Prints help for the module's command (the help should show function
  goal and required parameters).
 
 Select module commands
 ======================
 
-`select MODULE_NAME`
+``select MODULE_NAME``
  Use this command when using the shell only for one module. After entering this
  command, you will not need to enter module name in further commands. If
  the selected module has set a default shell prompt during its initialization,
  the prompt will be changed to that one. Otherwise, the prompt will be
  changed to the selected module's name to reflect the current module in use.
 
-`select`
+``select``
  Clears selected module. Restores prompt as well.
 
 Shell configuration
@@ -130,4 +130,3 @@ Shell API Functions
 *******************
 .. doxygengroup:: _shell_api_functions
    :project: Zephyr
-   :content-only:

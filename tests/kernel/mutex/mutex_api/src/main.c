@@ -20,7 +20,7 @@ extern void test_mutex_reent_lock_timeout_fail(void);
 extern void test_mutex_reent_lock_timeout_pass(void);
 
 /*test case main entry*/
-void test_main(void *p1, void *p2, void *p3)
+void test_main(void)
 {
 	ztest_test_suite(test_mutex_api,
 			 ztest_unit_test(test_mutex_lock_unlock),

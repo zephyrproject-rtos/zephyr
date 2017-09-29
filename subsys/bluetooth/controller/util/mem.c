@@ -115,7 +115,7 @@ void mem_rcopy(u8_t *dst, u8_t const *src, u16_t len)
 	}
 }
 
-u8_t mem_is_zero(u8_t *src, u16_t len)
+u8_t mem_nz(u8_t *src, u16_t len)
 {
 	while (len--) {
 		if (*src++) {

@@ -20,7 +20,7 @@
 #include <bluetooth/hci_driver.h>
 #include <bluetooth/l2cap.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_RFCOMM)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_RFCOMM)
 /* FIXME: #include "common/log.h" */
 #include <bluetooth/rfcomm.h>
 
@@ -35,10 +35,10 @@
 #define RFCOMM_MIN_MTU		BT_RFCOMM_SIG_MIN_MTU
 #define RFCOMM_DEFAULT_MTU	127
 
-#if defined(CONFIG_BLUETOOTH_HCI_ACL_FLOW_CONTROL)
-#define RFCOMM_MAX_CREDITS		(CONFIG_BLUETOOTH_ACL_RX_COUNT - 1)
+#if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
+#define RFCOMM_MAX_CREDITS		(CONFIG_BT_ACL_RX_COUNT - 1)
 #else
-#define RFCOMM_MAX_CREDITS		(CONFIG_BLUETOOTH_RX_BUF_COUNT - 1)
+#define RFCOMM_MAX_CREDITS		(CONFIG_BT_RX_BUF_COUNT - 1)
 #endif
 
 #define RFCOMM_CREDITS_THRESHOLD	(RFCOMM_MAX_CREDITS / 2)
@@ -55,12 +55,12 @@
 static struct bt_rfcomm_server *servers;
 
 /* Pool for dummy buffers to wake up the tx threads */
-NET_BUF_POOL_DEFINE(dummy_pool, CONFIG_BLUETOOTH_MAX_CONN, 0, 0, NULL);
+NET_BUF_POOL_DEFINE(dummy_pool, CONFIG_BT_MAX_CONN, 0, 0, NULL);
 
 #define RFCOMM_SESSION(_ch) CONTAINER_OF(_ch, \
 					 struct bt_rfcomm_session, br_chan.chan)
 
-static struct bt_rfcomm_session bt_rfcomm_pool[CONFIG_BLUETOOTH_MAX_CONN];
+static struct bt_rfcomm_session bt_rfcomm_pool[CONFIG_BT_MAX_CONN];
 
 /* reversed, 8-bit, poly=0x07 */
 static const u8_t rfcomm_crc_table[256] = {
@@ -242,7 +242,7 @@ static void rfcomm_dlc_destroy(struct bt_rfcomm_dlc *dlc)
 	dlc->state = BT_RFCOMM_STATE_IDLE;
 	dlc->session = NULL;
 
-	stack_analyze("dlc stack", dlc->stack, sizeof(dlc->stack));
+	STACK_ANALYZE("dlc stack", dlc->stack);
 
 	if (dlc->ops && dlc->ops->disconnected) {
 		dlc->ops->disconnected(dlc);
@@ -751,7 +751,8 @@ static void rfcomm_dlc_connected(struct bt_rfcomm_dlc *dlc)
 	k_delayed_work_cancel(&dlc->rtx_work);
 
 	k_fifo_init(&dlc->tx_queue);
-	k_thread_create(&dlc->tx_thread, dlc->stack, sizeof(dlc->stack),
+	k_thread_create(&dlc->tx_thread, dlc->stack,
+			K_THREAD_STACK_SIZEOF(dlc->stack),
 			rfcomm_dlc_tx_thread, dlc, NULL, NULL, K_PRIO_COOP(7),
 			0, K_NO_WAIT);
 
@@ -1574,7 +1575,7 @@ static struct bt_rfcomm_session *rfcomm_session_new(bt_rfcomm_role_t role)
 		BT_DBG("session %p initialized", session);
 
 		session->br_chan.chan.ops = &ops;
-		session->br_chan.rx.mtu	= CONFIG_BLUETOOTH_RFCOMM_L2CAP_MTU;
+		session->br_chan.rx.mtu	= CONFIG_BT_RFCOMM_L2CAP_MTU;
 		session->state = BT_RFCOMM_STATE_INIT;
 		session->role = role;
 		session->cfc = BT_RFCOMM_CFC_UNKNOWN;

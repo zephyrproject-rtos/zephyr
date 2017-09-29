@@ -46,7 +46,10 @@ extern "C" {
 #define I2C_SPEED_ULTRA			(0x5)
 
 /** @cond INTERNAL_HIDDEN */
-#define I2C_SPEED_MASK			(0x7 << 1)	/* 3 bits */
+#define I2C_SPEED_SHIFT			(1)
+#define I2C_SPEED_MASK			(0x7 << I2C_SPEED_SHIFT) /* 3 bits */
+#define I2C_SPEED_GET(cfg) 		(((cfg) & I2C_SPEED_MASK) \
+						>> I2C_SPEED_SHIFT)
 /** @endcond  */
 
 /** Use 10-bit addressing. */
@@ -54,10 +57,6 @@ extern "C" {
 
 /** Controller to act as Master. */
 #define I2C_MODE_MASTER			(1 << 4)
-
-/** Controller to act as Slave. */
-#define I2C_MODE_SLAVE_READ		(1 << 5)
-
 
 /*
  * I2C_MSG_* are I2C Message flags.
@@ -101,7 +100,6 @@ union dev_config {
 		u32_t        use_10_bit_addr : 1;
 		u32_t        speed : 3;
 		u32_t        is_master_device : 1;
-		u32_t        is_slave_read : 1;
 		u32_t        reserved : 26;
 	} bits;
 };

@@ -28,7 +28,7 @@
 #include <arch/cpu.h>
 
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
-extern u64_t __idle_tsc;  /* timestamp when CPU went idle */
+extern u64_t __idle_time_stamp;  /* timestamp when CPU went idle */
 #endif
 
 /**
@@ -47,7 +47,7 @@ void k_cpu_idle(void)
 	_int_latency_stop();
 	_sys_k_event_logger_enter_sleep();
 #if defined(CONFIG_BOOT_TIME_MEASUREMENT)
-	__idle_tsc = _tsc_read();
+	__idle_time_stamp = (u64_t)k_cycle_get_32();
 #endif
 
 	__asm__ volatile (

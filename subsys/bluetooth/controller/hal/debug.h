@@ -8,11 +8,11 @@
 #ifndef _HAL_DEBUG_H_
 #define _HAL_DEBUG_H_
 
-#ifdef CONFIG_BLUETOOTH_CONTROLLER_ASSERT_HANDLER
-void bt_controller_assert_handle(char *file, u32_t line);
+#ifdef CONFIG_BT_CTLR_ASSERT_HANDLER
+void bt_ctlr_assert_handle(char *file, u32_t line);
 #define LL_ASSERT(cond) if (!(cond)) { \
-				bt_controller_assert_handle(__FILE__, \
-							    __LINE__); \
+				bt_ctlr_assert_handle(__FILE__, \
+						      __LINE__); \
 			}
 #else
 #define LL_ASSERT(cond) BT_ASSERT(cond)

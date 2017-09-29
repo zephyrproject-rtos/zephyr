@@ -10,13 +10,13 @@
 
 #ifdef MAILBOX_BENCH
 
-static struct k_mbox_msg Message;
+static struct k_mbox_msg message;
 
 #ifdef FLOAT
 #define PRINT_HEADER()                                                       \
-	PRINT_STRING                                                           \
+	(PRINT_STRING                                         \
 	   ("|   size(B) |       time/packet (usec)       |          MB/sec" \
-	    "                |\n", output_file)
+	    "                |\n", output_file))
 #define PRINT_ONE_RESULT()                                                   \
 	PRINT_F(output_file, "|%11u|%32.3f|%32f|\n", putsize, puttime / 1000.0,\
 	     (1000.0 * putsize) / puttime)
@@ -24,21 +24,21 @@ static struct k_mbox_msg Message;
 #define PRINT_OVERHEAD()                                                     \
 	PRINT_F(output_file,						\
 	     "| message overhead:  %10.3f     usec/packet                   "\
-	     "            |\n", EmptyMsgPutTime / 1000.0)
+	     "            |\n", empty_msg_put_time / 1000.0)
 
 #define PRINT_XFER_RATE()                                                     \
-	double NettoTransferRate;                                               \
-	NettoTransferRate = 1000.0 * \
-		(putsize >> 1) / (puttime - EmptyMsgPutTime);		\
+	double netto_transfer_rate;                                           \
+	netto_transfer_rate = 1000.0 * \
+		(putsize >> 1) / (puttime - empty_msg_put_time);	\
 	PRINT_F(output_file,						\
 	     "| raw transfer rate:     %10.3f MB/sec (without"		\
-	     " overhead)                 |\n", NettoTransferRate)
+	     " overhead)                 |\n", netto_transfer_rate)
 
 #else
 #define PRINT_HEADER()                                                       \
-	PRINT_STRING                                                            \
+	(PRINT_STRING                                                         \
 	   ("|   size(B) |       time/packet (nsec)       |          KB/sec" \
-	    "                |\n", output_file);
+	    "                |\n", output_file))
 
 #define PRINT_ONE_RESULT()                                                   \
 	PRINT_F(output_file, "|%11u|%32u|%32u|\n", putsize, puttime,	     \
@@ -47,13 +47,13 @@ static struct k_mbox_msg Message;
 #define PRINT_OVERHEAD()                                                     \
 	PRINT_F(output_file,						\
 	     "| message overhead:  %10u     nsec/packet                     "\
-	     "          |\n", EmptyMsgPutTime)
+	     "          |\n", empty_msg_put_time)
 
 #define PRINT_XFER_RATE()                                                    \
 	PRINT_F(output_file, "| raw transfer rate:     %10u KB/sec (without" \
 	     " overhead)                 |\n",                               \
 	     (u32_t)(1000000 * (u64_t)(putsize >> 1)                   \
-	     / (puttime - EmptyMsgPutTime)))
+	     / (puttime - empty_msg_put_time)))
 
 #endif
 
@@ -78,8 +78,8 @@ void mailbox_test(void)
 	u32_t putsize;
 	u32_t puttime;
 	int putcount;
-	unsigned int EmptyMsgPutTime;
-	GetInfo getinfo;
+	unsigned int empty_msg_put_time;
+	struct getinfo getinfo;
 
 	PRINT_STRING(dashline, output_file);
 	PRINT_STRING("|                "
@@ -104,7 +104,7 @@ void mailbox_test(void)
 	/* waiting for ack */
 	k_msgq_get(&MB_COMM, &getinfo, K_FOREVER);
 	PRINT_ONE_RESULT();
-	EmptyMsgPutTime = puttime;
+	empty_msg_put_time = puttime;
 	for (putsize = 8; putsize <= MESSAGE_SIZE; putsize <<= 1) {
 		mailbox_put(putsize, putcount, &puttime);
 		/* waiting for ack */
@@ -132,14 +132,14 @@ void mailbox_put(u32_t size, int count, u32_t *time)
 	int i;
 	unsigned int t;
 
-	Message.rx_source_thread = K_ANY;
-	Message.tx_target_thread = K_ANY;
+	message.rx_source_thread = K_ANY;
+	message.tx_target_thread = K_ANY;
 
 	/* first sync with the receiver */
 	k_sem_give(&SEM0);
 	t = BENCH_START();
 	for (i = 0; i < count; i++) {
-		k_mbox_put(&MAILB1, &Message, K_FOREVER);
+		k_mbox_put(&MAILB1, &message, K_FOREVER);
 	}
 	t = TIME_STAMP_DELTA_GET(t);
 	*time = SYS_CLOCK_HW_CYCLES_TO_NS_AVG(t, count);

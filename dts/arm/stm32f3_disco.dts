@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2017 I-SENSE group of ICCS
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/stm32f303.dtsi>
+
+/ {
+	model = "STMicroelectronics STM32F3DISCOVERY board";
+	compatible = "st,stm32f3discovery", "st,stm32f303";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
+
+&usart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart1_pins_d>;
+	pinctrl-names = "default";
+	status = "ok";
+};
+
+&usart2 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart2_pins_a>;
+	pinctrl-names = "default";
+	status = "ok";
+};

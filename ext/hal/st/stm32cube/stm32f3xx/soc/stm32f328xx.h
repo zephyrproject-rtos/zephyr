@@ -2,14 +2,12 @@
   ******************************************************************************
   * @file    stm32f328xx.h
   * @author  MCD Application Team
-  * @version V2.3.1
-  * @date    16-December-2016
   * @brief   CMSIS STM32F328xx Devices Peripheral Access Layer Header File.
   *
   *          This file contains:
   *           - Data structures and the address mapping for all peripherals
   *           - Peripheral's registers declarations and bits definition
-  *           - Macros to access peripheralï¿½s registers hardware
+  *           - Macros to access peripheral’s registers hardware
   *
   ******************************************************************************
   * @attention
@@ -7150,9 +7148,19 @@ typedef struct
 #define EXTI_IMR2_IM35 EXTI_IMR2_MR35
 #endif
 
+#if defined(EXTI_IMR2_MR33) && defined(EXTI_IMR2_MR34) && defined(EXTI_IMR2_MR35)
 #define EXTI_IMR2_IM_Pos           (0U)
 #define EXTI_IMR2_IM_Msk           (0xFU << EXTI_IMR2_IM_Pos)                  /*!< 0x0000000F */
 #define EXTI_IMR2_IM               EXTI_IMR2_IM_Msk
+#elif defined(EXTI_IMR2_MR34) && defined(EXTI_IMR2_MR35)
+#define EXTI_IMR2_IM_Pos           (0U)
+#define EXTI_IMR2_IM_Msk           (0xDU << EXTI_IMR2_IM_Pos)                  /*!< 0x0000000D */
+#define EXTI_IMR2_IM               EXTI_IMR2_IM_Msk
+#else
+#define EXTI_IMR2_IM_Pos           (0U)
+#define EXTI_IMR2_IM_Msk           (0x1U << EXTI_IMR2_IM_Pos)                  /*!< 0x00000001 */
+#define EXTI_IMR2_IM               EXTI_IMR2_IM_Msk
+#endif
 
 /*******************  Bit definition for EXTI_EMR2 ****************************/
 #define EXTI_EMR2_MR32_Pos         (0U)
@@ -7169,6 +7177,20 @@ typedef struct
 #endif
 #if defined(EXTI_EMR2_MR35)
 #define EXTI_EMR2_EM35 EXTI_EMR2_MR35
+#endif
+
+#if defined(EXTI_EMR2_MR33) && defined(EXTI_EMR2_MR34) && defined(EXTI_EMR2_MR35)
+#define EXTI_EMR2_EM_Pos           (0U)
+#define EXTI_EMR2_EM_Msk           (0xFU << EXTI_EMR2_EM_Pos)                  /*!< 0x0000000F */
+#define EXTI_EMR2_EM               EXTI_EMR2_EM_Msk
+#elif defined(EXTI_EMR2_MR34) && defined(EXTI_EMR2_MR35)
+#define EXTI_EMR2_EM_Pos           (0U)
+#define EXTI_EMR2_EM_Msk           (0xDU << EXTI_EMR2_EM_Pos)                  /*!< 0x0000000D */
+#define EXTI_EMR2_EM               EXTI_EMR2_EM_Msk
+#else
+#define EXTI_EMR2_EM_Pos           (0U)
+#define EXTI_EMR2_EM_Msk           (0x1U << EXTI_EMR2_EM_Pos)                  /*!< 0x00000001 */
+#define EXTI_EMR2_EM               EXTI_EMR2_EM_Msk
 #endif
 
 /******************  Bit definition for EXTI_RTSR2 register ********************/
@@ -7420,21 +7442,6 @@ typedef struct
 #define OB_WRP1_nWRP1_Msk    (0xFFU << OB_WRP1_nWRP1_Pos)                      /*!< 0xFF000000 */
 #define OB_WRP1_nWRP1        OB_WRP1_nWRP1_Msk                                 /*!< Flash memory write protection complemented option bytes */
 
-/******************  Bit definition for FLASH_WRP2 register  ******************/
-#define OB_WRP2_WRP2_Pos     (0U)
-#define OB_WRP2_WRP2_Msk     (0xFFU << OB_WRP2_WRP2_Pos)                       /*!< 0x000000FF */
-#define OB_WRP2_WRP2         OB_WRP2_WRP2_Msk                                  /*!< Flash memory write protection option bytes */
-#define OB_WRP2_nWRP2_Pos    (8U)
-#define OB_WRP2_nWRP2_Msk    (0xFFU << OB_WRP2_nWRP2_Pos)                      /*!< 0x0000FF00 */
-#define OB_WRP2_nWRP2        OB_WRP2_nWRP2_Msk                                 /*!< Flash memory write protection complemented option bytes */
-
-/******************  Bit definition for FLASH_WRP3 register  ******************/
-#define OB_WRP3_WRP3_Pos     (16U)
-#define OB_WRP3_WRP3_Msk     (0xFFU << OB_WRP3_WRP3_Pos)                       /*!< 0x00FF0000 */
-#define OB_WRP3_WRP3         OB_WRP3_WRP3_Msk                                  /*!< Flash memory write protection option bytes */
-#define OB_WRP3_nWRP3_Pos    (24U)
-#define OB_WRP3_nWRP3_Msk    (0xFFU << OB_WRP3_nWRP3_Pos)                      /*!< 0xFF000000 */
-#define OB_WRP3_nWRP3        OB_WRP3_nWRP3_Msk                                 /*!< Flash memory write protection complemented option bytes */
 
 /******************************************************************************/
 /*                                                                            */
@@ -8985,9 +8992,9 @@ typedef struct
 #define RTC_CR_COSEL_Pos             (19U)
 #define RTC_CR_COSEL_Msk             (0x1U << RTC_CR_COSEL_Pos)                /*!< 0x00080000 */
 #define RTC_CR_COSEL                 RTC_CR_COSEL_Msk
-#define RTC_CR_BCK_Pos               (18U)
-#define RTC_CR_BCK_Msk               (0x1U << RTC_CR_BCK_Pos)                  /*!< 0x00040000 */
-#define RTC_CR_BCK                   RTC_CR_BCK_Msk
+#define RTC_CR_BKP_Pos               (18U)
+#define RTC_CR_BKP_Msk               (0x1U << RTC_CR_BKP_Pos)                  /*!< 0x00040000 */
+#define RTC_CR_BKP                   RTC_CR_BKP_Msk
 #define RTC_CR_SUB1H_Pos             (17U)
 #define RTC_CR_SUB1H_Msk             (0x1U << RTC_CR_SUB1H_Pos)                /*!< 0x00020000 */
 #define RTC_CR_SUB1H                 RTC_CR_SUB1H_Msk
@@ -9036,6 +9043,11 @@ typedef struct
 #define RTC_CR_WUCKSEL_0             (0x1U << RTC_CR_WUCKSEL_Pos)              /*!< 0x00000001 */
 #define RTC_CR_WUCKSEL_1             (0x2U << RTC_CR_WUCKSEL_Pos)              /*!< 0x00000002 */
 #define RTC_CR_WUCKSEL_2             (0x4U << RTC_CR_WUCKSEL_Pos)              /*!< 0x00000004 */
+
+/* Legacy defines */
+#define RTC_CR_BCK_Pos               RTC_CR_BKP_Pos
+#define RTC_CR_BCK_Msk               RTC_CR_BKP_Msk
+#define RTC_CR_BCK                   RTC_CR_BKP
 
 /********************  Bits definition for RTC_ISR register  ******************/
 #define RTC_ISR_RECALPF_Pos          (16U)
@@ -9578,12 +9590,6 @@ typedef struct
 #define SPI_SR_TXE_Pos              (1U)
 #define SPI_SR_TXE_Msk              (0x1U << SPI_SR_TXE_Pos)                   /*!< 0x00000002 */
 #define SPI_SR_TXE                  SPI_SR_TXE_Msk                             /*!< Transmit buffer Empty */
-#define SPI_SR_CHSIDE_Pos           (2U)
-#define SPI_SR_CHSIDE_Msk           (0x1U << SPI_SR_CHSIDE_Pos)                /*!< 0x00000004 */
-#define SPI_SR_CHSIDE               SPI_SR_CHSIDE_Msk                          /*!< Channel side */
-#define SPI_SR_UDR_Pos              (3U)
-#define SPI_SR_UDR_Msk              (0x1U << SPI_SR_UDR_Pos)                   /*!< 0x00000008 */
-#define SPI_SR_UDR                  SPI_SR_UDR_Msk                             /*!< Underrun flag */
 #define SPI_SR_CRCERR_Pos           (4U)
 #define SPI_SR_CRCERR_Msk           (0x1U << SPI_SR_CRCERR_Pos)                /*!< 0x00000010 */
 #define SPI_SR_CRCERR               SPI_SR_CRCERR_Msk                          /*!< CRC Error flag */
@@ -9966,15 +9972,6 @@ typedef struct
 #define SYSCFG_CFGR3_ADC2_DMA_RMP                SYSCFG_CFGR3_ADC2_DMA_RMP_Msk /*!< ADC2 DMA remap */
 #define SYSCFG_CFGR3_ADC2_DMA_RMP_0              (0x1U << SYSCFG_CFGR3_ADC2_DMA_RMP_Pos) /*!< 0x00000100 */
 #define SYSCFG_CFGR3_ADC2_DMA_RMP_1              (0x2U << SYSCFG_CFGR3_ADC2_DMA_RMP_Pos) /*!< 0x00000200 */
-#define SYSCFG_CFGR3_TRIGGER_RMP_Pos             (16U)
-#define SYSCFG_CFGR3_TRIGGER_RMP_Msk             (0x3U << SYSCFG_CFGR3_TRIGGER_RMP_Pos) /*!< 0x00030000 */
-#define SYSCFG_CFGR3_TRIGGER_RMP                 SYSCFG_CFGR3_TRIGGER_RMP_Msk  /*!< Trigger remap mask */
-#define SYSCFG_CFGR3_DAC1_TRG3_RMP_Pos           (16U)
-#define SYSCFG_CFGR3_DAC1_TRG3_RMP_Msk           (0x1U << SYSCFG_CFGR3_DAC1_TRG3_RMP_Pos) /*!< 0x00010000 */
-#define SYSCFG_CFGR3_DAC1_TRG3_RMP               SYSCFG_CFGR3_DAC1_TRG3_RMP_Msk /*!< DAC1 TRG3 remap */
-#define SYSCFG_CFGR3_DAC1_TRG5_RMP_Pos           (17U)
-#define SYSCFG_CFGR3_DAC1_TRG5_RMP_Msk           (0x1U << SYSCFG_CFGR3_DAC1_TRG5_RMP_Pos) /*!< 0x00020000 */
-#define SYSCFG_CFGR3_DAC1_TRG5_RMP               SYSCFG_CFGR3_DAC1_TRG5_RMP_Msk /*!< DAC1 TRG5 remap */
 
 /******************************************************************************/
 /*                                                                            */

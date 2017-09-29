@@ -23,11 +23,11 @@
 #include <bluetooth/hci.h>
 #include <bluetooth/hci_driver.h>
 
-#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BLUETOOTH_DEBUG_HCI_CORE)
+#define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_CORE)
 #include "common/log.h"
 
 #include "hci_ecc.h"
-#ifdef CONFIG_BLUETOOTH_HCI_RAW
+#ifdef CONFIG_BT_HCI_RAW
 #include <bluetooth/hci_raw.h>
 #include "hci_raw_internal.h"
 #else
@@ -35,7 +35,7 @@
 #endif
 
 static struct k_thread ecc_thread_data;
-static BT_STACK_NOINIT(ecc_thread_stack, 1060);
+static BT_STACK_NOINIT(ecc_thread_stack, 1024);
 
 /* based on Core Specification 4.2 Vol 3. Part H 2.3.5.6.1 */
 static const u32_t debug_private_key[8] = {
@@ -43,7 +43,7 @@ static const u32_t debug_private_key[8] = {
 	0xa3c55f38, 0x3f49f6d4
 };
 
-#if defined(CONFIG_BLUETOOTH_USE_DEBUG_KEYS)
+#if defined(CONFIG_BT_USE_DEBUG_KEYS)
 static const u8_t debug_public_key[64] = {
 	0xe6, 0x9d, 0x35, 0x0e, 0x48, 0x01, 0x03, 0xcc, 0xdb, 0xfd, 0xf4, 0xac,
 	0x11, 0x91, 0xf4, 0xef, 0xb9, 0xa5, 0xf9, 0xe9, 0xa7, 0x83, 0x2c, 0x5e,
@@ -57,24 +57,21 @@ static const u8_t debug_public_key[64] = {
 enum {
 	PENDING_PUB_KEY,
 	PENDING_DHKEY,
+
+	/* Total number of flags - must be at the end of the enum */
+	NUM_FLAGS,
 };
 
-static atomic_t flags;
+static ATOMIC_DEFINE(flags, NUM_FLAGS);
 
 static K_SEM_DEFINE(cmd_sem, 0, 1);
 
 static struct {
-	/* Based on the current implementation of ecc_make_key() it's safe
-	 * for the private_key and random to occupy the same memory area.
-	 */
-	union {
-		u32_t private_key[NUM_ECC_DIGITS];
-		u32_t random[NUM_ECC_DIGITS * 2];
-	};
+	u8_t private_key[32];
 
 	union {
-		EccPoint pk;
-		u32_t dhkey[NUM_ECC_DIGITS];
+		u8_t pk[64];
+		u8_t dhkey[32];
 	};
 } ecc;
 
@@ -103,16 +100,11 @@ static void send_cmd_status(u16_t opcode, u8_t status)
 
 static u8_t generate_keys(void)
 {
-#if !defined(CONFIG_BLUETOOTH_USE_DEBUG_KEYS)
+#if !defined(CONFIG_BT_USE_DEBUG_KEYS)
 	do {
 		int rc;
 
-		if (bt_rand((u8_t *)ecc.random, sizeof(ecc.random))) {
-			BT_ERR("Failed to get random bytes for ECC keys");
-			return BT_HCI_ERR_UNSPECIFIED;
-		}
-
-		rc = ecc_make_key(&ecc.pk, ecc.private_key, ecc.random);
+		rc = uECC_make_key(ecc.pk, ecc.private_key, &curve_secp256r1);
 		if (rc == TC_CRYPTO_FAIL) {
 			BT_ERR("Failed to create ECC public/private pair");
 			return BT_HCI_ERR_UNSPECIFIED;
@@ -154,11 +146,14 @@ static void emulate_le_p256_public_key_cmd(void)
 	if (status) {
 		memset(evt->key, 0, sizeof(evt->key));
 	} else {
-		memcpy(evt->key, ecc.pk.x, 32);
-		memcpy(&evt->key[32], ecc.pk.y, 32);
+		/* Convert X and Y coordinates from big-endian (provided
+		 * by crypto API) to little endian HCI.
+		 */
+		sys_memcpy_swap(evt->key, ecc.pk, 32);
+		sys_memcpy_swap(&evt->key[32], &ecc.pk[32], 32);
 	}
 
-	atomic_clear_bit(&flags, PENDING_PUB_KEY);
+	atomic_clear_bit(flags, PENDING_PUB_KEY);
 
 	bt_recv(buf);
 }
@@ -169,12 +164,15 @@ static void emulate_le_generate_dhkey(void)
 	struct bt_hci_evt_le_meta_event *meta;
 	struct bt_hci_evt_hdr *hdr;
 	struct net_buf *buf;
-	s32_t ret;
+	int ret;
 
-	if (ecc_valid_public_key(&ecc.pk) < 0) {
+	ret = uECC_valid_public_key(ecc.pk, &curve_secp256r1);
+	if (ret < 0) {
+		BT_ERR("public key is not valid (ret %d)", ret);
 		ret = TC_CRYPTO_FAIL;
 	} else {
-		ret = ecdh_shared_secret(ecc.dhkey, &ecc.pk, ecc.private_key);
+		ret = uECC_shared_secret(ecc.pk, ecc.private_key, ecc.dhkey,
+					 &curve_secp256r1);
 	}
 
 	buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
@@ -193,10 +191,13 @@ static void emulate_le_generate_dhkey(void)
 		memset(evt->dhkey, 0, sizeof(evt->dhkey));
 	} else {
 		evt->status = 0;
-		memcpy(evt->dhkey, ecc.dhkey, sizeof(ecc.dhkey));
+		/* Convert from big-endian (provided by crypto API) to
+		 * little-endian HCI.
+		 */
+		sys_memcpy_swap(evt->dhkey, ecc.dhkey, sizeof(ecc.dhkey));
 	}
 
-	atomic_clear_bit(&flags, PENDING_DHKEY);
+	atomic_clear_bit(flags, PENDING_DHKEY);
 
 	bt_recv(buf);
 }
@@ -206,16 +207,15 @@ static void ecc_thread(void *p1, void *p2, void *p3)
 	while (true) {
 		k_sem_take(&cmd_sem, K_FOREVER);
 
-		if (atomic_test_bit(&flags, PENDING_PUB_KEY)) {
+		if (atomic_test_bit(flags, PENDING_PUB_KEY)) {
 			emulate_le_p256_public_key_cmd();
-		} else if (atomic_test_bit(&flags, PENDING_DHKEY)) {
+		} else if (atomic_test_bit(flags, PENDING_DHKEY)) {
 			emulate_le_generate_dhkey();
 		} else {
 			__ASSERT(0, "Unhandled ECC command");
 		}
 
-		stack_analyze("ecc stack", ecc_thread_stack,
-			      sizeof(ecc_thread_stack));
+		STACK_ANALYZE("ecc stack", ecc_thread_stack);
 	}
 }
 
@@ -238,7 +238,7 @@ static void le_gen_dhkey(struct net_buf *buf)
 	struct bt_hci_cp_le_generate_dhkey *cmd;
 	u8_t status;
 
-	if (atomic_test_bit(&flags, PENDING_PUB_KEY)) {
+	if (atomic_test_bit(flags, PENDING_PUB_KEY)) {
 		status = BT_HCI_ERR_CMD_DISALLOWED;
 		goto send_status;
 	}
@@ -248,14 +248,17 @@ static void le_gen_dhkey(struct net_buf *buf)
 		goto send_status;
 	}
 
-	if (atomic_test_and_set_bit(&flags, PENDING_DHKEY)) {
+	if (atomic_test_and_set_bit(flags, PENDING_DHKEY)) {
 		status = BT_HCI_ERR_CMD_DISALLOWED;
 		goto send_status;
 	}
 
 	cmd = (void *)buf->data;
-	memcpy(ecc.pk.x, cmd->key, 32);
-	memcpy(ecc.pk.y, &cmd->key[32], 32);
+	/* Convert X and Y coordinates from little-endian HCI to
+	 * big-endian (expected by the crypto API).
+	 */
+	sys_memcpy_swap(ecc.pk, cmd->key, 32);
+	sys_memcpy_swap(&ecc.pk[32], &cmd->key[32], 32);
 	k_sem_give(&cmd_sem);
 	status = BT_HCI_ERR_SUCCESS;
 
@@ -270,9 +273,9 @@ static void le_p256_pub_key(struct net_buf *buf)
 
 	net_buf_unref(buf);
 
-	if (atomic_test_bit(&flags, PENDING_DHKEY)) {
+	if (atomic_test_bit(flags, PENDING_DHKEY)) {
 		status = BT_HCI_ERR_CMD_DISALLOWED;
-	} else if (atomic_test_and_set_bit(&flags, PENDING_PUB_KEY)) {
+	} else if (atomic_test_and_set_bit(flags, PENDING_PUB_KEY)) {
 		status = BT_HCI_ERR_CMD_DISALLOWED;
 	} else {
 		k_sem_give(&cmd_sem);
@@ -307,9 +310,14 @@ int bt_hci_ecc_send(struct net_buf *buf)
 	return bt_dev.drv->send(buf);
 }
 
+int default_CSPRNG(u8_t *dst, unsigned int len)
+{
+	return !bt_rand(dst, len);
+}
+
 void bt_hci_ecc_init(void)
 {
 	k_thread_create(&ecc_thread_data, ecc_thread_stack,
-			sizeof(ecc_thread_stack), ecc_thread, NULL, NULL, NULL,
-			K_PRIO_PREEMPT(10), 0, K_NO_WAIT);
+			K_THREAD_STACK_SIZEOF(ecc_thread_stack), ecc_thread,
+			NULL, NULL, NULL, K_PRIO_PREEMPT(10), 0, K_NO_WAIT);
 }

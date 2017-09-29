@@ -438,7 +438,7 @@ DEVICE_AND_API_INIT(uart_fe310_1, CONFIG_UART_FE310_PORT_1_NAME,
 		    (void *)&uart_fe310_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
-static void uart_fe310_irq_cfg_func_0(void)
+static void uart_fe310_irq_cfg_func_1(void)
 {
 	IRQ_CONNECT(FE310_UART_1_IRQ,
 		    CONFIG_UART_FE310_PORT_1_IRQ_PRIORITY,

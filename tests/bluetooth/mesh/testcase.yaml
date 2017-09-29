@@ -1,0 +1,40 @@
+tests:
+-   test:
+        build_only: true
+        platform_whitelist: qemu_x86 nrf51_pca10028 nrf52840_pca10056
+        tags: bluetooth mesh
+-   test_dbg:
+        build_only: true
+        extra_args: CONF_FILE=dbg.conf
+        platform_whitelist: qemu_x86 nrf51_pca10028 nrf52840_pca10056
+        tags: bluetooth mesh
+-   test_friend:
+        build_only: true
+        extra_args: CONF_FILE=friend.conf
+        platform_whitelist: qemu_x86 nrf51_pca10028 nrf52840_pca10056
+        tags: bluetooth mesh
+-   test_lpn:
+        build_only: true
+        extra_args: CONF_FILE=lpn.conf
+        platform_whitelist: qemu_x86 nrf51_pca10028 nrf52840_pca10056
+        tags: bluetooth mesh
+-   test_pb_gatt:
+        build_only: true
+        extra_args: CONF_FILE=pb_gatt.conf
+        platform_whitelist: qemu_x86 nrf51_pca10028 nrf52840_pca10056
+        tags: bluetooth mesh
+-   test_gatt:
+        build_only: true
+        extra_args: CONF_FILE=gatt.conf
+        platform_whitelist: qemu_x86 nrf51_pca10028 nrf52840_pca10056
+        tags: bluetooth mesh
+-   test_proxy:
+        build_only: true
+        extra_args: CONF_FILE=proxy.conf
+        platform_whitelist: qemu_x86 nrf51_pca10028 nrf52840_pca10056
+        tags: bluetooth mesh
+-   test_microbit:
+        build_only: true
+        extra_args: CONF_FILE=microbit.conf
+        platform_whitelist: bbc_microbit
+        tags: bluetooth mesh

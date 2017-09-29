@@ -51,6 +51,7 @@ endchoice
 
 choice
 	prompt "32KHz clock accuracy"
+	default CLOCK_CONTROL_NRF5_K32SRC_500PPM if CLOCK_CONTROL_NRF5_K32SRC_RC
 	default CLOCK_CONTROL_NRF5_K32SRC_20PPM
 	depends on CLOCK_CONTROL_NRF5
 

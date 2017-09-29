@@ -70,7 +70,7 @@ enum net_tcp_state {
 #define NET_TCP_URG 0x20
 #define NET_TCP_CTL 0x3f
 
-#define NET_TCP_FLAGS(net_pkt) (NET_TCP_HDR(net_pkt)->flags & NET_TCP_CTL)
+#define NET_TCP_FLAGS(hdr) (hdr->flags & NET_TCP_CTL)
 
 /* TCP max window size */
 #define NET_TCP_MAX_WIN   (4 * 1024)
@@ -104,6 +104,9 @@ struct net_tcp {
 	/** ACK message timer */
 	struct k_delayed_work ack_timer;
 
+	/** Timer for doing active close in case the peer FIN is lost. */
+	struct k_delayed_work fin_timer;
+
 	/** Retransmit timer */
 	struct k_timer retry_timer;
 
@@ -128,19 +131,12 @@ struct net_tcp {
 	u32_t flags : 8;
 	/** Current TCP state */
 	u32_t state : 4;
-	/* A FIN packet has been queued for transmission */
-	u32_t fin_queued : 1;
 	/* An outbound FIN packet has been sent */
 	u32_t fin_sent : 1;
 	/* An inbound FIN packet has been received */
 	u32_t fin_rcvd : 1;
-	/* Tells if ack timer has been already cancelled. It might happen
-	 * that the timer is executed even if it is cancelled, this is because
-	 * of various timing issues when timer is scheduled to run.
-	 */
-	u32_t ack_timer_cancelled : 1;
 	/** Remaining bits in this u32_t */
-	u32_t _padding : 11;
+	u32_t _padding : 13;
 
 	/** Accept callback to be called when the connection has been
 	 * established.
@@ -151,6 +147,8 @@ struct net_tcp {
 	 * Semaphore to signal TCP connection completion
 	 */
 	struct k_sem connect_wait;
+
+	u16_t recv_wnd;
 };
 
 static inline bool net_tcp_is_used(struct net_tcp *tcp)
@@ -199,7 +197,18 @@ static inline int net_tcp_unregister(struct net_conn_handle *handle)
 	return net_conn_unregister(handle);
 }
 
-const char * const net_tcp_state_str(enum net_tcp_state state);
+/*
+ * @brief Generate initial TCP sequence number
+ *
+ * @return Return a random TCP sequence number
+ */
+static inline u32_t tcp_init_isn(void)
+{
+	/* Randomise initial seq number */
+	return sys_rand32_get();
+}
+
+const char *net_tcp_state_str(enum net_tcp_state state);
 
 #if defined(CONFIG_NET_TCP)
 void net_tcp_change_state(struct net_tcp *tcp, enum net_tcp_state new_state);
@@ -329,6 +338,15 @@ void net_tcp_ack_received(struct net_context *ctx, u32_t ack);
 u16_t net_tcp_get_recv_mss(const struct net_tcp *tcp);
 
 /**
+ * @brief Returns the receive window for a given TCP context
+ *
+ * @param tcp TCP context
+ *
+ * @return Current TCP receive window
+ */
+u32_t net_tcp_get_recv_wnd(const struct net_tcp *tcp);
+
+/**
  * @brief Obtains the state for a TCP context
  *
  * @param tcp TCP context
@@ -347,6 +365,88 @@ static inline enum net_tcp_state net_tcp_get_state(const struct net_tcp *tcp)
  * @return true if network packet sequence number is valid, false otherwise
  */
 bool net_tcp_validate_seq(struct net_tcp *tcp, struct net_pkt *pkt);
+
+#if defined(CONFIG_NET_TCP)
+/**
+ * @brief Get TCP packet header data from net_pkt. The array values are in
+ * network byte order and other values are in host byte order.
+ *
+ * @param pkt Network packet
+ * @param hdr Where to place the header.
+ *
+ * @return Return pointer to header or NULL if something went wrong.
+ */
+struct net_tcp_hdr *net_tcp_get_hdr(struct net_pkt *pkt,
+				    struct net_tcp_hdr *hdr);
+
+/**
+ * @brief Set TCP packet header data in net_pkt. The array values are in
+ * network byte order and other values are in host byte order.
+ *
+ * @param pkt Network packet
+ * @param hdr Header to be written
+ *
+ * @return Return hdr or NULL if error
+ */
+struct net_tcp_hdr *net_tcp_set_hdr(struct net_pkt *pkt,
+				    struct net_tcp_hdr *hdr);
+
+/**
+ * @brief Set TCP checksum in network packet.
+ *
+ * @param pkt Network packet
+ * @param frag Fragment where to start calculating the offset.
+ * Typically this is set to pkt->frags by the caller.
+ *
+ * @return Return the actual fragment where the checksum was written.
+ */
+struct net_buf *net_tcp_set_chksum(struct net_pkt *pkt, struct net_buf *frag);
+
+/**
+ * @brief Get TCP checksum from network packet.
+ *
+ * @param pkt Network packet
+ * @param frag Fragment where to start calculating the offset.
+ * Typically this is set to pkt->frags by the caller.
+ *
+ * @return Return the checksum in host byte order.
+ */
+u16_t net_tcp_get_chksum(struct net_pkt *pkt, struct net_buf *frag);
+
+#else
+
+static inline u16_t net_tcp_get_chksum(struct net_pkt *pkt,
+				       struct net_buf *frag)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(frag);
+	return 0;
+}
+
+static inline struct net_buf *net_tcp_set_chksum(struct net_pkt *pkt,
+						 struct net_buf *frag)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(frag);
+	return NULL;
+}
+
+static inline struct net_tcp_hdr *net_tcp_get_hdr(struct net_pkt *pkt,
+						  struct net_tcp_hdr *hdr)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(hdr);
+	return NULL;
+}
+
+static inline struct net_tcp_hdr *net_tcp_set_hdr(struct net_pkt *pkt,
+						  struct net_tcp_hdr *hdr)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(hdr);
+	return NULL;
+}
+#endif
 
 #if defined(CONFIG_NET_TCP)
 void net_tcp_init(void);

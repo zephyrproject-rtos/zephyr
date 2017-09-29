@@ -261,8 +261,8 @@ reset:
 	/* For HelloVerifyRequest cookies */
 	ctx.client_id = (char)ctx.remaining;
 
-	ret = mbedtls_ssl_set_client_transport_id(&ssl, &ctx.client_id,
-						  sizeof(char));
+	ret = mbedtls_ssl_set_client_transport_id(
+		&ssl, (unsigned char *)&ctx.client_id, sizeof(char));
 	if (ret != 0) {
 		mbedtls_printf(" failed\n  ! "
 			       "mbedtls_ssl_set_client_transport_id()"
@@ -362,7 +362,7 @@ exit:
 }
 
 #define STACK_SIZE		8192
-u8_t stack[STACK_SIZE];
+K_THREAD_STACK_DEFINE(stack, STACK_SIZE);
 static struct k_thread dtls_thread;
 
 static inline int init_app(void)

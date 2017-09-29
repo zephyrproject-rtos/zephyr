@@ -19,7 +19,7 @@
 #include <arch/arm/cortex_m/cmsis.h>
 #include <misc/__assert.h>
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <sw_isr_table.h>
 #include <irq.h>
 #include <kernel_structs.h>

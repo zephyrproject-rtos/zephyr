@@ -11,32 +11,18 @@
  * Reset handler that prepares the system for running C code.
  */
 
-// #include <board.h>
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <arch/cpu.h>
 
 GDATA(_interrupt_stack)
-GDATA(_firq_stack)
 GDATA(_main_stack)
 
 /* use one of the available interrupt stacks during init */
 
-/* FIRQ only ? */
-#if CONFIG_NUM_IRQ_PRIO_LEVELS == 1
 
-	/* FIRQ, but uses _interrupt_stack ? */
-	#if CONFIG_RGF_NUM_BANKS == 1
-		#define INIT_STACK _interrupt_stack
-		#define INIT_STACK_SIZE CONFIG_ISR_STACK_SIZE
-	#else
-		#define INIT_STACK _firq_stack
-		#define INIT_STACK_SIZE CONFIG_FIRQ_STACK_SIZE
-	#endif
-#else
-	#define INIT_STACK _interrupt_stack
-	#define INIT_STACK_SIZE CONFIG_ISR_STACK_SIZE
-#endif
+#define INIT_STACK _interrupt_stack
+#define INIT_STACK_SIZE CONFIG_ISR_STACK_SIZE
 
 GTEXT(__reset)
 GTEXT(__start)
@@ -105,13 +91,6 @@ done_cache_invalidate:
 	mov_s r1, 0xaa
 	mov_s r2, CONFIG_ISR_STACK_SIZE
 	jl memset
-
-#if CONFIG_RGF_NUM_BANKS != 1
-	mov_s r0, _firq_stack
-	mov_s r1, 0xaa
-	mov_s r2, CONFIG_FIRQ_STACK_SIZE
-	jl memset
-#endif
 
 #endif /* CONFIG_INIT_STACKS */
 

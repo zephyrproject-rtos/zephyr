@@ -86,7 +86,7 @@ void calculate_pi_low(void)
 			reference_pi = pi;
 		} else if (reference_pi != pi) {
 			TC_ERROR("Computed pi %1.6f, reference pi %1.6f\n",
-					pi, reference_pi);
+				 pi, reference_pi);
 			fpu_sharing_error = 1;
 			return;
 		}
@@ -142,7 +142,7 @@ void calculate_pi_high(void)
 			reference_pi = pi;
 		} else if (reference_pi != pi) {
 			TC_ERROR("Computed pi %1.6f, reference pi %1.6f\n",
-					 pi, reference_pi);
+				 pi, reference_pi);
 			fpu_sharing_error = 1;
 			return;
 		}
@@ -151,8 +151,8 @@ void calculate_pi_high(void)
 
 		if ((++calc_pi_high_count % 100) == 50) {
 			PRINT_DATA("Pi calculation OK after %u (high) +"
-				" %u (low) tests (computed %1.6f)\n",
-				calc_pi_high_count, calc_pi_low_count, pi);
+				   " %u (low) tests (computed %1.6f)\n",
+				   calc_pi_high_count, calc_pi_low_count, pi);
 		}
 	}
 }

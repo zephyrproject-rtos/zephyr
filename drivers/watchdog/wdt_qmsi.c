@@ -169,8 +169,7 @@ static int wdt_qmsi_device_ctrl(struct device *dev, u32_t ctrl_command,
 static int init(struct device *dev)
 {
 	if (IS_ENABLED(CONFIG_WDT_QMSI_API_REENTRANCY)) {
-		k_sem_init(RP_GET(dev), 0, UINT_MAX);
-		k_sem_give(RP_GET(dev));
+		k_sem_init(RP_GET(dev), 1, UINT_MAX);
 	}
 
 	IRQ_CONNECT(IRQ_GET_NUMBER(QM_IRQ_WDT_0_INT), CONFIG_WDT_0_IRQ_PRI,

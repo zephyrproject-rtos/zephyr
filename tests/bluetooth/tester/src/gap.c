@@ -133,11 +133,11 @@ static void controller_info(u8_t *data, u16_t len)
 	 * If privacy is used, the device uses random type address, otherwise
 	 * static random or public type address is used.
 	 */
-#if !defined(CONFIG_BLUETOOTH_PRIVACY)
+#if !defined(CONFIG_BT_PRIVACY)
 	if (oob.addr.type == BT_ADDR_LE_RANDOM) {
 		atomic_set_bit(&current_settings, GAP_SETTINGS_STATIC_ADDRESS);
 	}
-#endif /* CONFIG_BLUETOOTH_PRIVACY */
+#endif /* CONFIG_BT_PRIVACY */
 
 	supported_settings = BIT(GAP_SETTINGS_POWERED);
 	supported_settings |= BIT(GAP_SETTINGS_CONNECTABLE);
@@ -724,9 +724,9 @@ static void tester_init_gap_cb(int err)
 	atomic_set_bit(&current_settings, GAP_SETTINGS_CONNECTABLE);
 	atomic_set_bit(&current_settings, GAP_SETTINGS_BONDABLE);
 	atomic_set_bit(&current_settings, GAP_SETTINGS_LE);
-#if defined(CONFIG_BLUETOOTH_PRIVACY)
+#if defined(CONFIG_BT_PRIVACY)
 	atomic_set_bit(&current_settings, GAP_SETTINGS_PRIVACY);
-#endif /* CONFIG_BLUETOOTH_PRIVACY */
+#endif /* CONFIG_BT_PRIVACY */
 
 	bt_conn_cb_register(&conn_callbacks);
 

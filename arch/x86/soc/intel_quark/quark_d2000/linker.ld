@@ -13,6 +13,7 @@
 
 #include <autoconf.h>
 
+#include <generated_dts_board.h>
 /* physical address of RAM (needed for correct __ram_phys_end symbol) */
 #define PHYS_RAM_ADDR    CONFIG_PHYS_RAM_ADDR
 
@@ -48,7 +49,7 @@ MEMORY
      * target. However, it shouldn't overlap any other regions.
      */
 
-    IDT_LIST        : ORIGIN = 512, LENGTH = 512
+    IDT_LIST        : ORIGIN = 0, LENGTH = 2K
     }
 
 #include <arch/x86/linker.ld>

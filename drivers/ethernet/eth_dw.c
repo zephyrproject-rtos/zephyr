@@ -128,7 +128,7 @@ static void eth_tx_spin_wait(struct eth_runtime *context)
 
 static void eth_tx_data(struct eth_runtime *context, u8_t *data, u16_t len)
 {
-#ifdef CONFIG_ETHERNET_DEBUG
+#ifdef CONFIG_NET_DEBUG_L2_ETHERNET
 	/* Check whether an error occurred transmitting the previous frame. */
 	if (context->tx_desc.err_summary) {
 		SYS_LOG_ERR("Error transmitting frame: TDES0 = %08x,"

@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f7xx_hal_tim_ex.c
   * @author  MCD Application Team
-  * @version V1.2.0
-  * @date    30-December-2016
   * @brief   TIM HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the Timer extension peripheral:
@@ -72,7 +70,7 @@
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -1774,13 +1772,19 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigBreakInput(TIM_HandleTypeDef *htim,
 {
   uint32_t tmporx = 0;
   uint32_t bkin_enable_mask = 0;
+  uint32_t bkin_polarity_mask = 0;
   uint32_t bkin_enable_bitpos = 0;
+  uint32_t bkin_polarity_bitpos = 0;
 
   /* Check the parameters */
   assert_param(IS_TIM_BREAK_INSTANCE(htim->Instance));
   assert_param(IS_TIM_BREAKINPUT(BreakInput));
   assert_param(IS_TIM_BREAKINPUTSOURCE(sBreakInputConfig->Source));
   assert_param(IS_TIM_BREAKINPUTSOURCE_STATE(sBreakInputConfig->Enable));
+  if (sBreakInputConfig->Source != TIM_BREAKINPUTSOURCE_DFSDM1)
+  {
+    assert_param(IS_TIM_BREAKINPUTSOURCE_POLARITY(sBreakInputConfig->Polarity));
+  }
 
   /* Check input state */
   __HAL_LOCK(htim);
@@ -1791,6 +1795,8 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigBreakInput(TIM_HandleTypeDef *htim,
     {
       bkin_enable_mask = TIM1_AF1_BKINE;
       bkin_enable_bitpos = 0;
+      bkin_polarity_mask = TIM1_AF1_BKINP;
+      bkin_polarity_bitpos = 9;
     }
     break;
   
@@ -1816,6 +1822,11 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigBreakInput(TIM_HandleTypeDef *htim,
         tmporx &= ~bkin_enable_mask;
         tmporx |= (sBreakInputConfig->Enable << bkin_enable_bitpos) & bkin_enable_mask;
         
+        if(sBreakInputConfig->Source != TIM_BREAKINPUTSOURCE_DFSDM1)
+        {
+          tmporx &= ~bkin_polarity_mask;
+          tmporx |= (sBreakInputConfig->Polarity << bkin_polarity_bitpos) & bkin_polarity_mask;
+        }
         /* Set TIMx_AF1 */
         htim->Instance->AF1 = tmporx;        
       }
@@ -1824,11 +1835,17 @@ HAL_StatusTypeDef HAL_TIMEx_ConfigBreakInput(TIM_HandleTypeDef *htim,
       {
         /* Get the TIMx_AF2 register value */
         tmporx = htim->Instance->AF2;
-        
+
         /* Enable the break input */
         tmporx &= ~bkin_enable_mask;
         tmporx |= (sBreakInputConfig->Enable << bkin_enable_bitpos) & bkin_enable_mask;
-        
+
+        if (sBreakInputConfig->Source != TIM_BREAKINPUTSOURCE_DFSDM1)
+        {
+          tmporx &= ~bkin_polarity_mask;
+          tmporx |= (sBreakInputConfig->Polarity << bkin_polarity_bitpos) & bkin_polarity_mask;
+        }
+
         /* Set TIMx_AF2 */
         htim->Instance->AF2 = tmporx;        
       }

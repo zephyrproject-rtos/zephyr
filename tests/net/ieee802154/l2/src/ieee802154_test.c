@@ -101,8 +101,8 @@ struct ieee802154_pkt_test test_sec_data_pkt = {
 };
 
 struct net_pkt *current_pkt;
-struct k_sem driver_lock;
 struct net_if *iface;
+K_SEM_DEFINE(driver_lock, 0, UINT_MAX);
 
 static void pkt_hexdump(u8_t *pkt, u8_t length)
 {
@@ -225,7 +225,10 @@ static bool test_ack_reply(struct ieee802154_pkt_test *t)
 
 	net_pkt_frag_add(pkt, frag);
 
-	net_recv_data(iface, pkt);
+	if (net_recv_data(iface, pkt) == NET_DROP) {
+		NET_ERR("Packet dropped");
+		return false;
+	}
 
 	k_sem_take(&driver_lock, 20);
 
@@ -259,7 +262,7 @@ static bool initialize_test_environment(void)
 {
 	struct device *dev;
 
-	k_sem_init(&driver_lock, 0, UINT_MAX);
+	k_sem_reset(&driver_lock);
 
 	current_pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
 	if (!current_pkt) {

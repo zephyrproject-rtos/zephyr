@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32l4xx_ll_tim.c
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    21-April-2017
   * @brief   TIM LL module driver.
   ******************************************************************************
   * @attention
@@ -716,7 +714,7 @@ void LL_TIM_BDTR_StructInit(LL_TIM_BDTR_InitTypeDef *TIM_BDTRInitStruct)
 /**
   * @brief  Configure the Break and Dead Time feature of the timer instance.
   * @note As the bits BK2P, BK2E, BK2F[3:0], BKF[3:0], AOE, BKP, BKE, OSSI, OSSR
-  *  and DTG[7:0] can be write-locked depending on the LOCK configuration, it 
+  *  and DTG[7:0] can be write-locked depending on the LOCK configuration, it
   *  can be necessary to configure all of them during the first write access to
   *  the TIMx_BDTR register.
   * @note Macro @ref IS_TIM_BREAK_INSTANCE(TIMx) can be used to check whether or not
@@ -732,7 +730,7 @@ void LL_TIM_BDTR_StructInit(LL_TIM_BDTR_InitTypeDef *TIM_BDTRInitStruct)
 ErrorStatus LL_TIM_BDTR_Init(TIM_TypeDef *TIMx, LL_TIM_BDTR_InitTypeDef *TIM_BDTRInitStruct)
 {
   uint32_t tmpbdtr = 0;
-  
+
   /* Check the parameters */
   assert_param(IS_TIM_BREAK_INSTANCE(TIMx));
   assert_param(IS_LL_TIM_OSSR_STATE(TIM_BDTRInitStruct->OSSRState));
@@ -741,10 +739,10 @@ ErrorStatus LL_TIM_BDTR_Init(TIM_TypeDef *TIMx, LL_TIM_BDTR_InitTypeDef *TIM_BDT
   assert_param(IS_LL_TIM_BREAK_STATE(TIM_BDTRInitStruct->BreakState));
   assert_param(IS_LL_TIM_BREAK_POLARITY(TIM_BDTRInitStruct->BreakPolarity));
   assert_param(IS_LL_TIM_AUTOMATIC_OUTPUT_STATE(TIM_BDTRInitStruct->AutomaticOutput));
-  
+
   /* Set the Lock level, the Break enable Bit and the Polarity, the OSSR State,
   the OSSI State, the dead time value and the Automatic Output Enable Bit */
-  
+
   /* Set the BDTR bits */
   MODIFY_REG(tmpbdtr, TIM_BDTR_DTG, TIM_BDTRInitStruct->DeadTime);
   MODIFY_REG(tmpbdtr, TIM_BDTR_LOCK, TIM_BDTRInitStruct->LockLevel);
@@ -765,16 +763,16 @@ ErrorStatus LL_TIM_BDTR_Init(TIM_TypeDef *TIMx, LL_TIM_BDTR_InitTypeDef *TIM_BDT
     assert_param(IS_LL_TIM_BREAK2_STATE(TIM_BDTRInitStruct->Break2State));
     assert_param(IS_LL_TIM_BREAK2_POLARITY(TIM_BDTRInitStruct->Break2Polarity));
     assert_param(IS_LL_TIM_BREAK2_FILTER(TIM_BDTRInitStruct->Break2Filter));
-    
+
     /* Set the BREAK2 input related BDTR bit-fields */
     MODIFY_REG(tmpbdtr, TIM_BDTR_BK2F, (TIM_BDTRInitStruct->Break2Filter));
     MODIFY_REG(tmpbdtr, TIM_BDTR_BK2E, TIM_BDTRInitStruct->Break2State);
     MODIFY_REG(tmpbdtr, TIM_BDTR_BK2P, TIM_BDTRInitStruct->Break2Polarity);
   }
-  
+
   /* Set TIMx_BDTR */
   LL_TIM_WriteReg(TIMx, BDTR, tmpbdtr);
-  
+
   return SUCCESS;
 }
 /**

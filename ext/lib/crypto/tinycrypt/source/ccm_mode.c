@@ -1,7 +1,7 @@
 /* ccm_mode.c - TinyCrypt implementation of CCM mode */
 
 /*
- *  Copyright (C) 2015 by Intel Corporation, All Rights Reserved.
+ *  Copyright (C) 2017 by Intel Corporation, All Rights Reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -36,8 +36,8 @@
 
 #include <stdio.h>
 
-int32_t tc_ccm_config(TCCcmMode_t c, TCAesKeySched_t sched, uint8_t *nonce,
-		      uint32_t nlen, uint32_t mlen)
+int tc_ccm_config(TCCcmMode_t c, TCAesKeySched_t sched, uint8_t *nonce,
+		  unsigned int nlen, unsigned int mlen)
 {
 
 	/* input sanity check: */
@@ -61,11 +61,11 @@ int32_t tc_ccm_config(TCCcmMode_t c, TCAesKeySched_t sched, uint8_t *nonce,
 /**
  * Variation of CBC-MAC mode used in CCM.
  */
-static void ccm_cbc_mac(uint8_t *T, const uint8_t *data, uint32_t dlen,
-			 uint32_t flag, TCAesKeySched_t sched)
+static void ccm_cbc_mac(uint8_t *T, const uint8_t *data, unsigned int dlen,
+			unsigned int flag, TCAesKeySched_t sched)
 {
 
-	uint32_t i;
+	unsigned int i;
 
 	if (flag > 0) {
 		T[0] ^= (uint8_t)(dlen >> 8);
@@ -90,14 +90,14 @@ static void ccm_cbc_mac(uint8_t *T, const uint8_t *data, uint32_t dlen,
  * encryption). Besides, it is assumed that the counter is stored in the last
  * 2 bytes of the nonce.
  */
-static int32_t ccm_ctr_mode(uint8_t *out, uint32_t outlen, const uint8_t *in,
-			     uint32_t inlen, uint8_t *ctr, const TCAesKeySched_t sched)
+static int ccm_ctr_mode(uint8_t *out, unsigned int outlen, const uint8_t *in,
+			unsigned int inlen, uint8_t *ctr, const TCAesKeySched_t sched)
 {
 
 	uint8_t buffer[TC_AES_BLOCK_SIZE];
 	uint8_t nonce[TC_AES_BLOCK_SIZE];
 	uint16_t block_num;
-	uint32_t i;
+	unsigned int i;
 
 	/* input sanity check: */
 	if (out == (uint8_t *) 0 ||
@@ -134,23 +134,26 @@ static int32_t ccm_ctr_mode(uint8_t *out, uint32_t outlen, const uint8_t *in,
 	return TC_CRYPTO_SUCCESS;
 }
 
-int32_t tc_ccm_generation_encryption(uint8_t *out, const uint8_t *associated_data,
-				     uint32_t alen, const uint8_t *payload,
-				     uint32_t plen, TCCcmMode_t c)
+int tc_ccm_generation_encryption(uint8_t *out, unsigned int olen,
+				 const uint8_t *associated_data,
+				 unsigned int alen, const uint8_t *payload,
+				 unsigned int plen, TCCcmMode_t c)
 {
+
 	/* input sanity check: */
 	if ((out == (uint8_t *) 0) ||
-	    (c == (TCCcmMode_t) 0) ||
-	    ((plen > 0) && (payload == (uint8_t *) 0)) ||
-	    ((alen > 0) && (associated_data == (uint8_t *) 0)) ||
-	    (alen >= TC_CCM_AAD_MAX_BYTES) || /* associated data size unsupported */
-	    (plen >= TC_CCM_PAYLOAD_MAX_BYTES)) { /* payload size unsupported */
+		(c == (TCCcmMode_t) 0) ||
+		((plen > 0) && (payload == (uint8_t *) 0)) ||
+		((alen > 0) && (associated_data == (uint8_t *) 0)) ||
+		(alen >= TC_CCM_AAD_MAX_BYTES) || /* associated data size unsupported */
+		(plen >= TC_CCM_PAYLOAD_MAX_BYTES) || /* payload size unsupported */
+		(olen < (plen + c->mlen))) {  /* invalid output buffer size */
 		return TC_CRYPTO_FAIL;
 	}
 
 	uint8_t b[Nb * Nk];
 	uint8_t tag[Nb * Nk];
-	uint32_t i;
+	unsigned int i;
 
 	/* GENERATING THE AUTHENTICATION TAG: */
 
@@ -192,23 +195,27 @@ int32_t tc_ccm_generation_encryption(uint8_t *out, const uint8_t *associated_dat
 	return TC_CRYPTO_SUCCESS;
 }
 
-int32_t tc_ccm_decryption_verification(uint8_t *out, const uint8_t *associated_data,
-				       uint32_t alen, const uint8_t *payload,
-				       uint32_t plen, TCCcmMode_t c)
+int tc_ccm_decryption_verification(uint8_t *out, unsigned int olen,
+				   const uint8_t *associated_data,
+				   unsigned int alen, const uint8_t *payload,
+				   unsigned int plen, TCCcmMode_t c)
 {
+
 	/* input sanity check: */
-       if ((out == (uint8_t *) 0) ||
+	if ((plen <= alen) ||
+	    (out == (uint8_t *) 0) ||
 	    (c == (TCCcmMode_t) 0) ||
 	    ((plen > 0) && (payload == (uint8_t *) 0)) ||
 	    ((alen > 0) && (associated_data == (uint8_t *) 0)) ||
 	    (alen >= TC_CCM_AAD_MAX_BYTES) || /* associated data size unsupported */
-	    (plen >= TC_CCM_PAYLOAD_MAX_BYTES)) { /* payload size unsupported */
+	    (plen >= TC_CCM_PAYLOAD_MAX_BYTES) || /* payload size unsupported */
+	    (olen < plen - c->mlen)) { /* invalid output buffer size */
 		return TC_CRYPTO_FAIL;
-	}
+  }
 
 	uint8_t b[Nb * Nk];
 	uint8_t tag[Nb * Nk];
-	uint32_t i;
+	unsigned int i;
 
 	/* DECRYPTION: */
 
@@ -250,11 +257,11 @@ int32_t tc_ccm_decryption_verification(uint8_t *out, const uint8_t *associated_d
 	}
 
 	/* comparing the received tag and the computed one: */
-	if (_compare(b, tag, c->mlen) != 0) {
+	if (_compare(b, tag, c->mlen) == 0) {
+		return TC_CRYPTO_SUCCESS;
+  	} else {
 		/* erase the decrypted buffer in case of mac validation failure: */
-		_set(out, 0, sizeof(*out));
+		_set(out, 0, plen - c->mlen);
 		return TC_CRYPTO_FAIL;
 	}
-
-	return TC_CRYPTO_SUCCESS;
 }

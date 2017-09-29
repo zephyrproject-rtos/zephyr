@@ -1,7 +1,7 @@
 /*  cmac_mode.h -- interface to a CMAC implementation */
 
 /*
- *  Copyright (C) 2015 by Intel Corporation, All Rights Reserved
+ *  Copyright (C) 2017 by Intel Corporation, All Rights Reserved
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -119,9 +119,9 @@ typedef struct tc_cmac_struct {
 /* where to put bytes that didn't fill a block */
 	uint8_t leftover[TC_AES_BLOCK_SIZE];
 /* identifies the encryption key */
-	uint32_t keyid;
+	unsigned int keyid;
 /* next available leftover location */
-	uint32_t leftover_offset;
+	unsigned int leftover_offset;
 /* AES key schedule */
 	TCAesKeySched_t sched;
 /* calls to tc_cmac_update left before re-key */
@@ -139,8 +139,8 @@ typedef struct tc_cmac_struct {
  * @param key IN -- the key to use
  * @param sched IN -- AES key schedule
  */
-int32_t tc_cmac_setup(TCCmacState_t s, const uint8_t *key,
-			   TCAesKeySched_t sched);
+int tc_cmac_setup(TCCmacState_t s, const uint8_t *key,
+		      TCAesKeySched_t sched);
 
 /**
  * @brief Erases the CMAC state
@@ -150,7 +150,7 @@ int32_t tc_cmac_setup(TCCmacState_t s, const uint8_t *key,
  *
  * @param s IN/OUT -- the state to erase
  */
-int32_t tc_cmac_erase(TCCmacState_t s);
+int tc_cmac_erase(TCCmacState_t s);
 
 /**
  * @brief Initializes a new CMAC computation
@@ -160,7 +160,7 @@ int32_t tc_cmac_erase(TCCmacState_t s);
  *
  * @param s IN/OUT -- the state to initialize
  */
-int32_t tc_cmac_init(TCCmacState_t s);
+int tc_cmac_init(TCCmacState_t s);
 
 /**
  * @brief Incrementally computes CMAC over the next data segment
@@ -173,7 +173,7 @@ int32_t tc_cmac_init(TCCmacState_t s);
  * @param data IN -- the next data segment to MAC
  * @param dlen IN -- the length of data in bytes
  */
-int32_t tc_cmac_update(TCCmacState_t s, const uint8_t *data, size_t dlen);
+int tc_cmac_update(TCCmacState_t s, const uint8_t *data, size_t dlen);
 
 /**
  * @brief Generates the tag from the CMAC state
@@ -185,10 +185,10 @@ int32_t tc_cmac_update(TCCmacState_t s, const uint8_t *data, size_t dlen);
  * @param tag OUT -- the CMAC tag
  * @param s IN -- CMAC state
  */
-int32_t tc_cmac_final(uint8_t *tag, TCCmacState_t s);
+int tc_cmac_final(uint8_t *tag, TCCmacState_t s);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif /* __TC_CMAC_MODE_H__ */

@@ -1,0 +1,8 @@
+sample:
+    description: TBD
+    name: TBD
+tests:
+-   test:
+        build_only: true
+        platform_whitelist: nucleo_f103rb nucleo_f401re
+        tags: samples

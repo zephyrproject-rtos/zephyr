@@ -14,7 +14,7 @@
 
 #include <offsets_short.h>
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <sw_isr_table.h>
 #include <kernel_structs.h>
 #include <arch/cpu.h>
@@ -44,7 +44,7 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 	push {lr}		/* lr is now the first item on the stack */
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING
-	bl read_systick_start_of_isr
+	bl read_timer_start_of_isr
 #endif
 
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT
@@ -110,18 +110,16 @@ _idle_state_cleared:
 
 	ldm r1!,{r0,r3}	/* arg in r0, ISR in r3 */
 #ifdef CONFIG_EXECUTION_BENCHMARKING
-#if defined(CONFIG_ARMV6_M)
-	push {r3}
-#endif
+	stm sp!,{r0-r3} /* Save r0 to r4 into stack */
 	push {lr}
-	bl read_systick_end_of_isr
+	bl read_timer_end_of_isr
 #if defined(CONFIG_ARMV6_M)
 	pop {r3}
 	mov lr,r3
-	pop {r3}
 #else
 	pop {lr}
 #endif
+	ldm sp!,{r0-r3} /* Restore r0 to r4 regs */
 #endif
 	blx r3		/* call ISR */
 

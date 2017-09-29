@@ -1,12 +1,3 @@
-
-flagBoardType=
-ifeq ($(CONFIG_BOARD_XTENSA),y)
-flagBoardType= -DXT_BOARD
-endif
-ifeq ($(CONFIG_SIMULATOR_XTENSA),y)
-flagBoardType= -DXT_SIMULATOR
-endif
-
 # XCC emits an annoying warning if this is used even though the
 # $(call cc-option,) test in toplevel Makefile passes.
 KBUILD_CFLAGS := $(filter-out -fno-omit-frame-pointer, \
@@ -28,10 +19,3 @@ cflags-$(CONFIG_LTO) += $(call cc-option,-flto,)
 
 KBUILD_CFLAGS += $(cflags-y)
 KBUILD_CXXFLAGS += $(cflags-y)
-
-QEMU_CPU_TYPE_xtensa ?= unsupported
-QEMU_FLAGS_xtensa = -cpu $(QEMU_CPU_TYPE_xtensa) \
-                    -machine sim -semihosting -nographic
-QEMU_xtensa = qemu-system-xtensa
-
-export QEMU_FLAGS_xtensa QEMU_xtensa

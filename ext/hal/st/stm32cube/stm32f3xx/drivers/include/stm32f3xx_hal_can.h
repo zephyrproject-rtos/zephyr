@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_can.h
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   Header file of CAN HAL module.
   ******************************************************************************
   * @attention
@@ -66,17 +64,21 @@
   */
 /**
   * @brief  HAL State structures definition
-  */ 
+  */
 typedef enum
 {
   HAL_CAN_STATE_RESET             = 0x00U,  /*!< CAN not yet initialized or disabled */
   HAL_CAN_STATE_READY             = 0x01U,  /*!< CAN initialized and ready for use   */
   HAL_CAN_STATE_BUSY              = 0x02U,  /*!< CAN process is ongoing              */
   HAL_CAN_STATE_BUSY_TX           = 0x12U,  /*!< CAN process is ongoing              */
-  HAL_CAN_STATE_BUSY_RX           = 0x22U,  /*!< CAN process is ongoing              */
-  HAL_CAN_STATE_BUSY_TX_RX        = 0x32U,  /*!< CAN process is ongoing              */
+  HAL_CAN_STATE_BUSY_RX0          = 0x22U,  /*!< CAN process is ongoing              */
+  HAL_CAN_STATE_BUSY_RX1          = 0x32U,  /*!< CAN process is ongoing              */
+  HAL_CAN_STATE_BUSY_TX_RX0       = 0x42U,  /*!< CAN process is ongoing              */
+  HAL_CAN_STATE_BUSY_TX_RX1       = 0x52U,  /*!< CAN process is ongoing              */
+  HAL_CAN_STATE_BUSY_RX0_RX1      = 0x62U,  /*!< CAN process is ongoing              */
+  HAL_CAN_STATE_BUSY_TX_RX0_RX1   = 0x72U,  /*!< CAN process is ongoing              */
   HAL_CAN_STATE_TIMEOUT           = 0x03U,  /*!< CAN in Timeout state                */
-  HAL_CAN_STATE_ERROR             = 0x04   /*!< CAN error state                     */
+  HAL_CAN_STATE_ERROR             = 0x04U   /*!< CAN error state                     */
 
 }HAL_CAN_StateTypeDef;
 
@@ -232,7 +234,9 @@ typedef struct
 
   CanTxMsgTypeDef*            pTxMsg;     /*!< Pointer to transmit structure  */
 
-  CanRxMsgTypeDef*            pRxMsg;     /*!< Pointer to reception structure */
+  CanRxMsgTypeDef*            pRxMsg;     /*!< Pointer to reception structure for RX FIFO0 msg */
+
+  CanRxMsgTypeDef*            pRx1Msg;    /*!< Pointer to reception structure for RX FIFO1 msg */
 
   HAL_LockTypeDef             Lock;       /*!< CAN locking object             */
 
@@ -265,6 +269,9 @@ typedef struct
 #define HAL_CAN_ERROR_BR            (0x00000040U)  /*!< Bit recessive        */
 #define HAL_CAN_ERROR_BD            (0x00000080U)  /*!< LEC dominant         */
 #define HAL_CAN_ERROR_CRC           (0x00000100U)  /*!< LEC transfer error   */
+#define HAL_CAN_ERROR_FOV0          (0x00000200U)  /*!< FIFO0 overrun error  */
+#define HAL_CAN_ERROR_FOV1          (0x00000400U)  /*!< FIFO1 overrun error  */
+#define HAL_CAN_ERROR_TXFAIL        (0x00000800U)  /*!< Transmit failure     */
 /**
   * @}
   */
@@ -281,7 +288,7 @@ typedef struct
 /** @defgroup CAN_operating_mode CAN Operating Mode
   * @{
   */
-#define CAN_MODE_NORMAL             (0x00000000U)                     /*!< Normal mode   */
+#define CAN_MODE_NORMAL             (0x00000000U)                              /*!< Normal mode   */
 #define CAN_MODE_LOOPBACK           ((uint32_t)CAN_BTR_LBKM)                   /*!< Loopback mode */
 #define CAN_MODE_SILENT             ((uint32_t)CAN_BTR_SILM)                   /*!< Silent mode   */
 #define CAN_MODE_SILENT_LOOPBACK    ((uint32_t)(CAN_BTR_LBKM | CAN_BTR_SILM))  /*!< Loopback combined with silent mode */
@@ -293,7 +300,7 @@ typedef struct
 /** @defgroup CAN_synchronisation_jump_width CAN Synchronization Jump Width
   * @{
   */
-#define CAN_SJW_1TQ                 (0x00000000U)     /*!< 1 time quantum */
+#define CAN_SJW_1TQ                 (0x00000000U)              /*!< 1 time quantum */
 #define CAN_SJW_2TQ                 ((uint32_t)CAN_BTR_SJW_0)  /*!< 2 time quantum */
 #define CAN_SJW_3TQ                 ((uint32_t)CAN_BTR_SJW_1)  /*!< 3 time quantum */
 #define CAN_SJW_4TQ                 ((uint32_t)CAN_BTR_SJW)    /*!< 4 time quantum */
@@ -304,7 +311,7 @@ typedef struct
 /** @defgroup CAN_time_quantum_in_bit_segment_1 CAN Time Quantum in Bit Segment 1
   * @{
   */
-#define CAN_BS1_1TQ                 (0x00000000U)                                       /*!< 1 time quantum  */
+#define CAN_BS1_1TQ                 (0x00000000U)                                                /*!< 1 time quantum  */
 #define CAN_BS1_2TQ                 ((uint32_t)CAN_BTR_TS1_0)                                    /*!< 2 time quantum  */
 #define CAN_BS1_3TQ                 ((uint32_t)CAN_BTR_TS1_1)                                    /*!< 3 time quantum  */
 #define CAN_BS1_4TQ                 ((uint32_t)(CAN_BTR_TS1_1 | CAN_BTR_TS1_0))                  /*!< 4 time quantum  */
@@ -327,7 +334,7 @@ typedef struct
 /** @defgroup CAN_time_quantum_in_bit_segment_2 CAN Time Quantum in Bit Segment 2
   * @{
   */
-#define CAN_BS2_1TQ                 (0x00000000U)                       /*!< 1 time quantum */
+#define CAN_BS2_1TQ                 (0x00000000U)                                /*!< 1 time quantum */
 #define CAN_BS2_2TQ                 ((uint32_t)CAN_BTR_TS2_0)                    /*!< 2 time quantum */
 #define CAN_BS2_3TQ                 ((uint32_t)CAN_BTR_TS2_1)                    /*!< 3 time quantum */
 #define CAN_BS2_4TQ                 ((uint32_t)(CAN_BTR_TS2_1 | CAN_BTR_TS2_0))  /*!< 4 time quantum */
@@ -420,9 +427,11 @@ typedef struct
 #define CAN_FLAG_FOV1              (0x00000404U)  /*!< FIFO 1 Overrun flag */
 
 /* Operating Mode Flags */
-#define CAN_FLAG_WKU               (0x00000103U)  /*!< Wake up flag           */
-#define CAN_FLAG_SLAK              (0x00000101U)  /*!< Sleep acknowledge flag */
-#define CAN_FLAG_SLAKI             (0x00000104U)  /*!< Sleep acknowledge flag */
+#define CAN_FLAG_INAK              (0x00000100U)  /*!< Initialization acknowledge flag */
+#define CAN_FLAG_SLAK              (0x00000101U)  /*!< Sleep acknowledge flag          */
+#define CAN_FLAG_ERRI              (0x00000102U)  /*!< Error flag                      */
+#define CAN_FLAG_WKU               (0x00000103U)  /*!< Wake up flag                    */
+#define CAN_FLAG_SLAKI             (0x00000104U)  /*!< Sleep acknowledge flag          */
 /* @note When SLAK interrupt is disabled (SLKIE=0U), no polling on SLAKI is possible.
          In this case the SLAK bit can be polled.*/
 
@@ -485,39 +494,39 @@ typedef struct
   */
 
 /** @brief  Reset CAN handle state
-  * @param  __HANDLE__: CAN handle.
+  * @param  __HANDLE__ CAN handle.
   * @retval None
   */
 #define __HAL_CAN_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = HAL_CAN_STATE_RESET)
 
 /**
   * @brief  Enable the specified CAN interrupts.
-  * @param  __HANDLE__: CAN handle.
-  * @param  __INTERRUPT__: CAN Interrupt
+  * @param  __HANDLE__ CAN handle.
+  * @param  __INTERRUPT__ CAN Interrupt
   * @retval None
   */
 #define __HAL_CAN_ENABLE_IT(__HANDLE__, __INTERRUPT__) (((__HANDLE__)->Instance->IER) |= (__INTERRUPT__))
 
 /**
   * @brief  Disable the specified CAN interrupts.
-  * @param  __HANDLE__: CAN handle.
-  * @param  __INTERRUPT__: CAN Interrupt
+  * @param  __HANDLE__ CAN handle.
+  * @param  __INTERRUPT__ CAN Interrupt
   * @retval None
   */
 #define __HAL_CAN_DISABLE_IT(__HANDLE__, __INTERRUPT__) (((__HANDLE__)->Instance->IER) &= ~(__INTERRUPT__))
 
 /**
   * @brief  Return the number of pending received messages.
-  * @param  __HANDLE__: CAN handle.
-  * @param  __FIFONUMBER__: Receive FIFO number, CAN_FIFO0 or CAN_FIFO1.
+  * @param  __HANDLE__ CAN handle.
+  * @param  __FIFONUMBER__ Receive FIFO number, CAN_FIFO0 or CAN_FIFO1.
   * @retval The number of pending message.
   */
 #define __HAL_CAN_MSG_PENDING(__HANDLE__, __FIFONUMBER__) (((__FIFONUMBER__) == CAN_FIFO0)? \
 ((uint8_t)((__HANDLE__)->Instance->RF0R&0x03U)) : ((uint8_t)((__HANDLE__)->Instance->RF1R&0x03U)))
 
 /** @brief  Check whether the specified CAN flag is set or not.
-  * @param  __HANDLE__: specifies the CAN Handle.
-  * @param  __FLAG__: specifies the flag to check.
+  * @param  __HANDLE__ specifies the CAN Handle.
+  * @param  __FLAG__ specifies the flag to check.
   *         This parameter can be one of the following values:
   *            @arg CAN_TSR_RQCP0: Request MailBox0 Flag
   *            @arg CAN_TSR_RQCP1: Request MailBox1 Flag
@@ -550,8 +559,8 @@ typedef struct
  ((((__HANDLE__)->Instance->ESR) & (1U << ((__FLAG__) & CAN_FLAG_MASK))) == (1U << ((__FLAG__) & CAN_FLAG_MASK))))
 
 /** @brief  Clear the specified CAN pending flag.
-  * @param  __HANDLE__: specifies the CAN Handle.
-  * @param  __FLAG__: specifies the flag to check.
+  * @param  __HANDLE__ specifies the CAN Handle.
+  * @param  __FLAG__ specifies the flag to check.
   *         This parameter can be one of the following values:
   *            @arg CAN_TSR_RQCP0: Request MailBox0 Flag
   *            @arg CAN_TSR_RQCP1: Request MailBox1 Flag
@@ -583,8 +592,8 @@ typedef struct
 
 
 /** @brief  Check if the specified CAN interrupt source is enabled or disabled.
-  * @param  __HANDLE__: specifies the CAN Handle.
-  * @param  __INTERRUPT__: specifies the CAN interrupt source to check.
+  * @param  __HANDLE__ specifies the CAN Handle.
+  * @param  __INTERRUPT__ specifies the CAN interrupt source to check.
   *         This parameter can be one of the following values:
   *            @arg CAN_IT_TME: Transmit mailbox empty interrupt enable
   *            @arg CAN_IT_FMP0: FIFO0 message pending interrupt enablev
@@ -595,21 +604,19 @@ typedef struct
 
 /**
   * @brief  Check the transmission status of a CAN Frame.
-  * @param  __HANDLE__: CAN handle.
-  * @param  __TRANSMITMAILBOX__: the number of the mailbox that is used for transmission.
+  * @param  __HANDLE__ CAN handle.
+  * @param  __TRANSMITMAILBOX__ the number of the mailbox that is used for transmission.
   * @retval The new status of transmission  (TRUE or FALSE).
   */
 #define __HAL_CAN_TRANSMIT_STATUS(__HANDLE__, __TRANSMITMAILBOX__)\
-(((__TRANSMITMAILBOX__) == CAN_TXMAILBOX_0)? ((((__HANDLE__)->Instance->TSR) & (CAN_TSR_RQCP0 | CAN_TSR_TXOK0 | CAN_TSR_TME0)) == (CAN_TSR_RQCP0 | CAN_TSR_TXOK0 | CAN_TSR_TME0)) :\
- ((__TRANSMITMAILBOX__) == CAN_TXMAILBOX_1)? ((((__HANDLE__)->Instance->TSR) & (CAN_TSR_RQCP1 | CAN_TSR_TXOK1 | CAN_TSR_TME1)) == (CAN_TSR_RQCP1 | CAN_TSR_TXOK1 | CAN_TSR_TME1)) :\
- ((((__HANDLE__)->Instance->TSR) & (CAN_TSR_RQCP2 | CAN_TSR_TXOK2 | CAN_TSR_TME2)) == (CAN_TSR_RQCP2 | CAN_TSR_TXOK2 | CAN_TSR_TME2)))
+(((__TRANSMITMAILBOX__) == CAN_TXMAILBOX_0)? ((((__HANDLE__)->Instance->TSR) & (CAN_TSR_RQCP0 | CAN_TSR_TME0)) == (CAN_TSR_RQCP0 | CAN_TSR_TME0)) :\
+ ((__TRANSMITMAILBOX__) == CAN_TXMAILBOX_1)? ((((__HANDLE__)->Instance->TSR) & (CAN_TSR_RQCP1 | CAN_TSR_TME1)) == (CAN_TSR_RQCP1 | CAN_TSR_TME1)) :\
+ ((((__HANDLE__)->Instance->TSR) & (CAN_TSR_RQCP2 | CAN_TSR_TME2)) == (CAN_TSR_RQCP2 | CAN_TSR_TME2)))
 
-
-
-/**
+ /**
   * @brief  Release the specified receive FIFO.
-  * @param  __HANDLE__: CAN handle.
-  * @param  __FIFONUMBER__: Receive FIFO number, CAN_FIFO0 or CAN_FIFO1.
+  * @param  __HANDLE__ CAN handle.
+  * @param  __FIFONUMBER__ Receive FIFO number, CAN_FIFO0 or CAN_FIFO1.
   * @retval None
   */
 #define __HAL_CAN_FIFO_RELEASE(__HANDLE__, __FIFONUMBER__) (((__FIFONUMBER__) == CAN_FIFO0)? \
@@ -617,8 +624,8 @@ typedef struct
 
 /**
   * @brief  Cancel a transmit request.
-  * @param  __HANDLE__: specifies the CAN Handle.
-  * @param  __TRANSMITMAILBOX__: the number of the mailbox that is used for transmission.
+  * @param  __HANDLE__ specifies the CAN Handle.
+  * @param  __TRANSMITMAILBOX__ the number of the mailbox that is used for transmission.
   * @retval None
   */
 #define __HAL_CAN_CANCEL_TRANSMIT(__HANDLE__, __TRANSMITMAILBOX__)\
@@ -628,8 +635,8 @@ typedef struct
 
 /**
   * @brief  Enable or disables the DBG Freeze for CAN.
-  * @param  __HANDLE__: specifies the CAN Handle.
-  * @param  __NEWSTATE__: new state of the CAN peripheral.
+  * @param  __HANDLE__ specifies the CAN Handle.
+  * @param  __NEWSTATE__ new state of the CAN peripheral.
   *         This parameter can be: ENABLE (CAN reception/transmission is frozen
   *         during debug. Reception FIFOs can still be accessed/controlled normally)
   *         or DISABLE (CAN is working during debug).

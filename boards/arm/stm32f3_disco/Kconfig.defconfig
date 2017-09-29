@@ -1,0 +1,13 @@
+# Kconfig - STM32F3DISCOVERY board configuration
+#
+# Copyright (c) 2017 I-SENSE group of ICCS
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_STM32F3_DISCO
+
+config BOARD
+	default stm32f3_disco
+
+endif # BOARD_STM32F3_DISCO

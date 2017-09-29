@@ -11,15 +11,12 @@ Samples and Demos
    kernel
    basic/*
    subsys/subsys.rst
-   mpu_test/*
-   mpu_stack_guard_test/*
    net/net.rst
    bluetooth/bluetooth.rst
    sensor/*
    grove/*
-   advanced
-   power/power.rst
    boards/*
+   mpu/*
 
 
 To add a new sample document, please use the template available under

@@ -2,14 +2,12 @@
   ******************************************************************************
   * @file    stm32_hal_legacy.h
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   This file contains aliases definition for the STM32Cube HAL constants
   *          macros and functions maintained for legacy purpose.
   ******************************************************************************
   * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2016 STMicroelectronics</center></h2>
+  * <h2><center>&copy; COPYRIGHT(c) 2017 STMicroelectronics</center></h2>
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -382,7 +380,7 @@
 /** @defgroup LL_FMC_Aliased_Defines LL FMC Aliased Defines maintained for compatibility purpose
   * @{
   */
-#if defined(STM32L4) || defined(STM32F7)
+#if defined(STM32L4) || defined(STM32F7) || defined(STM32H7)
 #define FMC_NAND_PCC_WAIT_FEATURE_DISABLE       FMC_NAND_WAIT_FEATURE_DISABLE
 #define FMC_NAND_PCC_WAIT_FEATURE_ENABLE        FMC_NAND_WAIT_FEATURE_ENABLE
 #define FMC_NAND_PCC_MEM_BUS_WIDTH_8            FMC_NAND_MEM_BUS_WIDTH_8
@@ -946,12 +944,9 @@
 #define ETH_MAC_RXFIFO_BELOW_THRESHOLD        0x00000100U  /* Rx FIFO fill level: fill-level below flow-control de-activate threshold */
 #define ETH_MAC_RXFIFO_ABOVE_THRESHOLD        0x00000200U  /* Rx FIFO fill level: fill-level above flow-control activate threshold */
 #define ETH_MAC_RXFIFO_FULL                   0x00000300U  /* Rx FIFO fill level: full */
-#if defined(STM32F1)
-#else
 #define ETH_MAC_READCONTROLLER_IDLE           0x00000000U  /* Rx FIFO read controller IDLE state */
 #define ETH_MAC_READCONTROLLER_READING_DATA   0x00000020U  /* Rx FIFO read controller Reading frame data */
 #define ETH_MAC_READCONTROLLER_READING_STATUS 0x00000040U  /* Rx FIFO read controller Reading frame status (or time-stamp) */
-#endif
 #define ETH_MAC_READCONTROLLER_FLUSHING       0x00000060U  /* Rx FIFO read controller Flushing the frame data and status */
 #define ETH_MAC_RXFIFO_WRITE_ACTIVE           0x00000010U  /* Rx FIFO write controller active */
 #define ETH_MAC_SMALL_FIFO_NOTACTIVE          0x00000000U  /* MAC small FIFO read / write controllers not active */
@@ -980,7 +975,7 @@
   * @}
   */
 
-#if defined(STM32L4xx) || defined(STM32F7) || defined(STM32F427xx) || defined(STM32F437xx) ||\
+#if defined(STM32L4) || defined(STM32F7) || defined(STM32F427xx) || defined(STM32F437xx) ||\
     defined(STM32F429xx) || defined(STM32F439xx) || defined(STM32F469xx) || defined(STM32F479xx)
 /** @defgroup HAL_DMA2D_Aliased_Defines HAL DMA2D Aliased Defines maintained for legacy purpose
   * @{
@@ -1005,7 +1000,7 @@
 /**
   * @}
   */
-#endif  /* STM32L4xx ||  STM32F7*/
+#endif  /* STM32L4 ||  STM32F7*/
 
 /** @defgroup HAL_PPP_Aliased_Defines HAL PPP Aliased Defines maintained for legacy purpose
   * @{
@@ -1190,6 +1185,9 @@
   * @{
   */
 #define HAL_LTDC_LineEvenCallback HAL_LTDC_LineEventCallback
+#define HAL_LTDC_Relaod           HAL_LTDC_Reload
+#define HAL_LTDC_StructInitFromVideoConfig  HAL_LTDCEx_StructInitFromVideoConfig
+#define HAL_LTDC_StructInitFromAdaptedCommandConfig  HAL_LTDCEx_StructInitFromAdaptedCommandConfig
 /**
   * @}
   */
@@ -1625,7 +1623,11 @@
 
 #define __HAL_I2C_RESET_CR2             I2C_RESET_CR2
 #define __HAL_I2C_GENERATE_START        I2C_GENERATE_START
+#if defined(STM32F1)
+#define __HAL_I2C_FREQ_RANGE            I2C_FREQRANGE
+#else
 #define __HAL_I2C_FREQ_RANGE            I2C_FREQ_RANGE
+#endif /* STM32F1 */
 #define __HAL_I2C_RISE_TIME             I2C_RISE_TIME
 #define __HAL_I2C_SPEED_STANDARD        I2C_SPEED_STANDARD
 #define __HAL_I2C_SPEED_FAST            I2C_SPEED_FAST
@@ -2631,7 +2633,7 @@
 #define SdioClockSelection                 Sdmmc1ClockSelection
 #define RCC_PERIPHCLK_SDIO                 RCC_PERIPHCLK_SDMMC1
 #define __HAL_RCC_SDIO_CONFIG              __HAL_RCC_SDMMC1_CONFIG
-#define __HAL_RCC_GET_SDIO_SOURCE          __HAL_RCC_GET_SDMMC1_SOURCE
+#define __HAL_RCC_GET_SDIO_SOURCE          __HAL_RCC_GET_SDMMC1_SOURCE	
 #endif
 
 #if defined(STM32F7)
@@ -2792,6 +2794,15 @@
 #define RCC_SWPMI1CLKSOURCE_PCLK    RCC_SWPMI1CLKSOURCE_PCLK1
 #define RCC_LPTIM1CLKSOURCE_PCLK    RCC_LPTIM1CLKSOURCE_PCLK1
 #define RCC_LPTIM2CLKSOURCE_PCLK    RCC_LPTIM2CLKSOURCE_PCLK1
+
+#define RCC_DFSDM1AUDIOCLKSOURCE_I2SAPB1    RCC_DFSDM1AUDIOCLKSOURCE_I2S1
+#define RCC_DFSDM1AUDIOCLKSOURCE_I2SAPB2    RCC_DFSDM1AUDIOCLKSOURCE_I2S2
+#define RCC_DFSDM2AUDIOCLKSOURCE_I2SAPB1    RCC_DFSDM2AUDIOCLKSOURCE_I2S1
+#define RCC_DFSDM2AUDIOCLKSOURCE_I2SAPB2    RCC_DFSDM2AUDIOCLKSOURCE_I2S2
+#define RCC_DFSDM1CLKSOURCE_APB2            RCC_DFSDM1CLKSOURCE_PCLK2
+#define RCC_DFSDM2CLKSOURCE_APB2            RCC_DFSDM2CLKSOURCE_PCLK2
+#define RCC_FMPI2C1CLKSOURCE_APB            RCC_FMPI2C1CLKSOURCE_PCLK1
+
 /**
   * @}
   */
@@ -2888,8 +2899,8 @@
 #define  __HAL_SD_SDMMC_CLEAR_FLAG  __HAL_SD_SDIO_CLEAR_FLAG
 #define  __HAL_SD_SDMMC_GET_IT      __HAL_SD_SDIO_GET_IT
 #define  __HAL_SD_SDMMC_CLEAR_IT    __HAL_SD_SDIO_CLEAR_IT
-#define  SDMMC_STATIC_FLAGS         SDIO_STATIC_FLAGS
-#define  SDMMC_CMD0TIMEOUT          SDIO_CMD0TIMEOUT
+#define  SDMMC_STATIC_FLAGS         SDIO_STATIC_FLAGS	
+#define  SDMMC_CMD0TIMEOUT          SDIO_CMD0TIMEOUT	
 #define  SD_SDMMC_SEND_IF_COND      SD_SDIO_SEND_IF_COND
 /* alias CMSIS */
 #define  SDMMC1_IRQn                SDIO_IRQn
@@ -2921,6 +2932,14 @@
 #define  SDIO_IRQn                  SDMMC1_IRQn
 #define  SDIO_IRQHandler            SDMMC1_IRQHandler
 #endif
+
+#if defined(STM32F7) || defined(STM32F4) || defined(STM32F2)
+#define  HAL_SD_CardCIDTypedef       HAL_SD_CardCIDTypeDef
+#define  HAL_SD_CardCSDTypedef       HAL_SD_CardCSDTypeDef
+#define  HAL_SD_CardStatusTypedef    HAL_SD_CardStatusTypeDef
+#define  HAL_SD_CardStateTypedef     HAL_SD_CardStateTypeDef
+#endif
+
 /**
   * @}
   */
@@ -3109,6 +3128,7 @@
   * @{
   */
 #define __HAL_LTDC_LAYER LTDC_LAYER
+#define __HAL_LTDC_RELOAD_CONFIG  __HAL_LTDC_RELOAD_IMMEDIATE_CONFIG
 /**
   * @}
   */
@@ -3150,3 +3170,4 @@
 #endif /* ___STM32_HAL_LEGACY */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+

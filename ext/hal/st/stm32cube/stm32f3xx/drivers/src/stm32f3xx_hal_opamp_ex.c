@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_opamp_ex.c
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   Extended OPAMP HAL module driver.
   *
   *          This file provides firmware functions to manage the following

@@ -1,0 +1,28 @@
+#
+# Copyright (c) 2017 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig APDS9960
+	bool "APDS9960 Sensor"
+	depends on I2C
+	default n
+	help
+	  Enable driver for APDS9960 sensors.
+
+config  APDS9960_I2C_DEV_NAME
+	string "I2C Master"
+	depends on APDS9960
+	default I2C_SS_0_NAME
+	help
+	  The device name of the I2C master device to which the APDS9960
+	  chip is connected.
+
+config APDS9960_DRV_NAME
+	string
+	prompt "Driver name"
+	default "APDS9960"
+	depends on APDS9960
+	help
+	  Device name with which the APDS9960 is identified.

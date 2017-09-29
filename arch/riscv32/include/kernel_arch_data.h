@@ -20,7 +20,7 @@ extern "C" {
 #endif
 
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <arch/cpu.h>
 #include <kernel_arch_thread.h>
 
@@ -37,7 +37,7 @@ struct _kernel_arch {
 
 typedef struct _kernel_arch _kernel_arch_t;
 
-extern char _interrupt_stack[CONFIG_ISR_STACK_SIZE];
+extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
 
 #endif /* _ASMLANGUAGE */
 

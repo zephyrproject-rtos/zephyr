@@ -7,7 +7,7 @@
 
 menuconfig FXOS8700
 	bool "FXOS8700 accelerometer/magnetometer driver"
-	depends on SENSOR && I2C
+	depends on I2C
 	default n
 	help
 	  Enable driver for the FXOS8700 accelerometer/magnetometer
@@ -19,7 +19,7 @@ config FXOS8700_NAME
 
 config FXOS8700_I2C_NAME
 	string "I2C device name"
-	depends on FXOS8700
+	depends on FXOS8700 && !HAS_DTS_I2C
 	default I2C_0_NAME
 
 config FXOS8700_I2C_ADDRESS

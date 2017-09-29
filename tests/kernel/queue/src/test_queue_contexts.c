@@ -29,8 +29,10 @@ static qdata_t data_p[LIST_LEN];
 static qdata_t data_l[LIST_LEN];
 static qdata_t data_sl[LIST_LEN];
 
-static char __noinit __stack tstack[STACK_SIZE];
+static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 static struct k_thread tdata;
+static K_THREAD_STACK_DEFINE(tstack1, STACK_SIZE);
+static struct k_thread tdata1;
 static struct k_sem end_sema;
 
 static void tqueue_append(struct k_queue *pqueue)
@@ -46,7 +48,7 @@ static void tqueue_append(struct k_queue *pqueue)
 	}
 
 	/**TESTPOINT: queue append list*/
-	static qdata_t *head = &data_l[0], *tail = &data_l[LIST_LEN-1];
+	static qdata_t *head = &data_l[0], *tail = &data_l[LIST_LEN - 1];
 
 	head->snode.next = (sys_snode_t *)tail;
 	tail->snode.next = NULL;
@@ -111,8 +113,8 @@ static void tqueue_thread_thread(struct k_queue *pqueue)
 	k_sem_init(&end_sema, 0, 1);
 	/**TESTPOINT: thread-thread data passing via queue*/
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
-		tThread_entry, pqueue, NULL, NULL,
-		K_PRIO_PREEMPT(0), 0, 0);
+				      tThread_entry, pqueue, NULL, NULL,
+				      K_PRIO_PREEMPT(0), 0, 0);
 	tqueue_append(pqueue);
 	k_sem_take(&end_sema, K_FOREVER);
 	k_thread_abort(tid);
@@ -163,4 +165,44 @@ void test_queue_isr2thread(void)
 
 	/**TESTPOINT: test K_QUEUE_DEFINE queue*/
 	tqueue_isr_thread(&kqueue);
+}
+
+static void tThread_get(void *p1, void *p2, void *p3)
+{
+	zassert_true(k_queue_get((struct k_queue *)p1, K_FOREVER) != NULL,
+		     NULL);
+	k_sem_give(&end_sema);
+}
+
+static void tqueue_get_2threads(struct k_queue *pqueue)
+{
+	k_sem_init(&end_sema, 0, 1);
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+				      tThread_get, pqueue, NULL, NULL,
+				      K_PRIO_PREEMPT(0), 0, 0);
+
+	k_tid_t tid1 = k_thread_create(&tdata1, tstack1, STACK_SIZE,
+				      tThread_get, pqueue, NULL, NULL,
+				      K_PRIO_PREEMPT(0), 0, 0);
+
+	/* Wait threads to initialize */
+	k_sleep(10);
+
+	k_queue_append(pqueue, (void *)&data[0]);
+	k_queue_append(pqueue, (void *)&data[1]);
+
+	/* Wait threads to finalize */
+	k_sem_take(&end_sema, K_FOREVER);
+	k_sem_take(&end_sema, K_FOREVER);
+
+	k_thread_abort(tid);
+	k_thread_abort(tid1);
+}
+
+void test_queue_get_2threads(void)
+{
+	/**TESTPOINT: test k_queue_init queue*/
+	k_queue_init(&queue);
+
+	tqueue_get_2threads(&queue);
 }

@@ -81,6 +81,16 @@ static int frdm_k64f_pinmux_init(struct device *dev)
 					| PORT_PCR_ODE_MASK);
 #endif
 
+#if CONFIG_ADC_1
+	/* ADC1_SE14 */
+	pinmux_pin_set(portb, 10, PORT_PCR_MUX(kPORT_PinDisabledOrAnalog));
+#endif
+
+#ifdef CONFIG_PWM_3
+	pinmux_pin_set(portc,  8, PORT_PCR_MUX(kPORT_MuxAlt3));
+	pinmux_pin_set(portc,  9, PORT_PCR_MUX(kPORT_MuxAlt3));
+#endif
+
 #if CONFIG_ETH_MCUX_0
 	pinmux_pin_set(porta,  5, PORT_PCR_MUX(kPORT_MuxAlt4));
 	pinmux_pin_set(porta, 12, PORT_PCR_MUX(kPORT_MuxAlt4));

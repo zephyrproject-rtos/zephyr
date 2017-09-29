@@ -30,7 +30,7 @@
 #define MY_STACK_SIZE 2048
 #define MY_PRIORITY 5
 
-char __noinit __stack my_stack_area[MY_STACK_SIZE];
+K_THREAD_STACK_DEFINE(my_stack_area, MY_STACK_SIZE);
 static struct k_thread my_thread;
 
 /* externs */
@@ -63,7 +63,7 @@ void isr_handler(void)
 
 /**
  *
- * This is the handler for the divde by zero exception.
+ * This is the handler for the divide by zero exception.
  *
  * The source of this divide-by-zero error comes from the following line in
  * main() ...

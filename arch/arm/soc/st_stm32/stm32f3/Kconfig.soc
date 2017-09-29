@@ -11,11 +11,13 @@ depends on SOC_SERIES_STM32F3X
 
 config SOC_STM32F303XC
 	bool "STM32F303XC"
+	select CPU_HAS_MPU
 
 config SOC_STM32F334X8
 	bool "STM32F334X8"
 
 config SOC_STM32F373XC
 	bool "STM32F373XC"
+	select CPU_HAS_MPU
 
 endchoice

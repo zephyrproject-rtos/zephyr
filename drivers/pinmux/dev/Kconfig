@@ -30,13 +30,6 @@ config PINMUX_DEV_ATMEL_SAM3X
 	Atmel SAM3X family of microcontrollers.
 	default n
 
-config PINMUX_DEV_K64
-	bool "Enable the pinmux dev driver for Freescale K64"
-	depends on PINMUX_DEV && SOC_MK64F12
-	help
-	Enables the pinmux dev driver for Freescale K64.
-	default n
-
 config PINMUX_DEV_STM32
 	bool "Enable pinmux dev driver for the ST STM32 family."
 	depends on PINMUX_DEV && SOC_FAMILY_STM32

@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_sdadc.c
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   This file provides firmware functions to manage the following
   *          functionalities of the Sigma-Delta Analog to Digital Converter
   *          (SDADC) peripherals:
@@ -265,23 +263,23 @@ static void              SDADC_DMAError(DMA_HandleTypeDef *hdma);
   *         parameters in the SDADC_InitTypeDef structure.
   * @note   If multiple SDADC are used, please configure first SDADC1 to set
   *         the common reference voltage.
-  * @param  hsdadc: SDADC handle.
+  * @param  hsdadc SDADC handle.
   * @retval HAL status.
   */
 HAL_StatusTypeDef HAL_SDADC_Init(SDADC_HandleTypeDef* hsdadc)
 {
+  /* Check SDADC handle */
+  if(hsdadc == NULL)
+  {
+    return HAL_ERROR;
+  }
+
   /* Check parameters */
   assert_param(IS_SDADC_ALL_INSTANCE(hsdadc->Instance));
   assert_param(IS_SDADC_LOWPOWER_MODE(hsdadc->Init.IdleLowPowerMode));
   assert_param(IS_SDADC_FAST_CONV_MODE(hsdadc->Init.FastConversionMode));
   assert_param(IS_SDADC_SLOW_CLOCK_MODE(hsdadc->Init.SlowClockMode));
   assert_param(IS_SDADC_VREF(hsdadc->Init.ReferenceVoltage));
-
-  /* Check SDADC handle */
-  if(hsdadc == NULL)
-  {
-    return HAL_ERROR;
-  }
 
   /* Initialize SDADC variables with default values */
   hsdadc->RegularContMode     = SDADC_CONTINUOUS_CONV_OFF;
@@ -337,19 +335,19 @@ HAL_StatusTypeDef HAL_SDADC_Init(SDADC_HandleTypeDef* hsdadc)
 
 /**
   * @brief  De-initializes the SDADC.
-  * @param  hsdadc: SDADC handle.
+  * @param  hsdadc SDADC handle.
   * @retval HAL status.
   */
 HAL_StatusTypeDef HAL_SDADC_DeInit(SDADC_HandleTypeDef* hsdadc)
 {
-  /* Check parameters */
-  assert_param(IS_SDADC_ALL_INSTANCE(hsdadc->Instance));
-
   /* Check SDADC handle */
   if(hsdadc == NULL)
   {
     return HAL_ERROR;
   }
+
+  /* Check parameters */
+  assert_param(IS_SDADC_ALL_INSTANCE(hsdadc->Instance));
 
   /* Disable the SDADC */
   hsdadc->Instance->CR2 &= ~(SDADC_CR2_ADON);
@@ -376,7 +374,7 @@ HAL_StatusTypeDef HAL_SDADC_DeInit(SDADC_HandleTypeDef* hsdadc)
 
 /**
   * @brief  Initializes the SDADC MSP.
-  * @param  hsdadc: SDADC handle
+  * @param  hsdadc SDADC handle
   * @retval None
   */
 __weak void HAL_SDADC_MspInit(SDADC_HandleTypeDef* hsdadc)
@@ -391,7 +389,7 @@ __weak void HAL_SDADC_MspInit(SDADC_HandleTypeDef* hsdadc)
 
 /**
   * @brief  De-initializes the SDADC MSP.
-  * @param  hsdadc: SDADC handle
+  * @param  hsdadc SDADC handle
   * @retval None
   */
 __weak void HAL_SDADC_MspDeInit(SDADC_HandleTypeDef* hsdadc)
@@ -434,10 +432,10 @@ __weak void HAL_SDADC_MspDeInit(SDADC_HandleTypeDef* hsdadc)
   *         Parameters are input mode, common mode, gain and offset.
   * @note   This function should be called only when SDADC instance is in idle state
   *         (neither calibration nor regular or injected conversion ongoing)
-  * @param  hsdadc: SDADC handle.
-  * @param  ConfIndex: Index of configuration to modify.
+  * @param  hsdadc SDADC handle.
+  * @param  ConfIndex Index of configuration to modify.
   *         This parameter can be a value of @ref SDADC_ConfIndex.
-  * @param  ConfParamStruct: Parameters to apply for this configuration.
+  * @param  ConfParamStruct Parameters to apply for this configuration.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SDADC_PrepareChannelConfig(SDADC_HandleTypeDef *hsdadc,
@@ -493,10 +491,10 @@ HAL_StatusTypeDef HAL_SDADC_PrepareChannelConfig(SDADC_HandleTypeDef *hsdadc,
   *         available configurations.
   * @note   This function should be called only when SDADC instance is in idle state
   *         (neither calibration nor regular or injected conversion ongoing)
-  * @param  hsdadc: SDADC handle.
-  * @param  Channel: Channel to associate with configuration.
+  * @param  hsdadc SDADC handle.
+  * @param  Channel Channel to associate with configuration.
   *         This parameter can be a value of @ref SDADC_Channel_Selection.
-  * @param  ConfIndex: Index of configuration to associate with channel.
+  * @param  ConfIndex Index of configuration to associate with channel.
   *         This parameter can be a value of @ref SDADC_ConfIndex.
   * @retval HAL status
   */
@@ -553,10 +551,10 @@ HAL_StatusTypeDef HAL_SDADC_AssociateChannelConfig(SDADC_HandleTypeDef *hsdadc,
 /**
   * @brief  This function allows to select channel for regular conversion and
   *         to enable/disable continuous mode for regular conversion.
-  * @param  hsdadc: SDADC handle.
-  * @param  Channel: Channel for regular conversion.
+  * @param  hsdadc SDADC handle.
+  * @param  Channel Channel for regular conversion.
   *         This parameter can be a value of @ref SDADC_Channel_Selection.
-  * @param  ContinuousMode: Enable/disable continuous mode for regular conversion.
+  * @param  ContinuousMode Enable/disable continuous mode for regular conversion.
   *         This parameter can be a value of @ref SDADC_ContinuousMode.
   * @retval HAL status
   */
@@ -598,10 +596,10 @@ HAL_StatusTypeDef HAL_SDADC_ConfigChannel(SDADC_HandleTypeDef *hsdadc,
 /**
   * @brief  This function allows to select channels for injected conversion and
   *         to enable/disable continuous mode for injected conversion.
-  * @param  hsdadc: SDADC handle.
-  * @param  Channel: Channels for injected conversion.
+  * @param  hsdadc SDADC handle.
+  * @param  Channel Channels for injected conversion.
   *         This parameter can be a values combination of @ref SDADC_Channel_Selection.
-  * @param  ContinuousMode: Enable/disable continuous mode for injected conversion.
+  * @param  ContinuousMode Enable/disable continuous mode for injected conversion.
   *         This parameter can be a value of @ref SDADC_ContinuousMode.
   * @retval HAL status
   */
@@ -646,8 +644,8 @@ HAL_StatusTypeDef HAL_SDADC_InjectedConfigChannel(SDADC_HandleTypeDef *hsdadc,
 /**
   * @brief  This function allows to select trigger for regular conversions.
   * @note   This function should not be called if regular conversion is ongoing.
-  * @param  hsdadc: SDADC handle.
-  * @param  Trigger: Trigger for regular conversions.
+  * @param  hsdadc SDADC handle.
+  * @param  Trigger Trigger for regular conversions.
   *         This parameter can be one of the following value :
   *            @arg SDADC_SOFTWARE_TRIGGER : Software trigger.
   *            @arg SDADC_SYNCHRONOUS_TRIGGER : Synchronous with SDADC1 (only for SDADC2 and SDADC3).
@@ -685,8 +683,8 @@ HAL_StatusTypeDef HAL_SDADC_SelectRegularTrigger(SDADC_HandleTypeDef *hsdadc, ui
 /**
   * @brief  This function allows to select trigger for injected conversions.
   * @note   This function should not be called if injected conversion is ongoing.
-  * @param  hsdadc: SDADC handle.
-  * @param  Trigger: Trigger for injected conversions.
+  * @param  hsdadc SDADC handle.
+  * @param  Trigger Trigger for injected conversions.
   *         This parameter can be one of the following value :
   *            @arg SDADC_SOFTWARE_TRIGGER : Software trigger.
   *            @arg SDADC_SYNCHRONOUS_TRIGGER : Synchronous with SDADC1 (only for SDADC2 and SDADC3).
@@ -726,10 +724,10 @@ HAL_StatusTypeDef HAL_SDADC_SelectInjectedTrigger(SDADC_HandleTypeDef *hsdadc, u
   * @brief  This function allows to select and configure injected external trigger.
   * @note   This function should be called only when SDADC instance is in idle state
   *         (neither calibration nor regular or injected conversion ongoing)
-  * @param  hsdadc: SDADC handle.
-  * @param  InjectedExtTrigger: External trigger for injected conversions.
+  * @param  hsdadc SDADC handle.
+  * @param  InjectedExtTrigger External trigger for injected conversions.
   *         This parameter can be a value of @ref SDADC_InjectedExtTrigger.
-  * @param  ExtTriggerEdge: Edge of external injected trigger.
+  * @param  ExtTriggerEdge Edge of external injected trigger.
   *         This parameter can be a value of @ref SDADC_ExtTriggerEdge.
   * @retval HAL status
   */
@@ -779,8 +777,8 @@ HAL_StatusTypeDef HAL_SDADC_SelectInjectedExtTrigger(SDADC_HandleTypeDef *hsdadc
   * @brief  This function allows to enable/disable delay addition for injected conversions.
   * @note   This function should be called only when SDADC instance is in idle state
   *         (neither calibration nor regular or injected conversion ongoing)
-  * @param  hsdadc: SDADC handle.
-  * @param  InjectedDelay: Enable/disable delay for injected conversions.
+  * @param  hsdadc SDADC handle.
+  * @param  InjectedDelay Enable/disable delay for injected conversions.
   *         This parameter can be a value of @ref SDADC_InjectedDelay.
   * @retval HAL status
   */
@@ -825,8 +823,8 @@ HAL_StatusTypeDef HAL_SDADC_SelectInjectedDelay(SDADC_HandleTypeDef *hsdadc,
   * @brief  This function allows to configure multimode for regular conversions.
   * @note   This function should not be called if regular conversion is ongoing
   *         and should be could only for SDADC1.
-  * @param  hsdadc: SDADC handle.
-  * @param  MultimodeType: Type of multimode for regular conversions.
+  * @param  hsdadc SDADC handle.
+  * @param  MultimodeType Type of multimode for regular conversions.
   *         This parameter can be a value of @ref SDADC_MultimodeType.
   * @retval HAL status
   */
@@ -864,8 +862,8 @@ HAL_StatusTypeDef HAL_SDADC_MultiModeConfigChannel(SDADC_HandleTypeDef* hsdadc,
   * @brief  This function allows to configure multimode for injected conversions.
   * @note   This function should not be called if injected conversion is ongoing
   *         and should be could only for SDADC1.
-  * @param  hsdadc: SDADC handle.
-  * @param  MultimodeType: Type of multimode for injected conversions.
+  * @param  hsdadc SDADC handle.
+  * @param  MultimodeType Type of multimode for injected conversions.
   *         This parameter can be a value of @ref SDADC_MultimodeType.
   * @retval HAL status
   */
@@ -937,8 +935,8 @@ HAL_StatusTypeDef HAL_SDADC_InjectedMultiModeConfigChannel(SDADC_HandleTypeDef* 
   * @brief  This function allows to start calibration in polling mode.
   * @note   This function should be called only when SDADC instance is in idle state
   *         (neither calibration nor regular or injected conversion ongoing).
-  * @param  hsdadc: SDADC handle.
-  * @param  CalibrationSequence: Calibration sequence.
+  * @param  hsdadc SDADC handle.
+  * @param  CalibrationSequence Calibration sequence.
   *         This parameter can be a value of @ref SDADC_CalibrationSequence.
   * @retval HAL status
   */
@@ -988,8 +986,8 @@ HAL_StatusTypeDef HAL_SDADC_CalibrationStart(SDADC_HandleTypeDef *hsdadc,
 /**
   * @brief  This function allows to poll for the end of calibration.
   * @note   This function should be called only if calibration is ongoing.
-  * @param  hsdadc: SDADC handle.
-  * @param  Timeout: Timeout value in milliseconds.
+  * @param  hsdadc SDADC handle.
+  * @param  Timeout Timeout value in milliseconds.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SDADC_PollForCalibEvent(SDADC_HandleTypeDef* hsdadc, uint32_t Timeout)
@@ -1038,8 +1036,8 @@ HAL_StatusTypeDef HAL_SDADC_PollForCalibEvent(SDADC_HandleTypeDef* hsdadc, uint3
   * @brief  This function allows to start calibration in interrupt mode.
   * @note   This function should be called only when SDADC instance is in idle state
   *         (neither calibration nor regular or injected conversion ongoing).
-  * @param  hsdadc: SDADC handle.
-  * @param  CalibrationSequence: Calibration sequence.
+  * @param  hsdadc SDADC handle.
+  * @param  CalibrationSequence Calibration sequence.
   *         This parameter can be a value of @ref SDADC_CalibrationSequence.
   * @retval HAL status
   */
@@ -1093,7 +1091,7 @@ HAL_StatusTypeDef HAL_SDADC_CalibrationStart_IT(SDADC_HandleTypeDef *hsdadc,
   * @brief  This function allows to start regular conversion in polling mode.
   * @note   This function should be called only when SDADC instance is in idle state
   *         or if injected conversion is ongoing.
-  * @param  hsdadc: SDADC handle.
+  * @param  hsdadc SDADC handle.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SDADC_Start(SDADC_HandleTypeDef *hsdadc)
@@ -1121,8 +1119,8 @@ HAL_StatusTypeDef HAL_SDADC_Start(SDADC_HandleTypeDef *hsdadc)
 /**
   * @brief  This function allows to poll for the end of regular conversion.
   * @note   This function should be called only if regular conversion is ongoing.
-  * @param  hsdadc: SDADC handle.
-  * @param  Timeout: Timeout value in milliseconds.
+  * @param  hsdadc SDADC handle.
+  * @param  Timeout Timeout value in milliseconds.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SDADC_PollForConversion(SDADC_HandleTypeDef* hsdadc, uint32_t Timeout)
@@ -1182,7 +1180,7 @@ HAL_StatusTypeDef HAL_SDADC_PollForConversion(SDADC_HandleTypeDef* hsdadc, uint3
 /**
   * @brief  This function allows to stop regular conversion in polling mode.
   * @note   This function should be called only if regular conversion is ongoing.
-  * @param  hsdadc: SDADC handle.
+  * @param  hsdadc SDADC handle.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SDADC_Stop(SDADC_HandleTypeDef *hsdadc)
@@ -1212,7 +1210,7 @@ HAL_StatusTypeDef HAL_SDADC_Stop(SDADC_HandleTypeDef *hsdadc)
   * @brief  This function allows to start regular conversion in interrupt mode.
   * @note   This function should be called only when SDADC instance is in idle state
   *         or if injected conversion is ongoing.
-  * @param  hsdadc: SDADC handle.
+  * @param  hsdadc SDADC handle.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SDADC_Start_IT(SDADC_HandleTypeDef *hsdadc)
@@ -1243,7 +1241,7 @@ HAL_StatusTypeDef HAL_SDADC_Start_IT(SDADC_HandleTypeDef *hsdadc)
 /**
   * @brief  This function allows to stop regular conversion in interrupt mode.
   * @note   This function should be called only if regular conversion is ongoing.
-  * @param  hsdadc: SDADC handle.
+  * @param  hsdadc SDADC handle.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SDADC_Stop_IT(SDADC_HandleTypeDef *hsdadc)
@@ -1276,9 +1274,9 @@ HAL_StatusTypeDef HAL_SDADC_Stop_IT(SDADC_HandleTypeDef *hsdadc)
   * @brief  This function allows to start regular conversion in DMA mode.
   * @note   This function should be called only when SDADC instance is in idle state
   *         or if injected conversion is ongoing.
-  * @param  hsdadc: SDADC handle.
-  * @param  pData: The destination buffer address.
-  * @param  Length: The length of data to be transferred from SDADC peripheral to memory.
+  * @param  hsdadc SDADC handle.
+  * @param  pData The destination buffer address.
+  * @param  Length The length of data to be transferred from SDADC peripheral to memory.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SDADC_Start_DMA(SDADC_HandleTypeDef *hsdadc, uint32_t *pData,
@@ -1350,7 +1348,7 @@ HAL_StatusTypeDef HAL_SDADC_Start_DMA(SDADC_HandleTypeDef *hsdadc, uint32_t *pDa
 /**
   * @brief  This function allows to stop regular conversion in DMA mode.
   * @note   This function should be called only if regular conversion is ongoing.
-  * @param  hsdadc: SDADC handle.
+  * @param  hsdadc SDADC handle.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SDADC_Stop_DMA(SDADC_HandleTypeDef *hsdadc)
@@ -1391,7 +1389,7 @@ HAL_StatusTypeDef HAL_SDADC_Stop_DMA(SDADC_HandleTypeDef *hsdadc)
 
 /**
   * @brief  This function allows to get regular conversion value.
-  * @param  hsdadc: SDADC handle.
+  * @param  hsdadc SDADC handle.
   * @retval Regular conversion value
   */
 uint32_t HAL_SDADC_GetValue(SDADC_HandleTypeDef *hsdadc)
@@ -1407,7 +1405,7 @@ uint32_t HAL_SDADC_GetValue(SDADC_HandleTypeDef *hsdadc)
   * @brief  This function allows to start injected conversion in polling mode.
   * @note   This function should be called only when SDADC instance is in idle state
   *         or if regular conversion is ongoing.
-  * @param  hsdadc: SDADC handle.
+  * @param  hsdadc SDADC handle.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SDADC_InjectedStart(SDADC_HandleTypeDef *hsdadc)
@@ -1435,8 +1433,8 @@ HAL_StatusTypeDef HAL_SDADC_InjectedStart(SDADC_HandleTypeDef *hsdadc)
 /**
   * @brief  This function allows to poll for the end of injected conversion.
   * @note   This function should be called only if injected conversion is ongoing.
-  * @param  hsdadc: SDADC handle.
-  * @param  Timeout: Timeout value in milliseconds.
+  * @param  hsdadc SDADC handle.
+  * @param  Timeout Timeout value in milliseconds.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SDADC_PollForInjectedConversion(SDADC_HandleTypeDef* hsdadc,
@@ -1507,7 +1505,7 @@ HAL_StatusTypeDef HAL_SDADC_PollForInjectedConversion(SDADC_HandleTypeDef* hsdad
 /**
   * @brief  This function allows to stop injected conversion in polling mode.
   * @note   This function should be called only if injected conversion is ongoing.
-  * @param  hsdadc: SDADC handle.
+  * @param  hsdadc SDADC handle.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SDADC_InjectedStop(SDADC_HandleTypeDef *hsdadc)
@@ -1537,7 +1535,7 @@ HAL_StatusTypeDef HAL_SDADC_InjectedStop(SDADC_HandleTypeDef *hsdadc)
   * @brief  This function allows to start injected conversion in interrupt mode.
   * @note   This function should be called only when SDADC instance is in idle state
   *         or if regular conversion is ongoing.
-  * @param  hsdadc: SDADC handle.
+  * @param  hsdadc SDADC handle.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SDADC_InjectedStart_IT(SDADC_HandleTypeDef *hsdadc)
@@ -1568,7 +1566,7 @@ HAL_StatusTypeDef HAL_SDADC_InjectedStart_IT(SDADC_HandleTypeDef *hsdadc)
 /**
   * @brief  This function allows to stop injected conversion in interrupt mode.
   * @note   This function should be called only if injected conversion is ongoing.
-  * @param  hsdadc: SDADC handle.
+  * @param  hsdadc SDADC handle.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SDADC_InjectedStop_IT(SDADC_HandleTypeDef *hsdadc)
@@ -1601,9 +1599,9 @@ HAL_StatusTypeDef HAL_SDADC_InjectedStop_IT(SDADC_HandleTypeDef *hsdadc)
   * @brief  This function allows to start injected conversion in DMA mode.
   * @note   This function should be called only when SDADC instance is in idle state
   *         or if regular conversion is ongoing.
-  * @param  hsdadc: SDADC handle.
-  * @param  pData: The destination buffer address.
-  * @param  Length: The length of data to be transferred from SDADC peripheral to memory.
+  * @param  hsdadc SDADC handle.
+  * @param  pData The destination buffer address.
+  * @param  Length The length of data to be transferred from SDADC peripheral to memory.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SDADC_InjectedStart_DMA(SDADC_HandleTypeDef *hsdadc, uint32_t *pData,
@@ -1675,7 +1673,7 @@ HAL_StatusTypeDef HAL_SDADC_InjectedStart_DMA(SDADC_HandleTypeDef *hsdadc, uint3
 /**
   * @brief  This function allows to stop injected conversion in DMA mode.
   * @note   This function should be called only if injected conversion is ongoing.
-  * @param  hsdadc: SDADC handle.
+  * @param  hsdadc SDADC handle.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SDADC_InjectedStop_DMA(SDADC_HandleTypeDef *hsdadc)
@@ -1716,8 +1714,8 @@ HAL_StatusTypeDef HAL_SDADC_InjectedStop_DMA(SDADC_HandleTypeDef *hsdadc)
 
 /**
   * @brief  This function allows to get injected conversion value.
-  * @param  hsdadc: SDADC handle.
-  * @param  Channel: Corresponding channel of injected conversion.
+  * @param  hsdadc SDADC handle.
+  * @param  Channel Corresponding channel of injected conversion.
   * @retval Injected conversion value
   */
 uint32_t HAL_SDADC_InjectedGetValue(SDADC_HandleTypeDef *hsdadc, uint32_t* Channel)
@@ -1741,9 +1739,9 @@ uint32_t HAL_SDADC_InjectedGetValue(SDADC_HandleTypeDef *hsdadc, uint32_t* Chann
   * @brief  This function allows to start multimode regular conversions in DMA mode.
   * @note   This function should be called only when SDADC instance is in idle state
   *         or if injected conversion is ongoing.
-  * @param  hsdadc: SDADC handle.
-  * @param  pData: The destination buffer address.
-  * @param  Length: The length of data to be transferred from SDADC peripheral to memory.
+  * @param  hsdadc SDADC handle.
+  * @param  pData The destination buffer address.
+  * @param  Length The length of data to be transferred from SDADC peripheral to memory.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SDADC_MultiModeStart_DMA(SDADC_HandleTypeDef* hsdadc, uint32_t* pData,
@@ -1828,7 +1826,7 @@ HAL_StatusTypeDef HAL_SDADC_MultiModeStart_DMA(SDADC_HandleTypeDef* hsdadc, uint
 /**
   * @brief  This function allows to stop multimode regular conversions in DMA mode.
   * @note   This function should be called only if regular conversion is ongoing.
-  * @param  hsdadc: SDADC handle.
+  * @param  hsdadc SDADC handle.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SDADC_MultiModeStop_DMA(SDADC_HandleTypeDef* hsdadc)
@@ -1874,7 +1872,7 @@ HAL_StatusTypeDef HAL_SDADC_MultiModeStop_DMA(SDADC_HandleTypeDef* hsdadc)
 
 /**
   * @brief  This function allows to get multimode regular conversion value.
-  * @param  hsdadc: SDADC handle.
+  * @param  hsdadc SDADC handle.
   * @retval Multimode regular conversion value
   */
 uint32_t HAL_SDADC_MultiModeGetValue(SDADC_HandleTypeDef* hsdadc)
@@ -1897,9 +1895,9 @@ uint32_t HAL_SDADC_MultiModeGetValue(SDADC_HandleTypeDef* hsdadc)
   * @brief  This function allows to start multimode injected conversions in DMA mode.
   * @note   This function should be called only when SDADC instance is in idle state
   *         or if regular conversion is ongoing.
-  * @param  hsdadc: SDADC handle.
-  * @param  pData: The destination buffer address.
-  * @param  Length: The length of data to be transferred from SDADC peripheral to memory.
+  * @param  hsdadc SDADC handle.
+  * @param  pData The destination buffer address.
+  * @param  Length The length of data to be transferred from SDADC peripheral to memory.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SDADC_InjectedMultiModeStart_DMA(SDADC_HandleTypeDef* hsdadc,
@@ -1984,7 +1982,7 @@ HAL_StatusTypeDef HAL_SDADC_InjectedMultiModeStart_DMA(SDADC_HandleTypeDef* hsda
 /**
   * @brief  This function allows to stop multimode injected conversions in DMA mode.
   * @note   This function should be called only if injected conversion is ongoing.
-  * @param  hsdadc: SDADC handle.
+  * @param  hsdadc SDADC handle.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SDADC_InjectedMultiModeStop_DMA(SDADC_HandleTypeDef* hsdadc)
@@ -2030,7 +2028,7 @@ HAL_StatusTypeDef HAL_SDADC_InjectedMultiModeStop_DMA(SDADC_HandleTypeDef* hsdad
 
 /**
   * @brief  This function allows to get multimode injected conversion value.
-  * @param  hsdadc: SDADC handle.
+  * @param  hsdadc SDADC handle.
   * @retval Multimode injected conversion value
   */
 uint32_t HAL_SDADC_InjectedMultiModeGetValue(SDADC_HandleTypeDef* hsdadc)
@@ -2051,7 +2049,7 @@ uint32_t HAL_SDADC_InjectedMultiModeGetValue(SDADC_HandleTypeDef* hsdadc)
 
 /**
   * @brief  This function handles the SDADC interrupts.
-  * @param  hsdadc: SDADC handle.
+  * @param  hsdadc SDADC handle.
   * @retval None
   */
 void HAL_SDADC_IRQHandler(SDADC_HandleTypeDef* hsdadc)
@@ -2155,7 +2153,7 @@ void HAL_SDADC_IRQHandler(SDADC_HandleTypeDef* hsdadc)
 
 /**
   * @brief  Calibration complete callback.
-  * @param  hsdadc: SDADC handle.
+  * @param  hsdadc SDADC handle.
   * @retval None
   */
 __weak void HAL_SDADC_CalibrationCpltCallback(SDADC_HandleTypeDef* hsdadc)
@@ -2170,7 +2168,7 @@ __weak void HAL_SDADC_CalibrationCpltCallback(SDADC_HandleTypeDef* hsdadc)
 
 /**
   * @brief  Half regular conversion complete callback.
-  * @param  hsdadc: SDADC handle.
+  * @param  hsdadc SDADC handle.
   * @retval None
   */
 __weak void HAL_SDADC_ConvHalfCpltCallback(SDADC_HandleTypeDef* hsdadc)
@@ -2187,7 +2185,7 @@ __weak void HAL_SDADC_ConvHalfCpltCallback(SDADC_HandleTypeDef* hsdadc)
   * @brief  Regular conversion complete callback.
   * @note   In interrupt mode, user has to read conversion value in this function
             using HAL_SDADC_GetValue or HAL_SDADC_MultiModeGetValue.
-  * @param  hsdadc: SDADC handle.
+  * @param  hsdadc SDADC handle.
   * @retval None
   */
 __weak void HAL_SDADC_ConvCpltCallback(SDADC_HandleTypeDef* hsdadc)
@@ -2202,7 +2200,7 @@ __weak void HAL_SDADC_ConvCpltCallback(SDADC_HandleTypeDef* hsdadc)
 
 /**
   * @brief  Half injected conversion complete callback.
-  * @param  hsdadc: SDADC handle.
+  * @param  hsdadc SDADC handle.
   * @retval None
   */
 __weak void HAL_SDADC_InjectedConvHalfCpltCallback(SDADC_HandleTypeDef* hsdadc)
@@ -2219,7 +2217,7 @@ __weak void HAL_SDADC_InjectedConvHalfCpltCallback(SDADC_HandleTypeDef* hsdadc)
   * @brief  Injected conversion complete callback.
   * @note   In interrupt mode, user has to read conversion value in this function
             using HAL_SDADC_InjectedGetValue or HAL_SDADC_InjectedMultiModeGetValue.
-  * @param  hsdadc: SDADC handle.
+  * @param  hsdadc SDADC handle.
   * @retval None
   */
 __weak void HAL_SDADC_InjectedConvCpltCallback(SDADC_HandleTypeDef* hsdadc)
@@ -2234,7 +2232,7 @@ __weak void HAL_SDADC_InjectedConvCpltCallback(SDADC_HandleTypeDef* hsdadc)
 
 /**
   * @brief  Error callback.
-  * @param  hsdadc: SDADC handle.
+  * @param  hsdadc SDADC handle.
   * @retval None
   */
 __weak void HAL_SDADC_ErrorCallback(SDADC_HandleTypeDef* hsdadc)
@@ -2249,7 +2247,7 @@ __weak void HAL_SDADC_ErrorCallback(SDADC_HandleTypeDef* hsdadc)
 
 /**
   * @brief  DMA half transfer complete callback for regular conversion.
-  * @param  hdma : DMA handle.
+  * @param  hdma DMA handle.
   * @retval None
   */
 static void SDADC_DMARegularHalfConvCplt(DMA_HandleTypeDef *hdma)
@@ -2263,7 +2261,7 @@ static void SDADC_DMARegularHalfConvCplt(DMA_HandleTypeDef *hdma)
 
 /**
   * @brief  DMA transfer complete callback for regular conversion.
-  * @param  hdma : DMA handle.
+  * @param  hdma DMA handle.
   * @retval None
   */
 static void SDADC_DMARegularConvCplt(DMA_HandleTypeDef *hdma)
@@ -2277,7 +2275,7 @@ static void SDADC_DMARegularConvCplt(DMA_HandleTypeDef *hdma)
 
 /**
   * @brief  DMA half transfer complete callback for injected conversion.
-  * @param  hdma : DMA handle.
+  * @param  hdma DMA handle.
   * @retval None
   */
 static void SDADC_DMAInjectedHalfConvCplt(DMA_HandleTypeDef *hdma)
@@ -2291,7 +2289,7 @@ static void SDADC_DMAInjectedHalfConvCplt(DMA_HandleTypeDef *hdma)
 
 /**
   * @brief  DMA transfer complete callback for injected conversion.
-  * @param  hdma : DMA handle.
+  * @param  hdma DMA handle.
   * @retval None
   */
 static void SDADC_DMAInjectedConvCplt(DMA_HandleTypeDef *hdma)
@@ -2305,7 +2303,7 @@ static void SDADC_DMAInjectedConvCplt(DMA_HandleTypeDef *hdma)
 
 /**
   * @brief  DMA error callback.
-  * @param  hdma : DMA handle.
+  * @param  hdma DMA handle.
   * @retval None
   */
 static void SDADC_DMAError(DMA_HandleTypeDef *hdma)
@@ -2341,7 +2339,7 @@ static void SDADC_DMAError(DMA_HandleTypeDef *hdma)
 
 /**
   * @brief  This function allows to get the current SDADC state.
-  * @param  hsdadc: SDADC handle.
+  * @param  hsdadc SDADC handle.
   * @retval SDADC state.
   */
 HAL_SDADC_StateTypeDef HAL_SDADC_GetState(SDADC_HandleTypeDef* hsdadc)
@@ -2351,7 +2349,7 @@ HAL_SDADC_StateTypeDef HAL_SDADC_GetState(SDADC_HandleTypeDef* hsdadc)
 
 /**
   * @brief  This function allows to get the current SDADC error code.
-  * @param  hsdadc: SDADC handle.
+  * @param  hsdadc SDADC handle.
   * @retval SDADC error code.
   */
 uint32_t HAL_SDADC_GetError(SDADC_HandleTypeDef* hsdadc)
@@ -2369,7 +2367,7 @@ uint32_t HAL_SDADC_GetError(SDADC_HandleTypeDef* hsdadc)
 
 /**
   * @brief  This function allows to enter in init mode for SDADC instance.
-  * @param  hsdadc: SDADC handle.
+  * @param  hsdadc SDADC handle.
   * @retval HAL status.
   */
 static HAL_StatusTypeDef SDADC_EnterInitMode(SDADC_HandleTypeDef* hsdadc)
@@ -2395,7 +2393,7 @@ static HAL_StatusTypeDef SDADC_EnterInitMode(SDADC_HandleTypeDef* hsdadc)
 
 /**
   * @brief  This function allows to exit from init mode for SDADC instance.
-  * @param  hsdadc: SDADC handle.
+  * @param  hsdadc SDADC handle.
   * @retval None.
   */
 static void SDADC_ExitInitMode(SDADC_HandleTypeDef* hsdadc)
@@ -2406,7 +2404,7 @@ static void SDADC_ExitInitMode(SDADC_HandleTypeDef* hsdadc)
 
 /**
   * @brief  This function allows to get the number of injected channels.
-  * @param  Channels : bitfield of injected channels.
+  * @param  Channels bitfield of injected channels.
   * @retval Number of injected channels.
   */
 static uint32_t SDADC_GetInjChannelsNbr(uint32_t Channels)
@@ -2429,7 +2427,7 @@ static uint32_t SDADC_GetInjChannelsNbr(uint32_t Channels)
 
 /**
   * @brief  This function allows to really start regular conversion.
-  * @param  hsdadc: SDADC handle.
+  * @param  hsdadc SDADC handle.
   * @retval HAL status.
   */
 static HAL_StatusTypeDef SDADC_RegConvStart(SDADC_HandleTypeDef* hsdadc)
@@ -2472,7 +2470,7 @@ static HAL_StatusTypeDef SDADC_RegConvStart(SDADC_HandleTypeDef* hsdadc)
 
 /**
   * @brief  This function allows to really stop regular conversion.
-  * @param  hsdadc: SDADC handle.
+  * @param  hsdadc SDADC handle.
   * @retval HAL status.
   */
 static HAL_StatusTypeDef SDADC_RegConvStop(SDADC_HandleTypeDef* hsdadc)
@@ -2543,7 +2541,7 @@ static HAL_StatusTypeDef SDADC_RegConvStop(SDADC_HandleTypeDef* hsdadc)
 
 /**
   * @brief  This function allows to really start injected conversion.
-  * @param  hsdadc: SDADC handle.
+  * @param  hsdadc SDADC handle.
   * @retval HAL status.
   */
 static HAL_StatusTypeDef SDADC_InjConvStart(SDADC_HandleTypeDef* hsdadc)
@@ -2596,7 +2594,7 @@ static HAL_StatusTypeDef SDADC_InjConvStart(SDADC_HandleTypeDef* hsdadc)
 
 /**
   * @brief  This function allows to really stop injected conversion.
-  * @param  hsdadc: SDADC handle.
+  * @param  hsdadc SDADC handle.
   * @retval HAL status.
   */
 static HAL_StatusTypeDef SDADC_InjConvStop(SDADC_HandleTypeDef* hsdadc)

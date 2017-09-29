@@ -94,6 +94,9 @@ struct net_nbr_table {
 
 	/** Function to be called when the table is cleared. */
 	void (*const clear)(struct net_nbr_table *table);
+
+	/** Max number of neighbors in the pool */
+	const u16_t nbr_count;
 };
 
 #define NET_NBR_LOCAL static
@@ -108,6 +111,7 @@ struct net_nbr_table {
 		.table = {						\
 			.clear = _clear,				\
 			.nbr = (struct net_nbr *)_pool,			\
+			.nbr_count = ARRAY_SIZE(_pool),			\
 		}							\
 	}
 

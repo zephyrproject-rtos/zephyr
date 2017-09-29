@@ -58,8 +58,8 @@ void main(void)
 		if (t_now < t_last) {
 			diff = t_now - t_last;
 			TC_PRINT("diff = %" PRId32 " (t_last = %" PRIu32
-			      " : t_now = %" PRIu32 "); i = %u\n",
-			      diff, t_last, t_now, i);
+				 " : t_now = %" PRIu32 "); i = %u\n",
+				 diff, t_last, t_now, i);
 			errors++;
 		}
 		t_last = t_now;

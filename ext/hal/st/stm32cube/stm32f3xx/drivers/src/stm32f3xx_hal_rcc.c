@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f3xx_hal_rcc.c
   * @author  MCD Application Team
-  * @version V1.4.0
-  * @date    16-December-2016
   * @brief   RCC HAL module driver.
   *          This file provides firmware functions to manage the following
   *          functionalities of the Reset and Clock Control (RCC) peripheral:
@@ -836,7 +834,7 @@ HAL_StatusTypeDef HAL_RCC_ClockConfig(RCC_ClkInitTypeDef  *RCC_ClkInitStruct, ui
 #endif
 void HAL_RCC_MCOConfig(uint32_t RCC_MCOx, uint32_t RCC_MCOSource, uint32_t RCC_MCODiv)
 {
-  GPIO_InitTypeDef gpio = {0};
+  GPIO_InitTypeDef gpio;
 
   /* Check the parameters */
   assert_param(IS_RCC_MCO(RCC_MCOx));

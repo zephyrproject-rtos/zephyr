@@ -14,10 +14,10 @@
 #define _ASMLANGUAGE
 
 #include <autoconf.h>
-#include <sections.h>
+#include <linker/sections.h>
 
-#include <linker-defs.h>
-#include <linker-tool.h>
+#include <linker/linker-defs.h>
+#include <linker/linker-tool.h>
 
 #define RAMABLE_REGION sram19_seg :sram19_phdr
 #define ROMABLE_REGION srom1_seg :srom1_phdr
@@ -49,6 +49,9 @@ MEMORY
   sram17_seg :                        	org = 0x60000378, len = 0x48
   sram18_seg :                        	org = 0x600003C0, len = 0x40
   sram19_seg :                        	org = 0x60000400, len = 0x3FFFC00
+#ifdef CONFIG_GEN_ISR_TABLES
+  IDT_LIST : org = 0x3ffbe000, len = 0x2000
+#endif
 }
 
 PHDRS
@@ -526,13 +529,7 @@ SECTIONS
     _data_start = ABSOLUTE(.);
     *(.data)
     *(.data.*)
-	KEEP(*(.isr_irq*))
-	/* sections for IRQ0-9 */
-	KEEP(*(SORT(.gnu.linkonce.d.isr_irq[0-9])))
-	/* sections for IRQ10-99 */
-	KEEP(*(SORT(.gnu.linkonce.d.isr_irq[0-9][0-9])))
-	/* sections for IRQ100-999 */
-	KEEP(*(SORT(.gnu.linkonce.d.isr_irq[0-9][0-9][0-9])))
+    KEEP(*(SW_ISR_TABLE))
     *(.gnu.linkonce.d.*)
     KEEP(*(.gnu.linkonce.d.*personality*))
     *(.data1)
@@ -614,4 +611,7 @@ SECTIONS
   {
     KEEP (*(.debug.xt.callgraph .debug.xt.callgraph.* .gnu.linkonce.xt.callgraph.*))
   }
+#ifdef CONFIG_GEN_ISR_TABLES
+#include <linker/intlist.ld>
+#endif
 }

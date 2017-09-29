@@ -11,13 +11,14 @@
 #include <stddef.h>
 #include <string.h>
 #include <misc/printk.h>
-#include <sections.h>
+#include <linker/sections.h>
 
 #include <tc_util.h>
 
 #include <net/buf.h>
 
 #include "icmpv6.h"
+#include <ztest.h>
 
 static int handler_called;
 static int handler_status;
@@ -54,8 +55,10 @@ static struct net_icmpv6_handler test_handler2 = {
 	.handler = handle_test_msg,
 };
 
-static bool run_tests(void)
+void run_tests(void)
 {
+	k_thread_priority_set(k_current_get(), K_PRIO_COOP(7));
+
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 	int ret;
@@ -72,59 +75,39 @@ static bool run_tests(void)
 	       TEST_MSG, sizeof(TEST_MSG));
 
 	ret = net_icmpv6_input(pkt, 0, 0);
-	if (!ret) {
-		printk("%d: Callback not called properly\n", __LINE__);
-		return false;
-	}
+
+	/**TESTPOINT: Check input*/
+	zassert_true(ret, "Callback not called properly");
 
 	handler_status = -1;
 
 	ret = net_icmpv6_input(pkt, NET_ICMPV6_ECHO_REPLY, 0);
-	if (ret < 0 || handler_status != 0) {
-		printk("%d: Callback not called properly\n", __LINE__);
-		return false;
-	}
+
+	/**TESTPOINT: Check input*/
+	zassert_true(!(ret < 0 || handler_status != 0),
+			"Callback not called properly");
 
 	ret = net_icmpv6_input(pkt, 1, 0);
-	if (!ret) {
-		printk("%d: Callback not called properly\n", __LINE__);
-		return false;
-	}
+
+	/**TESTPOINT: Check input*/
+	zassert_true(ret, "Callback not called properly");
 
 	handler_status = -1;
 
 	ret = net_icmpv6_input(pkt, NET_ICMPV6_ECHO_REQUEST, 0);
-	if (ret < 0 || handler_status != 0) {
-		printk("%d: Callback not called properly\n", __LINE__);
-		return false;
-	}
 
-	if (handler_called != 2) {
-		printk("%d: Callbacks not called properly\n", __LINE__);
-		return false;
-	}
+	/**TESTPOINT: Check input*/
+	zassert_true(!(ret < 0 || handler_status != 0),
+			"Callback not called properly");
 
-	printk("ICMPv6 tests passed\n");
-
-	return true;
+	/**TESTPOINT: Check input*/
+	zassert_true(!(handler_called != 2), "Callbacks not called properly");
 }
 
-void main_thread(void)
+/**test case main entry*/
+void test_main(void)
 {
-	if (run_tests()) {
-		TC_END_REPORT(TC_PASS);
-	} else {
-		TC_END_REPORT(TC_FAIL);
-	}
-}
-
-#define STACKSIZE 2000
-char __noinit __stack thread_stack[STACKSIZE];
-static struct k_thread thread_data;
-
-void main(void)
-{
-	k_thread_create(&thread_data, thread_stack, STACKSIZE,
-			(k_thread_entry_t)main_thread, NULL, NULL, NULL,
-			K_PRIO_COOP(7), 0, 0);
+	ztest_test_suite(test_icmpv6_fn,
+		ztest_unit_test(run_tests));
+	ztest_run_test_suite(test_icmpv6_fn);
 }

@@ -2,3 +2,4 @@
 config BOARD_QEMU_NIOS2
 	bool "QEMU NIOS II target"
 	depends on SOC_NIOS2_QEMU
+	select QEMU_TARGET

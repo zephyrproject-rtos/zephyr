@@ -71,7 +71,7 @@ In terminal #1, type:
 .. code-block:: console
 
    $ cd samples/net/echo_server
-   $ make pristine && make qemu
+   $ make pristine && make run
 
 If you see error from QEMU about unix:/tmp/slip.sock, it means you missed Step 1
 above.
@@ -130,8 +130,16 @@ To stop the daemons, just press Ctrl+C in the corresponding terminal windows
 (you need to stop both ``loop-slip-tap.sh`` and ``loop-socat.sh``).
 
 
-Setting up NAT/masquerading to access Internet
-**********************************************
+Setting up Zephyr and NAT/masquerading on QEMU host to access Internet
+**********************************************************************
+
+To access the Internet from a Zephyr application using IPv4,
+a gateway should be set via DHCP or configured manually.
+For applications using the :ref:`net_app_api` facility (with the config option
+:option:`CONFIG_NET_APP` enabled),
+set the :option:`CONFIG_NET_APP_MY_IPV4_GW` option to the IP address
+of the gateway. For apps not using the :ref:`net_app_api` facility, set up the
+gateway by calling the :c:func:`net_if_ipv4_set_gw` at runtime.
 
 To access Internet from a custom application running in a QEMU, NAT
 (masquerading) should be set up for QEMU's source address. Assuming 192.0.2.1 is
@@ -171,3 +179,34 @@ Terminal #2:
 
 This will start 2nd QEMU instance, and you should see logging of data sent and
 received in both.
+
+Running multiple QEMU VMs of the same sample
+********************************************
+
+If you find yourself needing to run multiple instances of the same Zephyr
+sample application, which do not need to be able to talk to each other, the
+``QEMU_INSTANCE`` argument is what you need.
+
+Start socat and tunslip6 manually (avoiding loop-x.sh scripts) for as many
+instances as you want. Use the following as a guide, replacing MAIN or OTHER.
+
+Terminal #1:
+============
+
+.. code-block:: console
+
+   $ socat PTY,link=/tmp/slip.devMAIN UNIX-LISTEN:/tmp/slip.sockMAIN
+   $ $ZEPHYR_BASE/../net-tools/tunslip6 -t tapMAIN -T -s /tmp/slip.devMAIN \
+        2001:db8::1/64
+   # Now run Zephyr
+   $ make run QEMU_INSTANCE=MAIN
+
+Terminal #2:
+============
+
+.. code-block:: console
+
+   $ socat PTY,link=/tmp/slip.devOTHER UNIX-LISTEN:/tmp/slip.sockOTHER
+   $ $ZEPHYR_BASE/../net-tools/tunslip6 -t tapOTHER -T -s /tmp/slip.devOTHER \
+        2001:db8::1/64
+   $ make run QEMU_INSTANCE=OTHER

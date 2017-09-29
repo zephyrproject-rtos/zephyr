@@ -27,7 +27,7 @@
 #define _kernel_arch_data__h_
 
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <asm_inline.h>
 #include <exception.h>
 #include <kernel_arch_thread.h>
@@ -38,6 +38,7 @@
 #include <zephyr/types.h>
 #include <misc/dlist.h>
 #endif
+
 
 /* increase to 16 bytes (or more?) to support SSE/SSE2 instructions? */
 
@@ -375,6 +376,11 @@
 
 #define EFLAGS_INITIAL 0x00000200
 #define EFLAGS_MASK 0x00003200
+
+/* Enable paging and write protection */
+#define CR0_PAGING_ENABLE 0x80010000
+/* Clear the 5th bit in  CR4 */
+#define CR4_PAE_DISABLE 0xFFFFFFEF
 
 #ifndef _ASMLANGUAGE
 

@@ -14,7 +14,7 @@
 #include <board.h>
 #include <init.h>
 #include <uart.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <gpio.h>
 
 #ifdef CONFIG_SOC_NRF52840
@@ -121,6 +121,12 @@ static int baudrate_set(struct device *dev,
 
 	/* Use the common nRF5 macros */
 	switch (baudrate) {
+	case 300:
+		divisor = NRF5_UART_BAUDRATE_300;
+		break;
+	case 600:
+		divisor = NRF5_UART_BAUDRATE_600;
+		break;
 	case 1200:
 		divisor = NRF5_UART_BAUDRATE_1200;
 		break;

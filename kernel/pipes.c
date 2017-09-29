@@ -14,7 +14,7 @@
 #include <kernel_structs.h>
 #include <debug/object_tracing_common.h>
 #include <toolchain.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <wait_q.h>
 #include <misc/dlist.h>
 #include <init.h>
@@ -136,6 +136,7 @@ void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
 	sys_dlist_init(&pipe->wait_q.writers);
 	sys_dlist_init(&pipe->wait_q.readers);
 	SYS_TRACING_OBJ_INIT(k_pipe, pipe);
+	_k_object_init(pipe);
 }
 
 /**

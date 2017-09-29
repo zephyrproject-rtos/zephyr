@@ -1,7 +1,7 @@
 /* cbc_mode.h - TinyCrypt interface to a CBC mode implementation */
 
 /*
- *  Copyright (C) 2015 by Intel Corporation, All Rights Reserved.
+ *  Copyright (C) 2017 by Intel Corporation, All Rights Reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
  *  modification, are permitted provided that the following conditions are met:
@@ -107,9 +107,9 @@ extern "C" {
  *  @param iv IN -- the IV for the this encrypt/decrypt
  *  @param sched IN --  AES key schedule for this encrypt
  */
-int32_t tc_cbc_mode_encrypt(uint8_t *out, uint32_t outlen, const uint8_t *in,
-			    uint32_t inlen, const uint8_t *iv,
-			    const TCAesKeySched_t sched);
+int tc_cbc_mode_encrypt(uint8_t *out, unsigned int outlen, const uint8_t *in,
+			unsigned int inlen, const uint8_t *iv,
+			const TCAesKeySched_t sched);
 
 /**
  * @brief CBC decryption procedure
@@ -140,12 +140,12 @@ int32_t tc_cbc_mode_encrypt(uint8_t *out, uint32_t outlen, const uint8_t *in,
  * @param sched IN --  AES key schedule for this decrypt
  *
  */
-int32_t tc_cbc_mode_decrypt(uint8_t *out, uint32_t outlen, const uint8_t *in,
-			    uint32_t inlen, const uint8_t *iv,
-			    const TCAesKeySched_t sched);
+int tc_cbc_mode_decrypt(uint8_t *out, unsigned int outlen, const uint8_t *in,
+			unsigned int inlen, const uint8_t *iv,
+			const TCAesKeySched_t sched);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif /* __TC_CBC_MODE_H__ */

@@ -154,7 +154,7 @@ static struct clock_control_driver_api stm32_clock_control_api = {
  * Unconditionally switch the system clock source to HSI.
  */
 __unused
-static void stm32_clock_switch_to_hsi(uint32_t ahb_prescaler)
+static void stm32_clock_switch_to_hsi(u32_t ahb_prescaler)
 {
 	/* Enable HSI if not enabled */
 	if (LL_RCC_HSI_IsReady() != 1) {

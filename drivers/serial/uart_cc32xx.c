@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* See www.ti.com/lit/pdf/swru367, section 6, for CC3200 UART info. */
-
 #include <kernel.h>
 #include <arch/cpu.h>
 #include <uart.h>
@@ -113,7 +111,7 @@ static int uart_cc32xx_err_check(struct device *dev)
 
 	cc32xx_errs = MAP_UARTRxErrorGet((unsigned long)config->base);
 
-	/* Map cc3200 SDK uart.h defines to zephyr uart.h defines */
+	/* Map cc32xx SDK uart.h defines to zephyr uart.h defines */
 	z_err = ((cc32xx_errs & UART_RXERROR_OVERRUN) ?
 		  UART_ERROR_OVERRUN : 0) |
 		((cc32xx_errs & UART_RXERROR_BREAK) ? UART_ERROR_BREAK : 0) |

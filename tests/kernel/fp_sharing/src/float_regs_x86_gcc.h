@@ -58,7 +58,7 @@ static inline void _load_all_float_registers(struct fp_register_set *regs)
 		"fldt   188(%0)\n\t;"
 		"fldt   198(%0)\n\t;"
 
-		:: "r" (regs)
+		: : "r" (regs)
 		);
 }
 
@@ -82,7 +82,7 @@ static inline void _load_all_float_registers(struct fp_register_set *regs)
  */
 
 static inline void
-	_load_then_store_all_float_registers(struct fp_register_set *regs)
+_load_then_store_all_float_registers(struct fp_register_set *regs)
 {
 	__asm__ volatile (
 		"movdqu  0(%0), %%xmm0\n\t;"
@@ -114,7 +114,7 @@ static inline void
 		"fstpt  138(%0)\n\t;"
 		"fstpt  128(%0)\n\t;"
 
-		:: "r" (regs)
+		: : "r" (regs)
 		);
 }
 
@@ -152,7 +152,7 @@ static inline void _store_all_float_registers(struct fp_register_set *regs)
 		"fstpt  138(%0)\n\t;"
 		"fstpt  128(%0)\n\t;"
 
-		:: "r" (regs) : "memory"
+		: : "r" (regs) : "memory"
 		);
 }
 #endif /* _FLOAT_REGS_X86_GCC_H */

@@ -5,6 +5,9 @@
  */
 
 #include <ztest.h>
+#include <net/buf.h>
+
+struct net_buf_pool _net_buf_pool_list[1];
 
 unsigned int irq_lock(void)
 {

@@ -1,5 +1,10 @@
 # Kconfig.cc2520 - TI CC2520 configuration options
 #
+#
+# Copyright (c) 2017 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
 
 menuconfig IEEE802154_CC2520
 	bool "TI CC2520 Driver support"

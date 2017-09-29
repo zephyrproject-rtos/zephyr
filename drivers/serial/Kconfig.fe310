@@ -10,6 +10,7 @@ menuconfig UART_FE310
 	depends on SOC_RISCV32_FE310
 	default n
 	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
 	help
 	  This option enables the SiFive Freedom E310 serial driver.
 

@@ -31,7 +31,7 @@ struct net_icmpv4_echo_req {
 } __packed;
 
 #define NET_ICMPV4_ECHO_REQ(pkt)					\
-	((struct net_icmpv4_echo_req *)(net_pkt_icmp_data(pkt) +	\
+	((struct net_icmpv4_echo_req *)((u8_t *)net_pkt_icmp_data(pkt) + \
 					sizeof(struct net_icmp_hdr)))
 
 typedef enum net_verdict (*icmpv4_callback_handler_t)(struct net_pkt *pkt);
@@ -75,6 +75,13 @@ void net_icmpv4_unregister_handler(struct net_icmpv4_handler *handler);
 
 enum net_verdict net_icmpv4_input(struct net_pkt *pkt,
 				  u8_t type, u8_t code);
+
+struct net_icmp_hdr *net_icmpv4_get_hdr(struct net_pkt *pkt,
+					struct net_icmp_hdr *hdr);
+struct net_icmp_hdr *net_icmpv4_set_hdr(struct net_pkt *pkt,
+					struct net_icmp_hdr *hdr);
+struct net_buf *net_icmpv4_set_chksum(struct net_pkt *pkt,
+				      struct net_buf *frag);
 
 #if defined(CONFIG_NET_IPV4)
 void net_icmpv4_init(void);

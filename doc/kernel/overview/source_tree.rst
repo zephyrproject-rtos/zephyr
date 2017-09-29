@@ -24,10 +24,16 @@ which are not described here.
     Board related code and configuration files.
 
 :file:`doc`
-    Zephyr documentation source files and tools.
+    Zephyr technical documentation source files and tools used to
+    generate the http://zephyrproject.org/doc web content.
 
 :file:`drivers`
     Device driver code.
+
+:file:`dts`
+    Device tree source (.dts) files used to describe non-discoverable
+    board-specific hardware details previously hard coded in the OS
+    source code.
 
 :file:`ext`
     Externally created code that has been integrated into Zephyr
@@ -54,13 +60,13 @@ which are not described here.
     Various programs and other files used to build and test Zephyr
     applications.
 
-:file:`tests`
-    Test code and benchmarks for Zephyr features.
-
 :file:`subsys`
     Subsystems of Zephyr, including:
+
     * USB device stack code.
     * Networking code, including the Bluetooth stack and networking stacks.
     * File system code.
     * Bluetooth host and controller
 
+:file:`tests`
+    Test code and benchmarks for Zephyr features.

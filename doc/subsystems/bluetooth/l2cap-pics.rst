@@ -1,7 +1,7 @@
 L2CAP PICS
 ##########
 
-PTS version: 6.4
+PTS version: 7.0.1
 
 * - different than PTS defaults
 

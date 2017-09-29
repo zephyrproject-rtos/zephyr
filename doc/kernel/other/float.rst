@@ -98,17 +98,17 @@ to support the SSE registers, or as an FPU user if the SSE registers are
 not supported. If this would result in a thread that is an FPU user being
 tagged as an SSE user, or if the application wants to avoid the exception
 handling overhead involved in auto-tagging threads, it is possible to
-pre-tag a thread using one of the techniques listed below.
+pretag a thread using one of the techniques listed below.
 
-* A statically-created x86 thread can be pre-tagged by passing the
+* A statically-created x86 thread can be pretagged by passing the
   :c:macro:`K_FP_REGS` or :c:macro:`K_SSE_REGS` option to
   :c:macro:`K_THREAD_DEFINE`.
 
-* A dynamically-created x86 thread can be pre-tagged by passing the
+* A dynamically-created x86 thread can be pretagged by passing the
   :c:macro:`K_FP_REGS` or :c:macro:`K_SSE_REGS` option to
   :cpp:func:`k_thread_create()`.
 
-* An already-created x86 thread can pre-tag itself once it has started
+* An already-created x86 thread can pretag itself once it has started
   by passing the :c:macro:`K_FP_REGS` or :c:macro:`K_SSE_REGS` option to
   :cpp:func:`k_float_enable()`.
 

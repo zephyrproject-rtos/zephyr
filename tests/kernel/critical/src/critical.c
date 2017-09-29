@@ -12,21 +12,22 @@
  */
 
 #include <zephyr.h>
-#include <sections.h>
+#include <linker/sections.h>
 #include <ztest.h>
 
 #define NUM_MILLISECONDS        5000
 #define TEST_TIMEOUT            20000
 
-static u32_t criticalVar;
-static u32_t altTaskIterations;
+static u32_t critical_var;
+static u32_t alt_task_iterations;
 
 static struct k_work_q offload_work_q;
-static char __stack offload_work_q_stack[CONFIG_OFFLOAD_WORKQUEUE_STACK_SIZE];
+static K_THREAD_STACK_DEFINE(offload_work_q_stack,
+			     CONFIG_OFFLOAD_WORKQUEUE_STACK_SIZE);
 
 #define STACK_SIZE 1024
-static char __stack stack1[STACK_SIZE];
-static char __stack stack2[STACK_SIZE];
+static K_THREAD_STACK_DEFINE(stack1, STACK_SIZE);
+static K_THREAD_STACK_DEFINE(stack2, STACK_SIZE);
 
 static struct k_thread thread1;
 static struct k_thread thread2;
@@ -39,19 +40,19 @@ K_SEM_DEFINE(TEST_SEM, 0, UINT_MAX);
  *
  * @brief Routine to be called from a workqueue
  *
- * This routine increments the global variable <criticalVar>.
+ * This routine increments the global variable <critical_var>.
  *
  * @return 0
  */
 
-void criticalRtn(struct k_work *unused)
+void critical_rtn(struct k_work *unused)
 {
 	volatile u32_t x;
 
 	ARG_UNUSED(unused);
 
-	x = criticalVar;
-	criticalVar = x + 1;
+	x = critical_var;
+	critical_var = x + 1;
 
 }
 
@@ -64,7 +65,7 @@ void criticalRtn(struct k_work *unused)
  * @return number of critical section calls made by task
  */
 
-u32_t criticalLoop(u32_t count)
+u32_t critical_loop(u32_t count)
 {
 	s64_t mseconds;
 
@@ -72,7 +73,7 @@ u32_t criticalLoop(u32_t count)
 	while (k_uptime_get() < mseconds + NUM_MILLISECONDS) {
 		struct k_work work_item;
 
-		k_work_init(&work_item, criticalRtn);
+		k_work_init(&work_item, critical_rtn);
 		k_work_submit_to_queue(&offload_work_q, &work_item);
 		count++;
 	}
@@ -89,7 +90,7 @@ u32_t criticalLoop(u32_t count)
  * @return N/A
  */
 
-void AlternateTask(void *arg1, void *arg2, void *arg3)
+void alternate_task(void *arg1, void *arg2, void *arg3)
 {
 	ARG_UNUSED(arg1);
 	ARG_UNUSED(arg2);
@@ -97,13 +98,13 @@ void AlternateTask(void *arg1, void *arg2, void *arg3)
 
 	k_sem_take(&ALT_SEM, K_FOREVER);        /* Wait to be activated */
 
-	altTaskIterations = criticalLoop(altTaskIterations);
+	alt_task_iterations = critical_loop(alt_task_iterations);
 
 	k_sem_give(&REGRESS_SEM);
 
 	k_sem_take(&ALT_SEM, K_FOREVER);        /* Wait to be re-activated */
 
-	altTaskIterations = criticalLoop(altTaskIterations);
+	alt_task_iterations = critical_loop(alt_task_iterations);
 
 	k_sem_give(&REGRESS_SEM);
 }
@@ -119,9 +120,9 @@ void AlternateTask(void *arg1, void *arg2, void *arg3)
  * @return N/A
  */
 
-void RegressionTask(void *arg1, void *arg2, void *arg3)
+void regression_task(void *arg1, void *arg2, void *arg3)
 {
-	u32_t nCalls = 0;
+	u32_t ncalls = 0;
 
 	ARG_UNUSED(arg1);
 	ARG_UNUSED(arg2);
@@ -129,27 +130,27 @@ void RegressionTask(void *arg1, void *arg2, void *arg3)
 
 	k_sem_give(&ALT_SEM);   /* Activate AlternateTask() */
 
-	nCalls = criticalLoop(nCalls);
+	ncalls = critical_loop(ncalls);
 
 	/* Wait for AlternateTask() to complete */
 	zassert_true(k_sem_take(&REGRESS_SEM, TEST_TIMEOUT) == 0,
-		    "Timed out waiting for REGRESS_SEM");
+		     "Timed out waiting for REGRESS_SEM");
 
-	zassert_equal(criticalVar, nCalls + altTaskIterations,
-		     "Unexpected value for <criticalVar>");
+	zassert_equal(critical_var, ncalls + alt_task_iterations,
+		      "Unexpected value for <criticalVar>");
 
 	k_sched_time_slice_set(10, 10);
 
 	k_sem_give(&ALT_SEM);   /* Re-activate AlternateTask() */
 
-	nCalls = criticalLoop(nCalls);
+	ncalls = critical_loop(ncalls);
 
 	/* Wait for AlternateTask() to finish */
 	zassert_true(k_sem_take(&REGRESS_SEM, TEST_TIMEOUT) == 0,
-		    "Timed out waiting for REGRESS_SEM");
+		     "Timed out waiting for REGRESS_SEM");
 
-	zassert_equal(criticalVar, nCalls + altTaskIterations,
-		     "Unexpected value for <criticalVar>");
+	zassert_equal(critical_var, ncalls + alt_task_iterations,
+		      "Unexpected value for <criticalVar>");
 
 	k_sem_give(&TEST_SEM);
 
@@ -157,22 +158,22 @@ void RegressionTask(void *arg1, void *arg2, void *arg3)
 
 static void init_objects(void)
 {
-	criticalVar = 0;
-	altTaskIterations = 0;
+	critical_var = 0;
+	alt_task_iterations = 0;
 	k_work_q_start(&offload_work_q,
 		       offload_work_q_stack,
-		       sizeof(offload_work_q_stack),
+		       K_THREAD_STACK_SIZEOF(offload_work_q_stack),
 		       CONFIG_OFFLOAD_WORKQUEUE_PRIORITY);
 }
 
 static void start_threads(void)
 {
 	k_thread_create(&thread1, stack1, STACK_SIZE,
-			AlternateTask, NULL, NULL, NULL,
+			alternate_task, NULL, NULL, NULL,
 			K_PRIO_PREEMPT(12), 0, 0);
 
 	k_thread_create(&thread2, stack2, STACK_SIZE,
-			RegressionTask, NULL, NULL, NULL,
+			regression_task, NULL, NULL, NULL,
 			K_PRIO_PREEMPT(12), 0, 0);
 }
 
@@ -182,12 +183,5 @@ void test_critical(void)
 	start_threads();
 
 	zassert_true(k_sem_take(&TEST_SEM, TEST_TIMEOUT * 2) == 0,
-		    "Timed out waiting for TEST_SEM");
-}
-
-void test_main(void)
-{
-	ztest_test_suite(kernel_critical_test, ztest_unit_test(test_critical));
-
-	ztest_run_test_suite(kernel_critical_test);
+		     "Timed out waiting for TEST_SEM");
 }

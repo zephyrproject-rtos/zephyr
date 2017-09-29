@@ -5,4 +5,4 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#define N_PHILOSOPHERS	5
+#define N_PHILOSOPHERS  5

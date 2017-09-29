@@ -21,14 +21,6 @@
 #include <net/arp.h>
 #include "net_private.h"
 
-struct arp_entry {
-	u32_t time;	/* FIXME - implement timeout functionality */
-	struct net_if *iface;
-	struct net_pkt *pending;
-	struct in_addr ip;
-	struct net_eth_addr eth;
-};
-
 static struct arp_entry arp_table[CONFIG_NET_ARP_TABLE_SIZE];
 
 static inline struct arp_entry *find_entry(struct net_if *iface,
@@ -110,12 +102,13 @@ static inline struct net_pkt *prepare_arp(struct net_if *iface,
 
 	pkt = net_pkt_get_reserve_tx(sizeof(struct net_eth_hdr), K_FOREVER);
 	if (!pkt) {
-		goto fail;
+		return NULL;
 	}
 
 	frag = net_pkt_get_frag(pkt, K_FOREVER);
 	if (!frag) {
-		goto fail;
+		net_pkt_unref(pkt);
+		return NULL;
 	}
 
 	net_pkt_frag_add(pkt, frag);
@@ -176,11 +169,6 @@ static inline struct net_pkt *prepare_arp(struct net_if *iface,
 	net_buf_add(frag, sizeof(struct net_arp_hdr));
 
 	return pkt;
-
-fail:
-	net_pkt_unref(pkt);
-	net_pkt_unref(pending);
-	return NULL;
 }
 
 struct net_pkt *net_arp_prepare(struct net_pkt *pkt)
@@ -234,6 +222,12 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt)
 	if (!net_if_ipv4_addr_mask_cmp(net_pkt_iface(pkt),
 				       &NET_IPV4_HDR(pkt)->dst)) {
 		addr = &net_pkt_iface(pkt)->ipv4.gw;
+		if (net_is_ipv4_addr_unspecified(addr)) {
+			NET_ERR("Gateway not set for iface %p",
+				net_pkt_iface(pkt));
+
+			return NULL;
+		}
 	} else {
 		addr = &NET_IPV4_HDR(pkt)->dst;
 	}
@@ -259,8 +253,6 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt)
 				req = prepare_arp(net_pkt_iface(pkt),
 						  addr, NULL, pkt);
 				NET_DBG("Resending ARP %p", req);
-
-				net_pkt_unref(pkt);
 
 				return req;
 			}
@@ -313,16 +305,8 @@ static inline void send_pending(struct net_if *iface, struct net_pkt **pkt)
 	*pkt = NULL;
 
 	if (net_if_send_data(iface, pending) == NET_DROP) {
-		/* This is to unref the original ref */
 		net_pkt_unref(pending);
 	}
-
-	/* The pending pkt was referenced when
-	 * it was added to cache so we need to
-	 * unref it now when it is removed from
-	 * the cache.
-	 */
-	net_pkt_unref(pending);
 }
 
 static inline void arp_update(struct net_if *iface,
@@ -428,6 +412,7 @@ enum net_verdict net_arp_input(struct net_pkt *pkt)
 {
 	struct net_arp_hdr *arp_hdr;
 	struct net_pkt *reply;
+	struct in_addr *addr;
 
 	if (net_pkt_get_len(pkt) < (sizeof(struct net_arp_hdr) -
 				    net_pkt_ll_reserve(pkt))) {
@@ -443,8 +428,12 @@ enum net_verdict net_arp_input(struct net_pkt *pkt)
 	switch (ntohs(arp_hdr->opcode)) {
 	case NET_ARP_REQUEST:
 		/* Someone wants to know our ll address */
-		if (!net_ipv4_addr_cmp(&arp_hdr->dst_ipaddr,
-				       if_get_addr(net_pkt_iface(pkt)))) {
+		addr = if_get_addr(net_pkt_iface(pkt));
+		if (!addr) {
+			return NET_DROP;
+		}
+
+		if (!net_ipv4_addr_cmp(&arp_hdr->dst_ipaddr, addr)) {
 			/* Not for us so drop the packet silently */
 			return NET_DROP;
 		}
@@ -494,6 +483,23 @@ void net_arp_clear_cache(void)
 	}
 
 	memset(&arp_table, 0, sizeof(arp_table));
+}
+
+int net_arp_foreach(net_arp_cb_t cb, void *user_data)
+{
+	int i, ret = 0;
+
+	for (i = 0; i < CONFIG_NET_ARP_TABLE_SIZE; i++) {
+		if (!arp_table[i].iface) {
+			continue;
+		}
+
+		ret++;
+
+		cb(&arp_table[i], user_data);
+	}
+
+	return ret;
 }
 
 void net_arp_init(void)

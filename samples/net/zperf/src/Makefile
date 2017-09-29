@@ -16,14 +16,9 @@ export PROFILER_NO_SHELL_REGISTER=1
 obj-y += ../../../task_profiler/profiler/
 endif
 
-ifeq ($(CONFIG_NET_L2_BLUETOOTH), y)
-ccflags-y +=-I${ZEPHYR_BASE}/samples/bluetooth/
-obj-y += ../../../bluetooth/gatt/ipss.o
-endif
-
 ifeq ($(CONFIG_NET_L2_IEEE802154), y)
 ccflags-y +=-I${ZEPHYR_BASE}/samples/net/common/
 ifeq ($(CONFIG_NET_APP_SETTINGS), y)
-obj-y += ../../common/ieee802154_settings.o
+obj-y += ieee802154_settings.o
 endif
 endif

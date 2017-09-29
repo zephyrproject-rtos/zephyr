@@ -1,0 +1,7 @@
+identifier: stm32f412g_disco
+name: 32F412GDISCOVERY
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb

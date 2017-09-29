@@ -1,6 +1,8 @@
 
 include $(srctree)/ext/lib/crypto/mbedtls/Makefile.include
 
+obj-y += zephyr_init.o
+
 obj-y += library/aes.o
 obj-y += library/aesni.o
 obj-y += library/arc4.o

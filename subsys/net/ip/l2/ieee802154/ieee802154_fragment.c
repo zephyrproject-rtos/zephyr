@@ -18,6 +18,7 @@
 #include <net/net_pkt.h>
 #include <net/net_if.h>
 #include <net/net_stats.h>
+#include <net/udp.h>
 
 #include "ieee802154_fragment.h"
 
@@ -135,8 +136,8 @@ static inline void set_up_frag_hdr(struct net_buf *frag, u16_t size,
 }
 
 static inline u8_t calc_max_payload(struct net_pkt *pkt,
-				       struct net_buf *frag,
-				       u8_t offset)
+				    struct net_buf *frag,
+				    u8_t offset)
 {
 	u8_t max;
 
@@ -147,11 +148,11 @@ static inline u8_t calc_max_payload(struct net_pkt *pkt,
 }
 
 static inline u8_t move_frag_data(struct net_buf *frag,
-				     struct net_buf *next,
-				     u8_t max,
-				     bool first,
-				     int hdr_diff,
-				     u8_t *room_left)
+				  struct net_buf *next,
+				  u8_t max,
+				  bool first,
+				  int hdr_diff,
+				  u8_t *room_left)
 {
 	u8_t room;
 	u8_t move;
@@ -320,7 +321,15 @@ static void update_protocol_header_lengths(struct net_pkt *pkt, u16_t size)
 	NET_IPV6_HDR(pkt)->len[1] = (u8_t) (size - NET_IPV6H_LEN);
 
 	if (NET_IPV6_HDR(pkt)->nexthdr == IPPROTO_UDP) {
-		NET_UDP_HDR(pkt)->len = htons(size - NET_IPV6H_LEN);
+		struct net_udp_hdr hdr, *udp_hdr;
+
+		udp_hdr = net_udp_get_hdr(pkt, &hdr);
+
+		NET_ASSERT(udp_hdr);
+
+		udp_hdr->len = htons(size - NET_IPV6H_LEN);
+
+		net_udp_set_hdr(pkt, udp_hdr);
 	}
 }
 

@@ -11,6 +11,8 @@
  *
  * Driver for Stellaris UART found namely on TI LM3S6965 board. It is similar to
  * an 16550 in functionality, but is not register-compatible.
+ * It is also register-compatible with the UART found on TI CC2650 SoC,
+ * so it can be used for boards using it, like the TI SensorTag.
  *
  * There is only support for poll-mode, so it can only be used with the printk
  * and STDOUT_CONSOLE APIs.
@@ -22,7 +24,7 @@
 #include <board.h>
 #include <init.h>
 #include <uart.h>
-#include <sections.h>
+#include <linker/sections.h>
 
 /* definitions */
 
@@ -642,7 +644,8 @@ static struct uart_stellaris_dev_data_t uart_stellaris_dev_data_0 = {
 	.baud_rate = TI_STELLARIS_UART_4000C000_CURRENT_SPEED,
 };
 
-DEVICE_AND_API_INIT(uart_stellaris0, CONFIG_UART_STELLARIS_PORT_0_NAME, &uart_stellaris_init,
+DEVICE_AND_API_INIT(uart_stellaris0, TI_STELLARIS_UART_4000C000_LABEL,
+		    &uart_stellaris_init,
 		    &uart_stellaris_dev_data_0, &uart_stellaris_dev_cfg_0,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &uart_stellaris_driver_api);
@@ -653,7 +656,7 @@ static void irq_config_func_0(struct device *dev)
 	IRQ_CONNECT(TI_STELLARIS_UART_4000C000_IRQ_0,
 		    TI_STELLARIS_UART_4000C000_IRQ_0_PRIORITY,
 		    uart_stellaris_isr, DEVICE_GET(uart_stellaris0),
-		    UART_IRQ_FLAGS);
+		    0);
 	irq_enable(TI_STELLARIS_UART_4000C000_IRQ_0);
 }
 #endif
@@ -679,7 +682,8 @@ static struct uart_stellaris_dev_data_t uart_stellaris_dev_data_1 = {
 	.baud_rate = TI_STELLARIS_UART_4000D000_CURRENT_SPEED,
 };
 
-DEVICE_AND_API_INIT(uart_stellaris1, CONFIG_UART_STELLARIS_PORT_1_NAME, &uart_stellaris_init,
+DEVICE_AND_API_INIT(uart_stellaris1, TI_STELLARIS_UART_4000D000_LABEL,
+		    &uart_stellaris_init,
 		    &uart_stellaris_dev_data_1, &uart_stellaris_dev_cfg_1,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &uart_stellaris_driver_api);
@@ -690,7 +694,7 @@ static void irq_config_func_1(struct device *dev)
 	IRQ_CONNECT(TI_STELLARIS_UART_4000D000_IRQ_0,
 		    TI_STELLARIS_UART_4000D000_IRQ_0_PRIORITY,
 		    uart_stellaris_isr, DEVICE_GET(uart_stellaris1),
-		    UART_IRQ_FLAGS);
+		    0);
 	irq_enable(TI_STELLARIS_UART_4000D000_IRQ_0);
 }
 #endif
@@ -716,7 +720,8 @@ static struct uart_stellaris_dev_data_t uart_stellaris_dev_data_2 = {
 	.baud_rate = TI_STELLARIS_UART_4000E000_CURRENT_SPEED,
 };
 
-DEVICE_AND_API_INIT(uart_stellaris2, CONFIG_UART_STELLARIS_PORT_2_NAME, &uart_stellaris_init,
+DEVICE_AND_API_INIT(uart_stellaris2, TI_STELLARIS_UART_4000E000_LABEL,
+		    &uart_stellaris_init,
 		    &uart_stellaris_dev_data_2, &uart_stellaris_dev_cfg_2,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &uart_stellaris_driver_api);
@@ -727,7 +732,7 @@ static void irq_config_func_2(struct device *dev)
 	IRQ_CONNECT(TI_STELLARIS_UART_4000E000_IRQ_0,
 		    TI_STELLARIS_UART_4000E000_IRQ_0_PRIORITY,
 		    uart_stellaris_isr, DEVICE_GET(uart_stellaris2),
-		    UART_IRQ_FLAGS);
+		    0);
 	irq_enable(TI_STELLARIS_UART_4000E000_IRQ_0);
 }
 #endif

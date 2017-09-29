@@ -14,194 +14,13 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <clock_control.h>
+#ifdef CONFIG_SOC_SERIES_STM32F1X
+#include <dt-bindings/pinctrl/stm32-pinctrlf1.h>
+#else
+#include <dt-bindings/pinctrl/stm32-pinctrl.h>
+#endif /* CONFIG_SOC_SERIES_STM32F1X */
 #include "pinmux/pinmux.h"
 
-/**
- * @brief numerical IDs for IO ports
- */
-enum stm32_pin_port {
-	STM32_PORTA = 0,	/* IO port A */
-	STM32_PORTB,		/* .. */
-	STM32_PORTC,
-	STM32_PORTD,
-	STM32_PORTE,
-	STM32_PORTF,
-	STM32_PORTG,
-	STM32_PORTH,		/* IO port H */
-};
-
-/* override this at soc level */
-#ifndef STM32_PORTS_MAX
-#define STM32_PORTS_MAX (STM32_PORTH + 1)
-#endif
-
-/**
- * @brief helper macro to encode an IO port pin in a numerical format
- */
-#define STM32PIN(_port, _pin) \
-	(_port << 4 | _pin)
-
-/*
- */
-enum stm32_pin_alt_func {
-	STM32_PINMUX_FUNC_ALT_0 = 0, /* GPIO */
-	STM32_PINMUX_FUNC_ALT_1,
-	STM32_PINMUX_FUNC_ALT_2,
-	STM32_PINMUX_FUNC_ALT_3,
-	STM32_PINMUX_FUNC_ALT_4,
-	STM32_PINMUX_FUNC_ALT_5,
-	STM32_PINMUX_FUNC_ALT_6,
-	STM32_PINMUX_FUNC_ALT_7,
-	STM32_PINMUX_FUNC_ALT_8,
-	STM32_PINMUX_FUNC_ALT_9,
-	STM32_PINMUX_FUNC_ALT_10,
-	STM32_PINMUX_FUNC_ALT_11,
-	STM32_PINMUX_FUNC_ALT_12,
-	STM32_PINMUX_FUNC_ALT_13,
-	STM32_PINMUX_FUNC_ALT_14,
-	STM32_PINMUX_FUNC_ALT_15,
-	STM32_PINMUX_FUNC_ALT_16,
-	STM32_PINMUX_FUNC_ALT_MAX
-};
-
-#define STM32_PINMUX_FUNC_GPIO 0
-#define STM32_PINMUX_FUNC_ANALOG (STM32_PINMUX_FUNC_ALT_MAX)
-
-#define STM32_PIN_PA0	STM32PIN(STM32_PORTA, 0)
-#define STM32_PIN_PA1	STM32PIN(STM32_PORTA, 1)
-#define STM32_PIN_PA2	STM32PIN(STM32_PORTA, 2)
-#define STM32_PIN_PA3	STM32PIN(STM32_PORTA, 3)
-#define STM32_PIN_PA4	STM32PIN(STM32_PORTA, 4)
-#define STM32_PIN_PA5	STM32PIN(STM32_PORTA, 5)
-#define STM32_PIN_PA6	STM32PIN(STM32_PORTA, 6)
-#define STM32_PIN_PA7	STM32PIN(STM32_PORTA, 7)
-#define STM32_PIN_PA8	STM32PIN(STM32_PORTA, 8)
-#define STM32_PIN_PA9	STM32PIN(STM32_PORTA, 9)
-#define STM32_PIN_PA10  STM32PIN(STM32_PORTA, 10)
-#define STM32_PIN_PA11  STM32PIN(STM32_PORTA, 11)
-#define STM32_PIN_PA12  STM32PIN(STM32_PORTA, 12)
-#define STM32_PIN_PA13  STM32PIN(STM32_PORTA, 13)
-#define STM32_PIN_PA14  STM32PIN(STM32_PORTA, 14)
-#define STM32_PIN_PA15  STM32PIN(STM32_PORTA, 15)
-
-#define STM32_PIN_PB0	STM32PIN(STM32_PORTB, 0)
-#define STM32_PIN_PB1	STM32PIN(STM32_PORTB, 1)
-#define STM32_PIN_PB2	STM32PIN(STM32_PORTB, 2)
-#define STM32_PIN_PB3	STM32PIN(STM32_PORTB, 3)
-#define STM32_PIN_PB4	STM32PIN(STM32_PORTB, 4)
-#define STM32_PIN_PB5	STM32PIN(STM32_PORTB, 5)
-#define STM32_PIN_PB6	STM32PIN(STM32_PORTB, 6)
-#define STM32_PIN_PB7	STM32PIN(STM32_PORTB, 7)
-#define STM32_PIN_PB8	STM32PIN(STM32_PORTB, 8)
-#define STM32_PIN_PB9	STM32PIN(STM32_PORTB, 9)
-#define STM32_PIN_PB10  STM32PIN(STM32_PORTB, 10)
-#define STM32_PIN_PB11  STM32PIN(STM32_PORTB, 11)
-#define STM32_PIN_PB12  STM32PIN(STM32_PORTB, 12)
-#define STM32_PIN_PB13  STM32PIN(STM32_PORTB, 13)
-#define STM32_PIN_PB14  STM32PIN(STM32_PORTB, 14)
-#define STM32_PIN_PB15  STM32PIN(STM32_PORTB, 15)
-
-#define STM32_PIN_PC0	STM32PIN(STM32_PORTC, 0)
-#define STM32_PIN_PC1	STM32PIN(STM32_PORTC, 1)
-#define STM32_PIN_PC2	STM32PIN(STM32_PORTC, 2)
-#define STM32_PIN_PC3	STM32PIN(STM32_PORTC, 3)
-#define STM32_PIN_PC4	STM32PIN(STM32_PORTC, 4)
-#define STM32_PIN_PC5	STM32PIN(STM32_PORTC, 5)
-#define STM32_PIN_PC6	STM32PIN(STM32_PORTC, 6)
-#define STM32_PIN_PC7	STM32PIN(STM32_PORTC, 7)
-#define STM32_PIN_PC8	STM32PIN(STM32_PORTC, 8)
-#define STM32_PIN_PC9	STM32PIN(STM32_PORTC, 9)
-#define STM32_PIN_PC10  STM32PIN(STM32_PORTC, 10)
-#define STM32_PIN_PC11  STM32PIN(STM32_PORTC, 11)
-#define STM32_PIN_PC12  STM32PIN(STM32_PORTC, 12)
-#define STM32_PIN_PC13  STM32PIN(STM32_PORTC, 13)
-#define STM32_PIN_PC14  STM32PIN(STM32_PORTC, 14)
-#define STM32_PIN_PC15  STM32PIN(STM32_PORTC, 15)
-
-#define STM32_PIN_PD0	STM32PIN(STM32_PORTD, 0)
-#define STM32_PIN_PD1	STM32PIN(STM32_PORTD, 1)
-#define STM32_PIN_PD2	STM32PIN(STM32_PORTD, 2)
-#define STM32_PIN_PD3	STM32PIN(STM32_PORTD, 3)
-#define STM32_PIN_PD4	STM32PIN(STM32_PORTD, 4)
-#define STM32_PIN_PD5	STM32PIN(STM32_PORTD, 5)
-#define STM32_PIN_PD6	STM32PIN(STM32_PORTD, 6)
-#define STM32_PIN_PD7	STM32PIN(STM32_PORTD, 7)
-#define STM32_PIN_PD8	STM32PIN(STM32_PORTD, 8)
-#define STM32_PIN_PD9	STM32PIN(STM32_PORTD, 9)
-#define STM32_PIN_PD10  STM32PIN(STM32_PORTD, 10)
-#define STM32_PIN_PD11  STM32PIN(STM32_PORTD, 11)
-#define STM32_PIN_PD12  STM32PIN(STM32_PORTD, 12)
-#define STM32_PIN_PD13  STM32PIN(STM32_PORTD, 13)
-#define STM32_PIN_PD14  STM32PIN(STM32_PORTD, 14)
-#define STM32_PIN_PD15  STM32PIN(STM32_PORTD, 15)
-
-#define STM32_PIN_PE0	STM32PIN(STM32_PORTE, 0)
-#define STM32_PIN_PE1	STM32PIN(STM32_PORTE, 1)
-#define STM32_PIN_PE2	STM32PIN(STM32_PORTE, 2)
-#define STM32_PIN_PE3	STM32PIN(STM32_PORTE, 3)
-#define STM32_PIN_PE4	STM32PIN(STM32_PORTE, 4)
-#define STM32_PIN_PE5	STM32PIN(STM32_PORTE, 5)
-#define STM32_PIN_PE6	STM32PIN(STM32_PORTE, 6)
-#define STM32_PIN_PE7	STM32PIN(STM32_PORTE, 7)
-#define STM32_PIN_PE8	STM32PIN(STM32_PORTE, 8)
-#define STM32_PIN_PE9	STM32PIN(STM32_PORTE, 9)
-#define STM32_PIN_PE10  STM32PIN(STM32_PORTE, 10)
-#define STM32_PIN_PE11  STM32PIN(STM32_PORTE, 11)
-#define STM32_PIN_PE12  STM32PIN(STM32_PORTE, 12)
-#define STM32_PIN_PE13  STM32PIN(STM32_PORTE, 13)
-#define STM32_PIN_PE14  STM32PIN(STM32_PORTE, 14)
-#define STM32_PIN_PE15  STM32PIN(STM32_PORTE, 15)
-
-#define STM32_PIN_PF0	STM32PIN(STM32_PORTF, 0)
-#define STM32_PIN_PF1	STM32PIN(STM32_PORTF, 1)
-#define STM32_PIN_PF2	STM32PIN(STM32_PORTF, 2)
-#define STM32_PIN_PF3	STM32PIN(STM32_PORTF, 3)
-#define STM32_PIN_PF4	STM32PIN(STM32_PORTF, 4)
-#define STM32_PIN_PF5	STM32PIN(STM32_PORTF, 5)
-#define STM32_PIN_PF6	STM32PIN(STM32_PORTF, 6)
-#define STM32_PIN_PF7	STM32PIN(STM32_PORTF, 7)
-#define STM32_PIN_PF8	STM32PIN(STM32_PORTF, 8)
-#define STM32_PIN_PF9	STM32PIN(STM32_PORTF, 9)
-#define STM32_PIN_PF10  STM32PIN(STM32_PORTF, 10)
-#define STM32_PIN_PF11  STM32PIN(STM32_PORTF, 11)
-#define STM32_PIN_PF12  STM32PIN(STM32_PORTF, 12)
-#define STM32_PIN_PF13  STM32PIN(STM32_PORTF, 13)
-#define STM32_PIN_PF14  STM32PIN(STM32_PORTF, 14)
-#define STM32_PIN_PF15  STM32PIN(STM32_PORTF, 15)
-
-#define STM32_PIN_PG0	STM32PIN(STM32_PORTG, 0)
-#define STM32_PIN_PG1	STM32PIN(STM32_PORTG, 1)
-#define STM32_PIN_PG2	STM32PIN(STM32_PORTG, 2)
-#define STM32_PIN_PG3	STM32PIN(STM32_PORTG, 3)
-#define STM32_PIN_PG4	STM32PIN(STM32_PORTG, 4)
-#define STM32_PIN_PG5	STM32PIN(STM32_PORTG, 5)
-#define STM32_PIN_PG6	STM32PIN(STM32_PORTG, 6)
-#define STM32_PIN_PG7	STM32PIN(STM32_PORTG, 7)
-#define STM32_PIN_PG8	STM32PIN(STM32_PORTG, 8)
-#define STM32_PIN_PG9	STM32PIN(STM32_PORTG, 9)
-#define STM32_PIN_PG10  STM32PIN(STM32_PORTG, 10)
-#define STM32_PIN_PG11  STM32PIN(STM32_PORTG, 11)
-#define STM32_PIN_PG12  STM32PIN(STM32_PORTG, 12)
-#define STM32_PIN_PG13  STM32PIN(STM32_PORTG, 13)
-#define STM32_PIN_PG14  STM32PIN(STM32_PORTG, 14)
-#define STM32_PIN_PG15  STM32PIN(STM32_PORTG, 15)
-
-#define STM32_PIN_PH0	STM32PIN(STM32_PORTH, 0)
-#define STM32_PIN_PH1	STM32PIN(STM32_PORTH, 1)
-#define STM32_PIN_PH2	STM32PIN(STM32_PORTH, 2)
-#define STM32_PIN_PH3	STM32PIN(STM32_PORTH, 3)
-#define STM32_PIN_PH4	STM32PIN(STM32_PORTH, 4)
-#define STM32_PIN_PH5	STM32PIN(STM32_PORTH, 5)
-#define STM32_PIN_PH6	STM32PIN(STM32_PORTH, 6)
-#define STM32_PIN_PH7	STM32PIN(STM32_PORTH, 7)
-#define STM32_PIN_PH8	STM32PIN(STM32_PORTH, 8)
-#define STM32_PIN_PH9	STM32PIN(STM32_PORTH, 9)
-#define STM32_PIN_PH10  STM32PIN(STM32_PORTH, 10)
-#define STM32_PIN_PH11  STM32PIN(STM32_PORTH, 11)
-#define STM32_PIN_PH12  STM32PIN(STM32_PORTH, 12)
-#define STM32_PIN_PH13  STM32PIN(STM32_PORTH, 13)
-#define STM32_PIN_PH14  STM32PIN(STM32_PORTH, 14)
-#define STM32_PIN_PH15  STM32PIN(STM32_PORTH, 15)
 
 /* pretend that array will cover pin functions */
 typedef int stm32_pin_func_t;
@@ -223,71 +42,19 @@ struct stm32_pinmux_conf {
 };
 
 /**
- * @brief helper to define pins
- */
-#define STM32_PIN_CONF(__pin, __funcs) \
-	{__pin, __funcs, ARRAY_SIZE(__funcs)}
-
-#define STM32_AF_SHIFT 16
-/**
- * @brief helper for encoding alternate function with pin config mode
- * on stm32_pin_func_t
- */
-#define STM32_AS_AF(__af)			\
-	(__af << STM32_AF_SHIFT)
-
-/**
- * @brief helper for extracting alternate function from stm32_pin_func_t
- */
-#define STM32_AF(__pinconf)			\
-	(__pinconf >> STM32_AF_SHIFT)
-
-/**
- * @brief helper for encoding pin mode on stm32_pin_func_t
- */
-#define STM32_AS_MODE(__mode)			\
-	(__mode)
-
-/**
- * @brief helper for extracting pin mode encoded on stm32_pin_func_t
- */
-#define STM32_MODE(__pinconf)				\
-	(__pinconf & ((1 << STM32_AF_SHIFT) - 1))
-
-/**
- * @brief helper for encoding pin mode and alternate function on
- * stm32_pin_func_t
- */
-#define STM32_PINFUNC(__af, __mode)			\
-	(STM32_AS_AF(__af) | STM32_AS_MODE(__mode))
-
-/**
  * @brief helper to extract IO port number from STM32PIN() encoded
  * value
  */
 #define STM32_PORT(__pin) \
-	(__pin >> 4)
+	((__pin) >> 4)
 
 /**
  * @brief helper to extract IO pin number from STM32PIN() encoded
  * value
  */
 #define STM32_PIN(__pin) \
-	(__pin & 0xf)
+	((__pin) & 0xf)
 
-/**
- * @brief helper for mapping pin function to its configuration
- *
- * @param pin   pin ID encoded with STM32PIN()
- * @param func  alternate function ID
- *
- * Helper function for mapping alternate function for given pin to its
- * configuration. This function must be implemented by SoC integration
- * code.
- *
- * @return SoC specific pin configuration
- */
-int stm32_get_pin_config(int pin, int func);
 
 /**
  * @brief helper for mapping IO port to its clock subsystem

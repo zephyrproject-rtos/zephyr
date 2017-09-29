@@ -5,7 +5,7 @@ Bluetooth: Eddystone
 
 Overview
 ********
-Application demostrating `Eddystone Configuration Service`_
+Application demonstrating `Eddystone Configuration Service`_
 
 The Eddystone Configuration Service runs as a GATT service on the beacon while
 it is connectable and allows configuration of the advertised data, the

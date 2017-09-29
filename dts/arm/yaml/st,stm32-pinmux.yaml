@@ -1,0 +1,28 @@
+---
+title: STM32 PINMUX
+id: st,stm32-pinmux
+version: 0.1
+
+description: >
+    This binding gives a base representation of the STM32 PINMUX
+
+properties:
+  - compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "st,stm32-pinmux"
+
+  - reg:
+      type: int
+      description: mmio register space
+      generation: define
+      category: required
+
+cell_string: PINMUX
+
+"#cells":
+  - pin
+  - function
+
+...

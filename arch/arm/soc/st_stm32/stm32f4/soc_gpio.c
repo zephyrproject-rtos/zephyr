@@ -22,110 +22,6 @@
 #include <gpio.h>
 #include <gpio/gpio_stm32.h>
 
-/**
- * @brief map pin function to MODE register value
- */
-static u32_t __func_to_mode(int func)
-{
-	switch (func) {
-	case STM32F4X_PIN_CONFIG_BIAS_HIGH_IMPEDANCE:
-	case STM32F4X_PIN_CONFIG_BIAS_PULL_UP:
-	case STM32F4X_PIN_CONFIG_BIAS_PULL_DOWN:
-		return 0x0;
-	case STM32F4X_PIN_CONFIG_DRIVE_PUSH_PULL:
-	case STM32F4X_PIN_CONFIG_DRIVE_PUSH_UP:
-	case STM32F4X_PIN_CONFIG_DRIVE_PUSH_DOWN:
-	case STM32F4X_PIN_CONFIG_DRIVE_OPEN_DRAIN:
-	case STM32F4X_PIN_CONFIG_DRIVE_OPEN_UP:
-	case STM32F4X_PIN_CONFIG_DRIVE_OPEN_DOWN:
-		return 0x1;
-	case STM32F4X_PIN_CONFIG_AF_PUSH_PULL:
-	case STM32F4X_PIN_CONFIG_AF_PUSH_UP:
-	case STM32F4X_PIN_CONFIG_AF_PUSH_DOWN:
-	case STM32F4X_PIN_CONFIG_AF_OPEN_DRAIN:
-	case STM32F4X_PIN_CONFIG_AF_OPEN_UP:
-	case STM32F4X_PIN_CONFIG_AF_OPEN_DOWN:
-		return 0x2;
-	case STM32F4X_PIN_CONFIG_ANALOG:
-		return 0x3;
-	}
-
-	return 0;
-}
-
-/**
- * @brief map pin function to OTYPE register value
- */
-static u32_t __func_to_otype(int func)
-{
-	switch (func) {
-	case STM32F4X_PIN_CONFIG_DRIVE_OPEN_DRAIN:
-	case STM32F4X_PIN_CONFIG_DRIVE_OPEN_UP:
-	case STM32F4X_PIN_CONFIG_DRIVE_OPEN_DOWN:
-	case STM32F4X_PIN_CONFIG_AF_OPEN_DRAIN:
-	case STM32F4X_PIN_CONFIG_AF_OPEN_UP:
-	case STM32F4X_PIN_CONFIG_AF_OPEN_DOWN:
-		return 0x1;
-	}
-
-	return 0;
-}
-
-/**
- * @brief map pin function to OSPEED register value
- */
-static u32_t __func_to_ospeed(int func)
-{
-	switch (func) {
-	case STM32F4X_PIN_CONFIG_DRIVE_PUSH_PULL:
-	case STM32F4X_PIN_CONFIG_DRIVE_PUSH_UP:
-	case STM32F4X_PIN_CONFIG_DRIVE_PUSH_DOWN:
-	case STM32F4X_PIN_CONFIG_DRIVE_OPEN_DRAIN:
-	case STM32F4X_PIN_CONFIG_DRIVE_OPEN_UP:
-	case STM32F4X_PIN_CONFIG_DRIVE_OPEN_DOWN:
-	case STM32F4X_PIN_CONFIG_AF_PUSH_PULL:
-	case STM32F4X_PIN_CONFIG_AF_PUSH_UP:
-	case STM32F4X_PIN_CONFIG_AF_PUSH_DOWN:
-	case STM32F4X_PIN_CONFIG_AF_OPEN_DRAIN:
-	case STM32F4X_PIN_CONFIG_AF_OPEN_UP:
-	case STM32F4X_PIN_CONFIG_AF_OPEN_DOWN:
-		/* Force fast speed by default */
-		return 0x2;
-	}
-
-	return 0;
-}
-
-/**
- * @brief map pin function to PUPD register value
- */
-static u32_t __func_to_pupd(int func)
-{
-	switch (func) {
-	case STM32F4X_PIN_CONFIG_DRIVE_PUSH_PULL:
-	case STM32F4X_PIN_CONFIG_DRIVE_OPEN_DRAIN:
-	case STM32F4X_PIN_CONFIG_AF_PUSH_PULL:
-	case STM32F4X_PIN_CONFIG_AF_OPEN_DRAIN:
-	case STM32F4X_PIN_CONFIG_BIAS_HIGH_IMPEDANCE:
-	case STM32F4X_PIN_CONFIG_ANALOG:
-		return 0x0;
-	case STM32F4X_PIN_CONFIG_DRIVE_PUSH_UP:
-	case STM32F4X_PIN_CONFIG_DRIVE_OPEN_UP:
-	case STM32F4X_PIN_CONFIG_AF_PUSH_UP:
-	case STM32F4X_PIN_CONFIG_AF_OPEN_UP:
-	case STM32F4X_PIN_CONFIG_BIAS_PULL_UP:
-		return 0x1;
-	case STM32F4X_PIN_CONFIG_DRIVE_PUSH_DOWN:
-	case STM32F4X_PIN_CONFIG_DRIVE_OPEN_DOWN:
-	case STM32F4X_PIN_CONFIG_AF_PUSH_DOWN:
-	case STM32F4X_PIN_CONFIG_AF_OPEN_DOWN:
-	case STM32F4X_PIN_CONFIG_BIAS_PULL_DOWN:
-		return 0x2;
-	}
-
-	return 0;
-}
-
 
 int stm32_gpio_flags_to_conf(int flags, int *pincfg)
 {
@@ -137,20 +33,18 @@ int stm32_gpio_flags_to_conf(int flags, int *pincfg)
 	}
 
 	if (direction == GPIO_DIR_OUT) {
-		if (pud == GPIO_PUD_PULL_UP) {
-			*pincfg = STM32F4X_PIN_CONFIG_DRIVE_PUSH_UP;
-		} else if (pud == GPIO_PUD_PULL_DOWN) {
-			*pincfg = STM32F4X_PIN_CONFIG_DRIVE_PUSH_DOWN;
-		} else {
-			*pincfg = STM32F4X_PIN_CONFIG_DRIVE_PUSH_PULL;
-		}
+		*pincfg = STM32_MODER_OUTPUT_MODE;
 	} else {
+		/* pull-{up,down} maybe? */
+		*pincfg = STM32_MODER_INPUT_MODE;
+
 		if (pud == GPIO_PUD_PULL_UP) {
-			*pincfg = STM32F4X_PIN_CONFIG_BIAS_PULL_UP;
+			*pincfg = *pincfg | STM32_PUPDR_PULL_UP;
 		} else if (pud == GPIO_PUD_PULL_DOWN) {
-			*pincfg = STM32F4X_PIN_CONFIG_BIAS_PULL_DOWN;
+			*pincfg = *pincfg | STM32_PUPDR_PULL_DOWN;
 		} else {
-			*pincfg = STM32F4X_PIN_CONFIG_BIAS_HIGH_IMPEDANCE;
+			/* floating */
+			*pincfg = *pincfg | STM32_PUPDR_NO_PULL;
 		}
 	}
 
@@ -161,45 +55,31 @@ int stm32_gpio_configure(u32_t *base_addr, int pin, int conf, int altf)
 {
 	volatile struct stm32f4x_gpio *gpio =
 		(struct stm32f4x_gpio *)(base_addr);
-	u32_t mode = __func_to_mode(conf);
-	u32_t otype = __func_to_otype(conf);
-	u32_t ospeed = __func_to_ospeed(conf);
-	u32_t pupd = __func_to_pupd(conf);
-	u32_t tmpreg = 0;
+	unsigned int mode, otype, ospeed, pupd;
+	unsigned int pin_shift = pin << 1;
+	unsigned int afr_bank = pin / 8;
+	unsigned int afr_shift = (pin % 8) << 2;
+	u32_t scratch;
 
-	/* TODO: validate if indeed alternate */
-	if (altf) {
-		/* Set the alternate function */
-		tmpreg = gpio->afr[pin >> 0x3];
-		tmpreg &= ~(0xf << ((pin & 0x07) * 4));
-		tmpreg |= (altf << ((pin & 0x07) * 4));
-		gpio->afr[pin >> 0x3] = tmpreg;
-	}
+	mode = (conf >> STM32_MODER_SHIFT) & STM32_MODER_MASK;
+	otype = (conf >> STM32_OTYPER_SHIFT) & STM32_OTYPER_MASK;
+	ospeed = (conf >> STM32_OSPEEDR_SHIFT) & STM32_OSPEEDR_MASK;
+	pupd = (conf >> STM32_PUPDR_SHIFT) & STM32_PUPDR_MASK;
 
-	/* Set the IO direction mode */
-	tmpreg = gpio->mode;
-	tmpreg &= ~(0x3 << (pin * 2));
-	tmpreg |= (mode << (pin * 2));
-	gpio->mode = tmpreg;
+	scratch = gpio->mode & ~(STM32_MODER_MASK << pin_shift);
+	gpio->mode = scratch | (mode << pin_shift);
 
-	if (otype) {
-		tmpreg = gpio->otype;
-		tmpreg &= ~(0x1 << pin);
-		tmpreg |= (otype << pin);
-		gpio->otype = tmpreg;
-	}
+	scratch = gpio->ospeed & ~(STM32_OSPEEDR_MASK << pin_shift);
+	gpio->ospeed = scratch | (ospeed << pin_shift);
 
-	if (ospeed) {
-		tmpreg = gpio->ospeed;
-		tmpreg &= ~(0x3 << (pin * 2));
-		tmpreg |= (ospeed << (pin * 2));
-		gpio->ospeed = tmpreg;
-	}
+	scratch = gpio->otype & ~(STM32_OTYPER_MASK << pin);
+	gpio->otype = scratch | (otype << pin);
 
-	tmpreg = gpio->pupdr;
-	tmpreg &= ~(0x3 << (pin * 2));
-	tmpreg |= (pupd << (pin * 2));
-	gpio->pupdr = tmpreg;
+	scratch = gpio->pupdr & ~(STM32_PUPDR_MASK << pin_shift);
+	gpio->pupdr = scratch | (pupd << pin_shift);
+
+	scratch = gpio->afr[afr_bank] & ~(STM32_AFR_MASK << afr_shift);
+	gpio->afr[afr_bank] = scratch | (altf << afr_shift);
 
 	return 0;
 }

@@ -6,8 +6,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menu "x86 Core Options"
-
 config NESTED_INTERRUPTS
 	bool
 	prompt "Enable nested interrupts"
@@ -50,17 +48,21 @@ config MAX_IRQ_LINES
 	to program to the PIC the association between vectors and
 	interrupts.
 
+if !HAS_DTS
 config PHYS_LOAD_ADDR
 	hex "Physical load address"
 	# Default value must be supplied by platform
 	help
 	This option specifies the physical address where the kernel is loaded.
+endif
 
+if !HAS_DTS
 config PHYS_RAM_ADDR
 	hex "Physical RAM address"
 	# Default value must be supplied by platform
 	help
 	This option specifies the physical RAM address of the selected SoC.
+endif
 
 config RAM_SIZE
 	int "Amount of RAM given to the kernel (in kB)"
@@ -101,15 +103,5 @@ config GDT_DYNAMIC
 	help
 	This option stores the GDT in RAM instead of ROM, so that it may
 	be modified at runtime at the expense of some memory.
-
-config DEBUG_IRQS
-	bool
-	prompt "Extra interrupt debugging functionality"
-	default n
-	help
-	Enable additional debugging services for interrupts. May nontrivially
-	increase ROM size, so use only when you need it.
-
-endmenu
 
 endmenu

@@ -24,7 +24,7 @@
 #include <board.h>
 #include <init.h>
 #include <uart.h>
-#include <sections.h>
+#include <linker/sections.h>
 
 /* UART registers struct */
 struct _uart {
@@ -142,11 +142,14 @@ static void baudrate_set(struct device *dev,
  * This routine is called to reset the chip in a quiescent state.
  * It is assumed that this function is called only once per UART.
  *
+ * @deprecated This driver will be deprecated. Please use uart_sam.c,
+ *             SAM family driver instead.
+ *
  * @param dev UART device struct
  *
  * @return 0
  */
-static int uart_sam3_init(struct device *dev)
+static int __deprecated uart_sam3_init(struct device *dev)
 {
 	volatile struct _uart *uart = UART_STRUCT(dev);
 

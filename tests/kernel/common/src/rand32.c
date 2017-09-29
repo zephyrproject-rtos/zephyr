@@ -48,7 +48,7 @@ void rand32_test(void)
 	}
 	for (i = 1; i <  N_VALUES; i++) {
 		zassert_false((rnd_values[i - 1] == rnd_values[i]),
-			     "random number subsequent calls return same value");
+			      "random number subsequent calls return same value");
 	}
 
 }

@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2017, embedjournal.com
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/stm32f103Xb.dtsi>
+
+/ {
+	model = "STM32 Minimum Development Board";
+	compatible = "st,stm32_min_dev", "st,stm32f103rb";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
+
+&usart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart1_pins_a>;
+	pinctrl-names = "default";
+	status = "ok";
+};
+
+&usart2 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart2_pins_a>;
+	pinctrl-names = "default";
+};
+
+&usart3 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart3_pins_a>;
+	pinctrl-names = "default";
+};

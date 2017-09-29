@@ -1,0 +1,4 @@
+tests:
+-   test:
+        arch_exclude: arm
+        tags: core bat_commit

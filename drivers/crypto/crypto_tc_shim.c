@@ -105,9 +105,9 @@ static int do_ccm_encrypt_mac(struct cipher_ctx *ctx,
 		return -EIO;
 	}
 
-	if (tc_ccm_generation_encryption(op->out_buf, aead_op->ad,
-					 aead_op->ad_len, op->in_buf,
-					  op->in_len, &ccm) == TC_CRYPTO_FAIL) {
+	if (tc_ccm_generation_encryption(op->out_buf, op->out_buf_max,
+					 aead_op->ad, aead_op->ad_len, op->in_buf,
+					 op->in_len, &ccm) == TC_CRYPTO_FAIL) {
 		SYS_LOG_ERR("TC internal error during CCM Encryption OP");
 		return -EIO;
 	}
@@ -146,10 +146,11 @@ static int do_ccm_decrypt_auth(struct cipher_ctx *ctx,
 		return -EIO;
 	}
 
-	if (tc_ccm_decryption_verification(op->out_buf, aead_op->ad,
-					   aead_op->ad_len, op->in_buf,
+	if (tc_ccm_decryption_verification(op->out_buf, op->out_buf_max,
+					   aead_op->ad, aead_op->ad_len,
+					   op->in_buf,
 					   op->in_len + ccm_param->tag_len,
-					    &ccm) == TC_CRYPTO_FAIL) {
+					   &ccm) == TC_CRYPTO_FAIL) {
 		SYS_LOG_ERR("TC internal error during CCM decryption OP");
 		return -EIO;
 	}

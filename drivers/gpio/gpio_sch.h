@@ -33,7 +33,7 @@ struct gpio_sch_config {
 #define GPIO_SCH_POLLING_MSEC		200
 
 struct gpio_sch_data {
-	char __stack polling_stack[GPIO_SCH_POLLING_STACK_SIZE];
+	K_THREAD_STACK_MEMBER(polling_stack, GPIO_SCH_POLLING_STACK_SIZE);
 	struct k_thread polling_thread;
 	sys_slist_t callbacks;
 	struct k_timer poll_timer;

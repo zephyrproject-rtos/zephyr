@@ -1,0 +1,4 @@
+tests:
+-   test:
+        min_ram: 20
+        tags: crypto sha256 hmac

@@ -229,8 +229,7 @@ static int aon_timer_init(struct device *dev)
 	QM_IR_UNMASK_INTERRUPTS(QM_INTERRUPT_ROUTER->aonpt_0_int_mask);
 
 	if (IS_ENABLED(CONFIG_AON_API_REENTRANCY)) {
-		k_sem_init(RP_GET(dev), 0, UINT_MAX);
-		k_sem_give(RP_GET(dev));
+		k_sem_init(RP_GET(dev), 1, UINT_MAX);
 	}
 
 	aonpt_qmsi_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
