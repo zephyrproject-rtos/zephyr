@@ -265,10 +265,15 @@ struct sensor_driver_api {
  *
  * @return 0 if successful, negative errno code if failure.
  */
-static inline int sensor_attr_set(struct device *dev,
-				  enum sensor_channel chan,
-				  enum sensor_attribute attr,
-				  const struct sensor_value *val)
+__syscall int sensor_attr_set(struct device *dev,
+			      enum sensor_channel chan,
+			      enum sensor_attribute attr,
+			      const struct sensor_value *val);
+
+static inline int _impl_sensor_attr_set(struct device *dev,
+					enum sensor_channel chan,
+					enum sensor_attribute attr,
+					const struct sensor_value *val)
 {
 	const struct sensor_driver_api *api = dev->driver_api;
 
@@ -286,6 +291,8 @@ static inline int sensor_attr_set(struct device *dev,
  * safe.  However, the fiber's stack is limited and defined by the
  * driver.  It is currently up to the caller to ensure that the handler
  * does not overflow the stack.
+ *
+ * This API is not permitted for user threads.
  *
  * @param dev Pointer to the sensor device
  * @param trig The trigger to activate
@@ -323,7 +330,9 @@ static inline int sensor_trigger_set(struct device *dev,
  *
  * @return 0 if successful, negative errno code if failure.
  */
-static inline int sensor_sample_fetch(struct device *dev)
+__syscall int sensor_sample_fetch(struct device *dev);
+
+static inline int _impl_sensor_sample_fetch(struct device *dev)
 {
 	const struct sensor_driver_api *api = dev->driver_api;
 
@@ -349,8 +358,11 @@ static inline int sensor_sample_fetch(struct device *dev)
  *
  * @return 0 if successful, negative errno code if failure.
  */
-static inline int sensor_sample_fetch_chan(struct device *dev,
-					   enum sensor_channel type)
+__syscall int sensor_sample_fetch_chan(struct device *dev,
+				       enum sensor_channel type);
+
+static inline int _impl_sensor_sample_fetch_chan(struct device *dev,
+						 enum sensor_channel type)
 {
 	const struct sensor_driver_api *api = dev->driver_api;
 
@@ -378,9 +390,13 @@ static inline int sensor_sample_fetch_chan(struct device *dev,
  *
  * @return 0 if successful, negative errno code if failure.
  */
-static inline int sensor_channel_get(struct device *dev,
-				     enum sensor_channel chan,
-				     struct sensor_value *val)
+__syscall int sensor_channel_get(struct device *dev,
+				 enum sensor_channel chan,
+				 struct sensor_value *val);
+
+static inline int _impl_sensor_channel_get(struct device *dev,
+					   enum sensor_channel chan,
+					   struct sensor_value *val)
 {
 	const struct sensor_driver_api *api = dev->driver_api;
 
@@ -469,6 +485,7 @@ static inline double sensor_value_to_double(struct sensor_value *val)
 	return (double)val->val1 + (double)val->val2 / 1000000;
 }
 
+#include <syscalls/sensor.h>
 
 #ifdef __cplusplus
 }
