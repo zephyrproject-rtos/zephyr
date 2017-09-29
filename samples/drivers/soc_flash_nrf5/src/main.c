@@ -185,4 +185,8 @@ void main(void)
 	       flash_get_page_count(flash_dev));
 
 #endif
+
+	printf("\nTest 8: Write block size API\n");
+	printf("   write-block-size = %u\n",
+	       flash_get_write_block_size(flash_dev));
 }
