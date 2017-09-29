@@ -1125,7 +1125,8 @@ int bt_mesh_net_decode(struct net_buf_simple *data, enum bt_mesh_net_if net_if,
 
 	BT_DBG("Decryption successful. Payload len %u", buf->len);
 
-	if (rx->dst == BT_MESH_ADDR_UNASSIGNED) {
+	if (net_if != BT_MESH_NET_IF_PROXY_CFG &&
+	    rx->dst == BT_MESH_ADDR_UNASSIGNED) {
 		BT_ERR("Destination address is unassigned; dropping packet");
 		return -EBADMSG;
 	}
