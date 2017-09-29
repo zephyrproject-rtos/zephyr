@@ -243,6 +243,11 @@ static void setup_ipv6(struct net_if *iface, u32_t flags)
 		}
 	}
 
+#if !defined(CONFIG_NET_IPV6_DAD)
+	k_sem_take(&counter, K_NO_WAIT);
+	k_sem_give(&waiter);
+#endif
+
 	return;
 }
 
