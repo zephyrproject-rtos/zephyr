@@ -81,8 +81,11 @@ struct eth_context {
 	 * in Zephyr, and adding needed interface to MCUX (or
 	 * bypassing it and writing a more complex driver working
 	 * directly with hardware).
+	 *
+	 * Note that we do not copy FCS into this buffer thus the
+	 * size is 1514 bytes.
 	 */
-	u8_t frame_buf[1500];
+	u8_t frame_buf[1500 + 14]; /* Max MTU + ethernet header size */
 };
 
 static void eth_0_config_func(void);
