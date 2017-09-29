@@ -346,7 +346,9 @@ breathe_default_project = "Zephyr"
 # Error when parsing function declaration and more.  This is a list
 # of strings that the parser additionally should accept as
 # attributes.
-cpp_id_attributes = ['__syscall', '__syscall_inline', '__deprecated' ]
+cpp_id_attributes = ['__syscall', '__syscall_inline', '__deprecated',
+    '__may_alias', '__used', '__unused', '__weak',
+    '__DEPRECATED_MACRO', 'FUNC_NORETURN' ]
 
 # docs_title is used in the breadcrumb title in the zephyr docs theme
 html_context = {
