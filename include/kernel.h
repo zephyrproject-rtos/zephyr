@@ -2505,9 +2505,8 @@ struct k_sem {
  *
  * @return N/A
  */
-__syscall static inline void k_sem_init(struct k_sem *sem,
-					unsigned int initial_count,
-					unsigned int limit);
+__syscall void k_sem_init(struct k_sem *sem, unsigned int initial_count,
+			  unsigned int limit);
 
 /**
  * @brief Take a semaphore.
@@ -2530,7 +2529,7 @@ __syscall static inline void k_sem_init(struct k_sem *sem,
  * @retval -EBUSY Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
  */
-__syscall static inline int k_sem_take(struct k_sem *sem, s32_t timeout);
+__syscall int k_sem_take(struct k_sem *sem, s32_t timeout);
 
 /**
  * @brief Give a semaphore.
@@ -2544,7 +2543,7 @@ __syscall static inline int k_sem_take(struct k_sem *sem, s32_t timeout);
  *
  * @return N/A
  */
-__syscall static inline void k_sem_give(struct k_sem *sem);
+__syscall void k_sem_give(struct k_sem *sem);
 
 /**
  * @brief Reset a semaphore's count to zero.
@@ -2555,7 +2554,7 @@ __syscall static inline void k_sem_give(struct k_sem *sem);
  *
  * @return N/A
  */
-__syscall_inline static inline void k_sem_reset(struct k_sem *sem);
+__syscall_inline void k_sem_reset(struct k_sem *sem);
 
 static inline void _impl_k_sem_reset(struct k_sem *sem)
 {
@@ -2571,7 +2570,7 @@ static inline void _impl_k_sem_reset(struct k_sem *sem)
  *
  * @return Current semaphore count.
  */
-__syscall_inline static inline unsigned int k_sem_count_get(struct k_sem *sem);
+__syscall_inline unsigned int k_sem_count_get(struct k_sem *sem);
 
 static inline unsigned int _impl_k_sem_count_get(struct k_sem *sem)
 {

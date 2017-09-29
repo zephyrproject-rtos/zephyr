@@ -12,7 +12,6 @@ import os
 
 api_regex = re.compile(r'''
 __(syscall|syscall_inline)\s+   # __syscall or __syscall_inline
-static\s+inline\s+              # All prototypes are static inline functions
 ([^(]+)                         # type and name of system call (split later)
 [(]                             # Function opening parenthesis
 ([^)]*)                         # Arg list (split later)
@@ -33,7 +32,11 @@ def typename_split(item):
     if "(" in item:
         raise SyscallParseException("Please use typedefs for function pointers")
 
-    m = typename_regex.match(item).groups()
+    mo = typename_regex.match(item)
+    if not mo:
+        raise SyscallParseException("Malformed system call invocation")
+
+    m = mo.groups()
     return (m[0].strip(), m[1])
 
 
@@ -84,10 +87,14 @@ def analyze_headers(base_path):
 
     for root, dirs, files in os.walk(base_path):
         for fn in files:
-            if not fn.endswith(".h"):
+
+            # toolchain/common.h has the definition of __syscall which we
+            # don't want to trip over
+            path = os.path.join(root, fn)
+            if not fn.endswith(".h") or path.endswith("toolchain/common.h"):
                 continue
 
-            with open(os.path.join(root, fn)) as fp:
+            with open(path, "r") as fp:
                 try:
                     result = [analyze_fn(mo.groups(), fn)
                               for mo in api_regex.finditer(fp.read())]
