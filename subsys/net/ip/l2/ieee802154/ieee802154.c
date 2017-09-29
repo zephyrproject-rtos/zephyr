@@ -31,7 +31,7 @@
 #include "ieee802154_security.h"
 #include "ieee802154_utils.h"
 
-#if 0
+#ifdef CONFIG_NET_DEBUG_L2_IEEE802154_DISPLAY_PACKET
 
 #include "net_private.h"
 
@@ -42,7 +42,7 @@ static inline void pkt_hexdump(struct net_pkt *pkt, bool full)
 
 #else
 #define pkt_hexdump(...)
-#endif
+#endif /* CONFIG_NET_DEBUG_L2_IEEE802154_DISPLAY_PACKET */
 
 #ifdef CONFIG_NET_L2_IEEE802154_ACK_REPLY
 static inline void ieee802154_acknowledge(struct net_if *iface,

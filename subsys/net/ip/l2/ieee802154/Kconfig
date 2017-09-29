@@ -28,6 +28,14 @@ config NET_DEBUG_L2_IEEE802154
 	  Enable it if you want to see what's happening. Only useful
 	  for developers.
 
+config NET_DEBUG_L2_IEEE802154_DISPLAY_PACKET
+	bool "Enable IEEE 802.15.4 packet display"
+	default n
+	depends on NET_DEBUG_L2_IEEE802154
+	help
+	  Enable printing out in/out 802.15.4 packets. This is extremely
+	  verbose, do not enable this unless you know what you are doing.
+
 config NET_L2_IEEE802154_ACK_REPLY
 	bool "Enable IEEE 802.15.4 ACK reply logic"
 	default n
