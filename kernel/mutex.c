@@ -35,6 +35,7 @@
 #include <debug/object_tracing_common.h>
 #include <errno.h>
 #include <init.h>
+#include <syscall_handler.h>
 
 #define RECORD_STATE_CHANGE(mutex) do { } while ((0))
 #define RECORD_CONFLICT(mutex) do { } while ((0))
@@ -66,7 +67,7 @@ SYS_INIT(init_mutex_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 #endif /* CONFIG_OBJECT_TRACING */
 
-void k_mutex_init(struct k_mutex *mutex)
+void _impl_k_mutex_init(struct k_mutex *mutex)
 {
 	mutex->owner = NULL;
 	mutex->lock_count = 0;
@@ -79,6 +80,19 @@ void k_mutex_init(struct k_mutex *mutex)
 	SYS_TRACING_OBJ_INIT(k_mutex, mutex);
 	_k_object_init(mutex);
 }
+
+#ifdef CONFIG_USERSPACE
+u32_t _handler_k_mutex_init(u32_t mutex, u32_t arg2, u32_t arg3,
+			    u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+{
+	_SYSCALL_ARG1;
+
+	_SYSCALL_IS_OBJ(mutex, K_OBJ_MUTEX, 1, ssf);
+	_impl_k_mutex_init((struct k_mutex *)mutex);
+
+	return 0;
+}
+#endif
 
 static int new_prio_for_inheritance(int target, int limit)
 {
@@ -102,7 +116,7 @@ static void adjust_owner_prio(struct k_mutex *mutex, int new_prio)
 	}
 }
 
-int k_mutex_lock(struct k_mutex *mutex, s32_t timeout)
+int _impl_k_mutex_lock(struct k_mutex *mutex, s32_t timeout)
 {
 	int new_prio, key;
 
@@ -188,7 +202,18 @@ int k_mutex_lock(struct k_mutex *mutex, s32_t timeout)
 	return -EAGAIN;
 }
 
-void k_mutex_unlock(struct k_mutex *mutex)
+#ifdef CONFIG_USERSPACE
+u32_t _handler_k_mutex_lock(u32_t mutex, u32_t timeout, u32_t arg3,
+			    u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+{
+	_SYSCALL_ARG2;
+
+	_SYSCALL_IS_OBJ(mutex, K_OBJ_MUTEX, 0, ssf);
+	return _impl_k_mutex_lock((struct k_mutex *)mutex, (s32_t)timeout);
+}
+#endif
+
+void _impl_k_mutex_unlock(struct k_mutex *mutex)
 {
 	int key;
 
@@ -240,3 +265,15 @@ void k_mutex_unlock(struct k_mutex *mutex)
 
 	k_sched_unlock();
 }
+
+#ifdef CONFIG_USERSPACE
+u32_t _handler_k_mutex_unlock(u32_t mutex, u32_t arg2, u32_t arg3,
+			      u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+{
+	_SYSCALL_ARG1;
+
+	_SYSCALL_IS_OBJ(mutex, K_OBJ_MUTEX, 0, ssf);
+	_impl_k_mutex_unlock((struct k_mutex *)mutex);
+	return 0;
+}
+#endif
