@@ -19,11 +19,12 @@
 #include <wait_q.h>
 #include <ksched.h>
 #include <misc/__assert.h>
+#include <syscall_handler.h>
 
 extern void _k_thread_single_abort(struct k_thread *thread);
 
 #if !defined(CONFIG_ARCH_HAS_THREAD_ABORT)
-void k_thread_abort(k_tid_t thread)
+void _impl_k_thread_abort(k_tid_t thread)
 {
 	unsigned int key;
 
@@ -42,5 +43,18 @@ void k_thread_abort(k_tid_t thread)
 
 	/* The abort handler might have altered the ready queue. */
 	_reschedule_threads(key);
+}
+#endif
+
+#ifdef CONFIG_USERSPACE
+u32_t _handler_k_thread_abort(u32_t thread_p, u32_t arg2, u32_t arg3,
+			      u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+{
+	struct k_thread *thread = (struct k_thread *)thread_p;
+	_SYSCALL_IS_OBJ(thread, K_OBJ_THREAD, 0, ssf);
+	_SYSCALL_VERIFY(!(thread->base.user_options & K_ESSENTIAL), ssf);
+
+	_impl_k_thread_abort((struct k_thread *)thread);
+	return 0;
 }
 #endif

@@ -620,7 +620,7 @@ extern void k_busy_wait(u32_t usec_to_wait);
  *
  * @return N/A
  */
-extern void k_yield(void);
+__syscall void k_yield(void);
 
 /**
  * @brief Wake up a sleeping thread.
@@ -633,7 +633,7 @@ extern void k_yield(void);
  *
  * @return N/A
  */
-extern void k_wakeup(k_tid_t thread);
+__syscall void k_wakeup(k_tid_t thread);
 
 /**
  * @brief Get thread ID of the current thread.
@@ -653,7 +653,7 @@ __syscall k_tid_t k_current_get(void);
  * @retval 0 Thread spawning canceled.
  * @retval -EINVAL Thread has already started executing.
  */
-extern int k_thread_cancel(k_tid_t thread);
+__syscall int k_thread_cancel(k_tid_t thread);
 
 /**
  * @brief Abort a thread.
@@ -669,7 +669,7 @@ extern int k_thread_cancel(k_tid_t thread);
  *
  * @return N/A
  */
-extern void k_thread_abort(k_tid_t thread);
+__syscall void k_thread_abort(k_tid_t thread);
 
 
 /**
@@ -681,7 +681,7 @@ extern void k_thread_abort(k_tid_t thread);
  *
  * @param thread thread to start
  */
-extern void k_thread_start(k_tid_t thread);
+__syscall void k_thread_start(k_tid_t thread);
 
 /**
  * @cond INTERNAL_HIDDEN
@@ -808,7 +808,7 @@ __syscall int k_thread_priority_get(k_tid_t thread);
  *
  * @return N/A
  */
-extern void k_thread_priority_set(k_tid_t thread, int prio);
+__syscall void k_thread_priority_set(k_tid_t thread, int prio);
 
 /**
  * @brief Suspend a thread.
@@ -824,7 +824,7 @@ extern void k_thread_priority_set(k_tid_t thread, int prio);
  *
  * @return N/A
  */
-extern void k_thread_suspend(k_tid_t thread);
+__syscall void k_thread_suspend(k_tid_t thread);
 
 /**
  * @brief Resume a suspended thread.
@@ -838,7 +838,7 @@ extern void k_thread_suspend(k_tid_t thread);
  *
  * @return N/A
  */
-extern void k_thread_resume(k_tid_t thread);
+__syscall void k_thread_resume(k_tid_t thread);
 
 /**
  * @brief Set time-slicing period and scope.
@@ -908,7 +908,7 @@ extern int k_is_in_isr(void);
  * @return 0 if invoked by an ISR or by a cooperative thread.
  * @return Non-zero if invoked by a preemptible thread.
  */
-extern int k_is_preempt_thread(void);
+__syscall int k_is_preempt_thread(void);
 
 /**
  * @} end addtogroup isr_apis
@@ -963,7 +963,7 @@ extern void k_sched_unlock(void);
  *
  * @return N/A
  */
-extern void k_thread_custom_data_set(void *value);
+__syscall void k_thread_custom_data_set(void *value);
 
 /**
  * @brief Get current thread's custom data.
@@ -972,7 +972,7 @@ extern void k_thread_custom_data_set(void *value);
  *
  * @return Current custom data value.
  */
-extern void *k_thread_custom_data_get(void);
+__syscall void *k_thread_custom_data_get(void);
 
 /**
  * @} end addtogroup thread_apis
