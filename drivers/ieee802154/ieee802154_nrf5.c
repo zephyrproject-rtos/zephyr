@@ -39,6 +39,8 @@ struct nrf5_802154_config {
 
 static struct nrf5_802154_data nrf5_data;
 
+#define ACK_TIMEOUT K_MSEC(10)
+
 /* Convenience defines for RADIO */
 #define NRF5_802154_DATA(dev) \
 	((struct nrf5_802154_data * const)(dev)->driver_data)
@@ -56,7 +58,6 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 	struct device *dev = (struct device *)arg1;
 	struct nrf5_802154_data *nrf5_radio = NRF5_802154_DATA(dev);
 	struct net_buf *frag = NULL;
-	enum net_verdict ack_result;
 	struct net_pkt *pkt;
 	u8_t pkt_len;
 
@@ -111,13 +112,6 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 
 		nrf_drv_radio802154_buffer_free(nrf5_radio->rx_psdu);
 
-		ack_result = ieee802154_radio_handle_ack(nrf5_radio->iface,
-							 pkt);
-		if (ack_result == NET_OK) {
-			SYS_LOG_DBG("ACK packet handled");
-			goto out;
-		}
-
 		SYS_LOG_DBG("Caught a packet (%u) (LQI: %u)",
 			    pkt_len, nrf5_radio->lqi);
 
@@ -144,6 +138,7 @@ static enum ieee802154_hw_caps nrf5_get_capabilities(struct device *dev)
 {
 	return IEEE802154_HW_FCS |
 		IEEE802154_HW_2_4_GHZ |
+		IEEE802154_HW_TX_RX_ACK |
 		IEEE802154_HW_FILTER;
 }
 
@@ -272,6 +267,9 @@ static int nrf5_tx(struct device *dev,
 
 	memcpy(nrf5_radio->tx_psdu + 1, payload, payload_len);
 
+	/* Reset semaphore in case ACK was received after timeout */
+	k_sem_reset(&nrf5_radio->tx_wait);
+
 	if (!nrf_drv_radio802154_transmit(nrf5_radio->tx_psdu,
 					  nrf5_radio->channel,
 					  nrf5_radio->txpower)) {
@@ -283,12 +281,13 @@ static int nrf5_tx(struct device *dev,
 		    nrf5_radio->channel,
 		    nrf5_radio->txpower);
 
-	/* The nRF driver guarantees that either
-	 * nrf_drv_radio802154_transmitted() or
-	 * nrf_drv_radio802154_energy_detected()
-	 * callback is called, thus unlocking the semaphore.
-	 */
-	k_sem_take(&nrf5_radio->tx_wait, K_FOREVER);
+	/* Wait for ack to be received */
+	if (k_sem_take(&nrf5_radio->tx_wait, ACK_TIMEOUT)) {
+		SYS_LOG_DBG("ACK not received");
+		nrf_drv_radio802154_receive(nrf5_radio->channel, true);
+
+		return -EIO;
+	}
 
 	SYS_LOG_DBG("Result: %d", nrf5_data.tx_success);
 
