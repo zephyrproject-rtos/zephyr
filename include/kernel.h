@@ -2032,8 +2032,8 @@ struct k_stack {
  *
  * @return N/A
  */
-extern void k_stack_init(struct k_stack *stack,
-			 u32_t *buffer, int num_entries);
+__syscall void k_stack_init(struct k_stack *stack,
+			    u32_t *buffer, int num_entries);
 
 /**
  * @brief Push an element onto a stack.
@@ -2047,7 +2047,7 @@ extern void k_stack_init(struct k_stack *stack,
  *
  * @return N/A
  */
-extern void k_stack_push(struct k_stack *stack, u32_t data);
+__syscall void k_stack_push(struct k_stack *stack, u32_t data);
 
 /**
  * @brief Pop an element from a stack.
@@ -2066,7 +2066,7 @@ extern void k_stack_push(struct k_stack *stack, u32_t data);
  * @retval -EBUSY Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
  */
-extern int k_stack_pop(struct k_stack *stack, u32_t *data, s32_t timeout);
+__syscall int k_stack_pop(struct k_stack *stack, u32_t *data, s32_t timeout);
 
 /**
  * @brief Statically define and initialize a stack

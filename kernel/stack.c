@@ -17,6 +17,7 @@
 #include <wait_q.h>
 #include <misc/__assert.h>
 #include <init.h>
+#include <syscall_handler.h>
 
 extern struct k_stack _k_stack_list_start[];
 extern struct k_stack _k_stack_list_end[];
@@ -44,7 +45,7 @@ SYS_INIT(init_stack_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 #endif /* CONFIG_OBJECT_TRACING */
 
-void k_stack_init(struct k_stack *stack, u32_t *buffer, int num_entries)
+void _impl_k_stack_init(struct k_stack *stack, u32_t *buffer, int num_entries)
 {
 	sys_dlist_init(&stack->wait_q);
 	stack->next = stack->base = buffer;
@@ -54,7 +55,24 @@ void k_stack_init(struct k_stack *stack, u32_t *buffer, int num_entries)
 	_k_object_init(stack);
 }
 
-void k_stack_push(struct k_stack *stack, u32_t data)
+#ifdef CONFIG_USERSPACE
+u32_t _handler_k_stack_init(u32_t stack, u32_t buffer, u32_t num_entries_p,
+			    u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+{
+	int num_entries = (int)num_entries_p;
+
+	/* FIXME why is 'num_entries' signed?? */
+	_SYSCALL_VERIFY(num_entries > 0, ssf);
+	_SYSCALL_IS_OBJ(stack, K_OBJ_STACK, 1, ssf);
+	_SYSCALL_MEMORY(buffer, num_entries * sizeof(u32_t), 1, ssf);
+
+	_impl_k_stack_init((struct k_stack *)stack, (u32_t *)buffer,
+			   num_entries);
+	return 0;
+}
+#endif
+
+void _impl_k_stack_push(struct k_stack *stack, u32_t data)
 {
 	struct k_thread *first_pending_thread;
 	unsigned int key;
@@ -84,7 +102,22 @@ void k_stack_push(struct k_stack *stack, u32_t data)
 	irq_unlock(key);
 }
 
-int k_stack_pop(struct k_stack *stack, u32_t *data, s32_t timeout)
+#ifdef CONFIG_USERSPACE
+u32_t _handler_k_stack_push(u32_t stack_p, u32_t data, u32_t arg3,
+			    u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+{
+	struct k_stack *stack = (struct k_stack *)stack_p;
+	_SYSCALL_ARG2;
+
+	_SYSCALL_IS_OBJ(stack, K_OBJ_STACK, 0, ssf);
+	_SYSCALL_VERIFY(stack->next != stack->top, ssf);
+
+	_impl_k_stack_push(stack, data);
+	return 0;
+}
+#endif
+
+int _impl_k_stack_pop(struct k_stack *stack, u32_t *data, s32_t timeout)
 {
 	unsigned int key;
 	int result;
@@ -111,3 +144,18 @@ int k_stack_pop(struct k_stack *stack, u32_t *data, s32_t timeout)
 	}
 	return result;
 }
+
+#ifdef CONFIG_USERSPACE
+u32_t _handler_k_stack_pop(u32_t stack, u32_t data, u32_t timeout,
+			   u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+{
+	_SYSCALL_ARG3;
+
+	_SYSCALL_IS_OBJ(stack, K_OBJ_STACK, 0, ssf);
+	_SYSCALL_MEMORY(data, sizeof(u32_t), 1, ssf);
+
+	return _impl_k_stack_pop((struct k_stack *)stack, (u32_t *)data,
+				 timeout);
+
+}
+#endif
