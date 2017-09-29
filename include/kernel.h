@@ -3239,8 +3239,8 @@ struct k_pipe {
  *
  * @return N/A
  */
-extern void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer,
-			size_t size);
+__syscall void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer,
+			   size_t size);
 
 /**
  * @brief Write data to a pipe.
@@ -3261,9 +3261,9 @@ extern void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer,
  * @retval -EAGAIN Waiting period timed out; between zero and @a min_xfer
  *                 minus one data bytes were written.
  */
-extern int k_pipe_put(struct k_pipe *pipe, void *data,
-		      size_t bytes_to_write, size_t *bytes_written,
-		      size_t min_xfer, s32_t timeout);
+__syscall int k_pipe_put(struct k_pipe *pipe, void *data,
+			 size_t bytes_to_write, size_t *bytes_written,
+			 size_t min_xfer, s32_t timeout);
 
 /**
  * @brief Read data from a pipe.
@@ -3284,9 +3284,9 @@ extern int k_pipe_put(struct k_pipe *pipe, void *data,
  * @retval -EAGAIN Waiting period timed out; between zero and @a min_xfer
  *                 minus one data bytes were read.
  */
-extern int k_pipe_get(struct k_pipe *pipe, void *data,
-		      size_t bytes_to_read, size_t *bytes_read,
-		      size_t min_xfer, s32_t timeout);
+__syscall int k_pipe_get(struct k_pipe *pipe, void *data,
+			 size_t bytes_to_read, size_t *bytes_read,
+			 size_t min_xfer, s32_t timeout);
 
 /**
  * @brief Write memory block to a pipe.
