@@ -71,7 +71,7 @@ static void bt_ready(int err)
 
 	printk("Bluetooth initialized\n");
 
-	hrs_init(0x01);
+	bt_hrs_register(0x01, NULL);
 	bt_bas_register(100, NULL);
 	bt_dis_register(CONFIG_SOC, "Manufacturer");
 
@@ -118,7 +118,7 @@ void main(void)
 		k_sleep(MSEC_PER_SEC);
 
 		/* Heartrate measurements simulation */
-		hrs_notify();
+		bt_hrs_simulate();
 
 		/* Battery level simulation */
 		bt_bas_simulate();
