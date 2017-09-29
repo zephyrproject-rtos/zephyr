@@ -278,7 +278,7 @@ u32_t _handler_k_thread_priority_get(u32_t arg1, u32_t arg2, u32_t arg3,
 }
 #endif
 
-void k_thread_priority_set(k_tid_t tid, int prio)
+void _impl_k_thread_priority_set(k_tid_t tid, int prio)
 {
 	/*
 	 * Use NULL, since we cannot know what the entry point is (we do not
@@ -293,6 +293,20 @@ void k_thread_priority_set(k_tid_t tid, int prio)
 	_thread_priority_set(thread, prio);
 	_reschedule_threads(key);
 }
+
+#ifdef CONFIG_USERSPACE
+u32_t _handler_k_thread_priority_set(u32_t thread, u32_t prio, u32_t arg3,
+				     u32_t arg4, u32_t arg5, u32_t arg6,
+				     void *ssf)
+{
+	_SYSCALL_ARG2;
+
+	_SYSCALL_IS_OBJ(thread, K_OBJ_THREAD, 0, ssf);
+	_SYSCALL_VERIFY(_VALID_PRIO(prio, NULL), ssf);
+	_impl_k_thread_priority_set((k_tid_t)thread, prio);
+	return 0;
+}
+#endif
 
 /*
  * Interrupts must be locked when calling this function.
@@ -320,7 +334,7 @@ void _move_thread_to_end_of_prio_q(struct k_thread *thread)
 #endif
 }
 
-void k_yield(void)
+void _impl_k_yield(void)
 {
 	__ASSERT(!_is_in_isr(), "");
 
@@ -337,6 +351,17 @@ void k_yield(void)
 		_Swap(key);
 	}
 }
+
+#ifdef CONFIG_USERSPACE
+u32_t _handler_k_yield(u32_t arg1, u32_t arg2, u32_t arg3,
+		       u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+{
+	_SYSCALL_ARG0;
+
+	_impl_k_yield();
+	return 0;
+}
+#endif
 
 void _impl_k_sleep(s32_t duration)
 {
@@ -381,7 +406,7 @@ u32_t _handler_k_sleep(u32_t arg1, u32_t arg2, u32_t arg3,
 }
 #endif
 
-void k_wakeup(k_tid_t thread)
+void _impl_k_wakeup(k_tid_t thread)
 {
 	int key = irq_lock();
 
@@ -404,6 +429,18 @@ void k_wakeup(k_tid_t thread)
 		_reschedule_threads(key);
 	}
 }
+
+#ifdef CONFIG_USERSPACE
+u32_t _handler_k_wakeup(u32_t thread, u32_t arg2, u32_t arg3,
+			u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+{
+	_SYSCALL_ARG1;
+
+	_SYSCALL_IS_OBJ(thread, K_OBJ_THREAD, 0, ssf);
+	_impl_k_wakeup((k_tid_t)thread);
+	return 0;
+}
+#endif
 
 k_tid_t _impl_k_current_get(void)
 {
@@ -483,7 +520,18 @@ void _update_time_slice_before_swap(void)
 }
 #endif /* CONFIG_TIMESLICING */
 
-int k_is_preempt_thread(void)
+int _impl_k_is_preempt_thread(void)
 {
 	return !_is_in_isr() && _is_preempt(_current);
 }
+
+#ifdef CONFIG_USERSPACE
+u32_t _handler_k_is_preempt_thread(u32_t arg1, u32_t arg2, u32_t arg3,
+				   u32_t arg4, u32_t arg5, u32_t arg6,
+				   void *ssf)
+{
+	_SYSCALL_ARG0;
+
+	return _impl_k_is_preempt_thread();
+}
+#endif

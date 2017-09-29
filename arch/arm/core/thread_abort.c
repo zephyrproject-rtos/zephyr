@@ -26,7 +26,7 @@
 
 extern void _k_thread_single_abort(struct k_thread *thread);
 
-void k_thread_abort(k_tid_t thread)
+void _impl_k_thread_abort(k_tid_t thread)
 {
 	unsigned int key;
 

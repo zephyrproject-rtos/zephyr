@@ -23,6 +23,7 @@
 #include <ksched.h>
 #include <wait_q.h>
 #include <atomic.h>
+#include <syscall_handler.h>
 
 extern struct _static_thread_data _static_thread_data_list_start[];
 extern struct _static_thread_data _static_thread_data_list_end[];
@@ -112,17 +113,38 @@ int saved_always_on = k_enable_sys_clock_always_on();
 }
 
 #ifdef CONFIG_THREAD_CUSTOM_DATA
-
-void k_thread_custom_data_set(void *value)
+void _impl_k_thread_custom_data_set(void *value)
 {
 	_current->custom_data = value;
 }
 
-void *k_thread_custom_data_get(void)
+#ifdef CONFIG_USERSPACE
+u32_t _handler_k_thread_custom_data_set(u32_t arg1, u32_t arg2, u32_t arg3,
+					u32_t arg4, u32_t arg5, u32_t arg6,
+					void *ssf)
+{
+	_SYSCALL_ARG1;
+
+	_impl_k_thread_custom_data_set((void *)arg1);
+	return 0;
+}
+#endif
+
+void *_impl_k_thread_custom_data_get(void)
 {
 	return _current->custom_data;
 }
 
+#ifdef CONFIG_USERSPACE
+u32_t _handler_k_thread_custom_data_get(u32_t arg1, u32_t arg2, u32_t arg3,
+					u32_t arg4, u32_t arg5, u32_t arg6,
+					void *ssf)
+{
+	_SYSCALL_ARG0;
+
+	return (u32_t)_impl_k_thread_custom_data_get();
+}
+#endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_THREAD_CUSTOM_DATA */
 
 #if defined(CONFIG_THREAD_MONITOR)
@@ -214,7 +236,7 @@ FUNC_NORETURN void _thread_entry(k_thread_entry_t entry,
 }
 
 #ifdef CONFIG_MULTITHREADING
-void k_thread_start(struct k_thread *thread)
+void _impl_k_thread_start(struct k_thread *thread)
 {
 	int key = irq_lock(); /* protect kernel queues */
 
@@ -235,6 +257,18 @@ void k_thread_start(struct k_thread *thread)
 
 	irq_unlock(key);
 }
+
+#ifdef CONFIG_USERSPACE
+u32_t _handler_k_thread_start(u32_t thread, u32_t arg2, u32_t arg3,
+			      u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+{
+	_SYSCALL_ARG1;
+
+	_SYSCALL_IS_OBJ(thread, K_OBJ_THREAD, 0, ssf);
+	_impl_k_thread_start((struct k_thread *)thread);
+	return 0;
+}
+#endif
 #endif
 
 #ifdef CONFIG_MULTITHREADING
@@ -292,7 +326,7 @@ k_tid_t k_thread_create(struct k_thread *new_thread,
 }
 #endif
 
-int k_thread_cancel(k_tid_t tid)
+int _impl_k_thread_cancel(k_tid_t tid)
 {
 	struct k_thread *thread = tid;
 
@@ -311,6 +345,17 @@ int k_thread_cancel(k_tid_t tid)
 
 	return 0;
 }
+
+#ifdef CONFIG_USERSPACE
+u32_t _handler_k_thread_cancel(u32_t thread, u32_t arg2, u32_t arg3,
+			       u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+{
+	_SYSCALL_ARG1;
+
+	_SYSCALL_IS_OBJ(thread, K_OBJ_THREAD, 0, ssf);
+	return _impl_k_thread_cancel((struct k_thread *)thread);
+}
+#endif
 
 static inline int is_in_any_group(struct _static_thread_data *thread_data,
 				  u32_t groups)
@@ -369,7 +414,7 @@ void _k_thread_single_suspend(struct k_thread *thread)
 	_mark_thread_as_suspended(thread);
 }
 
-void k_thread_suspend(struct k_thread *thread)
+void _impl_k_thread_suspend(struct k_thread *thread)
 {
 	unsigned int  key = irq_lock();
 
@@ -382,6 +427,18 @@ void k_thread_suspend(struct k_thread *thread)
 	}
 }
 
+#ifdef CONFIG_USERSPACE
+u32_t _handler_k_thread_suspend(u32_t thread, u32_t arg2, u32_t arg3,
+				u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+{
+	_SYSCALL_ARG1;
+
+	_SYSCALL_IS_OBJ(thread, K_OBJ_THREAD, 0, ssf);
+	_impl_k_thread_suspend((k_tid_t)thread);
+	return 0;
+}
+#endif
+
 void _k_thread_single_resume(struct k_thread *thread)
 {
 	_mark_thread_as_not_suspended(thread);
@@ -391,7 +448,7 @@ void _k_thread_single_resume(struct k_thread *thread)
 	}
 }
 
-void k_thread_resume(struct k_thread *thread)
+void _impl_k_thread_resume(struct k_thread *thread)
 {
 	unsigned int  key = irq_lock();
 
@@ -399,6 +456,18 @@ void k_thread_resume(struct k_thread *thread)
 
 	_reschedule_threads(key);
 }
+
+#ifdef CONFIG_USERSPACE
+u32_t _handler_k_thread_resume(u32_t thread, u32_t arg2, u32_t arg3,
+			       u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+{
+	_SYSCALL_ARG1;
+
+	_SYSCALL_IS_OBJ(thread, K_OBJ_THREAD, 0, ssf);
+	_impl_k_thread_resume((k_tid_t)thread);
+	return 0;
+}
+#endif
 
 void _k_thread_single_abort(struct k_thread *thread)
 {
