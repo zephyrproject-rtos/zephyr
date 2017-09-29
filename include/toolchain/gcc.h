@@ -95,10 +95,6 @@ do {                                                                    \
 #define __deprecated	__attribute__((deprecated))
 #define ARG_UNUSED(x) (void)(x)
 
-/* Only used by gen_syscalls.py */
-#define __syscall
-#define __syscall_inline
-
 #define likely(x)   __builtin_expect((long)!!(x), 1L)
 #define unlikely(x) __builtin_expect((long)!!(x), 0L)
 
