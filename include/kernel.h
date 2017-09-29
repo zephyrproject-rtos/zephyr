@@ -539,7 +539,6 @@ extern k_tid_t k_thread_create(struct k_thread *new_thread,
 			       void *p1, void *p2, void *p3,
 			       int prio, u32_t options, s32_t delay);
 
-#ifdef CONFIG_USERSPACE
 /**
  * @brief Drop a thread's privileges permanently to user mode
  *
@@ -551,7 +550,6 @@ extern k_tid_t k_thread_create(struct k_thread *new_thread,
 extern FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
 						   void *p1, void *p2,
 						   void *p3);
-#endif
 
 /**
  * @brief Put the current thread to sleep.
