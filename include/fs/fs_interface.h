@@ -41,7 +41,7 @@ extern "C" {
 		_dir_object; \
 	}
 
-#ifdef CONFIG_FILE_SYSTEM_FAT
+#ifdef CONFIG_FAT_FILESYSTEM_ELM
 #include <fs/fat_fs.h>
 #elif CONFIG_FILE_SYSTEM_NFFS
 #include <fs/nffs_fs.h>

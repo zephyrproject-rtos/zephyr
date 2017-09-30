@@ -24,10 +24,10 @@ config NO_FS
 	help
 	  No file system choosen.
 
-config FILE_SYSTEM_FAT
-	bool "FAT file system support"
+config FAT_FILESYSTEM_ELM
+	bool "ELM FAT File System"
 	help
-	Enables FAT file system support.
+	Use the ELM FAT File system implementation.
 
 config FILE_SYSTEM_NFFS
 	bool "NFFS file system support"
