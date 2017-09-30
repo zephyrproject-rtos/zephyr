@@ -16,7 +16,7 @@
 #include <errno.h>
 #include <flash.h>
 #include <board.h>
-#include "flash_img.h"
+#include <dfu/flash_img.h>
 
 BUILD_ASSERT_MSG((CONFIG_IMG_BLOCK_BUF_SIZE % FLASH_ALIGN == 0),
 		 "CONFIG_IMG_BLOCK_BUF_SIZE is not multiple of FLASH_ALIGN");
