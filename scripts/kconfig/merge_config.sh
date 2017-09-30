@@ -132,6 +132,7 @@ for MERGE_FILE in $MERGE_LIST ; do
 	done
 	chmod u+w $TMP_FILE
 	cat $MERGE_FILE >> $TMP_FILE
+	echo >> $TMP_FILE
 done
 
 if [ "$RUNMAKE" = "false" ]; then
