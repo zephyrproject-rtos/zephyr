@@ -84,6 +84,8 @@ config FS_NFFS_NUM_CACHE_BLOCKS
 	range 1 512
 	default 64
 
+source "ext/fs/nffs/Kconfig"
+
 endmenu
 
 endif # FILE_SYSTEM

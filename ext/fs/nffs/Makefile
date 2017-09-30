@@ -1,3 +1,3 @@
-ifdef CONFIG_NFFS_FILESYSTEM
+ifdef CONFIG_FILE_SYSTEM_NFFS
 ZEPHYRINCLUDE += -I$(srctree)/ext/fs/nffs/include
 endif
