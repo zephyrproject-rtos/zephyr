@@ -1,1 +1,2 @@
-message(FATAL_ERROR TODO)
+add_subdirectory_ifdef(CONFIG_FAT_FILESYSTEM_ELM fat)
+add_subdirectory_ifdef(CONFIG_NFFS_FILESYSTEM nffs)
