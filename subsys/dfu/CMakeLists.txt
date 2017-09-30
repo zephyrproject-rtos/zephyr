@@ -1,1 +1,2 @@
-message(FATAL_ERROR TODO)
+add_subdirectory(boot)
+add_subdirectory(img_util)
