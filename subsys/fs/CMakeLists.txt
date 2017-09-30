@@ -1,3 +1,10 @@
-zephyr_sources_ifdef(CONFIG_FILE_SYSTEM_FAT   fat_fs.c)
-zephyr_sources_ifdef(CONFIG_FILE_SYSTEM_NFFS  nffs_fs.c)
-zephyr_sources_ifdef(CONFIG_FILE_SYSTEM_SHELL shell.c)
+zephyr_link_interface_ifdef(CONFIG_FILE_SYSTEM_FAT ELMFAT)
+zephyr_link_interface_ifdef(CONFIG_FILE_SYSTEM_NFFS NFFS)
+
+zephyr_library()
+zephyr_library_sources_ifdef(CONFIG_FILE_SYSTEM_FAT   fat_fs.c)
+zephyr_library_sources_ifdef(CONFIG_FILE_SYSTEM_NFFS  nffs_fs.c)
+zephyr_library_sources_ifdef(CONFIG_FILE_SYSTEM_SHELL shell.c)
+
+zephyr_library_link_libraries_ifdef(CONFIG_FILE_SYSTEM_FAT ELMFAT)
+zephyr_library_link_libraries_ifdef(CONFIG_FILE_SYSTEM_NFFS NFFS)
