@@ -14,7 +14,7 @@
 
 #include <misc/__assert.h>
 #include <board.h>
-#include "mcuboot.h"
+#include <dfu/mcuboot.h>
 
 /*
  * Helpers for image trailer, as defined by mcuboot.
