@@ -5,7 +5,7 @@
  */
 
 #include <nffs/nffs.h>
-#include <test_nffs.h>
+#include "test_nffs.h"
 
 #if CONFIG_BOARD_QEMU_X86
 static struct nffs_area_desc nffs_selftest_area_descs[] = {
