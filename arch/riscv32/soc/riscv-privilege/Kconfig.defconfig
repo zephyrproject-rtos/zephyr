@@ -4,22 +4,4 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
-
-config SOC_FAMILY_RISCV_PRIVILEGE
-	bool
-	# omit prompt to signify a "hidden" option
-	default n
-
-config SOC_FAMILY
-	string
-	default "riscv-privilege"
-	depends on SOC_FAMILY_RISCV_PRIVILEGE
-
-config RISCV_HAS_PLIC
-	bool "Does the SOC provide support for a Platform Level Interrupt Controller"
-	default n
-	depends on SOC_FAMILY_RISCV_PRIVILEGE
-	help
-	Does the SOC provide support for a Platform Level Interrupt Controller
-
 source "arch/riscv32/soc/riscv-privilege/*/Kconfig.defconfig.series"
