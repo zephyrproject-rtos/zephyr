@@ -2,7 +2,19 @@
 #
 # Copyright (c) 2016 Piotr Mienkowski
 # SPDX-License-Identifier: Apache-2.0
-#
+
+config SOC_FAMILY_SAM
+	bool
+	# omit prompt to signify a "hidden" option
+	default n
+
+if SOC_FAMILY_SAM
+
+config SOC_FAMILY
+	string
+	default atmel_sam
+
+endif #SOC_FAMILY_SAM
 
 # Select SoC Part No. and configuration options
 source "arch/arm/soc/atmel_sam/*/Kconfig.soc"

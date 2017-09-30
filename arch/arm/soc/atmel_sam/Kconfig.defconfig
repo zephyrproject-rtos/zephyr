@@ -4,20 +4,10 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-config SOC_FAMILY_SAM
-	bool
-	# omit prompt to signify a "hidden" option
-	default n
-
 if SOC_FAMILY_SAM
-
-config SOC_FAMILY
-	string
-	default atmel_sam
 
 config WATCHDOG
 	def_bool y
 
-endif #SOC_FAMILY_SAM
-
+endif
 source "arch/arm/soc/atmel_sam/*/Kconfig.defconfig.series"
