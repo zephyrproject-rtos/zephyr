@@ -1,14 +1,7 @@
 
-config NFFS_FILESYSTEM
-	bool "NFFS File System"
-	depends on FILE_SYSTEM_NFFS
-	default n
-	help
-	Use the NFFS File system implementation.
-
 config NFFS_FILESYSTEM_MAX_AREAS
 	int "Maximum number of areas"
-	depends on NFFS_FILESYSTEM
+	depends on FILE_SYSTEM_NFFS
 	range 2 64
 	default 8
 	help
@@ -19,7 +12,7 @@ config NFFS_FILESYSTEM_MAX_AREAS
 
 config NFFS_FILESYSTEM_MAX_BLOCK_SIZE
 	int "Maximum block size"
-	depends on NFFS_FILESYSTEM
+	depends on FILE_SYSTEM_NFFS
 	range 16 2048
 	default 2048
 	help
