@@ -12,8 +12,6 @@ source "ext/hal/Kconfig"
 
 source "ext/lib/crypto/Kconfig"
 
-source "ext/fs/Kconfig"
-
 source "ext/debug/Kconfig"
 
 endmenu

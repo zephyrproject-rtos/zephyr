@@ -1,7 +1,0 @@
-
-config FAT_FILESYSTEM_ELM
-	bool "ELM FAT File System"
-	depends on FILE_SYSTEM_FAT
-	default y
-	help
-	Use the ELM FAT File system implementation.
