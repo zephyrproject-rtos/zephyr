@@ -1,6 +1,6 @@
 add_subdirectory_if_kconfig(adc)
 add_subdirectory_ifdef(CONFIG_AIO_COMPARATOR    aio)
-add_subdirectory_ifdef(CONFIG_CONSOLE_HAS_DRIVER console)
+add_subdirectory(console)
 # add_subdirectory_if_kconfig(bluetooth)
 add_subdirectory_if_kconfig(clock_control)
 add_subdirectory_if_kconfig(counter)
