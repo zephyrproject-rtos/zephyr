@@ -18,9 +18,9 @@
  */
 
 #include <errno.h>
-#include <i2c.h>
-#include <i2c_bitbang.h>
 #include <kernel.h>
+#include <i2c.h>
+#include "i2c_bitbang.h"
 
 /*
  * Indexes into delay table for each part of I2C timing waveform we are
