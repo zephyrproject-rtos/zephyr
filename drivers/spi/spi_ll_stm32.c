@@ -17,7 +17,7 @@
 #include <clock_control.h>
 
 #include <drivers/spi/spi_ll_stm32.h>
-#include <spi_ll_stm32.h>
+#include "spi_ll_stm32.h"
 
 #define CONFIG_CFG(cfg)						\
 ((const struct spi_stm32_config * const)(cfg)->dev->config->config_info)
