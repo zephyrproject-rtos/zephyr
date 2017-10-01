@@ -51,8 +51,8 @@ config LWM2M_ENGINE_MAX_REPLIES
 
 config LWM2M_ENGINE_MAX_OBSERVER
 	int "Maximum # of observable LWM2M resources"
-	default 50
-	range 10 200
+	default 20
+	range 5 200
 	help
 	  This value sets the maximum number of resources which can be
 	  added to the observe notification list.
@@ -73,7 +73,7 @@ config LWM2M_LOCAL_PORT
 
 config LWM2M_SECURITY_INSTANCE_COUNT
 	int "Maximum # of LWM2M Security object instances"
-	default 3
+	default 1
 	range 1 10
 	help
 	  This setting establishes the total count of LWM2M Security instances
@@ -81,7 +81,7 @@ config LWM2M_SECURITY_INSTANCE_COUNT
 
 config LWM2M_SERVER_INSTANCE_COUNT
 	int "Maximum # of LWM2M Server object instances"
-	default 3
+	default 1
 	range 1 10
 	help
 	  This setting establishes the total count of LWM2M Server instances
@@ -103,7 +103,7 @@ config LWM2M_RD_CLIENT_STACK_SIZE
 
 config LWM2M_RD_CLIENT_INSTANCE_COUNT
 	int "Maximum # of LWM2M RD client instances"
-	default 2
+	default 1
 	help
 	  This setting establishes the total count of LWM2M RD client instances
 	  available.
