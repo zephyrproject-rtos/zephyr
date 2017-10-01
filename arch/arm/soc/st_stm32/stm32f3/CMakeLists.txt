@@ -1,3 +1,4 @@
+zephyr_include_directories($ENV{ZEPHYR_BASE}/drivers)
 zephyr_sources(
   soc.c
   )
