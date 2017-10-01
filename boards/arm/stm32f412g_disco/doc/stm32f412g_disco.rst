@@ -35,7 +35,7 @@ some highlights of the STM32F412G-DISCO board:
        - + 5 V from Arduino* connectors
 
 - Two power supplies for MCU: 2.0 V and 3.3 V
-- Compatible with Arduino™ Uno revision 3 connectors
+- Compatible with Arduino(tm) Uno revision 3 connectors
 - Extension connector for direct access to various features of STM32F412ZGT6 MCU
 - Comprehensive free software including a variety of examples, part of STM32Cube package
 

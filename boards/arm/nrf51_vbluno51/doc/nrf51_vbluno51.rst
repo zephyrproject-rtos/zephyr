@@ -41,7 +41,7 @@ Supported Features
 	+ UART(1), I2C(2), SPI(1), PWM(3), SWD, Timer 16bit(3).
 	+ 21 digital channels, 6 ADC 10bit channels.
 	+ 1 Led and 1 Button onboard.
-	+ GPIO Voltage: 0 – 3.3V.
+	+ GPIO Voltage: 0 - 3.3V.
 - DAPLink (CMSIS-DAP) interface for program and debug:
 	+ USB MSD: Drag and Drop programming flash memory.
 	+ USB HID (DAP): CMSIS-DAP compliant debug channel.

@@ -163,7 +163,7 @@ static inline u32_t soc_gpio_get(const struct soc_gpio_pin *pin)
  * or may not be taken into account, depending on the precise timing of its
  * occurrence.
  *
- * tdiv_slck = ((div + 1) × 2) × tslck
+ * tdiv_slck = ((div + 1) x 2) x tslck
  * where tslck is the slow clock, typically 32.768 kHz.
  *
  * Setting the length of the debounce window is only meaningful if the pin is
