@@ -44,7 +44,7 @@ typedef u8_t i2s_fmt_t;
 
 /** @brief Standard I2S Data Format.
  *
- * Serial data is transmitted in two’s complement with the MSB first. Both
+ * Serial data is transmitted in two's complement with the MSB first. Both
  * Word Select (WS) and Serial Data (SD) signals are sampled on the rising edge
  * of the clock signal (SCK). The MSB is always sent one clock period after the
  * WS changes. Left channel data are sent first indicated by WS = 0, followed
@@ -63,7 +63,7 @@ typedef u8_t i2s_fmt_t;
 
 /** @brief PCM Short Frame Sync Data Format.
  *
- * Serial data is transmitted in two’s complement with the MSB first. Both
+ * Serial data is transmitted in two's complement with the MSB first. Both
  * Word Select (WS) and Serial Data (SD) signals are sampled on the falling edge
  * of the clock signal (SCK). The falling edge of the frame sync signal (WS)
  * indicates the start of the PCM word. The frame sync is one clock cycle long.
@@ -82,7 +82,7 @@ typedef u8_t i2s_fmt_t;
 
 /** @brief PCM Long Frame Sync Data Format.
  *
- * Serial data is transmitted in two’s complement with the MSB first. Both
+ * Serial data is transmitted in two's complement with the MSB first. Both
  * Word Select (WS) and Serial Data (SD) signals are sampled on the falling edge
  * of the clock signal (SCK). The rising edge of the frame sync signal (WS)
  * indicates the start of the PCM word. The frame sync has an arbitrary length,
@@ -103,7 +103,7 @@ typedef u8_t i2s_fmt_t;
 /**
  * @brief Left Justified Data Format.
  *
- * Serial data is transmitted in two’s complement with the MSB first. Both
+ * Serial data is transmitted in two's complement with the MSB first. Both
  * Word Select (WS) and Serial Data (SD) signals are sampled on the rising edge
  * of the clock signal (SCK). The bits within the data word are left justified
  * such that the MSB is always sent in the clock period following the WS
@@ -124,7 +124,7 @@ typedef u8_t i2s_fmt_t;
 /**
  * @brief Right Justified Data Format.
  *
- * Serial data is transmitted in two’s complement with the MSB first. Both
+ * Serial data is transmitted in two's complement with the MSB first. Both
  * Word Select (WS) and Serial Data (SD) signals are sampled on the rising edge
  * of the clock signal (SCK). The bits within the data word are right justified
  * such that the LSB is always sent in the clock period preceding the WS

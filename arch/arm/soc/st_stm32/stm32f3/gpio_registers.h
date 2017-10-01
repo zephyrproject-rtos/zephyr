@@ -12,7 +12,7 @@
  *
  * Based on reference manual:
  *   STM32F303xB/C/D/E, STM32F303x6/8, STM32F328x8, STM32F358xC,
- *   STM32F398xE advanced ARM ® -based MCUs
+ *   STM32F398xE advanced ARM(r)-based MCUs
  *
  * Chapter 11: General-purpose I/Os
  */

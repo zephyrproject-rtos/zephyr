@@ -110,7 +110,7 @@ typedef struct s_FpReg {
  * The following is the "normal" floating point register save area, or
  * more accurately the save area required by the 'fnsave' and 'frstor'
  * instructions.  The structure matches the layout described in the
- * "Intel® 64 and IA-32 Architectures Software Developer’s Manual
+ * "Intel(r) 64 and IA-32 Architectures Software Developer's Manual
  * Volume 1: Basic Architecture": Protected Mode x87 FPU State Image in
  * Memory, 32-Bit Format.
  */

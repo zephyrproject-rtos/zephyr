@@ -12,7 +12,7 @@
  *
  * Based on reference manual:
  *   STM32F101xx, STM32F102xx, STM32F103xx, STM32F105xx and STM32F107xx
- *   advanced ARM ® -based 32-bit MCUs
+ *   advanced ARM(r)-based 32-bit MCUs
  *
  * Chapter 9: General-purpose and alternate-function I/Os
  *            (GPIOs and AFIOs)

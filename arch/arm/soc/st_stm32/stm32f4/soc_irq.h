@@ -9,7 +9,7 @@
  *
  * Based on reference manual:
  *   RM0368 Reference manual STM32F401xB/C and STM32F401xD/E
- *   advanced ARM-based 32-bit MCUs
+ *   advanced ARM(r)-based 32-bit MCUs
  *
  * Chapter 10.1.3: Interrupt and exception vectors
  */
