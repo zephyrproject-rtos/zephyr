@@ -39,7 +39,7 @@ config MBEDTLS_CFG_FILE
 	Enable custom mbed TLS configuration
 
 config MBEDTLS_DEBUG
-	string "mbed TLS debug activation"
+	bool "mbed TLS debug activation"
 	depends on MBEDTLS_BUILTIN
 	default n
 	help
