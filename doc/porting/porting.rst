@@ -11,5 +11,4 @@ architectures, SoCs and boards.
 
    arch.rst
    board_porting.rst
-   application.rst
    ip-stack-migrate.rst
