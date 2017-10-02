@@ -211,6 +211,11 @@ extern "C" {
 #define K_MEM_PARTITION_P_RW_U_NA	(P_RW_U_NA | NOT_EXEC)
 #define K_MEM_PARTITION_P_RO_U_RO	(P_RO_U_RO | NOT_EXEC)
 #define K_MEM_PARTITION_P_RO_U_NA	(P_RO_U_NA | NOT_EXEC)
+
+/* Execution-allowed attributes */
+#define K_MEM_PARTITION_P_RWX_U_RWX	(P_RW_U_RW)
+#define K_MEM_PARTITION_P_RWX_U_RX	(P_RW_U_RO)
+#define K_MEM_PARTITION_P_RX_U_RX	(P_RO_U_RO)
 #endif /* _ASMLANGUAGE */
 #define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size) \
 	BUILD_ASSERT_MSG(!(((size) & ((size) - 1))) && (size) >= 32 && \
@@ -230,6 +235,14 @@ extern "C" {
 #define K_MEM_PARTITION_P_RW_U_NA	(MPU_REGION_SU_RW)
 #define K_MEM_PARTITION_P_RO_U_RO	(MPU_REGION_READ | MPU_REGION_SU)
 #define K_MEM_PARTITION_P_RO_U_NA	(MPU_REGION_SU_RX)
+
+/* Execution-allowed attributes */
+#define K_MEM_PARTITION_P_RWX_U_RWX	(MPU_REGION_READ | MPU_REGION_WRITE | \
+					 MPU_REGION_EXEC | MPU_REGION_SU)
+#define K_MEM_PARTITION_P_RWX_U_RX	(MPU_REGION_READ | MPU_REGION_EXEC | \
+					 MPU_REGION_SU_RWX)
+#define K_MEM_PARTITION_P_RX_U_RX	(MPU_REGION_READ | MPU_REGION_EXEC | \
+					 MPU_REGION_SU)
 #endif /* _ASMLANGUAGE */
 #define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size) \
 	BUILD_ASSERT_MSG((size) % 32 == 0 && (size) >= 32 && \
