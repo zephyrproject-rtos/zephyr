@@ -2,7 +2,7 @@ project(Zephyr-Kernel VERSION ${PROJECT_VERSION})
 enable_language(C CXX ASM)
 
 # Verify that the toolchain can compile a dummy file, if it is not we
-# won't be able to test test for compatiblity with certain C flags.
+# won't be able to test for compatiblity with certain C flags.
 check_c_compiler_flag("" toolchain_is_ok)
 assert(toolchain_is_ok "The toolchain is unable to build a dummy C file. See CMakeError.log.")
 
@@ -334,13 +334,38 @@ if(CONFIG_APPLICATION_MEMORY)
     endif()
   endforeach()
 
+  # Create a list ks, with relative paths to kernel space libs.
+  foreach(f ${kernel_object_file_list})
+    get_target_property(target_name       ${f} NAME)
+    get_target_property(target_binary_dir ${f} BINARY_DIR)
+
+    string(REPLACE
+      ${PROJECT_BINARY_DIR}
+      ""
+      fixed_path
+      ${target_binary_dir}
+      )
+
+    # Append / if not empty
+    if(fixed_path)
+      set(fixed_path "${fixed_path}/")
+    endif()
+
+    # Cut off leading / if present
+    if(fixed_path MATCHES "^/.+")
+      string(SUBSTRING ${fixed_path} 1 -1 fixed_path)
+    endif()
+
+    list(APPEND ks "${fixed_path}lib${target_name}.a")
+  endforeach()
+
   # We are done constructing kernel_object_file_list, now we inject this
   # information into the linker script through -D's
   list(LENGTH kernel_object_file_list NUM_KERNEL_OBJECT_FILES)
   list(APPEND LINKER_SCRIPT_DEFINES -DNUM_KERNEL_OBJECT_FILES=${NUM_KERNEL_OBJECT_FILES})
   set(i 0)
-  foreach(f ${kernel_object_file_list})
-    list(APPEND LINKER_SCRIPT_DEFINES -DKERNEL_OBJECT_FILE_${i}=$<TARGET_FILE:${f}>)
+  foreach(f ${ks})
+    list(APPEND LINKER_SCRIPT_DEFINES -DKERNEL_OBJECT_FILE_${i}=${f})
     math(EXPR i "${i}+1")
   endforeach()
 endif() # CONFIG_APPLICATION_MEMORY
