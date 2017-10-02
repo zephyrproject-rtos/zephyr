@@ -21,14 +21,21 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
+#include <bluetooth/cts.h>
 
 static struct bt_gatt_ccc_cfg ct_ccc_cfg[BT_GATT_CCC_MAX] = {};
 static u8_t ct[10];
 static u8_t ct_update;
+static bt_cts_subscribe_func_t subscribe_func;
+static bool ct_subscribed;
 
 static void ct_ccc_cfg_changed(const struct bt_gatt_attr *attr, u16_t value)
 {
-	/* TODO: Handle value */
+	ct_subscribed = (value == BT_GATT_CCC_NOTIFY) ? 1 : 0;
+
+	if (subscribe_func) {
+		subscribe_func(ct_subscribed);
+	}
 }
 
 static ssize_t read_ct(struct bt_conn *conn, const struct bt_gatt_attr *attr,
@@ -96,20 +103,54 @@ static void generate_current_time(u8_t *buf)
 	buf[9] = 0; /* No update, change, etc */
 }
 
-void cts_init(void)
+int bt_cts_register(u8_t time[10], bt_cts_subscribe_func_t func)
 {
-	/* Simulate current time for Current Time Service */
-	generate_current_time(ct);
+	int err;
 
-	bt_gatt_service_register(&cts_svc);
+	err = bt_gatt_service_register(&cts_svc);
+	if (err < 0) {
+		return err;
+	}
+
+	subscribe_func = func;
+
+	if (time) {
+		memcpy(ct, time, sizeof(ct));
+	} else {
+		/* Simulate current time for Current Time Service */
+		generate_current_time(ct);
+	}
+
+	return 0;
 }
 
-void cts_notify(void)
+void bt_cts_unregister(void)
+{
+	subscribe_func = NULL;
+	bt_gatt_service_unregister(&cts_svc);
+}
+
+int bt_cts_set_time(u8_t time[10])
+{
+	if (!time) {
+		return -EINVAL;
+	}
+
+	memcpy(ct, time, sizeof(ct));
+
+	if (!ct_subscribed) {
+		return 0;
+	}
+
+	return bt_gatt_notify(NULL, &attrs[3], &ct, sizeof(ct));
+}
+
+int bt_cts_simulate(void)
 {	/* Current Time Service updates only when time is changed */
 	if (!ct_update) {
-		return;
+		return 0;
 	}
 
 	ct_update = 0;
-	bt_gatt_notify(NULL, &attrs[3], &ct, sizeof(ct));
+	return bt_gatt_notify(NULL, &attrs[3], &ct, sizeof(ct));
 }

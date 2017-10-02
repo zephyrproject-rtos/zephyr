@@ -21,15 +21,22 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
+#include <bluetooth/bas.h>
 
 static struct bt_gatt_ccc_cfg  blvl_ccc_cfg[BT_GATT_CCC_MAX] = {};
-static u8_t simulate_blvl;
-static u8_t battery = 100;
+static bt_bas_subscribe_func_t subscribe_func;
+static u8_t subscribed_blvl;
+
+static u8_t blvl;
 
 static void blvl_ccc_cfg_changed(const struct bt_gatt_attr *attr,
 				 u16_t value)
 {
-	simulate_blvl = (value == BT_GATT_CCC_NOTIFY) ? 1 : 0;
+	subscribed_blvl = (value == BT_GATT_CCC_NOTIFY) ? 1 : 0;
+
+	if (subscribe_func) {
+		subscribe_func(subscribed_blvl);
+	}
 }
 
 static ssize_t read_blvl(struct bt_conn *conn, const struct bt_gatt_attr *attr,
@@ -47,28 +54,59 @@ static struct bt_gatt_attr attrs[] = {
 	BT_GATT_CHARACTERISTIC(BT_UUID_BAS_BATTERY_LEVEL,
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_NOTIFY),
 	BT_GATT_DESCRIPTOR(BT_UUID_BAS_BATTERY_LEVEL, BT_GATT_PERM_READ,
-			   read_blvl, NULL, &battery),
+			   read_blvl, NULL, &blvl),
 	BT_GATT_CCC(blvl_ccc_cfg, blvl_ccc_cfg_changed),
 };
 
 static struct bt_gatt_service bas_svc = BT_GATT_SERVICE(attrs);
 
-void bas_init(void)
+int bt_bas_register(u8_t level, bt_bas_subscribe_func_t func)
 {
-	bt_gatt_service_register(&bas_svc);
+	int err;
+
+	err = bt_gatt_service_register(&bas_svc);
+	if (err < 0) {
+		return err;
+	}
+
+	blvl = level;
+	subscribe_func = func;
+
+	return 0;
 }
 
-void bas_notify(void)
+void bt_bas_unregister(void)
 {
-	if (!simulate_blvl) {
-		return;
+	subscribe_func = NULL;
+	bt_gatt_service_unregister(&bas_svc);
+}
+
+int bt_bas_set_level(u8_t level)
+{
+	if (level > 100) {
+		return -EINVAL;
 	}
 
-	battery--;
-	if (!battery) {
-		/* Software eco battery charger */
-		battery = 100;
+	blvl = level;
+
+	if (!subscribed_blvl) {
+		return 0;
 	}
 
-	bt_gatt_notify(NULL, &attrs[2], &battery, sizeof(battery));
+	return bt_gatt_notify(NULL, &attrs[2], &level, sizeof(level));
+}
+
+int bt_bas_simulate(void)
+{
+	if (!subscribed_blvl) {
+		return 0;
+	}
+
+	blvl--;
+	if (!blvl) {
+		/* Software eco blvl charger */
+		blvl = 100;
+	}
+
+	return bt_gatt_notify(NULL, &attrs[2], &blvl, sizeof(blvl));
 }

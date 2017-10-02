@@ -164,7 +164,7 @@ static struct bt_gatt_attr attrs[] = {
 
 static struct bt_gatt_service hog_svc = BT_GATT_SERVICE(attrs);
 
-void hog_init(void)
+int bt_hog_register(void)
 {
-	bt_gatt_service_register(&hog_svc);
+	return bt_gatt_service_register(&hog_svc);
 }

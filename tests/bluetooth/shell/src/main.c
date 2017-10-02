@@ -23,7 +23,7 @@
 
 #include <shell/shell.h>
 
-#include <gatt/hrs.h>
+#include <bluetooth/hrs.h>
 
 #define DEVICE_NAME CONFIG_BT_DEVICE_NAME
 
@@ -42,7 +42,7 @@ static int cmd_hrs_simulate(int argc, char *argv[])
 
 		if (!hrs_registered) {
 			printk("Registering HRS Service\n");
-			hrs_init(0x01);
+			bt_hrs_register(0x01, NULL);
 			hrs_registered = true;
 		}
 
@@ -82,7 +82,7 @@ void main(void)
 
 		/* Heartrate measurements simulation */
 		if (hrs_simulate) {
-			hrs_notify();
+			bt_hrs_simulate();
 		}
 	}
 }

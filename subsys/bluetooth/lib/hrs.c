@@ -21,16 +21,22 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
+#include <bluetooth/hrs.h>
 
 static struct bt_gatt_ccc_cfg hrmc_ccc_cfg[BT_GATT_CCC_MAX] = {};
-static u8_t simulate_hrm;
+static bt_hrs_subscribe_func_t subscribe_func;
+static u8_t hrm_subscribed;
 static u8_t heartrate = 90;
 static u8_t hrs_blsc;
 
 static void hrmc_ccc_cfg_changed(const struct bt_gatt_attr *attr,
 				 u16_t value)
 {
-	simulate_hrm = (value == BT_GATT_CCC_NOTIFY) ? 1 : 0;
+	hrm_subscribed = (value == BT_GATT_CCC_NOTIFY) ? 1 : 0;
+
+	if (subscribe_func) {
+		subscribe_func(hrm_subscribed);
+	}
 }
 
 static ssize_t read_blsc(struct bt_conn *conn, const struct bt_gatt_attr *attr,
@@ -58,20 +64,42 @@ static struct bt_gatt_attr attrs[] = {
 
 static struct bt_gatt_service hrs_svc = BT_GATT_SERVICE(attrs);
 
-void hrs_init(u8_t blsc)
+int bt_hrs_register(u8_t blsc, bt_hrs_subscribe_func_t func)
 {
-	hrs_blsc = blsc;
+	int err;
 
-	bt_gatt_service_register(&hrs_svc);
+	err = bt_gatt_service_register(&hrs_svc);
+	if (err < 0) {
+		return err;
+	}
+
+	hrs_blsc = blsc;
+	subscribe_func = func;
+
+	return 0;
 }
 
-void hrs_notify(void)
+int bt_hrs_set_rate(u8_t type, u8_t heartrate)
+{
+	static u8_t hrm[2];
+
+	if (!hrm_subscribed) {
+		return 0;
+	}
+
+	hrm[0] = type;
+	hrm[1] = heartrate;
+
+	return bt_gatt_notify(NULL, &attrs[2], &hrm, sizeof(hrm));
+}
+
+int bt_hrs_simulate(void)
 {
 	static u8_t hrm[2];
 
 	/* Heartrate measurements simulation */
-	if (!simulate_hrm) {
-		return;
+	if (!hrm_subscribed) {
+		return 0;
 	}
 
 	heartrate++;
@@ -82,5 +110,5 @@ void hrs_notify(void)
 	hrm[0] = 0x06; /* uint8, sensor contact */
 	hrm[1] = heartrate;
 
-	bt_gatt_notify(NULL, &attrs[2], &hrm, sizeof(hrm));
+	return bt_gatt_notify(NULL, &attrs[2], &hrm, sizeof(hrm));
 }

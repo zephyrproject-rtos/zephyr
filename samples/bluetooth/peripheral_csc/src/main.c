@@ -20,9 +20,8 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
-
-#include <gatt/dis.h>
-#include <gatt/bas.h>
+#include <bluetooth/bas.h>
+#include <bluetooth/dis.h>
 
 #define DEVICE_NAME			CONFIG_BT_DEVICE_NAME
 #define DEVICE_NAME_LEN			(sizeof(DEVICE_NAME) - 1)
@@ -385,8 +384,8 @@ static void bt_ready(int err)
 
 	printk("Bluetooth initialized\n");
 
-	bas_init();
-	dis_init(CONFIG_SOC, "ACME");
+	bt_bas_register(100, NULL);
+	bt_dis_register(CONFIG_SOC, "ACME");
 	bt_gatt_service_register(&csc_svc);
 
 	err = bt_le_adv_start(BT_LE_ADV_CONN, ad, ARRAY_SIZE(ad),
@@ -420,6 +419,6 @@ void main(void)
 		}
 
 		/* Battery level simulation */
-		bas_notify();
+		bt_bas_simulate();
 	}
 }
