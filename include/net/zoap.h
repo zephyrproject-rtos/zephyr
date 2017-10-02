@@ -31,6 +31,10 @@ extern "C" {
  */
 
 /**
+ * @deprecated This library is deprecated.
+ */
+
+/**
  * @brief Set of CoAP packet options we are aware of.
  *
  * Users may add options other than these to their packets, provided
@@ -38,6 +42,10 @@ extern "C" {
  * that all options must be added to a packet in numeric order.
  *
  * Refer to RFC 7252, section 12.2 for more information.
+ */
+
+/**
+ * @deprecated This enum is deprecated.
  */
 enum zoap_option_num {
 	ZOAP_OPTION_IF_MATCH = 1,
@@ -67,6 +75,10 @@ enum zoap_option_num {
  * To be used with zoap_header_set_code() when creating a request
  * or a response.
  */
+
+/**
+ * @deprecated This enum is deprecated.
+ */
 enum zoap_method {
 	ZOAP_METHOD_GET = 1,
 	ZOAP_METHOD_POST = 2,
@@ -74,10 +86,18 @@ enum zoap_method {
 	ZOAP_METHOD_DELETE = 4,
 };
 
+
+/**
+ * @deprecated This macro is deprecated.
+ */
+
 #define ZOAP_REQUEST_MASK 0x07
 
 /**
  * @brief CoAP packets may be of one of these types.
+ */
+/**
+ * @deprecated This enum is deprecated.
  */
 enum zoap_msgtype {
 	/**
@@ -109,12 +129,18 @@ enum zoap_msgtype {
 	ZOAP_TYPE_RESET = 3
 };
 
+/**
+ * @deprecated This macro is deprecated.
+ */
 #define zoap_make_response_code(clas, det) ((clas << 5) | (det))
 
 /**
  * @brief Set of response codes available for a response packet.
  *
  * To be used with zoap_header_set_code() when creating a response.
+ */
+/**
+ * @deprecated This enum is deprecated.
  */
 enum zoap_response_code {
 	ZOAP_RESPONSE_CODE_OK = zoap_make_response_code(2, 0),
@@ -143,6 +169,9 @@ enum zoap_response_code {
 	ZOAP_RESPONSE_CODE_PROXYING_NOT_SUPPORTED = zoap_make_response_code(5, 5)
 };
 
+/**
+ * @deprecated This macro is deprecated.
+ */
 #define ZOAP_CODE_EMPTY (0)
 
 struct zoap_observer;
@@ -156,6 +185,9 @@ struct zoap_resource;
  * @brief Type of the callback being called when a resource's method is
  * invoked by the remote entity.
  */
+/**
+ * @deprecated This callback is deprecated.
+ */
 typedef int (*zoap_method_t)(struct zoap_resource *resource,
 			     struct zoap_packet *request,
 			     const struct sockaddr *from);
@@ -165,6 +197,9 @@ typedef int (*zoap_method_t)(struct zoap_resource *resource,
  * @brief Type of the callback being called when a resource's has observers
  * to be informed when an update happens.
  */
+/**
+ * @deprecated This callback is deprecated.
+ */
 typedef void (*zoap_notify_t)(struct zoap_resource *resource,
 			      struct zoap_observer *observer);
 
@@ -173,6 +208,9 @@ typedef void (*zoap_notify_t)(struct zoap_resource *resource,
  *
  * CoAP servers often want to register resources, so that clients can act on
  * them, by fetching their state or requesting updates to them.
+ */
+/**
+ * @deprecated This struct is deprecated.
  */
 struct zoap_resource {
 	/** Which function to be called for each CoAP method */
@@ -187,6 +225,9 @@ struct zoap_resource {
 /**
  * @brief Represents a remote device that is observing a local resource.
  */
+/**
+ * @deprecated This struct is deprecated.
+ */
 struct zoap_observer {
 	sys_snode_t list;
 	struct sockaddr addr;
@@ -196,6 +237,9 @@ struct zoap_observer {
 
 /**
  * @brief Representation of a CoAP packet.
+ */
+/**
+ * @deprecated This struct is deprecated.
  */
 struct zoap_packet {
 	struct net_pkt *pkt;
@@ -208,12 +252,18 @@ struct zoap_packet {
  * @brief Helper function to be called when a response matches the
  * a pending request.
  */
+/**
+ * @deprecated This callback is deprecated.
+ */
 typedef int (*zoap_reply_t)(const struct zoap_packet *response,
 			    struct zoap_reply *reply,
 			    const struct sockaddr *from);
 
 /**
  * @brief Represents a request awaiting for an acknowledgment (ACK).
+ */
+/**
+ * @deprecated This struct is deprecated.
  */
 struct zoap_pending {
 	struct net_pkt *pkt;
@@ -225,6 +275,9 @@ struct zoap_pending {
 /**
  * @brief Represents the handler for the reply of a request, it is
  * also used when observing resources.
+ */
+/**
+ * @deprecated This struct is deprecated.
  */
 struct zoap_reply {
 	zoap_reply_t reply;
@@ -243,9 +296,12 @@ struct zoap_reply {
  * @param request Request on which the observer will be based
  * @param addr Address of the remote device
  */
-void zoap_observer_init(struct zoap_observer *observer,
-			const struct zoap_packet *request,
-			const struct sockaddr *addr);
+/**
+ * @deprecated This api is deprecated.
+ */
+void __deprecated zoap_observer_init(struct zoap_observer *observer,
+				     const struct zoap_packet *request,
+				     const struct sockaddr *addr);
 
 /**
  * @brief After the observer is initialized, associate the observer
@@ -256,8 +312,11 @@ void zoap_observer_init(struct zoap_observer *observer,
  *
  * @return true if this is the first observer added to this resource.
  */
-bool zoap_register_observer(struct zoap_resource *resource,
-			    struct zoap_observer *observer);
+/**
+ * @deprecated This api is deprecated.
+ */
+bool __deprecated zoap_register_observer(struct zoap_resource *resource,
+					 struct zoap_observer *observer);
 
 /**
  * @brief Remove this observer from the list of registered observers
@@ -266,8 +325,11 @@ bool zoap_register_observer(struct zoap_resource *resource,
  * @param resource Resource in which to remove the observer
  * @param observer Observer to be removed
  */
-void zoap_remove_observer(struct zoap_resource *resource,
-			  struct zoap_observer *observer);
+/**
+ * @deprecated This api is deprecated.
+ */
+void __deprecated zoap_remove_observer(struct zoap_resource *resource,
+				       struct zoap_observer *observer);
 
 /**
  * @brief Returns the observer that matches address @a addr.
@@ -279,9 +341,13 @@ void zoap_remove_observer(struct zoap_resource *resource,
  * @return A pointer to a observer if a match is found, NULL
  * otherwise.
  */
-struct zoap_observer *zoap_find_observer_by_addr(
-	struct zoap_observer *observers, size_t len,
-	const struct sockaddr *addr);
+/**
+ * @deprecated This api is deprecated.
+ */
+struct zoap_observer * __deprecated zoap_find_observer_by_addr(
+				struct zoap_observer *observers,
+				size_t len,
+				const struct sockaddr *addr);
 
 /**
  * @brief Returns the next available observer representation.
@@ -292,8 +358,12 @@ struct zoap_observer *zoap_find_observer_by_addr(
  * @return A pointer to a observer if there's an available observer,
  * NULL otherwise.
  */
-struct zoap_observer *zoap_observer_next_unused(
-	struct zoap_observer *observers, size_t len);
+/**
+ * @deprecated This api is deprecated.
+ */
+struct zoap_observer * __deprecated zoap_observer_next_unused(
+				struct zoap_observer *observers,
+				size_t len);
 
 /**
  * @brief Indicates that a reply is expected for @a request.
@@ -301,13 +371,19 @@ struct zoap_observer *zoap_observer_next_unused(
  * @param reply Reply structure to be initialized
  * @param request Request from which @a reply will be based
  */
-void zoap_reply_init(struct zoap_reply *reply,
-		     const struct zoap_packet *request);
+/**
+ * @deprecated This api is deprecated.
+ */
+void __deprecated zoap_reply_init(struct zoap_reply *reply,
+				  const struct zoap_packet *request);
 
 /**
  * @brief Represents the value of a CoAP option.
  *
  * To be used with zoap_find_options().
+ */
+/**
+ * @deprecated This struct is deprecated.
  */
 struct zoap_option {
 	u8_t *value;
@@ -324,7 +400,11 @@ struct zoap_option {
  *
  * @return 0 in case of success or negative in case of error.
  */
-int zoap_packet_parse(struct zoap_packet *zpkt, struct net_pkt *pkt);
+/**
+ * @deprecated This api is deprecated.
+ */
+int __deprecated zoap_packet_parse(struct zoap_packet *zpkt,
+				   struct net_pkt *pkt);
 
 /**
  * @brief Creates a new CoAP packet from a net_pkt. @a pkt must remain
@@ -336,7 +416,11 @@ int zoap_packet_parse(struct zoap_packet *zpkt, struct net_pkt *pkt);
  *
  * @return 0 in case of success or negative in case of error.
  */
-int zoap_packet_init(struct zoap_packet *zpkt, struct net_pkt *pkt);
+/**
+ * @deprecated This api is deprecated.
+ */
+int __deprecated zoap_packet_init(struct zoap_packet *zpkt,
+				  struct net_pkt *pkt);
 
 /**
  * @brief Initialize a pending request with a request.
@@ -352,9 +436,12 @@ int zoap_packet_init(struct zoap_packet *zpkt, struct net_pkt *pkt);
  *
  * @return 0 in case of success or negative in case of error.
  */
-int zoap_pending_init(struct zoap_pending *pending,
-		      const struct zoap_packet *request,
-		      const struct sockaddr *addr);
+/**
+ * @deprecated This api is deprecated.
+ */
+int __deprecated zoap_pending_init(struct zoap_pending *pending,
+				   const struct zoap_packet *request,
+				   const struct sockaddr *addr);
 
 /**
  * @brief Returns the next available pending struct, that can be used
@@ -366,8 +453,12 @@ int zoap_pending_init(struct zoap_pending *pending,
  * @return pointer to a free #zoap_pending structure, NULL in case
  * none could be found.
  */
-struct zoap_pending *zoap_pending_next_unused(
-	struct zoap_pending *pendings, size_t len);
+/**
+ * @deprecated This api is deprecated.
+ */
+struct zoap_pending * __deprecated zoap_pending_next_unused(
+				struct zoap_pending *pendings,
+				size_t len);
 
 /**
  * @brief Returns the next available reply struct, so it can be used
@@ -379,8 +470,11 @@ struct zoap_pending *zoap_pending_next_unused(
  * @return pointer to a free #zoap_reply structure, NULL in case
  * none could be found.
  */
-struct zoap_reply *zoap_reply_next_unused(
-	struct zoap_reply *replies, size_t len);
+/**
+ * @deprecated This api is deprecated.
+ */
+struct zoap_reply * __deprecated zoap_reply_next_unused(
+				struct zoap_reply *replies, size_t len);
 
 /**
  * @brief After a response is received, clear all pending
@@ -393,9 +487,12 @@ struct zoap_reply *zoap_reply_next_unused(
  * @return pointer to the associated #zoap_pending structure, NULL in
  * case none could be found.
  */
-struct zoap_pending *zoap_pending_received(
-	const struct zoap_packet *response,
-	struct zoap_pending *pendings, size_t len);
+/**
+ * @deprecated This api is deprecated.
+ */
+struct zoap_pending * __deprecated zoap_pending_received(
+			const struct zoap_packet *response,
+			struct zoap_pending *pendings, size_t len);
 
 /**
  * @brief After a response is received, call zoap_reply_t handler
@@ -409,10 +506,13 @@ struct zoap_pending *zoap_pending_received(
  * @return Pointer to the reply matching the packet received, NULL if
  * none could be found.
  */
-struct zoap_reply *zoap_response_received(
-	const struct zoap_packet *response,
-	const struct sockaddr *from,
-	struct zoap_reply *replies, size_t len);
+/**
+ * @deprecated This api is deprecated.
+ */
+struct zoap_reply * __deprecated zoap_response_received(
+			const struct zoap_packet *response,
+			const struct sockaddr *from,
+			struct zoap_reply *replies, size_t len);
 
 /**
  * @brief Returns the next pending about to expire, pending->timeout
@@ -424,8 +524,11 @@ struct zoap_reply *zoap_response_received(
  * @return The next #zoap_pending to expire, NULL if none is about to
  * expire.
  */
-struct zoap_pending *zoap_pending_next_to_expire(
-	struct zoap_pending *pendings, size_t len);
+/**
+ * @deprecated This api is deprecated.
+ */
+struct zoap_pending * __deprecated zoap_pending_next_to_expire(
+				struct zoap_pending *pendings, size_t len);
 
 /**
  * @brief After a request is sent, user may want to cycle the pending
@@ -435,7 +538,10 @@ struct zoap_pending *zoap_pending_next_to_expire(
  *
  * @return false if this is the last retransmission.
  */
-bool zoap_pending_cycle(struct zoap_pending *pending);
+/**
+ * @deprecated This api is deprecated.
+ */
+bool __deprecated zoap_pending_cycle(struct zoap_pending *pending);
 
 /**
  * @brief Cancels the pending retransmission, so it again becomes
@@ -443,7 +549,10 @@ bool zoap_pending_cycle(struct zoap_pending *pending);
  *
  * @param pending Pending representation to be canceled
  */
-void zoap_pending_clear(struct zoap_pending *pending);
+/**
+ * @deprecated This api is deprecated.
+ */
+void __deprecated zoap_pending_clear(struct zoap_pending *pending);
 
 /**
  * @brief Cancels awaiting for this reply, so it becomes available
@@ -451,7 +560,10 @@ void zoap_pending_clear(struct zoap_pending *pending);
  *
  * @param reply The reply to be canceled
  */
-void zoap_reply_clear(struct zoap_reply *reply);
+/**
+ * @deprecated This api is deprecated.
+ */
+void __deprecated zoap_reply_clear(struct zoap_reply *reply);
 
 /**
  * @brief When a request is received, call the appropriate methods of
@@ -463,9 +575,12 @@ void zoap_reply_clear(struct zoap_reply *reply);
  *
  * @return 0 in case of success or negative in case of error.
  */
-int zoap_handle_request(struct zoap_packet *zpkt,
-			struct zoap_resource *resources,
-			const struct sockaddr *from);
+/**
+ * @deprecated This api is deprecated.
+ */
+int __deprecated zoap_handle_request(struct zoap_packet *zpkt,
+				     struct zoap_resource *resources,
+				     const struct sockaddr *from);
 
 /**
  * @brief Indicates that this resource was updated and that the @a
@@ -475,7 +590,10 @@ int zoap_handle_request(struct zoap_packet *zpkt,
  *
  * @return 0 in case of success or negative in case of error.
  */
-int zoap_resource_notify(struct zoap_resource *resource);
+/**
+ * @deprecated This api is deprecated.
+ */
+int __deprecated zoap_resource_notify(struct zoap_resource *resource);
 
 /**
  * @brief Returns if this request is enabling observing a resource.
@@ -485,7 +603,10 @@ int zoap_resource_notify(struct zoap_resource *resource);
  * @return True if the request is enabling observing a resource, False
  * otherwise
  */
-bool zoap_request_is_observe(const struct zoap_packet *request);
+/**
+ * @deprecated This api is deprecated.
+ */
+bool __deprecated zoap_request_is_observe(const struct zoap_packet *request);
 
 /**
  * @brief Returns a pointer to the start of the payload and its size
@@ -498,7 +619,11 @@ bool zoap_request_is_observe(const struct zoap_packet *request);
  *
  * @return pointer to the start of the payload, NULL in case of error.
  */
-u8_t *zoap_packet_get_payload(struct zoap_packet *zpkt, u16_t *len);
+/**
+ * @deprecated This api is deprecated.
+ */
+u8_t * __deprecated zoap_packet_get_payload(struct zoap_packet *zpkt,
+					    u16_t *len);
 
 /**
  * @brief Sets how much space was used by the payload.
@@ -512,7 +637,10 @@ u8_t *zoap_packet_get_payload(struct zoap_packet *zpkt, u16_t *len);
  *
  * @return 0 in case of success or negative in case of error.
  */
-int zoap_packet_set_used(struct zoap_packet *zpkt, u16_t len);
+/**
+ * @deprecated This api is deprecated.
+ */
+int __deprecated zoap_packet_set_used(struct zoap_packet *zpkt, u16_t len);
 
 /**
  * @brief Adds an option to the packet.
@@ -526,8 +654,11 @@ int zoap_packet_set_used(struct zoap_packet *zpkt, u16_t len);
  *
  * @return 0 in case of success or negative in case of error.
  */
-int zoap_add_option(struct zoap_packet *zpkt, u16_t code,
-		    const void *value, u16_t len);
+/**
+ * @deprecated This api is deprecated.
+ */
+int __deprecated zoap_add_option(struct zoap_packet *zpkt, u16_t code,
+				 const void *value, u16_t len);
 
 /**
  * @brief Converts an option to its integer representation.
@@ -540,7 +671,11 @@ int zoap_add_option(struct zoap_packet *zpkt, u16_t code,
  *
  * @return The integer representation of the option
  */
-unsigned int zoap_option_value_to_int(const struct zoap_option *option);
+/**
+ * @deprecated This api is deprecated.
+ */
+unsigned int __deprecated zoap_option_value_to_int(
+					const struct zoap_option *option);
 
 /**
  * @brief Adds an integer value option to the packet.
@@ -554,8 +689,11 @@ unsigned int zoap_option_value_to_int(const struct zoap_option *option);
  *
  * @return 0 in case of success or negative in case of error.
  */
-int zoap_add_option_int(struct zoap_packet *zpkt, u16_t code,
-			unsigned int val);
+/**
+ * @deprecated This api is deprecated.
+ */
+int __deprecated zoap_add_option_int(struct zoap_packet *zpkt, u16_t code,
+				     unsigned int val);
 
 /**
  * @brief Return the values associated with the option of value @a
@@ -570,8 +708,11 @@ int zoap_add_option_int(struct zoap_packet *zpkt, u16_t code,
  * @return The number of options found in packet matching code,
  * negative on error.
  */
-int zoap_find_options(const struct zoap_packet *zpkt, u16_t code,
-		      struct zoap_option *options, u16_t veclen);
+/**
+ * @deprecated This api is deprecated.
+ */
+int __deprecated zoap_find_options(const struct zoap_packet *zpkt, u16_t code,
+				   struct zoap_option *options, u16_t veclen);
 
 /**
  * Represents the size of each block that will be transferred using
@@ -580,6 +721,9 @@ int zoap_find_options(const struct zoap_packet *zpkt, u16_t code,
  * Each entry maps directly to the value that is used in the wire.
  *
  * https://tools.ietf.org/html/rfc7959
+ */
+/**
+ * @deprecated This enum is deprecated.
  */
 enum zoap_block_size {
 	ZOAP_BLOCK_16,
@@ -599,14 +743,20 @@ enum zoap_block_size {
  *
  * @return The size in bytes that the block_size represents
  */
-static inline u16_t zoap_block_size_to_bytes(
-	enum zoap_block_size block_size)
+/**
+ * @deprecated This api is deprecated.
+ */
+static inline u16_t __deprecated zoap_block_size_to_bytes(
+				enum zoap_block_size block_size)
 {
 	return (1 << (block_size + 4));
 }
 
 /**
  * @brief Represents the current state of a block-wise transaction.
+ */
+/**
+ * @deprecated This struct is deprecated.
  */
 struct zoap_block_context {
 	size_t total_size;
@@ -623,9 +773,12 @@ struct zoap_block_context {
  *
  * @return 0 in case of success or negative in case of error.
  */
-int zoap_block_transfer_init(struct zoap_block_context *ctx,
-			     enum zoap_block_size block_size,
-			     size_t total_size);
+/**
+ * @deprecated This api is deprecated.
+ */
+int __deprecated zoap_block_transfer_init(struct zoap_block_context *ctx,
+					  enum zoap_block_size block_size,
+					  size_t total_size);
 
 /**
  * @brief Add BLOCK1 option to the packet.
@@ -636,8 +789,11 @@ int zoap_block_transfer_init(struct zoap_block_context *ctx,
  *
  * @return 0 in case of success or negative in case of error.
  */
-int zoap_add_block1_option(struct zoap_packet *zpkt,
-			   struct zoap_block_context *ctx);
+/**
+ * @deprecated This api is deprecated.
+ */
+int __deprecated zoap_add_block1_option(struct zoap_packet *zpkt,
+					struct zoap_block_context *ctx);
 
 /**
  * @brief Add BLOCK2 option to the packet.
@@ -648,8 +804,11 @@ int zoap_add_block1_option(struct zoap_packet *zpkt,
  *
  * @return 0 in case of success or negative in case of error.
  */
-int zoap_add_block2_option(struct zoap_packet *zpkt,
-			   struct zoap_block_context *ctx);
+/**
+ * @deprecated This api is deprecated.
+ */
+int __deprecated zoap_add_block2_option(struct zoap_packet *zpkt,
+					struct zoap_block_context *ctx);
 
 /**
  * @brief Add SIZE1 option to the packet.
@@ -660,8 +819,11 @@ int zoap_add_block2_option(struct zoap_packet *zpkt,
  *
  * @return 0 in case of success or negative in case of error.
  */
-int zoap_add_size1_option(struct zoap_packet *zpkt,
-			 struct zoap_block_context *ctx);
+/**
+ * @deprecated This api is deprecated.
+ */
+int __deprecated zoap_add_size1_option(struct zoap_packet *zpkt,
+				       struct zoap_block_context *ctx);
 
 /**
  * @brief Add SIZE2 option to the packet.
@@ -672,8 +834,11 @@ int zoap_add_size1_option(struct zoap_packet *zpkt,
  *
  * @return 0 in case of success or negative in case of error.
  */
-int zoap_add_size2_option(struct zoap_packet *zpkt,
-			 struct zoap_block_context *ctx);
+/**
+ * @deprecated This api is deprecated.
+ */
+int __deprecated zoap_add_size2_option(struct zoap_packet *zpkt,
+				       struct zoap_block_context *ctx);
 
 /**
  * @brief Retrieves BLOCK{1,2} and SIZE{1,2} from @a zpkt and updates
@@ -684,8 +849,11 @@ int zoap_add_size2_option(struct zoap_packet *zpkt,
  *
  * @return 0 in case of success or negative in case of error.
  */
-int zoap_update_from_block(const struct zoap_packet *zpkt,
-			   struct zoap_block_context *ctx);
+/**
+ * @deprecated This api is deprecated.
+ */
+int __deprecated zoap_update_from_block(const struct zoap_packet *zpkt,
+					struct zoap_block_context *ctx);
 
 /**
  * @brief Updates @a ctx so after this is called the current entry
@@ -698,8 +866,11 @@ int zoap_update_from_block(const struct zoap_packet *zpkt,
  * @return The offset in the block-wise transfer, 0 if the transfer
  * has finished.
  */
-size_t zoap_next_block(const struct zoap_packet *zpkt,
-		       struct zoap_block_context *ctx);
+/**
+ * @deprecated This api is deprecated.
+ */
+size_t __deprecated zoap_next_block(const struct zoap_packet *zpkt,
+				    struct zoap_block_context *ctx);
 
 /**
  * @brief Returns the version present in a CoAP packet.
@@ -708,7 +879,10 @@ size_t zoap_next_block(const struct zoap_packet *zpkt,
  *
  * @return the CoAP version in packet
  */
-u8_t zoap_header_get_version(const struct zoap_packet *zpkt);
+/**
+ * @deprecated This api is deprecated.
+ */
+u8_t __deprecated zoap_header_get_version(const struct zoap_packet *zpkt);
 
 /**
  * @brief Returns the type of the CoAP packet.
@@ -717,7 +891,10 @@ u8_t zoap_header_get_version(const struct zoap_packet *zpkt);
  *
  * @return the type of the packet
  */
-u8_t zoap_header_get_type(const struct zoap_packet *zpkt);
+/**
+ * @deprecated This api is deprecated.
+ */
+u8_t __deprecated zoap_header_get_type(const struct zoap_packet *zpkt);
 
 /**
  * @brief Returns the token (if any) in the CoAP packet.
@@ -727,8 +904,11 @@ u8_t zoap_header_get_type(const struct zoap_packet *zpkt);
  *
  * @return pointer to the start of the token in the CoAP packet.
  */
-const u8_t *zoap_header_get_token(const struct zoap_packet *zpkt,
-				     u8_t *len);
+/**
+ * @deprecated This api is deprecated.
+ */
+const u8_t * __deprecated zoap_header_get_token(const struct zoap_packet *zpkt,
+						u8_t *len);
 
 /**
  * @brief Returns the code of the CoAP packet.
@@ -737,7 +917,10 @@ const u8_t *zoap_header_get_token(const struct zoap_packet *zpkt,
  *
  * @return the code present in the packet
  */
-u8_t zoap_header_get_code(const struct zoap_packet *zpkt);
+/**
+ * @deprecated This api is deprecated.
+ */
+u8_t __deprecated zoap_header_get_code(const struct zoap_packet *zpkt);
 
 /**
  * @brief Returns the message id associated with the CoAP packet.
@@ -746,7 +929,10 @@ u8_t zoap_header_get_code(const struct zoap_packet *zpkt);
  *
  * @return the message id present in the packet
  */
-u16_t zoap_header_get_id(const struct zoap_packet *zpkt);
+/**
+ * @deprecated This api is deprecated.
+ */
+u16_t __deprecated zoap_header_get_id(const struct zoap_packet *zpkt);
 
 /**
  * @brief Sets the version of the CoAP packet.
@@ -754,7 +940,10 @@ u16_t zoap_header_get_id(const struct zoap_packet *zpkt);
  * @param zpkt CoAP packet representation
  * @param ver The CoAP version to set in the packet
  */
-void zoap_header_set_version(struct zoap_packet *zpkt, u8_t ver);
+/**
+ * @deprecated This api is deprecated.
+ */
+void __deprecated zoap_header_set_version(struct zoap_packet *zpkt, u8_t ver);
 
 /**
  * @brief Sets the type of the CoAP packet.
@@ -762,7 +951,10 @@ void zoap_header_set_version(struct zoap_packet *zpkt, u8_t ver);
  * @param zpkt CoAP packet representation
  * @param type The packet type to set
  */
-void zoap_header_set_type(struct zoap_packet *zpkt, u8_t type);
+/**
+ * @deprecated This api is deprecated.
+ */
+void __deprecated zoap_header_set_type(struct zoap_packet *zpkt, u8_t type);
 
 /**
  * @brief Sets the token in the CoAP packet.
@@ -773,8 +965,12 @@ void zoap_header_set_type(struct zoap_packet *zpkt, u8_t type);
  *
  * @return 0 in case of success or negative in case of error.
  */
-int zoap_header_set_token(struct zoap_packet *zpkt, const u8_t *token,
-			  u8_t tokenlen);
+/**
+ * @deprecated This api is deprecated.
+ */
+int __deprecated zoap_header_set_token(struct zoap_packet *zpkt,
+				       const u8_t *token,
+				       u8_t tokenlen);
 
 /**
  * @brief Sets the code present in the CoAP packet.
@@ -782,7 +978,10 @@ int zoap_header_set_token(struct zoap_packet *zpkt, const u8_t *token,
  * @param zpkt CoAP packet representation
  * @param code The code set in the packet
  */
-void zoap_header_set_code(struct zoap_packet *zpkt, u8_t code);
+/**
+ * @deprecated This api is deprecated.
+ */
+void __deprecated zoap_header_set_code(struct zoap_packet *zpkt, u8_t code);
 
 /**
  * @brief Sets the message id present in the CoAP packet.
@@ -790,14 +989,20 @@ void zoap_header_set_code(struct zoap_packet *zpkt, u8_t code);
  * @param zpkt CoAP packet representation
  * @param id The message id to set in the packet
  */
-void zoap_header_set_id(struct zoap_packet *zpkt, u16_t id);
+/**
+ * @deprecated This api is deprecated.
+ */
+void __deprecated zoap_header_set_id(struct zoap_packet *zpkt, u16_t id);
 
 /**
  * @brief Helper to generate message ids
  *
  * @return a new message id
  */
-static inline u16_t zoap_next_id(void)
+/**
+ * @deprecated This api is deprecated.
+ */
+static inline u16_t __deprecated zoap_next_id(void)
 {
 	static u16_t message_id;
 
@@ -810,7 +1015,10 @@ static inline u16_t zoap_next_id(void)
  *
  * @return a 8-byte pseudo-random token.
  */
-u8_t *zoap_next_token(void);
+/**
+ * @deprecated This api is deprecated.
+ */
+u8_t * __deprecated zoap_next_token(void);
 
 /**
  * @}
