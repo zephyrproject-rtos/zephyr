@@ -567,12 +567,12 @@ extern void k_call_stacks_analyze(void);
  *
  * @return ID of new thread.
  */
-extern k_tid_t k_thread_create(struct k_thread *new_thread,
-			       k_thread_stack_t stack,
-			       size_t stack_size,
-			       k_thread_entry_t entry,
-			       void *p1, void *p2, void *p3,
-			       int prio, u32_t options, s32_t delay);
+__syscall k_tid_t k_thread_create(struct k_thread *new_thread,
+				  k_thread_stack_t stack,
+				  size_t stack_size,
+				  k_thread_entry_t entry,
+				  void *p1, void *p2, void *p3,
+				  int prio, u32_t options, s32_t delay);
 
 /**
  * @brief Drop a thread's privileges permanently to user mode

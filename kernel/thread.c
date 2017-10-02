@@ -339,11 +339,11 @@ void _setup_new_thread(struct k_thread *new_thread,
 }
 
 #ifdef CONFIG_MULTITHREADING
-k_tid_t k_thread_create(struct k_thread *new_thread,
-			k_thread_stack_t stack,
-			size_t stack_size, k_thread_entry_t entry,
-			void *p1, void *p2, void *p3,
-			int prio, u32_t options, s32_t delay)
+k_tid_t _impl_k_thread_create(struct k_thread *new_thread,
+			      k_thread_stack_t stack,
+			      size_t stack_size, k_thread_entry_t entry,
+			      void *p1, void *p2, void *p3,
+			      int prio, u32_t options, s32_t delay)
 {
 	__ASSERT(!_is_in_isr(), "Threads may not be created in ISRs");
 	_setup_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3,
@@ -354,7 +354,82 @@ k_tid_t k_thread_create(struct k_thread *new_thread,
 	}
 	return new_thread;
 }
-#endif
+
+
+#ifdef CONFIG_USERSPACE
+_SYSCALL_HANDLER(k_thread_create,
+		 new_thread_p, stack_p, stack_size, entry, p1, more_args)
+{
+	int prio;
+	u32_t options, delay, guard_size, total_size;
+	struct _k_object *stack_object;
+	struct k_thread *new_thread = (struct k_thread *)new_thread_p;
+	volatile struct _syscall_10_args *margs =
+		(volatile struct _syscall_10_args *)more_args;
+	k_thread_stack_t stack = (k_thread_stack_t)stack_p;
+
+	/* The thread and stack objects *must* be in an uninitialized state */
+	_SYSCALL_OBJ_NEVER_INIT(new_thread, K_OBJ_THREAD);
+	stack_object = _k_object_find(stack);
+	_SYSCALL_VERIFY_MSG(!_obj_validation_check(stack_object, stack,
+						   K_OBJ__THREAD_STACK_ELEMENT,
+						   _OBJ_INIT_FALSE),
+			    "bad stack object");
+
+	/* Verify that the stack size passed in is OK by computing the total
+	 * size and comparing it with the size value in the object metadata
+	 */
+	guard_size = (u32_t)K_THREAD_STACK_BUFFER(stack) - (u32_t)stack;
+	_SYSCALL_VERIFY_MSG(!__builtin_uadd_overflow(guard_size, stack_size,
+						     &total_size),
+			    "stack size overflow (%u+%u)", stack_size,
+			    guard_size);
+	/* They really ought to be equal, make this more strict? */
+	_SYSCALL_VERIFY_MSG(total_size <= stack_object->data,
+			    "stack size %u is too big, max is %u",
+			    total_size, stack_object->data);
+
+	/* Verify the struct containing args 6-10 */
+	_SYSCALL_MEMORY_READ(margs, sizeof(*margs));
+
+	/* Stash struct arguments in local variables to prevent switcheroo
+	 * attacks
+	 */
+	prio = margs->arg8;
+	options = margs->arg9;
+	delay = margs->arg10;
+	compiler_barrier();
+
+	/* User threads may only create other user threads and they can't
+	 * be marked as essential
+	 */
+	_SYSCALL_VERIFY(options & K_USER);
+	_SYSCALL_VERIFY(!(options & K_ESSENTIAL));
+
+	/* Check validity of prio argument; must be the same or worse priority
+	 * than the caller
+	 */
+	_SYSCALL_VERIFY(_VALID_PRIO(prio, NULL));
+	_SYSCALL_VERIFY(_is_prio_lower_or_equal(prio, _current->base.prio));
+
+	_setup_new_thread((struct k_thread *)new_thread, stack, stack_size,
+			  (k_thread_entry_t)entry, (void *)p1,
+			  (void *)margs->arg6, (void *)margs->arg7, prio,
+			  options);
+
+	if (new_thread->base.perm_index == -1) {
+		k_thread_abort(new_thread);
+		_SYSCALL_VERIFY_MSG(0, "too many threads created");
+	}
+
+	if (delay != K_FOREVER) {
+		schedule_new_thread(new_thread, delay);
+	}
+
+	return new_thread_p;
+}
+#endif /* CONFIG_USERSPACE */
+#endif /* CONFIG_MULTITHREADING */
 
 int _impl_k_thread_cancel(k_tid_t tid)
 {
