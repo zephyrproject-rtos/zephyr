@@ -5,8 +5,8 @@
 config PINMUX_CC2650
 	bool "Pinmux driver for CC2650 SoC"
 	depends on PINMUX && SOC_SERIES_CC2650
-	select GPIO
-	select GPIO_CC2650
+	depends on GPIO
+	depends on GPIO_CC2650
 	help
 	 Enable pin multiplexer for CC2650 SoC.
 
