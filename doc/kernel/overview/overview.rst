@@ -25,4 +25,3 @@ include: fitness wearables, smart watches, and IoT wireless gateways.
    :maxdepth: 1
 
    source_tree.rst
-   changes.rst
