@@ -2862,8 +2862,8 @@ struct k_msgq {
  *
  * @return N/A
  */
-extern void k_msgq_init(struct k_msgq *q, char *buffer,
-			size_t msg_size, u32_t max_msgs);
+__syscall void k_msgq_init(struct k_msgq *q, char *buffer,
+			   size_t msg_size, u32_t max_msgs);
 
 /**
  * @brief Send a message to a message queue.
@@ -2881,7 +2881,7 @@ extern void k_msgq_init(struct k_msgq *q, char *buffer,
  * @retval -ENOMSG Returned without waiting or queue purged.
  * @retval -EAGAIN Waiting period timed out.
  */
-extern int k_msgq_put(struct k_msgq *q, void *data, s32_t timeout);
+__syscall int k_msgq_put(struct k_msgq *q, void *data, s32_t timeout);
 
 /**
  * @brief Receive a message from a message queue.
@@ -2900,7 +2900,7 @@ extern int k_msgq_put(struct k_msgq *q, void *data, s32_t timeout);
  * @retval -ENOMSG Returned without waiting.
  * @retval -EAGAIN Waiting period timed out.
  */
-extern int k_msgq_get(struct k_msgq *q, void *data, s32_t timeout);
+__syscall int k_msgq_get(struct k_msgq *q, void *data, s32_t timeout);
 
 /**
  * @brief Purge a message queue.
@@ -2913,7 +2913,7 @@ extern int k_msgq_get(struct k_msgq *q, void *data, s32_t timeout);
  *
  * @return N/A
  */
-extern void k_msgq_purge(struct k_msgq *q);
+__syscall void k_msgq_purge(struct k_msgq *q);
 
 /**
  * @brief Get the amount of free space in a message queue.
@@ -2925,7 +2925,9 @@ extern void k_msgq_purge(struct k_msgq *q);
  *
  * @return Number of unused ring buffer entries.
  */
-static inline u32_t k_msgq_num_free_get(struct k_msgq *q)
+__syscall u32_t k_msgq_num_free_get(struct k_msgq *q);
+
+static inline u32_t _impl_k_msgq_num_free_get(struct k_msgq *q)
 {
 	return q->max_msgs - q->used_msgs;
 }
@@ -2939,7 +2941,9 @@ static inline u32_t k_msgq_num_free_get(struct k_msgq *q)
  *
  * @return Number of messages.
  */
-static inline u32_t k_msgq_num_used_get(struct k_msgq *q)
+__syscall u32_t k_msgq_num_used_get(struct k_msgq *q);
+
+static inline u32_t _impl_k_msgq_num_used_get(struct k_msgq *q)
 {
 	return q->used_msgs;
 }

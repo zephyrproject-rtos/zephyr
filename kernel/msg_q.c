@@ -19,6 +19,7 @@
 #include <wait_q.h>
 #include <misc/dlist.h>
 #include <init.h>
+#include <syscall_handler.h>
 
 extern struct k_msgq _k_msgq_list_start[];
 extern struct k_msgq _k_msgq_list_end[];
@@ -46,8 +47,8 @@ SYS_INIT(init_msgq_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 #endif /* CONFIG_OBJECT_TRACING */
 
-void k_msgq_init(struct k_msgq *q, char *buffer,
-		 size_t msg_size, u32_t max_msgs)
+void _impl_k_msgq_init(struct k_msgq *q, char *buffer,
+		       size_t msg_size, u32_t max_msgs)
 {
 	q->msg_size = msg_size;
 	q->max_msgs = max_msgs;
@@ -62,7 +63,22 @@ void k_msgq_init(struct k_msgq *q, char *buffer,
 	_k_object_init(q);
 }
 
-int k_msgq_put(struct k_msgq *q, void *data, s32_t timeout)
+#ifdef CONFIG_USERSPACE
+u32_t _handler_k_msgq_init(u32_t q, u32_t buffer, u32_t msg_size,
+			   u32_t max_msgs, u32_t arg5, u32_t arg6, void *ssf)
+{
+	_SYSCALL_ARG4;
+
+	_SYSCALL_IS_OBJ(q, K_OBJ_MSGQ, 1, ssf);
+	_SYSCALL_MEMORY(buffer, msg_size * max_msgs, 1, ssf);
+
+	_impl_k_msgq_init((struct k_msgq *)q, (char *)buffer, msg_size,
+			  max_msgs);
+	return 0;
+}
+#endif
+
+int _impl_k_msgq_put(struct k_msgq *q, void *data, s32_t timeout)
 {
 	__ASSERT(!_is_in_isr() || timeout == K_NO_WAIT, "");
 
@@ -110,7 +126,21 @@ int k_msgq_put(struct k_msgq *q, void *data, s32_t timeout)
 	return result;
 }
 
-int k_msgq_get(struct k_msgq *q, void *data, s32_t timeout)
+#ifdef CONFIG_USERSPACE
+u32_t _handler_k_msgq_put(u32_t msgq_p, u32_t data, u32_t timeout,
+			  u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+{
+	struct k_msgq *q = (struct k_msgq *)msgq_p;
+	_SYSCALL_ARG3;
+
+	_SYSCALL_IS_OBJ(q, K_OBJ_MSGQ, 0, ssf);
+	_SYSCALL_MEMORY(data, q->msg_size, 0, ssf);
+
+	return _impl_k_msgq_put(q, (void *)data, timeout);
+}
+#endif
+
+int _impl_k_msgq_get(struct k_msgq *q, void *data, s32_t timeout)
 {
 	__ASSERT(!_is_in_isr() || timeout == K_NO_WAIT, "");
 
@@ -164,7 +194,21 @@ int k_msgq_get(struct k_msgq *q, void *data, s32_t timeout)
 	return result;
 }
 
-void k_msgq_purge(struct k_msgq *q)
+#ifdef CONFIG_USERSPACE
+u32_t _handler_k_msgq_get(u32_t msgq_p, u32_t data, u32_t timeout,
+			  u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+{
+	struct k_msgq *q = (struct k_msgq *)msgq_p;
+	_SYSCALL_ARG3;
+
+	_SYSCALL_IS_OBJ(q, K_OBJ_MSGQ, 0, ssf);
+	_SYSCALL_MEMORY(data, q->msg_size, 1, ssf);
+
+	return _impl_k_msgq_get(q, (void *)data, timeout);
+}
+#endif
+
+void _impl_k_msgq_purge(struct k_msgq *q)
 {
 	unsigned int key = irq_lock();
 	struct k_thread *pending_thread;
@@ -181,3 +225,36 @@ void k_msgq_purge(struct k_msgq *q)
 
 	_reschedule_threads(key);
 }
+
+#ifdef CONFIG_USERSPACE
+u32_t _handler_k_msgq_purge(u32_t q, u32_t arg2, u32_t arg3,
+			    u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+{
+	_SYSCALL_ARG1;
+
+	_SYSCALL_IS_OBJ(q, K_OBJ_MSGQ, 0, ssf);
+
+	_impl_k_msgq_purge((struct k_msgq *)q);
+	return 0;
+}
+
+u32_t _handler_k_msgq_num_free_get(u32_t q, u32_t arg2, u32_t arg3, u32_t arg4,
+				   u32_t arg5, u32_t arg6, void *ssf)
+{
+	_SYSCALL_ARG1;
+
+	_SYSCALL_IS_OBJ(q, K_OBJ_MSGQ, 0, ssf);
+
+	return _impl_k_msgq_num_free_get((struct k_msgq *)q);
+}
+
+u32_t _handler_k_msgq_num_used_get(u32_t q, u32_t arg2, u32_t arg3, u32_t arg4,
+				   u32_t arg5, u32_t arg6, void *ssf)
+{
+	_SYSCALL_ARG1;
+
+	_SYSCALL_IS_OBJ(q, K_OBJ_MSGQ, 0, ssf);
+
+	return _impl_k_msgq_num_used_get((struct k_msgq *)q);
+}
+#endif /* CONFIG_USERSPACE */
