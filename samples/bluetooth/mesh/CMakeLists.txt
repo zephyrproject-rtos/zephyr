@@ -1,9 +1,3 @@
-if(DEFINED ENV{BOARD})
-  set(BOARD $ENV{BOARD})
-else()
-  set(BOARD qemu_x86)
-endif()
-
 if(BOARD STREQUAL bbc_microbit)
   set(CONF_FILE microbit.conf)
 elseif(BOARD STREQUAL nrf51-16k.conf)
@@ -19,3 +13,4 @@ project(NONE)
 target_link_libraries(app subsys__bluetooth)
 
 target_sources(app PRIVATE src/main.c)
+target_sources_ifdef(CONFIG_BOARD_BBC_MICROBIT app PRIVATE src/microbit.c)
