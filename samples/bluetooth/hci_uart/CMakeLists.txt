@@ -1,10 +1,4 @@
-if(DEFINED ENV{BOARD})
-  set(BOARD $ENV{BOARD})
-else()
-  set(BOARD nrf52_pca10040)
-endif()
-
-if(BOARD EQUAL bbc_microbit)
+if(BOARD STREQUAL bbc_microbit)
   set(CONF_FILE microbit.conf)
 else()
   set(CONF_FILE nrf5.conf)
