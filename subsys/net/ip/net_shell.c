@@ -1380,7 +1380,6 @@ int net_shell_cmd_dns(int argc, char *argv[])
 
 #if defined(CONFIG_NET_DEBUG_HTTP_CONN) && defined(CONFIG_HTTP_SERVER)
 #define MAX_HTTP_OUTPUT_LEN 64
-
 static char *http_str_output(char *output, int outlen, const char *str, int len)
 {
 	if (len > outlen) {
@@ -1397,6 +1396,7 @@ static char *http_str_output(char *output, int outlen, const char *str, int len)
 	return output;
 }
 
+#if !defined(CONFIG_HTTP_APP)
 static void http_server_cb(struct http_server_ctx *entry,
 			   void *user_data)
 {
@@ -1424,6 +1424,46 @@ static void http_server_cb(struct http_server_ctx *entry,
 	       http_str_output(output, sizeof(output) - 1,
 			       entry->req.url, entry->req.url_len));
 }
+#endif
+
+#if defined(CONFIG_HTTP_APP)
+static void http_server_cb(struct http_ctx *entry, void *user_data)
+{
+	int *count = user_data;
+	static char output[MAX_HTTP_OUTPUT_LEN];
+	int i;
+
+	/* +7 for []:port */
+	char addr_local[ADDR_LEN + 7];
+	char addr_remote[ADDR_LEN + 7] = "";
+
+	if (*count == 0) {
+		printk("        HTTP ctx    Local           \t"
+		       "Remote          \tURL\n");
+	}
+
+	(*count)++;
+
+	for (i = 0; i < CONFIG_NET_APP_SERVER_NUM_CONN; i++) {
+		if (!entry->app_ctx.server.net_ctxs[i] ||
+		    !net_context_is_used(entry->app_ctx.server.net_ctxs[i])) {
+			continue;
+		}
+
+		get_addresses(entry->app_ctx.server.net_ctxs[i],
+			      addr_local, sizeof(addr_local),
+			      addr_remote, sizeof(addr_remote));
+
+		printk("[%2d] %c%c %p  %16s\t%16s\t%s\n",
+		       *count,
+		       entry->app_ctx.is_enabled ? 'E' : 'D',
+		       entry->is_tls ? 'S' : ' ',
+		       entry, addr_local, addr_remote,
+		       http_str_output(output, sizeof(output) - 1,
+				       entry->http.url, entry->http.url_len));
+	}
+}
+#endif /* CONFIG_HTTP_APP */
 #endif /* CONFIG_NET_DEBUG_HTTP_CONN && CONFIG_HTTP_SERVER */
 
 int net_shell_cmd_http(int argc, char *argv[])
