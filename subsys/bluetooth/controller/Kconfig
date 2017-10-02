@@ -401,6 +401,7 @@ comment "BLE Controller hardware configuration"
 
 menuconfig BT_CTLR_GPIO_PA
 	bool "Power Amplifier GPIO interface"
+	depends on !SOC_SERIES_NRF51X
 	help
 	  Enable GPIO interface to a Power Amplifier. This allows hardware
 	  designs using PA to let the Controller toggle their state based on
@@ -431,6 +432,7 @@ endif # BT_CTLR_GPIO_PA
 
 menuconfig BT_CTLR_GPIO_LNA
 	bool "Low Noise Amplifier GPIO interface"
+	depends on !SOC_SERIES_NRF51X
 	help
 	  Enable GPIO interface to a Low Noise Amplifier. This allows hardware
 	  designs using LNAs to let the Controller toggle their state based on
