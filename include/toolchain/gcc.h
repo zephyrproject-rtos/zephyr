@@ -27,7 +27,17 @@
 #define FUNC_ALIAS(real_func, new_alias, return_type) \
 	return_type new_alias() ALIAS_OF(real_func)
 
+#if defined(CONFIG_ARCH_POSIX)
+/*let's not segfault if this were to happen for some reason*/
+#define CODE_UNREACHABLE \
+{\
+	void exit(int status); \
+	exit(1);\
+	__builtin_unreachable(); \
+}
+#else
 #define CODE_UNREACHABLE __builtin_unreachable()
+#endif
 #define FUNC_NORETURN    __attribute__((__noreturn__))
 
 /* The GNU assembler for Cortex-M3 uses # for immediate values, not
@@ -309,6 +319,8 @@ A##a:
 		",%0"                              \
 		"\n\t.type\t" #name ",%%object" :  : "n"(value))
 
+#elif defined(CONFIG_ARCH_POSIX)
+/*Nothing*/
 #else
 #error processor architecture not supported
 #endif
