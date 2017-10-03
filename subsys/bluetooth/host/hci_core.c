@@ -3767,11 +3767,7 @@ static const char *ver_str(u8_t ver)
 
 static void show_dev_info(void)
 {
-	char addr[BT_ADDR_LE_STR_LEN];
-
-	bt_addr_le_to_str(&bt_dev.id_addr, addr, sizeof(addr));
-
-	BT_INFO("Identity: %s", addr);
+	BT_INFO("Identity: %s", bt_addr_le_str(&bt_dev.id_addr));
 	BT_INFO("HCI: version %s (0x%02x) revision 0x%04x, manufacturer 0x%04x",
 		ver_str(bt_dev.hci_version), bt_dev.hci_version,
 		bt_dev.hci_revision, bt_dev.manufacturer);
