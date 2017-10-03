@@ -69,8 +69,8 @@ support systems:
   the `Zephyr GitHub wiki`_.
 
 * **Issue Reporting and Tracking**: Requirements and Issue tracking is done in
-  our JIRA system: https://jira.zephyrproject.org. You can browse through the
-  reported issues and submit issues of your own.
+  the Github issues system: https://github.com/zephyrproject-rtos/zephyr/issues.
+  You can browse through the reported issues and submit issues of your own.
 
 * **Security-related Issue Reporting**: For security-related inquiries or
   reporting suspected security-related bugs in the Zephyr OS, please

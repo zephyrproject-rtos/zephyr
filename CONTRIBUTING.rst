@@ -169,14 +169,14 @@ available for developers to contribute to and enhance.
 Pull Requests and Issues
 ************************
 
-.. _Zephyr Project Issues: https://jira.zephyrproject.org
+.. _Zephyr Project Issues: https://github.com/zephyrproject-rtos/zephyr/issues
 
 .. _open pull requests: https://github.com/zephyrproject-rtos/zephyr/pulls
 
 .. _Zephyr-devel mailing list:
    https://lists.zephyrproject.org/mailman/listinfo/zephyr-devel
 
-Before starting on a patch, first check in our Jira `Zephyr Project Issues`_
+Before starting on a patch, first check in our issues `Zephyr Project Issues`_
 system to see what's been reported on the issue you'd like to address.  Have a
 conversation on the `Zephyr-devel mailing list`_ (or the #zephyrproject IRC
 channel on freenode.net) to see what others think of your issue (and proposed
@@ -191,7 +191,7 @@ triage team will review and comment on the submission, typically within a few
 business days.
 
 You can find all `open pull requests`_ on GitHub and open `Zephyr Project
-Issues`_ in Jira.
+Issues`_ in Github issues.
 
 Development Tools and Git Setup
 *******************************
@@ -316,7 +316,7 @@ workflow here:
      $ git remote -v
 
 #. Create a topic branch (off of master) for your work (if you're addressing
-   Jira issue, we suggest including the Jira issue number in the branch name)::
+   an issue, we suggest including the issue number in the branch name)::
 
      $ git checkout master
      $ git checkout -b fix_comment_typo
@@ -434,9 +434,9 @@ Changes are submitted as Git commits. Each commit message must contain:
 * A Signed-off-by line, ``Signed-off-by: <name> <email>`` typically added
   automatically by using ``git commit -s``
 
-* If the change address a Jira issue, include a line of the form::
+* If the change addresses an issue, include a line of the form::
 
-      Jira: ZEP-xxx
+      Fixes #<issue number>.
 
 
 All changes and topics sent to GitHub must be well-formed, as described above.
