@@ -1,34 +1,34 @@
 /*
- *  Copyright (C) 2016 Texas Instruments Incorporated - http://www.ti.com/
- *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
+ *  Copyright (C) 2016 Texas Instruments Incorporated - http://www.ti.com/ 
+ *  
+ *  Redistribution and use in source and binary forms, with or without 
+ *  modification, are permitted provided that the following conditions 
  *  are met:
  *
- *    Redistributions of source code must retain the above copyright
+ *    Redistributions of source code must retain the above copyright 
  *    notice, this list of conditions and the following disclaimer.
  *
  *    Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
- *    documentation and/or other materials provided with the
+ *    notice, this list of conditions and the following disclaimer in the 
+ *    documentation and/or other materials provided with the   
  *    distribution.
  *
  *    Neither the name of Texas Instruments Incorporated nor the names of
  *    its contributors may be used to endorse or promote products derived
  *    from this software without specific prior written permission.
  *
- *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
+ *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
  *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
- *  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- *  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- *  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ *  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT 
+ *  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+ *  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
  *  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
  *  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- *  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ *  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
+ *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
  *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
+ *  
  */
 
 //*****************************************************************************
@@ -379,9 +379,9 @@ PRCMPeripheralClkEnable(unsigned long ulPeripheral, unsigned long ulClkFlags)
   {
     HWREG(ARCM_BASE + PRCM_PeriphRegsList[ulPeripheral].ulClkReg) |= ulClkFlags;
   }
-
+  
   //
-  // Checking ROM Version less than 2.x.x.
+  // Checking ROM Version less than 2.x.x. 
   // Only for driverlib backward compatibility
   //
   if( (HWREG(0x00000400) & 0xFFFF) < 2 )
@@ -2083,33 +2083,33 @@ void PRCMCC3200MCUInit()
 
       }
     }
-
+    
     unsigned long efuse_reg2;
     unsigned long ulDevMajorVer, ulDevMinorVer;
     //
     // Read the device identification register
     //
     efuse_reg2= HWREG(GPRCM_BASE + GPRCM_O_GPRCM_EFUSE_READ_REG2);
-
+    
     //
     // Read the ROM mojor and minor version
     //
     ulDevMajorVer = ((efuse_reg2 >> 28) & 0xF);
     ulDevMinorVer = ((efuse_reg2 >> 24) & 0xF);
-
+  
     if(((ulDevMajorVer == 0x3) && (ulDevMinorVer == 0)) || (ulDevMajorVer < 0x3))
     {
       unsigned int Scratch, PreRegulatedMode;
 
       // 0x4402F840 => 6th bit “1” indicates device is in pre-regulated mode.
       PreRegulatedMode = (HWREG(0x4402F840) >> 6) & 1;
-
+    
       if( PreRegulatedMode)
       {
         Scratch = HWREG(0x4402F028);
         Scratch &= 0xFFFFFF7F; // <7:7> = 0
         HWREG(0x4402F028) = Scratch;
-
+        
         Scratch = HWREG(0x4402F010);
         Scratch &= 0x0FFFFFFF; // <31:28> = 0
         Scratch |= 0x10000000; // <31:28> = 1
@@ -2147,16 +2147,16 @@ void PRCMCC3200MCUInit()
 
       // 0x4402F840 => 6th bit “1” indicates device is in pre-regulated mode.
       PreRegulatedMode = (HWREG(0x4402F840) >> 6) & 1;
-
+    
       Scratch = HWREG(0x4402F028);
       Scratch &= 0xFFFFFF7F; // <7:7> = 0
       HWREG(0x4402F028) = Scratch;
-
+    
       HWREG(0x4402F010) &= 0x0FFFFFFF; // <31:28> = 0
       if( PreRegulatedMode)
       {
         HWREG(0x4402F010) |= 0x10000000; // <31:28> = 1
-      }
+      }  
     }
   }
   else
@@ -2321,7 +2321,7 @@ unsigned long PRCMCameraFreqSet(unsigned char ulDivider, unsigned char ulWidth)
 void PRCMIORetentionEnable(unsigned long ulIORetGrpFlags)
 {
   unsigned long ulRegVal;
-
+  
   //
   // Supported only in ES2.00 and Later devices i.e. ROM Version 2.x.x or greater
   //
@@ -2406,7 +2406,7 @@ void PRCMIORetentionEnable(unsigned long ulIORetGrpFlags)
 void PRCMIORetentionDisable(unsigned long ulIORetGrpFlags)
 {
   unsigned long ulRegVal;
-
+  
   //
   // Supported only in ES2.00 and Later devices i.e. ROM Version 2.x.x or greater
   //
@@ -2452,7 +2452,7 @@ void PRCMIORetentionDisable(unsigned long ulIORetGrpFlags)
       ulRegVal  = PRCMHIBRegRead(HIB3P3_BASE  + HIB3P3_O_MEM_JTAG_CONF);
       ulRegVal &= ~0x00000101;
       PRCMHIBRegWrite(HIB3P3_BASE  + HIB3P3_O_MEM_JTAG_CONF,ulRegVal);
-
+      
     }
 
     //
@@ -2524,9 +2524,9 @@ unsigned long PRCMDeviceTypeGet()
   ulDevMajorVer = ((ulChipId >> 28) & 0xF);
   ulDevMinorVer = ((ulChipId >> 24) & 0xF);
 
-
+  
   ulChipId = ((HWREG(GPRCM_BASE + GPRCM_O_GPRCM_EFUSE_READ_REG2) >> 16) & 0x1F);
-
+   
   //
   // Get the device variant from the chip id
   //
@@ -2581,7 +2581,7 @@ unsigned long PRCMDeviceTypeGet()
     default:
       ulDevType = 0x0;
   }
-
+  
   if( ulDevType != 0 )
   {
     if( ulDevMajorVer == 0x3 )
@@ -2591,12 +2591,12 @@ unsigned long PRCMDeviceTypeGet()
     else if( ulDevMajorVer == 0x2 )
     {
       ulDevType  |= (PRCM_DEV_TYPE_FLAG_PRE_PROD|PRCM_DEV_TYPE_FLAG_3220);
-
+      
       if( ((ulDevType & PRCM_DEV_TYPE_FLAG_Z) != 0) )
       {
         if((ulDevMinorVer == 0x0))
         {
-          ulDevType |= PRCM_DEV_TYPE_FLAG_REV1;
+          ulDevType |= PRCM_DEV_TYPE_FLAG_REV1; 
         }
         else
         {
@@ -2609,7 +2609,7 @@ unsigned long PRCMDeviceTypeGet()
         {
           ulDevType |= PRCM_DEV_TYPE_FLAG_REV1;
         }
-      }
+      }     
     }
     else
     {
@@ -2628,9 +2628,9 @@ unsigned long PRCMDeviceTypeGet()
       {
         ulDevType |= (PRCM_DEV_TYPE_FLAG_PRE_PROD|PRCM_DEV_TYPE_FLAG_3200);
       }
-    }
+    }	  
   }
-
+ 
 
   return ulDevType;
 }
