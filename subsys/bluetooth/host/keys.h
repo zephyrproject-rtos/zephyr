@@ -59,6 +59,8 @@ struct bt_keys {
 #endif /* CONFIG_BT_SMP_SC_ONLY */
 };
 
+void bt_keys_foreach(int type, void (*func)(struct bt_keys *keys));
+
 struct bt_keys *bt_keys_get_addr(const bt_addr_le_t *addr);
 struct bt_keys *bt_keys_get_type(int type, const bt_addr_le_t *addr);
 struct bt_keys *bt_keys_find(int type, const bt_addr_le_t *addr);

@@ -50,6 +50,18 @@ struct bt_keys *bt_keys_get_addr(const bt_addr_le_t *addr)
 
 	return NULL;
 }
+
+void bt_keys_foreach(int type, void (*func)(struct bt_keys *keys))
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(key_pool); i++) {
+		if ((key_pool[i].keys & type)) {
+			func(&key_pool[i]);
+		}
+	}
+}
+
 struct bt_keys *bt_keys_find(int type, const bt_addr_le_t *addr)
 {
 	int i;
