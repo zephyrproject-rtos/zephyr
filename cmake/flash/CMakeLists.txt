@@ -17,9 +17,11 @@ foreach(target flash debug debugserver)
     set(script ${DEBUG_SCRIPT})
   elseif(target STREQUAL debugserver)
     set(comment "Debugging ${BOARD}")
-    set(script 0)
-    if(NOT EMU_PLATFORM)
-      set(script ${DEBUG_SCRIPT})
+    set(script ${DEBUG_SCRIPT})
+    if(EMU_PLATFORM)
+      # cmake/qemu/CMakeLists.txt will add a debugserver target for
+      # emulation platforms, so we don't add one here
+      continue()
     endif()
   endif()
 
