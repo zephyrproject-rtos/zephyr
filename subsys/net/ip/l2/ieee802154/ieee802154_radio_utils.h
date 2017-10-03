@@ -24,10 +24,15 @@ static inline bool prepare_for_ack(struct ieee802154_context *ctx,
 	return false;
 }
 
-static inline int wait_for_ack(struct ieee802154_context *ctx,
+static inline int wait_for_ack(struct net_if *iface,
 			       bool ack_required)
 {
-	if (!ack_required) {
+	const struct ieee802154_radio_api *radio = iface->dev->driver_api;
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
+
+
+	if (!ack_required ||
+	    (radio->get_capabilities(iface->dev) & IEEE802154_HW_TX_RX_ACK)) {
 		return 0;
 	}
 
