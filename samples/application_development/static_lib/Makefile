@@ -6,5 +6,3 @@
 
 all qemu flash pristine clean:
 	$(MAKE) -C hello_world $@
-
-run : qemu
