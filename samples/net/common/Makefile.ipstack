@@ -84,11 +84,11 @@ start_monitor: ${NET_TOOLS}/monitor_15_4
 
 ifeq ($(PCAP),)
 server: remove_pipes setup_pipes $(DOTCONFIG)
-	$(Q)$(call zephyrmake,$(O),qemu); true
+	$(Q)$(call zephyrmake,$(O),run); true
 	$(Q)stty sane
 else
 server: remove_pipes setup_pipes_dual_monitor start_monitor $(DOTCONFIG)
-	$(Q)$(call zephyrmake,$(O),qemu); true
+	$(Q)$(call zephyrmake,$(O),run); true
 	$(Q)kill `cat ${PID_FILE}`
 	$(Q)rm -f ${PID_FILE}
 	-@killall monitor_15_4 > /dev/null 2>&1 ; true
@@ -96,5 +96,5 @@ server: remove_pipes setup_pipes_dual_monitor start_monitor $(DOTCONFIG)
 endif
 
 client: $(DOTCONFIG)
-	$(Q)$(call zephyrmake,$(O),qemu); true
+	$(Q)$(call zephyrmake,$(O),run); true
 	$(Q)stty sane
