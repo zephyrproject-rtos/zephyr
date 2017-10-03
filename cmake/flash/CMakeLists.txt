@@ -8,72 +8,46 @@ list(APPEND ENV_VARS
        BOARD_NAME=${BOARD}
   )
 
-if(FLASH_SCRIPT)
-  add_custom_target(flash
-    COMMAND
+foreach(target flash debug debugserver)
+  if(target STREQUAL flash)
+    set(comment "Flashing ${BOARD}")
+    set(script ${FLASH_SCRIPT})
+  elseif(target STREQUAL debug)
+    set(comment "Debugging ${BOARD}")
+    set(script ${DEBUG_SCRIPT})
+  elseif(target STREQUAL debugserver)
+    set(comment "Debugging ${BOARD}")
+    set(script 0)
+    if(NOT EMU_PLATFORM)
+      set(script ${DEBUG_SCRIPT})
+    endif()
+  endif()
 
-    ${CMAKE_COMMAND} -E env
-    ${ENV_VARS}
-
-    ${CONFIG_SHELL}
-    $ENV{ZEPHYR_BASE}/scripts/support/${FLASH_SCRIPT}
-    flash
-
-    WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
-    COMMENT "Flashing ${BOARD}"
-    )
-else()
-  add_custom_target(flash
-    COMMAND
-    ${CMAKE_COMMAND} -E echo
-	"Flashing not supported with this board."
-	"Please check the documentation for alternate instructions."
-    COMMENT "Flashing ${BOARD}"
-    )
-endif()
-
-if(DEBUG_SCRIPT)
-  add_custom_target(debug
-    COMMAND
-
-    ${CMAKE_COMMAND} -E env
-    ${ENV_VARS}
-
-    ${CONFIG_SHELL}
-    $ENV{ZEPHYR_BASE}/scripts/support/${DEBUG_SCRIPT}
-    debug
-
-    WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
-    )
-else()
-  add_custom_target(debug
-    COMMAND
-    ${CMAKE_COMMAND} -E echo
-	"Debugging not supported with this board."
-	"Please check the documentation for alternate instructions."
-    )
-endif()
-
-if(NOT EMU_PLATFORM)
-  if(DEBUG_SCRIPT)
-    add_custom_target(debugserver
-      COMMAND
-
+  if(script)
+    set(cmd
       ${CMAKE_COMMAND} -E env
       ${ENV_VARS}
 
       ${CONFIG_SHELL}
-      $ENV{ZEPHYR_BASE}/scripts/support/${DEBUG_SCRIPT}
-      debugserver
+      $ENV{ZEPHYR_BASE}/scripts/support/${script}
+      ${target}
+
+      DEPENDS ${logical_target_for_zephyr_elf}
 
       WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
       )
   else()
-    add_custom_target(debugserver
-      COMMAND
+    set(cmd
       ${CMAKE_COMMAND} -E echo
-	  "Debugserver not supported with this board."
+	  "'${target}' is not supported with this board."
 	  "Please check the documentation for alternate instructions."
       )
   endif()
-endif()
+
+  add_custom_target(${target}
+    COMMAND
+    ${cmd}
+    COMMENT
+    ${comment}
+    )
+endforeach()
