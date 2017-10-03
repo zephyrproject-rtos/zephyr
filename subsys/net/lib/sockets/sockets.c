@@ -266,10 +266,8 @@ ssize_t zsock_sendto(int sock, const void *buf, size_t len, int flags,
 	if (sock_type == SOCK_DGRAM) {
 		err = net_context_sendto(send_pkt, dest_addr, addrlen, NULL,
 					 timeout, NULL, NULL);
-	} else if (sock_type == SOCK_STREAM) {
-		err = net_context_send(send_pkt, NULL, timeout, NULL, NULL);
 	} else {
-		__ASSERT(0, "Unknown socket type");
+		err = net_context_send(send_pkt, NULL, timeout, NULL, NULL);
 	}
 
 	if (err < 0) {
