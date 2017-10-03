@@ -5,6 +5,9 @@ Zephyr Project
 
    <a href="https://bestpractices.coreinfrastructure.org/projects/74"><img
    src="https://bestpractices.coreinfrastructure.org/projects/74/badge"></a>
+   <img
+   src="https://api.shippable.com/projects/58ffb2b8baa5e307002e1d79/badge?branch=master">
+
 
 The Zephyr Project is a scalable real-time operating system (RTOS) supporting
 multiple hardware architectures, optimized for resource constrained devices,
