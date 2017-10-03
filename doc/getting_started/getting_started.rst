@@ -163,7 +163,7 @@ follow the steps below to build with any custom or 3rd party cross-compilers:
    and extract it on your file system. This example assumes the compiler was
    extracted to: :file:`~/gcc-arm-none-eabi-5_3-2016q1/`.
 
-#. Navigate to the main project directory:
+#. Navigate to the main project directory (where you cloned the Zephyr source from GitHub):
 
    .. code-block:: console
 
