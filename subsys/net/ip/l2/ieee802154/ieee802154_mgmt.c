@@ -22,11 +22,10 @@
 #include "ieee802154_security.h"
 
 enum net_verdict ieee802154_handle_beacon(struct net_if *iface,
-					  struct ieee802154_mpdu *mpdu)
+					  struct ieee802154_mpdu *mpdu,
+					  u8_t lqi)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
-	struct ieee802154_radio_api *radio =
-		(struct ieee802154_radio_api *)iface->dev->driver_api;
 
 	NET_DBG("Beacon received");
 
@@ -41,7 +40,7 @@ enum net_verdict ieee802154_handle_beacon(struct net_if *iface,
 	k_sem_take(&ctx->res_lock, K_FOREVER);
 
 	ctx->scan_ctx->pan_id = mpdu->mhr.src_addr->plain.pan_id;
-	ctx->scan_ctx->lqi = radio->get_lqi(iface->dev);
+	ctx->scan_ctx->lqi = lqi;
 
 	if (mpdu->mhr.fs->fc.src_addr_mode == IEEE802154_ADDR_MODE_SHORT) {
 		ctx->scan_ctx->len = IEEE802154_SHORT_ADDR_LENGTH;
