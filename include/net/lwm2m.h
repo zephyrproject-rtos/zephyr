@@ -27,9 +27,19 @@
 #define IPSO_OBJECT_LIGHT_CONTROL_ID			3311
 
 /**
- * LwM2M context structure
+ * @brief LwM2M context structure
  *
  * @details Context structure for the LwM2M high-level API.
+ *
+ * @param net_app_ctx Related network application context.
+ * @param net_init_timeout Used if the net_app API needs to do some time
+ *    consuming operation, like resolving DNS address.
+ * @param net_timeout How long to wait for the network connection before
+ *    giving up.
+ * @param tx_slab Network packet (net_pkt) memory pool for network contexts
+ *    attached to this LwM2M context.
+ * @param data_pool Network data net_buf pool for network contexts attached
+ *    to this LwM2M context.
  */
 struct lwm2m_ctx {
 	/** Net app context structure */
@@ -38,14 +48,7 @@ struct lwm2m_ctx {
 	s32_t net_timeout;
 
 #if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
-	/** Network packet (net_pkt) memory pool for network contexts attached
-	 * to this LwM2M context.
-	 */
 	net_pkt_get_slab_func_t tx_slab;
-
-	/** Network data net_buf pool for network contexts attached to this
-	 * LwM2M context.
-	 */
 	net_pkt_get_pool_func_t data_pool;
 #endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 
