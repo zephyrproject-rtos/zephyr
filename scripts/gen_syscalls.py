@@ -11,7 +11,7 @@ import os
 
 
 api_regex = re.compile(r'''
-__(syscall|syscall_inline)\s+   # __syscall or __syscall_inline
+__syscall\s+                    # __syscall attribute, must be first
 ([^(]+)                         # type and name of system call (split later)
 [(]                             # Function opening parenthesis
 ([^)]*)                         # Arg list (split later)
@@ -41,7 +41,7 @@ def typename_split(item):
 
 
 def analyze_fn(match_group, fn):
-    variant, func, args = match_group
+    func, args = match_group
 
     try:
         if args == "void":
@@ -60,9 +60,7 @@ def analyze_fn(match_group, fn):
     # Get the proper system call macro invocation, which depends on the
     # number of arguments, the return type, and whether the implementation
     # is an inline function
-    macro = "K_SYSCALL_DECLARE%d%s%s" % (len(args),
-            "_VOID" if is_void else "",
-            "_INLINE" if variant == "syscall_inline" else "")
+    macro = "K_SYSCALL_DECLARE%d%s" % (len(args), "_VOID" if is_void else "")
 
     # Flatten the argument lists and generate a comma separated list
     # of t0, p0, t1, p1, ... tN, pN as expected by the macros

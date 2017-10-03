@@ -6,9 +6,9 @@
 
 import sys
 
-def gen_macro(ret, argc, inline=False):
-    sys.stdout.write("K_SYSCALL_DECLARE%d%s%s(id, name" % (argc,
-        ("" if ret else "_VOID"), ("_INLINE" if inline else "")))
+def gen_macro(ret, argc):
+    sys.stdout.write("K_SYSCALL_DECLARE%d%s(id, name" % (argc,
+        ("" if ret else "_VOID")))
     if (ret):
         sys.stdout.write(", ret")
     for i in range(argc):
@@ -53,8 +53,13 @@ def newline():
 
 def gen_defines_inner(ret, argc, kernel_only=False, user_only=False):
     sys.stdout.write("#define ")
-    gen_macro(ret, argc, inline=True)
+    gen_macro(ret, argc)
     newline()
+
+    if not user_only:
+        gen_fn(ret, argc, "_impl_##name", extern=True)
+        sys.stdout.write(";")
+        newline()
 
     gen_fn(ret, argc, "name");
     newline()
@@ -83,18 +88,6 @@ def gen_defines_inner(ret, argc, kernel_only=False, user_only=False):
         newline()
 
     sys.stdout.write("\t}\n\n")
-
-    sys.stdout.write("#define ")
-    gen_macro(ret, argc)
-    newline()
-
-    if not user_only:
-        gen_fn(ret, argc, "_impl_##name", extern=True)
-        sys.stdout.write(";")
-        newline()
-    sys.stdout.write("\t")
-    gen_macro(ret, argc, inline=True)
-    sys.stdout.write(";\n\n")
 
 def gen_defines(argc, kernel_only=False, user_only=False):
     gen_defines_inner(False, argc, kernel_only, user_only)
