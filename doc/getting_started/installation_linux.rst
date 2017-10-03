@@ -53,7 +53,7 @@ Install the required packages in a Ubuntu host system with:
 .. code-block:: console
 
    $ sudo apt-get install --no-install-recommends git ninja-build gperf \
-	 ccache doxygen dfu-util device-tree-compiler \
+     ccache doxygen dfu-util device-tree-compiler \
      python3-ply python3-pip python3-setuptools xz-utils file
 
 Install the required packages in a Fedora host system with:
