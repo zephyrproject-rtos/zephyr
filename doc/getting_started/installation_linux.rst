@@ -52,7 +52,7 @@ Install the required packages in a Ubuntu host system with:
 
 .. code-block:: console
 
-   $ sudo apt-get install git make gcc g++ ncurses-dev gperf \
+   $ sudo apt-get install git make gcc g++ ncurses-dev gperf ccache\
 	 doxygen dfu-util device-tree-compiler python3-ply python3-pip
 
 Install the required packages in a Fedora host system with:
@@ -60,7 +60,7 @@ Install the required packages in a Fedora host system with:
 .. code-block:: console
 
    $ sudo dnf group install "Development Tools"
-   $ sudo dnf install git make gcc glibc-static gperf \
+   $ sudo dnf install git make gcc glibc-static gperf ccache\
 	 libstdc++-static ncurses-devel \
 	 doxygen dfu-util dtc python3-pip \
 	 python3-ply python3-yaml dfu-util dtc python3-pykwalify
