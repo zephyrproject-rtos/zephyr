@@ -78,8 +78,6 @@ struct kw41z_context {
 
 	u32_t rx_warmup_time;
 	u32_t tx_warmup_time;
-
-	u8_t lqi;
 };
 
 static struct kw41z_context kw41z_context_data;
@@ -294,13 +292,6 @@ static u8_t kw41z_convert_lqi(u8_t hw_lqi)
 	}
 }
 
-static u8_t kw41z_get_lqi(struct device *dev)
-{
-	struct kw41z_context *kw41z = dev->driver_data;
-
-	return kw41z->lqi;
-}
-
 static inline void kw41z_rx(struct kw41z_context *kw41z, u8_t len)
 {
 	struct net_pkt *pkt = NULL;
@@ -362,7 +353,8 @@ static inline void kw41z_rx(struct kw41z_context *kw41z, u8_t len)
 
 	hw_lqi = (ZLL->LQI_AND_RSSI & ZLL_LQI_AND_RSSI_LQI_VALUE_MASK) >>
 		 ZLL_LQI_AND_RSSI_LQI_VALUE_SHIFT;
-	kw41z->lqi = kw41z_convert_lqi(hw_lqi);
+	net_pkt_set_ieee802154_lqi(pkt, kw41z_convert_lqi(hw_lqi));
+	/* ToDo: get the rssi as well and use net_pkt_set_ieee802154_rssi() */
 
 	if (net_recv_data(kw41z->iface, pkt) < 0) {
 		SYS_LOG_DBG("Packet dropped by NET stack");
@@ -672,7 +664,6 @@ static struct ieee802154_radio_api kw41z_radio_api = {
 	.start		= kw41z_start,
 	.stop		= kw41z_stop,
 	.tx		= kw41z_tx,
-	.get_lqi	= kw41z_get_lqi,
 };
 
 NET_DEVICE_INIT(kw41z, CONFIG_IEEE802154_KW41Z_DRV_NAME,

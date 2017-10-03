@@ -106,6 +106,9 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 		memcpy(frag->data, nrf5_radio->rx_psdu + 1, pkt_len);
 		net_buf_add(frag, pkt_len);
 
+		net_pkt_set_ieee802154_lqi(pkt, nrf5_radio->lqi);
+		net_pkt_set_ieee802154_rssi(pks, nrf5_radio->rssi);
+
 		nrf_drv_radio802154_buffer_free(nrf5_radio->rx_psdu);
 
 		ack_result = ieee802154_radio_handle_ack(nrf5_radio->iface,
@@ -292,13 +295,6 @@ static int nrf5_stop(struct device *dev)
 	return 0;
 }
 
-static u8_t nrf5_get_lqi(struct device *dev)
-{
-	struct nrf5_802154_data *nrf5_radio = NRF5_802154_DATA(dev);
-
-	return nrf5_radio->lqi;
-}
-
 static void nrf5_radio_irq(void *arg)
 {
 	ARG_UNUSED(arg);
@@ -409,7 +405,6 @@ static struct ieee802154_radio_api nrf5_radio_api = {
 	.start = nrf5_start,
 	.stop = nrf5_stop,
 	.tx = nrf5_tx,
-	.get_lqi = nrf5_get_lqi,
 };
 
 #if defined(CONFIG_IEEE802154_NRF5_RAW)

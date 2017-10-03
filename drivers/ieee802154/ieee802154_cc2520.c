@@ -541,6 +541,34 @@ static inline bool read_rxfifo_content(struct cc2520_spi *spi,
 	return true;
 }
 
+static inline void insert_radio_noise_details(struct net_pkt *pkt, u8_t *buf)
+{
+	u8_t lqi;
+
+	net_pkt_set_ieee802154_rssi(pkt, buf[0]);
+
+	/**
+	 * CC2520 does not provide an LQI but a correlation factor.
+	 * See Section 20.6
+	 * Such calculation can be loosely used to transform it to lqi:
+	 * corr <= 50 ? lqi = 0
+	 * or:
+	 * corr >= 110 ? lqi = 255
+	 * else:
+	 * lqi = (lqi - 50) * 4
+	 */
+	lqi = buf[1] & CC2520_FCS_CORRELATION;
+	if (lqi <= 50) {
+		lqi = 0;
+	} else if (lqi >= 110) {
+		lqi = 255;
+	} else {
+		lqi = (lqi - 50) << 2;
+	}
+
+	net_pkt_set_ieee802154_lqi(pkt, lqi);
+}
+
 static inline bool verify_crc(struct cc2520_context *cc2520,
 			      struct net_pkt *pkt)
 {
@@ -559,26 +587,7 @@ static inline bool verify_crc(struct cc2520_context *cc2520,
 		return false;
 	}
 
-	net_pkt_set_ieee802154_rssi(pkt, cc2520->spi.cmd_buf[1]);
-
-	/**
-	 * CC2520 does not provide an LQI but a correlation factor.
-	 * See Section 20.6
-	 * Such calculation can be loosely used to transform it to lqi:
-	 * corr <= 50 ? lqi = 0
-	 * or:
-	 * corr >= 110 ? lqi = 255
-	 * else:
-	 * lqi = (lqi - 50) * 4
-	 */
-	cc2520->lqi = cc2520->spi.cmd_buf[2] & CC2520_FCS_CORRELATION;
-	if (cc2520->lqi <= 50) {
-		cc2520->lqi = 0;
-	} else if (cc2520->lqi >= 110) {
-		cc2520->lqi = 255;
-	} else {
-		cc2520->lqi = (cc2520->lqi - 50) << 2;
-	}
+	insert_radio_noise_details(pkt, &cc2520->spi.cmd_buf[1]);
 
 	return true;
 }
@@ -649,15 +658,9 @@ static void cc2520_rx(int arg)
 			goto out;
 		}
 
-		cc2520->lqi = pkt_frag->data[pkt_len - 1] &
-			CC2520_FCS_CORRELATION;
-		if (cc2520->lqi <= 50) {
-			cc2520->lqi = 0;
-		} else if (cc2520->lqi >= 110) {
-			cc2520->lqi = 255;
-		} else {
-			cc2520->lqi = (cc2520->lqi - 50) << 2;
-		}
+		insert_radio_noise_details(pkt, &pkt_frag->data[pkt_len - 2]);
+
+		net_buf_add_u8(pkt_frag, net_pkt_ieee802154_lqi(pkt));
 #else
 		if (!read_rxfifo_content(&cc2520->spi, pkt_frag, pkt_len - 2)) {
 			SYS_LOG_ERR("No content read");
@@ -675,12 +678,7 @@ static void cc2520_rx(int arg)
 			goto out;
 		}
 
-#if defined(CONFIG_IEEE802154_CC2520_RAW)
-		net_buf_add_u8(pkt_frag, cc2520->lqi);
-#endif
-
-		SYS_LOG_DBG("Caught a packet (%u) (LQI: %u)",
-			    pkt_len, cc2520->lqi);
+		SYS_LOG_DBG("Caught a packet (%u)", pkt_len);
 
 		if (net_recv_data(cc2520->iface, pkt) < 0) {
 			SYS_LOG_DBG("Packet dropped by NET stack");
@@ -943,13 +941,6 @@ static int cc2520_stop(struct device *dev)
 	return 0;
 }
 
-static u8_t cc2520_get_lqi(struct device *dev)
-{
-	struct cc2520_context *cc2520 = dev->driver_data;
-
-	return cc2520->lqi;
-}
-
 /******************
  * Initialization *
  *****************/
@@ -1115,7 +1106,6 @@ static struct ieee802154_radio_api cc2520_radio_api = {
 	.start		= cc2520_start,
 	.stop		= cc2520_stop,
 	.tx		= cc2520_tx,
-	.get_lqi	= cc2520_get_lqi,
 };
 
 #if defined(CONFIG_IEEE802154_CC2520_RAW)
