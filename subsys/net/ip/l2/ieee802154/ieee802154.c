@@ -233,7 +233,8 @@ static enum net_verdict ieee802154_recv(struct net_if *iface,
 	}
 
 	if (mpdu.mhr.fs->fc.frame_type == IEEE802154_FRAME_TYPE_BEACON) {
-		return ieee802154_handle_beacon(iface, &mpdu);
+		return ieee802154_handle_beacon(iface, &mpdu,
+						net_pkt_ieee802154_lqi(pkt));
 	}
 
 	if (ieee802154_is_scanning(iface)) {
