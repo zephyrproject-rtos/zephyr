@@ -32,6 +32,9 @@
 #define NOTIFY_OBSERVER(o, i, r)	lwm2m_notify_observer(o, i, r)
 #define NOTIFY_OBSERVER_PATH(path)	lwm2m_notify_observer_path(path)
 
+/* Use this value to skip token generation */
+#define LWM2M_MSG_TOKEN_LEN_SKIP	0xFF
+
 char *lwm2m_sprint_ip_addr(const struct sockaddr *addr);
 
 int lwm2m_notify_observer(u16_t obj_id, u16_t obj_inst_id, u16_t res_id);

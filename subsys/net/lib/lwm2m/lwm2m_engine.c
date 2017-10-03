@@ -79,11 +79,13 @@
 
 #define BUF_ALLOC_TIMEOUT K_SECONDS(1)
 
+#define MAX_TOKEN_LEN		8
+
 struct observe_node {
 	sys_snode_t node;
 	struct lwm2m_ctx *ctx;
 	struct lwm2m_obj_path path;
-	u8_t  token[8];
+	u8_t  token[MAX_TOKEN_LEN];
 	s64_t event_timestamp;
 	s64_t last_timestamp;
 	u32_t min_period_sec;
@@ -134,14 +136,23 @@ char *lwm2m_sprint_ip_addr(const struct sockaddr *addr)
 #if CONFIG_SYS_LOG_LWM2M_LEVEL > 3
 static char *sprint_token(const u8_t *token, u8_t tkl)
 {
-	int i;
 	static char buf[32];
 	int pos = 0;
 
-	for (i = 0; i < tkl; i++) {
-		pos += snprintf(&buf[pos], 31 - pos, "%x", token[i]);
+	if (token && tkl != LWM2M_MSG_TOKEN_LEN_SKIP) {
+		int i;
+
+		for (i = 0; i < tkl; i++) {
+			pos += snprintf(&buf[pos], 31 - pos, "%x", token[i]);
+		}
+
+		buf[pos] = '\0';
+	} else if (tkl == LWM2M_MSG_TOKEN_LEN_SKIP) {
+		strcpy(buf, "[skip-token]");
+	} else {
+		strcpy(buf, "[no-token]");
 	}
-	buf[pos] = '\0';
+
 	return buf;
 }
 #endif
@@ -187,6 +198,12 @@ static int engine_add_observer(struct net_app_ctx *app_ctx,
 	struct observe_node *obs;
 	struct sockaddr *addr;
 	int i;
+
+	if (!token || (tkl == 0 || tkl > MAX_TOKEN_LEN)) {
+		SYS_LOG_ERR("token(%p) and token length(%u) must be valid.",
+			    token, tkl);
+		return -EINVAL;
+	}
 
 	/* remote addr */
 	addr = &app_ctx->default_ctx->remote;
@@ -283,7 +300,7 @@ static int engine_remove_observer(const u8_t *token, u8_t tkl)
 	struct observe_node *obs, *found_obj = NULL;
 	sys_snode_t *prev_node = NULL;
 
-	if (!token || tkl == 0) {
+	if (!token || (tkl == 0 || tkl > MAX_TOKEN_LEN)) {
 		SYS_LOG_ERR("token(%p) and token length(%u) must be valid.",
 			    token, tkl);
 		return -EINVAL;
@@ -610,11 +627,15 @@ int lwm2m_init_message(struct net_app_ctx *app_ctx, struct zoap_packet *zpkt,
 		zoap_header_set_id(zpkt, zoap_next_id());
 	}
 
-	/* tkl == 0 is for a new TOKEN, tkl == -1 means dont set */
-	if (token && tkl > 0) {
+	/*
+	 * tkl == 0 is for a new TOKEN
+	 * tkl == LWM2M_MSG_TOKEN_LEN_SKIP means dont set
+	 */
+	if (tkl == 0) {
+		zoap_header_set_token(zpkt, zoap_next_token(),
+				      MAX_TOKEN_LEN);
+	} else if (token && tkl != LWM2M_MSG_TOKEN_LEN_SKIP) {
 		zoap_header_set_token(zpkt, token, tkl);
-	} else if (tkl == 0) {
-		zoap_header_set_token(zpkt, zoap_next_token(), 8);
 	}
 
 	return 0;
@@ -2314,7 +2335,7 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
 					       ZOAP_TYPE_ACK,
 					       zoap_header_get_code(&response),
 					       zoap_header_get_id(&response),
-					       NULL, -1);
+					       NULL, LWM2M_MSG_TOKEN_LEN_SKIP);
 			if (r < 0) {
 				if (pkt2) {
 					net_pkt_unref(pkt2);
