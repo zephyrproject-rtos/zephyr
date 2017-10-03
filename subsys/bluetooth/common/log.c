@@ -49,7 +49,7 @@ const char *bt_hex(const void *buf, size_t len)
 #if defined(CONFIG_BT_DEBUG)
 const char *bt_addr_str(const bt_addr_t *addr)
 {
-	static char bufs[2][18];
+	static char bufs[2][BT_ADDR_STR_LEN];
 	static u8_t cur;
 	char *str;
 
@@ -62,7 +62,7 @@ const char *bt_addr_str(const bt_addr_t *addr)
 
 const char *bt_addr_le_str(const bt_addr_le_t *addr)
 {
-	static char bufs[2][27];
+	static char bufs[2][BT_ADDR_LE_STR_LEN];
 	static u8_t cur;
 	char *str;
 
