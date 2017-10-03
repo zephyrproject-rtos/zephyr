@@ -45,7 +45,6 @@ struct mcr20a_context {
 	K_THREAD_STACK_MEMBER(mcr20a_rx_stack,
 			      CONFIG_IEEE802154_MCR20A_RX_STACK_SIZE);
 	struct k_thread mcr20a_rx_thread;
-	u8_t lqi;
 };
 
 #include "ieee802154_mcr20a_regs.h"

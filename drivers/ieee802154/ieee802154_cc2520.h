@@ -48,7 +48,6 @@ struct cc2520_context {
 	struct k_sem access_lock;
 #endif
 	bool overflow;
-	u8_t lqi;
 };
 
 #include "ieee802154_cc2520_regs.h"

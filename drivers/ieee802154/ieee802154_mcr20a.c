@@ -582,10 +582,13 @@ static inline void mcr20a_rx(struct mcr20a_context *mcr20a, u8_t len)
 		goto out;
 	}
 
-	mcr20a->lqi = read_reg_lqi_value(&mcr20a->spi);
+	net_pkt_set_ieee802154_lqi(pkt, read_reg_lqi_value(&mcr20a->spi));
+	net_pkt_set_ieee802154_rssi(pkt, mcr20a_get_rssi(
+					    net_pkt_ieee802154_lqi(pkt)));
+
 	SYS_LOG_DBG("Caught a packet (%u) (LQI: %u, RSSI: %u)",
-		    pkt_len, mcr20a->lqi,
-		    mcr20a_get_rssi(mcr20a->lqi));
+		    pkt_len, net_pkt_ieee802154_lqi(pkt),
+		    net_pkt_ieee802154_rssi(pkt));
 
 #if defined(CONFIG_IEEE802154_MCR20A_RAW)
 	net_buf_add_u8(frag, mcr20a->lqi);
@@ -1231,14 +1234,6 @@ error:
 	return -EIO;
 }
 
-static u8_t mcr20a_get_lqi(struct device *dev)
-{
-	struct mcr20a_context *mcr20a = dev->driver_data;
-
-	SYS_LOG_DBG("");
-	return mcr20a->lqi;
-}
-
 static int mcr20a_update_overwrites(struct mcr20a_context *dev)
 {
 	struct mcr20a_spi *spi = &dev->spi;
@@ -1470,7 +1465,6 @@ static struct ieee802154_radio_api mcr20a_radio_api = {
 	.start		= mcr20a_start,
 	.stop		= mcr20a_stop,
 	.tx		= mcr20a_tx,
-	.get_lqi	= mcr20a_get_lqi,
 };
 
 #if defined(CONFIG_IEEE802154_MCR20A_RAW)
