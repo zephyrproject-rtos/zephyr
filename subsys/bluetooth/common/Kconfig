@@ -8,6 +8,13 @@
 
 if BT_HCI
 
+config BT_HCI_VS_EXT
+	bool "Zephyr HCI Vendor-Specific Extensions"
+	default y
+	help
+	  Enable support for the Zephyr HCI Vendor-Specific Extensions in the
+	  Host and/or Controller.
+
 config BT_RPA
 	# Virtual/hidden option
 	bool

@@ -30,17 +30,10 @@ endchoice
 
 comment "BLE Controller configuration"
 
-config BT_CTLR_HCI_VS_EXT
-	bool "Zephyr HCI Vendor-Specific Extensions"
-	default y
-	help
-	  Enable support for the Zephyr HCI Vendor-Specific Extensions in the
-	  Controller.
-
 config BT_CTLR_HCI_VS_BUILD_INFO
 	string "Zephyr HCI VS Build Info string"
 	default ""
-	depends on BT_CTLR_HCI_VS_EXT
+	depends on BT_HCI_VS_EXT
 	help
 	  User-defined string that will be returned by the Zephyr VS Read Build
 	  Information command after the Zephyr version and build time. When
