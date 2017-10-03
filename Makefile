@@ -1311,7 +1311,7 @@ host-tools:
 	$(Q)$(MAKE) $(build)=scripts/basic
 	$(Q)$(MAKE) $(build)=scripts/kconfig standalone
 	@mkdir -p ${ZEPHYR_BASE}/bin
-	@cp scripts/basic/fixdep scripts/kconfig/conf ${ZEPHYR_BASE}/bin
+	@cp scripts/basic/fixdep scripts/basic/stdin2hex scripts/kconfig/conf ${ZEPHYR_BASE}/bin
 
 
 # Documentation targets

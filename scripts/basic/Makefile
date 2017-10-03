@@ -9,6 +9,7 @@
 # fixdep: 	 Used to generate dependency information during build process
 
 hostprogs-y	:= fixdep
+hostprogs-y	+= stdin2hex
 always		:= $(hostprogs-y)
 
 # fixdep is needed to compile other host programs

@@ -1,0 +1,60 @@
+# Copyright (c) 2017 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig WS
+	bool "Websocket support [EXPERIMENTAL]"
+	default n
+	depends on NET_APP
+	select NET_TCP
+	help
+	This option enables the websocket library. Note that the library
+	supports HTTP and HTTPS so it can be used instead of HTTP library.
+
+if WS
+
+config WS_SERVER
+	bool "Enable websocket server support"
+	default n
+	select HTTP_PARSER
+	select NET_APP_SERVER
+	help
+	Enables websocket server routines
+
+config WS_TLS
+	bool "Enable TLS support for websocket"
+	default n
+	select NET_APP_TLS
+	select MBEDTLS
+	help
+	Enables websocket to be used over TLS link.
+
+config WS_HTTP_SERVER_NUM_URLS
+	int "Max number of HTTP URLs that the websocket server will handle"
+	default 4
+	help
+	This value determines how many HTTP URLs this websocket server can
+	handle.
+
+config WS_HTTP_HEADER_FIELD_ITEMS
+	int "HTTP header field max number of items"
+	default 16
+	help
+	Number of HTTP header field items that the server
+	application will handle
+
+config NET_DEBUG_WS
+	bool "Debug websocket library"
+	default n
+	help
+	Enables websocket library to output debug messages
+
+config  NET_DEBUG_WS_CONN
+	bool "Debug websocket connections"
+	default n
+	depends on NET_DEBUG_WS && NET_LOG
+	help
+	Enables websocket connection tracking.
+
+endif # WS

@@ -4229,6 +4229,11 @@ struct net_rpl_instance *net_rpl_get_default_instance(void)
 	return rpl_default_instance;
 }
 
+struct net_if *net_rpl_get_interface(void)
+{
+	return rpl_default_iface;
+}
+
 void net_rpl_init(void)
 {
 	/* Note that link_cb needs to be static as it is added

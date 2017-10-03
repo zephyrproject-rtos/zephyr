@@ -31,9 +31,8 @@
 #include "ipv6.h"
 #endif
 
-#if defined(CONFIG_HTTP)
 #include <net/http.h>
-#endif
+#include <net/websocket.h>
 
 #if defined(CONFIG_NET_APP)
 #include <net/net_app.h>
@@ -1354,7 +1353,8 @@ int net_shell_cmd_dns(int argc, char *argv[])
 	return 0;
 }
 
-#if defined(CONFIG_NET_DEBUG_HTTP_CONN) && defined(CONFIG_HTTP_SERVER)
+#if ((defined(CONFIG_NET_DEBUG_HTTP_CONN) && defined(CONFIG_HTTP_SERVER)) || \
+(defined(CONFIG_NET_DEBUG_WS_CONN) && defined(CONFIG_WS_SERVER)))
 #define MAX_HTTP_OUTPUT_LEN 64
 
 static char *http_str_output(char *output, int outlen, const char *str, int len)
@@ -1373,6 +1373,7 @@ static char *http_str_output(char *output, int outlen, const char *str, int len)
 	return output;
 }
 
+#if defined(CONFIG_HTTP_SERVER)
 static void http_server_cb(struct http_server_ctx *entry,
 			   void *user_data)
 {
@@ -1400,14 +1401,53 @@ static void http_server_cb(struct http_server_ctx *entry,
 	       http_str_output(output, sizeof(output) - 1,
 			       entry->req.url, entry->req.url_len));
 }
-#endif /* CONFIG_NET_DEBUG_HTTP_CONN && CONFIG_HTTP_SERVER */
+#else
+#define http_server_cb(...) NULL
+#endif
+
+#if defined(CONFIG_WS_SERVER)
+static void ws_server_cb(struct ws_ctx *entry, void *user_data)
+{
+	int *count = user_data;
+	static char output[MAX_HTTP_OUTPUT_LEN];
+
+	/* +7 for []:port */
+	char addr_local[ADDR_LEN + 7];
+	char addr_remote[ADDR_LEN + 7] = "";
+
+	if (*count == 0) {
+		printk("        WS ctx      Local           \t"
+		       "Remote          \tURL\n");
+	}
+
+	(*count)++;
+
+	get_addresses(entry->app_ctx.server.net_ctx,
+		      addr_local, sizeof(addr_local),
+		      addr_remote, sizeof(addr_remote));
+
+	printk("[%2d] %c%c %p  %16s\t%16s\t%s\n",
+	       *count,
+	       entry->app_ctx.is_enabled ? 'E' : 'D',
+	       entry->is_tls ? 'S' : ' ',
+	       entry, addr_local, addr_remote,
+	       http_str_output(output, sizeof(output) - 1,
+			       entry->http.url, entry->http.url_len));
+}
+#else
+#define ws_server_cb(...) NULL
+#endif
+#endif /* CONFIG_NET_DEBUG_HTTP_CONN && CONFIG_HTTP_SERVER ||
+	* CONFIG_NET_DEBUG_WS_CONN && CONFIG_WS_SERVER
+	*/
 
 int net_shell_cmd_http(int argc, char *argv[])
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-#if defined(CONFIG_NET_DEBUG_HTTP_CONN) && defined(CONFIG_HTTP_SERVER)
+#if (defined(CONFIG_NET_DEBUG_HTTP_CONN) && defined(CONFIG_HTTP_SERVER)) || \
+(defined(CONFIG_NET_DEBUG_WS_CONN) && defined(CONFIG_WS_SERVER))
 	static int count;
 	int arg = 1;
 
@@ -1415,6 +1455,7 @@ int net_shell_cmd_http(int argc, char *argv[])
 
 	/* Turn off monitoring if it was enabled */
 	http_server_conn_monitor(NULL, NULL);
+	ws_server_conn_monitor(NULL, NULL);
 
 	if (strcmp(argv[0], "http")) {
 		arg++;
@@ -1425,12 +1466,15 @@ int net_shell_cmd_http(int argc, char *argv[])
 			printk("Activating HTTP monitor. Type \"net http\" "
 			       "to disable HTTP connection monitoring.\n");
 			http_server_conn_monitor(http_server_cb, &count);
+			ws_server_conn_monitor(ws_server_cb, &count);
 		}
 	} else {
 		http_server_conn_foreach(http_server_cb, &count);
+		ws_server_conn_foreach(ws_server_cb, &count);
 	}
 #else
 	printk("Enable CONFIG_NET_DEBUG_HTTP_CONN and CONFIG_HTTP_SERVER "
+	       "or CONFIG_NET_DEBUG_WS_CONN and CONFIG_WS_SERVER "
 	       "to get HTTP server connection information\n");
 #endif
 
@@ -1661,7 +1705,7 @@ int net_shell_cmd_nbr(int argc, char *argv[])
 			return 0;
 		}
 
-		if (!net_ipv6_nbr_rm(net_if_get_default(), &addr)) {
+		if (!net_ipv6_nbr_rm(NULL, &addr)) {
 			printk("Cannot remove neighbor %s\n",
 			       net_sprint_ipv6_addr(&addr));
 		} else {
@@ -1720,7 +1764,13 @@ static enum net_verdict _handle_ipv6_echo_reply(struct net_pkt *pkt)
 static int _ping_ipv6(char *host)
 {
 	struct in6_addr ipv6_target;
+	struct net_if *iface = net_if_get_default();
+	struct net_nbr *nbr;
 	int ret;
+
+#if defined(CONFIG_NET_ROUTE)
+	struct net_route_entry *route;
+#endif
 
 	if (net_addr_pton(AF_INET6, host, &ipv6_target) < 0) {
 		return -EINVAL;
@@ -1728,7 +1778,19 @@ static int _ping_ipv6(char *host)
 
 	net_icmpv6_register_handler(&ping6_handler);
 
-	ret = net_icmpv6_send_echo_request(net_if_get_default(),
+	nbr = net_ipv6_nbr_lookup(NULL, &ipv6_target);
+	if (nbr) {
+		iface = nbr->iface;
+	}
+
+#if defined(CONFIG_NET_ROUTE)
+	route = net_route_lookup(NULL, &ipv6_target);
+	if (route) {
+		iface = route->iface;
+	}
+#endif
+
+	ret = net_icmpv6_send_echo_request(iface,
 					   &ipv6_target,
 					   sys_rand32_get(),
 					   sys_rand32_get());
@@ -2154,7 +2216,7 @@ static void get_my_ipv6_addr(struct net_if *iface,
 {
 	const struct in6_addr *my6addr;
 
-	my6addr = net_if_ipv6_select_src_addr(net_if_get_default(),
+	my6addr = net_if_ipv6_select_src_addr(iface,
 					      &net_sin6(myaddr)->sin6_addr);
 
 	memcpy(&net_sin6(myaddr)->sin6_addr, my6addr, sizeof(struct in6_addr));
@@ -2217,6 +2279,8 @@ static int tcp_connect(char *host, u16_t port, struct net_context **ctx)
 {
 	struct sockaddr addr;
 	struct sockaddr myaddr;
+	struct net_nbr *nbr;
+	struct net_if *iface = net_if_get_default();
 	int addrlen;
 	int family;
 	int ret;
@@ -2230,18 +2294,26 @@ static int tcp_connect(char *host, u16_t port, struct net_context **ctx)
 
 	net_sin6(&addr)->sin6_port = htons(port);
 	addrlen = sizeof(struct sockaddr_in6);
-	get_my_ipv6_addr(net_if_get_default(), &myaddr);
+
+	nbr = net_ipv6_nbr_lookup(NULL, &net_sin6(&addr)->sin6_addr);
+	if (nbr) {
+		iface = nbr->iface;
+	}
+
+	get_my_ipv6_addr(iface, &myaddr);
 	family = addr.sa_family = myaddr.sa_family = AF_INET6;
 #endif
 
 #if defined(CONFIG_NET_IPV4) && !defined(CONFIG_NET_IPV6)
+	ARG_UNUSED(nbr);
+
 	ret = net_addr_pton(AF_INET, host, &net_sin(&addr)->sin_addr);
 	if (ret < 0) {
 		printk("Invalid IPv4 address\n");
 		return 0;
 	}
 
-	get_my_ipv4_addr(net_if_get_default(), &myaddr);
+	get_my_ipv4_addr(iface, &myaddr);
 	net_sin(&addr)->sin_port = htons(port);
 	addrlen = sizeof(struct sockaddr_in);
 	family = addr.sa_family = myaddr.sa_family = AF_INET;
@@ -2258,12 +2330,19 @@ static int tcp_connect(char *host, u16_t port, struct net_context **ctx)
 
 		net_sin(&addr)->sin_port = htons(port);
 		addrlen = sizeof(struct sockaddr_in);
-		get_my_ipv4_addr(net_if_get_default(), &myaddr);
+
+		get_my_ipv4_addr(iface, &myaddr);
 		family = addr.sa_family = myaddr.sa_family = AF_INET;
 	} else {
 		net_sin6(&addr)->sin6_port = htons(port);
 		addrlen = sizeof(struct sockaddr_in6);
-		get_my_ipv6_addr(net_if_get_default(), &myaddr);
+
+		nbr = net_ipv6_nbr_lookup(NULL, &net_sin6(&addr)->sin6_addr);
+		if (nbr) {
+			iface = nbr->iface;
+		}
+
+		get_my_ipv6_addr(iface, &myaddr);
 		family = addr.sa_family = myaddr.sa_family = AF_INET6;
 	}
 #endif
