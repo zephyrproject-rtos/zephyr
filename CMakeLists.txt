@@ -64,7 +64,6 @@ zephyr_include_directories(
   ${STDINCLUDE}
 )
 
-
 zephyr_compile_definitions(
   KERNEL
   __ZEPHYR__=1
@@ -95,10 +94,12 @@ zephyr_compile_options(
   -Wformat
   -Wformat-security
   -Wno-format-zero-length
-  -Wno-main
+  -imacros ${AUTOCONF_H}
   -ffreestanding
-  -include ${AUTOCONF_H}
+  -Wno-main
+  ${NOSTDINC_F}
 )
+
 
 zephyr_compile_options(
   $<$<COMPILE_LANGUAGE:C>:-std=c99>
@@ -114,13 +115,15 @@ zephyr_compile_options(
   $<$<COMPILE_LANGUAGE:ASM>:-D_ASMLANGUAGE>
 )
 
+if(NOT CONFIG_NATIVE_APPLICATION)
 zephyr_ld_options(
   -nostartfiles
   -nodefaultlibs
   -nostdlib
   -static
   -no-pie
-  )
+)
+endif()
 
 # ==========================================================================
 #
@@ -231,7 +234,6 @@ endif()
 zephyr_cc_option_ifdef(CONFIG_DEBUG_SECTION_MISMATCH -fno-inline-functions-called-once)
 zephyr_cc_option_ifdef(CONFIG_STACK_USAGE            -fstack-usage)
 
-zephyr_compile_options(-nostdinc)
 zephyr_system_include_directories(${NOSTDINC})
 
 # Force an error when things like SYS_INIT(foo, ...) occur with a missing header.
@@ -248,9 +250,15 @@ if(IS_TEST)
 endif()
 
 set_ifndef(LINKERFLAGPREFIX -Wl)
+
+if(NOT CONFIG_NATIVE_APPLICATION)
 zephyr_ld_options(
   ${LINKERFLAGPREFIX},-X
   ${LINKERFLAGPREFIX},-N
+  )
+endif()
+
+zephyr_ld_options(
   ${LINKERFLAGPREFIX},--gc-sections
   ${LINKERFLAGPREFIX},--build-id=none
   )
@@ -502,7 +510,7 @@ add_custom_command(
   # TODO: Remove duplication
   COMMAND ${CMAKE_C_COMPILER}
   -x assembler-with-cpp
-  -nostdinc
+  ${NOSTDINC_F}
   -undef
   -MD -MF linker.cmd.dep -MT ${BASE_NAME}/linker.cmd
   ${ZEPHYR_INCLUDES}
@@ -676,11 +684,19 @@ endif()
 get_property(GKOF GLOBAL PROPERTY GENERATED_KERNEL_OBJECT_FILES)
 get_property(GKSF GLOBAL PROPERTY GENERATED_KERNEL_SOURCE_FILES)
 
+get_property(TOPT GLOBAL PROPERTY TOPT)
+set_ifndef(  TOPT -T)
+
 # FIXME: Is there any way to get rid of empty_file.c?
 add_executable(       zephyr_prebuilt misc/empty_file.c)
-target_link_libraries(zephyr_prebuilt -T${PROJECT_BINARY_DIR}/linker.cmd ${zephyr_lnk})
+target_link_libraries(zephyr_prebuilt ${TOPT} ${PROJECT_BINARY_DIR}/linker.cmd ${zephyr_lnk})
 set_property(TARGET   zephyr_prebuilt PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker.cmd)
 add_dependencies(     zephyr_prebuilt linker_script offsets)
+
+
+if(NOT CONFIG_NATIVE_APPLICATION)
+	set(NOSTDINC_F -nostdinc)
+endif()
 
 if(GKOF OR GKSF)
   set(logical_target_for_zephyr_elf kernel_elf)
@@ -694,7 +710,7 @@ if(GKOF OR GKSF)
     ${LINKER_SCRIPT_DEP}
     COMMAND ${CMAKE_C_COMPILER}
     -x assembler-with-cpp
-    -nostdinc
+    ${NOSTDINC_F}
     -undef
     -MD -MF linker_pass2.cmd.dep -MT ${BASE_NAME}/linker_pass2.cmd
     ${ZEPHYR_INCLUDES}
@@ -713,7 +729,7 @@ if(GKOF OR GKSF)
     )
 
   add_executable(       kernel_elf misc/empty_file.c ${GKSF})
-  target_link_libraries(kernel_elf ${GKOF} -T${PROJECT_BINARY_DIR}/linker_pass2.cmd ${zephyr_lnk})
+  target_link_libraries(kernel_elf ${GKOF} ${TOPT} ${PROJECT_BINARY_DIR}/linker_pass2.cmd ${zephyr_lnk})
   set_property(TARGET   kernel_elf PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_pass2.cmd)
   add_dependencies(     kernel_elf linker_pass2_script)
 else()

@@ -34,6 +34,14 @@ config RISCV32
 config XTENSA
 	bool "Xtensa architecture"
 
+config ARCH_POSIX
+	bool "POSIX (native) architecture"
+	select ATOMIC_OPERATIONS_BUILTIN
+	select ARCH_HAS_CUSTOM_SWAP_TO_MAIN
+	select ARCH_HAS_CUSTOM_BUSY_WAIT
+	select ARCH_HAS_THREAD_ABORT
+	select NATIVE_APPLICATION
+
 endchoice
 
 
