@@ -125,17 +125,19 @@ static inline void spi_context_complete(struct spi_context *ctx, int status)
 
 static inline void spi_context_cs_configure(struct spi_context *ctx)
 {
-	if (ctx->config->cs) {
+	if (ctx->config->cs && ctx->config->cs->gpio_dev) {
 		gpio_pin_configure(ctx->config->cs->gpio_dev,
 				   ctx->config->cs->gpio_pin, GPIO_DIR_OUT);
 		gpio_pin_write(ctx->config->cs->gpio_dev,
 			       ctx->config->cs->gpio_pin, 1);
+	} else {
+		SYS_LOG_INF("CS control inhibited (no GPIO device)");
 	}
 }
 
 static inline void spi_context_cs_control(struct spi_context *ctx, bool on)
 {
-	if (ctx->config->cs) {
+	if (ctx->config->cs && ctx->config->cs->gpio_dev) {
 		if (on) {
 			gpio_pin_write(ctx->config->cs->gpio_dev,
 				       ctx->config->cs->gpio_pin, 0);

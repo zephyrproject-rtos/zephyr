@@ -128,7 +128,8 @@ extern "C" {
  * This can be used to control a CS line via a GPIO line, instead of
  * using the controller inner CS logic.
  *
- * @param gpio_dev is a valid pointer to an actual GPIO device
+ * @param gpio_dev is a valid pointer to an actual GPIO device. A NULL pointer
+ *        can be provided to full inhibit CS control if necessary.
  * @param gpio_pin is a number representing the gpio PIN that will be used
  *    to act as a CS line
  * @param delay is a delay in microseconds to wait before starting the
