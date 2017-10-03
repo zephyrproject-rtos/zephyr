@@ -110,7 +110,6 @@
  * functions are system calls
  */
 #define __syscall static inline
-#define __syscall_inline static inline
 
 #ifndef BUILD_ASSERT
 /* compile-time assertion that makes the build fail */
