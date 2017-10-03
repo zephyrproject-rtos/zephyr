@@ -1,0 +1,31 @@
+# Kconfig - General configuration options
+
+#
+# Copyright (c) 2017 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+choice
+	prompt "POSIX Configuration Selection"
+	depends on ARCH_POSIX
+
+	source "arch/posix/soc/*/Kconfig.soc"
+endchoice
+
+menu "POSIX (native) Options"
+	depends on ARCH_POSIX
+
+config ARCH
+	default "posix"
+
+config ARCH_DEFCONFIG
+	string
+	default "arch/posix/defconfig"
+
+source "arch/posix/core/Kconfig"
+
+
+source "arch/posix/soc/*/Kconfig"
+
+endmenu
