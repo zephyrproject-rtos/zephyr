@@ -52,11 +52,21 @@ environment for Windows. Follow the steps below to set it up:
       $ export http_proxy=http://proxy.mycompany.com:123
       $ export https_proxy=$http_proxy
 
-#. Install the dependencies required to build Zephyr:
+#. Update MSYS2's packages and install the dependencies required to build
+   Zephyr (you may need to restart the MSYS2 shell)::
 
    .. code-block:: console
 
+      $ pacman -Syu
       $ pacman -S git make gcc dtc diffutils ncurses-devel python3 gperf
+
+#. From within the MSYS2 MSYS Shell, clone a copy of the Zephyr source into
+   your home directory using Git:
+
+   .. code-block:: console
+
+      $ cd ~
+      $ git clone https://github.com/zephyrproject-rtos/zephyr.git
 
 #. Install pip and the required Python modules::
 
@@ -95,15 +105,7 @@ environment for Windows. Follow the steps below to set it up:
    * For ARM, install GNU ARM Embedded from the ARM developer website:
      `GNU ARM Embedded`_ (install to :file:`c:\\gccarmemb`).
 
-#. From within the MSYS2 MSYS Shell, clone a copy of the Zephyr source into
-   your home directory using Git:
-
-   .. code-block:: console
-
-      $ cd ~
-      $ git clone https://github.com/zephyrproject-rtos/zephyr.git
-
-#. Also within the MSYS console, set up environment variables for the installed
+#. Within the MSYS console, set up environment variables for the installed
    tools and for the Zephyr environment (using the provided shell script):
 
    For x86:
