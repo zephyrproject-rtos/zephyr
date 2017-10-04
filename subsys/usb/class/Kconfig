@@ -88,6 +88,30 @@ config USB_MASS_STORAGE
 	help
 	USB Mass Storage device class driver
 
+config MASS_STORAGE_IN_EP_ADDR
+	hex
+	depends on USB_MASS_STORAGE
+	default 0x82
+	range 0x81 0x8f
+	help
+	Mass storage device class IN endpoint address
+
+config MASS_STORAGE_OUT_EP_ADDR
+	hex
+	depends on USB_MASS_STORAGE
+	default 0x01
+	range 0x01 0x0f
+	help
+	Mass storage device class OUT endpoint address
+
+config MASS_STORAGE_BULK_EP_MPS
+	int
+	depends on USB_MASS_STORAGE
+	default 64
+	range 8 64
+	help
+	Mass storage device class bulk endpoints size
+
 config SYS_LOG_USB_MASS_STORAGE_LEVEL
 	int
 	prompt "USB Mass Storage device class driver log level"
