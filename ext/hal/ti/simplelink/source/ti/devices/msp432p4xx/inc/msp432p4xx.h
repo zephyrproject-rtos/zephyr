@@ -250,7 +250,6 @@ typedef enum IRQn
 #define BITD                                     (uint16_t)(0x2000)
 #define BITE                                     (uint16_t)(0x4000)
 #define BITF                                     (uint16_t)(0x8000)
-#define BIT(x)                                 ((uint16_t)1 << (x))
 
 /******************************************************************************
 * Device and peripheral memory map                                            *
