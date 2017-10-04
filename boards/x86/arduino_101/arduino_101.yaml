@@ -8,3 +8,6 @@ toolchain:
 supported:
   - usb_device
   - ble
+  - aio
+  - spi
+  - i2c
