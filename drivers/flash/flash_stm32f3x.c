@@ -91,7 +91,10 @@ static int flash_stm32_write(struct device *dev, off_t offset,
 	}
 
 	if (remainder) {
-		halfword = (*((u16_t *)data)) & 0x00FF;
+		/* Half word write operation */
+		/* Get the byte to write and add 0xFF00 */
+		/* to keep leading byte to erased value */
+		halfword = ((*((u16_t *)data)) & 0x00FF) | 0xFF00;
 		if (flash_stm32_program_halfword(dev, address, halfword)
 				!= FLASH_COMPLETE) {
 			return -EINVAL;
