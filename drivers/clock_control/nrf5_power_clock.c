@@ -15,6 +15,7 @@
 
 static u8_t m16src_ref;
 static u8_t m16src_grd;
+static u8_t k32src_initialized;
 
 static int _m16src_start(struct device *dev, clock_control_subsys_t sub_system)
 {
@@ -141,14 +142,29 @@ static int _k32src_start(struct device *dev, clock_control_subsys_t sub_system)
 {
 	u32_t lf_clk_src;
 	u32_t intenset;
+	u32_t imask;
 
-	/* TODO: implement the ref count and re-entrancy guard, if a use-case
-	 * needs it.
+	/* If the LF clock is already started, but wasn't initialized with
+	 * this function, allow it to run once. This is needed because if a
+	 * soft reset is triggered while watchdog is active, the LF clock will
+	 * already be running, but won't be configured yet (watchdog forces LF
+	 * clock to be running).
+	 *
+	 * That is, a hardware check won't work here, because even if the LF
+	 * clock is already running it might not be initialized. We need an
+	 * initialized flag.
 	 */
 
-	if ((NRF_CLOCK->LFCLKSTAT & CLOCK_LFCLKSTAT_STATE_Msk)) {
-		return 0;
+	imask = irq_lock();
+
+	if (k32src_initialized) {
+		irq_unlock(imask);
+		goto lf_already_started;
 	}
+
+	k32src_initialized = 1;
+
+	irq_unlock(imask);
 
 	irq_disable(POWER_CLOCK_IRQn);
 
@@ -212,7 +228,12 @@ static int _k32src_start(struct device *dev, clock_control_subsys_t sub_system)
 		}
 	}
 
-	return !(NRF_CLOCK->LFCLKSTAT & CLOCK_LFCLKSTAT_STATE_Msk);
+lf_already_started:
+	if (NRF_CLOCK->LFCLKSTAT & CLOCK_LFCLKSTAT_STATE_Msk) {
+		return 0;
+	} else {
+		return -EINPROGRESS;
+	}
 }
 
 static void _power_clock_isr(void *arg)
