@@ -1,5 +1,4 @@
 tests:
   - test:
-      platform_whitelist: galileo arduino_101_sss quark_d2000_crb
-        quark_se_c1000_ss_devboard
-      tags: apps
+     depends_on: adc
+     tags: driver adc
