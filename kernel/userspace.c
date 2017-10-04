@@ -131,8 +131,7 @@ static int test_thread_perms(struct _k_object *ko)
 	return 0;
 }
 
-
-void k_object_grant_access(void *object, struct k_thread *thread)
+void k_object_access_grant(void *object, struct k_thread *thread)
 {
 	struct _k_object *ko = _k_object_find(object);
 
@@ -163,7 +162,6 @@ void k_object_grant_access(void *object, struct k_thread *thread)
 	}
 	set_thread_perms(ko, thread);
 }
-
 
 int _k_object_validate(void *obj, enum k_objects otype, int init)
 {
