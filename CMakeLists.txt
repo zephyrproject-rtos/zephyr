@@ -613,5 +613,6 @@ add_subdirectory(cmake/qemu)
 add_subdirectory(cmake/flash)
 
 add_subdirectory(cmake/usage)
+add_subdirectory(cmake/reports)
 
 include(cmake/ccache.cmake)
