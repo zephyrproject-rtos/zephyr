@@ -226,7 +226,7 @@ void thread_11(void)
 }
 
 K_THREAD_STACK_DEFINE(thread_12_stack_area, STACKSIZE);
-struct k_thread thread_12_thread_data;
+__kernel struct k_thread thread_12_thread_data;
 extern void thread_12(void);
 
 /**
@@ -239,7 +239,7 @@ extern void thread_12(void);
  * @return  N/A
  */
 
-void main(void)
+void user_main(void)
 {
 	int rv;
 	int i;
@@ -362,7 +362,8 @@ void main(void)
 	/* Start thread */
 	k_thread_create(&thread_12_thread_data, thread_12_stack_area, STACKSIZE,
 			(k_thread_entry_t)thread_12, NULL, NULL, NULL,
-			K_PRIO_PREEMPT(12), 0, K_NO_WAIT);
+			K_PRIO_PREEMPT(12), K_USER | K_INHERIT_PERMS,
+			K_NO_WAIT);
 	k_sleep(1);     /* Give thread_12 a chance to block on the mutex */
 
 	k_mutex_unlock(&private_mutex);
@@ -391,21 +392,39 @@ error_return:
 	TC_END_REPORT(tc_rc);
 }
 
+void main(void)
+{
+	k_thread_access_grant(k_current_get(), &private_mutex,
+			      &mutex_1, &mutex_2, &mutex_3, &mutex_4,
+			      &thread_12_thread_data, &thread_12_stack_area,
+			      NULL);
+
+	k_thread_user_mode_enter((k_thread_entry_t)user_main,
+				 NULL, NULL, NULL);
+}
+
 
 K_THREAD_DEFINE(THREAD_05, STACKSIZE, thread_05, NULL, NULL, NULL,
-		5, 0, K_NO_WAIT);
+		5, K_USER, K_NO_WAIT);
 
 K_THREAD_DEFINE(THREAD_06, STACKSIZE, thread_06, NULL, NULL, NULL,
-		6, 0, K_NO_WAIT);
+		6, K_USER, K_NO_WAIT);
 
 K_THREAD_DEFINE(THREAD_07, STACKSIZE, thread_07, NULL, NULL, NULL,
-		7, 0, K_NO_WAIT);
+		7, K_USER, K_NO_WAIT);
 
 K_THREAD_DEFINE(THREAD_08, STACKSIZE, thread_08, NULL, NULL, NULL,
-		8, 0, K_NO_WAIT);
+		8, K_USER, K_NO_WAIT);
 
 K_THREAD_DEFINE(THREAD_09, STACKSIZE, thread_09, NULL, NULL, NULL,
-		9, 0, K_NO_WAIT);
+		9, K_USER, K_NO_WAIT);
 
 K_THREAD_DEFINE(THREAD_11, STACKSIZE, thread_11, NULL, NULL, NULL,
-		11, 0, K_NO_WAIT);
+		11, K_USER, K_NO_WAIT);
+
+K_THREAD_ACCESS_GRANT(THREAD_05, &mutex_4);
+K_THREAD_ACCESS_GRANT(THREAD_06, &mutex_4);
+K_THREAD_ACCESS_GRANT(THREAD_07, &mutex_3);
+K_THREAD_ACCESS_GRANT(THREAD_08, &mutex_2);
+K_THREAD_ACCESS_GRANT(THREAD_09, &mutex_1);
+K_THREAD_ACCESS_GRANT(THREAD_11, &mutex_3);
