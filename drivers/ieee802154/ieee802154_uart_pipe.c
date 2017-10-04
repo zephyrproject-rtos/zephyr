@@ -93,7 +93,7 @@ flush:
 done:
 	*off = 0;
 
-	return pkt;
+	return buf;
 }
 
 static int upipe_cca(struct device *dev)
