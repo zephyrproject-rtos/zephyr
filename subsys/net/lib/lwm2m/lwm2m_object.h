@@ -47,7 +47,7 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <net/net_ip.h>
-#include <net/zoap.h>
+#include <net/coap.h>
 #include <net/lwm2m.h>
 #include <misc/printk.h>
 #include <kernel.h>
@@ -204,7 +204,7 @@ struct lwm2m_engine_obj_inst {
 };
 
 struct lwm2m_output_context {
-	struct zoap_packet *out_zpkt;
+	struct coap_packet *out_cpkt;
 	u8_t writer_flags;	/* flags for reader/writer */
 	u8_t *outbuf;
 	u16_t outsize;
@@ -214,7 +214,7 @@ struct lwm2m_output_context {
 };
 
 struct lwm2m_input_context {
-	struct zoap_packet *in_zpkt;
+	struct coap_packet *in_cpkt;
 	u8_t *inbuf;
 	u16_t insize;
 	s32_t inpos;

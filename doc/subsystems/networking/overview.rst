@@ -63,10 +63,10 @@ can be disabled if not needed.
   A sample :ref:`mqtt-publisher-sample` client application for MQTT v3.1.1 is
   implemented.
 
-* **CoAP** Constrained Application Protocol (RFC 7252) is supported. Both
-  Both :ref:`zoap-client-sample` and :ref:`zoap-server-sample` sample
-  applications are implemented. A :ref:`coap-client-sample` and
-  :ref:`coap-server-sample` using DTLS (Datagram Transport Layer Security)
+* **CoAP** Constrained Application Protocol (RFC 7252) is supported.
+  Both :ref:`coap-client-sample` and :ref:`coap-server-sample` sample
+  applications are implemented. A :ref:`coaps-client-sample` and
+  :ref:`coaps-server-sample` using DTLS (Datagram Transport Layer Security)
   (RFC 6347) are also implemented.
 
 * **LWM2M** OMA Lightweight Machine-to-Machine Protocol (V1.0 Feb 2017) is

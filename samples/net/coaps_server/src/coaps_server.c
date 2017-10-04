@@ -37,7 +37,7 @@
 #include <net/net_pkt.h>
 #include <net/net_ip.h>
 
-#include <net/zoap.h>
+#include <net/coap.h>
 
 #include "udp.h"
 #include "udp_cfg.h"
@@ -58,10 +58,10 @@
 static unsigned char heap[8192];
 #endif
 
-#define ZOAP_BUF_SIZE 128
+#define COAP_BUF_SIZE 128
 
-NET_PKT_TX_SLAB_DEFINE(zoap_pkt_slab, 4);
-NET_BUF_POOL_DEFINE(zoap_data_pool, 4, ZOAP_BUF_SIZE, 0, NULL);
+NET_PKT_TX_SLAB_DEFINE(coap_pkt_slab, 4);
+NET_BUF_POOL_DEFINE(coap_data_pool, 4, COAP_BUF_SIZE, 0, NULL);
 
 /*
  * Hardcoded values for server host and port
@@ -76,44 +76,42 @@ const char psk_id[] = "Client_identity\0";
 
 static mbedtls_ssl_context *curr_ctx;
 
-static int send_response(struct zoap_packet *request, u8_t response_code)
+static int send_response(struct coap_packet *request, u8_t response_code)
 {
 	struct net_pkt *pkt;
 	struct net_buf *frag;
-	struct zoap_packet response;
+	struct coap_packet response;
 	u8_t code, type;
 	u16_t id;
 	int r;
 
-	code = zoap_header_get_code(request);
-	type = zoap_header_get_type(request);
-	id = zoap_header_get_id(request);
+	code = coap_header_get_code(request);
+	type = coap_header_get_type(request);
+	id = coap_header_get_id(request);
 
 	printk("*******\n");
 	printk("type: %u code %u id %u\n", type, code, id);
 	printk("*******\n");
 
-	pkt = net_pkt_get_reserve(&zoap_pkt_slab, 0, K_NO_WAIT);
+	pkt = net_pkt_get_reserve(&coap_pkt_slab, 0, K_NO_WAIT);
 	if (!pkt) {
 		return -ENOMEM;
 	}
 
-	frag = net_buf_alloc(&zoap_data_pool, K_NO_WAIT);
+	frag = net_buf_alloc(&coap_data_pool, K_NO_WAIT);
 	if (!frag) {
+		net_pkt_unref(pkt);
 		return -ENOMEM;
 	}
 
 	net_pkt_frag_add(pkt, frag);
 
-	r = zoap_packet_init(&response, pkt);
+	r = coap_packet_init(&response, pkt, 1, COAP_TYPE_ACK,
+			     0, NULL, response_code, id);
 	if (r < 0) {
+		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
-
-	zoap_header_set_version(&response, 1);
-	zoap_header_set_type(&response, ZOAP_TYPE_ACK);
-	zoap_header_set_code(&response, response_code);
-	zoap_header_set_id(&response, id);
 
 	do {
 		r = mbedtls_ssl_write(curr_ctx, frag->data, frag->len);
@@ -129,79 +127,80 @@ static int send_response(struct zoap_packet *request, u8_t response_code)
 	return r;
 }
 
-static int test_del(struct zoap_resource *resource,
-		    struct zoap_packet *request, const struct sockaddr *from)
+static int test_del(struct coap_resource *resource,
+		    struct coap_packet *request)
 {
-	return send_response(request, ZOAP_RESPONSE_CODE_DELETED);
+	return send_response(request, COAP_RESPONSE_CODE_DELETED);
 }
 
-static int test_put(struct zoap_resource *resource,
-		    struct zoap_packet *request, const struct sockaddr *from)
+static int test_put(struct coap_resource *resource,
+		    struct coap_packet *request)
 {
-	return send_response(request, ZOAP_RESPONSE_CODE_CHANGED);
+	return send_response(request, COAP_RESPONSE_CODE_CHANGED);
 }
 
-static int test_post(struct zoap_resource *resource,
-		     struct zoap_packet *request, const struct sockaddr *from)
+static int test_post(struct coap_resource *resource,
+		     struct coap_packet *request)
 {
-	return send_response(request, ZOAP_RESPONSE_CODE_CREATED);
+	return send_response(request, COAP_RESPONSE_CODE_CREATED);
 }
 
-static int piggyback_get(struct zoap_resource *resource,
-			 struct zoap_packet *request,
-			 const struct sockaddr *from)
+static int piggyback_get(struct coap_resource *resource,
+			 struct coap_packet *request)
 {
 	struct net_pkt *pkt;
 	struct net_buf *frag;
-	struct zoap_packet response;
-	u8_t *payload, code, type;
-	u16_t len, id;
+	struct coap_packet response;
+	u8_t payload[40], code, type;
+	u16_t id;
 	int r;
 
-	code = zoap_header_get_code(request);
-	type = zoap_header_get_type(request);
-	id = zoap_header_get_id(request);
+	code = coap_header_get_code(request);
+	type = coap_header_get_type(request);
+	id = coap_header_get_id(request);
 
 	printk("*******\n");
 	printk("type: %u code %u id %u\n", type, code, id);
 	printk("*******\n");
 
-	pkt = net_pkt_get_reserve(&zoap_pkt_slab, 0, K_NO_WAIT);
+	pkt = net_pkt_get_reserve(&coap_pkt_slab, 0, K_NO_WAIT);
 	if (!pkt) {
 		return -ENOMEM;
 	}
 
-	frag = net_buf_alloc(&zoap_data_pool, K_NO_WAIT);
+	frag = net_buf_alloc(&coap_data_pool, K_NO_WAIT);
 	if (!frag) {
+		net_pkt_unref(pkt);
 		return -ENOMEM;
 	}
 
 	net_pkt_frag_add(pkt, frag);
 
-	r = zoap_packet_init(&response, pkt);
+	r = coap_packet_init(&response, pkt, 1, COAP_TYPE_ACK,
+			     0, NULL, COAP_RESPONSE_CODE_CONTENT, id);
 	if (r < 0) {
+		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
-	zoap_header_set_version(&response, 1);
-	zoap_header_set_type(&response, ZOAP_TYPE_ACK);
-	zoap_header_set_code(&response, ZOAP_RESPONSE_CODE_CONTENT);
-	zoap_header_set_id(&response, id);
-
-	payload = zoap_packet_get_payload(&response, &len);
-	if (!payload) {
+	r = coap_packet_append_payload_marker(&response);
+	if (r < 0) {
+		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
 	/* The response that coap-client expects */
-	r = snprintk((char *)payload, len, "Type: %u\nCode: %u\nMID: %u\n",
-		     type, code, id);
-	if (r < 0 || r > len) {
+	r = snprintk((char *)payload, sizeof(payload),
+		     "Type: %u\nCode: %u\nMID: %u\n", type, code, id);
+	if (r < 0) {
+		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
-	r = zoap_packet_set_used(&response, r);
-	if (r) {
+	r = coap_packet_append_payload(&response, (u8_t *)payload,
+				       strlen(payload));
+	if (r < 0) {
+		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
@@ -219,22 +218,22 @@ static int piggyback_get(struct zoap_resource *resource,
 	return r;
 }
 
-static int query_get(struct zoap_resource *resource,
-		     struct zoap_packet *request, const struct sockaddr *from)
+static int query_get(struct coap_resource *resource,
+		     struct coap_packet *request)
 {
-	struct zoap_option options[4];
+	struct coap_option options[4];
 	struct net_pkt *pkt;
 	struct net_buf *frag;
-	struct zoap_packet response;
-	u8_t *payload, code, type;
-	u16_t len, id;
+	struct coap_packet response;
+	u8_t payload[40], code, type;
+	u16_t id;
 	int i, r;
 
-	code = zoap_header_get_code(request);
-	type = zoap_header_get_type(request);
-	id = zoap_header_get_id(request);
+	code = coap_header_get_code(request);
+	type = coap_header_get_type(request);
+	id = coap_header_get_id(request);
 
-	r = zoap_find_options(request, ZOAP_OPTION_URI_QUERY, options, 4);
+	r = coap_find_options(request, COAP_OPTION_URI_QUERY, options, 4);
 	if (r <= 0) {
 		return -EINVAL;
 	}
@@ -261,43 +260,44 @@ static int query_get(struct zoap_resource *resource,
 
 	printk("*******\n");
 
-	pkt = net_pkt_get_reserve(&zoap_pkt_slab, 0, K_NO_WAIT);
+	pkt = net_pkt_get_reserve(&coap_pkt_slab, 0, K_NO_WAIT);
 	if (!pkt) {
 		return -ENOMEM;
 	}
 
-	frag = net_buf_alloc(&zoap_data_pool, K_NO_WAIT);
+	frag = net_buf_alloc(&coap_data_pool, K_NO_WAIT);
 	if (!frag) {
+		net_pkt_unref(pkt);
 		return -ENOMEM;
 	}
 
 	net_pkt_frag_add(pkt, frag);
 
-	r = zoap_packet_init(&response, pkt);
+	r = coap_packet_init(&response, pkt, 1, COAP_TYPE_ACK,
+			     0, NULL, COAP_RESPONSE_CODE_CONTENT, id);
 	if (r < 0) {
+		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
-	/* FIXME: Could be that zoap_packet_init() sets some defaults */
-	zoap_header_set_version(&response, 1);
-	zoap_header_set_type(&response, ZOAP_TYPE_ACK);
-	zoap_header_set_code(&response, ZOAP_RESPONSE_CODE_CONTENT);
-	zoap_header_set_id(&response, id);
-
-	payload = zoap_packet_get_payload(&response, &len);
-	if (!payload) {
+	r = coap_packet_append_payload_marker(&response);
+	if (r < 0) {
+		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
 	/* The response that coap-client expects */
-	r = snprintk((char *)payload, len, "Type: %u\nCode: %u\nMID: %u\n",
-		     type, code, id);
-	if (r < 0 || r > len) {
+	r = snprintk((char *)payload, sizeof(payload),
+		     "Type: %u\nCode: %u\nMID: %u\n", type, code, id);
+	if (r < 0) {
+		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
-	r = zoap_packet_set_used(&response, r);
-	if (r) {
+	r = coap_packet_append_payload(&response, (u8_t *)payload,
+				       strlen(payload));
+	if (r < 0) {
+		net_pkt_unref(pkt);
 		return -EINVAL;
 	}
 
@@ -321,7 +321,7 @@ static const char *const segments_path[] = { "seg1", "seg2", "seg3", NULL };
 
 static const char *const query_path[] = { "query", NULL };
 
-static struct zoap_resource resources[] = {
+static struct coap_resource resources[] = {
 	{.get = piggyback_get,
 	 .post = test_post,
 	 .del = test_del,
@@ -419,9 +419,11 @@ void dtls_server(void)
 	int len, ret = 0;
 	struct udp_context ctx;
 	struct dtls_timing_context timer;
-	struct zoap_packet zpkt;
+	struct coap_packet zpkt;
 	struct net_pkt *pkt;
 	struct net_buf *frag;
+	struct coap_option options[16];
+	u8_t opt_num = 16;
 
 	mbedtls_ssl_cookie_ctx cookie_ctx;
 	mbedtls_entropy_context entropy;
@@ -553,21 +555,21 @@ reset:
 
 	do {
 		/* Read the request */
-		pkt = net_pkt_get_reserve(&zoap_pkt_slab, 0, K_NO_WAIT);
+		pkt = net_pkt_get_reserve(&coap_pkt_slab, 0, K_NO_WAIT);
 		if (!pkt) {
 			mbedtls_printf("Could not get packet from slab\n");
 			goto exit;
 		}
 
-		frag = net_buf_alloc(&zoap_data_pool, K_NO_WAIT);
+		frag = net_buf_alloc(&coap_data_pool, K_NO_WAIT);
 		if (!frag) {
 			mbedtls_printf("Could not get frag from pool\n");
 			goto exit;
 		}
 
 		net_pkt_frag_add(pkt, frag);
-		len = ZOAP_BUF_SIZE - 1;
-		memset(frag->data, 0, ZOAP_BUF_SIZE);
+		len = COAP_BUF_SIZE - 1;
+		memset(frag->data, 0, COAP_BUF_SIZE);
 
 		ret = mbedtls_ssl_read(&ssl, frag->data, len);
 		if (ret == MBEDTLS_ERR_SSL_WANT_READ ||
@@ -598,14 +600,13 @@ reset:
 		len = ret;
 		frag->len = len;
 
-		ret = zoap_packet_parse(&zpkt, pkt);
+		ret = coap_packet_parse(&zpkt, pkt, options, opt_num);
 		if (ret) {
 			mbedtls_printf("Could not parse packet\n");
 			goto exit;
 		}
 
-		ret = zoap_handle_request(&zpkt, resources,
-					  (const struct sockaddr *)&ssl);
+		ret = coap_handle_request(&zpkt, resources, options, opt_num);
 		if (ret < 0) {
 			mbedtls_printf("No handler for such request (%d)\n",
 				       ret);

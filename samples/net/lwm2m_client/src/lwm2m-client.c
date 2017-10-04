@@ -54,6 +54,36 @@ static struct device *led_dev;
 static u32_t led_state;
 
 static struct lwm2m_ctx client;
+
+#if defined(CONFIG_NET_APP_DTLS)
+#if !defined(CONFIG_NET_APP_TLS_STACK_SIZE)
+#define CONFIG_NET_APP_TLS_STACK_SIZE		30000
+#endif /* CONFIG_NET_APP_TLS_STACK_SIZE */
+
+#define HOSTNAME "localhost"   /* for cert verification if that is enabled */
+
+/* The result buf size is set to large enough so that we can receive max size
+ * buf back. Note that mbedtls needs also be configured to have equal size
+ * value for its buffer size. See MBEDTLS_SSL_MAX_CONTENT_LEN option in DTLS
+ * config file.
+ */
+#define RESULT_BUF_SIZE 1500
+
+NET_APP_TLS_POOL_DEFINE(dtls_pool, 10);
+
+/* "000102030405060708090a0b0c0d0e0f" */
+static unsigned char client_psk[] = {
+	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+	0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
+};
+
+static char client_psk_id[] = "Client_identity";
+
+static u8_t dtls_result[RESULT_BUF_SIZE];
+NET_STACK_DEFINE(NET_APP_DTLS, net_app_dtls_stack,
+		 CONFIG_NET_APP_TLS_STACK_SIZE, CONFIG_NET_APP_TLS_STACK_SIZE);
+#endif /* CONFIG_NET_APP_DTLS */
+
 static struct k_sem quit_lock;
 
 #if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
@@ -147,12 +177,23 @@ static int device_factory_default_cb(u16_t obj_inst_id)
 	return 1;
 }
 
+#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT)
 static int firmware_update_cb(u16_t obj_inst_id)
 {
 	SYS_LOG_DBG("UPDATE");
+
+	/* TODO: kick off update process */
+
+	/* If success, set the update result as RESULT_SUCCESS.
+	 * In reality, it should be set at function lwm2m_setup()
+	 */
+	lwm2m_engine_set_u8("5/0/3", STATE_IDLE);
+	lwm2m_engine_set_u8("5/0/5", RESULT_SUCCESS);
 	return 1;
 }
+#endif
 
+#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT)
 static int firmware_block_received_cb(u16_t obj_inst_id,
 				      u8_t *data, u16_t data_len,
 				      bool last_block, size_t total_size)
@@ -161,6 +202,7 @@ static int firmware_block_received_cb(u16_t obj_inst_id,
 		    data_len, last_block);
 	return 1;
 }
+#endif
 
 static int lwm2m_setup(void)
 {
@@ -204,10 +246,12 @@ static int lwm2m_setup(void)
 
 	/* setup FIRMWARE object */
 
-	lwm2m_engine_register_post_write_callback("5/0/0",
-						  firmware_block_received_cb);
+#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT)
 	lwm2m_firmware_set_write_cb(firmware_block_received_cb);
-	lwm2m_engine_register_exec_callback("5/0/2", firmware_update_cb);
+#endif
+#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT)
+	lwm2m_firmware_set_update_cb(firmware_update_cb);
+#endif
 
 	/* setup TEMP SENSOR object */
 
@@ -225,6 +269,50 @@ static int lwm2m_setup(void)
 	}
 
 	return 0;
+}
+
+static void rd_client_event(struct lwm2m_ctx *client,
+			    enum lwm2m_rd_client_event client_event)
+{
+	switch (client_event) {
+
+	case LWM2M_RD_CLIENT_EVENT_NONE:
+		/* do nothing */
+		break;
+
+	case LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_FAILURE:
+		SYS_LOG_DBG("Bootstrap failure!");
+		break;
+
+	case LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_COMPLETE:
+		SYS_LOG_DBG("Bootstrap complete");
+		break;
+
+	case LWM2M_RD_CLIENT_EVENT_REGISTRATION_FAILURE:
+		SYS_LOG_DBG("Registration failure!");
+		break;
+
+	case LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE:
+		SYS_LOG_DBG("Registration complete");
+		break;
+
+	case LWM2M_RD_CLIENT_EVENT_REG_UPDATE_FAILURE:
+		SYS_LOG_DBG("Registration update failure!");
+		break;
+
+	case LWM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE:
+		SYS_LOG_DBG("Registration update complete");
+		break;
+
+	case LWM2M_RD_CLIENT_EVENT_DEREGISTER_FAILURE:
+		SYS_LOG_DBG("Deregister failure!");
+		break;
+
+	case LWM2M_RD_CLIENT_EVENT_DISCONNECT:
+		SYS_LOG_DBG("Disconnected");
+		break;
+
+	}
 }
 
 void main(void)
@@ -249,12 +337,27 @@ void main(void)
 	client.data_pool = data_udp_pool;
 #endif
 
+#if defined(CONFIG_NET_APP_DTLS)
+	client.client_psk = client_psk;
+	client.client_psk_len = 16;
+	client.client_psk_id = client_psk_id;
+	client.client_psk_id_len = strlen(client_psk_id);
+	client.cert_host = HOSTNAME;
+	client.dtls_pool = &dtls_pool;
+	client.dtls_result_buf = dtls_result;
+	client.dtls_result_buf_len = RESULT_BUF_SIZE;
+	client.dtls_stack = net_app_dtls_stack;
+	client.dtls_stack_len = K_THREAD_STACK_SIZEOF(net_app_dtls_stack);
+#endif /* CONFIG_NET_APP_DTLS */
+
 #if defined(CONFIG_NET_IPV6)
 	ret = lwm2m_rd_client_start(&client, CONFIG_NET_APP_PEER_IPV6_ADDR,
-				    CONFIG_LWM2M_PEER_PORT, CONFIG_BOARD);
+				    CONFIG_LWM2M_PEER_PORT, CONFIG_BOARD,
+				    rd_client_event);
 #elif defined(CONFIG_NET_IPV4)
 	ret = lwm2m_rd_client_start(&client, CONFIG_NET_APP_PEER_IPV4_ADDR,
-				    CONFIG_LWM2M_PEER_PORT, CONFIG_BOARD);
+				    CONFIG_LWM2M_PEER_PORT, CONFIG_BOARD,
+				    rd_client_event);
 #else
 	SYS_LOG_ERR("LwM2M client requires IPv4 or IPv6.");
 	ret = -EPROTONOSUPPORT;
