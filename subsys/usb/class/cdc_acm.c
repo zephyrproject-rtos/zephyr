@@ -46,6 +46,7 @@
 #include <usb/usb_device.h>
 #include <usb/usb_common.h>
 #include "../usb_descriptor.h"
+#include "../composite.h"
 
 #ifndef CONFIG_UART_INTERRUPT_DRIVEN
 #error "CONFIG_UART_INTERRUPT_DRIVEN must be set for CDC ACM driver"
@@ -93,7 +94,9 @@ struct cdc_acm_dev_data_t {
 	u32_t rx_buf_head;             /* Head of the internal Rx buffer */
 	u32_t rx_buf_tail;             /* Tail of the internal Rx buffer */
 	/* Interface data buffer */
+#ifndef CONFIG_USB_COMPOSITE_DEVICE
 	u8_t interface_data[CDC_CLASS_REQ_MAX_DATA_SIZE];
+#endif
 	/* CDC ACM line coding properties. LE order */
 	struct cdc_acm_line_coding line_coding;
 	/* CDC ACM line state bitmap, DTE side */
@@ -353,11 +356,18 @@ static void cdc_acm_baudrate_set(struct device *dev, u32_t baudrate)
  */
 static int cdc_acm_init(struct device *dev)
 {
-	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 	int ret;
 
 	cdc_acm_dev = dev;
 
+#ifdef CONFIG_USB_COMPOSITE_DEVICE
+	ret = composite_add_function(&cdc_acm_config, FIRST_IFACE_CDC_ACM);
+	if (ret < 0) {
+		SYS_LOG_ERR("Failed to add a function");
+		return ret;
+	}
+#else
+	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 	cdc_acm_config.interface.payload_data = dev_data->interface_data;
 	cdc_acm_config.usb_device_description = usb_get_device_descriptor();
 	/* Initialize the USB driver with the right configuration */
@@ -373,7 +383,7 @@ static int cdc_acm_init(struct device *dev)
 		SYS_LOG_ERR("Failed to enable USB");
 		return ret;
 	}
-
+#endif
 	dev->driver_api = &cdc_acm_driver_api;
 	k_sem_init(&poll_wait_sem, 0, UINT_MAX);
 
