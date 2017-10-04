@@ -1,6 +1,12 @@
 project(Zephyr-Kernel VERSION ${PROJECT_VERSION})
 enable_language(C CXX ASM)
 
+# *DOCUMENTATION*
+# To see a list of typical targets execute "make usage"
+# More info can be located in ./README.rst
+# Comments in this file are targeted only to the developer, do not
+# expect to learn how to build the kernel reading this file.
+
 # Verify that the toolchain can compile a dummy file, if it is not we
 # won't be able to test for compatiblity with certain C flags.
 check_c_compiler_flag("" toolchain_is_ok)
@@ -604,5 +610,7 @@ add_custom_command(
 
 add_subdirectory(cmake/qemu)
 add_subdirectory(cmake/flash)
+
+add_subdirectory(cmake/usage)
 
 include(cmake/ccache.cmake)
