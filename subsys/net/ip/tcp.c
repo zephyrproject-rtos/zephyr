@@ -565,7 +565,21 @@ u16_t net_tcp_get_recv_mss(const struct net_tcp *tcp)
 	}
 #if defined(CONFIG_NET_IPV6)
 	else if (family == AF_INET6) {
-		return 1280;
+		struct net_if *iface = net_context_get_iface(tcp->context);
+		int mss = 0;
+
+		if (iface && iface->mtu >= NET_IPV6TCPH_LEN) {
+			/* Detect MSS based on interface MTU minus "TCP,IP
+			 * header size"
+			 */
+			mss = iface->mtu - NET_IPV6TCPH_LEN;
+		}
+
+		if (mss < NET_IPV6_MTU) {
+			mss = NET_IPV6_MTU;
+		}
+
+		return mss;
 	}
 #endif /* CONFIG_NET_IPV6 */
 
