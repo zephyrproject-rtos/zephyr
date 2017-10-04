@@ -60,6 +60,9 @@ which are not described here.
     Various programs and other files used to build and test Zephyr
     applications.
 
+:file:`cmake`
+    Additional build scripts needed to build Zephyr.
+
 :file:`subsys`
     Subsystems of Zephyr, including:
 
