@@ -131,7 +131,17 @@ static int test_thread_perms(struct _k_object *ko)
 	return 0;
 }
 
-void k_object_access_grant(void *object, struct k_thread *thread)
+/**
+ * Kernek object permission modification check
+ *
+ * Check that the caller has sufficient perms to modify access permissions for
+ * a particular kernel object. oops() if a user thread is trying to something
+ * forbidden.
+ *
+ * @param object to be modified
+ * @return NULL if the caller is a kernel thread and the object was not found
+ */
+static struct _k_object *access_check(void *object)
 {
 	struct _k_object *ko = _k_object_find(object);
 
@@ -146,7 +156,7 @@ void k_object_access_grant(void *object, struct k_thread *thread)
 			 * objects won't ever be usable from userspace, but
 			 * we shouldn't explode.
 			 */
-			return;
+			return NULL;
 		}
 	}
 
@@ -156,11 +166,30 @@ void k_object_access_grant(void *object, struct k_thread *thread)
 	if (_is_thread_user() && !test_thread_perms(ko)) {
 		printk("insufficient permissions in current thread %p\n",
 		       _current);
-		printk("Cannot grant access to %s %p for thread %p\n",
-		       otype_to_str(ko->type), object, thread);
+		printk("Cannot grant access to %s %p\n",
+		       otype_to_str(ko->type), object);
 		k_oops();
 	}
-	set_thread_perms(ko, thread);
+
+	return ko;
+}
+
+void k_object_access_grant(void *object, struct k_thread *thread)
+{
+	struct _k_object *ko = access_check(object);
+
+	if (ko) {
+		set_thread_perms(ko, thread);
+	}
+}
+
+void k_object_access_all_grant(void *object)
+{
+	struct _k_object *ko = access_check(object);
+
+	if (ko) {
+		memset(ko->perms, 0xFF, CONFIG_MAX_THREAD_BYTES);
+	}
 }
 
 int _k_object_validate(void *obj, enum k_objects otype, int init)

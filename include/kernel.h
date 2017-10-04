@@ -229,6 +229,23 @@ void _k_object_init(void *obj);
  */
 void k_object_access_grant(void *object, struct k_thread *thread);
 
+
+/**
+ * grant all present and future threads access to an object
+ *
+ * If the caller is from supervisor mode, or the caller is from user mode and
+ * have sufficient permissions on the object, then that object will have
+ * permissions granted to it for *all* current and future threads running in
+ * the system, effectively becoming a public kernel object.
+ *
+ * Use of this API should be avoided on systems that are running untrusted code
+ * as it is possible for such code to derive the addresses of kernel objects
+ * and perform unwanted operations on them.
+ *
+ * @param object Address of kernel object
+ */
+void k_object_access_all_grant(void *object);
+
 #else
 static inline int _k_object_validate(void *obj, enum k_objects otype, int init)
 {
