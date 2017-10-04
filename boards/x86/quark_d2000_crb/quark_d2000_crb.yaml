@@ -7,6 +7,14 @@ toolchain:
   - issm
 ram: 8
 flash: 32
+supported:
+  - adc
+  - i2c
+  - spi
+  - gpio
+  - aio
+  - rtc
+  - watchdog
 testing:
         ignore_tags:
           - net

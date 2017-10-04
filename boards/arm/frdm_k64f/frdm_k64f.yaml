@@ -7,3 +7,7 @@ toolchain:
   - gccarmemb
 supported:
   - netif:eth
+  - adc
+  - i2c
+  - spi
+  - gpio

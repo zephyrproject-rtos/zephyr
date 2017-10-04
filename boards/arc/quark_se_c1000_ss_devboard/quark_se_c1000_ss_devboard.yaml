@@ -6,7 +6,14 @@ ram: 24
 flash: 152
 toolchain:
   - zephyr
+supported:
+  - adc
+  - i2c
+  - spi
+  - gpio
+  - rtc
+  - watchdog
 testing:
-        ignore_tags:
-          - net
-          - bluetooth
+  ignore_tags:
+    - net
+    - bluetooth

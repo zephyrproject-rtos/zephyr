@@ -8,3 +8,9 @@ toolchain:
 supported:
   - ieee802154
   - usb_device
+  - i2c
+  - spi
+  - gpio
+  - rtc
+  - aio
+  - watchdog

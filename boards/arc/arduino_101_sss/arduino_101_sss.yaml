@@ -5,8 +5,15 @@ arch: arc
 toolchain:
   - zephyr
 ram: 24
+supported:
+  - adc
+  - i2c
+  - spi
+  - gpio
+  - rtc
+  - watchdog
 testing:
-        default: true
-        ignore_tags:
-          - net
-          - bluetooth
+  default: true
+  ignore_tags:
+    - net
+    - bluetooth
