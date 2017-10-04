@@ -42,6 +42,7 @@
 #include <usb/usb_device.h>
 #include <usb/usb_common.h>
 #include "../usb_descriptor.h"
+#include "../composite.h"
 
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_MASS_STORAGE_LEVEL
 #include <logging/sys_log.h>
@@ -820,7 +821,10 @@ static void mass_thread_main(int arg1, int unused)
 	}
 }
 
+#ifndef CONFIG_USB_COMPOSITE_DEVICE
 static u8_t interface_data[64];
+#endif
+
 /**
  * @brief Initialize USB mass storage setup
  *
@@ -868,6 +872,14 @@ static int mass_storage_init(struct device *dev)
 	msd_state_machine_reset();
 	msd_init();
 
+#ifdef CONFIG_USB_COMPOSITE_DEVICE
+	ret = composite_add_function(&mass_storage_config,
+				 FIRST_IFACE_MASS_STORAGE);
+	if (ret < 0) {
+		SYS_LOG_ERR("Failed to add a function");
+		return ret;
+	}
+#else
 	mass_storage_config.interface.payload_data = interface_data;
 	mass_storage_config.usb_device_description =
 		usb_get_device_descriptor();
@@ -884,7 +896,7 @@ static int mass_storage_init(struct device *dev)
 		SYS_LOG_ERR("Failed to enable USB");
 		return ret;
 	}
-
+#endif
 	k_sem_init(&disk_wait_sem, 0, 1);
 
 	/* Start a thread to offload disk ops */
