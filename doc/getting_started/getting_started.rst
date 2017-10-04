@@ -116,7 +116,7 @@ of the supported boards:
 
 .. code-block:: console
 
-   $ ninja help
+   $ ninja usage
 
 Sample projects for different features of the project are available at
 at :file:`$ZEPHYR_BASE/samples`.
