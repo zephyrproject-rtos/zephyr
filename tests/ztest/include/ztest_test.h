@@ -18,6 +18,7 @@ struct unit_test {
 	void (*test)(void);
 	void (*setup)(void);
 	void (*teardown)(void);
+	u32_t thread_options;
 };
 
 void _ztest_run_test_suite(const char *name, struct unit_test *suite);
@@ -73,9 +74,25 @@ static inline void unit_test_noop(void)
  */
 
 #define ztest_unit_test_setup_teardown(fn, setup, teardown) { \
-		STRINGIFY(fn), fn, setup, teardown \
+		STRINGIFY(fn), fn, setup, teardown, 0 \
 }
 
+/**
+ * @brief Define a user mode test with setup and teardown functions
+ *
+ * This should be called as an argument to ztest_test_suite. The test will
+ * be run in the following order: @a setup, @a fn, @a teardown. ALL
+ * test functions will be run in user mode, and only if CONFIG_USERSPACE
+ * is enabled, otherwise this is the same as ztest_unit_test_setup_teardown().
+ *
+ * @param fn Main test function
+ * @param setup Setup function
+ * @param teardown Teardown function
+ */
+
+#define ztest_user_unit_test_setup_teardown(fn, setup, teardown) { \
+		STRINGIFY(fn), fn, setup, teardown, K_USER \
+}
 
 /**
  * @brief Define a test function
@@ -87,6 +104,19 @@ static inline void unit_test_noop(void)
 
 #define ztest_unit_test(fn) \
 	ztest_unit_test_setup_teardown(fn, unit_test_noop, unit_test_noop)
+
+/**
+ * @brief Define a test function that should run as a user thread
+ *
+ * This should be called as an argument to ztest_test_suite.
+ * If CONFIG_USERSPACE is not enabled, this is functionally identical to
+ * ztest_unit_test().
+ *
+ * @param fn Test function
+ */
+
+#define ztest_user_unit_test(fn) \
+	ztest_user_unit_test_setup_teardown(fn, unit_test_noop, unit_test_noop)
 
 /**
  * @brief Define a test suite
@@ -104,7 +134,7 @@ static inline void unit_test_noop(void)
  * @param name Name of the testing suite
  */
 #define ztest_test_suite(name, ...) \
-	struct unit_test _##name[] = { \
+	static struct unit_test _##name[] = { \
 		__VA_ARGS__, { 0 } \
 	}
 /**
