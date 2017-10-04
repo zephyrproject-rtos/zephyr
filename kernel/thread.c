@@ -270,7 +270,7 @@ void _setup_new_thread(struct k_thread *new_thread,
 	_k_object_init(new_thread);
 
 	/* Any given thread has access to itself */
-	k_object_grant_access(new_thread, new_thread);
+	k_object_access_grant(new_thread, new_thread);
 #endif
 }
 
