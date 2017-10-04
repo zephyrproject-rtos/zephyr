@@ -19,13 +19,14 @@ config IEEE802154_KW41Z_DRV_NAME
 	string "NXP KW41Z Driver's name"
 	default "KW41Z"
 	help
-	  This option sets the driver name
+	  This option sets the driver name. Do not change it unless
+	  you know what you are doing.
 
 config IEEE802154_KW41Z_INIT_PRIO
 	int "KW41Z initialization priority"
 	default 80
 	help
-	  Set the initialization priority number. Do not mess with it unless
+	  Set the initialization priority number. Do not change it unless
 	  you know what you are doing. It has to start before the net stack.
 
 endif
