@@ -17,7 +17,7 @@ test case>/<block>.
 
 Each test block in the testcase meta data can define the following key/value pairs:
 
- tags: <list of tags> (required)
+  tags: <list of tags> (required)
     A set of string tags for the testcase. Usually pertains to
     functional domains but can be anything. Command line invocations
     of this script can filter the set of tests to run based on tag.
@@ -809,8 +809,13 @@ class MakeGenerator:
             by execute() will be keyed by its .name field.
         """
         args = ti.test.extra_args[:]
-        args.extend(["ARCH=%s" % ti.platform.arch,
-                     "BOARD=%s" % ti.platform.name])
+        arg_list = [
+                "ARCH=%s" % ti.platform.arch,
+                "BOARD=%s" % ti.platform.name]
+        if len(ti.test.extra_configs) > 0:
+            arg_list.append("OVERLAY_CONFIG=%s" % os.path.join(ti.outdir, "overlay.conf"))
+
+        args.extend(arg_list)
         args.extend(extra_args)
         if (ti.platform.qemu_support and (not ti.build_only) and
             (not build_only) and (enable_slow or not ti.test.slow)):
@@ -919,9 +924,10 @@ arch_valid_keys = {"name" : {"type" : "str", "required" : True},
 platform_valid_keys = {"qemu_support" : {"type" : "bool", "default" : False},
                        "supported_toolchains" : {"type" : "list", "default" : []}}
 
-testcase_valid_keys = {"tags" : {"type" : "set", "required" : True},
+testcase_valid_keys = {"tags" : {"type" : "set", "required" : False},
                        "type" : {"type" : "str", "default": "integration"},
                        "extra_args" : {"type" : "list"},
+                       "extra_configs" : {"type" : "list"},
                        "build_only" : {"type" : "bool", "default" : False},
                        "build_on_all" : {"type" : "bool", "default" : False},
                        "skip" : {"type" : "bool", "default" : False},
@@ -953,7 +959,6 @@ class SanityConfigParser:
         self.cp = cp
 
     def _cast_value(self, value, typestr):
-
         if type(value) is str:
             v = value.strip()
         if typestr == "str":
@@ -968,7 +973,9 @@ class SanityConfigParser:
         elif typestr == "bool":
             return value
 
-        elif typestr.startswith("list"):
+        elif typestr.startswith("list") and type(value) is list:
+            return value
+        elif typestr.startswith("list") and type(value) is str:
             vs = v.split()
             if len(typestr) > 4 and typestr[4] == ":":
                 return [self._cast_value(vsi, typestr[5:]) for vsi in vs]
@@ -985,7 +992,7 @@ class SanityConfigParser:
         else:
             raise ConfigurationError(self.filename, "unknown type '%s'" % value)
 
-    def section(self,name):
+    def section(self, name):
         for s in self.sections():
             if name in s:
                 return s.get(name, {})
@@ -996,7 +1003,7 @@ class SanityConfigParser:
         @return a list of string section names"""
         return self.cp['tests']
 
-    def get_section(self, section, valid_keys):
+    def get_section(self, section, valid_keys, common):
         """Get a dictionary representing the keys/values within a section
 
         @param section The section in the .yaml file to retrieve data from
@@ -1022,13 +1029,19 @@ class SanityConfigParser:
         """
 
         d = {}
+        for k, v in common.items():
+            d[k] = v
         for k, v in self.section(section).items():
             if k not in valid_keys:
                 raise ConfigurationError(self.filename,
                         "Unknown config key '%s' in definition for '%s'"
                         % (k, section))
-            d[k] = v
 
+            if k in d:
+                if type(d[k]) is str:
+                    d[k] += " " + v
+            else:
+                d[k] = v
         for k, kinfo in valid_keys.items():
             if k not in d:
                 if "required" in kinfo:
@@ -1148,6 +1161,7 @@ class TestCase:
         self.type = tc_dict["type"]
         self.tags = tc_dict["tags"]
         self.extra_args = tc_dict["extra_args"]
+        self.extra_configs = tc_dict["extra_configs"]
         self.arch_whitelist = tc_dict["arch_whitelist"]
         self.arch_exclude = tc_dict["arch_exclude"]
         self.skip = tc_dict["skip"]
@@ -1170,6 +1184,7 @@ class TestCase:
         self.defconfig = {}
         self.yamlfile = yamlfile
 
+
     def __repr__(self):
         return self.name
 
@@ -1190,6 +1205,18 @@ class TestInstance:
         self.name = os.path.join(platform.name, test.name)
         self.outdir = os.path.join(base_outdir, platform.name, test.path)
         self.build_only = build_only or test.build_only
+
+    def create_overlay(self):
+        if len(self.test.extra_configs) > 0:
+            file = os.path.join(self.outdir, "overlay.conf")
+            os.makedirs(self.outdir, exist_ok=True)
+            f = open(file, "w")
+            content = ""
+            for c in self.test.extra_configs:
+                content += c
+            f.write(content)
+            f.close()
+
 
     def calculate_sizes(self):
         """Get the RAM/ROM sizes of a test case.
@@ -1269,9 +1296,13 @@ class TestSuite:
 
                 workdir = os.path.relpath(dirpath, testcase_root)
 
+                common = {}
+                if 'common' in cp.cp:
+                    common = cp.cp['common']
+
                 for section in cp.sections():
                     name = list(section.keys())[0]
-                    tc_dict = cp.get_section(name, testcase_valid_keys)
+                    tc_dict = cp.get_section(name, testcase_valid_keys, common)
                     tc = TestCase(testcase_root, workdir, name, tc_dict,
                                   yaml_path)
 
@@ -1332,15 +1363,26 @@ class TestSuite:
                         myp = p
                         break
                 instance = TestInstance(self.testcases[name], myp, self.outdir)
+                instance.create_overlay()
                 instance_list.append(instance)
             self.add_instances(instance_list)
 
+    def apply_filters(self, args, toolchain):
 
-    def apply_filters(self, platform_filter, arch_filter, tag_filter, exclude_tag,
-                      config_filter, testcase_filter, last_failed, all_plats,
-                      platform_limit, toolchain, extra_args, enable_ccache):
         instances = []
         discards = {}
+        platform_filter = args.platform
+        last_failed = args.only_failed
+        testcase_filter = args.test
+        arch_filter = args.arch
+        tag_filter = args.tag
+        exclude_tag = args.exclude_tag
+        config_filter = args.config
+        platform_limit = args.platform_limit
+        extra_args = args.extra_args
+        enable_ccache = args.ccache
+        all_plats = args.all
+
         verbose("platform filter: " + str(platform_filter))
         verbose("    arch_filter: " + str(arch_filter))
         verbose("     tag_filter: " + str(tag_filter))
@@ -1569,6 +1611,7 @@ class TestSuite:
                                     tc.tc_filter)
                             continue
 
+                    instance.create_overlay()
                     instance_list.append(instance)
 
                 if not instance_list:
@@ -2061,9 +2104,7 @@ def main():
     if args.load_tests:
         ts.load_from_file(args.load_tests)
     else:
-        discards = ts.apply_filters(args.platform, args.arch, args.tag, args.exclude_tag, args.config,
-                                args.test, args.only_failed, args.all,
-                                args.platform_limit, toolchain, args.extra_args, args.ccache)
+        discards = ts.apply_filters(args, toolchain)
 
     if args.discard_report:
         ts.discard_report(args.discard_report)
