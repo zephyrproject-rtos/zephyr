@@ -515,3 +515,14 @@ macro(assert test comment)
     message(FATAL_ERROR "Assertion failed: ${comment}")
   endif()
 endmacro()
+
+# Usage:
+#   assert_exists(CMAKE_READELF)
+#
+# will cause a FATAL_ERROR if there is no file or directory behind the
+# variable
+macro(assert_exists var)
+  if(NOT EXISTS ${${var}})
+    message(FATAL_ERROR "No such file or directory: ${var}: '${${var}}'")
+  endif()
+endmacro()
