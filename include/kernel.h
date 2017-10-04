@@ -215,7 +215,33 @@ int _k_object_validate(void *obj, enum k_objects otype, int init);
  * @param object Address of the kernel object
  */
 void _k_object_init(void *obj);
+#else
+static inline int _k_object_validate(void *obj, enum k_objects otype, int init)
+{
+	ARG_UNUSED(obj);
+	ARG_UNUSED(otype);
+	ARG_UNUSED(init);
 
+	return 0;
+}
+
+static inline void _k_object_init(void *obj)
+{
+	ARG_UNUSED(obj);
+}
+
+static inline void _impl_k_object_access_grant(void *object,
+					       struct k_thread *thread)
+{
+	ARG_UNUSED(object);
+	ARG_UNUSED(thread);
+}
+
+static inline void _impl_k_object_access_all_grant(void *object)
+{
+	ARG_UNUSED(object);
+}
+#endif /* !CONFIG_USERSPACE */
 
 /**
  * grant a thread access to a kernel object
@@ -227,7 +253,7 @@ void _k_object_init(void *obj);
  * @param object Address of kernel object
  * @param thread Thread to grant access to the object
  */
-void k_object_access_grant(void *object, struct k_thread *thread);
+__syscall void k_object_access_grant(void *object, struct k_thread *thread);
 
 
 /**
@@ -244,29 +270,7 @@ void k_object_access_grant(void *object, struct k_thread *thread);
  *
  * @param object Address of kernel object
  */
-void k_object_access_all_grant(void *object);
-
-#else
-static inline int _k_object_validate(void *obj, enum k_objects otype, int init)
-{
-	ARG_UNUSED(obj);
-	ARG_UNUSED(otype);
-	ARG_UNUSED(init);
-
-	return 0;
-}
-
-static inline void _k_object_init(void *obj)
-{
-	ARG_UNUSED(obj);
-}
-
-static inline void k_object_access_grant(void *object, struct k_thread *thread)
-{
-	ARG_UNUSED(object);
-	ARG_UNUSED(thread);
-}
-#endif /* CONFIG_USERSPACE */
+__syscall void k_object_access_all_grant(void *object);
 
 /* timeouts */
 
