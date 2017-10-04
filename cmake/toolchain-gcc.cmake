@@ -7,6 +7,9 @@ set(CMAKE_OBJDUMP      ${CROSS_COMPILE}objdump CACHE INTERNAL " " FORCE)
 #set(CMAKE_LINKER      ${CROSS_COMPILE}ld      CACHE INTERNAL " " FORCE) # Not in use yet
 set(CMAKE_AR           ${CROSS_COMPILE}ar      CACHE INTERNAL " " FORCE)
 set(CMAKE_RANLILB      ${CROSS_COMPILE}ranlib  CACHE INTERNAL " " FORCE)
+set(CMAKE_READELF      ${CROSS_COMPILE}readelf CACHE INTERNAL " " FORCE)
+
+assert_exists(CMAKE_READELF)
 
 if(CONFIG_CPLUSPLUS)
   set(cplusplus_compiler ${CROSS_COMPILE}g++)
