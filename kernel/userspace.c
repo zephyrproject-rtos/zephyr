@@ -174,7 +174,7 @@ static struct _k_object *access_check(void *object)
 	return ko;
 }
 
-void k_object_access_grant(void *object, struct k_thread *thread)
+void _impl_k_object_access_grant(void *object, struct k_thread *thread)
 {
 	struct _k_object *ko = access_check(object);
 
@@ -183,7 +183,7 @@ void k_object_access_grant(void *object, struct k_thread *thread)
 	}
 }
 
-void k_object_access_all_grant(void *object)
+void _impl_k_object_access_all_grant(void *object)
 {
 	struct _k_object *ko = access_check(object);
 
