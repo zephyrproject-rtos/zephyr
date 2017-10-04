@@ -1,10 +1,10 @@
+common:
+  arch_exclude: xtensa
+  min_ram: 32
+  tags: core
 tests:
   - test:
-      arch_exclude: xtensa
-      min_ram: 32
       tags: core
   - test_newlib:
-      arch_exclude: xtensa
-      extra_args: CONF_FILE=prj_newlib.conf
-      min_ram: 32
-      tags: core
+      extra_configs:
+        - CONFIG_NEWLIB_LIBC=y
