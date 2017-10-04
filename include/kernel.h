@@ -504,6 +504,13 @@ extern void k_call_stacks_analyze(void);
  */
 #define K_USER (1 << 2)
 
+/* This thread should make its stack memory permissions universally accessible
+ * if and when the thread aborts. Allows for re-use of stack memory areas
+ * if CONFIG_USERSPACE is enabled. Only use this with K_USER, and if you are
+ * sure that the released stack memory will not have any sensitive information.
+ */
+#define K_STACK_RELEASE (1 << 3)
+
 #ifdef CONFIG_X86
 /* x86 Bitmask definitions for threads user options */
 

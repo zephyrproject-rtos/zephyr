@@ -148,11 +148,14 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t stack,
 void _x86_swap_update_page_tables(struct k_thread *incoming,
 				  struct k_thread *outgoing)
 {
-	/* Outgoing thread stack no longer accessible */
-	_x86_mmu_set_flags((void *)outgoing->stack_info.start,
-			   ROUND_UP(outgoing->stack_info.size, MMU_PAGE_SIZE),
-			   MMU_ENTRY_SUPERVISOR, MMU_PTE_US_MASK);
-
+	if (!(outgoing->base.thread_state & _THREAD_DEAD &&
+	      outgoing->base.user_options & K_STACK_RELEASE)) {
+		/* Outgoing thread stack no longer accessible */
+		_x86_mmu_set_flags((void *)outgoing->stack_info.start,
+				   ROUND_UP(outgoing->stack_info.size,
+					    MMU_PAGE_SIZE),
+				   MMU_ENTRY_SUPERVISOR, MMU_PTE_US_MASK);
+	}
 
 	/* Userspace can now access the incoming thread's stack */
 	_x86_mmu_set_flags((void *)incoming->stack_info.start,
@@ -169,6 +172,21 @@ void _x86_swap_update_page_tables(struct k_thread *incoming,
 	 */
 }
 
+void _arch_release_thread_stack(struct k_thread *thread)
+{
+	size_t size;
+	void *stackmem;
+
+	stackmem = (void *)(thread->stack_info.start - _STACK_GUARD_SIZE);
+	size = ROUND_UP(thread->stack_info.size + _STACK_GUARD_SIZE,
+			MMU_PAGE_SIZE);
+
+	_x86_mmu_set_flags(stackmem, size,
+			   (MMU_ENTRY_USER | MMU_ENTRY_PRESENT |
+			    MMU_ENTRY_WRITE),
+			   (MMU_PTE_P_MASK | MMU_PTE_RW_MASK |
+			    MMU_PTE_US_MASK));
+}
 
 FUNC_NORETURN void _arch_user_mode_enter(k_thread_entry_t user_entry,
 					 void *p1, void *p2, void *p3)

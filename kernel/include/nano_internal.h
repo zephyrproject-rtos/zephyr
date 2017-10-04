@@ -151,6 +151,23 @@ void _arch_user_mode_enter(k_thread_entry_t user_entry, void *p1, void *p2,
  *            architecture specific.
  */
 extern FUNC_NORETURN void _arch_syscall_oops(void *ssf);
+
+/**
+ * @brief Free a thread's stack memory for universal use
+ *
+ * Used by k_thread_abort() for threads that were started with K_STACK_RELEASE.
+ * The entire stack region for the thread, including any guard pages, will
+ * be configured as memory that can be read/written by user mode threads, such
+ * that this stack memory may be re-used for another thread stack or other
+ * purposes.
+ *
+ * Threads this gets called on may be swapped out if they were the currently
+ * running thread, but never swapped in again, and will always be marked as
+ * _THREAD_DEAD.
+ *
+ * @param thread The thread whose stack will be released
+ */
+extern void _arch_release_thread_stack(struct k_thread *thread);
 #endif /* CONFIG_USERSPACE */
 
 /* set and clear essential fiber/task flag */
