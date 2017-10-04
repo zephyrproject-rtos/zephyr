@@ -100,6 +100,62 @@ zephyr_ld_options(
   -no-pie
   )
 
+# ==========================================================================
+#
+# cmake -DW=... settings
+#
+# W=1 - warnings that may be relevant and does not occur too often
+# W=2 - warnings that occur quite often but may still be relevant
+# W=3 - the more obscure warnings, can most likely be ignored
+# ==========================================================================
+if(W MATCHES "1")
+  zephyr_compile_options(
+    -Wextra
+    -Wunused
+    -Wno-unused-parameter
+    -Wmissing-declarations
+    -Wmissing-format-attribute
+    -Wold-style-definition
+    )
+  zephyr_cc_option(
+    -Wmissing-prototypes
+    -Wmissing-include-dirs
+    -Wunused-but-set-variable
+    -Wno-missing-field-initializers
+    )
+endif()
+
+if(W MATCHES "2")
+  zephyr_compile_options(
+    -Waggregate-return
+    -Wcast-align
+    -Wdisabled-optimization
+    -Wnested-externs
+    -Wshadow
+    )
+  zephyr_cc_option(
+    -Wlogical-op
+    -Wmissing-field-initializers
+    )
+endif()
+
+if(W MATCHES "3")
+  zephyr_compile_options(
+    -Wbad-function-cast
+    -Wcast-qual
+    -Wconversion
+    -Wpacked
+    -Wpadded
+    -Wpointer-arith
+    -Wredundant-decls
+    -Wswitch-default
+    )
+  zephyr_cc_option(
+    -Wpacked-bitfield-compat
+    -Wvla
+    )
+endif()
+
 # Allow the user to inject options when calling cmake, e.g.
 # 'cmake -DEXTRA_CFLAGS="-Werror -Wno-deprecated-declarations" ..'
 
