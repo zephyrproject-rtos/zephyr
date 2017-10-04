@@ -561,23 +561,21 @@ static struct net_context *get_server_ctx(struct net_app_ctx *ctx,
 			rport = net_sin6(&tmp->remote)->sin6_port;
 			port = net_sin6(dst)->sin6_port;
 
-			if (dst->sa_family == AF_UNSPEC) {
-				if (tmp->net_app == ctx) {
-					NET_DBG("Selecting net_ctx %p iface %p"
-						" for AF_UNSPEC port %d", tmp,
-						net_context_get_iface(tmp),
-						ntohs(rport));
-					return tmp;
-				}
-
-				continue;
-			}
-
 			if (net_ipv6_addr_cmp(addr6, remote6) &&
 			    port == rport) {
 				NET_DBG("Selecting net_ctx %p iface %p for "
 					"AF_INET6 port %d", tmp,
 					net_context_get_iface(tmp),
+					ntohs(rport));
+				return tmp;
+			}
+
+			if (tmp->net_app == ctx) {
+				NET_DBG("Selecting net_ctx %p iface %p"
+					" for %s port %d", tmp,
+					net_context_get_iface(tmp),
+					dst->sa_family == AF_UNSPEC ?
+					"AF_UNSPEC" : "AF_INET6",
 					ntohs(rport));
 				return tmp;
 			}
@@ -594,18 +592,6 @@ static struct net_context *get_server_ctx(struct net_app_ctx *ctx,
 			rport = net_sin(&tmp->remote)->sin_port;
 			port = net_sin(dst)->sin_port;
 
-			if (dst->sa_family == AF_UNSPEC) {
-				if (tmp->net_app == ctx) {
-					NET_DBG("Selecting net_ctx %p iface %p"
-						" for AF_UNSPEC port %d", tmp,
-						net_context_get_iface(tmp),
-						ntohs(port));
-					return tmp;
-				}
-
-				continue;
-			}
-
 			if (net_ipv4_addr_cmp(addr4, remote4) &&
 			    port == rport) {
 				NET_DBG("Selecting net_ctx %p iface %p for "
@@ -615,6 +601,15 @@ static struct net_context *get_server_ctx(struct net_app_ctx *ctx,
 				return tmp;
 			}
 
+			if (tmp->net_app == ctx) {
+				NET_DBG("Selecting net_ctx %p iface %p"
+					" for %s port %d", tmp,
+					net_context_get_iface(tmp),
+					dst->sa_family == AF_UNSPEC ?
+					"AF_UNSPEC" : "AF_INET",
+					ntohs(port));
+				return tmp;
+			}
 		}
 	}
 
@@ -903,7 +898,7 @@ struct net_pkt *net_app_get_net_pkt(struct net_app_ctx *ctx,
 				    s32_t timeout)
 {
 	struct net_context *net_ctx;
-	struct sockaddr dst;
+	struct sockaddr dst = { 0 };
 
 	if (!ctx) {
 		return NULL;
@@ -1905,10 +1900,13 @@ reset:
 		}
 
 		if (ctx->cb.recv) {
+			struct sockaddr dst = { 0 };
 			struct net_pkt *pkt;
 			int len = ret;
 
-			pkt = net_pkt_get_rx(_net_app_select_net_ctx(ctx, NULL),
+			dst.sa_family = AF_UNSPEC;
+
+			pkt = net_pkt_get_rx(_net_app_select_net_ctx(ctx, &dst),
 					     BUF_ALLOC_TIMEOUT);
 			if (!pkt) {
 				ret = -ENOMEM;
