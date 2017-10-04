@@ -1,25 +1,30 @@
+common:
+  tags: drivers adc
 tests:
-  - test_adc:
-      platform_whitelist: frdm_k64f frdm_kw41z frdm_kl25z
-        hexiwear_k64
-      tags: drivers
-  - test_adc_arc_resolution_6:
-      extra_args: CONF_FILE=prj_resolution_6.conf
+  - test:
+      depends_on: adc
+  - test_resolution_6:
+      extra_configs:
+        - CONFIG_ADC_QMSI_SAMPLE_WIDTH=6
       platform_whitelist: quark_se_c1000_ss_devboard
-      tags: drivers
-  - test_adc_arc_resolution_8:
-      extra_args: CONF_FILE=prj_resolution_8.conf
+      tags: hwtest
+  - test_resolution_8:
+      extra_configs:
+        - CONFIG_ADC_QMSI_SAMPLE_WIDTH=8
       platform_whitelist: quark_se_c1000_ss_devboard
-      tags: drivers
-  - test_adc_arc_resolution_10:
-      extra_args: CONF_FILE=prj_resolution_10.conf
+      tags: hwtest
+  - test_resolution_10:
+      extra_configs:
+        - CONFIG_ADC_QMSI_SAMPLE_WIDTH=10
       platform_whitelist: quark_se_c1000_ss_devboard
-      tags: drivers
-  - test_adc_arc_resolution_12:
-      extra_args: CONF_FILE=prj_resolution_12.conf
+      tags: hwtest
+  - test_resolution_12:
+      extra_configs:
+        - CONFIG_ADC_QMSI_SAMPLE_WIDTH=12
       platform_whitelist: quark_se_c1000_ss_devboard
-      tags: drivers
-  - test_adc_arc_poll_mode:
-      extra_args: CONF_FILE=prj_poll_mode.conf
+      tags: hwtest
+  - test_poll_mode:
+      extra_configs:
+        - CONFIG_ADC_QMSI_POLL=y
       platform_whitelist: quark_se_c1000_ss_devboard
-      tags: drivers
+      tags: hwtest
