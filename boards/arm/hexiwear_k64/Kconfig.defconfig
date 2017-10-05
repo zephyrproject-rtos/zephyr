@@ -88,6 +88,9 @@ if ADC
 config ADC_0
 	def_bool y
 
+config BATTERY_SENSE
+	def_bool y
+
 endif # ADC
 
 if FXOS8700
