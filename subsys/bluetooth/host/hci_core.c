@@ -4355,7 +4355,12 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 				return err;
 			}
 
-			set_param->own_addr_type = BT_ADDR_LE_RANDOM;
+			if (BT_FEAT_LE_PRIVACY(bt_dev.le.features)) {
+				set_param->own_addr_type =
+					BT_HCI_OWN_ADDR_RPA_OR_RANDOM;
+			} else {
+				set_param->own_addr_type = BT_ADDR_LE_RANDOM;
+			}
 		} else {
 			/*
 			 * If Static Random address is used as Identity

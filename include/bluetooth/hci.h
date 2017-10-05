@@ -215,6 +215,8 @@ struct bt_hci_cmd_hdr {
 						BT_LE_FEAT_BIT_PHY_2M)
 #define BT_FEAT_LE_PHY_CODED(feat)              BT_LE_FEAT_TEST(feat, \
 						BT_LE_FEAT_BIT_PHY_CODED)
+#define BT_FEAT_LE_PRIVACY(feat)                BT_LE_FEAT_TEST(feat, \
+						BT_LE_FEAT_BIT_PRIVACY)
 
 /* LE States */
 #define BT_LE_STATES_SLAVE_CONN_ADV(states)     (states & 0x0000004000000000)
@@ -745,6 +747,10 @@ struct bt_hci_cp_le_set_adv_enable {
 #define BT_HCI_OP_LE_SET_SCAN_PARAM             BT_OP(BT_OGF_LE, 0x000b)
 #define BT_HCI_LE_SCAN_PASSIVE                  0x00
 #define BT_HCI_LE_SCAN_ACTIVE                   0x01
+
+/* Special scan address types for LL privacy */
+#define BT_HCI_LE_SCAN_RPA_OR_PUBLIC            0x02
+#define BT_HCI_LE_SCAN_RPA_OR_RANDOM            0x03
 
 struct bt_hci_cp_le_set_scan_param {
 	u8_t  scan_type;
