@@ -22,6 +22,8 @@ enum {
 enum {
 	BT_KEYS_AUTHENTICATED,
 	BT_KEYS_DEBUG,
+	BT_KEYS_ID_PENDING_ADD,
+	BT_KEYS_ID_PENDING_DEL,
 
 	/* Total number of flags - must be at the end of the enum */
 	BT_KEYS_NUM_FLAGS,

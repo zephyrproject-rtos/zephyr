@@ -43,6 +43,8 @@ enum {
 
 	BT_DEV_RPA_VALID,
 
+	BT_DEV_ID_PENDING,
+
 #if defined(CONFIG_BT_BREDR)
 	BT_DEV_ISCAN,
 	BT_DEV_PSCAN,
@@ -184,5 +186,7 @@ int bt_send(struct net_buf *buf);
 
 u16_t bt_hci_get_cmd_opcode(struct net_buf *buf);
 
-int bt_id_add(const bt_addr_le_t *addr, u8_t val[16]);
-int bt_id_del(const bt_addr_le_t *addr);
+/* Don't require everyone to include keys.h */
+struct bt_keys;
+int bt_id_add(struct bt_keys *keys);
+int bt_id_del(struct bt_keys *keys);
