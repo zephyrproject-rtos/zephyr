@@ -64,6 +64,15 @@ struct bt_dev_le {
 	u16_t			mtu;
 	struct k_sem		pkts;
 #endif /* CONFIG_BT_CONN */
+
+#if defined(CONFIG_BT_SMP)
+	/* Size of the the controller resolving list */
+	u8_t                    rl_size;
+	/* Number of entries in the resolving list. rl_entries > rl_size
+	 * means that host-side resolving is used.
+	 */
+	u8_t                    rl_entries;
+#endif /* CONFIG_BT_SMP */
 };
 
 #if defined(CONFIG_BT_BREDR)
@@ -174,3 +183,6 @@ bool bt_addr_le_is_bonded(const bt_addr_le_t *addr);
 int bt_send(struct net_buf *buf);
 
 u16_t bt_hci_get_cmd_opcode(struct net_buf *buf);
+
+int bt_id_add(const bt_addr_le_t *addr, u8_t val[16]);
+int bt_id_del(const bt_addr_le_t *addr);

@@ -636,7 +636,8 @@ static void hci_disconn_complete(struct net_buf *buf)
 advertise:
 	if (atomic_test_bit(bt_dev.flags, BT_DEV_KEEP_ADVERTISING) &&
 	    !atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
-		if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
+		if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
+		    !BT_FEAT_LE_PRIVACY(bt_dev.le.features)) {
 			le_set_private_addr();
 		}
 
@@ -730,11 +731,10 @@ static void update_conn_param(struct bt_conn *conn)
 				 CONN_UPDATE_TIMEOUT);
 }
 
-static void le_conn_complete(struct net_buf *buf)
+static void le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 {
-	struct bt_hci_evt_le_conn_complete *evt = (void *)buf->data;
 	u16_t handle = sys_le16_to_cpu(evt->handle);
-	const bt_addr_le_t *id_addr;
+	bt_addr_le_t peer_addr, id_addr;
 	struct bt_conn *conn;
 	int err;
 
@@ -767,13 +767,23 @@ static void le_conn_complete(struct net_buf *buf)
 		return;
 	}
 
-	id_addr = find_id_addr(&evt->peer_addr);
+	bt_addr_le_copy(&id_addr, &evt->peer_addr);
+
+	/* Translate "enhanced" identity address type to normal one */
+	if (id_addr.type == BT_ADDR_LE_PUBLIC_ID ||
+	    id_addr.type == BT_ADDR_LE_RANDOM_ID) {
+		id_addr.type -= BT_ADDR_LE_PUBLIC_ID;
+		bt_addr_copy(&peer_addr.a, &evt->peer_rpa);
+		peer_addr.type = BT_ADDR_LE_RANDOM;
+	} else {
+		bt_addr_le_copy(&peer_addr, &evt->peer_addr);
+	}
 
 	/*
 	 * Make lookup to check if there's a connection object in
 	 * CONNECT state associated with passed peer LE address.
 	 */
-	conn = bt_conn_lookup_state_le(id_addr, BT_CONN_CONNECT);
+	conn = bt_conn_lookup_state_le(&id_addr, BT_CONN_CONNECT);
 
 	if (evt->role == BT_CONN_ROLE_SLAVE) {
 		/*
@@ -784,7 +794,7 @@ static void le_conn_complete(struct net_buf *buf)
 
 		/* only for slave we may need to add new connection */
 		if (!conn) {
-			conn = bt_conn_add_le(id_addr);
+			conn = bt_conn_add_le(&id_addr);
 		}
 	}
 
@@ -794,7 +804,7 @@ static void le_conn_complete(struct net_buf *buf)
 	}
 
 	conn->handle   = handle;
-	bt_addr_le_copy(&conn->le.dst, id_addr);
+	bt_addr_le_copy(&conn->le.dst, &id_addr);
 	conn->le.interval = sys_le16_to_cpu(evt->interval);
 	conn->le.latency = sys_le16_to_cpu(evt->latency);
 	conn->le.timeout = sys_le16_to_cpu(evt->supv_timeout);
@@ -806,16 +816,11 @@ static void le_conn_complete(struct net_buf *buf)
 	 * was set during outgoing connection creation.
 	 */
 	if (conn->role == BT_HCI_ROLE_SLAVE) {
-		bt_addr_le_copy(&conn->le.init_addr, &evt->peer_addr);
+		bt_addr_le_copy(&conn->le.init_addr, &peer_addr);
 
-		/* TODO Handle the probability that random address could have
-		 * been updated by rpa_timeout or numerous other places it is
-		 * called in this file before le_conn_complete is processed
-		 * here.
-		 */
 		if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
-			bt_addr_le_copy(&conn->le.resp_addr,
-					&bt_dev.random_addr);
+			bt_addr_copy(&conn->le.resp_addr.a, &evt->local_rpa);
+			conn->le.resp_addr.type = BT_ADDR_LE_RANDOM;
 		} else {
 			bt_addr_le_copy(&conn->le.resp_addr, &bt_dev.id_addr);
 		}
@@ -876,6 +881,43 @@ static void le_conn_complete(struct net_buf *buf)
 done:
 	bt_conn_unref(conn);
 	bt_le_scan_update(false);
+}
+
+static void le_legacy_conn_complete(struct net_buf *buf)
+{
+	struct bt_hci_evt_le_conn_complete *evt = (void *)buf->data;
+	struct bt_hci_evt_le_enh_conn_complete enh;
+	const bt_addr_le_t *id_addr;
+
+	BT_DBG("status %u role %u %s", evt->status, evt->role,
+	       bt_addr_le_str(&evt->peer_addr));
+
+	enh.status         = evt->status;
+	enh.handle         = evt->handle;
+	enh.role           = evt->role;
+	enh.interval       = evt->interval;
+	enh.latency        = evt->latency;
+	enh.supv_timeout   = evt->supv_timeout;
+	enh.clock_accuracy = evt->clock_accuracy;
+
+	bt_addr_le_copy(&enh.peer_addr, &evt->peer_addr);
+
+	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
+		bt_addr_copy(&enh.local_rpa, &bt_dev.random_addr.a);
+	} else {
+		bt_addr_copy(&enh.local_rpa, BT_ADDR_ANY);
+	}
+
+	id_addr = find_id_addr(&enh.peer_addr);
+	if (id_addr != &enh.peer_addr) {
+		bt_addr_copy(&enh.peer_rpa, &enh.peer_addr.a);
+		bt_addr_le_copy(&enh.peer_addr, id_addr);
+		enh.peer_addr.type += BT_ADDR_LE_PUBLIC_ID;
+	} else {
+		bt_addr_copy(&enh.peer_rpa, BT_ADDR_ANY);
+	}
+
+	le_enh_conn_complete(&enh);
 }
 
 static void le_remote_feat_complete(struct net_buf *buf)
@@ -2232,6 +2274,193 @@ static void role_change(struct net_buf *buf)
 #endif /* CONFIG_BT_BREDR */
 
 #if defined(CONFIG_BT_SMP)
+static int addr_res_enable(u8_t enable)
+{
+	struct net_buf *buf;
+
+	BT_DBG("%s", enable ? "enabled" : "disabled");
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADDR_RES_ENABLE, 1);
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	net_buf_add_u8(buf, enable);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADDR_RES_ENABLE,
+				    buf, NULL);
+}
+
+static int hci_id_add(const bt_addr_le_t *addr, u8_t val[16])
+{
+	struct bt_hci_cp_le_add_dev_to_rl *cp;
+	struct net_buf *buf;
+
+	BT_DBG("addr %s", bt_addr_le_str(addr));
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_ADD_DEV_TO_RL, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	bt_addr_le_copy(&cp->peer_id_addr, addr);
+	memcpy(cp->peer_irk, val, 16);
+
+#if defined(CONFIG_BT_PRIVACY)
+	memcpy(cp->local_irk, bt_dev.irk, 16);
+#else
+	memset(cp->local_irk, 0, 16);
+#endif
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_ADD_DEV_TO_RL, buf, NULL);
+}
+
+int bt_id_add(const bt_addr_le_t *addr, u8_t val[16])
+{
+	bool adv_enabled, scan_enabled;
+	int err;
+
+	BT_DBG("addr %s", bt_addr_le_str(addr));
+
+	/* Nothing to be done if host-side resolving is used */
+	if (!bt_dev.le.rl_size || bt_dev.le.rl_entries > bt_dev.le.rl_size) {
+		bt_dev.le.rl_entries++;
+		return 0;
+	}
+
+	adv_enabled = atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING);
+	if (adv_enabled) {
+		set_advertise_enable(false);
+	}
+
+	scan_enabled = atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING);
+	if (scan_enabled) {
+		set_le_scan_enable(BT_HCI_LE_SCAN_DISABLE);
+	}
+
+	/* If there are any existing entries address resolution will be on */
+	if (bt_dev.le.rl_entries) {
+		err = addr_res_enable(BT_HCI_ADDR_RES_DISABLE);
+		if (err) {
+			BT_WARN("Failed to disable address resolution");
+			goto done;
+		}
+	}
+
+	if (bt_dev.le.rl_entries == bt_dev.le.rl_size) {
+		BT_WARN("Resolving list size exceeded. Switching to host.");
+
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_CLEAR_RL, NULL, NULL);
+		if (err) {
+			BT_ERR("Failed to clear resolution list");
+			goto done;
+		}
+
+		bt_dev.le.rl_entries++;
+
+		goto done;
+	}
+
+	err = hci_id_add(addr, val);
+	if (err) {
+		BT_ERR("Failed to add IRK to controller");
+		goto done;
+	}
+
+	bt_dev.le.rl_entries++;
+
+done:
+	addr_res_enable(BT_HCI_ADDR_RES_ENABLE);
+
+	if (scan_enabled) {
+		set_le_scan_enable(BT_HCI_LE_SCAN_ENABLE);
+	}
+
+	if (adv_enabled) {
+		set_advertise_enable(true);
+	}
+
+	return err;
+}
+
+static void keys_add_id(struct bt_keys *keys)
+{
+	hci_id_add(&keys->addr, keys->irk.val);
+}
+
+int bt_id_del(const bt_addr_le_t *addr)
+{
+	struct bt_hci_cp_le_rem_dev_from_rl *cp;
+	bool adv_enabled, scan_enabled;
+	struct net_buf *buf;
+	int err;
+
+	BT_DBG("addr %s", bt_addr_le_str(addr));
+
+	if (!bt_dev.le.rl_size ||
+	    bt_dev.le.rl_entries > bt_dev.le.rl_size + 1) {
+		bt_dev.le.rl_entries--;
+		return 0;
+	}
+
+	adv_enabled = atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING);
+	if (adv_enabled) {
+		set_advertise_enable(false);
+	}
+
+	scan_enabled = atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING);
+	if (scan_enabled) {
+		set_le_scan_enable(BT_HCI_LE_SCAN_DISABLE);
+	}
+
+	err = addr_res_enable(BT_HCI_ADDR_RES_DISABLE);
+	if (err) {
+		BT_ERR("Disabling address resolution failed (err %d)", err);
+		goto done;
+	}
+
+	/* We checked size + 1 earlier, so here we know we can fit again */
+	if (bt_dev.le.rl_entries > bt_dev.le.rl_size) {
+		bt_dev.le.rl_entries--;
+		bt_keys_foreach(BT_KEYS_IRK, keys_add_id);
+		goto done;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_REM_DEV_FROM_RL, sizeof(*cp));
+	if (!buf) {
+		err = -ENOBUFS;
+		goto done;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	bt_addr_le_copy(&cp->peer_id_addr, addr);
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_REM_DEV_FROM_RL, buf, NULL);
+	if (err) {
+		BT_ERR("Failed to remove IRK from controller");
+		goto done;
+	}
+
+	bt_dev.le.rl_entries--;
+
+done:
+	/* Only re-enable if there are entries to do resolving with */
+	if (bt_dev.le.rl_entries) {
+		addr_res_enable(BT_HCI_ADDR_RES_ENABLE);
+	}
+
+	if (scan_enabled) {
+		set_le_scan_enable(BT_HCI_LE_SCAN_ENABLE);
+	}
+
+	if (adv_enabled) {
+		set_advertise_enable(true);
+	}
+
+	return err;
+}
+
 static void update_sec_level(struct bt_conn *conn)
 {
 	if (!conn->encrypt) {
@@ -2646,7 +2875,11 @@ static int start_le_scan(u8_t scan_type, u16_t interval, u16_t window)
 			return err;
 		}
 
-		set_param->addr_type = BT_ADDR_LE_RANDOM;
+		if (BT_FEAT_LE_PRIVACY(bt_dev.le.features)) {
+			set_param->addr_type = BT_HCI_OWN_ADDR_RPA_OR_RANDOM;
+		} else {
+			set_param->addr_type = BT_ADDR_LE_RANDOM;
+		}
 	} else {
 		set_param->addr_type =  bt_dev.id_addr.type;
 
@@ -2730,7 +2963,7 @@ static void le_adv_report(struct net_buf *buf)
 	BT_DBG("Adv number of reports %u",  num_reports);
 
 	while (num_reports--) {
-		const bt_addr_le_t *addr;
+		bt_addr_le_t id_addr;
 		s8_t rssi;
 
 		info = (void *)buf->data;
@@ -2742,7 +2975,13 @@ static void le_adv_report(struct net_buf *buf)
 		       bt_addr_le_str(&info->addr),
 		       info->evt_type, info->length, rssi);
 
-		addr = find_id_addr(&info->addr);
+		if (info->addr.type == BT_ADDR_LE_PUBLIC_ID ||
+		    info->addr.type == BT_ADDR_LE_RANDOM_ID) {
+			bt_addr_le_copy(&id_addr, &info->addr);
+			id_addr.type -= BT_ADDR_LE_PUBLIC_ID;
+		} else {
+			bt_addr_le_copy(&id_addr, find_id_addr(&info->addr));
+		}
 
 		if (scan_dev_found_cb) {
 			struct net_buf_simple_state state;
@@ -2750,13 +2989,14 @@ static void le_adv_report(struct net_buf *buf)
 			net_buf_simple_save(&buf->b, &state);
 
 			buf->len = info->length;
-			scan_dev_found_cb(addr, rssi, info->evt_type, &buf->b);
+			scan_dev_found_cb(&id_addr, rssi, info->evt_type,
+					  &buf->b);
 
 			net_buf_simple_restore(&buf->b, &state);
 		}
 
 #if defined(CONFIG_BT_CONN)
-		check_pending_conn(addr, &info->addr, info->evt_type);
+		check_pending_conn(&id_addr, &info->addr, info->evt_type);
 #endif /* CONFIG_BT_CONN */
 
 		/* Get next report iteration by moving pointer to right offset
@@ -2777,7 +3017,10 @@ static void hci_le_meta_event(struct net_buf *buf)
 	switch (evt->subevent) {
 #if defined(CONFIG_BT_CONN)
 	case BT_HCI_EVT_LE_CONN_COMPLETE:
-		le_conn_complete(buf);
+		le_legacy_conn_complete(buf);
+		break;
+	case BT_HCI_EVT_LE_ENH_CONN_COMPLETE:
+		le_enh_conn_complete((void *)buf->data);
 		break;
 	case BT_HCI_EVT_LE_CONN_UPDATE_COMPLETE:
 		le_conn_update_complete(buf);
@@ -3247,15 +3490,23 @@ static int le_set_event_mask(void)
 	mask |= BT_EVT_MASK_LE_ADVERTISING_REPORT;
 
 	if (IS_ENABLED(CONFIG_BT_CONN)) {
-		mask |= BT_EVT_MASK_LE_CONN_COMPLETE;
+		if (BT_FEAT_LE_PRIVACY(bt_dev.le.features)) {
+			mask |= BT_EVT_MASK_LE_ENH_CONN_COMPLETE;
+		} else {
+			mask |= BT_EVT_MASK_LE_CONN_COMPLETE;
+		}
+
 		mask |= BT_EVT_MASK_LE_CONN_UPDATE_COMPLETE;
 		mask |= BT_EVT_MASK_LE_REMOTE_FEAT_COMPLETE;
+
 		if (BT_FEAT_LE_CONN_PARAM_REQ_PROC(bt_dev.le.features)) {
 			mask |= BT_EVT_MASK_LE_CONN_PARAM_REQ;
 		}
+
 		if (BT_FEAT_LE_DLE(bt_dev.le.features)) {
 			mask |= BT_EVT_MASK_LE_DATA_LEN_CHANGE;
 		}
+
 		if (BT_FEAT_LE_PHY_2M(bt_dev.le.features) ||
 		    BT_FEAT_LE_PHY_CODED(bt_dev.le.features)) {
 			mask |= BT_EVT_MASK_LE_PHY_UPDATE_COMPLETE;
@@ -3378,6 +3629,27 @@ static int le_init(void)
 			return err;
 		}
 	}
+
+#if defined(CONFIG_BT_SMP)
+	if (BT_FEAT_LE_PRIVACY(bt_dev.le.features)) {
+		struct bt_hci_rp_le_read_rl_size *rp;
+		struct net_buf *rsp;
+
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_RL_SIZE, NULL,
+					   &rsp);
+		if (err) {
+			return err;
+		}
+
+		rp = (void *)rsp->data;
+
+		BT_DBG("Resolving List size %u", rp->rl_size);
+
+		bt_dev.le.rl_size = rp->rl_size;
+
+		net_buf_unref(rsp);
+	}
+#endif
 
 	return  le_set_event_mask();
 }

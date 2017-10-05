@@ -23,6 +23,10 @@ extern "C" {
 #define BT_ADDR_LE_PUBLIC_ID    0x02
 #define BT_ADDR_LE_RANDOM_ID    0x03
 
+/* Special own address types for LL privacy (used in adv & scan parameters) */
+#define BT_HCI_OWN_ADDR_RPA_OR_PUBLIC  0x02
+#define BT_HCI_OWN_ADDR_RPA_OR_RANDOM  0x03
+
 typedef struct {
 	u8_t  val[6];
 } bt_addr_t;
@@ -747,10 +751,6 @@ struct bt_hci_cp_le_set_adv_enable {
 #define BT_HCI_OP_LE_SET_SCAN_PARAM             BT_OP(BT_OGF_LE, 0x000b)
 #define BT_HCI_LE_SCAN_PASSIVE                  0x00
 #define BT_HCI_LE_SCAN_ACTIVE                   0x01
-
-/* Special scan address types for LL privacy */
-#define BT_HCI_LE_SCAN_RPA_OR_PUBLIC            0x02
-#define BT_HCI_LE_SCAN_RPA_OR_RANDOM            0x03
 
 struct bt_hci_cp_le_set_scan_param {
 	u8_t  scan_type;
