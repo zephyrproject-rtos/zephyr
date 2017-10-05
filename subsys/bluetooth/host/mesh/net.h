@@ -245,6 +245,8 @@ int bt_mesh_friend_cred_del(u16_t net_idx, u16_t addr);
 
 bool bt_mesh_kr_update(struct bt_mesh_subnet *sub, u8_t new_kr, bool new_key);
 
+void bt_mesh_net_revoke_keys(struct bt_mesh_subnet *sub);
+
 int bt_mesh_net_beacon_update(struct bt_mesh_subnet *sub);
 
 void bt_mesh_rpl_reset(void);
