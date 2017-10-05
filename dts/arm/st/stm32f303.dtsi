@@ -7,6 +7,11 @@
 #include <st/stm32f3.dtsi>
 
 / {
+	ccm0: memory@10000000 {
+		compatible = "st,stm32-ccm";
+		reg = <0x10000000 DT_CCM_SIZE>;
+	};
+
 	soc {
 		spi2: spi@40003800 {
 			compatible = "st,stm32-spi-fifo";
