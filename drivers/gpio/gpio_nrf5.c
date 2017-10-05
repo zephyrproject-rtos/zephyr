@@ -8,9 +8,6 @@
 /**
  * @file Driver for the Nordic Semiconductor nRF5X GPIO module.
  */
-#define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
-#include <logging/sys_log.h>
-
 #include <errno.h>
 #include <kernel.h>
 #include <device.h>
@@ -29,6 +26,7 @@
 #else
 #error "Platform not defined."
 #endif
+#define GPIO_PIN_CNF_SENSE_Invalid	0x01
 
 /* GPIO structure for nRF5X. More detailed description of each register can be found in nrf5X.h */
 struct _gpio {
@@ -100,13 +98,13 @@ struct gpio_nrf5_data {
 	((volatile struct _gpiote *)(DEV_GPIO_CFG(dev))->gpiote_base_addr)
 
 
-#define GPIO_SENSE_DISABLE	(GPIO_PIN_CNF_SENSE_Disabled	\
-					<< GPIO_PIN_CNF_SENSE_Pos)
-#define GPIO_SENSE_LOW		(GPIO_PIN_CNF_SENSE_Low		\
-					<< GPIO_PIN_CNF_SENSE_Pos)
-#define GPIO_SENSE_HIGH		(GPIO_PIN_CNF_SENSE_High	\
-					<< GPIO_PIN_CNF_SENSE_Pos)
-#define GPIO_SENSE_INVALID	(0x01 << GPIO_PIN_CNF_SENSE_Pos)
+#define GPIO_SENSE_DISABLE    (GPIO_PIN_CNF_SENSE_Disabled << \
+			       GPIO_PIN_CNF_SENSE_Pos)
+#define GPIO_SENSE_LOW        (GPIO_PIN_CNF_SENSE_Low << GPIO_PIN_CNF_SENSE_Pos)
+#define GPIO_SENSE_HIGH       (GPIO_PIN_CNF_SENSE_High << \
+			       GPIO_PIN_CNF_SENSE_Pos)
+#define GPIO_SENSE_INVALID    (GPIO_PIN_CNF_SENSE_Invalid << \
+			       GPIO_PIN_CNF_SENSE_Pos)
 #define GPIO_PULL_DISABLE     (GPIO_PIN_CNF_PULL_Disabled << GPIO_PIN_CNF_PULL_Pos)
 #define GPIO_PULL_DOWN        (GPIO_PIN_CNF_PULL_Pulldown << GPIO_PIN_CNF_PULL_Pos)
 #define GPIO_PULL_UP          (GPIO_PIN_CNF_PULL_Pullup << GPIO_PIN_CNF_PULL_Pos)
@@ -184,8 +182,7 @@ static int gpio_nrf5_config(struct device *dev,
 		}
 
 		if (sense == GPIO_SENSE_INVALID) {
-			SYS_LOG_ERR("Invalid parameter for sense,"
-						"setting SENSE disable\n");
+			__ASSERT_NO_MSG(sense == GPIO_SENSE_INVALID);
 			sense = GPIO_SENSE_DISABLE;
 		}
 
@@ -388,6 +385,24 @@ static const struct gpio_driver_api gpio_nrf5_drv_api_funcs = {
 	.enable_callback = gpio_nrf5_enable_callback,
 	.disable_callback = gpio_nrf5_disable_callback,
 };
+
+/* Enable GPIOTE Interrupt */
+void nrf_gpiote_interrupt_enable(uint32_t mask)
+{
+	nrf_gpiote_int_enable(mask);
+}
+
+/* Disable GPIOTE Interrupt */
+void  nrf_gpiote_interrupt_disable(uint32_t mask)
+{
+	nrf_gpiote_int_disable(mask);
+}
+
+/* Clear GPIOTE Port Event */
+void nrf_gpiote_clear_port_event(void)
+{
+	NRF_GPIOTE->EVENTS_PORT = 0;
+}
 
 /* Initialization for GPIO Port 0 */
 #ifdef CONFIG_GPIO_NRF5_P0
