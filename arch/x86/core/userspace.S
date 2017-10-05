@@ -120,18 +120,19 @@ SECTION_FUNC(TEXT, _x86_userspace_enter)
 	push	%edi
 	push	%eax
 
-	/* Compute size of user stack and put in ECX */
+	/* Compute size of user stack in 4-byte chunks and put in ECX */
 	mov	%ebx, %ecx
 	sub	%edi, %ecx
+	shr	$2, %ecx	/* Divide by 4 */
 
 #ifdef CONFIG_INIT_STACKS
 	mov	$0xAAAAAAAA, %eax
 #else
 	xor	%eax, %eax
 #endif
-	/* Fill ECX bytes of memory, 4 bytes at a time, starting at ES:EDI,
-	 * with whatever is in EAX. Stack sizes are always at least 4-byte
-	 * aligned.
+	/* Copy 4 bytes of memory at a time, starting at ES:EDI, with whatever
+	 * is in EAX. Repeat this ECX times.  Stack sizes are always at least
+	 * 4-byte aligned.
 	 */
 	cld
 	rep stosl
