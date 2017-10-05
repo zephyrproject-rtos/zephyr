@@ -2582,7 +2582,7 @@ static void krp_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 	} else if ((sub->kr_phase == BT_MESH_KR_PHASE_1 ||
 		    sub->kr_phase == BT_MESH_KR_PHASE_2) &&
 		   phase == BT_MESH_KR_PHASE_3) {
-		memcpy(&sub->keys[0], &sub->keys[1], sizeof(sub->keys[0]));
+		bt_mesh_net_revoke_keys(sub);
 		if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) ||
 		    IS_ENABLED(CONFIG_BT_MESH_FRIEND)) {
 			bt_mesh_friend_cred_refresh(ctx->net_idx);
