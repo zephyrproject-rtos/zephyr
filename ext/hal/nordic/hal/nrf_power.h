@@ -40,7 +40,6 @@
  * Hardware access layer for (POWER) peripheral.
  */
 #include "nrf.h"
-#include "nordic_common.h"
 #include "nrf_assert.h"
 #include <stdint.h>
 #include <stddef.h>
