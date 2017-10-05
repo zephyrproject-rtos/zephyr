@@ -471,6 +471,12 @@ extern void k_call_stacks_analyze(void);
  */
 #define K_USER (1 << 2)
 
+/* Indicates that the thread being created should inherit all kernel object
+ * permissions from the thread that created it. No effect if CONFIG_USERSPACE
+ * is not enabled.
+ */
+#define K_INHERIT_PERMS (1 << 3)
+
 #ifdef CONFIG_X86
 /* x86 Bitmask definitions for threads user options */
 
