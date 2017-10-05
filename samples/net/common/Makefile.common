@@ -6,13 +6,6 @@
 
 # Common routines used in net samples
 
-ifeq ($(CONFIG_NET_L2_IEEE802154), y)
-ifeq ($(CONFIG_NET_APP_SETTINGS), y)
-ccflags-y += -I${ZEPHYR_BASE}/samples/net/common/
-obj-y += ../../common/ieee802154_settings.o
-endif
-endif
-
 ifeq ($(CONFIG_IEEE802154_CC2520),y)
 ifeq ($(CONFIG_BOARD_ARDUINO_101),y)
 ccflags-y +=-I${ZEPHYR_BASE}/include/drivers/
