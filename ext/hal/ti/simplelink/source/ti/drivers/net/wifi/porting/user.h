@@ -956,10 +956,11 @@ typedef signed int _SlFd_t;
     
     \warning                User must implement it's own 'os_Spawn' function.
 */
-//#define SL_PLATFORM_EXTERNAL_SPAWN
+#define SL_PLATFORM_EXTERNAL_SPAWN
 
 #ifdef SL_PLATFORM_EXTERNAL_SPAWN
-#define sl_Spawn(pEntry,pValue,flags)       os_Spawn(pEntry,pValue,flags)        
+extern  _i16 os_Spawn(P_OS_SPAWN_ENTRY pEntry, void *pValue, unsigned long flags);
+#define sl_Spawn(pEntry,pValue,flags)       os_Spawn(pEntry,pValue,flags)
 #endif
 
 /*!
