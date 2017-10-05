@@ -8,6 +8,11 @@
 #include <st/stm32f411.dtsi>
 
 / {
+	ccm0: memory@10000000 {
+		compatible = "st,stm32-ccm";
+		reg = <0x10000000 DT_CCM_SIZE>;
+	};
+
 	soc {
 		pinctrl: pin-controller {
 			reg = <0x40020000 0x2800>;
