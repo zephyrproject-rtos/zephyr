@@ -105,13 +105,29 @@ function(zephyr_ld_options)
 endfunction()
 
 macro(zephyr_get_include_directories includes)
-  # With cmake 3.8 this should be possible with generator expressions.
   get_property(__l TARGET zephyr_interface PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
   foreach(dir ${__l})
     list(APPEND ${includes} -I${dir})
   endforeach()
 endmacro()
 
+macro(zephyr_get_compile_definitions definitions)
+  get_property(__l TARGET zephyr_interface PROPERTY INTERFACE_COMPILE_DEFINITIONS)
+  foreach(def ${__l})
+    list(APPEND ${definitions} -D${def})
+  endforeach()
+endmacro()
+
+macro(zephyr_get_compile_options options)
+  get_property(options TARGET zephyr_interface PROPERTY INTERFACE_COMPILE_OPTIONS)
+endmacro()
+
+macro(zephyr_get_system_include_directories system_includes)
+  get_property(__l TARGET zephyr_interface PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES)
+  foreach(dir ${__l})
+    list(APPEND ${system_includes} -isystem${dir})
+  endforeach()
+endmacro()
 
 # 2.1 zephyr_library_*
 #
