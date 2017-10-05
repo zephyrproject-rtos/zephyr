@@ -731,6 +731,21 @@ static void update_conn_param(struct bt_conn *conn)
 				 CONN_UPDATE_TIMEOUT);
 }
 
+#if defined(CONFIG_BT_SMP)
+static void update_pending_id(struct bt_keys *keys)
+{
+	if (atomic_test_and_clear_bit(keys->flags, BT_KEYS_ID_PENDING_ADD)) {
+		bt_id_add(keys);
+		return;
+	}
+
+	if (atomic_test_and_clear_bit(keys->flags, BT_KEYS_ID_PENDING_DEL)) {
+		bt_id_del(keys);
+		return;
+	}
+}
+#endif
+
 static void le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 {
 	u16_t handle = sys_le16_to_cpu(evt->handle);
@@ -740,6 +755,12 @@ static void le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 
 	BT_DBG("status %u handle %u role %u %s", evt->status, handle,
 	       evt->role, bt_addr_le_str(&evt->peer_addr));
+
+#if defined(CONFIG_BT_SMP)
+	if (atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_ID_PENDING)) {
+		bt_keys_foreach(BT_KEYS_IRK, update_pending_id);
+	}
+#endif
 
 	if (evt->status) {
 		/*
@@ -2316,17 +2337,26 @@ static int hci_id_add(const bt_addr_le_t *addr, u8_t val[16])
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_ADD_DEV_TO_RL, buf, NULL);
 }
 
-int bt_id_add(const bt_addr_le_t *addr, u8_t val[16])
+int bt_id_add(struct bt_keys *keys)
 {
 	bool adv_enabled, scan_enabled;
+	struct bt_conn *conn;
 	int err;
 
-	BT_DBG("addr %s", bt_addr_le_str(addr));
+	BT_DBG("addr %s", bt_addr_le_str(&keys->addr));
 
 	/* Nothing to be done if host-side resolving is used */
 	if (!bt_dev.le.rl_size || bt_dev.le.rl_entries > bt_dev.le.rl_size) {
 		bt_dev.le.rl_entries++;
 		return 0;
+	}
+
+	conn = bt_conn_lookup_state_le(NULL, BT_CONN_CONNECT);
+	if (conn) {
+		atomic_set_bit(bt_dev.flags, BT_DEV_ID_PENDING);
+		atomic_set_bit(keys->flags, BT_KEYS_ID_PENDING_ADD);
+		bt_conn_unref(conn);
+		return -EAGAIN;
 	}
 
 	adv_enabled = atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING);
@@ -2362,7 +2392,7 @@ int bt_id_add(const bt_addr_le_t *addr, u8_t val[16])
 		goto done;
 	}
 
-	err = hci_id_add(addr, val);
+	err = hci_id_add(&keys->addr, keys->irk.val);
 	if (err) {
 		BT_ERR("Failed to add IRK to controller");
 		goto done;
@@ -2389,19 +2419,28 @@ static void keys_add_id(struct bt_keys *keys)
 	hci_id_add(&keys->addr, keys->irk.val);
 }
 
-int bt_id_del(const bt_addr_le_t *addr)
+int bt_id_del(struct bt_keys *keys)
 {
 	struct bt_hci_cp_le_rem_dev_from_rl *cp;
 	bool adv_enabled, scan_enabled;
+	struct bt_conn *conn;
 	struct net_buf *buf;
 	int err;
 
-	BT_DBG("addr %s", bt_addr_le_str(addr));
+	BT_DBG("addr %s", bt_addr_le_str(&keys->addr));
 
 	if (!bt_dev.le.rl_size ||
 	    bt_dev.le.rl_entries > bt_dev.le.rl_size + 1) {
 		bt_dev.le.rl_entries--;
 		return 0;
+	}
+
+	conn = bt_conn_lookup_state_le(NULL, BT_CONN_CONNECT);
+	if (conn) {
+		atomic_set_bit(bt_dev.flags, BT_DEV_ID_PENDING);
+		atomic_set_bit(keys->flags, BT_KEYS_ID_PENDING_DEL);
+		bt_conn_unref(conn);
+		return -EAGAIN;
 	}
 
 	adv_enabled = atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING);
@@ -2423,6 +2462,7 @@ int bt_id_del(const bt_addr_le_t *addr)
 	/* We checked size + 1 earlier, so here we know we can fit again */
 	if (bt_dev.le.rl_entries > bt_dev.le.rl_size) {
 		bt_dev.le.rl_entries--;
+		keys->keys &= ~BT_KEYS_IRK;
 		bt_keys_foreach(BT_KEYS_IRK, keys_add_id);
 		goto done;
 	}
@@ -2434,7 +2474,7 @@ int bt_id_del(const bt_addr_le_t *addr)
 	}
 
 	cp = net_buf_add(buf, sizeof(*cp));
-	bt_addr_le_copy(&cp->peer_id_addr, addr);
+	bt_addr_le_copy(&cp->peer_id_addr, &keys->addr);
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_REM_DEV_FROM_RL, buf, NULL);
 	if (err) {

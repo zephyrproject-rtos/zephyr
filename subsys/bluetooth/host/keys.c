@@ -168,9 +168,7 @@ void bt_keys_clear(struct bt_keys *keys)
 	BT_DBG("keys for %s", bt_addr_le_str(&keys->addr));
 
 	if (keys->keys & BT_KEYS_IRK) {
-		/* Clear so bt_id_del doesn't try to re-add to controller */
-		keys->keys &= ~BT_KEYS_IRK;
-		bt_id_del(&keys->addr);
+		bt_id_del(keys);
 	}
 
 	memset(keys, 0, sizeof(*keys));

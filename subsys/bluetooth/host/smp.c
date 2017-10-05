@@ -3041,7 +3041,7 @@ static u8_t smp_ident_addr_info(struct bt_smp *smp, struct net_buf *buf)
 			}
 		}
 
-		bt_id_add(&keys->addr, keys->irk.val);
+		bt_id_add(keys);
 	}
 
 	smp->remote_dist &= ~BT_SMP_DIST_ID_KEY;
