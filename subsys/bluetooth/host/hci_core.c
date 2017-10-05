@@ -284,44 +284,6 @@ int bt_hci_cmd_send_sync(u16_t opcode, struct net_buf *buf,
 	return err;
 }
 
-static int bt_hci_stop_scanning(void)
-{
-	struct net_buf *buf, *rsp;
-	struct bt_hci_cp_le_set_scan_enable *scan_enable;
-	int err;
-
-	if (!atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING)) {
-		return -EALREADY;
-	}
-
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_ENABLE,
-				sizeof(*scan_enable));
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	scan_enable = net_buf_add(buf, sizeof(*scan_enable));
-	memset(scan_enable, 0, sizeof(*scan_enable));
-	scan_enable->filter_dup = BT_HCI_LE_SCAN_FILTER_DUP_DISABLE;
-	scan_enable->enable = BT_HCI_LE_SCAN_DISABLE;
-
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_SCAN_ENABLE, buf, &rsp);
-	if (err) {
-		return err;
-	}
-
-	/* Update scan state in case of success (0) status */
-	err = rsp->data[0];
-	if (!err) {
-		atomic_clear_bit(bt_dev.flags, BT_DEV_SCANNING);
-		atomic_clear_bit(bt_dev.flags, BT_DEV_ACTIVE_SCAN);
-	}
-
-	net_buf_unref(rsp);
-
-	return err;
-}
-
 static const bt_addr_le_t *find_id_addr(const bt_addr_le_t *addr)
 {
 	if (IS_ENABLED(CONFIG_BT_SMP)) {
@@ -463,6 +425,42 @@ static int le_set_private_addr(void)
 	return set_random_address(&nrpa);
 }
 #endif
+
+static int set_le_scan_enable(u8_t enable)
+{
+	struct bt_hci_cp_le_set_scan_enable *cp;
+	struct net_buf *buf;
+	int err;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_ENABLE, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+
+	if (enable == BT_HCI_LE_SCAN_ENABLE) {
+		cp->filter_dup = atomic_test_bit(bt_dev.flags,
+						 BT_DEV_SCAN_FILTER_DUP);
+	} else {
+		cp->filter_dup = BT_HCI_LE_SCAN_FILTER_DUP_DISABLE;
+	}
+
+	cp->enable = enable;
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_SCAN_ENABLE, buf, NULL);
+	if (err) {
+		return err;
+	}
+
+	if (enable == BT_HCI_LE_SCAN_ENABLE) {
+		atomic_set_bit(bt_dev.flags, BT_DEV_SCANNING);
+	} else {
+		atomic_clear_bit(bt_dev.flags, BT_DEV_SCANNING);
+	}
+
+	return 0;
+}
 
 #if defined(CONFIG_BT_CONN)
 static void hci_acl(struct net_buf *buf)
@@ -1131,7 +1129,8 @@ static void check_pending_conn(const bt_addr_le_t *id_addr,
 		return;
 	}
 
-	if (bt_hci_stop_scanning()) {
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING) &&
+	    set_le_scan_enable(BT_HCI_LE_SCAN_DISABLE)) {
 		goto failed;
 	}
 
@@ -2617,12 +2616,10 @@ static void hci_cmd_status(struct net_buf *buf)
 	}
 }
 
-static int start_le_scan(u8_t scan_type, u16_t interval, u16_t window,
-			 u8_t filter_dup)
+static int start_le_scan(u8_t scan_type, u16_t interval, u16_t window)
 {
-	struct net_buf *buf, *rsp;
 	struct bt_hci_cp_le_set_scan_param *set_param;
-	struct bt_hci_cp_le_set_scan_enable *scan_enable;
+	struct net_buf *buf;
 	int err;
 
 	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_PARAM,
@@ -2667,34 +2664,20 @@ static int start_le_scan(u8_t scan_type, u16_t interval, u16_t window,
 	}
 
 	bt_hci_cmd_send(BT_HCI_OP_LE_SET_SCAN_PARAM, buf);
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_ENABLE,
-				sizeof(*scan_enable));
-	if (!buf) {
-		return -ENOBUFS;
-	}
 
-	scan_enable = net_buf_add(buf, sizeof(*scan_enable));
-	memset(scan_enable, 0, sizeof(*scan_enable));
-	scan_enable->filter_dup = filter_dup;
-	scan_enable->enable = BT_HCI_LE_SCAN_ENABLE;
-
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_SCAN_ENABLE, buf, &rsp);
+	err = set_le_scan_enable(BT_HCI_LE_SCAN_ENABLE);
 	if (err) {
 		return err;
 	}
 
-	/* Update scan state in case of success (0) status */
-	err = rsp->data[0];
-	if (!err) {
-		atomic_set_bit(bt_dev.flags, BT_DEV_SCANNING);
-		if (scan_type == BT_HCI_LE_SCAN_ACTIVE) {
-			atomic_set_bit(bt_dev.flags, BT_DEV_ACTIVE_SCAN);
-		}
+	if (scan_type == BT_HCI_LE_SCAN_ACTIVE) {
+		atomic_set_bit(bt_dev.flags, BT_DEV_ACTIVE_SCAN);
+	} else {
+		atomic_clear_bit(bt_dev.flags, BT_DEV_ACTIVE_SCAN);
 	}
 
-	net_buf_unref(rsp);
 
-	return err;
+	return 0;
 }
 
 int bt_le_scan_update(bool fast_scan)
@@ -2706,7 +2689,7 @@ int bt_le_scan_update(bool fast_scan)
 	if (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING)) {
 		int err;
 
-		err = bt_hci_stop_scanning();
+		err = set_le_scan_enable(BT_HCI_LE_SCAN_DISABLE);
 		if (err) {
 			return err;
 		}
@@ -2721,6 +2704,8 @@ int bt_le_scan_update(bool fast_scan)
 			return 0;
 		}
 
+		atomic_set_bit(bt_dev.flags, BT_DEV_SCAN_FILTER_DUP);
+
 		bt_conn_unref(conn);
 
 		if (fast_scan) {
@@ -2731,8 +2716,7 @@ int bt_le_scan_update(bool fast_scan)
 			window = BT_GAP_SCAN_SLOW_WINDOW_1;
 		}
 
-		return start_le_scan(BT_HCI_LE_SCAN_PASSIVE, interval, window,
-				     0x01);
+		return start_le_scan(BT_HCI_LE_SCAN_PASSIVE, interval, window);
 	}
 
 	return 0;
@@ -4451,7 +4435,8 @@ int bt_le_adv_stop(void)
 
 	if (!IS_ENABLED(CONFIG_BT_PRIVACY)) {
 		/* If active scan is ongoing set NRPA */
-		if (atomic_test_bit(bt_dev.flags, BT_DEV_ACTIVE_SCAN)) {
+		if (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING) &&
+		    atomic_test_bit(bt_dev.flags, BT_DEV_ACTIVE_SCAN)) {
 			le_set_private_addr();
 		}
 	}
@@ -4501,15 +4486,20 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 	}
 
 	if (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING)) {
-		err = bt_hci_stop_scanning();
+		err = set_le_scan_enable(BT_HCI_LE_SCAN_DISABLE);
 		if (err) {
 			atomic_clear_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN);
 			return err;
 		}
 	}
 
-	err = start_le_scan(param->type, param->interval, param->window,
-			    param->filter_dup);
+	if (param->filter_dup) {
+		atomic_set_bit(bt_dev.flags, BT_DEV_SCAN_FILTER_DUP);
+	} else {
+		atomic_clear_bit(bt_dev.flags, BT_DEV_SCAN_FILTER_DUP);
+	}
+
+	err = start_le_scan(param->type, param->interval, param->window);
 	if (err) {
 		atomic_clear_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN);
 		return err;
