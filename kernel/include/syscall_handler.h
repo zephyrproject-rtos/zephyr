@@ -106,6 +106,16 @@ extern void _thread_perms_clear(struct _k_object *ko, struct k_thread *thread);
 extern void _thread_perms_all_set(struct _k_object *ko);
 
 /**
+ * Clear initialization state of a kernel object
+ *
+ * Intended for thread objects upon thread exit, or for other kernel objects
+ * that were released back to an object pool.
+ *
+ * @param object Address of the kernel object
+ */
+void _k_object_uninit(void *obj);
+
+/**
  * @brief Runtime expression check for system call arguments
  *
  * Used in handler functions to perform various runtime checks on arguments,

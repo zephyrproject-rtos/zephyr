@@ -260,6 +260,19 @@ void _k_object_init(void *object)
 	ko->flags |= K_OBJ_FLAG_INITIALIZED;
 }
 
+void _k_object_uninit(void *object)
+{
+	struct _k_object *ko;
+
+	/* See comments in _k_object_init() */
+	ko = _k_object_find(object);
+	if (!ko) {
+		return;
+	}
+
+	ko->flags &= ~K_OBJ_FLAG_INITIALIZED;
+}
+
 static u32_t _handler_bad_syscall(u32_t bad_id, u32_t arg2, u32_t arg3,
 				  u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
 {
