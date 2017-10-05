@@ -69,6 +69,7 @@ config NET_APP_NEED_IPV4
 config NET_DEBUG_APP
 	bool "Debug net app library"
 	default n
+	default y if NET_LOG_GLOBAL
 	help
 	Enables net app library to output debug messages
 
