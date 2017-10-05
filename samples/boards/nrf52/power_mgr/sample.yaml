@@ -1,0 +1,8 @@
+sample:
+    description: Low Power state Sample for nrf52
+    name: _nrf52-power-mgr-sample
+tests:
+-   test:
+        build_only: true
+        tags: nrf52 samples power
+        platform_whitelist: nrf52_vbluno52 nrf52840_pca10056 nrf52_pca10040

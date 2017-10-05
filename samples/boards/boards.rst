@@ -7,4 +7,4 @@ Board-specific samples
    :maxdepth: 1
    :glob:
 
-   */*
+   **/*

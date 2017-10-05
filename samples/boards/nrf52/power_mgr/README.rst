@@ -1,0 +1,75 @@
+.. _nrf52-power-mgr-sample:
+
+Power management demo
+#####################
+
+Overview
+********
+
+This sample demonstrates a power manager app that uses the Zephyr
+power management infrastructure to enter into Low Power state.
+
+This app will cycle through the following power schemes each time idle thread
+calls _sys_soc_suspend() hook function :
+
+1. Low Power State: Low Power State is SOC specific and being in this state is
+   transparent to devices. SOC and devices do not lose context in this Mode.
+   SOC supports the following two Low Power states :
+
+   A. CONSTANT LATENCY LOW POWER MODE : This Low Power State triggers CONSTLAT
+      task on nrf52 SOC. In this Mode there is Low Exit latency and 16MHz Clock
+      is kept ON.
+   B. LOW POWER STATE : In this Power State CONSTLAT task is triggered on nrf52
+      SOC. This is a deeper power state than CONSTANT LATENCY Mode. In this mode
+      the 16MHz Clock is turned off and only 32KHz clock is used.
+
+2. Deep Sleep: This Power State is mapped to SYSTEM OFF state. In this mode
+   all devices on board get suspended. All devices and SOC lose context on
+   wake up.
+
+3. No-op: No operation, letting kernel idle.
+
+Requirements
+************
+
+This application uses nrf52 DK board for the demo.
+
+Building, Flashing and Running
+******************************
+Building
+.. code-block:: console
+
+    make BOARD=nrf52_pca10040
+
+Flashing (Use nrfjprog for flashing):-
+.. code-block:: console
+
+     nrfjprog --eraseall -f nrf52
+     nrfjprog --program <zephyr.hex> -f nrf52
+     nrfjprog --reset -f nrf52
+
+Running:
+
+1. Open UART terminal.
+2. Power Cycle Device.
+3. Device will enter into Low Power Mode.
+4. Press Button 1 on device. This will wake device from Low Power Mode.
+5. Repeat Step 4 for entering into other Low Power/Deep Sleep states.
+
+
+Sample Output
+=================
+nrf52 core output
+-----------------
+
+.. code-block:: console
+
+  ***Power Management Demo on arm****
+  Demo Description
+  Application creates Idleness, Due to which System Idle Thread is
+  scheduled and it enters into various Low Power States.
+  Press Button 1 on Board to wake device from Low Power State
+  Application main thread
+  ---->Low power state entry - CONSTANT LATENCY MODE----- Low power state exit!
+  ---->Low power state entry - LOW POWER MODE ----- Low power state exit!
+  ===> Entry Into Deep Sleep ==
