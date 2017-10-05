@@ -4,7 +4,18 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-all qemu flash pristine clean:
-	$(MAKE) -C hello_world $@
+BOARD ?= qemu_x86
+CONF_FILE = prj.conf
 
-run : qemu
+export SOURCE_DIR = $(CURDIR)
+export LDFLAGS_zephyr += -L$(O)/mylib/lib
+export ALL_LIBS += mylib
+
+include ${ZEPHYR_BASE}/Makefile.inc
+
+all qemu flash zephyr : all-mylib
+clean pristine mrproper : clean-mylib
+all-mylib: outputexports
+
+all-mylib clean-mylib:
+	$(MAKE) -C ../mylib O=$(O) $(@:-mylib=)
