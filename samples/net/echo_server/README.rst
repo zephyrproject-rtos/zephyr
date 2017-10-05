@@ -29,9 +29,6 @@ described in :ref:`networking_with_qemu`.
 There are configuration files for different boards and setups in the
 echo-server directory:
 
-- :file:`prj_arduino_101_cc2520.conf`
-  Use this for Arduino 101 with external IEEE 802.15.4 cc2520 board.
-
 - :file:`prj_arduino_101.conf`
   Use this for Arduino 101 with external enc28j60 ethernet board.
 
