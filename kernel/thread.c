@@ -447,7 +447,18 @@ void _k_thread_single_abort(struct k_thread *thread)
 			_abort_thread_timeout(thread);
 		}
 	}
-	_mark_thread_as_dead(thread);
+
+	thread->base.thread_state |= _THREAD_DEAD;
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_THREAD
+	_sys_k_event_logger_thread_exit(thread);
+#endif
+
+#ifdef CONFIG_USERSPACE
+	/* Clear initailized state so that this thread object may be re-used
+	 * and triggers errors if API calls are made on it from user threads
+	 */
+	_k_object_uninit(thread);
+#endif
 }
 
 #ifdef CONFIG_MULTITHREADING
