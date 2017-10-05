@@ -42,7 +42,7 @@ static int shell_cmd_ack(int argc, char *argv[])
 	}
 
 	if (!strcmp(argv[1], "unset") || !strcmp(argv[1], "0")) {
-		net_mgmt(NET_REQUEST_IEEE802154_SET_ACK, iface, NULL, 0);
+		net_mgmt(NET_REQUEST_IEEE802154_UNSET_ACK, iface, NULL, 0);
 		printk("ACK flag unset on outgoing packets\n");
 
 		return 0;
