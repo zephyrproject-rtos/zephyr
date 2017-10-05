@@ -431,20 +431,6 @@ static inline void _ready_thread(struct k_thread *thread)
 #endif
 }
 
-/**
- * @brief Mark thread as dead
- *
- * This routine must be called with interrupts locked.
- */
-static inline void _mark_thread_as_dead(struct k_thread *thread)
-{
-	thread->base.thread_state |= _THREAD_DEAD;
-
-#ifdef CONFIG_KERNEL_EVENT_LOGGER_THREAD
-	_sys_k_event_logger_thread_exit(thread);
-#endif
-}
-
 /*
  * Set a thread's priority. If the thread is ready, place it in the correct
  * queue.
