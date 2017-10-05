@@ -467,9 +467,11 @@ def find_kobjects(elf, syms):
 header = """%compare-lengths
 %define lookup-function-name _k_object_lookup
 %language=ANSI-C
+%global-table
 %struct-type
 %{
 #include <kernel.h>
+#include <syscall_handler.h>
 #include <string.h>
 %}
 struct _k_object;
@@ -484,6 +486,17 @@ footer = """%%
 struct _k_object *_k_object_find(void *obj)
 {
     return _k_object_lookup((const char *)obj, sizeof(void *));
+}
+
+void _k_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
+{
+    int i;
+
+    for (i = MIN_HASH_VALUE; i <= MAX_HASH_VALUE; i++) {
+        if (wordlist[i].name) {
+            func(&wordlist[i], context);
+        }
+    }
 }
 """
 

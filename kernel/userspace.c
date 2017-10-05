@@ -92,6 +92,36 @@ const char *otype_to_str(enum k_objects otype)
 #endif
 }
 
+struct perm_ctx {
+	int parent_id;
+	int child_id;
+	struct k_thread *parent;
+};
+
+static void wordlist_cb(struct _k_object *ko, void *ctx_ptr)
+{
+	struct perm_ctx *ctx = (struct perm_ctx *)ctx_ptr;
+
+	if (sys_bitfield_test_bit((mem_addr_t)&ko->perms, ctx->parent_id) &&
+				  (struct k_thread *)ko->name != ctx->parent) {
+		sys_bitfield_set_bit((mem_addr_t)&ko->perms, ctx->child_id);
+	}
+}
+
+void _thread_perms_inherit(struct k_thread *parent, struct k_thread *child)
+{
+	struct perm_ctx ctx = {
+		parent->base.perm_index,
+		child->base.perm_index,
+		parent
+	};
+
+	if ((ctx.parent_id < 8 * CONFIG_MAX_THREAD_BYTES) &&
+	    (ctx.child_id < 8 * CONFIG_MAX_THREAD_BYTES)) {
+		_k_object_wordlist_foreach(wordlist_cb, &ctx);
+	}
+}
+
 void _thread_perms_set(struct _k_object *ko, struct k_thread *thread)
 {
 	if (thread->base.perm_index < 8 * CONFIG_MAX_THREAD_BYTES) {
