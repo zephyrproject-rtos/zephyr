@@ -9,6 +9,7 @@
 #include <zephyr/types.h>
 #include <string.h>
 #include <errno.h>
+#include <assert.h>
 
 #include <toolchain.h>
 #include <bluetooth/bluetooth.h>
@@ -198,6 +199,7 @@ static void supported_commands(u8_t *data, u16_t len)
 	tester_set_bit(cmds, GATT_WRITE_LONG);
 	tester_set_bit(cmds, GATT_CFG_NOTIFY);
 	tester_set_bit(cmds, GATT_CFG_INDICATE);
+	tester_set_bit(cmds, GATT_READ_LOCAL_ATTR_VAL);
 
 	tester_send(BTP_SERVICE_ID_GATT, GATT_READ_SUPPORTED_COMMANDS,
 		    CONTROLLER_INDEX, (u8_t *) rp, sizeof(cmds));
@@ -857,6 +859,40 @@ static void set_enc_key_size(u8_t *data, u16_t len)
 fail:
 	tester_rsp(BTP_SERVICE_ID_GATT, GATT_SET_ENC_KEY_SIZE, CONTROLLER_INDEX,
 		   status);
+}
+
+static void read_local_attr_value_rp(u8_t *value, u16_t value_len)
+{
+	u8_t buf[512 + sizeof(struct gatt_read_local_attr_rp)];
+	struct gatt_read_local_attr_rp *rp = (void *) buf;
+
+	/* Maximum attribute value size is 512 bytes */
+	assert(value_len < 512);
+
+	rp->value_length = sys_cpu_to_le16(value_len);
+	memcpy(rp->value, value, value_len);
+
+	tester_send(BTP_SERVICE_ID_GATT, GATT_READ_LOCAL_ATTR_VAL,
+		    CONTROLLER_INDEX, (u8_t *) rp,
+		    sizeof(*rp) + rp->value_length);
+}
+
+static void read_local_attr_value(u8_t *data, u16_t len)
+{
+	const struct gatt_read_local_attr_cmd *cmd = (void *) data;
+	struct bt_gatt_attr *a;
+
+	for (a = server_db; a <= LAST_DB_ATTR; a = NEXT_DB_ATTR(a)) {
+		const struct gatt_value *value = a->user_data;
+
+		if (a->handle == sys_le16_to_cpu(cmd->handle)) {
+			read_local_attr_value_rp(value->data, value->len);
+			return;
+		}
+	}
+
+	tester_rsp(BTP_SERVICE_ID_GATT, GATT_READ_LOCAL_ATTR_VAL,
+		   CONTROLLER_INDEX, BTP_STATUS_FAILED);
 }
 
 static void exchange_func(struct bt_conn *conn, u8_t err,
@@ -1777,6 +1813,9 @@ void tester_handle_gatt(u8_t opcode, u8_t index, u8_t *data,
 	case GATT_CFG_NOTIFY:
 	case GATT_CFG_INDICATE:
 		config_subscription(data, len, opcode);
+		return;
+	case GATT_READ_LOCAL_ATTR_VAL:
+		read_local_attr_value(data, len);
 		return;
 	default:
 		tester_rsp(BTP_SERVICE_ID_GATT, opcode, index,
