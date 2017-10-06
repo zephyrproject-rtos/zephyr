@@ -30,6 +30,9 @@ static void on_msg_rcvd(char *chan_name, char *umask, char *msg);
 static u8_t cmd_buf[CMD_BUFFER_SIZE];
 static u16_t cmd_len;
 
+#define NICK_BUFFER_SIZE 16
+static char nick_buf[NICK_BUFFER_SIZE];
+
 /* LED */
 #if defined(LED0_GPIO_PORT)
 #define LED_GPIO_NAME LED0_GPIO_PORT
@@ -345,7 +348,6 @@ static int
 zirc_connect(const char *host, int port)
 {
 	int ret;
-	char name_buf[32];
 
 	SYS_LOG_INF("Connecting to %s:%d...", host, port);
 
@@ -374,17 +376,11 @@ zirc_connect(const char *host, int port)
 		panic("Can't init network");
 	}
 
-	ret = snprintk(name_buf, sizeof(name_buf), "zephyrbot%u",
-		       sys_rand32_get());
-	if (ret < 0 || ret >= sizeof(name_buf)) {
-		panic("Can't fill name buffer");
-	}
-
-	if (zirc_nick_set(name_buf) < 0) {
+	if (zirc_nick_set(nick_buf) < 0) {
 		panic("Could not set nick");
 	}
 
-	if (zirc_user_set(name_buf, "Zephyr IRC Bot") < 0) {
+	if (zirc_user_set(nick_buf, "Zephyr IRC Bot") < 0) {
 		panic("Could not set user");
 	}
 
@@ -634,6 +630,13 @@ void main(void)
 	}
 
 	cmd_len = 0;
+
+	/* setup IRC nick for max 16 chars */
+	ret = snprintk(nick_buf, sizeof(nick_buf), "zephyrbot%05u",
+		       sys_rand32_get() & 0xFFFF);
+	if (ret < 0 || ret >= sizeof(nick_buf)) {
+		panic("Can't fill nick buffer");
+	}
 
 	ret = zirc_connect(DEFAULT_SERVER, DEFAULT_PORT);
 	if (ret < 0 && ret != -EINPROGRESS) {
