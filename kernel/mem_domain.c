@@ -9,7 +9,6 @@
 #include <kernel_structs.h>
 #include <nano_internal.h>
 
-
 static u8_t max_partitions;
 
 
@@ -18,7 +17,7 @@ void k_mem_domain_init(struct k_mem_domain *domain, u32_t num_parts,
 {
 	unsigned int key;
 
-	__ASSERT(domain && (!num_parts || parts), "");
+  __ASSERT(domain && (!num_parts || parts), "");
 	__ASSERT(num_parts <= max_partitions, "");
 
 	key = irq_lock();
