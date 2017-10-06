@@ -688,17 +688,6 @@ on_msg_rcvd(void *data, struct zirc_chan *chan, char *umask, char *msg)
 }
 #undef CMD
 
-static void
-initialize_hardware(void)
-{
-	SYS_LOG_INF("Initializing hardware");
-
-	led0 = device_get_binding(LED_GPIO_NAME);
-	if (led0) {
-		gpio_pin_configure(led0, LED_PIN, GPIO_DIR_OUT);
-	}
-}
-
 void main(void)
 {
 	struct zirc irc = { };
@@ -707,7 +696,10 @@ void main(void)
 
 	SYS_LOG_INF(APP_BANNER);
 
-	initialize_hardware();
+	led0 = device_get_binding(LED_GPIO_NAME);
+	if (led0) {
+		gpio_pin_configure(led0, LED_PIN, GPIO_DIR_OUT);
+	}
 
 	cmd_len = 0;
 
