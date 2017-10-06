@@ -92,6 +92,7 @@ void _net_app_tls_received(struct net_context *context,
 			   int status,
 			   void *user_data);
 int _net_app_ssl_mainloop(struct net_app_ctx *ctx);
+int _net_app_tls_trigger_close(struct net_app_ctx *ctx);
 
 #if defined(CONFIG_NET_APP_SERVER)
 void _net_app_accept_cb(struct net_context *net_ctx,

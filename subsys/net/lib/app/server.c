@@ -351,7 +351,13 @@ static void tls_server_handler(struct net_app_ctx *ctx,
 
 		_net_app_ssl_mainloop(ctx);
 
+		NET_DBG("Closing %p connection", ctx);
+
+		ctx->tls.close_requested = false;
+
 		mbedtls_ssl_close_notify(&ctx->tls.mbedtls.ssl);
+
+		ctx->tls.tx_pending = false;
 
 		if (ctx->cb.close) {
 			ctx->cb.close(ctx, -ESHUTDOWN, ctx->user_data);

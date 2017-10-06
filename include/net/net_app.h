@@ -388,6 +388,14 @@ struct net_app_ctx {
 
 		/** Have we called connect cb yet? */
 		bool connect_cb_called;
+
+		/** User wants to close the connection */
+		bool close_requested;
+
+		/** Is there TX pending? If there is then the close operation
+		 * will be postponed after we have sent the data.
+		 */
+		bool tx_pending;
 	} tls;
 #endif /* CONFIG_NET_APP_TLS || CONFIG_NET_APP_DTLS */
 
