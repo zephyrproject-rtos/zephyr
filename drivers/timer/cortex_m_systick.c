@@ -29,7 +29,7 @@
 #include <kernel_structs.h>
 
 /* running total of timer count */
-static volatile u32_t clock_accumulated_count;
+static volatile u64_t clock_accumulated_count;
 
 /*
  * A board support package's board.h header must provide definitions for the
@@ -749,14 +749,15 @@ u32_t _timer_cycle_get_32(void)
 #ifdef CONFIG_TICKLESS_KERNEL
 return (u32_t) get_elapsed_count();
 #else
-	u32_t cac, count;
+	u64_t cac;
+	u32_t count;
 
 	do {
 		cac = clock_accumulated_count;
 		count = SysTick->LOAD - SysTick->VAL;
 	} while (cac != clock_accumulated_count);
 
-	return cac + count;
+	return (u32_t)(cac + count);
 #endif
 }
 
@@ -775,10 +776,20 @@ return (u32_t) get_elapsed_count();
  */
 u64_t _timer_cycle_get(void)
 {
-	/* TODO: implementation */
-	return 0;
-}
+#ifdef CONFIG_TICKLESS_KERNEL
+return get_elapsed_count();
+#else
+	u64_t cac;
+	u32_t count;
 
+	do {
+		cac = clock_accumulated_count;
+		count = SysTick->LOAD - SysTick->VAL;
+	} while (cac != clock_accumulated_count);
+
+	return cac + count;
+#endif
+}
 
 #ifdef CONFIG_SYSTEM_CLOCK_DISABLE
 
