@@ -72,8 +72,7 @@ void _impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 
 #ifdef CONFIG_USERSPACE
 u32_t _handler_k_sem_init(u32_t sem_ptr, u32_t initial_count, u32_t limit,
-			  u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
-{
+			  u32_t arg4, u32_t arg5, u32_t arg6, void *ssf) {
 	_SYSCALL_ARG3;
 
 	_SYSCALL_IS_OBJ(sem_ptr, K_OBJ_SEM, 1, ssf);
@@ -84,6 +83,7 @@ u32_t _handler_k_sem_init(u32_t sem_ptr, u32_t initial_count, u32_t limit,
 #endif
 
 /* returns 1 if a reschedule must take place, 0 otherwise */
+// comment
 static inline int handle_poll_events(struct k_sem *sem)
 {
 #ifdef CONFIG_POLL

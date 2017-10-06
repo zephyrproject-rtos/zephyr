@@ -89,7 +89,10 @@ u64_t __noinit __end_tick_time;
 
 #define MAIN_STACK_SIZE CONFIG_MAIN_STACK_SIZE
 
-K_THREAD_STACK_DEFINE(_main_stack, MAIN_STACK_SIZE);
+
+
+/* acessable */
+K_THREAD_STACK_DEFINE(_main_stack, MAIN_STACK_SIZE );    
 K_THREAD_STACK_DEFINE(_idle_stack, IDLE_STACK_SIZE);
 
 static struct k_thread _main_thread_s;
