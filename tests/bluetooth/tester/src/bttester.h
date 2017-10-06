@@ -527,6 +527,13 @@ struct gatt_notification_ev {
 	u8_t data[0];
 } __packed;
 
+#define GATT_EV_ATTR_VALUE_CHANGED	0x81
+struct gatt_attr_value_changed_ev {
+	u16_t handle;
+	u16_t data_length;
+	u8_t data[0];
+} __packed;
+
 static inline void tester_set_bit(u8_t *addr, unsigned int bit)
 {
 	u8_t *p = addr + (bit / 8);

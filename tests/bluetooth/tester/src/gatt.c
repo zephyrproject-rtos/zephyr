@@ -9,6 +9,7 @@
 #include <zephyr/types.h>
 #include <string.h>
 #include <errno.h>
+#include <assert.h>
 
 #include <toolchain.h>
 #include <bluetooth/bluetooth.h>
@@ -297,6 +298,19 @@ static ssize_t read_value(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				 value->len);
 }
 
+static void attr_value_changed_ev(u16_t handle, const u8_t *value, u16_t len)
+{
+	u8_t buf[len + sizeof(struct gatt_attr_value_changed_ev)];
+	struct gatt_attr_value_changed_ev *ev = (void *) buf;
+
+	ev->handle = sys_cpu_to_le16(handle);
+	ev->data_length = sys_cpu_to_le16(len);
+	memcpy(ev->data, value, len);
+
+	tester_send(BTP_SERVICE_ID_GATT, GATT_EV_ATTR_VALUE_CHANGED,
+		    CONTROLLER_INDEX, buf, sizeof(buf));
+}
+
 static ssize_t write_value(struct bt_conn *conn,
 			   const struct bt_gatt_attr *attr, const void *buf,
 			   u16_t len, u16_t offset, u8_t flags)
@@ -326,6 +340,11 @@ static ssize_t write_value(struct bt_conn *conn,
 	}
 
 	memcpy(value->data + offset, buf, len);
+
+	/* Maximum attribute value size is 512 bytes */
+	assert(value->len < 512);
+
+	attr_value_changed_ev(attr->handle, value->data, value->len);
 
 	return len;
 }
