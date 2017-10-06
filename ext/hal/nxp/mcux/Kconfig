@@ -18,6 +18,13 @@ config HAS_MCUX_ADC16
 	help
 	  Set if the 16-bit ADC (ADC16) module is present in the SoC.
 
+config HAS_MCUX_DSPI
+	bool
+	default n
+	help
+	  Set if the DMA SPI (DSPI) module is present in the SoC, which is true
+	  when the mcux macro FSL_FEATURE_SOC_DSPI_COUNT is nonzero.
+
 config HAS_MCUX_FTM
 	bool
 	default n
