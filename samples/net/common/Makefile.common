@@ -6,10 +6,12 @@
 
 # Common routines used in net samples
 
-ifeq ($(CONFIG_BOARD_FRDM_K64F),y)
+ifeq ($(CONFIG_BOARD_FRDM_K64F), y)
+ifeq ($(CONFIG_IEEE802154_CC2520), y)
 ccflags-y +=-I${ZEPHYR_BASE}/drivers/
 ccflags-y +=-I${ZEPHYR_BASE}/include/drivers/
 obj-y += ../../common/cc2520_frdm_k64f.o
+endif
 endif
 
 ifeq ($(CONFIG_NET_TESTING), y)
