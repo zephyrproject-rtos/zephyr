@@ -516,6 +516,15 @@ struct gatt_cfg_notify_cmd {
 	u16_t ccc_handle;
 } __packed;
 
+#define GATT_READ_LOCAL_ATTR_VAL	0x1c
+struct gatt_read_local_attr_cmd {
+	u16_t handle;
+} __packed;
+struct gatt_read_local_attr_rp {
+	u16_t value_length;
+	u8_t value[0];
+} __packed;
+
 /* GATT events */
 #define GATT_EV_NOTIFICATION		0x80
 struct gatt_notification_ev {
