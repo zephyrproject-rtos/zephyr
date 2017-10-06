@@ -104,28 +104,84 @@ function(zephyr_ld_options)
     target_ld_options(zephyr_interface INTERFACE ${ARGV})
 endfunction()
 
-macro(zephyr_get_include_directories includes)
-  get_property(__l TARGET zephyr_interface PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
-  foreach(dir ${__l})
-    list(APPEND ${includes} -I${dir})
+# Getter functions for extracting build information from
+# zephyr_interface. Returning lists, and strings is supported, as is
+# requesting specific categories of build information (defines,
+# includes, options).
+#
+# The naming convention follows:
+# zephyr_get_${build_information}${format}(x)
+# Where
+#  the argument 'x' is written with the result
+# and
+#  ${build_information} can be one of
+#   - include_directories           # -I directories
+#   - system_include_directories    # -isystem directories
+#   - compile_definitions           # -D'efines
+#   - compile_options               # misc. compiler flags
+# and
+#  ${format} can be
+#  the empty string '', signifying that it should be returned as a list
+#  _as_string signifying that it should be returned as a string
+#
+# e.g.
+# zephyr_get_include_directories(x)
+# writes "-Isome_dir;-Isome/other/dir" to x
+
+# Utility macro used by the below macros.
+macro(get_property_and_add_prefix result target property prefix)
+  get_property(target_property TARGET ${target} PROPERTY ${property})
+  foreach(x ${target_property})
+    list(APPEND ${result} ${prefix}${x})
   endforeach()
 endmacro()
 
-macro(zephyr_get_compile_definitions definitions)
-  get_property(__l TARGET zephyr_interface PROPERTY INTERFACE_COMPILE_DEFINITIONS)
-  foreach(def ${__l})
-    list(APPEND ${definitions} -D${def})
-  endforeach()
+macro(zephyr_get_include_directories i)
+  get_property_and_add_prefix(${i} zephyr_interface INTERFACE_INCLUDE_DIRECTORIES -I)
 endmacro()
 
-macro(zephyr_get_compile_options options)
-  get_property(options TARGET zephyr_interface PROPERTY INTERFACE_COMPILE_OPTIONS)
+macro(zephyr_get_system_include_directories i)
+  get_property_and_add_prefix(${i} zephyr_interface INTERFACE_SYSTEM_INCLUDE_DIRECTORIES -isystem)
 endmacro()
 
-macro(zephyr_get_system_include_directories system_includes)
-  get_property(__l TARGET zephyr_interface PROPERTY INTERFACE_SYSTEM_INCLUDE_DIRECTORIES)
-  foreach(dir ${__l})
-    list(APPEND ${system_includes} -isystem${dir})
+macro(zephyr_get_compile_definitions i)
+  get_property_and_add_prefix(${i} zephyr_interface INTERFACE_COMPILE_DEFINITIONS -D)
+endmacro()
+
+macro(zephyr_get_compile_options i)
+  get_property(${i} TARGET zephyr_interface PROPERTY INTERFACE_COMPILE_OPTIONS)
+endmacro()
+
+macro(zephyr_get_include_directories_as_string i)
+  zephyr_get_include_directories(${i})
+
+  string(REPLACE ";"  " "   ${i} ${${i}})
+  string(REPLACE "-I" " -I" ${i} ${${i}})
+endmacro()
+
+macro(zephyr_get_system_include_directories_as_string i)
+  get_property_and_add_prefix(${i} zephyr_interface INTERFACE_SYSTEM_INCLUDE_DIRECTORIES -isystem)
+
+  string(REPLACE ";"  " "               ${i} ${${i}})
+  string(REPLACE "-isystem" " -isystem" ${i} ${${i}})
+endmacro()
+
+macro(zephyr_get_compile_definitions_as_string i)
+  get_property_and_add_prefix(${i} zephyr_interface INTERFACE_COMPILE_DEFINITIONS -D)
+
+  string(REPLACE ";"  " "   ${i} ${${i}})
+  string(REPLACE "-D" " -D" ${i} ${${i}})
+endmacro()
+
+macro(zephyr_get_compile_options_as_string i)
+  zephyr_get_compile_options(j)
+
+  foreach(__opt__ ${j})
+    if(__opt__ MATCHES "<COMPILE_LANGUAGE:")
+      # TODO: Support COMPILE_LANGUAGE generator expressions
+      continue()
+    endif()
+    set(${i} "${${i}} ${__opt__}")
   endforeach()
 endmacro()
 
