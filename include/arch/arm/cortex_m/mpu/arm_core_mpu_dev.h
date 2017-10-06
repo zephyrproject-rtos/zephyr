@@ -81,6 +81,13 @@ void arm_core_mpu_configure_mem_partition(u32_t part_index,
 					  struct k_mem_partition *part);
 
 /**
+ * @brief Reset MPU region for a single memory partition
+ *
+ * @param   part_index  memory partition index
+ */
+void arm_core_mpu_mem_partition_remove(u32_t part_index);
+
+/**
  * @brief get the maximum number of free regions for memory domain partitions
  */
 int arm_core_mpu_get_max_domain_partition_regions(void);

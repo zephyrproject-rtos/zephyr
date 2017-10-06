@@ -263,6 +263,23 @@ void arm_core_mpu_configure_mem_partition(u32_t part_index,
 }
 
 /**
+ * @brief Reset MPU region for a single memory partition
+ *
+ * @param   part_index  memory partition index
+ */
+void arm_core_mpu_mem_partition_remove(u32_t part_index)
+{
+	u32_t region_index =
+		_get_region_index_by_type(THREAD_DOMAIN_PARTITION_REGION);
+
+	SYS_LOG_DBG("disable region 0x%x", region_index + part_index);
+	/* Disable region */
+	ARM_MPU_DEV->rnr = region_index + part_index;
+	ARM_MPU_DEV->rbar = 0;
+	ARM_MPU_DEV->rasr = 0;
+}
+
+/**
  * @brief get the maximum number of free regions for memory domain partitions
  */
 int arm_core_mpu_get_max_domain_partition_regions(void)
