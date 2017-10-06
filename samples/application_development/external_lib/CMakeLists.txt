@@ -17,31 +17,13 @@ target_sources(app PRIVATE src/main.c)
 # do not need any build information from zephyr. Or they may be
 # incompatible with certain zephyr options and need them to be
 # filtered out.
-zephyr_get_include_directories(includes)
-zephyr_get_system_include_directories(system_includes)
-zephyr_get_compile_definitions(definitions)
-zephyr_get_compile_options(options)
-
-string(REPLACE ";"  " "   includes ${includes})
-string(REPLACE "-I" " -I" includes ${includes})
-
-string(REPLACE ";"  " "               system_includes ${system_includes})
-string(REPLACE "-isystem" " -isystem" system_includes ${system_includes})
-
-string(REPLACE ";"  " "   definitions ${definitions})
-string(REPLACE "-D" " -D" definitions ${definitions})
-
-set(options_string "")
-foreach(opt ${options})
-  if(opt MATCHES "<COMPILE_LANGUAGE:")
-    # TODO: Support COMPILE_LANGUAGE generator expressions
-    continue()
-  endif()
-  set(options_string "${options_string} ${opt}")
-endforeach()
+zephyr_get_include_directories_as_string(includes)
+zephyr_get_system_include_directories_as_string(system_includes)
+zephyr_get_compile_definitions_as_string(definitions)
+zephyr_get_compile_options_as_string(options)
 
 set(external_project_cflags
-  ${includes}${definitions}${options_string}${system_includes}
+  ${includes}${definitions}${options}${system_includes}
   )
 
 include(ExternalProject)
