@@ -29,7 +29,10 @@ build:
 
     ci:
       - export CCACHE_DIR=${SHIPPABLE_BUILD_DIR}/ccache/.ccache
-      - git rebase origin/${PULL_REQUEST_BASE_BRANCH}
+      - >
+        if [ "$IS_PULL_REQUEST" = "true" ]; then
+          git rebase origin/${PULL_REQUEST_BASE_BRANCH};
+        fi
       - source zephyr-env.sh
       - ccache -c -s --max-size=2000M
       - make host-tools
@@ -48,16 +51,18 @@ build:
             ./scripts/ci/check-compliance.py --commits ${COMMIT_RANGE} || true;
           fi;
       - >
-          ./scripts/ci/get_modified_tests.py --commits origin/${PULL_REQUEST_BASE_BRANCH}..HEAD > modified_tests.args;
-          ./scripts/ci/get_modified_boards.py --commits origin/${PULL_REQUEST_BASE_BRANCH}..HEAD > modified_boards.args;
+          if [ "$IS_PULL_REQUEST" = "true" ]; then
+            ./scripts/ci/get_modified_tests.py --commits origin/${PULL_REQUEST_BASE_BRANCH}..HEAD > modified_tests.args;
+            ./scripts/ci/get_modified_boards.py --commits origin/${PULL_REQUEST_BASE_BRANCH}..HEAD > modified_boards.args;
 
-          if [ -s modified_boards.args ]; then
-            ./scripts/sanitycheck +modified_boards.args --save-tests test_file.txt
+            if [ -s modified_boards.args ]; then
+              ./scripts/sanitycheck +modified_boards.args --save-tests test_file.txt;
+            fi;
+            if [ -s modified_tests.args ]; then
+              ./scripts/sanitycheck +modified_tests.args --save-tests test_file.txt;
+            fi;
+            rm -f modified_tests.args modified_boards.args;
           fi;
-          if [ -s modified_tests.args ]; then
-            ./scripts/sanitycheck +modified_tests.args --save-tests test_file.txt
-          fi;
-          rm -f modified_tests.args modified_boards.args;
       - ./scripts/sanitycheck ${SANITYCHECK_OPTIONS} --save-tests test_file.txt
       - ./scripts/sanitycheck  --load-tests test_file.txt --subset ${MATRIX_BUILD}/${MATRIX_BUILDS} || ./scripts/sanitycheck ${SANITYCHECK_OPTIONS_RETRY} || ./scripts/sanitycheck ${SANITYCHECK_OPTIONS_RETRY}
       - rm test_file.txt
