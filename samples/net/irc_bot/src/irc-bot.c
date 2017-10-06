@@ -155,8 +155,13 @@ on_cmd_privmsg(char *umask, char *cmd, size_t len)
 	}
 
 	space += 2; /* Jump over the ':', pointing to the message itself */
-	/* TODO: could be a private message (from another user) */
-	on_msg_rcvd(cmd, umask, space);
+
+	/* check for a private message from another user */
+	if (!strncmp(nick_buf, cmd, NICK_BUFFER_SIZE)) {
+		on_msg_rcvd(umask, umask, space);
+	} else {
+		on_msg_rcvd(cmd, umask, space);
+	}
 }
 
 #define CMD(cmd_, cb_) { \
@@ -539,8 +544,14 @@ on_cmd_led_toggle(char *chan_name, const char *nick, const char *msg)
 static void
 on_cmd_rejoin(char *chan_name, const char *nick, const char *msg)
 {
-	zirc_chan_part(chan_name);
-	zirc_chan_join(chan_name);
+	/* make sure this isn't a private message */
+	if (!strncmp(nick, chan_name, NICK_BUFFER_SIZE)) {
+		zirc_chan_send_msg(chan_name,
+				   "I can't rejoin a private message!");
+	} else {
+		zirc_chan_part(chan_name);
+		zirc_chan_join(chan_name);
+	}
 }
 
 static void
