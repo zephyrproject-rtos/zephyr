@@ -1,0 +1,114 @@
+# Kconfig - ILI9340 display driver configuration options
+
+#
+# Copyright (c) 2017 dXplore
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig ILI9340
+	bool "ILI9340 display driver"
+	depends on SPI
+	default n
+	help
+	Enable driver for ILI9340 display driver.
+
+if ILI9340
+
+config ILI9340_DEV_NAME
+	string "ILI9340 device name"
+	default "ILI9340"
+
+config ILI9340_SPI_DEV_NAME
+	string "SPI master where ILI9340 is connected"
+	default "SPI_0"
+	help
+	Specify the device name of the SPI master device to which ILI9340 is
+	connected.
+
+config ILI9340_SPI_SLAVE_NUMBER
+	int "SPI Slave number where ILI9340 is connected"
+	default 0
+	help
+	The number of the slave on the host controller to which ILI9340 is
+	connected.
+
+config ILI9340_SPI_FREQ
+	int "SPI Frequency"
+	default 15151515
+	help
+	Frequency to be used to communicate with the ILI9340.
+
+config SYS_LOG_ILI9340_LEVEL
+	int "ILI9340 Sys Log level"
+	depends on SYS_LOG
+	default 0
+	range 0 4
+	help
+	Sets log level for ILI9340 display driver.
+	Levels are:
+	- 0 OFF: do not write
+	- 1 ERROR: only write SYS_LOG_ERR
+	- 2 WARNING: write SYS_LOG_WRN in addition to previous level
+	- 3 INFO: write SYS_LOG_INF in addition to previous levels
+	- 4 DEBUG: write SYS_LOG_DBG in addition to previous levels
+
+config ILI9340_RESET_GPIO_PORT_NAME
+	string "Reset GPIO controller port name"
+	default "GPIO_0"
+	help
+	GPIO controller where the interrupt pin is attached to.
+
+config ILI9340_RESET_PIN
+	int "ILI9340 Reset pin"
+	default 0
+	help
+	ILI9340 reset pin.
+
+config ILI9340_CMD_DATA_GPIO_PORT_NAME
+	string "Command/Data GPIO controller port name"
+	default "GPIO_0"
+	help
+	GPIO controller where the command/data pin is attached to.
+
+config ILI9340_CMD_DATA_PIN
+	int "ILI9340 command/data pin"
+	default 1
+	help
+	ILI9340 command data pin.
+
+config ILI9340_GPIO_CS
+	bool "Use GPIO pin for chip select"
+	default n
+	help
+	Use GPIO pin for chips select.
+
+if ILI9340_GPIO_CS
+
+config ILI9340_CS_GPIO_PORT_NAME
+	string "Chip select GPIO controller port name"
+	default "GPIO_0"
+	help
+	GPIO controller where the chip select pin is attached to.
+
+config ILI9340_CS_GPIO_PIN
+	int "ILI9340 GPIO chip select"
+	default 1
+	help
+	ILI9340 GPIO chip select pin.
+
+endif #ILI9340_GPIO_CS
+
+choice
+	prompt "LCD"
+	default ILI9340_LCD_ADAFRUIT_1480
+	help
+	Specify the type of LCD connected to the ILI9340 display controller.
+
+config ILI9340_LCD_ADAFRUIT_1480
+	bool
+	prompt "Adafruit 2.2\" TFT 1480"
+
+endchoice
+
+endif #ILI9340

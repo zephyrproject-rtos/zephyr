@@ -1,0 +1,39 @@
+# Kconfig - Microbit display driver configuration options
+
+#
+# Copyright (c) 2017 dXplore
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config MICROBIT_DISPLAY
+	bool "BBC micro:bit 5x5 LED Display support"
+	depends on BOARD_BBC_MICROBIT
+	depends on PRINTK
+	depends on GPIO
+	help
+	  Enable this to be able to display images and text on the 5x5
+	  LED matrix display on the BBC micro:bit.
+
+if MICROBIT_DISPLAY
+
+config MICROBIT_DISPLAY_PIN_GRANULARITY
+	bool "Access the GPIO on a per-pin instead of per-port basis"
+	help
+	  By default, the micro:bit display driver will update the GPIO
+	  pins of the display (pins 4 through 15) by accessing the entire
+	  GPIO port. This is done for efficiency, however it may interfere
+	  with other peripherals connected to the same GPIO port. Select
+	  this option if other peripherals are connected to the same GPIO
+	  port.
+
+config MICROBIT_DISPLAY_STR_MAX
+	int "Maximum length of strings that can be shown on the display"
+	range 3 255
+	default 40
+	help
+	  This value specifies the maximum length of strings that can
+	  be displayed using the mb_display_string() and mb_display_print()
+	  APIs.
+
+endif # MICROBIT_DISPLAY
