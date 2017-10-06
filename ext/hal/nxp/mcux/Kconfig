@@ -71,4 +71,11 @@ config HAS_MCUX_TRNG
 	  Set if the true random number generator (TRNG) module is present in
 	  the SoC.
 
+config HAS_MCUX_UART
+	bool
+	default n
+	help
+	  Set if the uart (UART) module is present in the SoC, which is true
+	  when the mcux macro FSL_FEATURE_SOC_UART_COUNT is nonzero.
+
 endif # HAS_MCUX
