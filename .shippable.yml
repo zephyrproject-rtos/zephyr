@@ -30,6 +30,7 @@ build:
     ci:
       - export CCACHE_DIR=${SHIPPABLE_BUILD_DIR}/ccache/.ccache
       - git rebase origin/${PULL_REQUEST_BASE_BRANCH}
+      - git show cb560591f8c8665edc431dbc328548163a8e3d70
       - source zephyr-env.sh
       - ccache -c -s --max-size=2000M
       - make host-tools
