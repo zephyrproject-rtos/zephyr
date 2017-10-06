@@ -1,0 +1,7 @@
+identifier: 96b_neonkey
+name: 96Boards Neonkey
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb

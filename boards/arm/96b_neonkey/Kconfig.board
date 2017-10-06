@@ -1,0 +1,9 @@
+# Kconfig - 96Boards Neonkey Board Configuration
+#
+# Copyright (c) 2017 Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+config BOARD_96B_NEONKEY
+	bool "96Boards Neonkey"
+	depends on SOC_STM32F411XE

@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2017 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/stm32f411.dtsi>
+
+/ {
+	model = "Tocoding Neonkey 96boards";
+	compatible = "tocoding,neonkey", "st,stm32f411";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
+
+&usart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart1_pins_b>;
+	pinctrl-names = "default";
+	status = "ok";
+};
+
+&i2c1 {
+	status = "ok";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&i2c2 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&i2c3 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
