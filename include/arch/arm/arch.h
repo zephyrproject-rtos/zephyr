@@ -299,6 +299,11 @@ extern "C" {
 #endif  /* CONFIG_NXP_MPU */
 #endif /* CONFIG_USERSPACE */
 
+#ifndef _ASMLANGUAGE
+/* Typedef for the k_mem_partition attribute*/
+typedef u32_t k_mem_partition_attr_t;
+#endif /* _ASMLANGUAGE */
+
 #ifdef CONFIG_ARM_USERSPACE
 #ifndef _ASMLANGUAGE
 /* Syscall invocation macros. arm-specific machine constraints used to ensure

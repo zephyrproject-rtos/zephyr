@@ -4205,28 +4205,30 @@ static inline char *K_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
 		MEM_PARTITION_ENTRY((u32_t)start, size, attr)
 #endif /* _ARCH_MEM_PARTITION_ALIGN_CHECK */
 
-
 /* memory partition */
 struct k_mem_partition {
 	/* start address of memory partition */
 	u32_t start;
 	/* size of memory partition */
 	u32_t size;
+#ifdef CONFIG_USERSPACE
 	/* attribute of memory partition */
-	u32_t attr;
+	k_mem_partition_attr_t attr;
+#endif	/* CONFIG_USERSPACE */
 };
 
-#if defined(CONFIG_USERSPACE)
 /* memory domian */
 struct k_mem_domain {
 	/* number of partitions in the domain */
 	u32_t num_partitions;
+#ifdef CONFIG_USERSPACE
 	/* partitions in the domain */
 	struct k_mem_partition partitions[CONFIG_MAX_DOMAIN_PARTITIONS];
+#endif	/* CONFIG_USERSPACE */
 	/* domain q */
 	sys_dlist_t mem_domain_q;
 };
-#endif /* CONFIG_USERSPACE */
+
 
 /**
  * @brief Initialize a memory domain.

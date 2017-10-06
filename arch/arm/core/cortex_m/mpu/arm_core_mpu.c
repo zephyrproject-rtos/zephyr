@@ -52,4 +52,31 @@ int _arch_mem_domain_max_partitions_get(void)
 {
 	return arm_core_mpu_get_max_domain_partition_regions();
 }
+
+/*
+ * Reset MPU region for a single memory partition
+ */
+void _arch_mem_domain_partition_remove(struct k_mem_domain *domain,
+				       u32_t  partition_id)
+{
+	ARG_UNUSED(domain);
+
+	arm_core_mpu_disable();
+	arm_core_mpu_mem_partition_remove(partition_id);
+	arm_core_mpu_enable();
+
+}
+
+/*
+ * Destroy MPU regions for the mem domain
+ */
+void _arch_mem_domain_destroy(struct k_mem_domain *domain)
+{
+	ARG_UNUSED(domain);
+
+	arm_core_mpu_disable();
+	arm_core_mpu_configure_mem_domain(NULL);
+	arm_core_mpu_enable();
+}
+
 #endif
