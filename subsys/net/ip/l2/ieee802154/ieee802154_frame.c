@@ -554,6 +554,7 @@ bool data_addr_to_fs_settings(struct net_linkaddr *dst,
 		if (broadcast) {
 			params->dst.short_addr = IEEE802154_BROADCAST_ADDRESS;
 			params->dst.len = IEEE802154_SHORT_ADDR_LENGTH;
+			fs->fc.ar = 0;
 		} else {
 			params->dst.ext_addr = dst->addr;
 			params->dst.len = dst->len;
