@@ -24,6 +24,8 @@
 
 #define APP_BANNER "Zephyr IRC bot sample"
 
+static void on_msg_rcvd(char *chan_name, char *umask, char *msg);
+
 #define CMD_BUFFER_SIZE 256
 static u8_t cmd_buf[CMD_BUFFER_SIZE];
 static u16_t cmd_len;
@@ -49,30 +51,6 @@ static bool fake_led;
 #define DEFAULT_SERVER	"irc.freenode.net"
 #define DEFAULT_PORT	6667
 #define DEFAULT_CHANNEL	"#zephyrbot"
-
-struct zirc_chan;
-
-typedef void (*on_privmsg_rcvd_cb_t)(void *data, struct zirc_chan *chan,
-				  char *umask, char *msg);
-
-struct zirc {
-	struct zirc_chan *chans;
-
-	void *data;
-};
-
-struct zirc_chan {
-	struct zirc *irc;
-	struct zirc_chan *next;
-
-	const char *chan;
-
-	on_privmsg_rcvd_cb_t on_privmsg_rcvd;
-	void *data;
-};
-
-static void on_msg_rcvd(void *data, struct zirc_chan *chan, char *umask,
-			char *msg);
 
 static struct net_app_ctx app_ctx;
 
@@ -132,7 +110,7 @@ transmit(char buffer[], size_t len)
 }
 
 static void
-on_cmd_ping(struct zirc *irc, char *umask, char *cmd, size_t len)
+on_cmd_ping(char *umask, char *cmd, size_t len)
 {
 	char pong[32];
 	int ret;
@@ -149,9 +127,8 @@ on_cmd_ping(struct zirc *irc, char *umask, char *cmd, size_t len)
 }
 
 static void
-on_cmd_privmsg(struct zirc *irc, char *umask, char *cmd, size_t len)
+on_cmd_privmsg(char *umask, char *cmd, size_t len)
 {
-	struct zirc_chan *chan;
 	char *space;
 
 	if (!umask) {
@@ -175,15 +152,8 @@ on_cmd_privmsg(struct zirc *irc, char *umask, char *cmd, size_t len)
 	}
 
 	space += 2; /* Jump over the ':', pointing to the message itself */
-	for (chan = irc->chans; chan; chan = chan->next) {
-		if (!strncmp(chan->chan, cmd, space - cmd)) {
-			chan->on_privmsg_rcvd(chan->data, chan, umask, space);
-			return;
-		}
-	}
-
 	/* TODO: could be a private message (from another user) */
-	SYS_LOG_INF("Unknown privmsg received: %.*s\n", (int)len, cmd);
+	on_msg_rcvd(cmd, umask, space);
 }
 
 #define CMD(cmd_, cb_) { \
@@ -192,13 +162,12 @@ on_cmd_privmsg(struct zirc *irc, char *umask, char *cmd, size_t len)
 	.func = on_cmd_ ## cb_ \
 }
 static void
-process_command(struct zirc *irc, char *cmd, size_t len)
+process_command(char *cmd, size_t len)
 {
 	static const struct {
 		const char *cmd;
 		size_t cmd_len;
-		void (*func)(struct zirc *zirc, char *umask, char *cmd,
-			     size_t len);
+		void (*func)(char *umask, char *cmd, size_t len);
 	} commands[] = {
 		CMD("PING", ping),
 		CMD("PRIVMSG", privmsg),
@@ -239,7 +208,7 @@ process_command(struct zirc *irc, char *cmd, size_t len)
 
 			cmd += commands[i].cmd_len;
 			len -= commands[i].cmd_len;
-			commands[i].func(irc, umask, cmd, len);
+			commands[i].func(umask, cmd, len);
 
 			return;
 		}
@@ -254,7 +223,6 @@ static void
 on_context_recv(struct net_app_ctx *ctx, struct net_pkt *pkt,
 		int status, void *data)
 {
-	struct zirc *irc = data;
 	struct net_buf *tmp;
 	u16_t pos = 0;
 
@@ -286,7 +254,7 @@ on_context_recv(struct net_app_ctx *ctx, struct net_pkt *pkt,
 		tmp = net_frag_read(tmp, pos, &pos, 1, cmd_buf + cmd_len);
 		if (*(cmd_buf + cmd_len) == '\r') {
 			cmd_buf[cmd_len] = '\0';
-			process_command(irc, (char *)cmd_buf, cmd_len);
+			process_command((char *)cmd_buf, cmd_len);
 			/* skip the \n after \r */
 			tmp = net_frag_read(tmp, pos, &pos, 1, NULL);
 			cmd_len = 0;
@@ -303,7 +271,7 @@ on_context_recv(struct net_app_ctx *ctx, struct net_pkt *pkt,
 }
 
 static int
-zirc_nick_set(struct zirc *irc, const char *nick)
+zirc_nick_set(const char *nick)
 {
 	char buffer[32];
 	int ret;
@@ -319,7 +287,7 @@ zirc_nick_set(struct zirc *irc, const char *nick)
 }
 
 static int
-zirc_user_set(struct zirc *irc, const char *user, const char *realname)
+zirc_user_set(const char *user, const char *realname)
 {
 	char buffer[64];
 	int ret;
@@ -327,7 +295,7 @@ zirc_user_set(struct zirc *irc, const char *user, const char *realname)
 	SYS_LOG_INF("Setting user to: %s, real name to: %s", user, realname);
 
 	ret = snprintk(buffer, sizeof(buffer), "USER %s * * :%s\r\n",
-				   user, realname);
+		       user, realname);
 	if (ret < 0 || ret >= sizeof(buffer)) {
 		return -EINVAL;
 	}
@@ -336,19 +304,12 @@ zirc_user_set(struct zirc *irc, const char *user, const char *realname)
 }
 
 static int
-zirc_chan_join(struct zirc *irc, struct zirc_chan *chan,
-	       const char *channel,
-	       on_privmsg_rcvd_cb_t on_privmsg_rcvd,
-	       void *data)
+zirc_chan_join(const char *channel)
 {
 	char buffer[32];
 	int ret;
 
 	SYS_LOG_INF("Joining channel: %s", channel);
-
-	if (!on_privmsg_rcvd) {
-		return -EINVAL;
-	}
 
 	ret = snprintk(buffer, sizeof(buffer), "JOIN %s\r\n", channel);
 	if (ret < 0 || ret >= sizeof(buffer)) {
@@ -356,31 +317,18 @@ zirc_chan_join(struct zirc *irc, struct zirc_chan *chan,
 	}
 
 	ret = transmit(buffer, ret);
-	if (ret < 0) {
-		return ret;
-	}
-
-	chan->irc = irc;
-	chan->chan = channel;
-	chan->on_privmsg_rcvd = on_privmsg_rcvd;
-	chan->data = data;
-
-	chan->next = irc->chans;
-	irc->chans = chan;
-
-	return 0;
+	return ret;
 }
 
 static int
-zirc_chan_part(struct zirc_chan *chan)
+zirc_chan_part(char *chan_name)
 {
-	struct zirc_chan **cc, *c;
 	char buffer[32];
 	int ret;
 
-	SYS_LOG_INF("Leaving channel: %s", chan->chan);
+	SYS_LOG_INF("Leaving channel: %s", chan_name);
 
-	ret = snprintk(buffer, sizeof(buffer), "PART %s\r\n", chan->chan);
+	ret = snprintk(buffer, sizeof(buffer), "PART %s\r\n", chan_name);
 	if (ret < 0 || ret >= sizeof(buffer)) {
 		return -EINVAL;
 	}
@@ -390,21 +338,12 @@ zirc_chan_part(struct zirc_chan *chan)
 		return ret;
 	}
 
-	for (cc = &chan->irc->chans, c = chan->irc->chans;
-	     c; cc = &c->next, c = c->next) {
-		if (c == chan) {
-			*cc = c->next;
-			return 0;
-		}
-	}
-
-	return -ENOENT;
+	return 0;
 }
 
 static int
-zirc_connect(struct zirc *irc, const char *host, int port, void *data)
+zirc_connect(const char *host, int port)
 {
-	struct zirc_chan *chan;
 	int ret;
 	char name_buf[32];
 
@@ -429,15 +368,11 @@ zirc_connect(struct zirc *irc, const char *host, int port, void *data)
 		return ret;
 	}
 
-	irc->data = data;
-
 	ret = net_app_connect(&app_ctx, CONNECT_TIMEOUT);
 	if (ret < 0) {
 		SYS_LOG_ERR("Cannot connect (%d)", ret);
 		panic("Can't init network");
 	}
-
-	chan = irc->data;
 
 	ret = snprintk(name_buf, sizeof(name_buf), "zephyrbot%u",
 		       sys_rand32_get());
@@ -445,43 +380,41 @@ zirc_connect(struct zirc *irc, const char *host, int port, void *data)
 		panic("Can't fill name buffer");
 	}
 
-	if (zirc_nick_set(irc, name_buf) < 0) {
+	if (zirc_nick_set(name_buf) < 0) {
 		panic("Could not set nick");
 	}
 
-	if (zirc_user_set(irc, name_buf, "Zephyr IRC Bot") < 0) {
+	if (zirc_user_set(name_buf, "Zephyr IRC Bot") < 0) {
 		panic("Could not set user");
 	}
 
-	if (zirc_chan_join(irc, chan, DEFAULT_CHANNEL, on_msg_rcvd, NULL) < 0) {
+	if (zirc_chan_join(DEFAULT_CHANNEL) < 0) {
 		panic("Could not join channel");
 	}
 	return ret;
 }
 
 static int
-zirc_disconnect(struct zirc *irc)
+zirc_disconnect(void)
 {
 	SYS_LOG_INF("Disconnecting");
-
-	irc->chans = NULL;
 	cmd_len = 0;
 	net_app_close(&app_ctx);
 	return net_app_release(&app_ctx);
 }
 
 static int
-zirc_chan_send_msg(const struct zirc_chan *chan, const char *msg)
+zirc_chan_send_msg(const char *chan_name, const char *msg)
 {
 	char buffer[128];
 
-	SYS_LOG_INF("Sending to channel %s: %s", chan->chan, msg);
+	SYS_LOG_INF("Sending to channel/user %s: %s", chan_name, msg);
 
 	while (*msg) {
 		int msglen, txret;
 
 		msglen = snprintk(buffer, sizeof(buffer), "PRIVMSG %s :%s\r\n",
-				  chan->chan, msg);
+				  chan_name, msg);
 
 		if (msglen < 0) {
 			return msglen;
@@ -497,29 +430,29 @@ zirc_chan_send_msg(const struct zirc_chan *chan, const char *msg)
 		}
 
 		msg += msglen - sizeof("PRIVMSG  :\r\n") - 1 +
-		       strlen(chan->chan);
+		       strlen(chan_name);
 	}
 
 	return 0;
 }
 
 static void
-on_cmd_hello(struct zirc_chan *chan, const char *nick, const char *msg)
+on_cmd_hello(char *chan_name, const char *nick, const char *msg)
 {
 	char buf[64];
 	int ret;
 
 	ret = snprintk(buf, sizeof(buf), "Hello, %s!", nick);
 	if (ret < 0 || ret >= sizeof(buf)) {
-		zirc_chan_send_msg(chan, "Hello, world!  (Your nick is "
+		zirc_chan_send_msg(chan_name, "Hello, world!  (Your nick is "
 				   "larger than my stack allows.)");
 	} else {
-		zirc_chan_send_msg(chan, buf);
+		zirc_chan_send_msg(chan_name, buf);
 	}
 }
 
 static void
-on_cmd_random(struct zirc_chan *chan, const char *nick, const char *msg)
+on_cmd_random(char *chan_name, const char *nick, const char *msg)
 {
 	char buf[128];
 	s32_t num = sys_rand32_get();
@@ -548,10 +481,10 @@ on_cmd_random(struct zirc_chan *chan, const char *nick, const char *msg)
 	}
 
 	if (ret < 0 || ret >= sizeof(buf)) {
-		zirc_chan_send_msg(chan, "I rolled a fair dice and the "
+		zirc_chan_send_msg(chan_name, "I rolled a fair dice and the "
 				   "number is...  7.3");
 	} else {
-		zirc_chan_send_msg(chan, buf);
+		zirc_chan_send_msg(chan_name, buf);
 	}
 }
 
@@ -584,40 +517,40 @@ write_led(bool led)
 }
 
 static void
-on_cmd_led_off(struct zirc_chan *chan, const char *nick, const char *msg)
+on_cmd_led_off(char *chan_name, const char *nick, const char *msg)
 {
-	zirc_chan_send_msg(chan, "The LED should be *off* now");
+	zirc_chan_send_msg(chan_name, "The LED should be *off* now");
 	write_led(false);
 }
 
 static void
-on_cmd_led_on(struct zirc_chan *chan, const char *nick, const char *msg)
+on_cmd_led_on(char *chan_name, const char *nick, const char *msg)
 {
-	zirc_chan_send_msg(chan, "The LED should be *on* now");
+	zirc_chan_send_msg(chan_name, "The LED should be *on* now");
 	write_led(true);
 }
 
 static void
-on_cmd_led_toggle(struct zirc_chan *chan, const char *nick, const char *msg)
+on_cmd_led_toggle(char *chan_name, const char *nick, const char *msg)
 {
 	if (read_led()) {
-		on_cmd_led_off(chan, nick, msg);
+		on_cmd_led_off(chan_name, nick, msg);
 	} else {
-		on_cmd_led_on(chan, nick, msg);
+		on_cmd_led_on(chan_name, nick, msg);
 	}
 }
 
 static void
-on_cmd_rejoin(struct zirc_chan *chan, const char *nick, const char *msg)
+on_cmd_rejoin(char *chan_name, const char *nick, const char *msg)
 {
-	zirc_chan_part(chan);
-	zirc_chan_join(chan->irc, chan, DEFAULT_CHANNEL, on_msg_rcvd, NULL);
+	zirc_chan_part(chan_name);
+	zirc_chan_join(chan_name);
 }
 
 static void
-on_cmd_disconnect(struct zirc_chan *chan, const char *nick, const char *msg)
+on_cmd_disconnect(char *chan_name, const char *nick, const char *msg)
 {
-	zirc_disconnect(chan->irc);
+	zirc_disconnect();
 }
 
 #define CMD(c) { \
@@ -626,12 +559,12 @@ on_cmd_disconnect(struct zirc_chan *chan, const char *nick, const char *msg)
 	.func = on_cmd_ ## c \
 }
 static void
-on_msg_rcvd(void *data, struct zirc_chan *chan, char *umask, char *msg)
+on_msg_rcvd(char *chan_name, char *umask, char *msg)
 {
 	static const struct {
 		const char *cmd;
 		size_t cmd_len;
-		void (*func)(struct zirc_chan *chan, const char *nick,
+		void (*func)(char *chan_name, const char *nick,
 			     const char *msg);
 	} commands[] = {
 		CMD(hello),
@@ -662,7 +595,7 @@ on_msg_rcvd(void *data, struct zirc_chan *chan, char *umask, char *msg)
 	for (i = 0; i < ARRAY_SIZE(commands); i++) {
 		if (!strncmp(msg, commands[i].cmd, commands[i].cmd_len)) {
 			msg += commands[i].cmd_len;
-			commands[i].func(chan, nick, msg);
+			commands[i].func(chan_name, nick, msg);
 			return;
 		}
 	}
@@ -679,10 +612,11 @@ on_msg_rcvd(void *data, struct zirc_chan *chan, char *umask, char *msg)
 		ret = snprintk(msg, sizeof(msg), "%s, you're a grown up, figure"
 			       " it out", nick);
 		if (ret < 0 || ret >= sizeof(msg)) {
-			zirc_chan_send_msg(chan, "Your nick is too long, and my"
+			zirc_chan_send_msg(chan_name,
+					   "Your nick is too long, and my"
 					   " stack is limited. Can't help you");
 		} else {
-			zirc_chan_send_msg(chan, msg);
+			zirc_chan_send_msg(chan_name, msg);
 		}
 	}
 }
@@ -690,8 +624,6 @@ on_msg_rcvd(void *data, struct zirc_chan *chan, char *umask, char *msg)
 
 void main(void)
 {
-	struct zirc irc = { };
-	struct zirc_chan chan = { };
 	int ret;
 
 	SYS_LOG_INF(APP_BANNER);
@@ -703,7 +635,7 @@ void main(void)
 
 	cmd_len = 0;
 
-	ret = zirc_connect(&irc, DEFAULT_SERVER, DEFAULT_PORT, &chan);
+	ret = zirc_connect(DEFAULT_SERVER, DEFAULT_PORT);
 	if (ret < 0 && ret != -EINPROGRESS) {
 		panic("Could not connect");
 	}
