@@ -952,6 +952,13 @@ int net_app_close(struct net_app_ctx *ctx)
 		return -ENOENT;
 	}
 
+#if defined(CONFIG_NET_APP_TLS) || defined(CONFIG_NET_APP_DTLS)
+	if (ctx->tls.tx_pending) {
+		ctx->tls.close_requested = true;
+		return -EINPROGRESS;
+	}
+#endif
+
 	net_ctx = _net_app_select_net_ctx(ctx, NULL);
 
 	if (ctx->cb.close) {
@@ -964,6 +971,8 @@ int net_app_close(struct net_app_ctx *ctx)
 
 		for (i = 0; i < CONFIG_NET_APP_SERVER_NUM_CONN; i++) {
 			if (ctx->server.net_ctxs[i] == net_ctx) {
+				NET_DBG("Releasing slot %d net_ctx %p",
+					i, net_ctx);
 				ctx->server.net_ctxs[i] = NULL;
 				break;
 			}
@@ -988,6 +997,13 @@ int net_app_close2(struct net_app_ctx *ctx, struct net_context *net_ctx)
 	if (!ctx->is_init) {
 		return -ENOENT;
 	}
+
+#if defined(CONFIG_NET_APP_TLS) || defined(CONFIG_NET_APP_DTLS)
+	if (ctx->tls.tx_pending) {
+		ctx->tls.close_requested = true;
+		return -EINPROGRESS;
+	}
+#endif
 
 	if (ctx->cb.close) {
 		ctx->cb.close(ctx, 0, ctx->user_data);
@@ -1057,6 +1073,32 @@ static void ssl_sent(struct net_context *context,
 	k_sem_give(&ctx->tls.mbedtls.ssl_ctx.tx_sem);
 }
 
+int _net_app_tls_trigger_close(struct net_app_ctx *ctx)
+{
+	struct net_app_fifo_block *rx_data = NULL;
+	struct k_mem_block block;
+	int ret;
+
+	ret = k_mem_pool_alloc(ctx->tls.pool, &block,
+			       sizeof(struct net_app_fifo_block),
+			       BUF_ALLOC_TIMEOUT);
+	if (ret < 0) {
+		return ret;
+	}
+
+	rx_data = block.data;
+	rx_data->pkt = NULL;
+	rx_data->dir = NET_APP_PKT_TX;
+
+	memcpy(&rx_data->block, &block, sizeof(struct k_mem_block));
+
+	NET_DBG("Triggering connection close");
+
+	k_fifo_put(&ctx->tls.mbedtls.ssl_ctx.tx_rx_fifo, (void *)rx_data);
+
+	return 0;
+}
+
 /* Send encrypted data */
 int _net_app_ssl_tx(void *context, const unsigned char *buf, size_t size)
 {
@@ -1105,6 +1147,10 @@ int _net_app_ssl_tx(void *context, const unsigned char *buf, size_t size)
 
 	k_sem_take(&ctx->tls.mbedtls.ssl_ctx.tx_sem, K_FOREVER);
 
+	if (ctx->tls.close_requested) {
+		_net_app_tls_trigger_close(ctx);
+	}
+
 	return len;
 }
 
@@ -1145,6 +1191,8 @@ int _net_app_tls_sendto(struct net_pkt *pkt,
 	tx_data->dir = NET_APP_PKT_TX;
 	tx_data->token = token;
 	tx_data->cb = cb;
+
+	ctx->tls.tx_pending = true;
 
 	/* For freeing memory later */
 	memcpy(&tx_data->block, &block, sizeof(struct k_mem_block));
@@ -1540,6 +1588,8 @@ out:
 
 	net_pkt_unref(tx_data->pkt);
 
+	ctx->tls.tx_pending = false;
+
 	return ret;
 }
 
@@ -1593,7 +1643,6 @@ int _net_app_ssl_mux(void *context, unsigned char *buf, size_t size)
 		rx_data = k_fifo_get(&ctx->tls.mbedtls.ssl_ctx.tx_rx_fifo,
 				     K_FOREVER);
 		if (!rx_data->pkt) {
-			NET_DBG("Closing %p connection", ctx);
 			k_mem_pool_free(&rx_data->block);
 			return -EIO;
 		}
