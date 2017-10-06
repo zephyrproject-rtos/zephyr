@@ -674,18 +674,30 @@ struct net_context *select_server_ctx(struct net_app_ctx *ctx,
 #define select_server_ctx(...) NULL
 #endif /* CONFIG_NET_APP_SERVER */
 
+#if NET_LOG_ENABLED > 0
+#define _net_app_select_net_ctx(ctx, dst)				\
+	_net_app_select_net_ctx_debug(ctx, dst, __func__, __LINE__)
+
+struct net_context *_net_app_select_net_ctx_debug(struct net_app_ctx *ctx,
+						  const struct sockaddr *dst,
+						  const char *caller,
+						  int line)
+#else
 struct net_context *_net_app_select_net_ctx(struct net_app_ctx *ctx,
 					    const struct sockaddr *dst)
+#endif
 {
+	struct net_context *net_ctx = NULL;
+
 	if (ctx->app_type == NET_APP_CLIENT) {
-		return select_client_ctx(ctx, dst);
+		net_ctx = select_client_ctx(ctx, dst);
+	} else if (ctx->app_type == NET_APP_SERVER) {
+		net_ctx = select_server_ctx(ctx, dst);
 	}
 
-	if (ctx->app_type == NET_APP_SERVER) {
-		return select_server_ctx(ctx, dst);
-	}
+	NET_DBG("Selecting %p net_ctx (%s():%d)", net_ctx, caller, line);
 
-	return NULL;
+	return net_ctx;
 }
 
 int net_app_set_cb(struct net_app_ctx *ctx,
