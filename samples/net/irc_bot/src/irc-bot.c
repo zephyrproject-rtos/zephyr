@@ -22,6 +22,8 @@
 #error "CONFIG_NET_IPV6 or CONFIG_NET_IPV4 must be enabled for irc_bot"
 #endif
 
+#define APP_BANNER "Zephyr IRC bot sample"
+
 #define CMD_BUFFER_SIZE 256
 static u8_t cmd_buf[CMD_BUFFER_SIZE];
 static u16_t cmd_len;
@@ -703,7 +705,7 @@ void main(void)
 	struct zirc_chan chan = { };
 	int ret;
 
-	SYS_LOG_INF("Zephyr IRC bot sample");
+	SYS_LOG_INF(APP_BANNER);
 
 	initialize_hardware();
 
