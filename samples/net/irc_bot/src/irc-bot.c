@@ -24,6 +24,7 @@
 
 #define CMD_BUFFER_SIZE 256
 static u8_t cmd_buf[CMD_BUFFER_SIZE];
+static u16_t cmd_len;
 
 /* LED */
 #if defined(LED0_GPIO_PORT)
@@ -253,9 +254,7 @@ on_context_recv(struct net_app_ctx *ctx, struct net_pkt *pkt,
 {
 	struct zirc *irc = data;
 	struct net_buf *tmp;
-	u8_t *end_of_line;
-	size_t len;
-	u16_t pos = 0, cmd_len = 0;
+	u16_t pos = 0;
 
 	if (!pkt) {
 		/* TODO: notify of disconnection, maybe reconnect? */
@@ -275,40 +274,30 @@ on_context_recv(struct net_app_ctx *ctx, struct net_pkt *pkt,
 	/* skip pos to the first TCP payload */
 	pos = net_pkt_appdata(pkt) - tmp->data;
 
-	while (tmp) {
-		len = tmp->len - pos;
-
-		end_of_line = memchr(tmp->data + pos, '\r', len);
-		if (end_of_line) {
-			len = end_of_line - (tmp->data + pos);
+	while (true) {
+		if (cmd_len >= CMD_BUFFER_SIZE) {
+			SYS_LOG_WRN("cmd_buf overrun (>%d) Ignoring",
+				    CMD_BUFFER_SIZE);
+			cmd_len = 0;
 		}
 
-		if (cmd_len + len > sizeof(cmd_buf)) {
-			/* overrun cmd_buf - bail out */
-			SYS_LOG_ERR("CMD BUFFER OVERRUN!! %zu > %zu",
-				    cmd_len + len,
-				    sizeof(cmd_buf));
-			break;
-		}
-
-		tmp = net_frag_read(tmp, pos, &pos, len, cmd_buf + cmd_len);
-		cmd_len += len;
-
-		if (end_of_line) {
-			/* skip the /n char after /r */
-			if (tmp) {
-				tmp = net_frag_read(tmp, pos, &pos, 1, NULL);
-			}
-
+		tmp = net_frag_read(tmp, pos, &pos, 1, cmd_buf + cmd_len);
+		if (*(cmd_buf + cmd_len) == '\r') {
 			cmd_buf[cmd_len] = '\0';
 			process_command(irc, (char *)cmd_buf, cmd_len);
+			/* skip the \n after \r */
+			tmp = net_frag_read(tmp, pos, &pos, 1, NULL);
 			cmd_len = 0;
+		} else {
+			cmd_len++;
+		}
+
+		if (!tmp || pos == 0xFFFF) {
+			break;
 		}
 	}
 
 	net_pkt_unref(pkt);
-
-	/* TODO: handle messages that spans multiple packets? */
 }
 
 static int
@@ -474,6 +463,7 @@ zirc_disconnect(struct zirc *irc)
 	SYS_LOG_INF("Disconnecting");
 
 	irc->chans = NULL;
+	cmd_len = 0;
 	net_app_close(&app_ctx);
 	return net_app_release(&app_ctx);
 }
@@ -716,6 +706,8 @@ void main(void)
 	SYS_LOG_INF("Zephyr IRC bot sample");
 
 	initialize_hardware();
+
+	cmd_len = 0;
 
 	ret = zirc_connect(&irc, DEFAULT_SERVER, DEFAULT_PORT, &chan);
 	if (ret < 0 && ret != -EINPROGRESS) {
