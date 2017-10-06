@@ -23,13 +23,16 @@ build:
         - ${SHIPPABLE_BUILD_DIR}/ccache
     pre_ci_boot:
         image_name: zephyrprojectrtos/ci
-        image_tag: master.27
+        image_tag: v0.1
         pull: true
         options: "-e HOME=/home/buildslave --privileged=true --tty --net=bridge --user buildslave"
 
     ci:
       - export CCACHE_DIR=${SHIPPABLE_BUILD_DIR}/ccache/.ccache
-      - git rebase origin/${PULL_REQUEST_BASE_BRANCH}
+      - >
+        if [ "$IS_PULL_REQUEST" = "true" ]; then
+          git rebase origin/${PULL_REQUEST_BASE_BRANCH};
+        fi
       - source zephyr-env.sh
       - ccache -c -s --max-size=2000M
       - make host-tools
@@ -54,19 +57,20 @@ build:
             ./scripts/ci/check-compliance.py --commits ${COMMIT_RANGE} || true;
           fi;
       - >
-          sudo pip3 install sh;
-          ./scripts/ci/get_modified_tests.py --commits origin/${PULL_REQUEST_BASE_BRANCH}..HEAD > modified_tests.args;
-          ./scripts/ci/get_modified_boards.py --commits origin/${PULL_REQUEST_BASE_BRANCH}..HEAD > modified_boards.args;
+          if [ "$IS_PULL_REQUEST" = "true" ]; then
+            ./scripts/ci/get_modified_tests.py --commits origin/${PULL_REQUEST_BASE_BRANCH}..HEAD > modified_tests.args;
+            ./scripts/ci/get_modified_boards.py --commits origin/${PULL_REQUEST_BASE_BRANCH}..HEAD > modified_boards.args;
 
-          if [ -s modified_boards.args ]; then
-            ./scripts/sanitycheck --subset ${MATRIX_BUILD}/${MATRIX_BUILDS_EXTRA} +modified_boards.args || ./scripts/sanitycheck +modified_boards.args --only-failed;
-            cp ./scripts/sanity_chk/last_sanity.xml modified_boards.xml;
-          fi;
-          if [ -s modified_tests.args ]; then
-            ./scripts/sanitycheck --subset ${MATRIX_BUILD}/${MATRIX_BUILDS_EXTRA} +modified_tests.args || ./scripts/sanitycheck +modified_tests.args --only-failed
-            cp ./scripts/sanity_chk/last_sanity.xml modified_tests.xml;
-          fi;
-          rm -f modified_tests.args modified_boards.args;
+            if [ -s modified_boards.args ]; then
+              ./scripts/sanitycheck --subset ${MATRIX_BUILD}/${MATRIX_BUILDS_EXTRA} +modified_boards.args || ./scripts/sanitycheck +modified_boards.args --only-failed;
+              cp ./scripts/sanity_chk/last_sanity.xml modified_boards.xml;
+            fi;
+            if [ -s modified_tests.args ]; then
+              ./scripts/sanitycheck --subset ${MATRIX_BUILD}/${MATRIX_BUILDS_EXTRA} +modified_tests.args || ./scripts/sanitycheck +modified_tests.args --only-failed;
+              cp ./scripts/sanity_chk/last_sanity.xml modified_tests.xml;
+            fi;
+            rm -f modified_tests.args modified_boards.args;
+          fi
       - >
           if [ "$MATRIX_BUILD" != "3" ]; then
              ./scripts/sanitycheck ${PLATFORMS} --subset ${MATRIX_BUILD}/${MATRIX_BUILDS} ${COVERAGE} ${SANITYCHECK_OPTIONS} || ./scripts/sanitycheck ${PLATFORMS} ${COVERAGE} ${SANITYCHECK_OPTIONS_RETRY} || ./scripts/sanitycheck ${PLATFORMS} ${COVERAGE} ${SANITYCHECK_OPTIONS_RETRY}
