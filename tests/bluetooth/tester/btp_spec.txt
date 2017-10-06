@@ -1129,6 +1129,18 @@ Events:
 		This event indicates that IUT has received notification
 		or notification.
 
+	Opcode 0x81 - Attribute Value Changed
+
+		Controller Index:	<controller id>
+		Event parameters:	Attribute_ID (2 octets)
+					Data_Length (2 octet)
+					Data (1-512 octets)
+
+		This event command is used to indicate attribute
+		(characteristic or descriptor) value changed.
+		Event is triggered when ATT Write operation to Tester GATT
+		Server has been performed successfully.
+
 L2CAP Service (ID 3)
 ==================
 
