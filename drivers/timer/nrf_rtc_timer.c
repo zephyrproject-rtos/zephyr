@@ -542,6 +542,12 @@ u32_t _timer_cycle_get_32(void)
 	       elapsed_cycles;
 }
 
+u64_t _timer_cycle_get(void)
+{
+	/* TODO: implementation */
+	return 0;
+}
+
 #ifdef CONFIG_SYSTEM_CLOCK_DISABLE
 /**
  *

@@ -61,7 +61,7 @@ int _sys_clock_driver_init(struct device *device)
 
 /**
  *
- * @brief Read the platform's timer hardware
+ * @brief Read the platform's timer hardware (32-bit version)
  *
  * This routine returns the current time in terms of timer hardware clock
  * cycles.
@@ -71,4 +71,19 @@ int _sys_clock_driver_init(struct device *device)
 u32_t _timer_cycle_get_32(void)
 {
 	return accumulated_cycle_count + timer->val;
+}
+
+/**
+ *
+ * @brief Read the platform's timer hardware
+ *
+ * This routine returns the current time in terms of timer hardware clock
+ * cycles.
+ *
+ * @return up counter of elapsed clock cycles
+ */
+u64_t _timer_cycle_get(void)
+{
+	/* TODO: implementation */
+	return 0;
 }

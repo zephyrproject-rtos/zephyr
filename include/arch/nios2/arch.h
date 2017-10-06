@@ -203,7 +203,9 @@ enum nios2_exception_cause {
 
 
 extern u32_t _timer_cycle_get_32(void);
+extern u64_t _timer_cycle_get(void);
 #define _arch_k_cycle_get_32()	_timer_cycle_get_32()
+#define _arch_k_cycle_get()	_timer_cycle_get()
 
 #endif /* _ASMLANGUAGE */
 

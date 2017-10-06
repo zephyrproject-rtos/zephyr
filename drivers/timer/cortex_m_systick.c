@@ -733,7 +733,7 @@ int _sys_clock_driver_init(struct device *device)
 
 /**
  *
- * @brief Read the platform's timer hardware
+ * @brief Read the platform's timer hardware (32-bit version)
  *
  * This routine returns the current time in terms of timer hardware clock
  * cycles.
@@ -759,6 +759,26 @@ return (u32_t) get_elapsed_count();
 	return cac + count;
 #endif
 }
+
+/**
+ *
+ * @brief Read the platform's timer hardware
+ *
+ * This routine returns the current time in terms of timer hardware clock
+ * cycles.
+ *
+ * @return up counter of elapsed clock cycles
+ *
+ * \INTERNAL WARNING
+ * systick counter is a 24-bit down counter which is reset to "reload" value
+ * once it reaches 0.
+ */
+u64_t _timer_cycle_get(void)
+{
+	/* TODO: implementation */
+	return 0;
+}
+
 
 #ifdef CONFIG_SYSTEM_CLOCK_DISABLE
 

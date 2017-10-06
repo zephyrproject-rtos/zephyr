@@ -117,3 +117,9 @@ u32_t _timer_cycle_get_32(void)
 	return accumulated_cycle_count;
 }
 
+u64_t _timer_cycle_get(void)
+{
+	/* TODO: implementation */
+	return 0;
+}
+

@@ -1419,7 +1419,7 @@ extern s64_t k_uptime_delta(s64_t *reftime);
 extern u32_t k_uptime_delta_32(s64_t *reftime);
 
 /**
- * @brief Read the hardware clock.
+ * @brief Read the hardware clock (32-bit version).
  *
  * This routine returns the current time, as measured by the system's hardware
  * clock.
@@ -1427,6 +1427,16 @@ extern u32_t k_uptime_delta_32(s64_t *reftime);
  * @return Current hardware clock up-counter (in cycles).
  */
 #define k_cycle_get_32()	_arch_k_cycle_get_32()
+
+/**
+ * @brief Read the hardware clock.
+ *
+ * This routine returns the current time, as measured by the system's hardware
+ * clock.
+ *
+ * @return Current hardware clock up-counter (in cycles).
+ */
+#define k_cycle_get()	_arch_k_cycle_get()
 
 /**
  * @} end addtogroup clock_apis

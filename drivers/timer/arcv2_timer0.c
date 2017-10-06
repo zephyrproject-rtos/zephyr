@@ -570,6 +570,13 @@ return (u32_t) get_elapsed_count();
 #endif
 }
 
+u64_t _timer_cycle_get(void)
+{
+	/* TODO: implementation */
+	return 0;
+}
+
+
 #if defined(CONFIG_SYSTEM_CLOCK_DISABLE)
 /**
  *

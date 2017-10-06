@@ -723,7 +723,7 @@ int sys_clock_device_ctrl(struct device *port, u32_t ctrl_command,
 
 /**
  *
- * @brief Read the platform's timer hardware
+ * @brief Read the platform's timer hardware (32-bit version)
  *
  * This routine returns the current time in terms of timer hardware clock
  * cycles. We use the x86 TSC as the LOAPIC timer can't be used as a periodic
@@ -747,6 +747,23 @@ u32_t _timer_cycle_get_32(void)
 	return _do_read_cpu_timestamp32();
 #endif
 }
+
+/**
+ *
+ * @brief Read the platform's timer hardware
+ *
+ * This routine returns the current time in terms of timer hardware clock
+ * cycles. We use the x86 TSC as the LOAPIC timer can't be used as a periodic
+ * system clock and a timestamp source at the same time.
+ *
+ * @return up counter of elapsed clock cycles
+ */
+u64_t _timer_cycle_get(void)
+{
+	/* TODO: implementation */
+	return 0;
+}
+
 
 #if defined(CONFIG_SYSTEM_CLOCK_DISABLE)
 /**

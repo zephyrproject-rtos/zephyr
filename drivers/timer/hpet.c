@@ -706,7 +706,7 @@ int _sys_clock_driver_init(struct device *device)
 
 /**
  *
- * @brief Read the platform's timer hardware
+ * @brief Read the platform's timer hardware (32-bit version)
  *
  * This routine returns the current time in terms of timer hardware clock
  * cycles.
@@ -722,6 +722,27 @@ u32_t _timer_cycle_get_32(void)
 {
 	return (u32_t) *_HPET_MAIN_COUNTER_VALUE;
 }
+
+/**
+ *
+ * @brief Read the platform's timer hardware
+ *
+ * This routine returns the current time in terms of timer hardware clock
+ * cycles.
+ *
+ * @return up counter of elapsed clock cycles
+ *
+ * \INTERNAL WARNING
+ * If this routine is ever enhanced to return all 64 bits of the counter
+ * it will need to call _hpetMainCounterAtomic().
+ */
+
+u64_t _timer_cycle_get(void)
+{
+	/* TODO: implementation */
+	return 0;
+}
+
 
 #ifdef CONFIG_SYSTEM_CLOCK_DISABLE
 
