@@ -22,8 +22,6 @@ if LooseVersion(elftools.__version__) < LooseVersion('0.24'):
 
 kobjects = [
         "k_alert",
-        "k_delayed_work",
-        "k_mem_slab",
         "k_msgq",
         "k_mutex",
         "k_pipe",
@@ -31,8 +29,6 @@ kobjects = [
         "k_stack",
         "k_thread",
         "k_timer",
-        "k_work",
-        "k_work_q",
         "device"
         ]
 
