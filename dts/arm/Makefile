@@ -50,6 +50,7 @@ dtb-$(CONFIG_BOARD_STM32F3_DISCO)       =       stm32f3_disco.dts_compiled
 dtb-$(CONFIG_BOARD_OLIMEX_STM32_P405)	=	olimex_stm32_p405.dts_compiled
 dtb-$(CONFIG_BOARD_STM32F429I_DISC1)	=	stm32f429i_disc1.dts_compiled
 dtb-$(CONFIG_BOARD_EFM32WG_STK3800)	=	efm32wg_stk3800.dts_compiled
+dtb-$(CONFIG_BOARD_96B_NEONKEY)         =       96b_neonkey.dts_compiled
 
 always	:= $(dtb-y)
 endif
