@@ -73,6 +73,24 @@ static void on_msg_rcvd(void *data, struct zirc_chan *chan, char *umask,
 
 static struct net_app_ctx app_ctx;
 
+#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
+NET_PKT_TX_SLAB_DEFINE(tx_tcp, 15);
+NET_PKT_DATA_POOL_DEFINE(data_tcp, 30);
+
+static struct k_mem_slab *tx_slab(void)
+{
+	return &tx_tcp;
+}
+
+static struct net_buf_pool *data_pool(void)
+{
+	return &data_tcp;
+}
+#else
+#define tx_slab NULL
+#define data_pool NULL
+#endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
+
 static void
 panic(const char *msg)
 {
@@ -408,6 +426,10 @@ zirc_connect(struct zirc *irc, const char *host, int port, void *data)
 		SYS_LOG_ERR("net_app_init_tcp_client err:%d", ret);
 		return ret;
 	}
+
+#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
+	net_app_set_net_pkt_pool(&app_ctx, tx_slab, data_pool);
+#endif
 
 	/* set net_app callbacks */
 	ret = net_app_set_cb(&app_ctx, NULL, on_context_recv, NULL, NULL);
