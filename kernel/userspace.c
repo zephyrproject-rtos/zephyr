@@ -36,10 +36,6 @@ const char *otype_to_str(enum k_objects otype)
 	/* Core kernel objects */
 	case K_OBJ_ALERT:
 		return "k_alert";
-	case K_OBJ_DELAYED_WORK:
-		return "k_delayed_work";
-	case K_OBJ_MEM_SLAB:
-		return "k_mem_slab";
 	case K_OBJ_MSGQ:
 		return "k_msgq";
 	case K_OBJ_MUTEX:
@@ -54,10 +50,6 @@ const char *otype_to_str(enum k_objects otype)
 		return "k_thread";
 	case K_OBJ_TIMER:
 		return "k_timer";
-	case K_OBJ_WORK:
-		return "k_work";
-	case K_OBJ_WORK_Q:
-		return "k_work_q";
 
 	/* Driver subsystems */
 	case K_OBJ_DRIVER_ADC:

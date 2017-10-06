@@ -133,8 +133,6 @@ struct k_mem_partition;
 enum k_objects {
 	/* Core kernel objects */
 	K_OBJ_ALERT,
-	K_OBJ_DELAYED_WORK,
-	K_OBJ_MEM_SLAB,
 	K_OBJ_MSGQ,
 	K_OBJ_MUTEX,
 	K_OBJ_PIPE,
@@ -142,8 +140,6 @@ enum k_objects {
 	K_OBJ_STACK,
 	K_OBJ_THREAD,
 	K_OBJ_TIMER,
-	K_OBJ_WORK,
-	K_OBJ_WORK_Q,
 
 	/* Driver subsystems */
 	K_OBJ_DRIVER_ADC,
