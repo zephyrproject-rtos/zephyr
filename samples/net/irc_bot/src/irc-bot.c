@@ -608,7 +608,7 @@ on_msg_rcvd(char *chan_name, char *umask, char *msg)
 	}
 
 	if (!strncmp(msg, "!help", 5)) {
-		char msg[32];
+		char msg[64];
 		int ret;
 
 		/* TODO: loop through commands[] and create help text */
