@@ -18,6 +18,7 @@ config SOC_MKW22D5
 	select HAS_MCUX_FTM
 	select HAS_MCUX_GPIO
 	select HAS_MCUX_I2C
+	select HAS_MCUX_PORT
 	select HAS_MCUX_RNGA
 	select HAS_MCUX_SIM
 	select HAS_MCUX_UART
@@ -33,6 +34,7 @@ config SOC_MKW24D5
 	select HAS_MCUX_FTM
 	select HAS_MCUX_GPIO
 	select HAS_MCUX_I2C
+	select HAS_MCUX_PORT
 	select HAS_MCUX_RNGA
 	select HAS_MCUX_SIM
 	select HAS_MCUX_UART
@@ -49,6 +51,7 @@ config SOC_MKW40Z4
 	select HAS_MCUX_GPIO
 	select HAS_MCUX_I2C
 	select HAS_MCUX_LPUART
+	select HAS_MCUX_PORT
 	select HAS_MCUX_SIM
 	select HAS_MCUX_TRNG
 	select HAS_OSC
@@ -64,6 +67,7 @@ config SOC_MKW41Z4
 	select HAS_MCUX_GPIO
 	select HAS_MCUX_I2C
 	select HAS_MCUX_LPUART
+	select HAS_MCUX_PORT
 	select HAS_MCUX_SIM
 	select HAS_MCUX_TRNG
 	select HAS_OSC

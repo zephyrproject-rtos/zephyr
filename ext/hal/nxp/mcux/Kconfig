@@ -66,6 +66,14 @@ config HAS_MCUX_LPUART
 	help
 	  Set if the low power uart (LPUART) module is present in the SoC.
 
+config HAS_MCUX_PORT
+	bool
+	default n
+	help
+	  Set if the port control and interrupts (PORT) module is present in
+	  the SoC, which is true when the mcux macro FSL_FEATURE_SOC_PORT_COUNT
+	  is nonzero.
+
 config HAS_MCUX_RNGA
 	bool
 	default n
