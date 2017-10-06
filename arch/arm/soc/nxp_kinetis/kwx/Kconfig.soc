@@ -16,6 +16,7 @@ config SOC_MKW22D5
 	select HAS_MCUX_ADC16
 	select HAS_MCUX_DSPI
 	select HAS_MCUX_FTM
+	select HAS_MCUX_I2C
 	select HAS_MCUX_RNGA
 	select HAS_MCUX_SIM
 	select HAS_MCUX_UART
@@ -29,6 +30,7 @@ config SOC_MKW24D5
 	select HAS_MCUX_ADC16
 	select HAS_MCUX_DSPI
 	select HAS_MCUX_FTM
+	select HAS_MCUX_I2C
 	select HAS_MCUX_RNGA
 	select HAS_MCUX_SIM
 	select HAS_MCUX_UART
@@ -42,6 +44,7 @@ config SOC_MKW40Z4
 	select HAS_MCUX
 	select HAS_MCUX_ADC16
 	select HAS_MCUX_DSPI
+	select HAS_MCUX_I2C
 	select HAS_MCUX_LPUART
 	select HAS_MCUX_SIM
 	select HAS_MCUX_TRNG
@@ -55,6 +58,7 @@ config SOC_MKW41Z4
 	select HAS_MCUX
 	select HAS_MCUX_ADC16
 	select HAS_MCUX_DSPI
+	select HAS_MCUX_I2C
 	select HAS_MCUX_LPUART
 	select HAS_MCUX_SIM
 	select HAS_MCUX_TRNG
