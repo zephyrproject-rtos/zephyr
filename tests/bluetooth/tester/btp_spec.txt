@@ -1111,6 +1111,18 @@ Commands and responses:
 
 		In case of an error, the error response will be returned.
 
+	Opcode 0x1c - Read Local Attribute Value
+
+		Controller Index:	<controller id>
+		Command parameters:	Attribute_ID (2 octets)
+		Response parameters:	Value_Length (2 octet)
+					Value (1-512 octets)
+
+		This command is used to query local GATT Server of
+		characteristic/descriptor value.
+
+		In case of an error, the error response will be returned.
+
 Events:
 	Opcode 0x80 - Notification/Indication Received
 
