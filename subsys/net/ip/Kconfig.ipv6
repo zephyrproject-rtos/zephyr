@@ -113,8 +113,11 @@ config NET_IPV6_RA_RDNSS
 
 config NET_6LO
 	bool "Enable 6lowpan IPv6 Compression library"
+	default n
+	default y if NET_L2_IEEE802154
 	help
-	6lowpan compression and fragmentation.
+	6lowpan compression and fragmentation. It is enabled by default
+	if 802.15.4 is present, since using IPv6 on it requires it.
 
 config NET_6LO_CONTEXT
 	bool "Enable 6lowpan context based compression"
