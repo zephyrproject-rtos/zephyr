@@ -5,10 +5,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#if 1
 #define SYS_LOG_DOMAIN "irc"
-#define NET_LOG_ENABLED 1
-#endif
+#define SYS_LOG_LEVEL SYS_LOG_LEVEL_INFO
+#include <logging/sys_log.h>
 
 #include <board.h>
 #include <drivers/rand32.h>
@@ -77,7 +76,7 @@ static struct net_app_ctx app_ctx;
 static void
 panic(const char *msg)
 {
-	NET_ERR("Panic: %s", msg);
+	SYS_LOG_ERR("Panic: %s", msg);
 	for (;;) {
 		k_sleep(K_FOREVER);
 	}
@@ -91,7 +90,7 @@ transmit(char buffer[], size_t len)
 
 	send_pkt = net_app_get_net_pkt(&app_ctx, AF_UNSPEC, BUF_ALLOC_TIMEOUT);
 	if (!send_pkt) {
-		NET_ERR("Unable to get TX packet, not enough memory.");
+		SYS_LOG_ERR("Unable to get TX packet, not enough memory.");
 		return -ENOMEM;
 	}
 
@@ -117,13 +116,13 @@ on_cmd_ping(struct zirc *irc, char *umask, char *cmd, size_t len)
 	char pong[32];
 	int ret;
 
-	NET_INFO("Got PING command from server: %s", cmd);
+	SYS_LOG_INF("Got PING command from server: %s", cmd);
 
 	ret = snprintk(pong, 32, "PONG :%s", cmd + 1);
 	if (ret < sizeof(pong)) {
 		ret = transmit(pong, ret);
 		if (ret < 0) {
-			NET_ERR("Transmit error: %d", ret);
+			SYS_LOG_INF("Transmit error: %d", ret);
 		}
 	}
 }
@@ -139,7 +138,7 @@ on_cmd_privmsg(struct zirc *irc, char *umask, char *cmd, size_t len)
 		return;
 	}
 
-	NET_INFO("Got message from umask %s: %s", umask, cmd);
+	SYS_LOG_DBG("Got message from umask %s: %s", umask, cmd);
 
 	space = memchr(cmd, ' ', len);
 	if (!space) {
@@ -150,6 +149,7 @@ on_cmd_privmsg(struct zirc *irc, char *umask, char *cmd, size_t len)
 
 	if (*(space + 1) != ':') {
 		/* Just ignore messages without a ':' after the space */
+		SYS_LOG_DBG("Ignoring message umask: %s: %s", umask, space);
 		return;
 	}
 
@@ -162,7 +162,7 @@ on_cmd_privmsg(struct zirc *irc, char *umask, char *cmd, size_t len)
 	}
 
 	/* TODO: could be a private message (from another user) */
-	NET_INFO("Unknown privmsg received: %.*s\n", (int)len, cmd);
+	SYS_LOG_INF("Unknown privmsg received: %.*s\n", (int)len, cmd);
 }
 
 #define CMD(cmd_, cb_) { \
@@ -202,11 +202,11 @@ process_command(struct zirc *irc, char *cmd, size_t len)
 
 		cmd = space + 1;
 
-		NET_INFO("Received from server, umask=%s: %s", umask, cmd);
+		SYS_LOG_DBG("Received from server, umask=%s: %s", umask, cmd);
 	} else {
 		umask = NULL;
 
-		NET_INFO("Received from server (no umask): %s", cmd);
+		SYS_LOG_DBG("Received from server (no umask): %s", cmd);
 	}
 
 	for (i = 0; i < ARRAY_SIZE(commands); i++) {
@@ -214,7 +214,7 @@ process_command(struct zirc *irc, char *cmd, size_t len)
 			continue;
 		}
 		if (!strncmp(cmd, commands[i].cmd, commands[i].cmd_len)) {
-			NET_INFO("Command has handler, executing");
+			SYS_LOG_DBG("Command has handler, executing");
 
 			cmd += commands[i].cmd_len;
 			len -= commands[i].cmd_len;
@@ -225,7 +225,7 @@ process_command(struct zirc *irc, char *cmd, size_t len)
 	}
 
 	/* TODO: handle notices, CTCP, etc */
-	NET_INFO("Could not find handler to handle %s, ignoring", cmd);
+	SYS_LOG_DBG("Could not find handler to handle %s, ignoring", cmd);
 }
 #undef CMD
 
@@ -241,13 +241,13 @@ on_context_recv(struct net_app_ctx *ctx, struct net_pkt *pkt,
 
 	if (!pkt) {
 		/* TODO: notify of disconnection, maybe reconnect? */
-		NET_ERR("Disconnected\n");
+		SYS_LOG_ERR("Disconnected\n");
 		return;
 	}
 
 	if (status) {
 		/* TODO: handle connection error */
-		NET_ERR("Connection error: %d\n", -status);
+		SYS_LOG_ERR("Connection error: %d\n", -status);
 		net_pkt_unref(pkt);
 		return;
 	}
@@ -267,9 +267,9 @@ on_context_recv(struct net_app_ctx *ctx, struct net_pkt *pkt,
 
 		if (cmd_len + len > sizeof(cmd_buf)) {
 			/* overrun cmd_buf - bail out */
-			NET_ERR("CMD BUFFER OVERRUN!! %zu > %zu",
-				cmd_len + len,
-				sizeof(cmd_buf));
+			SYS_LOG_ERR("CMD BUFFER OVERRUN!! %zu > %zu",
+				    cmd_len + len,
+				    sizeof(cmd_buf));
 			break;
 		}
 
@@ -299,7 +299,7 @@ zirc_nick_set(struct zirc *irc, const char *nick)
 	char buffer[32];
 	int ret;
 
-	NET_INFO("Setting nickname to: %s", nick);
+	SYS_LOG_INF("Setting nickname to: %s", nick);
 
 	ret = snprintk(buffer, sizeof(buffer), "NICK %s\r\n", nick);
 	if (ret < 0 || ret >= sizeof(buffer)) {
@@ -315,7 +315,7 @@ zirc_user_set(struct zirc *irc, const char *user, const char *realname)
 	char buffer[64];
 	int ret;
 
-	NET_INFO("Setting user to: %s, real name to: %s", user, realname);
+	SYS_LOG_INF("Setting user to: %s, real name to: %s", user, realname);
 
 	ret = snprintk(buffer, sizeof(buffer), "USER %s * * :%s\r\n",
 				   user, realname);
@@ -335,7 +335,7 @@ zirc_chan_join(struct zirc *irc, struct zirc_chan *chan,
 	char buffer[32];
 	int ret;
 
-	NET_INFO("Joining channel: %s", channel);
+	SYS_LOG_INF("Joining channel: %s", channel);
 
 	if (!on_privmsg_rcvd) {
 		return -EINVAL;
@@ -369,7 +369,7 @@ zirc_chan_part(struct zirc_chan *chan)
 	char buffer[32];
 	int ret;
 
-	NET_INFO("Leaving channel: %s", chan->chan);
+	SYS_LOG_INF("Leaving channel: %s", chan->chan);
 
 	ret = snprintk(buffer, sizeof(buffer), "PART %s\r\n", chan->chan);
 	if (ret < 0 || ret >= sizeof(buffer)) {
@@ -399,20 +399,20 @@ zirc_connect(struct zirc *irc, const char *host, int port, void *data)
 	int ret;
 	char name_buf[32];
 
-	NET_INFO("Connecting to %s:%d...", host, port);
+	SYS_LOG_INF("Connecting to %s:%d...", host, port);
 
 	ret = net_app_init_tcp_client(&app_ctx, NULL, NULL,
 				      host, port,
 				      WAIT_TIMEOUT, NULL);
 	if (ret < 0) {
-		NET_ERR("net_app_init_tcp_client err:%d", ret);
+		SYS_LOG_ERR("net_app_init_tcp_client err:%d", ret);
 		return ret;
 	}
 
 	/* set net_app callbacks */
 	ret = net_app_set_cb(&app_ctx, NULL, on_context_recv, NULL, NULL);
 	if (ret < 0) {
-		NET_ERR("Could not set receive callback (err:%d)", ret);
+		SYS_LOG_ERR("Could not set receive callback (err:%d)", ret);
 		return ret;
 	}
 
@@ -420,7 +420,7 @@ zirc_connect(struct zirc *irc, const char *host, int port, void *data)
 
 	ret = net_app_connect(&app_ctx, CONNECT_TIMEOUT);
 	if (ret < 0) {
-		NET_ERR("Cannot connect (%d)", ret);
+		SYS_LOG_ERR("Cannot connect (%d)", ret);
 		panic("Can't init network");
 	}
 
@@ -449,7 +449,7 @@ zirc_connect(struct zirc *irc, const char *host, int port, void *data)
 static int
 zirc_disconnect(struct zirc *irc)
 {
-	NET_INFO("Disconnecting");
+	SYS_LOG_INF("Disconnecting");
 
 	irc->chans = NULL;
 	net_app_close(&app_ctx);
@@ -461,7 +461,7 @@ zirc_chan_send_msg(const struct zirc_chan *chan, const char *msg)
 {
 	char buffer[128];
 
-	NET_INFO("Sending to channel %s: %s", chan->chan, msg);
+	SYS_LOG_INF("Sending to channel %s: %s", chan->chan, msg);
 
 	while (*msg) {
 		int msglen, txret;
@@ -635,7 +635,7 @@ on_msg_rcvd(void *data, struct zirc_chan *chan, char *umask, char *msg)
 		return;
 	}
 
-	NET_INFO("Received from umask %s: %s", umask, msg);
+	SYS_LOG_DBG("Received from umask %s: %s", umask, msg);
 
 	end = strchr(umask, '!');
 	if (!end) {
@@ -677,7 +677,7 @@ on_msg_rcvd(void *data, struct zirc_chan *chan, char *umask, char *msg)
 static void
 initialize_hardware(void)
 {
-	NET_INFO("Initializing hardware");
+	SYS_LOG_INF("Initializing hardware");
 
 	led0 = device_get_binding(LED_GPIO_NAME);
 	if (led0) {
@@ -691,7 +691,7 @@ void main(void)
 	struct zirc_chan chan = { };
 	int ret;
 
-	NET_INFO("Zephyr IRC bot sample");
+	SYS_LOG_INF("Zephyr IRC bot sample");
 
 	initialize_hardware();
 
