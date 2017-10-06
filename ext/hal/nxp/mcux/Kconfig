@@ -25,6 +25,13 @@ config HAS_MCUX_DSPI
 	  Set if the DMA SPI (DSPI) module is present in the SoC, which is true
 	  when the mcux macro FSL_FEATURE_SOC_DSPI_COUNT is nonzero.
 
+config HAS_MCUX_ETH
+	bool
+	default n
+	help
+	  Set if the Ethernet MAC (ENET) module is present in the SoC, which is
+	  true when the mcux macro FSL_FEATURE_SOC_ENET_COUNT is nonzero.
+
 config HAS_MCUX_FTM
 	bool
 	default n
