@@ -38,6 +38,14 @@ config HAS_MCUX_FTM
 	help
 	  Set if the FlexTimer (FTM) module is present in the SoC.
 
+config HAS_MCUX_GPIO
+	bool
+	default n
+	help
+	  Set if the general-purpose input/output (GPIO) module is present in
+	  the SoC, which is true when the mcux macro FSL_FEATURE_SOC_GPIO_COUNT
+	  is nonzero.
+
 config HAS_MCUX_I2C
 	bool
 	default n
