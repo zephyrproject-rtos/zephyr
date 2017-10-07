@@ -24,9 +24,18 @@ static int alert_handler1(struct k_alert *);
 K_ALERT_DEFINE(kalert_pending, alert_handler1, PENDING_MAX);
 K_ALERT_DEFINE(kalert_consumed, alert_handler0, PENDING_MAX);
 
+enum handle_type {
+	HANDLER_IGNORE,
+	HANDLER_DEFAULT,
+	HANDLER_0,
+	HANDLER_1
+};
+
 static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
-static struct k_thread tdata;
+__kernel struct k_thread tdata;
+__kernel struct k_alert thread_alerts[4];
 static struct k_alert *palert;
+static enum handle_type htype;
 static volatile int handler_executed;
 
 /*handlers*/
@@ -54,20 +63,18 @@ static void alert_recv(void)
 {
 	int ret;
 
-	if (palert->handler == K_ALERT_IGNORE ||
-	    palert->handler == alert_handler0) {
-		if (palert->handler == alert_handler0) {
-			zassert_equal(handler_executed, PENDING_MAX, NULL);
-		}
+	switch (htype) {
+	case HANDLER_0:
+		zassert_equal(handler_executed, PENDING_MAX, NULL);
+		/* Fall through */
+	case HANDLER_IGNORE:
 		ret = k_alert_recv(palert, TIMEOUT);
 		zassert_equal(ret, -EAGAIN, NULL);
-	}
-
-	if (palert->handler == K_ALERT_DEFAULT ||
-	    palert->handler == alert_handler1) {
-		if (palert->handler == alert_handler1) {
-			zassert_equal(handler_executed, PENDING_MAX, NULL);
-		}
+		break;
+	case HANDLER_1:
+		zassert_equal(handler_executed, PENDING_MAX, NULL);
+		/* Fall through */
+	case HANDLER_DEFAULT:
 		for (int i = 0; i < PENDING_MAX; i++) {
 			/**TESTPOINT: alert recv*/
 			ret = k_alert_recv(palert, K_NO_WAIT);
@@ -93,7 +100,9 @@ static void thread_alert(void)
 	/**TESTPOINT: thread-thread sync via alert*/
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 				      thread_entry, NULL, NULL, NULL,
-				      K_PRIO_PREEMPT(0), 0, 0);
+				      K_PRIO_PREEMPT(0),
+				      K_USER | K_INHERIT_PERMS,
+				      0);
 	alert_send();
 	k_sleep(TIMEOUT);
 	k_thread_abort(tid);
@@ -116,49 +125,31 @@ static void isr_alert(void)
 /*test cases*/
 void test_thread_alert_default(void)
 {
-	struct k_alert alert;
-
-	/**TESTPOINT: init via k_alert_init*/
-	k_alert_init(&alert, K_ALERT_DEFAULT, PENDING_MAX);
-
-	/**TESTPOINT: alert handler default*/
-	palert = &alert;
+	palert = &thread_alerts[HANDLER_DEFAULT];
+	htype = HANDLER_DEFAULT;
 	thread_alert();
-
 }
 
 void test_thread_alert_ignore(void)
 {
-	/**TESTPOINT: alert handler ignore*/
-	struct k_alert alert;
-
-	/**TESTPOINT: init via k_alert_init*/
-	k_alert_init(&alert, K_ALERT_IGNORE, PENDING_MAX);
-	palert = &alert;
+	palert = &thread_alerts[HANDLER_IGNORE];
+	htype = HANDLER_IGNORE;
 	thread_alert();
 }
 
 void test_thread_alert_consumed(void)
 {
-	struct k_alert alert;
-
-	/**TESTPOINT: init via k_alert_init*/
-	k_alert_init(&alert, alert_handler0, PENDING_MAX);
-
 	/**TESTPOINT: alert handler return 0*/
-	palert = &alert;
+	palert = &thread_alerts[HANDLER_0];
+	htype = HANDLER_0;
 	thread_alert();
 }
 
 void test_thread_alert_pending(void)
 {
-	struct k_alert alert;
-
-	/**TESTPOINT: init via k_alert_init*/
-	k_alert_init(&alert, alert_handler1, PENDING_MAX);
-
 	/**TESTPOINT: alert handler return 1*/
-	palert = &alert;
+	palert = &thread_alerts[HANDLER_1];
+	htype = HANDLER_1;
 	thread_alert();
 }
 
@@ -171,6 +162,7 @@ void test_isr_alert_default(void)
 
 	/**TESTPOINT: alert handler default*/
 	palert = &alert;
+	htype = HANDLER_DEFAULT;
 	isr_alert();
 }
 
@@ -182,6 +174,7 @@ void test_isr_alert_ignore(void)
 	/**TESTPOINT: init via k_alert_init*/
 	k_alert_init(&alert, K_ALERT_IGNORE, PENDING_MAX);
 	palert = &alert;
+	htype = HANDLER_IGNORE;
 	isr_alert();
 }
 
@@ -194,6 +187,7 @@ void test_isr_alert_consumed(void)
 
 	/**TESTPOINT: alert handler return 0*/
 	palert = &alert;
+	htype = HANDLER_0;
 	isr_alert();
 }
 
@@ -206,21 +200,57 @@ void test_isr_alert_pending(void)
 
 	/**TESTPOINT: alert handler return 0*/
 	palert = &alert;
+	htype = HANDLER_1;
 	isr_alert();
 }
 
 void test_thread_kinit_alert(void)
 {
 	palert = &kalert_consumed;
+	htype = HANDLER_0;
 	thread_alert();
 	palert = &kalert_pending;
+	htype = HANDLER_1;
 	thread_alert();
 }
 
 void test_isr_kinit_alert(void)
 {
 	palert = &kalert_consumed;
+	htype = HANDLER_0;
 	isr_alert();
 	palert = &kalert_pending;
+	htype = HANDLER_1;
 	isr_alert();
+}
+
+/*test case main entry*/
+void test_main(void)
+{
+	k_thread_access_grant(k_current_get(), &kalert_pending,
+			      &kalert_consumed, &tdata, &tstack,
+			      &thread_alerts[HANDLER_DEFAULT],
+			      &thread_alerts[HANDLER_IGNORE],
+			      &thread_alerts[HANDLER_0],
+			      &thread_alerts[HANDLER_1], NULL);
+
+	k_alert_init(&thread_alerts[HANDLER_DEFAULT], K_ALERT_DEFAULT,
+		     PENDING_MAX);
+	k_alert_init(&thread_alerts[HANDLER_IGNORE], K_ALERT_IGNORE,
+		     PENDING_MAX);
+	k_alert_init(&thread_alerts[HANDLER_0], alert_handler0, PENDING_MAX);
+	k_alert_init(&thread_alerts[HANDLER_1], alert_handler1, PENDING_MAX);
+
+	ztest_test_suite(test_alert_api,
+			 ztest_user_unit_test(test_thread_alert_default),
+			 ztest_user_unit_test(test_thread_alert_ignore),
+			 ztest_user_unit_test(test_thread_alert_consumed),
+			 ztest_user_unit_test(test_thread_alert_pending),
+			 ztest_unit_test(test_isr_alert_default),
+			 ztest_unit_test(test_isr_alert_ignore),
+			 ztest_unit_test(test_isr_alert_consumed),
+			 ztest_unit_test(test_isr_alert_pending),
+			 ztest_user_unit_test(test_thread_kinit_alert),
+			 ztest_unit_test(test_isr_kinit_alert));
+	ztest_run_test_suite(test_alert_api);
 }
