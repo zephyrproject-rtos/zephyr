@@ -62,7 +62,6 @@ The toolchain is available for Linux, Windows, and Mac hosts and
 instructions to obtain and set them up are available in the ESP-IDF
 repository, using the toolchain and SDK links above.
 
-
 Set up build environment
 ========================
 
@@ -78,6 +77,17 @@ located, and where the toolchain has been installed:
    export ESP_IDF_PATH="/path/to/esp-idf"
    export ESPRESSIF_TOOLCHAIN_PATH="/path/to/xtensa-esp32-elf/"
 
+Since ESP-IDF is an external project in constant development, it's possible
+that files that Zephyr depends on will be moved, removed, or renamed.  Those
+files are mostly header files containing hardware definitions, which are
+unlikely to change and require fixes from the vendor.  In addition to
+setting the environment variables above, also check out an earlier version
+of ESP-IDF:
+
+.. code-block:: console
+
+   cd ${ESP_IDF_PATH}
+   git checkout dc8c33892e0
 
 Flashing
 ========
