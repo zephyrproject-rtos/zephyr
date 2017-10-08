@@ -13,8 +13,8 @@
 #include <ztest.h>
 
 #define STACK_SIZE (256 + CONFIG_TEST_EXTRA_STACKSIZE)
-static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
-static struct k_thread tdata;
+K_THREAD_STACK_EXTERN(tstack);
+extern struct k_thread tdata;
 static int execute_flag;
 
 static void thread_entry(void *p1, void *p2, void *p3)
@@ -44,7 +44,7 @@ void test_threads_cancel_undelayed(void)
 
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 				      thread_entry, NULL, NULL, NULL,
-				      spawn_prio, 0, 0);
+				      spawn_prio, K_USER, 0);
 
 	/**TESTPOINT: check cancel retcode when thread is not delayed*/
 	int cancel_ret = k_thread_cancel(tid);
@@ -62,7 +62,7 @@ void test_threads_cancel_started(void)
 
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 				      thread_entry, NULL, NULL, NULL,
-				      spawn_prio, 0, 0);
+				      spawn_prio, K_USER, 0);
 
 	k_sleep(50);
 	/**TESTPOINT: check cancel retcode when thread is started*/
@@ -81,7 +81,7 @@ void test_threads_cancel_delayed(void)
 
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 				      thread_entry, NULL, NULL, NULL,
-				      spawn_prio, 0, 100);
+				      spawn_prio, K_USER, 100);
 
 	k_sleep(50);
 	/**TESTPOINT: check cancel retcode when thread is started*/
@@ -94,13 +94,11 @@ void test_threads_cancel_delayed(void)
 void test_threads_abort_self(void)
 {
 	execute_flag = 0;
-	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
-				      thread_entry_abort, NULL, NULL, NULL,
-				      0, 0, 0);
+	k_thread_create(&tdata, tstack, STACK_SIZE, thread_entry_abort,
+			NULL, NULL, NULL, 0, K_USER, 0);
 	k_sleep(100);
 	/**TESTPOINT: spawned thread executed but abort itself*/
 	zassert_true(execute_flag == 1, NULL);
-	k_thread_abort(tid);
 }
 
 void test_threads_abort_others(void)
@@ -108,7 +106,7 @@ void test_threads_abort_others(void)
 	execute_flag = 0;
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 				      thread_entry, NULL, NULL, NULL,
-				      0, 0, 0);
+				      0, K_USER, 0);
 
 	k_thread_abort(tid);
 	k_sleep(100);
@@ -117,7 +115,7 @@ void test_threads_abort_others(void)
 
 	tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 			      thread_entry, NULL, NULL, NULL,
-			      0, 0, 0);
+			      0, K_USER, 0);
 	k_sleep(50);
 	k_thread_abort(tid);
 	/**TESTPOINT: check running thread is aborted*/

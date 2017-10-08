@@ -13,8 +13,8 @@
 #include <ztest.h>
 
 #define STACK_SIZE (256 + CONFIG_TEST_EXTRA_STACKSIZE)
-static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
-static struct k_thread tdata;
+K_THREAD_STACK_EXTERN(tstack);
+extern struct k_thread tdata;
 static int last_prio;
 
 static void thread_entry(void *p1, void *p2, void *p3)
