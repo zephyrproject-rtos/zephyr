@@ -21,11 +21,11 @@
 #define STACK_LEN 2
 
 static u32_t data[STACK_LEN];
+extern struct k_stack stack;
 
 /*test cases*/
 void test_stack_pop_fail(void *p1, void *p2, void *p3)
 {
-	struct k_stack stack;
 	u32_t rx_data;
 
 	k_stack_init(&stack, data, STACK_LEN);
