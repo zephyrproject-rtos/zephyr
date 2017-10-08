@@ -15,8 +15,9 @@
 
 #include "test_msgq.h"
 
-static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
-static struct k_thread tdata;
+K_THREAD_STACK_EXTERN(tstack);
+extern struct k_thread tdata;
+extern struct k_msgq msgq;
 static char __aligned(4) tbuffer[MSG_SIZE * MSGQ_LEN];
 static u32_t data[MSGQ_LEN] = { MSG0, MSG1 };
 
@@ -30,7 +31,6 @@ static void tThread_entry(void *p1, void *p2, void *p3)
 /*test cases*/
 void test_msgq_purge_when_put(void)
 {
-	struct k_msgq msgq;
 	int ret;
 
 	k_msgq_init(&msgq, tbuffer, MSG_SIZE, MSGQ_LEN);
@@ -41,14 +41,12 @@ void test_msgq_purge_when_put(void)
 		zassert_equal(ret, 0, NULL);
 	}
 	/*create another thread waiting to put msg*/
-	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
-				      tThread_entry, &msgq, NULL, NULL,
-				      K_PRIO_PREEMPT(0), 0, 0);
+	k_thread_create(&tdata, tstack, STACK_SIZE,
+			tThread_entry, &msgq, NULL, NULL,
+			K_PRIO_PREEMPT(0), K_USER | K_INHERIT_PERMS, 0);
 	k_sleep(TIMEOUT >> 1);
 	/**TESTPOINT: msgq purge while another thread waiting to put msg*/
 	k_msgq_purge(&msgq);
-	k_sleep(TIMEOUT >> 1);
-	k_thread_abort(tid);
 
 	/*verify msg put after purge*/
 	for (int i = 0; i < MSGQ_LEN; i++) {
