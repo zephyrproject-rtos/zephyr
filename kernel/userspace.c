@@ -113,7 +113,6 @@ static void set_thread_perms(struct _k_object *ko, struct k_thread *thread)
 	}
 }
 
-
 static int test_thread_perms(struct _k_object *ko)
 {
 	if (_current->base.perm_index < 8 * CONFIG_MAX_THREAD_BYTES) {
@@ -202,8 +201,13 @@ int _k_object_validate(void *obj, enum k_objects otype, int init)
 	 */
 	if (ko->flags & K_OBJ_FLAG_INITIALIZED && _is_thread_user() &&
 	    !test_thread_perms(ko)) {
-		printk("thread %p does not have permission on %s %p\n",
-		       _current, otype_to_str(otype), obj);
+		printk("thread %p (%d) does not have permission on %s %p [",
+		       _current, _current->base.perm_index, otype_to_str(otype),
+		       obj);
+		for (int i = CONFIG_MAX_THREAD_BYTES - 1; i >= 0; i--) {
+			printk("%02x", ko->perms[i]);
+		}
+		printk("]\n");
 		return -EPERM;
 	}
 
