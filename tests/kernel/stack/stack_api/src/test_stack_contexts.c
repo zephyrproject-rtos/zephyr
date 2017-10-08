@@ -24,12 +24,12 @@
 
 /**TESTPOINT: init via K_STACK_DEFINE*/
 K_STACK_DEFINE(kstack, STACK_LEN);
-static struct k_stack stack;
+__kernel struct k_stack stack;
 
-static K_THREAD_STACK_DEFINE(threadstack, STACK_SIZE);
-static struct k_thread thread_data;
+K_THREAD_STACK_DEFINE(threadstack, STACK_SIZE);
+__kernel struct k_thread thread_data;
 static u32_t data[STACK_LEN] = { 0xABCD, 0x1234 };
-static struct k_sem end_sema;
+__kernel struct k_sem end_sema;
 
 static void tstack_push(struct k_stack *pstack)
 {
@@ -75,7 +75,8 @@ static void tstack_thread_thread(struct k_stack *pstack)
 	/**TESTPOINT: thread-thread data passing via stack*/
 	k_tid_t tid = k_thread_create(&thread_data, threadstack, STACK_SIZE,
 				      tThread_entry, pstack, NULL, NULL,
-				      K_PRIO_PREEMPT(0), 0, 0);
+				      K_PRIO_PREEMPT(0), K_USER |
+				      K_INHERIT_PERMS, 0);
 	tstack_push(pstack);
 	k_sem_take(&end_sema, K_FOREVER);
 
