@@ -1334,7 +1334,7 @@ static inline void *_impl_k_timer_user_data_get(struct k_timer *timer)
  *
  * @return Current uptime.
  */
-extern s64_t k_uptime_get(void);
+__syscall s64_t k_uptime_get(void);
 
 #ifdef CONFIG_TICKLESS_KERNEL
 /**
