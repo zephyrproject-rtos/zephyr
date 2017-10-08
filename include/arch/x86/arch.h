@@ -576,7 +576,8 @@ static inline u32_t _arch_syscall_invoke6(u32_t arg1, u32_t arg2, u32_t arg3,
 #endif
 			 : "S" (call_id), "a" (arg1), "d" (arg2),
 			   "c" (arg3), "b" (arg4), "D" (arg5),
-			   [arg6] "m" (arg6));
+			   [arg6] "m" (arg6)
+			 : "memory");
 	return ret;
 }
 
@@ -591,7 +592,8 @@ static inline u32_t _arch_syscall_invoke5(u32_t arg1, u32_t arg2, u32_t arg3,
 			   , "=d" (arg2), "=c" (arg3)
 #endif
 			 : "S" (call_id), "a" (arg1), "d" (arg2),
-			   "c" (arg3), "b" (arg4), "D" (arg5));
+			   "c" (arg3), "b" (arg4), "D" (arg5)
+			 : "memory");
 	return ret;
 }
 
@@ -606,7 +608,8 @@ static inline u32_t _arch_syscall_invoke4(u32_t arg1, u32_t arg2, u32_t arg3,
 			   , "=d" (arg2), "=c" (arg3)
 #endif
 			 : "S" (call_id), "a" (arg1), "d" (arg2), "c" (arg3),
-			   "b" (arg4));
+			   "b" (arg4)
+			 : "memory");
 	return ret;
 }
 
@@ -620,7 +623,8 @@ static inline u32_t _arch_syscall_invoke3(u32_t arg1, u32_t arg2, u32_t arg3,
 #ifdef CONFIG_X86_IAMCU
 			   , "=d" (arg2), "=c" (arg3)
 #endif
-			 : "S" (call_id), "a" (arg1), "d" (arg2), "c" (arg3));
+			 : "S" (call_id), "a" (arg1), "d" (arg2), "c" (arg3)
+			 : "memory");
 	return ret;
 }
 
@@ -634,8 +638,9 @@ static inline u32_t _arch_syscall_invoke2(u32_t arg1, u32_t arg2, u32_t call_id)
 			   , "=d" (arg2)
 #endif
 			 : "S" (call_id), "a" (arg1), "d" (arg2)
+			 : "memory"
 #ifdef CONFIG_X86_IAMCU
-			 : "ecx"
+			 , "ecx"
 #endif
 			 );
 	return ret;
@@ -648,8 +653,9 @@ static inline u32_t _arch_syscall_invoke1(u32_t arg1, u32_t call_id)
 	__asm__ volatile("int $0x80"
 			 : "=a" (ret)
 			 : "S" (call_id), "a" (arg1)
+			 : "memory"
 #ifdef CONFIG_X86_IAMCU
-			 : "edx", "ecx"
+			 , "edx", "ecx"
 #endif
 			 );
 	return ret;
@@ -662,8 +668,9 @@ static inline u32_t _arch_syscall_invoke0(u32_t call_id)
 	__asm__ volatile("int $0x80"
 			 : "=a" (ret)
 			 : "S" (call_id)
+			 : "memory"
 #ifdef CONFIG_X86_IAMCU
-			 : "edx", "ecx"
+			 , "edx", "ecx"
 #endif
 			 );
 	return ret;
