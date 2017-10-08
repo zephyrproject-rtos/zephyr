@@ -285,11 +285,17 @@ void _impl_k_thread_priority_set(k_tid_t tid, int prio)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER2(k_thread_priority_set, thread, prio)
+_SYSCALL_HANDLER2(k_thread_priority_set, thread_p, prio)
 {
+	struct k_thread *thread = (struct k_thread *)thread_p;
+
 	_SYSCALL_OBJ(thread, K_OBJ_THREAD);
 	_SYSCALL_VERIFY_MSG(_VALID_PRIO(prio, NULL),
 			    "invalid thread priority %d", (int)prio);
+	_SYSCALL_VERIFY_MSG(prio >= thread->base.prio,
+			    "thread priority may only be downgraded (%d < %d)",
+			    prio, thread->base.prio);
+
 	_impl_k_thread_priority_set((k_tid_t)thread, prio);
 	return 0;
 }
