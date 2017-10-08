@@ -116,7 +116,7 @@ s64_t _tick_get(void)
 }
 FUNC_ALIAS(_tick_get, sys_tick_get, s64_t);
 
-s64_t k_uptime_get(void)
+s64_t _impl_k_uptime_get(void)
 {
 #ifdef CONFIG_TICKLESS_KERNEL
 	__ASSERT(_sys_clock_always_on,
@@ -124,6 +124,17 @@ s64_t k_uptime_get(void)
 #endif
 	return __ticks_to_ms(_tick_get());
 }
+
+#ifdef CONFIG_USERSPACE
+_SYSCALL_HANDLER1(k_uptime_get, ret_p)
+{
+	u64_t *ret = (u64_t *)ret_p;
+
+	_SYSCALL_MEMORY_WRITE(ret, sizeof(*ret));
+	*ret = _impl_k_uptime_get();
+	return 0;
+}
+#endif
 
 /**
  *
