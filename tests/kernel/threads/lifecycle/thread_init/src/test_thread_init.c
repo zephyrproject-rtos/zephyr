@@ -29,14 +29,14 @@
 #define INIT_COOP_P1 ((void *)0xFFFF0000)
 #define INIT_COOP_P2 ((void *)0xCDEF)
 #define INIT_COOP_P3 ((void *)0x1234)
-#define INIT_COOP_OPTION 0
+#define INIT_COOP_OPTION (K_USER | K_INHERIT_PERMS)
 #define INIT_COOP_DELAY 2000
 #define INIT_PREEMPT_PRIO 1
 #define INIT_PREEMPT_STACK_SIZE 499
 #define INIT_PREEMPT_P1 ((void *)5)
 #define INIT_PREEMPT_P2 ((void *)6)
 #define INIT_PREEMPT_P3 ((void *)7)
-#define INIT_PREEMPT_OPTION 0
+#define INIT_PREEMPT_OPTION (K_USER | K_INHERIT_PERMS)
 #define INIT_PREEMPT_DELAY K_NO_WAIT
 
 static void thread_entry(void *p1, void *p2, void *p3);
@@ -53,11 +53,14 @@ K_SEM_DEFINE(start_sema, 0, 1);
 
 K_SEM_DEFINE(end_sema, 0, 1);
 
+K_THREAD_ACCESS_GRANT(T_KDEFINE_COOP_THREAD, &start_sema, &end_sema);
+K_THREAD_ACCESS_GRANT(T_KDEFINE_PREEMPT_THREAD, &start_sema, &end_sema);
+
 /*local variables*/
 static K_THREAD_STACK_DEFINE(stack_coop, INIT_COOP_STACK_SIZE);
 static K_THREAD_STACK_DEFINE(stack_preempt, INIT_PREEMPT_STACK_SIZE);
-static struct k_thread thread_coop;
-static struct k_thread thread_preempt;
+__kernel static struct k_thread thread_coop;
+__kernel static struct k_thread thread_preempt;
 static u64_t t_create;
 static struct thread_data {
 	int init_prio;
@@ -193,4 +196,18 @@ void test_kinit_coop_thread(void)
 	k_sem_give(&start_sema);
 	/*wait for thread to exit*/
 	k_sem_take(&end_sema, K_FOREVER);
+}
+
+/*test case main entry*/
+void test_main(void)
+{
+	k_thread_access_grant(k_current_get(), &thread_preempt, &stack_preempt,
+			      &start_sema, &end_sema, NULL);
+
+	ztest_test_suite(test_thread_init,
+			 ztest_user_unit_test(test_kdefine_preempt_thread),
+			 ztest_user_unit_test(test_kdefine_coop_thread),
+			 ztest_user_unit_test(test_kinit_preempt_thread),
+			 ztest_unit_test(test_kinit_coop_thread));
+	ztest_run_test_suite(test_thread_init);
 }
