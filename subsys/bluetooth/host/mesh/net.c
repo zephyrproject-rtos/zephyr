@@ -68,6 +68,7 @@ static u16_t msg_cache_next;
 
 /* Singleton network context (the implementation only supports one) */
 struct bt_mesh_net bt_mesh = {
+	.local_queue = _K_FIFO_INITIALIZER(bt_mesh.local_queue),
 	.sub = {
 		[0 ... (CONFIG_BT_MESH_SUBNET_COUNT - 1)] = {
 			.net_idx = BT_MESH_KEY_UNUSED,
