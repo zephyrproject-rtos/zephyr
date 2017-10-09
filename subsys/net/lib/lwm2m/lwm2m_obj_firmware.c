@@ -332,7 +332,7 @@ static int lwm2m_firmware_init(struct device *dev)
 #ifdef CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
 	delivery_method = DELIVERY_METHOD_BOTH;
 #else
-	delivery_method = DELIVERY_METHOD_PUSH;
+	delivery_method = DELIVERY_METHOD_PUSH_ONLY;
 #endif
 
 	firmware.obj_id = LWM2M_OBJECT_FIRMWARE_ID;
