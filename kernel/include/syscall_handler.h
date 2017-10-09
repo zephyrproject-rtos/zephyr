@@ -43,19 +43,36 @@ int _k_object_validate(void *obj, enum k_objects otype, int init);
  * @brief Runtime expression check for system call arguments
  *
  * Used in handler functions to perform various runtime checks on arguments,
- * and generate a kernel oops if anything is not expected
+ * and generate a kernel oops if anything is not expected, printing a custom
+ * message.
  *
  * @param expr Boolean expression to verify, a false result will trigger an
  *             oops
  * @param ssf Syscall stack frame argument passed to the handler function
+ * @param fmt Printf-style format string (followed by appropriate variadic
+ *            arguments) to print on verification failure
  */
-#define _SYSCALL_VERIFY(expr, ssf) \
+#define _SYSCALL_VERIFY_MSG(expr, ssf, fmt, ...) \
 	do { \
 		if (!(expr)) { \
-			printk("FATAL: syscall failed check: " #expr "\n"); \
+			printk("FATAL: syscall %s failed check: " fmt "\n", \
+			       __func__, ##__VA_ARGS__); \
 			_arch_syscall_oops(ssf); \
 		} \
 	} while (0)
+
+/**
+ * @brief Runtime expression check for system call arguments
+ *
+ * Used in handler functions to perform various runtime checks on arguments,
+ * and generate a kernel oops if anything is not expected.
+ *
+ * @param expr Boolean expression to verify, a false result will trigger an
+ *             oops. A stringified version of this expression will be printed.
+ * @param ssf Syscall stack frame argument passed to the handler function
+ *            arguments) to print on verification failure
+ */
+#define _SYSCALL_VERIFY(expr, ssf) _SYSCALL_VERIFY_MSG(expr, ssf, #expr)
 
 /**
  * @brief Runtime check that a user thread has proper access to a memory area
@@ -73,7 +90,9 @@ int _k_object_validate(void *obj, enum k_objects otype, int init);
  * @param ssf Syscall stack frame argument passed to the handler function
  */
 #define _SYSCALL_MEMORY(ptr, size, write, ssf) \
-	_SYSCALL_VERIFY(!_arch_buffer_validate((void *)ptr, size, write), ssf)
+	_SYSCALL_VERIFY_MSG(!_arch_buffer_validate((void *)ptr, size, write), \
+			    ssf, "Memory region %p (size %u) has incorrect permissions", \
+			    (void *)(ptr), (u32_t)(size))
 
 /**
  * @brief Runtime check that a pointer is a kernel object of expected type
@@ -87,7 +106,8 @@ int _k_object_validate(void *obj, enum k_objects otype, int init);
  * @param ssf Syscall stack frame argument passed to the handler function
  */
 #define _SYSCALL_IS_OBJ(ptr, type, init, ssf) \
-	_SYSCALL_VERIFY(!_k_object_validate((void *)ptr, type, init), ssf)
+	_SYSCALL_VERIFY_MSG(!_k_object_validate((void *)ptr, type, init), ssf, \
+			    "object %p access denied", (void *)(ptr))
 
 /* Convenience macros for handler implementations */
 #define _SYSCALL_ARG0	ARG_UNUSED(arg1); ARG_UNUSED(arg2); ARG_UNUSED(arg3); \
