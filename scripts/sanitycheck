@@ -1121,7 +1121,7 @@ class Architecture:
 class TestCase:
     """Class representing a test application
     """
-    def __init__(self, testcase_root, workdir, name, tc_dict, inifile):
+    def __init__(self, testcase_root, workdir, name, tc_dict, yamlfile):
         """TestCase constructor.
 
         This gets called by TestSuite as it finds and reads test yaml  files.
@@ -1168,7 +1168,7 @@ class TestCase:
         self.path = os.path.normpath(os.path.join(os.path.abspath(testcase_root).replace(ZEPHYR_BASE + "/",''), workdir, name))
         self.name = os.path.join(self.path)
         self.defconfig = {}
-        self.inifile = inifile
+        self.yamlfile = yamlfile
 
     def __repr__(self):
         return self.name
@@ -1276,6 +1276,7 @@ class TestSuite:
                     tc_dict = cp.get_section(name, testcase_valid_keys)
                     tc = TestCase(testcase_root, workdir, name, tc_dict,
                                   yaml_path)
+
                     self.testcases[tc.name] = tc
 
         debug("Reading platform configuration files under %s..." % board_root)
@@ -1560,7 +1561,7 @@ class TestSuite:
                         try:
                             res = expr_parser.parse(tc.tc_filter, defconfig)
                         except (ValueError, SyntaxError) as se:
-                            sys.stderr.write("Failed processing %s\n" % tc.inifile)
+                            sys.stderr.write("Failed processing %s\n" % tc.yamlfile)
                             raise se
                         if not res:
                             discards[instance] = ("defconfig doesn't satisfy expression '%s'" %
