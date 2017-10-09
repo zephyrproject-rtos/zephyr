@@ -18,6 +18,28 @@
 extern const _k_syscall_handler_t _k_syscall_table[K_SYSCALL_LIMIT];
 
 /**
+ * Ensure a system object is a valid object of the expected type
+ *
+ * Searches for the object and ensures that it is indeed an object
+ * of the expected type, that the caller has the right permissions on it,
+ * and that the object has been initialized.
+ *
+ * This function is intended to be called on the kernel-side system
+ * call handlers to validate kernel object pointers passed in from
+ * userspace.
+ *
+ * @param obj Address of the kernel object
+ * @param otype Expected type of the kernel object
+ * @param init If true, this is for an init function and we will not error
+ *	   out if the object is not initialized
+ * @return 0 If the object is valid
+ *         -EBADF if not a valid object of the specified type
+ *         -EPERM If the caller does not have permissions
+ *         -EINVAL Object is not initialized
+ */
+int _k_object_validate(void *obj, enum k_objects otype, int init);
+
+/**
  * @brief Runtime expression check for system call arguments
  *
  * Used in handler functions to perform various runtime checks on arguments,
