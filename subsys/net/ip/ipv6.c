@@ -1037,11 +1037,6 @@ ignore_frag_error:
 		}
 	}
 
-	if (net_rpl_update_header(pkt, nexthop) < 0) {
-		net_pkt_unref(pkt);
-		return NULL;
-	}
-
 	if (!iface) {
 		/* This means that the dst was not onlink, so try to
 		 * figure out the interface using nexthop instead.
@@ -1058,6 +1053,11 @@ ignore_frag_error:
 	}
 
 try_send:
+	if (net_rpl_update_header(pkt, nexthop) < 0) {
+		net_pkt_unref(pkt);
+		return NULL;
+	}
+
 	nbr = nbr_lookup(&net_neighbor.table, iface, nexthop);
 
 	NET_DBG("Neighbor lookup %p (%d) iface %p addr %s state %s", nbr,
