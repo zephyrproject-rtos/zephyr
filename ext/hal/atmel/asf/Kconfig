@@ -8,3 +8,6 @@ config ASF
 	bool
 	select HAS_CMSIS
 	depends on SOC_FAMILY_SAM || SOC_FAMILY_SAM0
+
+config ATMEL_WINC1500
+	bool
