@@ -49,9 +49,6 @@
 #define _MACACKWAITDURATION		(864 / 16) /* 864us * 62500Hz */
 #endif
 
-/* AUTOACK should be enabled by default, disable it only for testing */
-#define MCR20A_AUTOACK_ENABLED		(true)
-
 #define MCR20A_FCS_LENGTH		(2)
 #define MCR20A_PSDU_LENGTH		(125)
 #define MCR20A_GET_SEQ_STATE_RETRIES	(3)
@@ -865,6 +862,7 @@ static enum ieee802154_hw_caps mcr20a_get_capabilities(struct device *dev)
 {
 	return IEEE802154_HW_FCS |
 		IEEE802154_HW_2_4_GHZ |
+		IEEE802154_HW_TX_RX_ACK |
 		IEEE802154_HW_FILTER;
 }
 
@@ -1114,8 +1112,8 @@ static int mcr20a_tx(struct device *dev,
 		     struct net_buf *frag)
 {
 	struct mcr20a_context *mcr20a = dev->driver_data;
-	u8_t seq = MCR20A_AUTOACK_ENABLED ? MCR20A_XCVSEQ_TX_RX :
-					       MCR20A_XCVSEQ_TX;
+	u8_t seq = ieee802154_is_ar_flag_set(pkt) ? MCR20A_XCVSEQ_TX_RX :
+						    MCR20A_XCVSEQ_TX;
 	int retval;
 
 	k_mutex_lock(&mcr20a->phy_mutex, K_FOREVER);
@@ -1348,11 +1346,9 @@ static int power_on_and_setup(struct device *dev)
 	write_reg_rx_wtr_mark(&mcr20a->spi, 8);
 
 	/* Configure PHY behaviour */
-	tmp = MCR20A_PHY_CTRL1_CCABFRTX;
-	if (MCR20A_AUTOACK_ENABLED) {
-		tmp |= MCR20A_PHY_CTRL1_AUTOACK |
-		       MCR20A_PHY_CTRL1_RXACKRQD;
-	}
+	tmp = MCR20A_PHY_CTRL1_CCABFRTX |
+	      MCR20A_PHY_CTRL1_AUTOACK |
+	      MCR20A_PHY_CTRL1_RXACKRQD;
 	write_reg_phy_ctrl1(&mcr20a->spi, tmp);
 
 	/* Enable Sequence-end interrupt */
