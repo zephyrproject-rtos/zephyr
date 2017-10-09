@@ -44,6 +44,7 @@ foreach(kconfig_target ${kconfig_target_list})
     KCONFIG_CONFIG=${DOTCONFIG}
     ${COMMAND_FOR_${kconfig_target}}
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig
+    USES_TERMINAL
     )
 endforeach()
 
