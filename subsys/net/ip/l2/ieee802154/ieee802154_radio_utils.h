@@ -14,7 +14,7 @@ typedef int (ieee802154_radio_tx_frag_t)(struct net_if *iface,
 static inline bool prepare_for_ack(struct ieee802154_context *ctx,
 				   struct net_pkt *pkt)
 {
-	if (ieee802154_ack_required(pkt)) {
+	if (ieee802154_is_ar_flag_set(pkt)) {
 		ctx->ack_received = false;
 		k_sem_init(&ctx->ack_lock, 0, UINT_MAX);
 
