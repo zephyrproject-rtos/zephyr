@@ -130,6 +130,14 @@ void _thread_perms_set(struct _k_object *ko, struct k_thread *thread)
 	}
 }
 
+void _thread_perms_clear(struct _k_object *ko, struct k_thread *thread)
+{
+	if (thread->base.perm_index < 8 * CONFIG_MAX_THREAD_BYTES) {
+		sys_bitfield_clear_bit((mem_addr_t)&ko->perms,
+				       thread->base.perm_index);
+	}
+}
+
 static int thread_perms_test(struct _k_object *ko)
 {
 	if (_current->base.perm_index < 8 * CONFIG_MAX_THREAD_BYTES) {
@@ -177,6 +185,15 @@ void _impl_k_object_access_grant(void *object, struct k_thread *thread)
 
 	if (ko) {
 		_thread_perms_set(ko, thread);
+	}
+}
+
+void _impl_k_object_access_revoke(void *object, struct k_thread *thread)
+{
+	struct _k_object *ko = _k_object_find(object);
+
+	if (ko) {
+		_thread_perms_clear(ko, thread);
 	}
 }
 
