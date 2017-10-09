@@ -8,6 +8,7 @@
 #include <tc_util.h>
 #include <kernel_structs.h>
 #include <irq_offload.h>
+#include <syscall_handler.h>
 
 #define SEM_ARRAY_SIZE	16
 
