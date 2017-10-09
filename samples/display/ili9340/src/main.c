@@ -1,11 +1,11 @@
 /*
- * Copyright (c) 2017 dXplore
+ * Copyright (c) 2017 Jan Van Winkel <jan.van_winkel@dxplore.eu>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <device.h>
-#include <drivers/display/ili9340.h>
+#include <display.h>
 #include <stdio.h>
 #include <string.h>
 #include <zephyr.h>
@@ -13,9 +13,6 @@
 #define LOG_LEVEL LOG_LEVEL_DEBUG
 #include <logging/log.h>
 LOG_MODULE_REGISTER(main);
-
-#define SCREEN_WIDTH 320
-#define SCREEN_HEIGHT 240
 
 /* This example will update each 500ms one of the LCD corners
  * wit a rectangular bitmap.
@@ -26,6 +23,9 @@ void main(void)
 {
 	struct device *dev;
 
+	struct display_capabilities capabilities;
+	struct display_buffer_descriptor buf_desc;
+
 	/* size of the rectangle */
 	const size_t w = 40;
 	const size_t h = 20;
@@ -33,14 +33,7 @@ void main(void)
 	u8_t *buf;
 
 	/* xy coordinates where to place rectangles*/
-	const size_t x0 = 0;
-	const size_t y0 = 0;
-	const size_t x1 = SCREEN_WIDTH - w;
-	const size_t y1 = 0;
-	const size_t x2 = SCREEN_WIDTH - w;
-	const size_t y2 = SCREEN_HEIGHT - h;
-	const size_t x3 = 0;
-	const size_t y3 = SCREEN_HEIGHT - h;
+	size_t x0, y0, x1, y1, x2, y2, x3, y3;
 
 	size_t color = 0;
 	size_t cnt = 0;
@@ -53,6 +46,18 @@ void main(void)
 		return;
 	}
 
+	display_get_capabilities(dev, &capabilities);
+
+	x0 = 0;
+	y0 = 0;
+	x1 = capabilities.x_resolution - w;
+	y1 = 0;
+	x2 = capabilities.x_resolution - w;
+	y2 = capabilities.y_resolution - h;
+	x3 = 0;
+	y3 = capabilities.y_resolution - h;
+
+
 	/* Allocate rectangular buffer for corner data */
 	buf = k_malloc(buf_size);
 
@@ -64,13 +69,22 @@ void main(void)
 	/* Clear ili9340 frame buffer before enabling LCD, reuse corner buffer
 	 */
 	(void)memset(buf, 0, buf_size);
-	h_step = (w * h) / SCREEN_WIDTH;
+	h_step = (w * h) / capabilities.x_resolution;
 
-	for (int idx = 0; idx < SCREEN_HEIGHT; idx += h_step) {
-		ili9340_write_bitmap(dev, 0, idx, SCREEN_WIDTH, h_step, buf);
+	buf_desc.buf_size = buf_size;
+	buf_desc.pitch = capabilities.x_resolution;
+	buf_desc.width = capabilities.x_resolution;
+	buf_desc.height = h_step;
+
+	for (int idx = 0; idx < capabilities.y_resolution; idx += h_step) {
+		display_write(dev, 0, idx, &buf_desc,  buf);
 	}
 
-	ili9340_display_on(dev);
+	display_blanking_off(dev);
+
+	buf_desc.pitch = w;
+	buf_desc.width = w;
+	buf_desc.height = h;
 
 	while (1) {
 		/* Update the color of the rectangle buffer and write the buffer
@@ -82,16 +96,16 @@ void main(void)
 		}
 		switch (cnt % 4) {
 		case 0:
-			ili9340_write_bitmap(dev, x0, y0, w, h, buf);
+			display_write(dev, x0, y0, &buf_desc, buf);
 			break;
 		case 1:
-			ili9340_write_bitmap(dev, x1, y1, w, h, buf);
+			display_write(dev, x1, y1, &buf_desc, buf);
 			break;
 		case 2:
-			ili9340_write_bitmap(dev, x2, y2, w, h, buf);
+			display_write(dev, x2, y2, &buf_desc, buf);
 			break;
 		case 3:
-			ili9340_write_bitmap(dev, x3, y3, w, h, buf);
+			display_write(dev, x3, y3, &buf_desc, buf);
 			break;
 		}
 		++cnt;
