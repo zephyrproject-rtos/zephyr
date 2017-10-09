@@ -243,6 +243,61 @@
 
 #endif	/* CONFIG_X86_PAE_MODE */
 
+#ifdef CONFIG_X86_USERSPACE
+
+/* Flags which are only available for PAE mode page tables  */
+#ifdef CONFIG_X86_PAE_MODE
+
+/* memory partition arch/soc independent attribute */
+#define K_MEM_PARTITION_P_RW_U_RW   (MMU_ENTRY_WRITE | \
+				     MMU_ENTRY_USER  | \
+				     MMU_ENTRY_EXECUTE_DISABLE)
+
+#define K_MEM_PARTITION_P_RW_U_NA   (MMU_ENTRY_WRITE | \
+				     MMU_ENTRY_SUPERVISOR | \
+				     MMU_ENTRY_EXECUTE_DISABLE)
+
+#define K_MEM_PARTITION_P_RO_U_RO   (MMU_ENTRY_READ | \
+				     MMU_ENTRY_USER | \
+				     MMU_ENTRY_EXECUTE_DISABLE)
+
+#define K_MEM_PARTITION_P_RO_U_NA   (MMU_ENTRY_READ  | \
+				     MMU_ENTRY_SUPERVISOR | \
+				     MMU_ENTRY_EXECUTE_DISABLE)
+
+/* Execution-allowed attributes */
+#define K_MEM_PARTITION_P_RWX_U_RWX (MMU_ENTRY_WRITE | MMU_ENTRY_USER)
+
+#define K_MEM_PARTITION_P_RWX_U_NA  (MMU_ENTRY_WRITE | MMU_ENTRY_SUPERVISOR)
+
+#define K_MEM_PARTITION_P_RX_U_RX   (MMU_ENTRY_READ | MMU_ENTRY_USER)
+
+#define K_MEM_PARTITION_P_RX_U_NA   (MMU_ENTRY_READ | MMU_ENTRY_SUPERVISOR)
+
+
+ /* memory partition access permission mask */
+#define K_MEM_PARTITION_PERM_MASK   (MMU_PTE_RW_MASK |\
+				     MMU_PTE_US_MASK |\
+				     MMU_PTE_XD_MASK)
+
+
+#else  /* 32-bit paging mode enabled */
+
+/* memory partition arch/soc independent attribute */
+#define K_MEM_PARTITION_P_RW_U_RW   (MMU_ENTRY_WRITE | MMU_ENTRY_USER)
+
+#define K_MEM_PARTITION_P_RW_U_NA   (MMU_ENTRY_WRITE | MMU_ENTRY_SUPERVISOR)
+
+#define K_MEM_PARTITION_P_RO_U_RO   (MMU_ENTRY_READ | MMU_ENTRY_USER)
+
+#define K_MEM_PARTITION_P_RO_U_NA   (MMU_ENTRY_READ  | MMU_ENTRY_SUPERVISOR)
+
+/* memory partition access permission mask */
+#define K_MEM_PARTITION_PERM_MASK   (MMU_PTE_RW_MASK | MMU_PTE_US_MASK)
+
+#endif	/* CONFIG_X86_PAE_MODE */
+
+#endif	 /* CONFIG_X86_USERSPACE */
 
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
@@ -684,6 +739,8 @@ typedef u64_t x86_page_entry_data_t;
 #else
 typedef u32_t x86_page_entry_data_t;
 #endif
+
+typedef x86_page_entry_data_t k_mem_partition_attr_t;
 
 #ifdef CONFIG_X86_PAE_MODE
 struct x86_mmu_page_directory_pointer {
