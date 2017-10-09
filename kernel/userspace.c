@@ -194,13 +194,10 @@ int _k_object_validate(void *obj, enum k_objects otype, int init)
 		return -EBADF;
 	}
 
-	/* Uninitialized objects are not owned by anyone. However if an
-	 * object is initialized, and the caller is from userspace, then
-	 * we need to assert that the user thread has sufficient permissions
-	 * to re-initialize.
+	/* Manipulation of any kernel objects by a user thread requires that
+	 * thread be granted access first, even for uninitialized objects
 	 */
-	if (ko->flags & K_OBJ_FLAG_INITIALIZED && _is_thread_user() &&
-	    !test_thread_perms(ko)) {
+	if (_is_thread_user() && !test_thread_perms(ko)) {
 		printk("thread %p (%d) does not have permission on %s %p [",
 		       _current, _current->base.perm_index, otype_to_str(otype),
 		       obj);
