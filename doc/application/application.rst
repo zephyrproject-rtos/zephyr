@@ -45,11 +45,11 @@ The most notable files in the build directory are listed below.
 * The :file:`Makefile` (or :file:`build.ninja`) project file that can
   be invoked to build the application.
 
-* The :directory:`zephyr` directory is the working directory of the
+* The :file:`zephyr` directory is the working directory of the
   generated build system and where most generated files are located.
 
 After the underlying build tool has been invoked the build output will
-be written to the :directory:`zephyr` directory.
+be written to the :file:`zephyr` directory.
 
 * The :file:`.config` file that contains the configuration settings
   used to build the application.
@@ -108,7 +108,7 @@ An application is integrated into the build system with two lines of
 boilerplate code in it's :file:`CMakeLists.txt` file and by having the
 environment variable :makevar:`ZEPHYR_BASE` set.
 
-.. code-block:: make
+.. code-block:: cmake
 
    include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
    project(NONE)
@@ -158,7 +158,7 @@ being included in a library target, even application code.
 Library targets have source code, that is added through CMakeLists.txt
 build scripts like this:
 
-.. code-block:: make
+.. code-block:: cmake
 
    target_sources(app PRIVATE src/main.c)
 
@@ -173,7 +173,7 @@ source file src/main.c, behaviour that we surely do not want. The
 paths of a target library.
 
 Application CMakeLists.txt
-********************
+**************************
 
 Every application must have a CMakeLists.txt file. The application
 CMakeLists.txt file is the entry point, or toplevel of the build
@@ -186,7 +186,7 @@ contains both the application and the kernel libraries.
 #. Add the name of the board configuration for your application on a
    new line:
 
-   .. code-block:: make
+   .. code-block:: cmake
 
       set(BOARD qemu_x86)
 
@@ -195,14 +195,14 @@ contains both the application and the kernel libraries.
 #. Include the mandatory boilerplate that integrates the application
    with the Zephyr build system on a new line:
 
-   .. code-block:: make
+   .. code-block:: cmake
 
       include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
       project(NONE)
 
 #. Add any application source files to the 'app' target library:
 
-   .. code-block:: make
+   .. code-block:: cmake
 
       target_sources(app PRIVATE src/main.c)
 
@@ -210,7 +210,7 @@ contains both the application and the kernel libraries.
 
 Below is an example CMakeList.txt:
 
-.. code-block:: make
+.. code-block:: cmake
 
    set(BOARD qemu_x86)
 
