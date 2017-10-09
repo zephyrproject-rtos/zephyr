@@ -87,6 +87,7 @@ content locally:
 
    $ cd ~/zephyr
    $ source zephyr-env.sh
+   $ cd doc
    $ make htmldocs
 
 The html output will be in ``~/zephyr/doc/_build/html/index.html``
