@@ -130,7 +130,6 @@ static struct spi_config spi_conf = {
 	.frequency = CONFIG_BT_SPI_MAX_CLK_FREQ,
 	.operation = (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8) |
 		      SPI_LINES_SINGLE),
-	.vendor    = 0,
 	.slave     = 0,
 	.cs        = NULL,
 };
