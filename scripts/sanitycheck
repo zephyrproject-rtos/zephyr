@@ -1233,7 +1233,7 @@ class TestSuite:
         os.path.join(os.environ['ZEPHYR_BASE'],
                      "scripts", "sanity_chk", "sanitycheck-tc-schema.yaml"))
 
-    def __init__(self, board_root, testcase_roots, outdir, coverage):
+    def __init__(self, board_root_list, testcase_roots, outdir, coverage):
         # Keep track of which test cases we've filtered out and why
         discards = {}
         self.arches = {}
@@ -1244,8 +1244,6 @@ class TestSuite:
         self.goals = None
         self.discards = None
         self.coverage = coverage
-
-        board_root = os.path.abspath(board_root)
 
         for testcase_root in testcase_roots:
             testcase_root = os.path.abspath(testcase_root)
@@ -1279,17 +1277,20 @@ class TestSuite:
 
                     self.testcases[tc.name] = tc
 
-        debug("Reading platform configuration files under %s..." % board_root)
-        for dirpath, dirnames, filenames in os.walk(board_root):
-            for filename in filenames:
-                if filename.endswith(".yaml"):
-                    fn = os.path.join(dirpath, filename)
-                    verbose("Found plaform configuration " + fn)
-                    try:
-                        platform = Platform(fn)
-                        self.platforms.append(platform)
-                    except RuntimeError as e:
-                        error("E: %s: can't load: %s" % (fn, e))
+        for board_root in board_root_list:
+            board_root = os.path.abspath(board_root)
+
+            debug("Reading platform configuration files under %s..." % board_root)
+            for dirpath, dirnames, filenames in os.walk(board_root):
+                for filename in filenames:
+                    if filename.endswith(".yaml"):
+                        fn = os.path.join(dirpath, filename)
+                        verbose("Found plaform configuration " + fn)
+                        try:
+                            platform = Platform(fn)
+                            self.platforms.append(platform)
+                        except RuntimeError as e:
+                            error("E: %s: can't load: %s" % (fn, e))
 
         arches = []
         for p in self.platforms:
@@ -1528,7 +1529,7 @@ class TestSuite:
                         discards[instance] = "Not in testcase toolchain whitelist"
                         continue
 
-                    if toolchain and toolchain not in plat.supported_toolchains:
+                    if toolchain and toolchain not in plat.supported_toolchains and tc.type != 'unit':
                         discards[instance] = "Not supported by the toolchain"
                         continue
 
@@ -1898,8 +1899,9 @@ def parse_arguments():
                  "testcase.yaml files under here will be processed. May be "
                  "called multiple times. Defaults to the 'samples' and "
                  "'tests' directories in the Zephyr tree.")
-    parser.add_argument("-A", "--board-root",
-            default="%s/boards" % ZEPHYR_BASE,
+    board_root_list = ["%s/boards" % ZEPHYR_BASE , "%s/scripts/sanity_chk/boards" % ZEPHYR_BASE]
+    parser.add_argument("-A", "--board-root", action="append",
+            default=board_root_list,
             help="Directory to search for board configuration files. All .yaml "
                  "files in the directory will be processed.")
     parser.add_argument("-z", "--size", action="append",

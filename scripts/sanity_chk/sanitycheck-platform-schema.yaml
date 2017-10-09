@@ -17,7 +17,7 @@ mapping:
     type: str
   "type":
     type: str
-    enum: [ 'mcu', 'qemu', 'sim' ]
+    enum: [ 'mcu', 'qemu', 'sim', 'unit' ]
   "arch":
     type: str
   "toolchain":
