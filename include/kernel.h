@@ -178,28 +178,6 @@ struct _k_object {
 } __packed;
 
 #define K_OBJ_FLAG_INITIALIZED	BIT(0)
-/**
- * Ensure a system object is a valid object of the expected type
- *
- * Searches for the object and ensures that it is indeed an object
- * of the expected type, that the caller has the right permissions on it,
- * and that the object has been initialized.
- *
- * This function is intended to be called on the kernel-side system
- * call handlers to validate kernel object pointers passed in from
- * userspace.
- *
- * @param obj Address of the kernel object
- * @param otype Expected type of the kernel object
- * @param init If true, this is for an init function and we will not error
- *	   out if the object is not initialized
- * @return 0 If the object is valid
- *         -EBADF if not a valid object of the specified type
- *         -EPERM If the caller does not have permissions
- *         -EINVAL Object is not initialized
- */
-int _k_object_validate(void *obj, enum k_objects otype, int init);
-
 
 /**
  * Lookup a kernel object and init its metadata if it exists
@@ -212,15 +190,6 @@ int _k_object_validate(void *obj, enum k_objects otype, int init);
  */
 void _k_object_init(void *obj);
 #else
-static inline int _k_object_validate(void *obj, enum k_objects otype, int init)
-{
-	ARG_UNUSED(obj);
-	ARG_UNUSED(otype);
-	ARG_UNUSED(init);
-
-	return 0;
-}
-
 static inline void _k_object_init(void *obj)
 {
 	ARG_UNUSED(obj);
