@@ -121,6 +121,16 @@ extern enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface,
  */
 void ieee802154_init(struct net_if *iface);
 
+/**
+ * @brief Check if AR flag is set on the frame inside given net_pkt
+ *
+ * @param pkt A valid pointer on a net_pkt structure, must not be NULL.
+ *
+ * @return True if AR flag is set, False otherwise
+ */
+bool ieee802154_is_ar_flag_set(struct net_pkt *pkt);
+
+
 #ifdef __cplusplus
 }
 #endif
