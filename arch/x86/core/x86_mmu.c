@@ -113,6 +113,7 @@ static inline void tlb_flush_page(void *addr)
 	 * specified address
 	 */
 	char *page = (char *)addr;
+
 	__asm__ ("invlpg %0" :: "m" (*page));
 }
 
@@ -140,3 +141,107 @@ void _x86_mmu_set_flags(void *ptr, size_t size, u32_t flags, u32_t mask)
 		addr += MMU_PAGE_SIZE;
 	}
 }
+
+#ifdef CONFIG_X86_USERSPACE
+
+/* Helper macros needed to be passed to x86_update_mem_domain_pages */
+#define X86_MEM_DOMAIN_SET_PAGES   (0U)
+#define X86_MEM_DOMAIN_RESET_PAGES (1U)
+/* Pass 1 to page_conf if reset of mem domain pages is needed else pass a 0*/
+static inline void x86_update_mem_domain_pages(struct k_mem_domain *mem_domain,
+					       u32_t page_conf)
+{
+	u32_t partition_index;
+	u32_t total_partitions;
+	struct k_mem_partition partition;
+	u32_t partitions_count;
+
+	/* If mem_domain doesn't point to a valid location return.*/
+	if (mem_domain == NULL) {
+		goto out;
+	}
+
+	/* Get the total number of partitions*/
+	total_partitions = mem_domain->num_partitions;
+
+	/* Iterate over all the partitions for the given mem_domain
+	 * For x86: interate over all the partitions and set the
+	 * required flags in the correct MMU page tables.
+	 */
+	partitions_count = 0;
+	for (partition_index = 0;
+	     partitions_count < total_partitions;
+	     partition_index++) {
+
+		/* Get the partition info */
+		partition = mem_domain->partitions[partition_index];
+		if (partition.size == 0) {
+			continue;
+		}
+		partitions_count++;
+		if (page_conf == X86_MEM_DOMAIN_SET_PAGES) {
+			/* Set the partition attributes */
+			_x86_mmu_set_flags((void *)partition.start,
+					   partition.size,
+					   partition.attr,
+					   K_MEM_PARTITION_PERM_MASK);
+		} else {
+			/* Reset the pages to supervisor RW only */
+			_x86_mmu_set_flags((void *)partition.start,
+					   partition.size,
+					   K_MEM_PARTITION_P_RW_U_NA,
+					   K_MEM_PARTITION_PERM_MASK);
+		}
+	}
+ out:
+	return;
+}
+
+
+/* Load the required parttions of the new incoming thread */
+void _x86_load_mmu_mem_domain(struct k_thread *thread)
+{
+	x86_update_mem_domain_pages(thread->mem_domain_info.mem_domain,
+				    X86_MEM_DOMAIN_SET_PAGES);
+}
+
+/* Destroy or reset the mmu page tables when necessary.
+ * Needed when either swap takes place or k_mem_domain_destroy is called.
+ */
+void _arch_mem_domain_destroy(struct k_mem_domain *domain)
+{
+	x86_update_mem_domain_pages(domain, X86_MEM_DOMAIN_RESET_PAGES);
+}
+
+/* Reset/destroy one partition spcified in the argument of the API. */
+void _arch_mem_domain_remove_partition(struct k_mem_domain *domain,
+				       u32_t  partition_id)
+{
+	u32_t total_partitions;
+	struct k_mem_partition partition;
+
+	if (domain == NULL) {
+		goto out;
+	}
+
+	total_partitions = domain->num_partitions;
+	__ASSERT(partition_id <= total_partitions,
+		 "invalid partitions");
+
+	partition = domain->partitions[partition_id];
+
+	_x86_mmu_set_flags((void *)partition.start,
+			   partition.size,
+			   K_MEM_PARTITION_P_RW_U_NA,
+			   K_MEM_PARTITION_PERM_MASK);
+
+ out:
+	return;
+}
+
+u8_t _arch_mem_domain_max_partitions_get(void)
+{
+	return CONFIG_MAX_DOMAIN_PARTITIONS;
+}
+
+#endif	/* CONFIG_X86_USERSPACE*/
