@@ -131,6 +131,8 @@ struct k_mem_partition;
  * function in kernel/userspace.c
  */
 enum k_objects {
+	K_OBJ_ANY,
+
 	/* Core kernel objects */
 	K_OBJ_ALERT,
 	K_OBJ_MSGQ,

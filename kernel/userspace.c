@@ -12,18 +12,7 @@
 #include <sys_io.h>
 #include <ksched.h>
 #include <syscall.h>
-
-/**
- * Kernel object validation function
- *
- * Retrieve metadata for a kernel object. This function is implemented in
- * the gperf script footer, see gen_kobject_list.py
- *
- * @param obj Address of kernel object to get metadata
- * @return Kernel object's metadata, or NULL if the parameter wasn't the
- * memory address of a kernel object
- */
-extern struct _k_object *_k_object_find(void *obj);
+#include <syscall_handler.h>
 
 const char *otype_to_str(enum k_objects otype)
 {
@@ -103,9 +92,7 @@ const char *otype_to_str(enum k_objects otype)
 #endif
 }
 
-/* Stub functions, to be filled in forthcoming patch sets */
-
-static void set_thread_perms(struct _k_object *ko, struct k_thread *thread)
+void _thread_perms_set(struct _k_object *ko, struct k_thread *thread)
 {
 	if (thread->base.perm_index < 8 * CONFIG_MAX_THREAD_BYTES) {
 		sys_bitfield_set_bit((mem_addr_t)&ko->perms,
@@ -113,7 +100,7 @@ static void set_thread_perms(struct _k_object *ko, struct k_thread *thread)
 	}
 }
 
-static int test_thread_perms(struct _k_object *ko)
+static int thread_perms_test(struct _k_object *ko)
 {
 	if (_current->base.perm_index < 8 * CONFIG_MAX_THREAD_BYTES) {
 		return sys_bitfield_test_bit((mem_addr_t)&ko->perms,
@@ -122,89 +109,66 @@ static int test_thread_perms(struct _k_object *ko)
 	return 0;
 }
 
-/**
- * Kernek object permission modification check
- *
- * Check that the caller has sufficient perms to modify access permissions for
- * a particular kernel object. oops() if a user thread is trying to something
- * forbidden.
- *
- * @param object to be modified
- * @return NULL if the caller is a kernel thread and the object was not found
- */
-static struct _k_object *access_check(void *object)
+void _thread_perms_all_set(struct _k_object *ko)
 {
-	struct _k_object *ko = _k_object_find(object);
+	memset(ko->perms, 0xFF, CONFIG_MAX_THREAD_BYTES);
+}
 
-	if (!ko) {
-		if (_is_thread_user()) {
-			printk("granting access	to non-existent kernel object %p\n",
-			       object);
-			k_oops();
-		} else {
-			/* Supervisor threads may at times instantiate objects
-			 * that ignore rules on where they can live. Such
-			 * objects won't ever be usable from userspace, but
-			 * we shouldn't explode.
-			 */
-			return NULL;
-		}
+static void dump_permission_error(struct _k_object *ko)
+{
+	printk("thread %p (%d) does not have permission on %s %p [",
+	       _current, _current->base.perm_index,
+	       otype_to_str(ko->type), ko->name);
+	for (int i = CONFIG_MAX_THREAD_BYTES - 1; i >= 0; i--) {
+		printk("%02x", ko->perms[i]);
 	}
+	printk("]\n");
+}
 
-	/* userspace can't grant access to objects unless it already has
-	 * access to that object
-	 */
-	if (_is_thread_user() && !test_thread_perms(ko)) {
-		printk("insufficient permissions in current thread %p\n",
-		       _current);
-		printk("Cannot grant access to %s %p\n",
-		       otype_to_str(ko->type), object);
-		k_oops();
+void _dump_object_error(int retval, void *obj, struct _k_object *ko,
+			enum k_objects otype)
+{
+	switch (retval) {
+	case -EBADF:
+		printk("%p is not a valid %s\n", obj, otype_to_str(otype));
+		break;
+	case -EPERM:
+		dump_permission_error(ko);
+		break;
+	case -EINVAL:
+		printk("%p used before initialization\n", obj);
+		break;
 	}
-
-	return ko;
 }
 
 void _impl_k_object_access_grant(void *object, struct k_thread *thread)
 {
-	struct _k_object *ko = access_check(object);
+	struct _k_object *ko = _k_object_find(object);
 
 	if (ko) {
-		set_thread_perms(ko, thread);
+		_thread_perms_set(ko, thread);
 	}
 }
 
 void _impl_k_object_access_all_grant(void *object)
 {
-	struct _k_object *ko = access_check(object);
+	struct _k_object *ko = _k_object_find(object);
 
 	if (ko) {
-		memset(ko->perms, 0xFF, CONFIG_MAX_THREAD_BYTES);
+		_thread_perms_all_set(ko);
 	}
 }
 
-int _k_object_validate(void *obj, enum k_objects otype, int init)
+int _k_object_validate(struct _k_object *ko, enum k_objects otype, int init)
 {
-	struct _k_object *ko;
-
-	ko = _k_object_find(obj);
-
-	if (!ko || ko->type != otype) {
-		printk("%p is not a %s\n", obj, otype_to_str(otype));
+	if (!ko || (otype != K_OBJ_ANY && ko->type != otype)) {
 		return -EBADF;
 	}
 
 	/* Manipulation of any kernel objects by a user thread requires that
 	 * thread be granted access first, even for uninitialized objects
 	 */
-	if (_is_thread_user() && !test_thread_perms(ko)) {
-		printk("thread %p (%d) does not have permission on %s %p [",
-		       _current, _current->base.perm_index, otype_to_str(otype),
-		       obj);
-		for (int i = CONFIG_MAX_THREAD_BYTES - 1; i >= 0; i--) {
-			printk("%02x", ko->perms[i]);
-		}
-		printk("]\n");
+	if (!thread_perms_test(ko)) {
 		return -EPERM;
 	}
 
@@ -212,13 +176,11 @@ int _k_object_validate(void *obj, enum k_objects otype, int init)
 	 * initialized, we should freak out
 	 */
 	if (!init && !(ko->flags & K_OBJ_FLAG_INITIALIZED)) {
-		printk("%p used before initialization\n", obj);
 		return -EINVAL;
 	}
 
 	return 0;
 }
-
 
 void _k_object_init(void *object)
 {
@@ -241,9 +203,13 @@ void _k_object_init(void *object)
 		return;
 	}
 
+	/* Initializing an object implicitly grants access to the calling
+	 * thread and nobody else
+	 */
 	memset(ko->perms, 0, CONFIG_MAX_THREAD_BYTES);
-	set_thread_perms(ko, _current);
+	_thread_perms_set(ko, _current);
 
+	/* Allows non-initialization system calls to be made on this object */
 	ko->flags |= K_OBJ_FLAG_INITIALIZED;
 }
 

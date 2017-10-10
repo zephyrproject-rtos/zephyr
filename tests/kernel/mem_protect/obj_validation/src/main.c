@@ -20,12 +20,10 @@ static __kernel char bad_sem[sizeof(struct k_sem)];
 static struct k_sem sem3;
 #endif
 
-
 static int test_bad_object(struct k_sem *sem)
 {
-	return !_k_object_validate(sem, K_OBJ_SEM, 0);
+	return !_k_object_validate(_k_object_find(sem), K_OBJ_SEM, 0);
 }
-
 
 void main(void) {
 	struct k_sem stack_sem;
@@ -44,6 +42,7 @@ void main(void) {
 #endif
 
 	/* sem1 should already be ready to go */
+	k_object_access_grant(&sem1, k_current_get());
 	rv |= !test_bad_object(&sem1);
 
 	/* sem2 has to be initialized at runtime */
