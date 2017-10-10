@@ -32,6 +32,9 @@ set(__build_dir ${CMAKE_CURRENT_BINARY_DIR}/zephyr)
 set(PROJECT_BINARY_DIR ${__build_dir})
 set(PROJECT_SOURCE_DIR $ENV{ZEPHYR_BASE})
 
+set(ZEPHYR_BINARY_DIR ${PROJECT_BINARY_DIR})
+set(ZEPHYR_SOURCE_DIR ${PROJECT_SOURCE_DIR})
+
 set(AUTOCONF_H ${__build_dir}/include/generated/autoconf.h)
 # Re-configure (Re-execute all CMakeLists.txt code) when autoconf.h changes
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${AUTOCONF_H})
