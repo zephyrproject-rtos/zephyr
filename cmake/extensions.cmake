@@ -6,6 +6,7 @@ include(CheckCCompilerFlag)
 # 1. Zephyr-aware extensions
 # 1.1. zephyr_*
 # 1.2. zephyr_library_*
+# 1.3. generate_inc_*
 # 2. Kconfig-aware extensions
 # 2.1 *_if_kconfig
 # 2.2 Misc
@@ -184,6 +185,54 @@ macro(zephyr_get_compile_options_as_string i)
     set(${i} "${${i}} ${__opt__}")
   endforeach()
 endmacro()
+
+# 1.3 generate_inc_*
+
+# These functions are useful if there is a need to generate a file
+# that can be included into the application at build time. The file
+# can also be compressed automatically when embedding it.
+#
+# See tests/application_development/gen_inc_file for an example of
+# usage.
+function(generate_inc_file
+    source_file    # The source file to be converted to hex
+    generated_file # The generated file
+    )
+  add_custom_command(
+    OUTPUT ${generated_file}
+    COMMAND
+    ${PYTHON_EXECUTABLE}
+    $ENV{ZEPHYR_BASE}/scripts/file2hex.py
+    ${ARGN} # Extra arguments are passed to file2hex.py
+    --file ${source_file}
+    > ${generated_file} # Does pipe redirection work on Windows?
+    DEPENDS ${source_file}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    )
+endfunction()
+
+function(generate_inc_file_for_target
+    target          # The cmake target that depends on the generated file
+    source_file     # The source file to be converted to hex
+    generated_file  # The generated file
+                    # Any additional arguments are passed on to file2hex.py
+    )
+  generate_inc_file(${source_file} ${generated_file} ${ARGN})
+
+  # Ensure 'generated_file' is generated before 'target' by creating a
+  # 'custom_target' for it and setting up a dependency between the two
+  # targets
+
+  # But first create a unique name for the custom target
+  # Replace / with _ (driver/serial => driver_serial) and . with _
+  set(generated_target_name ${generated_file})
+
+  string(REPLACE "/" "_" generated_target_name ${generated_target_name})
+  string(REPLACE "." "_" generated_target_name ${generated_target_name})
+
+  add_custom_target(${generated_target_name} DEPENDS ${generated_file})
+  add_dependencies(${target} ${generated_target_name})
+endfunction()
 
 # 2.1 zephyr_library_*
 #
