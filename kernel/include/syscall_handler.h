@@ -28,8 +28,9 @@ extern const _k_syscall_handler_t _k_syscall_table[K_SYSCALL_LIMIT];
  * call handlers to validate kernel object pointers passed in from
  * userspace.
  *
- * @param obj Address of the kernel object
- * @param otype Expected type of the kernel object
+ * @param ko Kernel object metadata pointer, or NULL
+ * @param otype Expected type of the kernel object, or K_OBJ_ANY if type
+ *	  doesn't matter
  * @param init If true, this is for an init function and we will not error
  *	   out if the object is not initialized
  * @return 0 If the object is valid
@@ -37,7 +38,45 @@ extern const _k_syscall_handler_t _k_syscall_table[K_SYSCALL_LIMIT];
  *         -EPERM If the caller does not have permissions
  *         -EINVAL Object is not initialized
  */
-int _k_object_validate(void *obj, enum k_objects otype, int init);
+int _k_object_validate(struct _k_object *ko, enum k_objects otype, int init);
+
+/**
+ * Dump out error information on failed _k_object_validate() call
+ *
+ * @param retval Return value from _k_object_validate()
+ * @param obj Kernel object we were trying to verify
+ * @param ko If retval=-EPERM, struct _k_object * that was looked up, or NULL
+ * @param otype Expected type of the kernel object
+ */
+extern void _dump_object_error(int retval, void *obj, struct _k_object *ko,
+			enum k_objects otype);
+
+/**
+ * Kernel object validation function
+ *
+ * Retrieve metadata for a kernel object. This function is implemented in
+ * the gperf script footer, see gen_kobject_list.py
+ *
+ * @param obj Address of kernel object to get metadata
+ * @return Kernel object's metadata, or NULL if the parameter wasn't the
+ * memory address of a kernel object
+ */
+extern struct _k_object *_k_object_find(void *obj);
+
+/**
+ * Grant a thread permission to a kernel object
+ *
+ * @param ko Kernel object metadata to update
+ * @param thread The thread to grant permission
+ */
+extern void _thread_perms_set(struct _k_object *ko, struct k_thread *thread);
+
+/**
+ * Grant all current and future threads access to a kernel object
+ *
+ * @param ko Kernel object metadata to update
+ */
+extern void _thread_perms_all_set(struct _k_object *ko);
 
 /**
  * @brief Runtime expression check for system call arguments
@@ -157,9 +196,28 @@ int _k_object_validate(void *obj, enum k_objects otype, int init);
 #define _SYSCALL_MEMORY_ARRAY_WRITE(ptr, nmemb, size, ssf) \
 	_SYSCALL_MEMORY_ARRAY(ptr, nmemb, size, 1, ssf)
 
+static inline int _obj_validation_check(void *obj, enum k_objects otype,
+					int init)
+{
+	struct _k_object *ko;
+	int ret;
+
+	ko = _k_object_find(obj);
+	ret = _k_object_validate(ko, otype, init);
+
+#ifdef CONFIG_PRINTK
+	if (ret) {
+		_dump_object_error(ret, obj, ko, otype);
+	}
+#endif
+
+	return ret;
+}
+
+
 #define _SYSCALL_IS_OBJ(ptr, type, init, ssf) \
-	_SYSCALL_VERIFY_MSG(!_k_object_validate((void *)ptr, type, init), ssf, \
-			    "object %p access denied", (void *)(ptr))
+	_SYSCALL_VERIFY_MSG(!_obj_validation_check((void *)ptr, type, init), \
+			    ssf, "object %p access denied", (void *)(ptr))
 
 /**
  * @brief Runtime check kernel object pointer for non-init functions
