@@ -43,6 +43,16 @@ include($ENV{ZEPHYR_BASE}/cmake/extensions.cmake)
 
 find_package(PythonInterp 3.4)
 
+# Generate syscall_macros.h at configure-time because it has virtually
+# no dependencies
+file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/include/generated)
+execute_process_safely(
+  COMMAND
+  ${PYTHON_EXECUTABLE}
+  $ENV{ZEPHYR_BASE}/scripts/gen_syscall_header.py
+  OUTPUT_FILE ${ZEPHYR_BINARY_DIR}/include/generated/syscall_macros.h
+  )
+
 if(NOT PREBUILT_HOST_TOOLS)
   set(PREBUILT_HOST_TOOLS $ENV{PREBUILT_HOST_TOOLS} CACHE PATH "")
   if("${CMAKE_HOST_SYSTEM_NAME}" STREQUAL "Windows")

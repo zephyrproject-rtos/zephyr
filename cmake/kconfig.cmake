@@ -1,4 +1,3 @@
-file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/include/generated)
 # Folders needed for conf/mconf files (kconfig has no method of redirecting all output files).
 # conf/mconf needs to be run from a different directory because of: ZEP-1963
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig/include/generated)
