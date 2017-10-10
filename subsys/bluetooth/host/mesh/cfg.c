@@ -1694,7 +1694,7 @@ static void mod_sub_va_overwrite(struct bt_mesh_model *model,
 				 struct bt_mesh_msg_ctx *ctx,
 				 struct net_buf_simple *buf)
 {
-	u16_t elem_addr, sub_addr;
+	u16_t elem_addr, sub_addr = BT_MESH_ADDR_UNASSIGNED;
 	struct bt_mesh_model *mod;
 	struct bt_mesh_elem *elem;
 	u8_t *label_uuid;
