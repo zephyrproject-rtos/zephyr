@@ -6419,6 +6419,9 @@ static inline u32_t event_conn_upd_prep(struct connection *conn,
 		if ((conn->llcp_conn_param.req != conn->llcp_conn_param.ack) &&
 		    (conn->llcp_conn_param.state == LLCP_CPR_STATE_UPD)) {
 			conn->llcp_conn_param.ack = conn->llcp_conn_param.req;
+
+			/* Stop procedure timeout */
+			conn->procedure_expire = 0;
 		}
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 		/* Reset ticker_id_prepare as role is not continued further
