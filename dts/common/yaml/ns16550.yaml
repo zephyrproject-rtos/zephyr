@@ -1,6 +1,6 @@
 ---
 title: ns16550
-id: ns16550-uart
+id: ns16550
 version: 0.1
 
 description: >
@@ -14,13 +14,19 @@ properties:
       type: string
       category: required
       description: compatible strings
-      constraint: "ns16550-uart"
+      constraint: "ns16550"
 
   - reg:
       type: array
       description: mmio register space
       generation: define
       category: required
+
+  - reg-shift:
+      type: int
+      category: optional
+      description: quantity to shift the register offsets by
+      generation: define
 
   - interrupts:
       type: array

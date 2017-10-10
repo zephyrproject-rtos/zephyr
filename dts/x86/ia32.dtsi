@@ -33,7 +33,7 @@
 
 
 		uart0: uart@f0008000 {
-			compatible = "ns16550-uart";
+			compatible = "ns16550";
 			reg = <0xf0008000 0x400>;
 			label = "UART_0";
 
@@ -41,7 +41,7 @@
 		};
 
 		uart1: uart@f0009000 {
-			compatible = "ns16550-uart";
+			compatible = "ns16550";
 			reg = <0xf0009000 0x400>;
 			label = "UART_1";
 
