@@ -1,4 +1,4 @@
-subdir-ccflags-y += -I$(srctree)/include/drivers
+subdir-ccflags-y += -I$(srctree)/include/drivers -D__ZEPHYR_KERNEL__
 
 obj-y = console/
 obj-y += random/

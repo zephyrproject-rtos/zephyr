@@ -100,10 +100,9 @@ static inline void encode_hdr(struct bt_monitor_hdr *hdr, u16_t opcode,
 	hdr->data_len = sys_cpu_to_le16(4 + hdr->hdr_len + len);
 }
 
-static int log_out(int c, void *unused)
+static void log_out(int c, void *unused)
 {
 	uart_poll_out(monitor_dev, c);
-	return 0;
 }
 
 static void drop_add(u16_t opcode)
