@@ -4261,6 +4261,14 @@ extern void k_mem_domain_remove_thread(k_tid_t thread);
  * @} end defgroup mem_domain_apis
  */
 
+/**
+ * @brief Emit a character buffer to the console device
+ *
+ * @param c String of characters to print
+ * @param n The length of the string
+ */
+__syscall void k_str_out(char *c, size_t n);
+
 #ifdef __cplusplus
 }
 #endif
