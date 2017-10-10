@@ -14,6 +14,7 @@ import abc
 from os import path
 import os
 import pprint
+import platform
 import sys
 import subprocess
 import time
@@ -82,6 +83,48 @@ class ZephyrBinaryFlasher(abc.ABC):
     @abc.abstractmethod
     def flash(self, **kwargs):
         '''Flash the board.'''
+
+
+class BossacBinaryFlasher(ZephyrBinaryFlasher):
+    '''Flasher front-end for bossac.'''
+
+    def __init__(self, bin_name, bossac='bossac', debug=False):
+        super(BossacBinaryFlasher, self).__init__(debug=debug)
+        self.bin_name = bin_name
+        self.bossac = bossac
+
+    def replaces_shell_script(shell_script):
+        return shell_script == 'bossa-flash.sh'
+
+    def create_from_env(debug):
+        '''Create flasher from environment.
+
+        Required:
+
+        - O: build output directory
+        - KERNEL_BIN_NAME: name of kernel binary
+
+        Optional:
+
+        - BOSSAC: path to bossac, default is bossac
+        '''
+        bin_name = path.join(get_env_or_bail('O'),
+                             get_env_or_bail('KERNEL_BIN_NAME'))
+        bossac = os.environ.get('BOSSAC', 'bossac')
+        return BossacBinaryFlasher(bin_name, bossac=bossac, debug=debug)
+
+    def flash(self, **kwargs):
+        if platform.system() != 'Linux':
+            msg = 'CAUTION: No flash tool for your host system found!'
+            raise NotImplementedError(msg)
+
+        cmd_stty = ['stty', '-F', '/dev/ttyACM0', 'raw', 'ispeed', '1200',
+                    'ospeed', '1200', 'cs8', '-cstopb', 'ignpar', 'eol', '255',
+                    'eof', '255']
+        cmd_flash = [self.bossac, '-R', '-e', '-w', '-v', '-b', self.bin_name]
+
+        check_call(cmd_stty, self.debug)
+        check_call(cmd_flash, self.debug)
 
 
 class DfuUtilBinaryFlasher(ZephyrBinaryFlasher):
