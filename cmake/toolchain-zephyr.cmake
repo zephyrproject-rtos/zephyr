@@ -31,6 +31,10 @@ elseif("${ARCH}" STREQUAL "xtensa")
   LIST(APPEND TOOLCHAIN_LIBS hal)
   LIST(APPEND LIB_INCLUDE_DIR -L${SYSROOT_DIR}/lib)
 
+elseif("${ARCH}" STREQUAL "arc")
+  # https://github.com/zephyrproject-rtos/zephyr/issues/3797
+  # -Os is broken on arc
+  set(OPTIMIZE_FOR_SIZE_FLAG "-O2")
 endif()
 
 set(CROSS_COMPILE ${TOOLCHAIN_HOME}/usr/bin/${CROSS_COMPILE_TARGET}/${CROSS_COMPILE_TARGET}-)
