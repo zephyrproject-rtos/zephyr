@@ -1212,11 +1212,7 @@ static void send_mod_sub_status(struct bt_mesh_model *model,
 
 	net_buf_simple_add_u8(msg, status);
 	net_buf_simple_add_le16(msg, elem_addr);
-	if (status) {
-		net_buf_simple_add_le16(msg, BT_MESH_ADDR_UNASSIGNED);
-	} else {
-		net_buf_simple_add_le16(msg, sub_addr);
-	}
+	net_buf_simple_add_le16(msg, sub_addr);
 
 	if (vnd) {
 		memcpy(net_buf_simple_add(msg, 4), mod_id, 4);
