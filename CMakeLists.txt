@@ -689,3 +689,19 @@ add_subdirectory(cmake/usage)
 add_subdirectory(cmake/reports)
 
 include(cmake/ccache.cmake)
+
+if(CONFIG_ASSERT)
+  message(WARNING "
+      ------------------------------------------------------------
+      --- WARNING:  __ASSERT() statements are globally ENABLED ---
+      --- The kernel will run more slowly and uses more memory ---
+      ------------------------------------------------------------"
+)
+endif()
+
+if(CONFIG_BOARD_DEPRECATED)
+  message(WARNING "
+      WARNING:  The board '${BOARD}' is deprecated and will be
+      removed in version ${CONFIG_BOARD_DEPRECATED}"
+)
+endif()
