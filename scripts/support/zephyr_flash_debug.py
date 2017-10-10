@@ -13,8 +13,20 @@ it delegates to the shell script passed as second argument."""
 import abc
 from os import path
 import os
+import pprint
 import sys
 import subprocess
+import time
+
+
+def get_env_or_bail(env_var):
+    try:
+        return os.environ[env_var]
+    except KeyError:
+        print('Variable {} not in environment:'.format(
+                  env_var), file=sys.stderr)
+        pprint.pprint(dict(os.environ), stream=sys.stderr)
+        raise
 
 
 def get_env_bool_or(env_var, default_value):
@@ -28,6 +40,12 @@ def check_call(cmd, debug):
     if debug:
         print(' '.join(cmd))
     subprocess.check_call(cmd)
+
+
+def check_output(cmd, debug):
+    if debug:
+        print(' '.join(cmd))
+    return subprocess.check_output(cmd)
 
 
 class ZephyrBinaryFlasher(abc.ABC):
@@ -64,6 +82,70 @@ class ZephyrBinaryFlasher(abc.ABC):
     @abc.abstractmethod
     def flash(self, **kwargs):
         '''Flash the board.'''
+
+
+class DfuUtilBinaryFlasher(ZephyrBinaryFlasher):
+    '''Flasher front-end for dfu-util.'''
+
+    def __init__(self, pid, alt, img, dfuse=None, exe='dfu-util', debug=False):
+        super(DfuUtilBinaryFlasher, self).__init__(debug=debug)
+        self.pid = pid
+        self.alt = alt
+        self.img = img
+        self.dfuse = dfuse
+        self.exe = exe
+        try:
+            self.list_pattern = ', alt={}'.format(int(self.alt))
+        except ValueError:
+            self.list_pattern = ', name={}'.format(self.alt)
+
+    def replaces_shell_script(shell_script):
+        return shell_script == 'dfuutil.sh'
+
+    def create_from_env(debug):
+        '''Create flasher from environment.
+
+        Required:
+
+        - DFUUTIL_PID: USB VID:PID of the board
+        - DFUUTIL_ALT: interface alternate setting number or name
+        - DFUUTIL_IMG: binary to flash
+
+        Optional:
+
+        - DFUUTIL_DFUSE_ADDR: target address if the board is a
+          DfuSe device. Ignored if not present.
+        - DFUUTIL: dfu-util executable, defaults to dfu-util.
+        '''
+        pid = get_env_or_bail('DFUUTIL_PID')
+        alt = get_env_or_bail('DFUUTIL_ALT')
+        img = get_env_or_bail('DFUUTIL_IMG')
+        dfuse = os.environ.get('DFUUTIL_DFUSE_ADDR', None)
+        exe = os.environ.get('DFUUTIL', 'dfu-util')
+
+        return DfuUtilBinaryFlasher(pid, alt, img, dfuse=dfuse, exe=exe,
+                                    debug=debug)
+
+    def find_device(self):
+        output = check_output([self.exe, '-l'], self.debug)
+        output = output.decode(sys.getdefaultencoding())
+        return self.list_pattern in output
+
+    def flash(self, **kwargs):
+        reset = 0
+        if not self.find_device():
+            reset = 1
+            print('Please reset your board to switch to DFU mode...')
+            while not self.find_device():
+                time.sleep(0.1)
+
+        cmd = [self.exe, '-d,{}'.format(self.pid)]
+        if self.dfuse is not None:
+            cmd.extend(['-s', '{}:leave'.format(self.dfuse)])
+        cmd.extend(['-a', self.alt, '-D', self.img])
+        check_call(cmd, self.debug)
+        if reset:
+            print('Now reset your board again to switch back to runtime mode.')
 
 
 # TODO: Stop using environment variables.
