@@ -273,7 +273,7 @@ u32_t _handler_k_thread_priority_get(u32_t arg1, u32_t arg2, u32_t arg3,
 	_SYSCALL_ARG1;
 
 	thread = (struct k_thread *)arg1;
-	_SYSCALL_IS_OBJ(thread, K_OBJ_THREAD, 0, ssf);
+	_SYSCALL_OBJ(thread, K_OBJ_THREAD, ssf);
 	return (u32_t)_impl_k_thread_priority_get(thread);
 }
 #endif
@@ -301,8 +301,9 @@ u32_t _handler_k_thread_priority_set(u32_t thread, u32_t prio, u32_t arg3,
 {
 	_SYSCALL_ARG2;
 
-	_SYSCALL_IS_OBJ(thread, K_OBJ_THREAD, 0, ssf);
-	_SYSCALL_VERIFY(_VALID_PRIO(prio, NULL), ssf);
+	_SYSCALL_OBJ(thread, K_OBJ_THREAD, ssf);
+	_SYSCALL_VERIFY_MSG(_VALID_PRIO(prio, NULL), ssf,
+			    "invalid thread priority %d", (int)prio);
 	_impl_k_thread_priority_set((k_tid_t)thread, prio);
 	return 0;
 }
@@ -399,7 +400,8 @@ u32_t _handler_k_sleep(u32_t arg1, u32_t arg2, u32_t arg3,
 {
 	_SYSCALL_ARG1;
 
-	_SYSCALL_VERIFY(arg1 != K_FOREVER, ssf);
+	_SYSCALL_VERIFY_MSG(arg1 != K_FOREVER, ssf,
+			    "sleeping forever not allowed");
 	_impl_k_sleep(arg1);
 
 	return 0;
@@ -436,7 +438,7 @@ u32_t _handler_k_wakeup(u32_t thread, u32_t arg2, u32_t arg3,
 {
 	_SYSCALL_ARG1;
 
-	_SYSCALL_IS_OBJ(thread, K_OBJ_THREAD, 0, ssf);
+	_SYSCALL_OBJ(thread, K_OBJ_THREAD, ssf);
 	_impl_k_wakeup((k_tid_t)thread);
 	return 0;
 }

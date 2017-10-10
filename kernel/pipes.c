@@ -146,8 +146,8 @@ u32_t _handler_k_pipe_init(u32_t pipe, u32_t buffer, u32_t size,
 {
 	_SYSCALL_ARG3;
 
-	_SYSCALL_IS_OBJ(pipe, K_OBJ_PIPE, 1, ssf);
-	_SYSCALL_MEMORY(buffer, size, 1, ssf);
+	_SYSCALL_OBJ_INIT(pipe, K_OBJ_PIPE, ssf);
+	_SYSCALL_MEMORY_WRITE(buffer, size, ssf);
 
 	_impl_k_pipe_init((struct k_pipe *)pipe, (unsigned char *)buffer,
 			  size);
@@ -694,9 +694,9 @@ u32_t _handler_k_pipe_get(u32_t pipe, u32_t data, u32_t bytes_to_read,
 	size_t *bytes_read = (size_t *)bytes_read_p;
 	size_t min_xfer = (size_t)min_xfer_p;
 
-	_SYSCALL_IS_OBJ(pipe, K_OBJ_PIPE, 0, ssf);
-	_SYSCALL_MEMORY(bytes_read, sizeof(*bytes_read), 1, ssf);
-	_SYSCALL_MEMORY((void *)data, bytes_to_read, 1, ssf);
+	_SYSCALL_OBJ(pipe, K_OBJ_PIPE, ssf);
+	_SYSCALL_MEMORY_WRITE(bytes_read, sizeof(*bytes_read), ssf);
+	_SYSCALL_MEMORY_WRITE((void *)data, bytes_to_read, ssf);
 	_SYSCALL_VERIFY(min_xfer <= bytes_to_read, ssf);
 
 	return _impl_k_pipe_get((struct k_pipe *)pipe, (void *)data,
@@ -724,9 +724,9 @@ u32_t _handler_k_pipe_put(u32_t pipe, u32_t data, u32_t bytes_to_write,
 	size_t *bytes_written = (size_t *)bytes_written_p;
 	size_t min_xfer = (size_t)min_xfer_p;
 
-	_SYSCALL_IS_OBJ(pipe, K_OBJ_PIPE, 0, ssf);
-	_SYSCALL_MEMORY(bytes_written, sizeof(*bytes_written), 1, ssf);
-	_SYSCALL_MEMORY((void *)data, bytes_to_write, 0, ssf);
+	_SYSCALL_OBJ(pipe, K_OBJ_PIPE, ssf);
+	_SYSCALL_MEMORY_WRITE(bytes_written, sizeof(*bytes_written), ssf);
+	_SYSCALL_MEMORY_READ((void *)data, bytes_to_write,  ssf);
 	_SYSCALL_VERIFY(min_xfer <= bytes_to_write, ssf);
 
 	return _impl_k_pipe_put((struct k_pipe *)pipe, (void *)data,

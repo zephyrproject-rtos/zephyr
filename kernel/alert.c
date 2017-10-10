@@ -97,7 +97,7 @@ u32_t _handler_k_alert_send(u32_t alert, u32_t arg2, u32_t arg3,
 {
 	_SYSCALL_ARG1;
 
-	_SYSCALL_IS_OBJ(alert, K_OBJ_ALERT, 0, ssf);
+	_SYSCALL_OBJ(alert, K_OBJ_ALERT, ssf);
 	_impl_k_alert_send((struct k_alert *)alert);
 
 	return 0;
@@ -115,7 +115,7 @@ u32_t _handler_k_alert_recv(u32_t alert, u32_t timeout, u32_t arg3,
 {
 	_SYSCALL_ARG2;
 
-	_SYSCALL_IS_OBJ(alert, K_OBJ_ALERT, 0, ssf);
+	_SYSCALL_OBJ(alert, K_OBJ_ALERT, ssf);
 	return _impl_k_alert_recv((struct k_alert *)alert, timeout);
 }
 #endif
