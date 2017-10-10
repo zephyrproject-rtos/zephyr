@@ -66,8 +66,25 @@ zephyr_compile_definitions(
   _FORTIFY_SOURCE=2
 )
 
+# We need to set an optimization level.
+# Default to -Os
+# unless CONFIG_DEBUG is set, then it is -Og
+#
+# also, some toolchain's break with -Os, and some toolchain's break
+# with -Og so allow them to override what flag to use
+#
+# Finally, the user can use Kconfig to add compiler options that will
+# come after these options and override them
+set_ifndef(OPTIMIZE_FOR_SIZE_FLAG  "-Os")
+set_ifndef(OPTIMIZE_FOR_DEBUG_FLAG "-Og")
+if(CONFIG_DEBUG)
+  set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_DEBUG_FLAG})
+else()
+  set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_SIZE_FLAG}) # Default
+endif()
+
 zephyr_compile_options(
-  -Os
+  ${OPTIMIZATION_FLAG} # Usually -Os
   -g # TODO: build configuration enough?
   -Wall
   -Wformat
