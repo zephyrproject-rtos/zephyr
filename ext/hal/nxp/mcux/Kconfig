@@ -16,7 +16,8 @@ config HAS_MCUX_ADC16
 	bool
 	default n
 	help
-	  Set if the 16-bit ADC (ADC16) module is present in the SoC.
+	  Set if the 16-bit ADC (ADC16) module is present in the SoC, which is
+	  true when the mcux macro FSL_FEATURE_SOC_ADC16_COUNT is nonzero.
 
 config HAS_MCUX_DSPI
 	bool
@@ -36,7 +37,8 @@ config HAS_MCUX_FTM
 	bool
 	default n
 	help
-	  Set if the FlexTimer (FTM) module is present in the SoC.
+	  Set if the FlexTimer (FTM) module is present in the SoC, which is
+	  true when the mcux macro FSL_FEATURE_SOC_FTM_COUNT is nonzero.
 
 config HAS_MCUX_GPIO
 	bool
@@ -58,13 +60,16 @@ config HAS_MCUX_LPSCI
 	bool
 	default n
 	help
-	  Set if the low power uart (LPSCI) module is present in the SoC.
+	  Set if the low power uart (LPSCI) module is present in the SoC, which
+	  is true when the mcux macro FSL_FEATURE_SOC_LPSCI_COUNT is nonzero.
 
 config HAS_MCUX_LPUART
 	bool
 	default n
 	help
-	  Set if the low power uart (LPUART) module is present in the SoC.
+	  Set if the low power uart (LPUART) module is present in the SoC,
+	  which is true when the mcux macro FSL_FEATURE_SOC_LPUART_COUNT is
+	  nonzero.
 
 config HAS_MCUX_PORT
 	bool
@@ -79,21 +84,24 @@ config HAS_MCUX_RNGA
 	default n
 	help
 	  Set if the random number generator accelerator (RNGA) module is
-	  present in the SoC.
+	  present in the SoC, which is true when the mcux macro
+	  FSL_FEATURE_SOC_RNG_COUNT is nonzero.
 
 config HAS_MCUX_SIM
 	bool
 	default n
 	help
 	  Set if the system integration module (SIM) module is present in the
-	  SoC.
+	  SoC, which is true when the mcux macro FSL_FEATURE_SOC_SIM_COUNT is
+	  nonzero.
 
 config HAS_MCUX_TRNG
 	bool
 	default n
 	help
 	  Set if the true random number generator (TRNG) module is present in
-	  the SoC.
+	  the SoC, which is true when the mcux macro FSL_FEATURE_SOC_TRNG_COUNT
+	  is nonzero.
 
 config HAS_MCUX_UART
 	bool
