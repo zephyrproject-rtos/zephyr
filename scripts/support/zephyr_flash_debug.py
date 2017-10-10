@@ -148,6 +148,67 @@ class DfuUtilBinaryFlasher(ZephyrBinaryFlasher):
             print('Now reset your board again to switch back to runtime mode.')
 
 
+class PyOcdBinaryFlasher(ZephyrBinaryFlasher):
+    '''Flasher front-end for pyocd-flashtool.'''
+
+    def __init__(self, bin_name, target, flashtool='pyocd-flashtool',
+                 board_id=None, daparg=None, debug=False):
+        super(PyOcdBinaryFlasher, self).__init__(debug=debug)
+        self.bin_name = bin_name
+        self.target = target
+        self.flashtool = flashtool
+        self.board_id = board_id
+        self.daparg = daparg
+
+    def replaces_shell_script(shell_script):
+        return shell_script == 'pyocd.sh'
+
+    def create_from_env(debug):
+        '''Create flasher from environment.
+
+        Required:
+
+        - O: build output directory
+        - KERNEL_BIN_NAME: name of kernel binary
+        - PYOCD_TARGET: target override
+
+        Optional:
+
+        - PYOCD_FLASHTOOL: flash tool path, defaults to pyocd-flashtool
+        - PYOCD_BOARD_ID: ID of board to flash, default is to guess
+        - PYOCD_DAPARG_ARG: arguments to pass to flashtool, default is none
+        '''
+        bin_name = path.join(get_env_or_bail('O'),
+                             get_env_or_bail('KERNEL_BIN_NAME'))
+        target = get_env_or_bail('PYOCD_TARGET')
+
+        flashtool = os.environ.get('PYOCD_FLASHTOOL', 'pyocd-flashtool')
+        board_id = os.environ.get('PYOCD_BOARD_ID', None)
+        daparg = os.environ.get('PYOCD_DAPARG_ARG', None)
+
+        return PyOcdBinaryFlasher(bin_name, target,
+                                  flashtool=flashtool, board_id=board_id,
+                                  daparg=daparg, debug=debug)
+
+    def flash(self, **kwargs):
+        daparg_args = []
+        if self.daparg is not None:
+            daparg_args = ['-da', self.daparg]
+
+        board_args = []
+        if self.board_id is not None:
+            board_args = ['-b', self.board_id]
+
+        cmd = ([self.flashtool] +
+               daparg_args +
+               ['-t', self.target] +
+               board_args +
+               [self.bin_name])
+
+        print('Flashing Target Device')
+        check_call(cmd, self.debug)
+
+
 # TODO: Stop using environment variables.
 #
 # Migrate the build system so we can use an argparse.ArgumentParser and
