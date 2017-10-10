@@ -74,14 +74,20 @@ int _k_object_validate(void *obj, enum k_objects otype, int init);
  */
 #define _SYSCALL_VERIFY(expr, ssf) _SYSCALL_VERIFY_MSG(expr, ssf, #expr)
 
+#define _SYSCALL_MEMORY(ptr, size, write, ssf) \
+	_SYSCALL_VERIFY_MSG(!_arch_buffer_validate((void *)ptr, size, write), \
+			    ssf, "Memory region %p (size %u) %s access denied", \
+			    (void *)(ptr), (u32_t)(size), \
+			    write ? "write" : "read")
+
 /**
- * @brief Runtime check that a user thread has proper access to a memory area
+ * @brief Runtime check that a user thread has read permission to a memory area
  *
- * Checks that the particular memory area is readable or writable by the
- * currently running thread if the CPU was in user mode, and generates a kernel
- * oops if it wasn't. Prevents userspace from getting the kernel to read or
- * modify memory the thread does not have access to, or passing in garbage
- * pointers that would crash/pagefault the kernel if accessed.
+ * Checks that the particular memory area is readable by the currently running
+ * thread if the CPU was in user mode, and generates a kernel oops if it
+ * wasn't. Prevents userspace from getting the kernel to read memory the thread
+ * does not have access to, or passing in garbage pointers that would
+ * crash/pagefault the kernel if dereferenced.
  *
  * @param ptr Memory area to examine
  * @param size Size of the memory area
@@ -89,25 +95,59 @@ int _k_object_validate(void *obj, enum k_objects otype, int init);
  *		read it
  * @param ssf Syscall stack frame argument passed to the handler function
  */
-#define _SYSCALL_MEMORY(ptr, size, write, ssf) \
-	_SYSCALL_VERIFY_MSG(!_arch_buffer_validate((void *)ptr, size, write), \
-			    ssf, "Memory region %p (size %u) has incorrect permissions", \
-			    (void *)(ptr), (u32_t)(size))
+#define _SYSCALL_MEMORY_READ(ptr, size, ssf) \
+	_SYSCALL_MEMORY(ptr, size, 0, ssf)
 
 /**
- * @brief Runtime check that a pointer is a kernel object of expected type
+ * @brief Runtime check that a user thread has write permission to a memory area
  *
- * Passes along arguments to _k_object_validate() and triggers a kernel oops
- * if the object wasn't valid or had incorrect permissions.
+ * Checks that the particular memory area is readable and writable by the
+ * currently running thread if the CPU was in user mode, and generates a kernel
+ * oops if it wasn't. Prevents userspace from getting the kernel to read or
+ * modify memory the thread does not have access to, or passing in garbage
+ * pointers that would crash/pagefault the kernel if dereferenced.
  *
- * @param ptr Untrusted kernel object pointer
- * @param type Expected kernel object type
- * @param init Whether this is an init function handler
+ * @param ptr Memory area to examine
+ * @param size Size of the memory area
+ * @param write If the thread should be able to write to this memory, not just
+ *		read it
  * @param ssf Syscall stack frame argument passed to the handler function
  */
+#define _SYSCALL_MEMORY_WRITE(ptr, size, ssf) \
+	_SYSCALL_MEMORY(ptr, size, 1, ssf)
+
 #define _SYSCALL_IS_OBJ(ptr, type, init, ssf) \
 	_SYSCALL_VERIFY_MSG(!_k_object_validate((void *)ptr, type, init), ssf, \
 			    "object %p access denied", (void *)(ptr))
+
+/**
+ * @brief Runtime check kernel object pointer for non-init functions
+ *
+ * Calls _k_object_validate and triggers a kernel oops if the check files.
+ * For use in system call handlers which are not init functions; a check
+ * enforcing that an object is initialized* will not occur.
+ *
+ * @param ptr Untrusted kernel object pointer
+ * @param type Expected kernel object type
+ * @param ssf Syscall stack frame argument passed to the handler function
+ */
+#define _SYSCALL_OBJ(ptr, type, ssf) \
+	_SYSCALL_IS_OBJ(ptr, type, 0, ssf)
+
+/**
+ * @brief Runtime check kernel object pointer for non-init functions
+ *
+ * See description of _SYSCALL_IS_OBJ. For use in system call handlers which
+ * are not init functions; a check enforcing that an object is initialized
+ * will not occur.
+ *
+ * @param ptr Untrusted kernel object pointer
+ * @param type Expected kernel object type
+ * @param ssf Syscall stack frame argument passed to the handler function
+ */
+
+#define _SYSCALL_OBJ_INIT(ptr, type, ssf) \
+	_SYSCALL_IS_OBJ(ptr, type, 1, ssf)
 
 /* Convenience macros for handler implementations */
 #define _SYSCALL_ARG0	ARG_UNUSED(arg1); ARG_UNUSED(arg2); ARG_UNUSED(arg3); \
