@@ -1918,7 +1918,7 @@ isr_rx_conn_pkt_ctrl_rej_conn_upd(struct radio_pdu_node_rx *radio_pdu_node_rx,
 	conn = _radio.conn_curr;
 
 	/* Unsupported remote feature */
-	if (rej_ext_ind->error_code == 0x1a) {
+	if (!conn->role && (rej_ext_ind->error_code == 0x1a)) {
 		LL_ASSERT(conn->llcp_req == conn->llcp_ack);
 
 		conn->llcp_conn_param.state = LLCP_CPR_STATE_UPD;
