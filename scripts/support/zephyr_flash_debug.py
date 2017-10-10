@@ -345,6 +345,98 @@ class NrfJprogFlasher(ZephyrBinaryFlasher):
                   self.board, board_snr))
 
 
+class OpenOcdBinaryFlasher(ZephyrBinaryFlasher):
+    '''Flasher front-end for openocd.'''
+
+    def __init__(self, bin_name, zephyr_base, arch, board_name,
+                 load_cmd, verify_cmd, openocd='openocd',
+                 default_path=None, pre_cmd=None,
+                 post_cmd=None, debug=False):
+        super(OpenOcdBinaryFlasher, self).__init__(debug=debug)
+        self.bin_name = bin_name
+        self.zephyr_base = zephyr_base
+        self.arch = arch
+        self.board_name = board_name
+        self.load_cmd = load_cmd
+        self.verify_cmd = verify_cmd
+        self.openocd = openocd
+        self.default_path = default_path
+        self.pre_cmd = pre_cmd
+        self.post_cmd = post_cmd
+
+    def replaces_shell_script(shell_script):
+        return shell_script == 'openocd.sh'
+
+    def create_from_env(debug):
+        '''Create flasher from environment.
+
+        Required:
+
+        - O: build output directory
+        - KERNEL_BIN_NAME: zephyr kernel binary
+        - ZEPHYR_BASE: zephyr Git repository base directory
+        - ARCH: board architecture
+        - BOARD_NAME: zephyr name of board
+        - OPENOCD_LOAD_CMD: command to load binary into flash
+        - OPENOCD_VERIFY_CMD: command to verify flash executed correctly
+
+        Optional:
+
+        - OPENOCD: path to openocd, defaults to openocd
+        - OPENOCD_DEFAULT_PATH: openocd search path to use
+        - OPENOCD_PRE_CMD: command to run before any others
+        - OPENOCD_POST_CMD: command to run after verifying flash write
+        '''
+        bin_name = path.join(get_env_or_bail('O'),
+                             get_env_or_bail('KERNEL_BIN_NAME'))
+        zephyr_base = get_env_or_bail('ZEPHYR_BASE')
+        arch = get_env_or_bail('ARCH')
+        board_name = get_env_or_bail('BOARD_NAME')
+        load_cmd = get_env_or_bail('OPENOCD_LOAD_CMD').strip('"')
+        verify_cmd = get_env_or_bail('OPENOCD_VERIFY_CMD').strip('"')
+
+        openocd = os.environ.get('OPENOCD', 'openocd')
+        default_path = os.environ.get('OPENOCD_DEFAULT_PATH', None)
+        pre_cmd = os.environ.get('OPENOCD_PRE_CMD', None)
+        post_cmd = os.environ.get('OPENOCD_POST_CMD', None)
+
+        return OpenOcdBinaryFlasher(bin_name, zephyr_base, arch, board_name,
+                                    load_cmd, verify_cmd, openocd=openocd,
+                                    default_path=default_path, pre_cmd=pre_cmd,
+                                    post_cmd=post_cmd, debug=debug)
+
+    def flash(self, **kwargs):
+        search_args = []
+        if self.default_path is not None:
+            search_args = ['-s', self.default_path]
+
+        config = path.join(self.zephyr_base, 'boards', self.arch,
+                           self.board_name, 'support', 'openocd.cfg')
+
+        pre_cmd = []
+        if self.pre_cmd is not None:
+            pre_cmd = ['-c', self.pre_cmd]
+
+        post_cmd = []
+        if self.post_cmd is not None:
+            post_cmd = ['-c', self.post_cmd]
+
+        cmd = ([self.openocd] +
+               search_args +
+               ['-f', config,
+                '-c', 'init',
+                '-c', 'targets'] +
+               pre_cmd +
+               ['-c', 'reset halt',
+                '-c', self.load_cmd,
+                '-c', 'reset halt',
+                '-c', self.verify_cmd] +
+               post_cmd +
+               ['-c', 'reset run',
+                '-c', 'shutdown'])
+        check_call(cmd, self.debug)
+
+
 class PyOcdBinaryFlasher(ZephyrBinaryFlasher):
     '''Flasher front-end for pyocd-flashtool.'''
 
