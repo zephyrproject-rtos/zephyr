@@ -1374,9 +1374,15 @@ run:
 endif
 
 ifneq ($(FLASH_SCRIPT),)
+ifeq ($(USE_ZEPHYR_FLASH_DEBUG_SHELL),)
+flash: zephyr
+	@echo "Flashing $(BOARD_NAME)"
+	$(Q)$(srctree)/scripts/support/zephyr_flash_debug.py flash $(srctree)/scripts/support/$(FLASH_SCRIPT)
+else
 flash: zephyr
 	@echo "Flashing $(BOARD_NAME)"
 	$(Q)$(CONFIG_SHELL) $(srctree)/scripts/support/$(FLASH_SCRIPT) flash
+endif
 else
 flash: FORCE
 	@echo Flashing not supported with this board.
