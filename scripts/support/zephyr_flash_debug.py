@@ -265,6 +265,86 @@ class Esp32BinaryFlasher(ZephyrBinaryFlasher):
         print("Flashing ESP32 on {} ({}bps)".format(self.device, self.baud))
         check_call(cmd_flash, self.debug)
 
+
+class NrfJprogFlasher(ZephyrBinaryFlasher):
+    '''Flasher front-end for nrfjprog.'''
+
+    def __init__(self, hex_, family, board, debug=False):
+        super(NrfJprogFlasher, self).__init__(debug=debug)
+        self.hex_ = hex_
+        self.family = family
+        self.board = board
+
+    def replaces_shell_script(shell_script):
+        return shell_script == 'nrf_flash.sh'
+
+    def create_from_env(debug):
+        '''Create flasher from environment.
+
+        Required:
+
+        - O: build output directory
+        - KERNEL_HEX_NAME: name of kernel binary in ELF format
+        - NRF_FAMILY: e.g. NRF51 or NRF52
+        - BOARD: Zephyr board name
+        '''
+        hex_ = path.join(get_env_or_bail('O'),
+                         get_env_or_bail('KERNEL_HEX_NAME'))
+        family = get_env_or_bail('NRF_FAMILY')
+        board = get_env_or_bail('BOARD')
+
+        return NrfJprogFlasher(hex_, family, board, debug=debug)
+
+    def get_board_snr_from_user(self):
+        snrs = check_output(['nrfjprog', '--ids'], self.debug)
+        snrs = snrs.decode(sys.getdefaultencoding()).strip().splitlines()
+
+        if len(snrs) == 1:
+            return snrs[0]
+
+        print('There are multiple boards connected.')
+        for i, snr in enumerate(snrs, 1):
+            print('{}. {}'.format(i, snr))
+
+        p = 'Please select one with desired serial number (1-{}): '.format(
+                len(snrs))
+        while True:
+            value = input(p)
+            try:
+                value = int(value)
+            except ValueError:
+                continue
+            if 1 <= value <= len(snrs):
+                break
+
+        return snrs[value - 1]
+
+    def flash(self, **kwargs):
+        board_snr = self.get_board_snr_from_user()
+
+        print('Flashing file: {}'.format(self.hex_))
+        commands = [
+            ['nrfjprog', '--eraseall', '-f', self.family, '--snr', board_snr],
+            ['nrfjprog', '--program', self.hex_, '-f', self.family, '--snr',
+             board_snr],
+        ]
+        if self.family == 'NRF52':
+            commands.extend([
+                # Set reset pin
+                ['nrfjprog', '--memwr', '0x10001200', '--val', '0x00000015',
+                 '-f', self.family, '--snr', board_snr],
+                ['nrfjprog', '--memwr', '0x10001204', '--val', '0x00000015',
+                 '-f', self.family, '--snr', board_snr],
+                ['nrfjprog', '--reset', '-f', self.family, '--snr', board_snr],
+            ])
+
+        for cmd in commands:
+            check_call(cmd, self.debug)
+
+        print('{} Serial Number {} flashed with success.'.format(
+                  self.board, board_snr))
+
+
 class PyOcdBinaryFlasher(ZephyrBinaryFlasher):
     '''Flasher front-end for pyocd-flashtool.'''
 
