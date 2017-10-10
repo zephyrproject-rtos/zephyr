@@ -12,10 +12,12 @@
  * init time. If no routine is installed, a nop routine is called.
  */
 
+#include <kernel.h>
 #include <misc/printk.h>
 #include <stdarg.h>
 #include <toolchain.h>
 #include <linker/sections.h>
+#include <syscall_handler.h>
 
 typedef int (*out_func_t)(int c, void *ctx);
 
@@ -215,6 +217,30 @@ still_might_format:
 	}
 }
 
+#ifdef CONFIG_USERSPACE
+struct out_context {
+	int count;
+	unsigned int buf_count;
+	char buf[CONFIG_PRINTK_BUFFER_SIZE];
+};
+
+static void buf_flush(struct out_context *ctx)
+{
+	k_str_out(ctx->buf, ctx->buf_count);
+	ctx->buf_count = 0;
+}
+
+static int char_out(int c, struct out_context *ctx)
+{
+	ctx->count++;
+	ctx->buf[ctx->buf_count++] = c;
+	if (ctx->buf_count == CONFIG_PRINTK_BUFFER_SIZE) {
+		buf_flush(ctx);
+	}
+
+	return c;
+}
+#else
 struct out_context {
 	int count;
 };
@@ -224,14 +250,43 @@ static int char_out(int c, struct out_context *ctx)
 	ctx->count++;
 	return _char_out(c);
 }
+#endif
 
 int vprintk(const char *fmt, va_list ap)
 {
 	struct out_context ctx = { 0 };
 
 	_vprintk((out_func_t)char_out, &ctx, fmt, ap);
+
+#ifdef CONFIG_USERSPACE
+	if (ctx.buf_count) {
+		buf_flush(&ctx);
+	}
+#endif
 	return ctx.count;
 }
+
+void _impl_k_str_out(char *c, size_t n)
+{
+	int i;
+
+	for (i = 0; i < n; i++) {
+		_char_out(c[i]);
+	}
+}
+
+#ifdef CONFIG_USERSPACE
+u32_t _handler_k_str_out(u32_t c, u32_t n, u32_t arg3, u32_t arg4,
+			  u32_t arg5, u32_t arg6, void *ssf)
+{
+	_SYSCALL_ARG2;
+
+	_SYSCALL_MEMORY(c, n, 0, ssf);
+	_impl_k_str_out((char *)c, n);
+
+	return 0;
+}
+#endif
 
 /**
  * @brief Output a string
