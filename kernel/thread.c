@@ -264,7 +264,7 @@ u32_t _handler_k_thread_start(u32_t thread, u32_t arg2, u32_t arg3,
 {
 	_SYSCALL_ARG1;
 
-	_SYSCALL_IS_OBJ(thread, K_OBJ_THREAD, 0, ssf);
+	_SYSCALL_OBJ(thread, K_OBJ_THREAD, ssf);
 	_impl_k_thread_start((struct k_thread *)thread);
 	return 0;
 }
@@ -352,7 +352,7 @@ u32_t _handler_k_thread_cancel(u32_t thread, u32_t arg2, u32_t arg3,
 {
 	_SYSCALL_ARG1;
 
-	_SYSCALL_IS_OBJ(thread, K_OBJ_THREAD, 0, ssf);
+	_SYSCALL_OBJ(thread, K_OBJ_THREAD, ssf);
 	return _impl_k_thread_cancel((struct k_thread *)thread);
 }
 #endif
@@ -433,7 +433,7 @@ u32_t _handler_k_thread_suspend(u32_t thread, u32_t arg2, u32_t arg3,
 {
 	_SYSCALL_ARG1;
 
-	_SYSCALL_IS_OBJ(thread, K_OBJ_THREAD, 0, ssf);
+	_SYSCALL_OBJ(thread, K_OBJ_THREAD, ssf);
 	_impl_k_thread_suspend((k_tid_t)thread);
 	return 0;
 }
@@ -463,7 +463,7 @@ u32_t _handler_k_thread_resume(u32_t thread, u32_t arg2, u32_t arg3,
 {
 	_SYSCALL_ARG1;
 
-	_SYSCALL_IS_OBJ(thread, K_OBJ_THREAD, 0, ssf);
+	_SYSCALL_OBJ(thread, K_OBJ_THREAD, ssf);
 	_impl_k_thread_resume((k_tid_t)thread);
 	return 0;
 }

@@ -51,8 +51,9 @@ u32_t _handler_k_thread_abort(u32_t thread_p, u32_t arg2, u32_t arg3,
 			      u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
 {
 	struct k_thread *thread = (struct k_thread *)thread_p;
-	_SYSCALL_IS_OBJ(thread, K_OBJ_THREAD, 0, ssf);
-	_SYSCALL_VERIFY(!(thread->base.user_options & K_ESSENTIAL), ssf);
+	_SYSCALL_OBJ(thread, K_OBJ_THREAD, ssf);
+	_SYSCALL_VERIFY_MSG(!(thread->base.user_options & K_ESSENTIAL), ssf,
+		"aborting essential thread %p", thread);
 
 	_impl_k_thread_abort((struct k_thread *)thread);
 	return 0;

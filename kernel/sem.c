@@ -76,7 +76,7 @@ u32_t _handler_k_sem_init(u32_t sem_ptr, u32_t initial_count, u32_t limit,
 {
 	_SYSCALL_ARG3;
 
-	_SYSCALL_IS_OBJ(sem_ptr, K_OBJ_SEM, 1, ssf);
+	_SYSCALL_OBJ_INIT(sem_ptr, K_OBJ_SEM, ssf);
 	_SYSCALL_VERIFY(limit != 0, ssf);
 	_impl_k_sem_init((struct k_sem *)sem_ptr, initial_count, limit);
 	return 0;
@@ -161,7 +161,7 @@ u32_t _handler_k_sem_give(u32_t sem_ptr, u32_t arg2, u32_t arg3,
 {
 	_SYSCALL_ARG1;
 
-	_SYSCALL_IS_OBJ(sem_ptr, K_OBJ_SEM, 0, ssf);
+	_SYSCALL_OBJ(sem_ptr, K_OBJ_SEM, ssf);
 	_impl_k_sem_give((struct k_sem *)sem_ptr);
 
 	return 0;
@@ -196,7 +196,7 @@ u32_t _handler_k_sem_take(u32_t sem_ptr, u32_t timeout, u32_t arg3,
 {
 	_SYSCALL_ARG2;
 
-	_SYSCALL_IS_OBJ(sem_ptr, K_OBJ_SEM, 0, ssf);
+	_SYSCALL_OBJ(sem_ptr, K_OBJ_SEM, ssf);
 	return _impl_k_sem_take((struct k_sem *)sem_ptr, timeout);
 }
 
@@ -205,7 +205,7 @@ u32_t _handler_k_sem_reset(u32_t sem_ptr, u32_t arg2, u32_t arg3,
 {
 	_SYSCALL_ARG1;
 
-	_SYSCALL_IS_OBJ(sem_ptr, K_OBJ_SEM, 0, ssf);
+	_SYSCALL_OBJ(sem_ptr, K_OBJ_SEM, ssf);
 	_impl_k_sem_reset((struct k_sem *)sem_ptr);
 
 	return 0;
@@ -216,7 +216,7 @@ u32_t _handler_k_sem_count_get(u32_t sem_ptr, u32_t arg2, u32_t arg3,
 {
 	_SYSCALL_ARG1;
 
-	_SYSCALL_IS_OBJ(sem_ptr, K_OBJ_SEM, 0, ssf);
+	_SYSCALL_OBJ(sem_ptr, K_OBJ_SEM, ssf);
 	return _impl_k_sem_count_get((struct k_sem *)sem_ptr);
 }
 #endif /* CONFIG_USERSPACE */

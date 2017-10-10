@@ -143,7 +143,7 @@ u32_t _handler_k_timer_start(u32_t timer, u32_t duration_p, u32_t period_p,
 
 	_SYSCALL_VERIFY(duration >= 0 && period >= 0 &&
 			(duration != 0 || period != 0), ssf);
-	_SYSCALL_IS_OBJ(timer, K_OBJ_TIMER, 0, ssf);
+	_SYSCALL_OBJ(timer, K_OBJ_TIMER, ssf);
 	_impl_k_timer_start((struct k_timer *)timer, duration, period);
 	return 0;
 }
@@ -184,7 +184,7 @@ u32_t _handler_k_timer_stop(u32_t timer, u32_t arg2, u32_t arg3,
 {
 	_SYSCALL_ARG1;
 
-	_SYSCALL_IS_OBJ(timer, K_OBJ_TIMER, 0, ssf);
+	_SYSCALL_OBJ(timer, K_OBJ_TIMER, ssf);
 	_impl_k_timer_stop((struct k_timer *)timer);
 	return 0;
 }
@@ -208,7 +208,7 @@ u32_t _handler_k_timer_status_get(u32_t timer, u32_t arg2, u32_t arg3,
 {
 	_SYSCALL_ARG1;
 
-	_SYSCALL_IS_OBJ(timer, K_OBJ_TIMER, 0, ssf);
+	_SYSCALL_OBJ(timer, K_OBJ_TIMER, ssf);
 	return _impl_k_timer_status_get((struct k_timer *)timer);
 }
 #endif
@@ -249,7 +249,7 @@ u32_t _handler_k_timer_status_sync(u32_t timer, u32_t arg2, u32_t arg3,
 {
 	_SYSCALL_ARG1;
 
-	_SYSCALL_IS_OBJ(timer, K_OBJ_TIMER, 0, ssf);
+	_SYSCALL_OBJ(timer, K_OBJ_TIMER, ssf);
 	return _impl_k_timer_status_sync((struct k_timer *)timer);
 }
 #endif

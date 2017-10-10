@@ -18,7 +18,7 @@ u32_t _handler_k_object_access_grant(u32_t object, u32_t thread, u32_t arg3,
 {
 	_SYSCALL_ARG2;
 
-	_SYSCALL_IS_OBJ(thread, K_OBJ_THREAD, 0, ssf);
+	_SYSCALL_OBJ(thread, K_OBJ_THREAD, ssf);
 	_impl_k_object_access_grant((void *)object, (struct k_thread *)thread);
 	return 0;
 }

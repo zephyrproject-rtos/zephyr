@@ -69,8 +69,8 @@ u32_t _handler_k_msgq_init(u32_t q, u32_t buffer, u32_t msg_size,
 {
 	_SYSCALL_ARG4;
 
-	_SYSCALL_IS_OBJ(q, K_OBJ_MSGQ, 1, ssf);
-	_SYSCALL_MEMORY(buffer, msg_size * max_msgs, 1, ssf);
+	_SYSCALL_OBJ_INIT(q, K_OBJ_MSGQ, ssf);
+	_SYSCALL_MEMORY_WRITE(buffer, msg_size * max_msgs, ssf);
 
 	_impl_k_msgq_init((struct k_msgq *)q, (char *)buffer, msg_size,
 			  max_msgs);
@@ -133,8 +133,8 @@ u32_t _handler_k_msgq_put(u32_t msgq_p, u32_t data, u32_t timeout,
 	struct k_msgq *q = (struct k_msgq *)msgq_p;
 	_SYSCALL_ARG3;
 
-	_SYSCALL_IS_OBJ(q, K_OBJ_MSGQ, 0, ssf);
-	_SYSCALL_MEMORY(data, q->msg_size, 0, ssf);
+	_SYSCALL_OBJ(q, K_OBJ_MSGQ, ssf);
+	_SYSCALL_MEMORY_READ(data, q->msg_size, ssf);
 
 	return _impl_k_msgq_put(q, (void *)data, timeout);
 }
@@ -201,8 +201,8 @@ u32_t _handler_k_msgq_get(u32_t msgq_p, u32_t data, u32_t timeout,
 	struct k_msgq *q = (struct k_msgq *)msgq_p;
 	_SYSCALL_ARG3;
 
-	_SYSCALL_IS_OBJ(q, K_OBJ_MSGQ, 0, ssf);
-	_SYSCALL_MEMORY(data, q->msg_size, 1, ssf);
+	_SYSCALL_OBJ(q, K_OBJ_MSGQ, ssf);
+	_SYSCALL_MEMORY_WRITE(data, q->msg_size, ssf);
 
 	return _impl_k_msgq_get(q, (void *)data, timeout);
 }
@@ -232,7 +232,7 @@ u32_t _handler_k_msgq_purge(u32_t q, u32_t arg2, u32_t arg3,
 {
 	_SYSCALL_ARG1;
 
-	_SYSCALL_IS_OBJ(q, K_OBJ_MSGQ, 0, ssf);
+	_SYSCALL_OBJ(q, K_OBJ_MSGQ, ssf);
 
 	_impl_k_msgq_purge((struct k_msgq *)q);
 	return 0;
@@ -243,7 +243,7 @@ u32_t _handler_k_msgq_num_free_get(u32_t q, u32_t arg2, u32_t arg3, u32_t arg4,
 {
 	_SYSCALL_ARG1;
 
-	_SYSCALL_IS_OBJ(q, K_OBJ_MSGQ, 0, ssf);
+	_SYSCALL_OBJ(q, K_OBJ_MSGQ, ssf);
 
 	return _impl_k_msgq_num_free_get((struct k_msgq *)q);
 }
@@ -253,7 +253,7 @@ u32_t _handler_k_msgq_num_used_get(u32_t q, u32_t arg2, u32_t arg3, u32_t arg4,
 {
 	_SYSCALL_ARG1;
 
-	_SYSCALL_IS_OBJ(q, K_OBJ_MSGQ, 0, ssf);
+	_SYSCALL_OBJ(q, K_OBJ_MSGQ, ssf);
 
 	return _impl_k_msgq_num_used_get((struct k_msgq *)q);
 }

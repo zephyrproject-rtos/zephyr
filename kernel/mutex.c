@@ -87,7 +87,7 @@ u32_t _handler_k_mutex_init(u32_t mutex, u32_t arg2, u32_t arg3,
 {
 	_SYSCALL_ARG1;
 
-	_SYSCALL_IS_OBJ(mutex, K_OBJ_MUTEX, 1, ssf);
+	_SYSCALL_OBJ_INIT(mutex, K_OBJ_MUTEX, ssf);
 	_impl_k_mutex_init((struct k_mutex *)mutex);
 
 	return 0;
@@ -208,7 +208,7 @@ u32_t _handler_k_mutex_lock(u32_t mutex, u32_t timeout, u32_t arg3,
 {
 	_SYSCALL_ARG2;
 
-	_SYSCALL_IS_OBJ(mutex, K_OBJ_MUTEX, 0, ssf);
+	_SYSCALL_OBJ(mutex, K_OBJ_MUTEX, ssf);
 	return _impl_k_mutex_lock((struct k_mutex *)mutex, (s32_t)timeout);
 }
 #endif
@@ -272,7 +272,7 @@ u32_t _handler_k_mutex_unlock(u32_t mutex, u32_t arg2, u32_t arg3,
 {
 	_SYSCALL_ARG1;
 
-	_SYSCALL_IS_OBJ(mutex, K_OBJ_MUTEX, 0, ssf);
+	_SYSCALL_OBJ(mutex, K_OBJ_MUTEX, ssf);
 	_impl_k_mutex_unlock((struct k_mutex *)mutex);
 	return 0;
 }
