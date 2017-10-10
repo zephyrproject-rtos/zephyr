@@ -6,6 +6,7 @@
 
 #include <tc_util.h>
 #include <zephyr.h>
+#include <ztest.h>
 #include <kernel.h>
 #include <kernel_structs.h>
 #include <stdbool.h>
@@ -230,8 +231,6 @@ static void coop_low(void *arg1, void *arg2, void *arg3)
 
 void task_high(void)
 {
-	TC_START("Test Preemptible Threads Pending on Kernel Objects");
-
 	k_fifo_init(&fifo);
 	k_lifo_init(&lifo);
 
@@ -271,9 +270,15 @@ void task_low(void)
 	lifo_tests(FOURTH_SECOND, &task_low_state, my_lifo_get, k_sem_take);
 }
 
-void task_monitor(void)
+void test_pending(void)
 {
-	int result = TC_FAIL;
+	/*
+	 * Main thread(test_main) priority was 9 but ztest thread runs at
+	 * priority -1. To run the test smoothly make both main and ztest
+	 * threads run at same priority level.
+	 */
+	k_thread_priority_set(k_current_get(), 9);
+
 	struct offload_work offload1;
 	struct offload_work offload2;
 
@@ -287,12 +292,10 @@ void task_monitor(void)
 	 */
 
 	TC_PRINT("Testing preemptible threads block on fifos ...\n");
-	if ((coop_high_state != FIFO_TEST_START) ||
-	    (coop_low_state != FIFO_TEST_START) ||
-	    (task_high_state != FIFO_TEST_START) ||
-	    (task_low_state != FIFO_TEST_START)) {
-		goto error;
-	}
+	zassert_false((coop_high_state != FIFO_TEST_START) ||
+		      (coop_low_state != FIFO_TEST_START) ||
+		      (task_high_state != FIFO_TEST_START) ||
+		      (task_low_state != FIFO_TEST_START), NULL);
 
 	/* Give waiting threads time to time-out */
 	k_sleep(NUM_SECONDS(2));
@@ -303,13 +306,11 @@ void task_monitor(void)
 	 */
 
 	TC_PRINT("Testing fifos time-out in correct order ...\n");
-	if ((task_low_state != FIFO_TEST_START + 1) ||
-	    (task_high_state != FIFO_TEST_START + 2) ||
-	    (coop_low_state != FIFO_TEST_START + 3) ||
-	    (coop_high_state != FIFO_TEST_START + 4)) {
-		TC_ERROR("**** Threads timed-out in unexpected order\n");
-		goto error;
-	}
+	zassert_false((task_low_state != FIFO_TEST_START + 1) ||
+		      (task_high_state != FIFO_TEST_START + 2) ||
+		      (coop_low_state != FIFO_TEST_START + 3) ||
+		      (coop_high_state != FIFO_TEST_START + 4),
+		      "**** Threads timed-out in unexpected order");
 
 	counter = FIFO_TEST_END;
 
@@ -329,13 +330,11 @@ void task_monitor(void)
 	k_fifo_put(&fifo, &fifo_test_data[2]);
 	k_fifo_put(&fifo, &fifo_test_data[3]);
 
-	if ((coop_high_state != FIFO_TEST_END + 1) ||
-	    (coop_low_state != FIFO_TEST_END + 2) ||
-	    (task_high_state != FIFO_TEST_END + 3) ||
-	    (task_low_state != FIFO_TEST_END + 4)) {
-		TC_ERROR("**** Unexpected delivery order\n");
-		goto error;
-	}
+	zassert_false((coop_high_state != FIFO_TEST_END + 1) ||
+		      (coop_low_state != FIFO_TEST_END + 2) ||
+		      (task_high_state != FIFO_TEST_END + 3) ||
+		      (task_low_state != FIFO_TEST_END + 4),
+		      "**** Unexpected delivery order");
 
 	k_work_init(&offload1.work_item, sync_threads);
 	offload1.sem = &end_test_sem;
@@ -351,24 +350,20 @@ void task_monitor(void)
 	 */
 
 	TC_PRINT("Testing preemptible threads block on lifos ...\n");
-	if ((coop_high_state != LIFO_TEST_START) ||
-	    (coop_low_state != LIFO_TEST_START) ||
-	    (task_high_state != LIFO_TEST_START) ||
-	    (task_low_state != LIFO_TEST_START)) {
-		goto error;
-	}
+	zassert_false((coop_high_state != LIFO_TEST_START) ||
+		      (coop_low_state != LIFO_TEST_START) ||
+		      (task_high_state != LIFO_TEST_START) ||
+		      (task_low_state != LIFO_TEST_START), NULL);
 
 	/* Give waiting threads time to time-out */
 	k_sleep(NUM_SECONDS(2));
 
 	TC_PRINT("Testing lifos time-out in correct order ...\n");
-	if ((task_low_state != LIFO_TEST_START + 1) ||
-	    (task_high_state != LIFO_TEST_START + 2) ||
-	    (coop_low_state != LIFO_TEST_START + 3) ||
-	    (coop_high_state != LIFO_TEST_START + 4)) {
-		TC_ERROR("**** Threads timed-out in unexpected order\n");
-		goto error;
-	}
+	zassert_false((task_low_state != LIFO_TEST_START + 1) ||
+		      (task_high_state != LIFO_TEST_START + 2) ||
+		      (coop_low_state != LIFO_TEST_START + 3) ||
+		      (coop_high_state != LIFO_TEST_START + 4),
+		      "**** Threads timed-out in unexpected order");
 
 	counter = LIFO_TEST_END;
 
@@ -388,13 +383,11 @@ void task_monitor(void)
 	k_lifo_put(&lifo, &lifo_test_data[3]);
 
 	TC_PRINT("Testing lifos delivered data correctly ...\n");
-	if ((coop_high_state != LIFO_TEST_END + 1) ||
-	    (coop_low_state != LIFO_TEST_END + 2) ||
-	    (task_high_state != LIFO_TEST_END + 3) ||
-	    (task_low_state != LIFO_TEST_END + 4)) {
-		TC_ERROR("**** Unexpected timeout order\n");
-		goto error;
-	}
+	zassert_false((coop_high_state != LIFO_TEST_END + 1) ||
+		      (coop_low_state != LIFO_TEST_END + 2) ||
+		      (task_high_state != LIFO_TEST_END + 3) ||
+		      (task_low_state != LIFO_TEST_END + 4),
+		      "**** Unexpected timeout order");
 
 	k_work_init(&offload2.work_item, sync_threads);
 	offload2.sem = &end_test_sem;
@@ -410,31 +403,25 @@ void task_monitor(void)
 	 */
 
 	TC_PRINT("Testing preemptible thread waiting on timer ...\n");
-	if (timer_end_tick != 0) {
-		TC_ERROR("Task did not pend on timer\n");
-		goto error;
-	}
+	zassert_equal(timer_end_tick, 0, "Task did not pend on timer");
 
 	/* Let the timer expire */
 	k_sleep(NUM_SECONDS(2));
 
-	if (timer_end_tick < timer_start_tick + NUM_SECONDS(1)) {
-		TC_ERROR("Task waiting on timer error\n");
-		goto error;
-	}
+	zassert_false((timer_end_tick < timer_start_tick + NUM_SECONDS(1)),
+			"Task waiting on timer error");
 
-	if (timer_data != NON_NULL_PTR) {
-		TC_ERROR("Incorrect data from timer\n");
-		goto error;
-	}
+	zassert_equal(timer_data, NON_NULL_PTR,
+				"Incorrect data from timer");
 
 	k_sem_give(&end_test_sem);
+}
 
-	result = TC_PASS;
-
-error:
-	TC_END_RESULT(result);
-	TC_END_REPORT(result);
+void test_main(void)
+{
+	ztest_test_suite(test_pend,
+			ztest_unit_test(test_pending));
+	ztest_run_test_suite(test_pend);
 }
 
 K_THREAD_DEFINE(TASK_LOW, PREEM_STACKSIZE, task_low, NULL, NULL, NULL,
@@ -443,5 +430,3 @@ K_THREAD_DEFINE(TASK_LOW, PREEM_STACKSIZE, task_low, NULL, NULL, NULL,
 K_THREAD_DEFINE(TASK_HIGH, PREEM_STACKSIZE, task_high, NULL, NULL, NULL,
 		5, 0, K_NO_WAIT);
 
-K_THREAD_DEFINE(TASK_MONITOR, PREEM_STACKSIZE, task_monitor, NULL, NULL, NULL,
-		9, 0, K_NO_WAIT);
