@@ -532,7 +532,7 @@ static int sm_do_bootstrap(int index)
 		coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_PATH,
 					  "bs", strlen("bs"));
 
-		snprintf(query_buffer, sizeof(query_buffer) - 1,
+		snprintk(query_buffer, sizeof(query_buffer) - 1,
 			 "ep=%s", clients[index].ep_name);
 		/* TODO: handle return error */
 		coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_QUERY,
@@ -644,12 +644,12 @@ static int sm_send_registration(int index, bool send_obj_support_data,
 		/* include client endpoint in URI QUERY on 1st registration */
 		coap_append_option_int(&msg->cpkt, COAP_OPTION_CONTENT_FORMAT,
 				       LWM2M_FORMAT_APP_LINK_FORMAT);
-		snprintf(query_buffer, sizeof(query_buffer) - 1,
+		snprintk(query_buffer, sizeof(query_buffer) - 1,
 			 "lwm2m=%s", LWM2M_PROTOCOL_VERSION);
 		/* TODO: handle return error */
 		coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_QUERY,
 					  query_buffer, strlen(query_buffer));
-		snprintf(query_buffer, sizeof(query_buffer) - 1,
+		snprintk(query_buffer, sizeof(query_buffer) - 1,
 			 "ep=%s", clients[index].ep_name);
 		/* TODO: handle return error */
 		coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_QUERY,
@@ -662,7 +662,7 @@ static int sm_send_registration(int index, bool send_obj_support_data,
 					  strlen(clients[index].server_ep));
 	}
 
-	snprintf(query_buffer, sizeof(query_buffer) - 1,
+	snprintk(query_buffer, sizeof(query_buffer) - 1,
 		 "lt=%d", clients[index].lifetime);
 	/* TODO: handle return error */
 	coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_QUERY,

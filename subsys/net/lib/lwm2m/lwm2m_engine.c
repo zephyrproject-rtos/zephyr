@@ -162,7 +162,7 @@ static char *sprint_token(const u8_t *token, u8_t tkl)
 		int i;
 
 		for (i = 0; i < tkl; i++) {
-			pos += snprintf(&buf[pos], 31 - pos, "%x", token[i]);
+			pos += snprintk(&buf[pos], 31 - pos, "%x", token[i]);
 		}
 
 		buf[pos] = '\0';
@@ -590,10 +590,12 @@ int lwm2m_create_obj_inst(u16_t obj_id, u16_t obj_inst_id,
 	obj->instance_count++;
 	(*obj_inst)->obj = obj;
 	(*obj_inst)->obj_inst_id = obj_inst_id;
-	sprintf((*obj_inst)->path, "%u/%u", obj_id, obj_inst_id);
+	snprintk((*obj_inst)->path, MAX_RESOURCE_LEN, "%u/%u",
+		 obj_id, obj_inst_id);
 	for (i = 0; i < (*obj_inst)->resource_count; i++) {
-		sprintf((*obj_inst)->resources[i].path, "%u/%u/%u",
-			obj_id, obj_inst_id, (*obj_inst)->resources[i].res_id);
+		snprintk((*obj_inst)->resources[i].path, MAX_RESOURCE_LEN,
+			 "%u/%u/%u", obj_id, obj_inst_id,
+			 (*obj_inst)->resources[i].res_id);
 	}
 
 	engine_register_obj_inst(*obj_inst);
@@ -935,7 +937,7 @@ u16_t lwm2m_get_rd_data(u8_t *client_data, u16_t size)
 
 		/* Only report <OBJ_ID> when no instance available */
 		if (obj->instance_count == 0) {
-			len = snprintf(temp, sizeof(temp), "%s</%u>",
+			len = snprintk(temp, sizeof(temp), "%s</%u>",
 				       (pos > 0) ? "," : "", obj->obj_id);
 			if (pos + len >= size) {
 				/* full buffer -- exit loop */
@@ -950,7 +952,7 @@ u16_t lwm2m_get_rd_data(u8_t *client_data, u16_t size)
 		SYS_SLIST_FOR_EACH_CONTAINER(&engine_obj_inst_list,
 					     obj_inst, node) {
 			if (obj_inst->obj->obj_id == obj->obj_id) {
-				len = snprintf(temp, sizeof(temp),
+				len = snprintk(temp, sizeof(temp),
 					       "%s</%s>",
 					       (pos > 0) ? "," : "",
 					       obj_inst->path);
@@ -2261,16 +2263,19 @@ static int do_discover_op(struct lwm2m_engine_context *context)
 			continue;
 		}
 
-		out->outlen += sprintf(&out->outbuf[out->outlen], ",</%u/%u>",
-				       obj_inst->obj->obj_id,
-				       obj_inst->obj_inst_id);
+		out->outlen += snprintk(&out->outbuf[out->outlen],
+					out->outsize - out->outlen,
+					",</%u/%u>",
+					obj_inst->obj->obj_id,
+					obj_inst->obj_inst_id);
 
 		for (i = 0; i < obj_inst->resource_count; i++) {
-			out->outlen += sprintf(&out->outbuf[out->outlen],
-					       ",</%u/%u/%u>",
-					       obj_inst->obj->obj_id,
-					       obj_inst->obj_inst_id,
-					       obj_inst->resources[i].res_id);
+			out->outlen += snprintk(&out->outbuf[out->outlen],
+						out->outsize - out->outlen,
+						",</%u/%u/%u>",
+						obj_inst->obj->obj_id,
+						obj_inst->obj_inst_id,
+						obj_inst->resources[i].res_id);
 		}
 	}
 
