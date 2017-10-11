@@ -1289,3 +1289,136 @@ Events:
 		This event forwards data received over L2CAP channel.
 		Chan_ID is the internal application number that identifies
 		L2CAP channel.
+
+Mesh Node Service (ID 4)
+==================
+
+Commands and responses:
+
+	Opcode 0x00 - Error response
+
+	Opcode 0x01 - Read Supported Commands command/response
+
+		Controller Index:	<controller id>
+		Command parameters:	<none>
+		Response parameters:	<supported commands> (variable)
+
+		Each bit in response is a flag indicating if command with
+		opcode matching bit number is supported. Bit set to 1 means
+		that command is supported. Bit 0 is reserved and shall always
+		be set to 0. If specific bit is not present in response (less
+		than required bytes received) it shall be assumed that command
+		is not supported.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x02 - Configure Provisioning command/response
+		Controller Index:	<controller id>
+		Command parameters:	UUID (16 octets)
+					Static Auth (16 octets)
+					Output Size (1 octet)
+					Output Actions (2 octets)
+					Input Size (1 octet)
+					Input Actions (2 octets)
+
+		This command is used to configure provisioning options.
+
+		Output actions is a bitmask with following available bits:
+			0	Blink
+			1	Beep
+			2	Vibrate
+			3	Display number
+			4	Display string
+
+		Input actions is a bitmask with following available bits:
+			0	Push
+			1	Twist
+			2	Enter number
+			3	Enter string
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x03 - Provision Node command/response
+		Controller Index:	<controller id>
+		Command parameters:	Network Key (16 octets)
+					Network Key Index (2 octets)
+					Provisioning Flags (1 octet)
+					IV Index (4 octets)
+					Sequence Number (4 octets)
+					Primary Element Address (2 octets)
+					Device Key (16 octets)
+
+		This command is used to provide provisioning information. It can
+		be used whenever unprovisioned beacon is advertising or not.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x04 - Init command/response
+		Controller Index:	<controller id>
+		Command parameters:	<none>
+
+		This command is used to start advertising either as
+		unprovisioned beacon or network node. Action depends on previous
+		configuration.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x05 - Reset command/response
+		Controller Index:	<controller id>
+		Command parameters:	<none>
+
+		This command is used to reset state of a provisioned node making
+		it to start sending unprovisioned beacons.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x06 - Input number command/response
+		Controller Index:	<controller id>
+		Command parameters:	Number (4 octets)
+
+		This command is used to reply with input number as a response to
+		Input action event.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x07 - Input string command/response
+		Controller Index:	<controller id>
+		Command parameters:	String Length (1 octet)
+					String (variable)
+
+		This command is used to reply with input string as a response to
+		Input action event.
+
+		In case of an error, the error response will be returned.
+
+Events:
+	Opcode 0x80 - Output number action Event
+
+		Controller Index:	<controller id>
+		Event parameters:	Action (2 octets)
+					Number (4 octets)
+
+	Opcode 0x81 - Output string action Event
+
+		Controller Index:	<controller id>
+		Event parameters:	String Length (1 octet)
+					String (variable)
+
+	Opcode 0x82 - Input action Event
+
+		Controller Index:	<controller id>
+		Event parameters:	Action (2 octets)
+					Size (1 octet)
+
+		This event indicates that input action is required. Depending
+		on action it may require reply with 'Input number' or
+		'Input string' commands.
+
+		Depending on action either number or string fields are valid.
+
+	Opcode 0x83 - Provisioned Event
+
+		Controller Index:	<controller id>
+		Event parameters:	<none>
+
+		This event indicate that node was provisioned.
