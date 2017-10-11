@@ -130,4 +130,6 @@ source "drivers/interrupt_controller/Kconfig.stm32"
 
 source "drivers/interrupt_controller/Kconfig.multilevel"
 
+source "drivers/interrupt_controller/Kconfig.s1000"
+
 endmenu
