@@ -166,7 +166,7 @@ static int transfer_request(struct coap_block_context *ctx,
 	return 0;
 
 cleanup:
-	lwm2m_release_message(msg);
+	lwm2m_reset_message(msg, true);
 
 	if (ret == -ENOMEM) {
 		lwm2m_firmware_set_update_result(RESULT_OUT_OF_MEM);
@@ -207,7 +207,7 @@ static int transfer_empty_ack(u16_t mid)
 	return 0;
 
 cleanup:
-	lwm2m_release_message(msg);
+	lwm2m_reset_message(msg, true);
 	return ret;
 }
 
