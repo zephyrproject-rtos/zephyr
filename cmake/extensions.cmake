@@ -663,6 +663,6 @@ function(execute_process_safely)
     RESULT_VARIABLE ret
   )
   if(ret)
-    message(FATAL_ERROR "Executing cmd: '${ARGN}'\n resulted in error: '${ret}'")
+    message(FATAL_ERROR "Executing cmd: '${ARGN}' resulted in error: '${ret}'")
   endif()
 endfunction()
