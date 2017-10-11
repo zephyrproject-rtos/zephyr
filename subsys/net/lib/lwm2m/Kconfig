@@ -27,6 +27,7 @@ config SYS_LOG_LWM2M_LEVEL
 config LWM2M_ENGINE_STACK_SIZE
 	int "LWM2M engine stack size"
 	default 1024
+	default 1536 if NET_LOG_GLOBAL
 	help
 	 Set the stack size for the LWM2M library engine (used for handling
 	 OBSERVE and NOTIFY events)
@@ -93,13 +94,6 @@ config LWM2M_RD_CLIENT_SUPPORT
 	help
 	  Client will use registration state machine to locate and connect to
 	  LWM2M servers (including bootstrap server support)
-
-config LWM2M_RD_CLIENT_STACK_SIZE
-	int "LWM2M RD client stack size"
-	default 1024
-	default 1536 if NET_LOG_GLOBAL
-	help
-	  Set the stack size for the LWM2M RD client
 
 config LWM2M_RD_CLIENT_INSTANCE_COUNT
 	int "Maximum # of LWM2M RD client instances"
