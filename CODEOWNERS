@@ -77,6 +77,7 @@ drivers/timer/altera_avalon_timer.c      @andrewboie
 drivers/timer/pulpino_timer.c            @fractalclone
 drivers/timer/riscv_machine_timer.c      @fractalclone
 drivers/usb                              @youvedeep @andyross
+drivers/usb/device/usb_dc_stm32.c        @ydamigos @loicpoulain
 drivers/i2c/i2c_ll_stm32*                @ldts @ydamigos
 dts/arm/st/*                             @erwango
 ext/fs/*                                 @nashif
