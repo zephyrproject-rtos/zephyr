@@ -849,7 +849,7 @@ quiet_cmd_create-lnk = LINK    $@
 	echo "$(LINKFLAGPREFIX)-Map=$(KERNEL_NAME).map"; 			\
 	echo "-L $(objtree)/include/generated";					\
 	echo "-u _OffsetAbsSyms -u _ConfigAbsSyms"; 				\
-	echo "-e __start"; 						 	\
+	echo "-e $(CONFIG_KERNEL_ENTRY)";					\
 	echo "$(LINKFLAGPREFIX)--start-group";					\
 	echo "$(LINKFLAGPREFIX)--whole-archive";				\
 	echo "libapplication.a";						\
