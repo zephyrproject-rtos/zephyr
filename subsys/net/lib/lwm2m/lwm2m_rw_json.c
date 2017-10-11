@@ -85,6 +85,13 @@
 #define MODE_VALUE     2
 #define MODE_READY     3
 
+struct json_data {
+	u8_t *name;
+	u8_t *value;
+	u8_t name_len;
+	u8_t value_len;
+};
+
 /* Simlified JSON style reader for reading in values from a LWM2M JSON string */
 int json_next_token(struct lwm2m_input_context *in, struct json_data *json)
 {
