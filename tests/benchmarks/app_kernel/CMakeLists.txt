@@ -1,9 +1,3 @@
-if(DEFINED ENV{BOARD})
-  set(BOARD $ENV{BOARD})
-else()
-  set(BOARD qemu_x86)
-endif()
-
 if(BOARD STREQUAL "minnowboard")
   set(CONF_FILE prj_fp.conf)
 else()

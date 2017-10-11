@@ -1,9 +1,3 @@
-if(DEFINED ENV{BOARD})
-  set(BOARD $ENV{BOARD})
-else()
-  set(BOARD qemu_x86)
-endif()
-
 set(small_freq_divider_frdm_k64f TRUE)
 set(small_freq_divider_arduino_due TRUE)
 set(small_freq_divider_qemu_cortex_m3 TRUE)
