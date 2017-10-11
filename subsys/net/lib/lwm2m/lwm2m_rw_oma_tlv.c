@@ -436,8 +436,6 @@ static size_t get_s32(struct lwm2m_input_context *in, s32_t *value)
 			size = 0;
 			tlv.length = 0;
 		}
-
-		in->last_value_len = tlv.length;
 	}
 
 	return size;
@@ -469,8 +467,6 @@ static size_t get_s64(struct lwm2m_input_context *in, s64_t *value)
 			size = 0;
 			tlv.length = 0;
 		}
-
-		in->last_value_len = tlv.length;
 	}
 
 	return size;
@@ -493,7 +489,6 @@ static size_t get_string(struct lwm2m_input_context *in,
 
 		memcpy(buf, tlv.value, tlv.length);
 		buf[tlv.length] = '\0';
-		in->last_value_len = tlv.length;
 	}
 
 	return size;
@@ -541,7 +536,6 @@ static size_t get_float32fix(struct lwm2m_input_context *in,
 		 * HACK BELOW: hard code the decimal value 0
 		 */
 		value->val2 = 0;
-		in->last_value_len = tlv.length;
 	}
 
 	return size;
@@ -560,8 +554,6 @@ static size_t get_float64fix(struct lwm2m_input_context *in,
 		}
 
 		/* TODO */
-
-		in->last_value_len = tlv.length;
 	}
 
 	return size;
@@ -580,7 +572,6 @@ static size_t get_bool(struct lwm2m_input_context *in, bool *value)
 			temp = (temp << 8) | tlv.value[i];
 		}
 		*value = (temp != 0);
-		in->last_value_len = tlv.length;
 	}
 
 	return size;

@@ -218,7 +218,6 @@ struct lwm2m_input_context {
 	u8_t *inbuf;
 	u16_t insize;
 	s32_t inpos;
-	u16_t last_value_len;
 	const struct lwm2m_reader *reader;
 };
 

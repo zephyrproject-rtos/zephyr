@@ -237,7 +237,6 @@ static size_t get_s32(struct lwm2m_input_context *in, s32_t *value)
 		*value = -*value;
 	}
 
-	in->last_value_len = i;
 	return i;
 }
 
@@ -261,7 +260,6 @@ static size_t get_s64(struct lwm2m_input_context *in, s64_t *value)
 		*value = -*value;
 	}
 
-	in->last_value_len = i;
 	return i;
 }
 
@@ -275,7 +273,6 @@ static size_t get_string(struct lwm2m_input_context *in,
 
 	memcpy(value, in->inbuf, in->insize);
 	value[in->insize] = '\0';
-	in->last_value_len = in->insize;
 	return in->insize;
 }
 
@@ -314,7 +311,6 @@ static size_t get_float32fix(struct lwm2m_input_context *in,
 		value->val1 = -value->val1;
 	}
 
-	in->last_value_len = i;
 	return i;
 }
 
@@ -353,7 +349,6 @@ static size_t get_float64fix(struct lwm2m_input_context *in,
 		value->val1 = -value->val1;
 	}
 
-	in->last_value_len = i;
 	return i;
 }
 
@@ -363,7 +358,6 @@ static size_t get_bool(struct lwm2m_input_context *in,
 	if (in->insize > 0) {
 		if (*in->inbuf == '1' || *in->inbuf == '0') {
 			*value = (*in->inbuf == '1') ? true : false;
-			in->last_value_len = 1;
 			return 1;
 		}
 	}
