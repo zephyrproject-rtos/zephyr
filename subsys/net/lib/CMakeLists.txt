@@ -1,5 +1,7 @@
-add_subdirectory_if_kconfig(zoap)
+add_subdirectory_if_kconfig(coap)
 add_subdirectory_if_kconfig(lwm2m)
+add_subdirectory_if_kconfig(sntp)
+add_subdirectory_if_kconfig(zoap)
 add_subdirectory_ifdef(CONFIG_DNS_RESOLVER      dns)
 add_subdirectory_ifdef(CONFIG_HTTP              http)
 add_subdirectory_ifdef(CONFIG_MQTT_LIB          mqtt)
