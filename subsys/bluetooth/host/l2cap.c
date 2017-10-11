@@ -635,7 +635,10 @@ static void l2cap_chan_rx_init(struct bt_l2cap_le_chan *chan)
 		}
 	}
 
-	chan->rx.mps = L2CAP_MAX_LE_MPS;
+	/* MPS shall not be bigger than MTU + 2 as the remaining bytes cannot
+	 * be used.
+	 */
+	chan->rx.mps = min(chan->rx.mtu + 2, L2CAP_MAX_LE_MPS);
 	k_sem_init(&chan->rx.credits, 0, UINT_MAX);
 }
 
