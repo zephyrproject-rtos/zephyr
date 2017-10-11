@@ -4,11 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/*
- * TODO:
- * Support PUSH transfer method (from server)
- */
-
 #define SYS_LOG_DOMAIN "lwm2m_obj_firmware"
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_LWM2M_LEVEL
 #include <logging/sys_log.h>
@@ -21,7 +16,7 @@
 
 /* Firmware resource IDs */
 #define FIRMWARE_PACKAGE_ID			0
-#define FIRMWARE_PACKAGE_URI_ID			1 /* TODO */
+#define FIRMWARE_PACKAGE_URI_ID			1
 #define FIRMWARE_UPDATE_ID			2
 #define FIRMWARE_STATE_ID			3
 #define FIRMWARE_UPDATE_RESULT_ID		5
@@ -269,11 +264,8 @@ static int firmware_update_cb(u16_t obj_inst_id)
 
 	state = lwm2m_firmware_get_update_state();
 	if (state != STATE_DOWNLOADED) {
-		/* TODO: pass response code to caller, -1 will be shown as
-		 * 4.05 method not allowed in current implementation
-		 */
 		SYS_LOG_ERR("State other than downloaded: %d", state);
-		return -1;
+		return -EPERM;
 	}
 
 	lwm2m_firmware_set_update_state(STATE_UPDATING);
