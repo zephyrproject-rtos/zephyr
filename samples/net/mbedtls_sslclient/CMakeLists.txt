@@ -1,9 +1,3 @@
-if(DEFINED ENV{BOARD})
-  set(BOARD $ENV{BOARD})
-else()
-  set(BOARD arduino_101)
-endif()
-
 set(CONF_FILE "prj_${BOARD}.conf")
 
 include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
