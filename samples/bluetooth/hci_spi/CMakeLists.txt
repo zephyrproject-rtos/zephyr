@@ -1,9 +1,3 @@
-if(DEFINED ENV{BOARD})
-  set(BOARD $ENV{BOARD})
-else()
-  set(BOARD 96b_carbon_nrf51)
-endif()
-
 include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
 project(NONE)
 
