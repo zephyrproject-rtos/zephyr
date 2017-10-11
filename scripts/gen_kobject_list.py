@@ -417,11 +417,12 @@ def find_kobjects(elf, syms):
             addr = (loc.value[1] | (loc.value[2] << 8) | (loc.value[3] << 16) |
                     (loc.value[4] << 24))
 
+        if addr == 0:
+            # Never linked; gc-sections deleted it
+            continue
+
         if ((addr < kram_start or addr >= kram_end)
                 and (addr < krom_start or addr >= krom_end)):
-            if addr == 0:
-                # Never linked; gc-sections deleted it
-                continue
 
             debug_die(die, "object '%s' found in invalid location %s" %
                     (name, hex(addr)));
