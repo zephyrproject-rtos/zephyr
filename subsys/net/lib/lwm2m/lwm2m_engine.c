@@ -2515,7 +2515,10 @@ static int handle_request(struct coap_packet *request,
 	}
 
 	/* render CoAP packet header */
-	lwm2m_init_message(msg);
+	r = lwm2m_init_message(msg);
+	if (r < 0) {
+		goto error;
+	}
 
 	switch (context.operation) {
 
@@ -2526,9 +2529,10 @@ static int handle_request(struct coap_packet *request,
 				r = coap_append_option_int(out.out_cpkt,
 							   COAP_OPTION_OBSERVE,
 							   1);
-				if (r) {
+				if (r < 0) {
 					SYS_LOG_ERR("OBSERVE option error: %d",
 						    r);
+					goto error;
 				}
 
 				r = engine_add_observer(msg, token, tkl, &path,
@@ -2551,9 +2555,10 @@ static int handle_request(struct coap_packet *request,
 		r = coap_append_option_int(out.out_cpkt,
 					   COAP_OPTION_CONTENT_FORMAT,
 					   accept);
-		if (r > 0) {
+		if (r < 0) {
 			SYS_LOG_ERR("Error setting response content-format: %d",
 				    r);
+			goto error;
 		}
 
 		r = do_read_op(obj, &context);
@@ -2585,7 +2590,7 @@ static int handle_request(struct coap_packet *request,
 		r = -EINVAL;
 	}
 
-	if (r) {
+	if (r < 0) {
 		goto error;
 	}
 
@@ -2614,7 +2619,7 @@ static int handle_request(struct coap_packet *request,
 	return 0;
 
 error:
-	/* TODO: reset CoAP packet and empty payload */
+	lwm2m_reset_message(msg, false);
 	if (r == -ENOENT) {
 		msg->code = COAP_RESPONSE_CODE_NOT_FOUND;
 	} else if (r == -EPERM) {
@@ -2626,6 +2631,11 @@ error:
 	} else {
 		/* Failed to handle the request */
 		msg->code = COAP_RESPONSE_CODE_INTERNAL_ERROR;
+	}
+
+	r = lwm2m_init_message(msg);
+	if (r < 0) {
+		SYS_LOG_ERR("Error recreating message: %d", r);
 	}
 
 	/* Free block context when error happened */
