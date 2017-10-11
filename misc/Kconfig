@@ -98,6 +98,12 @@ config LINK_WHOLE_ARCHIVE
 	This options allows linking external libraries with the
 	--whole-archive option to keep all symbols.
 
+config KERNEL_ENTRY
+	string "Kernel entry symbol"
+	default "__start"
+	help
+	Code entry symbol, to be set at linking phase.
+
 endmenu
 
 menu "Compiler Options"
