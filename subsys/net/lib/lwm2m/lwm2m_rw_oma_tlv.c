@@ -66,6 +66,20 @@
 #include "lwm2m_rw_oma_tlv.h"
 #include "lwm2m_engine.h"
 
+enum {
+	OMA_TLV_TYPE_OBJECT_INSTANCE   = 0,
+	OMA_TLV_TYPE_RESOURCE_INSTANCE = 1,
+	OMA_TLV_TYPE_MULTI_RESOURCE    = 2,
+	OMA_TLV_TYPE_RESOURCE          = 3
+};
+
+struct oma_tlv {
+	u8_t  type;
+	u16_t id; /* can be 8-bit or 16-bit when serialized */
+	u32_t length;
+	const u8_t *value;
+};
+
 static u8_t get_len_type(const struct oma_tlv *tlv)
 {
 	if (tlv->length < 8) {

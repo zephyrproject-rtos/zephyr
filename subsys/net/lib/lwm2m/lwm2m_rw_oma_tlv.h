@@ -43,31 +43,7 @@
 #ifndef LWM2M_RW_OMA_TLV_H_
 #define LWM2M_RW_OMA_TLV_H_
 
-#include <stdint.h>
-#include <stddef.h>
-
 #include "lwm2m_object.h"
-
-enum {
-	OMA_TLV_TYPE_OBJECT_INSTANCE   = 0,
-	OMA_TLV_TYPE_RESOURCE_INSTANCE = 1,
-	OMA_TLV_TYPE_MULTI_RESOURCE    = 2,
-	OMA_TLV_TYPE_RESOURCE          = 3
-};
-
-enum {
-	OMA_TLV_LEN_TYPE_NO_LEN    = 0,
-	OMA_TLV_LEN_TYPE_8BIT_LEN  = 1,
-	OMA_TLV_LEN_TYPE_16BIT_LEN = 2,
-	OMA_TLV_LEN_TYPE_24BIT_LEN = 3
-};
-
-struct oma_tlv {
-	u8_t  type;
-	u16_t id; /* can be 8-bit or 16-bit when serialized */
-	u32_t length;
-	const u8_t *value;
-};
 
 extern const struct lwm2m_writer oma_tlv_writer;
 extern const struct lwm2m_reader oma_tlv_reader;
