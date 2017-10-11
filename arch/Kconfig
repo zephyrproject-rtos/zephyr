@@ -47,7 +47,7 @@ config HW_STACK_PROTECTION
 config USERSPACE
 	bool "User mode threads"
 	depends on ARCH_HAS_USERSPACE
-	depends on HW_STACK_PROTECTION
+	select HW_STACK_PROTECTION
 	help
 	When enabled, threads may be created or dropped down to user mode,
 	which has significantly restricted permissions and must interact
