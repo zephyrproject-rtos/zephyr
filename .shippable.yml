@@ -61,7 +61,7 @@ build:
             if [ -s modified_boards.args ]; then
               ./scripts/sanitycheck +modified_boards.args --save-tests test_file.txt;
             fi;
-            if [ -s modified_tests.argsXX ]; then
+            if [ -s modified_tests.args ]; then
               ./scripts/sanitycheck +modified_tests.args --save-tests test_file.txt;
             fi;
             rm -f modified_tests.args modified_boards.args;
