@@ -70,7 +70,7 @@ u32_t _handler_k_msgq_init(u32_t q, u32_t buffer, u32_t msg_size,
 	_SYSCALL_ARG4;
 
 	_SYSCALL_OBJ_INIT(q, K_OBJ_MSGQ, ssf);
-	_SYSCALL_MEMORY_WRITE(buffer, msg_size * max_msgs, ssf);
+	_SYSCALL_MEMORY_ARRAY_WRITE(buffer, max_msgs, msg_size, ssf);
 
 	_impl_k_msgq_init((struct k_msgq *)q, (char *)buffer, msg_size,
 			  max_msgs);

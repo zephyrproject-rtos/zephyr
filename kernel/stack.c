@@ -64,7 +64,7 @@ u32_t _handler_k_stack_init(u32_t stack, u32_t buffer, u32_t num_entries_p,
 	/* FIXME why is 'num_entries' signed?? */
 	_SYSCALL_VERIFY(num_entries > 0, ssf);
 	_SYSCALL_OBJ_INIT(stack, K_OBJ_STACK, ssf);
-	_SYSCALL_MEMORY_WRITE(buffer, num_entries * sizeof(u32_t), ssf);
+	_SYSCALL_MEMORY_ARRAY_WRITE(buffer, num_entries, sizeof(u32_t), ssf);
 
 	_impl_k_stack_init((struct k_stack *)stack, (u32_t *)buffer,
 			   num_entries);

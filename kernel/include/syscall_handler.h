@@ -116,6 +116,47 @@ int _k_object_validate(void *obj, enum k_objects otype, int init);
 #define _SYSCALL_MEMORY_WRITE(ptr, size, ssf) \
 	_SYSCALL_MEMORY(ptr, size, 1, ssf)
 
+#define _SYSCALL_MEMORY_ARRAY(ptr, nmemb, size, write, ssf) \
+	do { \
+		u32_t product; \
+		_SYSCALL_VERIFY_MSG(!__builtin_umul_overflow((u32_t)(nmemb), \
+							     (u32_t)(size), \
+							     &product), ssf, \
+				    "%ux%u array is too large", \
+				    (u32_t)(nmemb), (u32_t)(size)); \
+		_SYSCALL_MEMORY(ptr, product, write, ssf); \
+	} while (0)
+
+/**
+ * @brief Validate user thread has read permission for sized array
+ *
+ * Used when the memory region is expressed in terms of number of elements and
+ * each element size, handles any overflow issues with computing the total
+ * array bounds. Otherwise see _SYSCALL_MEMORY_READ.
+ *
+ * @param ptr Memory area to examine
+ * @param nmemb Number of elements in the array
+ * @param size Size of each array element
+ * @param ssf Syscall stack frame argument passed to the handler function
+ */
+#define _SYSCALL_MEMORY_ARRAY_READ(ptr, nmemb, size, ssf) \
+	_SYSCALL_MEMORY_ARRAY(ptr, nmemb, size, 0, ssf)
+
+/**
+ * @brief Validate user thread has read/write permission for sized array
+ *
+ * Used when the memory region is expressed in terms of number of elements and
+ * each element size, handles any overflow issues with computing the total
+ * array bounds. Otherwise see _SYSCALL_MEMORY_WRITE.
+ *
+ * @param ptr Memory area to examine
+ * @param nmemb Number of elements in the array
+ * @param size Size of each array element
+ * @param ssf Syscall stack frame argument passed to the handler function
+ */
+#define _SYSCALL_MEMORY_ARRAY_WRITE(ptr, nmemb, size, ssf) \
+	_SYSCALL_MEMORY_ARRAY(ptr, nmemb, size, 1, ssf)
+
 #define _SYSCALL_IS_OBJ(ptr, type, init, ssf) \
 	_SYSCALL_VERIFY_MSG(!_k_object_validate((void *)ptr, type, init), ssf, \
 			    "object %p access denied", (void *)(ptr))
