@@ -42,6 +42,97 @@
 	GTEXT(_sys_soc_resume_from_deep_sleep)
 #endif
 
+#ifdef CONFIG_JAILHOUSE
+
+#define JAILHOUSE_INMATE_CS32   0x8
+#define JAILHOUSE_INMATE_DS32   0x18
+#define MSR_MTRR_DEF_TYPE       0x000002ff
+#define MTRR_ENABLE             0x00000800
+#define X86_CR0_PE              0x00000001
+#define X86_CR0_WP              0x00010000
+#define X86_CR4_PSE             0x00000010
+
+	.code16
+	.section ".boot", "ax"
+
+	.globl __jh_entry
+__jh_entry:
+	lgdtl %cs:gdt_ptr
+
+	mov %cr0,%eax
+	or $X86_CR0_PE,%al
+	mov %eax,%cr0
+
+	ljmpl $JAILHOUSE_INMATE_CS32,$start32
+
+	.code32
+start32:
+	/*
+	 * Minimal bootstrap into 32-bit mode, just to jump to
+	 * __start
+	 */
+
+	/* 4Mb pages */
+	mov %cr4,%eax
+	or $X86_CR4_PSE,%eax
+	mov %eax,%cr4
+
+	/* Enable write protect and protected mode */
+	mov $(X86_CR0_WP | X86_CR0_PE),%eax
+	mov %eax,%cr0
+
+	movl $MSR_MTRR_DEF_TYPE,%ecx
+	rdmsr
+	or $MTRR_ENABLE,%eax
+	wrmsr
+
+	mov $JAILHOUSE_INMATE_DS32,%eax
+	mov %eax,%ds
+	mov %eax,%es
+	mov %eax,%ss
+
+	ljmp $JAILHOUSE_INMATE_CS32, $__start
+
+	.global loader_gdt
+loader_gdt:
+	.quad 0
+
+	/* Boot entry 1 (selector=0x0): 32-bit code descriptor: DPL0 */
+
+	.word   0xffff		/* limit: xffff */
+	.word   0x0000		/* base : xxxx0000 */
+	.byte   0x00		/* base : xx00xxxx */
+	.byte   0x9b		/* Accessed, Code e/r, Present, DPL0 */
+	.byte   0xcf		/* limit: fxxxx, Page Gra, 32bit */
+	.byte   0x00		/* base : 00xxxxxx */
+
+	/* Boot entry 2 (selector=0x0): 16-bit code descriptor: DPL0 */
+
+	.word   0xffff		/* limit: xffff */
+	.word   0x0000		/* base : xxxx0000 */
+	.byte   0x00		/* base : xx00xxxx */
+	.byte   0x9b		/* Accessed, Code e/r, Present, DPL0 */
+	.byte   0x8f		/* limit: fxxxx, Byte Gra, 16bit */
+	.byte   0x00		/* base : 00xxxxxx */
+
+	/* Boot entry 3 (selector=0x0): Data descriptor: DPL0 */
+
+	.word   0xffff		/* limit: xffff */
+	.word   0x0000		/* base : xxxx0000 */
+	.byte   0x00		/* base : xx00xxxx */
+	.byte   0x93		/* Accessed, Data r/w, Present, DPL0 */
+	.byte   0xcf		/* limit: fxxxx, Page Gra, 32bit */
+	.byte   0x00		/* base : 00xxxxxx */
+gdt_ptr:
+	.short gdt_ptr - loader_gdt - 1
+	.long loader_gdt
+
+	.pushsection ".rodata"
+
+	.align(4096)
+
+	.popsection
+#endif /* CONFIG_JAILHOUSE */
 
 	/* processor is executing in 32-bit protected mode */
 
