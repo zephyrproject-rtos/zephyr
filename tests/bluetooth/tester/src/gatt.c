@@ -634,6 +634,8 @@ static int alloc_included(struct bt_gatt_attr *attr,
 		return -EINVAL;
 	}
 
+	attr_incl->user_data = attr;
+
 	*included_service_id = attr_incl->handle;
 	return 0;
 }
@@ -771,24 +773,9 @@ static void set_value(u8_t *data, u16_t len)
 		   status);
 }
 
-static void update_incl_svc_offset(u16_t db_attr_off)
-{
-	struct bt_gatt_attr *attr = server_db;
-	struct bt_gatt_include *incl;
-
-	while (attr++ < server_db + attr_count) {
-		if (!bt_uuid_cmp(attr->uuid, BT_UUID_GATT_INCLUDE)) {
-			incl = attr->user_data;
-			incl->start_handle += db_attr_off;
-			incl->end_handle += db_attr_off;
-		}
-	}
-}
-
 static void start_server(u8_t *data, u16_t len)
 {
 	struct gatt_start_server_rp rp;
-	u16_t db_attr_off;
 
 	/* Register last defined service */
 	if (register_service()) {
@@ -796,15 +783,6 @@ static void start_server(u8_t *data, u16_t len)
 			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
 		return;
 	}
-
-	/* All handles of gatt db are now assigned by
-	 * bt_gatt_service_register().
-	 */
-	db_attr_off = server_db[0].handle - 1;
-
-	update_incl_svc_offset(db_attr_off);
-	rp.db_attr_off = sys_cpu_to_le16(db_attr_off);
-	rp.db_attr_cnt = attr_count;
 
 	tester_send(BTP_SERVICE_ID_GATT, GATT_START_SERVER, CONTROLLER_INDEX,
 		    (u8_t *) &rp, sizeof(rp));
