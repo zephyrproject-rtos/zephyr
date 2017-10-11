@@ -15,6 +15,11 @@ config GPIO_DW_0_NAME
 config GPIO_DW_0_IRQ_PRI
 	default 1
 
+config I2C_0_DEFAULT_CFG
+	default 0x12
+config I2C_0_IRQ_PRI
+	default 0
+
 if UART_NS16550
 
 config UART_NS16550_PORT_0
