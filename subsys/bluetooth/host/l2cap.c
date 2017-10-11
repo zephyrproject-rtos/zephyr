@@ -46,7 +46,7 @@
 #define L2CAP_LE_PSM_END	0x00ff
 
 #define L2CAP_CONN_TIMEOUT	K_SECONDS(40)
-#define L2CAP_DISC_TIMEOUT	K_SECONDS(1)
+#define L2CAP_DISC_TIMEOUT	K_SECONDS(2)
 
 static sys_slist_t le_channels;
 
