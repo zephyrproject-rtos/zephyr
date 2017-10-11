@@ -10,7 +10,7 @@
 # See ~/zephyr/doc/dts
 set(GENERATED_DTS_BOARD_H    ${PROJECT_BINARY_DIR}/include/generated/generated_dts_board.h)
 set(GENERATED_DTS_BOARD_CONF ${PROJECT_BINARY_DIR}/include/generated/generated_dts_board.conf)
-set(DTS_SOURCE ${PROJECT_SOURCE_DIR}/dts/${ARCH}/${BOARD}.dts)
+set(DTS_SOURCE ${PROJECT_SOURCE_DIR}/dts/${ARCH}/${BOARD_FAMILY}.dts)
 
 message(STATUS "Generating zephyr/include/generated/generated_dts_board.h")
 
@@ -25,7 +25,7 @@ if(CONFIG_HAS_DTS)
 
   # Run the C preprocessor on the .dts source file to create the
   # intermediary file *.dts.pre.tmp
-  execute_process(
+  execute_process_safely(
     COMMAND ${CMAKE_C_COMPILER}
     -x assembler-with-cpp
     -nostdinc
@@ -39,33 +39,28 @@ if(CONFIG_HAS_DTS)
     -undef -D__DTS__
     -P
     -E ${DTS_SOURCE}
-    -o ${BOARD}.dts.pre.tmp
+    -o ${BOARD_FAMILY}.dts.pre.tmp
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-    RESULT_VARIABLE result_variable
     )
-
-  if(result_variable)
-    message(FATAL_ERROR "Preprocessing ${DTS_SOURCE} failed.")
-  endif()
 
   # Run the DTC on *.dts.pre.tmp to create the intermediary file *.dts_compiled
   execute_process(
     COMMAND ${DTC}
     -O dts
-    -o ${BOARD}.dts_compiled
+    -o ${BOARD_FAMILY}.dts_compiled
     -b 0
-    ${BOARD}.dts.pre.tmp
+    ${BOARD_FAMILY}.dts.pre.tmp
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     )
 
   # Run extract_dts_includes.py for the header file
   # generated_dts_board.h
-  set(FIXUP_FILE ${PROJECT_SOURCE_DIR}/dts/${ARCH}/${BOARD}.fixup)
+  set(FIXUP_FILE ${PROJECT_SOURCE_DIR}/dts/${ARCH}/${BOARD_FAMILY}.fixup)
   if(EXISTS ${FIXUP_FILE})
     set(FIXUP -f ${FIXUP_FILE})
   endif()
   set(CMD_EXTRACT_DTS_INCLUDES ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/dts/extract_dts_includes.py
-    --dts ${BOARD}.dts_compiled
+    --dts ${BOARD_FAMILY}.dts_compiled
     --yaml ${PROJECT_SOURCE_DIR}/dts/${ARCH}/yaml
     ${FIXUP}
     )
