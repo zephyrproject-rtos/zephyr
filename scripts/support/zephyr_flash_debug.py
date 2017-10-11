@@ -15,6 +15,7 @@ from os import path
 import os
 import pprint
 import platform
+import signal
 import sys
 import subprocess
 import time
@@ -83,6 +84,150 @@ class ZephyrBinaryFlasher(abc.ABC):
     @abc.abstractmethod
     def flash(self, **kwargs):
         '''Flash the board.'''
+
+
+DEFAULT_ARC_TCL_PORT = 6333
+DEFAULT_ARC_TELNET_PORT = 4444
+DEFAULT_ARC_GDB_PORT = 3333
+
+
+class ArcBinaryFlasher(ZephyrBinaryFlasher):
+    '''Flasher front-end for the ARC architecture, using openocd.'''
+
+    # This unusual flasher matches behavior in the original shell script.
+    #
+    # It works by starting a GDB server in a separate session, connecting a
+    # client to it to load the program, and running 'continue' within the
+    # client to execute the application. Ignoring SIGINT allows GDB's interrupt
+    # functionality to work normally; since the server is in another session,
+    # it doesn't receive the signal, either.
+    #
+    # Rather than exiting immediately when flashing is done, the client keeps
+    # running, and the user must exit GDB manually to leave the flash
+    # invocation. The flasher then cleans up the server.
+    #
+    # TODO:
+    #
+    # - make consistent with the other flashers, exiting immediately when
+    #   flashing is done and the program runs.
+    # - make portable, rather than assuming POSIX session behavior etc.
+
+    def __init__(self, elf, zephyr_base, arch, board_name, python,
+                 gdb, openocd='openocd', extra_init=None, default_path=None,
+                 tui=None, tcl_port=DEFAULT_ARC_TCL_PORT,
+                 telnet_port=DEFAULT_ARC_TELNET_PORT,
+                 gdb_port=DEFAULT_ARC_GDB_PORT, debug=False):
+        super(ArcBinaryFlasher, self).__init__(debug=debug)
+        self.elf = elf
+        self.zephyr_base = zephyr_base
+        self.arch = arch
+        self.board_name = board_name
+        self.python = python
+        self.gdb = gdb
+        self.openocd = openocd
+        self.extra_init = extra_init
+        self.default_path = default_path
+        self.tui = tui
+        self.tcl_port = tcl_port
+        self.telnet_port = telnet_port
+        self.gdb_port = gdb_port
+
+    def replaces_shell_script(shell_script):
+        return shell_script == 'arc_debugger.sh'
+
+    def create_from_env(debug):
+        '''Create flasher from environment.
+
+        Required:
+
+        - O: build output directory
+        - KERNEL_ELF_NAME: zephyr kernel binary in ELF format
+        - ZEPHYR_BASE: zephyr Git repository base directory
+        - ARCH: board architecture
+        - BOARD_NAME: zephyr name of board
+        - PYTHON: python executable
+        - GDB: gdb executable
+
+        Optional:
+
+        - OPENOCD: path to openocd, defaults to openocd
+        - OPENOCD_EXTRA_INIT: initialization command for GDB server
+        - OPENOCD_DEFAULT_PATH: openocd search path to use
+        - TUI: if present, passed to gdb server used to flash
+        - TCL_PORT: openocd TCL port, defaults to 6333
+        - TELNET_PORT: openocd telnet port, defaults to 4444
+        - GDB_PORT: openocd gdb port, defaults to 3333
+        '''
+        elf = path.join(get_env_or_bail('O'),
+                        get_env_or_bail('KERNEL_ELF_NAME'))
+        zephyr_base = get_env_or_bail('ZEPHYR_BASE')
+        arch = get_env_or_bail('ARCH')
+        board_name = get_env_or_bail('BOARD_NAME')
+        python = get_env_or_bail('PYTHON')
+        gdb = get_env_or_bail('GDB')
+
+        openocd = os.environ.get('OPENOCD', 'openocd')
+        extra_init = os.environ.get('OPENOCD_EXTRA_INIT', None)
+        default_path = os.environ.get('OPENOCD_DEFAULT_PATH', None)
+        tui = os.environ.get('TUI', None)
+        tcl_port = int(os.environ.get('TCL_PORT',
+                                      str(DEFAULT_ARC_TCL_PORT)))
+        telnet_port = int(os.environ.get('TELNET_PORT',
+                                         str(DEFAULT_ARC_TELNET_PORT)))
+        gdb_port = int(os.environ.get('GDB_PORT',
+                                      str(DEFAULT_ARC_GDB_PORT)))
+
+        return ArcBinaryFlasher(elf, zephyr_base, arch, board_name, python,
+                                gdb, openocd=openocd, extra_init=extra_init,
+                                default_path=default_path, tui=tui,
+                                tcl_port=tcl_port, telnet_port=telnet_port,
+                                gdb_port=gdb_port, debug=debug)
+
+    def flash(self, **kwargs):
+        if platform.system() != 'Linux':
+            raise NotImplementedError('Linux is currently required.')
+
+        search_args = []
+        if self.default_path is not None:
+            search_args = ['-s', self.default_path]
+
+        extra_init_args = []
+        if self.extra_init is not None:
+            extra_init_args = self.extra_init.split()
+
+        config = path.join(self.zephyr_base, 'boards', self.arch,
+                           self.board_name, 'support', 'openocd.cfg')
+
+        helper_cmd = ([self.openocd] +
+                      search_args +
+                      ['-f', config] +
+                      extra_init_args +
+                      ['-c', 'tcl_port {}'.format(self.tcl_port),
+                       '-c', 'telnet_port {}'.format(self.telnet_port),
+                       '-c', 'gdb_port {}'.format(self.gdb_port),
+                       '-c', 'init',
+                       '-c', 'targets',
+                       '-c', 'halt'])
+        helper = subprocess.Popen([self.python, 'arc-helper.py'] +
+                                  helper_cmd)
+
+        tui_arg = []
+        if self.tui is not None:
+            tui_arg = [self.tui]
+
+        gdb_cmd = ([self.gdb] +
+                   tui_arg +
+                   ['-ex', 'target remote :{}'.format(self.gdb_port),
+                    '-ex', 'load',
+                    '-ex', 'c',
+                   self.elf])
+        previous = signal.signal(signal.SIGINT, signal.SIG_IGN)
+        try:
+            check_call(gdb_cmd, self.debug)
+        finally:
+            signal.signal(signal.SIGINT, previous)
+            helper.terminate()
+            helper.wait()
 
 
 class BossacBinaryFlasher(ZephyrBinaryFlasher):
