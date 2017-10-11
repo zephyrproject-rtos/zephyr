@@ -62,7 +62,7 @@
 #define LWM2M_RD_CLIENT_URI "rd"
 
 #define SECONDS_TO_UPDATE_EARLY	2
-#define STATE_MACHINE_UPDATE_INTERVAL 500
+#define STATE_MACHINE_UPDATE_INTERVAL K_MSEC(500)
 
 #define LWM2M_PEER_PORT		CONFIG_LWM2M_PEER_PORT
 #define LWM2M_BOOTSTRAP_PORT	CONFIG_LWM2M_BOOTSTRAP_PORT
@@ -109,10 +109,6 @@ struct lwm2m_rd_client_info {
 
 	lwm2m_ctx_event_cb_t event_cb;
 };
-
-static K_THREAD_STACK_DEFINE(lwm2m_rd_client_thread_stack,
-			     CONFIG_LWM2M_RD_CLIENT_STACK_SIZE);
-struct k_thread lwm2m_rd_client_thread_data;
 
 /* buffers */
 static char query_buffer[64]; /* allocate some data for queries and updates */
@@ -800,70 +796,60 @@ static void lwm2m_rd_client_service(void)
 {
 	int index;
 
-	while (true) {
-		for (index = 0; index < client_count; index++) {
-			switch (get_sm_state(index)) {
+	for (index = 0; index < client_count; index++) {
+		switch (get_sm_state(index)) {
 
-			case ENGINE_INIT:
-				sm_do_init(index);
-				break;
+		case ENGINE_INIT:
+			sm_do_init(index);
+			break;
 
-			case ENGINE_DO_BOOTSTRAP:
-				sm_do_bootstrap(index);
-				break;
+		case ENGINE_DO_BOOTSTRAP:
+			sm_do_bootstrap(index);
+			break;
 
-			case ENGINE_BOOTSTRAP_SENT:
-				/* wait for bootstrap to be done or timeout */
-				break;
+		case ENGINE_BOOTSTRAP_SENT:
+			/* wait for bootstrap to be done or timeout */
+			break;
 
-			case ENGINE_BOOTSTRAP_DONE:
-				sm_bootstrap_done(index);
-				break;
+		case ENGINE_BOOTSTRAP_DONE:
+			sm_bootstrap_done(index);
+			break;
 
-			case ENGINE_DO_REGISTRATION:
-				sm_do_registration(index);
-				break;
+		case ENGINE_DO_REGISTRATION:
+			sm_do_registration(index);
+			break;
 
-			case ENGINE_REGISTRATION_SENT:
-				/* wait registration to be done or timeout */
-				break;
+		case ENGINE_REGISTRATION_SENT:
+			/* wait registration to be done or timeout */
+			break;
 
-			case ENGINE_REGISTRATION_DONE:
-				sm_registration_done(index);
-				break;
+		case ENGINE_REGISTRATION_DONE:
+			sm_registration_done(index);
+			break;
 
-			case ENGINE_UPDATE_SENT:
-				/* wait update to be done or abort */
-				break;
+		case ENGINE_UPDATE_SENT:
+			/* wait update to be done or abort */
+			break;
 
-			case ENGINE_DEREGISTER:
-				sm_do_deregister(index);
-				break;
+		case ENGINE_DEREGISTER:
+			sm_do_deregister(index);
+			break;
 
-			case ENGINE_DEREGISTER_SENT:
-				/* wait for deregister to be done or reset */
-				break;
+		case ENGINE_DEREGISTER_SENT:
+			/* wait for deregister to be done or reset */
+			break;
 
-			case ENGINE_DEREGISTER_FAILED:
-				break;
+		case ENGINE_DEREGISTER_FAILED:
+			break;
 
-			case ENGINE_DEREGISTERED:
-				break;
+		case ENGINE_DEREGISTERED:
+			break;
 
-			default:
-				SYS_LOG_ERR("Unhandled state: %d",
-					    get_sm_state(index));
+		default:
+			SYS_LOG_ERR("Unhandled state: %d",
+				    get_sm_state(index));
 
-			}
-
-			k_yield();
 		}
-
-		/*
-		 * TODO: calculate the diff between the start of the loop
-		 * and subtract that from the update interval
-		 */
-		k_sleep(K_MSEC(STATE_MACHINE_UPDATE_INTERVAL));
 	}
 }
 
@@ -908,13 +894,8 @@ cleanup:
 
 static int lwm2m_rd_client_init(struct device *dev)
 {
-	k_thread_create(&lwm2m_rd_client_thread_data,
-			&lwm2m_rd_client_thread_stack[0],
-			K_THREAD_STACK_SIZEOF(lwm2m_rd_client_thread_stack),
-			(k_thread_entry_t) lwm2m_rd_client_service,
-			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
-	SYS_LOG_DBG("LWM2M RD client thread started");
-	return 0;
+	return lwm2m_engine_add_service(lwm2m_rd_client_service,
+					STATE_MACHINE_UPDATE_INTERVAL);
 }
 
 SYS_INIT(lwm2m_rd_client_init, APPLICATION,
