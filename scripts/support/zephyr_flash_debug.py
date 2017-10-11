@@ -266,6 +266,50 @@ class Esp32BinaryFlasher(ZephyrBinaryFlasher):
         check_call(cmd_flash, self.debug)
 
 
+class Nios2Flasher(ZephyrBinaryFlasher):
+    '''Flasher front-end for NIOS II.'''
+
+    # From the original shell script:
+    #
+    #     "XXX [flash] only support[s] cases where the .elf is sent
+    #      over the JTAG and the CPU directly boots from __start. CONFIG_XIP
+    #      and CONFIG_INCLUDE_RESET_VECTOR must be disabled."
+
+    def __init__(self, hex_, cpu_sof, zephyr_base, debug=False):
+        super(Nios2Flasher, self).__init__(debug=debug)
+        self.hex_ = hex_
+        self.cpu_sof = cpu_sof
+        self.zephyr_base = zephyr_base
+
+    def replaces_shell_script(shell_script):
+        return shell_script == 'nios2.sh'
+
+    def create_from_env(debug):
+        '''Create flasher from environment.
+
+        Required:
+
+        - O: build output directory
+        - KERNEL_HEX_NAME: name of kernel binary in ELF format
+        - NIOS2_CPU_SOF: location of the CPU .sof data
+        - ZEPHYR_BASE: zephyr Git repository base directory
+        '''
+        hex_ = path.join(get_env_or_bail('O'),
+                         get_env_or_bail('KERNEL_HEX_NAME'))
+        cpu_sof = get_env_or_bail('NIOS2_CPU_SOF')
+        zephyr_base = get_env_or_bail('ZEPHYR_BASE')
+
+        return Nios2Flasher(hex_, cpu_sof, zephyr_base, debug=debug)
+
+    def flash(self, **kwargs):
+        cmd = [path.join(self.zephyr_base, 'scripts', 'support',
+                         'quartus-flash.py'),
+               '--sof', self.cpu_sof,
+               '--kernel', self.hex_]
+
+        check_call(cmd, self.debug)
+
+
 class NrfJprogFlasher(ZephyrBinaryFlasher):
     '''Flasher front-end for nrfjprog.'''
 
