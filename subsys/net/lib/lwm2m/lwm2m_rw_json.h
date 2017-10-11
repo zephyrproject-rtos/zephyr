@@ -44,17 +44,7 @@
 
 #include "lwm2m_object.h"
 
-struct json_data {
-	u8_t type; /* S,B,V */
-	u8_t *name;
-	u8_t *value;
-	u8_t name_len;
-	u8_t value_len;
-};
-
 extern const struct lwm2m_writer json_writer;
-
-int json_next_token(struct lwm2m_input_context *in, struct json_data *json);
 
 int do_write_op_json(struct lwm2m_engine_obj *obj,
 		     struct lwm2m_engine_context *context);
