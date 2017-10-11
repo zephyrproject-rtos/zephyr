@@ -27,6 +27,10 @@ void __irq_controller_irq_config(unsigned int vector, unsigned int irq,
 
 int __irq_controller_isr_vector_get(void);
 
+#ifdef CONFIG_JAILHOUSE_X2APIC
+void _jailhouse_eoi(void);
+#endif
+
 static inline void __irq_controller_eoi(void)
 {
 #if CONFIG_EOI_FORWARDING_BUG
@@ -44,9 +48,13 @@ static inline void __irq_controller_eoi(void)
 .endm
 #else
 .macro __irq_controller_eoi_macro
+#ifdef CONFIG_JAILHOUSE_X2APIC
+	call	_jailhouse_eoi
+#else
 	xorl %eax, %eax			/* zeroes eax */
 	loapic_eoi_reg = (CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI)
 	movl %eax, loapic_eoi_reg	/* tell LOAPIC the IRQ is handled */
+#endif
 .endm
 #endif /* CONFIG_EOI_FORWARDING_BUG */
 

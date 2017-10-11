@@ -150,6 +150,13 @@ static u32_t reg_timer_cfg_save;
 #endif
 #endif
 
+#ifdef CONFIG_JAILHOUSE_X2APIC
+void _jailhouse_eoi(void)
+{
+	write_x2apic(LOAPIC_EOI >> 4, 0);
+}
+#endif
+
 /**
  *
  * @brief Set the timer for periodic mode
@@ -160,7 +167,12 @@ static u32_t reg_timer_cfg_save;
  */
 static inline void periodic_mode_set(void)
 {
+#ifndef CONFIG_JAILHOUSE_X2APIC
 	*_REG_TIMER |= LOAPIC_TIMER_PERIODIC;
+#else
+	write_x2apic(LOAPIC_TIMER >> 4,
+		     read_x2apic(LOAPIC_TIMER >> 4) | LOAPIC_TIMER_PERIODIC);
+#endif
 }
 
 
@@ -176,7 +188,11 @@ static inline void periodic_mode_set(void)
  */
 static inline void initial_count_register_set(u32_t count)
 {
+#ifndef CONFIG_JAILHOUSE_X2APIC
 	*_REG_TIMER_ICR = count;
+#else
+	write_x2apic(LOAPIC_TIMER_ICR >> 4, count);
+#endif
 }
 
 #if defined(CONFIG_TICKLESS_IDLE)
@@ -207,7 +223,13 @@ static inline void one_shot_mode_set(void)
 #ifndef CONFIG_MVIC
 static inline void divide_configuration_register_set(void)
 {
+#ifndef CONFIG_JAILHOUSE_X2APIC
 	*_REG_TIMER_CFG = (*_REG_TIMER_CFG & ~0xf) | LOAPIC_TIMER_DIVBY_1;
+#else
+	write_x2apic(LOAPIC_TIMER_CONFIG >> 4,
+		     (read_x2apic(LOAPIC_TIMER_CONFIG >> 4) & ~0xf)
+		     | LOAPIC_TIMER_DIVBY_1);
+#endif
 }
 #endif
 
@@ -223,7 +245,11 @@ static inline void divide_configuration_register_set(void)
  */
 static inline u32_t current_count_register_get(void)
 {
+#ifndef CONFIG_JAILHOUSE_X2APIC
 	return *_REG_TIMER_CCR;
+#else
+	return read_x2apic(LOAPIC_TIMER_CCR >> 4);
+#endif
 }
 
 #if defined(CONFIG_TICKLESS_IDLE)

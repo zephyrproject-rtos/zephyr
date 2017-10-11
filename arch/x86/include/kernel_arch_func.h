@@ -69,6 +69,20 @@ extern void k_cpu_atomic_idle(unsigned int imask);
 extern void _MsrWrite(unsigned int msr, u64_t msrData);
 extern u64_t _MsrRead(unsigned int msr);
 
+#ifdef CONFIG_JAILHOUSE_X2APIC
+#define MSR_X2APIC_BASE 0x00000800
+
+static inline u32_t read_x2apic(unsigned int reg)
+{
+	return _MsrRead(MSR_X2APIC_BASE + reg);
+}
+
+static inline void write_x2apic(unsigned int reg, u32_t val)
+{
+	_MsrWrite(MSR_X2APIC_BASE + reg, val);
+}
+#endif
+
 /*
  * _IntLibInit() is called from the non-arch specific function,
  * prepare_multithreading(). The IA-32 kernel does not require any special
