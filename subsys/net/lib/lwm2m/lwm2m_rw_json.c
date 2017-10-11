@@ -73,10 +73,9 @@
 #define T_NONE		0
 #define T_STRING_B	1
 #define T_STRING	2
-#define T_NAME		4
-#define T_VNUM		5
-#define T_OBJ		6
-#define T_VAL		7
+#define T_NAME		3
+#define T_OBJ		4
+#define T_VAL		5
 
 #define SEPARATOR(f)	((f & WRITER_OUTPUT_VALUE) ? "," : "")
 
