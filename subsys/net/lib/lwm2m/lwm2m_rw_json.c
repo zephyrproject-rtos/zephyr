@@ -201,7 +201,7 @@ static size_t put_begin(struct lwm2m_output_context *out,
 {
 	int len;
 
-	len = snprintf(&out->outbuf[out->outlen],
+	len = snprintk(&out->outbuf[out->outlen],
 		       out->outsize - out->outlen,
 		       "{\"bn\":\"/%u/%u/\",\"e\":[",
 		       path->obj_id, path->obj_inst_id);
@@ -219,7 +219,7 @@ static size_t put_end(struct lwm2m_output_context *out,
 {
 	int len;
 
-	len = snprintf(&out->outbuf[out->outlen],
+	len = snprintk(&out->outbuf[out->outlen],
 		       out->outsize - out->outlen, "]}");
 	if (len < 0 || len >= (out->outsize - out->outlen)) {
 		return 0;
@@ -255,10 +255,10 @@ static size_t put_s32(struct lwm2m_output_context *out,
 	outlen = out->outsize - out->outlen;
 	sep = SEPARATOR(out->writer_flags);
 	if (out->writer_flags & WRITER_RESOURCE_INSTANCE) {
-		len = snprintf(outbuf, outlen, "%s{\"n\":\"%u/%u\",\"v\":%d}",
+		len = snprintk(outbuf, outlen, "%s{\"n\":\"%u/%u\",\"v\":%d}",
 			       sep, path->res_id, path->res_inst_id, value);
 	} else {
-		len = snprintf(outbuf, outlen, "%s{\"n\":\"%u\",\"v\":%d}",
+		len = snprintk(outbuf, outlen, "%s{\"n\":\"%u\",\"v\":%d}",
 			       sep, path->res_id, value);
 	}
 
@@ -296,10 +296,10 @@ static size_t put_s64(struct lwm2m_output_context *out,
 	outlen = out->outsize - out->outlen;
 	sep = SEPARATOR(out->writer_flags);
 	if (out->writer_flags & WRITER_RESOURCE_INSTANCE) {
-		len = snprintf(outbuf, outlen, "%s{\"n\":\"%u/%u\",\"v\":%lld}",
+		len = snprintk(outbuf, outlen, "%s{\"n\":\"%u/%u\",\"v\":%lld}",
 			       sep, path->res_id, path->res_inst_id, value);
 	} else {
-		len = snprintf(outbuf, outlen, "%s{\"n\":\"%u\",\"v\":%lld}",
+		len = snprintk(outbuf, outlen, "%s{\"n\":\"%u\",\"v\":%lld}",
 			       sep, path->res_id, value);
 	}
 
@@ -328,10 +328,10 @@ static size_t put_string(struct lwm2m_output_context *out,
 	outlen = out->outsize - out->outlen;
 	sep = SEPARATOR(out->writer_flags);
 	if (out->writer_flags & WRITER_RESOURCE_INSTANCE) {
-		res = snprintf(outbuf, outlen, "%s{\"n\":\"%u/%u\",\"sv\":\"",
+		res = snprintk(outbuf, outlen, "%s{\"n\":\"%u/%u\",\"sv\":\"",
 			       sep, path->res_id, path->res_inst_id);
 	} else {
-		res = snprintf(outbuf, outlen, "%s{\"n\":\"%u\",\"sv\":\"",
+		res = snprintk(outbuf, outlen, "%s{\"n\":\"%u\",\"sv\":\"",
 			       sep, path->res_id);
 	}
 
@@ -344,7 +344,7 @@ static size_t put_string(struct lwm2m_output_context *out,
 		/* Escape special characters */
 		/* TODO: Handle UTF-8 strings */
 		if (buf[i] < '\x20') {
-			res = snprintf(&outbuf[len], outlen - len, "\\x%x",
+			res = snprintk(&outbuf[len], outlen - len, "\\x%x",
 				       buf[i]);
 
 			if (res < 0 || res >= (outlen - len)) {
@@ -368,7 +368,7 @@ static size_t put_string(struct lwm2m_output_context *out,
 		}
 	}
 
-	res = snprintf(&outbuf[len], outlen - len, "\"}");
+	res = snprintk(&outbuf[len], outlen - len, "\"}");
 	if (res < 0 || res >= (outlen - len)) {
 		return 0;
 	}
@@ -394,10 +394,10 @@ static size_t put_float32fix(struct lwm2m_output_context *out,
 	outlen = out->outsize - out->outlen;
 	sep = SEPARATOR(out->writer_flags);
 	if (out->writer_flags & WRITER_RESOURCE_INSTANCE) {
-		res = snprintf(outbuf, outlen, "%s{\"n\":\"%u/%u\",\"v\":",
+		res = snprintk(outbuf, outlen, "%s{\"n\":\"%u/%u\",\"v\":",
 			       sep, path->res_id, path->res_inst_id);
 	} else {
-		res = snprintf(outbuf, outlen, "%s{\"n\":\"%u\",\"v\":",
+		res = snprintk(outbuf, outlen, "%s{\"n\":\"%u\",\"v\":",
 			       sep, path->res_id);
 	}
 
@@ -414,7 +414,7 @@ static size_t put_float32fix(struct lwm2m_output_context *out,
 
 	len += res;
 	outlen -= res;
-	res = snprintf(&outbuf[len], outlen, "}");
+	res = snprintk(&outbuf[len], outlen, "}");
 	if (res <= 0 || res >= outlen) {
 		return 0;
 	}
@@ -439,10 +439,10 @@ static size_t put_float64fix(struct lwm2m_output_context *out,
 	outlen = out->outsize - out->outlen;
 	sep = SEPARATOR(out->writer_flags);
 	if (out->writer_flags & WRITER_RESOURCE_INSTANCE) {
-		res = snprintf(outbuf, outlen, "%s{\"n\":\"%u/%u\",\"v\":",
+		res = snprintk(outbuf, outlen, "%s{\"n\":\"%u/%u\",\"v\":",
 			       sep, path->res_id, path->res_inst_id);
 	} else {
-		res = snprintf(outbuf, outlen, "%s{\"n\":\"%u\",\"v\":",
+		res = snprintk(outbuf, outlen, "%s{\"n\":\"%u\",\"v\":",
 			       sep, path->res_id);
 	}
 
@@ -459,7 +459,7 @@ static size_t put_float64fix(struct lwm2m_output_context *out,
 
 	len += res;
 	outlen -= res;
-	res = snprintf(&outbuf[len], outlen, "}");
+	res = snprintk(&outbuf[len], outlen, "}");
 	if (res <= 0 || res >= outlen) {
 		return 0;
 	}
@@ -483,11 +483,11 @@ static size_t put_bool(struct lwm2m_output_context *out,
 	outlen = out->outsize - out->outlen;
 	sep = SEPARATOR(out->writer_flags);
 	if (out->writer_flags & WRITER_RESOURCE_INSTANCE) {
-		len = snprintf(outbuf, outlen, "%s{\"n\":\"%u/%u\",\"bv\":%s}",
+		len = snprintk(outbuf, outlen, "%s{\"n\":\"%u/%u\",\"bv\":%s}",
 			       sep, path->res_id, path->res_inst_id,
 			       value ? "true" : "false");
 	} else {
-		len = snprintf(outbuf, outlen, "%s{\"n\":\"%u\",\"bv\":%s}",
+		len = snprintk(outbuf, outlen, "%s{\"n\":\"%u\",\"bv\":%s}",
 			       sep, path->res_id, value ? "true" : "false");
 	}
 

@@ -83,7 +83,7 @@ size_t plain_text_put_float32fix(u8_t *outbuf, size_t outlen,
 		value->val1 = -value->val1;
 	}
 
-	n = snprintf(outbuf, outlen, "%d.%d", value->val1, value->val2);
+	n = snprintk(outbuf, outlen, "%d.%d", value->val1, value->val2);
 
 	if (n < 0 || n >= outlen) {
 		return 0;
@@ -108,7 +108,7 @@ size_t plain_text_put_float64fix(u8_t *outbuf, size_t outlen,
 		value->val1 = -value->val1;
 	}
 
-	n = snprintf(outbuf, outlen, "%lld.%lld", value->val1, value->val2);
+	n = snprintk(outbuf, outlen, "%lld.%lld", value->val1, value->val2);
 
 	if (n < 0 || n >= outlen) {
 		return 0;
@@ -122,7 +122,7 @@ static size_t put_s32(struct lwm2m_output_context *out,
 {
 	int len;
 
-	len = snprintf(&out->outbuf[out->outlen], out->outsize - out->outlen,
+	len = snprintk(&out->outbuf[out->outlen], out->outsize - out->outlen,
 		       "%d", value);
 	if (len < 0 || len >= (out->outsize - out->outlen)) {
 		return 0;
@@ -149,7 +149,7 @@ static size_t put_s64(struct lwm2m_output_context *out,
 {
 	int len;
 
-	len = snprintf(&out->outbuf[out->outlen], out->outsize - out->outlen,
+	len = snprintk(&out->outbuf[out->outlen], out->outsize - out->outlen,
 		       "%lld", value);
 	if (len < 0 || len >= (out->outsize - out->outlen)) {
 		return 0;
