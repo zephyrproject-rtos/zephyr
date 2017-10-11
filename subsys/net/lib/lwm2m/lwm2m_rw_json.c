@@ -64,6 +64,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <inttypes.h>
+#include <ctype.h>
 
 #include "lwm2m_object.h"
 #include "lwm2m_rw_json.h"
@@ -527,7 +528,7 @@ static int parse_path(const u8_t *buf, u16_t buflen,
 		val = 0;
 		c = buf[pos];
 		/* we should get a value first - consume all numbers */
-		while (pos < buflen && c >= '0' && c <= '9') {
+		while (pos < buflen && isdigit(c)) {
 			val = val * 10 + (c - '0');
 			c = buf[++pos];
 		}
