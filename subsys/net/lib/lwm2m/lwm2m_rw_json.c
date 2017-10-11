@@ -308,7 +308,7 @@ static size_t put_s64(struct lwm2m_output_context *out,
 
 static size_t put_string(struct lwm2m_output_context *out,
 			 struct lwm2m_obj_path *path,
-			 const char *value, size_t strlen)
+			 char *buf, size_t buflen)
 {
 	u8_t *outbuf;
 	size_t outlen;
@@ -333,12 +333,12 @@ static size_t put_string(struct lwm2m_output_context *out,
 	}
 
 	len += res;
-	for (i = 0; i < strlen && len < outlen; ++i) {
+	for (i = 0; i < buflen && len < outlen; ++i) {
 		/* Escape special characters */
 		/* TODO: Handle UTF-8 strings */
-		if (value[i] < '\x20') {
+		if (buf[i] < '\x20') {
 			res = snprintf(&outbuf[len], outlen - len, "\\x%x",
-				       value[i]);
+				       buf[i]);
 
 			if (res < 0 || res >= (outlen - len)) {
 				return 0;
@@ -346,7 +346,7 @@ static size_t put_string(struct lwm2m_output_context *out,
 
 			len += res;
 			continue;
-		} else if (value[i] == '"' || value[i] == '\\') {
+		} else if (buf[i] == '"' || buf[i] == '\\') {
 			outbuf[len] = '\\';
 			++len;
 			if (len >= outlen) {
@@ -354,7 +354,7 @@ static size_t put_string(struct lwm2m_output_context *out,
 			}
 		}
 
-		outbuf[len] = value[i];
+		outbuf[len] = buf[i];
 		++len;
 		if (len >= outlen) {
 			return 0;
@@ -509,7 +509,7 @@ const struct lwm2m_writer json_writer = {
 	put_bool
 };
 
-static int parse_path(const u8_t *strpath, u16_t strlen,
+static int parse_path(const u8_t *buf, u16_t buflen,
 		      struct lwm2m_obj_path *path)
 {
 	int ret = 0;
@@ -519,18 +519,18 @@ static int parse_path(const u8_t *strpath, u16_t strlen,
 
 	do {
 		val = 0;
-		c = strpath[pos];
+		c = buf[pos];
 		/* we should get a value first - consume all numbers */
-		while (pos < strlen && c >= '0' && c <= '9') {
+		while (pos < buflen && c >= '0' && c <= '9') {
 			val = val * 10 + (c - '0');
-			c = strpath[++pos];
+			c = buf[++pos];
 		}
 
 		/*
 		 * Slash will mote thing forward
 		 * and the end will be when pos == pl
 		 */
-		if (c == '/' || pos == strlen) {
+		if (c == '/' || pos == buflen) {
 			SYS_LOG_DBG("Setting %u = %u", ret, val);
 			if (ret == 0) {
 				path->obj_id = val;
@@ -547,7 +547,7 @@ static int parse_path(const u8_t *strpath, u16_t strlen,
 				    c, pos);
 			return -1;
 		}
-	} while (pos < strlen);
+	} while (pos < buflen);
 
 	return ret;
 }

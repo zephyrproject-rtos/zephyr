@@ -92,17 +92,17 @@ static u16_t tlv_calc_id(u8_t flags, struct lwm2m_obj_path *path)
 }
 
 static void tlv_setup(struct oma_tlv *tlv, u8_t type, u16_t id,
-		     u32_t len, const u8_t *value)
+		     u32_t buflen, u8_t *buf)
 {
 	if (tlv) {
 		tlv->type = type;
 		tlv->id = id;
-		tlv->length = len;
-		tlv->value = value;
+		tlv->length = buflen;
+		tlv->value = buf;
 	}
 }
 
-static size_t oma_tlv_put(const struct oma_tlv *tlv, u8_t *buffer, size_t len)
+static size_t oma_tlv_put(const struct oma_tlv *tlv, u8_t *buf, size_t buflen)
 {
 	int pos;
 	u8_t len_type;
@@ -111,15 +111,15 @@ static size_t oma_tlv_put(const struct oma_tlv *tlv, u8_t *buffer, size_t len)
 	len_type = get_len_type(tlv);
 	pos = 1 + len_type;
 	/* ensure that we do not write too much */
-	if (len < tlv->length + pos) {
+	if (buflen < tlv->length + pos) {
 		SYS_LOG_ERR("OMA-TLV: Could not write the TLV - buffer overflow"
 			    " (len:%zd < tlv->length:%d + pos:%d)",
-			    len, tlv->length, pos);
+			    buflen, tlv->length, pos);
 		return 0;
 	}
 
 	/* first type byte in TLV header */
-	buffer[0] = (tlv->type << 6) |
+	buf[0] = (tlv->type << 6) |
 		    (tlv->id > 255 ? (1 << 5) : 0) |
 		    (len_type << 3) |
 		    (len_type == 0 ? tlv->length : 0);
@@ -127,63 +127,63 @@ static size_t oma_tlv_put(const struct oma_tlv *tlv, u8_t *buffer, size_t len)
 
 	/* The ID */
 	if (tlv->id > 255) {
-		buffer[pos++] = (tlv->id >> 8) & 0xff;
+		buf[pos++] = (tlv->id >> 8) & 0xff;
 	}
 
-	buffer[pos++] = tlv->id & 0xff;
+	buf[pos++] = tlv->id & 0xff;
 
 	/* Add length if needed - unrolled loop ? */
 	if (len_type > 2) {
-		buffer[pos++] = (tlv->length >> 16) & 0xff;
+		buf[pos++] = (tlv->length >> 16) & 0xff;
 	}
 
 	if (len_type > 1) {
-		buffer[pos++] = (tlv->length >> 8) & 0xff;
+		buf[pos++] = (tlv->length >> 8) & 0xff;
 	}
 
 	if (len_type > 0) {
-		buffer[pos++] = tlv->length & 0xff;
+		buf[pos++] = tlv->length & 0xff;
 	}
 
 	/* finally add the value */
 	if (tlv->value != NULL && tlv->length > 0) {
-		memcpy(&buffer[pos], tlv->value, tlv->length);
+		memcpy(&buf[pos], tlv->value, tlv->length);
 	}
 
 	/* TODO: Add debug print of TLV */
 	return pos + tlv->length;
 }
 
-size_t oma_tlv_get(struct oma_tlv *tlv, const u8_t *buffer, size_t len)
+size_t oma_tlv_get(struct oma_tlv *tlv, const u8_t *buf, size_t buflen)
 {
 	u8_t len_type;
 	u8_t len_pos = 1;
 	size_t tlv_len;
 
-	tlv->type = (buffer[0] >> 6) & 3;
-	len_type = (buffer[0] >> 3) & 3;
-	len_pos = 1 + (((buffer[0] & (1 << 5)) != 0) ? 2 : 1);
-	tlv->id = buffer[1];
+	tlv->type = (buf[0] >> 6) & 3;
+	len_type = (buf[0] >> 3) & 3;
+	len_pos = 1 + (((buf[0] & (1 << 5)) != 0) ? 2 : 1);
+	tlv->id = buf[1];
 
 	/* if len_pos > 2 it means that there are more ID to read */
 	if (len_pos > 2) {
-		tlv->id = (tlv->id << 8) + buffer[2];
+		tlv->id = (tlv->id << 8) + buf[2];
 	}
 
 	if (len_type == 0) {
-		tlv_len = buffer[0] & 7;
+		tlv_len = buf[0] & 7;
 	} else {
 		/* read the length */
 		tlv_len = 0;
 		while (len_type > 0) {
-			tlv_len = tlv_len << 8 | buffer[len_pos++];
+			tlv_len = tlv_len << 8 | buf[len_pos++];
 			len_type--;
 		}
 	}
 
 	/* and read out the data??? */
 	tlv->length = tlv_len;
-	tlv->value = &buffer[len_pos];
+	tlv->value = &buf[len_pos];
 	return len_pos + tlv_len;
 }
 
@@ -300,14 +300,14 @@ static size_t put_s64(struct lwm2m_output_context *out,
 
 static size_t put_string(struct lwm2m_output_context *out,
 			 struct lwm2m_obj_path *path,
-			 const char *value, size_t strlen)
+			 char *buf, size_t buflen)
 {
 	size_t len;
 	struct oma_tlv tlv;
 
 	tlv_setup(&tlv, tlv_calc_type(out->writer_flags),
-		  path->res_id, (u32_t)strlen,
-		  (u8_t *)value);
+		  path->res_id, (u32_t)buflen,
+		  (u8_t *)buf);
 	len = oma_tlv_put(&tlv, &out->outbuf[out->outlen],
 			    out->outsize - out->outlen);
 	out->outlen += len;
@@ -463,13 +463,13 @@ static size_t get_s64(struct lwm2m_input_context *in, s64_t *value)
 }
 
 static size_t get_string(struct lwm2m_input_context *in,
-			 u8_t *value, size_t strlen)
+			 u8_t *buf, size_t buflen)
 {
 	struct oma_tlv tlv;
 	size_t size = oma_tlv_get(&tlv, in->inbuf, in->insize);
 
 	if (size > 0) {
-		if (strlen <= tlv.length) {
+		if (buflen <= tlv.length) {
 			/*
 			 * The outbuffer can not contain the
 			 * full string including ending zero
@@ -477,8 +477,8 @@ static size_t get_string(struct lwm2m_input_context *in,
 			return 0;
 		}
 
-		memcpy(value, tlv.value, tlv.length);
-		value[tlv.length] = '\0';
+		memcpy(buf, tlv.value, tlv.length);
+		buf[tlv.length] = '\0';
 		in->last_value_len = tlv.length;
 	}
 
