@@ -1041,7 +1041,12 @@ void radio_ar_configure(u32_t nirk, void *irk)
 	NRF_AAR->ADDRPTR = (u32_t)NRF_RADIO->PACKETPTR - 1;
 	NRF_AAR->SCRATCHPTR = (u32_t)&_aar_scratch[0];
 
+	NRF_AAR->EVENTS_END = 0;
+	NRF_AAR->EVENTS_RESOLVED = 0;
+	NRF_AAR->EVENTS_NOTRESOLVED = 0;
+
 	radio_bc_configure(64);
+	radio_bc_status_reset();
 
 	NRF_PPI->CH[6].EEP = (u32_t)&(NRF_RADIO->EVENTS_BCMATCH);
 	NRF_PPI->CH[6].TEP = (u32_t)&(NRF_AAR->TASKS_START);
@@ -1055,18 +1060,16 @@ u32_t radio_ar_match_get(void)
 
 void radio_ar_status_reset(void)
 {
-	if (radio_bc_has_match()) {
-		NRF_AAR->EVENTS_END = 0;
-		NRF_AAR->EVENTS_RESOLVED = 0;
-		NRF_AAR->EVENTS_NOTRESOLVED = 0;
-	}
-
 	radio_bc_status_reset();
+
+	NRF_AAR->ENABLE = (AAR_ENABLE_ENABLE_Disabled << AAR_ENABLE_ENABLE_Pos) &
+			  AAR_ENABLE_ENABLE_Msk;
 }
 
 u32_t radio_ar_has_match(void)
 {
 	return (radio_bc_has_match() &&
-			(NRF_AAR->EVENTS_END) &&
-			(NRF_AAR->EVENTS_RESOLVED));
+		NRF_AAR->EVENTS_END &&
+		NRF_AAR->EVENTS_RESOLVED &&
+		!NRF_AAR->EVENTS_NOTRESOLVED);
 }
