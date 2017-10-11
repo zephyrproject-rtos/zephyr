@@ -1488,9 +1488,9 @@ static int lwm2m_engine_get(char *pathstr, void *buf, u16_t buflen)
 	return 0;
 }
 
-int lwm2m_engine_get_string(char *pathstr, void *str, u16_t strlen)
+int lwm2m_engine_get_string(char *pathstr, void *buf, u16_t buflen)
 {
-	return lwm2m_engine_get(pathstr, str, strlen);
+	return lwm2m_engine_get(pathstr, buf, buflen);
 }
 
 u8_t lwm2m_engine_get_u8(char *pathstr)
