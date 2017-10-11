@@ -758,7 +758,7 @@ struct lwm2m_message *lwm2m_get_message(struct lwm2m_ctx *client_ctx)
 	return NULL;
 }
 
-void lwm2m_release_message(struct lwm2m_message *msg)
+void lwm2m_reset_message(struct lwm2m_message *msg, bool release)
 {
 	if (!msg) {
 		return;
@@ -773,7 +773,16 @@ void lwm2m_release_message(struct lwm2m_message *msg)
 		coap_reply_clear(msg->reply);
 	}
 
-	memset(msg, 0, sizeof(*msg));
+	if (release) {
+		memset(msg, 0, sizeof(*msg));
+	} else {
+		if (msg->cpkt.pkt) {
+			net_pkt_unref(msg->cpkt.pkt);
+		}
+
+		msg->message_timeout_cb = NULL;
+		memset(&msg->cpkt, 0, sizeof(msg->cpkt));
+	}
 }
 
 int lwm2m_init_message(struct lwm2m_message *msg)
@@ -865,7 +874,7 @@ int lwm2m_init_message(struct lwm2m_message *msg)
 	return 0;
 
 cleanup:
-	lwm2m_release_message(msg);
+	lwm2m_reset_message(msg, true);
 	if (pkt) {
 		net_pkt_unref(pkt);
 	}
@@ -900,7 +909,7 @@ int lwm2m_send_message(struct lwm2m_message *msg)
 				      msg->pending->timeout);
 	} else {
 		/* if we're not expecting an ACK, free up the msg data */
-		lwm2m_release_message(msg);
+		lwm2m_reset_message(msg, true);
 	}
 
 	return 0;
@@ -2676,7 +2685,7 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
 					CONFIG_LWM2M_ENGINE_MAX_PENDING);
 	/*
 	 * Clear pending pointer because coap_pending_received() calls
-	 * coap_pending_clear, and later when we call lwm2m_release_message()
+	 * coap_pending_clear, and later when we call lwm2m_reset_message()
 	 * it will try and call coap_pending_clear() again if msg->pending
 	 * is != NULL.
 	 */
@@ -2717,7 +2726,7 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
 	if (reply || pending) {
 		/* free up msg resources */
 		if (msg) {
-			lwm2m_release_message(msg);
+			lwm2m_reset_message(msg, true);
 		}
 
 		SYS_LOG_DBG("reply %p handled and removed", reply);
@@ -2754,7 +2763,7 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
 		if (r < 0) {
 			SYS_LOG_ERR("Err sending response: %d",
 				    r);
-			lwm2m_release_message(msg);
+			lwm2m_reset_message(msg, true);
 		}
 	} else {
 		SYS_LOG_ERR("No handler for response");
@@ -2804,7 +2813,7 @@ static void retransmit_request(struct k_work *work)
 
 		/* final unref to release pkt */
 		net_pkt_unref(pending->pkt);
-		lwm2m_release_message(msg);
+		lwm2m_reset_message(msg, true);
 		return;
 	}
 
@@ -2954,7 +2963,7 @@ static int generate_notify_message(struct observe_node *obs,
 	return 0;
 
 cleanup:
-	lwm2m_release_message(msg);
+	lwm2m_reset_message(msg, true);
 	return ret;
 }
 

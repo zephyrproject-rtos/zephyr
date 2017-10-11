@@ -556,7 +556,7 @@ static int sm_do_bootstrap(int index)
 	return 0;
 
 cleanup:
-	lwm2m_release_message(msg);
+	lwm2m_reset_message(msg, true);
 	return ret;
 }
 
@@ -701,7 +701,7 @@ static int sm_send_registration(int index, bool send_obj_support_data,
 	return 0;
 
 cleanup:
-	lwm2m_release_message(msg);
+	lwm2m_reset_message(msg, true);
 	return ret;
 }
 
@@ -792,7 +792,7 @@ static int sm_do_deregister(int index)
 	return 0;
 
 cleanup:
-	lwm2m_release_message(msg);
+	lwm2m_reset_message(msg, true);
 	return ret;
 }
 
