@@ -146,7 +146,7 @@ typedef struct
 #endif /* LSE_VALUE */
 
 #if !defined  (LSI_VALUE)
-#define LSI_VALUE    32000U    /*!< Value of the LSI oscillator in Hz */
+#define LSI_VALUE    40000U    /*!< Value of the LSI oscillator in Hz */
 #endif /* LSI_VALUE */
 /**
   * @}

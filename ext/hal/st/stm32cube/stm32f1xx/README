@@ -12,3 +12,8 @@ Patch List:
 Impacted files:
    drivers/include/stm32f1xx_hal_conf.h
 ST Bug tracker ID: NA. Not a stm32cube issue
+
+*Update LSI_VALUE to 40 KHz
+Impacted files:
+  drivers/include/stm32f1xx_ll_rcc.h
+ST Bug tracker ID: 37419

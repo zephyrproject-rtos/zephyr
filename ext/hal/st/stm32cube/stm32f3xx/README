@@ -17,3 +17,8 @@ Patch List:
 Impacted files:
   drivers/include/stm32f3xx_ll_spi.h
 ST Bug tracker ID: 13359
+
+*Update LSI_VALUE to 40 KHz
+Impacted files:
+  drivers/include/stm32f3xx_ll_rcc.h
+ST Bug tracker ID: 37418
