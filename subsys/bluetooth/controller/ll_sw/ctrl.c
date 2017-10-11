@@ -2995,11 +2995,22 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		} else {
 			phy_rsp_send(_radio.conn_curr);
 
-			/* Start Procedure Timeout (TODO: this shall not replace
-			 * terminate procedure).
-			 */
-			_radio.conn_curr->procedure_expire =
-				_radio.conn_curr->procedure_reload;
+			/* Wait for peer master to complete the procedure */
+			if (_radio.conn_curr->llcp_phy.ack ==
+			    _radio.conn_curr->llcp_phy.req) {
+				_radio.conn_curr->llcp_phy.ack--;
+
+				_radio.conn_curr->llcp_phy.state =
+					LLCP_PHY_STATE_RSP_WAIT;
+
+				_radio.conn_curr->llcp_phy.cmd = 0;
+
+				/* Start Procedure Timeout (TODO: this shall not
+				 * replace terminate procedure).
+				 */
+				_radio.conn_curr->procedure_expire =
+					_radio.conn_curr->procedure_reload;
+			}
 		}
 		break;
 
