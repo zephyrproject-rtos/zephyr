@@ -80,14 +80,70 @@ add_custom_target(
   # Equivalent to rm -rf build/*
   )
 
-if(NOT BOARD)
+# The BOARD can be set by 3 sources. Through environment variables,
+# through the cmake CLI, and through CMakeLists.txt.
+#
+# CLI has the highest precedence, then comes environment variables,
+# and then finally CMakeLists.txt.
+#
+# A user can ignore all the precedence rules if he simply always uses
+# the same source. E.g. always specifies -DBOARD= on the command line,
+# always has an environment variable set, or always has a set(BOARD
+# foo) line in his CMakeLists.txt and avoids mixing sources.
+#
+# The selected BOARD can be accessed through the variable 'BOARD'.
+
+# Read out the cached board value if present
+get_property(cached_board_value CACHE BOARD PROPERTY VALUE)
+
+# There are actually 4 sources, the three user input sources, and the
+# previously used value (CACHED_BOARD). The previously used value has
+# precedence, and if we detect that the user is trying to change the
+# value we give him a warning about needing to clean the build
+# directory to be able to change boards.
+
+set(board_cli_argument ${cached_board_value}) # Either new or old
+if(board_cli_argument STREQUAL CACHED_BOARD)
+  # We already have a CACHED_BOARD so there is no new input on the CLI
+  unset(board_cli_argument)
+endif()
+
+set(board_app_cmake_lists ${BOARD})
+if(cached_board_value STREQUAL BOARD)
+  # The app build scripts did not set a default, The BOARD we are
+  # reading is the cached value from the CLI
+  unset(board_app_cmake_lists)
+endif()
+
+if(CACHED_BOARD)
+  # Warn the user if it looks like he is trying to change the board
+  # without cleaning first
+  if(board_cli_argument)
+    if(NOT (CACHED_BOARD STREQUAL board_cli_argument))
+      message(WARNING "The build directory must be cleaned pristinely when changing boards")
+      # TODO: Support changing boards without requiring a clean build
+    endif()
+  endif()
+
+  set(BOARD ${CACHED_BOARD})
+elseif(board_cli_argument)
+  set(BOARD ${board_cli_argument})
+
+elseif(DEFINED ENV{BOARD})
   set(BOARD $ENV{BOARD})
+
+elseif(board_app_cmake_lists)
+  set(BOARD ${board_app_cmake_lists})
+
+else()
+  message(FATAL_ERROR "BOARD is not being defined on the CMake command-line in the environment or by the app.")
 endif()
-set(BOARD ${BOARD} CACHE STRING "Board")
-if(NOT BOARD)
-  message(FATAL_ERROR "BOARD not set")
-endif()
+
+assert(BOARD "BOARD not set")
 message(STATUS "Selected BOARD ${BOARD}")
+
+# Store the selected board in the cache
+set(CACHED_BOARD ${BOARD} CACHE STRING "Selected board")
 
 # Use BOARD to search zephyr/boards/** for a _defconfig file,
 # e.g. zephyr/boards/arm/96b_carbon_nrf51/96b_carbon_nrf51_defconfig. When
