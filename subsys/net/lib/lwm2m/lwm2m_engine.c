@@ -2448,10 +2448,11 @@ static int handle_request(struct coap_packet *request,
 		if (path.level < 2) {
 			/* write/create a object instance */
 			context.operation = LWM2M_OP_CREATE;
+			msg->code = COAP_RESPONSE_CODE_CREATED;
 		} else {
 			context.operation = LWM2M_OP_EXECUTE;
+			msg->code = COAP_RESPONSE_CODE_CHANGED;
 		}
-		msg->code = COAP_RESPONSE_CODE_CHANGED;
 		break;
 
 	case COAP_METHOD_PUT:
