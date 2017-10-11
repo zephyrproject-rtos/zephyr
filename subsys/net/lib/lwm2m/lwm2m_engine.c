@@ -51,7 +51,7 @@
 #include "lwm2m_rd_client.h"
 #endif
 
-#define ENGINE_UPDATE_INTERVAL 500
+#define ENGINE_UPDATE_INTERVAL K_MSEC(500)
 
 #define DISCOVER_PREFACE	"</.well-known/core>;ct=40"
 
@@ -96,9 +96,21 @@ struct observe_node {
 
 static struct observe_node observe_node_data[CONFIG_LWM2M_ENGINE_MAX_OBSERVER];
 
+#define MAX_PERIODIC_SERVICE	10
+
+struct service_node {
+	sys_snode_t node;
+	void (*service_fn)(void);
+	u32_t min_call_period;
+	u64_t last_timestamp;
+};
+
+static struct service_node service_node_data[MAX_PERIODIC_SERVICE];
+
 static sys_slist_t engine_obj_list;
 static sys_slist_t engine_obj_inst_list;
 static sys_slist_t engine_observer_list;
+static sys_slist_t engine_service_list;
 
 #define NUM_BLOCK1_CONTEXT	CONFIG_LWM2M_NUM_BLOCK1_CONTEXT
 
@@ -2992,11 +3004,66 @@ cleanup:
 	return ret;
 }
 
+s32_t engine_next_service_timeout_ms(u32_t max_timeout)
+{
+	struct service_node *srv;
+	u64_t time_left_ms, timestamp = k_uptime_get();
+	u32_t timeout = max_timeout;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&engine_service_list, srv, node) {
+		if (!srv->service_fn) {
+			continue;
+		}
+
+		time_left_ms = srv->last_timestamp +
+				  K_MSEC(srv->min_call_period);
+
+		/* service is due */
+		if (time_left_ms < timestamp) {
+			return 0;
+		}
+
+		/* service timeout is less than the current timeout */
+		time_left_ms -= timestamp;
+		if (time_left_ms < timeout) {
+			timeout = time_left_ms;
+		}
+	}
+
+	return timeout;
+}
+
+int lwm2m_engine_add_service(void (*service)(void), u32_t period_ms)
+{
+	int i;
+
+	/* find an unused service index node */
+	for (i = 0; i < MAX_PERIODIC_SERVICE; i++) {
+		if (!service_node_data[i].service_fn) {
+			break;
+		}
+	}
+
+	if (i == MAX_PERIODIC_SERVICE) {
+		return -ENOMEM;
+	}
+
+	service_node_data[i].service_fn = service;
+	service_node_data[i].min_call_period = period_ms;
+	service_node_data[i].last_timestamp = 0;
+
+	sys_slist_append(&engine_service_list,
+			 &service_node_data[i].node);
+
+	return 0;
+}
+
 /* TODO: this needs to be triggered via work_queue */
 static void lwm2m_engine_service(void)
 {
 	struct observe_node *obs;
-	s64_t timestamp;
+	struct service_node *srv;
+	s64_t timestamp, service_due_timestamp;
 
 	while (true) {
 		/*
@@ -3030,7 +3097,23 @@ static void lwm2m_engine_service(void)
 
 		}
 
-		k_sleep(K_MSEC(ENGINE_UPDATE_INTERVAL));
+		timestamp = k_uptime_get();
+		SYS_SLIST_FOR_EACH_CONTAINER(&engine_service_list, srv, node) {
+			if (!srv->service_fn) {
+				continue;
+			}
+
+			service_due_timestamp = srv->last_timestamp +
+						K_MSEC(srv->min_call_period);
+			/* service is due */
+			if (timestamp > service_due_timestamp) {
+				srv->last_timestamp = k_uptime_get();
+				srv->service_fn();
+			}
+		}
+
+		/* calculate how long to sleep till the next service */
+		k_sleep(engine_next_service_timeout_ms(ENGINE_UPDATE_INTERVAL));
 	}
 }
 
