@@ -217,9 +217,10 @@ GRUB.
    .. code-block:: console
 
      $ cd $ZEPHYR_BASE
-     $ ./scripts/build_grub.sh
+     $ ./boards/x86/galileo/support/build_grub.sh
 
-#. Find the binary at :file:`$ZEPHYR_BASE/scripts/grub/bin/grub.efi`.
+#. Find the binary at
+   :file:`$ZEPHYR_BASE/./boards/x86/galileo/support/grub/bin/grub.efi`.
 
 
 
