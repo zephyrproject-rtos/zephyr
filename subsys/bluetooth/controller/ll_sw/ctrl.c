@@ -3450,8 +3450,7 @@ static inline void isr_rx_conn(u8_t crc_ok, u8_t trx_done,
 #if defined(CONFIG_BT_CTLR_PHY)
 	radio_gpio_pa_lna_enable(radio_tmr_end_get() + RADIO_TIFS -
 				 radio_rx_chain_delay_get(
-					 _radio.conn_curr->phy_rx,
-					 _radio.conn_curr->phy_flags) -
+					 _radio.conn_curr->phy_rx, 1) -
 				 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
 #else /* !CONFIG_BT_CTLR_PHY */
 	radio_gpio_pa_lna_enable(radio_tmr_end_get() + RADIO_TIFS -
