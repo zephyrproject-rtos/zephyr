@@ -152,7 +152,7 @@ yourself using the configuration menus:
 .. code-block:: console
 
    $ export CT_PREFIX=/Volumes/CrossToolNG
-   $ ct-ng menuconfig
+   $ ct-ng oldconfig
 
 Verifying the Configuration of the Toolchain
 ============================================
