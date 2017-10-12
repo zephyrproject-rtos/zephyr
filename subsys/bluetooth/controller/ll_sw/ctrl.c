@@ -8286,7 +8286,7 @@ static void rx_packet_set(struct connection *conn, struct pdu_data *pdu_data_rx)
 	if (conn->enc_rx) {
 		radio_pkt_configure(8, (max_rx_octets + 4), (phy << 1) | 0x01);
 
-		radio_pkt_rx_set(radio_ccm_rx_pkt_set(&conn->ccm_rx,
+		radio_pkt_rx_set(radio_ccm_rx_pkt_set(&conn->ccm_rx, phy,
 						      pdu_data_rx));
 	} else {
 		radio_pkt_configure(8, max_rx_octets, (phy << 1) | 0x01);
