@@ -115,20 +115,26 @@ static void retransmit_request(struct k_work *work)
 {
 	struct coap_pending *pending;
 	int r;
+	bool last_retransmit;
 
 	pending = coap_pending_next_to_expire(pendings, NUM_PENDINGS);
 	if (!pending) {
 		return;
 	}
 
+	last_retransmit = !coap_pending_cycle(pending);
+
 	r = net_context_sendto(pending->pkt, (struct sockaddr *) &mcast_addr,
 			       sizeof(mcast_addr), NULL, 0, NULL, NULL);
 	if (r < 0) {
+		coap_pending_clear(pending);
 		return;
 	}
 
-	if (!coap_pending_cycle(pending)) {
-		coap_pending_clear(pending);
+	if (last_retransmit) {
+		/* packet buffer will be freed when packet is sent */
+		pending->timeout = 0;
+		pending->pkt = NULL;
 		return;
 	}
 
@@ -231,15 +237,17 @@ static void event_iface_up(struct net_mgmt_event_callback *cb,
 	coap_reply_init(reply, &request);
 	reply->reply = resource_reply_cb;
 
+	/* Increase packet ref count to avoid being unref after sendto() */
+	coap_pending_cycle(pending);
+
 	r = net_context_sendto(pkt, (struct sockaddr *) &mcast_addr,
 			       sizeof(mcast_addr),
 			       NULL, 0, NULL, NULL);
 	if (r < 0) {
 		printk("Error sending the packet (%d).\n", r);
+		coap_pending_clear(pending);
 		return;
 	}
-
-	coap_pending_cycle(pending);
 
 	k_delayed_work_submit(&retransmit_work, pending->timeout);
 

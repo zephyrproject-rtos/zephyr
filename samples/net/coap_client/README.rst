@@ -6,7 +6,7 @@ CoAP client
 Overview
 ********
 
-A simple CoAP server showing how to retrieve information from a resource.
+A simple CoAP client showing how to retrieve information from a resource.
 
 This demo assumes that the platform of choice has networking support,
 some adjustments to the configuration may be needed.
