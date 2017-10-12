@@ -189,8 +189,10 @@ static void uart_stm32_irq_err_enable(struct device *dev)
 
 	/* Enable FE, ORE interruptions */
 	__HAL_UART_ENABLE_IT(UartHandle, UART_IT_ERR);
+#ifndef CONFIG_SOC_STM32F030X8
 	/* Enable Line break detection */
 	__HAL_UART_ENABLE_IT(UartHandle, UART_IT_LBD);
+#endif
 	/* Enable parity error interruption */
 	__HAL_UART_ENABLE_IT(UartHandle, UART_IT_PE);
 }
@@ -202,8 +204,10 @@ static void uart_stm32_irq_err_disable(struct device *dev)
 
 	/* Disable FE, ORE interruptions */
 	__HAL_UART_DISABLE_IT(UartHandle, UART_IT_ERR);
+#ifndef CONFIG_SOC_STM32F030X8
 	/* Disable Line break detection */
 	__HAL_UART_DISABLE_IT(UartHandle, UART_IT_LBD);
+#endif
 	/* Disable parity error interruption */
 	__HAL_UART_DISABLE_IT(UartHandle, UART_IT_PE);
 }

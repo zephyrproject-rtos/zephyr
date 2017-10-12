@@ -99,7 +99,9 @@ void stm32_setup_pins(const struct pin_config *pinconf,
 /* common pinmux device name for all STM32 chips */
 #define STM32_PINMUX_NAME "stm32-pinmux"
 
-#ifdef CONFIG_SOC_SERIES_STM32F1X
+#ifdef CONFIG_SOC_SERIES_STM32F0X
+#include "pinmux_stm32f0.h"
+#elif CONFIG_SOC_SERIES_STM32F1X
 #include "pinmux_stm32f1.h"
 #elif CONFIG_SOC_SERIES_STM32F3X
 #include "pinmux_stm32f3.h"

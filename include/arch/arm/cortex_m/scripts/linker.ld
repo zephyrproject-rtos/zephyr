@@ -181,6 +181,16 @@ SECTIONS
 
     GROUP_START(RAMABLE_REGION)
 
+#if defined(CONFIG_SOC_SERIES_STM32F0X) && !defined(CONFIG_IS_BOOTLOADER)
+    /* Must be first in ramable region */
+	SECTION_PROLOGUE(.st_stm32f0x_vt,(NOLOAD),)
+	{
+        _ram_vector_start = .;
+        . += _vector_end - _vector_start;
+        _ram_vector_end = .;
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+#endif
+
 #ifdef CONFIG_APPLICATION_MEMORY
 	SECTION_DATA_PROLOGUE(_APP_DATA_SECTION_NAME, (OPTIONAL),)
 	{
