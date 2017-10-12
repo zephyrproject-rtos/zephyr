@@ -8,9 +8,28 @@
 
 #include <xtensa_api.h>
 #include <xtensa/xtruntime.h>
+#include <board.h>
+
+#define CONFIG_GEN_IRQ_START_VECTOR 0
+
+#ifdef CONFIG_MULTI_LEVEL_INTERRUPTS
+
+#define CONFIG_NUM_IRQS (XCHAL_NUM_INTERRUPTS +\
+			(CONFIG_NUM_2ND_LEVEL_AGGREGATORS +\
+			CONFIG_NUM_3RD_LEVEL_AGGREGATORS) *\
+			CONFIG_MAX_IRQ_PER_AGGREGATOR)
+
+#define _arch_irq_enable(irq)	_soc_irq_enable(irq)
+#define _arch_irq_disable(irq)	_soc_irq_disable(irq)
+
+#else
 
 #define CONFIG_NUM_IRQS XCHAL_NUM_INTERRUPTS
-#define CONFIG_GEN_IRQ_START_VECTOR 0
+
+#define _arch_irq_enable(irq)	_xtensa_irq_enable(irq)
+#define _arch_irq_disable(irq)	_xtensa_irq_disable(irq)
+
+#endif
 
 /**
  *
@@ -22,7 +41,7 @@
  *
  * @return N/A
  */
-static ALWAYS_INLINE void _arch_irq_enable(u32_t irq)
+static ALWAYS_INLINE void _xtensa_irq_enable(u32_t irq)
 {
 	_xt_ints_on(1 << irq);
 }
@@ -36,7 +55,7 @@ static ALWAYS_INLINE void _arch_irq_enable(u32_t irq)
  *
  * @return N/A
  */
-static ALWAYS_INLINE void _arch_irq_disable(u32_t irq)
+static ALWAYS_INLINE void _xtensa_irq_disable(u32_t irq)
 {
 	_xt_ints_off(1 << irq);
 }
