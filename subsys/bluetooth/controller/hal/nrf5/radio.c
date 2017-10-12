@@ -659,7 +659,7 @@ void radio_tmr_status_reset(void)
 	NRF_PPI->CHENCLR =
 	    (PPI_CHEN_CH0_Msk | PPI_CHEN_CH1_Msk | PPI_CHEN_CH2_Msk |
 	     PPI_CHEN_CH3_Msk | PPI_CHEN_CH4_Msk | PPI_CHEN_CH5_Msk |
-	     PPI_CHEN_CH6_Msk);
+	     PPI_CHEN_CH6_Msk | PPI_CHEN_CH15_Msk);
 }
 
 void radio_tmr_tifs_set(u32_t tifs)
@@ -927,7 +927,7 @@ void radio_gpio_pa_lna_disable(void)
 
 static u8_t MALIGN(4) _ccm_scratch[(RADIO_PDU_LEN_MAX - 4) + 16];
 
-void *radio_ccm_rx_pkt_set(struct ccm *ccm, void *pkt)
+void *radio_ccm_rx_pkt_set(struct ccm *ccm, u8_t phy, void *pkt)
 {
 	u32_t mode;
 
@@ -941,21 +941,36 @@ void *radio_ccm_rx_pkt_set(struct ccm *ccm, void *pkt)
 		CCM_MODE_LENGTH_Msk;
 
 	/* Select CCM data rate based on current PHY in use. */
-	/* TODO: add cases for nRF52840's coded PHY */
-	switch ((NRF_RADIO->MODE & RADIO_MODE_MODE_Msk) >>
-		RADIO_MODE_MODE_Pos) {
+	switch (phy) {
 	default:
-	case RADIO_MODE_MODE_Ble_1Mbit:
+	case BIT(0):
 		mode |= (CCM_MODE_DATARATE_1Mbit <<
 			 CCM_MODE_DATARATE_Pos) &
 			CCM_MODE_DATARATE_Msk;
 		break;
 
-	case RADIO_MODE_MODE_Ble_2Mbit:
+	case BIT(1):
 		mode |= (CCM_MODE_DATARATE_2Mbit <<
 			 CCM_MODE_DATARATE_Pos) &
 			CCM_MODE_DATARATE_Msk;
 		break;
+
+#if defined(CONFIG_SOC_NRF52840)
+	case BIT(2):
+		mode |= (CCM_MODE_DATARATE_125Kbps <<
+			 CCM_MODE_DATARATE_Pos) &
+			CCM_MODE_DATARATE_Msk;
+
+		NRF_CCM->RATEOVERRIDE =
+			(CCM_RATEOVERRIDE_RATEOVERRIDE_500Kbps <<
+			 CCM_RATEOVERRIDE_RATEOVERRIDE_Pos) &
+			CCM_RATEOVERRIDE_RATEOVERRIDE_Msk;
+
+		NRF_PPI->CH[15].EEP = (u32_t)&(NRF_RADIO->EVENTS_RATEBOOST);
+		NRF_PPI->CH[15].TEP = (u32_t)&(NRF_CCM->TASKS_RATEOVERRIDE);
+		NRF_PPI->CHENSET = PPI_CHEN_CH15_Msk;
+		break;
+#endif /* CONFIG_SOC_NRF52840 */
 	}
 #endif
 	NRF_CCM->MODE = mode;
