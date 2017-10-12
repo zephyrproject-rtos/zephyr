@@ -109,6 +109,9 @@ struct acl_data {
 	/** BT_BUF_ACL_IN */
 	u8_t  type;
 
+	/* Index into the bt_conn storage array */
+	u8_t  id;
+
 	/** ACL connection handle */
 	u16_t handle;
 };
@@ -133,6 +136,7 @@ static void report_completed_packet(struct net_buf *buf)
 	struct bt_hci_cp_host_num_completed_packets *cp;
 	u16_t handle = acl(buf)->handle;
 	struct bt_hci_handle_count *hc;
+	struct bt_conn *conn;
 
 	net_buf_destroy(buf);
 
@@ -140,6 +144,21 @@ static void report_completed_packet(struct net_buf *buf)
 	if (!(bt_dev.supported_commands[10] & 0x20)) {
 		return;
 	}
+
+	conn = bt_conn_lookup_id(acl(buf)->id);
+	if (!conn) {
+		BT_WARN("Unable to look up conn with id 0x%02x", acl(buf)->id);
+		return;
+	}
+
+	if (conn->state != BT_CONN_CONNECTED &&
+	    conn->state != BT_CONN_DISCONNECT) {
+		BT_WARN("Not reporting packet for non-connected conn");
+		bt_conn_unref(conn);
+		return;
+	}
+
+	bt_conn_unref(conn);
 
 	BT_DBG("Reporting completed packet for handle %u", handle);
 
@@ -458,6 +477,7 @@ static void hci_acl(struct net_buf *buf)
 	flags = bt_acl_flags(handle);
 
 	acl(buf)->handle = bt_acl_handle(handle);
+	acl(buf)->id = BT_CONN_ID_INVALID;
 
 	net_buf_pull(buf, sizeof(*hdr));
 
@@ -475,6 +495,8 @@ static void hci_acl(struct net_buf *buf)
 		net_buf_unref(buf);
 		return;
 	}
+
+	acl(buf)->id = bt_conn_get_id(conn);
 
 	bt_conn_recv(conn, buf, flags);
 	bt_conn_unref(conn);
