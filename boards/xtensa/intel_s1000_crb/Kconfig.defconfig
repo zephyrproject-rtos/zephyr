@@ -10,6 +10,45 @@ config BOARD
 config BOARD_XTENSA
 	def_bool y
 
+config CAVS_ICTL_0_OFFSET
+	default 0x06
+config CAVS_ICTL_1_OFFSET
+	default 0x0A
+config CAVS_ICTL_2_OFFSET
+	default 0x0D
+config CAVS_ICTL_3_OFFSET
+	default 0x10
+
+config DW_ICTL_OFFSET
+	default 0x07
+
+config 2ND_LVL_INTR_00_OFFSET
+	default CAVS_ICTL_0_OFFSET
+config 2ND_LVL_INTR_01_OFFSET
+	default CAVS_ICTL_1_OFFSET
+config 2ND_LVL_INTR_02_OFFSET
+	default CAVS_ICTL_2_OFFSET
+config 2ND_LVL_INTR_03_OFFSET
+	default CAVS_ICTL_3_OFFSET
+config 3RD_LVL_INTR_00_OFFSET
+	default DW_ICTL_OFFSET
+
+config MAX_IRQ_PER_AGGREGATOR
+	default 32
+config NUM_2ND_LEVEL_AGGREGATORS
+	default 4
+config NUM_3RD_LEVEL_AGGREGATORS
+	default 1
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 21
+config 3RD_LVL_ISR_TBL_OFFSET
+	default 149
+
+config CAVS_ISR_TBL_OFFSET
+	default 2ND_LVL_ISR_TBL_OFFSET
+config DW_ISR_TBL_OFFSET
+	default 3RD_LVL_ISR_TBL_OFFSET
+
 config GPIO_DW_0_NAME
 	default "GPIO_PORTA"
 config GPIO_DW_0_IRQ_PRI
@@ -33,6 +72,8 @@ config UART_NS16550_PORT_0_BAUD_RATE
 	default 115200
 config UART_NS16550_PORT_0_OPTIONS
 	default 0
+config UART_INTERRUPT_DRIVEN
+	def_bool y
 
 endif # UART_NS16550_PORT_0
 
