@@ -23,12 +23,24 @@ static int i2c_stm32_runtime_configure(struct device *dev, u32_t config)
 	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
 	struct i2c_stm32_data *data = DEV_DATA(dev);
 	I2C_TypeDef *i2c = cfg->i2c;
-	u32_t clock;
+	u32_t clock = 0;
 
-	data->dev_config = config;
+#if defined(CONFIG_SOC_SERIES_STM32F3X) || defined(CONFIG_SOC_SERIES_STM32F0X)
+	LL_RCC_ClocksTypeDef rcc_clocks;
 
+	/*
+	 * STM32F0/3 I2C's independent clock source supports only
+	 * HSI and SYSCLK, not APB1. We force clock variable to
+	 * SYSCLK frequency.
+	 */
+	LL_RCC_GetSystemClocksFreq(&rcc_clocks);
+	clock = rcc_clocks.SYSCLK_Frequency;
+#else
 	clock_control_get_rate(device_get_binding(STM32_CLOCK_CONTROL_NAME),
 			(clock_control_subsys_t *) &cfg->pclken, &clock);
+#endif /* CONFIG_SOC_SERIES_STM32F3X) || CONFIG_SOC_SERIES_STM32F0X */
+
+	data->dev_config = config;
 
 	LL_I2C_Disable(i2c);
 	LL_I2C_SetMode(i2c, LL_I2C_MODE_I2C);
@@ -102,6 +114,33 @@ static int i2c_stm32_init(struct device *dev)
 
 	__ASSERT_NO_MSG(clock);
 	clock_control_on(clock, (clock_control_subsys_t *) &cfg->pclken);
+
+#if defined(CONFIG_SOC_SERIES_STM32F3X) || defined(CONFIG_SOC_SERIES_STM32F0X)
+	/*
+	 * STM32F0/3 I2C's independent clock source supports only
+	 * HSI and SYSCLK, not APB1. We force I2C clock source to SYSCLK.
+	 */
+
+	switch ((u32_t)cfg->i2c) {
+#ifdef CONFIG_I2C_1
+	case CONFIG_I2C_1_BASE_ADDRESS:
+		LL_RCC_SetI2CClockSource(LL_RCC_I2C1_CLKSOURCE_SYSCLK);
+		break;
+#endif /* CONFIG_I2C_1 */
+
+#ifdef CONFIG_I2C_2
+	case CONFIG_I2C_2_BASE_ADDRESS:
+		LL_RCC_SetI2CClockSource(LL_RCC_I2C2_CLKSOURCE_SYSCLK);
+		break;
+#endif /* CONFIG_I2C_2 */
+
+#ifdef CONFIG_I2C_3
+	case CONFIG_I2C_3_BASE_ADDRESS:
+		LL_RCC_SetI2CClockSource(LL_RCC_I2C3_CLKSOURCE_SYSCLK);
+		break;
+#endif /* CONFIG_I2C_3 */
+	}
+#endif /* CONFIG_SOC_SERIES_STM32F3X) || CONFIG_SOC_SERIES_STM32F0X */
 
 	bitrate_cfg = _i2c_map_dt_bitrate(cfg->bitrate);
 
