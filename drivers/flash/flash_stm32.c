@@ -12,7 +12,7 @@
 #include <init.h>
 #include <soc.h>
 
-#include <flash_stm32.h>
+#include "flash_stm32.h"
 
 #define STM32_FLASH_TIMEOUT	((u32_t) 0x000B0000)
 
