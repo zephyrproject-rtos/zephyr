@@ -975,11 +975,11 @@ zephyr: $(zephyr-deps) $(KERNEL_BIN_NAME)
 ifeq ($(CONFIG_HAS_DTS),y)
 define filechk_generated_dts_board.h
 	(echo "/* WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY! */"; \
-		if test -e $(ZEPHYR_BASE)/dts/$(ARCH)/$(BOARD_NAME).fixup; then \
+		if test -e $(ZEPHYR_BASE)/boards/$(ARCH)/$(BOARD_NAME)/dts.fixup; then \
 			$(ZEPHYR_BASE)/scripts/dts/extract_dts_includes.py \
 				-d dts/$(ARCH)/$(BOARD_NAME).dts_compiled \
 				-y $(ZEPHYR_BASE)/dts/$(ARCH)/yaml \
-				-f $(ZEPHYR_BASE)/dts/$(ARCH)/$(BOARD_NAME).fixup; \
+				-f $(ZEPHYR_BASE)/boards/$(ARCH)/$(BOARD_NAME)/dts.fixup; \
 		else \
 			$(ZEPHYR_BASE)/scripts/dts/extract_dts_includes.py \
 				-d dts/$(ARCH)/$(BOARD_NAME).dts_compiled \
