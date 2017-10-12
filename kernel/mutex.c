@@ -82,12 +82,9 @@ void _impl_k_mutex_init(struct k_mutex *mutex)
 }
 
 #ifdef CONFIG_USERSPACE
-u32_t _handler_k_mutex_init(u32_t mutex, u32_t arg2, u32_t arg3,
-			    u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+_SYSCALL_HANDLER1(k_mutex_init, mutex)
 {
-	_SYSCALL_ARG1;
-
-	_SYSCALL_OBJ_INIT(mutex, K_OBJ_MUTEX, ssf);
+	_SYSCALL_OBJ_INIT(mutex, K_OBJ_MUTEX);
 	_impl_k_mutex_init((struct k_mutex *)mutex);
 
 	return 0;
@@ -203,12 +200,9 @@ int _impl_k_mutex_lock(struct k_mutex *mutex, s32_t timeout)
 }
 
 #ifdef CONFIG_USERSPACE
-u32_t _handler_k_mutex_lock(u32_t mutex, u32_t timeout, u32_t arg3,
-			    u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+_SYSCALL_HANDLER2(k_mutex_lock, mutex, timeout)
 {
-	_SYSCALL_ARG2;
-
-	_SYSCALL_OBJ(mutex, K_OBJ_MUTEX, ssf);
+	_SYSCALL_OBJ(mutex, K_OBJ_MUTEX);
 	return _impl_k_mutex_lock((struct k_mutex *)mutex, (s32_t)timeout);
 }
 #endif
@@ -267,13 +261,5 @@ void _impl_k_mutex_unlock(struct k_mutex *mutex)
 }
 
 #ifdef CONFIG_USERSPACE
-u32_t _handler_k_mutex_unlock(u32_t mutex, u32_t arg2, u32_t arg3,
-			      u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
-{
-	_SYSCALL_ARG1;
-
-	_SYSCALL_OBJ(mutex, K_OBJ_MUTEX, ssf);
-	_impl_k_mutex_unlock((struct k_mutex *)mutex);
-	return 0;
-}
+_SYSCALL_HANDLER1_SIMPLE_VOID(k_mutex_unlock, K_OBJ_MUTEX, struct k_mutex *);
 #endif

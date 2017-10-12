@@ -56,15 +56,14 @@ void _impl_k_stack_init(struct k_stack *stack, u32_t *buffer, int num_entries)
 }
 
 #ifdef CONFIG_USERSPACE
-u32_t _handler_k_stack_init(u32_t stack, u32_t buffer, u32_t num_entries_p,
-			    u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+_SYSCALL_HANDLER3(k_stack_init, stack, buffer, num_entries_p)
 {
 	int num_entries = (int)num_entries_p;
 
 	/* FIXME why is 'num_entries' signed?? */
-	_SYSCALL_VERIFY(num_entries > 0, ssf);
-	_SYSCALL_OBJ_INIT(stack, K_OBJ_STACK, ssf);
-	_SYSCALL_MEMORY_ARRAY_WRITE(buffer, num_entries, sizeof(u32_t), ssf);
+	_SYSCALL_VERIFY(num_entries > 0);
+	_SYSCALL_OBJ_INIT(stack, K_OBJ_STACK);
+	_SYSCALL_MEMORY_ARRAY_WRITE(buffer, num_entries, sizeof(u32_t));
 
 	_impl_k_stack_init((struct k_stack *)stack, (u32_t *)buffer,
 			   num_entries);
@@ -103,14 +102,12 @@ void _impl_k_stack_push(struct k_stack *stack, u32_t data)
 }
 
 #ifdef CONFIG_USERSPACE
-u32_t _handler_k_stack_push(u32_t stack_p, u32_t data, u32_t arg3,
-			    u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+_SYSCALL_HANDLER2(k_stack_push, stack_p, data)
 {
 	struct k_stack *stack = (struct k_stack *)stack_p;
-	_SYSCALL_ARG2;
 
-	_SYSCALL_OBJ(stack, K_OBJ_STACK, ssf);
-	_SYSCALL_VERIFY_MSG(stack->next != stack->top, ssf, "stack is full");
+	_SYSCALL_OBJ(stack, K_OBJ_STACK);
+	_SYSCALL_VERIFY_MSG(stack->next != stack->top, "stack is full");
 
 	_impl_k_stack_push(stack, data);
 	return 0;
@@ -146,16 +143,12 @@ int _impl_k_stack_pop(struct k_stack *stack, u32_t *data, s32_t timeout)
 }
 
 #ifdef CONFIG_USERSPACE
-u32_t _handler_k_stack_pop(u32_t stack, u32_t data, u32_t timeout,
-			   u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+_SYSCALL_HANDLER3(k_stack_pop, stack, data, timeout)
 {
-	_SYSCALL_ARG3;
-
-	_SYSCALL_OBJ(stack, K_OBJ_STACK, ssf);
-	_SYSCALL_MEMORY_WRITE(data, sizeof(u32_t), ssf);
+	_SYSCALL_OBJ(stack, K_OBJ_STACK);
+	_SYSCALL_MEMORY_WRITE(data, sizeof(u32_t));
 
 	return _impl_k_stack_pop((struct k_stack *)stack, (u32_t *)data,
 				 timeout);
-
 }
 #endif

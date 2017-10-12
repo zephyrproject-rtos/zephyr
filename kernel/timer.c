@@ -132,18 +132,16 @@ void _impl_k_timer_start(struct k_timer *timer, s32_t duration, s32_t period)
 }
 
 #ifdef CONFIG_USERSPACE
-u32_t _handler_k_timer_start(u32_t timer, u32_t duration_p, u32_t period_p,
-			     u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+_SYSCALL_HANDLER3(k_timer_start, timer, duration_p, period_p)
 {
 	s32_t duration, period;
-	_SYSCALL_ARG3;
 
 	duration = (s32_t)duration_p;
 	period = (s32_t)period_p;
 
 	_SYSCALL_VERIFY(duration >= 0 && period >= 0 &&
-			(duration != 0 || period != 0), ssf);
-	_SYSCALL_OBJ(timer, K_OBJ_TIMER, ssf);
+			(duration != 0 || period != 0));
+	_SYSCALL_OBJ(timer, K_OBJ_TIMER);
 	_impl_k_timer_start((struct k_timer *)timer, duration, period);
 	return 0;
 }
@@ -179,15 +177,7 @@ void _impl_k_timer_stop(struct k_timer *timer)
 }
 
 #ifdef CONFIG_USERSPACE
-u32_t _handler_k_timer_stop(u32_t timer, u32_t arg2, u32_t arg3,
-			    u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
-{
-	_SYSCALL_ARG1;
-
-	_SYSCALL_OBJ(timer, K_OBJ_TIMER, ssf);
-	_impl_k_timer_stop((struct k_timer *)timer);
-	return 0;
-}
+_SYSCALL_HANDLER1_SIMPLE_VOID(k_timer_stop, K_OBJ_TIMER, struct k_timer *);
 #endif
 
 u32_t _impl_k_timer_status_get(struct k_timer *timer)
@@ -202,15 +192,7 @@ u32_t _impl_k_timer_status_get(struct k_timer *timer)
 }
 
 #ifdef CONFIG_USERSPACE
-u32_t _handler_k_timer_status_get(u32_t timer, u32_t arg2, u32_t arg3,
-				  u32_t arg4, u32_t arg5, u32_t arg6,
-				  void *ssf)
-{
-	_SYSCALL_ARG1;
-
-	_SYSCALL_OBJ(timer, K_OBJ_TIMER, ssf);
-	return _impl_k_timer_status_get((struct k_timer *)timer);
-}
+_SYSCALL_HANDLER1_SIMPLE(k_timer_status_get, K_OBJ_TIMER, struct k_timer *);
 #endif
 
 u32_t _impl_k_timer_status_sync(struct k_timer *timer)
@@ -243,15 +225,7 @@ u32_t _impl_k_timer_status_sync(struct k_timer *timer)
 }
 
 #ifdef CONFIG_USERSPACE
-u32_t _handler_k_timer_status_sync(u32_t timer, u32_t arg2, u32_t arg3,
-				   u32_t arg4, u32_t arg5, u32_t arg6,
-				   void *ssf)
-{
-	_SYSCALL_ARG1;
-
-	_SYSCALL_OBJ(timer, K_OBJ_TIMER, ssf);
-	return _impl_k_timer_status_sync((struct k_timer *)timer);
-}
+_SYSCALL_HANDLER1_SIMPLE(k_timer_status_sync, K_OBJ_TIMER, struct k_timer *);
 #endif
 
 s32_t _timeout_remaining_get(struct _timeout *timeout)
@@ -280,3 +254,15 @@ s32_t _timeout_remaining_get(struct _timeout *timeout)
 	irq_unlock(key);
 	return __ticks_to_ms(remaining_ticks);
 }
+
+#ifdef CONFIG_USERSPACE
+_SYSCALL_HANDLER1_SIMPLE(k_timer_remaining_get, K_OBJ_TIMER, struct k_timer *);
+_SYSCALL_HANDLER1_SIMPLE(k_timer_user_data_get, K_OBJ_TIMER, struct k_timer *);
+
+_SYSCALL_HANDLER2(k_timer_user_data_set, timer, user_data)
+{
+	_SYSCALL_OBJ(timer, K_OBJ_TIMER);
+	_impl_k_timer_user_data_set((struct k_timer *)timer, (void *)user_data);
+	return 0;
+}
+#endif

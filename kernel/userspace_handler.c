@@ -35,31 +35,24 @@ static struct _k_object *validate_any_object(void *obj)
  * To avoid double _k_object_find() lookups, we don't call the implementation
  * function, but call a level deeper.
  */
-
-u32_t _handler_k_object_access_grant(u32_t object, u32_t thread, u32_t arg3,
-				     u32_t arg4, u32_t arg5, u32_t arg6,
-				     void *ssf)
+_SYSCALL_HANDLER2(k_object_access_grant, object, thread)
 {
-	_SYSCALL_ARG2;
 	struct _k_object *ko;
 
-	_SYSCALL_OBJ(thread, K_OBJ_THREAD, ssf);
+	_SYSCALL_OBJ(thread, K_OBJ_THREAD);
 	ko = validate_any_object((void *)object);
-	_SYSCALL_VERIFY_MSG(ko, ssf, "object %p access denied", (void *)object);
+	_SYSCALL_VERIFY_MSG(ko, "object %p access denied", (void *)object);
 	_thread_perms_set(ko, (struct k_thread *)thread);
 
 	return 0;
 }
 
-u32_t _handler_k_object_access_all_grant(u32_t object, u32_t arg2, u32_t arg3,
-					 u32_t arg4, u32_t arg5, u32_t arg6,
-					 void *ssf)
+_SYSCALL_HANDLER1(k_object_access_all_grant, object)
 {
-	_SYSCALL_ARG1;
 	struct _k_object *ko;
 
 	ko = validate_any_object((void *)object);
-	_SYSCALL_VERIFY_MSG(ko, ssf, "object %p access denied", (void *)object);
+	_SYSCALL_VERIFY_MSG(ko, "object %p access denied", (void *)object);
 	_thread_perms_all_set(ko);
 
 	return 0;
