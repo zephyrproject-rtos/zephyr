@@ -41,4 +41,62 @@ config SYS_LOG_USB_DRIVER_LEVEL
 
 	- 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
 
+config USB_DC_STM32
+	bool
+	prompt "USB device controller driver for STM32 devices"
+	default n
+	help
+	Enable support for the USB device controller on the STM32
+	family of microcontrollers
+
+config USB_DC_STM32_IRQ_PRI
+	int
+	prompt "STM32 USB Controller interrupt priority"
+	depends on USB_DC_STM32
+	default 1
+	help
+	IRQ priority.
+
+config USB_DC_STM32_VBUS_SENSING
+	bool
+	prompt "STM32_USB controller VBUS sensing"
+	depends on USB_DC_STM32
+	default n
+	help
+	Say Y if your board uses the VBUS pin on the MCU to sense if
+	the VBUS is present on the USB connector.
+
+config USB_DC_STM32_DISCONN_ENABLE
+	bool
+	prompt "Enable STM32 USB Disconnect pin support"
+	depends on USB_DC_STM32
+	default n
+	help
+	Say Y if your board uses USB DISCONNECT pin to enable the
+	pull-up resistor on USB DP.
+
+config USB_DC_STM32_DISCONN_GPIO_PORT_NAME
+	string
+	prompt "USB DISCONNECT GPIO controller port name"
+	depends on USB_DC_STM32_DISCONN_ENABLE
+	default "GPIOC"
+	help
+	GPIO controller where the USB DISCONNECT pin is attached to.
+
+config USB_DC_STM32_DISCONN_PIN
+	int
+	prompt "USB DISCONNECT pin"
+	depends on USB_DC_STM32_DISCONN_ENABLE
+	default 12
+	help
+	USB DISCONNECT pin.
+
+config USB_DC_STM32_DISCONN_PIN_LEVEL
+	int
+	prompt "USB DISCONNECT pin level"
+	depends on USB_DC_STM32_DISCONN_ENABLE
+	default 0
+	help
+	USB DISCONNECT pin level.
+
 endif # USB

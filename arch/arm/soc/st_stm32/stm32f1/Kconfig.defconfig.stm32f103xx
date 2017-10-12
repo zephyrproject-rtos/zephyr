@@ -29,3 +29,10 @@ config NUM_IRQS
 
 endif # SOC_STM32F103XE
 
+config USB_DC_STM32_EP_NUM
+	int
+	default 8
+
+config USB_DC_STM32_PACKET_RAM_SIZE
+	int
+	default 512

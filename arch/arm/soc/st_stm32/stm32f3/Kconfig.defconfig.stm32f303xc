@@ -19,4 +19,12 @@ config NUM_IRQS
 	int
 	default 82
 
+config USB_DC_STM32_EP_NUM
+	int
+	default 8
+
+config USB_DC_STM32_PACKET_RAM_SIZE
+	int
+	default 512
+
 endif # SOC_STM32F303XC
