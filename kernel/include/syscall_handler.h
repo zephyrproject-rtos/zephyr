@@ -87,11 +87,10 @@ extern void _thread_perms_all_set(struct _k_object *ko);
  *
  * @param expr Boolean expression to verify, a false result will trigger an
  *             oops
- * @param ssf Syscall stack frame argument passed to the handler function
  * @param fmt Printf-style format string (followed by appropriate variadic
  *            arguments) to print on verification failure
  */
-#define _SYSCALL_VERIFY_MSG(expr, ssf, fmt, ...) \
+#define _SYSCALL_VERIFY_MSG(expr, fmt, ...) \
 	do { \
 		if (!(expr)) { \
 			printk("FATAL: syscall %s failed check: " fmt "\n", \
@@ -108,14 +107,12 @@ extern void _thread_perms_all_set(struct _k_object *ko);
  *
  * @param expr Boolean expression to verify, a false result will trigger an
  *             oops. A stringified version of this expression will be printed.
- * @param ssf Syscall stack frame argument passed to the handler function
- *            arguments) to print on verification failure
  */
-#define _SYSCALL_VERIFY(expr, ssf) _SYSCALL_VERIFY_MSG(expr, ssf, #expr)
+#define _SYSCALL_VERIFY(expr) _SYSCALL_VERIFY_MSG(expr, #expr)
 
-#define _SYSCALL_MEMORY(ptr, size, write, ssf) \
+#define _SYSCALL_MEMORY(ptr, size, write) \
 	_SYSCALL_VERIFY_MSG(!_arch_buffer_validate((void *)ptr, size, write), \
-			    ssf, "Memory region %p (size %u) %s access denied", \
+			    "Memory region %p (size %u) %s access denied", \
 			    (void *)(ptr), (u32_t)(size), \
 			    write ? "write" : "read")
 
@@ -132,10 +129,9 @@ extern void _thread_perms_all_set(struct _k_object *ko);
  * @param size Size of the memory area
  * @param write If the thread should be able to write to this memory, not just
  *		read it
- * @param ssf Syscall stack frame argument passed to the handler function
  */
-#define _SYSCALL_MEMORY_READ(ptr, size, ssf) \
-	_SYSCALL_MEMORY(ptr, size, 0, ssf)
+#define _SYSCALL_MEMORY_READ(ptr, size) \
+	_SYSCALL_MEMORY(ptr, size, 0)
 
 /**
  * @brief Runtime check that a user thread has write permission to a memory area
@@ -150,20 +146,19 @@ extern void _thread_perms_all_set(struct _k_object *ko);
  * @param size Size of the memory area
  * @param write If the thread should be able to write to this memory, not just
  *		read it
- * @param ssf Syscall stack frame argument passed to the handler function
  */
-#define _SYSCALL_MEMORY_WRITE(ptr, size, ssf) \
-	_SYSCALL_MEMORY(ptr, size, 1, ssf)
+#define _SYSCALL_MEMORY_WRITE(ptr, size) \
+	_SYSCALL_MEMORY(ptr, size, 1)
 
-#define _SYSCALL_MEMORY_ARRAY(ptr, nmemb, size, write, ssf) \
+#define _SYSCALL_MEMORY_ARRAY(ptr, nmemb, size, write) \
 	do { \
 		u32_t product; \
 		_SYSCALL_VERIFY_MSG(!__builtin_umul_overflow((u32_t)(nmemb), \
 							     (u32_t)(size), \
-							     &product), ssf, \
+							     &product), \
 				    "%ux%u array is too large", \
 				    (u32_t)(nmemb), (u32_t)(size)); \
-		_SYSCALL_MEMORY(ptr, product, write, ssf); \
+		_SYSCALL_MEMORY(ptr, product, write); \
 	} while (0)
 
 /**
@@ -176,10 +171,9 @@ extern void _thread_perms_all_set(struct _k_object *ko);
  * @param ptr Memory area to examine
  * @param nmemb Number of elements in the array
  * @param size Size of each array element
- * @param ssf Syscall stack frame argument passed to the handler function
  */
-#define _SYSCALL_MEMORY_ARRAY_READ(ptr, nmemb, size, ssf) \
-	_SYSCALL_MEMORY_ARRAY(ptr, nmemb, size, 0, ssf)
+#define _SYSCALL_MEMORY_ARRAY_READ(ptr, nmemb, size) \
+	_SYSCALL_MEMORY_ARRAY(ptr, nmemb, size, 0)
 
 /**
  * @brief Validate user thread has read/write permission for sized array
@@ -191,10 +185,9 @@ extern void _thread_perms_all_set(struct _k_object *ko);
  * @param ptr Memory area to examine
  * @param nmemb Number of elements in the array
  * @param size Size of each array element
- * @param ssf Syscall stack frame argument passed to the handler function
  */
-#define _SYSCALL_MEMORY_ARRAY_WRITE(ptr, nmemb, size, ssf) \
-	_SYSCALL_MEMORY_ARRAY(ptr, nmemb, size, 1, ssf)
+#define _SYSCALL_MEMORY_ARRAY_WRITE(ptr, nmemb, size) \
+	_SYSCALL_MEMORY_ARRAY(ptr, nmemb, size, 1)
 
 static inline int _obj_validation_check(void *obj, enum k_objects otype,
 					int init)
@@ -214,10 +207,9 @@ static inline int _obj_validation_check(void *obj, enum k_objects otype,
 	return ret;
 }
 
-
-#define _SYSCALL_IS_OBJ(ptr, type, init, ssf) \
+#define _SYSCALL_IS_OBJ(ptr, type, init) \
 	_SYSCALL_VERIFY_MSG(!_obj_validation_check((void *)ptr, type, init), \
-			    ssf, "object %p access denied", (void *)(ptr))
+			    "object %p access denied", (void *)(ptr))
 
 /**
  * @brief Runtime check kernel object pointer for non-init functions
@@ -228,10 +220,9 @@ static inline int _obj_validation_check(void *obj, enum k_objects otype,
  *
  * @param ptr Untrusted kernel object pointer
  * @param type Expected kernel object type
- * @param ssf Syscall stack frame argument passed to the handler function
  */
-#define _SYSCALL_OBJ(ptr, type, ssf) \
-	_SYSCALL_IS_OBJ(ptr, type, 0, ssf)
+#define _SYSCALL_OBJ(ptr, type) \
+	_SYSCALL_IS_OBJ(ptr, type, 0)
 
 /**
  * @brief Runtime check kernel object pointer for non-init functions
@@ -242,28 +233,120 @@ static inline int _obj_validation_check(void *obj, enum k_objects otype,
  *
  * @param ptr Untrusted kernel object pointer
  * @param type Expected kernel object type
- * @param ssf Syscall stack frame argument passed to the handler function
  */
 
-#define _SYSCALL_OBJ_INIT(ptr, type, ssf) \
-	_SYSCALL_IS_OBJ(ptr, type, 1, ssf)
+#define _SYSCALL_OBJ_INIT(ptr, type) \
+	_SYSCALL_IS_OBJ(ptr, type, 1)
 
-/* Convenience macros for handler implementations */
-#define _SYSCALL_ARG0	ARG_UNUSED(arg1); ARG_UNUSED(arg2); ARG_UNUSED(arg3); \
-			ARG_UNUSED(arg4); ARG_UNUSED(arg5); ARG_UNUSED(arg6)
+/*
+ * Handler definition macros
+ *
+ * All handlers have the same prototype:
+ *
+ * u32_t _handler_APINAME(u32_t arg1, u32_t arg2, u32_t arg3,
+ *			  u32_t arg4, u32_t arg5, u32_t arg6, void *ssf);
+ *
+ * These make it much simpler to define handlers instead of typing out
+ * the bolierplate. The macros ensure that the seventh argument is named
+ * "ssf" as this is now referenced by various other _SYSCALL macros.
+ *
+ * The different variants here simply depend on how many of the 6 arguments
+ * passed in are really used.
+ */
 
-#define _SYSCALL_ARG1	ARG_UNUSED(arg2); ARG_UNUSED(arg3); ARG_UNUSED(arg4); \
-			ARG_UNUSED(arg5); ARG_UNUSED(arg6)
+#define _SYSCALL_HANDLER0(name_) \
+	u32_t _handler_ ## name_(u32_t arg1 __unused, \
+				 u32_t arg2 __unused, \
+				 u32_t arg3 __unused, \
+				 u32_t arg4 __unused, \
+				 u32_t arg5 __unused, \
+				 u32_t arg6 __unused, \
+				 void *ssf)
 
-#define _SYSCALL_ARG2	ARG_UNUSED(arg3); ARG_UNUSED(arg4); ARG_UNUSED(arg5); \
-			ARG_UNUSED(arg6)
+#define _SYSCALL_HANDLER1(name_, arg1_) \
+	u32_t _handler_ ## name_(u32_t arg1_, \
+				 u32_t arg2 __unused, \
+				 u32_t arg3 __unused, \
+				 u32_t arg4 __unused, \
+				 u32_t arg5 __unused, \
+				 u32_t arg6 __unused, \
+				 void *ssf)
 
-#define _SYSCALL_ARG3	ARG_UNUSED(arg4); ARG_UNUSED(arg5); ARG_UNUSED(arg6)
+#define _SYSCALL_HANDLER2(name_, arg1_, arg2_) \
+	u32_t _handler_ ## name_(u32_t arg1_, \
+				 u32_t arg2_, \
+				 u32_t arg3 __unused, \
+				 u32_t arg4 __unused, \
+				 u32_t arg5 __unused, \
+				 u32_t arg6 __unused, \
+				 void *ssf)
 
+#define _SYSCALL_HANDLER3(name_, arg1_, arg2_, arg3_) \
+	u32_t _handler_ ## name_(u32_t arg1_, \
+				 u32_t arg2_, \
+				 u32_t arg3_, \
+				 u32_t arg4 __unused, \
+				 u32_t arg5 __unused, \
+				 u32_t arg6 __unused, \
+				 void *ssf)
 
-#define _SYSCALL_ARG4	ARG_UNUSED(arg5); ARG_UNUSED(arg6)
+#define _SYSCALL_HANDLER4(name_, arg1_, arg2_, arg3_, arg4_) \
+	u32_t _handler_ ## name_(u32_t arg1_, \
+				 u32_t arg2_, \
+				 u32_t arg3_, \
+				 u32_t arg4_, \
+				 u32_t arg5 __unused, \
+				 u32_t arg6 __unused, \
+				 void *ssf)
 
-#define _SYSCALL_ARG5	ARG_UNUSED(arg6)
+#define _SYSCALL_HANDLER5(name_, arg1_, arg2_, arg3_, arg4_, arg5_) \
+	u32_t _handler_ ## name_(u32_t arg1_, \
+				 u32_t arg2_, \
+				 u32_t arg3_, \
+				 u32_t arg4_, \
+				 u32_t arg5_, \
+				 u32_t arg6 __unused, \
+				 void *ssf)
+
+#define _SYSCALL_HANDLER6(name_, arg1_, arg2_, arg3_, arg4_, arg5_, arg6_) \
+	u32_t _handler_ ## name_(u32_t arg1_, \
+				 u32_t arg2_, \
+				 u32_t arg3_, \
+				 u32_t arg4_, \
+				 u32_t arg5_, \
+				 u32_t arg6_, \
+				 void *ssf)
+
+/*
+ * Helper macros for a very common case: calls which just take one argument
+ * which is an initialized kernel object of a specific type. Verify the object
+ * and call the implementation.
+ */
+
+#define _SYSCALL_HANDLER1_SIMPLE(name_, obj_enum_, obj_type_) \
+	_SYSCALL_HANDLER1(name_, arg1) { \
+		_SYSCALL_OBJ(arg1, obj_enum_); \
+		return (u32_t)_impl_ ## name_((obj_type_)arg1); \
+	}
+
+#define _SYSCALL_HANDLER1_SIMPLE_VOID(name_, obj_enum_, obj_type_) \
+	_SYSCALL_HANDLER1(name_, arg1) { \
+		_SYSCALL_OBJ(arg1, obj_enum_); \
+		_impl_ ## name_((obj_type_)arg1); \
+		return 0; \
+	}
+
+#define _SYSCALL_HANDLER0_SIMPLE(name_) \
+	_SYSCALL_HANDLER0(name_) { \
+		return (u32_t)_impl_ ## name_(); \
+	}
+
+#define _SYSCALL_HANDLER0_SIMPLE_VOID(name_) \
+	_SYSCALL_HANDLER0(name_) { \
+		_impl_ ## name_(); \
+		return 0; \
+	}
+
 #endif /* _ASMLANGUAGE */
 
 #endif /* CONFIG_USERSPACE */

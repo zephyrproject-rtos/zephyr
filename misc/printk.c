@@ -276,12 +276,9 @@ void _impl_k_str_out(char *c, size_t n)
 }
 
 #ifdef CONFIG_USERSPACE
-u32_t _handler_k_str_out(u32_t c, u32_t n, u32_t arg3, u32_t arg4,
-			  u32_t arg5, u32_t arg6, void *ssf)
+_SYSCALL_HANDLER2(k_str_out, c, n)
 {
-	_SYSCALL_ARG2;
-
-	_SYSCALL_MEMORY(c, n, 0, ssf);
+	_SYSCALL_MEMORY_READ(c, n);
 	_impl_k_str_out((char *)c, n);
 
 	return 0;

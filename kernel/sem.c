@@ -71,14 +71,11 @@ void _impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 }
 
 #ifdef CONFIG_USERSPACE
-u32_t _handler_k_sem_init(u32_t sem_ptr, u32_t initial_count, u32_t limit,
-			  u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+_SYSCALL_HANDLER3(k_sem_init, sem, initial_count, limit)
 {
-	_SYSCALL_ARG3;
-
-	_SYSCALL_OBJ_INIT(sem_ptr, K_OBJ_SEM, ssf);
-	_SYSCALL_VERIFY(limit != 0, ssf);
-	_impl_k_sem_init((struct k_sem *)sem_ptr, initial_count, limit);
+	_SYSCALL_OBJ_INIT(sem, K_OBJ_SEM);
+	_SYSCALL_VERIFY(limit != 0);
+	_impl_k_sem_init((struct k_sem *)sem, initial_count, limit);
 	return 0;
 }
 #endif
@@ -156,17 +153,8 @@ void _impl_k_sem_give(struct k_sem *sem)
 }
 
 #ifdef CONFIG_USERSPACE
-u32_t _handler_k_sem_give(u32_t sem_ptr, u32_t arg2, u32_t arg3,
-			  u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
-{
-	_SYSCALL_ARG1;
-
-	_SYSCALL_OBJ(sem_ptr, K_OBJ_SEM, ssf);
-	_impl_k_sem_give((struct k_sem *)sem_ptr);
-
-	return 0;
-}
-#endif /* CONFIG_USERSPACE */
+_SYSCALL_HANDLER1_SIMPLE_VOID(k_sem_give, K_OBJ_SEM, struct k_sem *);
+#endif
 
 int _impl_k_sem_take(struct k_sem *sem, s32_t timeout)
 {
@@ -191,32 +179,12 @@ int _impl_k_sem_take(struct k_sem *sem, s32_t timeout)
 }
 
 #ifdef CONFIG_USERSPACE
-u32_t _handler_k_sem_take(u32_t sem_ptr, u32_t timeout, u32_t arg3,
-			  u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+_SYSCALL_HANDLER2(k_sem_take, sem, timeout)
 {
-	_SYSCALL_ARG2;
-
-	_SYSCALL_OBJ(sem_ptr, K_OBJ_SEM, ssf);
-	return _impl_k_sem_take((struct k_sem *)sem_ptr, timeout);
+	_SYSCALL_OBJ(sem, K_OBJ_SEM);
+	return _impl_k_sem_take((struct k_sem *)sem, timeout);
 }
 
-u32_t _handler_k_sem_reset(u32_t sem_ptr, u32_t arg2, u32_t arg3,
-			   u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
-{
-	_SYSCALL_ARG1;
-
-	_SYSCALL_OBJ(sem_ptr, K_OBJ_SEM, ssf);
-	_impl_k_sem_reset((struct k_sem *)sem_ptr);
-
-	return 0;
-}
-
-u32_t _handler_k_sem_count_get(u32_t sem_ptr, u32_t arg2, u32_t arg3,
-			       u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
-{
-	_SYSCALL_ARG1;
-
-	_SYSCALL_OBJ(sem_ptr, K_OBJ_SEM, ssf);
-	return _impl_k_sem_count_get((struct k_sem *)sem_ptr);
-}
-#endif /* CONFIG_USERSPACE */
+_SYSCALL_HANDLER1_SIMPLE_VOID(k_sem_reset, K_OBJ_SEM, struct k_sem *);
+_SYSCALL_HANDLER1_SIMPLE(k_sem_count_get, K_OBJ_SEM, struct k_sem *);
+#endif

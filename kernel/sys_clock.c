@@ -79,13 +79,10 @@ u32_t _impl_k_uptime_get_32(void)
 }
 
 #ifdef CONFIG_USERSPACE
-u32_t _handler_k_uptime_get_32(u32_t arg1, u32_t arg2, u32_t arg3,
-			       u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+_SYSCALL_HANDLER0(k_uptime_get_32)
 {
-	_SYSCALL_ARG0;
-
 #ifdef CONFIG_TICKLESS_KERNEL
-	_SYSCALL_VERIFY(_sys_clock_always_on, ssf);
+	_SYSCALL_VERIFY(_sys_clock_always_on);
 #endif
 	return _impl_k_uptime_get_32();
 }

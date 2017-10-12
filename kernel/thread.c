@@ -119,13 +119,9 @@ void _impl_k_thread_custom_data_set(void *value)
 }
 
 #ifdef CONFIG_USERSPACE
-u32_t _handler_k_thread_custom_data_set(u32_t arg1, u32_t arg2, u32_t arg3,
-					u32_t arg4, u32_t arg5, u32_t arg6,
-					void *ssf)
+_SYSCALL_HANDLER1(k_thread_custom_data_set, data)
 {
-	_SYSCALL_ARG1;
-
-	_impl_k_thread_custom_data_set((void *)arg1);
+	_impl_k_thread_custom_data_set((void *)data);
 	return 0;
 }
 #endif
@@ -136,14 +132,7 @@ void *_impl_k_thread_custom_data_get(void)
 }
 
 #ifdef CONFIG_USERSPACE
-u32_t _handler_k_thread_custom_data_get(u32_t arg1, u32_t arg2, u32_t arg3,
-					u32_t arg4, u32_t arg5, u32_t arg6,
-					void *ssf)
-{
-	_SYSCALL_ARG0;
-
-	return (u32_t)_impl_k_thread_custom_data_get();
-}
+_SYSCALL_HANDLER0_SIMPLE(k_thread_custom_data_get);
 #endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_THREAD_CUSTOM_DATA */
 
@@ -259,15 +248,7 @@ void _impl_k_thread_start(struct k_thread *thread)
 }
 
 #ifdef CONFIG_USERSPACE
-u32_t _handler_k_thread_start(u32_t thread, u32_t arg2, u32_t arg3,
-			      u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
-{
-	_SYSCALL_ARG1;
-
-	_SYSCALL_OBJ(thread, K_OBJ_THREAD, ssf);
-	_impl_k_thread_start((struct k_thread *)thread);
-	return 0;
-}
+_SYSCALL_HANDLER1_SIMPLE_VOID(k_thread_start, K_OBJ_THREAD, struct k_thread *);
 #endif
 #endif
 
@@ -347,14 +328,7 @@ int _impl_k_thread_cancel(k_tid_t tid)
 }
 
 #ifdef CONFIG_USERSPACE
-u32_t _handler_k_thread_cancel(u32_t thread, u32_t arg2, u32_t arg3,
-			       u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
-{
-	_SYSCALL_ARG1;
-
-	_SYSCALL_OBJ(thread, K_OBJ_THREAD, ssf);
-	return _impl_k_thread_cancel((struct k_thread *)thread);
-}
+_SYSCALL_HANDLER1_SIMPLE(k_thread_cancel, K_OBJ_THREAD, struct k_thread *);
 #endif
 
 static inline int is_in_any_group(struct _static_thread_data *thread_data,
@@ -428,15 +402,7 @@ void _impl_k_thread_suspend(struct k_thread *thread)
 }
 
 #ifdef CONFIG_USERSPACE
-u32_t _handler_k_thread_suspend(u32_t thread, u32_t arg2, u32_t arg3,
-				u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
-{
-	_SYSCALL_ARG1;
-
-	_SYSCALL_OBJ(thread, K_OBJ_THREAD, ssf);
-	_impl_k_thread_suspend((k_tid_t)thread);
-	return 0;
-}
+_SYSCALL_HANDLER1_SIMPLE_VOID(k_thread_suspend, K_OBJ_THREAD, k_tid_t);
 #endif
 
 void _k_thread_single_resume(struct k_thread *thread)
@@ -458,15 +424,7 @@ void _impl_k_thread_resume(struct k_thread *thread)
 }
 
 #ifdef CONFIG_USERSPACE
-u32_t _handler_k_thread_resume(u32_t thread, u32_t arg2, u32_t arg3,
-			       u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
-{
-	_SYSCALL_ARG1;
-
-	_SYSCALL_OBJ(thread, K_OBJ_THREAD, ssf);
-	_impl_k_thread_resume((k_tid_t)thread);
-	return 0;
-}
+_SYSCALL_HANDLER1_SIMPLE_VOID(k_thread_resume, K_OBJ_THREAD, k_tid_t);
 #endif
 
 void _k_thread_single_abort(struct k_thread *thread)

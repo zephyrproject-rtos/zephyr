@@ -64,13 +64,10 @@ void _impl_k_msgq_init(struct k_msgq *q, char *buffer,
 }
 
 #ifdef CONFIG_USERSPACE
-u32_t _handler_k_msgq_init(u32_t q, u32_t buffer, u32_t msg_size,
-			   u32_t max_msgs, u32_t arg5, u32_t arg6, void *ssf)
+_SYSCALL_HANDLER4(k_msgq_init, q, buffer, msg_size, max_msgs)
 {
-	_SYSCALL_ARG4;
-
-	_SYSCALL_OBJ_INIT(q, K_OBJ_MSGQ, ssf);
-	_SYSCALL_MEMORY_ARRAY_WRITE(buffer, max_msgs, msg_size, ssf);
+	_SYSCALL_OBJ_INIT(q, K_OBJ_MSGQ);
+	_SYSCALL_MEMORY_ARRAY_WRITE(buffer, max_msgs, msg_size);
 
 	_impl_k_msgq_init((struct k_msgq *)q, (char *)buffer, msg_size,
 			  max_msgs);
@@ -127,14 +124,12 @@ int _impl_k_msgq_put(struct k_msgq *q, void *data, s32_t timeout)
 }
 
 #ifdef CONFIG_USERSPACE
-u32_t _handler_k_msgq_put(u32_t msgq_p, u32_t data, u32_t timeout,
-			  u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+_SYSCALL_HANDLER3(k_msgq_put, msgq_p, data, timeout)
 {
 	struct k_msgq *q = (struct k_msgq *)msgq_p;
-	_SYSCALL_ARG3;
 
-	_SYSCALL_OBJ(q, K_OBJ_MSGQ, ssf);
-	_SYSCALL_MEMORY_READ(data, q->msg_size, ssf);
+	_SYSCALL_OBJ(q, K_OBJ_MSGQ);
+	_SYSCALL_MEMORY_READ(data, q->msg_size);
 
 	return _impl_k_msgq_put(q, (void *)data, timeout);
 }
@@ -195,14 +190,12 @@ int _impl_k_msgq_get(struct k_msgq *q, void *data, s32_t timeout)
 }
 
 #ifdef CONFIG_USERSPACE
-u32_t _handler_k_msgq_get(u32_t msgq_p, u32_t data, u32_t timeout,
-			  u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+_SYSCALL_HANDLER3(k_msgq_get, msgq_p, data, timeout)
 {
 	struct k_msgq *q = (struct k_msgq *)msgq_p;
-	_SYSCALL_ARG3;
 
-	_SYSCALL_OBJ(q, K_OBJ_MSGQ, ssf);
-	_SYSCALL_MEMORY_WRITE(data, q->msg_size, ssf);
+	_SYSCALL_OBJ(q, K_OBJ_MSGQ);
+	_SYSCALL_MEMORY_WRITE(data, q->msg_size);
 
 	return _impl_k_msgq_get(q, (void *)data, timeout);
 }
@@ -227,34 +220,7 @@ void _impl_k_msgq_purge(struct k_msgq *q)
 }
 
 #ifdef CONFIG_USERSPACE
-u32_t _handler_k_msgq_purge(u32_t q, u32_t arg2, u32_t arg3,
-			    u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
-{
-	_SYSCALL_ARG1;
-
-	_SYSCALL_OBJ(q, K_OBJ_MSGQ, ssf);
-
-	_impl_k_msgq_purge((struct k_msgq *)q);
-	return 0;
-}
-
-u32_t _handler_k_msgq_num_free_get(u32_t q, u32_t arg2, u32_t arg3, u32_t arg4,
-				   u32_t arg5, u32_t arg6, void *ssf)
-{
-	_SYSCALL_ARG1;
-
-	_SYSCALL_OBJ(q, K_OBJ_MSGQ, ssf);
-
-	return _impl_k_msgq_num_free_get((struct k_msgq *)q);
-}
-
-u32_t _handler_k_msgq_num_used_get(u32_t q, u32_t arg2, u32_t arg3, u32_t arg4,
-				   u32_t arg5, u32_t arg6, void *ssf)
-{
-	_SYSCALL_ARG1;
-
-	_SYSCALL_OBJ(q, K_OBJ_MSGQ, ssf);
-
-	return _impl_k_msgq_num_used_get((struct k_msgq *)q);
-}
-#endif /* CONFIG_USERSPACE */
+_SYSCALL_HANDLER1_SIMPLE_VOID(k_msgq_purge, K_OBJ_MSGQ, struct k_msgq *);
+_SYSCALL_HANDLER1_SIMPLE(k_msgq_num_free_get, K_OBJ_MSGQ, struct k_msgq *);
+_SYSCALL_HANDLER1_SIMPLE(k_msgq_num_used_get, K_OBJ_MSGQ, struct k_msgq *);
+#endif

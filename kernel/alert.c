@@ -92,16 +92,7 @@ void _impl_k_alert_send(struct k_alert *alert)
 }
 
 #ifdef CONFIG_USERSPACE
-u32_t _handler_k_alert_send(u32_t alert, u32_t arg2, u32_t arg3,
-			    u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
-{
-	_SYSCALL_ARG1;
-
-	_SYSCALL_OBJ(alert, K_OBJ_ALERT, ssf);
-	_impl_k_alert_send((struct k_alert *)alert);
-
-	return 0;
-}
+_SYSCALL_HANDLER1_SIMPLE_VOID(k_alert_send, K_OBJ_ALERT, struct k_alert *);
 #endif
 
 int _impl_k_alert_recv(struct k_alert *alert, s32_t timeout)
@@ -110,12 +101,9 @@ int _impl_k_alert_recv(struct k_alert *alert, s32_t timeout)
 }
 
 #ifdef CONFIG_USERSPACE
-u32_t _handler_k_alert_recv(u32_t alert, u32_t timeout, u32_t arg3,
-			    u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+_SYSCALL_HANDLER2(k_alert_recv, alert, timeout)
 {
-	_SYSCALL_ARG2;
-
-	_SYSCALL_OBJ(alert, K_OBJ_ALERT, ssf);
+	_SYSCALL_OBJ(alert, K_OBJ_ALERT);
 	return _impl_k_alert_recv((struct k_alert *)alert, timeout);
 }
 #endif
