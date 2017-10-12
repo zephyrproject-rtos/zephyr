@@ -709,8 +709,7 @@ static inline void isr_radio_state_tx(void)
 		LL_ASSERT(!radio_is_ready());
 
 #if defined(CONFIG_BT_CTLR_PHY)
-		hcto += radio_rx_chain_delay_get(_radio.conn_curr->phy_rx,
-						 _radio.conn_curr->phy_flags);
+		hcto += radio_rx_chain_delay_get(_radio.conn_curr->phy_rx, 1);
 		hcto += addr_us_get(_radio.conn_curr->phy_rx);
 		hcto -= radio_tx_chain_delay_get(_radio.conn_curr->phy_tx,
 						 _radio.conn_curr->phy_flags);
@@ -7999,9 +7998,11 @@ static void event_slave(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 #if defined(CONFIG_BT_CTLR_PHY)
 	hcto += radio_rx_ready_delay_get(conn->phy_rx);
 	hcto += addr_us_get(conn->phy_rx);
+	hcto += radio_rx_chain_delay_get(conn->phy_rx, 1);
 #else /* !CONFIG_BT_CTLR_PHY */
 	hcto += radio_rx_ready_delay_get(0);
 	hcto += addr_us_get(0);
+	hcto += radio_rx_chain_delay_get(0, 0);
 #endif /* !CONFIG_BT_CTLR_PHY */
 
 	radio_tmr_hcto_configure(hcto);
