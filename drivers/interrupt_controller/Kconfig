@@ -126,6 +126,44 @@ config PLIC_FE310
 	  SiFive Freedom E310 Platform Level Interrupt Controller provides support
 	  for external interrupt lines defined by the FE310 SOC;
 
+config DW_ICTL
+	bool "Designware Interrupt Controller"
+	default n
+	depends on MULTI_LEVEL_INTERRUPTS
+	help
+	  Designware Interrupt Controller can be used as a 2nd level interrupt
+	  controller which combines several sources of interrupt into one line
+	  that is then routed to the 1st level interrupt controller.
+
+config DW_ICTL_NAME
+	string "Name for Designware Interrupt Controller"
+	depends on DW_ICTL
+	default "DW_ICTL"
+	help
+	  Give a name for the instance of Designware Interrupt Controller
+
+config DW_ICTL_OFFSET
+	hex "Parent interrupt number to which DW_ICTL maps"
+	default 0x00
+	depends on DW_ICTL
+	help
+	  Parent interrupt number to which DW_ICTL maps
+
+config DW_ISR_TBL_OFFSET
+	int "Offset in the SW ISR Table"
+	default 0
+	depends on DW_ICTL
+	help
+	  This indicates the offset in the SW_ISR_TABLE beginning from where
+	  the ISRs for Designware Interrupt Controller are assigned.
+
+config DW_ICTL_INIT_PRIORITY
+	int "Init priority for DW interrupt controller"
+	default 60
+	depends on DW_ICTL
+	help
+	  DesignWare Interrupt Controller initialization priority.
+
 source "drivers/interrupt_controller/Kconfig.stm32"
 
 source "drivers/interrupt_controller/Kconfig.multilevel"
