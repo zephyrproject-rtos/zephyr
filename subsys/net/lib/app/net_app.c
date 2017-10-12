@@ -12,6 +12,13 @@
 #define NET_LOG_ENABLED 1
 #endif
 
+#if defined(CONFIG_STDOUT_CONSOLE)
+#include <stdio.h>
+#define  MBEDTLS_PRINT printf
+#else
+#include <misc/printk.h>
+#define  MBEDTLS_PRINT printk
+#endif /* CONFIG_STDOUT_CONSOLE */
 #include <zephyr.h>
 #include <string.h>
 #include <errno.h>
@@ -1779,7 +1786,7 @@ int _net_app_tls_init(struct net_app_ctx *ctx, int client_or_server)
 	k_fifo_init(&ctx->tls.mbedtls.ssl_ctx.tx_rx_fifo);
 	k_sem_init(&ctx->tls.mbedtls.ssl_ctx.tx_sem, 0, UINT_MAX);
 
-	mbedtls_platform_set_printf(printk);
+	mbedtls_platform_set_printf(MBEDTLS_PRINT);
 
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
 	if (client_or_server == MBEDTLS_SSL_IS_SERVER) {
