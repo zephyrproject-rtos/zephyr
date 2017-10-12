@@ -1,0 +1,7 @@
+identifier: stm32f411e_disco
+name: 32F411EDISCOVERY
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb
