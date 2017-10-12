@@ -2000,7 +2000,7 @@ struct k_stack {
  * @return N/A
  */
 __syscall void k_stack_init(struct k_stack *stack,
-			    u32_t *buffer, int num_entries);
+			    u32_t *buffer, unsigned int num_entries);
 
 /**
  * @brief Push an element onto a stack.

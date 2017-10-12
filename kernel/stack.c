@@ -45,7 +45,8 @@ SYS_INIT(init_stack_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 #endif /* CONFIG_OBJECT_TRACING */
 
-void _impl_k_stack_init(struct k_stack *stack, u32_t *buffer, int num_entries)
+void _impl_k_stack_init(struct k_stack *stack, u32_t *buffer,
+			unsigned int num_entries)
 {
 	sys_dlist_init(&stack->wait_q);
 	stack->next = stack->base = buffer;
@@ -56,12 +57,8 @@ void _impl_k_stack_init(struct k_stack *stack, u32_t *buffer, int num_entries)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER3(k_stack_init, stack, buffer, num_entries_p)
+_SYSCALL_HANDLER3(k_stack_init, stack, buffer, num_entries)
 {
-	int num_entries = (int)num_entries_p;
-
-	/* FIXME why is 'num_entries' signed?? */
-	_SYSCALL_VERIFY(num_entries > 0);
 	_SYSCALL_OBJ_INIT(stack, K_OBJ_STACK);
 	_SYSCALL_MEMORY_ARRAY_WRITE(buffer, num_entries, sizeof(u32_t));
 
