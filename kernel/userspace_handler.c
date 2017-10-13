@@ -65,7 +65,7 @@ _SYSCALL_HANDLER(k_object_access_all_grant, object)
 
 	ko = validate_any_object((void *)object);
 	_SYSCALL_VERIFY_MSG(ko, "object %p access denied", (void *)object);
-	_thread_perms_all_set(ko);
+	ko->flags |= K_OBJ_FLAG_PUBLIC;
 
 	return 0;
 }

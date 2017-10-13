@@ -138,18 +138,32 @@ void _thread_perms_clear(struct _k_object *ko, struct k_thread *thread)
 	}
 }
 
+static void clear_perms_cb(struct _k_object *ko, void *ctx_ptr)
+{
+	int id = (int)ctx_ptr;
+
+	sys_bitfield_clear_bit((mem_addr_t)&ko->perms, id);
+}
+
+void _thread_perms_all_clear(struct k_thread *thread)
+{
+	if (thread->base.perm_index < 8 * CONFIG_MAX_THREAD_BYTES) {
+		_k_object_wordlist_foreach(clear_perms_cb,
+					   (void *)thread->base.perm_index);
+	}
+}
+
 static int thread_perms_test(struct _k_object *ko)
 {
+	if (ko->flags & K_OBJ_FLAG_PUBLIC) {
+		return 1;
+	}
+
 	if (_current->base.perm_index < 8 * CONFIG_MAX_THREAD_BYTES) {
 		return sys_bitfield_test_bit((mem_addr_t)&ko->perms,
 					     _current->base.perm_index);
 	}
 	return 0;
-}
-
-void _thread_perms_all_set(struct _k_object *ko)
-{
-	memset(ko->perms, 0xFF, CONFIG_MAX_THREAD_BYTES);
 }
 
 static void dump_permission_error(struct _k_object *ko)
@@ -202,7 +216,7 @@ void _impl_k_object_access_all_grant(void *object)
 	struct _k_object *ko = _k_object_find(object);
 
 	if (ko) {
-		_thread_perms_all_set(ko);
+		ko->flags |= K_OBJ_FLAG_PUBLIC;
 	}
 }
 
