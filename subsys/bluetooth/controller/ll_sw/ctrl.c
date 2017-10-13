@@ -487,8 +487,13 @@ void ll_reset(void)
 	_radio.packet_release_first = 0;
 	_radio.packet_release_last = 0;
 
+	/* reset FC feature */
+	/* TODO: remove this feature related all code in the future */
+	_radio.fc_ack = _radio.fc_req;
+
 	/* reset whitelist and resolving list */
 	ll_filter_reset(false);
+
 	/* memory allocations */
 	common_init();
 }
