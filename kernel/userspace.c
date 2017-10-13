@@ -67,8 +67,8 @@ const char *otype_to_str(enum k_objects otype)
 		return "pinmux driver";
 	case K_OBJ_DRIVER_PWM:
 		return "pwm driver";
-	case K_OBJ_DRIVER_RANDOM:
-		return "random driver";
+	case K_OBJ_DRIVER_ENTROPY:
+		return "entropy driver";
 	case K_OBJ_DRIVER_RTC:
 		return "realtime clock driver";
 	case K_OBJ_DRIVER_SENSOR:

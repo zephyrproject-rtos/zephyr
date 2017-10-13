@@ -1,4 +1,4 @@
 tests:
   - test_get_entropy:
-      filter: CONFIG_RANDOM_HAS_DRIVER
+      filter: CONFIG_ENTROPY_HAS_DRIVER
       tags: driver

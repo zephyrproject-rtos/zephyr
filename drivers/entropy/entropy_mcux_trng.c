@@ -5,14 +5,14 @@
  */
 
 #include <device.h>
-#include <random.h>
+#include <entropy.h>
 #include <random/rand32.h>
 #include <init.h>
 
 #include "fsl_trng.h"
 
-static int random_mcux_trng_get_entropy(struct device *dev, u8_t *buffer,
-					u16_t length)
+static int entropy_mcux_trng_get_entropy(struct device *dev, u8_t *buffer,
+					 u16_t length)
 {
 	status_t status;
 
@@ -24,18 +24,18 @@ static int random_mcux_trng_get_entropy(struct device *dev, u8_t *buffer,
 	return 0;
 }
 
-static const struct random_driver_api random_mcux_trng_api_funcs = {
-	.get_entropy = random_mcux_trng_get_entropy
+static const struct entropy_driver_api entropy_mcux_trng_api_funcs = {
+	.get_entropy = entropy_mcux_trng_get_entropy
 };
 
-static int random_mcux_trng_init(struct device *);
+static int entropy_mcux_trng_init(struct device *);
 
-DEVICE_AND_API_INIT(random_mcux_trng, CONFIG_RANDOM_NAME,
-		    random_mcux_trng_init, NULL, NULL,
+DEVICE_AND_API_INIT(entropy_mcux_trng, CONFIG_ENTROPY_NAME,
+		    entropy_mcux_trng_init, NULL, NULL,
 		    PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &random_mcux_trng_api_funcs);
+		    &entropy_mcux_trng_api_funcs);
 
-static int random_mcux_trng_init(struct device *dev)
+static int entropy_mcux_trng_init(struct device *dev)
 {
 	trng_config_t conf;
 	status_t status;

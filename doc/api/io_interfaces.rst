@@ -60,10 +60,10 @@ SPI Interface
 .. doxygengroup:: spi_interface
    :project: Zephyr
 
-Random Interface
-****************
+Entropy Interface
+*****************
 
-.. doxygengroup:: random_interface
+.. doxygengroup:: entropy_interface
    :project: Zephyr
 
 UART Interface

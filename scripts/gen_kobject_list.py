@@ -45,7 +45,7 @@ subsystems = [
         "ipm_driver_api",
         "pinmux_driver_api",
         "pwm_driver_api",
-        "random_driver_api",
+        "entropy_driver_api",
         "rtc_driver_api",
         "sensor_driver_api",
         "spi_driver_api",

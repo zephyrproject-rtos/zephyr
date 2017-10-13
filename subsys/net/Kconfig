@@ -74,7 +74,7 @@ config  NETWORKING
 	bool "Link layer and IP networking support"
 	select NET_BUF
 	select POLL
-	select RANDOM_GENERATOR
+	select ENTROPY_GENERATOR
 	default n
 	help
 	This option enabled generic link layer and IP networking support.

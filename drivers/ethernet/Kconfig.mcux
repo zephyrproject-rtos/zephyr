@@ -72,7 +72,7 @@ config ETH_MCUX_0_IRQ_PRI
 
 config ETH_MCUX_0_RANDOM_MAC
 	bool "Random MAC address"
-	depends on ETH_MCUX_0 && RANDOM_GENERATOR
+	depends on ETH_MCUX_0 && ENTROPY_GENERATOR
 	default y
 	help
 	  Generate a random MAC address dynamically.

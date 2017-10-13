@@ -1,0 +1,16 @@
+# Kconfig.stm32 - STM32 entropy generator driver configuration
+#
+# Copyright (c) 2017 Erwin Rol <erwin@erwinrol.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ENTROPY_STM32_RNG
+	bool "STM32 RNG driver"
+	depends on ENTROPY_GENERATOR
+	default n
+	select ENTROPY_HAS_DRIVER
+	select ENTROPY_DEVICE_ENTROPY_GENERATOR
+	help
+	  This option enables the RNG processor, which is a entropy number
+	  generator, based on a continuous analog noise, that provides
+	  a entropy 32-bit value to the host when read.
