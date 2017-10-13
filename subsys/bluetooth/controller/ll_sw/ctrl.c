@@ -6563,7 +6563,7 @@ static inline u32_t event_conn_upd_prep(struct connection *conn,
 			 * ticker_start function for first interval; add a
 			 * tick so as to use the ceiled value.
 			 */
-			ticks_win_offset += TICKER_TICKS_TO_US(1);
+			ticks_win_offset += 1;
 		}
 		conn->conn_interval = conn->llcp.conn_upd.interval;
 		conn->latency = conn->llcp.conn_upd.latency;
