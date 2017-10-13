@@ -221,7 +221,6 @@ static inline struct net_buf *process_hbuf(void)
 				if (hbuf_count) {
 					BT_DBG("FC: dequeueing ACL data");
 					node = sys_slist_get(&hbuf_pend);
-					hbuf_count--;
 				} else {
 					/* no buffers, HCI will signal */
 					node = NULL;
@@ -245,8 +244,10 @@ static inline struct net_buf *process_hbuf(void)
 					next_class = hci_get_class(next);
 				}
 				empty = sys_slist_is_empty(&hbuf_pend);
-
 				buf = encode_node(node_rx, class);
+				/* Update host buffers after encoding */
+				hbuf_count = hbuf_total -
+					     (hci_hbuf_sent - hci_hbuf_acked);
 				if (!empty && (class == HCI_CLASS_EVT_CONNECTION ||
 					       (class == HCI_CLASS_ACL_DATA &&
 						hbuf_count))) {
