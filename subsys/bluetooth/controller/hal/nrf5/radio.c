@@ -516,7 +516,7 @@ static void sw_switch(u8_t dir, u8_t phy_curr, u8_t flags_curr, u8_t phy_next,
 			       &(NRF_TIMER1->EVENTS_COMPARE[sw_tifs_toggle]);
 	if (dir) {
 		delay = radio_tx_ready_delay_get(phy_next, flags_next) +
-			radio_rx_chain_delay_get(phy_curr, flags_curr);
+			radio_rx_chain_delay_get(phy_curr, 1);
 
 		NRF_PPI->CH[ppi].TEP = (u32_t)&(NRF_RADIO->TASKS_TXEN);
 	} else {
