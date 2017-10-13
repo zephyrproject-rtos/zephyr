@@ -333,6 +333,7 @@ static struct net_pkt *prepare_segment(struct net_tcp *tcp,
 	struct net_context *context = tcp->context;
 	struct net_tcp_hdr *tcp_hdr;
 	u16_t dst_port, src_port;
+	bool pkt_allocated;
 	u8_t optlen = 0;
 
 	NET_ASSERT(context);
@@ -345,11 +346,14 @@ static struct net_pkt *prepare_segment(struct net_tcp *tcp,
 		 */
 		tail = pkt->frags;
 		pkt->frags = NULL;
+		pkt_allocated = false;
 	} else {
 		pkt = net_pkt_get_tx(context, ALLOC_TIMEOUT);
 		if (!pkt) {
 			return NULL;
 		}
+
+		pkt_allocated = true;
 	}
 
 #if defined(CONFIG_NET_IPV4)
@@ -377,13 +381,20 @@ static struct net_pkt *prepare_segment(struct net_tcp *tcp,
 	{
 		NET_DBG("[%p] Protocol family %d not supported", tcp,
 			net_pkt_family(pkt));
-		net_pkt_unref(pkt);
+
+		if (pkt_allocated) {
+			net_pkt_unref(pkt);
+		}
+
 		return NULL;
 	}
 
 	header = net_pkt_get_data(context, ALLOC_TIMEOUT);
 	if (!header) {
-		net_pkt_unref(pkt);
+		if (pkt_allocated) {
+			net_pkt_unref(pkt);
+		}
+
 		return NULL;
 	}
 
@@ -412,7 +423,10 @@ static struct net_pkt *prepare_segment(struct net_tcp *tcp,
 	}
 
 	if (finalize_segment(context, pkt) < 0) {
-		net_pkt_unref(pkt);
+		if (pkt_allocated) {
+			net_pkt_unref(pkt);
+		}
+
 		return NULL;
 	}
 
