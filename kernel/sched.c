@@ -285,7 +285,7 @@ void _impl_k_thread_priority_set(k_tid_t tid, int prio)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER2(k_thread_priority_set, thread_p, prio)
+_SYSCALL_HANDLER(k_thread_priority_set, thread_p, prio)
 {
 	struct k_thread *thread = (struct k_thread *)thread_p;
 
@@ -380,7 +380,7 @@ void _impl_k_sleep(s32_t duration)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER1(k_sleep, duration)
+_SYSCALL_HANDLER(k_sleep, duration)
 {
 	/* FIXME there were some discussions recently on whether we should
 	 * relax this, thread would be unscheduled until k_wakeup issued

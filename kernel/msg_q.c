@@ -64,7 +64,7 @@ void _impl_k_msgq_init(struct k_msgq *q, char *buffer,
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER4(k_msgq_init, q, buffer, msg_size, max_msgs)
+_SYSCALL_HANDLER(k_msgq_init, q, buffer, msg_size, max_msgs)
 {
 	_SYSCALL_OBJ_INIT(q, K_OBJ_MSGQ);
 	_SYSCALL_MEMORY_ARRAY_WRITE(buffer, max_msgs, msg_size);
@@ -124,7 +124,7 @@ int _impl_k_msgq_put(struct k_msgq *q, void *data, s32_t timeout)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER3(k_msgq_put, msgq_p, data, timeout)
+_SYSCALL_HANDLER(k_msgq_put, msgq_p, data, timeout)
 {
 	struct k_msgq *q = (struct k_msgq *)msgq_p;
 
@@ -190,7 +190,7 @@ int _impl_k_msgq_get(struct k_msgq *q, void *data, s32_t timeout)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER3(k_msgq_get, msgq_p, data, timeout)
+_SYSCALL_HANDLER(k_msgq_get, msgq_p, data, timeout)
 {
 	struct k_msgq *q = (struct k_msgq *)msgq_p;
 

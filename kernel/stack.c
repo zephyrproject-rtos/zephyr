@@ -57,7 +57,7 @@ void _impl_k_stack_init(struct k_stack *stack, u32_t *buffer,
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER3(k_stack_init, stack, buffer, num_entries)
+_SYSCALL_HANDLER(k_stack_init, stack, buffer, num_entries)
 {
 	_SYSCALL_OBJ_INIT(stack, K_OBJ_STACK);
 	_SYSCALL_MEMORY_ARRAY_WRITE(buffer, num_entries, sizeof(u32_t));
@@ -99,7 +99,7 @@ void _impl_k_stack_push(struct k_stack *stack, u32_t data)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER2(k_stack_push, stack_p, data)
+_SYSCALL_HANDLER(k_stack_push, stack_p, data)
 {
 	struct k_stack *stack = (struct k_stack *)stack_p;
 
@@ -140,7 +140,7 @@ int _impl_k_stack_pop(struct k_stack *stack, u32_t *data, s32_t timeout)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER3(k_stack_pop, stack, data, timeout)
+_SYSCALL_HANDLER(k_stack_pop, stack, data, timeout)
 {
 	_SYSCALL_OBJ(stack, K_OBJ_STACK);
 	_SYSCALL_MEMORY_WRITE(data, sizeof(u32_t));

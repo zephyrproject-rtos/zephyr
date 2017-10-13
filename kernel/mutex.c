@@ -82,7 +82,7 @@ void _impl_k_mutex_init(struct k_mutex *mutex)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER1(k_mutex_init, mutex)
+_SYSCALL_HANDLER(k_mutex_init, mutex)
 {
 	_SYSCALL_OBJ_INIT(mutex, K_OBJ_MUTEX);
 	_impl_k_mutex_init((struct k_mutex *)mutex);
@@ -200,7 +200,7 @@ int _impl_k_mutex_lock(struct k_mutex *mutex, s32_t timeout)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER2(k_mutex_lock, mutex, timeout)
+_SYSCALL_HANDLER(k_mutex_lock, mutex, timeout)
 {
 	_SYSCALL_OBJ(mutex, K_OBJ_MUTEX);
 	return _impl_k_mutex_lock((struct k_mutex *)mutex, (s32_t)timeout);
