@@ -4,11 +4,12 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-"""Zephyr board flashing script
+"""Zephyr flash/debug script
 
-This script is a transparent replacement for an existing Zephyr flash
-script. If it can invoke the flashing tools natively, it will do so; otherwise,
-it delegates to the shell script passed as second argument."""
+This script is a transparent replacement for existing Zephyr flash and debug
+scripts, i.e. scripts to flash binaries, run them, and debug them on real or
+emulated hardware. If it can invoke the relevant tools natively, it will do so;
+otherwise, it delegates to the shell script."""
 
 import abc
 from os import path
@@ -50,40 +51,94 @@ def check_output(cmd, debug):
     return subprocess.check_output(cmd)
 
 
-class ZephyrBinaryFlasher(abc.ABC):
-    '''Abstract superclass for flasher objects.'''
+class ZephyrBinaryRunner(abc.ABC):
+    '''Abstract superclass for binary runners (flashers, debuggers).
+
+    With some exceptions, boards supported by Zephyr must provide
+    generic means to be flashed (have a Zephyr firmware binary
+    permanently installed on the device for running) and debugged
+    (have a breakpoint debugger and program loader on a host
+    workstation attached to a running target). This is supported by
+    three top-level commands managed by the Zephyr build system:
+
+    - 'flash': flash a previously configured binary to the board,
+      start execution on the target, then return.
+
+    - 'debug': connect to the board via a debugging protocol, then
+      drop the user into a debugger interface with symbol tables
+      loaded from the current binary, and block until it exits.
+
+    - 'debugserver': connect via a board-specific debugging protocol,
+      then reset and halt the target. Ensure the user is now able to
+      connect to a debug server with symbol tables loaded from the
+      binary.
+
+    Runner functionality relies on a variety of target-specific tools
+    and configuration values, the user interface to which is
+    abstracted by this class. Each runner subclass should take any
+    values it needs to execute one of these commands in its
+    constructor.  The actual command execution is handled in the run()
+    method.
+
+    This functionality is also replacing the legacy Zephyr runners,
+    which are shell scripts.
+
+    At present, the Zephyr build system uses a variety of
+    tool-specific environment variables to control runner behavior.
+    To support a transition to ZephyrBinaryRunner and subclasses, this
+    class provides a create_for_shell_script() static factory method.
+    This method iterates over ZephyrBinaryRUnner subclasses,
+    determines which (if any) can provide equivalent functionality to
+    the shell-based runner, and returns a subclass instance with its
+    configuration determined from the environment.
+
+    To support this, subclasess currently must provide a pair of
+    static methods, replaces_shell_script() and create_from_env(). The
+    first allows the runner subclass to declare which commands and
+    scripts it can replace. The second is called by
+    create_for_shell_script() to create a concrete runner instance.
+
+    The environment-based factories are for legacy use *only*; the
+    user must be able to construct and use a runner using only the
+    constructor and run() method.'''
 
     def __init__(self, debug=False):
         self.debug = debug
 
     @staticmethod
-    def create_for_shell_script(shell_script, debug):
+    def create_for_shell_script(shell_script, command, debug):
         '''Factory for using as a drop-in replacement to a shell script.
 
-        Get flasher instance to use in place of shell_script, deriving
-        flasher configuration from the environment.'''
-        for sub_cls in ZephyrBinaryFlasher.__subclasses__():
-            if sub_cls.replaces_shell_script(shell_script):
-                return sub_cls.create_from_env(debug)
-        raise ValueError('no flasher replaces script {}'.format(shell_script))
+        Command is one of 'flash', 'debug', 'debugserver'.
+
+        Get runner instance to use in place of shell_script, deriving
+        configuration from the environment.'''
+        for sub_cls in ZephyrBinaryRunner.__subclasses__():
+            if sub_cls.replaces_shell_script(shell_script, command):
+                return sub_cls.create_from_env(command, debug)
+        raise ValueError('cannot implement script {} command {}'.format(
+                             shell_script, command))
 
     @staticmethod
     @abc.abstractmethod
-    def replaces_shell_script(shell_script):
-        '''Check if this flasher class replaces FLASH_SCRIPT=shell_script.'''
+    def replaces_shell_script(shell_script, command):
+        '''Check if this class replaces shell_script for the given command.'''
 
     @staticmethod
     @abc.abstractmethod
-    def create_from_env(debug):
+    def create_from_env(command, debug):
         '''Create new flasher instance from environment variables.
 
-        This class must be able to replace the current FLASH_SCRIPT. The
+        This class must be able to replace the current shell script
+        (FLASH_SCRIPT or DEBUG_SCRIPT, depending on command). The
         environment variables expected by that script are used to build
         the flasher in a backwards-compatible manner.'''
 
     @abc.abstractmethod
-    def flash(self, **kwargs):
-        '''Flash the board.'''
+    def run(self, command, **kwargs):
+        '''Run a command ('flash', 'debug', 'debugserver').
+
+        In case of an unsupported command, raise a ValueError.'''
 
 
 DEFAULT_ARC_TCL_PORT = 6333
@@ -91,8 +146,8 @@ DEFAULT_ARC_TELNET_PORT = 4444
 DEFAULT_ARC_GDB_PORT = 3333
 
 
-class ArcBinaryFlasher(ZephyrBinaryFlasher):
-    '''Flasher front-end for the ARC architecture, using openocd.'''
+class ArcBinaryRunner(ZephyrBinaryRunner):
+    '''Runner front-end for the ARC architecture, using openocd.'''
 
     # This unusual flasher matches behavior in the original shell script.
     #
@@ -117,7 +172,7 @@ class ArcBinaryFlasher(ZephyrBinaryFlasher):
                  tui=None, tcl_port=DEFAULT_ARC_TCL_PORT,
                  telnet_port=DEFAULT_ARC_TELNET_PORT,
                  gdb_port=DEFAULT_ARC_GDB_PORT, debug=False):
-        super(ArcBinaryFlasher, self).__init__(debug=debug)
+        super(ArcBinaryRunner, self).__init__(debug=debug)
         self.elf = elf
         self.zephyr_base = zephyr_base
         self.arch = arch
@@ -132,10 +187,10 @@ class ArcBinaryFlasher(ZephyrBinaryFlasher):
         self.telnet_port = telnet_port
         self.gdb_port = gdb_port
 
-    def replaces_shell_script(shell_script):
-        return shell_script == 'arc_debugger.sh'
+    def replaces_shell_script(shell_script, command):
+        return command == 'flash' and shell_script == 'arc_debugger.sh'
 
-    def create_from_env(debug):
+    def create_from_env(command, debug):
         '''Create flasher from environment.
 
         Required:
@@ -177,13 +232,16 @@ class ArcBinaryFlasher(ZephyrBinaryFlasher):
         gdb_port = int(os.environ.get('GDB_PORT',
                                       str(DEFAULT_ARC_GDB_PORT)))
 
-        return ArcBinaryFlasher(elf, zephyr_base, arch, board_name, python,
-                                gdb, openocd=openocd, extra_init=extra_init,
-                                default_path=default_path, tui=tui,
-                                tcl_port=tcl_port, telnet_port=telnet_port,
-                                gdb_port=gdb_port, debug=debug)
+        return ArcBinaryRunner(elf, zephyr_base, arch, board_name, python,
+                               gdb, openocd=openocd, extra_init=extra_init,
+                               default_path=default_path, tui=tui,
+                               tcl_port=tcl_port, telnet_port=telnet_port,
+                               gdb_port=gdb_port, debug=debug)
 
-    def flash(self, **kwargs):
+    def run(self, command, **kwargs):
+        if command != 'flash':
+            raise ValueError('only flash is supported')
+
         if platform.system() != 'Linux':
             raise NotImplementedError('Linux is currently required.')
 
@@ -230,18 +288,18 @@ class ArcBinaryFlasher(ZephyrBinaryFlasher):
             helper.wait()
 
 
-class BossacBinaryFlasher(ZephyrBinaryFlasher):
-    '''Flasher front-end for bossac.'''
+class BossacBinaryRunner(ZephyrBinaryRunner):
+    '''Runner front-end for bossac.'''
 
     def __init__(self, bin_name, bossac='bossac', debug=False):
-        super(BossacBinaryFlasher, self).__init__(debug=debug)
+        super(BossacBinaryRunner, self).__init__(debug=debug)
         self.bin_name = bin_name
         self.bossac = bossac
 
-    def replaces_shell_script(shell_script):
-        return shell_script == 'bossa-flash.sh'
+    def replaces_shell_script(shell_script, command):
+        return command == 'flash' and shell_script == 'bossa-flash.sh'
 
-    def create_from_env(debug):
+    def create_from_env(command, debug):
         '''Create flasher from environment.
 
         Required:
@@ -256,9 +314,12 @@ class BossacBinaryFlasher(ZephyrBinaryFlasher):
         bin_name = path.join(get_env_or_bail('O'),
                              get_env_or_bail('KERNEL_BIN_NAME'))
         bossac = os.environ.get('BOSSAC', 'bossac')
-        return BossacBinaryFlasher(bin_name, bossac=bossac, debug=debug)
+        return BossacBinaryRunner(bin_name, bossac=bossac, debug=debug)
 
-    def flash(self, **kwargs):
+    def run(self, command, **kwargs):
+        if command != 'flash':
+            raise ValueError('only flash is supported')
+
         if platform.system() != 'Linux':
             msg = 'CAUTION: No flash tool for your host system found!'
             raise NotImplementedError(msg)
@@ -272,11 +333,11 @@ class BossacBinaryFlasher(ZephyrBinaryFlasher):
         check_call(cmd_flash, self.debug)
 
 
-class DfuUtilBinaryFlasher(ZephyrBinaryFlasher):
-    '''Flasher front-end for dfu-util.'''
+class DfuUtilBinaryRunner(ZephyrBinaryRunner):
+    '''Runner front-end for dfu-util.'''
 
     def __init__(self, pid, alt, img, dfuse=None, exe='dfu-util', debug=False):
-        super(DfuUtilBinaryFlasher, self).__init__(debug=debug)
+        super(DfuUtilBinaryRunner, self).__init__(debug=debug)
         self.alt = alt
         self.img = img
         self.dfuse = dfuse
@@ -286,10 +347,10 @@ class DfuUtilBinaryFlasher(ZephyrBinaryFlasher):
         except ValueError:
             self.list_pattern = ', name="{}",'.format(self.alt)
 
-    def replaces_shell_script(shell_script):
-        return shell_script == 'dfuutil.sh'
+    def replaces_shell_script(shell_script, command):
+        return command == 'flash' and shell_script == 'dfuutil.sh'
 
-    def create_from_env(debug):
+    def create_from_env(command, debug):
         '''Create flasher from environment.
 
         Required:
@@ -310,8 +371,8 @@ class DfuUtilBinaryFlasher(ZephyrBinaryFlasher):
         dfuse = os.environ.get('DFUUTIL_DFUSE_ADDR', None)
         exe = os.environ.get('DFUUTIL', 'dfu-util')
 
-        return DfuUtilBinaryFlasher(pid, alt, img, dfuse=dfuse, exe=exe,
-                                    debug=debug)
+        return DfuUtilBinaryRunner(pid, alt, img, dfuse=dfuse, exe=exe,
+                                   debug=debug)
 
     def find_device(self):
         cmd = list(self.cmd) + ['-l']
@@ -319,7 +380,10 @@ class DfuUtilBinaryFlasher(ZephyrBinaryFlasher):
         output = output.decode(sys.getdefaultencoding())
         return self.list_pattern in output
 
-    def flash(self, **kwargs):
+    def run(self, command, **kwargs):
+        if command != 'flash':
+            raise ValueError('only flash is supported')
+
         reset = 0
         if not self.find_device():
             reset = 1
@@ -336,13 +400,13 @@ class DfuUtilBinaryFlasher(ZephyrBinaryFlasher):
             print('Now reset your board again to switch back to runtime mode.')
 
 
-class Esp32BinaryFlasher(ZephyrBinaryFlasher):
-    '''Flasher front-end for espidf.'''
+class Esp32BinaryRunner(ZephyrBinaryRunner):
+    '''Runner front-end for espidf.'''
 
     def __init__(self, elf, device, baud=921600, flash_size='detect',
                  flash_freq='40m', flash_mode='dio', espidf='espidf',
                  debug=False):
-        super(Esp32BinaryFlasher, self).__init__(debug=debug)
+        super(Esp32BinaryRunner, self).__init__(debug=debug)
         self.elf = elf
         self.device = device
         self.baud = baud
@@ -351,10 +415,10 @@ class Esp32BinaryFlasher(ZephyrBinaryFlasher):
         self.flash_mode = flash_mode
         self.espidf = espidf
 
-    def replaces_shell_script(shell_script):
-        return shell_script == 'esp32.sh'
+    def replaces_shell_script(shell_script, command):
+        return command == 'flash' and shell_script == 'esp32.sh'
 
-    def create_from_env(debug):
+    def create_from_env(command, debug):
         '''Create flasher from environment.
 
         Required:
@@ -388,12 +452,15 @@ class Esp32BinaryFlasher(ZephyrBinaryFlasher):
             espidf = path.join(idf_path, 'components', 'esptool_py', 'esptool',
                                'esptool.py')
 
-        return Esp32BinaryFlasher(elf, device, baud=baud,
-                                  flash_size=flash_size, flash_freq=flash_freq,
-                                  flash_mode=flash_mode, espidf=espidf,
-                                  debug=debug)
+        return Esp32BinaryRunner(elf, device, baud=baud,
+                                 flash_size=flash_size, flash_freq=flash_freq,
+                                 flash_mode=flash_mode, espidf=espidf,
+                                 debug=debug)
 
-    def flash(self, **kwargs):
+    def run(self, command, **kwargs):
+        if command != 'flash':
+            raise ValueError('only flash is supported')
+
         bin_name = path.splitext(self.elf)[0] + path.extsep + 'bin'
         cmd_convert = [self.espidf, '--chip', 'esp32', 'elf2image', self.elf]
         cmd_flash = [self.espidf, '--chip', 'esp32', '--port', self.device,
@@ -411,8 +478,8 @@ class Esp32BinaryFlasher(ZephyrBinaryFlasher):
         check_call(cmd_flash, self.debug)
 
 
-class Nios2Flasher(ZephyrBinaryFlasher):
-    '''Flasher front-end for NIOS II.'''
+class Nios2BinaryRunner(ZephyrBinaryRunner):
+    '''Runner front-end for NIOS II.'''
 
     # From the original shell script:
     #
@@ -421,15 +488,15 @@ class Nios2Flasher(ZephyrBinaryFlasher):
     #      and CONFIG_INCLUDE_RESET_VECTOR must be disabled."
 
     def __init__(self, hex_, cpu_sof, zephyr_base, debug=False):
-        super(Nios2Flasher, self).__init__(debug=debug)
+        super(Nios2BinaryRunner, self).__init__(debug=debug)
         self.hex_ = hex_
         self.cpu_sof = cpu_sof
         self.zephyr_base = zephyr_base
 
-    def replaces_shell_script(shell_script):
-        return shell_script == 'nios2.sh'
+    def replaces_shell_script(shell_script, command):
+        return command == 'flash' and shell_script == 'nios2.sh'
 
-    def create_from_env(debug):
+    def create_from_env(command, debug):
         '''Create flasher from environment.
 
         Required:
@@ -444,9 +511,12 @@ class Nios2Flasher(ZephyrBinaryFlasher):
         cpu_sof = get_env_or_bail('NIOS2_CPU_SOF')
         zephyr_base = get_env_or_bail('ZEPHYR_BASE')
 
-        return Nios2Flasher(hex_, cpu_sof, zephyr_base, debug=debug)
+        return Nios2BinaryRunner(hex_, cpu_sof, zephyr_base, debug=debug)
 
-    def flash(self, **kwargs):
+    def run(self, command, **kwargs):
+        if command != 'flash':
+            raise ValueError('only flash is supported')
+
         cmd = [path.join(self.zephyr_base, 'scripts', 'support',
                          'quartus-flash.py'),
                '--sof', self.cpu_sof,
@@ -455,19 +525,19 @@ class Nios2Flasher(ZephyrBinaryFlasher):
         check_call(cmd, self.debug)
 
 
-class NrfJprogFlasher(ZephyrBinaryFlasher):
-    '''Flasher front-end for nrfjprog.'''
+class NrfJprogBinaryRunner(ZephyrBinaryRunner):
+    '''Runner front-end for nrfjprog.'''
 
     def __init__(self, hex_, family, board, debug=False):
-        super(NrfJprogFlasher, self).__init__(debug=debug)
+        super(NrfJprogBinaryRunner, self).__init__(debug=debug)
         self.hex_ = hex_
         self.family = family
         self.board = board
 
-    def replaces_shell_script(shell_script):
-        return shell_script == 'nrf_flash.sh'
+    def replaces_shell_script(shell_script, command):
+        return command == 'flash' and shell_script == 'nrf_flash.sh'
 
-    def create_from_env(debug):
+    def create_from_env(command, debug):
         '''Create flasher from environment.
 
         Required:
@@ -482,7 +552,7 @@ class NrfJprogFlasher(ZephyrBinaryFlasher):
         family = get_env_or_bail('NRF_FAMILY')
         board = get_env_or_bail('BOARD')
 
-        return NrfJprogFlasher(hex_, family, board, debug=debug)
+        return NrfJprogBinaryRunner(hex_, family, board, debug=debug)
 
     def get_board_snr_from_user(self):
         snrs = check_output(['nrfjprog', '--ids'], self.debug)
@@ -508,7 +578,10 @@ class NrfJprogFlasher(ZephyrBinaryFlasher):
 
         return snrs[value - 1]
 
-    def flash(self, **kwargs):
+    def run(self, command, **kwargs):
+        if command != 'flash':
+            raise ValueError('only flash is supported')
+
         board_snr = self.get_board_snr_from_user()
 
         print('Flashing file: {}'.format(self.hex_))
@@ -534,14 +607,14 @@ class NrfJprogFlasher(ZephyrBinaryFlasher):
                   self.board, board_snr))
 
 
-class OpenOcdBinaryFlasher(ZephyrBinaryFlasher):
-    '''Flasher front-end for openocd.'''
+class OpenOcdBinaryRunner(ZephyrBinaryRunner):
+    '''Runner front-end for openocd.'''
 
     def __init__(self, bin_name, zephyr_base, arch, board_name,
                  load_cmd, verify_cmd, openocd='openocd',
                  default_path=None, pre_cmd=None,
                  post_cmd=None, debug=False):
-        super(OpenOcdBinaryFlasher, self).__init__(debug=debug)
+        super(OpenOcdBinaryRunner, self).__init__(debug=debug)
         self.bin_name = bin_name
         self.zephyr_base = zephyr_base
         self.arch = arch
@@ -553,10 +626,10 @@ class OpenOcdBinaryFlasher(ZephyrBinaryFlasher):
         self.pre_cmd = pre_cmd
         self.post_cmd = post_cmd
 
-    def replaces_shell_script(shell_script):
-        return shell_script == 'openocd.sh'
+    def replaces_shell_script(shell_script, command):
+        return command == 'flash' and shell_script == 'openocd.sh'
 
-    def create_from_env(debug):
+    def create_from_env(command, debug):
         '''Create flasher from environment.
 
         Required:
@@ -593,12 +666,15 @@ class OpenOcdBinaryFlasher(ZephyrBinaryFlasher):
         if post_cmd is not None:
             post_cmd = post_cmd.strip('"')
 
-        return OpenOcdBinaryFlasher(bin_name, zephyr_base, arch, board_name,
-                                    load_cmd, verify_cmd, openocd=openocd,
-                                    default_path=default_path, pre_cmd=pre_cmd,
-                                    post_cmd=post_cmd, debug=debug)
+        return OpenOcdBinaryRunner(bin_name, zephyr_base, arch, board_name,
+                                   load_cmd, verify_cmd, openocd=openocd,
+                                   default_path=default_path, pre_cmd=pre_cmd,
+                                   post_cmd=post_cmd, debug=debug)
 
-    def flash(self, **kwargs):
+    def run(self, command, **kwargs):
+        if command != 'flash':
+            raise ValueError('only flash is supported')
+
         search_args = []
         if self.default_path is not None:
             search_args = ['-s', self.default_path]
@@ -630,22 +706,22 @@ class OpenOcdBinaryFlasher(ZephyrBinaryFlasher):
         check_call(cmd, self.debug)
 
 
-class PyOcdBinaryFlasher(ZephyrBinaryFlasher):
-    '''Flasher front-end for pyocd-flashtool.'''
+class PyOcdBinaryRunner(ZephyrBinaryRunner):
+    '''Runner front-end for pyocd-flashtool.'''
 
     def __init__(self, bin_name, target, flashtool='pyocd-flashtool',
                  board_id=None, daparg=None, debug=False):
-        super(PyOcdBinaryFlasher, self).__init__(debug=debug)
+        super(PyOcdBinaryRunner, self).__init__(debug=debug)
         self.bin_name = bin_name
         self.target = target
         self.flashtool = flashtool
         self.board_id = board_id
         self.daparg = daparg
 
-    def replaces_shell_script(shell_script):
-        return shell_script == 'pyocd.sh'
+    def replaces_shell_script(shell_script, command):
+        return command == 'flash' and shell_script == 'pyocd.sh'
 
-    def create_from_env(debug):
+    def create_from_env(command, debug):
         '''Create flasher from environment.
 
         Required:
@@ -668,11 +744,14 @@ class PyOcdBinaryFlasher(ZephyrBinaryFlasher):
         board_id = os.environ.get('PYOCD_BOARD_ID', None)
         daparg = os.environ.get('PYOCD_DAPARG', None)
 
-        return PyOcdBinaryFlasher(bin_name, target,
-                                  flashtool=flashtool, board_id=board_id,
-                                  daparg=daparg, debug=debug)
+        return PyOcdBinaryRunner(bin_name, target,
+                                 flashtool=flashtool, board_id=board_id,
+                                 daparg=daparg, debug=debug)
 
-    def flash(self, **kwargs):
+    def run(self, command, **kwargs):
+        if command != 'flash':
+            raise ValueError('only flash is supported')
+
         daparg_args = []
         if self.daparg is not None:
             daparg_args = ['-da', self.daparg]
@@ -699,27 +778,29 @@ class PyOcdBinaryFlasher(ZephyrBinaryFlasher):
 #   python zephyr_flash_debug.py openocd --openocd-bin=/openocd/path ...
 #
 # For now, maintain compatibility.
-def flash(shell_script_full, debug):
+def run(shell_script_full, command, debug):
     shell_script = path.basename(shell_script_full)
     try:
-        flasher = ZephyrBinaryFlasher.create_for_shell_script(shell_script,
-                                                              debug)
+        runner = ZephyrBinaryRunner.create_for_shell_script(shell_script,
+                                                            command,
+                                                            debug)
     except ValueError:
-        # Can't create a flasher; fall back on shell script.
-        check_call([shell_script_full, 'flash'], debug)
+        # Unsupported; fall back on shell script.
+        check_call([shell_script_full, command], debug)
         return
 
-    flasher.flash()
+    runner.run(command)
 
 
 if __name__ == '__main__':
+    commands = {'flash', 'debug', 'debugserver'}
     debug = True
     try:
         debug = get_env_bool_or('KBUILD_VERBOSE', False)
-        if len(sys.argv) != 3 or sys.argv[1] != 'flash':
-            raise ValueError('usage: {} flash path-to-script'.format(
-                sys.argv[0]))
-        flash(sys.argv[2], debug)
+        if len(sys.argv) != 3 or sys.argv[1] not in commands:
+            raise ValueError('usage: {} <{}> path-to-script'.format(
+                sys.argv[0], '|'.join(commands)))
+        run(sys.argv[2], sys.argv[1], debug)
     except Exception as e:
         if debug:
             raise
