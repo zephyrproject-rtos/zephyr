@@ -218,20 +218,22 @@ still_might_format:
 }
 
 #ifdef CONFIG_USERSPACE
-struct out_context {
+struct buf_out_context {
 	int count;
 	unsigned int buf_count;
 	char buf[CONFIG_PRINTK_BUFFER_SIZE];
 };
 
-static void buf_flush(struct out_context *ctx)
+static void buf_flush(struct buf_out_context *ctx)
 {
 	k_str_out(ctx->buf, ctx->buf_count);
 	ctx->buf_count = 0;
 }
 
-static int char_out(int c, struct out_context *ctx)
+static int buf_char_out(int c, void *ctx_p)
 {
+	struct buf_out_context *ctx = ctx_p;
+
 	ctx->count++;
 	ctx->buf[ctx->buf_count++] = c;
 	if (ctx->buf_count == CONFIG_PRINTK_BUFFER_SIZE) {
@@ -240,31 +242,50 @@ static int char_out(int c, struct out_context *ctx)
 
 	return c;
 }
-#else
+#endif /* CONFIG_USERSPACE */
+
 struct out_context {
 	int count;
 };
 
-static int char_out(int c, struct out_context *ctx)
+static int char_out(int c, void *ctx_p)
 {
+	struct out_context *ctx = ctx_p;
+
 	ctx->count++;
 	return _char_out(c);
 }
-#endif
 
+#ifdef CONFIG_USERSPACE
+int vprintk(const char *fmt, va_list ap)
+{
+	if (_is_user_context()) {
+		struct buf_out_context ctx = { 0 };
+
+		_vprintk(buf_char_out, &ctx, fmt, ap);
+
+		if (ctx.buf_count) {
+			buf_flush(&ctx);
+		}
+		return ctx.count;
+	} else {
+		struct out_context ctx = { 0 };
+
+		_vprintk(char_out, &ctx, fmt, ap);
+
+		return ctx.count;
+	}
+}
+#else
 int vprintk(const char *fmt, va_list ap)
 {
 	struct out_context ctx = { 0 };
 
-	_vprintk((out_func_t)char_out, &ctx, fmt, ap);
+	_vprintk(char_out, &ctx, fmt, ap);
 
-#ifdef CONFIG_USERSPACE
-	if (ctx.buf_count) {
-		buf_flush(&ctx);
-	}
-#endif
 	return ctx.count;
 }
+#endif
 
 void _impl_k_str_out(char *c, size_t n)
 {
