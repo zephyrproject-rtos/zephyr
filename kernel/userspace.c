@@ -250,12 +250,6 @@ void _k_object_init(void *object)
 		return;
 	}
 
-	/* Initializing an object implicitly grants access to the calling
-	 * thread and nobody else
-	 */
-	memset(ko->perms, 0, CONFIG_MAX_THREAD_BYTES);
-	_thread_perms_set(ko, _current);
-
 	/* Allows non-initialization system calls to be made on this object */
 	ko->flags |= K_OBJ_FLAG_INITIALIZED;
 }
