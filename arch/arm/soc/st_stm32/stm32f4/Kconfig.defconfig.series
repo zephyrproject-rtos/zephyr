@@ -42,6 +42,9 @@ config GPIO_STM32_PORTB
 config GPIO_STM32_PORTC
 	def_bool y
 
+config GPIO_STM32_PORTD
+       def_bool y
+
 endif #GPIO
 
 if PINMUX
