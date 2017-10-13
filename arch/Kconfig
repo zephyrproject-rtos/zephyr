@@ -45,7 +45,7 @@ config HW_STACK_PROTECTION
 	  Select this option to enable hardware stack protection.
 
 config USERSPACE
-	bool "User mode threads"
+	bool "User mode threads (EXPERIMENTAL)"
 	depends on ARCH_HAS_USERSPACE
 	select HW_STACK_PROTECTION
 	help
@@ -53,6 +53,9 @@ config USERSPACE
 	which has significantly restricted permissions and must interact
 	with the kernel via system calls. See Zephyr documentation for more
 	details	about this feature.
+
+	This feature is under heavy development and APIs related to it are
+	subject to change, even if declared non-private.
 
 config MAX_THREAD_BYTES
 	int "Bytes to use when tracking object thread permissions"
