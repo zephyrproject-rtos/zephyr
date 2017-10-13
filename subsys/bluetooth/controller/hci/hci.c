@@ -57,6 +57,7 @@ static u32_t dup_curr;
 s32_t    hci_hbuf_total;
 u32_t    hci_hbuf_sent;
 u32_t    hci_hbuf_acked;
+u16_t    hci_hbuf_pend[CONFIG_BT_MAX_CONN];
 atomic_t hci_state_mask;
 static struct k_poll_signal *hbuf_signal;
 #endif
@@ -214,6 +215,7 @@ static void reset(struct net_buf *buf, struct net_buf **evt)
 	hci_hbuf_total = 0;
 	hci_hbuf_sent = 0;
 	hci_hbuf_acked = 0;
+	memset(hci_hbuf_pend, 0, sizeof(hci_hbuf_pend));
 	conn_count = 0;
 	if (buf) {
 		atomic_set_bit(&hci_state_mask, HCI_STATE_BIT_RESET);
@@ -261,6 +263,7 @@ static void set_ctl_to_host_flow(struct net_buf *buf, struct net_buf **evt)
 
 	hci_hbuf_sent = 0;
 	hci_hbuf_acked = 0;
+	memset(hci_hbuf_pend, 0, sizeof(hci_hbuf_pend));
 	hci_hbuf_total = -hci_hbuf_total;
 }
 
@@ -310,7 +313,18 @@ static void host_num_completed_packets(struct net_buf *buf,
 
 	/* leave *evt == NULL so no event is generated */
 	for (i = 0; i < cmd->num_handles; i++) {
-		count += sys_le16_to_cpu(cmd->h[i].count);
+		u16_t h = sys_le16_to_cpu(cmd->h[i].handle);
+		u16_t c = sys_le16_to_cpu(cmd->h[i].count);
+
+		if ((h >= ARRAY_SIZE(hci_hbuf_pend)) ||
+		    (c > hci_hbuf_pend[h])) {
+			ccst = cmd_complete(evt, sizeof(*ccst));
+			ccst->status = BT_HCI_ERR_INVALID_PARAM;
+			return;
+		}
+
+		hci_hbuf_pend[h] -= c;
+		count += c;
 	}
 
 	BT_DBG("FC: acked: %d", count);
@@ -2377,6 +2391,13 @@ static void disconn_complete(struct pdu_data *pdu_data, u16_t handle,
 	ep->handle = sys_cpu_to_le16(handle);
 	ep->reason = *((u8_t *)pdu_data);
 
+#if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
+	/* Clear any pending packets upon disconnection */
+	/* Note: This requires linear handle values starting from 0 */
+	LL_ASSERT(handle < ARRAY_SIZE(hci_hbuf_pend));
+	hci_hbuf_acked += hci_hbuf_pend[handle];
+	hci_hbuf_pend[handle] = 0;
+#endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
 	conn_count--;
 }
 
@@ -2816,6 +2837,11 @@ void hci_acl_encode(struct radio_pdu_node_rx *node_rx, struct net_buf *buf)
 			LL_ASSERT((hci_hbuf_sent - hci_hbuf_acked) <
 				  hci_hbuf_total);
 			hci_hbuf_sent++;
+			/* Note: This requires linear handle values starting
+			 * from 0
+			 */
+			LL_ASSERT(handle < ARRAY_SIZE(hci_hbuf_pend));
+			hci_hbuf_pend[handle]++;
 		}
 #endif
 		break;
