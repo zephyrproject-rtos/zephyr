@@ -101,7 +101,7 @@ int _impl_k_alert_recv(struct k_alert *alert, s32_t timeout)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER2(k_alert_recv, alert, timeout)
+_SYSCALL_HANDLER(k_alert_recv, alert, timeout)
 {
 	_SYSCALL_OBJ(alert, K_OBJ_ALERT);
 	return _impl_k_alert_recv((struct k_alert *)alert, timeout);

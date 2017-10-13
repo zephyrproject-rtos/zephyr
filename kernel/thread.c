@@ -119,7 +119,7 @@ void _impl_k_thread_custom_data_set(void *value)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER1(k_thread_custom_data_set, data)
+_SYSCALL_HANDLER(k_thread_custom_data_set, data)
 {
 	_impl_k_thread_custom_data_set((void *)data);
 	return 0;

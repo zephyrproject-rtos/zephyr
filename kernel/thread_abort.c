@@ -47,7 +47,7 @@ void _impl_k_thread_abort(k_tid_t thread)
 #endif
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER1(k_thread_abort, thread_p)
+_SYSCALL_HANDLER(k_thread_abort, thread_p)
 {
 	struct k_thread *thread = (struct k_thread *)thread_p;
 	_SYSCALL_OBJ(thread, K_OBJ_THREAD);

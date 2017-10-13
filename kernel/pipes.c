@@ -141,7 +141,7 @@ void _impl_k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER3(k_pipe_init, pipe, buffer, size)
+_SYSCALL_HANDLER(k_pipe_init, pipe, buffer, size)
 {
 	_SYSCALL_OBJ_INIT(pipe, K_OBJ_PIPE);
 	_SYSCALL_MEMORY_WRITE(buffer, size);
@@ -684,7 +684,7 @@ int _impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER6(k_pipe_get,
+_SYSCALL_HANDLER(k_pipe_get,
 		  pipe, data, bytes_to_read, bytes_read_p, min_xfer_p, timeout)
 {
 	size_t *bytes_read = (size_t *)bytes_read_p;
@@ -713,7 +713,7 @@ int _impl_k_pipe_put(struct k_pipe *pipe, void *data, size_t bytes_to_write,
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER6(k_pipe_put, pipe, data, bytes_to_write, bytes_written_p,
+_SYSCALL_HANDLER(k_pipe_put, pipe, data, bytes_to_write, bytes_written_p,
 		  min_xfer_p, timeout)
 {
 	size_t *bytes_written = (size_t *)bytes_written_p;
