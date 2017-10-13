@@ -9,8 +9,6 @@
 
 _SYSCALL_HANDLER4(sensor_attr_set, dev, chan, attr, val)
 {
-	_SYSCALL_ARG4;
-
 	_SYSCALL_OBJ(dev, K_OBJ_DRIVER_SENSOR);
 	_SYSCALL_MEMORY_READ(val, sizeof(struct sensor_value));
 	return _impl_sensor_attr_set((struct device *)dev, chan, attr,
