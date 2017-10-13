@@ -587,7 +587,11 @@ class OpenOcdBinaryFlasher(ZephyrBinaryFlasher):
         openocd = os.environ.get('OPENOCD', 'openocd')
         default_path = os.environ.get('OPENOCD_DEFAULT_PATH', None)
         pre_cmd = os.environ.get('OPENOCD_PRE_CMD', None)
+        if pre_cmd is not None:
+            pre_cmd = pre_cmd.strip('"')
         post_cmd = os.environ.get('OPENOCD_POST_CMD', None)
+        if post_cmd is not None:
+            post_cmd = post_cmd.strip('"')
 
         return OpenOcdBinaryFlasher(bin_name, zephyr_base, arch, board_name,
                                     load_cmd, verify_cmd, openocd=openocd,
