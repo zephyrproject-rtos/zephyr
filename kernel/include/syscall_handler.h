@@ -91,6 +91,14 @@ extern void _thread_perms_inherit(struct k_thread *parent,
 extern void _thread_perms_set(struct _k_object *ko, struct k_thread *thread);
 
 /**
+ * Revoke a thread's permission to a kernel object
+ *
+ * @param ko Kernel object metadata to update
+ * @param thread The thread to grant permission
+ */
+extern void _thread_perms_clear(struct _k_object *ko, struct k_thread *thread);
+
+/**
  * Grant all current and future threads access to a kernel object
  *
  * @param ko Kernel object metadata to update
