@@ -277,15 +277,14 @@ class DfuUtilBinaryFlasher(ZephyrBinaryFlasher):
 
     def __init__(self, pid, alt, img, dfuse=None, exe='dfu-util', debug=False):
         super(DfuUtilBinaryFlasher, self).__init__(debug=debug)
-        self.pid = pid
         self.alt = alt
         self.img = img
         self.dfuse = dfuse
-        self.exe = exe
+        self.cmd = [exe, '-d,{}'.format(pid)]
         try:
-            self.list_pattern = ', alt={}'.format(int(self.alt))
+            self.list_pattern = ', alt={},'.format(int(self.alt))
         except ValueError:
-            self.list_pattern = ', name={}'.format(self.alt)
+            self.list_pattern = ', name="{}",'.format(self.alt)
 
     def replaces_shell_script(shell_script):
         return shell_script == 'dfuutil.sh'
@@ -315,7 +314,8 @@ class DfuUtilBinaryFlasher(ZephyrBinaryFlasher):
                                     debug=debug)
 
     def find_device(self):
-        output = check_output([self.exe, '-l'], self.debug)
+        cmd = list(self.cmd) + ['-l']
+        output = check_output(cmd, self.debug)
         output = output.decode(sys.getdefaultencoding())
         return self.list_pattern in output
 
@@ -327,7 +327,7 @@ class DfuUtilBinaryFlasher(ZephyrBinaryFlasher):
             while not self.find_device():
                 time.sleep(0.1)
 
-        cmd = [self.exe, '-d,{}'.format(self.pid)]
+        cmd = list(self.cmd)
         if self.dfuse is not None:
             cmd.extend(['-s', '{}:leave'.format(self.dfuse)])
         cmd.extend(['-a', self.alt, '-D', self.img])
