@@ -444,6 +444,12 @@ void _k_thread_single_abort(struct k_thread *thread)
 		}
 	}
 	_mark_thread_as_dead(thread);
+
+#ifdef CONFIG_USERSPACE
+	if (thread->base.user_options & K_STACK_RELEASE) {
+		_arch_release_thread_stack(thread);
+	}
+#endif
 }
 
 #ifdef CONFIG_MULTITHREADING
