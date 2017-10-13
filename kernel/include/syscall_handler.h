@@ -98,12 +98,12 @@ extern void _thread_perms_set(struct _k_object *ko, struct k_thread *thread);
  */
 extern void _thread_perms_clear(struct _k_object *ko, struct k_thread *thread);
 
-/**
- * Grant all current and future threads access to a kernel object
+/*
+ * Revoke access to all objects for the provided thread
  *
- * @param ko Kernel object metadata to update
+ * @param thread Thread object to revoke access
  */
-extern void _thread_perms_all_set(struct _k_object *ko);
+extern void _thread_perms_all_clear(struct k_thread *thread);
 
 /**
  * Clear initialization state of a kernel object

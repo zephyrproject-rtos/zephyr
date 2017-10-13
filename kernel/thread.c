@@ -29,17 +29,60 @@ extern struct _static_thread_data _static_thread_data_list_start[];
 extern struct _static_thread_data _static_thread_data_list_end[];
 
 #ifdef CONFIG_USERSPACE
-/* Each thread gets assigned an index into a permission bitfield */
-static atomic_t thread_index;
+static int thread_count;
 
-static unsigned int thread_index_get(void)
+/*
+ * Fetch an unused thread ID. Returns -1 if all thread IDs are in use
+ */
+static int get_next_thread_index(void)
 {
-	unsigned int retval;
+	int key, pos = -1;
 
-	retval = (int)atomic_inc(&thread_index);
-	__ASSERT(retval < 8 * CONFIG_MAX_THREAD_BYTES,
-		 "too many threads created, increase CONFIG_MAX_THREAD_BYTES");
-	return retval;
+	key = irq_lock();
+
+	if (thread_count == CONFIG_MAX_THREAD_BYTES * 8) {
+		/* We have run out of thread IDs! */
+		goto out;
+	}
+
+	/* find an unused bit in the kernel's bitfield of in-use thread IDs */
+	for (int i = 0; i < CONFIG_MAX_THREAD_BYTES; i++) {
+		int fs;
+
+		fs = find_lsb_set(_kernel.free_thread_ids[i]);
+		if (fs) {
+			/* find_lsb_set counts bit positions starting at 1 */
+			--fs;
+			_kernel.free_thread_ids[i] &= ~(1 << fs);
+			pos = fs + (i * 8);
+			break;
+		}
+	}
+
+	thread_count++;
+out:
+	irq_unlock(key);
+
+	return pos;
+}
+
+static void free_thread_index(int id)
+{
+	int index, key;
+	u8_t bit;
+
+	if (id == -1) {
+		return;
+	}
+
+	key = irq_lock();
+
+	thread_count--;
+	index = id / 8;
+	bit = 1 << (id % 8);
+	_kernel.free_thread_ids[index] |= bit;
+
+	irq_unlock(key);
 }
 #endif
 
@@ -281,7 +324,7 @@ void _setup_new_thread(struct k_thread *new_thread,
 	_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3,
 		    prio, options);
 #ifdef CONFIG_USERSPACE
-	new_thread->base.perm_index = thread_index_get();
+	new_thread->base.perm_index = get_next_thread_index();
 	_k_object_init(new_thread);
 
 	/* Any given thread has access to itself */
@@ -458,6 +501,13 @@ void _k_thread_single_abort(struct k_thread *thread)
 	 * and triggers errors if API calls are made on it from user threads
 	 */
 	_k_object_uninit(thread);
+
+	if (thread->base.perm_index != -1) {
+		free_thread_index(thread->base.perm_index);
+
+		/* Revoke permissions on thread's ID so that it may be recycled */
+		_thread_perms_all_clear(thread);
+	}
 #endif
 }
 

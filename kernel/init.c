@@ -274,6 +274,10 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 
 	/* _kernel.ready_q is all zeroes */
 
+#ifdef CONFIG_USERSPACE
+	/* Mark all potential IDs as available */
+	memset(_kernel.free_thread_ids, 0xFF, CONFIG_MAX_THREAD_BYTES);
+#endif
 
 	/*
 	 * The interrupt library needs to be initialized early since a series

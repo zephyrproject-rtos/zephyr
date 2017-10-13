@@ -180,6 +180,7 @@ struct _k_object {
 } __packed;
 
 #define K_OBJ_FLAG_INITIALIZED	BIT(0)
+#define K_OBJ_FLAG_PUBLIC	BIT(1)
 
 /**
  * Lookup a kernel object and init its metadata if it exists
@@ -252,6 +253,9 @@ __syscall void k_object_access_revoke(void *object, struct k_thread *thread);
  * Use of this API should be avoided on systems that are running untrusted code
  * as it is possible for such code to derive the addresses of kernel objects
  * and perform unwanted operations on them.
+ *
+ * It is not possible to revoke permissions on public objects; once public,
+ * any thread may use it.
  *
  * @param object Address of kernel object
  */
