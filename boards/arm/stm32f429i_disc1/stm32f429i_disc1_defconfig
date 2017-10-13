@@ -15,7 +15,7 @@ CONFIG_UART_STM32_PORT_1=y
 # enable pinmux
 CONFIG_PINMUX=y
 
-# enable GPIO ports A, B, C, and G
+# enable GPIO ports A, B, C, D, G
 CONFIG_GPIO=y
 CONFIG_GPIO_STM32_PORTG=y
 
