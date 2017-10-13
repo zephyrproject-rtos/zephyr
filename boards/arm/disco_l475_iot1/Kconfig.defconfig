@@ -46,6 +46,18 @@ config UART_STM32_PORT_1
 
 endif # SERIAL
 
+if I2C
+
+config I2C_0
+	def_bool n
+
+config I2C_1
+	def_bool n
+
+config I2C_2
+	def_bool y
+
+endif # I2C
 
 if PWM
 
@@ -56,4 +68,47 @@ config PWM_STM32_2
 	def_bool y
 
 endif # PWM
+
+if LSM6DSL
+
+config LSM6DSL_I2C_MASTER_DEV_NAME
+	default "I2C_2"
+
+endif #LSM6DSL
+
+if LPS22HB
+
+config LPS22HB_I2C_MASTER_DEV_NAME
+	default "I2C_2"
+
+config LPS22HB_I2C_ADDR
+	default 0x5D
+
+endif #LPS22HB
+
+if LIS3MDL
+
+config LIS3MDL_I2C_MASTER_DEV_NAME
+	default "I2C_2"
+
+choice LIS3MDL_TRIGGER_MODE
+	default LIS3MDL_TRIGGER_NONE
+endchoice
+
+config LIS3MDL_I2C_ADDR
+	default 0x1E
+
+endif #LIS3MDL
+
+if HTS221
+
+config HTS221_I2C_MASTER_DEV_NAME
+	default "I2C_2"
+
+choice HTS221_TRIGGER_MODE
+	default HTS221_TRIGGER_NONE
+endchoice
+
+endif #HTS221
+
 endif # BOARD_DISCO_L475_IOT1
