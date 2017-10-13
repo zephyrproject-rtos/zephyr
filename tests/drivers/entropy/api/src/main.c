@@ -3,13 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <random.h>
+#include <entropy.h>
 #include <ztest.h>
 
 /*
  * @addtogroup t_entropy_api
  * @{
- * @defgroup t_random_get_entropy test_random_get_entropy
+ * @defgroup t_entropy_get_entropy test_entropy_get_entropy
  * @brief TestPurpose: verify Get entropy works
  * @details
  * - Test Steps
@@ -37,13 +37,13 @@ static int random_entropy(struct device *dev, char *buffer, char num)
 	 * outside the passed buffer, and that should never
 	 * happen.
 	 */
-	ret = random_get_entropy(dev, buffer, BUFFER_LENGTH - 1);
+	ret = entropy_get_entropy(dev, buffer, BUFFER_LENGTH - 1);
 	if (ret) {
-		TC_PRINT("Error: random_get_entropy failed: %d\n", ret);
+		TC_PRINT("Error: entropy_get_entropy failed: %d\n", ret);
 		return TC_FAIL;
 	}
 	if (buffer[BUFFER_LENGTH - 1] != num) {
-		TC_PRINT("Error: random_get_entropy buffer overflow\n");
+		TC_PRINT("Error: entropy_get_entropy buffer overflow\n");
 		return TC_FAIL;
 	}
 
@@ -71,7 +71,7 @@ static int get_entropy(void)
 	u8_t buffer[BUFFER_LENGTH] = { 0 };
 	int ret;
 
-	dev = device_get_binding(CONFIG_RANDOM_NAME);
+	dev = device_get_binding(CONFIG_ENTROPY_NAME);
 	if (!dev) {
 		TC_PRINT("error: no random device\n");
 		return TC_FAIL;
@@ -98,7 +98,7 @@ static int get_entropy(void)
 	return ret;
 }
 
-static void test_random_get_entropy(void)
+static void test_entropy_get_entropy(void)
 {
 	zassert_true(get_entropy() == TC_PASS, NULL);
 }
@@ -106,6 +106,6 @@ static void test_random_get_entropy(void)
 void test_main(void)
 {
 	ztest_test_suite(entropy_api,
-			 ztest_unit_test(test_random_get_entropy));
+			 ztest_unit_test(test_entropy_get_entropy));
 	ztest_run_test_suite(entropy_api);
 }

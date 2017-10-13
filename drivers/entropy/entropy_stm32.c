@@ -6,7 +6,7 @@
 
 #include <kernel.h>
 #include <device.h>
-#include <random.h>
+#include <entropy.h>
 #include <random/rand32.h>
 #include <init.h>
 #include <misc/__assert.h>
@@ -17,22 +17,22 @@
 #include <clock_control.h>
 #include <clock_control/stm32_clock_control.h>
 
-struct random_stm32_rng_dev_cfg {
+struct entropy_stm32_rng_dev_cfg {
 	struct stm32_pclken pclken;
 };
 
-struct random_stm32_rng_dev_data {
+struct entropy_stm32_rng_dev_data {
 	RNG_TypeDef *rng;
 	struct device *clock;
 };
 
 #define DEV_DATA(dev) \
-	((struct random_stm32_rng_dev_data *)(dev)->driver_data)
+	((struct entropy_stm32_rng_dev_data *)(dev)->driver_data)
 
 #define DEV_CFG(dev) \
-	((struct random_stm32_rng_dev_cfg *)(dev)->config->config_info)
+	((struct entropy_stm32_rng_dev_cfg *)(dev)->config->config_info)
 
-static void random_stm32_rng_reset(RNG_TypeDef *rng)
+static void entropy_stm32_rng_reset(RNG_TypeDef *rng)
 {
 	__ASSERT_NO_MSG(rng != NULL);
 
@@ -46,7 +46,7 @@ static void random_stm32_rng_reset(RNG_TypeDef *rng)
 	LL_RNG_Enable(rng);
 }
 
-static int random_stm32_got_error(RNG_TypeDef *rng)
+static int entropy_stm32_got_error(RNG_TypeDef *rng)
 {
 	__ASSERT_NO_MSG(rng != NULL);
 
@@ -61,7 +61,7 @@ static int random_stm32_got_error(RNG_TypeDef *rng)
 	return 0;
 }
 
-static int random_stm32_wait_ready(RNG_TypeDef *rng)
+static int entropy_stm32_wait_ready(RNG_TypeDef *rng)
 {
 	/* Agording to the reference manual it takes 40 periods
 	 * of the RNG_CLK clock signal between two consecutive
@@ -79,7 +79,7 @@ static int random_stm32_wait_ready(RNG_TypeDef *rng)
 	__ASSERT_NO_MSG(rng != NULL);
 
 	while (!LL_RNG_IsActiveFlag_DRDY(rng)) {
-		if (random_stm32_got_error(rng)) {
+		if (entropy_stm32_got_error(rng)) {
 			return -EIO;
 		}
 
@@ -90,17 +90,17 @@ static int random_stm32_wait_ready(RNG_TypeDef *rng)
 		k_yield();
 	}
 
-	if (random_stm32_got_error(rng)) {
+	if (entropy_stm32_got_error(rng)) {
 		return -EIO;
 	} else {
 		return 0;
 	}
 }
 
-static int random_stm32_rng_get_entropy(struct device *dev, u8_t *buffer,
-					u16_t length)
+static int entropy_stm32_rng_get_entropy(struct device *dev, u8_t *buffer,
+					 u16_t length)
 {
-	struct random_stm32_rng_dev_data *dev_data;
+	struct entropy_stm32_rng_dev_data *dev_data;
 	int n = sizeof(u32_t);
 	int res;
 
@@ -112,15 +112,15 @@ static int random_stm32_rng_get_entropy(struct device *dev, u8_t *buffer,
 	__ASSERT_NO_MSG(dev_data != NULL);
 
 	/* if the RNG has errors reset it before use */
-	if (random_stm32_got_error(dev_data->rng)) {
-		random_stm32_rng_reset(dev_data->rng);
+	if (entropy_stm32_got_error(dev_data->rng)) {
+		entropy_stm32_rng_reset(dev_data->rng);
 	}
 
 	while (length > 0) {
 		u32_t rndbits;
 		u8_t *p_rndbits = (u8_t *)&rndbits;
 
-		res = random_stm32_wait_ready(dev_data->rng);
+		res = entropy_stm32_wait_ready(dev_data->rng);
 		if (res < 0)
 			return res;
 
@@ -139,10 +139,10 @@ static int random_stm32_rng_get_entropy(struct device *dev, u8_t *buffer,
 	return 0;
 }
 
-static int random_stm32_rng_init(struct device *dev)
+static int entropy_stm32_rng_init(struct device *dev)
 {
-	struct random_stm32_rng_dev_data *dev_data;
-	struct random_stm32_rng_dev_cfg *dev_cfg;
+	struct entropy_stm32_rng_dev_data *dev_data;
+	struct entropy_stm32_rng_dev_cfg *dev_cfg;
 
 	__ASSERT_NO_MSG(dev != NULL);
 
@@ -163,24 +163,24 @@ static int random_stm32_rng_init(struct device *dev)
 	return 0;
 }
 
-static const struct random_driver_api random_stm32_rng_api = {
-	.get_entropy = random_stm32_rng_get_entropy
+static const struct entropy_driver_api entropy_stm32_rng_api = {
+	.get_entropy = entropy_stm32_rng_get_entropy
 };
 
-static const struct random_stm32_rng_dev_cfg random_stm32_rng_config = {
+static const struct entropy_stm32_rng_dev_cfg entropy_stm32_rng_config = {
 	.pclken	= { .bus = STM32_CLOCK_BUS_AHB2,
 		    .enr = LL_AHB2_GRP1_PERIPH_RNG },
 };
 
-static struct random_stm32_rng_dev_data random_stm32_rng_data = {
+static struct entropy_stm32_rng_dev_data entropy_stm32_rng_data = {
 	.rng = RNG,
 };
 
-DEVICE_AND_API_INIT(random_stm32_rng, CONFIG_RANDOM_NAME,
-		    random_stm32_rng_init,
-		    &random_stm32_rng_data, &random_stm32_rng_config,
+DEVICE_AND_API_INIT(entropy_stm32_rng, CONFIG_ENTROPY_NAME,
+		    entropy_stm32_rng_init,
+		    &entropy_stm32_rng_data, &entropy_stm32_rng_config,
 		    PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &random_stm32_rng_api);
+		    &entropy_stm32_rng_api);
 
 u32_t sys_rand32_get(void)
 {
@@ -193,4 +193,3 @@ u32_t sys_rand32_get(void)
 
 	return output;
 }
-

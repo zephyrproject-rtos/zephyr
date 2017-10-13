@@ -5,9 +5,9 @@
  */
 
 #include <string.h>
-#include <random.h>
+#include <entropy.h>
 
-static inline u32_t random_esp32_get_u32(void)
+static inline u32_t entropy_esp32_get_u32(void)
 {
 	/* The documentation specifies the random number generator at the
 	 * following address, which is at odds with the SDK, that specifies
@@ -25,10 +25,10 @@ static inline u32_t random_esp32_get_u32(void)
 	return *rng_data_reg;
 }
 
-static int random_esp32_get_entropy(struct device *device, u8_t *buf, u16_t len)
+static int entropy_esp32_get_entropy(struct device *device, u8_t *buf, u16_t len)
 {
 	while (len) {
-		u32_t v = random_esp32_get_u32();
+		u32_t v = entropy_esp32_get_u32();
 
 		if (len >= sizeof(v)) {
 			memcpy(buf, &v, sizeof(v));
@@ -44,19 +44,19 @@ static int random_esp32_get_entropy(struct device *device, u8_t *buf, u16_t len)
 	return 0;
 }
 
-static int random_esp32_init(struct device *device)
+static int entropy_esp32_init(struct device *device)
 {
 	return 0;
 }
 
-static struct random_driver_api random_esp32_api_funcs = {
-	.get_entropy = random_esp32_get_entropy
+static struct entropy_driver_api entropy_esp32_api_funcs = {
+	.get_entropy = entropy_esp32_get_entropy
 };
 
-DEVICE_AND_API_INIT(random_esp32, CONFIG_RANDOM_NAME,
-		    random_esp32_init, NULL, NULL,
+DEVICE_AND_API_INIT(entropy_esp32, CONFIG_ENTROPY_NAME,
+		    entropy_esp32_init, NULL, NULL,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &random_esp32_api_funcs);
+		    &entropy_esp32_api_funcs);
 
 u32_t sys_rand32_get(void)
 {

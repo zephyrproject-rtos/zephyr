@@ -5,13 +5,13 @@
  */
 
 #include <device.h>
-#include <random.h>
+#include <entropy.h>
 #include <random/rand32.h>
 #include <init.h>
 
 #include "fsl_rnga.h"
 
-static u8_t random_mcux_rnga_get_uint8(void)
+static u8_t entropy_mcux_rnga_get_uint8(void)
 {
 	u32_t random;
 	u8_t output = 0;
@@ -36,7 +36,7 @@ static u8_t random_mcux_rnga_get_uint8(void)
 	return output;
 }
 
-static int random_mcux_rnga_get_entropy(struct device *dev, u8_t *buffer,
+static int entropy_mcux_rnga_get_entropy(struct device *dev, u8_t *buffer,
 					u16_t length)
 {
 	int i;
@@ -44,24 +44,24 @@ static int random_mcux_rnga_get_entropy(struct device *dev, u8_t *buffer,
 	ARG_UNUSED(dev);
 
 	for (i = 0; i < length; i++) {
-		buffer[i] = random_mcux_rnga_get_uint8();
+		buffer[i] = entropy_mcux_rnga_get_uint8();
 	}
 
 	return 0;
 }
 
-static const struct random_driver_api random_mcux_rnga_api_funcs = {
-	.get_entropy = random_mcux_rnga_get_entropy
+static const struct entropy_driver_api entropy_mcux_rnga_api_funcs = {
+	.get_entropy = entropy_mcux_rnga_get_entropy
 };
 
-static int random_mcux_rnga_init(struct device *);
+static int entropy_mcux_rnga_init(struct device *);
 
-DEVICE_AND_API_INIT(random_mcux_rnga, CONFIG_RANDOM_NAME,
-		    random_mcux_rnga_init, NULL, NULL,
+DEVICE_AND_API_INIT(entropy_mcux_rnga, CONFIG_ENTROPY_NAME,
+		    entropy_mcux_rnga_init, NULL, NULL,
 		    PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &random_mcux_rnga_api_funcs);
+		    &entropy_mcux_rnga_api_funcs);
 
-static int random_mcux_rnga_init(struct device *dev)
+static int entropy_mcux_rnga_init(struct device *dev)
 {
 	u32_t seed = k_cycle_get_32();
 

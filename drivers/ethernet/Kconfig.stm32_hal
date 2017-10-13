@@ -50,7 +50,7 @@ config ETH_STM32_HAL_PHY_ADDRESS
 
 config ETH_STM32_HAL_RANDOM_MAC
 	bool "Random MAC address"
-	depends on ETH_STM32_HAL && RANDOM_GENERATOR
+	depends on ETH_STM32_HAL && ENTROPY_GENERATOR
 	default y
 	help
 	  Generate a random MAC address dynamically.

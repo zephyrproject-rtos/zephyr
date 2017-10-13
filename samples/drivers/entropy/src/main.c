@@ -5,22 +5,22 @@
  */
 
 #include <zephyr.h>
-#include <random.h>
+#include <entropy.h>
 #include <stdio.h>
 
 void main(void)
 {
 	struct device *dev;
 
-	printf("Random Example! %s\n", CONFIG_ARCH);
+	printf("Entropy Example! %s\n", CONFIG_ARCH);
 
-	dev = device_get_binding(CONFIG_RANDOM_NAME);
+	dev = device_get_binding(CONFIG_ENTROPY_NAME);
 	if (!dev) {
-		printf("error: no random device\n");
+		printf("error: no entropy device\n");
 		return;
 	}
 
-	printf("random device is %p, name is %s\n",
+	printf("entropy device is %p, name is %s\n",
 	       dev, dev->config->name);
 
 	while (1) {
@@ -34,14 +34,14 @@ void main(void)
 		 * outside the passed buffer, and that should never
 		 * happen.
 		 */
-		r = random_get_entropy(dev, buffer, BUFFER_LENGTH-1);
+		r = entropy_get_entropy(dev, buffer, BUFFER_LENGTH-1);
 		if (r) {
-			printf("random_get_entropy failed: %d\n", r);
+			printf("entropy_get_entropy failed: %d\n", r);
 			break;
 		}
 
 		if (buffer[BUFFER_LENGTH-1] != 0) {
-			printf("random_get_entropy buffer overflow\n");
+			printf("entropy_get_entropy buffer overflow\n");
 		}
 
 		for (int i = 0; i < BUFFER_LENGTH-1; i++) {

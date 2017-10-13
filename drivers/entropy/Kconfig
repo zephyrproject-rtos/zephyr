@@ -1,0 +1,49 @@
+# Kconfig - entropy generator driver configuration options
+
+#
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig ENTROPY_GENERATOR
+	bool
+	prompt "Entropy Drivers"
+	default n
+	help
+	  Include entropy drivers in system config.
+
+if ENTROPY_GENERATOR
+
+source "drivers/entropy/Kconfig.mcux"
+source "drivers/entropy/Kconfig.stm32"
+source "drivers/entropy/Kconfig.esp32"
+
+config ENTROPY_HAS_DRIVER
+	bool
+	default n
+	help
+	  This is an option to be enabled by individual entropy driver
+	  to signal that there is a true entropy driver.
+
+config ENTROPY_NAME
+	string "Entropy Device Name"
+	default "ENTROPY_0"
+	help
+	  Specify the device name to be used for the ENTROPY driver.
+
+config SYS_LOG_ENTROPY_LEVEL
+	int "Random Log level"
+	depends on SYS_LOG
+	default 0
+	range 0 4
+	help
+	  Sets log level for entropy driver.
+	  Levels are:
+	  - 0 OFF: do not write
+	  - 1 ERROR: only write SYS_LOG_ERR
+	  - 2 WARNING: write SYS_LOG_WRN in addition to previous level
+	  - 3 INFO: write SYS_LOG_INF in addition to previous levels
+	  - 4 DEBUG: write SYS_LOG_DBG in addition to previous levels
+
+endif
