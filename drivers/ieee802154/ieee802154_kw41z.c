@@ -20,7 +20,7 @@
 #include <net/net_if.h>
 #include <net/net_pkt.h>
 #include <misc/byteorder.h>
-#include <rand32.h>
+#include <random/rand32.h>
 
 #include "fsl_xcvr.h"
 

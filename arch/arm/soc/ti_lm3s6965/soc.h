@@ -73,7 +73,7 @@ extern "C" {
 
 #include <device.h>
 #include <misc/util.h>
-#include <drivers/rand32.h>
+#include <random/rand32.h>
 
 /* uart configuration settings */
 #if defined(CONFIG_UART_STELLARIS)

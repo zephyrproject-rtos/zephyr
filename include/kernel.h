@@ -26,7 +26,7 @@
 #include <misc/slist.h>
 #include <misc/util.h>
 #include <kernel_version.h>
-#include <drivers/rand32.h>
+#include <random/rand32.h>
 #include <kernel_arch_thread.h>
 #include <syscall.h>
 

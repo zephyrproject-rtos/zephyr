@@ -19,7 +19,7 @@
 
 #ifndef _ASMLANGUAGE
 #include <device.h>
-#include <drivers/rand32.h>
+#include <random/rand32.h>
 #endif
 
 #define INT_VEC_IRQ0 0x20 /* vector number for IRQ0 */

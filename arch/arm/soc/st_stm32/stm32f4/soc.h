@@ -26,7 +26,7 @@
 
 #include <device.h>
 #include <misc/util.h>
-#include <drivers/rand32.h>
+#include <random/rand32.h>
 
 #include <stm32f4xx.h>
 

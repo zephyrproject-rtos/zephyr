@@ -10,7 +10,7 @@
 #include <logging/sys_log.h>
 
 #include <board.h>
-#include <drivers/rand32.h>
+#include <random/rand32.h>
 #include <errno.h>
 #include <gpio.h>
 #include <net/net_app.h>

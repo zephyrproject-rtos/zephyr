@@ -16,7 +16,7 @@
 #include <kernel.h>
 #include <misc/printk.h>
 #include <misc/stack.h>
-#include <drivers/rand32.h>
+#include <random/rand32.h>
 #include <linker/sections.h>
 #include <toolchain.h>
 #include <kernel_structs.h>

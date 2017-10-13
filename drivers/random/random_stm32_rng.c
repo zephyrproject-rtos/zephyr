@@ -7,7 +7,7 @@
 #include <kernel.h>
 #include <device.h>
 #include <random.h>
-#include <drivers/rand32.h>
+#include <random/rand32.h>
 #include <init.h>
 #include <misc/__assert.h>
 #include <misc/util.h>

@@ -14,7 +14,7 @@
  * provide a random number generator.
  */
 
-#include <drivers/rand32.h>
+#include <random/rand32.h>
 #include <drivers/system_timer.h>
 #include <kernel.h>
 #include <atomic.h>
