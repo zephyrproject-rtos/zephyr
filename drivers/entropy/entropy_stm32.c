@@ -181,15 +181,3 @@ DEVICE_AND_API_INIT(entropy_stm32_rng, CONFIG_ENTROPY_NAME,
 		    &entropy_stm32_rng_data, &entropy_stm32_rng_config,
 		    PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &entropy_stm32_rng_api);
-
-u32_t sys_rand32_get(void)
-{
-	u32_t output;
-	int rc;
-
-	rc = random_stm32_rng_get_entropy(DEVICE_GET(random_stm32_rng),
-					  (u8_t *) &output, sizeof(output));
-	__ASSERT_NO_MSG(!rc);
-
-	return output;
-}

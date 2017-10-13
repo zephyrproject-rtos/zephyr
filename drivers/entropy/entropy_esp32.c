@@ -57,8 +57,3 @@ DEVICE_AND_API_INIT(entropy_esp32, CONFIG_ENTROPY_NAME,
 		    entropy_esp32_init, NULL, NULL,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &entropy_esp32_api_funcs);
-
-u32_t sys_rand32_get(void)
-{
-	return random_esp32_get_u32();
-}
