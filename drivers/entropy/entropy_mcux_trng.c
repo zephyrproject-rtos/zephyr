@@ -50,15 +50,3 @@ static int entropy_mcux_trng_init(struct device *dev)
 
 	return 0;
 }
-
-u32_t sys_rand32_get(void)
-{
-	u32_t output;
-	int rc;
-
-	rc = random_mcux_trng_get_entropy(DEVICE_GET(random_mcux_trng),
-					  (u8_t *) &output, sizeof(output));
-	__ASSERT_NO_MSG(!rc);
-
-	return output;
-}

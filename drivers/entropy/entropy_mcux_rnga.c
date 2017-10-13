@@ -79,15 +79,3 @@ static int entropy_mcux_rnga_init(struct device *dev)
 	RNGA_SetMode(RNG, kRNGA_ModeSleep);
 	return 0;
 }
-
-u32_t sys_rand32_get(void)
-{
-	u32_t output;
-	int r;
-
-	r = random_mcux_rnga_get_entropy(DEVICE_GET(random_mcux_rnga),
-					 (u8_t *) &output, sizeof(output));
-	__ASSERT_NO_MSG(!r);
-
-	return output;
-}
