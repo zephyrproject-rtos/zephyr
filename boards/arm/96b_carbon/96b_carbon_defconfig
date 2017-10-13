@@ -14,7 +14,6 @@ CONFIG_UART_STM32_PORT_1=y
 
 # enable I2C1
 CONFIG_I2C=y
-CONFIG_I2C_STM32_V1=y
 
 # enable pinmux
 CONFIG_PINMUX=y
