@@ -21,6 +21,21 @@ config USB_DW_IRQ_PRI
 	help
 	USB interrupt priority.
 
+config USB_DW_DMA
+	bool "Enable Designware USB Controller Buffer DMA mode"
+	default y
+	help
+	Use buffer DMA instead of FIFO mode for I/O to the controller.
+	This will reduce CPU overhead, but (at least right now)
+	requires a 64 byte per-endpoint buffer be allocated out/into
+	which the transferred data must be copied.  The USB framework
+	lacks an API for letting the higher levels of the stack manage
+	their own buffers.  Right now this feature exists as a
+	prototype to allow such a framework to be added in the future,
+	and as a workaround for known hardware bugs in FIFO mode on
+	some platforms.
+
+
 config SYS_LOG_USB_DRIVER_LEVEL
 	int
 	prompt "USB driver log level"
