@@ -23,7 +23,7 @@
 
 #include <misc/byteorder.h>
 #include <string.h>
-#include <rand32.h>
+#include <random/rand32.h>
 
 #include <net/ieee802154_radio.h>
 #include <drivers/clock_control/nrf5_clock_control.h>

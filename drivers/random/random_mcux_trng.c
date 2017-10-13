@@ -6,7 +6,7 @@
 
 #include <device.h>
 #include <random.h>
-#include <drivers/rand32.h>
+#include <random/rand32.h>
 #include <init.h>
 
 #include "fsl_trng.h"

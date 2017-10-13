@@ -31,7 +31,7 @@
 #ifndef _ASMLANGUAGE
 
 #include <misc/util.h>
-#include <drivers/rand32.h>
+#include <random/rand32.h>
 
 #define ARCV2_TIMER0_INT_LVL			IRQ_TIMER0
 #define ARCV2_TIMER0_INT_PRI			0

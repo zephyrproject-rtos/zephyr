@@ -127,7 +127,7 @@ extern "C" {
 #include <fsl_common.h>
 #include <device.h>
 #include <misc/util.h>
-#include <drivers/rand32.h>
+#include <random/rand32.h>
 
 #endif /* !_ASMLANGUAGE */
 
