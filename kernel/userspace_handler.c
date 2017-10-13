@@ -35,7 +35,7 @@ static struct _k_object *validate_any_object(void *obj)
  * To avoid double _k_object_find() lookups, we don't call the implementation
  * function, but call a level deeper.
  */
-_SYSCALL_HANDLER2(k_object_access_grant, object, thread)
+_SYSCALL_HANDLER(k_object_access_grant, object, thread)
 {
 	struct _k_object *ko;
 
@@ -47,7 +47,7 @@ _SYSCALL_HANDLER2(k_object_access_grant, object, thread)
 	return 0;
 }
 
-_SYSCALL_HANDLER2(k_object_access_revoke, object, thread)
+_SYSCALL_HANDLER(k_object_access_revoke, object, thread)
 {
 	struct _k_object *ko;
 
@@ -59,7 +59,7 @@ _SYSCALL_HANDLER2(k_object_access_revoke, object, thread)
 	return 0;
 }
 
-_SYSCALL_HANDLER1(k_object_access_all_grant, object)
+_SYSCALL_HANDLER(k_object_access_all_grant, object)
 {
 	struct _k_object *ko;
 

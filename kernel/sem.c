@@ -71,7 +71,7 @@ void _impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER3(k_sem_init, sem, initial_count, limit)
+_SYSCALL_HANDLER(k_sem_init, sem, initial_count, limit)
 {
 	_SYSCALL_OBJ_INIT(sem, K_OBJ_SEM);
 	_SYSCALL_VERIFY(limit != 0);
@@ -179,7 +179,7 @@ int _impl_k_sem_take(struct k_sem *sem, s32_t timeout)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER2(k_sem_take, sem, timeout)
+_SYSCALL_HANDLER(k_sem_take, sem, timeout)
 {
 	_SYSCALL_OBJ(sem, K_OBJ_SEM);
 	return _impl_k_sem_take((struct k_sem *)sem, timeout);
