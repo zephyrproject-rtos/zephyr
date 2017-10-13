@@ -1111,6 +1111,32 @@ Commands and responses:
 
 		In case of an error, the error response will be returned.
 
+	Opcode 0x1c - Get Attributes
+
+		Controller Index:	<controller id>
+		Command parameters:	Start Handle (2 octets)
+					End Handle (2 octets)
+					Type_Length (1 octet)
+					Type (2 or 16 octets)
+		Response parameters:	Attributes_Count (1 octet)
+					[array] Attribute (variable)
+
+		Object Attribute is defined as:
+					Handle (2 octets)
+					Permission (1 octet)
+					Type_Length (1 octet)
+					Type (2 or 16 octets)
+
+		Valid Type_Length parameter values:
+					0x02 = UUID16
+					0x10 = UUID128
+
+		This procedure is used to query GATT Server for attributes based
+		on given search pattern. Attributes can be searched using
+		Attribute Handle range and Attribute Type.
+
+		In case of an error, the error response will be returned.
+
 Events:
 	Opcode 0x80 - Notification/Indication Received
 
