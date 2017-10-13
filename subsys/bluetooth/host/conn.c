@@ -1280,6 +1280,8 @@ static void conn_cleanup(struct bt_conn *conn)
 
 	__ASSERT(sys_slist_is_empty(&conn->tx_pending), "Pending TX packets");
 
+	bt_conn_notify_tx(conn);
+
 	bt_conn_reset_rx_state(conn);
 
 	/* Release the reference we took for the very first
