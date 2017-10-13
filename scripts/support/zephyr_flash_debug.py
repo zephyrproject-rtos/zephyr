@@ -179,19 +179,22 @@ class ArcBinaryRunner(ZephyrBinaryRunner):
         self.board_name = board_name
         self.python = python
         self.gdb = gdb
-        self.openocd = openocd
+        search_args = []
+        if default_path is not None:
+            search_args = ['-s', default_path]
+        self.openocd_cmd = [openocd] + search_args
         self.extra_init = extra_init
-        self.default_path = default_path
         self.tui = tui
         self.tcl_port = tcl_port
         self.telnet_port = telnet_port
         self.gdb_port = gdb_port
 
     def replaces_shell_script(shell_script, command):
-        return command == 'flash' and shell_script == 'arc_debugger.sh'
+        return (command in {'flash', 'debug', 'debugserver'} and
+                shell_script == 'arc_debugger.sh')
 
     def create_from_env(command, debug):
-        '''Create flasher from environment.
+        '''Create runner from environment.
 
         Required:
 
@@ -239,25 +242,29 @@ class ArcBinaryRunner(ZephyrBinaryRunner):
                                gdb_port=gdb_port, debug=debug)
 
     def run(self, command, **kwargs):
-        if command != 'flash':
-            raise ValueError('only flash is supported')
+        if command not in {'flash', 'debug', 'debugserver'}:
+            raise ValueError('{} is not supported'.format(command))
 
         if platform.system() != 'Linux':
             raise NotImplementedError('Linux is currently required.')
 
-        search_args = []
-        if self.default_path is not None:
-            search_args = ['-s', self.default_path]
+        kwargs['openocd-cfg'] = path.join(self.zephyr_base, 'boards',
+                                          self.arch, self.board_name,
+                                          'support', 'openocd.cfg')
 
+        if command in {'flash', 'debug'}:
+            self.flash_debug(command, **kwargs)
+        else:
+            self.debugserver(**kwargs)
+
+    def flash_debug(self, command, **kwargs):
         extra_init_args = []
         if self.extra_init is not None:
             extra_init_args = self.extra_init.split()
 
-        config = path.join(self.zephyr_base, 'boards', self.arch,
-                           self.board_name, 'support', 'openocd.cfg')
+        config = kwargs['openocd-cfg']
 
-        helper_cmd = ([self.openocd] +
-                      search_args +
+        helper_cmd = (self.openocd_cmd +
                       ['-f', config] +
                       extra_init_args +
                       ['-c', 'tcl_port {}'.format(self.tcl_port),
@@ -273,12 +280,16 @@ class ArcBinaryRunner(ZephyrBinaryRunner):
         if self.tui is not None:
             tui_arg = [self.tui]
 
+        continue_arg = []
+        if command == 'flash':
+            continue_arg = ['-ex', 'c']
+
         gdb_cmd = ([self.gdb] +
                    tui_arg +
                    ['-ex', 'target remote :{}'.format(self.gdb_port),
-                    '-ex', 'load',
-                    '-ex', 'c',
-                   self.elf])
+                    '-ex', 'load'] +
+                   continue_arg +
+                   [self.elf])
         previous = signal.signal(signal.SIGINT, signal.SIG_IGN)
         try:
             check_call(gdb_cmd, self.debug)
@@ -286,6 +297,15 @@ class ArcBinaryRunner(ZephyrBinaryRunner):
             signal.signal(signal.SIGINT, previous)
             helper.terminate()
             helper.wait()
+
+    def debugserver(self, **kwargs):
+        config = kwargs['openocd-cfg']
+        cmd = (self.openocd_cmd +
+               ['-f', config,
+                '-c', 'init',
+                '-c', 'targets',
+                '-c', 'reset halt'])
+        check_call(cmd, self.debug)
 
 
 class BossacBinaryRunner(ZephyrBinaryRunner):
