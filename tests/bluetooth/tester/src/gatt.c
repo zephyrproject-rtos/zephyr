@@ -24,6 +24,7 @@
 
 #define CONTROLLER_INDEX 0
 #define MAX_BUFFER_SIZE 2048
+#define MAX_UUID_LEN 16
 
 /* This masks Permission bits from GATT API */
 #define GATT_PERM_MASK			(BT_GATT_PERM_READ | \
@@ -199,6 +200,7 @@ static void supported_commands(u8_t *data, u16_t len)
 	tester_set_bit(cmds, GATT_WRITE_LONG);
 	tester_set_bit(cmds, GATT_CFG_NOTIFY);
 	tester_set_bit(cmds, GATT_CFG_INDICATE);
+	tester_set_bit(cmds, GATT_GET_ATTRIBUTES);
 
 	tester_send(BTP_SERVICE_ID_GATT, GATT_READ_SUPPORTED_COMMANDS,
 		    CONTROLLER_INDEX, (u8_t *) rp, sizeof(cmds));
@@ -1704,6 +1706,81 @@ static void config_subscription(u8_t *data, u16_t len, u16_t op)
 	tester_rsp(BTP_SERVICE_ID_GATT, op, CONTROLLER_INDEX, status);
 }
 
+struct get_attrs_foreach_data {
+	struct net_buf_simple *buf;
+	struct bt_uuid *uuid;
+	u8_t count;
+};
+
+static u8_t get_attrs_rp(const struct bt_gatt_attr *attr, void *user_data)
+{
+	struct get_attrs_foreach_data *foreach = user_data;
+	struct gatt_attr *gatt_attr;
+
+	if (foreach->uuid && bt_uuid_cmp(foreach->uuid, attr->uuid)) {
+
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	gatt_attr = net_buf_simple_add(foreach->buf, sizeof(*gatt_attr));
+	gatt_attr->handle = sys_cpu_to_le16(attr->handle);
+	gatt_attr->permission = attr->perm;
+
+	if (foreach->uuid->type == BT_UUID_TYPE_16) {
+		gatt_attr->type_length = 2;
+		net_buf_simple_add_le16(foreach->buf,
+					BT_UUID_16(attr->uuid)->val);
+	} else {
+		gatt_attr->type_length = 16;
+		net_buf_simple_add_mem(foreach->buf,
+				       BT_UUID_128(attr->uuid)->val,
+				       gatt_attr->type_length);
+	}
+
+	foreach->count++;
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
+static void get_attrs(u8_t *data, u16_t len)
+{
+	const struct gatt_get_attributes_cmd *cmd = (void *) data;
+	struct gatt_get_attributes_rp *rp;
+	struct net_buf_simple *buf = NET_BUF_SIMPLE(BTP_DATA_MAX_SIZE);
+	struct get_attrs_foreach_data foreach;
+	u16_t start_handle, end_handle;
+	union uuid uuid;
+
+	start_handle = sys_le16_to_cpu(cmd->start_handle);
+	end_handle = sys_le16_to_cpu(cmd->end_handle);
+
+	if (cmd->type_length) {
+		btp2bt_uuid(cmd->type, cmd->type_length, &uuid.uuid);
+
+		SYS_LOG_DBG("start 0x%04x end 0x%04x, uuid %s", start_handle,
+			    end_handle, bt_uuid_str(&uuid.uuid));
+
+		foreach.uuid = &uuid.uuid;
+	} else {
+		SYS_LOG_DBG("start 0x%04x end 0x%04x", start_handle, end_handle);
+
+		foreach.uuid = NULL;
+	}
+
+	net_buf_simple_init(buf, sizeof(*rp));
+
+	foreach.buf = buf;
+	foreach.count = 0;
+
+	bt_gatt_foreach_attr(start_handle, end_handle, get_attrs_rp, &foreach);
+
+	rp = net_buf_simple_push(buf, sizeof(*rp));
+	rp->attrs_count = foreach.count;
+
+	tester_send(BTP_SERVICE_ID_GATT, GATT_GET_ATTRIBUTES, CONTROLLER_INDEX,
+		    buf->data, buf->len);
+}
+
 void tester_handle_gatt(u8_t opcode, u8_t index, u8_t *data,
 			 u16_t len)
 {
@@ -1774,6 +1851,9 @@ void tester_handle_gatt(u8_t opcode, u8_t index, u8_t *data,
 	case GATT_CFG_NOTIFY:
 	case GATT_CFG_INDICATE:
 		config_subscription(data, len, opcode);
+		return;
+	case GATT_GET_ATTRIBUTES:
+		get_attrs(data, len);
 		return;
 	default:
 		tester_rsp(BTP_SERVICE_ID_GATT, opcode, index,
