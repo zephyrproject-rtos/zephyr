@@ -309,11 +309,15 @@ static inline int slip_input_byte(struct slip_context *slip,
 
 			slip->rx = net_pkt_get_reserve_rx(0, K_NO_WAIT);
 			if (!slip->rx) {
+				SYS_LOG_ERR("[%p] cannot allocate pkt",
+					    slip);
 				return 0;
 			}
 
 			slip->last = net_pkt_get_frag(slip->rx, K_NO_WAIT);
 			if (!slip->last) {
+				SYS_LOG_ERR("[%p] cannot allocate 1st data frag",
+					    slip);
 				net_pkt_unref(slip->rx);
 				slip->rx = NULL;
 				return 0;
@@ -340,7 +344,7 @@ static inline int slip_input_byte(struct slip_context *slip,
 
 		frag = net_pkt_get_reserve_rx_data(0, K_NO_WAIT);
 		if (!frag) {
-			SYS_LOG_ERR("[%p] cannot allocate data fragment",
+			SYS_LOG_ERR("[%p] cannot allocate next data frag",
 				    slip);
 			net_pkt_unref(slip->rx);
 			slip->rx = NULL;
