@@ -358,10 +358,10 @@ static inline sys_snode_t *sys_slist_get_not_empty(sys_slist_t *list)
 {
 	sys_snode_t *node = list->head;
 
-	list->head = node->next;
 	if (list->tail == node) {
-		list->tail = list->head;
+		list->tail = NULL;
 	}
+	list->head = node->next;
 
 	return node;
 }
