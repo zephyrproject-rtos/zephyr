@@ -212,7 +212,7 @@ static inline void _impl_k_object_access_revoke(void *object,
 	ARG_UNUSED(thread);
 }
 
-static inline void _impl_k_object_access_all_grant(void *object)
+static inline void k_object_access_all_grant(void *object)
 {
 	ARG_UNUSED(object);
 }
@@ -259,7 +259,7 @@ __syscall void k_object_access_revoke(void *object, struct k_thread *thread);
  *
  * @param object Address of kernel object
  */
-__syscall void k_object_access_all_grant(void *object);
+void k_object_access_all_grant(void *object);
 
 /* timeouts */
 

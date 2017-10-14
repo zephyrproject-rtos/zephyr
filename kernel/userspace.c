@@ -211,7 +211,7 @@ void _impl_k_object_access_revoke(void *object, struct k_thread *thread)
 	}
 }
 
-void _impl_k_object_access_all_grant(void *object)
+void k_object_access_all_grant(void *object)
 {
 	struct _k_object *ko = _k_object_find(object);
 
