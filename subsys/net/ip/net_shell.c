@@ -1542,8 +1542,8 @@ int net_shell_cmd_mem(int argc, char *argv[])
 
 	printk("Network buffer pools:\n");
 
-#if defined(CONFIG_NET_DEBUG_NET_PKT)
-	printk("Address\t\tSize\tCount\tAvail\tName\n");
+#if defined(CONFIG_NET_BUF_POOL_USAGE)
+	printk("Address\t\tSize\tTotal\tAvail\tName\n");
 
 	printk("%p\t%zu\t%d\t%u\tRX\n",
 	       rx, rx->num_blocks * rx->block_size,
@@ -1561,13 +1561,14 @@ int net_shell_cmd_mem(int argc, char *argv[])
 	       tx_data, tx_data->pool_size, tx_data->buf_count,
 	       tx_data->avail_count, tx_data->name);
 #else
-	printk("Address\t\tCount\tName\n");
+	printk("(CONFIG_NET_BUF_POOL_USAGE to see free #s)\n");
+	printk("Address\t\tTotal\tName\n");
 
 	printk("%p\t%d\tRX\n", rx, rx->num_blocks);
 	printk("%p\t%d\tTX\n", tx, tx->num_blocks);
 	printk("%p\t%d\tRX DATA\n", rx_data, rx_data->buf_count);
 	printk("%p\t%d\tTX DATA\n", tx_data, tx_data->buf_count);
-#endif /* CONFIG_NET_DEBUG_NET_PKT */
+#endif /* CONFIG_NET_BUF_POOL_USAGE */
 
 	if (IS_ENABLED(CONFIG_NET_CONTEXT_NET_PKT_POOL)) {
 		struct ctx_info info;
