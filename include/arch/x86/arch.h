@@ -577,7 +577,7 @@ static inline u32_t _arch_syscall_invoke6(u32_t arg1, u32_t arg2, u32_t arg3,
 			 : "S" (call_id), "a" (arg1), "d" (arg2),
 			   "c" (arg3), "b" (arg4), "D" (arg5),
 			   [arg6] "m" (arg6)
-			 : "memory");
+			 : "memory", "esp");
 	return ret;
 }
 
