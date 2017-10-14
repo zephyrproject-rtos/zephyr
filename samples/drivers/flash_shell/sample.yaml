@@ -1,8 +1,9 @@
 sample:
-    description: Shell commands for inspecting flash driver behavior
-    name: Flash shell
+  description: Shell commands for inspecting flash driver
+    behavior
+  name: Flash shell
 tests:
--   test:
-        build_only: true
-        platform_whitelist: 96b_carbon
-        tags: apps
+  - test:
+      build_only: true
+      platform_whitelist: 96b_carbon
+      tags: apps

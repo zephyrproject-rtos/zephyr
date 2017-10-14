@@ -1,8 +1,8 @@
 sample:
-    description: TBD
-    name: TBD
+  description: TBD
+  name: TBD
 tests:
--   test:
-        arch_whitelist: x86
-        build_only: true
-        tags: net zoap
+  - test:
+      arch_whitelist: x86
+      build_only: true
+      tags: net zoap

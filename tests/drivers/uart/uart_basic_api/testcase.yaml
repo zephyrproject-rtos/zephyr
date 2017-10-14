@@ -1,9 +1,9 @@
 tests:
--   test_uart:
-        platform_whitelist: quark_se_c1000_devboard quark_d2000_crb
-        tags: drivers
--   test_uart_shell:
-        build_only: true
-        extra_args: CONF_FILE=prj_shell.conf
-        platform_whitelist: quark_se_c1000_devboard quark_d2000_crb
-        tags: drivers
+  - test_uart:
+      platform_whitelist: quark_se_c1000_devboard quark_d2000_crb
+      tags: drivers
+  - test_uart_shell:
+      build_only: true
+      extra_args: CONF_FILE=prj_shell.conf
+      platform_whitelist: quark_se_c1000_devboard quark_d2000_crb
+      tags: drivers

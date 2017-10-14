@@ -1,10 +1,10 @@
 tests:
--   test:
-        tags: dns net
-        min_ram: 16
-        timeout: 600
--   test-no-ipv6:
-        tags: dns net
-        min_ram: 16
-        timeout: 600
-        extra_args: CONF_FILE=prj-no-ipv6.conf
+  - test:
+      min_ram: 16
+      tags: dns net
+      timeout: 600
+  - test-no-ipv6:
+      extra_args: CONF_FILE=prj-no-ipv6.conf
+      min_ram: 16
+      tags: dns net
+      timeout: 600

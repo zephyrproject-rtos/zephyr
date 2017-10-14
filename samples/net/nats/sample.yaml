@@ -1,7 +1,7 @@
 sample:
-    name: NATS Client
+  name: NATS Client
 tests:
--   test:
-        build_only: true
-        tags: net nats
-        depends_on: netif
+  - test:
+      build_only: true
+      depends_on: netif
+      tags: net nats

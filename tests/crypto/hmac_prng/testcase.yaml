@@ -1,4 +1,4 @@
 tests:
--   test:
-        min_ram: 48
-        tags: crypto sha256 hmac prng
+  - test:
+      min_ram: 48
+      tags: crypto sha256 hmac prng

@@ -1,4 +1,4 @@
 tests:
--   test:
-        min_ram: 16
-        tags: core bat_commit
+  - test:
+      min_ram: 16
+      tags: core bat_commit

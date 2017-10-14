@@ -1,6 +1,6 @@
 tests:
--   test:
-        slow: true
-        tags: crypto ecc dh
-        timeout: 500
-        min_ram: 16
+  - test:
+      min_ram: 16
+      slow: true
+      tags: crypto ecc dh
+      timeout: 500

@@ -1,5 +1,5 @@
 tests:
--   test:
-        min_ram: 16
-        tags: dns net
-        timeout: 200
+  - test:
+      min_ram: 16
+      tags: dns net
+      timeout: 200

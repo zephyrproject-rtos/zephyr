@@ -1,7 +1,7 @@
 sample:
-    description: TBD
-    name: TBD
+  description: TBD
+  name: TBD
 tests:
--   test:
-        build_only: true
-        tags: samples
+  - test:
+      build_only: true
+      tags: samples
