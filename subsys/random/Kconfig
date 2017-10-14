@@ -17,6 +17,10 @@ config TEST_RANDOM_GENERATOR
 	  number generator is not available. The non-random number generator
 	  should not be used in a production environment.
 
+choice
+	prompt "Random generator"
+	default ENTROPY_DEVICE_RANDOM_GENERATOR
+
 config X86_TSC_RANDOM_GENERATOR
 	bool
 	prompt "x86 timestamp counter based number generator"
@@ -42,3 +46,16 @@ config ENTROPY_DEVICE_RANDOM_GENERATOR
 	  Enables a random number generator that uses the enabled
 	  hardware entropy gathering driver to generate random
 	  numbers.
+
+config XOROSHIRO_RANDOM_GENERATOR
+	bool
+	prompt "Use Xoroshiro128+ as PRNG"
+	depends on ENTROPY_HAS_DRIVER
+	help
+	  Enables the Xoroshiro128+ pseudo-random number generator, that
+	  uses the entropy driver as a seed source.  This is not a
+	  cryptographically secure random number generator.
+
+	  It is so named because it uses 128 bits of state.
+
+endchoice
