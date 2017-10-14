@@ -1,10 +1,10 @@
 tests:
--   test:
-        arch_exclude: xtensa # FIXME
-        min_ram: 32
-        tags: core
--   test_newlib:
-        arch_exclude: xtensa # FIXME
-        extra_args: CONF_FILE=prj_newlib.conf
-        min_ram: 32
-        tags: core
+  - test:
+      arch_exclude: xtensa
+      min_ram: 32
+      tags: core
+  - test_newlib:
+      arch_exclude: xtensa
+      extra_args: CONF_FILE=prj_newlib.conf
+      min_ram: 32
+      tags: core

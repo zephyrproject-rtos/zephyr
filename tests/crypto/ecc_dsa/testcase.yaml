@@ -1,5 +1,5 @@
 tests:
--   test:
-        min_ram: 16
-        tags: crypto ecc dsa
-        timeout: 180
+  - test:
+      min_ram: 16
+      tags: crypto ecc dsa
+      timeout: 180

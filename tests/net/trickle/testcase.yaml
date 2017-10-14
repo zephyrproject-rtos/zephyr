@@ -1,4 +1,4 @@
 tests:
--   test:
-        tags: net
-        min_ram: 12
+  - test:
+      min_ram: 12
+      tags: net

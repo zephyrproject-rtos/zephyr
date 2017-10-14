@@ -1,4 +1,4 @@
 tests:
--   test:
-        tags: core security
-        filter: CONFIG_ARCH_HAS_USERSPACE
+  - test:
+      filter: CONFIG_ARCH_HAS_USERSPACE
+      tags: core security
