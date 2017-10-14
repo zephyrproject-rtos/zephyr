@@ -95,6 +95,11 @@ def gen_defines_inner(ret, argc, kernel_only=False, user_only=False):
         sys.stdout.write("\t\t} else {")
         newline()
 
+        # Prevent memory access issues if the implementation function gets
+        # inlined
+        sys.stdout.write("\t\t\tcompiler_barrier();");
+        newline()
+
         sys.stdout.write("\t\t\t")
         gen_call_impl(ret, argc)
         sys.stdout.write("\t\t}")
