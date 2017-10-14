@@ -174,9 +174,9 @@ enum k_objects {
  * _k_object_find() */
 struct _k_object {
 	char *name;
-	char perms[CONFIG_MAX_THREAD_BYTES];
-	char type;
-	char flags;
+	u8_t perms[CONFIG_MAX_THREAD_BYTES];
+	u8_t type;
+	u8_t flags;
 } __packed;
 
 #define K_OBJ_FLAG_INITIALIZED	BIT(0)
