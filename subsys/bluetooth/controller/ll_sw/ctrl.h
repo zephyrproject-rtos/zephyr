@@ -175,17 +175,12 @@
  ****************************************************************************/
 /* Minimum LL Payload support (Dont change). */
 #define RADIO_LL_LENGTH_OCTETS_RX_MIN	27
-#define RADIO_LL_LENGTH_TIME_RX_MIN	(((RADIO_LL_LENGTH_OCTETS_RX_MIN) \
-						+ 14) * 8 \
-					)
 
 /* Maximum LL Payload support (27 to 251). */
 #ifndef RADIO_LL_LENGTH_OCTETS_RX_MAX
 #define RADIO_LL_LENGTH_OCTETS_RX_MAX	251
 #endif
-#define RADIO_LL_LENGTH_TIME_RX_MAX	(((RADIO_LL_LENGTH_OCTETS_RX_MAX) \
-						+ 14) * 8 \
-					)
+
 /* Implementation default L2CAP MTU */
 #ifndef RADIO_L2CAP_MTU_MAX
 #define RADIO_L2CAP_MTU_MAX		(RADIO_LL_LENGTH_OCTETS_RX_MAX - 4)
