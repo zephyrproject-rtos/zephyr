@@ -42,11 +42,15 @@
 #define RADIO_TIFS                      150
 #define RADIO_CONN_EVENTS(x, y)         ((u16_t)(((x) + (y) - 1) / (y)))
 
-/* Convert payload length to tx/rx time
- * On 1M PHY, add 14 bytes for preamble (1), access address (4),
- * header (2), MIC (4), and CRC (3). Convert to bits (1 Msps).
- */
-#define RADIO_PKT_TIME(octets)          (((octets) + 14) << 3)
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+#define RADIO_PKT_TIME(octets, phy) \
+	(((phy) & BIT(2)) ? (80 + 256 + 16 + 24 + ((((2 + (octets) + 4) * 8) + \
+						    24 + 3) * 8)) : \
+			    (((octets) + 14) * 8 / BIT(((phy) & 0x03) >> 1)))
+#else /* !CONFIG_BT_CTLR_PHY_CODED */
+#define RADIO_PKT_TIME(octets, phy) \
+	(((octets) + 14) * 8 / BIT(((phy) & 0x03) >> 1))
+#endif /* !CONFIG_BT_CTLR_PHY_CODED */
 
 #define RADIO_TICKER_JITTER_US			16
 #define RADIO_TICKER_START_PART_US		300
@@ -549,7 +553,8 @@ static void common_init(void)
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	/* Initialize the DLE defaults */
 	_radio.default_tx_octets = RADIO_LL_LENGTH_OCTETS_RX_MIN;
-	_radio.default_tx_time = RADIO_LL_LENGTH_TIME_RX_MIN;
+	_radio.default_tx_time = RADIO_PKT_TIME(RADIO_LL_LENGTH_OCTETS_RX_MIN,
+						0);
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -2019,8 +2024,8 @@ isr_rx_conn_pkt_ctrl_rej_dle(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		lr->max_rx_octets = conn->max_rx_octets;
 		lr->max_tx_octets = conn->max_tx_octets;
 #if !defined(CONFIG_BT_CTLR_PHY)
-		lr->max_rx_time = RADIO_PKT_TIME(conn->max_rx_octets);
-		lr->max_tx_time = RADIO_PKT_TIME(conn->max_tx_octets);
+		lr->max_rx_time = RADIO_PKT_TIME(conn->max_rx_octets, 0);
+		lr->max_tx_time = RADIO_PKT_TIME(conn->max_tx_octets, 0);
 #else /* CONFIG_BT_CTLR_PHY */
 		lr->max_rx_time = conn->max_rx_time;
 		lr->max_tx_time = conn->max_tx_time;
@@ -2217,7 +2222,8 @@ static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 		/* use the minimal of our default_tx_time and
 		 * peer max_rx_time
 		 */
-		if (lr->max_rx_time >= RADIO_LL_LENGTH_TIME_RX_MIN) {
+		if (lr->max_rx_time >=
+		    RADIO_PKT_TIME(RADIO_LL_LENGTH_OCTETS_RX_MIN, 0)) {
 			eff_tx_time = min(lr->max_rx_time,
 					    _radio.conn_curr->default_tx_time);
 		}
@@ -2225,9 +2231,11 @@ static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 		/* use the minimal of our max supported and
 		 * peer max_tx_time
 		 */
-		if (lr->max_tx_time >= RADIO_LL_LENGTH_TIME_RX_MIN) {
+		if (lr->max_tx_time >=
+		    RADIO_PKT_TIME(RADIO_LL_LENGTH_OCTETS_RX_MIN, 0)) {
 			eff_rx_time = min(lr->max_tx_time,
-					    RADIO_LL_LENGTH_TIME_RX_MAX);
+				RADIO_PKT_TIME(RADIO_LL_LENGTH_OCTETS_RX_MAX,
+					       BIT(2)));
 		}
 #endif /* CONFIG_BT_CTLR_PHY */
 
@@ -2299,8 +2307,8 @@ static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 			lr->max_tx_octets = eff_tx_octets;
 
 #if !defined(CONFIG_BT_CTLR_PHY)
-			lr->max_rx_time = RADIO_PKT_TIME(eff_rx_octets);
-			lr->max_tx_time = RADIO_PKT_TIME(eff_tx_octets);
+			lr->max_rx_time = RADIO_PKT_TIME(eff_rx_octets, 0);
+			lr->max_tx_time = RADIO_PKT_TIME(eff_tx_octets, 0);
 #else /* CONFIG_BT_CTLR_PHY */
 			lr->max_rx_time = eff_rx_time;
 			lr->max_tx_time = eff_tx_time;
@@ -2997,17 +3005,25 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 				_radio.conn_curr->llcp_phy.rx &= p->tx_phys;
 			}
 		} else {
-			phy_rsp_send(_radio.conn_curr);
+			struct pdu_data_llctrl *c =
+				&pdu_data_rx->payload.llctrl;
+			struct pdu_data_llctrl_phy_req_rsp *p =
+				&c->ctrldata.phy_req;
+
+			_radio.conn_curr->llcp_phy.state =
+				LLCP_PHY_STATE_RSP_WAIT;
 
 			/* Wait for peer master to complete the procedure */
 			if (_radio.conn_curr->llcp_phy.ack ==
 			    _radio.conn_curr->llcp_phy.req) {
 				_radio.conn_curr->llcp_phy.ack--;
 
-				_radio.conn_curr->llcp_phy.state =
-					LLCP_PHY_STATE_RSP_WAIT;
-
 				_radio.conn_curr->llcp_phy.cmd = 0;
+
+				_radio.conn_curr->llcp_phy.tx =
+					_radio.conn_curr->phy_pref_tx;
+				_radio.conn_curr->llcp_phy.rx =
+					_radio.conn_curr->phy_pref_rx;
 
 				/* Start Procedure Timeout (TODO: this shall not
 				 * replace terminate procedure).
@@ -3015,6 +3031,11 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 				_radio.conn_curr->procedure_expire =
 					_radio.conn_curr->procedure_reload;
 			}
+
+			_radio.conn_curr->llcp_phy.tx &= p->rx_phys;
+			_radio.conn_curr->llcp_phy.rx &= p->tx_phys;
+
+			phy_rsp_send(_radio.conn_curr);
 		}
 		break;
 
@@ -7304,9 +7325,10 @@ static inline void event_len_prep(struct connection *conn)
 			&pdu_ctrl_tx->payload.llctrl.ctrldata.length_req;
 		lr->max_rx_octets = RADIO_LL_LENGTH_OCTETS_RX_MAX;
 		lr->max_tx_octets = conn->default_tx_octets;
-		lr->max_rx_time = RADIO_PKT_TIME(RADIO_LL_LENGTH_OCTETS_RX_MAX);
+		lr->max_rx_time = RADIO_PKT_TIME(RADIO_LL_LENGTH_OCTETS_RX_MAX,
+						 BIT(2));
 #if !defined(CONFIG_BT_CTLR_PHY)
-		lr->max_tx_time = RADIO_PKT_TIME(conn->default_tx_octets);
+		lr->max_tx_time = RADIO_PKT_TIME(conn->default_tx_octets, 0);
 #else /* CONFIG_BT_CTLR_PHY */
 		lr->max_tx_time = conn->default_tx_time;
 #endif /* CONFIG_BT_CTLR_PHY */
@@ -7462,8 +7484,8 @@ static inline void event_len_prep(struct connection *conn)
 		lr->max_rx_octets = conn->max_rx_octets;
 		lr->max_tx_octets = conn->max_tx_octets;
 #if !defined(CONFIG_BT_CTLR_PHY)
-		lr->max_rx_time = RADIO_PKT_TIME(conn->max_rx_octets);
-		lr->max_tx_time = RADIO_PKT_TIME(conn->max_tx_octets);
+		lr->max_rx_time = RADIO_PKT_TIME(conn->max_rx_octets, 0);
+		lr->max_tx_time = RADIO_PKT_TIME(conn->max_tx_octets, 0);
 #else /* CONFIG_BT_CTLR_PHY */
 		lr->max_rx_time = conn->max_rx_time;
 		lr->max_tx_time = conn->max_tx_time;
@@ -8363,27 +8385,52 @@ static void prepare_pdu_data_tx(struct connection *conn,
 		switch (conn->phy_tx_time) {
 		default:
 		case BIT(0):
-			/* 1M PHY, 1us = 1 bit, hence divide by 8 */
-			max_tx_octets = conn->max_tx_time >> 3;
+			/* 1M PHY, 1us = 1 bit, hence divide by 8.
+			 * Deduct 10 bytes for preamble (1), access address (4),
+			 * header (2), and CRC (3).
+			 */
+			max_tx_octets = (conn->max_tx_time >> 3) - 10;
 			break;
 
 		case BIT(1):
 			/* 2M PHY, 1us = 2 bits, hence divide by 4.
-			 * Substract the additional preamble octet (1).
+			 * Deduct 11 bytes for preamble (2), access address (4),
+			 * header (2), and CRC (3).
 			 */
-			max_tx_octets = (conn->max_tx_time >> 2) - 1;
+			max_tx_octets = (conn->max_tx_time >> 2) - 11;
 			break;
+
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+		case BIT(2):
+			if (conn->phy_flags & 0x01) {
+				/* S8 Coded PHY, 8us = 1 bit, hence divide by
+				 * 64.
+				 * Subtract time for preamble (80), AA (256),
+				 * CI (16), TERM1 (24), CRC (192) and
+				 * TERM2 (24), total 592 us.
+				 * Subtract 2 bytes for header.
+				 */
+				max_tx_octets = ((conn->max_tx_time - 592) >>
+						 6) - 2;
+			} else {
+				/* S2 Coded PHY, 2us = 1 bit, hence divide by
+				 * 16.
+				 * Subtract time for preamble (80), AA (256),
+				 * CI (16), TERM1 (24), CRC (48) and
+				 * TERM2 (6), total 430 us.
+				 * Subtract 2 bytes for header.
+				 */
+				max_tx_octets = ((conn->max_tx_time - 430) >>
+						 4) - 2;
+			}
+			break;
+#endif /* CONFIG_BT_CTLR_PHY_CODED */
 		}
 
 		if (conn->enc_tx) {
 			/* deduct the MIC */
 			max_tx_octets -= 4;
 		}
-
-		/* deduct 10 bytes for preamble (1), access address (4),
-		 * header (2), and CRC (3).
-		 */
-		max_tx_octets -= 10;
 
 		if (max_tx_octets > conn->max_tx_octets) {
 			max_tx_octets = conn->max_tx_octets;
@@ -9278,9 +9325,9 @@ static void length_resp_send(struct connection *conn, u16_t eff_rx_octets,
 
 #if !defined(CONFIG_BT_CTLR_PHY)
 	pdu_ctrl_tx->payload.llctrl.ctrldata.length_rsp.max_rx_time =
-		RADIO_PKT_TIME(eff_rx_octets);
+		RADIO_PKT_TIME(eff_rx_octets, 0);
 	pdu_ctrl_tx->payload.llctrl.ctrldata.length_rsp.max_tx_time =
-		RADIO_PKT_TIME(eff_tx_octets);
+		RADIO_PKT_TIME(eff_tx_octets, 0);
 #else /* CONFIG_BT_CTLR_PHY */
 	pdu_ctrl_tx->payload.llctrl.ctrldata.length_rsp.max_rx_time =
 		eff_rx_time;
@@ -9671,8 +9718,10 @@ u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 
 #if defined(CONFIG_BT_CTLR_PHY)
 		conn->default_tx_time = _radio.default_tx_time;
-		conn->max_tx_time = RADIO_LL_LENGTH_TIME_RX_MIN;
-		conn->max_rx_time = RADIO_LL_LENGTH_TIME_RX_MIN;
+		conn->max_tx_time =
+			RADIO_PKT_TIME(RADIO_LL_LENGTH_OCTETS_RX_MIN, 0);
+		conn->max_rx_time =
+			RADIO_PKT_TIME(RADIO_LL_LENGTH_OCTETS_RX_MIN, 0);
 #endif /* CONFIG_BT_CTLR_PHY */
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
@@ -10134,8 +10183,8 @@ u32_t radio_connect_enable(u8_t adv_addr_type, u8_t *adv_addr, u16_t interval,
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	conn->default_tx_time = _radio.default_tx_time;
-	conn->max_tx_time = RADIO_LL_LENGTH_TIME_RX_MIN;
-	conn->max_rx_time = RADIO_LL_LENGTH_TIME_RX_MIN;
+	conn->max_tx_time = RADIO_PKT_TIME(RADIO_LL_LENGTH_OCTETS_RX_MIN, 0);
+	conn->max_rx_time = RADIO_PKT_TIME(RADIO_LL_LENGTH_OCTETS_RX_MIN, 0);
 #endif /* CONFIG_BT_CTLR_PHY */
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
@@ -10648,9 +10697,9 @@ void ll_length_max_get(u16_t *max_tx_octets, u16_t *max_tx_time,
 		       u16_t *max_rx_octets, u16_t *max_rx_time)
 {
 	*max_tx_octets = RADIO_LL_LENGTH_OCTETS_RX_MAX;
-	*max_tx_time = RADIO_LL_LENGTH_TIME_RX_MAX;
+	*max_tx_time = RADIO_PKT_TIME(RADIO_LL_LENGTH_OCTETS_RX_MAX, BIT(2));
 	*max_rx_octets = RADIO_LL_LENGTH_OCTETS_RX_MAX;
-	*max_rx_time = RADIO_LL_LENGTH_TIME_RX_MAX;
+	*max_rx_time = RADIO_PKT_TIME(RADIO_LL_LENGTH_OCTETS_RX_MAX, BIT(2));
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
