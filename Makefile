@@ -760,6 +760,7 @@ LDFLAGS_zephyr += $(call cc-ldoption,$(LINKFLAGPREFIX)-X)
 LDFLAGS_zephyr += $(call cc-ldoption,$(LINKFLAGPREFIX)-N)
 LDFLAGS_zephyr += $(call cc-ldoption,$(LINKFLAGPREFIX)--gc-sections)
 LDFLAGS_zephyr += $(call cc-ldoption,$(LINKFLAGPREFIX)--build-id=none)
+LDFLAGS_zephyr += $(call cc-ldoption,$(LINKFLAGPREFIX)--sort-section=alignment)
 
 LD_TOOLCHAIN ?= -D__GCC_LINKER_CMD__
 

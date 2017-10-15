@@ -115,6 +115,14 @@ SECTIONS
 	_vector_end = .;
 	_image_text_start = .;
 	*(.text)
+
+    /* Place _reset_section next to _PrepC because _reset_section
+    jumps to _PrepC and this jump must be within R_ARM_THM_JUMP11
+    bytes of each other to be done in the branch instruction in
+    _reset_section. */
+    *(.text._reset_section)
+    *(.text._PrepC)
+
 	*(".text.*")
 	*(.gnu.linkonce.t.*)
 
