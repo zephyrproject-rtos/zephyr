@@ -29,6 +29,7 @@ kobjects = [
         "k_stack",
         "k_thread",
         "k_timer",
+        "_k_thread_stack_element",
         "device"
         ]
 
@@ -65,6 +66,7 @@ def kobject_to_enum(ko):
 
 DW_OP_addr = 0x3
 DW_OP_fbreg = 0x91
+STACK_TYPE = "_k_thread_stack_element"
 
 # Global type environment. Populated by pass 1.
 type_env = {}
@@ -89,12 +91,38 @@ def debug_die(die, text):
     debug("File '%s', line %d:" % (fn, ln))
     debug("    %s" % text)
 
-
 # --- type classes ----
 
+class KobjectInstance:
+    def __init__(self, type_obj, addr):
+        self.addr = addr
+        self.type_obj = type_obj
+
+        # these two are set later
+        self.type_name = None
+        self.data = 0
+
+
+class KobjectType:
+    def __init__(self, offset, name, size, api=False):
+        self.name = name
+        self.size = size
+        self.offset = offset
+        self.api = api
+
+    def __repr__(self):
+        return "<kobject %s>" % self.name
+
+    def has_kobject(self):
+        return True
+
+    def get_kobjects(self, addr):
+        return {addr: KobjectInstance(self, addr)}
+
+
 class ArrayType:
-    def __init__(self, offset, num_members, member_type):
-        self.num_members = num_members
+    def __init__(self, offset, elements, member_type):
+        self.elements = elements
         self.member_type = member_type
         self.offset = offset
 
@@ -109,9 +137,35 @@ class ArrayType:
 
     def get_kobjects(self, addr):
         mt = type_env[self.member_type]
+
+        # Stacks are arrays of _k_stack_element_t but we want to treat
+        # the whole array as one kernel object (a thread stack)
+        # Data value gets set to size of entire region
+        if isinstance(mt, KobjectType) and mt.name == STACK_TYPE:
+            # An array of stacks appears as a multi-dimensional array.
+            # The last size is the size of each stack. We need to track
+            # each stack within the array, not as one huge stack object.
+            *dimensions, stacksize = self.elements
+            num_members = 1
+            for e in dimensions:
+                num_members = num_members * e
+
+            ret = {}
+            for i in range(num_members):
+                a = addr + (i * stacksize)
+                o = mt.get_kobjects(a)
+                o[a].data = stacksize
+                ret.update(o)
+            return ret
+
         objs = {}
 
-        for i in range(self.num_members):
+        # Multidimensional array flattened out
+        num_members = 1
+        for e in self.elements:
+            num_members = num_members * e
+
+        for i in range(num_members):
             objs.update(mt.get_kobjects(addr + (i * mt.size)))
         return objs
 
@@ -191,22 +245,6 @@ class AggregateType:
         return objs
 
 
-class KobjectType:
-    def __init__(self, offset, name, size, api=False):
-        self.name = name
-        self.size = size
-        self.offset = offset
-        self.api = api
-
-    def __repr__(self):
-        return "<kobject %s>" % self.name
-
-    def has_kobject(self):
-        return True
-
-    def get_kobjects(self, addr):
-        return {addr: self}
-
 # --- helper functions for getting data from DIEs ---
 
 def die_get_name(die):
@@ -268,8 +306,7 @@ def analyze_die_const(die):
 
 def analyze_die_array(die):
     type_offset = die_get_type_offset(die)
-    elements = 1
-    size_found = False
+    elements = []
 
     for child in die.iter_children():
         if child.tag != "DW_TAG_subrange_type":
@@ -281,10 +318,9 @@ def analyze_die_array(die):
         if not ub.form.startswith("DW_FORM_data"):
             continue
 
-        size_found = True
-        elements = elements * (ub.value + 1)
+        elements.append(ub.value + 1)
 
-    if not size_found:
+    if not elements:
         return
 
     type_env[die.offset] = ArrayType(die.offset, elements, type_offset)
@@ -442,12 +478,13 @@ def find_kobjects(elf, syms):
     ret = {}
     for addr, ko in all_objs.items():
         # API structs don't get into the gperf table
-        if ko.api:
+        if ko.type_obj.api:
             continue
 
-        if ko.name != "device":
+        if ko.type_obj.name != "device":
             # Not a device struct so we immediately know its type
-            ret[addr] = kobject_to_enum(ko.name)
+            ko.type_name = kobject_to_enum(ko.type_obj.name)
+            ret[addr] = ko
             continue
 
         # Device struct. Need to get the address of its API struct, if it has
@@ -458,7 +495,8 @@ def find_kobjects(elf, syms):
             continue
 
         apiobj = all_objs[apiaddr]
-        ret[addr] = subsystem_to_enum(apiobj.name)
+        ko.type_name = subsystem_to_enum(apiobj.type_obj.name)
+        ret[addr] = ko
 
     debug("found %d kernel object instances total" % len(ret))
     return ret
@@ -504,7 +542,8 @@ void _k_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 def write_gperf_table(fp, objs, static_begin, static_end):
     fp.write(header)
 
-    for obj_addr, obj_type in objs.items():
+    for obj_addr, ko in objs.items():
+        obj_type = ko.type_name
         # pre-initialized objects fall within this memory range, they are
         # either completely initialized at build time, or done automatically
         # at boot during some PRE_KERNEL_* phase
@@ -516,8 +555,8 @@ def write_gperf_table(fp, objs, static_begin, static_end):
             val = "\\x%02x" % byte
             fp.write(val)
 
-        fp.write("\",{},%s,%s\n" % (obj_type,
-                 "K_OBJ_FLAG_INITIALIZED" if initialized else "0"))
+        fp.write("\",{},%s,%s,%d\n" % (obj_type,
+                 "K_OBJ_FLAG_INITIALIZED" if initialized else "0", ko.data))
 
     fp.write(footer)
 

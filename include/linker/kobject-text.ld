@@ -2,7 +2,7 @@
 #if defined(CONFIG_DEBUG) || defined(CONFIG_STACK_CANARIES)
 #define KOBJECT_TEXT_AREA	256
 #else
-#define KOBJECT_TEXT_AREA	118
+#define KOBJECT_TEXT_AREA	128
 #endif
 #endif
 

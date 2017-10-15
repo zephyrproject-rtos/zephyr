@@ -142,6 +142,7 @@ enum k_objects {
 	K_OBJ_STACK,
 	K_OBJ_THREAD,
 	K_OBJ_TIMER,
+	K_OBJ__THREAD_STACK_ELEMENT,
 
 	/* Driver subsystems */
 	K_OBJ_DRIVER_ADC,
@@ -177,6 +178,7 @@ struct _k_object {
 	u8_t perms[CONFIG_MAX_THREAD_BYTES];
 	u8_t type;
 	u8_t flags;
+	u32_t data;
 } __packed;
 
 #define K_OBJ_FLAG_INITIALIZED	BIT(0)
@@ -260,6 +262,26 @@ __syscall void k_object_access_revoke(void *object, struct k_thread *thread);
  * @param object Address of kernel object
  */
 void k_object_access_all_grant(void *object);
+
+/* Using typedef deliberately here, this is quite intended to be an opaque
+ * type. K_THREAD_STACK_BUFFER() should be used to access the data within.
+ *
+ * The purpose of this data type is to clearly distinguish between the
+ * declared symbol for a stack (of type k_thread_stack_t) and the underlying
+ * buffer which composes the stack data actually used by the underlying
+ * thread; they cannot be used interchangably as some arches precede the
+ * stack buffer region with guard areas that trigger a MPU or MMU fault
+ * if written to.
+ *
+ * APIs that want to work with the buffer inside should continue to use
+ * char *.
+ *
+ * Stacks should always be created with K_THREAD_STACK_DEFINE().
+ */
+struct __packed _k_thread_stack_element {
+	char data;
+};
+typedef struct _k_thread_stack_element *k_thread_stack_t;
 
 /* timeouts */
 
@@ -422,6 +444,8 @@ struct k_thread {
 #if defined(CONFIG_USERSPACE)
 	/* memory domain info of the thread */
 	struct _mem_domain_info mem_domain_info;
+	/* Base address of thread stack */
+	k_thread_stack_t stack_obj;
 #endif /* CONFIG_USERSPACE */
 
 	/* arch-specifics: must always be at the end */
@@ -511,28 +535,6 @@ extern void k_call_stacks_analyze(void);
 /* end - thread options */
 
 #if !defined(_ASMLANGUAGE)
-
-/* Using typedef deliberately here, this is quite intended to be an opaque
- * type. K_THREAD_STACK_BUFFER() should be used to access the data within.
- *
- * The purpose of this data type is to clearly distinguish between the
- * declared symbol for a stack (of type k_thread_stack_t) and the underlying
- * buffer which composes the stack data actually used by the underlying
- * thread; they cannot be used interchangably as some arches precede the
- * stack buffer region with guard areas that trigger a MPU or MMU fault
- * if written to.
- *
- * APIs that want to work with the buffer inside should continue to use
- * char *.
- *
- * Stacks should always be created with K_THREAD_STACK_DEFINE().
- */
-struct __packed _k_thread_stack_element {
-	char data;
-};
-typedef struct _k_thread_stack_element *k_thread_stack_t;
-
-
 /**
  * @brief Create a thread.
  *

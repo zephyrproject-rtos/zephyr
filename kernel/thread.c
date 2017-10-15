@@ -326,6 +326,8 @@ void _setup_new_thread(struct k_thread *new_thread,
 #ifdef CONFIG_USERSPACE
 	new_thread->base.perm_index = get_next_thread_index();
 	_k_object_init(new_thread);
+	_k_object_init(stack);
+	new_thread->stack_obj = stack;
 
 	/* Any given thread has access to itself */
 	k_object_access_grant(new_thread, new_thread);
@@ -501,6 +503,7 @@ void _k_thread_single_abort(struct k_thread *thread)
 	 * and triggers errors if API calls are made on it from user threads
 	 */
 	_k_object_uninit(thread);
+	_k_object_uninit(thread->stack_obj);
 
 	if (thread->base.perm_index != -1) {
 		free_thread_index(thread->base.perm_index);

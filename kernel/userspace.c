@@ -41,6 +41,8 @@ const char *otype_to_str(enum k_objects otype)
 		return "k_thread";
 	case K_OBJ_TIMER:
 		return "k_timer";
+	case K_OBJ__THREAD_STACK_ELEMENT:
+		return "k_thread_stack_t";
 
 	/* Driver subsystems */
 	case K_OBJ_DRIVER_ADC:
