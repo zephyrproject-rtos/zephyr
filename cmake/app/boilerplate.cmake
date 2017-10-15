@@ -161,6 +161,10 @@ if(CONF_FILE)
   # variable CONF_FILE and the default prj.conf
 elseif(DEFINED ENV{CONF_FILE})
   set(CONF_FILE $ENV{CONF_FILE})
+
+elseif(EXISTS   ${APPLICATION_SOURCE_DIR}/prj_${BOARD}.conf)
+  set(CONF_FILE ${APPLICATION_SOURCE_DIR}/prj_${BOARD}.conf)
+
 elseif(EXISTS   ${APPLICATION_SOURCE_DIR}/prj.conf)
   set(CONF_FILE ${APPLICATION_SOURCE_DIR}/prj.conf)
 endif()
