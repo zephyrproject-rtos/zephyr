@@ -192,6 +192,8 @@ void _dump_object_error(int retval, void *obj, struct _k_object *ko,
 	case -EINVAL:
 		printk("%p used before initialization\n", obj);
 		break;
+	case -EADDRINUSE:
+		printk("%p %s in use\n", obj, otype_to_str(otype));
 	}
 }
 
@@ -222,24 +224,31 @@ void k_object_access_all_grant(void *object)
 	}
 }
 
-int _k_object_validate(struct _k_object *ko, enum k_objects otype, int init)
+int _k_object_validate(struct _k_object *ko, enum k_objects otype,
+		       enum _obj_init_check init)
 {
-	if (!ko || (otype != K_OBJ_ANY && ko->type != otype)) {
+	if (unlikely(!ko || (otype != K_OBJ_ANY && ko->type != otype))) {
 		return -EBADF;
 	}
 
 	/* Manipulation of any kernel objects by a user thread requires that
 	 * thread be granted access first, even for uninitialized objects
 	 */
-	if (!thread_perms_test(ko)) {
+	if (unlikely(!thread_perms_test(ko))) {
 		return -EPERM;
 	}
 
-	/* If we are not initializing an object, and the object is not
-	 * initialized, we should freak out
-	 */
-	if (!init && !(ko->flags & K_OBJ_FLAG_INITIALIZED)) {
-		return -EINVAL;
+	/* Initialization state checks. _OBJ_INIT_ANY, we don't care */
+	if (likely(init == _OBJ_INIT_TRUE)) {
+		/* Object MUST be intialized */
+		if (unlikely(!(ko->flags & K_OBJ_FLAG_INITIALIZED))) {
+			return -EINVAL;
+		}
+	} else if (init < _OBJ_INIT_TRUE) { /* _OBJ_INIT_FALSE case */
+		/* Object MUST NOT be initialized */
+		if (unlikely(ko->flags & K_OBJ_FLAG_INITIALIZED)) {
+			return -EADDRINUSE;
+		}
 	}
 
 	return 0;
