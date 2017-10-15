@@ -351,7 +351,7 @@ static FUNC_NORETURN __used void _df_handler_top(void)
 	_df_esf.eflags = _main_tss.eflags;
 
 	/* Restore the main IA task to a runnable state */
-	_main_tss.esp = (u32_t)(K_THREAD_STACK_BUFFER(_interrupt_stack) +
+	_main_tss.esp = (u32_t)(_ARCH_THREAD_STACK_BUFFER(_interrupt_stack) +
 				CONFIG_ISR_STACK_SIZE);
 	_main_tss.cs = CODE_SEG;
 	_main_tss.ds = DATA_SEG;
