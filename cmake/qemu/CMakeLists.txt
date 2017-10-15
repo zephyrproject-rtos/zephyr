@@ -17,6 +17,13 @@ if(EMU_PLATFORM)
     endif()
   endif()
 
+  if(QEMU_NET_STACK)
+    list(APPEND QEMU_FLAGS
+      -serial none
+      -serial unix:/tmp/slip.sock${QEMU_INSTANCE}
+      )
+  endif()
+
   #TODO To exit from QEMU enter
 
   if(CONFIG_X86_IAMCU)
