@@ -1,0 +1,38 @@
+#
+# Copyright (c) 2018, I-SENSE group of ICCS
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: USB Endpoints' properties
+id: USB-EP
+version: 0.1
+
+description: >
+    This binding gives number of endpoints that the USB hardware supports
+
+inherits:
+    !include usb.yaml
+
+properties:
+    num-bidir-endpoints:
+      type: int
+      category: required
+      description: Number of bi-directional endpoints supported by hardware
+                   (including EP0)
+      generation: define
+
+    num-in-endpoints:
+      type: int
+      category: optional
+      description: Number of IN endpoints supported by hardware
+                   (including EP0 IN)
+      generation: define
+
+    num-out-endpoints:
+      type: int
+      category: optional
+      description: Number of OUT endpoints supported by hardware
+                   (including EP0 OUT)
+      generation: define
+...

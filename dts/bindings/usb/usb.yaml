@@ -1,0 +1,25 @@
+#
+# Copyright (c) 2018, I-SENSE group of ICCS
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: USB Base Structure
+id: USB
+version: 0.1
+
+description: >
+    This binding gives the base structures for all USB devices
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+...
