@@ -17,6 +17,12 @@
 
 extern const _k_syscall_handler_t _k_syscall_table[K_SYSCALL_LIMIT];
 
+enum _obj_init_check {
+	_OBJ_INIT_TRUE = 0,
+	_OBJ_INIT_FALSE = -1,
+	_OBJ_INIT_ANY = 1
+};
+
 /**
  * Ensure a system object is a valid object of the expected type
  *
@@ -31,14 +37,15 @@ extern const _k_syscall_handler_t _k_syscall_table[K_SYSCALL_LIMIT];
  * @param ko Kernel object metadata pointer, or NULL
  * @param otype Expected type of the kernel object, or K_OBJ_ANY if type
  *	  doesn't matter
- * @param init If true, this is for an init function and we will not error
- *	   out if the object is not initialized
+ * @param init Indicate whether the object needs to already be in initialized
+ *             or uninitialized state, or that we don't care
  * @return 0 If the object is valid
  *         -EBADF if not a valid object of the specified type
  *         -EPERM If the caller does not have permissions
  *         -EINVAL Object is not initialized
  */
-int _k_object_validate(struct _k_object *ko, enum k_objects otype, int init);
+int _k_object_validate(struct _k_object *ko, enum k_objects otype,
+		       enum _obj_init_check init);
 
 /**
  * Dump out error information on failed _k_object_validate() call
@@ -100,6 +107,9 @@ extern void _thread_perms_clear(struct _k_object *ko, struct k_thread *thread);
 
 /*
  * Revoke access to all objects for the provided thread
+ *
+ * NOTE: Unlike _thread_perms_clear(), this function will not clear
+ * permissions on public objects.
  *
  * @param thread Thread object to revoke access
  */
@@ -226,54 +236,71 @@ void _k_object_uninit(void *obj);
 #define _SYSCALL_MEMORY_ARRAY_WRITE(ptr, nmemb, size) \
 	_SYSCALL_MEMORY_ARRAY(ptr, nmemb, size, 1)
 
-static inline int _obj_validation_check(void *obj, enum k_objects otype,
-					int init)
+static inline int _obj_validation_check(struct _k_object *ko,
+					void *obj,
+					enum k_objects otype,
+					enum _obj_init_check init)
 {
-	struct _k_object *ko;
 	int ret;
 
-	ko = _k_object_find(obj);
 	ret = _k_object_validate(ko, otype, init);
 
 #ifdef CONFIG_PRINTK
 	if (ret) {
 		_dump_object_error(ret, obj, ko, otype);
 	}
+#else
+	ARG_UNUSED(obj);
 #endif
 
 	return ret;
 }
 
 #define _SYSCALL_IS_OBJ(ptr, type, init) \
-	_SYSCALL_VERIFY_MSG(!_obj_validation_check((void *)ptr, type, init), \
-			    "object %p access denied", (void *)(ptr))
+	_SYSCALL_VERIFY_MSG( \
+	    !_obj_validation_check(_k_object_find((void *)ptr), (void *)ptr, \
+				   type, init), "access denied")
 
 /**
  * @brief Runtime check kernel object pointer for non-init functions
  *
  * Calls _k_object_validate and triggers a kernel oops if the check files.
- * For use in system call handlers which are not init functions; a check
- * enforcing that an object is initialized* will not occur.
+ * For use in system call handlers which are not init functions; a fatal
+ * error will occur if the object is not intiailized.
  *
  * @param ptr Untrusted kernel object pointer
  * @param type Expected kernel object type
  */
 #define _SYSCALL_OBJ(ptr, type) \
-	_SYSCALL_IS_OBJ(ptr, type, 0)
+	_SYSCALL_IS_OBJ(ptr, type, _OBJ_INIT_TRUE)
 
 /**
  * @brief Runtime check kernel object pointer for non-init functions
  *
- * See description of _SYSCALL_IS_OBJ. For use in system call handlers which
- * are not init functions; a check enforcing that an object is initialized
- * will not occur.
+ * See description of _SYSCALL_IS_OBJ. No initialization checks are done.
+ * Intended for init functions where objects may be re-initialized at will.
  *
  * @param ptr Untrusted kernel object pointer
  * @param type Expected kernel object type
  */
 
 #define _SYSCALL_OBJ_INIT(ptr, type) \
-	_SYSCALL_IS_OBJ(ptr, type, 1)
+	_SYSCALL_IS_OBJ(ptr, type, _OBJ_INIT_ANY)
+
+/**
+ * @brief Runtime check kernel object pointer for non-init functions
+ *
+ * See description of _SYSCALL_IS_OBJ. Triggers a fatal error if the object is
+ * initialized. Intended for init functions where objects, once initialized,
+ * can only be re-used when their initialization state expires due to some
+ * other mechanism.
+ *
+ * @param ptr Untrusted kernel object pointer
+ * @param type Expected kernel object type
+ */
+
+#define _SYSCALL_OBJ_NEVER_INIT(ptr, type) \
+	_SYSCALL_IS_OBJ(ptr, type, _OBJ_INIT_FALSE)
 
 /*
  * Handler definition macros

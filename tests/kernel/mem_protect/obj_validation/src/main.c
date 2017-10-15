@@ -26,7 +26,8 @@ static int test_object(struct k_sem *sem, int retval)
 		 */
 		ret = _k_object_validate(_k_object_find(sem), K_OBJ_SEM, 0);
 	} else {
-		ret = _obj_validation_check(sem, K_OBJ_SEM, 0);
+		ret = _obj_validation_check(_k_object_find(sem), sem,
+					    K_OBJ_SEM, 0);
 	}
 
 	if (ret != retval) {

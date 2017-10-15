@@ -17,7 +17,7 @@ static struct _k_object *validate_any_object(void *obj)
 	/* This can be any kernel object and it doesn't have to be
 	 * initialized
 	 */
-	ret = _k_object_validate(ko, K_OBJ_ANY, 1);
+	ret = _k_object_validate(ko, K_OBJ_ANY, _OBJ_INIT_ANY);
 	if (ret) {
 #ifdef CONFIG_PRINTK
 		_dump_object_error(ret, obj, ko, K_OBJ_ANY);
