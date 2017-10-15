@@ -979,6 +979,10 @@ static u16_t select_writer(struct lwm2m_output_context *out, u16_t accept)
 {
 	switch (accept) {
 
+	case LWM2M_FORMAT_APP_LINK_FORMAT:
+		/* TODO: rewrite do_discover as content formatter */
+		break;
+
 	case LWM2M_FORMAT_PLAIN_TEXT:
 	case LWM2M_FORMAT_OMA_PLAIN_TEXT:
 		out->writer = &plain_text_writer;
@@ -2433,7 +2437,12 @@ static int handle_request(struct coap_packet *request,
 	switch (code & COAP_REQUEST_MASK) {
 
 	case COAP_METHOD_GET:
-		if (discover || format == LWM2M_FORMAT_APP_LINK_FORMAT) {
+		/*
+		 * Leshan sends only an accept=LWM2M_FORMAT_APP_LINK_FORMAT to
+		 * indicate a discover OP
+		 */
+		if (discover || format == LWM2M_FORMAT_APP_LINK_FORMAT ||
+				accept == LWM2M_FORMAT_APP_LINK_FORMAT) {
 			context.operation = LWM2M_OP_DISCOVER;
 			accept = LWM2M_FORMAT_APP_LINK_FORMAT;
 		} else {
