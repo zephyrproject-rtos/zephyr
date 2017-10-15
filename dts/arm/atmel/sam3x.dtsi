@@ -33,6 +33,7 @@
 			compatible = "atmel,sam-uart";
 			reg = <0x400E0800 0x124>;
 			interrupts = <8 0>;
+			peripheral-id = <8>;
 			status = "disabled";
 			label = "UART_0";
 		};
@@ -41,6 +42,7 @@
 			compatible = "atmel,sam-usart";
 			reg = <0x40098000 0x130>;
 			interrupts = <17 0>;
+			peripheral-id = <17>;
 			status = "disabled";
 			label = "USART_0";
 		};
@@ -49,6 +51,7 @@
 			compatible = "atmel,sam-usart";
 			reg = <0x4009C000 0x130>;
 			interrupts = <18 0>;
+			peripheral-id = <18>;
 			status = "disabled";
 			label = "USART_1";
 		};
@@ -57,6 +60,7 @@
 			compatible = "atmel,sam-usart";
 			reg = <0x400A0000 0x130>;
 			interrupts = <19 0>;
+			peripheral-id = <19>;
 			status = "disabled";
 			label = "USART_2";
 		};
@@ -65,6 +69,7 @@
 			compatible = "atmel,sam-usart";
 			reg = <0x400A4000 0x130>;
 			interrupts = <20 0>;
+			peripheral-id = <20>;
 			status = "disabled";
 			label = "USART_3";
 		};

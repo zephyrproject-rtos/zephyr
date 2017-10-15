@@ -27,4 +27,10 @@ properties:
       category: required
       description: required interrupts
       generation: define
+
+  - peripheral-id:
+      type: int
+      description: peripheral ID
+      generation: define
+      category: required
 ...
