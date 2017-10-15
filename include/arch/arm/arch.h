@@ -135,7 +135,7 @@ extern "C" {
  * @param size Size of the stack memory region
  */
 #define _ARCH_THREAD_STACK_DEFINE(sym, size) \
-	struct _k_thread_stack_element __noinit __aligned(STACK_ALIGN) \
+	struct _k_thread_stack_element __kernel_noinit __aligned(STACK_ALIGN) \
 		sym[size+MPU_GUARD_ALIGN_AND_SIZE]
 
 /**
@@ -152,7 +152,7 @@ extern "C" {
  * @param size Size of the stack memory region
  */
 #define _ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	struct _k_thread_stack_element __noinit __aligned(STACK_ALIGN) \
+	struct _k_thread_stack_element __kernel_noinit __aligned(STACK_ALIGN) \
 		sym[nmemb][size+MPU_GUARD_ALIGN_AND_SIZE]
 
 /**
