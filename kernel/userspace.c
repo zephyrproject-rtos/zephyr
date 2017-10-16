@@ -14,6 +14,8 @@
 #include <syscall.h>
 #include <syscall_handler.h>
 
+#define MAX_THREAD_BITS		(CONFIG_MAX_THREAD_BYTES * 8)
+
 const char *otype_to_str(enum k_objects otype)
 {
 	/* -fdata-sections doesn't work right except in very very recent
@@ -116,15 +118,15 @@ void _thread_perms_inherit(struct k_thread *parent, struct k_thread *child)
 		parent
 	};
 
-	if ((ctx.parent_id < 8 * CONFIG_MAX_THREAD_BYTES) &&
-	    (ctx.child_id < 8 * CONFIG_MAX_THREAD_BYTES)) {
+	if ((ctx.parent_id < MAX_THREAD_BITS) &&
+	    (ctx.child_id < MAX_THREAD_BITS)) {
 		_k_object_wordlist_foreach(wordlist_cb, &ctx);
 	}
 }
 
 void _thread_perms_set(struct _k_object *ko, struct k_thread *thread)
 {
-	if (thread->base.perm_index < 8 * CONFIG_MAX_THREAD_BYTES) {
+	if (thread->base.perm_index < MAX_THREAD_BITS) {
 		sys_bitfield_set_bit((mem_addr_t)&ko->perms,
 				     thread->base.perm_index);
 	}
@@ -132,7 +134,7 @@ void _thread_perms_set(struct _k_object *ko, struct k_thread *thread)
 
 void _thread_perms_clear(struct _k_object *ko, struct k_thread *thread)
 {
-	if (thread->base.perm_index < 8 * CONFIG_MAX_THREAD_BYTES) {
+	if (thread->base.perm_index < MAX_THREAD_BITS) {
 		sys_bitfield_clear_bit((mem_addr_t)&ko->perms,
 				       thread->base.perm_index);
 	}
@@ -147,7 +149,7 @@ static void clear_perms_cb(struct _k_object *ko, void *ctx_ptr)
 
 void _thread_perms_all_clear(struct k_thread *thread)
 {
-	if (thread->base.perm_index < 8 * CONFIG_MAX_THREAD_BYTES) {
+	if (thread->base.perm_index < MAX_THREAD_BITS) {
 		_k_object_wordlist_foreach(clear_perms_cb,
 					   (void *)thread->base.perm_index);
 	}
@@ -159,7 +161,7 @@ static int thread_perms_test(struct _k_object *ko)
 		return 1;
 	}
 
-	if (_current->base.perm_index < 8 * CONFIG_MAX_THREAD_BYTES) {
+	if (_current->base.perm_index < MAX_THREAD_BITS) {
 		return sys_bitfield_test_bit((mem_addr_t)&ko->perms,
 					     _current->base.perm_index);
 	}
