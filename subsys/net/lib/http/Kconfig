@@ -60,15 +60,25 @@ config HTTP_PARSER
 	bool "HTTP Parser support"
 	default n
 	select HTTP
+	select HTTP_PARSER_URL
 	help
 	This option enables the http_parser library from nodejs.
+	This parser requires some string-related routines commonly
+	provided by a libc implementation.
+
+config HTTP_PARSER_URL
+	bool "HTTP Parser for URL support"
+	default n
+	select HTTP
+	help
+	This option enables the URI parser library based on source from nodejs.
 	This parser requires some string-related routines commonly
 	provided by a libc implementation.
 
 config HTTP_PARSER_STRICT
 	bool "HTTP strict parsing"
 	default n
-	depends on HTTP_PARSER
+	depends on (HTTP_PARSER || HTTP_PARSER_URL)
 	help
 	This option enables the strict parsing option
 
