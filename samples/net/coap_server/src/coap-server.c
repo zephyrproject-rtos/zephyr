@@ -1310,6 +1310,8 @@ static void retransmit_request(struct k_work *work)
 		return;
 	}
 
+	/* ref to avoid being freed by sendto() */
+	net_pkt_ref(pending->pkt);
 	/* drop IP + UDP headers */
 	strip_headers(pending->pkt);
 
@@ -1317,14 +1319,18 @@ static void retransmit_request(struct k_work *work)
 			       sizeof(struct sockaddr_in6),
 			       NULL, 0, NULL, NULL);
 	if (r < 0) {
-		return;
+		/* no error, keeps retry */
+		net_pkt_unref(pending->pkt);
 	}
 
 	if (!coap_pending_cycle(pending)) {
+		/* last retransmit, clear pending and unreference packet */
 		coap_pending_clear(pending);
 		return;
 	}
 
+	/* unref to balance ref made previously */
+	net_pkt_unref(pending->pkt);
 	k_delayed_work_submit(&retransmit_work, pending->timeout);
 }
 
