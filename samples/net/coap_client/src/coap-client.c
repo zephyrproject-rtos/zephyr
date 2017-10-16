@@ -52,6 +52,24 @@ static void msg_dump(const char *s, u8_t *data, unsigned len)
 	printk("(%u bytes)\n", len);
 }
 
+static void strip_headers(struct net_pkt *pkt)
+{
+	/* Get rid of IP + UDP/TCP header if it is there. The IP header
+	 * will be put back just before sending the packet.
+	 */
+	if (net_pkt_appdatalen(pkt) > 0) {
+		int header_len;
+
+		header_len = net_buf_frags_len(pkt->frags) -
+			     net_pkt_appdatalen(pkt);
+		if (header_len > 0) {
+			net_buf_pull(pkt->frags, header_len);
+		}
+	} else {
+		net_pkt_set_appdatalen(pkt, net_buf_frags_len(pkt->frags));
+	}
+}
+
 static int resource_reply_cb(const struct coap_packet *response,
 			     struct coap_reply *reply,
 			     const struct sockaddr *from)
@@ -123,6 +141,8 @@ static void retransmit_request(struct k_work *work)
 	}
 
 	last_retransmit = !coap_pending_cycle(pending);
+	/* drop IP + UDP headers */
+	strip_headers(pending->pkt);
 
 	r = net_context_sendto(pending->pkt, (struct sockaddr *) &mcast_addr,
 			       sizeof(mcast_addr), NULL, 0, NULL, NULL);
@@ -213,6 +233,9 @@ static void event_iface_up(struct net_mgmt_event_callback *cb,
 			return;
 		}
 	}
+
+	/* setup appdatalen */
+	strip_headers(pkt);
 
 	pending = coap_pending_next_unused(pendings, NUM_PENDINGS);
 	if (!pending) {
