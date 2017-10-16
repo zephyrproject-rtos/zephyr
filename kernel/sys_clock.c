@@ -79,7 +79,7 @@ u32_t _impl_k_uptime_get_32(void)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER0(k_uptime_get_32)
+_SYSCALL_HANDLER(k_uptime_get_32)
 {
 #ifdef CONFIG_TICKLESS_KERNEL
 	_SYSCALL_VERIFY(_sys_clock_always_on);
@@ -126,7 +126,7 @@ s64_t _impl_k_uptime_get(void)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER1(k_uptime_get, ret_p)
+_SYSCALL_HANDLER(k_uptime_get, ret_p)
 {
 	u64_t *ret = (u64_t *)ret_p;
 

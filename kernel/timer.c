@@ -132,7 +132,7 @@ void _impl_k_timer_start(struct k_timer *timer, s32_t duration, s32_t period)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER3(k_timer_start, timer, duration_p, period_p)
+_SYSCALL_HANDLER(k_timer_start, timer, duration_p, period_p)
 {
 	s32_t duration, period;
 
@@ -259,7 +259,7 @@ s32_t _timeout_remaining_get(struct _timeout *timeout)
 _SYSCALL_HANDLER1_SIMPLE(k_timer_remaining_get, K_OBJ_TIMER, struct k_timer *);
 _SYSCALL_HANDLER1_SIMPLE(k_timer_user_data_get, K_OBJ_TIMER, struct k_timer *);
 
-_SYSCALL_HANDLER2(k_timer_user_data_set, timer, user_data)
+_SYSCALL_HANDLER(k_timer_user_data_set, timer, user_data)
 {
 	_SYSCALL_OBJ(timer, K_OBJ_TIMER);
 	_impl_k_timer_user_data_set((struct k_timer *)timer, (void *)user_data);
