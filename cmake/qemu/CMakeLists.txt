@@ -5,6 +5,11 @@ if(EMU_PLATFORM)
   # instance name to the pid file we can easily run more instances of
   # the same sample.
 
+  set(qemu_targets
+    run
+    debugserver
+    )
+
   set(QEMU_FLAGS -serial)
   if(QEMU_PTY)
     list(APPEND QEMU_FLAGS pty)
@@ -44,11 +49,9 @@ if(EMU_PLATFORM)
   separate_arguments(env_qemu)
   list(APPEND QEMU_EXTRA_FLAGS ${env_qemu})
 
-  foreach(target run debugserver)
-    if(${target} STREQUAL debugserver)
-      list(APPEND QEMU_EXTRA_FLAGS -s -S)
-    endif()
+  set(MORE_FLAGS_FOR_debugserver -s -S)
 
+  foreach(target ${qemu_targets})
     add_custom_target(${target}
       ${PRE_QEMU_COMMANDS}
       COMMAND
@@ -57,6 +60,7 @@ if(EMU_PLATFORM)
       -pidfile qemu${QEMU_INSTANCE}.pid
       ${QEMU_FLAGS}
       ${QEMU_EXTRA_FLAGS}
+      ${MORE_FLAGS_FOR_${target}}
       -kernel $<TARGET_FILE:${logical_target_for_zephyr_elf}>
       WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
       COMMENT "${QEMU_PIPE_COMMENT}[QEMU] CPU: ${QEMU_CPU_TYPE_${ARCH}}"
