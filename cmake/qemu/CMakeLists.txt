@@ -23,12 +23,60 @@ if(EMU_PLATFORM)
   endif()
 
   if(QEMU_NET_STACK)
+    list(APPEND qemu_targets
+      client
+      server
+      )
+
     list(APPEND QEMU_FLAGS
       -serial none
-      -serial unix:/tmp/slip.sock${QEMU_INSTANCE}
       )
-  endif()
 
+    foreach(target ${qemu_targets})
+      if((${target} STREQUAL client) OR (${target} STREQUAL server))
+        list(APPEND MORE_FLAGS_FOR_${target}
+          -serial pipe:/tmp/ip-stack-${target}
+          -pidfile qemu-${target}.pid
+          )
+      else()
+        list(APPEND MORE_FLAGS_FOR_${target}
+          -serial unix:/tmp/slip.sock${QEMU_INSTANCE}
+          )
+      endif()
+    endforeach()
+
+
+    set(PIPE_SERVER_IN  /tmp/ip-stack-server.in)
+    set(PIPE_SERVER_OUT /tmp/ip-stack-server.out)
+    set(PIPE_CLIENT_IN  /tmp/ip-stack-client.in)
+    set(PIPE_CLIENT_OUT /tmp/ip-stack-client.out)
+
+    set(pipes
+      ${PIPE_SERVER_IN}
+      ${PIPE_SERVER_OUT}
+      ${PIPE_CLIENT_IN}
+      ${PIPE_CLIENT_OUT}
+      )
+
+    set(destroy_pipe_commands
+      COMMAND ${CMAKE_COMMAND} -E remove -f ${pipes}
+      )
+
+    # TODO: Support PCAP
+    # TODO: Port to Windows. Perhaps using python? Or removing the
+    # need for mkfifo and create_symlink somehow.
+    set(create_pipe_commands
+      COMMAND mkfifo                          ${PIPE_SERVER_IN}
+      COMMAND mkfifo                          ${PIPE_SERVER_OUT}
+      COMMAND ${CMAKE_COMMAND} -E create_symlink ${PIPE_SERVER_IN}  ${PIPE_CLIENT_OUT}
+      COMMAND ${CMAKE_COMMAND} -E create_symlink ${PIPE_SERVER_OUT} ${PIPE_CLIENT_IN}
+      )
+
+    set(PRE_QEMU_COMMANDS_FOR_server
+      ${destroy_pipe_commands}
+      ${create_pipe_commands}
+      )
+  endif(QEMU_NET_STACK)
 
   if(CONFIG_X86_IAMCU)
     list(APPEND PRE_QEMU_COMMANDS
@@ -53,6 +101,7 @@ if(EMU_PLATFORM)
   foreach(target ${qemu_targets})
     add_custom_target(${target}
       ${PRE_QEMU_COMMANDS}
+      ${PRE_QEMU_COMMANDS_FOR_${target}}
       COMMAND
       ${QEMU}
       ${QEMU_FLAGS_${ARCH}}
