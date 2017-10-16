@@ -107,7 +107,7 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 		net_buf_add(frag, pkt_len);
 
 		net_pkt_set_ieee802154_lqi(pkt, nrf5_radio->lqi);
-		net_pkt_set_ieee802154_rssi(pks, nrf5_radio->rssi);
+		net_pkt_set_ieee802154_rssi(pkt, nrf5_radio->rssi);
 
 		nrf_drv_radio802154_buffer_free(nrf5_radio->rx_psdu);
 
