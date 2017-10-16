@@ -25,6 +25,11 @@
 #define MAX_ITERATIONS	20
 #define WAIT_TIME (APP_REQ_TIMEOUT * 2)
 
+/* The OPTIONS method is problematic as the HTTP server might not support
+ * it so turn it off by default.
+ */
+#define SEND_OPTIONS 0
+
 #define RESULT_BUF_SIZE 1024
 static u8_t result[RESULT_BUF_SIZE];
 
@@ -260,11 +265,13 @@ static inline int do_sync_reqs(struct http_client_ctx *ctx, int count)
 			goto out;
 		}
 
+#if SEND_OPTIONS
 		ret = do_sync_http_req(&http_ctx, HTTP_OPTIONS, "/index.html",
 				       NULL, NULL);
 		if (ret < 0) {
 			goto out;
 		}
+#endif
 
 		ret = do_sync_http_req(&http_ctx, HTTP_POST, "/post_test.php",
 				       POST_CONTENT_TYPE, POST_PAYLOAD);
@@ -303,11 +310,13 @@ static inline int do_async_reqs(struct http_client_ctx *ctx, int count)
 			goto out;
 		}
 
+#if SEND_OPTIONS
 		ret = do_async_http_req(&http_ctx, HTTP_OPTIONS, "/index.html",
 					NULL, NULL);
 		if (ret < 0) {
 			goto out;
 		}
+#endif
 
 		ret = do_async_http_req(&http_ctx, HTTP_POST, "/post_test.php",
 					POST_CONTENT_TYPE, POST_PAYLOAD);
