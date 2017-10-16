@@ -231,8 +231,8 @@ static void tcp_received(struct net_app_ctx *ctx,
 		return;
 	}
 
-	NET_DBG("Sent %d bytes, received %u bytes",
-		data->expecting_tcp, net_pkt_appdatalen(pkt));
+	NET_DBG("%s: Sent %d bytes, received %u bytes",
+		data->proto, data->expecting_tcp, net_pkt_appdatalen(pkt));
 
 	if (!compare_tcp_data(pkt, data->expecting_tcp, data->received_tcp)) {
 		NET_DBG("Data mismatch");
