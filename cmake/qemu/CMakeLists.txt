@@ -27,7 +27,12 @@ if(EMU_PLATFORM)
   #TODO To exit from QEMU enter
 
   if(CONFIG_X86_IAMCU)
-    set(IAMCU_HACK COMMAND ${PYTHON_EXECUTABLE} $ENV{ZEPHYR_BASE}/scripts/qemu-machine-hack.py $<TARGET_FILE:${logical_target_for_zephyr_elf}>)
+    list(APPEND PRE_QEMU_COMMANDS
+      COMMAND
+      ${PYTHON_EXECUTABLE}
+      $ENV{ZEPHYR_BASE}/scripts/qemu-machine-hack.py
+      $<TARGET_FILE:${logical_target_for_zephyr_elf}>
+      )
   endif()
 
   if(NOT QEMU_PIPE)
@@ -45,7 +50,7 @@ if(EMU_PLATFORM)
     endif()
 
     add_custom_target(${target}
-      ${IAMCU_HACK}
+      ${PRE_QEMU_COMMANDS}
       COMMAND
       ${QEMU}
       ${QEMU_FLAGS_${ARCH}}
