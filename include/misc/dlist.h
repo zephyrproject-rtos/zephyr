@@ -6,9 +6,11 @@
 
 /**
  * @file
- * @brief Doubly-linked list inline implementation
+ * @brief Doubly-linked list implementation
  *
- * Doubly-linked list implementation.
+ * Doubly-linked list implementation using inline macros/functions.
+ * This API is not threadsafe, and thus if a list is used across threads,
+ * calls to functions must be protected with synchronization primitives.
  *
  * The lists are expected to be initialized such that both the head and tail
  * pointers point to the list itself.  Initializing the lists in such a fashion
@@ -229,6 +231,8 @@ static inline int sys_dlist_is_empty(sys_dlist_t *list)
 /**
  * @brief check if more than one node present
  *
+ * This function and most other sys_dlist_*() functions are not threadsafe.
+ *
  * @param list the doubly-linked list to operate on
  *
  * @return 1 if multiple nodes, 0 otherwise
@@ -316,6 +320,8 @@ static inline sys_dnode_t *sys_dlist_peek_tail(sys_dlist_t *list)
 /**
  * @brief add node to tail of list
  *
+ * This function and most other sys_dlist_*() functions are not threadsafe.
+ *
  * @param list the doubly-linked list to operate on
  * @param node the element to append
  *
@@ -333,6 +339,8 @@ static inline void sys_dlist_append(sys_dlist_t *list, sys_dnode_t *node)
 
 /**
  * @brief add node to head of list
+ *
+ * This function and most other sys_dlist_*() functions are not threadsafe.
  *
  * @param list the doubly-linked list to operate on
  * @param node the element to append
@@ -353,6 +361,7 @@ static inline void sys_dlist_prepend(sys_dlist_t *list, sys_dnode_t *node)
  * @brief insert node after a node
  *
  * Insert a node after a specified node in a list.
+ * This function and most other sys_dlist_*() functions are not threadsafe.
  *
  * @param list the doubly-linked list to operate on
  * @param insert_point the insert point in the list: if NULL, insert at head
@@ -378,6 +387,7 @@ static inline void sys_dlist_insert_after(sys_dlist_t *list,
  * @brief insert node before a node
  *
  * Insert a node before a specified node in a list.
+ * This function and most other sys_dlist_*() functions are not threadsafe.
  *
  * @param list the doubly-linked list to operate on
  * @param insert_point the insert point in the list: if NULL, insert at tail
@@ -405,6 +415,7 @@ static inline void sys_dlist_insert_before(sys_dlist_t *list,
  * Insert a node in a location depending on a external condition. The cond()
  * function checks if the node is to be inserted _before_ the current node
  * against which it is checked.
+ * This function and most other sys_dlist_*() functions are not threadsafe.
  *
  * @param list the doubly-linked list to operate on
  * @param node the element to insert
@@ -434,6 +445,7 @@ static inline void sys_dlist_insert_at(sys_dlist_t *list, sys_dnode_t *node,
  * @brief remove a specific node from a list
  *
  * The list is implicit from the node. The node must be part of a list.
+ * This function and most other sys_dlist_*() functions are not threadsafe.
  *
  * @param node the node to remove
  *
@@ -448,6 +460,8 @@ static inline void sys_dlist_remove(sys_dnode_t *node)
 
 /**
  * @brief get the first node in a list
+ *
+ * This function and most other sys_dlist_*() functions are not threadsafe.
  *
  * @param list the doubly-linked list to operate on
  *
