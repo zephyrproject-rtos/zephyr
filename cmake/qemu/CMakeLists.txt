@@ -29,7 +29,6 @@ if(EMU_PLATFORM)
       )
   endif()
 
-  #TODO To exit from QEMU enter
 
   if(CONFIG_X86_IAMCU)
     list(APPEND PRE_QEMU_COMMANDS
