@@ -199,6 +199,8 @@ static void *k_queue_poll(struct k_queue *queue, s32_t timeout)
 {
 	struct k_poll_event event;
 	int err;
+	unsigned int key;
+	void *val;
 
 	k_poll_event_init(&event, K_POLL_TYPE_FIFO_DATA_AVAILABLE,
 			  K_POLL_MODE_NOTIFY_ONLY, queue);
@@ -212,7 +214,13 @@ static void *k_queue_poll(struct k_queue *queue, s32_t timeout)
 
 	__ASSERT_NO_MSG(event.state == K_POLL_STATE_FIFO_DATA_AVAILABLE);
 
-	return sys_slist_get(&queue->data_q);
+	/* sys_slist_* aren't threadsafe, so must be always protected by
+	 * irq_lock.
+	 */
+	key = irq_lock();
+	val = sys_slist_get(&queue->data_q);
+	irq_unlock(key);
+	return val;
 }
 #endif /* CONFIG_POLL */
 
