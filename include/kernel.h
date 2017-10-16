@@ -281,7 +281,7 @@ void k_object_access_all_grant(void *object);
 struct __packed _k_thread_stack_element {
 	char data;
 };
-typedef struct _k_thread_stack_element *k_thread_stack_t;
+typedef struct _k_thread_stack_element k_thread_stack_t;
 
 /* timeouts */
 
@@ -445,7 +445,7 @@ struct k_thread {
 	/* memory domain info of the thread */
 	struct _mem_domain_info mem_domain_info;
 	/* Base address of thread stack */
-	k_thread_stack_t stack_obj;
+	k_thread_stack_t *stack_obj;
 #endif /* CONFIG_USERSPACE */
 
 	/* arch-specifics: must always be at the end */
@@ -568,7 +568,7 @@ extern void k_call_stacks_analyze(void);
  * @return ID of new thread.
  */
 __syscall k_tid_t k_thread_create(struct k_thread *new_thread,
-				  k_thread_stack_t stack,
+				  k_thread_stack_t *stack,
 				  size_t stack_size,
 				  k_thread_entry_t entry,
 				  void *p1, void *p2, void *p3,
@@ -692,7 +692,7 @@ __syscall void k_thread_start(k_tid_t thread);
 
 struct _static_thread_data {
 	struct k_thread *init_thread;
-	k_thread_stack_t init_stack;
+	k_thread_stack_t *init_stack;
 	unsigned int init_stack_size;
 	k_thread_entry_t init_entry;
 	void *init_p1;
@@ -2244,7 +2244,7 @@ static inline int k_work_pending(struct k_work *work)
  * @return N/A
  */
 extern void k_work_q_start(struct k_work_q *work_q,
-			   k_thread_stack_t stack,
+			   k_thread_stack_t *stack,
 			   size_t stack_size, int prio);
 
 /**
@@ -4031,13 +4031,24 @@ extern void _timer_expiration_handler(struct _timeout *t);
  * for properly declaring stacks, compatible with MMU/MPU constraints if
  * enabled
  */
+
+/**
+ * @brief Obtain an extern reference to a stack
+ *
+ * This macro properly brings the symbol of a thread stack declared
+ * elsewhere into scope.
+ *
+ * @param sym Thread stack symbol name
+ */
+#define K_THREAD_STACK_EXTERN(sym) extern k_thread_stack_t sym[]
+
 #ifdef _ARCH_THREAD_STACK_DEFINE
 #define K_THREAD_STACK_DEFINE(sym, size) _ARCH_THREAD_STACK_DEFINE(sym, size)
 #define K_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
 		_ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size)
 #define K_THREAD_STACK_MEMBER(sym, size) _ARCH_THREAD_STACK_MEMBER(sym, size)
 #define K_THREAD_STACK_SIZEOF(sym) _ARCH_THREAD_STACK_SIZEOF(sym)
-static inline char *K_THREAD_STACK_BUFFER(k_thread_stack_t sym)
+static inline char *K_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
 {
 	return _ARCH_THREAD_STACK_BUFFER(sym);
 }
@@ -4129,7 +4140,7 @@ static inline char *K_THREAD_STACK_BUFFER(k_thread_stack_t sym)
  * @param sym Declared stack symbol name
  * @return The buffer itself, a char *
  */
-static inline char *K_THREAD_STACK_BUFFER(k_thread_stack_t sym)
+static inline char *K_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
 {
 	return (char *)sym;
 }

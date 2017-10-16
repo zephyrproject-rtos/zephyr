@@ -17,7 +17,7 @@ static K_THREAD_STACK_DEFINE(alt_stack, STACKSIZE);
 
 #ifdef CONFIG_STACK_SENTINEL
 #define OVERFLOW_STACKSIZE 1024
-static k_thread_stack_t overflow_stack =
+static k_thread_stack_t *overflow_stack =
 		alt_stack + (STACKSIZE - OVERFLOW_STACKSIZE);
 #else
 #define OVERFLOW_STACKSIZE STACKSIZE
