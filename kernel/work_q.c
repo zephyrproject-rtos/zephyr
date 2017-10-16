@@ -46,7 +46,7 @@ static void work_q_main(void *work_q_ptr, void *p2, void *p3)
 	}
 }
 
-void k_work_q_start(struct k_work_q *work_q, k_thread_stack_t stack,
+void k_work_q_start(struct k_work_q *work_q, k_thread_stack_t *stack,
 		    size_t stack_size, int prio)
 {
 	k_queue_init(&work_q->queue);

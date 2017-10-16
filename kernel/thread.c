@@ -316,7 +316,7 @@ static void schedule_new_thread(struct k_thread *thread, s32_t delay)
 #endif
 
 void _setup_new_thread(struct k_thread *new_thread,
-		       k_thread_stack_t stack, size_t stack_size,
+		       k_thread_stack_t *stack, size_t stack_size,
 		       k_thread_entry_t entry,
 		       void *p1, void *p2, void *p3,
 		       int prio, u32_t options)
@@ -340,7 +340,7 @@ void _setup_new_thread(struct k_thread *new_thread,
 
 #ifdef CONFIG_MULTITHREADING
 k_tid_t _impl_k_thread_create(struct k_thread *new_thread,
-			      k_thread_stack_t stack,
+			      k_thread_stack_t *stack,
 			      size_t stack_size, k_thread_entry_t entry,
 			      void *p1, void *p2, void *p3,
 			      int prio, u32_t options, s32_t delay)
@@ -366,7 +366,7 @@ _SYSCALL_HANDLER(k_thread_create,
 	struct k_thread *new_thread = (struct k_thread *)new_thread_p;
 	volatile struct _syscall_10_args *margs =
 		(volatile struct _syscall_10_args *)more_args;
-	k_thread_stack_t stack = (k_thread_stack_t)stack_p;
+	k_thread_stack_t *stack = (k_thread_stack_t *)stack_p;
 
 	/* The thread and stack objects *must* be in an uninitialized state */
 	_SYSCALL_OBJ_NEVER_INIT(new_thread, K_OBJ_THREAD);

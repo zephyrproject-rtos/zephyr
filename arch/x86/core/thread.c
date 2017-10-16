@@ -72,7 +72,7 @@ struct _x86_initial_frame {
  * @param priority thread priority
  * @param options thread options: K_ESSENTIAL, K_FP_REGS, K_SSE_REGS
  */
-void _new_thread(struct k_thread *thread, k_thread_stack_t stack,
+void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		 size_t stack_size, k_thread_entry_t entry,
 		 void *parameter1, void *parameter2, void *parameter3,
 		 int priority, unsigned int options)
