@@ -59,6 +59,24 @@ struct dev_common_descriptor {
 		struct usb_ep_descriptor if1_out_ep;
 	} __packed cdc_acm_cfg;
 #endif
+#ifdef CONFIG_USB_DEVICE_NETWORK_ECM
+	struct usb_cdc_ecm_config {
+#ifdef CONFIG_USB_COMPOSITE_DEVICE
+		struct usb_association_descriptor iad;
+#endif
+		struct usb_if_descriptor if0;
+		struct cdc_header_descriptor if0_header;
+		struct cdc_union_descriptor if0_union;
+		struct cdc_ecm_descriptor if0_netfun_ecm;
+		struct usb_ep_descriptor if0_int_ep;
+
+		struct usb_if_descriptor if1_0;
+
+		struct usb_if_descriptor if1_1;
+		struct usb_ep_descriptor if1_1_in_ep;
+		struct usb_ep_descriptor if1_1_out_ep;
+	} __packed cdc_ecm_cfg;
+#endif
 #ifdef CONFIG_USB_MASS_STORAGE
 	struct usb_mass_config {
 		struct usb_if_descriptor if0;
@@ -85,8 +103,14 @@ struct dev_common_descriptor {
 			u8_t bDescriptorType;
 			u8_t bString[SN_DESC_LENGTH - 2];
 		} __packed unicode_sn;
+#ifdef CONFIG_USB_DEVICE_NETWORK_ECM
+		struct usb_cdc_ecm_mac_descriptor {
+			u8_t bLength;
+			u8_t bDescriptorType;
+			u8_t bString[ECM_MAC_DESC_LENGTH - 2];
+		} __packed unicode_mac;
+#endif /* CONFIG_USB_DEVICE_NETWORK_ECM */
 	} __packed string_descr;
-
 	struct usb_desc_header term_descr;
 } __packed;
 
@@ -237,6 +261,123 @@ static struct dev_common_descriptor common_desc = {
 		},
 	},
 #endif
+#ifdef CONFIG_USB_DEVICE_NETWORK_ECM
+	.cdc_ecm_cfg = {
+#ifdef CONFIG_USB_COMPOSITE_DEVICE
+		.iad = {
+			.bLength = sizeof(struct usb_association_descriptor),
+			.bDescriptorType = USB_ASSOCIATION_DESC,
+			.bFirstInterface = FIRST_IFACE_CDC_ECM,
+			.bInterfaceCount = 0x02,
+			.bFunctionClass = COMMUNICATION_DEVICE_CLASS,
+			.bFunctionSubClass = CDC_ECM_SUBCLASS,
+			.bFunctionProtocol = 0,
+			.iFunction = 0,
+		},
+#endif
+
+		/* Interface descriptor 0 */
+		/* CDC Communication interface */
+		.if0 = {
+			.bLength = sizeof(struct usb_if_descriptor),
+			.bDescriptorType = USB_INTERFACE_DESC,
+			.bInterfaceNumber = FIRST_IFACE_CDC_ECM,
+			.bAlternateSetting = 0,
+			.bNumEndpoints = 1,
+			.bInterfaceClass = COMMUNICATION_DEVICE_CLASS,
+			.bInterfaceSubClass = CDC_ECM_SUBCLASS,
+			.bInterfaceProtocol = 0,
+			.iInterface = 0,
+		},
+		/* Header Functional Descriptor */
+		.if0_header = {
+			.bFunctionLength = sizeof(struct cdc_header_descriptor),
+			.bDescriptorType = CS_INTERFACE,
+			.bDescriptorSubtype = HEADER_FUNC_DESC,
+			.bcdCDC = sys_cpu_to_le16(USB_1_1),
+		},
+		/* Union Functional Descriptor */
+		.if0_union = {
+			.bFunctionLength = sizeof(struct cdc_union_descriptor),
+			.bDescriptorType = CS_INTERFACE,
+			.bDescriptorSubtype = UNION_FUNC_DESC,
+			.bControlInterface = 0,
+			.bSubordinateInterface0 = 1,
+		},
+		/* Ethernet Networking Functional descriptor */
+		.if0_netfun_ecm = {
+			.bFunctionLength = sizeof(struct cdc_ecm_descriptor),
+			.bDescriptorType = CS_INTERFACE,
+			.bDescriptorSubtype = ETHERNET_FUNC_DESC,
+			.iMACAddress = 4,
+			.bmEthernetStatistics = sys_cpu_to_le32(0), /* None */
+			.wMaxSegmentSize = sys_cpu_to_le16(1514),
+			.wNumberMCFilters = sys_cpu_to_le16(0), /* None */
+			.bNumberPowerFilters = 0, /* No wake up */
+		},
+		/* Notification EP Descriptor */
+		.if0_int_ep = {
+			.bLength = sizeof(struct usb_ep_descriptor),
+			.bDescriptorType = USB_ENDPOINT_DESC,
+			.bEndpointAddress = CONFIG_CDC_ECM_INT_EP_ADDR,
+			.bmAttributes = USB_DC_EP_INTERRUPT,
+			.wMaxPacketSize =
+				sys_cpu_to_le16(
+				CONFIG_CDC_ECM_INTERRUPT_EP_MPS),
+			.bInterval = 0x09,
+		},
+
+		/* Interface descriptor 1/0 */
+		/* CDC Data Interface */
+		.if1_0 = {
+			.bLength = sizeof(struct usb_if_descriptor),
+			.bDescriptorType = USB_INTERFACE_DESC,
+			.bInterfaceNumber = FIRST_IFACE_CDC_ECM + 1,
+			.bAlternateSetting = 0,
+			.bNumEndpoints = 0,
+			.bInterfaceClass = COMMUNICATION_DEVICE_CLASS_DATA,
+			.bInterfaceSubClass = 0,
+			.bInterfaceProtocol = 0,
+			.iInterface = 0,
+		},
+
+		/* Interface descriptor 1/1 */
+		/* CDC Data Interface */
+		.if1_1 = {
+			.bLength = sizeof(struct usb_if_descriptor),
+			.bDescriptorType = USB_INTERFACE_DESC,
+			.bInterfaceNumber = FIRST_IFACE_CDC_ECM + 1,
+			.bAlternateSetting = 1,
+			.bNumEndpoints = 2,
+			.bInterfaceClass = COMMUNICATION_DEVICE_CLASS_DATA,
+			.bInterfaceSubClass = CDC_ECM_SUBCLASS,
+			.bInterfaceProtocol = 0,
+			.iInterface = 0,
+		},
+		/* Data Endpoint IN */
+		.if1_1_in_ep = {
+			.bLength = sizeof(struct usb_ep_descriptor),
+			.bDescriptorType = USB_ENDPOINT_DESC,
+			.bEndpointAddress = CONFIG_CDC_ECM_IN_EP_ADDR,
+			.bmAttributes = USB_DC_EP_BULK,
+			.wMaxPacketSize =
+				sys_cpu_to_le16(
+				CONFIG_CDC_ECM_BULK_EP_MPS),
+			.bInterval = 0x00,
+		},
+		/* Data Endpoint OUT */
+		.if1_1_out_ep = {
+			.bLength = sizeof(struct usb_ep_descriptor),
+			.bDescriptorType = USB_ENDPOINT_DESC,
+			.bEndpointAddress = CONFIG_CDC_ECM_OUT_EP_ADDR,
+			.bmAttributes = USB_DC_EP_BULK,
+			.wMaxPacketSize =
+				sys_cpu_to_le16(
+				CONFIG_CDC_ECM_BULK_EP_MPS),
+			.bInterval = 0x00,
+		},
+	},
+#endif
 #ifdef CONFIG_USB_MASS_STORAGE
 	.mass_cfg = {
 		/* Interface descriptor */
@@ -299,6 +440,13 @@ static struct dev_common_descriptor common_desc = {
 			.bDescriptorType = USB_STRING_DESC,
 			.bString = CONFIG_USB_DEVICE_SN,
 		},
+#ifdef CONFIG_USB_DEVICE_NETWORK_ECM
+		.unicode_mac = {
+			.bLength = ECM_MAC_DESC_LENGTH,
+			.bDescriptorType = USB_STRING_DESC,
+			.bString = CONFIG_USB_DEVICE_NETWORK_ECM_MAC
+		},
+#endif
 	},
 	.term_descr = {
 		.bLength = 0,
@@ -329,6 +477,11 @@ u8_t *usb_get_device_descriptor(void)
 
 	usb_fix_unicode_string(SN_UC_IDX_MAX, SN_STRING_IDX_MAX,
 		(u8_t *)common_desc.string_descr.unicode_sn.bString);
+
+#ifdef CONFIG_USB_DEVICE_NETWORK_ECM
+	usb_fix_unicode_string(ECM_MAC_UC_IDX_MAX, ECM_STRING_IDX_MAX,
+		(u8_t *)common_desc.string_descr.unicode_mac.bString);
+#endif
 
 	return (u8_t *) &common_desc;
 }
