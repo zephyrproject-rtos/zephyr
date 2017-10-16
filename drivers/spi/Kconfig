@@ -245,7 +245,7 @@ config SPI_SS_CS_GPIO
 config	SPI_SS_0
 	bool
 	prompt "SPI SS port 0"
-	depends on SPI_QMS_SS
+	depends on SPI_QMSI_SS
 	default n
 	help
 	  Enable SPI controller port 0.
