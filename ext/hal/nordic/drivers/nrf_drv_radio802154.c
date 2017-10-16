@@ -121,17 +121,14 @@
 
 #define SHORT_CCAIDLE_TXEN      1                         // Enable short between CCA Idle and TX Enable states.
 
-#define __IN_SECTION(name) \
-  __attribute__ ((section(RADIO_SECTION_PREFIX "." name)))
-
 typedef struct
 {
     uint8_t psdu[MAX_PACKET_SIZE + 1];
     bool    free;                      // If this buffer is free or contains a frame.
 } rx_buffer_t;
 
-// Receive buffer (EasyDMA cannot address whole RAM. Place buffer in the special section.)
-static rx_buffer_t m_receive_buffers[RADIO_RX_BUFFERS] __IN_SECTION("m_receive_buffers");
+// Receive buffer
+static rx_buffer_t m_receive_buffers[RADIO_RX_BUFFERS];
 
 #if RADIO_RX_BUFFERS > 1
 static rx_buffer_t * mp_current_rx_buffer; // Pointer to currently used receive buffer.
@@ -139,8 +136,8 @@ static rx_buffer_t * mp_current_rx_buffer; // Pointer to currently used receive 
 static rx_buffer_t * const mp_current_rx_buffer = &m_receive_buffers[0]; // If there is only one buffer use const pointer.
 #endif
 
-// Ack frame buffer (EasyDMA cannot address whole RAM. Place buffer in the special section.)
-static uint8_t m_ack_psdu[ACK_LENGTH + 1] __IN_SECTION("m_ack_psdu");
+// Ack frame buffer
+static uint8_t m_ack_psdu[ACK_LENGTH + 1];
 
 // Radio driver states
 typedef enum

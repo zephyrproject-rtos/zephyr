@@ -1,10 +1,6 @@
 ifeq ($(or $(CONFIG_IEEE802154_NRF5),$(CONFIG_IEEE802154_NRF5_RAW)),y)
 obj-y += nrf_drv_radio802154.o
 
-# A common prefix used for placing radio buffer in a named
-# memory section.
-KBUILD_CFLAGS += -DRADIO_SECTION_PREFIX="\".top_of_image_ram\""
-
 # Number of slots containing short addresses of nodes for which pending data is stored.
 KBUILD_CFLAGS += -DRADIO_PENDING_SHORT_ADDRESSES=1
 
