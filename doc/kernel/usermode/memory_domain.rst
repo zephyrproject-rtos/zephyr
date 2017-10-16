@@ -23,7 +23,8 @@ Memory partitions are defined by a set of underlying MPU regions
 or MMU tables. A thread belongs to a single memory domain at
 any point in time but a memory domain may contain multiple threads.
 Threads in the same memory domain have the same access permissions
-to the memory partitions belong to the memory domain.
+to the memory partitions belonging to the memory domain. New threads
+will inherit any memory domain configuration from the parent thread.
 
 Implementation
 **************

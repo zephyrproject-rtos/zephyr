@@ -273,6 +273,12 @@ void _setup_new_thread(struct k_thread *new_thread,
 	/* Any given thread has access to itself */
 	k_object_access_grant(new_thread, new_thread);
 
+	/* New threads inherit any memory domain membership by the parent */
+	if (_current->mem_domain_info.mem_domain) {
+		k_mem_domain_add_thread(_current->mem_domain_info.mem_domain,
+					new_thread);
+	}
+
 	if (options & K_INHERIT_PERMS) {
 		_thread_perms_inherit(_current, new_thread);
 	}
