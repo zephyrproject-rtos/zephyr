@@ -133,31 +133,32 @@ static void retransmit_request(struct k_work *work)
 {
 	struct coap_pending *pending;
 	int r;
-	bool last_retransmit;
 
 	pending = coap_pending_next_to_expire(pendings, NUM_PENDINGS);
 	if (!pending) {
 		return;
 	}
 
-	last_retransmit = !coap_pending_cycle(pending);
+	/* ref to avoid being freed after sendto() */
+	net_pkt_ref(pending->pkt);
 	/* drop IP + UDP headers */
 	strip_headers(pending->pkt);
 
 	r = net_context_sendto(pending->pkt, (struct sockaddr *) &mcast_addr,
 			       sizeof(mcast_addr), NULL, 0, NULL, NULL);
 	if (r < 0) {
+		/* no error, keep retry */
+		net_pkt_unref(pending->pkt);
+	}
+
+	if (!coap_pending_cycle(pending)) {
+		/* last retransmit, clear pending and unreference packet */
 		coap_pending_clear(pending);
 		return;
 	}
 
-	if (last_retransmit) {
-		/* packet buffer will be freed when packet is sent */
-		pending->timeout = 0;
-		pending->pkt = NULL;
-		return;
-	}
-
+	/* unref to balance ref we made for sendto() */
+	net_pkt_unref(pending->pkt);
 	k_delayed_work_submit(&retransmit_work, pending->timeout);
 }
 
