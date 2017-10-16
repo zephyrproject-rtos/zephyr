@@ -9,6 +9,7 @@ menuconfig LWM2M
 	default n
 	select ZOAP
 	select NET_APP_CLIENT
+	select HTTP_PARSER_URL
 	help
 	  This option adds logic for managing OMA LWM2M data
 
