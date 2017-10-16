@@ -1091,13 +1091,25 @@ static void arp_cb(struct arp_entry *entry, void *user_data)
 int net_shell_cmd_arp(int argc, char *argv[])
 {
 	ARG_UNUSED(argc);
-	ARG_UNUSED(argv);
 
 #if defined(CONFIG_NET_ARP)
-	int count = 0;
+	int arg = 1;
 
-	if (net_arp_foreach(arp_cb, &count) == 0) {
-		printk("ARP cache is empty.\n");
+	if (!argv[arg]) {
+		/* ARP cache content */
+		int count = 0;
+
+		if (net_arp_foreach(arp_cb, &count) == 0) {
+			printk("ARP cache is empty.\n");
+		}
+
+		return 0;
+	}
+
+	if (strcmp(argv[arg], "flush") == 0) {
+		printk("Flushing ARP cache.\n");
+		net_arp_clear_cache();
+		return 0;
 	}
 #else
 	printk("Enable CONFIG_NET_ARP, CONFIG_NET_IPV4 and "
@@ -2449,7 +2461,8 @@ static struct shell_cmd net_commands[] = {
 	{ "app", net_shell_cmd_app,
 		"\n\tPrint network application API usage information" },
 	{ "arp", net_shell_cmd_arp,
-		"\n\tPrint information about IPv4 ARP cache" },
+		"\n\tPrint information about IPv4 ARP cache\n"
+		"arp flush\n\tRemove all entries from ARP cache" },
 	{ "conn", net_shell_cmd_conn,
 		"\n\tPrint information about network connections" },
 	{ "dns", net_shell_cmd_dns, "\n\tShow how DNS is configure\n"
