@@ -36,7 +36,11 @@ void _x86_mmu_get_flags(void *addr, u32_t *pde_flags, u32_t *pte_flags)
 {
 
 	*pde_flags = X86_MMU_GET_PDE(addr)->value & ~MMU_PDE_PAGE_TABLE_MASK;
-	*pte_flags = X86_MMU_GET_PTE(addr)->value & ~MMU_PTE_PAGE_MASK;
+	if (*pde_flags & MMU_ENTRY_PRESENT) {
+		*pte_flags = X86_MMU_GET_PTE(addr)->value & ~MMU_PTE_PAGE_MASK;
+	} else {
+		*pte_flags = 0;
+	}
 }
 
 
