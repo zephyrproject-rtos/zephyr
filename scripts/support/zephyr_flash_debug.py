@@ -40,6 +40,14 @@ def get_env_bool_or(env_var, default_value):
         return default_value
 
 
+def get_env_strip_or(env_var, to_strip, default_value):
+    value = os.environ.get(env_var, None)
+    if value is not None:
+        return value.strip(to_strip)
+    else:
+        return default_value
+
+
 def check_call(cmd, debug):
     if debug:
         print(' '.join(cmd))
@@ -651,19 +659,20 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
 class OpenOcdBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for openocd.'''
 
-    def __init__(self, bin_name, zephyr_base, arch, board_name,
-                 load_cmd, verify_cmd, openocd='openocd',
-                 default_path=None, pre_cmd=None,
+    def __init__(self, openocd_config,
+                 openocd='openocd', default_path=None, bin_name=None,
+                 load_cmd=None, verify_cmd=None, pre_cmd=None,
                  post_cmd=None, debug=False):
         super(OpenOcdBinaryRunner, self).__init__(debug=debug)
+        self.openocd_config = openocd_config
+
+        search_args = []
+        if default_path is not None:
+            search_args = ['-s', default_path]
+        self.openocd_cmd = [openocd] + search_args
         self.bin_name = bin_name
-        self.zephyr_base = zephyr_base
-        self.arch = arch
-        self.board_name = board_name
         self.load_cmd = load_cmd
         self.verify_cmd = verify_cmd
-        self.openocd = openocd
-        self.default_path = default_path
         self.pre_cmd = pre_cmd
         self.post_cmd = post_cmd
 
@@ -671,57 +680,76 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         return command == 'flash' and shell_script == 'openocd.sh'
 
     def create_from_env(command, debug):
-        '''Create flasher from environment.
+        '''Create runner from environment.
 
         Required:
 
-        - O: build output directory
-        - KERNEL_BIN_NAME: zephyr kernel binary
         - ZEPHYR_BASE: zephyr Git repository base directory
         - ARCH: board architecture
         - BOARD_NAME: zephyr name of board
-        - OPENOCD_LOAD_CMD: command to load binary into flash
-        - OPENOCD_VERIFY_CMD: command to verify flash executed correctly
 
         Optional:
 
         - OPENOCD: path to openocd, defaults to openocd
         - OPENOCD_DEFAULT_PATH: openocd search path to use
+
+        Required for 'flash':
+
+        - O: build output directory
+        - KERNEL_BIN_NAME: zephyr kernel binary
+        - OPENOCD_LOAD_CMD: command to load binary into flash
+        - OPENOCD_VERIFY_CMD: command to verify flash executed correctly
+
+        Optional for 'flash':
+
         - OPENOCD_PRE_CMD: command to run before any others
         - OPENOCD_POST_CMD: command to run after verifying flash write
         '''
-        bin_name = path.join(get_env_or_bail('O'),
-                             get_env_or_bail('KERNEL_BIN_NAME'))
         zephyr_base = get_env_or_bail('ZEPHYR_BASE')
         arch = get_env_or_bail('ARCH')
         board_name = get_env_or_bail('BOARD_NAME')
-        load_cmd = get_env_or_bail('OPENOCD_LOAD_CMD').strip('"')
-        verify_cmd = get_env_or_bail('OPENOCD_VERIFY_CMD').strip('"')
+        openocd_config = path.join(zephyr_base, 'boards', arch,
+                                   board_name, 'support', 'openocd.cfg')
 
         openocd = os.environ.get('OPENOCD', 'openocd')
         default_path = os.environ.get('OPENOCD_DEFAULT_PATH', None)
-        pre_cmd = os.environ.get('OPENOCD_PRE_CMD', None)
-        if pre_cmd is not None:
-            pre_cmd = pre_cmd.strip('"')
-        post_cmd = os.environ.get('OPENOCD_POST_CMD', None)
-        if post_cmd is not None:
-            post_cmd = post_cmd.strip('"')
 
-        return OpenOcdBinaryRunner(bin_name, zephyr_base, arch, board_name,
-                                   load_cmd, verify_cmd, openocd=openocd,
-                                   default_path=default_path, pre_cmd=pre_cmd,
+        o = os.environ.get('O', None)
+        bin_ = os.environ.get('KERNEL_BIN_NAME', None)
+        if o is None or bin_ is None:
+            bin_name = None
+        else:
+            bin_name = path.join(o, bin_)
+
+        load_cmd = get_env_strip_or('OPENOCD_LOAD_CMD', '"', None)
+        verify_cmd = get_env_strip_or('OPENOCD_VERIFY_CMD', '"', None)
+        pre_cmd = get_env_strip_or('OPENOCD_PRE_CMD', '"', None)
+        post_cmd = get_env_strip_or('OPENOCD_POST_CMD', '"', None)
+
+        return OpenOcdBinaryRunner(openocd_config,
+                                   openocd=openocd, default_path=default_path,
+                                   bin_name=bin_name, load_cmd=load_cmd,
+                                   verify_cmd=verify_cmd, pre_cmd=pre_cmd,
                                    post_cmd=post_cmd, debug=debug)
 
     def run(self, command, **kwargs):
-        if command != 'flash':
-            raise ValueError('only flash is supported')
+        if command not in {'flash'}:
+            raise ValueError('{} is not supported'.format(command))
 
-        search_args = []
-        if self.default_path is not None:
-            search_args = ['-s', self.default_path]
+        if command == 'flash':
+            self.do_flash(**kwargs)
+        elif command == 'debug':
+            self.do_debug(**kwargs)
+        else:
+            self.do_debugserver(**kwargs)
 
-        config = path.join(self.zephyr_base, 'boards', self.arch,
-                           self.board_name, 'support', 'openocd.cfg')
+    def do_flash(self, **kwargs):
+        if self.bin_name is None:
+            raise ValueError('Cannot flash; binary name is missing')
+        if self.load_cmd is None:
+            raise ValueError('Cannot flash; load command is missing')
+        if self.verify_cmd is None:
+            raise ValueError('Cannot flash; verify command is missing')
 
         pre_cmd = []
         if self.pre_cmd is not None:
@@ -731,9 +759,8 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         if self.post_cmd is not None:
             post_cmd = ['-c', self.post_cmd]
 
-        cmd = ([self.openocd] +
-               search_args +
-               ['-f', config,
+        cmd = (self.openocd_cmd +
+               ['-f', self.openocd_config,
                 '-c', 'init',
                 '-c', 'targets'] +
                pre_cmd +
@@ -745,6 +772,12 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                ['-c', 'reset run',
                 '-c', 'shutdown'])
         check_call(cmd, self.debug)
+
+    def do_debug(self, **kwargs):
+        raise NotImplementedError()
+
+    def do_debugserver(self, **kwargs):
+        raise NotImplementedError()
 
 
 class PyOcdBinaryRunner(ZephyrBinaryRunner):
