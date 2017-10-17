@@ -3,20 +3,19 @@ Zephyr Sanity Tests
 ###################
 
 This script scans for the set of unit test applications in the git repository
-and attempts to execute them. By default, it tries to build each test case
-boards set to be default in the board definition file.
+and attempts to execute them. By default, it tries to build each test
+case on boards marked as default in the board definition file.
 
-The default options will build the  majority of the tests on a defined set of
-boards and will run in emulated environments (QEMU) if available for the
+The default options will build the majority of the tests on a defined set of
+boards and will run in an emulated environment (QEMU) if available for the
 architecture or configuration being tested.
 
-In general, the sanitycheck is used to verify that local changes did not break
-anything in the tree and would run basic kernel tests inside QEMU. Sanitycheck
-does guarantee that everything would work in the final environment and has
-limited coverage (test execution), however, the script builds samples and tests
-for different boards using different configurations and helps keeping the code
-buildable at all times.
-
+In normal use, sanitycheck runs a limited set of kernel tests (inside
+QEMU).  Because of its limited text execution coverage, sanitycheck
+cannot guarantee local changes will succeed in the full build
+environment, but it does sufficient testing by building samples and
+tests for different boards and different configurations to help keep the
+full code tree buildable.
 
 To run the script in the local tree, follow the steps below:
 
@@ -25,15 +24,15 @@ To run the script in the local tree, follow the steps below:
         $ source zephyr-env.sh
         $ ./scripts/sanitycheck
 
-If you have a system with a large number of cores, you can try and build/run all
-possible tests using the following options:
+If you have a system with a large number of cores, you can build and run
+all possible tests using the following options:
 
 ::
 
         $ ./scripts/sanitycheck --all --enable-slow
 
-This will build for all available boards and would run all possible tests in
-a simulated environment if applicable.
+This will build for all available boards and run all applicable tests in
+a simulated (QEMU) environment.
 
 The sanitycheck script accepts the following optional arguments:
 
@@ -246,7 +245,7 @@ entries in the test section each identifying a test scenario. The name of
 the test case only needs to be unique for the test cases specified in
 that testcase meta-data.
 
-Test cases are written suing the YAML syntax and share the same structure as
+Test cases are written using the YAML syntax and share the same structure as
 samples. The following is an example test with a few options that are
 explained in this document.
 
