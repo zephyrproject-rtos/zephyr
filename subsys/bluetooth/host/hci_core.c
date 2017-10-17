@@ -3731,10 +3731,12 @@ static int set_static_addr(void)
 		if (rp->num_addrs) {
 			bt_dev.id_addr.type = BT_ADDR_LE_RANDOM;
 			bt_addr_copy(&bt_dev.id_addr.a, &rp->a[0].bdaddr);
+			net_buf_unref(rsp);
 			goto set_addr;
-		} else {
-			BT_WARN("No static addresses stored in controller");
 		}
+
+		BT_WARN("No static addresses stored in controller");
+		net_buf_unref(rsp);
 	} else {
 		BT_WARN("Read Static Addresses command not available");
 	}
