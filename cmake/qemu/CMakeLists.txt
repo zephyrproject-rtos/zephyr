@@ -123,7 +123,7 @@ if(EMU_PLATFORM)
   separate_arguments(env_qemu)
   list(APPEND QEMU_EXTRA_FLAGS ${env_qemu})
 
-  set(MORE_FLAGS_FOR_debugserver -s -S)
+  list(APPEND MORE_FLAGS_FOR_debugserver -s -S)
 
   foreach(target ${qemu_targets})
     add_custom_target(${target}
