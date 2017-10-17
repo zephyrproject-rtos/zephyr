@@ -225,7 +225,6 @@ ssize_t zsock_sendto(int sock, const void *buf, size_t len, int flags,
 	s32_t timeout = K_FOREVER;
 	struct net_context *ctx = INT_TO_POINTER(sock);
 	size_t max_len = net_if_get_mtu(net_context_get_iface(ctx));
-	enum net_sock_type sock_type = net_context_get_type(ctx);
 
 	ARG_UNUSED(flags);
 
@@ -263,7 +262,7 @@ ssize_t zsock_sendto(int sock, const void *buf, size_t len, int flags,
 	 */
 	SET_ERRNO(net_context_recv(ctx, zsock_received_cb, K_NO_WAIT, NULL));
 
-	if (sock_type == SOCK_DGRAM) {
+	if (dest_addr) {
 		err = net_context_sendto(send_pkt, dest_addr, addrlen, NULL,
 					 timeout, NULL, NULL);
 	} else {
