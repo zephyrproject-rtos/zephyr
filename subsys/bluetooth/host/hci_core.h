@@ -74,6 +74,14 @@ struct bt_dev_br {
 };
 #endif
 
+/* The theoretical max for these is 8 and 64, but there's no point
+ * in allocating the full memory if we only support a small subset.
+ * These values must be updated whenever the host implementation is
+ * extended beyond the current values.
+ */
+#define BT_DEV_VS_FEAT_MAX  1
+#define BT_DEV_VS_CMDS_MAX  2
+
 /* State tracking for the local Bluetooth controller */
 struct bt_dev {
 	/* Local Identity Address */
@@ -94,6 +102,12 @@ struct bt_dev {
 
 	/* Supported commands */
 	u8_t			supported_commands[64];
+
+#if defined(CONFIG_BT_HCI_VS_EXT)
+	/* Vendor HCI support */
+	u8_t                    vs_features[BT_DEV_VS_FEAT_MAX];
+	u8_t                    vs_commands[BT_DEV_VS_CMDS_MAX];
+#endif
 
 	struct k_work           init;
 

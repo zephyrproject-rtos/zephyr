@@ -23,6 +23,7 @@
 #include <bluetooth/conn.h>
 #include <bluetooth/l2cap.h>
 #include <bluetooth/hci.h>
+#include <bluetooth/hci_vs.h>
 #include <bluetooth/hci_driver.h>
 #include <bluetooth/storage.h>
 
@@ -3713,29 +3714,33 @@ static int set_static_addr(void)
 		}
 	}
 
-#if defined(CONFIG_SOC_FAMILY_NRF5)
-	/* Read address from nRF5-specific storage
-	 * Non-initialized FICR values default to 0xFF, skip if no address
-	 * present. Also if a public address lives in FICR, do not use in this
-	 * function.
-	 */
-	if (((NRF_FICR->DEVICEADDR[0] != UINT32_MAX) ||
-	    ((NRF_FICR->DEVICEADDR[1] & UINT16_MAX) != UINT16_MAX)) &&
-	      (NRF_FICR->DEVICEADDRTYPE & 0x01)) {
+#if defined(CONFIG_BT_HCI_VS_EXT)
+	/* Check for VS_Read_Static_Addresses support */
+	if (bt_dev.vs_commands[1] & BIT(0)) {
+		struct bt_hci_rp_vs_read_static_addrs *rp;
+		struct net_buf *rsp;
 
-		bt_dev.id_addr.type = BT_ADDR_LE_RANDOM;
-		sys_put_le32(NRF_FICR->DEVICEADDR[0], &bt_dev.id_addr.a.val[0]);
-		sys_put_le16(NRF_FICR->DEVICEADDR[1], &bt_dev.id_addr.a.val[4]);
-		/* The FICR value is a just a random number, with no knowledge
-		 * of the Bluetooth Specification requirements for random
-		 * static addresses.
-		 */
-		BT_ADDR_SET_STATIC(&bt_dev.id_addr.a);
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_VS_READ_STATIC_ADDRS,
+					   NULL, &rsp);
+		if (err) {
+			BT_WARN("Failed to read static addresses");
+			goto generate;
+		}
 
-		goto set_addr;
+		rp = (void *)rsp->data;
+		if (rp->num_addrs) {
+			bt_dev.id_addr.type = BT_ADDR_LE_RANDOM;
+			bt_addr_copy(&bt_dev.id_addr.a, &rp->a[0].bdaddr);
+			goto set_addr;
+		} else {
+			BT_WARN("No static addresses stored in controller");
+		}
+	} else {
+		BT_WARN("Read Static Addresses command not available");
 	}
-#endif /* CONFIG_SOC_FAMILY_NRF5 */
+#endif
 
+generate:
 	BT_DBG("Generating new static random address");
 
 	err = bt_addr_le_create_static(&bt_dev.id_addr);
@@ -3803,6 +3808,112 @@ static inline void show_dev_info(void)
 }
 #endif /* CONFIG_BT_DEBUG */
 
+#if defined(CONFIG_BT_HCI_VS_EXT)
+#if defined(CONFIG_BT_DEBUG)
+static const char *vs_hw_platform(u16_t platform)
+{
+	static const char * const plat_str[] = {
+		"reserved", "Intel Corporation", "Nordic Semiconductor",
+		"NXP Semiconductors" };
+
+	if (platform < ARRAY_SIZE(plat_str)) {
+		return plat_str[platform];
+	}
+
+	return "unknown";
+}
+
+static const char *vs_hw_variant(u16_t platform, u16_t variant)
+{
+	static const char * const nordic_str[] = {
+		"reserved", "nRF51x", "nRF52x"
+	};
+
+	if (platform != BT_HCI_VS_HW_PLAT_NORDIC) {
+		return "unknown";
+	}
+
+	if (variant < ARRAY_SIZE(nordic_str)) {
+		return nordic_str[variant];
+	}
+
+	return "unknown";
+}
+
+static const char *vs_fw_variant(u8_t variant)
+{
+	static const char * const var_str[] = {
+		"Standard Bluetooth controller",
+		"Vendor specific controller",
+		"Firmware loader",
+		"Rescue image",
+	};
+
+	if (variant < ARRAY_SIZE(var_str)) {
+		return var_str[variant];
+	}
+
+	return "unknown";
+}
+#endif /* CONFIG_BT_DEBUG */
+
+static void hci_vs_init(void)
+{
+	union {
+		struct bt_hci_rp_vs_read_version_info *info;
+		struct bt_hci_rp_vs_read_supported_commands *cmds;
+		struct bt_hci_rp_vs_read_supported_features *feat;
+	} rp;
+	struct net_buf *rsp;
+	int err;
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_VS_READ_VERSION_INFO, NULL, &rsp);
+	if (err) {
+		BT_WARN("Vendor HCI extensions not available");
+		return;
+	}
+
+#if defined(CONFIG_BT_DEBUG)
+	rp.info = (void *)rsp->data;
+	BT_INFO("HW Platform: %s (0x%04x)",
+		vs_hw_platform(sys_le16_to_cpu(rp.info->hw_platform)),
+		sys_le16_to_cpu(rp.info->hw_platform));
+	BT_INFO("HW Variant: %s (0x%04x)",
+		vs_hw_variant(sys_le16_to_cpu(rp.info->hw_platform),
+			      sys_le16_to_cpu(rp.info->hw_variant)),
+		sys_le16_to_cpu(rp.info->hw_variant));
+	BT_INFO("Firmware: %s (0x%02x) Version %u.%u Build %u",
+		vs_fw_variant(rp.info->fw_variant), rp.info->fw_variant,
+		rp.info->fw_version, sys_le16_to_cpu(rp.info->fw_revision),
+		sys_le32_to_cpu(rp.info->fw_build));
+#endif /* CONFIG_BT_DEBUG */
+
+	net_buf_unref(rsp);
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_VS_READ_SUPPORTED_COMMANDS,
+				   NULL, &rsp);
+	if (err) {
+		BT_WARN("Failed to read supported vendor features");
+		return;
+	}
+
+	rp.cmds = (void *)rsp->data;
+	memcpy(bt_dev.vs_commands, rp.cmds->commands, BT_DEV_VS_CMDS_MAX);
+	net_buf_unref(rsp);
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_VS_READ_SUPPORTED_FEATURES,
+				   NULL, &rsp);
+	if (err) {
+		BT_WARN("Failed to read supported vendor commands");
+		return;
+	}
+
+	rp.feat = (void *)rsp->data;
+	memcpy(bt_dev.vs_features, rp.feat->features, BT_DEV_VS_FEAT_MAX);
+	net_buf_unref(rsp);
+}
+#endif /* CONFIG_BT_HCI_VS_EXT */
+
 static int hci_init(void)
 {
 	int err;
@@ -3831,6 +3942,10 @@ static int hci_init(void)
 	if (err) {
 		return err;
 	}
+
+#if defined(CONFIG_BT_HCI_VS_EXT)
+	hci_vs_init();
+#endif
 
 	if (!bt_addr_le_cmp(&bt_dev.id_addr, BT_ADDR_LE_ANY) ||
 	    !bt_addr_le_cmp(&bt_dev.id_addr, BT_ADDR_LE_NONE)) {
