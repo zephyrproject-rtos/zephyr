@@ -15,7 +15,7 @@
  * is read it must return the state of the physical hardware line, not just the
  * last state written to it for output.
  *
- * The SCL pin should be configued in the same manner as SDA, or, if it is known
+ * The SCL pin should be configured in the same manner as SDA, or, if it is known
  * that the hardware attached to pin doesn't attempt clock stretching, then the
  * SCL pin may be a push/pull output.
  */

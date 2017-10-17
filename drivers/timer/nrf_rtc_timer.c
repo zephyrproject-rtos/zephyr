@@ -215,9 +215,9 @@ void _timer_idle_enter(s32_t sys_ticks)
 #ifdef CONFIG_TICKLESS_KERNEL
 
 /**
- * @brief provides total systicks programed.
+ * @brief provides total systicks programmed.
  *
- * returns : total number of sys ticks programed.
+ * returns : total number of sys ticks programmed.
  */
 
 uint32_t _get_program_time(void)
@@ -226,9 +226,9 @@ uint32_t _get_program_time(void)
 }
 
 /**
- * @brief provides total systicks remaining since last programing of RTC.
+ * @brief provides total systicks remaining since last programming of RTC.
  *
- * returns : total number of sys ticks remaining since last RTC programing.
+ * returns : total number of sys ticks remaining since last RTC programming.
  */
 
 uint32_t _get_remaining_program_time(void)
@@ -242,9 +242,9 @@ uint32_t _get_remaining_program_time(void)
 }
 
 /**
- * @brief provides total systicks passed since last programing of RTC.
+ * @brief provides total systicks passed since last programming of RTC.
  *
- * returns : total number of sys ticks passed since last RTC programing.
+ * returns : total number of sys ticks passed since last RTC programming.
  */
 
 uint32_t _get_elapsed_program_time(void)
@@ -305,7 +305,7 @@ void _set_time(uint32_t time)
  * @brief provides time remaining to reach rtc count overflow.
  *
  * This function returns how many sys RTC remaining for rtc to overflow.
- * This will be required when we will programe RTC compare value to maximum
+ * This will be required when we will program RTC compare value to maximum
  * possible value.
  *
  * returns : difference between current systick and Maximum possible systick.
@@ -334,7 +334,7 @@ int32_t _get_max_clock_time(void)
 /**
  * @brief Enable sys Clock.
  *
- * This is used to programe RTC clock to maximum Clock time incase Clock to
+ * This is used to program RTC clock to maximum Clock time in case Clock to
  * remain On.
  */
 void _enable_sys_clock(void)

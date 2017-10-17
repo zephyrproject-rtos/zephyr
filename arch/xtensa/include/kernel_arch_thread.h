@@ -8,7 +8,7 @@
  * @file
  * @brief Per-arch thread definition
  *
- * This file contains defintions for
+ * This file contains definitions for
  *
  *  struct _thread_arch
  *  struct _callee_saved

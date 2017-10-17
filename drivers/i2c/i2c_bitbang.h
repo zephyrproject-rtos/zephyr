@@ -32,9 +32,9 @@ struct i2c_bitbang {
 };
 
 /**
- * @brief Initialise an i2c_bitbang instance
+ * @brief Initialize an i2c_bitbang instance
  *
- * @param bitbang	The instance to initialise
+ * @param bitbang	The instance to initialize
  * @param io		Functions to use for controlling I2C bus lines
  * @param io_context	Context pointer to pass to i/o functions when then are
  *			called.

@@ -9,7 +9,7 @@
 
 /**
  * @file
- * @brief USB Communicatons Device Class (CDC) public header
+ * @brief USB Communications Device Class (CDC) public header
  *
  * Header follows the Class Definitions for
  * Communications Devices Specification (CDC120-20101103-track.pdf),

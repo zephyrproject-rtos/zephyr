@@ -17,7 +17,7 @@
  * There is a bit of an impedance mismatch between the Zephyr
  * usb_device and the STM32 Cube HAL layer where higher levels make
  * assumptions about the low level drivers that don't quite match how
- * the low level drivers actuall work.
+ * the low level drivers actually work.
  *
  * The usb_dc_ep_read function expects to get the data it wants
  * immediately while the HAL_PCD_EP_Receive function only starts a
