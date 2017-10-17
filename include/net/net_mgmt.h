@@ -269,6 +269,7 @@ void net_mgmt_event_init(void);
 #define net_mgmt_add_event_callback(...)
 #define net_mgmt_event_notify(...)
 #define net_mgmt_event_init(...)
+#define net_mgmt_event_notify_with_info(...)
 
 static inline int net_mgmt_event_wait(u32_t mgmt_event_mask,
 				      u32_t *raised_event,
