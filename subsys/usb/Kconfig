@@ -38,13 +38,13 @@ config SYS_LOG_USB_LEVEL
 
 config USB_DEVICE_VID
 	hex
-	default 0x8086 #Intel vendor ID
+	prompt "USB Vendor ID"
 	help
 	USB device vendor ID
 
 config USB_DEVICE_PID
 	hex
-	default 0xF8A1
+	prompt "USB Product ID"
 	help
 	USB device product ID
 
