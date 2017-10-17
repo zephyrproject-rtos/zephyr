@@ -590,6 +590,25 @@ void _k_thread_single_abort(struct k_thread *thread)
 }
 
 #ifdef CONFIG_MULTITHREADING
+#ifdef CONFIG_USERSPACE
+extern char __object_access_start[];
+extern char __object_access_end[];
+
+static void grant_static_access(void)
+{
+	struct _k_object_assignment *pos;
+
+	for (pos = (struct _k_object_assignment *)__object_access_start;
+	     pos < (struct _k_object_assignment *)__object_access_end;
+	     pos++) {
+		for (int i = 0; pos->objects[i] != NULL; i++) {
+			k_object_access_grant(pos->objects[i],
+					      pos->thread);
+		}
+	}
+}
+#endif /* CONFIG_USERSPACE */
+
 void _init_static_threads(void)
 {
 	unsigned int  key;
@@ -609,6 +628,9 @@ void _init_static_threads(void)
 		thread_data->init_thread->init_data = thread_data;
 	}
 
+#ifdef CONFIG_USERSPACE
+	grant_static_access();
+#endif
 	_sched_lock();
 
 	/*
