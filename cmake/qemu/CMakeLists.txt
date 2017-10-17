@@ -62,20 +62,47 @@ if(EMU_PLATFORM)
       COMMAND ${CMAKE_COMMAND} -E remove -f ${pipes}
       )
 
-    # TODO: Support PCAP
     # TODO: Port to Windows. Perhaps using python? Or removing the
     # need for mkfifo and create_symlink somehow.
     set(create_pipe_commands
-      COMMAND mkfifo                          ${PIPE_SERVER_IN}
-      COMMAND mkfifo                          ${PIPE_SERVER_OUT}
-      COMMAND ${CMAKE_COMMAND} -E create_symlink ${PIPE_SERVER_IN}  ${PIPE_CLIENT_OUT}
-      COMMAND ${CMAKE_COMMAND} -E create_symlink ${PIPE_SERVER_OUT} ${PIPE_CLIENT_IN}
+      COMMAND mkfifo ${PIPE_SERVER_IN}
+      COMMAND mkfifo ${PIPE_SERVER_OUT}
       )
+    if(PCAP)
+      list(APPEND create_pipe_commands
+        COMMAND mkfifo ${PIPE_CLIENT_IN}
+        COMMAND mkfifo ${PIPE_CLIENT_OUT}
+        )
+    else()
+      list(APPEND create_pipe_commands
+        COMMAND ${CMAKE_COMMAND} -E create_symlink ${PIPE_SERVER_IN}  ${PIPE_CLIENT_OUT}
+        COMMAND ${CMAKE_COMMAND} -E create_symlink ${PIPE_SERVER_OUT} ${PIPE_CLIENT_IN}
+        )
+    endif()
 
     set(PRE_QEMU_COMMANDS_FOR_server
       ${destroy_pipe_commands}
       ${create_pipe_commands}
       )
+    if(PCAP)
+      # Start a monitor application to capture traffic
+      #
+      # Assumes;
+      # PCAP has been set to the file where traffic should be captured
+      # NET_TOOLS has been set to the net-tools repo path
+      # net-tools/monitor_15_4 has been built beforehand
+
+      set_ifndef(NET_TOOLS $ENV{ZEPHYR_BASE}/../net-tools) # Default if not set
+
+      list(APPEND PRE_QEMU_COMMANDS_FOR_server
+        COMMAND ${NET_TOOLS}/monitor_15_4
+		${PCAP}
+		/tmp/ip-stack-server
+        /tmp/ip-stack-client
+        > /dev/null &
+        # TODO: Support cleanup of the monitor_15_4 process
+        )
+    endif()
   endif(QEMU_NET_STACK)
 
   if(CONFIG_X86_IAMCU)
