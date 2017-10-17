@@ -1,1 +1,1 @@
-# Nothing here (yet)
+obj-$(CONFIG_LPD880X_STRIP) += lpd880x.o
