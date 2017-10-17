@@ -25,9 +25,9 @@
 
 static const char content[] = {
 #if 0
-    #include "response_big.html.bin.inc"
+    #include <response_big.html.bin.inc>
 #else
-    #include "response_small.html.bin.inc"
+    #include <response_small.html.bin.inc>
 #endif
 };
 
