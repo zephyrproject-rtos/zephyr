@@ -187,23 +187,13 @@ DEFAULT_ARC_GDB_PORT = 3333
 class ArcBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for the ARC architecture, using openocd.'''
 
-    # This unusual flasher matches behavior in the original shell script.
+    # This unusual 'flash' implementation matches the original shell script.
     #
     # It works by starting a GDB server in a separate session, connecting a
     # client to it to load the program, and running 'continue' within the
-    # client to execute the application. Ignoring SIGINT allows GDB's interrupt
-    # functionality to work normally; since the server is in another session,
-    # it doesn't receive the signal, either.
+    # client to execute the application.
     #
-    # Rather than exiting immediately when flashing is done, the client keeps
-    # running, and the user must exit GDB manually to leave the flash
-    # invocation. The flasher then cleans up the server.
-    #
-    # TODO:
-    #
-    # - make consistent with the other flashers, exiting immediately when
-    #   flashing is done and the program runs.
-    # - make portable, rather than assuming POSIX session behavior etc.
+    # TODO: exit immediately when flashing is done, leaving Zephyr running.
 
     def __init__(self, elf, zephyr_base, arch, board_name, python,
                  gdb, openocd='openocd', extra_init=None, default_path=None,
@@ -283,9 +273,6 @@ class ArcBinaryRunner(ZephyrBinaryRunner):
         if command not in {'flash', 'debug', 'debugserver'}:
             raise ValueError('{} is not supported'.format(command))
 
-        if platform.system() != 'Linux':
-            raise NotImplementedError('Linux is currently required.')
-
         kwargs['openocd-cfg'] = path.join(self.zephyr_base, 'boards',
                                           self.arch, self.board_name,
                                           'support', 'openocd.cfg')
@@ -302,7 +289,7 @@ class ArcBinaryRunner(ZephyrBinaryRunner):
 
         config = kwargs['openocd-cfg']
 
-        helper_cmd = (self.openocd_cmd +
+        server_cmd = (self.openocd_cmd +
                       ['-f', config] +
                       extra_init_args +
                       ['-c', 'tcl_port {}'.format(self.tcl_port),
@@ -311,8 +298,6 @@ class ArcBinaryRunner(ZephyrBinaryRunner):
                        '-c', 'init',
                        '-c', 'targets',
                        '-c', 'halt'])
-        helper = subprocess.Popen([self.python, 'arc-helper.py'] +
-                                  helper_cmd)
 
         tui_arg = []
         if self.tui is not None:
@@ -328,13 +313,8 @@ class ArcBinaryRunner(ZephyrBinaryRunner):
                     '-ex', 'load'] +
                    continue_arg +
                    [self.elf])
-        previous = signal.signal(signal.SIGINT, signal.SIG_IGN)
-        try:
-            check_call(gdb_cmd, self.debug)
-        finally:
-            signal.signal(signal.SIGINT, previous)
-            helper.terminate()
-            helper.wait()
+
+        self.run_server_and_client(server_cmd, gdb_cmd)
 
     def debugserver(self, **kwargs):
         config = kwargs['openocd-cfg']
