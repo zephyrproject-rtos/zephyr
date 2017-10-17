@@ -231,8 +231,8 @@ static void tcp_received(struct net_app_ctx *ctx,
 		return;
 	}
 
-	NET_DBG("Sent %d bytes, received %u bytes",
-		data->expecting_tcp, net_pkt_appdatalen(pkt));
+	NET_DBG("%s: Sent %d bytes, received %u bytes",
+		data->proto, data->expecting_tcp, net_pkt_appdatalen(pkt));
 
 	if (!compare_tcp_data(pkt, data->expecting_tcp, data->received_tcp)) {
 		NET_DBG("Data mismatch");
@@ -268,8 +268,6 @@ static void tcp_connected(struct net_app_ctx *ctx,
 			k_sem_give(&tcp_ready);
 		}
 	}
-
-	send_tcp_data(ctx, user_data);
 }
 
 static int connect_tcp(struct net_app_ctx *ctx, const char *peer,
@@ -350,6 +348,14 @@ int start_tcp(void)
 		if (ret < 0) {
 			NET_ERR("Cannot init IPv4 TCP client (%d)", ret);
 		}
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6)) {
+		send_tcp_data(&tcp6, &conf.ipv6);
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4)) {
+		send_tcp_data(&tcp4, &conf.ipv4);
 	}
 
 	return ret;

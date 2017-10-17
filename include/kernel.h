@@ -131,6 +131,8 @@ struct k_mem_partition;
  * function in kernel/userspace.c
  */
 enum k_objects {
+	K_OBJ_ANY,
+
 	/* Core kernel objects */
 	K_OBJ_ALERT,
 	K_OBJ_MSGQ,
@@ -140,6 +142,7 @@ enum k_objects {
 	K_OBJ_STACK,
 	K_OBJ_THREAD,
 	K_OBJ_TIMER,
+	K_OBJ__THREAD_STACK_ELEMENT,
 
 	/* Driver subsystems */
 	K_OBJ_DRIVER_ADC,
@@ -172,34 +175,14 @@ enum k_objects {
  * _k_object_find() */
 struct _k_object {
 	char *name;
-	char perms[CONFIG_MAX_THREAD_BYTES];
-	char type;
-	char flags;
+	u8_t perms[CONFIG_MAX_THREAD_BYTES];
+	u8_t type;
+	u8_t flags;
+	u32_t data;
 } __packed;
 
 #define K_OBJ_FLAG_INITIALIZED	BIT(0)
-/**
- * Ensure a system object is a valid object of the expected type
- *
- * Searches for the object and ensures that it is indeed an object
- * of the expected type, that the caller has the right permissions on it,
- * and that the object has been initialized.
- *
- * This function is intended to be called on the kernel-side system
- * call handlers to validate kernel object pointers passed in from
- * userspace.
- *
- * @param obj Address of the kernel object
- * @param otype Expected type of the kernel object
- * @param init If true, this is for an init function and we will not error
- *	   out if the object is not initialized
- * @return 0 If the object is valid
- *         -EBADF if not a valid object of the specified type
- *         -EPERM If the caller does not have permissions
- *         -EINVAL Object is not initialized
- */
-int _k_object_validate(void *obj, enum k_objects otype, int init);
-
+#define K_OBJ_FLAG_PUBLIC	BIT(1)
 
 /**
  * Lookup a kernel object and init its metadata if it exists
@@ -212,15 +195,6 @@ int _k_object_validate(void *obj, enum k_objects otype, int init);
  */
 void _k_object_init(void *obj);
 #else
-static inline int _k_object_validate(void *obj, enum k_objects otype, int init)
-{
-	ARG_UNUSED(obj);
-	ARG_UNUSED(otype);
-	ARG_UNUSED(init);
-
-	return 0;
-}
-
 static inline void _k_object_init(void *obj)
 {
 	ARG_UNUSED(obj);
@@ -233,7 +207,14 @@ static inline void _impl_k_object_access_grant(void *object,
 	ARG_UNUSED(thread);
 }
 
-static inline void _impl_k_object_access_all_grant(void *object)
+static inline void _impl_k_object_access_revoke(void *object,
+						struct k_thread *thread)
+{
+	ARG_UNUSED(object);
+	ARG_UNUSED(thread);
+}
+
+static inline void k_object_access_all_grant(void *object)
 {
 	ARG_UNUSED(object);
 }
@@ -244,13 +225,24 @@ static inline void _impl_k_object_access_all_grant(void *object)
  *
  * The thread will be granted access to the object if the caller is from
  * supervisor mode, or the caller is from user mode AND has permissions
- * on the object already.
+ * on both the object and the thread whose access is being granted.
  *
  * @param object Address of kernel object
  * @param thread Thread to grant access to the object
  */
 __syscall void k_object_access_grant(void *object, struct k_thread *thread);
 
+/**
+ * grant a thread access to a kernel object
+ *
+ * The thread will lose access to the object if the caller is from
+ * supervisor mode, or the caller is from user mode AND has permissions
+ * on both the object and the thread whose access is being revoked.
+ *
+ * @param object Address of kernel object
+ * @param thread Thread to remove access to the object
+ */
+__syscall void k_object_access_revoke(void *object, struct k_thread *thread);
 
 /**
  * grant all present and future threads access to an object
@@ -264,9 +256,32 @@ __syscall void k_object_access_grant(void *object, struct k_thread *thread);
  * as it is possible for such code to derive the addresses of kernel objects
  * and perform unwanted operations on them.
  *
+ * It is not possible to revoke permissions on public objects; once public,
+ * any thread may use it.
+ *
  * @param object Address of kernel object
  */
-__syscall void k_object_access_all_grant(void *object);
+void k_object_access_all_grant(void *object);
+
+/* Using typedef deliberately here, this is quite intended to be an opaque
+ * type. K_THREAD_STACK_BUFFER() should be used to access the data within.
+ *
+ * The purpose of this data type is to clearly distinguish between the
+ * declared symbol for a stack (of type k_thread_stack_t) and the underlying
+ * buffer which composes the stack data actually used by the underlying
+ * thread; they cannot be used interchangably as some arches precede the
+ * stack buffer region with guard areas that trigger a MPU or MMU fault
+ * if written to.
+ *
+ * APIs that want to work with the buffer inside should continue to use
+ * char *.
+ *
+ * Stacks should always be created with K_THREAD_STACK_DEFINE().
+ */
+struct __packed _k_thread_stack_element {
+	char data;
+};
+typedef struct _k_thread_stack_element *k_thread_stack_t;
 
 /* timeouts */
 
@@ -429,6 +444,8 @@ struct k_thread {
 #if defined(CONFIG_USERSPACE)
 	/* memory domain info of the thread */
 	struct _mem_domain_info mem_domain_info;
+	/* Base address of thread stack */
+	k_thread_stack_t stack_obj;
 #endif /* CONFIG_USERSPACE */
 
 	/* arch-specifics: must always be at the end */
@@ -500,6 +517,12 @@ extern void k_call_stacks_analyze(void);
  */
 #define K_USER (1 << 2)
 
+/* Indicates that the thread being created should inherit all kernel object
+ * permissions from the thread that created it. No effect if CONFIG_USERSPACE
+ * is not enabled.
+ */
+#define K_INHERIT_PERMS (1 << 3)
+
 #ifdef CONFIG_X86
 /* x86 Bitmask definitions for threads user options */
 
@@ -512,28 +535,6 @@ extern void k_call_stacks_analyze(void);
 /* end - thread options */
 
 #if !defined(_ASMLANGUAGE)
-
-/* Using typedef deliberately here, this is quite intended to be an opaque
- * type. K_THREAD_STACK_BUFFER() should be used to access the data within.
- *
- * The purpose of this data type is to clearly distinguish between the
- * declared symbol for a stack (of type k_thread_stack_t) and the underlying
- * buffer which composes the stack data actually used by the underlying
- * thread; they cannot be used interchangably as some arches precede the
- * stack buffer region with guard areas that trigger a MPU or MMU fault
- * if written to.
- *
- * APIs that want to work with the buffer inside should continue to use
- * char *.
- *
- * Stacks should always be created with K_THREAD_STACK_DEFINE().
- */
-struct __packed _k_thread_stack_element {
-	char data;
-};
-typedef struct _k_thread_stack_element *k_thread_stack_t;
-
-
 /**
  * @brief Create a thread.
  *
@@ -566,12 +567,12 @@ typedef struct _k_thread_stack_element *k_thread_stack_t;
  *
  * @return ID of new thread.
  */
-extern k_tid_t k_thread_create(struct k_thread *new_thread,
-			       k_thread_stack_t stack,
-			       size_t stack_size,
-			       k_thread_entry_t entry,
-			       void *p1, void *p2, void *p3,
-			       int prio, u32_t options, s32_t delay);
+__syscall k_tid_t k_thread_create(struct k_thread *new_thread,
+				  k_thread_stack_t stack,
+				  size_t stack_size,
+				  k_thread_entry_t entry,
+				  void *p1, void *p2, void *p3,
+				  int prio, u32_t options, s32_t delay);
 
 /**
  * @brief Drop a thread's privileges permanently to user mode
@@ -1363,7 +1364,7 @@ static inline void *_impl_k_timer_user_data_get(struct k_timer *timer)
  *
  * @return Current uptime.
  */
-extern s64_t k_uptime_get(void);
+__syscall s64_t k_uptime_get(void);
 
 #ifdef CONFIG_TICKLESS_KERNEL
 /**
@@ -2029,7 +2030,7 @@ struct k_stack {
  * @return N/A
  */
 __syscall void k_stack_init(struct k_stack *stack,
-			    u32_t *buffer, int num_entries);
+			    u32_t *buffer, unsigned int num_entries);
 
 /**
  * @brief Push an element onto a stack.
@@ -4260,6 +4261,14 @@ extern void k_mem_domain_remove_thread(k_tid_t thread);
 /**
  * @} end defgroup mem_domain_apis
  */
+
+/**
+ * @brief Emit a character buffer to the console device
+ *
+ * @param c String of characters to print
+ * @param n The length of the string
+ */
+__syscall void k_str_out(char *c, size_t n);
 
 #ifdef __cplusplus
 }

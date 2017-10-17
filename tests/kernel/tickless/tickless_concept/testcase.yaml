@@ -1,4 +1,4 @@
 tests:
--   test:
-        arch_exclude: riscv32 nios2
-        tags: kernel
+  - test:
+      arch_exclude: riscv32 nios2
+      tags: kernel

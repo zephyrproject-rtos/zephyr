@@ -207,7 +207,7 @@ static int spi_stm32_configure(struct spi_config *config)
 	for (br = 1 ; br <= ARRAY_SIZE(scaler) ; ++br) {
 		u32_t clk = clock >> br;
 
-		if (clk < config->frequency) {
+		if (clk <= config->frequency) {
 			break;
 		}
 	}

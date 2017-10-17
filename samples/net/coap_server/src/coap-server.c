@@ -42,6 +42,11 @@
 
 #define NUM_PENDINGS 3
 
+/* block option helper */
+#define GET_BLOCK_NUM(v)	((v) >> 4)
+#define GET_BLOCK_SIZE(v)	(((v) & 0x7))
+#define GET_MORE(v)		(!!((v) & 0x08))
+
 static struct net_context *context;
 
 static const u8_t plain_text_format;
@@ -59,6 +64,24 @@ static int obs_counter;
 static struct coap_resource *resource_to_notify;
 
 struct k_delayed_work retransmit_work;
+
+static void strip_headers(struct net_pkt *pkt)
+{
+	/* Get rid of IP + UDP/TCP header if it is there. The IP header
+	 * will be put back just before sending the packet.
+	 */
+	if (net_pkt_appdatalen(pkt) > 0) {
+		int header_len;
+
+		header_len = net_buf_frags_len(pkt->frags) -
+			     net_pkt_appdatalen(pkt);
+		if (header_len > 0) {
+			net_buf_pull(pkt->frags, header_len);
+		}
+	} else {
+		net_pkt_set_appdatalen(pkt, net_buf_frags_len(pkt->frags));
+	}
+}
 
 static void get_from_ip_addr(struct coap_packet *cpkt,
 			     struct sockaddr_in6 *from)
@@ -608,6 +631,9 @@ done:
 		k_delayed_work_submit(&retransmit_work, pending->timeout);
 	}
 
+	/* setup appdatalen */
+	strip_headers(pkt);
+
 	return net_context_sendto(pkt, (const struct sockaddr *)&from,
 				  sizeof(struct sockaddr_in6),
 				  NULL, 0, NULL, NULL);
@@ -700,6 +726,19 @@ static int large_get(struct coap_resource *resource,
 				  NULL, 0, NULL, NULL);
 }
 
+static int get_option_int(const struct coap_packet *pkt, u8_t opt)
+{
+	struct coap_option option = {};
+	int r;
+
+	r = coap_find_options(pkt, opt, &option, 1);
+	if (r <= 0) {
+		return -ENOENT;
+	}
+
+	return coap_option_value_to_int(&option);
+}
+
 static int large_update_put(struct coap_resource *resource,
 			    struct coap_packet *request)
 {
@@ -709,33 +748,34 @@ static int large_update_put(struct coap_resource *resource,
 	struct sockaddr_in6 from;
 	struct coap_packet response;
 	u8_t token[8];
-	u16_t offset;
-	u16_t id;
-	u8_t payload;
+	u16_t len, id, offset;
 	u8_t code;
 	u8_t type;
 	u8_t tkl;
 	int r;
+	bool last_block;
 
-	frag = net_frag_skip(request->frag, request->offset, &offset,
-			     request->hdr_len + request->opt_len);
-	if (!frag && offset == 0xffff) {
+	r = get_option_int(request, COAP_OPTION_BLOCK1);
+	if (r < 0) {
 		return -EINVAL;
 	}
 
-	frag = net_frag_read_u8(frag, offset, &offset, &payload);
-	if (frag && offset != 0xffff) {
-		NET_ERR("packet has payload, wrong");
-		return -EINVAL;
-	}
+	last_block = !GET_MORE(r);
 
-	if (ctx.total_size == 0) {
+	/* initialize block context upon the arrival of first block */
+	if (!GET_BLOCK_NUM(r)) {
 		coap_block_transfer_init(&ctx, COAP_BLOCK_64, 0);
 	}
 
 	r = coap_update_from_block(request, &ctx);
 	if (r < 0) {
 		NET_ERR("Invalid block size option from request");
+		return -EINVAL;
+	}
+
+	frag = coap_packet_get_payload(request, &offset, &len);
+	if (!last_block && frag == NULL && len == 0) {
+		NET_ERR("Packet without payload\n");
 		return -EINVAL;
 	}
 
@@ -762,16 +802,15 @@ static int large_update_put(struct coap_resource *resource,
 
 	net_pkt_frag_add(pkt, frag);
 
-	r = coap_packet_init(&response, pkt, 1, COAP_TYPE_ACK,
-			     tkl, (u8_t *) token,
-			     COAP_RESPONSE_CODE_CHANGED, id);
-	if (r < 0) {
-		return -EINVAL;
+	if (!last_block) {
+		code = COAP_RESPONSE_CODE_CONTINUE;
+	} else {
+		code = COAP_RESPONSE_CODE_CHANGED;
 	}
 
-	r = coap_append_block2_option(&response, &ctx);
+	r = coap_packet_init(&response, pkt, 1, COAP_TYPE_ACK,
+			     tkl, (u8_t *) token, code, id);
 	if (r < 0) {
-		NET_ERR("Could not add Block2 option to response");
 		return -EINVAL;
 	}
 
@@ -796,20 +835,34 @@ static int large_create_post(struct coap_resource *resource,
 	struct coap_packet response;
 	u8_t token[8];
 	u8_t code, type;
-	u16_t id;
+	u16_t len, id, offset;
 	u8_t tkl;
 	int r;
+	bool last_block;
 
-	if (ctx.total_size == 0) {
+	r = get_option_int(request, COAP_OPTION_BLOCK1);
+	if (r < 0) {
+		return -EINVAL;
+	}
+
+	last_block = !GET_MORE(r);
+
+	/* initialize block context upon the arrival of first block */
+	if (!GET_BLOCK_NUM(r)) {
 		coap_block_transfer_init(&ctx, COAP_BLOCK_32, 0);
 	}
 
 	r = coap_update_from_block(request, &ctx);
 	if (r < 0) {
+		NET_ERR("Invalid block size option from request");
 		return -EINVAL;
 	}
 
-	/* TODO: Check for payload, empty payload is an error case. */
+	frag = coap_packet_get_payload(request, &offset, &len);
+	if (!last_block && frag == NULL && len == 0) {
+		NET_ERR("Packet without payload\n");
+		return -EINVAL;
+	}
 
 	get_from_ip_addr(request, &from);
 	code = coap_header_get_code(request);
@@ -823,19 +876,17 @@ static int large_create_post(struct coap_resource *resource,
 
 	pkt = net_pkt_get_tx(context, K_FOREVER);
 	frag = net_pkt_get_data(context, K_FOREVER);
-
 	net_pkt_frag_add(pkt, frag);
 
-	r = coap_packet_init(&response, pkt, 1, COAP_TYPE_ACK,
-			     tkl, (u8_t *)token,
-			     COAP_RESPONSE_CODE_CONTINUE, id);
-	if (r < 0) {
-		return -EINVAL;
+	if (!last_block) {
+		code = COAP_RESPONSE_CODE_CONTINUE;
+	} else {
+		code = COAP_RESPONSE_CODE_CREATED;
 	}
 
-	r = coap_append_block2_option(&response, &ctx);
+	r = coap_packet_init(&response, pkt, 1, COAP_TYPE_ACK,
+			     tkl, (u8_t *)token, code, id);
 	if (r < 0) {
-		NET_ERR("Could not add Block2 option to response");
 		return -EINVAL;
 	}
 
@@ -943,6 +994,9 @@ static int send_notification_packet(const struct sockaddr *addr, u16_t age,
 
 		k_delayed_work_submit(&retransmit_work, pending->timeout);
 	}
+
+	/* setup appdatalen */
+	strip_headers(pkt);
 
 	return net_context_sendto(pkt, addr, addrlen, NULL, 0, NULL, NULL);
 }
@@ -1256,18 +1310,27 @@ static void retransmit_request(struct k_work *work)
 		return;
 	}
 
+	/* ref to avoid being freed by sendto() */
+	net_pkt_ref(pending->pkt);
+	/* drop IP + UDP headers */
+	strip_headers(pending->pkt);
+
 	r = net_context_sendto(pending->pkt, &pending->addr,
 			       sizeof(struct sockaddr_in6),
 			       NULL, 0, NULL, NULL);
 	if (r < 0) {
-		return;
+		/* no error, keeps retry */
+		net_pkt_unref(pending->pkt);
 	}
 
 	if (!coap_pending_cycle(pending)) {
+		/* last retransmit, clear pending and unreference packet */
 		coap_pending_clear(pending);
 		return;
 	}
 
+	/* unref to balance ref made previously */
+	net_pkt_unref(pending->pkt);
 	k_delayed_work_submit(&retransmit_work, pending->timeout);
 }
 

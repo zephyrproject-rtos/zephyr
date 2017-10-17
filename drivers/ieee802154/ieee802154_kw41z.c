@@ -78,8 +78,6 @@ struct kw41z_context {
 
 	u32_t rx_warmup_time;
 	u32_t tx_warmup_time;
-
-	u8_t lqi;
 };
 
 static struct kw41z_context kw41z_context_data;
@@ -191,6 +189,13 @@ static inline void kw41z_tmr2_disable(void)
 	ZLL->PHY_CTRL &= ~ZLL_PHY_CTRL_TMR2CMP_EN_MASK;
 }
 
+static enum ieee802154_hw_caps kw41z_get_capabilities(struct device *dev)
+{
+	return IEEE802154_HW_FCS |
+		IEEE802154_HW_2_4_GHZ |
+		IEEE802154_HW_FILTER;
+}
+
 static int kw41z_cca(struct device *dev)
 {
 	struct kw41z_context *kw41z = dev->driver_data;
@@ -252,6 +257,23 @@ static int kw41z_set_ieee_addr(struct device *dev, const u8_t *ieee_addr)
 	return 0;
 }
 
+static int kw41z_set_filter(struct device *dev,
+			    enum ieee802154_filter_type type,
+			    const struct ieee802154_filter *filter)
+{
+	SYS_LOG_DBG("Applying filter %u", type);
+
+	if (type == IEEE802154_FILTER_TYPE_IEEE_ADDR) {
+		return kw41z_set_ieee_addr(dev, filter->ieee_addr);
+	} else if (type == IEEE802154_FILTER_TYPE_SHORT_ADDR) {
+		return kw41z_set_short_addr(dev, filter->short_addr);
+	} else if (type == IEEE802154_FILTER_TYPE_PAN_ID) {
+		return kw41z_set_pan_id(dev, filter->pan_id);
+	}
+
+	return -EINVAL;
+}
+
 static int kw41z_set_txpower(struct device *dev, s16_t dbm)
 {
 	if (dbm < KW41Z_OUTPUT_POWER_MIN) {
@@ -292,13 +314,6 @@ static u8_t kw41z_convert_lqi(u8_t hw_lqi)
 	} else {
 		return (51 * hw_lqi) / 44;
 	}
-}
-
-static u8_t kw41z_get_lqi(struct device *dev)
-{
-	struct kw41z_context *kw41z = dev->driver_data;
-
-	return kw41z->lqi;
 }
 
 static inline void kw41z_rx(struct kw41z_context *kw41z, u8_t len)
@@ -362,7 +377,8 @@ static inline void kw41z_rx(struct kw41z_context *kw41z, u8_t len)
 
 	hw_lqi = (ZLL->LQI_AND_RSSI & ZLL_LQI_AND_RSSI_LQI_VALUE_MASK) >>
 		 ZLL_LQI_AND_RSSI_LQI_VALUE_SHIFT;
-	kw41z->lqi = kw41z_convert_lqi(hw_lqi);
+	net_pkt_set_ieee802154_lqi(pkt, kw41z_convert_lqi(hw_lqi));
+	/* ToDo: get the rssi as well and use net_pkt_set_ieee802154_rssi() */
 
 	if (net_recv_data(kw41z->iface, pkt) < 0) {
 		SYS_LOG_DBG("Packet dropped by NET stack");
@@ -663,16 +679,14 @@ static struct ieee802154_radio_api kw41z_radio_api = {
 	.iface_api.init	= kw41z_iface_init,
 	.iface_api.send	= ieee802154_radio_send,
 
-	.cca		= kw41z_cca,
-	.set_channel	= kw41z_set_channel,
-	.set_pan_id	= kw41z_set_pan_id,
-	.set_short_addr	= kw41z_set_short_addr,
-	.set_ieee_addr	= kw41z_set_ieee_addr,
-	.set_txpower	= kw41z_set_txpower,
-	.start		= kw41z_start,
-	.stop		= kw41z_stop,
-	.tx		= kw41z_tx,
-	.get_lqi	= kw41z_get_lqi,
+	.get_capabilities	= kw41z_get_capabilities,
+	.cca			= kw41z_cca,
+	.set_channel		= kw41z_set_channel,
+	.set_filter		= kw41z_set_filter,
+	.set_txpower		= kw41z_set_txpower,
+	.start			= kw41z_start,
+	.stop			= kw41z_stop,
+	.tx			= kw41z_tx,
 };
 
 NET_DEVICE_INIT(kw41z, CONFIG_IEEE802154_KW41Z_DRV_NAME,

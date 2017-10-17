@@ -122,7 +122,8 @@ struct net_pkt {
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_L2_IEEE802154)
-	u8_t ieee802154_rssi;
+	u8_t ieee802154_rssi; /* Received Signal Strength Indication */
+	u8_t ieee802154_lqi;  /* Link Quality Indicator */
 #endif
 	/* @endcond */
 
@@ -432,6 +433,17 @@ static inline void net_pkt_set_ieee802154_rssi(struct net_pkt *pkt,
 					       u8_t rssi)
 {
 	pkt->ieee802154_rssi = rssi;
+}
+
+static inline u8_t net_pkt_ieee802154_lqi(struct net_pkt *pkt)
+{
+	return pkt->ieee802154_lqi;
+}
+
+static inline void net_pkt_set_ieee802154_lqi(struct net_pkt *pkt,
+					      u8_t lqi)
+{
+	pkt->ieee802154_lqi = lqi;
 }
 #endif
 

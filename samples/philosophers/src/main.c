@@ -231,7 +231,13 @@ static void start_threads(void)
 		int prio = new_prio(i);
 
 		k_thread_create(&threads[i], &stacks[i][0], STACK_SIZE,
-				philosopher, (void *)i, NULL, NULL, prio, 0, 0);
+				philosopher, (void *)i, NULL, NULL, prio,
+				K_USER, K_FOREVER);
+
+		k_object_access_grant(fork(i), &threads[i]);
+		k_object_access_grant(fork((i + 1) % NUM_PHIL), &threads[i]);
+
+		k_thread_start(&threads[i]);
 	}
 }
 

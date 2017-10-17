@@ -1,3 +1,3 @@
 tests:
--   test:
-        tags: crypto aes ctr
+  - test:
+      tags: crypto aes ctr

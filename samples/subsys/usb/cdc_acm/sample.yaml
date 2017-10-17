@@ -1,9 +1,9 @@
 sample:
-    description: TBD
-    name: TBD
+  description: TBD
+  name: TBD
 tests:
--   test_x86:
-        build_only: true
-        platform_whitelist: arduino_101
-        tags: usb
-        depends_on: usb_device
+  - test_x86:
+      build_only: true
+      depends_on: usb_device
+      platform_whitelist: arduino_101
+      tags: usb

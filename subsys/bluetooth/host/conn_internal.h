@@ -167,6 +167,15 @@ struct bt_conn *bt_conn_lookup_handle(u16_t handle);
 /* Compare an address with bt_conn destination address */
 int bt_conn_addr_le_cmp(const struct bt_conn *conn, const bt_addr_le_t *peer);
 
+
+/* Helpers for identifying & looking up connections based on the the index to
+ * the connection list. This is useful for O(1) lookups, but can't be used
+ * e.g. as the handle since that's assigned to us by the controller.
+ */
+#define BT_CONN_ID_INVALID 0xff
+u8_t bt_conn_get_id(struct bt_conn *conn);
+struct bt_conn *bt_conn_lookup_id(u8_t id);
+
 /* Look up a connection state. For BT_ADDR_LE_ANY, returns the first connection
  * with the specific state
  */

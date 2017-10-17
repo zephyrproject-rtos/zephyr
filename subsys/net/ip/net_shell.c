@@ -1091,13 +1091,25 @@ static void arp_cb(struct arp_entry *entry, void *user_data)
 int net_shell_cmd_arp(int argc, char *argv[])
 {
 	ARG_UNUSED(argc);
-	ARG_UNUSED(argv);
 
 #if defined(CONFIG_NET_ARP)
-	int count = 0;
+	int arg = 1;
 
-	if (net_arp_foreach(arp_cb, &count) == 0) {
-		printk("ARP cache is empty.\n");
+	if (!argv[arg]) {
+		/* ARP cache content */
+		int count = 0;
+
+		if (net_arp_foreach(arp_cb, &count) == 0) {
+			printk("ARP cache is empty.\n");
+		}
+
+		return 0;
+	}
+
+	if (strcmp(argv[arg], "flush") == 0) {
+		printk("Flushing ARP cache.\n");
+		net_arp_clear_cache();
+		return 0;
 	}
 #else
 	printk("Enable CONFIG_NET_ARP, CONFIG_NET_IPV4 and "
@@ -1542,8 +1554,8 @@ int net_shell_cmd_mem(int argc, char *argv[])
 
 	printk("Network buffer pools:\n");
 
-#if defined(CONFIG_NET_DEBUG_NET_PKT)
-	printk("Address\t\tSize\tCount\tAvail\tName\n");
+#if defined(CONFIG_NET_BUF_POOL_USAGE)
+	printk("Address\t\tSize\tTotal\tAvail\tName\n");
 
 	printk("%p\t%zu\t%d\t%u\tRX\n",
 	       rx, rx->num_blocks * rx->block_size,
@@ -1561,13 +1573,14 @@ int net_shell_cmd_mem(int argc, char *argv[])
 	       tx_data, tx_data->pool_size, tx_data->buf_count,
 	       tx_data->avail_count, tx_data->name);
 #else
-	printk("Address\t\tCount\tName\n");
+	printk("(CONFIG_NET_BUF_POOL_USAGE to see free #s)\n");
+	printk("Address\t\tTotal\tName\n");
 
 	printk("%p\t%d\tRX\n", rx, rx->num_blocks);
 	printk("%p\t%d\tTX\n", tx, tx->num_blocks);
 	printk("%p\t%d\tRX DATA\n", rx_data, rx_data->buf_count);
 	printk("%p\t%d\tTX DATA\n", tx_data, tx_data->buf_count);
-#endif /* CONFIG_NET_DEBUG_NET_PKT */
+#endif /* CONFIG_NET_BUF_POOL_USAGE */
 
 	if (IS_ENABLED(CONFIG_NET_CONTEXT_NET_PKT_POOL)) {
 		struct ctx_info info;
@@ -2448,7 +2461,8 @@ static struct shell_cmd net_commands[] = {
 	{ "app", net_shell_cmd_app,
 		"\n\tPrint network application API usage information" },
 	{ "arp", net_shell_cmd_arp,
-		"\n\tPrint information about IPv4 ARP cache" },
+		"\n\tPrint information about IPv4 ARP cache\n"
+		"arp flush\n\tRemove all entries from ARP cache" },
 	{ "conn", net_shell_cmd_conn,
 		"\n\tPrint information about network connections" },
 	{ "dns", net_shell_cmd_dns, "\n\tShow how DNS is configure\n"

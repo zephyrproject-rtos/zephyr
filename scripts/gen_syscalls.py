@@ -55,12 +55,23 @@ def analyze_fn(match_group, fn):
         raise
 
     sys_id = "K_SYSCALL_" + func_name.upper()
+
+    if func_type == "void":
+        suffix = "_VOID"
+        is_void = True
+    else:
+        is_void = False
+        if func_type in ["s64_t", "u64_t"]:
+            suffix = "_RET64"
+        else:
+            suffix = ""
+
     is_void = (func_type == "void")
 
     # Get the proper system call macro invocation, which depends on the
     # number of arguments, the return type, and whether the implementation
     # is an inline function
-    macro = "K_SYSCALL_DECLARE%d%s" % (len(args), "_VOID" if is_void else "")
+    macro = "K_SYSCALL_DECLARE%d%s" % (len(args), suffix)
 
     # Flatten the argument lists and generate a comma separated list
     # of t0, p0, t1, p1, ... tN, pN as expected by the macros

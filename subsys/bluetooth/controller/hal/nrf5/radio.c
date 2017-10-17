@@ -516,7 +516,7 @@ static void sw_switch(u8_t dir, u8_t phy_curr, u8_t flags_curr, u8_t phy_next,
 			       &(NRF_TIMER1->EVENTS_COMPARE[sw_tifs_toggle]);
 	if (dir) {
 		delay = radio_tx_ready_delay_get(phy_next, flags_next) +
-			radio_rx_chain_delay_get(phy_curr, flags_curr);
+			radio_rx_chain_delay_get(phy_curr, 1);
 
 		NRF_PPI->CH[ppi].TEP = (u32_t)&(NRF_RADIO->TASKS_TXEN);
 	} else {
@@ -659,7 +659,7 @@ void radio_tmr_status_reset(void)
 	NRF_PPI->CHENCLR =
 	    (PPI_CHEN_CH0_Msk | PPI_CHEN_CH1_Msk | PPI_CHEN_CH2_Msk |
 	     PPI_CHEN_CH3_Msk | PPI_CHEN_CH4_Msk | PPI_CHEN_CH5_Msk |
-	     PPI_CHEN_CH6_Msk);
+	     PPI_CHEN_CH6_Msk | PPI_CHEN_CH15_Msk);
 }
 
 void radio_tmr_tifs_set(u32_t tifs)
@@ -927,7 +927,7 @@ void radio_gpio_pa_lna_disable(void)
 
 static u8_t MALIGN(4) _ccm_scratch[(RADIO_PDU_LEN_MAX - 4) + 16];
 
-void *radio_ccm_rx_pkt_set(struct ccm *ccm, void *pkt)
+void *radio_ccm_rx_pkt_set(struct ccm *ccm, u8_t phy, void *pkt)
 {
 	u32_t mode;
 
@@ -941,21 +941,36 @@ void *radio_ccm_rx_pkt_set(struct ccm *ccm, void *pkt)
 		CCM_MODE_LENGTH_Msk;
 
 	/* Select CCM data rate based on current PHY in use. */
-	/* TODO: add cases for nRF52840's coded PHY */
-	switch ((NRF_RADIO->MODE & RADIO_MODE_MODE_Msk) >>
-		RADIO_MODE_MODE_Pos) {
+	switch (phy) {
 	default:
-	case RADIO_MODE_MODE_Ble_1Mbit:
+	case BIT(0):
 		mode |= (CCM_MODE_DATARATE_1Mbit <<
 			 CCM_MODE_DATARATE_Pos) &
 			CCM_MODE_DATARATE_Msk;
 		break;
 
-	case RADIO_MODE_MODE_Ble_2Mbit:
+	case BIT(1):
 		mode |= (CCM_MODE_DATARATE_2Mbit <<
 			 CCM_MODE_DATARATE_Pos) &
 			CCM_MODE_DATARATE_Msk;
 		break;
+
+#if defined(CONFIG_SOC_NRF52840)
+	case BIT(2):
+		mode |= (CCM_MODE_DATARATE_125Kbps <<
+			 CCM_MODE_DATARATE_Pos) &
+			CCM_MODE_DATARATE_Msk;
+
+		NRF_CCM->RATEOVERRIDE =
+			(CCM_RATEOVERRIDE_RATEOVERRIDE_500Kbps <<
+			 CCM_RATEOVERRIDE_RATEOVERRIDE_Pos) &
+			CCM_RATEOVERRIDE_RATEOVERRIDE_Msk;
+
+		NRF_PPI->CH[15].EEP = (u32_t)&(NRF_RADIO->EVENTS_RATEBOOST);
+		NRF_PPI->CH[15].TEP = (u32_t)&(NRF_CCM->TASKS_RATEOVERRIDE);
+		NRF_PPI->CHENSET = PPI_CHEN_CH15_Msk;
+		break;
+#endif /* CONFIG_SOC_NRF52840 */
 	}
 #endif
 	NRF_CCM->MODE = mode;
@@ -1041,7 +1056,12 @@ void radio_ar_configure(u32_t nirk, void *irk)
 	NRF_AAR->ADDRPTR = (u32_t)NRF_RADIO->PACKETPTR - 1;
 	NRF_AAR->SCRATCHPTR = (u32_t)&_aar_scratch[0];
 
+	NRF_AAR->EVENTS_END = 0;
+	NRF_AAR->EVENTS_RESOLVED = 0;
+	NRF_AAR->EVENTS_NOTRESOLVED = 0;
+
 	radio_bc_configure(64);
+	radio_bc_status_reset();
 
 	NRF_PPI->CH[6].EEP = (u32_t)&(NRF_RADIO->EVENTS_BCMATCH);
 	NRF_PPI->CH[6].TEP = (u32_t)&(NRF_AAR->TASKS_START);
@@ -1055,18 +1075,16 @@ u32_t radio_ar_match_get(void)
 
 void radio_ar_status_reset(void)
 {
-	if (radio_bc_has_match()) {
-		NRF_AAR->EVENTS_END = 0;
-		NRF_AAR->EVENTS_RESOLVED = 0;
-		NRF_AAR->EVENTS_NOTRESOLVED = 0;
-	}
-
 	radio_bc_status_reset();
+
+	NRF_AAR->ENABLE = (AAR_ENABLE_ENABLE_Disabled << AAR_ENABLE_ENABLE_Pos) &
+			  AAR_ENABLE_ENABLE_Msk;
 }
 
 u32_t radio_ar_has_match(void)
 {
 	return (radio_bc_has_match() &&
-			(NRF_AAR->EVENTS_END) &&
-			(NRF_AAR->EVENTS_RESOLVED));
+		NRF_AAR->EVENTS_END &&
+		NRF_AAR->EVENTS_RESOLVED &&
+		!NRF_AAR->EVENTS_NOTRESOLVED);
 }

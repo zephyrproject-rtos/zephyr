@@ -1,13 +1,15 @@
 sample:
-    description: TBD
-    name: TBD
+  description: TBD
+  name: TBD
 tests:
--   test_arm:
-        build_only: true
-        platform_whitelist: 96b_nitrogen nrf51_pca10028 nrf52_pca10040 bbc_microbit
-        tags: uart bluetooth
--   test_nrf5:
-        build_only: true
-        extra_args: CONF_FILE="nrf5.conf"
-        platform_whitelist: 96b_nitrogen nrf51_pca10028 nrf52_pca10040 arduino_101_ble
-        tags: uart bluetooth
+  - test_arm:
+      build_only: true
+      platform_whitelist: 96b_nitrogen nrf51_pca10028
+        nrf52_pca10040 bbc_microbit
+      tags: uart bluetooth
+  - test_nrf5:
+      build_only: true
+      extra_args: CONF_FILE="nrf5.conf"
+      platform_whitelist: 96b_nitrogen nrf51_pca10028
+        nrf52_pca10040 arduino_101_ble
+      tags: uart bluetooth

@@ -1,12 +1,12 @@
 tests:
--   test_basic:
-        platform_whitelist: qemu_x86
-        tags: nffs fs
--   test_large:
-        platform_whitelist: qemu_x86
-        extra_args: TEST=large
-        tags: nffs fs
--   test_cache:
-        platform_whitelist: qemu_x86
-        extra_args: CONF_FILE=prj_cache.conf TEST=cache
-        tags: nffs fs
+  - test_basic:
+      platform_whitelist: qemu_x86
+      tags: nffs fs
+  - test_large:
+      extra_args: TEST=large
+      platform_whitelist: qemu_x86
+      tags: nffs fs
+  - test_cache:
+      extra_args: CONF_FILE=prj_cache.conf TEST=cache
+      platform_whitelist: qemu_x86
+      tags: nffs fs

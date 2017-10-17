@@ -1280,6 +1280,8 @@ static void conn_cleanup(struct bt_conn *conn)
 
 	__ASSERT(sys_slist_is_empty(&conn->tx_pending), "Pending TX packets");
 
+	bt_conn_notify_tx(conn);
+
 	bt_conn_reset_rx_state(conn);
 
 	/* Release the reference we took for the very first
@@ -2059,6 +2061,28 @@ int bt_conn_auth_pairing_confirm(struct bt_conn *conn)
 	}
 }
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
+
+u8_t bt_conn_get_id(struct bt_conn *conn)
+{
+	return conn - conns;
+}
+
+struct bt_conn *bt_conn_lookup_id(u8_t id)
+{
+	struct bt_conn *conn;
+
+	if (id >= ARRAY_SIZE(conns)) {
+		return NULL;
+	}
+
+	conn = &conns[id];
+
+	if (!atomic_get(&conn->ref)) {
+		return NULL;
+	}
+
+	return bt_conn_ref(conn);
+}
 
 int bt_conn_init(void)
 {

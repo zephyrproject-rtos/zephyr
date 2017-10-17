@@ -11,13 +11,10 @@
  * host and qemu. The host will need to run tunslip process.
  */
 
-
-#if defined(CONFIG_SLIP_DEBUG)
 #define SYS_LOG_DOMAIN "slip"
-#define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_SLIP_LEVEL
 #include <logging/sys_log.h>
 #include <stdio.h>
-#endif
 
 #include <kernel.h>
 
@@ -65,7 +62,7 @@ struct slip_context {
 #endif
 };
 
-#if defined(CONFIG_SLIP_DEBUG)
+#if SYS_LOG_LEVEL >= SYS_LOG_LEVEL_DEBUG
 #if defined(CONFIG_SYS_LOG_SHOW_COLOR)
 #define COLOR_OFF     "\x1B[0m"
 #define COLOR_YELLOW  "\x1B[0;33m"
@@ -178,7 +175,7 @@ static int slip_send(struct net_if *iface, struct net_pkt *pkt)
 	slip_writeb(SLIP_END);
 
 	for (frag = pkt->frags; frag; frag = frag->frags) {
-#if defined(CONFIG_SLIP_DEBUG)
+#if SYS_LOG_LEVEL >= SYS_LOG_LEVEL_DEBUG
 		int frag_count = 0;
 #endif
 
@@ -211,7 +208,7 @@ static int slip_send(struct net_if *iface, struct net_pkt *pkt)
 			slip_writeb_esc(c);
 		}
 
-#if defined(CONFIG_SLIP_DEBUG)
+#if SYS_LOG_LEVEL >= SYS_LOG_LEVEL_DEBUG
 		SYS_LOG_DBG("sent data %d bytes",
 			    frag->len + net_pkt_ll_reserve(pkt));
 		if (frag->len + ll_reserve) {
@@ -309,11 +306,15 @@ static inline int slip_input_byte(struct slip_context *slip,
 
 			slip->rx = net_pkt_get_reserve_rx(0, K_NO_WAIT);
 			if (!slip->rx) {
+				SYS_LOG_ERR("[%p] cannot allocate pkt",
+					    slip);
 				return 0;
 			}
 
 			slip->last = net_pkt_get_frag(slip->rx, K_NO_WAIT);
 			if (!slip->last) {
+				SYS_LOG_ERR("[%p] cannot allocate 1st data frag",
+					    slip);
 				net_pkt_unref(slip->rx);
 				slip->rx = NULL;
 				return 0;
@@ -340,7 +341,7 @@ static inline int slip_input_byte(struct slip_context *slip,
 
 		frag = net_pkt_get_reserve_rx_data(0, K_NO_WAIT);
 		if (!frag) {
-			SYS_LOG_ERR("[%p] cannot allocate data fragment",
+			SYS_LOG_ERR("[%p] cannot allocate next data frag",
 				    slip);
 			net_pkt_unref(slip->rx);
 			slip->rx = NULL;
@@ -381,7 +382,7 @@ static u8_t *recv_cb(u8_t *buf, size_t *off)
 
 	for (i = 0; i < *off; i++) {
 		if (slip_input_byte(slip, buf[i])) {
-#if defined(CONFIG_SLIP_DEBUG)
+#if SYS_LOG_LEVEL >= SYS_LOG_LEVEL_DEBUG
 			struct net_buf *frag = slip->rx->frags;
 			int bytes = net_buf_frags_len(frag);
 			int count = 0;

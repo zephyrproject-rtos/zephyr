@@ -77,6 +77,7 @@ void pollfds_del(int fd)
 int main(void)
 {
 	int res;
+	static int counter;
 	int serv4, serv6;
 	struct sockaddr_in bind_addr4 = {
 		.sin_family = AF_INET,
@@ -144,7 +145,8 @@ int main(void)
 
 				inet_ntop(client_addr.ss_family, addr,
 					  addr_str, sizeof(addr_str));
-				printf("Connection from %s fd=%d\n", addr_str, client);
+				printf("Connection #%d from %s fd=%d\n", counter++,
+				       addr_str, client);
 				if (pollfds_add(client) < 0) {
 					static char msg[] = "Too many connections\n";
 					send(client, msg, sizeof(msg) - 1, 0);

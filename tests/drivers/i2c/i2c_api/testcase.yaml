@@ -1,7 +1,7 @@
 tests:
--   test_i2c_x86:
-        platform_whitelist: quark_se_c1000_devboard quark_d2000_crb
-        tags: drivers
--   test_i2c_arc:
-        platform_whitelist: quark_se_c1000_ss_devboard
-        tags: drivers
+  - test_i2c_x86:
+      platform_whitelist: quark_se_c1000_devboard quark_d2000_crb
+      tags: drivers
+  - test_i2c_arc:
+      platform_whitelist: quark_se_c1000_ss_devboard
+      tags: drivers

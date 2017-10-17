@@ -88,7 +88,7 @@ void radio_gpio_lna_off(void);
 void radio_gpio_pa_lna_enable(u32_t trx_us);
 void radio_gpio_pa_lna_disable(void);
 
-void *radio_ccm_rx_pkt_set(struct ccm *ccm, void *pkt);
+void *radio_ccm_rx_pkt_set(struct ccm *ccm, u8_t phy, void *pkt);
 void *radio_ccm_tx_pkt_set(struct ccm *ccm, void *pkt);
 u32_t radio_ccm_is_done(void);
 u32_t radio_ccm_mic_is_valid(void);

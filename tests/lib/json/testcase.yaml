@@ -1,4 +1,4 @@
 tests:
--   test:
-        filter: not CONFIG_NEWLIB_LIBC
-        tags: json
+  - test:
+      filter: not CONFIG_NEWLIB_LIBC
+      tags: json

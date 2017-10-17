@@ -205,6 +205,11 @@ static const struct flash_driver_api flash_stm32_api = {
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_stm32_page_layout,
 #endif
+#if defined(CONFIG_SOC_SERIES_STM32F4X)
+	.write_block_size = 1,
+#elif defined(CONFIG_SOC_SERIES_STM32L4X)
+	.write_block_size = 8,
+#endif
 };
 
 static int stm32_flash_init(struct device *dev)

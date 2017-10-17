@@ -29,6 +29,7 @@
 #include "ieee802154_frame.h"
 #include "ieee802154_mgmt.h"
 #include "ieee802154_security.h"
+#include "ieee802154_utils.h"
 
 #if 0
 
@@ -233,7 +234,8 @@ static enum net_verdict ieee802154_recv(struct net_if *iface,
 	}
 
 	if (mpdu.mhr.fs->fc.frame_type == IEEE802154_FRAME_TYPE_BEACON) {
-		return ieee802154_handle_beacon(iface, &mpdu);
+		return ieee802154_handle_beacon(iface, &mpdu,
+						net_pkt_ieee802154_lqi(pkt));
 	}
 
 	if (ieee802154_is_scanning(iface)) {
@@ -315,8 +317,7 @@ NET_L2_INIT(IEEE802154_L2,
 void ieee802154_init(struct net_if *iface)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
-	const struct ieee802154_radio_api *radio =
-		iface->dev->driver_api;
+	const struct ieee802154_radio_api *radio = iface->dev->driver_api;
 	const u8_t *mac = iface->link_addr.addr;
 	u8_t long_addr[8];
 
@@ -331,9 +332,8 @@ void ieee802154_init(struct net_if *iface)
 #endif
 
 	sys_memcpy_swap(long_addr, mac, 8);
-
-	radio->set_ieee_addr(iface->dev, long_addr);
 	memcpy(ctx->ext_addr, long_addr, 8);
+	ieee802154_filter_ieee_addr(iface, ctx->ext_addr);
 
 	if (!radio->set_txpower(iface->dev,
 				CONFIG_NET_L2_IEEE802154_RADIO_DFLT_TX_POWER)) {

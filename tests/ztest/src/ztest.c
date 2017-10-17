@@ -139,12 +139,12 @@ out:
 #if CONFIG_ZTEST_STACKSIZE & (STACK_ALIGN - 1)
     #error "CONFIG_ZTEST_STACKSIZE must be a multiple of the stack alignment"
 #endif
-static struct k_thread ztest_thread;
+__kernel static struct k_thread ztest_thread;
 static K_THREAD_STACK_DEFINE(thread_stack, CONFIG_ZTEST_STACKSIZE +
 			     CONFIG_TEST_EXTRA_STACKSIZE);
 
 static int test_result;
-static struct k_sem test_end_signal;
+__kernel static struct k_sem test_end_signal;
 
 void ztest_test_fail(void)
 {
@@ -163,6 +163,7 @@ void ztest_test_pass(void)
 static void init_testing(void)
 {
 	k_sem_init(&test_end_signal, 0, 1);
+	k_object_access_all_grant(&test_end_signal);
 }
 
 static void test_cb(void *a, void *dummy2, void *dummy)
@@ -187,8 +188,8 @@ static int run_test(struct unit_test *test)
 	k_thread_create(&ztest_thread, thread_stack,
 			K_THREAD_STACK_SIZEOF(thread_stack),
 			(k_thread_entry_t) test_cb, (struct unit_test *)test,
-			NULL, NULL, -1, 0, 0);
-
+			NULL, NULL, -1, test->thread_options | K_INHERIT_PERMS,
+			0);
 	/*
 	 * There is an implicit expectation here that the thread that was
 	 * spawned is still higher priority than the current thread.

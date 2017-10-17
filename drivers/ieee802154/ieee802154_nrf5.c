@@ -106,6 +106,9 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 		memcpy(frag->data, nrf5_radio->rx_psdu + 1, pkt_len);
 		net_buf_add(frag, pkt_len);
 
+		net_pkt_set_ieee802154_lqi(pkt, nrf5_radio->lqi);
+		net_pkt_set_ieee802154_rssi(pks, nrf5_radio->rssi);
+
 		nrf_drv_radio802154_buffer_free(nrf5_radio->rx_psdu);
 
 		ack_result = ieee802154_radio_handle_ack(nrf5_radio->iface,
@@ -136,6 +139,14 @@ out:
 }
 
 /* Radio device API */
+
+static enum ieee802154_hw_caps nrf5_get_capabilities(struct device *dev)
+{
+	return IEEE802154_HW_FCS |
+		IEEE802154_HW_2_4_GHZ |
+		IEEE802154_HW_FILTER;
+}
+
 
 static int nrf5_cca(struct device *dev)
 {
@@ -219,6 +230,23 @@ static int nrf5_set_ieee_addr(struct device *dev, const u8_t *ieee_addr)
 	return 0;
 }
 
+static int nrf5_set_filter(struct device *dev,
+			   enum ieee802154_filter_type type,
+			   const struct ieee802154_filter *filter)
+{
+	SYS_LOG_DBG("Applying filter %u", type);
+
+	if (type == IEEE802154_FILTER_TYPE_IEEE_ADDR) {
+		return nrf5_set_ieee_addr(dev, filter->ieee_addr);
+	} else if (type == IEEE802154_FILTER_TYPE_SHORT_ADDR) {
+		return nrf5_set_short_addr(dev, filter->short_addr);
+	} else if (type == IEEE802154_FILTER_TYPE_PAN_ID) {
+		return nrf5_set_pan_id(dev, filter->pan_id);
+	}
+
+	return -EINVAL;
+}
+
 static int nrf5_set_txpower(struct device *dev, s16_t dbm)
 {
 	struct nrf5_802154_data *nrf5_radio = NRF5_802154_DATA(dev);
@@ -290,13 +318,6 @@ static int nrf5_stop(struct device *dev)
 	SYS_LOG_DBG("nRF5 802154 radio stopped");
 
 	return 0;
-}
-
-static u8_t nrf5_get_lqi(struct device *dev)
-{
-	struct nrf5_802154_data *nrf5_radio = NRF5_802154_DATA(dev);
-
-	return nrf5_radio->lqi;
 }
 
 static void nrf5_radio_irq(void *arg)
@@ -400,16 +421,14 @@ static struct ieee802154_radio_api nrf5_radio_api = {
 	.iface_api.init = nrf5_iface_init,
 	.iface_api.send = ieee802154_radio_send,
 
+	.get_capabilities = nrf5_get_capabilities,
 	.cca = nrf5_cca,
 	.set_channel = nrf5_set_channel,
-	.set_pan_id = nrf5_set_pan_id,
-	.set_short_addr = nrf5_set_short_addr,
-	.set_ieee_addr = nrf5_set_ieee_addr,
+	.set_filter = nrf5_set_filter,
 	.set_txpower = nrf5_set_txpower,
 	.start = nrf5_start,
 	.stop = nrf5_stop,
 	.tx = nrf5_tx,
-	.get_lqi = nrf5_get_lqi,
 };
 
 #if defined(CONFIG_IEEE802154_NRF5_RAW)

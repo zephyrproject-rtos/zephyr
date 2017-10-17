@@ -131,31 +131,34 @@ the tool.
 Using JTAG
 ==========
 
-In addition to the SoC vendor and SDK, this board also requires a build of
-OpenOCD with patches supporting the SoC.  The source code and build
-instructions can be obtained from GitHub:
+As with much custom hardware, the ESP-32 modules require patches to
+OpenOCD that are not upstream.  Espressif maintains their own fork of
+the project here.  By convention they put it in the `~/esp` next to the
+installations of their toolchain and SDK:
 
 .. code-block:: console
 
+   cd ~/esp
+
    git clone https://github.com/espressif/openocd-esp32
 
-After building OpenOCD, one should proceed as usual with the setup process.
-Since JTAG adapters may be different, this will most likely require editing
-the ``esp32.cfg`` file that's in the ``openocd-esp32`` directory.  For
-instance, to use a Flyswatter 2 JTAG adapter, one would modify the file so
-that the "source" line would read:
+   cd openocd-esp32
+   ./bootstrap
+   ./configure
+   make
 
-.. code-block:: tcl
+On the ESP-WROVER-KIT board, the JTAG pins are connected internally to
+a USB serial port on the same device as the console.  These boards
+require no external hardware and are debuggable as-is.  The JTAG
+signals, however, must be jumpered closed to connect the internal
+controller (the default is to leave them disconnected).  The jumper
+headers are on the right side of the board as viewed from the power
+switch, next to similar headers for SPI and UART.  See
+`ESP-WROVER-32 V3 Getting Started Guide`_ for details.
 
-   source [find interface/ftdi/flyswatter2.cfg]
-
-It might be a good idea to comment the line setting ``ESP32_RTOS`` and
-increasing ``adapter_khz`` to 400.  (Or higher, if using another JTAG
-adapter, but this value is known to be stable with the Flyswatter.)
-
-After the file has been properly edited, connect the JTAG pins according to
-the table below.  Please consult your JTAG adapter manual for the proper
-pinout.  Power to the ESP32 board should be provided by a USB cable.
+On the ESP-WROOM-32 DevKitC board, the JTAG pins are not run to a
+standard connector (e.g. ARM 20-pin) and need to be manually connected
+to the external programmer (e.g. a Flyswatter2):
 
 +------------+-----------+
 | ESP32 pin  | JTAG pin  |
@@ -175,6 +178,30 @@ pinout.  Power to the ESP32 board should be provided by a USB cable.
 | IO15       | TDO       |
 +------------+-----------+
 
+Once the device is connected, you should be able to connect with (for
+a DevKitC board, replace with esp32-wrover.cfg for WROVER):
+
+.. code-block:: console
+
+    cd ~/esp/openocd-esp32
+    src/openocd -f interface/ftdi/flyswatter2.cfg -c 'set ESP32_ONLYCPU 1' -c 'set ESP32_RTOS none' -f board/esp-wroom-32.cfg -s tcl
+
+The ESP32_ONLYCPU setting is critical: without it OpenOCD will present
+only the "APP_CPU" via the gdbserver, and not the "PRO_CPU" on which
+Zephyr is running.  It's currently unexplored as to whether the CPU
+can be switched at runtime or if breakpoints can be set for
+either/both.
+
+Now you can connect to openocd with gdb and point it to the OpenOCD
+gdbserver running (by default) on localhost port 3333.  Note that you
+must use the gdb distributed with the ESP-32 SDK.  Builds off of the
+FSF mainline get inexplicable protocol errors when connecting.
+
+.. code-block:: console
+
+    ~/esp/xtensa-esp32-elf/bin/xtensa-esp32-elf-gdb outdir/esp32/zephyr.elf
+    (gdb) target remote localhost:3333
+
 Further documentation can be obtained from the SoC vendor in `JTAG debugging
 for ESP32`_.
 
@@ -183,9 +210,10 @@ References
 
 .. [1] https://en.wikipedia.org/wiki/ESP32
 .. _`ESP32 Technical Reference Manual`: https://espressif.com/sites/default/files/documentation/esp32_technical_reference_manual_en.pdf
-.. _`JTAG debugging for ESP32`: https://espressif.com/sites/default/files/documentation/jtag_debugging_for_esp32_en.pdf
+.. _`JTAG debugging for ESP32`: http://esp-idf.readthedocs.io/en/latest/api-guides/jtag-debugging/index.html
 .. _`toolchain`: https://esp-idf.readthedocs.io/en/latest/get-started/index.html#get-started-setup-toochain
 .. _`SDK`: https://esp-idf.readthedocs.io/en/latest/get-started/index.html#get-started-get-esp-idf
 .. _`Hardware Referecne`: https://esp-idf.readthedocs.io/en/latest/hw-reference/index.html
 .. _`esptool documentation`: https://github.com/espressif/esptool/blob/master/README.md
 .. _`esptool.py`: https://github.com/espressif/esptool
+.. _`ESP-WROVER-32 V3 Getting Started Guide`: https://dl.espressif.com/doc/esp-idf/latest/get-started/get-started-wrover-kit.html

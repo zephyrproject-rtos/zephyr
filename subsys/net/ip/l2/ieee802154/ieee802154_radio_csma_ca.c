@@ -66,7 +66,7 @@ loop:
 			continue;
 		}
 
-		ret = wait_for_ack(ctx, ack_required);
+		ret = wait_for_ack(iface, ack_required);
 		if (!ret) {
 			break;
 		}

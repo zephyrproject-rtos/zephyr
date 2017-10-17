@@ -1212,11 +1212,7 @@ static void send_mod_sub_status(struct bt_mesh_model *model,
 
 	net_buf_simple_add_u8(msg, status);
 	net_buf_simple_add_le16(msg, elem_addr);
-	if (status) {
-		net_buf_simple_add_le16(msg, BT_MESH_ADDR_UNASSIGNED);
-	} else {
-		net_buf_simple_add_le16(msg, sub_addr);
-	}
+	net_buf_simple_add_le16(msg, sub_addr);
 
 	if (vnd) {
 		memcpy(net_buf_simple_add(msg, 4), mod_id, 4);
@@ -1694,7 +1690,7 @@ static void mod_sub_va_overwrite(struct bt_mesh_model *model,
 				 struct bt_mesh_msg_ctx *ctx,
 				 struct net_buf_simple *buf)
 {
-	u16_t elem_addr, sub_addr;
+	u16_t elem_addr, sub_addr = BT_MESH_ADDR_UNASSIGNED;
 	struct bt_mesh_model *mod;
 	struct bt_mesh_elem *elem;
 	u8_t *label_uuid;

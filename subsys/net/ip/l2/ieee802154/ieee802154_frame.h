@@ -480,14 +480,6 @@ bool ieee802154_create_ack_frame(struct net_if *iface,
 				 struct net_pkt *pkt, u8_t seq);
 #endif
 
-static inline bool ieee802154_ack_required(struct net_pkt *pkt)
-{
-	struct ieee802154_fcf_seq *fs =
-		(struct ieee802154_fcf_seq *)net_pkt_ll(pkt);
-
-	return fs->fc.ar;
-}
-
 #ifdef CONFIG_NET_L2_IEEE802154_SECURITY
 bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_pkt *pkt,
 				    struct ieee802154_mpdu *mpdu);

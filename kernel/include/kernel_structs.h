@@ -118,6 +118,11 @@ struct _kernel {
 	struct k_thread *threads; /* singly linked list of ALL fiber+tasks */
 #endif
 
+#if defined(CONFIG_USERSPACE)
+	/* 0 bits for ids currently in use, 1 for free ids */
+	u8_t free_thread_ids[CONFIG_MAX_THREAD_BYTES];
+#endif
+
 	/* arch-specific part of _kernel */
 	struct _kernel_arch arch;
 };

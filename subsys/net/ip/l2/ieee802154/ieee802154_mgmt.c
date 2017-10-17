@@ -20,13 +20,13 @@
 #include "ieee802154_frame.h"
 #include "ieee802154_mgmt.h"
 #include "ieee802154_security.h"
+#include "ieee802154_utils.h"
 
 enum net_verdict ieee802154_handle_beacon(struct net_if *iface,
-					  struct ieee802154_mpdu *mpdu)
+					  struct ieee802154_mpdu *mpdu,
+					  u8_t lqi)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
-	struct ieee802154_radio_api *radio =
-		(struct ieee802154_radio_api *)iface->dev->driver_api;
 
 	NET_DBG("Beacon received");
 
@@ -41,7 +41,7 @@ enum net_verdict ieee802154_handle_beacon(struct net_if *iface,
 	k_sem_take(&ctx->res_lock, K_FOREVER);
 
 	ctx->scan_ctx->pan_id = mpdu->mhr.src_addr->plain.pan_id;
-	ctx->scan_ctx->lqi = radio->get_lqi(iface->dev);
+	ctx->scan_ctx->lqi = lqi;
 
 	if (mpdu->mhr.fs->fc.src_addr_mode == IEEE802154_ADDR_MODE_SHORT) {
 		ctx->scan_ctx->len = IEEE802154_SHORT_ADDR_LENGTH;
@@ -116,7 +116,7 @@ static int ieee802154_scan(u32_t mgmt_request, struct net_if *iface,
 	ctx->scan_ctx = scan;
 	ret = 0;
 
-	radio->set_pan_id(iface->dev, IEEE802154_BROADCAST_PAN_ID);
+	ieee802154_filter_pan_id(iface, IEEE802154_BROADCAST_PAN_ID);
 
 	if (radio->start(iface->dev)) {
 		NET_DBG("Could not start device");
@@ -163,7 +163,7 @@ static int ieee802154_scan(u32_t mgmt_request, struct net_if *iface,
 	}
 
 	/* Let's come back to context's settings */
-	radio->set_pan_id(iface->dev, ctx->pan_id);
+	ieee802154_filter_pan_id(iface, ctx->pan_id);
 	radio->set_channel(iface->dev, ctx->channel);
 out:
 	ctx->scan_ctx = NULL;
@@ -395,10 +395,8 @@ static int ieee802154_set_parameters(u32_t mgmt_request,
 		}
 	} else if (mgmt_request == NET_REQUEST_IEEE802154_SET_PAN_ID) {
 		if (ctx->pan_id != value) {
-			ret = radio->set_pan_id(iface->dev, value);
-			if (!ret) {
-				ctx->pan_id = value;
-			}
+			ctx->pan_id = value;
+			ieee802154_filter_pan_id(iface, ctx->pan_id);
 		}
 	} else if (mgmt_request == NET_REQUEST_IEEE802154_SET_EXT_ADDR) {
 		if (len != IEEE802154_EXT_ADDR_LENGTH) {
@@ -406,18 +404,13 @@ static int ieee802154_set_parameters(u32_t mgmt_request,
 		}
 
 		if (memcmp(ctx->ext_addr, data, IEEE802154_EXT_ADDR_LENGTH)) {
-			ret = radio->set_ieee_addr(iface->dev, (u8_t *)data);
-			if (!ret) {
-				memcpy(ctx->ext_addr, data,
-				       IEEE802154_EXT_ADDR_LENGTH);
-			}
+			memcpy(ctx->ext_addr, data, IEEE802154_EXT_ADDR_LENGTH);
+			ieee802154_filter_ieee_addr(iface, ctx->ext_addr);
 		}
 	} else if (mgmt_request == NET_REQUEST_IEEE802154_SET_SHORT_ADDR) {
 		if (ctx->short_addr != value) {
-			ret = radio->set_short_addr(iface->dev, value);
-			if (!ret) {
-				ctx->short_addr = value;
-			}
+			ctx->short_addr = value;
+			ieee802154_filter_short_addr(iface, ctx->short_addr);
 		}
 	} else if (mgmt_request == NET_REQUEST_IEEE802154_SET_TX_POWER) {
 		if (ctx->tx_power != (s16_t)value) {

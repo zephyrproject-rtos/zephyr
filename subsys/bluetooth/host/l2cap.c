@@ -46,7 +46,7 @@
 #define L2CAP_LE_PSM_END	0x00ff
 
 #define L2CAP_CONN_TIMEOUT	K_SECONDS(40)
-#define L2CAP_DISC_TIMEOUT	K_SECONDS(1)
+#define L2CAP_DISC_TIMEOUT	K_SECONDS(2)
 
 static sys_slist_t le_channels;
 
@@ -635,7 +635,10 @@ static void l2cap_chan_rx_init(struct bt_l2cap_le_chan *chan)
 		}
 	}
 
-	chan->rx.mps = L2CAP_MAX_LE_MPS;
+	/* MPS shall not be bigger than MTU + 2 as the remaining bytes cannot
+	 * be used.
+	 */
+	chan->rx.mps = min(chan->rx.mtu + 2, L2CAP_MAX_LE_MPS);
 	k_sem_init(&chan->rx.credits, 0, UINT_MAX);
 }
 

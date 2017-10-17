@@ -39,7 +39,7 @@ static inline int aloha_tx_fragment(struct net_if *iface,
 			continue;
 		}
 
-		ret = wait_for_ack(ctx, ack_required);
+		ret = wait_for_ack(iface, ack_required);
 		if (!ret) {
 			break;
 		}

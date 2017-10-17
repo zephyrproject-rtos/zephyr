@@ -96,6 +96,11 @@ done:
 	return buf;
 }
 
+static enum ieee802154_hw_caps upipe_get_capabilities(struct device *dev)
+{
+	return IEEE802154_HW_FCS | IEEE802154_HW_2_4_GHZ;
+}
+
 static int upipe_cca(struct device *dev)
 {
 	struct upipe_context *upipe = dev->driver_data;
@@ -108,39 +113,6 @@ static int upipe_cca(struct device *dev)
 }
 
 static int upipe_set_channel(struct device *dev, u16_t channel)
-{
-	struct upipe_context *upipe = dev->driver_data;
-
-	if (upipe->stopped) {
-		return -EIO;
-	}
-
-	return 0;
-}
-
-static int upipe_set_pan_id(struct device *dev, u16_t pan_id)
-{
-	struct upipe_context *upipe = dev->driver_data;
-
-	if (upipe->stopped) {
-		return -EIO;
-	}
-
-	return 0;
-}
-
-static int upipe_set_short_addr(struct device *dev, u16_t short_addr)
-{
-	struct upipe_context *upipe = dev->driver_data;
-
-	if (upipe->stopped) {
-		return -EIO;
-	}
-
-	return 0;
-}
-
-static int upipe_set_ieee_addr(struct device *dev, const u8_t *ieee_addr)
 {
 	struct upipe_context *upipe = dev->driver_data;
 
@@ -271,11 +243,9 @@ static struct ieee802154_radio_api upipe_radio_api = {
 	.iface_api.init		= upipe_iface_init,
 	.iface_api.send		= ieee802154_radio_send,
 
+	.get_capabilities	= upipe_get_capabilities,
 	.cca			= upipe_cca,
 	.set_channel		= upipe_set_channel,
-	.set_pan_id		= upipe_set_pan_id,
-	.set_short_addr		= upipe_set_short_addr,
-	.set_ieee_addr		= upipe_set_ieee_addr,
 	.set_txpower		= upipe_set_txpower,
 	.tx			= upipe_tx,
 	.start			= upipe_start,

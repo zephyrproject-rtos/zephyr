@@ -1,5 +1,5 @@
 tests:
--   test:
-        tags: net
-        min_ram: 20
-        depends_on: netif
+  - test:
+      depends_on: netif
+      min_ram: 20
+      tags: net

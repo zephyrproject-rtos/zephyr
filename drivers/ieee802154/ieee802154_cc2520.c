@@ -309,6 +309,54 @@ static inline u8_t *get_mac(struct device *dev)
 	return cc2520->mac_addr;
 }
 
+static int _cc2520_set_pan_id(struct device *dev, u16_t pan_id)
+{
+	struct cc2520_context *cc2520 = dev->driver_data;
+
+	SYS_LOG_DBG("0x%x", pan_id);
+
+	pan_id = sys_le16_to_cpu(pan_id);
+
+	if (!write_mem_pan_id(&cc2520->spi, (u8_t *) &pan_id)) {
+		SYS_LOG_ERR("Failed");
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static int _cc2520_set_short_addr(struct device *dev, u16_t short_addr)
+{
+	struct cc2520_context *cc2520 = dev->driver_data;
+
+	SYS_LOG_DBG("0x%x", short_addr);
+
+	short_addr = sys_le16_to_cpu(short_addr);
+
+	if (!write_mem_short_addr(&cc2520->spi, (u8_t *) &short_addr)) {
+		SYS_LOG_ERR("Failed");
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static int _cc2520_set_ieee_addr(struct device *dev, const u8_t *ieee_addr)
+{
+	struct cc2520_context *cc2520 = dev->driver_data;
+
+	if (!write_mem_ext_addr(&cc2520->spi, (void *)ieee_addr)) {
+		SYS_LOG_ERR("Failed");
+		return -EIO;
+	}
+
+	SYS_LOG_DBG("IEEE address %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
+		    ieee_addr[7], ieee_addr[6], ieee_addr[5], ieee_addr[4],
+		    ieee_addr[3], ieee_addr[2], ieee_addr[1], ieee_addr[0]);
+
+	return 0;
+}
+
 /******************
  * GPIO functions *
  *****************/
@@ -541,6 +589,34 @@ static inline bool read_rxfifo_content(struct cc2520_spi *spi,
 	return true;
 }
 
+static inline void insert_radio_noise_details(struct net_pkt *pkt, u8_t *buf)
+{
+	u8_t lqi;
+
+	net_pkt_set_ieee802154_rssi(pkt, buf[0]);
+
+	/**
+	 * CC2520 does not provide an LQI but a correlation factor.
+	 * See Section 20.6
+	 * Such calculation can be loosely used to transform it to lqi:
+	 * corr <= 50 ? lqi = 0
+	 * or:
+	 * corr >= 110 ? lqi = 255
+	 * else:
+	 * lqi = (lqi - 50) * 4
+	 */
+	lqi = buf[1] & CC2520_FCS_CORRELATION;
+	if (lqi <= 50) {
+		lqi = 0;
+	} else if (lqi >= 110) {
+		lqi = 255;
+	} else {
+		lqi = (lqi - 50) << 2;
+	}
+
+	net_pkt_set_ieee802154_lqi(pkt, lqi);
+}
+
 static inline bool verify_crc(struct cc2520_context *cc2520,
 			      struct net_pkt *pkt)
 {
@@ -559,26 +635,7 @@ static inline bool verify_crc(struct cc2520_context *cc2520,
 		return false;
 	}
 
-	net_pkt_set_ieee802154_rssi(pkt, cc2520->spi.cmd_buf[1]);
-
-	/**
-	 * CC2520 does not provide an LQI but a correlation factor.
-	 * See Section 20.6
-	 * Such calculation can be loosely used to transform it to lqi:
-	 * corr <= 50 ? lqi = 0
-	 * or:
-	 * corr >= 110 ? lqi = 255
-	 * else:
-	 * lqi = (lqi - 50) * 4
-	 */
-	cc2520->lqi = cc2520->spi.cmd_buf[2] & CC2520_FCS_CORRELATION;
-	if (cc2520->lqi <= 50) {
-		cc2520->lqi = 0;
-	} else if (cc2520->lqi >= 110) {
-		cc2520->lqi = 255;
-	} else {
-		cc2520->lqi = (cc2520->lqi - 50) << 2;
-	}
+	insert_radio_noise_details(pkt, &cc2520->spi.cmd_buf[1]);
 
 	return true;
 }
@@ -649,15 +706,9 @@ static void cc2520_rx(int arg)
 			goto out;
 		}
 
-		cc2520->lqi = pkt_frag->data[pkt_len - 1] &
-			CC2520_FCS_CORRELATION;
-		if (cc2520->lqi <= 50) {
-			cc2520->lqi = 0;
-		} else if (cc2520->lqi >= 110) {
-			cc2520->lqi = 255;
-		} else {
-			cc2520->lqi = (cc2520->lqi - 50) << 2;
-		}
+		insert_radio_noise_details(pkt, &pkt_frag->data[pkt_len - 2]);
+
+		net_buf_add_u8(pkt_frag, net_pkt_ieee802154_lqi(pkt));
 #else
 		if (!read_rxfifo_content(&cc2520->spi, pkt_frag, pkt_len - 2)) {
 			SYS_LOG_ERR("No content read");
@@ -675,12 +726,7 @@ static void cc2520_rx(int arg)
 			goto out;
 		}
 
-#if defined(CONFIG_IEEE802154_CC2520_RAW)
-		net_buf_add_u8(pkt_frag, cc2520->lqi);
-#endif
-
-		SYS_LOG_DBG("Caught a packet (%u) (LQI: %u)",
-			    pkt_len, cc2520->lqi);
+		SYS_LOG_DBG("Caught a packet (%u)", pkt_len);
 
 		if (net_recv_data(cc2520->iface, pkt) < 0) {
 			SYS_LOG_DBG("Packet dropped by NET stack");
@@ -705,6 +751,14 @@ out:
 /********************
  * Radio device API *
  *******************/
+static enum ieee802154_hw_caps cc2520_get_capabilities(struct device *dev)
+{
+	/* ToDo: Add support for IEEE802154_HW_PROMISC */
+	return IEEE802154_HW_FCS |
+		IEEE802154_HW_2_4_GHZ |
+		IEEE802154_HW_FILTER;
+}
+
 static int cc2520_cca(struct device *dev)
 {
 	struct cc2520_context *cc2520 = dev->driver_data;
@@ -738,52 +792,21 @@ static int cc2520_set_channel(struct device *dev, u16_t channel)
 	return 0;
 }
 
-static int cc2520_set_pan_id(struct device *dev, u16_t pan_id)
+static int cc2520_set_filter(struct device *dev,
+			     enum ieee802154_filter_type type,
+			     const struct ieee802154_filter *filter)
 {
-	struct cc2520_context *cc2520 = dev->driver_data;
+	SYS_LOG_DBG("Applying filter %u", type);
 
-	SYS_LOG_DBG("0x%x", pan_id);
-
-	pan_id = sys_le16_to_cpu(pan_id);
-
-	if (!write_mem_pan_id(&cc2520->spi, (u8_t *) &pan_id)) {
-		SYS_LOG_ERR("Failed");
-		return -EIO;
+	if (type == IEEE802154_FILTER_TYPE_IEEE_ADDR) {
+		return _cc2520_set_ieee_addr(dev, filter->ieee_addr);
+	} else if (type == IEEE802154_FILTER_TYPE_SHORT_ADDR) {
+		return _cc2520_set_short_addr(dev, filter->short_addr);
+	} else if (type == IEEE802154_FILTER_TYPE_PAN_ID) {
+		return _cc2520_set_pan_id(dev, filter->pan_id);
 	}
 
-	return 0;
-}
-
-static int cc2520_set_short_addr(struct device *dev, u16_t short_addr)
-{
-	struct cc2520_context *cc2520 = dev->driver_data;
-
-	SYS_LOG_DBG("0x%x", short_addr);
-
-	short_addr = sys_le16_to_cpu(short_addr);
-
-	if (!write_mem_short_addr(&cc2520->spi, (u8_t *) &short_addr)) {
-		SYS_LOG_ERR("Failed");
-		return -EIO;
-	}
-
-	return 0;
-}
-
-static int cc2520_set_ieee_addr(struct device *dev, const u8_t *ieee_addr)
-{
-	struct cc2520_context *cc2520 = dev->driver_data;
-
-	if (!write_mem_ext_addr(&cc2520->spi, (void *)ieee_addr)) {
-		SYS_LOG_ERR("Failed");
-		return -EIO;
-	}
-
-	SYS_LOG_DBG("IEEE address %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x",
-		    ieee_addr[7], ieee_addr[6], ieee_addr[5], ieee_addr[4],
-		    ieee_addr[3], ieee_addr[2], ieee_addr[1], ieee_addr[0]);
-
-	return 0;
+	return -EINVAL;
 }
 
 static int cc2520_set_txpower(struct device *dev, s16_t dbm)
@@ -943,13 +966,6 @@ static int cc2520_stop(struct device *dev)
 	return 0;
 }
 
-static u8_t cc2520_get_lqi(struct device *dev)
-{
-	struct cc2520_context *cc2520 = dev->driver_data;
-
-	return cc2520->lqi;
-}
-
 /******************
  * Initialization *
  *****************/
@@ -1106,16 +1122,14 @@ static struct ieee802154_radio_api cc2520_radio_api = {
 	.iface_api.init	= cc2520_iface_init,
 	.iface_api.send	= ieee802154_radio_send,
 
-	.cca		= cc2520_cca,
-	.set_channel	= cc2520_set_channel,
-	.set_pan_id	= cc2520_set_pan_id,
-	.set_short_addr	= cc2520_set_short_addr,
-	.set_ieee_addr	= cc2520_set_ieee_addr,
-	.set_txpower	= cc2520_set_txpower,
-	.start		= cc2520_start,
-	.stop		= cc2520_stop,
-	.tx		= cc2520_tx,
-	.get_lqi	= cc2520_get_lqi,
+	.get_capabilities	= cc2520_get_capabilities,
+	.cca			= cc2520_cca,
+	.set_channel		= cc2520_set_channel,
+	.set_filter		= cc2520_set_filter,
+	.set_txpower		= cc2520_set_txpower,
+	.start			= cc2520_start,
+	.stop			= cc2520_stop,
+	.tx			= cc2520_tx,
 };
 
 #if defined(CONFIG_IEEE802154_CC2520_RAW)

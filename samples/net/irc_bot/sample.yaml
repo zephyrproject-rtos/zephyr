@@ -1,7 +1,7 @@
 sample:
-    name: IRC Bot
+  name: IRC Bot
 tests:
--   test:
-        build_only: true
-        tags: net irc
-        depends_on: netif
+  - test:
+      build_only: true
+      depends_on: netif
+      tags: net irc

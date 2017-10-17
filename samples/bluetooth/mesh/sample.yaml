@@ -1,8 +1,8 @@
 sample:
-    name: Bluetooth Mesh
+  name: Bluetooth Mesh
 tests:
--   test:
-        build_only: true
-        tags: bluetooth
-        # FIXME: does not fit on all Bluetooth devices
-        platform_whitelist: bbc_microbit nrf51_blenano qemu_x86
+  - test:
+      build_only: true
+      platform_whitelist: bbc_microbit nrf51_blenano
+        qemu_x86
+      tags: bluetooth

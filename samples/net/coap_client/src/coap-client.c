@@ -52,6 +52,24 @@ static void msg_dump(const char *s, u8_t *data, unsigned len)
 	printk("(%u bytes)\n", len);
 }
 
+static void strip_headers(struct net_pkt *pkt)
+{
+	/* Get rid of IP + UDP/TCP header if it is there. The IP header
+	 * will be put back just before sending the packet.
+	 */
+	if (net_pkt_appdatalen(pkt) > 0) {
+		int header_len;
+
+		header_len = net_buf_frags_len(pkt->frags) -
+			     net_pkt_appdatalen(pkt);
+		if (header_len > 0) {
+			net_buf_pull(pkt->frags, header_len);
+		}
+	} else {
+		net_pkt_set_appdatalen(pkt, net_buf_frags_len(pkt->frags));
+	}
+}
+
 static int resource_reply_cb(const struct coap_packet *response,
 			     struct coap_reply *reply,
 			     const struct sockaddr *from)
@@ -121,17 +139,26 @@ static void retransmit_request(struct k_work *work)
 		return;
 	}
 
+	/* ref to avoid being freed after sendto() */
+	net_pkt_ref(pending->pkt);
+	/* drop IP + UDP headers */
+	strip_headers(pending->pkt);
+
 	r = net_context_sendto(pending->pkt, (struct sockaddr *) &mcast_addr,
 			       sizeof(mcast_addr), NULL, 0, NULL, NULL);
 	if (r < 0) {
-		return;
+		/* no error, keep retry */
+		net_pkt_unref(pending->pkt);
 	}
 
 	if (!coap_pending_cycle(pending)) {
+		/* last retransmit, clear pending and unreference packet */
 		coap_pending_clear(pending);
 		return;
 	}
 
+	/* unref to balance ref we made for sendto() */
+	net_pkt_unref(pending->pkt);
 	k_delayed_work_submit(&retransmit_work, pending->timeout);
 }
 
@@ -208,6 +235,9 @@ static void event_iface_up(struct net_mgmt_event_callback *cb,
 		}
 	}
 
+	/* setup appdatalen */
+	strip_headers(pkt);
+
 	pending = coap_pending_next_unused(pendings, NUM_PENDINGS);
 	if (!pending) {
 		printk("Unable to find a free pending to track "
@@ -231,15 +261,17 @@ static void event_iface_up(struct net_mgmt_event_callback *cb,
 	coap_reply_init(reply, &request);
 	reply->reply = resource_reply_cb;
 
+	/* Increase packet ref count to avoid being unref after sendto() */
+	coap_pending_cycle(pending);
+
 	r = net_context_sendto(pkt, (struct sockaddr *) &mcast_addr,
 			       sizeof(mcast_addr),
 			       NULL, 0, NULL, NULL);
 	if (r < 0) {
 		printk("Error sending the packet (%d).\n", r);
+		coap_pending_clear(pending);
 		return;
 	}
-
-	coap_pending_cycle(pending);
 
 	k_delayed_work_submit(&retransmit_work, pending->timeout);
 

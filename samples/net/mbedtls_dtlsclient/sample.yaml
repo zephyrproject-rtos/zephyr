@@ -1,7 +1,7 @@
 sample:
-    name: mBED DTLS Client
+  name: mBED DTLS Client
 tests:
--   test:
-        build_only: true
-        tags: net
-        depends_on: netif
+  - test:
+      build_only: true
+      depends_on: netif
+      tags: net

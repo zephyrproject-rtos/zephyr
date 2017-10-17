@@ -582,10 +582,13 @@ static inline void mcr20a_rx(struct mcr20a_context *mcr20a, u8_t len)
 		goto out;
 	}
 
-	mcr20a->lqi = read_reg_lqi_value(&mcr20a->spi);
+	net_pkt_set_ieee802154_lqi(pkt, read_reg_lqi_value(&mcr20a->spi));
+	net_pkt_set_ieee802154_rssi(pkt, mcr20a_get_rssi(
+					    net_pkt_ieee802154_lqi(pkt)));
+
 	SYS_LOG_DBG("Caught a packet (%u) (LQI: %u, RSSI: %u)",
-		    pkt_len, mcr20a->lqi,
-		    mcr20a_get_rssi(mcr20a->lqi));
+		    pkt_len, net_pkt_ieee802154_lqi(pkt),
+		    net_pkt_ieee802154_rssi(pkt));
 
 #if defined(CONFIG_IEEE802154_MCR20A_RAW)
 	net_buf_add_u8(frag, mcr20a->lqi);
@@ -855,6 +858,13 @@ static int mcr20a_set_cca_mode(struct device *dev, u8_t mode)
 	return 0;
 }
 
+static enum ieee802154_hw_caps mcr20a_get_capabilities(struct device *dev)
+{
+	return IEEE802154_HW_FCS |
+		IEEE802154_HW_2_4_GHZ |
+		IEEE802154_HW_FILTER;
+}
+
 /* Note: CCA before TX is enabled by default */
 static int mcr20a_cca(struct device *dev)
 {
@@ -1011,6 +1021,23 @@ static int mcr20a_set_ieee_addr(struct device *dev, const u8_t *ieee_addr)
 		    ieee_addr[3], ieee_addr[2], ieee_addr[1], ieee_addr[0]);
 
 	return 0;
+}
+
+static int mcr20a_set_filter(struct device *dev,
+			     enum ieee802154_filter_type type,
+			     const struct ieee802154_filter *filter)
+{
+	SYS_LOG_DBG("Applying filter %u", type);
+
+	if (type == IEEE802154_FILTER_TYPE_IEEE_ADDR) {
+		return mcr20a_set_ieee_addr(dev, filter->ieee_addr);
+	} else if (type == IEEE802154_FILTER_TYPE_SHORT_ADDR) {
+		return mcr20a_set_short_addr(dev, filter->short_addr);
+	} else if (type == IEEE802154_FILTER_TYPE_PAN_ID) {
+		return mcr20a_set_pan_id(dev, filter->pan_id);
+	}
+
+	return -EINVAL;
 }
 
 static int mcr20a_set_txpower(struct device *dev, s16_t dbm)
@@ -1229,14 +1256,6 @@ error:
 	k_mutex_unlock(&mcr20a->phy_mutex);
 	SYS_LOG_ERR("Error stopping MCR20A");
 	return -EIO;
-}
-
-static u8_t mcr20a_get_lqi(struct device *dev)
-{
-	struct mcr20a_context *mcr20a = dev->driver_data;
-
-	SYS_LOG_DBG("");
-	return mcr20a->lqi;
 }
 
 static int mcr20a_update_overwrites(struct mcr20a_context *dev)
@@ -1461,16 +1480,14 @@ static struct ieee802154_radio_api mcr20a_radio_api = {
 	.iface_api.init	= mcr20a_iface_init,
 	.iface_api.send	= ieee802154_radio_send,
 
-	.cca		= mcr20a_cca,
-	.set_channel	= mcr20a_set_channel,
-	.set_pan_id	= mcr20a_set_pan_id,
-	.set_short_addr	= mcr20a_set_short_addr,
-	.set_ieee_addr	= mcr20a_set_ieee_addr,
-	.set_txpower	= mcr20a_set_txpower,
-	.start		= mcr20a_start,
-	.stop		= mcr20a_stop,
-	.tx		= mcr20a_tx,
-	.get_lqi	= mcr20a_get_lqi,
+	.get_capabilities	= mcr20a_get_capabilities,
+	.cca			= mcr20a_cca,
+	.set_channel		= mcr20a_set_channel,
+	.set_filter		= mcr20a_set_filter,
+	.set_txpower		= mcr20a_set_txpower,
+	.start			= mcr20a_start,
+	.stop			= mcr20a_stop,
+	.tx			= mcr20a_tx,
 };
 
 #if defined(CONFIG_IEEE802154_MCR20A_RAW)

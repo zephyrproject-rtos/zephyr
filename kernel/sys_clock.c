@@ -79,13 +79,10 @@ u32_t _impl_k_uptime_get_32(void)
 }
 
 #ifdef CONFIG_USERSPACE
-u32_t _handler_k_uptime_get_32(u32_t arg1, u32_t arg2, u32_t arg3,
-			       u32_t arg4, u32_t arg5, u32_t arg6, void *ssf)
+_SYSCALL_HANDLER(k_uptime_get_32)
 {
-	_SYSCALL_ARG0;
-
 #ifdef CONFIG_TICKLESS_KERNEL
-	_SYSCALL_VERIFY(_sys_clock_always_on, ssf);
+	_SYSCALL_VERIFY(_sys_clock_always_on);
 #endif
 	return _impl_k_uptime_get_32();
 }
@@ -119,7 +116,7 @@ s64_t _tick_get(void)
 }
 FUNC_ALIAS(_tick_get, sys_tick_get, s64_t);
 
-s64_t k_uptime_get(void)
+s64_t _impl_k_uptime_get(void)
 {
 #ifdef CONFIG_TICKLESS_KERNEL
 	__ASSERT(_sys_clock_always_on,
@@ -127,6 +124,17 @@ s64_t k_uptime_get(void)
 #endif
 	return __ticks_to_ms(_tick_get());
 }
+
+#ifdef CONFIG_USERSPACE
+_SYSCALL_HANDLER(k_uptime_get, ret_p)
+{
+	u64_t *ret = (u64_t *)ret_p;
+
+	_SYSCALL_MEMORY_WRITE(ret, sizeof(*ret));
+	*ret = _impl_k_uptime_get();
+	return 0;
+}
+#endif
 
 /**
  *

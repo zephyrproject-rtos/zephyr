@@ -25,6 +25,7 @@ int main(void)
 {
 	int serv;
 	struct sockaddr_in bind_addr;
+	static int counter;
 
 	serv = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 
@@ -43,7 +44,7 @@ int main(void)
 				    &client_addr_len);
 		inet_ntop(client_addr.sin_family, &client_addr.sin_addr,
 			  addr_str, sizeof(addr_str));
-		printf("Connection from %s\n", addr_str);
+		printf("Connection #%d from %s\n", counter++, addr_str);
 
 		while (1) {
 			char buf[128];
