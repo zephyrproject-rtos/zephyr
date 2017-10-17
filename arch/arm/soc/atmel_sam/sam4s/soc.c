@@ -25,7 +25,7 @@
  *
  * Setup the SoC clocks according to section 28.12 in datasheet.
  *
- * Setup Slow, Main, PLLA, Procesor and Master clocks during the device boot.
+ * Setup Slow, Main, PLLA, Processor and Master clocks during the device boot.
  * It is assumed that the relevant registers are at their reset value.
  */
 static ALWAYS_INLINE void clock_init(void)

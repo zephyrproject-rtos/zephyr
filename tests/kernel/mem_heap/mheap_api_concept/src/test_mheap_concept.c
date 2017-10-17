@@ -12,7 +12,7 @@
  * @details All TESTPOINTs extracted from kernel documentation.
  * https://www.zephyrproject.org/doc/kernel/memory/heap.html#concepts
  *
- * TESTPOINTs cover testable kernel behaviours that preserve across internal
+ * TESTPOINTs cover testable kernel behaviors that preserve across internal
  * implementation change or kernel version change.
  * As a black-box test, TESTPOINTs do not cover internal operations.
  * @}

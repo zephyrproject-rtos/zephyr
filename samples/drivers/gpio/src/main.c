@@ -15,7 +15,7 @@
  * BUTTON1 is on DIO_4
  * BUTTON2 is on DIO_0
  *
- * This sample toogles LED1 and wait interrupt on BUTTON1.
+ * This sample toggles LED1 and wait interrupt on BUTTON1.
  * Note that an internet pull-up is set on BUTTON1 as the button
  * only drives low when pressed.
  *

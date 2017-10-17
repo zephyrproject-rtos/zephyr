@@ -35,7 +35,7 @@
 
 /**
   * IPv6 Source and Destination address
-  * Example addresses are based on SAC (Source Adddress Compression),
+  * Example addresses are based on SAC (Source Address Compression),
   * SAM (Source Address Mode), DAC (Destination Address Compression),
   * DAM (Destination Address Mode) and also if the destination address
   * is Multicast address.

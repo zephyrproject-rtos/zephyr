@@ -1396,7 +1396,7 @@ void net_pkt_get_info(struct k_mem_slab **rx,
 /**
  * @brief Get source socket address.
  *
- * @param pkt Nework packet
+ * @param pkt Network packet
  * @param addr Source socket address
  * @param addrlen The length of source socket address
  * @return 0 on success, <0 otherwise.

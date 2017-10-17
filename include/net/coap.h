@@ -788,7 +788,7 @@ static inline u16_t coap_next_id(void)
  *
  * @return the net_buf fragment pointer and offset value if payload exists
  *         NULL pointer and offset set to 0 in case there is no payload
- *         NULL pointer and offset value 0xffff incase of an error
+ *         NULL pointer and offset value 0xffff in case of an error
  */
 struct net_buf *coap_packet_get_payload(const struct coap_packet *cpkt,
 					u16_t *offset,

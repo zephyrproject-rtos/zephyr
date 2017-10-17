@@ -266,7 +266,7 @@ static inline int _obj_validation_check(struct _k_object *ko,
  *
  * Calls _k_object_validate and triggers a kernel oops if the check files.
  * For use in system call handlers which are not init functions; a fatal
- * error will occur if the object is not intiailized.
+ * error will occur if the object is not initialized.
  *
  * @param ptr Untrusted kernel object pointer
  * @param type Expected kernel object type

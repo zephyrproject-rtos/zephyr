@@ -9,7 +9,7 @@
  * @{
  * @defgroup t_mpool_threadsafe test_mpool_threadsafe
  * @brief TestPurpose: verify API thread safe in multi-threads environment.
- * @details This's an extensive test. Multiple threads in same priority are
+ * @details This is an extensive test. Multiple threads in same priority are
  * created, with time slice scheduling enabled in a very small slicing size:
  * 1 millisecond (refer to prj.conf).
  * All threads share a same entry function to invoke same kernel APIs.
