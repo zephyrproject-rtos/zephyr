@@ -1,1 +1,2 @@
 obj-$(CONFIG_LPD880X_STRIP) += lpd880x.o
+obj-$(CONFIG_WS2812_STRIP) += ws2812.o
