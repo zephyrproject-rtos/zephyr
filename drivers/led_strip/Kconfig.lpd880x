@@ -1,0 +1,47 @@
+#
+# Copyright (c) 2017 Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig LPD880X_STRIP
+	bool "Enable LPD880x SPI LED strip driver"
+	depends on SPI
+	depends on !SPI_LEGACY_API
+	default n
+	help
+		Enable LED strip driver for daisy chains of LPD880x
+		(LPD8803, LPD8806, or compatible) devices.
+
+		Each LPD880x LED driver chip has some output channels
+		(3 channels for LPD8803, 6 for LPD8806), whose PWM
+		duty cycle can be set at 7 bit resolution via a
+		reduced SPI interface (MOSI and CLK lines only).
+		Each chip also includes data and clock out pins for
+		daisy chaining LED strips.
+
+if LPD880X_STRIP
+
+config LPD880X_STRIP_NAME
+	string "Driver name"
+	default "lpd880x_strip"
+	help
+		Device name for LPD880x LED strip.
+
+config LPD880X_STRIP_SPI_DEV_NAME
+	string "SPI master to use to drive the strip"
+	default ""
+	help
+		Specify the device name of the SPI master which the
+		LPD880X driver should use to control the LED strip.
+		Examples: SPI_0, SPI_1, etc.
+
+config LPD880X_STRIP_SPI_BAUD_RATE
+	int "Strip clock line frequency"
+	default 2000000
+	help
+		SPI clock rate, in Hz, to use while driving the strip.
+		The recommended maximum is 2 MHz (2000000); the absolute maximum
+		is 20 MHz (20000000). If unsure, accept the default value.
+
+endif # LPD880X_STRIP

@@ -42,4 +42,6 @@ config LED_STRIP_RGB_SCRATCH
 	bool
 	default n
 
+source "drivers/led_strip/Kconfig.lpd880x"
+
 endif # LED_STRIP
