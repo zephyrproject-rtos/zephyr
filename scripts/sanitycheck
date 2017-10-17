@@ -489,7 +489,7 @@ class SizeCalculator:
                    "_k_queue_area", "_net_buf_pool_area", "app_datas",
                    "kobject_data", "mmu_tables"]
     # These get copied into RAM only on non-XIP
-    ro_sections = ["text", "ctors", "init_array", "reset",
+    ro_sections = ["text", "ctors", "init_array", "reset", "object_access",
                    "rodata", "devconfig", "net_l2", "vector"]
 
     def __init__(self, filename, extra_sections):

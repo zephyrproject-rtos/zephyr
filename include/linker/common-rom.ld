@@ -24,7 +24,17 @@
 		__init_array_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
 #endif
-
+#ifdef CONFIG_USERSPACE
+	/* Build-time assignment of permissions to kernel objects to
+	 * threads declared with K_THREAD_DEFINE()
+	 */
+	SECTION_PROLOGUE(object_access, (OPTIONAL),)
+	{
+		__object_access_start = .;
+		KEEP(*(".object_access.*"))
+		__object_access_end = .;
+	}
+#endif
 	SECTION_PROLOGUE (devconfig, (OPTIONAL),)
 	{
 		__devconfig_start = .;

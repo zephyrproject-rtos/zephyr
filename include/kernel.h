@@ -181,6 +181,32 @@ struct _k_object {
 	u32_t data;
 } __packed;
 
+struct _k_object_assignment {
+	struct k_thread *thread;
+	void * const *objects;
+};
+
+/**
+ * @brief Grant a static thread access to a list of kernel objects
+ *
+ * For threads declared with K_THREAD_DEFINE(), grant the thread access to
+ * a set of kernel objects. These objects do not need to be in an initialized
+ * state. The permissions will be granted when the threads are initialized
+ * in the early boot sequence.
+ *
+ * All arguments beyond the first must be pointers to kernel objects.
+ *
+ * @param name_ Name of the thread, as passed to K_THREAD_DEFINE()
+ */
+#define K_THREAD_ACCESS_GRANT(name_, ...) \
+	static void * const _CONCAT(_object_list_, name_)[] = \
+		{ __VA_ARGS__, NULL }; \
+	static __used __in_section_unique(object_access) \
+		const struct _k_object_assignment \
+		_CONCAT(_object_access_, name_) = \
+			{ (&_k_thread_obj_ ## name_), \
+			  (_CONCAT(_object_list_, name_)) }
+
 #define K_OBJ_FLAG_INITIALIZED	BIT(0)
 #define K_OBJ_FLAG_PUBLIC	BIT(1)
 
@@ -195,6 +221,9 @@ struct _k_object {
  */
 void _k_object_init(void *obj);
 #else
+
+#define K_THREAD_ACCESS_GRANT(thread, ...)
+
 static inline void _k_object_init(void *obj)
 {
 	ARG_UNUSED(obj);
