@@ -37,12 +37,6 @@ static void _config(struct device *dev, u32_t mask, int flags)
 {
 	const struct gpio_sam3_config *cfg = dev->config->config_info;
 
-	/* Disable the pin and return as setup is meaningless now */
-	if (flags & GPIO_PIN_DISABLE) {
-		cfg->port->PIO_PDR = mask;
-		return;
-	}
-
 	/* Setup the pin direction */
 	if ((flags & GPIO_DIR_MASK) == GPIO_DIR_OUT) {
 		cfg->port->PIO_OER = mask;
@@ -89,10 +83,7 @@ static void _config(struct device *dev, u32_t mask, int flags)
 		cfg->port->PIO_SCIFSR = mask;
 	}
 
-	/* Enable the pin last after pin setup */
-	if (flags & GPIO_PIN_ENABLE) {
-		cfg->port->PIO_PER = mask;
-	}
+	cfg->port->PIO_PER = mask;
 }
 
 /**
