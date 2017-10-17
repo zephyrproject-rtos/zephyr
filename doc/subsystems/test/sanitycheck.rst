@@ -315,6 +315,22 @@ extra_args: <list of extra arguments>
     Extra arguments to pass to Make when building or running the
     test case.
 
+extra_configs: <list of extra configurations>
+    Extra configuration options to be merged with a master prj.conf
+    when building or running the test case. For example::
+
+	common:
+	  tags: drivers adc
+	tests:
+	  - test:
+	      depends_on: adc
+	  - test_resolution_6:
+	      extra_configs:
+		- CONFIG_ADC_QMSI_SAMPLE_WIDTH=6
+	      platform_whitelist: quark_se_c1000_ss_devboard
+	      tags: hwtest
+
+
 build_only: <True|False> (default False)
     If true, don't try to run the test under QEMU even if the
     selected platform supports it.

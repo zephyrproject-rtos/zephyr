@@ -35,6 +35,10 @@ Each test block in the testcase meta data can define the following key/value pai
     Extra arguments to pass to Make when building or running the
     test case.
 
+  extra_configs: <list of extra configurations>
+    Extra configuration options to be merged with a master prj.conf
+    when building or running the test case.
+
   build_only: <True|False> (default False)
     If true, don't try to run the test under QEMU even if the
     selected platform supports it.
