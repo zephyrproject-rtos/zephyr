@@ -10,7 +10,7 @@
  * @brief Single-linked list implementation
  *
  * Single-linked list implementation using inline macros/functions.
- * This API is not threadsafe, and thus if a list is used across threads,
+ * This API is not thread safe, and thus if a list is used across threads,
  * calls to functions must be protected with synchronization primitives.
  */
 
@@ -48,6 +48,8 @@ typedef struct _slist sys_slist_t;
  *         <user code>
  *     }
  *
+ * This and other SYS_SLIST_*() macros are not thread safe.
+ *
  * @param __sl A pointer on a sys_slist_t to iterate on
  * @param __sn A sys_snode_t pointer to peek each node of the list
  */
@@ -69,6 +71,8 @@ typedef struct _slist sys_slist_t;
  * where to start searching for the next entry from. If NULL, it starts from
  * the head.
  *
+ * This and other SYS_SLIST_*() macros are not thread safe.
+ *
  * @param __sl A pointer on a sys_slist_t to iterate on
  * @param __sn A sys_snode_t pointer to peek each node of the list
  *             it contains the starting node, or NULL to start from the head
@@ -88,6 +92,8 @@ typedef struct _slist sys_slist_t;
  *     SYS_SLIST_FOR_EACH_NODE_SAFE(l, n, s) {
  *         <user code>
  *     }
+ *
+ * This and other SYS_SLIST_*() macros are not thread safe.
  *
  * @param __sl A pointer on a sys_slist_t to iterate on
  * @param __sn A sys_snode_t pointer to peek each node of the list
@@ -256,7 +262,7 @@ static inline sys_snode_t *sys_slist_peek_next(sys_snode_t *node)
 /**
  * @brief Prepend a node to the given list
  *
- * This function and most other sys_slist_*() functions are not threadsafe.
+ * This and other sys_slist_*() functions are not thread safe.
  *
  * @param list A pointer on the list to affect
  * @param node A pointer on the node to prepend
@@ -275,7 +281,7 @@ static inline void sys_slist_prepend(sys_slist_t *list,
 /**
  * @brief Append a node to the given list
  *
- * This function and most other sys_slist_*() functions are not threadsafe.
+ * This and other sys_slist_*() functions are not thread safe.
  *
  * @param list A pointer on the list to affect
  * @param node A pointer on the node to append
@@ -299,7 +305,7 @@ static inline void sys_slist_append(sys_slist_t *list,
  *
  * Append a singly-linked, NULL-terminated list consisting of nodes containing
  * the pointer to the next node as the first element of a node, to @a list.
- * This function and most other sys_slist_*() functions are not threadsafe.
+ * This and other sys_slist_*() functions are not thread safe.
  *
  * @param list A pointer on the list to affect
  * @param head A pointer to the first element of the list to append
@@ -321,6 +327,7 @@ static inline void sys_slist_append_list(sys_slist_t *list,
  * @brief merge two slists, appending the second one to the first
  *
  * When the operation is completed, the appending list is empty.
+ * This and other sys_slist_*() functions are not thread safe.
  *
  * @param list A pointer on the list to affect
  * @param list_to_append A pointer to the list to append.
@@ -336,7 +343,7 @@ static inline void sys_slist_merge_slist(sys_slist_t *list,
 /**
  * @brief Insert a node to the given list
  *
- * This function and most other sys_slist_*() functions are not threadsafe.
+ * This and other sys_slist_*() functions are not thread safe.
  *
  * @param list A pointer on the list to affect
  * @param prev A pointer on the previous node
@@ -360,7 +367,7 @@ static inline void sys_slist_insert(sys_slist_t *list,
  * @brief Fetch and remove the first node of the given list
  *
  * List must be known to be non-empty.
- * This function and most other sys_slist_*() functions are not threadsafe.
+ * This and other sys_slist_*() functions are not thread safe.
  *
  * @param list A pointer on the list to affect
  *
@@ -381,7 +388,7 @@ static inline sys_snode_t *sys_slist_get_not_empty(sys_slist_t *list)
 /**
  * @brief Fetch and remove the first node of the given list
  *
- * This function and most other sys_slist_*() functions are not threadsafe.
+ * This and other sys_slist_*() functions are not thread safe.
  *
  * @param list A pointer on the list to affect
  *
@@ -395,7 +402,7 @@ static inline sys_snode_t *sys_slist_get(sys_slist_t *list)
 /**
  * @brief Remove a node
  *
- * This function and most other sys_slist_*() functions are not threadsafe.
+ * This and other sys_slist_*() functions are not thread safe.
  *
  * @param list A pointer on the list to affect
  * @param prev_node A pointer on the previous node
@@ -428,7 +435,7 @@ static inline void sys_slist_remove(sys_slist_t *list,
 /**
  * @brief Find and remove a node from a list
  *
- * This function and most other sys_slist_*() functions are not threadsafe.
+ * This and other sys_slist_*() functions are not thread safe.
  *
  * @param list A pointer on the list to affect
  * @param node A pointer on the node to remove from the list
