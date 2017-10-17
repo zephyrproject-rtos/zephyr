@@ -852,9 +852,6 @@ int net_app_close(struct net_app_ctx *ctx)
 	}
 
 	net_ctx = _net_app_select_net_ctx(ctx, NULL);
-	if (!net_ctx) {
-		return -EAFNOSUPPORT;
-	}
 
 	if (ctx->cb.close) {
 		ctx->cb.close(ctx, 0, ctx->user_data);
@@ -866,7 +863,9 @@ int net_app_close(struct net_app_ctx *ctx)
 	}
 #endif
 
-	net_context_put(net_ctx);
+	if (net_ctx) {
+		net_context_put(net_ctx);
+	}
 
 	return 0;
 }
