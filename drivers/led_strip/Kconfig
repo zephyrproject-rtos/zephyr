@@ -44,4 +44,6 @@ config LED_STRIP_RGB_SCRATCH
 
 source "drivers/led_strip/Kconfig.lpd880x"
 
+source "drivers/led_strip/Kconfig.ws2812"
+
 endif # LED_STRIP

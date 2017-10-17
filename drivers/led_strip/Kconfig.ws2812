@@ -1,0 +1,122 @@
+#
+# Copyright (c) 2017 Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# The following blog post is an excellent resource about pulse timing:
+#
+# https://wp.josh.com/2014/05/13/ws2812-neopixels-are-not-so-finicky-once-you-get-to-know-them/
+
+menuconfig WS2812_STRIP
+	bool "Enable WS2812 (and compatible) LED strip driver"
+	depends on SPI
+	depends on !SPI_LEGACY_API
+	default n
+	help
+		Enable LED strip driver for daisy chains of WS2812-ish
+		(or WS2812B, WS2813, SK6812, or compatible) devices.
+		These devices have a one-wire communications interface
+		which encodes bits using pulses. Short pulses indicate
+		zero bits, and long pulses indicate ones; refer to the
+		chip datsheets for precise specifications. To implement
+		this in a multitasking operating system, this driver
+		generates the pulses using a SPI peripheral.
+
+if WS2812_STRIP
+
+config WS2812_STRIP_NAME
+	string "Driver name"
+	default "ws2812_strip"
+	help
+		Device name for WS2812 LED strip.
+
+config WS2812_STRIP_SPI_DEV_NAME
+	string "SPI master to use to drive the strip"
+	default ""
+	help
+		Specify the device name of the SPI master which the
+		WS2812 driver should use to control the LED strip.
+		The MOSI pin of this SPI peripheral should be connected
+		to the signal pin for the first chip in the strip.
+		Examples: SPI_0, SPI_1, etc.
+
+config WS2812_STRIP_SPI_BAUD_RATE
+	int "Baud rate to use to drive LED strip"
+	default 5250000
+	help
+		SPI clock rate, in Hz, to use while driving the strip.
+		The baud rate must be chosen carefully together with the
+		WS2812_STRIP_SPI_ONE_FRAME and WS2812_STRIP_SPI_ZERO_FRAME
+		values so that the transmitted frames meet the chipset
+		pulse widths for one and zero bits. If unsure, keep the default,
+		but enable SPI debug logging for your device and make sure the
+		configuration is matched exactly at runtime.
+
+config WS2812_STRIP_ONE_FRAME
+	hex "SPI frame to shift out to signal a one bit"
+	default 0x7c
+	help
+		When shifted out at the configured clock frequency,
+		this must generate a pulse whose width fits within the chipset
+		specifications for T1H, and whose interpulse timing meets low
+		times. It is recommended that the first and last bits in the
+		frame be zero; this "encourages" SPI IPs to leave MOSI low
+		between frames.
+
+config WS2812_STRIP_ZERO_FRAME
+	hex "SPI frame to shift out to signal a zero bit"
+	default 0x60
+	help
+		When shifted out at the configured clock frequency,
+		this must generate a pulse whose width fits within the chipset
+		specifications for T0H, and whose interpulse timing meets low
+		times. It is recommended that the first and last bits in the
+		frame be zero; this "encourages" SPI IPs to leave MOSI low
+		between frames.
+
+# By default, we use GRBW [sic] (and ignore W).
+comment "The following options determine channel data order on the wire."
+
+config WS2812_RED_ORDER
+	int "Order in which a red pixel should be shifted out"
+	default 1
+	range 0 3
+	help
+		If the red channel is shifted out first, specify 0.
+		If second, specify 1, and so on.
+
+config WS2812_GRN_ORDER
+	int "Order in which a green pixel should be shifted out"
+	default 0
+	range 0 3
+	help
+		If the green channel is shifted out first, specify 0.
+		If second, specify 1, and so on.
+
+config WS2812_BLU_ORDER
+	int "Order in which a blue pixel should be shifted out"
+	default 2
+	range 0 3
+	help
+		If the blue channel is shifted out first, specify 0.
+		If second, specify 1, and so on.
+
+config WS2812_HAS_WHITE_CHANNEL
+	bool "Does the chip have a white channel on wire?"
+	default y
+	help
+		If the chipset has a white channel, say y. White channels
+		are not used by the driver, but must be declared if expected
+		by the chip.
+
+config WS2812_WHT_ORDER
+	int "Order in which a white pixel should be shifted out"
+	default 3
+	range 0 3
+	depends on WS2812_HAS_WHITE_CHANNEL
+	help
+		If the blue channel is shifted out first, specify 0.
+		If second, specify 1, and so on.
+
+endif # WS2812_STRIP
