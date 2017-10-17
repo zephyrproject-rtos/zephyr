@@ -692,6 +692,25 @@ void _k_thread_group_leave(u32_t groups, struct k_thread *thread)
 	thread_data->init_groups &= groups;
 }
 
+void k_thread_access_grant(struct k_thread *thread, ...)
+{
+#ifdef CONFIG_USERSPACE
+	va_list args;
+	va_start(args, thread);
+
+	while (1) {
+		void *object = va_arg(args, void *);
+		if (object == NULL) {
+			break;
+		}
+		k_object_access_grant(object, thread);
+	}
+	va_end(args);
+#else
+	ARG_UNUSED(thread);
+#endif
+}
+
 FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
 					    void *p1, void *p2, void *p3)
 {
