@@ -147,12 +147,23 @@ static int device_factory_default_cb(u16_t obj_inst_id)
 	return 1;
 }
 
+#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT)
 static int firmware_update_cb(u16_t obj_inst_id)
 {
 	SYS_LOG_DBG("UPDATE");
+
+	/* TODO: kick off update process */
+
+	/* If success, set the update result as RESULT_SUCCESS.
+	 * In reality, it should be set at function lwm2m_setup()
+	 */
+	lwm2m_engine_set_u8("5/0/3", STATE_IDLE);
+	lwm2m_engine_set_u8("5/0/5", RESULT_SUCCESS);
 	return 1;
 }
+#endif
 
+#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT)
 static int firmware_block_received_cb(u16_t obj_inst_id,
 				      u8_t *data, u16_t data_len,
 				      bool last_block, size_t total_size)
@@ -161,6 +172,7 @@ static int firmware_block_received_cb(u16_t obj_inst_id,
 		    data_len, last_block);
 	return 1;
 }
+#endif
 
 static int lwm2m_setup(void)
 {
@@ -204,10 +216,12 @@ static int lwm2m_setup(void)
 
 	/* setup FIRMWARE object */
 
-	lwm2m_engine_register_post_write_callback("5/0/0",
-						  firmware_block_received_cb);
+#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT)
 	lwm2m_firmware_set_write_cb(firmware_block_received_cb);
-	lwm2m_engine_register_exec_callback("5/0/2", firmware_update_cb);
+#endif
+#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT)
+	lwm2m_firmware_set_update_cb(firmware_update_cb);
+#endif
 
 	/* setup TEMP SENSOR object */
 
@@ -225,6 +239,50 @@ static int lwm2m_setup(void)
 	}
 
 	return 0;
+}
+
+static void rd_client_event(struct lwm2m_ctx *client,
+			    enum lwm2m_rd_client_event client_event)
+{
+	switch (client_event) {
+
+	case LWM2M_RD_CLIENT_EVENT_NONE:
+		/* do nothing */
+		break;
+
+	case LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_FAILURE:
+		SYS_LOG_DBG("Bootstrap failure!");
+		break;
+
+	case LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_COMPLETE:
+		SYS_LOG_DBG("Bootstrap complete");
+		break;
+
+	case LWM2M_RD_CLIENT_EVENT_REGISTRATION_FAILURE:
+		SYS_LOG_DBG("Registration failure!");
+		break;
+
+	case LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE:
+		SYS_LOG_DBG("Registration complete");
+		break;
+
+	case LWM2M_RD_CLIENT_EVENT_REG_UPDATE_FAILURE:
+		SYS_LOG_DBG("Registration update failure!");
+		break;
+
+	case LWM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE:
+		SYS_LOG_DBG("Registration update complete");
+		break;
+
+	case LWM2M_RD_CLIENT_EVENT_DEREGISTER_FAILURE:
+		SYS_LOG_DBG("Deregister failure!");
+		break;
+
+	case LWM2M_RD_CLIENT_EVENT_DISCONNECT:
+		SYS_LOG_DBG("Disconnected");
+		break;
+
+	}
 }
 
 void main(void)
@@ -251,10 +309,12 @@ void main(void)
 
 #if defined(CONFIG_NET_IPV6)
 	ret = lwm2m_rd_client_start(&client, CONFIG_NET_APP_PEER_IPV6_ADDR,
-				    CONFIG_LWM2M_PEER_PORT, CONFIG_BOARD);
+				    CONFIG_LWM2M_PEER_PORT, CONFIG_BOARD,
+				    rd_client_event);
 #elif defined(CONFIG_NET_IPV4)
 	ret = lwm2m_rd_client_start(&client, CONFIG_NET_APP_PEER_IPV4_ADDR,
-				    CONFIG_LWM2M_PEER_PORT, CONFIG_BOARD);
+				    CONFIG_LWM2M_PEER_PORT, CONFIG_BOARD,
+				    rd_client_event);
 #else
 	SYS_LOG_ERR("LwM2M client requires IPv4 or IPv6.");
 	ret = -EPROTONOSUPPORT;

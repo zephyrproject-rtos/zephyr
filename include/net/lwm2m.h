@@ -122,9 +122,15 @@ int lwm2m_device_add_err(u8_t error_code);
 #define RESULT_UPDATE_FAILED	8
 #define RESULT_UNSUP_PROTO	9
 
+#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT)
 void lwm2m_firmware_set_write_cb(lwm2m_engine_set_data_cb_t cb);
 lwm2m_engine_set_data_cb_t lwm2m_firmware_get_write_cb(void);
 
+#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT)
+void lwm2m_firmware_set_update_cb(lwm2m_engine_exec_cb_t cb);
+lwm2m_engine_exec_cb_t lwm2m_firmware_get_update_cb(void);
+#endif
+#endif
 
 /* LWM2M Engine */
 
@@ -192,8 +198,26 @@ int lwm2m_engine_start(struct lwm2m_ctx *client_ctx,
 
 /* LWM2M RD Client */
 
+/* Client events */
+enum lwm2m_rd_client_event {
+	LWM2M_RD_CLIENT_EVENT_NONE,
+	LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_FAILURE,
+	LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_COMPLETE,
+	LWM2M_RD_CLIENT_EVENT_REGISTRATION_FAILURE,
+	LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE,
+	LWM2M_RD_CLIENT_EVENT_REG_UPDATE_FAILURE,
+	LWM2M_RD_CLIENT_EVENT_REG_UPDATE_COMPLETE,
+	LWM2M_RD_CLIENT_EVENT_DEREGISTER_FAILURE,
+	LWM2M_RD_CLIENT_EVENT_DISCONNECT
+};
+
+/* Event callback */
+typedef void (*lwm2m_ctx_event_cb_t)(struct lwm2m_ctx *ctx,
+				     enum lwm2m_rd_client_event event);
+
 int lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx,
 			  char *peer_str, u16_t peer_port,
-			  const char *ep_name);
+			  const char *ep_name,
+			  lwm2m_ctx_event_cb_t event_cb);
 
 #endif	/* __LWM2M_H__ */

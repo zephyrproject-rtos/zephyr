@@ -85,8 +85,10 @@ int  lwm2m_get_or_create_engine_obj(struct lwm2m_engine_context *context,
 				    struct lwm2m_engine_obj_inst **obj_inst,
 				    u8_t *created);
 
+/* LwM2M context functions */
+void lwm2m_engine_context_init(struct lwm2m_ctx *client_ctx);
+
 /* LwM2M message functions */
-struct lwm2m_message *find_msg_from_pending(struct zoap_pending *pending);
 struct lwm2m_message *lwm2m_get_message(struct lwm2m_ctx *client_ctx);
 void lwm2m_release_message(struct lwm2m_message *msg);
 int lwm2m_init_message(struct lwm2m_message *msg);
@@ -102,5 +104,14 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
 		       bool handle_separate_response,
 		       udp_request_handler_cb_t udp_request_handler);
+
+enum zoap_block_size lwm2m_default_block_size(void);
+
+#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT)
+u8_t lwm2m_firmware_get_update_state(void);
+void lwm2m_firmware_set_update_state(u8_t state);
+void lwm2m_firmware_set_update_result(u8_t result);
+u8_t lwm2m_firmware_get_update_result(void);
+#endif
 
 #endif /* LWM2M_ENGINE_H */
