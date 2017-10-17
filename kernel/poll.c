@@ -292,7 +292,8 @@ static int _signal_poll_event(struct k_poll_event *event, u32_t state,
 
 	_unpend_thread(thread);
 	_abort_thread_timeout(thread);
-	_set_thread_return_value(thread, 0);
+	_set_thread_return_value(thread,
+				 state == K_POLL_STATE_NOT_READY ? -EINTR : 0);
 
 	if (!_is_thread_ready(thread)) {
 		goto ready_event;
