@@ -76,8 +76,8 @@ expected for the Zephyr build environment and so are included in
    $ sudo -E apt-get install doxygen
    $ pip install -r scripts/requirements.txt
 
-Documentaion presentation theme
-*******************************
+Documentation presentation theme
+********************************
 
 Sphinx supports easy customization of the generated documentation
 appearance through the use of themes.  Replace the theme files and do
@@ -124,7 +124,7 @@ configuration files in the ``.known-issues/doc`` folder.  (This
 filtering is done as part of the ``doc/Makefile``.)
 
 If you're contributing components included in the Zephyr API
-documentaion and run across these warnings, you can include filtering
+documentation and run across these warnings, you can include filtering
 them out as "expected" warnings by adding a conf file to the
 ``.known-issues/doc`` folder, following the example of other conf files
 found there.

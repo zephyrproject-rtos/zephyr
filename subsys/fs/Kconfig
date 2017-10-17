@@ -22,7 +22,7 @@ choice
 config NO_FS
 	bool "No File System"
 	help
-	  No file system choosen.
+	  No file system chosen.
 
 config FAT_FILESYSTEM_ELM
 	bool "ELM FAT File System"

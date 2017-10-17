@@ -13,7 +13,7 @@ writing and executing via an LwM2M server in a very lightweight environment.
 This LwM2M client sample application for Zephyr implements the LwM2M library
 and establishes both IPv4 and IPv6 connections to an LwM2M server using
 the `Open Mobile Alliance Lightweight Machine to Machine Technical
-Specification`_ (Section 5.3: Client Registration Inferface).
+Specification`_ (Section 5.3: Client Registration Interface).
 
 .. _Open Mobile Alliance Lightweight Machine to Machine Technical Specification:
     http://www.openmobilealliance.org/release/LightweightM2M/V1_0-20170208-A/OMA-TS-LightweightM2M-V1_0-20170208-A.pdf

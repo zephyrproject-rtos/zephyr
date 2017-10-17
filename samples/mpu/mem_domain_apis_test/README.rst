@@ -30,7 +30,7 @@ Serial Port.
 Sample Output
 =============
 
-In the beginnging, main thread adds app threads into specific memory domains.
+In the beginning, main thread adds app threads into specific memory domains.
 
 .. code-block:: console
 
