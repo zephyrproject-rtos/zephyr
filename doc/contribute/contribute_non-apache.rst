@@ -37,7 +37,7 @@ these additional steps must be followed:
    :file:`doc/contributing/code_component_README` (and included
    `below`_ for reference)
 
-#. The Zephyr Techincal Steering Committee (TSC) will evaluate the code
+#. The Zephyr Technical Steering Committee (TSC) will evaluate the code
    component README as part of the PR
    commit and vote on accepting it using the GitHub PR review tools.
 

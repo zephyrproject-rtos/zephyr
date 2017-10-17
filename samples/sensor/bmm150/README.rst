@@ -1,6 +1,6 @@
 .. _bmm150:
 
-BMM150 GeoMagnetic Sensor
+BMM150 Geomagnetic Sensor
 #########################
 
 Overview

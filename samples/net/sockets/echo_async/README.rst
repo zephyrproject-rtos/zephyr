@@ -7,7 +7,7 @@ Overview
 ********
 
 The sockets/echo-async sample application for Zephyr implements an
-asyncronous IPv4/IPv6 TCP echo server using a BSD Sockets compatible API
+asynchronous IPv4/IPv6 TCP echo server using a BSD Sockets compatible API
 with non-blocking sockets and a ``poll()`` call. This is an extension of
 the :ref:`sockets-echo-sample` sample. It's a more involved application,
 supporting both IPv4 and IPv6 with concurrent connections, limiting
