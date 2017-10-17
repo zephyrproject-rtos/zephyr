@@ -51,6 +51,25 @@ def check_output(cmd, debug):
     return subprocess.check_output(cmd)
 
 
+def popen_ignore_int(cmd, debug):
+    '''Spawn a child command, ensuring it ignores SIGINT.
+
+    The returned subprocess.Popen object must be manually terminated.'''
+    cflags = 0
+    preexec = None
+    system = platform.system()
+
+    if system == 'Windows':
+        cflags |= subprocess.CREATE_NEW_PROCESS_GROUP
+    elif system in {'Linux', 'Darwin'}:
+        preexec = os.setsid
+
+    if debug:
+        print(' '.join(cmd))
+
+    return subprocess.Popen(cmd, creationflags=cflags, preexec_fn=preexec)
+
+
 class ZephyrBinaryRunner(abc.ABC):
     '''Abstract superclass for binary runners (flashers, debuggers).
 
@@ -139,6 +158,25 @@ class ZephyrBinaryRunner(abc.ABC):
         '''Run a command ('flash', 'debug', 'debugserver').
 
         In case of an unsupported command, raise a ValueError.'''
+
+    def run_server_and_client(self, server, client):
+        '''Run a server that ignores SIGINT, and a client that handles it.
+
+        This routine portably:
+
+        - creates a Popen object for the `server' command which ignores SIGINT
+        - runs `client' in a subprocess while temporarily ignoring SIGINT
+        - cleans up the server after the client exits.
+
+        It's useful to e.g. open a GDB server and client.'''
+        server_proc = popen_ignore_int(server, self.debug)
+        previous = signal.signal(signal.SIGINT, signal.SIG_IGN)
+        try:
+            check_call(client, self.debug)
+        finally:
+            signal.signal(signal.SIGINT, previous)
+            server_proc.terminate()
+            server_proc.wait()
 
 
 DEFAULT_ARC_TCL_PORT = 6333
