@@ -8,4 +8,4 @@ tests:
         - CONFIG_USB_DEVICE_PID=0xBEEF
       build_only: true
       platform_whitelist: arduino_101
-      tags: msd
+      tags: msd usb
