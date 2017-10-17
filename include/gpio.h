@@ -108,18 +108,11 @@ extern "C" {
 #define GPIO_PUD_MASK		(3 << GPIO_PUD_POS)
 /** @endcond */
 
-/*
- * GPIO_PIN_(EN-/DIS-)ABLE are for pin enable / disable.
- *
- * Individual pins can be enabled or disabled
- * if the controller supports this operation.
- */
+/** Deprecated, do not use - Enable GPIO pin. */
+#define GPIO_PIN_ENABLE		(0 __DEPRECATED_MACRO)
 
-/** Enable GPIO pin. */
-#define GPIO_PIN_ENABLE		(1 << 10)
-
-/** Disable GPIO pin. */
-#define GPIO_PIN_DISABLE	(1 << 11)
+/** Deprecated, do not use - Disable GPIO pin. */
+#define GPIO_PIN_DISABLE	(0 __DEPRECATED_MACRO)
 
 /* GPIO_DS_* are for pin drive strength configuration.
  *
