@@ -616,6 +616,22 @@ extern FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
 						   void *p3);
 
 /**
+ * @brief Grant a thread access to a NULL-terminated  set of kernel objects
+ *
+ * This is a convenience function. For the provided thread, grant access to
+ * the remaining arguments, which must be pointers to kernel objects.
+ * The final argument must be a NULL.
+ *
+ * The thread object must be initialized (i.e. running). The objects don't
+ * need to be.
+ *
+ * @param thread Thread to grant access to objects
+ * @param ... NULL-terminated list of kernel object pointers
+ */
+extern void __attribute__((sentinel))
+	k_thread_access_grant(struct k_thread *thread, ...);
+
+/**
  * @brief Put the current thread to sleep.
  *
  * This routine puts the current thread to sleep for @a duration
