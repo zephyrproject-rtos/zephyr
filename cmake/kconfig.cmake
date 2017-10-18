@@ -3,6 +3,8 @@
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig/include/generated)
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig/include/config)
 
+set_ifndef(KCONFIG_ROOT ${PROJECT_SOURCE_DIR}/Kconfig)
+
 #set(BOARD_DEFCONFIG ${PROJECT_SOURCE_DIR}/boards/${ARCH}/${BOARD}/${BOARD}_defconfig)
 set(BOARD_DEFCONFIG ${BOARD_DIR}/${BOARD}_defconfig)
 set(DOTCONFIG       ${PROJECT_BINARY_DIR}/.config)
@@ -28,11 +30,11 @@ set(kconfig_target_list
   xconfig
   )
 
-set(COMMAND_FOR_config     ${KCONFIG_CONF} --oldaskconfig ${PROJECT_SOURCE_DIR}/Kconfig)
-set(COMMAND_FOR_gconfig    gconf                          ${PROJECT_SOURCE_DIR}/Kconfig)
-set(COMMAND_FOR_menuconfig ${KCONFIG_MCONF}               ${PROJECT_SOURCE_DIR}/Kconfig)
-set(COMMAND_FOR_oldconfig  ${KCONFIG_CONF} --oldconfig    ${PROJECT_SOURCE_DIR}/Kconfig)
-set(COMMAND_FOR_xconfig    qconf                          ${PROJECT_SOURCE_DIR}/Kconfig)
+set(COMMAND_FOR_config     ${KCONFIG_CONF} --oldaskconfig ${KCONFIG_ROOT})
+set(COMMAND_FOR_gconfig    gconf                          ${KCONFIG_ROOT})
+set(COMMAND_FOR_menuconfig ${KCONFIG_MCONF}               ${KCONFIG_ROOT})
+set(COMMAND_FOR_oldconfig  ${KCONFIG_CONF} --oldconfig    ${KCONFIG_ROOT})
+set(COMMAND_FOR_xconfig    qconf                          ${KCONFIG_ROOT})
 
 foreach(kconfig_target ${kconfig_target_list})
   add_custom_target(
@@ -122,7 +124,7 @@ if(CREATE_NEW_DOTCONFIG)
   execute_process(
 	  COMMAND ${KCONFIG_CONF}
       --olddefconfig
-      ${PROJECT_SOURCE_DIR}/Kconfig
+      ${KCONFIG_ROOT}
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig
     RESULT_VARIABLE ret
   )
@@ -145,7 +147,7 @@ message(STATUS "Generating zephyr/include/generated/autoconf.h")
 execute_process(
 	COMMAND ${KCONFIG_CONF}
     --silentoldconfig
-    ${PROJECT_SOURCE_DIR}/Kconfig
+    ${KCONFIG_ROOT}
   WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig
 )
 
