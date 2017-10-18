@@ -4,11 +4,14 @@ zephyr_compile_definitions(                                  ENABLE_EXTERNAL_ISR
 zephyr_compile_definitions_ifdef(CONFIG_SYS_POWER_DEEP_SLEEP ENABLE_RESTORE_CONTEXT)
 
 if(CONFIG_QMSI_LIBRARY)
-  message(FATAL_ERROR TODO)
-  # TODO: Support QMSI LIBRARY
-  # ZEPHYRINCLUDE += -I$(CONFIG_QMSI_INSTALL_PATH)/include
-  # LIB_INCLUDE_DIR += -L$(CONFIG_QMSI_INSTALL_PATH:"%"=%)/lib
-  # ALL_LIBS += qmsi
+  zephyr_include_directories(
+    ${CONFIG_QMSI_INSTALL_PATH}/include
+    )
+
+  zephyr_link_libraries(
+    qmsi
+    -L${CONFIG_QMSI_INSTALL_PATH}/lib
+    )
 endif()
 
 if(CONFIG_SOC_QUARK_SE_C1000_SS)
