@@ -16,6 +16,7 @@ from os import path
 import os
 import pprint
 import platform
+import shlex
 import signal
 import sys
 import subprocess
@@ -211,7 +212,7 @@ class ArcBinaryRunner(ZephyrBinaryRunner):
         if default_path is not None:
             search_args = ['-s', default_path]
         self.openocd_cmd = [openocd] + search_args
-        self.extra_init = extra_init
+        self.extra_init = extra_init if extra_init is not None else []
         self.tui = tui
         self.tcl_port = tcl_port
         self.telnet_port = telnet_port
@@ -254,6 +255,8 @@ class ArcBinaryRunner(ZephyrBinaryRunner):
 
         openocd = os.environ.get('OPENOCD', 'openocd')
         extra_init = os.environ.get('OPENOCD_EXTRA_INIT', None)
+        if extra_init is not None:
+            extra_init = shlex.split(extra_init)
         default_path = os.environ.get('OPENOCD_DEFAULT_PATH', None)
         tui = os.environ.get('TUI', None)
         tcl_port = int(os.environ.get('TCL_PORT',
@@ -283,15 +286,11 @@ class ArcBinaryRunner(ZephyrBinaryRunner):
             self.debugserver(**kwargs)
 
     def flash_debug(self, command, **kwargs):
-        extra_init_args = []
-        if self.extra_init is not None:
-            extra_init_args = self.extra_init.split()
-
         config = kwargs['openocd-cfg']
 
         server_cmd = (self.openocd_cmd +
                       ['-f', config] +
-                      extra_init_args +
+                      self.extra_init +
                       ['-c', 'tcl_port {}'.format(self.tcl_port),
                        '-c', 'telnet_port {}'.format(self.telnet_port),
                        '-c', 'gdb_port {}'.format(self.gdb_port),
