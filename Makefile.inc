@@ -100,8 +100,13 @@ export BOARD_NAME
 endif
 
 ifneq ($(DEBUG_SCRIPT),)
+ifeq ($(USE_ZEPHYR_FLASH_DEBUG_SHELL),)
+debugserver: FORCE
+	$(Q)$(ZEPHYR_BASE)/scripts/support/zephyr_flash_debug.py debugserver $(ZEPHYR_BASE)/scripts/support/$(DEBUG_SCRIPT)
+else
 debugserver: FORCE
 	$(Q)$(CONFIG_SHELL) $(ZEPHYR_BASE)/scripts/support/$(DEBUG_SCRIPT) debugserver
+endif
 else
 debugserver: FORCE
 	@echo Debugging not supported with this board.

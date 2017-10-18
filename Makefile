@@ -1390,9 +1390,13 @@ flash: FORCE
 endif
 
 ifneq ($(DEBUG_SCRIPT),)
+ifeq ($(USE_ZEPHYR_FLASH_DEBUG_SHELL),)
+debug: zephyr
+	$(Q)$(srctree)/scripts/support/zephyr_flash_debug.py debug $(srctree)/scripts/support/$(DEBUG_SCRIPT)
+else
 debug: zephyr
 	$(Q)$(CONFIG_SHELL) $(srctree)/scripts/support/$(DEBUG_SCRIPT) debug
-
+endif
 else
 debug: FORCE
 	@echo Debugging not supported with this board.
