@@ -249,13 +249,15 @@ static void bt_ready(int err)
 	configure();
 }
 
+static u16_t target = GROUP_ADDR;
+
 void board_button_1_pressed(void)
 {
 	struct net_buf_simple *msg = NET_BUF_SIMPLE(3 + 4);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net_idx,
 		.app_idx = app_idx,
-		.addr = GROUP_ADDR,
+		.addr = target,
 		.send_ttl = BT_MESH_TTL_DEFAULT,
 	};
 
@@ -269,15 +271,21 @@ void board_button_1_pressed(void)
 	printk("Button message sent with OpCode 0x%08x\n", OP_VENDOR_BUTTON);
 }
 
-bool board_toggle_relay(void)
+u16_t board_set_target(void)
 {
-	if (cfg_srv.relay == BT_MESH_RELAY_ENABLED) {
-		cfg_srv.relay = BT_MESH_RELAY_DISABLED;
-		return false;
+	switch (target) {
+	case GROUP_ADDR:
+		target = 1;
+		break;
+	case 9:
+		target = GROUP_ADDR;
+		break;
+	default:
+		target++;
+		break;
 	}
 
-	cfg_srv.relay = BT_MESH_RELAY_ENABLED;
-	return true;
+	return target;
 }
 
 static struct k_sem tune_sem = _K_SEM_INITIALIZER(tune_sem, 0, 1);
