@@ -216,6 +216,24 @@ extern "C" {
 #define K_MEM_PARTITION_P_RWX_U_RWX	(P_RW_U_RW)
 #define K_MEM_PARTITION_P_RWX_U_RX	(P_RW_U_RO)
 #define K_MEM_PARTITION_P_RX_U_RX	(P_RO_U_RO)
+
+#define K_MEM_PARTITION_IS_WRITABLE(attr) \
+	({ \
+		int __is_writable__; \
+		switch (attr) { \
+		case P_RW_U_RW: \
+		case P_RW_U_RO: \
+		case P_RW_U_NA: \
+			__is_writable__ = 1; \
+			break; \
+		default: \
+			__is_writable__ = 0; \
+		} \
+		__is_writable__; \
+	})
+#define K_MEM_PARTITION_IS_EXECUTABLE(attr) \
+	(!((attr) & (NOT_EXEC)))
+
 #endif /* _ASMLANGUAGE */
 #define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size) \
 	BUILD_ASSERT_MSG(!(((size) & ((size) - 1))) && (size) >= 32 && \
@@ -243,6 +261,34 @@ extern "C" {
 					 MPU_REGION_SU_RWX)
 #define K_MEM_PARTITION_P_RX_U_RX	(MPU_REGION_READ | MPU_REGION_EXEC | \
 					 MPU_REGION_SU)
+
+#define K_MEM_PARTITION_IS_WRITABLE(attr) \
+	({ \
+		int __is_writable__; \
+		switch (attr) { \
+		case MPU_REGION_WRITE: \
+		case MPU_REGION_SU_RW: \
+			__is_writable__ = 1; \
+			break; \
+		default: \
+			__is_writable__ = 0; \
+		} \
+		__is_writable__; \
+	})
+#define K_MEM_PARTITION_IS_EXECUTABLE(attr) \
+	({ \
+		int __is_executable__; \
+		switch (attr) { \
+		case MPU_REGION_SU_RX: \
+		case MPU_REGION_EXEC: \
+			__is_executable__ = 1; \
+			break; \
+		default: \
+			__is_executable__ = 0; \
+		} \
+		__is_executable__; \
+	})
+
 #endif /* _ASMLANGUAGE */
 #define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size) \
 	BUILD_ASSERT_MSG((size) % 32 == 0 && (size) >= 32 && \

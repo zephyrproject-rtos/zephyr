@@ -26,6 +26,7 @@ config ARM_MPU
 	depends on CPU_HAS_MPU
 	depends on SOC_FAMILY_ARM || SOC_FAMILY_STM32 || SOC_FAMILY_NRF5
 	select ARM_CORE_MPU
+	select ARCH_HAS_EXECUTABLE_PAGE_BIT
 	default n
 	help
 	  MCU has ARM MPU
@@ -35,6 +36,7 @@ config NXP_MPU
 	depends on CPU_HAS_MPU
 	depends on SOC_FAMILY_KINETIS
 	select ARM_CORE_MPU
+	select ARCH_HAS_EXECUTABLE_PAGE_BIT
 	default n
 	help
 	  MCU has NXP MPU
