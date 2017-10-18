@@ -932,7 +932,7 @@ static int test_block_size(void)
 	struct net_pkt *pkt = NULL;
 	struct net_buf *frag;
 	const char token[] = "token";
-	u8_t payload = 0xFE;
+	u8_t payload[32] = { 0 };
 	int result = TC_FAIL;
 	int r;
 
@@ -988,7 +988,7 @@ static int test_block_size(void)
 		goto done;
 	}
 
-	r = coap_packet_append_payload(&req, (u8_t *)&payload,
+	r = coap_packet_append_payload(&req, payload,
 				       coap_block_size_to_bytes(COAP_BLOCK_32));
 	if (r) {
 		TC_PRINT("Unable to append payload marker\n");
@@ -1068,7 +1068,7 @@ static int test_block_size(void)
 		goto done;
 	}
 
-	r = coap_packet_append_payload(&req, (u8_t *)&payload,
+	r = coap_packet_append_payload(&req, payload,
 				       coap_block_size_to_bytes(COAP_BLOCK_32));
 	if (r) {
 		TC_PRINT("Unable to append payload marker\n");
