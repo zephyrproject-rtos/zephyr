@@ -99,8 +99,14 @@ BOARD_NAME = $(BOARD)
 export BOARD_NAME
 endif
 
+ifneq ($(DEBUG_SCRIPT),)
 debugserver: FORCE
 	$(Q)$(CONFIG_SHELL) $(ZEPHYR_BASE)/scripts/support/$(DEBUG_SCRIPT) debugserver
+else
+debugserver: FORCE
+	@echo Debugging not supported with this board.
+	@echo Please check the documentation for alternate instructions.
+endif
 
 initconfig: $(DOTCONFIG)
 
