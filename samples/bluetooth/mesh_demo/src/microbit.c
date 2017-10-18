@@ -128,12 +128,14 @@ static void button_pressed(struct device *dev, struct gpio_callback *cb,
 	if (pins & BIT(SW0_GPIO_PIN)) {
 		k_work_submit(&button_work);
 	} else {
-		if (board_toggle_relay()) {
-			mb_display_print(disp, MB_DISPLAY_MODE_DEFAULT,
-					 SCROLL_SPEED, "R on");
+		u16_t target = board_set_target();
+
+		if (target > 0x0009) {
+			mb_display_print(disp, MB_DISPLAY_MODE_SINGLE,
+					 K_SECONDS(2), "A");
 		} else {
-			mb_display_print(disp, MB_DISPLAY_MODE_DEFAULT,
-					 SCROLL_SPEED, "R off");
+			mb_display_print(disp, MB_DISPLAY_MODE_SINGLE,
+					 K_SECONDS(2), "%X", (target & 0xf));
 		}
 	}
 }

@@ -7,7 +7,7 @@
  */
 
 void board_button_1_pressed(void);
-bool board_toggle_relay(void);
+u16_t board_set_target(void);
 void board_play(const char *str);
 
 #if defined(CONFIG_BOARD_BBC_MICROBIT)
