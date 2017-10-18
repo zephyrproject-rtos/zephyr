@@ -16,10 +16,6 @@ if(CONFIG_IEEE802154_NRF5 OR CONFIG_IEEE802154_NRF5_RAW)
   endif()
 
   zephyr_compile_definitions(
-    # A common prefix used for placing radio buffer in a named
-    # memory section.
-    RADIO_SECTION_PREFIX="\".top_of_image_ram\""
-
     # Number of slots containing short addresses of nodes for which
     # pending data is stored.
     RADIO_PENDING_SHORT_ADDRESSES=1

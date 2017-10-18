@@ -66,6 +66,12 @@ zephyr_sources_ifdef(CONFIG_I2C stm32f4xx/drivers/src/stm32f4xx_ll_i2c.c)
 zephyr_sources_ifdef(CONFIG_SPI_STM32 stm32f4xx/drivers/src/stm32f4xx_ll_spi.c)
 zephyr_sources_ifdef(CONFIG_RANDOM_STM32_RNG stm32f4xx/drivers/src/stm32f4xx_ll_rng.c)
 zephyr_sources_ifdef(CONFIG_ETH_STM32_HAL stm32f4xx/drivers/src/stm32f4xx_hal_eth.c)
+zephyr_sources_ifdef(CONFIG_USB_DC_STM32
+  stm32f4xx/drivers/src/stm32f4xx_ll_usb.c
+  stm32f4xx/drivers/src/stm32f4xx_hal_pcd.c
+  stm32f4xx/drivers/src/stm32f4xx_hal_pcd_ex.c
+  )
+
 zephyr_sources(stm32f4xx/soc/system_stm32f4xx.c)
 endif()
 
