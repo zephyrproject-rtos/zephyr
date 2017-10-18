@@ -658,7 +658,7 @@ class PyOcdBinaryFlasher(ZephyrBinaryFlasher):
 
         - PYOCD_FLASHTOOL: flash tool path, defaults to pyocd-flashtool
         - PYOCD_BOARD_ID: ID of board to flash, default is to guess
-        - PYOCD_DAPARG_ARG: arguments to pass to flashtool, default is none
+        - PYOCD_DAPARG: arguments to pass to flashtool, default is none
         '''
         bin_name = path.join(get_env_or_bail('O'),
                              get_env_or_bail('KERNEL_BIN_NAME'))
@@ -666,7 +666,7 @@ class PyOcdBinaryFlasher(ZephyrBinaryFlasher):
 
         flashtool = os.environ.get('PYOCD_FLASHTOOL', 'pyocd-flashtool')
         board_id = os.environ.get('PYOCD_BOARD_ID', None)
-        daparg = os.environ.get('PYOCD_DAPARG_ARG', None)
+        daparg = os.environ.get('PYOCD_DAPARG', None)
 
         return PyOcdBinaryFlasher(bin_name, target,
                                   flashtool=flashtool, board_id=board_id,
