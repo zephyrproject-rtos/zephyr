@@ -1,6 +1,6 @@
 tests:
   - test:
-      min_ram: 16
+      min_ram: 21
       tags: dns net
       timeout: 600
   - test-no-ipv6:
