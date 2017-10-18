@@ -313,6 +313,10 @@ function(zephyr_library_compile_definitions item)
   target_compile_definitions(${ZEPHYR_CURRENT_LIBRARY} PRIVATE ${item} ${ARGN})
 endfunction()
 
+function(zephyr_library_compile_options item)
+  target_compile_options(${ZEPHYR_CURRENT_LIBRARY} PRIVATE ${item} ${ARGN})
+endfunction()
+
 function(zephyr_library_cc_option)
   foreach(arg ${ARGV})
      target_cc_option(${ZEPHYR_CURRENT_LIBRARY} PRIVATE ${arg})
@@ -541,6 +545,12 @@ endfunction()
 function(zephyr_library_compile_definitions_ifdef feature_toggle item)
   if(${${feature_toggle}})
     zephyr_library_compile_definitions(${item} ${ARGN})
+  endif()
+endfunction()
+
+function(zephyr_library_compile_options_ifdef feature_toggle item)
+  if(${${feature_toggle}})
+    zephyr_library_compile_options(${item} ${ARGN})
   endif()
 endfunction()
 
