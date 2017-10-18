@@ -56,7 +56,7 @@
 		usart2: usart@400A0000 {
 			compatible = "atmel,sam-usart";
 			reg = <0x400A0000 0x130>;
-			interrupts = <18 0>;
+			interrupts = <19 0>;
 			status = "disabled";
 			label = "USART_2";
 		};
