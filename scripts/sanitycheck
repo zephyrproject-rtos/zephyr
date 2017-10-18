@@ -1216,8 +1216,7 @@ class TestInstance:
             os.makedirs(self.outdir, exist_ok=True)
             f = open(file, "w")
             content = ""
-            for c in self.test.extra_configs:
-                content += c
+            content = "\n".join(self.test.extra_configs)
             f.write(content)
             f.close()
 
