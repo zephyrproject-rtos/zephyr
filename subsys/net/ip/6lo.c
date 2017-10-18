@@ -1337,6 +1337,12 @@ static inline bool uncompress_IPHC_header(struct net_pkt *pkt)
 	net_buf_add(frag, NET_UDPH_LEN);
 
 end:
+	if (pkt->frags->len < offset) {
+		NET_ERR("pkt %p too short len %d vs %d", pkt,
+			pkt->frags->len, offset);
+		goto fail;
+	}
+
 	/* Move the data to beginning, no need for headers now */
 	NET_DBG("Removing %u bytes of compressed hdr", offset);
 	memmove(pkt->frags->data, pkt->frags->data + offset,
