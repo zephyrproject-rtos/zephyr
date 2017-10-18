@@ -555,6 +555,20 @@ config STACK_CANARIES
 
 	If stack canaries are not supported by the compiler, enabling this
 	option has no effect.
+
+config EXECUTE_XOR_WRITE
+	bool "Enable W^X for memory partitions"
+	depends on USERSPACE
+	depends on ARCH_HAS_EXECUTABLE_PAGE_BIT
+	default y
+	help
+	When enabled, will enforce that a writable page isn't executable
+	and vice versa.  This might not be acceptable in all scenarios,
+	so this option is given for those unafraid of shooting themselves
+	in the foot.
+
+	If unsure, say Y.
+
 endmenu
 
 config MAX_DOMAIN_PARTITIONS

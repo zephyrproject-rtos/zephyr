@@ -140,6 +140,9 @@ config ARCH_HAS_STACK_PROTECTION
 config ARCH_HAS_USERSPACE
 	bool
 
+config ARCH_HAS_EXECUTABLE_PAGE_BIT
+	bool
+
 #
 # Hidden PM feature configs which are to be selected by
 # individual SoC.

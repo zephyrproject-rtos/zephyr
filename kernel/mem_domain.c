@@ -8,10 +8,21 @@
 #include <kernel.h>
 #include <kernel_structs.h>
 #include <nano_internal.h>
-
+#include <misc/__assert.h>
 
 static u8_t max_partitions;
 
+static void ensure_w_xor_x(u32_t attrs)
+{
+#if defined(CONFIG_EXECUTE_XOR_WRITE) && __ASSERT_ON
+	bool writable = K_MEM_PARTITION_IS_WRITABLE(attrs);
+	bool executable = K_MEM_PARTITION_IS_EXECUTABLE(attrs);
+
+	__ASSERT(writable != executable, "writable page not executable");
+#else
+	ARG_UNUSED(attrs);
+#endif
+}
 
 void k_mem_domain_init(struct k_mem_domain *domain, u32_t num_parts,
 		struct k_mem_partition *parts[])
@@ -31,6 +42,9 @@ void k_mem_domain_init(struct k_mem_domain *domain, u32_t num_parts,
 
 		for (i = 0; i < num_parts; i++) {
 			__ASSERT(parts[i], "");
+
+			ensure_w_xor_x(parts[i]->attr);
+
 			domain->partitions[i] = *parts[i];
 		}
 	}
@@ -68,6 +82,8 @@ void k_mem_domain_add_partition(struct k_mem_domain *domain,
 
 	__ASSERT(domain && part, "");
 	__ASSERT(part->start + part->size > part->start, "");
+
+	ensure_w_xor_x(part->attr);
 
 	key = irq_lock();
 
