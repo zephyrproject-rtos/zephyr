@@ -53,7 +53,7 @@ environment for Windows. Follow the steps below to set it up:
       $ export https_proxy=$http_proxy
 
 #. Update MSYS2's packages and install the dependencies required to build
-   Zephyr (you may need to restart the MSYS2 shell)::
+   Zephyr (you may need to restart the MSYS2 shell):
 
    .. code-block:: console
 
