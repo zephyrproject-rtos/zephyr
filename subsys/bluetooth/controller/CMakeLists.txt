@@ -31,4 +31,9 @@ zephyr_library_include_directories(
   include
 )
 
+zephyr_library_compile_options_ifdef(
+  CONFIG_BT_CTLR_FAST_ENC
+  -Ofast
+  )
+
 zephyr_library_link_libraries(subsys__bluetooth)
