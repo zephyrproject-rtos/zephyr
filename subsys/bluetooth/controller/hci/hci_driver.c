@@ -186,11 +186,14 @@ static inline struct net_buf *process_node(struct radio_pdu_node_rx *node_rx)
 }
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
-static inline struct net_buf *process_hbuf(void)
+static inline struct net_buf *process_hbuf(struct radio_pdu_node_rx *n)
 {
 	/* shadow total count in case of preemption */
+	struct radio_pdu_node_rx *node_rx = NULL;
 	s32_t hbuf_total = hci_hbuf_total;
 	struct net_buf *buf = NULL;
+	sys_snode_t *node = NULL;
+	s8_t class;
 	int reset;
 
 	reset = atomic_test_and_clear_bit(&hci_state_mask, HCI_STATE_BIT_RESET);
@@ -199,68 +202,73 @@ static inline struct net_buf *process_hbuf(void)
 		sys_slist_init(&hbuf_pend);
 	}
 
-	if (hbuf_total > 0) {
-		struct radio_pdu_node_rx *node_rx = NULL;
-		s8_t class, next_class = -1;
-		sys_snode_t *node = NULL;
+	if (hbuf_total <= 0) {
+		hbuf_count = -1;
+		return NULL;
+	}
 
-		/* available host buffers */
+	/* available host buffers */
+	hbuf_count = hbuf_total - (hci_hbuf_sent - hci_hbuf_acked);
+
+	/* host acked ACL packets, try to dequeue from hbuf */
+	node = sys_slist_peek_head(&hbuf_pend);
+	if (!node) {
+		return NULL;
+	}
+
+	/* Return early if this iteration already has a node to process */
+	node_rx = NODE_RX(node);
+	class = hci_get_class(node_rx);
+	if (n) {
+		if (class == HCI_CLASS_EVT_CONNECTION ||
+		    (class == HCI_CLASS_ACL_DATA && hbuf_count)) {
+			/* node to process later, schedule an iteration */
+			BT_DBG("FC: signalling");
+			k_poll_signal(&hbuf_signal, 0x0);
+		}
+		return NULL;
+	}
+
+	switch (class) {
+	case HCI_CLASS_EVT_CONNECTION:
+		BT_DBG("FC: dequeueing event");
+		(void) sys_slist_get(&hbuf_pend);
+		break;
+	case HCI_CLASS_ACL_DATA:
+		if (hbuf_count) {
+			BT_DBG("FC: dequeueing ACL data");
+			(void) sys_slist_get(&hbuf_pend);
+		} else {
+			/* no buffers, HCI will signal */
+			node = NULL;
+		}
+		break;
+	case HCI_CLASS_EVT_DISCARDABLE:
+	case HCI_CLASS_EVT_REQUIRED:
+	default:
+		LL_ASSERT(0);
+		break;
+	}
+
+	if (node) {
+		buf = encode_node(node_rx, class);
+		/* Update host buffers after encoding */
 		hbuf_count = hbuf_total - (hci_hbuf_sent - hci_hbuf_acked);
-
-		/* host acked ACL packets, try to dequeue from hbuf */
+		/* next node */
 		node = sys_slist_peek_head(&hbuf_pend);
 		if (node) {
 			node_rx = NODE_RX(node);
 			class = hci_get_class(node_rx);
-			switch (class) {
-			case HCI_CLASS_EVT_CONNECTION:
-				BT_DBG("FC: dequeueing event");
-				node = sys_slist_get(&hbuf_pend);
-				break;
-			case HCI_CLASS_ACL_DATA:
-				if (hbuf_count) {
-					BT_DBG("FC: dequeueing ACL data");
-					node = sys_slist_get(&hbuf_pend);
-				} else {
-					/* no buffers, HCI will signal */
-					node = NULL;
-				}
-				break;
-			case HCI_CLASS_EVT_DISCARDABLE:
-			case HCI_CLASS_EVT_REQUIRED:
-			default:
-				LL_ASSERT(0);
-				break;
-			}
 
-			if (node) {
-				struct radio_pdu_node_rx *next;
-				bool empty = true;
-
-				node_rx = NODE_RX(node);
-				node = sys_slist_peek_head(&hbuf_pend);
-				if (node) {
-					next = NODE_RX(node);
-					next_class = hci_get_class(next);
-				}
-				empty = sys_slist_is_empty(&hbuf_pend);
-				buf = encode_node(node_rx, class);
-				/* Update host buffers after encoding */
-				hbuf_count = hbuf_total -
-					     (hci_hbuf_sent - hci_hbuf_acked);
-				if (!empty && (class == HCI_CLASS_EVT_CONNECTION ||
-					       (class == HCI_CLASS_ACL_DATA &&
-						hbuf_count))) {
-					/* more to process, schedule an
-					 * iteration
-					 */
-					BT_DBG("FC: signalling");
-					k_poll_signal(&hbuf_signal, 0x0);
-				}
+			if (class == HCI_CLASS_EVT_CONNECTION ||
+			    (class == HCI_CLASS_ACL_DATA && hbuf_count)) {
+				/* more to process, schedule an
+				 * iteration
+				 */
+				BT_DBG("FC: signalling");
+				k_poll_signal(&hbuf_signal, 0x0);
 			}
 		}
-	} else {
-		hbuf_count = -1;
 	}
 
 	return buf;
@@ -302,7 +310,7 @@ static void recv_thread(void *p1, void *p2, void *p3)
 		events[1].state = K_POLL_STATE_NOT_READY;
 
 		/* process host buffers first if any */
-		buf = process_hbuf();
+		buf = process_hbuf(node_rx);
 
 #else
 		node_rx = k_fifo_get(&recv_fifo, K_FOREVER);
