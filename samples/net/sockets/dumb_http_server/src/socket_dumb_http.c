@@ -23,8 +23,12 @@
 
 #endif
 
+#ifndef USE_BIG_PAYLOAD
+#define USE_BIG_PAYLOAD 1
+#endif
+
 static const char content[] = {
-#if 0
+#if USE_BIG_PAYLOAD
     #include "response_big.html.bin.inc"
 #else
     #include "response_small.html.bin.inc"

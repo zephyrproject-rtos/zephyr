@@ -45,20 +45,21 @@ the documentation at :ref:`boards`.
 
 After the sample starts, it expects connections at 192.0.2.1, port 8080.
 The easiest way to connect is by opening a following URL in a web
-browser: http://192.0.2.1:8080/ . You should see a page with content
-"Plain-text example.". Alternatively, a tool like ``curl`` can be used:
+browser: http://192.0.2.1:8080/ . You should see a page with a sample
+content about Zephyr (captured at a particular time from Zephyr's web
+site, note that it may differ from the content on the live Zephyr site).
+Alternatively, a tool like ``curl`` can be used:
 
 .. code-block:: console
 
     $ curl http://192.0.2.1:8080/
-    Plain-text example.
 
 Finally, you can run an HTTP profiling/load tool like Apache Bench
 (``ab``) against the server:
 
     $ ab -n10 http://192.0.2.1:8080/
 
-``-n`` parameter specified the number of HTTP requests to issue against
+``-n`` parameter specifies the number of HTTP requests to issue against
 a server.
 
 Running application on POSIX Host
