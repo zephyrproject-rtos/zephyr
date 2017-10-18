@@ -1,1 +1,1 @@
-add_subdirectory(simplelink/source/ti/devices)
+add_subdirectory(simplelink)
