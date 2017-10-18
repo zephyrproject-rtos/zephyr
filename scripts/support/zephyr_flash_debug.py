@@ -858,14 +858,24 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
 class PyOcdBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for pyocd-flashtool.'''
 
-    def __init__(self, bin_name, target, flashtool='pyocd-flashtool',
+    def __init__(self, target, flashtool='pyocd-flashtool',
+                 bin_name=None,
                  board_id=None, daparg=None, debug=False):
         super(PyOcdBinaryRunner, self).__init__(debug=debug)
-        self.bin_name = bin_name
-        self.target = target
+
+        self.target_args = ['-t', target]
         self.flashtool = flashtool
-        self.board_id = board_id
-        self.daparg = daparg
+        self.bin_name = bin_name
+
+        board_args = []
+        if board_id is not None:
+            board_args = ['-b', board_id]
+        self.board_args = board_args
+
+        daparg_args = []
+        if daparg is not None:
+            daparg_args = ['-da', daparg]
+        self.daparg_args = daparg_args
 
     def replaces_shell_script(shell_script, command):
         return command == 'flash' and shell_script == 'pyocd.sh'
@@ -875,48 +885,60 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
 
         Required:
 
-        - O: build output directory
-        - KERNEL_BIN_NAME: name of kernel binary
         - PYOCD_TARGET: target override
 
-        Optional:
+        Required for 'flash':
+
+        - O: build output directory
+        - KERNEL_BIN_NAME: name of kernel binary
+
+        Optional for 'flash':
 
         - PYOCD_FLASHTOOL: flash tool path, defaults to pyocd-flashtool
         - PYOCD_BOARD_ID: ID of board to flash, default is to guess
         - PYOCD_DAPARG: arguments to pass to flashtool, default is none
         '''
-        bin_name = path.join(get_env_or_bail('O'),
-                             get_env_or_bail('KERNEL_BIN_NAME'))
         target = get_env_or_bail('PYOCD_TARGET')
+
+        o = os.environ.get('O', None)
+        bin_ = os.environ.get('KERNEL_BIN_NAME', None)
+        bin_name = None
+        if o is not None:
+            if bin_ is not None:
+                bin_name = path.join(o, bin_)
 
         flashtool = os.environ.get('PYOCD_FLASHTOOL', 'pyocd-flashtool')
         board_id = os.environ.get('PYOCD_BOARD_ID', None)
         daparg = os.environ.get('PYOCD_DAPARG', None)
 
-        return PyOcdBinaryRunner(bin_name, target,
-                                 flashtool=flashtool, board_id=board_id,
+        return PyOcdBinaryRunner(target, flashtool=flashtool,
+                                 bin_name=bin_name, board_id=board_id,
                                  daparg=daparg, debug=debug)
 
     def run(self, command, **kwargs):
-        if command != 'flash':
-            raise ValueError('only flash is supported')
+        if command not in {'flash', 'debug', 'debugserver'}:
+            raise ValueError('{} is not supported'.format(command))
 
-        daparg_args = []
-        if self.daparg is not None:
-            daparg_args = ['-da', self.daparg]
+        if command == 'flash':
+            self.flash(**kwargs)
+        else:
+            self.debug_debugserver(command, **kwargs)
 
-        board_args = []
-        if self.board_id is not None:
-            board_args = ['-b', self.board_id]
+    def flash(self, **kwargs):
+        if self.bin_name is None:
+            raise ValueError('Cannot flash; bin_name is missing')
 
         cmd = ([self.flashtool] +
-               daparg_args +
-               ['-t', self.target] +
-               board_args +
+               self.daparg_args +
+               self.target_args +
+               self.board_args +
                [self.bin_name])
 
         print('Flashing Target Device')
         check_call(cmd, self.debug)
+
+    def debug_debugserver(command, **kwargs):
+        raise NotImplementedError()
 
 
 # TODO: Stop using environment variables.
