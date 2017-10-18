@@ -666,7 +666,7 @@ endif()
 
 # To avoid having the same logical target name for the zephyr lib and
 # the zephyr elf, we set the kernel_elf file name to zephyr.elf.
-set_target_properties(${logical_target_for_zephyr_elf} PROPERTIES OUTPUT_NAME "zephyr")
+set_target_properties(${logical_target_for_zephyr_elf} PROPERTIES OUTPUT_NAME ${KERNEL_NAME})
 
 add_custom_command(
   TARGET ${logical_target_for_zephyr_elf}
