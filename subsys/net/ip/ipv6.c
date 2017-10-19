@@ -1287,7 +1287,6 @@ static enum net_verdict handle_ns_input(struct net_pkt *pkt)
 	net_pkt_set_ipv6_ext_opt_len(pkt, sizeof(struct net_icmpv6_ns_hdr));
 
 	nd_opt_hdr = net_icmpv6_get_nd_opt_hdr(pkt, &ndopthdr);
-	NET_ASSERT(nd_opt_hdr);
 
 	left_len = net_pkt_get_len(pkt) - (sizeof(struct net_ipv6_hdr) +
 					   sizeof(struct net_icmp_hdr));
