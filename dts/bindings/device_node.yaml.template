@@ -6,6 +6,15 @@ description: >
     Describe in free form text w/ spanning lines what you
     are describing
 
+
+< parent | child >:
+# parent/child is used to document implicit relation between nodes.
+# This information is required to generate parent related bits in child
+# attributes.
+# In case parent has 'bus', slave inherits some information from master.
+# parent and child should share same bus-type value.
+   bus: <bus-type>
+
 # properties will be the contents of the device tree node
 # property names must match the property names in the DT
 

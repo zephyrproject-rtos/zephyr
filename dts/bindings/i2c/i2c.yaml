@@ -6,6 +6,9 @@ version: 0.1
 description: >
     This binding gives the base structures for all I2C devices
 
+child:
+    bus: i2c
+
 properties:
     "#address-cells":
       type: int
