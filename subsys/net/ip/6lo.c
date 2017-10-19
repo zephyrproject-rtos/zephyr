@@ -919,12 +919,7 @@ static inline u8_t uncompress_sa_ctx(struct net_pkt *pkt,
 				     u8_t offset,
 				     struct net_6lo_context *ctx)
 {
-	NET_DBG("SAC_1");
-
 	switch (CIPHC[1] & NET_6LO_IPHC_SAM_11) {
-	case NET_6LO_IPHC_SAM_00:
-		NET_DBG("SAM_00 unspecified address");
-		break;
 	case NET_6LO_IPHC_SAM_01:
 		NET_DBG("SAM_01 last 64 bits are inlined");
 
@@ -1268,20 +1263,27 @@ static inline bool uncompress_IPHC_header(struct net_pkt *pkt)
 	memset(&ipv6->dst.s6_addr[0], 0, 16);
 
 	/* Uncompress Source Address */
-#if defined(CONFIG_NET_6LO_CONTEXT)
 	if (CIPHC[1] & NET_6LO_IPHC_SAC_1) {
-		if (!src) {
-			NET_ERR("SAC is set but src context doesn't exists");
-			goto fail;
-		}
+		NET_DBG("SAC_1");
 
-		offset = uncompress_sa_ctx(pkt, ipv6, offset, src);
+		if ((CIPHC[1] & NET_6LO_IPHC_SAM_11) == NET_6LO_IPHC_SAM_00) {
+			NET_DBG("SAM_00 unspecified address");
+		} else {
+#if defined(CONFIG_NET_6LO_CONTEXT)
+			if (!src) {
+				NET_ERR("Src context doesn't exists");
+				goto fail;
+			}
+
+			offset = uncompress_sa_ctx(pkt, ipv6, offset, src);
+#else
+			NET_WARN("Context based uncompression not enabled");
+			goto fail;
+#endif
+		}
 	} else {
 		offset = uncompress_sa(pkt, ipv6, offset);
 	}
-#else
-	offset = uncompress_sa(pkt, ipv6, offset);
-#endif
 
 	/* Uncompress Destination Address */
 #if defined(CONFIG_NET_6LO_CONTEXT)
