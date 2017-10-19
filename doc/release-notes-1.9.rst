@@ -2,6 +2,42 @@
 
 .. _zephyr_1.9:
 
+Zephyr Kernel 1.9.2
+###################
+
+This is a maintenance release with fixes.
+
+Kernel
+******
+* Generic queue item acquisition fixed to always return a valid item when
+  using K_FOREVER
+
+Bluetooth
+*********
+* Multiple stability fixes for BLE Mesh
+* Multiple stability fixes for the BLE Controller
+
+Zephyr Kernel 1.9.1
+###################
+
+This is a maintenance release with fixes and a two new features in the
+BLE Controller.
+
+Drivers and Sensors
+*******************
+* mcux ethernet driver buffer overflow fixed
+* STM32 PWM prescaler issue fixed
+
+Networking
+**********
+* Support for IPv6 in DNS fixed
+
+Bluetooth
+*********
+* Multiple stability fixes for the BLE Controller
+* Support for PA/LNA amplifiers in the BLE Controller
+* Support for additional VS commands in the BLE Controller
+
 Zephyr Kernel 1.9.0
 ###################
 
