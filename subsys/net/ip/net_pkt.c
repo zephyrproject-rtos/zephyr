@@ -37,14 +37,6 @@
 
 #include "net_private.h"
 
-/* Available (free) buffers queue */
-#define NET_PKT_RX_COUNT	CONFIG_NET_PKT_RX_COUNT
-#define NET_PKT_TX_COUNT	CONFIG_NET_PKT_TX_COUNT
-#define NET_BUF_RX_COUNT	CONFIG_NET_BUF_RX_COUNT
-#define NET_BUF_TX_COUNT	CONFIG_NET_BUF_TX_COUNT
-#define NET_BUF_DATA_LEN	CONFIG_NET_BUF_DATA_SIZE
-#define NET_BUF_USER_DATA_LEN	CONFIG_NET_BUF_USER_DATA_SIZE
-
 #if defined(CONFIG_NET_TCP)
 #define APP_PROTO_LEN NET_TCPH_LEN
 #else
@@ -71,7 +63,7 @@
  * fragment. This makes possible to cast a protocol header
  * struct into memory area.
  */
-#if NET_BUF_DATA_LEN < (IP_PROTO_LEN + APP_PROTO_LEN)
+#if CONFIG_NET_BUF_DATA_SIZE < (IP_PROTO_LEN + APP_PROTO_LEN)
 #if defined(STRING2)
 #undef STRING2
 #endif
@@ -80,20 +72,17 @@
 #endif
 #define STRING2(x) #x
 #define STRING(x) STRING2(x)
-#pragma message "Data len " STRING(NET_BUF_DATA_LEN)
+#pragma message "Data len " STRING(CONFIG_NET_BUF_DATA_SIZE)
 #pragma message "Minimum len " STRING(IP_PROTO_LEN + APP_PROTO_LEN)
 #error "Too small net_buf fragment size"
 #endif
 
-K_MEM_SLAB_DEFINE(rx_pkts, sizeof(struct net_pkt), NET_PKT_RX_COUNT, 4);
-K_MEM_SLAB_DEFINE(tx_pkts, sizeof(struct net_pkt), NET_PKT_TX_COUNT, 4);
+NET_PKT_SLAB_DEFINE(rx_pkts, CONFIG_NET_PKT_RX_COUNT);
+NET_PKT_SLAB_DEFINE(tx_pkts, CONFIG_NET_PKT_TX_COUNT);
 
 /* The data fragment pool is for storing network data. */
-NET_BUF_POOL_DEFINE(rx_bufs, NET_BUF_RX_COUNT, NET_BUF_DATA_LEN,
-		    NET_BUF_USER_DATA_LEN, NULL);
-
-NET_BUF_POOL_DEFINE(tx_bufs, NET_BUF_TX_COUNT, NET_BUF_DATA_LEN,
-		    NET_BUF_USER_DATA_LEN, NULL);
+NET_PKT_DATA_POOL_DEFINE(rx_bufs, CONFIG_NET_BUF_RX_COUNT);
+NET_PKT_DATA_POOL_DEFINE(tx_bufs, CONFIG_NET_BUF_TX_COUNT);
 
 #if defined(CONFIG_NET_DEBUG_NET_PKT)
 
@@ -119,8 +108,10 @@ struct net_pkt_alloc {
 	bool is_pkt;
 };
 
-#define MAX_NET_PKT_ALLOCS (NET_PKT_RX_COUNT + NET_PKT_TX_COUNT + \
-			    NET_BUF_RX_COUNT + NET_BUF_TX_COUNT + \
+#define MAX_NET_PKT_ALLOCS (CONFIG_NET_PKT_RX_COUNT + \
+			    CONFIG_NET_PKT_TX_COUNT + \
+			    CONFIG_NET_BUF_RX_COUNT + \
+			    CONFIG_NET_BUF_TX_COUNT + \
 			    CONFIG_NET_DEBUG_NET_PKT_EXTERNALS)
 
 static struct net_pkt_alloc net_pkt_allocs[MAX_NET_PKT_ALLOCS];
