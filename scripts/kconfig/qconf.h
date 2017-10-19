@@ -3,12 +3,56 @@
  * Released under the terms of the GNU GPL v2.0.
  */
 
+#pragma once
+
 #if QT_VERSION < 0x040000
 #include <qlistview.h>
 #else
 #include <q3listview.h>
 #endif
 #include <qsettings.h>
+
+#include <Q3ListView>
+
+#if QT_VERSION < 0x040000
+#include <stddef.h>
+#include <qmainwindow.h>
+#include <qvbox.h>
+#include <qvaluelist.h>
+#include <qtextbrowser.h>
+#include <qaction.h>
+#include <qheader.h>
+#include <qfiledialog.h>
+#include <qdragobject.h>
+#include <qpopupmenu.h>
+#else
+#include <q3mainwindow.h>
+#include <q3vbox.h>
+#include <q3valuelist.h>
+#include <q3textbrowser.h>
+#include <q3action.h>
+#include <q3header.h>
+#include <q3filedialog.h>
+#include <q3dragobject.h>
+#include <q3popupmenu.h>
+#endif
+
+#include <qapplication.h>
+#include <qdesktopwidget.h>
+#include <qtoolbar.h>
+#include <qlayout.h>
+#include <qsplitter.h>
+#include <qlineedit.h>
+#include <qlabel.h>
+#include <qpushbutton.h>
+#include <qmenubar.h>
+#include <qmessagebox.h>
+#include <qregexp.h>
+#include <qevent.h>
+
+#include <stdlib.h>
+
+#include "lkc.h"
 
 #if QT_VERSION < 0x040000
 #define Q3ValueList             QValueList

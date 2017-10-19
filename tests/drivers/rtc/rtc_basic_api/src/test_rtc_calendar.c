@@ -21,7 +21,7 @@
  * @}
  */
 
-#include <test_rtc.h>
+#include "test_rtc.h"
 
 static int test_task(void)
 {

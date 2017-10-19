@@ -1,0 +1,24 @@
+zephyr_library()
+zephyr_library_link_libraries(subsys__bluetooth)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH
+    main.c
+    adv.c
+    beacon.c
+    net.c
+    transport.c
+    crypto.c
+    access.c
+    cfg.c
+    health.c
+)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_LOW_POWER lpn.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_FRIEND friend.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_PROV prov.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_PROXY proxy.c)
+
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_SELF_TEST test.c)
