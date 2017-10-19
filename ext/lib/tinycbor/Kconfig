@@ -1,0 +1,17 @@
+# Kconfig - tinycbor library support configuration options
+#
+# Copyright (c) 2017 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+#
+# DFU
+#
+
+config TINYCBOR
+	bool
+	prompt "tinycbor"
+	select NEWLIB_LIBC
+	help
+	  Enable support for CBOR using tinycbor library.
