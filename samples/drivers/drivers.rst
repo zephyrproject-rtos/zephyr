@@ -10,4 +10,4 @@ by Zephyr.
    :maxdepth: 1
    :glob:
 
-   led_lpd8806/*
+   */*
