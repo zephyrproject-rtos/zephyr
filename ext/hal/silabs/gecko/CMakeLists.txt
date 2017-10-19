@@ -1,5 +1,3 @@
-assert(0 "TODO")
-
 # Makefile - Gecko SDK
 #
 # Copyright (c) 2017, Christian Taedcke
