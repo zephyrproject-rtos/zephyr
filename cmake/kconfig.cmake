@@ -52,8 +52,8 @@ endforeach()
 set(
   merge_config_files
   ${BOARD_DEFCONFIG}
-  ${OVERLAY_CONFIG}
   ${CONF_FILE_AS_LIST}
+  ${OVERLAY_CONFIG}
   )
 
 # Create a list of absolute paths to the .config sources from
