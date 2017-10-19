@@ -35,6 +35,9 @@
 /* Use this value to skip token generation */
 #define LWM2M_MSG_TOKEN_LEN_SKIP	0xFF
 
+/* length of time in milliseconds to wait for buffer allocations */
+#define BUF_ALLOC_TIMEOUT K_SECONDS(1)
+
 struct lwm2m_message;
 
 /* Establish a message timeout callback */
