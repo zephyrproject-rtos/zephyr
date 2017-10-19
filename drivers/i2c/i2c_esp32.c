@@ -650,7 +650,7 @@ DEVICE_DECLARE(i2c_esp32_1);
 
 static void i2c_esp32_connect_irq_1(void)
 {
-	IRQ_CONNECT(CONFIG_I2C_ESP32_0_IRQ, 1, i2c_esp32_isr,
+	IRQ_CONNECT(CONFIG_I2C_ESP32_1_IRQ, 1, i2c_esp32_isr,
 		    DEVICE_GET(i2c_esp32_1), 0);
 }
 
