@@ -13,9 +13,15 @@ config SOC_MK64F12
 	bool "SOC_MK64F12"
 	select HAS_MCUX
 	select HAS_MCUX_ADC16
+	select HAS_MCUX_DSPI
+	select HAS_MCUX_ETH
 	select HAS_MCUX_FTM
+	select HAS_MCUX_GPIO
+	select HAS_MCUX_I2C
+	select HAS_MCUX_PORT
 	select HAS_MCUX_RNGA
 	select HAS_MCUX_SIM
+	select HAS_MCUX_UART
 	select HAS_OSC
 	select HAS_MCG
 	select CPU_HAS_FPU

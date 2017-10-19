@@ -7,7 +7,7 @@
 
 menuconfig PINMUX_MCUX
 	bool "MCUX pinmux driver"
-	depends on HAS_MCUX
+	depends on HAS_MCUX_PORT
 	default n
 	help
 	  Enable the MCUX pinmux driver.

@@ -14,8 +14,12 @@ config SOC_MKL25Z4
 	select CPU_CORTEX_M0PLUS
 	select HAS_MCUX
 	select HAS_MCUX_ADC16
+	select HAS_MCUX_GPIO
+	select HAS_MCUX_I2C
 	select HAS_MCUX_LPSCI
+	select HAS_MCUX_PORT
 	select HAS_MCUX_SIM
+	select HAS_MCUX_UART
 	select HAS_OSC
 	select HAS_MCG
 
