@@ -75,8 +75,6 @@
 #define REG_PREFACE		""
 #endif
 
-#define BUF_ALLOC_TIMEOUT K_SECONDS(1)
-
 #define MAX_TOKEN_LEN		8
 
 struct observe_node {
