@@ -104,11 +104,6 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 			struct lwm2m_engine_obj_field *obj_field,
 			struct lwm2m_engine_context *context);
 
-/* CoAP payload functions */
-u8_t *coap_packet_get_payload_ptr(struct coap_packet *cpkt, u16_t *len,
-				  bool start_marker);
-int coap_packet_set_used(struct coap_packet *cpkt, u16_t len);
-
 void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
 		       bool handle_separate_response,
 		       udp_request_handler_cb_t udp_request_handler);

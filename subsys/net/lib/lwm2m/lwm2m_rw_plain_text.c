@@ -58,6 +58,7 @@
 #define SYS_LOG_DOMAIN "lib/lwm2m_plain_text"
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_LWM2M_LEVEL
 #include <logging/sys_log.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -67,135 +68,86 @@
 #include "lwm2m_rw_plain_text.h"
 #include "lwm2m_engine.h"
 
-size_t plain_text_put_float32fix(u8_t *outbuf, size_t outlen,
-				 float32_value_t *value)
+/* some temporary buffer space for format conversions */
+static char pt_buffer[42]; /* can handle float64 format */
+
+size_t plain_text_put_format(struct lwm2m_output_context *out,
+			     const char *format, ...)
 {
-	int n, o = 0;
+	va_list vargs;
+	int n;
 
-	if (outlen == 0) {
+	va_start(vargs, format);
+	n = vsnprintk(pt_buffer, sizeof(pt_buffer), format, vargs);
+	va_end(vargs);
+	if (n < 0) {
+		/* TODO: generate an error? */
 		return 0;
 	}
 
-	if (value->val1 < 0) {
-		*outbuf++ = '-';
-		outlen--;
-		o = 1;
-		value->val1 = -value->val1;
-	}
-
-	n = snprintk(outbuf, outlen, "%d.%d", value->val1, value->val2);
-
-	if (n < 0 || n >= outlen) {
+	out->frag = net_pkt_write(out->out_cpkt->pkt, out->frag,
+				  out->offset, &out->offset,
+				  strlen(pt_buffer), pt_buffer,
+				  BUF_ALLOC_TIMEOUT);
+	if (!out->frag) {
 		return 0;
 	}
 
-	return n + o;
-}
-
-size_t plain_text_put_float64fix(u8_t *outbuf, size_t outlen,
-				 float64_value_t *value)
-{
-	int n, o = 0;
-
-	if (outlen == 0) {
-		return 0;
-	}
-
-	if (value->val1 < 0) {
-		*outbuf++ = '-';
-		outlen--;
-		o = 1;
-		value->val1 = -value->val1;
-	}
-
-	n = snprintk(outbuf, outlen, "%lld.%lld", value->val1, value->val2);
-
-	if (n < 0 || n >= outlen) {
-		return 0;
-	}
-
-	return n + o;
+	return strlen(pt_buffer);
 }
 
 static size_t put_s32(struct lwm2m_output_context *out,
 		      struct lwm2m_obj_path *path, s32_t value)
 {
-	int len;
-
-	len = snprintk(&out->outbuf[out->outlen], out->outsize - out->outlen,
-		       "%d", value);
-	if (len < 0 || len >= (out->outsize - out->outlen)) {
-		return 0;
-	}
-
-	out->outlen += len;
-	return (size_t)len;
+	return plain_text_put_format(out, "%d", value);
 }
 
 static size_t put_s8(struct lwm2m_output_context *out,
 		     struct lwm2m_obj_path *path, s8_t value)
 {
-	return put_s32(out, path, (s32_t)value);
+	return plain_text_put_format(out, "%d", value);
 }
 
 static size_t put_s16(struct lwm2m_output_context *out,
 		      struct lwm2m_obj_path *path, s16_t value)
 {
-	return put_s32(out, path, (s32_t)value);
+	return plain_text_put_format(out, "%d", value);
 }
 
 static size_t put_s64(struct lwm2m_output_context *out,
 		      struct lwm2m_obj_path *path, s64_t value)
 {
-	int len;
-
-	len = snprintk(&out->outbuf[out->outlen], out->outsize - out->outlen,
-		       "%lld", value);
-	if (len < 0 || len >= (out->outsize - out->outlen)) {
-		return 0;
-	}
-
-	out->outlen += len;
-	return (size_t)len;
+	return plain_text_put_format(out, "%lld", value);
 }
 
 static size_t put_float32fix(struct lwm2m_output_context *out,
 			     struct lwm2m_obj_path *path,
 			     float32_value_t *value)
 {
-	size_t len;
-
-	len = plain_text_put_float32fix(&out->outbuf[out->outlen],
-					out->outsize - out->outlen,
-					value);
-	out->outlen += len;
-	return len;
+	return plain_text_put_format(out, "%d.%d",
+				     value->val1, value->val2);
 }
 
 static size_t put_float64fix(struct lwm2m_output_context *out,
 			     struct lwm2m_obj_path *path,
 			     float64_value_t *value)
 {
-	size_t len;
-
-	len = plain_text_put_float64fix(&out->outbuf[out->outlen],
-					out->outsize - out->outlen,
-					value);
-	out->outlen += len;
-	return len;
+	return plain_text_put_format(out, "%lld.%lld",
+				     value->val1, value->val2);
 }
 
 static size_t put_string(struct lwm2m_output_context *out,
 			 struct lwm2m_obj_path *path,
 			 char *buf, size_t buflen)
 {
-	if (buflen >= (out->outsize - out->outlen)) {
-		return 0;
+	out->frag = net_pkt_write(out->out_cpkt->pkt, out->frag,
+				  out->offset, &out->offset,
+				  buflen, buf,
+				  BUF_ALLOC_TIMEOUT);
+	if (!out->frag) {
+		return -ENOMEM;
 	}
 
-	memmove(&out->outbuf[out->outlen], buf, buflen);
-	out->outbuf[buflen] = '\0';
-	out->outlen += buflen;
 	return buflen;
 }
 
@@ -203,163 +155,147 @@ static size_t put_bool(struct lwm2m_output_context *out,
 		       struct lwm2m_obj_path *path,
 		       bool value)
 {
-	if ((out->outsize - out->outlen) > 0) {
-		if (value) {
-			out->outbuf[out->outlen] = '1';
-		} else {
-			out->outbuf[out->outlen] = '0';
-		}
+	if (value) {
+		return plain_text_put_format(out, "%u", 1);
+	} else {
+		return plain_text_put_format(out, "%u", 0);
+	}
+}
 
-		out->outlen += 1;
-		return 1;
+static int pkt_length_left(struct lwm2m_input_context *in)
+{
+	struct net_buf *frag = in->frag;
+	int total_left = -in->offset;
+
+	while (frag) {
+		total_left += frag->len;
+		frag = frag->frags;
 	}
 
-	return 0;
+	return total_left;
+}
+
+static size_t plain_text_read_number(struct lwm2m_input_context *in,
+				     s64_t *value1,
+				     s64_t *value2,
+				     bool accept_sign, bool accept_dot)
+{
+	s64_t *counter = value1;
+	int i = 0;
+	bool neg = false;
+	bool dot_found = false;
+	u8_t tmp;
+
+	/* initialize values to 0 */
+	value1 = 0;
+	if (value2) {
+		value2 = 0;
+	}
+
+	while (in->frag && in->offset != 0xffff) {
+		in->frag = net_frag_read_u8(in->frag, in->offset, &in->offset,
+					    &tmp);
+		if (!in->frag && in->offset == 0xffff) {
+			break;
+		}
+
+		if (tmp == '-' && accept_sign && i == 0) {
+			neg = true;
+		} else if (tmp == '.' && i > 0 && accept_dot && !dot_found &&
+			   value2) {
+			dot_found = true;
+			counter = value2;
+		} else if (isdigit(tmp)) {
+			*counter = *counter * 10 + (tmp - '0');
+		} else {
+			/* anything else stop reading */
+			in->offset--;
+			break;
+		}
+
+		i++;
+	}
+
+	if (neg) {
+		*value1 = -*value1;
+	}
+
+	return i;
 }
 
 static size_t get_s32(struct lwm2m_input_context *in, s32_t *value)
 {
-	int i;
-	bool neg = false;
+	s64_t tmp = 0;
+	size_t len = 0;
 
-	*value = 0;
-	for (i = 0; i < in->insize; i++) {
-		if (isdigit(in->inbuf[i])) {
-			*value = *value * 10 + (in->inbuf[i] - '0');
-		} else if (in->inbuf[i] == '-' && i == 0) {
-			neg = true;
-		} else {
-			break;
-		}
+	len = plain_text_read_number(in, &tmp, NULL, true, false);
+	if (len > 0) {
+		*value = (s32_t)tmp;
 	}
 
-	if (neg) {
-		*value = -*value;
-	}
-
-	return i;
+	return len;
 }
 
 static size_t get_s64(struct lwm2m_input_context *in, s64_t *value)
 {
-	int i;
-	bool neg = false;
-
-	*value = 0;
-	for (i = 0; i < in->insize; i++) {
-		if (isdigit(in->inbuf[i])) {
-			*value = *value * 10 + (in->inbuf[i] - '0');
-		} else if (in->inbuf[i] == '-' && i == 0) {
-			neg = true;
-		} else {
-			break;
-		}
-	}
-
-	if (neg) {
-		*value = -*value;
-	}
-
-	return i;
+	return plain_text_read_number(in, value, NULL, true, false);
 }
 
 static size_t get_string(struct lwm2m_input_context *in,
 			 u8_t *value, size_t buflen)
 {
-	/* The outbuffer can't contain the full string including ending zero */
-	if (buflen <= in->insize) {
+	u16_t in_len = pkt_length_left(in);
+
+	if (in_len > buflen) {
+		/* TODO: generate warning? */
+		in_len = buflen - 1;
+	}
+	in->frag = net_frag_read(in->frag, in->offset, &in->offset,
+				 in_len, value);
+	if (!in->frag && in->offset == 0xffff) {
+		value[0] = '\0';
 		return 0;
 	}
 
-	memcpy(value, in->inbuf, in->insize);
-	value[in->insize] = '\0';
-	return in->insize;
+	value[in_len] = '\0';
+	return (size_t)in_len;
 }
 
 static size_t get_float32fix(struct lwm2m_input_context *in,
 			     float32_value_t *value)
 {
-	int i;
-	bool dot = false, neg = false;
-	s32_t counter = 0;
+	s64_t tmp1, tmp2;
+	size_t len = 0;
 
-	value->val1 = 0;
-	value->val2 = 0;
-	for (i = 0; i < in->insize; i++) {
-		if (isdigit(in->inbuf[i])) {
-			counter = counter * 10 + (in->inbuf[i] - '0');
-		} else if (in->inbuf[i] == '-' && i == 0) {
-			neg = true;
-		} else if (in->inbuf[i] == '.' && !dot) {
-			value->val1 = counter;
-			counter = 0;
-			dot = true;
-		} else {
-			break;
-		}
+	len = plain_text_read_number(in, &tmp1, &tmp2, true, true);
+	if (len > 0) {
+		value->val1 = (s32_t)tmp1;
+		value->val2 = (s32_t)tmp2;
 	}
 
-	if (!dot) {
-		value->val1 = counter;
-	} else {
-		value->val2 = counter;
-	}
-
-	SYS_LOG_DBG("READ FLOATFIX: '%s'(%d) => %d.%d",
-		    in->inbuf, in->insize, value->val1, value->val2);
-	if (neg) {
-		value->val1 = -value->val1;
-	}
-
-	return i;
+	return len;
 }
 
 static size_t get_float64fix(struct lwm2m_input_context *in,
 			     float64_value_t *value)
 {
-	int i;
-	bool dot = false, neg = false;
-	s64_t counter = 0;
-
-	value->val1 = 0;
-	value->val2 = 0;
-	for (i = 0; i < in->insize; i++) {
-		if (isdigit(in->inbuf[i])) {
-			counter = counter * 10 + (in->inbuf[i] - '0');
-		} else if (in->inbuf[i] == '-' && i == 0) {
-			neg = true;
-		} else if (in->inbuf[i] == '.' && !dot) {
-			value->val1 = counter;
-			counter = 0;
-			dot = true;
-		} else {
-			break;
-		}
-	}
-
-	if (!dot) {
-		value->val1 = counter;
-	} else {
-		value->val2 = counter;
-	}
-
-	SYS_LOG_DBG("READ FLOATFIX: '%s'(%d) => %lld.%lld",
-		    in->inbuf, in->insize, value->val1, value->val2);
-	if (neg) {
-		value->val1 = -value->val1;
-	}
-
-	return i;
+	return plain_text_read_number(in, &value->val1, &value->val2,
+				      true, true);
 }
 
 static size_t get_bool(struct lwm2m_input_context *in,
 		       bool *value)
 {
-	if (in->insize > 0) {
-		if (*in->inbuf == '1' || *in->inbuf == '0') {
-			*value = (*in->inbuf == '1') ? true : false;
-			return 1;
-		}
+	u8_t tmp;
+
+	in->frag = net_frag_read_u8(in->frag, in->offset, &in->offset, &tmp);
+	if (!in->frag && in->offset == 0xffff) {
+		return 0;
+	}
+
+	if (tmp == '1' || tmp == '0') {
+		*value = (tmp == '1') ? true : false;
+		return 1;
 	}
 
 	return 0;
@@ -429,6 +365,5 @@ int do_write_op_plain_text(struct lwm2m_engine_obj *obj,
 	}
 
 	context->path->level = 3;
-	context->in->inpos = 0;
 	return lwm2m_write_handler(obj_inst, res, obj_field, context);
 }

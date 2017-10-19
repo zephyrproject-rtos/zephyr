@@ -211,6 +211,8 @@ cleanup:
 	return ret;
 }
 
+#define OPAQUE_BUF_LEN		256
+
 static int
 do_firmware_transfer_reply_cb(const struct coap_packet *response,
 			      struct coap_reply *reply,
@@ -220,8 +222,9 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 	size_t transfer_offset = 0;
 	u8_t token[8];
 	u8_t tkl;
-	u16_t payload_len;
-	u8_t *payload;
+	u16_t payload_len, payload_offset;
+	struct net_buf *payload_frag;
+	static char opaque_buf[OPAQUE_BUF_LEN];
 	struct coap_packet *check_response = (struct coap_packet *)response;
 	lwm2m_engine_set_data_cb_t callback;
 	u8_t resp_code;
@@ -277,8 +280,8 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 	transfer_offset = coap_next_block(check_response, &firmware_block_ctx);
 
 	/* Process incoming data */
-	payload = coap_packet_get_payload_ptr(check_response, &payload_len,
-					      false);
+	payload_frag = coap_packet_get_payload(check_response, &payload_offset,
+					       &payload_len);
 	if (payload_len > 0) {
 		SYS_LOG_DBG("total: %zd, current: %zd",
 			    firmware_block_ctx.total_size,
@@ -286,7 +289,26 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 
 		callback = lwm2m_firmware_get_write_cb();
 		if (callback) {
-			ret = callback(0, payload, payload_len,
+			if (payload_len > sizeof(opaque_buf)) {
+				SYS_LOG_ERR("payload(%d) > buffer (%zu)",
+					    payload_len, sizeof(opaque_buf));
+				lwm2m_firmware_set_update_result(
+						RESULT_OUT_OF_MEM);
+				return -ENOMEM;
+			}
+
+			payload_frag = net_frag_read(payload_frag,
+						     payload_offset,
+						     &payload_offset,
+						     payload_len,
+						     opaque_buf);
+			if (!payload_frag && payload_offset == 0xffff) {
+				lwm2m_firmware_set_update_result(
+						RESULT_OUT_OF_MEM);
+				return -ENOMEM;
+			}
+
+			ret = callback(0, opaque_buf, payload_len,
 				       transfer_offset == 0,
 				       firmware_block_ctx.total_size);
 			if (ret == -ENOMEM) {
