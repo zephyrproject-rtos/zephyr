@@ -17,6 +17,7 @@ Samples and Demos
    grove/*
    boards/*
    mpu/*
+   drivers/drivers.rst
 
 
 To add a new sample document, please use the template available under
