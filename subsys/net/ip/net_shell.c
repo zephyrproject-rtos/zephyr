@@ -2109,6 +2109,8 @@ int net_shell_cmd_rpl(int argc, char *argv[])
 #if defined(CONFIG_INIT_STACKS)
 extern K_THREAD_STACK_DEFINE(_main_stack, CONFIG_MAIN_STACK_SIZE);
 extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
+extern K_THREAD_STACK_DEFINE(sys_work_q_stack,
+			     CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE);
 #endif
 
 int net_shell_cmd_stacks(int argc, char *argv[])
@@ -2155,6 +2157,17 @@ int net_shell_cmd_stacks(int argc, char *argv[])
 	       "ISR", "_interrupt_stack", CONFIG_ISR_STACK_SIZE,
 	       CONFIG_ISR_STACK_SIZE, unused,
 	       CONFIG_ISR_STACK_SIZE - unused, CONFIG_ISR_STACK_SIZE, pcnt);
+
+	net_analyze_stack_get_values(K_THREAD_STACK_BUFFER(sys_work_q_stack),
+				     K_THREAD_STACK_SIZEOF(sys_work_q_stack),
+				     &pcnt, &unused);
+	printk("%s [%s] stack size %d/%d bytes unused %u usage"
+	       " %d/%d (%u %%)\n",
+	       "WORKQ", "system workqueue",
+	       CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE,
+	       CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE, unused,
+	       CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE - unused,
+	       CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE, pcnt);
 #endif
 
 	return 0;
