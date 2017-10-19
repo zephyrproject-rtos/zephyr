@@ -31,14 +31,11 @@ Requirements
 Building and Running
 ********************
 
-There are configuration files for various hardware setups in the
+There are configuration files for various setups in the
 samples/net/lwm2m_client directory:
 
-- :file:`prj_frdm_k64f.conf`
-  Use this for FRDM-K64F board with built-in ethernet.
-
-- :file:`prj_qemu_x86.conf`
-  Use this for x86 QEMU.
+- :file:`prj.conf`
+  This is the standard default config.
 
 Build the lwm2m-client sample application like this:
 
@@ -49,7 +46,7 @@ Build the lwm2m-client sample application like this:
       BOARD=<board to use>
 
 The easiest way to setup this sample application is to build and run it
-via QEMU using the configuration :file:`prj_qemu_x86.conf`.
+via QEMU using the default configuration :file:`prj.conf`.
 This requires a small amount of setup described in :ref:`networking_with_qemu`.
 
 Download and run the latest build of the Leshan Demo Server:
