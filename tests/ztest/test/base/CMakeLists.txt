@@ -1,6 +1,12 @@
-list(APPEND INCLUDE subsys)
+if(BOARD STREQUAL unit_testing)
+  list(APPEND SOURCES src/main.c)
 
-list(APPEND SOURCES src/main.c)
+  include($ENV{ZEPHYR_BASE}/tests/unit/unittest.cmake)
+  project(none)
+else()
+  include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
+  project(NONE)
 
-include($ENV{ZEPHYR_BASE}/tests/unit/unittest.cmake)
-project(none)
+  FILE(GLOB app_sources src/*.c)
+  target_sources(app PRIVATE ${app_sources})
+endif()
