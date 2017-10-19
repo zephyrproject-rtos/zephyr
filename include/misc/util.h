@@ -206,7 +206,17 @@ static inline s64_t arithmetic_shift_right(s64_t value, u8_t shift)
 #define UTIL_INC_6 7
 #define UTIL_INC_7 8
 #define UTIL_INC_8 9
-#define UTIL_INC_9 9
+#define UTIL_INC_9 10
+#define UTIL_INC_10 11
+#define UTIL_INC_11 12
+#define UTIL_INC_12 13
+#define UTIL_INC_13 14
+#define UTIL_INC_14 15
+#define UTIL_INC_15 16
+#define UTIL_INC_16 17
+#define UTIL_INC_17 18
+#define UTIL_INC_18 19
+#define UTIL_INC_19 19
 
 #define UTIL_DEC(x) UTIL_PRIMITIVE_CAT(UTIL_DEC_, x)
 #define UTIL_DEC_0 0
@@ -219,6 +229,16 @@ static inline s64_t arithmetic_shift_right(s64_t value, u8_t shift)
 #define UTIL_DEC_7 6
 #define UTIL_DEC_8 7
 #define UTIL_DEC_9 8
+#define UTIL_DEC_10 9
+#define UTIL_DEC_11 10
+#define UTIL_DEC_12 11
+#define UTIL_DEC_13 12
+#define UTIL_DEC_14 13
+#define UTIL_DEC_15 14
+#define UTIL_DEC_16 15
+#define UTIL_DEC_17 16
+#define UTIL_DEC_18 17
+#define UTIL_DEC_19 18
 
 #define UTIL_CHECK_N(x, n, ...) n
 #define UTIL_CHECK(...) UTIL_CHECK_N(__VA_ARGS__, 0,)
@@ -262,7 +282,8 @@ static inline s64_t arithmetic_shift_right(s64_t value, u8_t shift)
  *
  * NRF_PWM0, NRF_PWM1, NRF_PWM2,
  *
- * @arg LEN: The length of the sequence. MUST be defined.
+ * @arg LEN: The length of the sequence. Must be defined and less than
+ * 20.
  *
  * @arg F(i, F_ARG): A macro function that accepts two arguments.
  *  F is called repeatedly, the first argument
