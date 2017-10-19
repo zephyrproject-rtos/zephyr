@@ -59,6 +59,14 @@ config USB_NRF52840
 	help
 	  nRF52840 USB Device Controller Driver
 
+config USB_KINETIS
+	bool
+	prompt "Kinetis USB Device Controller Driver"
+	select USB_DEVICE_DRIVER
+	default n
+	help
+	  Kinetis USB Device Controller Driver.
+
 config SYS_LOG_USB_DRIVER_LEVEL
 	int
 	prompt "USB driver log level"
