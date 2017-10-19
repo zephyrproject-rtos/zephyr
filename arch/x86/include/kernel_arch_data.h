@@ -381,6 +381,8 @@
 #define CR0_PAGING_ENABLE 0x80010000
 /* Clear the 5th bit in  CR4 */
 #define CR4_PAE_DISABLE 0xFFFFFFEF
+/* Set the 5th bit in  CR4 */
+#define CR4_PAE_ENABLE 0x00000020
 
 #ifndef _ASMLANGUAGE
 
