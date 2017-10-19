@@ -629,8 +629,23 @@ static struct net_6lo_data test_data_13 = {
 	.iphc = true
 };
 
-#if defined(CONFIG_NET_6LO_CONTEXT)
 static struct net_6lo_data test_data_14 = {
+	.ipv6.vtc = 0x60,
+	.ipv6.tcflow = 0x00,
+	.ipv6.flow = 0x00,
+	.ipv6.len = { 0x00, 0x00 },
+	.ipv6.nexthdr = NET_IPV6_NEXTHDR_NONE,
+	.ipv6.hop_limit = 0xff,
+	.ipv6.src = src_sac1_sam00,
+	.ipv6.dst = dst_m1_dam11,
+	.nh_udp = false,
+	.nh_icmp = false,
+	.small = true,
+	.iphc = true
+};
+
+#if defined(CONFIG_NET_6LO_CONTEXT)
+static struct net_6lo_data test_data_15 = {
 	.ipv6.vtc = 0x60,
 	.ipv6.tcflow = 0x20,
 	.ipv6.flow = 0x3412,
@@ -649,7 +664,7 @@ static struct net_6lo_data test_data_14 = {
 	.iphc = true
 };
 
-static struct net_6lo_data test_data_15 = {
+static struct net_6lo_data test_data_16 = {
 	.ipv6.vtc = 0x60,
 	.ipv6.tcflow = 0x21,
 	.ipv6.flow = 0x3412,
@@ -668,7 +683,7 @@ static struct net_6lo_data test_data_15 = {
 	.iphc = true
 };
 
-static struct net_6lo_data test_data_16 = {
+static struct net_6lo_data test_data_17 = {
 	.ipv6.vtc = 0x60,
 	.ipv6.tcflow = 0x21,
 	.ipv6.flow = 0x3412,
@@ -687,7 +702,7 @@ static struct net_6lo_data test_data_16 = {
 	.iphc = true
 };
 
-static struct net_6lo_data test_data_17 = {
+static struct net_6lo_data test_data_18 = {
 	.ipv6.vtc = 0x60,
 	.ipv6.tcflow = 0x20,
 	.ipv6.flow = 0x3412,
@@ -706,7 +721,7 @@ static struct net_6lo_data test_data_17 = {
 	.iphc = true
 };
 
-static struct net_6lo_data test_data_18 = {
+static struct net_6lo_data test_data_19 = {
 	.ipv6.vtc = 0x60,
 	.ipv6.tcflow = 0x20,
 	.ipv6.flow = 0x3412,
@@ -725,7 +740,7 @@ static struct net_6lo_data test_data_18 = {
 	.iphc = true
 };
 
-static struct net_6lo_data test_data_19 = {
+static struct net_6lo_data test_data_20 = {
 	.ipv6.vtc = 0x61,
 	.ipv6.tcflow = 0x23,
 	.ipv6.flow = 0x4567,
@@ -743,7 +758,7 @@ static struct net_6lo_data test_data_19 = {
 	.small = true,
 	.iphc = true
 };
-static struct net_6lo_data test_data_20 = {
+static struct net_6lo_data test_data_21 = {
 	.ipv6.vtc = 0x61,
 	.ipv6.tcflow = 0x23,
 	.ipv6.flow = 0x4567,
@@ -762,7 +777,7 @@ static struct net_6lo_data test_data_20 = {
 	.iphc = true
 };
 
-static struct net_6lo_data test_data_21 = {
+static struct net_6lo_data test_data_22 = {
 	.ipv6.vtc = 0x60,
 	.ipv6.tcflow = 0x0,
 	.ipv6.flow = 0x0,
@@ -781,7 +796,7 @@ static struct net_6lo_data test_data_21 = {
 	.iphc = true
 };
 
-static struct net_6lo_data test_data_22 = {
+static struct net_6lo_data test_data_23 = {
 	.ipv6.vtc = 0x60,
 	.ipv6.tcflow = 0x0,
 	.ipv6.flow = 0x0,
@@ -796,7 +811,7 @@ static struct net_6lo_data test_data_22 = {
 	.iphc = true
 };
 
-static struct net_6lo_data test_data_23 = {
+static struct net_6lo_data test_data_24 = {
 	.ipv6.vtc = 0x60,
 	.ipv6.tcflow = 0x20,
 	.ipv6.flow = 0x3412,
@@ -814,6 +829,26 @@ static struct net_6lo_data test_data_23 = {
 	.small = false,
 	.iphc = true
 };
+
+static struct net_6lo_data test_data_25 = {
+	.ipv6.vtc = 0x60,
+	.ipv6.tcflow = 0x00,
+	.ipv6.flow = 0x00,
+	.ipv6.len = { 0x00, 0x00 },
+	.ipv6.nexthdr = IPPROTO_UDP,
+	.ipv6.hop_limit = 0xff,
+	.ipv6.src = src_sac1_sam00,
+	.ipv6.dst = dst_m1_dam00,
+	.nh.udp.src_port = htons(udp_src_port_8bit_y),
+	.nh.udp.dst_port = htons(udp_dst_port_8bit),
+	.nh.udp.len = 0x00,
+	.nh.udp.chksum = 0x00,
+	.nh_udp = true,
+	.nh_icmp = false,
+	.small = true,
+	.iphc = true
+};
+
 #endif
 
 static int test_6lo(struct net_6lo_data *data)
@@ -885,17 +920,19 @@ static const struct {
 	{ "test_6lo_ipv6_dispatch_big_no_udp", &test_data_11},
 	{ "test_6lo_ipv6_dispatch_big_iphc", &test_data_12},
 	{ "test_6lo_sam11_dam11", &test_data_13},
+	{ "test_6lo_sac1_sam00_m1_dam11", &test_data_14},
 #if defined(CONFIG_NET_6LO_CONTEXT)
-	{ "test_6lo_sac1_sam01_dac1_dam01", &test_data_14},
-	{ "test_6lo_sac1_sam10_dac1_dam10", &test_data_15},
-	{ "test_6lo_sac1_sam11_dac1_dam11", &test_data_16},
-	{ "test_6lo_sac0_sam01_dac1_dam01", &test_data_17},
-	{ "test_6lo_sac1_sam01_dac0_dam01", &test_data_18},
-	{ "test_6lo_sac1_sam01_m1_dam00", &test_data_19},
-	{ "test_6lo_sac1_sam01_m1_dam01", &test_data_20},
-	{ "test_6lo_sac1_sam10_m1_dam10", &test_data_21},
-	{ "test_6lo_sac1_sam11_m1_dam10", &test_data_22},
-	{ "test_6lo_sac0_sam00_dac1_dam01", &test_data_23},
+	{ "test_6lo_sac1_sam01_dac1_dam01", &test_data_15},
+	{ "test_6lo_sac1_sam10_dac1_dam10", &test_data_16},
+	{ "test_6lo_sac1_sam11_dac1_dam11", &test_data_17},
+	{ "test_6lo_sac0_sam01_dac1_dam01", &test_data_18},
+	{ "test_6lo_sac1_sam01_dac0_dam01", &test_data_19},
+	{ "test_6lo_sac1_sam01_m1_dam00", &test_data_20},
+	{ "test_6lo_sac1_sam01_m1_dam01", &test_data_21},
+	{ "test_6lo_sac1_sam10_m1_dam10", &test_data_22},
+	{ "test_6lo_sac1_sam11_m1_dam10", &test_data_23},
+	{ "test_6lo_sac0_sam00_dac1_dam01", &test_data_24},
+	{ "test_6lo_sac1_sam00_m1_dam00", &test_data_25},
 #endif
 };
 
