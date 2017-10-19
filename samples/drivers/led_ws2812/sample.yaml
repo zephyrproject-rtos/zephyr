@@ -1,0 +1,9 @@
+sample:
+  description: Demonstration of the WS2812 LED driver
+  name: WS2812 sample
+  platforms: all
+tests:
+  - test:
+      platform_whitelist: 96b_carbon
+      build_only: true
+      tags: samples
