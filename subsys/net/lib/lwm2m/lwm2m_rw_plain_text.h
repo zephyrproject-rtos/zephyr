@@ -48,11 +48,8 @@
 extern const struct lwm2m_writer plain_text_writer;
 extern const struct lwm2m_reader plain_text_reader;
 
-size_t plain_text_put_float32fix(u8_t *outbuf, size_t outlen,
-				 float32_value_t *value);
-
-size_t plain_text_put_float64fix(u8_t *outbuf, size_t outlen,
-				 float64_value_t *value);
+size_t plain_text_put_format(struct lwm2m_output_context *out,
+			     const char *format, ...);
 
 int do_write_op_plain_text(struct lwm2m_engine_obj *obj,
 			   struct lwm2m_engine_context *context);

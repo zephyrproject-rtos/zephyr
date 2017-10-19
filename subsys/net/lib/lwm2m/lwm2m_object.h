@@ -204,21 +204,31 @@ struct lwm2m_engine_obj_inst {
 };
 
 struct lwm2m_output_context {
-	struct coap_packet *out_cpkt;
-	u8_t writer_flags;	/* flags for reader/writer */
-	u8_t *outbuf;
-	u16_t outsize;
-	u32_t outlen;
-	u8_t mark_pos_ri;	/* mark pos for last resource instance */
 	const struct lwm2m_writer *writer;
+	struct coap_packet *out_cpkt;
+
+	/* current write position in net_buf chain */
+	struct net_buf *frag;
+	u16_t offset;
+
+	/* markers for last resource inst */
+	struct net_buf *mark_frag_ri;
+	u16_t mark_pos_ri;
+
+	/* flags for reader/writer */
+	u8_t writer_flags;
 };
 
 struct lwm2m_input_context {
-	struct coap_packet *in_cpkt;
-	u8_t *inbuf;
-	u16_t insize;
-	s32_t inpos;
 	const struct lwm2m_reader *reader;
+	struct coap_packet *in_cpkt;
+
+	/* current read position in net_buf chain */
+	struct net_buf *frag;
+	u16_t offset;
+
+	/* length of incoming coap/lwm2m payload */
+	u16_t payload_len;
 };
 
 /* LWM2M format writer for the various formats supported */

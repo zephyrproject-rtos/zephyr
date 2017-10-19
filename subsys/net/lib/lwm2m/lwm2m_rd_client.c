@@ -606,8 +606,7 @@ static int sm_send_registration(int index, bool send_obj_support_data,
 {
 	struct net_app_ctx *app_ctx = NULL;
 	struct lwm2m_message *msg;
-	u8_t *payload;
-	u16_t client_data_len, len;
+	u16_t client_data_len;
 	int ret;
 
 	app_ctx = &clients[index].ctx->net_app_ctx;
@@ -667,18 +666,18 @@ static int sm_send_registration(int index, bool send_obj_support_data,
 	/* TODO: add supported binding query string */
 
 	if (send_obj_support_data) {
-		/* generate the rd data */
-		client_data_len = lwm2m_get_rd_data(client_data,
-						    sizeof(client_data));
-		payload = coap_packet_get_payload_ptr(&msg->cpkt, &len, true);
-		if (!payload) {
-			ret = -EINVAL;
+		ret = coap_packet_append_payload_marker(&msg->cpkt);
+		if (ret < 0) {
 			goto cleanup;
 		}
 
-		memcpy(payload, client_data, client_data_len);
-		ret = coap_packet_set_used(&msg->cpkt, client_data_len);
-		if (ret) {
+		/* generate the rd data */
+		client_data_len = lwm2m_get_rd_data(client_data,
+						    sizeof(client_data));
+
+		if (!net_pkt_append_all(msg->cpkt.pkt, client_data_len,
+					client_data, BUF_ALLOC_TIMEOUT)) {
+			ret = -ENOMEM;
 			goto cleanup;
 		}
 	}
