@@ -96,6 +96,7 @@ config LWM2M_RD_CLIENT_SUPPORT
 config LWM2M_RD_CLIENT_STACK_SIZE
 	int "LWM2M RD client stack size"
 	default 1024
+	default 1536 if NET_LOG_GLOBAL
 	help
 	  Set the stack size for the LWM2M RD client
 
