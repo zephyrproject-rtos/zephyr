@@ -95,4 +95,11 @@ config UART_MCUX
 
 endif # SERIAL
 
+if USB
+
+config USB_KINETIS
+	def_bool y
+
+endif # USB
+
 endif # SOC_MK64F12
