@@ -1,5 +1,4 @@
 add_library(ELMFAT INTERFACE)
-zephyr_append_cmake_library(ELMFAT)
 
 target_include_directories(ELMFAT INTERFACE include)
 

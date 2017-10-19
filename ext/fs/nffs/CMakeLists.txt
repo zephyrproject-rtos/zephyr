@@ -1,5 +1,4 @@
 add_library(NFFS INTERFACE)
-zephyr_append_cmake_library(NFFS)
 
 target_include_directories(NFFS INTERFACE include)
 

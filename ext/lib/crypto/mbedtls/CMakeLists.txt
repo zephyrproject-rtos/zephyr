@@ -1,5 +1,4 @@
 add_library(mbedTLS INTERFACE)
-zephyr_append_cmake_library(mbedTLS)
 target_compile_definitions(mbedTLS INTERFACE
 	MBEDTLS_CONFIG_FILE="${CONFIG_MBEDTLS_CFG_FILE}"
 	)
