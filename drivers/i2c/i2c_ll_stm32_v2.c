@@ -41,12 +41,7 @@ static inline void msg_init(struct device *dev, struct i2c_msg *msg,
 	LL_I2C_SetTransferRequest(i2c, transfer);
 	LL_I2C_SetTransferSize(i2c, len);
 
-	if ((flags & I2C_MSG_RESTART) == I2C_MSG_RESTART) {
-		LL_I2C_DisableAutoEndMode(i2c);
-	} else {
-		LL_I2C_EnableAutoEndMode(i2c);
-	}
-
+	LL_I2C_DisableAutoEndMode(i2c);
 	LL_I2C_DisableReloadMode(i2c);
 	LL_I2C_GenerateStartCondition(i2c);
 }
@@ -56,11 +51,18 @@ static inline void msg_done(struct device *dev, unsigned int flags)
 	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
 	I2C_TypeDef *i2c = cfg->i2c;
 
+	/* Wait for transfer to complete */
+	while (!LL_I2C_IsActiveFlag_TC(i2c)) {
+		;
+	}
+
+	/* Issue stop condition if necessary */
 	if ((flags & I2C_MSG_RESTART) == 0) {
+		LL_I2C_GenerateStopCondition(i2c);
 		while (!LL_I2C_IsActiveFlag_STOP(i2c)) {
 			;
 		}
-		LL_I2C_GenerateStopCondition(i2c);
+		LL_I2C_ClearFlag_STOP(i2c);
 	}
 }
 
@@ -179,7 +181,7 @@ int stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 		goto error;
 	}
 
-	msg_done(dev, flags | msg->flags);
+	msg_done(dev, flags);
 	LL_I2C_DisableIT_RX(i2c);
 
 	return 0;
@@ -248,7 +250,7 @@ int stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 		len--;
 	}
 
-	msg_done(dev, flags | msg->flags);
+	msg_done(dev, flags);
 
 	return 0;
 }
