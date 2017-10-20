@@ -12,6 +12,7 @@
 
 static u8_t max_partitions;
 
+
 void k_mem_domain_init(struct k_mem_domain *domain, u32_t num_parts,
 		struct k_mem_partition *parts[])
 {
@@ -47,11 +48,6 @@ void k_mem_domain_destroy(struct k_mem_domain *domain)
 	__ASSERT(domain, "");
 
 	key = irq_lock();
-
-	/* Handle architecture specifc destroy only if it is the current thread*/
-	if (_current->mem_domain_info.mem_domain == domain) {
-		_arch_mem_domain_destroy(domain);
-	}
 
 	SYS_DLIST_FOR_EACH_NODE_SAFE(&domain->mem_domain_q, node, next_node) {
 		struct k_thread *thread =
@@ -114,11 +110,6 @@ void k_mem_domain_remove_partition(struct k_mem_domain *domain,
 
 	/* Assert if not found */
 	__ASSERT(p_idx < max_partitions, "");
-
-	/* Handle architecture specifc remove only if it is the current thread*/
-	if (_current->mem_domain_info.mem_domain == domain) {
-		_arch_mem_domain_remove_partition(domain, p_idx);
-	}
 
 	domain->partitions[p_idx].start = 0;
 	domain->partitions[p_idx].size = 0;
