@@ -98,7 +98,7 @@ def run_checkpatch(tc, commit_range):
 def check_doc(tc, range):
 
     if os.path.exists(DOCS_WARNING_FILE) and os.path.getsize(DOCS_WARNING_FILE) > 0:
-        with open(DOCS_WARNING_FILE, "r") as f:
+        with open(DOCS_WARNING_FILE, "rb") as f:
             log = f.read()
             failure = ET.SubElement(tc, 'failure', type="failure",
                         message="documentation issues")
