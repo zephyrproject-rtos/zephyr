@@ -1,11 +1,9 @@
 Bluetooth Mesh implementation tasks
 ===================================
 
- * Friend support
+ * Friend support (work ongoing)
 
  * PB-GATT (Node)
-
- * GATT Proxy
 
  * Any generally useful models from the Model Specification
 
