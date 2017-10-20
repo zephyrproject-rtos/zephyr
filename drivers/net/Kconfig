@@ -1,4 +1,4 @@
-# Kconfig - SLIP driver configuration options
+# Kconfig - Misc network drivers configuration options
 
 #
 # Copyright (c) 2016 Intel Corporation
