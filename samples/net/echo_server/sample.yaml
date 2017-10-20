@@ -1,13 +1,19 @@
 sample:
-  description: TBD
-  name: TBD
+  name: Echo Server
+  description: Test core network features using a client/server sample
+common:
+  tags: net
+  build_only: true
 tests:
   - test:
-      build_only: true
+      platform_whitelist: qemu_x86 sam_e70_xplained frdm_k64f qemu_cortex_m3 arduino_101
+  - test_802154:
+      extra_args: CONF_FILE="prj_qemu_802154.conf"
       platform_whitelist: qemu_x86
-      tags: net
+  - test_mcr20a:
+      extra_args: CONF_FILE="prj_frdm_k64f_mcr20a.conf"
+      platform_whitelist: frdm_k64f
   - test_bt:
-      build_only: true
       extra_args: CONF_FILE="prj_bt.conf"
       platform_whitelist: qemu_x86
-      tags: net bluetooth
+      tags: bluetooth
