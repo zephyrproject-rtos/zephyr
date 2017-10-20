@@ -290,11 +290,11 @@ $(obj)/%.dtb.S: $(obj)/%.dtb
 	$(call cmd,dt_S_dtb)
 
 quiet_cmd_dtc = DTC     $@
-cmd_dtc = echo '\#include "$(notdir $<)"' > dts/$(ARCH)/$(notdir $<)_pre_compiled ; \
+cmd_dtc = echo '\#include "$(notdir $<)"' > boards/$(ARCH)/$(BOARD_NAME)/$(notdir $<)_pre_compiled ; \
 	if test -e $(DTC_OVERLAY_FILE); then \
-		echo '\#include "$(DTC_OVERLAY_FILE)"' >> dts/$(ARCH)/$(notdir $<)_pre_compiled ; \
+		echo '\#include "$(DTC_OVERLAY_FILE)"' >> boards/$(ARCH)/$(BOARD_NAME)/$(notdir $<)_pre_compiled ; \
 	fi ; \
-	$(CPP) $(dtc_cpp_flags) -x assembler-with-cpp -o $(dtc-tmp) dts/$(ARCH)/$(notdir $<)_pre_compiled ; \
+	$(CPP) $(dtc_cpp_flags) -x assembler-with-cpp -o $(dtc-tmp) boards/$(ARCH)/$(BOARD_NAME)/$(notdir $<)_pre_compiled ; \
 	$(DTC) -O dts -o $@ -b 0 \
 		-i $(dir $<) $(DTC_FLAGS) \
 		-d $(depfile).dtc.tmp $(dtc-tmp) ; \
