@@ -22,7 +22,7 @@ source "drivers/console/Kconfig"
 
 source "drivers/ethernet/Kconfig"
 
-source "drivers/slip/Kconfig"
+source "drivers/net/Kconfig"
 
 source "drivers/serial/Kconfig"
 
