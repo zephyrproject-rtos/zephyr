@@ -37,6 +37,23 @@ struct option_context {
 
 #define PKT_WAIT_TIME K_SECONDS(1)
 
+/* Values as per RFC 7252, section-3.1.
+ *
+ * Option Delta/Length: 4-bit unsigned integer. A value between 0 and
+ * 12 indicates the Option Delta/Length.  Three values are reserved for
+ * special constructs:
+ * 13: An 8-bit unsigned integer precedes the Option Value and indicates
+ *     the Option Delta/Length minus 13.
+ * 14: A 16-bit unsigned integer in network byte order precedes the
+ *     Option Value and indicates the Option Delta/Length minus 269.
+ * 15: Reserved for future use.
+ */
+#define COAP_OPTION_NO_EXT 12 /* Option's Delta/Length without extended data */
+#define COAP_OPTION_EXT_13 13
+#define COAP_OPTION_EXT_14 14
+#define COAP_OPTION_EXT_15 15
+#define COAP_OPTION_EXT_269 269
+
 static u8_t option_header_get_delta(u8_t opt)
 {
 	return (opt & 0xF0) >> 4;
@@ -57,7 +74,7 @@ static void option_header_set_len(u8_t *opt, u8_t len)
 	*opt |= (len & 0xF);
 }
 
-static int get_coap_packet_len(struct net_pkt *pkt)
+static u16_t get_coap_packet_len(struct net_pkt *pkt)
 {
 	u16_t len;
 
@@ -70,60 +87,82 @@ static int get_coap_packet_len(struct net_pkt *pkt)
 	return len;
 }
 
-static int decode_delta(u16_t num, struct option_context *context,
-			u16_t *decoded)
+static int check_frag_read_status(const struct net_buf *frag, u16_t offset)
 {
-	int hdrlen = 0;
+	if (!frag && offset == 0xffff) {
+		return -EINVAL;
+	} else if (!frag && offset == 0) {
+		return 0;
+	}
 
-	if (num == 13) {
+	return 1;
+}
+
+static int decode_delta(struct option_context *context, u16_t opt,
+			u16_t *opt_ext, u16_t *hdr_len)
+{
+	int ret = 0;
+
+	if (opt == COAP_OPTION_EXT_13) {
 		u8_t val;
 
-		context->frag = net_frag_read_u8(context->frag, context->offset,
-						 &context->offset, &val);
-		if (!context->frag && context->offset == 0xffff) {
+		*hdr_len = 1;
+		context->frag = net_frag_read_u8(context->frag,
+						 context->offset,
+						 &context->offset,
+						 &val);
+		ret = check_frag_read_status(context->frag,
+					     context->offset);
+		if (ret < 0) {
 			return -EINVAL;
 		}
 
-		num = val + 13;
-		hdrlen += 1;
-	} else if (num == 14) {
+		opt = val + COAP_OPTION_EXT_13;
+	} else if (opt == COAP_OPTION_EXT_14) {
 		u16_t val;
 
+		*hdr_len = 2;
 		context->frag = net_frag_read_be16(context->frag,
 						   context->offset,
-						   &context->offset, &val);
-		if (!context->frag && context->offset == 0xffff) {
+						   &context->offset,
+						   &val);
+		ret = check_frag_read_status(context->frag,
+					     context->offset);
+		if (ret < 0) {
 			return -EINVAL;
 		}
 
-		num = val + 269;
-		hdrlen += 2;
-	} else if (num == 15) {
+		opt = val + COAP_OPTION_EXT_269;
+	} else if (opt == COAP_OPTION_EXT_15) {
 		return -EINVAL;
 	}
 
-	*decoded = num;
+	*opt_ext = opt;
 
-	return hdrlen;
+	return ret;
 }
 
 static int parse_option(const struct coap_packet *cpkt,
 			struct option_context *context,
-			struct coap_option *option)
+			struct coap_option *option,
+			u16_t *opt_len)
 {
-	u16_t opt_len;
+	u16_t hdr_len;
 	u16_t delta;
 	u16_t len;
 	u8_t opt;
 	int r;
 
-	context->frag = net_frag_read_u8(context->frag, context->offset,
-					 &context->offset, &opt);
-	if (!context->frag && context->offset == 0xffff) {
-		return -EINVAL;
+	context->frag = net_frag_read_u8(context->frag,
+					 context->offset,
+					 &context->offset,
+					 &opt);
+	r = check_frag_read_status(context->frag, context->offset);
+	if (r < 0) {
+		return r;
 	}
 
-	opt_len = 1;
+	*opt_len += 1;
 
 	/* This indicates that options have ended */
 	if (opt == COAP_MARKER) {
@@ -133,48 +172,68 @@ static int parse_option(const struct coap_packet *cpkt,
 	delta = option_header_get_delta(opt);
 	len = option_header_get_len(opt);
 
-	/* In case 'delta' doesn't fit the option fixed header. */
-	r = decode_delta(delta, context, &delta);
-	if (r < 0) {
+	/* r == 0 means no more data to read from fragment, but delta
+	 * field shows that packet should contain more data, it must
+	 * be a malformed packet.
+	 */
+	if (r == 0 && delta > COAP_OPTION_NO_EXT) {
 		return -EINVAL;
 	}
 
-	opt_len += r;
-
-	/* In case 'len' doesn't fit the option fixed header. */
-	r = decode_delta(len, context, &len);
-	if (r < 0) {
-		return -EINVAL;
-	}
-
-	opt_len += r + len;
-
-	if (option) {
-		if (delta) {
-			option->delta = context->delta + delta;
-		} else {
-			option->delta = context->delta;
+	if (delta > COAP_OPTION_NO_EXT) {
+		/* In case 'delta' doesn't fit the option fixed header. */
+		r = decode_delta(context, delta, &delta, &hdr_len);
+		if ((r < 0) || (r == 0 && len > COAP_OPTION_NO_EXT)) {
+			return -EINVAL;
 		}
 
+		*opt_len += hdr_len;
+	}
+
+	if (len > COAP_OPTION_NO_EXT) {
+		/* In case 'len' doesn't fit the option fixed header. */
+		r = decode_delta(context, len, &len, &hdr_len);
+		if (r < 0) {
+			return -EINVAL;
+		}
+
+		*opt_len += hdr_len;
+	}
+
+	*opt_len += len;
+
+	if (r == 0) {
+		if (len == 0) {
+			context->delta += delta;
+			return r;
+		}
+
+		/* r == 0 means no more data to read from fragment, but len
+		 * field shows that packet should contain more data, it must
+		 * be a malformed packet.
+		 */
+		return -EINVAL;
+	}
+
+	if (option) {
+		option->delta = context->delta + delta;
 		option->len = len;
 		context->frag = net_frag_read(context->frag, context->offset,
 					      &context->offset, len,
 					      &option->value[0]);
-		if (!context->frag && context->offset == 0xffff) {
-			return -EINVAL;
-		}
-
 	} else {
 		context->frag = net_frag_skip(context->frag, context->offset,
 					      &context->offset, len);
-		if (!context->frag && context->offset == 0xffff) {
-			return -EINVAL;
-		}
+	}
+
+	r = check_frag_read_status(context->frag, context->offset);
+	if (r < 0) {
+		return r;
 	}
 
 	context->delta += delta;
 
-	return opt_len;
+	return r;
 }
 
 static int parse_options(const struct coap_packet *cpkt,
@@ -185,49 +244,33 @@ static int parse_options(const struct coap_packet *cpkt,
 					.frag = NULL,
 					.offset = 0
 					};
-	u8_t num;
 	u16_t opt_len;
-	int coap_len;
-
-	coap_len = get_coap_packet_len(cpkt->pkt);
-	if (coap_len < 0) {
-		return -EINVAL;
-	}
+	u8_t num;
+	int r;
 
 	/* Skip CoAP header */
 	context.frag = net_frag_skip(cpkt->frag, cpkt->offset,
 				     &context.offset, cpkt->hdr_len);
-	if (!context.frag && context.offset == 0xffff) {
-		return -EINVAL;
+	r = check_frag_read_status(context.frag, context.offset);
+	if (r <= 0) {
+		return r;
 	}
 
-	coap_len -= cpkt->hdr_len;
 	num = 0;
 	opt_len = 0;
 
 	while (true) {
 		struct coap_option *option;
-		int r;
-
-		if (opt_len >= coap_len) {
-			break;
-		}
 
 		option = num < opt_num ? &options[num++] : NULL;
-		r = parse_option(cpkt, &context, option);
-		if (r < 0) {
-			return r;
-		}
-
-		opt_len += r;
-
-		/* Reached End of Options (0xFF),
-		 * r is zero, so increase opt_len + 1.
-		 */
-		if (r == 0) {
-			opt_len++;
+		r = parse_option(cpkt, &context, option, &opt_len);
+		if (r <= 0) {
 			break;
 		}
+	}
+
+	if (r < 0) {
+		return r;
 	}
 
 	return opt_len;
@@ -305,8 +348,9 @@ int coap_packet_parse(struct coap_packet *cpkt, struct net_pkt *pkt,
 				   net_pkt_ip_hdr_len(pkt) +
 				   NET_UDPH_LEN +
 				   net_pkt_ipv6_ext_len(pkt));
-	if (!cpkt->frag && cpkt->offset == 0xffff) {
-		return -EINVAL;
+	ret = check_frag_read_status(cpkt->frag, cpkt->offset);
+	if (ret <= 0) {
+		return ret;
 	}
 
 	ret = get_header_len(cpkt);
@@ -865,20 +909,20 @@ int coap_packet_append_payload(struct coap_packet *cpkt, u8_t *payload,
 
 static u8_t encode_extended_option(u16_t num, u8_t *opt, u16_t *ext)
 {
-	if (num < 13) {
+	if (num < COAP_OPTION_EXT_13) {
 		*opt = num;
 		*ext = 0;
 
 		return 0;
-	} else if (num < 269) {
-		*opt = 13;
-		*ext = num - 13;
+	} else if (num < COAP_OPTION_EXT_269) {
+		*opt = COAP_OPTION_EXT_13;
+		*ext = num - COAP_OPTION_EXT_13;
 
 		return 1;
 	}
 
-	*opt = 14;
-	*ext = num - 269;
+	*opt = COAP_OPTION_EXT_14;
+	*ext = num - COAP_OPTION_EXT_269;
 
 	return 2;
 }
@@ -1014,54 +1058,37 @@ int coap_find_options(const struct coap_packet *cpkt, u16_t code,
 					  .offset = 0
 					};
 	u16_t opt_len;
-	int coap_len;
-	int count = 0;
+	int count;
 	int r;
 
-	if (!cpkt || !cpkt->pkt || !cpkt->pkt->frags) {
+	if (!cpkt || !cpkt->pkt || !cpkt->pkt->frags || !cpkt->hdr_len) {
 		return -EINVAL;
 	}
-
-	if (!cpkt->hdr_len) {
-		return -EINVAL;
-	}
-
-	coap_len = get_coap_packet_len(cpkt->pkt);
-	if (coap_len < 0) {
-		return -EINVAL;
-	}
-
-	coap_len -= cpkt->hdr_len;
-	opt_len = 0;
 
 	/* Skip CoAP header */
 	context.frag = net_frag_skip(cpkt->frag, cpkt->offset,
 				     &context.offset, cpkt->hdr_len);
-	if (!context.frag && context.offset == 0xffff) {
-		return -EINVAL;
+	r = check_frag_read_status(context.frag, context.offset);
+	if (r <= 0) {
+		return r;
 	}
 
+	opt_len = 0;
+	count = 0;
+
 	while (context.delta <= code && count < veclen) {
-		if (opt_len >= coap_len) {
-			break;
-		}
-
-		r = parse_option(cpkt, &context, &options[count]);
+		r = parse_option(cpkt, &context, &options[count], &opt_len);
 		if (r < 0) {
-			return -ENOENT;
+			return -EINVAL;
 		}
 
-		opt_len += r;
+		if (code == options[count].delta) {
+			count++;
+		}
 
 		if (r == 0) {
 			break;
 		}
-
-		if (code != options[count].delta) {
-			continue;
-		}
-
-		count++;
 	}
 
 	return count;
@@ -1197,24 +1224,21 @@ struct net_buf *coap_packet_get_payload(const struct coap_packet *cpkt,
 					u16_t *offset, u16_t *len)
 {
 	struct net_buf *frag;
-	int r;
-
-	if (!cpkt || !offset) {
-		return NULL;
-	}
+	u16_t coap_pkt_len;
 
 	frag = NULL;
 	*offset = 0xffff;
 	*len = 0;
 
-	r = get_coap_packet_len(cpkt->pkt);
-	if (r < 0) {
-		return frag;
+	if (!cpkt || !cpkt->pkt || !offset || !len) {
+		return NULL;
 	}
+
+	coap_pkt_len = get_coap_packet_len(cpkt->pkt);
 
 	frag = net_frag_skip(cpkt->frag, cpkt->offset, offset,
 			     cpkt->hdr_len + cpkt->opt_len);
-	*len = r - cpkt->hdr_len - cpkt->opt_len;
+	*len = coap_pkt_len - cpkt->hdr_len - cpkt->opt_len;
 
 	return frag;
 }
