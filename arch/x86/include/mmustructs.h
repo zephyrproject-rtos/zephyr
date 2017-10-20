@@ -137,6 +137,7 @@
 #define MMU_ENTRY_RUNTIME_WRITE	    0x20000000
 
 
+
 /* Helper macros to ease the usage of the MMU page table structures.
  * Returns the Page table address for the particular address.
  * Page Table address(returned value) is always 4KBytes aligned.
@@ -166,63 +167,6 @@
 #define X86_MMU_GET_4MB_PDE(addr)\
 	((union x86_mmu_pde_4mb *)\
 	 (&X86_MMU_PD->entry[MMU_PDE_NUM(addr)].fourmb))
-
-#ifdef CONFIG_X86_USERSPACE
-
-/* Flags which are only available for PAE mode page tables  */
-#ifdef CONFIG_X86_PAE_MODE
-
-/* memory partition arch/soc independent attribute */
-#define K_MEM_PARTITION_P_RW_U_RW   (MMU_ENTRY_WRITE | \
-				     MMU_ENTRY_USER  | \
-				     MMU_ENTRY_EXECUTE_DISABLE)
-
-#define K_MEM_PARTITION_P_RW_U_NA   (MMU_ENTRY_WRITE | \
-				     MMU_ENTRY_SUPERVISOR | \
-				     MMU_ENTRY_EXECUTE_DISABLE)
-
-#define K_MEM_PARTITION_P_RO_U_RO   (MMU_ENTRY_READ | \
-				     MMU_ENTRY_USER | \
-				     MMU_ENTRY_EXECUTE_DISABLE)
-
-#define K_MEM_PARTITION_P_RO_U_NA   (MMU_ENTRY_READ  | \
-				     MMU_ENTRY_SUPERVISOR | \
-				     MMU_ENTRY_EXECUTE_DISABLE)
-
-/* Execution-allowed attributes */
-#define K_MEM_PARTITION_P_RWX_U_RWX (MMU_ENTRY_WRITE | MMU_ENTRY_USER)
-
-#define K_MEM_PARTITION_P_RWX_U_NA  (MMU_ENTRY_WRITE | MMU_ENTRY_SUPERVISOR)
-
-#define K_MEM_PARTITION_P_RX_U_RX   (MMU_ENTRY_READ | MMU_ENTRY_USER)
-
-#define K_MEM_PARTITION_P_RX_U_NA   (MMU_ENTRY_READ | MMU_ENTRY_SUPERVISOR)
-
-
- /* memory partition access permission mask */
-#define K_MEM_PARTITION_PERM_MASK   (MMU_PTE_RW_MASK |\
-				     MMU_PTE_US_MASK |\
-				     MMU_PTE_XD_MASK)
-
-
-#else  /* 32-bit paging mode enabled */
-
-/* memory partition arch/soc independent attribute */
-#define K_MEM_PARTITION_P_RW_U_RW   (MMU_ENTRY_WRITE | MMU_ENTRY_USER)
-
-#define K_MEM_PARTITION_P_RW_U_NA   (MMU_ENTRY_WRITE | MMU_ENTRY_SUPERVISOR)
-
-#define K_MEM_PARTITION_P_RO_U_RO   (MMU_ENTRY_READ | MMU_ENTRY_USER)
-
-#define K_MEM_PARTITION_P_RO_U_NA   (MMU_ENTRY_READ  | MMU_ENTRY_SUPERVISOR)
-
-/* memory partition access permission mask */
-#define K_MEM_PARTITION_PERM_MASK   (MMU_PTE_RW_MASK | MMU_PTE_US_MASK)
-
-#endif	/* CONFIG_X86_PAE_MODE */
-
-#endif	 /* CONFIG_X86_USERSPACE */
-
 
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
