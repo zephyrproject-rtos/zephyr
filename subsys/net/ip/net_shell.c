@@ -2168,6 +2168,8 @@ int net_shell_cmd_stacks(int argc, char *argv[])
 	       CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE, unused,
 	       CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE - unused,
 	       CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE, pcnt);
+#else
+	printk("Enable CONFIG_INIT_STACKS to see usage information.\n");
 #endif
 
 	return 0;
