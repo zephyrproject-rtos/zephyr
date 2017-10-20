@@ -164,18 +164,9 @@ void _x86_swap_update_page_tables(struct k_thread *incoming,
 	 */
 	_main_tss.esp0 = incoming->stack_info.start;
 
-	/* If either thread defines different memory domains, efficiently
+	/* TODO: if either thread defines different memory domains, efficiently
 	 * switch between them
 	 */
-	if (incoming->mem_domain_info.mem_domain !=
-	   outgoing->mem_domain_info.mem_domain){
-
-		 /* Ensure that the outgoing mem domain configuration
-		  * is set back to default state.
-		  */
-		_arch_mem_domain_destroy(outgoing->mem_domain_info.mem_domain);
-		_x86_load_mmu_mem_domain(incoming);
-	}
 }
 
 
