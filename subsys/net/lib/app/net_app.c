@@ -528,6 +528,7 @@ struct net_context *select_client_ctx(struct net_app_ctx *ctx,
 #endif /* CONFIG_NET_APP_CLIENT */
 
 #if defined(CONFIG_NET_APP_SERVER)
+#if defined(CONFIG_NET_TCP)
 static struct net_context *get_server_ctx(struct net_app_ctx *ctx,
 					  const struct sockaddr *dst)
 {
@@ -618,6 +619,7 @@ static struct net_context *get_server_ctx(struct net_app_ctx *ctx,
 
 	return NULL;
 }
+#endif /* CONFIG_NET_TCP */
 
 static inline
 struct net_context *select_server_ctx(struct net_app_ctx *ctx,
