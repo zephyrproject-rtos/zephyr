@@ -29,7 +29,6 @@
 #define KW41Z_SHR_PHY_TIME		12
 #define KW41Z_PER_BYTE_TIME		2
 #define KW41Z_ACK_WAIT_TIME		54
-#define KW41Z_IDLE_WAIT_RETRIES		5
 #define KW41Z_PRE_RX_WAIT_TIME		1
 #define KW40Z_POST_SEQ_WAIT_TIME	1
 
@@ -38,15 +37,33 @@
 #define KW41Z_PSDU_LENGTH		125
 #define KW41Z_OUTPUT_POWER_MAX		2
 #define KW41Z_OUTPUT_POWER_MIN		(-19)
-#define KW41Z_AUTOACK_ENABLED		1
 
+/*
+ * When ACK offload is implemented in the 15.4 stack we can enable
+ * things here.
+ */
+#define KW41Z_AUTOACK_ENABLED		0
+
+#define BM_ZLL_IRQSTS_TMRxMSK (ZLL_IRQSTS_TMR1MSK_MASK | \
+				ZLL_IRQSTS_TMR2MSK_MASK | \
+				ZLL_IRQSTS_TMR3MSK_MASK | \
+				ZLL_IRQSTS_TMR4MSK_MASK)
+
+/*
+ * Clear channel assement types. Note that there is an extra one when
+ * bit 26 is included for "No CCA before transmit" if we are handling
+ * ACK frames but we will let the hardware handle that automatically.
+ */
 enum {
-	KW41Z_CCA_ED,
-	KW41Z_CCA_MODE1,
-	KW41Z_CCA_MODE2,
-	KW41Z_CCA_MODE3
+	KW41Z_CCA_ED,       /* Energy detect */
+	KW41Z_CCA_MODE1,    /* Energy above threshold   */
+	KW41Z_CCA_MODE2,    /* Carrier sense only       */
+	KW41Z_CCA_MODE3     /* Mode 1 + Mode 2          */
 };
 
+/*
+ * KW41Z has a sequencer that can run in any of the following states.
+ */
 enum {
 	KW41Z_STATE_IDLE,
 	KW41Z_STATE_RX,
@@ -112,12 +129,9 @@ static inline void kw41z_set_seq_state(u8_t state)
 
 static inline void kw41z_wait_for_idle(void)
 {
-	u8_t retries = KW41Z_IDLE_WAIT_RETRIES;
 	u8_t state = kw41z_get_instant_state();
 
-
-	while (state != KW41Z_STATE_IDLE && retries) {
-		retries--;
+	while (state != KW41Z_STATE_IDLE) {
 		state = kw41z_get_instant_state();
 	}
 
@@ -126,19 +140,103 @@ static inline void kw41z_wait_for_idle(void)
 	}
 }
 
-static int kw41z_prepare_for_new_state(void)
+static void kw41z_phy_abort(void)
 {
-	if (kw41z_get_seq_state() == KW41Z_STATE_RX) {
-		kw41z_set_seq_state(KW41Z_STATE_IDLE);
+	int key;
+
+	key = irq_lock();
+
+	/* Mask SEQ interrupt */
+	ZLL->PHY_CTRL |= ZLL_PHY_CTRL_SEQMSK_MASK;
+	/* Disable timer trigger (for scheduled XCVSEQ) */
+	if (ZLL->PHY_CTRL & ZLL_PHY_CTRL_TMRTRIGEN_MASK) {
+		ZLL->PHY_CTRL &= ~ZLL_PHY_CTRL_TMRTRIGEN_MASK;
+		/* give the FSM enough time to start if it was triggered */
+		while ((XCVR_MISC->XCVR_CTRL &
+			XCVR_CTRL_XCVR_STATUS_TSM_COUNT_MASK) == 0) {
+		}
 	}
 
-	if (kw41z_get_seq_state() != KW41Z_STATE_IDLE) {
-		return -1;
+	/* If XCVR is not idle, abort current SEQ */
+	if (ZLL->PHY_CTRL & ZLL_PHY_CTRL_XCVSEQ_MASK) {
+		ZLL->PHY_CTRL &= ~ZLL_PHY_CTRL_XCVSEQ_MASK;
+		/* wait for Sequence Idle (if not already) */
+
+		while (ZLL->SEQ_STATE & ZLL_SEQ_STATE_SEQ_STATE_MASK) {
+		}
 	}
 
-	kw41z_wait_for_idle();
+	/* Stop timers */
+	ZLL->PHY_CTRL &= ~(ZLL_PHY_CTRL_TMR1CMP_EN_MASK |
+			ZLL_PHY_CTRL_TMR2CMP_EN_MASK |
+			ZLL_PHY_CTRL_TMR3CMP_EN_MASK |
+			ZLL_PHY_CTRL_TC3TMOUT_MASK);
 
-	return 0;
+	/*
+	 * Clear all IRQ bits to avoid unexpected interrupts.
+	 *
+	 * For Coverity, this is a pointer to a register bank and the IRQSTS
+	 * register bits get cleared when a 1 is written to them so doing a
+	 * reg=reg may generate a warning but it is needed to clear the bits.
+	 */
+	ZLL->IRQSTS = ZLL->IRQSTS;
+
+	irq_unlock(key);
+}
+
+static void kw41z_isr_timeout_cleanup(void)
+{
+	u32_t irqsts;
+
+	/*
+	 * Set the PHY sequencer back to IDLE and disable TMR3 comparator
+	 * and timeout
+	 */
+	ZLL->PHY_CTRL &= ~(ZLL_PHY_CTRL_TMR3CMP_EN_MASK |
+			ZLL_PHY_CTRL_TC3TMOUT_MASK   |
+			ZLL_PHY_CTRL_XCVSEQ_MASK);
+
+	/* Mask SEQ, RX, TX and CCA interrupts */
+	ZLL->PHY_CTRL |= ZLL_PHY_CTRL_CCAMSK_MASK |
+			ZLL_PHY_CTRL_RXMSK_MASK  |
+			ZLL_PHY_CTRL_TXMSK_MASK  |
+			ZLL_PHY_CTRL_SEQMSK_MASK;
+
+	while (ZLL->SEQ_STATE & ZLL_SEQ_STATE_SEQ_STATE_MASK) {
+	}
+
+	irqsts = ZLL->IRQSTS;
+	/* Mask TMR3 interrupt */
+	irqsts |= ZLL_IRQSTS_TMR3MSK_MASK;
+
+	ZLL->IRQSTS = irqsts;
+}
+
+static void kw41z_isr_seq_cleanup(void)
+{
+	u32_t irqsts;
+
+	/* Set the PHY sequencer back to IDLE */
+	ZLL->PHY_CTRL &= ~ZLL_PHY_CTRL_XCVSEQ_MASK;
+	/* Mask SEQ, RX, TX and CCA interrupts */
+	ZLL->PHY_CTRL |= ZLL_PHY_CTRL_CCAMSK_MASK |
+			ZLL_PHY_CTRL_RXMSK_MASK  |
+			ZLL_PHY_CTRL_TXMSK_MASK  |
+			ZLL_PHY_CTRL_SEQMSK_MASK;
+
+	while (ZLL->SEQ_STATE & ZLL_SEQ_STATE_SEQ_STATE_MASK) {
+	}
+
+	irqsts = ZLL->IRQSTS;
+	/* Mask TMR3 interrupt */
+	irqsts |= ZLL_IRQSTS_TMR3MSK_MASK;
+
+	/* Clear transceiver interrupts except TMRxIRQ */
+	irqsts &= ~(ZLL_IRQSTS_TMR1IRQ_MASK |
+		ZLL_IRQSTS_TMR2IRQ_MASK |
+		ZLL_IRQSTS_TMR3IRQ_MASK |
+		ZLL_IRQSTS_TMR4IRQ_MASK);
+	ZLL->IRQSTS = irqsts;
 }
 
 static inline void kw41z_enable_seq_irq(void)
@@ -151,42 +249,50 @@ static inline void kw41z_disable_seq_irq(void)
 	ZLL->PHY_CTRL |= ZLL_PHY_CTRL_SEQMSK_MASK;
 }
 
-static void kw41z_tmr1_set_timeout(u32_t timeout)
+/*
+ * Set the T3CMP timer comparator. The 'timeout' value is an offset from
+ * now.
+ */
+static void kw41z_tmr3_set_timeout(u32_t timeout)
 {
+	u32_t irqsts;
+
+	/* Add in the current time so that we can get the comparator to
+	 * match appropriately to our offset time.
+	 */
 	timeout += ZLL->EVENT_TMR >> ZLL_EVENT_TMR_EVENT_TMR_SHIFT;
 
-	ZLL->PHY_CTRL &= ~ZLL_PHY_CTRL_TMR1CMP_EN_MASK;
+	/* disable TMR3 compare */
+	ZLL->PHY_CTRL &= ~ZLL_PHY_CTRL_TMR3CMP_EN_MASK;
+	ZLL->T3CMP = timeout & ZLL_T3CMP_T3CMP_MASK;
 
-	ZLL->T1CMP = timeout;
-	ZLL->IRQSTS = (ZLL->IRQSTS & ~ZLL_IRQSTS_TMR1MSK_MASK) |
-		      ZLL_IRQSTS_TMR1IRQ_MASK;
-
-	ZLL->PHY_CTRL |= ZLL_PHY_CTRL_TMR1CMP_EN_MASK;
+	/* aknowledge TMR3 IRQ */
+	irqsts  = ZLL->IRQSTS & BM_ZLL_IRQSTS_TMRxMSK;
+	irqsts |= ZLL_IRQSTS_TMR3IRQ_MASK;
+	ZLL->IRQSTS = irqsts;
+	/* enable TMR3 compare */
+	ZLL->PHY_CTRL |= ZLL_PHY_CTRL_TMR3CMP_EN_MASK;
+	/* enable autosequence stop by TC3 match */
+	ZLL->PHY_CTRL |= ZLL_PHY_CTRL_TC3TMOUT_MASK;
 }
 
-static inline void kw41z_tmr1_disable(void)
+static void kw41z_tmr3_disable(void)
 {
-	ZLL->IRQSTS |= ZLL_IRQSTS_TMR1MSK_MASK;
-	ZLL->PHY_CTRL &= ~ZLL_PHY_CTRL_TMR1CMP_EN_MASK;
-}
+	u32_t irqsts;
 
-static void kw41z_tmr2_set_timeout(u32_t timeout)
-{
-	timeout += ZLL->EVENT_TMR >> ZLL_EVENT_TMR_EVENT_TMR_SHIFT;
+	/*
+	 * disable TMR3 compare and disable autosequence stop by TC3
+	 * match
+	 */
+	ZLL->PHY_CTRL &= ~(ZLL_PHY_CTRL_TMR3CMP_EN_MASK |
+			ZLL_PHY_CTRL_TC3TMOUT_MASK);
+	/* mask TMR3 interrupt (do not change other IRQ status) */
+	irqsts  = ZLL->IRQSTS & BM_ZLL_IRQSTS_TMRxMSK;
+	irqsts |= ZLL_IRQSTS_TMR3MSK_MASK;
+	/* aknowledge TMR3 IRQ */
+	irqsts |= ZLL_IRQSTS_TMR3IRQ_MASK;
 
-	ZLL->PHY_CTRL &= ~ZLL_PHY_CTRL_TMR2CMP_EN_MASK;
-
-	ZLL->T2CMP = timeout;
-	ZLL->IRQSTS = (ZLL->IRQSTS & ~ZLL_IRQSTS_TMR2MSK_MASK) |
-		      ZLL_IRQSTS_TMR2IRQ_MASK;
-
-	ZLL->PHY_CTRL |= ZLL_PHY_CTRL_TMR2CMP_EN_MASK;
-}
-
-static inline void kw41z_tmr2_disable(void)
-{
-	ZLL->IRQSTS |= ZLL_IRQSTS_TMR2MSK_MASK;
-	ZLL->PHY_CTRL &= ~ZLL_PHY_CTRL_TMR2CMP_EN_MASK;
+	ZLL->IRQSTS = irqsts;
 }
 
 static enum ieee802154_hw_caps kw41z_get_capabilities(struct device *dev)
@@ -200,19 +306,16 @@ static int kw41z_cca(struct device *dev)
 {
 	struct kw41z_context *kw41z = dev->driver_data;
 
-	if (kw41z_prepare_for_new_state()) {
-		SYS_LOG_DBG("Can't initiate new SEQ state");
-		return -EBUSY;
-	}
+	kw41z_phy_abort();
 
 	k_sem_init(&kw41z->seq_sync, 0, 1);
 
 	kw41z_enable_seq_irq();
 	ZLL->PHY_CTRL = (ZLL->PHY_CTRL & ~ZLL_PHY_CTRL_CCATYPE_MASK) |
 			ZLL_PHY_CTRL_CCATYPE(KW41Z_CCA_MODE1);
+
 	kw41z_set_seq_state(KW41Z_STATE_CCA);
 
-	kw41z_tmr1_set_timeout(kw41z->rx_warmup_time + KW41Z_CCA_TIME);
 	k_sem_take(&kw41z->seq_sync, K_FOREVER);
 
 	return kw41z->seq_retval;
@@ -321,6 +424,9 @@ static inline void kw41z_rx(struct kw41z_context *kw41z, u8_t len)
 	struct net_pkt *pkt = NULL;
 	struct net_buf *frag = NULL;
 	u8_t pkt_len, hw_lqi;
+	int rslt;
+
+	SYS_LOG_DBG("ENTRY: len: %d", len);
 
 	pkt_len = len - KW41Z_FCS_LENGTH;
 
@@ -339,7 +445,7 @@ static inline void kw41z_rx(struct kw41z_context *kw41z, u8_t len)
 	net_pkt_frag_insert(pkt, frag);
 
 #if CONFIG_SOC_MKW41Z4
-	/* PKT_BUFFER_RX needs to be accessed alligned to 16 bits */
+	/* PKT_BUFFER_RX needs to be accessed aligned to 16 bits */
 	for (u16_t reg_val = 0, i = 0; i < pkt_len; i++) {
 		if (i % 2 == 0) {
 			reg_val = ZLL->PKT_BUFFER_RX[i/2];
@@ -349,7 +455,7 @@ static inline void kw41z_rx(struct kw41z_context *kw41z, u8_t len)
 		}
 	}
 #else /* CONFIG_SOC_MKW40Z4 */
-	/* PKT_BUFFER needs to be accessed alligned to 32 bits */
+	/* PKT_BUFFER needs to be accessed aligned to 32 bits */
 	for (u32_t reg_val = 0, i = 0; i < pkt_len; i++) {
 		switch (i % 4) {
 		case 0:
@@ -380,8 +486,9 @@ static inline void kw41z_rx(struct kw41z_context *kw41z, u8_t len)
 	net_pkt_set_ieee802154_lqi(pkt, kw41z_convert_lqi(hw_lqi));
 	/* ToDo: get the rssi as well and use net_pkt_set_ieee802154_rssi() */
 
-	if (net_recv_data(kw41z->iface, pkt) < 0) {
-		SYS_LOG_DBG("Packet dropped by NET stack");
+	rslt = net_recv_data(kw41z->iface, pkt);
+	if (rslt < 0) {
+		SYS_LOG_ERR("RCV Packet dropped by NET stack: %d", rslt);
 		goto out;
 	}
 
@@ -397,11 +504,17 @@ static int kw41z_tx(struct device *dev, struct net_pkt *pkt,
 {
 	struct kw41z_context *kw41z = dev->driver_data;
 	u8_t payload_len = net_pkt_ll_reserve(pkt) + frag->len;
-	u8_t *payload = frag->data - net_pkt_ll_reserve(pkt);
+#if KW41Z_AUTOACK_ENABLED
 	u32_t tx_timeout;
+#endif
 
-	if (kw41z_prepare_for_new_state()) {
-		SYS_LOG_DBG("Can't initiate new SEQ state");
+	/*
+	 * The transmit requests are preceded by the CCA request. On
+	 * completion of the CCA the sequencer should be in the IDLE
+	 * state.
+	 */
+	if (kw41z_get_seq_state() != KW41Z_STATE_IDLE) {
+		SYS_LOG_WRN("Can't initiate new SEQ state");
 		return -EBUSY;
 	}
 
@@ -412,10 +525,12 @@ static int kw41z_tx(struct device *dev, struct net_pkt *pkt,
 
 #if CONFIG_SOC_MKW41Z4
 	((u8_t *)ZLL->PKT_BUFFER_TX)[0] = payload_len + KW41Z_FCS_LENGTH;
-	memcpy(((u8_t *)ZLL->PKT_BUFFER_TX) + 1, payload, payload_len);
+	memcpy(((u8_t *)ZLL->PKT_BUFFER_TX) + 1,
+		(void *)(frag->data - net_pkt_ll_reserve(pkt)), payload_len);
 #else /* CONFIG_SOC_MKW40Z4 */
 	((u8_t *)ZLL->PKT_BUFFER)[0] = payload_len + KW41Z_FCS_LENGTH;
-	memcpy(((u8_t *)ZLL->PKT_BUFFER) + 1, payload, payload_len);
+	memcpy(((u8_t *)ZLL->PKT_BUFFER) + 1,
+		(void *)(frag->data - net_pkt_ll_reserve(pkt)), payload_len);
 #endif
 
 	/* Set CCA mode */
@@ -425,25 +540,38 @@ static int kw41z_tx(struct device *dev, struct net_pkt *pkt,
 	/* Clear all IRQ flags */
 	ZLL->IRQSTS = ZLL->IRQSTS;
 
-	tx_timeout = kw41z->tx_warmup_time + KW41Z_SHR_PHY_TIME +
-		     payload_len * KW41Z_PER_BYTE_TIME;
+	/*
+	 * Current Zephyr 802.15.4 stack doesn't support ACK offload
+	 */
 
+#if KW41Z_AUTOACK_ENABLED
 	/* Perform automatic reception of ACK frame, if required */
-	if (KW41Z_AUTOACK_ENABLED) {
-		tx_timeout += KW41Z_ACK_WAIT_TIME;
+	if (KW41Z_AUTOACK_ENABLED && payload->fc.ar) {
+		tx_timeout = kw41z->tx_warmup_time + KW41Z_SHR_PHY_TIME +
+				 payload_len * KW41Z_PER_BYTE_TIME + 10 +
+				 KW41Z_ACK_WAIT_TIME;
+
+		SYS_LOG_DBG("AUTOACK_ENABLED: len: %d, timeout: %d, seq: %d",
+			payload_len, tx_timeout, payload->sequence);
+
+		kw41z_tmr3_set_timeout(tx_timeout);
 		ZLL->PHY_CTRL |= ZLL_PHY_CTRL_RXACKRQD_MASK;
 		kw41z_set_seq_state(KW41Z_STATE_TXRX);
-		kw41z_tmr2_set_timeout(tx_timeout);
-	} else {
+	} else
+#endif
+	{
+		SYS_LOG_DBG("AUTOACK disabled: len: %d, seq: %d",
+			payload_len, payload->sequence);
+
 		ZLL->PHY_CTRL &= ~ZLL_PHY_CTRL_RXACKRQD_MASK;
 		kw41z_set_seq_state(KW41Z_STATE_TX);
-		kw41z_tmr1_set_timeout(tx_timeout);
 	}
 
 	kw41z_enable_seq_irq();
 
 	k_sem_take(&kw41z->seq_sync, K_FOREVER);
 
+	SYS_LOG_DBG("seq_retval: %d", kw41z->seq_retval);
 	return kw41z->seq_retval;
 }
 
@@ -452,103 +580,181 @@ static void kw41z_isr(int unused)
 	u32_t irqsts = ZLL->IRQSTS;
 	u8_t state = kw41z_get_seq_state();
 	u8_t restart_rx = 1;
-	u8_t rx_len;
+	u32_t rx_len;
+#if CONFIG_SYS_LOG_IEEE802154_DRIVER_LEVEL >= SYS_LOG_LEVEL_INFO
+	/*
+	 * Variable is used in debug output to capture the state of the
+	 * sequencer at interrupt.
+	 */
+	u32_t seq_state = ZLL->SEQ_STATE;
+#endif
 
-	/* TMR1 IRQ - time-out */
-	if ((irqsts & ZLL_IRQSTS_TMR1IRQ_MASK) &&
-	    !(irqsts & ZLL_IRQSTS_TMR1MSK_MASK)) {
-		SYS_LOG_DBG("TMR1 timeout");
-		kw41z_tmr1_disable();
-		kw41z_disable_seq_irq();
-
-		if (state == KW41Z_STATE_CCA &&
-		    !(irqsts & ZLL_IRQSTS_CCA_MASK)) {
-			kw41z_set_seq_state(KW41Z_STATE_IDLE);
-			atomic_set(&kw41z_context_data.seq_retval, 0);
-			restart_rx = 0;
-		} else {
-			atomic_set(&kw41z_context_data.seq_retval, -EBUSY);
-		}
-
-		k_sem_give(&kw41z_context_data.seq_sync);
-	}
-
-	/* TMR2 IRQ - time-out */
-	if ((irqsts & ZLL_IRQSTS_TMR2IRQ_MASK) &&
-	    !(irqsts & ZLL_IRQSTS_TMR2MSK_MASK)) {
-		SYS_LOG_DBG("TMR2 timeout");
-		kw41z_tmr2_disable();
-		atomic_set(&kw41z_context_data.seq_retval, -EBUSY);
-		k_sem_give(&kw41z_context_data.seq_sync);
-	}
-
-	/* Sequence done IRQ */
-	if ((state != KW41Z_STATE_IDLE) && (irqsts & ZLL_IRQSTS_SEQIRQ_MASK)) {
-		kw41z_disable_seq_irq();
-		kw41z_tmr1_disable();
-		kw41z_set_seq_state(KW41Z_STATE_IDLE);
-
-		switch (state) {
-		case KW41Z_STATE_RX:
-			SYS_LOG_DBG("RX seq done");
-
-			/*
-			 * KW41Z seems to require some time before the RX SEQ
-			 * done IRQ is triggered and the data is actually
-			 * available in the packet buffer.
-			 */
-			k_busy_wait(KW41Z_PRE_RX_WAIT_TIME);
-
-			rx_len = (ZLL->IRQSTS &
-				  ZLL_IRQSTS_RX_FRAME_LENGTH_MASK) >>
-				 ZLL_IRQSTS_RX_FRAME_LENGTH_SHIFT;
-			if (rx_len != 0) {
-				kw41z_rx(&kw41z_context_data, rx_len);
-			}
-
-			break;
-		case KW41Z_STATE_TXRX:
-			SYS_LOG_DBG("TXRX seq done");
-			kw41z_tmr2_disable();
-		case KW41Z_STATE_TX:
-			SYS_LOG_DBG("TX seq done");
-			if (irqsts & ZLL_IRQSTS_CCA_MASK) {
-				atomic_set(&kw41z_context_data.seq_retval,
-					   -EBUSY);
-			} else {
-				atomic_set(&kw41z_context_data.seq_retval, 0);
-			}
-
-			k_sem_give(&kw41z_context_data.seq_sync);
-			break;
-		case KW41Z_STATE_CCA:
-			SYS_LOG_DBG("CCA seq done");
-			if (irqsts & ZLL_IRQSTS_CCA_MASK) {
-				atomic_set(&kw41z_context_data.seq_retval,
-					   -EBUSY);
-			} else {
-				atomic_set(&kw41z_context_data.seq_retval, 0);
-				restart_rx = 0;
-			}
-
-			k_sem_give(&kw41z_context_data.seq_sync);
-			break;
-		default:
-			break;
-		}
-	}
+	SYS_LOG_DBG("irqsts: 0x%08X, PHY_CTRL: 0x%08X, "
+			"SEQ_STATE: 0x%08X, state: %d",
+			irqsts, (unsigned int)ZLL->PHY_CTRL,
+			(unsigned int)seq_state, state);
 
 	/* Clear interrupts */
 	ZLL->IRQSTS = irqsts;
 
+	if ((!(ZLL->PHY_CTRL & ZLL_PHY_CTRL_RX_WMRK_MSK_MASK)) &&
+	    (irqsts & ZLL_IRQSTS_RXWTRMRKIRQ_MASK)) {
+		/*
+		 * There is a bug in the KW41Z where in noisy environments
+		 * the RX sequence can get lost. The watermark mask IRQ can
+		 * start TMR3 to complete the rest of the read or to assert
+		 * IRQ if the sequencer gets lost so we can reset things.
+		 * Note that a TX from the upper layers will also reset
+		 * things so the problem is contained a bit in normal
+		 * operation.
+		 */
+		rx_len = (irqsts & ZLL_IRQSTS_RX_FRAME_LENGTH_MASK)
+			>> ZLL_IRQSTS_RX_FRAME_LENGTH_SHIFT;
+
+		SYS_LOG_DBG("WMRK irq: seq_state: 0x%08x, rx_len: %d",
+			seq_state, rx_len);
+
+		/*
+		 * Assume the RX includes an auto-ACK so set the timer to
+		 * include the RX frame size, crc, IFS, and ACK length and
+		 * convert to symbols.
+		 *
+		 * IFS is 12 symbols
+		 *
+		 * ACK frame is 11 bytes: 4 preamble, 1 start of frame, 1 frame
+		 * length, 2 frame control, 1 sequence, 2 FCS. Times two to
+		 * convert to symbols.
+		 */
+		rx_len = rx_len * 2 + 12 + 22 + 2;
+		kw41z_tmr3_set_timeout(rx_len);
+		restart_rx = 0;
+	}
+
+	/* Sequence done IRQ */
+	if ((state != KW41Z_STATE_IDLE) && (irqsts & ZLL_IRQSTS_SEQIRQ_MASK)) {
+		/*
+		 * PLL unlock, the autosequence has been aborted due to
+		 * PLL unlock
+		 */
+		if (irqsts & ZLL_IRQSTS_PLL_UNLOCK_IRQ_MASK) {
+			SYS_LOG_ERR("PLL unlock error");
+			kw41z_isr_seq_cleanup();
+			restart_rx = 1;
+		}
+		/*
+		 * TMR3 timeout, the autosequence has been aborted due to
+		 * TMR3 timeout
+		 */
+		else if ((irqsts & ZLL_IRQSTS_TMR3IRQ_MASK) &&
+			(!(irqsts & ZLL_IRQSTS_RXIRQ_MASK)) &&
+			(state != KW41Z_STATE_TX)) {
+
+			SYS_LOG_INF("a) TMR3 timeout: irqsts: 0x%08X, "
+				"seq_state: 0x%08X, state: %d",
+				irqsts, seq_state, state);
+
+			kw41z_isr_timeout_cleanup();
+			restart_rx = 1;
+			if (state == KW41Z_STATE_TXRX) {
+				/* TODO: What is the right error for no ACK? */
+				atomic_set(&kw41z_context_data.seq_retval,
+					   -EBUSY);
+			}
+		} else {
+			kw41z_isr_seq_cleanup();
+
+			switch (state) {
+			case KW41Z_STATE_RX:
+				SYS_LOG_DBG("RX seq done: SEQ_STATE: 0x%08X",
+					(unsigned int)seq_state);
+
+				kw41z_tmr3_disable();
+
+				rx_len = (ZLL->IRQSTS &
+					  ZLL_IRQSTS_RX_FRAME_LENGTH_MASK) >>
+					  ZLL_IRQSTS_RX_FRAME_LENGTH_SHIFT;
+
+				if (irqsts & ZLL_IRQSTS_RXIRQ_MASK) {
+					if (rx_len != 0) {
+						kw41z_rx(&kw41z_context_data,
+							rx_len);
+					}
+				}
+				restart_rx = 1;
+				break;
+			case KW41Z_STATE_TXRX:
+				SYS_LOG_DBG("TXRX seq done");
+				kw41z_tmr3_disable();
+			case KW41Z_STATE_TX:
+				SYS_LOG_DBG("TX seq done");
+				if (irqsts & ZLL_IRQSTS_CCA_MASK) {
+					atomic_set(
+						&kw41z_context_data.seq_retval,
+						-EBUSY);
+				} else {
+					atomic_set(
+						&kw41z_context_data.seq_retval,
+						0);
+				}
+
+				k_sem_give(&kw41z_context_data.seq_sync);
+				restart_rx = 1;
+
+				break;
+			case KW41Z_STATE_CCA:
+				SYS_LOG_DBG("CCA seq done");
+				if (irqsts & ZLL_IRQSTS_CCA_MASK) {
+					atomic_set(
+						&kw41z_context_data.seq_retval,
+						-EBUSY);
+					restart_rx = 1;
+				} else {
+					atomic_set(
+						&kw41z_context_data.seq_retval,
+						0);
+					restart_rx = 0;
+				}
+
+				k_sem_give(&kw41z_context_data.seq_sync);
+				break;
+			default:
+				SYS_LOG_DBG("Unhandled state: %d", state);
+				restart_rx = 1;
+				break;
+			}
+		}
+	} else {
+		/* Timer 3 Compare Match */
+		if ((irqsts & ZLL_IRQSTS_TMR3IRQ_MASK) &&
+			(!(irqsts & ZLL_IRQSTS_TMR3MSK_MASK))) {
+
+			SYS_LOG_INF("b) TMR3 timeout: irqsts: 0x%08X, "
+				"seq_state: 0x%08X, state: %d",
+				irqsts, seq_state, state);
+
+			kw41z_tmr3_disable();
+			restart_rx = 0;
+			if (state != KW41Z_STATE_IDLE) {
+				kw41z_isr_timeout_cleanup();
+				restart_rx = 1;
+				/* If we are not running an automated
+				 * sequence then handle event. TMR3 can expire
+				 * during Recv/Ack sequence where the transmit
+				 * of the ACK is not being interrupted.
+				 */
+			}
+		}
+	}
+
 	/* Restart RX */
-	if (restart_rx && state != KW41Z_STATE_IDLE) {
-		kw41z_set_seq_state(KW41Z_STATE_IDLE);
-		kw41z_wait_for_idle();
+	if (restart_rx) {
+		SYS_LOG_DBG("RESET RX");
 
 		kw41z_enable_seq_irq();
 		kw41z_set_seq_state(KW41Z_STATE_RX);
 	}
+	SYS_LOG_DBG("exit: IRQSTS: 0x%08X, PHY_CTRL: 0x%08X",
+		(unsigned int)ZLL->IRQSTS, (unsigned int)ZLL->PHY_CTRL);
 }
 
 static inline u8_t *get_mac(struct device *dev)
@@ -580,6 +786,7 @@ static int kw41z_init(struct device *dev)
 			ZLL_PHY_CTRL_CRC_MSK_MASK		|
 			ZLL_PHY_CTRL_PLL_UNLOCK_MSK_MASK	|
 			ZLL_PHY_CTRL_FILTERFAIL_MSK_MASK	|
+			ZLL_PHY_CTRL_RX_WMRK_MSK_MASK	|
 			ZLL_PHY_CTRL_CCAMSK_MASK		|
 			ZLL_PHY_CTRL_RXMSK_MASK			|
 			ZLL_PHY_CTRL_TXMSK_MASK			|
@@ -613,8 +820,7 @@ static int kw41z_init(struct device *dev)
 	/* Set prescaller to obtain 1 symbol (16us) timebase */
 	ZLL->TMR_PRESCALE = 0x05;
 
-	kw41z_tmr2_disable();
-	kw41z_tmr1_disable();
+	kw41z_tmr3_disable();
 
 	/* Compute warmup times (scaled to 16us) */
 	kw41z->rx_warmup_time = (XCVR_TSM->END_OF_SEQ &
@@ -650,6 +856,12 @@ static int kw41z_init(struct device *dev)
 	/* Adjust LQI compensation */
 	ZLL->CCA_LQI_CTRL &= ~ZLL_CCA_LQI_CTRL_LQI_OFFSET_COMP_MASK;
 	ZLL->CCA_LQI_CTRL |= ZLL_CCA_LQI_CTRL_LQI_OFFSET_COMP(96);
+
+	/* Enable the RxWatermark IRQ  */
+	ZLL->PHY_CTRL &= ~(ZLL_PHY_CTRL_RX_WMRK_MSK_MASK);
+	/* Set Rx watermark level */
+	ZLL->RX_WTR_MARK = 0;
+
 
 	/* Set default channel to 2405 MHZ */
 	kw41z_set_channel(dev, KW41Z_DEFAULT_CHANNEL);
@@ -689,9 +901,14 @@ static struct ieee802154_radio_api kw41z_radio_api = {
 	.tx			= kw41z_tx,
 };
 
-NET_DEVICE_INIT(kw41z, CONFIG_IEEE802154_KW41Z_DRV_NAME,
-		kw41z_init, &kw41z_context_data, NULL,
-		CONFIG_IEEE802154_KW41Z_INIT_PRIO,
-		&kw41z_radio_api, IEEE802154_L2,
-		NET_L2_GET_CTX_TYPE(IEEE802154_L2),
-		KW41Z_PSDU_LENGTH);
+NET_DEVICE_INIT(
+	kw41z,                              /* Device Name */
+	CONFIG_IEEE802154_KW41Z_DRV_NAME,   /* Driver Name */
+	kw41z_init,                         /* Initialization Function */
+	&kw41z_context_data,                /* Context data */
+	NULL,                               /* Configuration info */
+	CONFIG_IEEE802154_KW41Z_INIT_PRIO,  /* Initial priority */
+	&kw41z_radio_api,                   /* API interface functions */
+	IEEE802154_L2,                      /* L2 */
+	NET_L2_GET_CTX_TYPE(IEEE802154_L2), /* L2 context type */
+	KW41Z_PSDU_LENGTH);                 /* MTU size */
