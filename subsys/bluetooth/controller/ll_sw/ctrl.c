@@ -3278,7 +3278,7 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *radio_pdu_node_rx,
 				break;
 			case PDU_DATA_LLID_RESV:
 			default:
-				LL_ASSERT(0);
+				/* Invalid LL id, drop it. */
 				break;
 			}
 
