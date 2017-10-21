@@ -42,9 +42,9 @@ struct i2c_stm32_data {
 	} current;
 };
 
-s32_t stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg, u32_t flg,
+s32_t stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg, u8_t *flg,
 			  u16_t sadr);
-s32_t stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg, u32_t flg,
+s32_t stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg, u8_t *flg,
 			 u16_t sadr);
 s32_t stm32_i2c_configure_timing(struct device *dev, u32_t clk);
 
