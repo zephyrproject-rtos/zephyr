@@ -130,8 +130,12 @@ enum http_final_call {
 #endif
 
 #ifndef HTTP_USER_AGENT
-#define HTTP_USER_AGENT	"Zephyr-HTTP-Client/1.8"
-#endif
+#if defined(CONFIG_HTTPS)
+#define HTTP_USER_AGENT	"Zephyr-HTTPS-Client/" KERNEL_VERSION_STRING
+#else
+#define HTTP_USER_AGENT	"Zephyr-HTTP-Client/" KERNEL_VERSION_STRING
+#endif /* CONFIG_HTTPS */
+#endif /* HTTP_USER_AGENT */
 
 /* This can be used in http_client_send_get_req() when supplying
  * extra_header_fields parameter.
