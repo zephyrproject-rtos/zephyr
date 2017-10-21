@@ -90,11 +90,6 @@ do_debugserver() {
 CMD="$1"
 shift
 
-if [ "$KBUILD_VERBOSE" -eq 1 ]
-then
-	set -x
-fi
-
 case "${CMD}" in
   flash)
     echo "Flashing Target Device"
