@@ -61,24 +61,47 @@ static int i2c_stm32_transfer(struct device *dev, struct i2c_msg *msg,
 	LL_I2C_Enable(i2c);
 
 	current = msg;
+	/*
+	 * Set I2C_MSG_RESTART flag on first message in order to send start
+	 * condition
+	 */
+	current->flags |= I2C_MSG_RESTART;
 	while (num_msgs > 0) {
-		unsigned int flags = 0;
+		u8_t *next_msg_flags = NULL;
 
-		if (current->len > 255)
-			return -EINVAL;
-
-		/* do NOT issue the i2c stop condition at the end of transfer */
 		if (num_msgs > 1) {
 			next = current + 1;
+			next_msg_flags = &(next->flags);
+
+			/*
+			 * Stop or restart condition between messages
+			 * of different directions is required
+			 */
 			if (OPERATION(current) != OPERATION(next)) {
-				flags = I2C_MSG_RESTART;
+				if (!(next->flags & I2C_MSG_RESTART)) {
+					ret = -EINVAL;
+					break;
+				}
 			}
 		}
 
+		if (current->len > 255) {
+			ret = -EINVAL;
+			break;
+		}
+
+		/* Stop condition is required for the last message */
+		if ((num_msgs == 1) && !(current->flags & I2C_MSG_STOP)) {
+			ret = -EINVAL;
+			break;
+		}
+
 		if ((current->flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
-			ret = stm32_i2c_msg_write(dev, current, flags, slave);
+			ret = stm32_i2c_msg_write(dev, current, next_msg_flags,
+						  slave);
 		} else {
-			ret = stm32_i2c_msg_read(dev, current, flags, slave);
+			ret = stm32_i2c_msg_read(dev, current, next_msg_flags,
+						 slave);
 		}
 
 		if (ret < 0) {
