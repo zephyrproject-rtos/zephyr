@@ -63,6 +63,11 @@ static void net_app_foreach(net_app_ctx_cb_t cb, enum net_app_type type,
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&_net_app_instances, ctx, node) {
 		if (ctx->is_init && ctx->app_type == type) {
+			if (ctx->app_type == NET_APP_CLIENT &&
+			    !ctx->is_enabled) {
+				continue;
+			}
+
 			cb(ctx, user_data);
 		}
 	}
@@ -379,6 +384,11 @@ int _net_app_config_local_ctx(struct net_app_ctx *ctx,
 			ret = -EPFNOSUPPORT;
 			goto fail;
 		}
+
+		if (!ret) {
+			select_default_ctx(ctx);
+			return 0;
+		}
 #endif
 
 #if defined(CONFIG_NET_IPV4)
@@ -389,9 +399,12 @@ int _net_app_config_local_ctx(struct net_app_ctx *ctx,
 			ret = -EPFNOSUPPORT;
 			goto fail;
 		}
-#endif
 
-		select_default_ctx(ctx);
+		if (!ret) {
+			select_default_ctx(ctx);
+			return 0;
+		}
+#endif
 	} else {
 		if (addr->sa_family == AF_INET6) {
 #if defined(CONFIG_NET_IPV6)
@@ -999,7 +1012,33 @@ int net_app_close(struct net_app_ctx *ctx)
 	if (net_ctx) {
 		net_ctx->net_app = NULL;
 		net_context_put(net_ctx);
+
+		NET_DBG("Closing net_ctx %p", net_ctx);
 	}
+
+#if defined(CONFIG_NET_APP_CLIENT)
+	if (ctx->app_type == NET_APP_CLIENT) {
+		ctx->is_enabled = false;
+
+		/* Make sure we do not re-use the same port if we
+		 * re-connect after close.
+		 */
+#if defined(CONFIG_NET_IPV4)
+		net_sin(&ctx->ipv4.local)->sin_port = 0;
+
+		if (ctx->ipv4.ctx) {
+			net_sin_ptr(&ctx->ipv4.ctx->local)->sin_port = 0;
+		}
+#endif
+#if defined(CONFIG_NET_IPV6)
+		net_sin6(&ctx->ipv6.local)->sin6_port = 0;
+
+		if (ctx->ipv6.ctx) {
+			net_sin6_ptr(&ctx->ipv6.ctx->local)->sin6_port = 0;
+		}
+#endif
+	}
+#endif
 
 	return 0;
 }
@@ -1043,6 +1082,26 @@ int net_app_close2(struct net_app_ctx *ctx, struct net_context *net_ctx)
 		if (net_ctx != _net_app_select_net_ctx(ctx, NULL)) {
 			return -ENOENT;
 		}
+
+		ctx->is_enabled = false;
+
+		/* Make sure we do not re-use the same port if we
+		 * re-connect after close.
+		 */
+#if defined(CONFIG_NET_IPV4)
+		net_sin(&ctx->ipv4.local)->sin_port = 0;
+
+		if (net_ctx == ctx->ipv4.ctx) {
+			net_sin_ptr(&ctx->ipv4.ctx->local)->sin_port = 0;
+		}
+#endif
+#if defined(CONFIG_NET_IPV6)
+		net_sin6(&ctx->ipv6.local)->sin6_port = 0;
+
+		if (net_ctx == ctx->ipv6.ctx) {
+			net_sin6_ptr(&ctx->ipv6.ctx->local)->sin6_port = 0;
+		}
+#endif
 	}
 #endif
 
