@@ -285,6 +285,47 @@ static void close_net_ctx(struct net_app_ctx *ctx)
 #endif
 }
 
+static int bind_local(struct net_app_ctx *ctx)
+{
+	int ret = 0;
+
+#if defined(CONFIG_NET_IPV4)
+	if (ctx->ipv4.remote.sa_family == AF_INET && ctx->ipv4.ctx) {
+		ctx->ipv4.local.sa_family = AF_INET;
+		_net_app_set_local_addr(&ctx->ipv4.local, NULL,
+					net_sin(&ctx->ipv4.local)->sin_port);
+
+		ret = _net_app_set_net_ctx(ctx, ctx->ipv4.ctx,
+					   &ctx->ipv4.local,
+					   sizeof(struct sockaddr_in),
+					   ctx->proto);
+		if (ret < 0) {
+			net_context_put(ctx->ipv4.ctx);
+			ctx->ipv4.ctx = NULL;
+		}
+	}
+#endif
+
+#if defined(CONFIG_NET_IPV6)
+	if (ctx->ipv6.remote.sa_family == AF_INET6 && ctx->ipv6.ctx) {
+		ctx->ipv6.local.sa_family = AF_INET6;
+		_net_app_set_local_addr(&ctx->ipv6.local, NULL,
+				       net_sin6(&ctx->ipv6.local)->sin6_port);
+
+		ret = _net_app_set_net_ctx(ctx, ctx->ipv6.ctx,
+					   &ctx->ipv6.local,
+					   sizeof(struct sockaddr_in6),
+					   ctx->proto);
+		if (ret < 0) {
+			net_context_put(ctx->ipv6.ctx);
+			ctx->ipv6.ctx = NULL;
+		}
+	}
+#endif
+
+	return ret;
+}
+
 int net_app_init_client(struct net_app_ctx *ctx,
 			enum net_sock_type sock_type,
 			enum net_ip_protocol proto,
@@ -366,6 +407,7 @@ int net_app_init_client(struct net_app_ctx *ctx,
 	ctx->recv_cb = _net_app_received;
 	ctx->proto = proto;
 	ctx->sock_type = sock_type;
+	ctx->is_enabled = true;
 
 	ret = _net_app_config_local_ctx(ctx, sock_type, proto, &addr);
 	if (ret < 0) {
@@ -418,39 +460,10 @@ int net_app_init_client(struct net_app_ctx *ctx,
 		return -EPFNOSUPPORT;
 	}
 
-#if defined(CONFIG_NET_IPV4)
-	if (ctx->ipv4.remote.sa_family == AF_INET) {
-		ctx->ipv4.local.sa_family = AF_INET;
-		_net_app_set_local_addr(&ctx->ipv4.local, NULL,
-					net_sin(&ctx->ipv4.local)->sin_port);
-
-		ret = _net_app_set_net_ctx(ctx, ctx->ipv4.ctx,
-					   &ctx->ipv4.local,
-					   sizeof(struct sockaddr_in),
-					   ctx->proto);
-		if (ret < 0) {
-			net_context_put(ctx->ipv4.ctx);
-			ctx->ipv4.ctx = NULL;
-		}
+	ret = bind_local(ctx);
+	if (ret < 0) {
+		goto fail;
 	}
-#endif
-
-#if defined(CONFIG_NET_IPV6)
-	if (ctx->ipv6.remote.sa_family == AF_INET6) {
-		ctx->ipv6.local.sa_family = AF_INET6;
-		_net_app_set_local_addr(&ctx->ipv6.local, NULL,
-				       net_sin6(&ctx->ipv6.local)->sin6_port);
-
-		ret = _net_app_set_net_ctx(ctx, ctx->ipv6.ctx,
-					   &ctx->ipv6.local,
-					   sizeof(struct sockaddr_in6),
-					   ctx->proto);
-		if (ret < 0) {
-			net_context_put(ctx->ipv6.ctx);
-			ctx->ipv6.ctx = NULL;
-		}
-	}
-#endif
 
 	_net_app_print_info(ctx);
 
@@ -603,6 +616,27 @@ int net_app_connect(struct net_app_ctx *ctx, s32_t timeout)
 	net_ctx = _net_app_select_net_ctx(ctx, NULL);
 	if (!net_ctx) {
 		return -EAFNOSUPPORT;
+	}
+
+	if (!ctx->is_enabled) {
+		NET_DBG("Re-connecting to net_ctx %p", net_ctx);
+
+		ret = _net_app_config_local_ctx(ctx, ctx->sock_type,
+						ctx->proto, NULL);
+		if (ret < 0) {
+			NET_DBG("Cannot get local endpoint (%d)", ret);
+			return -EINVAL;
+		}
+
+		ret = bind_local(ctx);
+		if (ret < 0) {
+			NET_DBG("Cannot bind local endpoint (%d)", ret);
+			return -EINVAL;
+		}
+
+		ctx->is_enabled = true;
+
+		_net_app_print_info(ctx);
 	}
 
 #if defined(CONFIG_NET_APP_TLS) || defined(CONFIG_NET_APP_DTLS)
