@@ -88,7 +88,8 @@ int flash_stm32_block_erase_loop(struct device *dev, unsigned int offset,
 {
 	struct flash_pages_info info;
 	u32_t start_sector, end_sector;
-	u32_t i, rc = 0;
+	u32_t i;
+	int rc = 0;
 
 	rc = flash_get_page_info_by_offs(dev, offset, &info);
 	if (rc) {
@@ -110,7 +111,6 @@ int flash_stm32_block_erase_loop(struct device *dev, unsigned int offset,
 
 	return rc;
 }
-
 
 int flash_stm32_write_range(struct device *dev, unsigned int offset,
 			    const void *data, unsigned int len)
