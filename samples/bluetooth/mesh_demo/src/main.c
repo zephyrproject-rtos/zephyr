@@ -54,7 +54,7 @@ static void heartbeat(u8_t hops, u16_t feat)
 
 static struct bt_mesh_cfg cfg_srv = {
 #if defined(CONFIG_BOARD_BBC_MICROBIT)
-	.relay = BT_MESH_RELAY_DISABLED,
+	.relay = BT_MESH_RELAY_ENABLED,
 	.beacon = BT_MESH_BEACON_DISABLED,
 #else
 	.relay = BT_MESH_RELAY_ENABLED,
