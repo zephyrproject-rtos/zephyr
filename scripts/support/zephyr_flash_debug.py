@@ -547,7 +547,7 @@ class Nios2BinaryRunner(ZephyrBinaryRunner):
         Required:
 
         - O: build output directory
-        - KERNEL_HEX_NAME: name of kernel binary in ELF format
+        - KERNEL_HEX_NAME: name of kernel binary in HEX format
         - NIOS2_CPU_SOF: location of the CPU .sof data
         - ZEPHYR_BASE: zephyr Git repository base directory
         '''
