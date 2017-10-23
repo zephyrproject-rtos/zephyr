@@ -978,12 +978,12 @@ define filechk_generated_dts_board.h
 		if test -e $(ZEPHYR_BASE)/dts/$(ARCH)/$(BOARD_NAME).fixup; then \
 			$(ZEPHYR_BASE)/scripts/dts/extract_dts_includes.py \
 				-d dts/$(ARCH)/$(BOARD_NAME).dts_compiled \
-				-y $(ZEPHYR_BASE)/dts \
+				-y $(ZEPHYR_BASE)/dts/bindings \
 				-f $(ZEPHYR_BASE)/dts/$(ARCH)/$(BOARD_NAME).fixup; \
 		else \
 			$(ZEPHYR_BASE)/scripts/dts/extract_dts_includes.py \
 				-d dts/$(ARCH)/$(BOARD_NAME).dts_compiled \
-				-y $(ZEPHYR_BASE)/dts; \
+				-y $(ZEPHYR_BASE)/dts/bindings; \
 		fi; \
 		)
 endef
@@ -991,7 +991,7 @@ define filechk_generated_dts_board.conf
 	(echo "# WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY!"; \
 		$(ZEPHYR_BASE)/scripts/dts/extract_dts_includes.py \
 		-d dts/$(ARCH)/$(BOARD_NAME).dts_compiled \
-		-y $(ZEPHYR_BASE)/dts -k; \
+		-y $(ZEPHYR_BASE)/dts/bindings -k; \
 		)
 endef
 else
