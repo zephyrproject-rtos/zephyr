@@ -1,0 +1,46 @@
+#
+# Copyright (c) 2017 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menu "Ping Server"
+
+config PING_SERVER
+	bool "Ping Server"
+	default n
+	help
+	Provides a ping service running on a TCP or UDP port. When the service
+	is sent ping it responds with pong.
+
+menu "Ping Server Settings"
+	visible if PING_SERVER
+
+config PING_SERVER_RESPONSE
+	string "Send this in response to a ping"
+	default "pong"
+
+config PING_SERVER_PORT
+	int "Port to host on"
+	range 0 65535
+	default 34861
+
+choice
+	prompt "Protocol to listen on"
+	default PING_SERVER_UDP
+
+config PING_SERVER_UDP
+	bool "UDP"
+	help
+	Listen for UDP pings
+
+config PING_SERVER_TCP
+	bool "TCP"
+	help
+	Listen for TCP pings
+
+endchoice
+
+endmenu
+
+endmenu

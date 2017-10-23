@@ -606,7 +606,7 @@ endif # $(dot-config)
 
 # kernel objects are built as a static library
 libs-y := lib/ tests/
-core-y := kernel/ drivers/ misc/ boards/ ext/ subsys/ arch/
+core-y := kernel/ drivers/ misc/ boards/ ext/ subsys/ arch/ service/
 
 ARCH = $(subst $(DQUOTE),,$(CONFIG_ARCH))
 export ARCH

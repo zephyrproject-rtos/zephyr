@@ -1,0 +1,12 @@
+# Kconfig - Service configuration options
+#
+# Copyright (c) 2017 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menu "Service Configuration"
+
+source "service/ping/Kconfig"
+
+endmenu
