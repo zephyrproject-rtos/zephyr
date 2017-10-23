@@ -446,6 +446,5 @@ NET_DEVICE_INIT(nrf5_154_radio, CONFIG_IEEE802154_NRF5_DRV_NAME,
 NET_STACK_INFO_ADDR(RX, nrf5_154_radio,
 		    CONFIG_IEEE802154_NRF5_RX_STACK_SIZE,
 		    CONFIG_IEEE802154_NRF5_RX_STACK_SIZE,
-		    ((struct nrf5_802154_data *)
-		    (&__device_nrf5_154_radio))->rx_stack, 0);
+		    nrf5_data.rx_stack, 0);
 #endif
