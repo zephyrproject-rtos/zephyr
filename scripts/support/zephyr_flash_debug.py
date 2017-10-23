@@ -542,7 +542,7 @@ class Nios2BinaryRunner(ZephyrBinaryRunner):
         return command == 'flash' and shell_script == 'nios2.sh'
 
     def create_from_env(command, debug):
-        '''Create flasher from environment.
+        '''Create runner from environment.
 
         Required:
 
@@ -559,15 +559,24 @@ class Nios2BinaryRunner(ZephyrBinaryRunner):
         return Nios2BinaryRunner(hex_, cpu_sof, zephyr_base, debug=debug)
 
     def run(self, command, **kwargs):
-        if command != 'flash':
-            raise ValueError('only flash is supported')
+        if command not in {'flash', 'debug', 'debugserver'}:
+            raise ValueError('{} is not supported'.format(command))
 
+        if command == 'flash':
+            self.flash(**kwargs)
+        else:
+            self.debug_debugserver(command, **kwargs)
+
+    def flash(self, **kwargs):
         cmd = [path.join(self.zephyr_base, 'scripts', 'support',
                          'quartus-flash.py'),
                '--sof', self.cpu_sof,
                '--kernel', self.hex_]
 
         check_call(cmd, self.debug)
+
+    def debug_debugserver(command, **kwargs):
+        raise NotImplementedError()
 
 
 class NrfJprogBinaryRunner(ZephyrBinaryRunner):
