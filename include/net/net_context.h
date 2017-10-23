@@ -787,9 +787,16 @@ typedef void (*net_context_cb_t)(struct net_context *context, void *user_data);
 void net_context_foreach(net_context_cb_t cb, void *user_data);
 
 /**
- * @brief Create network buffer pool that is used by the IP stack
- * to allocate network buffers that are used by the context when
- * sending data to network.
+ * @brief Set custom network buffer pools for context send operations
+ *
+ * Set custom network buffer pools used by the IP stack to allocate
+ * network buffers used by the context when sending data to the
+ * network. Using dedicated buffers may help make send operations on
+ * a given context more reliable, e.g. not be subject to buffer
+ * starvation due to operations on other network contexts. Buffer pools
+ * are set per context, but several contexts may share the same buffers.
+ * Note that there's no support for per-context custom receive packet
+ * pools.
  *
  * @param context Context that will use the given net_buf pools.
  * @param tx_pool Pointer to the function that will return TX pool
