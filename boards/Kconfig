@@ -1,6 +1,7 @@
 
 config BOARD_DEPRECATED
-	string
+	bool
+	default n
 	help
 	This hidden option is set in the board configuration and indicates
 	the Zephyr release that the board configuration will be removed.
