@@ -11,6 +11,7 @@
 
 #include <logging/event_logger.h>
 #include <misc/ring_buffer.h>
+#include <kernel_structs.h>
 
 void sys_event_logger_init(struct event_logger *logger,
 			   u32_t *logger_buffer, u32_t buffer_size)
@@ -44,7 +45,18 @@ static void event_logger_put(struct event_logger *logger, u16_t event_id,
 void sys_event_logger_put(struct event_logger *logger, u16_t event_id,
 			  u32_t *event_data, u8_t data_size)
 {
-	event_logger_put(logger, event_id, event_data, data_size, k_sem_give);
+	/* The thread invoking sys_k_event_logger_get_wait() supposed
+	 * to only read the events of the threads which logged to kernel event
+	 * logger buffer. But it should not write to kernel event logger
+	 * buffer. Otherwise it would cause the race condition.
+	 */
+
+	struct k_thread *event_logger_thread =
+	(struct k_thread *)sys_dlist_peek_head(&(logger->sync_sema.wait_q));
+	if (_current != event_logger_thread) {
+		event_logger_put(logger, event_id, event_data,
+		data_size, k_sem_give);
+	}
 }
 
 
@@ -71,8 +83,19 @@ void _sys_event_logger_put_non_preemptible(struct event_logger *logger,
 {
 	extern void _sem_give_non_preemptible(struct k_sem *sem);
 
-	event_logger_put(logger, event_id, event_data, data_size,
-			 _sem_give_non_preemptible);
+	/* The thread invoking sys_k_event_logger_get_wait() supposed
+	 * to only read the events of the threads which logged to kernel event
+	 * logger buffer. But it should not write to kernel event logger
+	 * buffer. Otherwise it would cause the race condition.
+	 */
+
+	struct k_thread *event_logger_thread =
+	(struct k_thread *)sys_dlist_peek_head(&(logger->sync_sema.wait_q));
+
+	if (_current != event_logger_thread) {
+		event_logger_put(logger, event_id, event_data, data_size,
+						 _sem_give_non_preemptible);
+	}
 }
 
 
