@@ -30,6 +30,8 @@ source "ext/Kconfig"
 
 source "tests/Kconfig"
 
+source "service/Kconfig"
+
 #
 # The following are for Kconfig files for default values only.
 # These should be parsed at the end.
