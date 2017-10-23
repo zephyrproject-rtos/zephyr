@@ -305,7 +305,11 @@ int coap_packet_parse(struct coap_packet *cpkt, struct net_pkt *pkt,
 				   net_pkt_ip_hdr_len(pkt) +
 				   NET_UDPH_LEN +
 				   net_pkt_ipv6_ext_len(pkt));
-	if (!cpkt->frag && cpkt->offset == 0xffff) {
+	if (!cpkt->frag) {
+		return -EINVAL;
+	}
+
+	if (cpkt->offset == 0xffff) {
 		return -EINVAL;
 	}
 
