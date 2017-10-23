@@ -70,8 +70,11 @@ config CDC_ECM_BULK_EP_MPS
 
 config USB_DEVICE_NETWORK_ECM_MAC
 	string
-	default "001122334466"
+	default "00005E005301"
 	help
-	MAC Address string
+	MAC Host OS Address string.
+	MAC Address which would be assigned to network device, created in
+	the Host's Operating System. Use RFC 7042 Documentation values as
+	default MAC.
 
 endif # USB_DEVICE_NETWORK_ECM

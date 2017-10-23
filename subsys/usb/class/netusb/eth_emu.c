@@ -29,7 +29,10 @@ static void eth_emu_iface_init(struct net_if *iface)
 {
 	struct device *dev = net_if_get_device(iface);
 	struct eth_emu_context *ctx = dev->driver_data;
-	u8_t mac[6] = { 0x00, 0x11, 0x22, 0x33, 0x44, 0x55 };
+	/*
+	 * Use RFC7042 Documentation values for MAC address
+	 */
+	u8_t mac[6] = { 0x00, 0x00, 0x5E, 0x00, 0x53, 0x00 };
 
 	/*
 	 * TODO: Implement parsing Descriptor table
