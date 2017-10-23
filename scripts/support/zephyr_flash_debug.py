@@ -48,15 +48,22 @@ def get_env_strip_or(env_var, to_strip, default_value):
         return default_value
 
 
+def quote_sh_list(cmd):
+    '''Transform a command from list into shell string form.'''
+    fmt = ' '.join('{}' for _ in cmd)
+    args = [shlex.quote(s) for s in cmd]
+    return fmt.format(*args)
+
+
 def check_call(cmd, debug):
     if debug:
-        print(' '.join(cmd))
+        print(quote_sh_list(cmd))
     subprocess.check_call(cmd)
 
 
 def check_output(cmd, debug):
     if debug:
-        print(' '.join(cmd))
+        print(quote_sh_list(cmd))
     return subprocess.check_output(cmd)
 
 
@@ -74,7 +81,7 @@ def popen_ignore_int(cmd, debug):
         preexec = os.setsid
 
     if debug:
-        print(' '.join(cmd))
+        print(quote_sh_list(cmd))
 
     return subprocess.Popen(cmd, creationflags=cflags, preexec_fn=preexec)
 
