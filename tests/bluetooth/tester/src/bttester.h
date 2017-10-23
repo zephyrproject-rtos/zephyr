@@ -16,6 +16,7 @@
 #define BTP_SERVICE_ID_GAP	1
 #define BTP_SERVICE_ID_GATT	2
 #define BTP_SERVICE_ID_L2CAP	3
+#define BTP_SERVICE_ID_MESH	4
 
 #define BTP_STATUS_SUCCESS	0x00
 #define BTP_STATUS_FAILED	0x01
@@ -626,6 +627,79 @@ struct l2cap_data_received_ev {
 	u8_t data[0];
 } __packed;
 
+/* MESH Service */
+/* commands */
+#define MESH_READ_SUPPORTED_COMMANDS	0x01
+struct mesh_read_supported_commands_rp {
+	u8_t data[0];
+} __packed;
+
+#define MESH_OUT_BLINK			BIT(0)
+#define MESH_OUT_BEEP			BIT(1)
+#define MESH_OUT_VIBRATE		BIT(2)
+#define MESH_OUT_DISPLAY_NUMBER		BIT(3)
+#define MESH_OUT_DISPLAY_STRING		BIT(4)
+
+#define MESH_IN_PUSH			BIT(0)
+#define MESH_IN_TWIST			BIT(1)
+#define MESH_IN_ENTER_NUMBER		BIT(2)
+#define MESH_IN_ENTER_STRING		BIT(3)
+
+#define MESH_CONFIG_PROVISIONING	0x02
+struct mesh_config_provisioning_cmd {
+	u8_t uuid[16];
+	u8_t static_auth[16];
+	u8_t out_size;
+	u16_t out_actions;
+	u8_t in_size;
+	u16_t in_actions;
+} __packed;
+
+#define MESH_PROVISION_NODE		0x03
+struct mesh_provision_node_cmd {
+	u8_t net_key[16];
+	u16_t net_key_idx;
+	u8_t flags;
+	u32_t iv_index;
+	u32_t seq_num;
+	u16_t addr;
+	u8_t dev_key[16];
+} __packed;
+
+#define MESH_INIT			0x04
+#define MESH_RESET			0x05
+#define MESH_INPUT_NUMBER		0x06
+struct mesh_input_number_cmd {
+	u32_t number;
+} __packed;
+
+#define MESH_INPUT_STRING		0x07
+struct mesh_input_string_cmd {
+	u8_t string_len;
+	u8_t string[0];
+} __packed;
+
+/* events */
+#define MESH_EV_OUT_NUMBER_ACTION	0x80
+struct mesh_out_number_action_ev {
+	u16_t action;
+	u32_t number;
+} __packed;
+
+#define MESH_EV_OUT_STRING_ACTION	0x81
+struct mesh_out_string_action_ev {
+	u8_t string_len;
+	u8_t string[0];
+} __packed;
+
+#define MESH_EV_IN_ACTION		0x82
+struct mesh_in_action_ev {
+	u16_t action;
+	u8_t size;
+} __packed;
+
+#define MESH_EV_PROVISIONED		0x83
+
 void tester_init(void);
 void tester_rsp(u8_t service, u8_t opcode, u8_t index, u8_t status);
 void tester_send(u8_t service, u8_t opcode, u8_t index, u8_t *data,
@@ -643,3 +717,8 @@ u8_t tester_init_l2cap(void);
 void tester_handle_l2cap(u8_t opcode, u8_t index, u8_t *data,
 			 u16_t len);
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
+
+#if defined(CONFIG_BT_MESH)
+u8_t tester_init_mesh(void);
+void tester_handle_mesh(u8_t opcode, u8_t index, u8_t *data, u16_t len);
+#endif /* CONFIG_BT_MESH */
