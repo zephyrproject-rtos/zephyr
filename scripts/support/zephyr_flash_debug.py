@@ -599,6 +599,10 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
                  '-f', self.family, '--snr', board_snr],
                 ['nrfjprog', '--reset', '-f', self.family, '--snr', board_snr],
             ])
+        commands.append(['nrfjprog',
+                         '--pinreset',
+                         '-f', self.family,
+                         '--snr', board_snr])
 
         for cmd in commands:
             check_call(cmd, self.debug)
