@@ -92,16 +92,15 @@ static int gpio_gecko_configure(struct device *dev,
 	}
 
 	if ((flags & GPIO_DIR_MASK) == GPIO_DIR_IN) {
-
 		if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_UP) {
 			mode = gpioModeInputPull;
 			out = 1; /* pull-up*/
 		} else if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_DOWN) {
 			mode = gpioModeInputPull;
 			/* out = 0 means pull-down*/
+		} else {
+			mode = gpioModeInput;
 		}
-
-		mode = gpioModeInput;
 	} else { /* GPIO_DIR_OUT */
 		mode = gpioModePushPull;
 	}
