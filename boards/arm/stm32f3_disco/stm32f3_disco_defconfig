@@ -23,6 +23,7 @@ CONFIG_UART_CONSOLE=y
 
 #enable I2C
 CONFIG_I2C=y
+CONFIG_I2C_STM32_V2=y
 
 # enable pinmux
 CONFIG_PINMUX=y
