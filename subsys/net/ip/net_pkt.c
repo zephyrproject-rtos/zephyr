@@ -34,8 +34,10 @@
 #include <net/net_ip.h>
 #include <net/buf.h>
 #include <net/net_pkt.h>
+#include <net/udp.h>
 
 #include "net_private.h"
+#include "tcp.h"
 
 #if defined(CONFIG_NET_TCP)
 #define APP_PROTO_LEN NET_TCPH_LEN
@@ -1659,13 +1661,49 @@ int net_pkt_get_src_addr(struct net_pkt *pkt, struct sockaddr *addr,
 {
 	enum net_ip_protocol proto;
 	sa_family_t family;
+	u16_t port;
 
 	if (!addr || !pkt) {
 		return -EINVAL;
 	}
 
+	/* Set the family */
 	family = net_pkt_family(pkt);
+	addr->sa_family = family;
 
+	/* Examine the transport protocol */
+	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
+		proto = NET_IPV6_HDR(pkt)->nexthdr;
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
+		proto = NET_IPV4_HDR(pkt)->proto;
+	} else {
+		return -ENOTSUP;
+	}
+
+	/* Get the source port from transport protocol header */
+	if (IS_ENABLED(CONFIG_NET_TCP) && proto == IPPROTO_TCP) {
+		struct net_tcp_hdr hdr, *tcp_hdr;
+
+		tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
+		if (!tcp_hdr) {
+			return -EINVAL;
+		}
+
+		port = tcp_hdr->src_port;
+	} else if (IS_ENABLED(CONFIG_NET_UDP) && proto == IPPROTO_UDP) {
+		struct net_udp_hdr hdr, *udp_hdr;
+
+		udp_hdr = net_udp_get_hdr(pkt, &hdr);
+		if (!udp_hdr) {
+			return -EINVAL;
+		}
+
+		port = udp_hdr->src_port;
+	} else {
+		return -ENOTSUP;
+	}
+
+	/* Set address and port to addr */
 	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
 		struct sockaddr_in6 *addr6 = net_sin6(addr);
 
@@ -1674,16 +1712,7 @@ int net_pkt_get_src_addr(struct net_pkt *pkt, struct sockaddr *addr,
 		}
 
 		net_ipaddr_copy(&addr6->sin6_addr, &NET_IPV6_HDR(pkt)->src);
-		proto = NET_IPV6_HDR(pkt)->nexthdr;
-
-		if (IS_ENABLED(CONFIG_NET_TCP) && proto == IPPROTO_TCP) {
-			addr6->sin6_port = net_pkt_tcp_data(pkt)->src_port;
-		} else if (IS_ENABLED(CONFIG_NET_UDP) && proto == IPPROTO_UDP) {
-			addr6->sin6_port = net_pkt_udp_data(pkt)->src_port;
-		} else {
-			return -ENOTSUP;
-		}
-
+		addr6->sin6_port = port;
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
 		struct sockaddr_in *addr4 = net_sin(addr);
 
@@ -1692,16 +1721,7 @@ int net_pkt_get_src_addr(struct net_pkt *pkt, struct sockaddr *addr,
 		}
 
 		net_ipaddr_copy(&addr4->sin_addr, &NET_IPV4_HDR(pkt)->src);
-		proto = NET_IPV4_HDR(pkt)->proto;
-
-		if (IS_ENABLED(CONFIG_NET_TCP) && proto == IPPROTO_TCP) {
-			addr4->sin_port = net_pkt_tcp_data(pkt)->src_port;
-		} else if (IS_ENABLED(CONFIG_NET_UDP) && proto == IPPROTO_UDP) {
-			addr4->sin_port = net_pkt_udp_data(pkt)->src_port;
-		} else {
-			return -ENOTSUP;
-		}
-
+		addr4->sin_port = port;
 	} else {
 		return -ENOTSUP;
 	}
