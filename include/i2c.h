@@ -135,63 +135,13 @@ struct i2c_driver_api {
  * @retval 0 If successful.
  * @retval -EIO General input / output error, failed to configure device.
  */
-static inline int i2c_configure(struct device *dev, u32_t dev_config)
+__syscall int i2c_configure(struct device *dev, u32_t dev_config);
+
+static inline int _impl_i2c_configure(struct device *dev, u32_t dev_config)
 {
 	const struct i2c_driver_api *api = dev->driver_api;
 
 	return api->configure(dev, dev_config);
-}
-
-/**
- * @brief Write a set amount of data to an I2C device.
- *
- * This routine writes a set amount of data synchronously.
- *
- * @param dev Pointer to the device structure for the driver instance.
- * @param buf Memory pool from which the data is transferred.
- * @param num_bytes Number of bytes to write.
- * @param addr Address to the target I2C device for writing.
- *
- * @retval 0 If successful.
- * @retval -EIO General input / output error.
- */
-static inline int i2c_write(struct device *dev, u8_t *buf,
-			    u32_t num_bytes, u16_t addr)
-{
-	const struct i2c_driver_api *api = dev->driver_api;
-	struct i2c_msg msg;
-
-	msg.buf = buf;
-	msg.len = num_bytes;
-	msg.flags = I2C_MSG_WRITE | I2C_MSG_STOP;
-
-	return api->transfer(dev, &msg, 1, addr);
-}
-
-/**
- * @brief Read a set amount of data from an I2C device.
- *
- * This routine reads a set amount of data synchronously.
- *
- * @param dev Pointer to the device structure for the driver instance.
- * @param buf Memory pool that stores the retrieved data.
- * @param num_bytes Number of bytes to read.
- * @param addr Address of the I2C device being read.
- *
- * @retval 0 If successful.
- * @retval -EIO General input / output error.
- */
-static inline int i2c_read(struct device *dev, u8_t *buf,
-			   u32_t num_bytes, u16_t addr)
-{
-	const struct i2c_driver_api *api = dev->driver_api;
-	struct i2c_msg msg;
-
-	msg.buf = buf;
-	msg.len = num_bytes;
-	msg.flags = I2C_MSG_READ | I2C_MSG_STOP;
-
-	return api->transfer(dev, &msg, 1, addr);
 }
 
 /**
@@ -212,14 +162,73 @@ static inline int i2c_read(struct device *dev, u8_t *buf,
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  */
-static inline int i2c_transfer(struct device *dev,
-			       struct i2c_msg *msgs, u8_t num_msgs,
-			       u16_t addr)
+__syscall int i2c_transfer(struct device *dev,
+			   struct i2c_msg *msgs, u8_t num_msgs,
+			   u16_t addr);
+
+static inline int _impl_i2c_transfer(struct device *dev,
+				     struct i2c_msg *msgs, u8_t num_msgs,
+				     u16_t addr)
 {
 	const struct i2c_driver_api *api = dev->driver_api;
 
 	return api->transfer(dev, msgs, num_msgs, addr);
 }
+
+/*
+ * Derived i2c APIs -- all implemented in terms of i2c_transfer()
+ */
+
+/**
+ * @brief Write a set amount of data to an I2C device.
+ *
+ * This routine writes a set amount of data synchronously.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param buf Memory pool from which the data is transferred.
+ * @param num_bytes Number of bytes to write.
+ * @param addr Address to the target I2C device for writing.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General input / output error.
+ */
+static inline int i2c_write(struct device *dev, u8_t *buf,
+			    u32_t num_bytes, u16_t addr)
+{
+	struct i2c_msg msg;
+
+	msg.buf = buf;
+	msg.len = num_bytes;
+	msg.flags = I2C_MSG_WRITE | I2C_MSG_STOP;
+
+	return i2c_transfer(dev, &msg, 1, addr);
+}
+
+/**
+ * @brief Read a set amount of data from an I2C device.
+ *
+ * This routine reads a set amount of data synchronously.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param buf Memory pool that stores the retrieved data.
+ * @param num_bytes Number of bytes to read.
+ * @param addr Address of the I2C device being read.
+ *
+ * @retval 0 If successful.
+ * @retval -EIO General input / output error.
+ */
+static inline int i2c_read(struct device *dev, u8_t *buf,
+			   u32_t num_bytes, u16_t addr)
+{
+	struct i2c_msg msg;
+
+	msg.buf = buf;
+	msg.len = num_bytes;
+	msg.flags = I2C_MSG_READ | I2C_MSG_STOP;
+
+	return i2c_transfer(dev, &msg, 1, addr);
+}
+
 
 /**
  * @brief Read multiple bytes from an internal address of an I2C device.
@@ -240,7 +249,6 @@ static inline int i2c_burst_read(struct device *dev, u16_t dev_addr,
 				 u8_t start_addr, u8_t *buf,
 				 u8_t num_bytes)
 {
-	const struct i2c_driver_api *api = dev->driver_api;
 	struct i2c_msg msg[2];
 
 	msg[0].buf = &start_addr;
@@ -251,7 +259,7 @@ static inline int i2c_burst_read(struct device *dev, u16_t dev_addr,
 	msg[1].len = num_bytes;
 	msg[1].flags = I2C_MSG_RESTART | I2C_MSG_READ | I2C_MSG_STOP;
 
-	return api->transfer(dev, msg, 2, dev_addr);
+	return i2c_transfer(dev, msg, 2, dev_addr);
 }
 
 /**
@@ -273,7 +281,6 @@ static inline int i2c_burst_write(struct device *dev, u16_t dev_addr,
 				  u8_t start_addr, u8_t *buf,
 				  u8_t num_bytes)
 {
-	const struct i2c_driver_api *api = dev->driver_api;
 	struct i2c_msg msg[2];
 
 	msg[0].buf = &start_addr;
@@ -284,7 +291,7 @@ static inline int i2c_burst_write(struct device *dev, u16_t dev_addr,
 	msg[1].len = num_bytes;
 	msg[1].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
 
-	return api->transfer(dev, msg, 2, dev_addr);
+	return i2c_transfer(dev, msg, 2, dev_addr);
 }
 
 /**
@@ -383,7 +390,6 @@ static inline int i2c_burst_read16(struct device *dev, u16_t dev_addr,
 				   u16_t start_addr, u8_t *buf,
 				   u8_t num_bytes)
 {
-	const struct i2c_driver_api *api = dev->driver_api;
 	u8_t addr_buffer[2];
 	struct i2c_msg msg[2];
 
@@ -397,7 +403,7 @@ static inline int i2c_burst_read16(struct device *dev, u16_t dev_addr,
 	msg[1].len = num_bytes;
 	msg[1].flags = I2C_MSG_RESTART | I2C_MSG_READ | I2C_MSG_STOP;
 
-	return api->transfer(dev, msg, 2, dev_addr);
+	return i2c_transfer(dev, msg, 2, dev_addr);
 }
 
 /**
@@ -419,7 +425,6 @@ static inline int i2c_burst_write16(struct device *dev, u16_t dev_addr,
 				    u16_t start_addr, u8_t *buf,
 				    u8_t num_bytes)
 {
-	const struct i2c_driver_api *api = dev->driver_api;
 	u8_t addr_buffer[2];
 	struct i2c_msg msg[2];
 
@@ -433,7 +438,7 @@ static inline int i2c_burst_write16(struct device *dev, u16_t dev_addr,
 	msg[1].len = num_bytes;
 	msg[1].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
 
-	return api->transfer(dev, msg, 2, dev_addr);
+	return i2c_transfer(dev, msg, 2, dev_addr);
 }
 
 /**
@@ -534,7 +539,6 @@ static inline int i2c_burst_read_addr(struct device *dev, u16_t dev_addr,
 				      const u8_t addr_size,
 				      u8_t *buf, u8_t num_bytes)
 {
-	const struct i2c_driver_api *api = dev->driver_api;
 	struct i2c_msg msg[2];
 
 	msg[0].buf = start_addr;
@@ -545,7 +549,7 @@ static inline int i2c_burst_read_addr(struct device *dev, u16_t dev_addr,
 	msg[1].len = num_bytes;
 	msg[1].flags = I2C_MSG_RESTART | I2C_MSG_READ | I2C_MSG_STOP;
 
-	return api->transfer(dev, msg, 2, dev_addr);
+	return i2c_transfer(dev, msg, 2, dev_addr);
 }
 
 /**
@@ -570,7 +574,6 @@ static inline int i2c_burst_write_addr(struct device *dev, u16_t dev_addr,
 				       const u8_t addr_size,
 				       u8_t *buf, u8_t num_bytes)
 {
-	const struct i2c_driver_api *api = dev->driver_api;
 	struct i2c_msg msg[2];
 
 	msg[0].buf = start_addr;
@@ -581,7 +584,7 @@ static inline int i2c_burst_write_addr(struct device *dev, u16_t dev_addr,
 	msg[1].len = num_bytes;
 	msg[1].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
 
-	return api->transfer(dev, msg, 2, dev_addr);
+	return i2c_transfer(dev, msg, 2, dev_addr);
 }
 
 /**
@@ -705,5 +708,6 @@ struct i2c_client_config {
  * @}
  */
 
+#include <syscalls/i2c.h>
 
 #endif /* __DRIVERS_I2C_H */
