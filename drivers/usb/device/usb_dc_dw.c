@@ -405,7 +405,7 @@ static int usb_dw_tx(u8_t ep, const u8_t *const data,
 	/* Check if FIFO space available */
 	avail_space = usb_dw_tx_fifo_avail(ep_idx);
 	if (avail_space != usb_dw_ctrl.in_ep_ctrl[ep_idx].fifo_size) {
-		SYS_LOG_ERR("USB IN EP%d fifo not empty: %d\n",
+		SYS_LOG_DBG("USB IN EP%d fifo not empty: %d",
 			    ep_idx, avail_space);
 		usb_dw_flush_tx_fifo(ep_idx);
 		avail_space = usb_dw_tx_fifo_avail(ep_idx);
