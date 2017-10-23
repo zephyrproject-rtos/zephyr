@@ -35,14 +35,16 @@ extern "C" {
  * @details The values in the returned header are in network byte order.
  * Note that you must access the UDP header values by the returned pointer,
  * the hdr parameter is just a placeholder for the header data and it might
- * not contain anything if header can fit properly in the first fragment in
+ * not contain anything if the header fits properly in the first fragment of
  * the network packet.
  *
  * @param pkt Network packet
  * @param hdr Where to place the header if it does not fit in first fragment
- * of the network packet.
+ * of the network packet. This might not be pupulated if UDP header fits in
+ * net_buf fragment.
  *
  * @return Return pointer to header or NULL if something went wrong.
+ *         Always use the returned pointer to access the UDP header.
  */
 struct net_udp_hdr *net_udp_get_hdr(struct net_pkt *pkt,
 				    struct net_udp_hdr *hdr);
