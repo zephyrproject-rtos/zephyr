@@ -4,7 +4,7 @@
 
 import sys
 from os import listdir
-import os
+import os, fnmatch
 import re
 import yaml
 import argparse
@@ -743,17 +743,9 @@ def main():
 
     # scan YAML files and find the ones we are interested in
     yaml_files = []
-    for filename in listdir(args.yaml):
-        if re.match('.*\.yaml\Z', filename):
-            yaml_files.append(os.path.realpath(args.yaml + '/' + filename))
-
-    # scan common YAML files and find the ones we are interested in
-    zephyrbase = os.environ.get('ZEPHYR_BASE')
-    if zephyrbase is not None:
-        for filename in listdir(zephyrbase + '/dts/common/yaml'):
-            if re.match('.*\.yaml\Z', filename):
-                yaml_files.append(os.path.realpath(
-                    zephyrbase + '/dts/common/yaml/' + filename))
+    for root, dirnames, filenames in os.walk(args.yaml):
+        for filename in fnmatch.filter(filenames, '*.yaml'):
+            yaml_files.append(os.path.join(root, filename))
 
     yaml_list = {}
     file_load_list = set()
