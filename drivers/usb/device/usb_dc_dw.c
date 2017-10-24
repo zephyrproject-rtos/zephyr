@@ -400,16 +400,18 @@ static int usb_dw_tx(u8_t ep, const u8_t *const data,
 	unsigned int key;
 	u32_t i;
 
-	key = irq_lock();
 
 	/* Check if FIFO space available */
 	avail_space = usb_dw_tx_fifo_avail(ep_idx);
 	if (avail_space != usb_dw_ctrl.in_ep_ctrl[ep_idx].fifo_size) {
 		SYS_LOG_DBG("USB IN EP%d fifo not empty: %d",
 			    ep_idx, avail_space);
+		k_sleep(20);
 		usb_dw_flush_tx_fifo(ep_idx);
 		avail_space = usb_dw_tx_fifo_avail(ep_idx);
 	}
+
+	key = irq_lock();
 
 	avail_space *= 4;
 	if (!avail_space) {
