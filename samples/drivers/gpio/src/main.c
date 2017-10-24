@@ -124,30 +124,38 @@
 #include <gpio.h>
 #include <misc/util.h>
 
-#if defined(CONFIG_SOC_QUARK_SE_C1000_SS)
-#define GPIO_OUT_PIN	2
-#define GPIO_INT_PIN	3
-#define GPIO_NAME	"GPIO_SS_"
-#elif defined(CONFIG_SOC_QUARK_SE_C1000)
-#define GPIO_OUT_PIN	16
-#define GPIO_INT_PIN	19
-#define GPIO_NAME	"GPIO_"
+#if defined(CONFIG_BOARD_QUARK_SE_C1000_DEVBOARD)
+#define GPIO_OUT_PIN 15 /* GPIO15_I2S_RXD */
+#define GPIO_INT_PIN 16 /* GPIO16_I2S_RSCK */
+#define GPIO_NAME       "GPIO_"
+#elif defined(CONFIG_BOARD_QUARK_SE_C1000_DEVBOARD_SS)
+#define GPIO_OUT_PIN 4  /* GPIO_SS_AIN_12 */
+#define GPIO_INT_PIN 5  /* GPIO_SS_AIN_13 */
+#define GPIO_NAME       "GPIO_SS"
+#elif defined(CONFIG_BOARD_ARDUINO_101)
+#define GPIO_OUT_PIN 16  /* IO8 */
+#define GPIO_INT_PIN 19  /* IO4 */
+#define GPIO_NAME       "GPIO_"
+#elif defined(CONFIG_BOARD_ARDUINO_101_SSS)
+#define GPIO_OUT_PIN 2  /* AD0 */
+#define GPIO_INT_PIN 3  /* AD1 */
+#define GPIO_NAME       "GPIO_SS"
+#elif defined(CONFIG_BOARD_QUARK_D2000_CRB)
+#define GPIO_OUT_PIN 8  /* DIO7 */
+#define GPIO_INT_PIN 9  /* DIO8 */
+#define GPIO_NAME       "GPIO_"
 #elif defined(CONFIG_SOC_PART_NUMBER_SAM3X8E)
-#define GPIO_OUT_PIN	25
-#define GPIO_INT_PIN	27
-#define GPIO_NAME	"GPIO_"
-#elif defined(CONFIG_SOC_QUARK_D2000)
-#define GPIO_OUT_PIN	8
-#define GPIO_INT_PIN	24
-#define GPIO_NAME	"GPIO_"
+#define GPIO_OUT_PIN    25
+#define GPIO_INT_PIN    27
+#define GPIO_NAME       "GPIO_"
 #elif defined(CONFIG_SOC_CC2650)
-#define GPIO_OUT_PIN	10
-#define GPIO_INT_PIN	4
-#define GPIO_NAME	"GPIO_"
-#elif defined(CONFIG_SOC_ESP32)
-#define GPIO_OUT_PIN	4
-#define GPIO_INT_PIN	2
-#define GPIO_NAME	"GPIO_"
+#define GPIO_OUT_PIN    10
+#define GPIO_INT_PIN    4
+#define GPIO_NAME       "GPIO_"
+#elif defined(CONFIG_BOARD_ESP32)
+#define GPIO_OUT_PIN 4  /* DIO4 */
+#define GPIO_INT_PIN 2  /* DIO2 */
+#define GPIO_NAME       "GPIO_"
 #endif
 
 #if defined(CONFIG_GPIO_DW_0)
