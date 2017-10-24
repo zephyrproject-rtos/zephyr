@@ -125,6 +125,17 @@ void k_call_stacks_analyze(void)
 	STACK_ANALYZE("idle     ", _idle_stack);
 	STACK_ANALYZE("interrupt", _interrupt_stack);
 	STACK_ANALYZE("workqueue", sys_work_q_stack);
+
+#if defined(CONFIG_THREAD_MONITOR)
+	printk("\nApplication stacks:\n");
+	struct k_thread *tmp;
+	for (tmp = _kernel.threads; tmp != NULL; tmp = tmp->next_thread)
+	{
+		stack_analyze("<tbd>", (const char *)tmp->stack_info.start,
+			 tmp->stack_info.size);
+	}
+#endif
+
 }
 #else
 void k_call_stacks_analyze(void) { }

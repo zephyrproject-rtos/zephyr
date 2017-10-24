@@ -78,6 +78,12 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
     ldr r2, =CONFIG_ISR_STACK_SIZE
     bl memset
 #endif
+#ifdef CONFIG_STACK_SENTINEL
+    ldr r0, =_interrupt_stack
+    ldr r1, =0xF0
+    ldr r2, =0x04
+    bl  memset
+#endif
 
     /*
      * Set PSP and use it to boot without using MSP, so that it
