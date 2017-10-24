@@ -77,8 +77,19 @@ int _net_app_config_local_ctx(struct net_app_ctx *ctx,
 			      enum net_sock_type sock_type,
 			      enum net_ip_protocol proto,
 			      struct sockaddr *addr);
+
+#if NET_LOG_ENABLED > 0
+struct net_context *_net_app_select_net_ctx_debug(struct net_app_ctx *ctx,
+						  const struct sockaddr *dst,
+						  const char *caller,
+						  int line);
+#define _net_app_select_net_ctx(ctx, dst)				\
+	_net_app_select_net_ctx_debug(ctx, dst, __func__, __LINE__)
+#else
 struct net_context *_net_app_select_net_ctx(struct net_app_ctx *ctx,
 					    const struct sockaddr *dst);
+#endif
+
 int _net_app_ssl_mux(void *context, unsigned char *buf, size_t size);
 int _net_app_tls_sendto(struct net_pkt *pkt,
 			const struct sockaddr *dst_addr,
