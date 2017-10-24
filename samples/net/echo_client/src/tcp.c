@@ -272,7 +272,8 @@ static void tcp_connected(struct net_app_ctx *ctx,
 
 static int connect_tcp(struct net_app_ctx *ctx, const char *peer,
 		       void *user_data, u8_t *result_buf,
-		       size_t result_buf_len, u8_t *stack, size_t stack_size)
+		       size_t result_buf_len,
+		       k_thread_stack_t *stack, size_t stack_size)
 {
 	struct data *data = user_data;
 	int ret;
