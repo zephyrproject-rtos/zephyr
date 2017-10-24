@@ -6,13 +6,12 @@
 
 """Zephyr flash/debug script
 
-This script is a transparent replacement for existing Zephyr flash and debug
-scripts, i.e. scripts to flash binaries, run them, and debug them on real or
-emulated hardware. If it can invoke the relevant tools natively, it will do so;
-otherwise, it delegates to the shell script."""
+This script is a transparent replacement for legacy Zephyr flash and
+debug scripts which have now been removed. It will be refactored over
+time as the rest of the build system is taught to use it.
+"""
 
 from os import path
-import subprocess
 import sys
 
 from runner.core import ZephyrBinaryRunner, get_env_bool_or
@@ -33,11 +32,9 @@ def run(shell_script_full, command, debug):
                                                             command,
                                                             debug)
     except ValueError:
-        # Unsupported; fall back on shell script.
-        print('Unsupported, falling back on shell script',
+        print('Unrecognized shell script {}'.format(shell_script_full),
               file=sys.stderr)
-        subprocess.check_call([shell_script_full, command])
-        return
+        raise
 
     runner.run(command)
 
