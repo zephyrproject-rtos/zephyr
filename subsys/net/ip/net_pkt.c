@@ -1656,8 +1656,8 @@ void net_pkt_get_info(struct k_mem_slab **rx,
 	}
 }
 
-int net_pkt_get_src_addr(struct net_pkt *pkt, struct sockaddr *addr,
-			 socklen_t addrlen)
+static int net_pkt_get_addr(struct net_pkt *pkt, bool is_src,
+			    struct sockaddr *addr, socklen_t addrlen)
 {
 	enum net_ip_protocol proto;
 	sa_family_t family;
@@ -1689,7 +1689,12 @@ int net_pkt_get_src_addr(struct net_pkt *pkt, struct sockaddr *addr,
 			return -EINVAL;
 		}
 
-		port = tcp_hdr->src_port;
+		if (is_src) {
+			port = tcp_hdr->src_port;
+		} else {
+			port = tcp_hdr->dst_port;
+		}
+
 	} else if (IS_ENABLED(CONFIG_NET_UDP) && proto == IPPROTO_UDP) {
 		struct net_udp_hdr hdr, *udp_hdr;
 
@@ -1698,7 +1703,12 @@ int net_pkt_get_src_addr(struct net_pkt *pkt, struct sockaddr *addr,
 			return -EINVAL;
 		}
 
-		port = udp_hdr->src_port;
+		if (is_src) {
+			port = udp_hdr->src_port;
+		} else {
+			port = udp_hdr->dst_port;
+		}
+
 	} else {
 		return -ENOTSUP;
 	}
@@ -1711,7 +1721,14 @@ int net_pkt_get_src_addr(struct net_pkt *pkt, struct sockaddr *addr,
 			return -EINVAL;
 		}
 
-		net_ipaddr_copy(&addr6->sin6_addr, &NET_IPV6_HDR(pkt)->src);
+		if (is_src) {
+			net_ipaddr_copy(&addr6->sin6_addr,
+					&NET_IPV6_HDR(pkt)->src);
+		} else {
+			net_ipaddr_copy(&addr6->sin6_addr,
+					&NET_IPV6_HDR(pkt)->dst);
+		}
+
 		addr6->sin6_port = port;
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
 		struct sockaddr_in *addr4 = net_sin(addr);
@@ -1720,13 +1737,32 @@ int net_pkt_get_src_addr(struct net_pkt *pkt, struct sockaddr *addr,
 			return -EINVAL;
 		}
 
-		net_ipaddr_copy(&addr4->sin_addr, &NET_IPV4_HDR(pkt)->src);
+		if (is_src) {
+			net_ipaddr_copy(&addr4->sin_addr,
+					&NET_IPV4_HDR(pkt)->src);
+		} else {
+			net_ipaddr_copy(&addr4->sin_addr,
+					&NET_IPV4_HDR(pkt)->dst);
+		}
+
 		addr4->sin_port = port;
 	} else {
 		return -ENOTSUP;
 	}
 
 	return 0;
+}
+
+int net_pkt_get_src_addr(struct net_pkt *pkt, struct sockaddr *addr,
+			 socklen_t addrlen)
+{
+	return net_pkt_get_addr(pkt, true, addr, addrlen);
+}
+
+int net_pkt_get_dst_addr(struct net_pkt *pkt, struct sockaddr *addr,
+			 socklen_t addrlen)
+{
+	return net_pkt_get_addr(pkt, false, addr, addrlen);
 }
 
 #if defined(CONFIG_NET_DEBUG_NET_PKT)
