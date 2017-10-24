@@ -16,6 +16,7 @@ extern "C" {
 /**
  * @brief HTTP client and server library
  * @defgroup http_legacy HTTP Library
+ * @deprecated This library is deprecated.
  * @{
  */
 
@@ -82,6 +83,8 @@ struct https_context {
  * @param output Data to fill
  * @param len Maximum size to provide
  * @param olen The actual amount of bytes put into the buffer (Can be 0)
+ *
+ * @deprecated This typedef is deprecated.
  */
 typedef int (*https_entropy_src_cb_t)(void *data, unsigned char *output,
 				      size_t len, size_t *olen);
@@ -153,6 +156,8 @@ struct http_client_ctx;
  *
  * @param ctx HTTP context.
  * @param pkt Network packet.
+ *
+ * @deprecated This typedef is deprecated.
  */
 typedef void (*http_receive_cb_t)(struct http_client_ctx *ctx,
 				  struct net_pkt *pkt);
@@ -169,6 +174,8 @@ typedef void (*http_receive_cb_t)(struct http_client_ctx *ctx,
  * @param final_data Does this data buffer contain all the data or
  * is there still more data to come.
  * @param user_data A valid pointer on some user data or NULL
+ *
+ * @deprecated This typedef is deprecated.
  */
 typedef void (*http_response_cb_t)(struct http_client_ctx *ctx,
 				   u8_t *data, size_t buflen,
@@ -187,6 +194,8 @@ typedef void (*http_response_cb_t)(struct http_client_ctx *ctx,
  * if MBEDTLS_X509_CRT_PARSE_C is defined.
  *
  * @return 0 if ok, <0 if there is an error
+ *
+ * @deprecated This typedef is deprecated.
  */
 typedef int (*https_ca_cert_cb_t)(struct http_client_ctx *ctx,
 				  void *ca_cert);
@@ -195,6 +204,8 @@ typedef int (*https_ca_cert_cb_t)(struct http_client_ctx *ctx,
 /**
  * HTTP client context information. This contains all the data that is
  * needed when doing HTTP requests.
+ *
+ * @deprecated This struct is deprecated.
  */
 struct http_client_ctx {
 	struct http_parser parser;
@@ -367,6 +378,8 @@ struct http_client_ctx {
 /**
  * HTTP client request. This contains all the data that is needed when doing
  * a HTTP request.
+ *
+ * @deprecated This struct is deprecated.
  */
 struct http_client_request {
 	/** The HTTP method: GET, HEAD, OPTIONS, POST, ... */
@@ -408,10 +421,12 @@ struct http_client_request {
  * @param timeout Timeout when doing net_buf allocations.
  *
  * @return Return 0 if ok, and <0 if error.
+ *
+ * @deprecated This api is deprecated.
  */
-int http_request(struct http_client_ctx *ctx,
-		 struct http_client_request *req,
-		 s32_t timeout);
+int __deprecated http_request(struct http_client_ctx *ctx,
+			      struct http_client_request *req,
+			      s32_t timeout);
 
 /**
  * @brief Send a HTTP request to peer.
@@ -427,14 +442,16 @@ int http_request(struct http_client_ctx *ctx,
  * then we return immediately and the callback (if set) will be called later.
  *
  * @return Return 0 if ok, and <0 if error.
+ *
+ * @deprecated This api is deprecated.
  */
-int http_client_send_req(struct http_client_ctx *http_ctx,
-			 struct http_client_request *req,
-			 http_response_cb_t cb,
-			 u8_t *response_buf,
-			 size_t response_buf_len,
-			 void *user_data,
-			 s32_t timeout);
+int __deprecated http_client_send_req(struct http_client_ctx *http_ctx,
+				      struct http_client_request *req,
+				      http_response_cb_t cb,
+				      u8_t *response_buf,
+				      size_t response_buf_len,
+				      void *user_data,
+				      s32_t timeout);
 
 /**
  * @brief Send a HTTP GET request to peer.
@@ -455,16 +472,19 @@ int http_client_send_req(struct http_client_ctx *http_ctx,
  * then we return immediately and the callback (if set) will be called later.
  *
  * @return Return 0 if ok, and <0 if error.
+ *
+ * @deprecated This api is deprecated.
  */
-static inline int http_client_send_get_req(struct http_client_ctx *http_ctx,
-					   const char *url,
-					   const char *host,
-					   const char *extra_header_fields,
-					   http_response_cb_t cb,
-					   u8_t *response_buf,
-					   size_t response_buf_len,
-					   void *user_data,
-					   s32_t timeout)
+static inline
+int __deprecated http_client_send_get_req(struct http_client_ctx *http_ctx,
+					  const char *url,
+					  const char *host,
+					  const char *extra_header_fields,
+					  http_response_cb_t cb,
+					  u8_t *response_buf,
+					  size_t response_buf_len,
+					  void *user_data,
+					  s32_t timeout)
 {
 	struct http_client_request req = {
 				.method = HTTP_GET,
@@ -499,18 +519,21 @@ static inline int http_client_send_get_req(struct http_client_ctx *http_ctx,
  * then we return immediately and the callback (if set) will be called later.
  *
  * @return Return 0 if ok, and <0 if error.
+ *
+ * @deprecated This api is deprecated.
  */
-static inline int http_client_send_post_req(struct http_client_ctx *http_ctx,
-					    const char *url,
-					    const char *host,
-					    const char *extra_header_fields,
-					    const char *content_type,
-					    const char *payload,
-					    http_response_cb_t cb,
-					    u8_t *response_buf,
-					    size_t response_buf_len,
-					    void *user_data,
-					    s32_t timeout)
+static inline
+int __deprecated http_client_send_post_req(struct http_client_ctx *http_ctx,
+					   const char *url,
+					   const char *host,
+					   const char *extra_header_fields,
+					   const char *content_type,
+					   const char *payload,
+					   http_response_cb_t cb,
+					   u8_t *response_buf,
+					   size_t response_buf_len,
+					   void *user_data,
+					   s32_t timeout)
 {
 	struct http_client_request req = {
 				.method = HTTP_POST,
@@ -541,9 +564,11 @@ static inline int http_client_send_post_req(struct http_client_ctx *http_ctx,
  * @param server_port HTTP server TCP port.
  *
  * @return Return 0 if ok, <0 if error.
+ *
+ * @deprecated This api is deprecated.
  */
-int http_client_init(struct http_client_ctx *http_ctx,
-		     const char *server, u16_t server_port);
+int __deprecated http_client_init(struct http_client_ctx *http_ctx,
+				  const char *server, u16_t server_port);
 
 #if defined(CONFIG_HTTPS)
 /**
@@ -577,25 +602,29 @@ int http_client_init(struct http_client_ctx *http_ctx,
  * @param https_stack_len HTTP thread stack size.
  *
  * @return Return 0 if ok, <0 if error.
+ *
+ * @deprecated This api is deprecated.
  */
-int https_client_init(struct http_client_ctx *http_ctx,
-		      const char *server, u16_t server_port,
-		      u8_t *personalization_data,
-		      size_t personalization_data_len,
-		      https_ca_cert_cb_t cert_cb,
-		      const char *cert_host,
-		      https_entropy_src_cb_t entropy_src_cb,
-		      struct k_mem_pool *pool,
-		      k_thread_stack_t https_stack,
-		      size_t https_stack_size);
+int __deprecated https_client_init(struct http_client_ctx *http_ctx,
+				   const char *server, u16_t server_port,
+				   u8_t *personalization_data,
+				   size_t personalization_data_len,
+				   https_ca_cert_cb_t cert_cb,
+				   const char *cert_host,
+				   https_entropy_src_cb_t entropy_src_cb,
+				   struct k_mem_pool *pool,
+				   k_thread_stack_t https_stack,
+				   size_t https_stack_size);
 #endif /* CONFIG_HTTPS */
 
 /**
  * @brief Release all the resources allocated for HTTP context.
  *
  * @param http_ctx HTTP context.
+ *
+ * @deprecated This api is deprecated.
  */
-void http_client_release(struct http_client_ctx *http_ctx);
+void __deprecated http_client_release(struct http_client_ctx *http_ctx);
 
 #if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
 /**
@@ -611,8 +640,10 @@ void http_client_release(struct http_client_ctx *http_ctx);
  * This can be NULL in which case default TX memory pool is used.
  * @param data_pool Function which is used when allocating data network buffer.
  * This can be NULL in which case default DATA net_buf pool is used.
+ *
+ * @deprecated This api is deprecated.
  */
-int http_client_set_net_pkt_pool(struct http_client_ctx *ctx,
+int __deprecated http_client_set_net_pkt_pool(struct http_client_ctx *ctx,
 				 net_pkt_get_slab_func_t tx_slab,
 				 net_pkt_get_pool_func_t data_pool);
 #else
@@ -627,11 +658,17 @@ int http_client_set_net_pkt_pool(struct http_client_ctx *ctx,
 
 struct http_server_ctx;
 
+/**
+ * @deprecated This enum is deprecated.
+ */
 enum http_url_flags {
 	HTTP_URL_STANDARD = 0,
 };
 
 /* HTTP header fields struct */
+/**
+ * @deprecated This struct is deprecated.
+ */
 struct http_field_value {
 	/** Field name, this variable will point to the beginning of the string
 	 *  containing the HTTP field name
@@ -653,6 +690,9 @@ struct http_field_value {
 typedef int (*http_url_cb_t)(struct http_server_ctx *ctx);
 
 /* HTTP root URL struct, used for pattern matching */
+/**
+ * @deprecated This struct is deprecated.
+ */
 struct http_root_url {
 	/** URL */
 	const char *root;
@@ -671,6 +711,9 @@ struct http_root_url {
 };
 
 /* Collection of URLs that this server will handle */
+/**
+ * @deprecated This struct is deprecated.
+ */
 struct http_server_urls {
 	/* First item is the default handler and it is always there.
 	 */
@@ -689,6 +732,8 @@ struct http_server_urls {
  * @param pkey MBEDTLS private key
  *
  * @return 0 if ok, <0 if there is an error
+ *
+ * @deprecated This typedef is deprecated.
  */
 typedef int (*https_server_cert_cb_t)(struct http_server_ctx *ctx,
 				      mbedtls_x509_crt *cert,
@@ -696,6 +741,9 @@ typedef int (*https_server_cert_cb_t)(struct http_server_ctx *ctx,
 #endif /* CONFIG_HTTPS */
 
 /* The HTTP server context struct */
+/**
+ * @deprecated This struct is deprecated.
+ */
 struct http_server_ctx {
 	/** Collection of URLs that this server context will handle */
 	struct http_server_urls *urls;
@@ -851,13 +899,15 @@ struct http_server_ctx {
  * no extra prints are needed.
  *
  * @return Return 0 if ok, <0 if error.
+ *
+ * @deprecated This api is deprecated.
  */
-int http_server_init(struct http_server_ctx *http_ctx,
-		     struct http_server_urls *urls,
-		     struct sockaddr *server_addr,
-		     u8_t *request_buf,
-		     size_t request_buf_len,
-		     const char *server_banner);
+int __deprecated http_server_init(struct http_server_ctx *http_ctx,
+				  struct http_server_urls *urls,
+				  struct sockaddr *server_addr,
+				  u8_t *request_buf,
+				  size_t request_buf_len,
+				  const char *server_banner);
 
 #if defined(CONFIG_HTTPS)
 /**
@@ -899,28 +949,32 @@ int http_server_init(struct http_server_ctx *http_ctx,
  * @param https_stack_len HTTP thread stack size.
  *
  * @return Return 0 if ok, <0 if error.
+ *
+ * @deprecated This api is deprecated.
  */
-int https_server_init(struct http_server_ctx *http_ctx,
-		      struct http_server_urls *urls,
-		      struct sockaddr *server_addr,
-		      u8_t *request_buf,
-		      size_t request_buf_len,
-		      const char *server_banner,
-		      u8_t *personalization_data,
-		      size_t personalization_data_len,
-		      https_server_cert_cb_t cert_cb,
-		      https_entropy_src_cb_t entropy_src_cb,
-		      struct k_mem_pool *pool,
-		      k_thread_stack_t https_stack,
-		      size_t https_stack_len);
+int __deprecated https_server_init(struct http_server_ctx *http_ctx,
+				   struct http_server_urls *urls,
+				   struct sockaddr *server_addr,
+				   u8_t *request_buf,
+				   size_t request_buf_len,
+				   const char *server_banner,
+				   u8_t *personalization_data,
+				   size_t personalization_data_len,
+				   https_server_cert_cb_t cert_cb,
+				   https_entropy_src_cb_t entropy_src_cb,
+				   struct k_mem_pool *pool,
+				   k_thread_stack_t https_stack,
+				   size_t https_stack_len);
 #endif /* CONFIG_HTTPS */
 
 /**
  * @brief Release all the resources allocated for HTTP context.
  *
  * @param http_ctx HTTP context.
+ *
+ * @deprecated This api is deprecated.
  */
-void http_server_release(struct http_server_ctx *http_ctx);
+void __deprecated http_server_release(struct http_server_ctx *http_ctx);
 
 /**
  * @brief Enable HTTP server that is related to this context.
@@ -930,8 +984,10 @@ void http_server_release(struct http_server_ctx *http_ctx);
  * @param http_ctx HTTP context.
  *
  * @return Previous status of the server.
+ *
+ * @deprecated This api is deprecated.
  */
-bool http_server_enable(struct http_server_ctx *http_ctx);
+bool __deprecated http_server_enable(struct http_server_ctx *http_ctx);
 
 /**
  * @brief Disable HTTP server that is related to this context.
@@ -941,8 +997,10 @@ bool http_server_enable(struct http_server_ctx *http_ctx);
  * @param http_ctx HTTP context.
  *
  * @return Previous status of the server.
+ *
+ * @deprecated This api is deprecated.
  */
-bool http_server_disable(struct http_server_ctx *http_ctx);
+bool __deprecated http_server_disable(struct http_server_ctx *http_ctx);
 
 /**
  * @brief Helper function that can be used to fill the server (local) sockaddr
@@ -954,9 +1012,12 @@ bool http_server_disable(struct http_server_ctx *http_ctx);
  * @param port TCP port to use.
  *
  * @return 0 if ok, <0 if error.
+ *
+ * @deprecated This api is deprecated.
  */
-int http_server_set_local_addr(struct sockaddr *addr, const char *myaddr,
-			       u16_t port);
+int __deprecated http_server_set_local_addr(struct sockaddr *addr,
+					    const char *myaddr,
+					    u16_t port);
 
 /**
  * @brief Add a handler for a given URL.
@@ -972,10 +1033,13 @@ int http_server_set_local_addr(struct sockaddr *addr, const char *myaddr,
  *
  * @return NULL if the URL is already registered, pointer to  URL if
  * registering was ok.
+ *
+ * @deprecated This api is deprecated.
  */
-struct http_root_url *http_server_add_url(struct http_server_urls *urls,
-					  const char *url, u8_t flags,
-					  http_url_cb_t write_cb);
+struct http_root_url * __deprecated http_server_add_url(
+	struct http_server_urls *urls,
+	const char *url, u8_t flags,
+	http_url_cb_t write_cb);
 
 /**
  * @brief Delete the handler for a given URL.
@@ -987,8 +1051,11 @@ struct http_root_url *http_server_add_url(struct http_server_urls *urls,
  * @param url URL string.
  *
  * @return 0 if ok, <0 if error.
+ *
+ * @deprecated This api is deprecated.
  */
-int http_server_del_url(struct http_server_urls *urls, const char *url);
+int __deprecated http_server_del_url(struct http_server_urls *urls,
+				     const char *url);
 
 /**
  * @brief Add default URL handler.
@@ -1003,9 +1070,12 @@ int http_server_del_url(struct http_server_urls *urls, const char *url);
  *
  * @return NULL if default URL is already registered, pointer to default
  * URL if registering was ok.
+ *
+ * @deprecated This api is deprecated.
  */
-struct http_root_url *http_server_add_default(struct http_server_urls *urls,
-					      http_url_cb_t write_cb);
+struct http_root_url * __deprecated http_server_add_default(
+	struct http_server_urls *urls,
+	http_url_cb_t write_cb);
 
 /**
  * @brief Delete the default URL handler.
@@ -1016,8 +1086,10 @@ struct http_root_url *http_server_add_default(struct http_server_urls *urls,
  * registered.
  *
  * @return 0 if ok, <0 if error.
+ *
+ * @deprecated This api is deprecated.
  */
-int http_server_del_default(struct http_server_urls *urls);
+int __deprecated http_server_del_default(struct http_server_urls *urls);
 
 /**
  * @brief Send HTTP response to client.
@@ -1031,9 +1103,12 @@ int http_server_del_default(struct http_server_urls *urls);
  * @param timeout Timeout to wait until the connection is shutdown.
  *
  * @return 0 if ok, <0 if error.
+ *
+ * @deprecated This api is deprecated.
  */
-int http_response_wait(struct http_server_ctx *ctx, const char *http_header,
-		       const char *html_payload, s32_t timeout);
+int __deprecated http_response_wait(struct http_server_ctx *ctx,
+				    const char *http_header,
+				    const char *html_payload, s32_t timeout);
 
 /**
  * @brief Send HTTP response to client.
@@ -1046,9 +1121,12 @@ int http_response_wait(struct http_server_ctx *ctx, const char *http_header,
  * @param html_payload HTML payload to send.
  *
  * @return 0 if ok, <0 if error.
+ *
+ * @deprecated This api is deprecated.
  */
-int http_response(struct http_server_ctx *ctx, const char *http_header,
-		  const char *html_payload);
+int __deprecated http_response(struct http_server_ctx *ctx,
+			       const char *http_header,
+			       const char *html_payload);
 
 /**
  * @brief Send HTTP 400 response to client.
@@ -1059,8 +1137,11 @@ int http_response(struct http_server_ctx *ctx, const char *http_header,
  * @param html_payload HTML payload to send.
  *
  * @return 0 if ok, <0 if error.
+ *
+ * @deprecated This api is deprecated.
  */
-int http_response_400(struct http_server_ctx *ctx, const char *html_payload);
+int __deprecated http_response_400(struct http_server_ctx *ctx,
+				   const char *html_payload);
 
 /**
  * @brief Send HTTP 403 response to client.
@@ -1071,8 +1152,11 @@ int http_response_400(struct http_server_ctx *ctx, const char *html_payload);
  * @param html_payload HTML payload to send.
  *
  * @return 0 if ok, <0 if error.
+ *
+ * @deprecated This api is deprecated.
  */
-int http_response_403(struct http_server_ctx *ctx, const char *html_payload);
+int __deprecated http_response_403(struct http_server_ctx *ctx,
+				   const char *html_payload);
 
 /**
  * @brief Send HTTP 404 response to client.
@@ -1083,8 +1167,11 @@ int http_response_403(struct http_server_ctx *ctx, const char *html_payload);
  * @param html_payload HTML payload to send.
  *
  * @return 0 if ok, <0 if error.
+ *
+ * @deprecated This api is deprecated.
  */
-int http_response_404(struct http_server_ctx *ctx, const char *html_payload);
+int __deprecated http_response_404(struct http_server_ctx *ctx,
+				   const char *html_payload);
 
 /**
  * @brief Send some data to the client.
@@ -1098,11 +1185,13 @@ int http_response_404(struct http_server_ctx *ctx, const char *html_payload);
  * @param timeout Timeout to wait until the connection is teared down.
  *
  * @return 0 if ok, <0 if error.
+ *
+ * @deprecated This api is deprecated.
  */
-int http_response_send_data(struct http_server_ctx *ctx,
-			    const char *http_header,
-			    const char *html_payload,
-			    s32_t timeout);
+int __deprecated http_response_send_data(struct http_server_ctx *ctx,
+					 const char *http_header,
+					 const char *html_payload,
+					 s32_t timeout);
 
 #if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
 /**
@@ -1118,10 +1207,12 @@ int http_response_send_data(struct http_server_ctx *ctx,
  * This can be NULL in which case default TX memory pool is used.
  * @param data_pool Function which is used when allocating data network buffer.
  * This can be NULL in which case default DATA net_buf pool is used.
+ *
+ * @deprecated This api is deprecated.
  */
-int http_server_set_net_pkt_pool(struct http_server_ctx *ctx,
-				 net_pkt_get_slab_func_t tx_slab,
-				 net_pkt_get_pool_func_t data_pool);
+int __deprecated http_server_set_net_pkt_pool(struct http_server_ctx *ctx,
+					   net_pkt_get_slab_func_t tx_slab,
+					   net_pkt_get_pool_func_t data_pool);
 #else
 #define http_server_set_net_pkt_pool(...)
 #endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
@@ -1132,8 +1223,10 @@ int http_server_set_net_pkt_pool(struct http_server_ctx *ctx,
 typedef void (*http_server_cb_t)(struct http_server_ctx *entry,
 				 void *user_data);
 
-void http_server_conn_foreach(http_server_cb_t cb, void *user_data);
-void http_server_conn_monitor(http_server_cb_t cb, void *user_data);
+void __deprecated http_server_conn_foreach(http_server_cb_t cb,
+					   void *user_data);
+void __deprecated http_server_conn_monitor(http_server_cb_t cb,
+					   void *user_data);
 #else
 #define http_server_conn_foreach(...)
 #define http_server_conn_monitor(...)
