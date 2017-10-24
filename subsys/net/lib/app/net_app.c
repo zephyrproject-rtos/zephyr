@@ -680,9 +680,6 @@ struct net_context *select_server_ctx(struct net_app_ctx *ctx,
 #endif /* CONFIG_NET_APP_SERVER */
 
 #if NET_LOG_ENABLED > 0
-#define _net_app_select_net_ctx(ctx, dst)				\
-	_net_app_select_net_ctx_debug(ctx, dst, __func__, __LINE__)
-
 struct net_context *_net_app_select_net_ctx_debug(struct net_app_ctx *ctx,
 						  const struct sockaddr *dst,
 						  const char *caller,
