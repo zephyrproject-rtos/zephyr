@@ -1722,10 +1722,10 @@ int _net_app_ssl_mux(void *context, unsigned char *buf, size_t size)
 			return -EIO;
 		}
 
-		NET_DBG("%s encrypted data in pkt %p",
-			rx_data->dir == NET_APP_PKT_TX ? "Sending" :
-							"Receiving",
-			rx_data->pkt);
+		NET_DBG("%s data in pkt %p (len %zd)",
+			rx_data->dir == NET_APP_PKT_TX ? "Sending plain" :
+							"Receiving encrypted",
+			rx_data->pkt, net_pkt_get_len(rx_data->pkt));
 
 		/* If the fifo contains something we need to send, then try
 		 * to send it here and then go back waiting more data.
