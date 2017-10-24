@@ -10,4 +10,7 @@ if BOARD_STM32_MINI_A15
 config BOARD
 	default stm32_mini_a15
 
+config BOARD_DEPRECATED
+	default "1.11"
+
 endif # BOARD_STM32_MINI_A15
