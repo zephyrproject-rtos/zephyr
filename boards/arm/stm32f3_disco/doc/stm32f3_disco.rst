@@ -108,8 +108,8 @@ For mode details please refer to `STM32F3DISCOVERY board User Manual`_.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------
-- UART_1_TX : PA9
-- UART_1_RX : PA10
+- UART_1_TX : PC4
+- UART_1_RX : PC5
 - UART_2_TX : PA2
 - UART_2_RX : PA3
 - I2C1_SCL : PB6
