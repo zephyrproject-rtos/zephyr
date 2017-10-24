@@ -39,7 +39,7 @@ config ETH_SAM_GMAC_MAC_I2C_DEV_NAME
 config ETH_SAM_GMAC_MAC_I2C_EEPROM
 	bool
 	select I2C
-	select TWIHS_SAM
+	select I2C_SAM_TWIHS
 	select I2C_0
 
 config I2C_0_DEFAULT_CFG
