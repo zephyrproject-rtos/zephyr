@@ -10,6 +10,10 @@
  * Only I2C Master Mode with 7 bit addressing is currently supported.
  */
 
+#define SYS_LOG_DOMAIN "dev/i2c_sam_twihs"
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_I2C_LEVEL
+#include <logging/sys_log.h>
+
 #include <errno.h>
 #include <misc/__assert.h>
 #include <kernel.h>
@@ -17,10 +21,7 @@
 #include <init.h>
 #include <soc.h>
 #include <i2c.h>
-
-#define SYS_LOG_DOMAIN "dev/i2c_sam_twihs"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_I2C_LEVEL
-#include <logging/sys_log.h>
+#include "i2c-priv.h"
 
 /** I2C bus speed [Hz] in Standard Mode */
 #define BUS_SPEED_STANDARD_HZ         100000U
@@ -35,7 +36,7 @@
 struct i2c_sam_twihs_dev_cfg {
 	Twihs *regs;
 	void (*irq_config)(void);
-	u32_t mode_config;
+	u32_t bitrate;
 	const struct soc_gpio_pin *pin_list;
 	u8_t pin_list_size;
 	u8_t periph_id;
@@ -148,7 +149,7 @@ static int i2c_sam_twihs_configure(struct device *dev, u32_t config)
 static void write_msg_start(Twihs *const twihs, struct twihs_msg *msg,
 			    u8_t daddr)
 {
-	/* Set slave address and number of internal address bytes. */
+	/* Set slave address. */
 	twihs->TWIHS_MMR = TWIHS_MMR_DADR(daddr);
 
 	/* Write first data byte on I2C bus */
@@ -281,6 +282,7 @@ static int i2c_sam_twihs_initialize(struct device *dev)
 	const struct i2c_sam_twihs_dev_cfg *const dev_cfg = DEV_CFG(dev);
 	struct i2c_sam_twihs_dev_data *const dev_data = DEV_DATA(dev);
 	Twihs *const twihs = dev_cfg->regs;
+	u32_t bitrate_cfg;
 	int ret;
 
 	/* Configure interrupts */
@@ -298,7 +300,9 @@ static int i2c_sam_twihs_initialize(struct device *dev)
 	/* Reset the module */
 	twihs->TWIHS_CR = TWIHS_CR_SWRST;
 
-	ret = i2c_sam_twihs_configure(dev, dev_cfg->mode_config);
+	bitrate_cfg = _i2c_map_dt_bitrate(dev_cfg->bitrate);
+
+	ret = i2c_sam_twihs_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
 	if (ret < 0) {
 		SYS_LOG_ERR("Failed to initialize %s device", DEV_NAME(dev));
 		return ret;
@@ -324,20 +328,20 @@ static struct device DEVICE_NAME_GET(i2c0_sam);
 
 static void i2c0_sam_irq_config(void)
 {
-	IRQ_CONNECT(TWIHS0_IRQn, CONFIG_I2C_0_IRQ_PRI, i2c_sam_twihs_isr,
+	IRQ_CONNECT(CONFIG_I2C_0_IRQ, CONFIG_I2C_0_IRQ_PRI, i2c_sam_twihs_isr,
 		    DEVICE_GET(i2c0_sam), 0);
 }
 
 static const struct soc_gpio_pin pins_twihs0[] = PINS_TWIHS0;
 
 static const struct i2c_sam_twihs_dev_cfg i2c0_sam_config = {
-	.regs = TWIHS0,
+	.regs = (Twihs *)CONFIG_I2C_0_BASE_ADDRESS,
 	.irq_config = i2c0_sam_irq_config,
-	.periph_id = ID_TWIHS0,
-	.irq_id = TWIHS0_IRQn,
+	.periph_id = CONFIG_I2C_0_PERIPHERAL_ID,
+	.irq_id = CONFIG_I2C_0_IRQ,
 	.pin_list = pins_twihs0,
 	.pin_list_size = ARRAY_SIZE(pins_twihs0),
-	.mode_config = CONFIG_I2C_0_DEFAULT_CFG,
+	.bitrate = CONFIG_I2C_0_BITRATE,
 };
 
 static struct i2c_sam_twihs_dev_data i2c0_sam_data;
@@ -354,20 +358,20 @@ static struct device DEVICE_NAME_GET(i2c1_sam);
 
 static void i2c1_sam_irq_config(void)
 {
-	IRQ_CONNECT(TWIHS1_IRQn, CONFIG_I2C_1_IRQ_PRI, i2c_sam_twihs_isr,
+	IRQ_CONNECT(CONFIG_I2C_1_IRQ, CONFIG_I2C_1_IRQ_PRI, i2c_sam_twihs_isr,
 		    DEVICE_GET(i2c1_sam), 0);
 }
 
 static const struct soc_gpio_pin pins_twihs1[] = PINS_TWIHS1;
 
 static const struct i2c_sam_twihs_dev_cfg i2c1_sam_config = {
-	.regs = TWIHS1,
+	.regs = (Twihs *)CONFIG_I2C_1_BASE_ADDRESS,
 	.irq_config = i2c1_sam_irq_config,
-	.periph_id = ID_TWIHS1,
-	.irq_id = TWIHS1_IRQn,
+	.periph_id = CONFIG_I2C_1_PERIPHERAL_ID,
+	.irq_id = CONFIG_I2C_1_IRQ,
 	.pin_list = pins_twihs1,
 	.pin_list_size = ARRAY_SIZE(pins_twihs1),
-	.mode_config = CONFIG_I2C_1_DEFAULT_CFG,
+	.bitrate = CONFIG_I2C_1_BITRATE,
 };
 
 static struct i2c_sam_twihs_dev_data i2c1_sam_data;
@@ -384,20 +388,20 @@ static struct device DEVICE_NAME_GET(i2c2_sam);
 
 static void i2c2_sam_irq_config(void)
 {
-	IRQ_CONNECT(TWIHS2_IRQn, CONFIG_I2C_2_IRQ_PRI, i2c_sam_twihs_isr,
+	IRQ_CONNECT(CONFIG_I2C_2_IRQ, CONFIG_I2C_2_IRQ_PRI, i2c_sam_twihs_isr,
 		    DEVICE_GET(i2c2_sam), 0);
 }
 
 static const struct soc_gpio_pin pins_twihs2[] = PINS_TWIHS2;
 
 static const struct i2c_sam_twihs_dev_cfg i2c2_sam_config = {
-	.regs = TWIHS2,
+	.regs = (Twihs *)CONFIG_I2C_2_BASE_ADDRESS,
 	.irq_config = i2c2_sam_irq_config,
-	.periph_id = ID_TWIHS2,
-	.irq_id = TWIHS2_IRQn,
+	.periph_id = CONFIG_I2C_2_PERIPHERAL_ID,
+	.irq_id = CONFIG_I2C_2_IRQ,
 	.pin_list = pins_twihs2,
 	.pin_list_size = ARRAY_SIZE(pins_twihs2),
-	.mode_config = CONFIG_I2C_2_DEFAULT_CFG,
+	.bitrate = CONFIG_I2C_2_BITRATE,
 };
 
 static struct i2c_sam_twihs_dev_data i2c2_sam_data;
