@@ -464,7 +464,7 @@ SECTION_FUNC(TEXT, _x86_thread_entry_wrapper)
 	pop	%ecx
 	push	$0	 /* Null return address */
 #elif defined(CONFIG_GDB_INFO) || defined(CONFIG_DEBUG_INFO)
-	mov	$0, (%esp) /* zero initialEFLAGS location */
+	movl	$0, (%esp) /* zero initialEFLAGS location */
 #endif
 	jmp	*%edi
 #endif
