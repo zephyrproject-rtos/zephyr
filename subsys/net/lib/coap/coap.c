@@ -126,7 +126,7 @@ static int parse_option(const struct coap_packet *cpkt,
 	opt_len = 1;
 
 	/* This indicates that options have ended */
-	if (opt == COAP_MARKER) {
+	if (context->offset == 0 || opt == COAP_MARKER) {
 		return 0;
 	}
 
