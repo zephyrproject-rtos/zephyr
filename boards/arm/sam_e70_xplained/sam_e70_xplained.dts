@@ -13,6 +13,12 @@
 	model = "Atmel SAM E70 Xplained board";
 	compatible = "atmel,sam_e70_xplained", "atmel,same70q21", "atmel,same70";
 
+	aliases {
+		i2c_0 = &i2c0;
+		i2c_1 = &i2c1;
+		i2c_2 = &i2c2;
+	};
+
 	chosen {
 		zephyr,console = &usart1;
 		zephyr,sram = &sram0;
@@ -25,6 +31,14 @@
 };
 
 &adc1 {
+	status = "ok";
+};
+
+&i2c0 {
+	status = "ok";
+};
+
+&i2c2 {
 	status = "ok";
 };
 

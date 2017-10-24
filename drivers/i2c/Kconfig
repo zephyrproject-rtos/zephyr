@@ -59,6 +59,7 @@ config I2C_ATMEL_SAM3
 config I2C_SAM_TWIHS
 	bool "Atmel SAM (TWIHS) I2C driver"
 	depends on SOC_FAMILY_SAM
+	select HAS_DTS_I2C
 	default n
 	help
 	  Enable Atmel SAM MCU Family (TWIHS) I2C bus driver.

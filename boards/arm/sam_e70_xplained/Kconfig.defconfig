@@ -34,22 +34,20 @@ config ETH_SAM_GMAC_MAC_I2C_DEV_NAME
 	string
 	default "I2C_0"
 
-# Configure I2C bus driver
-
 config ETH_SAM_GMAC_MAC_I2C_EEPROM
 	bool
 	select I2C
-	select I2C_SAM_TWIHS
-	select I2C_0
-
-config I2C_0_DEFAULT_CFG
-	hex
-	default 0x12
-
-config I2C_0_IRQ_PRI
-	int
-	default 0
 
 endif # ETH_SAM_GMAC
+
+if I2C
+
+config I2C_SAM_TWIHS
+	default y
+
+config I2C_0
+	default y
+
+endif # I2C
 
 endif # BOARD_SAM_E70_XPLAINED
