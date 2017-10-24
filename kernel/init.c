@@ -196,7 +196,7 @@ static void _main(void *unused1, void *unused2, void *unused3)
 	if (boot_delay > 0) {
 		printk("***** delaying boot " STRINGIFY(CONFIG_BOOT_DELAY)
 		       "ms (per build configuration) *****\n");
-		k_sleep(CONFIG_BOOT_DELAY);
+		k_busy_wait(CONFIG_BOOT_DELAY * USEC_PER_MSEC);
 	}
 	PRINT_BOOT_BANNER();
 
