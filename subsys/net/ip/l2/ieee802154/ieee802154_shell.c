@@ -306,7 +306,7 @@ static int shell_cmd_get_pan_id(int argc, char *argv[])
 		     &pan_id, sizeof(u16_t))) {
 		printk("Could not get PAN ID\n");
 	} else {
-		printk("PAN ID %u\n", pan_id);
+		printk("PAN ID %u (0x%x)\n", pan_id, pan_id);
 	}
 
 	return 0;
