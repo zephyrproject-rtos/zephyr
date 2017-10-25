@@ -12,6 +12,8 @@
 
 #ifdef __cplusplus
 extern "C" {
+#else
+#define static_assert _Static_assert
 #endif
 
 #ifndef NDEBUG
