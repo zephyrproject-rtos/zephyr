@@ -112,7 +112,7 @@ union ic_interrupt_register {
 union ic_tar_register {
 	u16_t		raw;
 	struct {
-		u16_t	ic_tar : 9 __packed;
+		u16_t	ic_tar : 10 __packed;
 		u16_t	gc_or_start : 1 __packed;
 		u16_t	special : 1 __packed;
 		u16_t	ic_10bitaddr_master : 1 __packed;
@@ -125,7 +125,7 @@ union ic_tar_register {
 union ic_sar_register {
 	u16_t		raw;
 	struct {
-		u16_t	ic_sar : 9 __packed;
+		u16_t	ic_sar : 10 __packed;
 		u16_t	reserved : 6 __packed;
 	} bits;
 };
