@@ -57,7 +57,9 @@ struct counter_driver_api {
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-static inline int counter_start(struct device *dev)
+__syscall int counter_start(struct device *dev);
+
+static inline int _impl_counter_start(struct device *dev)
 {
 	const struct counter_driver_api *api = dev->driver_api;
 
@@ -72,7 +74,9 @@ static inline int counter_start(struct device *dev)
  * @retval -ENODEV if the device doesn't support stopping the
  *                        counter.
  */
-static inline int counter_stop(struct device *dev)
+__syscall int counter_stop(struct device *dev);
+
+static inline int _impl_counter_stop(struct device *dev)
 {
 	const struct counter_driver_api *api = dev->driver_api;
 
@@ -85,7 +89,9 @@ static inline int counter_stop(struct device *dev)
  *
  * @return  32-bit value
  */
-static inline u32_t counter_read(struct device *dev)
+__syscall u32_t counter_read(struct device *dev);
+
+static inline u32_t _impl_counter_read(struct device *dev)
 {
 	const struct counter_driver_api *api = dev->driver_api;
 
@@ -129,7 +135,9 @@ static inline int counter_set_alarm(struct device *dev,
  * @retval 1 if the counter interrupt is pending.
  * @retval 0 if no counter interrupt is pending.
  */
-static inline int counter_get_pending_int(struct device *dev)
+__syscall int counter_get_pending_int(struct device *dev);
+
+static inline int _impl_counter_get_pending_int(struct device *dev)
 {
 	struct counter_driver_api *api;
 
@@ -144,5 +152,7 @@ static inline int counter_get_pending_int(struct device *dev)
 /**
  * @}
  */
+
+#include <syscalls/counter.h>
 
 #endif /* __COUNTER_H__ */
