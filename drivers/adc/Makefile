@@ -4,3 +4,4 @@ obj-$(CONFIG_ADC_TI_ADC108S102) += adc_ti_adc108s102.o
 obj-$(CONFIG_ADC_QMSI) += adc_qmsi.o
 obj-$(CONFIG_ADC_QMSI_SS) += adc_qmsi_ss.o
 obj-$(CONFIG_ADC_SAM_AFEC) += adc_sam_afec.o
+obj-$(CONFIG_USERSPACE) += adc_handlers.o
