@@ -64,13 +64,40 @@ struct pwm_driver_api {
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-static inline int pwm_pin_set_cycles(struct device *dev, u32_t pwm,
-				     u32_t period, u32_t pulse)
+__syscall int pwm_pin_set_cycles(struct device *dev, u32_t pwm,
+				 u32_t period, u32_t pulse);
+
+static inline int _impl_pwm_pin_set_cycles(struct device *dev, u32_t pwm,
+					   u32_t period, u32_t pulse)
 {
 	struct pwm_driver_api *api;
 
 	api = (struct pwm_driver_api *)dev->driver_api;
 	return api->pin_set(dev, pwm, period, pulse);
+}
+
+/**
+ * @brief Get the clock rate (cycles per second) for a single PWM output.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param pwm PWM pin.
+ * @param cycles Pointer to the memory to store clock rate (cycles per sec).
+ *		 HW specific.
+ *
+ * @retval 0 If successful.
+ * @retval Negative errno code if failure.
+ */
+
+__syscall int pwm_get_cycles_per_sec(struct device *dev, u32_t pwm,
+				     u64_t *cycles);
+
+static inline int _impl_pwm_get_cycles_per_sec(struct device *dev, u32_t pwm,
+					       u64_t *cycles)
+{
+	struct pwm_driver_api *api;
+
+	api = (struct pwm_driver_api *)dev->driver_api;
+	return api->get_cycles_per_sec(dev, pwm, cycles);
 }
 
 /**
@@ -87,12 +114,9 @@ static inline int pwm_pin_set_cycles(struct device *dev, u32_t pwm,
 static inline int pwm_pin_set_usec(struct device *dev, u32_t pwm,
 				   u32_t period, u32_t pulse)
 {
-	struct pwm_driver_api *api;
 	u64_t period_cycles, pulse_cycles, cycles_per_sec;
 
-	api = (struct pwm_driver_api *)dev->driver_api;
-
-	if (api->get_cycles_per_sec(dev, pwm, &cycles_per_sec) != 0) {
+	if (pwm_get_cycles_per_sec(dev, pwm, &cycles_per_sec) != 0) {
 		return -EIO;
 	}
 
@@ -106,30 +130,9 @@ static inline int pwm_pin_set_usec(struct device *dev, u32_t pwm,
 		return -ENOTSUP;
 	}
 
-	return api->pin_set(dev, pwm, (u32_t)period_cycles,
-			    (u32_t)pulse_cycles);
+	return pwm_pin_set_cycles(dev, pwm, (u32_t)period_cycles,
+				  (u32_t)pulse_cycles);
 }
-
-/**
- * @brief Get the clock rate (cycles per second) for a single PWM output.
- *
- * @param dev Pointer to the device structure for the driver instance.
- * @param pwm PWM pin.
- * @param cycles Pointer to the memory to store clock rate (cycles per sec).
- *		 HW specific.
- *
- * @retval 0 If successful.
- * @retval Negative errno code if failure.
- */
-static inline int pwm_get_cycles_per_sec(struct device *dev, u32_t pwm,
-					 u64_t *cycles)
-{
-	struct pwm_driver_api *api;
-
-	api = (struct pwm_driver_api *)dev->driver_api;
-	return api->get_cycles_per_sec(dev, pwm, cycles);
-}
-
 
 #ifdef __cplusplus
 }
@@ -138,5 +141,7 @@ static inline int pwm_get_cycles_per_sec(struct device *dev, u32_t pwm,
 /**
  * @}
  */
+
+#include <syscalls/pwm.h>
 
 #endif /* __PWM_H__ */
