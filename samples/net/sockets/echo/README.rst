@@ -76,3 +76,15 @@ To test:
 
 As can be seen, the behavior of the application is the same as the Zephyr
 version.
+
+Running on cc3220sf_launchxl
+============================
+
+See the note on Provisioning and Fast Connect in :ref:`cc3220sf_launchxl`.
+
+After having connected to an Access Point using the sample WiFi shell,
+the IP address will be printed to the console upon running this echo
+application.
+
+Proceed to test as above.
+
