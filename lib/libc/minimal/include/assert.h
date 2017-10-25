@@ -20,7 +20,7 @@ extern "C" {
 #endif
 #else
 #ifndef assert
-#define assert(test)
+#define assert(test) ((void)0)
 #endif
 #endif
 
