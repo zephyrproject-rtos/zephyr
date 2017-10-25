@@ -1490,6 +1490,68 @@ done:
 	return result;
 }
 
+/* IPv6 + UDP frame (48 bytes) */
+static const unsigned char ipv6_malformed_marker[] = {
+	/* IPv6 header starts here */
+	0x60, 0x00, 0x00, 0x00, 0x00, 0x0E, 0x11, 0xFF,
+	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
+	0x20, 0x01, 0x0D, 0xB8, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+	/* UDP */
+	0xd8, 0xb4, 0x16, 0x33, 0x00, 0x0E, 0x00, 0x00,
+	/* CoAP */
+};
+
+/* 1 option, No payload (with payload marker) */
+static int test_parse_malformed_marker(void)
+{
+	u8_t pdu[] = { 0x40, 0x01, 0, 0, 0x40, 0xFF};
+	struct net_pkt *pkt;
+	struct net_buf *frag;
+	struct coap_packet cpkt;
+	int result = TC_FAIL;
+	int r;
+
+	pkt = net_pkt_get_reserve(&coap_pkt_slab, 0, K_NO_WAIT);
+	if (!pkt) {
+		TC_PRINT("Could not get packet from pool\n");
+		goto done;
+	}
+
+	frag = net_buf_alloc(&coap_data_pool, K_NO_WAIT);
+	if (!frag) {
+		TC_PRINT("Could not get buffer from pool\n");
+		goto done;
+	}
+
+	net_pkt_frag_add(pkt, frag);
+
+	net_pkt_append_all(pkt, sizeof(ipv6_malformed_marker),
+			   (u8_t *)ipv6_malformed_marker, K_FOREVER);
+	net_pkt_append_all(pkt, sizeof(pdu), (u8_t *)pdu, K_FOREVER);
+
+	net_pkt_set_ip_hdr_len(pkt, NET_IPV6H_LEN);
+	net_pkt_set_ipv6_ext_len(pkt, 0);
+
+	memcpy(frag->data, pdu, sizeof(pdu));
+	frag->len = NET_IPV6UDPH_LEN + sizeof(pdu);
+
+	/* an empty payload packet with payload marker is malformed */
+	r = coap_packet_parse(&cpkt, pkt, NULL, 0);
+	if (r) {
+		result = TC_PASS;
+	}
+
+done:
+	net_pkt_unref(pkt);
+
+	TC_END_RESULT(result);
+
+	return result;
+}
+
+
 static const struct {
 	const char *name;
 	int (*func)(void);
@@ -1509,6 +1571,8 @@ static const struct {
 	{ "Parse malformed option ext", test_parse_malformed_opt_ext },
 	{ "Parse malformed option length ext",
 		test_parse_malformed_opt_len_ext },
+	{ "Parse malformed empty payload with marker",
+		test_parse_malformed_marker, },
 };
 
 int main(int argc, char *argv[])

@@ -166,7 +166,8 @@ static int parse_option(const struct coap_packet *cpkt,
 
 	/* This indicates that options have ended */
 	if (opt == COAP_MARKER) {
-		return 0;
+		/* packet w/ marker but no payload is malformed */
+		return r > 0 ? 0 : -EINVAL;
 	}
 
 	delta = option_header_get_delta(opt);
