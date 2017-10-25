@@ -40,6 +40,8 @@ comment "Device Drivers"
 
 source "drivers/sensor/adxl362/Kconfig"
 
+source "drivers/sensor/adxrs290/Kconfig"
+
 source "drivers/sensor/ak8975/Kconfig"
 
 source "drivers/sensor/apds9960/Kconfig"

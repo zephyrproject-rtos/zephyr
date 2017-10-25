@@ -1,0 +1,34 @@
+# Kconfig - ADXRS290 Ultralow Noise, Dual-Axis MEMS Gyroscope
+
+#
+# Copyright (c) 2017 IpTronix S.r.l.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+menuconfig ADXRS290
+	bool "ADXRS290 sensor"
+	depends on SENSOR && SPI
+	default n
+	help
+	  Enable driver for ADXL362 Ultralow Noise, Dual-Axis MEMS Gyroscope.
+
+config ADXRS290_DEV_NAME
+	string "ADXRS290 device name"
+	depends on ADXRS290
+	default "ADXRS290"
+
+config ADXRS290_SPI_DEV_NAME
+	string "SPI device where ADXRS290 is connected"
+	depends on ADXRS290
+	default "SPI_0"
+	help
+	  Specify the device name of the SPI device to which ADXRS290 is
+	  connected.
+
+config ADXRS290_SPI_DEV_SLAVE
+	int "SPI Slave Select where ADXRS290 is connected"
+	depends on ADXRS290
+	default 1
+	help
+	  Specify the device name of the SPI device to which ADXRS290 is
+	  connected.
