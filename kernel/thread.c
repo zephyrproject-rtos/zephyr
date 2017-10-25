@@ -577,8 +577,8 @@ void _k_thread_single_abort(struct k_thread *thread)
 	/* Clear initailized state so that this thread object may be re-used
 	 * and triggers errors if API calls are made on it from user threads
 	 */
-	_k_object_uninit(thread);
 	_k_object_uninit(thread->stack_obj);
+	_k_object_uninit(thread);
 
 	if (thread->base.perm_index != -1) {
 		free_thread_index(thread->base.perm_index);
@@ -689,7 +689,7 @@ void _k_thread_group_leave(u32_t groups, struct k_thread *thread)
 {
 	struct _static_thread_data *thread_data = thread->init_data;
 
-	thread_data->init_groups &= groups;
+	thread_data->init_groups &= ~groups;
 }
 
 void k_thread_access_grant(struct k_thread *thread, ...)
