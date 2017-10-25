@@ -82,14 +82,14 @@ void stm32_i2c_event_isr(void *arg)
 	I2C_TypeDef *i2c = cfg->i2c;
 
 	if (data->current.is_write) {
-		if (data->current.len && LL_I2C_IsEnabledIT_TX(i2c)) {
+		if (data->current.len && LL_I2C_IsActiveFlag_TXIS(i2c)) {
 			LL_I2C_TransmitData8(i2c, *data->current.buf);
 		} else {
 			LL_I2C_DisableIT_TX(i2c);
 			goto error;
 		}
 	} else {
-		if (data->current.len && LL_I2C_IsEnabledIT_RX(i2c)) {
+		if (data->current.len && LL_I2C_IsActiveFlag_RXNE(i2c)) {
 			*data->current.buf = LL_I2C_ReceiveData8(i2c);
 		} else {
 			LL_I2C_DisableIT_RX(i2c);
