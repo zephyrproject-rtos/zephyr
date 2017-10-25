@@ -379,6 +379,19 @@ static int _i2c_dw_setup(struct device *dev, u16_t slave_address)
 		regs->ic_sar.bits.ic_sar = slave_address;
 	}
 
+	/* If I2C is being operated in master mode and I2C_DYNAMIC_TAR_UPDATE
+	 * configuration parameter is set to Yes (1), the ic_10bitaddr_master
+	 * bit in ic_tar register would control whether the DW_apb_i2c starts
+	 * its transfers in 7-bit or 10-bit addressing mode.
+	 */
+	if (I2C_MODE_MASTER & dw->app_config) {
+		if (I2C_ADDR_10_BITS & dw->app_config) {
+			regs->ic_tar.bits.ic_10bitaddr_master = 1;
+		} else {
+			regs->ic_tar.bits.ic_10bitaddr_master = 0;
+		}
+	}
+
 	return 0;
 }
 
