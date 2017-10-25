@@ -217,6 +217,19 @@ static int parse_option(const struct coap_packet *cpkt,
 	}
 
 	if (option) {
+		/*
+		 * Make sure the option data will fit into the value field of
+		 * coap_option.
+		 * NOTE: To expand the size of the value field set:
+		 * CONFIG_COAP_EXTENDED_OPTIONS_LEN=y
+		 * CONFIG_COAP_EXTENDED_OPTIONS_LEN_VALUE=<size>
+		 */
+		if (len > sizeof(option->value)) {
+			NET_ERR("%u is > sizeof(coap_option->value)(%zu)!",
+				len, sizeof(option->value));
+			return -ENOMEM;
+		}
+
 		option->delta = context->delta + delta;
 		option->len = len;
 		context->frag = net_frag_read(context->frag, context->offset,
@@ -986,14 +999,6 @@ int coap_packet_append_option(struct coap_packet *cpkt, u16_t code,
 
 	if (len && !value) {
 		return -EINVAL;
-	}
-
-	if (len > 13) {
-#if !defined(CONFIG_COAP_EXTENDED_OPTIONS_LEN)
-		NET_ERR("Enable CONFIG_COAP_EXTENDED_OPTIONS_LEN to support "
-			"if length is more than 13");
-		return -EINVAL;
-#endif
 	}
 
 	if (code < cpkt->last_delta) {
