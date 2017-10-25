@@ -270,10 +270,9 @@ static void kw41z_tmr3_set_timeout(u32_t timeout)
 	irqsts  = ZLL->IRQSTS & BM_ZLL_IRQSTS_TMRxMSK;
 	irqsts |= ZLL_IRQSTS_TMR3IRQ_MASK;
 	ZLL->IRQSTS = irqsts;
-	/* enable TMR3 compare */
-	ZLL->PHY_CTRL |= ZLL_PHY_CTRL_TMR3CMP_EN_MASK;
-	/* enable autosequence stop by TC3 match */
-	ZLL->PHY_CTRL |= ZLL_PHY_CTRL_TC3TMOUT_MASK;
+	/* enable TMR3 compare and autosequence stop by TC3 match */
+	ZLL->PHY_CTRL |=
+		(ZLL_PHY_CTRL_TMR3CMP_EN_MASK | ZLL_PHY_CTRL_TC3TMOUT_MASK);
 }
 
 static void kw41z_tmr3_disable(void)
@@ -589,15 +588,37 @@ static void kw41z_isr(int unused)
 	u32_t seq_state = ZLL->SEQ_STATE;
 #endif
 
-	SYS_LOG_DBG("irqsts: 0x%08X, PHY_CTRL: 0x%08X, "
-			"SEQ_STATE: 0x%08X, state: %d",
-			irqsts, (unsigned int)ZLL->PHY_CTRL,
-			(unsigned int)seq_state, state);
+	SYS_LOG_DBG("ENTRY: irqsts: 0x%08X, PHY_CTRL: 0x%08X, "
+		"SEQ_STATE: 0x%08X, SEQ_CTRL: 0x%08X, TMR: %d, state: %d",
+		irqsts, (unsigned int)ZLL->PHY_CTRL,
+		(unsigned int)seq_state,
+		(unsigned int)ZLL->SEQ_CTRL_STS,
+		(unsigned int)(ZLL->EVENT_TMR >> ZLL_EVENT_TMR_EVENT_TMR_SHIFT),
+		state);
 
 	/* Clear interrupts */
 	ZLL->IRQSTS = irqsts;
 
-	if ((!(ZLL->PHY_CTRL & ZLL_PHY_CTRL_RX_WMRK_MSK_MASK)) &&
+	if (irqsts & ZLL_IRQSTS_FILTERFAIL_IRQ_MASK) {
+		/*
+		 * The RX sequencer failed on the packet being received.
+		 * Stop the TMR3 and set the state to IDLE to skip the rest
+		 * of the processing except to restart the RX.
+		 */
+		SYS_LOG_INF("Incoming RX failed packet filtering rules: "
+			"CODE: 0x%08X, irqsts: 0x%08X, PHY_CTRL: 0x%08X, "
+			"SEQ_STATE: 0x%08X, state: %d",
+			(unsigned int)ZLL->FILTERFAIL_CODE,
+			irqsts,
+			(unsigned int)ZLL->PHY_CTRL,
+			(unsigned int)seq_state, state);
+
+		kw41z_isr_timeout_cleanup();
+
+		state = KW41Z_STATE_IDLE;
+		restart_rx = 1;
+
+	} else if ((!(ZLL->PHY_CTRL & ZLL_PHY_CTRL_RX_WMRK_MSK_MASK)) &&
 	    (irqsts & ZLL_IRQSTS_RXWTRMRKIRQ_MASK)) {
 		/*
 		 * There is a bug in the KW41Z where in noisy environments
@@ -650,8 +671,10 @@ static void kw41z_isr(int unused)
 			(state != KW41Z_STATE_TX)) {
 
 			SYS_LOG_INF("a) TMR3 timeout: irqsts: 0x%08X, "
-				"seq_state: 0x%08X, state: %d",
-				irqsts, seq_state, state);
+				"seq_state: 0x%08X, PHY_CTRL: 0x%08X, "
+				"state: %d",
+				irqsts, seq_state,
+				(unsigned int)ZLL->PHY_CTRL, state);
 
 			kw41z_isr_timeout_cleanup();
 			restart_rx = 1;
@@ -750,22 +773,42 @@ static void kw41z_isr(int unused)
 	if (restart_rx) {
 		SYS_LOG_DBG("RESET RX");
 
-		kw41z_enable_seq_irq();
 		kw41z_set_seq_state(KW41Z_STATE_RX);
+		kw41z_enable_seq_irq();
 	}
-	SYS_LOG_DBG("exit: IRQSTS: 0x%08X, PHY_CTRL: 0x%08X",
-		(unsigned int)ZLL->IRQSTS, (unsigned int)ZLL->PHY_CTRL);
+	SYS_LOG_DBG("exit: IRQSTS: 0x%08X, PHY_CTRL: 0x%08X, "
+		"FILTERCODE: 0x%08X",
+		(unsigned int)ZLL->IRQSTS,
+		(unsigned int)ZLL->PHY_CTRL,
+		(unsigned int)ZLL->FILTERFAIL_CODE);
 }
 
 static inline u8_t *get_mac(struct device *dev)
 {
 	struct kw41z_context *kw41z = dev->driver_data;
+
+	/*
+	 * The KW40Z has two 32-bit registers for the MAC address where
+	 * 40 bits of the registers are factory programmed to be unique
+	 * and the rest are to be assigned as the "company-specific" value.
+	 * 802.15.4 defines a EUI-64 64-bit address with company specific
+	 * being 24 or 36 bits with the unique value being 24 or 40 bits.
+	 *
+	 * TODO: Grab from RSIM->MAC_LSB/MAC_MSB for the unique 40 bits
+	 *       and how to allow for a OUI portion?
+	 */
+
 	u32_t *ptr = (u32_t *)(kw41z->mac_addr);
 
 	UNALIGNED_PUT(sys_rand32_get(), ptr);
 	ptr = (u32_t *)(kw41z->mac_addr + 4);
 	UNALIGNED_PUT(sys_rand32_get(), ptr);
 
+	/*
+	 * Clear bit 0 to ensure it isn't a multicast address and set
+	 * bit 1 to indicate address is locally administrered and may
+	 * not be globally unique.
+	 */
 	kw41z->mac_addr[0] = (kw41z->mac_addr[0] & ~0x01) | 0x02;
 
 	return kw41z->mac_addr;
@@ -869,7 +912,7 @@ static int kw41z_init(struct device *dev)
 	/* Unmask Transceiver Global Interrupts */
 	ZLL->PHY_CTRL &= ~ZLL_PHY_CTRL_TRCV_MSK_MASK;
 
-	/* Configre Radio IRQ */
+	/* Configure Radio IRQ */
 	NVIC_ClearPendingIRQ(Radio_1_IRQn);
 	IRQ_CONNECT(Radio_1_IRQn, RADIO_0_IRQ_PRIO, kw41z_isr, 0, 0);
 
