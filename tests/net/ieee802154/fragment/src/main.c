@@ -11,6 +11,7 @@
 
 #include <zephyr/types.h>
 #include <stddef.h>
+#include <ztest.h>
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
@@ -244,8 +245,11 @@ static struct net_pkt *create_pkt(struct net_fragment_data *data)
 	remaining = data->len;
 
 	len = NET_UDPH_LEN + remaining;
-	/* length is not set in net_fragment_data data pointer, calculate and set
-	 * in ipv6, udp and in data pointer too (it's required in comparison) */
+
+	/* length is not set in net_fragment_data data pointer, calculate and
+	 * set in ipv6, udp and in data pointer too
+	 * (it's required in comparison)
+	 */
 	frag->data[4] = len >> 8;
 	frag->data[5] = (u8_t) len;
 	frag->data[44] = len >> 8;
@@ -257,6 +261,7 @@ static struct net_pkt *create_pkt(struct net_fragment_data *data)
 
 	while (remaining > 0) {
 		u8_t copy;
+
 		bytes = net_buf_tailroom(frag);
 		copy = remaining > bytes ? bytes : remaining;
 		memcpy(net_buf_add(frag, copy), &user_data[pos], copy);
@@ -415,29 +420,23 @@ static struct net_fragment_data test_data_8 = {
 	.iphc = false
 };
 
-static int test_fragment(struct net_fragment_data *data)
+static void test_fragment(struct net_fragment_data *data)
 {
 	struct net_pkt *rxpkt = NULL;
-	int result = TC_FAIL;
 	struct net_pkt *pkt;
 	struct net_buf *frag, *dfrag;
 
 	pkt = create_pkt(data);
-	if (!pkt) {
-		TC_PRINT("%s: failed to create buffer\n", __func__);
-		goto end;
-	}
+	zassert_not_null(pkt, "failed to create buffer");
 
 #if DEBUG > 0
 	printk("length before compression %zd\n", net_pkt_get_len(pkt));
 	net_hexdump_frags("before-compression", pkt, false);
 #endif
 
-	if (!net_6lo_compress(pkt, data->iphc,
-			      ieee802154_fragment)) {
-		TC_PRINT("compression failed\n");
-		goto end;
-	}
+	zassert_true(net_6lo_compress(pkt, data->iphc,
+		     ieee802154_fragment),
+		     "compression failed");
 
 #if DEBUG > 0
 	printk("length after compression and fragmentation %zd\n",
@@ -449,16 +448,12 @@ static int test_fragment(struct net_fragment_data *data)
 
 	while (frag) {
 		rxpkt = net_pkt_get_reserve_rx(0, K_FOREVER);
-		if (!rxpkt) {
-			goto end;
-		}
+		zassert_not_null(rxpkt, NULL);
 
 		net_pkt_set_ll_reserve(rxpkt, 0);
 
 		dfrag = net_pkt_get_frag(rxpkt, K_FOREVER);
-		if (!dfrag) {
-			goto end;
-		}
+		zassert_not_null(dfrag, NULL);
 
 		memcpy(dfrag->data, frag->data, frag->len);
 		dfrag->len = frag->len;
@@ -473,7 +468,6 @@ static int test_fragment(struct net_fragment_data *data)
 			goto compare;
 		case NET_DROP:
 			net_pkt_unref(rxpkt);
-			goto end;
 		}
 	}
 
@@ -485,14 +479,11 @@ compare:
 #endif
 
 	if (compare_data(rxpkt, data)) {
-		result = TC_PASS;
+		zassert_true(1, "compare data passde");
 	}
 
-end:
 	net_pkt_unref(rxpkt);
 	net_pkt_unref(pkt);
-
-	return result;
 }
 
 /* tests names are based on traffic class, flow label, source address mode
@@ -500,34 +491,34 @@ end:
  * ports compressible type.
  */
 static const struct {
-	const char *name;
 	struct net_fragment_data *data;
 } tests[] = {
-	{ "test_fragment_sam00_dam00", &test_data_1},
-	{ "test_fragment_sam01_dam01", &test_data_2},
-	{ "test_fragment_sam10_dam10", &test_data_3},
-	{ "test_fragment_sam00_m1_dam00", &test_data_4},
-	{ "test_fragment_sam01_m1_dam01", &test_data_5},
-	{ "test_fragment_sam10_m1_dam10", &test_data_6},
-	{ "test_fragment_ipv6_dispatch_small", &test_data_7},
-	{ "test_fragment_ipv6_dispatch_big", &test_data_8},
+	{&test_data_1},
+	{&test_data_2},
+	{&test_data_3},
+	{&test_data_4},
+	{&test_data_5},
+	{&test_data_6},
+	{&test_data_7},
+	{&test_data_8}
 };
 
-void main(void)
+void test_loop(void)
 {
-	int count, pass;
+	int count;
+
 	k_thread_priority_set(k_current_get(), K_PRIO_COOP(7));
 
-	for (count = 0, pass = 0; count < ARRAY_SIZE(tests); count++) {
-		TC_START(tests[count].name);
-
-		if (test_fragment(tests[count].data)) {
-			TC_END(FAIL, "failed\n");
-		} else {
-			TC_END(PASS, "passed\n");
-			pass++;
-		}
+	for (count = 0; count < ARRAY_SIZE(tests); count++) {
+		test_fragment(tests[count].data);
 	}
-
-	TC_END_REPORT(((pass != ARRAY_SIZE(tests)) ? TC_FAIL : TC_PASS));
 }
+
+/*test case main entry*/
+void test_main(void)
+{
+	ztest_test_suite(test_frag,
+			ztest_unit_test(test_loop));
+	ztest_run_test_suite(test_frag);
+}
+>>>>>>> 3331cbc... tests: fragment: convert legacy test to ztest
