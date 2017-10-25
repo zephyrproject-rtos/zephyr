@@ -72,7 +72,6 @@ static void adc_test(void)
 	adc = device_get_binding(ADC_DEVICE_NAME);
 	zassert_not_null(adc, "Cannot get adc controller\n");
 
-	adc_enable(adc);
 	while (loops--) {
 		bufi = loops & 0x1;
 		/* .buffer should be void * ... */
@@ -96,7 +95,6 @@ static void adc_test(void)
 		k_sleep(SLEEPTIME);
 		bufi0 = bufi;
 	}
-	adc_disable(adc);
 }
 
 

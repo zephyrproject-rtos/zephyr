@@ -15,7 +15,6 @@
  *   -# Connect A0 to VCC3.3.
  *   -# Prepare ADC sequence table.
  *   -# Bind ADC device.
- *   -# Enable ADC device.
  *   -# Call adc_read() to fetch ADC sample.
  *   -# Dump the sample results.
  * - Expected Results
@@ -75,9 +74,6 @@ static int test_task(void)
 		return TC_FAIL;
 	}
 
-	/* 1. Verify adc_enable() */
-	adc_enable(adc_dev);
-
 	k_sleep(500);
 
 	/* 2. Verify adc_read() */
@@ -92,9 +88,6 @@ static int test_task(void)
 		TC_PRINT("%d ", seq_buffer[i]);
 	}
 	TC_PRINT("\n");
-
-	/* 3. Verify adc_disable() */
-	adc_disable(adc_dev);
 
 	return TC_PASS;
 }
