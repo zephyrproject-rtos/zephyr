@@ -89,7 +89,9 @@ struct adc_driver_api {
  *
  * @return N/A
  */
-static inline void adc_enable(struct device *dev)
+__syscall void adc_enable(struct device *dev);
+
+static inline void _impl_adc_enable(struct device *dev)
 {
 	const struct adc_driver_api *api = dev->driver_api;
 
@@ -106,7 +108,9 @@ static inline void adc_enable(struct device *dev)
  *
  * @return N/A
  */
-static inline void adc_disable(struct device *dev)
+__syscall void adc_disable(struct device *dev);
+
+static inline void _impl_adc_disable(struct device *dev)
 {
 	const struct adc_driver_api *api = dev->driver_api;
 
@@ -128,7 +132,10 @@ static inline void adc_disable(struct device *dev)
  * @retval 0 On success
  * @retval else Otherwise.
  */
-static inline int adc_read(struct device *dev, struct adc_seq_table *seq_table)
+__syscall int adc_read(struct device *dev, struct adc_seq_table *seq_table);
+
+static inline int _impl_adc_read(struct device *dev,
+				 struct adc_seq_table *seq_table)
 {
 	const struct adc_driver_api *api = dev->driver_api;
 
@@ -142,5 +149,7 @@ static inline int adc_read(struct device *dev, struct adc_seq_table *seq_table)
 #ifdef __cplusplus
 }
 #endif
+
+#include <syscalls/adc.h>
 
 #endif  /* __INCLUDE_ADC_H__ */
