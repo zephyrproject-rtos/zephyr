@@ -21,7 +21,8 @@
 extern struct k_sem forks[N_PHILOSOPHERS];
 
 
-
+//K_SEM_DEFINE(f3, -5, 1);
+struct k_sem f3;
 /**
  *
  * @brief Entry point to a philosopher's thread
@@ -60,4 +61,5 @@ void phil_entry(void)
 
 		RANDDELAY(id);
 	}
+	GIVE(&f3);
 }

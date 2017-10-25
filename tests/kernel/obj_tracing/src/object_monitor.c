@@ -42,6 +42,7 @@ void *force_sys_work_q_in = (void *)&k_sys_work_q;
 
 #define OBJ_LIST_NAME k_sem
 #define OBJ_LIST_TYPE struct k_sem
+extern struct k_sem f3;
 
 static inline int test_thread_monitor(void)
 {
@@ -50,6 +51,7 @@ static inline int test_thread_monitor(void)
 
 	/* wait a bit to allow any initialization-only threads to terminate */
 	k_sleep(100);
+	k_sem_take(&f3, 0);
 
 	thread_list   = (struct k_thread *)SYS_THREAD_MONITOR_HEAD;
 	while (thread_list != NULL) {
@@ -87,7 +89,10 @@ void object_monitor(void)
 
 	TC_START("OBJECT TRACING TEST");
 
-	obj_counter = 0;
+	/* ztest use one semaphore so use one count less than expected to pass
+	 * test
+	 */
+	obj_counter = -1;
 	obj_list   = SYS_TRACING_HEAD(OBJ_LIST_TYPE, OBJ_LIST_NAME);
 	while (obj_list != NULL) {
 		TC_PRINT("SEMAPHORE REF: %p\n", obj_list);
