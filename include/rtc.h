@@ -78,22 +78,27 @@ struct rtc_driver_api {
 	rtc_api_get_pending_int get_pending_int;
 };
 
-static inline u32_t rtc_read(struct device *dev)
+__syscall u32_t rtc_read(struct device *dev);
+
+static inline u32_t _impl_rtc_read(struct device *dev)
 {
 	const struct rtc_driver_api *api = dev->driver_api;
 
 	return api->read(dev);
 }
 
-static inline void rtc_enable(struct device *dev)
+__syscall void rtc_enable(struct device *dev);
+
+static inline void _impl_rtc_enable(struct device *dev)
 {
 	const struct rtc_driver_api *api = dev->driver_api;
 
 	api->enable(dev);
 }
 
+__syscall void rtc_disable(struct device *dev);
 
-static inline void rtc_disable(struct device *dev)
+static inline void _impl_rtc_disable(struct device *dev)
 {
 	const struct rtc_driver_api *api = dev->driver_api;
 
@@ -108,8 +113,10 @@ static inline int rtc_set_config(struct device *dev,
 	return api->set_config(dev, cfg);
 }
 
-static inline int rtc_set_alarm(struct device *dev,
-				const u32_t alarm_val)
+__syscall int rtc_set_alarm(struct device *dev, const u32_t alarm_val);
+
+static inline int _impl_rtc_set_alarm(struct device *dev,
+				      const u32_t alarm_val)
 {
 	const struct rtc_driver_api *api = dev->driver_api;
 
@@ -129,7 +136,9 @@ static inline int rtc_set_alarm(struct device *dev,
  * @retval 1 if the rtc interrupt is pending.
  * @retval 0 if no rtc interrupt is pending.
  */
-static inline int rtc_get_pending_int(struct device *dev)
+__syscall int rtc_get_pending_int(struct device *dev);
+
+static inline int _impl_rtc_get_pending_int(struct device *dev)
 {
 	struct rtc_driver_api *api;
 
@@ -140,5 +149,7 @@ static inline int rtc_get_pending_int(struct device *dev)
 #ifdef __cplusplus
 }
 #endif
+
+#include <syscalls/rtc.h>
 
 #endif
