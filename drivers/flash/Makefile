@@ -19,3 +19,4 @@ endif
 ccflags-$(CONFIG_SOC_FLASH_NRF5_RADIO_SYNC) += -I${ZEPHYR_BASE}/subsys/bluetooth
 
 obj-$(CONFIG_FLASH_PAGE_LAYOUT) += flash_page_layout.o
+obj-$(CONFIG_USERSPACE) += flash_handlers.o
