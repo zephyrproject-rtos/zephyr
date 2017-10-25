@@ -46,7 +46,9 @@ struct aio_cmp_driver_api {
  *
  * @return 0 if successful, otherwise failed.
  */
-static inline int aio_cmp_disable(struct device *dev, u8_t index)
+__syscall int aio_cmp_disable(struct device *dev, u8_t index);
+
+static inline int _impl_aio_cmp_disable(struct device *dev, u8_t index)
 {
 	const struct aio_cmp_driver_api *api = dev->driver_api;
 
@@ -91,7 +93,9 @@ static inline int aio_cmp_configure(struct device *dev, u8_t index,
  * @retval status != 0 if at least one aio_cmp interrupt is pending.
  * @retval 0 if no aio_cmp interrupt is pending.
  */
-static inline int aio_cmp_get_pending_int(struct device *dev)
+__syscall int aio_cmp_get_pending_int(struct device *dev);
+
+static inline int _impl_aio_cmp_get_pending_int(struct device *dev)
 {
 	struct aio_cmp_driver_api *api;
 
@@ -102,5 +106,7 @@ static inline int aio_cmp_get_pending_int(struct device *dev)
 #ifdef __cplusplus
 }
 #endif
+
+#include <syscalls/aio_comparator.h>
 
 #endif /* _AIO_COMPARATOR_H_ */
