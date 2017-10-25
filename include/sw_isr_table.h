@@ -14,6 +14,8 @@
 #ifndef _SW_ISR_TABLE__H_
 #define _SW_ISR_TABLE__H_
 
+#include <kernel.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
