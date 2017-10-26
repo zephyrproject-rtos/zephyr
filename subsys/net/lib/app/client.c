@@ -614,19 +614,21 @@ int net_app_connect(struct net_app_ctx *ctx, s32_t timeout)
 	}
 
 	net_ctx = _net_app_select_net_ctx(ctx, NULL);
-	if (!net_ctx) {
+	if (!net_ctx && ctx->is_enabled) {
 		return -EAFNOSUPPORT;
 	}
 
 	if (!ctx->is_enabled) {
-		NET_DBG("Re-connecting to net_ctx %p", net_ctx);
-
 		ret = _net_app_config_local_ctx(ctx, ctx->sock_type,
 						ctx->proto, NULL);
 		if (ret < 0) {
 			NET_DBG("Cannot get local endpoint (%d)", ret);
 			return -EINVAL;
 		}
+
+		net_ctx = _net_app_select_net_ctx(ctx, NULL);
+
+		NET_DBG("Re-conncting to net_ctx %p", net_ctx);
 
 		ret = bind_local(ctx);
 		if (ret < 0) {
@@ -720,15 +722,32 @@ static void tls_client_handler(struct net_app_ctx *ctx,
 
 	k_sem_give(startup_sync);
 
-	/* We wait until TLS connection is established */
-	k_sem_take(&ctx->client.connect_wait, K_FOREVER);
+	while (1) {
+		/* We wait until TLS connection is established */
+		k_sem_take(&ctx->client.connect_wait, K_FOREVER);
 
-	ret = _net_app_ssl_mainloop(ctx);
-	if (ret < 0) {
-		NET_ERR("TLS mainloop startup failed (%d)", ret);
+		ret = _net_app_ssl_mainloop(ctx);
+		if (ctx->tls.connection_closing) {
+			mbedtls_ssl_close_notify(&ctx->tls.mbedtls.ssl);
+
+			if (ctx->cb.close) {
+				ctx->cb.close(ctx, -ESHUTDOWN, ctx->user_data);
+			}
+
+			ctx->tls.connection_closing = false;
+			ctx->is_enabled = false;
+
+			/* Wait more connection requests from user */
+			continue;
+		}
+
+		if (ret < 0) {
+			NET_ERR("TLS mainloop startup failed (%d)", ret);
+			break;
+		}
 	}
 
-	mbedtls_ssl_close_notify(&ctx->tls.mbedtls.ssl);
+	NET_DBG("Shutting down TLS handler");
 
 	/* If there is any pending data that have not been processed
 	 * yet, we need to free it here.
