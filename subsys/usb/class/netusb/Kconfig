@@ -12,6 +12,7 @@ menu "USB Device Networking support"
 config USB_DEVICE_NETWORK
 	bool
 	default n
+	select NET_L2_ETHERNET
 
 config USB_DEVICE_NETWORK_ECM
 	bool
