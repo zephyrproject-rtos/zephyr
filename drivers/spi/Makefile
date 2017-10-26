@@ -10,3 +10,5 @@ obj-$(CONFIG_SPI_MCUX_DSPI) += spi_mcux_dspi.o
 obj-$(CONFIG_SPI_QMSI) += spi_qmsi.o
 obj-$(CONFIG_SPI_QMSI_SS) += spi_qmsi_ss.o
 obj-$(CONFIG_SPI_STM32) += spi_ll_stm32.o
+
+obj-$(CONFIG_USERSPACE) += spi_handlers.o
