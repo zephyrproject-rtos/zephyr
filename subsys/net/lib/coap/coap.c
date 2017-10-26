@@ -1224,16 +1224,15 @@ u16_t coap_header_get_id(const struct coap_packet *cpkt)
 struct net_buf *coap_packet_get_payload(const struct coap_packet *cpkt,
 					u16_t *offset, u16_t *len)
 {
-	struct net_buf *frag;
+	struct net_buf *frag = NULL;
 	u16_t coap_pkt_len;
-
-	frag = NULL;
-	*offset = 0xffff;
-	*len = 0;
 
 	if (!cpkt || !cpkt->pkt || !offset || !len) {
 		return NULL;
 	}
+
+	*offset = 0xffff;
+	*len = 0;
 
 	coap_pkt_len = get_coap_packet_len(cpkt->pkt);
 
