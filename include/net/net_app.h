@@ -396,6 +396,9 @@ struct net_app_ctx {
 		 * will be postponed after we have sent the data.
 		 */
 		bool tx_pending;
+
+		/** Is the TLS/DTLS handshake fully done */
+		u8_t handshake_done : 1;
 	} tls;
 #endif /* CONFIG_NET_APP_TLS || CONFIG_NET_APP_DTLS */
 

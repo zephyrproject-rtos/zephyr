@@ -1247,6 +1247,21 @@ int _net_app_tls_sendto(struct net_pkt *pkt,
 	struct k_mem_block block;
 	int ret;
 
+	if (!ctx->tls.handshake_done) {
+		/* This means that the initial TLS handshake is not yet
+		 * finished so our packet cannot be sent yet. Try sleeping
+		 * a bit and hope things are ok after that. If not, then
+		 * return error.
+		 */
+		k_sleep(MSEC(50));
+
+		if (!ctx->tls.handshake_done) {
+			NET_DBG("TLS handshake not yet done, pkt %p not sent",
+				pkt);
+			return -EBUSY;
+		}
+	}
+
 	ARG_UNUSED(dst_addr);
 	ARG_UNUSED(addrlen);
 
@@ -1917,6 +1932,10 @@ reset:
 	 * connection establishment.
 	 */
 	/* Waiting SSL handshake */
+	ctx->tls.handshake_done = false;
+
+	NET_DBG("Starting TLS handshake");
+
 	do {
 		ret = mbedtls_ssl_handshake(&ctx->tls.mbedtls.ssl);
 		if (ret != MBEDTLS_ERR_SSL_WANT_READ &&
@@ -1936,6 +1955,10 @@ reset:
 			}
 		}
 	} while (ret != 0);
+
+	ctx->tls.handshake_done = true;
+
+	NET_DBG("TLS handshake done");
 
 	/* We call the connect cb only once for each connection. The TLS
 	 * might require new handshakes etc, but application does not need
