@@ -1734,6 +1734,7 @@ int _net_app_ssl_mux(void *context, unsigned char *buf, size_t size)
 				     K_FOREVER);
 		if (!rx_data->pkt) {
 			k_mem_pool_free(&rx_data->block);
+			ctx->tls.connection_closing = true;
 			return -EIO;
 		}
 
@@ -1894,6 +1895,8 @@ int _net_app_ssl_mainloop(struct net_app_ctx *ctx)
 	size_t len;
 	int ret;
 
+	ctx->tls.connect_cb_called = false;
+
 reset:
 	mbedtls_ssl_session_reset(&ctx->tls.mbedtls.ssl);
 
@@ -1993,6 +1996,7 @@ reset:
 				break;
 
 			case -EIO:
+				ctx->tls.connection_closing = true;
 				break;
 
 			default:
@@ -2007,14 +2011,24 @@ reset:
 
 		if (ctx->cb.recv) {
 			struct sockaddr dst = { 0 };
+			struct net_context *net_ctx;
 			struct net_pkt *pkt;
 			int len = ret;
 			int hdr_len = 0;
 
 			dst.sa_family = AF_UNSPEC;
 
-			pkt = net_pkt_get_rx(_net_app_select_net_ctx(ctx, &dst),
-					     BUF_ALLOC_TIMEOUT);
+			/* If we cannot select any net_ctx, then the connection
+			 * is closed already.
+			 */
+			net_ctx = _net_app_select_net_ctx(ctx, &dst);
+			if (!net_ctx) {
+				ctx->tls.connection_closing = true;
+				ret = -EIO;
+				goto close;
+			}
+
+			pkt = net_pkt_get_rx(net_ctx, BUF_ALLOC_TIMEOUT);
 			if (!pkt) {
 				ret = -ENOMEM;
 				goto close;
