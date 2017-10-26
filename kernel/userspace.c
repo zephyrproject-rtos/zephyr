@@ -49,16 +49,10 @@ const char *otype_to_str(enum k_objects otype)
 		return "adc driver";
 	case K_OBJ_DRIVER_AIO_CMP:
 		return "aio comparator driver";
-	case K_OBJ_DRIVER_CLOCK_CONTROL:
-		return "clock control driver";
 	case K_OBJ_DRIVER_COUNTER:
 		return "counter driver";
 	case K_OBJ_DRIVER_CRYPTO:
 		return "crypto driver";
-	case K_OBJ_DRIVER_DMA:
-		return "dma driver";
-	case K_OBJ_DRIVER_ETH:
-		return "ethernet driver";
 	case K_OBJ_DRIVER_FLASH:
 		return "flash driver";
 	case K_OBJ_DRIVER_GPIO:
@@ -79,14 +73,10 @@ const char *otype_to_str(enum k_objects otype)
 		return "realtime clock driver";
 	case K_OBJ_DRIVER_SENSOR:
 		return "sensor driver";
-	case K_OBJ_DRIVER_SHARED_IRQ:
-		return "shared irq driver";
 	case K_OBJ_DRIVER_SPI:
 		return "spi driver";
 	case K_OBJ_DRIVER_UART:
 		return "uart driver";
-	case K_OBJ_DRIVER_WDT:
-		return "watchdog timer driver";
 	default:
 		return "?";
 	}
