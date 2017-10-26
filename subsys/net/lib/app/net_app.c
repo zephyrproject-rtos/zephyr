@@ -1641,6 +1641,11 @@ void _net_app_tls_received(struct net_context *context,
 	NET_DBG("Encrypted data received in pkt %p", pkt);
 
 	k_fifo_put(&ctx->tls.mbedtls.ssl_ctx.tx_rx_fifo, (void *)rx_data);
+
+	/* Make sure that the tls handler thread runs now, even if we receive
+	 * new packets.
+	 */
+	k_yield();
 }
 
 static int tls_sendto(struct net_app_ctx *ctx,
