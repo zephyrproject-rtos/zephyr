@@ -51,9 +51,12 @@ struct random_driver_api {
  * @retval 0 on success.
  * @retval -ERRNO errno code on error.
  */
-static inline int random_get_entropy(struct device *dev,
-				     u8_t *buffer,
-				     u16_t length)
+__syscall int random_get_entropy(struct device *dev, u8_t *buffer,
+				 u16_t length);
+
+static inline int _impl_random_get_entropy(struct device *dev,
+					   u8_t *buffer,
+					   u16_t length)
 {
 	const struct random_driver_api *api = dev->driver_api;
 
@@ -68,5 +71,7 @@ static inline int random_get_entropy(struct device *dev,
 /**
  * @}
  */
+
+#include <syscalls/random.h>
 
 #endif /* __RANDOM_H__ */
