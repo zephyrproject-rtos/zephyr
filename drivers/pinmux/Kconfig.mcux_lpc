@@ -1,0 +1,39 @@
+# Kconfig - MCUXpresso SDK pinmux for LPCXpresso54114
+
+#
+# Copyright (c) 2017, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+menuconfig PINMUX_LPC_MCUX
+	bool "MCUX LPC pinmux driver"
+	depends on HAS_MCUX
+	default n
+	help
+	  Enable the LPC MCUX pinmux driver.
+
+if PINMUX_LPC_MCUX
+
+config PINMUX_LPC_MCUX_PORT0
+	bool "Port 0"
+	default n
+	help
+	  Enable Port 0.
+
+config PINMUX_LPC_MCUX_PORT0_NAME
+	string "Pinmux Port 0 driver name"
+	depends on PINMUX_LPC_MCUX_PORT0
+	default "port0"
+
+config PINMUX_LPC_MCUX_PORT1
+	bool "Port 1"
+	default n
+	help
+	  Enable Port 1.
+
+config PINMUX_LPC_MCUX_PORT1_NAME
+	string "Pinmux Port 1 driver name"
+	depends on PINMUX_LPC_MCUX_PORT1
+	default "port1"
+
+endif # PINMUX_LPC_MCUX

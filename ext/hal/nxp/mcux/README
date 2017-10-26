@@ -26,6 +26,7 @@ following SoCs:
 - MKW20Z4
 - MKW22D5
 - MKW24D5
+- LPC54114
 
 
 Additionally, it provides the following components:

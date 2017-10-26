@@ -8,7 +8,12 @@
 # Translate the SoC name and part number into the mcux device and cpu name
 # respectively.
 MCUX_DEVICE = $(shell echo $(CONFIG_SOC) | tr '[:lower:]' '[:upper:]')
-MCUX_CPU = CPU_$(subst $(DQUOTE),,$(CONFIG_SOC_PART_NUMBER))
+
+ifeq ($(MCUX_DEVICE),LPC54114)	
+MCUX_CPU = CPU_$(subst $(DQUOTE),,$(CONFIG_SOC_PART_NUMBER))_cm4	
+else	
+MCUX_CPU = CPU_$(subst $(DQUOTE),,$(CONFIG_SOC_PART_NUMBER))	
+endif	
 
 export MCUX_DEVICE
 

@@ -1,0 +1,24 @@
+# Kconfig - MCUXpresso SDK USART
+
+#
+# Copyright 2017, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig USART_LPC_MCUX
+	bool "MCUX usart driver"
+	depends on HAS_MCUX
+	default n
+	select SERIAL_HAS_DRIVER
+	help
+	  Enable the MCUX usart driver.
+
+if USART_LPC_MCUX
+
+menuconfig USART_LPC_MCUX_0
+	bool "USART 0"
+	default n
+	help
+	  Enable USART 0.
+
+endif # USART_LPC_MCUX

@@ -1,0 +1,1 @@
+source "arch/arm/soc/nxp_lpc/*/Kconfig.defconfig.series"

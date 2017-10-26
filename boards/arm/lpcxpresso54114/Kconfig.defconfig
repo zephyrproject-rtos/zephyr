@@ -1,0 +1,42 @@
+# Kconfig - LPCXPRESSO54114 board
+
+#
+# Copyright (c) 2017, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_LPCXPRESSO54114
+
+config BOARD
+	default lpcxpresso54114
+
+if USART_LPC_MCUX
+config USART_LPC_MCUX_0
+	def_bool y if UART_CONSOLE
+
+endif # USART_LPC_MCUX
+
+config PINMUX
+	def_bool y
+
+if PINMUX_LPC_MCUX
+
+config PINMUX_LPC_MCUX_PORT0
+	def_bool y
+
+config PINMUX_LPC_MCUX_PORT1
+	def_bool y
+endif # PINMUX_LPC_MCUX
+
+if GPIO_LPC_MCUX
+
+config GPIO_LPC_MCUX_PORT0
+	def_bool y
+
+config GPIO_LPC_MCUX_PORT1
+	def_bool y
+
+endif # GPIO_LPC_MCUX
+
+endif # BOARD_LPCXPRESSO54114
