@@ -737,57 +737,77 @@ static void recv_cb_timeout(struct net_context *context,
 			    int status,
 			    void *user_data)
 {
-	DBG("Data received after a timeout.\n");
+	if (expecting_cb_failure) {
+		DBG("Data received after a timeout.\n");
+	}
 
 	recv_cb_timeout_called = true;
 	k_sem_give(&wait_data);
+
+	net_pkt_unref(pkt);
 }
 
-void timeout_thread(struct net_context *ctx, sa_family_t *family)
+void timeout_thread(struct net_context *ctx, void *param2, void *param3)
 {
+	int family = POINTER_TO_INT(param2);
+	s32_t timeout = POINTER_TO_INT(param3);
 	int ret;
 
-	ret = net_context_recv(ctx, recv_cb_timeout, WAIT_TIME_LONG, family);
-
-	if (ret || cb_failure) {
+	ret = net_context_recv(ctx, recv_cb_timeout, timeout,
+			       INT_TO_POINTER(family));
+	if (ret != -ETIMEDOUT && expecting_cb_failure) {
 		zassert_true(expecting_cb_failure,
 			     "Context recv UDP timeout test failed");
 		cb_failure = true;
 		return;
+	} else {
+		/* When waiting forever, we just bail out here */
+		goto out;
 	}
 
-	if (!recv_cb_timeout_called) {
-		TC_ERROR("No data received on time, recv test failed\n");
+	if (recv_cb_timeout_called) {
+		DBG("Data received on time, recv test failed\n");
 		cb_failure = true;
 		return;
 	}
 
-	k_thread_abort(k_current_get());
+	DBG("Timeout %s\n", family == AF_INET ? "IPv4" : "IPv6");
+
+out:
+	k_sem_give(&wait_data);
 }
 
-static void start_timeout_v6_thread(void)
+static k_tid_t start_timeout_v6_thread(s32_t timeout)
 {
-	k_thread_create(&thread_data, thread_stack, STACKSIZE,
-			(k_thread_entry_t)timeout_thread,
-			udp_v6_ctx, INT_TO_POINTER(AF_INET6), NULL,
-			K_PRIO_COOP(7), 0, 0);
+	return k_thread_create(&thread_data, thread_stack, STACKSIZE,
+			       (k_thread_entry_t)timeout_thread,
+			       udp_v6_ctx, INT_TO_POINTER(AF_INET6),
+			       INT_TO_POINTER(timeout),
+			       K_PRIO_COOP(7), 0, 0);
 }
 
-static void start_timeout_v4_thread(void)
+static k_tid_t start_timeout_v4_thread(s32_t timeout)
 {
-	k_thread_create(&thread_data, thread_stack, STACKSIZE,
-			(k_thread_entry_t)timeout_thread,
-			udp_v4_ctx, INT_TO_POINTER(AF_INET), NULL,
-			K_PRIO_COOP(7), 0, 0);
+	return k_thread_create(&thread_data, thread_stack, STACKSIZE,
+			       (k_thread_entry_t)timeout_thread,
+			       udp_v4_ctx, INT_TO_POINTER(AF_INET),
+			       INT_TO_POINTER(timeout),
+			       K_PRIO_COOP(7), 0, 0);
 }
 
 static void net_ctx_recv_v6_timeout(void)
 {
+	k_tid_t tid;
+
 	cb_failure = false;
 	expecting_cb_failure = true;
+	recv_cb_timeout_called = false;
 
 	/* Start a thread that will send data to receiver. */
-	start_timeout_v6_thread();
+	tid = start_timeout_v6_thread(WAIT_TIME_LONG);
+
+	k_sem_reset(&wait_data);
+	k_sem_take(&wait_data, WAIT_TIME_LONG * 2);
 
 	net_ctx_send_v6();
 	timeout_token = SENDING;
@@ -796,27 +816,95 @@ static void net_ctx_recv_v6_timeout(void)
 
 	k_sem_take(&wait_data, K_FOREVER);
 
+	k_thread_abort(tid);
+
 	expecting_cb_failure = false;
+	recv_cb_timeout_called = false;
 
 	zassert_true(!cb_failure, NULL);
 }
 
 static void net_ctx_recv_v4_timeout(void)
 {
+	k_tid_t tid;
+
 	cb_failure = false;
 	expecting_cb_failure = true;
+	recv_cb_timeout_called = false;
 
 	/* Start a thread that will send data to receiver. */
-	start_timeout_v4_thread();
+	tid = start_timeout_v4_thread(WAIT_TIME_LONG);
+
+	k_sem_reset(&wait_data);
+	k_sem_take(&wait_data, WAIT_TIME_LONG * 2);
 
 	net_ctx_send_v4();
 	timeout_token = SENDING;
 
+	DBG("Sent data\n");
+
 	k_sem_take(&wait_data, K_FOREVER);
 
+	k_thread_abort(tid);
+
 	expecting_cb_failure = false;
+	recv_cb_timeout_called = false;
 
 	zassert_true(!cb_failure, NULL);
+}
+
+static void net_ctx_recv_v6_timeout_forever(void)
+{
+	k_tid_t tid;
+
+	cb_failure = false;
+	expecting_cb_failure = false;
+	recv_cb_timeout_called = false;
+
+	/* Start a thread that will send data to receiver. */
+	tid = start_timeout_v6_thread(K_FOREVER);
+
+	/* Wait a bit so that we see if recv waited or not */
+	k_sleep(WAIT_TIME);
+
+	net_ctx_send_v6();
+	timeout_token = SENDING;
+
+	DBG("Sent data\n");
+
+	k_sem_take(&wait_data, K_FOREVER);
+
+	k_thread_abort(tid);
+
+	expecting_cb_failure = false;
+	recv_cb_timeout_called = false;
+}
+
+static void net_ctx_recv_v4_timeout_forever(void)
+{
+	k_tid_t tid;
+
+	cb_failure = false;
+	expecting_cb_failure = false;
+	recv_cb_timeout_called = false;
+
+	/* Start a thread that will send data to receiver. */
+	tid = start_timeout_v4_thread(K_FOREVER);
+
+	/* Wait a bit so that we see if recv waited or not */
+	k_sleep(WAIT_TIME);
+
+	net_ctx_send_v4();
+	timeout_token = SENDING;
+
+	DBG("Sent data\n");
+
+	k_sem_take(&wait_data, K_FOREVER);
+
+	k_thread_abort(tid);
+
+	expecting_cb_failure = false;
+	recv_cb_timeout_called = false;
 }
 
 static void net_ctx_put(void)
@@ -1026,6 +1114,8 @@ void test_main(void)
 			ztest_unit_test(net_ctx_recv_v4_reconfig),
 			ztest_unit_test(net_ctx_recv_v6_timeout),
 			ztest_unit_test(net_ctx_recv_v4_timeout),
+			ztest_unit_test(net_ctx_recv_v6_timeout_forever),
+			ztest_unit_test(net_ctx_recv_v4_timeout_forever),
 			ztest_unit_test(net_ctx_put));
 	ztest_run_test_suite(test_context);
 }
