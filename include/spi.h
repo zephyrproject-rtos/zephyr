@@ -244,11 +244,17 @@ struct spi_driver_api {
  *
  * @retval 0 If successful, negative errno code otherwise.
  */
-static inline int spi_transceive(struct spi_config *config,
-				 const struct spi_buf *tx_bufs,
-				 size_t tx_count,
-				 struct spi_buf *rx_bufs,
-				 size_t rx_count)
+__syscall int spi_transceive(struct spi_config *config,
+			     const struct spi_buf *tx_bufs,
+			     size_t tx_count,
+			     struct spi_buf *rx_bufs,
+			     size_t rx_count);
+
+static inline int _impl_spi_transceive(struct spi_config *config,
+				       const struct spi_buf *tx_bufs,
+				       size_t tx_count,
+				       struct spi_buf *rx_bufs,
+				       size_t rx_count)
 {
 	const struct spi_driver_api *api = config->dev->driver_api;
 
@@ -270,9 +276,7 @@ static inline int spi_read(struct spi_config *config,
 			   struct spi_buf *rx_bufs,
 			   size_t rx_count)
 {
-	const struct spi_driver_api *api = config->dev->driver_api;
-
-	return api->transceive(config, NULL, 0, rx_bufs, rx_count);
+	return spi_transceive(config, NULL, 0, rx_bufs, rx_count);
 }
 
 /**
@@ -290,9 +294,7 @@ static inline int spi_write(struct spi_config *config,
 			    const struct spi_buf *tx_bufs,
 			    size_t tx_count)
 {
-	const struct spi_driver_api *api = config->dev->driver_api;
-
-	return api->transceive(config, tx_bufs, tx_count, NULL, 0);
+	return spi_transceive(config, tx_bufs, tx_count, NULL, 0);
 }
 
 #ifdef CONFIG_POLL
@@ -393,7 +395,9 @@ static inline int spi_write_async(struct spi_config *config,
  *
  * @param config Pointer to a valid spi_config structure instance.
  */
-static inline int spi_release(struct spi_config *config)
+__syscall int spi_release(struct spi_config *config);
+
+static inline int _impl_spi_release(struct spi_config *config)
 {
 	const struct spi_driver_api *api = config->dev->driver_api;
 
@@ -408,6 +412,7 @@ static inline int spi_release(struct spi_config *config)
  * @}
  */
 
-#endif /* __SPI_H__ */
+#include <syscalls/spi.h>
 
+#endif /* __SPI_H__ */
 #endif /* CONFIG_SPI_LEGACY_API */
