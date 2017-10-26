@@ -680,9 +680,6 @@ struct net_context *select_server_ctx(struct net_app_ctx *ctx,
 #endif /* CONFIG_NET_APP_SERVER */
 
 #if NET_LOG_ENABLED > 0
-#define _net_app_select_net_ctx(ctx, dst)				\
-	_net_app_select_net_ctx_debug(ctx, dst, __func__, __LINE__)
-
 struct net_context *_net_app_select_net_ctx_debug(struct net_app_ctx *ctx,
 						  const struct sockaddr *dst,
 						  const char *caller,
@@ -1930,6 +1927,7 @@ reset:
 			struct sockaddr dst = { 0 };
 			struct net_pkt *pkt;
 			int len = ret;
+			int hdr_len = 0;
 
 			dst.sa_family = AF_UNSPEC;
 
@@ -1945,6 +1943,9 @@ reset:
 			 * from the IP header.
 			 */
 			if (ctx->tls.mbedtls.ssl_ctx.hdr) {
+				/* Needed to skip the protocol header */
+				hdr_len = ctx->tls.mbedtls.ssl_ctx.hdr->len;
+
 				net_pkt_frag_add(pkt,
 						 ctx->tls.mbedtls.ssl_ctx.hdr);
 #if defined(CONFIG_NET_IPV6)
@@ -1973,7 +1974,18 @@ reset:
 			}
 
 			net_pkt_set_appdatalen(pkt, len);
-			net_pkt_set_appdata(pkt, pkt->frags->data);
+
+			if (hdr_len) {
+				struct net_buf *frag;
+				u16_t pos;
+
+				frag = net_frag_get_pos(pkt, hdr_len, &pos);
+				NET_ASSERT(frag);
+
+				net_pkt_set_appdata(pkt, frag->data + pos);
+			} else {
+				net_pkt_set_appdata(pkt, pkt->frags->data);
+			}
 
 			ctx->cb.recv(ctx, pkt, 0, ctx->user_data);
 

@@ -85,7 +85,7 @@ NET_APP_TLS_POOL_DEFINE(dtls_pool, 10);
 #define net_app_dtls_stack_ipv6 NULL
 #endif /* CONFIG_NET_APP_TLS */
 
-#if defined(CONFIG_NET_APP_TLS)
+#if defined(CONFIG_NET_APP_TLS) || defined(CONFIG_NET_APP_DTLS)
 /* Load the certificates and private RSA key. */
 
 #include "test_certs.h"

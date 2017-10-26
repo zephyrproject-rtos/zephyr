@@ -72,13 +72,29 @@ config X86_IAMCU
 	assembly code will need to be updated to conform to the new calling
 	convention.  If in doubt say N
 
+menu "Memory Management"
 config X86_MMU
 	bool
 	default n
-	prompt "Memory Management Unit"
+	prompt "Enable Memory Management Unit"
 	help
 	This options enables the memory management unit present in x86. Enabling
 	this will create boot time page table structure.
+
+config X86_PAE_MODE
+	bool
+	depends on X86_MMU
+	default n
+	prompt "Enable PAE page tables"
+	help
+	When selected the Page address extension mode is enabled. The PAE
+	page tables provides a mechanism to selectively disable execution.
+	So any Page Table Entry (PTE) that sets the XD bit will have all
+	instruction fetches disabled in that 4KB region. The amount of RAM
+	needed for PAE tables is more than twice that of 32-Bit paging
+	because each PAE entry is 64bits wide.
+	Note: Do not enable in RAM constrained devices.
+endmenu
 
 config X86_STACK_PROTECTION
 	bool

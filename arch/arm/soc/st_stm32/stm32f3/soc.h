@@ -49,6 +49,10 @@
 #include <stm32f3xx_ll_i2c.h>
 #endif
 
+#ifdef CONFIG_IWDG_STM32
+#include <stm32f3xx_ll_iwdg.h>
+#endif
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32F3_SOC_H_ */

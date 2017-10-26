@@ -460,18 +460,33 @@ static inline void net_pkt_set_src_ipv6_addr(struct net_pkt *pkt)
 /* @endcond */
 
 /**
- * @brief Create a TX net_pkt slab that is used when sending user
- * specified data to network.
+ * @brief Create a net_pkt slab
  *
- * @param name Name of the pool.
+ * A net_pkt slab is used to store meta-information about
+ * network packets. It must be coupled with a data fragment pool
+ * (:c:macro:`NET_PKT_DATA_POOL_DEFINE`) used to store the actual
+ * packet data. The macro can be used by an application to define
+ * additional custom per-context TX packet slabs (see
+ * :c:func:`net_context_setup_pools`).
+ *
+ * @param name Name of the slab.
  * @param count Number of net_pkt in this slab.
  */
-#define NET_PKT_TX_SLAB_DEFINE(name, count)				\
+#define NET_PKT_SLAB_DEFINE(name, count)				\
 	K_MEM_SLAB_DEFINE(name, sizeof(struct net_pkt), count, 4)
 
+/* Backward compatibility macro */
+#define NET_PKT_TX_SLAB_DEFINE(name, count) NET_PKT_SLAB_DEFINE(name, count)
+
 /**
- * @brief Create a DATA net_buf pool that is used when sending user
- * specified data to network.
+ * @brief Create a data fragment net_buf pool
+ *
+ * A net_buf pool is used to store actual data for
+ * network packets. It must be coupled with a net_pkt slab
+ * (:c:macro:`NET_PKT_SLAB_DEFINE`) used to store the packet
+ * meta-information. The macro can be used by an application to
+ * define additional custom per-context TX packet pools (see
+ * :c:func:`net_context_setup_pools`).
  *
  * @param name Name of the pool.
  * @param count Number of net_buf in this pool.

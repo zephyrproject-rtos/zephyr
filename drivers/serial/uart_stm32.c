@@ -172,7 +172,9 @@ static void uart_stm32_irq_err_enable(struct device *dev)
 	/* Enable FE, ORE interruptions */
 	LL_USART_EnableIT_ERROR(UartInstance);
 	/* Enable Line break detection */
+#ifndef CONFIG_SOC_STM32F030X8
 	LL_USART_EnableIT_LBD(UartInstance);
+#endif
 	/* Enable parity error interruption */
 	LL_USART_EnableIT_PE(UartInstance);
 }
@@ -184,7 +186,9 @@ static void uart_stm32_irq_err_disable(struct device *dev)
 	/* Enable FE, ORE interruptions */
 	LL_USART_DisableIT_ERROR(UartInstance);
 	/* Enable Line break detection */
+#ifndef CONFIG_SOC_STM32F030X8
 	LL_USART_DisableIT_LBD(UartInstance);
+#endif
 	/* Enable parity error interruption */
 	LL_USART_DisableIT_PE(UartInstance);
 }

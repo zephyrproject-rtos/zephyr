@@ -71,4 +71,11 @@ config USB_DC_STM32_RAM_SIZE
 
 endif #USB
 
+if WATCHDOG
+
+config IWDG_STM32
+	def_bool y
+
+endif # WATCHDOG
+
 endif # SOC_SERIES_STM32F4X

@@ -1,43 +1,21 @@
 # Kconfig - STM32 IWDG configuration
 #
 # Copyright (c) 2016 Open-RnD Sp. z o.o.
+# Copyright (c) 2017 RnDity Sp. z o.o.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if SOC_FAMILY_STM32
-
-config IWDG_STM32
+menuconfig IWDG_STM32
 	bool "Independent Watchdog (IWDG) Driver for STM32 family of MCUs"
+	depends on SOC_FAMILY_STM32
 	help
 	  Enable IWDG driver for STM32 line of MCUs
-
-config IWDG_STM32_PRESCALER
-	int "Prescaler divider for clock feeding the IWDG"
-	depends on IWDG_STM32
-	default 4
-	range 4 256
-	help
-	  Set the prescaler divider for the clock feeding the Independent
-	  Watchdog. Higher values indicate that the watchdog will need to
-	  be reloaded more frequently. Allowed values: 4, 8, 16, 32, 64,
-	  128, 256. This setting combined with reload counter defines the
-	  watchdog countdown time.
-
-config IWDG_STM32_RELOAD_COUNTER
-	int "Value for IWDG counter"
-	depends on IWDG_STM32
-	default 2048
-	range 0 4095
-	help
-	  Configure the value to be loaded into the watchdog's counter each
-	  time a reload operation is performed. This value combined with
-	  prescaler setting defines the watchdog countdown time.
 
 config IWDG_STM32_START_AT_BOOT
 	bool "Start IWDG during boot"
 	depends on IWDG_STM32
-	default n
+	default y
 	help
 	  Enable this setting to allow IWDG to be automatically started
 	  during device initialization. Note that once IWDG is started
@@ -51,4 +29,11 @@ config IWDG_STM32_DEVICE_NAME
 	help
 	  Set the name used by IWDG device during registration.
 
-endif # SOC_FAMILY_STM32
+config IWDG_STM32_TIMEOUT
+	int "Value for IWDG timeout in [us]"
+	depends on IWDG_STM32
+	default 100
+	range 100 26214400
+	 help
+	  Set timeout value for IWDG in microseconds.
+	  The min timeout supported is 0.1ms, the max timeout is 26214.4ms.

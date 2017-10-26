@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2017 RnDity Sp. z o.o.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/stm32f030.dtsi>
+
+/ {
+	model = "STMicroelectronics STM32F030R8-NUCLEO board";
+	compatible = "st,stm32f030r8-nucleo", "st,stm32f030";
+
+	chosen {
+		zephyr,console = &usart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
+
+&usart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart1_pins_b>;
+	pinctrl-names = "default";
+	status = "ok";
+};
+
+&usart2 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart2_pins_a>;
+	pinctrl-names = "default";
+	status = "ok";
+};

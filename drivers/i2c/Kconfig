@@ -45,20 +45,31 @@ config I2C_QMSI
 	  provided by the QMSI BSP.
 
 config I2C_ATMEL_SAM3
-	bool "Atmel SAM3X I2C Driver"
+	bool "[deprecated] Atmel SAM3X I2C Driver"
 	depends on SOC_SERIES_SAM3X
 	default n
 	help
+	  This driver is deprecated and will be removed. Use
+	  "Atmel SAM (TWI) I2C driver" instead.
+
 	  Enable I2C support on the Atmel SAM3 family processor.
 	  Says y to enable additional options to enable support
 	  for individual controllers.
 
 config TWIHS_SAM
-	bool "Atmel SAM I2C driver"
+	bool "Atmel SAM (TWIHS) I2C driver"
 	depends on SOC_FAMILY_SAM
 	default n
 	help
-	  Enable Atmel SAM MCU Family I2C bus driver.
+	  Enable Atmel SAM MCU Family (TWIHS) I2C bus driver.
+
+config I2C_SAM_TWI
+	bool "Atmel SAM (TWI) I2C driver"
+	depends on SOC_FAMILY_SAM
+	select HAS_DTS_I2C
+	default n
+	help
+	  Enable Atmel SAM MCU Family (TWI) I2C bus driver.
 
 config I2C_MCUX
 	bool "MCUX I2C driver"

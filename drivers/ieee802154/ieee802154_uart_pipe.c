@@ -68,8 +68,8 @@ static u8_t *upipe_rx(u8_t *buf, size_t *off)
 
 		net_pkt_frag_insert(pkt, frag);
 
-		memcpy(frag->data, upipe->rx_buf, upipe->rx_len - 2);
-		net_buf_add(frag, upipe->rx_len - 2);
+		memcpy(frag->data, upipe->rx_buf, upipe->rx_len);
+		net_buf_add(frag, upipe->rx_len);
 
 		if (ieee802154_radio_handle_ack(upipe->iface, pkt) == NET_OK) {
 			SYS_LOG_DBG("ACK packet handled");
@@ -152,17 +152,12 @@ static int upipe_tx(struct device *dev,
 	data = UART_PIPE_RADIO_15_4_FRAME_TYPE;
 	uart_pipe_send(&data, 1);
 
-	data = len + 2;
+	data = len;
 	uart_pipe_send(&data, 1);
 
 	for (i = 0; i < len; i++) {
 		uart_pipe_send(pkt_buf+i, 1);
 	}
-
-	/* The 2 dummy bytes representing FCS */
-	data = 0xFF;
-	uart_pipe_send(&data, 1);
-	uart_pipe_send(&data, 1);
 
 	return 0;
 }

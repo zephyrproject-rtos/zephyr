@@ -1,0 +1,126 @@
+# Kconfig - Misc network drivers configuration options
+
+#
+# Copyright (c) 2016 Intel Corporation
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#
+# 1) Redistributions of source code must retain the above copyright notice,
+# this list of conditions and the following disclaimer.
+#
+# 2) Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution.
+#
+# 3) Neither the name of Intel Corporation nor the names of its contributors
+# may be used to endorse or promote products derived from this software without
+# specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+
+#
+# SLIP options
+#
+menuconfig SLIP
+	bool
+	prompt "SLIP driver"
+	select UART_PIPE
+	select UART_INTERRUPT_DRIVEN
+
+if SLIP
+
+config	SLIP_DRV_NAME
+	string "SLIP Driver name"
+	default "slip"
+	help
+	  This option sets the driver name
+
+config	SLIP_MTU
+	int "SLIP MTU"
+	default 1500
+	range 80 1500
+	help
+	  This option sets the MTU for the SLIP connection.
+	  The value is only used when fragmenting the network
+	  data into net_buf's. The actual SLIP connection
+	  does not use this value.
+
+config	SYS_LOG_SLIP_LEVEL
+	int
+	prompt "SLIP driver log level"
+	depends on SYS_LOG && SLIP
+	default 0
+	range 0 4
+	help
+	  Sets log level for SLIP driver.
+	  Levels are:
+	  0 OFF, do not write
+	  1 ERROR, only write SYS_LOG_ERR
+	  2 WARNING, write SYS_LOG_WRN in addition to previous level
+	  3 INFO, write SYS_LOG_INF in addition to previous levels
+	  4 DEBUG, write SYS_LOG_DBG in addition to previous levels
+
+config	SLIP_STATISTICS
+	bool "SLIP network connection statistics"
+	default n
+	help
+	  This option enables statistics support for SLIP driver.
+
+config  SLIP_TAP
+	bool "Use TAP interface to host"
+	default y
+	select NET_L2_ETHERNET
+	help
+	  In TAP the Ethernet frames are transferred over SLIP.
+
+
+config	SLIP_MAC_ADDR
+	string "MAC address for the interface"
+	default ""
+	help
+	  Specify a MAC address for the SLIP interface in the form of
+	  six hex 8-bit chars separated by colons (e.g.:
+	  aa:33:cc:22:e2:c0).  The default is an empty string, which
+	  means the code will make 00:00:5E:00:53:XX, where XX will be
+	  random.
+
+endif
+
+#
+# Net loopback options
+#
+menuconfig NET_LOOPBACK
+	bool
+	prompt "Net loopback driver"
+	select NET_L2_DUMMY
+
+if NET_LOOPBACK
+
+config  SYS_LOG_NET_LOOPBACK_LEVEL
+        int
+        prompt "Net loopback driver log level"
+        depends on SYS_LOG && NET_LOOPBACK
+        default 0
+        range 0 4
+        help
+          Sets log level for the driver.
+          Levels are:
+          0 OFF, do not write
+          1 ERROR, only write SYS_LOG_ERR
+          2 WARNING, write SYS_LOG_WRN in addition to previous level
+          3 INFO, write SYS_LOG_INF in addition to previous levels
+          4 DEBUG, write SYS_LOG_DBG in addition to previous levels
+
+endif

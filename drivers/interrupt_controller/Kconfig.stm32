@@ -13,6 +13,32 @@ config EXTI_STM32
 	help
 	 Enable EXTI driver for STM32 line of MCUs
 
+config EXTI_STM32_EXTI1_0_IRQ_PRI
+	int "EXTI1:0 IRQ priority"
+	depends on EXTI_STM32
+	depends on SOC_SERIES_STM32F0X
+	default 0
+	help
+	 IRQ priority of EXTI1:0 interrupt
+
+config EXTI_STM32_EXTI3_2_IRQ_PRI
+	int "EXTI3:2 IRQ priority"
+	depends on EXTI_STM32
+	depends on SOC_SERIES_STM32F0X
+	default 0
+	help
+	 IRQ priority of EXTI3:2 interrupt
+
+config EXTI_STM32_EXTI15_4_IRQ_PRI
+	int "EXTI15:4 IRQ priority"
+	depends on EXTI_STM32
+	depends on SOC_SERIES_STM32F0X
+	default 0
+	help
+	 IRQ priority of EXTI15:4 interrupt
+
+if SOC_SERIES_STM32F0X!=y
+
 config EXTI_STM32_EXTI0_IRQ_PRI
 	int "EXTI0 IRQ priority"
 	depends on EXTI_STM32
@@ -61,6 +87,8 @@ config EXTI_STM32_EXTI15_10_IRQ_PRI
 	default 0
 	help
 	 IRQ priority of EXTI15:10 interrupt
+
+endif # SOC_SERIES_STM32F0X!=y
 
 config EXTI_STM32_EXTI16_IRQ_PRI
 	int "EXTI16 IRQ priority"

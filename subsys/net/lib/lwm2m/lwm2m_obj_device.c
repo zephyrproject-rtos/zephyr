@@ -61,9 +61,7 @@
 #define DEVICE_STRING_LONG	32
 #define DEVICE_STRING_SHORT	8
 
-/* periodic notification thread */
-static K_THREAD_STACK_DEFINE(device_thread_stack, 512);
-static struct k_thread device_thread_data;
+#define DEVICE_SERVICE_INTERVAL K_SECONDS(10)
 
 /* resource state variables */
 static u8_t  manufacturer[DEVICE_STRING_LONG];
@@ -274,12 +272,7 @@ int lwm2m_device_add_err(u8_t error_code)
 
 static void device_periodic_service(void)
 {
-	while (true) {
-		/* TODO: make this delay configurable */
-		k_sleep(K_SECONDS(10));
-		NOTIFY_OBSERVER(LWM2M_OBJECT_DEVICE_ID, 0,
-				DEVICE_CURRENT_TIME_ID);
-	}
+	NOTIFY_OBSERVER(LWM2M_OBJECT_DEVICE_ID, 0, DEVICE_CURRENT_TIME_ID);
 }
 
 static struct lwm2m_engine_obj_inst *device_create(u16_t obj_inst_id)
@@ -370,12 +363,9 @@ static int lwm2m_device_init(struct device *dev)
 		SYS_LOG_DBG("Create LWM2M instance 0 error: %d", ret);
 	}
 
-	/* start thread to handle OBSERVER / NOTIFY events */
-	k_thread_create(&device_thread_data,
-			&device_thread_stack[0],
-			K_THREAD_STACK_SIZEOF(device_thread_stack),
-			(k_thread_entry_t) device_periodic_service,
-			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+	/* call device_periodic_service() every 10 seconds */
+	ret = lwm2m_engine_add_service(device_periodic_service,
+				       DEVICE_SERVICE_INTERVAL);
 	return ret;
 }
 

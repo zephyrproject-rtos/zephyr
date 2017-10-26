@@ -261,11 +261,22 @@ __csSet:
 	movl $__mmu_tables_start, %eax
 	movl %eax, %cr3
 
+#ifndef CONFIG_X86_PAE_MODE
 	/*Set CR4.PAE = 0 (5th bit in CR4*/
 	movl %cr4, %eax
 	andl $CR4_PAE_DISABLE, %eax
 	movl %eax, %cr4
+#else
+	movl %cr4, %eax
+	orl $CR4_PAE_ENABLE, %eax
+	movl %eax, %cr4
 
+	/* IA32_EFER NXE bit set */
+	movl $0xC0000080, %ecx
+	rdmsr
+	orl $0x800, %eax
+	wrmsr
+#endif
 	/* set CR0.PG bit (31st bit in CR0)*/
 	movl %cr0, %eax
 	orl $CR0_PAGING_ENABLE, %eax

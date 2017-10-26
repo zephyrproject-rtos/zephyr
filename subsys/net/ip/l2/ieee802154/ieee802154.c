@@ -145,7 +145,7 @@ enum net_verdict ieee802154_manage_recv_packet(struct net_if *iface,
 
 #ifdef CONFIG_NET_L2_IEEE802154_FRAGMENT
 	verdict = ieee802154_reassemble(pkt);
-	if (verdict == NET_DROP) {
+	if (verdict != NET_CONTINUE) {
 		goto out;
 	}
 #else
