@@ -9,4 +9,3 @@ obj-$(CONFIG_CPLUSPLUS) += cpp/
 obj-y += logging/
 obj-y += debug/
 obj-$(CONFIG_MCUBOOT_IMG_MANAGER) += dfu/
-obj-$(CONFIG_USERSPACE) += driver_handlers/

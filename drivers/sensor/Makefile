@@ -36,3 +36,4 @@ obj-$(CONFIG_SX9500) += sx9500/
 obj-$(CONFIG_TH02) += th02/
 obj-$(CONFIG_TMP007) += tmp007/
 obj-$(CONFIG_TMP112) += tmp112/
+obj-$(CONFIG_USERSPACE) += sensor_handlers.o
