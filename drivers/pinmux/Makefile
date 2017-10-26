@@ -13,3 +13,6 @@ obj-$(CONFIG_PINMUX_ESP32) += pinmux_esp32.o
 
 # "runtime" pinmux
 obj-$(CONFIG_PINMUX_DEV) += dev/
+
+# Userspace
+obj-$(CONFIG_USERSPACE) += pinmux_handlers.o
