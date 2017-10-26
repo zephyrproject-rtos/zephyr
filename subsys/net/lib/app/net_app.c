@@ -509,11 +509,21 @@ struct net_context *select_client_ctx(struct net_app_ctx *ctx,
 		}
 	} else {
 		if (!dst) {
+			if (ctx->default_ctx->ctx &&
+			    atomic_get(&ctx->default_ctx->ctx->refcount) <= 0) {
+				ctx->default_ctx->ctx = NULL;
+			}
+
 			return ctx->default_ctx->ctx;
 		} else {
 		common_checks:
 			if (dst->sa_family == AF_INET) {
 #if defined(CONFIG_NET_IPV4)
+				if (ctx->ipv4.ctx &&
+				    atomic_get(&ctx->ipv4.ctx->refcount) <= 0) {
+					ctx->ipv4.ctx = NULL;
+				}
+
 				return ctx->ipv4.ctx;
 #else
 				return NULL;
@@ -522,6 +532,11 @@ struct net_context *select_client_ctx(struct net_app_ctx *ctx,
 
 			if (dst->sa_family == AF_INET6) {
 #if defined(CONFIG_NET_IPV6)
+				if (ctx->ipv6.ctx &&
+				    atomic_get(&ctx->ipv6.ctx->refcount) <= 0) {
+					ctx->ipv6.ctx = NULL;
+				}
+
 				return ctx->ipv6.ctx;
 #else
 				return NULL;
@@ -529,6 +544,12 @@ struct net_context *select_client_ctx(struct net_app_ctx *ctx,
 			}
 
 			if (dst->sa_family == AF_UNSPEC) {
+				if (ctx->default_ctx->ctx &&
+				    atomic_get(&ctx->default_ctx->ctx->refcount)
+								       <= 0) {
+					ctx->default_ctx->ctx = NULL;
+				}
+
 				return ctx->default_ctx->ctx;
 			}
 		}
