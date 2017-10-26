@@ -2431,16 +2431,16 @@ int net_context_recv(struct net_context *context,
 
 #if defined(CONFIG_NET_CONTEXT_SYNC_RECV)
 	if (timeout) {
+		int ret;
+
 		/* Make sure we have the lock, then the packet_received()
 		 * callback will release the semaphore when data has been
 		 * received.
 		 */
-		while (k_sem_take(&context->recv_data_wait, K_NO_WAIT)) {
-			;
-		}
+		k_sem_reset(&context->recv_data_wait);
 
-		if (!k_sem_take(&context->recv_data_wait, timeout)) {
-			/* timeout */
+		ret = k_sem_take(&context->recv_data_wait, timeout);
+		if (ret == -EAGAIN) {
 			return -ETIMEDOUT;
 		}
 	}
