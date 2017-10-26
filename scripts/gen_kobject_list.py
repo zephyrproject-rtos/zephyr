@@ -36,11 +36,8 @@ kobjects = [
 subsystems = [
         "adc_driver_api",
         "aio_cmp_driver_api",
-        "clock_control_driver_api",
         "counter_driver_api",
         "crypto_driver_api",
-        "dma_driver_api",
-        "eth_driver_api",
         "flash_driver_api",
         "gpio_driver_api",
         "i2c_driver_api",
@@ -51,10 +48,8 @@ subsystems = [
         "random_driver_api",
         "rtc_driver_api",
         "sensor_driver_api",
-        "shared_irq_driver_api",
         "spi_driver_api",
         "uart_driver_api",
-        "wdt_driver_api",
         ]
 
 
