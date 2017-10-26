@@ -45,8 +45,6 @@
 #define NET_MAX_TCP_CONTEXT CONFIG_NET_MAX_CONTEXTS
 static struct net_tcp tcp_context[NET_MAX_TCP_CONTEXT];
 
-#define INIT_RETRY_MS 200
-
 /* 2MSL timeout, where "MSL" is arbitrarily 2 minutes in the RFC */
 #if defined(CONFIG_NET_TCP_2MSL_TIME)
 #define TIME_WAIT_MS K_SECONDS(CONFIG_NET_TCP_2MSL_TIME)
@@ -121,7 +119,8 @@ static void net_tcp_trace(struct net_pkt *pkt, struct net_tcp *tcp)
 
 static inline u32_t retry_timeout(const struct net_tcp *tcp)
 {
-	return ((u32_t)1 << tcp->retry_timeout_shift) * INIT_RETRY_MS;
+	return ((u32_t)1 << tcp->retry_timeout_shift) *
+				CONFIG_NET_TCP_INIT_RETRANSMISSION_TIMEOUT;
 }
 
 #define is_6lo_technology(pkt)						    \
