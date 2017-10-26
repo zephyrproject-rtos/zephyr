@@ -200,7 +200,7 @@ bool _mcr20a_write_burst(struct mcr20a_spi *spi, bool dreg, u16_t addr,
 {
 	bool retval;
 
-	if ((len + 2) > sizeof(spi->cmd_buf)) {
+	if ((len + 2) >= sizeof(spi->cmd_buf)) {
 		SYS_LOG_ERR("cmd buffer too small");
 		return false;
 	}
@@ -230,7 +230,7 @@ bool _mcr20a_write_burst(struct mcr20a_spi *spi, bool dreg, u16_t addr,
 bool _mcr20a_read_burst(struct mcr20a_spi *spi, bool dreg, u16_t addr,
 			u8_t *data_buf, u8_t len)
 {
-	if ((len + 2) > sizeof(spi->cmd_buf)) {
+	if ((len + 2) >= sizeof(spi->cmd_buf)) {
 		SYS_LOG_ERR("cmd buffer too small");
 		return false;
 	}
