@@ -19,5 +19,6 @@ from . import nios2
 from . import nrfjprog
 from . import openocd
 from . import pyocd
+from . import xtensa
 
 __all__ = ['ZephyrBinaryRunner']
