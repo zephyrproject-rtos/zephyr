@@ -14,6 +14,7 @@ from . import arc
 from . import bossac
 from . import dfu
 from . import esp32
+from . import jlink
 from . import nios2
 from . import nrfjprog
 from . import openocd
