@@ -239,7 +239,7 @@ struct gpio_callback {
 /**
  * @cond INTERNAL_HIDDEN
  *
- * GPIO driver API definition.
+ * GPIO driver API definition and system call entry points
  *
  * (Internal use only.)
  */
@@ -269,6 +269,61 @@ struct gpio_driver_api {
 	gpio_disable_callback_t disable_callback;
 	gpio_api_get_pending_int get_pending_int;
 };
+
+__syscall int gpio_config(struct device *port, int access_op, u32_t pin,
+			  int flags);
+
+static inline int _impl_gpio_config(struct device *port, int access_op,
+				    u32_t pin, int flags)
+{
+	const struct gpio_driver_api *api = port->driver_api;
+
+	return api->config(port, access_op, pin, flags);
+}
+
+__syscall int gpio_write(struct device *port, int access_op, u32_t pin,
+			 u32_t value);
+
+static inline int _impl_gpio_write(struct device *port, int access_op,
+				   u32_t pin, u32_t value)
+{
+	const struct gpio_driver_api *api = port->driver_api;
+
+	return api->write(port, access_op, pin, value);
+}
+
+__syscall int gpio_read(struct device *port, int access_op, u32_t pin,
+			u32_t *value);
+
+static inline int _impl_gpio_read(struct device *port, int access_op,
+				  u32_t pin, u32_t *value)
+{
+	const struct gpio_driver_api *api = port->driver_api;
+
+	return api->read(port, access_op, pin, value);
+}
+
+__syscall int gpio_enable_callback(struct device *port, int access_op,
+				   u32_t pin);
+
+static inline int _impl_gpio_enable_callback(struct device *port,
+					     int access_op, u32_t pin)
+{
+	const struct gpio_driver_api *api = port->driver_api;
+
+	return api->enable_callback(port, access_op, pin);
+}
+
+__syscall int gpio_disable_callback(struct device *port, int access_op,
+				    u32_t pin);
+
+static inline int _impl_gpio_disable_callback(struct device *port,
+					      int access_op, u32_t pin)
+{
+	const struct gpio_driver_api *api = port->driver_api;
+
+	return api->disable_callback(port, access_op, pin);
+}
 /**
  * @endcond
  */
@@ -283,9 +338,7 @@ struct gpio_driver_api {
 static inline int gpio_pin_configure(struct device *port, u32_t pin,
 				     int flags)
 {
-	const struct gpio_driver_api *api = port->driver_api;
-
-	return api->config(port, GPIO_ACCESS_BY_PIN, pin, flags);
+	return gpio_config(port, GPIO_ACCESS_BY_PIN, pin, flags);
 }
 
 /**
@@ -298,9 +351,7 @@ static inline int gpio_pin_configure(struct device *port, u32_t pin,
 static inline int gpio_pin_write(struct device *port, u32_t pin,
 				 u32_t value)
 {
-	const struct gpio_driver_api *api = port->driver_api;
-
-	return api->write(port, GPIO_ACCESS_BY_PIN, pin, value);
+	return gpio_write(port, GPIO_ACCESS_BY_PIN, pin, value);
 }
 
 /**
@@ -316,9 +367,7 @@ static inline int gpio_pin_write(struct device *port, u32_t pin,
 static inline int gpio_pin_read(struct device *port, u32_t pin,
 				u32_t *value)
 {
-	const struct gpio_driver_api *api = port->driver_api;
-
-	return api->read(port, GPIO_ACCESS_BY_PIN, pin, value);
+	return gpio_read(port, GPIO_ACCESS_BY_PIN, pin, value);
 }
 
 /**
@@ -387,9 +436,7 @@ static inline int gpio_remove_callback(struct device *port,
  */
 static inline int gpio_pin_enable_callback(struct device *port, u32_t pin)
 {
-	const struct gpio_driver_api *api = port->driver_api;
-
-	return api->enable_callback(port, GPIO_ACCESS_BY_PIN, pin);
+	return gpio_enable_callback(port, GPIO_ACCESS_BY_PIN, pin);
 }
 
 /**
@@ -400,9 +447,7 @@ static inline int gpio_pin_enable_callback(struct device *port, u32_t pin)
  */
 static inline int gpio_pin_disable_callback(struct device *port, u32_t pin)
 {
-	const struct gpio_driver_api *api = port->driver_api;
-
-	return api->disable_callback(port, GPIO_ACCESS_BY_PIN, pin);
+	return gpio_disable_callback(port, GPIO_ACCESS_BY_PIN, pin);
 }
 
 /**
@@ -415,9 +460,7 @@ static inline int gpio_pin_disable_callback(struct device *port, u32_t pin)
  */
 static inline int gpio_port_configure(struct device *port, int flags)
 {
-	const struct gpio_driver_api *api = port->driver_api;
-
-	return api->config(port, GPIO_ACCESS_BY_PORT, 0, flags);
+	return gpio_config(port, GPIO_ACCESS_BY_PORT, 0, flags);
 }
 
 /**
@@ -435,9 +478,7 @@ static inline int gpio_port_configure(struct device *port, int flags)
  */
 static inline int gpio_port_write(struct device *port, u32_t value)
 {
-	const struct gpio_driver_api *api = port->driver_api;
-
-	return api->write(port, GPIO_ACCESS_BY_PORT, 0, value);
+	return gpio_write(port, GPIO_ACCESS_BY_PORT, 0, value);
 }
 
 /**
@@ -455,9 +496,7 @@ static inline int gpio_port_write(struct device *port, u32_t value)
  */
 static inline int gpio_port_read(struct device *port, u32_t *value)
 {
-	const struct gpio_driver_api *api = port->driver_api;
-
-	return api->read(port, GPIO_ACCESS_BY_PORT, 0, value);
+	return gpio_read(port, GPIO_ACCESS_BY_PORT, 0, value);
 }
 
 /**
@@ -472,9 +511,7 @@ static inline int gpio_port_read(struct device *port, u32_t *value)
  */
 static inline int gpio_port_enable_callback(struct device *port)
 {
-	const struct gpio_driver_api *api = port->driver_api;
-
-	return api->enable_callback(port, GPIO_ACCESS_BY_PORT, 0);
+	return gpio_enable_callback(port, GPIO_ACCESS_BY_PORT, 0);
 }
 
 /**
@@ -484,9 +521,7 @@ static inline int gpio_port_enable_callback(struct device *port)
  */
 static inline int gpio_port_disable_callback(struct device *port)
 {
-	const struct gpio_driver_api *api = port->driver_api;
-
-	return api->disable_callback(port, GPIO_ACCESS_BY_PORT, 0);
+	return gpio_disable_callback(port, GPIO_ACCESS_BY_PORT, 0);
 }
 
 /**
@@ -502,7 +537,9 @@ static inline int gpio_port_disable_callback(struct device *port)
  * @retval status != 0 if at least one gpio interrupt is pending.
  * @retval 0 if no gpio interrupt is pending.
  */
-static inline int gpio_get_pending_int(struct device *dev)
+__syscall int gpio_get_pending_int(struct device *dev);
+
+static inline int _impl_gpio_get_pending_int(struct device *dev)
 {
 	struct gpio_driver_api *api;
 
@@ -543,5 +580,7 @@ struct gpio_pin_config {
 /**
  * @}
  */
+
+#include <syscalls/gpio.h>
 
 #endif /* __GPIO_H__ */
