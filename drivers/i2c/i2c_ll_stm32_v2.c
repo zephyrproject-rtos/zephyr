@@ -54,26 +54,6 @@ static inline void msg_init(struct device *dev, struct i2c_msg *msg,
 	}
 }
 
-static inline void msg_done(struct device *dev, unsigned int current_msg_flags)
-{
-	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
-	I2C_TypeDef *i2c = cfg->i2c;
-
-	/* Wait for transfer to complete */
-	while (!LL_I2C_IsActiveFlag_TC(i2c) && !LL_I2C_IsActiveFlag_TCR(i2c)) {
-		;
-	}
-	/* Issue stop condition if necessary */
-	if (current_msg_flags & I2C_MSG_STOP) {
-		LL_I2C_GenerateStopCondition(i2c);
-		while (!LL_I2C_IsActiveFlag_STOP(i2c)) {
-			;
-		}
-		LL_I2C_ClearFlag_STOP(i2c);
-		LL_I2C_DisableReloadMode(i2c);
-	}
-}
-
 #ifdef CONFIG_I2C_STM32_INTERRUPT
 void stm32_i2c_event_isr(void *arg)
 {
@@ -81,29 +61,61 @@ void stm32_i2c_event_isr(void *arg)
 	struct i2c_stm32_data *data = DEV_DATA((struct device *)arg);
 	I2C_TypeDef *i2c = cfg->i2c;
 
-	if (data->current.is_write) {
-		if (data->current.len && LL_I2C_IsActiveFlag_TXIS(i2c)) {
+	if (data->current.len) {
+		/* Interrupts for sending/receiving next byte */
+
+		if (data->current.is_write && LL_I2C_IsActiveFlag_TXIS(i2c)) {
+			/* Send next byte */
 			LL_I2C_TransmitData8(i2c, *data->current.buf);
-		} else {
-			LL_I2C_DisableIT_TX(i2c);
-			goto error;
-		}
-	} else {
-		if (data->current.len && LL_I2C_IsActiveFlag_RXNE(i2c)) {
+		} else if (!(data->current.is_write) &&
+			   LL_I2C_IsActiveFlag_RXNE(i2c)) {
+			/* Receive next byte */
 			*data->current.buf = LL_I2C_ReceiveData8(i2c);
 		} else {
-			LL_I2C_DisableIT_RX(i2c);
+			goto error;
+		}
+
+		data->current.buf++;
+		data->current.len--;
+		if (!data->current.len) {
+			LL_I2C_EnableIT_TC(i2c);
+		}
+
+	} else {
+		/* Interrupts to process end of message */
+
+		if (LL_I2C_IsActiveFlag_TC(i2c) ||
+		    LL_I2C_IsActiveFlag_TCR(i2c)) {
+			/* Interrupt after last byte of message
+			 * was transferred
+			 */
+			LL_I2C_DisableIT_TC(i2c);
+
+			/* Issue stop condition if necessary */
+			if (data->current.msg->flags & I2C_MSG_STOP) {
+				LL_I2C_GenerateStopCondition(i2c);
+				LL_I2C_EnableIT_STOP(i2c);
+			} else {
+				k_sem_give(&data->device_sync_sem);
+			}
+
+		} else if (LL_I2C_IsActiveFlag_STOP(i2c)) {
+			/* Interrupt after stop condition was
+			 * successfully issued
+			 */
+			LL_I2C_DisableIT_STOP(i2c);
+			LL_I2C_ClearFlag_STOP(i2c);
+			LL_I2C_DisableReloadMode(i2c);
+			k_sem_give(&data->device_sync_sem);
+		} else {
 			goto error;
 		}
 	}
 
-	data->current.buf++;
-	data->current.len--;
-	if (!data->current.len) {
-		k_sem_give(&data->device_sync_sem);
-	}
 	return;
 error:
+	LL_I2C_DisableIT_TX(i2c);
+	LL_I2C_DisableIT_RX(i2c);
 	data->current.is_err = 1;
 	k_sem_give(&data->device_sync_sem);
 }
@@ -136,6 +148,7 @@ int stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 	data->current.is_write = 1;
 	data->current.is_nack = 0;
 	data->current.is_err = 0;
+	data->current.msg = msg;
 
 	msg_init(dev, msg, next_msg_flags, slave, LL_I2C_REQUEST_WRITE);
 	LL_I2C_EnableIT_TX(i2c);
@@ -148,8 +161,6 @@ int stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 	if (data->current.is_nack || data->current.is_err) {
 		goto error;
 	}
-
-	msg_done(dev, msg->flags);
 
 	return 0;
 error:
@@ -178,6 +189,7 @@ int stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 	data->current.buf = msg->buf;
 	data->current.is_write = 0;
 	data->current.is_err = 0;
+	data->current.msg = msg;
 
 	msg_init(dev, msg, next_msg_flags, slave, LL_I2C_REQUEST_READ);
 	LL_I2C_EnableIT_RX(i2c);
@@ -189,8 +201,6 @@ int stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 		goto error;
 	}
 
-	msg_done(dev, msg->flags);
-
 	return 0;
 error:
 	SYS_LOG_DBG("%s: ERR %d", __func__, data->current.is_err);
@@ -200,6 +210,26 @@ error:
 }
 
 #else /* !CONFIG_I2C_STM32_INTERRUPT */
+static inline void msg_done(struct device *dev, unsigned int current_msg_flags)
+{
+	const struct i2c_stm32_config *cfg = DEV_CFG(dev);
+	I2C_TypeDef *i2c = cfg->i2c;
+
+	/* Wait for transfer to complete */
+	while (!LL_I2C_IsActiveFlag_TC(i2c) && !LL_I2C_IsActiveFlag_TCR(i2c)) {
+		;
+	}
+	/* Issue stop condition if necessary */
+	if (current_msg_flags & I2C_MSG_STOP) {
+		LL_I2C_GenerateStopCondition(i2c);
+		while (!LL_I2C_IsActiveFlag_STOP(i2c)) {
+			;
+		}
+		LL_I2C_ClearFlag_STOP(i2c);
+		LL_I2C_DisableReloadMode(i2c);
+	}
+}
+
 int stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 			u8_t *next_msg_flags, uint16_t slave)
 {
