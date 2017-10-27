@@ -209,6 +209,9 @@ static int send_response(struct net_context *ctx, struct net_pkt *pkt,
 
 		reply = create_answer(ctx, AF_INET, qtype, query,
 				      sizeof(struct in_addr), (u8_t *)addr);
+		if (!reply) {
+			return -ENOMEM;
+		}
 
 		net_pkt_set_ipv4_ttl(reply, 255);
 #else /* CONFIG_NET_IPV4 */
@@ -227,6 +230,9 @@ static int send_response(struct net_context *ctx, struct net_pkt *pkt,
 
 		reply = create_answer(ctx, AF_INET6, qtype, query,
 				      sizeof(struct in6_addr), (u8_t *)addr);
+		if (!reply) {
+			return -ENOMEM;
+		}
 
 		net_pkt_set_ipv6_hop_limit(reply, 255);
 #else /* CONFIG_NET_IPV6 */
@@ -236,10 +242,6 @@ static int send_response(struct net_context *ctx, struct net_pkt *pkt,
 	} else {
 		/* TODO: support also service PTRs */
 		return -EINVAL;
-	}
-
-	if (!reply) {
-		return -ENOMEM;
 	}
 
 	ret = net_context_sendto(reply, &dst, dst_len, NULL, K_NO_WAIT,
