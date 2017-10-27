@@ -50,6 +50,7 @@
 #include <usb/usb_device.h>
 #include <clock_control/stm32_clock_control.h>
 #include <misc/util.h>
+#include <gpio.h>
 
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_DRIVER_LEVEL
 #include <logging/sys_log.h>
@@ -770,3 +771,25 @@ void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef *hpcd, u8_t epnum)
 		ep_state->cb(ep, USB_DC_EP_DATA_IN);
 	}
 }
+
+#if defined(USB) && defined(CONFIG_USB_DC_STM32_DISCONN_ENABLE)
+void HAL_PCDEx_SetConnectionState(PCD_HandleTypeDef *hpcd, uint8_t state)
+{
+	struct device *usb_disconnect;
+
+	usb_disconnect = device_get_binding(
+				CONFIG_USB_DC_STM32_DISCONN_GPIO_PORT_NAME);
+	gpio_pin_configure(usb_disconnect,
+			   CONFIG_USB_DC_STM32_DISCONN_PIN, GPIO_DIR_OUT);
+
+	if (state) {
+		gpio_pin_write(usb_disconnect,
+			       CONFIG_USB_DC_STM32_DISCONN_PIN,
+			       CONFIG_USB_DC_STM32_DISCONN_PIN_LEVEL);
+	} else {
+		gpio_pin_write(usb_disconnect,
+			       CONFIG_USB_DC_STM32_DISCONN_PIN,
+			       !CONFIG_USB_DC_STM32_DISCONN_PIN_LEVEL);
+	}
+}
+#endif /* USB && CONFIG_USB_DC_STM32_DISCONN_ENABLE */
