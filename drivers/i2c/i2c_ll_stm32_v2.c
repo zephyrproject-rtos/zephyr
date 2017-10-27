@@ -142,19 +142,17 @@ int stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 	LL_I2C_EnableIT_NACK(i2c);
 
 	k_sem_take(&data->device_sync_sem, K_FOREVER);
+	LL_I2C_DisableIT_TX(i2c);
+	LL_I2C_DisableIT_NACK(i2c);
+
 	if (data->current.is_nack || data->current.is_err) {
 		goto error;
 	}
 
 	msg_done(dev, msg->flags);
-	LL_I2C_DisableIT_TX(i2c);
-	LL_I2C_DisableIT_NACK(i2c);
 
 	return 0;
 error:
-	LL_I2C_DisableIT_TX(i2c);
-	LL_I2C_DisableIT_NACK(i2c);
-
 	if (data->current.is_nack) {
 		SYS_LOG_DBG("%s: NACK", __func__);
 		data->current.is_nack = 0;
@@ -185,16 +183,16 @@ int stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 	LL_I2C_EnableIT_RX(i2c);
 
 	k_sem_take(&data->device_sync_sem, K_FOREVER);
+	LL_I2C_DisableIT_RX(i2c);
+
 	if (data->current.is_err) {
 		goto error;
 	}
 
 	msg_done(dev, msg->flags);
-	LL_I2C_DisableIT_RX(i2c);
 
 	return 0;
 error:
-	LL_I2C_DisableIT_RX(i2c);
 	SYS_LOG_DBG("%s: ERR %d", __func__, data->current.is_err);
 	data->current.is_err = 0;
 
