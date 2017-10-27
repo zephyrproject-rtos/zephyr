@@ -1,7 +1,7 @@
 subdir-ccflags-y += -I$(srctree)/include/drivers
 
 obj-y = console/
-obj-y += random/
+obj-y += random_generator/
 obj-y += serial/
 obj-y += display/
 obj-$(CONFIG_SYS_CLOCK_EXISTS) += timer/

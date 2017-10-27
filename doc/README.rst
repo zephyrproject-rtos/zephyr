@@ -100,6 +100,7 @@ commands to generate the html content locally:
 
    $ cd ~/zephyr
    $ source zephyr-env.sh
+   $ cd doc
    $ make htmldocs
 
 Depending on your development system, it will take about 15 minutes to

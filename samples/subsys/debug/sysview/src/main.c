@@ -10,8 +10,8 @@
 #include <misc/util.h>
 #include <zephyr.h>
 
-#include "SEGGER_SYSVIEW.h"
-#include "SEGGER_RTT.h"
+#include "systemview/SEGGER_SYSVIEW.h"
+#include "rtt/SEGGER_RTT.h"
 
 K_THREAD_STACK_DEFINE(printer_stack, 1024);
 K_THREAD_STACK_DEFINE(calc_stack, 1024);

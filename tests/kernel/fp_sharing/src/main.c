@@ -1,5 +1,3 @@
-/* main.c - load/store portion of FPU sharing test */
-
 /*
  * Copyright (c) 2011-2014 Wind River Systems, Inc.
  *
@@ -7,7 +5,9 @@
  */
 
 /*
- * DESCRIPTION
+ * @file
+ * load/store portion of FPU sharing test
+ *
  * This module implements the load/store portion of the FPU sharing test. This
  * version of this test utilizes a pair of tasks.
  *
@@ -60,7 +60,6 @@
 #endif /* __GNUC__ */
 #endif
 
-#include <arch/cpu.h>
 #include <tc_util.h>
 #include "float_context.h"
 #include <stddef.h>

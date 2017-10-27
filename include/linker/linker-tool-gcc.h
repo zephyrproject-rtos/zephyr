@@ -22,15 +22,15 @@
 #elif defined(CONFIG_X86)
 	#if  defined(__IAMCU)
 		OUTPUT_FORMAT("elf32-iamcu")
-		OUTPUT_ARCH(iamcu:intel)
+		OUTPUT_ARCH("iamcu:intel")
 	#else
 		OUTPUT_FORMAT("elf32-i386", "elf32-i386", "elf32-i386")
-		OUTPUT_ARCH(i386)
+		OUTPUT_ARCH("i386")
 	#endif
 #elif defined(CONFIG_NIOS2)
 	OUTPUT_FORMAT("elf32-littlenios2", "elf32-bignios2", "elf32-littlenios2")
 #elif defined(CONFIG_RISCV32)
-	OUTPUT_ARCH(riscv)
+	OUTPUT_ARCH("riscv")
 	OUTPUT_FORMAT("elf32-littleriscv")
 #elif defined(CONFIG_XTENSA)
 	/* Not needed */
