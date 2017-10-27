@@ -112,6 +112,9 @@ enum coap_block_size lwm2m_default_block_size(void);
 
 int lwm2m_engine_add_service(void (*service)(void), u32_t period_ms);
 
+int lwm2m_engine_get_resource(char *pathstr,
+			      struct lwm2m_engine_res_inst **res);
+
 size_t lwm2m_engine_get_opaque_more(struct lwm2m_input_context *in,
 				    u8_t *buf, size_t buflen, bool *last_block);
 
