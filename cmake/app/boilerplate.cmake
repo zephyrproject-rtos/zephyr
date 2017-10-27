@@ -2,7 +2,7 @@
 # Zephyr applications, e.g. zephyr/samples/hello_world/CMakeLists.txt
 # must start with the line:
 #
-# include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake)
+# include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
 #
 # It exists to reduce boilerplate code that Zephyr expects to be in
 # application CMakeLists.txt code.
