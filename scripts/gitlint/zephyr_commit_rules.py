@@ -76,7 +76,7 @@ class TitleStartsWithSubsystem(LineRule):
     def validate(self, title, _commit):
         regex = self.options['regex'].value
         pattern = re.compile(regex, re.UNICODE)
-        violation_message = "Title does not follow <subsystem>: <subject>"
+        violation_message = "Title does not follow [subsystem]: [subject]"
         if not pattern.search(title):
             return [RuleViolation(self.id, violation_message, title)]
 
