@@ -11,7 +11,7 @@
  * @}
  */
 
-#include <test_rtc.h>
+#include "test_rtc.h"
 
 void test_main(void)
 {

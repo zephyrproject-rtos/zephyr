@@ -32,7 +32,7 @@
  * @}
  */
 
-#include <test_uart.h>
+#include "test_uart.h"
 
 static volatile bool data_transmitted;
 static volatile bool data_received;
