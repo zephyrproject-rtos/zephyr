@@ -210,8 +210,6 @@ cleanup:
 	return ret;
 }
 
-#define OPAQUE_BUF_LEN		256
-
 static int
 do_firmware_transfer_reply_cb(const struct coap_packet *response,
 			      struct coap_reply *reply,
@@ -221,12 +219,13 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 	size_t transfer_offset = 0;
 	u8_t token[8];
 	u8_t tkl;
-	u16_t payload_len, payload_offset;
+	u16_t payload_len, payload_offset, len;
 	struct net_buf *payload_frag;
-	static char opaque_buf[OPAQUE_BUF_LEN];
 	struct coap_packet *check_response = (struct coap_packet *)response;
-	lwm2m_engine_set_data_cb_t callback;
-	u8_t resp_code;
+	struct lwm2m_engine_res_inst *res = NULL;
+	lwm2m_engine_set_data_cb_t write_cb;
+	size_t write_buflen;
+	u8_t resp_code, *write_buf;
 	struct coap_block_context received_block_ctx;
 
 	/* token is used to determine a valid ACK vs a separated response */
@@ -286,42 +285,57 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 			    firmware_block_ctx.total_size,
 			    firmware_block_ctx.current);
 
-		callback = lwm2m_firmware_get_write_cb();
-		if (callback) {
-			if (payload_len > sizeof(opaque_buf)) {
-				SYS_LOG_ERR("payload(%d) > buffer (%zu)",
-					    payload_len, sizeof(opaque_buf));
-				lwm2m_firmware_set_update_result(
-						RESULT_OUT_OF_MEM);
-				return -ENOMEM;
-			}
+		/* look up firmware package resource */
+		ret = lwm2m_engine_get_resource("5/0/0", &res);
+		if (ret < 0) {
+			return ret;
+		}
 
-			payload_frag = net_frag_read(payload_frag,
-						     payload_offset,
-						     &payload_offset,
-						     payload_len,
-						     opaque_buf);
-			if (!payload_frag && payload_offset == 0xffff) {
-				lwm2m_firmware_set_update_result(
-						RESULT_OUT_OF_MEM);
-				return -ENOMEM;
-			}
+		/* get buffer data */
+		write_buf = res->data_ptr;
+		write_buflen = res->data_len;
 
-			ret = callback(0, opaque_buf, payload_len,
-				       transfer_offset == 0,
-				       firmware_block_ctx.total_size);
-			if (ret == -ENOMEM) {
-				lwm2m_firmware_set_update_result(
-						RESULT_OUT_OF_MEM);
-				return ret;
-			} else if (ret == -ENOSPC) {
-				lwm2m_firmware_set_update_result(
-						RESULT_NO_STORAGE);
-				return ret;
-			} else if (ret < 0) {
-				lwm2m_firmware_set_update_result(
+		/* check for user override to buffer */
+		if (res->pre_write_cb) {
+			write_buf = res->pre_write_cb(0, &write_buflen);
+		}
+
+		write_cb = lwm2m_firmware_get_write_cb();
+		if (write_cb) {
+			/* flush incoming data to write_cb */
+			while (payload_len > 0) {
+				len = (payload_len > write_buflen) ?
+				       write_buflen : payload_len;
+				payload_len -= len;
+				payload_frag = net_frag_read(payload_frag,
+							     payload_offset,
+							     &payload_offset,
+							     len,
+							     write_buf);
+				/* check for end of packet */
+				if (!payload_frag && payload_offset == 0xffff) {
+					lwm2m_firmware_set_update_result(
 						RESULT_INTEGRITY_FAILED);
-				return ret;
+					return -EINVAL;
+				}
+
+				ret = write_cb(0, write_buf, len,
+					       !payload_frag &&
+					       transfer_offset == 0,
+					       firmware_block_ctx.total_size);
+				if (ret == -ENOMEM) {
+					lwm2m_firmware_set_update_result(
+						RESULT_OUT_OF_MEM);
+					return ret;
+				} else if (ret == -ENOSPC) {
+					lwm2m_firmware_set_update_result(
+						RESULT_NO_STORAGE);
+					return ret;
+				} else if (ret < 0) {
+					lwm2m_firmware_set_update_result(
+						RESULT_INTEGRITY_FAILED);
+					return ret;
+				}
 			}
 		}
 	}

@@ -56,6 +56,10 @@ static u32_t led_state;
 static struct lwm2m_ctx client;
 static struct k_sem quit_lock;
 
+#if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT)
+static u8_t firmware_buf[64];
+#endif
+
 #if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
 NET_PKT_TX_SLAB_DEFINE(lwm2m_tx_udp, 5);
 NET_PKT_DATA_POOL_DEFINE(lwm2m_data_udp, 20);
@@ -164,6 +168,12 @@ static int firmware_update_cb(u16_t obj_inst_id)
 #endif
 
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT)
+static void *firmware_get_buf(u16_t obj_inst_id, size_t *data_len)
+{
+	*data_len = sizeof(firmware_buf);
+	return firmware_buf;
+}
+
 static int firmware_block_received_cb(u16_t obj_inst_id,
 				      u8_t *data, u16_t data_len,
 				      bool last_block, size_t total_size)
@@ -217,6 +227,8 @@ static int lwm2m_setup(void)
 	/* setup FIRMWARE object */
 
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT)
+	/* setup data buffer for block-wise transfer */
+	lwm2m_engine_register_pre_write_callback("5/0/0", firmware_get_buf);
 	lwm2m_firmware_set_write_cb(firmware_block_received_cb);
 #endif
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT)
