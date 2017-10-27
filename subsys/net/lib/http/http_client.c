@@ -292,7 +292,8 @@ static int on_body(struct http_parser *parser, const char *at, size_t length)
 
 	NET_DBG("Processed %zd length %zd", ctx->rsp.processed, length);
 
-	if ((u8_t *)at != (u8_t *)ctx->rsp.response_buf) {
+	if (!ctx->rsp.body_start &&
+	    (u8_t *)at != (u8_t *)ctx->rsp.response_buf) {
 		/* This fragment contains the start of the body */
 		ctx->rsp.body_start = (u8_t *)at;
 	}
