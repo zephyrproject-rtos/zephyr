@@ -10,7 +10,7 @@
  * Demonstrates the ZEPHYR File System APIs
  */
 
-#include <test_fat.h>
+#include "test_fat.h"
 #include <stdio.h>
 
 extern int test_file_write(void);

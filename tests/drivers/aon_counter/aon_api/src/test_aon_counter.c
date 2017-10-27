@@ -23,7 +23,7 @@
  * @}
  */
 
-#include <test_aon.h>
+#include "test_aon.h"
 
 static int test_counter(void)
 {

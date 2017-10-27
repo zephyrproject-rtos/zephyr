@@ -10,7 +10,7 @@
  * Demonstrates the ZEPHYR File System APIs
  */
 
-#include <test_fat.h>
+#include "test_fat.h"
 #include <string.h>
 
 static int test_file_open(void)

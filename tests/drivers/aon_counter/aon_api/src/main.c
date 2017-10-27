@@ -11,7 +11,7 @@
  * @}
  */
 
-#include <test_aon.h>
+#include "test_aon.h"
 
 void test_main(void)
 {

@@ -21,7 +21,7 @@
 #include <misc/util.h>
 
 #include <spi.h>
-#include <spi_dw.h>
+#include "spi_dw.h"
 
 #ifdef CONFIG_IOAPIC
 #include <drivers/ioapic.h>
