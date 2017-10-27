@@ -193,10 +193,12 @@ static void tcp_retry_expired(struct k_timer *timer)
 		net_pkt_set_queued(pkt, true);
 
 		if (net_tcp_send_pkt(pkt) < 0 && !is_6lo_technology(pkt)) {
-			NET_DBG("[%p] pkt %p send failed", tcp, pkt);
+			NET_DBG("retry %u: [%p] pkt %p send failed",
+				tcp->retry_timeout_shift, tcp, pkt);
 			net_pkt_unref(pkt);
 		} else {
-			NET_DBG("[%p] sent pkt %p", tcp, pkt);
+			NET_DBG("retry %u: [%p] sent pkt %p",
+				tcp->retry_timeout_shift, tcp, pkt);
 			if (IS_ENABLED(CONFIG_NET_STATISTICS_TCP) &&
 			    !is_6lo_technology(pkt)) {
 				net_stats_update_tcp_seg_rexmit();
