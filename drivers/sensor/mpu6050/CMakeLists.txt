@@ -1,0 +1,2 @@
+zephyr_sources_ifdef(CONFIG_MPU6050 mpu6050.c)
+zephyr_sources_ifdef(CONFIG_MPU6050_TRIGGER mpu6050_trigger.c)
