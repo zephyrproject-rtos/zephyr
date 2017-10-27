@@ -1,0 +1,8 @@
+zephyr_sources_ifdef(CONFIG_ARCV2_INTERRUPT_UNIT    arcv2_irq_unit.c)
+zephyr_sources_ifdef(CONFIG_IOAPIC                  ioapic_intr.c)
+zephyr_sources_ifdef(CONFIG_LOAPIC                  loapic_intr.c system_apic.c)
+zephyr_sources_ifdef(CONFIG_LOAPIC_SPURIOUS_VECTOR  loapic_spurious.c)
+zephyr_sources_ifdef(CONFIG_MVIC                    mvic.c)
+zephyr_sources_ifdef(CONFIG_PIC_DISABLE             i8259.c)
+zephyr_sources_ifdef(CONFIG_PLIC_FE310              plic_fe310.c)
+zephyr_sources_ifdef(CONFIG_SOC_FAMILY_STM32        exti_stm32.c)

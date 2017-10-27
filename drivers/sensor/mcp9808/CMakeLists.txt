@@ -1,0 +1,2 @@
+zephyr_sources_ifdef(CONFIG_MCP9808 mcp9808.c)
+zephyr_sources_ifdef(CONFIG_MCP9808_TRIGGER mcp9808_trigger.c)
