@@ -1292,9 +1292,8 @@ static int lwm2m_engine_set(char *pathstr, void *value, u16_t len)
 	}
 
 	if (res->post_write_cb) {
-		/* ignore return value here */
-		res->post_write_cb(obj_inst->obj_inst_id, data_ptr, len,
-				   false, 0);
+		ret = res->post_write_cb(obj_inst->obj_inst_id, data_ptr, len,
+					 false, 0);
 	}
 
 	if (changed) {
@@ -1881,6 +1880,7 @@ static int lwm2m_write_handler_opaque(struct lwm2m_engine_obj_inst *obj_inst,
 {
 	size_t len = 1;
 	bool last_pkt_block = false, first_read = true;
+	int ret = 0;
 
 	while (!last_pkt_block && len > 0) {
 		if (first_read) {
@@ -1898,15 +1898,14 @@ static int lwm2m_write_handler_opaque(struct lwm2m_engine_obj_inst *obj_inst,
 		}
 
 		if (res->post_write_cb) {
-			/* ignore return value */
-			res->post_write_cb(obj_inst->obj_inst_id,
-					   data_ptr, len,
-					   last_pkt_block && last_block,
-					   total_size);
+			ret = res->post_write_cb(obj_inst->obj_inst_id,
+						 data_ptr, len,
+						 last_pkt_block && last_block,
+						 total_size);
 		}
 	}
 
-	return 0;
+	return ret;
 }
 
 /* This function is exposed for the content format writers */
@@ -2054,12 +2053,8 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 
 	if (res->post_write_cb &&
 	    obj_field->data_type != LWM2M_RES_TYPE_OPAQUE) {
-		/* ignore return value here */
 		ret = res->post_write_cb(obj_inst->obj_inst_id, data_ptr, len,
 					 last_block, total_size);
-		if (ret >= 0) {
-			ret = 0;
-		}
 	}
 
 	NOTIFY_OBSERVER_PATH(path);
