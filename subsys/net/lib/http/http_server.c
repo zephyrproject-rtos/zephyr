@@ -771,6 +771,7 @@ static void accept_cb(struct net_context *net_ctx,
 		      int status, void *data)
 {
 	struct http_server_ctx *http_ctx = data;
+	int ret;
 
 	ARG_UNUSED(addr);
 	ARG_UNUSED(addrlen);
@@ -797,7 +798,11 @@ static void accept_cb(struct net_context *net_ctx,
 
 	new_client(http_ctx, net_ctx, addr);
 
-	net_context_recv(net_ctx, http_ctx->recv_cb, K_NO_WAIT, http_ctx);
+	ret = net_context_recv(net_ctx, http_ctx->recv_cb, K_NO_WAIT,
+			       http_ctx);
+	if (ret < 0) {
+		NET_DBG("Cannot set recv_cb (%d)", ret);
+	}
 }
 
 static int set_net_ctx(struct http_server_ctx *http_ctx,
