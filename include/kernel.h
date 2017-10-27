@@ -3776,10 +3776,6 @@ enum _poll_states_bits {
 	       + 1 /* modes */ \
 	      ))
 
-#if _POLL_EVENT_NUM_UNUSED_BITS < 0
-#error overflow of 32-bit word in struct k_poll_event
-#endif
-
 /* end of polling API - PRIVATE */
 
 
