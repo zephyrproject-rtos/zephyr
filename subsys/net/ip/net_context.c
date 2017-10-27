@@ -368,23 +368,19 @@ static int check_used_port(enum net_ip_protocol ip_proto,
 static u16_t find_available_port(struct net_context *context,
 				    const struct sockaddr *addr)
 {
-	if (!net_sin(addr)->sin_port) {
-		u16_t local_port;
+	u16_t local_port;
 
-		do {
-			local_port = sys_rand32_get() | 0x8000;
-			if (local_port <= 1023) {
-				/* 0 - 1023 ports are reserved */
-				continue;
-			}
-		} while (check_used_port(
-				 net_context_get_ip_proto(context),
-				 htons(local_port), addr) == -EEXIST);
+	do {
+		local_port = sys_rand32_get() | 0x8000;
+		if (local_port <= 1023) {
+			/* 0 - 1023 ports are reserved */
+			continue;
+		}
+	} while (check_used_port(
+				net_context_get_ip_proto(context),
+				htons(local_port), addr) == -EEXIST);
 
-		return htons(local_port);
-	}
-
-	return net_sin(addr)->sin_port;
+	return htons(local_port);
 }
 
 int net_context_get(sa_family_t family,
