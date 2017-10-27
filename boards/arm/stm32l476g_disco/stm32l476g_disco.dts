@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2017 Arthur Sfez
+ *
+ * Based on stm32l496g_disco:
+ *
+ * Copyright (c) 2017 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/stm32l476.dtsi>
+
+/ {
+	model = "STMicroelectronics STM32L476G-DISCO board";
+	compatible = "st,stm32l476g-disco", "st,stm32l476";
+
+	chosen {
+		zephyr,console = &usart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
+
+&usart2 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart2_pins_d>;
+	pinctrl-names = "default";
+	status = "ok";
+};

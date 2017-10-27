@@ -1,0 +1,7 @@
+identifier: stm32l476g_disco
+name: STM32L476GDISCOVERY
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb
