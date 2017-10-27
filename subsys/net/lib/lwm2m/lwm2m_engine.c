@@ -1834,6 +1834,30 @@ static int lwm2m_read_handler(struct lwm2m_engine_obj_inst *obj_inst,
 	return 0;
 }
 
+size_t lwm2m_engine_get_opaque_more(struct lwm2m_input_context *in,
+				    u8_t *buf, size_t buflen, bool *last_block)
+{
+	u16_t in_len = in->opaque_len;
+
+	if (in_len > buflen) {
+		in_len = buflen;
+	}
+
+	in->opaque_len -= in_len;
+	if (in->opaque_len == 0) {
+		*last_block = true;
+	}
+
+	in->frag = net_frag_read(in->frag, in->offset, &in->offset, in_len,
+				 buf);
+	if (!in->frag && in->offset == 0xffff) {
+		*last_block = true;
+		return 0;
+	}
+
+	return (size_t)in_len;
+}
+
 /* This function is exposed for the content format writers */
 int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 			struct lwm2m_engine_res_inst *res,

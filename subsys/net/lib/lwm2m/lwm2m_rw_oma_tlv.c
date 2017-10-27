@@ -699,6 +699,16 @@ static size_t get_bool(struct lwm2m_input_context *in, bool *value)
 	return size;
 }
 
+static size_t get_opaque(struct lwm2m_input_context *in,
+			 u8_t *value, size_t buflen, bool *last_block)
+{
+	struct oma_tlv tlv;
+
+	oma_tlv_get(&tlv, in, false);
+	in->opaque_len = tlv.length;
+	return lwm2m_engine_get_opaque_more(in, value, buflen, last_block);
+}
+
 const struct lwm2m_writer oma_tlv_writer = {
 	NULL,
 	NULL,
@@ -711,7 +721,8 @@ const struct lwm2m_writer oma_tlv_writer = {
 	put_string,
 	put_float32fix,
 	put_float64fix,
-	put_bool
+	put_bool,
+	NULL
 };
 
 const struct lwm2m_reader oma_tlv_reader = {
@@ -720,7 +731,8 @@ const struct lwm2m_reader oma_tlv_reader = {
 	get_string,
 	get_float32fix,
 	get_float64fix,
-	get_bool
+	get_bool,
+	get_opaque
 };
 
 static int do_write_op_tlv_item(struct lwm2m_engine_context *context)

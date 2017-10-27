@@ -462,7 +462,8 @@ const struct lwm2m_writer json_writer = {
 	put_string,
 	put_float32fix,
 	put_float64fix,
-	put_bool
+	put_bool,
+	NULL
 };
 
 static int parse_path(const u8_t *buf, u16_t buflen,

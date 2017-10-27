@@ -301,6 +301,13 @@ static size_t get_bool(struct lwm2m_input_context *in,
 	return 0;
 }
 
+static size_t get_opaque(struct lwm2m_input_context *in,
+			 u8_t *value, size_t buflen, bool *last_block)
+{
+	in->opaque_len = pkt_length_left(in);
+	return lwm2m_engine_get_opaque_more(in, value, buflen, last_block);
+}
+
 const struct lwm2m_writer plain_text_writer = {
 	NULL,
 	NULL,
@@ -313,7 +320,8 @@ const struct lwm2m_writer plain_text_writer = {
 	put_string,
 	put_float32fix,
 	put_float64fix,
-	put_bool
+	put_bool,
+	NULL
 };
 
 const struct lwm2m_reader plain_text_reader = {
@@ -322,7 +330,8 @@ const struct lwm2m_reader plain_text_reader = {
 	get_string,
 	get_float32fix,
 	get_float64fix,
-	get_bool
+	get_bool,
+	get_opaque
 };
 
 int do_write_op_plain_text(struct lwm2m_engine_obj *obj,
