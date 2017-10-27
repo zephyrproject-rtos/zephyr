@@ -127,8 +127,12 @@
  * "-DXT_TICK_PER_SEC=<value>" where <value> is a suitable number.
  */
 #ifndef XT_TICK_PER_SEC
-#define XT_TICK_PER_SEC    CONFIG_SYS_CLOCK_TICKS_PER_SEC
-#endif
+#if CONFIG_TICKLESS_KERNEL
+#define XT_TICK_PER_SEC         1000	/* In tickless kernel 1TICK  = 1msec */
+#else
+#define XT_TICK_PER_SEC         CONFIG_SYS_CLOCK_TICKS_PER_SEC
+#endif  /* CONFIG_TICKLESS_KERNEL */
+#endif /* XT_TICK_PER_SEC */
 
 /*
  * Derivation of clock divisor for timer tick and interrupt (one per tick).
