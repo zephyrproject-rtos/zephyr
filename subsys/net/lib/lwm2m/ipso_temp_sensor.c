@@ -126,7 +126,7 @@ static int sensor_value_write_cb(u16_t obj_inst_id,
 		}
 	}
 
-	return 1;
+	return 0;
 }
 
 static struct lwm2m_engine_obj_inst *temp_sensor_create(u16_t obj_inst_id)
