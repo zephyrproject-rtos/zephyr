@@ -58,9 +58,9 @@ struct lwm2m_ctx {
 	struct k_delayed_work retransmit_work;
 };
 
-/* callback can return 1 if handled (don't update value) */
 typedef void *(*lwm2m_engine_get_data_cb_t)(u16_t obj_inst_id,
 				       size_t *data_len);
+/* callbacks return 0 on success and error code otherwise */
 typedef int (*lwm2m_engine_set_data_cb_t)(u16_t obj_inst_id,
 				       u8_t *data, u16_t data_len,
 				       bool last_block, size_t total_size);

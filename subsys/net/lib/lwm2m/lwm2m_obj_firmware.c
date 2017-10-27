@@ -189,7 +189,7 @@ static int package_write_cb(u16_t obj_inst_id,
 		if (data_len == 0 && state == STATE_DOWNLOADED) {
 			/* reset to state idle and result default */
 			lwm2m_firmware_set_update_result(RESULT_DEFAULT);
-			return 1;
+			return 0;
 		}
 
 		SYS_LOG_DBG("Cannot download: state = %d", state);
@@ -203,6 +203,7 @@ static int package_write_cb(u16_t obj_inst_id,
 			SYS_LOG_ERR("Failed to store firmware: %d", ret);
 			lwm2m_firmware_set_update_result(
 					RESULT_INTEGRITY_FAILED);
+			return ret;
 		}
 	}
 
@@ -210,7 +211,7 @@ static int package_write_cb(u16_t obj_inst_id,
 		lwm2m_firmware_set_update_state(STATE_DOWNLOADED);
 	}
 
-	return 1;
+	return ret;
 }
 
 static int package_uri_write_cb(u16_t obj_inst_id,
@@ -230,9 +231,9 @@ static int package_uri_write_cb(u16_t obj_inst_id,
 		lwm2m_firmware_set_update_result(RESULT_DEFAULT);
 	}
 
-	return 1;
-#else
 	return 0;
+#else
+	return -EINVAL;
 #endif
 }
 

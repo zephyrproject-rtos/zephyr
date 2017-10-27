@@ -158,11 +158,11 @@ static int current_time_post_write_cb(u16_t obj_inst_id,
 {
 	if (data_len == 4) {
 		time_offset = *(s32_t *)data - (s32_t)(k_uptime_get() / 1000);
-		return 1;
+		return 0;
 	}
 
 	SYS_LOG_ERR("unknown size %u", data_len);
-	return 0;
+	return -EINVAL;
 }
 
 /* special setter functions */

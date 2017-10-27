@@ -137,7 +137,7 @@ static int device_reboot_cb(u16_t obj_inst_id)
 	/* Change the battery voltage for testing */
 	lwm2m_device_set_pwrsrc_voltage_mv(pwrsrc_bat, --battery_voltage);
 
-	return 1;
+	return 0;
 }
 
 static int device_factory_default_cb(u16_t obj_inst_id)
@@ -148,7 +148,7 @@ static int device_factory_default_cb(u16_t obj_inst_id)
 	/* Change the USB current for testing */
 	lwm2m_device_set_pwrsrc_current_ma(pwrsrc_usb, --usb_current);
 
-	return 1;
+	return 0;
 }
 
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT)
@@ -163,7 +163,7 @@ static int firmware_update_cb(u16_t obj_inst_id)
 	 */
 	lwm2m_engine_set_u8("5/0/3", STATE_IDLE);
 	lwm2m_engine_set_u8("5/0/5", RESULT_SUCCESS);
-	return 1;
+	return 0;
 }
 #endif
 
@@ -180,7 +180,7 @@ static int firmware_block_received_cb(u16_t obj_inst_id,
 {
 	SYS_LOG_INF("FIRMWARE: BLOCK RECEIVED: len:%u last_block:%d",
 		    data_len, last_block);
-	return 1;
+	return 0;
 }
 #endif
 

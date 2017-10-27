@@ -88,7 +88,7 @@ static int on_time_post_write_cb(u16_t obj_inst_id,
 
 	if (data_len != 4) {
 		SYS_LOG_ERR("unknown size %u", data_len);
-		return 0;
+		return -EINVAL;
 	}
 
 	s32_t counter = *(s32_t *) data;
@@ -103,10 +103,10 @@ static int on_time_post_write_cb(u16_t obj_inst_id,
 				(s32_t)(k_uptime_get() / MSEC_PER_SEC);
 		}
 
-		return 1;
+		return 0;
 	}
 
-	return 0;
+	return -ENOENT;
 }
 
 static struct lwm2m_engine_obj_inst *light_control_create(u16_t obj_inst_id)
