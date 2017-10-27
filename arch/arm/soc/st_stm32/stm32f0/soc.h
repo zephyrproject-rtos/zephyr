@@ -43,6 +43,10 @@
 #include <stm32f0xx_ll_system.h>
 #endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 
+#ifdef CONFIG_IWDG_STM32
+#include <stm32f0xx_ll_iwdg.h>
+#endif
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32F0_SOC_H_ */

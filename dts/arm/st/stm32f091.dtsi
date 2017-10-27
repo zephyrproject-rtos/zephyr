@@ -1,0 +1,7 @@
+/*
+ * Copyright (c) Bobby Noelte
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/stm32f0.dtsi>
