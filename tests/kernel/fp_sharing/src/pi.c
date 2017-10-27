@@ -33,7 +33,7 @@
 #include <stdio.h>
 #include <tc_util.h>
 
-#include <float_context.h>
+#include "float_context.h"
 
 /*
  * PI_NUM_ITERATIONS: This macro is defined in the project's Makefile and

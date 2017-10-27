@@ -24,7 +24,7 @@
  * @}
  */
 
-#include <test_rtc.h>
+#include "test_rtc.h"
 
 static bool rtc_alarm_up;
 

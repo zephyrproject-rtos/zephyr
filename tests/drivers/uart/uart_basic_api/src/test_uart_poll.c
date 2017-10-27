@@ -26,7 +26,7 @@
  * @}
  */
 
-#include <test_uart.h>
+#include "test_uart.h"
 
 static const char *poll_data = "This is a POLL test.\r\n";
 

@@ -11,7 +11,7 @@
 #include <init.h>
 #include <soc.h>
 
-#include <flash_stm32.h>
+#include "flash_stm32.h"
 
 #define STM32F4X_SECTOR_MASK		((u32_t) 0xFFFFFF07)
 

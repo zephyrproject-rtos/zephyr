@@ -11,7 +11,7 @@
 #endif
 
 #include <net/sntp.h>
-#include <sntp_pkt.h>
+#include "sntp_pkt.h"
 
 #define SNTP_LI_MAX 3
 #define SNTP_VERSION_NUMBER 3
