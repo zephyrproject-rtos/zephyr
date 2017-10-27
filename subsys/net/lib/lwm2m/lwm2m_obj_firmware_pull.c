@@ -21,7 +21,7 @@
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
 
-#define PACKAGE_URI_LEN		255
+#define URI_LEN		255
 
 #define BUF_ALLOC_TIMEOUT	K_SECONDS(1)
 #define NETWORK_INIT_TIMEOUT	K_SECONDS(10)
@@ -29,15 +29,14 @@
 #define PACKET_TRANSFER_RETRY_MAX	3
 
 static struct k_work firmware_work;
-static char firmware_uri[PACKAGE_URI_LEN];
+static char firmware_uri[URI_LEN];
 static struct http_parser_url parsed_uri;
 static struct lwm2m_ctx firmware_ctx;
 static int firmware_retry;
 static struct coap_block_context firmware_block_ctx;
 
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
-#define PROXY_URI_LEN		255
-static char proxy_uri[PROXY_URI_LEN];
+static char proxy_uri[URI_LEN];
 #endif
 
 static void do_transmit_timeout_cb(struct lwm2m_message *msg);
@@ -372,7 +371,7 @@ static void firmware_transfer(struct k_work *work)
 
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
 	server_addr = CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_ADDR;
-	if (strlen(server_addr) >= PROXY_URI_LEN) {
+	if (strlen(server_addr) >= URI_LEN) {
 		SYS_LOG_ERR("Invalid Proxy URI: %s", server_addr);
 		lwm2m_firmware_set_update_result(RESULT_UNSUP_PROTO);
 		return;
@@ -489,7 +488,7 @@ int lwm2m_firmware_start_transfer(char *package_uri)
 	lwm2m_firmware_set_update_state(STATE_DOWNLOADING);
 
 	/* start file transfer work */
-	strncpy(firmware_uri, package_uri, PACKAGE_URI_LEN - 1);
+	strncpy(firmware_uri, package_uri, URI_LEN - 1);
 	k_work_submit(&firmware_work);
 
 	return 0;
