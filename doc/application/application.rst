@@ -5,8 +5,7 @@ Application Development Primer
 
 Overview
 ********
-The Zephyr Kernel's build system is based on the Kbuild system used in the
-Linux kernel.
+The Zephyr Kernel's build system is based on CMake.
 
 The build system is an application-centric system and requires an application
 build to initiate building the kernel source tree. The application build drives
