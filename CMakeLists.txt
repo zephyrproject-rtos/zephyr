@@ -2,6 +2,11 @@ project(Zephyr-Kernel VERSION ${PROJECT_VERSION})
 enable_language(C CXX ASM)
 
 # *DOCUMENTATION*
+#
+# Note that this is *NOT* the top-level CMakeLists.txt. That's in the
+# application. See the Application Development Primer documentation
+# for details.
+#
 # To see a list of typical targets execute "make usage"
 # More info can be located in ./README.rst
 # Comments in this file are targeted only to the developer, do not
