@@ -153,6 +153,7 @@ typedef struct float64_value {
 
 int lwm2m_engine_create_obj_inst(char *pathstr);
 
+int lwm2m_engine_set_opaque(char *pathstr, char *data_ptr, u16_t data_len);
 int lwm2m_engine_set_string(char *path, char *data_ptr);
 int lwm2m_engine_set_u8(char *path, u8_t value);
 int lwm2m_engine_set_u16(char *path, u16_t value);
@@ -166,6 +167,7 @@ int lwm2m_engine_set_bool(char *path, bool value);
 int lwm2m_engine_set_float32(char *pathstr, float32_value_t *value);
 int lwm2m_engine_set_float64(char *pathstr, float64_value_t *value);
 
+int lwm2m_engine_get_opaque(char *pathstr, void *buf, u16_t buflen);
 int lwm2m_engine_get_string(char *path, void *str, u16_t strlen);
 u8_t  lwm2m_engine_get_u8(char *path);
 u16_t lwm2m_engine_get_u16(char *path);
