@@ -2112,7 +2112,7 @@ def main():
     if args.discard_report:
         ts.discard_report(args.discard_report)
 
-    if VERBOSE:
+    if VERBOSE > 1:
         for i, reason in discards.items():
             debug("{:<25} {:<50} {}SKIPPED{}: {}".format(i.platform.name,
                   i.test.name, COLOR_YELLOW, COLOR_NORMAL, reason))
