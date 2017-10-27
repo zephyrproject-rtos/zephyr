@@ -4,7 +4,6 @@ ifdef CONFIG_SOC_SERIES_STM32F0X
 obj-y += stm32f0xx/drivers/src/stm32f0xx_hal.o
 obj-y += stm32f0xx/drivers/src/stm32f0xx_hal_rcc.o
 obj-$(CONFIG_CLOCK_CONTROL_STM32_CUBE) += stm32f0xx/drivers/src/stm32f0xx_ll_utils.o
-obj-$(CONFIG_SERIAL_HAS_DRIVER) += stm32f0xx/drivers/src/stm32f0xx_hal_uart.o
 obj-y += stm32f0xx/soc/system_stm32f0xx.o
 endif
 
