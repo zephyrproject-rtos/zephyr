@@ -1625,8 +1625,7 @@ static int engine_get_resource(struct lwm2m_obj_path *path,
 	return 0;
 }
 
-static int engine_get_resource_from_pathstr(char *pathstr,
-			       struct lwm2m_engine_res_inst **res)
+int lwm2m_engine_get_resource(char *pathstr, struct lwm2m_engine_res_inst **res)
 {
 	int ret;
 	struct lwm2m_obj_path path;
@@ -1651,7 +1650,7 @@ int lwm2m_engine_register_read_callback(char *pathstr,
 	int ret;
 	struct lwm2m_engine_res_inst *res = NULL;
 
-	ret = engine_get_resource_from_pathstr(pathstr, &res);
+	ret = lwm2m_engine_get_resource(pathstr, &res);
 	if (ret < 0) {
 		return ret;
 	}
@@ -1666,7 +1665,7 @@ int lwm2m_engine_register_pre_write_callback(char *pathstr,
 	int ret;
 	struct lwm2m_engine_res_inst *res = NULL;
 
-	ret = engine_get_resource_from_pathstr(pathstr, &res);
+	ret = lwm2m_engine_get_resource(pathstr, &res);
 	if (ret < 0) {
 		return ret;
 	}
@@ -1681,7 +1680,7 @@ int lwm2m_engine_register_post_write_callback(char *pathstr,
 	int ret;
 	struct lwm2m_engine_res_inst *res = NULL;
 
-	ret = engine_get_resource_from_pathstr(pathstr, &res);
+	ret = lwm2m_engine_get_resource(pathstr, &res);
 	if (ret < 0) {
 		return ret;
 	}
@@ -1696,7 +1695,7 @@ int lwm2m_engine_register_exec_callback(char *pathstr,
 	int ret;
 	struct lwm2m_engine_res_inst *res = NULL;
 
-	ret = engine_get_resource_from_pathstr(pathstr, &res);
+	ret = lwm2m_engine_get_resource(pathstr, &res);
 	if (ret < 0) {
 		return ret;
 	}
