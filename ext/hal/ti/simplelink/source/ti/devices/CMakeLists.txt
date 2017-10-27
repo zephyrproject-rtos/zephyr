@@ -1,0 +1,3 @@
+add_subdirectory_ifdef(CONFIG_HAS_CC3220SDK cc32xx)
+add_subdirectory_ifdef(CONFIG_HAS_MSP432P4XXSDK msp432p4xx)
+
