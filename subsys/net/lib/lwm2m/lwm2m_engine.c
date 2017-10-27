@@ -1371,7 +1371,6 @@ static int lwm2m_engine_get(char *pathstr, void *buf, u16_t buflen)
 	struct lwm2m_engine_obj_inst *obj_inst;
 	struct lwm2m_engine_obj_field *obj_field;
 	struct lwm2m_engine_res_inst *res = NULL;
-	u16_t len = 0;
 	void *data_ptr = NULL;
 	size_t data_len = 0;
 
@@ -1439,7 +1438,6 @@ static int lwm2m_engine_get(char *pathstr, void *buf, u16_t buflen)
 
 		case LWM2M_RES_TYPE_STRING:
 			strncpy((u8_t *)buf, (u8_t *)data_ptr, buflen);
-			len = strlen(buf);
 			break;
 
 		case LWM2M_RES_TYPE_U64:
