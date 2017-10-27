@@ -29,15 +29,16 @@ config USB_DW_IRQ_PRI
 config USB_DC_STM32
 	bool
 	prompt "USB device controller driver for STM32 devices"
-	depends on SOC_SERIES_STM32F4X
+	depends on SOC_FAMILY_STM32
 	select USB_DEVICE_DRIVER
-	select USE_STM32_LL_USB
+	select USE_STM32_LL_USB if !SOC_SERIES_STM32F0X && !SOC_SERIES_STM32F3X && !SOC_SERIES_STM32L0X
 	select USE_STM32_HAL_PCD
 	select USE_STM32_HAL_PCD_EX
 	select HAS_DTS_USB
 	default n
 	help
-	  STM32 family USB device controller Driver.
+	  Enable USB support on the STM32 F0, F1, F3, F4 and L4 family of
+	  processors.
 
 config USB_DC_SAM0
 	bool
