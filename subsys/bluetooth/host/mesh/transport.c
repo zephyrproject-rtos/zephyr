@@ -64,6 +64,7 @@ static struct seg_tx {
 	struct bt_mesh_subnet   *sub;
 	struct net_buf          *seg[BT_MESH_TX_SEG_COUNT];
 	u64_t                    seq_auth;
+	u16_t                    dst;
 	u8_t                     seg_n;      /* Last segment index */
 	u8_t                     nack_count; /* Number of not acked segments */
 	bt_mesh_cb_t             cb;
@@ -145,6 +146,7 @@ static void seg_tx_reset(struct seg_tx *tx)
 	tx->cb_data = NULL;
 	tx->seq_auth = 0;
 	tx->sub = NULL;
+	tx->dst = BT_MESH_ADDR_UNASSIGNED;
 
 	if (!tx->nack_count) {
 		return;
@@ -272,6 +274,7 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, u8_t aid,
 	}
 
 	seg_o = 0;
+	tx->dst = net_tx->ctx->addr;
 	tx->seg_n = (sdu->len - 1) / 12;
 	tx->nack_count = tx->seg_n + 1;
 	tx->seq_auth = SEQ_AUTH(BT_MESH_NET_IVI_TX, bt_mesh.seq);
@@ -537,6 +540,36 @@ static int sdu_recv(struct bt_mesh_net_rx *rx, u8_t hdr, u8_t mic_size,
 	return -EINVAL;
 }
 
+static struct seg_tx *seg_tx_lookup(u16_t seq_zero, u8_t obo, u16_t addr)
+{
+	struct seg_tx *tx;
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(seg_tx); i++) {
+		tx = &seg_tx[i];
+
+		if ((tx->seq_auth & 0x1fff) != seq_zero) {
+			continue;
+		}
+
+		if (tx->dst == addr) {
+			return tx;
+		}
+
+		/* If the expected remote address doesn't match,
+		 * but the OBO flag is set and this is the first
+		 * acknowledgement, assume it's a Friend that's
+		 * responding and therefore accept the message.
+		 */
+		if (obo && tx->nack_count == tx->seg_n + 1) {
+			tx->dst = addr;
+			return tx;
+		}
+	}
+
+	return NULL;
+}
+
 static int trans_ack(struct bt_mesh_net_rx *rx, u8_t hdr,
 		     struct net_buf_simple *buf)
 {
@@ -545,7 +578,6 @@ static int trans_ack(struct bt_mesh_net_rx *rx, u8_t hdr,
 	u32_t ack;
 	u16_t seq_zero;
 	u8_t obo;
-	int i;
 
 	if (buf->len < 6) {
 		BT_ERR("Too short ack message");
@@ -560,15 +592,9 @@ static int trans_ack(struct bt_mesh_net_rx *rx, u8_t hdr,
 
 	BT_DBG("OBO %u seq_zero 0x%04x ack 0x%08x", obo, seq_zero, ack);
 
-	for (tx = NULL, i = 0; i < ARRAY_SIZE(seg_tx); i++) {
-		if ((seg_tx[i].seq_auth & 0x1fff) == seq_zero) {
-			tx = &seg_tx[i];
-			break;
-		}
-	}
-
+	tx = seg_tx_lookup(seq_zero, obo, rx->ctx.addr);
 	if (!tx) {
-		BT_WARN("Unknown SeqZero for ack");
+		BT_WARN("No matching TX context for ack");
 		return -EINVAL;
 	}
 
