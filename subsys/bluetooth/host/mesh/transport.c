@@ -109,7 +109,7 @@ static int send_unseg(struct bt_mesh_net_tx *tx, u8_t aid,
 		return -ENOBUFS;
 	}
 
-	net_buf_reserve(buf, 9);
+	net_buf_reserve(buf, BT_MESH_NET_HDR_LEN);
 
 	if (tx->ctx->app_idx == BT_MESH_KEY_DEV) {
 		net_buf_add_u8(buf, UNSEG_HDR(0, 0));
@@ -301,7 +301,7 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, u8_t aid,
 		BT_MESH_ADV(seg)->seg.new_key = net_tx->sub->kr_flag;
 		BT_MESH_ADV(seg)->seg.friend_cred = net_tx->ctx->friend_cred;
 
-		net_buf_reserve(seg, 9);
+		net_buf_reserve(seg, BT_MESH_NET_HDR_LEN);
 
 		net_buf_add_u8(seg, seg_hdr);
 		net_buf_add_u8(seg, (SZMIC(mic_len) << 7) | seq_zero >> 6);
@@ -734,8 +734,7 @@ int bt_mesh_ctl_send(struct bt_mesh_net_tx *tx, u8_t ctl_op, void *data,
 		return -ENOBUFS;
 	}
 
-	/* Reserve space for Network headers */
-	net_buf_reserve(buf, 9);
+	net_buf_reserve(buf, BT_MESH_NET_HDR_LEN);
 
 	net_buf_add_u8(buf, CTL_HDR(ctl_op, 0));
 
