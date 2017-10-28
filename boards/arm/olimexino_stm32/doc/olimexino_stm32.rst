@@ -45,6 +45,8 @@ hardware features:
 +-----------+------------+----------------------+
 | SPI       | on-chip    | spi                  |
 +-----------+------------+----------------------+
+| USB       | on-chip    | USB device           |
++-----------+------------+----------------------+
 
 Other hardware features are not supported by the Zephyr kernel.
 
@@ -318,6 +320,15 @@ OLIMEXINO-STM32 board has up to 1 I2C. The default I2C mapping for Zephyr is:
 
 - I2C2_SCL : PB10
 - I2C2_SDA : PB11
+
+USB
+===
+
+OLIMEXINO-STM32 board has a USB 2.0 full-speed device interface available
+through its mini USB connector.
+
+- USB_DM : PA11
+- USB_DP : PA12
 
 Jumpers
 =======

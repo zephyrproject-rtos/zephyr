@@ -67,6 +67,14 @@
 #define EP_TYPE_INTR PCD_EP_TYPE_INTR
 #endif
 
+#ifndef CONFIG_USB_NUM_IN_ENDPOINTS
+#define CONFIG_USB_NUM_IN_ENDPOINTS 0
+#endif /* CONFIG_USB_NUM_IN_ENDPOINTS */
+
+#ifndef CONFIG_USB_NUM_OUT_ENDPOINTS
+#define CONFIG_USB_NUM_OUT_ENDPOINTS 0
+#endif /* CONFIG_USB_NUM_OUT_ENDPOINTS */
+
 /* Total in ep number = bidirectional ep number + in ep number */
 #define NUM_IN_EP (CONFIG_USB_NUM_BIDIR_ENDPOINTS + \
 		   CONFIG_USB_NUM_IN_ENDPOINTS)
