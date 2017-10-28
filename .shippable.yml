@@ -10,12 +10,13 @@ env:
         - ZEPHYR_SDK_INSTALL_DIR=/opt/sdk/zephyr-sdk-0.9.1
         - ZEPHYR_GCC_VARIANT=zephyr
         - USE_CCACHE=1
-        - MATRIX_BUILDS="3"
-        - MATRIX_BUILDS_EXTRA="3"
+        - MATRIX_BUILDS="4"
+        - MATRIX_BUILDS_EXTRA="4"
     matrix:
         - MATRIX_BUILD="1"
         - MATRIX_BUILD="2"
         - MATRIX_BUILD="3"
+        - MATRIX_BUILD="4"
 
 build:
     cache: true
