@@ -120,8 +120,8 @@ registers (to avoid stack accesses). It is possible to register a FIRQ
 handler that operates outside of the kernel, but care must be taken to only
 use instructions that only use the banked registers.
 
-The kernel is able to handle transitions to and from FIRQ, RIRQ and threads
-(fibers/task). The contexts are saved 'lazily': the minimum amount of work is
+The kernel is able to handle transitions to and from FIRQ, RIRQ and threads.
+The contexts are saved 'lazily': the minimum amount of work is
 done upfront, and the rest is done when needed:
 
 o RIRQ
@@ -129,7 +129,7 @@ o RIRQ
   All needed regisers to run C code in the ISR are saved automatically
   on the outgoing thread's stack: loop, status32, pc, and the caller-
   saved GPRs. That stack frame layout is pre-determined. If returning
-  to a fiber, the stack is popped and no registers have to be saved by
+  to a thread, the stack is popped and no registers have to be saved by
   the kernel. If a context switch is required, the callee-saved GPRs
   are then saved in the thread control structure (TCS).
 
@@ -151,7 +151,7 @@ o FIRQ
   During early initialization, the sp in the 2nd register bank is made to
   refer to _firq_stack. This allows for the FIRQ handler to use its own stack.
   GPRs are banked, loop registers are saved in unused callee saved regs upon
-  interrupt entry. If returning to a fiber, loop registers are restored and the
+  interrupt entry. If returning to a thread, loop registers are restored and the
   CPU switches back to bank 0 for the GPRs. If a context switch is
   needed, at this point only are all the registers saved. First, a
   stack frame with the same layout as the automatic RIRQ one is created

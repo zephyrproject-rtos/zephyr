@@ -31,7 +31,7 @@ struct result result[N_THREADS];
 
 struct k_fifo fifo;
 
-static void errno_fiber(int n, int my_errno)
+static void errno_thread(int n, int my_errno)
 {
 	errno = my_errno;
 
@@ -61,7 +61,7 @@ void test_thread_context(void)
 	/**TESTPOINT: thread- threads stacks are separate */
 	for (int ii = 0; ii < N_THREADS; ii++) {
 		k_thread_create(&threads[ii], stacks[ii], STACK_SIZE,
-				(k_thread_entry_t) errno_fiber,
+				(k_thread_entry_t) errno_thread,
 				(void *) ii, (void *) errno_values[ii], NULL,
 				K_PRIO_PREEMPT(ii + 5), 0, K_NO_WAIT);
 	}

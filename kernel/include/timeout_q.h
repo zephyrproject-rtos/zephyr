@@ -33,14 +33,14 @@ static inline void _init_timeout(struct _timeout *t, _timeout_func_t func)
 	t->delta_ticks_from_prev = _INACTIVE;
 
 	/*
-	 * Must be initialized here so that the _fiber_wakeup family of APIs can
-	 * verify the fiber is not on a wait queue before aborting a timeout.
+	 * Must be initialized here so that k_wakeup can
+	 * verify the thread is not on a wait queue before aborting a timeout.
 	 */
 	t->wait_q = NULL;
 
 	/*
 	 * Must be initialized here, so the _handle_one_timeout()
-	 * routine can check if there is a fiber waiting on this timeout
+	 * routine can check if there is a thread waiting on this timeout
 	 */
 	t->thread = NULL;
 

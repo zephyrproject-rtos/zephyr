@@ -314,7 +314,7 @@ static void coop_delayed_work_resubmit(int arg1, int arg2)
 	}
 }
 
-static int test_delayed_resubmit_fiber(void)
+static int test_delayed_resubmit_thread(void)
 {
 	TC_PRINT("Starting delayed resubmit from coop thread test\n");
 
@@ -380,7 +380,7 @@ void main(void)
 
 	reset_results();
 
-	if (test_delayed_resubmit_fiber() != TC_PASS) {
+	if (test_delayed_resubmit_thread() != TC_PASS) {
 		goto end;
 	}
 

@@ -26,7 +26,7 @@
 #define STACKSIZE    512
 #endif
 
-/* stack used by the fibers */
+/* stack used by the threads */
 static K_THREAD_STACK_DEFINE(thread_one_stack, STACKSIZE);
 static K_THREAD_STACK_DEFINE(thread_two_stack, STACKSIZE);
 static struct k_thread thread_one_data;

@@ -53,7 +53,7 @@
  * previous factor.
  *
  * 5. Tickless idle may be prematurely aborted due to a non-timer interrupt.
- * Its handler may make a task or fiber ready to run, so any elapsed ticks
+ * Its handler may make a thread ready to run, so any elapsed ticks
  * must be accounted for and the timer must also expire at the end of the
  * next logical tick so _timer_int_handler() can put it back in periodic mode.
  * This can only be distinguished from the previous factor by the execution of
@@ -569,8 +569,8 @@ void _timer_idle_exit(void)
 	 * Either a non-timer interrupt occurred, or we straddled a tick when
 	 * entering tickless idle. It is impossible to determine which occurred
 	 * at this point. Regardless of the cause, ensure that the timer will
-	 * expire at the end of the next tick in case the ISR makes any tasks
-	 * and/or fibers ready to run.
+	 * expire at the end of the next tick in case the ISR makes any threads
+	 * ready to run.
 	 *
 	 * NOTE #1: In the case of a straddled tick, the '_sys_idle_elapsed_ticks'
 	 * calculation below may result in either 0 or 1. If 1, then this may

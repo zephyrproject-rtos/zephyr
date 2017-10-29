@@ -376,7 +376,10 @@ void task_monitor(void)
 	offload1.sem = &sync_test_sem;
 	k_work_submit_to_queue(&offload_work_q, &offload1.work_item);
 
-	/* Two fibers and two tasks should be waiting on the LIFO */
+	/*
+	 * Two cooperative threads and two preemptive threads should
+	 * be waiting on the LIFO
+	 */
 
 	/* Add data to the LIFO */
 	k_lifo_put(&lifo, &lifo_test_data[0]);

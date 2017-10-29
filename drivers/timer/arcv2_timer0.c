@@ -446,7 +446,7 @@ void _timer_idle_exit(void)
 
 	/*
 	 * Ensure the timer will expire at the end of the next tick in case
-	 * the ISR makes any tasks and/or fibers ready to run.
+	 * the ISR makes any threads ready to run.
 	 */
 	timer0_limit_register_set(cycles_per_tick - 1);
 	timer0_count_register_set(current_count % cycles_per_tick);

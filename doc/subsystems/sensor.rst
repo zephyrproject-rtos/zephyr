@@ -99,10 +99,10 @@ type and the channel on which the trigger must be configured.
 
 Because most sensors are connected via SPI or I2C busses, it is not possible
 to communicate with them from the interrupt execution context.  The
-execution of the trigger handler is deferred to a fiber, so that data
-fetching operations are possible.  A driver can spawn its own fiber to fetch
+execution of the trigger handler is deferred to a thread, so that data
+fetching operations are possible.  A driver can spawn its own thread to fetch
 data, thus ensuring minimum latency. Alternatively, multiple sensor drivers
-can share a system-wide fiber. The shared fiber approach increases the
+can share a system-wide thread. The shared thread approach increases the
 latency of handling interrupts but uses less memory. You can configure which
 approach to follow for each driver. Most drivers can entirely disable
 triggers resulting in a smaller footprint.

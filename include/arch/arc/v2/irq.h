@@ -73,8 +73,8 @@ extern void _irq_spurious(void *unused);
  *
  * @brief Disable all interrupts on the local CPU
  *
- * This routine disables interrupts.  It can be called from either interrupt,
- * task or fiber level.  This routine returns an architecture-dependent
+ * This routine disables interrupts.  It can be called from either interrupt or
+ * thread level.  This routine returns an architecture-dependent
  * lock-out key representing the "interrupt disable state" prior to the call;
  * this key can be passed to irq_unlock() to re-enable interrupts.
  *
@@ -92,7 +92,7 @@ extern void _irq_spurious(void *unused);
  * thread executes, or while the system is idle.
  *
  * The "interrupt disable state" is an attribute of a thread.  Thus, if a
- * fiber or task disables interrupts and subsequently invokes a kernel
+ * thread disables interrupts and subsequently invokes a kernel
  * routine that causes the calling thread to block, the interrupt
  * disable state will be restored when the thread is later rescheduled
  * for execution.
@@ -117,7 +117,7 @@ static ALWAYS_INLINE unsigned int _arch_irq_lock(void)
  * is an architecture-dependent lock-out key that is returned by a previous
  * invocation of irq_lock().
  *
- * This routine can be called from either interrupt, task or fiber level.
+ * This routine can be called from either interrupt or thread level.
  *
  * @return N/A
  */

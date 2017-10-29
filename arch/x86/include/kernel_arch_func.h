@@ -45,14 +45,14 @@ static inline void kernel_arch_init(void)
 
 /**
  *
- * @brief Set the return value for the specified fiber (inline)
+ * @brief Set the return value for the specified thread (inline)
  *
- * @param fiber pointer to fiber
+ * @param thread pointer to thread
  * @param value value to set as return value
  *
  * The register used to store the return value from a function call invocation
- * is set to <value>.  It is assumed that the specified <fiber> is pending, and
- * thus the fibers context is stored in its TCS.
+ * is set to @a value.  It is assumed that the specified @a thread is pending, and
+ * thus the threads context is stored in its TCS.
  *
  * @return N/A
  */

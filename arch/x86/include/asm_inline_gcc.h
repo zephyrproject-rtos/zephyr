@@ -70,7 +70,7 @@ static inline void _FpAccessDisable(void)
  * @brief Save non-integer context information
  *
  * This routine saves the system's "live" non-integer context into the
- * specified area.  If the specified task or fiber supports SSE then
+ * specified area.  If the specified thread supports SSE then
  * x87/MMX/SSEx thread info is saved, otherwise only x87/MMX thread is saved.
  * Function is invoked by _FpCtxSave(struct tcs *tcs)
  *
@@ -90,7 +90,7 @@ static inline void _do_fp_regs_save(void *preemp_float_reg)
  * @brief Save non-integer context information
  *
  * This routine saves the system's "live" non-integer context into the
- * specified area.  If the specified task or fiber supports SSE then
+ * specified area.  If the specified thread supports SSE then
  * x87/MMX/SSEx thread info is saved, otherwise only x87/MMX thread is saved.
  * Function is invoked by _FpCtxSave(struct tcs *tcs)
  *

@@ -21,8 +21,8 @@
 #define _kernel_arch_thread__h_
 
 /*
- * Reason a thread has relinquished control: fibers can only be in the NONE
- * or COOP state, tasks can be one in the four.
+ * Reason a thread has relinquished control: threads can only be in the NONE
+ * or COOP state, threads can be one in the four.
  */
 #define _CAUSE_NONE 0
 #define _CAUSE_COOP 1

@@ -102,7 +102,7 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 
 
 	/*
-	 * Error was fatal to a kernel task or a fiber; invoke the system
+	 * Error was fatal to a kernel task or a thread; invoke the system
 	 * fatal error handling policy defined for the platform.
 	 */
 

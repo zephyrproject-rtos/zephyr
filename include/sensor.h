@@ -287,8 +287,8 @@ static inline int _impl_sensor_attr_set(struct device *dev,
 /**
  * @brief Activate a sensor's trigger and set the trigger handler
  *
- * The handler will be called from a fiber, so I2C or SPI operations are
- * safe.  However, the fiber's stack is limited and defined by the
+ * The handler will be called from a thread, so I2C or SPI operations are
+ * safe.  However, the thread's stack is limited and defined by the
  * driver.  It is currently up to the caller to ensure that the handler
  * does not overflow the stack.
  *

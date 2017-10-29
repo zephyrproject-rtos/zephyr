@@ -84,7 +84,7 @@
 #define STACK_SIZE 768
 
 /*
- * There are multiple tasks doing printfs and they may conflict.
+ * There are multiple threads doing printfs and they may conflict.
  * Therefore use puts() instead of printf().
  */
 #if defined(CONFIG_STDOUT_CONSOLE)
@@ -226,7 +226,10 @@ static void init_objects(void)
 
 static void start_threads(void)
 {
-	/* create two fibers (prios -2/-1) and four tasks: (prios 0-3) */
+	/*
+	 * create two coop. threads (prios -2/-1) and four preemptive threads
+	 * : (prios 0-3)
+	 */
 	for (int i = 0; i < NUM_PHIL; i++) {
 		int prio = new_prio(i);
 
