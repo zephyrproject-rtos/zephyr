@@ -21,7 +21,7 @@
 
 #define TOTAL_TEST_NUMBER 2
 
-/* 1 IPM console fiber if enabled */
+/* 1 IPM console thread if enabled */
 #if defined(CONFIG_IPM_CONSOLE_RECEIVER) && defined(CONFIG_PRINTK)
 #define IPM_THREAD 1
 #else

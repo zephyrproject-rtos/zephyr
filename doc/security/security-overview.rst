@@ -309,7 +309,7 @@ security violations and limit their impact:
    [PAUL09]_.
 
 -  **Least privilege** describes an access model in which each user,
-   program, thread, and fiber shall have the smallest possible
+   program and thread shall have the smallest possible
    subset of permissions in the system required to perform their
    task. This positive security model aims to minimize the attack
    surface of the system.

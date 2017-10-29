@@ -23,7 +23,7 @@ extern "C" {
  * be allocated for saving coprocessor state and/or C library state information
  * (if thread safety is enabled for the C library). The sizes are in bytes.
  *
- * Stack sizes for individual tasks should be derived from these minima based
+ * Stack sizes for individual threads should be derived from these minima based
  * on the maximum call depth of the task and the maximum level of interrupt
  * nesting.  A minimum stack size is defined by XT_STACK_MIN_SIZE. This minimum
  * is based on the requirement for a task that calls nothing else but can be
@@ -46,7 +46,7 @@ extern "C" {
  *
  * XT_USE_THREAD_SAFE_CLIB -- Define this to a nonzero value to enable
  * thread-safe use of the C library. This will require extra stack space to be
- * allocated for tasks that use the C library reentrant functions. See below
+ * allocated for threads that use the C library reentrant functions. See below
  * for more information.
  *
  * NOTE: The Xtensa toolchain supports multiple C libraries and not all of them

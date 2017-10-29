@@ -9,25 +9,25 @@ APIs tested in this test set
 ============================
 
 k_thread_create
-  - start a helper fiber to help with k_yield() tests
-  - start a fiber to test fiber related functionality
+  - start a helper thread to help with k_yield() tests
+  - start a thread to test thread related functionality
 
 k_yield
-  - Called by a higher priority fiber when there is another fiber
-  - Called by an equal priority fiber when there is another fiber
-  - Called by a lower priority fiber when there is another fiber
+  - Called by a higher priority thread when there is another thread
+  - Called by an equal priority thread when there is another thread
+  - Called by a lower priority thread when there is another thread
 
 k_current_get
   - Called from an ISR (interrupted a task)
-  - Called from an ISR (interrupted a fiber)
+  - Called from an ISR (interrupted a thread)
   - Called from a task
-  - Called from a fiber
+  - Called from a thread
 
 k_is_in_isr
   - Called from an ISR that interrupted a task
-  - Called from an ISR that interrupted a fiber
+  - Called from an ISR that interrupted a thread
   - Called from a task
-  - Called from a fiber
+  - Called from a thread
 
 k_cpu_idle
   - CPU to be woken up by tick timer.  Thus, after each call, the tick count

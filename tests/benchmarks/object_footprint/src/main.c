@@ -116,7 +116,7 @@ void main(void)
 #endif
 
 #ifdef CONFIG_OBJECTS_THREAD
-	/* start a trivial fiber */
+	/* start a trivial thread */
 	k_thread_create(&objects_thread, pStack, THREAD_STACK_SIZE,
 			thread_entry, MESSAGE, (void *)func_array,
 			NULL, 10, 0, K_NO_WAIT);

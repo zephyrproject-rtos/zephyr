@@ -110,12 +110,12 @@ struct _kernel {
 	 * for a thread to only "own" the XMM registers.
 	 */
 
-	/* thread (fiber or task) that owns the FP regs */
+	/* thread that owns the FP regs */
 	struct k_thread *current_fp;
 #endif
 
 #if defined(CONFIG_THREAD_MONITOR)
-	struct k_thread *threads; /* singly linked list of ALL fiber+tasks */
+	struct k_thread *threads; /* singly linked list of ALL threads */
 #endif
 
 #if defined(CONFIG_USERSPACE)

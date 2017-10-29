@@ -212,10 +212,10 @@ static void _gpio_sch_manage_callback(struct device *dev)
 {
 	struct gpio_sch_data *gpio = dev->driver_data;
 
-	/* Start the fiber only when relevant */
+	/* Start the thread only when relevant */
 	if (!sys_slist_is_empty(&gpio->callbacks) && gpio->cb_enabled) {
 		if (!gpio->poll) {
-			SYS_LOG_DBG("Starting SCH GPIO polling fiber");
+			SYS_LOG_DBG("Starting SCH GPIO polling thread");
 			gpio->poll = 1;
 			k_thread_create(&gpio->polling_thread,
 					gpio->polling_stack,

@@ -108,7 +108,7 @@ void _sys_k_event_logger_context_switch(void)
 	 * The mechanism we use to log the kernel events uses a sync semaphore
 	 * to inform that there are available events to be collected. The
 	 * context switch event can be triggered from a task. When we signal a
-	 * semaphore from a task and a fiber is waiting for that semaphore, a
+	 * semaphore from a thread is waiting for that semaphore, a
 	 * context switch is generated immediately. Due to the fact that we
 	 * register the context switch event while the context switch is being
 	 * processed, a new context switch can be generated before the kernel

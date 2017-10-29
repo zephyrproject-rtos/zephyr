@@ -66,7 +66,7 @@ This is the name used to identify the event-based idling mechanism of the
 Zephyr RTOS kernel scheduler. The kernel scheduler can run in two modes. During
 normal operation, when at least one thread is active, it sets up the system
 timer in periodic mode and runs in an interval-based scheduling mode. The
-interval-based mode allows it to time slice between tasks. Many times, the
+interval-based mode allows it to time slice between threads. Many times, the
 threads would be waiting on semaphores, timeouts or for events. When there
 are no threads running, it is inefficient for the kernel scheduler to run
 in interval-based mode. This is because, in this mode the timer would trigger

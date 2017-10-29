@@ -258,13 +258,13 @@ struct _thread_arch {
 	/*
 	 * The location of all floating point related structures/fields MUST be
 	 * located at the end of struct tcs.  This way only the
-	 * fibers/tasks that actually utilize non-integer capabilities need to
+	 * threads that actually utilize non-integer capabilities need to
 	 * account for the increased memory required for storing FP state when
 	 * sizing stacks.
 	 *
 	 * Given that stacks "grow down" on IA-32, and the TCS is located
 	 * at the start of a thread's "workspace" memory, the stacks of
-	 * fibers/tasks that do not utilize floating point instruction can
+	 * threads that do not utilize floating point instruction can
 	 * effectively consume the memory occupied by the 'tCoopFloatReg' and
 	 * 'tPreempFloatReg' structures without ill effect.
 	 */

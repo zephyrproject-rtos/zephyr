@@ -212,7 +212,7 @@ void main(void)
 			MY_PRIORITY, 0, K_NO_WAIT);
 
 	/*
-	 * The fiber/task should not run past where the spurious interrupt is
+	 * The thread should not run past where the spurious interrupt is
 	 * generated. Therefore spur_handler_aborted_thread should remain at 1.
 	 */
 	if (spur_handler_aborted_thread == 0) {

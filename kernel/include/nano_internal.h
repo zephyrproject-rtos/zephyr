@@ -153,7 +153,7 @@ void _arch_user_mode_enter(k_thread_entry_t user_entry, void *p1, void *p2,
 extern FUNC_NORETURN void _arch_syscall_oops(void *ssf);
 #endif /* CONFIG_USERSPACE */
 
-/* set and clear essential fiber/task flag */
+/* set and clear essential thread flag */
 
 extern void _thread_essential_set(void);
 extern void _thread_essential_clear(void);

@@ -73,10 +73,10 @@ config	FLOAT
 	prompt "Floating point registers"
 	default n
 	help
-	This option allows tasks and fibers to use the floating point registers.
-	By default, only a single task or fiber may use the registers.
+	This option allows threads to use the floating point registers.
+	By default, only a single thread may use the registers.
 
-	Disabling this option means that any task or fiber that uses a
+	Disabling this option means that any thread that uses a
 	floating point register will get a fatal exception.
 
 config	FP_SHARING
@@ -85,7 +85,7 @@ config	FP_SHARING
 	depends on FLOAT
 	default n
 	help
-	This option allows multiple tasks and fibers to use the floating point
+	This option allows multiple threads to use the floating point
 	registers.
 
 choice

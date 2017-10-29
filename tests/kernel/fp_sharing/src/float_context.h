@@ -109,7 +109,7 @@ struct fp_register_set {
 
 /*
  * The following constants define the initial byte value used by the background
- * task, and the fiber when loading up the floating point registers.
+ * task, and the thread when loading up the floating point registers.
  */
 
 #define MAIN_FLOAT_REG_CHECK_BYTE ((unsigned char)0xe5)

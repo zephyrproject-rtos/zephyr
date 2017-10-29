@@ -108,7 +108,7 @@ static void test_thread(int arg1, int arg2)
 	}
 
 	TC_PRINT("Testing: test thread sleep + helper thread wakeup test\n");
-	k_sem_give(&helper_thread_sem);   /* Activate helper fiber */
+	k_sem_give(&helper_thread_sem);   /* Activate helper thread */
 	align_to_tick_boundary();
 
 	start_tick = k_uptime_get_32();
@@ -124,7 +124,7 @@ static void test_thread(int arg1, int arg2)
 	}
 
 	TC_PRINT("Testing: test thread sleep + isr offload wakeup test\n");
-	k_sem_give(&helper_thread_sem);   /* Activate helper fiber */
+	k_sem_give(&helper_thread_sem);   /* Activate helper thread */
 	align_to_tick_boundary();
 
 	start_tick = k_uptime_get_32();
@@ -170,11 +170,11 @@ static void helper_thread(int arg1, int arg2)
 
 	k_sem_take(&helper_thread_sem, K_FOREVER);
 
-	/* Wake the test fiber */
+	/* Wake the test thread */
 	k_wakeup(test_thread_id);
 	k_sem_take(&helper_thread_sem, K_FOREVER);
 
-	/* Wake the test fiber from an ISR */
+	/* Wake the test thread from an ISR */
 	irq_offload(irq_offload_isr, (void *)test_thread_id);
 }
 
@@ -210,7 +210,7 @@ void main(void)
 	/* Wait for test_thread to activate us */
 	k_sem_take(&task_sem, K_FOREVER);
 
-	/* Wake the test fiber */
+	/* Wake the test thread */
 	k_wakeup(test_thread_id);
 
 	if (test_failure) {
