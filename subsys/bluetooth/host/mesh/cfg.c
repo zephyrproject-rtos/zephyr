@@ -2473,7 +2473,9 @@ static void friend_set(struct bt_mesh_model *model,
 		goto send_status;
 	}
 
-	cfg->frnd = buf->data[0];
+	if (IS_ENABLED(CONFIG_BT_MESH_FRIEND)) {
+		cfg->frnd = buf->data[0];
+	}
 
 	sub = bt_mesh_subnet_get(cfg->hb_pub.net_idx);
 	if ((cfg->hb_pub.feat & BT_MESH_FEAT_FRIEND) && sub) {
