@@ -16,6 +16,7 @@
  */
 
 #include <zephyr.h>
+#include <ztest.h>
 #include <tc_util.h>
 #include <misc/util.h>
 
@@ -538,46 +539,31 @@ int pool_malloc_test(void)
  * @return N/A
  */
 
-void main(void)
+void test_mem_pool(void)
 {
-	int tc_rC;     /* test case return code */
+	int tc_rc;     /* test case return code */
 
 	TC_START("Test Memory Pool and Heap APIs");
 
 	TC_PRINT("Testing k_mem_pool_alloc(K_NO_WAIT) ...\n");
-	tc_rC = pool_block_get_test();
-	if (tc_rC != TC_PASS) {
-		goto done_tests;
-	}
+	tc_rc = pool_block_get_test();
+	zassert_equal(tc_rc, TC_PASS, "pool block failure");
 
 	TC_PRINT("Testing k_mem_pool_alloc(timeout) ...\n");
-	tc_rC = pool_block_get_timeout_test();
-	if (tc_rC != TC_PASS) {
-		goto done_tests;
-	}
+	tc_rc = pool_block_get_timeout_test();
+	zassert_equal(tc_rc, TC_PASS, "pool block timeout failure");
 
 	TC_PRINT("Testing k_mem_pool_alloc(K_FOREVER) ...\n");
-	tc_rC = pool_block_get_wait_test();
-	if (tc_rC != TC_PASS) {
-		goto done_tests;
-	}
+	tc_rc = pool_block_get_wait_test();
+	zassert_equal(tc_rc, TC_PASS, "pool block wait failure");
 
 	TC_PRINT("Testing k_mem_pool_defragment() ...\n");
-	tc_rC = pool_defrag_test();
-	if (tc_rC != TC_PASS) {
-		goto done_tests;
-	}
+	tc_rc = pool_defrag_test();
+	zassert_equal(tc_rc, TC_PASS, "pool defrag failure");
 
-	tc_rC = pool_malloc_test();
-	if (tc_rC != TC_PASS) {
-		goto done_tests;
-	}
-
-done_tests:
-	TC_END_RESULT(tc_rC);
-	TC_END_REPORT(tc_rC);
+	tc_rc = pool_malloc_test();
+	zassert_equal(tc_rc, TC_PASS, "pool malloc failure");
 }
-
 
 
 K_THREAD_DEFINE(t_alternate, STACKSIZE, alternate_task, NULL, NULL, NULL,
@@ -588,3 +574,10 @@ K_THREAD_DEFINE(t_defrag, STACKSIZE, defrag_task, NULL, NULL, NULL,
 
 K_THREAD_DEFINE(t_helper, STACKSIZE, helper_task, NULL, NULL, NULL,
 		7, 0, K_NO_WAIT);
+
+/*test case main entry*/
+void test_main(void)
+{
+	ztest_test_suite(test_mempool, ztest_unit_test(test_mem_pool));
+	ztest_run_test_suite(test_mempool);
+}
