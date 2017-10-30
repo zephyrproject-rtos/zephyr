@@ -395,23 +395,32 @@ static inline int friend_cred_get(u16_t net_idx, u16_t addr, u8_t idx,
 }
 #endif /* FRIEND || LOW_POWER */
 
-int bt_mesh_net_beacon_update(struct bt_mesh_subnet *sub)
+u8_t bt_mesh_net_flags(struct bt_mesh_subnet *sub)
 {
-	struct bt_mesh_subnet_keys *keys;
-	u8_t flags;
+	u8_t flags = 0x00;
 
-	if (sub->kr_flag) {
-		BT_DBG("NetIndex %u Using new key", sub->net_idx);
-		flags = BT_MESH_NET_FLAG_KR;
-		keys = &sub->keys[1];
-	} else {
-		BT_DBG("NetIndex %u Using current key", sub->net_idx);
-		flags = 0x00;
-		keys = &sub->keys[0];
+	if (sub && sub->kr_flag) {
+		flags |= BT_MESH_NET_FLAG_KR;
 	}
 
 	if (bt_mesh.iv_update) {
 		flags |= BT_MESH_NET_FLAG_IVU;
+	}
+
+	return flags;
+}
+
+int bt_mesh_net_beacon_update(struct bt_mesh_subnet *sub)
+{
+	u8_t flags = bt_mesh_net_flags(sub);
+	struct bt_mesh_subnet_keys *keys;
+
+	if (sub->kr_flag) {
+		BT_DBG("NetIndex %u Using new key", sub->net_idx);
+		keys = &sub->keys[1];
+	} else {
+		BT_DBG("NetIndex %u Using current key", sub->net_idx);
+		keys = &sub->keys[0];
 	}
 
 	BT_DBG("flags 0x%02x, IVI 0x%08x", flags, bt_mesh.iv_index);
