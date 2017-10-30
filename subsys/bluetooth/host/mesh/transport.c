@@ -32,15 +32,11 @@
 #include "transport.h"
 
 #define AID_MASK                    ((u8_t)(BIT_MASK(6)))
-#define OP_MASK                     ((u8_t)(BIT_MASK(7)))
 
 #define SEG(data)                   ((data)[0] >> 7)
 #define AKF(data)                   (((data)[0] >> 6) & 0x01)
 #define AID(data)                   ((data)[0] & AID_MASK)
 #define MIC_SIZE(data)              (((data)[1] & 0x80) ? 8 : 4)
-
-#define CTL_OP(data)                ((data)[0] & OP_MASK)
-#define CTL_HDR(op, seg)            ((op & OP_MASK) | (seg << 7))
 
 #define SZMIC(mic_len)              (mic_len == 8 ? 1 : 0)
 
@@ -660,7 +656,7 @@ static int trans_heartbeat(struct bt_mesh_net_rx *rx,
 static int ctl_recv(struct bt_mesh_net_rx *rx, u8_t hdr,
 		    struct net_buf_simple *buf)
 {
-	u8_t ctl_op = CTL_OP(&hdr);
+	u8_t ctl_op = TRANS_CTL_OP(&hdr);
 
 	BT_DBG("OpCode 0x%02x len %u", ctl_op, buf->len);
 
@@ -762,7 +758,7 @@ int bt_mesh_ctl_send(struct bt_mesh_net_tx *tx, u8_t ctl_op, void *data,
 
 	net_buf_reserve(buf, BT_MESH_NET_HDR_LEN);
 
-	net_buf_add_u8(buf, CTL_HDR(ctl_op, 0));
+	net_buf_add_u8(buf, TRANS_CTL_HDR(ctl_op, 0));
 
 	net_buf_add_mem(buf, data, data_len);
 
