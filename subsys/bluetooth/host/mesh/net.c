@@ -902,7 +902,6 @@ static int net_decrypt(struct bt_mesh_subnet *sub, u8_t idx, const u8_t *data,
 	       sub->keys[idx].nid, NID(data), sub->net_idx, idx);
 
 	if (NID(data) == sub->keys[idx].nid) {
-		rx->ctx.friend_cred = false;
 		enc = sub->keys[idx].enc;
 		priv = sub->keys[idx].privacy;
 		rx->ctx.friend_cred = 0;
