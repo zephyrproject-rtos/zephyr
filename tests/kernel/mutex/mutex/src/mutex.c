@@ -47,6 +47,7 @@
 
 #include <tc_util.h>
 #include <zephyr.h>
+#include <ztest.h>
 
 #define STACKSIZE 512
 
@@ -101,9 +102,9 @@ void thread_06(void)
 	 * Wait for the mutex.  There is a higher priority level thread waiting
 	 * on the mutex, so request will not immediately contribute to raising
 	 * the priority of the owning thread (main thread).  When thread_05
-	 * times out this thread will become the highest priority waiting thread.
-	 * The priority of the owning thread (main thread) will not drop back
-	 * to 7, but will instead drop to 6.
+	 * times out this thread will become the highest priority waiting
+	 * thread. The priority of the owning thread (main thread) will not
+	 * drop back to 7, but will instead drop to 6.
 	 */
 
 	rv = k_mutex_lock(&mutex_4, K_SECONDS(2));
@@ -184,7 +185,8 @@ void thread_09(void)
 
 	k_sleep(K_MSEC(500));	/* Allow lower priority thread to run */
 
-	rv = k_mutex_lock(&mutex_1, K_NO_WAIT);  /*<mutex_1> is already locked. */
+	/*<mutex_1> is already locked. */
+	rv = k_mutex_lock(&mutex_1, K_NO_WAIT);
 	if (rv != -EBUSY) {	/* This attempt to lock the mutex */
 		/* should not succeed. */
 		tc_rc = TC_FAIL;
@@ -241,6 +243,13 @@ extern void thread_12(void);
 
 void user_main(void)
 {
+	/*
+	 * Main thread(test_main) priority was 10 but ztest thread runs at
+	 * priority -1. To run the test smoothly make both main and ztest
+	 * threads run at same priority level.
+	 */
+	k_thread_priority_set(k_current_get(), 10);
+
 	int rv;
 	int i;
 	struct k_mutex *mutexes[4] = { &mutex_1, &mutex_2, &mutex_3, &mutex_4 };
@@ -261,25 +270,16 @@ void user_main(void)
 
 	for (i = 0; i < 4; i++) {
 		rv = k_mutex_lock(mutexes[i], K_NO_WAIT);
-		if (rv != 0) {
-			TC_ERROR("Failed to lock mutex 0x%x\n",
-				 (u32_t)mutexes[i]);
-			tc_rc = TC_FAIL;
-			goto error_return;
-		}
+		zassert_equal(rv, 0, "Failed to lock mutex 0x%x\n",
+			      (u32_t)mutexes[i]);
 		k_sleep(K_SECONDS(1));
 
 		rv = k_thread_priority_get(k_current_get());
-		if (rv != priority[i]) {
-			TC_ERROR("Expected priority %d, not %d\n",
-				 priority[i], rv);
-			tc_rc = TC_FAIL;
-			goto error_return;
-		}
+		zassert_equal(rv, priority[i], "expected priority %d, not %d\n",
+			      priority[i], rv);
 
-		if (tc_rc != TC_PASS) {  /* Catch any errors from other threads */
-			goto error_return;
-		}
+		/* Catch any errors from other threads */
+		zassert_equal(tc_rc, TC_PASS, NULL);
 	}
 
 	/* ~ 4 seconds have passed */
@@ -292,22 +292,14 @@ void user_main(void)
 	/* ~ 5 seconds have passed */
 
 	rv = k_thread_priority_get(k_current_get());
-	if (rv != 6) {
-		TC_ERROR("%s timed out and out priority should drop.\n",
-			 "thread_05");
-		TC_ERROR("Expected priority %d, not %d\n", 6, rv);
-		tc_rc = TC_FAIL;
-		goto error_return;
-	}
+	zassert_equal(rv, 6, "%s timed out and out priority should drop.\n",
+		      "thread_05");
+	zassert_equal(rv, 6, "Expected priority %d, not %d\n", 6, rv);
 
 	k_mutex_unlock(&mutex_4);
 	rv = k_thread_priority_get(k_current_get());
-	if (rv != 7) {
-		TC_ERROR("Gave %s and priority should drop.\n", "mutex_4");
-		TC_ERROR("Expected priority %d, not %d\n", 7, rv);
-		tc_rc = TC_FAIL;
-		goto error_return;
-	}
+	zassert_equal(rv, 7, "Gave %s and priority should drop.\n", "mutex_4");
+	zassert_equal(rv, 7, "Expected priority %d, not %d\n", 7, rv);
 
 	k_sleep(K_SECONDS(1));       /* thread_07 should time out */
 
@@ -315,49 +307,29 @@ void user_main(void)
 
 	for (i = 0; i < 3; i++) {
 		rv = k_thread_priority_get(k_current_get());
-		if (rv != droppri[i]) {
-			TC_ERROR("Expected priority %d, not %d\n",
-				 droppri[i], rv);
-			tc_rc = TC_FAIL;
-			goto error_return;
-		}
+		zassert_equal(rv, droppri[i], "Expected priority %d, not %d\n",
+			      droppri[i], rv);
 		k_mutex_unlock(givemutex[i]);
 
-		if (tc_rc != TC_PASS) {
-			goto error_return;
-		}
+		zassert_equal(tc_rc, TC_PASS, NULL);
 	}
 
 	rv = k_thread_priority_get(k_current_get());
-	if (rv != 10) {
-		TC_ERROR("Expected priority %d, not %d\n", 10, rv);
-		tc_rc = TC_FAIL;
-		goto error_return;
-	}
+	zassert_equal(rv, 10, "Expected priority %d, not %d\n", 10, rv);
 
 	k_sleep(K_SECONDS(1));     /* Give thread_11 time to run */
 
-	if (tc_rc != TC_PASS) {
-		goto error_return;
-	}
+	zassert_equal(tc_rc, TC_PASS, NULL);
 
 	/* test recursive locking using a private mutex */
 
 	TC_PRINT("Testing recursive locking\n");
 
 	rv = k_mutex_lock(&private_mutex, K_NO_WAIT);
-	if (rv != 0) {
-		TC_ERROR("Failed to lock private mutex\n");
-		tc_rc = TC_FAIL;
-		goto error_return;
-	}
+	zassert_equal(rv, 0, "Failed to lock private mutex\n");
 
 	rv = k_mutex_lock(&private_mutex, K_NO_WAIT);
-	if (rv != 0) {
-		TC_ERROR("Failed to recursively lock private mutex\n");
-		tc_rc = TC_FAIL;
-		goto error_return;
-	}
+	zassert_equal(rv, 0, "Failed to recursively lock private mutex\n");
 
 	/* Start thread */
 	k_thread_create(&thread_12_thread_data, thread_12_stack_area, STACKSIZE,
@@ -370,39 +342,15 @@ void user_main(void)
 	k_mutex_unlock(&private_mutex); /* thread_12 should now have lock */
 
 	rv = k_mutex_lock(&private_mutex, K_NO_WAIT);
-	if (rv != -EBUSY) {
-		TC_ERROR("Unexpectedly got lock on private mutex\n");
-		tc_rc = TC_FAIL;
-		goto error_return;
-	}
+	zassert_equal(rv, -EBUSY, "Unexpectedly got lock on private mutex\n");
 
 	rv = k_mutex_lock(&private_mutex, K_SECONDS(1));
-	if (rv != 0) {
-		TC_ERROR("Failed to re-obtain lock on private mutex\n");
-		tc_rc = TC_FAIL;
-		goto error_return;
-	}
+	zassert_equal(rv, 0, "Failed to re-obtain lock on private mutex\n");
 
 	k_mutex_unlock(&private_mutex);
 
 	TC_PRINT("Recursive locking tests successful\n");
-
-error_return:
-	TC_END_RESULT(tc_rc);
-	TC_END_REPORT(tc_rc);
 }
-
-void main(void)
-{
-	k_thread_access_grant(k_current_get(), &private_mutex,
-			      &mutex_1, &mutex_2, &mutex_3, &mutex_4,
-			      &thread_12_thread_data, &thread_12_stack_area,
-			      NULL);
-
-	k_thread_user_mode_enter((k_thread_entry_t)user_main,
-				 NULL, NULL, NULL);
-}
-
 
 K_THREAD_DEFINE(THREAD_05, STACKSIZE, thread_05, NULL, NULL, NULL,
 		5, K_USER, K_NO_WAIT);
@@ -428,3 +376,14 @@ K_THREAD_ACCESS_GRANT(THREAD_07, &mutex_3);
 K_THREAD_ACCESS_GRANT(THREAD_08, &mutex_2);
 K_THREAD_ACCESS_GRANT(THREAD_09, &mutex_1);
 K_THREAD_ACCESS_GRANT(THREAD_11, &mutex_3);
+
+/*test case main entry*/
+void test_main(void)
+{
+	k_thread_access_grant(k_current_get(), &private_mutex,
+			      &mutex_1, &mutex_2, &mutex_3, &mutex_4,
+			      &thread_12_thread_data, &thread_12_stack_area,
+			      NULL);
+	ztest_test_suite(test_mutex, ztest_user_unit_test(user_main));
+	ztest_run_test_suite(test_mutex);
+}
