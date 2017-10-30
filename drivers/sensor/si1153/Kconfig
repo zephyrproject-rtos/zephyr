@@ -1,0 +1,77 @@
+# Kconfig.si1153 - SI1153 Proximity/Ambient Light Sensor IC with I2C Interface
+
+#
+# Copyright (c) 2017 IpTronix S.r.l.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig SI1153
+	bool "SI1153 sensor"
+	depends on SENSOR && I2C
+	default n
+	help
+	 Enable driver for SI1153 Proximity/Ambient Light Sensor IC with I2C Interface.
+
+config SI1153_DEV_NAME
+	string "SI1153 device name"
+	depends on SI1153
+	default "SI1153"
+
+config SI1153_I2C_DEV_NAME
+	string "I2C device where SI1153 is connected"
+	depends on SI1153
+	default "I2C_0"
+	help
+	 Specify the device name of the I2C device to which SI1153 is
+	 connected.
+
+config SI1153_I2C_DEV_ADDRESS
+	hex "I2C address where SI1153 is connected"
+	depends on SI1153
+	default 0x53
+	help
+	 Specify the I2C address to which SI1153 is connected.
+
+config SI1153_INTERRUPT
+	prompt "Enable interrupt handling"
+	bool
+	default false
+	depends on SI1153
+
+config SI1153_GPIO_DEV_NAME
+	string "Gpio device"
+	default "GPIO_1"
+	depends on SI1153 && SI1153_INTERRUPT
+	help
+	  The name of the GPIO device to which the SI1153 interrupt pin is
+	  connected.
+
+config SI1153_GPIO_PIN_NUM
+	int "Interrupt GPIO pin number"
+	default 4
+	depends on SI1153 && SI1153_INTERRUPT
+	help
+	  The number of the GPIO pin which is connected to SI1153 interrupt pin.
+
+config SI1153_OWN_THREAD
+	prompt "Enable thread handling"
+	bool
+	default false
+	depends on SI1153
+
+config SI1153_THREAD_PRIORITY
+	int
+	prompt "Thread priority"
+	depends on SI1153 && SI1153_OWN_THREAD
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config SI1153_THREAD_STACK_SIZE
+	int
+	prompt "Thread stack size"
+	depends on SI1153 && SI1153_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
