@@ -1030,6 +1030,7 @@ static u16_t select_reader(struct lwm2m_input_context *in, u16_t format)
 {
 	switch (format) {
 
+	case LWM2M_FORMAT_APP_OCTET_STREAM:
 	case LWM2M_FORMAT_PLAIN_TEXT:
 	case LWM2M_FORMAT_OMA_PLAIN_TEXT:
 		in->reader = &plain_text_reader;
@@ -2329,6 +2330,7 @@ static int do_write_op(struct lwm2m_engine_obj *obj,
 {
 	switch (format) {
 
+	case LWM2M_FORMAT_APP_OCTET_STREAM:
 	case LWM2M_FORMAT_PLAIN_TEXT:
 	case LWM2M_FORMAT_OMA_PLAIN_TEXT:
 		return do_write_op_plain_text(obj, context);
