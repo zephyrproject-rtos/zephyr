@@ -9,6 +9,10 @@
 #define BT_MESH_TX_SEG_COUNT (CONFIG_BT_MESH_ADV_BUF_COUNT - 3)
 #define BT_MESH_TX_SDU_MAX (BT_MESH_TX_SEG_COUNT * 12)
 
+#define TRANS_CTL_OP_MASK              ((u8_t)BIT_MASK(7))
+#define TRANS_CTL_OP(data)             ((data)[0] & TRANS_CTL_OP_MASK)
+#define TRANS_CTL_HDR(op, seg)         ((op & TRANS_CTL_OP_MASK) | (seg << 7))
+
 #define TRANS_CTL_OP_ACK               0x00
 #define TRANS_CTL_OP_FRIEND_POLL       0x01
 #define TRANS_CTL_OP_FRIEND_UPDATE     0x02
