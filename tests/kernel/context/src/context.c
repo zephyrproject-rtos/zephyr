@@ -19,6 +19,7 @@
 #include <kernel_structs.h>
 #include <arch/cpu.h>
 #include <irq_offload.h>
+#include <ztest.h>
 
 #include <util_test_common.h>
 
@@ -210,7 +211,8 @@ static int test_kernel_cpu_idle(int atomic)
 		tms += sys_clock_us_per_tick / USEC_PER_MSEC;
 		tms2 = k_uptime_get_32();
 		if (tms2 < tms) {
-			TC_ERROR("Bad ms per tick value computed, got %d which is less than %d\n",
+			TC_ERROR("Bad ms per tick value computed,"
+				 "got %d which is less than %d\n",
 				 tms2, tms);
 			return TC_FAIL;
 		}
@@ -772,7 +774,8 @@ static int test_timeout(void)
 		data = k_fifo_get(&timeout_order_fifo, 750);
 		if (!data) {
 			TC_ERROR
-				(" *** timeout while waiting for delayed thread\n");
+				(" *** timeout while waiting for"
+				 " delayed thread\n");
 			return TC_FAIL;
 		}
 
@@ -839,7 +842,8 @@ static int test_timeout(void)
 
 		if (!data) {
 			TC_ERROR
-				(" *** timeout while waiting for delayed thread\n");
+				(" *** timeout while waiting for"
+				 " delayed thread\n");
 			return TC_FAIL;
 		}
 
@@ -877,42 +881,38 @@ static int test_timeout(void)
  *
  * @return N/A
  */
-void main(void)
+void testing_context(void)
 {
 	int rv;                 /* return value from tests */
 
 	thread_detected_error = 0;
 	thread_evidence = 0;
-
-	TC_START("Test kernel CPU and thread routines");
+	/*
+	 * Main thread(test_main) priority is 0 but ztest thread runs at
+	 * priority -1. To run the test smoothly make both main and ztest
+	 * threads run at same priority level.
+	 */
+	k_thread_priority_set(k_current_get(), 0);
 
 	TC_PRINT("Initializing kernel objects\n");
 	rv = kernel_init_objects();
-	if (rv != TC_PASS) {
-		goto tests_done;
-	}
+	zassert_equal(rv, TC_PASS, "failure kernel objects\n");
 
 	TC_PRINT("Testing interrupt locking and unlocking\n");
 	rv = test_kernel_interrupts(irq_lock_wrapper, irq_unlock_wrapper, -1);
-	if (rv != TC_PASS) {
-		goto tests_done;
-	}
+	zassert_equal(rv, TC_PASS, "failure kernel interrupts");
 #ifdef TICK_IRQ
 	/* Disable interrupts coming from the timer. */
 
 	TC_PRINT("Testing irq_disable() and irq_enable()\n");
 	rv = test_kernel_interrupts(irq_disable_wrapper, irq_enable_wrapper,
 				    TICK_IRQ);
-	if (rv != TC_PASS) {
-		goto tests_done;
-	}
+	zassert_equal(rv, TC_PASS, "kernel interrpt failure");
 #endif
 
 	TC_PRINT("Testing some kernel context routines\n");
 	rv = test_kernel_ctx_task();
-	if (rv != TC_PASS) {
-		goto tests_done;
-	}
+	zassert_equal(rv, TC_PASS, "failure kernel ctx task");
 
 	TC_PRINT("Spawning a thread from a task\n");
 	thread_evidence = 0;
@@ -921,11 +921,8 @@ void main(void)
 			thread_entry, k_current_get(), NULL,
 			NULL, K_PRIO_COOP(THREAD_PRIORITY), 0, 0);
 
-	if (thread_evidence != 1) {
-		rv = TC_FAIL;
-		TC_ERROR("  - thread did not execute as expected!\n");
-		goto tests_done;
-	}
+	zassert_equal(thread_evidence, 1,
+		      "  - thread did not execute as expected!\n");
 
 	/*
 	 * The thread ran, now wake it so it can test k_current_get and
@@ -934,46 +931,37 @@ void main(void)
 	TC_PRINT("Thread to test k_current_get() and " "k_is_in_isr()\n");
 	k_sem_give(&sem_thread);
 
-	if (thread_detected_error != 0) {
-		rv = TC_FAIL;
-		TC_ERROR("  - failure detected in thread; "
-			 "thread_detected_error = %d\n", thread_detected_error);
-		goto tests_done;
-	}
+	zassert_equal(thread_detected_error, 0,
+		      "  - failure detected in thread; "
+		      "thread_detected_error = %d\n", thread_detected_error);
 
 	TC_PRINT("Thread to test k_yield()\n");
 	k_sem_give(&sem_thread);
 
-	if (thread_detected_error != 0) {
-		rv = TC_FAIL;
-		TC_ERROR("  - failure detected in thread; "
-			 "thread_detected_error = %d\n", thread_detected_error);
-		goto tests_done;
-	}
+	zassert_equal(thread_detected_error, 0,
+		      "  - failure detected in thread; "
+		      "thread_detected_error = %d\n", thread_detected_error);
 
 	k_sem_give(&sem_thread);
 
 	rv = test_timeout();
-	if (rv != TC_PASS) {
-		goto tests_done;
-	}
+	zassert_equal(rv, TC_PASS, "test timeout\n");
 
 #ifdef HAS_POWERSAVE_INSTRUCTION
 	TC_PRINT("Testing k_cpu_idle()\n");
 	rv = test_kernel_cpu_idle(0);
-	if (rv != TC_PASS) {
-		goto tests_done;
-	}
+	zassert_equal(rv, TC_PASS, "failure test kernel cpu idel");
 #ifndef CONFIG_ARM
 	TC_PRINT("Testing k_cpu_atomic_idle()\n");
 	rv = test_kernel_cpu_idle(1);
-	if (rv != TC_PASS) {
-		goto tests_done;
-	}
+	zassert_equal(rv, TC_PASS, " failure kernel cpu idle");
 #endif
 #endif
+}
 
-tests_done:
-	TC_END_RESULT(rv);
-	TC_END_REPORT(rv);
+/*test case main entry*/
+void test_main(void)
+{
+	ztest_test_suite(test_context, ztest_unit_test(testing_context));
+	ztest_run_test_suite(test_context);
 }
