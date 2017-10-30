@@ -256,7 +256,7 @@ int bt_mesh_net_beacon_update(struct bt_mesh_subnet *sub);
 
 void bt_mesh_rpl_reset(void);
 
-void bt_mesh_iv_update(u32_t iv_index, bool iv_update);
+bool bt_mesh_iv_update(u32_t iv_index, bool iv_update);
 
 struct bt_mesh_subnet *bt_mesh_subnet_get(u16_t net_idx);
 

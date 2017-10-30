@@ -557,14 +557,14 @@ void bt_mesh_rpl_reset(void)
 	}
 }
 
-void bt_mesh_iv_update(u32_t iv_index, bool iv_update)
+bool bt_mesh_iv_update(u32_t iv_index, bool iv_update)
 {
 	int i;
 
 	if (iv_index < bt_mesh.iv_index || iv_index > bt_mesh.iv_index + 42) {
 		BT_ERR("IV Index completely out of sync: 0x%08x != 0x%08x",
 			iv_index, bt_mesh.iv_index);
-		return;
+		return false;
 	}
 
 	if (iv_index > bt_mesh.iv_index + 1) {
@@ -580,20 +580,21 @@ void bt_mesh_iv_update(u32_t iv_index, bool iv_update)
 			BT_WARN("No update, but IV Index 0x%08x != 0x%08x",
 				iv_index, bt_mesh.iv_index);
 		}
-		return;
+
+		return false;
 	}
 
 	if (bt_mesh.iv_update) {
 		if (iv_index != bt_mesh.iv_index) {
 			BT_WARN("IV Index mismatch: 0x%08x != 0x%08x",
 				iv_index, bt_mesh.iv_index);
-			return;
+			return false;
 		}
 	} else {
 		if (iv_index != bt_mesh.iv_index + 1) {
 			BT_WARN("Wrong new IV Index: 0x%08x != 0x%08x + 1",
 				iv_index, bt_mesh.iv_index);
-			return;
+			return false;
 		}
 	}
 
@@ -602,7 +603,7 @@ void bt_mesh_iv_update(u32_t iv_index, bool iv_update)
 
 		if (delta < K_HOURS(96)) {
 			BT_WARN("IV Update before minimum duration");
-			return;
+			return false;
 		}
 	}
 
@@ -610,7 +611,7 @@ void bt_mesh_iv_update(u32_t iv_index, bool iv_update)
 	if (!iv_update && bt_mesh_tx_in_progress()) {
 		BT_WARN("IV Update deferred because of pending transfer");
 		bt_mesh.pending_update = 1;
-		return;
+		return false;
 	}
 
 do_update:
@@ -639,6 +640,8 @@ do_update:
 			bt_mesh_net_beacon_update(&bt_mesh.sub[i]);
 		}
 	}
+
+	return true;
 }
 
 int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
