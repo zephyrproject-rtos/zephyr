@@ -8,6 +8,7 @@
 
 menu "USB Device Networking support"
 	depends on USB_DEVICE_STACK
+	depends on NET_L2_ETHERNET
 
 config USB_DEVICE_NETWORK
 	bool
