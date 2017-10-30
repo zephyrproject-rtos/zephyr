@@ -338,7 +338,7 @@ config BT_CTLR_SCHED_ADVANCED
 config BT_CTLR_RADIO_ENABLE_FAST
 	bool "Use tTXEN/RXEN,FAST ramp-up"
 	depends on SOC_SERIES_NRF52X
-	default y if SOC_NRF52840
+	default y
 	help
 	  Enable use of fast radio ramp-up mode.
 
