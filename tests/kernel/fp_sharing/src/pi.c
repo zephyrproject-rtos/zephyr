@@ -1,5 +1,3 @@
-/* pi.c - pi computation portion of FPU sharing test */
-
 /*
  * Copyright (c) 2011-2014 Wind River Systems, Inc.
  *
@@ -7,7 +5,9 @@
  */
 
 /*
- * DESCRIPTION
+ * @file
+ * pi computation portion of FPU sharing test
+ *
  * This module is used for the FPU sharing test, and supplements the basic
  * load/store test by incorporating two additional threads that utilize the
  * floating point unit.
