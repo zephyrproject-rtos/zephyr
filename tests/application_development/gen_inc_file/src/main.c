@@ -10,11 +10,11 @@
 
 /* The file.inc contains characters from 0 to 255 */
 static const unsigned char inc_file[] = {
-#include "file.bin.inc"
+#include <file.bin.inc>
 };
 
 static const unsigned char gz_inc_file[] = {
-#include "file.bin.gz.inc"
+#include <file.bin.gz.inc>
 };
 
 static const unsigned char compressed_inc_file[] = {
