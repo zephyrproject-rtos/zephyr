@@ -11,6 +11,7 @@
  *  Ensures interrupt and exception stubs are installed correctly.
  */
 
+#include <ztest.h>
 #include <zephyr.h>
 #include <tc_util.h>
 #include <arch/x86/segmentation.h>
@@ -99,7 +100,7 @@ extern void *_EXCEPTION_STUB_NAME(exc_divide_error_handler, IV_DIVIDE_ERROR);
  * @return TC_PASS on success, TC_FAIL on failure
  */
 
-int idt_stub_test(void)
+void idt_stub_test(void)
 {
 	struct segment_descriptor *p_idt_entry;
 	u32_t offset;
@@ -108,27 +109,19 @@ int idt_stub_test(void)
 	p_idt_entry = (struct segment_descriptor *)
 		      (_idt_base_address + (TEST_SOFT_INT << 3));
 	offset = (u32_t)(&int_stub);
-	if (DTE_OFFSET(p_idt_entry) != offset) {
-		TC_ERROR("Failed to find offset of int_stub (0x%x) at vector %d\n",
-			 offset, TEST_SOFT_INT);
-		return TC_FAIL;
-	}
+
+	 /**TESTPOINT: Check offset of int_stub */
+	zassert_equal(DTE_OFFSET(p_idt_entry), offset,
+			"Failed to find offset of int_stub at vector");
 
 	/* Check for the exception stub */
 	p_idt_entry = (struct segment_descriptor *)
 		      (_idt_base_address + (IV_DIVIDE_ERROR << 3));
 	offset = (u32_t)(&_EXCEPTION_STUB_NAME(exc_divide_error_handler, 0));
-	if (DTE_OFFSET(p_idt_entry) != offset) {
-		TC_ERROR("Failed to find offset of exc stub (0x%x) at vector %d\n",
-			 offset, IV_DIVIDE_ERROR);
-		return TC_FAIL;
-	}
 
-	/*
-	 * If the other fields are wrong, the system will crash when the exception
-	 * and software interrupt are triggered so we don't check them.
-	 */
-	return TC_PASS;
+	/**TESTPOINT: Check offset of exc stub */
+	zassert_equal(DTE_OFFSET(p_idt_entry), offset,
+			"Failed to find offset of exc stub at vector");
 }
 
 /**
@@ -156,56 +149,33 @@ void idt_spur_task(void *arg1, void *arg2, void *arg3)
  * @return N/A
  */
 
-void main(void)
+void test_static_idt(void)
 {
-	int rv;                 /* return value from tests */
 	volatile int error;     /* used to create a divide by zero error */
 
-	TC_START("Starting static IDT tests");
-
 	TC_PRINT("Testing to see if IDT has address of test stubs()\n");
-	rv = idt_stub_test();
-	if (rv != TC_PASS) {
-		goto done_tests;
-	}
+	idt_stub_test();
 
 	TC_PRINT("Testing to see interrupt handler executes properly\n");
 	_trigger_isr_handler();
 
-	if (int_handler_executed == 0) {
-		TC_ERROR("Interrupt handler did not execute\n");
-		rv = TC_FAIL;
-		goto done_tests;
-	} else if (int_handler_executed != 1) {
-		TC_ERROR("Interrupt handler executed more than once! (%d)\n",
-			 int_handler_executed);
-		rv = TC_FAIL;
-		goto done_tests;
-	}
+	 /**TESTPOINT: Check Interrupt Handler*/
+	zassert_true(int_handler_executed,
+			"Interrupt handler did not execute");
 
 	TC_PRINT("Testing to see exception handler executes properly\n");
 
 	/*
-	 * Use exc_handler_executed instead of 0 to prevent the compiler issuing a
-	 * 'divide by zero' warning.
+	 * Use exc_handler_executed instead of 0 to prevent the compiler
+	 * issuing a 'divide by zero' warning.
 	 */
 	error = 32;     /* avoid static checker uninitialized warnings */
 	error = error / exc_handler_executed;
 
-	if (exc_handler_executed == 0) {
-		TC_ERROR("Exception handler did not execute\n");
-		rv = TC_FAIL;
-		goto done_tests;
-	} else if (exc_handler_executed != 1) {
-		TC_ERROR("Exception handler executed more than once! (%d)\n",
-			 exc_handler_executed);
-		rv = TC_FAIL;
-		goto done_tests;
-	}
+	/**TESTPOINT: Check Exception Handler*/
+	zassert_true(exc_handler_executed,
+			"Exception handler did not execute");
 
-	/*
-	 * Start task to trigger the spurious interrupt handler
-	 */
 	TC_PRINT("Testing to see spurious handler executes properly\n");
 	k_thread_create(&my_thread, my_stack_area, MY_STACK_SIZE,
 			idt_spur_task, NULL, NULL, NULL,
@@ -215,13 +185,16 @@ void main(void)
 	 * The thread should not run past where the spurious interrupt is
 	 * generated. Therefore spur_handler_aborted_thread should remain at 1.
 	 */
-	if (spur_handler_aborted_thread == 0) {
-		TC_ERROR("Spurious handler did not execute as expected\n");
-		rv = TC_FAIL;
-		goto done_tests;
-	}
 
-done_tests:
-	TC_END(rv, "%s - %s.\n", rv == TC_PASS ? PASS : FAIL, __func__);
-	TC_END_REPORT(rv);
+	 /**TESTPOINT: Check Spurious Handler*/
+	zassert_true(spur_handler_aborted_thread,
+			"Spurious handler did not execute as expected");
+
+}
+
+void test_main(void *p1, void *p2, void *p3)
+{
+	ztest_test_suite(test_static_idt_fn,
+		ztest_unit_test(test_static_idt));
+	ztest_run_test_suite(test_static_idt_fn);
 }

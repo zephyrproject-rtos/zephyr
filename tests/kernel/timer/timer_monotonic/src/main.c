@@ -7,8 +7,9 @@
 #include <zephyr.h>
 #include <inttypes.h>
 #include <tc_util.h>
+#include <ztest.h>
 
-int test_frequency(void)
+void test_frequency(void)
 {
 	u32_t start, end, delta, pct;
 
@@ -25,20 +26,13 @@ int test_frequency(void)
 	       sys_clock_hw_cycles_per_sec, pct);
 
 	/* Heuristic: if we're more than 10% off, throw an error */
-	if (pct < 90 || pct > 110) {
-		TC_PRINT("Clock calibration is way off!\n");
-		return -1;
-	}
-
-	return 0;
+	zassert_true(!(pct < 90 || pct > 110), "Clock calibration is way off!");
 }
 
-
-void main(void)
+void test_timer(void)
 {
 	u32_t t_last, t_now, i, errors;
 	s32_t diff;
-	int rv = TC_PASS;
 
 	errors = 0;
 
@@ -64,18 +58,14 @@ void main(void)
 		}
 		t_last = t_now;
 	}
-
-	if (errors) {
-		TC_PRINT("errors = %d\n", errors);
-		rv = TC_FAIL;
-	} else {
-		TC_PRINT("Cycle results appear to be monotonic\n");
-	}
-
-	if (test_frequency()) {
-		rv = TC_FAIL;
-	}
-
-	TC_END_REPORT(rv);
+	zassert_false(errors, "Cycle results appear to be monotonic\n");
 }
 
+/**test case main entry */
+void test_main(void *p1, void *p2, void *p3)
+{
+	ztest_test_suite(test_timer_fn,
+		ztest_unit_test(test_timer),
+		ztest_unit_test(test_frequency));
+	ztest_run_test_suite(test_timer_fn);
+}
