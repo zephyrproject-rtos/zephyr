@@ -675,18 +675,51 @@ following procedure:
 #. Rebuild the application normally following the steps specified
    in `Build an Application`_ above.
 
-
+.. _application_run:
 
 Run an Application
 ******************
 
-An application image can be run on real or emulated hardware. The kernel has
-built-in emulator support for QEMU. It allows you to run and test an application
-virtually, before (or in lieu of) loading and running it on actual target
-hardware.
+An application image can be run on real or emulated hardware.
 
-#. Open a terminal console and navigate to the application directory
-   :file:`~/app`.
+Most boards supported by Zephyr let you flash a compiled binary using
+the Make ``flash`` target to copy the binary to the board and run it.
+Follow these instructions to flash and run an application on real
+hardware:
+
+#. Open a terminal console on your host computer, and navigate to the
+   application directory, :file:`~/app`.
+
+#. Enter the following command to build and run the application on
+   your board, which you will usually attach via USB.
+
+   .. code-block:: console
+
+       $ make [BOARD=<type> ...] flash
+
+   The Zephyr build system integrates with the board support files to
+   use hardware-specific tools to flash the Zephyr binary to your
+   hardware, then run it.
+
+   In cases where board support is incomplete, ``make flash`` may not
+   be supported. If you receive an error message about flash support
+   being unavailable when running this command, consult :ref:`your
+   board's documentation <boards>` for additional information on how
+   to flash your board.
+
+.. note:: When developing on Linux, it's common to need to install
+          board-specific udev rules to enable USB device access to
+          your board as a non-root user. If ``make flash`` fails,
+          consult your board's documentation to see if this is
+          necessary.
+
+The kernel has built-in emulator support for QEMU. It allows you to
+run and test an application virtually, before (or in lieu of) loading
+and running it on actual target hardware. Follow these instructions to
+run an application via QEMU:
+
+#. Open a terminal console on your host computer, and navigate to the
+   application directory :file:`~/app`.
 
 #. Enter the following command to build and run the application
    using a QEMU-supported board configuration, such as qemu_cortex_m3 or
