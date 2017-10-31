@@ -400,8 +400,8 @@ static inline void net_buf_simple_restore(struct net_buf_simple *buf,
   */
 struct net_buf {
 	union {
-		/** FIFO uses first 4 bytes itself, reserve space */
-		int _unused;
+		/** Allow placing the buffer into sys_slist_t */
+		sys_snode_t node;
 
 		/** Fragments associated with this buffer. */
 		struct net_buf *frags;
