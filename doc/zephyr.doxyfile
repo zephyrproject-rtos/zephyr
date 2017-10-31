@@ -113,7 +113,9 @@ INPUT                  = \
 INPUT_ENCODING         = UTF-8
 FILE_PATTERNS          = "*.c" "*.h" "*.S"
 RECURSIVE              = YES
-EXCLUDE                = ../include/spi_legacy.h ../include/net/http_legacy.h
+EXCLUDE                = ../include/spi_legacy.h
+             ../include/net/http_legacy.h \
+			 ../include/misc/util.h
 EXCLUDE_SYMLINKS       =
 EXCLUDE_PATTERNS       =
 EXCLUDE_SYMBOLS        =
