@@ -13,22 +13,11 @@
 			special_char##profile##_##name##_start_time);	     \
 	}
 
-/*total_##profile##_##name##_time =
- * profile##_##name##_end_us - profile##_##name##_start_us;
- */
-
 #define DECLARE_VAR(profile, name) \
 	u64_t total_##profile##_##name##_time;
 
-extern u64_t __start_swap_time;
-extern u64_t __end_swap_time;
-extern u64_t __start_intr_time;
-extern u64_t __end_intr_time;
-extern u64_t __start_tick_time;
-extern u64_t __end_tick_time;
-
 /* NRF RTC TIMER runs ar very slow rate (32KHz), So in order to measure
- * Kernel stats dedicated timer is used to measure kernel stats
+ * Kernel starts a dedicated timer to measure kernel stats.
  */
 #if defined(CONFIG_NRF_RTC_TIMER)
 #define NANOSECS_PER_SEC 1000000000
@@ -37,12 +26,13 @@ extern u64_t __end_tick_time;
  * Capture Register and Current Count will be copied into corresponding
  * current count register.
  */
-#define GET_CURRENT_TIME()  ((NRF_TIMER2->TASKS_CAPTURE[0] = 1) ?	\
-							NRF_TIMER2->CC[0] : 0)
+#define TIMING_INFO_PRE_READ() (NRF_TIMER2->TASKS_CAPTURE[0] = 1)
+#define TIMING_INFO_OS_GET_TIME()  (NRF_TIMER2->CC[0])
+#define TIMING_INFO_GET_TIMER_VALUE()	TIMING_INFO_GET_CURRENT_TIME()
+
 #define CYCLES_TO_NS(x) ((x) * (NANOSECS_PER_SEC/CYCLES_PER_SEC))
 #define PRINT_STATS(x, y, z)   PRINT_F(x, (y*((SystemCoreClock)/	\
 							CYCLES_PER_SEC)), z)
-#define GET_TIMER_VALUE()	GET_CURRENT_TIME()
 
 /* Configure Timer parameters */
 static inline void benchmark_timer_init(void)
@@ -71,14 +61,21 @@ static inline u32_t get_core_freq_MHz(void)
 	return SystemCoreClock/1000000;
 }
 
-#else
-#define GET_CURRENT_TIME()  OS_GET_TIME()
-#define CYCLES_TO_NS(x) SYS_CLOCK_HW_CYCLES_TO_NS(x)
-#define GET_TIMER_VALUE()	SysTick->VAL
-/* Dummy functions for timer */
+#else  /* All other architectures */
+/* Done because weak attribute doesn't work on static inline. */
 static inline void benchmark_timer_init(void)  {       }
 static inline void benchmark_timer_stop(void)  {       }
 static inline void benchmark_timer_start(void) {       }
+
+#define TIMING_INFO_PRE_READ()
+#define TIMING_INFO_OS_GET_TIME()  k_cycle_get_32()
+
+#ifdef CONFIG_ARM
+#define TIMING_INFO_GET_TIMER_VALUE()   SysTick->VAL
+#endif	/* CONFIG_ARM */
+
+#define CYCLES_TO_NS(x) SYS_CLOCK_HW_CYCLES_TO_NS(x)
+/* Dummy functions for timer */
 
 /* Get Core Frequency in MHz */
 static inline u32_t get_core_freq_MHz(void)
@@ -96,6 +93,14 @@ void heap_malloc_free_bench(void);
 void semaphore_bench(void);
 void mutex_bench(void);
 void msg_passing_bench(void);
+
+/* External variables */
+extern u64_t __start_swap_time;
+extern u64_t __end_swap_time;
+extern u64_t __start_intr_time;
+extern u64_t __end_intr_time;
+extern u64_t __start_tick_time;
+extern u64_t __end_tick_time;
 
 /* PRINT_F
  * Macro to print a formatted output string. fprintf is used when
