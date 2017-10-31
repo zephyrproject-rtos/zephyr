@@ -19,8 +19,8 @@ char sline[256];
 /* FILE *output_file = stdout; */
 
 /* location of the time stamps*/
-u32_t __read_swap_end_time_value;
-u64_t __common_var_swap_end_time;
+extern u32_t __read_swap_end_time_value;
+extern u64_t __common_var_swap_end_time;
 
 volatile u64_t thread_abort_end_time;
 volatile u64_t thread_abort_start_time;
@@ -85,51 +85,9 @@ u32_t benchmarking_overhead_swap(void)
 		"pop %edx\n\t"
 		"pop %eax\n\t");
 
-	/* u64_t end_time = GET_CURRENT_TIME(); */
 	return(test_end_time - start_time);
 }
 #endif
-
-#if CONFIG_ARM
-void read_timer_start_of_swap(void)
-{
-	__start_swap_time = (u32_t) GET_TIMER_VALUE();
-}
-
-void read_timer_end_of_swap(void)
-{
-	if (__read_swap_end_time_value == 1) {
-		__read_swap_end_time_value = 2;
-		__common_var_swap_end_time = GET_CURRENT_TIME();
-	}
-}
-
-/* ARM processors read current value of time through sysTick timer
- * and nrf soc read it though timer
- */
-void read_timer_start_of_isr(void)
-{
-	__start_intr_time  = (u32_t) GET_TIMER_VALUE();
-}
-
-void read_timer_end_of_isr(void)
-{
-	__end_intr_time  = (u32_t) GET_TIMER_VALUE();
-}
-
-void read_timer_start_of_tick_handler(void)
-{
-	__start_tick_time  = (u32_t)GET_TIMER_VALUE();
-}
-
-void read_timer_end_of_tick_handler(void)
-{
-	 __end_tick_time  = (u32_t) GET_TIMER_VALUE();
-}
-
-#endif /* CONFIG_ARM */
-
-
 
 void test_thread_entry(void *p, void *p1, void *p2)
 {
@@ -142,7 +100,8 @@ void test_thread_entry(void *p, void *p1, void *p2)
 void thread_swap_test(void *p1, void *p2, void *p3)
 {
 	__read_swap_end_time_value = 1;
-	thread_abort_start_time = GET_CURRENT_TIME();
+	TIMING_INFO_PRE_READ();
+	thread_abort_start_time = TIMING_INFO_OS_GET_TIME();
 	k_thread_abort(_current);
 }
 
@@ -202,20 +161,24 @@ void system_thread_bench(void)
 
 	/*******************************************************************/
 	/* thread create*/
-	thread_create_start_time = GET_CURRENT_TIME();
+	TIMING_INFO_PRE_READ();
+	thread_create_start_time = TIMING_INFO_OS_GET_TIME();
 
 	k_tid_t my_tid = k_thread_create(&my_thread, my_stack_area,
 					 STACK_SIZE,
 					 thread_swap_test,
 					 NULL, NULL, NULL,
 					 5 /*priority*/, 0, 10);
-	thread_create_end_time = GET_CURRENT_TIME();
+	TIMING_INFO_PRE_READ();
+	thread_create_end_time = TIMING_INFO_OS_GET_TIME();
 
 	/* thread Termination*/
-	thread_cancel_start_time = GET_CURRENT_TIME();
+	TIMING_INFO_PRE_READ();
+	thread_cancel_start_time = TIMING_INFO_OS_GET_TIME();
 	s32_t ret_value_thread_cancel  = k_thread_cancel(my_tid);
 
-	thread_cancel_end_time = GET_CURRENT_TIME();
+	TIMING_INFO_PRE_READ();
+	thread_cancel_end_time = TIMING_INFO_OS_GET_TIME();
 	ARG_UNUSED(ret_value_thread_cancel);
 
 	/* Thread suspend*/
@@ -225,7 +188,8 @@ void system_thread_bench(void)
 					      NULL, NULL, NULL,
 					      -1 /*priority*/, 0, 0);
 
-	thread_suspend_end_time = GET_CURRENT_TIME();
+	TIMING_INFO_PRE_READ();
+	thread_suspend_end_time = TIMING_INFO_OS_GET_TIME();
 	/* At this point test for resume*/
 	k_thread_resume(sus_res_tid);
 
@@ -304,11 +268,13 @@ void system_thread_bench(void)
 
 void thread_suspend_test(void *p1, void *p2, void *p3)
 {
-	thread_suspend_start_time = GET_CURRENT_TIME();
+	TIMING_INFO_PRE_READ();
+	thread_suspend_start_time = TIMING_INFO_OS_GET_TIME();
 	k_thread_suspend(_current);
 
 	/* comes to this line once its resumed*/
-	thread_resume_end_time = GET_CURRENT_TIME();
+	TIMING_INFO_PRE_READ();
+	thread_resume_end_time = TIMING_INFO_OS_GET_TIME();
 
 	/* k_thread_suspend(_current); */
 }
@@ -328,17 +294,23 @@ void heap_malloc_free_bench(void)
 	u32_t sum_free = 0;
 
 	while (count++ != 100) {
-		heap_malloc_start_time = GET_CURRENT_TIME();
+		TIMING_INFO_PRE_READ();
+		heap_malloc_start_time = TIMING_INFO_OS_GET_TIME();
 		void *allocated_mem = k_malloc(10);
 
-		heap_malloc_end_time = GET_CURRENT_TIME();
+		TIMING_INFO_PRE_READ();
+		heap_malloc_end_time = TIMING_INFO_OS_GET_TIME();
 		if (allocated_mem == NULL) {
 			TC_PRINT("\n Malloc failed at count %d\n", count);
 			break;
 		}
-		heap_free_start_time = GET_CURRENT_TIME();
+		TIMING_INFO_PRE_READ();
+		heap_free_start_time = TIMING_INFO_OS_GET_TIME();
+
 		k_free(allocated_mem);
-		heap_free_end_time = GET_CURRENT_TIME();
+
+		TIMING_INFO_PRE_READ();
+		heap_free_end_time = TIMING_INFO_OS_GET_TIME();
 		sum_malloc += heap_malloc_end_time - heap_malloc_start_time;
 		sum_free += heap_free_end_time - heap_free_start_time;
 	}
