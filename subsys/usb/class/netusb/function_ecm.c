@@ -233,40 +233,33 @@ int ecm_send(struct net_pkt *pkt)
 {
 	u8_t send_buf[CONFIG_CDC_ECM_BULK_EP_MPS];
 	int remaining = sizeof(send_buf);
+	struct net_buf *frag;
 
 	net_hexdump_frags("<", pkt);
 
 	if (!pkt->frags) {
-		remaining = append_bytes(send_buf, sizeof(send_buf),
-					 net_pkt_ll(pkt),
-					 net_pkt_ll_reserve(pkt),
-					 remaining);
-		if (remaining < 0) {
-			return remaining;
-		}
-	} else {
-		struct net_buf *frag;
+		return -ENODATA;
+	}
 
-		remaining = append_bytes(send_buf, sizeof(send_buf),
-					 net_pkt_ll(pkt),
-					 net_pkt_ll_reserve(pkt) +
-					 pkt->frags->len,
-					 remaining);
-		if (remaining < 0) {
-			return remaining;
-		}
+	remaining = append_bytes(send_buf, sizeof(send_buf),
+				 net_pkt_ll(pkt),
+				 net_pkt_ll_reserve(pkt) +
+				 pkt->frags->len,
+				 remaining);
+	if (remaining < 0) {
+		return remaining;
+	}
 
-		for (frag = pkt->frags->frags; frag; frag = frag->frags) {
+	for (frag = pkt->frags->frags; frag; frag = frag->frags) {
 #if VERBOSE_DEBUG
-			SYS_LOG_DBG("Fragment %p len %u, remaining %u",
-				    frag, frag->len, remaining);
+		SYS_LOG_DBG("Fragment %p len %u, remaining %u",
+			    frag, frag->len, remaining);
 #endif
-			remaining = append_bytes(send_buf, sizeof(send_buf),
-						 frag->data, frag->len,
-						 remaining);
-			if (remaining < 0) {
-				return remaining;
-			}
+		remaining = append_bytes(send_buf, sizeof(send_buf),
+					 frag->data, frag->len,
+					 remaining);
+		if (remaining < 0) {
+			return remaining;
 		}
 	}
 
