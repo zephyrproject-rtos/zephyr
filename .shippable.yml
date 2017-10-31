@@ -35,19 +35,24 @@ build:
           git rebase origin/${PULL_REQUEST_BASE_BRANCH};
         fi
       - source zephyr-env.sh
+      - cd $ZEPHYR_BASE/scripts
+      - mkdir build && cd build
+      - cmake .. && make
+      - export PREBUILT_HOST_TOOLS=$(pwd)
+      - cd $ZEPHYR_BASE
       - ccache -c -s --max-size=2000M
-      - make host-tools
-      - export PREBUILT_HOST_TOOLS=${ZEPHYR_BASE}/bin
       - >
           if [ "$MATRIX_BUILD" = "3" -a "$IS_PULL_REQUEST" = "true" ]; then
             export COMMIT_RANGE=origin/${PULL_REQUEST_BASE_BRANCH}..HEAD
             echo "Building a Pull Request";
             echo "- Building Documentation";
             echo "Commit range:" ${COMMIT_RANGE}
+            pushd doc
             make htmldocs > doc.warnings 2>&1;
             if [ -s doc.warnings ]; then
               echo " => New documentation warnings/errors";
             fi;
+            popd
             echo "- Verify commit message, coding style, doc build";
             ./scripts/ci/check-compliance.py --commits ${COMMIT_RANGE} || true;
           fi;
