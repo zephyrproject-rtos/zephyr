@@ -7,6 +7,7 @@
 #include <stdbool.h>
 
 #include <zephyr.h>
+#include <ztest.h>
 #include <tc_util.h>
 #include <misc/util.h>
 
@@ -351,48 +352,43 @@ static int test_delayed(void)
 	return check_results(NUM_TEST_ITEMS);
 }
 
-
-void main(void)
+void testing_workq(void)
 {
-	int status = TC_FAIL;
+	/*
+	 * Main thread(test_main) priority is 0 but ztest thread runs at
+	 * priority -1. To run the test smoothly make both main and ztest
+	 * threads run at same priority level.
+	 */
+	k_thread_priority_set(k_current_get(), 0);
 
-	if (test_sequence() != TC_PASS) {
-		goto end;
-	}
-
-	reset_results();
-
-	if (test_resubmit() != TC_PASS) {
-		goto end;
-	}
+	zassert_equal(test_sequence(), TC_PASS, "test sequence failed");
 
 	reset_results();
 
-	if (test_delayed() != TC_PASS) {
-		goto end;
-	}
+	zassert_equal(test_resubmit(), TC_PASS, "test resubmit failed");
 
 	reset_results();
 
-	if (test_delayed_resubmit() != TC_PASS) {
-		goto end;
-	}
+	zassert_equal(test_delayed(), TC_PASS, "test delayed failed");
 
 	reset_results();
 
-	if (test_delayed_resubmit_thread() != TC_PASS) {
-		goto end;
-	}
+	zassert_equal(test_delayed_resubmit(), TC_PASS, "delayed resubmit"
+		      " failed");
 
 	reset_results();
 
-	if (test_delayed_cancel() != TC_PASS) {
-		goto end;
-	}
+	zassert_equal(test_delayed_resubmit_thread(), TC_PASS,
+		      "delayed resubmit thread failed");
+	reset_results();
 
-	status = TC_PASS;
+	zassert_equal(test_delayed_cancel(), TC_PASS,
+		      "delayed cancel failed");
+}
 
-end:
-	TC_END_RESULT(status);
-	TC_END_REPORT(status);
+/*test case main entry*/
+void test_main(void)
+{
+	ztest_test_suite(test_workq, ztest_unit_test(testing_workq));
+	ztest_run_test_suite(test_workq);
 }
