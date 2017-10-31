@@ -35,11 +35,6 @@ build:
           git rebase origin/${PULL_REQUEST_BASE_BRANCH};
         fi
       - source zephyr-env.sh
-      - cd $ZEPHYR_BASE/scripts
-      - mkdir build && cd build
-      - cmake .. && make
-      - export PREBUILT_HOST_TOOLS=$(pwd)
-      - cd $ZEPHYR_BASE
       - ccache -c -s --max-size=2000M
       - >
           if [ "$MATRIX_BUILD" = "3" -a "$IS_PULL_REQUEST" = "true" ]; then
