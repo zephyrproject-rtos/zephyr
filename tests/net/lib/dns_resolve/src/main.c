@@ -220,6 +220,8 @@ static void test_init(void)
 		DBG("Cannot add IPv6 address %s\n",
 		       net_sprint_ipv6_addr(&my_addr1));
 		zassert_not_null(ifaddr, "addr1");
+
+		return;
 	}
 
 	/* For testing purposes we need to set the adddresses preferred */
