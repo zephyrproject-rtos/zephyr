@@ -17,6 +17,7 @@
  */
 
 #include <tc_util.h>
+#include <ztest.h>
 #include <arch/cpu.h>
 #include <misc/util.h>
 #include <irq_offload.h>
@@ -34,7 +35,7 @@
 #define HELPER_THREAD_PRIORITY  -10
 
 #define ONE_SECOND  (MSEC_PER_SEC)
-#define TICKS_PER_MS  MSEC_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC
+#define TICKS_PER_MS  (MSEC_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
 static struct k_sem test_thread_sem;
 static struct k_sem helper_thread_sem;
@@ -96,7 +97,8 @@ static void test_thread(int arg1, int arg2)
 	start_tick = k_uptime_get_32();
 
 	/* FIXME: one tick less to account for
-	 * one  extra tick for _TICK_ALIGN in k_sleep*/
+	 * one  extra tick for _TICK_ALIGN in k_sleep
+	 */
 	k_sleep(ONE_SECOND - TICKS_PER_MS);
 	end_tick = k_uptime_get_32();
 
@@ -113,12 +115,13 @@ static void test_thread(int arg1, int arg2)
 
 	start_tick = k_uptime_get_32();
 	/* FIXME: one tick less to account for
-	 * one  extra tick for _TICK_ALIGN in k_sleep*/
+	 * one  extra tick for _TICK_ALIGN in k_sleep
+	 */
 	k_sleep(ONE_SECOND - TICKS_PER_MS);
 	end_tick = k_uptime_get_32();
 
 	if (end_tick - start_tick > 1) {
-		TC_ERROR(" *** k_wakeup() took too long (%d ticks) \n",
+		TC_ERROR(" *** k_wakeup() took too long (%d ticks)\n",
 				 end_tick - start_tick);
 		return;
 	}
@@ -129,7 +132,8 @@ static void test_thread(int arg1, int arg2)
 
 	start_tick = k_uptime_get_32();
 	/* FIXME: one tick less to account for
-	 * one  extra tick for _TICK_ALIGN in k_sleep*/
+	 * one  extra tick for _TICK_ALIGN in k_sleep
+	 */
 	k_sleep(ONE_SECOND - TICKS_PER_MS);
 	end_tick = k_uptime_get_32();
 
@@ -146,7 +150,8 @@ static void test_thread(int arg1, int arg2)
 	start_tick = k_uptime_get_32();
 
 	/* FIXME: one tick less to account for
-	 * one  extra tick for _TICK_ALIGN in k_sleep*/
+	 * one  extra tick for _TICK_ALIGN in k_sleep
+	 */
 	k_sleep(ONE_SECOND - TICKS_PER_MS);           /* Task will execute */
 	end_tick = k_uptime_get_32();
 
@@ -155,7 +160,6 @@ static void test_thread(int arg1, int arg2)
 				 end_tick - start_tick);
 		return;
 	}
-
 	test_failure = false;
 }
 
@@ -169,23 +173,25 @@ static void helper_thread(int arg1, int arg2)
 {
 
 	k_sem_take(&helper_thread_sem, K_FOREVER);
-
 	/* Wake the test thread */
 	k_wakeup(test_thread_id);
 	k_sem_take(&helper_thread_sem, K_FOREVER);
-
 	/* Wake the test thread from an ISR */
 	irq_offload(irq_offload_isr, (void *)test_thread_id);
 }
 
-void main(void)
+void testing_sleep(void)
 {
 	int       status = TC_FAIL;
 	u32_t  start_tick;
 	u32_t  end_tick;
 
-	TC_START("Test kernel Sleep and Wakeup APIs\n");
-
+	/*
+	 * Main thread(test_main) priority is 0 but ztest thread runs at
+	 * priority -1. To run the test smoothly make both main and ztest
+	 * threads run at same priority level.
+	 */
+	k_thread_priority_set(k_current_get(), 0);
 	test_objects_init();
 
 	test_thread_id = k_thread_create(&test_thread_data, test_thread_stack,
@@ -213,26 +219,26 @@ void main(void)
 	/* Wake the test thread */
 	k_wakeup(test_thread_id);
 
-	if (test_failure) {
-		goto done_tests;
-	}
+	zassert_false(test_failure, "test failure");
 
 	TC_PRINT("Testing kernel k_sleep()\n");
 	align_to_tick_boundary();
 	start_tick = k_uptime_get_32();
 	/* FIXME: one tick less to account for
-	 * one  extra tick for _TICK_ALIGN in k_sleep*/
+	 * one  extra tick for _TICK_ALIGN in k_sleep
+	 */
 	k_sleep(ONE_SECOND - TICKS_PER_MS);
 	end_tick = k_uptime_get_32();
-
-	if (!sleep_time_valid(start_tick, end_tick, ONE_SECOND)) {
-		TC_ERROR("k_sleep() slept for %d ticks, not %d\n",
-			end_tick - start_tick, ONE_SECOND);
-		goto done_tests;
-	}
+	zassert_true(sleep_time_valid(start_tick, end_tick, ONE_SECOND),
+		     "k_sleep() slept for %d ticks, not %d\n",
+		     end_tick - start_tick, ONE_SECOND);
 
 	status = TC_PASS;
+}
 
-done_tests:
-	TC_END_REPORT(status);
+/*test case main entry*/
+void test_main(void)
+{
+	ztest_test_suite(test_sleep, ztest_unit_test(testing_sleep));
+	ztest_run_test_suite(test_sleep);
 }
