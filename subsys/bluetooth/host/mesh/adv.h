@@ -29,6 +29,9 @@ struct bt_mesh_adv {
 		/* Generic User Data */
 		u8_t user_data[2];
 
+		/* Address, used e.g. for Friend Queue messages */
+		u16_t addr;
+
 		/* For transport layer segment sending */
 		struct {
 			u8_t tx_id;
@@ -42,6 +45,11 @@ struct bt_mesh_adv {
 /* xmit_count: Number of retransmissions, i.e. 0 == 1 transmission */
 struct net_buf *bt_mesh_adv_create(enum bt_mesh_adv_type type, u8_t xmit_count,
 				   u8_t xmit_int, s32_t timeout);
+
+struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *pool,
+					     enum bt_mesh_adv_type type,
+					     u8_t xmit_count, u8_t xmit_int,
+					     s32_t timeout);
 
 void bt_mesh_adv_send(struct net_buf *buf, bt_mesh_adv_func_t sent);
 
