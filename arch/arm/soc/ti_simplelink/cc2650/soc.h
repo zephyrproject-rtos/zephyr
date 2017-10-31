@@ -9,10 +9,10 @@
 #define _CC2650_SOC_H_
 
 #include <misc/util.h>
-#include "include/ccfg.h"
-#include "include/gpio.h"
-#include "include/ioc.h"
-#include "include/prcm.h"
+#include "registers/ccfg.h"
+#include "registers/gpio.h"
+#include "registers/ioc.h"
+#include "registers/prcm.h"
 
 
 /* Helper functions and macros */
