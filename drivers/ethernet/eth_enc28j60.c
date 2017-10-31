@@ -43,12 +43,14 @@ static void eth_enc28j60_set_bank(struct device *dev, u16_t reg_addr)
 	tx_buf[0] = ENC28J60_SPI_RCR | ENC28J60_REG_ECON1;
 	tx_buf[1] = 0x0;
 
-	spi_transceive(context->spi, tx_buf, 2, tx_buf, 2);
+	if (!spi_transceive(context->spi, tx_buf, 2, tx_buf, 2)) {
+		tx_buf[0] = ENC28J60_SPI_WCR | ENC28J60_REG_ECON1;
+		tx_buf[1] = (tx_buf[1] & 0xFC) | ((reg_addr >> 8) & 0x0F);
 
-	tx_buf[0] = ENC28J60_SPI_WCR | ENC28J60_REG_ECON1;
-	tx_buf[1] = (tx_buf[1] & 0xFC) | ((reg_addr >> 8) & 0x0F);
-
-	spi_write(context->spi, tx_buf, 2);
+		spi_write(context->spi, tx_buf, 2);
+	} else {
+		SYS_LOG_DBG("Failure while setting bank to %d", reg_addr);
+	}
 
 	k_sem_give(&context->spi_sem);
 }
@@ -85,9 +87,12 @@ static void eth_enc28j60_read_reg(struct device *dev, u16_t reg_addr,
 	tx_buf[0] = ENC28J60_SPI_RCR | (reg_addr & 0xFF);
 	tx_buf[1] = 0x0;
 
-	spi_transceive(context->spi, tx_buf, tx_size, tx_buf, tx_size);
-
-	*value = tx_buf[tx_size - 1];
+	if (!spi_transceive(context->spi, tx_buf, tx_size, tx_buf, tx_size)) {
+		*value = tx_buf[tx_size - 1];
+	} else {
+		SYS_LOG_DBG("Failure while reading register %d", reg_addr);
+		*value = 0;
+	}
 
 	k_sem_give(&context->spi_sem);
 }
@@ -171,23 +176,31 @@ static void eth_enc28j60_read_mem(struct device *dev, u8_t *data_buffer,
 	for (int i = 0; i < num_segments;
 	     ++i, data_buffer += MAX_BUFFER_LENGTH) {
 		context->mem_buf[0] = ENC28J60_SPI_RBM;
-		spi_transceive(context->spi,
-			       context->mem_buf, MAX_BUFFER_LENGTH + 1,
-			       context->mem_buf, MAX_BUFFER_LENGTH + 1);
-		if (data_buffer) {
-			memcpy(data_buffer, context->mem_buf + 1,
-			       MAX_BUFFER_LENGTH);
+
+		if (!spi_transceive(context->spi,
+				    context->mem_buf, MAX_BUFFER_LENGTH + 1,
+				    context->mem_buf, MAX_BUFFER_LENGTH + 1)) {
+			if (data_buffer) {
+				memcpy(data_buffer, context->mem_buf + 1,
+				       MAX_BUFFER_LENGTH);
+			}
+		} else {
+			SYS_LOG_DBG("Failed to read memory");
 		}
 	}
 
 	if (num_remaining > 0) {
 		context->mem_buf[0] = ENC28J60_SPI_RBM;
-		spi_transceive(context->spi,
-			       context->mem_buf, num_remaining + 1,
-			       context->mem_buf, num_remaining + 1);
-		if (data_buffer) {
-			memcpy(data_buffer, context->mem_buf + 1,
-			       num_remaining);
+
+		if (!spi_transceive(context->spi,
+				    context->mem_buf, num_remaining + 1,
+				    context->mem_buf, num_remaining + 1)) {
+			if (data_buffer) {
+				memcpy(data_buffer, context->mem_buf + 1,
+				       num_remaining);
+			}
+		} else {
+			SYS_LOG_DBG("Failed to read memory");
 		}
 	}
 
