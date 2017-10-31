@@ -13,6 +13,7 @@ menuconfig CLOCK_CONTROL_STM32_CUBE
 	prompt "STM32 Reset & Clock Control"
 	depends on CLOCK_CONTROL
 	default n if SOC_SERIES_STM32
+	select USE_STM32_LL_UTILS
 	help
 	  Enable driver for Reset & Clock Control subsystem found
 	  in STM32 family of MCUs
