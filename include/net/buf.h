@@ -553,6 +553,20 @@ struct net_buf_pool {
 struct net_buf_pool *net_buf_pool_get(int id);
 
 /**
+ *  @brief Get a zero-based index for a buffer.
+ *
+ *  This function will translate a buffer into a zero-based index,
+ *  based on its placement in its buffer pool. This can be useful if you
+ *  want to associate an external array of meta-data contexts with the
+ *  buffers of a pool.
+ *
+ *  @param buf  Network buffer.
+ *
+ *  @return Zero-based index for the buffer.
+ */
+int net_buf_id(struct net_buf *buf);
+
+/**
  *  @brief Allocate a new buffer from a pool.
  *
  *  Allocate a new buffer from a pool.

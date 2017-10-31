@@ -64,6 +64,15 @@ static int pool_id(struct net_buf_pool *pool)
 #define UNINIT_BUF(pool, n) (struct net_buf *)(((u8_t *)(pool->__bufs)) + \
 					       ((n) * BUF_SIZE(pool)))
 
+int net_buf_id(struct net_buf *buf)
+{
+	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
+	u8_t *pool_start = (u8_t *)pool->__bufs;
+	u8_t *buf_ptr = (u8_t *)buf;
+
+	return (buf_ptr - pool_start) / BUF_SIZE(pool);
+}
+
 static inline struct net_buf *pool_get_uninit(struct net_buf_pool *pool,
 					      u16_t uninit_count)
 {
