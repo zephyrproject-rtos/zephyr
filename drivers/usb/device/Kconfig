@@ -32,6 +32,9 @@ config USB_DC_STM32
 	depends on HAS_STM32CUBE
 	depends on SOC_SERIES_STM32F4X
 	select USB_DEVICE_DRIVER
+	select USE_STM32_LL_USB
+	select USE_STM32_HAL_PCD
+	select USE_STM32_HAL_PCD_EX
 	default n
 	help
 	  STM32 family USB device controller Driver.
