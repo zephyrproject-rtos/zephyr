@@ -152,7 +152,7 @@ config NET_TCP_INIT_RETRANSMISSION_TIMEOUT
 	int "Initial value of Retransmission Timeout (RTO) (in milliseconds)"
 	depends on NET_TCP
 	default 200
-	range 100 2000
+	range 100 60000
 	help
 	This value affects the timeout between initial retransmission
 	of TCP data packets. The value is in milliseconds.
