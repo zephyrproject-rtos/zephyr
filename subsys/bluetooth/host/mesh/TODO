@@ -1,8 +1,6 @@
 Bluetooth Mesh implementation tasks
 ===================================
 
- * Friend support (work ongoing)
-
  * PB-GATT (Node)
 
  * Any generally useful models from the Model Specification

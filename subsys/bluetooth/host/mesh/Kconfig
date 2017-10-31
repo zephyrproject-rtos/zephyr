@@ -265,16 +265,17 @@ config BT_MESH_FRIEND_RECV_WIN
 	  Receive Window in milliseconds supported by the Friend node.
 
 config BT_MESH_FRIEND_QUEUE_SIZE
-	int "Friend Queue Size"
-	range 1 BT_MESH_ADV_BUF_COUNT
-	default 16
+	int "Minimum number of buffers supported per Friend Queue"
+	range 2 65536
+	default 4
 	help
-	  Queue Size available on the Friend node.
+	  Minimum number of buffers available to be stored for each
+	  local Friend Queue.
 
 config BT_MESH_FRIEND_SUB_LIST_SIZE
 	int "Friend Subscription List Size"
-	range 1 255
-	default 16
+	range 0 1023
+	default 3
 	help
 	  Size of the Subscription List that can be supported by a
 	  Friend node for a Low Power node.
@@ -286,6 +287,16 @@ config BT_MESH_FRIEND_LPN_COUNT
 	help
 	  Number of Low Power Nodes the Friend can have a Friendship
 	  with simultaneously.
+
+config BT_MESH_FRIEND_SEG_RX
+	int "Number of incomplete segment lists per LPN"
+	range 1 1000
+	default 1
+	help
+	  Number of incomplete segment lists that we track for each LPN
+	  that we are Friends for. In other words, this determines how
+	  many elements we can simultaneously be receiving segmented
+	  messages from when the messages are going into the Friend queue.
 
 endif # BT_MESH_FRIEND
 
