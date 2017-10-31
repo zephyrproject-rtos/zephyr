@@ -99,6 +99,7 @@ static struct tcp_backlog_entry {
 	u32_t recv_max_ack;
 	u32_t send_seq;
 	u32_t send_ack;
+	u16_t send_mss;
 	struct k_delayed_work ack_timer;
 } tcp_backlog[CONFIG_NET_TCP_BACKLOG_SIZE];
 
@@ -174,7 +175,8 @@ static int tcp_backlog_find(struct net_pkt *pkt, int *empty_slot)
 	return -EADDRNOTAVAIL;
 }
 
-static int tcp_backlog_syn(struct net_pkt *pkt, struct net_context *context)
+static int tcp_backlog_syn(struct net_pkt *pkt, struct net_context *context,
+			   u16_t send_mss)
 {
 	int empty_slot = -1;
 	int ret;
@@ -198,6 +200,7 @@ static int tcp_backlog_syn(struct net_pkt *pkt, struct net_context *context)
 	tcp_backlog[empty_slot].recv_max_ack = context->tcp->recv_max_ack;
 	tcp_backlog[empty_slot].send_seq = context->tcp->send_seq;
 	tcp_backlog[empty_slot].send_ack = context->tcp->send_ack;
+	tcp_backlog[empty_slot].send_mss = send_mss;
 
 	k_delayed_work_init(&tcp_backlog[empty_slot].ack_timer,
 			    backlog_ack_timeout);
@@ -232,6 +235,7 @@ static int tcp_backlog_ack(struct net_pkt *pkt, struct net_context *context)
 	context->tcp->recv_max_ack = tcp_backlog[r].recv_max_ack;
 	context->tcp->send_seq = tcp_backlog[r].send_seq + 1;
 	context->tcp->send_ack = tcp_backlog[r].send_ack;
+	context->tcp->send_mss = tcp_backlog[r].send_mss;
 
 	k_delayed_work_cancel(&tcp_backlog[r].ack_timer);
 	memset(&tcp_backlog[r], 0, sizeof(struct tcp_backlog_entry));
@@ -1610,6 +1614,7 @@ NET_CONN_CB(tcp_syn_rcvd)
 	 */
 	if (NET_TCP_FLAGS(tcp_hdr) == NET_TCP_SYN) {
 		int r;
+		u16_t send_mss = NET_TCP_DEFAULT_MSS;
 
 		net_tcp_print_recv_info("SYN", pkt, tcp_hdr->src_port);
 
@@ -1621,7 +1626,9 @@ NET_CONN_CB(tcp_syn_rcvd)
 			sys_get_be32(tcp_hdr->seq) + 1;
 		context->tcp->recv_max_ack = context->tcp->send_seq + 1;
 
-		r = tcp_backlog_syn(pkt, context);
+		/* Get MSS from TCP options here*/
+
+		r = tcp_backlog_syn(pkt, context, send_mss);
 		if (r < 0) {
 			if (r == -EADDRINUSE) {
 				NET_DBG("TCP connection already exists");
