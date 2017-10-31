@@ -13,7 +13,7 @@
 #include <sys_io.h>
 #include "pinmux/pinmux.h"
 
-#include "pinmux_quark_mcu.h"
+#include <pinmux_quark_mcu.h>
 
 /*
  * This is the full pinmap that we have available on the board for configuration

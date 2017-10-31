@@ -373,6 +373,7 @@ ZEPHYRINCLUDE    = \
 		-I$(srctree)/kernel/include \
 		-I$(srctree)/arch/$(ARCH)/include \
 		-I$(srctree)/arch/$(ARCH)/soc/$(SOC_PATH) \
+		-I$(srctree)/arch/$(ARCH)/soc/$(SOC_FAMILY)/include \
 		-I$(srctree)/boards/$(ARCH)/$(BOARD_NAME) \
 		$(if $(KBUILD_SRC), -I$(srctree)/include) \
 		-I$(srctree)/include \
