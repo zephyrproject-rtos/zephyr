@@ -21,7 +21,7 @@
 #include <errno.h>
 
 #if !defined(CONFIG_MBEDTLS_CFG_FILE)
-#include "mbedtls/config.h"
+#include <mbedtls/config.h>
 #else
 #include CONFIG_MBEDTLS_CFG_FILE
 #endif
