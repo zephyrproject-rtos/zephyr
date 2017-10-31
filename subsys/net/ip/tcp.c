@@ -238,6 +238,7 @@ struct net_tcp *net_tcp_alloc(struct net_context *context)
 	tcp_context[i].send_seq = tcp_init_isn();
 	tcp_context[i].recv_max_ack = tcp_context[i].send_seq + 1u;
 	tcp_context[i].recv_wnd = min(NET_TCP_MAX_WIN, NET_TCP_BUF_MAX_LEN);
+	tcp_context[i].send_mss = NET_TCP_DEFAULT_MSS;
 
 	tcp_context[i].accept_cb = NULL;
 

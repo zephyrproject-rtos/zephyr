@@ -72,6 +72,11 @@ enum net_tcp_state {
 
 #define NET_TCP_FLAGS(hdr) (hdr->flags & NET_TCP_CTL)
 
+/* RFC 1122 4.2.2.6 "If an MSS option is not received at connection
+ * setup, TCP MUST assume a default send MSS of 536"
+ */
+#define NET_TCP_DEFAULT_MSS   536
+
 /* TCP max window size */
 #define NET_TCP_MAX_WIN   (4 * 1024)
 
@@ -148,7 +153,15 @@ struct net_tcp {
 	 */
 	struct k_sem connect_wait;
 
+	/**
+	 * Current TCP receive window for our side
+	 */
 	u16_t recv_wnd;
+
+	/**
+	 * Send MSS for the peer
+	 */
+	u16_t send_mss;
 };
 
 static inline bool net_tcp_is_used(struct net_tcp *tcp)
