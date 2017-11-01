@@ -1823,6 +1823,14 @@ class TestSuite:
                 cw.writerow(rowdict)
 
 
+def is_ccache_enabled_in_environ():
+    try:
+        value = os.environ["USE_CCACHE"]
+        return int(value)
+    except:
+        return 0
+
+
 def parse_arguments():
 
     parser = argparse.ArgumentParser(description = __doc__,
@@ -1880,7 +1888,8 @@ def parse_arguments():
     parser.add_argument("--compare-report",
             help="Use this report file for size comparison")
 
-    parser.add_argument("--ccache", action="store_const", const=1, default=0,
+    parser.add_argument("--ccache", action="store_const", const=1,
+            default=is_ccache_enabled_in_environ(),
             help="Enable the use of ccache when building")
 
     parser.add_argument("-B", "--subset",
