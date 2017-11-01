@@ -165,6 +165,7 @@ struct connection {
 #endif /* CONFIG_BT_CTLR_PHY */
 
 		struct {
+			u8_t  initiate;
 			u8_t  error_code;
 			u8_t  rand[8];
 			u8_t  ediv[2];
