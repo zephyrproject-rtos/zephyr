@@ -49,12 +49,17 @@ foreach(kconfig_target ${kconfig_target_list})
     )
 endforeach()
 
+# Bring in extra configuration files dropped in by the user or anyone else;
+# make sure they are set at the end so we can override any other setting
+file(GLOB config_files ${APPLICATION_BINARY_DIR}/*.conf)
+list(SORT config_files)
 set(
   merge_config_files
   ${BOARD_DEFCONFIG}
   ${CONF_FILE_AS_LIST}
   ${OVERLAY_CONFIG}
-  )
+  ${config_files}
+)
 
 # Create a list of absolute paths to the .config sources from
 # merge_config_files, which is a mix of absolute and relative paths.
