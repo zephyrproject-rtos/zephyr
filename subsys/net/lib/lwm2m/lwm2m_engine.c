@@ -1903,6 +1903,9 @@ static int lwm2m_write_handler_opaque(struct lwm2m_engine_obj_inst *obj_inst,
 						 data_ptr, len,
 						 last_pkt_block && last_block,
 						 total_size);
+			if (ret < 0) {
+				return ret;
+			}
 		}
 	}
 
