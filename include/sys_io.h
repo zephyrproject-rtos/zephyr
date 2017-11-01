@@ -13,7 +13,6 @@
 extern "C" {
 #endif
 
-#include <kernel.h>
 #include <zephyr/types.h>
 #include <stddef.h>
 
