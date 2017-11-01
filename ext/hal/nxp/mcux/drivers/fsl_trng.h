@@ -94,7 +94,7 @@ typedef struct _trng_statistical_check_limit
 /*!
  * @brief Data structure for the TRNG initialization
  *
- * This structure initializes the TRNG by calling the the TRNG_Init() function.
+ * This structure initializes the TRNG by calling the TRNG_Init() function.
  * It contains all TRNG configurations.
  */
 typedef struct _trng_user_config

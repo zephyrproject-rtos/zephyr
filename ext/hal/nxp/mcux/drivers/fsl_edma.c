@@ -47,15 +47,6 @@
  */
 static uint32_t EDMA_GetInstance(DMA_Type *base);
 
-/*!
- * @brief Push content of TCD structure into hardware TCD register.
- *
- * @param base EDMA peripheral base address.
- * @param channel EDMA channel number.
- * @param tcd Point to TCD structure.
- */
-static void EDMA_InstallTCD(DMA_Type *base, uint32_t channel, edma_tcd_t *tcd);
-
 /*******************************************************************************
  * Variables
  ******************************************************************************/
@@ -96,7 +87,7 @@ static uint32_t EDMA_GetInstance(DMA_Type *base)
     return instance;
 }
 
-static void EDMA_InstallTCD(DMA_Type *base, uint32_t channel, edma_tcd_t *tcd)
+void EDMA_InstallTCD(DMA_Type *base, uint32_t channel, edma_tcd_t *tcd)
 {
     assert(channel < FSL_FEATURE_EDMA_MODULE_CHANNEL);
     assert(tcd != NULL);
@@ -480,6 +471,23 @@ void EDMA_ClearChannelStatusFlags(DMA_Type *base, uint32_t channel, uint32_t mas
     }
 }
 
+static uint8_t Get_StartInstance(void)
+{
+    static uint8_t StartInstanceNum;
+
+#if defined(DMA0)
+    StartInstanceNum = EDMA_GetInstance(DMA0);
+#elif defined(DMA1)
+    StartInstanceNum = EDMA_GetInstance(DMA1);
+#elif defined(DMA2)
+    StartInstanceNum = EDMA_GetInstance(DMA2);
+#elif defined(DMA3)
+    StartInstanceNum = EDMA_GetInstance(DMA3);
+#endif
+
+    return StartInstanceNum;
+}
+
 void EDMA_CreateHandle(edma_handle_t *handle, DMA_Type *base, uint32_t channel)
 {
     assert(handle != NULL);
@@ -487,6 +495,7 @@ void EDMA_CreateHandle(edma_handle_t *handle, DMA_Type *base, uint32_t channel)
 
     uint32_t edmaInstance;
     uint32_t channelIndex;
+    uint8_t StartInstance;
     edma_tcd_t *tcdRegs;
 
     /* Zero the handle */
@@ -496,7 +505,8 @@ void EDMA_CreateHandle(edma_handle_t *handle, DMA_Type *base, uint32_t channel)
     handle->channel = channel;
     /* Get the DMA instance number */
     edmaInstance = EDMA_GetInstance(base);
-    channelIndex = (edmaInstance * FSL_FEATURE_EDMA_MODULE_CHANNEL) + channel;
+    StartInstance = Get_StartInstance();
+    channelIndex = ((edmaInstance - StartInstance) * FSL_FEATURE_EDMA_MODULE_CHANNEL) + channel;
     s_EDMAHandle[channelIndex] = handle;
 
     /* Enable NVIC interrupt */
@@ -814,6 +824,14 @@ void EDMA_AbortTransfer(edma_handle_t *handle)
     handle->base->TCD[handle->channel].CSR = 0;
     /* Cancel all next TCD transfer. */
     handle->base->TCD[handle->channel].DLAST_SGA = 0;
+
+    /* Handle the tcd */
+    if (handle->tcdPool != NULL)
+    {
+        handle->header = 0;
+        handle->tail = 0;
+        handle->tcdUsed = 0;
+    }
 }
 
 void EDMA_HandleIRQ(edma_handle_t *handle)
@@ -887,6 +905,7 @@ void EDMA_HandleIRQ(edma_handle_t *handle)
 /* 8 channels (Shared): kl28 */
 #if defined(FSL_FEATURE_EDMA_MODULE_CHANNEL) && FSL_FEATURE_EDMA_MODULE_CHANNEL == 8U
 
+#if defined(DMA0)
 void DMA0_04_DriverIRQHandler(void)
 {
     if ((EDMA_GetChannelStatusFlags(DMA0, 0U) & kEDMA_InterruptFlag) != 0U)
@@ -897,6 +916,11 @@ void DMA0_04_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[4]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA0_15_DriverIRQHandler(void)
@@ -909,6 +933,11 @@ void DMA0_15_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[5]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA0_26_DriverIRQHandler(void)
@@ -921,6 +950,11 @@ void DMA0_26_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[6]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA0_37_DriverIRQHandler(void)
@@ -933,9 +967,17 @@ void DMA0_37_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[7]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
+#endif
 
 #if defined(DMA1)
+
+#if defined(DMA0)
 void DMA1_04_DriverIRQHandler(void)
 {
     if ((EDMA_GetChannelStatusFlags(DMA1, 0U) & kEDMA_InterruptFlag) != 0U)
@@ -946,6 +988,11 @@ void DMA1_04_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[12]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA1_15_DriverIRQHandler(void)
@@ -958,6 +1005,11 @@ void DMA1_15_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[13]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA1_26_DriverIRQHandler(void)
@@ -970,6 +1022,11 @@ void DMA1_26_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[14]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA1_37_DriverIRQHandler(void)
@@ -982,7 +1039,82 @@ void DMA1_37_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[15]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
+
+#else
+void DMA1_04_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA1, 0U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[0]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA1, 4U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[4]);
+    }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
+}
+
+void DMA1_15_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA1, 1U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[1]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA1, 5U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[5]);
+    }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
+}
+
+void DMA1_26_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA1, 2U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[2]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA1, 6U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[6]);
+    }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
+}
+
+void DMA1_37_DriverIRQHandler(void)
+{
+    if ((EDMA_GetChannelStatusFlags(DMA1, 3U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[3]);
+    }
+    if ((EDMA_GetChannelStatusFlags(DMA1, 7U) & kEDMA_InterruptFlag) != 0U)
+    {
+        EDMA_HandleIRQ(s_EDMAHandle[7]);
+    }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
+}
+#endif
 #endif
 #endif /* 8 channels (Shared) */
 
@@ -999,6 +1131,11 @@ void DMA0_08_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[8]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA0_19_DriverIRQHandler(void)
@@ -1011,6 +1148,11 @@ void DMA0_19_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[9]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA0_210_DriverIRQHandler(void)
@@ -1023,6 +1165,11 @@ void DMA0_210_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[10]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA0_311_DriverIRQHandler(void)
@@ -1035,6 +1182,11 @@ void DMA0_311_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[11]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA0_412_DriverIRQHandler(void)
@@ -1047,6 +1199,11 @@ void DMA0_412_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[12]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA0_513_DriverIRQHandler(void)
@@ -1059,6 +1216,11 @@ void DMA0_513_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[13]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA0_614_DriverIRQHandler(void)
@@ -1071,6 +1233,11 @@ void DMA0_614_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[14]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA0_715_DriverIRQHandler(void)
@@ -1083,6 +1250,11 @@ void DMA0_715_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[15]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 #if defined(DMA1)
@@ -1096,6 +1268,11 @@ void DMA1_08_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[24]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA1_19_DriverIRQHandler(void)
@@ -1108,6 +1285,11 @@ void DMA1_19_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[25]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA1_210_DriverIRQHandler(void)
@@ -1120,6 +1302,11 @@ void DMA1_210_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[26]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA1_311_DriverIRQHandler(void)
@@ -1132,6 +1319,11 @@ void DMA1_311_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[27]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA1_412_DriverIRQHandler(void)
@@ -1144,6 +1336,11 @@ void DMA1_412_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[28]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA1_513_DriverIRQHandler(void)
@@ -1156,6 +1353,11 @@ void DMA1_513_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[29]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA1_614_DriverIRQHandler(void)
@@ -1168,6 +1370,11 @@ void DMA1_614_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[30]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA1_715_DriverIRQHandler(void)
@@ -1180,6 +1387,11 @@ void DMA1_715_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[31]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 #endif
 #endif /* 16 channels (Shared) */
@@ -1197,6 +1409,11 @@ void DMA0_DMA16_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[16]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA1_DMA17_DriverIRQHandler(void)
@@ -1209,6 +1426,11 @@ void DMA1_DMA17_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[17]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA2_DMA18_DriverIRQHandler(void)
@@ -1221,6 +1443,11 @@ void DMA2_DMA18_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[18]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA3_DMA19_DriverIRQHandler(void)
@@ -1233,6 +1460,11 @@ void DMA3_DMA19_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[19]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA4_DMA20_DriverIRQHandler(void)
@@ -1245,6 +1477,11 @@ void DMA4_DMA20_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[20]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA5_DMA21_DriverIRQHandler(void)
@@ -1257,6 +1494,11 @@ void DMA5_DMA21_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[21]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA6_DMA22_DriverIRQHandler(void)
@@ -1269,6 +1511,11 @@ void DMA6_DMA22_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[22]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA7_DMA23_DriverIRQHandler(void)
@@ -1281,6 +1528,11 @@ void DMA7_DMA23_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[23]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA8_DMA24_DriverIRQHandler(void)
@@ -1293,6 +1545,11 @@ void DMA8_DMA24_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[24]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA9_DMA25_DriverIRQHandler(void)
@@ -1305,6 +1562,11 @@ void DMA9_DMA25_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[25]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA10_DMA26_DriverIRQHandler(void)
@@ -1317,6 +1579,11 @@ void DMA10_DMA26_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[26]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA11_DMA27_DriverIRQHandler(void)
@@ -1329,6 +1596,11 @@ void DMA11_DMA27_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[27]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA12_DMA28_DriverIRQHandler(void)
@@ -1341,6 +1613,11 @@ void DMA12_DMA28_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[28]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA13_DMA29_DriverIRQHandler(void)
@@ -1353,6 +1630,11 @@ void DMA13_DMA29_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[29]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA14_DMA30_DriverIRQHandler(void)
@@ -1365,6 +1647,11 @@ void DMA14_DMA30_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[30]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA15_DMA31_DriverIRQHandler(void)
@@ -1377,6 +1664,11 @@ void DMA15_DMA31_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[31]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 #endif /* 32 channels (Shared) */
 
@@ -1393,6 +1685,11 @@ void DMA0_0_4_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[4]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA0_1_5_DriverIRQHandler(void)
@@ -1405,6 +1702,11 @@ void DMA0_1_5_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[5]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA0_2_6_DriverIRQHandler(void)
@@ -1417,6 +1719,11 @@ void DMA0_2_6_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[6]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA0_3_7_DriverIRQHandler(void)
@@ -1429,6 +1736,11 @@ void DMA0_3_7_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[7]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA0_8_12_DriverIRQHandler(void)
@@ -1441,6 +1753,11 @@ void DMA0_8_12_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[12]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA0_9_13_DriverIRQHandler(void)
@@ -1453,6 +1770,11 @@ void DMA0_9_13_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[13]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA0_10_14_DriverIRQHandler(void)
@@ -1465,6 +1787,11 @@ void DMA0_10_14_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[14]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA0_11_15_DriverIRQHandler(void)
@@ -1477,6 +1804,11 @@ void DMA0_11_15_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[15]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA0_16_20_DriverIRQHandler(void)
@@ -1489,6 +1821,11 @@ void DMA0_16_20_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[20]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA0_17_21_DriverIRQHandler(void)
@@ -1501,6 +1838,11 @@ void DMA0_17_21_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[21]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA0_18_22_DriverIRQHandler(void)
@@ -1513,6 +1855,11 @@ void DMA0_18_22_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[22]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA0_19_23_DriverIRQHandler(void)
@@ -1525,6 +1872,11 @@ void DMA0_19_23_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[23]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA0_24_28_DriverIRQHandler(void)
@@ -1537,6 +1889,11 @@ void DMA0_24_28_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[28]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA0_25_29_DriverIRQHandler(void)
@@ -1549,6 +1906,11 @@ void DMA0_25_29_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[29]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA0_26_30_DriverIRQHandler(void)
@@ -1561,6 +1923,11 @@ void DMA0_26_30_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[30]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA0_27_31_DriverIRQHandler(void)
@@ -1573,6 +1940,11 @@ void DMA0_27_31_DriverIRQHandler(void)
     {
         EDMA_HandleIRQ(s_EDMAHandle[31]);
     }
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 #endif /* 32 channels (Shared): MCIMX7U5 */
 
@@ -1582,21 +1954,41 @@ void DMA0_27_31_DriverIRQHandler(void)
 void DMA0_DriverIRQHandler(void)
 {
     EDMA_HandleIRQ(s_EDMAHandle[0]);
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA1_DriverIRQHandler(void)
 {
     EDMA_HandleIRQ(s_EDMAHandle[1]);
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA2_DriverIRQHandler(void)
 {
     EDMA_HandleIRQ(s_EDMAHandle[2]);
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA3_DriverIRQHandler(void)
 {
     EDMA_HandleIRQ(s_EDMAHandle[3]);
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 /* 8 channels (No Shared) */
@@ -1605,21 +1997,41 @@ void DMA3_DriverIRQHandler(void)
 void DMA4_DriverIRQHandler(void)
 {
     EDMA_HandleIRQ(s_EDMAHandle[4]);
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA5_DriverIRQHandler(void)
 {
     EDMA_HandleIRQ(s_EDMAHandle[5]);
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA6_DriverIRQHandler(void)
 {
     EDMA_HandleIRQ(s_EDMAHandle[6]);
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA7_DriverIRQHandler(void)
 {
     EDMA_HandleIRQ(s_EDMAHandle[7]);
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 #endif /* FSL_FEATURE_EDMA_MODULE_CHANNEL == 8 */
 
@@ -1629,41 +2041,81 @@ void DMA7_DriverIRQHandler(void)
 void DMA8_DriverIRQHandler(void)
 {
     EDMA_HandleIRQ(s_EDMAHandle[8]);
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA9_DriverIRQHandler(void)
 {
     EDMA_HandleIRQ(s_EDMAHandle[9]);
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA10_DriverIRQHandler(void)
 {
     EDMA_HandleIRQ(s_EDMAHandle[10]);
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA11_DriverIRQHandler(void)
 {
     EDMA_HandleIRQ(s_EDMAHandle[11]);
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA12_DriverIRQHandler(void)
 {
     EDMA_HandleIRQ(s_EDMAHandle[12]);
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA13_DriverIRQHandler(void)
 {
     EDMA_HandleIRQ(s_EDMAHandle[13]);
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA14_DriverIRQHandler(void)
 {
     EDMA_HandleIRQ(s_EDMAHandle[14]);
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA15_DriverIRQHandler(void)
 {
     EDMA_HandleIRQ(s_EDMAHandle[15]);
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 #endif /* FSL_FEATURE_EDMA_MODULE_CHANNEL == 16 */
 
@@ -1673,81 +2125,161 @@ void DMA15_DriverIRQHandler(void)
 void DMA16_DriverIRQHandler(void)
 {
     EDMA_HandleIRQ(s_EDMAHandle[16]);
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA17_DriverIRQHandler(void)
 {
     EDMA_HandleIRQ(s_EDMAHandle[17]);
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA18_DriverIRQHandler(void)
 {
     EDMA_HandleIRQ(s_EDMAHandle[18]);
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA19_DriverIRQHandler(void)
 {
     EDMA_HandleIRQ(s_EDMAHandle[19]);
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA20_DriverIRQHandler(void)
 {
     EDMA_HandleIRQ(s_EDMAHandle[20]);
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA21_DriverIRQHandler(void)
 {
     EDMA_HandleIRQ(s_EDMAHandle[21]);
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA22_DriverIRQHandler(void)
 {
     EDMA_HandleIRQ(s_EDMAHandle[22]);
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA23_DriverIRQHandler(void)
 {
     EDMA_HandleIRQ(s_EDMAHandle[23]);
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA24_DriverIRQHandler(void)
 {
     EDMA_HandleIRQ(s_EDMAHandle[24]);
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA25_DriverIRQHandler(void)
 {
     EDMA_HandleIRQ(s_EDMAHandle[25]);
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA26_DriverIRQHandler(void)
 {
     EDMA_HandleIRQ(s_EDMAHandle[26]);
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA27_DriverIRQHandler(void)
 {
     EDMA_HandleIRQ(s_EDMAHandle[27]);
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA28_DriverIRQHandler(void)
 {
     EDMA_HandleIRQ(s_EDMAHandle[28]);
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA29_DriverIRQHandler(void)
 {
     EDMA_HandleIRQ(s_EDMAHandle[29]);
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA30_DriverIRQHandler(void)
 {
     EDMA_HandleIRQ(s_EDMAHandle[30]);
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void DMA31_DriverIRQHandler(void)
 {
     EDMA_HandleIRQ(s_EDMAHandle[31]);
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 #endif /* FSL_FEATURE_EDMA_MODULE_CHANNEL == 32 */
 

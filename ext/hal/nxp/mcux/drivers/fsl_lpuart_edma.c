@@ -29,7 +29,6 @@
  */
 
 #include "fsl_lpuart_edma.h"
-#include "fsl_dmamux.h"
 
 /*******************************************************************************
  * Definitions
@@ -55,8 +54,47 @@ enum _lpuart_edma_tansfer_states
  * Definitions
  ******************************************************************************/
 
+/* Array of LPUART handle. */
+#if (defined(LPUART8))
+#define LPUART_HANDLE_ARRAY_SIZE 9
+#else /* LPUART8 */
+#if (defined(LPUART7))
+#define LPUART_HANDLE_ARRAY_SIZE 8
+#else /* LPUART7 */
+#if (defined(LPUART6))
+#define LPUART_HANDLE_ARRAY_SIZE 7
+#else /* LPUART6 */
+#if (defined(LPUART5))
+#define LPUART_HANDLE_ARRAY_SIZE 6
+#else /* LPUART5 */
+#if (defined(LPUART4))
+#define LPUART_HANDLE_ARRAY_SIZE 5
+#else /* LPUART4 */
+#if (defined(LPUART3))
+#define LPUART_HANDLE_ARRAY_SIZE 4
+#else /* LPUART3 */
+#if (defined(LPUART2))
+#define LPUART_HANDLE_ARRAY_SIZE 3
+#else /* LPUART2 */
+#if (defined(LPUART1))
+#define LPUART_HANDLE_ARRAY_SIZE 2
+#else /* LPUART1 */
+#if (defined(LPUART0))
+#define LPUART_HANDLE_ARRAY_SIZE 1
+#else /* LPUART0 */
+#define LPUART_HANDLE_ARRAY_SIZE FSL_FEATURE_SOC_LPUART_COUNT
+#endif /* LPUART 0 */
+#endif /* LPUART 1 */
+#endif /* LPUART 2 */
+#endif /* LPUART 3 */
+#endif /* LPUART 4 */
+#endif /* LPUART 5 */
+#endif /* LPUART 6 */
+#endif /* LPUART 7 */
+#endif /* LPUART 8 */
+
 /*<! Private handle only used for internally. */
-static lpuart_edma_private_handle_t s_edmaPrivateHandle[FSL_FEATURE_SOC_LPUART_COUNT];
+static lpuart_edma_private_handle_t s_edmaPrivateHandle[LPUART_HANDLE_ARRAY_SIZE];
 
 /*******************************************************************************
  * Prototypes
