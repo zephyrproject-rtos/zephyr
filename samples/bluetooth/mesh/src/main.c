@@ -18,7 +18,11 @@
 static struct bt_mesh_cfg cfg_srv = {
 	.relay = BT_MESH_RELAY_DISABLED,
 	.beacon = BT_MESH_BEACON_ENABLED,
+#if defined(CONFIG_BT_MESH_FRIEND)
+	.frnd = BT_MESH_FRIEND_ENABLED,
+#else
 	.frnd = BT_MESH_FRIEND_NOT_SUPPORTED,
+#endif
 #if defined(CONFIG_BT_MESH_GATT_PROXY)
 	.gatt_proxy = BT_MESH_GATT_PROXY_ENABLED,
 #else
