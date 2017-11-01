@@ -19,9 +19,6 @@ config ADC_MCUX_ADC16
 
 endif # ADC
 
-config CLOCK_CONTROL
-	def_bool y
-
 if CLOCK_CONTROL
 
 config CLOCK_CONTROL_MCUX_SIM

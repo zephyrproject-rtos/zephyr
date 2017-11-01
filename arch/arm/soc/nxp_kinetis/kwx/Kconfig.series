@@ -11,5 +11,6 @@ config SOC_SERIES_KINETIS_KWX
 	select SOC_FAMILY_KINETIS
 	select SYS_POWER_LOW_POWER_STATE_SUPPORTED
 	select CPU_HAS_SYSTICK
+	select CLOCK_CONTROL
 	help
 	  Enable support for Kinetis KWx MCU series
