@@ -29,24 +29,10 @@ foreach(target flash debug debugserver)
     set(cmd
       ${CMAKE_COMMAND} -E env
       ${ENV_VARS}
-      )
-
-    if(USE_ZEPHYR_FLASH_DEBUG_SHELL OR (NOT (target STREQUAL flash)))
-      list(APPEND cmd
-        ${CONFIG_SHELL}
-        $ENV{ZEPHYR_BASE}/scripts/support/${script}
-        ${target}
-        )
-    else()
-      list(APPEND cmd
-        ${PYTHON_EXECUTABLE}
-        $ENV{ZEPHYR_BASE}/scripts/support/zephyr_flash_debug.py
-        flash
-        $ENV{ZEPHYR_BASE}/scripts/support/${script}
-        )
-    endif()
-
-    list(APPEND cmd
+      ${PYTHON_EXECUTABLE}
+      $ENV{ZEPHYR_BASE}/scripts/support/zephyr_flash_debug.py
+      ${target}
+      $ENV{ZEPHYR_BASE}/scripts/support/${script}
       DEPENDS ${logical_target_for_zephyr_elf}
       WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
       )
