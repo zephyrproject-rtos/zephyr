@@ -3869,6 +3869,18 @@ static void hci_vs_init(void)
 	struct net_buf *rsp;
 	int err;
 
+	/* If heuristics is enabled, try to guess HCI VS support by looking
+	 * at the HCI version and identity address. We haven't tried to set
+	 * a static random address yet at this point, so the identity will
+	 * either be zeroes or a valid public address.
+	 */
+	if (IS_ENABLED(CONFIG_BT_HCI_VS_EXT_DETECT) &&
+	    (bt_dev.hci_version < BT_HCI_VERSION_5_0 ||
+	     bt_addr_le_cmp(&bt_dev.id_addr, BT_ADDR_LE_ANY))) {
+		BT_WARN("Controller doesn't seem to support Zephyr vendor HCI");
+		return;
+	}
+
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_VS_READ_VERSION_INFO, NULL, &rsp);
 	if (err) {
 		BT_WARN("Vendor HCI extensions not available");
