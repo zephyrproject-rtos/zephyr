@@ -52,22 +52,31 @@ Install the required packages in a Ubuntu host system with:
 
 .. code-block:: console
 
-   $ sudo apt-get install git make gcc g++ ncurses-dev gperf ccache\
-	 doxygen dfu-util device-tree-compiler python3-ply python3-pip
+   $ sudo apt-get install --no-install-recommends git ninja-build gperf \
+     ccache doxygen dfu-util device-tree-compiler \
+     python3-ply python3-pip python3-setuptools xz-utils file
 
 Install the required packages in a Fedora host system with:
 
 .. code-block:: console
 
    $ sudo dnf group install "Development Tools"
-   $ sudo dnf install git make gcc glibc-static gperf ccache\
-	 libstdc++-static ncurses-devel \
+   $ sudo dnf install git ninja-build gperf ccache\
 	 doxygen dfu-util dtc python3-pip \
 	 python3-ply python3-yaml dfu-util dtc python3-pykwalify
 
 Install additional packages required for development with Zephyr::
 
    $ pip3 install --user -r scripts/requirements.txt
+
+Install exactly version 3.8.2 of CMake::
+
+   $ mkdir $HOME/work_dir && cd $HOME/work_dir
+   $ wget https://cmake.org/files/v3.8/cmake-3.8.2-Linux-x86_64.sh
+   $ yes | sh cmake-3.8.2-Linux-x86_64.sh | cat
+   $ echo "export PATH=$PWD/cmake-3.8.2-Linux-x86_64/bin:\$PATH" >> $HOME/.bashrc
+   $ bash
+   $ cmake --version
 
 .. _zephyr_sdk:
 
@@ -118,8 +127,7 @@ Follow these steps to install the SDK on your Linux host system.
 
    .. code-block:: console
 
-      $ chmod +x zephyr-sdk-<version>-setup.run
-      $ ./zephyr-sdk-<version>-setup.run
+      $ sh zephyr-sdk-<version>-setup.run
 
    There is no need to use ``sudo`` if the SDK is installed in the current
    user's home directory.
