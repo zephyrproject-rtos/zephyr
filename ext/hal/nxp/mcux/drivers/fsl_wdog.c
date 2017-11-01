@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Freescale Semiconductor, Inc.
+ * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
  *
  * Redistribution and use in source and binary forms, with or without modification,
@@ -31,123 +31,101 @@
 #include "fsl_wdog.h"
 
 /*******************************************************************************
+ * Variables
+ ******************************************************************************/
+static WDOG_Type *const s_wdogBases[] = WDOG_BASE_PTRS;
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
+/* Array of WDOG clock name. */
+static const clock_ip_name_t s_wdogClock[] = WDOG_CLOCKS;
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+
+/*******************************************************************************
  * Code
  ******************************************************************************/
+static uint32_t WDOG_GetInstance(WDOG_Type *base)
+{
+    uint32_t instance;
+
+    /* Find the instance index from base address mappings. */
+    for (instance = 0; instance < ARRAY_SIZE(s_wdogBases); instance++)
+    {
+        if (s_wdogBases[instance] == base)
+        {
+            break;
+        }
+    }
+
+    assert(instance < ARRAY_SIZE(s_wdogBases));
+
+    return instance;
+}
 
 void WDOG_GetDefaultConfig(wdog_config_t *config)
 {
     assert(config);
 
     config->enableWdog = true;
-    config->clockSource = kWDOG_LpoClockSource;
-    config->prescaler = kWDOG_ClockPrescalerDivide1;
-#if defined(FSL_FEATURE_WDOG_HAS_WAITEN) && FSL_FEATURE_WDOG_HAS_WAITEN
-    config->workMode.enableWait = true;
-#endif /* FSL_FEATURE_WDOG_HAS_WAITEN */
+    config->workMode.enableWait = false;
     config->workMode.enableStop = false;
     config->workMode.enableDebug = false;
-    config->enableUpdate = true;
     config->enableInterrupt = false;
-    config->enableWindowMode = false;
-    config->windowValue = 0U;
-    config->timeoutValue = 0xFFFFU;
+    config->softwareResetExtension = false;
+    config->enablePowerDown = false;
+    config->softwareAssertion= true;
+    config->softwareResetSignal = true;
+    config->timeoutValue = 0xffu;
+    config->interruptTimeValue = 0x04u;
 }
 
 void WDOG_Init(WDOG_Type *base, const wdog_config_t *config)
 {
     assert(config);
 
-    uint32_t value = 0U;
-    uint32_t primaskValue = 0U;
+    uint16_t value = 0u;
 
-    value = WDOG_STCTRLH_WDOGEN(config->enableWdog) | WDOG_STCTRLH_CLKSRC(config->clockSource) |
-            WDOG_STCTRLH_IRQRSTEN(config->enableInterrupt) | WDOG_STCTRLH_WINEN(config->enableWindowMode) |
-            WDOG_STCTRLH_ALLOWUPDATE(config->enableUpdate) | WDOG_STCTRLH_DBGEN(config->workMode.enableDebug) |
-            WDOG_STCTRLH_STOPEN(config->workMode.enableStop) |
-#if defined(FSL_FEATURE_WDOG_HAS_WAITEN) && FSL_FEATURE_WDOG_HAS_WAITEN
-            WDOG_STCTRLH_WAITEN(config->workMode.enableWait) |
-#endif /* FSL_FEATURE_WDOG_HAS_WAITEN */
-            WDOG_STCTRLH_DISTESTWDOG(1U);
+    value = WDOG_WCR_WDE(config->enableWdog) | WDOG_WCR_WDW(config->workMode.enableWait) |
+            WDOG_WCR_WDZST(config->workMode.enableStop) | WDOG_WCR_WDBG(config->workMode.enableDebug) |
+            WDOG_WCR_SRE(config->softwareResetExtension) | WDOG_WCR_WT(config->timeoutValue) |
+            WDOG_WCR_WDA(config->softwareAssertion) | WDOG_WCR_SRS(config->softwareResetSignal);
 
-    /* Disable the global interrupts. Otherwise, an interrupt could effectively invalidate the unlock sequence
-     * and the WCT may expire. After the configuration finishes, re-enable the global interrupts. */
-    primaskValue = DisableGlobalIRQ();
-    WDOG_Unlock(base);
-    /* Wait one bus clock cycle */
-    base->RSTCNT = 0U;
     /* Set configruation */
-    base->PRESC = WDOG_PRESC_PRESCVAL(config->prescaler);
-    base->WINH = (uint16_t)((config->windowValue >> 16U) & 0xFFFFU);
-    base->WINL = (uint16_t)((config->windowValue) & 0xFFFFU);
-    base->TOVALH = (uint16_t)((config->timeoutValue >> 16U) & 0xFFFFU);
-    base->TOVALL = (uint16_t)((config->timeoutValue) & 0xFFFFU);
-    base->STCTRLH = value;
-    EnableGlobalIRQ(primaskValue);
+    CLOCK_EnableClock(s_wdogClock[WDOG_GetInstance(base)]);
+    base->WICR = WDOG_WICR_WICT(config->interruptTimeValue) | WDOG_WICR_WIE(config->enableInterrupt);
+    base->WMCR = WDOG_WMCR_PDE(config->enablePowerDown);
+    base->WCR = value;
 }
 
 void WDOG_Deinit(WDOG_Type *base)
 {
-    uint32_t primaskValue = 0U;
-
-    /* Disable the global interrupts */
-    primaskValue = DisableGlobalIRQ();
-    WDOG_Unlock(base);
-    /* Wait one bus clock cycle */
-    base->RSTCNT = 0U;
-    WDOG_Disable(base);
-    EnableGlobalIRQ(primaskValue);
-    WDOG_ClearResetCount(base);
+    if (base->WCR & WDOG_WCR_WDBG_MASK)
+    {
+        WDOG_Disable(base);
+    }
 }
 
-void WDOG_SetTestModeConfig(WDOG_Type *base, wdog_test_config_t *config)
+uint16_t WDOG_GetStatusFlags(WDOG_Type *base)
 {
-    assert(config);
+    uint16_t status_flag = 0U;
 
-    uint32_t value = 0U;
-    uint32_t primaskValue = 0U;
-
-    value = WDOG_STCTRLH_DISTESTWDOG(0U) | WDOG_STCTRLH_TESTWDOG(1U) | WDOG_STCTRLH_TESTSEL(config->testMode) |
-            WDOG_STCTRLH_BYTESEL(config->testedByte) | WDOG_STCTRLH_IRQRSTEN(0U) | WDOG_STCTRLH_WDOGEN(1U) |
-            WDOG_STCTRLH_ALLOWUPDATE(1U);
-
-    /* Disable the global interrupts. Otherwise, an interrupt could effectively invalidate the unlock sequence
-     * and the WCT may expire. After the configuration finishes, re-enable the global interrupts. */
-    primaskValue = DisableGlobalIRQ();
-    WDOG_Unlock(base);
-    /* Wait one bus clock cycle */
-    base->RSTCNT = 0U;
-    /* Set configruation */
-    base->TOVALH = (uint16_t)((config->timeoutValue >> 16U) & 0xFFFFU);
-    base->TOVALL = (uint16_t)((config->timeoutValue) & 0xFFFFU);
-    base->STCTRLH = value;
-    EnableGlobalIRQ(primaskValue);
-}
-
-uint32_t WDOG_GetStatusFlags(WDOG_Type *base)
-{
-    uint32_t status_flag = 0U;
-
-    status_flag |= (base->STCTRLH & WDOG_STCTRLH_WDOGEN_MASK);
-    status_flag |= (base->STCTRLL & WDOG_STCTRLL_INTFLG_MASK);
+    status_flag |= (base->WCR & WDOG_WCR_WDE_MASK);
+    status_flag |= (base->WRSR & WDOG_WRSR_POR_MASK);
+    status_flag |= (base->WRSR & WDOG_WRSR_TOUT_MASK);
+    status_flag |= (base->WRSR & WDOG_WRSR_SFTW_MASK);
+    status_flag |= (base->WICR & WDOG_WICR_WTIS_MASK);
 
     return status_flag;
 }
 
-void WDOG_ClearStatusFlags(WDOG_Type *base, uint32_t mask)
+void WDOG_ClearInterruptStatus(WDOG_Type *base, uint16_t mask)
 {
-    if (mask & kWDOG_TimeoutFlag)
+    if (mask & kWDOG_InterruptFlag)
     {
-        base->STCTRLL |= WDOG_STCTRLL_INTFLG_MASK;
+        base->WICR |= WDOG_WICR_WTIS_MASK;
     }
 }
 
 void WDOG_Refresh(WDOG_Type *base)
 {
-    uint32_t primaskValue = 0U;
-
-    /* Disable the global interrupt to protect refresh sequence */
-    primaskValue = DisableGlobalIRQ();
-    base->REFRESH = WDOG_FIRST_WORD_OF_REFRESH;
-    base->REFRESH = WDOG_SECOND_WORD_OF_REFRESH;
-    EnableGlobalIRQ(primaskValue);
+    base->WSR = WDOG_REFRESH_KEY & 0xFFFFU;
+    base->WSR = (WDOG_REFRESH_KEY >> 16U) & 0xFFFFU;
 }

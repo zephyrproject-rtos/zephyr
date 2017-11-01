@@ -31,12 +31,13 @@
 #define _FSL_ENET_H_
 
 #include "fsl_common.h"
-
+#if defined(FSL_FEATURE_MEMORY_HAS_ADDRESS_OFFSET) && FSL_FEATURE_MEMORY_HAS_ADDRESS_OFFSET
+#include "fsl_memory.h"
+#endif
 /*!
  * @addtogroup enet
  * @{
  */
-
 
 /*******************************************************************************
  * Definitions
@@ -45,7 +46,15 @@
 /*! @name Driver version */
 /*@{*/
 /*! @brief Defines the driver version. */
-#define FSL_ENET_DRIVER_VERSION (MAKE_VERSION(2, 1, 1)) /*!< Version 2.1.1. */
+#define FSL_ENET_DRIVER_VERSION (MAKE_VERSION(2, 2, 1)) /*!< Version 2.2.1. */
+/*@}*/
+
+/*! @name ENET DESCRIPTOR QUEUE */
+/*@{*/
+/*! @brief Defines the queue number. */
+#ifndef FSL_FEATURE_ENET_QUEUE
+#define FSL_FEATURE_ENET_QUEUE 1 /* Singal queue for previous IP. */
+#endif
 /*@}*/
 
 /*! @name Control and status region bit masks of the receive buffer descriptor. */
@@ -110,8 +119,14 @@
 /*@{*/
 #define ENET_BUFFDESCRIPTOR_TX_INTERRUPT_MASK 0x4000U /*!< Interrupt mask. */
 #define ENET_BUFFDESCRIPTOR_TX_TIMESTAMP_MASK 0x2000U /*!< Timestamp flag mask. */
+#if defined(FSL_FEATURE_ENET_HAS_AVB) && FSL_FEATURE_ENET_HAS_AVB
+#define ENET_BUFFDESCRIPTOR_TX_USETXLAUNCHTIME_MASK 0x0100U /*!< Use the transmit launch time. */
+#define ENET_BUFFDESCRIPTOR_TX_FRAMETYPE_MASK 0x00F0U       /*!< Frame type mask. */
+#define ENET_BUFFDESCRIPTOR_TX_FRAMETYPE_SHIFT 4U           /*!< Frame type shift. */
+#define ENET_BD_FTYPE(n) ((n << ENET_BUFFDESCRIPTOR_TX_FRAMETYPE_SHIFT) & ENET_BUFFDESCRIPTOR_TX_FRAMETYPE_MASK)
+#endif /* FSL_FEATURE_ENET_HAS_AVB */
 /*@}*/
-#endif                                                /* ENET_ENHANCEDBUFFERDESCRIPTOR_MODE */
+#endif /* ENET_ENHANCEDBUFFERDESCRIPTOR_MODE */
 
 /*! @brief Defines the receive error status flag mask. */
 #define ENET_BUFFDESCRIPTOR_RX_ERR_MASK                                        \
@@ -121,83 +136,102 @@
 #define ENET_BUFFDESCRIPTOR_RX_EXT_ERR_MASK \
     (ENET_BUFFDESCRIPTOR_RX_MACERR_MASK | ENET_BUFFDESCRIPTOR_RX_PHYERR_MASK | ENET_BUFFDESCRIPTOR_RX_COLLISION_MASK)
 #endif
+
+/*! @name Defines some Ethernet parameters. */
+/*@{*/
+#define ENET_FRAME_MAX_FRAMELEN 1518U /*!< Default maximum Ethernet frame size. */
+
+#define ENET_FIFO_MIN_RX_FULL 5U    /*!< ENET minimum receive FIFO full. */
+#define ENET_RX_MIN_BUFFERSIZE 256U /*!< ENET minimum buffer size. */
+#define ENET_PHY_MAXADDRESS (ENET_MMFR_PA_MASK >> ENET_MMFR_PA_SHIFT)
+#if FSL_FEATURE_ENET_QUEUE > 1
+#define ENET_TX_INTERRUPT                                                                                    \
+    (kENET_TxFrameInterrupt | kENET_TxBufferInterrupt | kENET_TxFrame1Interrupt | kENET_TxBuffer1Interrupt | \
+     kENET_TxFrame2Interrupt | kENET_TxBuffer2Interrupt)
+#define ENET_RX_INTERRUPT                                                                                    \
+    (kENET_RxFrameInterrupt | kENET_RxBufferInterrupt | kENET_RxFrame1Interrupt | kENET_RxBuffer1Interrupt | \
+     kENET_RxFrame2Interrupt | kENET_RxBuffer2Interrupt)
+#else
 #define ENET_TX_INTERRUPT (kENET_TxFrameInterrupt | kENET_TxBufferInterrupt)
 #define ENET_RX_INTERRUPT (kENET_RxFrameInterrupt | kENET_RxBufferInterrupt)
+#endif /* FSL_FEATURE_ENET_QUEUE > 1 */
 #define ENET_TS_INTERRUPT (kENET_TsTimerInterrupt | kENET_TsAvailInterrupt)
-#define ENET_ERR_INTERRUPT (kENET_BabrInterrupt | kENET_BabtInterrupt | kENET_EBusERInterrupt | \
-    kENET_LateCollisionInterrupt | kENET_RetryLimitInterrupt | kENET_UnderrunInterrupt | kENET_PayloadRxInterrupt)
-
-
-/*! @name Defines the maximum Ethernet frame size. */
-/*@{*/
-#define ENET_FRAME_MAX_FRAMELEN 1518U     /*!< Default maximum Ethernet frame size. */
+#define ENET_ERR_INTERRUPT                                                                              \
+    (kENET_BabrInterrupt | kENET_BabtInterrupt | kENET_EBusERInterrupt | kENET_LateCollisionInterrupt | \
+     kENET_RetryLimitInterrupt | kENET_UnderrunInterrupt | kENET_PayloadRxInterrupt)
+#define ENET_ERR_INTERRUPT                                                                              \
+    (kENET_BabrInterrupt | kENET_BabtInterrupt | kENET_EBusERInterrupt | kENET_LateCollisionInterrupt | \
+     kENET_RetryLimitInterrupt | kENET_UnderrunInterrupt | kENET_PayloadRxInterrupt)
 /*@}*/
-
-#define ENET_FIFO_MIN_RX_FULL 5U /*!< ENET minimum receive FIFO full. */
-#define ENET_RX_MIN_BUFFERSIZE 256U /*!< ENET minimum buffer size. */
-
-/*! @brief Defines the PHY address scope for the ENET. */
-#define ENET_PHY_MAXADDRESS (ENET_MMFR_PA_MASK >> ENET_MMFR_PA_SHIFT)
 
 /*! @brief Defines the status return codes for transaction. */
 enum _enet_status
 {
-    kStatus_ENET_RxFrameError = MAKE_STATUS(kStatusGroup_ENET, 0U), /*!< A frame received but data error happen. */
-    kStatus_ENET_RxFrameFail = MAKE_STATUS(kStatusGroup_ENET, 1U),  /*!< Failed to receive a frame. */
-    kStatus_ENET_RxFrameEmpty = MAKE_STATUS(kStatusGroup_ENET, 2U), /*!< No frame arrive. */
-    kStatus_ENET_TxFrameBusy =
-        MAKE_STATUS(kStatusGroup_ENET, 3U),                       /*!< Transmit buffer descriptors are under process. */
-    kStatus_ENET_TxFrameFail = MAKE_STATUS(kStatusGroup_ENET, 4U) /*!< Transmit frame fail. */
+    kStatus_ENET_RxFrameError = MAKE_STATUS(kStatusGroup_ENET, 0U),   /*!< A frame received but data error happen. */
+    kStatus_ENET_RxFrameFail = MAKE_STATUS(kStatusGroup_ENET, 1U),    /*!< Failed to receive a frame. */
+    kStatus_ENET_RxFrameEmpty = MAKE_STATUS(kStatusGroup_ENET, 2U),   /*!< No frame arrive. */
+    kStatus_ENET_TxFrameOverLen = MAKE_STATUS(kStatusGroup_ENET, 3U), /*!< Tx frame over length. */
+    kStatus_ENET_TxFrameBusy = MAKE_STATUS(kStatusGroup_ENET, 4U),    /*!< Tx buffer descriptors are under process. */
+    kStatus_ENET_TxFrameFail = MAKE_STATUS(kStatusGroup_ENET, 5U)     /*!< Transmit frame fail. */
 #ifdef ENET_ENHANCEDBUFFERDESCRIPTOR_MODE
     ,
-    kStatus_ENET_PtpTsRingFull = MAKE_STATUS(kStatusGroup_ENET, 5U), /*!< Timestamp ring full. */
-    kStatus_ENET_PtpTsRingEmpty = MAKE_STATUS(kStatusGroup_ENET, 6U) /*!< Timestamp ring empty. */
+    kStatus_ENET_PtpTsRingFull = MAKE_STATUS(kStatusGroup_ENET, 6U), /*!< Timestamp ring full. */
+    kStatus_ENET_PtpTsRingEmpty = MAKE_STATUS(kStatusGroup_ENET, 7U) /*!< Timestamp ring empty. */
 #endif                                                               /* ENET_ENHANCEDBUFFERDESCRIPTOR_MODE */
 };
 
-/*! @brief Defines the RMII or MII mode for data interface between the MAC and the PHY. */
+/*! @brief Defines the MII/RMII/RGMII mode for data interface between the MAC and the PHY. */
 typedef enum _enet_mii_mode
 {
-    kENET_MiiMode = 0U, /*!< MII mode for data interface. */
-    kENET_RmiiMode      /*!< RMII mode for data interface. */
+    kENET_MiiMode = 0U,  /*!< MII mode for data interface. */
+    kENET_RmiiMode = 1U, /*!< RMII mode for data interface. */
+#if defined(FSL_FEATURE_ENET_HAS_AVB) && FSL_FEATURE_ENET_HAS_AVB
+    kENET_RgmiiMode = 2U /*!< RGMII mode for data interface.  */
+#endif                   /* FSL_FEATURE_ENET_HAS_AVB */
 } enet_mii_mode_t;
 
-/*! @brief Defines the 10 Mbps or 100 Mbps speed for the  MII data interface. */
-typedef enum _enet_mii_speed
+/*! @brief Defines the 10/100/1000 Mbps speed for the MII data interface.
+ *
+ * Notice: "kENET_MiiSpeed1000M" only supported when mii mode is "kENET_RgmiiMode".
+ */
+typedef enum _enet_mii_speed 
 {
-    kENET_MiiSpeed10M = 0U, /*!< Speed 10 Mbps. */
-    kENET_MiiSpeed100M      /*!< Speed 100 Mbps. */
+    kENET_MiiSpeed10M = 0U,  /*!< Speed 10 Mbps. */
+    kENET_MiiSpeed100M = 1U, /*!< Speed 100 Mbps. */
+#if defined(FSL_FEATURE_ENET_HAS_AVB) && FSL_FEATURE_ENET_HAS_AVB
+    kENET_MiiSpeed1000M = 2U /*!< Speed 1000M bps. */
+#endif                       /* FSL_FEATURE_ENET_HAS_AVB */
 } enet_mii_speed_t;
 
 /*! @brief Defines the half or full duplex for the MII data interface. */
-typedef enum _enet_mii_duplex
+typedef enum _enet_mii_duplex 
 {
     kENET_MiiHalfDuplex = 0U, /*!< Half duplex mode. */
     kENET_MiiFullDuplex       /*!< Full duplex mode. */
 } enet_mii_duplex_t;
 
-/*! @brief Defines the write operation for the MII management frame. */
-typedef enum _enet_mii_write
+/*! @brief Define the MII opcode for normal MDIO_CLAUSES_22 Frame. */
+typedef enum _enet_mii_write 
 {
     kENET_MiiWriteNoCompliant = 0U, /*!< Write frame operation, but not MII-compliant. */
     kENET_MiiWriteValidFrame        /*!< Write frame operation for a valid MII management frame. */
 } enet_mii_write_t;
 
 /*! @brief Defines the read operation for the MII management frame. */
-typedef enum _enet_mii_read
+typedef enum _enet_mii_read 
 {
     kENET_MiiReadValidFrame = 2U, /*!< Read frame operation for a valid MII management frame. */
     kENET_MiiReadNoCompliant = 3U /*!< Read frame operation, but not MII-compliant. */
 } enet_mii_read_t;
 
-#if defined (FSL_FEATURE_ENET_HAS_EXTEND_MDIO) && FSL_FEATURE_ENET_HAS_EXTEND_MDIO
+#if defined(FSL_FEATURE_ENET_HAS_EXTEND_MDIO) && FSL_FEATURE_ENET_HAS_EXTEND_MDIO
 /*! @brief Define the MII opcode for extended MDIO_CLAUSES_45 Frame. */
 typedef enum _enet_mii_extend_opcode {
     kENET_MiiAddrWrite_C45 = 0U,  /*!< Address Write operation. */
     kENET_MiiWriteFrame_C45 = 1U, /*!< Write frame operation for a valid MII management frame. */
     kENET_MiiReadFrame_C45 = 3U   /*!< Read frame operation for a valid MII management frame. */
 } enet_mii_extend_opcode;
-#endif  /* FSL_FEATURE_ENET_HAS_EXTEND_MDIO */
+#endif /* FSL_FEATURE_ENET_HAS_EXTEND_MDIO */
 
 /*! @brief Defines a special configuration for ENET MAC controller.
  *
@@ -211,7 +245,7 @@ typedef enum _enet_mii_extend_opcode {
  * configure rxFifoFullThreshold and txFifoWatermark
  * in the enet_config_t.
  */
-typedef enum _enet_special_control_flag
+typedef enum _enet_special_control_flag 
 {
     kENET_ControlFlowControlEnable = 0x0001U,       /*!< Enable ENET flow control: pause frame. */
     kENET_ControlRxPayloadCheckEnable = 0x0002U,    /*!< Enable ENET receive payload length check. */
@@ -222,7 +256,11 @@ typedef enum _enet_special_control_flag
     kENET_ControlSMIPreambleDisable = 0x0040U,      /*!< Enable SMI preamble. */
     kENET_ControlPromiscuousEnable = 0x0080U,       /*!< Enable promiscuous mode. */
     kENET_ControlMIILoopEnable = 0x0100U,           /*!< Enable ENET MII loop back. */
-    kENET_ControlVLANTagEnable = 0x0200U            /*!< Enable VLAN tag frame. */
+    kENET_ControlVLANTagEnable = 0x0200U,           /*!< Enable normal VLAN (single vlan tag). */
+#if defined(FSL_FEATURE_ENET_HAS_AVB) && FSL_FEATURE_ENET_HAS_AVB
+    kENET_ControlSVLANEnable = 0x0400U,     /*!< Enable S-VLAN. */
+    kENET_ControlVLANUseSecondTag = 0x0800U /*!< Enable extracting the second vlan tag for further processing. */
+#endif                                      /* FSL_FEATURE_ENET_HAS_AVB */
 } enet_special_control_flag_t;
 
 /*! @brief List of interrupts supported by the peripheral. This
@@ -230,7 +268,7 @@ typedef enum _enet_special_control_flag
  * members. Members usually map to interrupt enable bits in one or more
  * peripheral registers.
  */
-typedef enum _enet_interrupt_enable
+typedef enum _enet_interrupt_enable 
 {
     kENET_BabrInterrupt = ENET_EIR_BABR_MASK,        /*!< Babbling receive error interrupt source */
     kENET_BabtInterrupt = ENET_EIR_BABT_MASK,        /*!< Babbling transmit error interrupt source */
@@ -244,25 +282,64 @@ typedef enum _enet_interrupt_enable
     kENET_LateCollisionInterrupt = ENET_EIR_LC_MASK, /*!< Late collision interrupt source */
     kENET_RetryLimitInterrupt = ENET_EIR_RL_MASK,    /*!< Collision Retry Limit interrupt source */
     kENET_UnderrunInterrupt = ENET_EIR_UN_MASK,      /*!< Transmit FIFO underrun interrupt source */
-    kENET_PayloadRxInterrupt = ENET_EIR_PLR_MASK,    /*!< Payload Receive interrupt source */
-    kENET_WakeupInterrupt = ENET_EIR_WAKEUP_MASK,     /*!< WAKEUP interrupt source */
-    kENET_TsAvailInterrupt = ENET_EIR_TS_AVAIL_MASK, /*!< TS AVAIL interrupt source for PTP */
-    kENET_TsTimerInterrupt = ENET_EIR_TS_TIMER_MASK  /*!< TS WRAP interrupt source for PTP */
+    kENET_PayloadRxInterrupt = ENET_EIR_PLR_MASK,    /*!< Payload Receive error interrupt source */
+    kENET_WakeupInterrupt = ENET_EIR_WAKEUP_MASK,    /*!< WAKEUP interrupt source */
+#if FSL_FEATURE_ENET_QUEUE > 1
+    kENET_RxFlush2Interrupt = ENET_EIR_RXFLUSH_2_MASK, /*!< Rx DMA ring2 flush indication. */
+    kENET_RxFlush1Interrupt = ENET_EIR_RXFLUSH_1_MASK, /*!< Rx DMA ring1 flush indication. */
+    kENET_RxFlush0Interrupt = ENET_EIR_RXFLUSH_0_MASK, /*!< RX DMA ring0 flush indication. */
+    kENET_TxFrame2Interrupt = ENET_EIR_TXF2_MASK,      /*!< Tx frame interrupt for Tx ring/class 2. */
+    kENET_TxBuffer2Interrupt = ENET_EIR_TXB2_MASK,     /*!< Tx buffer interrupt for Tx ring/class 2. */
+    kENET_RxFrame2Interrupt = ENET_EIR_RXF2_MASK,      /*!< Rx frame interrupt for Rx ring/class 2. */
+    kENET_RxBuffer2Interrupt = ENET_EIR_RXB2_MASK,     /*!< Rx buffer interrupt for Rx ring/class 2. */
+    kENET_TxFrame1Interrupt = ENET_EIR_TXF1_MASK,      /*!< Tx frame interrupt for Tx ring/class 1. */
+    kENET_TxBuffer1Interrupt = ENET_EIR_TXB1_MASK,     /*!< Tx buffer interrupt for Tx ring/class 1. */
+    kENET_RxFrame1Interrupt = ENET_EIR_RXF1_MASK,      /*!< Rx frame interrupt for Rx ring/class 1. */
+    kENET_RxBuffer1Interrupt = ENET_EIR_RXB1_MASK,     /*!< Rx buffer interrupt for Rx ring/class 1. */
+#endif                                                 /* FSL_FEATURE_ENET_QUEUE > 1 */
+    kENET_TsAvailInterrupt = ENET_EIR_TS_AVAIL_MASK,   /*!< TS AVAIL interrupt source for PTP */
+    kENET_TsTimerInterrupt = ENET_EIR_TS_TIMER_MASK    /*!< TS WRAP interrupt source for PTP */
 } enet_interrupt_enable_t;
 
 /*! @brief Defines the common interrupt event for callback use. */
-typedef enum _enet_event
+typedef enum _enet_event 
 {
-    kENET_RxEvent,     /*!< Receive event. */
-    kENET_TxEvent,     /*!< Transmit event. */
-    kENET_ErrEvent,    /*!< Error event: BABR/BABT/EBERR/LC/RL/UN/PLR . */
-    kENET_WakeUpEvent, /*!< Wake up from sleep mode event. */
+    kENET_RxEvent,            /*!< Receive event. */
+    kENET_TxEvent,            /*!< Transmit event. */
+    kENET_ErrEvent,           /*!< Error event: BABR/BABT/EBERR/LC/RL/UN/PLR . */
+    kENET_WakeUpEvent,        /*!< Wake up from sleep mode event. */
     kENET_TimeStampEvent,     /*!< Time stamp event. */
     kENET_TimeStampAvailEvent /*!< Time stamp available event.*/
 } enet_event_t;
 
+#if defined(FSL_FEATURE_ENET_HAS_AVB) && FSL_FEATURE_ENET_HAS_AVB
+/*! @brief Defines certain idle slope for bandwidth fraction. */
+typedef enum _enet_idle_slope 
+{
+    kENET_IdleSlope1 = 1U,       /*!< The bandwidth fraction is about 0.002. */
+    kENET_IdleSlope2 = 2U,       /*!< The bandwidth fraction is about 0.003. */
+    kENET_IdleSlope4 = 4U,       /*!< The bandwidth fraction is about 0.008. */
+    kENET_IdleSlope8 = 8U,       /*!< The bandwidth fraction is about 0.02. */
+    kENET_IdleSlope16 = 16U,     /*!< The bandwidth fraction is about 0.03. */
+    kENET_IdleSlope32 = 32U,     /*!< The bandwidth fraction is about 0.06. */
+    kENET_IdleSlope64 = 64U,     /*!< The bandwidth fraction is about 0.11. */
+    kENET_IdleSlope128 = 128U,   /*!< The bandwidth fraction is about 0.20. */
+    kENET_IdleSlope256 = 256U,   /*!< The bandwidth fraction is about 0.33. */
+    kENET_IdleSlope384 = 384U,   /*!< The bandwidth fraction is about 0.43. */
+    kENET_IdleSlope512 = 512U,   /*!< The bandwidth fraction is about 0.50. */
+    kENET_IdleSlope640 = 640U,   /*!< The bandwidth fraction is about 0.56. */
+    kENET_IdleSlope768 = 768U,   /*!< The bandwidth fraction is about 0.60. */
+    kENET_IdleSlope896 = 896U,   /*!< The bandwidth fraction is about 0.64. */
+    kENET_IdleSlope1024 = 1024U, /*!< The bandwidth fraction is about 0.67. */
+    kENET_IdleSlope1152 = 1152U, /*!< The bandwidth fraction is about 0.69. */
+    kENET_IdleSlope1280 = 1280U, /*!< The bandwidth fraction is about 0.71. */
+    kENET_IdleSlope1408 = 1408U, /*!< The bandwidth fraction is about 0.73. */
+    kENET_IdleSlope1536 = 1536U  /*!< The bandwidth fraction is about 0.75. */
+} enet_idle_slope_t;
+#endif /* FSL_FEATURE_ENET_HAS_AVB */
+
 /*! @brief Defines the transmit accelerator configuration. */
-typedef enum _enet_tx_accelerator
+typedef enum _enet_tx_accelerator 
 {
     kENET_TxAccelIsShift16Enabled = ENET_TACC_SHIFT16_MASK, /*!< Transmit FIFO shift-16. */
     kENET_TxAccelIpCheckEnabled = ENET_TACC_IPCHK_MASK,     /*!< Insert IP header checksum. */
@@ -270,7 +347,7 @@ typedef enum _enet_tx_accelerator
 } enet_tx_accelerator_t;
 
 /*! @brief Defines the receive accelerator configuration. */
-typedef enum _enet_rx_accelerator
+typedef enum _enet_rx_accelerator 
 {
     kENET_RxAccelPadRemoveEnabled = ENET_RACC_PADREM_MASK,  /*!< Padding removal for short IP frames. */
     kENET_RxAccelIpCheckEnabled = ENET_RACC_IPDIS_MASK,     /*!< Discard with wrong IP header checksum. */
@@ -281,7 +358,7 @@ typedef enum _enet_rx_accelerator
 
 #ifdef ENET_ENHANCEDBUFFERDESCRIPTOR_MODE
 /*! @brief Defines the ENET PTP message related constant. */
-typedef enum _enet_ptp_event_type
+typedef enum _enet_ptp_event_type 
 {
     kENET_PtpEventMsgType = 3U,  /*!< PTP event message type. */
     kENET_PtpSrcPortIdLen = 10U, /*!< PTP message sequence id length. */
@@ -290,7 +367,7 @@ typedef enum _enet_ptp_event_type
 } enet_ptp_event_type_t;
 
 /*! @brief Defines the IEEE 1588 PTP timer channel numbers. */
-typedef enum _enet_ptp_timer_channel
+typedef enum _enet_ptp_timer_channel 
 {
     kENET_PtpTimerChannel1 = 0U, /*!< IEEE 1588 PTP timer Channel 1. */
     kENET_PtpTimerChannel2,      /*!< IEEE 1588 PTP timer Channel 2. */
@@ -347,8 +424,12 @@ typedef struct _enet_tx_bd_struct
 #ifdef ENET_ENHANCEDBUFFERDESCRIPTOR_MODE
     uint16_t controlExtend0; /*!< Extend buffer descriptor control0. */
     uint16_t controlExtend1; /*!< Extend buffer descriptor control1. */
+#if defined(FSL_FEATURE_ENET_HAS_AVB) && FSL_FEATURE_ENET_HAS_AVB
+    int8_t *txLaunchTime; /*!< Transmit launch time. */
+#else
     uint16_t reserved0;
     uint16_t reserved1;
+#endif /* FSL_FEATURE_ENET_HAS_AVB */
     uint16_t reserved2;
     uint16_t controlExtend2; /*!< Extend buffer descriptor control2. */
     uint32_t timestamp;      /*!< Timestamp. */
@@ -396,7 +477,7 @@ typedef struct _enet_data_error_stats
  *    Receive buffers should be continuous with the total size equal to "rxBdNumber * rxBuffSizeAlign".
  *    Transmit buffers should be continuous with the total size equal to "txBdNumber * txBuffSizeAlign".
  *    when the data buffers are in cacheable region when cache is enabled, all those size should be
- *    aligned to the maximum value of "ENET_BUFF_ALIGNMENT" and the cache line size. 
+ *    aligned to the maximum value of "ENET_BUFF_ALIGNMENT" and the cache line size.
  */
 typedef struct _enet_buffer_config
 {
@@ -404,8 +485,8 @@ typedef struct _enet_buffer_config
     uint16_t txBdNumber;                              /*!< Transmit buffer descriptor number. */
     uint32_t rxBuffSizeAlign;                         /*!< Aligned receive data buffer size. */
     uint32_t txBuffSizeAlign;                         /*!< Aligned transmit data buffer size. */
-    volatile enet_rx_bd_struct_t *rxBdStartAddrAlign; /*!< Aligned receive buffer descriptor start address. */
-    volatile enet_tx_bd_struct_t *txBdStartAddrAlign; /*!< Aligned transmit buffer descriptor start address. */
+    volatile enet_rx_bd_struct_t *rxBdStartAddrAlign; /*!< Aligned receive buffer descriptor start address: should be non-cacheable. */
+    volatile enet_tx_bd_struct_t *txBdStartAddrAlign; /*!< Aligned transmit buffer descriptor start address: should be non-cacheable. */
     uint8_t *rxBufferAlign;                           /*!< Receive data buffer start address. */
     uint8_t *txBufferAlign;                           /*!< Transmit data buffer start address. */
 } enet_buffer_config_t;
@@ -449,7 +530,7 @@ typedef struct _enet_ptp_config
 } enet_ptp_config_t;
 #endif /* ENET_ENHANCEDBUFFERDESCRIPTOR_MODE */
 
-#if defined (FSL_FEATURE_ENET_HAS_INTERRUPT_COALESCE) && FSL_FEATURE_ENET_HAS_INTERRUPT_COALESCE
+#if defined(FSL_FEATURE_ENET_HAS_INTERRUPT_COALESCE) && FSL_FEATURE_ENET_HAS_INTERRUPT_COALESCE
 /*! @brief Defines the interrupt coalescing configure structure. */
 typedef struct _enet_intcoalesce_config
 {
@@ -460,17 +541,35 @@ typedef struct _enet_intcoalesce_config
 } enet_intcoalesce_config_t;
 #endif /* FSL_FEATURE_ENET_HAS_INTERRUPT_COALESCE */
 
+#if defined(FSL_FEATURE_ENET_HAS_AVB) && FSL_FEATURE_ENET_HAS_AVB
+/*! @brief Defines the ENET AVB Configure structure.
+ *
+ * This is used for to configure the extended ring 1 and ring 2.
+ * 1. The classification match format is (CMP3 << 12) | (CMP2 << 8) | (CMP1 << 4) | CMP0.
+ * composed of four 3-bit compared VLAN priority field cmp0~cmp3, cm0 ~ cmp3 are used in parallel.
+ *
+ * If CMP1,2,3 are not unused, please set them to the same value as CMP0.
+ * 2. The idleSlope is used to calculate the Band Width fraction, BW fraction = 1 / (1 + 512/idleSlope).
+ * For avb configuration, the BW fraction of Class 1 and Class 2 combined must not exceed 0.75.
+ */
+typedef struct _enet_avb_config
+{
+    uint16_t rxClassifyMatch[FSL_FEATURE_ENET_QUEUE - 1];    /*!< The classification match value for the ring. */
+    enet_idle_slope_t idleSlope[FSL_FEATURE_ENET_QUEUE - 1]; /*!< The idle slope for certian bandwidth fraction. */
+} enet_avb_config_t;
+#endif /* FSL_FEATURE_ENET_HAS_AVB */
+
 /*! @brief Defines the basic configuration structure for the ENET device.
  *
  * Note:
- *  1. macSpecialConfig is used for a special control configuration, a logical OR of
+ *  1. macSpecialConfig is used for a special control configuration, A logical OR of
  *  "enet_special_control_flag_t". For a special configuration for MAC,
  *  set this parameter to 0.
- *  2. txWatermark is used for a cut-through operation. It is in steps of 64 bytes.
+ *  2. txWatermark is used for a cut-through operation. It is in steps of 64 bytes:
  *  0/1  - 64 bytes written to TX FIFO before transmission of a frame begins.
  *  2    - 128 bytes written to TX FIFO ....
  *  3    - 192 bytes written to TX FIFO ....
- *  The maximum of txWatermark is 0x2F   - 4032 bytes written to TX FIFO.
+ *  The maximum of txWatermark is 0x2F   - 4032 bytes written to TX FIFO ....
  *  txWatermark allows minimizing the transmit latency to set the txWatermark to 0 or 1
  *  or for larger bus access latency 3 or larger due to contention for the system bus.
  *  3. rxFifoFullThreshold is similar to the txWatermark for cut-through operation in RX.
@@ -488,6 +587,7 @@ typedef struct _enet_intcoalesce_config
  *  recommended to be used to enable the transmit and receive accelerator.
  *  After the accelerators are enabled, the store and forward feature should be enabled.
  *  As a result, kENET_ControlStoreAndFwdDisabled should not be set.
+ *  7. The intCoalesceCfg can be used in the rx or tx enabled cases to decrese the CPU loading.
  */
 typedef struct _enet_config
 {
@@ -502,7 +602,7 @@ typedef struct _enet_config
     uint16_t pauseDuration;       /*!< For flow control enabled case: Pause duration. */
     uint8_t rxFifoEmptyThreshold; /*!< For flow control enabled case:  when RX FIFO level reaches this value,
                                      it makes MAC generate XOFF pause frame. */
-#if defined (FSL_FEATURE_ENET_HAS_RECEIVE_STATUS_THRESHOLD) && FSL_FEATURE_ENET_HAS_RECEIVE_STATUS_THRESHOLD
+#if defined(FSL_FEATURE_ENET_HAS_RECEIVE_STATUS_THRESHOLD) && FSL_FEATURE_ENET_HAS_RECEIVE_STATUS_THRESHOLD
     uint8_t rxFifoStatEmptyThreshold; /*!< For flow control enabled case: number of frames in the receive FIFO,
                                     independent of size, that can be accept. If the limit is reached, reception
                                     continues and a pause frame is triggered. */
@@ -511,36 +611,50 @@ typedef struct _enet_config
                                       the MAC receive ready status. */
     uint8_t txFifoWatermark;          /*!< For store and forward disable case, the data required in TX FIFO
                                       before a frame transmit start. */
-#if defined (FSL_FEATURE_ENET_HAS_INTERRUPT_COALESCE) && FSL_FEATURE_ENET_HAS_INTERRUPT_COALESCE
-    enet_intcoalesce_config_t *intCoalesceCfg; /* If the interrupt coalsecence is not required in the ring n(0,1,2), please set
-                                         to NULL. */
-#endif /* FSL_FEATURE_ENET_HAS_INTERRUPT_COALESCE */
+#if defined(FSL_FEATURE_ENET_HAS_INTERRUPT_COALESCE) && FSL_FEATURE_ENET_HAS_INTERRUPT_COALESCE
+    enet_intcoalesce_config_t
+        *intCoalesceCfg; /* If the interrupt coalsecence is not required in the ring n(0,1,2), please set
+                   to NULL. */
+#endif                   /* FSL_FEATURE_ENET_HAS_INTERRUPT_COALESCE */
+    uint8_t ringNum;     /*!< Number of used rings. default with 1 -- single ring. */
 } enet_config_t;
 
 /* Forward declaration of the handle typedef. */
 typedef struct _enet_handle enet_handle_t;
 
 /*! @brief ENET callback function. */
+#if FSL_FEATURE_ENET_QUEUE > 1
+typedef void (*enet_callback_t)(
+    ENET_Type *base, enet_handle_t *handle, uint32_t ringId, enet_event_t event, void *userData);
+#else
 typedef void (*enet_callback_t)(ENET_Type *base, enet_handle_t *handle, enet_event_t event, void *userData);
+#endif /* FSL_FEATURE_ENET_QUEUE > 1 */
 
 /*! @brief Defines the ENET handler structure. */
 struct _enet_handle
 {
-    volatile enet_rx_bd_struct_t *rxBdBase;    /*!< Receive buffer descriptor base address pointer. */
-    volatile enet_rx_bd_struct_t *rxBdCurrent; /*!< The current available receive buffer descriptor pointer. */
-    volatile enet_tx_bd_struct_t *txBdBase;    /*!< Transmit buffer descriptor base address pointer. */
-    volatile enet_tx_bd_struct_t *txBdCurrent; /*!< The current available transmit buffer descriptor pointer. */
-    uint32_t rxBuffSizeAlign;                  /*!< Receive buffer size alignment. */
-    uint32_t txBuffSizeAlign;                  /*!< Transmit buffer size alignment. */
-    enet_callback_t callback;                  /*!< Callback function. */
-    void *userData;                            /*!< Callback function parameter.*/
+    volatile enet_rx_bd_struct_t
+        *rxBdBase[FSL_FEATURE_ENET_QUEUE]; /*!< Receive buffer descriptor base address pointer. */
+    volatile enet_rx_bd_struct_t
+        *rxBdCurrent[FSL_FEATURE_ENET_QUEUE]; /*!< The current available receive buffer descriptor pointer. */
+    volatile enet_tx_bd_struct_t
+        *txBdBase[FSL_FEATURE_ENET_QUEUE]; /*!< Transmit buffer descriptor base address pointer. */
+    volatile enet_tx_bd_struct_t
+        *txBdCurrent[FSL_FEATURE_ENET_QUEUE];         /*!< The current available transmit buffer descriptor pointer. */
+    uint32_t rxBuffSizeAlign[FSL_FEATURE_ENET_QUEUE]; /*!< Receive buffer size alignment. */
+    uint32_t txBuffSizeAlign[FSL_FEATURE_ENET_QUEUE]; /*!< Transmit buffer size alignment. */
+    uint8_t ringNum;                                  /*!< Number of used rings. */
+    enet_callback_t callback;                         /*!< Callback function. */
+    void *userData;                                   /*!< Callback function parameter.*/
 #ifdef ENET_ENHANCEDBUFFERDESCRIPTOR_MODE
-    volatile enet_tx_bd_struct_t *txBdDirtyStatic; /*!< The dirty transmit buffer descriptor for error static update. */
-    volatile enet_tx_bd_struct_t *txBdDirtyTime;   /*!< The dirty transmit buffer descriptor for time stamp update. */
-    uint64_t msTimerSecond;                        /*!< The second for Master PTP timer .*/
-    enet_ptp_time_data_ring_t rxPtpTsDataRing;     /*!< Receive PTP 1588 time stamp data ring buffer. */
-    enet_ptp_time_data_ring_t txPtpTsDataRing;     /*!< Transmit PTP 1588 time stamp data ring buffer. */
-#endif                                             /* ENET_ENHANCEDBUFFERDESCRIPTOR_MODE */
+    volatile enet_tx_bd_struct_t
+        *txBdDirtyStatic[FSL_FEATURE_ENET_QUEUE]; /*!< The dirty transmit buffer descriptor for error static update. */
+    volatile enet_tx_bd_struct_t
+        *txBdDirtyTime[FSL_FEATURE_ENET_QUEUE]; /*!< The dirty transmit buffer descriptor for time stamp update. */
+    uint64_t msTimerSecond;                     /*!< The second for Master PTP timer .*/
+    enet_ptp_time_data_ring_t rxPtpTsDataRing;  /*!< Receive PTP 1588 time stamp data ring buffer. */
+    enet_ptp_time_data_ring_t txPtpTsDataRing;  /*!< Transmit PTP 1588 time stamp data ring buffer. */
+#endif                                          /* ENET_ENHANCEDBUFFERDESCRIPTOR_MODE */
 };
 
 /*******************************************************************************
@@ -552,7 +666,7 @@ extern "C" {
 #endif
 
 /*!
-  * @name Initialization and de-initialization
+  * @name Initialization and De-initialization
   * @{
   */
 
@@ -560,10 +674,10 @@ extern "C" {
  * @brief Gets the ENET default configuration structure.
  *
  * The purpose of this API is to get the default ENET MAC controller
- * configuration structure for ENET_Init(). Users may use the initialized
- * structure unchanged in ENET_Init() or modify fields of the
+ * configure structure for ENET_Init(). User may use the initialized
+ * structure unchanged in ENET_Init(), or modify some fields of the
  * structure before calling ENET_Init().
- * This is an example.
+ * Example:
    @code
    enet_config_t config;
    ENET_GetDefaultConfig(&config);
@@ -579,12 +693,17 @@ void ENET_GetDefaultConfig(enet_config_t *config);
  *
  * @param base    ENET peripheral base address.
  * @param handle  ENET handler pointer.
- * @param config  ENET Mac configuration structure pointer.
+ * @param config  ENET mac configuration structure pointer.
  *        The "enet_config_t" type mac configuration return from ENET_GetDefaultConfig
  *        can be used directly. It is also possible to verify the Mac configuration using other methods.
  * @param bufferConfig  ENET buffer configuration structure pointer.
  *        The buffer configuration should be prepared for ENET Initialization.
- * @param macAddr  ENET mac address of the Ethernet device. This Mac address should be
+ *        It is the start address of "ringNum" enet_buffer_config structures.
+ *        To support added multi-ring features in some soc and compatible with the previous
+ *        enet driver version. For single ring supported, this bufferConfig is a buffer 
+ *        configure structure pointer, for multi-ring supported and used case, this bufferConfig 
+ *        pointer should be a buffer configure structure array pointer. 
+ * @param macAddr  ENET mac address of Ethernet device. This MAC address should be
  *        provided.
  * @param srcClock_Hz The internal module clock source for MII clock.
  *
@@ -612,8 +731,8 @@ void ENET_Deinit(ENET_Type *base);
 /*!
  * @brief Resets the ENET module.
  *
- * This function restores the ENET module to the reset state.
- * Note that this function sets all registers to the
+ * This function restores the ENET module to reset state.
+ * Note that this function sets all registers to
  * reset state. As a result, the ENET module can't work after calling this function.
  *
  * @param base  ENET peripheral base address.
@@ -633,6 +752,8 @@ static inline void ENET_Reset(ENET_Type *base)
 /*!
  * @brief Sets the ENET MII speed and duplex.
  *
+ * This API is provided to dynamically change the speed and dulpex for MAC.
+ *
  * @param base  ENET peripheral base address.
  * @param speed The speed of the RMII mode.
  * @param duplex The duplex of the RMII mode.
@@ -640,7 +761,7 @@ static inline void ENET_Reset(ENET_Type *base)
 void ENET_SetMII(ENET_Type *base, enet_mii_speed_t speed, enet_mii_duplex_t duplex);
 
 /*!
- * @brief Sets the ENET SMI (serial management interface) - MII management interface.
+ * @brief Sets the ENET SMI(serial management interface)- MII management interface.
  *
  * @param base  ENET peripheral base address.
  * @param srcClock_Hz This is the ENET module clock frequency. Normally it's the system clock. See clock distribution.
@@ -678,9 +799,11 @@ static inline uint32_t ENET_ReadSMIData(ENET_Type *base)
 /*!
  * @brief Starts an SMI (Serial Management Interface) read command.
  *
+ * Used for standard IEEE802.3 MDIO Clause 22 format.
+ *
  * @param base  ENET peripheral base address.
  * @param phyAddr The PHY address.
- * @param phyReg The PHY register.
+ * @param phyReg The PHY register. Range from 0 ~ 31.
  * @param operation The read operation.
  */
 void ENET_StartSMIRead(ENET_Type *base, uint32_t phyAddr, uint32_t phyReg, enet_mii_read_t operation);
@@ -688,15 +811,17 @@ void ENET_StartSMIRead(ENET_Type *base, uint32_t phyAddr, uint32_t phyReg, enet_
 /*!
  * @brief Starts an SMI write command.
  *
+ * Used for standard IEEE802.3 MDIO Clause 22 format.
+ *
  * @param base  ENET peripheral base address.
  * @param phyAddr The PHY address.
- * @param phyReg The PHY register.
+ * @param phyReg The PHY register. Range from 0 ~ 31.
  * @param operation The write operation.
  * @param data The data written to PHY.
  */
 void ENET_StartSMIWrite(ENET_Type *base, uint32_t phyAddr, uint32_t phyReg, enet_mii_write_t operation, uint32_t data);
 
-#if defined (FSL_FEATURE_ENET_HAS_EXTEND_MDIO) && FSL_FEATURE_ENET_HAS_EXTEND_MDIO
+#if defined(FSL_FEATURE_ENET_HAS_EXTEND_MDIO) && FSL_FEATURE_ENET_HAS_EXTEND_MDIO
 /*!
  * @brief Starts the extended IEEE802.3 Clause 45 MDIO format SMI read command.
  *
@@ -721,7 +846,41 @@ void ENET_StartExtC45SMIRead(ENET_Type *base, uint32_t phyAddr, uint32_t phyReg)
 void ENET_StartExtC45SMIWrite(ENET_Type *base, uint32_t phyAddr, uint32_t phyReg, uint32_t data);
 #endif /* FSL_FEATURE_ENET_HAS_EXTEND_MDIO */
 
-/* @} */
+#if defined(FSL_FEATURE_ENET_HAS_AVB) && FSL_FEATURE_ENET_HAS_AVB
+/*!
+ * @brief Control the usage of the delayed tx/rx RGMII clock.
+ *
+ * @param base  ENET peripheral base address.
+ * @param txEnabled  Enable or disable to generate the delayed version of RGMII_TXC.
+ * @param rxEnabled  Enable or disable to use the delayed version of RGMII_RXC.
+ */
+
+static inline void ENET_SetRGMIIClockDelay(ENET_Type *base, bool txEnabled, bool rxEnabled)
+{
+    uint32_t ecrReg = base->ECR;
+
+    /* Set for transmit clock delay. */
+    if (txEnabled)
+    {
+        ecrReg |= ENET_ECR_TXC_DLY_MASK;
+    }
+    else
+    {
+        ecrReg &= ~ENET_ECR_TXC_DLY_MASK;
+    }
+
+    /* Set for receive clock delay. */
+    if (rxEnabled)
+    {
+        ecrReg |= ENET_ECR_RXC_DLY_MASK;
+    }
+    else
+    {
+        ecrReg &= ~ENET_ECR_RXC_DLY_MASK;
+    }
+}
+#endif /* FSL_FEATURE_ENET_HAS_AVB */
+       /* @} */
 
 /*!
  * @name MAC Address Filter
@@ -765,12 +924,36 @@ void ENET_LeaveMulticastGroup(ENET_Type *base, uint8_t *address);
 /* @} */
 
 /*!
- * @name Other basic operations
+ * @name Other basic operation
  * @{
  */
 
+#ifdef ENET_ENHANCEDBUFFERDESCRIPTOR_MODE
+#if defined(FSL_FEATURE_ENET_HAS_AVB) && FSL_FEATURE_ENET_HAS_AVB
+/*!
+ * @brief Sets the ENET AVB feature.
+ *
+ * ENET AVB feature configuration, set the Receive classification match and transmit
+ * bandwidth. This API is called when the AVB feature is required.
+ *
+ * Note: The AVB frames transmission scheme is credit-based tx scheme and it's only supported
+ * with the Enhanced buffer descriptors. so the AVB configuration should only done with
+ * Enhanced buffer descriptor. so when the AVB feature is required, please make sure the
+ * the "ENET_ENHANCEDBUFFERDESCRIPTOR_MODE" is defined.
+ *
+ * @param base ENET peripheral base address.
+ * @param handle ENET handler pointer.
+ * @param config The ENET AVB feature configuration structure.
+ */
+void ENET_AVBConfigure(ENET_Type *base, enet_handle_t *handle, const enet_avb_config_t *config);
+#endif /* FSL_FEATURE_ENET_HAS_AVB */
+#endif /* ENET_ENHANCEDBUFFERDESCRIPTOR_MODE  */
+
 /*!
  * @brief Activates ENET read or receive.
+ *
+ * This function is to active the enet read process. It is
+ * used for single descriptor ring/queue.
  *
  * @param base  ENET peripheral base address.
  *
@@ -782,6 +965,27 @@ static inline void ENET_ActiveRead(ENET_Type *base)
 {
     base->RDAR = ENET_RDAR_RDAR_MASK;
 }
+
+#if FSL_FEATURE_ENET_QUEUE > 1
+/*!
+ * @brief Activates ENET read or receive for multiple-queue/ring.
+ *
+ * This function is to active the enet read process. It is
+ * used for extended multiple descriptor rings/queues.
+ *
+ * @param base  ENET peripheral base address.
+ *
+ * @note This must be called after the MAC configuration and
+ * state are ready. It must be called after the ENET_Init() and
+ * ENET_Ptp1588Configure(). This should be called when the ENET receive required.
+ */
+static inline void ENET_ActiveReadMultiRing(ENET_Type *base)
+{
+    base->RDAR = ENET_RDAR_RDAR_MASK;
+    base->RDAR1 = ENET_RDAR1_RDAR_MASK;
+    base->RDAR2 = ENET_RDAR2_RDAR_MASK;
+}
+#endif /* FSL_FEATURE_ENET_QUEUE > 1 */
 
 /*!
  * @brief Enables/disables the MAC to enter sleep mode.
@@ -806,13 +1010,13 @@ static inline void ENET_EnableSleepMode(ENET_Type *base, bool enable)
 }
 
 /*!
- * @brief Gets ENET transmit and receive accelerator functions from the MAC controller.
+ * @brief Gets ENET transmit and receive accelerator functions from MAC controller.
  *
  * @param base  ENET peripheral base address.
  * @param txAccelOption The transmit accelerator option. The "enet_tx_accelerator_t" is
- *         recommended  as the mask to get the exact the accelerator option.
+ *         recommended to be used to as the mask to get the exact the accelerator option.
  * @param rxAccelOption The receive accelerator option. The "enet_rx_accelerator_t" is
- *         recommended as the mask to get the exact the accelerator option.
+ *         recommended to be used to as the mask to get the exact the accelerator option.
  */
 static inline void ENET_GetAccelFunction(ENET_Type *base, uint32_t *txAccelOption, uint32_t *rxAccelOption)
 {
@@ -826,7 +1030,7 @@ static inline void ENET_GetAccelFunction(ENET_Type *base, uint32_t *txAccelOptio
 /* @} */
 
 /*!
- * @name Interrupts
+ * @name Interrupts.
  * @{
  */
 
@@ -898,7 +1102,6 @@ static inline void ENET_ClearInterruptStatus(ENET_Type *base, uint32_t mask)
 {
     base->EIR = mask;
 }
-
 /* @} */
 
 /*!
@@ -918,7 +1121,7 @@ static inline void ENET_ClearInterruptStatus(ENET_Type *base, uint32_t mask)
 void ENET_SetCallback(enet_handle_t *handle, enet_callback_t callback, void *userData);
 
 /*!
- * @brief Gets the ENET the error statistics of a received frame.
+ * @brief Gets the error statistics of a received frame for ENET single ring.
  *
  * This API must be called after the ENET_GetRxFrameSize and before the ENET_ReadFrame().
  * If the ENET_GetRxFrameSize returns kStatus_ENET_RxFrameError,
@@ -941,7 +1144,7 @@ void ENET_GetRxErrBeforeReadFrame(enet_handle_t *handle, enet_data_error_stats_t
 
 #ifdef ENET_ENHANCEDBUFFERDESCRIPTOR_MODE
 /*!
- * @brief Gets the ENET transmit frame statistics after the data send.
+ * @brief Gets the ENET transmit frame statistics after the data send for single ring.
  *
  * This interface gets the error statistics of the transmit frame.
  * Because the error information is reported by the uDMA after the data delivery, this interface
@@ -955,10 +1158,12 @@ void ENET_GetRxErrBeforeReadFrame(enet_handle_t *handle, enet_data_error_stats_t
  */
 status_t ENET_GetTxErrAfterSendFrame(enet_handle_t *handle, enet_data_error_stats_t *eErrorStatic);
 #endif /* ENET_ENHANCEDBUFFERDESCRIPTOR_MODE */
+
 /*!
-* @brief Gets the size of the read frame.
+* @brief Gets the size of the read frame for single ring.
+*
 * This function gets a received frame size from the ENET buffer descriptors.
-* @note The FCS of the frame is automatically removed by Mac and the size is the length without the FCS.
+* @note The FCS of the frame is automatically removed by MAC and the size is the length without the FCS.
 * After calling ENET_GetRxFrameSize, ENET_ReadFrame() should be called to update the
 * receive buffers If the result is not "kStatus_ENET_RxFrameEmpty".
 *
@@ -973,10 +1178,10 @@ status_t ENET_GetTxErrAfterSendFrame(enet_handle_t *handle, enet_data_error_stat
 status_t ENET_GetRxFrameSize(enet_handle_t *handle, uint32_t *length);
 
 /*!
- * @brief Reads a frame from the ENET device.
+ * @brief Reads a frame from the ENET device for single ring.
  * This function reads a frame (both the data and the length) from the ENET buffer descriptors.
  * The ENET_GetRxFrameSize should be used to get the size of the prepared data buffer.
- * This is an example.
+ * This is an example:
  * @code
  *       uint32_t length;
  *       enet_handle_t g_handle;
@@ -1012,9 +1217,10 @@ status_t ENET_GetRxFrameSize(enet_handle_t *handle, uint32_t *length);
 status_t ENET_ReadFrame(ENET_Type *base, enet_handle_t *handle, uint8_t *data, uint32_t length);
 
 /*!
- * @brief Transmits an ENET frame.
+ * @brief Transmits an ENET frame for single ring.
  * @note The CRC is automatically appended to the data. Input the data
  * to send without the CRC.
+ *
  *
  * @param base  ENET peripheral base address.
  * @param handle The ENET handler pointer. This is the same handler pointer used in the ENET_Init.
@@ -1026,8 +1232,140 @@ status_t ENET_ReadFrame(ENET_Type *base, enet_handle_t *handle, uint8_t *data, u
  *         The waiting mechanism is recommended to be added after each call return with
  *         kStatus_ENET_TxFrameBusy.
  */
-status_t ENET_SendFrame(ENET_Type *base, enet_handle_t *handle, uint8_t *data, uint32_t length);
+status_t ENET_SendFrame(ENET_Type *base, enet_handle_t *handle, const uint8_t *data, uint32_t length);
 
+#if FSL_FEATURE_ENET_QUEUE > 1
+/*!
+ * @brief Gets the error statistics of received frame for extended multi-ring.
+ *
+ * This API must be called after the ENET_GetRxFrameSizeMultiRing and before the ENET_ReadFrameMultiRing().
+ * If the ENET_GetRxFrameSizeMultiRing returns kStatus_ENET_RxFrameError,
+ * the ENET_GetRxErrBeforeReadFrameMultiRing can be used to get the exact error statistics.
+ *
+ * @param handle The ENET handler structure pointer. This is the same handler pointer used in the ENET_Init.
+ * @param eErrorStatic The error statistics structure pointer.
+ * @param ringId The ring index, range from 0 ~ FSL_FEATURE_ENET_QUEUE - 1.
+ */
+void ENET_GetRxErrBeforeReadFrameMultiRing(enet_handle_t *handle,
+                                           enet_data_error_stats_t *eErrorStatic,
+                                           uint32_t ringId);
+
+/*!
+ * @brief Transmits an ENET frame for extended multi-ring.
+ * @note The CRC is automatically appended to the data. Input the data
+ * to send without the CRC.
+ *
+ * In this API, multiple-ring are mainly used for extended avb frames are supported.
+ * The transmit scheme for avb frames is the credit-based scheme, the AVB class A, AVB class B
+ * and the non-AVB frame are transmitted in ring 1, ring 2 and ring 0 independently.
+ * So application should care about the transmit ring index when use multiple-ring transmission.
+ *
+ * @param base  ENET peripheral base address.
+ * @param handle The ENET handler pointer. This is the same handler pointer used in the ENET_Init.
+ * @param data The data buffer provided by user to be send.
+ * @param length The length of the data to be send.
+ * @param ringId The ring index for transmission.
+ * @retval kStatus_Success  Send frame succeed.
+ * @retval kStatus_ENET_TxFrameBusy  Transmit buffer descriptor is busy under transmission.
+ *         The transmit busy happens when the data send rate is over the MAC capacity.
+ *         The waiting mechanism is recommended to be added after each call return with
+ *         kStatus_ENET_TxFrameBusy.
+ */
+status_t ENET_SendFrameMultiRing(
+    ENET_Type *base, enet_handle_t *handle, uint8_t *data, uint32_t length, uint32_t ringId);
+
+#ifdef ENET_ENHANCEDBUFFERDESCRIPTOR_MODE
+/*!
+ * @brief Gets the ENET transmit frame statistics after the data send for extended multi-ring.
+ *
+ * This interface gets the error statistics of the transmit frame.
+ * Because the error information is reported by the uDMA after the data delivery, this interface
+ * should be called after the data transmit API and shall be called by transmit interrupt handler.
+ * After calling the ENET_SendFrame, the transmit interrupt notifies the transmit completion.
+ *
+ * @param handle The PTP handler pointer. This is the same handler pointer used in the ENET_Init.
+ * @param eErrorStatic The error statistics structure pointer.
+ * @param ringId The ring index.
+ * @return The execute status.
+ */
+status_t ENET_GetTxErrAfterSendFrameMultiRing(enet_handle_t *handle,
+                                              enet_data_error_stats_t *eErrorStatic,
+                                              uint32_t ringId);
+#endif /* ENET_ENHANCEDBUFFERDESCRIPTOR_MODE */
+
+/*!
+* @brief Gets the size of the read frame for extended mutli-ring.
+*
+* This function gets a received frame size from the ENET buffer descriptors.
+* @note The FCS of the frame is automatically removed by MAC and the size is the length without the FCS.
+* After calling ENET_GetRxFrameSizeMultiRing, ENET_ReadFrameMultiRing() should be called to update the
+* receive buffers If the result is not "kStatus_ENET_RxFrameEmpty". The usage is
+* the same to the single ring, refer to ENET_GetRxFrameSize.
+*
+* @param handle The ENET handler structure. This is the same handler pointer used in the ENET_Init.
+* @param length The length of the valid frame received.
+* @param ringId The ring index or ring number;
+* @retval kStatus_ENET_RxFrameEmpty No frame received. Should not call ENET_ReadFrameMultiRing to read frame.
+* @retval kStatus_ENET_RxFrameError Data error happens. ENET_ReadFrameMultiRing should be called with NULL data
+*         and NULL length to update the receive buffers.
+* @retval kStatus_Success Receive a frame Successfully then the ENET_ReadFrame
+*         should be called with the right data buffer and the captured data length input.
+*/
+status_t ENET_GetRxFrameSizeMultiRing(enet_handle_t *handle, uint32_t *length, uint32_t ringId);
+
+/*!
+ * @brief Reads a frame from the ENET device for multi-ring.
+ *
+ * This function reads a frame (both the data and the length) from the ENET buffer descriptors.
+ * The ENET_GetRxFrameSizeMultiRing should be used to get the size of the prepared data buffer.
+ * This usage is the same as the single ring, refer to ENET_ReadFrame.
+
+ * @param base  ENET peripheral base address.
+ * @param handle The ENET handler structure. This is the same handler pointer used in the ENET_Init.
+ * @param data The data buffer provided by user to store the frame which memory size should be at least "length".
+ * @param length The size of the data buffer which is still the length of the received frame.
+ * @param ringId The ring index or ring number;
+ * @return The execute status, successful or failure.
+ */
+status_t ENET_ReadFrameMultiRing(
+    ENET_Type *base, enet_handle_t *handle, uint8_t *data, uint32_t length, uint32_t ringId);
+
+/*!
+ * @brief The transmit IRQ handler.
+ *
+ * @param base  ENET peripheral base address.
+ * @param handle The ENET handler pointer.
+ * @param ringId The ring id or ring number.
+ */
+void ENET_TransmitIRQHandler(ENET_Type *base, enet_handle_t *handle, uint32_t ringId);
+
+/*!
+ * @brief The receive IRQ handler.
+ *
+ * @param base  ENET peripheral base address.
+ * @param handle The ENET handler pointer.
+ * @param ringId The ring id or ring number.
+ */
+void ENET_ReceiveIRQHandler(ENET_Type *base, enet_handle_t *handle, uint32_t ringId);
+
+/*!
+ * @brief the common IRQ handler for the tx/rx irq handler.
+ *
+ * This is used for the combined tx/rx interrupt for multi-ring (frame 1).
+ *
+ * @param base  ENET peripheral base address.
+ */
+void ENET_CommonFrame1IRQHandler(ENET_Type *base);
+
+/*!
+ * @brief the common IRQ handler for the tx/rx irq handler.
+ *
+ * This is used for the combined tx/rx interrupt for multi-ring (frame 2).
+ *
+ * @param base  ENET peripheral base address.
+ */
+void ENET_CommonFrame2IRQHandler(ENET_Type *base);
+#else
 /*!
  * @brief The transmit IRQ handler.
  *
@@ -1043,9 +1381,10 @@ void ENET_TransmitIRQHandler(ENET_Type *base, enet_handle_t *handle);
  * @param handle The ENET handler pointer.
  */
 void ENET_ReceiveIRQHandler(ENET_Type *base, enet_handle_t *handle);
+#endif /* FSL_FEATURE_ENET_QUEUE > 1 */
 
 /*!
- * @brief The error IRQ handler.
+ * @brief Some special IRQ handler including the error, mii, wakeup irq handler.
  *
  * @param base  ENET peripheral base address.
  * @param handle The ENET handler pointer.
@@ -1055,7 +1394,7 @@ void ENET_ErrorIRQHandler(ENET_Type *base, enet_handle_t *handle);
 /*!
  * @brief the common IRQ handler for the tx/rx/error etc irq handler.
  *
- * This is used for the combined tx/rx/error interrupt for single ring (ring 0).
+ * This is used for the combined tx/rx/error interrupt for single/mutli-ring (frame 0).
  *
  * @param base  ENET peripheral base address.
  */
@@ -1137,7 +1476,8 @@ static inline void ENET_Ptp1588SetChannelMode(ENET_Type *base,
 {
     uint32_t tcrReg = 0;
 
-    tcrReg = ENET_TCSR_TMODE(mode) | ENET_TCSR_TIE(intEnable);
+    tcrReg = ENET_TCSR_TMODE(mode) | (intEnable ? ENET_TCSR_TIE_MASK : 0);
+
     /* Disable channel mode first. */
     base->CHANNEL[channel].TCSR = 0;
     base->CHANNEL[channel].TCSR = tcrReg;
@@ -1149,32 +1489,29 @@ static inline void ENET_Ptp1588SetChannelMode(ENET_Type *base,
  *
  * For the input "mode" in ENET_Ptp1588SetChannelMode, the kENET_PtpChannelPulseLowonCompare
  * kENET_PtpChannelPulseHighonCompare only support the pulse width for one 1588 clock.
- * this function is extended for control the pulse width from 1 to 32 1588 clock cycles. 
- * so call this function if you need to set the timer channel mode for 
+ * this function is extended for control the pulse width from 1 to 32 1588 clock cycles.
+ * so call this function if you need to set the timer channel mode for
  * kENET_PtpChannelPulseLowonCompare or kENET_PtpChannelPulseHighonCompare
  * with pulse width more than one 1588 clock,
  *
  * @param base  ENET peripheral base address.
  * @param channel The ENET PTP timer channel number.
- * @param isOutputLow  True --- timer channel is configured for output compare 
+ * @param isOutputLow  True --- timer channel is configured for output compare
  *                              pulse output low.
  *                     false --- timer channel is configured for output compare
  *                              pulse output high.
  * @param pulseWidth  The pulse width control value, range from 0 ~ 31.
  *                     0  --- pulse width is one 1588 clock cycle.
- *                     31 --- pulse width is thirty two 1588 clock cycles.      
+ *                     31 --- pulse width is thirty two 1588 clock cycles.
  * @param intEnable Enables or disables the interrupt.
  */
-static inline void ENET_Ptp1588SetChannelOutputPulseWidth(ENET_Type *base,
-                                              enet_ptp_timer_channel_t channel,
-                                              bool isOutputLow,
-                                              uint8_t pulseWidth,
-                                              bool intEnable)
+static inline void ENET_Ptp1588SetChannelOutputPulseWidth(
+    ENET_Type *base, enet_ptp_timer_channel_t channel, bool isOutputLow, uint8_t pulseWidth, bool intEnable)
 {
     uint32_t tcrReg;
 
     tcrReg = ENET_TCSR_TIE(intEnable) | ENET_TCSR_TPWC(pulseWidth);
-    
+
     if (isOutputLow)
     {
         tcrReg |= ENET_TCSR_TMODE(kENET_PtpChannelPulseLowonCompare);
@@ -1188,7 +1525,7 @@ static inline void ENET_Ptp1588SetChannelOutputPulseWidth(ENET_Type *base,
     base->CHANNEL[channel].TCSR = 0;
     base->CHANNEL[channel].TCSR = tcrReg;
 }
-#endif   /* FSL_FEATURE_ENET_HAS_TIMER_PWCONTROL */
+#endif /* FSL_FEATURE_ENET_HAS_TIMER_PWCONTROL */
 
 /*!
  * @brief Sets the ENET PTP 1588 timer channel comparison value.

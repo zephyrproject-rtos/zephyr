@@ -26,6 +26,8 @@ following SoCs:
 - MKW20Z4
 - MKW22D5
 - MKW24D5
+- MIMXRT1051
+- MIMXRT1052
 
 
 Additionally, it provides the following components:

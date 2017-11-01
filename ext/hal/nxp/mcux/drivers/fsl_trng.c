@@ -36,7 +36,7 @@
  *******************************************************************************/
 /* Default values for user configuration structure.*/
 #if (defined(KW40Z4_SERIES) || defined(KW41Z4_SERIES) || defined(KW31Z4_SERIES) || defined(KW21Z4_SERIES) || \
-     defined(MCIMX7U5_M4_SERIES))
+     defined(MCIMX7U5_M4_SERIES) || defined(KW36Z4_SERIES))
 #define TRNG_USER_CONFIG_DEFAULT_OSC_DIV kTRNG_RingOscDiv8
 #elif(defined(KV56F24_SERIES) || defined(KV58F24_SERIES) || defined(KL28Z7_SERIES) || defined(KL81Z7_SERIES) || \
       defined(KL82Z7_SERIES))
@@ -898,6 +898,7 @@ typedef enum _trng_statistical_check
     (TRNG_RMW_MCTL(base, (TRNG_MCTL_RST_DEF_MASK | TRNG_MCTL_ERR_MASK), TRNG_MCTL_RST_DEF(value)))
 /*@}*/
 
+#if !(defined(FSL_FEATURE_TRNG_HAS_NO_TRNG_ACC) && (FSL_FEATURE_TRNG_HAS_NO_TRNG_ACC > 0))
 /*!
  * @name Register TRNG_MCTL, field TRNG_ACC[5] (RW)
  *
@@ -914,6 +915,7 @@ typedef enum _trng_statistical_check
 #define TRNG_WR_MCTL_TRNG_ACC(base, value) \
     (TRNG_RMW_MCTL(base, (TRNG_MCTL_TRNG_ACC_MASK | TRNG_MCTL_ERR_MASK), TRNG_MCTL_TRNG_ACC(value)))
 /*@}*/
+#endif
 
 /*!
  * @name Register TRNG_MCTL, field TSTOP_OK[13] (RO)
@@ -1536,9 +1538,11 @@ status_t TRNG_Init(TRNG_Type *base, const trng_config_t *userConfig)
             /* Start entropy generation.*/
             /* Set to Run mode.*/
             TRNG_WR_MCTL_PRGM(base, kTRNG_WorkModeRun);
+#if !(defined(FSL_FEATURE_TRNG_HAS_NO_TRNG_ACC) && (FSL_FEATURE_TRNG_HAS_NO_TRNG_ACC > 0))
             /* Enable TRNG Access Mode. To generate an Entropy
             * value that can be read via the true0-true15 registers.*/
             TRNG_WR_MCTL_TRNG_ACC(base, 1);
+#endif /* !FSL_FEATURE_TRNG_HAS_NO_TRNG_ACC */
 
             if (userConfig->lock == 1) /* Disable programmability of TRNG registers. */
             {
