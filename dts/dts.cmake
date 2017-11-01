@@ -61,7 +61,7 @@ if(CONFIG_HAS_DTS)
   endif()
   set(CMD_EXTRACT_DTS_INCLUDES ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/dts/extract_dts_includes.py
     --dts ${BOARD_FAMILY}.dts_compiled
-    --yaml ${PROJECT_SOURCE_DIR}/dts/${ARCH}/yaml
+    --yaml ${PROJECT_SOURCE_DIR}/dts/bindings
     ${FIXUP}
     )
   execute_process(
