@@ -263,7 +263,7 @@ static size_t oma_tlv_get(struct oma_tlv *tlv,
 	}
 
 	if (len_type == 0) {
-		tlv_len = buf[1] & 7;
+		tlv_len = buf[0] & 7;
 	} else {
 		/* read the length */
 		tlv_len = 0;
