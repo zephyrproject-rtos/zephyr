@@ -458,3 +458,106 @@ Each architecture also needs its own linker script, even if most sections can
 be derived from the linker scripts of other architectures. Some sections might
 be specific to the new architecture, for example the SCB section on ARM and the
 IDT section on x86.
+
+Hardware Stack Protection
+=========================
+
+This option uses hardware features to generate a fatal error if a thread
+in supervisor mode overflows its stack. This is useful for debugging, although
+for a couple reasons, you can't reliably make any assertions about the state
+of the system after this happens:
+
+* The kernel could have been inside a critical section when the overflow
+  occurs, leaving important global data structures in a corrupted state.
+* For systems that implement stack protection using a guard memory region,
+  it's possible to overshoot the guard and corrupt adjacent data structures
+  before the hardware detects this situation.
+
+To enable the :option:`CONFIG_HW_STACK_PROTECTION` feature, the system must
+provide some kind of hardware-based stack overflow protection, and enable the
+:option:`CONFIG_ARCH_HAS_STACK_PROTECTION` option.
+
+There are no C APIs that need to be implemented to support stack protection,
+and it's entirely implemented within the ``arch/`` code.  However in most cases
+(such as if a guard region needs to be defined) the architecture will need to
+declare its own versions of the K_THREAD_STACK macros in ``arch/cpu.h``:
+
+* :c:macro:`_ARCH_THREAD_STACK_DEFINE()`
+* :c:macro:`_ARCH_THREAD_STACK_ARRAY_DEFINE()`
+* :c:macro:`_ARCH_THREAD_STACK_MEMBER()`
+* :c:macro:`_ARCH_THREAD_STACK_SIZEOF()`
+
+For systems that implement stack protection using a Memory Protection Unit
+(MPU) or Memory Management Unit (MMU), this is typically done by declaring a
+guard memory region immediately before the stack area.
+
+* On MMU systems, this guard area is an entire page whose permissions in the
+  page table will generate a fault on writes. This page needs to be
+  configured in the arch's _new_thread() function.
+
+* On MPU systems, one of the MPU regions needs to be reserved for the thread
+  stack guard area, whose size should be minimized. The region in the MPU
+  should be reconfigured on context switch such that the guard region
+  for the incoming thread is not writable.
+
+User Mode Threads
+=================
+
+To support user mode threads, several kernel-to-arch APIs need to be
+implemented, and the system must enable the :option:`CONFIG_ARCH_HAS_USERSPACE`
+option. Please see the documentation for each of these functions for more
+details:
+
+* :cpp:func:`_arch_buffer_validate()` to test whether the current thread has
+  access permissions to a particular memory region
+
+* :cpp:func:`_arch_user_mode_enter()` which will irreversably drop a supervisor
+  thread to user mode privileges. The stack must be wiped.
+
+* :cpp:func:`_arch_syscall_oops()` which generates a kernel oops when system
+  call parameters can't be validated, in such a way that the oops appears to be
+  generated from where the system call was invoked in the user thread
+
+* :cpp:func:`_arch_syscall_invoke0()` through
+  :cpp:func:`_arch_syscall_invoke6()` invoke a system call with the
+  appropriate number of arguments which must all be passed in during the
+  privilege elevation via registers.
+
+* :cpp:func:`_arch_is_user_context()` return nonzero if the CPU is currently
+  running in user mode
+
+* :cpp:func:`_arch_mem_domain_max_partitions_get()` which indicates the max
+  number of regions for a memory domain. MMU systems have an unlimited amount,
+  MPU systems have constraints on this.
+
+* :cpp:func:`_arch_mem_domain_partition_remove()` Remove a partition from
+  a memory domain if the currently executing thread was part of that domain.
+
+* :cpp:func:`_arch_mem_domain_destroy()` Reset the thread's memory domain
+  configuration
+
+In addition to implementing these APIs, there are some other tasks as well:
+
+* :cpp:func:`_new_thread()` needs to spawn threads with :c:macro:`K_USER` in
+  user mode
+
+* On context switch, the outgoing thread's stack memory should be marked
+  inaccessible to user mode by making the appropriate configuration changes in
+  the memory management hardware.. The incoming thread's stack memory should
+  likewaise be marked as accessible. This ensures that threads can't mess with
+  other thread stacks.
+
+* On context switch, the system needs to switch between memory domains for
+  the incoming and outgoing threads.
+
+* Thread stack areas must include a kernel stack region. This should be
+  inaccessible to user threads at all times. This stack will be used when
+  system calls are made. This should be fixed size for all threads, and must
+  be large enough to handle any system call.
+
+* A software interrupt or some kind of privilege elevation mechanism needs to
+  be established. This is closely tied to how the _arch_syscall_invoke macros
+  are implemented. On system call, the appropriate handler function needs to
+  be looked up in _k_syscall_table. Bad system call IDs should jump to the
+  :cpp:enum:`K_SYSCALL_BAD` handler. Upon completion of the system call, care
+  must be taken not to leak any register state back to user mode.

@@ -17,4 +17,5 @@ the code in the Zephyr source tree.
    memory/memory.rst
    synchronization/synchronization.rst
    data_passing/data_passing.rst
+   usermode/usermode.rst
    other/other.rst
