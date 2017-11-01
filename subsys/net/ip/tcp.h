@@ -72,6 +72,10 @@ enum net_tcp_state {
 
 #define NET_TCP_FLAGS(hdr) (hdr->flags & NET_TCP_CTL)
 
+/* Length of TCP header, including options */
+/* "offset": 4-bit field in high nibble, units of dwords */
+#define NET_TCP_HDR_LEN(hdr) (4 * ((hdr)->offset >> 4))
+
 /* RFC 1122 4.2.2.6 "If an MSS option is not received at connection
  * setup, TCP MUST assume a default send MSS of 536"
  */
