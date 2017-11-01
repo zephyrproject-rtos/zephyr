@@ -1252,7 +1252,7 @@ struct net_buf *net_frag_read(struct net_buf *frag, u16_t offset,
 			frag = net_frag_read_byte(frag, *pos, pos, NULL);
 		}
 
-		/* Error: Still reamining length to be read, but no data. */
+		/* Error: Still remaining length to be read, but no data. */
 		if (!frag && len) {
 			NET_ERR("Not enough data to read");
 			goto error;
