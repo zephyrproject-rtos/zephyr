@@ -11,4 +11,4 @@ if(CONFIG_CLOCK_CONTROL_STM32_CUBE)
   zephyr_sources_ifdef(CONFIG_SOC_SERIES_STM32F3X stm32f3x_ll_clock.c)
   zephyr_sources_ifdef(CONFIG_SOC_SERIES_STM32F4X stm32f4x_ll_clock.c)
   zephyr_sources_ifdef(CONFIG_SOC_SERIES_STM32L4X stm32l4x_ll_clock.c)
-endif
+endif()
