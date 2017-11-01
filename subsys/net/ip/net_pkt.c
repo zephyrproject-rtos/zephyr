@@ -1215,11 +1215,7 @@ static inline struct net_buf *adjust_offset(struct net_buf *frag,
 	}
 
 	while (frag) {
-		if (offset == frag->len) {
-			*pos = 0;
-
-			return frag->frags;
-		} else if (offset < frag->len) {
+		if (offset < frag->len) {
 			*pos = offset;
 
 			return frag;
