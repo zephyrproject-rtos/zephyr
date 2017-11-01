@@ -482,6 +482,9 @@ extern void	_arch_irq_disable(unsigned int irq);
  * @{
  */
 
+struct k_thread;
+typedef struct k_thread *k_tid_t;
+
 /**
  * @brief Enable preservation of floating point context information.
  *
