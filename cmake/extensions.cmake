@@ -658,22 +658,3 @@ macro(assert_exists var)
     message(FATAL_ERROR "No such file or directory: ${var}: '${${var}}'")
   endif()
 endmacro()
-
-# Usage:
-#   Same as CMake's built-in execute_process() function except that
-#   RESULT_VARIABLE may not be set.
-#
-#   https://cmake.org/cmake/help/v3.8/command/execute_process.html
-#
-# Will wrap execute_process() and ensure that if the command fails
-# this causes the build to fail as well. As opposed to CMake's default
-# behaviour of silently ignoring the failure.
-function(execute_process_safely)
-  execute_process(
-    ${ARGN}
-    RESULT_VARIABLE ret
-  )
-  if(ret)
-    message(FATAL_ERROR "Executing cmd: '${ARGN}' resulted in error: '${ret}'")
-  endif()
-endfunction()

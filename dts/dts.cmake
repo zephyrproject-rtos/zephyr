@@ -25,7 +25,7 @@ if(CONFIG_HAS_DTS)
 
   # Run the C preprocessor on the .dts source file to create the
   # intermediary file *.dts.pre.tmp
-  execute_process_safely(
+  execute_process(
     COMMAND ${CMAKE_C_COMPILER}
     -x assembler-with-cpp
     -nostdinc

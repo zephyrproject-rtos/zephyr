@@ -46,7 +46,7 @@ find_package(PythonInterp 3.4)
 # Generate syscall_macros.h at configure-time because it has virtually
 # no dependencies
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/include/generated)
-execute_process_safely(
+execute_process(
   COMMAND
   ${PYTHON_EXECUTABLE}
   $ENV{ZEPHYR_BASE}/scripts/gen_syscall_header.py
@@ -208,7 +208,7 @@ include(${BOARD_DIR}/board.cmake OPTIONAL)
 
 zephyr_library_named(app)
 
-execute_process_safely(
+execute_process(
   COMMAND
   ${PYTHON_EXECUTABLE}
   $ENV{ZEPHYR_BASE}/scripts/gen_syscalls.py
