@@ -182,7 +182,32 @@ status_t SAI_TransferSendEDMA(I2S_Type *base, sai_edma_handle_t *handle, sai_tra
 status_t SAI_TransferReceiveEDMA(I2S_Type *base, sai_edma_handle_t *handle, sai_transfer_t *xfer);
 
 /*!
+ * @brief Terminate all SAI send.
+ *
+ * This function will clear all transfer slots buffered in the sai queue. If users only want to abort the
+ * current transfer slot, please call SAI_TransferAbortSendEDMA.
+ *
+ * @param base SAI base pointer.
+ * @param handle SAI eDMA handle pointer.
+ */
+void SAI_TransferTerminateSendEDMA(I2S_Type *base, sai_edma_handle_t *handle);
+
+/*!
+ * @brief Terminate all SAI receive.
+ *
+ * This function will clear all transfer slots buffered in the sai queue. If users only want to abort the
+ * current transfer slot, please call SAI_TransferAbortReceiveEDMA.
+ *
+ * @param base SAI base pointer.
+ * @param handle SAI eDMA handle pointer.
+ */
+void SAI_TransferTerminateReceiveEDMA(I2S_Type *base, sai_edma_handle_t *handle);
+
+/*!
  * @brief Aborts a SAI transfer using eDMA.
+ *
+ * This function only aborts the current transfer slots, the other transfer slots' information still kept
+ * in the handler. If users want to terminate all transfer slots, just call SAI_TransferTerminateSendEDMA.
  *
  * @param base SAI base pointer.
  * @param handle SAI eDMA handle pointer.
@@ -191,6 +216,9 @@ void SAI_TransferAbortSendEDMA(I2S_Type *base, sai_edma_handle_t *handle);
 
 /*!
  * @brief Aborts a SAI receive using eDMA.
+ *
+ * This function only aborts the current transfer slots, the other transfer slots' information still kept
+ * in the handler. If users want to terminate all transfer slots, just call SAI_TransferTerminateReceiveEDMA.
  *
  * @param base SAI base pointer
  * @param handle SAI eDMA handle pointer.

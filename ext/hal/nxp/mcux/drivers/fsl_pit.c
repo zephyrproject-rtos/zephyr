@@ -83,9 +83,10 @@ void PIT_Init(PIT_Type *base, const pit_config_t *config)
     CLOCK_EnableClock(s_pitClocks[PIT_GetInstance(base)]);
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
+#if defined(FSL_FEATURE_PIT_HAS_MDIS) && FSL_FEATURE_PIT_HAS_MDIS
     /* Enable PIT timers */
     base->MCR &= ~PIT_MCR_MDIS_MASK;
-
+#endif
     /* Config timer operation when in debug mode */
     if (config->enableRunInDebug)
     {
@@ -99,8 +100,10 @@ void PIT_Init(PIT_Type *base, const pit_config_t *config)
 
 void PIT_Deinit(PIT_Type *base)
 {
+#if defined(FSL_FEATURE_PIT_HAS_MDIS) && FSL_FEATURE_PIT_HAS_MDIS
     /* Disable PIT timers */
     base->MCR |= PIT_MCR_MDIS_MASK;
+#endif
 
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Gate the PIT clock*/

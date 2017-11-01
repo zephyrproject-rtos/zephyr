@@ -44,7 +44,7 @@
 
 /*! @name Driver version */
 /*@{*/
-#define FSL_SAI_DRIVER_VERSION (MAKE_VERSION(2, 1, 2)) /*!< Version 2.1.2 */
+#define FSL_SAI_DRIVER_VERSION (MAKE_VERSION(2, 1, 3)) /*!< Version 2.1.3 */
 /*@}*/
 
 /*! @brief SAI return status*/
@@ -80,8 +80,8 @@ typedef enum _sai_master_slave
 typedef enum _sai_mono_stereo
 {
     kSAI_Stereo = 0x0U, /*!< Stereo sound. */
-    kSAI_MonoLeft,      /*!< Only left channel have sound. */
-    kSAI_MonoRight      /*!< Only Right channel have sound. */
+    kSAI_MonoRight,     /*!< Only Right channel have sound. */
+    kSAI_MonoLeft       /*!< Only left channel have sound. */
 } sai_mono_stereo_t;
 
 /*! @brief Synchronous or asynchronous mode */
@@ -218,6 +218,8 @@ typedef struct _sai_transfer_format
 #endif                       /* FSL_FEATURE_SAI_FIFO_COUNT */
     uint8_t channel;         /*!< Data channel used in transfer.*/
     sai_protocol_t protocol; /*!< Which audio protocol used */
+    bool isFrameSyncCompact; /*!< True means Frame sync length is configurable according to bitWidth, false means frame
+                                sync length is 64 times of bit clock. */
 } sai_transfer_format_t;
 
 /*! @brief SAI transfer structure */
@@ -426,6 +428,50 @@ static inline void SAI_RxClearStatusFlags(I2S_Type *base, uint32_t mask)
 {
     base->RCSR = ((base->RCSR & 0xFFE3FFFFU) | mask);
 }
+
+/*!
+ * @brief Do software reset or FIFO reset .
+ *
+ * FIFO reset means clear all the data in the FIFO, and make the FIFO pointer both to 0.
+ * Software reset means claer the Tx internal logic, including the bit clock, frame count etc. But software
+ * reset will not clear any configuration registers like TCR1~TCR5.
+ * This function will also clear all the error flags such as FIFO error, sync error etc.
+ *
+ * @param base SAI base pointer
+ * @param type Reset type, FIFO reset or software reset
+ */
+void SAI_TxSoftwareReset(I2S_Type *base, sai_reset_type_t type);
+
+/*!
+ * @brief Do software reset or FIFO reset .
+ *
+ * FIFO reset means clear all the data in the FIFO, and make the FIFO pointer both to 0.
+ * Software reset means claer the Rx internal logic, including the bit clock, frame count etc. But software
+ * reset will not clear any configuration registers like RCR1~RCR5.
+ * This function will also clear all the error flags such as FIFO error, sync error etc.
+ *
+ * @param base SAI base pointer
+ * @param type Reset type, FIFO reset or software reset
+ */
+void SAI_RxSoftwareReset(I2S_Type *base, sai_reset_type_t type);
+
+/*!
+ * @brief Set the Tx channel FIFO enable mask.
+ *
+ * @param base SAI base pointer
+ * @param mask Channel enable mask, 0 means all channel FIFO disabled, 1 means channel 0 enabled,
+ * 3 means both channel 0 and channel 1 enabled.
+ */
+void SAI_TxSetChannelFIFOMask(I2S_Type *base, uint8_t mask);
+
+/*!
+ * @brief Set the Rx channel FIFO enable mask.
+ *
+ * @param base SAI base pointer
+ * @param mask Channel enable mask, 0 means all channel FIFO disabled, 1 means channel 0 enabled,
+ * 3 means both channel 0 and channel 1 enabled.
+ */
+void SAI_RxSetChannelFIFOMask(I2S_Type *base, uint8_t mask);
 
 /*! @} */
 
@@ -820,6 +866,28 @@ void SAI_TransferAbortSend(I2S_Type *base, sai_handle_t *handle);
  * @param handle Pointer to the sai_handle_t structure which stores the transfer state.
  */
 void SAI_TransferAbortReceive(I2S_Type *base, sai_handle_t *handle);
+
+/*!
+ * @brief Terminate all SAI send.
+ *
+ * This function will clear all transfer slots buffered in the sai queue. If users only want to abort the
+ * current transfer slot, please call SAI_TransferAbortSend.
+ *
+ * @param base SAI base pointer.
+ * @param handle SAI eDMA handle pointer.
+ */
+void SAI_TransferTerminateSend(I2S_Type *base, sai_handle_t *handle);
+
+/*!
+ * @brief Terminate all SAI receive.
+ *
+ * This function will clear all transfer slots buffered in the sai queue. If users only want to abort the
+ * current transfer slot, please call SAI_TransferAbortReceive.
+ *
+ * @param base SAI base pointer.
+ * @param handle SAI eDMA handle pointer.
+ */
+void SAI_TransferTerminateReceive(I2S_Type *base, sai_handle_t *handle);
 
 /*!
  * @brief Tx interrupt handler.

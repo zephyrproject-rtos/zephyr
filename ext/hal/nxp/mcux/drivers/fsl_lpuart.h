@@ -43,8 +43,8 @@
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief LPUART driver version 2.2.3. */
-#define FSL_LPUART_DRIVER_VERSION (MAKE_VERSION(2, 2, 3))
+/*! @brief LPUART driver version 2.2.5. */
+#define FSL_LPUART_DRIVER_VERSION (MAKE_VERSION(2, 2, 5))
 /*@}*/
 
 /*! @brief Error codes for the LPUART driver. */
@@ -66,6 +66,7 @@ enum _lpuart_status
     kStatus_LPUART_ParityError = MAKE_STATUS(kStatusGroup_LPUART, 12),      /*!< LPUART parity error. */
     kStatus_LPUART_BaudrateNotSupport =
         MAKE_STATUS(kStatusGroup_LPUART, 13), /*!< Baudrate is not support in current clock source */
+    kStatus_LPUART_IdleLineDetected = MAKE_STATUS(kStatusGroup_LPUART, 14), /*!< IDLE flag. */
 };
 
 /*! @brief LPUART parity mode. */
@@ -91,6 +92,45 @@ typedef enum _lpuart_stop_bit_count
     kLPUART_OneStopBit = 0U, /*!< One stop bit */
     kLPUART_TwoStopBit = 1U, /*!< Two stop bits */
 } lpuart_stop_bit_count_t;
+
+#if defined(FSL_FEATURE_LPUART_HAS_MODEM_SUPPORT) && FSL_FEATURE_LPUART_HAS_MODEM_SUPPORT
+/*! @brief LPUART transmit CTS source. */
+typedef enum _lpuart_transmit_cts_source
+{
+    kLPUART_CtsSourcePin = 0U,         /*!< CTS resource is the LPUART_CTS pin. */
+    kLPUART_CtsSourceMatchResult = 1U, /*!< CTS resource is the match result. */
+} lpuart_transmit_cts_source_t;
+
+/*! @brief LPUART transmit CTS configure. */
+typedef enum _lpuart_transmit_cts_config
+{
+    kLPUART_CtsSampleAtStart = 0U, /*!< CTS input is sampled at the start of each character. */
+    kLPUART_CtsSampleAtIdle = 1U,  /*!< CTS input is sampled when the transmitter is idle */
+} lpuart_transmit_cts_config_t;
+#endif
+
+/*! @brief LPUART idle flag type defines when the receiver starts counting. */
+typedef enum _lpuart_idle_type_select
+{
+    kLPUART_IdleTypeStartBit = 0U, /*!< Start counting after a valid start bit. */
+    kLPUART_IdleTypeStopBit = 1U,  /*!< Start conuting after a stop bit. */
+} lpuart_idle_type_select_t;
+
+/*! @brief LPUART idle detected configuration.
+ *  This structure defines the number of idle characters that must be received before
+ *  the IDLE flag is set.
+ */
+typedef enum _lpuart_idle_config
+{
+    kLPUART_IdleCharacter1 = 0U,   /*!< the number of idle characters. */
+    kLPUART_IdleCharacter2 = 1U,   /*!< the number of idle characters. */
+    kLPUART_IdleCharacter4 = 2U,   /*!< the number of idle characters. */
+    kLPUART_IdleCharacter8 = 3U,   /*!< the number of idle characters. */
+    kLPUART_IdleCharacter16 = 4U,  /*!< the number of idle characters. */
+    kLPUART_IdleCharacter32 = 5U,  /*!< the number of idle characters. */
+    kLPUART_IdleCharacter64 = 6U,  /*!< the number of idle characters. */
+    kLPUART_IdleCharacter128 = 7U, /*!< the number of idle characters. */
+} lpuart_idle_config_t;
 
 /*!
  * @brief LPUART interrupt configuration structure, default settings all disabled.
@@ -180,8 +220,16 @@ typedef struct _lpuart_config
     uint8_t txFifoWatermark; /*!< TX FIFO watermark */
     uint8_t rxFifoWatermark; /*!< RX FIFO watermark */
 #endif
-    bool enableTx; /*!< Enable TX */
-    bool enableRx; /*!< Enable RX */
+#if defined(FSL_FEATURE_LPUART_HAS_MODEM_SUPPORT) && FSL_FEATURE_LPUART_HAS_MODEM_SUPPORT
+    bool enableRxRTS;                         /*!< RX RTS enable */
+    bool enableTxCTS;                         /*!< TX CTS enable */
+    lpuart_transmit_cts_source_t txCtsSource; /*!< TX CTS source */
+    lpuart_transmit_cts_config_t txCtsConfig; /*!< TX CTS configure */
+#endif
+    lpuart_idle_type_select_t rxIdleType; /*!< RX IDLE type. */
+    lpuart_idle_config_t rxIdleConfig;    /*!< RX IDLE configuration. */
+    bool enableTx;                        /*!< Enable TX */
+    bool enableRx;                        /*!< Enable RX */
 } lpuart_config_t;
 
 /*! @brief LPUART transfer structure. */
@@ -306,6 +354,8 @@ void LPUART_Deinit(LPUART_Type *base);
  *   lpuartConfig->stopBitCount = kLPUART_OneStopBit;
  *   lpuartConfig->txFifoWatermark = 0;
  *   lpuartConfig->rxFifoWatermark = 1;
+ *   lpuartConfig->rxIdleType = kLPUART_IdleTypeStartBit;
+ *   lpuartConfig->rxIdleConfig = kLPUART_IdleCharacter1;
  *   lpuartConfig->enableTx = false;
  *   lpuartConfig->enableRx = false;
  *
@@ -463,12 +513,10 @@ static inline void LPUART_EnableTxDMA(LPUART_Type *base, bool enable)
     if (enable)
     {
         base->BAUD |= LPUART_BAUD_TDMAE_MASK;
-        base->CTRL |= LPUART_CTRL_TIE_MASK;
     }
     else
     {
         base->BAUD &= ~LPUART_BAUD_TDMAE_MASK;
-        base->CTRL &= ~LPUART_CTRL_TIE_MASK;
     }
 }
 
@@ -485,12 +533,10 @@ static inline void LPUART_EnableRxDMA(LPUART_Type *base, bool enable)
     if (enable)
     {
         base->BAUD |= LPUART_BAUD_RDMAE_MASK;
-        base->CTRL |= LPUART_CTRL_RIE_MASK;
     }
     else
     {
         base->BAUD &= ~LPUART_BAUD_RDMAE_MASK;
-        base->CTRL &= ~LPUART_CTRL_RIE_MASK;
     }
 }
 
@@ -700,6 +746,14 @@ void LPUART_TransferStartRingBuffer(LPUART_Type *base,
  * @param handle LPUART handle pointer.
  */
 void LPUART_TransferStopRingBuffer(LPUART_Type *base, lpuart_handle_t *handle);
+
+/*!
+ * @brief Get the length of received data in RX ring buffer.
+ *
+ * @userData handle LPUART handle pointer.
+ * @return Length of received data in RX ring buffer.
+ */
+size_t LPUART_TransferGetRxRingBufferLength(LPUART_Type *base, lpuart_handle_t *handle);
 
 /*!
  * @brief Aborts the interrupt-driven data transmit.
