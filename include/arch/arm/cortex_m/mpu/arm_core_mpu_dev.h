@@ -6,6 +6,8 @@
 #ifndef _ARM_CORE_MPU_DEV_H_
 #define _ARM_CORE_MPU_DEV_H_
 
+#include <zephyr/types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -33,6 +35,9 @@ extern "C" {
 #define THREAD_DOMAIN_PARTITION_REGION 0x3
 
 #if defined(CONFIG_ARM_CORE_MPU)
+struct k_mem_domain;
+struct k_mem_partition;
+
 /* ARM Core MPU Driver API */
 
 /*
