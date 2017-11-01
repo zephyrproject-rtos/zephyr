@@ -13,5 +13,6 @@ config SOC_SERIES_KINETIS_K6X
 	select SYS_POWER_LOW_POWER_STATE_SUPPORTED
 	select CPU_HAS_SYSTICK
 	select CPU_HAS_MPU
+	select CLOCK_CONTROL
 	help
 	  Enable support for Kinetis K6x MCU series
