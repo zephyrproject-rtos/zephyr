@@ -45,7 +45,7 @@
 /*! @name Driver version */
 /*@{*/
 /*! @brief eDMA driver version */
-#define FSL_EDMA_DRIVER_VERSION (MAKE_VERSION(2, 1, 1)) /*!< Version 2.1.1. */
+#define FSL_EDMA_DRIVER_VERSION (MAKE_VERSION(2, 1, 2)) /*!< Version 2.1.2. */
 /*@}*/
 
 /*! @brief Compute the offset unit from DCHPRI3 */
@@ -187,19 +187,6 @@ typedef struct _edma_config
  * @brief eDMA transfer configuration
  *
  * This structure configures the source/destination transfer attribute.
- * This figure shows the eDMA's transfer model:
- *  _________________________________________________
- *              | Transfer Size |                    |
- *   Minor Loop |_______________| Major loop Count 1 |
- *     Bytes    | Transfer Size |                    |
- *  ____________|_______________|____________________|--> Minor loop complete
- *               ____________________________________
- *              |               |                    |
- *              |_______________| Major Loop Count 2 |
- *              |               |                    |
- *              |_______________|____________________|--> Minor loop  Complete
- *
- *               ---------------------------------------------------------> Transfer complete
  */
 typedef struct _edma_transfer_config
 {
@@ -306,6 +293,15 @@ void EDMA_Init(DMA_Type *base, const edma_config_t *config);
  * @param base eDMA peripheral base address.
  */
 void EDMA_Deinit(DMA_Type *base);
+
+/*!
+ * @brief Push content of TCD structure into hardware TCD register.
+ *
+ * @param base EDMA peripheral base address.
+ * @param channel EDMA channel number.
+ * @param tcd Point to TCD structure.
+ */
+void EDMA_InstallTCD(DMA_Type *base, uint32_t channel, edma_tcd_t *tcd);
 
 /*!
  * @brief Gets the eDMA default configuration structure.
@@ -868,6 +864,32 @@ void EDMA_StopTransfer(edma_handle_t *handle);
  * @param handle DMA handle pointer.
  */
 void EDMA_AbortTransfer(edma_handle_t *handle);
+
+/*!
+ * @brief Get unused TCD slot number.
+ *
+ * This function gets current tcd index which is run. If the TCD pool pointer is NULL, it will return 0.
+ *
+ * @param handle DMA handle pointer.
+ * @return The unused tcd slot number.
+ */
+static inline uint32_t EDMA_GetUnusedTCDNumber(edma_handle_t *handle)
+{
+    return (handle->tcdSize - handle->tcdUsed);
+}
+
+/*!
+ * @brief Get the next tcd address.
+ *
+ * This function gets the next tcd address. If this is last TCD, return 0.
+ *
+ * @param handle DMA handle pointer.
+ * @return The next TCD address.
+ */
+static inline uint32_t EDMA_GetNextTCDAddress(edma_handle_t *handle)
+{
+    return (handle->base->TCD[handle->channel].DLAST_SGA);
+}
 
 /*!
  * @brief eDMA IRQ handler for the current major loop transfer completion.

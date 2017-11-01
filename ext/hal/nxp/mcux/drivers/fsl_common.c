@@ -1,72 +1,45 @@
 /*
- * Copyright (c) 2015-2016, Freescale Semiconductor, Inc.
- * Copyright 2016-2017 NXP
- *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+* Copyright (c) 2015-2016, Freescale Semiconductor, Inc.
+ * Copyright 2016 NXP
+* All rights reserved.
+*
+* Redistribution and use in source and binary forms, with or without modification,
+* are permitted provided that the following conditions are met:
+*
+* o Redistributions of source code must retain the above copyright notice, this list
+*   of conditions and the following disclaimer.
+*
+* o Redistributions in binary form must reproduce the above copyright notice, this
+*   list of conditions and the following disclaimer in the documentation and/or
+*   other materials provided with the distribution.
+*
+* o Neither the name of the copyright holder nor the names of its
+*   contributors may be used to endorse or promote products derived from this
+*   software without specific prior written permission.
+*
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+* ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+* DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
+* ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+* (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+* LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
+* ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+* (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+* SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
 
 #include "fsl_common.h"
-#include "fsl_debug_console.h"
+#define SDK_MEM_MAGIC_NUMBER   12345U
 
-#ifndef NDEBUG
-#if (defined(__CC_ARM)) || (defined(__ICCARM__))
-void __aeabi_assert(const char *failedExpr, const char *file, int line)
+typedef struct _mem_align_control_block
 {
-    PRINTF("ASSERT ERROR \" %s \": file \"%s\" Line \"%d\" \n", failedExpr, file, line);
-    for (;;)
-    {
-        __BKPT(0);
-    }
-}
-#elif(defined(__REDLIB__))
-
-#if SDK_DEBUGCONSOLE
-void __assertion_failed(char *_Expr)
-{
-    PRINTF("%s\n", _Expr);
-    for (;;)
-    {
-        __asm("bkpt #0");
-    }
-}
-#endif
-
-#elif(defined(__GNUC__))
-void __assert_func(const char *file, int line, const char *func, const char *failedExpr)
-{
-    PRINTF("ASSERT ERROR \" %s \": file \"%s\" Line \"%d\" function name \"%s\" \n", failedExpr, file, line, func);
-    for (;;)
-    {
-        __BKPT(0);
-    }
-}
-#endif /* (defined(__CC_ARM)) ||  (defined (__ICCARM__)) */
-#endif /* NDEBUG */
+    uint16_t    identifier;     /*!< Identifier for the memory control block. */
+    uint16_t    offset;         /*!< offset from aligned adress to real address */
+} mem_align_cb_t;
 
 #ifndef __GIC_PRIO_BITS
+#if defined(ENABLE_RAM_VECTOR_TABLE)
 uint32_t InstallIRQHandler(IRQn_Type irq, uint32_t irqHandler)
 {
 /* Addresses for VECTOR_TABLE and VECTOR_RAM come from the linker file */
@@ -110,11 +83,18 @@ uint32_t InstallIRQHandler(IRQn_Type irq, uint32_t irqHandler)
 
     EnableGlobalIRQ(irqMaskValue);
 
-    return ret;
-}
+/* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+  exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
 #endif
 
-#ifndef CPU_QN908X
+    return ret;
+}
+#endif /* ENABLE_RAM_VECTOR_TABLE. */
+#endif /* __GIC_PRIO_BITS. */
+
+#ifndef QN908XC_SERIES
 #if (defined(FSL_FEATURE_SOC_SYSCON_COUNT) && (FSL_FEATURE_SOC_SYSCON_COUNT > 0))
 
 void EnableDeepSleepIRQ(IRQn_Type interrupt)
@@ -145,32 +125,38 @@ void DisableDeepSleepIRQ(IRQn_Type interrupt)
     SYSCON->STARTERCLR[index] = 1u << intNumber;
 }
 #endif /* FSL_FEATURE_SOC_SYSCON_COUNT */
-#else
-void EnableDeepSleepIRQ(IRQn_Type interrupt)
+
+#endif /* QN908XC_SERIES */
+
+void *SDK_Malloc(size_t size, size_t alignbytes)
 {
-    uint32_t index = 0;
-    uint32_t intNumber = (uint32_t)interrupt;
-    while (intNumber >= 32u)
+    mem_align_cb_t *p_cb = NULL;
+    uint32_t alignedsize = SDK_SIZEALIGN(size, alignbytes) + alignbytes + sizeof(mem_align_cb_t);
+    void *p_align_addr, *p_addr = malloc(alignedsize);
+
+    if (!p_addr)
     {
-        index++;
-        intNumber -= 32u;
+        return NULL;
     }
 
-    /*   SYSCON->STARTERSET[index] = 1u << intNumber; */
-    EnableIRQ(interrupt); /* also enable interrupt at NVIC */
+    p_align_addr = (void *)SDK_SIZEALIGN((uint32_t)p_addr + sizeof(mem_align_cb_t), alignbytes);
+
+    p_cb = (mem_align_cb_t *)((uint32_t)p_align_addr - 4);
+    p_cb->identifier = SDK_MEM_MAGIC_NUMBER;
+    p_cb->offset = (uint32_t)p_align_addr - (uint32_t)p_addr;
+
+    return (void *)p_align_addr;
 }
 
-void DisableDeepSleepIRQ(IRQn_Type interrupt)
+void SDK_Free(void *ptr)
 {
-    uint32_t index = 0;
-    uint32_t intNumber = (uint32_t)interrupt;
-    while (intNumber >= 32u)
+    mem_align_cb_t *p_cb = (mem_align_cb_t *)((uint32_t)ptr - 4);
+
+    if (p_cb->identifier != SDK_MEM_MAGIC_NUMBER)
     {
-        index++;
-        intNumber -= 32u;
+        return;
     }
 
-    DisableIRQ(interrupt); /* also disable interrupt at NVIC */
-                           /*   SYSCON->STARTERCLR[index] = 1u << intNumber; */
+    free((void *)((uint32_t)ptr - p_cb->offset));
 }
-#endif /*CPU_QN908X */
+
