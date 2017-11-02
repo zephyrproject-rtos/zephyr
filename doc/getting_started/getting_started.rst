@@ -40,6 +40,8 @@ To clone the repository anonymously, enter:
 You have successfully checked out a copy of the source code to your local
 machine.
 
+.. _getting_started_run_sample:
+
 Building and Running an Application
 ***********************************
 
