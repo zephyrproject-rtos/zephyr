@@ -2851,20 +2851,17 @@ static void heartbeat_sub_set(struct bt_mesh_model *model,
 	    sub_period == 0x00) {
 		cfg->hb_sub.src = BT_MESH_ADDR_UNASSIGNED;
 		cfg->hb_sub.dst = BT_MESH_ADDR_UNASSIGNED;
-		cfg->hb_sub.min_hops = 0;
-		cfg->hb_sub.max_hops = 0;
 		period_ms = 0;
 	} else {
 		cfg->hb_sub.src = sub_src;
 		cfg->hb_sub.dst = sub_dst;
 		cfg->hb_sub.min_hops = 0x7f;
 		cfg->hb_sub.max_hops = 0;
+		cfg->hb_sub.count = 0;
 		period_ms = hb_pwr2(sub_period, 1) * 1000;
 	}
 
 	BT_DBG("period_ms %u", period_ms);
-
-	cfg->hb_sub.count = 0;
 
 	if (period_ms) {
 		cfg->hb_sub.expiry = k_uptime_get() + period_ms;
