@@ -9,8 +9,6 @@
 #ifndef __INCioapich
 #define __INCioapich
 
-#include <drivers/loapic.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -37,7 +35,6 @@ extern "C" {
 #define IOAPIC_EXTINT 0x00000700
 
 #ifndef _ASMLANGUAGE
-#include <device.h>
 void _ioapic_irq_enable(unsigned int irq);
 void _ioapic_irq_disable(unsigned int irq);
 void _ioapic_int_vec_set(unsigned int irq, unsigned int vector);
