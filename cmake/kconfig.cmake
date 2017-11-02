@@ -106,8 +106,7 @@ endif()
 if(CREATE_NEW_DOTCONFIG)
   execute_process(
     COMMAND
-    ${PYTHON_EXECUTABLE}
-    ${PROJECT_SOURCE_DIR}/scripts/kconfig/merge_config.py
+    ${PROJECT_SOURCE_DIR}/scripts/kconfig/merge_config.sh
     -m
     -q
     -O ${PROJECT_BINARY_DIR}
