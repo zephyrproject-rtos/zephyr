@@ -107,8 +107,6 @@ s8_t nm_bus_init(void *pvinit)
 	winc1500.spi_slave = CONFIG_WIFI_WINC1500_SPI_SLAVE;
 	SYS_LOG_INF("spi_configure OK");
 
-	winc1500_configure_intgpios();
-
 	nm_bsp_reset();
 	nm_bsp_sleep(1);
 

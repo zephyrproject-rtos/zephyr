@@ -52,18 +52,18 @@ s8_t nm_bsp_deinit(void)
 
 void nm_bsp_reset(void)
 {
-	gpio_pin_write(winc1500.gpios[WINC1500_GPIO_IDX_CHIP_EN],
-		       CONFIG_WINC1500_GPIO_CHIP_EN, 0);
-	gpio_pin_write(winc1500.gpios[WINC1500_GPIO_IDX_RESET_N],
-		       CONFIG_WINC1500_GPIO_RESET_N, 0);
+	gpio_pin_write(winc1500.gpios[WINC1500_GPIO_IDX_CHIP_EN].dev,
+		       winc1500.gpios[WINC1500_GPIO_IDX_CHIP_EN].pin, 0);
+	gpio_pin_write(winc1500.gpios[WINC1500_GPIO_IDX_RESET_N].dev,
+		       winc1500.gpios[WINC1500_GPIO_IDX_RESET_N].pin, 0);
 	nm_bsp_sleep(100);
 
-	gpio_pin_write(winc1500.gpios[WINC1500_GPIO_IDX_CHIP_EN],
-		       CONFIG_WINC1500_GPIO_CHIP_EN, 1);
+	gpio_pin_write(winc1500.gpios[WINC1500_GPIO_IDX_CHIP_EN].dev,
+		       winc1500.gpios[WINC1500_GPIO_IDX_CHIP_EN].pin, 1);
 	nm_bsp_sleep(10);
 
-	gpio_pin_write(winc1500.gpios[WINC1500_GPIO_IDX_RESET_N],
-		       CONFIG_WINC1500_GPIO_RESET_N, 1);
+	gpio_pin_write(winc1500.gpios[WINC1500_GPIO_IDX_RESET_N].dev,
+		       winc1500.gpios[WINC1500_GPIO_IDX_RESET_N].pin, 1);
 	nm_bsp_sleep(10);
 }
 
@@ -78,9 +78,9 @@ void nm_bsp_register_isr(void (*isr_fun)(void))
 
 	gpio_init_callback(&winc1500.gpio_cb,
 			   chip_isr,
-			   BIT(CONFIG_WINC1500_GPIO_IRQN));
+			   BIT(winc1500.gpios[WINC1500_GPIO_IDX_IRQN].pin));
 
-	gpio_add_callback(winc1500.gpios[WINC1500_GPIO_IDX_IRQN],
+	gpio_add_callback(winc1500.gpios[WINC1500_GPIO_IDX_IRQN].dev,
 			  &winc1500.gpio_cb);
 }
 
@@ -88,11 +88,11 @@ void nm_bsp_interrupt_ctrl(u8_t enable)
 {
 	if (enable) {
 		gpio_pin_enable_callback(
-			winc1500.gpios[WINC1500_GPIO_IDX_IRQN],
-			CONFIG_WINC1500_GPIO_IRQN);
+			winc1500.gpios[WINC1500_GPIO_IDX_IRQN].dev,
+			winc1500.gpios[WINC1500_GPIO_IDX_IRQN].pin);
 	} else {
 		gpio_pin_disable_callback(
-			winc1500.gpios[WINC1500_GPIO_IDX_IRQN],
-			CONFIG_WINC1500_GPIO_IRQN);
+			winc1500.gpios[WINC1500_GPIO_IDX_IRQN].dev,
+			winc1500.gpios[WINC1500_GPIO_IDX_IRQN].pin);
 	}
 }
