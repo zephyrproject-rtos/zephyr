@@ -894,6 +894,7 @@ static void relay_set(struct bt_mesh_model *model,
 	if (!cfg) {
 		BT_WARN("No Configuration Server context available");
 	} else if (buf->data[0] == 0x00 || buf->data[0] == 0x01) {
+		bool change = (cfg->relay != buf->data[0]);
 		struct bt_mesh_subnet *sub;
 
 		cfg->relay = buf->data[0];
@@ -905,7 +906,7 @@ static void relay_set(struct bt_mesh_model *model,
 		       TRANSMIT_INT(cfg->relay_retransmit))
 
 		sub = bt_mesh_subnet_get(cfg->hb_pub.net_idx);
-		if ((cfg->hb_pub.feat & BT_MESH_FEAT_RELAY) && sub) {
+		if ((cfg->hb_pub.feat & BT_MESH_FEAT_RELAY) && sub && change) {
 			hb_send(model);
 		}
 	} else {
