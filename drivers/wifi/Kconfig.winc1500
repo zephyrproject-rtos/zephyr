@@ -37,8 +37,6 @@ config WIFI_WINC1500_SPI_FREQ
 	help
 	 SPI frequency to use with WINC1500
 
-# TODO GPIO
-
 config WIFI_WINC1500_SSID
 	string "SSID the chip shall try to connect to"
 	default ""

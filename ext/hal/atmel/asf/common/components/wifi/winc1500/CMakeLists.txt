@@ -1,4 +1,7 @@
-zephyr_include_directories(./)
+zephyr_include_directories(
+  ./
+  $ENV{ZEPHYR_BASE}/include/drivers
+  )
 
 zephyr_sources(
   driver/source/m2m_ate_mode.c

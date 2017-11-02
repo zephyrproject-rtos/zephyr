@@ -10,6 +10,8 @@
 #include <device.h>
 #include <gpio.h>
 
+#include <wifi/winc1500.h>
+
 #include "wifi_winc1500_config.h"
 #include <bus_wrapper/include/nm_bus_wrapper.h>
 
@@ -21,11 +23,11 @@ extern tstrNmBusCapabilities egstrNmBusCapabilities;
 #define NM_BSP_PRINTF		CONF_WINC_PRINTF
 
 struct winc1500_device {
-	struct device		**gpios;
-	struct gpio_callback	gpio_cb;
+	struct winc1500_gpio_configuration	*gpios;
+	struct gpio_callback			gpio_cb;
 
-	struct device		*spi_dev;
-	int spi_slave;
+	struct device				*spi_dev;
+	int 					spi_slave;
 };
 
 extern struct winc1500_device winc1500;
