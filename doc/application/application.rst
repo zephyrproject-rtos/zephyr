@@ -174,19 +174,19 @@ Overview
 ========
 
 CMake is used to build Zephyr. A CMake build is done in two
-stages. The first stage is called Configuration, during Configuration
-the CMakeLists.txt build scripts are executed. At the end of
-Configuration, CMake will have an internal model of the Zephyr build
-and can generate build scripts that are native to the host platform.
+stages. The first stage is called **configuration**. During configuration,
+the CMakeLists.txt build scripts are executed. After configuration is finished,
+CMake has an internal model of the Zephyr build, and can generate build scripts
+that are native to the host platform.
 
-CMake supports generating several build systems, but only Ninja and
-Make are tested and supported by Zephyr. After Configuration and
-Generation the user can begin the Build stage by executing the
-generated build system. The build system will for most code changes be
-able to re-build the application without involving CMake. But for
-certain configuration changes the Configuration step will need to be
-executed again, either automatically by the build system, or even
-manually in some cases.
+CMake supports generating scripts for several build systems, but only Ninja and
+Make are tested and supported by Zephyr. After configuration, the user can
+begin the **build** stage by executing the generated build scripts. These build
+scripts will be able to recompile the application without involving CMake
+following most code changes. However, after certain changes, the configuration
+step must be executed again before building. The build scripts can detect some
+of these situations and reconfigure automatically, but there are cases when
+this must be done manually.
 
 Zephyr uses CMake's concept of a 'target' to organize the build. A
 target can be an executable, a library, or a generated file. For
@@ -201,14 +201,14 @@ build scripts like this:
 
    target_sources(app PRIVATE src/main.c)
 
-In the above code an existing library target named 'app' is being
-configured to have the source file src/main.c. The PRIVATE keyword
-indicates that we are modifying the internals of how the library is
-being built. Whereas using the keyword 'PUBLIC' would modify how other
-libraries that link with app are built. In this case, using PUBLIC
-here would cause libraries that link with app to also include the
-source file src/main.c, behaviour that we surely do not want. The
-'PUBLIC' keyword could however be useful when modifying the include
+In the above code, an existing library target named ``app`` is
+configured to include the source file :file:`src/main.c`. The ``PRIVATE``
+keyword indicates that we are modifying the internals of how the library is
+being built. Using the keyword ``PUBLIC`` would modify how other
+libraries that link with app are built. In this case, using ``PUBLIC``
+would cause libraries that link with ``app`` to also include the
+source file :file:`src/main.c`, behaviour that we surely do not want. The
+``PUBLIC`` keyword could however be useful when modifying the include
 paths of a target library.
 
 Application CMakeLists.txt
