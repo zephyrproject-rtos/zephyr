@@ -142,7 +142,7 @@ help:
 $(DOTCONFIG): $(BOARDCONFIG) $(KBUILD_DEFCONFIG_PATH) $(CONF_FILE)
 	$(Q)$(CONFIG_SHELL) $(ZEPHYR_BASE)/scripts/kconfig/merge_config.sh \
 		-q -m -O $(O) $(KBUILD_DEFCONFIG_PATH) $(OVERLAY_CONFIG) $(CONF_FILE) \
-			      $(wildcard $(O)/*.conf)
+			      $(sort $(wildcard $(O)/*.conf))
 	$(Q)$(MAKE) $(S) -C $(ZEPHYR_BASE) O=$(O) PROJECT=$(PROJECT_BASE) oldnoconfig
 
 pristine:
