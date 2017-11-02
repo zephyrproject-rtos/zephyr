@@ -33,6 +33,7 @@
 #define IRQ_POLARITY_LOW	_IRQ_POLARITY_LOW
 
 #ifndef _ASMLANGUAGE
+#include <zephyr/types.h>
 
 #if CONFIG_X86_FIXED_IRQ_MAPPING
 /**
