@@ -216,7 +216,7 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 			      const struct sockaddr *from)
 {
 	int ret;
-	size_t transfer_offset = 0;
+	bool last_block;
 	u8_t token[8];
 	u8_t tkl;
 	u16_t payload_len, payload_offset, len;
@@ -239,7 +239,7 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 		ret = transfer_empty_ack(coap_header_get_id(check_response));
 		if (ret < 0) {
 			SYS_LOG_ERR("Error transmitting ACK");
-			return ret;
+			goto error;
 		}
 	}
 
@@ -249,8 +249,8 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 		SYS_LOG_ERR("Unexpected response from server: %d.%d",
 			    COAP_RESPONSE_CODE_CLASS(resp_code),
 			    COAP_RESPONSE_CODE_DETAIL(resp_code));
-		lwm2m_firmware_set_update_result(RESULT_CONNECTION_LOST);
-		return -ENOENT;
+		ret = -ENOMSG;
+		goto error;
 	}
 
 	/* save main firmware block context */
@@ -260,8 +260,8 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 	ret = coap_update_from_block(check_response, &firmware_block_ctx);
 	if (ret < 0) {
 		SYS_LOG_ERR("Error from block update: %d", ret);
-		lwm2m_firmware_set_update_result(RESULT_INTEGRITY_FAILED);
-		return ret;
+		ret = -EFAULT;
+		goto error;
 	}
 
 	/* test for duplicate transfer */
@@ -274,8 +274,8 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 		return 0;
 	}
 
-	/* Reach last block if transfer_offset equals to 0 */
-	transfer_offset = coap_next_block(check_response, &firmware_block_ctx);
+	/* Reach last block if ret equals to 0 */
+	last_block = !coap_next_block(check_response, &firmware_block_ctx);
 
 	/* Process incoming data */
 	payload_frag = coap_packet_get_payload(check_response, &payload_offset,
@@ -288,7 +288,7 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 		/* look up firmware package resource */
 		ret = lwm2m_engine_get_resource("5/0/0", &res);
 		if (ret < 0) {
-			return ret;
+			goto error;
 		}
 
 		/* get buffer data */
@@ -314,39 +314,43 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 							     write_buf);
 				/* check for end of packet */
 				if (!payload_frag && payload_offset == 0xffff) {
-					lwm2m_firmware_set_update_result(
-						RESULT_INTEGRITY_FAILED);
-					return -EINVAL;
+					/* malformed packet */
+					ret = -EFAULT;
+					goto error;
 				}
 
 				ret = write_cb(0, write_buf, len,
-					       !payload_frag &&
-					       transfer_offset == 0,
+					       !payload_frag && last_block,
 					       firmware_block_ctx.total_size);
-				if (ret == -ENOMEM) {
-					lwm2m_firmware_set_update_result(
-						RESULT_OUT_OF_MEM);
-					return ret;
-				} else if (ret == -ENOSPC) {
-					lwm2m_firmware_set_update_result(
-						RESULT_NO_STORAGE);
-					return ret;
-				} else if (ret < 0) {
-					lwm2m_firmware_set_update_result(
-						RESULT_INTEGRITY_FAILED);
-					return ret;
+				if (ret < 0) {
+					goto error;
 				}
 			}
 		}
 	}
 
-	if (transfer_offset > 0) {
+	if (!last_block) {
 		/* More block(s) to come, setup next transfer */
 		ret = transfer_request(&firmware_block_ctx, token, tkl,
 				       do_firmware_transfer_reply_cb);
 	} else {
 		/* Download finished */
 		lwm2m_firmware_set_update_state(STATE_DOWNLOADED);
+	}
+
+	return 0;
+
+error:
+	if (ret == -ENOMEM) {
+		lwm2m_firmware_set_update_result(RESULT_OUT_OF_MEM);
+	} else if (ret == -ENOSPC) {
+		lwm2m_firmware_set_update_result(RESULT_NO_STORAGE);
+	} else if (ret == -EFAULT) {
+		lwm2m_firmware_set_update_result(RESULT_INTEGRITY_FAILED);
+	} else if (ret == -ENOMSG) {
+		lwm2m_firmware_set_update_result(RESULT_CONNECTION_LOST);
+	} else {
+		lwm2m_firmware_set_update_result(RESULT_UPDATE_FAILED);
 	}
 
 	return ret;

@@ -177,7 +177,7 @@ static int package_write_cb(u16_t obj_inst_id,
 			    bool last_block, size_t total_size)
 {
 	u8_t state;
-	int ret = 0;
+	int ret;
 
 	state = lwm2m_firmware_get_update_state();
 	if (state == STATE_IDLE) {
@@ -196,19 +196,25 @@ static int package_write_cb(u16_t obj_inst_id,
 		return -EPERM;
 	}
 
-	if (write_cb) {
-		ret = write_cb(obj_inst_id, data, data_len,
-			       last_block, total_size);
-		if (ret < 0) {
-			SYS_LOG_ERR("Failed to store firmware: %d", ret);
-			lwm2m_firmware_set_update_result(
-					RESULT_INTEGRITY_FAILED);
-			return ret;
+	ret = write_cb ? write_cb(obj_inst_id, data, data_len,
+				  last_block, total_size) : 0;
+	if (ret >= 0) {
+		if (last_block) {
+			lwm2m_firmware_set_update_state(STATE_DOWNLOADED);
 		}
-	}
 
-	if (last_block) {
-		lwm2m_firmware_set_update_state(STATE_DOWNLOADED);
+		return 0;
+	} else if (ret == -ENOMEM) {
+		lwm2m_firmware_set_update_result(RESULT_OUT_OF_MEM);
+	} else if (ret == -ENOSPC) {
+		lwm2m_firmware_set_update_result(RESULT_NO_STORAGE);
+		/* Response 4.13 (RFC7959, section 2.9.3) */
+		/* TODO: should include size1 option to indicate max size */
+		ret = -EFBIG;
+	} else if (ret == -EFAULT) {
+		lwm2m_firmware_set_update_result(RESULT_INTEGRITY_FAILED);
+	} else {
+		lwm2m_firmware_set_update_result(RESULT_UPDATE_FAILED);
 	}
 
 	return ret;

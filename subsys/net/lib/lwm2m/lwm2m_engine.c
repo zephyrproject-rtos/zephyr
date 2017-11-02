@@ -2666,6 +2666,8 @@ error:
 		msg->code = COAP_RESPONSE_CODE_NOT_ALLOWED;
 	} else if (r == -EEXIST) {
 		msg->code = COAP_RESPONSE_CODE_BAD_REQUEST;
+	} else if (r == -EFAULT) {
+		msg->code = COAP_RESPONSE_CODE_INCOMPLETE;
 	} else if (r == -EFBIG) {
 		msg->code = COAP_RESPONSE_CODE_REQUEST_TOO_LARGE;
 	} else {
