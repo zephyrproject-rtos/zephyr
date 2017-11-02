@@ -2902,6 +2902,9 @@ static void heartbeat_sub_set(struct bt_mesh_model *model,
 		period_ms = hb_pwr2(sub_period, 1) * 1000;
 	}
 
+	/* Let the transport layer know it needs to handle this address */
+	bt_mesh_set_hb_sub_dst(cfg->hb_sub.dst);
+
 	BT_DBG("period_ms %u", period_ms);
 
 	if (period_ms) {
