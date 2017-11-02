@@ -108,7 +108,7 @@ struct net_tcp {
 	struct k_delayed_work fin_timer;
 
 	/** Retransmit timer */
-	struct k_timer retry_timer;
+	struct k_delayed_work retry_timer;
 
 	/** List pointer used for TCP retransmit buffering */
 	sys_slist_t sent_list;

@@ -163,9 +163,9 @@ static void abort_connection(struct net_tcp *tcp)
 	net_context_unref(ctx);
 }
 
-static void tcp_retry_expired(struct k_timer *timer)
+static void tcp_retry_expired(struct k_work *work)
 {
-	struct net_tcp *tcp = CONTAINER_OF(timer, struct net_tcp, retry_timer);
+	struct net_tcp *tcp = CONTAINER_OF(work, struct net_tcp, retry_timer);
 	struct net_pkt *pkt;
 
 	/* Double the retry period for exponential backoff and resent
@@ -179,7 +179,7 @@ static void tcp_retry_expired(struct k_timer *timer)
 			return;
 		}
 
-		k_timer_start(&tcp->retry_timer, retry_timeout(tcp), 0);
+		k_delayed_work_submit(&tcp->retry_timer, retry_timeout(tcp));
 
 		pkt = CONTAINER_OF(sys_slist_peek_head(&tcp->sent_list),
 				   struct net_pkt, sent_list);
@@ -241,7 +241,7 @@ struct net_tcp *net_tcp_alloc(struct net_context *context)
 
 	tcp_context[i].accept_cb = NULL;
 
-	k_timer_init(&tcp_context[i].retry_timer, tcp_retry_expired, NULL);
+	k_delayed_work_init(&tcp_context[i].retry_timer, tcp_retry_expired);
 	k_sem_init(&tcp_context[i].connect_wait, 0, UINT_MAX);
 
 	return &tcp_context[i];
@@ -255,6 +255,11 @@ static void ack_timer_cancel(struct net_tcp *tcp)
 static void fin_timer_cancel(struct net_tcp *tcp)
 {
 	k_delayed_work_cancel(&tcp->fin_timer);
+}
+
+static void retry_timer_cancel(struct net_tcp *tcp)
+{
+	k_delayed_work_cancel(&tcp->retry_timer);
 }
 
 int net_tcp_release(struct net_tcp *tcp)
@@ -273,7 +278,7 @@ int net_tcp_release(struct net_tcp *tcp)
 		net_pkt_unref(pkt);
 	}
 
-	k_timer_stop(&tcp->retry_timer);
+	retry_timer_cancel(tcp);
 	k_sem_reset(&tcp->connect_wait);
 
 	ack_timer_cancel(tcp);
@@ -726,9 +731,9 @@ int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 	sys_slist_append(&context->tcp->sent_list, &pkt->sent_list);
 
 	/* We need to restart retry_timer if it is stopped. */
-	if (k_timer_remaining_get(&context->tcp->retry_timer) == 0) {
-		k_timer_start(&context->tcp->retry_timer,
-			      retry_timeout(context->tcp), 0);
+	if (k_delayed_work_remaining_get(&context->tcp->retry_timer) == 0) {
+		k_delayed_work_submit(&context->tcp->retry_timer,
+				      retry_timeout(context->tcp));
 	}
 
 	do_ref_if_needed(context->tcp, pkt);
@@ -834,17 +839,17 @@ static void restart_timer(struct net_tcp *tcp)
 	if (!sys_slist_is_empty(&tcp->sent_list)) {
 		tcp->flags |= NET_TCP_RETRYING;
 		tcp->retry_timeout_shift = 0;
-		k_timer_start(&tcp->retry_timer, retry_timeout(tcp), 0);
+		k_delayed_work_submit(&tcp->retry_timer, retry_timeout(tcp));
 	} else if (IS_ENABLED(CONFIG_NET_TCP_TIME_WAIT)) {
 		if (tcp->fin_sent && tcp->fin_rcvd) {
 			/* We know sent_list is empty, which means if
 			 * fin_sent is true it must have been ACKd
 			 */
-			k_timer_start(&tcp->retry_timer, TIME_WAIT_MS, 0);
+			k_delayed_work_submit(&tcp->retry_timer, TIME_WAIT_MS);
 			net_context_ref(tcp->context);
 		}
 	} else {
-		k_timer_stop(&tcp->retry_timer);
+		k_delayed_work_cancel(&tcp->retry_timer);
 		tcp->flags &= ~NET_TCP_RETRYING;
 	}
 }
