@@ -29,6 +29,8 @@
 #include <random/rand32.h>
 #include <kernel_arch_thread.h>
 #include <syscall.h>
+#include <misc/printk.h>
+#include <arch/cpu.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,7 +44,6 @@ extern "C" {
  */
 
 #ifdef CONFIG_KERNEL_DEBUG
-#include <misc/printk.h>
 #define K_DEBUG(fmt, ...) printk("[%s]  " fmt, __func__, ##__VA_ARGS__)
 #else
 #define K_DEBUG(fmt, ...)
@@ -4003,14 +4004,10 @@ extern void k_cpu_atomic_idle(unsigned int key);
 
 extern void _sys_power_save_idle_exit(s32_t ticks);
 
-#include <arch/cpu.h>
-
 #ifdef _ARCH_EXCEPT
 /* This archtecture has direct support for triggering a CPU exception */
 #define _k_except_reason(reason)	_ARCH_EXCEPT(reason)
 #else
-
-#include <misc/printk.h>
 
 /* NOTE: This is the implementation for arches that do not implement
  * _ARCH_EXCEPT() to generate a real CPU exception.
