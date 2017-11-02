@@ -39,7 +39,11 @@ if(CONFIG_HAS_DTS)
     -E ${DTS_SOURCE}
     -o ${BOARD_FAMILY}.dts.pre.tmp
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    RESULT_VARIABLE ret
     )
+  if(NOT "${ret}" STREQUAL "0")
+    message(FATAL_ERROR "command failed with return code: ${ret}")
+  endif()
 
   # Run the DTC on *.dts.pre.tmp to create the intermediary file *.dts_compiled
   execute_process(
@@ -49,7 +53,11 @@ if(CONFIG_HAS_DTS)
     -b 0
     ${BOARD_FAMILY}.dts.pre.tmp
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    RESULT_VARIABLE ret
     )
+  if(NOT "${ret}" STREQUAL "0")
+    message(FATAL_ERROR "command failed with return code: ${ret}")
+  endif()
 
   # Run extract_dts_includes.py for the header file
   # generated_dts_board.h
@@ -66,7 +74,11 @@ if(CONFIG_HAS_DTS)
     COMMAND ${CMD_EXTRACT_DTS_INCLUDES}
     OUTPUT_VARIABLE STDOUT
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    RESULT_VARIABLE ret
     )
+  if(NOT "${ret}" STREQUAL "0")
+    message(FATAL_ERROR "command failed with return code: ${ret}")
+  endif()
 
   # extract_dts_includes.py writes the header file contents to stdout,
   # which we capture in the variable STDOUT and then finaly write into
@@ -79,7 +91,12 @@ if(CONFIG_HAS_DTS)
     COMMAND ${CMD_EXTRACT_DTS_INCLUDES} --keyvalue
     OUTPUT_VARIABLE STDOUT
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    RESULT_VARIABLE ret
     )
+  if(NOT "${ret}" STREQUAL "0")
+    message(FATAL_ERROR "command failed with return code: ${ret}")
+  endif()
+
   file(WRITE ${GENERATED_DTS_BOARD_CONF} "${STDOUT}" )
   import_kconfig(${GENERATED_DTS_BOARD_CONF})
 
