@@ -158,7 +158,10 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_PROV)) {
-		bt_mesh_prov_init(prov);
+		err = bt_mesh_prov_init(prov);
+		if (err) {
+			return err;
+		}
 	}
 
 	bt_mesh_net_init();
