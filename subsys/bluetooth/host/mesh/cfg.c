@@ -2793,10 +2793,16 @@ static void hb_sub_send_status(struct bt_mesh_model *model,
 
 	net_buf_simple_add_le16(msg, cfg->hb_sub.src);
 	net_buf_simple_add_le16(msg, cfg->hb_sub.dst);
-	net_buf_simple_add_u8(msg, hb_log(period));
-	net_buf_simple_add_u8(msg, hb_log(cfg->hb_sub.count));
-	net_buf_simple_add_u8(msg, cfg->hb_sub.min_hops);
-	net_buf_simple_add_u8(msg, cfg->hb_sub.max_hops);
+
+	if (cfg->hb_sub.src == BT_MESH_ADDR_UNASSIGNED ||
+	    cfg->hb_sub.dst == BT_MESH_ADDR_UNASSIGNED) {
+		memset(net_buf_simple_add(msg, 4), 0, 4);
+	} else {
+		net_buf_simple_add_u8(msg, hb_log(period));
+		net_buf_simple_add_u8(msg, hb_log(cfg->hb_sub.count));
+		net_buf_simple_add_u8(msg, cfg->hb_sub.min_hops);
+		net_buf_simple_add_u8(msg, cfg->hb_sub.max_hops);
+	}
 
 	bt_mesh_model_send(model, ctx, msg, NULL, NULL);
 }
@@ -2849,8 +2855,14 @@ static void heartbeat_sub_set(struct bt_mesh_model *model,
 	if (sub_src == BT_MESH_ADDR_UNASSIGNED ||
 	    sub_dst == BT_MESH_ADDR_UNASSIGNED ||
 	    sub_period == 0x00) {
-		cfg->hb_sub.src = BT_MESH_ADDR_UNASSIGNED;
-		cfg->hb_sub.dst = BT_MESH_ADDR_UNASSIGNED;
+		/* Setting the same addresses with zero period should retain
+		 * the addresses according to MESH/NODE/CFG/HBS/BV-02-C.
+		 */
+		if (cfg->hb_sub.src != sub_src || cfg->hb_sub.dst != sub_dst) {
+			cfg->hb_sub.src = BT_MESH_ADDR_UNASSIGNED;
+			cfg->hb_sub.dst = BT_MESH_ADDR_UNASSIGNED;
+		}
+
 		period_ms = 0;
 	} else {
 		cfg->hb_sub.src = sub_src;
