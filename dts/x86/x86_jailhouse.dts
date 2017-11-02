@@ -1,0 +1,10 @@
+#include <qemu_x86.dts>
+
+&flash0 {
+	reg = <0x0 DT_SRAM_SIZE>;
+};
+
+&sram0 {
+	reg = <0x0 DT_SRAM_SIZE>;
+};
+
