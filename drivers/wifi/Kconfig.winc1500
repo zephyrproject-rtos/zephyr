@@ -31,11 +31,48 @@ config WIFI_WINC1500_SPI_SLAVE
 	 Specify the slave select pin of the SPI to which WINC1500 is
 	 connected.
 
-config WIFI_WINC1500_SPI_FREQ
+config WIFI_WIFI_WINC1500_SPI_FREQ
 	int "SPI frequency to use with WINC1500"
 	default 4
 	help
 	 SPI frequency to use with WINC1500
+
+config WIFI_WINC1500_THREAD_STACK_SIZE
+	int "HAL callback handler thread stack size"
+	default 2048
+	help
+	  This option sets the size of the stack used by the thread handling
+	  WINC1500 HAL callbacks. Do not touch it unless you know what you are
+	  doing.
+
+config WIFI_WINC1500_THREAD_PRIO
+	int "HAL callback handler thread priority"
+	default 2
+	help
+	  This option sets the priority of the thread handling WINC1500 HAL
+	  callbacks. Do not touch it unless you know what you are doing.
+
+config WIFI_WINC1500_BUF_CTR
+	int "Number of buffer per-buffer pool"
+	default 1
+	help
+	 Set the number of buffer the driver will have access to in each of
+	 its buffer pools.
+
+config WIFI_WINC1500_MAX_PACKET_SIZE
+	int "Maximum size of a packet, in bytes"
+	default 1500
+	help
+	 Set the maximum size of a network packet going through the chip.
+	 This sets the size of each buffer, in each buffe pools.
+	 Do not modify it unless you know what you are doing.
+
+config WIFI_WINC1500_OFFLOAD_MAX_SOCKETS
+	int "Maximum number of sockets that can be managed"
+	default 2
+	help
+	 Set the number of sockets that can be managed through the driver
+	 and the chip.
 
 config WIFI_WINC1500_SSID
 	string "SSID the chip shall try to connect to"

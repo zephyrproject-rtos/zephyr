@@ -106,32 +106,15 @@ typedef struct {
 #include <driver/include/m2m_wifi.h>
 #include <socket/include/m2m_socket_host_if.h>
 
-#ifndef CONFIG_WINC1500_THREAD_STACK_SIZE
-#define CONFIG_WINC1500_THREAD_STACK_SIZE 5000
-#endif
-#ifndef CONFIG_WINC1500_THREAD_PRIO
-#define CONFIG_WINC1500_THREAD_PRIO 2
-#endif
-
-#ifndef CONFIG_WINC1500_BUF_CTR
-#define CONFIG_WINC1500_BUF_CTR 1
-#endif
-#ifndef CONFIG_WINC1500_MAX_PACKET_SIZE
-#define CONFIG_WINC1500_MAX_PACKET_SIZE 1500
-#endif
-#ifndef CONFIG_OFFLOAD_MAX_SOCKETS
-#define CONFIG_OFFLOAD_MAX_SOCKETS 2
-#endif
-
 #define WINC1500_BIND_TIMEOUT 500
 #define WINC1500_LISTEN_TIMEOUT 500
 
-NET_BUF_POOL_DEFINE(winc1500_tx_pool, CONFIG_WINC1500_BUF_CTR,
-		    CONFIG_WINC1500_MAX_PACKET_SIZE, 0, NULL);
-NET_BUF_POOL_DEFINE(winc1500_rx_pool, CONFIG_WINC1500_BUF_CTR,
-		    CONFIG_WINC1500_MAX_PACKET_SIZE, 0, NULL);
+NET_BUF_POOL_DEFINE(winc1500_tx_pool, CONFIG_WIFI_WINC1500_BUF_CTR,
+		    CONFIG_WIFI_WINC1500_MAX_PACKET_SIZE, 0, NULL);
+NET_BUF_POOL_DEFINE(winc1500_rx_pool, CONFIG_WIFI_WINC1500_BUF_CTR,
+		    CONFIG_WIFI_WINC1500_MAX_PACKET_SIZE, 0, NULL);
 
-K_THREAD_STACK_MEMBER(winc1500_stack, CONFIG_WINC1500_THREAD_STACK_SIZE);
+K_THREAD_STACK_MEMBER(winc1500_stack, CONFIG_WIFI_WINC1500_THREAD_STACK_SIZE);
 struct k_thread winc1500_thread_data;
 
 struct socket_data {
@@ -151,7 +134,8 @@ struct socket_data {
 };
 
 struct winc1500_data {
-	struct socket_data socket_data[CONFIG_OFFLOAD_MAX_SOCKETS];
+	struct socket_data socket_data[
+		CONFIG_WIFI_WINC1500_OFFLOAD_MAX_SOCKETS];
 	struct net_if *iface;
 	unsigned char mac[6];
 };
@@ -577,7 +561,7 @@ static int winc1500_recv(struct net_context *context,
 	w1500_data.socket_data[socket].recv_user_data = user_data;
 
 	ret = recv(socket, w1500_data.socket_data[socket].pkt_buf->data,
-		   CONFIG_WINC1500_MAX_PACKET_SIZE, timeout);
+		   CONFIG_WIFI_WINC1500_MAX_PACKET_SIZE, timeout);
 	if (ret) {
 		SYS_LOG_ERR("recv error %d %s!",
 			    ret, socket_error_string(ret));
@@ -732,7 +716,7 @@ static void winc1500_socket_cb(SOCKET sock, uint8 message, void *pvMsg)
 		}
 
 		recv(sock, sd->pkt_buf->data,
-		     CONFIG_WINC1500_MAX_PACKET_SIZE, K_NO_WAIT);
+		     CONFIG_WIFI_WINC1500_MAX_PACKET_SIZE, K_NO_WAIT);
 	}
 		break;
 	case SOCKET_MSG_BIND:
@@ -895,9 +879,9 @@ static int winc1500_init(struct device *dev)
 
 	/* monitoring thread for winc wifi callbacks */
 	k_thread_create(&winc1500_thread_data, winc1500_stack,
-			CONFIG_WINC1500_THREAD_STACK_SIZE,
+			CONFIG_WIFI_WINC1500_THREAD_STACK_SIZE,
 			(k_thread_entry_t)winc1500_thread, NULL, NULL, NULL,
-			K_PRIO_COOP(CONFIG_WINC1500_THREAD_PRIO),
+			K_PRIO_COOP(CONFIG_WIFI_WINC1500_THREAD_PRIO),
 			0, K_NO_WAIT);
 
 	SYS_LOG_INF("Connecting to %s (%u) with %s",
@@ -921,4 +905,4 @@ static int winc1500_init(struct device *dev)
 NET_DEVICE_OFFLOAD_INIT(winc1500, CONFIG_WIFI_WINC1500_NAME,
 			winc1500_init, &w1500_data, NULL,
 			CONFIG_WIFI_INIT_PRIORITY, &winc1500_api,
-			CONFIG_WINC1500_MAX_PACKET_SIZE);
+			CONFIG_WIFI_WINC1500_MAX_PACKET_SIZE);
