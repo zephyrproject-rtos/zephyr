@@ -667,7 +667,7 @@ int coap_well_known_core_get(struct coap_resource *resource,
 }
 #endif
 
-/* Exposing some of the APIs to ZoAP unit tests in tests/net/lib/coap */
+/* Exposing some of the APIs to CoAP unit tests in tests/net/lib/coap */
 #if defined(CONFIG_COAP_TEST_API_ENABLE)
 bool _coap_match_path_uri(const char * const *path,
 			  const char *uri, u16_t len)

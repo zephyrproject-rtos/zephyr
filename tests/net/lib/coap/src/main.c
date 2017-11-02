@@ -1579,7 +1579,7 @@ int main(int argc, char *argv[])
 {
 	int count, pass, result;
 
-	TC_START("Test Zoap CoAP PDU parsing and building");
+	TC_START("Test CoAP PDU parsing and building");
 
 	for (count = 0, pass = 0; count < ARRAY_SIZE(tests); count++) {
 		if (tests[count].func() == TC_PASS) {
