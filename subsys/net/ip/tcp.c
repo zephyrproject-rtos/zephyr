@@ -600,7 +600,7 @@ u16_t net_tcp_get_recv_mss(const struct net_tcp *tcp)
 static void net_tcp_set_syn_opt(struct net_tcp *tcp, u8_t *options,
 				u8_t *optionlen)
 {
-	u16_t recv_mss;
+	u32_t recv_mss;
 
 	*optionlen = 0;
 
@@ -611,7 +611,8 @@ static void net_tcp_set_syn_opt(struct net_tcp *tcp, u8_t *options,
 		recv_mss = 0;
 	}
 
-	UNALIGNED_PUT(htonl((u32_t)recv_mss | NET_TCP_MSS_HEADER),
+	recv_mss |= (NET_TCP_MSS_OPT << 24) | (NET_TCP_MSS_SIZE << 16);
+	UNALIGNED_PUT(htonl(recv_mss),
 		      (u32_t *)(options + *optionlen));
 
 	*optionlen += NET_TCP_MSS_SIZE;
@@ -1234,4 +1235,78 @@ struct net_buf *net_tcp_set_chksum(struct net_pkt *pkt, struct net_buf *frag)
 	NET_ASSERT(frag);
 
 	return frag;
+}
+
+int net_tcp_parse_opts(struct net_pkt *pkt, int opt_totlen,
+		       struct net_tcp_options *opts)
+{
+	struct net_buf *frag = pkt->frags;
+	u16_t pos = net_pkt_ip_hdr_len(pkt)
+		  + net_pkt_ipv6_ext_len(pkt)
+		  + sizeof(struct net_tcp_hdr);
+	u8_t opt, optlen;
+
+	/* TODO: this should be done for each TCP pkt, on reception */
+	if (pos + opt_totlen > net_pkt_get_len(pkt)) {
+		NET_ERR("Truncated pkt len: %d, expected: %d",
+			(int)net_pkt_get_len(pkt), pos + opt_totlen);
+		return -EINVAL;
+	}
+
+	while (opt_totlen) {
+		frag = net_frag_read(frag, pos, &pos, sizeof(opt), &opt);
+		opt_totlen--;
+
+		/* https://www.iana.org/assignments/tcp-parameters/tcp-parameters.xhtml#tcp-parameters-1 */
+		/* "Options 0 and 1 are exactly one octet which is their
+		 * kind field.  All other options have their one octet
+		 * kind field, followed by a one octet length field,
+		 * followed by length-2 octets of option data."
+		 */
+		if (opt == NET_TCP_END_OPT) {
+			break;
+		} else if (opt == NET_TCP_NOP_OPT) {
+			continue;
+		}
+
+		if (!opt_totlen) {
+			optlen = 0;
+			goto error;
+		}
+
+		frag = net_frag_read(frag, pos, &pos, sizeof(optlen), &optlen);
+		opt_totlen--;
+		if (optlen < 2) {
+			goto error;
+		}
+
+		/* Subtract opt/optlen size now to avoid doing this
+		 * repeatedly.
+		 */
+		optlen -= 2;
+		if (opt_totlen < optlen) {
+			goto error;
+		}
+
+		switch (opt) {
+		case NET_TCP_MSS_OPT:
+			if (optlen != 2) {
+				goto error;
+			}
+			frag = net_frag_read(frag, pos, &pos,
+					     optlen, (u8_t *)&opts->mss);
+			break;
+		default:
+			frag = net_frag_skip(frag, pos, &pos, optlen);
+			break;
+		}
+
+		opt_totlen -= optlen;
+	}
+
+	return 0;
+
+error:
+	NET_ERR("Invalid TCP opt: %d len: %d", opt, optlen);
+	return -EINVAL;
 }
