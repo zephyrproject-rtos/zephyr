@@ -355,6 +355,8 @@ If :makevar:`CONF_FILE` specifies multiple files, they will be merged in order.
 For information on available kernel configuration options, including
 inter-dependencies between options, see the :ref:`configuration`.
 
+.. _application_set_conf:
+
 Setting Application Configuration Values
 ========================================
 
@@ -405,32 +407,47 @@ The example below shows a comment line and an override setting
 Overriding Default Configuration
 ================================
 
-Override the default board and kernel configuration to temporarily alter the
-application's configuration, perhaps to test the effect of a change.
+Follow these steps to override an application's configuration
+temporarily, perhaps to test the effect of a change.
 
 .. note::
 
-   If you want to permanently alter the configuration you
-   should revise the :file:`.conf` file.
+   If you want to permanently alter the configuration you should set
+   the new value in a :file:`.conf` file, as described above in
+   :ref:`application_set_conf`.
 
-Configure the kernel options using a menu-driven interface. While you can add
-entries manually, using the configuration menu is a preferred method.
+The steps below describe how to configure your application using a
+menu-driven configurator interface. While you can edit your
+application's :file:`.config` manually, using a configurator tool is
+preferred, since it correctly handles dependencies between options.
 
 
-#. After generating project files run :command:`ninja menuconfig` to launch the menu-driven interface.
+#. Generate a Ninja build system, and use it to run ``ninja
+   menuconfig`` as follows.
 
-   a) In a terminal session, navigate to the application directory
-      (:file:`~/app`).
+   a) Using CMake, create a build directory (:file:`~/app/build`) from
+      your application directory (:file:`~/app`) with a Ninja build
+      system.
 
-   b) Enter the following command:
+      For example, on a Unix shell:
 
       .. code-block:: bash
 
-          $ cmake -Bbuild -H. -GNinja
-          $ ninja -C build menuconfig
+         $ cd ~/app
+         $ mkdir build && cd build
+         $ cmake -GNinja ..
 
-      A question-based menu opens that allows you to set individual configuration
-      options.
+   b) Run ``ninja menuconfig`` from the build directory
+      (:file:`~/app/build`).
+
+      Continuing the above Unix shell example:
+
+      .. code-block:: bash
+
+          $ ninja menuconfig
+
+      A question-based menu opens that allows you to set individual
+      configuration options.
 
       .. image:: figures/app_kernel_conf_1.png
            :width: 600px
@@ -450,7 +467,8 @@ entries manually, using the configuration menu is a preferred method.
 
    * Type a numerical value in the round brackets :guilabel:`( )`.
 
-   * Press :kbd:`Tab` to navigate the command menu at the bottom of the display.
+   * Press :kbd:`Tab` to navigate the command menu at the bottom of the
+     display.
 
      .. note::
 
@@ -463,6 +481,8 @@ entries manually, using the configuration menu is a preferred method.
    :guilabel:`<Help >` and press :kbd:`Enter`.
 
    Press :kbd:`Enter` to return to the menu.
+
+#. Press :kbd:`/` to bring up a search menu to look for a particular option.
 
 #. After configuring the kernel options for your application, tab to
    :guilabel:`< Save >` and press :kbd:`Enter`.
