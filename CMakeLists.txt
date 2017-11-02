@@ -322,11 +322,6 @@ add_subdirectory(arch)
 add_subdirectory(drivers)
 add_subdirectory(tests)
 
-# DTS is placed behind ext/ because
-# /home/sebo/zephyr/dts/arm/ti/cc32xx.dtsi depends on include
-# directories from ext/hal/ti/simplelink
-include(dts/dts.cmake)
-
 # Generate offsets.c.obj from offsets.c
 # Generate offsets.h     from offsets.c.obj
 

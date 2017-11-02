@@ -193,6 +193,13 @@ include($ENV{ZEPHYR_BASE}/cmake/host-tools.cmake)
 include($ENV{ZEPHYR_BASE}/cmake/kconfig.cmake)
 include($ENV{ZEPHYR_BASE}/cmake/toolchain.cmake)
 
+# DTS should be run directly after kconfig because CONFIG_ variables
+# from kconfig and dts should be available at the same time. But
+# running DTS involves running the preprocessor, so we put it behind
+# toolchain. Meaning toolchain.cmake is the only component where
+# kconfig and dts variables aren't available at the same time.
+include($ENV{ZEPHYR_BASE}/dts/dts.cmake)
+
 set(KERNEL_NAME ${CONFIG_KERNEL_BIN_NAME})
 
 set(KERNEL_ELF_NAME   ${KERNEL_NAME}.elf)
