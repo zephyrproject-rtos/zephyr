@@ -7,7 +7,6 @@
 #ifndef __INC_SYS_APIC_H
 #define __INC_SYS_APIC_H
 
-#include <drivers/ioapic.h>
 #include <drivers/loapic.h>
 
 #define _IRQ_TRIGGER_EDGE	IOAPIC_EDGE
@@ -17,6 +16,7 @@
 #define _IRQ_POLARITY_LOW	IOAPIC_LOW
 
 #ifndef _ASMLANGUAGE
+#include <zephyr/types.h>
 
 #define LOAPIC_IRQ_BASE  CONFIG_IOAPIC_NUM_RTES
 #define LOAPIC_IRQ_COUNT 6  /* Default to LOAPIC_TIMER to LOAPIC_ERROR */

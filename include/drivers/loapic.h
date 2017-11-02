@@ -45,7 +45,6 @@ extern "C" {
 #define LOAPIC_LVT_MASKED 0x00010000   /* mask */
 
 #ifndef _ASMLANGUAGE
-#include <device.h>
 
 extern void _loapic_int_vec_set(unsigned int irq, unsigned int vector);
 extern void _loapic_irq_enable(unsigned int irq);
