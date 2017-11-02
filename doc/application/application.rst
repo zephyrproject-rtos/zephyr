@@ -212,42 +212,91 @@ source file :file:`src/main.c`, behaviour that we surely do not want. The
 paths of a target library.
 
 Application CMakeLists.txt
-**************************
+==========================
 
-Every application must have a CMakeLists.txt file. The application
-CMakeLists.txt file is the entry point, or toplevel of the build
-system that builds the :file:`zephyr.elf` image. :file:`zephyr.elf`
+Every application must have a :file:`CMakeLists.txt` file. This
+file is the entry point, or top level, of the build
+system that builds the final :file:`zephyr.elf` image. :file:`zephyr.elf`
 contains both the application and the kernel libraries.
 
-#. Open the :file:`CMakeLists.txt` and add the following mandatory
-   entries using any text editor.
+This section describes some of what you can do in your :file:`CMakeLists.txt`.
+Make sure to follow these steps in order.
 
-#. Add the name of the board configuration for your application on a
-   new line:
+#. If you only want to build for one board, add the name of the board
+   configuration for your application on a new line. For example:
 
    .. code-block:: cmake
 
       set(BOARD qemu_x86)
 
-   The supported boards can be found in :ref:`boards`.
+   Refer to :ref:`boards` for more information on available boards.
 
-#. Include the mandatory boilerplate that integrates the application
-   with the Zephyr build system on a new line:
+   The Zephyr build system determines a value for :makevar:`BOARD` by checking
+   the following, in order:
+
+   - Any previously used value as determined by the CMake cache takes highest
+     precedence. This ensures you don't try to run a build with a different
+     :makevar:`BOARD` value than you set during the build configuration step.
+
+   - Any value given on the CMake command line using ``-DBOARD=YOUR_BOARD``
+     will be checked for and used next.
+
+   - If an environment variable ``BOARD`` is set, its value will then be used.
+
+   - Finally, if you set ``BOARD`` in your application :file:`CMakeLists.txt`
+     as described in this step, this value will be used.
+
+#. If your application uses a configuration file or files other than
+   the usual :file:`prj.conf` (or :file:`prj_YOUR_BOARD.conf`, where
+   ``YOUR_BOARD`` is a board name), you can now add lines setting the
+   :makevar:`CONF_FILE` variable to these files appropriately.
+
+   More details are available below in :ref:`application_configuration`.
+
+#. If your application has its own kernel configuration options, you can add a
+   line setting the location of the Kconfig file which defines them.
+
+   **This is a somewhat advanced use case; you probably don't need this.**
+
+   This applies if your application has its own unique configuration
+   **options**, which you want to set differently depending on the build
+   configuration.  If you just want to set application specific **values** for
+   existing Zephyr configuration options, refer to the :makevar:`CONF_FILE`
+   description above.
+
+   For example, if you have a file named :file:`Kconfig` in the same directory
+   as your application's :file:`CMakeLists.txt`, add the following line:
+
+   .. code-block:: cmake
+
+      set(KCONFIG_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/Kconfig)
+
+   Make sure to include the following lines in your :file:`Kconfig` file before
+   any application-specific configuration options:
+
+   .. literalinclude:: application-kconfig.include
+
+   .. important::
+
+      The indented lines above must use tabs, not spaces.
+
+#. Now include the mandatory boilerplate that integrates the
+   application with the Zephyr build system on a new line, **after any
+   lines added from above steps**:
 
    .. code-block:: cmake
 
       include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
       project(NONE)
 
-#. Add any application source files to the 'app' target library:
+#. You can now add any application source files to the 'app' target
+   library, each on their own line, like so:
 
    .. code-block:: cmake
 
       target_sources(app PRIVATE src/main.c)
 
-#. Save and close the :file:`CMakeLists.txt`.
-
-Below is an example CMakeList.txt:
+Below is a simple example CMakeList.txt:
 
 .. code-block:: cmake
 
@@ -263,41 +312,54 @@ Below is an example CMakeList.txt:
 Application Configuration
 *************************
 
-The application's kernel is configured using a set of configuration options
+The application's kernel is configured using a set of options
 that can be customized for application-specific purposes.
 The Zephyr build system takes a configuration option's value from the first
 source in which it is specified.
 
-The available sources are (in order):
+An option's value is taken from the following available sources, in order:
 
-#. The application's current configuration. (i.e. The :file:`.config` file.)
+#. An application's current configuration (i.e. the file
+   :file:`zephyr/.config` in the build directory). This can be used
+   during development as described below in :ref:`override_kernel_conf`.
 
-#. The application's default configuration. (Specified by ``CONF_FILE``, i.e. :file:`prj.conf`.)
+#. The application's configuration file(s) given by the
+   :makevar:`CONF_FILE` variable, either as set explicitly by the user
+   or using one of the default values detailed below.
 
-#. The board configuration used by the application.
-   (i.e. The board's :file:`_defconfig` file.)
+#. The board's default configuration for the current :makevar:`BOARD`
+   setting (i.e. the :file:`boards/ARCHITECTURE/BOARD/BOARD_defconfig`
+   file in the Zephyr base directory).
 
-#. The kernel's default configuration.
-   (i.e. One of the kernel's :file:`Kconfig` files.)
+#. The kernel's default configuration settings (i.e. the default value given to
+   the option in one of Zephyr's :file:`Kconfig` files).
+
+The Zephyr build system determines a value for :makevar:`CONF_FILE` by
+checking the following, in order:
+
+- Any value given to :makevar:`CONF_FILE` in your application
+  :file:`CMakeLists.txt`, passed to the the CMake command line, or present
+  in the CMake variable cache, takes precedence.
+
+- If a CMake command, macro, or function ``set_conf_file`` is defined, it
+  will be invoked and must set :makevar:`CONF_FILE`.
+
+- If the file :file:`prj_BOARD.conf` exists in your application directory,
+  where ``BOARD`` is the BOARD value set earlier, it will be used.
+
+- Finally, if :file:`prj.conf` exists in your application directory, it will
+  be used.
+
+If :makevar:`CONF_FILE` specifies multiple files, they will be merged in order.
 
 For information on available kernel configuration options, including
 inter-dependencies between options, see the :ref:`configuration`.
 
-Default Board Configuration
-===========================
+Application Configuration
+=========================
 
-An application's :file:`.conf` file defines its default kernel configuration.
-The settings in this file override or augment the board configuration settings.
-
-The board configuration settings can be viewed
-in :file:`$ZEPHYR_BASE/boards/ARCHITECTURE/BOARD/BOARD_defconfig`.
-
-.. note::
-
-   When the default board configuration settings are sufficient for your
-   application, a :file:`.conf` file is not needed. Skip ahead to
-   :ref:`override_kernel_conf`.
-
+As described above, an application can use :makevar:`CONF_FILE` to
+override its default kernel configuration.
 
 #. Navigate to the :file:`app`, and create the :file:`prj.conf` file. Enter:
 
