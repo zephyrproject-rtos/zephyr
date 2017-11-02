@@ -31,11 +31,34 @@ config WIFI_WINC1500_SPI_SLAVE
 	 Specify the slave select pin of the SPI to which WINC1500 is
 	 connected.
 
-config WIFI_WIFI_WINC1500_SPI_FREQ
+config WIFI_WINC1500_SPI_FREQ
 	int "SPI frequency to use with WINC1500"
-	default 4
+	default 8000000
 	help
 	 SPI frequency to use with WINC1500
+
+config WIFI_WINC1500_GPIO_SPI_CS
+	bool "Manage SPI CS through a GPIO pin"
+	default n
+	help
+	  This option is useful if one needs to manage SPI CS through a GPIO
+	  pin to by-pass the SPI controller's CS logic.
+
+config WIFI_WINC1500_GPIO_SPI_CS_DRV_NAME
+	string "GPIO driver's name to use to drive SPI CS through"
+	default ""
+	depends on WIFI_WINC1500_GPIO_SPI_CS
+	help
+	  This option is mandatory to set which GPIO controller to use in
+	  order to actually emulate the SPI CS.
+
+config WIFI_WINC1500_GPIO_SPI_CS_PIN
+	int "GPIO PIN to use to drive SPI CS through"
+	default 0
+	depends on WIFI_WINC1500_GPIO_SPI_CS
+	help
+	  This option is mandatory to set which GPIO pin to use in order
+	  to actually emulate the SPI CS.
 
 config WIFI_WINC1500_THREAD_STACK_SIZE
 	int "HAL callback handler thread stack size"

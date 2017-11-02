@@ -55,17 +55,31 @@ static s8_t nm_i2c_write_special(u8_t *wb1, u16_t sz1,
 
 #ifdef CONF_WINC_USE_SPI
 
+#ifdef CONFIG_WIFI_WINC1500_GPIO_SPI_CS
+struct spi_cs_control cs_ctrl;
+#endif
+
 static s8_t spi_rw(u8_t *mosi, u8_t *miso, u16_t size)
 {
-	int ret;
+	const struct spi_buf buf_tx = {
+		.buf = mosi,
+		.len = size
+	};
+	const struct spi_buf_set tx = {
+		.buffers = &buf_tx,
+		.count = 1
+	};
+	const struct spi_buf buf_rx = {
+		.buf = miso,
+		.len = miso ? size : 0
+	};
+	const struct spi_buf_set rx = {
+		.buffers = &buf_rx,
+		.count = 1
+	};
 
-	spi_slave_select(winc1500.spi_dev, winc1500.spi_slave);
-
-	ret = spi_transceive(winc1500.spi_dev,
-			     mosi, size,
-			     miso, miso ? size : 0);
-	if (ret) {
-		SYS_LOG_ERR("spi_transceive fail %d", ret);
+	if (spi_transceive(winc1500.spi, &winc1500.spi_cfg, &tx, &rx)) {
+		SYS_LOG_ERR("spi_transceive fail");
 		return M2M_ERR_BUS_FAIL;
 	}
 
@@ -76,36 +90,40 @@ static s8_t spi_rw(u8_t *mosi, u8_t *miso, u16_t size)
 
 s8_t nm_bus_init(void *pvinit)
 {
-	s8_t result = 0;
-
 #ifdef CONF_WINC_USE_I2C
 	/* Not implemented */
 #elif defined CONF_WINC_USE_SPI
-	struct spi_config spi_config;
-	int ret;
-
 	/* configure GPIOs */
 	winc1500.gpios = winc1500_configure_gpios();
 
 	/* setup SPI device */
-	winc1500.spi_dev = device_get_binding(
-		CONFIG_WIFI_WINC1500_SPI_DRV_NAME);
-	if (!winc1500.spi_dev) {
+	winc1500.spi = device_get_binding(CONFIG_WIFI_WINC1500_SPI_DRV_NAME);
+	if (!winc1500.spi) {
 		SYS_LOG_ERR("spi device binding");
 		return -1;
 	}
 
-	spi_config.config = SPI_WORD(8) | SPI_TRANSFER_MSB;
-	spi_config.max_sys_freq = CONFIG_WIFI_WINC1500_SPI_FREQ;
+	winc1500.spi_cfg.operation = SPI_WORD_SET(8) | SPI_TRANSFER_MSB;
+	winc1500.spi_cfg.frequency = CONFIG_WIFI_WINC1500_SPI_FREQ;
+	winc1500.spi_cfg.slave = CONFIG_WIFI_WINC1500_SPI_SLAVE;
 
-	ret = spi_configure(winc1500.spi_dev, &spi_config);
-	if (ret) {
-		SYS_LOG_ERR("spi_configure fail %d", ret);
-		return -1;
+#ifdef CONFIG_WIFI_WINC1500_GPIO_SPI_CS
+	cs_ctrl.gpio_dev = device_get_binding(
+		CONFIG_WIFI_WINC1500_GPIO_SPI_CS_DRV_NAME);
+	if (!cs_ctrl.gpio_dev) {
+		SYS_LOG_ERR("Unable to get GPIO SPI CS device");
+		return -ENODEV;
 	}
 
-	winc1500.spi_slave = CONFIG_WIFI_WINC1500_SPI_SLAVE;
-	SYS_LOG_INF("spi_configure OK");
+	cs_ctrl.gpio_pin = CONFIG_WIFI_WINC1500_GPIO_SPI_CS_PIN;
+	cs_ctrl.delay = 0;
+
+	winc1500.spi_cfg.cs = &cs_ctrl;
+
+	SYS_LOG_DBG("SPI GPIO CS configured on %s:%u",
+		    CONFIG_WIFI_WINC1500_GPIO_SPI_CS_DRV_NAME,
+		    CONFIG_WIFI_WINC1500_GPIO_SPI_CS_PIN);
+#endif /* CONFIG_WIFI_WINC1500_GPIO_SPI_CS */
 
 	nm_bsp_reset();
 	nm_bsp_sleep(1);
@@ -114,7 +132,7 @@ s8_t nm_bus_init(void *pvinit)
 
 	SYS_LOG_INF("NOTICE:DONE");
 #endif
-	return result;
+	return 0;
 }
 
 s8_t nm_bus_ioctl(u8_t cmd, void *parameter)

@@ -33,11 +33,6 @@ s8_t nm_bsp_init(void)
 	/* Initialize chip IOs. */
 	winc1500.gpios = winc1500_configure_gpios();
 
-	winc1500.spi_dev = device_get_binding(CONFIG_WINC1500_SPI_DRV_NAME);
-	if (!winc1500.spi_dev) {
-		return -1;
-	}
-
 	/* Perform chip reset. */
 	nm_bsp_reset();
 
