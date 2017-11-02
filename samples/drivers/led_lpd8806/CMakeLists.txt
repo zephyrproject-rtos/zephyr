@@ -1,8 +1,8 @@
 macro(set_conf_file)
-  set(CONF_FILE prj.conf)
-
   if(EXISTS               ${APPLICATION_SOURCE_DIR}/boards/${BOARD}.conf)
-    list(APPEND CONF_FILE ${APPLICATION_SOURCE_DIR}/boards/${BOARD}.conf)
+    set(CONF_FILE "prj.conf ${APPLICATION_SOURCE_DIR}/boards/${BOARD}.conf")
+  else()
+    set(CONF_FILE "prj.conf")
   endif()
 endmacro()
 
