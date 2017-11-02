@@ -9,6 +9,7 @@
 
 #include <device.h>
 #include <gpio.h>
+#include <spi.h>
 
 #include <wifi/winc1500.h>
 
@@ -25,9 +26,8 @@ extern tstrNmBusCapabilities egstrNmBusCapabilities;
 struct winc1500_device {
 	struct winc1500_gpio_configuration	*gpios;
 	struct gpio_callback			gpio_cb;
-
-	struct device				*spi_dev;
-	int 					spi_slave;
+	struct device				*spi;
+	struct spi_config			spi_cfg;
 };
 
 extern struct winc1500_device winc1500;
