@@ -90,6 +90,13 @@ static struct seg_rx {
 	},
 };
 
+static u16_t hb_sub_dst = BT_MESH_ADDR_UNASSIGNED;
+
+void bt_mesh_set_hb_sub_dst(u16_t addr)
+{
+	hb_sub_dst = addr;
+}
+
 static int send_unseg(struct bt_mesh_net_tx *tx, u8_t aid,
 		      struct net_buf_simple *sdu)
 {
@@ -687,6 +694,11 @@ static int trans_heartbeat(struct bt_mesh_net_rx *rx,
 		return -EINVAL;
 	}
 
+	if (rx->dst != hb_sub_dst) {
+		BT_WARN("Ignoring heartbeat to non-subscribed destination");
+		return 0;
+	}
+
 	init_ttl = (net_buf_simple_pull_u8(buf) & 0x7f);
 	feat = net_buf_simple_pull_be16(buf);
 
@@ -711,16 +723,13 @@ static int ctl_recv(struct bt_mesh_net_rx *rx, u8_t hdr,
 	switch (ctl_op) {
 	case TRANS_CTL_OP_ACK:
 		return trans_ack(rx, hdr, buf, seq_auth);
-	}
-
-	/* Only acks need processing for Friend behavior */
-	if (IS_ENABLED(CONFIG_BT_MESH_FRIEND) && !rx->local_match) {
-		return 0;
-	}
-
-	switch (ctl_op) {
 	case TRANS_CTL_OP_HEARTBEAT:
 		return trans_heartbeat(rx, buf);
+	}
+
+	/* Only acks and heartbeats may need processing without local_match */
+	if (!rx->local_match) {
+		return 0;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_FRIEND)) {
@@ -784,6 +793,11 @@ static int trans_unseg(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx,
 	if (rx->ctl) {
 		return ctl_recv(rx, hdr, buf, seq_auth);
 	} else {
+		/* SDUs must match a local element or an LPN of this Friend. */
+		if (!rx->local_match && !rx->friend_match) {
+			return 0;
+		}
+
 		return sdu_recv(rx, hdr, 4, 0, buf);
 	}
 }
@@ -1197,12 +1211,8 @@ int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx)
 		rx->friend_match = false;
 	}
 
-	if (!rx->local_match && !rx->friend_match) {
-		return 0;
-	}
-
-	BT_DBG("src 0x%04x dst 0x%04x seq 0x%08x", rx->ctx.addr, rx->dst,
-	       rx->seq);
+	BT_DBG("src 0x%04x dst 0x%04x seq 0x%08x friend_match %u",
+	       rx->ctx.addr, rx->dst, rx->seq, rx->friend_match);
 
 	/* Remove network headers */
 	net_buf_simple_pull(buf, BT_MESH_NET_HDR_LEN);
@@ -1217,8 +1227,7 @@ int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx)
 	    bt_mesh_lpn_established() &&
 	    (!bt_mesh_lpn_waiting_update() || !rx->ctx.friend_cred)) {
 		BT_WARN("Ignoring unexpected message in Low Power mode");
-		err = -EAGAIN;
-		goto done;
+		return -EAGAIN;
 	}
 
 	/* Save the parsing state so the buffer can later be relayed or
@@ -1227,6 +1236,13 @@ int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx)
 	net_buf_simple_save(buf, &state);
 
 	if (SEG(buf->data)) {
+		/* Segmented messages must match a local element or an
+		 * LPN of this Friend.
+		 */
+		if (!rx->local_match && !rx->friend_match) {
+			return 0;
+		}
+
 		err = trans_seg(buf, rx, &pdu_type, &seq_auth);
 	} else {
 		err = trans_unseg(buf, rx, &seq_auth);
@@ -1244,10 +1260,9 @@ int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx)
 		bt_mesh_lpn_msg_received(rx);
 	}
 
-done:
 	net_buf_simple_restore(buf, &state);
 
-	if (IS_ENABLED(CONFIG_BT_MESH_FRIEND) && !err) {
+	if (IS_ENABLED(CONFIG_BT_MESH_FRIEND) && rx->friend_match && !err) {
 		if (seq_auth == TRANS_SEQ_AUTH_NVAL) {
 			bt_mesh_friend_enqueue_rx(rx, pdu_type, NULL, buf);
 		} else {
