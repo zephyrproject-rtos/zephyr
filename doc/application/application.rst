@@ -355,43 +355,50 @@ If :makevar:`CONF_FILE` specifies multiple files, they will be merged in order.
 For information on available kernel configuration options, including
 inter-dependencies between options, see the :ref:`configuration`.
 
-Application Configuration
-=========================
+Setting Application Configuration Values
+========================================
 
-As described above, an application can use :makevar:`CONF_FILE` to
-override its default kernel configuration.
+This section describes how to edit Zephyr configuration
+(:file:`.conf`) files.
 
-#. Navigate to the :file:`app`, and create the :file:`prj.conf` file. Enter:
+- Add each configuration entry on a new line.
 
-   .. code-block:: bash
+- Enable a boolean option by setting its value to ``y``:
 
-       $ vim prj.conf
+  .. code-block:: none
 
-   The application's default configuration is specified by
-   ``CONF_FILE``, ``CONF_FILE`` defaults to :file:`prj.conf` unless
-   configured otherwise in the application :file:`CMakeLists.txt`
-   file.
+     CONFIG_SOME_BOOL=y
 
-#. Edit the file and add the appropriate configuration entries.
+  To ensure that a boolean configuration option is not set, add a line
+  like this instead (including the leading ``#`` symbol):
 
-   a) Add each configuration entry on a new line.
+  .. code-block:: none
 
-   b) Begin each entry with ``CONFIG_``.
+     # CONFIG_SOME_BOOL is not set
 
-   c) Ensure that each entry contains no spaces
-      (including on either side of the = sign).
+- You can set integer and string options as well, like this:
 
-   d) Use a # followed by a space to comment a line.
+  .. code-block:: none
 
-   The example below shows a comment line and a board
-   configuration override in the :file:`prj.conf`.
+     CONFIG_SOME_INT=42
+     CONFIG_SOME_STRING="the best value ever"
 
-   .. code-block:: c
+- Ensure that each entry setting an option contains no spaces
+  (including on either side of the = sign).
 
-       # Enable printk for debugging
-       CONFIG_PRINTK=y
+- Use a # followed by a space to comment a line:
 
-#. Save and close the file.
+  .. code-block:: none
+
+     # This is a comment.
+
+The example below shows a comment line and an override setting
+:option:`CONFIG_PRINTK` to ``y``:
+
+.. code-block:: c
+
+    # Enable printk for debugging
+    CONFIG_PRINTK=y
 
 .. _override_kernel_conf:
 
