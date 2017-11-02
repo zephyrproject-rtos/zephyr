@@ -2616,6 +2616,19 @@ static u8_t hb_log(u16_t val)
 	}
 }
 
+static u8_t hb_pub_count_log(u16_t val)
+{
+	if (!val) {
+		return 0x00;
+	} else if (val == 0x01) {
+		return 0x01;
+	} else if (val == 0xffff) {
+		return 0xff;
+	} else {
+		return 32 - __builtin_clz(val - 1) + 1;
+	}
+}
+
 static u16_t hb_pwr2(u8_t val, u8_t sub)
 {
 	if (!val) {
@@ -2657,7 +2670,7 @@ static void hb_pub_send_status(struct bt_mesh_model *model,
 	}
 
 	net_buf_simple_add_le16(msg, cfg->hb_pub.dst);
-	net_buf_simple_add_u8(msg, hb_log(cfg->hb_pub.count));
+	net_buf_simple_add_u8(msg, hb_pub_count_log(cfg->hb_pub.count));
 	net_buf_simple_add_u8(msg, cfg->hb_pub.period);
 	net_buf_simple_add_u8(msg, cfg->hb_pub.ttl);
 	net_buf_simple_add_le16(msg, cfg->hb_pub.feat);
