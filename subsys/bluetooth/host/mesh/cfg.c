@@ -2820,7 +2820,9 @@ static void heartbeat_sub_set(struct bt_mesh_model *model,
 		return;
 	}
 
-	if (BT_MESH_ADDR_IS_VIRTUAL(sub_dst)) {
+	if (BT_MESH_ADDR_IS_VIRTUAL(sub_dst) || BT_MESH_ADDR_IS_RFU(sub_dst) ||
+	    (BT_MESH_ADDR_IS_UNICAST(sub_dst) &&
+	     sub_dst != bt_mesh_primary_addr())) {
 		BT_WARN("Prohibited destination address");
 		return;
 	}
