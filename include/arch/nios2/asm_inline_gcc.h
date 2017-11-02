@@ -19,6 +19,7 @@ extern "C" {
 #ifndef _ASMLANGUAGE
 
 #include <sys_io.h>
+#include <toolchain.h>
 
 /**
  *
