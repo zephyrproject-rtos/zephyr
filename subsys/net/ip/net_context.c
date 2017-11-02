@@ -1613,9 +1613,21 @@ NET_CONN_CB(tcp_syn_rcvd)
 	 */
 	if (NET_TCP_FLAGS(tcp_hdr) == NET_TCP_SYN) {
 		int r;
-		u16_t send_mss = NET_TCP_DEFAULT_MSS;
+		int opt_totlen;
+		struct net_tcp_options tcp_opts = {
+			.mss = NET_TCP_DEFAULT_MSS,
+		};
 
 		net_tcp_print_recv_info("SYN", pkt, tcp_hdr->src_port);
+
+		opt_totlen = NET_TCP_HDR_LEN(tcp_hdr)
+			     - sizeof(struct net_tcp_hdr);
+		/* We expect MSS option to be present (opt_totlen > 0),
+		 * so call unconditionally.
+		 */
+		if (net_tcp_parse_opts(pkt, opt_totlen, &tcp_opts) < 0) {
+			return NET_DROP;
+		}
 
 		net_tcp_change_state(tcp, NET_TCP_SYN_RCVD);
 
@@ -1627,7 +1639,7 @@ NET_CONN_CB(tcp_syn_rcvd)
 
 		/* Get MSS from TCP options here*/
 
-		r = tcp_backlog_syn(pkt, context, send_mss);
+		r = tcp_backlog_syn(pkt, context, tcp_opts.mss);
 		if (r < 0) {
 			if (r == -EADDRINUSE) {
 				NET_DBG("TCP connection already exists");

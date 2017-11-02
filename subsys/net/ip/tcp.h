@@ -89,11 +89,22 @@ enum net_tcp_state {
 
 #define NET_TCP_MAX_OPT_SIZE  8
 
-#define NET_TCP_MSS_HEADER    0x02040000 /* MSS option */
-#define NET_TCP_WINDOW_HEADER 0x30300    /* Window scale option */
+/* TCP Option codes */
+#define NET_TCP_END_OPT          0
+#define NET_TCP_NOP_OPT          1
+#define NET_TCP_MSS_OPT          2
+#define NET_TCP_WINDOW_SCALE_OPT 3
 
-#define NET_TCP_MSS_SIZE      4          /* MSS option size */
-#define NET_TCP_WINDOW_SIZE   3          /* Window scale option size */
+/* TCP Option sizes */
+#define NET_TCP_END_SIZE          1
+#define NET_TCP_NOP_SIZE          1
+#define NET_TCP_MSS_SIZE          4
+#define NET_TCP_WINDOW_SCALE_SIZE 3
+
+/** Parsed TCP option values for net_tcp_parse_opts()  */
+struct net_tcp_options {
+	u16_t mss;
+};
 
 /* Max received bytes to buffer internally */
 #define NET_TCP_BUF_MAX_LEN 1280
@@ -442,6 +453,23 @@ struct net_buf *net_tcp_set_chksum(struct net_pkt *pkt, struct net_buf *frag);
  * @return Return the checksum in host byte order.
  */
 u16_t net_tcp_get_chksum(struct net_pkt *pkt, struct net_buf *frag);
+
+/**
+ * @brief Parse TCP options from network packet.
+ *
+ * Parse TCP options, returning MSS value (as that the only one we
+ * handle so far).
+ *
+ * @param pkt Network packet
+ * @param opt_totlen Total length of options to parse
+ * @param opts Pointer to TCP options structure. (Each option is updated
+ * only if present, so the structure must be initialized with the default
+ * values.)
+ *
+ * @return 0 if no error, <0 in case of error
+ */
+int net_tcp_parse_opts(struct net_pkt *pkt, int opt_totlen,
+		       struct net_tcp_options *opts);
 
 #else
 
