@@ -1,6 +1,9 @@
 #include <arm/armv7-m.dtsi>
-#include <inc/hw_ints.h>
+
 #include <ti/mem.h>
+
+#define INT_UARTA0              21          // UART0 Rx and Tx
+#define INT_UARTA1              22          // UART1 Rx and Tx
 
 /* Note: Zephyr uses exception numbers, vs the IRQ #s used by the CC32XX SDK */
 /* which are offset by 16: */
