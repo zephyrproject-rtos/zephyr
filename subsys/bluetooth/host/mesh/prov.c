@@ -1483,14 +1483,18 @@ bool bt_prov_active(void)
 	return atomic_test_bit(link.flags, LINK_ACTIVE);
 }
 
-void bt_mesh_prov_init(const struct bt_mesh_prov *prov_info)
+int bt_mesh_prov_init(const struct bt_mesh_prov *prov_info)
 {
+	int err;
+
 	static struct bt_pub_key_cb pub_key_cb = {
 		.func = pub_key_ready,
 	};
 
-	if (bt_pub_key_gen(&pub_key_cb)) {
-		BT_ERR("Failed to generate public key");
+	err = bt_pub_key_gen(&pub_key_cb);
+	if (err) {
+		BT_ERR("Failed to generate public key (%d)", err);
+		return err;
 	}
 
 	prov = prov_info;
@@ -1513,4 +1517,6 @@ void bt_mesh_prov_init(const struct bt_mesh_prov *prov_info)
 		memcpy(uuid.val, prov->uuid, 16);
 		BT_INFO("Device UUID: %s", bt_uuid_str(&uuid.uuid));
 	}
+
+	return 0;
 }
