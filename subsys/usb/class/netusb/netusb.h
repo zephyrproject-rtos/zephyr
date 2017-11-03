@@ -9,6 +9,8 @@
  */
 
 struct netusb_function {
+	int num_ep;
+	struct usb_ep_cfg_data *ep;
 	int (*connect_media)(bool status);
 	int (*send_pkt)(struct net_pkt *pkt);
 	int (*class_handler)(struct usb_setup_packet *setup, s32_t *len,

@@ -57,22 +57,6 @@ void netusb_recv(struct net_pkt *pkt)
 	}
 }
 
-static struct usb_ep_cfg_data netusb_ep_data[] = {
-	/* Configuration ECM */
-	{
-		.ep_cb = ecm_int_in,
-		.ep_addr = CONFIG_CDC_ECM_INT_EP_ADDR
-	},
-	{
-		.ep_cb = ecm_bulk_out,
-		.ep_addr = CONFIG_CDC_ECM_OUT_EP_ADDR
-	},
-	{
-		.ep_cb = ecm_bulk_in,
-		.ep_addr = CONFIG_CDC_ECM_IN_EP_ADDR
-	},
-};
-
 static int netusb_connect_media(void)
 {
 	if (!netusb.func->connect_media) {
@@ -187,8 +171,6 @@ static struct usb_cfg_data netusb_config = {
 		.vendor_handler = NULL,
 		.payload_data = NULL,
 	},
-	.num_endpoints = ARRAY_SIZE(netusb_ep_data),
-	.endpoint = netusb_ep_data,
 };
 
 int try_write(u8_t ep, u8_t *data, u16_t len)
@@ -258,6 +240,9 @@ static void netusb_init(struct net_if *iface)
 #if defined(CONFIG_USB_DEVICE_NETWORK_ECM)
 	netusb.func = ecm_register_function(iface, CONFIG_CDC_ECM_IN_EP_ADDR);
 #endif
+
+	netusb_config.endpoint = netusb.func->ep;
+	netusb_config.num_endpoints = netusb.func->num_ep;
 
 #if defined(CONFIG_USB_COMPOSITE_DEVICE)
 #if defined(CONFIG_USB_DEVICE_NETWORK_ECM)
