@@ -543,7 +543,7 @@ class PageMode_PAE:
         a = PAGE_ENTRY_ACCESSED
         ps = 0 << 7  # set to make sure that the phy page is 4KB
         page_table = self.address_of_page_table(pdpte, value.pde_index) << 12
-        xd = check_bits(perms, [62, 63]) << 63
+        xd = 0
         return (present |
                 read_write |
                 user_mode |
