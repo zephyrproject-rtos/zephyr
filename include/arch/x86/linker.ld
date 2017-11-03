@@ -265,16 +265,13 @@ SECTIONS
 	KEEP(*(gdt_ram_data))
 #else /* LINKER_PASS2 */
 
-#ifdef CONFIG_X86_STACK_PROTECTION
-    #ifdef CONFIG_X86_USERSPACE
-        #define GDT_NUM_ENTRIES 7
-    #else
-        #define GDT_NUM_ENTRIES	5
-    #endif /* CONFIG_X86_USERSPACE */
-#else /* CONFIG_X86_STACK_PROTECTION */
+#ifdef CONFIG_USERSPACE
+    #define GDT_NUM_ENTRIES 7
+#elif defined(CONFIG_HW_STACK_PROTECTION)
+    #define GDT_NUM_ENTRIES 5
+#else
     #define GDT_NUM_ENTRIES 3
-#endif /* CONFIG_X86_STACK_PROTECTION */
-
+#endif /* CONFIG_X86_USERSPACE */
 	. += GDT_NUM_ENTRIES * 8;
 #endif /* LINKER_PASS2 */
 #endif /* CONFIG_GDT_DYNAMIC */
