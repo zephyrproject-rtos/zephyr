@@ -172,7 +172,7 @@ static int get_unused_session(void)
 	return i;
 }
 
-int tc_session_setup(struct device *dev, struct cipher_ctx *ctx,
+static int tc_session_setup(struct device *dev, struct cipher_ctx *ctx,
 		     enum cipher_algo algo, enum cipher_mode mode,
 		     enum cipher_op op_type)
 {
@@ -268,13 +268,13 @@ int tc_session_setup(struct device *dev, struct cipher_ctx *ctx,
 	return 0;
 }
 
-int tc_query_caps(struct device *dev)
+static int tc_query_caps(struct device *dev)
 {
 	return (CAP_RAW_KEY | CAP_SEPARATE_IO_BUFS | CAP_SYNC_OPS);
 }
 
 
-int tc_session_free(struct device *dev, struct cipher_ctx *sessn)
+static int tc_session_free(struct device *dev, struct cipher_ctx *sessn)
 {
 	struct tc_shim_drv_state *data =  sessn->drv_sessn_state;
 

@@ -21,7 +21,6 @@
 
 struct tc_shim_drv_state {
 	int in_use;
-//	int session_key;
 	struct tc_aes_key_sched_struct session_key;
 };
 
