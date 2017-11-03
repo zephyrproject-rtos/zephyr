@@ -227,17 +227,12 @@ Flashing
 
 The ``dfu-util`` flashing application will only recognize the Arduino 101 as a
 DFU-capable device within five seconds after the Master Reset button is pressed
-on the board. You can run this application, either manually, or with the help of
-``make``:
+on the board. You can run this application with the help of the Zephyr build
+system by defining the environment variable ``ZEPHYR_FLASH_OVER_DFU=y`` before
+flashing Zephyr applications (as described in :ref:`application_run`).
 
-* Manual method: Type the ``dfu-util`` command line, press the Master Reset
-  button, and then quickly press Return to execute the dfu-util command. If
-  dfu-util fails saying "No DFU capable USB device available", try again more
-  quickly after pressing the Master Reset button.
-* Make method: Define the environment variable ``ZEPHYR_FLASH_OVER_DFU=y`` and
-  run ``make flash``. You will be prompted to reset the board when make is ready
-  to flash it. If you regularly use this method, you can add the following line
-  into your ``~/.zephyrrc`` file:
+If you regularly use this method, you can add the following line into your
+``~/.zephyrrc`` file:
 
 .. code-block:: console
 
@@ -248,52 +243,27 @@ Flashing the Sensor Subsystem Core
 When building for the ARC processor, the board type is listed as
 ``arduino_101_sss``.
 
-The sample application :ref:`hello_world` is used for this tutorial.
-Change directories to your local checkout copy of Zephyr, and run:
+The sample application :ref:`hello_world` is used for this tutorial.  To build
+and flash this application using ``dfu-util``, first set
+``ZEPHYR_FLASH_OVER_DFU=y`` in the environment as described above, then run:
 
-.. code-block:: console
-
-   $ cd $ZEPHYR_BASE/samples/hello_world
-   $ make BOARD=arduino_101_sss
-
-Once the image has been built, flash it with either this command using the
-manual method:
-
-.. code-block:: console
-
-   $ dfu-util -a sensor_core -D outdir/arduino_101_sss/zephyr.bin
-
-or with this command using the make-assisted method:
-
-.. code-block:: console
-
-   $ ZEPHYR_FLASH_OVER_DFU=y make BOARD=arduino_101_sss flash
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: arduino_101_sss
+   :goals: build flash
 
 Flashing the x86 Application Core
 ---------------------------------
 
 When building for the x86 processor, the board type is listed as
-``arduino_101``.
+``arduino_101``.  To build and flash the :ref:`hello_world` application to this
+board using ``dfu-util``, first set ``ZEPHYR_FLASH_OVER_DFU=y`` in the
+environment as described above, then run:
 
-Change directories to your local checkout copy of Zephyr, and run:
-
-.. code-block:: console
-
-   $ cd $ZEPHYR_BASE/samples/hello_world
-   $ make BOARD=arduino_101
-
-Once the image has been built, flash it with either this command using the
-manual method:
-
-.. code-block:: console
-
-   $ dfu-util -a x86_app -D outdir/arduino_101/zephyr.bin
-
-or with this command using the make-assisted method:
-
-.. code-block:: console
-
-   $ ZEPHYR_FLASH_OVER_DFU=y make BOARD=arduino_101 flash
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: arduino_101
+   :goals: build flash
 
 .. _bluetooth_firmware_arduino_101:
 
@@ -311,25 +281,14 @@ Luckily, starting with Zephyr 1.6, Zephyr itself is able to act as the firmware
 for the controller. The application you need is ``samples/bluetooth/hci_uart`` and
 the target board is called ``arduino_101_ble``.
 
-To build the Bluetooth controller image, follow the instructions below:
+To build the Bluetooth controller image and flash it using ``dfu-util``, first
+set ``ZEPHYR_FLASH_OVER_DFU=y`` in the environment as described above, then
+run:
 
-.. code-block:: console
-
-   $ cd $ZEPHYR_BASE/samples/bluetooth/hci_uart
-   $ make BOARD=arduino_101_ble
-
-Once the image has been built, flash it with either this command using the
-manual method:
-
-.. code-block:: console
-
-   $ dfu-util -a ble_core -D outdir/arduino_101_ble/zephyr.bin
-
-or with this command using the make-assisted method:
-
-.. code-block:: console
-
-   $ ZEPHYR_FLASH_OVER_DFU=y make BOARD=arduino_101_ble flash
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/hci_uart
+   :board: arduino_101_ble
+   :goals: build flash
 
 After successfully completing these steps your Arduino 101 should now have a HCI
 compatible BLE firmware.
@@ -424,18 +383,13 @@ the ARC core, respectively.
 Application Core (x86)
 ----------------------
 
-Build and flash the x86 application with the following commands:
+Build and flash an x86 application, then launch a debugging server with the
+following commands:
 
-.. code-block:: console
-
-   $ cd <my x86 app>
-   $ make BOARD=arduino_101 flash
-
-Launch the debug server on the x86 core:
-
-.. code-block:: console
-
-   $ make BOARD=arduino_101 debugserver
+.. zephyr-app-commands::
+   :app: <my x86 app>
+   :board: arduino_101
+   :goals: build flash debugserver
 
 Connect to the debug server at the x86 core from a second console:
 
@@ -452,25 +406,20 @@ Sensor Subsystem Core (ARC)
 
 Enable ARC INIT from the x86 core. This can be done by flashing an x86
 application that sets the ``CONFIG_ARC_INIT=y`` option, such as the booting stub
-provided with the Zephyr Test Framework.
+provided with the Zephyr Test Framework, like so:
 
-.. code-block:: console
+.. zephyr-app-commands::
+   :zephyr-app: tests/booting/stub
+   :board: arduino_101
+   :goals: flash
 
-   $ cd $ZEPHYR_BASE/tests/booting/stub
-   $ make BOARD=arduino_101 flash
+Then build the ARC application, flash it, and launch a debug server with the
+following commands:
 
-Build and flash the ARC application with the following commands:
-
-.. code-block:: console
-
-   $ cd <my arc app>
-   $ make BOARD=arduino_101_sss flash
-
-Launch the debug server on the ARC core:
-
-.. code-block:: console
-
-   $ make BOARD=arduino_101_sss debugserver
+.. zephyr-app-commands::
+   :app: <my arc app>
+   :board: arduino_101_sss
+   :goals: flash debugserver
 
 Connect to the debug server at the ARC core from a second console:
 
