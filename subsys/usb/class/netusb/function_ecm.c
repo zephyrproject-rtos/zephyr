@@ -22,7 +22,6 @@
 
 #include <net/net_pkt.h>
 
-#include "eth_emu.h"
 #include "netusb.h"
 
 #define USB_CDC_ECM_REQ_TYPE		0x21
