@@ -20,6 +20,24 @@ import sys
 import pprint
 import collections
 
+class FileWrapper:
+  def __init__(self, file_obj):
+    self.file_obj = file_obj
+    self.buffer = ''
+
+  def readline(self):
+    ret = self.buffer
+
+    if not ret.endswith('\n'):
+      ret += self.file_obj.readline()
+
+    self.buffer = ''
+    return ret
+
+  def unread(self, buffer):
+    self.buffer += buffer
+
+
 def read_until(line, fd, end):
   out = [line]
   while True:
@@ -57,8 +75,11 @@ def clean_line(line, fd):
   line = line.strip()
   return line
 
-def parse_node_name(line):
-  line = line[:-1]
+def parse_node_name(fd, line):
+  line, rest = line.split('{', 1)
+
+  if rest:
+    fd.unread(rest + '\n')
 
   if '@' in line:
     line, addr = line.split('@')
@@ -158,7 +179,7 @@ def build_node_name(name, addr):
   return '%s@%s' % (name, addr.strip())
 
 def parse_node(line, fd):
-  label, name, addr, numeric_addr = parse_node_name(line)
+  label, name, addr, numeric_addr = parse_node_name(fd, line)
 
   node = {
     'label': label,
@@ -167,19 +188,21 @@ def parse_node(line, fd):
     'props': {},
     'name': build_node_name(name, addr)
   }
+
   while True:
     line = fd.readline()
     if not line:
       raise SyntaxError("parse_node: Missing } while parsing node")
 
     line = clean_line(line, fd)
+
     if not line:
       continue
 
-    if line == "};":
+    if line == '};':
       break
 
-    if line.endswith('{'):
+    if '{' in line:
       new_node = parse_node(line, fd)
       node['children'][new_node['name']] = new_node
     else:
@@ -195,7 +218,7 @@ def open_with_include_path(file_path, mode, include_path):
     except IOError:
       continue
 
-    return fd
+    return FileWrapper(fd)
 
   raise IOError("Could not find %s in %s" % (file_path, include_path))
 
@@ -208,6 +231,8 @@ def update_node(node, new_node):
   return node
 
 def parse_file(fd, ignore_dts_version=False, include_path=[]):
+  fd = FileWrapper(fd)
+
   include_path.append(os.getcwd())
 
   nodes = {}
