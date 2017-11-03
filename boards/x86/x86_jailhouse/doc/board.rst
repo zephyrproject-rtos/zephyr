@@ -63,11 +63,14 @@ tests in a QEMU emulated environment (we assume the same QEMU
 configuration used to accomodate Jailhouse's configs/qemu-x86.c root
 cell configuration).
 
-For example, with the :ref:`synchronization_sample`, one would issue:
+For example, with the :ref:`synchronization_sample`, first set
+``JAILHOUSE_QEMU_IMG_FILE`` to the path to the :file:`.qcow2` file.
+Then:
 
-.. code-block:: console
-
-        $ make -C samples/synchronization BOARD=x86_jailhouse JAILHOUSE_QEMU_IMG_FILE=path_to_image.qcow2 run
+.. zephyr-app-commands::
+   :zephyr-app: samples/synchronization
+   :board: x86_jailhouse
+   :goals: run
 
 This assumes the user has the binary qemu-system-x86_64 in their
 system (not provided by Zephyr's toolchain). This is because the base
