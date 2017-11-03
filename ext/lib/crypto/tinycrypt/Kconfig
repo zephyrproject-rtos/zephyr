@@ -8,7 +8,7 @@
 
 config TINYCRYPT
 	bool
-	prompt "Cryptography Support"
+	prompt "TinyCrypt Support"
 	default n
 	help
 	This option enables the TinyCrypt cryptography library.
