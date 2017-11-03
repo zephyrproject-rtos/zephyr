@@ -21,27 +21,27 @@
 #include "../../usb_descriptor.h"
 #include "../../composite.h"
 #include "netusb.h"
-#include "eth_emu.h"
 #include "function_ecm.h"
 
 #define NETUSB_NUM_CONF 1
 
 static struct __netusb {
+	struct net_if *iface;
 	u8_t conf;
 	u8_t conf_index;
 	struct netusb_function *func[NETUSB_NUM_CONF];
 } netusb;
 
-/* Ethernet Emulation device */
-static struct eth_emu_context *eth_emu_ctx;
-
-int netusb_send(struct net_pkt *pkt)
+static int netusb_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	SYS_LOG_DBG("Send pkt, len %u", net_pkt_get_len(pkt));
 
 	switch (netusb.conf) {
 	case 1:
-		return ecm_send(pkt);
+		if (!ecm_send(pkt)) {
+			net_pkt_unref(pkt);
+			return 0;
+		}
 	default:
 		SYS_LOG_ERR("Unconfigured device, conf %u", netusb.conf);
 		break;
@@ -93,12 +93,12 @@ static void netusb_status_configured(u8_t *conf)
 	switch (*conf) {
 	case 1:
 		netusb.conf_index = 0;
-		eth_emu_up();
+		net_if_up(netusb.iface);
 		netusb_connect_media();
 		break;
 	case 0:
 		netusb_disconnect_media();
-		eth_emu_down();
+		net_if_down(netusb.iface);
 		break;
 	default:
 		SYS_LOG_ERR("Wrong configuration chosen: %u", *conf);
@@ -232,27 +232,20 @@ int try_write(u8_t ep, u8_t *data, u16_t len)
 	return ret;
 }
 
-static int netusb_device_init(struct device *dev)
+static void netusb_init(struct net_if *iface)
 {
-	struct device *eth_dev;
-	struct net_if *iface;
+	static u8_t mac[6] = { 0x00, 0x00, 0x5E, 0x00, 0x53, 0x00 };
 	int ret;
-
-	ARG_UNUSED(dev);
 
 	SYS_LOG_DBG("netusb device initialization");
 
-	eth_dev = device_get_binding(CONFIG_ETH_EMU_0_NAME);
-	if (!eth_dev) {
-		SYS_LOG_ERR("Cannot get Ethernet Emulation device");
-		return -ENODEV;
-	}
+	SYS_LOG_DBG("iface %p", iface);
 
-	eth_emu_ctx = (struct eth_emu_context *)eth_dev->driver_data;
-
-	iface = eth_emu_ctx->iface;
+	netusb.iface = iface;
 
 	SYS_LOG_DBG("iface %p", iface);
+
+	net_if_set_link_addr(iface, mac, sizeof(mac), NET_LINK_ETHERNET);
 
 	net_if_down(iface);
 
@@ -266,7 +259,7 @@ static int netusb_device_init(struct device *dev)
 	ret = composite_add_function(&netusb_config, FIRST_IFACE_CDC_ECM);
 	if (ret < 0) {
 		SYS_LOG_ERR("Failed to add CDC ECM function");
-		return ret;
+		return;
 	}
 #endif /* CONFIG_USB_DEVICE_NETWORK_ECM */
 #else /* CONFIG_USB_COMPOSITE_DEVICE */
@@ -276,23 +269,30 @@ static int netusb_device_init(struct device *dev)
 	ret = usb_set_config(&netusb_config);
 	if (ret < 0) {
 		SYS_LOG_ERR("Failed to configure USB device");
-		return ret;
+		return;
 	}
 
 	ret = usb_enable(&netusb_config);
 	if (ret < 0) {
 		SYS_LOG_ERR("Failed to enable USB");
-		return ret;
+		return;
 	}
 #endif /* CONFIG_USB_COMPOSITE_DEVICE */
 
 	SYS_LOG_INF("netusb initialized");
-
-	return ret;
 }
 
-/*
- * Initialization priority should be bigger then CONFIG_ETH_INIT_PRIORITY
- * in order to be able to get eth_dev
- */
-SYS_INIT(netusb_device_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
+static struct net_if_api api_funcs = {
+	.init	= netusb_init,
+	.send	= netusb_send,
+};
+
+static int netusb_init_dev(struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return 0;
+}
+
+NET_DEVICE_INIT(eth_netusb, "eth_netusb", netusb_init_dev, NULL, NULL,
+		CONFIG_ETH_INIT_PRIORITY, &api_funcs, ETHERNET_L2,
+		NET_L2_GET_CTX_TYPE(ETHERNET_L2), 1500);

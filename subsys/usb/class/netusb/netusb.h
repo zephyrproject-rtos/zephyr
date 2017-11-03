@@ -8,8 +8,6 @@
  * USB definitions
  */
 
-int netusb_send(struct net_pkt *pkt);
-
 struct netusb_function {
 	int (*connect_media)(bool status);
 };
