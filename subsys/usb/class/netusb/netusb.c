@@ -14,7 +14,7 @@
 
 #include <usb_device.h>
 #include <usb_common.h>
-#include <class/cdc_acm.h>
+#include <class/usb_cdc.h>
 
 #include <net_private.h>
 
