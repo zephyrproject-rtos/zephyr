@@ -20,7 +20,6 @@ num_of_regions = 0
 read_buff = ''
 raw_info = []
 
-struct_mmu_regions_tuple = {"start_addr", "size", "permissions"}
 mmu_region_details = namedtuple("mmu_region_details",
                                 "pde_index page_entries_info")
 
