@@ -259,6 +259,9 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 	dummy_thread->stack_info.start = 0;
 	dummy_thread->stack_info.size = 0;
 #endif
+#ifdef CONFIG_USERSPACE
+	dummy_thread->mem_domain_info.mem_domain = 0;
+#endif
 #endif
 
 	/* _kernel.ready_q is all zeroes */
