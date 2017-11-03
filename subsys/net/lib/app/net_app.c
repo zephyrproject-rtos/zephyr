@@ -387,7 +387,6 @@ int _net_app_config_local_ctx(struct net_app_ctx *ctx,
 
 		if (!ret) {
 			select_default_ctx(ctx);
-			return 0;
 		}
 #endif
 
@@ -402,9 +401,9 @@ int _net_app_config_local_ctx(struct net_app_ctx *ctx,
 
 		if (!ret) {
 			select_default_ctx(ctx);
-			return 0;
 		}
 #endif
+		return ret;
 	} else {
 		if (addr->sa_family == AF_INET6) {
 #if defined(CONFIG_NET_IPV6)
