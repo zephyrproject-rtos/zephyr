@@ -23,13 +23,10 @@
 #include "netusb.h"
 #include "function_ecm.h"
 
-#define NETUSB_NUM_CONF 1
-
 static struct __netusb {
 	struct net_if *iface;
 	u8_t conf;
-	u8_t conf_index;
-	struct netusb_function *func[NETUSB_NUM_CONF];
+	struct netusb_function *func;
 } netusb;
 
 static int netusb_send(struct net_if *iface, struct net_pkt *pkt)
@@ -78,20 +75,20 @@ static struct usb_ep_cfg_data netusb_ep_data[] = {
 
 static int netusb_connect_media(void)
 {
-	if (!netusb.func[netusb.conf_index]->connect_media) {
+	if (!netusb.func->connect_media) {
 		return -ENOTSUP;
 	}
 
-	return netusb.func[netusb.conf_index]->connect_media(true);
+	return netusb.func->connect_media(true);
 }
 
 static int netusb_disconnect_media(void)
 {
-	if (!netusb.func[netusb.conf_index]->connect_media) {
+	if (!netusb.func->connect_media) {
 		return -ENOTSUP;
 	}
 
-	return netusb.func[netusb.conf_index]->connect_media(false);
+	return netusb.func->connect_media(false);
 }
 
 static void netusb_status_configured(u8_t *conf)
@@ -102,7 +99,6 @@ static void netusb_status_configured(u8_t *conf)
 
 	switch (*conf) {
 	case 1:
-		netusb.conf_index = 0;
 		net_if_up(netusb.iface);
 		netusb_connect_media();
 		break;
@@ -260,8 +256,7 @@ static void netusb_init(struct net_if *iface)
 	net_if_down(iface);
 
 #if defined(CONFIG_USB_DEVICE_NETWORK_ECM)
-	netusb.func[0] = ecm_register_function(iface,
-					       CONFIG_CDC_ECM_IN_EP_ADDR);
+	netusb.func = ecm_register_function(iface, CONFIG_CDC_ECM_IN_EP_ADDR);
 #endif
 
 #if defined(CONFIG_USB_COMPOSITE_DEVICE)
