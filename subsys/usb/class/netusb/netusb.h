@@ -12,4 +12,5 @@ struct netusb_function {
 	int (*connect_media)(bool status);
 };
 
+void netusb_recv(struct net_pkt *pkt);
 int try_write(u8_t ep, u8_t *data, u16_t len);

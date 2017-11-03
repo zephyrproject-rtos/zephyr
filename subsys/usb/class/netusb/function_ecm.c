@@ -105,12 +105,9 @@ void ecm_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 
 		net_hexdump_frags(">", in_pkt);
 
-		if (net_recv_data(ecm.iface, in_pkt) < 0) {
-			SYS_LOG_ERR("Queueing packet %p failed", in_pkt);
-			net_pkt_unref(in_pkt);
-		}
-
+		netusb_recv(in_pkt);
 		in_pkt = NULL;
+
 		return;
 	}
 
@@ -162,11 +159,7 @@ void ecm_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 
 		net_hexdump_frags(">", in_pkt);
 
-		if (net_recv_data(ecm.iface, in_pkt) < 0) {
-			SYS_LOG_ERR("Queueing packet %p failed", in_pkt);
-			net_pkt_unref(in_pkt);
-		}
-
+		netusb_recv(in_pkt);
 		in_pkt = NULL;
 	}
 }
