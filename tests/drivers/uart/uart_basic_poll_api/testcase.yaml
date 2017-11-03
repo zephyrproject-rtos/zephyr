@@ -1,0 +1,5 @@
+tests:
+-   test_uart:
+        build_only: true
+        platform_whitelist: esp32
+        tags: drivers
