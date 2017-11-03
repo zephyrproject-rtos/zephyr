@@ -39,7 +39,7 @@ _SYSCALL_HANDLER(k_object_access_grant, object, thread)
 {
 	struct _k_object *ko;
 
-	_SYSCALL_OBJ(thread, K_OBJ_THREAD);
+	_SYSCALL_OBJ_INIT(thread, K_OBJ_THREAD);
 	ko = validate_any_object((void *)object);
 	_SYSCALL_VERIFY_MSG(ko, "object %p access denied", (void *)object);
 	_thread_perms_set(ko, (struct k_thread *)thread);
@@ -51,7 +51,7 @@ _SYSCALL_HANDLER(k_object_access_revoke, object, thread)
 {
 	struct _k_object *ko;
 
-	_SYSCALL_OBJ(thread, K_OBJ_THREAD);
+	_SYSCALL_OBJ_INIT(thread, K_OBJ_THREAD);
 	ko = validate_any_object((void *)object);
 	_SYSCALL_VERIFY_MSG(ko, "object %p access denied", (void *)object);
 	_thread_perms_clear(ko, (struct k_thread *)thread);
