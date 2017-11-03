@@ -71,11 +71,9 @@ Programming and Debugging
 The D2000 board configuration details are found in the project's tree at
 :file:`boards/x86/quark_d2000_crb`.
 
-To build an application for this board, the following call is needed:
-
-.. code-block:: console
-
-   $ make BOARD=quark_d2000_crb <make target>
+Applications for the ``quark_d2000_crb`` board configuration can be built and
+flashed in the usual way (see :ref:`build_an_application` and
+:ref:`application_run` for more details).
 
 Flashing
 ========
@@ -99,32 +97,25 @@ Flashing
 
 #. Connect the D2000 via USB to the host computer.
 
-#. Once the binary is built, it can be flashed to the device by:
+#. Build and flash a Zephyr application. Here is an example for the
+   :ref:`hello_world` application.
 
-   .. code-block:: console
-
-      $ make BOARD=quark_d2000_crb flash
+   .. zephyr-app-commands::
+      :zephyr-app: samples/hello_world
+      :board: quark_d2000_crb
+      :goals: build flash
 
 Debugging
 =========
 
-To debug an application on the Quark D2000 board, follow these steps.  As an
-example, we are using the :ref:`hello_world` application.
+You can debug an application in the usual way.  Here is an example for the
+:ref:`hello_world` application.
 
-#. Go to the application's folder:.
-
-   .. code-block:: console
-
-      $ cd $ZEPHYR_BASE/samples/hello_world
-
-#. Verify the final binary is in :file:`outdir/quark_d2000_crb/zephyr.elf`.
-
-#. To enable the debug process, enter:
-
-   .. code-block:: console
-
-      $ make BOARD=quark_d2000_crb debug
-
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: quark_d200_crb
+   :maybe-skip-config:
+   :goals: debug
 
 .. _Intel Website:
    http://www.intel.com/content/www/us/en/embedded/products/quark/mcu/d2000/quark-d2000-crb-user-guide.html
