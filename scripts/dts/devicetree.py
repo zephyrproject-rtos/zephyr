@@ -15,6 +15,7 @@
 # limitations under the License.
 #
 
+import os
 import sys
 import pprint
 
@@ -179,9 +180,23 @@ def parse_node(line, fd):
 
   return node
 
-def parse_file(fd, ignore_dts_version=False):
+def open_with_include_path(file_path, mode, include_path):
+  for path in include_path:
+    try:
+      fd = open(os.path.join(path, file_path), mode)
+    except IOError:
+      continue
+
+    return fd
+
+  raise IOError("Could not find %s in %s" % (file_path, include_path))
+
+def parse_file(fd, ignore_dts_version=False, include_path=[]):
+  include_path.append(os.getcwd())
+
   nodes = {}
   has_v1_tag = False
+
   while True:
     line = fd.readline()
     if not line:
@@ -193,7 +208,7 @@ def parse_file(fd, ignore_dts_version=False):
 
     if line.startswith('/include/ '):
       tag, filename = line.split()
-      with open(filename.strip()[1:-1], "r") as new_fd:
+      with open_with_include_path(filename.strip()[1:-1], "r", include_path) as new_fd:
         nodes.update(parse_file(new_fd, True))
     elif line == '/dts-v1/;':
       has_v1_tag = True
