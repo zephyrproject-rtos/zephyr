@@ -589,10 +589,10 @@ following is the current proposal:
    the reporter.
 
 -  All security relevant issues shall trigger an automated notification
-   on the Zephyr security mailing list (security@lists.zephyrproject.org).
-   Any member of the
-   security board can then triage the severity of the issue
-   according to the `Common Vulnerability Scoring System v3.0 <CVSS_>`_
+   on the Zephyr security mailing list
+   (vulnerabilities@zephyrproject.org).  Any member of the security
+   board can then triage the severity of the issue according to the
+   `Common Vulnerability Scoring System v3.0 <CVSS_>`_
 
 -  Depending on the resulting severity score of the issue, the issue is
    prioritized and assigned to the owner of the affected module.
