@@ -168,7 +168,7 @@ def parse_property(property, fd):
   if not property.endswith(';'):
     raise SyntaxError("parse_property: missing semicolon: %s" % property)
 
-  return property[:-1].strip(), True
+  return property[:-1].strip(), {'empty': True}
 
 def build_node_name(name, addr):
   if addr is None:
