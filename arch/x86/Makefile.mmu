@@ -4,7 +4,7 @@ else
 	GENMMU_EXTRA_ARGS :=
 endif
 
-GENMMU := $(ZEPHYR_BASE)/scripts/gen_mmu.py
+GENMMU := $(ZEPHYR_BASE)/scripts/gen_mmu_x86.py
 
 OUTPUT_FORMAT ?= elf32-i386
 OUTPUT_ARCH ?= i386
