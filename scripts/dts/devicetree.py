@@ -46,8 +46,16 @@ def remove_comment(line, fd):
     out.append(line[:idx])
     line = read_until(line[idx:], fd, '*/')[-1]
 
+def remove_preprocessor_directives(line):
+  if line.startswith('# '):
+    return ''
+  return line
+
 def clean_line(line, fd):
-  return remove_comment(line, fd).strip()
+  line = remove_preprocessor_directives(line)
+  line = remove_comment(line, fd)
+  line = line.strip()
+  return line
 
 def parse_node_name(line):
   line = line[:-1]
