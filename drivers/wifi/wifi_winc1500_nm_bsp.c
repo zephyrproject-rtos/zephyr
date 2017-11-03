@@ -30,9 +30,6 @@ s8_t nm_bsp_init(void)
 {
 	isr_function = NULL;
 
-	/* Initialize chip IOs. */
-	winc1500.gpios = winc1500_configure_gpios();
-
 	/* Perform chip reset. */
 	nm_bsp_reset();
 
