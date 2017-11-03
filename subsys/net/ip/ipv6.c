@@ -273,6 +273,9 @@ static inline void nbr_free(struct net_nbr *nbr)
 bool net_ipv6_nbr_rm(struct net_if *iface, struct in6_addr *addr)
 {
 	struct net_nbr *nbr;
+#if defined(CONFIG_NET_MGMT_EVENT_INFO)
+	struct net_event_ipv6_nbr info;
+#endif
 
 	nbr = nbr_lookup(&net_neighbor.table, iface, addr);
 	if (!nbr) {
@@ -283,6 +286,16 @@ bool net_ipv6_nbr_rm(struct net_if *iface, struct in6_addr *addr)
 	net_route_del_by_nexthop(iface, addr);
 
 	nbr_free(nbr);
+
+#if defined(CONFIG_NET_MGMT_EVENT_INFO)
+	info.idx = -1;
+	net_ipaddr_copy(&info.addr, addr);
+	net_mgmt_event_notify_with_info(NET_EVENT_IPV6_NBR_DEL,
+					iface, (void *) &info,
+					sizeof(struct net_event_ipv6_nbr));
+#else
+	net_mgmt_event_notify(NET_EVENT_IPV6_NBR_DEL, iface);
+#endif
 
 	return true;
 }
@@ -447,6 +460,9 @@ struct net_nbr *net_ipv6_nbr_add(struct net_if *iface,
 				 enum net_ipv6_nbr_state state)
 {
 	struct net_nbr *nbr;
+#if defined(CONFIG_NET_MGMT_EVENT_INFO)
+	struct net_event_ipv6_nbr info;
+#endif
 
 	nbr = nbr_lookup(&net_neighbor.table, iface, addr);
 	if (!nbr) {
@@ -491,6 +507,16 @@ struct net_nbr *net_ipv6_nbr_add(struct net_if *iface,
 		net_sprint_ipv6_addr(addr),
 		net_sprint_ll_addr(lladdr->addr, lladdr->len),
 		nbr->iface);
+
+#if defined(CONFIG_NET_MGMT_EVENT_INFO)
+	info.idx = nbr->idx;
+	net_ipaddr_copy(&info.addr, addr);
+	net_mgmt_event_notify_with_info(NET_EVENT_IPV6_NBR_ADD,
+					iface, (void *) &info,
+					sizeof(struct net_event_ipv6_nbr));
+#else
+	net_mgmt_event_notify(NET_EVENT_IPV6_NBR_ADD, iface);
+#endif
 
 	return nbr;
 }
