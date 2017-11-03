@@ -17,6 +17,7 @@
 #define TEST_MGMT_REQUEST		0x17AB1234
 #define TEST_MGMT_EVENT			0x97AB1234
 #define TEST_MGMT_EVENT_UNHANDLED	0x97AB4321
+#define TEST_MGMT_EVENT_INFO_SIZE	sizeof("mgmt event info")
 
 /* Notifier infra */
 static u32_t event2throw;
@@ -35,7 +36,7 @@ static struct net_mgmt_event_callback rx_cb;
 static struct in6_addr addr6 = { { { 0xfe, 0x80, 0, 0, 0, 0, 0, 0,
 				     0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 
-static char info_data[CONFIG_NET_MGMT_EVENT_INFO_SIZE] = "mgmt event info";
+static char info_data[TEST_MGMT_EVENT_INFO_SIZE] = "mgmt event info";
 
 static int test_mgmt_request(u32_t mgmt_request,
 			     struct net_if *iface, void *data, u32_t len)
@@ -110,7 +111,7 @@ static void thrower_thread(void)
 				net_mgmt_event_notify_with_info(
 					event2throw, net_if_get_default(),
 					info_data,
-					CONFIG_NET_MGMT_EVENT_INFO_SIZE);
+					TEST_MGMT_EVENT_INFO_SIZE);
 			} else {
 				net_mgmt_event_notify(event2throw,
 						      net_if_get_default());
@@ -127,7 +128,7 @@ static void receiver_cb(struct net_mgmt_event_callback *cb,
 
 	if (with_info && cb->info) {
 		if (memcmp(info_data, cb->info,
-			   CONFIG_NET_MGMT_EVENT_INFO_SIZE)) {
+			   TEST_MGMT_EVENT_INFO_SIZE)) {
 			rx_calls = (u32_t) -1;
 			return;
 		}

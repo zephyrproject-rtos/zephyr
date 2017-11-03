@@ -16,6 +16,8 @@
 extern "C" {
 #endif
 
+#include <net/net_ip.h>
+
 /**
  * @addtogroup net_mgmt
  * @{
@@ -137,6 +139,57 @@ enum net_event_ipv4_cmd {
 
 #define NET_EVENT_IPV4_ROUTER_ADD				\
 	(_NET_EVENT_IPV4_BASE |	NET_EVENT_IPV4_CMD_ROUTER_ADD)
+
+#ifdef CONFIG_NET_MGMT_EVENT_INFO
+/**
+ * @brief Network Management event information structure
+ * Used to pass information on network events like
+ *   NET_EVENT_IPV6_ADDR_ADD,
+ *   NET_EVENT_IPV6_ADDR_DEL,
+ *   NET_EVENT_IPV6_MADDR_ADD and
+ *   NET_EVENT_IPV6_MADDR_DEL
+ * when CONFIG_NET_MGMT_EVENT_INFO enabled and event generator pass the
+ * information.
+ */
+struct net_event_ipv6_addr {
+	struct in6_addr addr;
+};
+
+/**
+ * @brief Network Management event information structure
+ * Used to pass information on network events like
+ *   NET_EVENT_IPV6_NBR_ADD and
+ *   NET_EVENT_IPV6_NBR_DEL
+ * when CONFIG_NET_MGMT_EVENT_INFO enabled and event generator pass the
+ * information.
+ * @Note: idx will be '-1' in case of NET_EVENT_IPV6_NBR_DEL event.
+ */
+struct net_event_ipv6_nbr {
+	struct in6_addr addr;
+	int idx; /* NBR index*/
+};
+
+/**
+ * @brief Network Management event information structure
+ * Used to pass information on network events like
+ *   NET_EVENT_IPV6_ROUTE_ADD and
+ *   NET_EVENT_IPV6_ROUTE_DEL
+ * when CONFIG_NET_MGMT_EVENT_INFO enabled and event generator pass the
+ * information.
+ */
+struct net_event_ipv6_route {
+	struct in6_addr nexthop;
+	struct in6_addr addr; /* addr/prefix */
+	u8_t prefix_len;
+};
+
+/* Maximum size of "struct net_event_ipv6_addr" or
+ * "struct net_event_ipv6_nbr" or "struct net_event_ipv6_route".
+ * NOTE: Update comments here and calculate which struct occupies max size.
+ */
+#define NET_EVENT_INFO_MAX_SIZE sizeof(struct net_event_ipv6_route)
+
+#endif
 
 #ifdef __cplusplus
 }

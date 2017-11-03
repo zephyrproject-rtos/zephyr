@@ -55,16 +55,7 @@ config NET_MGMT_EVENT_INFO
 	help
 	Event notifier will be able to provide information to an event,
 	and listeners will then be able to get it. Such information depends
-	on the type of event and can be an IP address, etc...
-
-config NET_MGMT_EVENT_INFO_SIZE
-	int "Maximum size in bytes of event information"
-	default 17
-	depends on NET_MGMT_EVENT_INFO
-	help
-	Maximum size of the information - whatever it is - that can be passed
-	along with an event. Note this will grow each entries in the event
-	queue. Do not touch this unless you know what you are doing.
+	on the type of event.
 
 config NET_DEBUG_MGMT_EVENT
 	bool "Enable debug output on Net MGMT event core"
