@@ -46,22 +46,6 @@
 /* BOS descriptor type */
 #define DESCRIPTOR_TYPE_BOS     0x0f
 
-/* Number of interfaces */
-#define WEBUSB_NUM_ITF         0x03
-
-/* Number of Endpoints in the custom interface */
-#define WEBUSB_NUM_EP          0x02
-#define WEBUSB_ENDP_OUT        0x02
-#define WEBUSB_ENDP_IN         0x83
-
-/* Size in bytes of the configuration sent to
- * the Host on GetConfiguration() request
- * For Communication Device: CONF + (3 x ITF) +
- * (5 x EP) + HF + CMF + ACMF + UF -> 67 bytes
- */
-#define WEBUSB_SERIAL_CONF_SIZE   (USB_CONFIGURATION_DESC_SIZE + \
-	(3 * USB_INTERFACE_DESC_SIZE) + (5 * USB_ENDPOINT_DESC_SIZE) + 19)
-
 /* WebUSB enabled Custom Class driver port name */
 #define WEBUSB_SERIAL_PORT_NAME "WSERIAL"
 
