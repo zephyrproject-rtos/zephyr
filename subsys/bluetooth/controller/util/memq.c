@@ -38,7 +38,7 @@ void *memq_peek(void *tail, void *head, void **mem)
 
 	/* if head and tail are equal, then queue empty */
 	if (head == tail) {
-		return 0;
+		return NULL;
 	}
 
 	/* pick the head link node */
@@ -58,6 +58,9 @@ void *memq_dequeue(void *tail, void **head, void **mem)
 
 	/* use memq peek to get the link and mem */
 	link = memq_peek(tail, *head, mem);
+	if (!link) {
+		return link;
+	}
 
 	/* increment the head to next link node */
 	*head = *((void **)link);
