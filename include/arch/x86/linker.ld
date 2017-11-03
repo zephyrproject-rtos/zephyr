@@ -312,7 +312,7 @@ SECTIONS
 	/* Memory management unit*/
 	SECTION_PROLOGUE(mmulist, (OPTIONAL),)
 	{
-	/* get size of the mmu lists needed for gen_mmu.py*/
+	/* get size of the mmu lists needed for gen_mmu_x86.py*/
 	LONG((__MMU_LIST_END__ - __MMU_LIST_START__) / __MMU_REGION_SIZEOF)
 	/* Get the start of mmu tables in data section so that the address
 	 * of the page tables can be calculated.
