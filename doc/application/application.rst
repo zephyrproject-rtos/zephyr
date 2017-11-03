@@ -663,7 +663,8 @@ the build system to rebuild the entire application from scratch with the
 following procedure:
 
 
-#. Navigate to the build directory :file:`~/app/build`.
+#. Open a terminal console on your host computer, and navigate to the
+   build directory :file:`~/app/build`.
 
 #. Enter the following command to delete the application's generated
    files, except for the :file:`.config` file that contains the
@@ -683,7 +684,7 @@ following procedure:
        $ ninja pristine
 
 #. Rebuild the application normally following the steps specified
-   in `Build an Application`_ above.
+   in :ref:`build_an_application` above.
 
 .. _application_run:
 
