@@ -90,12 +90,12 @@ static s8_t spi_rw(u8_t *mosi, u8_t *miso, u16_t size)
 
 s8_t nm_bus_init(void *pvinit)
 {
-#ifdef CONF_WINC_USE_I2C
-	/* Not implemented */
-#elif defined CONF_WINC_USE_SPI
 	/* configure GPIOs */
 	winc1500.gpios = winc1500_configure_gpios();
 
+#ifdef CONF_WINC_USE_I2C
+	/* Not implemented */
+#elif defined CONF_WINC_USE_SPI
 	/* setup SPI device */
 	winc1500.spi = device_get_binding(CONFIG_WIFI_WINC1500_SPI_DRV_NAME);
 	if (!winc1500.spi) {
