@@ -22,7 +22,7 @@ struct mgmt_event_entry {
 	struct net_if *iface;
 
 #ifdef CONFIG_NET_MGMT_EVENT_INFO
-	u8_t info[CONFIG_NET_MGMT_EVENT_INFO_SIZE];
+	u8_t info[NET_EVENT_INFO_MAX_SIZE];
 	size_t info_length;
 #endif /* CONFIG_NET_MGMT_EVENT_INFO */
 };
@@ -57,12 +57,12 @@ static inline void mgmt_push_event(u32_t mgmt_event, struct net_if *iface,
 	events[in_event].info_length = 0;
 
 	if (info && length) {
-		if (length <= CONFIG_NET_MGMT_EVENT_INFO_SIZE) {
+		if (length <= NET_EVENT_INFO_MAX_SIZE) {
 			memcpy(events[in_event].info, info, length);
 			events[in_event].info_length = length;
 		} else {
 			NET_ERR("Event info length %u > max size %u",
-				length, CONFIG_NET_MGMT_EVENT_INFO_SIZE);
+				length, NET_EVENT_INFO_MAX_SIZE);
 		}
 	}
 
