@@ -860,9 +860,8 @@ number of files the developer can group them into sub-directories
 under :file:`src`, to whatever depth is needed.
 
 Application-specific source code should not use symbol name prefixes that have
-been reserved by the kernel for its own use. For more information, see
-
-`Naming Conventions
+been reserved by the kernel for its own use. For more information, see `Naming
+Conventions
 <https://github.com/zephyrproject-rtos/zephyr/wiki/Naming-Conventions>`_.
 
 Support for building third-party library code
