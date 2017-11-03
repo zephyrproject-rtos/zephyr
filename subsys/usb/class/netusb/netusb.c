@@ -35,7 +35,7 @@ static int netusb_send(struct net_if *iface, struct net_pkt *pkt)
 
 	switch (netusb.conf) {
 	case 1:
-		if (!ecm_send(pkt)) {
+		if (!netusb.func->send_pkt(pkt)) {
 			net_pkt_unref(pkt);
 			return 0;
 		}
@@ -154,7 +154,7 @@ static int netusb_class_handler(struct usb_setup_packet *setup,
 
 	switch (netusb.conf) {
 	case 1:
-		return ecm_class_handler(setup, len, data);
+		return netusb.func->class_handler(setup, len, data);
 	default:
 		SYS_LOG_ERR("Unconfigured device, conf %u", netusb.conf);
 		return -ENODEV;
