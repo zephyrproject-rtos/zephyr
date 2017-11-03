@@ -18,6 +18,7 @@
 import os
 import sys
 import pprint
+import collections
 
 def read_until(line, fd, end):
   out = [line]
@@ -191,6 +192,14 @@ def open_with_include_path(file_path, mode, include_path):
 
   raise IOError("Could not find %s in %s" % (file_path, include_path))
 
+def update_node(node, new_node):
+  for k, v in new_node.items():
+    if isinstance(v, collections.Mapping):
+      node[k] = update_node(node.get(k, {}), v)
+    else:
+      node[k] = v
+  return node
+
 def parse_file(fd, ignore_dts_version=False, include_path=[]):
   include_path.append(os.getcwd())
 
@@ -229,7 +238,7 @@ def parse_file(fd, ignore_dts_version=False, include_path=[]):
         raise SyntaxError("parse_file: Missing /dts-v1/ tag")
 
       new_node = parse_node(line, fd)
-      nodes[new_node['name']] = new_node
+      nodes[new_node['name']] = update_node(nodes.get(new_node['name'], {}), new_node)
     else:
       raise SyntaxError("parse_file: Couldn't understand the line: %s" % line)
   return nodes
