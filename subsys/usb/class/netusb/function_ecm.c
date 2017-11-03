@@ -286,17 +286,10 @@ static struct usb_ep_cfg_data ecm_ep_data[] = {
 	},
 };
 
-static struct netusb_function ecm_function = {
+struct netusb_function ecm_function = {
 	.connect_media = NULL,
 	.class_handler = ecm_class_handler,
 	.send_pkt = ecm_send,
 	.num_ep = ARRAY_SIZE(ecm_ep_data),
 	.ep = ecm_ep_data,
 };
-
-struct netusb_function *ecm_register_function(struct net_if *iface, u8_t in)
-{
-	ecm.iface = iface;
-
-	return &ecm_function;
-}

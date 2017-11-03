@@ -21,7 +21,6 @@
 #include "../../usb_descriptor.h"
 #include "../../composite.h"
 #include "netusb.h"
-#include "function_ecm.h"
 
 static struct __netusb {
 	struct net_if *iface;
@@ -238,20 +237,18 @@ static void netusb_init(struct net_if *iface)
 	net_if_down(iface);
 
 #if defined(CONFIG_USB_DEVICE_NETWORK_ECM)
-	netusb.func = ecm_register_function(iface, CONFIG_CDC_ECM_IN_EP_ADDR);
+	netusb.func = &ecm_function;
 #endif
 
 	netusb_config.endpoint = netusb.func->ep;
 	netusb_config.num_endpoints = netusb.func->num_ep;
 
 #if defined(CONFIG_USB_COMPOSITE_DEVICE)
-#if defined(CONFIG_USB_DEVICE_NETWORK_ECM)
-	ret = composite_add_function(&netusb_config, FIRST_IFACE_CDC_ECM);
+	ret = composite_add_function(&netusb_config, NETUSB_IFACE_IDX);
 	if (ret < 0) {
 		SYS_LOG_ERR("Failed to add CDC ECM function");
 		return;
 	}
-#endif /* CONFIG_USB_DEVICE_NETWORK_ECM */
 #else /* CONFIG_USB_COMPOSITE_DEVICE */
 	netusb_config.interface.payload_data = interface_data;
 	netusb_config.usb_device_description = usb_get_device_descriptor();
