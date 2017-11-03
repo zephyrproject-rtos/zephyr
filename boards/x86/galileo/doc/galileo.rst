@@ -232,18 +232,19 @@ application image on a Galileo board. The following instructions apply to both
 devices.
 
 
-#. Set the board configuration to Galileo by changing the
-   :command:`make` command that is executed in the app directory
-   (e.g. :file:`$ZEPHYR_BASE/samples/hello_world`) to:
+#. Build a Zephyr application; for instance, to build the ``hello_world``
+   application:
 
-   .. code-block:: console
-
-      $ make BOARD=galileo
+   .. zephyr-app-commands::
+      :zephyr-app: samples/hello_world
+      :board: galileo
+      :goals: build
 
    .. note::
-      A stripped project image file named :file:`zephyr.strip` is
-      automatically created when the project is built. This image has
-      removed debug information from the :file:`zephyr.elf` file.
+
+      A stripped project image file named :file:`zephyr.strip` is automatically
+      created in the build directory after the application is built. This image
+      has removed debug information from the :file:`zephyr.elf` file.
 
 #. Use one of these cables for serial output:
 
