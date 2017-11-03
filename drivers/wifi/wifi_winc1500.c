@@ -591,6 +591,47 @@ static struct net_offload winc1500_offload = {
 	.put		= winc1500_put,
 };
 
+static void handle_wifi_con_state_changed(void *pvMsg)
+{
+	tstrM2mWifiStateChanged *pstrWifiState =
+		(tstrM2mWifiStateChanged *)pvMsg;
+
+	switch (pstrWifiState->u8CurrState) {
+	case M2M_WIFI_DISCONNECTED:
+		/* TODO status disconnected */
+		break;
+	case M2M_WIFI_CONNECTED:
+		/* TODO status connected */
+		break;
+	case M2M_WIFI_UNDEF:
+		/* TODO status undefined*/
+		break;
+	}
+}
+
+static void handle_wifi_dhcp_conf(void *pvMsg)
+{
+	u8_t *pu8IPAddress = (u8_t *)pvMsg;
+	struct in_addr addr;
+	u8_t i;
+
+	/* Connected and got IP address*/
+	SYS_LOG_INF("Wi-Fi connected, IP is %u.%u.%u.%u",
+		    pu8IPAddress[0], pu8IPAddress[1],
+		    pu8IPAddress[2], pu8IPAddress[3]);
+
+	/* TODO at this point the standby mode should be enable
+	 * status = WiFi connected IP assigned
+	 */
+	for (i = 0; i < 4; i++) {
+		addr.s4_addr[i] = pu8IPAddress[i];
+	}
+
+	/* TODO fill in net mask, gateway and lease time */
+
+	net_if_ipv4_addr_add(w1500_data.iface, &addr, NET_ADDR_DHCP, 0);
+}
+
 static void winc1500_wifi_cb(u8_t message_type, void *pvMsg)
 {
 	SYS_LOG_INF("Msg Type %d %s",
@@ -598,54 +639,151 @@ static void winc1500_wifi_cb(u8_t message_type, void *pvMsg)
 
 	switch (message_type) {
 	case M2M_WIFI_RESP_CON_STATE_CHANGED:
-	{
-		tstrM2mWifiStateChanged *pstrWifiState =
-			(tstrM2mWifiStateChanged *)pvMsg;
-
-		switch (pstrWifiState->u8CurrState) {
-		case M2M_WIFI_DISCONNECTED:
-			/* TODO status disconnected */
-			break;
-		case M2M_WIFI_CONNECTED:
-			/* TODO status connected */
-			break;
-		case M2M_WIFI_UNDEF:
-			/* TODO status undefined*/
-			break;
-		}
-	}
-
-	break;
-
+		handle_wifi_con_state_changed(pvMsg);
+		break;
 	case M2M_WIFI_REQ_DHCP_CONF:
-	{
-		u8_t *pu8IPAddress = (u8_t *)pvMsg;
-		struct in_addr addr;
-		u8_t i;
-
-		/* Connected and got IP address*/
-		SYS_LOG_INF("Wi-Fi connected, IP is %u.%u.%u.%u",
-			    pu8IPAddress[0], pu8IPAddress[1],
-			    pu8IPAddress[2], pu8IPAddress[3]);
-		/* TODO at this point the standby mode should be enable
-		 * status = WiFi connected IP assigned
-		 */
-		for (i = 0; i < 4; i++) {
-			addr.s4_addr[i] = pu8IPAddress[i];
-		}
-
-		/* TODO fill in net mask, gateway and lease time */
-
-		net_if_ipv4_addr_add(w1500_data.iface,
-				     &addr, NET_ADDR_DHCP, 0);
-	}
-
-	break;
-
+		handle_wifi_dhcp_conf(pvMsg);
+		break;
 	default:
 		break;
 	}
 
+}
+
+static void handle_socket_msg_connect(struct socket_data *sd, void *pvMsg)
+{
+	tstrSocketConnectMsg *strConnMsg = (tstrSocketConnectMsg *)pvMsg;
+
+	SYS_LOG_ERR("CONNECT: socket %d error %d",
+		    strConnMsg->sock, strConnMsg->s8Error);
+
+	if (sd->connect_cb) {
+		sd->connect_cb(sd->context,
+			       strConnMsg->s8Error,
+			       sd->connect_user_data);
+	}
+
+	sd->ret_code = strConnMsg->s8Error;
+}
+
+
+static bool handle_socket_msg_recv(SOCKET sock,
+				   struct socket_data *sd, void *pvMsg)
+{
+	tstrSocketRecvMsg *pstrRx = (tstrSocketRecvMsg *)pvMsg;
+
+	if ((pstrRx->pu8Buffer != NULL) && (pstrRx->s16BufferSize > 0)) {
+
+		net_buf_add(sd->pkt_buf, pstrRx->s16BufferSize);
+
+		net_pkt_set_appdata(sd->rx_pkt, sd->pkt_buf->data);
+		net_pkt_set_appdatalen(sd->rx_pkt, pstrRx->s16BufferSize);
+
+		if (sd->recv_cb) {
+			sd->recv_cb(sd->context,
+				    sd->rx_pkt,
+				    0,
+				    sd->recv_user_data);
+			}
+	} else if (pstrRx->pu8Buffer == NULL) {
+		if (pstrRx->s16BufferSize == SOCK_ERR_CONN_ABORTED) {
+			net_pkt_unref(sd->rx_pkt);
+			return false;
+		}
+	}
+
+	if (prepare_pkt(sd)) {
+		SYS_LOG_ERR("Could not reserve packet buffer");
+		return false;
+	}
+
+	recv(sock, sd->pkt_buf->data,
+	     CONFIG_WIFI_WINC1500_MAX_PACKET_SIZE, K_NO_WAIT);
+
+	return true;
+}
+
+static void handle_socket_msg_bind(struct socket_data *sd, void *pvMsg)
+{
+	tstrSocketBindMsg *bind_msg = (tstrSocketBindMsg *)pvMsg;
+
+	/* Holding a value of ZERO for a successful bind or otherwise
+	 * a negative error code corresponding to the type of error.
+	 */
+
+	if (bind_msg->status) {
+		SYS_LOG_ERR("BIND: error %d %s",
+			    bind_msg->status,
+			    socket_message_to_string(bind_msg->status));
+		sd->ret_code = bind_msg->status;
+	}
+}
+
+static void handle_socket_msg_listen(struct socket_data *sd, void *pvMsg)
+{
+	tstrSocketListenMsg *listen_msg = (tstrSocketListenMsg *)pvMsg;
+
+	/* Holding a value of ZERO for a successful listen or otherwise
+	 * a negative error code corresponding to the type of error.
+	 */
+
+	if (listen_msg->status) {
+		SYS_LOG_ERR("winc1500_socket_cb:LISTEN: error %d %s",
+			    listen_msg->status,
+			    socket_message_to_string(listen_msg->status));
+		sd->ret_code = listen_msg->status;
+	}
+}
+
+static void handle_socket_msg_accept(struct socket_data *sd, void *pvMsg)
+{
+	tstrSocketAcceptMsg *accept_msg = (tstrSocketAcceptMsg *)pvMsg;
+
+	/* On a successful accept operation, the return information is
+	 * the socket ID for the accepted connection with the remote peer.
+	 * Otherwise a negative error code is returned to indicate failure
+	 * of the accept operation.
+	 */
+
+	SYS_LOG_INF("ACCEPT: from %d.%d.%d.%d:%d, new socket is %d",
+		    accept_msg->strAddr.sin_addr.s4_addr[0],
+		    accept_msg->strAddr.sin_addr.s4_addr[1],
+		    accept_msg->strAddr.sin_addr.s4_addr[2],
+		    accept_msg->strAddr.sin_addr.s4_addr[3],
+		    ntohs(accept_msg->strAddr.sin_port),
+		    accept_msg->sock);
+
+	if (accept_msg->sock < 0) {
+		SYS_LOG_ERR("ACCEPT: error %d %s",
+			    accept_msg->sock,
+			    socket_message_to_string(accept_msg->sock));
+		sd->ret_code = accept_msg->sock;
+	}
+
+	if (sd->accept_cb) {
+		struct socket_data *a_sd;
+		int ret;
+
+		a_sd = &w1500_data.socket_data[accept_msg->sock];
+
+		memcpy(a_sd, sd, sizeof(struct socket_data));
+
+		ret = net_context_get(AF_INET, SOCK_STREAM,
+				      IPPROTO_TCP, &a_sd->context);
+		if (ret < 0) {
+			SYS_LOG_ERR("Cannot get new net context for ACCEPT");
+		} else {
+			a_sd->context->user_data =
+				(void *)((int)accept_msg->sock);
+
+			sd->accept_cb(a_sd->context,
+				      (struct sockaddr *)&accept_msg->strAddr,
+				      sizeof(struct sockaddr_in),
+				      (accept_msg->sock > 0) ?
+				      0 : accept_msg->sock,
+				      sd->accept_user_data);
+		}
+	}
 }
 
 static void winc1500_socket_cb(SOCKET sock, uint8 message, void *pvMsg)
@@ -661,156 +799,32 @@ static void winc1500_socket_cb(SOCKET sock, uint8 message, void *pvMsg)
 
 	switch (message) {
 	case SOCKET_MSG_CONNECT:
-	{
-		tstrSocketConnectMsg *strConnMsg =
-			(tstrSocketConnectMsg *)pvMsg;
-
-		SYS_LOG_ERR("CONNECT: socket %d error %d",
-			    strConnMsg->sock, strConnMsg->s8Error);
-
-		if (sd->connect_cb) {
-			sd->connect_cb(sd->context,
-				       strConnMsg->s8Error,
-				       sd->connect_user_data);
-		}
-
-		sd->ret_code = strConnMsg->s8Error;
-	}
+		handle_socket_msg_connect(sd, pvMsg);
 		k_sem_give(&sd->wait_sem);
-		break;
 
+		break;
 	case SOCKET_MSG_SEND:
 		break;
-
 	case SOCKET_MSG_RECV:
-	{
-		tstrSocketRecvMsg *pstrRx = (tstrSocketRecvMsg *)pvMsg;
-
-		if ((pstrRx->pu8Buffer != NULL) &&
-		    (pstrRx->s16BufferSize > 0)) {
-
-			net_buf_add(sd->pkt_buf,
-				    pstrRx->s16BufferSize);
-
-			net_pkt_set_appdata(sd->rx_pkt,
-					    sd->pkt_buf->data);
-			net_pkt_set_appdatalen(sd->rx_pkt,
-					       pstrRx->s16BufferSize);
-
-			if (sd->recv_cb) {
-				sd->recv_cb(sd->context,
-					    sd->rx_pkt,
-					    0,
-					    sd->recv_user_data);
-			}
-		} else if (pstrRx->pu8Buffer == NULL) {
-			if (pstrRx->s16BufferSize == SOCK_ERR_CONN_ABORTED) {
-				net_pkt_unref(sd->rx_pkt);
-				return;
-			}
-		}
-
-		if (prepare_pkt(&w1500_data.socket_data[sock])) {
-			SYS_LOG_ERR("Could not reserve packet buffer");
+		if (!handle_socket_msg_recv(sock, sd, pvMsg)) {
 			return;
 		}
 
-		recv(sock, sd->pkt_buf->data,
-		     CONFIG_WIFI_WINC1500_MAX_PACKET_SIZE, K_NO_WAIT);
-	}
 		break;
 	case SOCKET_MSG_BIND:
-	{
-		/* The result of the bind operation.
-		 * Holding a value of ZERO for a successful
-		 * bind or otherwise a negative error code
-		 * corresponding to the type of error.
-		 */
-		tstrSocketBindMsg *bind_msg = (tstrSocketBindMsg *)pvMsg;
-
-		if (bind_msg->status) {
-			SYS_LOG_ERR("BIND: error %d %s",
-				    bind_msg->status,
-				    socket_message_to_string(bind_msg->status));
-			sd->ret_code = bind_msg->status;
-		}
-	}
+		handle_socket_msg_bind(sd, pvMsg);
 		k_sem_give(&sd->wait_sem);
+
 		break;
 	case SOCKET_MSG_LISTEN:
-	{
-		/* Holding a value of ZERO for a successful listen or
-		 * otherwise a negative error code corresponding to
-		 * the type of error.
-		 */
-		tstrSocketListenMsg *listen_msg = (tstrSocketListenMsg *)pvMsg;
-
-		if (listen_msg->status) {
-			SYS_LOG_ERR("winc1500_socket_cb:LISTEN: error %d %s\n",
-				    listen_msg->status,
-				    socket_message_to_string(listen_msg->status));
-			sd->ret_code = listen_msg->status;
-		}
-	}
+		handle_socket_msg_listen(sd, pvMsg);
 		k_sem_give(&sd->wait_sem);
+
 		break;
 	case SOCKET_MSG_ACCEPT:
-	{
-		/* sock
-		 *   On a successful accept operation, the return information
-		 *   is the socket ID for the accepted connection with the
-		 *   remote peer.
-		 *   Otherwise a negative error code is returned to indicate
-		 *   failure of the accept operation.
-		 * strAddr;
-		 *   Socket address structure for the remote peer.
-		 */
-		tstrSocketAcceptMsg *accept_msg = (tstrSocketAcceptMsg *)pvMsg;
-
-		SYS_LOG_INF("ACCEPT:"
-			    "from %d.%d.%d.%d:%d, new socket is %d",
-			    accept_msg->strAddr.sin_addr.s4_addr[0],
-			    accept_msg->strAddr.sin_addr.s4_addr[1],
-			    accept_msg->strAddr.sin_addr.s4_addr[2],
-			    accept_msg->strAddr.sin_addr.s4_addr[3],
-			    ntohs(accept_msg->strAddr.sin_port),
-			    accept_msg->sock);
-
-		if (accept_msg->sock < 0) {
-			SYS_LOG_ERR("ACCEPT: error %d %s",
-				    accept_msg->sock,
-				    socket_message_to_string(accept_msg->sock));
-			sd->ret_code = accept_msg->sock;
-		}
-
-		if (sd->accept_cb) {
-			struct socket_data *a_sd;
-			int ret;
-
-			a_sd = &w1500_data.socket_data[accept_msg->sock];
-
-			memcpy(a_sd, sd, sizeof(struct socket_data));
-
-			ret = net_context_get(AF_INET, SOCK_STREAM,
-					      IPPROTO_TCP, &a_sd->context);
-			if (ret < 0) {
-				SYS_LOG_ERR("Cannot get new network"
-					    "context for ACCEPT");
-			} else {
-				a_sd->context->user_data =
-					(void *)((int)accept_msg->sock);
-
-				sd->accept_cb(
-					a_sd->context,
-					(struct sockaddr *)&accept_msg->strAddr,
-					sizeof(struct sockaddr_in),
-					(accept_msg->sock > 0) ?
-					0 :accept_msg->sock,
-					sd->accept_user_data);
-			}
-		}
-	}
+		handle_socket_msg_accept(sd, pvMsg);
 		k_sem_give(&sd->wait_sem);
+
 		break;
 	}
 }
