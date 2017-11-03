@@ -50,6 +50,16 @@ static int netusb_send(struct net_if *iface, struct net_pkt *pkt)
 	return -ENODEV;
 }
 
+void netusb_recv(struct net_pkt *pkt)
+{
+	SYS_LOG_DBG("Recv pkt, len %u", net_pkt_get_len(pkt));
+
+	if (net_recv_data(netusb.iface, pkt)) {
+		SYS_LOG_ERR("Queueing packet %p failed", pkt);
+		net_pkt_unref(pkt);
+	}
+}
+
 static struct usb_ep_cfg_data netusb_ep_data[] = {
 	/* Configuration ECM */
 	{
