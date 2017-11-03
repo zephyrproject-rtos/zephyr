@@ -714,7 +714,7 @@ static int do_ccm_encrypt_mac(struct cipher_ctx *ctx,
 }
 
 static int do_ccm_decrypt_auth(struct cipher_ctx *ctx,
-			   struct cipher_aead_pkt *aead_op, u8_t *nonce)
+			       struct cipher_aead_pkt *aead_op, u8_t *nonce)
 {
 	struct device *dev = ctx->device;
 	struct ataes132a_driver_state *state = ctx->drv_sessn_state;
@@ -779,7 +779,8 @@ static int do_block(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
 	return ataes132a_aes_ecb_block(dev, key_id, pkt);
 }
 
-int ataes132a_session_free(struct device *dev, struct cipher_ctx *session)
+static int ataes132a_session_free(struct device *dev,
+				  struct cipher_ctx *session)
 {
 	struct ataes132a_driver_state *state = session->drv_sessn_state;
 
@@ -790,9 +791,9 @@ int ataes132a_session_free(struct device *dev, struct cipher_ctx *session)
 	return 0;
 }
 
-int ataes132a_session_setup(struct device *dev, struct cipher_ctx *ctx,
-			     enum cipher_algo algo, enum cipher_mode mode,
-			     enum cipher_op op_type)
+static int ataes132a_session_setup(struct device *dev, struct cipher_ctx *ctx,
+				   enum cipher_algo algo, enum cipher_mode mode,
+				   enum cipher_op op_type)
 {
 	u8_t key_id = *((u8_t *)ctx->key.handle);
 	struct ataes132a_device_data *data = dev->driver_data;
@@ -874,7 +875,7 @@ int ataes132a_session_setup(struct device *dev, struct cipher_ctx *ctx,
 	return 0;
 }
 
-int ataes132a_query_caps(struct device *dev)
+static int ataes132a_query_caps(struct device *dev)
 {
 	return (CAP_OPAQUE_KEY_HNDL | CAP_SEPARATE_IO_BUFS |
 		CAP_SYNC_OPS | CAP_AUTONONCE);
