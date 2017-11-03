@@ -38,7 +38,8 @@ struct ecm {
 /* Pointer to pkt assembling at the moment */
 struct net_pkt *in_pkt;
 
-int ecm_class_handler(struct usb_setup_packet *setup, s32_t *len, u8_t **data)
+static int ecm_class_handler(struct usb_setup_packet *setup, s32_t *len,
+			     u8_t **data)
 {
 	SYS_LOG_DBG("");
 
@@ -221,7 +222,7 @@ static int append_bytes(u8_t *out_buf, u16_t buf_len, u8_t *data,
 	return remaining;
 }
 
-int ecm_send(struct net_pkt *pkt)
+static int ecm_send(struct net_pkt *pkt)
 {
 	u8_t send_buf[CONFIG_CDC_ECM_BULK_EP_MPS];
 	int remaining = sizeof(send_buf);
@@ -271,6 +272,8 @@ int ecm_send(struct net_pkt *pkt)
 
 static struct netusb_function ecm_function = {
 	.connect_media = NULL,
+	.class_handler = ecm_class_handler,
+	.send_pkt = ecm_send,
 };
 
 struct netusb_function *ecm_register_function(struct net_if *iface, u8_t in)
