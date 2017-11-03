@@ -1,0 +1,4 @@
+tests:
+  test:
+    platform_whitelist: intel_s1000_crb
+    tags: boards
