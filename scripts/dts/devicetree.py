@@ -154,7 +154,6 @@ def parse_node(line, fd):
 
   node = {
     'label': label,
-    'type': type,
     'addr': numeric_addr,
     'children': {},
     'props': {},
@@ -227,7 +226,6 @@ def parse_file(fd, ignore_dts_version=False, include_path=[]):
       end = int(end[:-1], 16)
       label = "reserved_memory_0x%x_0x%x" % (start, end)
       nodes[label] = {
-        'type': 'memory',
         'reg': [start, end],
         'label': label,
         'addr': start,
