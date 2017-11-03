@@ -27,15 +27,11 @@
 #define USB_CDC_ECM_REQ_TYPE		0x21
 #define USB_CDC_SET_ETH_PKT_FILTER	0x43
 
-struct ecm {
-	struct net_if *iface;
-
-	/* In a case of low memory skip data to the end of the packet */
-	bool skip;
-} ecm;
-
 /* Pointer to pkt assembling at the moment */
 struct net_pkt *in_pkt;
+
+/* In a case of low memory skip data to the end of the packet */
+static bool skip;
 
 static int ecm_class_handler(struct usb_setup_packet *setup, s32_t *len,
 			     u8_t **data)
@@ -96,9 +92,9 @@ static void ecm_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 		SYS_LOG_DBG("Got frame delimeter, ECM pkt received, len %u",
 			    net_pkt_get_len(in_pkt));
 
-		if (ecm.skip) {
+		if (skip) {
 			SYS_LOG_WRN("End skipping fragments");
-			ecm.skip = false;
+			skip = false;
 
 			return;
 		}
@@ -111,12 +107,12 @@ static void ecm_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 		return;
 	}
 
-	if (ecm.skip) {
+	if (skip) {
 		SYS_LOG_WRN("Skipping %u bytes", len);
 
 		if (len < sizeof(buffer)) {
 			SYS_LOG_WRN("End skipping fragments");
-			ecm.skip = false;
+			skip = false;
 
 			return;
 		}
@@ -129,7 +125,7 @@ static void ecm_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 		pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
 		if (!pkt) {
 			SYS_LOG_ERR("Not enough memory for pkt buffer");
-			ecm.skip = true;
+			skip = true;
 			return;
 		}
 
