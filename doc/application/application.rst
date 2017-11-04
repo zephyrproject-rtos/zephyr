@@ -386,9 +386,10 @@ environment.
 The simplest way to debug an application running in QEMU is using the GNU
 Debugger and setting a local GDB server in your development system through QEMU.
 
-You will need an ELF binary image for debugging purposes.  The build system
-generates the image in the build directory.  By default, the kernel binary name
-is :file:`zephyr.elf`. The name can be changed using a Kconfig option.
+You will need an Executable and Linkable Format (ELF) binary image for
+debugging purposes.  The build system generates the image in the build
+directory.  By default, the kernel binary name is
+:file:`zephyr.elf`. The name can be changed using a Kconfig option.
 
 We will use the standard 1234 TCP port to open a :abbr:`GDB (GNU Debugger)`
 server instance. This port number can be changed for a port that best suits the
