@@ -56,8 +56,8 @@ Importing code into the Zephyr OS from other projects that use a license
 other than the Apache 2.0 license needs to be fully understood in
 context and approved by the Zephyr governing board.
 
-By carefully reviewing potential contributions and also enforcing
-`developer attestations <DCO>`_ for contributed code, we can ensure that
+By carefully reviewing potential contributions and also enforcing a
+:ref:`DCO` for contributed code, we can ensure that
 the Zephyr community can develop products with the Zephyr Project
 without concerns over patent or copyright issues.
 
