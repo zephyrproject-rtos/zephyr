@@ -514,8 +514,8 @@ build scripts like this:
 
    target_sources(app PRIVATE src/main.c)
 
-In the above code, an existing library target named ``app`` is
-configured to include the source file :file:`src/main.c`. The ``PRIVATE``
+In the above :file:`CMakeLists.txt`, an existing library target named ``app``
+is configured to include the source file :file:`src/main.c`. The ``PRIVATE``
 keyword indicates that we are modifying the internals of how the library is
 being built. Using the keyword ``PUBLIC`` would modify how other
 libraries that link with app are built. In this case, using ``PUBLIC``
