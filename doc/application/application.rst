@@ -569,13 +569,12 @@ Make sure to follow these steps in order.
 #. If your application has its own kernel configuration options, add a
    line setting the location of the Kconfig file that defines them.
 
-   **This is a somewhat advanced use case; you probably don't need this.**
+   An (unlikely) advanced use case would be if your application has its own
+   unique configuration **options** that are set differently depending on the
+   build configuration.
 
-   This applies if your application has its own unique configuration
-   **options**, which you want to set differently depending on the build
-   configuration.  If you just want to set application specific **values** for
-   existing Zephyr configuration options, refer to the :makevar:`CONF_FILE`
-   description above.
+   If you just want to set application specific **values** for existing Zephyr
+   configuration options, refer to the :makevar:`CONF_FILE` description above.
 
    For example, if you have a file named :file:`Kconfig` in the same directory
    as your application's :file:`CMakeLists.txt`, add the following line:
