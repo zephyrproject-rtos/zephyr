@@ -527,10 +527,9 @@ paths of a target library.
 Application CMakeLists.txt
 ==========================
 
-Every application must have a :file:`CMakeLists.txt` file. This
-file is the entry point, or top level, of the build
-system that builds the final :file:`zephyr.elf` image. :file:`zephyr.elf`
-contains both the application and the kernel libraries.
+Every application must have a :file:`CMakeLists.txt` file. This file is the
+entry point, or top level, of the build system. The final :file:`zephyr.elf`
+image contains both the application and the kernel libraries.
 
 This section describes some of what you can do in your :file:`CMakeLists.txt`.
 Make sure to follow these steps in order.
