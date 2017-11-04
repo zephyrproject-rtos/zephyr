@@ -500,6 +500,7 @@ set(zephyr_lnk
   ${OFFSETS_O_PATH}
   ${LINKERFLAGPREFIX},--end-group
   ${LIB_INCLUDE_DIR}
+  -L${PROJECT_BINARY_DIR}
   ${TOOLCHAIN_LIBS}
   )
 
