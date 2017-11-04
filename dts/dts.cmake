@@ -15,13 +15,35 @@ set(DTS_SOURCE ${PROJECT_SOURCE_DIR}/dts/${ARCH}/${BOARD_FAMILY}.dts)
 message(STATUS "Generating zephyr/include/generated/generated_dts_board.h")
 
 if(CONFIG_HAS_DTS)
+
+  set(DTC_INCLUDE_FLAG_FOR_SOURCE
+    -include ${DTS_SOURCE}
+    )
+
+  if(NOT DTC_OVERLAY_FILE)
+    # overlay file is not set, so try to use overlay dir instead.
+
+    set_ifndef(DTC_OVERLAY_DIR ${APPLICATION_SOURCE_DIR})
+
+    set(DTC_OVERLAY_FILE ${DTC_OVERLAY_DIR}/${BOARD_FAMILY}.overlay)
+  endif()
+
+  if(EXISTS ${DTC_OVERLAY_FILE})
+    set(DTC_INCLUDE_FLAG_FOR_OVERLAY
+      -include ${DTC_OVERLAY_FILE}
+      )
+  else()
+    unset(DTC_INCLUDE_FLAG_FOR_OVERLAY)
+  endif()
+
   # TODO: Cut down on CMake configuration time by avoiding
   # regeneration of generated_dts_board.h on every configure. How
   # challenging is this? What are the dts dependencies? We run the
   # preprocessor, and it seems to be including all kinds of
   # directories with who-knows how many header files.
 
-  # Run the C preprocessor on the .dts source file to create the
+  # Run the C preprocessor on an empty C source file that has one or
+  # more DTS source files -include'd into it to create the
   # intermediary file *.dts.pre.tmp
   execute_process(
     COMMAND ${CMAKE_C_COMPILER}
@@ -32,11 +54,13 @@ if(CONFIG_HAS_DTS)
     -isystem ${PROJECT_SOURCE_DIR}/dts/${ARCH}
     -isystem ${PROJECT_SOURCE_DIR}/dts
     -include ${AUTOCONF_H}
+    ${DTC_INCLUDE_FLAG_FOR_SOURCE}  # include the DTS source
+    ${DTC_INCLUDE_FLAG_FOR_OVERLAY} # Possibly include an overlay after the source
     -I${PROJECT_SOURCE_DIR}/dts/common
     -I${PROJECT_SOURCE_DIR}/drivers
     -undef -D__DTS__
     -P
-    -E ${DTS_SOURCE}
+    -E $ENV{ZEPHYR_BASE}/misc/empty_file.c
     -o ${BOARD_FAMILY}.dts.pre.tmp
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     RESULT_VARIABLE ret
