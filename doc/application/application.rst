@@ -520,7 +520,7 @@ keyword indicates that we are modifying the internals of how the library is
 being built. Using the keyword ``PUBLIC`` would modify how other
 libraries that link with app are built. In this case, using ``PUBLIC``
 would cause libraries that link with ``app`` to also include the
-source file :file:`src/main.c`, behaviour that we surely do not want. The
+source file :file:`src/main.c`, behavior that we surely do not want. The
 ``PUBLIC`` keyword could however be useful when modifying the include
 paths of a target library.
 
