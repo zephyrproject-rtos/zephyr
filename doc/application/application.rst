@@ -608,7 +608,7 @@ Make sure to follow these steps in order.
 
       target_sources(app PRIVATE src/main.c)
 
-Below is a simple example CMakeList.txt:
+Below is a simple example :file:`CMakeList.txt`:
 
 .. code-block:: cmake
 
