@@ -51,7 +51,7 @@ support systems:
   `Zephyr Introduction`_ and `Getting Started Guide`_.
 
 * **Releases**: Source code for Zephyr kernel releases are available at
-  https://zephyrproject.org/downloads. On this page,
+  https://zephyrproject.org/developers/#downloads. On this page,
   you'll find release information, and links to download or clone source
   code from our GitHub repository.  You'll also find links for the Zephyr
   SDK, a moderated collection of tools and libraries used to develop your

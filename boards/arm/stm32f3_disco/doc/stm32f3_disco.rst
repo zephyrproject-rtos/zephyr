@@ -108,10 +108,14 @@ For mode details please refer to `STM32F3DISCOVERY board User Manual`_.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------
-- UART_1_TX : PA9
-- UART_1_RX : PA10
+- UART_1_TX : PC4
+- UART_1_RX : PC5
 - UART_2_TX : PA2
 - UART_2_RX : PA3
+- I2C1_SCL : PB6
+- I2C1_SDA : PB7
+- I2C2_SCL : PF1
+- I2C2_SDA : PF0
 - USER_PB : PA0
 - LD3 : PE9
 - LD4 : PE8
@@ -140,13 +144,7 @@ I2C
 
 STM32F3DISCOVERY has up to 2 I2Cs. I2C1 is connected to the LSM303DLHC and is
 an ultra-compact low-power system-in-package featuring a 3D digital linear
-acceleration sensor and a 3D digital magnetic sensor. The default I2C
-mapping for Zephyr is:
-
-- I2C1_SCL : PB6
-- I2C1_SDA : PB7
-- I2C2_SCL : PF1
-- I2C2_SDA : PF0
+acceleration sensor and a 3D digital magnetic sensor.
 
 Programming and Debugging
 *************************

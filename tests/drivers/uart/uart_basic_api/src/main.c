@@ -35,7 +35,11 @@ void test_main(void)
 	shell_register_default_module("uart");
 #else
 	ztest_test_suite(uart_basic_test,
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
 			 ztest_unit_test(test_uart_fifo_fill),
+			 ztest_unit_test(test_uart_fifo_read),
+#endif
+			 ztest_unit_test(test_uart_poll_in),
 			 ztest_unit_test(test_uart_poll_out));
 	ztest_run_test_suite(uart_basic_test);
 #endif

@@ -87,21 +87,15 @@ static void beacon_complete(struct net_buf *buf, int err)
 void bt_mesh_beacon_create(struct bt_mesh_subnet *sub,
 			   struct net_buf_simple *buf)
 {
+	u8_t flags = bt_mesh_net_flags(sub);
 	struct bt_mesh_subnet_keys *keys;
-	u8_t flags;
 
 	net_buf_simple_add_u8(buf, BEACON_TYPE_SECURE);
 
 	if (sub->kr_flag) {
-		flags = BT_MESH_NET_FLAG_KR;
 		keys = &sub->keys[1];
 	} else {
-		flags = 0x00;
 		keys = &sub->keys[0];
-	}
-
-	if (bt_mesh.iv_update) {
-		flags |= BT_MESH_NET_FLAG_IVU;
 	}
 
 	net_buf_simple_add_u8(buf, flags);

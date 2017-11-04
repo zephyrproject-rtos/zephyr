@@ -263,7 +263,7 @@ static size_t oma_tlv_get(struct oma_tlv *tlv,
 	}
 
 	if (len_type == 0) {
-		tlv_len = buf[1] & 7;
+		tlv_len = buf[0] & 7;
 	} else {
 		/* read the length */
 		tlv_len = 0;
@@ -669,30 +669,12 @@ static size_t get_float64fix(struct lwm2m_input_context *in,
 
 static size_t get_bool(struct lwm2m_input_context *in, bool *value)
 {
-	struct oma_tlv tlv;
-	size_t size = oma_tlv_get(&tlv, in, false);
-	int i;
-	u8_t values[4];
-	s32_t temp = 0;
+	s64_t temp;
+	size_t size;
 
+	*value = 0;
+	size = get_number(in, &temp, 2);
 	if (size > 0) {
-		if (tlv.length > 4) {
-			SYS_LOG_ERR("invalid length: %u (>4)", tlv.length);
-			return 0;
-		}
-
-		in->frag = net_frag_read(in->frag, in->offset, &in->offset,
-					 tlv.length, values);
-		if (!in->frag && in->offset == 0xffff) {
-			/* TODO: Generate error? */
-			return 0;
-		}
-
-		/* will probably need to handle MSB as a sign bit? */
-		for (i = 0; i < tlv.length; i++) {
-			temp = (temp << 8) | values[i];
-		}
-
 		*value = (temp != 0);
 	}
 

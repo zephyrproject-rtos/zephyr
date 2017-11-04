@@ -32,7 +32,7 @@ this, check out articles such as `Why choose Apache 2.0 licensing`_ and
 `Top 10 Apache License Questions Answered`_).
 
 .. _Why choose Apache 2.0 licensing:
-   https://www.zephyrproject.org/about/faq/what-rationale-choosing-apache-20-license
+   https://www.zephyrproject.org/about/#faq
 
 .. _Top 10 Apache License Questions Answered:
    https://www.whitesourcesoftware.com/whitesource-blog/top-10-apache-license-questions-answered/

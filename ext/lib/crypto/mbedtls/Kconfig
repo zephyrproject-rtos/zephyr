@@ -87,6 +87,7 @@ config MBEDTLS_ENABLE_HEAP
 
 config MBEDTLS_HEAP_SIZE
 	int "Heap size for mbed TLS"
+	default 512
 	depends on MBEDTLS_ENABLE_HEAP
 	help
 	The mbedtls routines will use this heap if enabled.

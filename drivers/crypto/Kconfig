@@ -44,12 +44,19 @@ config SYS_LOG_CRYPTO_LEVEL
 config CRYPTO_TINYCRYPT_SHIM
 	bool "Enable TinyCrypt shim driver [EXPERIMENTAL] "
 	default n
+	select TINYCRYPT
+	select TINYCRYPT_AES
+	select TINYCRYPT_AES_CBC
+	select TINYCRYPT_AES_CTR
+	select TINYCRYPT_AES_CCM
+	select TINYCRYPT_AES_CMAC
 	help
 	Enable TinyCrypt shim layer compliant with crypto APIs.
 
 config CRYPTO_TINYCRYPT_SHIM_MAX_SESSION
 	int "Maximum of sessions TinyCrypt shim driver can handle"
 	default 2
+	depends on CRYPTO_TINYCRYPT_SHIM
 	help
 	This can be used to tweak the amount of sessions the driver
 	can handle in parallel.
@@ -65,6 +72,7 @@ config CRYPTO_MBEDTLS_SHIM
 	bool "Enable mbedTLS shim driver [EXPERIMENTAL] "
 	default n
 	select MBEDTLS
+	select MBEDTLS_BUILTIN
 	select MBEDTLS_ENABLE_HEAP
 	help
 	Enable mbedTLS shim layer compliant with crypto APIs. You will need
@@ -80,6 +88,7 @@ config CRYPTO_MBEDTLS_SHIM_DRV_NAME
 config CRYPTO_MBEDTLS_SHIM_MAX_SESSION
 	int "Maximum of sessions mbedTLS shim driver can handle"
 	default 2
+	depends on CRYPTO_MBEDTLS_SHIM
 	help
 	This can be used to tweak the amount of sessions the driver
 	can handle in parallel.

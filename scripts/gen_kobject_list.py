@@ -62,6 +62,7 @@ def kobject_to_enum(ko):
 DW_OP_addr = 0x3
 DW_OP_fbreg = 0x91
 STACK_TYPE = "_k_thread_stack_element"
+thread_counter = 0
 
 # Global type environment. Populated by pass 1.
 type_env = {}
@@ -90,12 +91,22 @@ def debug_die(die, text):
 
 class KobjectInstance:
     def __init__(self, type_obj, addr):
+        global thread_counter
+
         self.addr = addr
         self.type_obj = type_obj
 
-        # these two are set later
+        # Type name determined later since drivers needs to look at the
+        # API struct address
         self.type_name = None
-        self.data = 0
+
+        if self.type_obj.name == "k_thread":
+            # Assign an ID for this thread object, used to track its
+            # permissions to other kernel objects
+            self.data = thread_counter
+            thread_counter = thread_counter + 1
+        else:
+            self.data = 0
 
 
 class KobjectType:
@@ -587,7 +598,14 @@ def main():
         elf = ELFFile(fp)
         args.little_endian = elf.little_endian
         syms = get_symbols(elf)
+        max_threads = syms["CONFIG_MAX_THREAD_BYTES"] * 8
         objs = find_kobjects(elf, syms)
+
+    if thread_counter > max_threads:
+        sys.stderr.write("Too many thread objects (%d)\n" % thread_counter)
+        sys.stderr.write("Increase CONFIG_MAX_THREAD_BYTES to %d\n",
+                -(-thread_counter // 8));
+        sys.exit(1)
 
     with open(args.output, "w") as fp:
         write_gperf_table(fp, objs, syms["_static_kernel_objects_begin"],

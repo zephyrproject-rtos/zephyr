@@ -554,6 +554,8 @@ reset:
 	}
 
 	do {
+		struct net_buf *ip;
+
 		/* Read the request */
 		pkt = net_pkt_get_reserve(&coap_pkt_slab, 0, K_NO_WAIT);
 		if (!pkt) {
@@ -599,6 +601,24 @@ reset:
 
 		len = ret;
 		frag->len = len;
+
+		/* The COAP packet does not have IP + UDP header and the coap
+		 * packet starts immediately from first fragment. The net_pkt
+		 * contains information from which byte in net_buf the coap
+		 * packet actually starts and coap API will use that info when
+		 * parsing the packet. Because of this add a dummy IP + UDP
+		 * header before the actual coap data so that parsing succeeds.
+		 */
+		ip = net_buf_alloc(&coap_data_pool, K_NO_WAIT);
+		if (!ip) {
+			mbedtls_printf("Could not get frag from pool\n");
+			goto exit;
+		}
+
+		net_buf_add(ip, net_pkt_ip_hdr_len(pkt) +
+			    net_pkt_ipv6_ext_len(pkt) + NET_UDPH_LEN);
+		ip->frags = pkt->frags;
+		pkt->frags = ip;
 
 		ret = coap_packet_parse(&zpkt, pkt, options, opt_num);
 		if (ret) {

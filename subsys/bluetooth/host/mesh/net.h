@@ -223,12 +223,18 @@ extern struct bt_mesh_net bt_mesh;
 #define BT_MESH_NET_IVI_TX (bt_mesh.iv_index - bt_mesh.iv_update)
 #define BT_MESH_NET_IVI_RX(rx) (bt_mesh.iv_index - (rx)->old_iv)
 
+#define BT_MESH_NET_HDR_LEN 9
+
 int bt_mesh_net_keys_create(struct bt_mesh_subnet_keys *keys,
 			    const u8_t key[16]);
 
 int bt_mesh_net_create(u16_t idx, u8_t flags, const u8_t key[16],
 		       u32_t iv_index);
 
+u8_t bt_mesh_net_flags(struct bt_mesh_subnet *sub);
+
+int bt_mesh_friend_cred_get(u16_t net_idx, u16_t addr, u8_t idx,
+			    u8_t *nid, const u8_t **enc, const u8_t **priv);
 int bt_mesh_friend_cred_set(struct bt_mesh_friend_cred *cred, u8_t idx,
 			    const u8_t net_key[16]);
 void bt_mesh_friend_cred_refresh(u16_t net_idx);
@@ -250,7 +256,7 @@ int bt_mesh_net_beacon_update(struct bt_mesh_subnet *sub);
 
 void bt_mesh_rpl_reset(void);
 
-void bt_mesh_iv_update(u32_t iv_index, bool iv_update);
+bool bt_mesh_iv_update(u32_t iv_index, bool iv_update);
 
 struct bt_mesh_subnet *bt_mesh_subnet_get(u16_t net_idx);
 
@@ -268,8 +274,7 @@ int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
 		       bool new_key, bool friend_cred, bt_mesh_adv_func_t cb);
 
 int bt_mesh_net_decode(struct net_buf_simple *data, enum bt_mesh_net_if net_if,
-		       struct bt_mesh_net_rx *rx, struct net_buf_simple *buf,
-		       struct net_buf_simple_state *state);
+		       struct bt_mesh_net_rx *rx, struct net_buf_simple *buf);
 
 void bt_mesh_net_recv(struct net_buf_simple *data, s8_t rssi,
 		      enum bt_mesh_net_if net_if);

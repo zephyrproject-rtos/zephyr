@@ -1903,6 +1903,9 @@ static int lwm2m_write_handler_opaque(struct lwm2m_engine_obj_inst *obj_inst,
 						 data_ptr, len,
 						 last_pkt_block && last_block,
 						 total_size);
+			if (ret < 0) {
+				return ret;
+			}
 		}
 	}
 
@@ -2390,8 +2393,8 @@ static int handle_request(struct coap_packet *request,
 	int observe = -1; /* default to -1, 0 = ENABLE, 1 = DISABLE */
 	bool discover = false;
 	struct block_context *block_ctx = NULL;
-	size_t block_offset = 0;
 	enum coap_block_size block_size;
+	bool last_block = false;
 
 	/* setup engine context */
 	memset(&context, 0, sizeof(struct lwm2m_engine_context));
@@ -2532,9 +2535,11 @@ static int handle_request(struct coap_packet *request,
 	/* Check for block transfer */
 	r = get_option_int(in.in_cpkt, COAP_OPTION_BLOCK1);
 	if (r > 0) {
+		last_block = !GET_MORE(r);
+
 		/* RFC7252: 4.6. Message Size */
 		block_size = GET_BLOCK_SIZE(r);
-		if (GET_MORE(r) &&
+		if (!last_block &&
 		    coap_block_size_to_bytes(block_size) > in.payload_len) {
 			SYS_LOG_DBG("Trailing payload is discarded!");
 			r = -EFBIG;
@@ -2551,13 +2556,14 @@ static int handle_request(struct coap_packet *request,
 			goto error;
 		}
 
-		/* 0 will be returned if it's the last block */
-		block_offset = coap_next_block(in.in_cpkt, &block_ctx->ctx);
-	}
+		r = coap_update_from_block(in.in_cpkt, &block_ctx->ctx);
+		if (r < 0) {
+			SYS_LOG_ERR("Error from block update: %d", r);
+			goto error;
+		}
 
-	/* Handle blockwise 1 (Part 1): Set response code / free context */
-	if (block_ctx) {
-		if (block_offset > 0) {
+		/* Handle blockwise 1 (Part 1): Set response code */
+		if (!last_block) {
 			msg->code = COAP_RESPONSE_CODE_CONTINUE;
 		}
 	}
@@ -2632,9 +2638,9 @@ static int handle_request(struct coap_packet *request,
 		goto error;
 	}
 
-	/* Handle blockwise 1 (Part 2): Append BLOCK1 option */
+	/* Handle blockwise 1 (Part 2): Append BLOCK1 option / free context */
 	if (block_ctx) {
-		if (block_offset > 0) {
+		if (!last_block) {
 			/* More to come, ack with correspond block # */
 			r = coap_append_block1_option(out.out_cpkt,
 						      &block_ctx->ctx);

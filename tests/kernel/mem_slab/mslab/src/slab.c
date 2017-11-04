@@ -15,14 +15,15 @@
  *     k_mem_slab_num_used_get
  *
  * @note
- * One should ensure that the block is released to the same memory slab from which it
- * was allocated, and is only released once.  Using an invalid pointer will
- * have unpredictable side effects.
+ * One should ensure that the block is released to the same memory slab from
+ * which it was allocated, and is only released once.  Using an invalid pointer
+ * will have unpredictable side effects.
  */
 
 #include <tc_util.h>
 #include <stdbool.h>
 #include <zephyr.h>
+#include <ztest.h>
 
 /* size of stack area used by each thread */
 #define STACKSIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
@@ -156,7 +157,7 @@ exittest1:
 
 int test_slab_get_all_blocks(void **p)
 {
-	int ret_value;   /* task_mem_map_xxx interface return value */
+	int ret_value;  /* task_mem_map_xxx interface return value */
 	void *errptr;   /* Pointer to block */
 
 	TC_PRINT("Function %s\n", __func__);
@@ -311,18 +312,17 @@ void print_pointers(void **pointer)
  * @return  N/A
  */
 
-void main(void)
+void testing_mslab(void)
 {
-	int ret_value;             /* task_mem_map_xxx interface return value */
-	void *b;                  /* Pointer to memory block */
-	void *ptr[NUMBLOCKS];     /* Pointer to memory block */
+	int ret_value;                  /* task_mem_map_xxx interface return value */
+	void *b;                        /* Pointer to memory block */
+	void *ptr[NUMBLOCKS];           /* Pointer to memory block */
 
 	/* not strictly necessary, but keeps coverity checks happy */
 	memset(ptr, 0, sizeof(ptr));
 
 	/* Part 1 of test */
 
-	TC_START("Test Kernel memory slabs");
 	TC_PRINT("Starts %s\n", __func__);
 	PRINT_LINE;
 	TC_PRINT("(1) - Allocate and free %d blocks "
@@ -331,18 +331,14 @@ void main(void)
 
 	/* Test k_mem_slab_alloc */
 	tc_rc = test_slab_get_all_blocks(ptr);
-	if (tc_rc == TC_FAIL) {
-		TC_ERROR("Failed test_slab_get_all_blocks function\n");
-		goto exittest;           /* terminate test */
-	}
+	zassert_not_equal(tc_rc, TC_FAIL,
+			  "Failed test_slab_get_all_blocks function\n");
 
 	print_pointers(ptr);
 	/* Test task_mem_map_free */
 	tc_rc = test_slab_free_all_blocks(ptr);
-	if (tc_rc == TC_FAIL) {
-		TC_ERROR("Failed testalab_freeall_blocks function\n");
-		goto exittest;           /* terminate test */
-	}
+	zassert_not_equal(tc_rc, TC_FAIL,
+			  "Failed testalab_freeall_blocks function\n");
 
 	k_sem_give(&SEM_REGRESSDONE);   /* Allow helper thread to run */
 	/* Wait for helper thread to finish */
@@ -362,26 +358,15 @@ void main(void)
 	PRINT_LINE;
 
 	ret_value = k_mem_slab_alloc(&map_lgblks, &b, 20);
-	if (verify_ret_value(-EAGAIN, ret_value)) {
-		TC_PRINT("%s: k_mem_slab_alloc times out which is "
-			 "expected\n", __func__);
-	} else {
-		TC_ERROR("Failed k_mem_slab_alloc, retValue %d\n", ret_value);
-		tc_rc = TC_FAIL;
-		goto exittest;           /* terminate test */
-	}
+	zassert_true(verify_ret_value(-EAGAIN, ret_value),
+		     "Failed k_mem_slab_alloc, retValue %d\n",
+		     ret_value);
 
 	TC_PRINT("%s: start to wait for block\n", __func__);
 	k_sem_give(&SEM_REGRESSDONE);    /* Allow helper thread to run part 4 */
 	ret_value = k_mem_slab_alloc(&map_lgblks, &b, 50);
-	if (verify_ret_value(0, ret_value)) {
-		TC_PRINT("%s: k_mem_slab_alloc OK, block allocated at %p\n",
-			 __func__, b);
-	} else {
-		TC_ERROR("Failed k_mem_slab_alloc, ret_value %d\n", ret_value);
-		tc_rc = TC_FAIL;
-		goto exittest;           /* terminate test */
-	}
+	zassert_true(verify_ret_value(0, ret_value),
+		     "Failed k_mem_slab_alloc, ret_value %d\n", ret_value);
 
 	/* Wait for helper thread to complete */
 	k_sem_take(&SEM_HELPERDONE, K_FOREVER);
@@ -389,14 +374,8 @@ void main(void)
 	TC_PRINT("%s: start to wait for block\n", __func__);
 	k_sem_give(&SEM_REGRESSDONE);    /* Allow helper thread to run part 5 */
 	ret_value = k_mem_slab_alloc(&map_lgblks, &b, K_FOREVER);
-	if (verify_ret_value(0, ret_value)) {
-		TC_PRINT("%s: k_mem_slab_alloc OK, block allocated at %p\n",
-			 __func__, b);
-	} else {
-		TC_ERROR("Failed k_mem_slab_alloc, ret_value %d\n", ret_value);
-		tc_rc = TC_FAIL;
-		goto exittest;           /* terminate test */
-	}
+	zassert_true(verify_ret_value(0, ret_value),
+		     "Failed k_mem_slab_alloc, ret_value %d\n", ret_value);
 
 	/* Wait for helper thread to complete */
 	k_sem_take(&SEM_HELPERDONE, K_FOREVER);
@@ -408,12 +387,14 @@ void main(void)
 	k_mem_slab_free(&map_lgblks, &b);
 	TC_PRINT("%s: 1 block freed, used %d block\n",
 		 __func__,  k_mem_slab_num_used_get(&map_lgblks));
-
-exittest:
-
-	TC_END_RESULT(tc_rc);
-	TC_END_REPORT(tc_rc);
 }
 
 K_THREAD_DEFINE(HELPER, STACKSIZE, helper_thread, NULL, NULL, NULL,
 		7, 0, K_NO_WAIT);
+
+/*test case main entry*/
+void test_main(void)
+{
+	ztest_test_suite(test_mslab, ztest_unit_test(testing_mslab));
+	ztest_run_test_suite(test_mslab);
+}

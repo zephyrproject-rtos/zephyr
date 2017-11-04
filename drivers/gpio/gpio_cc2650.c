@@ -111,11 +111,6 @@ static int gpio_cc2650_config_pin(int pin, int flags)
 		 CC2650_IOC_IOCFGX_IE_MASK |
 		 CC2650_IOC_IOCFGX_HYST_EN_MASK);
 
-	if (flags & GPIO_PIN_DISABLE) {
-		disconnect(pin, &gpio_doe31_0_config, &iocfg_config);
-		goto commit_config;
-	}
-
 	if (flags & GPIO_DIR_OUT) {
 		gpio_doe31_0_config |= BIT(pin);
 		iocfg_config |= CC2650_IOC_INPUT_DISABLED;
@@ -181,7 +176,6 @@ static int gpio_cc2650_config_pin(int pin, int flags)
 	}
 
 	/* Commit changes */
-commit_config:
 	sys_write32(iocfg_config, iocfg);
 	sys_write32(gpio_doe31_0_config, doe31_0);
 	return 0;

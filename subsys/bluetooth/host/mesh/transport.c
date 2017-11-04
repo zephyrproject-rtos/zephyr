@@ -32,15 +32,11 @@
 #include "transport.h"
 
 #define AID_MASK                    ((u8_t)(BIT_MASK(6)))
-#define OP_MASK                     ((u8_t)(BIT_MASK(7)))
 
 #define SEG(data)                   ((data)[0] >> 7)
 #define AKF(data)                   (((data)[0] >> 6) & 0x01)
 #define AID(data)                   ((data)[0] & AID_MASK)
 #define MIC_SIZE(data)              (((data)[1] & 0x80) ? 8 : 4)
-
-#define CTL_OP(data)                ((data)[0] & OP_MASK)
-#define CTL_HDR(op, seg)            ((op & OP_MASK) | (seg << 7))
 
 #define SZMIC(mic_len)              (mic_len == 8 ? 1 : 0)
 
@@ -64,6 +60,7 @@ static struct seg_tx {
 	struct bt_mesh_subnet   *sub;
 	struct net_buf          *seg[BT_MESH_TX_SEG_COUNT];
 	u64_t                    seq_auth;
+	u16_t                    dst;
 	u8_t                     seg_n;      /* Last segment index */
 	u8_t                     nack_count; /* Number of not acked segments */
 	bt_mesh_cb_t             cb;
@@ -109,7 +106,7 @@ static int send_unseg(struct bt_mesh_net_tx *tx, u8_t aid,
 		return -ENOBUFS;
 	}
 
-	net_buf_reserve(buf, 9);
+	net_buf_reserve(buf, BT_MESH_NET_HDR_LEN);
 
 	if (tx->ctx->app_idx == BT_MESH_KEY_DEV) {
 		net_buf_add_u8(buf, UNSEG_HDR(0, 0));
@@ -145,6 +142,7 @@ static void seg_tx_reset(struct seg_tx *tx)
 	tx->cb_data = NULL;
 	tx->seq_auth = 0;
 	tx->sub = NULL;
+	tx->dst = BT_MESH_ADDR_UNASSIGNED;
 
 	if (!tx->nack_count) {
 		return;
@@ -272,6 +270,7 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, u8_t aid,
 	}
 
 	seg_o = 0;
+	tx->dst = net_tx->ctx->addr;
 	tx->seg_n = (sdu->len - 1) / 12;
 	tx->nack_count = tx->seg_n + 1;
 	tx->seq_auth = SEQ_AUTH(BT_MESH_NET_IVI_TX, bt_mesh.seq);
@@ -301,7 +300,7 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, u8_t aid,
 		BT_MESH_ADV(seg)->seg.new_key = net_tx->sub->kr_flag;
 		BT_MESH_ADV(seg)->seg.friend_cred = net_tx->ctx->friend_cred;
 
-		net_buf_reserve(seg, 9);
+		net_buf_reserve(seg, BT_MESH_NET_HDR_LEN);
 
 		net_buf_add_u8(seg, seg_hdr);
 		net_buf_add_u8(seg, (SZMIC(mic_len) << 7) | seq_zero >> 6);
@@ -537,6 +536,36 @@ static int sdu_recv(struct bt_mesh_net_rx *rx, u8_t hdr, u8_t mic_size,
 	return -EINVAL;
 }
 
+static struct seg_tx *seg_tx_lookup(u16_t seq_zero, u8_t obo, u16_t addr)
+{
+	struct seg_tx *tx;
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(seg_tx); i++) {
+		tx = &seg_tx[i];
+
+		if ((tx->seq_auth & 0x1fff) != seq_zero) {
+			continue;
+		}
+
+		if (tx->dst == addr) {
+			return tx;
+		}
+
+		/* If the expected remote address doesn't match,
+		 * but the OBO flag is set and this is the first
+		 * acknowledgement, assume it's a Friend that's
+		 * responding and therefore accept the message.
+		 */
+		if (obo && tx->nack_count == tx->seg_n + 1) {
+			tx->dst = addr;
+			return tx;
+		}
+	}
+
+	return NULL;
+}
+
 static int trans_ack(struct bt_mesh_net_rx *rx, u8_t hdr,
 		     struct net_buf_simple *buf)
 {
@@ -545,7 +574,6 @@ static int trans_ack(struct bt_mesh_net_rx *rx, u8_t hdr,
 	u32_t ack;
 	u16_t seq_zero;
 	u8_t obo;
-	int i;
 
 	if (buf->len < 6) {
 		BT_ERR("Too short ack message");
@@ -560,15 +588,9 @@ static int trans_ack(struct bt_mesh_net_rx *rx, u8_t hdr,
 
 	BT_DBG("OBO %u seq_zero 0x%04x ack 0x%08x", obo, seq_zero, ack);
 
-	for (tx = NULL, i = 0; i < ARRAY_SIZE(seg_tx); i++) {
-		if ((seg_tx[i].seq_auth & 0x1fff) == seq_zero) {
-			tx = &seg_tx[i];
-			break;
-		}
-	}
-
+	tx = seg_tx_lookup(seq_zero, obo, rx->ctx.addr);
 	if (!tx) {
-		BT_WARN("Unknown SeqZero for ack");
+		BT_WARN("No matching TX context for ack");
 		return -EINVAL;
 	}
 
@@ -634,7 +656,7 @@ static int trans_heartbeat(struct bt_mesh_net_rx *rx,
 static int ctl_recv(struct bt_mesh_net_rx *rx, u8_t hdr,
 		    struct net_buf_simple *buf)
 {
-	u8_t ctl_op = CTL_OP(&hdr);
+	u8_t ctl_op = TRANS_CTL_OP(&hdr);
 
 	BT_DBG("OpCode 0x%02x len %u", ctl_op, buf->len);
 
@@ -734,10 +756,9 @@ int bt_mesh_ctl_send(struct bt_mesh_net_tx *tx, u8_t ctl_op, void *data,
 		return -ENOBUFS;
 	}
 
-	/* Reserve space for Network headers */
-	net_buf_reserve(buf, 9);
+	net_buf_reserve(buf, BT_MESH_NET_HDR_LEN);
 
-	net_buf_add_u8(buf, CTL_HDR(ctl_op, 0));
+	net_buf_add_u8(buf, TRANS_CTL_HDR(ctl_op, 0));
 
 	net_buf_add_mem(buf, data, data_len);
 
@@ -1075,6 +1096,10 @@ int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx)
 
 	BT_DBG("src 0x%04x dst 0x%04x seq 0x%08x", rx->ctx.addr, rx->dst,
 	       rx->seq);
+
+	/* Remove network headers */
+	net_buf_simple_pull(buf, BT_MESH_NET_HDR_LEN);
+
 	BT_DBG("Payload %s", bt_hex(buf->data, buf->len));
 
 	/* If LPN mode is enabled messages are only accepted when we've

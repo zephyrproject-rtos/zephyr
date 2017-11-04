@@ -42,12 +42,6 @@ static void cmsdk_ahb_gpio_config(struct device *dev, u32_t mask, int flags)
 {
 	const struct gpio_cmsdk_ahb_cfg * const cfg = dev->config->config_info;
 
-	/* Disable the pin and return as setup is meaningless now */
-	if (flags & GPIO_PIN_DISABLE) {
-		cfg->port->altfuncset = mask;
-		return;
-	}
-
 	/*
 	 * Setup the pin direction
 	 * Output Enable:
@@ -88,10 +82,7 @@ static void cmsdk_ahb_gpio_config(struct device *dev, u32_t mask, int flags)
 		}
 	}
 
-	/* Enable the pin last after pin setup */
-	if (flags & GPIO_PIN_ENABLE) {
-		cfg->port->altfuncclr = mask;
-	}
+	cfg->port->altfuncclr = mask;
 }
 
 /**

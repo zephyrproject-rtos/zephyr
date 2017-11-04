@@ -2470,10 +2470,12 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_START_ENC_REQ:
-		LL_ASSERT(_radio.conn_curr->llcp_req ==
-			  _radio.conn_curr->llcp_ack);
+		LL_ASSERT((_radio.conn_curr->llcp_req ==
+			   _radio.conn_curr->llcp_ack) ||
+			  (_radio.conn_curr->llcp_type == LLCP_ENCRYPTION));
 
 		/* start enc rsp to be scheduled in master prepare */
+		_radio.conn_curr->llcp.encryption.initiate = 0;
 		_radio.conn_curr->llcp_type = LLCP_ENCRYPTION;
 		_radio.conn_curr->llcp_ack--;
 		break;
@@ -2481,10 +2483,13 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 	case PDU_DATA_LLCTRL_TYPE_START_ENC_RSP:
 		if (_radio.role == ROLE_SLAVE) {
 #if !defined(CONFIG_BT_CTLR_FAST_ENC)
-			LL_ASSERT(_radio.conn_curr->llcp_req ==
-				  _radio.conn_curr->llcp_ack);
+			LL_ASSERT((_radio.conn_curr->llcp_req ==
+				   _radio.conn_curr->llcp_ack) ||
+				  (_radio.conn_curr->llcp_type ==
+				   LLCP_ENCRYPTION));
 
 			/* start enc rsp to be scheduled in slave  prepare */
+			_radio.conn_curr->llcp.encryption.initiate = 0;
 			_radio.conn_curr->llcp_type = LLCP_ENCRYPTION;
 			_radio.conn_curr->llcp_ack--;
 #else /* CONFIG_BT_CTLR_FAST_ENC */
@@ -2604,10 +2609,12 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 					PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ,
 					0x23);
 #if defined(CONFIG_BT_CTLR_PHY)
-			} else if ((conn->llcp_req != conn->llcp_ack) ||
+			} else if (((conn->llcp_req != conn->llcp_ack) &&
+				    (conn->llcp_type != LLCP_ENCRYPTION)) ||
 				   (conn->llcp_phy.req != conn->llcp_phy.ack)) {
 #else /* !CONFIG_BT_CTLR_PHY */
-			} else if (conn->llcp_req != conn->llcp_ack) {
+			} else if ((conn->llcp_req != conn->llcp_ack) &&
+				   (conn->llcp_type != LLCP_ENCRYPTION)) {
 #endif /* !CONFIG_BT_CTLR_PHY */
 				/* Different procedure collision */
 				nack = reject_ext_ind_send(_radio.conn_curr,
@@ -2926,13 +2933,17 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 					PDU_DATA_LLCTRL_TYPE_PHY_REQ,
 					0x23);
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
-			} else if ((_radio.conn_curr->llcp_req !=
-				    _radio.conn_curr->llcp_ack) ||
+			} else if (((_radio.conn_curr->llcp_req !=
+				     _radio.conn_curr->llcp_ack) &&
+				    (_radio.conn_curr->llcp_type !=
+				     LLCP_ENCRYPTION)) ||
 				   (_radio.conn_curr->llcp_conn_param.req !=
 				    _radio.conn_curr->llcp_conn_param.ack)) {
 #else /* !CONFIG_BT_CTLR_CONN_PARAM_REQ */
 			} else if ((_radio.conn_curr->llcp_req !=
-				    _radio.conn_curr->llcp_ack)) {
+				    _radio.conn_curr->llcp_ack) &&
+				   (_radio.conn_curr->llcp_type !=
+				    LLCP_ENCRYPTION)) {
 #endif /* !CONFIG_BT_CTLR_CONN_PARAM_REQ */
 				/* Different procedure collision */
 				nack = reject_ext_ind_send(_radio.conn_curr,
@@ -6675,21 +6686,89 @@ static inline void event_enc_reject_prep(struct connection *conn,
 static inline void event_enc_prep(struct connection *conn)
 {
 	struct radio_pdu_node_tx *node_tx;
+	struct pdu_data *pdu_ctrl_tx;
+
+	if (conn->llcp.encryption.initiate) {
+		return;
+	}
 
 	node_tx = mem_acquire(&_radio.pkt_tx_ctrl_free);
-	if (node_tx) {
-		struct pdu_data *pdu_ctrl_tx =
-			(struct pdu_data *)node_tx->pdu_data;
+	if (!node_tx) {
+		return;
+	}
 
-		/* master sends encrypted enc start rsp in control priority */
-		if (!conn->role) {
+	pdu_ctrl_tx = (void *)node_tx->pdu_data;
+
+	/* master sends encrypted enc start rsp in control priority */
+	if (!conn->role) {
+		/* calc the Session Key */
+		ecb_encrypt(&conn->llcp.encryption.ltk[0],
+			    &conn->llcp.encryption.skd[0],
+			    NULL, &conn->ccm_rx.key[0]);
+
+		/* copy the Session Key */
+		memcpy(&conn->ccm_tx.key[0], &conn->ccm_rx.key[0],
+		       sizeof(conn->ccm_tx.key));
+
+		/* copy the IV */
+		memcpy(&conn->ccm_tx.iv[0], &conn->ccm_rx.iv[0],
+		       sizeof(conn->ccm_tx.iv));
+
+		/* initialise counter */
+		conn->ccm_rx.counter = 0;
+		conn->ccm_tx.counter = 0;
+
+		/* set direction: slave to master = 0,
+		 * master to slave = 1
+		 */
+		conn->ccm_rx.direction = 0;
+		conn->ccm_tx.direction = 1;
+
+		/* enable receive encryption */
+		conn->enc_rx = 1;
+
+		/* send enc start resp */
+		start_enc_rsp_send(conn, pdu_ctrl_tx);
+	}
+
+	/* slave send reject ind or start enc req at control priority */
+
+#if defined(CONFIG_BT_CTLR_FAST_ENC)
+	else {
+#else /* !CONFIG_BT_CTLR_FAST_ENC */
+	else if (!conn->pause_tx || conn->refresh) {
+#endif /* !CONFIG_BT_CTLR_FAST_ENC */
+
+		/* place the reject ind packet as next in tx queue */
+		if (conn->llcp.encryption.error_code) {
+			event_enc_reject_prep(conn, pdu_ctrl_tx);
+		}
+		/* place the start enc req packet as next in tx queue */
+		else {
+
+#if !defined(CONFIG_BT_CTLR_FAST_ENC)
+			u8_t err;
+
+			/* TODO BT Spec. text: may finalize the sending
+			 * of additional data channel PDUs queued in the
+			 * controller.
+			 */
+			err = enc_rsp_send(conn);
+			if (err) {
+				mem_release(node_tx, &_radio.pkt_tx_ctrl_free);
+
+				return;
+			}
+#endif /* !CONFIG_BT_CTLR_FAST_ENC */
+
 			/* calc the Session Key */
 			ecb_encrypt(&conn->llcp.encryption.ltk[0],
-				    &conn->llcp.encryption.skd[0],
-				    NULL, &conn->ccm_rx.key[0]);
+				    &conn->llcp.encryption.skd[0], NULL,
+				    &conn->ccm_rx.key[0]);
 
 			/* copy the Session Key */
-			memcpy(&conn->ccm_tx.key[0], &conn->ccm_rx.key[0],
+			memcpy(&conn->ccm_tx.key[0],
+			       &conn->ccm_rx.key[0],
 			       sizeof(conn->ccm_tx.key));
 
 			/* copy the IV */
@@ -6703,102 +6782,38 @@ static inline void event_enc_prep(struct connection *conn)
 			/* set direction: slave to master = 0,
 			 * master to slave = 1
 			 */
-			conn->ccm_rx.direction = 0;
-			conn->ccm_tx.direction = 1;
+			conn->ccm_rx.direction = 1;
+			conn->ccm_tx.direction = 0;
 
-			/* enable receive encryption */
+			/* enable receive encryption (transmit turned
+			 * on when start enc resp from master is
+			 * received)
+			 */
 			conn->enc_rx = 1;
 
-			/* send enc start resp */
-			start_enc_rsp_send(conn, pdu_ctrl_tx);
+			/* prepare the start enc req */
+			pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
+			pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl,
+						    ctrldata);
+			pdu_ctrl_tx->payload.llctrl.opcode =
+				PDU_DATA_LLCTRL_TYPE_START_ENC_REQ;
 		}
 
-		/* slave send reject ind or start enc req at control priority */
-
-#if defined(CONFIG_BT_CTLR_FAST_ENC)
-		else {
-#else /* !CONFIG_BT_CTLR_FAST_ENC */
-		else if (!conn->pause_tx || conn->refresh) {
-#endif /* !CONFIG_BT_CTLR_FAST_ENC */
-
-			/* place the reject ind packet as next in tx queue */
-			if (conn->llcp.encryption.error_code) {
-				event_enc_reject_prep(conn, pdu_ctrl_tx);
-			}
-			/* place the start enc req packet as next in tx queue */
-			else {
-
 #if !defined(CONFIG_BT_CTLR_FAST_ENC)
-				u8_t err;
+	} else {
+		start_enc_rsp_send(_radio.conn_curr, pdu_ctrl_tx);
 
-				/* TODO BT Spec. text: may finalize the sending
-				 * of additional data channel PDUs queued in the
-				 * controller.
-				 */
-				err = enc_rsp_send(conn);
-				if (err) {
-					mem_release(node_tx,
-						    &_radio.pkt_tx_ctrl_free);
-
-					return;
-				}
+		/* resume data packet rx and tx */
+		_radio.conn_curr->pause_rx = 0;
+		_radio.conn_curr->pause_tx = 0;
 #endif /* !CONFIG_BT_CTLR_FAST_ENC */
 
-				/* calc the Session Key */
-				ecb_encrypt(&conn->llcp.encryption.ltk[0],
-					    &conn->llcp.encryption.skd[0], NULL,
-					    &conn->ccm_rx.key[0]);
-
-				/* copy the Session Key */
-				memcpy(&conn->ccm_tx.key[0],
-				       &conn->ccm_rx.key[0],
-				       sizeof(conn->ccm_tx.key));
-
-				/* copy the IV */
-				memcpy(&conn->ccm_tx.iv[0], &conn->ccm_rx.iv[0],
-				       sizeof(conn->ccm_tx.iv));
-
-				/* initialise counter */
-				conn->ccm_rx.counter = 0;
-				conn->ccm_tx.counter = 0;
-
-				/* set direction: slave to master = 0,
-				 * master to slave = 1
-				 */
-				conn->ccm_rx.direction = 1;
-				conn->ccm_tx.direction = 0;
-
-				/* enable receive encryption (transmit turned
-				 * on when start enc resp from master is
-				 * received)
-				 */
-				conn->enc_rx = 1;
-
-				/* prepare the start enc req */
-				pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
-				pdu_ctrl_tx->len =
-					offsetof(struct pdu_data_llctrl,
-						 ctrldata);
-				pdu_ctrl_tx->payload.llctrl.opcode =
-					PDU_DATA_LLCTRL_TYPE_START_ENC_REQ;
-			}
-
-#if !defined(CONFIG_BT_CTLR_FAST_ENC)
-		} else {
-			start_enc_rsp_send(_radio.conn_curr, pdu_ctrl_tx);
-
-			/* resume data packet rx and tx */
-			_radio.conn_curr->pause_rx = 0;
-			_radio.conn_curr->pause_tx = 0;
-#endif /* !CONFIG_BT_CTLR_FAST_ENC */
-
-		}
-
-		ctrl_tx_enqueue(conn, node_tx);
-
-		/* procedure request acked */
-		conn->llcp_ack = conn->llcp_req;
 	}
+
+	ctrl_tx_enqueue(conn, node_tx);
+
+	/* procedure request acked */
+	conn->llcp_ack = conn->llcp_req;
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
@@ -10481,7 +10496,7 @@ u32_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
 	struct radio_pdu_node_tx *node_tx;
 
 	conn = connection_get(handle);
-	if (!conn) {
+	if (!conn || (conn->llcp_req != conn->llcp_ack)) {
 		return 1;
 	}
 
@@ -10534,6 +10549,11 @@ u32_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
 			return 1;
 		}
 
+		conn->llcp.encryption.initiate = 1;
+
+		conn->llcp_type = LLCP_ENCRYPTION;
+		conn->llcp_req++;
+
 		return 0;
 	}
 
@@ -10557,6 +10577,7 @@ u32_t ll_start_enc_req_send(u16_t handle, u8_t error_code,
 			}
 
 			conn->llcp.encryption.error_code = error_code;
+			conn->llcp.encryption.initiate = 0;
 
 			conn->llcp_type = LLCP_ENCRYPTION;
 			conn->llcp_req++;
@@ -10579,6 +10600,7 @@ u32_t ll_start_enc_req_send(u16_t handle, u8_t error_code,
 		}
 
 		conn->llcp.encryption.error_code = 0;
+		conn->llcp.encryption.initiate = 0;
 
 		conn->llcp_type = LLCP_ENCRYPTION;
 		conn->llcp_req++;

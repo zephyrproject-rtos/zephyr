@@ -15,6 +15,16 @@ config BT_HCI_VS_EXT
 	  Enable support for the Zephyr HCI Vendor-Specific Extensions in the
 	  Host and/or Controller.
 
+config BT_HCI_VS_EXT_DETECT
+	bool "Use heuristics to guess HCI vendor extensions support in advance"
+	depends on BT_HCI_VS_EXT && !BT_CTLR
+	default y if BOARD_QEMU_X86 || BOARD_QEMU_CORTEX_M3
+	help
+	  Use some heuristics to try to guess in advance whether the controller
+	  supports the HCI vendor extensions in advance, in order to prevent
+	  sending vendor commands to controller which may interpret them in
+	  completely different ways.
+
 config BT_RPA
 	# Virtual/hidden option
 	bool

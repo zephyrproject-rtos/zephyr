@@ -28,64 +28,6 @@
 extern struct _static_thread_data _static_thread_data_list_start[];
 extern struct _static_thread_data _static_thread_data_list_end[];
 
-#ifdef CONFIG_USERSPACE
-static int thread_count;
-
-/*
- * Fetch an unused thread ID. Returns -1 if all thread IDs are in use
- */
-static int get_next_thread_index(void)
-{
-	int key, pos = -1;
-
-	key = irq_lock();
-
-	if (thread_count == CONFIG_MAX_THREAD_BYTES * 8) {
-		/* We have run out of thread IDs! */
-		goto out;
-	}
-
-	/* find an unused bit in the kernel's bitfield of in-use thread IDs */
-	for (int i = 0; i < CONFIG_MAX_THREAD_BYTES; i++) {
-		int fs;
-
-		fs = find_lsb_set(_kernel.free_thread_ids[i]);
-		if (fs) {
-			/* find_lsb_set counts bit positions starting at 1 */
-			--fs;
-			_kernel.free_thread_ids[i] &= ~(1 << fs);
-			pos = fs + (i * 8);
-			break;
-		}
-	}
-
-	thread_count++;
-out:
-	irq_unlock(key);
-
-	return pos;
-}
-
-static void free_thread_index(int id)
-{
-	int index, key;
-	u8_t bit;
-
-	if (id == -1) {
-		return;
-	}
-
-	key = irq_lock();
-
-	thread_count--;
-	index = id / 8;
-	bit = 1 << (id % 8);
-	_kernel.free_thread_ids[index] |= bit;
-
-	irq_unlock(key);
-}
-#endif
-
 #define _FOREACH_STATIC_THREAD(thread_data)              \
 	for (struct _static_thread_data *thread_data =   \
 	     _static_thread_data_list_start;             \
@@ -324,7 +266,6 @@ void _setup_new_thread(struct k_thread *new_thread,
 	_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3,
 		    prio, options);
 #ifdef CONFIG_USERSPACE
-	new_thread->base.perm_index = get_next_thread_index();
 	_k_object_init(new_thread);
 	_k_object_init(stack);
 	new_thread->stack_obj = stack;
@@ -416,11 +357,6 @@ _SYSCALL_HANDLER(k_thread_create,
 			  (k_thread_entry_t)entry, (void *)p1,
 			  (void *)margs->arg6, (void *)margs->arg7, prio,
 			  options);
-
-	if (new_thread->base.perm_index == -1) {
-		k_thread_abort(new_thread);
-		_SYSCALL_VERIFY_MSG(0, "too many threads created");
-	}
 
 	if (delay != K_FOREVER) {
 		schedule_new_thread(new_thread, delay);
@@ -580,12 +516,8 @@ void _k_thread_single_abort(struct k_thread *thread)
 	_k_object_uninit(thread->stack_obj);
 	_k_object_uninit(thread);
 
-	if (thread->base.perm_index != -1) {
-		free_thread_index(thread->base.perm_index);
-
-		/* Revoke permissions on thread's ID so that it may be recycled */
-		_thread_perms_all_clear(thread);
-	}
+	/* Revoke permissions on thread's ID so that it may be recycled */
+	_thread_perms_all_clear(thread);
 #endif
 }
 

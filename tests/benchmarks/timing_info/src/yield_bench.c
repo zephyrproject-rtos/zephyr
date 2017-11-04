@@ -57,7 +57,8 @@ void yield_bench(void)
 	/*read the time of start of the sleep till the swap happens */
 	__read_swap_end_time_value = 1;
 
-	thread_sleep_start_time =   GET_CURRENT_TIME();
+	TIMING_INFO_PRE_READ();
+	thread_sleep_start_time =   TIMING_INFO_OS_GET_TIME();
 	k_sleep(1000);
 	thread_sleep_end_time =   ((u32_t)__common_var_swap_end_time);
 
@@ -75,12 +76,14 @@ void yield_bench(void)
 void thread_yield0_test(void *p1, void *p2, void *p3)
 {
 	k_sem_take(&yield_sem, 10);
-	thread_start_time =  GET_CURRENT_TIME();
+	TIMING_INFO_PRE_READ();
+	thread_start_time =  TIMING_INFO_OS_GET_TIME();
 	while (count != 1000) {
 		count++;
 		k_yield();
 	}
-	thread_end_time =  GET_CURRENT_TIME();
+	TIMING_INFO_PRE_READ();
+	thread_end_time =  TIMING_INFO_OS_GET_TIME();
 	k_thread_abort(yield1_tid);
 }
 

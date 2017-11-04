@@ -67,14 +67,6 @@ u64_t __noinit __main_time_stamp;  /* timestamp when main task starts */
 u64_t __noinit __idle_time_stamp;  /* timestamp when CPU goes idle */
 #endif
 
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-u64_t __noinit __start_swap_time;
-u64_t __noinit __end_swap_time;
-u64_t __noinit __start_intr_time;
-u64_t __noinit __end_intr_time;
-u64_t __noinit __start_tick_time;
-u64_t __noinit __end_tick_time;
-#endif
 /* init/main and idle threads */
 
 #define IDLE_STACK_SIZE CONFIG_IDLE_STACK_SIZE
@@ -267,17 +259,9 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 	dummy_thread->stack_info.start = 0;
 	dummy_thread->stack_info.size = 0;
 #endif
-#ifdef CONFIG_USERSPACE
-	dummy_thread->base.perm_index = 0;
-#endif
 #endif
 
 	/* _kernel.ready_q is all zeroes */
-
-#ifdef CONFIG_USERSPACE
-	/* Mark all potential IDs as available */
-	memset(_kernel.free_thread_ids, 0xFF, CONFIG_MAX_THREAD_BYTES);
-#endif
 
 	/*
 	 * The interrupt library needs to be initialized early since a series
