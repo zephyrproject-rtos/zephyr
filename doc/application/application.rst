@@ -372,15 +372,16 @@ Application Debugging
 
 
 This section is a quick hands-on reference to start debugging your
-application with QEMU. Most content in this section is already covered on
+application with QEMU. Most content in this section is already covered in
 `QEMU`_ and `GNU_Debugger`_ reference manuals.
 
 .. _QEMU: http://wiki.qemu.org/Main_Page
 
 .. _GNU_Debugger: http://www.gnu.org/software/gdb
 
-In this quick reference you find shortcuts, specific environmental variables and
-parameters that can help you to quickly set up your debugging environment.
+In this quick reference, you'll find shortcuts, specific environmental
+variables, and parameters that can help you to quickly set up your debugging
+environment.
 
 The simplest way to debug an application running in QEMU is using the GNU
 Debugger and setting a local GDB server in your development system through QEMU.
