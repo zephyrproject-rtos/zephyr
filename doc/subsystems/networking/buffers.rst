@@ -45,7 +45,11 @@ passed from one thread to another. However, since a net_buf may have a
 fragment chain attached to it, instead of using the :c:func:`k_fifo_put`
 and :c:func:`k_fifo_get` APIs, special :c:func:`net_buf_put` and
 :c:func:`net_buf_get` APIs must be used when passing buffers through
-FIFOs. These APIs ensure that the buffer chains stay intact.
+FIFOs. These APIs ensure that the buffer chains stay intact. The same
+applies for passing buffers through a singly linked list, in which case
+the :c:func:`net_buf_slist_put` and :c:func:`net_buf_slist_get`
+functions must be used instead of :c:func:`sys_slist_append` and
+:c:func:`sys_slist_get`.
 
 Common Operations
 *****************

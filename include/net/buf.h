@@ -647,6 +647,31 @@ void net_buf_reset(struct net_buf *buf);
 void net_buf_reserve(struct net_buf *buf, size_t reserve);
 
 /**
+ *  @brief Put a buffer into a list
+ *
+ *  Put a buffer to the end of a list. If the buffer contains follow-up
+ *  fragments this function will take care of inserting them as well
+ *  into the list.
+ *
+ *  @param list Which list to append the buffer to.
+ *  @param buf Buffer.
+ */
+void net_buf_slist_put(sys_slist_t *list, struct net_buf *buf);
+
+/**
+ *  @brief Get a buffer from a list.
+ *
+ *  Get buffer from a list. If the buffer had any fragments, these will
+ *  automatically be recovered from the list as well and be placed to
+ *  the buffer's fragment list.
+ *
+ *  @param list Which list to take the buffer from.
+ *
+ *  @return New buffer or NULL if the FIFO is empty.
+ */
+struct net_buf *net_buf_slist_get(sys_slist_t *list);
+
+/**
  *  @brief Put a buffer into a FIFO
  *
  *  Put a buffer to the end of a FIFO. If the buffer contains follow-up
