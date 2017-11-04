@@ -20,6 +20,9 @@ import sys
 import pprint
 import collections
 
+import ast
+import operator as op
+
 class FileWrapper:
   def __init__(self, file_obj):
     self.file_obj = file_obj
@@ -98,6 +101,10 @@ def parse_node_name(fd, line):
   return label, name.strip(), addr, int(addr,16)
 
 def parse_values_internal(value, start, end, separator):
+  # Remove the prefix 'start', and the suffix 'end' from 'value' and
+  # write the resulting string to the variable 'out'
+  #
+  # out = value[len(start):-len(end)]
   out = []
 
   inside = False
@@ -123,7 +130,55 @@ def parse_values_internal(value, start, end, separator):
 
   return [parse_value(v) for v in out]
 
+def substitue_evaluation_of_expression(value):
+  start = value.index("(")
+  end = value.rfind(")")
+  if end == -1:
+    raise SyntaxError("'(' found, but no matching ')' on the same line {}".format(value))
+
+  end += 1
+
+  # Attribution:
+  # https://stackoverflow.com/a/9558001/1134134
+  # supported operators
+  operators = {ast.Add: op.add, ast.Sub: op.sub, ast.Mult: op.mul,
+               ast.Div: op.truediv, ast.Pow: op.pow, ast.BitXor: op.xor,
+               ast.USub: op.neg}
+
+  def eval_expr(expr):
+    """
+    >>> eval_expr('2^6')
+    4
+    >>> eval_expr('2**6')
+    64
+    >>> eval_expr('1 + 2*3**(4^5) / (6 + -7)')
+    -5.0
+    """
+    return eval_(ast.parse(expr, mode='eval').body)
+
+  def eval_(node):
+      if isinstance(node, ast.Num): # <number>
+          return node.n
+      elif isinstance(node, ast.BinOp): # <left> <operator> <right>
+          return operators[type(node.op)](eval_(node.left), eval_(node.right))
+      elif isinstance(node, ast.UnaryOp): # <operator> <operand> e.g., -1
+          return operators[type(node.op)](eval_(node.operand))
+      else:
+          raise TypeError(node)
+
+  expr = value[start:end]
+  evaluated = eval_expr(expr)
+
+  # Substitue the expression with the evaluated expression
+  return value[0:start] + str(evaluated) + value[end:]
+
 def parse_values(value, start, end, separator):
+
+  # If we find a '(' in the value, we immediately evaluate the
+  # expression and substitue the expression with the evaluated value
+  if "(" in value:
+    value = substitue_evaluation_of_expression(value)
+
   out = parse_values_internal(value, start, end, separator)
   if isinstance(out, list) and all(isinstance(v, str) and len(v) == 1 and not v.isalpha() for v in out):
     return bytearray(out)
