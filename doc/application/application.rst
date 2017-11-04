@@ -775,7 +775,7 @@ preferred, since it correctly handles dependencies between options.
       square brackets :guilabel:`[ ]` to
       enable or disable a kernel configuration option.
 
-   * Type a numerical value in the round brackets :guilabel:`( )`.
+   * Type a numerical value in the parentheses :guilabel:`( )`.
 
    * Press :kbd:`Tab` to navigate the command menu at the bottom of the
      display.
