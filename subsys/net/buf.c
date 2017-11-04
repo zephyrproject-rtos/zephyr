@@ -233,6 +233,56 @@ void net_buf_reserve(struct net_buf *buf, size_t reserve)
 	buf->data = buf->__buf + reserve;
 }
 
+void net_buf_slist_put(sys_slist_t *list, struct net_buf *buf)
+{
+	struct net_buf *tail;
+	unsigned int key;
+
+	NET_BUF_ASSERT(list);
+	NET_BUF_ASSERT(buf);
+
+	for (tail = buf; tail->frags; tail = tail->frags) {
+		tail->flags |= NET_BUF_FRAGS;
+	}
+
+	key = irq_lock();
+	sys_slist_append_list(list, &buf->node, &tail->node);
+	irq_unlock(key);
+}
+
+struct net_buf *net_buf_slist_get(sys_slist_t *list)
+{
+	struct net_buf *buf, *frag;
+	unsigned int key;
+
+	NET_BUF_ASSERT(list);
+
+	key = irq_lock();
+	buf = (void *)sys_slist_get(list);
+	irq_unlock(key);
+
+	if (!buf) {
+		return NULL;
+	}
+
+	/* Get any fragments belonging to this buffer */
+	for (frag = buf; (frag->flags & NET_BUF_FRAGS); frag = frag->frags) {
+		key = irq_lock();
+		frag->frags = (void *)sys_slist_get(list);
+		irq_unlock(key);
+
+		NET_BUF_ASSERT(frag->frags);
+
+		/* The fragments flag is only for list-internal usage */
+		frag->flags &= ~NET_BUF_FRAGS;
+	}
+
+	/* Mark the end of the fragment list */
+	frag->frags = NULL;
+
+	return buf;
+}
+
 void net_buf_put(struct k_fifo *fifo, struct net_buf *buf)
 {
 	struct net_buf *tail;
