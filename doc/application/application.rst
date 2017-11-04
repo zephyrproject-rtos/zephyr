@@ -624,12 +624,10 @@ Below is a simple example :file:`CMakeList.txt`:
 Application Configuration
 *************************
 
-The application is configured using a set of options
-that can be customized for application-specific purposes.
-The Zephyr build system takes a configuration option's value from the first
-source in which it is specified.
-
-An option's value is taken from the following available sources, in order:
+The application is configured using a set of options that can be customized for
+application-specific purposes.  The Zephyr build system takes a configuration
+option's value from the first source in which it is specified, taken from the
+following available sources, in order:
 
 #. An application's current configuration (i.e. the file
    :file:`zephyr/.config` in the build directory). This can be used
