@@ -272,7 +272,7 @@ executed. Any driver will specify one of five initialization levels:
 ``PRE_KERNEL_1``
         Used for devices that have no dependencies, such as those that rely
         solely on hardware present in the processor/SOC. These devices cannot
-        use any kernel services during configuration, since the services are
+        use any kernel services during configuration, since the kernel services are
         not yet available. The interrupt subsystem will be configured however
         so it's OK to set up interrupts. Init functions at this level run on the
         interrupt stack.
