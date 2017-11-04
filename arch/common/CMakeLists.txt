@@ -6,3 +6,8 @@ zephyr_sources_ifdef(
   CONFIG_GEN_ISR_TABLES
   isr_tables.c
   )
+
+zephyr_sources_ifdef(
+  CONFIG_EXECUTION_BENCHMARKING
+  timing_info_bench.c
+  )

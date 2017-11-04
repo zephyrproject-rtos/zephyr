@@ -134,7 +134,7 @@ if(CONFIG_X86_MMU)
     OUTPUT mmu_tables.bin
     COMMAND
     ${PYTHON_EXECUTABLE}
-    ${PROJECT_SOURCE_DIR}/scripts/gen_mmu.py
+    ${PROJECT_SOURCE_DIR}/scripts/gen_mmu_x86.py
     -i mmulist.bin
     -k $<TARGET_FILE:zephyr_prebuilt>
     -o mmu_tables.bin
