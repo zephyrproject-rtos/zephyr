@@ -71,11 +71,13 @@ if(CONFIG_HAS_DTS)
 
   # Run the DTC on *.dts.pre.tmp to create the intermediary file *.dts_compiled
   execute_process(
-    COMMAND ${DTC}
-    -O dts
+    COMMAND
+    ${PYTHON_EXECUTABLE}
+    ${PROJECT_SOURCE_DIR}/scripts/dts/flatten.py
+    -i ${BOARD_FAMILY}.dts.pre.tmp
     -o ${BOARD_FAMILY}.dts_compiled
-    -b 0
-    ${BOARD_FAMILY}.dts.pre.tmp
+    --include-path ${PROJECT_BINARY_DIR}
+    --boot-cpu 0
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     RESULT_VARIABLE ret
     )
