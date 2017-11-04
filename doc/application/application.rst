@@ -185,6 +185,7 @@ Basics
 
        $ export CONF_FILE=prj.alternate.conf
        $ cmake -GNinja ..
+       $ ninja
 
    If desired, you can generate project files for a different board
    type than the one specified in the application's
