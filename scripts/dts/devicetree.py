@@ -131,12 +131,19 @@ def parse_values_internal(value, start, end, separator):
   return [parse_value(v) for v in out]
 
 def substitue_evaluation_of_expression(value):
+  # Find out where the first expression starts and ends.
+  paren_nesting_level = 1
   start = value.index("(")
-  end = value.rfind(")")
-  if end == -1:
-    raise SyntaxError("'(' found, but no matching ')' on the same line {}".format(value))
+  i = start + 1
+  while paren_nesting_level > 0:
+    if value[i] == ")":
+      paren_nesting_level -= 1
+    elif value[i] == "(":
+      paren_nesting_level += 1
 
-  end += 1
+    i +=1
+
+  end = i
 
   # Attribution:
   # https://stackoverflow.com/a/9558001/1134134
@@ -182,9 +189,10 @@ def substitue_evaluation_of_expression(value):
 
 def parse_values(value, start, end, separator):
 
-  # If we find a '(' in the value, we immediately evaluate the
-  # expression and substitue the expression with the evaluated value
-  if "(" in value:
+  # If we find a '(' in the value, we immediately evaluate the first
+  # expression and substitue the expression with the evaluated
+  # value. Repeat until expressions are evaluated.
+  while "(" in value:
     value = substitue_evaluation_of_expression(value)
 
   out = parse_values_internal(value, start, end, separator)
