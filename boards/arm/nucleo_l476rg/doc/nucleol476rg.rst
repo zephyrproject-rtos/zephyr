@@ -199,7 +199,7 @@ Connect the Nucleo L476RG to your host computer using the USB port.
 Then build and flash an application. Here is an example for the
 :ref:`hello_world` application.
 
-Run a serial host program to connect with your Nucleo board.
+Run a serial host program to connect with your Nucleo board:
 
 .. code-block:: console
 
@@ -216,7 +216,7 @@ You should see the following message  on the console:
 
 .. code-block:: console
 
-   $ Hello World! arm
+   Hello World! arm
 
 Debugging
 =========

@@ -172,8 +172,8 @@ Default Zephyr Peripheral Mapping:
 System Clock
 ------------
 
-STM32L496G Discovery System Clock could be driven by internal or external oscillator,
-as well as main PLL clock. By default System clock is driven by PLL clock at 80MHz,
+STM32L496G Discovery System Clock could be driven by an internal or external oscillator,
+as well as the main PLL clock. By default the System clock is driven by the PLL clock at 80MHz,
 driven by 16MHz high speed internal oscillator.
 
 Serial Port
@@ -220,7 +220,7 @@ You should see the following message on the console:
 
 .. code-block:: console
 
-   $ Hello World! arm
+   Hello World! arm
 
 Debugging
 =========
