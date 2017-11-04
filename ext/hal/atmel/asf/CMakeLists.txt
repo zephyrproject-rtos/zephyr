@@ -1,1 +1,2 @@
 add_subdirectory_ifdef(CONFIG_SOC_FAMILY_SAM sam)
+add_subdirectory_ifdef(CONFIG_SOC_FAMILY_SAM0 sam0)
