@@ -624,7 +624,7 @@ Below is a simple example :file:`CMakeList.txt`:
 Application Configuration
 *************************
 
-The application's kernel is configured using a set of options
+The application is configured using a set of options
 that can be customized for application-specific purposes.
 The Zephyr build system takes a configuration option's value from the first
 source in which it is specified.
