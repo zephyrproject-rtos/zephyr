@@ -456,7 +456,7 @@ corresponds to :file:`zephyr.elf` file:
    option.
 
 If you are not using a .gdbinit file, issue the following command inside GDB to
-connect to the remove GDB server on port 1234:
+connect to the remote GDB server on port 1234:
 
 .. code-block:: bash
 
