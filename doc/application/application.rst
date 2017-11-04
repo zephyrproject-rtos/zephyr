@@ -468,7 +468,7 @@ elf binary file, in this instance, the :file:`zephyr.elf` file.
 
 The :abbr:`DDD (Data Displayer Debugger)` may not be installed in your
 development system by default. Follow your system instructions to install
-it.
+it. For example, use ``sudo apt-get install ddd`` on an Ubuntu system.
 
 .. code-block:: bash
 
