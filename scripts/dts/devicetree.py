@@ -141,9 +141,17 @@ def substitue_evaluation_of_expression(value):
   # Attribution:
   # https://stackoverflow.com/a/9558001/1134134
   # supported operators
-  operators = {ast.Add: op.add, ast.Sub: op.sub, ast.Mult: op.mul,
-               ast.Div: op.truediv, ast.Pow: op.pow, ast.BitXor: op.xor,
-               ast.USub: op.neg}
+  operators = {
+    ast.Add: op.add,
+    ast.Sub: op.sub,
+    ast.Mult: op.mul,
+    ast.Div: op.truediv,
+    ast.Pow: op.pow,
+    ast.BitXor: op.xor,
+    ast.BitOr: op.or_,
+    ast.LShift: op.lshift,
+    ast.USub: op.neg,
+  }
 
   def eval_expr(expr):
     """
