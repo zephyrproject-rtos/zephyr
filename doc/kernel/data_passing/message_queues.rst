@@ -34,7 +34,7 @@ A message queue must be initialized before it can be used.
 This sets its ring buffer to empty.
 
 A data item can be **sent** to a message queue by a thread or an ISR.
-The data item a pointed at by the sending thread is copied to a waiting thread,
+The data item pointed at by the sending thread is copied to a waiting thread,
 if one exists; otherwise the item is copied to the message queue's ring buffer,
 if space is available. In either case, the size of the data area being sent
 *must* equal the message queue's data item size.
