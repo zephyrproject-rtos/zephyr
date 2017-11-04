@@ -395,7 +395,7 @@ We will use the standard 1234 TCP port to open a :abbr:`GDB (GNU Debugger)`
 server instance. This port number can be changed for a port that best suits the
 development environment.
 
-You can run Qemu to listen for a "gdb connection" before it starts executing any
+You can run QEMU to listen for a "gdb connection" before it starts executing any
 code to debug it.
 
 .. code-block:: bash
