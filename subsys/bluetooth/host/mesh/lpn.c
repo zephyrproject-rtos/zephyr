@@ -251,6 +251,10 @@ static void req_sent(struct net_buf *buf, int err)
 {
 	struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
 
+#if defined(CONFIG_BT_MESH_DEBUG_LOW_POWER)
+	BT_DBG("buf %p err %d state %s", buf, err, state2str(lpn->state));
+#endif
+
 	if (err) {
 		BT_ERR("Sending request failed (err %d)", err);
 		lpn->sent_req = 0;
@@ -629,6 +633,13 @@ static void lpn_timeout(struct k_work *work)
 		k_delayed_work_submit(&lpn->timer, FRIEND_REQ_RETRY_TIMEOUT);
 		break;
 	case BT_MESH_LPN_ESTABLISHING:
+		if (lpn->req_attempts < 6) {
+			BT_WARN("Retrying first Friend Poll");
+			if (send_friend_poll() == 0) {
+				break;
+			}
+		}
+
 		BT_ERR("Timed out waiting for first Friend Update");
 		clear_friendship(false);
 		break;
