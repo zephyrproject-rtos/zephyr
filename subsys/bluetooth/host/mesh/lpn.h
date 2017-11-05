@@ -24,6 +24,16 @@ static inline bool bt_mesh_lpn_established(void)
 #endif
 }
 
+static inline bool bt_mesh_lpn_match(u16_t addr)
+{
+#if defined(CONFIG_BT_MESH_LOW_POWER)
+	if (bt_mesh_lpn_established()) {
+		return (addr == bt_mesh.lpn.frnd);
+	}
+#endif
+	return false;
+}
+
 static inline bool bt_mesh_lpn_waiting_update(void)
 {
 #if defined(CONFIG_BT_MESH_LOW_POWER)

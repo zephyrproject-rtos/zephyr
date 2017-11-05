@@ -675,7 +675,8 @@ int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
 	const u8_t *enc, *priv;
 	int err;
 
-	BT_DBG("net_idx 0x%04x, len %u", sub->net_idx, buf->len);
+	BT_DBG("net_idx 0x%04x new_key %u friend_cred %u len %u",
+	       sub->net_idx, new_key, friend_cred, buf->len);
 
 	if (friend_cred) {
 		err = bt_mesh_friend_cred_get(sub->net_idx,
@@ -825,16 +826,6 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
 	       net_buf_tailroom(buf));
 	BT_DBG("Payload len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 	BT_DBG("Seq 0x%06x", bt_mesh.seq);
-
-#if defined(CONFIG_BT_MESH_LOW_POWER)
-	/* Communication between LPN & Friend should always be using
-	 * the Friendship Credentials. Any other destination should
-	 * use the Master Credentials.
-	 */
-	if (bt_mesh_lpn_established()) {
-		tx->ctx->friend_cred = (tx->ctx->addr == bt_mesh.lpn.frnd);
-	}
-#endif
 
 	if (tx->ctx->send_ttl == BT_MESH_TTL_DEFAULT) {
 		tx->ctx->send_ttl = bt_mesh_default_ttl_get();

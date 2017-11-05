@@ -444,6 +444,14 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
 		return err;
 	}
 
+	/* Communication between LPN & Friend should always be using
+	 * the Friendship Credentials. Any other destination should
+	 * use the Master Credentials.
+	 */
+	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
+		tx->ctx->friend_cred = bt_mesh_lpn_match(tx->ctx->addr);
+	}
+
 	if (seg) {
 		return send_seg(tx, aid, mic_len, msg, cb, cb_data);
 	}
@@ -854,6 +862,14 @@ int bt_mesh_ctl_send(struct bt_mesh_net_tx *tx, u8_t ctl_op, void *data,
 			net_buf_unref(buf);
 			return 0;
 		}
+	}
+
+	/* Communication between LPN & Friend should always be using
+	 * the Friendship Credentials. Any other destination should
+	 * use the Master Credentials.
+	 */
+	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
+		tx->ctx->friend_cred = bt_mesh_lpn_match(tx->ctx->addr);
 	}
 
 	return bt_mesh_net_send(tx, buf, cb);
