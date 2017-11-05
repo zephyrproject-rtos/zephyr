@@ -19,10 +19,15 @@ driver/include/stm32f1xx_hal_conf_template.h
 into:
 driver/include/stm32f1xx_hal_conf.h
 
+If there are changes in the number of *.c files the Kconfig file in the
+stm32cube directory and the CMakeLists.txt files in the stm32yyxx/ directories
+will have to be updated. If *.c have been removed drivers that used them will
+also have to be updated.
+
 IMPORTANT:
 ----------
-STM32Cube, as an external library, is not supposed to be modifid.
-In practice, it might be required to patch it
+STM32Cube, as an external library, is not supposed to be modified.
+In practice, it might be required to patch it.
 When updating a STM32Cube package to a new version, please have a look
 to the patch list in dedicated README file, to make sure you don't overwrite
 some earlier modifications of the package.
@@ -36,15 +41,20 @@ In order to enjoy ST CMSIS definitions:
     *stm32yyxx.h should be included in soc.h
        **E.g.: #include <stm32f1xx.h>
 
-In order to use STM32Cube HAL, these files should be compiled:
-In /ext/hal/st/stm32cube/Kbuild :
-obj-y += stm32yyxx/drivers/src/stm32yyxx_hal.o
-obj-y += stm32yyxx/drivers/src/stm32yyxx_hal_rcc.o
-obj-y += stm32yyxx/soc/system_stm32yyxx.o
-Plus add HAL driver file (when needed):
-obj-$(CONFIG_SERIAL_HAS_DRIVER) += stm32yyxx/drivers/src/stm32yyxx_hal_uart.o
-
-
 Additionally, in order to use STM32Cube LL (when needed):
     *include stm32yyxx_ll_usart.h in soc.h
        **E.g.: #include <stm32f1xx_ll_usart.h>
+
+Drivers and applications that need functions from the STM32Cube HAL/LL C-files
+will need to add the appropriate select entries in their Kconfig files.
+For example when functions from stm32f4xx_hal_uart.c are used, the following
+entry;
+
+	select USE_STM32_HAL_UART
+
+should be added to the Kconfig file. 
+And if the driver for example needs functions from the LL I2C C-files, the
+Kconfig file should include the following entry;
+
+	select USE_STM32_LL_I2C
+
