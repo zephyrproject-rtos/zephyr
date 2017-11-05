@@ -94,12 +94,12 @@ static struct net_buf *friend_buf_alloc(u16_t src)
 	return buf;
 }
 
-static struct bt_mesh_friend *friend_lpn_find(u16_t net_idx, u16_t addr,
-					      bool established)
+struct bt_mesh_friend *bt_mesh_friend_find(u16_t net_idx, u16_t lpn_addr,
+					   bool established)
 {
 	int i;
 
-	BT_DBG("net_idx 0x%04x addr 0x%04x", net_idx, addr);
+	BT_DBG("net_idx 0x%04x lpn_addr 0x%04x", net_idx, lpn_addr);
 
 	for (i = 0; i < ARRAY_SIZE(bt_mesh.frnd); i++) {
 		struct bt_mesh_friend *frnd = &bt_mesh.frnd[i];
@@ -108,11 +108,11 @@ static struct bt_mesh_friend *friend_lpn_find(u16_t net_idx, u16_t addr,
 			continue;
 		}
 
-		if (frnd->net_idx != net_idx) {
+		if (net_idx != BT_MESH_KEY_ANY && frnd->net_idx != net_idx) {
 			continue;
 		}
 
-		if (frnd->lpn == addr) {
+		if (frnd->lpn == lpn_addr) {
 			return frnd;
 		}
 	}
@@ -224,7 +224,7 @@ int bt_mesh_friend_clear(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 
 	BT_DBG("LPN addr 0x%04x counter 0x%04x", lpn_addr, lpn_counter);
 
-	frnd = friend_lpn_find(rx->sub->net_idx, lpn_addr, true);
+	frnd = bt_mesh_friend_find(rx->sub->net_idx, lpn_addr, true);
 	if (!frnd) {
 		BT_WARN("No matching LPN addr 0x%04x", lpn_addr);
 		return 0;
@@ -415,7 +415,7 @@ int bt_mesh_friend_sub_add(struct bt_mesh_net_rx *rx,
 		return -EINVAL;
 	}
 
-	frnd = friend_lpn_find(rx->sub->net_idx, rx->ctx.addr, true);
+	frnd = bt_mesh_friend_find(rx->sub->net_idx, rx->ctx.addr, true);
 	if (!frnd) {
 		BT_WARN("No matching LPN addr 0x%04x", rx->ctx.addr);
 		return 0;
@@ -452,7 +452,7 @@ int bt_mesh_friend_sub_rem(struct bt_mesh_net_rx *rx,
 		return -EINVAL;
 	}
 
-	frnd = friend_lpn_find(rx->sub->net_idx, rx->ctx.addr, true);
+	frnd = bt_mesh_friend_find(rx->sub->net_idx, rx->ctx.addr, true);
 	if (!frnd) {
 		BT_WARN("No matching LPN addr 0x%04x", rx->ctx.addr);
 		return 0;
@@ -508,7 +508,7 @@ int bt_mesh_friend_poll(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 		return -EINVAL;
 	}
 
-	frnd = friend_lpn_find(rx->sub->net_idx, rx->ctx.addr, false);
+	frnd = bt_mesh_friend_find(rx->sub->net_idx, rx->ctx.addr, false);
 	if (!frnd) {
 		BT_WARN("No matching LPN addr 0x%04x", rx->ctx.addr);
 		return 0;
@@ -664,9 +664,10 @@ int bt_mesh_friend_req(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 
 	old_friend = sys_be16_to_cpu(msg->prev_addr);
 	if (BT_MESH_ADDR_IS_UNICAST(old_friend)) {
-		frnd = friend_lpn_find(rx->sub->net_idx, old_friend, true);
+		frnd = bt_mesh_friend_find(rx->sub->net_idx, old_friend, true);
 	} else {
-		frnd = friend_lpn_find(rx->sub->net_idx, rx->ctx.addr, true);
+		frnd = bt_mesh_friend_find(rx->sub->net_idx, rx->ctx.addr,
+					   true);
 	}
 
 	if (frnd) {
