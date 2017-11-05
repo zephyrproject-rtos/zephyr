@@ -40,6 +40,8 @@ int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
 	int err;
 
 	BT_INFO("Primary Element: 0x%04x", addr);
+	BT_DBG("net_idx 0x%04x flags 0x%02x iv_index 0x%04x",
+	       net_idx, flags, iv_index);
 
 	if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT)) {
 		bt_mesh_proxy_prov_disable();
