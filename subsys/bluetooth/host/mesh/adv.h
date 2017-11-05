@@ -35,9 +35,7 @@ struct bt_mesh_adv {
 		/* For transport layer segment sending */
 		struct {
 			u8_t tx_id;
-			u8_t attempts:6,
-			     new_key:1,
-			     friend_cred:1;
+			u8_t attempts;
 		} seg;
 	};
 };

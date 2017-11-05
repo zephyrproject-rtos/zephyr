@@ -61,11 +61,13 @@ static struct seg_tx {
 	struct net_buf          *seg[BT_MESH_TX_SEG_COUNT];
 	u64_t                    seq_auth;
 	u16_t                    dst;
-	u8_t                     seg_n;      /* Last segment index */
-	u8_t                     nack_count; /* Number of not acked segments */
+	u8_t                     seg_n:5,       /* Last segment index */
+				 friend_cred:1, /* Use Friendship creds */
+				 new_key:1;     /* New/old key */
+	u8_t                     nack_count;    /* Number of unacked segs */
 	bt_mesh_cb_t             cb;
 	void                    *cb_data;
-	struct k_delayed_work    retransmit; /* Retransmit timer */
+	struct k_delayed_work    retransmit;    /* Retransmit timer */
 } seg_tx[CONFIG_BT_MESH_TX_SEG_MSG_COUNT];
 
 static struct seg_rx {
@@ -229,10 +231,8 @@ static void seg_tx_send_unacked(struct seg_tx *tx)
 
 		BT_DBG("resending %u/%u", i, tx->seg_n);
 
-		err = bt_mesh_net_resend(tx->sub, seg,
-					 BT_MESH_ADV(seg)->seg.new_key,
-					 BT_MESH_ADV(seg)->seg.friend_cred,
-					 seg_sent);
+		err = bt_mesh_net_resend(tx->sub, seg, tx->new_key,
+					 tx->friend_cred, seg_sent);
 		if (err) {
 			BT_ERR("Sending segment failed");
 			seg_tx_complete(tx, -EIO);
@@ -295,6 +295,8 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, u8_t aid,
 	tx->nack_count = tx->seg_n + 1;
 	tx->seq_auth = SEQ_AUTH(BT_MESH_NET_IVI_TX, bt_mesh.seq);
 	tx->sub = net_tx->sub;
+	tx->new_key = net_tx->sub->kr_flag;
+	tx->friend_cred = net_tx->ctx->friend_cred;
 
 	seq_zero = tx->seq_auth & 0x1fff;
 
@@ -317,8 +319,6 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, u8_t aid,
 
 		BT_MESH_ADV(seg)->seg.tx_id = tx - seg_tx;
 		BT_MESH_ADV(seg)->seg.attempts = SEG_RETRANSMIT_ATTEMPTS;
-		BT_MESH_ADV(seg)->seg.new_key = net_tx->sub->kr_flag;
-		BT_MESH_ADV(seg)->seg.friend_cred = net_tx->ctx->friend_cred;
 
 		net_buf_reserve(seg, BT_MESH_NET_HDR_LEN);
 
