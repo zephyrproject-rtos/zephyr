@@ -2503,7 +2503,9 @@ static void lpn_timeout_get(struct bt_mesh_model *model,
 {
 	/* Needed size: opcode (2 bytes) + msg + MIC */
 	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 5 + 4);
+	struct bt_mesh_friend *frnd;
 	u16_t lpn_addr;
+	s32_t timeout;
 
 	lpn_addr = net_buf_simple_pull_le16(buf);
 
@@ -2517,7 +2519,24 @@ static void lpn_timeout_get(struct bt_mesh_model *model,
 
 	bt_mesh_model_msg_init(msg, OP_LPN_TIMEOUT_STATUS);
 	net_buf_simple_add_le16(msg, lpn_addr);
-	memset(net_buf_simple_add(msg, 3), 0, 3);
+
+	if (!IS_ENABLED(CONFIG_BLUETOOTH_MESH_FRIEND)) {
+		timeout = 0;
+		goto send_rsp;
+	}
+
+	frnd = bt_mesh_friend_find(BT_MESH_KEY_ANY, lpn_addr, true);
+	if (!frnd) {
+		timeout = 0;
+		goto send_rsp;
+	}
+
+	timeout = k_delayed_work_remaining_get(&frnd->timer) / 100;
+
+send_rsp:
+	net_buf_simple_add_u8(msg, timeout);
+	net_buf_simple_add_u8(msg, timeout >> 8);
+	net_buf_simple_add_u8(msg, timeout >> 16);
 
 	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
 		BT_ERR("Unable to send LPN PollTimeout Status");
