@@ -271,6 +271,8 @@ int bt_mesh_friend_cred_update(u16_t net_idx, u8_t idx, const u8_t net_key[16])
 {
 	int err, i;
 
+	BT_DBG("net_idx 0x%04x idx %u", net_idx, idx);
+
 	for (i = 0; i < ARRAY_SIZE(friend_cred); i++) {
 		struct bt_mesh_friend_cred *cred = &friend_cred[i];
 
@@ -435,7 +437,7 @@ int bt_mesh_net_create(u16_t idx, u8_t flags, const u8_t key[16],
 	struct bt_mesh_subnet *sub;
 	int err;
 
-	BT_DBG("idx %u iv_index %u", idx, iv_index);
+	BT_DBG("idx %u flags 0x%02x iv_index %u", idx, flags, iv_index);
 
 	BT_DBG("NetKey %s", bt_hex(key, 16));
 
