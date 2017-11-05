@@ -445,9 +445,19 @@ int bt_mesh_net_create(u16_t idx, u8_t flags, const u8_t key[16],
 
 	sub = &bt_mesh.sub[0];
 
-	err = bt_mesh_net_keys_create(&sub->keys[0], key);
-	if (err) {
-		return -EIO;
+	sub->kr_flag = BT_MESH_KEY_REFRESH(flags);
+	if (sub->kr_flag) {
+		err = bt_mesh_net_keys_create(&sub->keys[1], key);
+		if (err) {
+			return -EIO;
+		}
+
+		sub->kr_phase = BT_MESH_KR_PHASE_2;
+	} else {
+		err = bt_mesh_net_keys_create(&sub->keys[0], key);
+		if (err) {
+			return -EIO;
+		}
 	}
 
 	bt_mesh.valid = 1;
@@ -457,12 +467,6 @@ int bt_mesh_net_create(u16_t idx, u8_t flags, const u8_t key[16],
 		sub->node_id = BT_MESH_NODE_IDENTITY_RUNNING;
 	} else {
 		sub->node_id = BT_MESH_NODE_IDENTITY_NOT_SUPPORTED;
-	}
-
-	sub->kr_flag = BT_MESH_KEY_REFRESH(flags);
-	if (sub->kr_flag) {
-		memcpy(&sub->keys[1], &sub->keys[0], sizeof(sub->keys[0]));
-		sub->kr_phase = BT_MESH_KR_PHASE_2;
 	}
 
 	bt_mesh.iv_index = iv_index;
