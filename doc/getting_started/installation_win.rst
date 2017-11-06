@@ -58,7 +58,7 @@ environment for Windows. Follow the steps below to set it up:
    .. code-block:: console
 
       $ pacman -Syu
-      $ pacman -S git make gcc dtc diffutils ncurses-devel python3 gperf
+      $ pacman -S git cmake make gcc dtc diffutils ncurses-devel python3 gperf
 
 #. From within the MSYS2 MSYS Shell, clone a copy of the Zephyr source into
    your home directory using Git:
@@ -132,6 +132,20 @@ environment for Windows. Follow the steps below to set it up:
       $ unset ZEPHYR_SDK_INSTALL_DIR
       $ source ~/zephyr/zephyr-env.sh
 
+#. Within the MSYS console, build the required host tools:
+
+    .. code-block:: console
+
+      $ cd $ZEPHYR_BASE
+      $ cmake -Bbuild -Hscripts/
+      $ cd build
+      $ make
+
+    .. note::
+
+        You only need to do this once after cloning the git repository.
+
+
 #. Finally, you can try building the :ref:`hello_world` sample to check things
    out.
 
@@ -140,15 +154,18 @@ environment for Windows. Follow the steps below to set it up:
     .. code-block:: console
 
        $ cd $ZEPHYR_BASE/samples/hello_world
-       $ make BOARD=arduino_101
+       $ cmake -Bbuild -H. -DPREBUILT_HOST_TOOLS=$ZEPHYR_BASE/build  -DBOARD=arduino_101
+       $ cd build
+       $ make
 
    To build for the ARM-based Nordic nRF52 Development Kit:
 
     .. code-block:: console
 
        $ cd $ZEPHYR_BASE/samples/hello_world
-       $ make BOARD=nrf52_pca10040
-
+       $ cmake -Bbuild -H. -DPREBUILT_HOST_TOOLS=$ZEPHYR_BASE/build  -DBOARD=nrf52_pca10040
+       $ cd build
+       $ make
 
     This should check that all the tools and toolchain are set up correctly for
     your own Zephyr development.
