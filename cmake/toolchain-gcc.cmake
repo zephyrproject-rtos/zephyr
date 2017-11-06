@@ -25,19 +25,16 @@ else()
 endif()
 set(CMAKE_CXX_COMPILER ${cplusplus_compiler}     CACHE INTERNAL " " FORCE)
 
-execute_process(
-  COMMAND ${CMAKE_C_COMPILER} --print-file-name=include
-  OUTPUT_VARIABLE _OUTPUT
-  )
-string(REGEX REPLACE "\n" "" _OUTPUT ${_OUTPUT})
-set(NOSTDINC ${_OUTPUT})
+set(NOSTDINC "")
 
-execute_process(
-  COMMAND ${CMAKE_C_COMPILER} --print-file-name=include-fixed
-  OUTPUT_VARIABLE _OUTPUT
-  )
-string(REGEX REPLACE "\n" "" _OUTPUT ${_OUTPUT})
-list(APPEND NOSTDINC ${_OUTPUT})
+foreach(file_name include include-fixed)
+  execute_process(
+    COMMAND ${CMAKE_C_COMPILER} --print-file-name=${file_name}
+    OUTPUT_VARIABLE _OUTPUT
+    )
+  string(REGEX REPLACE "\n" "" _OUTPUT ${_OUTPUT})
+  list(APPEND NOSTDINC ${_OUTPUT})
+endforeach()
 
 include($ENV{ZEPHYR_BASE}/cmake/gcc-m-cpu.cmake)
 
