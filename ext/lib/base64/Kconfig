@@ -1,0 +1,18 @@
+# Kconfig - base64 library support configuration options
+#
+# Copyright (c) 2017 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+#
+# BASE64
+#
+
+config BASE64
+	bool
+	prompt "mbedtls base64"
+	help
+	  Enable support for RFC 1521 base64 encoding/decoding.
+	  This module can by used only in case base64 module bundled
+	  in the mbedtls library is not enabled.
