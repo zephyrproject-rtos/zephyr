@@ -34,11 +34,16 @@ endif()
 # copy-pasting cmake_minimum_required across application
 # CMakeLists.txt files.
 #
-# 3.6.0 is set as the minimum required version because MSYS does not
-# support 3.8, this will be set back to 3.8 when
+# An exception to the above is MSYS, MSYS is allowed to use 3.6.0
+# because MSYS does not support 3.8, this will be set back to 3.8 when
 # https://github.com/zephyrproject-rtos/zephyr/issues/4687 is
 # resolved.
-cmake_minimum_required(VERSION 3.6.0)
+if(MSYS)
+  cmake_minimum_required(VERSION 3.6.0)
+else()
+  cmake_minimum_required(VERSION 3.8.2)
+endif()
+
 cmake_policy(SET CMP0000 OLD)
 cmake_policy(SET CMP0002 NEW)
 
