@@ -24,26 +24,28 @@
 
 static struct __netusb {
 	struct net_if *iface;
-	u8_t conf;
+	bool configured;
 	struct netusb_function *func;
 } netusb;
 
 static int netusb_send(struct net_if *iface, struct net_pkt *pkt)
 {
+	int ret;
+
 	SYS_LOG_DBG("Send pkt, len %u", net_pkt_get_len(pkt));
 
-	switch (netusb.conf) {
-	case 1:
-		if (!netusb.func->send_pkt(pkt)) {
-			net_pkt_unref(pkt);
-			return 0;
-		}
-	default:
-		SYS_LOG_ERR("Unconfigured device, conf %u", netusb.conf);
-		break;
+	if (!netusb.configured) {
+		SYS_LOG_ERR("Unconfigured device, conf %u", netusb.configured);
+		return -ENODEV;
 	}
 
-	return -ENODEV;
+	ret = netusb.func->send_pkt(pkt);
+	if (ret) {
+		return ret;
+	}
+
+	net_pkt_unref(pkt);
+	return 0;
 }
 
 void netusb_recv(struct net_pkt *pkt)
@@ -78,20 +80,20 @@ static void netusb_status_configured(u8_t *conf)
 {
 	SYS_LOG_INF("Enable configuration number %u", *conf);
 
-	netusb.conf = *conf;
-
 	switch (*conf) {
 	case 1:
+		netusb.configured = true;
 		net_if_up(netusb.iface);
 		netusb_connect_media();
 		break;
 	case 0:
+		netusb.configured = false;
 		netusb_disconnect_media();
 		net_if_down(netusb.iface);
 		break;
 	default:
 		SYS_LOG_ERR("Wrong configuration chosen: %u", *conf);
-		netusb.conf = 0;
+		netusb.configured = false;
 		break;
 	}
 }
@@ -133,15 +135,15 @@ static int netusb_class_handler(struct usb_setup_packet *setup,
 				s32_t *len, u8_t **data)
 {
 	SYS_LOG_DBG("len %d req_type 0x%x req 0x%x conf %u",
-		    *len, setup->bmRequestType, setup->bRequest, netusb.conf);
+		    *len, setup->bmRequestType, setup->bRequest,
+		    netusb.configured);
 
-	switch (netusb.conf) {
-	case 1:
-		return netusb.func->class_handler(setup, len, data);
-	default:
-		SYS_LOG_ERR("Unconfigured device, conf %u", netusb.conf);
+	if (!netusb.configured) {
+		SYS_LOG_ERR("Unconfigured device, conf %u", netusb.configured);
 		return -ENODEV;
 	}
+
+	return netusb.func->class_handler(setup, len, data);
 }
 
 static int netusb_custom_handler(struct usb_setup_packet *setup,
