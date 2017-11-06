@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <ztest.h>
 #include <zephyr.h>
 #include <tc_util.h>
 
@@ -24,28 +25,25 @@ int test_frequency(void)
 	       sys_clock_hw_cycles_per_sec, pct);
 
 	/* Heuristic: if we're more than 10% off, throw an error */
-	if (pct < 90 || pct > 110) {
-		TC_PRINT("Clock calibration is way off!\n");
-		return -1;
-	}
-
+	zassert_false((pct < 90 || pct > 110),
+			"Clock calibration is way off!\n");
 	return 0;
 }
 
 
-void main(void)
+void test_timer(void)
 {
 	u32_t t_last, t_now, i, errors;
 	s32_t diff;
-	int rv = TC_PASS;
 
 	errors = 0;
 
+	/* k_thread_priority_set(k_current_get(), 0);*/
 	TC_PRINT("sys_clock_us_per_tick = %d\n", sys_clock_us_per_tick);
 	TC_PRINT("sys_clock_hw_cycles_per_tick = %d\n",
-		 sys_clock_hw_cycles_per_tick);
+		sys_clock_hw_cycles_per_tick);
 	TC_PRINT("sys_clock_hw_cycles_per_sec = %d\n",
-		 sys_clock_hw_cycles_per_sec);
+		sys_clock_hw_cycles_per_sec);
 
 	TC_START("test monotonic timer");
 
@@ -53,7 +51,6 @@ void main(void)
 
 	for (i = 0; i < 1000000; i++) {
 		t_now = k_cycle_get_32();
-
 		if (t_now < t_last) {
 			diff = t_now - t_last;
 			TC_PRINT("diff = %d (t_last = %u : t_now = %u);"
@@ -62,18 +59,14 @@ void main(void)
 		}
 		t_last = t_now;
 	}
-
-	if (errors) {
-		TC_PRINT("errors = %d\n", errors);
-		rv = TC_FAIL;
-	} else {
-		TC_PRINT("Cycle results appear to be monotonic\n");
-	}
-
-	if (test_frequency()) {
-		rv = TC_FAIL;
-	}
-
-	TC_END_REPORT(rv);
+	zassert_false(errors, "errors = %d\n", errors);
+	zassert_false(test_frequency(), "test frequency failure");
 }
 
+
+void test_main(void *p1, void *p2, void *p3)
+{
+	ztest_test_suite(test_timer_fn,
+		ztest_unit_test(test_timer));
+	ztest_run_test_suite(test_timer_fn);
+}
