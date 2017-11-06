@@ -14,6 +14,19 @@
 # modified by the entry point ${APPLICATION_SOURCE_DIR}/CMakeLists.txt
 # that was specified when cmake was called.
 
+# Determine if we are using MSYS.
+#
+# We don't use project() because it would take some time to rewrite
+# the build scripts to be compatible with everything project() does.
+execute_process(
+  COMMAND
+  uname
+  OUTPUT_VARIABLE uname_output
+  )
+if(uname_output MATCHES "^MSYS")
+  set(MSYS 1)
+endif()
+
 # CMake version 3.8.2 is the only supported version. Version 3.9 is
 # not supported because it introduced a warning that we do not wish to
 # show to users. Specifically, it displays a warning when an OLD
@@ -47,19 +60,6 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${AUTOCONF_H})
 include($ENV{ZEPHYR_BASE}/cmake/extensions.cmake)
 
 find_package(PythonInterp 3.4)
-
-# Determine if we are using MSYS.
-#
-# We don't use project() because it would take some time to rewrite
-# the build scripts to be compatible with everything project() does.
-execute_process(
-  COMMAND
-  uname
-  OUTPUT_VARIABLE uname_output
-  )
-if(uname_output MATCHES "^MSYS")
-  set(MSYS 1)
-endif()
 
 # Generate syscall_macros.h at configure-time because it has virtually
 # no dependencies
