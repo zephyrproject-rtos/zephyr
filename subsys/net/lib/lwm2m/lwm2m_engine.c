@@ -1730,8 +1730,8 @@ static int lwm2m_read_handler(struct lwm2m_engine_obj_inst *obj_inst,
 			      struct lwm2m_engine_obj_field *obj_field,
 			      struct lwm2m_engine_context *context)
 {
-	struct lwm2m_output_context *out = context->out;
-	struct lwm2m_obj_path *path = context->path;
+	struct lwm2m_output_context *out;
+	struct lwm2m_obj_path *path;
 	int i, loop_max = 1;
 	u16_t res_inst_id_tmp = 0;
 	void *data_ptr = NULL;
@@ -1740,6 +1740,9 @@ static int lwm2m_read_handler(struct lwm2m_engine_obj_inst *obj_inst,
 	if (!obj_inst || !res || !obj_field || !context) {
 		return -EINVAL;
 	}
+
+	out = context->out;
+	path = context->path;
 
 	/* setup initial data elements */
 	data_ptr = res->data_ptr;
@@ -1915,8 +1918,8 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 			struct lwm2m_engine_obj_field *obj_field,
 			struct lwm2m_engine_context *context)
 {
-	struct lwm2m_input_context *in = context->in;
-	struct lwm2m_obj_path *path = context->path;
+	struct lwm2m_input_context *in;
+	struct lwm2m_obj_path *path;
 	s64_t temp64 = 0;
 	s32_t temp32 = 0;
 	void *data_ptr = NULL;
@@ -1932,6 +1935,9 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 	if (!obj_inst || !res || !obj_field || !context) {
 		return -EINVAL;
 	}
+
+	in = context->in;
+	path = context->path;
 
 	/* setup initial data elements */
 	data_ptr = res->data_ptr;
@@ -2078,7 +2084,7 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 static int lwm2m_exec_handler(struct lwm2m_engine_obj *obj,
 			      struct lwm2m_engine_context *context)
 {
-	struct lwm2m_obj_path *path = context->path;
+	struct lwm2m_obj_path *path;
 	struct lwm2m_engine_obj_inst *obj_inst;
 	struct lwm2m_engine_res_inst *res = NULL;
 	int ret;
@@ -2086,6 +2092,8 @@ static int lwm2m_exec_handler(struct lwm2m_engine_obj *obj,
 	if (!obj || !context) {
 		return -EINVAL;
 	}
+
+	path = context->path;
 
 	obj_inst = get_engine_obj_inst(path->obj_id, path->obj_inst_id);
 	if (!obj_inst) {
