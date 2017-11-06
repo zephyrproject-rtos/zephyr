@@ -206,7 +206,17 @@ int zsock_accept(int sock, struct sockaddr *addr, socklen_t *addrlen)
 		int len = min(*addrlen, sizeof(ctx->remote));
 
 		memcpy(addr, &ctx->remote, len);
-		*addrlen = sizeof(ctx->remote);
+		/* addrlen is a value-result argument, set to actual
+		 * size of source address
+		 */
+		if (ctx->remote.sa_family == AF_INET) {
+			*addrlen = sizeof(struct sockaddr_in);
+		} else if (ctx->remote.sa_family == AF_INET6) {
+			*addrlen = sizeof(struct sockaddr_in6);
+		} else {
+			errno = ENOTSUP;
+			return -1;
+		}
 	}
 
 	/* TODO: Ensure non-negative */
@@ -389,6 +399,18 @@ ssize_t zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
 			rv = net_pkt_get_src_addr(pkt, src_addr, *addrlen);
 			if (rv < 0) {
 				errno = rv;
+				return -1;
+			}
+
+			/* addrlen is a value-result argument, set to actual
+			 * size of source address
+			 */
+			if (src_addr->sa_family == AF_INET) {
+				*addrlen = sizeof(struct sockaddr_in);
+			} else if (src_addr->sa_family == AF_INET6) {
+				*addrlen = sizeof(struct sockaddr_in6);
+			} else {
+				errno = ENOTSUP;
 				return -1;
 			}
 		}
