@@ -28,7 +28,7 @@
 #define USB_CDC_SET_ETH_PKT_FILTER	0x43
 
 /* Pointer to pkt assembling at the moment */
-struct net_pkt *in_pkt;
+static struct net_pkt *in_pkt;
 
 /* In a case of low memory skip data to the end of the packet */
 static bool skip;
