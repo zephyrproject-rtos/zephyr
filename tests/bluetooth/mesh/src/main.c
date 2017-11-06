@@ -10,7 +10,6 @@
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/mesh.h>
-#include <ztest.h>
 
 #include "board.h"
 
@@ -192,28 +191,33 @@ static const struct bt_mesh_prov prov = {
 
 static void bt_ready(int err)
 {
-	zassert_false(err, "Bluetooth init failed");
+	if (err) {
+		printk("Bluetooth init failed (err %d)\n", err);
+		return;
+	}
 
 	printk("Bluetooth initialized\n");
 
 	board_init();
 
-	zassert_false(bt_mesh_init(&prov, &comp),
-			"Initializing mesh failed");
+	err = bt_mesh_init(&prov, &comp);
+	if (err) {
+		printk("Initializing mesh failed (err %d)\n", err);
+		return;
+	}
 
 	printk("Mesh initialized\n");
 }
 
-void test_mesh(void)
+void main(void)
 {
-	/* Initialize the Bluetooth Subsystem */
-	zassert_false(bt_enable(bt_ready), "Bluetooth init failed");
-}
+	int err;
 
-/*test case main entry*/
-void test_main(void)
-{
-	ztest_test_suite(test_bluetooth_mesh,
-			ztest_unit_test(test_mesh));
-	ztest_run_test_suite(test_bluetooth_mesh);
+	printk("Initializing...\n");
+
+	/* Initialize the Bluetooth Subsystem */
+	err = bt_enable(bt_ready);
+	if (err) {
+		printk("Bluetooth init failed (err %d)\n", err);
+	}
 }
