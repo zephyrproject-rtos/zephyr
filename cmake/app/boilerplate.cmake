@@ -52,7 +52,12 @@ find_package(PythonInterp 3.4)
 #
 # We don't use project() because it would take some time to rewrite
 # the build scripts to be compatible with everything project() does.
-if(PYTHON_EXECUTABLE MATCHES ".exe$")
+execute_process(
+  COMMAND
+  uname
+  OUTPUT_VARIABLE uname_output
+  )
+if(uname_output MATCHES "^MSYS")
   set(MSYS 1)
 endif()
 
