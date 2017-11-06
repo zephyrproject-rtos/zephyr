@@ -48,6 +48,14 @@ include($ENV{ZEPHYR_BASE}/cmake/extensions.cmake)
 
 find_package(PythonInterp 3.4)
 
+# Determine if we are using MSYS.
+#
+# We don't use project() because it would take some time to rewrite
+# the build scripts to be compatible with everything project() does.
+if(PYTHON_EXECUTABLE MATCHES ".exe$")
+  set(MSYS 1)
+endif()
+
 # Generate syscall_macros.h at configure-time because it has virtually
 # no dependencies
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/include/generated)
