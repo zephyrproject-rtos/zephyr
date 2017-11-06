@@ -42,17 +42,29 @@ config HW_STACK_PROTECTION
 	bool "Hardware Stack Protection"
 	depends on ARCH_HAS_STACK_PROTECTION
 	help
-	  Select this option to enable hardware stack protection.
+	Select this option to enable hardware-based platform features to
+	catch stack overflows when the system is running in privileged
+	mode. If CONFIG_USERSPACE is not enabled, the system is always
+	running in privileged mode.
+
+	Note that this does not necessarily prevent corruptuon and assertions
+	about the overall system state when a fault is triggered cannot be
+	made.
 
 config USERSPACE
 	bool "User mode threads (EXPERIMENTAL)"
 	depends on ARCH_HAS_USERSPACE
-	select HW_STACK_PROTECTION
 	help
 	When enabled, threads may be created or dropped down to user mode,
 	which has significantly restricted permissions and must interact
 	with the kernel via system calls. See Zephyr documentation for more
 	details	about this feature.
+
+	If a user thread overflows its stack, this will be caught and the
+	kernel itself will be shielded from harm. Enabling this option
+	may or may not catch stack overflows when the system is in
+	privileged mode or handling a system call; to ensure these are always
+	caught, enable CONFIG_HW_STACK_PROTECTION.
 
 	This feature is under heavy development and APIs related to it are
 	subject to change, even if declared non-private.

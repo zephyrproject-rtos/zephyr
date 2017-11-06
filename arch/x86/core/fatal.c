@@ -65,7 +65,8 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 		break;
 	}
 #if defined(CONFIG_STACK_CANARIES) || defined(CONFIG_STACK_SENTINEL) || \
-		defined(CONFIG_X86_STACK_PROTECTION)
+		defined(CONFIG_HW_STACK_PROTECTION) || \
+		defined(CONFIG_USERSPACE)
 	case _NANO_ERR_STACK_CHK_FAIL:
 		printk("***** Stack Check Fail! *****\n");
 		break;
@@ -211,7 +212,7 @@ EXC_FUNC_NOCODE(IV_OVERFLOW);
 EXC_FUNC_NOCODE(IV_BOUND_RANGE);
 EXC_FUNC_NOCODE(IV_INVALID_OPCODE);
 EXC_FUNC_NOCODE(IV_DEVICE_NOT_AVAILABLE);
-#ifndef CONFIG_X86_STACK_PROTECTION
+#ifndef CONFIG_X86_ENABLE_TSS
 EXC_FUNC_NOCODE(IV_DOUBLE_FAULT);
 #endif
 EXC_FUNC_CODE(IV_INVALID_TSS);
@@ -294,7 +295,7 @@ FUNC_NORETURN void page_fault_handler(const NANO_ESF *pEsf)
 _EXCEPTION_CONNECT_CODE(page_fault_handler, IV_PAGE_FAULT);
 #endif /* CONFIG_EXCEPTION_DEBUG */
 
-#ifdef CONFIG_X86_STACK_PROTECTION
+#ifdef CONFIG_X86_ENABLE_TSS
 static __noinit volatile NANO_ESF _df_esf;
 
 /* Very tiny stack; just enough for the bogus error code pushed by the CPU
@@ -396,4 +397,4 @@ static FUNC_NORETURN __used void _df_handler_top(void)
  */
 _X86_IDT_TSS_REGISTER(DF_TSS, -1, -1, IV_DOUBLE_FAULT, 0);
 
-#endif /* CONFIG_X86_STACK_PROTECTION */
+#endif /* CONFIG_X86_ENABLE_TSS */

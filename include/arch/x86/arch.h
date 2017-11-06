@@ -552,10 +552,11 @@ extern FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
 						const NANO_ESF * pEsf);
 
 
-#ifdef CONFIG_X86_STACK_PROTECTION
+#ifdef CONFIG_X86_ENABLE_TSS
 extern struct task_state_segment _main_tss;
+#endif
 
-#ifdef CONFIG_X86_USERSPACE
+#ifdef CONFIG_USERSPACE
 /* Syscall invocation macros. x86-specific machine constraints used to ensure
  * args land in the proper registers, see implementation of
  * _x86_syscall_entry_stub in userspace.S
@@ -688,8 +689,12 @@ static inline int _arch_is_user_context(void)
 
 	return cs == USER_CODE_SEG;
 }
+#endif /* CONFIG_USERSPACE */
 
-/* With userspace enabled, stacks are arranged as follows:
+
+#if defined(CONFIG_HW_STACK_PROTECTION) && defined(CONFIG_USERSPACE)
+/* With both hardware stack protection and userspace enabled, stacks are
+ * arranged as follows:
  *
  * High memory addresses
  * +---------------+
@@ -711,14 +716,18 @@ static inline int _arch_is_user_context(void)
  * All context switches will save/restore the esp0 field in the TSS.
  */
 #define _STACK_GUARD_SIZE	(MMU_PAGE_SIZE * 2)
-#else /* !CONFIG_X86_USERSPACE */
-#define _STACK_GUARD_SIZE	MMU_PAGE_SIZE
-#endif /* CONFIG_X86_USERSPACE */
 #define _STACK_BASE_ALIGN	MMU_PAGE_SIZE
-#else /* !CONFIG_X86_STACK_PROTECTION */
+#elif defined(CONFIG_HW_STACK_PROTECTION) || defined(CONFIG_USERSPACE)
+/* If only one of HW stack protection or userspace is enabled, then the
+ * stack will be preceded by one page which is a guard page or a kernel mode
+ * stack, respectively.
+ */
+#define _STACK_GUARD_SIZE	MMU_PAGE_SIZE
+#define _STACK_BASE_ALIGN	MMU_PAGE_SIZE
+#else /* Neither feature */
 #define _STACK_GUARD_SIZE	0
 #define _STACK_BASE_ALIGN	STACK_ALIGN
-#endif /* CONFIG_X86_STACK_PROTECTION */
+#endif
 
 #define _ARCH_THREAD_STACK_DEFINE(sym, size) \
 	struct _k_thread_stack_element __kernel_noinit \
