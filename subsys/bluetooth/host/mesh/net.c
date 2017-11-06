@@ -906,35 +906,12 @@ struct bt_mesh_subnet *bt_mesh_subnet_find(const u8_t net_id[8], u8_t flags,
 	return NULL;
 }
 
-static int net_decrypt(struct bt_mesh_subnet *sub, u8_t idx, const u8_t *data,
+static int net_decrypt(struct bt_mesh_subnet *sub, const u8_t *enc,
+		       const u8_t *priv, const u8_t *data,
 		       size_t data_len, struct bt_mesh_net_rx *rx,
 		       struct net_buf_simple *buf)
 {
-	const u8_t *enc, *priv;
-
-	BT_DBG("NID 0x%02x, PDU NID 0x%02x net_idx 0x%04x idx %u",
-	       sub->keys[idx].nid, NID(data), sub->net_idx, idx);
-
-	if (NID(data) == sub->keys[idx].nid) {
-		enc = sub->keys[idx].enc;
-		priv = sub->keys[idx].privacy;
-		rx->ctx.friend_cred = 0;
-	} else {
-		u8_t nid;
-
-		if (bt_mesh_friend_cred_get(sub->net_idx,
-					    BT_MESH_ADDR_UNASSIGNED, idx,
-					    &nid, &enc, &priv)) {
-			return -ENOENT;
-		}
-
-		if (nid != NID(data)) {
-			return -ENOENT;
-		}
-
-		rx->ctx.friend_cred = 1;
-	}
-
+	BT_DBG("NID 0x%02x net_idx 0x%04x", NID(data), sub->net_idx);
 	BT_DBG("IVI %u net->iv_index 0x%08x", IVI(data), bt_mesh.iv_index);
 
 	rx->old_iv = (IVI(data) != (bt_mesh.iv_index & 0x01));
@@ -968,40 +945,90 @@ static int net_decrypt(struct bt_mesh_subnet *sub, u8_t idx, const u8_t *data,
 	return bt_mesh_net_decrypt(enc, buf, BT_MESH_NET_IVI_RX(rx), false);
 }
 
-static int net_find_and_decrypt(const u8_t *data, size_t data_len,
-				struct bt_mesh_net_rx *rx,
-				struct net_buf_simple *buf)
+#if (defined(CONFIG_BT_MESH_LOW_POWER) || \
+     defined(CONFIG_BT_MESH_FRIEND))
+static int friend_decrypt(struct bt_mesh_subnet *sub, const u8_t *data,
+			  size_t data_len, struct bt_mesh_net_rx *rx,
+			  struct net_buf_simple *buf)
 {
 	int i;
 
-	BT_DBG("");
+	BT_DBG("NID 0x%02x net_idx 0x%04x", NID(data), sub->net_idx);
 
-	for (i = 0; i < ARRAY_SIZE(bt_mesh.sub); i++) {
-		struct bt_mesh_subnet *sub = &bt_mesh.sub[i];
-		int err;
+	for (i = 0; i < ARRAY_SIZE(friend_cred); i++) {
+		struct bt_mesh_friend_cred *cred = &friend_cred[i];
 
-		if (sub->net_idx == BT_MESH_KEY_UNUSED) {
+		if (cred->net_idx != sub->net_idx) {
 			continue;
 		}
 
-		err = net_decrypt(sub, 0, data, data_len, rx, buf);
-		if (!err) {
-			rx->ctx.net_idx = sub->net_idx;
-			rx->sub = sub;
-			return true;
+		if (NID(data) == cred->cred[0].nid &&
+		    !net_decrypt(sub, cred->cred[0].enc, cred->cred[0].privacy,
+				 data, data_len, rx, buf)) {
+			return 0;
 		}
 
 		if (sub->kr_phase == BT_MESH_KR_NORMAL) {
 			continue;
 		}
 
-		err = net_decrypt(sub, 1, data, data_len, rx, buf);
-		if (!err) {
-			rx->ctx.net_idx = sub->net_idx;
-			rx->sub = sub;
+		if (NID(data) == cred->cred[1].nid &&
+		    !net_decrypt(sub, cred->cred[1].enc, cred->cred[1].privacy,
+				 data, data_len, rx, buf)) {
 			rx->new_key = 1;
-			return true;
+			return 0;
 		}
+	}
+
+	return -ENOENT;
+}
+#endif
+
+static int net_find_and_decrypt(const u8_t *data, size_t data_len,
+				struct bt_mesh_net_rx *rx,
+				struct net_buf_simple *buf)
+{
+	struct bt_mesh_subnet *sub;
+	int i;
+
+	BT_DBG("");
+
+	for (i = 0; i < ARRAY_SIZE(bt_mesh.sub); i++) {
+		sub = &bt_mesh.sub[i];
+		if (sub->net_idx == BT_MESH_KEY_UNUSED) {
+			continue;
+		}
+
+#if (defined(CONFIG_BT_MESH_LOW_POWER) || \
+     defined(CONFIG_BT_MESH_FRIEND))
+		if (!friend_decrypt(sub, data, data_len, rx, buf)) {
+			rx->ctx.friend_cred = 1;
+			break;
+		}
+#endif
+
+		if (NID(data) == sub->keys[0].nid &&
+		    !net_decrypt(sub, sub->keys[0].enc, sub->keys[0].privacy,
+				 data, data_len, rx, buf)) {
+			break;
+		}
+
+		if (sub->kr_phase == BT_MESH_KR_NORMAL) {
+			continue;
+		}
+
+		if (NID(data) == sub->keys[1].nid &&
+		    !net_decrypt(sub, sub->keys[1].enc, sub->keys[1].privacy,
+				 data, data_len, rx, buf)) {
+			rx->new_key = 1;
+			break;
+		}
+	}
+
+	if (i < ARRAY_SIZE(bt_mesh.sub)) {
+		rx->ctx.net_idx = sub->net_idx;
+		rx->sub = sub;
+		return true;
 	}
 
 	return false;
