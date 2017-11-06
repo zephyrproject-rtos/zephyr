@@ -41,6 +41,9 @@ MEMORY
     IDT_LIST  (wx)      : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
 }
 
+/*  Default entry point:  */
+ENTRY(__start)
+
 SECTIONS
     {
 

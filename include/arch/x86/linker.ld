@@ -61,6 +61,9 @@
 	#define MMU_PAGE_ALIGN
 #endif
 
+/*  Default entry point:  */
+ENTRY(__start)
+
 /* SECTIONS definitions */
 SECTIONS
 	{

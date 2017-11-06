@@ -80,6 +80,9 @@ MEMORY
     IDT_LIST  (wx)      : ORIGIN = (RAM_ADDR + RAM_SIZE), LENGTH = 2K
     }
 
+/*  Default entry point:  */
+ENTRY(__start)
+
 SECTIONS
     {
     GROUP_START(ROMABLE_REGION)
