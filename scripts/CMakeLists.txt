@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.6)
 Project(Zehpyr-Host-Tools)
 
 # fixdep is added because all files depend on autoconf.h,
