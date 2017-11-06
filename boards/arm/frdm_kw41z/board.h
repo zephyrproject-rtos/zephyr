@@ -30,10 +30,16 @@
 #define BLUE_GPIO_PIN	18
 
 /* LED0. There is no physical LED on the board with this name, so create an
- * alias to the green LED to make the basic blinky sample work.
+ * alias to the green LED to make various samples work.
  */
 #define LED0_GPIO_PORT	GREEN_GPIO_NAME
 #define LED0_GPIO_PIN	GREEN_GPIO_PIN
+
+/* LED1. There is no physical LED on the board with this name, so create an
+ * alias to the blue LED to make various samples work.
+ */
+#define LED1_GPIO_PORT	BLUE_GPIO_NAME
+#define LED1_GPIO_PIN	BLUE_GPIO_PIN
 
 /* Push button switch 0. There is no physical switch on the board with this
  * name, so create an alias to SW3 to make the basic button sample work.
