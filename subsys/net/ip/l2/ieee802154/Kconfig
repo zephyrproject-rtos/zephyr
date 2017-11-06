@@ -30,7 +30,7 @@ config NET_DEBUG_L2_IEEE802154
 config NET_DEBUG_L2_IEEE802154_DISPLAY_PACKET
 	bool "Enable IEEE 802.15.4 packet display"
 	default n
-	depends on NET_DEBUG_L2_IEEE802154
+	depends on NET_LOG
 	help
 	  Enable printing out in/out 802.15.4 packets. This is extremely
 	  verbose, do not enable this unless you know what you are doing.
