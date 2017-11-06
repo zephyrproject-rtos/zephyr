@@ -32,7 +32,6 @@ endif()
 list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake)
 
 find_package(Curses REQUIRED)
-find_package(Intl REQUIRED)
 find_package(Regex REQUIRED)
 
 include_directories(
@@ -53,7 +52,7 @@ add_executable(conf
   conf.c
   zconf.tab.c
 )
-target_link_libraries(conf ${Regex_LIBRARIES} ${Intl_LIBRARIES})
+target_link_libraries(conf ${Regex_LIBRARIES})
 
 add_executable(mconf
   mconf.c
@@ -65,7 +64,7 @@ add_executable(mconf
   lxdialog/util.c
   lxdialog/yesno.c
 )
-target_link_libraries(mconf ${CURSES_LIBRARIES} ${Regex_LIBRARIES} ${Intl_LIBRARIES})
+target_link_libraries(mconf ${CURSES_LIBRARIES} ${Regex_LIBRARIES})
 
 # Build a GTK-based frontend to Kconfig if the necessary dependencies
 # are already installed.
