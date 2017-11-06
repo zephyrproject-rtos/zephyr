@@ -1,1 +1,0 @@
-ccflags-y += -I$(ZEPHYR_BASE)/tests/include -I$(ZEPHYR_BASE)/tests/ztest/include

@@ -1,7 +1,0 @@
-ccflags-y +=-I$(srctree)/include
-ccflags-y +=-I$(srctree)/include/drivers
-ccflags-y +=-I$(srctree)/drivers
-
-asflags-y := ${ccflags-y}
-
-obj-y = soc_irq.o vector.o pulpino_irq.o pulpino_idle.o

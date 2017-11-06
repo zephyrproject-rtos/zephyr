@@ -1,6 +1,0 @@
-subdir-ccflags-y +=-I$(srctree)/include/drivers
-subdir-ccflags-y +=-I$(srctree)/drivers
-subdir-asflags-y += $(subdir-ccflags-y)
-
-obj-y += soc/$(SOC_PATH)/
-obj-y += core/

@@ -1,7 +1,0 @@
-FLASH_SCRIPT = arc_debugger.sh
-DEBUG_SCRIPT = arc_debugger.sh
-
-OPENOCD_LOAD_CMD = "load_image ${O}/${KERNEL_ELF_NAME}"
-OPENOCD_VERIFY_CMD = "verify_image ${O}/${KERNEL_ELF_NAME}"
-
-export FLASH_SCRIPT DEBUG_SCRIPT OPENOCD_VERIFY_CMD OPENOCD_LOAD_CMD
