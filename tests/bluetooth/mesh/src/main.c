@@ -19,7 +19,7 @@ static bool has_reg_fault = true;
 
 static struct bt_mesh_cfg cfg_srv = {
 	.relay = BT_MESH_RELAY_DISABLED,
-	.beacon = BT_MESH_BEACON_DISABLED,
+	.beacon = BT_MESH_BEACON_ENABLED,
 #if defined(CONFIG_BT_MESH_FRIEND)
 #if defined(CONFIG_BT_MESH_LOW_POWER)
 	.frnd = BT_MESH_FRIEND_DISABLED,
