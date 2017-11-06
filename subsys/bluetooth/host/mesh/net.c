@@ -748,7 +748,7 @@ int bt_mesh_net_encode(struct bt_mesh_net_tx *tx, struct net_buf_simple *buf,
 		       bool proxy)
 {
 	const bool ctl = (tx->ctx->app_idx == BT_MESH_KEY_UNUSED);
-	u8_t nid;
+	u8_t nid, idx = (tx->sub->kr_phase == BT_MESH_KR_PHASE_2);
 	const u8_t *enc, *priv;
 	u8_t *seq;
 	int err;
@@ -778,32 +778,23 @@ int bt_mesh_net_encode(struct bt_mesh_net_tx *tx, struct net_buf_simple *buf,
 		net_buf_simple_push_u8(buf, tx->ctx->send_ttl);
 	}
 
-	if (tx->sub->kr_phase == BT_MESH_KR_PHASE_2) {
-		if (tx->ctx->friend_cred) {
-			err = bt_mesh_friend_cred_get(tx->sub->net_idx,
-						      BT_MESH_ADDR_UNASSIGNED,
-						      1, &nid, &enc, &priv);
-			if (err) {
-				return err;
-			}
-		} else {
-			nid = tx->sub->keys[1].nid;
-			enc = tx->sub->keys[1].enc;
-			priv = tx->sub->keys[1].privacy;
+	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) && tx->ctx->friend_cred) {
+		if (bt_mesh_friend_cred_get(tx->sub->net_idx,
+					    BT_MESH_ADDR_UNASSIGNED,
+					    idx, &nid, &enc, &priv)) {
+			BT_WARN("Falling back to master credentials");
+
+			tx->ctx->friend_cred = 0;
+
+			nid = tx->sub->keys[idx].nid;
+			enc = tx->sub->keys[idx].enc;
+			priv = tx->sub->keys[idx].privacy;
 		}
 	} else {
-		if (tx->ctx->friend_cred) {
-			err = bt_mesh_friend_cred_get(tx->sub->net_idx,
-						      BT_MESH_ADDR_UNASSIGNED,
-						      0, &nid, &enc, &priv);
-			if (err) {
-				return err;
-			}
-		} else {
-			nid = tx->sub->keys[0].nid;
-			enc = tx->sub->keys[0].enc;
-			priv = tx->sub->keys[0].privacy;
-		}
+		tx->ctx->friend_cred = 0;
+		nid = tx->sub->keys[idx].nid;
+		enc = tx->sub->keys[idx].enc;
+		priv = tx->sub->keys[idx].privacy;
 	}
 
 	net_buf_simple_push_u8(buf, (nid | (BT_MESH_NET_IVI_TX & 1) << 7));

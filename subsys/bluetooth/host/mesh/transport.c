@@ -365,6 +365,11 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, u8_t aid,
 		}
 	}
 
+	/* bt_mesh_net_send() may have modified this if the needed
+	 * Friendship credentials were not found.
+	 */
+	tx->friend_cred = net_tx->ctx->friend_cred;
+
 	if (bt_mesh_lpn_established()) {
 		bt_mesh_lpn_friend_poll();
 	}
