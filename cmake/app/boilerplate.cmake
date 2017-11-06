@@ -23,7 +23,7 @@ execute_process(
   uname
   OUTPUT_VARIABLE uname_output
   )
-if(uname_output MATCHES "^MSYS")
+if(uname_output MATCHES "MSYS")
   set(MSYS 1)
 endif()
 
