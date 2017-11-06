@@ -20,7 +20,12 @@
 # policy is used, but we need policy CMP0000 set to OLD to avoid
 # copy-pasting cmake_minimum_required across application
 # CMakeLists.txt files.
-cmake_minimum_required(VERSION 3.8.2)
+#
+# 3.6.0 is set as the minimum required version because MSYS does not
+# support 3.8, this will be set back to 3.8 when
+# https://github.com/zephyrproject-rtos/zephyr/issues/4687 is
+# resolved.
+cmake_minimum_required(VERSION 3.6.0)
 cmake_policy(SET CMP0000 OLD)
 cmake_policy(SET CMP0002 NEW)
 
