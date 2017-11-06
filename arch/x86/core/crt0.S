@@ -375,7 +375,7 @@ __csSet:
 
 #endif /* CONFIG_X86_MMU */
 
-#ifdef CONFIG_X86_STACK_PROTECTION
+#if defined(CONFIG_X86_ENABLE_TSS)
 	mov $MAIN_TSS, %ax
 	ltr %ax
 #endif
