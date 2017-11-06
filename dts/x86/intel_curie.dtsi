@@ -1,5 +1,6 @@
 #include "skeleton.dtsi"
-#include "mem.h"
+
+#define __SIZE_K(x) (x * 1024)
 
 / {
 	cpus {
