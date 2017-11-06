@@ -35,6 +35,31 @@ config NET_DEBUG_L2_IEEE802154_DISPLAY_PACKET
 	  Enable printing out in/out 802.15.4 packets. This is extremely
 	  verbose, do not enable this unless you know what you are doing.
 
+if NET_DEBUG_L2_IEEE802154_DISPLAY_PACKET
+
+choice
+	prompt "Which packet do you want to print-out?"
+	default NET_DEBUG_L2_IEEE802154_DISPLAY_PACKET_FULL
+
+config NET_DEBUG_L2_IEEE802154_DISPLAY_PACKET_FULL
+	bool "Print-out both RX and TX packets"
+	help
+	  This will print-out both received and transmitted packets.
+
+config NET_DEBUG_L2_IEEE802154_DISPLAY_PACKET_RX
+	bool "Print-out only RX packets"
+	help
+	  This will print-out received packets only.
+
+config NET_DEBUG_L2_IEEE802154_DISPLAY_PACKET_TX
+	bool "Print-out only TX packets"
+	help
+	  This will print-out transmitted packets only.
+
+endchoice
+
+endif # NET_DEBUG_L2_IEEE802154_DISPLAY_PACKET
+
 config NET_L2_IEEE802154_ACK_REPLY
 	bool "Enable IEEE 802.15.4 ACK reply logic"
 	default n

@@ -41,9 +41,19 @@
 #include "net_private.h"
 
 static inline void pkt_hexdump(const char *title, struct net_pkt *pkt,
-			       bool full)
+			       bool in, bool full)
 {
-	net_hexdump_frags(title, pkt, full);
+	if ((IS_ENABLED(CONFIG_NET_DEBUG_L2_IEEE802154_DISPLAY_PACKET_RX) ||
+	     IS_ENABLED(CONFIG_NET_DEBUG_L2_IEEE802154_DISPLAY_PACKET_FULL)) &&
+	    in) {
+		net_hexdump_frags(title, pkt, full);
+	}
+
+	if ((IS_ENABLED(CONFIG_NET_DEBUG_L2_IEEE802154_DISPLAY_PACKET_TX) ||
+	     IS_ENABLED(CONFIG_NET_DEBUG_L2_IEEE802154_DISPLAY_PACKET_FULL)) &&
+	    !in) {
+		net_hexdump_frags(title, pkt, full);
+	}
 }
 
 #ifndef CONFIG_NET_DEBUG_L2_IEEE802154
@@ -163,7 +173,7 @@ enum net_verdict ieee802154_manage_recv_packet(struct net_if *iface,
 	net_pkt_ll_src(pkt)->addr = src ? net_pkt_ll(pkt) + src : NULL;
 	net_pkt_ll_dst(pkt)->addr = dst ? net_pkt_ll(pkt) + dst : NULL;
 
-	pkt_hexdump(RX_PKT_TITLE, pkt, false);
+	pkt_hexdump(RX_PKT_TITLE, pkt, true, false);
 out:
 	return verdict;
 }
@@ -173,7 +183,7 @@ static inline bool ieee802154_manage_send_packet(struct net_if *iface,
 {
 	bool ret;
 
-	pkt_hexdump(TX_PKT_TITLE " (before 6lo)", pkt, false);
+	pkt_hexdump(TX_PKT_TITLE " (before 6lo)", pkt, false, false);
 
 #ifdef CONFIG_NET_L2_IEEE802154_FRAGMENT
 	ret = net_6lo_compress(pkt, true, ieee802154_fragment);
@@ -181,7 +191,7 @@ static inline bool ieee802154_manage_send_packet(struct net_if *iface,
 	ret = net_6lo_compress(pkt, true, NULL);
 #endif
 
-	pkt_hexdump(TX_PKT_TITLE " (after 6lo)", pkt, false);
+	pkt_hexdump(TX_PKT_TITLE " (after 6lo)", pkt, false, false);
 
 	return ret;
 }
@@ -233,7 +243,7 @@ static enum net_verdict ieee802154_recv(struct net_if *iface,
 		return NET_DROP;
 	}
 
-	pkt_hexdump(RX_PKT_TITLE " (with ll)", pkt, true);
+	pkt_hexdump(RX_PKT_TITLE " (with ll)", pkt, true, true);
 
 	return ieee802154_manage_recv_packet(iface, pkt);
 }
@@ -269,7 +279,7 @@ static enum net_verdict ieee802154_send(struct net_if *iface,
 		frag = frag->frags;
 	}
 
-	pkt_hexdump(TX_PKT_TITLE " (with ll)", pkt, true);
+	pkt_hexdump(TX_PKT_TITLE " (with ll)", pkt, false, true);
 
 	net_if_queue_tx(iface, pkt);
 
