@@ -356,7 +356,7 @@ class PageMode_4kb:
         self.pte_print_elements()
 
     def pde_verbose_output(self, pde, binary_value):
-        if args.verbose is False:
+        if args.verbose < 2:
             return
 
         global print_string_pde_list
@@ -853,7 +853,7 @@ class PageMode_PAE:
                                  (pdpte * self.size_addressed_per_pdpte)))
 
     def pdpte_verbose_output(self, pdpte, binary_value):
-        if args.verbose is False:
+        if args.verbose < 2:
             return
 
         present = format_string(binary_value & 0x1)
@@ -878,7 +878,7 @@ class PageMode_PAE:
         print("END OF PAGE DIRECTORY POINTER")
 
     def pde_verbose_output(self, pdpte, pde, binary_value):
-        if args.verbose is False:
+        if args.verbose < 2:
             return
 
         global print_string_pde_list
@@ -1109,8 +1109,9 @@ def parse_args():
                         help="Zephyr kernel image")
     parser.add_argument("-o", "--output",
                         help="Output file into which the page tables are written.")
-    parser.add_argument("-v", "--verbose", action="store_true",
-                        help="Lists all the relavent data generated.")
+    parser.add_argument("-v", "--verbose", action="count", default=0,
+                        help="Print debugging information. Multiple "
+                             "invocations increase verbosity")
     args = parser.parse_args()
 
 
@@ -1145,7 +1146,7 @@ def hex_20(input_value):
 
 
 def verbose_output(page_mode):
-    if args.verbose is False:
+    if args.verbose == 0:
         return
 
     print("\nMemory Regions as defined:")
@@ -1155,7 +1156,9 @@ def verbose_output(page_mode):
               ", Permission = " + hex(info[2]))
 
     page_mode.verbose_output()
-    page_mode.print_all_page_table_info()
+
+    if args.verbose > 1:
+        page_mode.print_all_page_table_info()
 
 # build sym table
 def get_symbols(obj):
