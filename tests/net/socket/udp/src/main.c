@@ -96,6 +96,7 @@ static void test_sendto_recvfrom(int client_sock,
 	zassert_equal(strncmp(rx_buf, TEST_STR_SMALL, strlen(TEST_STR_SMALL)),
 		      0,
 		      "unexpected data");
+	zassert_equal(addrlen, client_addrlen, "unexpected addrlen");
 
 	/* Check the client port */
 	if (net_sin(client_addr)->sin_port != ANY_PORT) {

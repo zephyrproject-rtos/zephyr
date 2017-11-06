@@ -86,15 +86,13 @@ static void test_sendto(int sock, const void *buf, size_t len, int flags,
 		      "send failed");
 }
 
-static int test_accept(int sock)
+static void test_accept(int sock, int *new_sock, struct sockaddr *addr,
+			socklen_t *addrlen)
 {
-	int new_sock;
-	struct sockaddr addr;
-	socklen_t addrlen = sizeof(addr);
+	zassert_not_null(new_sock, "null newsock");
 
-	new_sock = accept(sock, &addr, &addrlen);
-	zassert_true(new_sock >= 0, "accept failed");
-	return new_sock;
+	*new_sock = accept(sock, addr, addrlen);
+	zassert_true(*new_sock >= 0, "accept failed");
 }
 
 static void test_recv(int sock)
@@ -147,6 +145,8 @@ void test_v4_send_recv(void)
 	int new_sock;
 	struct sockaddr_in c_saddr;
 	struct sockaddr_in s_saddr;
+	struct sockaddr addr;
+	socklen_t addrlen = sizeof(addr);
 
 	prepare_sock_v4(CONFIG_NET_APP_MY_IPV4_ADDR,
 			ANY_PORT,
@@ -164,7 +164,9 @@ void test_v4_send_recv(void)
 	test_connect(c_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
 	test_send(c_sock, TEST_STR_SMALL, strlen(TEST_STR_SMALL), 0);
 
-	new_sock = test_accept(s_sock);
+	test_accept(s_sock, &new_sock, &addr, &addrlen);
+	zassert_equal(addrlen, sizeof(struct sockaddr_in), "wrong addrlen");
+
 	test_recv(new_sock);
 
 	test_close(new_sock);
@@ -182,6 +184,8 @@ void test_v6_send_recv(void)
 	int new_sock;
 	struct sockaddr_in6 c_saddr;
 	struct sockaddr_in6 s_saddr;
+	struct sockaddr addr;
+	socklen_t addrlen = sizeof(addr);
 
 	prepare_sock_v6(CONFIG_NET_APP_MY_IPV6_ADDR,
 			ANY_PORT,
@@ -199,7 +203,9 @@ void test_v6_send_recv(void)
 	test_connect(c_sock, (struct sockaddr *)&s_saddr, sizeof(s_saddr));
 	test_send(c_sock, TEST_STR_SMALL, strlen(TEST_STR_SMALL), 0);
 
-	new_sock = test_accept(s_sock);
+	test_accept(s_sock, &new_sock, &addr, &addrlen);
+	zassert_equal(addrlen, sizeof(struct sockaddr_in6), "wrong addrlen");
+
 	test_recv(new_sock);
 
 	test_close(new_sock);
@@ -216,7 +222,7 @@ void test_v4_sendto_recvfrom(void)
 	int new_sock;
 	struct sockaddr_in c_saddr;
 	struct sockaddr_in s_saddr;
-	struct sockaddr_in addr;
+	struct sockaddr addr;
 	socklen_t addrlen = sizeof(addr);
 
 	prepare_sock_v4(CONFIG_NET_APP_MY_IPV4_ADDR,
@@ -236,8 +242,11 @@ void test_v4_sendto_recvfrom(void)
 	test_sendto(c_sock, TEST_STR_SMALL, strlen(TEST_STR_SMALL), 0,
 		    (struct sockaddr *)&s_saddr, sizeof(s_saddr));
 
-	new_sock = test_accept(s_sock);
-	test_recvfrom(new_sock, (struct sockaddr *)&addr, &addrlen);
+	test_accept(s_sock, &new_sock, &addr, &addrlen);
+	zassert_equal(addrlen, sizeof(struct sockaddr_in), "wrong addrlen");
+
+	test_recvfrom(new_sock, &addr, &addrlen);
+	zassert_equal(addrlen, sizeof(struct sockaddr_in), "wrong addrlen");
 
 	test_close(new_sock);
 	test_close(s_sock);
@@ -253,7 +262,7 @@ void test_v6_sendto_recvfrom(void)
 	int new_sock;
 	struct sockaddr_in6 c_saddr;
 	struct sockaddr_in6 s_saddr;
-	struct sockaddr_in6 addr;
+	struct sockaddr addr;
 	socklen_t addrlen = sizeof(addr);
 
 	prepare_sock_v6(CONFIG_NET_APP_MY_IPV6_ADDR,
@@ -273,8 +282,11 @@ void test_v6_sendto_recvfrom(void)
 	test_sendto(c_sock, TEST_STR_SMALL, strlen(TEST_STR_SMALL), 0,
 		    (struct sockaddr *)&s_saddr, sizeof(s_saddr));
 
-	new_sock = test_accept(s_sock);
-	test_recvfrom(new_sock, (struct sockaddr *)&addr, &addrlen);
+	test_accept(s_sock, &new_sock, &addr, &addrlen);
+	zassert_equal(addrlen, sizeof(struct sockaddr_in6), "wrong addrlen");
+
+	test_recvfrom(new_sock, &addr, &addrlen);
+	zassert_equal(addrlen, sizeof(struct sockaddr_in6), "wrong addrlen");
 
 	test_close(new_sock);
 	test_close(s_sock);
@@ -291,6 +303,8 @@ void test_v4_sendto_recvfrom_null_dest(void)
 	int new_sock;
 	struct sockaddr_in c_saddr;
 	struct sockaddr_in s_saddr;
+	struct sockaddr addr;
+	socklen_t addrlen = sizeof(addr);
 
 	prepare_sock_v4(CONFIG_NET_APP_MY_IPV4_ADDR,
 			ANY_PORT,
@@ -309,7 +323,9 @@ void test_v4_sendto_recvfrom_null_dest(void)
 	test_sendto(c_sock, TEST_STR_SMALL, strlen(TEST_STR_SMALL), 0,
 		    (struct sockaddr *)&s_saddr, sizeof(s_saddr));
 
-	new_sock = test_accept(s_sock);
+	test_accept(s_sock, &new_sock, &addr, &addrlen);
+	zassert_equal(addrlen, sizeof(struct sockaddr_in), "wrong addrlen");
+
 	test_recvfrom(new_sock, NULL, NULL);
 
 	test_close(new_sock);
@@ -327,6 +343,8 @@ void test_v6_sendto_recvfrom_null_dest(void)
 	int new_sock;
 	struct sockaddr_in6 c_saddr;
 	struct sockaddr_in6 s_saddr;
+	struct sockaddr addr;
+	socklen_t addrlen = sizeof(addr);
 
 	prepare_sock_v6(CONFIG_NET_APP_MY_IPV6_ADDR,
 			ANY_PORT,
@@ -345,7 +363,9 @@ void test_v6_sendto_recvfrom_null_dest(void)
 	test_sendto(c_sock, TEST_STR_SMALL, strlen(TEST_STR_SMALL), 0,
 		    (struct sockaddr *)&s_saddr, sizeof(s_saddr));
 
-	new_sock = test_accept(s_sock);
+	test_accept(s_sock, &new_sock, &addr, &addrlen);
+	zassert_equal(addrlen, sizeof(struct sockaddr_in6), "wrong addrlen");
+
 	test_recvfrom(new_sock, NULL, NULL);
 
 	test_close(new_sock);
