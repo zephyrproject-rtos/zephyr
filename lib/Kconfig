@@ -4,11 +4,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-
-menu "Cryptography"
-source "lib/crypto/tinycrypt/Kconfig"
-endmenu
-
 source "lib/libc/Kconfig"
 
 source "lib/json/Kconfig"
