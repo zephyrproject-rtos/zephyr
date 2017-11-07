@@ -1225,8 +1225,6 @@ static inline struct net_buf *adjust_offset(struct net_buf *frag,
 		frag = frag->frags;
 	}
 
-	NET_ERR("Invalid offset (%u), failed to adjust", offset);
-
 	return NULL;
 }
 
