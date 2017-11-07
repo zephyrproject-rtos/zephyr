@@ -1,4 +1,0 @@
-subdir-ccflags-y +=-I$(srctree)/subsys/net/lib/coap
-ccflags-y += -I${srctree}/net/ip
-
-obj-y := coap.o coap_link_format.o
