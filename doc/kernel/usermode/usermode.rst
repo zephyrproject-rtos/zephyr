@@ -11,3 +11,4 @@ and how permissions for these threads are managed.
 
     kernelobjects.rst
     syscalls.rst
+    memory_domain.rst

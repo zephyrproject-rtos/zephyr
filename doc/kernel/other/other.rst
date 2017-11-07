@@ -15,4 +15,3 @@ This section describes other services provided by the kernel.
    float.rst
    cxx_support.rst
    cpu_idle.rst
-   memory_domain.rst
