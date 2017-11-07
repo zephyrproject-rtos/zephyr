@@ -178,7 +178,7 @@ class ZephyrBinaryRunner(abc.ABC):
     tool-specific environment variables to control runner behavior.
     To support a transition to ZephyrBinaryRunner and subclasses, this
     class provides a create_for_shell_script() static factory method.
-    This method iterates over ZephyrBinaryRUnner subclasses,
+    This method iterates over ZephyrBinaryRunner subclasses,
     determines which (if any) can provide equivalent functionality to
     the shell-based runner, and returns a subclass instance with its
     configuration determined from the environment.
