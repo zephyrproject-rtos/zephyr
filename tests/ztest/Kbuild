@@ -1,5 +1,0 @@
-ccflags-y += -I$(ZEPHYR_BASE)/tests/include
-ccflags-y += -I$(ZEPHYR_BASE)/tests/ztest/include
-
-obj-$(CONFIG_ZTEST) += src/ztest.o
-obj-$(CONFIG_ZTEST_MOCKING) += src/ztest_mock.o

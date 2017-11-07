@@ -1,5 +1,0 @@
-FLASH_SCRIPT = nrf_flash.sh
-
-NRF_FAMILY = NRF51
-
-export FLASH_SCRIPT NRF_FAMILY
