@@ -171,8 +171,8 @@ class ZephyrBinaryRunner(abc.ABC):
     constructor.  The actual command execution is handled in the run()
     method.
 
-    This functionality is also replacing the legacy Zephyr runners,
-    which are shell scripts.
+    This functionality has replaced the legacy Zephyr runners,
+    which were shell scripts.
 
     At present, the Zephyr build system uses a variety of
     tool-specific environment variables to control runner behavior.
@@ -180,7 +180,7 @@ class ZephyrBinaryRunner(abc.ABC):
     class provides a create_for_shell_script() static factory method.
     This method iterates over ZephyrBinaryRunner subclasses,
     determines which (if any) can provide equivalent functionality to
-    the shell-based runner, and returns a subclass instance with its
+    the old shell-based runner, and returns a subclass instance with its
     configuration determined from the environment.
 
     To support this, subclasess currently must provide a pair of
