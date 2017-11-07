@@ -27,15 +27,34 @@ static inline size_t stack_unused_space_get(const char *stack, size_t size)
 	 * that correct Kconfig option is used.
 	 */
 #if defined(STACK_GROWS_UP)
+#if defined(CONFIG_STACK_SENTINEL)
+	if (*((u32_t*)&stack[size-4]) != 0xF0F0F0F0) {
+		return unused;
+	}
+		
+	for (i = size - 5; i >= 0; i--) {
+#else
 	for (i = size - 1; i >= 0; i--) {
+#endif
 		if ((unsigned char)stack[i] == 0xaa) {
 			unused++;
 		} else {
 			break;
 		}
 	}
+	
+#else
+
+#if defined(CONFIG_STACK_SENTINEL)
+
+	if (*((u32_t *)stack) != 0xF0F0F0F0) {
+		return unused;
+	}
+		
+	for (i = 4; i < size; i++) {
 #else
 	for (i = 0; i < size; i++) {
+#endif
 		if ((unsigned char)stack[i] == 0xaa) {
 			unused++;
 		} else {
