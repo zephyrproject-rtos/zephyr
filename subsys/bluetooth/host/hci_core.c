@@ -2923,8 +2923,11 @@ static int start_le_scan(u8_t scan_type, u16_t interval, u16_t window)
 	} else {
 		set_param->addr_type =  bt_dev.id_addr.type;
 
-		/* only set NRPA if there is no advertising ongoing */
-		if (scan_type == BT_HCI_LE_SCAN_ACTIVE &&
+		/* Use NRPA unless identity has been explicitly requested
+		 * (through Kconfig), or if there is no advertising ongoing.
+		 */
+		if (!IS_ENABLED(CONFIG_BT_SCAN_WITH_IDENTITY) &&
+		    scan_type == BT_HCI_LE_SCAN_ACTIVE &&
 		    !atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
 			err = le_set_private_addr();
 			if (err) {
