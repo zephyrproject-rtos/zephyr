@@ -1,4 +1,0 @@
-# Default to xt-run but let the user override to xtsc-run if they desire
-EMU_PLATFORM ?= xt-run
-DEBUG_SCRIPT := xt-gdb.sh
-

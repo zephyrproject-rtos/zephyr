@@ -1,2 +1,0 @@
-socket_dumb_http: src/socket_dumb_http.c
-	$(CC) $^ -o $@

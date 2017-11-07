@@ -1,4 +1,0 @@
-subdir-ccflags-y +=-I$(srctree)/subsys/net/lib/zoap
-ccflags-y += -I${srctree}/net/ip
-
-obj-y := zoap.o zoap_link_format.o

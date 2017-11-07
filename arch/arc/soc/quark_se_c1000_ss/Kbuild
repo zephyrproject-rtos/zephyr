@@ -1,8 +1,0 @@
-ccflags-y +=-I$(srctree)/include
-ccflags-y +=-I$(srctree)/include/drivers
-ccflags-y +=-I$(srctree)/drivers
-ccflags-$(CONFIG_ADC) +=-I$(srctree)/drivers/adc
-
-asflags-y := ${ccflags-y}
-
-obj-y = soc.o soc_config.o soc_power.o power.o

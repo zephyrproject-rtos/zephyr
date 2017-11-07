@@ -1,6 +1,0 @@
-ccflags-y +=-I$(srctree)/arch/x86
-ccflags-y +=-I$(srctree)/include/drivers
-ccflags-y +=-I$(srctree)/drivers
-asflags-y := ${ccflags-y}
-
-obj-$(CONFIG_SOC_QUARK_SE_C1000) = soc.o soc_config.o eoi.o power.o soc_power.o
