@@ -1,8 +1,0 @@
-
-subdir-ccflags-$(CONFIG_MBEDTLS_LIBRARY) += -I$(CONFIG_MBEDTLS_INSTALL_PATH)/include
-
-subdir-ccflags-$(CONFIG_MBEDTLS_BUILTIN) += -I$(srctree)/ext/lib/crypto/mbedtls/include
-
-subdir-ccflags-$(CONFIG_MBEDTLS_BUILTIN) += -I$(srctree)/ext/lib/crypto/mbedtls/configs
-
-subdir-ccflags-$(CONFIG_MBEDTLS_BUILTIN) += -DMBEDTLS_CONFIG_FILE='$(CONFIG_MBEDTLS_CFG_FILE)'

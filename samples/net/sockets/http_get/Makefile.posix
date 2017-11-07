@@ -1,4 +1,0 @@
-# This makefile builds the sample for a POSIX system, like Linux
-
-http_get: src/http_get.c
-	$(CC) $^ -o $@

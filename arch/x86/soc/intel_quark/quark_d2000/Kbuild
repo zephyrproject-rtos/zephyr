@@ -1,8 +1,0 @@
-ccflags-y +=-I$(srctree)/arch/x86
-ccflags-y +=-I$(srctree)/include/drivers
-ccflags-y +=-I$(srctree)/drivers
-asflags-y := ${ccflags-y}
-
-# Force build system to create built-in.o even though we don't
-# have any C files to compile
-obj- = dummy.o
