@@ -405,4 +405,17 @@ void k_free(void *ptr)
 		k_mem_pool_free(ptr);
 	}
 }
+
+void *k_calloc(size_t nmemb, size_t size)
+{
+	void *ret;
+	size_t bounds;
+
+	bounds = nmemb * size;
+	ret = k_malloc(bounds);
+	if (ret) {
+		memset(ret, 0, bounds);
+	}
+	return ret;
+}
 #endif
