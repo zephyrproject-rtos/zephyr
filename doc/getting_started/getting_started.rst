@@ -88,7 +88,7 @@ To build an example application follow these steps:
       $ cd $ZEPHYR_BASE/samples/hello_world
       $ mkdir build
       $ cd build
-      $ cmake -GNinja ..
+      $ cmake ..
 
 The above will generate project files that can build the
 :ref:`hello_world` sample application using the default settings
@@ -98,7 +98,7 @@ enter:
 .. code-block:: console
 
    $ cd $ZEPHYR_BASE/samples/hello_world/build
-   $ ninja
+   $ make
 
 You can build for a different board by defining the variable BOARD
 with one of the supported boards, for example:
@@ -109,8 +109,8 @@ with one of the supported boards, for example:
    $ export BOARD=arduino_101
    $ mkdir build_101
    $ cd build_101
-   $ cmake -GNinja ..
-   $ ninja
+   $ cmake ..
+   $ make
 
 For further information on the supported boards go see
 :ref:`here <boards>`. Alternatively, run the following command to obtain a list
@@ -118,7 +118,7 @@ of the supported boards:
 
 .. code-block:: console
 
-   $ ninja usage
+   $ make usage
 
 Sample projects for different features of the project are available at
 at :file:`$ZEPHYR_BASE/samples`.
@@ -154,9 +154,9 @@ follow the steps below to build with any custom or 3rd party cross-compilers:
    .. code-block:: console
 
       $ mkdir ~/kconfig_build_dir && cd ~/kconfig_build_dir
-      $ cmake -GNinja $ZEPHYR_BASE/scripts
-      $ ninja
-      $ echo "export PATH=$PWD/kconfig:\$PATH" >> $HOME/.bashrc
+      $ cmake $ZEPHYR_BASE/scripts
+      $ make
+      $ echo "export PATH=$PWD/kconfig:\$PATH" >> $HOME/.zephyrrc
       $ bash
       $ which conf
 
@@ -184,7 +184,7 @@ follow the steps below to build with any custom or 3rd party cross-compilers:
 
       $ export GCCARMEMB_TOOLCHAIN_PATH="~/gcc-arm-none-eabi-5_3-2016q1/"
       $ export ZEPHYR_GCC_VARIANT=gccarmemb
-      $ cmake -DBOARD=arduino_due -H$ZEPHYR_BASE/samples/hello_world -Bbld -GNinja && cmake --build bld
+      $ cmake -DBOARD=arduino_due -H$ZEPHYR_BASE/samples/hello_world -Bbld && cmake --build bld
 
 Running a Sample Application in QEMU
 ====================================
@@ -204,8 +204,8 @@ type:
    $ export BOARD=qemu_x86
    $ mkdir qemu_build
    $ cd qemu_build
-   $ cmake -GNinja ..
-   $ ninja run
+   $ cmake ..
+   $ make run
 
 To run an application using the ARM qemu_cortex_m3 board configuration
 specify the qemu_cortex_m3 board instead.

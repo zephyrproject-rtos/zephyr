@@ -74,7 +74,7 @@ Install exactly version 3.8.2 of CMake::
    $ mkdir $HOME/work_dir && cd $HOME/work_dir
    $ wget https://cmake.org/files/v3.8/cmake-3.8.2-Linux-x86_64.sh
    $ yes | sh cmake-3.8.2-Linux-x86_64.sh | cat
-   $ echo "export PATH=$PWD/cmake-3.8.2-Linux-x86_64/bin:\$PATH" >> $HOME/.bashrc
+   $ echo "export PATH=$PWD/cmake-3.8.2-Linux-x86_64/bin:\$PATH" >> $HOME/.zephyrrc
    $ bash
    $ cmake --version
 
