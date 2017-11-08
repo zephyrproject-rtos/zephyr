@@ -89,52 +89,37 @@ Push buttons
 Programming and Debugging
 *************************
 
+Applications for the ``nrf52840_pca10056`` board configuration can be
+built and flashed in the usual way (see :ref:`build_an_application`
+and :ref:`application_run` for more details); however, the standard
+debugging targets are not currently available.
+
 Flashing
 ========
 
-Follow the instructions in the :ref:`nordic_segger` page to install and configure
-all the necessary software.
+Follow the instructions in the :ref:`nordic_segger` page to install
+and configure all the necessary software. Further information can be
+found in :ref:`nordic_segger_flashing`. Then build and flash
+applications as usual (see :ref:`build_an_application` and
+:ref:`application_run` for more details).
 
-This tutorial uses the sample application
-shell :file:`$ZEPHYR_BASE/samples/subsys/shell/shell`, and uses the information that can be found in
-:ref:`nordic_segger_flashing`.
+Here is an example for the :ref:`hello_world` application.
 
-#. To build the Zephyr kernel, enter:
+First, run your favorite terminal program to listen for output.
 
-   .. code-block:: console
+.. code-block:: console
 
-      $ cd $ZEPHYR_BASE
-      $ make -C samples/subsys/shell/shell BOARD=nrf52840_pca10056
+   $ minicom -D <tty_device> -b 115200
 
-#. Connect the micro-USB cable to the nRF52840 PDK and to your computer.
+Replace :code:`<tty_device>` with the port where the board nRF52 DK
+can be found. For example, under Linux, :code:`/dev/ttyACM0`.
 
-#. Erase the flash memory in the nRF52840:
+Then build and flash the application in the usual way.
 
-   .. code-block:: console
-
-      $ nrfjprog --eraseall -f nrf52
-
-#. Flash the application using the nrfjprog tool:
-
-   .. code-block:: console
-
-      $ nrfjprog --program outdir/zephyr.hex -f nrf52
-
-#. Run your favorite terminal program to listen for output.
-
-   .. code-block:: console
-
-      $ minicom -D <tty_device> -b 115200
-
-   Replace :code:`<tty_device>` with the port where the board
-   nRF52840 PDK can be found. For example, under Linux,
-   :code:`/dev/ttyACM0`.
-
-   The ``-b`` option sets baudrate ignoring the value
-   from config.
-
-#. Press the Reset button and you should see the output of
-   shell application in your terminal.
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: nrf52840_pca10056
+   :goals: build flash
 
 Debugging
 =========

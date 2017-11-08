@@ -119,48 +119,43 @@ At power-on, the board is in firmware-upgrade mode (also called DFU for
 "Device Firmware Upgrade"), allowing the firmware to be updated through the USB.
 This interface is supported by the openocd version included in Zephyr SDK.
 
+Applications for the ``stm3210c_eval`` board configuration can be built and
+flashed in the usual way (see :ref:`build_an_application` and
+:ref:`application_run` for more details).
+
 Flashing an application to STM3210C-EVAL
 ----------------------------------------
 
-The sample application :ref:`blinky-sample` is being used in this tutorial:
+Connect the STM3210C-EVAL to your host computer using the USB port, then build
+and flash an application in the usual way.
 
-.. code-block:: console
+Here is an example for the :ref:`blinky-sample` application.
 
-   $<zephyr_root_path>/samples/basic/blinky
-
-To build the Zephyr kernel and application, enter:
-
-.. code-block:: console
-
-   $ cd <zephyr_root_path>
-   $ source zephyr-env.sh
-   $ cd $ZEPHYR_BASE/samples/basic/blinky
-   $ make BOARD=stm3210c_eval
-
-Connect the STM3210C-EVAL to your host computer using the USB port.
-Then, enter the following command:
-
-.. code-block:: console
-
-   $ make BOARD=stm3210c_eval flash
-
-Run a serial host program to connect with your STM3210C-EVAL board:
-
-.. code-block:: console
-
-   $ minicom -D /dev/ttyACM0
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/blinky
+   :board: stm3210c_eval
+   :goals: build flash
 
 You will see the LED blinking every second.
 
 Debugging
 =========
 
-Access gdb with the following make command:
+You can run a serial host program to connect with your STM3210C-EVAL board. For
+example, on Linux:
 
 .. code-block:: console
 
-   $ make BOARD=stm3210c_eval debug
+   $ minicom -D /dev/ttyACM0
 
+You can debug an application in the usual way.  Here is an example for the
+:ref:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: stm3210c_eval
+   :maybe-skip-config:
+   :goals: debug
 
 References
 **********

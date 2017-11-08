@@ -267,37 +267,13 @@ and install a more recent version of pyOCD.
 Flashing an Application to 96Boards Nitrogen
 ============================================
 
-This example uses the :ref:`hello_world` sample with the
-:ref:`nxp_opensda_pyocd` tools. Use the ``make flash`` build target to build
-your Zephyr application, invoke the pyOCD flash tool and program your Zephyr
-application to flash.
+Here is an example for the :ref:`hello_world` application. This
+requires installing the :ref:`nxp_opensda_pyocd` tools.
 
-.. code-block:: console
-
-   $ cd <zephyr_root_path>
-   $ . zephyr-env.sh
-   $ cd samples/hello_world/
-   $ make BOARD=96b_nitrogen
-
-You can either flash the board by using the ``make flash`` target:
-
-.. code-block:: console
-
-   $ make flash
-
-or you can invoke the pyocd commands directly, as described below.
-
-Erase the flash memory in the nRF52832:
-
-.. code-block:: console
-
-   $ pyocd-flashtool -d debug -t nrf52 -ce
-
-Flash the application using the pyocd-flashtool tool:
-
-.. code-block:: console
-
-   $ pyocd-flashtool -d debug -t nrf52 outdir/96b_nitrogen/zephyr.hex
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: 96b_nitrogen
+   :goals: build flash
 
 Run your favorite terminal program to listen for output.
 
@@ -319,23 +295,14 @@ terminal:
 Debugging with GDB
 ==================
 
-To debug Zephyr with GDB launch the GDB server on a terminal:
+You can debug an application in the usual way.  Here is an example for the
+:ref:`hello_world` application. This also requires pyOCD.
 
-.. code-block:: console
-
-   $ pyocd-gdbserver
-
-and then launch GDB against the .elf file you built:
-
-.. code-block:: console
-
-   $ arm-none-eabi-gdb outdir/96b_nitrogen/zephyr.elf
-
-And finally connect GDB to the GDB Server:
-
-.. code-block:: console
-
-   (gdb) target remote localhost:3333
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: 96b_nitrogen
+   :maybe-skip-config:
+   :goals: debug
 
 .. _pyOCD:
     https://github.com/mbedmicro/pyOCD

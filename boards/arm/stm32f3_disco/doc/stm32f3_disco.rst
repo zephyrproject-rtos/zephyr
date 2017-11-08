@@ -153,33 +153,24 @@ Flashing
 ========
 
 STM32F3DISCOVERY Discovery kit includes a ST-LINK/V2 or ST-LINK/V2-B embedded
-debug tool interface. This interface is supported by the openocd version
-included in Zephyr SDK.
+debug tool interface.
+
+Applications for the ``stm32f3_disco`` board configuration can be built and
+flashed in the usual way (see :ref:`build_an_application` and
+:ref:`application_run` for more details).
 
 Flashing an application to STM32F3DISCOVERY
 -------------------------------------------
 
-The sample application :ref:`hello_world` is being used in this tutorial:
+First, connect the STM32F3DISCOVERY Discovery kit to your host computer using
+the USB port to prepare it for flashing. Then build and flash your application.
 
-.. code-block:: console
+Here is an example for the :ref:`hello_world` application.
 
-   $<zephyr_root_path>/samples/hello_world
-
-To build the Zephyr kernel and application, enter:
-
-.. code-block:: console
-
-   $ cd <zephyr_root_path>
-   $ source zephyr-env.sh
-   $ cd $ZEPHYR_BASE/samples/hello_world/
-   $ make BOARD=stm32f3_disco
-
-Connect the STM32F3DISCOVERY Discovery kit to your host computer using the USB
-ST-LINK port. Then, enter the following command:
-
-.. code-block:: console
-
-   $ make BOARD=stm32f3_disco flash
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: stm32f3_disco
+   :goals: build flash
 
 Run a serial host program to connect with your board. For PCB version A or B a
 TTL(3.3V) serial adapter is required. For PCB version C and newer a Virtual Com
@@ -192,7 +183,7 @@ Port (VCP) is available on the  USB ST-LINK port.
 Replace <tty_device> with the port where the STM32F3DISCOVERY board can be
 found. For example, under Linux, /dev/ttyUSB0.
 
-You should see the following message:
+You should see the following message on the console:
 
 .. code-block:: console
 
@@ -202,12 +193,13 @@ You should see the following message:
 Debugging
 =========
 
-Access gdb with the following make command:
+You can debug an application in the usual way.  Here is an example for the
+:ref:`hello_world` application.
 
-.. code-block:: console
-
-   $ make BOARD=stm32f3_disco debug
-
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: stm32f3_disco
+   :goals: debug
 
 .. _STM32F3DISCOVERY website:
    http://www.st.com/en/evaluation-tools/stm32f3discovery.html

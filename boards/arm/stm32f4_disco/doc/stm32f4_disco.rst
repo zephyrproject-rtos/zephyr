@@ -139,6 +139,10 @@ Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+Applications for the ``stm32f4_disco`` board configuration can be built and
+flashed in the usual way (see :ref:`build_an_application` and
+:ref:`application_run` for more details).
+
 Flashing
 ========
 
@@ -148,27 +152,7 @@ This interface is supported by the openocd version included in Zephyr SDK.
 Flashing an application to STM32F4DISCOVERY
 -------------------------------------------
 
-The sample application :ref:`hello_world` is being used in this tutorial:
-
-.. code-block:: console
-
-   $<zephyr_root_path>/samples/hello_world
-
-To build the Zephyr kernel and application, enter:
-
-.. code-block:: console
-
-   $ cd <zephyr_root_path>
-   $ source zephyr-env.sh
-   $ cd $ZEPHYR_BASE/samples/hello_world/
-   $ make BOARD=stm32f4_disco
-
-Connect the STM32F4DISCOVERY Discovery kit to your host computer using the USB port.
-Then, enter the following command:
-
-.. code-block:: console
-
-   $ make BOARD=stm32f4_disco flash
+Here is an example for the :ref:`hello_world` application.
 
 Run a serial host program to connect with your board:
 
@@ -176,7 +160,14 @@ Run a serial host program to connect with your board:
 
    $ minicom -D /dev/ttyACM0
 
-You should see the following message:
+Build and flash the application:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: stm32f4_disco
+   :goals: build flash
+
+You should see the following message on the console:
 
 .. code-block:: console
 
@@ -186,12 +177,14 @@ You should see the following message:
 Debugging
 =========
 
-Access gdb with the following make command:
+You can debug an application in the usual way.  Here is an example for the
+:ref:`hello_world` application.
 
-.. code-block:: console
-
-   $ make BOARD=stm32f4_disco debug
-
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: stm32f4_disco
+   :maybe-skip-config:
+   :goals: debug
 
 .. _STM32F4DISCOVERY website:
    http://www.st.com/en/evaluation-tools/stm32f4discovery.html

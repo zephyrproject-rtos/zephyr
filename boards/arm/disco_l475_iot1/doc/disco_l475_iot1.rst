@@ -173,65 +173,53 @@ Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+Applications for the ``disco_l475_iot1`` board configuration can be built and
+flashed in the usual way (see :ref:`build_an_application` and
+:ref:`application_run` for more details).
+
 Flashing
 ========
 
-Disco L475 IoT board includes an ST-LINK/V2-1 embedded debug tool interface.
-This interface is not supported by the openocd version 0.9 included by the Zephyr SDK v0.9.
-Until we update the Zephyr SDK, use openocd v0.10.0 from the openocd-stm32 project on GitHub
-to get the minimum set of scripts needed to flash and debug STM32 development boards.
-
-.. code-block:: console
-
-   $ git clone  https://github.com/erwango/openocd-stm32.git
-
-Then follow instructions in README.md
-
+Disco L475 IoT board includes an ST-LINK/V2-1 embedded debug tool
+interface.  This interface is supported by the openocd version
+included in the Zephyr SDK since v0.9.2.
 
 Flashing an application to Disco L475 IoT
 -----------------------------------------
 
-The sample application :ref:`hello_world` is being used in this tutorial:
+Here is an example for the :ref:`hello_world` application.
 
-To build the Zephyr kernel and application, enter:
-
-.. code-block:: console
-
-   $ cd <zephyr_root_path>
-   $ source zephyr-env.sh
-   $ cd $ZEPHYR_BASE/samples/hello_world/
-   $ make BOARD=disco_l475_iot1
-
-Connect the Disco L475 IoT to your host computer using the USB port.
-Then, enter the following command:
-
-.. code-block:: console
-
-   $ cd <openocd-stm32_path>
-   $ stm32_flsh l4 $ZEPHYR_BASE/samples/hello_world/outdir/disco_l475_iot1/zephyr.bin
-
-Run a serial host program to connect with your Nucleo board.
+Connect the Disco L475 IoT to your host computer using the USB port, then
+run a serial host program to connect with your Nucleo board. For example:
 
 .. code-block:: console
 
    $ minicom -D /dev/ttyACM0
 
-You should see the following message:
+Then build and flash the application:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: disco_l475_iot1
+   :goals: build flash
+
+You should see the following message on the console:
 
 .. code-block:: console
 
    $ Hello World! arm
 
-
 Debugging
 =========
 
-Access gdb with the following make command:
+You can debug an application in the usual way.  Here is an example for the
+:ref:`hello_world` application.
 
-.. code-block:: console
-
-   $ cd <openocd-stm32_path>
-   $ stm32_dbg l4 $ZEPHYR_BASE/samples/hello_world/outdir/disco_l475_iot1/zephyr.elf
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: disco_l475_iot1
+   :maybe-skip-config:
+   :goals: debug
 
 .. _Disco L475 IoT1 website:
    http://www.st.com/content/st_com/en/products/evaluation-tools/product-evaluation-tools/mcu-eval-tools/stm32-mcu-eval-tools/stm32-mcu-discovery-kits/b-l475e-iot01a.html

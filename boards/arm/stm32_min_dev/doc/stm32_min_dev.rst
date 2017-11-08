@@ -94,24 +94,35 @@ The stm32_min_dev board configuration supports the following hardware features:
 
 Other hardware features are not supported by the Zephyr kernel.
 
-Building and Flashing Zephyr onto stm32_min_dev
-***********************************************
 
-You can build any of the Zephyr samples with,
+Programming and Debugging
+*************************
 
-.. code-block:: console
+Applications for the ``stm32_min_dev`` board configuration can be built and
+flashed in the usual way (see :ref:`build_an_application` and
+:ref:`application_run` for more details).
 
-   $ cd $<zephyr_root_path>
-   $ source zephyr-env.sh
-   $ make -C samples/basic/blinky BOARD=stm32_min_dev
+Flashing
+========
 
-Flashing the Zephyr kernel onto stm32_min_dev requires the popular ST-Link
-debugger/programmer. This port comes with support for doing just that with the
-flash target.
+Here is an example for the :ref:`blinky-sample` application.
 
-.. code-block:: console
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/blinky
+   :board: stm32_min_dev
+   :goals: build flash
 
-   $ make -C samples/basic/blinky BOARD=stm32_min_dev flash
+Debugging
+=========
+
+You can debug an application in the usual way.  Here is an example for the
+:ref:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: stm32_min_dev
+   :maybe-skip-config:
+   :goals: debug
 
 .. _STM32F103x8:
         http://www.st.com/resource/en/datasheet/stm32f103c8.pdf

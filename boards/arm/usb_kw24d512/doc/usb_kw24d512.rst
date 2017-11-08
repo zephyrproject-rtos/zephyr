@@ -125,23 +125,20 @@ Flashing
 ========
 
 The Segger J-Link firmware does not support command line flashing, therefore
-the ``make flash`` build target is not supported.
+the usual ``flash`` build target is not supported.
 
 Debugging
 =========
 
 This example uses the :ref:`hello_world` sample with the
-:ref:`nxp_opensda_jlink` tools. Use the ``make debug`` build target to build
-your Zephyr application, invoke the J-Link GDB server, attach a GDB client, and
-program your Zephyr application to flash. It will leave you at a gdb prompt.
+:ref:`nxp_opensda_jlink` tools. This builds the Zephyr application,
+invokes the J-Link GDB server, attaches a GDB client, and programs the
+application to flash. It will leave you at a gdb prompt.
 
-.. code-block:: console
-
-   $ cd <zephyr_root_path>
-   $ . zephyr-env.sh
-   $ cd samples/hello_world/
-   $ make BOARD=usb_kw24d512 debug
-
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: usb_kw24d512
+   :goals: debug
 
 In a second terminal, open telnet:
 

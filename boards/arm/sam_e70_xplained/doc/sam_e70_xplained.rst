@@ -83,11 +83,7 @@ Programming and Debugging
 
 Flashing the Zephyr project onto SAM E70 MCU requires the `OpenOCD tool`_.
 Support for Atmel SAM E microcontroller series was added in OpenOCD release
-0.10.0. The current OpenOCD version available in the Zephyr SDK is 0.9 and
-unfortunately it does not support Atmel SAM E microcontrollers. Since few, if
-any major Linux distributions currently offer OpenOCD version 0.10.0 as a
-package you will have to compile and install it yourself. Make sure to enable
-CMSIS-DAP support as this is the debug interface used by the on board EDBG chip.
+0.10.0, which was added in Zephyr SDK 0.9.2.
 
 By default a factory new SAM E70 chip will boot SAM-BA boot loader located in
 the ROM, not the flashed image. This is determined by the value of GPNVM1
@@ -107,16 +103,6 @@ contents of the SAM E70 flash memory:
 Flashing
 ========
 
-#. Build the Zephyr kernel and the application:
-
-   .. code-block:: console
-
-      $ cd $ZEPHYR_BASE/samples/hello_world/
-      $ make BOARD=sam_e70_xplained
-
-#. Connect the SAM E70 Xplained board to your host computer using the USB debug
-   port.
-
 #. Run your favorite terminal program to listen for output. Under Linux the
    terminal should be :code:`/dev/ttyACM0`. For example:
 
@@ -132,41 +118,35 @@ Flashing
    - Parity: None
    - Stop bits: 1
 
-#. To flash the image, assuming the OpenOCD tool is already installed, enter:
+#. Connect the SAM E70 Xplained board to your host computer using the
+   USB debug port. Then build and flash the :ref:`hello_world`
+   application.
 
-   .. code-block:: console
-
-      $ make BOARD=sam_e70_xplained flash
-
-   The command will also verify that the image was programmed correctly, reset
-   the board and run the Zephyr application.
-
-   You can flash the image using an external debug adapter such as J-Link or
-   ULINK, connected to the 20-pin JTAG header. Supply the name of the debug
-   adapter (e.g., ``jlink``) to the make command via an OPENOCD_INTERFACE
-   variable. OpenOCD will look for the appropriate interface configuration in an
-   ``interface/$(OPENOCD_INTERFACE).cfg`` file on its internal search path.
-
-   .. code-block:: console
-
-      $ make BOARD=sam_e70_xplained OPENOCD_INTERFACE=jlink flash
+   .. zephyr-app-commands::
+      :zephyr-app: samples/hello_world
+      :board: sam_e70_xplained
+      :goals: build flash
 
    You should see "Hello World!" in your terminal.
+
+You can flash the image using an external debug adapter such as J-Link
+or ULINK, connected to the 20-pin JTAG header. Supply the name of the
+debug adapter (e.g., ``jlink``) via an OPENOCD_INTERFACE environment
+variable. OpenOCD will look for the appropriate interface
+configuration in an ``interface/$(OPENOCD_INTERFACE).cfg`` file on its
+internal search path.
 
 Debugging
 =========
 
-#. Connect the SAM E70 Xplained board to your host computer using the USB debug
-   port.
+You can debug an application in the usual way.  Here is an example for the
+:ref:`hello_world` application.
 
-#. Start GDB server on your host computer
-
-   .. code-block:: console
-
-      $ openocd -f board/atmel_same70_xplained.cfg&
-
-#. You can now use GDB remote debugging to connect to the target board. By
-   default GDB server will listen on port 3333.
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: sam_e70_xplained
+   :maybe-skip-config:
+   :goals: debug
 
 References
 **********

@@ -95,6 +95,10 @@ More details
 Programming and Debugging
 *************************
 
+Applications for the ``nrf51_vbluno51`` board configuration can be
+built and flashed in the usual way (see :ref:`build_an_application`
+and :ref:`application_run` for more details).
+
 Flashing
 ========
 
@@ -102,23 +106,28 @@ The VBLUno51 board has on-board DAPLink (CMSIS-DAP) interface for flashing and d
 You do not need any other programming device.
 You only need to install pyOCD tool (https://pypi.python.org/pypi/pyOCD)
 
-This tutorial uses the blinky application :ref:`blinky-sample`
+This tutorial uses the blinky application :ref:`blinky-sample`.
 
 See the :ref:`getting_started` for general information on setting up
- your development environment.
+your development environment. Then build and flash the application in
+the usual way.
 
-#. To build the Zephyr kernel along with the blinky sample app, enter:
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/blinky
+   :board: nrf51_vbluno51
+   :goals: build flash
 
-   .. code-block:: console
+Debugging
+=========
 
-      $ cd $ZEPHYR_BASE/samples/basic/blinky
-      $ make BOARD=nrf51_vbluno51
+You can debug an application in the usual way.  Here is an example for the
+:ref:`blinky-sample` application.
 
-#. To build and flash the generated binary image to the board, enter:
-
-   .. code-block:: console
-
-      $ make BOARD=nrf51_vbluno51 flash
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/blinky
+   :board: nrf51_vbluno51
+   :maybe-skip-config:
+   :goals: debug
 
 Testing the VBLUno51 with Zephyr: buttons, LEDs, UART, BLE
 **********************************************************

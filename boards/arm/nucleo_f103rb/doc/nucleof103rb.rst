@@ -115,6 +115,10 @@ For mode details please refer to `STM32 Nucleo-64 board User Manual`_.
 Programming and Debugging
 *************************
 
+Applications for the ``nucleo_f103rb`` board configuration can be built and
+flashed in the usual way (see :ref:`build_an_application` and
+:ref:`application_run` for more details).
+
 Flashing
 ========
 
@@ -124,33 +128,26 @@ This interface is supported by the openocd version included in the Zephyr SDK.
 Flashing an application to Nucleo F103RB
 ----------------------------------------
 
-The sample application :ref:`blinky-sample` is being used in this tutorial.
+Here is an example for the :ref:`blinky-sample` application.
 
-.. code-block:: console
-
-   $ cd <zephyr_root_path>
-   $ source zephyr-env.sh
-   $ cd $ZEPHYR_BASE/samples/basic/blinky
-   $ make BOARD=nucleo_f103rb
-
-Connect the Nucleo F103RB to your host computer using the USB port.
-Then, enter the following command:
-
-.. code-block:: console
-
-   $ make BOARD=nucleo_f103rb flash
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/blinky
+   :board: nucleo_f103rb
+   :goals: build flash
 
 You will see the LED blinking every second.
 
 Debugging
 =========
 
-Access gdb with the following make command:
+You can debug an application in the usual way.  Here is an example for the
+:ref:`blinky-sample` application.
 
-.. code-block:: console
-
-   $ make BOARD=nucleo_f103rb debug
-
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic-blinky
+   :board: nucleo_f103rb
+   :maybe-skip-config:
+   :goals: debug
 
 References
 **********

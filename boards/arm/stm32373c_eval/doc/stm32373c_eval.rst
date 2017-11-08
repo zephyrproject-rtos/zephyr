@@ -115,6 +115,10 @@ Default Zephyr Peripheral Mapping:
 Programming and Debugging
 *************************
 
+Applications for the ``stm32373c_eval`` board configuration can be built and
+flashed in the usual way (see :ref:`build_an_application` and
+:ref:`application_run` for more details).
+
 Flashing
 ========
 
@@ -126,45 +130,26 @@ This interface is supported by the openocd version included in Zephyr SDK.
 Flashing an application to STM32373C-EVAL
 -----------------------------------------
 
-The sample application :ref:`blinky-sample` is being used in this tutorial:
+Here is an example for the :ref:`blinky-sample` application.
 
-.. code-block:: console
-
-   $<zephyr_root_path>/samples/basic/blinky
-
-To build the Zephyr kernel and application, enter:
-
-.. code-block:: console
-
-   $ cd <zephyr_root_path>
-   $ source zephyr-env.sh
-   $ cd $ZEPHYR_BASE/samples/basic/blinky
-   $ make BOARD=stm32373c_eval
-
-Connect the STM32373C-EVAL to your host computer using the USB port.
-Then, enter the following command:
-
-.. code-block:: console
-
-   $ make BOARD=stm32373c_eval flash
-
-Run a serial host program to connect with your STM32373C-EVAL board:
-
-.. code-block:: console
-
-   $ minicom -D /dev/ttyACM0
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/blinky
+   :board: stm32373c_eval
+   :goals: build flash
 
 You will see the LED blinking every second.
 
 Debugging
 =========
 
-Access gdb with the following make command:
+You can debug an application in the usual way.  Here is an example for the
+:ref:`blinky-sample` application.
 
-.. code-block:: console
-
-   $ make BOARD=stm32373c_eval debug
-
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/blinky
+   :board: stm32373c_eval
+   :maybe-skip-config:
+   :goals: debug
 
 References
 **********
