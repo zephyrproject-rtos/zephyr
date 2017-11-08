@@ -1,4 +1,5 @@
 #include "skeleton.dtsi"
+#include <dt-bindings/interrupt-controller/intel-ioapic.h>
 
 #define __SIZE_K(x) (x * 1024)
 
@@ -17,6 +18,13 @@
 			device_type = "cpu";
 			compatible = "arc";
 			reg = <1>;
+		};
+
+		intc: ioapic@fec00000  {
+			compatible = "intel,ioapic";
+			reg = <0xfec00000 0x100000>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
 		};
 	};
 
@@ -43,6 +51,9 @@
 		rtc: rtc@b0000400 {
 			compatible = "intel,qmsi-rtc";
 			reg = <0xb0000400 0x400>;
+			interrupts = <11  IRQ_TYPE_EDGE_RISING>;
+			interrupt-parent = <&intc>;
+
 			clock-frequency = <32768>;
 		};
 
@@ -50,6 +61,8 @@
 			compatible = "intel,qmsi-uart";
 			reg = <0xb0002000 0x400>;
 			label = "UART_0";
+			interrupts = <5 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
 
 			status = "disabled";
 		};
@@ -58,6 +71,9 @@
 			compatible = "intel,qmsi-uart";
 			reg = <0xb0002400 0x400>;
 			label = "UART_1";
+			interrupts = <6 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+
 
 			status = "disabled";
 		};
@@ -65,6 +81,8 @@
 		gpio: gpio@b000c000 {
 			compatible = "intel,qmsi-gpio";
 			reg = <0xb00c00 0x400>;
+			interrupts = <8 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
 
 			gpio-controller;
 			#gpio-cells = <2>;
