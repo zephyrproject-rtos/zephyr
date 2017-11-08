@@ -29,31 +29,39 @@ has sufficient permissions to work with it.
 Object Placement
 ================
 
-Kernel objects that are only used by supervisor threads have no restrictions.
-In order for a kernel object to be usable by a user thread, several conditions
-must be met on how it is declared.
+Kernel objects that are only used by supervisor threads have no restrictions
+and can be located anywhere in the binary, or even declared on stacks. However,
+to prevent accidental or intentional corruption by user threads, they must
+not be located in any memory that user threads have direct access to.
 
-First, that object must be declared as a top-level global at build time, such
-that it appears in the ELF symbol table. It is permitted to declare kernel
-objects with static scope. The post-build script ``gen_kobject_list.py`` scans
-the generated ELF file to find kernel objects and places their memory addresses
-in a special table of kernel object metadata.  Kernel objects may be members of
-arrays or embedded within other data structures.
+In order for a kernel object to be usable by a user thread via system call
+APIs, several conditions must be met on how the kernel object is declared:
 
-Kernel objects must be located in memory reserved for the kernel. If
-:option:`CONFIG_APPLICATION_MEMORY` is used, all declarations of kernel objects
-inside application code must be prefixed with the :c:macro:`__kernel` attribute
-so that they are placed in the right memory sections. The APIs for statically
-declaring and initializing kernel objects (such as :c:macro:`K_SEM_DEFINE()`)
-automatically do this. However, uninitialized kernel objects need to be tagged
-like this:
+* The object must be declared as a top-level global at build time, such that it
+  appears in the ELF symbol table. It is permitted to declare kernel objects
+  with static scope. The post-build script ``gen_kobject_list.py`` scans the
+  generated ELF file to find kernel objects and places their memory addresses
+  in a special table of kernel object metadata.  Kernel objects may be members
+  of arrays or embedded within other data structures.
+
+* Kernel objects must be located in memory reserved for the kernel. If
+  :option:`CONFIG_APPLICATION_MEMORY` is used, all declarations of kernel
+  objects inside application code must be prefixed with the :c:macro:`__kernel`
+  attribute so that they are placed in the right memory sections. The APIs for
+  statically declaring and initializing kernel objects (such as
+  :c:macro:`K_SEM_DEFINE()`) automatically do this. However, uninitialized
+  kernel objects need to be tagged like this:
 
 .. code-block:: c
 
     __kernel struct k_sem my_sem;
 
-Any memory reserved for a kernel object must be used exclusively for that
-object. Kernel objects may not be members of a union data type.
+* Any memory reserved for a kernel object must be used exclusively for that
+  object. Kernel objects may not be members of a union data type.
+
+Kernel objects that are found but do not meet the above conditions will not be
+included in the generated table that is used to validate kernel object pointers
+passed in from user mode.
 
 The debug output of the ``gen_kobject_list.py`` script may be useful when
 debugging why some object was unexpectedly not being tracked. This
@@ -86,7 +94,9 @@ includes:
 
 * A bitfield indicating permissions on that object. All threads have a
   numerical ID assigned to them at build time, used to index the permission
-  bitfield for an object to see if that thread has permission on it.
+  bitfield for an object to see if that thread has permission on it. The size
+  of this bitfield is controlled by the :option:`CONFIG_MAX_THREAD_BYTES`
+  option and the build system will generate an error if this value is too low.
 * A type field indicating what kind of object this is, which is some
   instance of :cpp:enum:`k_objects`.
 * A set of flags for that object. This is currently used to track
@@ -145,6 +155,10 @@ Once a thread has been granted access to an object, such access may be
 removed with the :c:func:`k_object_access_revoke()` API. User threads using
 this API must have permission on both the object in question, and the thread
 object that is having access revoked.
+
+API calls from supervisor mode to set permissions on kernel objects that are
+not being tracked by the kernel will be no-ops. Doing the same from user mode
+will result in a fatal error for the calling thread.
 
 Initialization State
 ====================
@@ -224,3 +238,23 @@ what API struct they are set to.
   :c:func:`otype_to_str()` function in ``kernel/userspace.c``
 
 Driver instances of the new subsystem should now be tracked.
+
+Configuration Options
+=====================
+
+Related configuration options:
+
+* :option:`CONFIG_USERSPACE`
+* :option:`CONFIG_APPLICATION_MEMORY`
+* :option:`CONFIG_MAX_THREAD_BYTES`
+
+APIs
+====
+
+* :c:func:`k_object_access_grant()`
+* :c:func:`k_object_access_revoke()`
+* :c:func:`k_object_access_all_grant()`
+* :c:func:`k_thread_access_grant()`
+* :c:func:`k_thread_user_mode_enter()`
+* :c:macro:`K_THREAD_ACCESS_GRANT()`
+

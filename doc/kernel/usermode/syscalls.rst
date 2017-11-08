@@ -7,6 +7,17 @@ certain CPU instructions may not be used, and they have access to only a
 limited part of the memory map. System calls (may) allow user threads to
 perform operations not directly available to them.
 
+When defining system calls, it is very important to ensure that access to the
+API's private data is done exclusively through system call interfaces.
+Private kernel data should never be made available to user mode threads
+directly. For example, the ``k_queue`` APIs were intentionally not made
+available as they store bookkeeping information about the queue directly
+in the queue buffers which are visible from user mode.
+
+APIs that allow the user to register callback functions that run in
+supervisor mode should never be exposed as system calls. Reserve these
+for supervisor-mode access only.
+
 This section describes how to declare new system calls and discusses a few
 implementation details relevant to them.
 
@@ -58,6 +69,13 @@ value and arguments, and has some limitations:
 
 * :c:macro:`__syscall` must be the first thing in the prototype.
 
+The preprocessor is intentionally not used when determining the set of
+system calls to generate. However, any generated system calls that don't
+actually have a handler function defined (because the related feature is not
+enabled in the kernel configuration) will instead point to a special handler
+for unimplemented system calls. Data type definitions for APIs should not
+have conditional visibility to the compiler.
+
 Any header file that declares system calls must include a special generated
 header at the very bottom of the header file. This header follows the
 naming convention ``syscalls/<name of header file>``. For example, at the
@@ -67,12 +85,38 @@ bottom of ``include/sensor.h``:
 
     #include <syscalls/sensor.h>
 
+Invocation Context
+------------------
+
+Source code that uses system call APIs can be made more efficient if it is
+known that all the code inside a particular C file runs exclusively in
+user mode, or exclusively in supervisor mode. The system will look for
+the definition of macros :c:macro:`__ZEPHYR_SUPERVISOR__` or
+:c:macro:`__ZEPHYR_USER__`, typically these will be added to the compiler
+flags in the build system for the related files.
+
+* If :option:`CONFIG_USERSPACE` is not enabled, all APIs just directly call
+  the implementation function.
+
+* Otherwise, the default case is to make a runtime check to see if the
+  processor is currently running in user mode, and either make the system call
+  or directly call the implementation function as appropriate.
+
+* If :c:macro:`__ZEPHYR_SUPERVISOR__` is defined, then it is assumed that
+  all the code runs in supervisor mode and all APIs just directly call the
+  implementation function. If the code was actually running in user mode,
+  there will be a CPU exception as soon as it tries to do something it isn't
+  allowed to do.
+
+* If :c:macro:`__ZEPHYR_USER__` is defined, then it is assumed that all the
+  code runs in user mode and system calls are unconditionally made.
+
 Implementation Details
 ----------------------
 
 Declaring an API with :c:macro:`__syscall` causes some code to be generated in
-C and header files, all of which can be found in the project out directory
-under ``include/generated/``:
+C and header files by ``scripts/gen_syscalls.py``, all of which can be found in
+the project out directory under ``include/generated/``:
 
 * The system call is added to the enumerated type of system call IDs,
   which is expressed in ``include/generated/syscall_list.h``. It is the name
@@ -107,10 +151,43 @@ This generates an inline function that takes three arguments with void
 return value. Depending on context it will either directly call the
 implementation function or go through a system call elevation. A
 prototype for the implementation function is also automatically generated.
+In this example, the implementation of the :c:macro:`K_SYSCALL_DECLARE3_VOID()`
+macro will be::
+
+    #if !defined(CONFIG_USERSPACE) || defined(__ZEPHYR_SUPERVISOR__)
+
+    #define K_SYSCALL_DECLARE3_VOID(id, name, t0, p0, t1, p1, t2, p2) \
+            extern void _impl_##name(t0 p0, t1 p1, t2 p2); \
+            static inline void name(t0 p0, t1 p1, t2 p2) \
+            { \
+                    _impl_##name(p0, p1, p2); \
+            }
+
+    #elif defined(__ZEPHYR_USER__)
+    #define K_SYSCALL_DECLARE3_VOID(id, name, t0, p0, t1, p1, t2, p2) \
+            static inline void name(t0 p0, t1 p1, t2 p2) \
+            { \
+                    _arch_syscall_invoke3((u32_t)p0, (u32_t)p1, (u32_t)p2, id); \
+            }
+
+    #else /* mixed kernel/user macros */
+    #define K_SYSCALL_DECLARE3_VOID(id, name, t0, p0, t1, p1, t2, p2) \
+            extern void _impl_##name(t0 p0, t1 p1, t2 p2); \
+            static inline void name(t0 p0, t1 p1, t2 p2) \
+            { \
+                    if (_is_user_context()) { \
+                            _arch_syscall_invoke3((u32_t)p0, (u32_t)p1, (u32_t)p2, id); \
+                    } else { \
+                            compiler_barrier(); \
+                            _impl_##name(p0, p1, p2); \
+                    } \
+            }
+    #endif
 
 The header containing :c:macro:`K_SYSCALL_DECLARE3_VOID()` is itself
 generated due to its repetitive nature and can be found in
-``include/generated/syscall_macros.h``.
+``include/generated/syscall_macros.h``. It is created by
+``scripts/gen_syscall_header.py``.
 
 Implementation Function
 =======================
@@ -251,3 +328,56 @@ initialized), and that the limit parameter is nonzero:
         _impl_k_sem_init((struct k_sem *)sem, initial_count, limit);
         return 0;
     }
+
+Simple Handler Declarations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Many kernel or driver APIs have very simple handler functions, where they
+either accept no arguments, or take one object which is a kernel object
+pointer of some specific type. Some special macros have been defined for
+these simple cases, with variants depending on whether the API has a return
+value:
+
+* :c:macro:`_SYSCALL_HANDLER1_SIMPLE()` one kernel object argument, returns
+  a value
+* :c:macro:`_SYSCALL_HANDLER1_SIMPLE_VOID()` one kernel object argument,
+  no return value
+* :c:macro:`_SYSCALL_HANDLER0_SIMPLE()` no arguments, returns a value
+* :c:macro:`_SYSCALL_HANDLER0_SIMPLE_VOID()` no arguments, no return value
+
+For example, :c:func:`k_sem_count_get()` takes a semaphore object as its
+only argument and returns a value, so its handler can be completely expressed
+as:
+
+.. code-block:: c
+
+    _SYSCALL_HANDLER1_SIMPLE(k_sem_count_get, K_OBJ_SEM, struct k_sem *);
+
+Configuration Options
+=====================
+
+Related configuration options:
+
+* :option:`CONFIG_USERSPACE`
+
+APIs
+====
+
+Helper macros for creating system call handlers are provided in
+:file:`kernel/include/syscall_handler.h`:
+
+* :c:macro:`_SYSCALL_HANDLER()`
+* :c:macro:`_SYSCALL_HANDLER1_SIMPLE()`
+* :c:macro:`_SYSCALL_HANDLER1_SIMPLE_VOID()`
+* :c:macro:`_SYSCALL_HANDLER0_SIMPLE()`
+* :c:macro:`_SYSCALL_HANDLER0_SIMPLE_VOID()`
+* :c:macro:`_SYSCALL_OBJ()`
+* :c:macro:`_SYSCALL_OBJ_INIT()`
+* :c:macro:`_SYSCALL_OBJ_NEVER_INIT()`
+* :c:macro:`_SYSCALL_MEMORY_READ()`
+* :c:macro:`_SYSCALL_MEMORY_WRITE()`
+* :c:macro:`_SYSCALL_MEMORY_ARRAY_READ()`
+* :c:macro:`_SYSCALL_MEMORY_ARRAY_WRITE()`
+* :c:macro:`_SYSCALL_VERIFY_MSG()`
+* :c:macro:`_SYSCALL_VERIFY`
+

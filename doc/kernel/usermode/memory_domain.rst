@@ -6,7 +6,19 @@ Memory Domain
 The memory domain APIs are used by unprivileged threads to share data to
 the threads in the same memory domain and protect sensitive data from threads
 outside their domain. Memory domains are not only used for improving security,
-but are also useful for debugging (unexpected access would cause exception).
+but are also useful for debugging (unexpected access would cause an exception).
+
+An alternative to using memory domains is the
+:option:`CONFIG_APPLICATION_MEMORY` option, which will grant access to user
+threads at boot to all global memory defined in object files that are not
+part of the core kernel. This is useful for very simple applications which
+will allow all threads to use global data defined within the application, but
+each thread's stack is still protected from other user threads and there is
+no access to private kernel data structures.
+
+Since architectures generally have constraints on how many partitions can be
+defined, and the size/alignment of each partition, users may need to group
+related data together using linker sections.
 
 .. contents::
     :local:
