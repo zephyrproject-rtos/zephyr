@@ -481,7 +481,9 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 		irq_enable(STM32F4_IRQ_OTG_FS);
 	}
 
-	*ret_bytes = data_len;
+	if (ret_bytes) {
+		*ret_bytes = data_len;
+	}
 
 	return ret;
 }
