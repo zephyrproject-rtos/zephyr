@@ -2709,7 +2709,6 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
 	struct coap_reply *reply;
 	struct coap_packet response;
 	struct sockaddr from_addr;
-	struct coap_option options[4];
 	int r;
 	u8_t token[8];
 	u8_t tkl;
@@ -2739,7 +2738,7 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
 	}
 #endif
 
-	r = coap_packet_parse(&response, pkt, options, 4);
+	r = coap_packet_parse(&response, pkt, NULL, 0);
 	if (r < 0) {
 		SYS_LOG_ERR("Invalid data received (err:%d)", r);
 		goto cleanup;
