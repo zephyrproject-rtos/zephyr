@@ -57,11 +57,47 @@ Install tools to build Zephyr binaries:
 
 .. code-block:: console
 
-   $ brew install dfu-util doxygen qemu dtc python3 gperf
+   $ brew install cmake dfu-util doxygen qemu dtc python3 gperf
    $ curl -O 'https://bootstrap.pypa.io/get-pip.py'
    $ ./get-pip.py
    $ rm get-pip.py
    $ pip3 install --user -r scripts/requirements.txt
+
+Source :file:`zephyr-env.sh` wherever you have cloned the Zephyr Git repository:
+
+.. code-block:: console
+
+   $ unset ZEPHYR_SDK_INSTALL_DIR
+   $ source ~/zephyr/zephyr-env.sh
+
+Within the shell, build the required host tools:
+
+.. code-block:: console
+
+   $ cd $ZEPHYR_BASE
+   $ cmake -Bbuild -Hscripts/
+   $ cd build
+   $ make
+
+.. note::
+
+   You only need to do this once after cloning the git repository.
+
+Finally, assuming you are using a 3rd-party toolchain you can try building the :ref:`hello_world` sample to check things out.
+
+To build for the ARM-based Nordic nRF52 Development Kit:
+
+.. code-block:: console
+
+   $ cd $ZEPHYR_BASE/samples/hello_world
+   $ cmake -Bbuild -H. -DPREBUILT_HOST_TOOLS=$ZEPHYR_BASE/build  -DBOARD=nrf52_pca10040
+   $ cd build
+   $ make
+
+.. _setting_up_mac_toolchain:
+
+Setting Up the Toolchain
+************************
 
 Install tools needed for building the toolchain (if needed):
 
@@ -92,11 +128,6 @@ latest version usually supports the latest released compilers.
    $ ./configure
    $ make
    $ make install
-
-.. _setting_up_mac_toolchain:
-
-Setting Up the Toolchain
-************************
 
 Creating a Case-sensitive File System
 =====================================
