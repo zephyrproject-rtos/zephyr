@@ -86,8 +86,7 @@ To build an example application follow these steps:
    .. code-block:: console
 
       $ cd $ZEPHYR_BASE/samples/hello_world
-      $ mkdir build
-      $ cd build
+      $ mkdir build && cd build
       $ cmake ..
 
 The above will generate project files that can build the
@@ -106,10 +105,8 @@ with one of the supported boards, for example:
 .. code-block:: console
 
    $ cd $ZEPHYR_BASE/samples/hello_world
-   $ export BOARD=arduino_101
-   $ mkdir build_101
-   $ cd build_101
-   $ cmake ..
+   $ mkdir build_101 && cd build_101
+   $ cmake -DBOARD=arduino_101 ..
    $ make
 
 For further information on the supported boards go see
@@ -148,35 +145,28 @@ follow the steps below to build with any custom or 3rd party cross-compilers:
 
       $ unset ZEPHYR_GCC_VARIANT
       $ unset ZEPHYR_SDK_INSTALL_DIR
+      $ cd <zephyr git clone location>
+      $ source zephyr-env.sh
 
-#. Build Kconfig and add it to path
+#. Build Kconfig in :file:`$ZEPHYR_BASE/build` and add it to path
 
    .. code-block:: console
 
-      $ mkdir ~/kconfig_build_dir && cd ~/kconfig_build_dir
+      $ cd $ZEPHYR_BASE
+      $ mkdir build && cd build
       $ cmake $ZEPHYR_BASE/scripts
       $ make
       $ echo "export PATH=$PWD/kconfig:\$PATH" >> $HOME/.zephyrrc
-      $ bash
-      $ which conf
+      $ source $ZEPHYR_BASE/zephyr-env.sh
+
+.. note::
+
+   You only need to do this once after cloning the git repository.
 
 #. We will use the `GCC ARM Embedded`_ compiler for this example, download the
    package suitable for your operating system from the `GCC ARM Embedded`_ website
    and extract it on your file system. This example assumes the compiler was
    extracted to: :file:`~/gcc-arm-none-eabi-5_3-2016q1/`.
-
-#. Navigate to the main project directory (where you cloned the Zephyr source from GitHub):
-
-   .. code-block:: console
-
-      $ cd zephyr-project
-
-#. Source the project environment file to set the project environment
-   variables:
-
-   .. code-block:: console
-
-      $ source zephyr-env.sh
 
 #. Build the example :ref:`hello_world` project, enter:
 
@@ -184,7 +174,10 @@ follow the steps below to build with any custom or 3rd party cross-compilers:
 
       $ export GCCARMEMB_TOOLCHAIN_PATH="~/gcc-arm-none-eabi-5_3-2016q1/"
       $ export ZEPHYR_GCC_VARIANT=gccarmemb
-      $ cmake -DBOARD=arduino_due -H$ZEPHYR_BASE/samples/hello_world -Bbld && cmake --build bld
+      $ cd $ZEPHYR_BASE/samples/hello_world
+      $ mkdir build && cd build
+      $ cmake -DBOARD=arduino_due ..
+      $ make
 
 Running a Sample Application in QEMU
 ====================================
@@ -201,10 +194,8 @@ type:
 .. code-block:: console
 
    $ cd $ZEPHYR_BASE/samples/hello_world
-   $ export BOARD=qemu_x86
-   $ mkdir qemu_build
-   $ cd qemu_build
-   $ cmake ..
+   $ mkdir qemu_build && cd qemu_build
+   $ cmake -DBOARD=qemu_x86 ..
    $ make run
 
 To run an application using the ARM qemu_cortex_m3 board configuration

@@ -68,16 +68,19 @@ Source :file:`zephyr-env.sh` wherever you have cloned the Zephyr Git repository:
 .. code-block:: console
 
    $ unset ZEPHYR_SDK_INSTALL_DIR
-   $ source ~/zephyr/zephyr-env.sh
+   $ cd <zephyr git clone location>
+   $ source zephyr-env.sh
 
-Within the shell, build the required host tools:
+Build Kconfig in :file:`$ZEPHYR_BASE/build` and add it to path
 
 .. code-block:: console
 
    $ cd $ZEPHYR_BASE
-   $ cmake -Bbuild -Hscripts/
-   $ cd build
+   $ mkdir build && cd build
+   $ cmake $ZEPHYR_BASE/scripts
    $ make
+   $ echo "export PATH=$PWD/kconfig:\$PATH" >> $HOME/.zephyrrc
+   $ source $ZEPHYR_BASE/zephyr-env.sh
 
 .. note::
 
@@ -90,8 +93,8 @@ To build for the ARM-based Nordic nRF52 Development Kit:
 .. code-block:: console
 
    $ cd $ZEPHYR_BASE/samples/hello_world
-   $ cmake -Bbuild -H. -DPREBUILT_HOST_TOOLS=$ZEPHYR_BASE/build  -DBOARD=nrf52_pca10040
-   $ cd build
+   $ mkdir build && cd build
+   $ cmake -DBOARD=nrf52_pca10040 ..
    $ make
 
 .. _setting_up_mac_toolchain:
