@@ -7,3 +7,7 @@ target_link_libraries(app subsys__bluetooth)
 
 target_sources(app PRIVATE src/main.c)
 target_sources_ifdef(CONFIG_BOARD_BBC_MICROBIT app PRIVATE src/microbit.c)
+
+if(NODE_ADDR)
+  zephyr_compile_definitions(NODE_ADDR=${NODE_ADDR})
+endif()
