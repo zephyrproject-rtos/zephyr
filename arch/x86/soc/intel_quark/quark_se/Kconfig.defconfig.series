@@ -27,7 +27,7 @@ config PHYS_LOAD_ADDR
 endif
 
 config RAM_SIZE
-	default 55
+	default 52
 
 config ROM_SIZE
 	default 144

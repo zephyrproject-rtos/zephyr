@@ -40,7 +40,7 @@ config SRAM_BASE_ADDRESS
 
 config SRAM_SIZE
 	default 16 if NSIM
-	default 24
+	default 27
 
 config ICCM_BASE_ADDRESS
 	default 0xFFFFFFFF
