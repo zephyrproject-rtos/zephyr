@@ -3,11 +3,14 @@
 User Mode
 #########
 
-This section describes how threads may be configured to run in user mode,
-and how permissions for these threads are managed.
+This section describes access policies for kernel objects, how system calls
+are defined, and how memory may be managed to support user mode threads.
+
+For details on creating threads that run in user mode, please see
+:ref:`lifecycle_v2`.
 
 .. toctree::
-    :maxdepth: 1
+    :maxdepth: 2
 
     kernelobjects.rst
     syscalls.rst
