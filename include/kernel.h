@@ -3705,6 +3705,19 @@ extern void *k_malloc(size_t size);
 extern void k_free(void *ptr);
 
 /**
+ * @brief Allocate memory from heap, array style
+ *
+ * This routine provides traditional calloc() semantics. Memory is
+ * allocated from the heap memory pool and zeroed.
+ *
+ * @param nmemb Number of elements in the requested array
+ * @param size Size of each array element (in bytes).
+ *
+ * @return Address of the allocated memory if successful; otherwise NULL.
+ */
+extern void *k_calloc(size_t nmemb, size_t size);
+
+/**
  * @} end defgroup heap_apis
  */
 
