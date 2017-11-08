@@ -131,6 +131,9 @@ static int tcp_backlog_find(struct net_pkt *pkt, int *empty_slot)
 		}
 
 		tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
+		if (!tcp_hdr) {
+			return -EINVAL;
+		}
 
 		switch (net_pkt_family(pkt)) {
 #if defined(CONFIG_NET_IPV6)
