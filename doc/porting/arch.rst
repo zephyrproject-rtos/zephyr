@@ -511,7 +511,7 @@ details:
 * :cpp:func:`_arch_buffer_validate()` to test whether the current thread has
   access permissions to a particular memory region
 
-* :cpp:func:`_arch_user_mode_enter()` which will irreversably drop a supervisor
+* :cpp:func:`_arch_user_mode_enter()` which will irreversibly drop a supervisor
   thread to user mode privileges. The stack must be wiped.
 
 * :cpp:func:`_arch_syscall_oops()` which generates a kernel oops when system
@@ -544,7 +544,7 @@ In addition to implementing these APIs, there are some other tasks as well:
 * On context switch, the outgoing thread's stack memory should be marked
   inaccessible to user mode by making the appropriate configuration changes in
   the memory management hardware.. The incoming thread's stack memory should
-  likewaise be marked as accessible. This ensures that threads can't mess with
+  likewise be marked as accessible. This ensures that threads can't mess with
   other thread stacks.
 
 * On context switch, the system needs to switch between memory domains for
