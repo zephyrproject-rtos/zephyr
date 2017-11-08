@@ -235,7 +235,6 @@ ssize_t zsock_sendto(int sock, const void *buf, size_t len, int flags,
 	struct net_pkt *send_pkt;
 	s32_t timeout = K_FOREVER;
 	struct net_context *ctx = INT_TO_POINTER(sock);
-	size_t max_len = net_if_get_mtu(net_context_get_iface(ctx));
 
 	ARG_UNUSED(flags);
 
@@ -247,18 +246,6 @@ ssize_t zsock_sendto(int sock, const void *buf, size_t len, int flags,
 	if (!send_pkt) {
 		errno = EAGAIN;
 		return -1;
-	}
-
-	/* Make sure we don't send more data in one packet than
-	 * MTU allows. Optimize for number of branches in the code.
-	 */
-	max_len -= NET_IPV4TCPH_LEN;
-	if (net_context_get_family(ctx) != AF_INET) {
-		max_len -= NET_IPV6TCPH_LEN - NET_IPV4TCPH_LEN;
-	}
-
-	if (len > max_len) {
-		len = max_len;
 	}
 
 	len = net_pkt_append(send_pkt, len, buf, timeout);
