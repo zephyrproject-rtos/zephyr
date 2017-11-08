@@ -46,12 +46,10 @@ build:
             echo "Building a Pull Request";
             echo "- Building Documentation";
             echo "Commit range:" ${COMMIT_RANGE}
-            pushd doc
             make htmldocs > doc.warnings 2>&1;
             if [ -s doc.warnings ]; then
               echo " => New documentation warnings/errors";
             fi;
-            popd
             echo "- Verify commit message, coding style, doc build";
             ./scripts/ci/check-compliance.py --commits ${COMMIT_RANGE} || true;
           fi;
