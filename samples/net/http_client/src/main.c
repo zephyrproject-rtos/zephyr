@@ -427,9 +427,9 @@ static void http_received(struct http_ctx *ctx,
 			  void *user_data)
 {
 	if (!status) {
-		NET_DBG("Received %d bytes data", net_pkt_appdatalen(pkt));
-
 		if (pkt) {
+			NET_DBG("Received %d bytes data",
+				net_pkt_appdatalen(pkt));
 			net_pkt_unref(pkt);
 		}
 	} else {
