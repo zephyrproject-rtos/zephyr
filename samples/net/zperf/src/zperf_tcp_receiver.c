@@ -63,7 +63,7 @@ static void tcp_received(struct net_context *context,
 	case STATE_COMPLETED:
 		printk(TAG "New session started\n");
 		zperf_reset_session_stats(session);
-		session->start_time =  sys_cycle_get_32();
+		session->start_time = k_cycle_get_32();
 		session->state = STATE_ONGOING;
 		/* fall through */
 	case STATE_ONGOING:
