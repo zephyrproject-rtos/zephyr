@@ -23,7 +23,7 @@ config CDC_ACM_PORT_NAME
 	Port name through which CDC ACM class device driver is accessed
 
 config CDC_ACM_INT_EP_ADDR
-	hex
+	hex "CDC ACM Interrupt Endpoint address"
 	depends on USB_CDC_ACM
 	default 0x85
 	range 0x81 0x8f
@@ -31,7 +31,7 @@ config CDC_ACM_INT_EP_ADDR
 	CDC ACM class interrupt endpoint address
 
 config CDC_ACM_IN_EP_ADDR
-	hex
+	hex "CDC ACM BULK IN Endpoint address"
 	depends on USB_CDC_ACM
 	default 0x84
 	range 0x81 0x8f
@@ -39,7 +39,7 @@ config CDC_ACM_IN_EP_ADDR
 	CDC ACM class IN endpoint address
 
 config CDC_ACM_OUT_EP_ADDR
-	hex
+	hex "CDC ACM BULK OUT Endpoint address"
 	depends on USB_CDC_ACM
 	default 0x03
 	range 0x01 0x0f
