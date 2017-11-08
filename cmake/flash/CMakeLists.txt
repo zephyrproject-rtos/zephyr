@@ -6,6 +6,7 @@ list(APPEND ENV_VARS
   KERNEL_BIN_NAME=${KERNEL_BIN_NAME}
              ARCH=${ARCH}
        BOARD_NAME=${BOARD}
+             GDB=${CMAKE_GDB}
   )
 
 foreach(target flash debug debugserver)
