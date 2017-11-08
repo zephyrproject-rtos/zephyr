@@ -32,8 +32,10 @@
 
 #define RC_STR(rc)	(rc == 0 ? "OK" : "ERROR")
 
-#define HTTP_STATUS_400_BR	"HTTP/1.1 400 Bad Request\r\n" \
-				"\r\n"
+/* Max length of the error description in HTTP error reply */
+#define MAX_DESCRIPTION_LEN 20
+
+#define HTTP_STATUS_400_BR	"Bad Request"
 
 #if defined(CONFIG_NET_DEBUG_HTTP_CONN)
 /** List of http connections */
@@ -165,10 +167,11 @@ static void http_data_sent(struct net_app_ctx *app_ctx,
 	}
 }
 
-int http_send_error(struct http_ctx *ctx, int code,
+int http_send_error(struct http_ctx *ctx, int code, const char *description,
 		    u8_t *html_payload, size_t html_len)
 {
-	const char *msg;
+	char msg[sizeof(HTTP_PROTOCOL " xxx " HTTP_CRLF HTTP_CRLF) +
+		 MAX_DESCRIPTION_LEN];
 	int ret;
 
 	if (ctx->pending) {
@@ -176,11 +179,12 @@ int http_send_error(struct http_ctx *ctx, int code,
 		ctx->pending = NULL;
 	}
 
-	switch (code) {
-	case 400:
-		msg = HTTP_STATUS_400_BR;
-		break;
+	if (code < 100 || code > 999) {
+		return -EINVAL;
 	}
+
+	snprintk(msg, sizeof(msg), "%s %d %s%s%s", HTTP_PROTOCOL, code,
+		 description, HTTP_CRLF, HTTP_CRLF);
 
 	ret = http_add_header(ctx, msg, NULL);
 	if (ret < 0) {
@@ -630,7 +634,7 @@ fail:
 	}
 
 	if (ctx->http.parser.http_errno != HPE_OK) {
-		http_send_error(ctx, 400, NULL, 0);
+		http_send_error(ctx, 400, HTTP_STATUS_400_BR, NULL, 0);
 	} else {
 		if (ctx->state == HTTP_STATE_HEADER_RECEIVED) {
 			goto http_ready;
