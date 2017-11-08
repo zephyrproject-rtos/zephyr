@@ -45,7 +45,7 @@
 		uart0: uart@b0002000 {
 			compatible = "intel,qmsi-uart";
 			reg = <0xb0002000 0x400>;
-			interrupts = <5 0>;
+			interrupts = <41 0>;
 			interrupt-parent = <&core_intc>;
 			label = "UART_0";
 
@@ -55,7 +55,7 @@
 		uart1: uart@b0002400 {
 			compatible = "intel,qmsi-uart";
 			reg = <0xb0002400 0x400>;
-			interrupts = <6 0>;
+			interrupts = <42 0>;
 			interrupt-parent = <&core_intc>;
 			label = "UART_1";
 

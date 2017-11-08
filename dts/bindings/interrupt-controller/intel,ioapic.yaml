@@ -1,0 +1,33 @@
+---
+title: Intel I/O Advanced Programmable Interrupt Controller
+version: 0.1
+
+description: >
+    This binding describes the Intel I/O Advanced Programmable Interrupt
+    controller
+
+properties:
+  compatible:
+      category: required
+      type: string
+      description: compatible strings
+      constraint: "intel,ioapic"
+
+  reg:
+      category: required
+      type: int
+      description: mmio register space
+      generation: define
+
+  intel,num-irq-priority-bits:
+      category: required
+      type: int
+      description: number of bits of IRQ priorities
+      generation: define
+
+cell_string: IRQ
+
+"#cells":
+  - irq
+  - sense
+...

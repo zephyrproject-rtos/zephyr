@@ -1,0 +1,33 @@
+---
+title: Intel Quark D2000 Interrupt Controller
+version: 0.1
+
+description: >
+    This binding describes the Intel Quark D2000 Interrupt
+    Controller
+
+properties:
+  compatible:
+      category: required
+      type: string
+      description: compatible strings
+      constraint: "intel,mvic"
+
+  reg:
+      category: required
+      type: int
+      description: mmio register space
+      generation: define
+
+  intel,num-irq-priority-bits:
+      category: required
+      type: int
+      description: number of bits of IRQ priorities
+      generation: define
+
+cell_string: IRQ
+
+"#cells":
+  - irq
+  - sense
+...

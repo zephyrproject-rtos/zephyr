@@ -1,4 +1,5 @@
 #include "skeleton.dtsi"
+#include <dt-bindings/interrupt-controller/intel-ioapic.h>
 
 #define __SIZE_K(x) (x * 1024)
 
@@ -13,6 +14,12 @@
 			reg = <0>;
 		};
 
+		intc: ioapic@fec00000  {
+			compatible = "intel,ioapic";
+			reg = <0xfec00000 0x100000>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+		};
 	};
 
 	flash0: flash@00100000{
@@ -37,6 +44,8 @@
 			compatible = "ns16550";
 			reg = <0xf0008000 0x400>;
 			label = "UART_0";
+			interrupts = <4 IRQ_TYPE_EDGE_RISING>;
+			interrupt-parent = <&intc>;
 
 			status = "disabled";
 		};
@@ -45,6 +54,8 @@
 			compatible = "ns16550";
 			reg = <0xf0009000 0x400>;
 			label = "UART_1";
+			interrupts = <3 IRQ_TYPE_EDGE_RISING>;
+			interrupt-parent = <&intc>;
 
 			status = "disabled";
 		};
