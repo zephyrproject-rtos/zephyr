@@ -32,10 +32,6 @@
 #include <net/coap.h>
 #include <net/coap_link_format.h>
 
-#if defined(CONFIG_NET_L2_IEEE802154)
-#include <ieee802154_settings.h>
-#endif
-
 #define MY_COAP_PORT 5683
 
 #define ALL_NODES_LOCAL_COAP_MCAST					\
@@ -1116,13 +1112,6 @@ static void init_app(void)
 		.sin6_addr = IN6ADDR_ANY_INIT,
 		.sin6_port = htons(MY_COAP_PORT) };
 	int r;
-
-#if defined(CONFIG_NET_L2_IEEE802154)
-	if (ieee802154_sample_setup()) {
-		NET_ERR("IEEE 802.15.4 setup failed");
-		return;
-	}
-#endif
 
 	led0 = device_get_binding(LED_GPIO_NAME);
 	if (led0) {
