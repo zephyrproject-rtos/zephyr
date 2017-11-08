@@ -172,8 +172,8 @@ Basics
 
        $ mkdir build
        $ cd build
-       $ cmake -GNinja ..
-       $ ninja
+       $ cmake ..
+       $ make
 
    If desired, you can build the application using the configuration settings
    specified in an alternate :file:`.conf` file using the :code:`CONF_FILE`
@@ -184,8 +184,8 @@ Basics
 
 
        $ export CONF_FILE=prj.alternate.conf
-       $ cmake -GNinja ..
-       $ ninja
+       $ cmake ..
+       $ make
 
    If desired, you can generate project files for a different board
    type than the one specified in the application's
@@ -200,7 +200,8 @@ Build Directory Contents
 ========================
 
 
-When using the Ninja backend, a build directory looks like this:
+When using the Ninja backend instead of the Make backend, a build
+directory looks like this:
 
 .. code-block:: none
 
@@ -267,7 +268,7 @@ following procedure:
 
    .. code-block:: console
 
-       $ ninja clean
+       $ make clean
 
    Alternatively, enter the following command to delete *all*
    generated files, including the :file:`.config` files that contain
@@ -276,7 +277,7 @@ following procedure:
 
    .. code-block:: console
 
-       $ ninja pristine
+       $ make pristine
 
 #. Rebuild the application normally following the steps specified
    in :ref:`build_an_application` above.
@@ -310,7 +311,7 @@ hardware:
 
    .. code-block:: console
 
-      $ ninja flash
+      $ make flash
 
 The Zephyr build system integrates with the board support files to
 use hardware-specific tools to flash the Zephyr binary to your
@@ -353,7 +354,7 @@ run an application via QEMU:
 
    .. code-block:: console
 
-      $ ninja run
+      $ make run
 
 #. Press :kbd:`Ctrl A, X` to stop the application from running
    in QEMU.
@@ -416,7 +417,7 @@ the following inside the build directory of an application:
 
 .. code-block:: bash
 
-   ninja debugserver
+   make debugserver
 
 The build system will start a QEMU instance with the CPU halted at startup
 and with a GDB server instance listening at the TCP port 1234.
@@ -732,12 +733,11 @@ application's :file:`.config` manually, using a configurator tool is
 preferred, since it correctly handles dependencies between options.
 
 
-#. Generate a Ninja build system, and use it to run ``ninja
+#. Generate a Make build system, and use it to run ``make
    menuconfig`` as follows.
 
    a) Using CMake, create a build directory (:file:`~/app/build`) from
-      your application directory (:file:`~/app`) with a Ninja build
-      system.
+      your application directory (:file:`~/app`).
 
       For example, on a Unix shell:
 
@@ -745,16 +745,16 @@ preferred, since it correctly handles dependencies between options.
 
          $ cd ~/app
          $ mkdir build && cd build
-         $ cmake -GNinja ..
+         $ cmake ..
 
-   b) Run ``ninja menuconfig`` from the build directory
+   b) Run ``make menuconfig`` from the build directory
       (:file:`~/app/build`).
 
       Continuing the above Unix shell example:
 
       .. code-block:: bash
 
-          $ ninja menuconfig
+          $ make menuconfig
 
       A question-based menu opens that allows you to set individual
       configuration options.
