@@ -231,20 +231,13 @@ to `CMSIS-DAP Website`_.
 Flashing an application to V2M Beetle
 -------------------------------------
 
-The sample application :ref:`hello_world` is being used in this tutorial:
+You can build applications in the usual way. Here is an example for
+the :ref:`hello_world` application.
 
-.. code-block:: console
-
-   $ZEPHYR_BASE/samples/hello_world
-
-To build the Zephyr kernel and application, enter:
-
-.. code-block:: console
-
-   $ cd $ZEPHYR_BASE
-   $ . zephyr-env.sh
-   $ cd $ZEPHYR_BASE/samples/hello_world/
-   $ make BOARD=v2m_beetle
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: v2m_beetle
+   :goals: build flash
 
 Connect the V2M Beetle to your host computer using the USB port and you should
 see a USB connection which exposes a Mass Storage (MBED) and a USB Serial Port.

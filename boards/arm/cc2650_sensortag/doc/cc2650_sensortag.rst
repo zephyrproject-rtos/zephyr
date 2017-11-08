@@ -140,12 +140,13 @@ the CCFG content, see :file:`arch/arm/soc/ti_simplelink/cc2650/soc.c`.
 Building
 ========
 
-Building does not require anything more than Zephyr already provides.
-To build your current configuration and code:
+You can build an application in the usual way. Here is an example for
+the :ref:`hello_world` application.
 
-.. code-block:: console
-
-  $ make BOARD=cc2650_sensortag
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: cc2650_sensortag
+   :goals: build flash
 
 Flashing
 ========
@@ -177,8 +178,8 @@ operation, then light up again upon completion.
 Debugging
 =========
 
-Debugging can be done with OpenOCD 0.10, which is currently not supported
-by the latest Zephyr SDK version. A basic configuration file for the
+Debugging can be done with OpenOCD 0.10, which is supported
+by the Zephyr SDK since v0.9.2. A basic configuration file for the
 SensorTag board would be:
 
 .. code-block:: console

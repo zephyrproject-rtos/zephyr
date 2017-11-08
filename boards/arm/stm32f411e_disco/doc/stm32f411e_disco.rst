@@ -124,6 +124,10 @@ assigned to UART2. Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+Applications for the ``stm32f411e_disco`` board configuration can be built and
+flashed in the usual way (see :ref:`build_an_application` and
+:ref:`application_run` for more details).
+
 Flashing
 ========
 
@@ -134,39 +138,29 @@ Zephyr SDK.
 Flashing an application to STM32F411E-DISCO
 -------------------------------------------
 
-The sample application :ref:`blinky-sample` is being used in this tutorial:
-
-.. code-block:: console
-
-   $<zephyr_root_path>/samples/basic/blinky
-
-To build the Zephyr kernel and application, enter:
-
-.. code-block:: console
-
-   $ cd <zephyr_root_path>
-   $ source zephyr-env.sh
-   $ cd $ZEPHYR_BASE/samples/basic/blinky/
-   $ make BOARD=stm32f411e_disco
-
 Connect the STM32F411E-DISCO Discovery kit to your host computer using the
-USB port. Then, enter the following command:
+USB port. Then build and flash an application.
 
-.. code-block:: console
+Here is an example for the :ref:`blinky-sample` application.
 
-   $ make BOARD=stm32f411e_disco flash
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/blinky
+   :board: stm32f411e_disco
+   :goals: build flash
 
 You should see the orange led (LD3) blinking every second.
 
 Debugging
 =========
 
-Access gdb with the following make command:
+You can debug applications in the usual way. Here is an example for
+the :ref:`blinky-sample` application.
 
-.. code-block:: console
-
-   $ make BOARD=stm32f411e_disco debug
-
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/blinky
+   :board: stm32f411e_disco
+   :maybe-skip-config:
+   :goals: debug
 
 References
 **********

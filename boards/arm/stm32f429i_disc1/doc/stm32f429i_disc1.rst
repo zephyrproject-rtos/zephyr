@@ -136,6 +136,10 @@ The default communication settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+Applications for the ``stm32f429i_disc1`` board configuration can be built
+and flashed in the usual way (see :ref:`build_an_application` and
+:ref:`application_run` for more details).
+
 Flashing
 ========
 
@@ -145,27 +149,15 @@ This interface is supported by the openocd version included in Zephyr SDK.
 Flashing an application to STM32F429I-DISC1
 -------------------------------------------
 
-The sample application :ref:`hello_world` is being used in this tutorial:
+First, connect the STM32F429I-DISC1 Discovery kit to your host computer using
+the USB port to prepare it for flashing. Then build and flash your application.
 
-.. code-block:: console
+Here is an example for the :ref:`hello_world` application.
 
-   $<zephyr_root_path>/samples/hello_world
-
-To build the Zephyr kernel and application, enter:
-
-.. code-block:: console
-
-   $ cd <zephyr_root_path>
-   $ source zephyr-env.sh
-   $ cd $ZEPHYR_BASE/samples/hello_world/
-   $ make BOARD=stm32f429i_disc1
-
-Connect the STM32F429I-DISC1 Discovery kit to your host computer using the USB port.
-Then, enter the following command:
-
-.. code-block:: console
-
-   $ make BOARD=stm32f429i_disc1 flash
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: stm32f429i_disc1
+   :goals: build flash
 
 Run a serial host program to connect with your board:
 
@@ -183,12 +175,13 @@ Then, press the RESET button (The black one), you should see the following messa
 Debugging
 =========
 
-Access gdb with the following make command:
+You can debug an application in the usual way.  Here is an example for the
+:ref:`hello_world` application.
 
-.. code-block:: console
-
-   $ make BOARD=stm32f429i_disc1 debug
-
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: stm32f429i_disc1
+   :goals: debug
 
 .. _STM32F429I-DISC1 website:
    http://www.st.com/en/evaluation-tools/32f429idiscovery.html

@@ -239,21 +239,6 @@ debian/ubuntu can be quite old, so you might have to build dfu-util from source.
 Flashing an Application to 96Boards Carbon
 ------------------------------------------
 
-The sample application :ref:`hello_world` is being used in this tutorial:
-
-.. code-block:: console
-
-   $<zephyr_root_path>/samples/hello_world
-
-To build the Zephyr kernel and application, enter:
-
-.. code-block:: console
-
-   $ cd <zephyr_root_path>
-   $ source zephyr-env.sh
-   $ cd $ZEPHYR_BASE/samples/hello_world/
-   $ make BOARD=96b_carbon
-
 Connect the micro-USB cable to the USB OTG Carbon port and to your computer.
 The board should power ON. Force the board into DFU mode by keeping the BOOT0
 switch pressed while pressing and releasing the RST switch.
@@ -286,11 +271,13 @@ You should see following confirmation on your Linux host:
    usb 1-2.1: Manufacturer: STMicroelectronics
    usb 1-2.1: SerialNumber: 3574364C3034
 
-Flash a new application to the board:
+Then build and flash an application. Here is an example for the
+:ref:`hello_world` application.
 
-.. code-block:: console
-
-   $ sudo dfu-util -d [0483:df11] -a 0 -D outdir/96b_carbon/zephyr.bin -s 0x08000000
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: 96b_carbon
+   :goals: build flash
 
 Connect the micro-USB cable to the USB UART (FTDI) port and to your computer.
 Run your favorite terminal program to listen for output.
@@ -324,18 +311,14 @@ in general, see :ref:`build_an_application`.
 
 2. Install the dfu-util flashing app, as described above.
 
-3. Build the ``samples/bluetooth/ipsp`` application for 96b_carbon::
+3. Build and flash the ``samples/bluetooth/ipsp`` application for
+   96b_carbon. See the instructions above for how to put your board
+   into DFU mode if you haven't done this before:
 
-     $ cd <zephyr_root_path>
-     $ source zephyr-env.sh
-     $ cd $ZEPHYR_BASE/samples/bluetooth/ipsp/
-     $ make BOARD=96b_carbon
-
-4. Flash the compiled application using dfu-util. See the instructions
-   above for how to put your board into DFU mode if you haven't done
-   this before::
-
-     $ make BOARD=96b_carbon flash
+   .. zephyr-app-commands::
+      :zephyr-app: samples/bluetooth/ipsp
+      :board: 96b_carbon
+      :goals: build flash
 
 5. Refer to the instructions in :ref:`bluetooth-ipsp-sample` for how
    to verify functionality.

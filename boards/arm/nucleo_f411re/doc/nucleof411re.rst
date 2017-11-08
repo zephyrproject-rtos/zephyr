@@ -134,6 +134,10 @@ Default settings are 115200 8N1.
 Programming and Debugging
 *************************
 
+Applications for the ``nucleo_f411re`` board configuration can be built and
+flashed in the usual way (see :ref:`build_an_application` and
+:ref:`application_run` for more details).
+
 Flashing
 ========
 
@@ -143,27 +147,7 @@ This interface is supported by the openocd version included in Zephyr SDK.
 Flashing an application to Nucleo F411RE
 ----------------------------------------
 
-The sample application :ref:`hello_world` is being used in this tutorial:
-
-.. code-block:: console
-
-   $<zephyr_root_path>/samples/hello_world
-
-To build the Zephyr kernel and application, enter:
-
-.. code-block:: console
-
-   $ cd <zephyr_root_path>
-   $ source zephyr-env.sh
-   $ cd $ZEPHYR_BASE/samples/hello_world/
-   $ make BOARD=nucleo_f411re
-
-Connect the Nucleo F411RE to your host computer using the USB port.
-Then, enter the following command:
-
-.. code-block:: console
-
-   $ make BOARD=nucleo_f411re flash
+Here is an example for the :ref:`hello_world` application.
 
 Run a serial host program to connect with your Nucleo board.
 
@@ -171,22 +155,30 @@ Run a serial host program to connect with your Nucleo board.
 
    $ minicom -D /dev/ttyACM0
 
-You should see the following message:
+Build and flash the application:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: nucleo_f411re
+   :goals: build flash
+
+You should see the following message on the console:
 
 .. code-block:: console
 
    $ Hello World! arm
 
-
 Debugging
 =========
 
-Access gdb with the following make command:
+You can debug an application in the usual way.  Here is an example for the
+:ref:`hello_world` application.
 
-.. code-block:: console
-
-   $ make BOARD=nucleo_f411re debug
-
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: nucleo_f411re
+   :maybe-skip-config:
+   :goals: debug
 
 .. _Nucleo F411RE website:
    http://www.st.com/en/evaluation-tools/nucleo-f411re.html

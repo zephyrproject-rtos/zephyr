@@ -189,62 +189,50 @@ Programming and Debugging
 Flashing
 ========
 
-STM32L496G Discovery board includes an ST-LINK/V2-1 embedded debug tool interface.
-This interface is not supported by the openocd version 0.9 included by the Zephyr SDK v0.9,
-use openocd v0.10.0 from the openocd-stm32 project on GitHub to get the minimum set of scripts
-needed to flash and debug STM32 development boards.
+STM32L496G Discovery board includes an ST-LINK/V2-1 embedded debug
+tool interface.  This interface is supported by openocd version
+v0.10.0, which has been available since Zephyr SDK v0.9.2.
 
-.. code-block:: console
-
-   $ git clone  https://github.com/erwango/openocd-stm32.git
-
-Then follow instructions in README.md
-
+Applications for the ``stm32l496g_disco`` board configuration can be
+built and flashed in the usual way (see :ref:`build_an_application`
+and :ref:`application_run` for more details).
 
 Flashing an application to STM32L496G Discovery
 -----------------------------------------------
 
-The sample application :ref:`hello_world` is being used in this tutorial:
-
-To build the Zephyr kernel and application, enter:
-
-.. code-block:: console
-
-   $ cd <zephyr_root_path>
-   $ source zephyr-env.sh
-   $ cd $ZEPHYR_BASE/samples/hello_world/
-   $ make BOARD=stm32l496g_disco
-
-Connect the STM32L496G Discovery to your host computer using the USB port.
-Then, enter the following command:
-
-.. code-block:: console
-
-   $ cd <openocd-stm32_path>
-   $ stm32_flsh l4 $ZEPHYR_BASE/samples/hello_world/outdir/stm32l496g_disco/zephyr.bin
-
-Run a serial host program to connect with your Discovery board.
+Connect the STM32L496G Discovery to your host computer using the USB
+port, then run a serial host program to connect with your Discovery
+board. For example:
 
 .. code-block:: console
 
    $ minicom -D /dev/ttyACM0
 
-You should see the following message:
+Then, build and flash in the usual way. Here is an example for the
+:ref:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: stm32l496g_disco
+   :goals: build flash
+
+You should see the following message on the console:
 
 .. code-block:: console
 
    $ Hello World! arm
 
-
 Debugging
 =========
 
-Access gdb with the following make command:
+You can debug an application in the usual way.  Here is an example for the
+:ref:`hello_world` application.
 
-.. code-block:: console
-
-   $ cd <openocd-stm32_path>
-   $ stm32_dbg l4 $ZEPHYR_BASE/samples/hello_world/outdir/stm32l496g_disco/zephyr.elf
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: stm32l496g_disco
+   :maybe-skip-config:
+   :goals: debug
 
 .. _STM32L496G Discovery website:
    http://www.st.com/en/evaluation-tools/32l496gdiscovery.html

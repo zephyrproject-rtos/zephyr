@@ -64,22 +64,42 @@ It also regulates 5V from USB to 3.3V via the onboard LDO to power Nano v2.
 Programming and Debugging
 *************************
 
+Applications for the ``nrf52_blenano2`` board configuration can be built and
+flashed in the usual way (see :ref:`build_an_application` and
+:ref:`application_run` for more details).
+
 Flashing
 ========
 
-Build the Zephyr kernel and BLE sample application:
+To flash an application, you'll need to connect your BLE Nano 2 with the
+DAPLink board, then attach that to your computer via USB.
 
-.. code-block:: console
+.. warning::
 
-   $ cd $ZEPHYR_BASE
-   $ . zephyr-env.sh
-   $ make -C samples/bluetooth/beacon BOARD=nrf52_blenano2
+   Be careful to mount the BLE Nano 2 correctly! The side of the board
+   with the VIN and GND pins should face **towards** the USB
+   connector.
 
-- Mount your BLE Nano v2 onto the DAPLink USB dongle correctly.
-- Connect DAPLink USB dongle to your host computer.
-- The PC will prompt a new mass storage disk.
-- Copy the generated file zephyr.bin on folder samples/bluetooth/beacon/outdir/nrf52_blenano2 to the DAPLink drive.
-- Open nRF Connect application to check advertising packets.
+Now build and flash applications as usual. Here is an example for the
+:ref:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: nrf52_blenano2
+   :goals: build flash
+
+Debugging
+=========
+
+After mounting the BLE Nano 2 on its DAPLink board as described above,
+you can debug an application in the usual way.  Here is an example for
+the :ref:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: nrf52_blenano2
+   :maybe-skip-config:
+   :goals: debug
 
 References
 **********

@@ -83,23 +83,16 @@ The VBLUno52 board has an on-board DAPLink (CMSIS-DAP) interface for flashing an
 You do not need any other programming device.
 You only need to install the pyOCD tool (https://pypi.python.org/pypi/pyOCD)
 
-This tutorial uses the blinky application :ref:`blinky-sample`
-
 See the :ref:`getting_started` for general information on setting up
 your development environment.
 
-#. To build the Zephyr kernel along with the blinky sample app, enter:
+You can build and flash applications in the usual way. Here is an
+example for the :ref:`hello_world` application.
 
-   .. code-block:: console
-
-      $ cd $ZEPHYR_BASE/samples/basic/blinky
-      $ make BOARD=nrf52_vbluno52
-
-#. To build and flash the generated binary image to the board, enter:
-
-   .. code-block:: console
-
-      $ make BOARD=nrf52_vbluno52 flash
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: nrf52_vbluno52
+   :goals: build flash
 
 Testing the VBLUno52 with Zephyr: buttons, LEDs, UART, BLE
 **********************************************************

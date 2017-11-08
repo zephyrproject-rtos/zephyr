@@ -102,9 +102,8 @@ UART0 is connected to the board controller and is used for the console.
 Programming and Debugging
 *************************
 
-.. note::
-
-   Before using the kit the first time, you should update the J-Link firmware
+.. note:
+   Before useing the kit the first time, you should update the J-Link firmware
    from `J-Link-Downloads`_
 
 Flashing
@@ -124,12 +123,10 @@ Flashing an application to EFM32-STK3800
 The sample application :ref:`hello_world` is used for this example.
 Build the Zephyr kernel and application:
 
-.. code-block:: console
-
-   $ cd <zephyr_root_path>
-   $ . zephyr-env.sh
-   $ cd samples/hello_world/
-   $ make BOARD=efm32wg_stk3800
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: efm32wg_stk3800
+   :goals: build
 
 Connect the EFM32WG-STK3800 to your host computer using the USB port and you
 should see a USB connection which exposes a Mass Storage (STK3800) and a

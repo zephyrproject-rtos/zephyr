@@ -142,6 +142,10 @@ Nucleo F401RE board has up to 3 I2Cs. The default I2C mapping for Zephyr is:
 Programming and Debugging
 *************************
 
+Applications for the ``nucleo_f401re`` board configuration can be built and
+flashed in the usual way (see :ref:`build_an_application` and
+:ref:`application_run` for more details).
+
 Flashing
 ========
 
@@ -151,35 +155,22 @@ This interface is supported by the openocd version included in Zephyr SDK.
 Flashing an application to Nucleo F401RE
 ----------------------------------------
 
-The sample application :ref:`hello_world` is being used in this tutorial:
-
-.. code-block:: console
-
-   $<zephyr_root_path>/samples/hello_world
-
-To build the Zephyr kernel and application, enter:
-
-.. code-block:: console
-
-   $ cd <zephyr_root_path>
-   $ source zephyr-env.sh
-   $ cd $ZEPHYR_BASE/samples/hello_world/
-   $ make BOARD=nucleo_f401re
-
-Connect the Nucleo F401RE to your host computer using the USB port.
-Then, enter the following command:
-
-.. code-block:: console
-
-   $ make BOARD=nucleo_f401re flash
-
-Run a serial host program to connect with your Nucleo board:
+Connect the Nucleo F401RE to your host computer using the USB port,
+then run a serial host program to connect with your Nucleo board:
 
 .. code-block:: console
 
    $ minicom -D /dev/ttyACM0
 
-You should see the following message:
+Now build and flash an application. Here is an example for
+:ref:`hello_world`.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: nucleo_f401re
+   :goals: build flash
+
+You should see the following message on the console:
 
 .. code-block:: console
 
@@ -189,12 +180,14 @@ You should see the following message:
 Debugging
 =========
 
-Access gdb with the following make command:
+You can debug an application in the usual way.  Here is an example for the
+:ref:`hello_world` application.
 
-.. code-block:: console
-
-   $ make BOARD=nucleo_f411re debug
-
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: nucleo_f401re
+   :maybe-skip-config:
+   :goals: debug
 
 .. _Nucleo F401RE website:
    http://www.st.com/en/evaluation-tools/nucleo-f401re.html

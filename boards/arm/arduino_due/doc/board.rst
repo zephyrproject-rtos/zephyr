@@ -169,44 +169,32 @@ To build the bossa tool, follow these steps:
 Flashing an Application to Arduino Due
 --------------------------------------
 
-The sample application :ref:`hello_world` will be used in this tutorial, which can
-be found in :file:`$ZEPHYR_BASE/samples/hello_world`.
+Applications for the ``arduino_due`` board configuration can be built
+and flashed in the usual way (see :ref:`build_an_application` and
+:ref:`application_run` for more details).
 
-#. To build the Zephyr kernel, enter:
+Here is an example for the :ref:`hello_world` application. After
+building the application, press the Reset button before running the
+flash command, so the board will boot into the SAM-BA bootloader and
+be prepared to receive the new program.
 
-   .. code-block:: console
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: arduino_due
+   :goals: build flash
 
-      $ cd $ZEPHYR_BASE
-      $ make -C samples/hello_world BOARD=arduino_due
+After flashing the application, run your favorite terminal program to
+listen for output. For example, under Linux, the terminal should be
+:code:`/dev/ttyACM0`. For example:
 
-#. Connect the Arduino Due to your host computer using the programming port.
+.. code-block:: console
 
-#. Press the Erase button for more than 220 ms.
+   $ minicom -D /dev/ttyACM0 -o
 
-#. Press the Reset button so the board will boot into the SAM-BA bootloader.
+The -o option tells minicom not to send the modem initialization
+string.
 
-#. To flash the kernel onto Arduino Due, assuming the bossa tool already
-   exists. Using the command line version of bossa, enter:
-
-   .. code-block:: console
-
-      $ bossac -p <tty_device> -e -w -v -b outdir/arduino_due/zephyr.bin
-
-   Where :code:`<tty_device>` is where the Arduino Due can be found. For
-   example, under Linux, :code:`<tty_device>` should be :code:`ttyACM0`.
-   Note that the path :file:`/dev/` is omitted.
-
-#. Run your favorite terminal program to listen for output. For example, under
-   Linux, the terminal should be :code:`/dev/ttyACM0`. For example:
-
-   .. code-block:: console
-
-      $ minicom -D /dev/ttyACM0 -o
-
-   The -o option tells minicom not to send the modem initialization
-   string.
-
-#. Press the Reset button and you should see "Hello World!" in your terminal.
+Now press the Reset button and you should see "Hello World!" in your terminal.
 
 .. note::
    Make sure your terminal program is closed before flashing the binary image,

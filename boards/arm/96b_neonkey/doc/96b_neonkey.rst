@@ -129,14 +129,12 @@ Programming and Debugging
 Building
 ========
 
-Build the Zephyr kernel and application with:
+Here is an example for building the :ref:`hello_world` application.
 
-.. code-block:: console
-
-   $ cd <zephyr_root_path>
-   $ source zephyr-env.sh
-   $ cd $ZEPHYR_BASE/samples/hello_world/
-   $ make BOARD=96b_neonkey
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: 96b_neonkey
+   :goals: build flash
 
 Flashing
 ========

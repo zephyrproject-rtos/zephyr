@@ -82,10 +82,10 @@ Flashing
 
 #. Build the Zephyr kernel and the :ref:`hello_world` sample application:
 
-   .. code-block:: console
-
-      $ cd $ZEPHYR_BASE/samples/hello_world/
-      $ make BOARD=sam4s_xplained
+   .. zephyr-app-commands::
+      :zephyr-app: samples/hello_world
+      :board: sam4s_xplained
+      :goals: build
 
 #. Connect the SAM4S Xplained board to your host computer using the USB debug
    port.

@@ -247,20 +247,12 @@ V2M MPS2 provides:
 Flashing an application to V2M MPS2
 -----------------------------------
 
-The sample application :ref:`hello_world` is being used in this tutorial:
+Here is an example for the :ref:`hello_world` application.
 
-.. code-block:: console
-
-   $ZEPHYR_BASE/samples/hello_world
-
-To build the Zephyr kernel and application, enter:
-
-.. code-block:: console
-
-   $ cd $ZEPHYR_BASE
-   $ . zephyr-env.sh
-   $ cd $ZEPHYR_BASE/samples/hello_world/
-   $ make BOARD=mps2_an385
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: mps2_an385
+   :goals: build
 
 Connect the V2M MPS2 to your host computer using the USB port and you should
 see a USB connection which exposes a Mass Storage and a USB Serial Port.

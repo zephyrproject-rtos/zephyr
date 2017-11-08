@@ -71,9 +71,10 @@ Programming and Debugging
 Use this configuration to run basic Zephyr applications and kernel tests in the QEMU
 emulated environment, for example, with the :ref:`synchronization_sample`:
 
-.. code-block:: console
-
-        $ make -C samples/synchronization BOARD=qemu_cortex_m3 run
+.. zephyr-app-commands::
+   :zephyr-app: samples/synchronization
+   :board: qemu_cortex_m3
+   :goals: run
 
 This will build an image with the synchronization sample app, boot it using
 QEMU, and display the following console output:

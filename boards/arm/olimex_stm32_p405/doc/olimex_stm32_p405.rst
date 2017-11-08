@@ -221,23 +221,17 @@ In the following examples a ST-Link V2 USB dongle is used.
 Flashing an application to the Olimex-STM32-P405
 ================================================
 
-The sample application :ref:`hello_world` is being used in this tutorial. To
-build the Zephyr kernel and application, enter:
-
-.. code-block:: console
-
-   $ cd <zephyr_root_path>
-   $ source zephyr-env.sh
-   $ cd $ZEPHYR_BASE/samples/hello_world/
-   $ make BOARD=olimex_stm32_p405
+The sample application :ref:`hello_world` is being used in this tutorial.
 
 Connect the ST-Link USB dongle to your host computer and to the JTAG port of
 the OLIMEX-STM32-P405 board.
-Then, enter the following command:
 
-.. code-block:: console
+Now build and flash the application.
 
-   $ make BOARD=olimex_stm32_p405 flash
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: olimex_stm32_p405
+   :goals: build flash
 
 Run a serial host program to connect with your board:
 
@@ -255,12 +249,14 @@ After resetting the board, you should see the following message:
 Debugging
 =========
 
-Access gdb with the following make command:
+You can debug an application in the usual way.  Here is an example for the
+:ref:`hello_world` application.
 
-.. code-block:: console
-
-   $ make BOARD=olimex_stm32_p405 debug
-
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: olimex_stm32_p405
+   :maybe-skip-config:
+   :goals: debug
 
 .. _OLIMEX-STM32-P405 website:
    https://www.olimex.com/Products/ARM/ST/STM32-P405/

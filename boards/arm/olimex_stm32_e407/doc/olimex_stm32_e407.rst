@@ -326,26 +326,23 @@ The OLIMEX-STM32-E407 board does not include an embedded debug tool
 interface. You will need to use ST tools or an external JTAG probe.
 In the following examples a ST-Link V2 USB dongle is used.
 
+If you have an external JTAG probe compliant with the default Zephyr OpenOCD
+configuration, however, then applications for the ``olimex_stm32_e407`` board
+configuration can be built and flashed in the usual way (see
+:ref:`build_an_application` and :ref:`application_run` for more details).
+
 Flashing an application to the Olimex-STM32-E407
 ================================================
 
-The sample application :ref:`hello_world` is being used in this tutorial. To
-build the Zephyr kernel and application, enter:
-
-.. code-block:: console
-
-   $ cd <zephyr_root_path>
-   $ source zephyr-env.sh
-   $ cd $ZEPHYR_BASE/samples/hello_world/
-   $ make BOARD=olimex_stm32_e407
-
 Connect the ST-Link USB dongle to your host computer and to the JTAG port of
-the OLIMEX-STM32-E407 board.
-Then, enter the following command:
+the OLIMEX-STM32-E407 board. Then build and flash an application.
 
-.. code-block:: console
+Here is an example for the :ref:`hello_world` application.
 
-   $ make BOARD=olimex_stm32_e407 flash
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: olimex_stm32_e407
+   :goals: build flash
 
 Run a serial host program to connect with your board:
 
@@ -363,12 +360,14 @@ After resetting the board, you should see the following message:
 Debugging
 =========
 
-Access gdb with the following make command:
+Provided that you have a JTAG probe, you can debug an application in the usual
+way.  Here is an example for the :ref:`hello_world` application.
 
-.. code-block:: console
-
-   $ make BOARD=olimex_stm32_e407 debug
-
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: olimex_stm32_e407
+   :maybe-skip-config:
+   :goals: debug
 
 .. _OLIMEX-STM32-E407 website:
    https://www.olimex.com/Products/ARM/ST/STM32-E407/open-source-hardware

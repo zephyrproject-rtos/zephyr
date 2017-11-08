@@ -119,6 +119,10 @@ For mode details please refer to `STM32 Nucleo-64 board User Manual`_.
 Programming and Debugging
 *************************
 
+Applications for the ``nucleo_f334r8`` board configuration can be built and
+flashed in the usual way (see :ref:`build_an_application` and
+:ref:`application_run` for more details).
+
 Flashing
 ========
 
@@ -128,45 +132,28 @@ This interface is supported by the openocd version included in Zephyr SDK.
 Flashing an application to Nucleo F334R8
 ----------------------------------------
 
-The sample application :ref:`blinky-sample` is being used in this tutorial:
+Connect the Nucleo F334R8 to your host computer using the USB port,
+then build and flash an application. Here is an example for the
+:ref:`blinky-sample` application.
 
-.. code-block:: console
-
-   $<zephyr_root_path>/samples/basic/blinky
-
-To build the Zephyr kernel and application, enter:
-
-.. code-block:: console
-
-   $ cd <zephyr_root_path>
-   $ source zephyr-env.sh
-   $ cd $ZEPHYR_BASE/samples/basic/blinky
-   $ make BOARD=nucleo_f334r8
-
-Connect the Nucleo F334R8 to your host computer using the USB port.
-Then, enter the following command:
-
-.. code-block:: console
-
-   $ make BOARD=nucleo_f334r8 flash
-
-Run a serial host program to connect with your Nucleo board:
-
-.. code-block:: console
-
-   $ minicom -D /dev/ttyACM0
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/blinky
+   :board: nucleo_f334r8
+   :goals: build flash
 
 You will see the LED blinking every second.
 
 Debugging
 =========
 
-Access gdb with the following make command:
+You can debug an application in the usual way.  Here is an example for
+the :ref:`blinky-sample` application.
 
-.. code-block:: console
-
-   $ make BOARD=nucleo_f334r8 debug
-
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/blinky
+   :board: nucleo_f334r8
+   :maybe-skip-config:
+   :goals: debug
 
 References
 **********
