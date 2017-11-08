@@ -38,6 +38,12 @@ find_program(
   mconf
   )
 
+# openocd is an optional dependency
+find_program(
+  OPENOCD
+  openocd
+  )
+
 # qemu is an optional dependency
 if("${ARCH}" STREQUAL "x86")
   set(QEMU_binary_suffix i386)
