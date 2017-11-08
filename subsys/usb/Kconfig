@@ -39,14 +39,16 @@ config SYS_LOG_USB_LEVEL
 config USB_DEVICE_VID
 	hex
 	prompt "USB Vendor ID"
+	default 0xDEAD
 	help
-	USB device vendor ID
+	USB device vendor ID. MUST be configured by vendor.
 
 config USB_DEVICE_PID
 	hex
 	prompt "USB Product ID"
+	default 0xBEEF
 	help
-	USB device product ID
+	USB device product ID. MUST be configured by vendor.
 
 config USB_DEVICE_MANUFACTURER
 	string
