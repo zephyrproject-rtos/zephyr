@@ -3,9 +3,6 @@ sample:
   name: TBD
 tests:
   - test:
-      extra_configs:
-        - CONFIG_USB_DEVICE_VID=0xDEAD
-        - CONFIG_USB_DEVICE_PID=0xBEEF
       build_only: true
       depends_on: usb_device
       platform_whitelist: arduino_101
