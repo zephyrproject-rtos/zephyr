@@ -517,7 +517,7 @@ int http_server_init(struct http_ctx *ctx,
  * @param personalization_data Personalization data (Device specific
  * identifiers) for random number generator. (Can be NULL).
  * @param personalization_data_len Length of the personalization data.
- * @param cert_cb User supplied callback that setups the certifacates.
+ * @param cert_cb User supplied callback that setups the certificates.
  * @param entropy_src_cb User supplied callback that setup the entropy. This
  * can be set to NULL, in which case default entropy source is used.
  * @param pool Memory pool for RX data reads.
