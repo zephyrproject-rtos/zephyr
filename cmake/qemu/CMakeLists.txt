@@ -22,6 +22,14 @@ if(EMU_PLATFORM)
     endif()
   endif()
 
+  # Add a BT serial device when building for bluetooth, unless the
+  # application explicitly opts out with NO_QEMU_SERIAL_BT_SERVER.
+  if(CONFIG_BT)
+    if(NOT NO_QEMU_SERIAL_BT_SERVER)
+      list(APPEND QEMU_FLAGS -serial unix:/tmp/bt-server-bredr)
+    endif()
+  endif()
+
   if(QEMU_NET_STACK)
     list(APPEND qemu_targets
       client
