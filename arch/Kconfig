@@ -47,7 +47,7 @@ config HW_STACK_PROTECTION
 	mode. If CONFIG_USERSPACE is not enabled, the system is always
 	running in privileged mode.
 
-	Note that this does not necessarily prevent corruptuon and assertions
+	Note that this does not necessarily prevent corruption and assertions
 	about the overall system state when a fault is triggered cannot be
 	made.
 

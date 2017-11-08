@@ -19,7 +19,7 @@ menuconfig WS2812_STRIP
 		These devices have a one-wire communications interface
 		which encodes bits using pulses. Short pulses indicate
 		zero bits, and long pulses indicate ones; refer to the
-		chip datsheets for precise specifications. To implement
+		chip datasheets for precise specifications. To implement
 		this in a multitasking operating system, this driver
 		generates the pulses using a SPI peripheral.
 

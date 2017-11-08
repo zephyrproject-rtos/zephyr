@@ -306,7 +306,7 @@ config BT_SCAN_WITH_IDENTITY
 	depends on !BT_PRIVACY && (BT_CENTRAL || BT_OBSERVER)
 	help
 	  Enable this if you want to perform active scanning using the local
-	  identy address as the scanner address. By default the stack will
+	  identity address as the scanner address. By default the stack will
 	  always use a non-resolvable private address (NRPA) in order to avoid
 	  disclosing local identity information. However, if the use case
 	  requires disclosing it then enable this option.
