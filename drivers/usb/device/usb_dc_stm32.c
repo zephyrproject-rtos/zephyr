@@ -83,6 +83,7 @@ struct usb_dc_stm32_ep_state {
 	u8_t ep_stalled;	/** Endpoint stall flag */
 	u32_t read_count;	/** Number of bytes in read buffer  */
 	u32_t read_offset;	/** Current offset in read buffer */
+	struct k_sem write_sem;	/** Write boolean semaphore */
 };
 
 /* Driver state */
@@ -171,6 +172,7 @@ static int usb_dc_stm32_init(void)
 	for (i = 0; i < CONFIG_USB_DC_STM32_EP_NUM; i++) {
 		HAL_PCDEx_SetTxFiFo(&usb_dc_stm32_state.pcd, i,
 				    FIFO_EP_WORDS);
+		k_sem_init(&usb_dc_stm32_state.in_ep_state[i].write_sem, 1, 1);
 	}
 
 	IRQ_CONNECT(STM32F4_IRQ_OTG_FS, CONFIG_USB_DC_STM32_IRQ_PRI,
@@ -438,6 +440,7 @@ int usb_dc_ep_disable(const u8_t ep)
 int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 		    const u32_t data_len, u32_t * const ret_bytes)
 {
+	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
 	HAL_StatusTypeDef status;
 	int ret = 0;
 
@@ -446,6 +449,12 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 	if (!EP_IS_IN(ep)) {
 		SYS_LOG_ERR("invalid ep 0x%02x", ep);
 		return -EINVAL;
+	}
+
+	ret = k_sem_take(&ep_state->write_sem, 1000);
+	if (ret) {
+		SYS_LOG_ERR("Unable to write ep 0x%02x (%d)", ep, ret);
+		return ret;
 	}
 
 	if (!k_is_in_isr()) {
@@ -457,6 +466,7 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 	if (status != HAL_OK) {
 		SYS_LOG_ERR("HAL_PCD_EP_Transmit failed(0x%02x), %d",
 			    ep, (int)status);
+		k_sem_give(&ep_state->write_sem);
 		ret = -EIO;
 	}
 
@@ -615,6 +625,8 @@ void HAL_PCD_DataInStageCallback(PCD_HandleTypeDef *hpcd, u8_t epnum)
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
 
 	SYS_LOG_DBG("epnum 0x%02x", epnum);
+
+	k_sem_give(&ep_state->write_sem);
 
 	if (ep_state->cb) {
 		ep_state->cb(ep, USB_DC_EP_DATA_IN);
