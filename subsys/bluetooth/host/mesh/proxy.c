@@ -62,6 +62,11 @@ static bool proxy_adv_enabled;
 
 #if defined(CONFIG_BT_MESH_GATT_PROXY)
 static void proxy_send_beacons(struct k_work *work);
+static u16_t proxy_ccc_val;
+#endif
+
+#if defined(CONFIG_BT_MESH_PB_GATT)
+static u16_t prov_ccc_val;
 #endif
 
 static struct bt_mesh_proxy_client {
@@ -540,17 +545,17 @@ static ssize_t prov_ccc_write(struct bt_conn *conn,
 			      u16_t offset, u8_t flags)
 {
 	struct bt_mesh_proxy_client *client;
-	u16_t value;
+	u16_t *value = attr->user_data;
 
 	BT_DBG("len %u: %s", len, bt_hex(buf, len));
 
-	if (len != sizeof(value)) {
+	if (len != sizeof(*value)) {
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
-	value = sys_get_le16(buf);
-	if (value != BT_GATT_CCC_NOTIFY) {
-		BT_WARN("Client wrote 0x%04x instead enabling notify", value);
+	*value = sys_get_le16(buf);
+	if (*value != BT_GATT_CCC_NOTIFY) {
+		BT_WARN("Client wrote 0x%04x instead enabling notify", *value);
 		return len;
 	}
 
@@ -564,6 +569,16 @@ static ssize_t prov_ccc_write(struct bt_conn *conn,
 	}
 
 	return len;
+}
+
+static ssize_t prov_ccc_read(struct bt_conn *conn,
+			     const struct bt_gatt_attr *attr,
+			     void *buf, u16_t len, u16_t offset)
+{
+	u16_t *value = attr->user_data;
+
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
+				 sizeof(*value));
 }
 
 /* Mesh Provisioning Service Declaration */
@@ -580,8 +595,9 @@ static struct bt_gatt_attr prov_attrs[] = {
 	BT_GATT_DESCRIPTOR(BT_UUID_MESH_PROV_DATA_OUT, BT_GATT_PERM_NONE,
 			   NULL, NULL, NULL),
 	/* Add custom CCC as clients need to be tracked individually */
-	BT_GATT_DESCRIPTOR(BT_UUID_GATT_CCC, BT_GATT_PERM_WRITE, NULL,
-			   prov_ccc_write, NULL),
+	BT_GATT_DESCRIPTOR(BT_UUID_GATT_CCC,
+			   BT_GATT_PERM_WRITE | BT_GATT_PERM_READ,
+			   prov_ccc_read, prov_ccc_write, &prov_ccc_val),
 };
 
 static struct bt_gatt_service prov_svc = BT_GATT_SERVICE(prov_attrs);
@@ -664,6 +680,16 @@ static ssize_t proxy_ccc_write(struct bt_conn *conn,
 	return len;
 }
 
+static ssize_t proxy_ccc_read(struct bt_conn *conn,
+			      const struct bt_gatt_attr *attr,
+			      void *buf, u16_t len, u16_t offset)
+{
+	u16_t *value = attr->user_data;
+
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
+				 sizeof(*value));
+}
+
 /* Mesh Proxy Service Declaration */
 static struct bt_gatt_attr proxy_attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_MESH_PROXY),
@@ -678,8 +704,8 @@ static struct bt_gatt_attr proxy_attrs[] = {
 	BT_GATT_DESCRIPTOR(BT_UUID_MESH_PROXY_DATA_OUT, BT_GATT_PERM_NONE,
 			   NULL, NULL, NULL),
 	/* Add custom CCC as clients need to be tracked individually */
-	BT_GATT_DESCRIPTOR(BT_UUID_GATT_CCC, BT_GATT_PERM_WRITE, NULL,
-			   proxy_ccc_write, NULL),
+	BT_GATT_DESCRIPTOR(BT_UUID_GATT_CCC, BT_GATT_PERM_WRITE, proxy_ccc_read,
+			   proxy_ccc_write, &proxy_ccc_val),
 };
 
 static struct bt_gatt_service proxy_svc = BT_GATT_SERVICE(proxy_attrs);
