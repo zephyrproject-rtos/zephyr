@@ -72,13 +72,13 @@ Install additional packages required for development with Zephyr::
 Note that CMake version 3.8.2+ or higher is required. If you are using a
 distribution that currently ships an older version, check the backports or
 install a more recent version manually. For example, to install version
-3.8.2 from the CMake website directly::
+3.8.2 from the CMake website directly in ~/cmake::
 
-   $ mkdir $HOME/work_dir && cd $HOME/work_dir
+   $ mkdir $HOME/cmake && cd $HOME/cmake
    $ wget https://cmake.org/files/v3.8/cmake-3.8.2-Linux-x86_64.sh
    $ yes | sh cmake-3.8.2-Linux-x86_64.sh | cat
    $ echo "export PATH=$PWD/cmake-3.8.2-Linux-x86_64/bin:\$PATH" >> $HOME/.zephyrrc
-   $ bash
+   $ source <zephyr git clone location>/zephyr-env.sh
    $ cmake --version
 
 .. _zephyr_sdk:

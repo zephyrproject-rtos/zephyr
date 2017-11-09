@@ -81,33 +81,22 @@ To build an example application follow these steps:
 
       $ source zephyr-env.sh
 
-#. Generate project files for the :ref:`hello_world` example, enter:
+#. Build the :ref:`hello_world` example for the `arduino_101` board, enter:
 
-   .. code-block:: console
-
-      $ cd $ZEPHYR_BASE/samples/hello_world
-      $ mkdir build && cd build
-      $ cmake ..
-
-The above will generate project files that can build the
-:ref:`hello_world` sample application using the default settings
-defined in the application's CMakeLists.txt. To build the application,
-enter:
-
-.. code-block:: console
-
-   $ cd $ZEPHYR_BASE/samples/hello_world/build
-   $ make
+   .. zephyr-app-commands::
+      :zephyr-app: samples/hello_world
+      :board: arduino_101
+      :build-dir: arduino_101
+      :goals: build
 
 You can build for a different board by defining the variable BOARD
-with one of the supported boards, for example:
+with another of the supported boards, for example:
 
-.. code-block:: console
-
-   $ cd $ZEPHYR_BASE/samples/hello_world
-   $ mkdir build_101 && cd build_101
-   $ cmake -DBOARD=arduino_101 ..
-   $ make
+   .. zephyr-app-commands::
+      :zephyr-app: samples/hello_world
+      :board: arduino_due
+      :build-dir: arduino_due
+      :goals: build
 
 For further information on the supported boards go see
 :ref:`here <boards>`. Alternatively, run the following command to obtain a list
@@ -159,9 +148,9 @@ follow the steps below to build with any custom or 3rd party cross-compilers:
       $ echo "export PATH=$PWD/kconfig:\$PATH" >> $HOME/.zephyrrc
       $ source $ZEPHYR_BASE/zephyr-env.sh
 
-.. note::
+   .. note::
 
-   You only need to do this once after cloning the git repository.
+      You only need to do this once after cloning the git repository.
 
 #. We will use the `GCC ARM Embedded`_ compiler for this example, download the
    package suitable for your operating system from the `GCC ARM Embedded`_ website
@@ -174,10 +163,11 @@ follow the steps below to build with any custom or 3rd party cross-compilers:
 
       $ export GCCARMEMB_TOOLCHAIN_PATH="~/gcc-arm-none-eabi-5_3-2016q1/"
       $ export ZEPHYR_GCC_VARIANT=gccarmemb
-      $ cd $ZEPHYR_BASE/samples/hello_world
-      $ mkdir build && cd build
-      $ cmake -DBOARD=arduino_due ..
-      $ make
+
+   .. zephyr-app-commands::
+      :zephyr-app: samples/hello_world
+      :board: arduino_due
+      :goals: build
 
 Running a Sample Application in QEMU
 ====================================
