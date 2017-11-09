@@ -437,22 +437,18 @@ void bt_mesh_model_msg_init(struct net_buf_simple *msg, u32_t opcode)
 	net_buf_simple_add_le16(msg, opcode & 0xffff);
 }
 
-int bt_mesh_model_send(struct bt_mesh_model *model,
-		       struct bt_mesh_msg_ctx *ctx,
-		       struct net_buf_simple *msg, bt_mesh_cb_t cb,
-		       void *cb_data)
+static int model_send(struct bt_mesh_model *model,
+		      struct bt_mesh_msg_ctx *ctx,
+		      bool friend_cred, struct net_buf_simple *msg,
+		      bt_mesh_cb_t cb, void *cb_data)
 {
 	struct bt_mesh_net_tx tx = {
 		.sub = bt_mesh_subnet_get(ctx->net_idx),
 		.ctx = ctx,
 		.src = model->elem->addr,
 		.xmit = bt_mesh_net_transmit_get(),
+		.friend_cred = friend_cred,
 	};
-
-	if (ctx->friend_cred && !bt_mesh_lpn_established()) {
-		BT_ERR("Friendship Credentials requested without a Friend");
-		return -EINVAL;
-	}
 
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x dst 0x%04x", ctx->net_idx,
 	       ctx->app_idx, ctx->addr);
@@ -476,11 +472,21 @@ int bt_mesh_model_send(struct bt_mesh_model *model,
 	return bt_mesh_trans_send(&tx, msg, cb, cb_data);
 }
 
+int bt_mesh_model_send(struct bt_mesh_model *model,
+		       struct bt_mesh_msg_ctx *ctx,
+		       struct net_buf_simple *msg, bt_mesh_cb_t cb,
+		       void *cb_data)
+{
+	return model_send(model, ctx, false, msg, cb, cb_data);
+}
+
 int bt_mesh_model_publish(struct bt_mesh_model *model,
 			  struct net_buf_simple *msg)
 {
 	struct bt_mesh_app_key *key;
 	struct bt_mesh_msg_ctx ctx;
+
+	BT_DBG("");
 
 	if (!model->pub) {
 		return -ENOTSUP;
@@ -499,10 +505,9 @@ int bt_mesh_model_publish(struct bt_mesh_model *model,
 	ctx.net_idx = key->net_idx;
 	ctx.app_idx = key->app_idx;
 	ctx.addr = model->pub->addr;
-	ctx.friend_cred = model->pub->cred;
 	ctx.send_ttl = model->pub->ttl;
 
-	return bt_mesh_model_send(model, &ctx, msg, NULL, NULL);
+	return model_send(model, &ctx, model->pub->cred, msg, NULL, NULL);
 }
 
 struct bt_mesh_model *bt_mesh_model_find_vnd(struct bt_mesh_elem *elem,

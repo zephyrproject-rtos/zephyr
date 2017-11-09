@@ -234,6 +234,7 @@ struct bt_mesh_net_rx {
 	u16_t  dst;            /* Destination address */
 	u8_t   old_iv:1,       /* iv_index - 1 was used */
 	       new_key:1,      /* Data was encrypted with updated key */
+	       friend_cred:1,  /* Data was encrypted with friend cred */
 	       ctl:1,          /* Network Control */
 	       net_if:2,       /* Network interface */
 	       local_match:1,  /* Matched a local element */
@@ -247,6 +248,7 @@ struct bt_mesh_net_tx {
 	struct bt_mesh_msg_ctx *ctx;
 	u16_t src;
 	u8_t  xmit;
+	bool  friend_cred;
 };
 
 extern struct bt_mesh_net bt_mesh;
@@ -302,7 +304,7 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
 		     bt_mesh_adv_func_t cb);
 
 int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
-		       bool new_key, bool friend_cred, bt_mesh_adv_func_t cb);
+		       bool new_key, bt_mesh_adv_func_t cb);
 
 int bt_mesh_net_decode(struct net_buf_simple *data, enum bt_mesh_net_if net_if,
 		       struct bt_mesh_net_rx *rx, struct net_buf_simple *buf);

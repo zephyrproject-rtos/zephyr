@@ -172,10 +172,7 @@ struct bt_mesh_msg_ctx {
 	u16_t addr;
 
 	/** Received TTL value. Not used for sending. */
-	u8_t  recv_ttl:7;
-
-	/** Whether friend credentials are used. */
-	u8_t  friend_cred:1;
+	u8_t  recv_ttl;
 
 	/** TTL, or BT_MESH_TTL_DEFAULT for default TTL. */
 	u8_t  send_ttl;
