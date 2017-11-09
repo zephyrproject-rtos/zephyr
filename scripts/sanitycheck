@@ -32,7 +32,7 @@ Each test block in the testcase meta data can define the following key/value pai
     are still compiled.
 
   extra_args: <list of extra arguments>
-    Extra arguments to pass to Make when building or running the
+    Extra cache entries to pass to CMake when building or running the
     test case.
 
   extra_configs: <list of extra configurations>
@@ -1971,10 +1971,22 @@ def parse_arguments():
             help="Build all test cases with assertions enabled.")
     parser.add_argument("-Q", "--error-on-deprecations", action="store_false",
             help="Error on deprecation warnings.")
-    parser.add_argument("-x", "--extra-args", action="append", default=[],
-            help="Extra arguments to pass to the build when compiling test "
-                 "cases. May be called multiple times. These will be passed "
-                 "in after any sanitycheck-supplied options.")
+
+    parser.add_argument(
+        "-x", "--extra-args", action="append", default=[],
+        help="""Extra CMake cache entries to define when building test cases. May
+        be called multiple times. The key-value entries will be
+        prefixed with -D before being passed to CMake.
+
+        E.g
+        "sanitycheck -x=USE_CCACHE=0"
+        will translate to
+        "cmake -DUSE_CCACHE=0"
+
+        which will ultimately disable ccache.
+        """
+    )
+
     parser.add_argument("-C", "--coverage", action="store_true",
             help="Scan for unit test coverage with gcov + lcov.")
 
