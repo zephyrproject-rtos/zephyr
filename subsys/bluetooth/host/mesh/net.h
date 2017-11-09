@@ -156,13 +156,17 @@ struct bt_mesh_lpn {
 	      pending_poll:1,   /* Poll to be sent after subscription */
 	      disable:1,        /* Disable LPN after clearing */
 	      fsn:1,            /* Friend Sequence Number */
-	      established:1;    /* Friendship established */
+	      established:1,    /* Friendship established */
+	      clear_success:1;  /* Friend Clear Confirm received */
 
 	/* Friend Queue Size */
 	u8_t  queue_size;
 
 	/* LPNCounter */
 	u16_t counter;
+
+	/* Previous Friend of this LPN */
+	u16_t old_friend;
 
 	/* Next LPN related action timer */
 	struct k_delayed_work timer;
