@@ -74,9 +74,15 @@ void _impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 #ifdef CONFIG_USERSPACE
 _SYSCALL_HANDLER(k_sem_init, sem, initial_count, limit)
 {
+	int key;
+
 	_SYSCALL_OBJ_INIT(sem, K_OBJ_SEM);
 	_SYSCALL_VERIFY(limit != 0);
+
+	key = irq_lock();
 	_impl_k_sem_init((struct k_sem *)sem, initial_count, limit);
+	irq_unlock(key);
+
 	return 0;
 }
 #endif
