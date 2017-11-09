@@ -186,6 +186,42 @@ config BT_MESH_LOW_POWER
 	  Enable this option to be able to act as a Low Power Node.
 
 if BT_MESH_LOW_POWER
+
+config BT_MESH_LPN_ESTABLISHMENT
+	bool "Perform Friendship establishment using low power"
+	default y
+	help
+	  Perform the Friendship establishment using low power, with
+	  the help of a reduced scan duty cycle. The downside of this
+	  is that the node may miss out on messages intended for it
+	  until it has successfully set up Friendship with a Friend
+	  node.
+
+config BT_MESH_LPN_AUTO
+	bool "Automatically start looking for Friend nodes once provisioned"
+	default y
+	help
+	  Automatically enable LPN functionality once provisioned and start
+	  looking for Friend nodes. If this option is disabled LPN mode
+	  needs to be manually enabled by calling bt_mesh_lpn_set(true).
+
+config BT_MESH_LPN_AUTO_TIMEOUT
+	int "Time from last received message before going to LPN mode"
+	default 15
+	range 0 3600
+	depends on BT_MESH_LPN_AUTO
+	help
+	  Time in seconds from the last received message, that the node
+	  will wait before starting to look for Friend nodes.
+
+config BT_MESH_LPN_RETRY_TIMEOUT
+	int "Retry timeout for Friend requests"
+	default 8
+	range 1 3600
+	help
+	  Time in seconds between Friend Requests, if a previous Friend
+	  Request did not receive any acceptable Friend Offers.
+
 config BT_MESH_LPN_RSSI_FACTOR
 	int "RSSIFactor, used in the Friend Offer Delay calculation"
 	range 0 3

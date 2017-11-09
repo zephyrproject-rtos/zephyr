@@ -1289,12 +1289,17 @@ int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx)
 	 * we still need to go through the actual sending to the bearer and
 	 * wait for ReceiveDelay before transitioning to WAIT_UPDATE state.
 	 *
+	 * Another situation where we want to notify the LPN state machine
+	 * is if it's configured to use an automatic Friendship establishment
+	 * timer, in which case we want to reset the timer at this point.
+	 *
 	 * ENOENT is a special condition that's only used to indicate that
 	 * the Transport OpCode was invalid, in which case we should ignore
 	 * the PDU completely, as per MESH/NODE/FRND/LPN/BI-02-C.
 	 */
 	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) && err != -ENOENT &&
-	    bt_mesh_lpn_established() && bt_mesh_lpn_waiting_update()) {
+	    (bt_mesh_lpn_timer() ||
+	     (bt_mesh_lpn_established() && bt_mesh_lpn_waiting_update()))) {
 		bt_mesh_lpn_msg_received(rx);
 	}
 
