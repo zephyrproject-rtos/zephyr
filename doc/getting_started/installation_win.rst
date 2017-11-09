@@ -133,7 +133,7 @@ environment for Windows. Follow the steps below to set it up:
       $ cd <zephyr git clone location>
       $ source zephyr-env.sh
 
- #. Within the MSYS console, build Kconfig in :file:`$ZEPHYR_BASE/build` and
+#. Within the MSYS console, build Kconfig in :file:`$ZEPHYR_BASE/build` and
     add it to path
 
    .. code-block:: console
@@ -152,26 +152,22 @@ environment for Windows. Follow the steps below to set it up:
 #. Finally, you can try building the :ref:`hello_world` sample to check things
    out.
 
-   To build for the Intel |reg| Quark |trade| (x86-based) Arduino 101:
+To build for the Intel |reg| Quark |trade| (x86-based) Arduino 101:
 
-    .. code-block:: console
+.. zephyr-app-commands::
+  :zephyr-app: samples/hello_world
+  :board: arduino_101
+  :goals: build
 
-       $ cd $ZEPHYR_BASE/samples/hello_world
-       $ mkdir build && cd build
-       $ cmake -DBOARD=arduino_101 ..
-       $ make
+To build for the ARM-based Nordic nRF52 Development Kit:
 
-   To build for the ARM-based Nordic nRF52 Development Kit:
+.. zephyr-app-commands::
+  :zephyr-app: samples/hello_world
+  :board: nrf52_pca10040
+  :goals: build
 
-    .. code-block:: console
-
-       $ cd $ZEPHYR_BASE/samples/hello_world
-       $ mkdir build && cd build
-       $ cmake -DBOARD=nrf52_pca10040 ..
-       $ make
-
-    This should check that all the tools and toolchain are set up correctly for
-    your own Zephyr development.
+This should check that all the tools and toolchain are set up correctly for
+your own Zephyr development.
 
 Using Windows 10 WSL (Windows Subsystem for Linux)
 ==================================================

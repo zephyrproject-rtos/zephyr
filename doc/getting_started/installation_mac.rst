@@ -90,12 +90,10 @@ Finally, assuming you are using a 3rd-party toolchain you can try building the :
 
 To build for the ARM-based Nordic nRF52 Development Kit:
 
-.. code-block:: console
-
-   $ cd $ZEPHYR_BASE/samples/hello_world
-   $ mkdir build && cd build
-   $ cmake -DBOARD=nrf52_pca10040 ..
-   $ make
+.. zephyr-app-commands::
+  :zephyr-app: samples/hello_world
+  :board: nrf52_pca10040
+  :goals: build
 
 .. _setting_up_mac_toolchain:
 
