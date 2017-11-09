@@ -19,7 +19,7 @@ static bool has_reg_fault = true;
 
 static struct bt_mesh_cfg cfg_srv = {
 	.relay = BT_MESH_RELAY_DISABLED,
-	.beacon = BT_MESH_BEACON_ENABLED,
+	.beacon = BT_MESH_BEACON_DISABLED,
 #if defined(CONFIG_BT_MESH_FRIEND)
 #if defined(CONFIG_BT_MESH_LOW_POWER)
 	.frnd = BT_MESH_FRIEND_DISABLED,
@@ -156,25 +156,9 @@ static int output_number(bt_mesh_output_action action, uint32_t number)
 }
 #endif
 
-#if defined(CONFIG_BT_MESH_LOW_POWER)
-static struct k_delayed_work timer;
-
-static void enable_lpn(struct k_work *work)
-{
-	printk("Enabling LPN\n");
-
-	bt_mesh_lpn_set(true);
-}
-#endif
-
 static void prov_complete(void)
 {
 	board_prov_complete();
-
-#if defined(CONFIG_BT_MESH_LOW_POWER)
-	k_delayed_work_init(&timer, enable_lpn);
-	k_delayed_work_submit(&timer, K_SECONDS(10));
-#endif
 }
 
 static const u8_t dev_uuid[16] = { 0xdd, 0xdd };
