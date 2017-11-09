@@ -202,8 +202,7 @@ int tc_ccm_decryption_verification(uint8_t *out, unsigned int olen,
 {
 
 	/* input sanity check: */
-	if ((plen <= alen) ||
-	    (out == (uint8_t *) 0) ||
+	if ((out == (uint8_t *) 0) ||
 	    (c == (TCCcmMode_t) 0) ||
 	    ((plen > 0) && (payload == (uint8_t *) 0)) ||
 	    ((alen > 0) && (associated_data == (uint8_t *) 0)) ||
