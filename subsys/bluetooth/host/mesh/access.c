@@ -446,6 +446,7 @@ int bt_mesh_model_send(struct bt_mesh_model *model,
 		.sub = bt_mesh_subnet_get(ctx->net_idx),
 		.ctx = ctx,
 		.src = model->elem->addr,
+		.xmit = bt_mesh_net_transmit_get(),
 	};
 
 	if (ctx->friend_cred && !bt_mesh_lpn_established()) {

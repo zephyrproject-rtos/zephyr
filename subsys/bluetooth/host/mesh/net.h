@@ -246,6 +246,7 @@ struct bt_mesh_net_tx {
 	struct bt_mesh_subnet *sub;
 	struct bt_mesh_msg_ctx *ctx;
 	u16_t src;
+	u8_t  xmit;
 };
 
 extern struct bt_mesh_net bt_mesh;
