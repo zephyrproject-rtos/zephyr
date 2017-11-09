@@ -989,7 +989,7 @@ static int net_find_and_decrypt(const u8_t *data, size_t data_len,
 				struct net_buf_simple *buf)
 {
 	struct bt_mesh_subnet *sub;
-	int i;
+	unsigned int i;
 
 	BT_DBG("");
 
