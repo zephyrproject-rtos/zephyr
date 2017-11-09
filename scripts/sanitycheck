@@ -754,8 +754,8 @@ class MakeGenerator:
         @param directory Absolute path to working directory, will be passed
             to make -C
         @param outdir Absolute path to output directory, will be passed to
-            Kbuild via -O=<path>
-        @param args Extra command line arguments to pass to 'make', typically
+            cmake via -B=<path>
+        @param args Extra command line arguments to pass to 'cmake', typically
             environment variables or specific Make goals
         """
         self._add_goal(outdir)
@@ -782,8 +782,7 @@ class MakeGenerator:
             to make -C
         @param outdir Absolute path to output directory, will be passed to
             Kbuild via -O=<path>
-        @param args Extra command line arguments to pass to 'make', typically
-            environment variables. Do not pass specific Make goals here.
+        @param args Extra cache entries to define in CMake.
         @param timeout Maximum length of time QEMU session should be allowed
             to run before automatically killing it. Default is 30 seconds.
         """
