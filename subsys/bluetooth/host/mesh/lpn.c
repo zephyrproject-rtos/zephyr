@@ -100,15 +100,19 @@ static void clear_friendship(bool disable);
 
 static void friend_clear_sent(struct net_buf *buf, int err)
 {
+	struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
+
 	/* We're switching away from Low Power behavior, so permanently
 	 * enable scanning.
 	 */
 	bt_mesh_scan_enable();
 
+	lpn->req_attempts++;
+
 	if (err) {
 		BT_ERR("Sending Friend Request failed (err %d)", err);
 		lpn_set_state(BT_MESH_LPN_ENABLED);
-		clear_friendship(bt_mesh.lpn.disable);
+		clear_friendship(lpn->disable);
 		return;
 	}
 
@@ -144,7 +148,7 @@ static void clear_friendship(bool disable)
 {
 	struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
 
-	if (lpn->established) {
+	if (lpn->established && lpn->req_attempts < REQ_ATTEMPTS(lpn)) {
 		send_friend_clear();
 		lpn->disable = disable;
 		return;
