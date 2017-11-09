@@ -136,7 +136,7 @@ class ZephyrAppCommandsDirective(Directive):
         source_dir = kwargs['source_dir']
         goals = kwargs['goals']
 
-        board_arg = ' BOARD={}'.format(board) if board else ''
+        board_arg = ' -DBOARD={}'.format(board) if board else ''
 
         content = []
         content.extend([
