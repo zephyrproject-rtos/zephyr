@@ -188,13 +188,14 @@ static const struct bt_mesh_prov *prov;
 static void close_link(u8_t err, u8_t reason);
 
 #if defined(CONFIG_BT_MESH_PB_ADV)
-static void buf_sent(struct net_buf *buf, int err)
+static void buf_sent(struct net_buf *buf, u16_t duration, int err)
 {
 	if (!link.tx.buf[0]) {
 		return;
 	}
 
-	k_delayed_work_submit(&link.tx.retransmit, RETRANSMIT_TIMEOUT);
+	k_delayed_work_submit(&link.tx.retransmit,
+			      duration + RETRANSMIT_TIMEOUT);
 }
 
 static void free_segments(void)
@@ -266,7 +267,7 @@ static struct net_buf *adv_buf_create(void)
 
 static u8_t pending_ack = XACT_NVAL;
 
-static void ack_complete(struct net_buf *buf, int err)
+static void ack_complete(struct net_buf *buf, u16_t duration, int err)
 {
 	BT_DBG("xact %u complete", (u8_t)pending_ack);
 	pending_ack = XACT_NVAL;

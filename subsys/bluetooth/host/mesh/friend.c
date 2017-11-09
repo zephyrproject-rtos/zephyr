@@ -780,7 +780,7 @@ static void enqueue_friend_pdu(struct bt_mesh_friend *frnd,
 	}
 }
 
-static void buf_sent(struct net_buf *buf, int err)
+static void buf_sent(struct net_buf *buf, u16_t duration, int err)
 {
 	struct bt_mesh_friend *frnd = NULL;
 	int i;
@@ -801,11 +801,11 @@ static void buf_sent(struct net_buf *buf, int err)
 	frnd->pending_buf = 0;
 
 	if (frnd->established) {
-		k_delayed_work_submit(&frnd->timer, frnd->poll_to);
+		k_delayed_work_submit(&frnd->timer, duration + frnd->poll_to);
 		BT_DBG("Waiting %u ms for next poll", frnd->poll_to);
 	} else {
 		/* Friend offer timeout is 1 second */
-		k_delayed_work_submit(&frnd->timer, K_SECONDS(1));
+		k_delayed_work_submit(&frnd->timer, duration + K_SECONDS(1));
 		BT_DBG("Waiting for first poll");
 
 		/* Friend Offer doesn't follow the re-sending semantics */
