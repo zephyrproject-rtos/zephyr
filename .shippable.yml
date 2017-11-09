@@ -10,17 +10,13 @@ env:
         - ZEPHYR_SDK_INSTALL_DIR=/opt/sdk/zephyr-sdk-0.9.2
         - ZEPHYR_GCC_VARIANT=zephyr
         - USE_CCACHE=1
-        - MATRIX_BUILDS="8"
-        - MATRIX_BUILDS_EXTRA="8"
+        - MATRIX_BUILDS="4"
+        - MATRIX_BUILDS_EXTRA="4"
     matrix:
         - MATRIX_BUILD="1"
         - MATRIX_BUILD="2"
         - MATRIX_BUILD="3"
         - MATRIX_BUILD="4"
-        - MATRIX_BUILD="5"
-        - MATRIX_BUILD="6"
-        - MATRIX_BUILD="7"
-        - MATRIX_BUILD="8"
 
 build:
     cache: true
@@ -41,7 +37,7 @@ build:
       - source zephyr-env.sh
       - ccache -c -s --max-size=2000M
       - >
-          if [ "$MATRIX_BUILD" = "3" -a "$IS_PULL_REQUEST" = "true" ]; then
+          if [ "$MATRIX_BUILD" = "4" -a "$IS_PULL_REQUEST" = "true" ]; then
             export COMMIT_RANGE=origin/${PULL_REQUEST_BASE_BRANCH}..HEAD
             echo "Building a Pull Request";
             echo "- Building Documentation";
