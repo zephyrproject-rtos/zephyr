@@ -168,6 +168,9 @@ struct bt_mesh_lpn {
 	/* Previous Friend of this LPN */
 	u16_t old_friend;
 
+	/* Duration reported for last advertising packet */
+	u16_t adv_duration;
+
 	/* Next LPN related action timer */
 	struct k_delayed_work timer;
 

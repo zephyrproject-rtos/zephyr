@@ -17,7 +17,8 @@ enum bt_mesh_adv_type {
 	BT_MESH_ADV_BEACON,
 };
 
-typedef void (*bt_mesh_adv_func_t)(struct net_buf *buf, int err);
+typedef void (*bt_mesh_adv_func_t)(struct net_buf *buf, u16_t duration,
+				   int err);
 
 struct bt_mesh_adv {
 	bt_mesh_adv_func_t sent;

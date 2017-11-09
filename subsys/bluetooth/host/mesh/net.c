@@ -841,7 +841,7 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
 	    bt_mesh_elem_find(tx->ctx->addr)) {
 		net_buf_put(&bt_mesh.local_queue, net_buf_ref(buf));
 		if (cb) {
-			cb(buf, 0);
+			cb(buf, 0, 0);
 		}
 		k_work_submit(&bt_mesh.local_work);
 	} else {

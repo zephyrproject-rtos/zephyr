@@ -63,13 +63,13 @@ static const u8_t adv_type[] = {
 NET_BUF_POOL_DEFINE(adv_buf_pool, CONFIG_BT_MESH_ADV_BUF_COUNT,
 		    BT_MESH_ADV_DATA_SIZE, sizeof(struct bt_mesh_adv), NULL);
 
-static inline void adv_sent(struct net_buf *buf, int err)
+static inline void adv_sent(struct net_buf *buf, u16_t duration, int err)
 {
 	if (BT_MESH_ADV(buf)->busy) {
 		BT_MESH_ADV(buf)->busy = 0;
 
 		if (BT_MESH_ADV(buf)->sent) {
-			BT_MESH_ADV(buf)->sent(buf, err);
+			BT_MESH_ADV(buf)->sent(buf, duration, err);
 		}
 	}
 
@@ -103,7 +103,7 @@ static inline void adv_send(struct net_buf *buf)
 	param.own_addr = NULL;
 
 	err = bt_le_adv_start(&param, &ad, 1, NULL, 0);
-	adv_sent(buf, err);
+	adv_sent(buf, duration, err);
 	if (err) {
 		BT_ERR("Advertising failed: err %d", err);
 		return;

@@ -200,11 +200,12 @@ static inline void seg_tx_complete(struct seg_tx *tx, int err)
 	seg_tx_reset(tx);
 }
 
-static void seg_sent(struct net_buf *buf, int err)
+static void seg_sent(struct net_buf *buf, u16_t duration, int err)
 {
 	struct seg_tx *tx = &seg_tx[BT_MESH_ADV(buf)->seg.tx_id];
 
-	k_delayed_work_submit(&tx->retransmit, SEG_RETRANSMIT_TIMEOUT);
+	k_delayed_work_submit(&tx->retransmit,
+			      duration + SEG_RETRANSMIT_TIMEOUT);
 }
 
 static void seg_tx_send_unacked(struct seg_tx *tx)
