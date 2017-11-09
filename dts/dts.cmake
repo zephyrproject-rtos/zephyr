@@ -10,7 +10,7 @@
 # See ~/zephyr/doc/dts
 set(GENERATED_DTS_BOARD_H    ${PROJECT_BINARY_DIR}/include/generated/generated_dts_board.h)
 set(GENERATED_DTS_BOARD_CONF ${PROJECT_BINARY_DIR}/include/generated/generated_dts_board.conf)
-set(DTS_SOURCE ${PROJECT_SOURCE_DIR}/dts/${ARCH}/${BOARD_FAMILY}.dts)
+set_ifndef(DTS_SOURCE ${PROJECT_SOURCE_DIR}/dts/${ARCH}/${BOARD_FAMILY}.dts)
 
 message(STATUS "Generating zephyr/include/generated/generated_dts_board.h")
 
