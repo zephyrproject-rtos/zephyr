@@ -233,15 +233,14 @@ run the same tests the CI system runs, follow these steps from within your
 local Zephyr source working directory::
 
     $ source zephyr-env.sh
-    $ ./scripts/sanitycheck --ccache
+    $ ./scripts/sanitycheck
 
 The above will execute the basic sanitycheck script, which will run various
 kernel tests using the QEMU emulator.  It will also do some build tests on
 various samples with advanced features that can't run in QEMU.
 
 We highly recommend you run these tests locally to avoid any CI
-failures. Enabling ccache with --ccache is optional, but it will speed
-up the execution time considerably.
+failures.
 
 
 Coding Style
