@@ -137,20 +137,7 @@ void _reschedule_threads(int key)
 
 void k_sched_lock(void)
 {
-#ifdef CONFIG_PREEMPT_ENABLED
-	__ASSERT(_current->base.sched_locked != 1, "");
-	__ASSERT(!_is_in_isr(), "");
-
-	--_current->base.sched_locked;
-
-	/* Probably not needed since we're in a real function,
-	 * but it doesn't hurt.
-	 */
-	compiler_barrier();
-
-	K_DEBUG("scheduler locked (%p:%d)\n",
-		_current, _current->base.sched_locked);
-#endif
+	_sched_lock();
 }
 
 void k_sched_unlock(void)

@@ -239,12 +239,8 @@ static inline int _must_switch_threads(void)
 }
 
 /*
- * Internal equivalent to k_sched_lock so that it does not incur a function
- * call penalty in the kernel guts.
- *
- * Must be kept in sync until the header files are cleaned-up and the
- * applications have access to the kernel internal deta structures (through
- * APIs of course).
+ * Called directly by other internal kernel code.
+ * Exposed to applications via k_sched_lock(), which just calls this
  */
 static inline void _sched_lock(void)
 {
