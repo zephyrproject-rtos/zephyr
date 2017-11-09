@@ -62,7 +62,6 @@ static struct seg_tx {
 	u64_t                    seq_auth;
 	u16_t                    dst;
 	u8_t                     seg_n:5,       /* Last segment index */
-				 friend_cred:1, /* Use Friendship creds */
 				 new_key:1;     /* New/old key */
 	u8_t                     nack_count;    /* Number of unacked segs */
 	bt_mesh_cb_t             cb;
@@ -230,8 +229,7 @@ static void seg_tx_send_unacked(struct seg_tx *tx)
 
 		BT_DBG("resending %u/%u", i, tx->seg_n);
 
-		err = bt_mesh_net_resend(tx->sub, seg, tx->new_key,
-					 tx->friend_cred, seg_sent);
+		err = bt_mesh_net_resend(tx->sub, seg, tx->new_key, seg_sent);
 		if (err) {
 			BT_ERR("Sending segment failed");
 			seg_tx_complete(tx, -EIO);
@@ -295,7 +293,6 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, u8_t aid,
 	tx->seq_auth = SEQ_AUTH(BT_MESH_NET_IVI_TX, bt_mesh.seq);
 	tx->sub = net_tx->sub;
 	tx->new_key = net_tx->sub->kr_flag;
-	tx->friend_cred = net_tx->ctx->friend_cred;
 
 	seq_zero = tx->seq_auth & 0x1fff;
 
@@ -363,11 +360,6 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, u8_t aid,
 			return err;
 		}
 	}
-
-	/* bt_mesh_net_send() may have modified this if the needed
-	 * Friendship credentials were not found.
-	 */
-	tx->friend_cred = net_tx->ctx->friend_cred;
 
 	if (bt_mesh_lpn_established()) {
 		bt_mesh_lpn_friend_poll();
@@ -446,14 +438,6 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
 				  BT_MESH_NET_IVI_TX);
 	if (err) {
 		return err;
-	}
-
-	/* Communication between LPN & Friend should always be using
-	 * the Friendship Credentials. Any other destination should
-	 * use the Master Credentials.
-	 */
-	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
-		tx->ctx->friend_cred = bt_mesh_lpn_match(tx->ctx->addr);
 	}
 
 	if (seg) {
@@ -763,7 +747,7 @@ static int ctl_recv(struct bt_mesh_net_rx *rx, u8_t hdr,
 			return bt_mesh_lpn_friend_clear_cfm(rx, buf);
 		}
 
-		if (!rx->ctx.friend_cred) {
+		if (!rx->friend_cred) {
 			BT_WARN("Message from friend with wrong credentials");
 			return -EINVAL;
 		}
@@ -864,14 +848,6 @@ int bt_mesh_ctl_send(struct bt_mesh_net_tx *tx, u8_t ctl_op, void *data,
 			net_buf_unref(buf);
 			return 0;
 		}
-	}
-
-	/* Communication between LPN & Friend should always be using
-	 * the Friendship Credentials. Any other destination should
-	 * use the Master Credentials.
-	 */
-	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
-		tx->ctx->friend_cred = bt_mesh_lpn_match(tx->ctx->addr);
 	}
 
 	return bt_mesh_net_send(tx, buf, cb);
@@ -1257,7 +1233,7 @@ int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx)
 	 */
 	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) &&
 	    bt_mesh_lpn_established() &&
-	    (!bt_mesh_lpn_waiting_update() || !rx->ctx.friend_cred)) {
+	    (!bt_mesh_lpn_waiting_update() || !rx->friend_cred)) {
 		BT_WARN("Ignoring unexpected message in Low Power mode");
 		return -EAGAIN;
 	}

@@ -327,13 +327,13 @@ static int send_friend_poll(void)
 		.app_idx     = BT_MESH_KEY_UNUSED,
 		.addr        = bt_mesh.lpn.frnd,
 		.send_ttl    = 0,
-		.friend_cred = 1,
 	};
 	struct bt_mesh_net_tx tx = {
 		.sub = &bt_mesh.sub[0],
 		.ctx = &ctx,
 		.src = bt_mesh_primary_addr(),
 		.xmit = POLL_XMIT,
+		.friend_cred = true,
 	};
 	struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
 	u8_t fsn = lpn->fsn;
@@ -619,13 +619,13 @@ static bool sub_update(u8_t op)
 		.app_idx     = BT_MESH_KEY_UNUSED,
 		.addr        = lpn->frnd,
 		.send_ttl    = 0,
-		.friend_cred = 1,
 	};
 	struct bt_mesh_net_tx tx = {
 		.sub = &bt_mesh.sub[0],
 		.ctx = &ctx,
 		.src = bt_mesh_primary_addr(),
 		.xmit = POLL_XMIT,
+		.friend_cred = true,
 	};
 	struct bt_mesh_ctl_friend_sub req;
 	size_t i, g;
@@ -928,7 +928,7 @@ int bt_mesh_lpn_friend_update(struct bt_mesh_net_rx *rx,
 		 * credentials so we need to ensure the right ones (Friend
 		 * Credentials) were used for this message.
 		 */
-		if (!rx->ctx.friend_cred) {
+		if (!rx->friend_cred) {
 			BT_WARN("Friend Update with wrong credentials");
 			return -EINVAL;
 		}
