@@ -103,14 +103,12 @@ static int send_unseg(struct bt_mesh_net_tx *tx, u8_t aid,
 		      struct net_buf_simple *sdu)
 {
 	struct net_buf *buf;
-	u8_t xmit;
 
 	BT_DBG("src 0x%04x dst 0x%04x app_idx 0x%04x sdu_len %u",
 	       tx->src, tx->ctx->addr, tx->ctx->app_idx, sdu->len);
 
-	xmit = bt_mesh_net_transmit_get();
-	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, TRANSMIT_COUNT(xmit),
-				 TRANSMIT_INT(xmit), BUF_TIMEOUT);
+	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, TRANSMIT_COUNT(tx->xmit),
+				 TRANSMIT_INT(tx->xmit), BUF_TIMEOUT);
 	if (!buf) {
 		BT_ERR("Out of network buffers");
 		return -ENOBUFS;
@@ -306,12 +304,12 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, u8_t aid,
 	for (seg_o = 0; sdu->len; seg_o++) {
 		struct net_buf *seg;
 		u16_t len;
-		u8_t xmit;
 		int err;
 
-		xmit = bt_mesh_net_transmit_get();
-		seg = bt_mesh_adv_create(BT_MESH_ADV_DATA, TRANSMIT_COUNT(xmit),
-					 TRANSMIT_INT(xmit), BUF_TIMEOUT);
+		seg = bt_mesh_adv_create(BT_MESH_ADV_DATA,
+					 TRANSMIT_COUNT(net_tx->xmit),
+					 TRANSMIT_INT(net_tx->xmit),
+					 BUF_TIMEOUT);
 		if (!seg) {
 			BT_ERR("Out of segment buffers");
 			seg_tx_reset(tx);
@@ -838,15 +836,13 @@ int bt_mesh_ctl_send(struct bt_mesh_net_tx *tx, u8_t ctl_op, void *data,
 		     size_t data_len, u64_t *seq_auth, bt_mesh_adv_func_t cb)
 {
 	struct net_buf *buf;
-	u8_t xmit;
 
 	BT_DBG("src 0x%04x dst 0x%04x ttl 0x%02x ctl 0x%02x", tx->src,
 	       tx->ctx->addr, tx->ctx->send_ttl, ctl_op);
 	BT_DBG("len %zu: %s", data_len, bt_hex(data, data_len));
 
-	xmit = bt_mesh_net_transmit_get();
-	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, TRANSMIT_COUNT(xmit),
-				 TRANSMIT_INT(xmit), BUF_TIMEOUT);
+	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, TRANSMIT_COUNT(tx->xmit),
+				 TRANSMIT_INT(tx->xmit), BUF_TIMEOUT);
 	if (!buf) {
 		BT_ERR("Out of transport buffers");
 		return -ENOBUFS;
@@ -894,6 +890,7 @@ static int send_ack(struct bt_mesh_subnet *sub, u16_t src, u16_t dst,
 		.sub = sub,
 		.ctx = &ctx,
 		.src = obo ? bt_mesh_primary_addr() : src,
+		.xmit = bt_mesh_net_transmit_get(),
 	};
 	u16_t seq_zero = *seq_auth & 0x1fff;
 	u8_t buf[6];
