@@ -550,10 +550,137 @@ int bt_mesh_friend_poll(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 	return 0;
 }
 
-static void send_friend_clear(u16_t addr)
+static struct bt_mesh_friend *find_clear(u16_t prev_friend)
 {
-	/* TODO: Send Friend Clear message to the old Friend */
-	BT_WARN("Sending Friend Clear not yet implemented");
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(bt_mesh.frnd); i++) {
+		struct bt_mesh_friend *frnd = &bt_mesh.frnd[i];
+
+		if (frnd->clear.frnd == prev_friend) {
+			return frnd;
+		}
+	}
+
+	return NULL;
+}
+
+static void friend_clear_sent(struct net_buf *buf, u16_t duration, int err)
+{
+	struct bt_mesh_friend *frnd;
+
+	BT_DBG("addr 0x%02x", BT_MESH_ADV(buf)->addr);
+
+	frnd = find_clear(BT_MESH_ADV(buf)->addr);
+	if (!frnd) {
+		BT_WARN("No matching clear procedure found for 0x%02x",
+			BT_MESH_ADV(buf)->addr);
+		return;
+	}
+
+	k_delayed_work_submit(&frnd->clear.timer,
+			      duration + K_SECONDS(frnd->clear.repeat_sec));
+	frnd->clear.repeat_sec *= 2;
+}
+
+static void send_friend_clear(struct bt_mesh_friend *frnd)
+{
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx  = frnd->net_idx,
+		.app_idx  = BT_MESH_KEY_UNUSED,
+		.addr     = frnd->clear.frnd,
+		.send_ttl = BT_MESH_TTL_MAX,
+	};
+	struct bt_mesh_net_tx tx = {
+		.sub  = &bt_mesh.sub[0],
+		.ctx  = &ctx,
+		.src  = bt_mesh_primary_addr(),
+		.xmit = bt_mesh_net_transmit_get(),
+	};
+	struct bt_mesh_ctl_friend_clear req = {
+		.lpn_addr    = sys_cpu_to_be16(frnd->lpn),
+		.lpn_counter = sys_cpu_to_be16(frnd->lpn_counter),
+	};
+
+	BT_DBG("");
+
+	bt_mesh_ctl_send(&tx, TRANS_CTL_OP_FRIEND_CLEAR, &req,
+			 sizeof(req), NULL, friend_clear_sent);
+}
+
+static void clear_timeout(struct k_work *work)
+{
+	struct bt_mesh_friend *frnd = CONTAINER_OF(work, struct bt_mesh_friend,
+						   clear.timer.work);
+	u32_t now, duration;
+
+	BT_DBG("LPN 0x%04x (old) Friend 0x%04x", frnd->lpn, frnd->clear.frnd);
+
+	now = k_uptime_get_32();
+	/* Handle time wrap-around due to 32-bit limit */
+	if (now < frnd->clear.start) {
+		duration = (UINT32_MAX - frnd->clear.start) + now;
+	} else {
+		duration = now - frnd->clear.start;
+	}
+
+	if (duration > 2 * frnd->poll_to) {
+		BT_DBG("Clear Procedure timer expired");
+		frnd->clear.frnd = BT_MESH_ADDR_UNASSIGNED;
+		return;
+	}
+
+	send_friend_clear(frnd);
+}
+
+static void clear_procedure_start(struct bt_mesh_friend *frnd)
+{
+	BT_DBG("LPN 0x%04x (old) Friend 0x%04x", frnd->lpn, frnd->clear.frnd);
+
+	frnd->clear.start = k_uptime_get_32() + (2 * frnd->poll_to);
+	frnd->clear.repeat_sec = 1;
+
+	send_friend_clear(frnd);
+}
+
+int bt_mesh_friend_clear_cfm(struct bt_mesh_net_rx *rx,
+			     struct net_buf_simple *buf)
+{
+	struct bt_mesh_ctl_friend_clear_confirm *msg = (void *)buf->data;
+	struct bt_mesh_friend *frnd;
+	u16_t lpn_addr, lpn_counter;
+
+	BT_DBG("");
+
+	if (buf->len < sizeof(*msg)) {
+		BT_WARN("Too short Friend Clear Confirm");
+		return -EINVAL;
+	}
+
+	frnd = find_clear(rx->ctx.addr);
+	if (!frnd) {
+		BT_WARN("No pending clear procedure for 0x%02x", rx->ctx.addr);
+		return 0;
+	}
+
+	lpn_addr = sys_be16_to_cpu(msg->lpn_addr);
+	if (lpn_addr != frnd->lpn) {
+		BT_WARN("LPN address mismatch (0x%04x != 0x%04x)",
+			lpn_addr, frnd->lpn);
+		return 0;
+	}
+
+	lpn_counter = sys_be16_to_cpu(msg->lpn_counter);
+	if (lpn_counter != frnd->lpn_counter) {
+		BT_WARN("LPN counter mismatch (0x%04x != 0x%04x)",
+			lpn_counter, frnd->lpn_counter);
+		return 0;
+	}
+
+	k_delayed_work_cancel(&frnd->clear.timer);
+	frnd->clear.frnd = BT_MESH_ADDR_UNASSIGNED;
+
+	return 0;
 }
 
 static void enqueue_offer(struct bt_mesh_friend *frnd, s8_t rssi)
@@ -674,8 +801,6 @@ int bt_mesh_friend_req(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 		BT_WARN("Existing LPN re-requesting Friendship");
 		friend_clear(frnd);
 		goto init_friend;
-	} else if (BT_MESH_ADDR_IS_UNICAST(old_friend)) {
-		send_friend_clear(old_friend);
 	}
 
 	for (i = 0; i < ARRAY_SIZE(bt_mesh.frnd); i++) {
@@ -696,9 +821,15 @@ init_friend:
 	frnd->recv_delay = msg->recv_delay;
 	frnd->poll_to = poll_to * 100;
 	frnd->lpn_counter = sys_be16_to_cpu(msg->lpn_counter);
+	frnd->clear.frnd = sys_be16_to_cpu(msg->prev_addr);
 
 	BT_DBG("LPN 0x%04x rssi %d recv_delay %u poll_to %ums",
 	       frnd->lpn, rx->rssi, frnd->recv_delay, frnd->poll_to);
+
+	if (BT_MESH_ADDR_IS_UNICAST(old_friend) &&
+	    !bt_mesh_elem_find(old_friend)) {
+		clear_procedure_start(frnd);
+	}
 
 	k_delayed_work_submit(&frnd->timer,
 			      offer_delay(frnd, rx->rssi, msg->criteria));
@@ -866,6 +997,7 @@ int bt_mesh_friend_init(void)
 		sys_slist_init(&frnd->queue);
 
 		k_delayed_work_init(&frnd->timer, friend_timeout);
+		k_delayed_work_init(&frnd->clear.timer, clear_timeout);
 
 		for (j = 0; j < ARRAY_SIZE(frnd->seg); j++) {
 			sys_slist_init(&frnd->seg[j].queue);
