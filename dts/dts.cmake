@@ -85,7 +85,7 @@ if(CONFIG_HAS_DTS)
 
   # Run extract_dts_includes.py for the header file
   # generated_dts_board.h
-  set(DTS_BOARD_FIXUP_FILE ${PROJECT_SOURCE_DIR}/dts/${ARCH}/${BOARD_FAMILY}.fixup)
+  set_ifndef(DTS_BOARD_FIXUP_FILE ${PROJECT_SOURCE_DIR}/dts/${ARCH}/${BOARD_FAMILY}.fixup)
   if(EXISTS ${DTS_BOARD_FIXUP_FILE})
     set(DTS_BOARD_FIXUP -f ${DTS_BOARD_FIXUP_FILE})
   endif()
