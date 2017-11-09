@@ -24,6 +24,49 @@
 
 #include "fsl_xcvr.h"
 
+/*
+ * For non-invasive tracing of IRQ events. Sometimes the print logs
+ * will shift the timings around so this trace buffer can be used to
+ * post inspect conditions to see what sequence of events occurred.
+ */
+
+#define KW41_DBG_TRACE_WTRM	0
+#define KW41_DBG_TRACE_RX	1
+#define KW41_DBG_TRACE_TX	2
+#define KW41_DBG_TRACE_CCA	3
+#define KW41_DBG_TRACE_TMR3	0xFF
+
+#if defined(CONFIG_KW41_DBG_TRACE)
+
+#define KW41_DBG_TRACE_SIZE 30
+
+struct kw41_dbg_trace {
+	u8_t	type;
+	u32_t	irqsts;
+	u32_t	phy_ctrl;
+	u32_t	seq_state;
+};
+
+struct kw41_dbg_trace kw41_dbg[KW41_DBG_TRACE_SIZE];
+int kw41_dbg_idx;
+
+#define KW_DBG_TRACE(_type, _irqsts, _phy_ctrl, _seq_state) \
+	do { \
+		kw41_dbg[kw41_dbg_idx].type = (_type); \
+		kw41_dbg[kw41_dbg_idx].irqsts = (_irqsts); \
+		kw41_dbg[kw41_dbg_idx].phy_ctrl = (_phy_ctrl); \
+		kw41_dbg[kw41_dbg_idx].seq_state = (_seq_state); \
+		if (++kw41_dbg_idx == KW41_DBG_TRACE_SIZE) { \
+			kw41_dbg_idx = 0; \
+		} \
+	} while (0)
+
+#else
+
+#define KW_DBG_TRACE(_type, _irqsts, _phy_ctrl, _seq_state)
+
+#endif
+
 #define KW41Z_DEFAULT_CHANNEL		26
 #define KW41Z_CCA_TIME			8
 #define KW41Z_SHR_PHY_TIME		12
@@ -581,7 +624,8 @@ static void kw41z_isr(int unused)
 	u8_t state = kw41z_get_seq_state();
 	u8_t restart_rx = 1;
 	u32_t rx_len;
-#if CONFIG_SYS_LOG_IEEE802154_DRIVER_LEVEL > SYS_LOG_LEVEL_INFO
+#if defined(CONFIG_KW41_DBG_TRACE) || \
+	(CONFIG_SYS_LOG_IEEE802154_DRIVER_LEVEL > SYS_LOG_LEVEL_INFO)
 	/*
 	 * Variable is used in debug output to capture the state of the
 	 * sequencer at interrupt.
@@ -628,6 +672,9 @@ static void kw41z_isr(int unused)
 		SYS_LOG_DBG("WMRK irq: seq_state: 0x%08x, rx_len: %d",
 			seq_state, rx_len);
 
+		KW_DBG_TRACE(KW41_DBG_TRACE_WTRM, irqsts,
+			(unsigned int)ZLL->PHY_CTRL, seq_state);
+
 		/*
 		 * Assume the RX includes an auto-ACK so set the timer to
 		 * include the RX frame size, crc, IFS, and ACK length and
@@ -669,6 +716,9 @@ static void kw41z_isr(int unused)
 				irqsts, seq_state,
 				(unsigned int)ZLL->PHY_CTRL, state);
 
+			KW_DBG_TRACE(KW41_DBG_TRACE_TMR3, irqsts,
+				(unsigned int)ZLL->PHY_CTRL, seq_state);
+
 			kw41z_isr_timeout_cleanup();
 			restart_rx = 1;
 
@@ -684,6 +734,9 @@ static void kw41z_isr(int unused)
 			case KW41Z_STATE_RX:
 				SYS_LOG_DBG("RX seq done: SEQ_STATE: 0x%08X",
 					(unsigned int)seq_state);
+
+				KW_DBG_TRACE(KW41_DBG_TRACE_RX, irqsts,
+					(unsigned int)ZLL->PHY_CTRL, seq_state);
 
 				kw41z_tmr3_disable();
 
@@ -704,6 +757,8 @@ static void kw41z_isr(int unused)
 				kw41z_tmr3_disable();
 			case KW41Z_STATE_TX:
 				SYS_LOG_DBG("TX seq done");
+				KW_DBG_TRACE(KW41_DBG_TRACE_TX, irqsts,
+					(unsigned int)ZLL->PHY_CTRL, seq_state);
 				if (irqsts & ZLL_IRQSTS_CCA_MASK) {
 					atomic_set(
 						&kw41z_context_data.seq_retval,
@@ -720,6 +775,8 @@ static void kw41z_isr(int unused)
 				break;
 			case KW41Z_STATE_CCA:
 				SYS_LOG_DBG("CCA seq done");
+				KW_DBG_TRACE(KW41_DBG_TRACE_CCA, irqsts,
+					(unsigned int)ZLL->PHY_CTRL, seq_state);
 				if (irqsts & ZLL_IRQSTS_CCA_MASK) {
 					atomic_set(
 						&kw41z_context_data.seq_retval,
@@ -913,6 +970,10 @@ static void kw41z_iface_init(struct net_if *iface)
 	struct device *dev = net_if_get_device(iface);
 	struct kw41z_context *kw41z = dev->driver_data;
 	u8_t *mac = get_mac(dev);
+
+#if defined(CONFIG_KW41_DBG_TRACE)
+	kw41_dbg_idx = 0;
+#endif
 
 	net_if_set_link_addr(iface, mac, 8, NET_LINK_IEEE802154);
 	kw41z->iface = iface;

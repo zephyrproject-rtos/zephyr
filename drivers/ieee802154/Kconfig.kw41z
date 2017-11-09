@@ -29,4 +29,11 @@ config IEEE802154_KW41Z_INIT_PRIO
 	  Set the initialization priority number. Do not change it unless
 	  you know what you are doing. It has to start before the net stack.
 
+config KW41_DBG_TRACE
+	bool "Enabled simplified debug tracing of events"
+	default n
+	help
+	The value depends on your debugging needs. This generates an encoded
+	trace of events without going to debug logging to avoid timing impact
+	on running code. The buffer is post analyzed via the debugger.
 endif
