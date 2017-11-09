@@ -160,7 +160,7 @@ static int do_sync_http_req(struct http_ctx *ctx,
 
 	req.method = method;
 	req.url = url;
-	req.protocol = " " HTTP_PROTOCOL HTTP_CRLF;
+	req.protocol = " " HTTP_PROTOCOL;
 
 	NET_INFO("[%d] Send %s", count, url);
 
@@ -295,7 +295,7 @@ static int do_async_http_req(struct http_ctx *ctx,
 
 	req.method = method;
 	req.url = url;
-	req.protocol = " " HTTP_PROTOCOL HTTP_CRLF;
+	req.protocol = " " HTTP_PROTOCOL;
 
 	k_sem_init(&waiter.wait, 0, 1);
 
