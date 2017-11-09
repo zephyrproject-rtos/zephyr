@@ -299,6 +299,35 @@ __syscall void k_object_access_revoke(void *object, struct k_thread *thread);
  */
 void k_object_access_all_grant(void *object);
 
+#ifdef CONFIG_DYNAMIC_OBJECTS
+/**
+ * Allocate a kernel object of a designated type
+ *
+ * This will instantiate at runtime a kernel object of the specified type,
+ * returning a pointer to it. The object will be returned in an uninitialized
+ * state, with the calling thread being granted permission on it. The memory
+ * for the object will be allocated out of the kernel's heap.
+ *
+ * Currently, allocation of thread stacks is not supported.
+ *
+ * @param otype Requested kernel object type
+ * @return A pointer to the allocated kernel object, or NULL if memory wasn't
+ * available
+ */
+void *k_object_alloc(enum k_objects otype);
+
+/**
+ * Free a kernel object previously allocated with k_object_alloc()
+ *
+ * This will return memory for a kernel object back to the system heap.
+ * Care must be exercised that the object will not be used during or after
+ * when this call is made.
+ *
+ * @param obj Pointer to the kernel object memory address.
+ */
+void k_object_free(void *obj);
+#endif /* CONFIG_DYNAMIC_OBJECTS */
+
 /* Using typedef deliberately here, this is quite intended to be an opaque
  * type. K_THREAD_STACK_BUFFER() should be used to access the data within.
  *
