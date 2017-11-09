@@ -689,7 +689,7 @@ class MakeGenerator:
 
     re_make = re.compile("sanity_test_([A-Za-z0-9]+) (.+)|$|make[:] \*\*\* \[(.+:.+: )?(.+)\] Error.+$")
 
-    def __init__(self, base_outdir, asserts=False,  deprecations=False, ccache=0):
+    def __init__(self, base_outdir, asserts=False,  deprecations=False):
         """MakeGenerator constructor
 
         @param base_outdir Intended to be the base out directory. A make.log
@@ -705,7 +705,6 @@ class MakeGenerator:
         self.makefile = os.path.join(base_outdir, "Makefile")
         self.asserts = asserts
         self.deprecations = deprecations
-        self.ccache = ccache
 
     def _get_rule_header(self, name):
         return MakeGenerator.GOAL_HEADER_TMPL.format(goal=name)
@@ -727,15 +726,6 @@ class MakeGenerator:
 
         if self.deprecations:
             cflags = cflags + "  -Wno-deprecated-declarations"
-
-        if self.ccache:
-            # CMake enables ccache by default when installed
-            #
-            # sanitycheck requires the user to explicitly enable
-            # ccache
-            pass
-        else:
-            args += " -DUSE_CCACHE=0"
 
         return MakeGenerator.MAKE_RULE_TMPL.format(
             phase=phase,
@@ -1410,7 +1400,6 @@ class TestSuite:
         config_filter = args.config
         platform_limit = args.platform_limit
         extra_args = args.extra_args
-        enable_ccache = args.ccache
         all_plats = args.all
 
         verbose("platform filter: " + str(platform_filter))
@@ -1418,7 +1407,6 @@ class TestSuite:
         verbose("     tag_filter: " + str(tag_filter))
         verbose("    exclude_tag: " + str(exclude_tag))
         verbose("  config_filter: " + str(config_filter))
-        verbose("  enable_ccache: " + str(enable_ccache))
 
         if last_failed:
             failed_tests = self.get_last_failed()
@@ -1433,7 +1421,7 @@ class TestSuite:
             info("Selecting default platforms per test case")
             default_platforms = True
 
-        mg = MakeGenerator(self.outdir, ccache=enable_ccache)
+        mg = MakeGenerator(self.outdir)
         dlist = {}
         for tc_name, tc in self.testcases.items():
             for arch_name, arch in self.arches.items():
@@ -1667,7 +1655,7 @@ class TestSuite:
             self.instances[ti.name] = ti
 
     def execute(self, cb, cb_context, build_only, enable_slow, enable_asserts, enable_deprecations,
-                extra_args, enable_ccache):
+                extra_args):
 
         def calc_one_elf_size(name, goal):
             if not goal.failed:
@@ -1677,8 +1665,7 @@ class TestSuite:
                 goal.metrics["rom_size"] = sc.get_rom_size()
                 goal.metrics["unrecognized"] = sc.unrecognized_sections()
 
-        mg = MakeGenerator(self.outdir, asserts=enable_asserts, deprecations=enable_deprecations,
-                ccache=enable_ccache)
+        mg = MakeGenerator(self.outdir, asserts=enable_asserts, deprecations=enable_deprecations)
         for i in self.instances.values():
             mg.add_test_instance(i, build_only, enable_slow, self.coverage, extra_args)
         self.goals = mg.execute(cb, cb_context)
@@ -1906,9 +1893,6 @@ def parse_arguments():
                  "and why")
     parser.add_argument("--compare-report",
             help="Use this report file for size comparison")
-
-    parser.add_argument("--ccache", action="store_const", const=1, default=0,
-            help="Enable the use of ccache when building")
 
     parser.add_argument("-B", "--subset",
             help="Only run a subset of the tests, 1/4 for running the first 25%%, "
@@ -2174,11 +2158,11 @@ def main():
     if VERBOSE or not TERMINAL:
         goals = ts.execute(chatty_test_cb, ts.instances, args.build_only,
                            args.enable_slow, args.enable_asserts, args.error_on_deprecations,
-                           args.extra_args, args.ccache)
+                           args.extra_args)
     else:
         goals = ts.execute(terse_test_cb, ts.instances, args.build_only,
                            args.enable_slow, args.enable_asserts, args.error_on_deprecations,
-                           args.extra_args, args.ccache)
+                           args.extra_args)
         info("")
 
     # figure out which report to use for size comparison
