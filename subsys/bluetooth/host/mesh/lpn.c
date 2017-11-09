@@ -62,6 +62,9 @@
 #define POLL_TO(to) { (u8_t)((to) >> 16), (u8_t)((to) >> 8), (u8_t)(to) }
 #define LPN_POLL_TO POLL_TO(CONFIG_BT_MESH_LPN_POLL_TIMEOUT)
 
+/* 2 transmissions, 20ms interval */
+#define POLL_XMIT BT_MESH_TRANSMIT(1, 20)
+
 #if defined(CONFIG_BT_MESH_DEBUG_LOW_POWER)
 static const char *state2str(int state)
 {
@@ -229,7 +232,7 @@ static int send_friend_req(struct bt_mesh_lpn *lpn)
 		.sub = &bt_mesh.sub[0],
 		.ctx = &ctx,
 		.src = bt_mesh_primary_addr(),
-		.xmit = bt_mesh_net_transmit_get(),
+		.xmit = POLL_XMIT,
 	};
 	struct bt_mesh_ctl_friend_req req = {
 		.criteria    = LPN_CRITERIA,
@@ -330,7 +333,7 @@ static int send_friend_poll(void)
 		.sub = &bt_mesh.sub[0],
 		.ctx = &ctx,
 		.src = bt_mesh_primary_addr(),
-		.xmit = bt_mesh_net_transmit_get(),
+		.xmit = POLL_XMIT,
 	};
 	struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
 	u8_t fsn = lpn->fsn;
@@ -622,7 +625,7 @@ static bool sub_update(u8_t op)
 		.sub = &bt_mesh.sub[0],
 		.ctx = &ctx,
 		.src = bt_mesh_primary_addr(),
-		.xmit = bt_mesh_net_transmit_get(),
+		.xmit = POLL_XMIT,
 	};
 	struct bt_mesh_ctl_friend_sub req;
 	size_t i, g;
