@@ -1,5 +1,13 @@
 include($ENV{ZEPHYR_BASE}/cmake/host-tools-${ZEPHYR_GCC_VARIANT}.cmake OPTIONAL)
 
+# This allows to find 'conf' below if the Zephyr 0.9.2 SDK is installed,
+# even if we are using another toolchain (like ISSM)
+if(NOT $ENV{ZEPHYR_SDK_INSTALL_DIR} STREQUAL "")
+  list(APPEND CMAKE_PROGRAM_PATH $ENV{ZEPHYR_SDK_INSTALL_DIR}/sysroots/x86_64-pokysdk-linux/usr/bin)
+endif()
+
+# This allows to find 'conf' below if we have pre-built it and set
+# environ variable PREBUILT_HOST_TOOLS
 if(PREBUILT_HOST_TOOLS)
   list(APPEND CMAKE_PROGRAM_PATH ${PREBUILT_HOST_TOOLS}/kconfig)
 endif()
