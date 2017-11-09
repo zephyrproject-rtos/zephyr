@@ -2887,41 +2887,32 @@ static void hci_cmd_status(struct net_buf *buf)
 
 static int start_le_scan(u8_t scan_type, u16_t interval, u16_t window)
 {
-	struct bt_hci_cp_le_set_scan_param *set_param;
+	struct bt_hci_cp_le_set_scan_param set_param;
 	struct net_buf *buf;
 	int err;
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_PARAM,
-				sizeof(*set_param));
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	set_param = net_buf_add(buf, sizeof(*set_param));
-	memset(set_param, 0, sizeof(*set_param));
-	set_param->scan_type = scan_type;
+	set_param.scan_type = scan_type;
 
 	/* for the rest parameters apply default values according to
 	 *  spec 4.2, vol2, part E, 7.8.10
 	 */
-	set_param->interval = sys_cpu_to_le16(interval);
-	set_param->window = sys_cpu_to_le16(window);
-	set_param->filter_policy = 0x00;
+	set_param.interval = sys_cpu_to_le16(interval);
+	set_param.window = sys_cpu_to_le16(window);
+	set_param.filter_policy = 0x00;
 
 	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
 		err = le_set_private_addr();
 		if (err) {
-			net_buf_unref(buf);
 			return err;
 		}
 
 		if (BT_FEAT_LE_PRIVACY(bt_dev.le.features)) {
-			set_param->addr_type = BT_HCI_OWN_ADDR_RPA_OR_RANDOM;
+			set_param.addr_type = BT_HCI_OWN_ADDR_RPA_OR_RANDOM;
 		} else {
-			set_param->addr_type = BT_ADDR_LE_RANDOM;
+			set_param.addr_type = BT_ADDR_LE_RANDOM;
 		}
 	} else {
-		set_param->addr_type =  bt_dev.id_addr.type;
+		set_param.addr_type =  bt_dev.id_addr.type;
 
 		/* Use NRPA unless identity has been explicitly requested
 		 * (through Kconfig), or if there is no advertising ongoing.
@@ -2931,13 +2922,19 @@ static int start_le_scan(u8_t scan_type, u16_t interval, u16_t window)
 		    !atomic_test_bit(bt_dev.flags, BT_DEV_ADVERTISING)) {
 			err = le_set_private_addr();
 			if (err) {
-				net_buf_unref(buf);
 				return err;
 			}
 
-			set_param->addr_type = BT_ADDR_LE_RANDOM;
+			set_param.addr_type = BT_ADDR_LE_RANDOM;
 		}
 	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_SCAN_PARAM, sizeof(set_param));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	net_buf_add_mem(buf, &set_param, sizeof(set_param));
 
 	bt_hci_cmd_send(BT_HCI_OP_LE_SET_SCAN_PARAM, buf);
 
@@ -4616,8 +4613,8 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 		    const struct bt_data *ad, size_t ad_len,
 		    const struct bt_data *sd, size_t sd_len)
 {
+	struct bt_hci_cp_le_set_adv_param set_param;
 	struct net_buf *buf;
-	struct bt_hci_cp_le_set_adv_param *set_param;
 	int err;
 
 	if (!valid_adv_param(param)) {
@@ -4649,32 +4646,22 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 		}
 	}
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_PARAM,
-				sizeof(*set_param));
-	if (!buf) {
-		return -ENOBUFS;
-	}
-
-	set_param = net_buf_add(buf, sizeof(*set_param));
-
-	memset(set_param, 0, sizeof(*set_param));
-	set_param->min_interval = sys_cpu_to_le16(param->interval_min);
-	set_param->max_interval = sys_cpu_to_le16(param->interval_max);
-	set_param->channel_map  = 0x07;
+	set_param.min_interval = sys_cpu_to_le16(param->interval_min);
+	set_param.max_interval = sys_cpu_to_le16(param->interval_max);
+	set_param.channel_map  = 0x07;
 
 	if (param->options & BT_LE_ADV_OPT_CONNECTABLE) {
 		if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
 			err = le_set_private_addr();
 			if (err) {
-				net_buf_unref(buf);
 				return err;
 			}
 
 			if (BT_FEAT_LE_PRIVACY(bt_dev.le.features)) {
-				set_param->own_addr_type =
+				set_param.own_addr_type =
 					BT_HCI_OWN_ADDR_RPA_OR_RANDOM;
 			} else {
-				set_param->own_addr_type = BT_ADDR_LE_RANDOM;
+				set_param.own_addr_type = BT_ADDR_LE_RANDOM;
 			}
 		} else {
 			/*
@@ -4688,10 +4675,10 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 				set_random_address(&bt_dev.id_addr.a);
 			}
 
-			set_param->own_addr_type = bt_dev.id_addr.type;
+			set_param.own_addr_type = bt_dev.id_addr.type;
 		}
 
-		set_param->type = BT_LE_ADV_IND;
+		set_param.type = BT_LE_ADV_IND;
 	} else {
 		if (param->own_addr) {
 			/* Only NRPA is allowed */
@@ -4705,18 +4692,24 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 		}
 
 		if (err) {
-			net_buf_unref(buf);
 			return err;
 		}
 
-		set_param->own_addr_type = BT_ADDR_LE_RANDOM;
+		set_param.own_addr_type = BT_ADDR_LE_RANDOM;
 
 		if (sd) {
-			set_param->type = BT_LE_ADV_SCAN_IND;
+			set_param.type = BT_LE_ADV_SCAN_IND;
 		} else {
-			set_param->type = BT_LE_ADV_NONCONN_IND;
+			set_param.type = BT_LE_ADV_NONCONN_IND;
 		}
 	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_SET_ADV_PARAM, sizeof(set_param));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	net_buf_add_mem(buf, &set_param, sizeof(set_param));
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_ADV_PARAM, buf, NULL);
 	if (err) {
