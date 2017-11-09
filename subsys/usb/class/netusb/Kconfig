@@ -36,21 +36,21 @@ if USB_DEVICE_NETWORK_ECM
 
 config CDC_ECM_INT_EP_ADDR
 	hex "CDC ECM Interrupt Endpoint address"
-	default 0x84
+	default 0x83
 	range 0x81 0x8F
 	help
 	CDC ECM class interrupt endpoint address
 
 config CDC_ECM_IN_EP_ADDR
 	hex "CDC ECM BULK IN Endpoint address"
-	default 0x83
+	default 0x82
 	range 0x81 0x8F
 	help
 	CDC ECM class IN endpoint address
 
 config CDC_ECM_OUT_EP_ADDR
 	hex "CDC ECM BULK OUT Endpoint address"
-	default 0x02
+	default 0x01
 	range 0x01 0x0F
 	help
 	CDC ECM class OUT endpoint address
