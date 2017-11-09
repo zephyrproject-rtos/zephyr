@@ -722,7 +722,7 @@ static int ctl_recv(struct bt_mesh_net_rx *rx, u8_t hdr,
 		return 0;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MESH_FRIEND)) {
+	if (IS_ENABLED(CONFIG_BT_MESH_FRIEND) && !bt_mesh_lpn_established()) {
 		switch (ctl_op) {
 		case TRANS_CTL_OP_FRIEND_POLL:
 			return bt_mesh_friend_poll(rx, buf);
@@ -730,6 +730,8 @@ static int ctl_recv(struct bt_mesh_net_rx *rx, u8_t hdr,
 			return bt_mesh_friend_req(rx, buf);
 		case TRANS_CTL_OP_FRIEND_CLEAR:
 			return bt_mesh_friend_clear(rx, buf);
+		case TRANS_CTL_OP_FRIEND_CLEAR_CFM:
+			return bt_mesh_friend_clear_cfm(rx, buf);
 		case TRANS_CTL_OP_FRIEND_SUB_ADD:
 			return bt_mesh_friend_sub_add(rx, buf);
 		case TRANS_CTL_OP_FRIEND_SUB_REM:
@@ -831,6 +833,8 @@ int bt_mesh_ctl_send(struct bt_mesh_net_tx *tx, u8_t ctl_op, void *data,
 		BT_ERR("Out of transport buffers");
 		return -ENOBUFS;
 	}
+
+	BT_MESH_ADV(buf)->addr = tx->ctx->addr;
 
 	net_buf_reserve(buf, BT_MESH_NET_HDR_LEN);
 
