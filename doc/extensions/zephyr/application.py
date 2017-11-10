@@ -59,6 +59,9 @@ class ZephyrAppCommandsDirective(Directive):
       created a build directory and changed there, and will tweak the text to
       note that doing so again is not necessary.
 
+    - :compact: if set, the generated output is a single code block with no
+      additional comment lines
+
     '''
     has_content = False
     required_arguments = 0
@@ -74,7 +77,8 @@ class ZephyrAppCommandsDirective(Directive):
         'build-args': directives.unchanged,
         'build-dir': directives.unchanged,
         'goals': directives.unchanged_required,
-        'maybe-skip-config': directives.flag
+        'maybe-skip-config': directives.flag,
+        'compact': directives.flag
     }
 
     GENERATORS = ['make', 'ninja']
@@ -95,6 +99,7 @@ class ZephyrAppCommandsDirective(Directive):
         build_dir_append = self.options.get('build-dir', '').strip('/')
         goals = self.options.get('goals').split()
         skip_config = 'maybe-skip-config' in self.options
+        compact = 'compact' in self.options
 
         if app and zephyr_app:
             raise self.error('Both app and zephyr-app options were given.')
@@ -102,6 +107,9 @@ class ZephyrAppCommandsDirective(Directive):
         if generator not in self.GENERATORS:
             raise self.error('Unknown generator {}; choose from: {}'.format(
                 generator, self.GENERATORS))
+
+        if compact and skip_config:
+            raise self.error('Both compact and maybe-skip-config options were given.')
 
         # Allow build directories which are nested.
         build_dir = ('build' + '/' + build_dir_append).rstrip('/')
@@ -115,7 +123,8 @@ class ZephyrAppCommandsDirective(Directive):
             'gen_args': gen_args,
             'build_args': build_args,
             'source_dir': source_dir,
-            'goals': goals
+            'goals': goals,
+            'compact': compact
             }
 
         # Build the command content as a list, then convert to string.
@@ -123,14 +132,16 @@ class ZephyrAppCommandsDirective(Directive):
 
         if zephyr_app:
             content.append('$ cd $ZEPHYR_BASE/{}'.format(zephyr_app))
-            content.append('')
+            if not compact:
+                content.append('')
         elif app:
             content.append('$ cd {}'.format(app))
-            content.append('')
+            if not compact:
+                content.append('')
 
         if skip_config:
             content.append("# If you already made a build directory ({}) and ran cmake, just 'cd {}' instead.".format(build_dir, build_dir))  # noqa: E501
-        else:
+        elif not compact:
             content.append('# Make a build directory, and use cmake to configure a {}-based build system:'.format(generator.capitalize()))  # noqa: E501
         content.append('$ {} {} && cd {}'.format(mkdir, build_dir, build_dir))
 
@@ -154,6 +165,7 @@ class ZephyrAppCommandsDirective(Directive):
         build_args = kwargs['build_args']
         source_dir = kwargs['source_dir']
         goals = kwargs['goals']
+        compact = kwargs['compact']
 
         board_arg = ' -DBOARD={}'.format(board) if board else ''
         conf_arg = ' -DCONF_FILE={}'.format(conf) if conf else ''
@@ -162,9 +174,11 @@ class ZephyrAppCommandsDirective(Directive):
 
         content = []
         content.extend([
-            '$ cmake{}{}{} {}'.format(board_arg, conf_arg, gen_args, source_dir),
-            '',
-            '# Now run make on the generated build system:'])
+            '$ cmake{}{}{} {}'.format(board_arg, conf_arg, gen_args,
+            source_dir)])
+        if not compact:
+            content.extend(['',
+                '# Now run make on the generated build system:'])
         if 'build' in goals:
             content.append('$ make{}'.format(build_args))
         if 'flash' in goals:
@@ -182,6 +196,7 @@ class ZephyrAppCommandsDirective(Directive):
         build_args = kwargs['build_args']
         source_dir = kwargs['source_dir']
         goals = kwargs['goals']
+        compact = kwargs['compact']
 
         board_arg = ' -DBOARD={}'.format(board) if board else ''
         conf_arg = ' -DCONF_FILE={}'.format(conf) if conf else ''
@@ -190,9 +205,11 @@ class ZephyrAppCommandsDirective(Directive):
 
         content = []
         content.extend([
-            '$ cmake -GNinja{}{}{} {}'.format(board_arg, conf_arg, gen_args, source_dir),
-            '',
-            '# Now run ninja on the generated build system:'])
+            '$ cmake -GNinja{}{}{} {}'.format(board_arg, conf_arg, gen_args,
+            source_dir)])
+        if not compact:
+            content.extend([ '',
+                '# Now run ninja on the generated build system:'])
         if 'build' in goals:
             content.append('$ ninja{}'.format(build_args))
         if 'flash' in goals:
