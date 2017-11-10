@@ -15,7 +15,43 @@
 
 	soc {
 		pinctrl: pin-controller {
-			reg = <0x40020000 0x2800>;
+			reg = <0x40020000 0x2400>;
+
+			gpiof: gpio@40021400 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40021400 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000020>;
+				label = "GPIOF";
+			};
+
+			gpiog: gpio@40021800 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40021800 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000040>;
+				label = "GPIOG";
+			};
+
+			gpioh: gpio@40021c00 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40021c00 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000040>;
+				label = "GPIOH";
+			};
+
+			gpioi: gpio@40022000 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40022000 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000100>;
+				label = "GPIOI";
+			};
 		};
 
 		usart3: serial@40004800 {
