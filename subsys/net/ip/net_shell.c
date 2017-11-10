@@ -1905,6 +1905,11 @@ int net_shell_cmd_ping(int argc, char *argv[])
 		host = argv[2];
 	}
 
+	if (!host) {
+		printk("Target host missing\n");
+		return 0;
+	}
+
 	ret = _ping_ipv6(host);
 	if (!ret) {
 		goto wait_reply;
