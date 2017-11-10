@@ -123,7 +123,6 @@ int http_request(struct http_ctx *ctx, struct http_request *req, s32_t timeout,
 
 	if (req->payload && req->payload_size) {
 		char content_len_str[HTTP_CONT_LEN_SIZE];
-		int i;
 
 		ret = snprintk(content_len_str, HTTP_CONT_LEN_SIZE,
 			       "%u", req->payload_size);
@@ -143,17 +142,10 @@ int http_request(struct http_ctx *ctx, struct http_request *req, s32_t timeout,
 			goto out;
 		}
 
-		for (i = 0; i < req->payload_size;) {
-			ret = http_send_chunk(ctx,
-					      req->payload + i,
-					      req->payload_size - i,
-					      user_data);
-			if (ret < 0) {
-				NET_ERR("Cannot send data to peer (%d)", ret);
-				return ret;
-			}
-
-			i += ret;
+		ret = http_prepare_and_send(ctx, req->payload,
+					    req->payload_size, user_data);
+		if (ret < 0) {
+			goto out;
 		}
 	} else {
 		ret = http_add_header(ctx, HTTP_EOF, user_data);
