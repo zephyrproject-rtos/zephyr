@@ -406,6 +406,11 @@ int bt_mesh_lpn_friend_offer(struct bt_mesh_net_rx *rx,
 		return 0;
 	}
 
+	if (!msg->recv_win) {
+		BT_WARN("Prohibited ReceiveWindow value");
+		return -EINVAL;
+	}
+
 	frnd_counter = sys_be16_to_cpu(msg->frnd_counter);
 
 	BT_DBG("recv_win %u queue_size %u sub_list_size %u rssi %d counter %u",
