@@ -353,7 +353,7 @@ Run a serial host program to connect with your board:
 
    $ minicom -D /dev/ttyACM0
 
-After reseting the board you should see the following message:
+After resetting the board, you should see the following message:
 
 .. code-block:: console
 
