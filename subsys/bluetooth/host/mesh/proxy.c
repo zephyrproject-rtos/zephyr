@@ -618,7 +618,7 @@ int bt_mesh_proxy_prov_disable(void)
 	for (i = 0; i < ARRAY_SIZE(clients); i++) {
 		struct bt_mesh_proxy_client *client = &clients[i];
 
-		if (clients->conn && client->filter_type == PROV) {
+		if (client->conn && client->filter_type == PROV) {
 			bt_mesh_pb_gatt_close(client->conn);
 			client->filter_type = NONE;
 		}
@@ -714,8 +714,8 @@ int bt_mesh_proxy_gatt_disable(void)
 	for (i = 0; i < ARRAY_SIZE(clients); i++) {
 		struct bt_mesh_proxy_client *client = &clients[i];
 
-		if (clients->conn && (client->filter_type == WHITELIST ||
-				      client->filter_type == BLACKLIST)) {
+		if (client->conn && (client->filter_type == WHITELIST ||
+				     client->filter_type == BLACKLIST)) {
 			client->filter_type = NONE;
 		}
 	}
