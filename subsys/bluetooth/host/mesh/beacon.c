@@ -80,10 +80,8 @@ static void beacon_complete(struct net_buf *buf, int err)
 	BT_DBG("err %d", err);
 
 	sub = &bt_mesh.sub[BT_MESH_ADV(buf)->user_data[0]];
-	sub->beacon_sent = k_uptime_get();
+	sub->beacon_sent = k_uptime_get_32();
 }
-
-#define BEACON_INTERVAL(sub) K_SECONDS(10 * ((sub)->beacons_last + 1))
 
 void bt_mesh_beacon_create(struct bt_mesh_subnet *sub,
 			   struct net_buf_simple *buf)
@@ -115,27 +113,34 @@ void bt_mesh_beacon_create(struct bt_mesh_subnet *sub,
 	       bt_hex(sub->auth, 8));
 }
 
+/* If the interval has passed or is within 5 seconds from now send a beacon */
+#define BEACON_THRESHOLD(sub) (K_SECONDS(10 * ((sub)->beacons_last + 1)) - \
+			       K_SECONDS(5))
+
 static int secure_beacon_send(void)
 {
-	s64_t threshold;
+	u32_t now = k_uptime_get_32();
 	int i;
 
 	BT_DBG("");
 
-	/* If the interval has passed or is within 5 seconds from now
-	 * send a beacon.
-	 */
-	threshold = k_uptime_get() + K_SECONDS(5);
-
 	for (i = 0; i < ARRAY_SIZE(bt_mesh.sub); i++) {
 		struct bt_mesh_subnet *sub = &bt_mesh.sub[i];
 		struct net_buf *buf;
+		u32_t time_diff;
 
 		if (sub->net_idx == BT_MESH_KEY_UNUSED) {
 			continue;
 		}
 
-		if (sub->beacon_sent + BEACON_INTERVAL(sub) > threshold) {
+		/* Handle time wrap due to 32-bit storage */
+		if (sub->beacon_sent > now) {
+			time_diff = (UINT32_MAX - sub->beacon_sent) + now;
+		} else {
+			time_diff = now - sub->beacon_sent;
+		}
+
+		if (time_diff < BEACON_THRESHOLD(sub)) {
 			continue;
 		}
 

@@ -43,7 +43,7 @@ struct bt_mesh_friend_cred {
 };
 
 struct bt_mesh_subnet {
-	s64_t beacon_sent;        /* Time stamp of last sent beacon */
+	u32_t beacon_sent;        /* Timestamp of last sent beacon */
 	u8_t  beacons_last;       /* Number of beacons during last
 				   * observation window
 				   */
