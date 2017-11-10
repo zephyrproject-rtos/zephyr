@@ -102,8 +102,9 @@ UART0 is connected to the board controller and is used for the console.
 Programming and Debugging
 *************************
 
-.. note:
-   Before useing the kit the first time, you should update the J-Link firmware
+.. note::
+
+   Before using the kit the first time, you should update the J-Link firmware
    from `J-Link-Downloads`_
 
 Flashing
