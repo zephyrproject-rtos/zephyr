@@ -1,6 +1,6 @@
 zephyr_sources_if_kconfig(uart_altera_jtag.c)
 zephyr_sources_if_kconfig(uart_atmel_sam3.c)
-zephyr_sources_if_kconfig(uart_cc32.c)
+zephyr_sources_if_kconfig(uart_cc32xx.c)
 zephyr_sources_if_kconfig(uart_cmsdk_apb.c)
 zephyr_sources_if_kconfig(uart_gecko.c)
 zephyr_sources_if_kconfig(uart_mcux.c)
