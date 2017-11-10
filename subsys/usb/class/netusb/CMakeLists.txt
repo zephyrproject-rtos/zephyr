@@ -12,6 +12,7 @@ zephyr_library_include_directories(
   )
 
 zephyr_library_sources_ifdef(
+  CONFIG_USB_DEVICE_NETWORK
   netusb.c
   )
 
