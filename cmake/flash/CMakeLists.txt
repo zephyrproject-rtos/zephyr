@@ -7,6 +7,7 @@ list(APPEND ENV_VARS
              ARCH=${ARCH}
        BOARD_NAME=${BOARD}
               GDB=${CMAKE_GDB}
+          OPENOCD_DEFAULT_PATH=${OPENOCD_DEFAULT_PATH}
           OPENOCD=${OPENOCD}
   )
 
