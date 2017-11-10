@@ -92,9 +92,21 @@ of ESP-IDF:
 Flashing
 ========
 
-Issuing ``make BOARD=esp32 flash`` should work as usual.  Environment
-variables can be set to set the serial port device, baud rate, and
-other options.  Please refer to the following table for details.
+The usual ``flash`` target will work with the ``esp32`` board
+configuration. Here is an example for the :ref:`hello_world`
+application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: esp32
+   :goals: flash
+
+Refer to :ref:`build_an_application` and :ref:`application_run` for
+more details.
+
+Environment variables can be set to set the serial port device, baud
+rate, and other options.  Please refer to the following table for
+details.
 
 +----------------+---------------+
 | Variable       | Default value |
