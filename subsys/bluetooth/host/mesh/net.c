@@ -984,9 +984,9 @@ static int friend_decrypt(struct bt_mesh_subnet *sub, const u8_t *data,
 }
 #endif
 
-static int net_find_and_decrypt(const u8_t *data, size_t data_len,
-				struct bt_mesh_net_rx *rx,
-				struct net_buf_simple *buf)
+static bool net_find_and_decrypt(const u8_t *data, size_t data_len,
+				 struct bt_mesh_net_rx *rx,
+				 struct net_buf_simple *buf)
 {
 	struct bt_mesh_subnet *sub;
 	int i;
@@ -1003,14 +1003,18 @@ static int net_find_and_decrypt(const u8_t *data, size_t data_len,
      defined(CONFIG_BT_MESH_FRIEND))
 		if (!friend_decrypt(sub, data, data_len, rx, buf)) {
 			rx->ctx.friend_cred = 1;
-			break;
+			rx->ctx.net_idx = sub->net_idx;
+			rx->sub = sub;
+			return true;
 		}
 #endif
 
 		if (NID(data) == sub->keys[0].nid &&
 		    !net_decrypt(sub, sub->keys[0].enc, sub->keys[0].privacy,
 				 data, data_len, rx, buf)) {
-			break;
+			rx->ctx.net_idx = sub->net_idx;
+			rx->sub = sub;
+			return true;
 		}
 
 		if (sub->kr_phase == BT_MESH_KR_NORMAL) {
@@ -1021,14 +1025,10 @@ static int net_find_and_decrypt(const u8_t *data, size_t data_len,
 		    !net_decrypt(sub, sub->keys[1].enc, sub->keys[1].privacy,
 				 data, data_len, rx, buf)) {
 			rx->new_key = 1;
-			break;
+			rx->ctx.net_idx = sub->net_idx;
+			rx->sub = sub;
+			return true;
 		}
-	}
-
-	if (i < ARRAY_SIZE(bt_mesh.sub)) {
-		rx->ctx.net_idx = sub->net_idx;
-		rx->sub = sub;
-		return true;
 	}
 
 	return false;
