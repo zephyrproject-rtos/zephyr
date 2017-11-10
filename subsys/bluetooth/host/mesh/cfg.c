@@ -2526,7 +2526,7 @@ static void lpn_timeout_get(struct bt_mesh_model *model,
 		goto send_rsp;
 	}
 
-	frnd = bt_mesh_friend_find(BT_MESH_KEY_ANY, lpn_addr, true);
+	frnd = bt_mesh_friend_find(BT_MESH_KEY_ANY, lpn_addr, true, true);
 	if (!frnd) {
 		timeout = 0;
 		goto send_rsp;

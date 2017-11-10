@@ -98,7 +98,7 @@ static struct net_buf *friend_buf_alloc(u16_t src)
 }
 
 struct bt_mesh_friend *bt_mesh_friend_find(u16_t net_idx, u16_t lpn_addr,
-					   bool established)
+					   bool valid, bool established)
 {
 	int i;
 
@@ -106,6 +106,10 @@ struct bt_mesh_friend *bt_mesh_friend_find(u16_t net_idx, u16_t lpn_addr,
 
 	for (i = 0; i < ARRAY_SIZE(bt_mesh.frnd); i++) {
 		struct bt_mesh_friend *frnd = &bt_mesh.frnd[i];
+
+		if (valid && !frnd->valid) {
+			continue;
+		}
 
 		if (established && !frnd->established) {
 			continue;
@@ -164,12 +168,11 @@ static void friend_clear(struct bt_mesh_friend *frnd)
 		}
 	}
 
+	frnd->valid = 0;
 	frnd->established = 0;
 	frnd->pending_buf = 0;
 	frnd->fsn = 0;
 	frnd->queue_size = 0;
-	frnd->lpn = BT_MESH_ADDR_UNASSIGNED;
-	frnd->net_idx = BT_MESH_KEY_UNUSED;
 	memset(frnd->sub_list, 0, sizeof(frnd->sub_list));
 }
 
@@ -216,6 +219,13 @@ int bt_mesh_friend_clear(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 	struct bt_mesh_ctl_friend_clear *msg = (void *)buf->data;
 	struct bt_mesh_friend *frnd;
 	u16_t lpn_addr, lpn_counter;
+	struct bt_mesh_net_tx tx = {
+		.sub  = rx->sub,
+		.ctx  = &rx->ctx,
+		.src  = bt_mesh_primary_addr(),
+		.xmit = bt_mesh_net_transmit_get(),
+	};
+	struct bt_mesh_ctl_friend_clear_confirm cfm;
 
 	if (buf->len < sizeof(*msg)) {
 		BT_WARN("Too short Friend Clear");
@@ -227,16 +237,31 @@ int bt_mesh_friend_clear(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 
 	BT_DBG("LPN addr 0x%04x counter 0x%04x", lpn_addr, lpn_counter);
 
-	frnd = bt_mesh_friend_find(rx->sub->net_idx, lpn_addr, true);
+	frnd = bt_mesh_friend_find(rx->sub->net_idx, lpn_addr, false, false);
 	if (!frnd) {
 		BT_WARN("No matching LPN addr 0x%04x", lpn_addr);
 		return 0;
 	}
 
-	if (frnd->lpn_counter != lpn_counter) {
-		BT_WARN("LPN Counter mismatch");
+	/* A Friend Clear message is considered valid if the result of the
+	 * subtraction of the value of the LPNCounter field of the Friend
+	 * Request message (the one that initiated the friendship) from the
+	 * value of the LPNCounter field of the Friend Clear message, modulo
+	 * 65536, is in the range 0 to 255 inclusive.
+	 */
+	if (lpn_counter - frnd->lpn_counter > 255) {
+		BT_WARN("LPN Counter out of range (old %u new %u)",
+			frnd->lpn_counter, lpn_counter);
 		return 0;
 	}
+
+	tx.ctx->send_ttl = BT_MESH_TTL_MAX;
+
+	cfm.lpn_addr    = msg->lpn_addr;
+	cfm.lpn_counter = msg->lpn_counter;
+
+	bt_mesh_ctl_send(&tx, TRANS_CTL_OP_FRIEND_CLEAR_CFM, &cfm,
+			 sizeof(cfm), NULL, NULL);
 
 	friend_clear(frnd);
 
@@ -418,7 +443,7 @@ int bt_mesh_friend_sub_add(struct bt_mesh_net_rx *rx,
 		return -EINVAL;
 	}
 
-	frnd = bt_mesh_friend_find(rx->sub->net_idx, rx->ctx.addr, true);
+	frnd = bt_mesh_friend_find(rx->sub->net_idx, rx->ctx.addr, true, true);
 	if (!frnd) {
 		BT_WARN("No matching LPN addr 0x%04x", rx->ctx.addr);
 		return 0;
@@ -455,7 +480,7 @@ int bt_mesh_friend_sub_rem(struct bt_mesh_net_rx *rx,
 		return -EINVAL;
 	}
 
-	frnd = bt_mesh_friend_find(rx->sub->net_idx, rx->ctx.addr, true);
+	frnd = bt_mesh_friend_find(rx->sub->net_idx, rx->ctx.addr, true, true);
 	if (!frnd) {
 		BT_WARN("No matching LPN addr 0x%04x", rx->ctx.addr);
 		return 0;
@@ -511,7 +536,7 @@ int bt_mesh_friend_poll(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 		return -EINVAL;
 	}
 
-	frnd = bt_mesh_friend_find(rx->sub->net_idx, rx->ctx.addr, false);
+	frnd = bt_mesh_friend_find(rx->sub->net_idx, rx->ctx.addr, true, false);
 	if (!frnd) {
 		BT_WARN("No matching LPN addr 0x%04x", rx->ctx.addr);
 		return 0;
@@ -794,10 +819,11 @@ int bt_mesh_friend_req(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 
 	old_friend = sys_be16_to_cpu(msg->prev_addr);
 	if (BT_MESH_ADDR_IS_UNICAST(old_friend)) {
-		frnd = bt_mesh_friend_find(rx->sub->net_idx, old_friend, true);
+		frnd = bt_mesh_friend_find(rx->sub->net_idx, old_friend,
+					   true, true);
 	} else {
 		frnd = bt_mesh_friend_find(rx->sub->net_idx, rx->ctx.addr,
-					   true);
+					   true, true);
 	}
 
 	if (frnd) {
@@ -807,8 +833,9 @@ int bt_mesh_friend_req(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 	}
 
 	for (i = 0; i < ARRAY_SIZE(bt_mesh.frnd); i++) {
-		if (bt_mesh.frnd[i].lpn == BT_MESH_ADDR_UNASSIGNED) {
+		if (!bt_mesh.frnd[i].valid) {
 			frnd = &bt_mesh.frnd[i];
+			frnd->valid = 1;
 			break;
 		}
 	}
