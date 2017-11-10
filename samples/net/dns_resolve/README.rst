@@ -122,18 +122,11 @@ FRDM K64F
 
 Open a terminal window and type:
 
-.. code-block:: console
-
-    $ make BOARD=frdm_k64f
-
-
-The FRDM K64F board is detected as a USB storage device. The board
-must be mounted (i.e. to /mnt) to 'flash' the binary:
-
-.. code-block:: console
-
-    $ cp outdir/frdm_k64f/zephyr.bin /mnt
-
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/dns_resolve
+   :board: frdm_k64f
+   :goals: build flash
+   :compact:
 
 See :ref:`Freedom-K64F board documentation <frdm_k64f>` for more information
 about this board.
@@ -154,10 +147,11 @@ Arduino 101
 
 Open a terminal window and type:
 
-.. code-block:: console
-
-	$ make BOARD=arduino_101
-
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/dns_resolve
+   :board: arduino_101
+   :goals: build
+   :compact:
 
 To load the binary in the development board follow the steps
 in :ref:`arduino_101`.

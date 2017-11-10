@@ -31,10 +31,11 @@ To use QEMU for testing, follow the :ref:`networking_with_qemu` guide.
 
 Run Zephyr samples/net/telnet application in QEMU:
 
-.. code-block:: console
-
-    $ cd $ZEPHYR_BASE/samples/net/telnet
-    $ make pristine && make run
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/telnet
+   :board: qemu_x86
+   :goals: run
+   :compact:
 
 Once started, you should see you IP address details for example:
 
@@ -76,10 +77,11 @@ DHCP server on a local network is not in the scope of this README.
 
 Build Zephyr samples/net/telnet application:
 
-.. code-block:: console
-
-    $ cd $ZEPHYR_BASE/samples/net/dhcpv4_client
-    $ make pristine && make BOARD=frdm_k64f
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/telnet
+   :board: frdm_k64f
+   :goals: build
+   :compact:
 
 Flash the resulting Zephyr binary following the :ref:`Freedom-K64F <frdm_k64f>`
 board documentation noted above.

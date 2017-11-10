@@ -66,8 +66,11 @@ Running RPL node
 To build and run RPL node, follow the below steps to build and install
 it on IEEE 802.15.4 radio supported board.
 
-.. code-block:: console
-
-    $ make pristine and make flash
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/rpl-node
+   :board: <board to use>
+   :conf: <config file to use>
+   :goals: build flash
+   :compact:
 
 Wait until the RPL node joins with Border-Router and updates the list in the web UI.

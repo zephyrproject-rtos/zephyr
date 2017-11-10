@@ -38,12 +38,7 @@ or wireshark.
 
 See the `net-tools`_ project for more details
 
-It can be built and executed on QEMU as follows:
-
-.. code-block:: console
-
-    make run
-
+It can be built and executed on QEMU as described in :ref:`networking_with_qemu`.
 
 Use this command on the host to run the`libcoap`_ implementation of
 the ETSI test cases:
@@ -53,12 +48,7 @@ the ETSI test cases:
    sudo ./examples/etsi_coaptest.sh -i tap0 2001:db8::1
 
 To build the version supporting the TI CC2520 radio, use the supplied
-configuration file enabling IEEE 802.15.4:
-
-.. code-block:: console
-
-    make CONF_FILE=prj_cc2520.conf run
-
+prj_cc2520.conf configuration file enabling IEEE 802.15.4.
 
 .. _`net-tools`: https://github.com/zephyrproject-rtos/net-tools
 
