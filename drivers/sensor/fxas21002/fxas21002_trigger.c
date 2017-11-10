@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <fxas21002.h>
+#include "fxas21002.h"
 
 static void fxas21002_gpio_callback(struct device *dev,
 				   struct gpio_callback *cb,

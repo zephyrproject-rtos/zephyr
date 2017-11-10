@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <fxos8700.h>
+#include "fxos8700.h"
 
 static void fxos8700_gpio_callback(struct device *dev,
 				   struct gpio_callback *cb,

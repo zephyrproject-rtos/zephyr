@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <fxas21002.h>
+#include "fxas21002.h"
 #include <misc/util.h>
 #include <misc/__assert.h>
 
