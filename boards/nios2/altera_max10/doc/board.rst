@@ -145,11 +145,18 @@ Flashing
 
 Flashing Kernel into UFM
 ------------------------
-This is as simple as:
 
-.. code-block:: console
+The usual ``flash`` target will work with the ``altera_max10`` board
+configuration. Here is an example for the :ref:`hello_world`
+application.
 
-   $ make flash
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: altera_max10
+   :goals: flash
+
+Refer to :ref:`build_an_application` and :ref:`application_run` for
+more details.
 
 This provisions the Zephyr kernel and the CPU configuration onto the board,
 using the scripts/support/quartus-flash.py script. After it completes the kernel
@@ -170,11 +177,12 @@ the following config options are disabled:
    CONFIG_XIP=n
    CONFIG_INCLUDE_RESET_VECTOR=n
 
-Then, after building your kernel, push it into device's RAM:
+Then, after building your kernel, push it into device's RAM by running
+this from the build directory:
 
 .. code-block:: console
 
-   $ nios2-download --go outdir/zephyr.elf
+   $ nios2-download --go zephyr/zephyr.elf
 
 If you have a console session running (either minicom or nios2-terminal) you
 should see the application's output. There are additional arguments you can pass
@@ -191,18 +199,17 @@ Flash Memory (UFM), or load an image over the JTAG using GDB.
 Debugging With UFM Flashed Image
 --------------------------------
 
-This can be accomplished with the "make debug" build target:
+You can debug an application in the usual way.  Here is an example.
+
+.. zephyr-app-commands::
+   :zephyr-app: tests/crypto/test_sha256
+   :board: altera_max10
+   :goals: debug
+
+You will see output similar to the following:
 
 .. code-block:: console
 
-   $ make debug
-   make[1]: Entering directory '/projects/zephyr2'
-   make[2]: Entering directory '/projects/zephyr2/tests/crypto/test_sha256/outdir'
-     Using /projects/zephyr2 as source for kernel
-     GEN     ./Makefile
-     CHK     include/generated/version.h
-     CHK     misc/generated/configs.c
-     CHK     include/generated/offsets.h
    Nios II GDB server running on port 14777
    Ignoring --stop option because --tcpport also specified
    Python Exception <type 'exceptions.ImportError'> No module named gdb:
@@ -254,12 +261,12 @@ To start debugging manually:
 
    nios2-gdb-server --tcpport 1234 --stop --reset-target
 
-And then connect with GDB:
+And then connect with GDB from the build directory:
 
 
 .. code-block:: console
 
-   nios2-poky-elf-gdb  outdir/zephyr.elf -ex "target remote :1234"
+   nios2-poky-elf-gdb  zephyr/zephyr.elf -ex "target remote :1234"
 
 Debugging With JTAG Flashed Image
 ---------------------------------
@@ -285,11 +292,11 @@ nios2-configure-sof. You can leave this process running.
    $ nios2-gdb-server --tcpport 1234 --tcppersist --init-cache --reset-target
 
 Build your Zephyr kernel, and load it into a GDB built for Nios II (included in
-the Zephyr SDK):
+the Zephyr SDK) from the build directory:
 
 .. code-block:: console
 
-   $ nios2-poky-elf-gdb outdir/zephyr.elf
+   $ nios2-poky-elf-gdb zephyr/zephyr.elf
 
 Then connect to the GDB server:
 
