@@ -303,7 +303,7 @@ config BT_MESH_FRIEND_RECV_WIN
 config BT_MESH_FRIEND_QUEUE_SIZE
 	int "Minimum number of buffers supported per Friend Queue"
 	range 2 65536
-	default 4
+	default 16
 	help
 	  Minimum number of buffers available to be stored for each
 	  local Friend Queue.
@@ -319,7 +319,7 @@ config BT_MESH_FRIEND_SUB_LIST_SIZE
 config BT_MESH_FRIEND_LPN_COUNT
 	int "Number of supported LPN nodes"
 	range 1 1000
-	default 1
+	default 2
 	help
 	  Number of Low Power Nodes the Friend can have a Friendship
 	  with simultaneously.
