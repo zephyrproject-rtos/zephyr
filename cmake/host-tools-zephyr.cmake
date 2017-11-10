@@ -34,4 +34,6 @@ endif()
 # we call, e.g. find_program(QEMU qemu-system-x86)
 list(APPEND CMAKE_PREFIX_PATH ${TOOLCHAIN_HOME}/usr)
 
-set(QEMU_BIOS 		${TOOLCHAIN_HOME}/usr/share/qemu)
+# TODO: Use find_* somehow for these as well?
+set_ifndef(QEMU_BIOS            ${TOOLCHAIN_HOME}/usr/share/qemu)
+set_ifndef(OPENOCD_DEFAULT_PATH ${TOOLCHAIN_HOME}/usr/share/openocd/scripts)
