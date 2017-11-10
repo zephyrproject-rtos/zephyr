@@ -181,14 +181,10 @@ class ZephyrAppCommandsDirective(Directive):
                             '# Now run make on the generated build system:'])
         if 'build' in goals:
             content.append('$ make{}'.format(build_args))
-        if 'flash' in goals:
-            content.append('$ make flash')
-        if 'debug' in goals:
-            content.append('$ make debug')
-        if 'debugserver' in goals:
-            content.append('$ make debugserver')
-        if 'run' in goals:
-            content.append('$ make run')
+        for goal in goals:
+            if goal == 'build':
+                continue
+            content.append('$ make {}'.format(goal))
         return content
 
     def _generate_ninja(self, **kwargs):
@@ -214,14 +210,10 @@ class ZephyrAppCommandsDirective(Directive):
                             '# Now run ninja on the generated build system:'])
         if 'build' in goals:
             content.append('$ ninja{}'.format(build_args))
-        if 'flash' in goals:
-            content.append('$ ninja flash')
-        if 'debug' in goals:
-            content.append('$ ninja debug')
-        if 'debugserver' in goals:
-            content.append('$ ninja debugserver')
-        if 'run' in goals:
-            content.append('$ ninja run')
+        for goal in goals:
+            if goal == 'build':
+                continue
+            content.append('$ ninja {}'.format(goal))
         return content
 
 
