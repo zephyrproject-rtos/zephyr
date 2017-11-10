@@ -336,6 +336,13 @@ config BT_MESH_FRIEND_SEG_RX
 
 endif # BT_MESH_FRIEND
 
+config BT_MESH_SHELL
+	bool "Enable Bluetooth Mesh shell"
+	select CONSOLE_SHELL
+	help
+	  Activate shell module that provides Bluetooth Mesh commands to
+	  the console.
+
 config BT_MESH_DEBUG
 	bool "Enable debug logs"
 	depends on BT_DEBUG
