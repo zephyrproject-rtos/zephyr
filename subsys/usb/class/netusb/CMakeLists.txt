@@ -11,9 +11,8 @@ zephyr_library_include_directories(
   $ENV{ZEPHYR_BASE}/subsys/net/ip
   )
 
-zephyr_library_sources_ifdef(
+zephyr_library_sources(
   netusb.c
-  eth_emu.c
   )
 
 zephyr_library_sources_ifdef(
