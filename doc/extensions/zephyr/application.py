@@ -52,8 +52,8 @@ class ZephyrAppCommandsDirective(Directive):
       single page.
 
     - :goals: a whitespace-separated list of what to do with the app (in
-      'build', 'flash', 'debug', 'debugserver'). Commands to accomplish these
-      tasks will be generated in the right order.
+      'build', 'flash', 'debug', 'debugserver', 'run'). Commands to accomplish
+      these tasks will be generated in the right order.
 
     - :maybe-skip-config: if set, this indicates the reader may have already
       created a build directory and changed there, and will tweak the text to
@@ -187,6 +187,8 @@ class ZephyrAppCommandsDirective(Directive):
             content.append('$ make debug')
         if 'debugserver' in goals:
             content.append('$ make debugserver')
+        if 'run' in goals:
+            content.append('$ make run')
         return content
 
     def _generate_ninja(self, **kwargs):
@@ -218,6 +220,8 @@ class ZephyrAppCommandsDirective(Directive):
             content.append('$ ninja debug')
         if 'debugserver' in goals:
             content.append('$ ninja debugserver')
+        if 'run' in goals:
+            content.append('$ ninja run')
         return content
 
 
