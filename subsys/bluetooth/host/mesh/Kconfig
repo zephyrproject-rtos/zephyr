@@ -251,7 +251,7 @@ config BT_MESH_LPN_MIN_QUEUE_SIZE
 config BT_MESH_LPN_RECV_DELAY
 	int "Receive delay requested by the local node"
 	range 10 255
-	default 20
+	default 100
 	help
 	  The ReceiveDelay is the time between the Low Power node
 	  sending a request and listening for a response. This delay
