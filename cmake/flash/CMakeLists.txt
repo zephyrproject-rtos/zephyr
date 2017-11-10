@@ -8,6 +8,7 @@ list(APPEND ENV_VARS
        BOARD_NAME=${BOARD}
               GDB=${CMAKE_GDB}
           OPENOCD=${OPENOCD}
+	  OPENOCD_DEFAULT_PATH=${TOOLCHAIN_HOME}/usr/share/openocd/scripts
   )
 
 foreach(target flash debug debugserver)
