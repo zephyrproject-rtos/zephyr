@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <max30101.h>
+#include "max30101.h"
 
 static int max30101_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
