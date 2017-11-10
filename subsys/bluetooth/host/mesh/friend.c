@@ -73,6 +73,7 @@ static void discard_buffer(void)
 
 static struct net_buf *friend_buf_alloc(u16_t src)
 {
+	u8_t xmit = bt_mesh_net_transmit_get();
 	struct net_buf *buf;
 
 	BT_DBG("src 0x%04x", src);
@@ -80,7 +81,9 @@ static struct net_buf *friend_buf_alloc(u16_t src)
 	do {
 		buf = bt_mesh_adv_create_from_pool(&friend_buf_pool,
 						   BT_MESH_ADV_DATA,
-						   0, 0, K_NO_WAIT);
+						   TRANSMIT_COUNT(xmit),
+						   TRANSMIT_INT(xmit),
+						   K_NO_WAIT);
 		if (!buf) {
 			discard_buffer();
 		}
