@@ -151,10 +151,9 @@ The linker script should be named ``linker.ld`` and placed in the directory
 Configuring build
 =================
 
-.. code-block:: console
-
-    $ cd tests/kernel/test_build
-    $ make menuconfig
+.. zephyr-app-commands::
+   :zephyr-app: tests/kernel/test_build
+   :goals: menuconfig
 
 Below is an example of usage for typical configuration:
 
@@ -183,11 +182,10 @@ Compiling and running
 The Xtensa executable can be run in the simulator either with a standalone core,
 or with a core connected to simulated peripherals.
 
-Use make to build and run as follows:
+Build and run as follows:
 
-.. code-block:: console
-
-    $ make run
+.. zephyr-app-commands::
+   :goals: run
 
 References
 **********
