@@ -1,5 +1,3 @@
-set(QEMU_NET_STACK 1)
-
 macro(set_conf_file)
   if(PROFILER)
     set(CONF_FILE prj_${BOARD}_prof.conf)
