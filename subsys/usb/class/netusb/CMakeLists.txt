@@ -13,7 +13,6 @@ zephyr_library_include_directories(
 
 zephyr_library_sources_ifdef(
   netusb.c
-  eth_emu.c
   )
 
 zephyr_library_sources_ifdef(
