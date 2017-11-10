@@ -30,6 +30,16 @@ if(EMU_PLATFORM)
     endif()
   endif()
 
+  # If we are running a networking application in QEMU, then set proper
+  # QEMU variables. This also allows two QEMUs to be hooked together and
+  # pass data between them. The QEMU flags are not set for standalone
+  # tests defined by CONFIG_NET_TEST.
+  if(CONFIG_NETWORKING)
+    if(NOT CONFIG_NET_TEST)
+      set(QEMU_NET_STACK 1)
+    endif()
+  endif()
+
   if(QEMU_NET_STACK)
     list(APPEND qemu_targets
       client
