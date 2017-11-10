@@ -175,10 +175,10 @@ class ZephyrAppCommandsDirective(Directive):
         content = []
         content.extend([
             '$ cmake{}{}{} {}'.format(board_arg, conf_arg, gen_args,
-            source_dir)])
+                                      source_dir)])
         if not compact:
             content.extend(['',
-                '# Now run make on the generated build system:'])
+                            '# Now run make on the generated build system:'])
         if 'build' in goals:
             content.append('$ make{}'.format(build_args))
         if 'flash' in goals:
@@ -208,10 +208,10 @@ class ZephyrAppCommandsDirective(Directive):
         content = []
         content.extend([
             '$ cmake -GNinja{}{}{} {}'.format(board_arg, conf_arg, gen_args,
-            source_dir)])
+                                              source_dir)])
         if not compact:
-            content.extend([ '',
-                '# Now run ninja on the generated build system:'])
+            content.extend(['',
+                            '# Now run ninja on the generated build system:'])
         if 'build' in goals:
             content.append('$ ninja{}'.format(build_args))
         if 'flash' in goals:
