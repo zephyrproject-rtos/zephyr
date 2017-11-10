@@ -60,9 +60,12 @@ code with a 404 Not Found HTML body.
 To build this sample on your Linux host computer, open a terminal window,
 locate the source code of this sample application and type:
 
-.. code-block:: console
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/http_server
+   :board: qemu_x86
+   :goals: run
+   :compact:
 
-	make run
 
 Sample Output
 =============
@@ -175,9 +178,13 @@ The sample code also includes a HTTPS (HTTP over TLS) server example
 running side by side with the HTTP server, this server runs on QEMU.
 In order to compile and run the code execute:
 
-.. code-block:: console
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/http_server
+   :board: qemu_x86
+   :conf: prj_tls.conf
+   :goals: run
+   :compact:
 
-        make CONF_FILE=prj_tls.conf run
 
 Known Issues and Limitations
 ============================

@@ -39,11 +39,12 @@ samples/net/lwm2m_client directory:
 
 Build the lwm2m-client sample application like this:
 
-.. code-block:: console
-
-    $ cd $ZEPHYR_BASE/samples/net/lwm2m_client
-    $ make pristine && make CONF_FILE=<your desired conf file> \
-      BOARD=<board to use>
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/lwm2m_client
+   :board: <board to use>
+   :conf: <config file to use>
+   :goals: build
+   :compact:
 
 The easiest way to setup this sample application is to build and run it
 via QEMU using the default configuration :file:`prj.conf`.
@@ -61,10 +62,11 @@ can watch and manage connected LwM2M devices.
 
 Build the lwm2m-client sample application for QEMU like this:
 
-.. code-block:: console
-
-    $ cd $ZEPHYR_BASE/samples/net/lwm2m_client
-    $ make pristine && make run
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/lwm2m_client
+   :board: qemu_x86
+   :goals: run
+   :compact:
 
 The sample will start and automatically connect to the Leshan Demo Server with
 both an IPv4 client endpoint (qemu_x86-ipv4-########) and an IPV6 client

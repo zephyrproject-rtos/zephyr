@@ -96,9 +96,11 @@ following macros to specify those values:
 On your Linux host computer, open a terminal window, locate the source code
 of this sample application (i.e. :file:`samples/net/mqtt_publisher`) and type:
 
-.. code-block:: console
-
-	$ make BOARD=frdm_k64f
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/mqtt_publisher
+   :board: frdm_k64f
+   :goals: build flash
+   :compact:
 
 Open another terminal window and type:
 

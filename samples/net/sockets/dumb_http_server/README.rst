@@ -31,11 +31,11 @@ Building and Running
 
 Build the Zephyr version of the sockets/echo application like this:
 
-.. code-block:: console
-
-    $ cd $ZEPHYR_BASE/samples/net/sockets/dumb_http_server
-    $ make pristine
-    $ make BOARD=<board_to_use>
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/sockets/dump_http_server
+   :board: <board_to_use>
+   :goals: build
+   :compact:
 
 ``board_to_use`` defaults to ``qemu_x86``. In this case, you can run the
 application in QEMU using ``make run``. If you used another BOARD, you

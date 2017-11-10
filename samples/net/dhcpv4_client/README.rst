@@ -49,10 +49,11 @@ using this conf file:
 
 Run Zephyr samples/net/dhcpv4_client application in QEMU:
 
-.. code-block:: console
-
-    $ cd $ZEPHYR_BASE/samples/net/dhcpv4_client
-    $ make pristine && make run
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/dhcpv4_client
+   :board: qemu_x86
+   :goals: run
+   :compact:
 
 Once DHCPv4 client address negotiation completed with server, details
 are shown like this:
@@ -117,11 +118,11 @@ using this conf file:
 
 Build Zephyr samples/net/dhcpv4_client application:
 
-.. code-block:: console
-
-    $ cd $ZEPHYR_BASE/samples/net/dhcpv4_client
-    $ make pristine && make BOARD=frdm_k64f
-    $ cp outdir/frdm_k64f/zephyr.bin /media/rveerama/MBED/
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/dhcpv4_client
+   :board: frdm_k64f
+   :goals: build flash
+   :compact:
 
 Once DHCPv4 client address negotiation completed with server, details
 are shown like this:

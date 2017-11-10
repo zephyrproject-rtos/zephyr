@@ -27,11 +27,7 @@ be obtained by using a tool like tcpdump or wireshark.
 
 See the `net-tools`_ project for more details.
 
-It can be built and executed on QEMU as follows:
-
-.. code-block:: console
-
-    make run
+It can be built and executed on QEMU as described in :ref:`networking_with_qemu`.
 
 Sample output
 =============
