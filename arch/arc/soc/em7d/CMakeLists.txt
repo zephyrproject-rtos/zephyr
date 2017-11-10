@@ -1,6 +1,6 @@
 zephyr_library_include_directories(${PROJECT_SOURCE_DIR}/drivers)
 
-zephyr_cc_option(-mcpu=-mcpu=em4_dmips -mno-sdata)
+zephyr_cc_option(-mcpu=em4_dmips -mno-sdata)
 zephyr_cc_option(-mdiv-rem -mswap -mnorm)
 zephyr_cc_option(-mmpy-option=6 -mbarrel-shifter)
 zephyr_cc_option(--param l1-cache-size=16384)
@@ -18,4 +18,4 @@ zephyr_sources(
   soc_config.c
   )
 
-zephyr_source_ifdef(CONFIG_ARC_MPU_ENABLE arc_mpu_regions.c)
+zephyr_sources_ifdef(CONFIG_ARC_MPU_ENABLE arc_mpu_regions.c)
