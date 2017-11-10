@@ -7,14 +7,14 @@
 #
 
 menuconfig BT_MESH
-	bool "Smart Mesh support"
+	bool "Bluetooth Mesh support"
 	select TINYCRYPT
 	select TINYCRYPT_AES
 	select TINYCRYPT_AES_CMAC
 	help
-	  This option enables Smart Mesh support. The specific features
-	  that will be available is dependent on other features that have
-	  been enabled in the stack, such as GATT support.
+	  This option enables Bluetooth Mesh support. The specific
+	  features that are available may depend on other features
+	  that have been enabled in the stack, such as GATT support.
 
 if BT_MESH
 
