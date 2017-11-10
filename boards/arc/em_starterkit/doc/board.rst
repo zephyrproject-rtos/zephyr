@@ -197,14 +197,18 @@ You can try many of the sample applications or tests, but let us discuss
 the one called :ref:`hello_world`.
 It is found in :file:`$ZEPHYR_BASE/samples/hello_world`.
 
+Configuring
+-----------
+
 You may need to write a prj_arc.conf file if the sample doesn't have one.
-Next, you can use the make menuconfig rule to configure the target. By
-providing the argument "BOARD=em_starterkit", you can select the ARC
+Next, you can use the menuconfig rule to configure the target. By
+specifying ``em_starterkit`` as the board configuration, you can select the ARC
 EM Starter Kit board support for Zephyr.
 
-.. code-block:: console
-
-   $ make menuconfig BOARD=em_starterkit
+.. zephyr-app-commands::
+   :board: em_starterkit
+   :zephyr-app: samples/hello_world
+   :goals: menuconfig
 
 On this board you will also need to consider the "ARC SoC Selection" and set
 it either to EM9D or EM11D. To boot up the EM9D on the board, all dip
@@ -213,11 +217,18 @@ are made in the normal way. To boot up the EM11D on the board,
 all dip switches should be UP except for switch 2. Next press the button
 above the letter C in the "ARC" logo on the silkscreen.
 
-To build the application, execute make:
+Building
+--------
 
-.. code-block:: console
+You can build application in the usual way.  Refer to
+:ref:`build_an_application` for more details. Here is an example for
+:ref:`hello_world`.
 
-   $ make BOARD=em_starterkit
+.. zephyr-app-commands::
+   :board: em_starterkit
+   :zephyr-app: samples/hello_world
+   :maybe-skip-config:
+   :goals: build
 
 Connecting Serial Output
 =========================
@@ -247,29 +258,32 @@ Debugging
 Using the latest version of Zephyr SDK(>=0.9), you can debug and flash
 EM Starterkit directly.
 
-Build and debug the application with the following commands:
+One option is to build and debug the application using the usual
+Zephyr build system commands.
 
-.. code-block:: console
-
-   $ cd <my app>
-   $ make BOARD=em_starterkit debug
+.. zephyr-app-commands::
+   :board: em_starterkit
+   :app: <my app>
+   :goals: debug
 
 At this point you can do your normal debug session. Set breakpoints and then
 'c' to continue into the program.
 
-Launch the debug server on the EM Starter Kit:
+The other option is to launch a debug server, as follows.
 
-.. code-block:: console
+.. zephyr-app-commands::
+   :board: em_starterkit
+   :app: <my app>
+   :goals: debugserver
 
-   $ make BOARD=em_starterkit debugserver
-
-Connect to the debug server at the EM Starter Kit from a second console:
+Then connect to the debug server at the EM Starter Kit from a second
+console, from the build directory containing the output :file:`zephyr.elf`.
 
 .. code-block:: console
 
    $ cd <my app>
    $ $ZEPHYR_SDK_INSTALL_DIR/sysroots/x86_64-pokysdk-linux/usr/bin/arc-zephyr-elf/arc-zephyr-elf-gdb \
-      outdir/em_starterkit/zephyr.elf
+      zephyr.elf
    (gdb) target remote localhost:3333
    (gdb) load
    (gdb) b main
@@ -279,11 +293,11 @@ Flashing
 ========
 
 If you just want to download the application to the EM Starter Kit's CCM
-or DDR and run, you can also use this command to achieve this.
+or DDR and run, you can do so in the usual way.
 
-.. code-block:: console
-
-   $ make BOARD=em_starterkit flash
+.. zephyr-app-commands::
+   :board: em_starterkit
+   :goals: flash
 
 This command still uses openocd and gdb to load application elf file
 to EM Starter Kit, but it will load application and then run immediately.
