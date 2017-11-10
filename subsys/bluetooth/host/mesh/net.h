@@ -94,6 +94,7 @@ struct bt_mesh_friend {
 	      send_last:1,
 	      sec_update:1,
 	      pending_buf:1,
+	      valid:1,
 	      established:1;
 	s32_t poll_to;
 	u16_t lpn_counter;
