@@ -47,6 +47,11 @@ function(zephyr_sources)
     else()
       set(path ${CMAKE_CURRENT_SOURCE_DIR}/${arg})
     endif()
+
+    if(IS_DIRECTORY ${path})
+      message(FATAL_ERROR "zephyr_sources() was called on a directory")
+    endif()
+
     target_sources(zephyr PRIVATE ${path})
   endforeach()
 endfunction()
