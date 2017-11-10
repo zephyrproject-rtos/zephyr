@@ -39,6 +39,13 @@ class ZephyrAppCommandsDirective(Directive):
 
     - :board: if set, the application build will target the given board.
 
+    - :conf: if set, the application build will use the given configuration
+      file.
+
+    - :gen-args: if set, additional arguments to the CMake invocation
+
+    - :build-args: if set, additional arguments to the build invocation
+
     - :build-dir: if set, the application build directory will *APPEND* this
       (relative, Unix-separated) path to the standard build directory. This is
       mostly useful for distinguishing builds for one application within a
@@ -62,6 +69,9 @@ class ZephyrAppCommandsDirective(Directive):
         'zephyr-app': directives.unchanged,
         'generator': directives.unchanged,
         'board': directives.unchanged,
+        'conf': directives.unchanged,
+        'gen-args': directives.unchanged,
+        'build-args': directives.unchanged,
         'build-dir': directives.unchanged,
         'goals': directives.unchanged_required,
         'maybe-skip-config': directives.flag
@@ -79,6 +89,9 @@ class ZephyrAppCommandsDirective(Directive):
         zephyr_app = self.options.get('zephyr-app', None)
         generator = self.options.get('generator', 'make').lower()
         board = self.options.get('board', None)
+        conf = self.options.get('conf', None)
+        gen_args = self.options.get('gen-args', None)
+        build_args = self.options.get('build-args', None)
         build_dir_append = self.options.get('build-dir', '').strip('/')
         goals = self.options.get('goals').split()
         skip_config = 'maybe-skip-config' in self.options
@@ -98,6 +111,9 @@ class ZephyrAppCommandsDirective(Directive):
 
         run_config = {
             'board': board,
+            'conf': conf,
+            'gen_args': gen_args,
+            'build_args': build_args,
             'source_dir': source_dir,
             'goals': goals
             }
@@ -133,18 +149,24 @@ class ZephyrAppCommandsDirective(Directive):
 
     def _generate_make(self, **kwargs):
         board = kwargs['board']
+        conf = kwargs['conf']
+        gen_args = kwargs['gen_args']
+        build_args = kwargs['build_args']
         source_dir = kwargs['source_dir']
         goals = kwargs['goals']
 
         board_arg = ' -DBOARD={}'.format(board) if board else ''
+        conf_arg = ' -DCONF_FILE={}'.format(conf) if conf else ''
+        gen_args = ' {}'.format(gen_args) if gen_args else ''
+        build_args = ' {}'.format(build_args) if build_args else ''
 
         content = []
         content.extend([
-            '$ cmake{} {}'.format(board_arg, source_dir),
+            '$ cmake{}{}{} {}'.format(board_arg, conf_arg, gen_args, source_dir),
             '',
             '# Now run make on the generated build system:'])
         if 'build' in goals:
-            content.append('$ make')
+            content.append('$ make{}'.format(build_args))
         if 'flash' in goals:
             content.append('$ make flash')
         if 'debug' in goals:
@@ -155,18 +177,24 @@ class ZephyrAppCommandsDirective(Directive):
 
     def _generate_ninja(self, **kwargs):
         board = kwargs['board']
+        conf = kwargs['conf']
+        gen_args = kwargs['gen_args']
+        build_args = kwargs['build_args']
         source_dir = kwargs['source_dir']
         goals = kwargs['goals']
 
         board_arg = ' -DBOARD={}'.format(board) if board else ''
+        conf_arg = ' -DCONF_FILE={}'.format(conf) if conf else ''
+        gen_args = ' {}'.format(gen_args) if gen_args else ''
+        build_args = ' {}'.format(build_args) if build_args else ''
 
         content = []
         content.extend([
-            '$ cmake -GNinja{} {}'.format(board_arg, source_dir),
+            '$ cmake -GNinja{}{}{} {}'.format(board_arg, conf_arg, gen_args, source_dir),
             '',
             '# Now run ninja on the generated build system:'])
         if 'build' in goals:
-            content.append('$ ninja')
+            content.append('$ ninja{}'.format(build_args))
         if 'flash' in goals:
             content.append('$ ninja flash')
         if 'debug' in goals:
