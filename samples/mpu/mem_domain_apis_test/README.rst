@@ -17,13 +17,12 @@ Building and Running
 
 This project can be built and executed as follows:
 
-.. code-block:: console
+.. zephyr-app-commands::
+   :zephyr-app: samples/mpu/mem_domain_apis_test
+   :board: frdm_k64f
+   :goals: build flash
+   :compact:
 
-   $ cd samples/mpu/mem_domain_apis_test
-   $ make BOARD=frdm_k64f
-
-Connect the board to your host computer using the USB port.
-Flash the generated zephyr.bin on the board.
 Reset the board and you will see messages on the corresponding
 Serial Port.
 

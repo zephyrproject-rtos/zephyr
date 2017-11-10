@@ -20,13 +20,12 @@ Building and Running
 
 This project can be built and executed as follows:
 
-.. code-block:: console
+.. zephyr-app-commands::
+   :zephyr-app: samples/mpu/mpu_test
+   :board: v2m_beetle
+   :goals: build flash
+   :compact:
 
-   $ cd samples/mpu_test
-   $ make BOARD=v2m_beetle
-
-Connect the board to your host computer using the USB port.
-Flash the generated zephyr.bin on the board.
 Reset the board and you should be able to see on the corresponding
 Serial Port the following message:
 
@@ -42,9 +41,12 @@ Serial Port the following message:
 To build the single thread version, use the supplied configuration file for
 single thread: :file:`prj_single.conf`:
 
-.. code-block:: console
-
-   $ make BOARD=v2m_beetle CONF_FILE=prj_single.conf run
+.. zephyr-app-commands::
+   :zephyr-app: samples/mpu/mpu_test
+   :board: v2m_beetle
+   :conf: prj_single.conf
+   :goals: run
+   :compact:
 
 To build a version that allows writes to the flash device, edit
 ``prj.conf``, and follow the directions in the comments to enable the

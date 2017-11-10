@@ -20,17 +20,20 @@ Building and Running
 This project outputs to the console.
 To build the test with the MPU disabled:
 
-.. code-block:: console
-
-   $ cd samples/mpu_stack_guard_test
-   $ make
+.. zephyr-app-commands::
+   :zephyr-app: samples/mpu/mpu_stack_guard_test
+   :board: v2m_beetle
+   :goals: build flash
+   :compact:
 
 To build the test with the MPU enabled and the stack guard feature present:
 
-.. code-block:: console
-
-   $ cd samples/mpu_stack_guard_test
-   $ make CONF_FILE=prj_stack_guard.conf
+.. zephyr-app-commands::
+   :zephyr-app: samples/mpu/mpu_stack_guard_test
+   :board: v2m_beetle
+   :conf: prj_stack_guard.conf
+   :goals: build flash
+   :compact:
 
 Sample Output
 =============
