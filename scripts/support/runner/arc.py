@@ -26,7 +26,7 @@ class ArcBinaryRunner(ZephyrBinaryRunner):
     #
     # TODO: exit immediately when flashing is done, leaving Zephyr running.
 
-    def __init__(self, elf, zephyr_base, arch, board_name, python,
+    def __init__(self, elf, zephyr_base, arch, board_name,
                  gdb, openocd='openocd', extra_init=None, default_path=None,
                  tui=None, tcl_port=DEFAULT_ARC_TCL_PORT,
                  telnet_port=DEFAULT_ARC_TELNET_PORT,
@@ -36,7 +36,6 @@ class ArcBinaryRunner(ZephyrBinaryRunner):
         self.zephyr_base = zephyr_base
         self.arch = arch
         self.board_name = board_name
-        self.python = python
         self.gdb = gdb
         search_args = []
         if default_path is not None:
@@ -62,7 +61,6 @@ class ArcBinaryRunner(ZephyrBinaryRunner):
         - ZEPHYR_BASE: zephyr Git repository base directory
         - ARCH: board architecture
         - BOARD_NAME: zephyr name of board
-        - PYTHON: python executable
         - GDB: gdb executable
 
         Optional:
@@ -80,7 +78,6 @@ class ArcBinaryRunner(ZephyrBinaryRunner):
         zephyr_base = get_env_or_bail('ZEPHYR_BASE')
         arch = get_env_or_bail('ARCH')
         board_name = get_env_or_bail('BOARD_NAME')
-        python = get_env_or_bail('PYTHON')
         gdb = get_env_or_bail('GDB')
 
         openocd = os.environ.get('OPENOCD', 'openocd')
@@ -96,7 +93,7 @@ class ArcBinaryRunner(ZephyrBinaryRunner):
         gdb_port = int(os.environ.get('GDB_PORT',
                                       str(DEFAULT_ARC_GDB_PORT)))
 
-        return ArcBinaryRunner(elf, zephyr_base, arch, board_name, python,
+        return ArcBinaryRunner(elf, zephyr_base, arch, board_name,
                                gdb, openocd=openocd, extra_init=extra_init,
                                default_path=default_path, tui=tui,
                                tcl_port=tcl_port, telnet_port=telnet_port,
