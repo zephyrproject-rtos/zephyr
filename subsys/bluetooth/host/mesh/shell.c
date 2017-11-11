@@ -195,11 +195,60 @@ static int cmd_reset(int argc, char *argv[])
 	return 0;
 }
 
+static bool str2bool(const char *str)
+{
+	return (!strcmp(str, "on") || !strcmp(str, "enable"));
+}
+
+#if defined(CONFIG_BT_MESH_LOW_POWER)
+static int cmd_lpn(int argc, char *argv[])
+{
+	static bool enabled;
+	int err;
+
+	if (argc < 2) {
+		printk("%s\n", enabled ? "enabled" : "disabled");
+		return 0;
+	}
+
+	if (str2bool(argv[1])) {
+		if (enabled) {
+			printk("LPN already enabled\n");
+			return 0;
+		}
+
+		err = bt_mesh_lpn_set(true);
+		if (err) {
+			printk("Enabling LPN failed (err %d)\n", err);
+		} else {
+			enabled = true;
+		}
+	} else {
+		if (!enabled) {
+			printk("LPN already disabled\n");
+			return 0;
+		}
+
+		err = bt_mesh_lpn_set(false);
+		if (err) {
+			printk("Enabling LPN failed (err %d)\n", err);
+		} else {
+			enabled = false;
+		}
+	}
+
+	return 0;
+}
+#endif /* MESH_LOW_POWER */
+
 static const struct shell_cmd mesh_commands[] = {
 	{ "init", cmd_init, NULL },
 	{ "reset", cmd_reset, NULL },
 	{ "input-num", cmd_input_num, "<number>" },
 	{ "input-str", cmd_input_str, "<string>" },
+#if defined(CONFIG_BT_MESH_LOW_POWER)
+	{ "lpn", cmd_lpn, "<value: off, on>" },
+#endif
 	{ NULL, NULL, NULL}
 };
 
