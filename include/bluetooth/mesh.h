@@ -454,7 +454,7 @@ typedef enum {
 struct bt_mesh_prov {
 	const u8_t *uuid;
 
-	u8_t       *static_val;
+	const u8_t *static_val;
 	u8_t        static_val_len;
 
 	u8_t        output_size;
