@@ -11,15 +11,29 @@ CONFIG_DIR=${ZEPHYR_BASE}/.known-issues/doc
 
 LOG_FILE=$1
 
+red='\E[31m'
+green='\e[32m'
+
 if [ -z "${LOG_FILE}" ]; then
         echo "Error in $0: missing input parameter <logfile>"
         exit 1
 fi
 
-if [ -e "${LOG_FILE}" ]; then
-   if [ -s "${LOG_FILE}" ]; then
-      $KI_SCRIPT --config-dir ${CONFIG_DIR} ${LOG_FILE}
+if [ -s "${LOG_FILE}" ]; then
+   $KI_SCRIPT --config-dir ${CONFIG_DIR} ${LOG_FILE} > doc.warnings 2>&1
+   if [ -s doc.warnings ]; then
+	   echo
+	   echo -e "${red}New errors/warnings found, please fix them:"
+	   echo -e "=============================================="
+	   tput sgr0
+	   echo
+	   cat doc.warnings
+	   echo
+   else
+	   echo -e "${green}No new errors/warnings."
+	   tput sgr0
    fi
+
 else
    echo "Error in $0: logfile \"${LOG_FILE}\" not found."
    exit 1

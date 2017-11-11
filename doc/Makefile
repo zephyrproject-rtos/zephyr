@@ -80,7 +80,7 @@ prep: doxy content kconfig
 
 html: content kconfig
 	$(Q)$(SPHINXBUILD) -t $(DOC_TAG) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html 2>&1 | tee doc.log;
-	$(Q)./scripts/filter-doc-log.sh doc.log > doc.warnings 2>&1;
+	$(Q)./scripts/filter-doc-log.sh doc.log
 	@rm -rf samples
 	@rm -rf boards
 
