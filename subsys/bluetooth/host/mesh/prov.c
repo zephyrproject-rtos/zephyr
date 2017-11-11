@@ -703,7 +703,8 @@ static void prov_start(const u8_t *data)
 
 	if (prov_auth(data[2], data[3], data[4]) < 0) {
 		BT_ERR("Invalid authentication method: 0x%02x; "
-			"action: 0x%02x; size: 0x%02x", data[2], data[3], data[4]);
+			"action: 0x%02x; size: 0x%02x", data[2], data[3],
+			data[4]);
 		prov_send_fail_msg(PROV_ERR_NVAL_FMT);
 	}
 }
