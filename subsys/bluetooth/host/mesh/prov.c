@@ -759,17 +759,29 @@ static void send_confirm(void)
 	link.expect = PROV_RANDOM;
 }
 
+static void send_input_complete(void)
+{
+	struct net_buf_simple *buf = PROV_BUF(1);
+
+	prov_buf_init(buf, PROV_INPUT_COMPLETE);
+	prov_send(buf);
+}
+
 int bt_mesh_input_number(u32_t num)
 {
+	BT_DBG("%u", num);
+
 	if (!atomic_test_and_clear_bit(link.flags, WAIT_NUMBER)) {
 		return -EINVAL;
 	}
 
+	sys_put_be32(num, &link.auth[12]);
+
+	send_input_complete();
+
 	if (!atomic_test_bit(link.flags, HAVE_DHKEY)) {
 		return 0;
 	}
-
-	sys_put_be32(num, &link.auth[12]);
 
 	if (atomic_test_and_clear_bit(link.flags, SEND_CONFIRM)) {
 		send_confirm();
@@ -780,15 +792,19 @@ int bt_mesh_input_number(u32_t num)
 
 int bt_mesh_input_string(const char *str)
 {
+	BT_DBG("%s", str);
+
 	if (!atomic_test_and_clear_bit(link.flags, WAIT_STRING)) {
 		return -EINVAL;
 	}
 
+	strncpy(link.auth, str, prov->input_size);
+
+	send_input_complete();
+
 	if (!atomic_test_bit(link.flags, HAVE_DHKEY)) {
 		return 0;
 	}
-
-	strncpy(link.auth, str, prov->input_size);
 
 	if (atomic_test_and_clear_bit(link.flags, SEND_CONFIRM)) {
 		send_confirm();
