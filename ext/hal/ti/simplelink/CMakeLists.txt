@@ -2,6 +2,7 @@ add_subdirectory(source/ti/devices)
 
 if(CONFIG_SIMPLELINK_HOST_DRIVER)
   zephyr_include_directories(
+    .
     source
     kernel/zephyr/dpl
     )
@@ -21,6 +22,7 @@ if(CONFIG_HAS_CC3220SDK)
       source/ti/drivers/dma/UDMACC32XX.c
       source/ti/drivers/power/PowerCC32XX.c
       source/ti/drivers/utils/List.c
+      source/ti/drivers/net/wifi/source/driver.c
       source/ti/drivers/net/wifi/source/device.c
       source/ti/drivers/net/wifi/source/flowcont.c
       source/ti/drivers/net/wifi/source/fs.c
@@ -34,6 +36,7 @@ if(CONFIG_HAS_CC3220SDK)
       source/ti/drivers/net/wifi/porting/cc_pal.c
       source/ti/drivers/net/wifi/eventreg.c
       source/ti/drivers/net/wifi/source/socket.c
+      source/ti/drivers/net/wifi/source/sl_socket.c
 
       source/ti/devices/cc32xx/driverlib/timer.c
       source/ti/devices/cc32xx/driverlib/udma.c
@@ -45,19 +48,15 @@ if(CONFIG_HAS_CC3220SDK)
       kernel/zephyr/dpl/HwiP_zephyr.c
       )
 
-    # Create library for these two source files because they need to be
-    # built slightly differently. TODO: Use set_source_files_properties
-    # instead?
-    zephyr_library_named(simplelink_wifi_driver)
-    zephyr_library_sources(source/ti/drivers/net/wifi/source/driver.c)
-    zephyr_library_compile_definitions(__LINUX_ERRNO_EXTENSIONS__)
-    zephyr_library_compile_definitions(${COMPILER})
-    zephyr_library_compile_options(-Wno-strict-aliasing) # driver.c warns on strict-aliasing
+    set_source_files_properties(source/ti/drivers/net/wifi/source/driver.c
+      PROPERTIES COMPILE_DEFINITIONS "__LINUX_ERRNO_EXTENSIONS__;${COMPILER}" )
+    set_source_files_properties(source/ti/drivers/net/wifi/source/driver.c
+      PROPERTIES COMPILE_FLAGS -Wno-strict-aliasing) # driver.c warns on strict-aliasing
 
-    zephyr_library_named(simplelink_wifi_sl_socket)
-    zephyr_library_sources(source/ti/drivers/net/wifi/source/sl_socket.c)
-    zephyr_library_compile_definitions(${COMPILER})
-    zephyr_library_compile_options(-Wno-missing-braces) # sl_socket warns on missing braces
+    set_source_files_properties(source/ti/drivers/net/wifi/source/sl_socket.c
+      PROPERTIES COMPILE_DEFINITIONS "${COMPILER}")
+    set_source_files_properties(source/ti/drivers/net/wifi/source/sl_socket.c
+      PROPERTIES COMPILE_FLAGS -Wno-missing-braces) # sl_socket warns on missing braces 
   endif()
 
 elseif(CONFIG_HAS_MSP432P4XXSDK)
