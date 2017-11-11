@@ -128,11 +128,8 @@ static struct bt_mesh_model root_models[] = {
 		      &gen_level_pub, NULL),
 };
 
-static struct bt_mesh_model vnd_models[] = {
-};
-
 static struct bt_mesh_elem elements[] = {
-	BT_MESH_ELEM(0, root_models, vnd_models),
+	BT_MESH_ELEM(0, root_models, BT_MESH_MODEL_NONE),
 };
 
 static const struct bt_mesh_comp comp = {

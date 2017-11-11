@@ -61,8 +61,11 @@ int bt_mesh_proxy_identity_enable(void);
 
 /** Helper to define a mesh element within an array.
  *
+ *  In case the element has no SIG or Vendor models the helper
+ *  macro BT_MESH_MODEL_NONE can be given instead.
+ *
  *  @param _loc       Location Descriptor.
- *  @param _mods      Array of models
+ *  @param _mods      Array of models.
  *  @param _vnd_mods  Array of vendor models.
  */
 #define BT_MESH_ELEM(_loc, _mods, _vnd_mods)        \
@@ -200,7 +203,7 @@ struct bt_mesh_model_op {
 			      { BT_MESH_MODEL_OP_END })
 
 /** Helper to define an empty model array */
-#define BT_MESH_MODEL_EMPTY ((struct bt_mesh_model []){})
+#define BT_MESH_MODEL_NONE ((struct bt_mesh_model []){})
 
 #define BT_MESH_MODEL(_id, _op, _pub, _user_data)                            \
 {                                                                            \
