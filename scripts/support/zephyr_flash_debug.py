@@ -43,7 +43,7 @@ if __name__ == '__main__':
     commands = {'flash', 'debug', 'debugserver'}
     debug = True
     try:
-        debug = get_env_bool_or('KBUILD_VERBOSE', False)
+        debug = get_env_bool_or('VERBOSE', False)
         if len(sys.argv) != 3 or sys.argv[1] not in commands:
             raise ValueError('usage: {} <{}> path-to-script'.format(
                 sys.argv[0], '|'.join(commands)))
@@ -53,6 +53,6 @@ if __name__ == '__main__':
             raise
         else:
             print('Error: {}'.format(e), file=sys.stderr)
-            print('Re-run with KBUILD_VERBOSE=1 for a stack trace.',
+            print('Re-run with VERBOSE=1 for a stack trace.',
                   file=sys.stderr)
             sys.exit(1)
