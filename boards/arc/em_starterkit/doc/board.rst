@@ -176,18 +176,12 @@ Set up Zephyr Software
 
 Since there are different firmware versions of EM Starter Kit, you need to
 choose the proper firmware version supported in Zephyr.
-If you select one core configuration in EM Starter Kit, you need to change
-the default EM Starter Kit board default configuration file
-:file:`/boards/arc/em_starterkit/em_starterkit_defconfig`.
 
-For example, if you choose EM Starter Kit 2.2 EM11D, you need to change
-the ``em_starterkit_defconfig`` file to say:
+Three different configurations exist for this board:
 
-.. code-block:: shell
-
-   CONFIG_SOC_EM11D=y
-   CONFIG_BOARD_EM_STARTERKIT=y
-   CONFIG_BOARD_EM_STARTERKIT_R22=y
+* EM7D: em_starterkit_em7d_defconfig
+* EM9D: em_starterkit_defconfig
+* EM11D: em_starterkit_em11d_defconfig
 
 
 Building Sample Applications
