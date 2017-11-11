@@ -57,8 +57,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         Required:
 
         - ZEPHYR_BASE: zephyr Git repository base directory
-        - ARCH: board architecture
-        - BOARD_NAME: zephyr name of board
+        - BOARD_DIR: directory of board definition
 
         Optional:
 
@@ -92,10 +91,8 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         - GDB_PORT: openocd gdb port, defaults to 3333
         '''
         zephyr_base = get_env_or_bail('ZEPHYR_BASE')
-        arch = get_env_or_bail('ARCH')
-        board_name = get_env_or_bail('BOARD_NAME')
-        openocd_config = path.join(zephyr_base, 'boards', arch,
-                                   board_name, 'support', 'openocd.cfg')
+        board_dir = get_env_or_bail('BOARD_DIR')
+        openocd_config = path.join(board_dir, 'support', 'openocd.cfg')
 
         openocd = os.environ.get('OPENOCD', 'openocd')
         default_path = os.environ.get('OPENOCD_DEFAULT_PATH', None)

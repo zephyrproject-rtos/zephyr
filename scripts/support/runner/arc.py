@@ -16,7 +16,7 @@ DEFAULT_ARC_GDB_PORT = 3333
 
 
 class ArcBinaryRunner(ZephyrBinaryRunner):
-    '''Runner front-end for the ARC architecture, using openocd.'''
+    '''Runner front-end for the EM Starterkit board, using openocd.'''
 
     # This unusual 'flash' implementation matches the original shell script.
     #
@@ -26,7 +26,7 @@ class ArcBinaryRunner(ZephyrBinaryRunner):
     #
     # TODO: exit immediately when flashing is done, leaving Zephyr running.
 
-    def __init__(self, elf, zephyr_base, arch, board_name,
+    def __init__(self, elf, zephyr_base, board_dir,
                  gdb, openocd='openocd', extra_init=None, default_path=None,
                  tui=None, tcl_port=DEFAULT_ARC_TCL_PORT,
                  telnet_port=DEFAULT_ARC_TELNET_PORT,
@@ -34,8 +34,7 @@ class ArcBinaryRunner(ZephyrBinaryRunner):
         super(ArcBinaryRunner, self).__init__(debug=debug)
         self.elf = elf
         self.zephyr_base = zephyr_base
-        self.arch = arch
-        self.board_name = board_name
+        self.board_dir = board_dir
         self.gdb = gdb
         search_args = []
         if default_path is not None:
@@ -59,8 +58,7 @@ class ArcBinaryRunner(ZephyrBinaryRunner):
         - O: build output directory
         - KERNEL_ELF_NAME: zephyr kernel binary in ELF format
         - ZEPHYR_BASE: zephyr Git repository base directory
-        - ARCH: board architecture
-        - BOARD_NAME: zephyr name of board
+        - BOARD_DIR: board directory
         - GDB: gdb executable
 
         Optional:
@@ -76,8 +74,7 @@ class ArcBinaryRunner(ZephyrBinaryRunner):
         elf = path.join(get_env_or_bail('O'),
                         get_env_or_bail('KERNEL_ELF_NAME'))
         zephyr_base = get_env_or_bail('ZEPHYR_BASE')
-        arch = get_env_or_bail('ARCH')
-        board_name = get_env_or_bail('BOARD_NAME')
+        board_dir = get_env_or_bail('BOARD_DIR')
         gdb = get_env_or_bail('GDB')
 
         openocd = os.environ.get('OPENOCD', 'openocd')
@@ -93,7 +90,7 @@ class ArcBinaryRunner(ZephyrBinaryRunner):
         gdb_port = int(os.environ.get('GDB_PORT',
                                       str(DEFAULT_ARC_GDB_PORT)))
 
-        return ArcBinaryRunner(elf, zephyr_base, arch, board_name,
+        return ArcBinaryRunner(elf, zephyr_base, board_dir,
                                gdb, openocd=openocd, extra_init=extra_init,
                                default_path=default_path, tui=tui,
                                tcl_port=tcl_port, telnet_port=telnet_port,
@@ -103,9 +100,8 @@ class ArcBinaryRunner(ZephyrBinaryRunner):
         if command not in {'flash', 'debug', 'debugserver'}:
             raise ValueError('{} is not supported'.format(command))
 
-        kwargs['openocd-cfg'] = path.join(self.zephyr_base, 'boards',
-                                          self.arch, self.board_name,
-                                          'support', 'openocd.cfg')
+        kwargs['openocd-cfg'] = path.join(self.board_dir, 'support',
+                                          'openocd.cfg')
 
         if command in {'flash', 'debug'}:
             self.flash_debug(command, **kwargs)
