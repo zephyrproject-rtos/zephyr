@@ -77,7 +77,7 @@ if(CONFIG_SOC_SERIES_STM32F4X)
   zephyr_sources_ifdef(CONFIG_PWM stm32f4xx/drivers/src/stm32f4xx_hal_tim.c)
   zephyr_sources_ifdef(CONFIG_I2C stm32f4xx/drivers/src/stm32f4xx_ll_i2c.c)
   zephyr_sources_ifdef(CONFIG_SPI_STM32 stm32f4xx/drivers/src/stm32f4xx_ll_spi.c)
-  zephyr_sources_ifdef(CONFIG_RANDOM_STM32_RNG stm32f4xx/drivers/src/stm32f4xx_ll_rng.c)
+  zephyr_sources_ifdef(CONFIG_ENTROPY_STM32_RNG stm32f4xx/drivers/src/stm32f4xx_ll_rng.c)
   zephyr_sources_ifdef(CONFIG_ETH_STM32_HAL stm32f4xx/drivers/src/stm32f4xx_hal_eth.c)
   zephyr_sources_ifdef(CONFIG_USB_DC_STM32
     stm32f4xx/drivers/src/stm32f4xx_ll_usb.c
