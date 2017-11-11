@@ -600,7 +600,9 @@ static int prov_auth(u8_t method, u8_t action, u8_t size)
 			return -EINVAL;
 		}
 
-		memcpy(link.auth, prov->static_val, prov->static_val_len);
+		memcpy(link.auth + 16 - prov->static_val_len,
+		       prov->static_val, prov->static_val_len);
+		memset(link.auth, 0, sizeof(link.auth) - prov->static_val_len);
 		return 0;
 
 	case AUTH_METHOD_OUTPUT:
@@ -635,6 +637,7 @@ static int prov_auth(u8_t method, u8_t action, u8_t size)
 			str[size] = '\0';
 
 			memcpy(link.auth, str, size);
+			memset(link.auth + size, 0, sizeof(link.auth) - size);
 
 			return prov->output_string((char *)str);
 		} else {
@@ -646,6 +649,7 @@ static int prov_auth(u8_t method, u8_t action, u8_t size)
 			num %= div[size - 1];
 
 			sys_put_be32(num, &link.auth[12]);
+			memset(link.auth, 0, 12);
 
 			return prov->output_number(output, num);
 		}
