@@ -382,6 +382,29 @@ static int cmd_netidx(int argc, char *argv[])
 	return 0;
 }
 
+static int cmd_beacon(int argc, char *argv[])
+{
+	u8_t status;
+	int err;
+
+	if (argc < 2) {
+		err = bt_mesh_cfg_beacon_get(net_idx, dst, &status);
+	} else {
+		u8_t val = str2bool(argv[1]);
+
+		err = bt_mesh_cfg_beacon_set(net_idx, dst, val, &status);
+	}
+
+	if (err) {
+		printk("Unable to send Beacon Get/Set message (err %d)\n", err);
+		return 0;
+	}
+
+	printk("Beacon state is 0x%02x\n", status);
+
+	return 0;
+}
+
 static const struct shell_cmd mesh_commands[] = {
 	{ "init", cmd_init, NULL },
 	{ "reset", cmd_reset, NULL },
@@ -396,6 +419,7 @@ static const struct shell_cmd mesh_commands[] = {
 	{ "dst", cmd_dst, "[destination address]" },
 	{ "netidx", cmd_netidx, "[NetIdx]" },
 	{ "get-comp", cmd_get_comp, "[page]" },
+	{ "beacon", cmd_beacon, "[val: off, on]" },
 	{ NULL, NULL, NULL}
 };
 
