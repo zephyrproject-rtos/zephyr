@@ -41,11 +41,11 @@ Building and Running
 This sample can be built for multiple boards, in this example we will build it
 for the nucleo_f103rb board:
 
-.. code-block:: console
-
-   $ cd samples/basic/button
-   $ make BOARD=nucleo_f103rb
-
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/button
+   :board: nucleo_f103rb
+   :goals: build
+   :compact:
 
 After startup, the program looks up a predefined GPIO device, and configures the
 pin in input mode, enabling interrupt generation on falling edge. During each

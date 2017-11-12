@@ -22,7 +22,8 @@ Each thread is then defined at compile time using K_THREAD_DEFINE.
 Building
 ********
 
-.. code-block:: console
-
-    $ cd samples/basic/threads
-    $ make
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/threads
+   :board: 96b_carbon
+   :goals: build flash
+   :compact:
