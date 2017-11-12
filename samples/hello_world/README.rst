@@ -17,18 +17,21 @@ Building and Running
 This project outputs 'Hello World' to the console.  It can be built and executed
 on QEMU as follows:
 
-.. code-block:: console
-
-   $ cd samples/hello_world
-   $ make run
-
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: qemu_x86
+   :goals: run
+   :compact:
 
 To build the single thread version, use the supplied configuration file for
 single thread: :file:`prj_single.conf`:
 
-.. code-block:: console
-
-   $ make CONF_FILE=prj_single.conf run
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: qemu_x86
+   :conf: prj_single.conf
+   :goals: run
+   :compact:
 
 Sample Output
 =============
