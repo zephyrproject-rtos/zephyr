@@ -468,6 +468,8 @@ struct bt_mesh_prov {
 
 	int         (*input)(bt_mesh_input_action act, u8_t size);
 
+	void        (*link_open)(void);
+	void        (*link_close)(void);
 	void        (*complete)(void);
 };
 
