@@ -293,6 +293,8 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, u8_t aid,
 	tx->seq_auth = SEQ_AUTH(BT_MESH_NET_IVI_TX, bt_mesh.seq);
 	tx->sub = net_tx->sub;
 	tx->new_key = net_tx->sub->kr_flag;
+	tx->cb = cb;
+	tx->cb_data = cb_data;
 
 	seq_zero = tx->seq_auth & 0x1fff;
 
