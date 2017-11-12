@@ -45,11 +45,11 @@ This sample should work on any board that has I2C enabled and has an Arduino
 shield interface. For example, it can be run on the Quark D2000 DevBoard as
 described below:
 
-.. code-block:: console
-
-   $ make BOARD=quark_d2000_crb
-   $ make flash
-
+.. zephyr-app-commands::
+   :zephyr-app: samples/grove/lcd
+   :board: quark_d2000_crb
+   :goals: flash
+   :compact:
 
 .. _Grove Base Shield: http://wiki.seeedstudio.com/wiki/Grove_-_Base_Shield
 .. _Grove LCD module: http://wiki.seeed.cc/Grove-LCD_RGB_Backlight/
