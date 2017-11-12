@@ -196,7 +196,7 @@ Once downloaded you can install it and configure it like so:
 * Host Interface: USB
 
 Once configured, you can then use the File->Open menu to open the ``zephyr.elf``
-file that you can find in your ``outdir/<board>/`` folder.
+file that you can find in your build folder.
 
 References
 **********

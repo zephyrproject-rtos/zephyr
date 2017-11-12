@@ -58,11 +58,13 @@ through a so-called user channel for QEMU to use:
 #. Choose one of the Bluetooth sample applications located in
    :literal:`samples/bluetooth`.
 
-#. To run Bluetooth application in QEMU, type:
+#. To run a Bluetooth application in QEMU, type:
 
-   .. code-block:: console
-
-      $ make run
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/<sample>
+   :board: qemu_x86
+   :goals: run
+   :compact:
 
 Running QEMU now results in a connection with the second serial line to
 the :literal:`bt-server-bredr` UNIX socket, letting the application
