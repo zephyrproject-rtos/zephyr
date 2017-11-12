@@ -18,18 +18,21 @@ Building and Running
 This project outputs to the console.  It can be built and executed
 on QEMU as follows:
 
-.. code-block:: console
-
-   $ cd samples/synchronization
-   $ make run
+.. zephyr-app-commands::
+   :zephyr-app: samples/synchronization
+   :board: qemu_x86
+   :goals: run
+   :compact:
 
 On the supported ARM MCUs the project can be built with the MPU and the Thread
 Stack Guard feature enabled:
 
-.. code-block:: console
-
-   $ cd samples/synchronization
-   $ make BOARD=v2m_beetle CONF_FILE=prj_stack_guard.conf
+.. zephyr-app-commands::
+   :zephyr-app: samples/synchronization
+   :board: v2m_beetle
+   :conf: prj_stack_guard.conf
+   :goals: build flash
+   :compact:
 
 Sample Output
 =============
