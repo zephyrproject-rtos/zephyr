@@ -57,10 +57,47 @@ static void comp_data_status(struct bt_mesh_model *model,
 	k_sem_give(&cli->op_sync);
 }
 
+static void beacon_status(struct bt_mesh_model *model,
+			  struct bt_mesh_msg_ctx *ctx,
+			  struct net_buf_simple *buf)
+{
+	u8_t *status;
+
+	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
+	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
+	       bt_hex(buf->data, buf->len));
+
+	if (cli->op_pending != OP_BEACON_STATUS) {
+		BT_WARN("Unexpected Beacon Status");
+		return;
+	}
+
+	status = cli->op_param;
+	*status = net_buf_simple_pull_u8(buf);
+
+	k_sem_give(&cli->op_sync);
+}
+
 const struct bt_mesh_model_op bt_mesh_cfg_cli_op[] = {
 	{ OP_DEV_COMP_DATA_STATUS,   15,  comp_data_status },
+	{ OP_BEACON_STATUS,          1,   beacon_status },
 	BT_MESH_MODEL_OP_END,
 };
+
+static int check_cli(void)
+{
+	if (!cli) {
+		BT_ERR("No available Configuration Client context!");
+		return -EINVAL;
+	}
+
+	if (cli->op_pending) {
+		BT_WARN("Another synchronous operation pending");
+		return -EBUSY;
+	}
+
+	return 0;
+}
 
 int bt_mesh_cfg_comp_data_get(u16_t net_idx, u16_t addr, u8_t page,
 			      u8_t *status, struct net_buf_simple *comp)
@@ -78,14 +115,9 @@ int bt_mesh_cfg_comp_data_get(u16_t net_idx, u16_t addr, u8_t page,
 	};
 	int err;
 
-	if (!cli) {
-		BT_ERR("No available Configuration Client context!\n");
-		return -EINVAL;
-	}
-
-	if (cli->op_pending) {
-		BT_WARN("Another synchronous operation pending");
-		return -EBUSY;
+	err = check_cli();
+	if (err) {
+		return err;
 	}
 
 	bt_mesh_model_msg_init(msg, OP_DEV_COMP_DATA_GET);
@@ -107,6 +139,78 @@ int bt_mesh_cfg_comp_data_get(u16_t net_idx, u16_t addr, u8_t page,
 
 	return err;
 }
+
+int bt_mesh_cfg_beacon_get(u16_t net_idx, u16_t addr, u8_t *status)
+{
+	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 0 + 4);
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = net_idx,
+		.app_idx = BT_MESH_KEY_DEV,
+		.addr = addr,
+		.send_ttl = BT_MESH_TTL_DEFAULT,
+	};
+	int err;
+
+	err = check_cli();
+	if (err) {
+		return err;
+	}
+
+	bt_mesh_model_msg_init(msg, OP_BEACON_GET);
+
+	err = bt_mesh_model_send(cli->model, &ctx, msg, NULL, NULL);
+	if (err) {
+		BT_ERR("model_send() failed (err %d)", err);
+		return err;
+	}
+
+	cli->op_param = status;
+	cli->op_pending = OP_BEACON_STATUS;
+
+	err = k_sem_take(&cli->op_sync, MSG_TIMEOUT);
+
+	cli->op_pending = 0;
+	cli->op_param = NULL;
+
+	return err;
+}
+
+int bt_mesh_cfg_beacon_set(u16_t net_idx, u16_t addr, u8_t val, u8_t *status)
+{
+	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 1 + 4);
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = net_idx,
+		.app_idx = BT_MESH_KEY_DEV,
+		.addr = addr,
+		.send_ttl = BT_MESH_TTL_DEFAULT,
+	};
+	int err;
+
+	err = check_cli();
+	if (err) {
+		return err;
+	}
+
+	bt_mesh_model_msg_init(msg, OP_BEACON_SET);
+	net_buf_simple_add_u8(msg, val);
+
+	err = bt_mesh_model_send(cli->model, &ctx, msg, NULL, NULL);
+	if (err) {
+		BT_ERR("model_send() failed (err %d)", err);
+		return err;
+	}
+
+	cli->op_param = status;
+	cli->op_pending = OP_BEACON_STATUS;
+
+	err = k_sem_take(&cli->op_sync, MSG_TIMEOUT);
+
+	cli->op_pending = 0;
+	cli->op_param = NULL;
+
+	return err;
+}
+
 
 int bt_mesh_cfg_cli_init(struct bt_mesh_model *model, bool primary)
 {

@@ -35,6 +35,10 @@ extern const struct bt_mesh_model_op bt_mesh_cfg_cli_op[];
 int bt_mesh_cfg_comp_data_get(u16_t net_idx, u16_t addr, u8_t page,
 			      u8_t *status, struct net_buf_simple *comp);
 
+int bt_mesh_cfg_beacon_get(u16_t net_idx, u16_t addr, u8_t *status);
+
+int bt_mesh_cfg_beacon_set(u16_t net_idx, u16_t addr, u8_t val, u8_t *status);
+
 /**
  * @}
  */
