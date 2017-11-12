@@ -2891,6 +2891,8 @@ static int start_le_scan(u8_t scan_type, u16_t interval, u16_t window)
 	struct net_buf *buf;
 	int err;
 
+	memset(&set_param, 0, sizeof(set_param));
+
 	set_param.scan_type = scan_type;
 
 	/* for the rest parameters apply default values according to
@@ -4645,6 +4647,8 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 			return err;
 		}
 	}
+
+	memset(&set_param, 0, sizeof(set_param));
 
 	set_param.min_interval = sys_cpu_to_le16(param->interval_min);
 	set_param.max_interval = sys_cpu_to_le16(param->interval_max);
