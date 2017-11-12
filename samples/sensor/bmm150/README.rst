@@ -23,11 +23,17 @@ and stub code on the x86 core (using the ``arduino_101`` board target), as shown
 
 .. code-block:: console
 
-        $ cd $ZEPHYR_BASE/samples/sensor/bmm150
-        $ make BOARD=arduino_101_sss flash
+.. zephyr-app-commands::
+   :zephyr-app: samples/sensors/bmm150
+   :board: arduino_101_sss
+   :goals: flash
+   :compact:
 
-        $ cd $ZEPHYR_BASE/tests/booting/stub
-        $ make BOARD=arduino_101 flash
+.. zephyr-app-commands::
+   :zephyr-app: tests/booting/stub
+   :board: arduino_101
+   :goals: flash
+   :compact:
 
 Sample Output
 =============

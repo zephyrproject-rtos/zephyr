@@ -17,10 +17,11 @@ enable the green LED and measure the reflected light with a photodiode. The raw
 ADC data prints to the console. Further processing (not included in this
 sample) is required to extract a heart rate signal from the light measurement.
 
-.. code-block:: console
-
-   $ cd samples/sensors/max30101
-   $ make BOARD=hexiwear_k64
+.. zephyr-app-commands::
+   :zephyr-app: samples/sensors/max30101
+   :board: hexiwear_k64
+   :goals: build
+   :compact:
 
 Sample Output
 =============

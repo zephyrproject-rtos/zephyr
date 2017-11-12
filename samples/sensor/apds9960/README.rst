@@ -20,13 +20,17 @@ There are two processor cores (x86 and ARC) on the Arduino 101.  You'll need to 
 both this sample's code on the ARC core (using the ``arduino101_sss`` board target),
 and stub code on the x86 core (using the ``arduino_101`` board target), as shown below:
 
-.. code-block:: console
+.. zephyr-app-commands::
+   :zephyr-app: samples/sensors/apds9960
+   :board: arduino_101_sss
+   :goals: flash
+   :compact:
 
-        $ cd $ZEPHYR_BASE/samples/sensors/apds9960
-        $ make BOARD=arduino_101_sss flash
-
-        $ cd $ZEPHYR_BASE/tests/booting/stub
-        $ make BOARD=arduino_101 flash
+.. zephyr-app-commands::
+   :zephyr-app: tests/booting/stub
+   :board: arduino_101
+   :goals: flash
+   :compact:
 
 Sample Output
 =============
