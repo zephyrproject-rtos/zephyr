@@ -58,9 +58,9 @@ static const struct bt_mesh_comp comp = {
 	.elem_count = ARRAY_SIZE(elements),
 };
 
-static void prov_complete(void)
+static void prov_complete(u16_t addr)
 {
-	printk("Local node provisioned\n");
+	printk("Local node provisioned, primary address 0x%04x\n", addr);
 }
 
 static int output_number(bt_mesh_output_action action, uint32_t number)

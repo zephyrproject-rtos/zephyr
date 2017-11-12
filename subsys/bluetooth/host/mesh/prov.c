@@ -1051,7 +1051,7 @@ static void prov_data(const u8_t *data)
 	bt_mesh_provision(pdu, net_idx, flags, iv_index, 0, addr, dev_key);
 
 	if (prov->complete) {
-		prov->complete();
+		prov->complete(addr);
 	}
 }
 

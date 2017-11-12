@@ -156,7 +156,7 @@ static int output_number(bt_mesh_output_action action, uint32_t number)
 }
 #endif
 
-static void prov_complete(void)
+static void prov_complete(u16_t addr)
 {
 	board_prov_complete();
 }
