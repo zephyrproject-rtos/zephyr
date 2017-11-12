@@ -62,6 +62,13 @@ int bt_mesh_cfg_app_key_add(u16_t net_idx, u16_t addr, u16_t key_net_idx,
 			    u16_t key_app_idx, const u8_t app_key[16],
 			    u8_t *status);
 
+int bt_mesh_cfg_mod_app_bind(u16_t net_idx, u16_t addr, u16_t elem_addr,
+			     u16_t mod_app_idx, u16_t mod_id, u8_t *status);
+
+int bt_mesh_cfg_mod_app_bind_vnd(u16_t net_idx, u16_t addr, u16_t elem_addr,
+				 u16_t mod_app_idx, u16_t mod_id, u16_t cid,
+				 u8_t *status);
+
 /**
  * @}
  */
