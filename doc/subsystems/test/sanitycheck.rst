@@ -181,9 +181,9 @@ required for best test coverage for this specific board:
 
 identifier:
   A string that matches how the board is defined in the build system. This same
-  string is used when building, for example when calling 'make'::
+  string is used when building, for example when calling 'cmake'::
 
-  # make BOARD=quark_d2000_crb
+  # cmake -DBOARD=quark_d2000_crb ..
 
 name:
   The actual name of the board as it appears in marketing material.

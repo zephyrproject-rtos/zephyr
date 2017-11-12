@@ -16,7 +16,7 @@ Glossary of Terms
       The set of user-supplied files that the Zephyr build system uses
       to build an application image for a specified board configuration.
       It can contain application-specific code, kernel configuration settings,
-      and at least one Makefile.
+      and at least one CMakeLists.txt file.
       The application's kernel configuration settings direct the build system
       to create a custom kernel that makes efficient use of the board's
       resources.

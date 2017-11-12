@@ -68,10 +68,11 @@ Build and start the ``echo_server`` sample application.
 
 In terminal #1, type:
 
-.. code-block:: console
-
-   $ cd samples/net/echo_server
-   $ make pristine && make run
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/echo_server
+   :board: qemu_x86
+   :goals: run
+   :compact:
 
 If you see error from QEMU about unix:/tmp/slip.sock, it means you missed Step 1
 above.
@@ -162,20 +163,24 @@ samples, you will need 2 terminal windows, set up for Zephyr development.
 Terminal #1:
 ============
 
-.. code-block:: console
-
-   $ cd samples/net/echo_server
-   $ make server
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/echo_server
+   :board: qemu_x86
+   :goals: build
+   :build-args: server
+   :compact:
 
 This will start QEMU, waiting for connection from a client QEMU.
 
 Terminal #2:
 ============
 
-.. code-block:: console
-
-   $ cd samples/net/echo_client
-   $ make client
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/echo_client
+   :board: qemu_x86
+   :goals: build
+   :build-args: client
+   :compact:
 
 This will start 2nd QEMU instance, and you should see logging of data sent and
 received in both.
