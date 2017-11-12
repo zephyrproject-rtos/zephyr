@@ -53,7 +53,7 @@ struct bt_mesh_prov {
 
 	void        (*link_open)(void);
 	void        (*link_close)(void);
-	void        (*complete)(void);
+	void        (*complete)(u16_t addr);
 };
 
 int bt_mesh_input_string(const char *str);
