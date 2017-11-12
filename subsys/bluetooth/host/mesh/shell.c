@@ -590,6 +590,45 @@ static int cmd_mod_app_bind(int argc, char *argv[])
 	return 0;
 }
 
+static int cmd_mod_sub_add(int argc, char *argv[])
+{
+	u16_t elem_addr, sub_addr, mod_id, cid;
+	u8_t status;
+	int err;
+
+	if (argc < 4) {
+		return -EINVAL;
+	}
+
+	elem_addr = strtoul(argv[1], NULL, 0);
+	sub_addr = strtoul(argv[2], NULL, 0);
+	mod_id = strtoul(argv[3], NULL, 0);
+
+	if (argc > 4) {
+		cid = strtoul(argv[3], NULL, 0);
+		err = bt_mesh_cfg_mod_sub_add_vnd(net_idx, dst, elem_addr,
+						  sub_addr, mod_id, cid,
+						  &status);
+	} else {
+		err = bt_mesh_cfg_mod_sub_add(net_idx, dst, elem_addr,
+					      sub_addr, mod_id, &status);
+	}
+
+	if (err) {
+		printk("Unable to send Model Subscription Add (err %d)\n", err);
+		return 0;
+	}
+
+	if (status) {
+		printk("Model Subscription Add failed with status 0x%02x\n",
+		       status);
+	} else {
+		printk("Model subscription was successful\n");
+	}
+
+	return 0;
+}
+
 static const struct shell_cmd mesh_commands[] = {
 	{ "init", cmd_init, NULL },
 	{ "reset", cmd_reset, NULL },
@@ -612,6 +651,8 @@ static const struct shell_cmd mesh_commands[] = {
 	{ "app-key-add", cmd_app_key_add, "<NetKeyIndex> <AppKeyIndex> <val>" },
 	{ "mod-app-bind", cmd_mod_app_bind,
 		"<addr> <AppIndex> <Model ID> [Company ID]" },
+	{ "mod-sub-add", cmd_mod_sub_add,
+		"<elem addr> <sub addr> <Model ID> [Company ID]" },
 	{ NULL, NULL, NULL}
 };
 
