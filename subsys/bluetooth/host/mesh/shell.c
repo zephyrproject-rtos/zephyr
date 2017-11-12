@@ -17,6 +17,9 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/mesh.h>
 
+static u16_t dst = BT_MESH_ADDR_UNASSIGNED;
+static u16_t net_idx;
+
 static struct bt_mesh_cfg cfg_srv = {
 	.relay = BT_MESH_RELAY_DISABLED,
 	.beacon = BT_MESH_BEACON_DISABLED,
@@ -41,10 +44,14 @@ static struct bt_mesh_cfg cfg_srv = {
 static struct bt_mesh_health health_srv = {
 };
 
+static struct bt_mesh_cfg_cli cfg_cli = {
+};
+
 static const u8_t dev_uuid[16] = { 0xdd, 0xdd };
 
 static struct bt_mesh_model root_models[] = {
 	BT_MESH_MODEL_CFG_SRV(&cfg_srv),
+	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
 	BT_MESH_MODEL_HEALTH_SRV(&health_srv),
 };
 
@@ -61,6 +68,7 @@ static const struct bt_mesh_comp comp = {
 static void prov_complete(u16_t addr)
 {
 	printk("Local node provisioned, primary address 0x%04x\n", addr);
+	dst = addr;
 }
 
 static int output_number(bt_mesh_output_action action, uint32_t number)
@@ -267,6 +275,80 @@ static int cmd_ident(int argc, char *argv[])
 }
 #endif /* MESH_GATT_PROXY */
 
+static int cmd_get_comp(int argc, char *argv[])
+{
+	struct net_buf_simple *comp = NET_BUF_SIMPLE(32);
+	u8_t status, page = 0x00;
+	int err;
+
+	if (argc > 1) {
+		page = strtol(argv[1], NULL, 0);
+	}
+
+	net_buf_simple_init(comp, 0);
+	err = bt_mesh_cfg_comp_data_get(net_idx, dst, page, &status, comp);
+	if (err) {
+		printk("Getting composition failed (err %d)\n", err);
+		return 0;
+	}
+
+	if (status != 0x00) {
+		printk("Got non-success status 0x%02x\n", status);
+		return 0;
+	}
+
+	printk("Got Composition Data for 0x%04x:\n", dst);
+	printk("\tCID      0x%04x\n", net_buf_simple_pull_le16(comp));
+	printk("\tPID      0x%04x\n", net_buf_simple_pull_le16(comp));
+	printk("\tVID      0x%04x\n", net_buf_simple_pull_le16(comp));
+	printk("\tCRPL     0x%04x\n", net_buf_simple_pull_le16(comp));
+	printk("\tFeatures 0x%04x\n", net_buf_simple_pull_le16(comp));
+
+	while (comp->len > 4) {
+		u8_t sig, vnd;
+		u16_t loc;
+		int i;
+
+		loc = net_buf_simple_pull_le16(comp);
+		sig = net_buf_simple_pull_u8(comp);
+		vnd = net_buf_simple_pull_u8(comp);
+
+		printk("\n\tElement @ 0x%04x:\n", loc);
+
+		if (comp->len < ((sig * 2) + (vnd * 4))) {
+			printk("\t\t...truncated data!\n");
+			break;
+		}
+
+		if (sig) {
+			printk("\t\tSIG Models:\n");
+		} else {
+			printk("\t\tNo SIG Models\n");
+		}
+
+		for (i = 0; i < sig; i++) {
+			u16_t mod_id = net_buf_simple_pull_le16(comp);
+
+			printk("\t\t\t0x%04x\n", mod_id);
+		}
+
+		if (vnd) {
+			printk("\t\tVendor Models:\n");
+		} else {
+			printk("\t\tNo Vendor Models\n");
+		}
+
+		for (i = 0; i < vnd; i++) {
+			u16_t cid = net_buf_simple_pull_le16(comp);
+			u16_t mod_id = net_buf_simple_pull_le16(comp);
+
+			printk("\t\t\tCompany 0x%04x: 0x%04x\n", cid, mod_id);
+		}
+	}
+
+	return 0;
+}
+
 static const struct shell_cmd mesh_commands[] = {
 	{ "init", cmd_init, NULL },
 	{ "reset", cmd_reset, NULL },
@@ -278,6 +360,7 @@ static const struct shell_cmd mesh_commands[] = {
 #if defined(CONFIG_BT_MESH_GATT_PROXY)
 	{ "ident", cmd_ident, NULL },
 #endif
+	{ "get-comp", cmd_get_comp, "[page]" },
 	{ NULL, NULL, NULL}
 };
 
