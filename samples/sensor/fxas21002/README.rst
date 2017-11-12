@@ -16,10 +16,11 @@ This project outputs sensor data to the console. It requires an fxas21002
 sensor, which is present on the :ref:`hexiwear_k64` board. It does not work on
 QEMU.
 
-.. code-block:: console
-
-   $ cd samples/sensors/fxas21002
-   $ make BOARD=hexiwear_k64
+.. zephyr-app-commands::
+   :zephyr-app: samples/sensors/fxas21002
+   :board: hexiwear_k64
+   :goals: build
+   :compact:
 
 Sample Output
 =============

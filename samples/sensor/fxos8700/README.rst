@@ -16,10 +16,11 @@ This project outputs sensor data to the console. It requires an fxos8700
 sensor, which is present on the :ref:`frdm_k64f`, :ref:`frdm_kw41z`, and
 :ref:`hexiwear_k64` boards.  It does not work on QEMU.
 
-.. code-block:: console
-
-   $ cd samples/sensors/fxos8700
-   $ make BOARD=frdm_k64f
+.. zephyr-app-commands::
+   :zephyr-app: samples/sensors/fxos8700
+   :board: frdm_k64f
+   :goals: build
+   :compact:
 
 Sample Output
 =============
