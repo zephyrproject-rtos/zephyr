@@ -106,17 +106,19 @@ Before using the environmental sensing sample, the Arduino 101 board needs to be
 flashed with the firmware for its nRF51 Bluetooth LE controller. To do this,
 follow the steps in :ref:`bluetooth_firmware_arduino_101`.
 
-The sample provide a single :file:`Makefile` that builds both images, simple run
-make in the top level directory of the application and flash either using JTAG
-or using DFU. (DFU is preferred).
+Build and flash each of the images either using JTAG or DFU (DFU is preferred):
 
-The sample can be found here: :file:`samples/boards/arduino_101/environmental_sensing` in the
-Zephyr project tree.
+.. zephyr-app-commands::
+   :zephyr-app: samples/boards/arduino_101/environmental_sensing/ap
+   :board: arduino_101
+   :goals: build flash
+   :compact:
 
-.. code-block:: console
-
-   $ make
-   $ make flash # for flashing with JTAG
+.. zephyr-app-commands::
+   :zephyr-app: samples/boards/arduino_101/environmental_sensing/sensor
+   :board: arduino_101_sss
+   :goals: build flash
+   :compact:
 
 Running
 ========

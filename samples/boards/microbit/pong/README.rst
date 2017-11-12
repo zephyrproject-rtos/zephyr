@@ -25,7 +25,9 @@ generate beeps whenever the ball hits a wall or the paddle.
 Building
 ********
 
-.. code-block:: console
+.. zephyr-app-commands::
+   :zephyr-app: samples/boards/microbit/pong
+   :board: bbc_microbit
+   :goals: build
+   :compact:
 
-   $ cd samples/boards/microbit/pong
-   $ make
