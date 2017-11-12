@@ -70,6 +70,9 @@ static struct bt_mesh_cfg cfg_srv = {
 	.hb_sub.func = heartbeat,
 };
 
+static struct bt_mesh_cfg_cli cfg_cli = {
+};
+
 static void attention_on(struct bt_mesh_model *model)
 {
 	printk("attention_on()\n");
@@ -90,6 +93,7 @@ static struct bt_mesh_health health_srv = {
 
 static struct bt_mesh_model root_models[] = {
 	BT_MESH_MODEL_CFG_SRV(&cfg_srv),
+	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
 	BT_MESH_MODEL_HEALTH_SRV(&health_srv),
 };
 
@@ -135,85 +139,28 @@ static const struct bt_mesh_comp comp = {
 	.elem_count = ARRAY_SIZE(elements),
 };
 
-#define OP_APP_KEY_ADD        BT_MESH_MODEL_OP_1(0x00)
-#define OP_MOD_SUB_ADD        BT_MESH_MODEL_OP_2(0x80, 0x1b)
-#define OP_HEARTBEAT_SUB_SET  BT_MESH_MODEL_OP_2(0x80, 0x3b)
-#define OP_MOD_APP_BIND       BT_MESH_MODEL_OP_2(0x80, 0x3d)
-
-static inline void key_idx_pack(struct net_buf_simple *buf,
-				u16_t idx1, u16_t idx2)
-{
-	net_buf_simple_add_le16(buf, idx1 | ((idx2 & 0x00f) << 12));
-	net_buf_simple_add_u8(buf, idx2 >> 4);
-}
-
 static void configure(void)
 {
-	struct net_buf_simple *msg = NET_BUF_SIMPLE(24);
-	struct bt_mesh_msg_ctx ctx = {
-		.net_idx = net_idx,
-		.app_idx = BT_MESH_KEY_DEV,
-		.addr = elements[0].addr,
-	};
-
 	printk("Configuring...\n");
 
-	/* Add App Key */
-	bt_mesh_model_msg_init(msg, OP_APP_KEY_ADD);
-
-	key_idx_pack(msg, net_idx, app_idx);
-	net_buf_simple_add_mem(msg, app_key, sizeof(app_key));
-
-	if (bt_mesh_model_send(&root_models[0], &ctx, msg, NULL, NULL)) {
-		printk("Unable to send App Key Add message\n");
-		return;
-	}
+	/* Add Application Key */
+	bt_mesh_cfg_app_key_add(net_idx, addr, net_idx, app_idx, app_key, NULL);
 
 	/* Bind to vendor model */
-	bt_mesh_model_msg_init(msg, OP_MOD_APP_BIND);
-	net_buf_simple_add_le16(msg, elements[0].addr);
-	net_buf_simple_add_le16(msg, app_idx);
-	net_buf_simple_add_le16(msg, CID_INTEL);
-	net_buf_simple_add_le16(msg, MOD_INTEL);
-
-	if (bt_mesh_model_send(&root_models[0], &ctx, msg, NULL, NULL)) {
-		printk("Unable to send Model App Key Bind message\n");
-		return;
-	}
+	bt_mesh_cfg_mod_app_bind_vnd(net_idx, addr, addr, app_idx,
+				     MOD_INTEL, CID_INTEL, NULL);
 
 	/* Bind to Health model */
-	bt_mesh_model_msg_init(msg, OP_MOD_APP_BIND);
-	net_buf_simple_add_le16(msg, elements[0].addr);
-	net_buf_simple_add_le16(msg, app_idx);
-	net_buf_simple_add_le16(msg, BT_MESH_MODEL_ID_HEALTH_SRV);
+	bt_mesh_cfg_mod_app_bind(net_idx, addr, addr, app_idx,
+				 BT_MESH_MODEL_ID_HEALTH_SRV, NULL);
 
-	if (bt_mesh_model_send(&root_models[0], &ctx, msg, NULL, NULL)) {
-		printk("Unable to send Model App Key Bind message\n");
-		return;
-	}
-
-	/* Bind to Health model */
-	bt_mesh_model_msg_init(msg, OP_MOD_SUB_ADD);
-	net_buf_simple_add_le16(msg, elements[0].addr);
-	net_buf_simple_add_le16(msg, GROUP_ADDR);
-	net_buf_simple_add_le16(msg, CID_INTEL);
-	net_buf_simple_add_le16(msg, MOD_INTEL);
-
-	if (bt_mesh_model_send(&root_models[0], &ctx, msg, NULL, NULL)) {
-		printk("Unable to send Model Subscription Add message\n");
-		return;
-	}
+	/* Add model subscription */
+	bt_mesh_cfg_mod_sub_add_vnd(net_idx, addr, addr, GROUP_ADDR,
+				    MOD_INTEL, CID_INTEL, NULL);
 
 	/* Heartbeat subscription */
-	bt_mesh_model_msg_init(msg, OP_HEARTBEAT_SUB_SET);
-	net_buf_simple_add_le16(msg, PROV_ADDR);
-	net_buf_simple_add_le16(msg, GROUP_ADDR);
-	net_buf_simple_add_u8(msg, 0x10);
-
-	if (bt_mesh_model_send(&root_models[0], &ctx, msg, NULL, NULL)) {
-		printk("Unable to send Model App Key Bind message\n");
-		return;
-	}
+	bt_mesh_cfg_hb_sub_set(net_idx, addr, PROV_ADDR, GROUP_ADDR, 0x10,
+			       NULL);
 
 	printk("Configuration complete\n");
 
