@@ -552,6 +552,44 @@ static int cmd_app_key_add(int argc, char *argv[])
 	return 0;
 }
 
+static int cmd_mod_app_bind(int argc, char *argv[])
+{
+	u16_t elem_addr, mod_app_idx, mod_id, cid;
+	u8_t status;
+	int err;
+
+	if (argc < 4) {
+		return -EINVAL;
+	}
+
+	elem_addr = strtoul(argv[1], NULL, 0);
+	mod_app_idx = strtoul(argv[2], NULL, 0);
+	mod_id = strtoul(argv[3], NULL, 0);
+
+	if (argc > 4) {
+		cid = strtoul(argv[3], NULL, 0);
+		err = bt_mesh_cfg_mod_app_bind_vnd(net_idx, dst, elem_addr,
+						   mod_app_idx, mod_id, cid,
+						   &status);
+	} else {
+		err = bt_mesh_cfg_mod_app_bind(net_idx, dst, elem_addr,
+					       mod_app_idx, mod_id, &status);
+	}
+
+	if (err) {
+		printk("Unable to send Model App Bind (err %d)\n", err);
+		return 0;
+	}
+
+	if (status) {
+		printk("Model App Bind failed with status 0x%02x\n", status);
+	} else {
+		printk("AppKey successfully bound\n");
+	}
+
+	return 0;
+}
+
 static const struct shell_cmd mesh_commands[] = {
 	{ "init", cmd_init, NULL },
 	{ "reset", cmd_reset, NULL },
@@ -572,6 +610,8 @@ static const struct shell_cmd mesh_commands[] = {
 	{ "gatt-proxy", cmd_gatt_proxy, "[val: off, on]" },
 	{ "relay", cmd_relay, "[val: off, on] [count: 0-7] [interval: 0-32]" },
 	{ "app-key-add", cmd_app_key_add, "<NetKeyIndex> <AppKeyIndex> <val>" },
+	{ "mod-app-bind", cmd_mod_app_bind,
+		"<addr> <AppIndex> <Model ID> [Company ID]" },
 	{ NULL, NULL, NULL}
 };
 
