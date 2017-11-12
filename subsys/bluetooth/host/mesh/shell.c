@@ -629,6 +629,37 @@ static int cmd_mod_sub_add(int argc, char *argv[])
 	return 0;
 }
 
+static int cmd_hb_sub_set(int argc, char *argv[])
+{
+	u8_t status, period;
+	u16_t sub_src, sub_dst;
+	int err;
+
+	if (argc < 4) {
+		return -EINVAL;
+	}
+
+	sub_src = strtoul(argv[1], NULL, 0);
+	sub_dst = strtoul(argv[2], NULL, 0);
+	period = strtoul(argv[3], NULL, 0);
+
+	err = bt_mesh_cfg_hb_sub_set(net_idx, dst, sub_src, sub_dst, period,
+				     &status);
+	if (err) {
+		printk("Heartbeat Subscription Set failed (err %d)\n", err);
+		return 0;
+	}
+
+	if (status) {
+		printk("Heartbeat Subscription Set failed (status 0x%02x)\n",
+		       status);
+	} else {
+		printk("Heartbeat subscription successfully set\n");
+	}
+
+	return 0;
+}
+
 static const struct shell_cmd mesh_commands[] = {
 	{ "init", cmd_init, NULL },
 	{ "reset", cmd_reset, NULL },
@@ -653,6 +684,7 @@ static const struct shell_cmd mesh_commands[] = {
 		"<addr> <AppIndex> <Model ID> [Company ID]" },
 	{ "mod-sub-add", cmd_mod_sub_add,
 		"<elem addr> <sub addr> <Model ID> [Company ID]" },
+	{ "hb-sub-set", cmd_hb_sub_set, "<src> <dst> <period>" },
 	{ NULL, NULL, NULL}
 };
 
