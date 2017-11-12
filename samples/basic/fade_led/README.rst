@@ -42,8 +42,8 @@ Building and Running
 This sample can be built for multiple boards, in this example we will build it
 for the arduino_101 board:
 
-.. code-block:: console
-
-   $ cd samples/basic/fade_led
-   $ make BOARD=arduino_101
-   $ make BOARD=arduino_101 flash
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/fade_led
+   :board: arduino_101
+   :goals: build flash
+   :compact:

@@ -63,21 +63,26 @@ The sample can be found here: :file:`samples/basic/disco`.
 Nucleo F103RB
 =============
 
-.. code-block:: console
-
-   $ make BOARD=nucleo_f103rb
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/disco
+   :board: nucleo_f103rb
+   :goals: build
+   :compact:
 
 Nucleo F401RE
 =============
 
-.. code-block:: console
-
-   $ make BOARD=nucleo_f401re
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/disco
+   :board: nucleo_f401re
+   :goals: build
+   :compact:
 
 Arduino 101
 ============
 
-.. code-block:: console
-
-   $ make BOARD=arduino_101
-
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/disco
+   :board: arduino_101
+   :goals: build
+   :compact:

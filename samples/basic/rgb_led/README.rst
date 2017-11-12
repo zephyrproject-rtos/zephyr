@@ -43,8 +43,8 @@ Building and Running
 This samples does not output anything to the console.  It can be built and
 flashed to a board as follows:
 
-.. code-block:: console
-
-   $ cd samples/basic/rgb_led
-   $ make BOARD=arduino_101
-   $ make BOARD=arduino_101 flash
+.. zephyr-app-commands::
+   :zephyr-app: samples/basic/rgb_led
+   :board: arduino_101
+   :goals: build flash
+   :compact:
