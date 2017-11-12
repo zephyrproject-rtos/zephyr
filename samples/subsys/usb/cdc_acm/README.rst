@@ -32,10 +32,11 @@ Arduino 101
 To see the console output of the app, open a serial port emulator and
 attach it to the USB to TTL Serial cable. Build and flash the project:
 
-.. code-block:: console
-
-   $ cd samples/subsys/usb/cdc_acm
-   $ make BOARD=arduino_101 flash
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/usb/cdc_acm
+   :board: arduino_101
+   :goals: flash
+   :compact:
 
 See :ref:`Flashing the x86 Application Core section <arduino_101>` for details.
 

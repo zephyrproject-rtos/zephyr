@@ -22,10 +22,11 @@ Building and Running
 This project outputs to the console.  It can be built and executed
 on QEMU as follows:
 
-.. code-block:: console
-
-   $ cd samples/subsys/kernel_event_logger
-   $ make run
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/logging/kernel_event_logger
+   :board: qemu_x86
+   :goals: run
+   :compact:
 
 Sample Output
 =============

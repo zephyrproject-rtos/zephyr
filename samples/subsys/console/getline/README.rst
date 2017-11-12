@@ -29,11 +29,11 @@ Building and Running
 
 The easiest way to run this sample is using QEMU:
 
-.. code-block:: console
-
-   $ cd samples/console/getline
-   $ make BOARD=qemu_x86
-   $ make BOARD=qemu_x86 run
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/console/getline
+   :board: qemu_x86
+   :goals: run
+   :compact:
 
 Now start pressing keys on a keyboard, followed by Enter. The input line
 will be printed back, with a hex code of the last character, to show that
