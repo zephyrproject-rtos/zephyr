@@ -81,8 +81,8 @@ static struct net_buf *friend_buf_alloc(u16_t src)
 	do {
 		buf = bt_mesh_adv_create_from_pool(&friend_buf_pool,
 						   BT_MESH_ADV_DATA,
-						   TRANSMIT_COUNT(xmit),
-						   TRANSMIT_INT(xmit),
+						   BT_MESH_TRANSMIT_COUNT(xmit),
+						   BT_MESH_TRANSMIT_INT(xmit),
 						   K_NO_WAIT);
 		if (!buf) {
 			discard_buffer();

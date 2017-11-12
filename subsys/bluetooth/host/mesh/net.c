@@ -1045,8 +1045,9 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 	BT_DBG("TTL %u CTL %u dst 0x%04x", rx->ctx.recv_ttl, rx->ctl, rx->dst);
 
 	transmit = bt_mesh_relay_retransmit_get();
-	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA, TRANSMIT_COUNT(transmit),
-				 TRANSMIT_INT(transmit), K_NO_WAIT);
+	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA,
+				 BT_MESH_TRANSMIT_COUNT(transmit),
+				 BT_MESH_TRANSMIT_INT(transmit), K_NO_WAIT);
 	if (!buf) {
 		BT_ERR("Out of relay buffers");
 		return;

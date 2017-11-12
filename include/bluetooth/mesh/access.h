@@ -199,6 +199,26 @@ struct bt_mesh_model_op {
  */
 #define BT_MESH_TRANSMIT(count, int_ms) ((count) | (((int_ms / 10) - 1) << 3))
 
+/** @def BT_MESH_TRANSMIT_COUNT
+ *
+ *  @brief Decode transmit count from a transmit value.
+ *
+ *  @param transmit Encoded transmit count & interval value.
+ *
+ *  @return Transmission count (actual transmissions is N + 1).
+ */
+#define BT_MESH_TRANSMIT_COUNT(transmit) (((transmit) & (u8_t)BIT_MASK(3)))
+
+/** @def BT_MESH_TRANSMIT_INT
+ *
+ *  @brief Decode transmit interval from a transmit value.
+ *
+ *  @param transmit Encoded transmit count & interval value.
+ *
+ *  @return Transmission interval in milliseconds.
+ */
+#define BT_MESH_TRANSMIT_INT(transmit) ((((transmit) >> 3) + 1) * 10)
+
 struct bt_mesh_model_pub {
 	/* Self-reference for easy lookup */
 	struct bt_mesh_model *mod;
