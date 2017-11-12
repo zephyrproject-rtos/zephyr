@@ -21,6 +21,8 @@ zephyr_library_sources_ifdef(CONFIG_BT_MESH_PROV prov.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_PROXY proxy.c)
 
+zephyr_library_sources_ifdef(CONFIG_BT_MESH_CFG_CLI cfg_cli.c)
+
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_SELF_TEST test.c)
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_SHELL shell.c)
