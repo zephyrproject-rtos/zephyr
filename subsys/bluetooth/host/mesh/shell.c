@@ -158,12 +158,24 @@ static int input(bt_mesh_input_action act, u8_t size)
 	return 0;
 }
 
+static void link_open(void)
+{
+	printk("Provisioning link opened\n");
+}
+
+static void link_close(void)
+{
+	printk("Provisioning link closed\n");
+}
+
 static const u8_t static_val[] = {
 	0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef
 };
 
 static const struct bt_mesh_prov prov = {
 	.uuid = dev_uuid,
+	.link_open = link_open,
+	.link_close = link_close,
 	.complete = prov_complete,
 	.static_val = static_val,
 	.static_val_len = sizeof(static_val),
