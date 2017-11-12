@@ -58,6 +58,10 @@ int bt_mesh_cfg_relay_get(u16_t net_idx, u16_t addr, u8_t *status,
 int bt_mesh_cfg_relay_set(u16_t net_idx, u16_t addr, u8_t new_relay,
 			  u8_t new_transmit, u8_t *status, u8_t *transmit);
 
+int bt_mesh_cfg_app_key_add(u16_t net_idx, u16_t addr, u16_t key_net_idx,
+			    u16_t key_app_idx, const u8_t app_key[16],
+			    u8_t *status);
+
 /**
  * @}
  */

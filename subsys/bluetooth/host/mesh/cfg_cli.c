@@ -135,6 +135,43 @@ static void relay_status(struct bt_mesh_model *model,
 	k_sem_give(&cli->op_sync);
 }
 
+struct app_key_param {
+	u8_t *status;
+	u16_t net_idx;
+	u16_t app_idx;
+};
+
+static void app_key_status(struct bt_mesh_model *model,
+			   struct bt_mesh_msg_ctx *ctx,
+			   struct net_buf_simple *buf)
+{
+	struct app_key_param *param;
+	u16_t net_idx, app_idx;
+	u8_t status;
+
+	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
+	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
+	       bt_hex(buf->data, buf->len));
+
+	if (cli->op_pending != OP_APP_KEY_STATUS) {
+		BT_WARN("Unexpected Relay Status message");
+		return;
+	}
+
+	status = net_buf_simple_pull_u8(buf);
+	key_idx_unpack(buf, &net_idx, &app_idx);
+
+	param = cli->op_param;
+	if (param->net_idx != net_idx || param->app_idx != app_idx) {
+		BT_WARN("App Key Status key indices did not match");
+		return;
+	}
+
+	*param->status = status;
+
+	k_sem_give(&cli->op_sync);
+}
+
 const struct bt_mesh_model_op bt_mesh_cfg_cli_op[] = {
 	{ OP_DEV_COMP_DATA_STATUS,   15,  comp_data_status },
 	{ OP_BEACON_STATUS,          1,   beacon_status },
@@ -142,6 +179,7 @@ const struct bt_mesh_model_op bt_mesh_cfg_cli_op[] = {
 	{ OP_FRIEND_STATUS,          1,   friend_status },
 	{ OP_GATT_PROXY_STATUS,      1,   gatt_proxy_status },
 	{ OP_RELAY_STATUS,           2,   relay_status },
+	{ OP_APP_KEY_STATUS,         4,   app_key_status },
 	BT_MESH_MODEL_OP_END,
 };
 
@@ -396,6 +434,50 @@ int bt_mesh_cfg_relay_set(u16_t net_idx, u16_t addr, u8_t new_relay,
 
 	cli->op_param = &param;
 	cli->op_pending = OP_RELAY_STATUS;
+
+	err = k_sem_take(&cli->op_sync, MSG_TIMEOUT);
+
+	cli->op_pending = 0;
+	cli->op_param = NULL;
+
+	return err;
+}
+
+int bt_mesh_cfg_app_key_add(u16_t net_idx, u16_t addr, u16_t key_net_idx,
+			    u16_t key_app_idx, const u8_t app_key[16],
+			    u8_t *status)
+{
+	struct net_buf_simple *msg = NET_BUF_SIMPLE(1 + 19 + 4);
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = net_idx,
+		.app_idx = BT_MESH_KEY_DEV,
+		.addr = addr,
+		.send_ttl = BT_MESH_TTL_DEFAULT,
+	};
+	struct app_key_param param = {
+		.status = status,
+		.net_idx = key_net_idx,
+		.app_idx = key_app_idx,
+	};
+	int err;
+
+	err = check_cli();
+	if (err) {
+		return err;
+	}
+
+	bt_mesh_model_msg_init(msg, OP_APP_KEY_ADD);
+	key_idx_pack(msg, key_net_idx, key_app_idx);
+	net_buf_simple_add_mem(msg, app_key, 16);
+
+	err = bt_mesh_model_send(cli->model, &ctx, msg, NULL, NULL);
+	if (err) {
+		BT_ERR("model_send() failed (err %d)", err);
+		return err;
+	}
+
+	cli->op_param = &param;
+	cli->op_pending = OP_APP_KEY_STATUS;
 
 	err = k_sem_take(&cli->op_sync, MSG_TIMEOUT);
 
