@@ -336,6 +336,11 @@ config BT_MESH_FRIEND_SEG_RX
 
 endif # BT_MESH_FRIEND
 
+config BT_MESH_CFG_CLI
+	bool "Support for Configuration Client Model"
+	help
+	  Enable support for the configuration client model.
+
 config BT_MESH_SHELL
 	bool "Enable Bluetooth Mesh shell"
 	select CONSOLE_SHELL

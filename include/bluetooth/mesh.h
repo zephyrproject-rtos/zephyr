@@ -19,6 +19,10 @@
 #include <bluetooth/mesh/cfg_srv.h>
 #include <bluetooth/mesh/health_srv.h>
 
+#if defined(CONFIG_BT_MESH_CFG_CLI)
+#include <bluetooth/mesh/cfg_cli.h>
+#endif
+
 #if defined(CONFIG_BT_MESH_GATT_PROXY)
 #include <bluetooth/mesh/proxy.h>
 #endif
