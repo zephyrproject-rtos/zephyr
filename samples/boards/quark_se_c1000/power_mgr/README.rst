@@ -37,9 +37,11 @@ the board.
 Building and Running
 ********************
 
-.. code-block:: console
-
-    make BOARD=<board>
+.. zephyr-app-commands::
+   :zephyr-app: samples/boards/quark_se_c1000/power_mgr
+   :board: <board>
+   :goals: build
+   :compact:
 
 Sample Output
 =============

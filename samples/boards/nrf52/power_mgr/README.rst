@@ -36,17 +36,12 @@ This application uses nrf52 DK board for the demo.
 
 Building, Flashing and Running
 ******************************
-Building
-.. code-block:: console
 
-    make BOARD=nrf52_pca10040
-
-Flashing (Use nrfjprog for flashing):-
-.. code-block:: console
-
-     nrfjprog --eraseall -f nrf52
-     nrfjprog --program <zephyr.hex> -f nrf52
-     nrfjprog --reset -f nrf52
+.. zephyr-app-commands::
+   :zephyr-app: samples/boards/nrf52/power_mgr
+   :board: nrf52_pca10040
+   :goals: build flash
+   :compact:
 
 Running:
 

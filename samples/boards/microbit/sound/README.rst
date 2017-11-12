@@ -19,10 +19,11 @@ Building
 
 The sample can be built as follows:
 
-.. code-block:: console
-
-   $ cd samples/boards/microbit/sound
-   $ make
+.. zephyr-app-commands::
+   :zephyr-app: samples/boards/microbit/sound
+   :board: bbc_microbit
+   :goals: build
+   :compact:
 
 Sample Output
 =============

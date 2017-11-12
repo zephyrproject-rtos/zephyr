@@ -14,10 +14,11 @@ Building
 This project outputs various things on the BBC micro:bit display. It can
 be built as follows:
 
-.. code-block:: console
-
-   $ cd samples/boards/microbit/display
-   $ make
+.. zephyr-app-commands::
+   :zephyr-app: samples/boards/microbit/display
+   :board: bbc_microbit
+   :goals: build
+   :compact:
 
 Sample Output
 =============
