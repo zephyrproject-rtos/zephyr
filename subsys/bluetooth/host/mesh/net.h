@@ -204,7 +204,7 @@ struct bt_mesh_net {
 
 	/* Local network interface */
 	struct k_work local_work;
-	struct k_fifo local_queue;
+	sys_slist_t local_queue;
 
 #if defined(CONFIG_BT_MESH_FRIEND)
 	/* Friend state, unique for each LPN that we're Friends for */
