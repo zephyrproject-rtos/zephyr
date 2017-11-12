@@ -39,6 +39,25 @@ int bt_mesh_cfg_beacon_get(u16_t net_idx, u16_t addr, u8_t *status);
 
 int bt_mesh_cfg_beacon_set(u16_t net_idx, u16_t addr, u8_t val, u8_t *status);
 
+int bt_mesh_cfg_ttl_get(u16_t net_idx, u16_t addr, u8_t *ttl);
+
+int bt_mesh_cfg_ttl_set(u16_t net_idx, u16_t addr, u8_t val, u8_t *ttl);
+
+int bt_mesh_cfg_friend_get(u16_t net_idx, u16_t addr, u8_t *status);
+
+int bt_mesh_cfg_friend_set(u16_t net_idx, u16_t addr, u8_t val, u8_t *status);
+
+int bt_mesh_cfg_gatt_proxy_get(u16_t net_idx, u16_t addr, u8_t *status);
+
+int bt_mesh_cfg_gatt_proxy_set(u16_t net_idx, u16_t addr, u8_t val,
+			       u8_t *status);
+
+int bt_mesh_cfg_relay_get(u16_t net_idx, u16_t addr, u8_t *status,
+			  u8_t *transmit);
+
+int bt_mesh_cfg_relay_set(u16_t net_idx, u16_t addr, u8_t new_relay,
+			  u8_t new_transmit, u8_t *status, u8_t *transmit);
+
 /**
  * @}
  */
