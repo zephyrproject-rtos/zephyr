@@ -405,6 +405,120 @@ static int cmd_beacon(int argc, char *argv[])
 	return 0;
 }
 
+static int cmd_ttl(int argc, char *argv[])
+{
+	u8_t ttl;
+	int err;
+
+	if (argc < 2) {
+		err = bt_mesh_cfg_ttl_get(net_idx, dst, &ttl);
+	} else {
+		u8_t val = strtoul(argv[1], NULL, 0);
+
+		err = bt_mesh_cfg_ttl_set(net_idx, dst, val, &ttl);
+	}
+
+	if (err) {
+		printk("Unable to send Default TTL Get/Set (err %d)\n", err);
+		return 0;
+	}
+
+	printk("Default TTL is 0x%02x\n", ttl);
+
+	return 0;
+}
+
+static int cmd_friend(int argc, char *argv[])
+{
+	u8_t frnd;
+	int err;
+
+	if (argc < 2) {
+		err = bt_mesh_cfg_friend_get(net_idx, dst, &frnd);
+	} else {
+		u8_t val = strtoul(argv[1], NULL, 0);
+
+		err = bt_mesh_cfg_friend_set(net_idx, dst, val, &frnd);
+	}
+
+	if (err) {
+		printk("Unable to send Friend Get/Set (err %d)\n", err);
+		return 0;
+	}
+
+	printk("Friend is set to 0x%02x\n", frnd);
+
+	return 0;
+}
+
+static int cmd_gatt_proxy(int argc, char *argv[])
+{
+	u8_t proxy;
+	int err;
+
+	if (argc < 2) {
+		err = bt_mesh_cfg_gatt_proxy_get(net_idx, dst, &proxy);
+	} else {
+		u8_t val = strtoul(argv[1], NULL, 0);
+
+		err = bt_mesh_cfg_gatt_proxy_set(net_idx, dst, val, &proxy);
+	}
+
+	if (err) {
+		printk("Unable to send GATT Proxy Get/Set (err %d)\n", err);
+		return 0;
+	}
+
+	printk("GATT Proxy is set to 0x%02x\n", proxy);
+
+	return 0;
+}
+
+static int cmd_relay(int argc, char *argv[])
+{
+	u8_t relay, transmit;
+	int err;
+
+	if (argc < 2) {
+		err = bt_mesh_cfg_relay_get(net_idx, dst, &relay, &transmit);
+	} else {
+		u8_t val = strtoul(argv[1], NULL, 0);
+		u8_t count, interval, new_transmit;
+
+		if (val) {
+			if (argc > 2) {
+				count = strtoul(argv[2], NULL, 0);
+			} else {
+				count = 2;
+			}
+
+			if (argc > 3) {
+				interval = strtoul(argv[3], NULL, 0);
+			} else {
+				interval = 20;
+			}
+
+			new_transmit = BT_MESH_TRANSMIT(count, interval);
+		} else {
+			new_transmit = 0;
+		}
+
+		err = bt_mesh_cfg_relay_set(net_idx, dst, val, new_transmit,
+					    &relay, &transmit);
+	}
+
+	if (err) {
+		printk("Unable to send Relay Get/Set (err %d)\n", err);
+		return 0;
+	}
+
+	printk("Relay is 0x%02x, Transmit 0x%02x (count %u interval %ums)\n",
+	       relay, transmit, BT_MESH_TRANSMIT_COUNT(transmit),
+	       BT_MESH_TRANSMIT_INT(transmit));
+
+	return 0;
+}
+
 static const struct shell_cmd mesh_commands[] = {
 	{ "init", cmd_init, NULL },
 	{ "reset", cmd_reset, NULL },
@@ -420,6 +534,10 @@ static const struct shell_cmd mesh_commands[] = {
 	{ "netidx", cmd_netidx, "[NetIdx]" },
 	{ "get-comp", cmd_get_comp, "[page]" },
 	{ "beacon", cmd_beacon, "[val: off, on]" },
+	{ "ttl", cmd_ttl, "[ttl: 0x00, 0x02-0x7f]" },
+	{ "friend", cmd_friend, "[val: off, on]" },
+	{ "gatt-proxy", cmd_gatt_proxy, "[val: off, on]" },
+	{ "relay", cmd_relay, "[val: off, on] [count: 0-7] [interval: 0-32]" },
 	{ NULL, NULL, NULL}
 };
 
