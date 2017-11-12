@@ -100,12 +100,11 @@ application as follows.
 
 Then build and flash the application:
 
-.. code-block:: bash
-
-   $ cd ~/zephyr
-   $ source zephyr-env.sh
-   $ cd samples/drivers/led_ws2812
-   $ BOARD=your_board make flash
+.. zephyr-app-commands::
+   :zephyr-app: samples/drivers/led_ws2812
+   :board: <board>
+   :goals: flash
+   :compact:
 
 Refer to your :ref:`board's documentation <boards>` for alternative
 flash instructions if your board doesn't support the ``flash`` target.
