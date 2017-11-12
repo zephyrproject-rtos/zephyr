@@ -831,7 +831,8 @@ static void net_transmit_set(struct bt_mesh_model *model,
 	       bt_hex(buf->data, buf->len));
 
 	BT_DBG("Transmit 0x%02x (count %u interval %ums)", buf->data[0],
-	       TRANSMIT_COUNT(buf->data[0]), TRANSMIT_INT(buf->data[0]));
+	       BT_MESH_TRANSMIT_COUNT(buf->data[0]),
+	       BT_MESH_TRANSMIT_INT(buf->data[0]));
 
 	if (!cfg) {
 		BT_WARN("No Configuration Server context available");
@@ -890,8 +891,8 @@ static void relay_set(struct bt_mesh_model *model,
 
 		BT_DBG("Relay 0x%02x Retransmit 0x%02x (count %u interval %u)",
 		       cfg->relay, cfg->relay_retransmit,
-		       TRANSMIT_COUNT(cfg->relay_retransmit),
-		       TRANSMIT_INT(cfg->relay_retransmit))
+		       BT_MESH_TRANSMIT_COUNT(cfg->relay_retransmit),
+		       BT_MESH_TRANSMIT_INT(cfg->relay_retransmit))
 
 		sub = bt_mesh_subnet_get(cfg->hb_pub.net_idx);
 		if ((cfg->hb_pub.feat & BT_MESH_FEAT_RELAY) && sub && change) {
@@ -1022,7 +1023,8 @@ static void mod_pub_set(struct bt_mesh_model *model,
 	BT_DBG("pub_app_idx 0x%03x, pub_ttl %u pub_period 0x%02x",
 	       pub_app_idx, pub_ttl, pub_period);
 	BT_DBG("retransmit 0x%02x (count %u interval %ums)", retransmit,
-	       TRANSMIT_COUNT(retransmit), TRANSMIT_INT(retransmit));
+	       BT_MESH_TRANSMIT_COUNT(retransmit),
+	       BT_MESH_TRANSMIT_INT(retransmit));
 
 	elem = bt_mesh_elem_find(elem_addr);
 	if (!elem) {
@@ -1128,7 +1130,8 @@ static void mod_pub_va_set(struct bt_mesh_model *model,
 	BT_DBG("pub_app_idx 0x%03x, pub_ttl %u pub_period 0x%02x",
 	       pub_app_idx, pub_ttl, pub_period);
 	BT_DBG("retransmit 0x%02x (count %u interval %ums)", retransmit,
-	       TRANSMIT_COUNT(retransmit), TRANSMIT_INT(retransmit));
+	       BT_MESH_TRANSMIT_COUNT(retransmit),
+	       BT_MESH_TRANSMIT_INT(retransmit));
 
 	elem = bt_mesh_elem_find(elem_addr);
 	if (!elem) {
