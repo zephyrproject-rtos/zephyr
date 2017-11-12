@@ -35,6 +35,9 @@ static const struct {
 } const model_init[] = {
 	{ BT_MESH_MODEL_ID_CFG_SRV, bt_mesh_conf_init },
 	{ BT_MESH_MODEL_ID_HEALTH_SRV, bt_mesh_health_init },
+#if defined(CONFIG_BT_MESH_CFG_CLI)
+	{ BT_MESH_MODEL_ID_CFG_CLI, bt_mesh_cfg_cli_init },
+#endif
 };
 
 void bt_mesh_model_foreach(void (*func)(struct bt_mesh_model *mod,

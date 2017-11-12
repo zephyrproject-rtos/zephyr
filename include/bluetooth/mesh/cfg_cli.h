@@ -18,7 +18,12 @@
  */
 
 /** Mesh Configuration Client Model Context */
-struct bt_mesh_cli {
+struct bt_mesh_cfg_cli {
+	struct bt_mesh_model *model;
+
+	struct k_sem          op_sync;
+	u32_t                 op_pending;
+	void                 *op_param;
 };
 
 extern const struct bt_mesh_model_op bt_mesh_cfg_cli_op[];
@@ -26,6 +31,9 @@ extern const struct bt_mesh_model_op bt_mesh_cfg_cli_op[];
 #define BT_MESH_MODEL_CFG_CLI(cli_data)                                      \
 		BT_MESH_MODEL(BT_MESH_MODEL_ID_CFG_CLI,                      \
 			      bt_mesh_cfg_cli_op, NULL, cli_data)
+
+int bt_mesh_cfg_comp_data_get(u16_t net_idx, u16_t addr, u8_t page,
+			      u8_t *status, struct net_buf_simple *comp);
 
 /**
  * @}
