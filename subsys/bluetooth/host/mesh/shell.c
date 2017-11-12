@@ -17,6 +17,7 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/mesh.h>
 
+static u16_t local = BT_MESH_ADDR_UNASSIGNED;
 static u16_t dst = BT_MESH_ADDR_UNASSIGNED;
 static u16_t net_idx;
 
@@ -68,6 +69,7 @@ static const struct bt_mesh_comp comp = {
 static void prov_complete(u16_t addr)
 {
 	printk("Local node provisioned, primary address 0x%04x\n", addr);
+	local = addr;
 	dst = addr;
 }
 
@@ -349,6 +351,37 @@ static int cmd_get_comp(int argc, char *argv[])
 	return 0;
 }
 
+static int cmd_dst(int argc, char *argv[])
+{
+	if (argc < 2) {
+		printk("Destination address: 0x%04x%s\n", dst,
+		       dst == local ? " (local)" : "");
+		return 0;
+	}
+
+	if (!strcmp(argv[1], "local")) {
+		dst = local;
+	} else {
+		dst = strtoul(argv[1], NULL, 0);
+	}
+
+	printk("Destination address set to 0x%04x%s\n", dst,
+	       dst == local ? " (local)" : "");
+	return 0;
+}
+
+static int cmd_netidx(int argc, char *argv[])
+{
+	if (argc < 2) {
+		printk("NetIdx: 0x%04x\n", net_idx);
+		return 0;
+	}
+
+	net_idx = strtoul(argv[1], NULL, 0);
+	printk("NetIdx set to 0x%04x\n", net_idx);
+	return 0;
+}
+
 static const struct shell_cmd mesh_commands[] = {
 	{ "init", cmd_init, NULL },
 	{ "reset", cmd_reset, NULL },
@@ -360,6 +393,8 @@ static const struct shell_cmd mesh_commands[] = {
 #if defined(CONFIG_BT_MESH_GATT_PROXY)
 	{ "ident", cmd_ident, NULL },
 #endif
+	{ "dst", cmd_dst, "[destination address]" },
+	{ "netidx", cmd_netidx, "[NetIdx]" },
 	{ "get-comp", cmd_get_comp, "[page]" },
 	{ NULL, NULL, NULL}
 };
