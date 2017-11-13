@@ -9,7 +9,7 @@ zephyr_library_sources_ifdef(CONFIG_BT_MESH
     transport.c
     crypto.c
     access.c
-    cfg.c
+    cfg_srv.c
     health.c
 )
 

@@ -52,7 +52,7 @@ static void heartbeat(u8_t hops, u16_t feat)
 	board_play("100H");
 }
 
-static struct bt_mesh_cfg cfg_srv = {
+static struct bt_mesh_cfg_srv cfg_srv = {
 #if defined(CONFIG_BOARD_BBC_MICROBIT)
 	.relay = BT_MESH_RELAY_ENABLED,
 	.beacon = BT_MESH_BEACON_DISABLED,

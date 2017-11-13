@@ -35,7 +35,7 @@
 
 #define DEFAULT_TTL 7
 
-static struct bt_mesh_cfg *conf;
+static struct bt_mesh_cfg_srv *conf;
 
 static struct label {
 	u16_t addr;
@@ -45,7 +45,7 @@ static struct label {
 static void hb_send(struct bt_mesh_model *model)
 {
 
-	struct bt_mesh_cfg *cfg = model->user_data;
+	struct bt_mesh_cfg_srv *cfg = model->user_data;
 	u16_t feat = 0;
 	struct __packed {
 		u8_t  init_ttl;
@@ -652,7 +652,7 @@ static void beacon_set(struct bt_mesh_model *model,
 {
 	/* Needed size: opcode (2 bytes) + msg + MIC */
 	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 1 + 4);
-	struct bt_mesh_cfg *cfg = model->user_data;
+	struct bt_mesh_cfg_srv *cfg = model->user_data;
 
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
@@ -708,7 +708,7 @@ static void default_ttl_set(struct bt_mesh_model *model,
 {
 	/* Needed size: opcode (2 bytes) + msg + MIC */
 	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 1 + 4);
-	struct bt_mesh_cfg *cfg = model->user_data;
+	struct bt_mesh_cfg_srv *cfg = model->user_data;
 
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
@@ -760,7 +760,7 @@ static void gatt_proxy_set(struct bt_mesh_model *model,
 			   struct bt_mesh_msg_ctx *ctx,
 			   struct net_buf_simple *buf)
 {
-	struct bt_mesh_cfg *cfg = model->user_data;
+	struct bt_mesh_cfg_srv *cfg = model->user_data;
 	struct bt_mesh_subnet *sub;
 
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
@@ -824,7 +824,7 @@ static void net_transmit_set(struct bt_mesh_model *model,
 {
 	/* Needed size: opcode (2 bytes) + msg + MIC */
 	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 1 + 4);
-	struct bt_mesh_cfg *cfg = model->user_data;
+	struct bt_mesh_cfg_srv *cfg = model->user_data;
 
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
@@ -874,7 +874,7 @@ static void relay_set(struct bt_mesh_model *model,
 {
 	/* Needed size: opcode (2 bytes) + msg + MIC */
 	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 2 + 4);
-	struct bt_mesh_cfg *cfg = model->user_data;
+	struct bt_mesh_cfg_srv *cfg = model->user_data;
 
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
@@ -2001,7 +2001,7 @@ static void net_key_update(struct bt_mesh_model *model,
 	send_net_key_status(model, ctx, idx, STATUS_SUCCESS);
 }
 
-static void hb_pub_disable(struct bt_mesh_cfg *cfg)
+static void hb_pub_disable(struct bt_mesh_cfg_srv *cfg)
 {
 	BT_DBG("");
 
@@ -2017,7 +2017,7 @@ static void net_key_del(struct bt_mesh_model *model,
 			struct bt_mesh_msg_ctx *ctx,
 			struct net_buf_simple *buf)
 {
-	struct bt_mesh_cfg *cfg = model->user_data;
+	struct bt_mesh_cfg_srv *cfg = model->user_data;
 	struct bt_mesh_subnet *sub;
 	u16_t del_idx, i;
 	u8_t status;
@@ -2374,7 +2374,7 @@ static void node_reset(struct bt_mesh_model *model,
 {
 	/* Needed size: opcode (2 bytes) + msg + MIC */
 	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 0 + 4);
-	struct bt_mesh_cfg *cfg = model->user_data;
+	struct bt_mesh_cfg_srv *cfg = model->user_data;
 	int i;
 
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
@@ -2421,7 +2421,7 @@ static void send_friend_status(struct bt_mesh_model *model,
 {
 	/* Needed size: opcode (2 bytes) + msg + MIC */
 	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 1 + 4);
-	struct bt_mesh_cfg *cfg = model->user_data;
+	struct bt_mesh_cfg_srv *cfg = model->user_data;
 
 	bt_mesh_model_msg_init(msg, OP_FRIEND_STATUS);
 	net_buf_simple_add_u8(msg, cfg->frnd);
@@ -2446,7 +2446,7 @@ static void friend_set(struct bt_mesh_model *model,
 		       struct bt_mesh_msg_ctx *ctx,
 		       struct net_buf_simple *buf)
 {
-	struct bt_mesh_cfg *cfg = model->user_data;
+	struct bt_mesh_cfg_srv *cfg = model->user_data;
 	struct bt_mesh_subnet *sub;
 
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
@@ -2674,7 +2674,7 @@ static void hb_pub_send_status(struct bt_mesh_model *model,
 {
 	/* Needed size: opcode (1 byte) + msg + MIC */
 	struct net_buf_simple *msg = NET_BUF_SIMPLE(1 + 10 + 4);
-	struct bt_mesh_cfg *cfg = model->user_data;
+	struct bt_mesh_cfg_srv *cfg = model->user_data;
 
 	BT_DBG("src 0x%04x status 0x%02x", ctx->addr, status);
 
@@ -2713,7 +2713,7 @@ static void heartbeat_pub_set(struct bt_mesh_model *model,
 			      struct net_buf_simple *buf)
 {
 	struct hb_pub_param *param = (void *)buf->data;
-	struct bt_mesh_cfg *cfg = model->user_data;
+	struct bt_mesh_cfg_srv *cfg = model->user_data;
 	u16_t dst, feat, idx;
 	u8_t status;
 
@@ -2792,7 +2792,7 @@ static void hb_sub_send_status(struct bt_mesh_model *model,
 {
 	/* Needed size: opcode (2 bytes) + msg + MIC */
 	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 9 + 4);
-	struct bt_mesh_cfg *cfg = model->user_data;
+	struct bt_mesh_cfg_srv *cfg = model->user_data;
 	u16_t period;
 	s64_t uptime;
 
@@ -2838,7 +2838,7 @@ static void heartbeat_sub_set(struct bt_mesh_model *model,
 			      struct bt_mesh_msg_ctx *ctx,
 			      struct net_buf_simple *buf)
 {
-	struct bt_mesh_cfg *cfg = model->user_data;
+	struct bt_mesh_cfg_srv *cfg = model->user_data;
 	u16_t sub_src, sub_dst;
 	u8_t sub_period;
 	s32_t period_ms;
@@ -2905,7 +2905,7 @@ static void heartbeat_sub_set(struct bt_mesh_model *model,
 	hb_sub_send_status(model, ctx, STATUS_SUCCESS);
 }
 
-const struct bt_mesh_model_op bt_mesh_cfg_op[] = {
+const struct bt_mesh_model_op bt_mesh_cfg_srv_op[] = {
 	{ OP_DEV_COMP_DATA_GET,        1,   dev_comp_data_get },
 	{ OP_APP_KEY_ADD,              19,  app_key_add },
 	{ OP_APP_KEY_UPDATE,           19,  app_key_update },
@@ -2958,8 +2958,9 @@ const struct bt_mesh_model_op bt_mesh_cfg_op[] = {
 
 static void hb_publish(struct k_work *work)
 {
-	struct bt_mesh_cfg *cfg = CONTAINER_OF(work, struct bt_mesh_cfg,
-					       hb_pub.timer.work);
+	struct bt_mesh_cfg_srv *cfg = CONTAINER_OF(work,
+						   struct bt_mesh_cfg_srv,
+						   hb_pub.timer.work);
 	struct bt_mesh_model *model = cfg->model;
 	struct bt_mesh_subnet *sub;
 	u16_t period_ms;
@@ -2990,7 +2991,7 @@ static void hb_publish(struct k_work *work)
 	}
 }
 
-static bool conf_is_valid(struct bt_mesh_cfg *cfg)
+static bool conf_is_valid(struct bt_mesh_cfg_srv *cfg)
 {
 	if (cfg->relay > 0x02) {
 		return false;
@@ -3007,9 +3008,9 @@ static bool conf_is_valid(struct bt_mesh_cfg *cfg)
 	return true;
 }
 
-int bt_mesh_conf_init(struct bt_mesh_model *model, bool primary)
+int bt_mesh_cfg_srv_init(struct bt_mesh_model *model, bool primary)
 {
-	struct bt_mesh_cfg *cfg = model->user_data;
+	struct bt_mesh_cfg_srv *cfg = model->user_data;
 
 	if (!cfg) {
 		BT_ERR("No Configuration Server context provided");
@@ -3048,7 +3049,7 @@ int bt_mesh_conf_init(struct bt_mesh_model *model, bool primary)
 
 void bt_mesh_heartbeat(u16_t src, u16_t dst, u8_t hops, u16_t feat)
 {
-	struct bt_mesh_cfg *cfg = conf;
+	struct bt_mesh_cfg_srv *cfg = conf;
 
 	if (!cfg) {
 		BT_WARN("No configuaration server context available");
