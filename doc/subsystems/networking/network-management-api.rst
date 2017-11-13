@@ -54,7 +54,7 @@ code. This makes it possible for different events to be handled by the
 same callback function, if desired.
 
 See an example of registering callback functions and using the network
-management API in :file:`test/net/mgmt/src/mgmt.c`.
+management API in :file:`tests/net/mgmt/src/mgmt.c`.
 
 Defining a network management procedure
 ***************************************
