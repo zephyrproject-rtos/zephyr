@@ -552,7 +552,7 @@ static void prov_capabilities(const u8_t *data)
 	BT_DBG("Input OOB Action:  0x%04x", input_action);
 }
 
-static bt_mesh_output_action output_action(u8_t action)
+static bt_mesh_output_action_t output_action(u8_t action)
 {
 	switch (action) {
 	case OUTPUT_OOB_BLINK:
@@ -570,7 +570,7 @@ static bt_mesh_output_action output_action(u8_t action)
 	}
 }
 
-static bt_mesh_input_action input_action(u8_t action)
+static bt_mesh_input_action_t input_action(u8_t action)
 {
 	switch (action) {
 	case INPUT_OOB_PUSH:
@@ -588,8 +588,8 @@ static bt_mesh_input_action input_action(u8_t action)
 
 static int prov_auth(u8_t method, u8_t action, u8_t size)
 {
-	bt_mesh_output_action output;
-	bt_mesh_input_action input;
+	bt_mesh_output_action_t output;
+	bt_mesh_input_action_t input;
 
 	switch (method) {
 	case AUTH_METHOD_NO_OOB:

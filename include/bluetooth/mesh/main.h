@@ -24,7 +24,7 @@ typedef enum {
 	BT_MESH_VIBRATE         = BIT(2),
 	BT_MESH_DISPLAY_NUMBER  = BIT(3),
 	BT_MESH_DISPLAY_STRING  = BIT(4),
-} bt_mesh_output_action;
+} bt_mesh_output_action_t;
 
 typedef enum {
 	BT_MESH_NO_INPUT      = 0,
@@ -32,7 +32,7 @@ typedef enum {
 	BT_MESH_TWIST         = BIT(1),
 	BT_MESH_ENTER_NUMBER  = BIT(2),
 	BT_MESH_ENTER_STRING  = BIT(3),
-} bt_mesh_input_action;
+} bt_mesh_input_action_t;
 
 struct bt_mesh_prov {
 	const u8_t *uuid;
@@ -46,12 +46,12 @@ struct bt_mesh_prov {
 	u8_t        input_size;
 	u16_t       input_actions;
 
-	int         (*output_number)(bt_mesh_output_action act, u32_t num);
+	int         (*output_number)(bt_mesh_output_action_t act, u32_t num);
 	int         (*output_string)(const char *str);
 
-	int         (*input)(bt_mesh_input_action act, u8_t size);
+	int         (*input)(bt_mesh_input_action_t act, u8_t size);
 
-	void        (*link_open)(void);
+	void        (*link_open)(bt);
 	void        (*link_close)(void);
 	void        (*complete)(u16_t addr);
 };
