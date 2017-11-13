@@ -1174,6 +1174,7 @@ void bt_mesh_net_recv(struct net_buf_simple *data, s8_t rssi,
 {
 	struct net_buf_simple *buf = NET_BUF_SIMPLE(29);
 	struct bt_mesh_net_rx rx = { .rssi = rssi };
+	struct net_buf_simple_state state;
 
 	BT_DBG("rssi %d net_if %u", rssi, net_if);
 
@@ -1184,6 +1185,9 @@ void bt_mesh_net_recv(struct net_buf_simple *data, s8_t rssi,
 	if (bt_mesh_net_decode(data, net_if, &rx, buf)) {
 		return;
 	}
+
+	/* Save the state so the buffer can later be relayed */
+	net_buf_simple_save(buf, &state);
 
 	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) &&
 	    net_if == BT_MESH_NET_IF_PROXY) {
@@ -1200,6 +1204,7 @@ void bt_mesh_net_recv(struct net_buf_simple *data, s8_t rssi,
 	 */
 	if (!BT_MESH_ADDR_IS_UNICAST(rx.dst) ||
 	    (!rx.local_match && !rx.friend_match)) {
+		net_buf_simple_restore(buf, &state);
 		bt_mesh_net_relay(buf, &rx);
 	}
 }
