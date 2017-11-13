@@ -62,10 +62,46 @@ struct bt_mesh_prov {
 	void        (*reset)(void);
 };
 
+/** @brief Provide provisioning input OOB string.
+ *
+ *  This is intended to be called after the bt_mesh_prov input callback
+ *  has been called with BT_MESH_ENTER_STRING as the action.
+ *
+ *  @param string String.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
 int bt_mesh_input_string(const char *str);
+
+/** @brief Provide provisioning input OOB number.
+ *
+ *  This is intended to be called after the bt_mesh_prov input callback
+ *  has been called with BT_MESH_ENTER_NUMBER as the action.
+ *
+ *  @param num Number.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
 int bt_mesh_input_number(u32_t num);
 
+/** @brief Enable specific provisioning bearers
+ *
+ *  Enable one or more provisioning bearers.
+ *
+ *  @param bearers Bit-wise or of provisioning bearers.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
 int bt_mesh_prov_enable(bt_mesh_prov_bearer_t bearers);
+
+/** @brief Disable specific provisioning bearers
+ *
+ *  Disable one or more provisioning bearers.
+ *
+ *  @param bearers Bit-wise or of provisioning bearers.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
 int bt_mesh_prov_disable(bt_mesh_prov_bearer_t bearers);
 
 /**
