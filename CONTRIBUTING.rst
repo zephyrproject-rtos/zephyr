@@ -185,6 +185,14 @@ finding, or that have similar ideas for changes or additions.  Send a message
 to the `Zephyr-devel mailing list`_ to introduce and discuss your idea with
 the development community.
 
+Please note that it's common practice on IRC to be away from the
+channel, but still have a client logged in to receive traffic. If you
+ask a question to a particular person and they don't answer, **try
+to stay signed in to the channel** if you can, so they have time to
+respond to you. This is especially important given the many different
+timezones Zephyr developers live in. If you don't get a timely
+response on IRC, try sending a message to the mailing list instead.
+
 It's always a good practice to search for existing or related issues before
 submitting your own. When you submit an issue (bug or feature request), the
 triage team will review and comment on the submission, typically within a few
