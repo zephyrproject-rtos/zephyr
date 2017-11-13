@@ -167,6 +167,12 @@ static void configure(void)
 	board_play("100C100D100E100F100G100A100H");
 }
 
+static const u8_t dev_uuid[16] = { 0xdd, 0xdd };
+
+static const struct bt_mesh_prov prov = {
+	.uuid = dev_uuid,
+};
+
 static void bt_ready(int err)
 {
 	if (err) {
@@ -176,7 +182,7 @@ static void bt_ready(int err)
 
 	printk("Bluetooth initialized\n");
 
-	err = bt_mesh_init(NULL, &comp);
+	err = bt_mesh_init(&prov, &comp);
 	if (err) {
 		printk("Initializing mesh failed (err %d)\n", err);
 		return;
