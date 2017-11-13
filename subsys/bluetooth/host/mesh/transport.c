@@ -1244,8 +1244,8 @@ int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx)
 		return -EAGAIN;
 	}
 
-	/* Save the parsing state so the buffer can later be relayed or
-	 * placed in the Friend Queue.
+	/* Save the app-level state so the buffer can later be placed in
+	 * the Friend Queue.
 	 */
 	net_buf_simple_save(buf, &state);
 
