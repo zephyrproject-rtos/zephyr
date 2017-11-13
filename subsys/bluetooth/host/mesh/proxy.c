@@ -1043,6 +1043,10 @@ s32_t bt_mesh_proxy_adv_start(void)
 {
 	BT_DBG("");
 
+	if (gatt_svc == MESH_GATT_NONE) {
+		return K_FOREVER;
+	}
+
 #if defined(CONFIG_BT_MESH_PB_GATT)
 	if (!bt_mesh_is_provisioned()) {
 		if (bt_le_adv_start(proxy_adv_param,

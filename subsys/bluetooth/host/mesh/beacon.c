@@ -351,9 +351,6 @@ void bt_mesh_beacon_recv(struct net_buf_simple *buf)
 void bt_mesh_beacon_init(void)
 {
 	k_delayed_work_init(&beacon_timer, beacon_send);
-
-	/* Start beaconing since we're unprovisioned */
-	k_work_submit(&beacon_timer.work);
 }
 
 void bt_mesh_beacon_ivu_initiator(bool enable)
