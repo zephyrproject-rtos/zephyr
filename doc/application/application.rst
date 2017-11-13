@@ -449,12 +449,13 @@ corresponds to :file:`zephyr.elf` file:
 
 .. code-block:: bash
 
-   $ gdb --tui zephyr.elf
+   $ ..../path/to/gdb --tui zephyr.elf
 
 .. note::
 
    The GDB version on the development system might not support the --tui
-   option.
+   option. Please make sure you use the GDB binary from the SDK which
+   corrosponds to the toolchain that has been used to build the binary.
 
 If you are not using a .gdbinit file, issue the following command inside GDB to
 connect to the remote GDB server on port 1234:
