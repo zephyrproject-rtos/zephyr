@@ -5,10 +5,17 @@
 # and currently provided by the Zephyr SDK. Those tools will need to be
 # provided for different OSes and sepearately from the toolchain.
 
+if(DEFINED ENV{ZEPHYR_SDK_INSTALL_DIR})
+  set_ifndef(ZEPHYR_SDK_INSTALL_DIR $ENV{ZEPHYR_SDK_INSTALL_DIR})
+endif()
+set(ZEPHYR_SDK_INSTALL_DIR ${ZEPHYR_SDK_INSTALL_DIR} CACHE PATH "Zephyr SDK install directory")
 
-set_ifndef(ZEPHYR_SDK_INSTALL_DIR $ENV{ZEPHYR_SDK_INSTALL_DIR})
-set(       ZEPHYR_SDK_INSTALL_DIR ${ZEPHYR_SDK_INSTALL_DIR} CACHE PATH "Zephyr SDK install directory")
-assert(    ZEPHYR_SDK_INSTALL_DIR "ZEPHYR_SDK_INSTALL_DIR is not set")
+if(NOT ZEPHYR_SDK_INSTALL_DIR)
+  # Until https://github.com/zephyrproject-rtos/zephyr/issues/4912 is
+  # resolved we use ZEPHYR_SDK_INSTALL_DIR to determine whether the user
+  # wants to use the Zephyr SDK or not.
+  return()
+endif()
 
 set(REQUIRED_SDK_VER 0.9.2)
 set(TOOLCHAIN_VENDOR zephyr)
