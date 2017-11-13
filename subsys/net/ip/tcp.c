@@ -391,6 +391,8 @@ static struct net_pkt *prepare_segment(struct net_tcp *tcp,
 
 		if (pkt_allocated) {
 			net_pkt_unref(pkt);
+		} else {
+			pkt->frags = tail;
 		}
 
 		return NULL;
@@ -400,6 +402,8 @@ static struct net_pkt *prepare_segment(struct net_tcp *tcp,
 	if (!header) {
 		if (pkt_allocated) {
 			net_pkt_unref(pkt);
+		} else {
+			pkt->frags = tail;
 		}
 
 		return NULL;
