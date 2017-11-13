@@ -30,8 +30,8 @@ K_PIPE_DEFINE(kpipe, PIPE_LEN, 4);
 static struct k_pipe pipe;
 
 static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
-static struct k_thread tdata;
-static struct k_sem end_sema;
+struct k_thread tdata;
+K_SEM_DEFINE(end_sema, 0, 1);
 
 static void tpipe_put(struct k_pipe *ppipe)
 {
@@ -100,8 +100,6 @@ static void tThread_block_put(void *p1, void *p2, void *p3)
 
 static void tpipe_thread_thread(struct k_pipe *ppipe)
 {
-	k_sem_init(&end_sema, 0, 1);
-
 	/**TESTPOINT: thread-thread data passing via pipe*/
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 				      tThread_entry, ppipe, NULL, NULL,
