@@ -1,4 +1,4 @@
-include($ENV{ZEPHYR_BASE}/cmake/host-tools-${ZEPHYR_GCC_VARIANT}.cmake OPTIONAL)
+include($ENV{ZEPHYR_BASE}/cmake/host-tools-zephyr.cmake)
 
 if(PREBUILT_HOST_TOOLS)
   list(APPEND CMAKE_PROGRAM_PATH ${PREBUILT_HOST_TOOLS}/kconfig)
