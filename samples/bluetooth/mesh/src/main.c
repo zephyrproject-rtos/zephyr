@@ -152,6 +152,11 @@ static void prov_complete(u16_t addr)
 	board_prov_complete();
 }
 
+static void prov_reset(void)
+{
+	bt_mesh_prov_enable(BT_MESH_PROV_ADV | BT_MESH_PROV_GATT);
+}
+
 static const uint8_t dev_uuid[16] = { 0xdd, 0xdd };
 
 static const struct bt_mesh_prov prov = {
@@ -160,6 +165,7 @@ static const struct bt_mesh_prov prov = {
 	.output_actions = BT_MESH_DISPLAY_NUMBER,
 	.output_number = output_number,
 	.complete = prov_complete,
+	.reset = prov_reset,
 };
 
 static void bt_ready(int err)
@@ -178,6 +184,8 @@ static void bt_ready(int err)
 		printk("Initializing mesh failed (err %d)\n", err);
 		return;
 	}
+
+	bt_mesh_prov_enable(BT_MESH_PROV_ADV | BT_MESH_PROV_GATT);
 
 	printk("Mesh initialized\n");
 }

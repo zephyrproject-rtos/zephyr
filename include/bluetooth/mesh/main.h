@@ -34,6 +34,11 @@ typedef enum {
 	BT_MESH_ENTER_STRING  = BIT(3),
 } bt_mesh_input_action_t;
 
+typedef enum {
+	BT_MESH_PROV_ADV   = BIT(0),
+	BT_MESH_PROV_GATT  = BIT(1),
+} bt_mesh_prov_bearer_t;
+
 struct bt_mesh_prov {
 	const u8_t *uuid;
 
@@ -51,13 +56,17 @@ struct bt_mesh_prov {
 
 	int         (*input)(bt_mesh_input_action_t act, u8_t size);
 
-	void        (*link_open)(bt);
-	void        (*link_close)(void);
+	void        (*link_open)(bt_mesh_prov_bearer_t bearer);
+	void        (*link_close)(bt_mesh_prov_bearer_t bearer);
 	void        (*complete)(u16_t addr);
+	void        (*reset)(void);
 };
 
 int bt_mesh_input_string(const char *str);
 int bt_mesh_input_number(u32_t num);
+
+int bt_mesh_prov_enable(bt_mesh_prov_bearer_t bearers);
+int bt_mesh_prov_disable(bt_mesh_prov_bearer_t bearers);
 
 /**
  * @}
