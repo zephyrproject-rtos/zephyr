@@ -86,7 +86,7 @@ static void attention_off(struct bt_mesh_model *model)
 	board_attention(false);
 }
 
-static struct bt_mesh_health health_srv = {
+static struct bt_mesh_health_srv health_srv = {
 	.attention.on = attention_on,
 	.attention.off = attention_off,
 };

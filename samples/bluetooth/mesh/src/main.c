@@ -35,7 +35,7 @@ static struct bt_mesh_cfg_srv cfg_srv = {
 	.relay_retransmit = BT_MESH_TRANSMIT(2, 20),
 };
 
-static struct bt_mesh_health health_srv = {
+static struct bt_mesh_health_srv health_srv = {
 };
 
 static struct bt_mesh_model_pub gen_level_pub;

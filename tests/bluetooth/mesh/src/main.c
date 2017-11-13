@@ -103,7 +103,7 @@ static int fault_test(struct bt_mesh_model *model, uint8_t test_id,
 	return 0;
 }
 
-static struct bt_mesh_health health_srv = {
+static struct bt_mesh_health_srv health_srv = {
 	.fault_get_cur = fault_get_cur,
 	.fault_get_reg = fault_get_reg,
 	.fault_clear = fault_clear,

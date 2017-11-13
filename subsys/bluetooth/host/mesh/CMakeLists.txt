@@ -10,7 +10,7 @@ zephyr_library_sources_ifdef(CONFIG_BT_MESH
     crypto.c
     access.c
     cfg_srv.c
-    health.c
+    health_srv.c
 )
 
 zephyr_library_sources_ifdef(CONFIG_BT_MESH_LOW_POWER lpn.c)

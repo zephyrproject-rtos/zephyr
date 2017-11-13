@@ -18,7 +18,7 @@
  */
 
 /** Mesh Health Server Model Context */
-struct bt_mesh_health {
+struct bt_mesh_health_srv {
 	struct bt_mesh_model *model;
 
 	/* Fetch current faults */
@@ -48,12 +48,12 @@ struct bt_mesh_health {
 
 int bt_mesh_fault_update(struct bt_mesh_elem *elem);
 
-extern const struct bt_mesh_model_op bt_mesh_health_op[];
+extern const struct bt_mesh_model_op bt_mesh_health_srv_op[];
 extern struct bt_mesh_model_pub bt_mesh_health_pub;
 
 #define BT_MESH_MODEL_HEALTH_SRV(srv_data)                                   \
 		BT_MESH_MODEL(BT_MESH_MODEL_ID_HEALTH_SRV,                   \
-			      bt_mesh_health_op, &bt_mesh_health_pub,        \
+			      bt_mesh_health_srv_op, &bt_mesh_health_pub,    \
 			      srv_data)
 
 /**
