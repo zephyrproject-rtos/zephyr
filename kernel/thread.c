@@ -273,6 +273,12 @@ void _setup_new_thread(struct k_thread *new_thread,
 	/* Any given thread has access to itself */
 	k_object_access_grant(new_thread, new_thread);
 
+#ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
+	/* _current may be null if the dummy thread is not used */
+	if (!_current) {
+		return;
+	}
+#endif
 	/* New threads inherit any memory domain membership by the parent */
 	if (_current->mem_domain_info.mem_domain) {
 		k_mem_domain_add_thread(_current->mem_domain_info.mem_domain,
