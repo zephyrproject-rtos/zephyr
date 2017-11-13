@@ -41,7 +41,7 @@ build:
             echo "Building a Pull Request";
             echo "- Building Documentation";
             echo "Commit range:" ${COMMIT_RANGE}
-            make htmldocs
+            make htmldocs > doc.warnings 2>&1;
             if [ -s doc/doc.warnings ]; then
               echo " => New documentation warnings/errors";
             fi;
