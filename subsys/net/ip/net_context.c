@@ -1095,7 +1095,7 @@ NET_CONN_CB(tcp_established)
 {
 	struct net_context *context = (struct net_context *)user_data;
 	struct net_tcp_hdr hdr, *tcp_hdr;
-	enum net_verdict ret;
+	enum net_verdict ret = NET_OK;
 	u8_t tcp_flags;
 	u16_t data_len;
 
@@ -1115,10 +1115,6 @@ NET_CONN_CB(tcp_established)
 	net_tcp_print_recv_info("DATA", pkt, tcp_hdr->src_port);
 
 	tcp_flags = NET_TCP_FLAGS(tcp_hdr);
-	if (tcp_flags & NET_TCP_ACK) {
-		net_tcp_ack_received(context,
-				     sys_get_be32(tcp_hdr->ack));
-	}
 
 	/*
 	 * If we receive RST here, we close the socket. See RFC 793 chapter
@@ -1143,6 +1139,48 @@ NET_CONN_CB(tcp_established)
 		net_context_unref(context);
 
 		return NET_DROP;
+	}
+
+	/* Handle TCP state transition */
+	if (tcp_flags & NET_TCP_ACK) {
+		/* TCP state might be changed after maintaining the sent pkt
+		 * list, e.g., an ack of FIN is received.
+		 */
+		net_tcp_ack_received(context,
+				     sys_get_be32(tcp_hdr->ack));
+
+		if (net_tcp_get_state(context->tcp)
+			   == NET_TCP_FIN_WAIT_1) {
+			/* Active close: step to FIN_WAIT_2 */
+			net_tcp_change_state(context->tcp, NET_TCP_FIN_WAIT_2);
+		} else if (net_tcp_get_state(context->tcp)
+			   == NET_TCP_LAST_ACK) {
+			/* Passive close: step to CLOSED */
+			net_tcp_change_state(context->tcp, NET_TCP_CLOSED);
+			/* Release the pkt before clean up */
+			net_pkt_unref(pkt);
+			goto clean_up;
+		}
+	}
+
+	if (tcp_flags & NET_TCP_FIN) {
+		if (net_tcp_get_state(context->tcp) == NET_TCP_ESTABLISHED) {
+			/* Passive close: step to CLOSE_WAIT */
+			net_tcp_change_state(context->tcp, NET_TCP_CLOSE_WAIT);
+
+			/* We should receive ACK next in order to get rid of
+			 * LAST_ACK state that we are entering in a short while.
+			 * But we need to be prepared to NOT to receive it as
+			 * otherwise the connection would be stuck forever.
+			 */
+			k_delayed_work_submit(&context->tcp->ack_timer, ACK_TIMEOUT);
+		} else if (net_tcp_get_state(context->tcp)
+			   == NET_TCP_FIN_WAIT_2) {
+			/* Active close: step to TIME_WAIT */
+			net_tcp_change_state(context->tcp, NET_TCP_TIME_WAIT);
+		}
+
+		context->tcp->fin_rcvd = 1;
 	}
 
 	if (net_tcp_seq_cmp(sys_get_be32(tcp_hdr->seq),
@@ -1175,40 +1213,35 @@ NET_CONN_CB(tcp_established)
 		return NET_DROP;
 	}
 
-	ret = packet_received(conn, pkt, context->tcp->recv_user_data);
+	/* If the pkt has appdata, notify the recv callback which should
+	 * release the pkt. Otherwise, release the pkt immediately.
+	 */
+	if (data_len > 0) {
+		ret = packet_received(conn, pkt, context->tcp->recv_user_data);
+	} else if (data_len == 0) {
+		net_pkt_unref(pkt);
+	}
 
+	/* Increment the ack */
 	context->tcp->send_ack += data_len;
-
 	if (tcp_flags & NET_TCP_FIN) {
-		/* Sending an ACK in the CLOSE_WAIT state will transition to
-		 * LAST_ACK state
-		 */
-		context->tcp->fin_rcvd = 1;
-
-		if (net_tcp_get_state(context->tcp) == NET_TCP_ESTABLISHED) {
-			net_tcp_change_state(context->tcp, NET_TCP_CLOSE_WAIT);
-		}
-
 		context->tcp->send_ack += 1;
+	}
 
+	send_ack(context, &conn->remote_addr, false);
+
+clean_up:
+	if (net_tcp_get_state(context->tcp) == NET_TCP_TIME_WAIT) {
+		/* After the ack is sent, step to CLOSED */
+		net_tcp_change_state(context->tcp, NET_TCP_CLOSED);
+	}
+
+	if (net_tcp_get_state(context->tcp) == NET_TCP_CLOSED) {
 		if (context->recv_cb) {
 			context->recv_cb(context, NULL, 0,
 					 context->tcp->recv_user_data);
 		}
 
-		/* We should receive ACK next in order to get rid of LAST_ACK
-		 * state that we are entering in a short while. But we need to
-		 * be prepared to NOT to receive it as otherwise the connection
-		 * would be stuck forever.
-		 */
-		k_delayed_work_submit(&context->tcp->ack_timer, ACK_TIMEOUT);
-	}
-
-	send_ack(context, &conn->remote_addr, false);
-
-	if (sys_slist_is_empty(&context->tcp->sent_list)
-	    && context->tcp->fin_rcvd
-	    && context->tcp->fin_sent) {
 		net_context_unref(context);
 	}
 
@@ -2215,14 +2248,7 @@ static enum net_verdict packet_received(struct net_conn *conn,
 		/* TCP packets get appdata earlier in tcp_established(). */
 		set_appdata_values(pkt, IPPROTO_UDP);
 	}
-#if defined(CONFIG_NET_TCP)
-	else if (net_context_get_type(context) == SOCK_STREAM) {
-		if (net_pkt_appdatalen(pkt) == 0) {
-			net_pkt_unref(pkt);
-			return NET_OK;
-		}
-	}
-#endif /* CONFIG_NET_TCP */
+
 	NET_DBG("Set appdata %p to len %u (total %zu)",
 		net_pkt_appdata(pkt), net_pkt_appdatalen(pkt),
 		net_pkt_get_len(pkt));
