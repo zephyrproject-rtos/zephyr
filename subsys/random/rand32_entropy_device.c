@@ -21,6 +21,10 @@ u32_t sys_rand32_get(void)
 		 * if the whole operation isn't atomic.
 		 */
 		dev = device_get_binding(CONFIG_ENTROPY_NAME);
+		__ASSERT((dev != NULL),
+			"Device driver for %s (CONFIG_ENTROPY_NAME) not found. "
+			"Check your build configuration!",
+			CONFIG_ENTROPY_NAME);
 		atomic_set(&entropy_driver, (atomic_t)(uintptr_t)dev);
 	}
 
