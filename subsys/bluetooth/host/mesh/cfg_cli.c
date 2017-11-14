@@ -282,8 +282,8 @@ static void mod_sub_status(struct bt_mesh_model *model,
 
 struct hb_sub_param {
 	u8_t *status;
-	u16_t src;
-	u16_t dst;
+	u16_t *src;
+	u16_t *dst;
 	u8_t *period;
 	u8_t *count;
 	u8_t *min;
@@ -294,9 +294,7 @@ static void hb_sub_status(struct bt_mesh_model *model,
 			  struct bt_mesh_msg_ctx *ctx,
 			  struct net_buf_simple *buf)
 {
-	u16_t src, dst;
 	struct hb_sub_param *param;
-	u8_t status;
 
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
@@ -307,40 +305,17 @@ static void hb_sub_status(struct bt_mesh_model *model,
 		return;
 	}
 
-	status = net_buf_simple_pull_u8(buf);
-	src = net_buf_simple_pull_le16(buf);
-	dst = net_buf_simple_pull_le16(buf);
-
 	param = cli->op_param;
-	if (param->src != src || param->dst != dst) {
-		BT_WARN("Heartbeat Subscription Status parameters mismatch");
-		return;
-	}
 
-	*param->status = status;
+	*param->status = net_buf_simple_pull_u8(buf);
 
-	if (param->period) {
+	if (param->src) {
+		*param->src = net_buf_simple_pull_le16(buf);
+		*param->dst = net_buf_simple_pull_le16(buf);
 		*param->period = net_buf_simple_pull_u8(buf);
-	} else {
-		net_buf_simple_pull(buf, 1);
-	}
-
-	if (param->count) {
 		*param->count = net_buf_simple_pull_u8(buf);
-	} else {
-		net_buf_simple_pull(buf, 1);
-	}
-
-	if (param->min) {
 		*param->min = net_buf_simple_pull_u8(buf);
-	} else {
-		net_buf_simple_pull(buf, 1);
-	}
-
-	if (param->max) {
 		*param->max = net_buf_simple_pull_u8(buf);
-	} else {
-		net_buf_simple_pull(buf, 1);
 	}
 
 	k_sem_give(&cli->op_sync);
@@ -859,8 +834,6 @@ int bt_mesh_cfg_hb_sub_set(u16_t net_idx, u16_t addr, u16_t src, u16_t dst,
 	};
 	struct hb_sub_param param = {
 		.status = status,
-		.src = src,
-		.dst = dst,
 	};
 	int err;
 
@@ -873,6 +846,56 @@ int bt_mesh_cfg_hb_sub_set(u16_t net_idx, u16_t addr, u16_t src, u16_t dst,
 	net_buf_simple_add_le16(msg, src);
 	net_buf_simple_add_le16(msg, dst);
 	net_buf_simple_add_u8(msg, period);
+
+	err = bt_mesh_model_send(cli->model, &ctx, msg, NULL, NULL);
+	if (err) {
+		BT_ERR("model_send() failed (err %d)", err);
+		return err;
+	}
+
+	if (!status) {
+		return 0;
+	}
+
+	cli->op_param = &param;
+	cli->op_pending = OP_HEARTBEAT_SUB_STATUS;
+
+	err = k_sem_take(&cli->op_sync, MSG_TIMEOUT);
+
+	cli->op_pending = 0;
+	cli->op_param = NULL;
+
+	return err;
+}
+
+int bt_mesh_cfg_hb_sub_get(u16_t net_idx, u16_t addr, u16_t *src, u16_t *dst,
+			   u8_t *period, u8_t *count, u8_t *min, u8_t *max,
+			   u8_t *status)
+{
+	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 0 + 4);
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = net_idx,
+		.app_idx = BT_MESH_KEY_DEV,
+		.addr = addr,
+		.send_ttl = BT_MESH_TTL_DEFAULT,
+	};
+	struct hb_sub_param param = {
+		.status = status,
+		.src = src,
+		.dst = dst,
+		.period = period,
+		.count = count,
+		.min = min,
+		.max = max,
+	};
+	int err;
+
+	err = check_cli();
+	if (err) {
+		return err;
+	}
+
+	bt_mesh_model_msg_init(msg, OP_HEARTBEAT_SUB_GET);
 
 	err = bt_mesh_model_send(cli->model, &ctx, msg, NULL, NULL);
 	if (err) {
