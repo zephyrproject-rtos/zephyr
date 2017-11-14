@@ -4,11 +4,14 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+PREFIX ?= .
+OBJ_DIR ?= $(PREFIX)/obj
+LIB_DIR ?= $(PREFIX)/lib
+
 all:
-	mkdir -p obj lib
-	$(CC) -c $(CFLAGS) -Iinclude src/mylib.c -o obj/mylib.o
-	$(AR) -rcs lib/libmylib.a obj/mylib.o
+	mkdir -p $(OBJ_DIR) $(LIB_DIR)
+	$(CC) -c $(CFLAGS) -Iinclude src/mylib.c -o $(OBJ_DIR)/mylib.o
+	$(AR) -rcs $(LIB_DIR)/libmylib.a $(OBJ_DIR)/mylib.o
 
 clean:
-	rm -rf obj lib
-
+	rm -rf $(OBJ_DIR) $(LIB_DIR)
