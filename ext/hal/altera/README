@@ -1,0 +1,36 @@
+Altera HAL
+#####################
+
+Origin:
+   Altera Quartus Prime Lite SDK
+   http://dl.altera.com/?edition=lite
+
+Status:
+   v17.0
+
+Purpose:
+   Hardware Abstraction Layer for NIOSII based soft IP blocks.
+
+Description:
+   Altera Hardware Abstraction Layer(or Altera HAL) provides the
+   low level driver support for NIOSII based soft IP blocks.
+
+   Altera HAL primarily abstracts the low level hardware interactions
+   of different NIOSII based soft IP blocks like UART, I2C, SPI etc...
+   and provides the high level API's for the shim drivers.
+
+Dependencies:
+   Some of the Altera HAL drivers have dependency on the newlibc and
+   it needs to be enabled before enabling the Altera HAL.
+
+   The NIOSII port of Zephyr will be accessing the Altera HAL through
+   shim drivers to enable the different soft IP blocks on Zephyr.
+
+URL:
+   https://www.altera.com/products/processors/support.html
+
+Maintained-by:
+   External
+
+License:
+   MIT
