@@ -50,6 +50,8 @@ void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
 
 #if defined(CONFIG_ARM)
 #define NO_EXECUTE_SUPPORT 1
+#elif defined(CONFIG_ARC)
+#define NO_EXECUTE_SUPPORT 1
 #elif defined(CONFIG_X86)
 #if defined(CONFIG_X86_PAE_MODE)
 #define NO_EXECUTE_SUPPORT 1
