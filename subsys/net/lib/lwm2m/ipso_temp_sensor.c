@@ -109,12 +109,12 @@ static int sensor_value_write_cb(u16_t obj_inst_id,
 				update_min = true;
 			}
 
-			if (sensor_value[i].val1 > min_measured_value[i].val1) {
+			if (sensor_value[i].val1 > max_measured_value[i].val1) {
 				update_max = true;
 			} else if (sensor_value[i].val1 ==
-					min_measured_value[i].val1 &&
+					max_measured_value[i].val1 &&
 				   sensor_value[i].val2 >
-					min_measured_value[i].val2) {
+					max_measured_value[i].val2) {
 				update_max = true;
 			}
 
