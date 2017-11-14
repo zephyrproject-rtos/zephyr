@@ -23,12 +23,12 @@
 
 #include "foundation.h"
 
-#define MSG_TIMEOUT K_SECONDS(10)
-
 struct comp_data {
 	u8_t *status;
 	struct net_buf_simple *comp;
 };
+
+static s32_t msg_timeout = K_SECONDS(2);
 
 static struct bt_mesh_cfg_cli *cli;
 
@@ -420,7 +420,7 @@ int bt_mesh_cfg_comp_data_get(u16_t net_idx, u16_t addr, u8_t page,
 	cli->op_param = &param;
 	cli->op_pending = OP_DEV_COMP_DATA_STATUS;
 
-	err = k_sem_take(&cli->op_sync, MSG_TIMEOUT);
+	err = k_sem_take(&cli->op_sync, msg_timeout);
 
 	cli->op_pending = 0;
 	cli->op_param = NULL;
@@ -456,7 +456,7 @@ static int get_state_u8(u16_t net_idx, u16_t addr, u32_t op, u32_t rsp,
 	cli->op_param = val;
 	cli->op_pending = rsp;
 
-	err = k_sem_take(&cli->op_sync, MSG_TIMEOUT);
+	err = k_sem_take(&cli->op_sync, msg_timeout);
 
 	cli->op_pending = 0;
 	cli->op_param = NULL;
@@ -493,7 +493,7 @@ static int set_state_u8(u16_t net_idx, u16_t addr, u32_t op, u32_t rsp,
 	cli->op_param = val;
 	cli->op_pending = rsp;
 
-	err = k_sem_take(&cli->op_sync, MSG_TIMEOUT);
+	err = k_sem_take(&cli->op_sync, msg_timeout);
 
 	cli->op_pending = 0;
 	cli->op_param = NULL;
@@ -582,7 +582,7 @@ int bt_mesh_cfg_relay_get(u16_t net_idx, u16_t addr, u8_t *status,
 	cli->op_param = &param;
 	cli->op_pending = OP_RELAY_STATUS;
 
-	err = k_sem_take(&cli->op_sync, MSG_TIMEOUT);
+	err = k_sem_take(&cli->op_sync, msg_timeout);
 
 	cli->op_pending = 0;
 	cli->op_param = NULL;
@@ -624,7 +624,7 @@ int bt_mesh_cfg_relay_set(u16_t net_idx, u16_t addr, u8_t new_relay,
 	cli->op_param = &param;
 	cli->op_pending = OP_RELAY_STATUS;
 
-	err = k_sem_take(&cli->op_sync, MSG_TIMEOUT);
+	err = k_sem_take(&cli->op_sync, msg_timeout);
 
 	cli->op_pending = 0;
 	cli->op_param = NULL;
@@ -672,7 +672,7 @@ int bt_mesh_cfg_app_key_add(u16_t net_idx, u16_t addr, u16_t key_net_idx,
 	cli->op_param = &param;
 	cli->op_pending = OP_APP_KEY_STATUS;
 
-	err = k_sem_take(&cli->op_sync, MSG_TIMEOUT);
+	err = k_sem_take(&cli->op_sync, msg_timeout);
 
 	cli->op_pending = 0;
 	cli->op_param = NULL;
@@ -728,7 +728,7 @@ int mod_app_bind(u16_t net_idx, u16_t addr, u16_t elem_addr, u16_t mod_app_idx,
 	cli->op_param = &param;
 	cli->op_pending = OP_MOD_APP_STATUS;
 
-	err = k_sem_take(&cli->op_sync, MSG_TIMEOUT);
+	err = k_sem_take(&cli->op_sync, msg_timeout);
 
 	cli->op_pending = 0;
 	cli->op_param = NULL;
@@ -799,7 +799,7 @@ int mod_sub_add(u16_t net_idx, u16_t addr, u16_t elem_addr, u16_t sub_addr,
 	cli->op_param = &param;
 	cli->op_pending = OP_MOD_SUB_STATUS;
 
-	err = k_sem_take(&cli->op_sync, MSG_TIMEOUT);
+	err = k_sem_take(&cli->op_sync, msg_timeout);
 
 	cli->op_pending = 0;
 	cli->op_param = NULL;
@@ -860,7 +860,7 @@ int bt_mesh_cfg_hb_sub_set(u16_t net_idx, u16_t addr, u16_t src, u16_t dst,
 	cli->op_param = &param;
 	cli->op_pending = OP_HEARTBEAT_SUB_STATUS;
 
-	err = k_sem_take(&cli->op_sync, MSG_TIMEOUT);
+	err = k_sem_take(&cli->op_sync, msg_timeout);
 
 	cli->op_pending = 0;
 	cli->op_param = NULL;
@@ -910,7 +910,7 @@ int bt_mesh_cfg_hb_sub_get(u16_t net_idx, u16_t addr, u16_t *src, u16_t *dst,
 	cli->op_param = &param;
 	cli->op_pending = OP_HEARTBEAT_SUB_STATUS;
 
-	err = k_sem_take(&cli->op_sync, MSG_TIMEOUT);
+	err = k_sem_take(&cli->op_sync, msg_timeout);
 
 	cli->op_pending = 0;
 	cli->op_param = NULL;
@@ -966,7 +966,7 @@ int bt_mesh_cfg_hb_pub_set(u16_t net_idx, u16_t addr, u16_t pub_dst,
 	cli->op_param = &param;
 	cli->op_pending = OP_HEARTBEAT_PUB_STATUS;
 
-	err = k_sem_take(&cli->op_sync, MSG_TIMEOUT);
+	err = k_sem_take(&cli->op_sync, msg_timeout);
 
 	cli->op_pending = 0;
 	cli->op_param = NULL;
@@ -1016,12 +1016,22 @@ int bt_mesh_cfg_hb_pub_get(u16_t net_idx, u16_t addr, u16_t *pub_dst,
 	cli->op_param = &param;
 	cli->op_pending = OP_HEARTBEAT_PUB_STATUS;
 
-	err = k_sem_take(&cli->op_sync, MSG_TIMEOUT);
+	err = k_sem_take(&cli->op_sync, msg_timeout);
 
 	cli->op_pending = 0;
 	cli->op_param = NULL;
 
 	return err;
+}
+
+s32_t bt_mesh_cfg_cli_timeout_get(void)
+{
+	return msg_timeout;
+}
+
+void bt_mesh_cfg_cli_timeout_set(s32_t timeout)
+{
+	msg_timeout = timeout;
 }
 
 int bt_mesh_cfg_cli_init(struct bt_mesh_model *model, bool primary)
