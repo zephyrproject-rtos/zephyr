@@ -233,10 +233,21 @@ static int cmd_init(int argc, char *argv[])
 {
 	int err;
 
+	err = bt_enable(NULL);
+	if (err && err != -EALREADY) {
+		printk("Bluetooth init failed (err %d)\n", err);
+		return 0;
+	} else if (!err) {
+		printk("Bluetooth initialized\n");
+	}
+
 	err = bt_mesh_init(&prov, &comp);
 	if (err) {
 		printk("Mesh initialization failed (err %d)\n", err);
 	}
+
+	printk("Mesh initialized\n");
+	printk("Use \"pb-adv on\" or \"pb-gatt on\" to enable advertising\n");
 
 	return 0;
 }
