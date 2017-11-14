@@ -17,9 +17,14 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/mesh.h>
 
-static u16_t local = BT_MESH_ADDR_UNASSIGNED;
-static u16_t dst = BT_MESH_ADDR_UNASSIGNED;
-static u16_t net_idx;
+static struct {
+	u16_t local;
+	u16_t dst;
+	u16_t net_idx;
+} net = {
+	.local = BT_MESH_ADDR_UNASSIGNED,
+	.dst = BT_MESH_ADDR_UNASSIGNED,
+};
 
 static struct bt_mesh_cfg_srv cfg_srv = {
 	.relay = BT_MESH_RELAY_DISABLED,
@@ -68,9 +73,9 @@ static const struct bt_mesh_comp comp = {
 
 static void prov_complete(u16_t addr)
 {
-	printk("Local node provisioned, primary address 0x%04x\n", addr);
-	local = addr;
-	dst = addr;
+	printk("Local node provisioned, address 0x%04x\n", addr);
+	net.local = addr;
+	net.dst = addr;
 }
 
 static void prov_reset(void)
@@ -306,7 +311,8 @@ static int cmd_get_comp(int argc, char *argv[])
 	}
 
 	net_buf_simple_init(comp, 0);
-	err = bt_mesh_cfg_comp_data_get(net_idx, dst, page, &status, comp);
+	err = bt_mesh_cfg_comp_data_get(net.net_idx, net.dst, page,
+					&status, comp);
 	if (err) {
 		printk("Getting composition failed (err %d)\n", err);
 		return 0;
@@ -317,7 +323,7 @@ static int cmd_get_comp(int argc, char *argv[])
 		return 0;
 	}
 
-	printk("Got Composition Data for 0x%04x:\n", dst);
+	printk("Got Composition Data for 0x%04x:\n", net.dst);
 	printk("\tCID      0x%04x\n", net_buf_simple_pull_le16(comp));
 	printk("\tPID      0x%04x\n", net_buf_simple_pull_le16(comp));
 	printk("\tVID      0x%04x\n", net_buf_simple_pull_le16(comp));
@@ -372,31 +378,31 @@ static int cmd_get_comp(int argc, char *argv[])
 static int cmd_dst(int argc, char *argv[])
 {
 	if (argc < 2) {
-		printk("Destination address: 0x%04x%s\n", dst,
-		       dst == local ? " (local)" : "");
+		printk("Destination address: 0x%04x%s\n", net.dst,
+		       net.dst == net.local ? " (local)" : "");
 		return 0;
 	}
 
 	if (!strcmp(argv[1], "local")) {
-		dst = local;
+		net.dst = net.local;
 	} else {
-		dst = strtoul(argv[1], NULL, 0);
+		net.dst = strtoul(argv[1], NULL, 0);
 	}
 
-	printk("Destination address set to 0x%04x%s\n", dst,
-	       dst == local ? " (local)" : "");
+	printk("Destination address set to 0x%04x%s\n", net.dst,
+	       net.dst == net.local ? " (local)" : "");
 	return 0;
 }
 
 static int cmd_netidx(int argc, char *argv[])
 {
 	if (argc < 2) {
-		printk("NetIdx: 0x%04x\n", net_idx);
+		printk("NetIdx: 0x%04x\n", net.net_idx);
 		return 0;
 	}
 
-	net_idx = strtoul(argv[1], NULL, 0);
-	printk("NetIdx set to 0x%04x\n", net_idx);
+	net.net_idx = strtoul(argv[1], NULL, 0);
+	printk("NetIdx set to 0x%04x\n", net.net_idx);
 	return 0;
 }
 
@@ -406,11 +412,12 @@ static int cmd_beacon(int argc, char *argv[])
 	int err;
 
 	if (argc < 2) {
-		err = bt_mesh_cfg_beacon_get(net_idx, dst, &status);
+		err = bt_mesh_cfg_beacon_get(net.net_idx, net.dst, &status);
 	} else {
 		u8_t val = str2bool(argv[1]);
 
-		err = bt_mesh_cfg_beacon_set(net_idx, dst, val, &status);
+		err = bt_mesh_cfg_beacon_set(net.net_idx, net.dst, val,
+					     &status);
 	}
 
 	if (err) {
@@ -429,11 +436,11 @@ static int cmd_ttl(int argc, char *argv[])
 	int err;
 
 	if (argc < 2) {
-		err = bt_mesh_cfg_ttl_get(net_idx, dst, &ttl);
+		err = bt_mesh_cfg_ttl_get(net.net_idx, net.dst, &ttl);
 	} else {
 		u8_t val = strtoul(argv[1], NULL, 0);
 
-		err = bt_mesh_cfg_ttl_set(net_idx, dst, val, &ttl);
+		err = bt_mesh_cfg_ttl_set(net.net_idx, net.dst, val, &ttl);
 	}
 
 	if (err) {
@@ -452,11 +459,11 @@ static int cmd_friend(int argc, char *argv[])
 	int err;
 
 	if (argc < 2) {
-		err = bt_mesh_cfg_friend_get(net_idx, dst, &frnd);
+		err = bt_mesh_cfg_friend_get(net.net_idx, net.dst, &frnd);
 	} else {
 		u8_t val = strtoul(argv[1], NULL, 0);
 
-		err = bt_mesh_cfg_friend_set(net_idx, dst, val, &frnd);
+		err = bt_mesh_cfg_friend_set(net.net_idx, net.dst, val, &frnd);
 	}
 
 	if (err) {
@@ -475,11 +482,12 @@ static int cmd_gatt_proxy(int argc, char *argv[])
 	int err;
 
 	if (argc < 2) {
-		err = bt_mesh_cfg_gatt_proxy_get(net_idx, dst, &proxy);
+		err = bt_mesh_cfg_gatt_proxy_get(net.net_idx, net.dst, &proxy);
 	} else {
 		u8_t val = strtoul(argv[1], NULL, 0);
 
-		err = bt_mesh_cfg_gatt_proxy_set(net_idx, dst, val, &proxy);
+		err = bt_mesh_cfg_gatt_proxy_set(net.net_idx, net.dst, val,
+						 &proxy);
 	}
 
 	if (err) {
@@ -498,7 +506,8 @@ static int cmd_relay(int argc, char *argv[])
 	int err;
 
 	if (argc < 2) {
-		err = bt_mesh_cfg_relay_get(net_idx, dst, &relay, &transmit);
+		err = bt_mesh_cfg_relay_get(net.net_idx, net.dst, &relay,
+					    &transmit);
 	} else {
 		u8_t val = strtoul(argv[1], NULL, 0);
 		u8_t count, interval, new_transmit;
@@ -521,8 +530,8 @@ static int cmd_relay(int argc, char *argv[])
 			new_transmit = 0;
 		}
 
-		err = bt_mesh_cfg_relay_set(net_idx, dst, val, new_transmit,
-					    &relay, &transmit);
+		err = bt_mesh_cfg_relay_set(net.net_idx, net.dst, val,
+					    new_transmit, &relay, &transmit);
 	}
 
 	if (err) {
@@ -553,8 +562,8 @@ static int cmd_app_key_add(int argc, char *argv[])
 
 	/* TODO: decode key value that's given in hex */
 
-	err = bt_mesh_cfg_app_key_add(net_idx, dst, key_net_idx, key_app_idx,
-				      val, &status);
+	err = bt_mesh_cfg_app_key_add(net.net_idx, net.dst, key_net_idx,
+				      key_app_idx, val, &status);
 	if (err) {
 		printk("Unable to send App Key Add (err %d)\n", err);
 		return 0;
@@ -586,11 +595,11 @@ static int cmd_mod_app_bind(int argc, char *argv[])
 
 	if (argc > 4) {
 		cid = strtoul(argv[3], NULL, 0);
-		err = bt_mesh_cfg_mod_app_bind_vnd(net_idx, dst, elem_addr,
-						   mod_app_idx, mod_id, cid,
-						   &status);
+		err = bt_mesh_cfg_mod_app_bind_vnd(net.net_idx, net.dst,
+						   elem_addr, mod_app_idx,
+						   mod_id, cid, &status);
 	} else {
-		err = bt_mesh_cfg_mod_app_bind(net_idx, dst, elem_addr,
+		err = bt_mesh_cfg_mod_app_bind(net.net_idx, net.dst, elem_addr,
 					       mod_app_idx, mod_id, &status);
 	}
 
@@ -624,11 +633,11 @@ static int cmd_mod_sub_add(int argc, char *argv[])
 
 	if (argc > 4) {
 		cid = strtoul(argv[3], NULL, 0);
-		err = bt_mesh_cfg_mod_sub_add_vnd(net_idx, dst, elem_addr,
-						  sub_addr, mod_id, cid,
-						  &status);
+		err = bt_mesh_cfg_mod_sub_add_vnd(net.net_idx, net.dst,
+						  elem_addr, sub_addr, mod_id,
+						  cid, &status);
 	} else {
-		err = bt_mesh_cfg_mod_sub_add(net_idx, dst, elem_addr,
+		err = bt_mesh_cfg_mod_sub_add(net.net_idx, net.dst, elem_addr,
 					      sub_addr, mod_id, &status);
 	}
 
@@ -661,8 +670,8 @@ static int cmd_hb_sub_set(int argc, char *argv[])
 	sub_dst = strtoul(argv[2], NULL, 0);
 	period = strtoul(argv[3], NULL, 0);
 
-	err = bt_mesh_cfg_hb_sub_set(net_idx, dst, sub_src, sub_dst, period,
-				     &status);
+	err = bt_mesh_cfg_hb_sub_set(net.net_idx, net.dst, sub_src, sub_dst,
+				     period, &status);
 	if (err) {
 		printk("Heartbeat Subscription Set failed (err %d)\n", err);
 		return 0;
