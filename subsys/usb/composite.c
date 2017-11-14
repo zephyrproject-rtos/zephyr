@@ -16,7 +16,7 @@
 #include "composite.h"
 #include "usb_descriptor.h"
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_LEVEL
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_DEVICE_LEVEL
 #include <logging/sys_log.h>
 
 static struct usb_interface_cfg_data function_cfg[NUMOF_IFACES];
