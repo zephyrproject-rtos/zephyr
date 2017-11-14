@@ -50,3 +50,24 @@ void test_mheap_malloc_free(void)
 	/** TESTPOINT: If ptr is NULL, no operation is performed.*/
 	k_free(NULL);
 }
+
+#define NMEMB	8
+#define SIZE	16
+#define BOUNDS	(NMEMB * SIZE)
+
+void test_mheap_calloc(void)
+{
+	char *mem;
+
+	mem = k_calloc(NMEMB, SIZE);
+
+	zassert_not_null(mem, "calloc operation failed");
+
+	/* Memory should be zeroed and not crash us if we read/write to it */
+	for (int i = 0; i < BOUNDS; i++) {
+		zassert_equal(mem[i], 0, NULL);
+		mem[i] = 1;
+	}
+
+	k_free(mem);
+}
