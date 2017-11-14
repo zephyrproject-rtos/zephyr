@@ -74,6 +74,7 @@ extern int alt_alarm_start (alt_alarm* the_alarm,
 
 extern void alt_alarm_stop (alt_alarm* the_alarm);
 
+#ifndef ZEPHYR_RTOS
 /*
  * Obtain the system clock rate in ticks/s. 
  */
@@ -116,6 +117,42 @@ static ALT_INLINE alt_u32 ALT_ALWAYS_INLINE alt_nticks (void)
  */
 
 extern void alt_tick (void);
+#else
+/*
+ * Obtain the system clock rate in ticks/s.
+ */
+
+static ALT_INLINE alt_u32 ALT_ALWAYS_INLINE alt_ticks_per_second (void)
+{
+  return 0;
+}
+
+/*
+ * alt_sysclk_init() is intended to be only used by the system clock driver
+ * in order to initialise the value of the clock frequency.
+ */
+
+static ALT_INLINE int ALT_ALWAYS_INLINE alt_sysclk_init (alt_u32 nticks)
+{
+  return 0;
+}
+
+/*
+ * alt_nticks() returns the elapsed number of system clock ticks since reset.
+ */
+
+static ALT_INLINE alt_u32 ALT_ALWAYS_INLINE alt_nticks (void)
+{
+  return 0;
+}
+
+/*
+ * alt_tick() should only be called by the system clock driver. This is used
+ * to notify the system that the system timer period has expired.
+ */
+
+extern void alt_tick (void);
+#endif
 
 #ifdef __cplusplus
 }
