@@ -309,6 +309,7 @@ static int bind_local(struct net_app_ctx *ctx)
 #if defined(CONFIG_NET_IPV6)
 	if (ctx->ipv6.remote.sa_family == AF_INET6 && ctx->ipv6.ctx) {
 		ctx->ipv6.local.sa_family = AF_INET6;
+
 		_net_app_set_local_addr(&ctx->ipv6.local, NULL,
 				       net_sin6(&ctx->ipv6.local)->sin6_port);
 
@@ -639,6 +640,44 @@ int net_app_connect(struct net_app_ctx *ctx, s32_t timeout)
 		ctx->is_enabled = true;
 
 		_net_app_print_info(ctx);
+	} else {
+		/* We cannot bind to local unspecified address when sending.
+		 * Select proper address depending on remote one in this case.
+		 */
+#if defined(CONFIG_NET_IPV6)
+		if (net_context_get_family(net_ctx) == AF_INET6 &&
+		    net_is_ipv6_addr_unspecified(
+			    &net_sin6(&ctx->ipv6.local)->sin6_addr)) {
+			const struct in6_addr *addr;
+
+			addr = net_if_ipv6_select_src_addr(
+				NULL,
+				&net_sin6(&ctx->ipv6.remote)->sin6_addr);
+			if (addr && addr != net_ipv6_unspecified_address()) {
+				net_ipaddr_copy(
+					&net_sin6(&ctx->ipv6.local)->sin6_addr,
+					addr);
+			}
+		}
+#endif
+
+#if defined(CONFIG_NET_IPV4)
+		if (net_context_get_family(net_ctx) == AF_INET &&
+		    net_is_ipv4_addr_unspecified(
+			    &net_sin(&ctx->ipv4.local)->sin_addr)) {
+			struct net_if *iface;
+
+			/* Just take the first IPv4 address of an interface */
+			iface = net_context_get_iface(net_ctx);
+			if (iface) {
+				net_ipaddr_copy(
+				      &net_sin(&ctx->ipv4.local)->sin_addr,
+				      &iface->ipv4.unicast[0].address.in_addr);
+			} else {
+				NET_WARN("Source address is unspecified!");
+			}
+		}
+#endif
 	}
 
 #if defined(CONFIG_NET_APP_TLS) || defined(CONFIG_NET_APP_DTLS)
