@@ -28,7 +28,8 @@ void test_bank_erase(void)
 	for (offs = FLASH_AREA_IMAGE_1_OFFSET;
 	     offs <= FLASH_AREA_IMAGE_1_OFFSET + FLASH_AREA_IMAGE_1_SIZE;
 	     offs += sizeof(temp)) {
-		flash_read(flash_dev, offs, &temp, sizeof(temp));
+		ret = flash_read(flash_dev, offs, &temp, sizeof(temp));
+		zassert_true(ret == 0, "Reading from flash");
 		if (temp != 0xFFFFFFFF) {
 			ret = flash_write_protection_set(flash_dev, false);
 			zassert_true(ret == 0, "Disabling flash protection");
