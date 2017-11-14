@@ -228,11 +228,7 @@ static void netusb_init(struct net_if *iface)
 
 	SYS_LOG_DBG("netusb device initialization");
 
-	SYS_LOG_DBG("iface %p", iface);
-
 	netusb.iface = iface;
-
-	SYS_LOG_DBG("iface %p", iface);
 
 	net_if_set_link_addr(iface, mac, sizeof(mac), NET_LINK_ETHERNET);
 
