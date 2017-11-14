@@ -79,6 +79,10 @@ int bt_mesh_cfg_mod_sub_add_vnd(u16_t net_idx, u16_t addr, u16_t elem_addr,
 int bt_mesh_cfg_hb_sub_set(u16_t net_idx, u16_t addr, u16_t src, u16_t dst,
 			   u8_t period, u8_t *status);
 
+int bt_mesh_cfg_hb_pub_set(u16_t net_idx, u16_t addr, u16_t pub_dst,
+			   u8_t count, u8_t period, u8_t ttl, u16_t feat,
+			   u16_t pub_net_idx, u8_t *status);
+
 /**
  * @}
  */
