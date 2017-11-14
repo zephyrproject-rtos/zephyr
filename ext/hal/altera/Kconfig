@@ -1,0 +1,15 @@
+# Kconfig - Altera HAL drivers configuration
+
+#
+# Copyright (c) 2017 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Some of the Altera HAL drivers depends on newlibc
+# library, So make sure to enable the NEWLIB_LIBC
+# before selecting the Altera HAL.
+menuconfig HAS_ALTERA_HAL
+	bool "Altera HAL drivers support"
+	default n
+	depends on NIOS2
+	depends on NEWLIB_LIBC
