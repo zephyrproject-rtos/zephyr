@@ -89,6 +89,10 @@ int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
 		bt_mesh_friend_init();
 	}
 
+	if (IS_ENABLED(CONFIG_BT_MESH_PROV)) {
+		bt_mesh_prov_complete(net_idx, addr);
+	}
+
 	return 0;
 }
 
