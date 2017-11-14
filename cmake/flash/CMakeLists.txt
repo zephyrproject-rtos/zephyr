@@ -42,7 +42,7 @@ foreach(target flash debug debugserver)
       ${PYTHON_EXECUTABLE}
       $ENV{ZEPHYR_BASE}/scripts/support/zephyr_flash_debug.py
       ${target}
-      $ENV{ZEPHYR_BASE}/scripts/support/${script}
+      ${script}
       DEPENDS ${logical_target_for_zephyr_elf}
       WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
       )
