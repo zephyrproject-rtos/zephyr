@@ -26,7 +26,7 @@ I18NSPHINXOPTS  = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 .PHONY: help clean html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest coverage gettext
 
 doxy-code:
-	$(Q)doxygen zephyr.doxyfile
+	$(Q)doxygen zephyr.doxyfile 2>&1 | tee doc.log
 
 doxy: doxy-code
 
@@ -79,7 +79,7 @@ kconfig: scripts/genrest/genrest.py
 prep: doxy content kconfig
 
 html: content kconfig
-	$(Q)$(SPHINXBUILD) -t $(DOC_TAG) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html 2>&1 | tee doc.log;
+	$(Q)$(SPHINXBUILD) -t $(DOC_TAG) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html 2>&1 | tee -a doc.log;
 	$(Q)./scripts/filter-doc-log.sh doc.log
 	@rm -rf samples
 	@rm -rf boards
