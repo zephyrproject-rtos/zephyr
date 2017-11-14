@@ -216,7 +216,10 @@ static void print_module_commands(const int module)
 	printk("help\n");
 
 	for (i = 0; shell_module->commands[i].cmd_name; i++) {
-		printk("%s\n", shell_module->commands[i].cmd_name);
+		printk("%-28s %s\n",
+		       shell_module->commands[i].cmd_name,
+		       shell_module->commands[i].help ?
+		       shell_module->commands[i].help : "");
 	}
 }
 
