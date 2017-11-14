@@ -12,6 +12,7 @@
 #include <board.h>
 #include <errno.h>
 #include <spi.h>
+#include <toolchain.h>
 
 #include <clock_control/stm32_clock_control.h>
 #include <clock_control.h>
@@ -47,54 +48,95 @@ static int spi_stm32_get_err(SPI_TypeDef *spi)
 	return (int)(sr & SPI_STM32_ERR_MSK);
 }
 
-static inline u8_t spi_stm32_next_tx(struct spi_stm32_data *data)
+static inline u16_t spi_stm32_next_tx(struct spi_stm32_data *data)
 {
-	return spi_context_tx_on(&data->ctx) ?
-		*data->ctx.tx_buf : SPI_STM32_TX_NOP;
+	u16_t tx_frame;
+
+	if (spi_context_tx_on(&data->ctx)) {
+		if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
+			tx_frame = UNALIGNED_GET((u8_t *)(data->ctx.tx_buf));
+		} else {
+			tx_frame = UNALIGNED_GET((u16_t *)(data->ctx.tx_buf));
+		}
+	} else {
+		tx_frame = SPI_STM32_TX_NOP;
+	}
+	return tx_frame;
 }
 
 /* Shift a SPI frame as master. */
 static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
-	u8_t tx_frame;
-	u8_t rx_frame;
+	u16_t tx_frame;
+	u16_t rx_frame;
 
 	tx_frame = spi_stm32_next_tx(data);
 	while (!LL_SPI_IsActiveFlag_TXE(spi)) {
 		/* NOP */
 	}
-	LL_SPI_TransmitData8(spi, tx_frame);
-	/* The update is ignored if TX is off. */
-	spi_context_update_tx(&data->ctx, 1, 1);
+	if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
+		LL_SPI_TransmitData8(spi, tx_frame);
+		/* The update is ignored if TX is off. */
+		spi_context_update_tx(&data->ctx, 1, 1);
+	} else {
+		LL_SPI_TransmitData16(spi, tx_frame);
+		/* The update is ignored if TX is off. */
+		spi_context_update_tx(&data->ctx, 2, 1);
+	}
 
 	while (!LL_SPI_IsActiveFlag_RXNE(spi)) {
 		/* NOP */
 	}
-	rx_frame = LL_SPI_ReceiveData8(spi);
-	if (spi_context_rx_on(&data->ctx)) {
-		*data->ctx.rx_buf = rx_frame;
-		spi_context_update_rx(&data->ctx, 1, 1);
+
+	if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
+		rx_frame = LL_SPI_ReceiveData8(spi);
+		if (spi_context_rx_on(&data->ctx)) {
+			UNALIGNED_PUT(rx_frame, (u8_t *)data->ctx.rx_buf);
+			spi_context_update_rx(&data->ctx, 1, 1);
+		}
+	} else {
+		rx_frame = LL_SPI_ReceiveData16(spi);
+		if (spi_context_rx_on(&data->ctx)) {
+			UNALIGNED_PUT(rx_frame, (u16_t *)data->ctx.rx_buf);
+			spi_context_update_rx(&data->ctx, 2, 1);
+		}
 	}
 }
 
 /* Shift a SPI frame as slave. */
 static void spi_stm32_shift_s(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
-	u8_t tx_frame;
-	u8_t rx_frame;
+	u16_t tx_frame;
+	u16_t rx_frame;
 
 	tx_frame = spi_stm32_next_tx(data);
 	if (LL_SPI_IsActiveFlag_TXE(spi)) {
-		LL_SPI_TransmitData8(spi, tx_frame);
-		/* The update is ignored if TX is off. */
-		spi_context_update_tx(&data->ctx, 1, 1);
+		if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
+			LL_SPI_TransmitData8(spi, tx_frame);
+			/* The update is ignored if TX is off. */
+			spi_context_update_tx(&data->ctx, 1, 1);
+		} else {
+			LL_SPI_TransmitData16(spi, tx_frame);
+			/* The update is ignored if TX is off. */
+			spi_context_update_tx(&data->ctx, 2, 1);
+		}
 	}
 
 	if (LL_SPI_IsActiveFlag_RXNE(spi)) {
-		rx_frame = LL_SPI_ReceiveData8(spi);
-		if (spi_context_rx_on(&data->ctx)) {
-			*data->ctx.rx_buf = rx_frame;
-			spi_context_update_rx(&data->ctx, 1, 1);
+		if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
+			rx_frame = LL_SPI_ReceiveData8(spi);
+			if (spi_context_rx_on(&data->ctx)) {
+				UNALIGNED_PUT(rx_frame,
+					      (u8_t *)data->ctx.rx_buf);
+				spi_context_update_rx(&data->ctx, 1, 1);
+			}
+		} else {
+			rx_frame = LL_SPI_ReceiveData16(spi);
+			if (spi_context_rx_on(&data->ctx)) {
+				UNALIGNED_PUT(rx_frame,
+					      (u16_t *)data->ctx.rx_buf);
+				spi_context_update_rx(&data->ctx, 2, 1);
+			}
 		}
 	}
 }
@@ -197,7 +239,8 @@ static int spi_stm32_configure(struct spi_config *config)
 		return 0;
 	}
 
-	if (SPI_WORD_SIZE_GET(config->operation) != 8) {
+	if ((SPI_WORD_SIZE_GET(config->operation) != 8)
+	    && (SPI_WORD_SIZE_GET(config->operation) != 16)) {
 		return -ENOTSUP;
 	}
 
@@ -261,7 +304,11 @@ static int spi_stm32_configure(struct spi_config *config)
 		}
 	}
 
-	LL_SPI_SetDataWidth(spi, LL_SPI_DATAWIDTH_8BIT);
+	if (SPI_WORD_SIZE_GET(config->operation) ==  8) {
+		LL_SPI_SetDataWidth(spi, LL_SPI_DATAWIDTH_8BIT);
+	} else {
+		LL_SPI_SetDataWidth(spi, LL_SPI_DATAWIDTH_16BIT);
+	}
 
 #if defined(CONFIG_SOC_SERIES_STM32L4X) || defined(CONFIG_SOC_SERIES_STM32F3X)
 	LL_SPI_SetRxFIFOThreshold(spi, LL_SPI_RX_FIFO_TH_QUARTER);
