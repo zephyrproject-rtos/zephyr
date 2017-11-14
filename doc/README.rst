@@ -74,7 +74,7 @@ expected for the Zephyr build environment and so are included in
 .. code-block:: bash
 
    $ sudo -E apt-get install doxygen
-   $ pip install -r scripts/requirements.txt
+   $ pip install --user -r scripts/requirements.txt
 
 Documentation presentation theme
 ********************************
