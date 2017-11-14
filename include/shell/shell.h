@@ -29,6 +29,7 @@ struct shell_cmd {
 	const char *cmd_name;
 	shell_cmd_function_t cb;
 	const char *help;
+	const char *desc;
 };
 
 /** @brief Callback to get the current prompt.
