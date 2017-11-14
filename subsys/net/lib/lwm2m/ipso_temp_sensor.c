@@ -57,6 +57,22 @@ static struct lwm2m_engine_obj_field fields[] = {
 static struct lwm2m_engine_obj_inst inst[MAX_INSTANCE_COUNT];
 static struct lwm2m_engine_res_inst res[MAX_INSTANCE_COUNT][TEMP_MAX_ID];
 
+static void update_min_measured(u16_t obj_inst_id, int index)
+{
+	min_measured_value[index].val1 = sensor_value[index].val1;
+	min_measured_value[index].val2 = sensor_value[index].val2;
+	NOTIFY_OBSERVER(IPSO_OBJECT_TEMP_SENSOR_ID, obj_inst_id,
+			TEMP_MIN_MEASURED_VALUE_ID);
+}
+
+static void update_max_measured(u16_t obj_inst_id, int index)
+{
+	max_measured_value[index].val1 = sensor_value[index].val1;
+	max_measured_value[index].val2 = sensor_value[index].val2;
+	NOTIFY_OBSERVER(IPSO_OBJECT_TEMP_SENSOR_ID, obj_inst_id,
+			TEMP_MAX_MEASURED_VALUE_ID);
+}
+
 static int reset_min_max_measured_values_cb(u16_t obj_inst_id)
 {
 	int i;
@@ -105,23 +121,11 @@ static int sensor_value_write_cb(u16_t obj_inst_id,
 			}
 
 			if (update_min) {
-				min_measured_value[i].val1 =
-						sensor_value[i].val1;
-				min_measured_value[i].val2 =
-						sensor_value[i].val2;
-				NOTIFY_OBSERVER(IPSO_OBJECT_TEMP_SENSOR_ID,
-						obj_inst_id,
-						TEMP_MIN_MEASURED_VALUE_ID);
+				update_min_measured(obj_inst_id, i);
 			}
 
 			if (update_max) {
-				max_measured_value[i].val1 =
-						sensor_value[i].val1;
-				max_measured_value[i].val2 =
-						sensor_value[i].val2;
-				NOTIFY_OBSERVER(IPSO_OBJECT_TEMP_SENSOR_ID,
-						obj_inst_id,
-						TEMP_MAX_MEASURED_VALUE_ID);
+				update_max_measured(obj_inst_id, i);
 			}
 		}
 	}
