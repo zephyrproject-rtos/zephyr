@@ -54,7 +54,7 @@ static int shell_cmd_ack(int argc, char *argv[])
 static inline void parse_extended_address(char *addr, u8_t *ext_addr)
 {
 	char *p, *n;
-	int i = 0;
+	int i = IEEE802154_EXT_ADDR_LENGTH - 1;
 
 	p = addr;
 
@@ -66,6 +66,7 @@ static inline void parse_extended_address(char *addr, u8_t *ext_addr)
 
 		ext_addr[i] = strtol(p, NULL, 16);
 		p = n ? n + 1 : n;
+		i--;
 	} while (n);
 }
 
@@ -154,10 +155,10 @@ static inline void print_coordinator_address(void)
 
 		printk("(extended) ");
 
-		for (i = 0; i < IEEE802154_EXT_ADDR_LENGTH; i++) {
+		for (i = IEEE802154_EXT_ADDR_LENGTH - 1; i > -1; i--) {
 			printk("%02X", params.addr[i]);
 
-			if (i < (IEEE802154_EXT_ADDR_LENGTH - 1)) {
+			if (i > 0) {
 				printk(":");
 			}
 		}
@@ -322,18 +323,18 @@ static int shell_cmd_set_ext_addr(int argc, char *argv[])
 		return -EINVAL;
 	}
 
-	if (strlen(argv[2]) != 23) {
+	if (strlen(argv[1]) != 23) {
 		printk("23 characters needed\n");
 		return 0;
 	}
 
-	parse_extended_address(argv[2], addr);
+	parse_extended_address(argv[1], addr);
 
 	if (net_mgmt(NET_REQUEST_IEEE802154_SET_EXT_ADDR, iface,
 		     addr, IEEE802154_EXT_ADDR_LENGTH)) {
 		printk("Could not set extended address\n");
 	} else {
-		printk("Extended address %s set\n", argv[2]);
+		printk("Extended address set\n");
 	}
 
 	return 0;
@@ -356,10 +357,10 @@ static int shell_cmd_get_ext_addr(int argc, char *argv[])
 		int i;
 
 		printk("Extended address: ");
-		for (i = 0; i < IEEE802154_EXT_ADDR_LENGTH; i++) {
+		for (i = IEEE802154_EXT_ADDR_LENGTH - 1; i > -1; i--) {
 			printk("%02X", addr[i]);
 
-			if (i < (IEEE802154_EXT_ADDR_LENGTH - 1)) {
+			if (i > 0) {
 				printk(":");
 			}
 		}
@@ -454,7 +455,7 @@ static struct shell_cmd ieee802154_commands[] = {
 	{ "ack",		shell_cmd_ack,
 	  "<set/1 | unset/0>" },
 	{ "associate",		shell_cmd_associate,
-	  "<pan_id> <PAN coordinator short or long address>" },
+	  "<pan_id> <PAN coordinator short or long address (EUI-64)>" },
 	{ "disassociate",	shell_cmd_disassociate,
 	  NULL },
 	{ "scan",		shell_cmd_scan,
@@ -469,7 +470,7 @@ static struct shell_cmd ieee802154_commands[] = {
 	{ "get_pan_id",		shell_cmd_get_pan_id,
 	  NULL },
 	{ "set_ext_addr",	shell_cmd_set_ext_addr,
-	  "<long/extended address>" },
+	  "<long/extended address (EUI-64)>" },
 	{ "get_ext_addr",	shell_cmd_get_ext_addr,
 	  NULL },
 	{ "set_short_addr",	shell_cmd_set_short_addr,
