@@ -79,4 +79,12 @@ void _arch_mem_domain_destroy(struct k_mem_domain *domain)
 	arm_core_mpu_enable();
 }
 
+/*
+ * Validate the given buffer is user accessible or not
+ */
+int _arch_buffer_validate(void *addr, size_t size, int write)
+{
+	return arm_core_mpu_buffer_validate(addr, size, write);
+}
+
 #endif
