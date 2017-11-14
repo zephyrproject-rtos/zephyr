@@ -189,6 +189,26 @@ generated due to its repetitive nature and can be found in
 ``include/generated/syscall_macros.h``. It is created by
 ``scripts/gen_syscall_header.py``.
 
+The final layer is the invocation of the system call itself. All architectures
+implementing system calls must implement the seven inline functions
+:c:func:`_arch_syscall_invoke0` through :c:func:`_arch_syscall_invoke6`.  These
+functions marshal arguments into designated CPU registers and perform the
+necessary privilege elevation. In this layer, all arguments are treated as an
+unsigned 32-bit type. There is always a 32-bit unsigned return value, which
+may or may not be used.
+
+Some system calls may have more than six arguments. The number of arguments
+passed via registers is fixed at six for all architectures. Additional
+arguments will need to be passed in a struct, which needs to be treated as
+untrusted memory in the handler function. This is done by the derived
+functions :c:func:`_syscall_invoke7` through :c:func:`_syscall_invoke10`.
+
+Some system calls may return a value that will not fit in a 32-bit register,
+such as APIs that return a 64-bit value. In this scenario, the return value is
+populated in a memory buffer that is passed in as an argument. For example,
+see the implementation of :c:func:`_syscall_ret64_invoke0` and
+:c:func:`_syscall_ret64_invoke1`.
+
 Implementation Function
 =======================
 
@@ -304,16 +324,15 @@ information is not necessary since all arguments and the return value are
         ...
     }
 
-Note that system calls may have more than six arguments. In this case,
-the sixth and subsequent arguments to the system call are placed into a struct,
-and a pointer to that struct is passed to the handler as its sixth argument.
-See ``include/syscall.h`` to see how this is done; the struct passed in must be
-validated like any other memory buffer.
-
 After validating all the arguments, the handler function needs to then call
 the implementation function. If the implementation function returns a value,
 this needs to be returned by the handler, otherwise the handler should return
 0.
+
+.. note:: Do not forget that all the arguments to the handler are passed in as
+    unsigned 32-bit values.  If checks are needed on parameters that are
+    actually signed values, casts may be needed in order for these checks to
+    be performed properly.
 
 Using :c:func:`k_sem_init()` as an example again, we need to enforce that the
 semaphore object passed in is a valid semaphore object (but not necessarily
@@ -353,6 +372,84 @@ as:
 
     _SYSCALL_HANDLER1_SIMPLE(k_sem_count_get, K_OBJ_SEM, struct k_sem *);
 
+System Calls With 6 Or More Arguments
+-------------------------------------
+
+System calls may have more than six arguments, however the number of arguments
+passed in via registers when the privilege elevation is invoked is fixed at six
+for all architectures. In this case, the sixth and subsequent arguments to the
+system call are placed into a struct, and a pointer to that struct is passed to
+the handler as its sixth argument.
+
+See ``include/syscall.h`` to see how this is done; the struct passed in must be
+validated like any other memory buffer. For example, for a system call
+with nine arguments, arguments 6 through 9 will be passed in via struct, which
+must be verified since memory pointers from user mode can be incorrect or
+malicious:
+
+.. code-block:: c
+
+    _SYSCALL_HANDLER(k_foo, arg1, arg2, arg3, arg4, arg5, more_args_ptr)
+    {
+        struct _syscall_9_args *margs = (struct _syscall_9_args *)more_args_ptr;
+
+        _SYSCALL_MEMORY_READ(margs, sizeof(*margs));
+
+        ...
+
+     }
+
+It is also very important to note that arguments passed in this way can change
+at any time due to concurrent access to the argument struct. If any parameters
+are subject to enforcement checks, they need to be copied out of the struct and
+only then checked. One way to ensure this isn't optimized out is to declare the
+argument struct as ``volatile``, and copy values out of it into local variables
+before checking. Using the previous example:
+
+.. code-block:: c
+
+    _SYSCALL_HANDLER(k_foo, arg1, arg2, arg3, arg4, arg5, more_args_ptr)
+    {
+        volatile struct _syscall_9_args *margs =
+                        (struct _syscall_9_args *)more_args_ptr;
+        int arg8;
+
+        _SYSCALL_MEMORY_READ(margs, sizeof(*margs));
+        arg8 = margs->arg8;
+        _SYSCALL_VERIFY_MSG(arg8 < 12, "arg8 must be less than 12");
+
+        _impl_k_foo(arg1, arg2, arg3, arg3, arg4, arg5, margs->arg6,
+                    margs->arg7, arg8, margs->arg9);
+        return 0;
+     }
+
+
+System Calls With 64-bit Return Value
+-------------------------------------
+
+If a system call has a return value larger than 32-bits, the handler will not
+return anything. Instead, a pointer to a sufficient memory region for the
+return value will be passed in as an additional argument. As an example, we
+have the system call for getting the current system uptime:
+
+.. code-block:: c
+
+    __syscall s64_t k_uptime_get(void);
+
+The handler function has the return area passed in as a pointer, which must
+be validated as writable by the calling thread:
+
+.. code-block:: c
+
+    _SYSCALL_HANDLER(k_uptime_get, ret_p)
+    {
+        s64_t *ret = (s64_t *)ret_p;
+
+        _SYSCALL_MEMORY_WRITE(ret, sizeof(*ret));
+        *ret = _impl_k_uptime_get();
+        return 0;
+    }
+
 Configuration Options
 =====================
 
@@ -380,4 +477,21 @@ Helper macros for creating system call handlers are provided in
 * :c:macro:`_SYSCALL_MEMORY_ARRAY_WRITE()`
 * :c:macro:`_SYSCALL_VERIFY_MSG()`
 * :c:macro:`_SYSCALL_VERIFY`
+
+Functions for invoking system calls are defined in
+:file:`include/syscall.h`:
+
+* :c:func:`_arch_syscall_invoke0`
+* :c:func:`_arch_syscall_invoke1`
+* :c:func:`_arch_syscall_invoke2`
+* :c:func:`_arch_syscall_invoke3`
+* :c:func:`_arch_syscall_invoke4`
+* :c:func:`_arch_syscall_invoke5`
+* :c:func:`_arch_syscall_invoke6`
+* :c:func:`_syscall_invoke7`
+* :c:func:`_syscall_invoke8`
+* :c:func:`_syscall_invoke9`
+* :c:func:`_syscall_invoke10`
+* :c:func:`_syscall_ret64_invoke0`
+* :c:func:`_syscall_ret64_invoke1`
 
