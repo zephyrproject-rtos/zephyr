@@ -66,7 +66,7 @@
 #endif
 #include <usb/usb_device.h>
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_LEVEL
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_DEVICE_LEVEL
 #define SYS_LOG_NO_NEWLINE
 #include <logging/sys_log.h>
 

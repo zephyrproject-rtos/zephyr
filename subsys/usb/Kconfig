@@ -16,7 +16,7 @@ menuconfig USB_DEVICE_STACK
 
 if USB_DEVICE_STACK
 
-config SYS_LOG_USB_LEVEL
+config SYS_LOG_USB_DEVICE_LEVEL
 	int
 	prompt "Sets log level for the USB device stack"
 	default 0
