@@ -11,8 +11,8 @@
 #define __BT_MESH_HEALTH_SRV_H
 
 /**
- * @brief Mesh Bluetooth Mesh Health Server Model
- * @defgroup bt_mesh_health_srv
+ * @brief Bluetooth Mesh Health Server Model
+ * @defgroup bt_mesh_health_srv Bluetooth Mesh Health Server Model
  * @ingroup bt_mesh
  * @{
  */
