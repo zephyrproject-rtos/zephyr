@@ -346,6 +346,42 @@ static void hb_sub_status(struct bt_mesh_model *model,
 	k_sem_give(&cli->op_sync);
 }
 
+struct hb_pub_param {
+	u8_t   *status;
+	u16_t  *dst;
+	u8_t   *count;
+	u8_t   *period;
+	u8_t   *ttl;
+	u16_t  *feat;
+	u16_t  *net_idx;
+};
+
+static void hb_pub_status(struct bt_mesh_model *model,
+			  struct bt_mesh_msg_ctx *ctx,
+			  struct net_buf_simple *buf)
+{
+	struct hb_pub_param *param;
+
+	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
+	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
+	       bt_hex(buf->data, buf->len));
+
+	if (cli->op_pending != OP_HEARTBEAT_PUB_STATUS) {
+		BT_WARN("Unexpected Heartbeat Publication Status message");
+		return;
+	}
+
+	*param->status = net_buf_simple_pull_u8(buf);
+	*param->dst = net_buf_simple_pull_le16(buf);
+	*param->count = net_buf_simple_pull_u8(buf);
+	*param->period = net_buf_simple_pull_u8(buf);
+	*param->ttl = net_buf_simple_pull_u8(buf);
+	*param->feat = net_buf_simple_pull_u8(buf);
+	*param->net_idx = net_buf_simple_pull_u8(buf);
+
+	k_sem_give(&cli->op_sync);
+}
+
 const struct bt_mesh_model_op bt_mesh_cfg_cli_op[] = {
 	{ OP_DEV_COMP_DATA_STATUS,   15,  comp_data_status },
 	{ OP_BEACON_STATUS,          1,   beacon_status },
@@ -357,6 +393,7 @@ const struct bt_mesh_model_op bt_mesh_cfg_cli_op[] = {
 	{ OP_MOD_APP_STATUS,         7,   mod_app_status },
 	{ OP_MOD_SUB_STATUS,         7,   mod_sub_status },
 	{ OP_HEARTBEAT_SUB_STATUS,   9,   hb_sub_status },
+	{ OP_HEARTBEAT_PUB_STATUS,   10,  hb_pub_status },
 	BT_MESH_MODEL_OP_END,
 };
 
@@ -849,6 +886,62 @@ int bt_mesh_cfg_hb_sub_set(u16_t net_idx, u16_t addr, u16_t src, u16_t dst,
 
 	cli->op_param = &param;
 	cli->op_pending = OP_HEARTBEAT_SUB_STATUS;
+
+	err = k_sem_take(&cli->op_sync, MSG_TIMEOUT);
+
+	cli->op_pending = 0;
+	cli->op_param = NULL;
+
+	return err;
+}
+
+int bt_mesh_cfg_hb_pub_set(u16_t net_idx, u16_t addr, u16_t pub_dst,
+			   u8_t count, u8_t period, u8_t ttl, u16_t feat,
+			   u16_t pub_net_idx, u8_t *status)
+{
+	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 9 + 4);
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = net_idx,
+		.app_idx = BT_MESH_KEY_DEV,
+		.addr = addr,
+		.send_ttl = BT_MESH_TTL_DEFAULT,
+	};
+	struct hb_pub_param param = {
+		.status = status,
+		.dst = &pub_dst,
+		.count = &count,
+		.period = &period,
+		.ttl = &ttl,
+		.feat = &feat,
+		.net_idx = &pub_net_idx,
+	};
+	int err;
+
+	err = check_cli();
+	if (err) {
+		return err;
+	}
+
+	bt_mesh_model_msg_init(msg, OP_HEARTBEAT_PUB_SET);
+	net_buf_simple_add_le16(msg, pub_dst);
+	net_buf_simple_add_u8(msg, count);
+	net_buf_simple_add_u8(msg, period);
+	net_buf_simple_add_u8(msg, ttl);
+	net_buf_simple_add_le16(msg, feat);
+	net_buf_simple_add_le16(msg, pub_net_idx);
+
+	err = bt_mesh_model_send(cli->model, &ctx, msg, NULL, NULL);
+	if (err) {
+		BT_ERR("model_send() failed (err %d)", err);
+		return err;
+	}
+
+	if (!status) {
+		return 0;
+	}
+
+	cli->op_param = &param;
+	cli->op_pending = OP_HEARTBEAT_PUB_STATUS;
 
 	err = k_sem_take(&cli->op_sync, MSG_TIMEOUT);
 
