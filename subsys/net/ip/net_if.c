@@ -278,6 +278,15 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
 		net_pkt_ll_src(pkt)->len = net_pkt_ll_if(pkt)->len;
 	}
 
+#if defined(CONFIG_NET_LOOPBACK)
+	/* If the packet is destined back to us, then there is no need to do
+	 * additional checks, so let the packet through.
+	 */
+	if (iface->l2 == &NET_L2_GET_NAME(DUMMY)) {
+		goto send;
+	}
+#endif
+
 #if defined(CONFIG_NET_IPV6)
 	/* If the ll dst address is not set check if it is present in the nbr
 	 * cache.
@@ -291,6 +300,9 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
 	}
 #endif
 
+#if defined(CONFIG_NET_LOOPBACK)
+send:
+#endif
 	verdict = iface->l2->send(iface, pkt);
 
 done:
