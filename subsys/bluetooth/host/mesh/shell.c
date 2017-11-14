@@ -885,8 +885,43 @@ static int cmd_provision(int argc, char *argv[])
 	return 0;
 }
 
+int cmd_timeout(int argc, char *argv[])
+{
+	s32_t timeout;
+
+	if (argc < 2) {
+		timeout = bt_mesh_cfg_cli_timeout_get();
+		if (timeout == K_FOREVER) {
+			printk("Message timeout: forever\n");
+		} else {
+			printk("Message timeout: %u seconds\n",
+			       timeout / 1000);
+		}
+
+		return 0;
+	}
+
+	timeout = strtol(argv[1], NULL, 0);
+	if (timeout < 0 || timeout > (INT32_MAX / 1000)) {
+		timeout = K_FOREVER;
+	} else {
+		timeout = timeout * 1000;
+	}
+
+	bt_mesh_cfg_cli_timeout_set(timeout);
+	if (timeout == K_FOREVER) {
+		printk("Message timeout: forever\n");
+	} else {
+		printk("Message timeout: %u seconds\n",
+		       timeout / 1000);
+	}
+
+	return 0;
+}
+
 static const struct shell_cmd mesh_commands[] = {
 	{ "init", cmd_init, NULL },
+	{ "timeout", cmd_timeout, "[timeout in seconds]" },
 #if defined(CONFIG_BT_MESH_PB_ADV)
 	{ "pb-adv", cmd_pb_adv, "<val: off, on>" },
 #endif

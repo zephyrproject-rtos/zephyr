@@ -91,6 +91,9 @@ int bt_mesh_cfg_hb_pub_get(u16_t net_idx, u16_t addr, u16_t *pub_dst,
 			   u8_t *count, u8_t *period, u8_t *ttl, u16_t *feat,
 			   u16_t *pub_net_idx, u8_t *status);
 
+s32_t bt_mesh_cfg_cli_timeout_get(void);
+void bt_mesh_cfg_cli_timeout_set(s32_t timeout);
+
 /**
  * @}
  */
