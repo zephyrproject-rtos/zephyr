@@ -65,5 +65,20 @@ zephyr_answer_file=~/zephyr-env_install.bash
 }
 unset zephyr_answer_file
 zephyr_answer_file=~/.zephyrrc
+zaliases="\n#Zephyr build aliases
+\nzcmake () { rm -rf builds/\$1 && mkdir -p builds/\$1 && cd builds/\$1 
+&& cmake -DBOARD=\$1 ../.. && make \${@:2} && cd ../..; }
+\nzmake () { cd builds/\$1 && make \${@:2} && cd ../..; }
+\nzclean () { rm -rf builds/* ; }"
+if [ -f ${zephyr_answer_file} ]; then
+        if ! grep "#Zephyr build aliases" $zephyr_answer_file > /dev/null; then
+                echo -e $zaliases >> $zephyr_answer_file
+        fi;
+else
+        echo -e $zaliases > $zephyr_answer_file
+fi
 [ -f ${zephyr_answer_file} ] &&  . ${zephyr_answer_file};
+unset zaliases
 unset zephyr_answer_file
+
+
