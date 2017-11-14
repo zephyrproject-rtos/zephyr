@@ -190,9 +190,17 @@ void _vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 			}
 			case 's': {
 				char *s = va_arg(ap, char *);
+				char *start = s;
 
 				while (*s)
 					out((int)(*s++), ctx);
+
+				if (padding == PAD_SPACE_AFTER) {
+					int remaining = min_width - (s - start);
+					while (remaining-- > 0) {
+						out(' ', ctx);
+					}
+				}
 				break;
 			}
 			case 'c': {
