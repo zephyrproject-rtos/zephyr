@@ -36,6 +36,7 @@ static void loopback_init(struct net_if *iface)
 
 static int loopback_send(struct net_if *iface, struct net_pkt *pkt)
 {
+	struct net_pkt *cloned;
 	int res;
 
 	if (!pkt->frags) {
@@ -63,14 +64,30 @@ static int loopback_send(struct net_if *iface, struct net_pkt *pkt)
 		net_ipaddr_copy(&NET_IPV4_HDR(pkt)->dst, &addr);
 	}
 
-	res = net_recv_data(iface, pkt);
-	if (res < 0) {
-		SYS_LOG_ERR("Data receive failed.");
-		net_pkt_unref(pkt);
-		return res;
+	/* We should simulate normal driver meaning that if the packet is
+	 * properly sent (which is always in this driver), then the packet
+	 * must be dropped. This is very much needed for TCP packets where
+	 * the packet is reference counted in various stages of sending.
+	 */
+	cloned = net_pkt_clone(pkt, MSEC(100));
+	if (!cloned) {
+		res = -ENOMEM;
+		goto out;
 	}
 
-	return 0;
+	res = net_recv_data(iface, cloned);
+	if (res < 0) {
+		SYS_LOG_ERR("Data receive failed.");
+		goto out;
+	}
+
+out:
+	net_pkt_unref(pkt);
+
+	/* Let the receiving thread run now */
+	k_yield();
+
+	return res;
 }
 
 static struct net_if_api loopback_if_api = {
