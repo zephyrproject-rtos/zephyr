@@ -595,6 +595,54 @@ out:
 }
 #endif /* CONFIG_NET_APP_DTLS */
 
+static void check_local_address(struct net_app_ctx *ctx,
+				struct net_context *net_ctx)
+{
+#if defined(CONFIG_NET_IPV6)
+	if (net_context_get_family(net_ctx) == AF_INET6) {
+		const struct in6_addr *laddr;
+		struct in6_addr *raddr;
+
+		laddr = &net_sin6(&ctx->ipv6.local)->sin6_addr;
+		if (!net_is_ipv6_addr_unspecified(laddr)) {
+			return;
+		}
+
+		raddr = &net_sin6(&ctx->ipv6.remote)->sin6_addr;
+
+		laddr = net_if_ipv6_select_src_addr(NULL, raddr);
+		if (laddr && laddr != net_ipv6_unspecified_address()) {
+			net_ipaddr_copy(&net_sin6(&ctx->ipv6.local)->sin6_addr,
+					laddr);
+		} else {
+			NET_WARN("Source address is unspecified!");
+		}
+	}
+#endif
+
+#if defined(CONFIG_NET_IPV4)
+	if (net_context_get_family(net_ctx) == AF_INET) {
+		struct in_addr *laddr;
+		struct net_if *iface;
+
+		laddr = &net_sin(&ctx->ipv4.local)->sin_addr;
+		if (!net_is_ipv4_addr_unspecified(laddr)) {
+			return;
+		}
+
+		/* Just take the first IPv4 address of an interface */
+		iface = net_context_get_iface(net_ctx);
+		if (iface) {
+			laddr = &iface->ipv4.unicast[0].address.in_addr;
+			net_ipaddr_copy(&net_sin(&ctx->ipv4.local)->sin_addr,
+					laddr);
+		} else {
+			NET_WARN("Source address is unspecified!");
+		}
+	}
+#endif
+}
+
 int net_app_connect(struct net_app_ctx *ctx, s32_t timeout)
 {
 	struct net_context *net_ctx;
@@ -639,6 +687,11 @@ int net_app_connect(struct net_app_ctx *ctx, s32_t timeout)
 		ctx->is_enabled = true;
 
 		_net_app_print_info(ctx);
+	} else {
+		/* We cannot bind to local unspecified address when sending.
+		 * Select proper address depending on remote one in this case.
+		 */
+		check_local_address(ctx, net_ctx);
 	}
 
 #if defined(CONFIG_NET_APP_TLS) || defined(CONFIG_NET_APP_DTLS)
