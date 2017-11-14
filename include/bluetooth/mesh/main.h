@@ -58,7 +58,7 @@ struct bt_mesh_prov {
 
 	void        (*link_open)(bt_mesh_prov_bearer_t bearer);
 	void        (*link_close)(bt_mesh_prov_bearer_t bearer);
-	void        (*complete)(u16_t addr);
+	void        (*complete)(u16_t net_idx, u16_t addr);
 	void        (*reset)(void);
 };
 
