@@ -215,6 +215,7 @@ endif()
 include($ENV{ZEPHYR_BASE}/cmake/version.cmake)
 include($ENV{ZEPHYR_BASE}/cmake/host-tools.cmake)
 include($ENV{ZEPHYR_BASE}/cmake/kconfig.cmake)
+include($ENV{ZEPHYR_BASE}/cmake/meta.cmake)
 include($ENV{ZEPHYR_BASE}/cmake/toolchain.cmake)
 
 # DTS should be run directly after kconfig because CONFIG_ variables
