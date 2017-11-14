@@ -25,21 +25,23 @@ include(ExternalProject)
 # Add an external project to be able download and build the third
 # party library. In this case downloading is not necessary as it has
 # been committed to the repository.
-set(mylib_dir ${CMAKE_CURRENT_SOURCE_DIR}/mylib)
+set(mylib_src_dir   ${CMAKE_CURRENT_SOURCE_DIR}/mylib)
+set(mylib_build_dir ${CMAKE_CURRENT_BINARY_DIR}/mylib)
 ExternalProject_Add(
-  mylib_project           # Name for custom target
-  PREFIX     ${mylib_dir} # Root dir for entire project
-  SOURCE_DIR ${mylib_dir}
-  BINARY_DIR ${mylib_dir} # This particular build system is invoked from the root
+  mylib_project                 # Name for custom target
+  PREFIX     ${mylib_build_dir} # Root dir for entire project
+  SOURCE_DIR ${mylib_src_dir}
+  BINARY_DIR ${mylib_src_dir} # This particular build system is invoked from the root
   CONFIGURE_COMMAND ""    # Skip configuring the project, e.g. with autoconf
   BUILD_COMMAND
   make
+  PREFIX=${mylib_build_dir}
   CC=${CMAKE_C_COMPILER}
   CFLAGS=${external_project_cflags}
   INSTALL_COMMAND ""      # This particular build system has no install command
   )
-set(MYLIB_INCLUDE_DIR ${mylib_dir}/include)
-set(MYLIB_LIB_DIR     ${mylib_dir}/lib)
+set(MYLIB_INCLUDE_DIR ${mylib_src_dir}/include)
+set(MYLIB_LIB_DIR     ${mylib_build_dir}/lib)
 
 # Create a wrapper CMake library that our app can link with
 add_library(mylib_lib STATIC IMPORTED)
