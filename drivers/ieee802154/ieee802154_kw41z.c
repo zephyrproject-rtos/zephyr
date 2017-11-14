@@ -75,7 +75,7 @@ int kw41_dbg_idx;
 #define KW41Z_PRE_RX_WAIT_TIME		1
 #define KW40Z_POST_SEQ_WAIT_TIME	1
 
-#define RADIO_0_IRQ_PRIO		0x80
+#define RADIO_0_IRQ_PRIO		0x0
 #define KW41Z_FCS_LENGTH		2
 #define KW41Z_PSDU_LENGTH		125
 #define KW41Z_OUTPUT_POWER_MAX		2
