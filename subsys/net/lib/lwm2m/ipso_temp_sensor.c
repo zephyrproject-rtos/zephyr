@@ -80,10 +80,8 @@ static int reset_min_max_measured_values_cb(u16_t obj_inst_id)
 	SYS_LOG_DBG("RESET MIN/MAX %d", obj_inst_id);
 	for (i = 0; i < MAX_INSTANCE_COUNT; i++) {
 		if (inst[i].obj && inst[i].obj_inst_id == obj_inst_id) {
-			min_measured_value[i].val1 = 0;
-			min_measured_value[i].val2 = 0;
-			max_measured_value[i].val1 = 0;
-			max_measured_value[i].val2 = 0;
+			update_min_measured(obj_inst_id, i);
+			update_max_measured(obj_inst_id, i);
 			return 0;
 		}
 	}
@@ -162,9 +160,9 @@ static struct lwm2m_engine_obj_inst *temp_sensor_create(u16_t obj_inst_id)
 	sensor_value[index].val1 = 0;
 	sensor_value[index].val2 = 0;
 	units[index][0] = '\0';
-	min_measured_value[index].val1 = 0;
+	min_measured_value[index].val1 = INT32_MAX;
 	min_measured_value[index].val2 = 0;
-	max_measured_value[index].val1 = 0;
+	max_measured_value[index].val1 = -INT32_MAX;
 	max_measured_value[index].val2 = 0;
 	min_range_value[index].val1 = 0;
 	min_range_value[index].val2 = 0;
