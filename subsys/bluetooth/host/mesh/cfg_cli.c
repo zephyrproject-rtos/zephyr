@@ -951,6 +951,56 @@ int bt_mesh_cfg_hb_pub_set(u16_t net_idx, u16_t addr, u16_t pub_dst,
 	return err;
 }
 
+int bt_mesh_cfg_hb_pub_get(u16_t net_idx, u16_t addr, u16_t *pub_dst,
+			   u8_t *count, u8_t *period, u8_t *ttl, u16_t *feat,
+			   u16_t *pub_net_idx, u8_t *status)
+{
+	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 0 + 4);
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = net_idx,
+		.app_idx = BT_MESH_KEY_DEV,
+		.addr = addr,
+		.send_ttl = BT_MESH_TTL_DEFAULT,
+	};
+	struct hb_pub_param param = {
+		.status = status,
+		.dst = pub_dst,
+		.count = count,
+		.period = period,
+		.ttl = ttl,
+		.feat = feat,
+		.net_idx = pub_net_idx,
+	};
+	int err;
+
+	err = check_cli();
+	if (err) {
+		return err;
+	}
+
+	bt_mesh_model_msg_init(msg, OP_HEARTBEAT_PUB_GET);
+
+	err = bt_mesh_model_send(cli->model, &ctx, msg, NULL, NULL);
+	if (err) {
+		BT_ERR("model_send() failed (err %d)", err);
+		return err;
+	}
+
+	if (!status) {
+		return 0;
+	}
+
+	cli->op_param = &param;
+	cli->op_pending = OP_HEARTBEAT_PUB_STATUS;
+
+	err = k_sem_take(&cli->op_sync, MSG_TIMEOUT);
+
+	cli->op_pending = 0;
+	cli->op_param = NULL;
+
+	return err;
+}
+
 int bt_mesh_cfg_cli_init(struct bt_mesh_model *model, bool primary)
 {
 	BT_DBG("primary %u", primary);
