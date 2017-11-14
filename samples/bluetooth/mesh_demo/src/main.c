@@ -158,9 +158,16 @@ static void configure(void)
 	bt_mesh_cfg_mod_sub_add_vnd(net_idx, addr, addr, GROUP_ADDR,
 				    MOD_INTEL, CID_INTEL, NULL);
 
+#if defined(NODE_ADDR) && NODE_ADDR == PROV_ADDR
+	bt_mesh_cfg_hb_pub_set(net_idx, addr, GROUP_ADDR, 0xff, 0x05, 0x07,
+			       0, net_idx, NULL);
+	printk("Publishing heartbeat messages\n");
+#else
 	/* Heartbeat subscription */
 	bt_mesh_cfg_hb_sub_set(net_idx, addr, PROV_ADDR, GROUP_ADDR, 0x10,
 			       NULL);
+	printk("Subscribing to heartbeat messages\n");
+#endif
 
 	printk("Configuration complete\n");
 
