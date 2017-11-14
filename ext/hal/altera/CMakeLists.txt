@@ -5,6 +5,9 @@ zephyr_include_directories(
   altera_hal/HAL/inc
   )
 
+zephyr_compile_definitions(ZEPHYR_RTOS)
+add_subdirectory(altera_hal/HAL/src)
+
 if(CONFIG_ALTERA_AVALON_TIMER)
   zephyr_include_directories(
     drivers/altera_avalon_timer/inc
