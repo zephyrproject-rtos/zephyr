@@ -283,6 +283,7 @@ static struct usb_ep_cfg_data ecm_ep_data[] = {
 };
 
 struct netusb_function ecm_function = {
+	.init = NULL,
 	.connect_media = NULL,
 	.class_handler = ecm_class_handler,
 	.send_pkt = ecm_send,
