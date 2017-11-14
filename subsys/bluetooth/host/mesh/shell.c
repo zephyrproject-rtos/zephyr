@@ -689,6 +689,40 @@ static int cmd_hb_sub_set(int argc, char *argv[])
 	return 0;
 }
 
+static int cmd_hb_pub_set(int argc, char *argv[])
+{
+	u8_t status, count, period, ttl;
+	u16_t pub_dst, feat, pub_net_idx;
+	int err;
+
+	if (argc < 7) {
+		return -EINVAL;
+	}
+
+	pub_dst = strtoul(argv[1], NULL, 0);
+	count = strtoul(argv[2], NULL, 0);
+	period = strtoul(argv[3], NULL, 0);
+	ttl = strtoul(argv[4], NULL, 0);
+	feat = strtoul(argv[5], NULL, 0);
+	pub_net_idx = strtoul(argv[5], NULL, 0);
+
+	err = bt_mesh_cfg_hb_pub_set(net.net_idx, net.dst, pub_dst, count,
+				     period, ttl, feat, pub_net_idx, &status);
+	if (err) {
+		printk("Heartbeat Publication Set failed (err %d)\n", err);
+		return 0;
+	}
+
+	if (status) {
+		printk("Heartbeat Publication Set failed (status 0x%02x)\n",
+		       status);
+	} else {
+		printk("Heartbeat publication successfully set\n");
+	}
+
+	return 0;
+}
+
 #if defined(CONFIG_BT_MESH_PROV)
 static int cmd_pb(bt_mesh_prov_bearer_t bearer, int argc, char *argv[])
 {
@@ -765,6 +799,8 @@ static const struct shell_cmd mesh_commands[] = {
 	{ "mod-sub-add", cmd_mod_sub_add,
 		"<elem addr> <sub addr> <Model ID> [Company ID]" },
 	{ "hb-sub-set", cmd_hb_sub_set, "<src> <dst> <period>" },
+	{ "hb-pub-set", cmd_hb_pub_set,
+		"<dst> <count> <period> <ttl> <features> <NetKeyIndex>" },
 	{ NULL, NULL, NULL}
 };
 
