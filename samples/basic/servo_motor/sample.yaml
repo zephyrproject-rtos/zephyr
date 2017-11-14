@@ -1,8 +1,8 @@
 sample:
-  description: TBD
-  name: TBD
+  name: Servo Motor using PWM
 tests:
   test:
-    build_only: true
+    # FIXME: We should remove those and just rely on depends_on
     platform_whitelist: arduino_101 quark_d2000_crb
-    tags: apps
+    tags: drivers pwm
+    depends_on: pwm
