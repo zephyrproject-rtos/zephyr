@@ -237,6 +237,10 @@ static void netusb_init(struct net_if *iface)
 #if defined(CONFIG_USB_DEVICE_NETWORK_ECM)
 	netusb.func = &ecm_function;
 #endif
+	if (netusb.func->init && netusb.func->init()) {
+		SYS_LOG_ERR("Initialization failed");
+		return;
+	}
 
 	netusb_config.endpoint = netusb.func->ep;
 	netusb_config.num_endpoints = netusb.func->num_ep;
