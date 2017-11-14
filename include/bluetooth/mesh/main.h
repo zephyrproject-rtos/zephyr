@@ -39,26 +39,102 @@ typedef enum {
 	BT_MESH_PROV_GATT  = BIT(1),
 } bt_mesh_prov_bearer_t;
 
+/** Provisioning properties & capabilities. */
 struct bt_mesh_prov {
+	/** The UUID that's used when advertising as unprovisioned */
 	const u8_t *uuid;
 
+	/** Static OOB value */
 	const u8_t *static_val;
+	/** Static OOB value length */
 	u8_t        static_val_len;
 
+	/** Maximum size of Output OOB supported */
 	u8_t        output_size;
+	/** Supported Output OOB Actions */
 	u16_t       output_actions;
 
+	/* Maximum size of Input OOB supported */
 	u8_t        input_size;
+	/** Supported Input OOB Actions */
 	u16_t       input_actions;
 
+	/** @brief Output of a number is requested.
+	 *
+	 *  This callback notifies the application that it should
+	 *  output the given number using the given action.
+	 *
+	 *  @param act Action for outputting the number.
+	 *  @param num Number to be outputted.
+	 *
+	 *  @return Zero on success or negative error code otherwise
+	 */
 	int         (*output_number)(bt_mesh_output_action_t act, u32_t num);
+
+	/** @brief Output of a string is requested.
+	 *
+	 *  This callback notifies the application that it should
+	 *  display the given string to the user.
+	 *
+	 *  @param str String to be displayed.
+	 *
+	 *  @return Zero on success or negative error code otherwise
+	 */
 	int         (*output_string)(const char *str);
 
+	/** @brief Input is requested.
+	 *
+	 *  This callback notifies the application that it should
+	 *  request input from the user using the given action. The
+	 *  requested input will either be a string or a number, and
+	 *  the application needs to consequently call the
+	 *  bt_mesh_input_string() or bt_mesh_input_number() functions
+	 *  once the data has been acquired from the user.
+	 *
+	 *  @param act Action for inputting data.
+	 *  @param num Maximum size of the inputted data.
+	 *
+	 *  @return Zero on success or negative error code otherwise
+	 */
 	int         (*input)(bt_mesh_input_action_t act, u8_t size);
 
+	/** @brief Provisioning link has been opened.
+	 *
+	 *  This callback notifies the application that a provisioning
+	 *  link has been opened on the given provisioning bearer.
+	 *
+	 *  @param bearer Provisioning bearer.
+	 */
 	void        (*link_open)(bt_mesh_prov_bearer_t bearer);
+
+	/** @brief Provisioning link has been closed.
+	 *
+	 *  This callback notifies the application that a provisioning
+	 *  link has been closed on the given provisioning bearer.
+	 *
+	 *  @param bearer Provisioning bearer.
+	 */
 	void        (*link_close)(bt_mesh_prov_bearer_t bearer);
+
+	/** @brief Provisioning is complete.
+	 *
+	 *  This callback notifies the application that provisioning has
+	 *  been successfully completed, and that the local node has been
+	 *  assigned the specified NetKeyIndex and primary element address.
+	 *
+	 *  @param net_idx NetKeyIndex given during provisioning.
+	 *  @param addr Primary element address.
+	 */
 	void        (*complete)(u16_t net_idx, u16_t addr);
+
+	/** @brief Node has been reset.
+	 *
+	 *  This callback notifies the application that the local node
+	 *  has been reset and needs to be reprovisioned. The node will
+	 *  not automatically advertise as unprovisioned, rather the
+	 *  bt_mesh_prov_enable() API needs to be called to enable
+	 *  unprovisioned advertising on one or more provisioning bearers.
+	 */
 	void        (*reset)(void);
 };
 
@@ -145,6 +221,10 @@ int bt_mesh_prov_disable(bt_mesh_prov_bearer_t bearers);
 
 /** @brief Initialize Mesh support
  *
+ *  After calling this API, the node will not automatically advertise as
+ *  unprovisioned, rather the bt_mesh_prov_enable() API needs to be called
+ *  to enable unprovisioned advertising on one or more provisioning bearers.
+ *
  *  @param prov Node provisioning information.
  *  @param comp Node Composition.
  *
@@ -155,8 +235,13 @@ int bt_mesh_init(const struct bt_mesh_prov *prov,
 
 /** @brief Reset the state of the local Mesh node.
  *
- *  Resets the state of the node, which in turn causes it to start sending
- *  out unprovisioned beacons.
+ *  Resets the state of the node, which means that it needs to be
+ *  reprovisioned to become an active node in a Mesh network again.
+ *
+ *  After calling this API, the node will not automatically advertise as
+ *  unprovisioned, rather the bt_mesh_prov_enable() API needs to be called
+ *  to enable unprovisioned advertising on one or more provisioning bearers.
+ *
  */
 void bt_mesh_reset(void);
 
