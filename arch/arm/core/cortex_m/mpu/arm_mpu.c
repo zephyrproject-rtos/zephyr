@@ -140,6 +140,56 @@ static inline u32_t _size_to_mpu_rasr_size(u32_t size)
 	return (find_msb_set(size) - 2) << 1;
 }
 
+/**
+ * This internal function check if region is enabled or not
+ */
+static inline int _is_enabled_region(u32_t r_index)
+{
+	ARM_MPU_DEV->rnr = r_index;
+
+	return ARM_MPU_DEV->rasr & REGION_ENABLE_MASK;
+}
+
+/**
+ * This internal function check if the given buffer in in the region
+ */
+static inline int _is_in_region(u32_t r_index, u32_t start, u32_t size)
+{
+	u32_t r_addr_start;
+	u32_t r_size_lshift;
+	u32_t r_addr_end;
+
+	ARM_MPU_DEV->rnr = r_index;
+	r_addr_start = ARM_MPU_DEV->rbar & REGION_BASE_ADDR_MASK;
+	r_size_lshift = ((ARM_MPU_DEV->rasr & REGION_SIZE_MASK) >>
+			REGION_SIZE_OFFSET) + 1;
+	r_addr_end = r_addr_start + (1 << r_size_lshift) - 1;
+
+	if (start >= r_addr_start && (start + size - 1) <= r_addr_end) {
+		return 1;
+	}
+
+	return 0;
+}
+
+/**
+ * This internal function check if the region is user accessible or not
+ */
+static inline int _is_user_accessible_region(u32_t r_index, int write)
+{
+	u32_t r_ap;
+
+	ARM_MPU_DEV->rnr = r_index;
+	r_ap = ARM_MPU_DEV->rasr & ACCESS_PERMS_MASK;
+
+	if (write) {
+		return r_ap == P_RW_U_RW;
+	}
+
+	/* For all user accessible permissions, their AP[1] bit is l */
+	return r_ap & (0x2 << ACCESS_PERMS_OFFSET);
+}
+
 /* ARM Core MPU Driver API Implementation for ARM MPU */
 
 /**
@@ -291,6 +341,35 @@ int arm_core_mpu_get_max_domain_partition_regions(void)
 	 */
 	return _get_num_regions() -
 		_get_region_index_by_type(THREAD_DOMAIN_PARTITION_REGION);
+}
+
+/**
+ * @brief validate the given buffer is user accessible or not
+ */
+int arm_core_mpu_buffer_validate(void *addr, size_t size, int write)
+{
+	u32_t r_index;
+
+	/* Iterate all mpu regions in reversed order */
+	for (r_index = _get_num_regions() + 1; r_index-- > 0;) {
+		if (!_is_enabled_region(r_index) ||
+		    !_is_in_region(r_index, (u32_t)addr, size)) {
+			continue;
+		}
+
+		/* For ARM MPU, higher region number takes priority.
+		 * Since we iterate all mpu regions in reversed order, so
+		 * we can stop the iteration immediately once we find the
+		 * matched region that grants permission or denies access.
+		 */
+		if (_is_user_accessible_region(r_index, write)) {
+			return 0;
+		} else {
+			return -EPERM;
+		}
+	}
+
+	return -EPERM;
 }
 #endif /* CONFIG_USERSPACE */
 

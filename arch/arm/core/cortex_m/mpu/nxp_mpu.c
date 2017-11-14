@@ -112,6 +112,46 @@ static inline u32_t _get_region_index_by_type(u32_t type)
 	}
 }
 
+/**
+ * This internal function check if region is enabled or not
+ */
+static inline int _is_enabled_region(u32_t r_index)
+{
+	return SYSMPU->WORD[r_index][3] & SYSMPU_WORD_VLD_MASK;
+}
+
+/**
+ * This internal function check if the given buffer in in the region
+ */
+static inline int _is_in_region(u32_t r_index, u32_t start, u32_t size)
+{
+	u32_t r_addr_start;
+	u32_t r_addr_end;
+
+	r_addr_start = SYSMPU->WORD[r_index][0];
+	r_addr_end = SYSMPU->WORD[r_index][1];
+
+	if (start >= r_addr_start && (start + size - 1) <= r_addr_end) {
+		return 1;
+	}
+
+	return 0;
+}
+
+/**
+ * This internal function check if the region is user accessible or not
+ */
+static inline int _is_user_accessible_region(u32_t r_index, int write)
+{
+	u32_t r_ap = SYSMPU->WORD[r_index][2];
+
+	if (write) {
+		return (r_ap & MPU_REGION_WRITE) == MPU_REGION_WRITE;
+	}
+
+	return (r_ap & MPU_REGION_READ) == MPU_REGION_READ;
+}
+
 /* ARM Core MPU Driver API Implementation for NXP MPU */
 
 /**
@@ -321,6 +361,33 @@ int arm_core_mpu_get_max_domain_partition_regions(void)
 	 */
 	return _get_num_regions() -
 		_get_region_index_by_type(THREAD_DOMAIN_PARTITION_REGION) - 1;
+}
+
+/**
+ * @brief validate the given buffer is user accessible or not
+ */
+int arm_core_mpu_buffer_validate(void *addr, size_t size, int write)
+{
+	u32_t r_index;
+
+	/* Iterate all mpu regions */
+	for (r_index = 0; r_index < _get_num_regions(); r_index++) {
+		if (!_is_enabled_region(r_index) ||
+		    !_is_in_region(r_index, (u32_t)addr, size)) {
+			continue;
+		}
+
+		/* For NXP MPU, priority given to granting permission over
+		 * denying access for overlapping region.
+		 * So we can stop the iteration immediately once we find the
+		 * matched region that grants permission.
+		 */
+		if (_is_user_accessible_region(r_index, write)) {
+			return 0;
+		}
+	}
+
+	return -EPERM;
 }
 #endif /* CONFIG_USERSPACE */
 
