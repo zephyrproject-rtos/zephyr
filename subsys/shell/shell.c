@@ -181,7 +181,7 @@ static const char *get_command_and_module(char *argv[], int *module)
 	return argv[0];
 }
 
-static int show_cmd_help(char *argv[])
+static int show_cmd_help(char *argv[], bool full)
 {
 	const char *command = NULL;
 	int module = -1;
@@ -196,10 +196,13 @@ static int show_cmd_help(char *argv[])
 	shell_module = &__shell_cmd_start[module];
 	for (i = 0; shell_module->commands[i].cmd_name; i++) {
 		if (!strcmp(command, shell_module->commands[i].cmd_name)) {
-			printk("%s %s\n",
+			printk("Usage: %s %s\n",
 			       shell_module->commands[i].cmd_name,
 			       shell_module->commands[i].help ?
 			       shell_module->commands[i].help : "");
+			if (full && shell_module->commands[i].desc) {
+				printk("%s\n", shell_module->commands[i].desc);
+			}
 			return 0;
 		}
 	}
@@ -229,7 +232,7 @@ static int show_help(int argc, char *argv[])
 
 	/* help per command */
 	if ((argc > 2) || ((default_module != -1) && (argc == 2))) {
-		return show_cmd_help(&argv[1]);
+		return show_cmd_help(&argv[1], true);
 	}
 
 	/* help per module */
@@ -385,7 +388,7 @@ int shell_exec(char *line)
 	}
 
 	if (err < 0) {
-		show_cmd_help(argv);
+		show_cmd_help(argv, false);
 	}
 
 	return err;
