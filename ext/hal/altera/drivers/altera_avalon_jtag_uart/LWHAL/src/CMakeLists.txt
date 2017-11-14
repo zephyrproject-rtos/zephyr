@@ -1,0 +1,1 @@
+zephyr_sources(altera_avalon_jtag_uart_lwhal_putchar.c)
