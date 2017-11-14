@@ -1,0 +1,33 @@
+---
+title: Atmel SAM0 watchdog driver
+id: atmel,sam0-watchdog
+version: 0.1
+
+description: >
+    This is a representation of the SAM0 watchdog
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "atmel,sam0-watchdog"
+
+    reg:
+      type: int
+      description: mmio register space
+      generation: define
+      category: required
+
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+
+    interrupts:
+      type: array
+      category: required
+      description: required interrupts
+      generation: define
+...
