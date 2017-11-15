@@ -314,12 +314,6 @@ static shell_cmd_function_t get_cb(int module, const char *command)
 	return NULL;
 }
 
-static inline void print_cmd_unknown(char *argv)
-{
-	printk("Unrecognized command: %s\n", argv);
-	printk("Type 'help' for list of available commands\n");
-}
-
 static shell_cmd_function_t get_internal(const char *command)
 {
 	if (!strcmp(command, "help")) {
@@ -379,7 +373,8 @@ int shell_exec(char *line)
 		if (app_cmd_handler != NULL) {
 			cb = app_cmd_handler;
 		} else {
-			print_cmd_unknown(argv[0]);
+			printk("Unrecognized command: %s\n", argv[0]);
+			printk("Type 'help' for list of available commands\n");
 			return -EINVAL;
 		}
 	}
