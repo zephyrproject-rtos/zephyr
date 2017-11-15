@@ -51,7 +51,7 @@ The MSP-EXP432P401R LaunchXL development board configuration supports the follow
 | UART      | on-chip    | serial port           |
 +-----------+------------+-----------------------+
 
-More details about the supported periperals are available in `MSP432P4XX TRM`_
+More details about the supported peripherals are available in `MSP432P4XX TRM`_
 Other hardware features are not currently supported by the Zephyr kernel.
 
 Building and Flashing
