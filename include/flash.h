@@ -48,15 +48,16 @@ typedef int (*flash_api_write_protection)(struct device *dev, bool enable);
  * @brief Retrieve a flash device's layout.
  *
  * A flash device layout is a run-length encoded description of the
- * pages on the device.
+ * pages on the device. (Here, "pages" means the smallest erasable
+ * areas on the flash device.)
  *
- * For flash memories which have uniform sector layout, this routine
+ * For flash memories which have uniform page sizes, this routine
  * returns an array of length 1, which specifies the page size and
  * number of pages in the memory.
  *
- * Layouts for flash memories with nonuniform sector sizes will be
+ * Layouts for flash memories with nonuniform page sizes will be
  * returned as an array with multiple elements, each of which
- * describes a group of sectors that all have the same size. In this
+ * describes a group of pages that all have the same size. In this
  * case, the sequence of array elements specifies the order in which
  * these groups occur on the device.
  *
@@ -64,7 +65,6 @@ typedef int (*flash_api_write_protection)(struct device *dev, bool enable);
  * @param layout      The flash layout will be returned in this argument.
  * @param layout_size The number of elements in the returned layout.
  */
-
 typedef void (*flash_api_pages_layout)(struct device *dev,
 				       const struct flash_pages_layout **layout,
 				       size_t *layout_size);
@@ -130,8 +130,10 @@ static inline int _impl_flash_write(struct device *dev, off_t offset,
  *  @brief  Erase part or all of a flash memory
  *
  *  Acceptable values of erase size and offset are subject to
- *  hardware-specific multiples of sector size and offset. Please check the
- *  API implemented by the underlying sub driver.
+ *  hardware-specific multiples of page size and offset. Please check
+ *  the API implemented by the underlying sub driver, for example by
+ *  using flash_get_page_info_by_offs() if that is supported by your
+ *  flash driver.
  *
  *  Prior to the invocation of this API, the flash_write_protection_set needs
  *  to be called first to disable the write protection.
@@ -141,6 +143,9 @@ static inline int _impl_flash_write(struct device *dev, off_t offset,
  *  @param  size            : size of area to be erased
  *
  *  @return  0 on success, negative errno code on fail.
+ *
+ *  @see flash_get_page_info_by_offs()
+ *  @see flash_get_page_info_by_idx()
  */
 __syscall int flash_erase(struct device *dev, off_t offset, size_t size);
 
