@@ -13,7 +13,7 @@
 #include <device.h>
 #include <gpio.h>
 
-#define SECONDS_TO_SLEEP	1
+#define SECONDS_TO_SLEEP	60
 
 /* In Tickless Kernel mode, time is passed in milliseconds instead of ticks */
 #ifdef CONFIG_TICKLESS_KERNEL
