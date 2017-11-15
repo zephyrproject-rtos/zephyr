@@ -19,3 +19,4 @@ operation of the stacks and how they were implemented.
    net-app-api.rst
    buffers.rst
    qemu_setup.rst
+   usbnet_setup.rst
