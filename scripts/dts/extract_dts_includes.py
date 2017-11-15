@@ -173,8 +173,8 @@ def compress_nodes(nodes, path):
     if 'props' in nodes:
         status = nodes['props'].get('status')
 
-    if status == "disabled":
-        return
+        if status == "disabled":
+            return
 
     if isinstance(nodes, dict):
         reduced[path] = dict(nodes)
