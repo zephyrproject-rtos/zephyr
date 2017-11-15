@@ -824,7 +824,7 @@ static int cmd_pb(bt_mesh_prov_bearer_t bearer, int argc, char *argv[])
 	if (str2bool(argv[1])) {
 		err = bt_mesh_prov_enable(bearer);
 		if (err) {
-			printk("Failed to enable %s\n (err %d)",
+			printk("Failed to enable %s (err %d)\n",
 			       bearer2str(bearer), err);
 		} else {
 			printk("%s enabled\n", bearer2str(bearer));
