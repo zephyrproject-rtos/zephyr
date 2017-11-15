@@ -2421,6 +2421,13 @@ static int handle_request(struct coap_packet *request,
 
 	code = coap_header_get_code(in.in_cpkt);
 
+	/* setup response token */
+	tkl = coap_header_get_token(in.in_cpkt, token);
+	if (tkl) {
+		msg->tkl = tkl;
+		msg->token = token;
+	}
+
 	/* parse the URL path into components */
 	r = coap_find_options(in.in_cpkt, COAP_OPTION_URI_PATH, options, 4);
 	if (r <= 0) {
@@ -2527,13 +2534,6 @@ static int handle_request(struct coap_packet *request,
 
 	default:
 		break;
-	}
-
-	/* setup response token */
-	tkl = coap_header_get_token(in.in_cpkt, token);
-	if (tkl) {
-		msg->tkl = tkl;
-		msg->token = token;
 	}
 
 	/* setup incoming data */
