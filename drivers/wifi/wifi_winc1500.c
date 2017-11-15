@@ -6,6 +6,10 @@
 
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_WIFI_LEVEL
 #define SYS_LOG_DOMAIN "dev/winc1500"
+#if (SYS_LOG_LEVEL > SYS_LOG_LEVEL_OFF)
+#define NET_LOG_ENABLED 1
+#endif
+
 #include <logging/sys_log.h>
 
 #include <zephyr.h>
@@ -143,6 +147,13 @@ struct winc1500_data {
 static struct winc1500_data w1500_data;
 
 #if (SYS_LOG_LEVEL > SYS_LOG_LEVEL_OFF)
+
+static void stack_stats(void)
+{
+	net_analyze_stack("WINC1500 stack",
+			  K_THREAD_STACK_BUFFER(winc1500_stack),
+			  K_THREAD_STACK_SIZEOF(winc1500_stack));
+}
 
 static char *socket_error_string(s8_t err)
 {
@@ -599,12 +610,15 @@ static void handle_wifi_con_state_changed(void *pvMsg)
 	switch (pstrWifiState->u8CurrState) {
 	case M2M_WIFI_DISCONNECTED:
 		/* TODO status disconnected */
+		SYS_LOG_DBG("Disconnected");
 		break;
 	case M2M_WIFI_CONNECTED:
 		/* TODO status connected */
+		SYS_LOG_DBG("Connected");
 		break;
 	case M2M_WIFI_UNDEF:
 		/* TODO status undefined*/
+		SYS_LOG_DBG("Undefined?");
 		break;
 	}
 }
@@ -616,7 +630,7 @@ static void handle_wifi_dhcp_conf(void *pvMsg)
 	u8_t i;
 
 	/* Connected and got IP address*/
-	SYS_LOG_INF("Wi-Fi connected, IP is %u.%u.%u.%u",
+	SYS_LOG_DBG("Wi-Fi connected, IP is %u.%u.%u.%u",
 		    pu8IPAddress[0], pu8IPAddress[1],
 		    pu8IPAddress[2], pu8IPAddress[3]);
 
@@ -634,7 +648,7 @@ static void handle_wifi_dhcp_conf(void *pvMsg)
 
 static void winc1500_wifi_cb(u8_t message_type, void *pvMsg)
 {
-	SYS_LOG_INF("Msg Type %d %s",
+	SYS_LOG_DBG("Msg Type %d %s",
 		    message_type, wifi_cb_msg_2_str(message_type));
 
 	switch (message_type) {
@@ -648,6 +662,7 @@ static void winc1500_wifi_cb(u8_t message_type, void *pvMsg)
 		break;
 	}
 
+	stack_stats();
 }
 
 static void handle_socket_msg_connect(struct socket_data *sd, void *pvMsg)
@@ -745,7 +760,7 @@ static void handle_socket_msg_accept(struct socket_data *sd, void *pvMsg)
 	 * of the accept operation.
 	 */
 
-	SYS_LOG_INF("ACCEPT: from %d.%d.%d.%d:%d, new socket is %d",
+	SYS_LOG_DBG("ACCEPT: from %d.%d.%d.%d:%d, new socket is %d",
 		    accept_msg->strAddr.sin_addr.s4_addr[0],
 		    accept_msg->strAddr.sin_addr.s4_addr[1],
 		    accept_msg->strAddr.sin_addr.s4_addr[2],
@@ -791,7 +806,7 @@ static void winc1500_socket_cb(SOCKET sock, uint8 message, void *pvMsg)
 	struct socket_data *sd = &w1500_data.socket_data[sock];
 
 	if (message != 6) {
-		SYS_LOG_INF(": sock %d Msg %d %s",
+		SYS_LOG_DBG(": sock %d Msg %d %s",
 			    sock, message, socket_message_to_string(message));
 	}
 
@@ -827,6 +842,8 @@ static void winc1500_socket_cb(SOCKET sock, uint8 message, void *pvMsg)
 
 		break;
 	}
+
+	stack_stats();
 }
 
 static void winc1500_thread(void)
@@ -842,7 +859,7 @@ static void winc1500_thread(void)
 
 static void winc1500_iface_init(struct net_if *iface)
 {
-	SYS_LOG_INF("eth_init:net_if_set_link_addr:"
+	SYS_LOG_DBG("eth_init:net_if_set_link_addr:"
 		    "MAC Address %02X:%02X:%02X:%02X:%02X:%02X",
 		    w1500_data.mac[0], w1500_data.mac[1], w1500_data.mac[2],
 		    w1500_data.mac[3], w1500_data.mac[4], w1500_data.mac[5]);
@@ -882,7 +899,7 @@ static int winc1500_init(struct device *dev)
 	registerSocketCallback(winc1500_socket_cb, NULL);
 
 	m2m_wifi_get_otp_mac_address(w1500_data.mac, &is_valid);
-	SYS_LOG_INF("WINC1500 MAC Address from OTP (%d) "
+	SYS_LOG_DBG("WINC1500 MAC Address from OTP (%d) "
 		    "%02X:%02X:%02X:%02X:%02X:%02X",
 		    is_valid,
 		    w1500_data.mac[0], w1500_data.mac[1], w1500_data.mac[2],
@@ -898,7 +915,7 @@ static int winc1500_init(struct device *dev)
 			K_PRIO_COOP(CONFIG_WIFI_WINC1500_THREAD_PRIO),
 			0, K_NO_WAIT);
 
-	SYS_LOG_INF("Connecting to %s (%u) with %s",
+	SYS_LOG_DBG("Connecting to %s (%u) with %s",
 		    CONFIG_WIFI_WINC1500_SSID,
 		    CONFIG_WIFI_WINC1500_SSID_LENGTH,
 		    CONFIG_WIFI_WINC1500_PSK);
@@ -911,7 +928,7 @@ static int winc1500_init(struct device *dev)
 		SYS_LOG_WRN("Connecting to wifi does not seem to work");
 	}
 
-	SYS_LOG_INF("WINC1500 driver Initialized");
+	SYS_LOG_DBG("WINC1500 driver Initialized");
 
 	return 0;
 }
