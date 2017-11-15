@@ -306,20 +306,19 @@ static int exit_module(int argc, char *argv[])
 
 static shell_cmd_function_t get_cb(int *argc, char *argv[], int *module)
 {
-	const char *first_string = argv[0];
 	const struct shell_module *shell_module;
 	const char *command;
 	int i;
 
-	if (!strcmp(first_string, "help")) {
+	if (!strcmp(argv[0], "help")) {
 		return show_help;
 	}
 
-	if (!strcmp(first_string, "select")) {
+	if (!strcmp(argv[0], "select")) {
 		return select_module;
 	}
 
-	if (!strcmp(first_string, "exit")) {
+	if (!strcmp(argv[0], "exit")) {
 		return exit_module;
 	}
 
