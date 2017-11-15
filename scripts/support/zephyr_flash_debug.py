@@ -1,17 +1,19 @@
 #! /usr/bin/env python3
 
 # Copyright (c) 2017 Linaro Limited.
+# Copyright (c) 2017 Open Source Foundries Limited.
 #
 # SPDX-License-Identifier: Apache-2.0
 
 """Zephyr flash/debug script
 
-This script is a transparent replacement for legacy Zephyr flash and
-debug scripts which have now been removed. It will be refactored over
-time as the rest of the build system is taught to use it.
+This helper script is the build system's entry point to Zephyr's
+"runner" Python package. This package provides ZephyrBinaryRunner,
+which is a standard interface for flashing and debugging boards
+supported by Zephyr, as well as backend-specific scripts for tools
+such as OpenOCD, pyOCD, etc.
 """
 
-from os import path
 import sys
 
 from runner.core import ZephyrBinaryRunner, get_env_bool_or
