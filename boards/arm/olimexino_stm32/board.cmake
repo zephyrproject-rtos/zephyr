@@ -1,12 +1,1 @@
-set(FLASH_SCRIPT openocd.sh)
-set(DEBUG_SCRIPT openocd.sh)
-
-set(FLASH_BASE_ADDRESS 0x08000000)
-
-set(OPENOCD_LOAD_CMD "flash write_image erase ${PROJECT_BINARY_DIR}/${KERNEL_BIN_NAME} ${FLASH_BASE_ADDRESS}")
-set(OPENOCD_VERIFY_CMD "verify_image          ${PROJECT_BINARY_DIR}/${KERNEL_BIN_NAME} ${FLASH_BASE_ADDRESS}")
-
-set_property(GLOBAL APPEND PROPERTY FLASH_SCRIPT_ENV_VARS
-  OPENOCD_LOAD_CMD
-  OPENOCD_VERIFY_CMD
-  )
+include($ENV{ZEPHYR_BASE}/boards/common/openocd.board.cmake)
