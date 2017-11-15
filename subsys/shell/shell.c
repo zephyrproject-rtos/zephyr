@@ -41,7 +41,7 @@ extern struct shell_module __shell_cmd_end[];
 
 static const char *prompt;
 static char default_module_prompt[PROMPT_MAX_LEN];
-static int default_module = -1;
+static struct shell_module *default_module;
 
 #define STACKSIZE CONFIG_CONSOLE_SHELL_STACKSIZE
 static K_THREAD_STACK_DEFINE(stack, STACKSIZE);
@@ -67,11 +67,11 @@ static const char *get_prompt(void)
 		}
 	}
 
-	if (default_module != -1) {
-		if (__shell_cmd_start[default_module].prompt) {
+	if (default_module) {
+		if (default_module->prompt) {
 			const char *ret;
 
-			ret = __shell_cmd_start[default_module].prompt();
+			ret = default_module->prompt();
 			if (ret) {
 				return ret;
 			}
@@ -135,7 +135,7 @@ static size_t line2argv(char *str, char *argv[], size_t size)
 	return argc;
 }
 
-static int get_destination_module(const char *module_str)
+static struct shell_module *get_destination_module(const char *module_str)
 {
 	int i;
 
@@ -143,11 +143,11 @@ static int get_destination_module(const char *module_str)
 		if (!strncmp(module_str,
 			     __shell_cmd_start[i].module_name,
 			     MODULE_NAME_MAX_LEN)) {
-			return i;
+			return &__shell_cmd_start[i];
 		}
 	}
 
-	return -1;
+	return NULL;
 }
 
 static int show_cmd_help(const struct shell_cmd *cmd, bool full)
@@ -161,18 +161,17 @@ static int show_cmd_help(const struct shell_cmd *cmd, bool full)
 	return 0;
 }
 
-static void print_module_commands(const int module)
+static void print_module_commands(struct shell_module *module)
 {
-	const struct shell_module *shell_module = &__shell_cmd_start[module];
 	int i;
 
 	printk("help\n");
 
-	for (i = 0; shell_module->commands[i].cmd_name; i++) {
+	for (i = 0; module->commands[i].cmd_name; i++) {
 		printk("%-28s %s\n",
-		       shell_module->commands[i].cmd_name,
-		       shell_module->commands[i].help ?
-		       shell_module->commands[i].help : "");
+		       module->commands[i].cmd_name,
+		       module->commands[i].help ?
+		       module->commands[i].help : "");
 	}
 }
 
@@ -190,14 +189,15 @@ static const struct shell_cmd *get_cmd(const struct shell_cmd cmds[],
 	return NULL;
 }
 
-static const struct shell_cmd *get_mod_cmd(int module, const char *cmd_str)
+static const struct shell_cmd *get_mod_cmd(struct shell_module *module,
+					   const char *cmd_str)
 {
-	return get_cmd(__shell_cmd_start[module].commands, cmd_str);
+	return get_cmd(module->commands, cmd_str);
 }
 
 static int cmd_help(int argc, char *argv[])
 {
-	int module = default_module;
+	struct shell_module *module = default_module;
 
 	/* help per command */
 	if (argc > 1) {
@@ -205,7 +205,7 @@ static int cmd_help(int argc, char *argv[])
 		const char *cmd_str;
 
 		module = get_destination_module(argv[1]);
-		if (module != -1) {
+		if (module) {
 			if (argc == 2) {
 				goto module_help;
 			}
@@ -218,7 +218,7 @@ static int cmd_help(int argc, char *argv[])
 			return -EINVAL;
 		}
 
-		if (module == -1) {
+		if (!module) {
 			printk("No help found for '%s'\n", cmd_str);
 			return -EINVAL;
 		}
@@ -234,14 +234,17 @@ static int cmd_help(int argc, char *argv[])
 
 module_help:
 	/* help per module */
-	if (module != -1) {
+	if (module) {
 		print_module_commands(module);
 		printk("\nEnter 'exit' to leave current module.\n");
 	} else { /* help for all entities */
+		int i;
+
 		printk("Available modules:\n");
-		for (module = 0; module < NUM_OF_SHELL_ENTITIES; module++) {
-			printk("%s\n", __shell_cmd_start[module].module_name);
+		for (i = 0; i < NUM_OF_SHELL_ENTITIES; i++) {
+			printk("%s\n", __shell_cmd_start[i].module_name);
 		}
+
 		printk("\nTo select a module, enter 'select <module name>'.\n");
 	}
 
@@ -250,7 +253,7 @@ module_help:
 
 static int set_default_module(const char *name)
 {
-	int module;
+	struct shell_module *module;
 
 	if (strlen(name) > MODULE_NAME_MAX_LEN) {
 		printk("Module name %s is too long, default is not changed\n",
@@ -260,7 +263,7 @@ static int set_default_module(const char *name)
 
 	module = get_destination_module(name);
 
-	if (module == -1) {
+	if (!module) {
 		printk("Illegal module %s, default is not changed\n", name);
 		return -EINVAL;
 	}
@@ -276,7 +279,7 @@ static int set_default_module(const char *name)
 static int cmd_select(int argc, char *argv[])
 {
 	if (argc == 1) {
-		default_module = -1;
+		default_module = NULL;
 		return 0;
 	}
 
@@ -286,7 +289,7 @@ static int cmd_select(int argc, char *argv[])
 static int cmd_exit(int argc, char *argv[])
 {
 	if (argc == 1) {
-		default_module = -1;
+		default_module = NULL;
 	}
 
 	return 0;
@@ -320,20 +323,20 @@ int shell_exec(char *line)
 		goto done;
 	}
 
-	if (argc == 1 && default_module == -1) {
+	if (argc == 1 && !default_module) {
 		printk("No module selected. Use 'select' or 'help'.\n");
 		return -EINVAL;
 	}
 
-	if (default_module != -1) {
+	if (default_module) {
 		cmd = get_mod_cmd(default_module, argv[0]);
 	}
 
 	if (!cmd && argc > 1) {
-		int module;
+		struct shell_module *module;
 
 		module = get_destination_module(argv[0]);
-		if (module != -1) {
+		if (module) {
 			cmd = get_mod_cmd(module, argv[1]);
 			if (cmd) {
 				argc--;
@@ -380,10 +383,11 @@ static void shell(void *p1, void *p2, void *p3)
 	}
 }
 
-static int get_command_to_complete(char *str, char **command_prefix)
+static struct shell_module *get_completion_module(char *str,
+						  char **command_prefix)
 {
 	char dest_str[MODULE_NAME_MAX_LEN];
-	int dest = -1;
+	struct shell_module *dest;
 	char *start;
 
 	/* remove ' ' at the beginning of the line */
@@ -392,15 +396,17 @@ static int get_command_to_complete(char *str, char **command_prefix)
 	}
 
 	if (!*str) {
-		return -1;
+		return NULL;
 	}
 
 	start = str;
 
-	if (default_module != -1) {
+	if (default_module) {
 		dest = default_module;
 		/* caller function already checks str len and put '\0' */
 		*command_prefix = str;
+	} else {
+		dest = NULL;
 	}
 
 	/*
@@ -408,23 +414,23 @@ static int get_command_to_complete(char *str, char **command_prefix)
 	 * Otherwise, only two parameters are possibles.
 	 */
 	str = strchr(str, ' ');
-	if (default_module != -1) {
-		return (str == NULL) ? dest : -1;
+	if (default_module) {
+		return str ? dest : NULL;
 	}
 
-	if (str == NULL) {
-		return -1;
+	if (!str) {
+		return NULL;
 	}
 
 	if ((str - start + 1) >= MODULE_NAME_MAX_LEN) {
-		return -1;
+		return NULL;
 	}
 
 	strncpy(dest_str, start, (str - start + 1));
 	dest_str[str - start] = '\0';
 	dest = get_destination_module(dest_str);
-	if (dest == -1) {
-		return -1;
+	if (!dest) {
+		return NULL;
 	}
 
 	str++;
@@ -434,14 +440,14 @@ static int get_command_to_complete(char *str, char **command_prefix)
 	str = strchr(str, ' ');
 
 	/* only two parameters are possibles in case of no default module */
-	return (str == NULL) ? dest : -1;
+	return str ? dest : NULL;
 }
 
 static u8_t completion(char *line, u8_t len)
 {
 	const char *first_match = NULL;
 	int common_chars = -1, space = 0;
-	int i, dest, command_len;
+	int i, command_len;
 	const struct shell_module *module;
 	char *command_prefix;
 
@@ -454,20 +460,18 @@ static u8_t completion(char *line, u8_t len)
 	 * k_fifo_get function
 	 */
 	line[len] = '\0';
-	dest = get_command_to_complete(line, &command_prefix);
-	if (dest == -1) {
+	module = get_completion_module(line, &command_prefix);
+	if (!module) {
 		return 0;
 	}
 
 	command_len = strlen(command_prefix);
 
-	module = &__shell_cmd_start[dest];
-
 	for (i = 0; module->commands[i].cmd_name; i++) {
 		int j;
 
 		if (strncmp(command_prefix,
-			module->commands[i].cmd_name, command_len)) {
+			    module->commands[i].cmd_name, command_len)) {
 			continue;
 		}
 
@@ -562,9 +566,9 @@ void shell_register_prompt_handler(shell_prompt_function_t handler)
 
 void shell_register_default_module(const char *name)
 {
-	int result = set_default_module(name);
+	int err = set_default_module(name);
 
-	if (result != -1) {
+	if (!err) {
 		printk("\n%s", default_module_prompt);
 	}
 }
