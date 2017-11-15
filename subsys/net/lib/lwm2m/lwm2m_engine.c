@@ -53,7 +53,7 @@
 
 #define ENGINE_UPDATE_INTERVAL K_MSEC(500)
 
-#define DISCOVER_PREFACE	"</.well-known/core>;ct=40"
+#define WELL_KNOWN_CORE_PATH	"</.well-known/core>"
 
 /*
  * TODO: to implement a way for clients to specify alternate path
@@ -2261,18 +2261,31 @@ static int do_read_op(struct lwm2m_engine_obj *obj,
 	return ret;
 }
 
-static int do_discover_op(struct lwm2m_engine_context *context)
+static int do_discover_op(struct lwm2m_engine_context *context, bool well_known)
 {
 	static char disc_buf[24];
-	struct lwm2m_output_context *out = context->out;
+	struct lwm2m_engine_obj *obj;
 	struct lwm2m_engine_obj_inst *obj_inst;
-	int i = 0, ret;
+	struct lwm2m_obj_path *path = context->path;
+	struct lwm2m_output_context *out = context->out;
+	int ret;
 	u16_t temp_len;
+	bool reported = false;
+
+	/* object ID is required unless it's bootstrap discover (TODO) or it's
+	 * a ".well-known/core" discovery
+	 * ref: lwm2m spec 20170208-A table 11
+	 */
+	if (!well_known &&
+	    (path->level == 0 ||
+	     (path->level > 0 && path->obj_id == LWM2M_OBJECT_SECURITY_ID))) {
+		return -EPERM;
+	}
 
 	/* set output content-format */
 	ret = coap_append_option_int(out->out_cpkt,
-				   COAP_OPTION_CONTENT_FORMAT,
-				   LWM2M_FORMAT_APP_LINK_FORMAT);
+				     COAP_OPTION_CONTENT_FORMAT,
+				     LWM2M_FORMAT_APP_LINK_FORMAT);
 	if (ret < 0) {
 		SYS_LOG_ERR("Error setting response content-format: %d", ret);
 		return ret;
@@ -2287,45 +2300,104 @@ static int do_discover_op(struct lwm2m_engine_context *context)
 					    &temp_len);
 	out->offset++;
 
-	/* </.well-known/core>,**;ct=40 */
-	if (!net_pkt_append_all(out->out_cpkt->pkt,
-				strlen(DISCOVER_PREFACE), DISCOVER_PREFACE,
-				BUF_ALLOC_TIMEOUT)) {
-		return -ENOMEM;
-	}
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&engine_obj_inst_list, obj_inst, node) {
-		/* TODO: support bootstrap discover
-		 * Avoid discovery for security object (5.2.7.3)
-		 */
-		if (obj_inst->obj->obj_id == LWM2M_OBJECT_SECURITY_ID) {
-			continue;
-		}
-
-		snprintk(disc_buf, sizeof(disc_buf), ",</%u/%u>",
-			 obj_inst->obj->obj_id, obj_inst->obj_inst_id);
-
+	/* Handle CoAP .well-known/core discover */
+	if (well_known) {
+		/* </.well-known/core> */
 		if (!net_pkt_append_all(out->out_cpkt->pkt,
-					strlen(disc_buf), disc_buf,
+					strlen(WELL_KNOWN_CORE_PATH),
+					WELL_KNOWN_CORE_PATH,
 					BUF_ALLOC_TIMEOUT)) {
 			return -ENOMEM;
 		}
 
-		for (i = 0; i < obj_inst->resource_count; i++) {
-			snprintk(disc_buf, sizeof(disc_buf),
-				",</%u/%u/%u>",
-				obj_inst->obj->obj_id,
-				obj_inst->obj_inst_id,
-				obj_inst->resources[i].res_id);
+		SYS_SLIST_FOR_EACH_CONTAINER(&engine_obj_list, obj, node) {
+			snprintk(disc_buf, sizeof(disc_buf), ",</%u>",
+				 obj->obj_id);
 			if (!net_pkt_append_all(out->out_cpkt->pkt,
 						strlen(disc_buf), disc_buf,
 						BUF_ALLOC_TIMEOUT)) {
 				return -ENOMEM;
 			}
 		}
+
+		return 0;
 	}
 
-	return 0;
+	/* TODO: lwm2m spec 20170208-A sec 5.2.7.3 bootstrap discover on "/"
+	 * - report object 0 (security) with ssid
+	 * - prefixed w/ lwm2m enabler version. e.g. lwm2m="1.0"
+	 * - returns object and object instances only
+	 */
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&engine_obj_inst_list, obj_inst, node) {
+		/* TODO: support bootstrap discover
+		 * Avoid discovery for security object (5.2.7.3)
+		 * Skip reporting unrelated object
+		 */
+		if (obj_inst->obj->obj_id == LWM2M_OBJECT_SECURITY_ID ||
+		    obj_inst->obj->obj_id != path->obj_id) {
+			continue;
+		}
+
+		if (path->level == 1) {
+			/* TODO: report object attrs (5.4.2) */
+			snprintk(disc_buf, sizeof(disc_buf), "%s</%u>",
+				 reported ? "," : "",
+				 obj_inst->obj->obj_id);
+			if (!net_pkt_append_all(out->out_cpkt->pkt,
+						strlen(disc_buf), disc_buf,
+						BUF_ALLOC_TIMEOUT)) {
+				return -ENOMEM;
+			}
+
+			reported = true;
+		}
+
+		/* skip unrelated object instance */
+		if (path->level > 1 &&
+		    path->obj_inst_id != obj_inst->obj_inst_id) {
+			continue;
+		}
+
+		if (path->level == 2) {
+			/* TODO: report object instance attrs (5.4.2) */
+			snprintk(disc_buf, sizeof(disc_buf), "%s</%u/%u>",
+				 reported ? "," : "",
+				 obj_inst->obj->obj_id, obj_inst->obj_inst_id);
+			if (!net_pkt_append_all(out->out_cpkt->pkt,
+						strlen(disc_buf), disc_buf,
+						BUF_ALLOC_TIMEOUT)) {
+				return -ENOMEM;
+			}
+
+			reported = true;
+		}
+
+		for (int i = 0; i < obj_inst->resource_count; i++) {
+			/* skip unrelated resources */
+			if (path->level == 3 &&
+			    path->res_id != obj_inst->resources[i].res_id) {
+				continue;
+			}
+
+			/* TODO: report resource attrs when path > 1 (5.4.2) */
+			snprintk(disc_buf, sizeof(disc_buf),
+				 "%s</%u/%u/%u>",
+				 reported ? "," : "",
+				 obj_inst->obj->obj_id,
+				 obj_inst->obj_inst_id,
+				 obj_inst->resources[i].res_id);
+			if (!net_pkt_append_all(out->out_cpkt->pkt,
+						strlen(disc_buf), disc_buf,
+						BUF_ALLOC_TIMEOUT)) {
+				return -ENOMEM;
+			}
+
+			reported = true;
+		}
+	}
+
+	return reported ? 0 : -ENOENT;
 }
 
 int lwm2m_get_or_create_engine_obj(struct lwm2m_engine_context *context,
@@ -2390,7 +2462,7 @@ static int handle_request(struct coap_packet *request,
 	int r;
 	u8_t code;
 	struct coap_option options[4];
-	struct lwm2m_engine_obj *obj;
+	struct lwm2m_engine_obj *obj = NULL;
 	u8_t token[8];
 	u8_t tkl = 0;
 	u16_t format, accept;
@@ -2399,7 +2471,7 @@ static int handle_request(struct coap_packet *request,
 	struct lwm2m_obj_path path;
 	struct lwm2m_engine_context context;
 	int observe = -1; /* default to -1, 0 = ENABLE, 1 = DISABLE */
-	bool discover = false;
+	bool well_known = false;
 	struct block_context *block_ctx = NULL;
 	enum coap_block_size block_size;
 	bool last_block = false;
@@ -2452,7 +2524,7 @@ static int handle_request(struct coap_packet *request,
 			goto error;
 		}
 
-		discover = true;
+		well_known = true;
 	} else {
 		r = coap_options_to_path(options, r, &path);
 		if (r < 0) {
@@ -2480,12 +2552,14 @@ static int handle_request(struct coap_packet *request,
 		accept = LWM2M_FORMAT_OMA_TLV;
 	}
 
-	/* find registered obj */
-	obj = get_engine_obj(path.obj_id);
-	if (!obj) {
-		/* No matching object found - ignore request */
-		r = -ENOENT;
-		goto error;
+	if (!well_known) {
+		/* find registered obj */
+		obj = get_engine_obj(path.obj_id);
+		if (!obj) {
+			/* No matching object found - ignore request */
+			r = -ENOENT;
+			goto error;
+		}
 	}
 
 	format = select_reader(&in, format);
@@ -2499,13 +2573,15 @@ static int handle_request(struct coap_packet *request,
 		 * Leshan sends only an accept=LWM2M_FORMAT_APP_LINK_FORMAT to
 		 * indicate a discover OP
 		 */
-		if (discover || format == LWM2M_FORMAT_APP_LINK_FORMAT ||
-				accept == LWM2M_FORMAT_APP_LINK_FORMAT) {
+		if (well_known ||
+		    format == LWM2M_FORMAT_APP_LINK_FORMAT ||
+		    accept == LWM2M_FORMAT_APP_LINK_FORMAT) {
 			context.operation = LWM2M_OP_DISCOVER;
 			accept = LWM2M_FORMAT_APP_LINK_FORMAT;
 		} else {
 			context.operation = LWM2M_OP_READ;
 		}
+
 		/* check for observe */
 		observe = get_option_int(in.in_cpkt, COAP_OPTION_OBSERVE);
 		msg->code = COAP_RESPONSE_CODE_CONTENT;
@@ -2622,7 +2698,7 @@ static int handle_request(struct coap_packet *request,
 		break;
 
 	case LWM2M_OP_DISCOVER:
-		r = do_discover_op(&context);
+		r = do_discover_op(&context, well_known);
 		break;
 
 	case LWM2M_OP_WRITE:
