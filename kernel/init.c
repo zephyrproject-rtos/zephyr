@@ -29,37 +29,8 @@
 #include <misc/dlist.h>
 #include <kernel_internal.h>
 #include <kswap.h>
+#include <boot.h>
 
-/* kernel build timestamp items */
-
-#define BUILD_TIMESTAMP "BUILD: " __DATE__ " " __TIME__
-
-#ifdef CONFIG_BUILD_TIMESTAMP
-const char * const build_timestamp = BUILD_TIMESTAMP;
-#endif
-
-/* boot banner items */
-
-static const unsigned int boot_delay;
-#if defined(CONFIG_BOOT_DELAY) && CONFIG_BOOT_DELAY > 0
-#define BOOT_DELAY_BANNER " (delayed boot "	\
-	STRINGIFY(CONFIG_BOOT_DELAY) "ms)"
-static const unsigned int boot_delay = CONFIG_BOOT_DELAY;
-#else
-#define BOOT_DELAY_BANNER ""
-static const unsigned int boot_delay;
-#endif
-#define BOOT_BANNER "BOOTING ZEPHYR OS v"	\
-	KERNEL_VERSION_STRING BOOT_DELAY_BANNER
-
-#if !defined(CONFIG_BOOT_BANNER)
-#define PRINT_BOOT_BANNER() do { } while (0)
-#elif !defined(CONFIG_BUILD_TIMESTAMP)
-#define PRINT_BOOT_BANNER() printk("***** " BOOT_BANNER " *****\n")
-#else
-#define PRINT_BOOT_BANNER() \
-	printk("***** " BOOT_BANNER " - %s *****\n", build_timestamp)
-#endif
 
 /* boot time measurement items */
 
@@ -222,11 +193,14 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 	ARG_UNUSED(unused3);
 
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_POST_KERNEL);
+
 	if (boot_delay > 0) {
-		printk("***** delaying boot " STRINGIFY(CONFIG_BOOT_DELAY)
-		       "ms (per build configuration) *****\n");
+		printk("***** delaying boot %dms"
+		       "(per build configuration) *****\n", boot_delay);
 		k_busy_wait(CONFIG_BOOT_DELAY * USEC_PER_MSEC);
 	}
+
+	/* display boot banner */
 	PRINT_BOOT_BANNER();
 
 	/* Final init level before app starts */
@@ -448,8 +422,6 @@ FUNC_NORETURN void _Cstart(void)
 #ifdef CONFIG_SMP
 	smp_init();
 #endif
-
-	/* display boot banner */
 
 	switch_to_main_thread();
 
