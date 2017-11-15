@@ -10,6 +10,8 @@ if(OPENSDA_FW STREQUAL jlink)
   set_ifndef(DEBUG_SCRIPT jlink.sh)
 endif()
 
+set(JLINK_DEVICE Cortex-M7)
+
 set_property(GLOBAL APPEND PROPERTY FLASH_SCRIPT_ENV_VARS
-  JLINK_DEVICE=Cortex-M7
+  JLINK_DEVICE
   )
