@@ -367,8 +367,6 @@ int shell_exec(char *line)
 		return -EINVAL;
 	}
 
-	err = argc;
-
 	cb = get_cb(&argc, argv, &module);
 	if (!cb) {
 		if (app_cmd_handler != NULL) {
