@@ -304,7 +304,7 @@ static int exit_module(int argc, char *argv[])
 	return 0;
 }
 
-static shell_cmd_function_t get_cb(int *argc, char *argv[], int *module)
+static shell_cmd_function_t get_cb(int argc, char *argv[], int *module)
 {
 	const struct shell_module *shell_module;
 	const char *command;
@@ -322,7 +322,7 @@ static shell_cmd_function_t get_cb(int *argc, char *argv[], int *module)
 		return exit_module;
 	}
 
-	if ((*argc == 1) && (default_module == -1)) {
+	if ((argc == 1) && (default_module == -1)) {
 		printk("Missing parameter\n");
 		return NULL;
 	}
@@ -361,7 +361,7 @@ int shell_exec(char *line)
 		return -EINVAL;
 	}
 
-	cb = get_cb(&argc, argv, &module);
+	cb = get_cb(argc, argv, &module);
 	if (!cb) {
 		if (app_cmd_handler != NULL) {
 			cb = app_cmd_handler;
