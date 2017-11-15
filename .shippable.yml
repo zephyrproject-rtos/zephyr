@@ -44,6 +44,7 @@ build:
             make htmldocs
             if [ -s doc/doc.warnings ]; then
               echo " => New documentation warnings/errors";
+              cp doc/doc.warnings doc.warnings
             fi;
             echo "- Verify commit message, coding style, doc build";
             ./scripts/ci/check-compliance.py --commits ${COMMIT_RANGE} || true;
