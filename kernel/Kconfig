@@ -191,6 +191,12 @@ config BOOT_BANNER
 	This option outputs a banner to the console device during boot up. It
 	also embeds a date & time stamp in the kernel and in each USAP image.
 
+config SYSTEM_INFO
+       bool "Print system information"
+       depends on BOOT_BANNER
+       help
+         Print system information to the console.
+
 config BOOT_DELAY
 	int
 	prompt "Boot delay in milliseconds"

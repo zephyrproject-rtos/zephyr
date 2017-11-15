@@ -161,7 +161,10 @@ static void _main(void *unused1, void *unused2, void *unused3)
 		       "ms (per build configuration) *****\n");
 		k_busy_wait(CONFIG_BOOT_DELAY * USEC_PER_MSEC);
 	}
+
+	/* define in kernel/include/boot.h */
 	PRINT_BOOT_BANNER();
+	PRINT_SYSTEM_INFO();
 
 	/* Final init level before app starts */
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_APPLICATION);
