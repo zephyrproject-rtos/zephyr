@@ -201,6 +201,7 @@ static void supported_commands(u8_t *data, u16_t len)
 	tester_set_bit(cmds, GATT_CFG_NOTIFY);
 	tester_set_bit(cmds, GATT_CFG_INDICATE);
 	tester_set_bit(cmds, GATT_GET_ATTRIBUTES);
+	tester_set_bit(cmds, GATT_GET_ATTRIBUTE_VALUE);
 
 	tester_send(BTP_SERVICE_ID_GATT, GATT_READ_SUPPORTED_COMMANDS,
 		    CONTROLLER_INDEX, (u8_t *) rp, sizeof(cmds));
@@ -1781,6 +1782,62 @@ static void get_attrs(u8_t *data, u16_t len)
 		    buf->data, buf->len);
 }
 
+static u8_t err_to_att(int err)
+{
+	if (err < 0 && err >= -0xff) {
+		return -err;
+	}
+
+	return BT_ATT_ERR_UNLIKELY;
+}
+
+static u8_t get_attr_val_rp(const struct bt_gatt_attr *attr, void *user_data)
+{
+	struct net_buf_simple *buf = user_data;
+	struct gatt_get_attribute_value_rp *rp;
+	ssize_t read, to_read;
+
+	rp = net_buf_simple_add(buf, sizeof(*rp));
+	rp->value_length = 0x0000;
+	rp->att_response = 0x00;
+
+	do {
+		to_read = net_buf_simple_tailroom(buf);
+
+		read = attr->read(NULL, attr, buf->data + buf->len, to_read,
+				  rp->value_length);
+		if (read < 0) {
+			rp->att_response = err_to_att(read);
+			break;
+		}
+
+		rp->value_length += read;
+
+		net_buf_simple_add(buf, read);
+	} while (read == to_read);
+
+	return BT_GATT_ITER_STOP;
+}
+
+static void get_attr_val(u8_t *data, u16_t len)
+{
+	const struct gatt_get_attribute_value_cmd *cmd = (void *) data;
+	struct net_buf_simple *buf = NET_BUF_SIMPLE(BTP_DATA_MAX_SIZE);
+	u16_t handle = sys_le16_to_cpu(cmd->handle);
+
+	net_buf_simple_init(buf, 0);
+
+	bt_gatt_foreach_attr(handle, handle, get_attr_val_rp, buf);
+
+	if (buf->len) {
+		tester_send(BTP_SERVICE_ID_GATT, GATT_GET_ATTRIBUTE_VALUE,
+			    CONTROLLER_INDEX, buf->data, buf->len);
+	} else {
+		tester_rsp(BTP_SERVICE_ID_GATT, GATT_GET_ATTRIBUTE_VALUE,
+			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
+	}
+}
+
 void tester_handle_gatt(u8_t opcode, u8_t index, u8_t *data,
 			 u16_t len)
 {
@@ -1854,6 +1911,9 @@ void tester_handle_gatt(u8_t opcode, u8_t index, u8_t *data,
 		return;
 	case GATT_GET_ATTRIBUTES:
 		get_attrs(data, len);
+		return;
+	case GATT_GET_ATTRIBUTE_VALUE:
+		get_attr_val(data, len);
 		return;
 	default:
 		tester_rsp(BTP_SERVICE_ID_GATT, opcode, index,
