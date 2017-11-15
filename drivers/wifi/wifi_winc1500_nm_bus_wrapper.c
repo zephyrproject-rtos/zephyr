@@ -130,7 +130,7 @@ s8_t nm_bus_init(void *pvinit)
 
 	nm_bsp_interrupt_ctrl(1);
 
-	SYS_LOG_INF("NOTICE:DONE");
+	SYS_LOG_DBG("NOTICE:DONE");
 #endif
 	return 0;
 }
