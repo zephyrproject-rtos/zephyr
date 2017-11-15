@@ -157,11 +157,6 @@ static const char *get_command_and_module(char *argv[], int *module)
 {
 	*module = -1;
 
-	if (!argv[0]) {
-		printk("Unrecognized command\n");
-		return NULL;
-	}
-
 	if (default_module == -1) {
 		if (!argv[1] || argv[1][0] == '\0') {
 			printk("Unrecognized command: %s\n", argv[0]);
