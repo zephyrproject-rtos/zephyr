@@ -993,13 +993,19 @@ int bt_mesh_lpn_init(void)
 	if (lpn->state == BT_MESH_LPN_ENABLED) {
 		if (IS_ENABLED(CONFIG_BT_MESH_LPN_ESTABLISHMENT)) {
 			bt_mesh_scan_disable();
+		} else {
+			bt_mesh_scan_enable();
 		}
 
 		send_friend_req(lpn);
-	} else if (IS_ENABLED(CONFIG_BT_MESH_LPN_AUTO)) {
-		BT_DBG("Waiting %u ms for messages", LPN_AUTO_TIMEOUT);
-		lpn_set_state(BT_MESH_LPN_TIMER);
-		k_delayed_work_submit(&lpn->timer, LPN_AUTO_TIMEOUT);
+	} else {
+		bt_mesh_scan_enable();
+
+		if (IS_ENABLED(CONFIG_BT_MESH_LPN_AUTO)) {
+			BT_DBG("Waiting %u ms for messages", LPN_AUTO_TIMEOUT);
+			lpn_set_state(BT_MESH_LPN_TIMER);
+			k_delayed_work_submit(&lpn->timer, LPN_AUTO_TIMEOUT);
+		}
 	}
 
 	return 0;

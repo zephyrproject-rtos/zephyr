@@ -76,13 +76,10 @@ int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
 		bt_mesh_adv_update();
 	}
 
-	/* If PB-ADV is disabled then scanning will have been disabled */
-	if (!IS_ENABLED(CONFIG_BT_MESH_PB_ADV)) {
-		bt_mesh_scan_enable();
-	}
-
 	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
 		bt_mesh_lpn_init();
+	} else {
+		bt_mesh_scan_enable();
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_FRIEND)) {
