@@ -211,11 +211,9 @@ static int cmd_help(int argc, char *argv[])
 			}
 
 			cmd_str = argv[2];
-		} else if (argc > 2) {
-			cmd_str = argv[1];
 		} else {
-			printk("Unknown module or command\n");
-			return -EINVAL;
+			cmd_str = argv[1];
+			module = default_module;
 		}
 
 		if (!module) {
