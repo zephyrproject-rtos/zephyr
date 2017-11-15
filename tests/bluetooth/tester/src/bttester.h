@@ -535,6 +535,16 @@ struct gatt_attr {
 	u8_t type[0];
 } __packed;
 
+#define GATT_GET_ATTRIBUTE_VALUE	0x1d
+struct gatt_get_attribute_value_cmd {
+	u16_t handle;
+} __packed;
+struct gatt_get_attribute_value_rp {
+	u8_t att_response;
+	u16_t value_length;
+	u8_t value[0];
+} __packed;
+
 /* GATT events */
 #define GATT_EV_NOTIFICATION		0x80
 struct gatt_notification_ev {
