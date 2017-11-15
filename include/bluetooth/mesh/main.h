@@ -143,7 +143,7 @@ struct bt_mesh_prov {
  *  This is intended to be called after the bt_mesh_prov input callback
  *  has been called with BT_MESH_ENTER_STRING as the action.
  *
- *  @param string String.
+ *  @param str String.
  *
  *  @return Zero on success or (negative) error code otherwise.
  */
