@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define SYS_LOG_LEVEL 3
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_DEVICE_LEVEL
 #define SYS_LOG_DOMAIN "netusb"
 #include <logging/sys_log.h>
 
@@ -228,11 +228,7 @@ static void netusb_init(struct net_if *iface)
 
 	SYS_LOG_DBG("netusb device initialization");
 
-	SYS_LOG_DBG("iface %p", iface);
-
 	netusb.iface = iface;
-
-	SYS_LOG_DBG("iface %p", iface);
 
 	net_if_set_link_addr(iface, mac, sizeof(mac), NET_LINK_ETHERNET);
 
@@ -241,6 +237,10 @@ static void netusb_init(struct net_if *iface)
 #if defined(CONFIG_USB_DEVICE_NETWORK_ECM)
 	netusb.func = &ecm_function;
 #endif
+	if (netusb.func->init && netusb.func->init()) {
+		SYS_LOG_ERR("Initialization failed");
+		return;
+	}
 
 	netusb_config.endpoint = netusb.func->ep;
 	netusb_config.num_endpoints = netusb.func->num_ep;

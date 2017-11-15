@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define SYS_LOG_LEVEL 3
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_DEVICE_LEVEL
 #define SYS_LOG_DOMAIN "function/ecm"
 #include <logging/sys_log.h>
 
@@ -283,6 +283,7 @@ static struct usb_ep_cfg_data ecm_ep_data[] = {
 };
 
 struct netusb_function ecm_function = {
+	.init = NULL,
 	.connect_media = NULL,
 	.class_handler = ecm_class_handler,
 	.send_pkt = ecm_send,
