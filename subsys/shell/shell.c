@@ -311,11 +311,6 @@ static shell_cmd_function_t get_cb(int *argc, char *argv[], int *module)
 	const char *command;
 	int i;
 
-	if (!first_string || first_string[0] == '\0') {
-		printk("Illegal parameter\n");
-		return NULL;
-	}
-
 	if (!strcmp(first_string, "help")) {
 		return show_help;
 	}
