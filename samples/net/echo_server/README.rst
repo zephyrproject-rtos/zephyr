@@ -60,6 +60,10 @@ echo-server directory:
 - :file:`prj_sam_e70_xplained.conf`
   Use this for Atmel SMART SAM E70 Xplained board with ethernet.
 
+- :file:`prj_netusb.conf`
+  Use this for Ethernet over USB setup with supported boards. The setup is
+  described in :ref:`usb_device_networking_setup`.
+
 Build echo-server sample application like this:
 
 .. zephyr-app-commands::
