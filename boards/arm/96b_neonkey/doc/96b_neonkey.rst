@@ -152,7 +152,7 @@ ROM bootloader can be triggered by the following pattern:
 2. Press and hold the USR button
 3. Press and release the RST button
 
-More detailed information on activating the ROM bootloder can be found in
+More detailed information on activating the ROM bootloader can be found in
 Chapter 29 of Application note `AN2606`_. The ROM bootloader supports flashing
 via UART, I2C and SPI protocols.
 

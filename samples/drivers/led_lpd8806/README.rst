@@ -19,7 +19,7 @@ Requirements
 - LED strip using LPD8806 or compatible, such as `these strips from AdaFruit`_.
 
 - Zephyr board with SPI master driver. SPI communications must use 5V
-  signalling, which may require a level translator, such as the
+  signaling, which may require a level translator, such as the
   `74AHCT125`_.
 
 - 5V power supply.

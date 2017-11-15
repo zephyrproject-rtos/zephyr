@@ -60,7 +60,7 @@ Programming and Debugging
 
 Use this configuration to run basic Zephyr applications and kernel
 tests in a QEMU emulated environment (we assume the same QEMU
-configuration used to accomodate Jailhouse's configs/qemu-x86.c root
+configuration used to accommodate Jailhouse's configs/qemu-x86.c root
 cell configuration).
 
 For example, with the :ref:`synchronization_sample`, first set
