@@ -150,60 +150,15 @@ static int get_destination_module(const char *module_str)
 	return -1;
 }
 
-/* For a specific command: argv[0] = module name, argv[1] = command name
- * If a default module was selected: argv[0] = command name
- */
-static const char *get_command_and_module(char *argv[], int *module)
+static int show_cmd_help(const struct shell_cmd *cmd, bool full)
 {
-	*module = -1;
+	printk("Usage: %s %s\n", cmd->cmd_name, cmd->help ? cmd->help : "");
 
-	if (default_module == -1) {
-		if (!argv[1] || argv[1][0] == '\0') {
-			printk("Unrecognized command: %s\n", argv[0]);
-			return NULL;
-		}
-
-		*module = get_destination_module(argv[0]);
-		if (*module == -1) {
-			printk("Illegal module %s\n", argv[0]);
-			return NULL;
-		}
-
-		return argv[1];
+	if (full && cmd->desc) {
+		printk("%s\n", cmd->desc);
 	}
 
-	*module = default_module;
-	return argv[0];
-}
-
-static int show_cmd_help(char *argv[], bool full)
-{
-	const char *command = NULL;
-	int module = -1;
-	const struct shell_module *shell_module;
-	int i;
-
-	command = get_command_and_module(argv, &module);
-	if ((module == -1) || (command == NULL)) {
-		return 0;
-	}
-
-	shell_module = &__shell_cmd_start[module];
-	for (i = 0; shell_module->commands[i].cmd_name; i++) {
-		if (!strcmp(command, shell_module->commands[i].cmd_name)) {
-			printk("Usage: %s %s\n",
-			       shell_module->commands[i].cmd_name,
-			       shell_module->commands[i].help ?
-			       shell_module->commands[i].help : "");
-			if (full && shell_module->commands[i].desc) {
-				printk("%s\n", shell_module->commands[i].desc);
-			}
-			return 0;
-		}
-	}
-
-	printk("Unrecognized command: %s\n", argv[0]);
-	return -EINVAL;
+	return 0;
 }
 
 static void print_module_commands(const int module)
@@ -221,27 +176,65 @@ static void print_module_commands(const int module)
 	}
 }
 
-static int show_help(int argc, char *argv[])
+static const struct shell_cmd *get_cmd(const struct shell_cmd cmds[],
+				       const char *cmd_str)
 {
-	int module;
+	int i;
 
-	/* help per command */
-	if ((argc > 2) || ((default_module != -1) && (argc == 2))) {
-		return show_cmd_help(&argv[1], true);
+	for (i = 0; cmds[i].cmd_name; i++) {
+		if (!strcmp(cmd_str, cmds[i].cmd_name)) {
+			return &cmds[i];
+		}
 	}
 
-	/* help per module */
-	if ((argc == 2) || ((default_module != -1) && (argc == 1))) {
-		if (default_module == -1) {
-			module = get_destination_module(argv[1]);
-			if (module == -1) {
-				printk("Illegal module %s\n", argv[1]);
-				return -EINVAL;
+	return NULL;
+}
+
+static const struct shell_cmd *get_mod_cmd(int module, const char *cmd_str)
+{
+	return get_cmd(__shell_cmd_start[module].commands, cmd_str);
+}
+
+static int cmd_help(int argc, char *argv[])
+{
+	int module = default_module;
+
+	/* help per command */
+	if (argc > 1) {
+		const struct shell_cmd *cmd;
+		const char *cmd_str;
+
+		module = get_destination_module(argv[1]);
+		if (module != -1) {
+			if (argc == 2) {
+				goto module_help;
 			}
+
+			cmd_str = argv[2];
+		} else if (argc > 2) {
+			cmd_str = argv[1];
 		} else {
-			module = default_module;
+			printk("Unknown module or command\n");
+			return -EINVAL;
 		}
 
+		if (module == -1) {
+			printk("No help found for '%s'\n", cmd_str);
+			return -EINVAL;
+		}
+
+		cmd = get_mod_cmd(module, cmd_str);
+		if (cmd) {
+			return show_cmd_help(cmd, true);
+		} else {
+			printk("Unknown command '%s'\n", cmd_str);
+			return -EINVAL;
+		}
+	}
+
+module_help:
+	/* help per module */
+	if (module != -1) {
 		print_module_commands(module);
 		printk("\nEnter 'exit' to leave current module.\n");
 	} else { /* help for all entities */
@@ -280,7 +273,7 @@ static int set_default_module(const char *name)
 	return 0;
 }
 
-static int select_module(int argc, char *argv[])
+static int cmd_select(int argc, char *argv[])
 {
 	if (argc == 1) {
 		default_module = -1;
@@ -290,7 +283,7 @@ static int select_module(int argc, char *argv[])
 	return set_default_module(argv[1]);
 }
 
-static int exit_module(int argc, char *argv[])
+static int cmd_exit(int argc, char *argv[])
 {
 	if (argc == 1) {
 		default_module = -1;
@@ -299,42 +292,22 @@ static int exit_module(int argc, char *argv[])
 	return 0;
 }
 
-static shell_cmd_function_t get_cb(int module, const char *command)
+static const struct shell_cmd *get_internal(const char *command)
 {
-	const struct shell_module *shell_module;
-	int i;
+	static const struct shell_cmd internal_commands[] = {
+		{ "help", cmd_help, "[command]" },
+		{ "select", cmd_select, "[module]" },
+		{ "exit", cmd_exit, NULL },
+		{ NULL },
+	};
 
-	shell_module = &__shell_cmd_start[module];
-	for (i = 0; shell_module->commands[i].cmd_name; i++) {
-		if (!strcmp(command, shell_module->commands[i].cmd_name)) {
-			return shell_module->commands[i].cb;
-		}
-	}
-
-	return NULL;
-}
-
-static shell_cmd_function_t get_internal(const char *command)
-{
-	if (!strcmp(command, "help")) {
-		return show_help;
-	}
-
-	if (!strcmp(command, "select")) {
-		return select_module;
-	}
-
-	if (!strcmp(command, "exit")) {
-		return exit_module;
-	}
-
-	return NULL;
+	return get_cmd(internal_commands, command);
 }
 
 int shell_exec(char *line)
 {
 	char *argv[ARGC_MAX + 1], **argv_start = argv;
-	shell_cmd_function_t cb;
+	const struct shell_cmd *cmd;
 	int argc, err;
 
 	argc = line2argv(line, argv, ARRAY_SIZE(argv));
@@ -342,9 +315,9 @@ int shell_exec(char *line)
 		return -EINVAL;
 	}
 
-	cb = get_internal(argv[0]);
-	if (cb) {
-		return cb(argc, argv_start);
+	cmd = get_internal(argv[0]);
+	if (cmd) {
+		goto done;
 	}
 
 	if (argc == 1 && default_module == -1) {
@@ -353,35 +326,36 @@ int shell_exec(char *line)
 	}
 
 	if (default_module != -1) {
-		cb = get_cb(default_module, argv[0]);
+		cmd = get_mod_cmd(default_module, argv[0]);
 	}
 
-	if (!cb && argc > 1) {
+	if (!cmd && argc > 1) {
 		int module;
 
 		module = get_destination_module(argv[0]);
 		if (module != -1) {
-			cb = get_cb(module, argv[1]);
-			if (cb) {
+			cmd = get_mod_cmd(module, argv[1]);
+			if (cmd) {
 				argc--;
 				argv_start++;
 			}
 		}
 	}
 
-	if (!cb) {
-		if (app_cmd_handler != NULL) {
-			cb = app_cmd_handler;
-		} else {
-			printk("Unrecognized command: %s\n", argv[0]);
-			printk("Type 'help' for list of available commands\n");
-			return -EINVAL;
+	if (!cmd) {
+		if (app_cmd_handler) {
+			return app_cmd_handler(argc, argv);
 		}
+
+		printk("Unrecognized command: %s\n", argv[0]);
+		printk("Type 'help' for list of available commands\n");
+		return -EINVAL;
 	}
 
-	err = cb(argc, argv_start);
+done:
+	err = cmd->cb(argc, argv_start);
 	if (err < 0) {
-		show_cmd_help(argv, false);
+		show_cmd_help(cmd, false);
 	}
 
 	return err;
