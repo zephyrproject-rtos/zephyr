@@ -21,6 +21,8 @@ chosen = {}
 reduced = {}
 defs = {}
 structs = {}
+struct_dict = {}
+node_file = ""
 
 
 def convert_string_to_label(s):
@@ -113,7 +115,7 @@ class Loader(yaml.Loader):
         self._root = os.path.realpath(stream.name)
         super(Loader, self).__init__(stream)
         Loader.add_constructor('!include', Loader.include)
-        Loader.add_constructor('!import',  Loader.include)
+        Loader.add_constructor('!import', Loader.include)
 
     def include(self, node):
         if isinstance(node, yaml.ScalarNode):
@@ -856,6 +858,156 @@ def lookup_defs(defs, node, key):
     return defs[node].get(key, None)
 
 
+def print_pinctrl_init_code(node_instances, node, yaml_list, instance=""):
+    node_yaml_props = yaml_list[node]['properties']
+
+    # local variables
+    node_compat = convert_string_to_label(node)
+
+    label_string = ""
+
+    if instance != "":
+        label_string = "_" + instance
+
+    write_node_file("static const struct" + ' pin_config ' + node_compat +
+                    "_pinconf" + label_string + " [] = {\n")
+
+    for node in structs.keys():
+        if 'pinctrl' in structs[node].keys():
+            node_pinctrl = structs[node]['pinctrl']
+            if len(node_pinctrl['instance']) > 0:
+                if str(node_pinctrl['instance'][0]).strip("'") != \
+                        instance:
+                    continue
+
+            for config in range(0, len(node_pinctrl['data'])):
+                if 'default' in str(node_pinctrl['members'][config]):
+                    for pin in range(0, len(node_pinctrl['data'][config])):
+                        write_node_file("\t{")
+                        write_node_file(
+                            str(node_pinctrl['data'][config][pin])[1:-1])
+                        write_node_file("},\n")
+
+    write_node_file("};\n\n")
+
+    return
+
+
+def write_node_file(str):
+    global file
+
+    if file != "":
+        file.write(str)
+    else:
+        raise Exception("Output file does not exist.")
+
+
+def generate_structs_file(args, yaml_list):
+    global file
+    compatible = reduced['/']['props']['compatible'][0]
+
+    if not args.structs:
+        print('Usage: %s -d filename.dts -y path_to_yaml -s $(objtree)' %
+              sys.argv[0])
+        return 1
+
+    # print driver code init
+    for node in struct_dict:
+
+        #Look for node with 'pinmux' type
+        try:
+            if yaml_list[node]['gen_type'] != 'pinmux':
+                continue
+        except KeyError:
+                continue
+
+        outdir_path = str(args.structs)
+        node_file_path = str(outdir_path)
+        node_file = node_file_path + '/' + convert_string_to_label(
+            node) + '_init.h'
+
+        if not os.path.exists(os.path.dirname(node_file)):
+            try:
+                os.makedirs(os.path.dirname(node_file))
+            except:
+                raise Exception(
+                    "Could not find path: " + str(node_file_path))
+
+        try:
+            file = open(node_file, 'w')
+        except:
+            raise Exception("Could not open file: " + node_file)
+
+        write_node_file("/**************************************************\n")
+        write_node_file(" * Generated include file for " + node)
+        write_node_file("\n")
+        write_node_file(" *               DO NOT MODIFY\n");
+        write_node_file(" */\n")
+        write_node_file("\n")
+        write_node_file("#ifndef " + str(
+            convert_string_to_label(node) + '_init').upper() + "_H" + "\n");
+        write_node_file("#define _" + str(
+            convert_string_to_label(node) + '_init').upper() + "_H" + "\n");
+        write_node_file("\n")
+
+        # check if multiple instances of pinmux/pinctrl IP
+        if len(struct_dict[node]) > 1:
+            i = 0
+            pinmux_table = []
+
+            for instance in (struct_dict[node]):
+
+                # build the array of used pinmuxes
+                for node_1 in structs.keys():
+                    #For each node in structs, check it has a pinctrl prop
+                    if 'pinctrl' in structs[node_1].keys():
+                        pinmux_label = str(
+                            structs[node_1]['pinctrl']['instance'][
+                                0]).strip("'")
+                        #check if pinctrl instance is same as current one
+                        # if pinmux_label == str(
+                        #         struct_dict[node][i]['label']['data'][0][
+                        #             0]).strip('"'):
+                        if pinmux_label not in pinmux_table:
+                            pinmux_table.append(pinmux_label)
+                i = i + 1
+
+            # write pinmux array for this instance
+            for line in range(0, len(pinmux_table)):
+                print_pinctrl_init_code(struct_dict[node], node, yaml_list,
+                                        pinmux_table[line])
+
+            # write the array of used pinmuxes
+            write_node_file(
+                "static struct instances_pinconfig " + str(convert_string_to_label(
+                    node)) + "_instances" + " [] = {")
+
+            for line in range(0, len(pinmux_table)):
+                write_node_file("\n\t{\"" + str(pinmux_table[line]) + "\", ")
+                write_node_file(
+                    str(convert_string_to_label(node)) + "_pinconf_" + str(
+                        pinmux_table[line]) + ", ")
+                write_node_file("ARRAY_SIZE(" +
+                    str(convert_string_to_label(node)) + "_pinconf_" + str(
+                        pinmux_table[line]) + ")")
+                write_node_file("},")
+            write_node_file("\n};\n\n")
+
+        else:
+            # check if there is a label associated
+            if 'label' in struct_dict[node][0]:
+                pinmux_label = str(
+                    struct_dict[node][0]['label']['data'][0][0]).strip('"')
+                print_pinctrl_init_code(struct_dict[node], node, yaml_list,
+                                        pinmux_label)
+            else:
+                print_pinctrl_init_code(struct_dict[node], node, yaml_list)
+
+        write_node_file("#endif /* _" + str(
+            convert_string_to_label(node) + '_init').upper() + "_H */" + "\n");
+        node_file = ""
+        file.close()
+
 
 def generate_structs(args):
     # Generate structure information here
@@ -890,6 +1042,7 @@ def generate_structs(args):
     # pprint.pprint(struct_dict)
     return
 
+
 def parse_arguments():
 
     rdh = argparse.RawDescriptionHelpFormatter
@@ -897,6 +1050,7 @@ def parse_arguments():
 
     parser.add_argument("-d", "--dts", help="DTS file")
     parser.add_argument("-y", "--yaml", help="YAML file")
+    parser.add_argument("-s", "--structs", help="objdir path")
     parser.add_argument("-f", "--fixup", action="append",
                         help="Fixup file, we allow multiple")
     parser.add_argument("-k", "--keyvalue", action="store_true",
@@ -1030,16 +1184,17 @@ def main():
 
     insert_defs(chosen['zephyr,flash'], load_defs, {})
 
-    # pprint.pprint(defs)
-    # pprint.pprint(structs)
     # generate include file
     if args.keyvalue:
         generate_keyvalue_file(args)
+        generate_structs_file(args, yaml_list)
     elif args.structs:
         generate_structs(args)
+        generate_include_file(args)
+        generate_structs_file(args, yaml_list)
     else:
         generate_include_file(args)
-
+        # generate_structs_file(args, yaml_list)
 
 if __name__ == '__main__':
     main()

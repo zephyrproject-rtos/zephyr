@@ -93,6 +93,7 @@ if(CONFIG_HAS_DTS)
     --dts ${BOARD_FAMILY}.dts_compiled
     --yaml ${PROJECT_SOURCE_DIR}/dts/bindings
     ${DTS_BOARD_FIXUP}
+    -s ${PROJECT_BINARY_DIR}/include/generated
     )
   execute_process(
     COMMAND ${CMD_EXTRACT_DTS_INCLUDES}
