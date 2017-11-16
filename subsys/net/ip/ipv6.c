@@ -279,6 +279,9 @@ bool net_ipv6_nbr_rm(struct net_if *iface, struct in6_addr *addr)
 		return false;
 	}
 
+	/* Remove any routes with nbr as nexthop in first place */
+	net_route_del_by_nexthop(iface, addr);
+
 	nbr_free(nbr);
 
 	return true;
