@@ -35,11 +35,15 @@
 &i2c1 {
 	status = "ok";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c1_pins_a>;
+	pinctrl-names = "default";
 };
 
 &i2c2 {
 	status = "ok";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c2_pins_a>;
+	pinctrl-names = "default";
 };
 
 &flash0 {

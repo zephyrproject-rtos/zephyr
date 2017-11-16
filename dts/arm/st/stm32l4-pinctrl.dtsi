@@ -57,6 +57,18 @@
 					tx = <STM32_PIN_PB10 (STM32_PINMUX_ALT_FUNC_7 | STM32_PUSHPULL_NOPULL)>;
 				};
 			};
+			i2c1_pins_a: i2c1@0 {
+				sda_scl {
+					scl = <STM32_PIN_PB8 (STM32_PINMUX_ALT_FUNC_4 | STM32_OPENDRAIN_PULLUP)>;
+					sda = <STM32_PIN_PB9 (STM32_PINMUX_ALT_FUNC_4 | STM32_OPENDRAIN_PULLUP)>;
+				};
+			};
+			i2c2_pins_a: i2c2@0 {
+				sda_scl {
+					scl = <STM32_PIN_PB10 (STM32_PINMUX_ALT_FUNC_4 | STM32_OPENDRAIN_PULLUP)>;
+					sda = <STM32_PIN_PB11 (STM32_PINMUX_ALT_FUNC_4 | STM32_OPENDRAIN_PULLUP)>;
+				};
+			};
 		};
 	};
 };
