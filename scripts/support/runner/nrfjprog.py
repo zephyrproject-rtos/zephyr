@@ -13,11 +13,10 @@ from .core import ZephyrBinaryRunner, get_env_or_bail
 class NrfJprogBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for nrfjprog.'''
 
-    def __init__(self, hex_, family, board, debug=False):
+    def __init__(self, hex_, family, debug=False):
         super(NrfJprogBinaryRunner, self).__init__(debug=debug)
         self.hex_ = hex_
         self.family = family
-        self.board = board
 
     def replaces_shell_script(shell_script, command):
         return command == 'flash' and shell_script == 'nrf_flash.sh'
@@ -30,14 +29,12 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
         - O: build output directory
         - KERNEL_HEX_NAME: name of kernel binary in ELF format
         - NRF_FAMILY: e.g. NRF51 or NRF52
-        - BOARD: Zephyr board name
         '''
         hex_ = path.join(get_env_or_bail('O'),
                          get_env_or_bail('KERNEL_HEX_NAME'))
         family = get_env_or_bail('NRF_FAMILY')
-        board = get_env_or_bail('BOARD')
 
-        return NrfJprogBinaryRunner(hex_, family, board, debug=debug)
+        return NrfJprogBinaryRunner(hex_, family, debug=debug)
 
     def get_board_snr_from_user(self):
         snrs = self.check_output(['nrfjprog', '--ids'])
@@ -92,5 +89,5 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
         for cmd in commands:
             self.check_call(cmd)
 
-        print('{} Serial Number {} flashed with success.'.format(
-                  self.board, board_snr))
+        print('Board with serial number {} flashed successfully.'.format(
+                  board_snr))
