@@ -143,6 +143,52 @@ class NetworkPortHelper:
         return {int(b) for b in used_bytes}
 
 
+class BuildConfiguration:
+    '''This helper class provides access to build-time configuration.
+
+    Configuration options can be read as if the object were a dict,
+    either object['CONFIG_FOO'] or object.get('CONFIG_FOO').
+
+    Configuration values in .config and generated_dts_board.conf are
+    available.'''
+
+    def __init__(self, build_dir):
+        self.build_dir = build_dir
+        self.options = {}
+        self._init()
+
+    def __getitem__(self, item):
+        return self.options[item]
+
+    def get(self, option, *args):
+        return self.options.get(option, *args)
+
+    def _init(self):
+        build_z = os.path.join(self.build_dir, 'zephyr')
+        generated = os.path.join(build_z, 'include', 'generated')
+        files = [os.path.join(build_z, '.config'),
+                 os.path.join(generated, 'generated_dts_board.conf')]
+        for f in files:
+            self._parse(f)
+
+    def _parse(self, filename):
+        with open(filename, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                option, value = line.split('=', 1)
+                self.options[option] = self._parse_value(value)
+
+    def _parse_value(self, value):
+        if value.startswith('"') or value.startswith("'"):
+            return value.split()
+        try:
+            return int(value, 0)
+        except ValueError:
+            return value
+
+
 class RunnerCaps:
     '''This class represents a runner class's capabilities.
 
