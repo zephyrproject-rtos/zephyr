@@ -798,14 +798,26 @@ static int cmd_mod_pub(int argc, char *argv[])
 	}
 }
 
+static void hb_sub_print(struct bt_mesh_cfg_hb_sub *sub)
+{
+	printk("Heartbeat Subscription:\n"
+	       "\tSource:      0x%04x\n"
+	       "\tDestination: 0x%04x\n"
+	       "\tPeriodLog:   0x%02x\n"
+	       "\tCountLog:    0x%02x\n"
+	       "\tMinHops:     %u\n"
+	       "\tMaxHops:     %u\n",
+	       sub->src, sub->dst, sub->period, sub->count,
+	       sub->min, sub->max);
+}
+
 static int hb_sub_get(int argc, char *argv[])
 {
-	u8_t status, period, count, min, max;
-	u16_t src, dst;
+	struct bt_mesh_cfg_hb_sub sub;
+	u8_t status;
 	int err;
 
-	err = bt_mesh_cfg_hb_sub_get(net.net_idx, net.dst, &src, &dst, &period,
-				     &count, &min, &max, &status);
+	err = bt_mesh_cfg_hb_sub_get(net.net_idx, net.dst, &sub, &status);
 	if (err) {
 		printk("Heartbeat Subscription Get failed (err %d)\n", err);
 		return 0;
@@ -814,28 +826,24 @@ static int hb_sub_get(int argc, char *argv[])
 	if (status) {
 		printk("Heartbeat Subscription Get failed (status 0x%02x)\n",
 		       status);
-		return 0;
+	} else {
+		hb_sub_print(&sub);
 	}
-
-	printk("Heartbeat subscription:\n");
-	printk("\tsrc 0x%04x dst 0x%04x period 0x%02x\n", src, dst, period);
-	printk("\tcount 0x%02x min 0x%02x max 0x%02x\n", count, min, max);
 
 	return 0;
 }
 
 static int hb_sub_set(int argc, char *argv[])
 {
-	u8_t status, period;
-	u16_t sub_src, sub_dst;
+	struct bt_mesh_cfg_hb_sub sub;
+	u8_t status;
 	int err;
 
-	sub_src = strtoul(argv[1], NULL, 0);
-	sub_dst = strtoul(argv[2], NULL, 0);
-	period = strtoul(argv[3], NULL, 0);
+	sub.src = strtoul(argv[1], NULL, 0);
+	sub.dst = strtoul(argv[2], NULL, 0);
+	sub.period = strtoul(argv[3], NULL, 0);
 
-	err = bt_mesh_cfg_hb_sub_set(net.net_idx, net.dst, sub_src, sub_dst,
-				     period, &status);
+	err = bt_mesh_cfg_hb_sub_set(net.net_idx, net.dst, &sub, &status);
 	if (err) {
 		printk("Heartbeat Subscription Set failed (err %d)\n", err);
 		return 0;
@@ -845,7 +853,7 @@ static int hb_sub_set(int argc, char *argv[])
 		printk("Heartbeat Subscription Set failed (status 0x%02x)\n",
 		       status);
 	} else {
-		printk("Heartbeat subscription successfully set\n");
+		hb_sub_print(&sub);
 	}
 
 	return 0;
