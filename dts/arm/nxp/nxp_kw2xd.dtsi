@@ -136,6 +136,7 @@
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x40049000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 9>;
+			label = "porta";
 
 			uart0_default: uart0_default {
 				rx-tx {
@@ -149,6 +150,7 @@
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004a000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 10>;
+			label = "portb";
 
 			spi1_default: spi1_default {
 				miso-mosi-clk {
@@ -162,12 +164,14 @@
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004b000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 11>;
+			label = "portc";
 		};
 
 		pinmux_d: pinmux@4004c000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004c000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 12>;
+			label = "portd";
 
 			uart2_default: uart2_default {
 				rx-tx {
@@ -181,6 +185,7 @@
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004d000 0xd0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 13>;
+			label = "porte";
 		};
 
 		gpioa: gpio@400ff000 {

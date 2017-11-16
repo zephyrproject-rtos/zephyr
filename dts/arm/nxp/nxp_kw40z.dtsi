@@ -94,6 +94,7 @@
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x40049000 0xa4>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 9>;
+			label = "porta";
 
 			spi1_default: spi1_default {
 				mosi-miso-sck-pcs0 {
@@ -107,12 +108,14 @@
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004a000 0xa4>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 10>;
+			label = "portb";
 		};
 
 		pinmux_c: pinmux@4004b000 {
 			compatible = "nxp,kinetis-pinmux";
 			reg = <0x4004b000 0xa4>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x1038 11>;
+			label = "portc";
 
 			lpuart0_default: lpuart0_default {
 				rx-tx {
