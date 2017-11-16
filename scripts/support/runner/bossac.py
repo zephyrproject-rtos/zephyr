@@ -8,7 +8,7 @@ from os import path
 import os
 import platform
 
-from .core import ZephyrBinaryRunner, get_env_or_bail
+from .core import ZephyrBinaryRunner, RunnerCaps, get_env_or_bail
 
 DEFAULT_BOSSAC_PORT = '/dev/ttyACM0'
 
@@ -28,8 +28,8 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
         return 'bossac'
 
     @classmethod
-    def handles_command(cls, command):
-        return command == 'flash'
+    def capabilities(cls):
+        return RunnerCaps(commands={'flash'})
 
     def create_from_env(command, debug):
         '''Create flasher from environment.

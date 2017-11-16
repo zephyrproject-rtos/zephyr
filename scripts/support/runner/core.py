@@ -143,6 +143,17 @@ class NetworkPortHelper:
         return {int(b) for b in used_bytes}
 
 
+class RunnerCaps:
+    '''This class represents a runner class's capabilities.
+
+    The most basic capability is the set of supported commands,
+    available in the commands field. This defaults to all three
+    commands.'''
+
+    def __init__(self, commands={'flash', 'debug', 'debugserver'}):
+        self.commands = commands
+
+
 class ZephyrBinaryRunner(abc.ABC):
     '''Abstract superclass for binary runners (flashers, debuggers).
 
@@ -184,7 +195,7 @@ class ZephyrBinaryRunner(abc.ABC):
 
     1. Define a ZephyrBinaryRunner subclass, and implement its
        abstract methods. Override any methods you need to, especially
-       handles_command().
+       capabilities().
 
     2. Make sure the Python module defining your runner class is
        imported by this package's __init__.py (otherwise,
@@ -229,7 +240,8 @@ class ZephyrBinaryRunner(abc.ABC):
         else:
             raise ValueError('no runner named {} is known'.format(runner_name))
 
-        if not cls.handles_command(command):
+        caps = cls.capabilities()
+        if command not in caps.commands:
             raise ValueError('runner {} does not implement command {}'.format(
                 runner_name, command))
 
@@ -246,13 +258,15 @@ class ZephyrBinaryRunner(abc.ABC):
         etc.).'''
 
     @classmethod
-    def handles_command(cls, command):
-        '''Return True iff this class can run the given command.
+    def capabilities(cls):
+        '''Returns a RunnerCaps representing this runner's capabilities.
 
-        The default implementation returns True if the command is
-        valid (i.e. is one of "flash", "debug", and "debugserver").
-        Subclasses should override if they only provide a subset.'''
-        return command in {'flash', 'debug', 'debugserver'}
+        This implementation returns the default capabilities, which
+        includes support for all three commands, but no other special
+        powers.
+
+        Subclasses should override appropriately if needed.'''
+        return RunnerCaps()
 
     @staticmethod
     @abc.abstractmethod
@@ -263,7 +277,8 @@ class ZephyrBinaryRunner(abc.ABC):
         '''Runs command ('flash', 'debug', 'debugserver').
 
         This is the main entry point to this runner.'''
-        if not self.handles_command(command):
+        caps = self.capabilities()
+        if command not in caps.commands:
             raise ValueError('runner {} does not implement command {}'.format(
                 self.name(), command))
         self.do_run(command, **kwargs)

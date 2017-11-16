@@ -7,7 +7,7 @@
 from os import path
 import os
 
-from .core import ZephyrBinaryRunner, get_env_or_bail
+from .core import ZephyrBinaryRunner, RunnerCaps, get_env_or_bail
 
 
 class Esp32BinaryRunner(ZephyrBinaryRunner):
@@ -30,8 +30,8 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
         return 'esp32'
 
     @classmethod
-    def handles_command(cls, command):
-        return command == 'flash'
+    def capabilities(cls):
+        return RunnerCaps(commands={'flash'})
 
     def create_from_env(command, debug):
         '''Create flasher from environment.
