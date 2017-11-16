@@ -3494,6 +3494,43 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 	NET_DBG("Adding DAO route to %s", net_sprint_ipv6_addr(dao_sender));
 
 	ipv6_nbr = net_ipv6_nbr_lookup(net_pkt_iface(pkt), dao_sender);
+	if (ipv6_nbr) {
+		struct net_linkaddr_storage *nbr_lladdr;
+		struct net_linkaddr *src_lladdr;
+
+		NET_DBG("Neighbor %s [%s] already in neighbor cache",
+			net_sprint_ipv6_addr(dao_sender),
+			net_sprint_ll_addr(net_pkt_ll_src(pkt)->addr,
+					   net_pkt_ll_src(pkt)->len));
+
+		nbr_lladdr = net_nbr_get_lladdr(ipv6_nbr->idx);
+		if (!nbr_lladdr) {
+			NET_ERR("Invalid lladdr from ipv6 nbr");
+			return NET_DROP;
+		}
+
+		src_lladdr = net_pkt_ll_src(pkt);
+		if (!src_lladdr || !src_lladdr->addr) {
+			NET_ERR("Invalid src lladdr in net pkt");
+			return NET_DROP;
+		}
+
+		/* DAO received from different LLAddr, so remove IPv6 nbr from
+		 * previous LLAddr and add as a new nbr from current LLAddr.
+		 */
+		if (memcmp(nbr_lladdr->addr, src_lladdr->addr,
+			   nbr_lladdr->len)) {
+
+			if (!net_ipv6_nbr_rm(net_pkt_iface(pkt), dao_sender)) {
+				NET_ERR("Failed to remove %s, doesn't exist",
+					net_sprint_ipv6_addr(dao_sender));
+				return NET_DROP;
+			}
+
+			ipv6_nbr = NULL;
+		}
+	}
+
 	if (!ipv6_nbr) {
 		ipv6_nbr = net_ipv6_nbr_add(net_pkt_iface(pkt), dao_sender,
 					    net_pkt_ll_src(pkt), false,
