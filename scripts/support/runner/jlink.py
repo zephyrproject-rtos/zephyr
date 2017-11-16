@@ -79,7 +79,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
     def print_gdbserver_message(self):
         print('JLink GDB server running on port {}'.format(self.gdb_port))
 
-    def run(self, command, **kwargs):
+    def do_run(self, command, **kwargs):
         if command not in {'debug', 'debugserver'}:
             raise ValueError('{} is not supported'.format(command))
 

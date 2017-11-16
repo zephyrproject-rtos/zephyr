@@ -67,7 +67,7 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
                                  flash_mode=flash_mode, espidf=espidf,
                                  debug=debug)
 
-    def run(self, command, **kwargs):
+    def do_run(self, command, **kwargs):
         if command != 'flash':
             raise ValueError('only flash is supported')
 

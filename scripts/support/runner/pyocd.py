@@ -107,7 +107,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
                                  tui=tui, bin_name=bin_name, elf_name=elf_name,
                                  board_id=board_id, daparg=daparg, debug=debug)
 
-    def run(self, command, **kwargs):
+    def do_run(self, command, **kwargs):
         if command not in {'flash', 'debug', 'debugserver'}:
             raise ValueError('{} is not supported'.format(command))
 
