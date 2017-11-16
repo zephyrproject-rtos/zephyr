@@ -6,23 +6,14 @@ version: 0.1
 description: >
     This binding gives a base representation of the STM32 PINMUX
 
+inherits:
+    !include pinmux.yaml
+
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "st,stm32-pinmux"
 
-    reg:
-      type: int
-      description: mmio register space
-      generation: define
-      category: required
-
-cell_string: PINMUX
-
 "#cells":
-  - pin
-  - function
+  - pin,function
 
 ...

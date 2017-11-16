@@ -1,0 +1,27 @@
+---
+title: PINMUX Base structure
+id: pinmux
+version: 0.1
+
+description: >
+    This binding gives the base structures for all PINMUX devices
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+    reg:
+      type: int
+      description: mmio register space
+      generation: define
+      category: required
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+
+cell_string: PINMUX
+
+...

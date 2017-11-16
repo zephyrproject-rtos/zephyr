@@ -6,18 +6,12 @@ version: 0.1
 description: >
     This is a representation of the TI CC2650 pinmux node
 
+inherits:
+    !include pinmux.yaml
+
 properties:
     compatible:
-      type: string
-      category: required
-      description: compatible strings
       constraint: "ti,cc2650-pinmux"
-
-    reg:
-      type: int
-      description: mmio register space
-      generation: define
-      category: required
 
 cell_string: PINMUX
 
