@@ -1,6 +1,7 @@
 #! /usr/bin/env python3
 
 # Copyright (c) 2017 Linaro Limited.
+# Copyright (c) 2017 Open Source Foundries Limited.
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -145,12 +146,16 @@ class NetworkPortHelper:
 class ZephyrBinaryRunner(abc.ABC):
     '''Abstract superclass for binary runners (flashers, debuggers).
 
+    **Note**: these APIs are still evolving, and will change!
+
     With some exceptions, boards supported by Zephyr must provide
     generic means to be flashed (have a Zephyr firmware binary
     permanently installed on the device for running) and debugged
     (have a breakpoint debugger and program loader on a host
-    workstation attached to a running target). This is supported by
-    three top-level commands managed by the Zephyr build system:
+    workstation attached to a running target).
+
+    This is supported by three top-level commands managed by the
+    Zephyr build system:
 
     - 'flash': flash a previously configured binary to the board,
       start execution on the target, then return.
@@ -164,71 +169,103 @@ class ZephyrBinaryRunner(abc.ABC):
       connect to a debug server with symbol tables loaded from the
       binary.
 
-    Runner functionality relies on a variety of target-specific tools
-    and configuration values, the user interface to which is
-    abstracted by this class. Each runner subclass should take any
-    values it needs to execute one of these commands in its
-    constructor.  The actual command execution is handled in the run()
-    method.
+    This class provides an API for these commands. Every runner has a
+    name, and declares commands it can handle. Zephyr boards declare
+    compatible runner(s) by name to the build system, which can then
+    call into the create_runner() method below to make a concrete
+    runner instance for use executing a command.
 
-    This functionality has replaced the legacy Zephyr runners,
-    which were shell scripts.
+    If your board can use an existing runner, all you have to do is
+    give its name to the build system. How to do that is out of the
+    scope of this documentation, but use the existing boards as a
+    starting point.
 
-    At present, the Zephyr build system uses a variety of
-    tool-specific environment variables to control runner behavior.
-    To support a transition to ZephyrBinaryRunner and subclasses, this
-    class provides a create_for_shell_script() static factory method.
-    This method iterates over ZephyrBinaryRunner subclasses,
-    determines which (if any) can provide equivalent functionality to
-    the old shell-based runner, and returns a subclass instance with its
-    configuration determined from the environment.
+    If you want to define and use your own runner:
 
-    To support this, subclasess currently must provide a pair of
-    static methods, replaces_shell_script() and create_from_env(). The
-    first allows the runner subclass to declare which commands and
-    scripts it can replace. The second is called by
-    create_for_shell_script() to create a concrete runner instance.
+    1. Define a ZephyrBinaryRunner subclass, and implement its
+       abstract methods. Override any methods you need to, especially
+       handles_command().
+
+    2. Make sure the Python module defining your runner class is
+       imported by this package's __init__.py (otherwise,
+       create_runner() won't work).
+
+    3. Give your runner's name to the Zephyr build system in your
+       board's build files.
+
+    Runners use a variety of target-specific tools and configuration
+    values, the user interface to which is abstracted by this
+    class. Each runner subclass should take any values it needs to
+    execute one of these commands in its constructor.  The actual
+    command execution is handled in the run() method.
+
+    At present, the Zephyr build system uses environment variables to
+    control runner behavior.  To support this, a create_runner()
+    method is defined below.  This method takes a runner name, and
+    iterates over defined ZephyrBinaryRunner subclasses to find the
+    runner class. It then checks that it supports the command, then
+    instantiates and returns a runner with configuration determined by
+    the environment.
+
+    To support this, subclasses currently must define a static method:
+    create_from_env(). This is called by create_runner() to create a
+    concrete runner instance.
 
     The environment-based factories are for legacy use *only*; the
+    build system is moving away from use of environment variables. The
     user must be able to construct and use a runner using only the
-    constructor and run() method.'''
+    constructor and run() method.
+
+    '''
 
     def __init__(self, debug=False):
         self.debug = debug
 
     @staticmethod
-    def create_for_shell_script(shell_script, command, debug):
-        '''Factory for using as a drop-in replacement to a shell script.
+    def create_runner(runner_name, command, debug):
+        for cls in ZephyrBinaryRunner.__subclasses__():
+            if cls.name() == runner_name:
+                break
+        else:
+            raise ValueError('no runner named {} is known'.format(runner_name))
 
-        Command is one of 'flash', 'debug', 'debugserver'.
+        if not cls.handles_command(command):
+            raise ValueError('runner {} does not implement command {}'.format(
+                runner_name, command))
 
-        Get runner instance to use in place of shell_script, deriving
-        configuration from the environment.'''
-        for sub_cls in ZephyrBinaryRunner.__subclasses__():
-            if sub_cls.replaces_shell_script(shell_script, command):
-                return sub_cls.create_from_env(command, debug)
-        raise ValueError('cannot implement script {} command {}'.format(
-                             shell_script, command))
+        return cls.create_from_env(command, debug)
 
-    @staticmethod
+    @classmethod
     @abc.abstractmethod
-    def replaces_shell_script(shell_script, command):
-        '''Check if this class replaces shell_script for the given command.'''
+    def name(cls):
+        '''Return this runner's user-visible name.
+
+        When choosing a name, pick something short and lowercase,
+        based on the name of the tool (like openocd, jlink, etc.) or
+        the target architecture/board (like xtensa, em-starterkit,
+        etc.).'''
+
+    @classmethod
+    def handles_command(cls, command):
+        '''Return True iff this class can run the given command.
+
+        The default implementation returns True if the command is
+        valid (i.e. is one of "flash", "debug", and "debugserver").
+        Subclasses should override if they only provide a subset.'''
+        return command in {'flash', 'debug', 'debugserver'}
 
     @staticmethod
     @abc.abstractmethod
     def create_from_env(command, debug):
-        '''Create new flasher instance from environment variables.
-
-        This class must be able to replace the current shell script
-        (FLASH_SCRIPT or DEBUG_SCRIPT, depending on command). The
-        environment variables expected by that script are used to build
-        the flasher in a backwards-compatible manner.'''
+        '''Create new runner instance from environment variables.'''
 
     def run(self, command, **kwargs):
         '''Runs command ('flash', 'debug', 'debugserver').
 
         This is the main entry point to this runner.'''
+        if not self.handles_command(command):
+            raise ValueError('runner {} does not implement command {}'.format(
+                self.name(), command))
         self.do_run(command, **kwargs)
 
     @abc.abstractmethod

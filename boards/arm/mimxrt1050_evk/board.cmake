@@ -7,7 +7,7 @@
 set_ifndef(OPENSDA_FW jlink)
 
 if(OPENSDA_FW STREQUAL jlink)
-  set_ifndef(DEBUG_SCRIPT jlink.sh)
+  set_ifndef(BOARD_DEBUG_RUNNER jlink)
 endif()
 
 set(JLINK_DEVICE Cortex-M7)

@@ -25,8 +25,13 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
         except ValueError:
             self.list_pattern = ', name="{}",'.format(self.alt)
 
-    def replaces_shell_script(shell_script, command):
-        return command == 'flash' and shell_script == 'dfuutil.sh'
+    @classmethod
+    def name(cls):
+        return 'dfu-util'
+
+    @classmethod
+    def handles_command(cls, command):
+        return command == 'flash'
 
     def create_from_env(command, debug):
         '''Create flasher from environment.
@@ -59,9 +64,6 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
         return self.list_pattern in output
 
     def do_run(self, command, **kwargs):
-        if command != 'flash':
-            raise ValueError('only flash is supported')
-
         reset = 0
         if not self.find_device():
             reset = 1

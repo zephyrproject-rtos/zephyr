@@ -1,1 +1,1 @@
-set(FLASH_SCRIPT bossa-flash.sh)
+set(BOARD_FLASH_RUNNER bossac)

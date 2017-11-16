@@ -1,5 +1,5 @@
 if(DEFINED ENV{ZEPHYR_FLASH_OVER_DFU})
-  set(FLASH_SCRIPT dfuutil.sh)
+  set(BOARD_FLASH_RUNNER dfu-util)
 
   set(DFUUTIL_PID 8087:0aba)
   set(DFUUTIL_ALT ble_core)
