@@ -101,12 +101,20 @@ int bt_mesh_cfg_mod_sub_add_vnd(u16_t net_idx, u16_t addr, u16_t elem_addr,
 				 u16_t sub_addr, u16_t mod_id, u16_t cid,
 				 u8_t *status);
 
-int bt_mesh_cfg_hb_sub_set(u16_t net_idx, u16_t addr, u16_t src, u16_t dst,
-			   u8_t period, u8_t *status);
+struct bt_mesh_cfg_hb_sub {
+	u16_t src;
+	u16_t dst;
+	u8_t  period;
+	u8_t  count;
+	u8_t  min;
+	u8_t  max;
+};
 
-int bt_mesh_cfg_hb_sub_get(u16_t net_idx, u16_t addr, u16_t *src, u16_t *dst,
-			   u8_t *period, u8_t *count, u8_t *min, u8_t *max,
-			   u8_t *status);
+int bt_mesh_cfg_hb_sub_set(u16_t net_idx, u16_t addr,
+			   struct bt_mesh_cfg_hb_sub *sub, u8_t *status);
+
+int bt_mesh_cfg_hb_sub_get(u16_t net_idx, u16_t addr,
+			   struct bt_mesh_cfg_hb_sub *sub, u8_t *status);
 
 struct bt_mesh_cfg_hb_pub {
 	u16_t dst;

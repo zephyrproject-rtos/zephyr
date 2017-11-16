@@ -173,10 +173,16 @@ static void configure(void)
 		printk("Publishing heartbeat messages\n");
 	}
 #else
-	/* Heartbeat subscription */
-	bt_mesh_cfg_hb_sub_set(net_idx, addr, PROV_ADDR, GROUP_ADDR, 0x10,
-			       NULL);
-	printk("Subscribing to heartbeat messages\n");
+	{
+		struct bt_mesh_cfg_hb_sub sub = {
+			.src = PROV_ADDR,
+			.dst = GROUP_ADDR,
+			.period = 0x10,
+		};
+
+		bt_mesh_cfg_hb_sub_set(net_idx, addr, &sub, NULL);
+		printk("Subscribing to heartbeat messages\n");
+	}
 #endif
 
 	printk("Configuration complete\n");
