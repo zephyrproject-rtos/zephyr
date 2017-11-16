@@ -760,7 +760,7 @@ static int cc2520_cca(struct device *dev)
 	struct cc2520_context *cc2520 = dev->driver_data;
 
 	if (!get_cca(cc2520)) {
-		SYS_LOG_DBG("Busy");
+		SYS_LOG_WRN("Busy");
 		return -EBUSY;
 	}
 
@@ -851,7 +851,7 @@ static int cc2520_set_txpower(struct device *dev, s16_t dbm)
 
 	return 0;
 error:
-	SYS_LOG_DBG("Failed");
+	SYS_LOG_ERR("Failed");
 	return -EIO;
 }
 
