@@ -5,6 +5,8 @@ arch: x86
 toolchain:
   - zephyr
   - issm
+debug_interface:
+  - openocd
 supported:
   - usb_device
   - ble
