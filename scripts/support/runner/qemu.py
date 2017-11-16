@@ -20,6 +20,6 @@ class QemuBinaryRunner(ZephyrBinaryRunner):
         '''Create runner. No environment dependencies.'''
         return QemuBinaryRunner()
 
-    def run(self, command, **kwargs):
+    def do_run(self, command, **kwargs):
         if command == 'debugserver':
             print('Detached GDB server')

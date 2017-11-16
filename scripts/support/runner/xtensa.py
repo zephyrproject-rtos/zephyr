@@ -35,7 +35,7 @@ class XtensaBinaryRunner(ZephyrBinaryRunner):
 
         return XtensaBinaryRunner(xt_gdb, elf_name)
 
-    def run(self, command, **kwargs):
+    def do_run(self, command, **kwargs):
         if command != 'debug':
             raise ValueError('Only debug is supported')
 

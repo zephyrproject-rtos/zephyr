@@ -58,7 +58,7 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
         output = output.decode(sys.getdefaultencoding())
         return self.list_pattern in output
 
-    def run(self, command, **kwargs):
+    def do_run(self, command, **kwargs):
         if command != 'flash':
             raise ValueError('only flash is supported')
 

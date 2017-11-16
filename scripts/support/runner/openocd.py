@@ -134,7 +134,7 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
                                    telnet_port=telnet_port, gdb_port=gdb_port,
                                    gdb=gdb, tui=tui, debug=debug)
 
-    def run(self, command, **kwargs):
+    def do_run(self, command, **kwargs):
         if command not in {'flash', 'debug', 'debugserver'}:
             raise ValueError('{} is not supported'.format(command))
 

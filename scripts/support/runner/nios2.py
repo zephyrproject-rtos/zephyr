@@ -76,7 +76,7 @@ class Nios2BinaryRunner(ZephyrBinaryRunner):
                                  cpu_sof=cpu_sof, zephyr_base=zephyr_base,
                                  gdb=gdb, tui=tui, debug=debug)
 
-    def run(self, command, **kwargs):
+    def do_run(self, command, **kwargs):
         if command not in {'flash', 'debug', 'debugserver'}:
             raise ValueError('{} is not supported'.format(command))
 
