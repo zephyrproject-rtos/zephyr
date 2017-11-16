@@ -620,22 +620,35 @@ static inline void insert_radio_noise_details(struct net_pkt *pkt, u8_t *buf)
 static inline bool verify_crc(struct cc2520_context *cc2520,
 			      struct net_pkt *pkt)
 {
-	cc2520->spi.cmd_buf[0] = CC2520_INS_RXBUF;
-	cc2520->spi.cmd_buf[1] = 0;
-	cc2520->spi.cmd_buf[2] = 0;
+	u8_t *noise_buf;
 
-	spi_slave_select(cc2520->spi.dev, cc2520->spi.slave);
+	if (!IS_ENABLED(CONFIG_IEEE802154_RAW_MODE)) {
+		cc2520->spi.cmd_buf[0] = CC2520_INS_RXBUF;
+		cc2520->spi.cmd_buf[1] = 0;
+		cc2520->spi.cmd_buf[2] = 0;
 
-	if (spi_transceive(cc2520->spi.dev, cc2520->spi.cmd_buf, 3,
-			   cc2520->spi.cmd_buf, 3) != 0) {
-		return false;
+		spi_slave_select(cc2520->spi.dev, cc2520->spi.slave);
+
+		if (spi_transceive(cc2520->spi.dev, cc2520->spi.cmd_buf, 3,
+				   cc2520->spi.cmd_buf, 3) != 0) {
+			return false;
+		}
+
+		if (!(cc2520->spi.cmd_buf[2] & CC2520_FCS_CRC_OK)) {
+			return false;
+		}
+
+		noise_buf = &cc2520->spi.cmd_buf[1];
+	} else {
+		if (!(pkt->frags->data[pkt->frags->len - 1] &
+		      CC2520_FCS_CRC_OK)) {
+			return false;
+		}
+
+		noise_buf = &pkt->frags->data[pkt->frags->len - 2];
 	}
 
-	if (!(cc2520->spi.cmd_buf[2] & CC2520_FCS_CRC_OK)) {
-		return false;
-	}
-
-	insert_radio_noise_details(pkt, &cc2520->spi.cmd_buf[1]);
+	insert_radio_noise_details(pkt, noise_buf);
 
 	return true;
 }
@@ -682,12 +695,6 @@ static void cc2520_rx(int arg)
 			goto flush;
 		}
 
-#if defined(CONFIG_IEEE802154_CC2520_RAW)
-		/**
-		 * Reserve 1 byte for length
-		 */
-		net_pkt_set_ll_reserve(pkt, 1);
-#endif
 		pkt_frag = net_pkt_get_frag(pkt, K_NO_WAIT);
 		if (!pkt_frag) {
 			SYS_LOG_ERR("No pkt_frag available");
@@ -696,21 +703,11 @@ static void cc2520_rx(int arg)
 
 		net_pkt_frag_insert(pkt, pkt_frag);
 
-#if defined(CONFIG_IEEE802154_CC2520_RAW)
+		if (!IS_ENABLED(CONFIG_IEEE802154_RAW_MODE)) {
+			pkt_len -= 2;
+		}
+
 		if (!read_rxfifo_content(&cc2520->spi, pkt_frag, pkt_len)) {
-			SYS_LOG_ERR("No content read");
-			goto flush;
-		}
-
-		if (!(pkt_frag->data[pkt_len - 1] & CC2520_FCS_CRC_OK)) {
-			goto out;
-		}
-
-		insert_radio_noise_details(pkt, &pkt_frag->data[pkt_len - 2]);
-
-		net_buf_add_u8(pkt_frag, net_pkt_ieee802154_lqi(pkt));
-#else
-		if (!read_rxfifo_content(&cc2520->spi, pkt_frag, pkt_len - 2)) {
 			SYS_LOG_ERR("No content read");
 			goto flush;
 		}
@@ -719,7 +716,6 @@ static void cc2520_rx(int arg)
 			SYS_LOG_ERR("Bad packet CRC");
 			goto out;
 		}
-#endif
 
 		if (ieee802154_radio_handle_ack(cc2520->iface, pkt) == NET_OK) {
 			SYS_LOG_DBG("ACK packet handled");
@@ -1132,7 +1128,7 @@ static struct ieee802154_radio_api cc2520_radio_api = {
 	.tx			= cc2520_tx,
 };
 
-#if defined(CONFIG_IEEE802154_CC2520_RAW)
+#if defined(CONFIG_IEEE802154_RAW_MODE)
 DEVICE_AND_API_INIT(cc2520, CONFIG_IEEE802154_CC2520_DRV_NAME,
 		    cc2520_init, &cc2520_context_data, NULL,
 		    POST_KERNEL, CONFIG_IEEE802154_CC2520_INIT_PRIO,

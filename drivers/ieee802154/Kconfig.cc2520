@@ -9,7 +9,6 @@
 menuconfig IEEE802154_CC2520
 	bool "TI CC2520 Driver support"
 	depends on NETWORKING
-	select NET_L2_IEEE802154
 	default n
 
 if IEEE802154_CC2520
@@ -121,15 +120,5 @@ config IEEE802154_CC2520_CRYPTO_INIT_PRIO
 	Set the initialization priority number. Do not mess with it unless
 	you know what you are doing. It should be initialized after CC2520
 	as it shares the same runtime context.
-
-config IEEE802154_CC2520_RAW
-	bool "TI CC2520 Driver RAW channel"
-	select NET_L2_RAW_CHANNEL
-	default n
-	help
-	Enable IEEE802154_CC2520 driver with RAW channel
-
-	The CC2520 driver with RAW channel allows to export radio interface
-	over USB making an USB 802.15.4 dongle.
 
 endif # IEEE802154_CC2520

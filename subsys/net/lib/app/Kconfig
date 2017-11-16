@@ -200,7 +200,7 @@ config NET_APP_PEER_IPV4_ADDR
 
 endif # NET_IPV4
 
-if NET_L2_IEEE802154 || NET_L2_RAW_CHANNEL
+if NET_L2_IEEE802154 || IEEE802154_RAW_MODE
 
 config NET_APP_IEEE802154_DEV_NAME
 	string "IEEE 802.15.4 device name"
@@ -258,7 +258,7 @@ config NET_APP_IEEE802154_SECURITY_LEVEL
 	  6 encryption/authentication with a 8 bytes length tag
 	  7 encryption/authentication with a 16 bytes length tag
 
-endif # NET_L2_IEEE802154 || NET_L2_RAW_CHANNEL
+endif # NET_L2_IEEE802154 || IEEE802154_RAW_MODE
 
 if NET_L2_BT
 

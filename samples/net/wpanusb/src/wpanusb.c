@@ -572,25 +572,6 @@ static void init_tx_queue(void)
 			NULL, NULL, NULL, K_PRIO_COOP(8), 0, K_NO_WAIT);
 }
 
-extern enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface,
-						    struct net_pkt *pkt)
-{
-	/* parse on higher layer */
-	return NET_CONTINUE;
-}
-
-int ieee802154_radio_send(struct net_if *iface, struct net_pkt *pkt)
-{
-	SYS_LOG_DBG("");
-
-	return -ENOTSUP;
-}
-
-void ieee802154_init(struct net_if *iface)
-{
-	SYS_LOG_DBG("");
-}
-
 int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct net_buf *frag;
@@ -599,6 +580,10 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 		    pkt, net_pkt_get_len(pkt));
 
 	frag = net_buf_frag_last(pkt->frags);
+
+	/* Linux requires LQI to be put at the beginning of the buffer */
+	memmove(frag->data+1, frag->data, frag->len);
+	frag->data[0] = net_pkt_ieee802154_lqi(pkt);
 
 	/**
 	 * Add length 1 byte, do not forget to reserve it

@@ -122,7 +122,7 @@ struct net_pkt {
 #endif /* CONFIG_NET_IPV6_FRAGMENT */
 #endif /* CONFIG_NET_IPV6 */
 
-#if defined(CONFIG_NET_L2_IEEE802154)
+#if defined(CONFIG_NET_L2_IEEE802154) || defined(CONFIG_IEEE802154_RAW_MODE)
 	u8_t ieee802154_rssi; /* Received Signal Strength Indication */
 	u8_t ieee802154_lqi;  /* Link Quality Indicator */
 #endif
@@ -424,7 +424,7 @@ static inline void net_pkt_ll_swap(struct net_pkt *pkt)
 	net_pkt_ll_dst(pkt)->addr = addr;
 }
 
-#if defined(CONFIG_NET_L2_IEEE802154)
+#if defined(CONFIG_NET_L2_IEEE802154) || defined(CONFIG_IEEE802154_RAW_MODE)
 static inline u8_t net_pkt_ieee802154_rssi(struct net_pkt *pkt)
 {
 	return pkt->ieee802154_rssi;

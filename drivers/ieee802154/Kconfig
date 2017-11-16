@@ -31,6 +31,16 @@ config SYS_LOG_IEEE802154_DRIVER_LEVEL
 
 	- 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
 
+config IEEE802154_RAW_MODE
+	bool "Use IEEE 802.15.4 driver without the MAC stack"
+	default n if NET_L2_IEEE802154
+	select NET_RAW_MODE
+	help
+	This option enables using the drivers in a so-called "raw" mode,
+	i.e. without a MAC stack (the net L2 layer for 802.15.4 will not
+	be built). Used only for very specific cases, such as wpan_serial
+	and wpanusb samples.
+
 source "drivers/ieee802154/Kconfig.cc2520"
 
 source "drivers/ieee802154/Kconfig.kw41z"
