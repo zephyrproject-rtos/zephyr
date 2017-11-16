@@ -6,7 +6,7 @@
 
 from os import path
 
-from .core import ZephyrBinaryRunner, get_env_or_bail
+from .core import ZephyrBinaryRunner, RunnerCaps, get_env_or_bail
 
 
 class XtensaBinaryRunner(ZephyrBinaryRunner):
@@ -22,8 +22,8 @@ class XtensaBinaryRunner(ZephyrBinaryRunner):
         return 'xtensa'
 
     @classmethod
-    def handles_command(cls, command):
-        return command == 'debug'
+    def capabilities(cls):
+        return RunnerCaps(commands={'debug'})
 
     def create_from_env(command, debug):
         '''Create runner from environment.

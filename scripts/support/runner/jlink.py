@@ -7,7 +7,7 @@
 from os import path
 import os
 
-from .core import ZephyrBinaryRunner, get_env_or_bail
+from .core import ZephyrBinaryRunner, RunnerCaps, get_env_or_bail
 
 DEFAULT_JLINK_GDB_PORT = 2331
 
@@ -33,8 +33,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         return 'jlink'
 
     @classmethod
-    def handles_command(cls, command):
-        return command in {'debug', 'debugserver'}
+    def capabilities(cls):
+        return RunnerCaps(commands={'debug', 'debugserver'})
 
     def create_from_env(command, debug):
         '''Create runner from environment.

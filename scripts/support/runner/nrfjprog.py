@@ -7,7 +7,7 @@
 from os import path
 import sys
 
-from .core import ZephyrBinaryRunner, get_env_or_bail
+from .core import ZephyrBinaryRunner, RunnerCaps, get_env_or_bail
 
 
 class NrfJprogBinaryRunner(ZephyrBinaryRunner):
@@ -23,8 +23,8 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
         return 'nrfjprog'
 
     @classmethod
-    def handles_command(cls, command):
-        return command == 'flash'
+    def capabilities(cls):
+        return RunnerCaps(commands={'flash'})
 
     def create_from_env(command, debug):
         '''Create flasher from environment.
