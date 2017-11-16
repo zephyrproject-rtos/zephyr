@@ -59,169 +59,29 @@ application binary. :ref:`nxp_opensda_firmware` with this application.
 Flashing
 ========
 
-Use the ``make flash`` build target with ``OPENSDA_FW=daplink`` to build your
-Zephyr application, invoke the pyOCD flash tool and program your Zephyr
-application to flash.
+Use the CMake ``flash`` target with the argument ``OPENSDA_FW=daplink`` to
+build your Zephyr application, invoke the pyOCD flash tool and program your
+Zephyr application to flash. Some boards set the argument by default, so it is
+not always necessary to set explicitly.
 
-  .. code-block:: console
-
-     $ make OPENSDA_FW=daplink flash
-     Using /home/maureen/zephyr/boards/arm/frdm_k64f/frdm_k64f_defconfig as base
-     Merging /home/maureen/zephyr/tests/include/test.config
-     Merging prj.conf
-     #
-     # configuration written to .config
-     #
-     make[1]: Entering directory '/home/maureen/zephyr'
-     make[2]: Entering directory '/home/maureen/zephyr/samples/hello_world/outdir/frdm_k64f'
-       GEN     ./Makefile
-     scripts/kconfig/conf --silentoldconfig Kconfig
-       Using /home/maureen/zephyr as source for kernel
-       GEN     ./Makefile
-       CHK     include/generated/version.h
-       UPD     include/generated/version.h
-       DTC     dts/arm/frdm_k64f.dts_compiled
-       CHK     include/generated/generated_dts_board.h
-       UPD     include/generated/generated_dts_board.h
-       CHK     misc/generated/configs.c
-       UPD     misc/generated/configs.c
-       CHK     include/generated/offsets.h
-       UPD     include/generated/offsets.h
-       CC      lib/libc/minimal/source/stdlib/strtol.o
-
-     <snip>
-
-       CC      kernel/work_q.o
-       AR      kernel/lib.a
-       CC      src/main.o
-       LD      src/built-in.o
-       AR      libzephyr.a
-       LINK    zephyr.lnk
-       IRQ     isr_tables.c
-       CC      isr_tables.o
-       LINK    zephyr.elf
-       BIN     zephyr.bin
-     Flashing frdm_k64f
-     Flashing Target Device
-     INFO:root:DAP SWD MODE initialised
-     INFO:root:K64F not in secure state
-     INFO:root:ROM table #0 @ 0xe00ff000 cidr=b105100d pidr=4000bb4c4
-     INFO:root:[0]<e000e000:SCS-M4 cidr=b105e00d, pidr=4000bb00c, class=14>
-     WARNING:root:Invalid coresight component, cidr=0x0
-     INFO:root:[1]<e0001000: cidr=0, pidr=0, component invalid>
-     INFO:root:[2]<e0002000:FPB cidr=b105e00d, pidr=4002bb003, class=14>
-     WARNING:root:Invalid coresight component, cidr=0x1010101
-     INFO:root:[3]<e0000000: cidr=1010101, pidr=101010101010101, component invalid>
-     WARNING:root:Invalid coresight component, cidr=0x0
-     INFO:root:[4]<e0040000: cidr=0, pidr=0, component invalid>
-     INFO:root:[5]<e0041000:ETM-M4 cidr=b105900d, pidr=4000bb925, class=9, devtype=13, devid=0>
-     INFO:root:[6]<e0042000:ETB cidr=b105900d, pidr=4003bb907, class=9, devtype=21, devid=0>
-     INFO:root:[7]<e0043000:CSTF cidr=b105900d, pidr=4001bb908, class=9, devtype=12, devid=28>
-     INFO:root:CPU core is Cortex-M4
-     INFO:root:FPU present
-     INFO:root:6 hardware breakpoints, 4 literal comparators
-     INFO:root:4 hardware watchpoints
-     [====================] 100%
-     INFO:root:Programmed 12288 bytes (3 pages) at 10.57 kB/s
-     make[2]: Leaving directory '/home/maureen/zephyr/samples/hello_world/outdir/frdm_k64f'
-     make[1]: Leaving directory '/home/maureen/zephyr'
-
+  .. zephyr-app-commands::
+     :zephyr-app: samples/hello_world
+     :gen-args: -DOPENSDA_FW=daplink
+     :goals: flash
 
 Debugging
 =========
 
-Use the ``make debug`` build target with ``OPENSDA_FW=daplink`` to build your
-Zephyr application, invoke the pyOCD GDB server, attach a GDB client, and
-program your Zephyr application to flash. It will leave you at a gdb prompt.
+Use the CMake ``debug`` target with the argument ``OPENSDA_FW=daplink`` to
+build your Zephyr application, invoke the pyOCD GDB server, attach a GDB
+client, and program your Zephyr application to flash. It will leave you at a
+GDB prompt. Some boards set the argument by default, so it is not always
+necessary to set explicitly.
 
-  .. code-block:: console
-
-     $ make OPENSDA_FW=daplink debug
-     Using /home/maureen/zephyr/boards/arm/frdm_k64f/frdm_k64f_defconfig as base
-     Merging /home/maureen/zephyr/tests/include/test.config
-     Merging prj.conf
-     #
-     # configuration written to .config
-     #
-     make[1]: Entering directory '/home/maureen/zephyr'
-     make[2]: Entering directory '/home/maureen/zephyr/samples/hello_world/outdir/frdm_k64f'
-       GEN     ./Makefile
-     scripts/kconfig/conf --silentoldconfig Kconfig
-       Using /home/maureen/zephyr as source for kernel
-       GEN     ./Makefile
-       CHK     include/generated/version.h
-       UPD     include/generated/version.h
-       DTC     dts/arm/frdm_k64f.dts_compiled
-       CHK     include/generated/generated_dts_board.h
-       UPD     include/generated/generated_dts_board.h
-       CHK     misc/generated/configs.c
-       UPD     misc/generated/configs.c
-       CHK     include/generated/offsets.h
-       UPD     include/generated/offsets.h
-       CC      lib/libc/minimal/source/stdlib/strtol.o
-
-     <snip>
-
-       CC      kernel/work_q.o
-       AR      kernel/lib.a
-       CC      src/main.o
-       LD      src/built-in.o
-       AR      libzephyr.a
-       LINK    zephyr.lnk
-       IRQ     isr_tables.c
-       CC      isr_tables.o
-       LINK    zephyr.elf
-       BIN     zephyr.bin
-     pyOCD GDB server running on port 3333
-     GNU gdb (GDB) 7.11.0.20160511-git
-     Copyright (C) 2016 Free Software Foundation, Inc.
-     License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
-     This is free software: you are free to change and redistribute it.
-     There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
-     and "show warranty" for details.
-     This GDB was configured as "--host=x86_64-pokysdk-linux --target=arm-zephyr-eabi".
-     Type "show configuration" for configuration details.
-     For bug reporting instructions, please see:
-     <http://www.gnu.org/software/gdb/bugs/>.
-     Find the GDB manual and other documentation resources online at:
-     <http://www.gnu.org/software/gdb/documentation/>.
-     For help, type "help".
-     Type "apropos word" to search for commands related to "word"...
-     Reading symbols from /home/maureen/zephyr/samples/hello_world/outdir/frdm_k64f/zephyr.elf...done.
-     INFO:root:DAP SWD MODE initialised
-     INFO:root:K64F not in secure state
-     INFO:root:ROM table #0 @ 0xe00ff000 cidr=b105100d pidr=4000bb4c4
-     INFO:root:[0]<e000e000:SCS-M4 cidr=b105e00d, pidr=4000bb00c, class=14>
-     WARNING:root:Invalid coresight component, cidr=0x0
-     INFO:root:[1]<e0001000: cidr=0, pidr=0, component invalid>
-     INFO:root:[2]<e0002000:FPB cidr=b105e00d, pidr=4002bb003, class=14>
-     WARNING:root:Invalid coresight component, cidr=0x1010101
-     INFO:root:[3]<e0000000: cidr=1010101, pidr=101010101010101, component invalid>
-     WARNING:root:Invalid coresight component, cidr=0x0
-     INFO:root:[4]<e0040000: cidr=0, pidr=0, component invalid>
-     INFO:root:[5]<e0041000:ETM-M4 cidr=b105900d, pidr=4000bb925, class=9, devtype=13, devid=0>
-     INFO:root:[6]<e0042000:ETB cidr=b105900d, pidr=4003bb907, class=9, devtype=21, devid=0>
-     INFO:root:[7]<e0043000:CSTF cidr=b105900d, pidr=4001bb908, class=9, devtype=12, devid=28>
-     INFO:root:CPU core is Cortex-M4
-     INFO:root:FPU present
-     INFO:root:6 hardware breakpoints, 4 literal comparators
-     INFO:root:4 hardware watchpoints
-     INFO:root:Telnet: server started on port 4444
-     INFO:root:GDB server started at port:3333
-     Remote debugging using :3333
-     INFO:root:One client connected!
-     k_cpu_idle () at /home/maureen/zephyr/arch/arm/core/cpu_idle.S:135
-     135		bx lr
-     Loading section text, size 0x233e lma 0x0
-     Loading section devconfig, size 0xa8 lma 0x2340
-     Loading section rodata, size 0x5d4 lma 0x23e8
-     Loading section datas, size 0x14 lma 0x29bc
-     Loading section initlevel, size 0xa8 lma 0x29d0
-     [====================] 100%
-     INFO:root:Programmed 45056 bytes (3 pages) at 38.21 kB/s
-     Start address 0x1b64, load size 10870
-     Transfer rate: 9 KB/sec, 1207 bytes/write.
-     (gdb)
+  .. zephyr-app-commands::
+     :zephyr-app: samples/hello_world
+     :gen-args: -DOPENSDA_FW=daplink
+     :goals: debug
 
 
 .. _nxp_opensda_jlink:
@@ -248,136 +108,21 @@ Flashing
 ========
 
 The Segger J-Link firmware does not support command line flashing, therefore
-the ``make flash`` build target is not supported.
+the CMake ``flash`` target is not supported.
 
 Debugging
 =========
 
-Use the ``make debug`` build target with ``OPENSDA_FW=jlink`` to build your
-Zephyr application, invoke the J-Link GDB server, attach a GDB client, and
-program your Zephyr application to flash. It will leave you at a gdb prompt.
+Use the CMake ``debug`` target with the argument ``OPENSDA_FW=jlink`` to build
+your Zephyr application, invoke the J-Link GDB server, attach a GDB client, and
+program your Zephyr application to flash. It will leave you at a GDB prompt.
+Some boards set the argument by default, so it is not always necessary to set
+explicitly.
 
-  .. code-block:: console
-
-     $ make OPENSDA_FW=jlink debug
-     Using /home/maureen/zephyr/boards/arm/frdm_k64f/frdm_k64f_defconfig as base
-     Merging /home/maureen/zephyr/tests/include/test.config
-     Merging prj.conf
-     #
-     # configuration written to .config
-     #
-     make[1]: Entering directory '/home/maureen/zephyr'
-     make[2]: Entering directory '/home/maureen/zephyr/samples/hello_world/outdir/frdm_k64f'
-       GEN     ./Makefile
-     scripts/kconfig/conf --silentoldconfig Kconfig
-       Using /home/maureen/zephyr as source for kernel
-       GEN     ./Makefile
-       CHK     include/generated/version.h
-       UPD     include/generated/version.h
-       DTC     dts/arm/frdm_k64f.dts_compiled
-       CHK     include/generated/generated_dts_board.h
-       UPD     include/generated/generated_dts_board.h
-       CHK     misc/generated/configs.c
-       UPD     misc/generated/configs.c
-       CHK     include/generated/offsets.h
-       UPD     include/generated/offsets.h
-       CC      lib/libc/minimal/source/stdlib/strtol.o
-
-     <snip>
-
-       CC      kernel/work_q.o
-       AR      kernel/lib.a
-       CC      src/main.o
-       LD      src/built-in.o
-       AR      libzephyr.a
-       LINK    zephyr.lnk
-       IRQ     isr_tables.c
-       CC      isr_tables.o
-       LINK    zephyr.elf
-       BIN     zephyr.bin
-     JLink GDB server running on port 2331
-     SEGGER J-Link GDB Server V6.14b Command Line Version
-
-     JLinkARM.dll V6.14b (DLL compiled Mar  9 2017 08:48:20)
-
-     -----GDB Server start settings-----
-     GDBInit file:                  none
-     GDB Server Listening port:     2331
-     SWO raw output listening port: 2332
-     Terminal I/O port:             2333
-     Accept remote connection:      yes
-     Generate logfile:              off
-     Verify download:               off
-     Init regs on start:            off
-     Silent mode:                   off
-     Single run mode:               on
-     Target connection timeout:     0 ms
-     ------J-Link related settings------
-     J-Link Host interface:         USB
-     J-Link script:                 none
-     J-Link settings file:          none
-     ------Target related settings------
-     Target device:                 MK64FN1M0xxx12
-     Target interface:              SWD
-     Target interface speed:        1000kHz
-     Target endian:                 little
-
-     Connecting to J-Link...
-     GNU gdb (GDB) 7.11.0.20160511-git
-     Copyright (C) 2016 Free Software Foundation, Inc.
-     License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
-     This is free software: you are free to change and redistribute it.
-     There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
-     and "show warranty" for details.
-     This GDB was configured as "--host=x86_64-pokysdk-linux --target=arm-zephyr-eabi".
-     Type "show configuration" for configuration details.
-     For bug reporting instructions, please see:
-     <http://www.gnu.org/software/gdb/bugs/>.
-     Find the GDB manual and other documentation resources online at:
-     <http://www.gnu.org/software/gdb/documentation/>.
-     For help, type "help".
-     Type "apropos word" to search for commands related to "word"...
-     Reading symbols from /home/maureen/zephyr/samples/hello_world/outdir/frdm_k64f/zephyr.elf...done.
-     J-Link is connected.
-     Firmware: J-Link OpenSDA 2 compiled Feb 28 2017 19:27:57
-     Hardware: V1.00
-     S/N: 621000000
-     Checking target voltage...
-     Target voltage: 3.30 V
-     Listening on TCP/IP port 2331
-     Connecting to target...Connected to target
-     Waiting for GDB connection...Remote debugging using :2331
-     Connected to 127.0.0.1
-     Reading all registers
-     Read 4 bytes @ address 0x00001A04 (Data = 0xBF004770)
-     Read 2 bytes @ address 0x000019FC (Data = 0x4040)
-     Read 2 bytes @ address 0x000019FE (Data = 0xF380)
-     Read 2 bytes @ address 0x00001A00 (Data = 0x8811)
-     Read 2 bytes @ address 0x00001A02 (Data = 0xBF30)
-     k_cpu_idle () at /home/maureen/zephyr/arch/arm/core/cpu_idle.S:135
-     135		bx lr
-     Halting target CPU...
-     ...Target halted (PC = 0x00001A04)
-     Loading section text, size 0x233e lma 0x0
-     Downloading 4096 bytes @ address 0x00000000
-     Downloading 4096 bytes @ address 0x00001000
-     Downloading 830 bytes @ address 0x00002000
-     Loading section devconfig, size 0xa8 lma 0x2340
-     Downloading 168 bytes @ address 0x00002340
-     Loading section rodata, size 0x5d4 lma 0x23e8
-     Downloading 1492 bytes @ address 0x000023E8
-     Loading section datas, size 0x14 lma 0x29bc
-     Downloading 20 bytes @ address 0x000029BC
-     Loading section initlevel, size 0xa8 lma 0x29d0
-     Downloading 168 bytes @ address 0x000029D0
-     Start address 0x1b64, load size 10870
-     Writing register (PC = 0x641b0000)
-     Transfer rate: 5307 KB/sec, 1552 bytes/write.
-     Read 4 bytes @ address 0x00001B64 (Data = 0xF3802010)
-     Resetting target
-     Resetting target
-     (gdb)
-
+  .. zephyr-app-commands::
+     :zephyr-app: samples/hello_world
+     :gen-args: -DOPENSDA_FW=jlink
+     :goals: debug
 
 Console
 =======
