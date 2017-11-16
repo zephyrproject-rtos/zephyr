@@ -449,10 +449,6 @@ static void tx_thread(void)
 
 		hexdump("SLIP <", buf->data, buf->len);
 
-		/* Remove LQI */
-		/* TODO: Reuse get_lqi() */
-		buf->len -= 1;
-
 		/* remove FCS 2 bytes */
 		buf->len -= 2;
 
@@ -567,6 +563,16 @@ static bool init_ieee802154(void)
 	return true;
 }
 
+int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
+{
+	SYS_LOG_DBG("Got data, pkt %p, frags->len %d",
+		    pkt, net_pkt_get_len(pkt));
+
+	k_fifo_put(&tx_queue, pkt);
+
+	return 0;
+}
+
 void main(void)
 {
 	struct device *dev;
@@ -634,35 +640,4 @@ void main(void)
 
 	/* Enable tx interrupts */
 	uart_irq_tx_enable(dev);
-}
-
-void ieee802154_init(struct net_if *iface)
-{
-	SYS_LOG_DBG("");
-}
-
-int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
-{
-	SYS_LOG_DBG("Got data, pkt %p, frags->len %d",
-		    pkt, net_pkt_get_len(pkt));
-
-	k_fifo_put(&tx_queue, pkt);
-
-	return 0;
-}
-
-extern enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface,
-						    struct net_pkt *pkt)
-{
-	SYS_LOG_DBG("");
-
-	/* parse on higher layer */
-	return NET_CONTINUE;
-}
-
-int ieee802154_radio_send(struct net_if *iface, struct net_pkt *pkt)
-{
-	SYS_LOG_DBG("");
-
-	return -ENOTSUP;
 }

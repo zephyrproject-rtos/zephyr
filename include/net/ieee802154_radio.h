@@ -88,6 +88,17 @@ struct ieee802154_radio_api {
 } __packed;
 
 /**
+ * @brief Check if AR flag is set on the frame inside given net_pkt
+ *
+ * @param pkt A valid pointer on a net_pkt structure, must not be NULL.
+ *
+ * @return True if AR flag is set, False otherwise
+ */
+bool ieee802154_is_ar_flag_set(struct net_pkt *pkt);
+
+#ifndef CONFIG_IEEE802154_RAW_MODE
+
+/**
  * @brief Radio driver sending function that hw drivers should use
  *
  * @details This function should be used to fill in struct net_if's send
@@ -122,15 +133,23 @@ extern enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface,
  */
 void ieee802154_init(struct net_if *iface);
 
-/**
- * @brief Check if AR flag is set on the frame inside given net_pkt
- *
- * @param pkt A valid pointer on a net_pkt structure, must not be NULL.
- *
- * @return True if AR flag is set, False otherwise
- */
-bool ieee802154_is_ar_flag_set(struct net_pkt *pkt);
+#else /* CONFIG_IEEE802154_RAW_MODE */
 
+static inline int ieee802154_radio_send(struct net_if *iface,
+					struct net_pkt *pkt)
+{
+	return 0;
+}
+
+static inline enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface,
+							   struct net_pkt *pkt)
+{
+	return NET_CONTINUE;
+}
+
+#define ieee802154_init(_iface_)
+
+#endif /* CONFIG_IEEE802154_RAW_MODE */
 
 #ifdef __cplusplus
 }

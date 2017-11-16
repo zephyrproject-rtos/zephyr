@@ -9,21 +9,9 @@
 menuconfig  IEEE802154_MCR20A
 	bool "NXP MCR20A Driver support"
 	depends on NETWORKING && SPI
-	select NET_L2_IEEE802154
 	default n
 
-menuconfig IEEE802154_MCR20A_RAW
-	bool "NXP MCR20A Driver RAW channel"
-	depends on SPI
-	select NET_L2_RAW_CHANNEL
-	default n
-	help
-	Enable IEEE802154_MCR20A driver with RAW channel
-
-	The MCR20A driver with RAW channel allows to export radio interface
-	over USB making an USB 802.15.4 dongle.
-
-if IEEE802154_MCR20A || IEEE802154_MCR20A_RAW
+if IEEE802154_MCR20A
 
 config IEEE802154_MCR20A_DRV_NAME
 	string "NXP MCR20A Driver's name"

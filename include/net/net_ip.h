@@ -127,7 +127,7 @@ struct sockaddr_in_ptr {
 #define NET_SOCKADDR_MAX_SIZE (sizeof(struct sockaddr_in))
 #define NET_SOCKADDR_PTR_MAX_SIZE (sizeof(struct sockaddr_in_ptr))
 #else
-#if !defined(CONFIG_NET_L2_RAW_CHANNEL)
+#if !defined(CONFIG_NET_RAW_MODE)
 #error "Either IPv6 or IPv4 needs to be selected."
 #else
 #define NET_SOCKADDR_MAX_SIZE (sizeof(struct sockaddr_in6))
