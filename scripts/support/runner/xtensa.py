@@ -6,7 +6,7 @@
 
 from os import path
 
-from .core import ZephyrBinaryRunner, RunnerCaps, get_env_or_bail
+from .core import ZephyrBinaryRunner, RunnerCaps
 
 
 class XtensaBinaryRunner(ZephyrBinaryRunner):
@@ -25,20 +25,15 @@ class XtensaBinaryRunner(ZephyrBinaryRunner):
     def capabilities(cls):
         return RunnerCaps(commands={'debug'})
 
-    def create_from_env(command, debug):
-        '''Create runner from environment.
+    @classmethod
+    def do_add_parser(cls, parser):
+        parser.add_argument('--xcc-tools', required=True,
+                            help='path to XTensa tools')
 
-        Required:
-
-        - XCC_TOOLS: path to Xtensa tools
-        - O: build output directory
-        - KERNEL_ELF_NAME: zephyr kernel binary in ELF format
-        '''
-        xt_gdb = path.join(get_env_or_bail('XCC_TOOLS'), 'bin', 'xt-gdb')
-        elf_name = path.join(get_env_or_bail('O'),
-                             get_env_or_bail('KERNEL_ELF_NAME'))
-
-        return XtensaBinaryRunner(xt_gdb, elf_name)
+    @classmethod
+    def create_from_args(command, args):
+        xt_gdb = path.join(args.xcc_tools, 'bin', 'xt-gdb')
+        return XtensaBinaryRunner(xt_gdb, args.kernel_elf, args.verbose)
 
     def do_run(self, command, **kwargs):
         gdb_cmd = (self.gdb_cmd + [self.elf_name])

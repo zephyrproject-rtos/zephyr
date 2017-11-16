@@ -1,4 +1,2 @@
-set(BOARD_FLASH_RUNNER nios2)
-set(BOARD_DEBUG_RUNNER nios2)
-set(NIOS2_CPU_SOF $ENV{ZEPHYR_BASE}/arch/nios2/soc/nios2f-zephyr/cpu/ghrd_10m50da.sof)
-set_property(GLOBAL APPEND PROPERTY FLASH_SCRIPT_ENV_VARS NIOS2_CPU_SOF)
+board_runner_args(nios2 "--cpu-sof=$ENV{ZEPHYR_BASE}/arch/nios2/soc/nios2f-zephyr/cpu/ghrd_10m50da.sof")
+include($ENV{ZEPHYR_BASE}/boards/common/nios2.board.cmake)

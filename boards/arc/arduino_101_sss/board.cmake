@@ -1,29 +1,14 @@
 if(DEFINED ENV{ZEPHYR_FLASH_OVER_DFU})
   set(BOARD_FLASH_RUNNER dfu-util)
-
-  set(DFUUTIL_PID 8087:0aba)
-  set(DFUUTIL_ALT sensor_core)
-  set(DFUUTIL_IMG ${PROJECT_BINARY_DIR}/${KERNEL_BIN_NAME})
-
-  set_property(GLOBAL APPEND PROPERTY FLASH_SCRIPT_ENV_VARS
-    DFUUTIL_PID
-    DFUUTIL_ALT
-    DFUUTIL_IMG
-    )
 else()
   set(BOARD_FLASH_RUNNER openocd)
 endif()
 
 set(BOARD_DEBUG_RUNNER openocd)
 
-set(OPENOCD_PRE_CMD "targets 1")
-set(OPENOCD_LOAD_CMD "load_image     ${PROJECT_BINARY_DIR}/${KERNEL_BIN_NAME} ${CONFIG_FLASH_BASE_ADDRESS}")
-set(OPENOCD_VERIFY_CMD "verify_image ${PROJECT_BINARY_DIR}/${KERNEL_BIN_NAME} ${CONFIG_FLASH_BASE_ADDRESS}")
-set(GDB_PORT 3334)
+board_runner_args(dfu-util "--pid=8087:0aba" "--alt=sensor_core")
+set(PRE_LOAD targets 1)
+board_runner_args(openocd "--cmd-pre-load=\"${PRE_LOAD}\"" "--gdb-port=3334")
 
-set_property(GLOBAL APPEND PROPERTY FLASH_SCRIPT_ENV_VARS
-  OPENOCD_PRE_CMD
-  OPENOCD_LOAD_CMD
-  OPENOCD_VERIFY_CMD
-  GDB_PORT
-  )
+include($ENV{ZEPHYR_BASE}/boards/common/dfu-util.board.cmake)
+include($ENV{ZEPHYR_BASE}/boards/common/openocd.board.cmake)

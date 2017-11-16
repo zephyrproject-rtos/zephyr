@@ -4,11 +4,10 @@
 
 '''Runner for flashing with dfu-util.'''
 
-import os
 import sys
 import time
 
-from .core import ZephyrBinaryRunner, RunnerCaps, get_env_or_bail
+from .core import ZephyrBinaryRunner, RunnerCaps
 
 
 class DfuUtilBinaryRunner(ZephyrBinaryRunner):
@@ -33,29 +32,30 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
     def capabilities(cls):
         return RunnerCaps(commands={'flash'})
 
-    def create_from_env(command, debug):
-        '''Create flasher from environment.
+    @classmethod
+    def do_add_parser(cls, parser):
+        # Required:
+        parser.add_argument("--pid", required=True,
+                            help="USB VID:PID of the board")
+        parser.add_argument("--alt", required=True,
+                            help="interface alternate setting number or name")
 
-        Required:
+        # Optional:
+        parser.add_argument("--img",
+                            help="binary to flash, default is --kernel-bin")
+        parser.add_argument("--dfuse-addr", default=None,
+                            help='''target address if the board is a DfuSe
+                            device; ignored it not present''')
+        parser.add_argument('--dfu-util', default='dfu-util',
+                            help='dfu-util executable; defaults to "dfu-util"')
 
-        - DFUUTIL_PID: USB VID:PID of the board
-        - DFUUTIL_ALT: interface alternate setting number or name
-        - DFUUTIL_IMG: binary to flash
-
-        Optional:
-
-        - DFUUTIL_DFUSE_ADDR: target address if the board is a
-          DfuSe device. Ignored if not present.
-        - DFUUTIL: dfu-util executable, defaults to dfu-util.
-        '''
-        pid = get_env_or_bail('DFUUTIL_PID')
-        alt = get_env_or_bail('DFUUTIL_ALT')
-        img = get_env_or_bail('DFUUTIL_IMG')
-        dfuse = os.environ.get('DFUUTIL_DFUSE_ADDR', None)
-        exe = os.environ.get('DFUUTIL', 'dfu-util')
-
-        return DfuUtilBinaryRunner(pid, alt, img, dfuse=dfuse, exe=exe,
-                                   debug=debug)
+    @classmethod
+    def create_from_args(cls, args):
+        if args.img is None:
+            args.img = args.kernel_bin
+        return DfuUtilBinaryRunner(args.pid, args.alt, args.img,
+                                   dfuse=args.dfuse_addr, exe=args.dfu_util,
+                                   debug=args.verbose)
 
     def find_device(self):
         cmd = list(self.cmd) + ['-l']

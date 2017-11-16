@@ -4,9 +4,6 @@
 
 '''Runner for NIOS II, based on quartus-flash.py and GDB.'''
 
-from os import path
-import os
-
 from .core import ZephyrBinaryRunner, NetworkPortHelper
 
 
@@ -20,61 +17,36 @@ class Nios2BinaryRunner(ZephyrBinaryRunner):
     #      and CONFIG_INCLUDE_RESET_VECTOR must be disabled."
 
     def __init__(self, hex_name=None, elf_name=None, cpu_sof=None,
-                 zephyr_base=None, gdb=None, tui=None, debug=False):
+                 quartus_py=None, gdb=None, tui=False, debug=False):
         super(Nios2BinaryRunner, self).__init__(debug=debug)
         self.hex_name = hex_name
         self.elf_name = elf_name
         self.cpu_sof = cpu_sof
-        self.zephyr_base = zephyr_base
+        self.quartus_py = quartus_py
         self.gdb_cmd = [gdb] if gdb is not None else None
-        self.tui_arg = [tui] if tui is not None else []
+        self.tui_arg = ['-tui'] if tui else []
 
     @classmethod
     def name(cls):
         return 'nios2'
 
-    def create_from_env(command, debug):
-        '''Create runner from environment.
+    @classmethod
+    def do_add_parser(cls, parser):
+        # TODO merge quartus-flash.py script into this file.
+        parser.add_argument('--quartus-flash', required=True)
+        parser.add_argument('--cpu-sof', required=True,
+                            help='path to the the CPU .sof data')
+        parser.add_argument('--tui', default=False, action='store_true',
+                            help='if given, GDB uses -tui')
 
-        Required for 'flash', 'debug':
-
-        - O: build output directory
-
-        Required for 'flash':
-
-        - KERNEL_HEX_NAME: name of kernel binary in HEX format
-        - NIOS2_CPU_SOF: location of the CPU .sof data
-        - ZEPHYR_BASE: zephyr Git repository base directory
-
-        Required for 'debug':
-
-        - KERNEL_ELF_NAME: name of kernel binary in ELF format
-        - GDB: GDB executable
-
-        Optional for 'debug':
-
-        - TUI: one additional argument to GDB (e.g. -tui)
-        '''
-        cpu_sof = os.environ.get('NIOS2_CPU_SOF', None)
-        zephyr_base = os.environ.get('ZEPHYR_BASE', None)
-
-        o = os.environ.get('O', None)
-        hex_ = os.environ.get('KERNEL_HEX_NAME', None)
-        elf = os.environ.get('KERNEL_ELF_NAME', None)
-        hex_name = None
-        elf_name = None
-        if o is not None:
-            if hex_ is not None:
-                hex_name = path.join(o, hex_)
-            if elf is not None:
-                elf_name = path.join(o, elf)
-
-        gdb = os.environ.get('GDB', None)
-        tui = os.environ.get('TUI', None)
-
-        return Nios2BinaryRunner(hex_name=hex_name, elf_name=elf_name,
-                                 cpu_sof=cpu_sof, zephyr_base=zephyr_base,
-                                 gdb=gdb, tui=tui, debug=debug)
+    @classmethod
+    def create_from_args(command, args):
+        return Nios2BinaryRunner(hex_name=args.kernel_hex,
+                                 elf_name=args.kernel_elf,
+                                 cpu_sof=args.cpu_sof,
+                                 quartus_py=args.quartus_flash,
+                                 gdb=args.gdb, tui=args.tui,
+                                 debug=args.verbose)
 
     def do_run(self, command, **kwargs):
         if command == 'flash':
@@ -83,19 +55,12 @@ class Nios2BinaryRunner(ZephyrBinaryRunner):
             self.debug_debugserver(command, **kwargs)
 
     def flash(self, **kwargs):
-        sof_msg = (
-            'Cannot flash; '
-            'Please set NIOS2_CPU_SOF variable to location of CPU .sof data')
-
-        if self.zephyr_base is None:
-            raise ValueError('Cannot flash; ZEPHYR_BASE is missing.')
+        if self.quartus_py is None:
+            raise ValueError('Cannot flash; --quartus-flash not given.')
         if self.cpu_sof is None:
-            raise ValueError(sof_msg)
-        if self.hex_name is None:
-            raise ValueError('Cannot flash; .hex binary name is missing')
+            raise ValueError('Cannot flash; --cpu-sof not given.')
 
-        cmd = [path.join(self.zephyr_base, 'scripts', 'support',
-                         'quartus-flash.py'),
+        cmd = [self.quartus_py,
                '--sof', self.cpu_sof,
                '--kernel', self.hex_name]
 

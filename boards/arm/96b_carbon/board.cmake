@@ -1,13 +1,4 @@
-set(BOARD_FLASH_RUNNER dfu-util)
+board_runner_args(dfu-util "--pid=0483:df11" "--alt=0")
+board_runner_args(dfu-util "--dfuse-addr=${CONFIG_FLASH_BASE_ADDRESS}")
 
-set(DFUUTIL_PID 0483:df11)
-set(DFUUTIL_ALT 0)
-set(DFUUTIL_IMG ${PROJECT_BINARY_DIR}/${KERNEL_BIN_NAME})
-set(DFUUTIL_DFUSE_ADDR ${CONFIG_FLASH_BASE_ADDRESS})
-
-set_property(GLOBAL APPEND PROPERTY FLASH_SCRIPT_ENV_VARS
-  DFUUTIL_PID
-  DFUUTIL_ALT
-  DFUUTIL_IMG
-  DFUUTIL_DFUSE_ADDR
-  )
+include($ENV{ZEPHYR_BASE}/boards/common/dfu-util.board.cmake)
