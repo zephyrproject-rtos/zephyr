@@ -226,10 +226,10 @@ struct bt_mesh_model_pub {
 	u16_t addr;         /* Publish Address */
 	u16_t key;          /* Publish AppKey Index */
 
-	u32_t ttl:8,        /* Publish Time to Live */
-	      retransmit:8, /* Retransmit Count & Interval Steps */
-	      period:8,     /* Publish Period */
-	      period_div:4, /* Divisor for the Period */
+	u8_t  ttl;          /* Publish Time to Live */
+	u8_t  retransmit;   /* Retransmit Count & Interval Steps */
+	u8_t  period;       /* Publish Period */
+	u8_t  period_div:4, /* Divisor for the Period */
 	      cred:1;       /* Friendship Credentials Flag */
 
 	/* Publish callback */
