@@ -1,1 +1,1 @@
-set(FLASH_SCRIPT esp32.sh)
+set(BOARD_FLASH_RUNNER esp32)

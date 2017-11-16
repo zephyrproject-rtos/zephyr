@@ -1,5 +1,5 @@
-set(FLASH_SCRIPT pyocd.sh)
-set(DEBUG_SCRIPT pyocd.sh)
+set(BOARD_FLASH_RUNNER pyocd)
+set(BOARD_DEBUG_RUNNER pyocd)
 
 set(PYOCD_TARGET nrf52)
 

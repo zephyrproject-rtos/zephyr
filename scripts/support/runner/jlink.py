@@ -28,9 +28,13 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         self.gdb_port = gdb_port
         self.tui_arg = [tui] if tui is not None else []
 
-    def replaces_shell_script(shell_script, command):
-        return (command in {'debug', 'debugserver'} and
-                shell_script == 'jlink.sh')
+    @classmethod
+    def name(cls):
+        return 'jlink'
+
+    @classmethod
+    def handles_command(cls, command):
+        return command in {'debug', 'debugserver'}
 
     def create_from_env(command, debug):
         '''Create runner from environment.
@@ -80,9 +84,6 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         print('JLink GDB server running on port {}'.format(self.gdb_port))
 
     def do_run(self, command, **kwargs):
-        if command not in {'debug', 'debugserver'}:
-            raise ValueError('{} is not supported'.format(command))
-
         server_cmd = (self.gdbserver_cmd +
                       ['-port', str(self.gdb_port),
                        '-if', self.iface,

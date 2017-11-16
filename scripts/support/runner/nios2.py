@@ -29,9 +29,9 @@ class Nios2BinaryRunner(ZephyrBinaryRunner):
         self.gdb_cmd = [gdb] if gdb is not None else None
         self.tui_arg = [tui] if tui is not None else []
 
-    def replaces_shell_script(shell_script, command):
-        return (command in {'flash', 'debug', 'debugserver'} and
-                shell_script == 'nios2.sh')
+    @classmethod
+    def name(cls):
+        return 'nios2'
 
     def create_from_env(command, debug):
         '''Create runner from environment.
@@ -77,9 +77,6 @@ class Nios2BinaryRunner(ZephyrBinaryRunner):
                                  gdb=gdb, tui=tui, debug=debug)
 
     def do_run(self, command, **kwargs):
-        if command not in {'flash', 'debug', 'debugserver'}:
-            raise ValueError('{} is not supported'.format(command))
-
         if command == 'flash':
             self.flash(**kwargs)
         else:

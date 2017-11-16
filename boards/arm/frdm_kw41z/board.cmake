@@ -1,10 +1,10 @@
 set_ifndef(OPENSDA_FW jlink)
 
 if(OPENSDA_FW STREQUAL jlink)
-  set_ifndef(DEBUG_SCRIPT jlink.sh)
+  set_ifndef(BOARD_DEBUG_RUNNER jlink)
 elseif(OPENSDA_FW STREQUAL daplink)
-  set_ifndef(DEBUG_SCRIPT pyocd.sh)
-  set_ifndef(FLASH_SCRIPT pyocd.sh)
+  set_ifndef(BOARD_DEBUG_RUNNER pyocd)
+  set_ifndef(BOARD_FLASH_RUNNER pyocd)
 endif()
 
 set(JLINK_DEVICE MKW41Z512xxx4)

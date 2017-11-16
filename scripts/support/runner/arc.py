@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-'''ARC architecture-specific runner.'''
+'''ARC architecture-specific runners.'''
 
 from os import path
 import os
@@ -15,7 +15,7 @@ DEFAULT_ARC_TELNET_PORT = 4444
 DEFAULT_ARC_GDB_PORT = 3333
 
 
-class ArcBinaryRunner(ZephyrBinaryRunner):
+class EmStarterKitBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for the EM Starterkit board, using openocd.'''
 
     # This unusual 'flash' implementation matches the original shell script.
@@ -31,7 +31,7 @@ class ArcBinaryRunner(ZephyrBinaryRunner):
                  tui=None, tcl_port=DEFAULT_ARC_TCL_PORT,
                  telnet_port=DEFAULT_ARC_TELNET_PORT,
                  gdb_port=DEFAULT_ARC_GDB_PORT, debug=False):
-        super(ArcBinaryRunner, self).__init__(debug=debug)
+        super(EmStarterKitBinaryRunner, self).__init__(debug=debug)
         self.elf = elf
         self.zephyr_base = zephyr_base
         self.board_dir = board_dir
@@ -46,9 +46,9 @@ class ArcBinaryRunner(ZephyrBinaryRunner):
         self.telnet_port = telnet_port
         self.gdb_port = gdb_port
 
-    def replaces_shell_script(shell_script, command):
-        return (command in {'flash', 'debug', 'debugserver'} and
-                shell_script == 'arc_debugger.sh')
+    @classmethod
+    def name(cls):
+        return 'em-starterkit'
 
     def create_from_env(command, debug):
         '''Create runner from environment.
@@ -90,11 +90,12 @@ class ArcBinaryRunner(ZephyrBinaryRunner):
         gdb_port = int(os.environ.get('GDB_PORT',
                                       str(DEFAULT_ARC_GDB_PORT)))
 
-        return ArcBinaryRunner(elf, zephyr_base, board_dir,
-                               gdb, openocd=openocd, extra_init=extra_init,
-                               default_path=default_path, tui=tui,
-                               tcl_port=tcl_port, telnet_port=telnet_port,
-                               gdb_port=gdb_port, debug=debug)
+        return EmStarterKitBinaryRunner(
+            elf, zephyr_base, board_dir,
+            gdb, openocd=openocd, extra_init=extra_init,
+            default_path=default_path, tui=tui,
+            tcl_port=tcl_port, telnet_port=telnet_port,
+            gdb_port=gdb_port, debug=debug)
 
     def do_run(self, command, **kwargs):
         if command not in {'flash', 'debug', 'debugserver'}:

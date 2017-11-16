@@ -1,5 +1,5 @@
-set(FLASH_SCRIPT openocd.sh)
-set(DEBUG_SCRIPT openocd.sh)
+set(BOARD_FLASH_RUNNER openocd)
+set(BOARD_DEBUG_RUNNER openocd)
 
 set(OPENOCD_PRE_CMD "targets 1")
 set(OPENOCD_LOAD_CMD "load_image     ${PROJECT_BINARY_DIR}/${KERNEL_BIN_NAME} ${CONFIG_PHYS_LOAD_ADDR}")

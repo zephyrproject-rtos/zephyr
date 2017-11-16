@@ -1,4 +1,4 @@
-set(FLASH_SCRIPT nrf_flash.sh)
+set(BOARD_FLASH_RUNNER nrfjprog)
 
 set(NRF_FAMILY NRF51)
 

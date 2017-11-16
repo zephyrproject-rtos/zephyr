@@ -8,4 +8,4 @@ set(QEMU_FLAGS_${ARCH}
   -machine sifive
   )
 
-set(DEBUG_SCRIPT qemu.sh)
+set(BOARD_DEBUG_RUNNER qemu)

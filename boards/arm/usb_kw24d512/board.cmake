@@ -1,4 +1,4 @@
-set(DEBUG_SCRIPT jlink.sh)
+set(BOARD_DEBUG_RUNNER jlink)
 
 set(JLINK_DEVICE MKW24D512xxx5)
 
