@@ -13,7 +13,7 @@ DEFAULT_PYOCD_GDB_PORT = 3333
 
 
 class PyOcdBinaryRunner(ZephyrBinaryRunner):
-    '''Runner front-end for pyocd-flashtool.'''
+    '''Runner front-end for pyOCD.'''
 
     def __init__(self, target, flashtool='pyocd-flashtool',
                  gdb=None, gdbserver='pyocd-gdbserver',
