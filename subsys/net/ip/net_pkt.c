@@ -1194,19 +1194,8 @@ u16_t net_pkt_append(struct net_pkt *pkt, u16_t len, const u8_t *data,
 #if defined(CONFIG_NET_TCP)
 		if (ctx->tcp) {
 			max_len = ctx->tcp->send_mss;
-		} else
-#endif
-		{
-			struct net_if *iface = net_context_get_iface(ctx);
-			max_len = net_if_get_mtu(iface);
-			/* Optimize for number of jumps in the code ("if"
-			 * instead of "if/else").
-			 */
-			max_len -= NET_IPV4TCPH_LEN;
-			if (net_context_get_family(ctx) != AF_INET) {
-				max_len -= NET_IPV6TCPH_LEN - NET_IPV4TCPH_LEN;
-			}
 		}
+#endif
 	}
 
 	if (len > max_len) {
