@@ -4,10 +4,10 @@
 
 '''Runner for pyOCD .'''
 
-from os import path
 import os
+import sys
 
-from .core import ZephyrBinaryRunner, get_env_or_bail
+from .core import ZephyrBinaryRunner
 
 DEFAULT_PYOCD_GDB_PORT = 3333
 
@@ -17,7 +17,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
 
     def __init__(self, target, flashtool='pyocd-flashtool',
                  gdb=None, gdbserver='pyocd-gdbserver',
-                 gdb_port=DEFAULT_PYOCD_GDB_PORT, tui=None,
+                 gdb_port=DEFAULT_PYOCD_GDB_PORT, tui=False,
                  bin_name=None, elf_name=None,
                  board_id=None, daparg=None, debug=False):
         super(PyOcdBinaryRunner, self).__init__(debug=debug)
@@ -27,7 +27,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
         self.gdb_cmd = [gdb] if gdb is not None else None
         self.gdbserver = gdbserver
         self.gdb_port = gdb_port
-        self.tui_args = [tui] if tui is not None else []
+        self.tui_args = ['-tui'] if tui else []
         self.bin_name = bin_name
         self.elf_name = elf_name
 
@@ -45,67 +45,46 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
     def name(cls):
         return 'pyocd'
 
+    @classmethod
+    def do_add_parser(cls, parser):
+        parser.add_argument('--target', required=True,
+                            help='target override')
+
+        parser.add_argument('--daparg',
+                            help='Additional arguments to pyocd tool')
+        parser.add_argument('--flashtool', default='pyocd-flashtool',
+                            help='flash tool path, default is pyocd-flashtool')
+        parser.add_argument('--gdbserver', default='pyocd-gdbserver',
+                            help='GDB server, default is pyocd-gdbserver')
+        parser.add_argument('--gdb-port', default=DEFAULT_PYOCD_GDB_PORT,
+                            help='pyocd gdb port, defaults to {}'.format(
+                                DEFAULT_PYOCD_GDB_PORT))
+        parser.add_argument('--tui', default=False, action='store_true',
+                            help='if given, GDB uses -tui')
+        parser.add_argument('--board-id',
+                            help='ID of board to flash, default is to prompt')
+
+    @classmethod
+    def create_from_args(cls, args):
+        daparg = os.environ.get('PYOCD_DAPARG')
+        if daparg:
+            print('Warning: setting PYOCD_DAPARG in the environment is',
+                  'deprecated; use the --daparg option instead.',
+                  file=sys.stderr)
+            if args.daparg is None:
+                print('Missing --daparg set to {} from environment'.format(
+                          daparg),
+                      file=sys.stderr)
+                args.daparg = daparg
+
+        return PyOcdBinaryRunner(
+            args.target, flashtool=args.flashtool, gdb=args.gdb,
+            gdbserver=args.gdbserver, gdb_port=args.gdb_port, tui=args.tui,
+            bin_name=args.kernel_bin, elf_name=args.kernel_elf,
+            board_id=args.board_id, daparg=args.daparg, debug=args.verbose)
+
     def port_args(self):
         return ['-p', str(self.gdb_port)]
-
-    def create_from_env(command, debug):
-        '''Create runner from environment.
-
-        Required:
-
-        - PYOCD_TARGET: target override
-
-        Optional:
-
-        - PYOCD_DAPARG: arguments to pass to pyocd tool, default is none
-        - PYOCD_BOARD_ID: ID of board to flash, default is to prompt
-
-        Required for 'flash':
-
-        - O: build output directory
-        - KERNEL_BIN_NAME: name of kernel binary
-
-        Optional for 'flash':
-
-        - PYOCD_FLASHTOOL: flash tool path, defaults to pyocd-flashtool
-
-        Required for 'debug':
-
-        - O: build output directory
-        - KERNEL_ELF_NAME
-        - GDB: gdb executable
-
-        Optional for 'debug', 'debugserver':
-
-        - TUI: one additional argument to GDB (e.g. -tui)
-        - GDB_PORT: pyocd gdb port, defaults to 3333
-        - PYOCD_GDBSERVER: gdb server executable, defaults to pyocd-gdbserver
-        '''
-        target = get_env_or_bail('PYOCD_TARGET')
-
-        o = os.environ.get('O', None)
-        bin_ = os.environ.get('KERNEL_BIN_NAME', None)
-        elf = os.environ.get('KERNEL_ELF_NAME', None)
-        bin_name = None
-        elf_name = None
-        if o is not None:
-            if bin_ is not None:
-                bin_name = path.join(o, bin_)
-            if elf is not None:
-                elf_name = path.join(o, elf)
-
-        flashtool = os.environ.get('PYOCD_FLASHTOOL', 'pyocd-flashtool')
-        board_id = os.environ.get('PYOCD_BOARD_ID', None)
-        daparg = os.environ.get('PYOCD_DAPARG', None)
-        gdb = os.environ.get('GDB', None)
-        gdbserver = os.environ.get('PYOCD_GDBSERVER', 'pyocd-gdbserver')
-        gdb_port = os.environ.get('GDB_PORT', DEFAULT_PYOCD_GDB_PORT)
-        tui = os.environ.get('TUI', None)
-
-        return PyOcdBinaryRunner(target, flashtool=flashtool, gdb=gdb,
-                                 gdbserver=gdbserver, gdb_port=gdb_port,
-                                 tui=tui, bin_name=bin_name, elf_name=elf_name,
-                                 board_id=board_id, daparg=daparg, debug=debug)
 
     def do_run(self, command, **kwargs):
         if command == 'flash':

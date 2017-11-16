@@ -5,9 +5,8 @@
 '''Runner for flashing ESP32 devices with esptool/espidf.'''
 
 from os import path
-import os
 
-from .core import ZephyrBinaryRunner, RunnerCaps, get_env_or_bail
+from .core import ZephyrBinaryRunner, RunnerCaps
 
 
 class Esp32BinaryRunner(ZephyrBinaryRunner):
@@ -33,44 +32,41 @@ class Esp32BinaryRunner(ZephyrBinaryRunner):
     def capabilities(cls):
         return RunnerCaps(commands={'flash'})
 
-    def create_from_env(command, debug):
-        '''Create flasher from environment.
+    @classmethod
+    def do_add_parser(cls, parser):
+        # Required
+        parser.add_argument('--esp-idf-path', required=True,
+                            help='path to ESP-IDF')
 
-        Required:
+        # Optional
+        parser.add_argument('--esp-device', default='/dev/ttyUSB0',
+                            help='serial port to flash, default /dev/ttyUSB0')
+        parser.add_argument('--esp-baud-rate', default='921600',
+                            help='serial baud rate, default 921600')
+        parser.add_argument('--esp-flash-size', default='detect',
+                            help='flash size, default "detect"')
+        parser.add_argument('--esp-flash-freq', default='40m',
+                            help='flash frequency, default "40m"')
+        parser.add_argument('--esp-flash-mode', default='dio',
+                            help='flash mode, default "dio"')
+        parser.add_argument(
+            '--esp-tool',
+            help='''if given, complete path to espidf. default is to search for
+            it in [ESP_IDF_PATH]/components/esptool_py/esptool/esptool.py''')
 
-        - O: build output directory
-        - KERNEL_ELF_NAME: name of kernel binary in ELF format
+    @classmethod
+    def create_from_args(command, args):
+        if args.esp_tool:
+            espidf = args.esp_tool
+        else:
+            espidf = path.join(args.esp_idf_path, 'components', 'esptool_py',
+                               'esptool', 'esptool.py')
 
-        Optional:
-
-        - ESP_DEVICE: serial port to flash, default /dev/ttyUSB0
-        - ESP_BAUD_RATE: serial baud rate, default 921600
-        - ESP_FLASH_SIZE: flash size, default 'detect'
-        - ESP_FLASH_FREQ: flash frequency, default '40m'
-        - ESP_FLASH_MODE: flash mode, default 'dio'
-        - ESP_TOOL: complete path to espidf, or set to 'espidf' to look for it
-          in $ESP_IDF_PATH/components/esptool_py/esptool/esptool.py
-        '''
-        elf = path.join(get_env_or_bail('O'),
-                        get_env_or_bail('KERNEL_ELF_NAME'))
-
-        # TODO add sane device defaults on other platforms than Linux.
-        device = os.environ.get('ESP_DEVICE', '/dev/ttyUSB0')
-        baud = os.environ.get('ESP_BAUD_RATE', '921600')
-        flash_size = os.environ.get('ESP_FLASH_SIZE', 'detect')
-        flash_freq = os.environ.get('ESP_FLASH_FREQ', '40m')
-        flash_mode = os.environ.get('ESP_FLASH_MODE', 'dio')
-        espidf = os.environ.get('ESP_TOOL', 'espidf')
-
-        if espidf == 'espidf':
-            idf_path = get_env_or_bail('ESP_IDF_PATH')
-            espidf = path.join(idf_path, 'components', 'esptool_py', 'esptool',
-                               'esptool.py')
-
-        return Esp32BinaryRunner(elf, device, baud=baud,
-                                 flash_size=flash_size, flash_freq=flash_freq,
-                                 flash_mode=flash_mode, espidf=espidf,
-                                 debug=debug)
+        return Esp32BinaryRunner(
+            args.kernel_elf, args.esp_device, baud=args.esp_baud_rate,
+            flash_size=args.esp_flash_size, flash_freq=args.esp_flash_freq,
+            flash_mode=args.esp_flash_mode, espidf=espidf,
+            debug=args.verbose)
 
     def do_run(self, command, **kwargs):
         bin_name = path.splitext(self.elf)[0] + path.extsep + 'bin'

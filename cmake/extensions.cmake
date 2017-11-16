@@ -8,6 +8,7 @@ include(CheckCXXCompilerFlag)
 # 1.1. zephyr_*
 # 1.2. zephyr_library_*
 # 1.3. generate_inc_*
+# 1.4. board_*
 # 2. Kconfig-aware extensions
 # 2.1 *_if_kconfig
 # 2.2 Misc
@@ -433,6 +434,61 @@ endfunction()
 # need to be included in the build.
 function(zephyr_append_cmake_library library)
   set_property(GLOBAL APPEND PROPERTY ZEPHYR_LIBS ${library})
+endfunction()
+
+# 1.4. board_*
+#
+# This section is for extensions which control Zephyr's board runners
+# from the build system. The Zephyr build system has targets for
+# flashing and debugging supported boards. These are wrappers around a
+# "runner" Python package that is part of Zephyr. This section
+# provides glue between CMake and the runner invocation script,
+# zephyr_flash_debug.py.
+
+# This function is intended for board.cmake files.
+#
+# Usage:
+#   board_runner_args(runner "--some-arg=val1" "--another-arg=val2")
+#
+# Will ensure the command line to zephyr_flash_debug.py contains:
+#   --some-arg=val1 --another-arg=val2
+#
+# in the flash, debug, and debugserver target recipes, as
+# appropriate. These settings will override any defaults provided by
+# the build system.
+function(board_runner_args runner)
+  string(MAKE_C_IDENTIFIER ${runner} runner_id)
+  # Note the "_EXPLICIT_" here, and see below.
+  set_property(GLOBAL APPEND PROPERTY BOARD_RUNNER_ARGS_EXPLICIT_${runner_id} ${ARGN})
+endfunction()
+
+# This function is intended for internal use by
+# boards/common/runner.board.cmake files.
+#
+# Basic usage:
+#   board_finalize_runner_args(runner)
+#
+# This ensures the build system captures all arguments added in any
+# board_runner_args() calls.
+#
+# Extended usage:
+#   board_runner_args(runner "--some-arg=default-value")
+#
+# This provides common or default values for arguments. These are
+# placed before board_runner_args() calls, so they generally take
+# precedence, except for arguments which can be given multiple times
+# (use these with caution).
+function(board_finalize_runner_args runner)
+  string(MAKE_C_IDENTIFIER ${runner} runner_id)
+  get_property(explicit GLOBAL PROPERTY "BOARD_RUNNER_ARGS_EXPLICIT_${runner_id}")
+  # Note no _EXPLICIT_ here. This property contains the final list.
+  set_property(GLOBAL APPEND PROPERTY BOARD_RUNNER_ARGS_${runner_id}
+    # Default arguments from the common runner file come first.
+    ${ARGN}
+    # Arguments explicitly given with board_runner_args() come
+    # last, so they take precedence.
+    ${explicit}
+    )
 endfunction()
 
 ########################################################

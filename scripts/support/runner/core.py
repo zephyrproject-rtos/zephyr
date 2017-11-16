@@ -14,54 +14,9 @@ as well as some other helpers for concrete runner classes.
 import abc
 import os
 import platform
-import pprint
 import shlex
 import signal
 import subprocess
-import sys
-
-
-def get_env_or_bail(env_var):
-    '''Get an environment variable, or raise an error.
-
-    In case of KeyError, an error message is printed, along with the
-    environment, and the exception is re-raised.
-    '''
-    try:
-        return os.environ[env_var]
-    except KeyError:
-        print('Variable {} not in environment:'.format(
-                  env_var), file=sys.stderr)
-        pprint.pprint(dict(os.environ), stream=sys.stderr)
-        raise
-
-
-def get_env_bool_or(env_var, default_value):
-    '''Get an environment variable as a boolean, or return a default value.
-
-    Get an environment variable, interpret it as a base ten
-    integer, and convert that to a boolean.
-
-    In case the environment variable is not defined, return default_value.
-    '''
-    try:
-        return bool(int(os.environ[env_var]))
-    except KeyError:
-        return default_value
-
-
-def get_env_strip_or(env_var, to_strip, default_value):
-    '''Get and clean up an environment variable, or return a default value.
-
-    Get the value of env_var from the environment. If it is
-    defined, return that value with to_strip stripped off. If it
-    is undefined, return default_value (without any stripping).
-    '''
-    value = os.environ.get(env_var, None)
-    if value is not None:
-        return value.strip(to_strip)
-    else:
-        return default_value
 
 
 def quote_sh_list(cmd):
@@ -227,10 +182,10 @@ class ZephyrBinaryRunner(abc.ABC):
       binary.
 
     This class provides an API for these commands. Every runner has a
-    name, and declares commands it can handle. Zephyr boards declare
-    compatible runner(s) by name to the build system, which can then
-    call into the create_runner() method below to make a concrete
-    runner instance for use executing a command.
+    name (like 'pyocd'), and declares commands it can handle (like
+    'flash'). Zephyr boards (like 'nrf52_pca10040') declare compatible
+    runner(s) by name to the build system, which makes concrete runner
+    instances to execute commands via this class.
 
     If your board can use an existing runner, all you have to do is
     give its name to the build system. How to do that is out of the
@@ -240,58 +195,34 @@ class ZephyrBinaryRunner(abc.ABC):
     If you want to define and use your own runner:
 
     1. Define a ZephyrBinaryRunner subclass, and implement its
-       abstract methods. Override any methods you need to, especially
-       capabilities().
+       abstract methods. You may need to override capabilities().
 
     2. Make sure the Python module defining your runner class is
-       imported by this package's __init__.py (otherwise,
-       create_runner() won't work).
+       imported, e.g. by editing this package's __init__.py (otherwise,
+       get_runners() won't work).
 
     3. Give your runner's name to the Zephyr build system in your
        board's build files.
+
+    For command-line invocation from the Zephyr build system, runners
+    define their own argparse-based interface through the common
+    add_parser() (and runner-specific do_add_parser() it delegates
+    to), and provide a way to create instances of themselves from
+    parsed arguments via create_from_args().
 
     Runners use a variety of target-specific tools and configuration
     values, the user interface to which is abstracted by this
     class. Each runner subclass should take any values it needs to
     execute one of these commands in its constructor.  The actual
-    command execution is handled in the run() method.
-
-    At present, the Zephyr build system uses environment variables to
-    control runner behavior.  To support this, a create_runner()
-    method is defined below.  This method takes a runner name, and
-    iterates over defined ZephyrBinaryRunner subclasses to find the
-    runner class. It then checks that it supports the command, then
-    instantiates and returns a runner with configuration determined by
-    the environment.
-
-    To support this, subclasses currently must define a static method:
-    create_from_env(). This is called by create_runner() to create a
-    concrete runner instance.
-
-    The environment-based factories are for legacy use *only*; the
-    build system is moving away from use of environment variables. The
-    user must be able to construct and use a runner using only the
-    constructor and run() method.
-
-    '''
+    command execution is handled in the run() method.'''
 
     def __init__(self, debug=False):
         self.debug = debug
 
     @staticmethod
-    def create_runner(runner_name, command, debug):
-        for cls in ZephyrBinaryRunner.__subclasses__():
-            if cls.name() == runner_name:
-                break
-        else:
-            raise ValueError('no runner named {} is known'.format(runner_name))
-
-        caps = cls.capabilities()
-        if command not in caps.commands:
-            raise ValueError('runner {} does not implement command {}'.format(
-                runner_name, command))
-
-        return cls.create_from_env(command, debug)
+    def get_runners():
+        '''Get a list of all currently defined runner classes.'''
+        return ZephyrBinaryRunner.__subclasses__()
 
     @classmethod
     @abc.abstractmethod
@@ -314,10 +245,77 @@ class ZephyrBinaryRunner(abc.ABC):
         Subclasses should override appropriately if needed.'''
         return RunnerCaps()
 
-    @staticmethod
+    @classmethod
+    def add_parser(cls, parser):
+        '''Adds a sub-command parser for this runner.
+
+        The given object, parser, is a sub-command parser from the
+        argparse module. For more details, refer to the documentation
+        for argparse.ArgumentParser.add_subparsers().
+
+        The standard (required) arguments are:
+
+        * --board-dir
+        * --kernel-elf, --kernel-hex, --kernel-bin
+
+        The standard optional arguments are:
+
+        * --gdb
+        * --openocd, --openocd-search
+
+        Runner-specific options are added through the do_add_parser()
+        hook.
+
+        The single positional argument is "command". This is currently
+        restricted to values 'flash', 'debug', and 'debugserver'.'''
+        # Required options.
+        parser.add_argument('--board-dir', required=True,
+                            help='Zephyr board directory')
+        parser.add_argument('--kernel-elf', required=True,
+                            help='path to kernel binary in .elf format')
+        parser.add_argument('--kernel-hex', required=True,
+                            help='path to kernel binary in .hex format')
+        parser.add_argument('--kernel-bin', required=True,
+                            help='path to kernel binary in .bin format')
+
+        # Optional options.
+        parser.add_argument('--gdb', default=None,
+                            help='GDB compatible with the target')
+        parser.add_argument('--openocd', default='openocd',
+                            help='OpenOCD to use')
+        parser.add_argument('--openocd-search', default=None,
+                            help='directory to add to OpenOCD search path')
+
+        # Runner-specific options.
+        cls.do_add_parser(parser)
+
+        # The lone positional argument. Note that argparse can't cope
+        # with adding options after the first positional argument, so
+        # this must come last.
+        parser.add_argument('command',
+                            choices=['flash', 'debug', 'debugserver'],
+                            help='command to run (flash, debug, debugserver)')
+
+    @classmethod
     @abc.abstractmethod
-    def create_from_env(command, debug):
-        '''Create new runner instance from environment variables.'''
+    def do_add_parser(cls, parser):
+        '''Hook for adding runner-specific options.
+
+        Subclasses **must not** add positional arguments. That is, when
+        calling parser.add_argument(), make sure to begin the argument
+        with '-' so it is interpreted as an option, rather than a
+        positional argument.
+
+        * OK: parser.add_argument('--my-option')
+        * Not OK: parser.add_argument('my-argument').'''
+
+    @classmethod
+    @abc.abstractmethod
+    def create_from_args(cls, args):
+        '''Create an instance from command-line arguments.
+
+        These will have been parsed from the command line according to
+        the specification defined by add_parser().'''
 
     def run(self, command, **kwargs):
         '''Runs command ('flash', 'debug', 'debugserver').

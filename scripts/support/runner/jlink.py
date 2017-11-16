@@ -4,10 +4,7 @@
 
 '''Runner for debugging with JLink.'''
 
-from os import path
-import os
-
-from .core import ZephyrBinaryRunner, RunnerCaps, get_env_or_bail
+from .core import ZephyrBinaryRunner, RunnerCaps
 
 DEFAULT_JLINK_GDB_PORT = 2331
 
@@ -17,7 +14,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
 
     def __init__(self, device,
                  gdbserver='JLinkGDBServer', iface='swd', elf_name=None,
-                 gdb=None, gdb_port=DEFAULT_JLINK_GDB_PORT, tui=None,
+                 gdb=None, gdb_port=DEFAULT_JLINK_GDB_PORT, tui=False,
                  debug=False):
         super(JLinkBinaryRunner, self).__init__(debug=debug)
         self.device = device
@@ -26,7 +23,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         self.elf_name = elf_name
         self.gdb_cmd = [gdb] if gdb is not None else None
         self.gdb_port = gdb_port
-        self.tui_arg = [tui] if tui is not None else []
+        self.tui_arg = ['-tui'] if tui else []
 
     @classmethod
     def name(cls):
@@ -36,49 +33,28 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
     def capabilities(cls):
         return RunnerCaps(commands={'debug', 'debugserver'})
 
-    def create_from_env(command, debug):
-        '''Create runner from environment.
+    @classmethod
+    def do_add_parser(cls, parser):
+        # Required:
+        parser.add_argument('--device', required=True, help='device name')
 
-        Required:
+        # Optional:
+        parser.add_argument('--iface', default='swd',
+                            help='interface to use, default is swd')
+        parser.add_argument('--tui', default=False, action='store_true',
+                            help='if given, GDB uses -tui')
+        parser.add_argument('--gdbserver', default='JLinkGDBServer',
+                            help='GDB server, default is JLinkGDBServer')
+        parser.add_argument('--gdb-port', default=DEFAULT_JLINK_GDB_PORT,
+                            help='pyocd gdb port, defaults to {}'.format(
+                                DEFAULT_JLINK_GDB_PORT))
 
-        - JLINK_DEVICE: device name
-
-        Required for 'debug':
-
-        - GDB: gdb to use
-        - O: build output directory
-        - KERNEL_ELF_NAME: zephyr kernel binary in ELF format
-
-        Optional for 'debug':
-
-        - TUI: if present, passed to gdb server used to flash
-
-        Optional for 'debug', 'debugserver':
-
-        - JLINK_GDBSERVER: default is JLinkGDBServer
-        - GDB_PORT: default is 2331
-        - JLINK_IF: default is swd
-        '''
-        device = get_env_or_bail('JLINK_DEVICE')
-
-        gdb = os.environ.get('GDB', None)
-        o = os.environ.get('O', None)
-        elf = os.environ.get('KERNEL_ELF_NAME', None)
-        elf_name = None
-        if o is not None:
-            if elf is not None:
-                elf_name = path.join(o, elf)
-        tui = os.environ.get('TUI', None)
-
-        gdbserver = os.environ.get('JLINK_GDBSERVER', 'JLinkGDBServer')
-        gdb_port = int(os.environ.get('GDB_PORT',
-                                      str(DEFAULT_JLINK_GDB_PORT)))
-        iface = os.environ.get('JLINK_IF', 'swd')
-
-        return JLinkBinaryRunner(device, gdbserver=gdbserver,
-                                 iface=iface, elf_name=elf_name,
-                                 gdb=gdb, gdb_port=gdb_port, tui=tui,
-                                 debug=debug)
+    @classmethod
+    def create_from_args(cls, args):
+        return JLinkBinaryRunner(args.device, gdbserver=args.gdbserver,
+                                 iface=args.iface, elf_name=args.kernel_elf,
+                                 gdb=args.gdb, gdb_port=args.gdb_port,
+                                 tui=args.tui, debug=args.verbose)
 
     def print_gdbserver_message(self):
         print('JLink GDB server running on port {}'.format(self.gdb_port))

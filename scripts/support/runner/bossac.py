@@ -4,11 +4,9 @@
 
 '''bossac-specific runner (flash only) for Atmel SAM microcontrollers.'''
 
-from os import path
-import os
 import platform
 
-from .core import ZephyrBinaryRunner, RunnerCaps, get_env_or_bail
+from .core import ZephyrBinaryRunner, RunnerCaps
 
 DEFAULT_BOSSAC_PORT = '/dev/ttyACM0'
 
@@ -31,25 +29,17 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
     def capabilities(cls):
         return RunnerCaps(commands={'flash'})
 
-    def create_from_env(command, debug):
-        '''Create flasher from environment.
+    @classmethod
+    def do_add_parser(cls, parser):
+        parser.add_argument('--bossac', default='bossac',
+                            help='path to bossac, default is bossac')
+        parser.add_argument('--bossac-port', default='/dev/ttyACM0',
+                            help='serial port to use, default is /dev/ttyACM0')
 
-        Required:
-
-        - O: build output directory
-        - KERNEL_BIN_NAME: name of kernel binary
-
-        Optional:
-
-        - BOSSAC: path to bossac, default is bossac
-        - BOSSAC_PORT: serial port to use, default is /dev/ttyACM0
-        '''
-        bin_name = path.join(get_env_or_bail('O'),
-                             get_env_or_bail('KERNEL_BIN_NAME'))
-        bossac = os.environ.get('BOSSAC', 'bossac')
-        port = os.environ.get('BOSSAC_PORT', DEFAULT_BOSSAC_PORT)
-        return BossacBinaryRunner(bin_name, bossac=bossac, port=port,
-                                  debug=debug)
+    @classmethod
+    def create_from_args(command, args):
+        return BossacBinaryRunner(args.kernel_bin, bossac=args.bossac,
+                                  port=args.bossac_port, debug=args.verbose)
 
     def do_run(self, command, **kwargs):
         if platform.system() != 'Linux':

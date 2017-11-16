@@ -5,10 +5,8 @@
 '''Runner for openocd.'''
 
 from os import path
-import os
-import shlex
 
-from .core import ZephyrBinaryRunner, get_env_or_bail, get_env_strip_or
+from .core import ZephyrBinaryRunner
 
 DEFAULT_OPENOCD_TCL_PORT = 6333
 DEFAULT_OPENOCD_TELNET_PORT = 4444
@@ -19,10 +17,9 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for openocd.'''
 
     def __init__(self, openocd_config,
-                 openocd='openocd', default_path=None,
-                 bin_name=None, elf_name=None,
-                 load_cmd=None, verify_cmd=None, pre_cmd=None, post_cmd=None,
-                 extra_init=None,
+                 openocd='openocd', search=None,
+                 elf_name=None,
+                 pre_cmd=None, load_cmd=None, verify_cmd=None, post_cmd=None,
                  tcl_port=DEFAULT_OPENOCD_TCL_PORT,
                  telnet_port=DEFAULT_OPENOCD_TELNET_PORT,
                  gdb_port=DEFAULT_OPENOCD_GDB_PORT,
@@ -31,108 +28,62 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
         self.openocd_config = openocd_config
 
         search_args = []
-        if default_path is not None:
-            search_args = ['-s', default_path]
+        if search is not None:
+            search_args = ['-s', search]
         self.openocd_cmd = [openocd] + search_args
-        self.bin_name = bin_name
         self.elf_name = elf_name
         self.load_cmd = load_cmd
         self.verify_cmd = verify_cmd
         self.pre_cmd = pre_cmd
         self.post_cmd = post_cmd
-        self.extra_init = extra_init if extra_init is not None else []
         self.tcl_port = tcl_port
         self.telnet_port = telnet_port
         self.gdb_port = gdb_port
         self.gdb_cmd = [gdb] if gdb is not None else None
-        self.tui_arg = [tui] if tui is not None else []
+        self.tui_arg = ['-tui'] if tui else []
 
     @classmethod
     def name(cls):
         return 'openocd'
 
-    def create_from_env(command, debug):
-        '''Create runner from environment.
+    @classmethod
+    def do_add_parser(cls, parser):
+        # Options for flashing:
+        parser.add_argument('--cmd-pre-load',
+                            help='Command to run before flashing')
+        parser.add_argument('--cmd-load',
+                            help='''Command to load/flash binary
+                            (required when flashing)''')
+        parser.add_argument('--cmd-verify',
+                            help='''Command to verify flashed binary''')
+        parser.add_argument('--cmd-post-verify',
+                            help='Command to run after verification')
 
-        Required:
+        # Options for debugging:
+        parser.add_argument('--tui', default=False, action='store_true',
+                            help='if given, GDB uses -tui')
+        parser.add_argument('--tcl-port', default=DEFAULT_OPENOCD_TCL_PORT,
+                            help='openocd TCL port, defaults to 6333')
+        parser.add_argument('--telnet-port',
+                            default=DEFAULT_OPENOCD_TELNET_PORT,
+                            help='openocd telnet port, defaults to 4444')
+        parser.add_argument('--gdb-port', default=DEFAULT_OPENOCD_GDB_PORT,
+                            help='openocd gdb port, defaults to 3333')
 
-        - ZEPHYR_BASE: zephyr Git repository base directory
-        - BOARD_DIR: directory of board definition
+    @classmethod
+    def create_from_args(cls, args):
+        openocd_config = path.join(args.board_dir, 'support', 'openocd.cfg')
 
-        Optional:
-
-        - OPENOCD: path to openocd, defaults to openocd
-        - OPENOCD_DEFAULT_PATH: openocd search path to use
-
-        Required for 'flash':
-
-        - O: build output directory
-        - KERNEL_BIN_NAME: zephyr kernel binary
-        - OPENOCD_LOAD_CMD: command to load binary into flash
-        - OPENOCD_VERIFY_CMD: command to verify flash executed correctly
-
-        Optional for 'flash':
-
-        - OPENOCD_PRE_CMD: command to run before any others
-        - OPENOCD_POST_CMD: command to run after verifying flash write
-
-        Required for 'debug':
-
-        - GDB: GDB executable
-        - O: build output directory
-        - KERNEL_ELF_NAME: zephyr kernel binary, ELF format
-
-        Optional for 'debug':
-
-        - TUI: one additional argument to GDB (e.g. -tui)
-        - OPENOCD_EXTRA_INIT: additional arguments to pass to openocd
-        - TCL_PORT: openocd TCL port, defaults to 6333
-        - TELNET_PORT: openocd telnet port, defaults to 4444
-        - GDB_PORT: openocd gdb port, defaults to 3333
-        '''
-        zephyr_base = get_env_or_bail('ZEPHYR_BASE')
-        board_dir = get_env_or_bail('BOARD_DIR')
-        openocd_config = path.join(board_dir, 'support', 'openocd.cfg')
-
-        openocd = os.environ.get('OPENOCD', 'openocd')
-        default_path = os.environ.get('OPENOCD_DEFAULT_PATH', None)
-
-        o = os.environ.get('O', None)
-        bin_ = os.environ.get('KERNEL_BIN_NAME', None)
-        elf = os.environ.get('KERNEL_ELF_NAME', None)
-        bin_name = None
-        elf_name = None
-        if o is not None:
-            if bin_ is not None:
-                bin_name = path.join(o, bin_)
-            if elf is not None:
-                elf_name = path.join(o, elf)
-
-        load_cmd = get_env_strip_or('OPENOCD_LOAD_CMD', '"', None)
-        verify_cmd = get_env_strip_or('OPENOCD_VERIFY_CMD', '"', None)
-        pre_cmd = get_env_strip_or('OPENOCD_PRE_CMD', '"', None)
-        post_cmd = get_env_strip_or('OPENOCD_POST_CMD', '"', None)
-
-        gdb = os.environ.get('GDB', None)
-        tui = os.environ.get('TUI', None)
-        extra_init = os.environ.get('OPENOCD_EXTRA_INIT', None)
-        if extra_init is not None:
-            extra_init = shlex.split(extra_init)
-        tcl_port = int(os.environ.get('TCL_PORT',
-                                      str(DEFAULT_OPENOCD_TCL_PORT)))
-        telnet_port = int(os.environ.get('TELNET_PORT',
-                                         str(DEFAULT_OPENOCD_TELNET_PORT)))
-        gdb_port = int(os.environ.get('GDB_PORT',
-                                      str(DEFAULT_OPENOCD_GDB_PORT)))
-
-        return OpenOcdBinaryRunner(openocd_config,
-                                   openocd=openocd, default_path=default_path,
-                                   bin_name=bin_name, elf_name=elf_name,
-                                   load_cmd=load_cmd, verify_cmd=verify_cmd,
-                                   pre_cmd=pre_cmd, post_cmd=post_cmd,
-                                   extra_init=extra_init, tcl_port=tcl_port,
-                                   telnet_port=telnet_port, gdb_port=gdb_port,
-                                   gdb=gdb, tui=tui, debug=debug)
+        return OpenOcdBinaryRunner(
+            openocd_config,
+            openocd=args.openocd, search=args.openocd_search,
+            elf_name=args.kernel_elf,
+            pre_cmd=args.cmd_pre_load,
+            load_cmd=args.cmd_load, verify_cmd=args.cmd_verify,
+            post_cmd=args.cmd_post_verify,
+            tcl_port=args.tcl_port, telnet_port=args.telnet_port,
+            gdb_port=args.gdb_port, gdb=args.gdb, tui=args.tui,
+            debug=args.verbose)
 
     def do_run(self, command, **kwargs):
         if command == 'flash':
@@ -143,8 +94,6 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             self.do_debugserver(**kwargs)
 
     def do_flash(self, **kwargs):
-        if self.bin_name is None:
-            raise ValueError('Cannot flash; binary name is missing')
         if self.load_cmd is None:
             raise ValueError('Cannot flash; load command is missing')
         if self.verify_cmd is None:
@@ -179,9 +128,8 @@ class OpenOcdBinaryRunner(ZephyrBinaryRunner):
             raise ValueError('Cannot debug; no .elf specified')
 
         server_cmd = (self.openocd_cmd +
-                      ['-f', self.openocd_config] +
-                      self.extra_init +
-                      ['-c', 'tcl_port {}'.format(self.tcl_port),
+                      ['-f', self.openocd_config,
+                       '-c', 'tcl_port {}'.format(self.tcl_port),
                        '-c', 'telnet_port {}'.format(self.telnet_port),
                        '-c', 'gdb_port {}'.format(self.gdb_port),
                        '-c', 'init',

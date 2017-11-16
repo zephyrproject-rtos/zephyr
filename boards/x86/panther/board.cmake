@@ -1,12 +1,4 @@
-set(BOARD_FLASH_RUNNER openocd)
-set(BOARD_DEBUG_RUNNER openocd)
-
-set(OPENOCD_PRE_CMD "targets 1")
-set(OPENOCD_LOAD_CMD "load_image     ${PROJECT_BINARY_DIR}/${KERNEL_BIN_NAME} ${CONFIG_PHYS_LOAD_ADDR}")
-set(OPENOCD_VERIFY_CMD "verify_image ${PROJECT_BINARY_DIR}/${KERNEL_BIN_NAME} ${CONFIG_PHYS_LOAD_ADDR}")
-
-set_property(GLOBAL APPEND PROPERTY FLASH_SCRIPT_ENV_VARS
-  OPENOCD_PRE_CMD
-  OPENOCD_LOAD_CMD
-  OPENOCD_VERIFY_CMD
-  )
+set(PRE_LOAD targets 1)
+board_runner_args(openocd "--cmd-pre-load=\"${PRE_LOAD}\"")
+set(OPENOCD_ADDRESS ${CONFIG_PHYS_LOAD_ADDR})
+include($ENV{ZEPHYR_BASE}/boards/common/openocd.board.cmake)
