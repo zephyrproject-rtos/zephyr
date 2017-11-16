@@ -2645,6 +2645,14 @@ static void net_rpl_process_dio(struct net_if *iface,
 		net_rpl_reset_dio_timer(instance);
 	}
 
+	if (instance->current_dag && instance->current_dag->preferred_parent) {
+		if (instance->current_dag->preferred_parent->rank <=
+		    dio->rank) {
+			/* Not a preferable parent. */
+			return;
+		}
+	}
+
 	/* Prefix Information Option treated to add new prefix */
 	if (dio->prefix_info.length != 0) {
 		if (dio->prefix_info.flags & NET_ICMPV6_RA_FLAG_AUTONOMOUS) {
