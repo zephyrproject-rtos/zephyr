@@ -224,6 +224,79 @@ static void mod_app_status(struct bt_mesh_model *model,
 	k_sem_give(&cli->op_sync);
 }
 
+struct mod_pub_param {
+	u16_t                       mod_id;
+	u16_t                       cid;
+	u16_t                       elem_addr;
+	u8_t                       *status;
+	struct bt_mesh_cfg_mod_pub *pub;
+};
+
+static void mod_pub_status(struct bt_mesh_model *model,
+			   struct bt_mesh_msg_ctx *ctx,
+			   struct net_buf_simple *buf)
+{
+	u16_t mod_id, cid, elem_addr;
+	struct mod_pub_param *param;
+	u8_t status;
+
+	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
+	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
+	       bt_hex(buf->data, buf->len));
+
+	if (cli->op_pending != OP_MOD_PUB_STATUS) {
+		BT_WARN("Unexpected Model Pub Status message");
+		return;
+	}
+
+	param = cli->op_param;
+	if (param->cid != CID_NVAL) {
+		if (buf->len < 14) {
+			BT_WARN("Unexpected Mod Pub Status with SIG Model");
+			return;
+		}
+
+		cid = sys_get_le16(&buf->data[10]);
+		mod_id = sys_get_le16(&buf->data[12]);
+	} else {
+		if (buf->len > 12) {
+			BT_WARN("Unexpected Mod Pub Status with Vendor Model");
+			return;
+		}
+
+		cid = CID_NVAL;
+		mod_id = sys_get_le16(&buf->data[10]);
+	}
+
+	if (mod_id != param->mod_id || cid != param->cid) {
+		BT_WARN("Mod Pub Model ID or Company ID mismatch");
+		return;
+	}
+
+	status = net_buf_simple_pull_u8(buf);
+
+	elem_addr = net_buf_simple_pull_le16(buf);
+	if (elem_addr != param->elem_addr) {
+		BT_WARN("Model Pub Status for unexpected element (0x%04x)",
+			elem_addr);
+		return;
+	}
+
+	*param->status = status;
+
+	if (param->pub) {
+		param->pub->addr = net_buf_simple_pull_le16(buf);
+		param->pub->app_idx = net_buf_simple_pull_le16(buf);
+		param->pub->cred_flag = (param->pub->app_idx & BIT(12));
+		param->pub->app_idx &= BIT_MASK(12);
+		param->pub->ttl = net_buf_simple_pull_u8(buf);
+		param->pub->period = net_buf_simple_pull_u8(buf);
+		param->pub->transmit = net_buf_simple_pull_u8(buf);
+	}
+
+	k_sem_give(&cli->op_sync);
+}
+
 struct mod_sub_param {
 	u8_t *status;
 	u16_t elem_addr;
@@ -360,6 +433,7 @@ const struct bt_mesh_model_op bt_mesh_cfg_cli_op[] = {
 	{ OP_RELAY_STATUS,           2,   relay_status },
 	{ OP_APP_KEY_STATUS,         4,   app_key_status },
 	{ OP_MOD_APP_STATUS,         7,   mod_app_status },
+	{ OP_MOD_PUB_STATUS,         12,  mod_pub_status },
 	{ OP_MOD_SUB_STATUS,         7,   mod_sub_status },
 	{ OP_HEARTBEAT_SUB_STATUS,   9,   hb_sub_status },
 	{ OP_HEARTBEAT_PUB_STATUS,   10,  hb_pub_status },
@@ -821,6 +895,163 @@ int bt_mesh_cfg_mod_sub_add_vnd(u16_t net_idx, u16_t addr, u16_t elem_addr,
 
 	return mod_sub_add(net_idx, addr, elem_addr, sub_addr, mod_id, cid,
 			   status);
+}
+
+static int mod_pub_get(u16_t net_idx, u16_t addr, u16_t elem_addr,
+		       u16_t mod_id, u16_t cid,
+		       struct bt_mesh_cfg_mod_pub *pub, u8_t *status)
+{
+	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 6 + 4);
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = net_idx,
+		.app_idx = BT_MESH_KEY_DEV,
+		.addr = addr,
+		.send_ttl = BT_MESH_TTL_DEFAULT,
+	};
+	struct mod_pub_param param = {
+		.mod_id = mod_id,
+		.cid = cid,
+		.elem_addr = elem_addr,
+		.status = status,
+		.pub = pub,
+	};
+	int err;
+
+	err = check_cli();
+	if (err) {
+		return err;
+	}
+
+	bt_mesh_model_msg_init(msg, OP_MOD_PUB_GET);
+
+	net_buf_simple_add_le16(msg, elem_addr);
+
+	if (cid != CID_NVAL) {
+		net_buf_simple_add_le16(msg, cid);
+	}
+
+	net_buf_simple_add_le16(msg, mod_id);
+
+	err = bt_mesh_model_send(cli->model, &ctx, msg, NULL, NULL);
+	if (err) {
+		BT_ERR("model_send() failed (err %d)", err);
+		return err;
+	}
+
+	if (!status) {
+		return 0;
+	}
+
+	cli->op_param = &param;
+	cli->op_pending = OP_MOD_PUB_STATUS;
+
+	err = k_sem_take(&cli->op_sync, msg_timeout);
+
+	cli->op_pending = 0;
+	cli->op_param = NULL;
+
+	return err;
+}
+
+int bt_mesh_cfg_mod_pub_get(u16_t net_idx, u16_t addr, u16_t elem_addr,
+			    u16_t mod_id, struct bt_mesh_cfg_mod_pub *pub,
+			    u8_t *status)
+{
+	return mod_pub_get(net_idx, addr, elem_addr, mod_id, CID_NVAL,
+			   pub, status);
+}
+
+int bt_mesh_cfg_mod_pub_get_vnd(u16_t net_idx, u16_t addr, u16_t elem_addr,
+				u16_t mod_id, u16_t cid,
+				struct bt_mesh_cfg_mod_pub *pub, u8_t *status)
+{
+	if (cid == CID_NVAL) {
+		return -EINVAL;
+	}
+
+	return mod_pub_get(net_idx, addr, elem_addr, mod_id, CID_NVAL,
+			   pub, status);
+}
+
+static int mod_pub_set(u16_t net_idx, u16_t addr, u16_t elem_addr,
+		       u16_t mod_id, u16_t cid,
+		       struct bt_mesh_cfg_mod_pub *pub, u8_t *status)
+{
+	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 13 + 4);
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = net_idx,
+		.app_idx = BT_MESH_KEY_DEV,
+		.addr = addr,
+		.send_ttl = BT_MESH_TTL_DEFAULT,
+	};
+	struct mod_pub_param param = {
+		.mod_id = mod_id,
+		.cid = cid,
+		.elem_addr = elem_addr,
+		.status = status,
+		.pub = pub,
+	};
+	int err;
+
+	err = check_cli();
+	if (err) {
+		return err;
+	}
+
+	bt_mesh_model_msg_init(msg, OP_MOD_PUB_SET);
+
+	net_buf_simple_add_le16(msg, elem_addr);
+	net_buf_simple_add_le16(msg, pub->addr);
+	net_buf_simple_add_le16(msg, (pub->app_idx & (pub->cred_flag << 12)));
+	net_buf_simple_add_u8(msg, pub->ttl);
+	net_buf_simple_add_u8(msg, pub->period);
+	net_buf_simple_add_u8(msg, pub->transmit);
+
+	if (cid != CID_NVAL) {
+		net_buf_simple_add_le16(msg, cid);
+	}
+
+	net_buf_simple_add_le16(msg, mod_id);
+
+	err = bt_mesh_model_send(cli->model, &ctx, msg, NULL, NULL);
+	if (err) {
+		BT_ERR("model_send() failed (err %d)", err);
+		return err;
+	}
+
+	if (!status) {
+		return 0;
+	}
+
+	cli->op_param = &param;
+	cli->op_pending = OP_MOD_PUB_STATUS;
+
+	err = k_sem_take(&cli->op_sync, msg_timeout);
+
+	cli->op_pending = 0;
+	cli->op_param = NULL;
+
+	return err;
+}
+
+int bt_mesh_cfg_mod_pub_set(u16_t net_idx, u16_t addr, u16_t elem_addr,
+			    u16_t mod_id, struct bt_mesh_cfg_mod_pub *pub,
+			    u8_t *status)
+{
+	return mod_pub_set(net_idx, addr, elem_addr, mod_id, CID_NVAL,
+			   pub, status);
+}
+
+int bt_mesh_cfg_mod_pub_set_vnd(u16_t net_idx, u16_t addr, u16_t elem_addr,
+				u16_t mod_id, u16_t cid,
+				struct bt_mesh_cfg_mod_pub *pub, u8_t *status)
+{
+	if (cid == CID_NVAL) {
+		return -EINVAL;
+	}
+
+	return mod_pub_set(net_idx, addr, elem_addr, mod_id, CID_NVAL,
+			   pub, status);
 }
 
 int bt_mesh_cfg_hb_sub_set(u16_t net_idx, u16_t addr, u16_t src, u16_t dst,

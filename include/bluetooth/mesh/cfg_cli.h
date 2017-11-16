@@ -69,6 +69,31 @@ int bt_mesh_cfg_mod_app_bind_vnd(u16_t net_idx, u16_t addr, u16_t elem_addr,
 				 u16_t mod_app_idx, u16_t mod_id, u16_t cid,
 				 u8_t *status);
 
+struct bt_mesh_cfg_mod_pub {
+	u16_t  addr;
+	u16_t  app_idx;
+	bool   cred_flag;
+	u8_t   ttl;
+	u8_t   period;
+	u8_t   transmit;
+};
+
+int bt_mesh_cfg_mod_pub_get(u16_t net_idx, u16_t addr, u16_t elem_addr,
+			    u16_t mod_id, struct bt_mesh_cfg_mod_pub *pub,
+			    u8_t *status);
+
+int bt_mesh_cfg_mod_pub_get_vnd(u16_t net_idx, u16_t addr, u16_t elem_addr,
+				u16_t mod_id, u16_t cid,
+				struct bt_mesh_cfg_mod_pub *pub, u8_t *status);
+
+int bt_mesh_cfg_mod_pub_set(u16_t net_idx, u16_t addr, u16_t elem_addr,
+			    u16_t mod_id, struct bt_mesh_cfg_mod_pub *pub,
+			    u8_t *status);
+
+int bt_mesh_cfg_mod_pub_set_vnd(u16_t net_idx, u16_t addr, u16_t elem_addr,
+				u16_t mod_id, u16_t cid,
+				struct bt_mesh_cfg_mod_pub *pub, u8_t *status);
+
 int bt_mesh_cfg_mod_sub_add(u16_t net_idx, u16_t addr, u16_t elem_addr,
 			    u16_t sub_addr, u16_t mod_id, u8_t *status);
 
