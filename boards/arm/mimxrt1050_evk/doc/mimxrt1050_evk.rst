@@ -147,29 +147,30 @@ The Segger J-Link tools are the default for this board, therefore it is not
 necessary to set ``OPENSDA_FW=jlink`` explicitly when you invoke ``make
 debug``.
 
+With these mechanisms, applications for the ``mimxrt1050_evk`` board
+configuration can be built and debugged in the usual way (see
+:ref:`build_an_application` and :ref:`application_run` for more details).
+
 The pyOCD tools do not yet support this SoC.
 
 Flashing
 ========
 
 The Segger J-Link firmware does not support command line flashing, therefore
-the ``make flash`` build target is not supported.
+the usual ``flash`` build system target is not supported.
 
 Debugging
 =========
 
 This example uses the :ref:`hello_world` sample with the
-:ref:`nxp_opensda_jlink` tools. Use the ``make debug`` build target to build
-your Zephyr application, invoke the J-Link GDB server, attach a GDB client, and
-program your Zephyr application to flash. The following commands will do all
-that, and leave you at a gdb prompt.
+:ref:`nxp_opensda_jlink` tools. Run the following to build your Zephyr
+application, invoke the J-Link GDB server, attach a GDB client, and program
+your Zephyr application to flash. It will leave you at a GDB prompt.
 
-.. code-block:: console
-
-   $ cd <zephyr_root_path>
-   $ . zephyr-env.sh
-   $ cd samples/hello_world/
-   $ make BOARD=mimxrt1050_evk debug
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: mimxrt1050_evk
+   :goals: debug
 
 
 .. _MIMXRT1050-EVK Website:
