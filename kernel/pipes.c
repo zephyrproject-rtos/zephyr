@@ -143,11 +143,15 @@ void _impl_k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
 #ifdef CONFIG_USERSPACE
 _SYSCALL_HANDLER(k_pipe_init, pipe, buffer, size)
 {
+	int key;
+
 	_SYSCALL_OBJ_INIT(pipe, K_OBJ_PIPE);
 	_SYSCALL_MEMORY_WRITE(buffer, size);
 
+	key = irq_lock();
 	_impl_k_pipe_init((struct k_pipe *)pipe, (unsigned char *)buffer,
 			  size);
+	irq_unlock(key);
 	return 0;
 }
 #endif

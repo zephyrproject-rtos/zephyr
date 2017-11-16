@@ -84,8 +84,12 @@ void _impl_k_mutex_init(struct k_mutex *mutex)
 #ifdef CONFIG_USERSPACE
 _SYSCALL_HANDLER(k_mutex_init, mutex)
 {
+	int key;
+
 	_SYSCALL_OBJ_INIT(mutex, K_OBJ_MUTEX);
+	key = irq_lock();
 	_impl_k_mutex_init((struct k_mutex *)mutex);
+	irq_unlock(key);
 
 	return 0;
 }

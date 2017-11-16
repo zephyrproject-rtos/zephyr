@@ -313,13 +313,15 @@ k_tid_t _impl_k_thread_create(struct k_thread *new_thread,
 _SYSCALL_HANDLER(k_thread_create,
 		 new_thread_p, stack_p, stack_size, entry, p1, more_args)
 {
-	int prio;
+	int prio, key;
 	u32_t options, delay, guard_size, total_size;
 	struct _k_object *stack_object;
 	struct k_thread *new_thread = (struct k_thread *)new_thread_p;
 	volatile struct _syscall_10_args *margs =
 		(volatile struct _syscall_10_args *)more_args;
 	k_thread_stack_t *stack = (k_thread_stack_t *)stack_p;
+
+	key = irq_lock();
 
 	/* The thread and stack objects *must* be in an uninitialized state */
 	_SYSCALL_OBJ_NEVER_INIT(new_thread, K_OBJ_THREAD);
@@ -345,13 +347,9 @@ _SYSCALL_HANDLER(k_thread_create,
 	/* Verify the struct containing args 6-10 */
 	_SYSCALL_MEMORY_READ(margs, sizeof(*margs));
 
-	/* Stash struct arguments in local variables to prevent switcheroo
-	 * attacks
-	 */
 	prio = margs->arg8;
 	options = margs->arg9;
 	delay = margs->arg10;
-	compiler_barrier();
 
 	/* User threads may only create other user threads and they can't
 	 * be marked as essential
@@ -369,6 +367,7 @@ _SYSCALL_HANDLER(k_thread_create,
 			  (k_thread_entry_t)entry, (void *)p1,
 			  (void *)margs->arg6, (void *)margs->arg7, prio,
 			  options);
+	irq_unlock(key);
 
 	if (delay != K_FOREVER) {
 		schedule_new_thread(new_thread, delay);

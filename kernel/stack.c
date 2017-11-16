@@ -59,11 +59,16 @@ void _impl_k_stack_init(struct k_stack *stack, u32_t *buffer,
 #ifdef CONFIG_USERSPACE
 _SYSCALL_HANDLER(k_stack_init, stack, buffer, num_entries)
 {
+	int key;
+
 	_SYSCALL_OBJ_INIT(stack, K_OBJ_STACK);
 	_SYSCALL_MEMORY_ARRAY_WRITE(buffer, num_entries, sizeof(u32_t));
 
+	key = irq_lock();
 	_impl_k_stack_init((struct k_stack *)stack, (u32_t *)buffer,
 			   num_entries);
+	irq_unlock(key);
+
 	return 0;
 }
 #endif

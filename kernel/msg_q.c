@@ -66,11 +66,15 @@ void _impl_k_msgq_init(struct k_msgq *q, char *buffer,
 #ifdef CONFIG_USERSPACE
 _SYSCALL_HANDLER(k_msgq_init, q, buffer, msg_size, max_msgs)
 {
+	int key;
+
 	_SYSCALL_OBJ_INIT(q, K_OBJ_MSGQ);
 	_SYSCALL_MEMORY_ARRAY_WRITE(buffer, max_msgs, msg_size);
 
+	key = irq_lock();
 	_impl_k_msgq_init((struct k_msgq *)q, (char *)buffer, msg_size,
 			  max_msgs);
+	irq_unlock(key);
 	return 0;
 }
 #endif
