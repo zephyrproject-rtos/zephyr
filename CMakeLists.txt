@@ -702,7 +702,7 @@ add_custom_command(
   COMMAND ${CMAKE_OBJDUMP} -S                                              ${KERNEL_ELF_NAME} >  ${KERNEL_LST_NAME}
   COMMAND ${CMAKE_READELF} -e                                              ${KERNEL_ELF_NAME} >  ${KERNEL_STAT_NAME}
   COMMAND ${CMAKE_STRIP}   --strip-all                                     ${KERNEL_ELF_NAME} -o ${KERNEL_STRIP_NAME}
-  COMMENT "Generating zephyr.{hex,bin,lst,strip,stat,s19} from zephyr.elf for board: ${BOARD}"
+  COMMENT "Generating zephyr.{hex,bin,lst,strip,stat,s19} from zephyr.elf for board: ${CONFIG_META_BOARD_NAME}"
   # NB: COMMENT only works for some CMake-Generators
 )
 
