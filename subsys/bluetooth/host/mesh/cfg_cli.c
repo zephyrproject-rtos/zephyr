@@ -389,13 +389,8 @@ static void hb_sub_status(struct bt_mesh_model *model,
 }
 
 struct hb_pub_param {
-	u8_t   *status;
-	u16_t  *dst;
-	u8_t   *count;
-	u8_t   *period;
-	u8_t   *ttl;
-	u16_t  *feat;
-	u16_t  *net_idx;
+	u8_t *status;
+	struct bt_mesh_cfg_hb_pub *pub;
 };
 
 static void hb_pub_status(struct bt_mesh_model *model,
@@ -413,13 +408,18 @@ static void hb_pub_status(struct bt_mesh_model *model,
 		return;
 	}
 
+	param = cli->op_param;
+
 	*param->status = net_buf_simple_pull_u8(buf);
-	*param->dst = net_buf_simple_pull_le16(buf);
-	*param->count = net_buf_simple_pull_u8(buf);
-	*param->period = net_buf_simple_pull_u8(buf);
-	*param->ttl = net_buf_simple_pull_u8(buf);
-	*param->feat = net_buf_simple_pull_u8(buf);
-	*param->net_idx = net_buf_simple_pull_u8(buf);
+
+	if (param->pub) {
+		param->pub->dst = net_buf_simple_pull_le16(buf);
+		param->pub->count = net_buf_simple_pull_u8(buf);
+		param->pub->period = net_buf_simple_pull_u8(buf);
+		param->pub->ttl = net_buf_simple_pull_u8(buf);
+		param->pub->feat = net_buf_simple_pull_u8(buf);
+		param->pub->net_idx = net_buf_simple_pull_u8(buf);
+	}
 
 	k_sem_give(&cli->op_sync);
 }
@@ -1150,9 +1150,8 @@ int bt_mesh_cfg_hb_sub_get(u16_t net_idx, u16_t addr, u16_t *src, u16_t *dst,
 	return err;
 }
 
-int bt_mesh_cfg_hb_pub_set(u16_t net_idx, u16_t addr, u16_t pub_dst,
-			   u8_t count, u8_t period, u8_t ttl, u16_t feat,
-			   u16_t pub_net_idx, u8_t *status)
+int bt_mesh_cfg_hb_pub_set(u16_t net_idx, u16_t addr,
+			   const struct bt_mesh_cfg_hb_pub *pub, u8_t *status)
 {
 	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 9 + 4);
 	struct bt_mesh_msg_ctx ctx = {
@@ -1163,12 +1162,6 @@ int bt_mesh_cfg_hb_pub_set(u16_t net_idx, u16_t addr, u16_t pub_dst,
 	};
 	struct hb_pub_param param = {
 		.status = status,
-		.dst = &pub_dst,
-		.count = &count,
-		.period = &period,
-		.ttl = &ttl,
-		.feat = &feat,
-		.net_idx = &pub_net_idx,
 	};
 	int err;
 
@@ -1178,12 +1171,12 @@ int bt_mesh_cfg_hb_pub_set(u16_t net_idx, u16_t addr, u16_t pub_dst,
 	}
 
 	bt_mesh_model_msg_init(msg, OP_HEARTBEAT_PUB_SET);
-	net_buf_simple_add_le16(msg, pub_dst);
-	net_buf_simple_add_u8(msg, count);
-	net_buf_simple_add_u8(msg, period);
-	net_buf_simple_add_u8(msg, ttl);
-	net_buf_simple_add_le16(msg, feat);
-	net_buf_simple_add_le16(msg, pub_net_idx);
+	net_buf_simple_add_le16(msg, pub->dst);
+	net_buf_simple_add_u8(msg, pub->count);
+	net_buf_simple_add_u8(msg, pub->period);
+	net_buf_simple_add_u8(msg, pub->ttl);
+	net_buf_simple_add_le16(msg, pub->feat);
+	net_buf_simple_add_le16(msg, pub->net_idx);
 
 	err = bt_mesh_model_send(cli->model, &ctx, msg, NULL, NULL);
 	if (err) {
@@ -1206,9 +1199,8 @@ int bt_mesh_cfg_hb_pub_set(u16_t net_idx, u16_t addr, u16_t pub_dst,
 	return err;
 }
 
-int bt_mesh_cfg_hb_pub_get(u16_t net_idx, u16_t addr, u16_t *pub_dst,
-			   u8_t *count, u8_t *period, u8_t *ttl, u16_t *feat,
-			   u16_t *pub_net_idx, u8_t *status)
+int bt_mesh_cfg_hb_pub_get(u16_t net_idx, u16_t addr,
+			   struct bt_mesh_cfg_hb_pub *pub, u8_t *status)
 {
 	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 0 + 4);
 	struct bt_mesh_msg_ctx ctx = {
@@ -1219,12 +1211,7 @@ int bt_mesh_cfg_hb_pub_get(u16_t net_idx, u16_t addr, u16_t *pub_dst,
 	};
 	struct hb_pub_param param = {
 		.status = status,
-		.dst = pub_dst,
-		.count = count,
-		.period = period,
-		.ttl = ttl,
-		.feat = feat,
-		.net_idx = pub_net_idx,
+		.pub = pub,
 	};
 	int err;
 

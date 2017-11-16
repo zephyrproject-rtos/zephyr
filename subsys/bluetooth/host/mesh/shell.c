@@ -866,13 +866,11 @@ static int cmd_hb_sub(int argc, char *argv[])
 
 static int hb_pub_get(int argc, char *argv[])
 {
-	u8_t status, count, period, ttl;
-	u16_t pub_dst, feat, pub_net_idx;
+	struct bt_mesh_cfg_hb_pub pub;
+	u8_t status;
 	int err;
 
-	err = bt_mesh_cfg_hb_pub_get(net.net_idx, net.dst, &pub_dst, &count,
-				     &period, &ttl, &feat, &pub_net_idx,
-				     &status);
+	err = bt_mesh_cfg_hb_pub_get(net.net_idx, net.dst, &pub, &status);
 	if (err) {
 		printk("Heartbeat Publication Get failed (err %d)\n", err);
 		return 0;
@@ -886,28 +884,27 @@ static int hb_pub_get(int argc, char *argv[])
 
 	printk("Heartbeat publication:\n");
 	printk("\tdst 0x%04x count 0x%02x period 0x%02x\n",
-	       pub_dst, count, period);
+	       pub.dst, pub.count, pub.period);
 	printk("\tttl 0x%02x feat 0x%04x net_idx 0x%04x\n",
-	       ttl, feat, pub_net_idx);
+	       pub.ttl, pub.feat, pub.net_idx);
 
 	return 0;
 }
 
 static int hb_pub_set(int argc, char *argv[])
 {
-	u8_t status, count, period, ttl;
-	u16_t pub_dst, feat, pub_net_idx;
+	struct bt_mesh_cfg_hb_pub pub;
+	u8_t status;
 	int err;
 
-	pub_dst = strtoul(argv[1], NULL, 0);
-	count = strtoul(argv[2], NULL, 0);
-	period = strtoul(argv[3], NULL, 0);
-	ttl = strtoul(argv[4], NULL, 0);
-	feat = strtoul(argv[5], NULL, 0);
-	pub_net_idx = strtoul(argv[5], NULL, 0);
+	pub.dst = strtoul(argv[1], NULL, 0);
+	pub.count = strtoul(argv[2], NULL, 0);
+	pub.period = strtoul(argv[3], NULL, 0);
+	pub.ttl = strtoul(argv[4], NULL, 0);
+	pub.feat = strtoul(argv[5], NULL, 0);
+	pub.net_idx = strtoul(argv[5], NULL, 0);
 
-	err = bt_mesh_cfg_hb_pub_set(net.net_idx, net.dst, pub_dst, count,
-				     period, ttl, feat, pub_net_idx, &status);
+	err = bt_mesh_cfg_hb_pub_set(net.net_idx, net.dst, &pub, &status);
 	if (err) {
 		printk("Heartbeat Publication Set failed (err %d)\n", err);
 		return 0;

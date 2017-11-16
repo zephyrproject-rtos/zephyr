@@ -159,9 +159,19 @@ static void configure(void)
 				    MOD_INTEL, CID_INTEL, NULL);
 
 #if defined(NODE_ADDR) && NODE_ADDR == PROV_ADDR
-	bt_mesh_cfg_hb_pub_set(net_idx, addr, GROUP_ADDR, 0xff, 0x05, 0x07,
-			       0, net_idx, NULL);
-	printk("Publishing heartbeat messages\n");
+	{
+		struct bt_mesh_cfg_hb_pub pub = {
+			.dst = GROUP_ADDR,
+			.count = 0xff,
+			.period = 0x05,
+			.ttl = 0x07,
+			.feat = 0,
+			.net_idx = net_idx,
+		};
+
+		bt_mesh_cfg_hb_pub_set(net_idx, addr, &pub, NULL);
+		printk("Publishing heartbeat messages\n");
+	}
 #else
 	/* Heartbeat subscription */
 	bt_mesh_cfg_hb_sub_set(net_idx, addr, PROV_ADDR, GROUP_ADDR, 0x10,
