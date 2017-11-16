@@ -440,9 +440,14 @@ void bt_mesh_model_msg_init(struct net_buf_simple *msg, u32_t opcode)
 	net_buf_simple_add_le16(msg, opcode & 0xffff);
 }
 
+/* Send using Friendship credentials */
+#define FRIEND_CRED   BIT(0)
+/* Assume AppKey binding to be implicit */
+#define IMPLICIT_BIND BIT(1)
+
 static int model_send(struct bt_mesh_model *model,
 		      struct bt_mesh_msg_ctx *ctx,
-		      bool friend_cred, struct net_buf_simple *msg,
+		      int flags, struct net_buf_simple *msg,
 		      bt_mesh_cb_t cb, void *cb_data)
 {
 	struct bt_mesh_net_tx tx = {
@@ -450,7 +455,7 @@ static int model_send(struct bt_mesh_model *model,
 		.ctx = ctx,
 		.src = model->elem->addr,
 		.xmit = bt_mesh_net_transmit_get(),
-		.friend_cred = friend_cred,
+		.friend_cred = !!(flags & FRIEND_CRED),
 	};
 
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x dst 0x%04x", ctx->net_idx,
@@ -472,7 +477,7 @@ static int model_send(struct bt_mesh_model *model,
 		return -EMSGSIZE;
 	}
 
-	if (!model_has_key(model, ctx->app_idx)) {
+	if (!(flags & IMPLICIT_BIND) && !model_has_key(model, ctx->app_idx)) {
 		BT_ERR("Model not bound to AppKey 0x%04x", ctx->app_idx);
 		return -EINVAL;
 	}
@@ -485,7 +490,7 @@ int bt_mesh_model_send(struct bt_mesh_model *model,
 		       struct net_buf_simple *msg, bt_mesh_cb_t cb,
 		       void *cb_data)
 {
-	return model_send(model, ctx, false, msg, cb, cb_data);
+	return model_send(model, ctx, 0, msg, cb, cb_data);
 }
 
 int bt_mesh_model_publish(struct bt_mesh_model *model,
@@ -493,6 +498,7 @@ int bt_mesh_model_publish(struct bt_mesh_model *model,
 {
 	struct bt_mesh_app_key *key;
 	struct bt_mesh_msg_ctx ctx;
+	int flags;
 
 	BT_DBG("");
 
@@ -515,7 +521,16 @@ int bt_mesh_model_publish(struct bt_mesh_model *model,
 	ctx.addr = model->pub->addr;
 	ctx.send_ttl = model->pub->ttl;
 
-	return model_send(model, &ctx, model->pub->cred, msg, NULL, NULL);
+	/* Model Publication isn't required to have an explicit
+	 * AppKey binding for the publication's AppKey Index.
+	 */
+	flags = IMPLICIT_BIND;
+
+	if (model->pub->cred) {
+		flags |= FRIEND_CRED;
+	}
+
+	return model_send(model, &ctx, flags, msg, NULL, NULL);
 }
 
 struct bt_mesh_model *bt_mesh_model_find_vnd(struct bt_mesh_elem *elem,
