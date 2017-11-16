@@ -446,7 +446,7 @@ static void send_request(struct net_if *iface)
 fail:
 	NET_DBG("Message preparation failed");
 
-	if (!pkt) {
+	if (pkt) {
 		net_pkt_unref(pkt);
 	}
 }
@@ -489,7 +489,7 @@ static void send_discover(struct net_if *iface)
 fail:
 	NET_DBG("Message preparation failed");
 
-	if (!pkt) {
+	if (pkt) {
 		net_pkt_unref(pkt);
 	}
 }
