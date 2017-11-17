@@ -258,7 +258,12 @@ ssize_t zsock_sendto(int sock, const void *buf, size_t len, int flags,
 	/* Register the callback before sending in order to receive the response
 	 * from the peer.
 	 */
-	SET_ERRNO(net_context_recv(ctx, zsock_received_cb, K_NO_WAIT, NULL));
+	err = net_context_recv(ctx, zsock_received_cb, K_NO_WAIT, NULL);
+	if (err < 0) {
+		net_pkt_unref(send_pkt);
+		errno = -err;
+		return -1;
+	}
 
 	if (dest_addr) {
 		err = net_context_sendto(send_pkt, dest_addr, addrlen, NULL,
