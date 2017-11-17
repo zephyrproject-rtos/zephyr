@@ -18,16 +18,16 @@ struct sockaddr_in6 my_addr6 = { 0 };
 struct net_context *context;
 int ret;
 
-struct nano_sem quit_lock;
+struct k_sem waiter;
 
 static inline void quit(void)
 {
-	nano_sem_give(&quit_lock);
+	k_sem_give(&waiter);
 }
 
 static inline void init_app(void)
 {
-	nano_sem_init(&quit_lock);
+	k_sem_init(&waiter, 0, 1);
 
 	/* Add our address to the network interface */
 	net_if_ipv6_addr_add(net_if_get_default(), &in6addr_my,
@@ -46,7 +46,7 @@ void main(void)
 
 	receive_data();
 
-	nano_sem_take(&quit_lock, TICKS_UNLIMITED);
+	k_sem_take(&waiter, K_FOREVER);
 
 	close_context();
 
