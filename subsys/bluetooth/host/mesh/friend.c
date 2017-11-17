@@ -604,15 +604,18 @@ static struct bt_mesh_friend *find_clear(u16_t prev_friend)
 	return NULL;
 }
 
-static void friend_clear_sent(struct net_buf *buf, u16_t duration, int err,
-			      void *user_data)
+static void friend_clear_sent(int err, void *user_data)
 {
 	struct bt_mesh_friend *frnd = user_data;
 
 	k_delayed_work_submit(&frnd->clear.timer,
-			      duration + K_SECONDS(frnd->clear.repeat_sec));
+			      K_SECONDS(frnd->clear.repeat_sec));
 	frnd->clear.repeat_sec *= 2;
 }
+
+static const struct bt_mesh_adv_cb clear_sent_cb = {
+	.send_end = friend_clear_sent,
+};
 
 static void send_friend_clear(struct bt_mesh_friend *frnd)
 {
@@ -636,7 +639,7 @@ static void send_friend_clear(struct bt_mesh_friend *frnd)
 	BT_DBG("");
 
 	bt_mesh_ctl_send(&tx, TRANS_CTL_OP_FRIEND_CLEAR, &req,
-			 sizeof(req), NULL, friend_clear_sent, frnd);
+			 sizeof(req), NULL, &clear_sent_cb, frnd);
 }
 
 static void clear_timeout(struct k_work *work)
@@ -945,21 +948,27 @@ static void enqueue_friend_pdu(struct bt_mesh_friend *frnd,
 	}
 }
 
-static void buf_sent(struct net_buf *buf, u16_t duration, int err,
-		     void *user_data)
+static void buf_send_start(u16_t duration, int err, void *user_data)
 {
 	struct bt_mesh_friend *frnd = user_data;
 
-	BT_DBG("buf %p err %d", buf, err);
+	BT_DBG("err %d", err);
 
 	frnd->pending_buf = 0;
+}
+
+static void buf_send_end(int err, void *user_data)
+{
+	struct bt_mesh_friend *frnd = user_data;
+
+	BT_DBG("err %d", err);
 
 	if (frnd->established) {
-		k_delayed_work_submit(&frnd->timer, duration + frnd->poll_to);
+		k_delayed_work_submit(&frnd->timer, frnd->poll_to);
 		BT_DBG("Waiting %u ms for next poll", frnd->poll_to);
 	} else {
 		/* Friend offer timeout is 1 second */
-		k_delayed_work_submit(&frnd->timer, duration + K_SECONDS(1));
+		k_delayed_work_submit(&frnd->timer, K_SECONDS(1));
 		BT_DBG("Waiting for first poll");
 
 		/* Friend Offer doesn't follow the re-sending semantics */
@@ -972,6 +981,10 @@ static void friend_timeout(struct k_work *work)
 {
 	struct bt_mesh_friend *frnd = CONTAINER_OF(work, struct bt_mesh_friend,
 						   timer.work);
+	static const struct bt_mesh_adv_cb buf_sent_cb = {
+		.send_start = buf_send_start,
+		.send_end = buf_send_end,
+	};
 
 	__ASSERT_NO_MSG(frnd->pending_buf == 0);
 
@@ -1005,7 +1018,7 @@ static void friend_timeout(struct k_work *work)
 
 send_last:
 	frnd->pending_buf = 1;
-	bt_mesh_adv_send(frnd->last, buf_sent, frnd);
+	bt_mesh_adv_send(frnd->last, &buf_sent_cb, frnd);
 }
 
 int bt_mesh_friend_init(void)

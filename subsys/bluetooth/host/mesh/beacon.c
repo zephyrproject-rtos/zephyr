@@ -73,14 +73,13 @@ static void cache_add(u8_t data[21], u16_t net_idx)
 	memcpy(beacon_cache[net_idx].data, data, 21);
 }
 
-static void beacon_complete(struct net_buf *buf, u16_t duration, int err,
-			    void *user_data)
+static void beacon_complete(int err, void *user_data)
 {
 	struct bt_mesh_subnet *sub = user_data;
 
 	BT_DBG("err %d", err);
 
-	sub->beacon_sent = k_uptime_get_32() + duration;
+	sub->beacon_sent = k_uptime_get_32();
 }
 
 void bt_mesh_beacon_create(struct bt_mesh_subnet *sub,
@@ -119,6 +118,9 @@ void bt_mesh_beacon_create(struct bt_mesh_subnet *sub,
 
 static int secure_beacon_send(void)
 {
+	static const struct bt_mesh_adv_cb send_cb = {
+		.send_end = beacon_complete,
+	};
 	u32_t now = k_uptime_get_32();
 	int i;
 
@@ -153,7 +155,7 @@ static int secure_beacon_send(void)
 
 		bt_mesh_beacon_create(sub, &buf->b);
 
-		bt_mesh_adv_send(buf, beacon_complete, sub);
+		bt_mesh_adv_send(buf, &send_cb, sub);
 		net_buf_unref(buf);
 	}
 

@@ -23,9 +23,14 @@ enum bt_mesh_adv_type {
 typedef void (*bt_mesh_adv_func_t)(struct net_buf *buf, u16_t duration,
 				   int err, void *user_data);
 
+struct bt_mesh_adv_cb {
+	void (*send_start)(u16_t duration, int err, void *user_data);
+	void (*send_end)(int err, void *user_data);
+};
+
 struct bt_mesh_adv {
-	bt_mesh_adv_func_t sent;
-	void *user_data;
+	const struct bt_mesh_adv_cb *cb;
+	void *cb_data;
 
 	u8_t      type:2,
 		  busy:1;
@@ -54,8 +59,8 @@ struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *pool,
 					     u8_t xmit_count, u8_t xmit_int,
 					     s32_t timeout);
 
-void bt_mesh_adv_send(struct net_buf *buf, bt_mesh_adv_func_t sent,
-		      void *user_data);
+void bt_mesh_adv_send(struct net_buf *buf, const struct bt_mesh_adv_cb *cb,
+		      void *cb_data);
 
 void bt_mesh_adv_update(void);
 
