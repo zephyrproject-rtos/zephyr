@@ -276,6 +276,11 @@ enum radio_pdu_node_rx_type {
 #if defined(CONFIG_BT_CTLR_ADV_INDICATION)
 	NODE_RX_TYPE_ADV_INDICATION,
 #endif /* CONFIG_BT_CTLR_ADV_INDICATION */
+
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+	NODE_RX_TYPE_MESH_ADV_CPLT,
+	NODE_RX_TYPE_MESH_REPORT,
+#endif /* CONFIG_BT_HCI_MESH_EXT */
 };
 
 struct radio_le_conn_cmplt {
@@ -344,6 +349,16 @@ void radio_ticks_active_to_start_set(u32_t ticks_active_to_start);
 struct radio_adv_data *radio_adv_data_get(void);
 struct radio_adv_data *radio_scan_data_get(void);
 
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+u32_t radio_adv_enable(u8_t phy_p, u16_t interval, u8_t chan_map,
+		       u8_t filter_policy, u8_t rl_idx,
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
+u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
+		       u8_t rl_idx,
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
+		       u8_t retry, u8_t scan_window, u8_t scan_delay);
+#else /* !CONFIG_BT_HCI_MESH_EXT */
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 u32_t radio_adv_enable(u8_t phy_p, u16_t interval, u8_t chan_map,
 		       u8_t filter_policy, u8_t rl_idx);
@@ -351,6 +366,7 @@ u32_t radio_adv_enable(u8_t phy_p, u16_t interval, u8_t chan_map,
 u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 		       u8_t rl_idx);
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
+#endif /* !CONFIG_BT_HCI_MESH_EXT */
 
 u32_t radio_adv_disable(void);
 u32_t ll_adv_is_enabled(void);

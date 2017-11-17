@@ -29,6 +29,10 @@
 #include "ll.h"
 #include "hci_internal.h"
 
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+#include "ll_sw/ll_mesh.h"
+#endif /* CONFIG_BT_HCI_MESH_EXT */
+
 #if defined(CONFIG_BT_CTLR_DTM_HCI)
 #include "ll_sw/ll_test.h"
 #endif /* CONFIG_BT_CTLR_DTM_HCI */
@@ -932,7 +936,11 @@ static void le_set_adv_enable(struct net_buf *buf, struct net_buf **evt)
 	struct bt_hci_evt_cc_status *ccst;
 	u32_t status;
 
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+	status = ll_adv_enable(0, cmd->enable, 0, 0, 0);
+#else /* !CONFIG_BT_HCI_MESH_EXT */
 	status = ll_adv_enable(cmd->enable);
+#endif /* !CONFIG_BT_HCI_MESH_EXT */
 
 	ccst = cmd_complete(evt, sizeof(*ccst));
 	ccst->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
@@ -1955,7 +1963,22 @@ static void mesh_get_opts(struct net_buf *buf, struct net_buf **evt)
 
 static void mesh_advertise(struct net_buf *buf, struct net_buf **evt)
 {
+	struct bt_hci_cp_mesh_advertise *cmd = (void *)buf->data;
+	struct bt_hci_rp_mesh_advertise *rp;
+	u8_t adv_slot = cmd->adv_slot;
+	u8_t status;
 
+	status = ll_mesh_advertise(adv_slot,
+				   cmd->own_addr_type, cmd->random_addr.val,
+				   cmd->ch_map, cmd->tx_power,
+				   cmd->retx_count, cmd->retx_interval,
+				   cmd->scan_duration, cmd->scan_delay,
+				   cmd->scan_filter, cmd->data_len, cmd->data);
+
+	rp = cmd_complete(evt, sizeof(*rp));
+	rp->status = status;
+	rp->opcode = BT_HCI_OC_MESH_ADVERTISE;
+	rp->adv_slot = adv_slot;
 }
 
 static void mesh_advertise_cancel(struct net_buf *buf, struct net_buf **evt)
@@ -1965,10 +1988,7 @@ static void mesh_advertise_cancel(struct net_buf *buf, struct net_buf **evt)
 	u8_t adv_slot = cmd->adv_slot;
 	u8_t status;
 
-	/* TODO:
 	status = ll_mesh_advertise_cancel(adv_slot);
-	*/
-	status = 0;
 
 	rp = cmd_complete(evt, sizeof(*rp));
 	rp->status = status;
@@ -2805,6 +2825,16 @@ static void encode_control(struct radio_pdu_node_rx *node_rx,
 		return;
 #endif /* CONFIG_BT_CTLR_PROFILE_ISR */
 
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+	case NODE_RX_TYPE_MESH_ADV_CPLT:
+		BT_INFO("Mesh advertise complete.");
+		return;
+
+	case NODE_RX_TYPE_MESH_REPORT:
+		BT_INFO("Mesh scan report.");
+		return;
+#endif /* CONFIG_BT_HCI_MESH_EXT */
+
 	default:
 		LL_ASSERT(0);
 		return;
@@ -3113,9 +3143,8 @@ s8_t hci_get_class(struct radio_pdu_node_rx *node_rx)
 			return HCI_CLASS_EVT_DISCARDABLE;
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
-		/* TODO:
 		case NODE_RX_TYPE_MESH_ADV_CPLT:
-		*/
+		case NODE_RX_TYPE_MESH_REPORT:
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
 		case NODE_RX_TYPE_CONNECTION:
