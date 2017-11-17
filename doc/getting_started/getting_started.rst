@@ -23,6 +23,7 @@ Use the following procedures to create a new development environment.
    installation_linux.rst
    installation_mac.rst
    installation_win.rst
+   installation_docker.rst
 
 
 Checking Out the Source Code Anonymously
