@@ -272,7 +272,7 @@ int bt_mesh_friend_clear(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 	cfm.lpn_counter = msg->lpn_counter;
 
 	bt_mesh_ctl_send(&tx, TRANS_CTL_OP_FRIEND_CLEAR_CFM, &cfm,
-			 sizeof(cfm), NULL, NULL);
+			 sizeof(cfm), NULL, NULL, NULL);
 
 	friend_clear(frnd);
 
@@ -604,18 +604,10 @@ static struct bt_mesh_friend *find_clear(u16_t prev_friend)
 	return NULL;
 }
 
-static void friend_clear_sent(struct net_buf *buf, u16_t duration, int err)
+static void friend_clear_sent(struct net_buf *buf, u16_t duration, int err,
+			      void *user_data)
 {
-	struct bt_mesh_friend *frnd;
-
-	BT_DBG("addr 0x%02x", BT_MESH_ADV(buf)->addr);
-
-	frnd = find_clear(BT_MESH_ADV(buf)->addr);
-	if (!frnd) {
-		BT_WARN("No matching clear procedure found for 0x%02x",
-			BT_MESH_ADV(buf)->addr);
-		return;
-	}
+	struct bt_mesh_friend *frnd = user_data;
 
 	k_delayed_work_submit(&frnd->clear.timer,
 			      duration + K_SECONDS(frnd->clear.repeat_sec));
@@ -644,7 +636,7 @@ static void send_friend_clear(struct bt_mesh_friend *frnd)
 	BT_DBG("");
 
 	bt_mesh_ctl_send(&tx, TRANS_CTL_OP_FRIEND_CLEAR, &req,
-			 sizeof(req), NULL, friend_clear_sent);
+			 sizeof(req), NULL, friend_clear_sent, frnd);
 }
 
 static void clear_timeout(struct k_work *work)
@@ -953,23 +945,12 @@ static void enqueue_friend_pdu(struct bt_mesh_friend *frnd,
 	}
 }
 
-static void buf_sent(struct net_buf *buf, u16_t duration, int err)
+static void buf_sent(struct net_buf *buf, u16_t duration, int err,
+		     void *user_data)
 {
-	struct bt_mesh_friend *frnd = NULL;
-	int i;
+	struct bt_mesh_friend *frnd = user_data;
 
 	BT_DBG("buf %p err %d", buf, err);
-
-	for (i = 0; i < ARRAY_SIZE(bt_mesh.frnd); i++) {
-		if (bt_mesh.frnd[i].last == buf) {
-			frnd = &bt_mesh.frnd[i];
-			break;
-		}
-	}
-
-	if (!frnd) {
-		return;
-	}
 
 	frnd->pending_buf = 0;
 
@@ -1024,7 +1005,7 @@ static void friend_timeout(struct k_work *work)
 
 send_last:
 	frnd->pending_buf = 1;
-	bt_mesh_adv_send(frnd->last, buf_sent);
+	bt_mesh_adv_send(frnd->last, buf_sent, frnd);
 }
 
 int bt_mesh_friend_init(void)
