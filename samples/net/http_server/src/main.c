@@ -110,25 +110,11 @@ static int http_response(struct http_ctx *ctx, const char *header,
 			 const char *payload, size_t payload_len,
 			 char *str)
 {
-	char content_length[6];
 	int ret;
 
 	ret = http_add_header(ctx, header, str);
 	if (ret < 0) {
 		NET_ERR("Cannot add HTTP header (%d)", ret);
-		return ret;
-	}
-
-	ret = snprintk(content_length, sizeof(content_length), "%zd",
-		       payload_len);
-	if (ret <= 0 || ret >= sizeof(content_length)) {
-		ret = -ENOMEM;
-		return ret;
-	}
-
-	ret = http_add_header_field(ctx, "Content-Length", content_length, str);
-	if (ret < 0) {
-		NET_ERR("Cannot add Content-Length HTTP header (%d)", ret);
 		return ret;
 	}
 
