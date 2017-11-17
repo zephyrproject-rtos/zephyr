@@ -1011,6 +1011,7 @@ static void friend_timeout(struct k_work *work)
 	       frnd->last, frnd->lpn);
 
 send_last:
+	frnd->pending_buf = 1;
 	bt_mesh_adv_send(frnd->last, buf_sent);
 }
 
