@@ -118,8 +118,8 @@ void bt_mesh_beacon_create(struct bt_mesh_subnet *sub,
 
 static int secure_beacon_send(void)
 {
-	static const struct bt_mesh_adv_cb send_cb = {
-		.send_end = beacon_complete,
+	static const struct bt_mesh_send_cb send_cb = {
+		.end = beacon_complete,
 	};
 	u32_t now = k_uptime_get_32();
 	int i;

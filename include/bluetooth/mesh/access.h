@@ -267,7 +267,10 @@ struct bt_mesh_model {
 	void *user_data;
 };
 
-typedef void (*bt_mesh_cb_t)(int err, void *cb_data);
+struct bt_mesh_send_cb {
+	void (*start)(u16_t duration, int err, void *cb_data);
+	void (*end)(int err, void *cb_data);
+};
 
 void bt_mesh_model_msg_init(struct net_buf_simple *msg, u32_t opcode);
 
@@ -290,7 +293,8 @@ void bt_mesh_model_msg_init(struct net_buf_simple *msg, u32_t opcode);
  */
 int bt_mesh_model_send(struct bt_mesh_model *model,
 		       struct bt_mesh_msg_ctx *ctx,
-		       struct net_buf_simple *msg, bt_mesh_cb_t cb,
+		       struct net_buf_simple *msg,
+		       const struct bt_mesh_send_cb *cb,
 		       void *cb_data);
 
 /**

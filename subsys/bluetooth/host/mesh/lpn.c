@@ -125,8 +125,8 @@ static void friend_clear_sent(int err, void *user_data)
 	k_delayed_work_submit(&lpn->timer, FRIEND_REQ_TIMEOUT);
 }
 
-static const struct bt_mesh_adv_cb clear_sent_cb = {
-	.send_end = friend_clear_sent,
+static const struct bt_mesh_send_cb clear_sent_cb = {
+	.end = friend_clear_sent,
 };
 
 static int send_friend_clear(void)
@@ -223,8 +223,8 @@ static void friend_req_sent(u16_t duration, int err, void *user_data)
 	}
 }
 
-static const struct bt_mesh_adv_cb friend_req_sent_cb = {
-	.send_start = friend_req_sent,
+static const struct bt_mesh_send_cb friend_req_sent_cb = {
+	.start = friend_req_sent,
 };
 
 static int send_friend_req(struct bt_mesh_lpn *lpn)
@@ -329,8 +329,8 @@ static void req_sent(u16_t duration, int err, void *user_data)
 	}
 }
 
-static const struct bt_mesh_adv_cb req_sent_cb = {
-	.send_start = req_sent,
+static const struct bt_mesh_send_cb req_sent_cb = {
+	.start = req_sent,
 };
 
 static int send_friend_poll(void)

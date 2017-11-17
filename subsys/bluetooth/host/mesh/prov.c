@@ -197,8 +197,8 @@ static void buf_sent(int err, void *user_data)
 	k_delayed_work_submit(&link.tx.retransmit, RETRANSMIT_TIMEOUT);
 }
 
-static struct bt_mesh_adv_cb buf_sent_cb = {
-	.send_end = buf_sent,
+static struct bt_mesh_send_cb buf_sent_cb = {
+	.end = buf_sent,
 };
 
 static void free_segments(void)
@@ -282,10 +282,10 @@ static void ack_complete(u16_t duration, int err, void *user_data)
 
 static void gen_prov_ack_send(u8_t xact_id)
 {
-	static const struct bt_mesh_adv_cb cb = {
-		.send_start = ack_complete,
+	static const struct bt_mesh_send_cb cb = {
+		.start = ack_complete,
 	};
-	const struct bt_mesh_adv_cb *complete;
+	const struct bt_mesh_send_cb *complete;
 	struct net_buf *buf;
 
 	BT_DBG("xact_id %u", xact_id);
