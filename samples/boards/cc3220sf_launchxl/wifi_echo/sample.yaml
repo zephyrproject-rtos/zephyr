@@ -1,0 +1,8 @@
+sample:
+  description: 'Socket echo sample over CC3220SF WiFi'
+  name: WiFi Socket Echo Example
+tests:
+  test:
+    build_only: true
+    platform_whitelist: cc3220sf_launchxl
+    tags: samples wifi_echo
