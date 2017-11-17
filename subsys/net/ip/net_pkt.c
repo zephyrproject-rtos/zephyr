@@ -38,6 +38,7 @@
 
 #include "net_private.h"
 #include "tcp.h"
+#include "rpl.h"
 
 #if defined(CONFIG_NET_TCP)
 #define APP_PROTO_LEN NET_TCPH_LEN
@@ -519,14 +520,48 @@ static struct net_pkt *net_pkt_get(struct k_mem_slab *slab,
 	pkt = net_pkt_get_reserve(slab, net_if_get_ll_reserve(iface, addr6),
 				  timeout);
 #endif
-	if (pkt) {
+	if (pkt && slab != &rx_pkts) {
+		sa_family_t family;
+		uint16_t iface_len, data_len = 0;
+		enum net_ip_protocol proto;
+
 		net_pkt_set_context(pkt, context);
 		net_pkt_set_iface(pkt, iface);
 
-		if (context) {
-			net_pkt_set_family(pkt,
-					   net_context_get_family(context));
+		iface_len = net_if_get_mtu(iface);
+
+		family = net_context_get_family(context);
+		net_pkt_set_family(pkt, family);
+
+		if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
+			data_len = max(iface_len, NET_IPV6_MTU);
 		}
+
+		if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
+			data_len = max(iface_len, NET_IPV4_MTU);
+		}
+
+		proto = net_context_get_ip_proto(context);
+
+		if (IS_ENABLED(CONFIG_NET_TCP) && proto == IPPROTO_TCP) {
+			data_len -= NET_TCPH_LEN;
+			data_len -= NET_TCP_MAX_OPT_SIZE;
+		}
+
+		if (IS_ENABLED(CONFIG_NET_UDP) && proto == IPPROTO_UDP) {
+			data_len -= NET_UDPH_LEN;
+
+#if defined(CONFIG_NET_RPL_INSERT_HBH_OPTION)
+			data_len -= NET_RPL_HOP_BY_HOP_LEN;
+#endif
+
+		}
+
+		if (proto == IPPROTO_ICMP || proto == IPPROTO_ICMPV6) {
+			data_len -= NET_ICMPH_LEN;
+		}
+
+		pkt->data_len = data_len;
 	}
 
 	return pkt;
@@ -1164,7 +1199,7 @@ u16_t net_pkt_append(struct net_pkt *pkt, u16_t len, const u8_t *data,
 {
 	struct net_buf *frag;
 	struct net_context *ctx;
-	size_t max_len;
+	u16_t max_len, appended;
 
 	if (!pkt || !data) {
 		return 0;
@@ -1179,41 +1214,32 @@ u16_t net_pkt_append(struct net_pkt *pkt, u16_t len, const u8_t *data,
 		net_pkt_frag_add(pkt, frag);
 	}
 
-	/* Make sure we don't send more data in one packet than
-	 * MTU allows.
-	 * This check really belongs to net_pkt_append_bytes(),
-	 * but instead done here for efficiency, we assume
-	 * (at least for now) that that callers of
-	 * net_pkt_append_bytes() are smart enough to not
-	 * overflow MTU.
-	 */
-	max_len = 0x10000;
-
 	ctx = net_pkt_context(pkt);
 	if (ctx) {
+		/* Make sure we don't send more data in one packet than
+		 * protocol or MTU allows when there is a context for the
+		 * packet.
+		 */
+		max_len = pkt->data_len;
+
 #if defined(CONFIG_NET_TCP)
 		if (ctx->tcp) {
 			max_len = ctx->tcp->send_mss;
-		} else
+		}
 #endif
-		{
-			struct net_if *iface = net_context_get_iface(ctx);
-			max_len = net_if_get_mtu(iface);
-			/* Optimize for number of jumps in the code ("if"
-			 * instead of "if/else").
-			 */
-			max_len -= NET_IPV4TCPH_LEN;
-			if (net_context_get_family(ctx) != AF_INET) {
-				max_len -= NET_IPV6TCPH_LEN - NET_IPV4TCPH_LEN;
-			}
+
+		if (len > max_len) {
+			len = max_len;
 		}
 	}
 
-	if (len > max_len) {
-		len = max_len;
+	appended = net_pkt_append_bytes(pkt, data, len, timeout);
+
+	if (ctx) {
+		pkt->data_len -= appended;
 	}
 
-	return net_pkt_append_bytes(pkt, data, len, timeout);
+	return appended;
 }
 
 /* Helper routine to retrieve single byte from fragment and move

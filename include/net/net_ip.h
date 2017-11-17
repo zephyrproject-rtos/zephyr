@@ -179,6 +179,7 @@ extern const struct in6_addr in6addr_loopback;
 #define INADDR_ANY_INIT { { { INADDR_ANY } } }
 
 #define NET_IPV6_MTU 1280
+#define NET_IPV4_MTU  576
 
 /** IPv6 extension headers types */
 #define NET_IPV6_NEXTHDR_HBHO        0
