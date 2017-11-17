@@ -17,6 +17,7 @@
 /**
  * @brief BSD Sockets compatible API
  * @defgroup bsd_sockets BSD Sockets compatible API
+ * @ingroup networking
  * @{
  */
 

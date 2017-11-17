@@ -18,6 +18,7 @@ extern "C" {
 /**
  * @brief Network hostname configuration library
  * @defgroup net_hostname Network Hostname Library
+ * @ingroup networking
  * @{
  */
 

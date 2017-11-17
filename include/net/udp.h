@@ -24,6 +24,7 @@ extern "C" {
 /**
  * @brief UDP library
  * @defgroup udp UDP Library
+ * @ingroup networking
  * @{
  */
 

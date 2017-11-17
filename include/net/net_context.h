@@ -16,6 +16,7 @@
 /**
  * @brief Application network context
  * @defgroup net_context Application network context
+ * @ingroup networking
  * @{
  */
 

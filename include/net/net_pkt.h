@@ -34,6 +34,7 @@ extern "C" {
 /**
  * @brief Network packet management library
  * @defgroup net_pkt Network Packet Library
+ * @ingroup networking
  * @{
  */
 

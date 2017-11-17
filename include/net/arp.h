@@ -24,6 +24,7 @@ extern "C" {
 /**
  * @brief Address resolution (ARP) library
  * @defgroup arp ARP Library
+ * @ingroup networking
  * @{
  */
 

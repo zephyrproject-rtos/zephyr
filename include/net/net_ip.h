@@ -16,6 +16,7 @@
 /**
  * @brief IPv4/IPv6 primitives and helpers
  * @defgroup ip_4_6 IPv4/IPv6 primitives and helpers
+ * @ingroup networking
  * @{
  */
 

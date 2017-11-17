@@ -39,6 +39,7 @@ extern "C" {
 /**
  * @brief HTTP client and server library
  * @defgroup http HTTP Library
+ * @ingroup networking
  * @{
  */
 

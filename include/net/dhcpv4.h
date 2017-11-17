@@ -18,6 +18,7 @@ extern "C" {
 /**
  * @brief DHCPv4
  * @defgroup dhcpv4 DHCPv4
+ * @ingroup networking
  * @{
  */
 

@@ -22,6 +22,7 @@ extern "C" {
 /**
  * @brief Network buffer library
  * @defgroup net_buf Network Buffer Library
+ * @ingroup networking
  * @{
  */
 

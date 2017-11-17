@@ -16,6 +16,7 @@ extern "C" {
 /**
  * @brief HTTP client and server library
  * @defgroup http_legacy HTTP Library
+ * @ingroup networking
  * @deprecated This library is deprecated.
  * @{
  */
