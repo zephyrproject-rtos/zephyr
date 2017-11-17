@@ -135,11 +135,13 @@ class Loader(yaml.Loader):
     def extractFile(self, filename):
         filepath = os.path.join(os.path.dirname(self._root), filename)
         if not os.path.isfile(filepath):
-            # we need to look in common directory
-            # take path and back up 2 directories and tack on '/common/yaml'
+            # we need to look in bindings/* directories
+            # take path and back up 1 directory and parse in '/bindings/*'
             filepath = os.path.dirname(self._root).split('/')
-            filepath = '/'.join(filepath[:-2])
-            filepath = os.path.join(filepath + '/common/yaml', filename)
+            filepath = '/'.join(filepath[:-1])
+            for root, dirnames, file in os.walk(filepath):
+                if fnmatch.filter(file, filename):
+                    filepath = os.path.join(root, filename)
         with open(filepath, 'r') as f:
             return yaml.load(f, Loader)
 
