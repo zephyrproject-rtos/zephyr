@@ -54,7 +54,7 @@ Install the required packages in a Ubuntu host system with:
 
    $ sudo apt-get install --no-install-recommends git cmake ninja-build gperf \
      ccache doxygen dfu-util device-tree-compiler \
-     python3-ply python3-pip python3-setuptools xz-utils file
+     python3-ply python3-pip python3-setuptools xz-utils file make
 
 Install the required packages in a Fedora host system with:
 
@@ -69,8 +69,8 @@ Install additional packages required for development with Zephyr::
 
    $ pip3 install --user -r scripts/requirements.txt
 
-Note that CMake version 3.8.2+ or higher is required. If you are using a
-distribution that currently ships an older version, check the backports or
+CMake version 3.8.2 or higher is required. Check what version you have using
+``cmake --version``, and if its an older version, check the backports or
 install a more recent version manually. For example, to install version
 3.8.2 from the CMake website directly in ~/cmake::
 
