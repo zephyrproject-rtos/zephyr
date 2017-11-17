@@ -670,7 +670,8 @@ do_update:
 }
 
 int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
-		       bool new_key, bt_mesh_adv_func_t cb, void *user_data)
+		       bool new_key, const struct bt_mesh_adv_cb *cb,
+		       void *cb_data)
 {
 	const u8_t *enc, *priv;
 	int err;
@@ -710,7 +711,7 @@ int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
 		return err;
 	}
 
-	bt_mesh_adv_send(buf, cb, user_data);
+	bt_mesh_adv_send(buf, cb, cb_data);
 
 	if (!bt_mesh.iv_update && bt_mesh.seq > IV_UPDATE_SEQ_LIMIT) {
 		bt_mesh_beacon_ivu_initiator(true);
@@ -799,7 +800,7 @@ int bt_mesh_net_encode(struct bt_mesh_net_tx *tx, struct net_buf_simple *buf,
 }
 
 int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
-		     bt_mesh_adv_func_t cb, void *user_data)
+		     const struct bt_mesh_adv_cb *cb, void *cb_data)
 {
 	int err;
 
@@ -830,13 +831,16 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
 	/* Deliver to local network interface if necessary */
 	if (bt_mesh_fixed_group_match(tx->ctx->addr) ||
 	    bt_mesh_elem_find(tx->ctx->addr)) {
+		if (cb && cb->send_start) {
+			cb->send_start(0, 0, cb_data);
+		}
 		net_buf_slist_put(&bt_mesh.local_queue, net_buf_ref(buf));
-		if (cb) {
-			cb(buf, 0, 0, user_data);
+		if (cb && cb->send_end) {
+			cb->send_end(0, cb_data);
 		}
 		k_work_submit(&bt_mesh.local_work);
 	} else {
-		bt_mesh_adv_send(buf, cb, user_data);
+		bt_mesh_adv_send(buf, cb, cb_data);
 	}
 
 done:

@@ -70,24 +70,29 @@ static struct bt_mesh_adv *adv_alloc(int id)
 	return &adv_pool[id];
 }
 
-static inline void adv_sent(struct net_buf *buf, u16_t duration, int err)
+static inline void adv_send_start(u16_t duration, int err,
+				  const struct bt_mesh_adv_cb *cb,
+				  void *cb_data)
 {
-	if (BT_MESH_ADV(buf)->busy) {
-		BT_MESH_ADV(buf)->busy = 0;
-
-		if (BT_MESH_ADV(buf)->sent) {
-			BT_MESH_ADV(buf)->sent(buf, duration, err,
-					       BT_MESH_ADV(buf)->user_data);
-		}
+	if (cb && cb->send_start) {
+		cb->send_start(duration, err, cb_data);
 	}
+}
 
-	net_buf_unref(buf);
+static inline void adv_send_end(int err, const struct bt_mesh_adv_cb *cb,
+				void *cb_data)
+{
+	if (cb && cb->send_end) {
+		cb->send_end(err, cb_data);
+	}
 }
 
 static inline void adv_send(struct net_buf *buf)
 {
 	const s32_t adv_int_min = ((bt_dev.hci_version >= BT_HCI_VERSION_5_0) ?
 				   ADV_INT_FAST : ADV_INT_DEFAULT);
+	const struct bt_mesh_adv_cb *cb = BT_MESH_ADV(buf)->cb;
+	void *cb_data = BT_MESH_ADV(buf)->cb_data;
 	struct bt_le_adv_param param;
 	u16_t duration, adv_int;
 	struct bt_data ad;
@@ -111,7 +116,8 @@ static inline void adv_send(struct net_buf *buf)
 	param.own_addr = NULL;
 
 	err = bt_le_adv_start(&param, &ad, 1, NULL, 0);
-	adv_sent(buf, duration, err);
+	net_buf_unref(buf);
+	adv_send_start(duration, err, cb, cb_data);
 	if (err) {
 		BT_ERR("Advertising failed: err %d", err);
 		return;
@@ -122,6 +128,7 @@ static inline void adv_send(struct net_buf *buf)
 	k_sleep(duration);
 
 	err = bt_le_adv_stop();
+	adv_send_end(err, cb, cb_data);
 	if (err) {
 		BT_ERR("Stopping advertising failed: err %d", err);
 		return;
@@ -158,6 +165,7 @@ static void adv_thread(void *p1, void *p2, void *p3)
 
 		/* busy == 0 means this was canceled */
 		if (BT_MESH_ADV(buf)->busy) {
+			BT_MESH_ADV(buf)->busy = 0;
 			adv_send(buf);
 		}
 
@@ -209,14 +217,14 @@ struct net_buf *bt_mesh_adv_create(enum bt_mesh_adv_type type, u8_t xmit_count,
 					    xmit_count, xmit_int, timeout);
 }
 
-void bt_mesh_adv_send(struct net_buf *buf, bt_mesh_adv_func_t sent,
-		      void *user_data)
+void bt_mesh_adv_send(struct net_buf *buf, const struct bt_mesh_adv_cb *cb,
+		      void *cb_data)
 {
 	BT_DBG("type 0x%02x len %u: %s", BT_MESH_ADV(buf)->type, buf->len,
 	       bt_hex(buf->data, buf->len));
 
-	BT_MESH_ADV(buf)->sent = sent;
-	BT_MESH_ADV(buf)->user_data = user_data;
+	BT_MESH_ADV(buf)->cb = cb;
+	BT_MESH_ADV(buf)->cb_data = cb_data;
 	BT_MESH_ADV(buf)->busy = 1;
 
 	net_buf_put(&adv_queue, net_buf_ref(buf));
