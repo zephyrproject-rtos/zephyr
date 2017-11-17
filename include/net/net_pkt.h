@@ -73,6 +73,8 @@ struct net_pkt {
 	struct net_linkaddr lladdr_src;
 	struct net_linkaddr lladdr_dst;
 
+	u16_t data_len;         /* amount of payload data that can be added */
+
 	u16_t appdatalen;
 	u8_t ll_reserve;	/* link layer header length */
 	u8_t ip_hdr_len;	/* pre-filled in order to avoid func call */
