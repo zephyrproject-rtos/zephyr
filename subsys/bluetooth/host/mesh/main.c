@@ -113,7 +113,7 @@ void bt_mesh_reset(void)
 	k_delayed_work_cancel(&bt_mesh.ivu_complete);
 
 	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
-		bt_mesh_lpn_disable();
+		bt_mesh_lpn_disable(true);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
