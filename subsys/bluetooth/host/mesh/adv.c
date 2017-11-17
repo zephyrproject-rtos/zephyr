@@ -76,7 +76,8 @@ static inline void adv_sent(struct net_buf *buf, u16_t duration, int err)
 		BT_MESH_ADV(buf)->busy = 0;
 
 		if (BT_MESH_ADV(buf)->sent) {
-			BT_MESH_ADV(buf)->sent(buf, duration, err);
+			BT_MESH_ADV(buf)->sent(buf, duration, err,
+					       BT_MESH_ADV(buf)->user_data);
 		}
 	}
 
@@ -208,12 +209,14 @@ struct net_buf *bt_mesh_adv_create(enum bt_mesh_adv_type type, u8_t xmit_count,
 					    xmit_count, xmit_int, timeout);
 }
 
-void bt_mesh_adv_send(struct net_buf *buf, bt_mesh_adv_func_t sent)
+void bt_mesh_adv_send(struct net_buf *buf, bt_mesh_adv_func_t sent,
+		      void *user_data)
 {
 	BT_DBG("type 0x%02x len %u: %s", BT_MESH_ADV(buf)->type, buf->len,
 	       bt_hex(buf->data, buf->len));
 
 	BT_MESH_ADV(buf)->sent = sent;
+	BT_MESH_ADV(buf)->user_data = user_data;
 	BT_MESH_ADV(buf)->busy = 1;
 
 	net_buf_put(&adv_queue, net_buf_ref(buf));

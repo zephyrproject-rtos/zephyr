@@ -89,7 +89,7 @@ static void hb_send(struct bt_mesh_model *model)
 	BT_DBG("InitTTL %u feat 0x%04x", cfg->hb_pub.ttl, feat);
 
 	bt_mesh_ctl_send(&tx, TRANS_CTL_OP_HEARTBEAT, &hb, sizeof(hb),
-			 NULL, NULL);
+			 NULL, NULL, NULL);
 }
 
 static int comp_add_elem(struct net_buf_simple *buf, struct bt_mesh_elem *elem,

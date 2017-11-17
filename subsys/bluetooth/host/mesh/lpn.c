@@ -103,7 +103,8 @@ static inline void lpn_set_state(int state)
 
 static void clear_friendship(bool force, bool disable);
 
-static void friend_clear_sent(struct net_buf *buf, u16_t duration, int err)
+static void friend_clear_sent(struct net_buf *buf, u16_t duration, int err,
+			      void *user_data)
 {
 	struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
 
@@ -147,7 +148,7 @@ static int send_friend_clear(void)
 	BT_DBG("");
 
 	return bt_mesh_ctl_send(&tx, TRANS_CTL_OP_FRIEND_CLEAR, &req,
-				sizeof(req), NULL, friend_clear_sent);
+				sizeof(req), NULL, friend_clear_sent, NULL);
 }
 
 static void clear_friendship(bool force, bool disable)
@@ -198,7 +199,8 @@ static void clear_friendship(bool force, bool disable)
 	k_delayed_work_submit(&lpn->timer, FRIEND_REQ_RETRY_TIMEOUT);
 }
 
-static void friend_req_sent(struct net_buf *buf, u16_t duration, int err)
+static void friend_req_sent(struct net_buf *buf, u16_t duration, int err,
+			    void *user_data)
 {
 	struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
 
@@ -246,7 +248,7 @@ static int send_friend_req(struct bt_mesh_lpn *lpn)
 	BT_DBG("");
 
 	return bt_mesh_ctl_send(&tx, TRANS_CTL_OP_FRIEND_REQ, &req,
-				sizeof(req), NULL, friend_req_sent);
+				sizeof(req), NULL, friend_req_sent, NULL);
 }
 
 static inline void group_zero(atomic_t *target)
@@ -288,7 +290,8 @@ static inline void group_clear(atomic_t *target, atomic_t *source)
 #endif
 }
 
-static void req_sent(struct net_buf *buf, u16_t duration, int err)
+static void req_sent(struct net_buf *buf, u16_t duration, int err,
+		     void *user_data)
 {
 	struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
 
@@ -350,7 +353,7 @@ static int send_friend_poll(void)
 	}
 
 	err = bt_mesh_ctl_send(&tx, TRANS_CTL_OP_FRIEND_POLL, &fsn, 1,
-			       NULL, req_sent);
+			       NULL, req_sent, NULL);
 	if (err == 0) {
 		lpn->pending_poll = 0;
 		lpn->sent_req = TRANS_CTL_OP_FRIEND_POLL;
@@ -669,7 +672,8 @@ static bool sub_update(u8_t op)
 
 	req.xact = lpn->xact_next++;
 
-	if (bt_mesh_ctl_send(&tx, op, &req, 1 + g * 2, NULL, req_sent) < 0) {
+	if (bt_mesh_ctl_send(&tx, op, &req, 1 + g * 2, NULL,
+			     req_sent, NULL) < 0) {
 		group_zero(lpn->pending);
 		return false;
 	}
