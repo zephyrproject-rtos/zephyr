@@ -11,6 +11,20 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Display Drivers
+ * @defgroup display_interfaces Display Drivers
+ * @{
+ * @}
+ */
+
+/**
+ * @brief Grove display APIs
+ * @defgroup grove_display Grove display APIs
+ * @ingroup display_interfaces
+ * @{
+ */
+
 #define GROVE_LCD_NAME			"GLCD"
 
 /**
@@ -155,6 +169,11 @@ void glcd_color_set(struct device *port, u8_t r, u8_t g, u8_t b);
  *  @return Returns 0 if all passes
  */
 int glcd_initialize(struct device *port);
+
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }
