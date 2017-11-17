@@ -9,7 +9,10 @@
 /* Maximum advertising data payload for a single data type */
 #define BT_MESH_ADV_DATA_SIZE 29
 
-#define BT_MESH_ADV(buf) ((struct bt_mesh_adv *)net_buf_user_data(buf))
+/* The user data is a pointer (4 bytes) to struct bt_mesh_adv */
+#define BT_MESH_ADV_USER_DATA_SIZE 4
+
+#define BT_MESH_ADV(buf) (*(struct bt_mesh_adv **)net_buf_user_data(buf))
 
 enum bt_mesh_adv_type {
 	BT_MESH_ADV_PROV,
@@ -41,11 +44,14 @@ struct bt_mesh_adv {
 	};
 };
 
+typedef struct bt_mesh_adv *(*bt_mesh_adv_alloc_t)(int id);
+
 /* xmit_count: Number of retransmissions, i.e. 0 == 1 transmission */
 struct net_buf *bt_mesh_adv_create(enum bt_mesh_adv_type type, u8_t xmit_count,
 				   u8_t xmit_int, s32_t timeout);
 
 struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *pool,
+					     bt_mesh_adv_alloc_t get_id,
 					     enum bt_mesh_adv_type type,
 					     u8_t xmit_count, u8_t xmit_int,
 					     s32_t timeout);
