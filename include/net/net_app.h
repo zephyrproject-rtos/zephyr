@@ -51,6 +51,7 @@ extern "C" {
 /**
  * @brief Network application library
  * @defgroup net_app Network Application Library
+ * @ingroup networking
  * @{
  */
 

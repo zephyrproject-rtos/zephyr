@@ -21,6 +21,7 @@ extern "C" {
 /**
  * @brief Network Layer 2 abstraction layer
  * @defgroup net_l2 Network L2 Abstraction Layer
+ * @ingroup networking
  * @{
  */
 

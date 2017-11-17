@@ -19,6 +19,7 @@ extern "C" {
 /**
  * @brief Network Management
  * @defgroup net_mgmt Network Management
+ * @ingroup networking
  * @{
  */
 

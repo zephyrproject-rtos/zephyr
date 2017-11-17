@@ -26,7 +26,8 @@ extern "C" {
 
 /**
  * @brief COAP library
- * @defgroup COAP Library
+ * @defgroup coap COAP Library
+ * @ingroup networking
  * @{
  */
 

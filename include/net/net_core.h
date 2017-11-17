@@ -18,8 +18,16 @@ extern "C" {
 #endif
 
 /**
+ * @brief Networking
+ * @defgroup networking Networking
+ * @{
+ * @}
+ */
+
+/**
  * @brief Network core library
  * @defgroup net_core Network Core Library
+ * @ingroup networking
  * @{
  */
 

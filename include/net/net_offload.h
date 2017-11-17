@@ -15,6 +15,7 @@
 /**
  * @brief Network offloading interface
  * @defgroup net_offload Network Offloading Interface
+ * @ingroup networking
  * @{
  */
 

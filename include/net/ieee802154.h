@@ -22,6 +22,7 @@ extern "C" {
 /**
  * @brief IEEE 802.15.4 library
  * @defgroup ieee802154 IEEE 802.15.4 Library
+ * @ingroup networking
  * @{
  */
 

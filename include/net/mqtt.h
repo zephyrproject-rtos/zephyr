@@ -18,6 +18,7 @@ extern "C" {
 /**
  * @brief MQTT library
  * @defgroup mqtt MQTT library
+ * @ingroup networking
  * @{
  */
 
