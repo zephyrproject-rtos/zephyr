@@ -15,7 +15,8 @@ The Zephyr project supports these operating systems:
 * macOS
 * Windows 8.1
 
-Use the following procedures to create a new development environment.
+Use the following procedures to create a new development environment, or use
+a pre-made Docker image.
 
 .. toctree::
    :maxdepth: 1
@@ -23,8 +24,33 @@ Use the following procedures to create a new development environment.
    installation_linux.rst
    installation_mac.rst
    installation_win.rst
-   installation_docker.rst
 
+Docker based environment
+========================
+
+You can skip the OS based installation above, and the checkout and configuration
+steps by running everything in a Docker container.
+
+For example, to build and run the `hello_world` sample with x86:
+
+.. code-block:: console
+
+   $ docker run --rm -it -w /x86 svendowideit/zephyr sh -c "cmake -DBOARD=qemu_x86 /zephyr/samples/hello_world && make run"
+
+Or using the ARM cortext m4 board:
+
+.. code-block:: console
+
+   $ docker run --rm -it -w /arm svendowideit/zephyr sh -c "cmake -DBOARD=qemu_cortex_m3 /zephyr/samples/hello_world && make run"
+
+To build your own project, use a volume - in this example, I'm assuming that you're in
+the directory you want to build, with access to the code you need.
+
+.. code-block:: console
+
+   $ docker run --rm -it -w /source -v $(pwd):/source svendowideit/zephyr
+
+This will leave you in a bash shell with zephyr installed and set up ready to use.
 
 Checking Out the Source Code Anonymously
 ========================================

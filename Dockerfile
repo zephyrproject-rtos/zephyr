@@ -20,7 +20,7 @@ RUN wget -O /tmp/zephyr-setup https://github.com/zephyrproject-rtos/meta-zephyr-
     && rm /tmp/zephyr-setup
 
 # Zephyr Project repo and Python pre-requisites
-RUN git clone https://github.com/zephyrproject-rtos/zephyr.git $ZEPHYR_BASE \
+RUN git clone --depth 1 https://github.com/zephyrproject-rtos/zephyr.git $ZEPHYR_BASE \
     && cd $ZEPHYR_BASE \
     && pip3 install --user -r scripts/requirements.txt
 
