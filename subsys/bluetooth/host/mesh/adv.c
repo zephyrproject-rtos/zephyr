@@ -61,7 +61,14 @@ static const u8_t adv_type[] = {
 };
 
 NET_BUF_POOL_DEFINE(adv_buf_pool, CONFIG_BT_MESH_ADV_BUF_COUNT,
-		    BT_MESH_ADV_DATA_SIZE, sizeof(struct bt_mesh_adv), NULL);
+		    BT_MESH_ADV_DATA_SIZE, BT_MESH_ADV_USER_DATA_SIZE, NULL);
+
+static struct bt_mesh_adv adv_pool[CONFIG_BT_MESH_ADV_BUF_COUNT];
+
+static struct bt_mesh_adv *adv_alloc(int id)
+{
+	return &adv_pool[id];
+}
 
 static inline void adv_sent(struct net_buf *buf, u16_t duration, int err)
 {
@@ -169,6 +176,7 @@ void bt_mesh_adv_update(void)
 }
 
 struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *pool,
+					     bt_mesh_adv_alloc_t get_id,
 					     enum bt_mesh_adv_type type,
 					     u8_t xmit_count, u8_t xmit_int,
 					     s32_t timeout)
@@ -181,7 +189,9 @@ struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *pool,
 		return NULL;
 	}
 
-	adv = net_buf_user_data(buf);
+	adv = get_id(net_buf_id(buf));
+	BT_MESH_ADV(buf) = adv;
+
 	memset(adv, 0, sizeof(*adv));
 
 	adv->type         = type;
@@ -194,8 +204,8 @@ struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *pool,
 struct net_buf *bt_mesh_adv_create(enum bt_mesh_adv_type type, u8_t xmit_count,
 				   u8_t xmit_int, s32_t timeout)
 {
-	return bt_mesh_adv_create_from_pool(&adv_buf_pool, type, xmit_count,
-					    xmit_int, timeout);
+	return bt_mesh_adv_create_from_pool(&adv_buf_pool, adv_alloc, type,
+					    xmit_count, xmit_int, timeout);
 }
 
 void bt_mesh_adv_send(struct net_buf *buf, bt_mesh_adv_func_t sent)
