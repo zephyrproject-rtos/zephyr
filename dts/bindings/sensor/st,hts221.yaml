@@ -1,0 +1,22 @@
+#
+# Copyright (c) 2017, Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: STMicroelectronics MEMS sensors HTS221
+id: st,hts221
+version: 0.1
+
+description: >
+    This binding gives a base representation of HTS221 humidity and temperature
+    sensor
+
+inherits:
+    !include i2c-device.yaml
+
+properties:
+    compatible:
+      constraint: "st,hts221"
+
+...

@@ -1,0 +1,22 @@
+#
+# Copyright (c) 2017, Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: STMicroelectronics MEMS sensors LSM6DSL
+id: st,lps22hb-press
+version: 0.1
+
+description: >
+    This binding gives a base representation of LSM6DSL 6-axis accelerometer
+    and gyrometer
+
+inherits:
+    !include i2c-device.yaml
+
+properties:
+    compatible:
+      constraint: "st,lsm6dsl"
+
+...
