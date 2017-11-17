@@ -59,6 +59,6 @@ void bt_mesh_lpn_msg_received(struct bt_mesh_net_rx *rx);
 void bt_mesh_lpn_group_add(u16_t group);
 void bt_mesh_lpn_group_del(u16_t *groups, size_t group_count);
 
-void bt_mesh_lpn_disable(void);
+void bt_mesh_lpn_disable(bool force);
 
 int bt_mesh_lpn_init(void);

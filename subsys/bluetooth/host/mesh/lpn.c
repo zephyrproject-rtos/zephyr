@@ -101,7 +101,7 @@ static inline void lpn_set_state(int state)
 	bt_mesh.lpn.state = state;
 }
 
-static void clear_friendship(bool disable);
+static void clear_friendship(bool force, bool disable);
 
 static void friend_clear_sent(struct net_buf *buf, u16_t duration, int err)
 {
@@ -117,7 +117,7 @@ static void friend_clear_sent(struct net_buf *buf, u16_t duration, int err)
 	if (err) {
 		BT_ERR("Sending Friend Request failed (err %d)", err);
 		lpn_set_state(BT_MESH_LPN_ENABLED);
-		clear_friendship(lpn->disable);
+		clear_friendship(false, lpn->disable);
 		return;
 	}
 
@@ -150,11 +150,11 @@ static int send_friend_clear(void)
 				sizeof(req), NULL, friend_clear_sent);
 }
 
-static void clear_friendship(bool disable)
+static void clear_friendship(bool force, bool disable)
 {
 	struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
 
-	if (lpn->established && !lpn->clear_success &&
+	if (!force && lpn->established && !lpn->clear_success &&
 	    lpn->req_attempts < CLEAR_ATTEMPTS) {
 		send_friend_clear();
 		lpn->disable = disable;
@@ -359,13 +359,13 @@ static int send_friend_poll(void)
 	return err;
 }
 
-void bt_mesh_lpn_disable(void)
+void bt_mesh_lpn_disable(bool force)
 {
 	if (bt_mesh.lpn.state == BT_MESH_LPN_DISABLED) {
 		return;
 	}
 
-	clear_friendship(true);
+	clear_friendship(force, true);
 }
 
 int bt_mesh_lpn_set(bool enable)
@@ -406,7 +406,7 @@ int bt_mesh_lpn_set(bool enable)
 			k_delayed_work_cancel(&lpn->timer);
 			lpn_set_state(BT_MESH_LPN_DISABLED);
 		} else {
-			bt_mesh_lpn_disable();
+			bt_mesh_lpn_disable(false);
 		}
 	}
 
@@ -548,7 +548,7 @@ int bt_mesh_lpn_friend_clear_cfm(struct bt_mesh_net_rx *rx,
 	}
 
 	lpn->clear_success = 1;
-	clear_friendship(lpn->disable);
+	clear_friendship(false, lpn->disable);
 
 	return 0;
 }
@@ -701,7 +701,7 @@ static void update_timeout(struct bt_mesh_lpn *lpn)
 		}
 
 		BT_ERR("Timed out waiting for first Friend Update");
-		clear_friendship(false);
+		clear_friendship(false, false);
 	}
 }
 
@@ -717,7 +717,7 @@ static void lpn_timeout(struct k_work *work)
 	case BT_MESH_LPN_DISABLED:
 		break;
 	case BT_MESH_LPN_CLEAR:
-		clear_friendship(bt_mesh.lpn.disable);
+		clear_friendship(false, bt_mesh.lpn.disable);
 		break;
 	case BT_MESH_LPN_TIMER:
 		BT_DBG("Starting to look for Friend nodes");
@@ -762,7 +762,7 @@ static void lpn_timeout(struct k_work *work)
 		BT_ERR("No response from Friend after %u retries",
 		       lpn->req_attempts);
 		lpn->req_attempts = 0;
-		clear_friendship(false);
+		clear_friendship(false, false);
 		break;
 	case BT_MESH_LPN_RECV_DELAY:
 		k_delayed_work_submit(&lpn->timer,
