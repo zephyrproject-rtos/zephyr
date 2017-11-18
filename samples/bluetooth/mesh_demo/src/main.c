@@ -86,15 +86,23 @@ static void attention_off(struct bt_mesh_model *model)
 	board_attention(false);
 }
 
+static const struct bt_mesh_health_srv_cb health_srv_cb = {
+	.attn_on = attention_on,
+	.attn_off = attention_off,
+};
+
 static struct bt_mesh_health_srv health_srv = {
-	.attention.on = attention_on,
-	.attention.off = attention_off,
+	.cb = &health_srv_cb,
+};
+
+static struct bt_mesh_model_pub health_pub = {
+	.msg  = BT_MESH_HEALTH_FAULT_MSG(0),
 };
 
 static struct bt_mesh_model root_models[] = {
 	BT_MESH_MODEL_CFG_SRV(&cfg_srv),
 	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
-	BT_MESH_MODEL_HEALTH_SRV(&health_srv),
+	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),
 };
 
 static void vnd_publish(struct bt_mesh_model *mod)

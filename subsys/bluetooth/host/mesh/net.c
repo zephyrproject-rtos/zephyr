@@ -776,14 +776,14 @@ int bt_mesh_net_encode(struct bt_mesh_net_tx *tx, struct net_buf_simple *buf,
 					    idx, &nid, &enc, &priv)) {
 			BT_WARN("Falling back to master credentials");
 
-			tx->friend_cred = false;
+			tx->friend_cred = 0;
 
 			nid = tx->sub->keys[idx].nid;
 			enc = tx->sub->keys[idx].enc;
 			priv = tx->sub->keys[idx].privacy;
 		}
 	} else {
-		tx->friend_cred = false;
+		tx->friend_cred = 0;
 		nid = tx->sub->keys[idx].nid;
 		enc = tx->sub->keys[idx].enc;
 		priv = tx->sub->keys[idx].privacy;

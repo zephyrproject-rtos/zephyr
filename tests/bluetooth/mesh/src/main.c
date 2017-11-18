@@ -15,6 +15,8 @@
 
 #define CID_INTEL 0x0002
 
+#define MAX_FAULT 24
+
 static bool has_reg_fault = true;
 
 static struct bt_mesh_cfg_srv cfg_srv = {
@@ -44,7 +46,7 @@ static struct bt_mesh_cfg_srv cfg_srv = {
 static int fault_get_cur(struct bt_mesh_model *model, u8_t *test_id,
 			 u16_t *company_id, u8_t *faults, u8_t *fault_count)
 {
-	u8_t reg_faults[24] = { [0 ... 23] = 0xff };
+	u8_t reg_faults[MAX_FAULT] = { [0 ... (MAX_FAULT - 1)] = 0xff };
 
 	printk("fault_get_cur() has_reg_fault %u\n", has_reg_fault);
 
@@ -68,7 +70,7 @@ static int fault_get_reg(struct bt_mesh_model *model, u16_t company_id,
 	*test_id = 0x00;
 
 	if (has_reg_fault) {
-		u8_t reg_faults[24] = { [0 ... 23] = 0xff };
+		u8_t reg_faults[MAX_FAULT] = { [0 ... (MAX_FAULT - 1)] = 0xff };
 
 		memcpy(faults, reg_faults, sizeof(reg_faults));
 		*fault_count = sizeof(reg_faults);
@@ -103,16 +105,24 @@ static int fault_test(struct bt_mesh_model *model, uint8_t test_id,
 	return 0;
 }
 
-static struct bt_mesh_health_srv health_srv = {
+static const struct bt_mesh_health_srv_cb health_srv_cb = {
 	.fault_get_cur = fault_get_cur,
 	.fault_get_reg = fault_get_reg,
 	.fault_clear = fault_clear,
 	.fault_test = fault_test,
 };
 
+static struct bt_mesh_health_srv health_srv = {
+	.cb = &health_srv_cb,
+};
+
+static struct bt_mesh_model_pub health_pub = {
+	.msg = BT_MESH_HEALTH_FAULT_MSG(MAX_FAULT),
+};
+
 static struct bt_mesh_model root_models[] = {
 	BT_MESH_MODEL_CFG_SRV(&cfg_srv),
-	BT_MESH_MODEL_HEALTH_SRV(&health_srv),
+	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),
 };
 
 static void vnd_publish(struct bt_mesh_model *mod)

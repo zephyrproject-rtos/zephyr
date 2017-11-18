@@ -36,9 +36,9 @@
 #define SEG(data)                   ((data)[0] >> 7)
 #define AKF(data)                   (((data)[0] >> 6) & 0x01)
 #define AID(data)                   ((data)[0] & AID_MASK)
-#define MIC_SIZE(data)              (((data)[1] & 0x80) ? 8 : 4)
+#define ASZMIC(data)                (((data)[1] >> 7) & 1)
 
-#define SZMIC(mic_len)              (mic_len == 8 ? 1 : 0)
+#define APP_MIC_LEN(aszmic)         ((aszmic) ? 8 : 4)
 
 #define UNSEG_HDR(akf, aid)         ((akf << 6) | (aid & AID_MASK))
 #define SEG_HDR(akf, aid)           (UNSEG_HDR(akf, aid) | 0x80)
@@ -98,8 +98,7 @@ void bt_mesh_set_hb_sub_dst(u16_t addr)
 	hb_sub_dst = addr;
 }
 
-static int send_unseg(struct bt_mesh_net_tx *tx, u8_t aid,
-		      struct net_buf_simple *sdu,
+static int send_unseg(struct bt_mesh_net_tx *tx, struct net_buf_simple *sdu,
 		      const struct bt_mesh_send_cb *cb, void *cb_data)
 {
 	struct net_buf *buf;
@@ -120,7 +119,7 @@ static int send_unseg(struct bt_mesh_net_tx *tx, u8_t aid,
 	if (tx->ctx->app_idx == BT_MESH_KEY_DEV) {
 		net_buf_add_u8(buf, UNSEG_HDR(0, 0));
 	} else {
-		net_buf_add_u8(buf, UNSEG_HDR(1, aid));
+		net_buf_add_u8(buf, UNSEG_HDR(1, tx->aid));
 	}
 
 	net_buf_add_mem(buf, sdu->data, sdu->len);
@@ -251,8 +250,7 @@ static void seg_retransmit(struct k_work *work)
 	seg_tx_send_unacked(tx);
 }
 
-static int send_seg(struct bt_mesh_net_tx *net_tx, u8_t aid,
-		    u8_t mic_len, struct net_buf_simple *sdu,
+static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 		    const struct bt_mesh_send_cb *cb, void *cb_data)
 {
 	u8_t seg_hdr, seg_o;
@@ -260,9 +258,9 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, u8_t aid,
 	struct seg_tx *tx;
 	int i;
 
-	BT_DBG("src 0x%04x dst 0x%04x app_idx 0x%04x mic_len %u sdu_len %u",
-	       net_tx->src, net_tx->ctx->addr, net_tx->ctx->app_idx, mic_len,
-	       sdu->len);
+	BT_DBG("src 0x%04x dst 0x%04x app_idx 0x%04x aszmic %u sdu_len %u",
+	       net_tx->src, net_tx->ctx->addr, net_tx->ctx->app_idx,
+	       net_tx->aszmic, sdu->len);
 
 	if (sdu->len < 1) {
 		BT_ERR("Zero-length SDU not allowed");
@@ -289,7 +287,7 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, u8_t aid,
 	if (net_tx->ctx->app_idx == BT_MESH_KEY_DEV) {
 		seg_hdr = SEG_HDR(0, 0);
 	} else {
-		seg_hdr = SEG_HDR(1, aid);
+		seg_hdr = SEG_HDR(1, net_tx->aid);
 	}
 
 	seg_o = 0;
@@ -326,7 +324,7 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, u8_t aid,
 		net_buf_reserve(seg, BT_MESH_NET_HDR_LEN);
 
 		net_buf_add_u8(seg, seg_hdr);
-		net_buf_add_u8(seg, (SZMIC(mic_len) << 7) | seq_zero >> 6);
+		net_buf_add_u8(seg, (net_tx->aszmic << 7) | seq_zero >> 6);
 		net_buf_add_u8(seg, (((seq_zero & 0x3f) << 2) |
 				     (seg_o >> 3)));
 		net_buf_add_u8(seg, ((seg_o & 0x07) << 5) | tx->seg_n);
@@ -394,11 +392,18 @@ struct bt_mesh_app_key *bt_mesh_app_key_find(u16_t app_idx)
 int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
 		       const struct bt_mesh_send_cb *cb, void *cb_data)
 {
-	bool seg = (msg->len > 11 || cb);
 	const u8_t *key;
-	u8_t mic_len, aid, aszmic;
 	u8_t *ad;
 	int err;
+
+	if (net_buf_simple_tailroom(msg) < 4) {
+		BT_ERR("Insufficient tailroom for Transport MIC");
+		return -EINVAL;
+	}
+
+	if (msg->len > 11) {
+		tx->ctx->send_rel = 1;
+	}
 
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x dst 0x%04x", tx->sub->net_idx,
 	       tx->ctx->app_idx, tx->ctx->addr);
@@ -406,7 +411,7 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
 
 	if (tx->ctx->app_idx == BT_MESH_KEY_DEV) {
 		key = bt_mesh.dev_key;
-		aid = 0;
+		tx->aid = 0;
 	} else {
 		struct bt_mesh_app_key *app_key;
 
@@ -418,19 +423,17 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
 		if (tx->sub->kr_phase == BT_MESH_KR_PHASE_2 &&
 		    app_key->updated) {
 			key = app_key->keys[1].val;
-			aid = app_key->keys[1].id;
+			tx->aid = app_key->keys[1].id;
 		} else {
 			key = app_key->keys[0].val;
-			aid = app_key->keys[0].id;
+			tx->aid = app_key->keys[0].id;
 		}
 	}
 
-	if (!seg || net_buf_simple_tailroom(msg) < 8) {
-		mic_len = 4;
-		aszmic = 0;
+	if (!tx->ctx->send_rel || net_buf_simple_tailroom(msg) < 8) {
+		tx->aszmic = 0;
 	} else {
-		mic_len = 8;
-		aszmic = 1;
+		tx->aszmic = 1;
 	}
 
 	if (BT_MESH_ADDR_IS_VIRTUAL(tx->ctx->addr)) {
@@ -440,18 +443,39 @@ int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
 	}
 
 	err = bt_mesh_app_encrypt(key, tx->ctx->app_idx == BT_MESH_KEY_DEV,
-				  aszmic, msg, ad, mic_len, tx->src,
+				  tx->aszmic, msg, ad, tx->src,
 				  tx->ctx->addr, bt_mesh.seq,
 				  BT_MESH_NET_IVI_TX);
 	if (err) {
 		return err;
 	}
 
-	if (seg) {
-		return send_seg(tx, aid, mic_len, msg, cb, cb_data);
+	if (tx->ctx->send_rel) {
+		err = send_seg(tx, msg, cb, cb_data);
+	} else {
+		err = send_unseg(tx, msg, cb, cb_data);
 	}
 
-	return send_unseg(tx, aid, msg, cb, cb_data);
+	return err;
+}
+
+int bt_mesh_trans_resend(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
+			 const struct bt_mesh_send_cb *cb, void *cb_data)
+{
+	struct net_buf_simple_state state;
+	int err;
+
+	net_buf_simple_save(msg, &state);
+
+	if (tx->ctx->send_rel || msg->len > 15) {
+		err = send_seg(tx, msg, cb, cb_data);
+	} else {
+		err = send_unseg(tx, msg, cb, cb_data);
+	}
+
+	net_buf_simple_restore(msg, &state);
+
+	return err;
 }
 
 static bool is_replay(struct bt_mesh_net_rx *rx)
@@ -489,8 +513,8 @@ static bool is_replay(struct bt_mesh_net_rx *rx)
 	return true;
 }
 
-static int sdu_recv(struct bt_mesh_net_rx *rx, u8_t hdr, u8_t mic_size,
-		    u8_t aszmic, struct net_buf_simple *buf)
+static int sdu_recv(struct bt_mesh_net_rx *rx, u8_t hdr, u8_t aszmic,
+		    struct net_buf_simple *buf)
 {
 	struct net_buf_simple *sdu =
 		NET_BUF_SIMPLE(CONFIG_BT_MESH_RX_SDU_MAX - 4);
@@ -498,11 +522,10 @@ static int sdu_recv(struct bt_mesh_net_rx *rx, u8_t hdr, u8_t mic_size,
 	u16_t i;
 	int err;
 
-	BT_DBG("MIC_SIZE %u ASZMIC %u AKF %u AID 0x%02x",
-	       mic_size, aszmic, AKF(&hdr), AID(&hdr));
+	BT_DBG("ASZMIC %u AKF %u AID 0x%02x", aszmic, AKF(&hdr), AID(&hdr));
 	BT_DBG("len %u: %s", buf->len, bt_hex(buf->data, buf->len));
 
-	if (buf->len < 1 + mic_size) {
+	if (buf->len < 1 + APP_MIC_LEN(aszmic)) {
 		BT_ERR("Too short SDU + MIC");
 		return -EINVAL;
 	}
@@ -519,14 +542,13 @@ static int sdu_recv(struct bt_mesh_net_rx *rx, u8_t hdr, u8_t mic_size,
 	}
 
 	/* Adjust the length to not contain the MIC at the end */
-	buf->len -= mic_size;
+	buf->len -= APP_MIC_LEN(aszmic);
 
 	if (!AKF(&hdr)) {
 		net_buf_simple_init(sdu, 0);
 		err = bt_mesh_app_decrypt(bt_mesh.dev_key, true, aszmic, buf,
-					  mic_size, sdu, ad, rx->ctx.addr,
-					  rx->dst, rx->seq,
-					  BT_MESH_NET_IVI_RX(rx));
+					  sdu, ad, rx->ctx.addr, rx->dst,
+					  rx->seq, BT_MESH_NET_IVI_RX(rx));
 		if (err) {
 			BT_ERR("Unable to decrypt with DevKey");
 			return -EINVAL;
@@ -559,9 +581,8 @@ static int sdu_recv(struct bt_mesh_net_rx *rx, u8_t hdr, u8_t mic_size,
 
 		net_buf_simple_init(sdu, 0);
 		err = bt_mesh_app_decrypt(keys->val, false, aszmic, buf,
-					  mic_size, sdu, ad, rx->ctx.addr,
-					  rx->dst, rx->seq,
-					  BT_MESH_NET_IVI_RX(rx));
+					  sdu, ad, rx->ctx.addr, rx->dst,
+					  rx->seq, BT_MESH_NET_IVI_RX(rx));
 		if (err) {
 			BT_WARN("Unable to decrypt with AppKey %u", i);
 			continue;
@@ -803,7 +824,7 @@ static int trans_unseg(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx,
 			return 0;
 		}
 
-		return sdu_recv(rx, hdr, 4, 0, buf);
+		return sdu_recv(rx, hdr, 0, buf);
 	}
 }
 
@@ -1062,8 +1083,7 @@ static int trans_seg(struct net_buf_simple *buf, struct bt_mesh_net_rx *net_rx,
 		return -EINVAL;
 	}
 
-	BT_DBG("MIC_SIZE %u AKF %u AID 0x%02x", MIC_SIZE(hdr), AKF(hdr),
-	       AID(hdr));
+	BT_DBG("ASZMIC %u AKF %u AID 0x%02x", ASZMIC(hdr), AKF(hdr), AID(hdr));
 
 	net_buf_simple_pull(buf, 1);
 
@@ -1207,8 +1227,7 @@ found_rx:
 	if (net_rx->ctl) {
 		err = ctl_recv(net_rx, *hdr, &rx->buf, seq_auth);
 	} else {
-		err = sdu_recv(net_rx, *hdr, MIC_SIZE(hdr),
-			       SZMIC(MIC_SIZE(hdr)), &rx->buf);
+		err = sdu_recv(net_rx, *hdr, ASZMIC(hdr), &rx->buf);
 	}
 
 	seg_rx_reset(rx);
