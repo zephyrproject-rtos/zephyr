@@ -1278,7 +1278,7 @@ int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx)
 	 * be encrypted using the Friend Credentials.
 	 */
 	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) &&
-	    bt_mesh_lpn_established() &&
+	    bt_mesh_lpn_established() && rx->net_if == BT_MESH_NET_IF_ADV &&
 	    (!bt_mesh_lpn_waiting_update() || !rx->friend_cred)) {
 		BT_WARN("Ignoring unexpected message in Low Power mode");
 		return -EAGAIN;
