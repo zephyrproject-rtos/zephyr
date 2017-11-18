@@ -58,6 +58,10 @@ static struct bt_mesh_cfg_srv cfg_srv = {
 static struct bt_mesh_health_srv health_srv = {
 };
 
+static struct bt_mesh_model_pub health_pub = {
+	.msg = BT_MESH_HEALTH_FAULT_MSG(0),
+};
+
 static struct bt_mesh_cfg_cli cfg_cli = {
 };
 
@@ -66,7 +70,7 @@ static const u8_t dev_uuid[16] = { 0xdd, 0xdd };
 static struct bt_mesh_model root_models[] = {
 	BT_MESH_MODEL_CFG_SRV(&cfg_srv),
 	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
-	BT_MESH_MODEL_HEALTH_SRV(&health_srv),
+	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),
 };
 
 static struct bt_mesh_elem elements[] = {

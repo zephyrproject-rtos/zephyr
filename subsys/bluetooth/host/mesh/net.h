@@ -257,7 +257,9 @@ struct bt_mesh_net_tx {
 	struct bt_mesh_msg_ctx *ctx;
 	u16_t src;
 	u8_t  xmit;
-	bool  friend_cred;
+	u8_t  friend_cred:1,
+	      aszmic:1,
+	      aid:6;
 };
 
 extern struct bt_mesh_net bt_mesh;

@@ -262,6 +262,7 @@ static u8_t _mod_pub_set(struct bt_mesh_model *model, u16_t pub_addr,
 		model->pub->ttl = 0;
 		model->pub->period = 0;
 		model->pub->retransmit = 0;
+		model->pub->count = 0;
 
 		if (model->pub->func) {
 			k_delayed_work_cancel(&model->pub->timer);
@@ -343,7 +344,7 @@ static u8_t mod_unbind(struct bt_mesh_model *model, u16_t key_idx)
 
 		if (model->pub && model->pub->key == key_idx) {
 			_mod_pub_set(model, BT_MESH_ADDR_UNASSIGNED,
-				     BT_MESH_KEY_UNUSED, 0, 0, 0, 0);
+				     0, 0, 0, 0, 0);
 		}
 
 		return STATUS_SUCCESS;

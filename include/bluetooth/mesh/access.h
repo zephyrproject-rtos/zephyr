@@ -131,7 +131,10 @@ struct bt_mesh_msg_ctx {
 	u16_t addr;
 
 	/** Received TTL value. Not used for sending. */
-	u8_t  recv_ttl;
+	u8_t  recv_ttl:7;
+
+	/** Force sending reliably by using segment acknowledgement */
+	u8_t  send_rel:1;
 
 	/** TTL, or BT_MESH_TTL_DEFAULT for default TTL. */
 	u8_t  send_ttl;
@@ -264,7 +267,11 @@ struct bt_mesh_model_pub {
 	u8_t  retransmit;   /* Retransmit Count & Interval Steps */
 	u8_t  period;       /* Publish Period */
 	u8_t  period_div:4, /* Divisor for the Period */
-	      cred:1;       /* Friendship Credentials Flag */
+	      cred:1,       /* Friendship Credentials Flag */
+	      count:3;      /* Retransmissions left */
+
+	/* Buffer containing the publication message */
+	struct net_buf_simple *msg;
 
 	/* Publish callback */
 	void    (*func)(struct bt_mesh_model *mod);
@@ -334,13 +341,15 @@ int bt_mesh_model_send(struct bt_mesh_model *model,
 /**
  * @brief Send a model publication message.
  *
+ * Before calling this function, the user needs to ensure that the model
+ * publication message ('msg' member of struct bt_mesh_model_pub) contains
+ * a valid message to be sent.
+ *
  * @param model  Mesh (client) Model that's publishing the message.
- * @param msg    Access Layer message to publish.
  *
  * @return 0 on success, or (negative) error code on failure.
  */
-int bt_mesh_model_publish(struct bt_mesh_model *model,
-			  struct net_buf_simple *msg);
+int bt_mesh_model_publish(struct bt_mesh_model *model);
 
 /** Node Composition */
 struct bt_mesh_comp {
