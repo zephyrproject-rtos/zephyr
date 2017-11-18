@@ -25,8 +25,7 @@ Kernel
 Architectures
 *************
 
-* details ...
-
+* nrf52: Add support for LOW_POWER state and SYSTEM_OFF
 
 Boards
 ******
@@ -36,7 +35,7 @@ Boards
 Drivers and Sensors
 *******************
 
-* details ...
+* timer: Add Support for TICKLESS KERNEL in xtensa_sys_timer
 
 Networking
 **********
