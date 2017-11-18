@@ -816,8 +816,8 @@ int bt_mesh_cfg_mod_app_bind_vnd(u16_t net_idx, u16_t addr, u16_t elem_addr,
 			    status);
 }
 
-static int mod_sub_add(u16_t net_idx, u16_t addr, u16_t elem_addr,
-		       u16_t sub_addr, u16_t mod_id, u16_t cid, u8_t *status)
+static int mod_sub(u32_t op, u16_t net_idx, u16_t addr, u16_t elem_addr,
+		   u16_t sub_addr, u16_t mod_id, u16_t cid, u8_t *status)
 {
 	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 8 + 4);
 	struct bt_mesh_msg_ctx ctx = {
@@ -840,7 +840,7 @@ static int mod_sub_add(u16_t net_idx, u16_t addr, u16_t elem_addr,
 		return err;
 	}
 
-	bt_mesh_model_msg_init(msg, OP_MOD_SUB_ADD);
+	bt_mesh_model_msg_init(msg, op);
 	net_buf_simple_add_le16(msg, elem_addr);
 	net_buf_simple_add_le16(msg, sub_addr);
 
@@ -874,8 +874,8 @@ static int mod_sub_add(u16_t net_idx, u16_t addr, u16_t elem_addr,
 int bt_mesh_cfg_mod_sub_add(u16_t net_idx, u16_t addr, u16_t elem_addr,
 			    u16_t sub_addr, u16_t mod_id, u8_t *status)
 {
-	return mod_sub_add(net_idx, addr, elem_addr, sub_addr, mod_id,
-			   CID_NVAL, status);
+	return mod_sub(OP_MOD_SUB_ADD, net_idx, addr, elem_addr, sub_addr,
+		       mod_id, CID_NVAL, status);
 }
 
 int bt_mesh_cfg_mod_sub_add_vnd(u16_t net_idx, u16_t addr, u16_t elem_addr,
@@ -886,8 +886,46 @@ int bt_mesh_cfg_mod_sub_add_vnd(u16_t net_idx, u16_t addr, u16_t elem_addr,
 		return -EINVAL;
 	}
 
-	return mod_sub_add(net_idx, addr, elem_addr, sub_addr, mod_id, cid,
-			   status);
+	return mod_sub(OP_MOD_SUB_ADD, net_idx, addr, elem_addr, sub_addr,
+		       mod_id, cid, status);
+}
+
+int bt_mesh_cfg_mod_sub_del(u16_t net_idx, u16_t addr, u16_t elem_addr,
+			    u16_t sub_addr, u16_t mod_id, u8_t *status)
+{
+	return mod_sub(OP_MOD_SUB_DEL, net_idx, addr, elem_addr, sub_addr,
+		       mod_id, CID_NVAL, status);
+}
+
+int bt_mesh_cfg_mod_sub_del_vnd(u16_t net_idx, u16_t addr, u16_t elem_addr,
+				 u16_t sub_addr, u16_t mod_id, u16_t cid,
+				 u8_t *status)
+{
+	if (cid == CID_NVAL) {
+		return -EINVAL;
+	}
+
+	return mod_sub(OP_MOD_SUB_DEL, net_idx, addr, elem_addr, sub_addr,
+		       mod_id, cid, status);
+}
+
+int bt_mesh_cfg_mod_sub_overwrite(u16_t net_idx, u16_t addr, u16_t elem_addr,
+				  u16_t sub_addr, u16_t mod_id, u8_t *status)
+{
+	return mod_sub(OP_MOD_SUB_OVERWRITE, net_idx, addr, elem_addr,
+		       sub_addr, mod_id, CID_NVAL, status);
+}
+
+int bt_mesh_cfg_mod_sub_overwrite_vnd(u16_t net_idx, u16_t addr,
+				      u16_t elem_addr, u16_t sub_addr,
+				      u16_t mod_id, u16_t cid, u8_t *status)
+{
+	if (cid == CID_NVAL) {
+		return -EINVAL;
+	}
+
+	return mod_sub(OP_MOD_SUB_OVERWRITE, net_idx, addr, elem_addr,
+		       sub_addr, mod_id, cid, status);
 }
 
 static int mod_pub_get(u16_t net_idx, u16_t addr, u16_t elem_addr,
