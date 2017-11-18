@@ -126,8 +126,10 @@ if tags.has('daily') or tags.has('release'):
     html_theme_path = ['./themes']
 
 if tags.has('release'):
+    is_release = True
     docs_title = 'Docs / %s' %(version)
 else:
+    is_release = False
     docs_title = 'Docs'
 
 # The name for this set of Sphinx documents.  If None, it defaults to
@@ -312,4 +314,5 @@ breathe_default_project = "Zephyr"
 html_context = {
     'show_license': html_show_license,
     'docs_title': docs_title,
+    'is_release': is_release,
 }
