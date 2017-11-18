@@ -1,0 +1,13 @@
+# Kconfig - Atmel SAM SERCOM configuration options
+#
+# Copyright (c) 2017 Google LLC.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig UART_SAM0
+	bool "Atmel SAM0 series SERCOM USART driver"
+	depends on SOC_FAMILY_SAM0
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	default n
+	help
+	  This option enables the SERCOMx USART driver for Atmel SAM0 MCUs.
