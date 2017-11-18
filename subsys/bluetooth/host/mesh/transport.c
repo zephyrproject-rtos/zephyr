@@ -198,12 +198,26 @@ static inline void seg_tx_complete(struct seg_tx *tx, int err)
 	seg_tx_reset(tx);
 }
 
+static void seg_send_start(u16_t duration, int err, void *user_data)
+{
+	struct seg_tx *tx = user_data;
+
+	if (tx->cb && tx->cb->start) {
+		tx->cb->start(duration, err, tx->cb_data);
+	}
+}
+
 static void seg_sent(int err, void *user_data)
 {
 	struct seg_tx *tx = user_data;
 
 	k_delayed_work_submit(&tx->retransmit, SEG_RETRANSMIT_TIMEOUT);
 }
+
+static const struct bt_mesh_send_cb first_sent_cb = {
+	.start = seg_send_start,
+	.end = seg_sent,
+};
 
 static const struct bt_mesh_send_cb seg_sent_cb = {
 	.end = seg_sent,
@@ -358,7 +372,9 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 
 		BT_DBG("Sending %u/%u", seg_o, tx->seg_n);
 
-		err = bt_mesh_net_send(net_tx, seg, &seg_sent_cb, tx);
+		err = bt_mesh_net_send(net_tx, seg,
+				       seg_o ? &seg_sent_cb : &first_sent_cb,
+				       tx);
 		if (err) {
 			BT_ERR("Sending segment failed");
 			seg_tx_reset(tx);
