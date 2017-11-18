@@ -219,6 +219,40 @@ struct bt_mesh_model_op {
  */
 #define BT_MESH_TRANSMIT_INT(transmit) ((((transmit) >> 3) + 1) * 10)
 
+/** @def BT_MESH_PUB_TRANSMIT
+ *
+ *  @brief Encode Publish Retransmit count & interval steps.
+ *
+ *  @param count   Number of retransmissions (first transmission is excluded).
+ *  @param int_ms  Interval steps in milliseconds. Must be greater than 0
+ *                 and a multiple of 50.
+ *
+ *  @return Mesh transmit value that can be used e.g. for the default
+ *          values of the configuration model data.
+ */
+#define BT_MESH_PUB_TRANSMIT(count, int_ms) BT_MESH_TRANSMIT(count,           \
+							     (int_ms) / 5)
+
+/** @def BT_MESH_PUB_TRANSMIT_COUNT
+ *
+ *  @brief Decode Pubhlish Retransmit count from a given value.
+ *
+ *  @param transmit Encoded Publish Retransmit count & interval value.
+ *
+ *  @return Retransmission count (actual transmissions is N + 1).
+ */
+#define BT_MESH_PUB_TRANSMIT_COUNT(transmit) BT_MESH_TRANSMIT_COUNT(transmit)
+
+/** @def BT_MESH_PUB_TRANSMIT_INT
+ *
+ *  @brief Decode Publish Retransmit interval from a given value.
+ *
+ *  @param transmit Encoded Publish Retransmit count & interval value.
+ *
+ *  @return Transmission interval in milliseconds.
+ */
+#define BT_MESH_PUB_TRANSMIT_INT(transmit) ((((transmit) >> 3) + 1) * 50)
+
 struct bt_mesh_model_pub {
 	/* Self-reference for easy lookup */
 	struct bt_mesh_model *mod;

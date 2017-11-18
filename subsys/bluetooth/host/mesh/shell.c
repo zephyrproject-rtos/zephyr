@@ -708,10 +708,10 @@ static int mod_pub_get(u16_t addr, u16_t mod_id, u16_t cid)
 	       "\tPublishTTL:                     %u\n"
 	       "\tPublishPeriod:                  0x%02x\n"
 	       "\tPublishRetransmitCount:         %u\n"
-	       "\tPublishRetransmitIntervalSteps: %u\n",
+	       "\tPublishRetransmitInterval:      %ums\n",
 	       addr, mod_id, pub.addr, pub.app_idx, pub.cred_flag, pub.ttl,
-	       pub.period, BT_MESH_TRANSMIT_COUNT(pub.transmit),
-	       BT_MESH_TRANSMIT_INT(pub.transmit));
+	       pub.period, BT_MESH_PUB_TRANSMIT_COUNT(pub.transmit),
+	       BT_MESH_PUB_TRANSMIT_INT(pub.transmit));
 
 	return 0;
 }
@@ -719,7 +719,8 @@ static int mod_pub_get(u16_t addr, u16_t mod_id, u16_t cid)
 static int mod_pub_set(u16_t addr, u16_t mod_id, u16_t cid, char *argv[])
 {
 	struct bt_mesh_cfg_mod_pub pub;
-	u8_t status, count, interval;
+	u8_t status, count;
+	u16_t interval;
 	int err;
 
 	pub.addr = strtoul(argv[0], NULL, 0);
@@ -735,12 +736,12 @@ static int mod_pub_set(u16_t addr, u16_t mod_id, u16_t cid, char *argv[])
 	}
 
 	interval = strtoul(argv[6], NULL, 0);
-	if (interval > 31) {
-		printk("Invalid retransmit interval\n");
+	if (interval > (31 * 50) || (interval % 50)) {
+		printk("Invalid retransmit interval %u\n", interval);
 		return -EINVAL;
 	}
 
-	pub.transmit = BT_MESH_TRANSMIT(count, interval);
+	pub.transmit = BT_MESH_PUB_TRANSMIT(count, interval);
 
 	if (cid == CID_NVAL) {
 		err = bt_mesh_cfg_mod_pub_set(net.net_idx, net.dst, addr,

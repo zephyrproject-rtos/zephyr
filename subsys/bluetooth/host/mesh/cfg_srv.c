@@ -1023,8 +1023,8 @@ static void mod_pub_set(struct bt_mesh_model *model,
 	BT_DBG("pub_app_idx 0x%03x, pub_ttl %u pub_period 0x%02x",
 	       pub_app_idx, pub_ttl, pub_period);
 	BT_DBG("retransmit 0x%02x (count %u interval %ums)", retransmit,
-	       BT_MESH_TRANSMIT_COUNT(retransmit),
-	       BT_MESH_TRANSMIT_INT(retransmit));
+	       BT_MESH_PUB_TRANSMIT_COUNT(retransmit),
+	       BT_MESH_PUB_TRANSMIT_INT(retransmit));
 
 	elem = bt_mesh_elem_find(elem_addr);
 	if (!elem) {
@@ -1130,8 +1130,8 @@ static void mod_pub_va_set(struct bt_mesh_model *model,
 	BT_DBG("pub_app_idx 0x%03x, pub_ttl %u pub_period 0x%02x",
 	       pub_app_idx, pub_ttl, pub_period);
 	BT_DBG("retransmit 0x%02x (count %u interval %ums)", retransmit,
-	       BT_MESH_TRANSMIT_COUNT(retransmit),
-	       BT_MESH_TRANSMIT_INT(retransmit));
+	       BT_MESH_PUB_TRANSMIT_COUNT(retransmit),
+	       BT_MESH_PUB_TRANSMIT_INT(retransmit));
 
 	elem = bt_mesh_elem_find(elem_addr);
 	if (!elem) {
