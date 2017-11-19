@@ -9,7 +9,7 @@ RUN apt-get update \
     && apt-get install -yq --no-install-recommends git cmake ninja-build gperf \
                ccache doxygen dfu-util device-tree-compiler \
                python3-ply python3-pip python3-setuptools xz-utils file \
-               wget make \
+               wget make vim-tiny \
     && rm -rf /var/lib/apt/lists/*
 
 # Zephyr SDK
