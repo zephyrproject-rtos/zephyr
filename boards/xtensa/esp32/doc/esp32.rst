@@ -62,6 +62,19 @@ The toolchain is available for Linux, Windows, and Mac hosts and
 instructions to obtain and set them up are available in the ESP-IDF
 repository, using the toolchain and SDK links above.
 
+Docker container based builds
+=============================
+
+You can skip locally installing and configuring the Zephyr build system by
+using pre-made the ``svendowideit/zephyr-esp32`` Docker image.
+
+For example, to build the ``hello_world`` sample:
+
+.. code-block:: console
+
+   docker run --rm -it -w /arm svendowideit/zephyr-esp32 sh -c "cmake -DBOARD=esp32 /zephyr/samples/hello_world && make flash"
+
+
 Set up build environment
 ========================
 
