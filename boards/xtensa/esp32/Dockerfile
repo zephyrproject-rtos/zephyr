@@ -1,7 +1,7 @@
 
 # sample build:
 #
-# docker run --rm -it -w /arm svendowideit/zephyr-esp32 sh -c "cmake -DBOARD=esp32 /zephyr/samples/hello_world && make flash"
+# docker run --rm -it --device /dev/ttyUSB0:/dev/ttyUSB0 -w /esp32 svendowideit/zephyr-esp32 sh -c "cmake -DBOARD=esp32 /zephyr/samples/hello_world && make flash"
 
 FROM svendowideit/zephyr
 

@@ -68,11 +68,11 @@ Docker container based builds
 You can skip locally installing and configuring the Zephyr build system by
 using pre-made the ``svendowideit/zephyr-esp32`` Docker image.
 
-For example, to build the ``hello_world`` sample:
+For example, to build the ``hello_world`` sample and flash it when its attached to ttyUSB0:
 
 .. code-block:: console
 
-   docker run --rm -it -w /arm svendowideit/zephyr-esp32 sh -c "cmake -DBOARD=esp32 /zephyr/samples/hello_world && make flash"
+   docker run --rm -it --device /dev/ttyUSB0:/dev/ttyUSB0 -w /esp32 svendowideit/zephyr-esp32 sh -c "cmake -DBOARD=esp32 /zephyr/samples/hello_world && make flash"
 
 
 Set up build environment
