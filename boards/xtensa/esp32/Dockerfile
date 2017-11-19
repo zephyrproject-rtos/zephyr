@@ -17,7 +17,7 @@ ENV ESPRESSIF_TOOLCHAIN_PATH="/opt/xtensa-esp32-elf/"
 # ESP-IDF SDK
 RUN git clone --recursive https://github.com/espressif/esp-idf.git $ESP_IDF_PATH \
     && cd $ESP_IDF_PATH \
-    git checkout dc8c33892e0
+    && git checkout dc8c33892e0
 
 # xtensa esp32 toolchain
 RUN wget -O /tmp/xtensa-esp32-linux64.tgz https://dl.espressif.com/dl/xtensa-esp32-elf-linux64-1.22.0-73-ge28a011-5.2.0.tar.gz
