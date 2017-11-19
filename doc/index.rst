@@ -20,8 +20,8 @@ Zephyr Project Documentation
    ``https://www.zephyrproject.org/doc/<version>``. The following documentation
    versions are available:
 
-   `Zephyr 1.5.0`_ | `Zephyr 1.6.0`_ | `Zephyr 1.7.0`_ | `Zephyr 1.8.0`_ |
-   `Zephyr 1.9.0`_
+   `Zephyr 1.5.0`_ | `Zephyr 1.6.1`_ | `Zephyr 1.7.1`_ | `Zephyr 1.8.0`_ |
+   `Zephyr 1.9.2`_
 
 For more information about previous releases, please consult the published
 :ref:`zephyr_release_notes`.
@@ -63,8 +63,8 @@ Indices and Tables
 
 * :ref:`genindex`
 
-.. _Zephyr 1.9.0: https://www.zephyrproject.org/doc/1.9.0/
+.. _Zephyr 1.9.2: https://www.zephyrproject.org/doc/1.9.0/
 .. _Zephyr 1.8.0: https://www.zephyrproject.org/doc/1.8.0/
-.. _Zephyr 1.7.0: https://www.zephyrproject.org/doc/1.7.0/
-.. _Zephyr 1.6.0: https://www.zephyrproject.org/doc/1.6.0/
+.. _Zephyr 1.7.1: https://www.zephyrproject.org/doc/1.7.0/
+.. _Zephyr 1.6.1: https://www.zephyrproject.org/doc/1.6.0/
 .. _Zephyr 1.5.0: https://www.zephyrproject.org/doc/1.5.0/
