@@ -105,13 +105,14 @@ static struct bt_mesh_model root_models[] = {
 	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),
 };
 
-static void vnd_publish(struct bt_mesh_model *mod)
+static int vnd_publish(struct bt_mesh_model *mod)
 {
 	printk("Vendor publish\n");
+	return 0;
 }
 
 static struct bt_mesh_model_pub vnd_pub = {
-	.func = vnd_publish,
+	.update = vnd_publish,
 };
 
 static void vnd_button_pressed(struct bt_mesh_model *model,

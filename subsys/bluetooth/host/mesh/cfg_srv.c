@@ -251,7 +251,7 @@ static u8_t _mod_pub_set(struct bt_mesh_model *model, u16_t pub_addr,
 		return STATUS_FEAT_NOT_SUPP;
 	}
 
-	if (!model->pub->func && period) {
+	if (!model->pub->update && period) {
 		return STATUS_NVAL_PUB_PARAM;
 	}
 
@@ -264,7 +264,7 @@ static u8_t _mod_pub_set(struct bt_mesh_model *model, u16_t pub_addr,
 		model->pub->retransmit = 0;
 		model->pub->count = 0;
 
-		if (model->pub->func) {
+		if (model->pub->update) {
 			k_delayed_work_cancel(&model->pub->timer);
 		}
 
@@ -282,7 +282,7 @@ static u8_t _mod_pub_set(struct bt_mesh_model *model, u16_t pub_addr,
 	model->pub->period = period;
 	model->pub->retransmit = retransmit;
 
-	if (model->pub->func) {
+	if (model->pub->update) {
 		s32_t period_ms;
 
 		period_ms = bt_mesh_model_pub_period_get(model);
