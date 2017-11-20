@@ -2375,8 +2375,6 @@ static void node_reset(struct bt_mesh_model *model,
 {
 	/* Needed size: opcode (2 bytes) + msg + MIC */
 	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 0 + 4);
-	struct bt_mesh_cfg_srv *cfg = model->user_data;
-	int i;
 
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
@@ -2391,28 +2389,6 @@ static void node_reset(struct bt_mesh_model *model,
 	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
 		BT_ERR("Unable to send Node Reset Status");
 	}
-
-	/* Delete all app keys */
-	for (i = 0; i < ARRAY_SIZE(bt_mesh.app_keys); i++) {
-		struct bt_mesh_app_key *key = &bt_mesh.app_keys[i];
-
-		if (key->net_idx != BT_MESH_KEY_UNUSED) {
-			_app_key_del(key);
-		}
-	}
-
-	for (i = 0; i < ARRAY_SIZE(bt_mesh.sub); i++) {
-		struct bt_mesh_subnet *sub = &bt_mesh.sub[i];
-
-		if (cfg->hb_pub.net_idx == sub->net_idx) {
-			hb_pub_disable(cfg);
-		}
-
-		memset(sub, 0, sizeof(*sub));
-		sub->net_idx = BT_MESH_KEY_UNUSED;
-	}
-
-	memset(labels, 0, sizeof(labels));
 
 	bt_mesh_reset();
 }
@@ -3046,6 +3022,42 @@ int bt_mesh_cfg_srv_init(struct bt_mesh_model *model, bool primary)
 	conf = cfg;
 
 	return 0;
+}
+
+void bt_mesh_cfg_reset(void)
+{
+	struct bt_mesh_cfg_srv *cfg = conf;
+	int i;
+
+	if (!cfg) {
+		return;
+	}
+
+	bt_mesh_set_hb_sub_dst(BT_MESH_ADDR_UNASSIGNED);
+
+	cfg->hb_sub.src = BT_MESH_ADDR_UNASSIGNED;
+	cfg->hb_sub.dst = BT_MESH_ADDR_UNASSIGNED;
+	cfg->hb_sub.expiry = 0;
+
+	hb_pub_disable(cfg);
+
+	/* Delete all app keys */
+	for (i = 0; i < ARRAY_SIZE(bt_mesh.app_keys); i++) {
+		struct bt_mesh_app_key *key = &bt_mesh.app_keys[i];
+
+		if (key->net_idx != BT_MESH_KEY_UNUSED) {
+			_app_key_del(key);
+		}
+	}
+
+	for (i = 0; i < ARRAY_SIZE(bt_mesh.sub); i++) {
+		struct bt_mesh_subnet *sub = &bt_mesh.sub[i];
+
+		memset(sub, 0, sizeof(*sub));
+		sub->net_idx = BT_MESH_KEY_UNUSED;
+	}
+
+	memset(labels, 0, sizeof(labels));
 }
 
 void bt_mesh_heartbeat(u16_t src, u16_t dst, u8_t hops, u16_t feat)
