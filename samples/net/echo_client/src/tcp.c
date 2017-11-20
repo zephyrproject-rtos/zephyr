@@ -151,7 +151,7 @@ static void send_tcp_data(struct net_app_ctx *ctx,
 
 	data->received_tcp = 0;
 
-	pkt = prepare_send_pkt(ctx, data->proto, data->expecting_tcp);
+	pkt = prepare_send_pkt(ctx, data->proto, &data->expecting_tcp);
 	if (!pkt) {
 		return;
 	}
