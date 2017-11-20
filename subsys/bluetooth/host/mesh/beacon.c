@@ -135,13 +135,7 @@ static int secure_beacon_send(void)
 			continue;
 		}
 
-		/* Handle time wrap due to 32-bit storage */
-		if (sub->beacon_sent > now) {
-			time_diff = (UINT32_MAX - sub->beacon_sent) + now;
-		} else {
-			time_diff = now - sub->beacon_sent;
-		}
-
+		time_diff = now - sub->beacon_sent;
 		if (time_diff < BEACON_THRESHOLD(sub)) {
 			continue;
 		}
