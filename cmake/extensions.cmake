@@ -572,6 +572,11 @@ function(zephyr_library_link_libraries_ifdef feature_toggle item)
   endif()
 endfunction()
 
+macro(list_append_ifdef feature_toggle list)
+  if(${${feature_toggle}})
+    list(APPEND ${list} ${ARGN})
+  endif()
+endmacro()
 
 # 3.2. *_ifndef
 # See 3.1 *_ifdef

@@ -665,17 +665,63 @@ endif()
 # the zephyr elf, we set the kernel_elf file name to zephyr.elf.
 set_target_properties(${logical_target_for_zephyr_elf} PROPERTIES OUTPUT_NAME ${KERNEL_NAME})
 
+set(post_build_commands "")
+
+# TODO: Write a KConfig for these options instead
+set(CONFIG_CHECK_LINK_MAP 1)
+
+set(CONFIG_BUILD_OUTPUT_HEX 1)
+set(CONFIG_BUILD_OUTPUT_BIN 1)
+set(CONFIG_BUILD_OUTPUT_S19 1)
+set(CONFIG_BUILD_OUTPUT_DISASSEMBLY 1)
+set(CONFIG_BUILD_OUTPUT_STAT 1)
+set(CONFIG_BUILD_OUTPUT_STRIPPED 1)
+
+list_append_ifdef(CONFIG_CHECK_LINK_MAP
+  post_build_commands
+  COMMAND ${PYTHON_EXECUTABLE} $ENV{ZEPHYR_BASE}/scripts/check_link_map.py ${KERNEL_MAP_NAME}
+  )
+
+list_append_ifdef(
+  CONFIG_BUILD_OUTPUT_HEX
+  post_build_commands
+  COMMAND ${CMAKE_OBJCOPY} -S -Oihex   -R .comment -R COMMON -R .eh_frame  ${KERNEL_ELF_NAME}    ${KERNEL_HEX_NAME}
+  )
+
+list_append_ifdef(
+  CONFIG_BUILD_OUTPUT_BIN
+  post_build_commands
+  COMMAND ${CMAKE_OBJCOPY} -S -Obinary -R .comment -R COMMON -R .eh_frame  ${KERNEL_ELF_NAME}    ${KERNEL_BIN_NAME}
+  )
+list_append_ifdef(
+  CONFIG_BUILD_OUTPUT_S19
+  post_build_commands
+  COMMAND ${CMAKE_OBJCOPY} --srec-len 1 --output-target=srec ${KERNEL_ELF_NAME} ${KERNEL_S19_NAME}
+  )
+
+list_append_ifdef(
+  CONFIG_BUILD_OUTPUT_DISASSEMBLY
+  post_build_commands
+  COMMAND ${CMAKE_OBJDUMP} -S ${KERNEL_ELF_NAME} >  ${KERNEL_LST_NAME}
+  )
+
+list_append_ifdef(
+  CONFIG_BUILD_OUTPUT_STAT
+  post_build_commands
+  COMMAND ${CMAKE_READELF} -e ${KERNEL_ELF_NAME} >  ${KERNEL_STAT_NAME}
+  )
+
+list_append_ifdef(
+  CONFIG_BUILD_OUTPUT_STRIPPED
+  post_build_commands
+  COMMAND ${CMAKE_STRIP}   --strip-all ${KERNEL_ELF_NAME} -o ${KERNEL_STRIP_NAME}
+  )
+
 add_custom_command(
   TARGET ${logical_target_for_zephyr_elf}
   POST_BUILD
-  COMMAND ${PYTHON_EXECUTABLE} $ENV{ZEPHYR_BASE}/scripts/check_link_map.py ${KERNEL_MAP_NAME}
-  COMMAND ${CMAKE_OBJCOPY} -S -Oihex   -R .comment -R COMMON -R .eh_frame  ${KERNEL_ELF_NAME}    ${KERNEL_HEX_NAME}
-  COMMAND ${CMAKE_OBJCOPY} -S -Obinary -R .comment -R COMMON -R .eh_frame  ${KERNEL_ELF_NAME}    ${KERNEL_BIN_NAME}
-  COMMAND ${CMAKE_OBJCOPY} --srec-len 1 --output-target=srec               ${KERNEL_ELF_NAME}    ${KERNEL_S19_NAME}
-  COMMAND ${CMAKE_OBJDUMP} -S                                              ${KERNEL_ELF_NAME} >  ${KERNEL_LST_NAME}
-  COMMAND ${CMAKE_READELF} -e                                              ${KERNEL_ELF_NAME} >  ${KERNEL_STAT_NAME}
-  COMMAND ${CMAKE_STRIP}   --strip-all                                     ${KERNEL_ELF_NAME} -o ${KERNEL_STRIP_NAME}
-  COMMENT "Generating zephyr.{hex,bin,lst,strip,stat,s19} from zephyr.elf for board: ${BOARD}"
+  ${post_build_commands}
+  COMMENT "Generating files from zephyr.elf for board: ${BOARD}"
   # NB: COMMENT only works for some CMake-Generators
 )
 
