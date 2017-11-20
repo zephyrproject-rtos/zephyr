@@ -67,46 +67,50 @@ static ALWAYS_INLINE void clock_init(void)
 
 #ifdef CONFIG_SOC_ATMEL_SAME70_EXT_MAINCK
 	/*
-	 * Setup main external crystal oscillator
+	 * Setup main external crystal oscillator if not already done
+	 * by a previous program i.e. bootloader
 	 */
 
-	/* Start the external crystal oscillator */
-	PMC->CKGR_MOR =   CKGR_MOR_KEY_PASSWD
-			/* We select maximum setup time. While start up time
-			 * could be shortened this optimization is not deemed
-			 * critical now.
-			 */
-			| CKGR_MOR_MOSCXTST(0xFFu)
-			/* RC OSC must stay on */
-			| CKGR_MOR_MOSCRCEN
-			| CKGR_MOR_MOSCXTEN;
+	if (PMC->PMC_SR & PMC_SR_MOSCRCS) {
+		/* Start the external crystal oscillator */
+		PMC->CKGR_MOR =   CKGR_MOR_KEY_PASSWD
+				/* We select maximum setup time.
+				 * While start up time could be shortened
+				 * this optimization is not deemed
+				 * critical now.
+				 */
+				| CKGR_MOR_MOSCXTST(0xFFu)
+				/* RC OSC must stay on */
+				| CKGR_MOR_MOSCRCEN
+				| CKGR_MOR_MOSCXTEN;
 
-	/* Wait for oscillator to be stabilized */
-	while (!(PMC->PMC_SR & PMC_SR_MOSCXTS)) {
-		;
-	}
+		/* Wait for oscillator to be stabilized */
+		while (!(PMC->PMC_SR & PMC_SR_MOSCXTS)) {
+			;
+		}
 
-	/* Select the external crystal oscillator as main clock source */
-	PMC->CKGR_MOR =   CKGR_MOR_KEY_PASSWD
-			| CKGR_MOR_MOSCSEL
-			| CKGR_MOR_MOSCXTST(0xFFu)
-			| CKGR_MOR_MOSCRCEN
-			| CKGR_MOR_MOSCXTEN;
+		/* Select the external crystal oscillator as main clock */
+		PMC->CKGR_MOR =   CKGR_MOR_KEY_PASSWD
+				| CKGR_MOR_MOSCSEL
+				| CKGR_MOR_MOSCXTST(0xFFu)
+				| CKGR_MOR_MOSCRCEN
+				| CKGR_MOR_MOSCXTEN;
 
-	/* Wait for external oscillator to be selected */
-	while (!(PMC->PMC_SR & PMC_SR_MOSCSELS)) {
-		;
-	}
+		/* Wait for external oscillator to be selected */
+		while (!(PMC->PMC_SR & PMC_SR_MOSCSELS)) {
+			;
+		}
 
-	/* Turn off RC OSC, not used any longer, to save power */
-	PMC->CKGR_MOR =   CKGR_MOR_KEY_PASSWD
-			| CKGR_MOR_MOSCSEL
-			| CKGR_MOR_MOSCXTST(0xFFu)
-			| CKGR_MOR_MOSCXTEN;
+		/* Turn off RC OSC, not used any longer, to save power */
+		PMC->CKGR_MOR =   CKGR_MOR_KEY_PASSWD
+				| CKGR_MOR_MOSCSEL
+				| CKGR_MOR_MOSCXTST(0xFFu)
+				| CKGR_MOR_MOSCXTEN;
 
-	/* Wait for RC OSC to be turned off */
-	while (PMC->PMC_SR & PMC_SR_MOSCRCS) {
-		;
+		/* Wait for RC OSC to be turned off */
+		while (PMC->PMC_SR & PMC_SR_MOSCRCS) {
+			;
+		}
 	}
 
 #ifdef CONFIG_SOC_ATMEL_SAME70_WAIT_MODE
