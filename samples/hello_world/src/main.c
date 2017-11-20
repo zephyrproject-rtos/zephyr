@@ -6,8 +6,9 @@
 
 #include <zephyr.h>
 #include <misc/printk.h>
+#include <board_meta.h>
 
 void main(void)
 {
-	printk("Hello World! %s\n", CONFIG_ARCH);
+	printk("Hello World! %s\n", META_BOARD_NAME);
 }

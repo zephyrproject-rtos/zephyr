@@ -30,6 +30,11 @@ mapping:
     type: int
   "flash":
     type: int
+  "debug_interface":
+    type: seq
+    seq:
+      -
+        type: str
   "supported":
     type: seq
     seq:
