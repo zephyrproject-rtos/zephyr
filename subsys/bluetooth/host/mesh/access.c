@@ -99,19 +99,15 @@ s32_t bt_mesh_model_pub_period_get(struct bt_mesh_model *mod)
 
 static s32_t next_period(struct bt_mesh_model *mod)
 {
-	u32_t elapsed, period, now = k_uptime_get_32();
 	struct bt_mesh_model_pub *pub = mod->pub;
+	u32_t elapsed, period;
 
 	period = bt_mesh_model_pub_period_get(mod);
 	if (!period) {
 		return 0;
 	}
 
-	if (now < pub->period_start) {
-		elapsed = now + (UINT32_MAX - pub->period_start);
-	} else {
-		elapsed = now - pub->period_start;
-	}
+	elapsed = k_uptime_get_32() - pub->period_start;
 
 	BT_DBG("Publishing took %ums", elapsed);
 
