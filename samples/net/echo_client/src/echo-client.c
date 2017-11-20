@@ -103,22 +103,16 @@ static inline int init_app(void)
 
 struct net_pkt *prepare_send_pkt(struct net_app_ctx *ctx,
 				 const char *name,
-				 int expecting_len)
+				 int *expecting_len)
 {
 	struct net_pkt *send_pkt;
-	bool status;
 
 	send_pkt = net_app_get_net_pkt(ctx, AF_UNSPEC, K_FOREVER);
 
 	NET_ASSERT(send_pkt);
 
-	status = net_pkt_append_all(send_pkt, expecting_len, lorem_ipsum,
-				    K_FOREVER);
-	if (!status) {
-		NET_ERR("%s: cannot create send pkt", name);
-		net_pkt_unref(send_pkt);
-		return NULL;
-	}
+	*expecting_len = net_pkt_append(send_pkt, *expecting_len, lorem_ipsum,
+					K_FOREVER);
 
 	return send_pkt;
 }
