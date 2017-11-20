@@ -16,14 +16,14 @@ config HTS221_NAME
 	string
 	prompt "Driver name"
 	default "HTS221"
-	depends on HTS221
+	depends on HTS221 && !HAS_DTS_I2C_DEVICE
 	help
 	  Device name with which the HTS221 sensor is identified.
 
 config HTS221_I2C_MASTER_DEV_NAME
 	string
 	prompt "I2C master where HTS221 is connected"
-	depends on HTS221
+	depends on HTS221 && !HAS_DTS_I2C_DEVICE
 	default "I2C_0"
 	help
 	  Specify the device name of the I2C master device to which HTS221 is
