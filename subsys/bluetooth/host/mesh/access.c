@@ -97,6 +97,33 @@ s32_t bt_mesh_model_pub_period_get(struct bt_mesh_model *mod)
 	return period >> mod->pub->period_div;
 }
 
+static s32_t next_period(struct bt_mesh_model *mod)
+{
+	u32_t elapsed, period, now = k_uptime_get_32();
+	struct bt_mesh_model_pub *pub = mod->pub;
+
+	period = bt_mesh_model_pub_period_get(mod);
+	if (!period) {
+		return 0;
+	}
+
+	if (now < pub->period_start) {
+		elapsed = now + (UINT32_MAX - pub->period_start);
+	} else {
+		elapsed = now - pub->period_start;
+	}
+
+	BT_DBG("Publishing took %ums", elapsed);
+
+	if (elapsed > period) {
+		BT_WARN("Publication sending took longer than the period");
+		/* Return smallest positive number since 0 means disabled */
+		return K_MSEC(1);
+	}
+
+	return period - elapsed;
+}
+
 static void publish_sent(int err, void *user_data)
 {
 	struct bt_mesh_model *mod = user_data;
@@ -107,7 +134,7 @@ static void publish_sent(int err, void *user_data)
 	if (mod->pub->count) {
 		delay = BT_MESH_PUB_TRANSMIT_INT(mod->pub->retransmit);
 	} else {
-		delay = bt_mesh_model_pub_period_get(mod);
+		delay = next_period(mod);
 	}
 
 	if (delay) {
@@ -187,10 +214,9 @@ static void mod_publish(struct k_work *work)
 		return;
 	}
 
-	/* Submit in advance so the timer is more accurate */
-	k_delayed_work_submit(&pub->timer, period_ms);
-
 	__ASSERT_NO_MSG(pub->update != NULL);
+
+	pub->period_start = k_uptime_get_32();
 
 	err = pub->update(pub->mod);
 	if (err) {
