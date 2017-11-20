@@ -20,8 +20,8 @@
 		};
 	};
 
-	flash0: flash@40010000 {
-		reg = <0x40000000 DT_FLASH_SIZE>;
+	flash0: flash@DT_FLASH_ADDR {
+		reg = <DT_FLASH_ADDR DT_FLASH_SIZE>;
 	};
 
 	sram0: memory@a8000400 {
