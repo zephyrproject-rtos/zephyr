@@ -2570,12 +2570,10 @@ static int handle_request(struct coap_packet *request,
 
 	case COAP_METHOD_GET:
 		/*
-		 * Leshan sends only an accept=LWM2M_FORMAT_APP_LINK_FORMAT to
-		 * indicate a discover OP
+		 * LwM2M V1_0_1-20170704-A, table 25,
+		 * Discover: CoAP GET + accept=LWM2M_FORMAT_APP_LINK_FORMAT
 		 */
-		if (well_known ||
-		    format == LWM2M_FORMAT_APP_LINK_FORMAT ||
-		    accept == LWM2M_FORMAT_APP_LINK_FORMAT) {
+		if (well_known || accept == LWM2M_FORMAT_APP_LINK_FORMAT) {
 			context.operation = LWM2M_OP_DISCOVER;
 			accept = LWM2M_FORMAT_APP_LINK_FORMAT;
 		} else {
