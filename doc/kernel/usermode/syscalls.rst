@@ -54,10 +54,10 @@ supervisor mode. For example, to initialize a semaphore:
 
 The :c:macro:`__syscall` attribute is very special. To the C compiler, it
 simply expands to 'static inline'. However to the post-build
-``gen_syscalls.py`` script, it indicates that this API is a system call and
-generates the body of the function.  The ``gen_syscalls.py`` script does some
-parsing of the function prototype, to determine the data types of its return
-value and arguments, and has some limitations:
+``parse_syscalls.py`` script, it indicates that this API is a system call.
+The ``parse_syscalls.py`` script does some parsing of the function prototype,
+to determine the data types of its return value and arguments, and has some
+limitations:
 
 * Array arguments must be passed in as pointers, not arrays. For example,
   ``int foo[]`` or ``int foo[12]`` is not allowed, but should instead be

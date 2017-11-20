@@ -221,18 +221,6 @@ include(${BOARD_DIR}/board.cmake OPTIONAL)
 
 zephyr_library_named(app)
 
-execute_process(
-  COMMAND
-  ${PYTHON_EXECUTABLE}
-  $ENV{ZEPHYR_BASE}/scripts/gen_syscalls.py
-  --include          $ENV{ZEPHYR_BASE}/include            # Read files from this dir
-  --base-output      include/generated/syscalls           # Write to this dir
-  --syscall-dispatch include/generated/syscall_dispatch.c # Write this file
-  INPUT_FILE         kconfig/include/config/auto.conf     # Read this file from stdin
-  OUTPUT_FILE        include/generated/syscall_list.h     # Write stdout to this file
-  WORKING_DIRECTORY ${ZEPHYR_BINARY_DIR}
-  )
-
 add_subdirectory($ENV{ZEPHYR_BASE} ${__build_dir})
 
 define_property(GLOBAL PROPERTY ZEPHYR_LIBS

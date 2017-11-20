@@ -302,6 +302,38 @@ add_custom_command(                       OUTPUT  ${syscall_macros_h}
   DEPENDS ${PROJECT_SOURCE_DIR}/scripts/gen_syscall_header.py
   )
 
+# This command is a hack to support commands that are always run. Any
+# target that depends on always_rebuild will always be rebuilt.
+add_custom_command(OUTPUT always_rebuild COMMAND cmake -E echo Building for board ${BOARD})
+
+set(syscall_list_h ${CMAKE_CURRENT_BINARY_DIR}/include/generated/syscall_list.h)
+set(syscalls_json  ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/syscalls.json)
+
+add_custom_command(
+  OUTPUT
+  ${syscalls_json}
+  COMMAND
+  ${PYTHON_EXECUTABLE}
+  ${PROJECT_SOURCE_DIR}/scripts/parse_syscalls.py
+  --include          ${PROJECT_SOURCE_DIR}/include        # Read files from this dir
+  --json-file        ${syscalls_json}                     # Write this file
+  DEPENDS always_rebuild
+  )
+
+add_custom_target(syscall_list_h_target DEPENDS                ${syscall_list_h})
+add_custom_command(OUTPUT include/generated/syscall_dispatch.c ${syscall_list_h}
+  # Also, some files are written to include/generated/syscalls/
+  COMMAND
+  ${PYTHON_EXECUTABLE}
+  ${PROJECT_SOURCE_DIR}/scripts/gen_syscalls.py
+  --json-file        ${syscalls_json}                     # Read this file
+  --base-output      include/generated/syscalls           # Write to this dir
+  --syscall-dispatch include/generated/syscall_dispatch.c # Write this file
+  > ${syscall_list_h}                                     # Write stdout to this file
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  DEPENDS ${syscalls_json}
+  )
+
 # Generate offsets.c.obj from offsets.c
 # Generate offsets.h     from offsets.c.obj
 
@@ -309,9 +341,12 @@ set(OFFSETS_C_PATH $ENV{ZEPHYR_BASE}/arch/${ARCH}/core/offsets/offsets.c)
 set(OFFSETS_O_PATH ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/offsets.dir/arch/${ARCH}/core/offsets/offsets.c.obj)
 set(OFFSETS_H_PATH ${PROJECT_BINARY_DIR}/include/generated/offsets.h)
 
-add_library(offsets STATIC ${OFFSETS_C_PATH})
+add_library(          offsets STATIC ${OFFSETS_C_PATH})
 target_link_libraries(offsets zephyr_interface)
-add_dependencies(offsets syscall_macros_h_target)
+add_dependencies(     offsets
+  syscall_list_h_target
+  syscall_macros_h_target
+  )
 
 add_custom_command(
   OUTPUT ${OFFSETS_H_PATH}
