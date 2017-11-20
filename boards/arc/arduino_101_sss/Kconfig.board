@@ -2,3 +2,4 @@
 config BOARD_ARDUINO_101_SSS
 	bool "Arduino 101 Sensor Sub System"
 	depends on SOC_QUARK_SE_C1000_SS
+	select HAS_DTS

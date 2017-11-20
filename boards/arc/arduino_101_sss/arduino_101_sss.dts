@@ -1,0 +1,30 @@
+/dts-v1/;
+
+#define DT_FLASH_SIZE		__SIZE_K(128)
+#define DT_SRAM_SIZE		__SIZE_K(24)
+#define DT_DCCM_SIZE		__SIZE_K(8)
+
+#define DT_FLASH_ADDR		0x40034000
+
+#include "quark_se_c1000_ss.dtsi"
+
+/ {
+	model = "arduino_101_sss";
+	compatible = "intel,arduino_101_sss", "intel,quark_se_c1000";
+
+	aliases {
+		uart_0 = &uart0;
+		uart_1 = &uart1;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart1;
+	};
+};
+
+&uart1 {
+	status = "ok";
+	current-speed = <115200>;
+};
