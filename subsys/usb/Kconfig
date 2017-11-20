@@ -78,8 +78,10 @@ config USB_COMPOSITE_DEVICE
 
 config USB_COMPOSITE_BUFFER_SIZE
 	int
+	prompt "Set buffer size for Class Handler"
 	depends on USB_COMPOSITE_DEVICE
 	default 64
+	default 256 if USB_DEVICE_NETWORK_RNDIS
 
 source "subsys/usb/class/Kconfig"
 
