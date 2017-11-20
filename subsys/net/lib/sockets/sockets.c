@@ -303,7 +303,7 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 		}
 
 		res = _k_fifo_wait_non_empty(&ctx->recv_q, timeout);
-		if (res && res != -EAGAIN) {
+		if (res && res != -EAGAIN && res != -EINTR) {
 			errno = -res;
 			return -1;
 		}
