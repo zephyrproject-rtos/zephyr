@@ -2,3 +2,12 @@ tests:
   kernel.common:
     tags: kernel
     min_ram: 16
+  kernel.common.random_sw_systimer:
+    extra_args: CONF_FILE=prj_sw_random_systimer.conf
+    tags: kernel
+    min_ram: 16
+  kernel.common.random_hw_xoroshiro:
+    extra_args: CONF_FILE=prj_hw_random_xoroshiro.conf
+    filter: CONFIG_ENTROPY_HAS_DRIVER
+    tags: kernel
+    min_ram: 16

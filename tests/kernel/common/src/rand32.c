@@ -26,29 +26,34 @@
 
 void test_rand32(void)
 {
-	u32_t rnd_values[N_VALUES];
-	int i;
+	u32_t gen, last_gen;
+	int rnd_cnt;
+	int equal_count = 0;
 
 	/*
 	 * Test subsequently calls sys_rand32_get(), checking
 	 * that two values are not equal.
 	 */
 	SYS_LOG_DBG("Generating random numbers");
+	last_gen = sys_rand32_get();
 	/*
 	 * Get several subsequent numbers as fast as possible.
-	 * If random number generator is based on timer, check
-	 * the situation when random number generator is called
-	 * faster than timer clock ticks.
-	 * In order to do this, make several subsequent calls
-	 * and save results in an array to verify them on the
-	 * next step
+	 * Based on review comments in
+	 * https://github.com/zephyrproject-rtos/zephyr/pull/5066
+	 * If minimum half of the numbers generated were the same
+	 * as the previously generated one, then test fails, this
+	 * should catch a buggy sys_rand32_get() function.
 	 */
-	for (i = 0; i < N_VALUES; i++) {
-		rnd_values[i] = sys_rand32_get();
-	}
-	for (i = 1; i <  N_VALUES; i++) {
-		zassert_false((rnd_values[i - 1] == rnd_values[i]),
-			      "random number subsequent calls return same value");
+	for (rnd_cnt = 0; rnd_cnt < (N_VALUES - 1); rnd_cnt++) {
+		gen = sys_rand32_get();
+		if (gen == last_gen) {
+			equal_count++;
+		}
+		last_gen = gen;
 	}
 
+	if (equal_count > N_VALUES / 2) {
+		zassert_false((equal_count > N_VALUES / 2),
+		"random numbers returned same value with high probability");
+	}
 }
