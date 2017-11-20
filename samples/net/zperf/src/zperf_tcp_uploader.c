@@ -49,7 +49,6 @@ void zperf_tcp_upload(struct net_context *ctx,
 		struct net_pkt *pkt;
 		struct net_buf *frag;
 		u32_t loop_time;
-		bool st;
 
 		/* Timestamps */
 		loop_time = k_cycle_get_32();
@@ -71,15 +70,8 @@ void zperf_tcp_upload(struct net_context *ctx,
 		net_pkt_frag_add(pkt, frag);
 
 		/* Fill in the TCP payload */
-		st = net_pkt_append_all(pkt, sizeof(sample_packet),
-				     sample_packet, K_FOREVER);
-		if (!st) {
-			printk(TAG "ERROR! Failed to fill packet\n");
-
-			net_pkt_unref(pkt);
-			nb_errors++;
-			break;
-		}
+		net_pkt_append(pkt, sizeof(sample_packet),
+			       sample_packet, K_FOREVER);
 
 		/* Send the packet */
 		ret = net_context_send(pkt, NULL, K_NO_WAIT, NULL, NULL);
