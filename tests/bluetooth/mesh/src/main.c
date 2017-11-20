@@ -133,9 +133,12 @@ static int vnd_publish(struct bt_mesh_model *mod)
 
 static struct bt_mesh_model_pub vnd_pub = {
 	.update = vnd_publish,
+	.msg = NET_BUF_SIMPLE(4),
 };
 
-static struct bt_mesh_model_pub vnd_pub2;
+static struct bt_mesh_model_pub vnd_pub2 = {
+	.msg = NET_BUF_SIMPLE(4),
+};
 
 static const struct bt_mesh_model_op vnd_ops[] = {
 	BT_MESH_MODEL_OP_END,
@@ -206,6 +209,12 @@ static void bt_ready(int err)
 		printk("Initializing mesh failed (err %d)\n", err);
 		return;
 	}
+
+	/* Initialize publication messages with dummy data */
+	net_buf_simple_init(vnd_pub.msg, 0);
+	net_buf_simple_add_le32(vnd_pub.msg, UINT32_MAX);
+	net_buf_simple_init(vnd_pub2.msg, 0);
+	net_buf_simple_add_le32(vnd_pub2.msg, UINT32_MAX);
 
 	bt_mesh_prov_enable(BT_MESH_PROV_ADV | BT_MESH_PROV_GATT);
 
