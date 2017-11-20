@@ -168,6 +168,9 @@ void k_mem_domain_remove_thread(k_tid_t thread)
 	__ASSERT(thread && thread->mem_domain_info.mem_domain, "");
 
 	key = irq_lock();
+	if (_current == thread) {
+		_arch_mem_domain_destroy(thread->mem_domain_info.mem_domain);
+	}
 
 	sys_dlist_remove(&thread->mem_domain_info.mem_domain_q_node);
 	thread->mem_domain_info.mem_domain = NULL;
