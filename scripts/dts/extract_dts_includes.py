@@ -199,6 +199,19 @@ def find_parent_irq_node(node_address):
 
     return reduced[phandles[interrupt_parent]]
 
+def find_parent_prop(node_address, prop):
+    parent_address = ''
+
+    for comp in node_address.split('/')[1:-1]:
+        parent_address += '/' + comp
+
+    if prop in reduced[parent_address]['props']:
+        parent_prop = reduced[parent_address]['props'].get(prop)
+    else:
+        raise Exception("Parent of node " + node_address +
+                        " has no " + prop + " property")
+
+    return parent_prop
 
 def extract_interrupts(node_address, yaml, y_key, names, defs, def_label):
     node = reduced[node_address]
@@ -430,6 +443,10 @@ def extract_single(node_address, yaml, prop, key, prefix, defs, def_label):
     else:
         k = convert_string_to_label(key).upper()
         label = def_label + '_' + k
+
+        if prop == 'parent-label':
+            prop = find_parent_prop(node_address, 'label')
+
         if isinstance(prop, str):
             prop = "\"" + prop + "\""
         prop_def[label] = prop
@@ -460,17 +477,58 @@ def extract_string_prop(node_address, yaml, key, label, defs):
     return
 
 
+def get_node_label(node_compat, node_address):
+
+    def_label = convert_string_to_label(node_compat.upper())
+    if '@' in node_address:
+        def_label += '_' + node_address.split('@')[-1].upper()
+    else:
+        def_label += convert_string_to_label(node_address.upper())
+
+    return def_label
+
 def extract_property(node_compat, yaml, node_address, y_key, y_val, names,
                      prefix, defs, label_override):
 
     if 'base_label' in yaml[node_compat]:
         def_label = yaml[node_compat].get('base_label')
     else:
-        def_label = convert_string_to_label(node_compat.upper())
-        if '@' in node_address:
-            def_label += '_' + node_address.split('@')[-1].upper()
-        else:
-            def_label += convert_string_to_label(node_address.upper())
+        def_label = get_node_label(node_compat, node_address)
+
+    if 'parent' in yaml[node_compat]:
+        if 'bus' in yaml[node_compat]['parent']:
+            # get parent label
+            parent_address = ''
+            for comp in node_address.split('/')[1:-1]:
+                parent_address += '/' + comp
+
+            #check parent has matching child bus value
+            try:
+                parent_yaml = \
+                    yaml[reduced[parent_address]['props']['compatible']]
+                parent_bus = parent_yaml['child']['bus']
+            except (KeyError, TypeError) as e:
+                raise Exception(str(node_address) + " defines parent " +
+                        str(parent_address) + " as bus master but " +
+                        str(parent_address) + " not configured as bus master " +
+                        "in yaml description")
+
+            if parent_bus != yaml[node_compat]['parent']['bus']:
+                bus_value = yaml[node_compat]['parent']['bus']
+                raise Exception(str(node_address) + " defines parent " +
+                        str(parent_address) + " as " + bus_value +
+                        " bus master but " + str(parent_address) +
+                        " configured as " + str(parent_bus) +
+                        " bus master")
+
+            # Use parent label to generate label
+            parent_label = get_node_label(
+                find_parent_prop(node_address,'compatible') , parent_address)
+            def_label = parent_label + '_' + def_label
+
+            # Generate bus-name define
+            extract_single(node_address, yaml, 'parent-label',
+                           'bus-name', prefix, defs, def_label)
 
     if label_override is not None:
         def_label += '_' + label_override
