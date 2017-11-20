@@ -271,6 +271,8 @@ struct bt_mesh_model_pub {
 	      cred:1,       /**< Friendship Credentials Flag. */
 	      count:3;      /**< Retransmissions left. */
 
+	u32_t period_start; /**< Start of the current period. */
+
 	/** @brief Buffer containing the publication message.
 	 *
 	 *  The application is expected to initialize this with
