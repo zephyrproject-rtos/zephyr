@@ -44,10 +44,10 @@ static struct net_context *v4_ctx;
 static struct net_context *reply_v4_ctx;
 
 static struct sockaddr_in6 any_addr6;
-static const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;
+static const struct in6_addr sin6_addr_any = IN6ADDR_ANY_INIT;
 
 static struct sockaddr_in any_addr4;
-static const struct in_addr in4addr_any = { { { 0 } } };
+static const struct in_addr sin_addr_any = INADDR_ANY_INIT;
 
 static struct in6_addr my_v6_inaddr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					  0, 0, 0, 0, 0, 0, 0, 0x2a } } };
@@ -1698,10 +1698,10 @@ static bool test_init(void)
 		return false;
 	}
 
-	net_ipaddr_copy(&any_addr6.sin6_addr, &in6addr_any);
+	net_ipaddr_copy(&any_addr6.sin6_addr, &sin6_addr_any);
 	any_addr6.sin6_family = AF_INET6;
 
-	net_ipaddr_copy(&any_addr4.sin_addr, &in4addr_any);
+	net_ipaddr_copy(&any_addr4.sin_addr, &sin_addr_any);
 	any_addr4.sin_family = AF_INET;
 
 	k_sem_init(&wait_connect, 0, UINT_MAX);
