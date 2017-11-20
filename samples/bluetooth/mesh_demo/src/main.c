@@ -105,16 +105,6 @@ static struct bt_mesh_model root_models[] = {
 	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),
 };
 
-static int vnd_publish(struct bt_mesh_model *mod)
-{
-	printk("Vendor publish\n");
-	return 0;
-}
-
-static struct bt_mesh_model_pub vnd_pub = {
-	.update = vnd_publish,
-};
-
 static void vnd_button_pressed(struct bt_mesh_model *model,
 			       struct bt_mesh_msg_ctx *ctx,
 			       struct net_buf_simple *buf)
@@ -135,7 +125,7 @@ static const struct bt_mesh_model_op vnd_ops[] = {
 };
 
 static struct bt_mesh_model vnd_models[] = {
-	BT_MESH_MODEL_VND(CID_INTEL, MOD_INTEL, vnd_ops, &vnd_pub, NULL),
+	BT_MESH_MODEL_VND(CID_INTEL, MOD_INTEL, vnd_ops, NULL, NULL),
 };
 
 static struct bt_mesh_elem elements[] = {
