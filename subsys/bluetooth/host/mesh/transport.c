@@ -1343,7 +1343,20 @@ void bt_mesh_rx_reset(void)
 	BT_DBG("");
 
 	for (i = 0; i < ARRAY_SIZE(seg_rx); i++) {
-		seg_rx[i].in_use = 0;
+		seg_rx_reset(&seg_rx[i]);
+		seg_rx[i].src = BT_MESH_ADDR_UNASSIGNED;
+		seg_rx[i].dst = BT_MESH_ADDR_UNASSIGNED;
+	}
+}
+
+void bt_mesh_tx_reset(void)
+{
+	int i;
+
+	BT_DBG("");
+
+	for (i = 0; i < ARRAY_SIZE(seg_tx); i++) {
+		seg_tx_reset(&seg_tx[i]);
 	}
 }
 
