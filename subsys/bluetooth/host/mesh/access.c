@@ -110,9 +110,10 @@ static void publish_sent(int err, void *user_data)
 		delay = bt_mesh_model_pub_period_get(mod);
 	}
 
-	BT_DBG("Publishing next time in %dms", delay);
-
-	k_delayed_work_submit(&mod->pub->timer, delay);
+	if (delay) {
+		BT_DBG("Publishing next time in %dms", delay);
+		k_delayed_work_submit(&mod->pub->timer, delay);
+	}
 }
 
 static const struct bt_mesh_send_cb pub_sent_cb = {
@@ -159,6 +160,7 @@ static void mod_publish(struct k_work *work)
 						     struct bt_mesh_model_pub,
 						     timer.work);
 	s32_t period_ms;
+	int err;
 
 	BT_DBG("");
 
@@ -166,8 +168,6 @@ static void mod_publish(struct k_work *work)
 	BT_DBG("period %u ms", period_ms);
 
 	if (pub->count) {
-		int err;
-
 		err = publish_retransmit(pub->mod);
 		if (err) {
 			BT_ERR("Failed to retransmit (err %d)", err);
@@ -183,17 +183,29 @@ static void mod_publish(struct k_work *work)
 		return;
 	}
 
-	if (period_ms) {
-		k_delayed_work_submit(&pub->timer, period_ms);
+	if (!period_ms) {
+		return;
 	}
 
-	if (pub->func) {
-		pub->func(pub->mod);
+	/* Submit in advance so the timer is more accurate */
+	k_delayed_work_submit(&pub->timer, period_ms);
 
-		if (pub->count) {
-			/* Retransmissions also control the timer */
-			k_delayed_work_cancel(&pub->timer);
-		}
+	__ASSERT_NO_MSG(pub->update != NULL);
+
+	err = pub->update(pub->mod);
+	if (err) {
+		BT_ERR("Failed to update publication message");
+		return;
+	}
+
+	err = bt_mesh_model_publish(pub->mod);
+	if (err) {
+		BT_ERR("Publishing failed (err %d)", err);
+	}
+
+	if (pub->count) {
+		/* Retransmissions also control the timer */
+		k_delayed_work_cancel(&pub->timer);
 	}
 }
 

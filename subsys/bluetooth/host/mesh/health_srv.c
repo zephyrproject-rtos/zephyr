@@ -338,11 +338,10 @@ const struct bt_mesh_model_op bt_mesh_health_srv_op[] = {
 	BT_MESH_MODEL_OP_END,
 };
 
-static void health_pub(struct bt_mesh_model *mod)
+static int health_pub_update(struct bt_mesh_model *mod)
 {
 	struct bt_mesh_model_pub *pub = mod->pub;
 	size_t count;
-	int err;
 
 	BT_DBG("");
 
@@ -351,10 +350,7 @@ static void health_pub(struct bt_mesh_model *mod)
 		pub->period_div = 0;
 	}
 
-	err = bt_mesh_model_publish(mod);
-	if (err) {
-		BT_ERR("Publishing failed (err %d)", err);
-	}
+	return 0;
 }
 
 int bt_mesh_fault_update(struct bt_mesh_elem *elem)
@@ -400,7 +396,7 @@ int bt_mesh_health_srv_init(struct bt_mesh_model *model, bool primary)
 		return -EINVAL;
 	}
 
-	model->pub->func = health_pub,
+	model->pub->update = health_pub_update,
 
 	k_delayed_work_init(&srv->attn_timer, attention_off);
 

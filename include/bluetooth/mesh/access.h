@@ -273,8 +273,8 @@ struct bt_mesh_model_pub {
 	/* Buffer containing the publication message */
 	struct net_buf_simple *msg;
 
-	/* Publish callback */
-	void    (*func)(struct bt_mesh_model *mod);
+	/* Update callback for period publishing */
+	int (*update)(struct bt_mesh_model *mod);
 
 	/* Publish Period Timer */
 	struct k_delayed_work timer;
@@ -343,7 +343,10 @@ int bt_mesh_model_send(struct bt_mesh_model *model,
  *
  * Before calling this function, the user needs to ensure that the model
  * publication message ('msg' member of struct bt_mesh_model_pub) contains
- * a valid message to be sent.
+ * a valid message to be sent. Note that this API is only to be used
+ * for non-period publishing. For periodic publishing the app only needs
+ * to make sure that pub->msg contains a valid message whenever the
+ * pub->update callback is called.
  *
  * @param model  Mesh (client) Model that's publishing the message.
  *
