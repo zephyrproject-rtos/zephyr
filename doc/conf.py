@@ -57,24 +57,29 @@ author = u'many'
 # The following code tries to extract the information by reading the Makefile,
 # when Sphinx is run directly (e.g. by Read the Docs).
 try:
-    makefile_version_major = None
-    makefile_version_minor = None
-    makefile_patchlevel = None
+    version_major = None
+    version_minor = None
+    patchlevel = None
+    extraversion = None
     for line in open('../VERSION'):
         key, val = [x.strip() for x in line.split('=', 2)]
         if key == 'VERSION_MAJOR':
-            makefile_version_major = val
+            version_major = val
         if key == 'VERSION_MINOR':
-            makefile_version_minor = val
+            version_minor = val
         elif key == 'PATCHLEVEL':
-            makefile_patchlevel = val
-        if makefile_version_major and makefile_version_minor and makefile_patchlevel:
+            patchlevel = val
+        elif key == 'EXTRAVERSION':
+            extraversion = val
+        if version_major and version_minor and patchlevel and extraversion:
             break
 except:
     pass
 finally:
-    if makefile_version_major and makefile_version_minor and makefile_patchlevel:
-        version = release = makefile_version_major + '.' + makefile_version_minor + '.' + makefile_patchlevel
+    if version_major and version_minor and patchlevel and extraversion:
+        version = release = version_major + '.' + version_minor + '.' + patchlevel
+        if extraversion != '':
+            version = release = version + '-' + extraversion
     else:
         sys.stderr.write('Warning: Could not extract kernel version\n')
         version = release = "unknown version"
