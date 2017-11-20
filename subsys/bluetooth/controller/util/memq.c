@@ -8,7 +8,7 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 
-inline void *memq_peek(void *tail, void *head, void **mem);
+inline void *memq_peek(void *head, void *tail, void **mem);
 
 void *memq_init(void *link, void **head, void **tail)
 {
@@ -18,7 +18,7 @@ void *memq_init(void *link, void **head, void **tail)
 	return link;
 }
 
-void *memq_enqueue(void *mem, void *link, void **tail)
+void *memq_enqueue(void *link, void *mem, void **tail)
 {
 	/* make the current tail link node point to new link node */
 	*((void **)*tail) = link;
@@ -32,7 +32,7 @@ void *memq_enqueue(void *mem, void *link, void **tail)
 	return link;
 }
 
-void *memq_peek(void *tail, void *head, void **mem)
+void *memq_peek(void *head, void *tail, void **mem)
 {
 	void *link;
 
@@ -57,7 +57,7 @@ void *memq_dequeue(void *tail, void **head, void **mem)
 	void *link;
 
 	/* use memq peek to get the link and mem */
-	link = memq_peek(tail, *head, mem);
+	link = memq_peek(*head, tail, mem);
 	if (!link) {
 		return link;
 	}
@@ -87,7 +87,7 @@ u32_t memq_ut(void)
 		return 2;
 	}
 
-	link = memq_enqueue(0, &link_1[0], &tail);
+	link = memq_enqueue(&link_1[0], 0, &tail);
 	if ((link != &link_1[0]) || (tail != &link_1[0])) {
 		return 3;
 	}

@@ -8522,7 +8522,7 @@ static void packet_rx_enqueue(void)
 	_radio.packet_rx_last = last;
 
 	/* Enqueue into event-cum-data queue */
-	link = memq_enqueue(radio_pdu_node_rx, link,
+	link = memq_enqueue(link, radio_pdu_node_rx,
 			    (void *)&_radio.link_rx_tail);
 	LL_ASSERT(link);
 
@@ -8827,7 +8827,7 @@ static void terminate_ind_rx_enqueue(struct connection *conn, u8_t reason)
 	    _radio.packet_release_last;
 
 	/* Enqueue into event-cum-data queue */
-	link = memq_enqueue(radio_pdu_node_rx, link,
+	link = memq_enqueue(link, radio_pdu_node_rx,
 			    (void *)&_radio.link_rx_tail);
 	LL_ASSERT(link);
 

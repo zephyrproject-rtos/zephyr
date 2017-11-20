@@ -102,7 +102,7 @@ u32_t mayfly_enqueue(u8_t caller_id, u8_t callee_id, u8_t chain,
 
 	/* new, add as ready in the queue */
 	m->_req = ack + 1;
-	memq_enqueue(m, m->_link, &mft[callee_id][caller_id].tail);
+	memq_enqueue(m->_link, m, &mft[callee_id][caller_id].tail);
 
 	/* pend the callee for execution */
 	mayfly_pend(caller_id, callee_id);
@@ -123,8 +123,8 @@ void mayfly_run(u8_t callee_id)
 		struct mayfly *m = 0;
 
 		/* fetch mayfly in callee queue, if any */
-		link = memq_peek(mft[callee_id][caller_id].tail,
-				 mft[callee_id][caller_id].head,
+		link = memq_peek(mft[callee_id][caller_id].head,
+				 mft[callee_id][caller_id].tail,
 				 (void **)&m);
 		while (link) {
 			u8_t state;
@@ -156,8 +156,8 @@ void mayfly_run(u8_t callee_id)
 			}
 
 			/* fetch next mayfly in callee queue, if any */
-			link = memq_peek(mft[callee_id][caller_id].tail,
-					 mft[callee_id][caller_id].head,
+			link = memq_peek(mft[callee_id][caller_id].head,
+					 mft[callee_id][caller_id].tail,
 					 (void **)&m);
 
 			/* yield out of mayfly_run if a mayfly function was
