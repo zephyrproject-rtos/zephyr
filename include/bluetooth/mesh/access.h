@@ -256,27 +256,46 @@ struct bt_mesh_model_op {
  */
 #define BT_MESH_PUB_TRANSMIT_INT(transmit) ((((transmit) >> 3) + 1) * 50)
 
+/** Model publication context. */
 struct bt_mesh_model_pub {
-	/* Self-reference for easy lookup */
+	/** The model the context belongs to. Initialized by the stack. */
 	struct bt_mesh_model *mod;
 
-	u16_t addr;         /* Publish Address */
-	u16_t key;          /* Publish AppKey Index */
+	u16_t addr;         /**< Publish Address. */
+	u16_t key;          /**< Publish AppKey Index. */
 
-	u8_t  ttl;          /* Publish Time to Live */
-	u8_t  retransmit;   /* Retransmit Count & Interval Steps */
-	u8_t  period;       /* Publish Period */
-	u8_t  period_div:4, /* Divisor for the Period */
-	      cred:1,       /* Friendship Credentials Flag */
-	      count:3;      /* Retransmissions left */
+	u8_t  ttl;          /**< Publish Time to Live. */
+	u8_t  retransmit;   /**< Retransmit Count & Interval Steps. */
+	u8_t  period;       /**< Publish Period. */
+	u8_t  period_div:4, /**< Divisor for the Period. */
+	      cred:1,       /**< Friendship Credentials Flag. */
+	      count:3;      /**< Retransmissions left. */
 
-	/* Buffer containing the publication message */
+	/** @brief Buffer containing the publication message.
+	 *
+	 *  The application is expected to initialize this with
+	 *  a valid net_buf_simple pointer, with the help of e.g.
+	 *  the NET_BUF_SIMPLE() macro. The buffer must contain
+	 *  a valid publication messages before calling the
+	 *  bt_mesh_model_publish() API or after the publication's
+	 *  update() callback has been called and returned success.
+	 */
 	struct net_buf_simple *msg;
 
-	/* Update callback for period publishing */
+	/** @brief Callback for updating the publication buffer.
+	 *
+	 *  When set to NULL, the model is assumed not to support
+	 *  periodic publishing. When set to non-NULL the callback
+	 *  will be called periodically and is expected to update
+	 *  the publication buffer with a valid publication message.
+	 *
+	 *  @param mod The Model the Publication Context belogs to.
+	 *
+	 *  @return Zero on success or (negative) error code otherwise.
+	 */
 	int (*update)(struct bt_mesh_model *mod);
 
-	/* Publish Period Timer */
+	/** Publish Period Timer. Only for stack-internal use. */
 	struct k_delayed_work timer;
 };
 
