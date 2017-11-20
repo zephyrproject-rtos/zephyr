@@ -16,14 +16,14 @@ config LIS3MDL_NAME
 	string
 	prompt "Driver name"
 	default "LIS3MDL"
-	depends on LIS3MDL
+	depends on LIS3MDL && !HAS_DTS_I2C_DEVICE
 	help
 	  Device name with which the LIS3MDL sensor is identified.
 
 config LIS3MDL_I2C_ADDR
 	hex
 	prompt "I2C address"
-	depends on LIS3MDL
+	depends on LIS3MDL && !HAS_DTS_I2C_DEVICE
 	default 0x1C
 	help
 	  I2C address of the LIS3MDL sensor.
@@ -33,7 +33,7 @@ config LIS3MDL_I2C_ADDR
 config LIS3MDL_I2C_MASTER_DEV_NAME
 	string
 	prompt "I2C master where LIS3MDL is connected"
-	depends on LIS3MDL
+	depends on LIS3MDL && !HAS_DTS_I2C_DEVICE
 	default "I2C_0"
 	help
 	  Specify the device name of the I2C master device to which LIS3MDL is
