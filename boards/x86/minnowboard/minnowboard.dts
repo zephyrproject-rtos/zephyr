@@ -1,0 +1,41 @@
+/dts-v1/;
+
+#define DT_FLASH_SIZE		__SIZE_K(72)
+
+#if XIP
+	#define DT_SRAM_SIZE		__SIZE_K(128)
+#else
+	#define DT_SRAM_SIZE		__SIZE_K(256)
+#endif
+
+#include <atom.dtsi>
+
+/ {
+	model = "minnowboard";
+	compatible = "intel,atom";
+
+	aliases {
+		uart_0 = &uart0;
+		uart_1 = &uart1;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+		zephyr,bt-uart = &uart1;
+		zephyr,uart-pipe = &uart1;
+		zephyr,bt-mon-uart = &uart1;
+	};
+};
+
+&uart0 {
+	status = "ok";
+	current-speed = <115200>;
+};
+
+&uart1 {
+	status = "ok";
+	current-speed = <115200>;
+};
+
