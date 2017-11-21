@@ -273,14 +273,15 @@ struct bt_mesh_model_pub {
 
 	u32_t period_start; /**< Start of the current period. */
 
-	/** @brief Buffer containing the publication message.
+	/** @brief Publication buffer, containing the publication message.
 	 *
 	 *  The application is expected to initialize this with
 	 *  a valid net_buf_simple pointer, with the help of e.g.
-	 *  the NET_BUF_SIMPLE() macro. The buffer must contain
-	 *  a valid publication messages before calling the
+	 *  the NET_BUF_SIMPLE() macro. The publication buffer must
+	 *  contain a valid publication message before calling the
 	 *  bt_mesh_model_publish() API or after the publication's
-	 *  update() callback has been called and returned success.
+	 *  @ref bt_mesh_model_pub.update callback has been called
+	 *  and returned success.
 	 */
 	struct net_buf_simple *msg;
 
@@ -289,7 +290,8 @@ struct bt_mesh_model_pub {
 	 *  When set to NULL, the model is assumed not to support
 	 *  periodic publishing. When set to non-NULL the callback
 	 *  will be called periodically and is expected to update
-	 *  the publication buffer with a valid publication message.
+	 *  @ref bt_mesh_model_pub.msg with a valid publication
+	 *  message.
 	 *
 	 *  @param mod The Model the Publication Context belogs to.
 	 *
@@ -363,11 +365,11 @@ int bt_mesh_model_send(struct bt_mesh_model *model,
  * @brief Send a model publication message.
  *
  * Before calling this function, the user needs to ensure that the model
- * publication message ('msg' member of struct bt_mesh_model_pub) contains
- * a valid message to be sent. Note that this API is only to be used
- * for non-period publishing. For periodic publishing the app only needs
- * to make sure that pub->msg contains a valid message whenever the
- * pub->update callback is called.
+ * publication message (@ref bt_mesh_model_pub.msg) contains a valid
+ * message to be sent. Note that this API is only to be used for
+ * non-period publishing. For periodic publishing the app only needs
+ * to make sure that @ref bt_mesh_model_pub.msg contains a valid message
+ * whenever the @ref bt_mesh_model_pub.update callback is called.
  *
  * @param model  Mesh (client) Model that's publishing the message.
  *
