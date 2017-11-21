@@ -1463,3 +1463,29 @@ Events:
 		Event parameters:	<none>
 
 		This event indicate that node was provisioned.
+
+	Opcode 0x84 - Link open Event
+
+		Controller Index:	<controller id>
+		Event parameters:	Bearer (1 octet)
+
+		Valid Bearer parameter values:
+
+					0x00 = PB-ADV
+					0x01 = PB-GATT
+
+		This event indicates that provisioning link has been opened on
+		given bearer.
+
+	Opcode 0x85 - Link closed Event
+
+		Controller Index:	<controller id>
+		Event parameters:	Bearer (1 octet)
+
+		Valid Bearer parameter values:
+
+					0x00 = PB-ADV
+					0x01 = PB-GATT
+
+		This event indicates that provisioning link has been closed on
+		given bearer.
