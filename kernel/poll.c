@@ -227,9 +227,7 @@ int k_poll(struct k_poll_event *events, int num_events, s32_t timeout)
 	/*
 	 * If we're not polling anymore, it means that at least one event
 	 * condition is met, either when looping through the events here or
-	 * because one of the events registered has had its state changed, or
-	 * that one of the objects we wanted to poll on already had a thread
-	 * polling on it.
+	 * because one of the events registered has had its state changed.
 	 */
 	if (!is_polling()) {
 		clear_event_registrations(events, last_registered, key);
