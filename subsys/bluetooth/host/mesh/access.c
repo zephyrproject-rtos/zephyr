@@ -608,14 +608,11 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
 	struct bt_mesh_model_pub *pub = model->pub;
 	struct bt_mesh_app_key *key;
 	struct bt_mesh_msg_ctx ctx = {
-		.addr = pub->addr,
-		.send_ttl = pub->ttl,
 	};
 	struct bt_mesh_net_tx tx = {
 		.ctx = &ctx,
 		.src = model->elem->addr,
 		.xmit = bt_mesh_net_transmit_get(),
-		.friend_cred = model->pub->cred,
 	};
 	int err;
 
@@ -647,9 +644,12 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
 	net_buf_simple_init(sdu, 0);
 	net_buf_simple_add_mem(sdu, pub->msg->data, pub->msg->len);
 
+	ctx.addr = pub->addr;
+	ctx.send_ttl = pub->ttl;
 	ctx.net_idx = key->net_idx;
 	ctx.app_idx = key->app_idx;
 
+	tx.friend_cred = pub->cred;
 	tx.sub = bt_mesh_subnet_get(ctx.net_idx),
 
 	pub->count = BT_MESH_PUB_TRANSMIT_COUNT(pub->retransmit);
