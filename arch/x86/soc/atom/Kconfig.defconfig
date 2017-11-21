@@ -11,11 +11,13 @@ if SOC_ATOM
 config SOC
 	default atom
 
+if !HAS_DTS
 config PHYS_LOAD_ADDR
 	default 0x00100000
 
 config PHYS_RAM_ADDR
 	default 0x00400000
+endif
 
 config RAM_SIZE
 	default 128 if XIP
@@ -41,12 +43,16 @@ config UART_NS16550_PORT_0
 
 if UART_NS16550_PORT_0
 
+if !HAS_DTS
 config UART_NS16550_PORT_0_NAME
 	default "UART_0"
+endif
 config UART_NS16550_PORT_0_IRQ_PRI
 	default 3
+if !HAS_DTS
 config UART_NS16550_PORT_0_BAUD_RATE
 	default 115200
+endif
 config UART_NS16550_PORT_0_OPTIONS
 	default 0
 
@@ -57,12 +63,16 @@ config UART_NS16550_PORT_1
 
 if UART_NS16550_PORT_1
 
+if !HAS_DTS
 config UART_NS16550_PORT_1_NAME
 	default "UART_1"
+endif
 config UART_NS16550_PORT_1_IRQ_PRI
 	default 3
+if !HAS_DTS
 config UART_NS16550_PORT_1_BAUD_RATE
 	default 115200
+endif
 config UART_NS16550_PORT_1_OPTIONS
 	default 0
 
@@ -72,6 +82,7 @@ endif # UART_NS16550
 
 if BT_UART
 
+if !HAS_DTS
 config BT_UART_ON_DEV_NAME
 	default "UART_1"
 
@@ -86,5 +97,6 @@ endif
 
 config BT_MONITOR_ON_DEV_NAME
 	default "UART_1" if BT_DEBUG_MONITOR
+endif
 
 endif
