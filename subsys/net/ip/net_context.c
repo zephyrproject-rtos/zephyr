@@ -1116,6 +1116,28 @@ NET_CONN_CB(tcp_established)
 
 	tcp_flags = NET_TCP_FLAGS(tcp_hdr);
 
+	if (net_tcp_seq_cmp(sys_get_be32(tcp_hdr->seq),
+			    context->tcp->send_ack) < 0) {
+		/* Peer sent us packet we've already seen. Apparently,
+		 * our ack was lost.
+		 */
+
+		/* RFC793 specifies that "highest" (i.e. current from our PoV)
+		 * ack # value can/should be sent, so we just force resend.
+		 */
+		send_ack(context, &conn->remote_addr, true);
+		return NET_DROP;
+	}
+
+	if (net_tcp_seq_cmp(sys_get_be32(tcp_hdr->seq),
+			    context->tcp->send_ack) > 0) {
+		/* Don't try to reorder packets.  If it doesn't
+		 * match the next segment exactly, drop and wait for
+		 * retransmit
+		 */
+		return NET_DROP;
+	}
+
 	/*
 	 * If we receive RST here, we close the socket. See RFC 793 chapter
 	 * called "Reset Processing" for details.
@@ -1181,27 +1203,6 @@ NET_CONN_CB(tcp_established)
 		}
 
 		context->tcp->fin_rcvd = 1;
-	}
-
-	if (net_tcp_seq_cmp(sys_get_be32(tcp_hdr->seq),
-			    context->tcp->send_ack) < 0) {
-		/* Peer sent us packet we've already seen. Apparently,
-		 * our ack was lost.
-		 */
-
-		/* RFC793 specifies that "highest" (i.e. current from our PoV)
-		 * ack # value can/should be sent, so we just force resend.
-		 */
-		send_ack(context, &conn->remote_addr, true);
-		return NET_DROP;
-	}
-
-	if (sys_get_be32(tcp_hdr->seq) - context->tcp->send_ack) {
-		/* Don't try to reorder packets.  If it doesn't
-		 * match the next segment exactly, drop and wait for
-		 * retransmit
-		 */
-		return NET_DROP;
 	}
 
 	set_appdata_values(pkt, IPPROTO_TCP);
