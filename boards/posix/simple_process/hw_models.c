@@ -13,10 +13,10 @@
 #include <stdint.h>
 
 /*set this to 1 to run in real time, to 0 to run as fast as possible*/
-#define CONFIG_POSIX_RUN_AT_REAL_TIME 1
+#define CONFIG_ARCH_POSIX_RUN_AT_REAL_TIME 1
 #define STOP_AFTER_5_SECONDS 1
 
-#if (CONFIG_POSIX_RUN_AT_REAL_TIME)
+#if (CONFIG_ARCH_POSIX_RUN_AT_REAL_TIME)
 #include <time.h>
 #endif
 
@@ -26,7 +26,7 @@
 void hw_models_main_loop(void)
 {
 	/*just a trivial system tick model*/
-#if (CONFIG_POSIX_RUN_AT_REAL_TIME)
+#if (CONFIG_ARCH_POSIX_RUN_AT_REAL_TIME)
 	struct timespec tv;
 	uint64_t Expected_time;
 #endif
@@ -38,7 +38,7 @@ void hw_models_main_loop(void)
  */
 
 
-#if (CONFIG_POSIX_RUN_AT_REAL_TIME)
+#if (CONFIG_ARCH_POSIX_RUN_AT_REAL_TIME)
 	clock_gettime(CLOCK_MONOTONIC, &tv);
 	Expected_time = tv.tv_sec*1e6 + tv.tv_nsec/1000;
 #endif
@@ -47,7 +47,7 @@ void hw_models_main_loop(void)
 		hw_irq_controller(TIMER);
 		running_time += tick_p;
 
-#if (CONFIG_POSIX_RUN_AT_REAL_TIME)
+#if (CONFIG_ARCH_POSIX_RUN_AT_REAL_TIME)
 		clock_gettime(CLOCK_MONOTONIC, &tv);
 		Expected_time += tick_p;
 		uint64_t RealCurrentTime = tv.tv_sec*1e6 + tv.tv_nsec/1000;

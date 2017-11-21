@@ -28,6 +28,7 @@
 #include <pthread.h>
 #include <stdbool.h>
 #include <pc_tracing.h>
+#include "soc.h"
 
 /******************************************
  * CPU boot, halt and interrupt handling: *

@@ -1,5 +1,5 @@
 if(CONFIG_NEWLIB_LIBC)
   add_subdirectory(newlib)
-else()
+elseif(NOT CONFIG_ARCH_POSIX)
   add_subdirectory(minimal)
 endif()
