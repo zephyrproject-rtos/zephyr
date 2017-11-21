@@ -23,6 +23,8 @@
 #define LWM2M_FORMAT_OMA_OLD_OPAQUE	1544
 #define LWM2M_FORMAT_OMA_TLV		11542
 #define LWM2M_FORMAT_OMA_JSON		11543
+/* 65000 ~ 65535 inclusive are reserved for experiments */
+#define LWM2M_FORMAT_NONE		65535
 
 
 #define COAP_RESPONSE_CODE_CLASS(x)	(x >> 5)
