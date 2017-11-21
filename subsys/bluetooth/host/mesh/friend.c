@@ -777,7 +777,7 @@ int bt_mesh_friend_req(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 	struct bt_mesh_subnet *sub = rx->sub;
 	struct bt_mesh_friend *frnd = NULL;
 	u16_t old_friend;
-	u16_t poll_to;
+	u32_t poll_to;
 	int i;
 
 	if (buf->len < sizeof(*msg)) {
