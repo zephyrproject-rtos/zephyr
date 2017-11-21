@@ -31,7 +31,8 @@ static int printk_init(struct device *arg)
 	return 0;
 }
 
-SYS_INIT(printk_init, PRE_KERNEL_1, 50);
+#define CONFIG_UART_CONSOLE_INIT_PRIORITY 50
+SYS_INIT(printk_init, PRE_KERNEL_1, CONFIG_UART_CONSOLE_INIT_PRIORITY);
 /*the CONFIG_UART_CONSOLE_INIT_PRIORITY is just something silly by now*/
 
 
