@@ -749,7 +749,17 @@ add_custom_command(
   # NB: COMMENT only works for some CMake-Generators
 )
 
-add_subdirectory(cmake/qemu)
+if(EMU_PLATFORM STREQUAL "qemu")
+	add_subdirectory(cmake/qemu)
+elseif(EMU_PLATFORM STREQUAL "native")
+    add_custom_target(run
+      COMMAND
+      ${APPLICATION_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME}
+      WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
+      USES_TERMINAL
+      )
+endif()
+
 add_subdirectory(cmake/flash)
 
 add_subdirectory(cmake/usage)
