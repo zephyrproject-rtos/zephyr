@@ -62,3 +62,12 @@ void board_irq_unlock(unsigned int key)
 {
 	/*A stub for this board as we only have the system timer irq*/
 }
+
+
+
+/**
+ * This function shall take the irq controller to a fully unlocked state
+ */
+void board_irq_full_unlock(void)
+{
+}

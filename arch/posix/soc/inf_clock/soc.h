@@ -17,6 +17,7 @@ void posix_soc_halt_cpu(void);
 void posix_soc_interrupt_raised(void);
 void posix_soc_boot_cpu(void);
 void posix_soc_atomic_halt_cpu(unsigned int imask);
+int posix_soc_is_cpu_running(void);
 
 #ifdef __cplusplus
 }

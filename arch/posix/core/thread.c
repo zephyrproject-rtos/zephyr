@@ -22,6 +22,7 @@
 #include <wait_q.h>
 
 #include "posix_core.h"
+#include "board_irq.h"
 
 
 /**
@@ -76,4 +77,9 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	posix_core_new_thread(thread_status);
 
 	thread_monitor_init(thread);
+}
+
+void _new_thread_pre_start(void)
+{
+	board_irq_full_unlock();
 }

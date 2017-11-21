@@ -181,6 +181,9 @@ static void *posix_core_thread_starter(void *arg)
  */
 	posix_core_wait_until_allowed();
 
+	extern void _new_thread_pre_start(void); /*defined in thread.c*/
+	_new_thread_pre_start();
+
 	/*Once allowed, we jump to the actual thread entry point:*/
 	extern void _thread_entry(void (*entry)(void *, void *, void *),
 				  void *p1, void *p2, void *p3);

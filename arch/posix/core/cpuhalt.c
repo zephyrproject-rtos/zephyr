@@ -19,6 +19,8 @@
 
 #include <zephyr.h>
 #include "posix_core.h"
+#include <soc.h>
+#include "board_irq.h"
 
 /**
  *
@@ -34,6 +36,7 @@
  */
 void k_cpu_idle(void)
 {
+	board_irq_full_unlock();
 	posix_soc_halt_cpu();
 }
 
