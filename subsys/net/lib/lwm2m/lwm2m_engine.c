@@ -702,32 +702,16 @@ static u16_t atou16(u8_t *buf, u16_t buflen, u16_t *len)
 static int coap_options_to_path(struct coap_option *opt, int options_count,
 				struct lwm2m_obj_path *path)
 {
-	u16_t len;
+	u16_t len, *id[4] = { &path->obj_id, &path->obj_inst_id,
+			      &path->res_id, &path->res_inst_id };
 
 	path->level = options_count;
-	path->obj_id = atou16(opt[0].value, opt[0].len, &len);
-	if (len == 0 || opt[0].len != len) {
-		path->level = 0;
-	}
 
-	if (path->level > 1) {
-		path->obj_inst_id = atou16(opt[1].value, opt[1].len, &len);
-		if (len == 0 || opt[1].len != len) {
-			path->level = 1;
-		}
-	}
-
-	if (path->level > 2) {
-		path->res_id = atou16(opt[2].value, opt[2].len, &len);
-		if (len == 0 || opt[2].len != len) {
-			path->level = 2;
-		}
-	}
-
-	if (path->level > 3) {
-		path->res_inst_id = atou16(opt[3].value, opt[3].len, &len);
-		if (len == 0 || opt[3].len != len) {
-			path->level = 3;
+	for (int i = 0; i < options_count; i++) {
+		*id[i] = atou16(opt[i].value, opt[i].len, &len);
+		if (len == 0 || opt[i].len != len) {
+			path->level = i;
+			break;
 		}
 	}
 
