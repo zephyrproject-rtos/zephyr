@@ -809,7 +809,10 @@ if(CONFIG_OUTPUT_PRINT_MEMORY_USAGE)
   target_link_libraries_ifdef(${check} zephyr_prebuilt ${option})
 endif()
 
-add_subdirectory(cmake/qemu)
+if(EMU_PLATFORM)
+  include($ENV{ZEPHYR_BASE}/cmake/emu/${EMU_PLATFORM}.cmake)
+endif()
+
 add_subdirectory(cmake/flash)
 
 add_subdirectory(cmake/usage)
