@@ -1,0 +1,14 @@
+# Kconfig - generic PC platform configuration options
+
+#
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_POSIX
+
+config SOC
+	default inf_clock
+
+endif

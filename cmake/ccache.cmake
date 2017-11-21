@@ -3,7 +3,7 @@
 
 if(USE_CCACHE STREQUAL "0")
 else()
-  find_program(CCACHE_FOUND ccache)
+  find_program(CCACHE_FOUNDX ccache)
   if(CCACHE_FOUND)
     set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
     set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK    ccache)

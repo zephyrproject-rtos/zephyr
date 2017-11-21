@@ -1,0 +1,10 @@
+zephyr_library()
+zephyr_library_compile_definitions(_POSIX_CHEATS_H)
+zephyr_library_sources(
+	board_irq.c
+	hw_models.c
+	irq_handler.c
+	main.c
+	misc.c
+	tracing.c
+	)

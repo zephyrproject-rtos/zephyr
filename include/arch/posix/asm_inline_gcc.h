@@ -27,6 +27,7 @@ extern "C" {
 #ifndef _ASMLANGUAGE
 
 #include <toolchain/common.h>
+#include <zephyr/types.h>
 
 /**
  *
