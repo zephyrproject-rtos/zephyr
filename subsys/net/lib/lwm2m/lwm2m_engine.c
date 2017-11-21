@@ -2057,7 +2057,7 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 }
 
 static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
-			     struct lwm2m_engine_context *context)
+				    struct lwm2m_engine_context *context)
 {
 	if (!obj || !context) {
 		return -EINVAL;
@@ -2065,7 +2065,7 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 
 	/* TODO: set parameters on resource for notification */
 
-	return 0;
+	return -ENOTSUP;
 }
 
 static int lwm2m_exec_handler(struct lwm2m_engine_obj *obj,
@@ -2377,7 +2377,7 @@ static int handle_request(struct coap_packet *request,
 	struct lwm2m_engine_obj *obj;
 	u8_t token[8];
 	u8_t tkl = 0;
-	u16_t format, accept;
+	u16_t format = LWM2M_FORMAT_NONE, accept;
 	struct lwm2m_input_context in;
 	struct lwm2m_output_context out;
 	struct lwm2m_obj_path path;
@@ -2449,10 +2449,8 @@ static int handle_request(struct coap_packet *request,
 	r = coap_find_options(in.in_cpkt, COAP_OPTION_CONTENT_FORMAT,
 			      options, 1);
 	if (r > 0) {
-		format = coap_option_value_to_int(&options[0]);
-	} else {
-		SYS_LOG_DBG("No content-format given. Assume text plain.");
-		format = LWM2M_FORMAT_PLAIN_TEXT;
+		format = select_reader(
+				&in, coap_option_value_to_int(&options[0]));
 	}
 
 	/* read Accept */
@@ -2472,7 +2470,6 @@ static int handle_request(struct coap_packet *request,
 		goto error;
 	}
 
-	format = select_reader(&in, format);
 	accept = select_writer(&out, accept);
 
 	/* set the operation */
@@ -2512,7 +2509,13 @@ static int handle_request(struct coap_packet *request,
 		break;
 
 	case COAP_METHOD_PUT:
-		context.operation = LWM2M_OP_WRITE;
+		/* write attributes if content-format is absent */
+		if (format == LWM2M_FORMAT_NONE) {
+			context.operation = LWM2M_OP_WRITE_ATTR;
+		} else {
+			context.operation = LWM2M_OP_WRITE;
+		}
+
 		msg->code = COAP_RESPONSE_CODE_CHANGED;
 		break;
 
@@ -2667,6 +2670,8 @@ error:
 		msg->code = COAP_RESPONSE_CODE_INCOMPLETE;
 	} else if (r == -EFBIG) {
 		msg->code = COAP_RESPONSE_CODE_REQUEST_TOO_LARGE;
+	} else if (r == -ENOTSUP) {
+		msg->code = COAP_RESPONSE_CODE_NOT_IMPLEMENTED;
 	} else {
 		/* Failed to handle the request */
 		msg->code = COAP_RESPONSE_CODE_INTERNAL_ERROR;
