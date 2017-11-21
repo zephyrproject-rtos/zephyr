@@ -344,6 +344,7 @@ config BT_MESH_CFG_CLI
 config BT_MESH_SHELL
 	bool "Enable Bluetooth Mesh shell"
 	select CONSOLE_SHELL
+	depends on BT_MESH_CFG_CLI
 	help
 	  Activate shell module that provides Bluetooth Mesh commands to
 	  the console.
