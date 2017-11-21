@@ -947,7 +947,9 @@ static void send_mod_pub_status(struct bt_mesh_model *cfg_mod,
 		memcpy(net_buf_simple_add(msg, 2), mod_id, 2);
 	}
 
-	bt_mesh_model_send(cfg_mod, ctx, msg, NULL, NULL);
+	if (bt_mesh_model_send(cfg_mod, ctx, msg, NULL, NULL)) {
+		BT_ERR("Unable to send Model Publication Status");
+	}
 }
 
 static void mod_pub_get(struct bt_mesh_model *model,
@@ -1225,7 +1227,9 @@ static void send_mod_sub_status(struct bt_mesh_model *model,
 		memcpy(net_buf_simple_add(msg, 2), mod_id, 2);
 	}
 
-	bt_mesh_model_send(model, ctx, msg, NULL, NULL);
+	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
+		BT_ERR("Unable to send Model Subscription Status");
+	}
 }
 
 static void mod_sub_add(struct bt_mesh_model *model,
@@ -1868,7 +1872,9 @@ static void send_net_key_status(struct bt_mesh_model *model,
 	net_buf_simple_add_u8(msg, status);
 	net_buf_simple_add_le16(msg, idx);
 
-	bt_mesh_model_send(model, ctx, msg, NULL, NULL);
+	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
+		BT_ERR("Unable to send NetKey Status");
+	}
 }
 
 static void net_key_add(struct bt_mesh_model *model,
@@ -2366,7 +2372,9 @@ send_list:
 		}
 	}
 
-	bt_mesh_model_send(model, ctx, msg, NULL, NULL);
+	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
+		BT_ERR("Unable to send Model Application List message");
+	}
 }
 
 static void node_reset(struct bt_mesh_model *model,
@@ -2522,7 +2530,9 @@ static void send_krp_status(struct bt_mesh_model *model,
 	net_buf_simple_add_le16(msg, idx);
 	net_buf_simple_add_u8(msg, phase);
 
-	bt_mesh_model_send(model, ctx, msg, NULL, NULL);
+	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
+		BT_ERR("Unable to send Key Refresh State Status");
+	}
 }
 
 static void krp_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
@@ -2673,7 +2683,9 @@ static void hb_pub_send_status(struct bt_mesh_model *model,
 	net_buf_simple_add_le16(msg, cfg->hb_pub.net_idx);
 
 send:
-	bt_mesh_model_send(model, ctx, msg, NULL, NULL);
+	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
+		BT_ERR("Unable to send Heartbeat Publication Status");
+	}
 }
 
 static void heartbeat_pub_get(struct bt_mesh_model *model,
@@ -2799,7 +2811,9 @@ static void hb_sub_send_status(struct bt_mesh_model *model,
 		net_buf_simple_add_u8(msg, cfg->hb_sub.max_hops);
 	}
 
-	bt_mesh_model_send(model, ctx, msg, NULL, NULL);
+	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
+		BT_ERR("Unable to send Heartbeat Subscription Status");
+	}
 }
 
 static void heartbeat_sub_get(struct bt_mesh_model *model,
