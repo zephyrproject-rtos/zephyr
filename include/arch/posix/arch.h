@@ -45,6 +45,8 @@ struct __esf {
 typedef struct __esf NANO_ESF;
 extern const NANO_ESF _default_esf;
 
+extern u32_t _timer_cycle_get_32(void);
+#define _arch_k_cycle_get_32()  _timer_cycle_get_32()
 
 #ifdef __cplusplus
 }

@@ -40,6 +40,11 @@ static pthread_mutex_t posix_soc_mtx_cpu   = PTHREAD_MUTEX_INITIALIZER;
 /*variable which tells if the CPU is halted (1) or not (0)*/
 static bool posix_soc_cpu_halted = true;
 
+int posix_soc_is_cpu_running(void)
+{
+	return !posix_soc_cpu_halted;
+}
+
 #define POSIX_ARCH_SOC_DEBUG_PRINTS 0
 
 /**

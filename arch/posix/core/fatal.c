@@ -204,9 +204,9 @@ FUNC_NORETURN __weak void _SysFatalErrorHandler(unsigned int reason,
 		goto hang_system;
 	}
 	if (k_is_in_isr() || _is_thread_essential()) {
-		printk("Fatal fault in %s! Spinning...\n",
-				k_is_in_isr() ? "ISR" : "essential thread");
-		goto hang_system;
+		simulation_engine_print_error_and_exit(
+			"Fatal fault in %s! Stopping...\n",
+			k_is_in_isr() ? "ISR" : "essential thread");
 	}
 	printk("Fatal fault in thread %p! Aborting.\n", _current);
 	k_thread_abort(_current);
@@ -216,11 +216,7 @@ hang_system:
 	ARG_UNUSED(reason);
 #endif
 
-#ifdef ALT_CPU_HAS_DEBUG_STUB
-	_nios2_break();
-#endif
-	for (;;) {
-		k_cpu_idle();
-	}
+	simulation_engine_print_error_and_exit(
+		"Stopped in _SysFatalErrorHandler()\n");
 	CODE_UNREACHABLE;
 }

@@ -14,6 +14,7 @@ extern "C" {
 
 unsigned int board_irq_lock(void);
 void board_irq_unlock(unsigned int key);
+void board_irq_full_unlock(void);
 
 /* _ARCH_IRQ_CONNECT , _ARCH_IRQ_DIRECT_CONNECT
  * _ARCH_ISR_DIRECT_DECLARE and so forth would need to be defined here
