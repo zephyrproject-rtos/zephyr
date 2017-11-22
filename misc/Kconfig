@@ -142,15 +142,6 @@ config TOOLCHAIN_VARIANT
 
 endmenu
 
-config GDB_INFO
-	bool
-	prompt "Task-aware debugging with GDB"
-	default n
-	help
-	  This option enables the kernel to collect additional information
-	  during interrupts, exceptions, and context switches. This information
-	  is required for task-aware debugging with GDB.
-
 menu "Build Options"
 
 config KERNEL_BIN_NAME
