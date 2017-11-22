@@ -14,9 +14,8 @@
 
 #include <errno.h>
 
-#include <net/ieee802154_radio.h>
-
 #include "ieee802154_frame.h"
+#include "ieee802154_utils.h"
 #include "ieee802154_radio_utils.h"
 
 static inline int aloha_tx_fragment(struct net_if *iface,
@@ -26,7 +25,6 @@ static inline int aloha_tx_fragment(struct net_if *iface,
 	u8_t retries = CONFIG_NET_L2_IEEE802154_RADIO_TX_RETRIES;
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	bool ack_required = prepare_for_ack(ctx, pkt, frag);
-	const struct ieee802154_radio_api *radio = iface->dev->driver_api;
 	int ret = -EIO;
 
 	NET_DBG("frag %p", frag);
@@ -34,7 +32,7 @@ static inline int aloha_tx_fragment(struct net_if *iface,
 	while (retries) {
 		retries--;
 
-		ret = radio->tx(iface->dev, pkt, frag);
+		ret = ieee802154_tx(iface, pkt, frag);
 		if (ret) {
 			continue;
 		}
