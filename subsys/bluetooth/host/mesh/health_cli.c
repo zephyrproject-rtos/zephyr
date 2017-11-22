@@ -29,6 +29,7 @@ static struct bt_mesh_health_cli *health_cli;
 
 struct health_fault_param {
 	u16_t   cid;
+	u8_t   *expect_test_id;
 	u8_t   *test_id;
 	u8_t   *faults;
 	size_t *fault_count;
@@ -54,14 +55,20 @@ static void health_fault_status(struct bt_mesh_model *model,
 	param = health_cli->op_param;
 
 	test_id = net_buf_simple_pull_u8(buf);
-	cid = net_buf_simple_pull_le16(buf);
+	if (param->expect_test_id && test_id != *param->expect_test_id) {
+		BT_WARN("Health fault with unexpected Test ID");
+		return;
+	}
 
+	cid = net_buf_simple_pull_le16(buf);
 	if (cid != param->cid) {
 		BT_WARN("Health fault with unexpected Company ID");
 		return;
 	}
 
-	*param->test_id = test_id;
+	if (param->test_id) {
+		*param->test_id = test_id;
+	}
 
 	if (buf->len > *param->fault_count) {
 		BT_WARN("Got more faults than there's space for");
@@ -119,6 +126,60 @@ static int check_cli(void)
 	}
 
 	return 0;
+}
+
+int bt_mesh_health_fault_test(u16_t net_idx, u16_t addr, u16_t app_idx,
+			      u16_t cid, u8_t test_id, u8_t *faults,
+			      size_t *fault_count)
+{
+	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 3 + 4);
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = net_idx,
+		.app_idx = app_idx,
+		.addr = addr,
+		.send_ttl = BT_MESH_TTL_DEFAULT,
+	};
+	struct health_fault_param param = {
+		.cid = cid,
+		.expect_test_id = &test_id,
+		.faults = faults,
+		.fault_count = fault_count,
+	};
+	int err;
+
+	err = check_cli();
+	if (err) {
+		return err;
+	}
+
+	if (faults) {
+		bt_mesh_model_msg_init(msg, OP_HEALTH_FAULT_TEST);
+	} else {
+		bt_mesh_model_msg_init(msg, OP_HEALTH_FAULT_TEST_UNREL);
+	}
+
+	net_buf_simple_add_u8(msg, test_id);
+	net_buf_simple_add_le16(msg, cid);
+
+	err = bt_mesh_model_send(health_cli->model, &ctx, msg, NULL, NULL);
+	if (err) {
+		BT_ERR("model_send() failed (err %d)", err);
+		return err;
+	}
+
+	if (!faults) {
+		return 0;
+	}
+
+	health_cli->op_param = &param;
+	health_cli->op_pending = OP_HEALTH_FAULT_STATUS;
+
+	err = k_sem_take(&health_cli->op_sync, msg_timeout);
+
+	health_cli->op_pending = 0;
+	health_cli->op_param = NULL;
+
+	return err;
 }
 
 int bt_mesh_health_fault_clear(u16_t net_idx, u16_t addr, u16_t app_idx,

@@ -1289,6 +1289,56 @@ static int cmd_fault_clear_unack(int argc, char *argv[])
 	return 0;
 }
 
+static int cmd_fault_test(int argc, char *argv[])
+{
+	u8_t faults[32];
+	size_t fault_count;
+	u8_t test_id;
+	u16_t cid;
+	int err;
+
+	if (argc < 3) {
+		return -EINVAL;
+	}
+
+	cid = strtoul(argv[1], NULL, 0);
+	test_id = strtoul(argv[2], NULL, 0);
+	fault_count = sizeof(faults);
+
+	err = bt_mesh_health_fault_test(net.net_idx, net.dst, net.app_idx,
+					cid, test_id, faults, &fault_count);
+	if (err) {
+		printk("Failed to send Health Fault Test (err %d)\n", err);
+	} else {
+		show_faults(test_id, cid, faults, fault_count);
+	}
+
+	return 0;
+}
+
+static int cmd_fault_test_unack(int argc, char *argv[])
+{
+	u16_t cid;
+	u8_t test_id;
+	int err;
+
+	if (argc < 3) {
+		return -EINVAL;
+	}
+
+	cid = strtoul(argv[1], NULL, 0);
+	test_id = strtoul(argv[2], NULL, 0);
+
+	err = bt_mesh_health_fault_test(net.net_idx, net.dst, net.app_idx,
+					cid, test_id, NULL, NULL);
+	if (err) {
+		printk("Health Fault Test Unacknowledged failed (err %d)\n",
+		       err);
+	}
+
+	return 0;
+}
+
 static int cmd_add_fault(int argc, char *argv[])
 {
 	u8_t fault_id;
@@ -1408,6 +1458,8 @@ static const struct shell_cmd mesh_commands[] = {
 	{ "fault-get", cmd_fault_get, "<Company ID>" },
 	{ "fault-clear", cmd_fault_clear, "<Company ID>" },
 	{ "fault-clear-unack", cmd_fault_clear_unack, "Company ID>" },
+	{ "fault-test", cmd_fault_test, "<Company ID> <Test ID>" },
+	{ "fault-test-unack", cmd_fault_test_unack, "<Company ID> <Test ID>" },
 
 	/* Health Server Model Operations */
 	{ "add-fault", cmd_add_fault, "<Fault ID>" },
