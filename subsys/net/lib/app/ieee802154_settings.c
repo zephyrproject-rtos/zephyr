@@ -58,5 +58,7 @@ int _net_app_ieee802154_setup(void)
 	}
 #endif /* CONFIG_NET_L2_IEEE802154_SECURITY */
 
+	net_if_up(iface);
+
 	return 0;
 }
