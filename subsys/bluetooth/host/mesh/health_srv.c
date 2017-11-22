@@ -168,7 +168,6 @@ static void health_fault_test_unrel(struct bt_mesh_model *model,
 				    struct net_buf_simple *buf)
 {
 	struct bt_mesh_health_srv *srv = model->user_data;
-	const struct bt_mesh_comp *comp;
 	u16_t company_id;
 	u8_t test_id;
 
@@ -176,13 +175,6 @@ static void health_fault_test_unrel(struct bt_mesh_model *model,
 	company_id = net_buf_simple_pull_le16(buf);
 
 	BT_DBG("test 0x%02x company 0x%04x", test_id, company_id);
-
-	comp = bt_mesh_comp_get();
-	if (comp->cid != company_id) {
-		BT_WARN("CID 0x%04x doesn't match composition CID 0x%04x",
-			company_id, comp->cid);
-		return;
-	}
 
 	if (srv->cb && srv->cb->fault_test) {
 		srv->cb->fault_test(model, test_id, company_id);
