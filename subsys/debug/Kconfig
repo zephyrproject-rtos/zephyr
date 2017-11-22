@@ -162,6 +162,7 @@ config OMIT_FRAME_POINTER
 	If unsure, disable OVERRIDE_FRAME_POINTER_DEFAULT to allow the compiler
 	to adopt sensible defaults for your architecture.
 
+
 #
 # Generic Debugging Options
 #
@@ -178,6 +179,15 @@ config DEBUG_INFO
 #
 # Miscellaneous debugging options
 #
+
+config GDB_INFO
+	bool
+	prompt "Thread-aware debugging with GDB"
+	default n
+	help
+	  This option enables the kernel to collect additional information
+	  during interrupts, exceptions, and context switches. This information
+	  is required for thread-aware debugging with GDB.
 
 config OPENOCD_SUPPORT
 	bool
