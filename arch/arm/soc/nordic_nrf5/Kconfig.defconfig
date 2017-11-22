@@ -7,6 +7,9 @@
 
 if SOC_FAMILY_NRF5
 
+config BUILD_OUTPUT_HEX
+	default y
+
 if SERIAL
 
 config GPIO
