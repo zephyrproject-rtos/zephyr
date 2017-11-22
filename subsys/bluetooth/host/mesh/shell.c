@@ -66,6 +66,24 @@ static struct bt_mesh_model_pub health_pub = {
 static struct bt_mesh_cfg_cli cfg_cli = {
 };
 
+void show_faults(u8_t test_id, u16_t cid, u8_t *faults, size_t fault_count)
+{
+	size_t i;
+
+	if (!fault_count) {
+		printk("Health Test ID 0x%02x Company ID 0x%04x: no faults\n",
+		       test_id, cid);
+		return;
+	}
+
+	printk("Health Test ID 0x%02x Company ID 0x%04x Fault Count %zu:\n",
+	       test_id, cid, fault_count);
+
+	for (i = 0; i < fault_count; i++) {
+		printk("\t0x%02x\n", faults[i]);
+	}
+}
+
 static struct bt_mesh_health_cli health_cli = {
 };
 
@@ -1110,6 +1128,32 @@ int cmd_timeout(int argc, char *argv[])
 	return 0;
 }
 
+static int cmd_fault_get(int argc, char *argv[])
+{
+	u8_t faults[32];
+	size_t fault_count;
+	u8_t test_id;
+	u16_t cid;
+	int err;
+
+	if (argc < 2) {
+		return -EINVAL;
+	}
+
+	cid = strtoul(argv[1], NULL, 0);
+	fault_count = sizeof(faults);
+
+	err = bt_mesh_health_fault_get(net.net_idx, net.dst, net.app_idx, cid,
+				       &test_id, faults, &fault_count);
+	if (err) {
+		printk("Failed to send Health Fault Get (err %d)\n", err);
+	} else {
+		show_faults(test_id, cid, faults, fault_count);
+	}
+
+	return 0;
+}
+
 static const struct shell_cmd mesh_commands[] = {
 	{ "init", cmd_init, NULL },
 	{ "timeout", cmd_timeout, "[timeout in seconds]" },
@@ -1132,6 +1176,8 @@ static const struct shell_cmd mesh_commands[] = {
 	{ "dst", cmd_dst, "[destination address]" },
 	{ "netidx", cmd_netidx, "[NetIdx]" },
 	{ "appidx", cmd_appidx, "[AppIdx]" },
+
+	/* Configuration Client Model operations */
 	{ "get-comp", cmd_get_comp, "[page]" },
 	{ "beacon", cmd_beacon, "[val: off, on]" },
 	{ "ttl", cmd_ttl, "[ttl: 0x00, 0x02-0x7f]" },
@@ -1150,6 +1196,10 @@ static const struct shell_cmd mesh_commands[] = {
 	{ "hb-sub", cmd_hb_sub, "[<src> <dst> <period>]" },
 	{ "hb-pub", cmd_hb_pub,
 		"[<dst> <count> <period> <ttl> <features> <NetKeyIndex>]" },
+
+	/* Health Client Model Operations */
+	{ "fault-get", cmd_fault_get, "<Company ID>" },
+
 	{ NULL, NULL, NULL}
 };
 
