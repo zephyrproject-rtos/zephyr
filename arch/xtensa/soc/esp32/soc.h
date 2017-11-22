@@ -11,6 +11,34 @@
 
 #include <zephyr/types.h>
 #include <stdbool.h>
+#include <arch/xtensa/arch.h>
+
+/**
+ * @brief Struct to peripheral masks to enable peripheral
+ * clock and reset peripherals.
+ */
+struct esp32_peripheral {
+	/** Mask for clock peripheral */
+	int clk;
+	/** Mask for reset peripheral */
+	int rst;
+};
+
+static inline void esp32_set_mask32(u32_t v, u32_t mem_addr)
+{
+	sys_write32(sys_read32(mem_addr) | v, mem_addr);
+}
+
+static inline void esp32_clear_mask32(u32_t v, u32_t mem_addr)
+{
+	sys_write32(sys_read32(mem_addr) & ~v, mem_addr);
+}
+
+static inline void esp32_enable_peripheral(const struct esp32_peripheral *peripheral)
+{
+	esp32_set_mask32(peripheral->clk, DPORT_PERIP_CLK_EN_REG);
+	esp32_clear_mask32(peripheral->rst, DPORT_PERIP_RST_EN_REG);
+}
 
 extern int esp32_rom_intr_matrix_set(int cpu_no,
 				     int interrupt_src,
