@@ -100,7 +100,6 @@ zephyr_compile_options(
   ${NOSTDINC_F}
 )
 
-
 zephyr_compile_options(
   $<$<COMPILE_LANGUAGE:C>:-std=c99>
 
