@@ -341,10 +341,16 @@ config BT_MESH_CFG_CLI
 	help
 	  Enable support for the configuration client model.
 
+config BT_MESH_HEALTH_CLI
+	bool "Support for Health Client Model"
+	help
+	  Enable support for the health client model.
+
 config BT_MESH_SHELL
 	bool "Enable Bluetooth Mesh shell"
 	select CONSOLE_SHELL
 	depends on BT_MESH_CFG_CLI
+	depends on BT_MESH_HEALTH_CLI
 	help
 	  Activate shell module that provides Bluetooth Mesh commands to
 	  the console.
