@@ -760,9 +760,6 @@ void timeout_thread(struct net_context *ctx, void *param2, void *param3)
 			     "Context recv UDP timeout test failed");
 		cb_failure = true;
 		return;
-	} else {
-		/* When waiting forever, we just bail out here */
-		goto out;
 	}
 
 	if (recv_cb_timeout_called) {
@@ -773,7 +770,6 @@ void timeout_thread(struct net_context *ctx, void *param2, void *param3)
 
 	DBG("Timeout %s\n", family == AF_INET ? "IPv4" : "IPv6");
 
-out:
 	k_sem_give(&wait_data);
 }
 
