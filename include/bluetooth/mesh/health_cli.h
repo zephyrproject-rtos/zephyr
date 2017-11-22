@@ -34,6 +34,10 @@ extern const struct bt_mesh_model_op bt_mesh_health_cli_op[];
 
 int bt_mesh_health_cli_set(struct bt_mesh_model *model);
 
+int bt_mesh_health_fault_get(u16_t net_idx, u16_t addr, u16_t app_idx,
+			     u16_t cid, u8_t *test_id, u8_t *faults,
+			     size_t *fault_count);
+
 s32_t bt_mesh_health_cli_timeout_get(void);
 void bt_mesh_health_cli_timeout_set(s32_t timeout);
 
