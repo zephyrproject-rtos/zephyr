@@ -70,6 +70,10 @@ static inline void ieee802154_filter_pan_id(struct net_if *iface,
 
 static inline bool ieee802154_verify_channel(struct device *dev, u16_t channel)
 {
+	if (channel == IEEE802154_NO_CHANNEL) {
+		return false;
+	}
+
 #ifdef CONFIG_NET_L2_IEEE802154_SUB_GHZ
 	const struct ieee802154_radio_api *radio = dev->driver_api;
 
