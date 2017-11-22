@@ -121,6 +121,59 @@ static int check_cli(void)
 	return 0;
 }
 
+int bt_mesh_health_fault_clear(u16_t net_idx, u16_t addr, u16_t app_idx,
+			       u16_t cid, u8_t *test_id, u8_t *faults,
+			       size_t *fault_count)
+{
+	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 2 + 4);
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = net_idx,
+		.app_idx = app_idx,
+		.addr = addr,
+		.send_ttl = BT_MESH_TTL_DEFAULT,
+	};
+	struct health_fault_param param = {
+		.cid = cid,
+		.test_id = test_id,
+		.faults = faults,
+		.fault_count = fault_count,
+	};
+	int err;
+
+	err = check_cli();
+	if (err) {
+		return err;
+	}
+
+	if (test_id) {
+		bt_mesh_model_msg_init(msg, OP_HEALTH_FAULT_CLEAR);
+	} else {
+		bt_mesh_model_msg_init(msg, OP_HEALTH_FAULT_CLEAR_UNREL);
+	}
+
+	net_buf_simple_add_le16(msg, cid);
+
+	err = bt_mesh_model_send(health_cli->model, &ctx, msg, NULL, NULL);
+	if (err) {
+		BT_ERR("model_send() failed (err %d)", err);
+		return err;
+	}
+
+	if (!test_id) {
+		return 0;
+	}
+
+	health_cli->op_param = &param;
+	health_cli->op_pending = OP_HEALTH_FAULT_STATUS;
+
+	err = k_sem_take(&health_cli->op_sync, msg_timeout);
+
+	health_cli->op_pending = 0;
+	health_cli->op_param = NULL;
+
+	return err;
+}
+
 int bt_mesh_health_fault_get(u16_t net_idx, u16_t addr, u16_t app_idx,
 			     u16_t cid, u8_t *test_id, u8_t *faults,
 			     size_t *fault_count)
