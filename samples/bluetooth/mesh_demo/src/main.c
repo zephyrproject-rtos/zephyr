@@ -17,7 +17,7 @@
 #define MOD_INTEL 0x0000
 
 #define GROUP_ADDR 0xc000
-#define PROV_ADDR  0x000f
+#define PUBLISHER_ADDR  0x000f
 
 #define OP_VENDOR_BUTTON BT_MESH_MODEL_OP_3(0x00, CID_INTEL)
 
@@ -37,14 +37,8 @@ static const u16_t net_idx;
 static const u16_t app_idx;
 static const u32_t iv_index;
 static u8_t flags;
-#if defined(NODE_ADDR)
 static u16_t addr = NODE_ADDR;
-#else
-static u16_t addr = 0x0b0c;
-#endif
 static u32_t seq;
-
-#define PROVISIONER_ADDR 0x0001
 
 static void heartbeat(u8_t hops, u16_t feat)
 {
@@ -166,7 +160,7 @@ static void configure(void)
 	bt_mesh_cfg_mod_sub_add_vnd(net_idx, addr, addr, GROUP_ADDR,
 				    MOD_INTEL, CID_INTEL, NULL);
 
-#if defined(NODE_ADDR) && NODE_ADDR == PROV_ADDR
+#if NODE_ADDR == PUBLISHER_ADDR
 	{
 		struct bt_mesh_cfg_hb_pub pub = {
 			.dst = GROUP_ADDR,
@@ -183,7 +177,7 @@ static void configure(void)
 #else
 	{
 		struct bt_mesh_cfg_hb_sub sub = {
-			.src = PROV_ADDR,
+			.src = PUBLISHER_ADDR,
 			.dst = GROUP_ADDR,
 			.period = 0x10,
 		};
