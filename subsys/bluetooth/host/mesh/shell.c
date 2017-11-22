@@ -29,6 +29,7 @@ static struct {
 	u16_t local;
 	u16_t dst;
 	u16_t net_idx;
+	u16_t app_idx;
 } net = {
 	.local = BT_MESH_ADDR_UNASSIGNED,
 	.dst = BT_MESH_ADDR_UNASSIGNED,
@@ -428,6 +429,18 @@ static int cmd_netidx(int argc, char *argv[])
 
 	net.net_idx = strtoul(argv[1], NULL, 0);
 	printk("NetIdx set to 0x%04x\n", net.net_idx);
+	return 0;
+}
+
+static int cmd_appidx(int argc, char *argv[])
+{
+	if (argc < 2) {
+		printk("AppIdx: 0x%04x\n", net.app_idx);
+		return 0;
+	}
+
+	net.app_idx = strtoul(argv[1], NULL, 0);
+	printk("AppIdx set to 0x%04x\n", net.app_idx);
 	return 0;
 }
 
@@ -1114,6 +1127,7 @@ static const struct shell_cmd mesh_commands[] = {
 #endif
 	{ "dst", cmd_dst, "[destination address]" },
 	{ "netidx", cmd_netidx, "[NetIdx]" },
+	{ "appidx", cmd_appidx, "[AppIdx]" },
 	{ "get-comp", cmd_get_comp, "[page]" },
 	{ "beacon", cmd_beacon, "[val: off, on]" },
 	{ "ttl", cmd_ttl, "[ttl: 0x00, 0x02-0x7f]" },
