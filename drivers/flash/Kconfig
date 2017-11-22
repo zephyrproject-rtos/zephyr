@@ -1,4 +1,4 @@
-# Kconfig - flash driver configuration options
+# Kconfig - Flash driver configuration options
 
 #
 # Copyright (c) 2016 Intel Corporation
@@ -7,11 +7,11 @@
 #
 
 #
-# flash driver
+# Flash driver
 #
 menuconfig FLASH
 	bool
-	prompt "flash hardware support"
+	prompt "Flash hardware support"
 	default n
 	help
 	  Enable support for the flash hardware.
@@ -30,13 +30,13 @@ config SPI_FLASH_W25QXXDV
 
 config SPI_FLASH_W25QXXDV_SPI_NAME
 	string
-	prompt "spi controller device name"
+	prompt "SPI controller device name"
 	depends on SPI_FLASH_W25QXXDV
 	default ""
 
 config SPI_FLASH_W25QXXDV_DRV_NAME
 	string
-	prompt "spi flash device name"
+	prompt "SPI flash device name"
 	depends on SPI_FLASH_W25QXXDV
 	default "W25QXXDV"
 
@@ -59,14 +59,14 @@ config SPI_FLASH_W25QXXDV_SPI_FREQ_0
 	  clock.
 
 config	SPI_FLASH_W25QXXDV_SPI_SLAVE
-	int "SPI slave linked to spi flash"
+	int "SPI slave linked to SPI flash"
 	depends on SPI_FLASH_W25QXXDV
 	help
 	  This option sets the SPI slave number the SPI controller has to switch
 	  to when dealing with WinBond SPI flash chip.
 
 config SPI_FLASH_W25QXXDV_FLASH_SIZE
-	int "flash size in bytes"
+	int "Flash size in bytes"
 	depends on SPI_FLASH_W25QXXDV
 	default 2097152
 	help
@@ -96,7 +96,7 @@ config SOC_FLASH_QMSI_DEV_NAME
 	  Specify the device name for the flash driver.
 
 config SOC_FLASH_QMSI_CLK_COUNT_US
-	int "system clk count per microsecond"
+	int "System clk count per microsecond"
 	depends on SOC_FLASH_QMSI
 	default 32
 	help
