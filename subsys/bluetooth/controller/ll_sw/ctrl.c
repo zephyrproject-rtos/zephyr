@@ -198,12 +198,11 @@ static struct {
 	u8_t  packet_rx_acquire;
 
 	/* Controller to Host event-cum-data queue */
-	void  *link_rx_pool;
-	void  *link_rx_free;
-	void  *link_rx_head;
-
-	void  *volatile link_rx_tail;
-	u8_t  link_rx_data_quota;
+	void        *link_rx_pool;
+	void        *link_rx_free;
+	memq_link_t *link_rx_head;
+	memq_link_t *volatile link_rx_tail;
+	u8_t        link_rx_data_quota;
 
 	/* Connections common Tx ctrl and data pool */
 	void  *pkt_tx_ctrl_pool;
@@ -412,8 +411,8 @@ u32_t radio_init(void *hf_clock, u8_t sca, u8_t connection_count_max,
 
 	/* initialise rx link pool memory */
 	_radio.link_rx_pool = mem_radio;
-	mem_radio += (sizeof(void *) * 2 * (_radio.packet_rx_count +
-					    _radio.connection_count));
+	mem_radio += (sizeof(memq_link_t) * (_radio.packet_rx_count +
+					     _radio.connection_count));
 
 	/* initialise tx ctrl pool memory */
 	_radio.pkt_tx_ctrl_pool = mem_radio;
@@ -508,7 +507,7 @@ void ll_reset(void)
 
 static void common_init(void)
 {
-	void *link;
+	memq_link_t *link;
 
 	/* initialise connection pool. */
 	if (_radio.connection_count) {
@@ -526,7 +525,7 @@ static void common_init(void)
 		 &_radio.pkt_rx_data_free);
 
 	/* initialise rx link pool. */
-	mem_init(_radio.link_rx_pool, (sizeof(void *) * 2),
+	mem_init(_radio.link_rx_pool, (sizeof(memq_link_t)),
 		 (_radio.packet_rx_count + _radio.connection_count),
 		 &_radio.link_rx_free);
 
@@ -4309,8 +4308,8 @@ static void mayfly_radio_active(void *params)
 static void event_active(u32_t ticks_at_expire, u32_t remainder,
 			 u16_t lazy, void *context)
 {
-	static void *s_link[2];
-	static struct mayfly s_mfy_radio_active = {0, 0, s_link, (void *)1,
+	static memq_link_t s_link;
+	static struct mayfly s_mfy_radio_active = {0, 0, &s_link, (void *)1,
 						   mayfly_radio_active};
 	u32_t retval;
 
@@ -4337,8 +4336,8 @@ static void mayfly_radio_inactive(void *params)
 static void event_inactive(u32_t ticks_at_expire, u32_t remainder,
 			   u16_t lazy, void *context)
 {
-	static void *s_link[2];
-	static struct mayfly s_mfy_radio_inactive = {0, 0, s_link, NULL,
+	static memq_link_t s_link;
+	static struct mayfly s_mfy_radio_inactive = {0, 0, &s_link, NULL,
 						     mayfly_radio_inactive};
 	u32_t retval;
 
@@ -4364,8 +4363,8 @@ static void mayfly_xtal_start(void *params)
 static void event_xtal(u32_t ticks_at_expire, u32_t remainder,
 		       u16_t lazy, void *context)
 {
-	static void *s_link[2];
-	static struct mayfly s_mfy_xtal_start = {0, 0, s_link, NULL,
+	static memq_link_t s_link;
+	static struct mayfly s_mfy_xtal_start = {0, 0, &s_link, NULL,
 						 mayfly_xtal_start};
 	u32_t retval;
 
@@ -4396,8 +4395,8 @@ static void mayfly_xtal_retain(u8_t caller_id, u8_t retain)
 
 	if (retain) {
 		if (!s_xtal_retained) {
-			static void *s_link[2];
-			static struct mayfly s_mfy_xtal_start = {0, 0, s_link,
+			static memq_link_t s_link;
+			static struct mayfly s_mfy_xtal_start = {0, 0, &s_link,
 				NULL, mayfly_xtal_start};
 			u32_t retval;
 
@@ -4413,10 +4412,10 @@ static void mayfly_xtal_retain(u8_t caller_id, u8_t retain)
 		}
 	} else {
 		if (s_xtal_retained) {
-			static void *s_link[2][2];
+			static memq_link_t s_link[2];
 			static struct mayfly s_mfy_xtal_stop[2] = {
-				{0, 0, s_link[0], NULL, mayfly_xtal_stop},
-				{0, 0, s_link[1], NULL, mayfly_xtal_stop}
+				{0, 0, &s_link[0], NULL, mayfly_xtal_stop},
+				{0, 0, &s_link[1], NULL, mayfly_xtal_stop}
 			};
 			struct mayfly *p_mfy_xtal_stop = NULL;
 			u32_t retval;
@@ -5181,8 +5180,8 @@ static void mayfly_radio_stop(void *params)
 static void event_stop(u32_t ticks_at_expire, u32_t remainder,
 		       u16_t lazy, void *context)
 {
-	static void *s_link[2];
-	static struct mayfly s_mfy_radio_stop = {0, 0, s_link, NULL,
+	static memq_link_t s_link;
+	static struct mayfly s_mfy_radio_stop = {0, 0, &s_link, NULL,
 						 mayfly_radio_stop};
 	u32_t retval;
 
@@ -5345,8 +5344,8 @@ static void event_common_prepare(u32_t ticks_at_expire,
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
 	/* calc whether xtal needs to be retained after this event */
 	{
-		static void *s_link[2];
-		static struct mayfly s_mfy_xtal_stop_calc = {0, 0, s_link, NULL,
+		static memq_link_t s_link;
+		static struct mayfly s_mfy_xtal_stop_calc = {0, 0, &s_link, NULL,
 			mayfly_xtal_stop_calc};
 		u32_t retval;
 
@@ -5879,8 +5878,8 @@ static void mayfly_adv_stop(void *param)
 
 static inline void ticker_stop_adv_stop_active(void)
 {
-	static void *s_link[2];
-	static struct mayfly s_mfy_radio_inactive = {0, 0, s_link, NULL,
+	static memq_link_t s_link;
+	static struct mayfly s_mfy_radio_inactive = {0, 0, &s_link, NULL,
 		mayfly_radio_inactive};
 	u32_t volatile ret_cb = TICKER_STATUS_BUSY;
 	u32_t ret;
@@ -5901,8 +5900,8 @@ static inline void ticker_stop_adv_stop_active(void)
 	}
 
 	if (ret_cb == TICKER_STATUS_SUCCESS) {
-		static void *s_link[2];
-		static struct mayfly s_mfy_xtal_stop = {0, 0, s_link, NULL,
+		static memq_link_t s_link;
+		static struct mayfly s_mfy_xtal_stop = {0, 0, &s_link, NULL,
 			mayfly_xtal_stop};
 		u32_t volatile ret_cb = TICKER_STATUS_BUSY;
 		u32_t ret;
@@ -5980,8 +5979,8 @@ static inline void ticker_stop_adv_stop_active(void)
 		 * (role dependent)
 		 */
 		if (_radio.role != ROLE_NONE) {
-			static void *s_link[2];
-			static struct mayfly s_mfy_radio_stop = {0, 0, s_link,
+			static memq_link_t s_link;
+			static struct mayfly s_mfy_radio_stop = {0, 0, &s_link,
 				NULL, mayfly_radio_stop};
 			u32_t retval;
 
@@ -6006,8 +6005,8 @@ static inline void ticker_stop_adv_stop_active(void)
 
 static void ticker_stop_adv_stop(u32_t status, void *params)
 {
-	static void *s_link[2];
-	static struct mayfly s_mfy_adv_stop = {0, 0, s_link, NULL,
+	static memq_link_t s_link;
+	static struct mayfly s_mfy_adv_stop = {0, 0, &s_link, NULL,
 					       mayfly_adv_stop};
 	u32_t retval;
 
@@ -6079,9 +6078,9 @@ static void event_scan_prepare(u32_t ticks_at_expire, u32_t remainder,
 	 * to be placed
 	 */
 	if (_radio.scanner.conn) {
-		static void *s_link[2];
+		static memq_link_t s_link;
 		static struct mayfly s_mfy_sched_after_mstr_free_offset_get = {
-			0, 0, s_link, NULL,
+			0, 0, &s_link, NULL,
 			mayfly_sched_after_mstr_free_offset_get};
 		u32_t ticks_at_expire_normal = ticks_at_expire;
 		u32_t retval;
@@ -6329,9 +6328,9 @@ static inline u32_t event_conn_upd_prep(struct connection *conn,
 			  0xffff;
 	if (conn->llcp.conn_upd.state != LLCP_CUI_STATE_INPROG) {
 #if defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
-		static void *s_link[2];
+		static memq_link_t s_link;
 		static struct mayfly s_mfy_sched_offset = {0, 0,
-			s_link, 0, 0 };
+			&s_link, 0, 0 };
 		void (*fp_mayfly_select_or_use)(void *) = NULL;
 #endif /* CONFIG_BT_CTLR_SCHED_ADVANCED */
 		struct radio_pdu_node_tx *node_tx;
@@ -6985,8 +6984,8 @@ static inline void event_conn_param_req(struct connection *conn,
 
 #if defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
 	{
-		static void *s_link[2];
-		static struct mayfly s_mfy_sched_offset = {0, 0, s_link, NULL,
+		static memq_link_t s_link;
+		static struct mayfly s_mfy_sched_offset = {0, 0, &s_link, NULL,
 			mayfly_sched_free_win_offset_calc};
 		u32_t retval;
 
@@ -8487,8 +8486,8 @@ static void packet_rx_callback(void)
 #if (RADIO_TICKER_USER_ID_WORKER_PRIO == RADIO_TICKER_USER_ID_JOB_PRIO)
 	radio_event_callback();
 #else
-	static void *s_link[2];
-	static struct mayfly s_mfy_callback = {0, 0, s_link, NULL,
+	static memq_link_t s_link;
+	static struct mayfly s_mfy_callback = {0, 0, &s_link, NULL,
 		(void *)radio_event_callback};
 
 	mayfly_enqueue(RADIO_TICKER_USER_ID_WORKER, RADIO_TICKER_USER_ID_JOB, 1,
@@ -8498,8 +8497,8 @@ static void packet_rx_callback(void)
 
 static void packet_rx_enqueue(void)
 {
-	void *link;
 	struct radio_pdu_node_rx *radio_pdu_node_rx;
+	memq_link_t *link;
 	u8_t last;
 
 	LL_ASSERT(_radio.packet_rx_last != _radio.packet_rx_acquire);
@@ -8807,7 +8806,7 @@ static void connection_release(struct connection *conn)
 static void terminate_ind_rx_enqueue(struct connection *conn, u8_t reason)
 {
 	struct radio_pdu_node_rx *radio_pdu_node_rx;
-	void *link;
+	memq_link_t *link;
 
 	/* Prepare the rx packet structure */
 	radio_pdu_node_rx = (void *)&conn->llcp_terminate.radio_pdu_node_rx;
@@ -9474,8 +9473,8 @@ static inline void role_active_disable(u8_t ticker_id_stop,
 				       u32_t ticks_xtal_to_start,
 				       u32_t ticks_active_to_start)
 {
-	static void *s_link[2];
-	static struct mayfly s_mfy_radio_inactive = {0, 0, s_link, NULL,
+	static memq_link_t s_link;
+	static struct mayfly s_mfy_radio_inactive = {0, 0, &s_link, NULL,
 		mayfly_radio_inactive};
 	u32_t volatile ret_cb = TICKER_STATUS_BUSY;
 	u32_t ret;
@@ -9493,8 +9492,8 @@ static inline void role_active_disable(u8_t ticker_id_stop,
 	}
 
 	if (ret_cb == TICKER_STATUS_SUCCESS) {
-		static void *s_link[2];
-		static struct mayfly s_mfy_xtal_stop = {0, 0, s_link, NULL,
+		static memq_link_t s_link;
+		static struct mayfly s_mfy_xtal_stop = {0, 0, &s_link, NULL,
 			mayfly_xtal_stop};
 		u32_t volatile ret_cb = TICKER_STATUS_BUSY;
 		u32_t ret;
@@ -9598,8 +9597,8 @@ static inline void role_active_disable(u8_t ticker_id_stop,
 
 		/* Force Radio ISR execution and wait for role to stop */
 		if (_radio.role != ROLE_NONE) {
-			static void *s_link[2];
-			static struct mayfly s_mfy_radio_stop = {0, 0, s_link,
+			static memq_link_t s_link;
+			static struct mayfly s_mfy_radio_stop = {0, 0, &s_link,
 				NULL, mayfly_radio_stop};
 			u32_t retval;
 
@@ -10890,7 +10889,7 @@ u8_t radio_rx_get(struct radio_pdu_node_rx **radio_pdu_node_rx, u16_t *handle)
 	if (_radio.link_rx_head != _radio.link_rx_tail) {
 		struct radio_pdu_node_rx *_radio_pdu_node_rx;
 
-		_radio_pdu_node_rx = *((void **)_radio.link_rx_head + 1);
+		_radio_pdu_node_rx = _radio.link_rx_head->mem;
 
 		cmplt = tx_cmplt_get(handle,
 				&_radio.packet_release_first,
@@ -10926,7 +10925,7 @@ u8_t radio_rx_get(struct radio_pdu_node_rx **radio_pdu_node_rx, u16_t *handle)
 void radio_rx_dequeue(void)
 {
 	struct radio_pdu_node_rx *radio_pdu_node_rx = NULL;
-	void *link;
+	memq_link_t *link;
 
 	link = memq_dequeue(_radio.link_rx_tail, &_radio.link_rx_head,
 			    (void **)&radio_pdu_node_rx);
