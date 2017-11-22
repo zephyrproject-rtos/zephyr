@@ -17,7 +17,8 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/mesh.h>
 
-#define CID_NVAL 0xffff
+#define CID_NVAL   0xffff
+#define CID_LOCAL  0x0002
 
 /* Default net, app & dev key values, unless otherwise specified */
 static const u8_t default_key[16] = {
@@ -110,7 +111,7 @@ static struct bt_mesh_elem elements[] = {
 };
 
 static const struct bt_mesh_comp comp = {
-	.cid = 0xffff,
+	.cid = CID_LOCAL,
 	.elem = elements,
 	.elem_count = ARRAY_SIZE(elements),
 };
