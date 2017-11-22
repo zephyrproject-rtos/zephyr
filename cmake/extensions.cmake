@@ -552,6 +552,12 @@ function(zephyr_cc_option_ifdef feature_toggle)
   endif()
 endfunction()
 
+function(zephyr_ld_option_ifdef feature_toggle)
+  if(${${feature_toggle}})
+    zephyr_ld_options(${ARGN})
+  endif()
+endfunction()
+
 function(zephyr_link_libraries_ifdef feature_toggle)
   if(${${feature_toggle}})
     zephyr_link_libraries(${ARGN})
