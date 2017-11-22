@@ -14,6 +14,57 @@
 
 #include <net/ieee802154_radio.h>
 
+static inline
+enum ieee802154_hw_caps ieee802154_get_hw_capabilities(struct net_if *iface)
+{
+	const struct ieee802154_radio_api *radio = iface->dev->driver_api;
+
+	return radio->get_capabilities(iface->dev);
+}
+
+static inline int ieee802154_cca(struct net_if *iface)
+{
+	const struct ieee802154_radio_api *radio = iface->dev->driver_api;
+
+	return radio->cca(iface->dev);
+}
+
+static inline int ieee802154_set_channel(struct net_if *iface, u16_t channel)
+{
+	const struct ieee802154_radio_api *radio = iface->dev->driver_api;
+
+	return radio->set_channel(iface->dev, channel);
+}
+
+static inline int ieee802154_set_tx_power(struct net_if *iface, s16_t dbm)
+{
+	const struct ieee802154_radio_api *radio = iface->dev->driver_api;
+
+	return radio->set_txpower(iface->dev, dbm);
+}
+
+static inline int ieee802154_tx(struct net_if *iface,
+				struct net_pkt *pkt, struct net_buf *frag)
+{
+	const struct ieee802154_radio_api *radio = iface->dev->driver_api;
+
+	return radio->tx(iface->dev, pkt, frag);
+}
+
+static inline int ieee802154_start(struct net_if *iface)
+{
+	const struct ieee802154_radio_api *radio = iface->dev->driver_api;
+
+	return radio->start(iface->dev);
+}
+
+static inline int ieee802154_stop(struct net_if *iface)
+{
+	const struct ieee802154_radio_api *radio = iface->dev->driver_api;
+
+	return radio->stop(iface->dev);
+}
+
 static inline void ieee802154_filter_ieee_addr(struct net_if *iface,
 					       u8_t *ieee_addr)
 {
