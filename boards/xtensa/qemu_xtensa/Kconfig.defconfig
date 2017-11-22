@@ -4,6 +4,9 @@
 
 if BOARD_QEMU_XTENSA
 
+config BUILD_OUTPUT_BIN
+        default n
+
 config BOARD
 	default qemu_xtensa
 

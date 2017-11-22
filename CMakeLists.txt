@@ -667,16 +667,6 @@ set_target_properties(${logical_target_for_zephyr_elf} PROPERTIES OUTPUT_NAME ${
 
 set(post_build_commands "")
 
-# TODO: Write a KConfig for these options instead
-set(CONFIG_CHECK_LINK_MAP 1)
-
-set(CONFIG_BUILD_OUTPUT_HEX 1)
-set(CONFIG_BUILD_OUTPUT_BIN 1)
-set(CONFIG_BUILD_OUTPUT_S19 1)
-set(CONFIG_BUILD_OUTPUT_DISASSEMBLY 1)
-set(CONFIG_BUILD_OUTPUT_STAT 1)
-set(CONFIG_BUILD_OUTPUT_STRIPPED 1)
-
 list_append_ifdef(CONFIG_CHECK_LINK_MAP
   post_build_commands
   COMMAND ${PYTHON_EXECUTABLE} $ENV{ZEPHYR_BASE}/scripts/check_link_map.py ${KERNEL_MAP_NAME}
@@ -700,13 +690,13 @@ list_append_ifdef(
   )
 
 list_append_ifdef(
-  CONFIG_BUILD_OUTPUT_DISASSEMBLY
+  CONFIG_OUTPUT_DISASSEMBLY
   post_build_commands
   COMMAND ${CMAKE_OBJDUMP} -S ${KERNEL_ELF_NAME} >  ${KERNEL_LST_NAME}
   )
 
 list_append_ifdef(
-  CONFIG_BUILD_OUTPUT_STAT
+  CONFIG_OUTPUT_STAT
   post_build_commands
   COMMAND ${CMAKE_READELF} -e ${KERNEL_ELF_NAME} >  ${KERNEL_STAT_NAME}
   )
