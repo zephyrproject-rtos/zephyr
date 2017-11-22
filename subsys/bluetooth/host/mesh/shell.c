@@ -84,7 +84,16 @@ void show_faults(u8_t test_id, u16_t cid, u8_t *faults, size_t fault_count)
 	}
 }
 
+static void health_current_status(struct bt_mesh_health_cli *cli, u16_t addr,
+				  u8_t test_id, u16_t cid, u8_t *faults,
+				  size_t fault_count)
+{
+	printk("Health Current Status from 0x%04x\n", addr);
+	show_faults(test_id, cid, faults, fault_count);
+}
+
 static struct bt_mesh_health_cli health_cli = {
+	.current_status = health_current_status,
 };
 
 static const u8_t dev_uuid[16] = { 0xdd, 0xdd };

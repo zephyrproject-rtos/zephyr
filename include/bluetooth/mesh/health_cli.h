@@ -21,6 +21,10 @@
 struct bt_mesh_health_cli {
 	struct bt_mesh_model *model;
 
+	void (*current_status)(struct bt_mesh_health_cli *cli, u16_t addr,
+			       u8_t test_id, u16_t cid, u8_t *faults,
+			       size_t fault_count);
+
 	struct k_sem          op_sync;
 	u32_t                 op_pending;
 	void                 *op_param;
