@@ -107,9 +107,36 @@ static void health_current_status(struct bt_mesh_model *model,
 	cli->current_status(cli, ctx->addr, test_id, cid, buf->data, buf->len);
 }
 
+struct health_period_param {
+	u8_t *divisor;
+};
+
+static void health_period_status(struct bt_mesh_model *model,
+				 struct bt_mesh_msg_ctx *ctx,
+				 struct net_buf_simple *buf)
+{
+	struct health_period_param *param;
+
+	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
+	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
+	       bt_hex(buf->data, buf->len));
+
+	if (health_cli->op_pending != OP_HEALTH_PERIOD_STATUS) {
+		BT_WARN("Unexpected Health Period Status message");
+		return;
+	}
+
+	param = health_cli->op_param;
+
+	*param->divisor = net_buf_simple_pull_u8(buf);
+
+	k_sem_give(&health_cli->op_sync);
+}
+
 const struct bt_mesh_model_op bt_mesh_health_cli_op[] = {
 	{ OP_HEALTH_FAULT_STATUS,    3,   health_fault_status },
 	{ OP_HEALTH_CURRENT_STATUS,  3,   health_current_status },
+	{ OP_HEALTH_PERIOD_STATUS,   1,   health_period_status },
 	BT_MESH_MODEL_OP_END,
 };
 
@@ -126,6 +153,94 @@ static int check_cli(void)
 	}
 
 	return 0;
+}
+
+int bt_mesh_health_period_get(u16_t net_idx, u16_t addr, u16_t app_idx,
+			      u8_t *divisor)
+{
+	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 0 + 4);
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = net_idx,
+		.app_idx = app_idx,
+		.addr = addr,
+		.send_ttl = BT_MESH_TTL_DEFAULT,
+	};
+	struct health_period_param param = {
+		.divisor = divisor,
+	};
+	int err;
+
+	err = check_cli();
+	if (err) {
+		return err;
+	}
+
+	bt_mesh_model_msg_init(msg, OP_HEALTH_PERIOD_GET);
+
+	err = bt_mesh_model_send(health_cli->model, &ctx, msg, NULL, NULL);
+	if (err) {
+		BT_ERR("model_send() failed (err %d)", err);
+		return err;
+	}
+
+	health_cli->op_param = &param;
+	health_cli->op_pending = OP_HEALTH_PERIOD_STATUS;
+
+	err = k_sem_take(&health_cli->op_sync, msg_timeout);
+
+	health_cli->op_pending = 0;
+	health_cli->op_param = NULL;
+
+	return err;
+}
+
+int bt_mesh_health_period_set(u16_t net_idx, u16_t addr, u16_t app_idx,
+			      u8_t divisor, u8_t *updated_divisor)
+{
+	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 1 + 4);
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = net_idx,
+		.app_idx = app_idx,
+		.addr = addr,
+		.send_ttl = BT_MESH_TTL_DEFAULT,
+	};
+	struct health_period_param param = {
+		.divisor = updated_divisor,
+	};
+	int err;
+
+	err = check_cli();
+	if (err) {
+		return err;
+	}
+
+	if (updated_divisor) {
+		bt_mesh_model_msg_init(msg, OP_HEALTH_PERIOD_SET);
+	} else {
+		bt_mesh_model_msg_init(msg, OP_HEALTH_PERIOD_SET_UNREL);
+	}
+
+	net_buf_simple_add_u8(msg, divisor);
+
+	err = bt_mesh_model_send(health_cli->model, &ctx, msg, NULL, NULL);
+	if (err) {
+		BT_ERR("model_send() failed (err %d)", err);
+		return err;
+	}
+
+	if (!updated_divisor) {
+		return 0;
+	}
+
+	health_cli->op_param = &param;
+	health_cli->op_pending = OP_HEALTH_PERIOD_STATUS;
+
+	err = k_sem_take(&health_cli->op_sync, msg_timeout);
+
+	health_cli->op_pending = 0;
+	health_cli->op_param = NULL;
+
+	return err;
 }
 
 int bt_mesh_health_fault_test(u16_t net_idx, u16_t addr, u16_t app_idx,

@@ -1339,6 +1339,64 @@ static int cmd_fault_test_unack(int argc, char *argv[])
 	return 0;
 }
 
+static int cmd_period_get(int argc, char *argv[])
+{
+	u8_t divisor;
+	int err;
+
+	err = bt_mesh_health_period_get(net.net_idx, net.dst, net.app_idx,
+					&divisor);
+	if (err) {
+		printk("Failed to send Health Period Get (err %d)\n", err);
+	} else {
+		printk("Health FastPeriodDivisor: %u\n", divisor);
+	}
+
+	return 0;
+}
+
+static int cmd_period_set(int argc, char *argv[])
+{
+	u8_t divisor, updated_divisor;
+	int err;
+
+	if (argc < 2) {
+		return -EINVAL;
+	}
+
+	divisor = strtoul(argv[1], NULL, 0);
+
+	err = bt_mesh_health_period_set(net.net_idx, net.dst, net.app_idx,
+					divisor, &updated_divisor);
+	if (err) {
+		printk("Failed to send Health Period Set (err %d)\n", err);
+	} else {
+		printk("Health FastPeriodDivisor: %u\n", updated_divisor);
+	}
+
+	return 0;
+}
+
+static int cmd_period_set_unack(int argc, char *argv[])
+{
+	u8_t divisor;
+	int err;
+
+	if (argc < 2) {
+		return -EINVAL;
+	}
+
+	divisor = strtoul(argv[1], NULL, 0);
+
+	err = bt_mesh_health_period_set(net.net_idx, net.dst, net.app_idx,
+					divisor, NULL);
+	if (err) {
+		printk("Failed to send Health Period Set (err %d)\n", err);
+	}
+
+	return 0;
+}
+
 static int cmd_add_fault(int argc, char *argv[])
 {
 	u8_t fault_id;
@@ -1460,6 +1518,9 @@ static const struct shell_cmd mesh_commands[] = {
 	{ "fault-clear-unack", cmd_fault_clear_unack, "Company ID>" },
 	{ "fault-test", cmd_fault_test, "<Company ID> <Test ID>" },
 	{ "fault-test-unack", cmd_fault_test_unack, "<Company ID> <Test ID>" },
+	{ "period-get", cmd_period_get, "" },
+	{ "period-set", cmd_period_set, "<divisor>" },
+	{ "period-set-unack", cmd_period_set_unack, "<divisor>" },
 
 	/* Health Server Model Operations */
 	{ "add-fault", cmd_add_fault, "<Fault ID>" },
