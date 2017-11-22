@@ -1397,6 +1397,64 @@ static int cmd_period_set_unack(int argc, char *argv[])
 	return 0;
 }
 
+static int cmd_attention_get(int argc, char *argv[])
+{
+	u8_t attention;
+	int err;
+
+	err = bt_mesh_health_attention_get(net.net_idx, net.dst, net.app_idx,
+					   &attention);
+	if (err) {
+		printk("Failed to send Health Attention Get (err %d)\n", err);
+	} else {
+		printk("Health Attention Timer: %u\n", attention);
+	}
+
+	return 0;
+}
+
+static int cmd_attention_set(int argc, char *argv[])
+{
+	u8_t attention, updated_attention;
+	int err;
+
+	if (argc < 2) {
+		return -EINVAL;
+	}
+
+	attention = strtoul(argv[1], NULL, 0);
+
+	err = bt_mesh_health_attention_set(net.net_idx, net.dst, net.app_idx,
+					   attention, &updated_attention);
+	if (err) {
+		printk("Failed to send Health Attention Set (err %d)\n", err);
+	} else {
+		printk("Health Attention Timer: %u\n", updated_attention);
+	}
+
+	return 0;
+}
+
+static int cmd_attention_set_unack(int argc, char *argv[])
+{
+	u8_t attention;
+	int err;
+
+	if (argc < 2) {
+		return -EINVAL;
+	}
+
+	attention = strtoul(argv[1], NULL, 0);
+
+	err = bt_mesh_health_attention_set(net.net_idx, net.dst, net.app_idx,
+					   attention, NULL);
+	if (err) {
+		printk("Failed to send Health Attention Set (err %d)\n", err);
+	}
+
+	return 0;
+}
+
 static int cmd_add_fault(int argc, char *argv[])
 {
 	u8_t fault_id;
@@ -1521,6 +1579,9 @@ static const struct shell_cmd mesh_commands[] = {
 	{ "period-get", cmd_period_get, "" },
 	{ "period-set", cmd_period_set, "<divisor>" },
 	{ "period-set-unack", cmd_period_set_unack, "<divisor>" },
+	{ "attention-get", cmd_attention_get, "" },
+	{ "attention-set", cmd_attention_set, "<timer>" },
+	{ "attention-set-unack", cmd_attention_set_unack, "<timer>" },
 
 	/* Health Server Model Operations */
 	{ "add-fault", cmd_add_fault, "<Fault ID>" },

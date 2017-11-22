@@ -133,10 +133,37 @@ static void health_period_status(struct bt_mesh_model *model,
 	k_sem_give(&health_cli->op_sync);
 }
 
+struct health_attention_param {
+	u8_t *attention;
+};
+
+static void health_attention_status(struct bt_mesh_model *model,
+				    struct bt_mesh_msg_ctx *ctx,
+				    struct net_buf_simple *buf)
+{
+	struct health_attention_param *param;
+
+	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
+	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
+	       bt_hex(buf->data, buf->len));
+
+	if (health_cli->op_pending != OP_ATTENTION_STATUS) {
+		BT_WARN("Unexpected Health Attention Status message");
+		return;
+	}
+
+	param = health_cli->op_param;
+
+	*param->attention = net_buf_simple_pull_u8(buf);
+
+	k_sem_give(&health_cli->op_sync);
+}
+
 const struct bt_mesh_model_op bt_mesh_health_cli_op[] = {
 	{ OP_HEALTH_FAULT_STATUS,    3,   health_fault_status },
 	{ OP_HEALTH_CURRENT_STATUS,  3,   health_current_status },
 	{ OP_HEALTH_PERIOD_STATUS,   1,   health_period_status },
+	{ OP_ATTENTION_STATUS,       1,   health_attention_status },
 	BT_MESH_MODEL_OP_END,
 };
 
@@ -168,6 +195,78 @@ static int cli_wait(void *param, u32_t op)
 	health_cli->op_param = NULL;
 
 	return err;
+}
+
+int bt_mesh_health_attention_get(u16_t net_idx, u16_t addr, u16_t app_idx,
+				 u8_t *attention)
+{
+	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 0 + 4);
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = net_idx,
+		.app_idx = app_idx,
+		.addr = addr,
+		.send_ttl = BT_MESH_TTL_DEFAULT,
+	};
+	struct health_attention_param param = {
+		.attention = attention,
+	};
+	int err;
+
+	err = check_cli();
+	if (err) {
+		return err;
+	}
+
+	bt_mesh_model_msg_init(msg, OP_ATTENTION_GET);
+
+	err = bt_mesh_model_send(health_cli->model, &ctx, msg, NULL, NULL);
+	if (err) {
+		BT_ERR("model_send() failed (err %d)", err);
+		return err;
+	}
+
+	return cli_wait(&param, OP_ATTENTION_STATUS);
+}
+
+int bt_mesh_health_attention_set(u16_t net_idx, u16_t addr, u16_t app_idx,
+				 u8_t attention, u8_t *updated_attention)
+{
+	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 1 + 4);
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = net_idx,
+		.app_idx = app_idx,
+		.addr = addr,
+		.send_ttl = BT_MESH_TTL_DEFAULT,
+	};
+	struct health_attention_param param = {
+		.attention = updated_attention,
+	};
+	int err;
+
+	err = check_cli();
+	if (err) {
+		return err;
+	}
+
+	if (updated_attention) {
+		bt_mesh_model_msg_init(msg, OP_ATTENTION_SET);
+	} else {
+		bt_mesh_model_msg_init(msg, OP_ATTENTION_SET_UNREL);
+	}
+
+	net_buf_simple_add_u8(msg, attention);
+
+	err = bt_mesh_model_send(health_cli->model, &ctx, msg, NULL, NULL);
+	if (err) {
+		BT_ERR("model_send() failed (err %d)", err);
+		return err;
+	}
+
+	if (!updated_attention) {
+		return 0;
+	}
+
+	return cli_wait(&param, OP_ATTENTION_STATUS);
 }
 
 int bt_mesh_health_period_get(u16_t net_idx, u16_t addr, u16_t app_idx,
