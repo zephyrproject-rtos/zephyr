@@ -68,12 +68,9 @@ static void tcp_received(struct net_context *context,
 		/* fall through */
 	case STATE_ONGOING:
 		session->counter++;
+		session->length += net_pkt_appdatalen(pkt);
 
-		if (pkt) {
-			session->length += net_pkt_appdatalen(pkt);
-		}
-
-		if (!pkt && status == 0) { /* EOF */
+		if (status == 0) { /* EOF */
 			u32_t rate_in_kbps;
 			u32_t duration = HW_CYCLES_TO_USEC(
 				time_delta(session->start_time, time));
