@@ -12,8 +12,8 @@
 #ifndef __IEEE802154_H__
 #define __IEEE802154_H__
 
-#include <net/net_l2.h>
-#include <net/ieee802154_mgmt.h>
+#include <limits.h>
+#include <net/net_mgmt.h>
 #include <crypto/cipher_structs.h>
 
 #ifdef __cplusplus
@@ -26,6 +26,9 @@ extern "C" {
  * @ingroup networking
  * @{
  */
+
+#define IEEE802154_MAX_ADDR_LENGTH	8
+#define IEEE802154_NO_CHANNEL		USHRT_MAX
 
 struct ieee802154_security_ctx {
 	u32_t frame_counter;
