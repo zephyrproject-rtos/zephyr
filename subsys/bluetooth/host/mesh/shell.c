@@ -57,7 +57,85 @@ static struct bt_mesh_cfg_srv cfg_srv = {
 	.relay_retransmit = BT_MESH_TRANSMIT(2, 20),
 };
 
+static u8_t cur_faults[4];
+static u8_t reg_faults[8];
+
+static void get_faults(u8_t *faults, u8_t faults_size, u8_t *dst, u8_t *count)
+{
+	u8_t i, limit = *count;
+
+	for (i = 0, *count = 0; i < faults_size && *count < limit; i++) {
+		if (faults[i]) {
+			*dst++ = faults[i];
+			(*count)++;
+		}
+	}
+}
+
+static int fault_get_cur(struct bt_mesh_model *model, u8_t *test_id,
+			 u16_t *company_id, u8_t *faults, u8_t *fault_count)
+{
+	printk("Sending current faults\n");
+
+	*test_id = 0x00;
+	*company_id = CID_LOCAL;
+
+	get_faults(cur_faults, sizeof(cur_faults), faults, fault_count);
+
+	return 0;
+}
+
+static int fault_get_reg(struct bt_mesh_model *model, u16_t cid,
+			 u8_t *test_id, u8_t *faults, u8_t *fault_count)
+{
+	if (cid != CID_LOCAL) {
+		printk("Faults requested for unknown Company ID 0x%04x\n", cid);
+		return -EINVAL;
+	}
+
+	printk("Sending registered faults\n");
+
+	*test_id = 0x00;
+
+	get_faults(reg_faults, sizeof(reg_faults), faults, fault_count);
+
+	return 0;
+}
+
+static int fault_clear(struct bt_mesh_model *model, uint16_t cid)
+{
+	if (cid != CID_LOCAL) {
+		return -EINVAL;
+	}
+
+	memset(reg_faults, 0, sizeof(reg_faults));
+
+	return 0;
+}
+
+static int fault_test(struct bt_mesh_model *model, uint8_t test_id,
+		      uint16_t cid)
+{
+	if (cid != CID_LOCAL) {
+		return -EINVAL;
+	}
+
+	if (test_id != 0x00) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static const struct bt_mesh_health_srv_cb health_srv_cb = {
+	.fault_get_cur = fault_get_cur,
+	.fault_get_reg = fault_get_reg,
+	.fault_clear = fault_clear,
+	.fault_test = fault_test,
+};
+
 static struct bt_mesh_health_srv health_srv = {
+	.cb = &health_srv_cb,
 };
 
 static struct bt_mesh_model_pub health_pub = {
@@ -1164,6 +1242,78 @@ static int cmd_fault_get(int argc, char *argv[])
 	return 0;
 }
 
+static int cmd_add_fault(int argc, char *argv[])
+{
+	u8_t fault_id;
+	u8_t i;
+
+	if (argc < 2) {
+		return -EINVAL;
+	}
+
+	fault_id = strtoul(argv[1], NULL, 0);
+	if (!fault_id) {
+		printk("The Fault ID must be non-zero!\n");
+		return -EINVAL;
+	}
+
+	for (i = 0; i < sizeof(cur_faults); i++) {
+		if (!cur_faults[i]) {
+			cur_faults[i] = fault_id;
+			break;
+		}
+	}
+
+	if (i == sizeof(cur_faults)) {
+		printk("Fault array is full. Use \"del-fault\" to clear it\n");
+		return 0;
+	}
+
+	for (i = 0; i < sizeof(reg_faults); i++) {
+		if (!reg_faults[i]) {
+			reg_faults[i] = fault_id;
+			break;
+		}
+	}
+
+	if (i == sizeof(reg_faults)) {
+		printk("No space to store more registered faults\n");
+	}
+
+	bt_mesh_fault_update(&elements[0]);
+
+	return 0;
+}
+
+static int cmd_del_fault(int argc, char *argv[])
+{
+	u8_t fault_id;
+	u8_t i;
+
+	if (argc < 2) {
+		memset(cur_faults, 0, sizeof(cur_faults));
+		printk("All current faults cleared\n");
+		return 0;
+	}
+
+	fault_id = strtoul(argv[1], NULL, 0);
+	if (!fault_id) {
+		printk("The Fault ID must be non-zero!\n");
+		return -EINVAL;
+	}
+
+	for (i = 0; i < sizeof(cur_faults); i++) {
+		if (cur_faults[i] == fault_id) {
+			cur_faults[i] = 0;
+			printk("Fault cleared\n");
+		}
+	}
+
+	bt_mesh_fault_update(&elements[0]);
+
+	return 0;
+}
+
 static const struct shell_cmd mesh_commands[] = {
 	{ "init", cmd_init, NULL },
 	{ "timeout", cmd_timeout, "[timeout in seconds]" },
@@ -1209,6 +1359,10 @@ static const struct shell_cmd mesh_commands[] = {
 
 	/* Health Client Model Operations */
 	{ "fault-get", cmd_fault_get, "<Company ID>" },
+
+	/* Health Server Model Operations */
+	{ "add-fault", cmd_add_fault, "<Fault ID>" },
+	{ "del-fault", cmd_del_fault, "[Fault ID]" },
 
 	{ NULL, NULL, NULL}
 };
