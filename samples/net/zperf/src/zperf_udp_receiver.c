@@ -135,9 +135,9 @@ static void udp_received(struct net_context *context,
 			 int status,
 			 void *user_data)
 {
-	struct net_buf *frag = pkt->frags;
 	struct zperf_udp_datagram hdr;
 	struct session *session;
+	struct net_buf *frag;
 	u16_t offset, pos;
 	s32_t transit_time;
 	u32_t time;
@@ -146,6 +146,8 @@ static void udp_received(struct net_context *context,
 	if (!pkt) {
 		return;
 	}
+
+	frag = pkt->frags;
 
 	if (net_pkt_appdatalen(pkt) < sizeof(struct zperf_udp_datagram)) {
 		net_pkt_unref(pkt);
