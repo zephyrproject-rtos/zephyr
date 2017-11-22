@@ -12,6 +12,14 @@ zephyr_compile_options(
   -include ${PROJECT_SOURCE_DIR}/arch/posix/include/posix_cheats.h
   )
 
+zephyr_compile_options_ifdef(CONFIG_COVERAGE
+  -fprofile-arcs
+  -ftest-coverage
+)
+zephyr_link_libraries_ifdef(CONFIG_COVERAGE
+	-lgcov
+	)
+
 zephyr_compile_definitions(_POSIX_C_SOURCE=199309)
 
 zephyr_ld_options(
