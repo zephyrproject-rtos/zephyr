@@ -38,6 +38,9 @@ static const struct {
 #if defined(CONFIG_BT_MESH_CFG_CLI)
 	{ BT_MESH_MODEL_ID_CFG_CLI, bt_mesh_cfg_cli_init },
 #endif
+#if defined(CONFIG_BT_MESH_HEALTH_CLI)
+	{ BT_MESH_MODEL_ID_HEALTH_CLI, bt_mesh_health_cli_init },
+#endif
 };
 
 void bt_mesh_model_foreach(void (*func)(struct bt_mesh_model *mod,
