@@ -707,15 +707,20 @@ def dict_merge(dct, merge_dct):
         else:
             dct[k] = merge_dct[k]
 
+
 def yaml_traverse_inherited(node):
     """ Recursive overload procedure inside ``node``
     ``inherits`` section is searched for and used as node base when found.
     Base values are then overloaded by node values
+    Additionally, 'id' key of 'inherited' dict is converted to 'gen_type'
     :param node:
     :return: node
     """
 
     if 'inherits' in node.keys():
+        if 'id' in node['inherits'].keys():
+            node['inherits']['gen_type'] = node['inherits']['id']
+            node['inherits'].pop('id')
         try:
             yaml_traverse_inherited(node['inherits']['inherits'])
         except KeyError:
