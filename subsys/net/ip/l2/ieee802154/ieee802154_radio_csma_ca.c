@@ -17,9 +17,8 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#include <net/ieee802154_radio.h>
-
 #include "ieee802154_frame.h"
+#include "ieee802154_utils.h"
 #include "ieee802154_radio_utils.h"
 
 static inline int csma_ca_tx_fragment(struct net_if *iface,
@@ -30,7 +29,6 @@ static inline int csma_ca_tx_fragment(struct net_if *iface,
 	const u8_t max_be = CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA_MAX_BE;
 	u8_t retries = CONFIG_NET_L2_IEEE802154_RADIO_TX_RETRIES;
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
-	const struct ieee802154_radio_api *radio = iface->dev->driver_api;
 	bool ack_required = prepare_for_ack(ctx, pkt, frag);
 	u8_t be = CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA_MIN_BE;
 	u8_t nb = 0;
@@ -49,7 +47,7 @@ loop:
 		}
 
 		while (1) {
-			if (!radio->cca(iface->dev)) {
+			if (!ieee802154_cca(iface)) {
 				break;
 			}
 
@@ -61,7 +59,7 @@ loop:
 			}
 		}
 
-		ret = radio->tx(iface->dev, pkt, frag);
+		ret = ieee802154_tx(iface, pkt, frag);
 		if (ret) {
 			continue;
 		}

@@ -7,6 +7,8 @@
 #ifndef __IEEE802154_RADIO_UTILS_H__
 #define __IEEE802154_RADIO_UTILS_H__
 
+#include "ieee802154_utils.h"
+
 typedef int (ieee802154_radio_tx_frag_t)(struct net_if *iface,
 					 struct net_pkt *pkt,
 					 struct net_buf *frag);
@@ -33,12 +35,11 @@ static inline bool prepare_for_ack(struct ieee802154_context *ctx,
 static inline int wait_for_ack(struct net_if *iface,
 			       bool ack_required)
 {
-	const struct ieee802154_radio_api *radio = iface->dev->driver_api;
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 
 
 	if (!ack_required ||
-	    (radio->get_capabilities(iface->dev) & IEEE802154_HW_TX_RX_ACK)) {
+	    (ieee802154_get_hw_capabilities(iface) & IEEE802154_HW_TX_RX_ACK)) {
 		return 0;
 	}
 
@@ -79,15 +80,15 @@ static inline int tx_packet_fragments(struct net_if *iface,
 				      struct net_pkt *pkt,
 				      ieee802154_radio_tx_frag_t *tx_func)
 {
-	const struct ieee802154_radio_api *radio = iface->dev->driver_api;
 	int ret = 0;
 	struct net_buf *frag;
 
 	frag = pkt->frags;
 	while (frag) {
 		if (IS_ENABLED(CONFIG_NET_L2_IEEE802154_RADIO_CSMA_CA) &&
-		    radio->get_capabilities(iface->dev) & IEEE802154_HW_CSMA) {
-			ret = radio->tx(iface->dev, pkt, frag);
+		    ieee802154_get_hw_capabilities(iface) &
+		    IEEE802154_HW_CSMA) {
+			ret = ieee802154_tx(iface, pkt, frag);
 		} else {
 			ret = tx_func(iface, pkt, frag);
 		}
