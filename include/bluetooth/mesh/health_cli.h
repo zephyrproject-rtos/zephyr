@@ -46,6 +46,10 @@ int bt_mesh_health_fault_clear(u16_t net_idx, u16_t addr, u16_t app_idx,
 			       u16_t cid, u8_t *test_id, u8_t *faults,
 			       size_t *fault_count);
 
+int bt_mesh_health_fault_test(u16_t net_idx, u16_t addr, u16_t app_idx,
+			      u16_t cid, u8_t test_id, u8_t *faults,
+			      size_t *fault_count);
+
 s32_t bt_mesh_health_cli_timeout_get(void);
 void bt_mesh_health_cli_timeout_set(s32_t timeout);
 
