@@ -119,17 +119,18 @@ static inline void ieee802154_filter_pan_id(struct net_if *iface,
 	}
 }
 
-static inline bool ieee802154_verify_channel(struct device *dev, u16_t channel)
+static inline bool ieee802154_verify_channel(struct net_if *iface,
+					     u16_t channel)
 {
 	if (channel == IEEE802154_NO_CHANNEL) {
 		return false;
 	}
 
 #ifdef CONFIG_NET_L2_IEEE802154_SUB_GHZ
-	const struct ieee802154_radio_api *radio = dev->driver_api;
+	const struct ieee802154_radio_api *radio = iface->dev->driver_api;
 
-	if (radio->get_capabilities(dev) & IEEE802154_HW_SUB_GHZ) {
-		if (channel > radio->get_subg_channel_count(dev)) {
+	if (radio->get_capabilities(iface->dev) & IEEE802154_HW_SUB_GHZ) {
+		if (channel > radio->get_subg_channel_count(iface->dev)) {
 			return false;
 		}
 	}
