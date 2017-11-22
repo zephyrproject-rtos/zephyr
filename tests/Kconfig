@@ -13,4 +13,11 @@ config TEST_EXTRA_STACKSIZE
 	default 0
 	default 768 if XTENSA
 
+config COVERAGE
+	bool "Create coverage data"
+	default n
+	help
+	  This option will build your application with the -coverage option
+	  which will generate data that can be used to create coverage reports.
+	  Currently this is fully supported only on the native POSIX port.
 endmenu

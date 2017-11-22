@@ -115,6 +115,12 @@ zephyr_compile_options(
   )
 endif()
 
+zephyr_compile_options_ifdef(CONFIG_COVERAGE
+  -fprofile-arcs
+  -ftest-coverage
+)
+
+
 zephyr_compile_options(
   $<$<COMPILE_LANGUAGE:C>:-std=c99>
 
@@ -282,6 +288,7 @@ zephyr_ld_options(
   -m32
 )
 endif()
+
 zephyr_ld_options(
   ${LINKERFLAGPREFIX},--gc-sections
   ${LINKERFLAGPREFIX},--build-id=none
