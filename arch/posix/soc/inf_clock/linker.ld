@@ -65,6 +65,12 @@ SECTIONS
   KEEP(*(SORT("._k_alert.static.*")))
   _k_alert_list_end = .;
  } /*> RAM*/
+ _k_queue_area () :
+ {
+  _k_queue_list_start = .;
+  KEEP(*(SORT("._k_queue.static.*")))
+  _k_queue_list_end = .;
+ } /*> RAM */
  _k_fifo_area () :
  {
   _k_fifo_list_start = .;
@@ -101,6 +107,12 @@ SECTIONS
   KEEP(*(SORT("._k_pipe.static.*")))
   _k_pipe_list_end = .;
  } /*> RAM*/
+ _k_work_area () : ALIGN_WITH_INPUT SUBALIGN(4)
+ {
+  _k_work_list_start = .;
+  KEEP(*(SORT("._k_work.static.*")))
+  _k_work_list_end = .;
+ } /*> RAM */
  _k_task_list () :
  {
   _k_task_list_start = .;
@@ -127,7 +139,7 @@ SECTIONS
   KEEP(*(SORT("._k_memory_pool*")))
   _k_mem_pool_end = .;
  }/*> RAM*/
- _net_buf_pool_area () : ALIGN_WITH_INPUT SUBALIGN(4)
+ _net_buf_pool_area () :
  {
   _net_buf_pool_list = .;
   KEEP(*(SORT("._net_buf_pool.static.*")))
@@ -138,6 +150,13 @@ SECTIONS
   *(".net_if.*")
   KEEP(*(SORT(".net_if*")))
   __net_if_end = .;
+ } /*> RAM*/
+ net_if_event () :
+ {
+  __net_if_event_start = .;
+  *(".net_if_event.*")
+  KEEP(*(SORT(".net_if_event.*")))
+  __net_if_event_end = .;
  } /*> RAM*/
  net_l2_data () :
  {
