@@ -16,6 +16,10 @@
 #include "fsl_common.h"
 #include "fsl_flash.h"
 
+#ifdef CONFIG_FLASH_PAGE_LAYOUT
+#error FLASH_PAGE_LAYOUT extension is not implemented for this driver.
+#endif
+
 struct flash_priv {
 	flash_config_t config;
 };
