@@ -1,4 +1,5 @@
 include(CheckCCompilerFlag)
+include(CheckCXXCompilerFlag)
 
 ########################################################
 # Table of contents
@@ -637,7 +638,34 @@ endfunction()
 # compiler lacks support. *_cc_option was ported from KBuild, see
 # cc-option in
 # https://www.kernel.org/doc/Documentation/kbuild/makefiles.txt
+
+# Writes 1 to the output variable 'ok' for the language 'lang' if
+# the flag is supported, otherwise writes 0.
 #
+# lang must be C or CXX
+#
+# Usage:
+#
+# check_compiler_flag(C "-Wall" my_check)
+# print(my_check) # my_check is now 1
+function(check_compiler_flag lang option ok)
+  string(MAKE_C_IDENTIFIER check${option}_${lang} ${ok})
+
+  if(${lang} STREQUAL C)
+    check_c_compiler_flag(${option} ${${ok}})
+  else()
+    check_cxx_compiler_flag(${option} ${${ok}})
+  endif()
+
+  if(${${${ok}}})
+    set(ret 1)
+  else()
+    set(ret 0)
+  endif()
+
+  set(${ok} ${ret} PARENT_SCOPE)
+endfunction()
+
 function(target_cc_option target scope option)
   string(MAKE_C_IDENTIFIER check${option} check)
   check_c_compiler_flag(${option} ${check})
