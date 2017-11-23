@@ -7,22 +7,22 @@ description: >
     This binding gives a base representation of the LPSCI UART
 
 inherits:
-  - !include uart.yaml
+    !include uart.yaml
 
 properties:
-  - compatible:
+    compatible:
       type: string
       category: required
       description: compatible strings
       constraint: "nxp,kinetis-lpsci"
 
-  - reg:
+    reg:
       type: array
       description: mmio register space
       generation: define
       category: required
 
-  - interrupts:
+    interrupts:
       type: array
       category: required
       description: required interrupts

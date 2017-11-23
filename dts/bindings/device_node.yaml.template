@@ -12,27 +12,27 @@ description: >
 properties:
 
 # A typical property entry will look like the following
-# - <name of property as it is in device tree>
+#   <name of property as it is in device tree>
 #     category: <required | optional>
 #     type: <string | int | array>
 #     description: <description of property>
 #     generation: <define | structure>
 
 # At a minimum, the compatible is required for matching nodes
-  - compatible: <list of string compatible matches>
+    compatible: <list of string compatible matches>
       category: required
       type: string
       description: compatible of node
 
 # reg is used to denote mmio registers
-  - reg:
+    reg:
       type: array
       description: mmio register space
       generation: define
       category: required
 
 # interrupts specifies the interrupts that the driver may utilize
-  - interrupts:
+    interrupts:
       type: array
       category: required
       description: required interrupts

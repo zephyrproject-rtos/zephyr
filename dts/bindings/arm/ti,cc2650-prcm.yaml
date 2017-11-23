@@ -8,13 +8,13 @@ description: >
     Power, Reset, and Clock control Module.
 
 properties:
-  - compatible:
+    compatible:
       type: string
       category: required
       description: compatible strings
       constraint: "ti,cc2650-prcm"
 
-  - reg:
+    reg:
       type: array
       description: mmio register space
       generation: define

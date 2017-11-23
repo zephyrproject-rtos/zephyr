@@ -12,13 +12,13 @@ description: >
     This binding gives a base representation of the ARC DCCM
 
 properties:
-  - compatible:
+    compatible:
       type: string
       category: optional
       description: compatible strings
       constraint: "arc,dccm"
 
-  - reg:
+    reg:
       type: array
       description: DCCM memory mapped address space
       generation: define

@@ -12,13 +12,13 @@ description: >
     This binding gives a base representation of the ARC ICCM
 
 properties:
-  - compatible:
+    compatible:
       type: string
       category: optional
       description: compatible strings
       constraint: "arc,iccm"
 
-  - reg:
+    reg:
       type: array
       description: ICCM memory mapped address space
       generation: define

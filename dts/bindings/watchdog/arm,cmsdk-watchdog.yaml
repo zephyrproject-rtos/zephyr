@@ -7,13 +7,13 @@ description: >
     This binding gives a base representation of the ARM CMSDK WATCHDOG
 
 properties:
-  - compatible:
+    compatible:
       type: string
       category: required
       description: compatible strings
       constraint: "arm,cmsdk-watchdog"
 
-  - reg:
+    reg:
       type: array
       description: mmio register space
       generation: define

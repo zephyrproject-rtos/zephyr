@@ -7,28 +7,28 @@ description: >
     This binding gives a base representation of the Atmel SAM AFEC
 
 inherits:
-  - !include adc.yaml
+    !include adc.yaml
 
 properties:
-  - compatible:
+    compatible:
       type: string
       category: required
       description: compatible strings
       constraint: "atmel,sam-afec"
 
-  - reg:
+    reg:
       type: array
       description: mmio register space
       generation: define
       category: required
 
-  - interrupts:
+    interrupts:
       type: array
       category: required
       description: required interrupts
       generation: define
 
-  - peripheral-id:
+    peripheral-id:
       type: int
       description: peripheral ID
       generation: define

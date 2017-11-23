@@ -6,19 +6,19 @@ description: >
     This binding describes the ARM Cortex M0+ NVIC IRQ controller
 
 properties:
-  - compatible:
+    compatible:
       category: required
       type: string
       description: compatible strings
       constraint: "arm,v6m-nvic"
 
-  - reg:
+    reg:
       category: required
       type: int
       description: mmio register space
       generation: define
 
-  - arm,num-irq-priority-bits:
+    arm,num-irq-priority-bits:
       category: required
       type: int
       description: number of bits of IRQ priorities

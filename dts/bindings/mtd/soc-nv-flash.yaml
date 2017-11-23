@@ -7,13 +7,13 @@ description: >
     This binding gives a base FLASH description
 
 properties:
-  - compatible:
+    compatible:
       type: string
       category: optional
       description: compatible strings
       constraint: "soc-nv-flash"
 
-  - write-block-size:
+    write-block-size:
      type: int
      description: address alignment required by flash write operations
      generation: define
