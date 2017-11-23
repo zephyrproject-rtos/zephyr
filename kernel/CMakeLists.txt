@@ -24,6 +24,7 @@ add_library(kernel
   work_q.c
 )
 
+target_include_directories(kernel PRIVATE ${PROJECT_SOURCE_DIR}/include/posix)
 target_sources_ifdef(CONFIG_INT_LATENCY_BENCHMARK kernel PRIVATE int_latency_bench.c)
 target_sources_ifdef(CONFIG_STACK_CANARIES        kernel PRIVATE compiler_stack_protect.c)
 target_sources_ifdef(CONFIG_SYS_CLOCK_EXISTS      kernel PRIVATE timer.c)
