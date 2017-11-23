@@ -65,6 +65,8 @@
 /* 2 transmissions, 20ms interval */
 #define POLL_XMIT BT_MESH_TRANSMIT(1, 20)
 
+static void (*lpn_cb)(u16_t friend_addr, bool established);
+
 #if defined(CONFIG_BT_MESH_DEBUG_LOW_POWER)
 static const char *state2str(int state)
 {
@@ -158,6 +160,8 @@ static void clear_friendship(bool force, bool disable)
 {
 	struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
 
+	BT_DBG("force %u disable %u", force, disable);
+
 	if (!force && lpn->established && !lpn->clear_success &&
 	    lpn->req_attempts < CLEAR_ATTEMPTS) {
 		send_friend_clear();
@@ -175,6 +179,10 @@ static void clear_friendship(bool force, bool disable)
 		lpn->old_friend = BT_MESH_ADDR_UNASSIGNED;
 	} else {
 		lpn->old_friend = lpn->frnd;
+	}
+
+	if (lpn_cb && lpn->frnd != BT_MESH_ADDR_UNASSIGNED) {
+		lpn_cb(lpn->frnd, false);
 	}
 
 	lpn->frnd = BT_MESH_ADDR_UNASSIGNED;
@@ -951,6 +959,10 @@ int bt_mesh_lpn_friend_update(struct bt_mesh_net_rx *rx,
 
 		BT_INFO("Friendship established with 0x%04x", lpn->frnd);
 
+		if (lpn_cb) {
+			lpn_cb(lpn->frnd, true);
+		}
+
 		/* Set initial poll timeout */
 		lpn->poll_timeout = min(POLL_TIMEOUT_MAX(lpn), K_SECONDS(1));
 	}
@@ -990,10 +1002,20 @@ int bt_mesh_lpn_friend_update(struct bt_mesh_net_rx *rx,
 	return 0;
 }
 
-void bt_mesh_lpn_friend_poll(void)
+int bt_mesh_lpn_poll(void)
 {
+	if (!bt_mesh.lpn.established) {
+		return -EAGAIN;
+	}
+
 	BT_DBG("Requesting more messages");
-	send_friend_poll();
+
+	return send_friend_poll();
+}
+
+void bt_mesh_lpn_set_cb(void (*cb)(u16_t friend_addr, bool established))
+{
+	lpn_cb = cb;
 }
 
 int bt_mesh_lpn_init(void)
