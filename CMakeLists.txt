@@ -101,7 +101,7 @@ zephyr_compile_options(
 )
 
 zephyr_compile_options(
-  $<$<COMPILE_LANGUAGE:C>:-std=c99>
+  $<$<COMPILE_LANGUAGE:C>:-std=c11>
 
   $<$<COMPILE_LANGUAGE:CXX>:-std=c++11>
   $<$<COMPILE_LANGUAGE:CXX>:-fcheck-new>
@@ -213,6 +213,7 @@ zephyr_compile_options(${CONFIG_COMPILER_OPT})
 # TODO: This Clang check is broken
 if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
   zephyr_cc_option(
+    -Wno-section
     -Wno-unknown-warning-option
     -Wno-unused-variable
     -Wno-format-invalid-specifier

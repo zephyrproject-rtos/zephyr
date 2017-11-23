@@ -14,7 +14,11 @@ if(${ARCH_FOR_${GCC_M_CPU}})
 endif()
 
 zephyr_compile_options(
-  -mabi=aapcs
+  -ffreestanding
+  -march=armv7-m
+  -mcpu=cortex-m3
+  -mfloat-abi=soft -mthumb
+  #-mabi=aapcs
   ${TOOLCHAIN_C_FLAGS}
   ${ARCH_FLAG}
   )
