@@ -6,19 +6,19 @@ description: >
     This is a representation of the Kinetis GPIO nodes
 
 properties:
-  - compatible:
+    compatible:
       type: string
       category: required
       description: compatible strings
       constraint: "nxp,kinetis-gpio"
 
-  - reg:
+    reg:
       type: int
       description: mmio register space
       generation: define
       category: required
 
-  - interrupts:
+    interrupts:
       type: compound
       category: required
       description: required interrupts

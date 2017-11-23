@@ -7,32 +7,32 @@ description: >
     This binding gives the base structures for all UART devices
 
 properties:
-  - clock-frequency:
+    clock-frequency:
       type: int
       category: optional
       description: Clock frequency information for UART operation
       generation: define
-  - current-speed:
+    current-speed:
       type: int
       category: required
       description: Initial baud rate setting for UART
       generation: define
-  - clocks:
+    clocks:
       type: array
       category: required
       description: Clock gate information
       generation: define
-  - label:
+    label:
       type: string
       category: required
       description: Human readable string describing the device (used by Zephyr for API name)
       generation: define
-  - interrupt-names:
+    interrupt-names:
       type: stringlist
       category: optional
       description: names of required interrupts
       generation: define
-  - pinctrl-\d+:
+    pinctrl-\d+:
       type: array
       category: optional
       description: pinmux information for RX, TX, CTS, RTS

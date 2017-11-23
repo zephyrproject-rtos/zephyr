@@ -7,28 +7,28 @@ description: >
     This binding gives a base representation of the ns16550 UART
 
 inherits:
-  - !include uart.yaml
+    !include uart.yaml
 
 properties:
-  - compatible:
+    compatible:
       type: string
       category: required
       description: compatible strings
       constraint: "ns16550"
 
-  - reg:
+    reg:
       type: array
       description: mmio register space
       generation: define
       category: required
 
-  - reg-shift:
+    reg-shift:
       type: int
       category: optional
       description: quantity to shift the register offsets by
       generation: define
 
-  - interrupts:
+    interrupts:
       type: array
       category: required
       description: required interrupts

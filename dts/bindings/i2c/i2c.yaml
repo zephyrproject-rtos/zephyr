@@ -7,25 +7,25 @@ description: >
     This binding gives the base structures for all I2C devices
 
 properties:
-  - "#address-cells":
+    "#address-cells":
       type: int
       category: required
       description: should be 1.
-  - "#size-cells":
+    "#size-cells":
       type: int
       category: required
       description: should be 0.
-  - clock-frequency :
+    clock-frequency :
       type: int
       category: optional
       description: Initial clock frequency in Hz
       generation: define
-  - clocks:
+    clocks:
       type: array
       category: required
       description: Clock gate information
       generation: define
-  - label:
+    label:
       type: string
       category: required
       description: Human readable string describing the device (used by Zephyr for API name)

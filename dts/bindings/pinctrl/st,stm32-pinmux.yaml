@@ -7,13 +7,13 @@ description: >
     This binding gives a base representation of the STM32 PINMUX
 
 properties:
-  - compatible:
+    compatible:
       type: string
       category: required
       description: compatible strings
       constraint: "st,stm32-pinmux"
 
-  - reg:
+    reg:
       type: int
       description: mmio register space
       generation: define
