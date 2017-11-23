@@ -15,3 +15,7 @@ target_sources(app PRIVATE
 if(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 target_sources(app PRIVATE src/l2cap.c)
 endif()
+
+if(CONFIG_BT_MESH)
+target_sources(app PRIVATE src/mesh.c)
+endif()
