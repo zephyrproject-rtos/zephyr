@@ -644,6 +644,8 @@ endfunction()
 #
 # lang must be C or CXX
 #
+# TODO: Support ASM
+#
 # Usage:
 #
 # check_compiler_flag(C "-Wall" my_check)
@@ -667,20 +669,36 @@ function(check_compiler_flag lang option ok)
 endfunction()
 
 function(target_cc_option target scope option)
-  string(MAKE_C_IDENTIFIER check${option} check)
-  check_c_compiler_flag(${option} ${check})
-  target_compile_option_ifdef(${check} ${target} ${scope} ${option})
+  target_cc_option_fallback(${target} ${scope} ${option} "")
 endfunction()
 
-# Support an optional second option for when the first option is
-# not supported.
+# Support an optional second option for when the first option is not
+# supported.
 function(target_cc_option_fallback target scope option1 option2)
-  string(MAKE_C_IDENTIFIER check${option1} check)
-  check_c_compiler_flag(${option1} ${check})
-  if(${check})
-    target_compile_options(${target} ${scope} ${option1})
+  if(CONFIG_CPLUSPLUS)
+    foreach(lang C CXX)
+      # For now, we assume that all flags that apply to C/CXX also
+      # apply to ASM.
+      check_compiler_flag(${lang} ${option1} check)
+      if(${check})
+        target_compile_options(${target} ${scope}
+          $<$<COMPILE_LANGUAGE:${lang}>:${option1}>
+          $<$<COMPILE_LANGUAGE:ASM>:${option1}>
+          )
+      elseif(option2)
+        target_compile_options(${target} ${scope}
+          $<$<COMPILE_LANGUAGE:${lang}>:${option2}>
+          $<$<COMPILE_LANGUAGE:ASM>:${option2}>
+          )
+      endif()
+    endforeach()
   else()
-    target_compile_options(${target} ${scope} ${option2})
+    check_compiler_flag(C ${option1} check)
+    if(${check})
+      target_compile_options(${target} ${scope} ${option1})
+    elseif(option2)
+      target_compile_options(${target} ${scope} ${option2})
+    endif()
   endif()
 endfunction()
 
