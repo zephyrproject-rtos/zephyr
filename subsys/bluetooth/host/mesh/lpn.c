@@ -310,8 +310,8 @@ static void req_sent(u16_t duration, int err, void *user_data)
 	struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
 
 #if defined(CONFIG_BT_MESH_DEBUG_LOW_POWER)
-	BT_DBG("duration %u err %d state %s",
-	       duration, err, state2str(lpn->state));
+	BT_DBG("req 0x%02x duration %u err %d state %s",
+	       lpn->sent_req, duration, err, state2str(lpn->state));
 #endif
 
 	if (err) {
@@ -652,6 +652,8 @@ static bool sub_update(u8_t op)
 	struct bt_mesh_ctl_friend_sub req;
 	size_t i, g;
 
+	BT_DBG("op 0x%02x sent_req 0x%02x", op, lpn->sent_req);
+
 	if (lpn->sent_req) {
 		return false;
 	}
@@ -704,8 +706,6 @@ static bool sub_update(u8_t op)
 
 static void update_timeout(struct bt_mesh_lpn *lpn)
 {
-	lpn->sent_req = 0;
-
 	if (lpn->established) {
 		BT_WARN("No response from Friend during ReceiveWindow");
 		bt_mesh_scan_disable();
@@ -718,6 +718,7 @@ static void update_timeout(struct bt_mesh_lpn *lpn)
 
 		if (lpn->req_attempts < 6) {
 			BT_WARN("Retrying first Friend Poll");
+			lpn->sent_req = 0;
 			if (send_friend_poll() == 0) {
 				return;
 			}
