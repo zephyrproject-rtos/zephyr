@@ -1,0 +1,24 @@
+# Kconfig - PMS7003 PM2.5 sensor configuration options
+
+#
+# Copyright (c) 2017 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig PMS7003
+	bool "PMS7003 PM2.5 sensor"
+	depends on SERIAL
+	default n
+	help
+	  Enable driver for pms7003 PM2.5 sensor.
+
+config PMS7003_UART_DEVICE
+	string "UART device"
+	depends on PMS7003
+	default "UART_3"
+
+config PMS7003_DRIVER_NAME
+	string "Driver name"
+	depends on PMS7003
+	default "PMS7003"
