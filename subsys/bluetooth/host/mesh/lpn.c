@@ -104,6 +104,45 @@ static inline void lpn_set_state(int state)
 	bt_mesh.lpn.state = state;
 }
 
+static inline void group_zero(atomic_t *target)
+{
+#if CONFIG_BT_MESH_LPN_GROUPS > 32
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(bt_mesh.lpn.added); i++) {
+		atomic_set(&target[i], 0);
+	}
+#else
+	atomic_set(target, 0);
+#endif
+}
+
+static inline void group_set(atomic_t *target, atomic_t *source)
+{
+#if CONFIG_BT_MESH_LPN_GROUPS > 32
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(bt_mesh.lpn.added); i++) {
+		atomic_or(&target[i], atomic_get(&source[i]));
+	}
+#else
+	atomic_or(target, atomic_get(source));
+#endif
+}
+
+static inline void group_clear(atomic_t *target, atomic_t *source)
+{
+#if CONFIG_BT_MESH_LPN_GROUPS > 32
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(bt_mesh.lpn.added); i++) {
+		atomic_and(&target[i], ~atomic_get(&source[i]));
+	}
+#else
+	atomic_and(target, ~atomic_get(source));
+#endif
+}
+
 static void clear_friendship(bool force, bool disable);
 
 static void friend_clear_sent(int err, void *user_data)
@@ -196,6 +235,10 @@ static void clear_friendship(bool force, bool disable)
 	lpn->established = 0;
 	lpn->clear_success = 0;
 
+	group_zero(lpn->added);
+	group_zero(lpn->pending);
+	group_zero(lpn->to_remove);
+
 	/* Set this to 1 to force group subscription when the next
 	 * Friendship is created, in case lpn->groups doesn't get
 	 * modified meanwhile.
@@ -264,45 +307,6 @@ static int send_friend_req(struct bt_mesh_lpn *lpn)
 
 	return bt_mesh_ctl_send(&tx, TRANS_CTL_OP_FRIEND_REQ, &req,
 				sizeof(req), NULL, &friend_req_sent_cb, NULL);
-}
-
-static inline void group_zero(atomic_t *target)
-{
-#if CONFIG_BT_MESH_LPN_GROUPS > 32
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(bt_mesh.lpn.added); i++) {
-		atomic_set(&target[i], 0);
-	}
-#else
-	atomic_set(target, 0);
-#endif
-}
-
-static inline void group_set(atomic_t *target, atomic_t *source)
-{
-#if CONFIG_BT_MESH_LPN_GROUPS > 32
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(bt_mesh.lpn.added); i++) {
-		atomic_or(&target[i], atomic_get(&source[i]));
-	}
-#else
-	atomic_or(target, atomic_get(source));
-#endif
-}
-
-static inline void group_clear(atomic_t *target, atomic_t *source)
-{
-#if CONFIG_BT_MESH_LPN_GROUPS > 32
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(bt_mesh.lpn.added); i++) {
-		atomic_and(&target[i], ~atomic_get(&source[i]));
-	}
-#else
-	atomic_and(target, ~atomic_get(source));
-#endif
 }
 
 static void req_sent(u16_t duration, int err, void *user_data)
