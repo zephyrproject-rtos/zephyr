@@ -13,6 +13,10 @@
 #include "spi_flash_w25qxxdv_defs.h"
 #include "spi_flash_w25qxxdv.h"
 
+#ifdef CONFIG_FLASH_PAGE_LAYOUT
+#error FLASH_PAGE_LAYOUT extension is not implemented for this driver.
+#endif
+
 static inline int spi_flash_wb_id(struct device *dev)
 {
 	struct spi_flash_data *const driver_data = dev->driver_data;

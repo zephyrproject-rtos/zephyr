@@ -15,6 +15,10 @@
 #include "qm_flash.h"
 #include "qm_soc_regs.h"
 
+#ifdef CONFIG_FLASH_PAGE_LAYOUT
+#error FLASH_PAGE_LAYOUT extension is not implemented for this driver.
+#endif
+
 struct soc_flash_data {
 #ifdef CONFIG_SOC_FLASH_QMSI_API_REENTRANCY
 	struct k_sem sem;
