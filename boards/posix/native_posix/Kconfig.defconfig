@@ -1,0 +1,13 @@
+
+if BOARD_NATIVE_POSIX
+
+config BUILD_OUTPUT_BIN
+	default n
+
+config BUILD_OUTPUT_EXE
+	default y
+
+config BOARD
+	default "native_posix"
+
+endif
