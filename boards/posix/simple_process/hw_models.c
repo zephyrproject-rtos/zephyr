@@ -8,7 +8,7 @@
  * Barebones HW model sufficient to run some of the sample apps
  */
 
-#include "soc.h"
+#include "posix_soc.h"
 #include "hw_models.h"
 #include <stdint.h>
 
