@@ -12,6 +12,7 @@
 #include <string.h>
 #include "spi_flash_w25qxxdv_defs.h"
 #include "spi_flash_w25qxxdv.h"
+#include "flash_priv.h"
 
 static inline int spi_flash_wb_id(struct device *dev)
 {
@@ -344,6 +345,10 @@ static const struct flash_driver_api spi_flash_api = {
 	.write = spi_flash_wb_write,
 	.erase = spi_flash_wb_erase,
 	.write_protection = spi_flash_wb_write_protection_set,
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
+	.page_layout = (flash_api_pages_layout)
+		       flash_page_layout_not_implemented,
+#endif
 	.write_block_size = 1,
 };
 

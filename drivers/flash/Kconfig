@@ -18,7 +18,7 @@ menuconfig FLASH
 
 config FLASH_PAGE_LAYOUT
 	bool "API for retrieving the layout of pages"
-	depends on FLASH
+	depends on FLASH && FLASH_HAS_PAGE_LAYOUT
 	default n
 	help
 	  Enables API for retrieving the layout of flash memory pages.
@@ -127,6 +127,7 @@ config SOC_FLASH_NRF5
 	bool "Nordic Semiconductor nRF5X flash driver"
 	depends on FLASH && SOC_FAMILY_NRF5
 	default n
+	select FLASH_HAS_PAGE_LAYOUT
 	help
 	  Enables Nordic Semiconductor nRF5X flash driver.
 

@@ -12,6 +12,7 @@
 #include <errno.h>
 #include <init.h>
 #include <soc.h>
+#include "flash_priv.h"
 
 #include "fsl_common.h"
 #include "fsl_flash.h"
@@ -92,6 +93,10 @@ static const struct flash_driver_api flash_mcux_api = {
 	.erase = flash_mcux_erase,
 	.write = flash_mcux_write,
 	.read = flash_mcux_read,
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
+	.page_layout = (flash_api_pages_layout)
+		       flash_page_layout_not_implemented,
+#endif
 	.write_block_size = FSL_FEATURE_FLASH_PFLASH_BLOCK_WRITE_UNIT_SIZE,
 };
 
