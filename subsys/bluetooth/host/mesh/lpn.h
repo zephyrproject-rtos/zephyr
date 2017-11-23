@@ -52,8 +52,6 @@ static inline bool bt_mesh_lpn_timer(void)
 #endif
 }
 
-void bt_mesh_lpn_friend_poll(void);
-
 void bt_mesh_lpn_msg_received(struct bt_mesh_net_rx *rx);
 
 void bt_mesh_lpn_group_add(u16_t group);
