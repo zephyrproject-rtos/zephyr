@@ -1,0 +1,10 @@
+
+if BOARD_SIMPLE_PROCESS
+
+config BUILD_OUTPUT_BIN
+	default n
+
+config BUILD_OUTPUT_EXE
+	default y
+
+endif
