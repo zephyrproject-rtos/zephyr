@@ -717,6 +717,7 @@ list_append_ifdef(
   post_build_commands
   COMMAND ${CMAKE_OBJCOPY} -S -Obinary -R .comment -R COMMON -R .eh_frame  ${KERNEL_ELF_NAME}    ${KERNEL_BIN_NAME}
   )
+
 list_append_ifdef(
   CONFIG_BUILD_OUTPUT_S19
   post_build_commands
@@ -741,6 +742,12 @@ list_append_ifdef(
   COMMAND ${CMAKE_STRIP}   --strip-all ${KERNEL_ELF_NAME} -o ${KERNEL_STRIP_NAME}
   )
 
+list_append_ifdef(
+  CONFIG_BUILD_OUTPUT_EXE
+  post_build_commands
+  COMMAND ${CMAKE_COMMAND} -E rename ${KERNEL_ELF_NAME}    ${KERNEL_EXE_NAME}
+  )
+
 add_custom_command(
   TARGET ${logical_target_for_zephyr_elf}
   POST_BUILD
@@ -754,7 +761,7 @@ if(EMU_PLATFORM STREQUAL "qemu")
 elseif(EMU_PLATFORM STREQUAL "native")
     add_custom_target(run
       COMMAND
-      ${APPLICATION_BINARY_DIR}/zephyr/${KERNEL_ELF_NAME}
+      ${APPLICATION_BINARY_DIR}/zephyr/${KERNEL_EXE_NAME}
       WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
       USES_TERMINAL
       )
