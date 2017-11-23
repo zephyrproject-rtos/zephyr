@@ -760,6 +760,7 @@ list_append_ifdef(
   post_build_commands
   COMMAND ${CMAKE_OBJCOPY} -S -Obinary -R .comment -R COMMON -R .eh_frame  ${KERNEL_ELF_NAME}    ${KERNEL_BIN_NAME}
   )
+
 list_append_ifdef(
   CONFIG_BUILD_OUTPUT_S19
   post_build_commands
@@ -782,6 +783,12 @@ list_append_ifdef(
   CONFIG_BUILD_OUTPUT_STRIPPED
   post_build_commands
   COMMAND ${CMAKE_STRIP}   --strip-all ${KERNEL_ELF_NAME} -o ${KERNEL_STRIP_NAME}
+  )
+
+list_append_ifdef(
+  CONFIG_BUILD_OUTPUT_EXE
+  post_build_commands
+  COMMAND ${CMAKE_COMMAND} -E rename ${KERNEL_ELF_NAME}    ${KERNEL_EXE_NAME}
   )
 
 add_custom_command(
