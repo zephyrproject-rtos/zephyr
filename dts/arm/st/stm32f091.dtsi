@@ -17,5 +17,17 @@
 			status = "disabled";
 			label = "SPI_2";
 		};
+
+		pinctrl: pin-controller {
+
+			gpioe: gpio@48001000 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x48001000 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00200000>;
+				label = "GPIOE";
+			};
+		};
 	};
 };
