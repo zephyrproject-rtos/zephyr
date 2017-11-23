@@ -163,14 +163,6 @@ endmenu
 menu "ARM Cortex-M0/M0+/M3/M4/M7 options"
 	depends on ARMV6_M || ARMV7_M
 
-config IRQ_OFFLOAD
-	bool "Enable IRQ offload"
-	default n
-	help
-	Enable irq_offload() API which allows functions to be synchronously
-	run in interrupt context. Adds some overhead to context switching.
-	Mainly useful for test cases.
-
 config GEN_ISR_TABLES
 	default y
 
