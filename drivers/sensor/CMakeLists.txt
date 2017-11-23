@@ -33,5 +33,6 @@ add_subdirectory_ifdef(CONFIG_SX9500		sx9500)
 add_subdirectory_ifdef(CONFIG_TH02		    th02)
 add_subdirectory_ifdef(CONFIG_TMP007		tmp007)
 add_subdirectory_ifdef(CONFIG_TMP112		tmp112)
+add_subdirectory_ifdef(CONFIG_PMS7003		pms7003)
 
 zephyr_sources_ifdef(CONFIG_USERSPACE sensor_handlers.c)
