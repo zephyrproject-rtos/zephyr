@@ -48,6 +48,7 @@
 #define REQ_RETRY_DURATION(lpn)  (4 * (LPN_RECV_DELAY + (lpn)->adv_duration + \
 				       (lpn)->recv_win + POLL_RETRY_TIMEOUT))
 
+#define POLL_TIMEOUT_INIT     (CONFIG_BT_MESH_LPN_INIT_POLL_TIMEOUT * 100)
 #define POLL_TIMEOUT_MAX(lpn) ((CONFIG_BT_MESH_LPN_POLL_TIMEOUT * 100) - \
 			       REQ_RETRY_DURATION(lpn))
 
@@ -964,7 +965,8 @@ int bt_mesh_lpn_friend_update(struct bt_mesh_net_rx *rx,
 		}
 
 		/* Set initial poll timeout */
-		lpn->poll_timeout = min(POLL_TIMEOUT_MAX(lpn), K_SECONDS(1));
+		lpn->poll_timeout = min(POLL_TIMEOUT_MAX(lpn),
+					POLL_TIMEOUT_INIT);
 	}
 
 	friend_response_received(lpn);

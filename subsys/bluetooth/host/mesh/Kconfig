@@ -259,15 +259,27 @@ config BT_MESH_LPN_RECV_DELAY
 	  is in units of milliseconds.
 
 config BT_MESH_LPN_POLL_TIMEOUT
-	int "The initial value of the PollTimeout timer"
+	int "The value of the PollTimeout timer"
 	range 10 244735
-	default 100
+	default 300
 	help
 	  PollTimeout timer is used to measure time between two
 	  consecutive requests sent by the Low Power node. If no
 	  requests are received by the Friend node before the
 	  PollTimeout timer expires, then the friendship is considered
-	  terminated. The value is in units of 100 milliseconds.
+	  terminated. The value is in units of 100 milliseconds, so e.g.
+	  a value of 300 means 3 seconds.
+
+config BT_MESH_LPN_INIT_POLL_TIMEOUT
+	int "The starting value of the PollTimeout timer"
+	range 10 BT_MESH_LPN_POLL_TIMEOUT
+	default BT_MESH_LPN_POLL_TIMEOUT
+	help
+	  The initial value of the PollTimeout timer when Friendship
+	  gets established for the first time. After this the timeout
+	  will gradually grow toward the actual PollTimeout, doubling
+	  in value for each iteration. The value is in units of 100
+	  milliseconds, so e.g. a value of 300 means 3 seconds.
 
 config BT_MESH_LPN_SCAN_LATENCY
 	int "Latency for enabling scanning"
