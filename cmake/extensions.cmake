@@ -802,6 +802,17 @@ macro(assert test comment)
 endmacro()
 
 # Usage:
+#   assert_not(FLASH_SCRIPT "FLASH_SCRIPT has been removed; use BOARD_FLASH_RUNNER")
+#
+# will cause a FATAL_ERROR and print an errorm essage if the first
+# espression is true
+macro(assert_not test comment)
+  if(${test})
+    message(FATAL_ERROR "Assertion failed: ${comment}")
+  endif()
+endmacro()
+
+# Usage:
 #   assert_exists(CMAKE_READELF)
 #
 # will cause a FATAL_ERROR if there is no file or directory behind the
