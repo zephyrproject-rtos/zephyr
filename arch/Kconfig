@@ -191,6 +191,49 @@ config BOOTLOADER_CONTEXT_RESTORE_SUPPORTED
 	This option signifies that the target has options of bootloaders
 	that support context restore upon resume from deep sleep
 
+
+# End hidden CPU family configs
+#
+
+config CPU_HAS_FPU
+	bool
+	default n
+	help
+	  This option is enabled when the CPU has hardware floating point
+	  unit.
+
+config CPU_HAS_MPU
+	bool
+	# Omit prompt to signify "hidden" option
+	default n
+	help
+	  This option is enabled when the CPU has a Memory Protection Unit (MPU).
+
+menu "Floating Point Options"
+depends on CPU_HAS_FPU
+
+config FLOAT
+	bool
+	prompt "Floating point registers"
+	default n
+	help
+	This option allows threads to use the floating point registers.
+	By default, only a single thread may use the registers.
+
+	Disabling this option means that any thread that uses a
+	floating point register will get a fatal exception.
+
+config FP_SHARING
+	bool
+	prompt "Floating point register sharing"
+	depends on FLOAT
+	default n
+	help
+	This option allows multiple threads to use the floating point
+	registers.
+
+endmenu
+
 #
 # End hidden PM feature configs
 #
