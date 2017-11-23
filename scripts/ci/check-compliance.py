@@ -8,7 +8,7 @@ from email.utils import parseaddr
 import sh
 import logging
 import argparse
-import check_identity
+#from check_identity import verify_signed_off
 
 if "ZEPHYR_BASE" not in os.environ:
     logging.error("$ZEPHYR_BASE environment variable undefined.\n")
@@ -94,6 +94,50 @@ def run_checkpatch(tc, commit_range):
 
     return 0
 
+def verify_signed_off(tc, commit):
+
+    signed = []
+    author = ""
+    sha = ""
+    parsed_addr = None
+    for line in commit.split("\n"):
+        match = re.search("^commit\s([^\s]*)", line)
+        if match:
+            sha = match.group(1)
+        match = re.search("^Author:\s(.*)", line)
+        if match:
+            author = match.group(1)
+            parsed_addr = parseaddr(author)
+        match = re.search("signed-off-by:\s(.*)", line, re.IGNORECASE)
+        if match:
+            signed.append(match.group(1))
+
+    error1 = "%s: author email (%s) needs to match one of the signed-off-by entries." %(sha, author)
+    error2 = "%s: author email (%s) does not follow the syntax: First Last <email>." %(sha, author)
+    error = 0
+    failure = None
+    if author not in signed:
+        failure = ET.SubElement(tc, 'failure', type="failure", message="identity error")
+        failure.text = error1
+        error = 1
+    if not parsed_addr or len(parsed_addr[0].split(" ")) < 2:
+        if not failure:
+            failure = ET.SubElement(tc, 'failure', type="failure", message="identity error")
+            failure.text = error2
+        else:
+            failure.text = failure.text + "\n" + error2
+        error = 1
+
+    return error
+
+def run_check_identity(tc, range):
+    error = 0
+    for f in get_shas(range):
+        commit = sh.git("log","--decorate=short", "-n 1", f, **sh_special_args)
+        error += verify_signed_off(tc, commit)
+
+    return error
+
 
 def check_doc(tc, range):
 
@@ -113,6 +157,10 @@ tests = {
         "gitlint": {
             "call": run_gitlint,
             "name": "Commit message style",
+            },
+        "identity": {
+            "call": run_check_identity,
+            "name": "Author Identity verification",
             },
         "checkpatch": {
             "call": run_checkpatch,
