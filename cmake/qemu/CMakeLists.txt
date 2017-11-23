@@ -1,10 +1,6 @@
 if(EMU_PLATFORM)
   # TODO: Support more emulators
 
-  # QEMU_INSTANCE is a command line argument to make. By appending the
-  # instance name to the pid file we can easily run more instances of
-  # the same sample.
-
   set(qemu_targets
     run
     debugserver
@@ -57,8 +53,11 @@ if(EMU_PLATFORM)
           -pidfile qemu-${target}.pid
           )
       else()
+        # QEMU_INSTANCE is a command line argument to *make* (not cmake). By
+        # appending the instance name to the pid file we can easily run more
+        # instances of the same sample.
         list(APPEND MORE_FLAGS_FOR_${target}
-          -serial unix:/tmp/slip.sock${QEMU_INSTANCE}
+          -serial unix:/tmp/slip.sock\${QEMU_INSTANCE}
           )
       endif()
     endforeach()
@@ -150,7 +149,7 @@ if(EMU_PLATFORM)
       COMMAND
       ${QEMU}
       ${QEMU_FLAGS_${ARCH}}
-      -pidfile qemu${QEMU_INSTANCE}.pid
+      -pidfile qemu\${QEMU_INSTANCE}.pid
       ${QEMU_FLAGS}
       ${QEMU_EXTRA_FLAGS}
       ${MORE_FLAGS_FOR_${target}}
