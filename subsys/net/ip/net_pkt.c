@@ -254,7 +254,7 @@ void net_pkt_print_frags(struct net_pkt *pkt)
 {
 	struct net_buf *frag;
 	size_t total = 0;
-	int count = -1, frag_size = 0, ll_overhead = 0;
+	int count = 0, frag_size = 0, ll_overhead = 0;
 
 	if (!pkt) {
 		NET_INFO("pkt %p", pkt);
@@ -287,7 +287,7 @@ void net_pkt_print_frags(struct net_pkt *pkt)
 	NET_INFO("Total data size %zu, occupied %d bytes, ll overhead %d, "
 		 "utilization %zu%%",
 		 total, count * frag_size - count * ll_overhead,
-		 count * ll_overhead, (total * 100) / (count * frag_size));
+		 count * ll_overhead, count ? (total * 100) / (count * frag_size) : 0);
 }
 
 struct net_pkt *net_pkt_get_reserve_debug(struct k_mem_slab *slab,
