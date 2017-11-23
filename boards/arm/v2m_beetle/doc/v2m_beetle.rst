@@ -237,7 +237,7 @@ the :ref:`hello_world` application.
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: v2m_beetle
-   :goals: build flash
+   :goals: build
 
 Connect the V2M Beetle to your host computer using the USB port and you should
 see a USB connection which exposes a Mass Storage (MBED) and a USB Serial Port.
