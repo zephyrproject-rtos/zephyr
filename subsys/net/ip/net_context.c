@@ -458,7 +458,8 @@ int net_context_get(sa_family_t family,
 			if (!contexts[i].tcp) {
 				NET_ASSERT_INFO(contexts[i].tcp,
 						"Cannot allocate TCP context");
-				return -ENOBUFS;
+				ret = -ENOBUFS;
+				break;
 			}
 
 			k_delayed_work_init(&contexts[i].tcp->ack_timer,
@@ -468,15 +469,13 @@ int net_context_get(sa_family_t family,
 		}
 #endif /* CONFIG_NET_TCP */
 
+		contexts[i].iface = 0;
 		contexts[i].flags = 0;
 		atomic_set(&contexts[i].refcount, 1);
 
 		net_context_set_family(&contexts[i], family);
 		net_context_set_type(&contexts[i], type);
 		net_context_set_ip_proto(&contexts[i], ip_proto);
-
-		contexts[i].flags |= NET_CONTEXT_IN_USE;
-		contexts[i].iface = 0;
 
 		memset(&contexts[i].remote, 0, sizeof(struct sockaddr));
 		memset(&contexts[i].local, 0, sizeof(struct sockaddr_ptr));
@@ -489,7 +488,8 @@ int net_context_get(sa_family_t family,
 						    (struct sockaddr *)addr6);
 
 			if (!addr6->sin6_port) {
-				return -EADDRINUSE;
+				ret = -EADDRINUSE;
+				break;
 			}
 		}
 #endif
@@ -502,7 +502,8 @@ int net_context_get(sa_family_t family,
 						    (struct sockaddr *)addr);
 
 			if (!addr->sin_port) {
-				return -EADDRINUSE;
+				ret = -EADDRINUSE;
+				break;
 			}
 		}
 #endif
@@ -511,6 +512,7 @@ int net_context_get(sa_family_t family,
 		k_sem_init(&contexts[i].recv_data_wait, 1, UINT_MAX);
 #endif /* CONFIG_NET_CONTEXT_SYNC_RECV */
 
+		contexts[i].flags |= NET_CONTEXT_IN_USE;
 		*context = &contexts[i];
 
 		ret = 0;
