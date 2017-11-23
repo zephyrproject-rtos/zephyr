@@ -197,6 +197,13 @@ config BUILD_OUTPUT_BIN
 	  Build a binary in BIN format. This will build a zephyr.bin file need
 	  by some platforms.
 
+config BUILD_OUTPUT_EXE
+	bool "Build a binary in ELF format with .exe extension"
+	default n
+	help
+	  Build a binary in ELF format that can run in the host system. This
+	  will build a zephyr.exe file.
+
 config BUILD_OUTPUT_S19
 	bool "Build a binary in S19 format"
 	default n
