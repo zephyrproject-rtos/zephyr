@@ -112,6 +112,13 @@ enum sensor_channel {
 	SENSOR_CHAN_BLUE,
 	/** Altitude, in meters */
 	SENSOR_CHAN_ALTITUDE,
+
+	/** 1.0 micro-meters Particulate Matter, in ug/m3 */
+	SENSOR_CHAN_PM_1_0,
+	/** 2.5 micro-meters Particulate Matter, in ug/m3 */
+	SENSOR_CHAN_PM_2_5,
+	/** 10 micro-meters Particulate Matter, in ug/m3 */
+	SENSOR_CHAN_PM_10,
 	/** All channels. */
 	SENSOR_CHAN_ALL,
 };
