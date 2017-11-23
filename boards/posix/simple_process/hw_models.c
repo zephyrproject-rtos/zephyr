@@ -20,6 +20,7 @@
 #include <time.h>
 #endif
 
+static uint64_t running_time;
 /**
  * Entry point for the HW models
  */
@@ -31,7 +32,7 @@ void hw_models_main_loop(void)
 	uint64_t Expected_time;
 #endif
 	uint64_t tick_p = 10000;
-	uint64_t running_time = 0;
+	running_time = 0;
 /*
  * Note regarding types: This file is not suppossed to see the kernel types
  * Therefore we use stdint.h types
@@ -84,6 +85,16 @@ void hw_models_main_loop(void)
 		}
 #endif
 	} /*while (1)*/
+}
+
+
+/**
+ * Return the current HW time counter
+ * (number of microseconds since boot in 32bits)
+ */
+uint32_t _timer_cycle_get_32(void)
+{
+	return running_time;
 }
 
 /**
