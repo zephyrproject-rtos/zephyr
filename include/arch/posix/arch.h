@@ -18,8 +18,8 @@
 #ifndef _ARCH_IFACE_H
 #define _ARCH_IFACE_H
 
-#include <arch/posix/asm_inline.h>
 #include <irq.h>
+#include <arch/posix/asm_inline.h>
 #include <board_irq.h> /* Each board must define this */
 #include <sw_isr_table.h>
 

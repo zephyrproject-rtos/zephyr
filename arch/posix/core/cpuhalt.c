@@ -17,9 +17,8 @@
  *
  */
 
-#include <zephyr.h>
 #include "posix_core.h"
-#include <soc.h>
+#include "posix_soc.h"
 #include "board_irq.h"
 
 /**
