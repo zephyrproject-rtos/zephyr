@@ -5,3 +5,20 @@
  */
 
 #include <st/stm32l475.dtsi>
+
+/ {
+	soc {
+		pinctrl: pin-controller {
+			reg = <0x48000000 0x2400>;
+
+			gpioi: gpio@480002000 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x48002000 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00000100>;
+				label = "GPIOI";
+			};
+		};
+	};
+};
