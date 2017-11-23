@@ -188,8 +188,9 @@ config BOOT_BANNER
 	select PRINTK
 	select EARLY_CONSOLE
 	help
-	This option outputs a banner to the console device during boot up. It
-	also embeds a date & time stamp in the kernel and in each USAP image.
+	  This option outputs a banner to the console device during boot up. It
+	  also embeds a date & time stamp in the kernel if the BUILD_TIMESTAMP
+	  option is enabled.
 
 config BOOT_DELAY
 	int
