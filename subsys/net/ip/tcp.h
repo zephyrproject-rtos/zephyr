@@ -79,7 +79,12 @@ enum net_tcp_state {
 /* RFC 1122 4.2.2.6 "If an MSS option is not received at connection
  * setup, TCP MUST assume a default send MSS of 536"
  */
-#define NET_TCP_DEFAULT_MSS   536
+/*#define NET_TCP_DEFAULT_MSS   536*/
+/* TODO: We don't yet implement full MSS negotiation in Zephyr,
+ * but have tests which rely on being able to send "full" IPv6
+ * (MTU 1280) packets, so for now set default MSS to higher value
+ */
+#define NET_TCP_DEFAULT_MSS   1280
 
 /* TCP max window size */
 #define NET_TCP_MAX_WIN   (4 * 1024)
