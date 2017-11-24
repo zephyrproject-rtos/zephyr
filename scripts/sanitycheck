@@ -809,7 +809,6 @@ class MakeGenerator:
         self._add_goal(outdir)
         build_logfile = os.path.join(outdir, "build.log")
         run_logfile = os.path.join(outdir, "run.log")
-        qemu_logfile = os.path.join(outdir, "qemu.log")
         valgrind_logfile = os.path.join(outdir, "valgrind.log")
         if coverage:
                 args += ["COVERAGE=1"]
