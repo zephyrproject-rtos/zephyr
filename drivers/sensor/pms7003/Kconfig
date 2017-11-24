@@ -1,4 +1,4 @@
-# Kconfig - PMS7003 PM2.5 sensor configuration options
+# Kconfig - PMS7003 particulate matter sensor configuration options
 
 #
 # Copyright (c) 2017 Intel Corporation
@@ -7,11 +7,11 @@
 #
 
 menuconfig PMS7003
-	bool "PMS7003 PM2.5 sensor"
+	bool "PMS7003 particulate matter sensor"
 	depends on SERIAL
 	default n
 	help
-	  Enable driver for pms7003 PM2.5 sensor.
+	  Enable driver for pms7003 particulate matter sensor.
 
 config PMS7003_UART_DEVICE
 	string "UART device"
