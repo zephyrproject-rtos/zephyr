@@ -75,6 +75,13 @@ void board_irq_full_unlock(void)
 }
 
 
+int board_get_current_irq(void)
+{
+	/*TODO*/
+	return 0;
+}
+
+
 /**
  * @brief Run a function in interrupt context
  *
@@ -100,3 +107,4 @@ int _arch_irq_is_enabled(unsigned int irq)
 	/*TODO*/
 	return 0;
 }
+
