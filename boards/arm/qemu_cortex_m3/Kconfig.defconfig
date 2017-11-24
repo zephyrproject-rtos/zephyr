@@ -1,6 +1,9 @@
 
 if BOARD_QEMU_CORTEX_M3
 
+config BUILD_OUTPUT_BIN
+        default n
+
 config BOARD
 	default qemu_cortex_m3
 

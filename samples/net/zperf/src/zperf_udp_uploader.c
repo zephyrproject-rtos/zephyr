@@ -27,6 +27,11 @@ static inline void zperf_upload_decode_stat(struct net_pkt *pkt,
 	u16_t offset;
 	u16_t pos;
 
+	if (!pkt) {
+		printk(TAG "ERROR! Failed to receive statistic\n");
+		return;
+	}
+
 	frag = net_frag_get_pos(pkt,
 				net_pkt_ip_hdr_len(pkt) +
 				net_pkt_ipv6_ext_len(pkt) +
@@ -39,10 +44,7 @@ static inline void zperf_upload_decode_stat(struct net_pkt *pkt,
 	}
 
 	/* Decode stat */
-	if (!pkt) {
-		printk(TAG "ERROR! Failed to receive statistic\n");
-		return;
-	} else if (net_pkt_appdatalen(pkt) <
+	if (net_pkt_appdatalen(pkt) <
 		   (sizeof(struct zperf_server_hdr) +
 		    sizeof(struct zperf_udp_datagram))) {
 		printk(TAG "ERROR! Statistics too small\n");

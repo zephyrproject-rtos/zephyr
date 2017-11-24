@@ -557,13 +557,6 @@ static inline void mcr20a_rx(struct mcr20a_context *mcr20a, u8_t len)
 		goto out;
 	}
 
-#if defined(CONFIG_IEEE802154_MCR20A_RAW)
-	/* TODO: Test raw mode */
-	/**
-	 * Reserve 1 byte for length
-	 */
-	net_pkt_set_ll_reserve(pkt, 1);
-#endif
 	frag = net_pkt_get_frag(pkt, K_NO_WAIT);
 	if (!frag) {
 		SYS_LOG_ERR("No frag available");
@@ -589,10 +582,6 @@ static inline void mcr20a_rx(struct mcr20a_context *mcr20a, u8_t len)
 	SYS_LOG_DBG("Caught a packet (%u) (LQI: %u, RSSI: %u)",
 		    pkt_len, net_pkt_ieee802154_lqi(pkt),
 		    net_pkt_ieee802154_rssi(pkt));
-
-#if defined(CONFIG_IEEE802154_MCR20A_RAW)
-	net_buf_add_u8(frag, mcr20a->lqi);
-#endif
 
 	if (net_recv_data(mcr20a->iface, pkt) < 0) {
 		SYS_LOG_DBG("Packet dropped by NET stack");
@@ -1492,7 +1481,7 @@ static struct ieee802154_radio_api mcr20a_radio_api = {
 	.tx			= mcr20a_tx,
 };
 
-#if defined(CONFIG_IEEE802154_MCR20A_RAW)
+#if defined(CONFIG_IEEE802154_RAW_MODE)
 DEVICE_AND_API_INIT(mcr20a, CONFIG_IEEE802154_MCR20A_DRV_NAME,
 		    mcr20a_init, &mcr20a_context_data, NULL,
 		    POST_KERNEL, CONFIG_IEEE802154_MCR20A_INIT_PRIO,

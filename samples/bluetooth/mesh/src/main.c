@@ -38,6 +38,10 @@ static struct bt_mesh_cfg_srv cfg_srv = {
 static struct bt_mesh_health_srv health_srv = {
 };
 
+static struct bt_mesh_model_pub health_pub = {
+	.msg  = BT_MESH_HEALTH_FAULT_MSG(0),
+};
+
 static struct bt_mesh_model_pub gen_level_pub;
 static struct bt_mesh_model_pub gen_onoff_pub;
 
@@ -121,7 +125,7 @@ static const struct bt_mesh_model_op gen_level_op[] = {
 
 static struct bt_mesh_model root_models[] = {
 	BT_MESH_MODEL_CFG_SRV(&cfg_srv),
-	BT_MESH_MODEL_HEALTH_SRV(&health_srv),
+	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),
 	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_ONOFF_SRV, gen_onoff_op,
 		      &gen_onoff_pub, NULL),
 	BT_MESH_MODEL(BT_MESH_MODEL_ID_GEN_LEVEL_SRV, gen_level_op,

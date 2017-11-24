@@ -24,7 +24,7 @@
 #include <errno.h>
 #include <gpio.h>
 #include <i2c.h>
-#include <i2c_bitbang.h>
+#include "i2c_bitbang.h"
 
 /* Driver config */
 struct i2c_gpio_config {

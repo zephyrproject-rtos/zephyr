@@ -78,13 +78,6 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 			goto out;
 		}
 
-#if defined(CONFIG_IEEE802154_NRF5_RAW)
-		/**
-		 * Reserve 1 byte for length
-		 */
-		net_pkt_set_ll_reserve(pkt, 1);
-#endif
-
 		frag = net_pkt_get_frag(pkt, K_NO_WAIT);
 		if (!frag) {
 			SYS_LOG_ERR("No frag available");
@@ -97,11 +90,11 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 		 * The last 2 bytes contain LQI or FCS, depending if
 		 * automatic CRC handling is enabled or not, respectively.
 		 */
-#if defined(CONFIG_IEEE802154_NRF5_RAW)
-		pkt_len = nrf5_radio->rx_psdu[0];
-#else
-		pkt_len = nrf5_radio->rx_psdu[0] -  NRF5_FCS_LENGTH;
-#endif
+		if (IS_ENABLED(CONFIG_IEEE802154_RAW_MODE)) {
+			pkt_len = nrf5_radio->rx_psdu[0];
+		} else {
+			pkt_len = nrf5_radio->rx_psdu[0] -  NRF5_FCS_LENGTH;
+		}
 
 		/* Skip length (first byte) and copy the payload */
 		memcpy(frag->data, nrf5_radio->rx_psdu + 1, pkt_len);
@@ -430,7 +423,7 @@ static struct ieee802154_radio_api nrf5_radio_api = {
 	.tx = nrf5_tx,
 };
 
-#if defined(CONFIG_IEEE802154_NRF5_RAW)
+#if defined(CONFIG_IEEE802154_RAW_MODE)
 DEVICE_AND_API_INIT(nrf5_154_radio, CONFIG_IEEE802154_NRF5_DRV_NAME,
 		    nrf5_init, &nrf5_data, &nrf5_radio_cfg,
 		    POST_KERNEL, CONFIG_IEEE802154_NRF5_INIT_PRIO,

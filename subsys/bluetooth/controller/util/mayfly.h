@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Nordic Semiconductor ASA
+ * Copyright (c) 2016-2017 Nordic Semiconductor ASA
  * Copyright (c) 2016 Vinayak Kariappa Chettimada
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -18,7 +18,7 @@
 struct mayfly {
 	u8_t volatile _req;
 	u8_t _ack;
-	void *_link;
+	memq_link_t *_link;
 	void *param;
 	void (*fp)(void *);
 };

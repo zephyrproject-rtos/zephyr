@@ -127,7 +127,7 @@ struct sockaddr_in_ptr {
 #define NET_SOCKADDR_MAX_SIZE (sizeof(struct sockaddr_in))
 #define NET_SOCKADDR_PTR_MAX_SIZE (sizeof(struct sockaddr_in_ptr))
 #else
-#if !defined(CONFIG_NET_L2_RAW_CHANNEL)
+#if !defined(CONFIG_NET_RAW_MODE)
 #error "Either IPv6 or IPv4 needs to be selected."
 #else
 #define NET_SOCKADDR_MAX_SIZE (sizeof(struct sockaddr_in6))
@@ -167,6 +167,9 @@ struct net_addr {
 				0, 0, 0, 0, 0, 0, 0 } } }
 #define IN6ADDR_LOOPBACK_INIT { { { 0, 0, 0, 0, 0, 0, 0, \
 				0, 0, 0, 0, 0, 0, 0, 0, 1 } } }
+
+extern const struct in6_addr in6addr_any;
+extern const struct in6_addr in6addr_loopback;
 
 #define INET6_ADDRSTRLEN 46
 #define NET_IPV6_ADDR_LEN sizeof("xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx")

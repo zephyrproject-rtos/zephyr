@@ -2,3 +2,4 @@
 config BOARD_ZEDBOARD_PULPINO
 	bool "Zedboard pulpino target"
 	depends on SOC_RISCV32_PULPINO
+	select BUILD_OUTPUT_S19

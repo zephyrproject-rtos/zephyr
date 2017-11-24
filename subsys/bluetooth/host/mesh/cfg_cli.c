@@ -448,6 +448,21 @@ static int check_cli(void)
 	return 0;
 }
 
+static int cli_wait(void *param, u32_t op)
+{
+	int err;
+
+	cli->op_param = param;
+	cli->op_pending = op;
+
+	err = k_sem_take(&cli->op_sync, msg_timeout);
+
+	cli->op_pending = 0;
+	cli->op_param = NULL;
+
+	return err;
+}
+
 int bt_mesh_cfg_comp_data_get(u16_t net_idx, u16_t addr, u8_t page,
 			      u8_t *status, struct net_buf_simple *comp)
 {
@@ -478,15 +493,7 @@ int bt_mesh_cfg_comp_data_get(u16_t net_idx, u16_t addr, u8_t page,
 		return err;
 	}
 
-	cli->op_param = &param;
-	cli->op_pending = OP_DEV_COMP_DATA_STATUS;
-
-	err = k_sem_take(&cli->op_sync, msg_timeout);
-
-	cli->op_pending = 0;
-	cli->op_param = NULL;
-
-	return err;
+	return cli_wait(&param, OP_DEV_COMP_DATA_STATUS);
 }
 
 static int get_state_u8(u16_t net_idx, u16_t addr, u32_t op, u32_t rsp,
@@ -514,15 +521,7 @@ static int get_state_u8(u16_t net_idx, u16_t addr, u32_t op, u32_t rsp,
 		return err;
 	}
 
-	cli->op_param = val;
-	cli->op_pending = rsp;
-
-	err = k_sem_take(&cli->op_sync, msg_timeout);
-
-	cli->op_pending = 0;
-	cli->op_param = NULL;
-
-	return err;
+	return cli_wait(val, rsp);
 }
 
 static int set_state_u8(u16_t net_idx, u16_t addr, u32_t op, u32_t rsp,
@@ -551,15 +550,7 @@ static int set_state_u8(u16_t net_idx, u16_t addr, u32_t op, u32_t rsp,
 		return err;
 	}
 
-	cli->op_param = val;
-	cli->op_pending = rsp;
-
-	err = k_sem_take(&cli->op_sync, msg_timeout);
-
-	cli->op_pending = 0;
-	cli->op_param = NULL;
-
-	return err;
+	return cli_wait(val, rsp);
 }
 
 int bt_mesh_cfg_beacon_get(u16_t net_idx, u16_t addr, u8_t *status)
@@ -640,15 +631,7 @@ int bt_mesh_cfg_relay_get(u16_t net_idx, u16_t addr, u8_t *status,
 		return err;
 	}
 
-	cli->op_param = &param;
-	cli->op_pending = OP_RELAY_STATUS;
-
-	err = k_sem_take(&cli->op_sync, msg_timeout);
-
-	cli->op_pending = 0;
-	cli->op_param = NULL;
-
-	return err;
+	return cli_wait(&param, OP_RELAY_STATUS);
 }
 
 int bt_mesh_cfg_relay_set(u16_t net_idx, u16_t addr, u8_t new_relay,
@@ -682,15 +665,7 @@ int bt_mesh_cfg_relay_set(u16_t net_idx, u16_t addr, u8_t new_relay,
 		return err;
 	}
 
-	cli->op_param = &param;
-	cli->op_pending = OP_RELAY_STATUS;
-
-	err = k_sem_take(&cli->op_sync, msg_timeout);
-
-	cli->op_pending = 0;
-	cli->op_param = NULL;
-
-	return err;
+	return cli_wait(&param, OP_RELAY_STATUS);
 }
 
 int bt_mesh_cfg_app_key_add(u16_t net_idx, u16_t addr, u16_t key_net_idx,
@@ -730,15 +705,7 @@ int bt_mesh_cfg_app_key_add(u16_t net_idx, u16_t addr, u16_t key_net_idx,
 		return 0;
 	}
 
-	cli->op_param = &param;
-	cli->op_pending = OP_APP_KEY_STATUS;
-
-	err = k_sem_take(&cli->op_sync, msg_timeout);
-
-	cli->op_pending = 0;
-	cli->op_param = NULL;
-
-	return err;
+	return cli_wait(&param, OP_APP_KEY_STATUS);
 }
 
 static int mod_app_bind(u16_t net_idx, u16_t addr, u16_t elem_addr,
@@ -786,15 +753,7 @@ static int mod_app_bind(u16_t net_idx, u16_t addr, u16_t elem_addr,
 		return 0;
 	}
 
-	cli->op_param = &param;
-	cli->op_pending = OP_MOD_APP_STATUS;
-
-	err = k_sem_take(&cli->op_sync, msg_timeout);
-
-	cli->op_pending = 0;
-	cli->op_param = NULL;
-
-	return err;
+	return cli_wait(&param, OP_MOD_APP_STATUS);
 }
 
 int bt_mesh_cfg_mod_app_bind(u16_t net_idx, u16_t addr, u16_t elem_addr,
@@ -816,8 +775,8 @@ int bt_mesh_cfg_mod_app_bind_vnd(u16_t net_idx, u16_t addr, u16_t elem_addr,
 			    status);
 }
 
-static int mod_sub_add(u16_t net_idx, u16_t addr, u16_t elem_addr,
-		       u16_t sub_addr, u16_t mod_id, u16_t cid, u8_t *status)
+static int mod_sub(u32_t op, u16_t net_idx, u16_t addr, u16_t elem_addr,
+		   u16_t sub_addr, u16_t mod_id, u16_t cid, u8_t *status)
 {
 	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 8 + 4);
 	struct bt_mesh_msg_ctx ctx = {
@@ -840,7 +799,7 @@ static int mod_sub_add(u16_t net_idx, u16_t addr, u16_t elem_addr,
 		return err;
 	}
 
-	bt_mesh_model_msg_init(msg, OP_MOD_SUB_ADD);
+	bt_mesh_model_msg_init(msg, op);
 	net_buf_simple_add_le16(msg, elem_addr);
 	net_buf_simple_add_le16(msg, sub_addr);
 
@@ -860,22 +819,14 @@ static int mod_sub_add(u16_t net_idx, u16_t addr, u16_t elem_addr,
 		return 0;
 	}
 
-	cli->op_param = &param;
-	cli->op_pending = OP_MOD_SUB_STATUS;
-
-	err = k_sem_take(&cli->op_sync, msg_timeout);
-
-	cli->op_pending = 0;
-	cli->op_param = NULL;
-
-	return err;
+	return cli_wait(&param, OP_MOD_SUB_STATUS);
 }
 
 int bt_mesh_cfg_mod_sub_add(u16_t net_idx, u16_t addr, u16_t elem_addr,
 			    u16_t sub_addr, u16_t mod_id, u8_t *status)
 {
-	return mod_sub_add(net_idx, addr, elem_addr, sub_addr, mod_id,
-			   CID_NVAL, status);
+	return mod_sub(OP_MOD_SUB_ADD, net_idx, addr, elem_addr, sub_addr,
+		       mod_id, CID_NVAL, status);
 }
 
 int bt_mesh_cfg_mod_sub_add_vnd(u16_t net_idx, u16_t addr, u16_t elem_addr,
@@ -886,8 +837,46 @@ int bt_mesh_cfg_mod_sub_add_vnd(u16_t net_idx, u16_t addr, u16_t elem_addr,
 		return -EINVAL;
 	}
 
-	return mod_sub_add(net_idx, addr, elem_addr, sub_addr, mod_id, cid,
-			   status);
+	return mod_sub(OP_MOD_SUB_ADD, net_idx, addr, elem_addr, sub_addr,
+		       mod_id, cid, status);
+}
+
+int bt_mesh_cfg_mod_sub_del(u16_t net_idx, u16_t addr, u16_t elem_addr,
+			    u16_t sub_addr, u16_t mod_id, u8_t *status)
+{
+	return mod_sub(OP_MOD_SUB_DEL, net_idx, addr, elem_addr, sub_addr,
+		       mod_id, CID_NVAL, status);
+}
+
+int bt_mesh_cfg_mod_sub_del_vnd(u16_t net_idx, u16_t addr, u16_t elem_addr,
+				 u16_t sub_addr, u16_t mod_id, u16_t cid,
+				 u8_t *status)
+{
+	if (cid == CID_NVAL) {
+		return -EINVAL;
+	}
+
+	return mod_sub(OP_MOD_SUB_DEL, net_idx, addr, elem_addr, sub_addr,
+		       mod_id, cid, status);
+}
+
+int bt_mesh_cfg_mod_sub_overwrite(u16_t net_idx, u16_t addr, u16_t elem_addr,
+				  u16_t sub_addr, u16_t mod_id, u8_t *status)
+{
+	return mod_sub(OP_MOD_SUB_OVERWRITE, net_idx, addr, elem_addr,
+		       sub_addr, mod_id, CID_NVAL, status);
+}
+
+int bt_mesh_cfg_mod_sub_overwrite_vnd(u16_t net_idx, u16_t addr,
+				      u16_t elem_addr, u16_t sub_addr,
+				      u16_t mod_id, u16_t cid, u8_t *status)
+{
+	if (cid == CID_NVAL) {
+		return -EINVAL;
+	}
+
+	return mod_sub(OP_MOD_SUB_OVERWRITE, net_idx, addr, elem_addr,
+		       sub_addr, mod_id, cid, status);
 }
 
 static int mod_pub_get(u16_t net_idx, u16_t addr, u16_t elem_addr,
@@ -935,15 +924,7 @@ static int mod_pub_get(u16_t net_idx, u16_t addr, u16_t elem_addr,
 		return 0;
 	}
 
-	cli->op_param = &param;
-	cli->op_pending = OP_MOD_PUB_STATUS;
-
-	err = k_sem_take(&cli->op_sync, msg_timeout);
-
-	cli->op_pending = 0;
-	cli->op_param = NULL;
-
-	return err;
+	return cli_wait(&param, OP_MOD_PUB_STATUS);
 }
 
 int bt_mesh_cfg_mod_pub_get(u16_t net_idx, u16_t addr, u16_t elem_addr,
@@ -1016,15 +997,7 @@ static int mod_pub_set(u16_t net_idx, u16_t addr, u16_t elem_addr,
 		return 0;
 	}
 
-	cli->op_param = &param;
-	cli->op_pending = OP_MOD_PUB_STATUS;
-
-	err = k_sem_take(&cli->op_sync, msg_timeout);
-
-	cli->op_pending = 0;
-	cli->op_param = NULL;
-
-	return err;
+	return cli_wait(&param, OP_MOD_PUB_STATUS);
 }
 
 int bt_mesh_cfg_mod_pub_set(u16_t net_idx, u16_t addr, u16_t elem_addr,
@@ -1083,15 +1056,7 @@ int bt_mesh_cfg_hb_sub_set(u16_t net_idx, u16_t addr,
 		return 0;
 	}
 
-	cli->op_param = &param;
-	cli->op_pending = OP_HEARTBEAT_SUB_STATUS;
-
-	err = k_sem_take(&cli->op_sync, msg_timeout);
-
-	cli->op_pending = 0;
-	cli->op_param = NULL;
-
-	return err;
+	return cli_wait(&param, OP_HEARTBEAT_SUB_STATUS);
 }
 
 int bt_mesh_cfg_hb_sub_get(u16_t net_idx, u16_t addr,
@@ -1127,15 +1092,7 @@ int bt_mesh_cfg_hb_sub_get(u16_t net_idx, u16_t addr,
 		return 0;
 	}
 
-	cli->op_param = &param;
-	cli->op_pending = OP_HEARTBEAT_SUB_STATUS;
-
-	err = k_sem_take(&cli->op_sync, msg_timeout);
-
-	cli->op_pending = 0;
-	cli->op_param = NULL;
-
-	return err;
+	return cli_wait(&param, OP_HEARTBEAT_SUB_STATUS);
 }
 
 int bt_mesh_cfg_hb_pub_set(u16_t net_idx, u16_t addr,
@@ -1176,15 +1133,7 @@ int bt_mesh_cfg_hb_pub_set(u16_t net_idx, u16_t addr,
 		return 0;
 	}
 
-	cli->op_param = &param;
-	cli->op_pending = OP_HEARTBEAT_PUB_STATUS;
-
-	err = k_sem_take(&cli->op_sync, msg_timeout);
-
-	cli->op_pending = 0;
-	cli->op_param = NULL;
-
-	return err;
+	return cli_wait(&param, OP_HEARTBEAT_PUB_STATUS);
 }
 
 int bt_mesh_cfg_hb_pub_get(u16_t net_idx, u16_t addr,
@@ -1220,15 +1169,7 @@ int bt_mesh_cfg_hb_pub_get(u16_t net_idx, u16_t addr,
 		return 0;
 	}
 
-	cli->op_param = &param;
-	cli->op_pending = OP_HEARTBEAT_PUB_STATUS;
-
-	err = k_sem_take(&cli->op_sync, msg_timeout);
-
-	cli->op_pending = 0;
-	cli->op_param = NULL;
-
-	return err;
+	return cli_wait(&param, OP_HEARTBEAT_PUB_STATUS);
 }
 
 s32_t bt_mesh_cfg_cli_timeout_get(void)

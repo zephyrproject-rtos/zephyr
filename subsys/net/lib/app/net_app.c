@@ -1199,51 +1199,51 @@ int _net_app_ssl_tx(void *context, const unsigned char *buf, size_t size)
 {
 	struct net_app_ctx *ctx = context;
 	struct net_pkt *send_buf;
-	int ret, len;
+	size_t sent = 0;
+	int ret, len = 0;
 
-	send_buf = net_app_get_net_pkt(ctx, AF_UNSPEC, BUF_ALLOC_TIMEOUT);
-	if (!send_buf) {
-		return MBEDTLS_ERR_SSL_ALLOC_FAILED;
-	}
+	while (size) {
+		send_buf = net_app_get_net_pkt(ctx, AF_UNSPEC,
+					       BUF_ALLOC_TIMEOUT);
+		if (!send_buf) {
+			return MBEDTLS_ERR_SSL_ALLOC_FAILED;
+		}
 
-	ret = net_pkt_append_all(send_buf, size, (u8_t *)buf,
-				 BUF_ALLOC_TIMEOUT);
-	if (!ret) {
-		/* Cannot append data */
-		net_pkt_unref(send_buf);
-		return 0;
-	}
+		sent = net_pkt_append(send_buf, size, (u8_t *)buf + len,
+				      BUF_ALLOC_TIMEOUT);
+		size -= sent;
+		len += sent;
 
-	len = size;
-
-	if (ctx->proto == IPPROTO_UDP) {
+		if (ctx->proto == IPPROTO_UDP) {
 #if defined(CONFIG_NET_APP_DTLS)
-		if (!ctx->dtls.ctx) {
+			if (!ctx->dtls.ctx) {
+				net_pkt_unref(send_buf);
+				return MBEDTLS_ERR_SSL_INTERNAL_ERROR;
+			}
+
+			ret = net_context_sendto(send_buf,
+						 &ctx->dtls.ctx->remote,
+						 sizeof(ctx->dtls.ctx->remote),
+						 ssl_sent, K_NO_WAIT, NULL,
+						 ctx);
+#else
+			ret = -EPROTONOSUPPORT;
+#endif
+		} else {
+			ret = net_context_send(send_buf, ssl_sent, K_NO_WAIT,
+					       NULL, ctx);
+		}
+
+		if (ret < 0) {
 			net_pkt_unref(send_buf);
 			return MBEDTLS_ERR_SSL_INTERNAL_ERROR;
 		}
 
-		ret = net_context_sendto(send_buf,
-					 &ctx->dtls.ctx->remote,
-					 sizeof(ctx->dtls.ctx->remote),
-					 ssl_sent, K_NO_WAIT, NULL, ctx);
-#else
-		ret = -EPROTONOSUPPORT;
-#endif
-	} else {
-		ret = net_context_send(send_buf, ssl_sent, K_NO_WAIT, NULL,
-				       ctx);
-	}
+		k_sem_take(&ctx->tls.mbedtls.ssl_ctx.tx_sem, K_FOREVER);
 
-	if (ret < 0) {
-		net_pkt_unref(send_buf);
-		return MBEDTLS_ERR_SSL_INTERNAL_ERROR;
-	}
-
-	k_sem_take(&ctx->tls.mbedtls.ssl_ctx.tx_sem, K_FOREVER);
-
-	if (ctx->tls.close_requested) {
-		_net_app_tls_trigger_close(ctx);
+		if (ctx->tls.close_requested) {
+			_net_app_tls_trigger_close(ctx);
+		}
 	}
 
 	return len;

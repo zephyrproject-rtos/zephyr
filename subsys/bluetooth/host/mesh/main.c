@@ -104,13 +104,17 @@ void bt_mesh_reset(void)
 	bt_mesh.iv_index = 0;
 	bt_mesh.seq = 0;
 	bt_mesh.iv_update = 0;
+	bt_mesh.pending_update = 0;
 	bt_mesh.valid = 0;
 	bt_mesh.last_update = 0;
 	bt_mesh.ivu_initiator = 0;
 
-	bt_mesh_set_hb_sub_dst(BT_MESH_ADDR_UNASSIGNED);
-
 	k_delayed_work_cancel(&bt_mesh.ivu_complete);
+
+	bt_mesh_cfg_reset();
+
+	bt_mesh_rx_reset();
+	bt_mesh_tx_reset();
 
 	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
 		bt_mesh_lpn_disable(true);

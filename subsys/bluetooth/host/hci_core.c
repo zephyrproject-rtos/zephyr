@@ -4038,9 +4038,9 @@ static int set_static_addr(void)
 	} else {
 		BT_WARN("Read Static Addresses command not available");
 	}
-#endif
 
 generate:
+#endif
 	BT_DBG("Generating new static random address");
 
 	err = bt_addr_le_create_static(&bt_dev.id_addr);

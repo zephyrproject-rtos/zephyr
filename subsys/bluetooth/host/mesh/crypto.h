@@ -129,13 +129,11 @@ int bt_mesh_net_decrypt(const u8_t key[16], struct net_buf_simple *buf,
 
 int bt_mesh_app_encrypt(const u8_t key[16], bool dev_key, u8_t aszmic,
 			struct net_buf_simple *buf, const u8_t *ad,
-			u8_t mic_len, u16_t src, u16_t dst,
-			u32_t seq_num, u32_t iv_index);
+			u16_t src, u16_t dst, u32_t seq_num, u32_t iv_index);
 
 int bt_mesh_app_decrypt(const u8_t key[16], bool dev_key, u8_t aszmic,
-			struct net_buf_simple *buf, u8_t mic_len,
-			struct net_buf_simple *out, const u8_t *ad,
-			u16_t src, u16_t dst, u32_t seq_num,
+			struct net_buf_simple *buf, struct net_buf_simple *out,
+			const u8_t *ad, u16_t src, u16_t dst, u32_t seq_num,
 			u32_t iv_index);
 
 u8_t bt_mesh_fcs_calc(const u8_t *data, u8_t data_len);

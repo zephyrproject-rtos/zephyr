@@ -131,7 +131,10 @@ struct bt_mesh_msg_ctx {
 	u16_t addr;
 
 	/** Received TTL value. Not used for sending. */
-	u8_t  recv_ttl;
+	u8_t  recv_ttl:7;
+
+	/** Force sending reliably by using segment acknowledgement */
+	u8_t  send_rel:1;
 
 	/** TTL, or BT_MESH_TTL_DEFAULT for default TTL. */
 	u8_t  send_ttl;
@@ -219,23 +222,84 @@ struct bt_mesh_model_op {
  */
 #define BT_MESH_TRANSMIT_INT(transmit) ((((transmit) >> 3) + 1) * 10)
 
+/** @def BT_MESH_PUB_TRANSMIT
+ *
+ *  @brief Encode Publish Retransmit count & interval steps.
+ *
+ *  @param count   Number of retransmissions (first transmission is excluded).
+ *  @param int_ms  Interval steps in milliseconds. Must be greater than 0
+ *                 and a multiple of 50.
+ *
+ *  @return Mesh transmit value that can be used e.g. for the default
+ *          values of the configuration model data.
+ */
+#define BT_MESH_PUB_TRANSMIT(count, int_ms) BT_MESH_TRANSMIT(count,           \
+							     (int_ms) / 5)
+
+/** @def BT_MESH_PUB_TRANSMIT_COUNT
+ *
+ *  @brief Decode Pubhlish Retransmit count from a given value.
+ *
+ *  @param transmit Encoded Publish Retransmit count & interval value.
+ *
+ *  @return Retransmission count (actual transmissions is N + 1).
+ */
+#define BT_MESH_PUB_TRANSMIT_COUNT(transmit) BT_MESH_TRANSMIT_COUNT(transmit)
+
+/** @def BT_MESH_PUB_TRANSMIT_INT
+ *
+ *  @brief Decode Publish Retransmit interval from a given value.
+ *
+ *  @param transmit Encoded Publish Retransmit count & interval value.
+ *
+ *  @return Transmission interval in milliseconds.
+ */
+#define BT_MESH_PUB_TRANSMIT_INT(transmit) ((((transmit) >> 3) + 1) * 50)
+
+/** Model publication context. */
 struct bt_mesh_model_pub {
-	/* Self-reference for easy lookup */
+	/** The model the context belongs to. Initialized by the stack. */
 	struct bt_mesh_model *mod;
 
-	u16_t addr;         /* Publish Address */
-	u16_t key;          /* Publish AppKey Index */
+	u16_t addr;         /**< Publish Address. */
+	u16_t key;          /**< Publish AppKey Index. */
 
-	u8_t  ttl;          /* Publish Time to Live */
-	u8_t  retransmit;   /* Retransmit Count & Interval Steps */
-	u8_t  period;       /* Publish Period */
-	u8_t  period_div:4, /* Divisor for the Period */
-	      cred:1;       /* Friendship Credentials Flag */
+	u8_t  ttl;          /**< Publish Time to Live. */
+	u8_t  retransmit;   /**< Retransmit Count & Interval Steps. */
+	u8_t  period;       /**< Publish Period. */
+	u8_t  period_div:4, /**< Divisor for the Period. */
+	      cred:1,       /**< Friendship Credentials Flag. */
+	      count:3;      /**< Retransmissions left. */
 
-	/* Publish callback */
-	void    (*func)(struct bt_mesh_model *mod);
+	u32_t period_start; /**< Start of the current period. */
 
-	/* Publish Period Timer */
+	/** @brief Publication buffer, containing the publication message.
+	 *
+	 *  The application is expected to initialize this with
+	 *  a valid net_buf_simple pointer, with the help of e.g.
+	 *  the NET_BUF_SIMPLE() macro. The publication buffer must
+	 *  contain a valid publication message before calling the
+	 *  bt_mesh_model_publish() API or after the publication's
+	 *  @ref bt_mesh_model_pub.update callback has been called
+	 *  and returned success.
+	 */
+	struct net_buf_simple *msg;
+
+	/** @brief Callback for updating the publication buffer.
+	 *
+	 *  When set to NULL, the model is assumed not to support
+	 *  periodic publishing. When set to non-NULL the callback
+	 *  will be called periodically and is expected to update
+	 *  @ref bt_mesh_model_pub.msg with a valid publication
+	 *  message.
+	 *
+	 *  @param mod The Model the Publication Context belogs to.
+	 *
+	 *  @return Zero on success or (negative) error code otherwise.
+	 */
+	int (*update)(struct bt_mesh_model *mod);
+
+	/** Publish Period Timer. Only for stack-internal use. */
 	struct k_delayed_work timer;
 };
 
@@ -267,7 +331,10 @@ struct bt_mesh_model {
 	void *user_data;
 };
 
-typedef void (*bt_mesh_cb_t)(int err, void *cb_data);
+struct bt_mesh_send_cb {
+	void (*start)(u16_t duration, int err, void *cb_data);
+	void (*end)(int err, void *cb_data);
+};
 
 void bt_mesh_model_msg_init(struct net_buf_simple *msg, u32_t opcode);
 
@@ -290,19 +357,25 @@ void bt_mesh_model_msg_init(struct net_buf_simple *msg, u32_t opcode);
  */
 int bt_mesh_model_send(struct bt_mesh_model *model,
 		       struct bt_mesh_msg_ctx *ctx,
-		       struct net_buf_simple *msg, bt_mesh_cb_t cb,
+		       struct net_buf_simple *msg,
+		       const struct bt_mesh_send_cb *cb,
 		       void *cb_data);
 
 /**
  * @brief Send a model publication message.
  *
+ * Before calling this function, the user needs to ensure that the model
+ * publication message (@ref bt_mesh_model_pub.msg) contains a valid
+ * message to be sent. Note that this API is only to be used for
+ * non-period publishing. For periodic publishing the app only needs
+ * to make sure that @ref bt_mesh_model_pub.msg contains a valid message
+ * whenever the @ref bt_mesh_model_pub.update callback is called.
+ *
  * @param model  Mesh (client) Model that's publishing the message.
- * @param msg    Access Layer message to publish.
  *
  * @return 0 on success, or (negative) error code on failure.
  */
-int bt_mesh_model_publish(struct bt_mesh_model *model,
-			  struct net_buf_simple *msg);
+int bt_mesh_model_publish(struct bt_mesh_model *model);
 
 /** Node Composition */
 struct bt_mesh_comp {

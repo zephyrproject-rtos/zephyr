@@ -36,6 +36,10 @@
 #include "rpl.h"
 #include "net_stats.h"
 
+/* IPv6 wildcard and loopback address defined by RFC2553 */
+const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;
+const struct in6_addr in6addr_loopback = IN6ADDR_LOOPBACK_INIT;
+
 #if defined(CONFIG_NET_IPV6_ND)
 static void nd_reachable_timeout(struct k_work *work);
 #endif
@@ -626,9 +630,7 @@ fail:
 
 const struct in6_addr *net_ipv6_unspecified_address(void)
 {
-	static const struct in6_addr addr = IN6ADDR_ANY_INIT;
-
-	return &addr;
+	return &in6addr_any;
 }
 
 struct net_pkt *net_ipv6_create_raw(struct net_pkt *pkt,

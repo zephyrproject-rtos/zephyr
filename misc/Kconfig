@@ -6,7 +6,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menu "Compile and Link Features"
+menu "Build and Link Features"
 
 menu "Linker Options"
 config HAS_FLASH_LOAD_OFFSET
@@ -104,9 +104,16 @@ config KERNEL_ENTRY
 	help
 	Code entry symbol, to be set at linking phase.
 
+config CHECK_LINK_MAP
+	bool "Check linker map"
+	default y
+	help
+	  Run a linker address generation validity checker at the end of the
+	  build.
 endmenu
 
 menu "Compiler Options"
+
 config CROSS_COMPILE
 	string "Cross-compiler tool prefix"
 	help
@@ -144,12 +151,49 @@ config GDB_INFO
 	  during interrupts, exceptions, and context switches. This information
 	  is required for task-aware debugging with GDB.
 
+menu "Build Options"
+
 config KERNEL_BIN_NAME
 	string "The kernel binary name"
 	default "zephyr"
 	help
-	This option sets the name of the generated kernel binary.
+	  This option sets the name of the generated kernel binary.
 
+config OUTPUT_STAT
+	bool "Create a statistics file"
+	default y
+	help
+	  Create a stat file using readelf -e <elf>
+
+config BUILD_OUTPUT_HEX
+	bool "Build a binary in HEX format"
+	default n
+	help
+	  Build a binary in HEX format. This will build a zephyr.hex file need
+	  by some platforms.
+
+config BUILD_OUTPUT_BIN
+	bool "Build a binary in BIN format"
+	default y
+	help
+	  Build a binary in BIN format. This will build a zephyr.bin file need
+	  by some platforms.
+
+config BUILD_OUTPUT_S19
+	bool "Build a binary in S19 format"
+	default n
+	help
+	  Build a binary in S19 format. This will build a zephyr.s19 file need
+	  by some platforms.
+
+config BUILD_OUTPUT_STRIPPED
+	bool "Build a stripped binary"
+	default n
+	help
+	  Build a stripped binary. This will build a zephyr.stripped file need
+	  by some platforms.
+
+endmenu
 endmenu
 
 menu "System Monitoring Options"

@@ -10,11 +10,17 @@ menu "IP stack"
 	depends on NETWORKING
 
 # Hidden option
-config NET_L2_RAW_CHANNEL
+config NET_RAW_MODE
 	bool
 	default n
+	help
+	This is a very specific option used to built only the very minimal
+	part of the net stack in order to get network drivers working without
+	any net stack above: core, L2 etc... Basically this will build only
+	net_pkt part. It is currently used only by IEEE 802.15.4 drivers,
+	though any type of net drivers could use it.
 
-if !NET_L2_RAW_CHANNEL
+if !NET_RAW_MODE
 
 config NET_INIT_PRIO
 	int
@@ -283,7 +289,7 @@ config NET_DEBUG_TRICKLE
 	help
 	Enables Trickle library output debug messages
 
-endif # NET_L2_RAW_CHANNEL
+endif # NET_RAW_MODE
 
 config NET_PKT_RX_COUNT
 	int "How many packet receives can be pending at the same time"

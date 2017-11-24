@@ -964,7 +964,7 @@ static int node_id_adv(struct bt_mesh_subnet *sub)
 	err = bt_le_adv_start(proxy_adv_param, node_id_ad,
 			      ARRAY_SIZE(node_id_ad), NULL, 0);
 	if (err) {
-		BT_ERR("Failed to advertise using Node ID (err %d)", err);
+		BT_WARN("Failed to advertise using Node ID (err %d)", err);
 		return err;
 	}
 
@@ -989,7 +989,7 @@ static int net_id_adv(struct bt_mesh_subnet *sub)
 	err = bt_le_adv_start(proxy_adv_param,
 			      net_id_ad, ARRAY_SIZE(net_id_ad), NULL, 0);
 	if (err) {
-		BT_ERR("Failed to advertise using Network ID (err %d)", err);
+		BT_WARN("Failed to advertise using Network ID (err %d)", err);
 		return err;
 	}
 
