@@ -115,6 +115,32 @@ int bt_mesh_cfg_mod_sub_overwrite_vnd(u16_t net_idx, u16_t addr,
 				      u16_t elem_addr, u16_t sub_addr,
 				      u16_t mod_id, u16_t cid, u8_t *status);
 
+int bt_mesh_cfg_mod_sub_va_add(u16_t net_idx, u16_t addr, u16_t elem_addr,
+			       const u8_t label[16], u16_t mod_id,
+			       u16_t *virt_addr, u8_t *status);
+
+int bt_mesh_cfg_mod_sub_va_add_vnd(u16_t net_idx, u16_t addr, u16_t elem_addr,
+				   const u8_t label[16], u16_t mod_id,
+				   u16_t cid, u16_t *virt_addr, u8_t *status);
+
+int bt_mesh_cfg_mod_sub_va_del(u16_t net_idx, u16_t addr, u16_t elem_addr,
+			       const u8_t label[16], u16_t mod_id,
+			       u16_t *virt_addr, u8_t *status);
+
+int bt_mesh_cfg_mod_sub_va_del_vnd(u16_t net_idx, u16_t addr, u16_t elem_addr,
+				   const u8_t label[16], u16_t mod_id,
+				   u16_t cid, u16_t *virt_addr, u8_t *status);
+
+int bt_mesh_cfg_mod_sub_va_overwrite(u16_t net_idx, u16_t addr,
+				     u16_t elem_addr, const u8_t label[16],
+				     u16_t mod_id, u16_t *virt_addr,
+				     u8_t *status);
+
+int bt_mesh_cfg_mod_sub_va_overwrite_vnd(u16_t net_idx, u16_t addr,
+					 u16_t elem_addr, const u8_t label[16],
+					 u16_t mod_id, u16_t cid,
+					 u16_t *virt_addr, u8_t *status);
+
 struct bt_mesh_cfg_hb_sub {
 	u16_t src;
 	u16_t dst;
