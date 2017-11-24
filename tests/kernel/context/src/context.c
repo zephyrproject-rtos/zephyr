@@ -68,6 +68,8 @@
  * The Cortex-M use the SYSTICK exception for the system timer, which is
  * not considered an IRQ by the irq_enable/Disable APIs.
  */
+#elif defined(CONFIG_ARCH_POSIX) && defined(CONFIG_BOARD_NATIVE_POSIX)
+#define TICK_IRQ TIMER_TICK_IRQ
 #else
 /* generate an error */
 #error Timer type is not defined for this platform
@@ -196,6 +198,9 @@ static int test_kernel_cpu_idle(int atomic)
 	/* Align to a "ms boundary". */
 	tms = k_uptime_get_32();
 	while (tms == k_uptime_get_32()) {
+#if defined(CONFIG_ARCH_POSIX)
+		posix_halt_cpu(); /*Sleep until next IRQ*/
+#endif
 	}
 
 	tms = k_uptime_get_32();
@@ -290,10 +295,16 @@ static int test_kernel_interrupts(disable_int_func disable_int,
 	/* Align to a "tick boundary" */
 	tick = _tick_get_32();
 	while (_tick_get_32() == tick) {
+#if defined(CONFIG_ARCH_POSIX)
+		k_busy_wait(1000);
+#endif
 	}
 
 	tick++;
 	while (_tick_get_32() == tick) {
+#if defined(CONFIG_ARCH_POSIX)
+		k_busy_wait(1000);
+#endif
 		count++;
 	}
 
@@ -310,6 +321,9 @@ static int test_kernel_interrupts(disable_int_func disable_int,
 	tick = _tick_get_32();
 	for (i = 0; i < count; i++) {
 		_tick_get_32();
+#if defined(CONFIG_ARCH_POSIX)
+		k_busy_wait(1000);
+#endif
 	}
 
 	tick2 = _tick_get_32();
@@ -329,6 +343,9 @@ static int test_kernel_interrupts(disable_int_func disable_int,
 	/* Now repeat with interrupts unlocked. */
 	for (i = 0; i < count; i++) {
 		_tick_get_32();
+#if defined(CONFIG_ARCH_POSIX)
+		k_busy_wait(1000);
+#endif
 	}
 
 	tick2 = _tick_get_32();
