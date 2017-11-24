@@ -6,17 +6,22 @@ if(EMU_PLATFORM)
     debugserver
     )
 
-  set(QEMU_FLAGS -serial)
+  # We can set "default" value for QEMU_PTY & QEMU_PIPE on cmake invocation.
   if(QEMU_PTY)
-    list(APPEND QEMU_FLAGS pty)
+    # Send console output to a pseudo-tty, used for running automated tests
+    set(CMAKE_QEMU_SERIAL0 pty)
   else()
     if(QEMU_PIPE)
-      # Send console output to a pipe, used for running automated sanity tests
-      list(APPEND QEMU_FLAGS pipe:${QEMU_PIPE})
+      # Send console output to a pipe, used for running automated tests
+      set(CMAKE_QEMU_SERIAL0 pipe:${QEMU_PIPE})
     else()
-      list(APPEND QEMU_FLAGS mon:stdio)
+      set(CMAKE_QEMU_SERIAL0 mon:stdio)
     endif()
   endif()
+
+  # But also can set QEMU_PTY & QEMU_PIPE on *make* (not cmake) invocation,
+  # like it was before cmake.
+  set(QEMU_FLAGS -serial \${if \${QEMU_PTY}, pty, \${if \${QEMU_PIPE}, pipe:\${QEMU_PIPE}, ${CMAKE_QEMU_SERIAL0}}})
 
   # Add a BT serial device when building for bluetooth, unless the
   # application explicitly opts out with NO_QEMU_SERIAL_BT_SERVER.
