@@ -100,6 +100,8 @@ source "drivers/sensor/mpu6050/Kconfig"
 
 source "drivers/sensor/nrf5/Kconfig"
 
+source "drivers/sensor/pms7003/Kconfig"
+
 source "drivers/sensor/sht3xd/Kconfig"
 
 source "drivers/sensor/sx9500/Kconfig"
@@ -109,7 +111,5 @@ source "drivers/sensor/th02/Kconfig"
 source "drivers/sensor/tmp007/Kconfig"
 
 source "drivers/sensor/tmp112/Kconfig"
-
-source "drivers/sensor/pms7003/Kconfig"
 
 endif # SENSOR

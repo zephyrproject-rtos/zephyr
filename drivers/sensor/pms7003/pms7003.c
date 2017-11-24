@@ -42,13 +42,13 @@ struct pms7003_data {
  * @param timeout the timeout in milliseconds
  * @return 0 if success; -ETIME if timeout
  */
-int uart_wait_for(struct device *dev, uint8_t *data, int len, int timeout)
+static int uart_wait_for(struct device *dev, u8_t *data, int len, int timeout)
 {
 	int matched_size = 0;
 	s64_t timeout_time = k_uptime_get() + K_MSEC(timeout);
 
 	while (1) {
-		unsigned char c;
+		u8_t c;
 
 		if (k_uptime_get() > timeout_time) {
 			return -ETIME;
@@ -79,13 +79,13 @@ int uart_wait_for(struct device *dev, uint8_t *data, int len, int timeout)
  * @param timeout the timeout in milliseconds
  * @return 0 if success; -ETIME if timeout
  */
-int uart_read_bytes(struct device *dev, uint8_t *data, int len, int timeout)
+static int uart_read_bytes(struct device *dev, u8_t *data, int len, int timeout)
 {
 	int read_size = 0;
 	s64_t timeout_time = k_uptime_get() + K_MSEC(timeout);
 
 	while (1) {
-		unsigned char c;
+		u8_t c;
 
 		if (k_uptime_get() > timeout_time) {
 			return -ETIME;
@@ -110,8 +110,8 @@ static int pms7003_sample_fetch(struct device *dev, enum sensor_channel chan)
 	 * 00 4E 00 03 00 00 00 00 00 00 71 00 02 06
 	 */
 
-	unsigned char pms7003_start_bytes[] = {0x42, 0x4d};
-	unsigned char pms7003_receive_buffer[30];
+	u8_t pms7003_start_bytes[] = {0x42, 0x4d};
+	u8_t pms7003_receive_buffer[30];
 
 	if (uart_wait_for(drv_data->uart_dev, pms7003_start_bytes,
 			  sizeof(pms7003_start_bytes),
@@ -126,11 +126,11 @@ static int pms7003_sample_fetch(struct device *dev, enum sensor_channel chan)
 	}
 
 	drv_data->pm_1_0 =
-	    pms7003_receive_buffer[8] * 0xff + pms7003_receive_buffer[9];
+	    (pms7003_receive_buffer[8] << 8) + pms7003_receive_buffer[9];
 	drv_data->pm_2_5 =
-	    pms7003_receive_buffer[10] * 0xff + pms7003_receive_buffer[11];
+	    (pms7003_receive_buffer[10] << 8) + pms7003_receive_buffer[11];
 	drv_data->pm_10 =
-	    pms7003_receive_buffer[12] * 0xff + pms7003_receive_buffer[13];
+	    (pms7003_receive_buffer[12] << 8) + pms7003_receive_buffer[13];
 
 	SYS_LOG_DBG("pm1.0 = %d", drv_data->pm_1_0);
 	SYS_LOG_DBG("pm2.5 = %d", drv_data->pm_2_5);
