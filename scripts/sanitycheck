@@ -908,7 +908,7 @@ class MakeGenerator:
         elif ti.test.type == "unit":
             self.add_unit_goal(ti.name, ti.test.code_location, ti.outdir,
                                args, ti.test.timeout, coverage)
-        elif ti.platform.type == "native":
+        elif ti.platform.type == "native" and (not ti.build_only) and (not build_only):
             self.add_native_goal(ti.name, ti.test.code_location, ti.outdir,
                                args, ti.test.timeout, coverage)
         else:
