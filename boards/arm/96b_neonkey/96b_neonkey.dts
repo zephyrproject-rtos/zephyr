@@ -16,6 +16,44 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led_0: led@0 {
+			gpios = <&gpiob 12 GPIO_INT_ACTIVE_HIGH>;
+			label = "USR0 LED";
+		};
+		green_led_1: led@1 {
+			gpios = <&gpiob 13 GPIO_INT_ACTIVE_HIGH>;
+			label = "USR1 LED";
+		};
+		green_led_2: led@2 {
+			gpios = <&gpiob 14 GPIO_INT_ACTIVE_HIGH>;
+			label = "USR2 LED";
+		};
+		green_led_3: led@3 {
+			gpios = <&gpiob 15 GPIO_INT_ACTIVE_HIGH>;
+			label = "USR3 LED";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		user_button: button@0 {
+			label = "User";
+			gpios = <&gpiob 2 GPIO_INT_ACTIVE_LOW>;
+		};
+	};
+
+	aliases {
+		led0 = &green_led_0;
+		led1 = &green_led_1;
+		led2 = &green_led_2;
+		led3 = &green_led_3;
+		sw0 = &user_button;
+	};
 };
 
 &usart1 {

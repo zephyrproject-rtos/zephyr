@@ -16,6 +16,29 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led_2: led@0 {
+			gpios = <&gpioa 5 GPIO_INT_ACTIVE_HIGH>;
+			label = "User LD2";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		user_button: button@0 {
+			label = "User";
+			gpios = <&gpioc 13 GPIO_INT_ACTIVE_LOW>;
+		};
+	};
+
+	aliases {
+		led0 = &green_led_2;
+		sw0 = &user_button;
+	};
 };
 
 &usart1 {
@@ -36,4 +59,3 @@
 	status = "ok";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
-

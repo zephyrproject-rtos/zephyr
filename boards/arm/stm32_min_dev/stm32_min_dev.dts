@@ -16,6 +16,18 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
+
+	leds {
+		compatible = "gpio-leds";
+		led: led@0 {
+			gpios = <&gpiob 12 GPIO_INT_ACTIVE_HIGH>;
+			label = "LD";
+		};
+	};
+
+	aliases {
+		led0 = &led;
+	};
 };
 
 &usart1 {

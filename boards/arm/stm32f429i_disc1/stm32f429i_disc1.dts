@@ -16,6 +16,33 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
+
+	leds {
+		compatible = "gpio-leds";
+		orange_led_3: led@0 {
+			gpios = <&gpiog 13 GPIO_INT_ACTIVE_HIGH>;
+			label = "User LD3";
+		};
+		green_led_4: led@1 {
+			gpios = <&gpiog 14 GPIO_INT_ACTIVE_HIGH>;
+			label = "User LD4";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		user_button: button@0 {
+			label = "User";
+			gpios = <&gpioa 0 GPIO_INT_ACTIVE_LOW>;
+		};
+	};
+
+	aliases {
+		led0 = &green_led_4;
+		sw0 = &user_button;
+	};
 };
 
 &usart1 {
