@@ -769,7 +769,7 @@ static int cmd_mod_app_bind(int argc, char *argv[])
 	mod_id = strtoul(argv[3], NULL, 0);
 
 	if (argc > 4) {
-		cid = strtoul(argv[3], NULL, 0);
+		cid = strtoul(argv[4], NULL, 0);
 		err = bt_mesh_cfg_mod_app_bind_vnd(net.net_idx, net.dst,
 						   elem_addr, mod_app_idx,
 						   mod_id, cid, &status);
@@ -807,7 +807,7 @@ static int cmd_mod_sub_add(int argc, char *argv[])
 	mod_id = strtoul(argv[3], NULL, 0);
 
 	if (argc > 4) {
-		cid = strtoul(argv[3], NULL, 0);
+		cid = strtoul(argv[4], NULL, 0);
 		err = bt_mesh_cfg_mod_sub_add_vnd(net.net_idx, net.dst,
 						  elem_addr, sub_addr, mod_id,
 						  cid, &status);
@@ -846,7 +846,7 @@ static int cmd_mod_sub_del(int argc, char *argv[])
 	mod_id = strtoul(argv[3], NULL, 0);
 
 	if (argc > 4) {
-		cid = strtoul(argv[3], NULL, 0);
+		cid = strtoul(argv[4], NULL, 0);
 		err = bt_mesh_cfg_mod_sub_del_vnd(net.net_idx, net.dst,
 						  elem_addr, sub_addr, mod_id,
 						  cid, &status);
