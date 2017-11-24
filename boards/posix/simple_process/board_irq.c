@@ -86,3 +86,17 @@ void irq_offload(irq_offload_routine_t routine, void *parameter)
 	routine(parameter);
 }
 
+
+void _arch_irq_enable(unsigned int irq)
+{
+	/*TODO*/
+}
+void _arch_irq_disable(unsigned int irq)
+{
+	/*TODO*/
+}
+int _arch_irq_is_enabled(unsigned int irq)
+{
+	/*TODO*/
+	return 0;
+}

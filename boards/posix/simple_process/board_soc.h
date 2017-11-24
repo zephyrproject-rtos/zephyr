@@ -23,9 +23,7 @@
 extern "C" {
 #endif
 
-/*
- * Empty for this board
- */
+#define TIMER_TICK_IRQ 0
 
 #ifdef __cplusplus
 }
