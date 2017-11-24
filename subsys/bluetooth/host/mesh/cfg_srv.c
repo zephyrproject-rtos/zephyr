@@ -1215,6 +1215,9 @@ static void send_mod_sub_status(struct bt_mesh_model *model,
 	/* Needed size: opcode (2 bytes) + msg + MIC */
 	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 9 + 4);
 
+	BT_DBG("status 0x%02x elem_addr 0x%04x sub_addr 0x%04x", status,
+	       elem_addr, sub_addr);
+
 	bt_mesh_model_msg_init(msg, OP_MOD_SUB_STATUS);
 
 	net_buf_simple_add_u8(msg, status);
@@ -3178,11 +3181,17 @@ u8_t *bt_mesh_label_uuid_get(u16_t addr)
 {
 	int i;
 
+	BT_DBG("addr 0x%04x", addr);
+
 	for (i = 0; i < ARRAY_SIZE(labels); i++) {
 		if (labels[i].addr == addr) {
+			BT_DBG("Found Label UUID for 0x%04x: %s", addr,
+			       bt_hex(labels[i].uuid, 16));
 			return labels[i].uuid;
 		}
 	}
+
+	BT_WARN("No matching Label UUID for 0x%04x", addr);
 
 	return NULL;
 }
