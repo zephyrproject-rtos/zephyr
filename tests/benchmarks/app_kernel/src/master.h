@@ -62,6 +62,10 @@ extern char sline[];
 	"|--------------------------------------" \
 	"---------------------------------------|\n"
 
+/*
+ * To avoid divisions by 0 faults, wrap the divisor with this macro
+ */
+#define SAFE_DIVISOR(a) (((a) != 0)?(a):1)
 
 
 /* pipe amount of content to receive (0+, 1+, all) */
