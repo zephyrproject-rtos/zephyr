@@ -1,6 +1,9 @@
 
 if BOARD_GALILEO
 
+config BUILD_OUTPUT_STRIPPED
+	def_bool y
+
 config BOARD
 	default galileo
 
