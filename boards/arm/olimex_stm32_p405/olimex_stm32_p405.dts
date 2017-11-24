@@ -17,6 +17,29 @@
 		zephyr,flash = &flash0;
 		zephyr,ccm = &ccm0;
 	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led_1: led@0 {
+			gpios = <&gpioc 12 GPIO_INT_ACTIVE_HIGH>;
+			label = "LED1";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		user_button: button@0 {
+			label = "Key";
+			gpios = <&gpioa 0 GPIO_INT_ACTIVE_LOW>;
+		};
+	};
+
+	aliases {
+		led0 = &green_led_1;
+		sw0 = &user_button;
+	};
 };
 
 &usart2 {
@@ -25,4 +48,3 @@
 	pinctrl-names = "default";
 	status = "ok";
 };
-

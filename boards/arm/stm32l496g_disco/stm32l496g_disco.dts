@@ -16,6 +16,45 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led_2: led@0 {
+			gpios = <&gpiob 13 GPIO_INT_ACTIVE_HIGH>;
+			label = "User LD2";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		joy_sel: joystick@0 {
+			label = "joystick select";
+			gpios = <&gpioc 13 GPIO_INT_ACTIVE_LOW>;
+		};
+		joy_down: joystick@1 {
+			label = "joystick down";
+			gpios = <&gpioi 10 GPIO_INT_ACTIVE_LOW>;
+		};
+		joy_up: joystick@2 {
+			label = "joystick up";
+			gpios = <&gpioi 8 GPIO_INT_ACTIVE_LOW>;
+		};
+		joy_left: joystick@3 {
+			label = "joystick left";
+			gpios = <&gpioi 9 GPIO_INT_ACTIVE_LOW>;
+		};
+		joy_right: joystick@4 {
+			label = "joystick right";
+			gpios = <&gpiof 11 GPIO_INT_ACTIVE_LOW>;
+		};
+	};
+
+	aliases {
+		led0 = &green_led_2;
+		sw0 = &joy_sel;
+	};
 };
 
 &usart1 {
