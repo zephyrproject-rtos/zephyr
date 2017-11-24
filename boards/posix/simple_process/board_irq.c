@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "irq_offload.h"
+
 /**
  * @brief Disable all interrupts on the CPU
  *
@@ -71,3 +73,16 @@ void board_irq_unlock(unsigned int key)
 void board_irq_full_unlock(void)
 {
 }
+
+
+/**
+ * @brief Run a function in interrupt context
+ *
+ * In this simple board, the function can just be run
+ * directly
+ */
+void irq_offload(irq_offload_routine_t routine, void *parameter)
+{
+	routine(parameter);
+}
+
