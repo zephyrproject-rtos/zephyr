@@ -1986,7 +1986,7 @@ static void net_key_update(struct bt_mesh_model *model,
 			send_net_key_status(model, ctx, idx, STATUS_SUCCESS);
 			return;
 		}
-		break;
+		/* fall through */
 	case BT_MESH_KR_PHASE_2:
 	case BT_MESH_KR_PHASE_3:
 		send_net_key_status(model, ctx, idx, STATUS_CANNOT_UPDATE);
