@@ -8,6 +8,7 @@
 
 
 void simulation_engine_print_error_and_exit(const char *format, ...);
+void simulation_engine_print_warning(const char *format, ...);
 void simulation_engine_print_trace(const char *format, ...);
 
 
