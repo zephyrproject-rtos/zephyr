@@ -17,6 +17,12 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/mesh.h>
 
+/* Private includes for raw Network & Transport layer access */
+#include "mesh.h"
+#include "net.h"
+#include "transport.h"
+#include "foundation.h"
+
 #define CID_NVAL   0xffff
 #define CID_LOCAL  0x0002
 
@@ -610,6 +616,47 @@ static int cmd_appidx(int argc, char *argv[])
 
 	net.app_idx = strtoul(argv[1], NULL, 0);
 	printk("AppIdx set to 0x%04x\n", net.app_idx);
+	return 0;
+}
+
+static int cmd_net_send(int argc, char *argv[])
+{
+	struct net_buf_simple *msg = NET_BUF_SIMPLE(32);
+	struct bt_mesh_msg_ctx ctx = {
+		.send_ttl = BT_MESH_TTL_DEFAULT,
+		.net_idx = net.net_idx,
+		.addr = net.dst,
+		.app_idx = net.app_idx,
+
+	};
+	struct bt_mesh_net_tx tx = {
+		.ctx = &ctx,
+		.src = net.local,
+		.xmit = bt_mesh_net_transmit_get(),
+		.sub = bt_mesh_subnet_get(net.net_idx),
+	};
+	size_t len;
+	int err;
+
+	if (argc < 2) {
+		return -EINVAL;
+	}
+
+	if (!tx.sub) {
+		printk("No matching subnet for NetKey Index 0x%04x\n",
+		       net.net_idx);
+		return 0;
+	}
+
+	net_buf_simple_init(msg, 0);
+	len = hex2bin(argv[1], msg->data, net_buf_simple_tailroom(msg) - 4);
+	net_buf_simple_add(msg, len);
+
+	err = bt_mesh_trans_send(&tx, msg, NULL, NULL);
+	if (err) {
+		printk("Failed to send (err %d)\n", err);
+	}
+
 	return 0;
 }
 
@@ -1619,6 +1666,8 @@ static const struct shell_cmd mesh_commands[] = {
 	{ "dst", cmd_dst, "[destination address]" },
 	{ "netidx", cmd_netidx, "[NetIdx]" },
 	{ "appidx", cmd_appidx, "[AppIdx]" },
+
+	{ "net-send", cmd_net_send, "<hex string>" },
 
 	/* Configuration Client Model operations */
 	{ "get-comp", cmd_get_comp, "[page]" },
