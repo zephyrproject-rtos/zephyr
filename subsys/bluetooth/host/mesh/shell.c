@@ -1769,7 +1769,7 @@ static const struct shell_cmd mesh_commands[] = {
 	{ "friend", cmd_friend, "[val: off, on]" },
 	{ "gatt-proxy", cmd_gatt_proxy, "[val: off, on]" },
 	{ "relay", cmd_relay, "[val: off, on] [count: 0-7] [interval: 0-32]" },
-	{ "app-key-add", cmd_app_key_add, "<NetKeyIndex> <AppKeyIndex> <val>" },
+	{ "app-key-add", cmd_app_key_add, "<NetKeyIndex> <AppKeyIndex> [val]" },
 	{ "mod-app-bind", cmd_mod_app_bind,
 		"<addr> <AppIndex> <Model ID> [Company ID]" },
 	{ "mod-pub", cmd_mod_pub, "<addr> <mod id> [cid] [<PubAddr> "
@@ -1789,13 +1789,13 @@ static const struct shell_cmd mesh_commands[] = {
 	/* Health Client Model Operations */
 	{ "fault-get", cmd_fault_get, "<Company ID>" },
 	{ "fault-clear", cmd_fault_clear, "<Company ID>" },
-	{ "fault-clear-unack", cmd_fault_clear_unack, "Company ID>" },
+	{ "fault-clear-unack", cmd_fault_clear_unack, "<Company ID>" },
 	{ "fault-test", cmd_fault_test, "<Company ID> <Test ID>" },
 	{ "fault-test-unack", cmd_fault_test_unack, "<Company ID> <Test ID>" },
-	{ "period-get", cmd_period_get, "" },
+	{ "period-get", cmd_period_get, NULL },
 	{ "period-set", cmd_period_set, "<divisor>" },
 	{ "period-set-unack", cmd_period_set_unack, "<divisor>" },
-	{ "attention-get", cmd_attention_get, "" },
+	{ "attention-get", cmd_attention_get, NULL },
 	{ "attention-set", cmd_attention_set, "<timer>" },
 	{ "attention-set-unack", cmd_attention_set_unack, "<timer>" },
 
