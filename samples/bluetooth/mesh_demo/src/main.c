@@ -17,7 +17,7 @@
 #define MOD_INTEL 0x0000
 
 #define GROUP_ADDR 0xc000
-#define PROV_ADDR  0x000f
+#define PUBLISHER_ADDR  0x000f
 
 #define OP_VENDOR_BUTTON BT_MESH_MODEL_OP_3(0x00, CID_INTEL)
 
@@ -37,14 +37,8 @@ static const u16_t net_idx;
 static const u16_t app_idx;
 static const u32_t iv_index;
 static u8_t flags;
-#if defined(NODE_ADDR)
 static u16_t addr = NODE_ADDR;
-#else
-static u16_t addr = 0x0b0c;
-#endif
 static u32_t seq;
-
-#define PROVISIONER_ADDR 0x0001
 
 static void heartbeat(u8_t hops, u16_t feat)
 {
@@ -86,24 +80,23 @@ static void attention_off(struct bt_mesh_model *model)
 	board_attention(false);
 }
 
+static const struct bt_mesh_health_srv_cb health_srv_cb = {
+	.attn_on = attention_on,
+	.attn_off = attention_off,
+};
+
 static struct bt_mesh_health_srv health_srv = {
-	.attention.on = attention_on,
-	.attention.off = attention_off,
+	.cb = &health_srv_cb,
+};
+
+static struct bt_mesh_model_pub health_pub = {
+	.msg  = BT_MESH_HEALTH_FAULT_MSG(0),
 };
 
 static struct bt_mesh_model root_models[] = {
 	BT_MESH_MODEL_CFG_SRV(&cfg_srv),
 	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
-	BT_MESH_MODEL_HEALTH_SRV(&health_srv),
-};
-
-static void vnd_publish(struct bt_mesh_model *mod)
-{
-	printk("Vendor publish\n");
-}
-
-static struct bt_mesh_model_pub vnd_pub = {
-	.func = vnd_publish,
+	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),
 };
 
 static void vnd_button_pressed(struct bt_mesh_model *model,
@@ -126,7 +119,7 @@ static const struct bt_mesh_model_op vnd_ops[] = {
 };
 
 static struct bt_mesh_model vnd_models[] = {
-	BT_MESH_MODEL_VND(CID_INTEL, MOD_INTEL, vnd_ops, &vnd_pub, NULL),
+	BT_MESH_MODEL_VND(CID_INTEL, MOD_INTEL, vnd_ops, NULL, NULL),
 };
 
 static struct bt_mesh_elem elements[] = {
@@ -158,7 +151,7 @@ static void configure(void)
 	bt_mesh_cfg_mod_sub_add_vnd(net_idx, addr, addr, GROUP_ADDR,
 				    MOD_INTEL, CID_INTEL, NULL);
 
-#if defined(NODE_ADDR) && NODE_ADDR == PROV_ADDR
+#if NODE_ADDR == PUBLISHER_ADDR
 	{
 		struct bt_mesh_cfg_hb_pub pub = {
 			.dst = GROUP_ADDR,
@@ -175,7 +168,7 @@ static void configure(void)
 #else
 	{
 		struct bt_mesh_cfg_hb_sub sub = {
-			.src = PROV_ADDR,
+			.src = PUBLISHER_ADDR,
 			.dst = GROUP_ADDR,
 			.period = 0x10,
 		};

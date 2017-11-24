@@ -210,8 +210,9 @@ type:
    $ cmake -DBOARD=qemu_x86 ..
    $ make run
 
-To run an application using the ARM qemu_cortex_m3 board configuration
-specify the qemu_cortex_m3 board instead.
+To exit the qemu emulator, press ``Ctrl-a``, followed by ``x``.
+
+Use the ``qemu_cortex_m3`` board configuration to test the ARM build.
 
 QEMU is not supported on all boards and SoCs. When developing for a specific
 hardware target you should always test on the actual hardware and should not

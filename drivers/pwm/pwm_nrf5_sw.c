@@ -204,10 +204,19 @@ static int pwm_nrf5_sw_init(struct device *dev)
 }
 
 #define PWM_0_MAP_SIZE 3
+/* NOTE: nRF51x BLE controller use HW tIFS hence using only PPI channels 0-6.
+ * nRF52x BLE controller implements SW tIFS and uses addition 6 PPI channels.
+ * Also, nRF52x requires one additional PPI channel for decryption rate boost.
+ * Hence, nRF52x BLE controller uses PPI channels 0-13.
+ *
+ * NOTE: If PA/LNA feature is enabled for nRF52x, then additional two PPI
+ * channels 14-15 are used by BLE controller.
+ */
+/* FIXME: For nRF51, use .timer = NRF_TIMER1, .ppi_base = 7 */
 static const struct pwm_config pwm_nrf5_sw_0_config = {
-	.timer = NRF_TIMER1,
+	.timer = NRF_TIMER2,
 	.gpiote_base = 0,
-	.ppi_base = 8,
+	.ppi_base = 14,
 	.map_size = PWM_0_MAP_SIZE,
 };
 

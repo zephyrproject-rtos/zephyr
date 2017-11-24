@@ -81,12 +81,14 @@ struct bt_mesh_app_key *bt_mesh_app_key_find(u16_t app_idx);
 bool bt_mesh_tx_in_progress(void);
 
 void bt_mesh_rx_reset(void);
+void bt_mesh_tx_reset(void);
 
 int bt_mesh_ctl_send(struct bt_mesh_net_tx *tx, u8_t ctl_op, void *data,
-		     size_t data_len, u64_t *seq_auth, bt_mesh_adv_func_t cb);
+		     size_t data_len, u64_t *seq_auth,
+		     const struct bt_mesh_send_cb *cb, void *cb_data);
 
 int bt_mesh_trans_send(struct bt_mesh_net_tx *tx, struct net_buf_simple *msg,
-		       bt_mesh_cb_t cb, void *cb_data);
+		       const struct bt_mesh_send_cb *cb, void *cb_data);
 
 int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx);
 

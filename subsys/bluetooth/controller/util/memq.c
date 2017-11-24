@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Nordic Semiconductor ASA
+ * Copyright (c) 2016-2017 Nordic Semiconductor ASA
  * Copyright (c) 2016 Vinayak Kariappa Chettimada
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -8,23 +8,25 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 
-inline void *memq_peek(void *tail, void *head, void **mem);
+#include "memq.h"
 
-void *memq_init(void *link, void **head, void **tail)
+inline memq_link_t *memq_peek(memq_link_t *head, memq_link_t *tail, void **mem);
+
+memq_link_t *memq_init(memq_link_t *link, memq_link_t **head, memq_link_t **tail)
 {
-	/* head and tail pointer to the initial link node */
+	/* head and tail pointer to the initial link */
 	*head = *tail = link;
 
 	return link;
 }
 
-void *memq_enqueue(void *mem, void *link, void **tail)
+memq_link_t *memq_enqueue(memq_link_t *link, void *mem, memq_link_t **tail)
 {
-	/* make the current tail link node point to new link node */
-	*((void **)*tail) = link;
+	/* make the current tail link's next point to new link */
+	(*tail)->next = link;
 
-	/* assign mem to current tail link node */
-	*((void **)*tail + 1) = mem;
+	/* assign mem to current tail link's mem */
+	(*tail)->mem = mem;
 
 	/* increment the tail! */
 	*tail = link;
@@ -32,71 +34,33 @@ void *memq_enqueue(void *mem, void *link, void **tail)
 	return link;
 }
 
-void *memq_peek(void *tail, void *head, void **mem)
+memq_link_t *memq_peek(memq_link_t *head, memq_link_t *tail, void **mem)
 {
-	void *link;
-
 	/* if head and tail are equal, then queue empty */
 	if (head == tail) {
 		return NULL;
 	}
 
-	/* pick the head link node */
-	link = head;
-
-	/* extract the element node */
+	/* extract the link's mem */
 	if (mem) {
-		*mem = *((void **)link + 1);
+		*mem = head->mem;
 	}
 
-	return link;
+	return head;
 }
 
-void *memq_dequeue(void *tail, void **head, void **mem)
+memq_link_t *memq_dequeue(memq_link_t *tail, memq_link_t **head, void **mem)
 {
-	void *link;
+	memq_link_t *link;
 
 	/* use memq peek to get the link and mem */
-	link = memq_peek(tail, *head, mem);
+	link = memq_peek(*head, tail, mem);
 	if (!link) {
 		return link;
 	}
 
 	/* increment the head to next link node */
-	*head = *((void **)link);
+	*head = link->next;
 
 	return link;
-}
-
-u32_t memq_ut(void)
-{
-	void *head;
-	void *tail;
-	void *link;
-	void *link_0[2];
-	void *link_1[2];
-
-	link = memq_init(&link_0[0], &head, &tail);
-	if ((link != &link_0[0]) || (head != &link_0[0])
-	    || (tail != &link_0[0])) {
-		return 1;
-	}
-
-	link = memq_dequeue(tail, &head, NULL);
-	if ((link) || (head != &link_0[0])) {
-		return 2;
-	}
-
-	link = memq_enqueue(0, &link_1[0], &tail);
-	if ((link != &link_1[0]) || (tail != &link_1[0])) {
-		return 3;
-	}
-
-	link = memq_dequeue(tail, &head, NULL);
-	if ((link != &link_0[0]) || (tail != &link_1[0])
-	    || (head != &link_1[0])) {
-		return 4;
-	}
-
-	return 0;
 }

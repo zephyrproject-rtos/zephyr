@@ -257,7 +257,9 @@ struct bt_mesh_net_tx {
 	struct bt_mesh_msg_ctx *ctx;
 	u16_t src;
 	u8_t  xmit;
-	bool  friend_cred;
+	u8_t  friend_cred:1,
+	      aszmic:1,
+	      aid:6;
 };
 
 extern struct bt_mesh_net bt_mesh;
@@ -310,10 +312,11 @@ int bt_mesh_net_encode(struct bt_mesh_net_tx *tx, struct net_buf_simple *buf,
 		       bool proxy);
 
 int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
-		     bt_mesh_adv_func_t cb);
+		     const struct bt_mesh_send_cb *cb, void *cb_data);
 
 int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
-		       bool new_key, bt_mesh_adv_func_t cb);
+		       bool new_key, const struct bt_mesh_send_cb *cb,
+		       void *cb_data);
 
 int bt_mesh_net_decode(struct net_buf_simple *data, enum bt_mesh_net_if net_if,
 		       struct bt_mesh_net_rx *rx, struct net_buf_simple *buf);

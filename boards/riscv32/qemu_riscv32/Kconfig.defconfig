@@ -1,5 +1,8 @@
 if BOARD_QEMU_RISCV32
 
+config BUILD_OUTPUT_BIN
+        default n
+
 config BOARD
 	default "qemu_riscv32"
 

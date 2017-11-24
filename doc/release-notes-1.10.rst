@@ -40,7 +40,29 @@ Drivers and Sensors
 Networking
 **********
 
-* details ...
+* HTTP API changed to use net-app API. Old HTTP API is deprecated.
+* Loopback network interface support added. This is used in testing only.
+* LWM2M multi-fragment network packet support added.
+* New CoAP library implementation which supports longer network packets.
+* Old ZoAP library deprecated.
+* mDNS (multicast DNS) support added.
+* SNTP (Simple Network Time Protocol) client library added.
+* TCP fixes.
+* RPL fixes.
+* ARP fixes.
+* DNS fixes.
+* LWM2M fixes.
+* Ethernet fixes.
+* net-app API fixes.
+* Network shell fixes.
+* BSD socket API fixes.
+* Network management API fixes.
+* Networking sample application fixes.
+* 6lo IPv6 header compression fixes.
+* IEEE 802.15.4 generic fixes.
+* IEEE 802.15.4 mcr20a driver fixes.
+* IEEE 802.15.4 kw41z driver fixes.
+* IEEE 802.15.4 nrf5 driver fixes.
 
 Bluetooth
 *********

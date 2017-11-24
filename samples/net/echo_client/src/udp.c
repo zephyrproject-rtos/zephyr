@@ -146,7 +146,7 @@ static void send_udp_data(struct net_app_ctx *ctx, struct data *data)
 
 	data->expecting_udp = sys_rand32_get() % ipsum_len;
 
-	pkt = prepare_send_pkt(ctx, data->proto, data->expecting_udp);
+	pkt = prepare_send_pkt(ctx, data->proto, &data->expecting_udp);
 	if (!pkt) {
 		return;
 	}

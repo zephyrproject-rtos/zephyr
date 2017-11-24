@@ -89,7 +89,7 @@ static void hb_send(struct bt_mesh_model *model)
 	BT_DBG("InitTTL %u feat 0x%04x", cfg->hb_pub.ttl, feat);
 
 	bt_mesh_ctl_send(&tx, TRANS_CTL_OP_HEARTBEAT, &hb, sizeof(hb),
-			 NULL, NULL);
+			 NULL, NULL, NULL);
 }
 
 static int comp_add_elem(struct net_buf_simple *buf, struct bt_mesh_elem *elem,
@@ -251,7 +251,7 @@ static u8_t _mod_pub_set(struct bt_mesh_model *model, u16_t pub_addr,
 		return STATUS_FEAT_NOT_SUPP;
 	}
 
-	if (!model->pub->func && period) {
+	if (!model->pub->update && period) {
 		return STATUS_NVAL_PUB_PARAM;
 	}
 
@@ -262,8 +262,9 @@ static u8_t _mod_pub_set(struct bt_mesh_model *model, u16_t pub_addr,
 		model->pub->ttl = 0;
 		model->pub->period = 0;
 		model->pub->retransmit = 0;
+		model->pub->count = 0;
 
-		if (model->pub->func) {
+		if (model->pub->update) {
 			k_delayed_work_cancel(&model->pub->timer);
 		}
 
@@ -281,7 +282,7 @@ static u8_t _mod_pub_set(struct bt_mesh_model *model, u16_t pub_addr,
 	model->pub->period = period;
 	model->pub->retransmit = retransmit;
 
-	if (model->pub->func) {
+	if (model->pub->update) {
 		s32_t period_ms;
 
 		period_ms = bt_mesh_model_pub_period_get(model);
@@ -343,7 +344,7 @@ static u8_t mod_unbind(struct bt_mesh_model *model, u16_t key_idx)
 
 		if (model->pub && model->pub->key == key_idx) {
 			_mod_pub_set(model, BT_MESH_ADDR_UNASSIGNED,
-				     BT_MESH_KEY_UNUSED, 0, 0, 0, 0);
+				     0, 0, 0, 0, 0);
 		}
 
 		return STATUS_SUCCESS;
@@ -946,7 +947,9 @@ static void send_mod_pub_status(struct bt_mesh_model *cfg_mod,
 		memcpy(net_buf_simple_add(msg, 2), mod_id, 2);
 	}
 
-	bt_mesh_model_send(cfg_mod, ctx, msg, NULL, NULL);
+	if (bt_mesh_model_send(cfg_mod, ctx, msg, NULL, NULL)) {
+		BT_ERR("Unable to send Model Publication Status");
+	}
 }
 
 static void mod_pub_get(struct bt_mesh_model *model,
@@ -1023,8 +1026,8 @@ static void mod_pub_set(struct bt_mesh_model *model,
 	BT_DBG("pub_app_idx 0x%03x, pub_ttl %u pub_period 0x%02x",
 	       pub_app_idx, pub_ttl, pub_period);
 	BT_DBG("retransmit 0x%02x (count %u interval %ums)", retransmit,
-	       BT_MESH_TRANSMIT_COUNT(retransmit),
-	       BT_MESH_TRANSMIT_INT(retransmit));
+	       BT_MESH_PUB_TRANSMIT_COUNT(retransmit),
+	       BT_MESH_PUB_TRANSMIT_INT(retransmit));
 
 	elem = bt_mesh_elem_find(elem_addr);
 	if (!elem) {
@@ -1130,8 +1133,8 @@ static void mod_pub_va_set(struct bt_mesh_model *model,
 	BT_DBG("pub_app_idx 0x%03x, pub_ttl %u pub_period 0x%02x",
 	       pub_app_idx, pub_ttl, pub_period);
 	BT_DBG("retransmit 0x%02x (count %u interval %ums)", retransmit,
-	       BT_MESH_TRANSMIT_COUNT(retransmit),
-	       BT_MESH_TRANSMIT_INT(retransmit));
+	       BT_MESH_PUB_TRANSMIT_COUNT(retransmit),
+	       BT_MESH_PUB_TRANSMIT_INT(retransmit));
 
 	elem = bt_mesh_elem_find(elem_addr);
 	if (!elem) {
@@ -1224,7 +1227,9 @@ static void send_mod_sub_status(struct bt_mesh_model *model,
 		memcpy(net_buf_simple_add(msg, 2), mod_id, 2);
 	}
 
-	bt_mesh_model_send(model, ctx, msg, NULL, NULL);
+	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
+		BT_ERR("Unable to send Model Subscription Status");
+	}
 }
 
 static void mod_sub_add(struct bt_mesh_model *model,
@@ -1867,7 +1872,9 @@ static void send_net_key_status(struct bt_mesh_model *model,
 	net_buf_simple_add_u8(msg, status);
 	net_buf_simple_add_le16(msg, idx);
 
-	bt_mesh_model_send(model, ctx, msg, NULL, NULL);
+	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
+		BT_ERR("Unable to send NetKey Status");
+	}
 }
 
 static void net_key_add(struct bt_mesh_model *model,
@@ -2365,7 +2372,9 @@ send_list:
 		}
 	}
 
-	bt_mesh_model_send(model, ctx, msg, NULL, NULL);
+	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
+		BT_ERR("Unable to send Model Application List message");
+	}
 }
 
 static void node_reset(struct bt_mesh_model *model,
@@ -2374,8 +2383,6 @@ static void node_reset(struct bt_mesh_model *model,
 {
 	/* Needed size: opcode (2 bytes) + msg + MIC */
 	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 0 + 4);
-	struct bt_mesh_cfg_srv *cfg = model->user_data;
-	int i;
 
 	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
 	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
@@ -2390,28 +2397,6 @@ static void node_reset(struct bt_mesh_model *model,
 	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
 		BT_ERR("Unable to send Node Reset Status");
 	}
-
-	/* Delete all app keys */
-	for (i = 0; i < ARRAY_SIZE(bt_mesh.app_keys); i++) {
-		struct bt_mesh_app_key *key = &bt_mesh.app_keys[i];
-
-		if (key->net_idx != BT_MESH_KEY_UNUSED) {
-			_app_key_del(key);
-		}
-	}
-
-	for (i = 0; i < ARRAY_SIZE(bt_mesh.sub); i++) {
-		struct bt_mesh_subnet *sub = &bt_mesh.sub[i];
-
-		if (cfg->hb_pub.net_idx == sub->net_idx) {
-			hb_pub_disable(cfg);
-		}
-
-		memset(sub, 0, sizeof(*sub));
-		sub->net_idx = BT_MESH_KEY_UNUSED;
-	}
-
-	memset(labels, 0, sizeof(labels));
 
 	bt_mesh_reset();
 }
@@ -2545,7 +2530,9 @@ static void send_krp_status(struct bt_mesh_model *model,
 	net_buf_simple_add_le16(msg, idx);
 	net_buf_simple_add_u8(msg, phase);
 
-	bt_mesh_model_send(model, ctx, msg, NULL, NULL);
+	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
+		BT_ERR("Unable to send Key Refresh State Status");
+	}
 }
 
 static void krp_get(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
@@ -2696,7 +2683,9 @@ static void hb_pub_send_status(struct bt_mesh_model *model,
 	net_buf_simple_add_le16(msg, cfg->hb_pub.net_idx);
 
 send:
-	bt_mesh_model_send(model, ctx, msg, NULL, NULL);
+	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
+		BT_ERR("Unable to send Heartbeat Publication Status");
+	}
 }
 
 static void heartbeat_pub_get(struct bt_mesh_model *model,
@@ -2822,7 +2811,9 @@ static void hb_sub_send_status(struct bt_mesh_model *model,
 		net_buf_simple_add_u8(msg, cfg->hb_sub.max_hops);
 	}
 
-	bt_mesh_model_send(model, ctx, msg, NULL, NULL);
+	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
+		BT_ERR("Unable to send Heartbeat Subscription Status");
+	}
 }
 
 static void heartbeat_sub_get(struct bt_mesh_model *model,
@@ -3045,6 +3036,42 @@ int bt_mesh_cfg_srv_init(struct bt_mesh_model *model, bool primary)
 	conf = cfg;
 
 	return 0;
+}
+
+void bt_mesh_cfg_reset(void)
+{
+	struct bt_mesh_cfg_srv *cfg = conf;
+	int i;
+
+	if (!cfg) {
+		return;
+	}
+
+	bt_mesh_set_hb_sub_dst(BT_MESH_ADDR_UNASSIGNED);
+
+	cfg->hb_sub.src = BT_MESH_ADDR_UNASSIGNED;
+	cfg->hb_sub.dst = BT_MESH_ADDR_UNASSIGNED;
+	cfg->hb_sub.expiry = 0;
+
+	hb_pub_disable(cfg);
+
+	/* Delete all app keys */
+	for (i = 0; i < ARRAY_SIZE(bt_mesh.app_keys); i++) {
+		struct bt_mesh_app_key *key = &bt_mesh.app_keys[i];
+
+		if (key->net_idx != BT_MESH_KEY_UNUSED) {
+			_app_key_del(key);
+		}
+	}
+
+	for (i = 0; i < ARRAY_SIZE(bt_mesh.sub); i++) {
+		struct bt_mesh_subnet *sub = &bt_mesh.sub[i];
+
+		memset(sub, 0, sizeof(*sub));
+		sub->net_idx = BT_MESH_KEY_UNUSED;
+	}
+
+	memset(labels, 0, sizeof(labels));
 }
 
 void bt_mesh_heartbeat(u16_t src, u16_t dst, u8_t hops, u16_t feat)

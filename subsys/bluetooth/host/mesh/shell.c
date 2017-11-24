@@ -17,7 +17,8 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/mesh.h>
 
-#define CID_NVAL 0xffff
+#define CID_NVAL   0xffff
+#define CID_LOCAL  0x0002
 
 /* Default net, app & dev key values, unless otherwise specified */
 static const u8_t default_key[16] = {
@@ -29,6 +30,7 @@ static struct {
 	u16_t local;
 	u16_t dst;
 	u16_t net_idx;
+	u16_t app_idx;
 } net = {
 	.local = BT_MESH_ADDR_UNASSIGNED,
 	.dst = BT_MESH_ADDR_UNASSIGNED,
@@ -55,10 +57,122 @@ static struct bt_mesh_cfg_srv cfg_srv = {
 	.relay_retransmit = BT_MESH_TRANSMIT(2, 20),
 };
 
+static u8_t cur_faults[4];
+static u8_t reg_faults[8];
+
+static void get_faults(u8_t *faults, u8_t faults_size, u8_t *dst, u8_t *count)
+{
+	u8_t i, limit = *count;
+
+	for (i = 0, *count = 0; i < faults_size && *count < limit; i++) {
+		if (faults[i]) {
+			*dst++ = faults[i];
+			(*count)++;
+		}
+	}
+}
+
+static int fault_get_cur(struct bt_mesh_model *model, u8_t *test_id,
+			 u16_t *company_id, u8_t *faults, u8_t *fault_count)
+{
+	printk("Sending current faults\n");
+
+	*test_id = 0x00;
+	*company_id = CID_LOCAL;
+
+	get_faults(cur_faults, sizeof(cur_faults), faults, fault_count);
+
+	return 0;
+}
+
+static int fault_get_reg(struct bt_mesh_model *model, u16_t cid,
+			 u8_t *test_id, u8_t *faults, u8_t *fault_count)
+{
+	if (cid != CID_LOCAL) {
+		printk("Faults requested for unknown Company ID 0x%04x\n", cid);
+		return -EINVAL;
+	}
+
+	printk("Sending registered faults\n");
+
+	*test_id = 0x00;
+
+	get_faults(reg_faults, sizeof(reg_faults), faults, fault_count);
+
+	return 0;
+}
+
+static int fault_clear(struct bt_mesh_model *model, uint16_t cid)
+{
+	if (cid != CID_LOCAL) {
+		return -EINVAL;
+	}
+
+	memset(reg_faults, 0, sizeof(reg_faults));
+
+	return 0;
+}
+
+static int fault_test(struct bt_mesh_model *model, uint8_t test_id,
+		      uint16_t cid)
+{
+	if (cid != CID_LOCAL) {
+		return -EINVAL;
+	}
+
+	if (test_id != 0x00) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static const struct bt_mesh_health_srv_cb health_srv_cb = {
+	.fault_get_cur = fault_get_cur,
+	.fault_get_reg = fault_get_reg,
+	.fault_clear = fault_clear,
+	.fault_test = fault_test,
+};
+
 static struct bt_mesh_health_srv health_srv = {
+	.cb = &health_srv_cb,
+};
+
+static struct bt_mesh_model_pub health_pub = {
+	.msg = BT_MESH_HEALTH_FAULT_MSG(0),
 };
 
 static struct bt_mesh_cfg_cli cfg_cli = {
+};
+
+void show_faults(u8_t test_id, u16_t cid, u8_t *faults, size_t fault_count)
+{
+	size_t i;
+
+	if (!fault_count) {
+		printk("Health Test ID 0x%02x Company ID 0x%04x: no faults\n",
+		       test_id, cid);
+		return;
+	}
+
+	printk("Health Test ID 0x%02x Company ID 0x%04x Fault Count %zu:\n",
+	       test_id, cid, fault_count);
+
+	for (i = 0; i < fault_count; i++) {
+		printk("\t0x%02x\n", faults[i]);
+	}
+}
+
+static void health_current_status(struct bt_mesh_health_cli *cli, u16_t addr,
+				  u8_t test_id, u16_t cid, u8_t *faults,
+				  size_t fault_count)
+{
+	printk("Health Current Status from 0x%04x\n", addr);
+	show_faults(test_id, cid, faults, fault_count);
+}
+
+static struct bt_mesh_health_cli health_cli = {
+	.current_status = health_current_status,
 };
 
 static const u8_t dev_uuid[16] = { 0xdd, 0xdd };
@@ -66,7 +180,8 @@ static const u8_t dev_uuid[16] = { 0xdd, 0xdd };
 static struct bt_mesh_model root_models[] = {
 	BT_MESH_MODEL_CFG_SRV(&cfg_srv),
 	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
-	BT_MESH_MODEL_HEALTH_SRV(&health_srv),
+	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),
+	BT_MESH_MODEL_HEALTH_CLI(&health_cli),
 };
 
 static struct bt_mesh_elem elements[] = {
@@ -74,7 +189,7 @@ static struct bt_mesh_elem elements[] = {
 };
 
 static const struct bt_mesh_comp comp = {
-	.cid = 0xffff,
+	.cid = CID_LOCAL,
 	.elem = elements,
 	.elem_count = ARRAY_SIZE(elements),
 };
@@ -231,29 +346,6 @@ static const struct bt_mesh_prov prov = {
 	.input = input,
 };
 
-static int cmd_init(int argc, char *argv[])
-{
-	int err;
-
-	err = bt_enable(NULL);
-	if (err && err != -EALREADY) {
-		printk("Bluetooth init failed (err %d)\n", err);
-		return 0;
-	} else if (!err) {
-		printk("Bluetooth initialized\n");
-	}
-
-	err = bt_mesh_init(&prov, &comp);
-	if (err) {
-		printk("Mesh initialization failed (err %d)\n", err);
-	}
-
-	printk("Mesh initialized\n");
-	printk("Use \"pb-adv on\" or \"pb-gatt on\" to enable advertising\n");
-
-	return 0;
-}
-
 static int cmd_reset(int argc, char *argv[])
 {
 	bt_mesh_reset();
@@ -305,7 +397,58 @@ static int cmd_lpn(int argc, char *argv[])
 
 	return 0;
 }
+
+static int cmd_poll(int argc, char *argv[])
+{
+	int err;
+
+	err = bt_mesh_lpn_poll();
+	if (err) {
+		printk("Friend Poll failed (err %d)\n", err);
+	}
+
+	return 0;
+}
+
+static void lpn_cb(u16_t friend_addr, bool established)
+{
+	if (established) {
+		printk("Friendship (as LPN) established to Friend 0x%04x\n",
+		       friend_addr);
+	} else {
+		printk("Friendship (as LPN) lost with Friend 0x%04x\n",
+		       friend_addr);
+	}
+}
+
 #endif /* MESH_LOW_POWER */
+
+static int cmd_init(int argc, char *argv[])
+{
+	int err;
+
+	err = bt_enable(NULL);
+	if (err && err != -EALREADY) {
+		printk("Bluetooth init failed (err %d)\n", err);
+		return 0;
+	} else if (!err) {
+		printk("Bluetooth initialized\n");
+	}
+
+	err = bt_mesh_init(&prov, &comp);
+	if (err) {
+		printk("Mesh initialization failed (err %d)\n", err);
+	}
+
+	printk("Mesh initialized\n");
+	printk("Use \"pb-adv on\" or \"pb-gatt on\" to enable advertising\n");
+
+#if IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)
+	bt_mesh_lpn_set_cb(lpn_cb);
+#endif
+
+	return 0;
+}
 
 #if defined(CONFIG_BT_MESH_GATT_PROXY)
 static int cmd_ident(int argc, char *argv[])
@@ -424,6 +567,18 @@ static int cmd_netidx(int argc, char *argv[])
 
 	net.net_idx = strtoul(argv[1], NULL, 0);
 	printk("NetIdx set to 0x%04x\n", net.net_idx);
+	return 0;
+}
+
+static int cmd_appidx(int argc, char *argv[])
+{
+	if (argc < 2) {
+		printk("AppIdx: 0x%04x\n", net.app_idx);
+		return 0;
+	}
+
+	net.app_idx = strtoul(argv[1], NULL, 0);
+	printk("AppIdx set to 0x%04x\n", net.app_idx);
 	return 0;
 }
 
@@ -676,6 +831,46 @@ static int cmd_mod_sub_add(int argc, char *argv[])
 	return 0;
 }
 
+static int cmd_mod_sub_del(int argc, char *argv[])
+{
+	u16_t elem_addr, sub_addr, mod_id, cid;
+	u8_t status;
+	int err;
+
+	if (argc < 4) {
+		return -EINVAL;
+	}
+
+	elem_addr = strtoul(argv[1], NULL, 0);
+	sub_addr = strtoul(argv[2], NULL, 0);
+	mod_id = strtoul(argv[3], NULL, 0);
+
+	if (argc > 4) {
+		cid = strtoul(argv[3], NULL, 0);
+		err = bt_mesh_cfg_mod_sub_del_vnd(net.net_idx, net.dst,
+						  elem_addr, sub_addr, mod_id,
+						  cid, &status);
+	} else {
+		err = bt_mesh_cfg_mod_sub_del(net.net_idx, net.dst, elem_addr,
+					      sub_addr, mod_id, &status);
+	}
+
+	if (err) {
+		printk("Unable to send Model Subscription Delete (err %d)\n",
+		       err);
+		return 0;
+	}
+
+	if (status) {
+		printk("Model Subscription Delete failed with status 0x%02x\n",
+		       status);
+	} else {
+		printk("Model subscription deltion was successful\n");
+	}
+
+	return 0;
+}
+
 static int mod_pub_get(u16_t addr, u16_t mod_id, u16_t cid)
 {
 	struct bt_mesh_cfg_mod_pub pub;
@@ -708,10 +903,10 @@ static int mod_pub_get(u16_t addr, u16_t mod_id, u16_t cid)
 	       "\tPublishTTL:                     %u\n"
 	       "\tPublishPeriod:                  0x%02x\n"
 	       "\tPublishRetransmitCount:         %u\n"
-	       "\tPublishRetransmitIntervalSteps: %u\n",
+	       "\tPublishRetransmitInterval:      %ums\n",
 	       addr, mod_id, pub.addr, pub.app_idx, pub.cred_flag, pub.ttl,
-	       pub.period, BT_MESH_TRANSMIT_COUNT(pub.transmit),
-	       BT_MESH_TRANSMIT_INT(pub.transmit));
+	       pub.period, BT_MESH_PUB_TRANSMIT_COUNT(pub.transmit),
+	       BT_MESH_PUB_TRANSMIT_INT(pub.transmit));
 
 	return 0;
 }
@@ -719,7 +914,8 @@ static int mod_pub_get(u16_t addr, u16_t mod_id, u16_t cid)
 static int mod_pub_set(u16_t addr, u16_t mod_id, u16_t cid, char *argv[])
 {
 	struct bt_mesh_cfg_mod_pub pub;
-	u8_t status, count, interval;
+	u8_t status, count;
+	u16_t interval;
 	int err;
 
 	pub.addr = strtoul(argv[0], NULL, 0);
@@ -735,12 +931,12 @@ static int mod_pub_set(u16_t addr, u16_t mod_id, u16_t cid, char *argv[])
 	}
 
 	interval = strtoul(argv[6], NULL, 0);
-	if (interval > 31) {
-		printk("Invalid retransmit interval\n");
+	if (interval > (31 * 50) || (interval % 50)) {
+		printk("Invalid retransmit interval %u\n", interval);
 		return -EINVAL;
 	}
 
-	pub.transmit = BT_MESH_TRANSMIT(count, interval);
+	pub.transmit = BT_MESH_PUB_TRANSMIT(count, interval);
 
 	if (cid == CID_NVAL) {
 		err = bt_mesh_cfg_mod_pub_set(net.net_idx, net.dst, addr,
@@ -1048,6 +1244,317 @@ int cmd_timeout(int argc, char *argv[])
 	return 0;
 }
 
+static int cmd_fault_get(int argc, char *argv[])
+{
+	u8_t faults[32];
+	size_t fault_count;
+	u8_t test_id;
+	u16_t cid;
+	int err;
+
+	if (argc < 2) {
+		return -EINVAL;
+	}
+
+	cid = strtoul(argv[1], NULL, 0);
+	fault_count = sizeof(faults);
+
+	err = bt_mesh_health_fault_get(net.net_idx, net.dst, net.app_idx, cid,
+				       &test_id, faults, &fault_count);
+	if (err) {
+		printk("Failed to send Health Fault Get (err %d)\n", err);
+	} else {
+		show_faults(test_id, cid, faults, fault_count);
+	}
+
+	return 0;
+}
+
+static int cmd_fault_clear(int argc, char *argv[])
+{
+	u8_t faults[32];
+	size_t fault_count;
+	u8_t test_id;
+	u16_t cid;
+	int err;
+
+	if (argc < 2) {
+		return -EINVAL;
+	}
+
+	cid = strtoul(argv[1], NULL, 0);
+	fault_count = sizeof(faults);
+
+	err = bt_mesh_health_fault_clear(net.net_idx, net.dst, net.app_idx,
+					 cid, &test_id, faults, &fault_count);
+	if (err) {
+		printk("Failed to send Health Fault Clear (err %d)\n", err);
+	} else {
+		show_faults(test_id, cid, faults, fault_count);
+	}
+
+	return 0;
+}
+
+static int cmd_fault_clear_unack(int argc, char *argv[])
+{
+	u16_t cid;
+	int err;
+
+	if (argc < 2) {
+		return -EINVAL;
+	}
+
+	cid = strtoul(argv[1], NULL, 0);
+
+	err = bt_mesh_health_fault_clear(net.net_idx, net.dst, net.app_idx,
+					 cid, NULL, NULL, NULL);
+	if (err) {
+		printk("Health Fault Clear Unacknowledged failed (err %d)\n",
+		       err);
+	}
+
+	return 0;
+}
+
+static int cmd_fault_test(int argc, char *argv[])
+{
+	u8_t faults[32];
+	size_t fault_count;
+	u8_t test_id;
+	u16_t cid;
+	int err;
+
+	if (argc < 3) {
+		return -EINVAL;
+	}
+
+	cid = strtoul(argv[1], NULL, 0);
+	test_id = strtoul(argv[2], NULL, 0);
+	fault_count = sizeof(faults);
+
+	err = bt_mesh_health_fault_test(net.net_idx, net.dst, net.app_idx,
+					cid, test_id, faults, &fault_count);
+	if (err) {
+		printk("Failed to send Health Fault Test (err %d)\n", err);
+	} else {
+		show_faults(test_id, cid, faults, fault_count);
+	}
+
+	return 0;
+}
+
+static int cmd_fault_test_unack(int argc, char *argv[])
+{
+	u16_t cid;
+	u8_t test_id;
+	int err;
+
+	if (argc < 3) {
+		return -EINVAL;
+	}
+
+	cid = strtoul(argv[1], NULL, 0);
+	test_id = strtoul(argv[2], NULL, 0);
+
+	err = bt_mesh_health_fault_test(net.net_idx, net.dst, net.app_idx,
+					cid, test_id, NULL, NULL);
+	if (err) {
+		printk("Health Fault Test Unacknowledged failed (err %d)\n",
+		       err);
+	}
+
+	return 0;
+}
+
+static int cmd_period_get(int argc, char *argv[])
+{
+	u8_t divisor;
+	int err;
+
+	err = bt_mesh_health_period_get(net.net_idx, net.dst, net.app_idx,
+					&divisor);
+	if (err) {
+		printk("Failed to send Health Period Get (err %d)\n", err);
+	} else {
+		printk("Health FastPeriodDivisor: %u\n", divisor);
+	}
+
+	return 0;
+}
+
+static int cmd_period_set(int argc, char *argv[])
+{
+	u8_t divisor, updated_divisor;
+	int err;
+
+	if (argc < 2) {
+		return -EINVAL;
+	}
+
+	divisor = strtoul(argv[1], NULL, 0);
+
+	err = bt_mesh_health_period_set(net.net_idx, net.dst, net.app_idx,
+					divisor, &updated_divisor);
+	if (err) {
+		printk("Failed to send Health Period Set (err %d)\n", err);
+	} else {
+		printk("Health FastPeriodDivisor: %u\n", updated_divisor);
+	}
+
+	return 0;
+}
+
+static int cmd_period_set_unack(int argc, char *argv[])
+{
+	u8_t divisor;
+	int err;
+
+	if (argc < 2) {
+		return -EINVAL;
+	}
+
+	divisor = strtoul(argv[1], NULL, 0);
+
+	err = bt_mesh_health_period_set(net.net_idx, net.dst, net.app_idx,
+					divisor, NULL);
+	if (err) {
+		printk("Failed to send Health Period Set (err %d)\n", err);
+	}
+
+	return 0;
+}
+
+static int cmd_attention_get(int argc, char *argv[])
+{
+	u8_t attention;
+	int err;
+
+	err = bt_mesh_health_attention_get(net.net_idx, net.dst, net.app_idx,
+					   &attention);
+	if (err) {
+		printk("Failed to send Health Attention Get (err %d)\n", err);
+	} else {
+		printk("Health Attention Timer: %u\n", attention);
+	}
+
+	return 0;
+}
+
+static int cmd_attention_set(int argc, char *argv[])
+{
+	u8_t attention, updated_attention;
+	int err;
+
+	if (argc < 2) {
+		return -EINVAL;
+	}
+
+	attention = strtoul(argv[1], NULL, 0);
+
+	err = bt_mesh_health_attention_set(net.net_idx, net.dst, net.app_idx,
+					   attention, &updated_attention);
+	if (err) {
+		printk("Failed to send Health Attention Set (err %d)\n", err);
+	} else {
+		printk("Health Attention Timer: %u\n", updated_attention);
+	}
+
+	return 0;
+}
+
+static int cmd_attention_set_unack(int argc, char *argv[])
+{
+	u8_t attention;
+	int err;
+
+	if (argc < 2) {
+		return -EINVAL;
+	}
+
+	attention = strtoul(argv[1], NULL, 0);
+
+	err = bt_mesh_health_attention_set(net.net_idx, net.dst, net.app_idx,
+					   attention, NULL);
+	if (err) {
+		printk("Failed to send Health Attention Set (err %d)\n", err);
+	}
+
+	return 0;
+}
+
+static int cmd_add_fault(int argc, char *argv[])
+{
+	u8_t fault_id;
+	u8_t i;
+
+	if (argc < 2) {
+		return -EINVAL;
+	}
+
+	fault_id = strtoul(argv[1], NULL, 0);
+	if (!fault_id) {
+		printk("The Fault ID must be non-zero!\n");
+		return -EINVAL;
+	}
+
+	for (i = 0; i < sizeof(cur_faults); i++) {
+		if (!cur_faults[i]) {
+			cur_faults[i] = fault_id;
+			break;
+		}
+	}
+
+	if (i == sizeof(cur_faults)) {
+		printk("Fault array is full. Use \"del-fault\" to clear it\n");
+		return 0;
+	}
+
+	for (i = 0; i < sizeof(reg_faults); i++) {
+		if (!reg_faults[i]) {
+			reg_faults[i] = fault_id;
+			break;
+		}
+	}
+
+	if (i == sizeof(reg_faults)) {
+		printk("No space to store more registered faults\n");
+	}
+
+	bt_mesh_fault_update(&elements[0]);
+
+	return 0;
+}
+
+static int cmd_del_fault(int argc, char *argv[])
+{
+	u8_t fault_id;
+	u8_t i;
+
+	if (argc < 2) {
+		memset(cur_faults, 0, sizeof(cur_faults));
+		printk("All current faults cleared\n");
+		return 0;
+	}
+
+	fault_id = strtoul(argv[1], NULL, 0);
+	if (!fault_id) {
+		printk("The Fault ID must be non-zero!\n");
+		return -EINVAL;
+	}
+
+	for (i = 0; i < sizeof(cur_faults); i++) {
+		if (cur_faults[i] == fault_id) {
+			cur_faults[i] = 0;
+			printk("Fault cleared\n");
+		}
+	}
+
+	bt_mesh_fault_update(&elements[0]);
+
+	return 0;
+}
+
 static const struct shell_cmd mesh_commands[] = {
 	{ "init", cmd_init, NULL },
 	{ "timeout", cmd_timeout, "[timeout in seconds]" },
@@ -1063,12 +1570,16 @@ static const struct shell_cmd mesh_commands[] = {
 	{ "provision", cmd_provision, "<NetKeyIndex> <addr> [IVIndex]" },
 #if defined(CONFIG_BT_MESH_LOW_POWER)
 	{ "lpn", cmd_lpn, "<value: off, on>" },
+	{ "poll", cmd_poll, NULL },
 #endif
 #if defined(CONFIG_BT_MESH_GATT_PROXY)
 	{ "ident", cmd_ident, NULL },
 #endif
 	{ "dst", cmd_dst, "[destination address]" },
 	{ "netidx", cmd_netidx, "[NetIdx]" },
+	{ "appidx", cmd_appidx, "[AppIdx]" },
+
+	/* Configuration Client Model operations */
 	{ "get-comp", cmd_get_comp, "[page]" },
 	{ "beacon", cmd_beacon, "[val: off, on]" },
 	{ "ttl", cmd_ttl, "[ttl: 0x00, 0x02-0x7f]" },
@@ -1082,9 +1593,29 @@ static const struct shell_cmd mesh_commands[] = {
 		"<AppKeyIndex> <cred> <ttl> <period> <count> <interval>]" },
 	{ "mod-sub-add", cmd_mod_sub_add,
 		"<elem addr> <sub addr> <Model ID> [Company ID]" },
+	{ "mod-sub-del", cmd_mod_sub_del,
+		"<elem addr> <sub addr> <Model ID> [Company ID]" },
 	{ "hb-sub", cmd_hb_sub, "[<src> <dst> <period>]" },
 	{ "hb-pub", cmd_hb_pub,
 		"[<dst> <count> <period> <ttl> <features> <NetKeyIndex>]" },
+
+	/* Health Client Model Operations */
+	{ "fault-get", cmd_fault_get, "<Company ID>" },
+	{ "fault-clear", cmd_fault_clear, "<Company ID>" },
+	{ "fault-clear-unack", cmd_fault_clear_unack, "Company ID>" },
+	{ "fault-test", cmd_fault_test, "<Company ID> <Test ID>" },
+	{ "fault-test-unack", cmd_fault_test_unack, "<Company ID> <Test ID>" },
+	{ "period-get", cmd_period_get, "" },
+	{ "period-set", cmd_period_set, "<divisor>" },
+	{ "period-set-unack", cmd_period_set_unack, "<divisor>" },
+	{ "attention-get", cmd_attention_get, "" },
+	{ "attention-set", cmd_attention_set, "<timer>" },
+	{ "attention-set-unack", cmd_attention_set_unack, "<timer>" },
+
+	/* Health Server Model Operations */
+	{ "add-fault", cmd_add_fault, "<Fault ID>" },
+	{ "del-fault", cmd_del_fault, "[Fault ID]" },
+
 	{ NULL, NULL, NULL}
 };
 

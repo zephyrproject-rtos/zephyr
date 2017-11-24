@@ -239,7 +239,7 @@ function(generate_inc_file_for_target
   add_dependencies(${target} ${generated_target_name})
 endfunction()
 
-# 2.1 zephyr_library_*
+# 1.2 zephyr_library_*
 #
 # Zephyr libraries use CMake's library concept and a set of
 # assumptions about how zephyr code is organized to cut down on
@@ -260,6 +260,11 @@ endfunction()
 # The methods modify the CMake target_* API to reduce boilerplate;
 #  PRIVATE is assumed
 #  The target is assumed to be ZEPHYR_CURRENT_LIBRARY
+#
+# When a flag that is given through the zephyr_* API conflicts with
+# the zephyr_library_* API then precedence will be given to the
+# zephyr_library_* API. In other words, local configuration overrides
+# global configuration.
 
 # Constructor with a directory-inferred name
 macro(zephyr_library)
@@ -319,12 +324,34 @@ function(zephyr_library_compile_definitions item)
 endfunction()
 
 function(zephyr_library_compile_options item)
-  target_compile_options(${ZEPHYR_CURRENT_LIBRARY} PRIVATE ${item} ${ARGN})
+  # The compiler is relied upon for sane behaviour when flags are in
+  # conflict. Compilers generally give precedence to flags given late
+  # on the command line. So to ensure that zephyr_library_* flags are
+  # placed late on the command line we create a dummy interface
+  # library and link with it to obtain the flags.
+  #
+  # Linking with a dummy interface library will place flags later on
+  # the command line than the the flags from zephyr_interface because
+  # zephyr_interface will be the first interface library that flags
+  # are taken from.
+
+  string(RANDOM random)
+  set(lib_name options_interface_lib_${random})
+
+  add_library(           ${lib_name} INTERFACE)
+  target_compile_options(${lib_name} INTERFACE ${item} ${ARGN})
+
+  target_link_libraries(${ZEPHYR_CURRENT_LIBRARY} ${lib_name})
 endfunction()
 
 function(zephyr_library_cc_option)
-  foreach(arg ${ARGV})
-     target_cc_option(${ZEPHYR_CURRENT_LIBRARY} PRIVATE ${arg})
+  foreach(option ${ARGV})
+    string(MAKE_C_IDENTIFIER check${option} check)
+    check_c_compiler_flag(${option} ${check})
+
+    if(${check})
+      zephyr_library_compile_options(${option})
+    endif()
   endforeach()
 endfunction()
 
@@ -572,6 +599,11 @@ function(zephyr_library_link_libraries_ifdef feature_toggle item)
   endif()
 endfunction()
 
+macro(list_append_ifdef feature_toggle list)
+  if(${${feature_toggle}})
+    list(APPEND ${list} ${ARGN})
+  endif()
+endmacro()
 
 # 3.2. *_ifndef
 # See 3.1 *_ifdef

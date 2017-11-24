@@ -3,7 +3,6 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
 /** @file
  * @brief CRC 16 computation function
  */
@@ -14,6 +13,16 @@
 #include <zephyr/types.h>
 #include <stdbool.h>
 #include <stddef.h>
+
+/**
+ * @defgroup checksum Checksum
+ */
+
+/**
+ * @defgroup crc16 CRC 16
+ * @ingroup checksum
+ * @{
+ */
 
 /**
  * @brief Generic function for computing CRC 16
@@ -65,4 +74,7 @@ static inline u16_t crc16_ansi(const u8_t *src, size_t len)
 	return crc16(src, len, 0x8005, 0xffff, true);
 }
 
+/**
+ * @}
+ */
 #endif

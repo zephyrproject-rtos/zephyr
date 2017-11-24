@@ -188,15 +188,18 @@ static const struct bt_mesh_prov *prov;
 static void close_link(u8_t err, u8_t reason);
 
 #if defined(CONFIG_BT_MESH_PB_ADV)
-static void buf_sent(struct net_buf *buf, u16_t duration, int err)
+static void buf_sent(int err, void *user_data)
 {
 	if (!link.tx.buf[0]) {
 		return;
 	}
 
-	k_delayed_work_submit(&link.tx.retransmit,
-			      duration + RETRANSMIT_TIMEOUT);
+	k_delayed_work_submit(&link.tx.retransmit, RETRANSMIT_TIMEOUT);
 }
+
+static struct bt_mesh_send_cb buf_sent_cb = {
+	.end = buf_sent,
+};
 
 static void free_segments(void)
 {
@@ -271,7 +274,7 @@ static struct net_buf *adv_buf_create(void)
 
 static u8_t pending_ack = XACT_NVAL;
 
-static void ack_complete(struct net_buf *buf, u16_t duration, int err)
+static void ack_complete(u16_t duration, int err, void *user_data)
 {
 	BT_DBG("xact %u complete", (u8_t)pending_ack);
 	pending_ack = XACT_NVAL;
@@ -279,7 +282,10 @@ static void ack_complete(struct net_buf *buf, u16_t duration, int err)
 
 static void gen_prov_ack_send(u8_t xact_id)
 {
-	bt_mesh_adv_func_t complete;
+	static const struct bt_mesh_send_cb cb = {
+		.start = ack_complete,
+	};
+	const struct bt_mesh_send_cb *complete;
 	struct net_buf *buf;
 
 	BT_DBG("xact_id %u", xact_id);
@@ -296,7 +302,7 @@ static void gen_prov_ack_send(u8_t xact_id)
 
 	if (pending_ack == XACT_NVAL) {
 		pending_ack = xact_id;
-		complete = ack_complete;
+		complete = &cb;
 	} else {
 		complete = NULL;
 	}
@@ -305,7 +311,7 @@ static void gen_prov_ack_send(u8_t xact_id)
 	net_buf_add_u8(buf, xact_id);
 	net_buf_add_u8(buf, GPC_ACK);
 
-	bt_mesh_adv_send(buf, complete);
+	bt_mesh_adv_send(buf, complete, NULL);
 	net_buf_unref(buf);
 }
 
@@ -323,9 +329,9 @@ static void send_reliable(void)
 		}
 
 		if (i + 1 < ARRAY_SIZE(link.tx.buf) && link.tx.buf[i + 1]) {
-			bt_mesh_adv_send(buf, NULL);
+			bt_mesh_adv_send(buf, NULL, NULL);
 		} else {
-			bt_mesh_adv_send(buf, buf_sent);
+			bt_mesh_adv_send(buf, &buf_sent_cb, NULL);
 		}
 	}
 }
@@ -1135,9 +1141,9 @@ static void prov_retransmit(struct k_work *work)
 		BT_DBG("%u bytes: %s", buf->len, bt_hex(buf->data, buf->len));
 
 		if (i + 1 < ARRAY_SIZE(link.tx.buf) && link.tx.buf[i + 1]) {
-			bt_mesh_adv_send(buf, NULL);
+			bt_mesh_adv_send(buf, NULL, NULL);
 		} else {
-			bt_mesh_adv_send(buf, buf_sent);
+			bt_mesh_adv_send(buf, &buf_sent_cb, NULL);
 		}
 
 	}

@@ -3944,6 +3944,7 @@ extern void k_poll_event_init(struct k_poll_event *event, u32_t type,
  *
  * @retval 0 One or more events are ready.
  * @retval -EAGAIN Waiting period timed out.
+ * @retval -EINTR Poller thread has been interrupted.
  */
 
 extern int k_poll(struct k_poll_event *events, int num_events,

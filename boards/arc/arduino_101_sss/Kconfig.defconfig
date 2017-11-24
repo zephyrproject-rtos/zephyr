@@ -4,13 +4,14 @@ if BOARD_ARDUINO_101_SSS
 config BOARD
 	default "arduino_101_sss"
 
-
+if !HAS_DTS
 config FLASH_SIZE
 	default 128
 
 
 config FLASH_BASE_ADDRESS
 	default 0x40034000
+endif
 
 if GPIO_QMSI && BMI160 && BMI160_TRIGGER
 
