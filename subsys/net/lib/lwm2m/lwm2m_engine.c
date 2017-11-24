@@ -28,6 +28,7 @@
 
 #include <zephyr/types.h>
 #include <stddef.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <ctype.h>
@@ -78,6 +79,12 @@
 
 #if defined(CONFIG_NET_APP_DTLS)
 #define INSTANCE_INFO "Zephyr DTLS LwM2M-client"
+#endif
+
+#if defined(CONFIG_COAP_EXTENDED_OPTIONS_LEN)
+#define	COAP_OPTION_BUF_LEN	(CONFIG_COAP_EXTENDED_OPTIONS_LEN_VALUE + 1)
+#else
+#define	COAP_OPTION_BUF_LEN	13
 #endif
 
 #define MAX_TOKEN_LEN		8
@@ -132,6 +139,13 @@ struct block_context {
 };
 
 static struct block_context block1_contexts[NUM_BLOCK1_CONTEXT];
+
+/* write-attribute related definitons */
+static const char * const LWM2M_ATTR_STR[] = { "pmin", "pmax",
+					       "gt", "lt", "st" };
+static const u8_t LWM2M_ATTR_LEN[] = { 4, 4, 2, 2, 2 };
+
+static struct lwm2m_attr write_attr_pool[CONFIG_LWM2M_NUM_ATTR];
 
 /* periodic / notify / observe handling stack */
 static K_THREAD_STACK_DEFINE(engine_thread_stack,
@@ -287,6 +301,50 @@ static void free_block_ctx(struct block_context *ctx)
 }
 
 /* observer functions */
+
+struct notification_attrs {
+	/* use to determine which value is set */
+	u8_t flags;
+	float32_value_t gt;
+	float32_value_t lt;
+	float32_value_t st;
+	s32_t pmin;
+	s32_t pmax;
+};
+
+static int update_attrs(sys_slist_t *list, struct notification_attrs *out)
+{
+	struct lwm2m_attr *attr;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(list, attr, node) {
+		switch (attr->type) {
+		case LWM2M_ATTR_PMIN:
+			out->pmin = attr->int_val;
+			break;
+		case LWM2M_ATTR_PMAX:
+			out->pmax = attr->int_val;
+			break;
+		case LWM2M_ATTR_LT:
+			out->lt = attr->float_val;
+			break;
+		case LWM2M_ATTR_GT:
+			out->gt = attr->float_val;
+			break;
+		case LWM2M_ATTR_STEP:
+			out->st = attr->float_val;
+			break;
+		default:
+			SYS_LOG_ERR("Unrecognize attr: %d",
+				    attr->type);
+			return -EINVAL;
+		}
+
+		/* mark as set */
+		out->flags |= BIT(attr->type);
+	}
+
+	return 0;
+}
 
 int lwm2m_notify_observer(u16_t obj_id, u16_t obj_inst_id, u16_t res_id)
 {
@@ -625,6 +683,8 @@ int lwm2m_delete_obj_inst(u16_t obj_id, u16_t obj_inst_id)
 	int i, ret = 0;
 	struct lwm2m_engine_obj *obj;
 	struct lwm2m_engine_obj_inst *obj_inst;
+	struct lwm2m_attr *attr, *tmp;
+	sys_snode_t *prev_node = NULL;
 
 	obj = get_engine_obj(obj_id);
 	if (!obj) {
@@ -645,8 +705,23 @@ int lwm2m_delete_obj_inst(u16_t obj_id, u16_t obj_inst_id)
 
 	/* reset obj_inst and res_inst data structure */
 	for (i = 0; i < obj_inst->resource_count; i++) {
+		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(
+				&obj_inst->resources[i].attr_list, attr,
+				tmp, node) {
+			sys_slist_remove(&obj_inst->resources[i].attr_list,
+					 prev_node, &attr->node);
+			memset(attr, 0, sizeof(*attr));
+		}
+
 		memset(obj_inst->resources + i, 0,
 		       sizeof(struct lwm2m_engine_res_inst));
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(
+			&obj_inst->attr_list, attr, tmp, node) {
+		sys_slist_remove(&obj_inst->attr_list, prev_node,
+				 &attr->node);
+		memset(attr, 0, sizeof(*attr));
 	}
 
 	memset(obj_inst, 0, sizeof(struct lwm2m_engine_obj_inst));
@@ -702,6 +777,50 @@ static u16_t atou16(u8_t *buf, u16_t buflen, u16_t *len)
 
 	*len = pos;
 	return val;
+}
+
+static int atof32(const char *input, float32_value_t *out)
+{
+	char *pos, *end, buf[24];
+	long int val;
+	s32_t base = 1000000, sign = 1;
+
+	if (!input || !out) {
+		return -EINVAL;
+	}
+
+	strncpy(buf, input, sizeof(buf) - 1);
+	buf[sizeof(buf) - 1] = '\0';
+
+	if (strchr(buf, '-')) {
+		sign = -1;
+	}
+
+	pos = strchr(buf, '.');
+	if (pos) {
+		*pos = '\0';
+	}
+
+	errno = 0;
+	val = strtol(buf, &end, 10);
+	if (errno || *end || val > INT_MAX || val < INT_MIN) {
+		return -EINVAL;
+	}
+
+	out->val1 = (s32_t) val;
+	out->val2 = 0;
+
+	if (!pos) {
+		return 0;
+	}
+
+	while (*(++pos) && base > 1 && isdigit(*pos)) {
+		out->val2 = out->val2 * 10 + (*pos - '0');
+		base /= 10;
+	}
+
+	out->val2 *= sign * base;
+	return !*pos || base == 1 ? 0 : -EINVAL;
 }
 
 static int coap_options_to_path(struct coap_option *opt, int options_count,
@@ -2072,13 +2191,237 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 				    struct lwm2m_engine_context *context)
 {
+	char opt_buf[COAP_OPTION_BUF_LEN];
+	int nr_opt, ret = 0;
+	struct coap_option options[NR_LWM2M_ATTR];
+	struct lwm2m_engine_obj_inst *obj_inst = NULL;
+	struct lwm2m_engine_res_inst *res = NULL;
+	struct lwm2m_input_context *in;
+	struct lwm2m_obj_path *path;
+	struct lwm2m_attr *attr, *tmp;
+	struct notification_attrs nattrs = { 0 };
+	sys_slist_t *attr_list;
+	sys_snode_t *prev_node = NULL;
+	u8_t type = 0;
+	void *nattr_ptrs[NR_LWM2M_ATTR] = {
+		&nattrs.pmin, &nattrs.pmax, &nattrs.gt, &nattrs.lt, &nattrs.st
+	};
+
 	if (!obj || !context) {
 		return -EINVAL;
 	}
 
-	/* TODO: set parameters on resource for notification */
+	/* do not expose security obj */
+	if (obj->obj_id == LWM2M_OBJECT_SECURITY_ID) {
+		return -ENOENT;
+	}
 
-	return -ENOTSUP;
+	in = context->in;
+	path = context->path;
+
+	nr_opt = coap_find_options(in->in_cpkt, COAP_OPTION_URI_QUERY,
+				   options, NR_LWM2M_ATTR);
+	if (nr_opt <= 0) {
+		SYS_LOG_ERR("No attribute found!");
+		/* translate as bad request */
+		return -EEXIST;
+	}
+
+	/* get lwm2m_attr slist */
+	if (path->level == 3) {
+		ret = engine_get_resource(path, &res);
+		if (ret < 0) {
+			return ret;
+		}
+
+		attr_list = &res->attr_list;
+	} else if (path->level == 1) {
+		attr_list = &obj->attr_list;
+	} else if (path->level == 2) {
+		obj_inst = get_engine_obj_inst(path->obj_id, path->obj_inst_id);
+		if (!obj_inst) {
+			return -ENOENT;
+		}
+
+		attr_list = &obj_inst->attr_list;
+	} else {
+		/* bad request */
+		return -EEXIST;
+	}
+
+	/* retrieve existing attributes */
+	update_attrs(attr_list, &nattrs);
+
+	/* loop through options to parse attribute */
+	for (int i = 0; i < nr_opt; i++) {
+		int limit = min(options[i].len, 5), plen = 0, vlen;
+		float32_value_t val = { 0 };
+		type = 0;
+
+		/* search for '=' */
+		while (plen < limit && options[i].value[plen] != '=') {
+			plen += 1;
+		}
+
+		/* either length = 2(gt/lt/st) or = 4(pmin/pmax) */
+		if (plen != 2 && plen != 4) {
+			continue;
+		}
+
+		/* matching attribute name */
+		for (type = 0; type < NR_LWM2M_ATTR; type++) {
+			if (LWM2M_ATTR_LEN[type] == plen &&
+			    !memcmp(options[i].value, LWM2M_ATTR_STR[type],
+				    LWM2M_ATTR_LEN[type])) {
+				break;
+			}
+		}
+
+		/* unrecognized attribute */
+		if (type == NR_LWM2M_ATTR) {
+			continue;
+		}
+
+		/* unset attribute when no value's given */
+		if (options[i].len == plen) {
+			nattrs.flags &= ~BIT(type);
+
+			memset(nattr_ptrs[type], 0,
+			       type <= LWM2M_ATTR_PMAX ?
+			       sizeof(s32_t) : sizeof(float32_value_t));
+			continue;
+		}
+
+		/* gt/lt/st cannot be assigned to obj/obj_inst unless unset */
+		if (plen == 2 && path->level <= 2) {
+			return -EEXIST;
+		}
+
+		vlen = options[i].len - plen - 1;
+		memcpy(opt_buf, options[i].value + plen + 1, vlen);
+		opt_buf[vlen] = '\0';
+
+		/* convert value to integer or float */
+		if (plen == 4) {
+			char *end;
+			long int v;
+
+			/* pmin/pmax: integer (sec 5.1.2)
+			 * however, negative is non-sense
+			 */
+			errno = 0;
+			v = strtol(opt_buf, &end, 10);
+			if (errno || *end || v > INT_MAX || v < 0) {
+				ret = -EINVAL;
+			}
+
+			val.val1 = v;
+		} else {
+			/* gt/lt/st: type float */
+			ret = atof32(opt_buf, &val);
+		}
+
+		if (ret < 0) {
+			SYS_LOG_ERR("invalid attr[%s] value",
+				    LWM2M_ATTR_STR[type]);
+			/* bad request */
+			return -EEXIST;
+		}
+
+		if (type <= LWM2M_ATTR_PMAX) {
+			*(s32_t *)nattr_ptrs[type] = val.val1;
+		} else {
+			memcpy(nattr_ptrs[type], &val, sizeof(float32_value_t));
+		}
+
+		nattrs.flags |= BIT(type);
+	}
+
+	if ((nattrs.flags & (BIT(LWM2M_ATTR_PMIN) | BIT(LWM2M_ATTR_PMAX))) &&
+	    nattrs.pmin > nattrs.pmax) {
+		SYS_LOG_DBG("pmin (%d) > pmax (%d)", nattrs.pmin, nattrs.pmax);
+		return -EEXIST;
+	}
+
+	if (nattrs.flags & (BIT(LWM2M_ATTR_LT) | BIT(LWM2M_ATTR_GT))) {
+		if (!((nattrs.lt.val1 < nattrs.gt.val1) ||
+		      (nattrs.lt.val2 < nattrs.gt.val2))) {
+			SYS_LOG_DBG("lt > gt");
+			return -EEXIST;
+		}
+
+		if (nattrs.flags & BIT(LWM2M_ATTR_STEP)) {
+			s32_t st1 = nattrs.st.val1 * 2 +
+				    nattrs.st.val2 * 2 / 1000000;
+			s32_t st2 = nattrs.st.val2 * 2 % 1000000;
+			if (!(((nattrs.lt.val1 + st1) < nattrs.gt.val1) ||
+			      ((nattrs.lt.val2 + st2) < nattrs.gt.val2))) {
+				SYS_LOG_DBG("lt + 2*st > gt");
+				return -EEXIST;
+			}
+		}
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(attr_list, attr, tmp, node) {
+		type = attr->type;
+
+		if (!(BIT(type) & nattrs.flags)) {
+			SYS_LOG_DBG("Unset attr %s", LWM2M_ATTR_STR[type]);
+			sys_slist_remove(attr_list, prev_node, &attr->node);
+			memset(attr, 0, sizeof(*attr));
+			continue;
+		}
+
+		prev_node = &attr->node;
+		nattrs.flags &= ~BIT(type);
+
+		if (type <= LWM2M_ATTR_PMAX) {
+			attr->int_val = *(s32_t *)nattr_ptrs[type];
+		} else {
+			memcpy(&attr->float_val, nattr_ptrs[type],
+			       sizeof(float32_value_t));
+		}
+
+		SYS_LOG_DBG("Update %s to %d.%06d", LWM2M_ATTR_STR[type],
+			    attr->float_val.val1, attr->float_val.val2);
+	}
+
+	/* add attribute to obj/obj_inst/res */
+	for (type = 0; nattrs.flags && type < NR_LWM2M_ATTR; type++) {
+		int i;
+
+		if (!(BIT(type) & nattrs.flags)) {
+			continue;
+		}
+
+		/* grab an entry for newly added attribute */
+		for (i = 0; i < CONFIG_LWM2M_NUM_ATTR; i++) {
+			if (!write_attr_pool[i].used) {
+				break;
+			}
+		}
+
+		if (i == CONFIG_LWM2M_NUM_ATTR) {
+			return -ENOMEM;
+		}
+
+		attr = write_attr_pool + i;
+		attr->type = type;
+		attr->used = true;
+		if (type <= LWM2M_ATTR_PMAX) {
+			attr->int_val = *(s32_t *)nattr_ptrs[type];
+		} else {
+			memcpy(&attr->float_val, nattr_ptrs[type],
+			       sizeof(float32_value_t));
+		}
+
+		sys_slist_append(attr_list, &attr->node);
+		nattrs.flags &= ~BIT(type);
+		SYS_LOG_DBG("Add %s to %d.%06d", LWM2M_ATTR_STR[type],
+			    attr->float_val.val1, attr->float_val.val2);
+	}
+
+	return 0;
 }
 
 static int lwm2m_exec_handler(struct lwm2m_engine_obj *obj,

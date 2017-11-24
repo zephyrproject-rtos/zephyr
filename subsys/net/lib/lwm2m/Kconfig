@@ -179,6 +179,13 @@ config LWM2M_DEVICE_ERROR_CODE_MAX
 	  This value sets the maximum number of error codes that the device
 	  object will store before ignoring new values.
 
+config LWM2M_NUM_ATTR
+	int "Maximum # of LWM2M attributes"
+	default 20
+	help
+	  This value sets up the maximum number of LwM2M attributes that
+	  we can handle at the same time.
+
 menu "IPSO Alliance Smart Object Support"
 
 source "subsys/net/lib/lwm2m/Kconfig.ipso"
