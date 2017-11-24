@@ -28,6 +28,7 @@ build:
         options: "-e HOME=/home/buildslave --privileged=true --tty --net=bridge --user buildslave"
 
     ci:
+      - sudo apt-get install gcovr gcc-6-multilib
       - export CCACHE_DIR=${SHIPPABLE_BUILD_DIR}/ccache/.ccache
       - >
         if [ "$IS_PULL_REQUEST" = "true" ]; then
@@ -67,8 +68,11 @@ build:
       - rm test_file.txt
       - ccache -s
     on_failure:
-      - rm -rf sanity-out out-2nd-pass
       - mkdir -p shippable/testresults
+      - mkdir -p shippable/codecoverage
+      - source zephyr-env.sh
+      - gcovr -r ${ZEPHYR_BASE} -x > shippable/codecoverage/coverage.xml
+      - rm -rf sanity-out out-2nd-pass
       - >
           if [ -e compliance.xml ]; then
             cp compliance.xml shippable/testresults/;
@@ -78,8 +82,11 @@ build:
             cp ./scripts/sanity_chk/last_sanity.xml shippable/testresults/;
           fi;
     on_success:
-      - rm -rf sanity-out out-2nd-pass
       - mkdir -p shippable/testresults
+      - mkdir -p shippable/codecoverage
+      - source zephyr-env.sh
+      - gcovr -r ${ZEPHYR_BASE} -x > shippable/codecoverage/coverage.xml
+      - rm -rf sanity-out out-2nd-pass
       - >
           if [ -e compliance.xml ]; then
             cp compliance.xml shippable/testresults/;
