@@ -26,6 +26,15 @@ void simulation_engine_print_error_and_exit(const char *format, ...)
 	exit(1);
 }
 
+void simulation_engine_print_warning(const char *format, ...)
+{
+	va_list variable_args;
+
+	va_start(variable_args, format);
+	vfprintf(stderr, format, variable_args);
+	va_end(variable_args);
+}
+
 void simulation_engine_print_trace(const char *format, ...)
 {
 	va_list variable_args;

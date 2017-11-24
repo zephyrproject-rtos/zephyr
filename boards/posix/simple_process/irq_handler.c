@@ -8,7 +8,7 @@
 #include <drivers/system_timer.h>
 #include <posix_core.h>
 #include <kernel_structs.h>
-#include "hw_models.h"
+#include "hw_models_top.h"
 
 /**
  * When an interrupt is raised, this function is called to handle it

@@ -20,13 +20,15 @@
  */
 
 #include <soc.h>
-#include "hw_models.h"
+#include "hw_models_top.h"
 #include <stdlib.h>
+
+#define STOP_AFTER_5_SECONDS 1
 
 
 void main_clean_up(void)
 {
-	hw_cleanup();
+	hwm_cleanup();
 	/*Eventually also cleanup threads in POSIX core*/
 	exit(0);
 }
@@ -44,11 +46,15 @@ void main_clean_up(void)
 int main(void)
 {
 
-	hw_init();
+	hwm_init();
+
+#if (STOP_AFTER_5_SECONDS)
+	hwm_set_end_of_time(5e6);
+#endif
 
 	posix_soc_boot_cpu();
 
-	hw_models_main_loop();
+	hwm_main_loop();
 
 	return 0;
 
