@@ -295,7 +295,7 @@ static void secure_beacon_recv(struct net_buf_simple *buf)
 		bt_mesh_beacon_ivu_initiator(false);
 	}
 
-	iv_change = bt_mesh_iv_update(iv_index, BT_MESH_IV_UPDATE(flags));
+	iv_change = bt_mesh_net_iv_update(iv_index, BT_MESH_IV_UPDATE(flags));
 
 	kr_change = bt_mesh_kr_update(sub, BT_MESH_KEY_REFRESH(flags), new_key);
 	if (kr_change) {

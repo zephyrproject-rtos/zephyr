@@ -265,6 +265,26 @@ int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
 		      u8_t flags, u32_t iv_index, u32_t seq,
 		      u16_t addr, const u8_t dev_key[16]);
 
+/** @brief Toggle the IV Update test mode
+ *
+ *  This API is only available if the IV Update test mode has been enabled
+ *  in Kconfig. It is needed for passing most of the IV Update qualification
+ *  test cases.
+ *
+ *  @param enable true to enable IV Update test mode, false to disable it.
+ */
+void bt_mesh_iv_update_test(bool enable);
+
+/** @brief Toggle the IV Update state
+ *
+ *  This API is only available if the IV Update test mode has been enabled
+ *  in Kconfig. It is needed for passing most of the IV Update qualification
+ *  test cases.
+ *
+ *  @return true if IV Update In Progress state was entered, false otherwise.
+ */
+bool bt_mesh_iv_update(void);
+
 /** @brief Toggle the Low Power feature of the local device
  *
  *  Enables or disables the Low Power feature of the local device. This is
