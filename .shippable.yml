@@ -5,7 +5,7 @@ compiler: gcc
 env:
     global:
         - SDK=0.9.2
-        - SANITYCHECK_OPTIONS=" --inline-logs -R"
+        - SANITYCHECK_OPTIONS=" -p simple_process --inline-logs -R"
         - SANITYCHECK_OPTIONS_RETRY="${SANITYCHECK_OPTIONS} --only-failed --outdir=out-2nd-pass"
         - ZEPHYR_SDK_INSTALL_DIR=/opt/sdk/zephyr-sdk-0.9.2
         - ZEPHYR_GCC_VARIANT=zephyr
@@ -28,6 +28,7 @@ build:
         options: "-e HOME=/home/buildslave --privileged=true --tty --net=bridge --user buildslave"
 
     ci:
+      - sudo apt-get install gcovr
       - export CCACHE_DIR=${SHIPPABLE_BUILD_DIR}/ccache/.ccache
       - >
         if [ "$IS_PULL_REQUEST" = "true" ]; then
@@ -54,10 +55,10 @@ build:
             ./scripts/ci/get_modified_tests.py --commits origin/${PULL_REQUEST_BASE_BRANCH}..HEAD > modified_tests.args;
             ./scripts/ci/get_modified_boards.py --commits origin/${PULL_REQUEST_BASE_BRANCH}..HEAD > modified_boards.args;
 
-            if [ -s modified_boards.args ]; then
+            if [ -s modified_boardsX.args ]; then
               ./scripts/sanitycheck +modified_boards.args --save-tests test_file.txt;
             fi;
-            if [ -s modified_tests.args ]; then
+            if [ -s modified_testsX.args ]; then
               ./scripts/sanitycheck +modified_tests.args --save-tests test_file.txt;
             fi;
             rm -f modified_tests.args modified_boards.args;
@@ -65,13 +66,18 @@ build:
       - ./scripts/sanitycheck ${SANITYCHECK_OPTIONS} --save-tests test_file.txt
       - ./scripts/sanitycheck  --load-tests test_file.txt --subset ${MATRIX_BUILD}/${MATRIX_BUILDS} || ./scripts/sanitycheck ${SANITYCHECK_OPTIONS_RETRY} || ./scripts/sanitycheck ${SANITYCHECK_OPTIONS_RETRY}
       - rm test_file.txt
+      - gcovr -r ${ZEPHYR_BASE} -x > cov.xml
       - ccache -s
     on_failure:
       - rm -rf sanity-out out-2nd-pass
       - mkdir -p shippable/testresults
+      - mkdir -p shippable/codecoverage
       - >
           if [ -e compliance.xml ]; then
             cp compliance.xml shippable/testresults/;
+          fi;
+          if [ -e cov.xml ]; then
+            cp cov.xml shippable/codecoverage/coverage.xml;
           fi;
       - >
           if [ -e ./scripts/sanity_chk/last_sanity.xml ]; then
@@ -80,9 +86,13 @@ build:
     on_success:
       - rm -rf sanity-out out-2nd-pass
       - mkdir -p shippable/testresults
+      - mkdir -p shippable/codecoverage
       - >
           if [ -e compliance.xml ]; then
             cp compliance.xml shippable/testresults/;
+          fi;
+          if [ -e cov.xml ]; then
+            cp cov.xml shippable/codecoverage/coverage.xml;
           fi;
       - >
           if [ -e ./scripts/sanity_chk/last_sanity.xml ]; then
