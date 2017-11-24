@@ -358,6 +358,37 @@ static bool str2bool(const char *str)
 	return (!strcmp(str, "on") || !strcmp(str, "enable"));
 }
 
+static u8_t hex2val(char c)
+{
+	if (c >= '0' && c <= '9') {
+		return c - '0';
+	} else if (c >= 'a' && c <= 'f') {
+		return c - 'a' + 10;
+	} else if (c >= 'A' && c <= 'F') {
+		return c - 'A' + 10;
+	} else {
+		return 0;
+	}
+}
+
+static size_t hex2bin(const char *hex, u8_t *bin, size_t bin_len)
+{
+	size_t len = 0;
+
+	while (*hex && len < bin_len) {
+		bin[len] = hex2val(*hex++) << 4;
+
+		if (!*hex) {
+			len++;
+			break;
+		}
+
+		bin[len++] |= hex2val(*hex++);
+	}
+
+	return len;
+}
+
 #if defined(CONFIG_BT_MESH_LOW_POWER)
 static int cmd_lpn(int argc, char *argv[])
 {
@@ -724,6 +755,7 @@ static int cmd_relay(int argc, char *argv[])
 
 static int cmd_app_key_add(int argc, char *argv[])
 {
+	u8_t key_val[16];
 	u16_t key_net_idx, key_app_idx;
 	u8_t status;
 	int err;
@@ -734,6 +766,15 @@ static int cmd_app_key_add(int argc, char *argv[])
 
 	key_net_idx = strtoul(argv[1], NULL, 0);
 	key_app_idx = strtoul(argv[2], NULL, 0);
+
+	if (argc > 3) {
+		size_t len;
+
+		len = hex2bin(argv[3], key_val, sizeof(key_val));
+		memset(key_val, 0, sizeof(key_val) - len);
+	} else {
+		memcpy(key_val, default_key, sizeof(key_val));
+	}
 
 	/* TODO: decode key value that's given in hex */
 
