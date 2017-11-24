@@ -3,6 +3,6 @@ name: Native POSIX port
 type: native
 arch: posix
 toolchain:
-  - host
+  - zephyr
 testing:
   default: true
