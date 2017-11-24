@@ -662,19 +662,33 @@ static int cmd_net_send(int argc, char *argv[])
 
 static int cmd_iv_update(int argc, char *argv[])
 {
-	if (!bt_mesh_is_provisioned()) {
-		printk("Not yet provisioned!\n");
-		return 0;
+	if (bt_mesh_iv_update()) {
+		printk("Transitioned to IV Update In Progress state\n");
+	} else {
+		printk("Transitioned to IV Update Normal state\n");
 	}
 
-	if (bt_mesh.iv_update) {
-		printk("Transitioning to IV Update Normal state\n");
-		bt_mesh_iv_update(bt_mesh.iv_index, false);
-	} else {
-		printk("Transitioning to IV Update In Progress state\n");
-		bt_mesh_iv_update(bt_mesh.iv_index + 1, true);
-		printk("New IV Index 0x%08x\n", bt_mesh.iv_index);
+	printk("IV Index is 0x%08x\n", bt_mesh.iv_index);
+
+	return 0;
+}
+
+static int cmd_iv_update_test(int argc, char *argv[])
+{
+	bool enable;
+
+	if (argc < 2) {
+		return -EINVAL;
 	}
+
+	enable = str2bool(argv[1]);
+	if (enable) {
+		printk("Enabling IV Update test mode\n");
+	} else {
+		printk("Disabling IV Update test mode\n");
+	}
+
+	bt_mesh_iv_update_test(enable);
 
 	return 0;
 }
@@ -1782,6 +1796,7 @@ static const struct shell_cmd mesh_commands[] = {
 	/* Commands which access internal APIs, for testing only */
 	{ "net-send", cmd_net_send, "<hex string>" },
 	{ "iv-update", cmd_iv_update, NULL },
+	{ "iv-update-test", cmd_iv_update_test, "<value: off, on>" },
 
 	/* Configuration Client Model operations */
 	{ "get-comp", cmd_get_comp, "[page]" },

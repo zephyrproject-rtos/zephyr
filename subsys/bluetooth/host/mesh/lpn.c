@@ -986,7 +986,7 @@ int bt_mesh_lpn_friend_update(struct bt_mesh_net_rx *rx,
 		bt_mesh_net_beacon_update(sub);
 	}
 
-	bt_mesh_iv_update(iv_index, BT_MESH_IV_UPDATE(msg->flags));
+	bt_mesh_net_iv_update(iv_index, BT_MESH_IV_UPDATE(msg->flags));
 
 	if (lpn->groups_changed) {
 		sub_update(TRANS_CTL_OP_FRIEND_SUB_ADD);

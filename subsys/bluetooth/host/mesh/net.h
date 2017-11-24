@@ -197,6 +197,7 @@ struct bt_mesh_net {
 	u32_t seq:24,            /* Next outgoing sequence number */
 	      iv_update:1,       /* 1 if IV Update in Progress */
 	      ivu_initiator:1,   /* IV Update initiated by us */
+	      ivu_test:1,        /* IV Update test mode */
 	      pending_update:1,  /* Update blocked by SDU in progress */
 	      valid:1;           /* 0 if unused */
 
@@ -300,7 +301,7 @@ int bt_mesh_net_beacon_update(struct bt_mesh_subnet *sub);
 
 void bt_mesh_rpl_reset(void);
 
-bool bt_mesh_iv_update(u32_t iv_index, bool iv_update);
+bool bt_mesh_net_iv_update(u32_t iv_index, bool iv_update);
 
 struct bt_mesh_subnet *bt_mesh_subnet_get(u16_t net_idx);
 
