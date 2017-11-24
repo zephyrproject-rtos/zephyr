@@ -115,10 +115,12 @@ zephyr_compile_options(
   )
 endif()
 
+if(CONFIG_ARCH_POSIX)
 zephyr_compile_options_ifdef(CONFIG_COVERAGE
   -fprofile-arcs
   -ftest-coverage
 )
+endif()
 
 
 zephyr_compile_options(
