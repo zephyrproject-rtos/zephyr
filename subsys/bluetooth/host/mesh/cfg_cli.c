@@ -300,7 +300,8 @@ static void mod_pub_status(struct bt_mesh_model *model,
 struct mod_sub_param {
 	u8_t *status;
 	u16_t elem_addr;
-	u16_t sub_addr;
+	u16_t *sub_addr;
+	u16_t *expect_sub;
 	u16_t mod_id;
 	u16_t cid;
 };
@@ -335,11 +336,15 @@ static void mod_sub_status(struct bt_mesh_model *model,
 	mod_id = net_buf_simple_pull_le16(buf);
 
 	param = cli->op_param;
-	if (param->elem_addr != elem_addr ||
-	    param->sub_addr != sub_addr || param->mod_id != mod_id ||
+	if (param->elem_addr != elem_addr || param->mod_id != mod_id ||
+	    (param->expect_sub && *param->expect_sub != sub_addr) ||
 	    param->cid != cid) {
 		BT_WARN("Model Subscription Status parameters did not match");
 		return;
+	}
+
+	if (param->sub_addr) {
+		*param->sub_addr = sub_addr;
 	}
 
 	*param->status = status;
@@ -788,7 +793,7 @@ static int mod_sub(u32_t op, u16_t net_idx, u16_t addr, u16_t elem_addr,
 	struct mod_sub_param param = {
 		.status = status,
 		.elem_addr = elem_addr,
-		.sub_addr = sub_addr,
+		.expect_sub = &sub_addr,
 		.mod_id = mod_id,
 		.cid = cid,
 	};
@@ -877,6 +882,120 @@ int bt_mesh_cfg_mod_sub_overwrite_vnd(u16_t net_idx, u16_t addr,
 
 	return mod_sub(OP_MOD_SUB_OVERWRITE, net_idx, addr, elem_addr,
 		       sub_addr, mod_id, cid, status);
+}
+
+static int mod_sub_va(u32_t op, u16_t net_idx, u16_t addr, u16_t elem_addr,
+		      const u8_t label[16], u16_t mod_id, u16_t cid,
+		      u16_t *virt_addr, u8_t *status)
+{
+	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 22 + 4);
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = net_idx,
+		.app_idx = BT_MESH_KEY_DEV,
+		.addr = addr,
+		.send_ttl = BT_MESH_TTL_DEFAULT,
+	};
+	struct mod_sub_param param = {
+		.status = status,
+		.elem_addr = elem_addr,
+		.sub_addr = virt_addr,
+		.mod_id = mod_id,
+		.cid = cid,
+	};
+	int err;
+
+	err = check_cli();
+	if (err) {
+		return err;
+	}
+
+	BT_DBG("net_idx 0x%04x addr 0x%04x elem_addr 0x%04x label %s",
+	       net_idx, addr, elem_addr, label);
+	BT_DBG("mod_id 0x%04x cid 0x%04x", mod_id, cid);
+
+	bt_mesh_model_msg_init(msg, op);
+	net_buf_simple_add_le16(msg, elem_addr);
+	net_buf_simple_add_mem(msg, label, 16);
+
+	if (cid != CID_NVAL) {
+		net_buf_simple_add_le16(msg, cid);
+	}
+
+	net_buf_simple_add_le16(msg, mod_id);
+
+	err = bt_mesh_model_send(cli->model, &ctx, msg, NULL, NULL);
+	if (err) {
+		BT_ERR("model_send() failed (err %d)", err);
+		return err;
+	}
+
+	if (!status) {
+		return 0;
+	}
+
+	return cli_wait(&param, OP_MOD_SUB_STATUS);
+}
+
+int bt_mesh_cfg_mod_sub_va_add(u16_t net_idx, u16_t addr, u16_t elem_addr,
+			       const u8_t label[16], u16_t mod_id,
+			       u16_t *virt_addr, u8_t *status)
+{
+	return mod_sub_va(OP_MOD_SUB_VA_ADD, net_idx, addr, elem_addr, label,
+			  mod_id, CID_NVAL, virt_addr, status);
+}
+
+int bt_mesh_cfg_mod_sub_va_add_vnd(u16_t net_idx, u16_t addr, u16_t elem_addr,
+				   const u8_t label[16], u16_t mod_id,
+				   u16_t cid, u16_t *virt_addr, u8_t *status)
+{
+	if (cid == CID_NVAL) {
+		return -EINVAL;
+	}
+
+	return mod_sub_va(OP_MOD_SUB_VA_ADD, net_idx, addr, elem_addr, label,
+			  mod_id, cid, virt_addr, status);
+}
+
+int bt_mesh_cfg_mod_sub_va_del(u16_t net_idx, u16_t addr, u16_t elem_addr,
+			       const u8_t label[16], u16_t mod_id,
+			       u16_t *virt_addr, u8_t *status)
+{
+	return mod_sub_va(OP_MOD_SUB_VA_DEL, net_idx, addr, elem_addr, label,
+			  mod_id, CID_NVAL, virt_addr, status);
+}
+
+int bt_mesh_cfg_mod_sub_va_del_vnd(u16_t net_idx, u16_t addr, u16_t elem_addr,
+				   const u8_t label[16], u16_t mod_id,
+				   u16_t cid, u16_t *virt_addr, u8_t *status)
+{
+	if (cid == CID_NVAL) {
+		return -EINVAL;
+	}
+
+	return mod_sub_va(OP_MOD_SUB_VA_DEL, net_idx, addr, elem_addr, label,
+			  mod_id, cid, virt_addr, status);
+}
+
+int bt_mesh_cfg_mod_sub_va_overwrite(u16_t net_idx, u16_t addr,
+				     u16_t elem_addr, const u8_t label[16],
+				     u16_t mod_id, u16_t *virt_addr,
+				     u8_t *status)
+{
+	return mod_sub_va(OP_MOD_SUB_VA_OVERWRITE, net_idx, addr, elem_addr,
+			  label, mod_id, CID_NVAL, virt_addr, status);
+}
+
+int bt_mesh_cfg_mod_sub_va_overwrite_vnd(u16_t net_idx, u16_t addr,
+					 u16_t elem_addr, const u8_t label[16],
+					 u16_t mod_id, u16_t cid,
+					 u16_t *virt_addr, u8_t *status)
+{
+	if (cid == CID_NVAL) {
+		return -EINVAL;
+	}
+
+	return mod_sub_va(OP_MOD_SUB_VA_OVERWRITE, net_idx, addr, elem_addr,
+			  label, mod_id, cid, virt_addr, status);
 }
 
 static int mod_pub_get(u16_t net_idx, u16_t addr, u16_t elem_addr,

@@ -959,6 +959,99 @@ static int cmd_mod_sub_del(int argc, char *argv[])
 	return 0;
 }
 
+static int cmd_mod_sub_add_va(int argc, char *argv[])
+{
+	u16_t elem_addr, sub_addr, mod_id, cid;
+	u8_t label[16];
+	u8_t status;
+	size_t len;
+	int err;
+
+	if (argc < 4) {
+		return -EINVAL;
+	}
+
+	elem_addr = strtoul(argv[1], NULL, 0);
+
+	len = hex2bin(argv[2], label, sizeof(label));
+	memset(label + len, 0, sizeof(label) - len);
+
+	mod_id = strtoul(argv[3], NULL, 0);
+
+	if (argc > 4) {
+		cid = strtoul(argv[4], NULL, 0);
+		err = bt_mesh_cfg_mod_sub_va_add_vnd(net.net_idx, net.dst,
+						     elem_addr, label, mod_id,
+						     cid, &sub_addr, &status);
+	} else {
+		err = bt_mesh_cfg_mod_sub_va_add(net.net_idx, net.dst,
+						 elem_addr, label, mod_id,
+						 &sub_addr, &status);
+	}
+
+	if (err) {
+		printk("Unable to send Mod Sub VA Add (err %d)\n", err);
+		return 0;
+	}
+
+	if (status) {
+		printk("Mod Sub VA Add failed with status 0x%02x\n",
+		       status);
+	} else {
+		printk("0x%04x subscribed to Label UUID %s (va 0x%04x)\n",
+		       elem_addr, argv[2], sub_addr);
+	}
+
+	return 0;
+}
+
+static int cmd_mod_sub_del_va(int argc, char *argv[])
+{
+	u16_t elem_addr, sub_addr, mod_id, cid;
+	u8_t label[16];
+	u8_t status;
+	size_t len;
+	int err;
+
+	if (argc < 4) {
+		return -EINVAL;
+	}
+
+	elem_addr = strtoul(argv[1], NULL, 0);
+
+	len = hex2bin(argv[2], label, sizeof(label));
+	memset(label + len, 0, sizeof(label) - len);
+
+	mod_id = strtoul(argv[3], NULL, 0);
+
+	if (argc > 4) {
+		cid = strtoul(argv[4], NULL, 0);
+		err = bt_mesh_cfg_mod_sub_va_del_vnd(net.net_idx, net.dst,
+						     elem_addr, label, mod_id,
+						     cid, &sub_addr, &status);
+	} else {
+		err = bt_mesh_cfg_mod_sub_va_del(net.net_idx, net.dst,
+						 elem_addr, label, mod_id,
+						 &sub_addr, &status);
+	}
+
+	if (err) {
+		printk("Unable to send Model Subscription Delete (err %d)\n",
+		       err);
+		return 0;
+	}
+
+	if (status) {
+		printk("Model Subscription Delete failed with status 0x%02x\n",
+		       status);
+	} else {
+		printk("0x%04x unsubscribed from Label UUID %s (va 0x%04x)\n",
+		       elem_addr, argv[2], sub_addr);
+	}
+
+	return 0;
+}
+
 static int mod_pub_get(u16_t addr, u16_t mod_id, u16_t cid)
 {
 	struct bt_mesh_cfg_mod_pub pub;
@@ -1685,6 +1778,10 @@ static const struct shell_cmd mesh_commands[] = {
 		"<elem addr> <sub addr> <Model ID> [Company ID]" },
 	{ "mod-sub-del", cmd_mod_sub_del,
 		"<elem addr> <sub addr> <Model ID> [Company ID]" },
+	{ "mod-sub-add-va", cmd_mod_sub_add_va,
+		"<elem addr> <Label UUID> <Model ID> [Company ID]" },
+	{ "mod-sub-del-va", cmd_mod_sub_del_va,
+		"<elem addr> <Label UUID> <Model ID> [Company ID]" },
 	{ "hb-sub", cmd_hb_sub, "[<src> <dst> <period>]" },
 	{ "hb-pub", cmd_hb_pub,
 		"[<dst> <count> <period> <ttl> <features> <NetKeyIndex>]" },
