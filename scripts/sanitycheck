@@ -661,15 +661,14 @@ class MakeGoal:
     MakeGenerator is used for tasks outside of building tests (such as
     defconfigs) which is why MakeGoal is a separate class from TestInstance.
     """
-    def __init__(self, name, text, qemu, make_log, build_log, run_log,
-                 qemu_log):
+    def __init__(self, name, text, handler, make_log, build_log, run_log, handler_log):
         self.name = name
         self.text = text
-        self.qemu = qemu
+        self.handler = handler
         self.make_log = make_log
         self.build_log = build_log
         self.run_log = run_log
-        self.qemu_log = qemu_log
+        self.handler_log = handler_log
         self.make_state = "waiting"
         self.failed = False
         self.finished = False
@@ -688,7 +687,7 @@ class MakeGoal:
             return self.run_log
         elif self.make_state == "finished":
             # QEMU finished, but timed out or otherwise wasn't successful
-            return self.qemu_log
+            return self.handler_log
 
     def fail(self, reason):
         self.failed = True
@@ -843,8 +842,8 @@ class MakeGenerator:
         run_logfile = os.path.join(outdir, "run.log")
         qemu_logfile = os.path.join(outdir, "qemu.log")
 
-        q = QEMUHandler(name, outdir, qemu_logfile, timeout)
-        args.append("QEMU_PIPE=%s" % q.get_fifo())
+        qemu_handler = QEMUHandler(name, outdir, qemu_logfile, timeout)
+        args.append("QEMU_PIPE=%s" % qemu_handler.get_fifo())
         text = (self._get_rule_header(name) +
                 self._get_sub_make(name, "building", directory,
                                    outdir, build_logfile, args) +
@@ -852,7 +851,7 @@ class MakeGenerator:
                                    outdir, run_logfile,
                                    args, make_args="run") +
                 self._get_rule_footer(name))
-        self.goals[name] = MakeGoal(name, text, q, self.logfile, build_logfile,
+        self.goals[name] = MakeGoal(name, text, qemu_handler, self.logfile, build_logfile,
                                     run_logfile, qemu_logfile)
 
     def add_unit_goal(self, name, directory, outdir, args, timeout=30, coverage=False):
@@ -868,8 +867,8 @@ class MakeGenerator:
                 self._get_sub_make(name, "building", directory,
                                    outdir, build_logfile, args) +
                 self._get_rule_footer(name))
-        q = UnitHandler(name, directory, outdir, run_logfile, valgrind_logfile, timeout)
-        self.goals[name] = MakeGoal(name, text, q, self.logfile, build_logfile,
+        unit_handler = UnitHandler(name, directory, outdir, run_logfile, valgrind_logfile, timeout)
+        self.goals[name] = MakeGoal(name, text, unit_handler, self.logfile, build_logfile,
                                     run_logfile, valgrind_logfile)
 
     def add_native_goal(self, name, directory, outdir, args, timeout=30, coverage=False):
@@ -883,8 +882,8 @@ class MakeGenerator:
                 self._get_sub_make(name, "building", directory,
                                    outdir, build_logfile, args) +
                 self._get_rule_footer(name))
-        q = NativeHandler(name, directory, outdir, run_logfile, valgrind_logfile, timeout)
-        self.goals[name] = MakeGoal(name, text, q, self.logfile, build_logfile,
+        native_handler = NativeHandler(name, directory, outdir, run_logfile, valgrind_logfile, timeout)
+        self.goals[name] = MakeGoal(name, text, native_handler, self.logfile, build_logfile,
                                     run_logfile, valgrind_logfile)
 
     def add_test_instance(self, ti, build_only=False, enable_slow=False, coverage=False,
@@ -963,21 +962,21 @@ class MakeGenerator:
                     # will cause the 'make run' invocation to exit with
                     # nonzero status.
                     # Need to distinguish this case from a compilation failure.
-                    if goal.qemu:
+                    if goal.handler:
                         goal.fail("qemu_crash")
                     else:
                         goal.fail("build_error")
                 else:
                     if state == "finished":
-                        if goal.qemu:
-                            if goal.qemu.unit:
+                        if goal.handler:
+                            if goal.handler.unit:
                                 # We can't run unit tests with Make
-                                goal.qemu.handle()
-                                if goal.qemu.returncode == 2:
-                                    goal.qemu_log = goal.qemu.valgrind_log
-                                elif goal.qemu.returncode:
-                                    goal.qemu_log = goal.qemu.run_log
-                            thread_status, metrics = goal.qemu.get_state()
+                                goal.handler.handle()
+                                if goal.handler.returncode == 2:
+                                    goal.handler_log = goal.handler.valgrind_log
+                                elif goal.handler.returncode:
+                                    goal.handler_log = goal.handler.run_log
+                            thread_status, metrics = goal.handler.get_state()
                             goal.metrics.update(metrics)
                             if thread_status == "passed":
                                 goal.success()
@@ -1846,7 +1845,7 @@ class TestSuite:
                     if tc.get('classname') == "%s:%s" %(i.platform.name, i.test.name):
                         eleTestsuite.remove(tc)
 
-            if not goal.failed and goal.qemu:
+            if not goal.failed and goal.handler:
                     handler_time = "%s" %(goal.metrics["handler_time"])
 
             eleTestcase = ET.SubElement(eleTestsuite, 'testcase', classname="%s:%s" %(i.platform.name, i.test.name), name="%s" %(name), time=handler_time)
@@ -1891,7 +1890,7 @@ class TestSuite:
                     rowdict["status"] = goal.reason
                 else:
                     rowdict["passed"] = True
-                    if goal.qemu:
+                    if goal.handler:
                         rowdict["handler_time"] = goal.metrics["handler_time"]
                     rowdict["ram_size"] = goal.metrics["ram_size"]
                     rowdict["rom_size"] = goal.metrics["rom_size"]
