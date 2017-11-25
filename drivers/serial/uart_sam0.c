@@ -151,11 +151,37 @@ static void uart_sam0_isr(void *arg)
 	}
 }
 
+static int uart_sam0_fifo_fill(struct device *dev, const u8_t *tx_data, int len)
+{
+	SercomUsart *regs = DEV_CFG(dev)->regs;
+
+	if (regs->INTFLAG.bit.DRE && len >= 1) {
+		regs->DATA.reg = tx_data[0];
+		return 1;
+	} else {
+		return 0;
+	}
+}
+
+static void uart_sam0_irq_tx_enable(struct device *dev)
+{
+	SercomUsart *regs = DEV_CFG(dev)->regs;
+
+	regs->INTENSET.reg = SERCOM_USART_INTENCLR_DRE;
+}
+
 static void uart_sam0_irq_tx_disable(struct device *dev)
 {
 	SercomUsart *const regs = DEV_CFG(dev)->regs;
 
 	regs->INTENCLR.reg = SERCOM_USART_INTENCLR_DRE;
+}
+
+static int uart_sam0_irq_tx_ready(struct device *dev)
+{
+	SercomUsart *const regs = DEV_CFG(dev)->regs;
+
+	return regs->INTFLAG.bit.DRE != 0;
 }
 
 static void uart_sam0_irq_rx_enable(struct device *dev)
@@ -219,8 +245,11 @@ static const struct uart_driver_api uart_sam0_driver_api = {
 	.poll_in = uart_sam0_poll_in,
 	.poll_out = uart_sam0_poll_out,
 #if CONFIG_UART_INTERRUPT_DRIVEN
+	.fifo_fill = uart_sam0_fifo_fill,
 	.fifo_read = uart_sam0_fifo_read,
+	.irq_tx_enable = uart_sam0_irq_tx_enable,
 	.irq_tx_disable = uart_sam0_irq_tx_disable,
+	.irq_tx_ready = uart_sam0_irq_tx_ready,
 	.irq_rx_enable = uart_sam0_irq_rx_enable,
 	.irq_rx_disable = uart_sam0_irq_rx_disable,
 	.irq_rx_ready = uart_sam0_irq_rx_ready,
