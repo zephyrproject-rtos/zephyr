@@ -66,18 +66,15 @@ build:
       - ./scripts/sanitycheck ${SANITYCHECK_OPTIONS} --save-tests test_file.txt
       - ./scripts/sanitycheck  --load-tests test_file.txt --subset ${MATRIX_BUILD}/${MATRIX_BUILDS} || ./scripts/sanitycheck ${SANITYCHECK_OPTIONS_RETRY} || ./scripts/sanitycheck ${SANITYCHECK_OPTIONS_RETRY}
       - rm test_file.txt
-      - gcovr -r ${ZEPHYR_BASE} -x > cov.xml
       - ccache -s
     on_failure:
       - rm -rf sanity-out out-2nd-pass
       - mkdir -p shippable/testresults
       - mkdir -p shippable/codecoverage
+      - gcovr -r ${ZEPHYR_BASE} -x > shippable/codecoverage/coverage.xml
       - >
           if [ -e compliance.xml ]; then
             cp compliance.xml shippable/testresults/;
-          fi;
-          if [ -e cov.xml ]; then
-            cp cov.xml shippable/codecoverage/coverage.xml;
           fi;
       - >
           if [ -e ./scripts/sanity_chk/last_sanity.xml ]; then
@@ -87,12 +84,10 @@ build:
       - rm -rf sanity-out out-2nd-pass
       - mkdir -p shippable/testresults
       - mkdir -p shippable/codecoverage
+      - gcovr -r ${ZEPHYR_BASE} -x > shippable/codecoverage/coverage.xml
       - >
           if [ -e compliance.xml ]; then
             cp compliance.xml shippable/testresults/;
-          fi;
-          if [ -e cov.xml ]; then
-            cp cov.xml shippable/codecoverage/coverage.xml;
           fi;
       - >
           if [ -e ./scripts/sanity_chk/last_sanity.xml ]; then
