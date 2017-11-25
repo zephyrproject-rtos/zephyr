@@ -280,7 +280,7 @@ class Handler:
         self.lock = threading.Lock()
         self.state = "waiting"
         self.metrics = {}
-        self.metrics["qemu_time"] = 0
+        self.metrics["handler_time"] = 0
         self.metrics["ram_size"] = 0
         self.metrics["rom_size"] = 0
         self.unit = unit
@@ -423,9 +423,9 @@ class QEMUHandler(Handler):
             # APIs. Add whatever gets reported to the metrics dictionary
             line = ""
 
-        metrics["qemu_time"] = time.time() - start_time
+        metrics["handler_time"] = time.time() - start_time
         verbose("QEMU complete (%s) after %f seconds" %
-                (out_state, metrics["qemu_time"]))
+                (out_state, metrics["handler_time"]))
         handler.set_state(out_state, metrics)
 
         log_out_fp.close()
@@ -1773,7 +1773,7 @@ class TestSuite:
             eleTestsuite = ET.SubElement(eleTestsuites, 'testsuite', name=run, time="%d" %duration,
                     tests="%d" %(errors + passes + fails),  failures="%d" %fails,  errors="%d" %errors, skip="0")
 
-        qemu_time = "0"
+        handler_time = "0"
         for name, goal in self.goals.items():
 
             i = self.instances[name]
@@ -1783,9 +1783,9 @@ class TestSuite:
                         eleTestsuite.remove(tc)
 
             if not goal.failed and goal.qemu:
-                    qemu_time = "%s" %(goal.metrics["qemu_time"])
+                    handler_time = "%s" %(goal.metrics["handler_time"])
 
-            eleTestcase = ET.SubElement(eleTestsuite, 'testcase', classname="%s:%s" %(i.platform.name, i.test.name), name="%s" %(name), time=qemu_time)
+            eleTestcase = ET.SubElement(eleTestsuite, 'testcase', classname="%s:%s" %(i.platform.name, i.test.name), name="%s" %(name), time=handler_time)
             if goal.failed:
                 failure = ET.SubElement(eleTestcase, 'failure', type="failure", message=goal.reason)
                 p = ("%s/%s/%s" %(args.outdir, i.platform.name, i.test.name))
@@ -1811,7 +1811,7 @@ class TestSuite:
 
         with open(filename, "wt") as csvfile:
             fieldnames = ["test", "arch", "platform", "passed", "status",
-                          "extra_args", "qemu", "qemu_time", "ram_size",
+                          "extra_args", "qemu", "handler_time", "ram_size",
                           "rom_size"]
             cw = csv.DictWriter(csvfile, fieldnames, lineterminator=os.linesep)
             cw.writeheader()
@@ -1828,7 +1828,7 @@ class TestSuite:
                 else:
                     rowdict["passed"] = True
                     if goal.qemu:
-                        rowdict["qemu_time"] = goal.metrics["qemu_time"]
+                        rowdict["handler_time"] = goal.metrics["handler_time"]
                     rowdict["ram_size"] = goal.metrics["ram_size"]
                     rowdict["rom_size"] = goal.metrics["rom_size"]
                 cw.writerow(rowdict)
