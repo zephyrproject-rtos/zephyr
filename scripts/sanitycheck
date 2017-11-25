@@ -271,10 +271,10 @@ class Handler:
         """Constructor
 
         @param name Arbitrary name of the created thread
-        @param outdir Working directory, should be where qemu.pid gets created
-            by kbuild
-        @param log_fn Absolute path to write out QEMU's log data
-        @param timeout Kill the QEMU process if it doesn't finish up within
+        @param outdir Working directory, should be where handler pid file (qemu.pid for example)
+            gets created by the build system
+        @param log_fn Absolute path to write out handler's log data
+        @param timeout Kill the handler process if it doesn't finish up within
             the given number of seconds
         """
         self.lock = threading.Lock()
@@ -448,7 +448,7 @@ class QEMUHandler(Handler):
 
         @param name Arbitrary name of the created thread
         @param outdir Working directory, should be where qemu.pid gets created
-            by kbuild
+            by the build system
         @param log_fn Absolute path to write out QEMU's log data
         @param timeout Kill the QEMU process if it doesn't finish up within
             the given number of seconds
