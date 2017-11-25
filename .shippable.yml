@@ -68,10 +68,10 @@ build:
       - rm test_file.txt
       - ccache -s
     on_failure:
-      - rm -rf sanity-out out-2nd-pass
       - mkdir -p shippable/testresults
       - mkdir -p shippable/codecoverage
       - gcovr -r ${ZEPHYR_BASE} -x > shippable/codecoverage/coverage.xml
+      - rm -rf sanity-out out-2nd-pass
       - >
           if [ -e compliance.xml ]; then
             cp compliance.xml shippable/testresults/;
@@ -81,10 +81,10 @@ build:
             cp ./scripts/sanity_chk/last_sanity.xml shippable/testresults/;
           fi;
     on_success:
-      - rm -rf sanity-out out-2nd-pass
       - mkdir -p shippable/testresults
       - mkdir -p shippable/codecoverage
       - gcovr -r ${ZEPHYR_BASE} -x > shippable/codecoverage/coverage.xml
+      - rm -rf sanity-out out-2nd-pass
       - >
           if [ -e compliance.xml ]; then
             cp compliance.xml shippable/testresults/;
