@@ -1936,6 +1936,9 @@ static void net_key_add(struct bt_mesh_model *model,
 
 	sub->net_idx = idx;
 
+	/* Make sure we have valid beacon data to be sent */
+	bt_mesh_net_beacon_update(sub);
+
 	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
 		sub->node_id = BT_MESH_NODE_IDENTITY_STOPPED;
 		bt_mesh_proxy_beacon_send(sub);

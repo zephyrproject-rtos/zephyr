@@ -477,6 +477,9 @@ int bt_mesh_net_create(u16_t idx, u8_t flags, const u8_t key[16],
 	/* Set initial IV Update procedure state time-stamp */
 	bt_mesh.last_update = k_uptime_get();
 
+	/* Make sure we have valid beacon data to be sent */
+	bt_mesh_net_beacon_update(sub);
+
 	return 0;
 }
 
