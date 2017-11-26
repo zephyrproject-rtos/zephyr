@@ -81,9 +81,8 @@ static size_t health_get_current(struct bt_mesh_model *mod,
 	company_ptr = net_buf_simple_add(msg, sizeof(company_id));
 	comp = bt_mesh_comp_get();
 
-	fault_count = net_buf_simple_tailroom(msg) - 4;
-
 	if (srv->cb && srv->cb->fault_get_cur) {
+		fault_count = net_buf_simple_tailroom(msg);
 		err = srv->cb->fault_get_cur(mod, test_id, &company_id,
 					     net_buf_simple_tail(msg),
 					     &fault_count);
@@ -358,8 +357,7 @@ int bt_mesh_fault_update(struct bt_mesh_elem *elem)
 		return -EINVAL;
 	}
 
-	k_delayed_work_submit(&mod->pub->timer, K_NO_WAIT);
-	return 0;
+	return bt_mesh_model_publish(mod);
 }
 
 static void attention_off(struct k_work *work)
