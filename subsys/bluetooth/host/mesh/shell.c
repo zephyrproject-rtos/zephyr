@@ -63,8 +63,10 @@ static struct bt_mesh_cfg_srv cfg_srv = {
 	.relay_retransmit = BT_MESH_TRANSMIT(2, 20),
 };
 
-static u8_t cur_faults[4];
-static u8_t reg_faults[8];
+#define CUR_FAULTS_MAX 4
+
+static u8_t cur_faults[CUR_FAULTS_MAX];
+static u8_t reg_faults[CUR_FAULTS_MAX * 2];
 
 static void get_faults(u8_t *faults, u8_t faults_size, u8_t *dst, u8_t *count)
 {
@@ -145,7 +147,7 @@ static struct bt_mesh_health_srv health_srv = {
 };
 
 static struct bt_mesh_model_pub health_pub = {
-	.msg = BT_MESH_HEALTH_FAULT_MSG(0),
+	.msg = BT_MESH_HEALTH_FAULT_MSG(CUR_FAULTS_MAX),
 };
 
 static struct bt_mesh_cfg_cli cfg_cli = {
