@@ -1332,16 +1332,13 @@ class TestSuite:
             board_root = os.path.abspath(board_root)
 
             debug("Reading platform configuration files under %s..." % board_root)
-            for dirpath, dirnames, filenames in os.walk(board_root):
-                for filename in filenames:
-                    if filename.endswith(".yaml"):
-                        fn = os.path.join(dirpath, filename)
-                        verbose("Found plaform configuration " + fn)
-                        try:
-                            platform = Platform(fn)
-                            self.platforms.append(platform)
-                        except RuntimeError as e:
-                            error("E: %s: can't load: %s" % (fn, e))
+            for fn in glob.glob(os.path.join(board_root, "*", "*", "*.yaml")):
+                verbose("Found plaform configuration " + fn)
+                try:
+                    platform = Platform(fn)
+                    self.platforms.append(platform)
+                except RuntimeError as e:
+                    error("E: %s: can't load: %s" % (fn, e))
 
         arches = []
         for p in self.platforms:
