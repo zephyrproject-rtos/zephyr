@@ -1750,6 +1750,7 @@ static int cmd_del_fault(int argc, char *argv[])
 	if (argc < 2) {
 		memset(cur_faults, 0, sizeof(cur_faults));
 		printk("All current faults cleared\n");
+		bt_mesh_fault_update(&elements[0]);
 		return 0;
 	}
 
