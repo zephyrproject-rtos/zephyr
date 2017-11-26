@@ -337,11 +337,21 @@ class NativeHandler(Handler):
                         out_state = "failed"
                     else:
                         out_state = "failed valgrind"
-                else:
-                    out_state = "passed"
+
             except subprocess.TimeoutExpired:
                 out_state = "timeout"
                 self.returncode = 1
+
+        with open(self.run_log, "r") as rl:
+            for line in rl.readlines():
+                line = line.strip()
+                if line == self.RUN_PASSED:
+                    out_state = "passed"
+                    break
+
+                if line == self.RUN_FAILED:
+                    out_state = "failed"
+                    break
 
         returncode = subprocess.call(["GCOV_PREFIX=" + self.outdir, "gcov", self.sourcedir, "-s", self.outdir], shell=True)
 
@@ -686,7 +696,7 @@ class MakeGoal:
             # Failure in sub-make for "make run", qemu probably failed to start
             return self.run_log
         elif self.make_state == "finished":
-            # QEMU finished, but timed out or otherwise wasn't successful
+            # Execution handler finished, but timed out or otherwise wasn't successful
             return self.handler_log
 
     def fail(self, reason):
@@ -907,7 +917,7 @@ class MakeGenerator:
         elif ti.test.type == "unit":
             self.add_unit_goal(ti.name, ti.test.code_location, ti.outdir,
                                args, ti.test.timeout, coverage)
-        elif ti.platform.type == "native":
+        elif ti.platform.type == "native" and (not ti.build_only) and (not build_only):
             self.add_native_goal(ti.name, ti.test.code_location, ti.outdir,
                                args, ti.test.timeout, coverage)
         else:
@@ -952,12 +962,6 @@ class MakeGenerator:
                 state, name, _, error = m.groups()
                 if error:
                     goal = self.goals[error]
-                else:
-                    goal = self.goals[name]
-                    goal.make_state = state
-
-
-                if error:
                     # Sometimes QEMU will run an image and then crash out, which
                     # will cause the 'make run' invocation to exit with
                     # nonzero status.
@@ -967,6 +971,9 @@ class MakeGenerator:
                     else:
                         goal.fail("build_error")
                 else:
+                    goal = self.goals[name]
+                    goal.make_state = state
+
                     if state == "finished":
                         if goal.handler:
                             if goal.handler.unit:
@@ -976,6 +983,7 @@ class MakeGenerator:
                                     goal.handler_log = goal.handler.valgrind_log
                                 elif goal.handler.returncode:
                                     goal.handler_log = goal.handler.run_log
+
                             thread_status, metrics = goal.handler.get_state()
                             goal.metrics.update(metrics)
                             if thread_status == "passed":
