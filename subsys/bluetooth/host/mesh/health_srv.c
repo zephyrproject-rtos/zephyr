@@ -37,9 +37,7 @@ static void health_get_registered(struct bt_mesh_model *mod,
 				  struct net_buf_simple *msg)
 {
 	struct bt_mesh_health_srv *srv = mod->user_data;
-	u8_t fault_count;
 	u8_t *test_id;
-	int err;
 
 	BT_DBG("Company ID 0x%04x", company_id);
 
@@ -47,9 +45,11 @@ static void health_get_registered(struct bt_mesh_model *mod,
 
 	test_id = net_buf_simple_add(msg, 1);
 	net_buf_simple_add_le16(msg, company_id);
-	fault_count = net_buf_simple_tailroom(msg) - 4;
 
 	if (srv->cb && srv->cb->fault_get_reg) {
+		u8_t fault_count = net_buf_simple_tailroom(msg) - 4;
+		int err;
+
 		err = srv->cb->fault_get_reg(mod, company_id, test_id,
 					     net_buf_simple_tail(msg),
 					     &fault_count);
