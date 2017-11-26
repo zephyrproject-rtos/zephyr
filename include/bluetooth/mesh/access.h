@@ -281,7 +281,14 @@ struct bt_mesh_model_pub {
 	 *  contain a valid publication message before calling the
 	 *  bt_mesh_model_publish() API or after the publication's
 	 *  @ref bt_mesh_model_pub.update callback has been called
-	 *  and returned success.
+	 *  and returned success. The buffer must be created outside
+	 *  of function context, i.e. it must not be on the stack.
+	 *  This is most conveniently acheived by creating it inline
+	 *  when declaring the publication context:
+	 *
+	 *      static struct bt_mesh_model_pub my_pub = {
+	 *              .msg = NET_BUF_SIMPLE(size),
+	 *      };
 	 */
 	struct net_buf_simple *msg;
 
