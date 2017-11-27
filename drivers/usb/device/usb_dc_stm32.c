@@ -488,8 +488,8 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 	return ret;
 }
 
-int usb_dc_ep_read(const u8_t ep, u8_t *const data, const u32_t max_data_len,
-		   u32_t * const read_bytes)
+int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
+			u32_t *read_bytes)
 {
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
 	u32_t read_count = ep_state->read_count;
@@ -497,7 +497,20 @@ int usb_dc_ep_read(const u8_t ep, u8_t *const data, const u32_t max_data_len,
 	SYS_LOG_DBG("ep 0x%02x, %u bytes, %u+%u, %p", ep,
 		    max_data_len, ep_state->read_offset, read_count, data);
 
-	if (!max_data_len) {
+	if (!EP_IS_OUT(ep)) { /* check if OUT ep */
+		SYS_LOG_ERR("Wrong endpoint direction: 0x%02x", ep);
+		return -EINVAL;
+	}
+
+	if (!data && max_data_len) {
+		SYS_LOG_ERR("Wrong arguments");
+		return -EINVAL;
+	}
+
+	if (!data && !max_data_len) {
+		/* When both buffer and max data to read are zero return
+		 * the available data in buffer
+		 */
 		goto done;
 	}
 
@@ -511,6 +524,23 @@ int usb_dc_ep_read(const u8_t ep, u8_t *const data, const u32_t max_data_len,
 		ep_state->read_offset += read_count;
 	}
 
+done:
+	if (read_bytes) {
+		*read_bytes = read_count;
+	}
+
+	return 0;
+}
+
+int usb_dc_ep_read_continue(u8_t ep)
+{
+	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
+
+	if (!EP_IS_OUT(ep)) { /* Check if OUT ep */
+		SYS_LOG_ERR("Not valid endpoint: %02x", ep);
+		return -EINVAL;
+	}
+
 	/* If no more data in the buffer, start a new read transaction.
 	 * DataOutStageCallback will called on transaction complete.
 	 */
@@ -519,9 +549,18 @@ int usb_dc_ep_read(const u8_t ep, u8_t *const data, const u32_t max_data_len,
 				     USB_OTG_FS_MAX_PACKET_SIZE);
 	}
 
-done:
-	if (read_bytes) {
-		*read_bytes = read_count;
+	return 0;
+}
+
+int usb_dc_ep_read(const u8_t ep, u8_t *const data, const u32_t max_data_len,
+		   u32_t * const read_bytes)
+{
+	if (usb_dc_ep_read_wait(ep, data, max_data_len, read_bytes) != 0) {
+		return -EINVAL;
+	}
+
+	if (usb_dc_ep_read_continue(ep) != 0) {
+		return -EINVAL;
 	}
 
 	return 0;
