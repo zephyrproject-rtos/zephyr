@@ -41,7 +41,7 @@ struct _callee_saved {
 
 	/*
 	 * Thread status pointer
-	 * (Portability: you need to compile as a 32bit binary..)
+	 * (We need to compile as 32bit binaries in POSIX)
 	 */
 	u32_t thread_status;
 };

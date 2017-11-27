@@ -22,7 +22,7 @@ void hw_irq_controller(irq_type_t irq)
 	/*No interrupt masking or any other fancy feature*/
 
 	irq_status |= 1 << irq;
-	posix_soc_interrupt_raised();
+	ps_interrupt_raised();
 }
 
 /**

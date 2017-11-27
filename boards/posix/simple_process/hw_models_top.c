@@ -32,7 +32,7 @@ static void hwm_sleep_until_next_timer(void)
 	if (next_timer_time >= device_time) {
 		device_time = next_timer_time;
 	} else {
-		simulation_engine_print_warning(
+		ps_print_warning(
 "next_timer_time corrupted (%"PRItime"<= %"PRItime", Timertype=%i)\n",
 			next_timer_time,
 			device_time,
@@ -40,7 +40,7 @@ static void hwm_sleep_until_next_timer(void)
 	}
 
 	if (device_time > end_of_time) {
-		simulation_engine_print_trace(
+		ps_print_trace(
 			"\n\n\n\n\n\nAutostopped after %.3Lfs\n",
 			((long double)end_of_time)/1.0e6);
 
@@ -80,7 +80,7 @@ void hwm_main_loop(void)
 			hwtimer_timer_reached();
 			break;
 		default:
-			simulation_engine_print_error_and_exit(
+			ps_print_error_and_exit(
 					"next_timer_index corrupted\n");
 			break;
 		}

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _POSIX_SOC_INF_CLOCK_H
-#define _POSIX_SOC_INF_CLOCK_H
+#ifndef _POSIX_SOC_INF_CLOCK_SOC_H
+#define _POSIX_SOC_INF_CLOCK_SOC_H
 
 #include "board_soc.h"
 #include "posix_soc.h"
@@ -19,4 +19,4 @@ extern "C" {
 }
 #endif
 
-#endif /* _POSIX_SOC_INF_CLOCK_H */
+#endif /* _POSIX_SOC_INF_CLOCK_SOC_H */

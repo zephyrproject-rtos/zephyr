@@ -52,7 +52,7 @@ int main(void)
 	hwm_set_end_of_time(5e6);
 #endif
 
-	posix_soc_boot_cpu();
+	ps_boot_cpu();
 
 	hwm_main_loop();
 

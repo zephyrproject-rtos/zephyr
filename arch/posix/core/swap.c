@@ -15,6 +15,7 @@
 
 #include <kernel_structs.h>
 #include "posix_core.h"
+#include "irq.h"
 
 /**
  *
@@ -71,7 +72,7 @@ unsigned int __swap(unsigned int key)
  * signal to whomever is allowed to run to continue
  */
 	{
-		posix_core_swap(ready_thread_ptr->thread_id);
+		pc_swap(ready_thread_ptr->thread_id);
 	} /*when we continue, _kernel->current points back to this thread*/
 
 	irq_unlock(_kernel.current->callee_saved.key);

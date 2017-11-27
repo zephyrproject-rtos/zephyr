@@ -66,7 +66,7 @@ void hwtimer_timer_reached(void)
 		int s = nanosleep(&requested_time, &remaining);
 
 		if (s == -1) {
-			simulation_engine_print_trace(
+			ps_print_trace(
 					"Interrupted or error\n");
 		}
 	}

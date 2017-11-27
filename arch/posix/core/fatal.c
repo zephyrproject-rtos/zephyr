@@ -12,6 +12,7 @@
 #include <kernel_structs.h>
 #include <misc/printk.h>
 #include <inttypes.h>
+#include "posix_soc_if.h"
 
 const NANO_ESF _default_esf = {
 	0xdeadbaad
@@ -204,7 +205,7 @@ FUNC_NORETURN __weak void _SysFatalErrorHandler(unsigned int reason,
 		goto hang_system;
 	}
 	if (k_is_in_isr() || _is_thread_essential()) {
-		simulation_engine_print_error_and_exit(
+		ps_print_error_and_exit(
 			"Fatal fault in %s! Stopping...\n",
 			k_is_in_isr() ? "ISR" : "essential thread");
 	}
@@ -216,7 +217,7 @@ hang_system:
 	ARG_UNUSED(reason);
 #endif
 
-	simulation_engine_print_error_and_exit(
+	ps_print_error_and_exit(
 		"Stopped in _SysFatalErrorHandler()\n");
 	CODE_UNREACHABLE;
 }

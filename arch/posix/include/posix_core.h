@@ -10,6 +10,7 @@
 extern "C" {
 #endif
 
+/*TODO: with the current compile script we can safely include kernel.h here*/
 typedef void (*_posix_core_thread_entry_t)(void *, void *, void *);
 /* we redefine here the kernel.h _thread_entry_t to not need to include the
  * kernel.h and all its dependencies
@@ -28,14 +29,14 @@ typedef struct {
 } posix_thread_status_t;
 
 
-void posix_core_new_thread(posix_thread_status_t *ptr);
-void posix_core_swap(p_thread_id_t next_allowed_thread_nbr);
+void pc_new_thread(posix_thread_status_t *ptr);
+void pc_swap(p_thread_id_t next_allowed_thread_nbr);
 void posix_core_main_thread_start(p_thread_id_t next_allowed_thread_nbr);
-void posix_core_init_multithreading(void);
+void pc_init_multithreading(void);
 
-/*The SOC shall define this function*/
-void posix_soc_halt_cpu(void);
+void pc_new_thread_pre_start(void); /*defined in thread.c*/
 
+void _PrepC(void);
 
 #ifdef __cplusplus
 }

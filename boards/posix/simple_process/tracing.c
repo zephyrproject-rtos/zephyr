@@ -16,7 +16,7 @@
 #include <stdarg.h> /*for va args*/
 
 
-void simulation_engine_print_error_and_exit(const char *format, ...)
+void ps_print_error_and_exit(const char *format, ...)
 {
 	va_list variable_args;
 
@@ -26,7 +26,7 @@ void simulation_engine_print_error_and_exit(const char *format, ...)
 	exit(1);
 }
 
-void simulation_engine_print_warning(const char *format, ...)
+void ps_print_warning(const char *format, ...)
 {
 	va_list variable_args;
 
@@ -35,7 +35,7 @@ void simulation_engine_print_warning(const char *format, ...)
 	va_end(variable_args);
 }
 
-void simulation_engine_print_trace(const char *format, ...)
+void ps_print_trace(const char *format, ...)
 {
 	va_list variable_args;
 

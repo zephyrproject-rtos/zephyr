@@ -18,8 +18,7 @@
  */
 
 #include "posix_core.h"
-#include "posix_soc.h"
-#include "board_irq.h"
+#include "posix_soc_if.h"
 
 /**
  *
@@ -35,8 +34,8 @@
  */
 void k_cpu_idle(void)
 {
-	board_irq_full_unlock();
-	posix_soc_halt_cpu();
+	ps_irq_full_unlock();
+	ps_halt_cpu();
 }
 
 /**
@@ -61,5 +60,5 @@ void k_cpu_idle(void)
 
 void k_cpu_atomic_idle(unsigned int imask)
 {
-	posix_soc_atomic_halt_cpu(imask);
+	ps_atomic_halt_cpu(imask);
 }

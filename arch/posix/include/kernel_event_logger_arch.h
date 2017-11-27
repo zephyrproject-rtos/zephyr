@@ -13,6 +13,8 @@
 #ifndef __KERNEL_EVENT_LOGGER_ARCH_H__
 #define __KERNEL_EVENT_LOGGER_ARCH_H__
 
+#include "posix_soc_if.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -25,11 +27,9 @@ extern "C" {
  *
  * @return The key of the interrupt that is currently being processed.
  */
-int _sys_current_irq_key_get(void)
+static inline int _sys_current_irq_key_get(void)
 {
-	/*The board must define this*/
-	extern int board_get_current_irq(void);
-	return board_get_current_irq();
+	return ps_get_current_irq();
 }
 
 #ifdef __cplusplus

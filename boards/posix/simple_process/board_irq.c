@@ -39,11 +39,17 @@
  * "interrupt disable state" prior to the call.
  *
  */
-unsigned int board_irq_lock(void)
+unsigned int ps_irq_lock(void)
 {
 	/*A stub for this board as we only have the system timer irq*/
 	return 0;
 }
+unsigned int _arch_irq_lock(void)
+{
+	/*The board must define this*/
+	return ps_irq_lock();
+}
+
 
 
 /**
@@ -60,22 +66,25 @@ unsigned int board_irq_lock(void)
  *
  */
 
-void board_irq_unlock(unsigned int key)
+void ps_irq_unlock(unsigned int key)
 {
 	/*A stub for this board as we only have the system timer irq*/
 }
-
+void _arch_irq_unlock(unsigned int key)
+{
+	ps_irq_unlock(key);
+}
 
 
 /**
  * This function shall take the irq controller to a fully unlocked state
  */
-void board_irq_full_unlock(void)
+void ps_irq_full_unlock(void)
 {
 }
 
 
-int board_get_current_irq(void)
+int ps_get_current_irq(void)
 {
 	/*TODO*/
 	return 0;

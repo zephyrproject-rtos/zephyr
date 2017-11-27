@@ -24,20 +24,20 @@
 
 #include <pthread.h>
 #include <stdbool.h>
-#include <pc_tracing.h>
 
 #include "posix_core.h"
+#include "posix_soc_if.h"
 
 
 /*
  * Conditional variable to block/awake all threads during swaps()
  * (we only need 1 mutex and 1 cond variable for all threads)
  */
-static pthread_cond_t posix_core_cond_threads = PTHREAD_COND_INITIALIZER;
+static pthread_cond_t pc_cond_threads = PTHREAD_COND_INITIALIZER;
 /* Mutex for the conditional variable posix_core_cond_threads */
-static pthread_mutex_t posix_core_mtx_threads = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t pc_mtx_threads = PTHREAD_MUTEX_INITIALIZER;
 /* Token which tells which process is allowed to run now */
-static pthread_t posix_core_currently_allowed_thread;
+static pthread_t pc_currently_allowed_thread;
 
 /*
  * Portability issue: Now we assume in the code below that
@@ -51,23 +51,23 @@ static pthread_t posix_core_currently_allowed_thread;
  * thread, and use p_thread_id_t as an index to that table
  */
 
-static void posix_core_wait_until_allowed(void);
-static void *posix_core_thread_starter(void *arg);
+static void pc_wait_until_allowed(void);
+static void *pc_thread_starter(void *arg);
 
 
 /**
  *  Helper function to hung this thread until it is allowed again
  *  (somebody calls posix_core_let_run() with this thread number
  */
-static void posix_core_wait_until_allowed(void)
+static void pc_wait_until_allowed(void)
 {
 	pthread_t this_thread_nbr = pthread_self();
 
 	while (!pthread_equal(this_thread_nbr,
-		posix_core_currently_allowed_thread)) {
+		pc_currently_allowed_thread)) {
 
-		pthread_cond_wait(&posix_core_cond_threads,
-				  &posix_core_mtx_threads);
+		pthread_cond_wait(&pc_cond_threads,
+				  &pc_mtx_threads);
 	}
 /*
  * Note that we go out of this while loop with the mutex locked by this
@@ -77,7 +77,7 @@ static void posix_core_wait_until_allowed(void)
  */
 
 	if (POSIX_ARCH_DEBUG_PRINTS) {
-		simulation_engine_print_trace(
+		ps_print_trace(
 			"Posix arch core: Thread %lu: I'm allowed to run!\n",
 			this_thread_nbr);
 	}
@@ -88,24 +88,23 @@ static void posix_core_wait_until_allowed(void)
  *  Helper function to let the thread with id <next_allowed_thread_nbr> run
  *  Note: posix_core_let_run() can only be called with the mutex locked
  */
-static void posix_core_let_run(p_thread_id_t next_allowed_thread_nbr)
+static void pc_let_run(p_thread_id_t next_allowed_thread_nbr)
 {
 	if (POSIX_ARCH_DEBUG_PRINTS) {
-		simulation_engine_print_trace(
-				"Posix arch core: We let thread %lu run\n",
+		ps_print_trace("Posix arch core: We let thread %lu run\n",
 				next_allowed_thread_nbr);
 	}
 
-	posix_core_currently_allowed_thread = next_allowed_thread_nbr;
+	pc_currently_allowed_thread = next_allowed_thread_nbr;
 
-	if (pthread_cond_broadcast(&posix_core_cond_threads)) {
+	if (pthread_cond_broadcast(&pc_cond_threads)) {
 /*
  * we let all threads know one is able to run now (it may even be us again
  * if fancied)
  * Note that as we hold the mutex, they are going to be blocked until we reach
  * our own wait_util_allowed() while loop
  */
-		simulation_engine_print_error_and_exit(
+		ps_print_error_and_exit(
 			"Posix arch core: error on pthread_cond_signal()\n");
 	}
 }
@@ -119,10 +118,10 @@ static void posix_core_let_run(p_thread_id_t next_allowed_thread_nbr)
  *
  * called from __swap() which does the picking from the kernel structures
  */
-void posix_core_swap(p_thread_id_t next_allowed_thread_nbr)
+void pc_swap(p_thread_id_t next_allowed_thread_nbr)
 {
-	posix_core_let_run(next_allowed_thread_nbr);
-	posix_core_wait_until_allowed();
+	pc_let_run(next_allowed_thread_nbr);
+	pc_wait_until_allowed();
 }
 
 /**
@@ -134,12 +133,12 @@ void posix_core_swap(p_thread_id_t next_allowed_thread_nbr)
 void posix_core_main_thread_start(p_thread_id_t next_allowed_thread_nbr)
 {
 	if (0) {
-		posix_core_swap(next_allowed_thread_nbr);
+		pc_swap(next_allowed_thread_nbr);
 	} else {
-		posix_core_let_run(next_allowed_thread_nbr);
+		pc_let_run(next_allowed_thread_nbr);
 
-		if (pthread_mutex_unlock(&posix_core_mtx_threads)) {
-			simulation_engine_print_error_and_exit(
+		if (pthread_mutex_unlock(&pc_mtx_threads)) {
+			ps_print_error_and_exit(
 			"Posix arch core: error on pthread_mutex_lock()\n");
 		}
 
@@ -158,20 +157,20 @@ void posix_core_main_thread_start(p_thread_id_t next_allowed_thread_nbr)
  *
  * Spawned from posix_core_new_thread() below
  */
-static void *posix_core_thread_starter(void *arg)
+static void *pc_thread_starter(void *arg)
 {
 	posix_thread_status_t *ptr = (posix_thread_status_t *) arg;
 
 	/*we detach ourselves so nobody needs to join to us*/
 	pthread_detach(pthread_self());
 
-	if (pthread_mutex_lock(&posix_core_mtx_threads)) {
+	if (pthread_mutex_lock(&pc_mtx_threads)) {
 /*
  * We block until all other running threads reach the while loop in
  * posix_core_wait_until_allowed() and they release the mutex while they wait
  * for somebody to signal that they are allowed to run
  */
-		simulation_engine_print_error_and_exit(
+		ps_print_error_and_exit(
 			"Posix arch core: error on pthread_mutex_lock()\n");
 	}
 
@@ -179,12 +178,12 @@ static void *posix_core_thread_starter(void *arg)
  * The thread would try to execute immediately, so we need to block it until
  * allowed
  */
-	posix_core_wait_until_allowed();
+	pc_wait_until_allowed();
 
-	extern void _new_thread_pre_start(void); /*defined in thread.c*/
-	_new_thread_pre_start();
+	pc_new_thread_pre_start();
 
 	/*Once allowed, we jump to the actual thread entry point:*/
+	/*TODO include "nano_internal.h"*/
 	extern void _thread_entry(void (*entry)(void *, void *, void *),
 				  void *p1, void *p2, void *p3);
 
@@ -195,7 +194,7 @@ static void *posix_core_thread_starter(void *arg)
  * happen
  */
 	if (POSIX_ARCH_DEBUG_PRINTS) {
-		simulation_engine_print_trace(
+		ps_print_trace(
 			"Posix arch core: Thread %lu ended\n",
 			pthread_self());
 	}
@@ -209,18 +208,18 @@ static void *posix_core_thread_starter(void *arg)
  * _new_thread() picks from the kernel structures what it is that we need to
  * call with what parameters
  */
-void posix_core_new_thread(posix_thread_status_t *ptr)
+void pc_new_thread(posix_thread_status_t *ptr)
 {
 
 	if (pthread_create(&(ptr->thread_id), NULL,
-			posix_core_thread_starter, (void *)ptr)) {
+			pc_thread_starter, (void *)ptr)) {
 
-		simulation_engine_print_error_and_exit(
+		ps_print_error_and_exit(
 				"Posix arch core: error on pthread_create\n");
 	}
 
 	if (POSIX_ARCH_DEBUG_PRINTS) {
-		simulation_engine_print_trace(
+		ps_print_trace(
 			"Posix arch core: Thread %lu created\n",
 			ptr->thread_id);
 	}
@@ -231,7 +230,7 @@ void posix_core_new_thread(posix_thread_status_t *ptr)
  * Called from _IntLibInit()
  * prepare whatever needs to be prepared to be able to start threads
  */
-void posix_core_init_multithreading(void)
+void pc_init_multithreading(void)
 {
 /*
  * Let's ensure none of the created threads starts until the first thread (the
@@ -244,8 +243,8 @@ void posix_core_init_multithreading(void)
  * But doing this, means we do not need to assume there is any invalid system
  * thread number
  */
-	if (pthread_mutex_lock(&posix_core_mtx_threads)) {
-		simulation_engine_print_error_and_exit(
+	if (pthread_mutex_lock(&pc_mtx_threads)) {
+		ps_print_error_and_exit(
 			"Posix arch core: error on pthread_mutex_lock()\n");
 	}
 }

@@ -49,7 +49,7 @@ _set_thread_return_value(struct k_thread *thread, unsigned int value)
  */
 static inline void _IntLibInit(void)
 {
-	posix_core_init_multithreading();
+	pc_init_multithreading();
 }
 
 #ifdef __cplusplus

@@ -14,7 +14,7 @@
  * When an interrupt is raised, this function is called to handle it
  * and, if needed, swap to a reenabled thread
  */
-void irq_handler(void)
+void pb_irq_handler(void)
 {
 	/*uint64_t irq_status = hw_irq_controller_get_irq_status();*/
 	hw_irq_controller_clear_irqs();
