@@ -2279,7 +2279,7 @@ static inline void le_dir_adv_report(struct pdu_adv *adv, struct net_buf *buf,
 	dir_info = (void *)(((u8_t *)drp) + sizeof(*drp));
 
 	/* Directed Advertising */
-	dir_info->evt_type = 0x01;
+	dir_info->evt_type = BT_LE_ADV_DIRECT_IND;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	if (rl_idx < ll_rl_size_get()) {
@@ -2304,6 +2304,40 @@ static inline void le_dir_adv_report(struct pdu_adv *adv, struct net_buf *buf,
 	dir_info->rssi = rssi;
 }
 #endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
+
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+static inline void le_mesh_scan_report(struct pdu_adv *adv, struct net_buf *buf,
+				       s8_t rssi, u8_t *extra)
+{
+	u8_t data_len = (adv->len - BDADDR_SIZE);
+	struct bt_hci_evt_mesh_scanning_report *mep;
+	struct bt_hci_evt_mesh_scan_report *sr;
+	u32_t instant;
+	u8_t chan;
+
+	/*@todo: add event filtering */
+	LL_ASSERT(adv->type == PDU_ADV_TYPE_NONCONN_IND);
+
+	chan = *extra;
+	extra++;
+	instant = sys_get_le32(extra);
+
+	mep = mesh_evt(buf, BT_HCI_EVT_MESH_SCANNING_REPORT,
+			    sizeof(*mep) + sizeof(*sr));
+
+	mep->num_reports = 1;
+	sr = (void *)(((u8_t *)mep) + sizeof(*mep));
+	sr->addr.type = adv->tx_addr;
+	memcpy(&sr->addr.a.val[0], &adv->payload.adv_ind.addr[0],
+	       sizeof(bt_addr_t));
+	sr->chan = chan;
+	sr->rssi = rssi;
+	sys_put_le32(instant, (u8_t *)&sr->instant);
+
+	sr->data_len = data_len;
+	memcpy(&sr->data[0], &adv->payload.adv_ind.data[0], data_len);
+}
+#endif /* CONFIG_BT_HCI_MESH_EXT */
 
 static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
 				  struct net_buf *buf)
@@ -2354,6 +2388,14 @@ static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
 		return;
 	}
 #endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
+
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+	if (((struct radio_pdu_node_rx *)b)->hdr.type ==
+	    NODE_RX_TYPE_MESH_REPORT) {
+		le_mesh_scan_report(adv, buf, rssi, extra);
+		return;
+	}
+#endif /* CONFIG_BT_HCI_MESH_EXT */
 
 	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
 	    !(le_event_mask & BT_EVT_MASK_LE_ADVERTISING_REPORT)) {
@@ -2855,7 +2897,7 @@ static void encode_control(struct radio_pdu_node_rx *node_rx,
 		return;
 
 	case NODE_RX_TYPE_MESH_REPORT:
-		BT_INFO("Mesh scan report.");
+		le_advertising_report(pdu_data, b, buf);
 		return;
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
