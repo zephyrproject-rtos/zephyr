@@ -173,7 +173,7 @@ static void exec_heap(void)
 #endif
 #endif /* NO_EXECUTE_SUPPORT */
 
-void test_main(void *unused1, void *unused2, void *unused3)
+void test_main(void)
 {
 	ztest_test_suite(test_protection,
 #ifdef NO_EXECUTE_SUPPORT
