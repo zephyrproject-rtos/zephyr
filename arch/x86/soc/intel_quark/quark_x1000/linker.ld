@@ -12,6 +12,7 @@
  */
 
 #include <autoconf.h>
+#include <generated_dts_board.h>
 
 /* physical address where the kernel is loaded */
 #define PHYS_LOAD_ADDR CONFIG_PHYS_LOAD_ADDR
