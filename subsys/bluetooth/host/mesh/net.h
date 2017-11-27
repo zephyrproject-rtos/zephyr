@@ -57,6 +57,7 @@ struct bt_mesh_subnet {
 	u8_t  kr_phase;           /* Key Refresh Phase */
 
 	u8_t  node_id;            /* Node Identity State */
+	u32_t node_id_start;      /* Node Identity started timestamp */
 
 	u8_t  auth[8];            /* Beacon Authentication Value */
 
