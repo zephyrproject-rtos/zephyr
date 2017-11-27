@@ -279,8 +279,8 @@ int bt_mesh_net_create(u16_t idx, u8_t flags, const u8_t key[16],
 
 u8_t bt_mesh_net_flags(struct bt_mesh_subnet *sub);
 
-int bt_mesh_friend_cred_get(u16_t net_idx, u16_t addr, u8_t idx,
-			    u8_t *nid, const u8_t **enc, const u8_t **priv);
+int bt_mesh_friend_cred_get(struct bt_mesh_subnet *sub, u16_t addr, u8_t *nid,
+			    const u8_t **enc, const u8_t **priv);
 int bt_mesh_friend_cred_set(struct bt_mesh_friend_cred *cred, u8_t idx,
 			    const u8_t net_key[16]);
 void bt_mesh_friend_cred_refresh(u16_t net_idx);

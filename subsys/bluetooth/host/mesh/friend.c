@@ -312,23 +312,21 @@ static struct net_buf *create_friend_pdu(struct bt_mesh_friend *frnd,
 	struct bt_mesh_subnet *sub;
 	const u8_t *enc, *priv;
 	struct net_buf *buf;
-	u8_t nid, key_idx;
+	u8_t nid;
 
 	sub = bt_mesh_subnet_get(frnd->net_idx);
 	__ASSERT_NO_MSG(sub != NULL);
 
 	buf = friend_buf_alloc(info->src);
 
-	key_idx = (sub->kr_phase == BT_MESH_KR_PHASE_2);
-
 	/* Friend Offer needs master security credentials */
 	if (info->ctl && TRANS_CTL_OP(sdu->data) == TRANS_CTL_OP_FRIEND_OFFER) {
-		enc = sub->keys[key_idx].enc;
-		priv = sub->keys[key_idx].privacy;
-		nid = sub->keys[key_idx].nid;
+		enc = sub->keys[sub->kr_flag].enc;
+		priv = sub->keys[sub->kr_flag].privacy;
+		nid = sub->keys[sub->kr_flag].nid;
 	} else {
-		if (bt_mesh_friend_cred_get(sub->net_idx, frnd->lpn, key_idx,
-					    &nid, &enc, &priv)) {
+		if (bt_mesh_friend_cred_get(sub, frnd->lpn, &nid, &enc,
+					    &priv)) {
 			BT_ERR("bt_mesh_friend_cred_get failed");
 			goto failed;
 		}
