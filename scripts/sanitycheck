@@ -2090,8 +2090,6 @@ def main():
     global VERBOSE, INLINE_LOGS, CPU_COUNTS, log_file
     args = parse_arguments()
     toolchain = os.environ.get("ZEPHYR_GCC_VARIANT", None)
-    if toolchain == "zephyr":
-        os.environ["DISABLE_TRYRUN"] = "1"
 
     if args.size:
         for fn in args.size:
