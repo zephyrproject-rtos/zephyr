@@ -128,6 +128,11 @@ void testing_fatal(void)
 {
 	int expected_reason;
 
+#if defined(CONFIG_ARCH_POSIX)
+	ARG_UNUSED(expected_reason);
+	ARG_UNUSED(overflow_stack);
+#endif
+
 	rv = TC_PASS;
 
 	/*
@@ -137,6 +142,7 @@ void testing_fatal(void)
 	 */
 	k_thread_priority_set(_current, K_PRIO_PREEMPT(MAIN_PRIORITY));
 
+#ifndef CONFIG_ARCH_POSIX
 	TC_PRINT("test alt thread 1: generic CPU exception\n");
 	k_thread_create(&alt_thread, alt_stack,
 			K_THREAD_STACK_SIZEOF(alt_stack),
@@ -144,6 +150,13 @@ void testing_fatal(void)
 			NULL, NULL, NULL, K_PRIO_COOP(PRIORITY), 0,
 			K_NO_WAIT);
 	zassert_not_equal(rv, TC_FAIL, "thread was not aborted\n");
+#else
+	/*
+	 * We want the native OS to handle segfaults so we can debug it
+	 * with the normal linux tools
+	 */
+	TC_PRINT("test alt thread 1: skipped for POSIX ARCH\n");
+#endif
 
 	TC_PRINT("test alt thread 2: initiate kernel oops\n");
 	k_thread_create(&alt_thread, alt_stack,
@@ -169,6 +182,7 @@ void testing_fatal(void)
 		      crash_reason, _NANO_ERR_KERNEL_PANIC);
 	zassert_not_equal(rv, TC_FAIL, "thread was not aborted\n");
 
+#ifndef CONFIG_ARCH_POSIX
 	TC_PRINT("test stack overflow - timer irq\n");
 #ifdef CONFIG_STACK_SENTINEL
 	/* When testing stack sentinel feature, the overflow stack is a
@@ -211,6 +225,13 @@ void testing_fatal(void)
 		      crash_reason, _NANO_ERR_STACK_CHK_FAIL);
 
 	zassert_not_equal(rv, TC_FAIL, "thread was not aborted\n");
+#else
+	TC_PRINT("test stack overflow - skipped for POSIX arch\n");
+	/*
+	 * We do not have a stack check for the posix ARCH
+	 * again we relay on the native OS
+	 */
+#endif
 }
 
 /*test case main entry*/
