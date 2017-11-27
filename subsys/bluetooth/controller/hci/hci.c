@@ -137,6 +137,20 @@ static void *meta_evt(struct net_buf *buf, u8_t subevt, u8_t melen)
 	return net_buf_add(buf, melen);
 }
 
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+static void *mesh_evt(struct net_buf *buf, u8_t subevt, u8_t melen)
+{
+	struct bt_hci_evt_mesh *me;
+
+	evt_create(buf, BT_HCI_EVT_VENDOR, sizeof(*me) + melen);
+	me = net_buf_add(buf, sizeof(*me));
+	me->prefix = BT_HCI_MESH_EVT_PREFIX;
+	me->subevent = subevt;
+
+	return net_buf_add(buf, melen);
+}
+#endif /* CONFIG_BT_HCI_MESH_EXT */
+
 #if defined(CONFIG_BT_CONN)
 static void disconnect(struct net_buf *buf, struct net_buf **evt)
 {
@@ -1925,20 +1939,6 @@ static void vs_read_key_hierarchy_roots(struct net_buf *buf,
 #endif /* CONFIG_BT_HCI_VS_EXT */
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
-/* TODO:
-static void *mesh_evt(struct net_buf *buf, u8_t subevt, u8_t melen)
-{
-	struct bt_hci_evt_mesh *me;
-
-	evt_create(buf, BT_HCI_EVT_VENDOR, sizeof(*me) + melen);
-	me = net_buf_add(buf, sizeof(*me));
-	me->prefix = BT_HCI_MESH_EVT_PREFIX;
-	me->subevent = subevt;
-
-	return net_buf_add(buf, melen);
-}
-*/
-
 static void mesh_get_opts(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_rp_mesh_get_opts *rp;
@@ -2728,6 +2728,17 @@ static void le_phy_upd_complete(struct pdu_data *pdu_data, u16_t handle,
 #endif /* CONFIG_BT_CTLR_PHY */
 #endif /* CONFIG_BT_CONN */
 
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+static void mesh_adv_cplt(struct pdu_data *pdu_data, u8_t *b,
+			  struct net_buf *buf)
+{
+	struct bt_hci_evt_mesh_adv_complete *mep;
+
+	mep = mesh_evt(buf, BT_HCI_EVT_MESH_ADV_COMPLETE, sizeof(*mep));
+	mep->adv_slot = ((u8_t *)pdu_data)[0];
+}
+#endif /* CONFIG_BT_HCI_MESH_EXT */
+
 static void encode_control(struct radio_pdu_node_rx *node_rx,
 			   struct pdu_data *pdu_data, struct net_buf *buf)
 {
@@ -2827,7 +2838,7 @@ static void encode_control(struct radio_pdu_node_rx *node_rx,
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 	case NODE_RX_TYPE_MESH_ADV_CPLT:
-		BT_INFO("Mesh advertise complete.");
+		mesh_adv_cplt(pdu_data, b, buf);
 		return;
 
 	case NODE_RX_TYPE_MESH_REPORT:

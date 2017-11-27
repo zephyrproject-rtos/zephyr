@@ -3884,6 +3884,7 @@ static inline void isr_radio_state_rx(u8_t trx_done, u8_t crc_ok,
 static void mayfly_mesh_stop(void *param)
 {
 	struct radio_pdu_node_rx *node_rx;
+	u8_t *adv_slot;
 
 	/* Prepare the rx packet structure */
 	node_rx = packet_rx_reserve_get(1);
@@ -3893,7 +3894,8 @@ static void mayfly_mesh_stop(void *param)
 	node_rx->hdr.handle = 0xffff;
 	node_rx->hdr.type = NODE_RX_TYPE_MESH_ADV_CPLT;
 
-	/* TODO: populate adv slot in event */
+	adv_slot = (u8_t *)node_rx->pdu_data;
+	*adv_slot = 0;
 
 	/* enqueue event into rx queue */
 	packet_rx_enqueue();

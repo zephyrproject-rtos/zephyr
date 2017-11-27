@@ -168,7 +168,7 @@ struct bt_hci_evt_vs_scan_req_rx {
 #define BT_HCI_MESH_REVISION                   0x01
 
 #define BT_HCI_OP_VS_MESH                      BT_OP(BT_OGF_VS, 0x0042)
-#define BT_HCI_MESH_EVT_PREFIX                 0x23
+#define BT_HCI_MESH_EVT_PREFIX                 0xF0
 
 struct bt_hci_cp_mesh {
 	u8_t         opcode;
