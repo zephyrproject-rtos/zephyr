@@ -816,10 +816,10 @@ int bt_mesh_friend_req(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 	old_friend = sys_be16_to_cpu(msg->prev_addr);
 	if (BT_MESH_ADDR_IS_UNICAST(old_friend)) {
 		frnd = bt_mesh_friend_find(rx->sub->net_idx, old_friend,
-					   true, true);
+					   true, false);
 	} else {
 		frnd = bt_mesh_friend_find(rx->sub->net_idx, rx->ctx.addr,
-					   true, true);
+					   true, false);
 	}
 
 	if (frnd) {
