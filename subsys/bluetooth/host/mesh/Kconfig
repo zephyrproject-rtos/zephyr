@@ -52,6 +52,18 @@ config BT_MESH_GATT_PROXY
 	  i.e. the ability to act as a proxy between a Mesh GATT Client
 	  and a Mesh network.
 
+config BT_MESH_NODE_ID_TIMEOUT
+	int "Node Identity advertising timeout"
+	depends on BT_MESH_GATT_PROXY
+	range 1 60
+	default 60
+	help
+	  This option determines for how long the local node advertises
+	  using Node Identity. The given value is in seconds. The
+	  specification limits this to 60 seconds, and implies that to
+	  be the appropriate value as well, so just leaving this as the
+	  default is the safest option.
+
 if BT_MESH_PROXY
 
 config BT_MESH_PROXY_FILTER_SIZE

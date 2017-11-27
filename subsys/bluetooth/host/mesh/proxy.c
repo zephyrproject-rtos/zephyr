@@ -922,6 +922,8 @@ static s64_t node_id_start;
 #define NODE_ID_LEN  19
 #define NET_ID_LEN   11
 
+#define NODE_ID_TIMEOUT K_SECONDS(CONFIG_BT_MESH_NODE_ID_TIMEOUT)
+
 static u8_t proxy_svc_data[NODE_ID_LEN] = { 0x28, 0x18, };
 
 static const struct bt_data node_id_ad[] = {
@@ -1014,13 +1016,14 @@ static s32_t gatt_proxy_advertise(void)
 	if (node_id_start) {
 		s64_t active = k_uptime_get() - node_id_start;
 
-		BT_DBG("Node Id active for %lld ms", active);
-
-		if (active < K_SECONDS(60)) {
-			remaining = K_SECONDS(60) - active;
+		if (active < NODE_ID_TIMEOUT) {
+			remaining = NODE_ID_TIMEOUT - active;
+			BT_DBG("Node ID active for %lld ms, %d ms remaining",
+			       active, remaining);
 		} else {
 			sub->node_id = BT_MESH_NODE_IDENTITY_STOPPED;
 			node_id_start = 0;
+			BT_DBG("Node ID stopped");
 		}
 	}
 
@@ -1028,7 +1031,7 @@ static s32_t gatt_proxy_advertise(void)
 		proxy_adv_param = &fast_adv_param;
 		if (node_id_adv(sub) == 0 && !node_id_start) {
 			node_id_start = k_uptime_get();
-			remaining = K_SECONDS(60);
+			remaining = NODE_ID_TIMEOUT;
 		}
 	} else if (bt_mesh_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED) {
 		proxy_adv_param = &slow_adv_param;
