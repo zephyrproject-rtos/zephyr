@@ -445,6 +445,9 @@ int bt_mesh_net_create(u16_t idx, u8_t flags, const u8_t key[16],
 		return -EALREADY;
 	}
 
+	memset(msg_cache, 0, sizeof(msg_cache));
+	msg_cache_next = 0;
+
 	sub = &bt_mesh.sub[0];
 
 	sub->kr_flag = BT_MESH_KEY_REFRESH(flags);
