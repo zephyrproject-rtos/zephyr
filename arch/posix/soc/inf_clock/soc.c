@@ -183,8 +183,10 @@ void ps_boot_cpu(void)
 			"Posix arch core: error on pthread_create\n");
 	}
 
-	/*And we wait until Zephyr has run til completion
-	 *(as gone to idle)*/
+	/*
+	 * And we wait until Zephyr has run til completion
+	 * (as gone to idle)
+	 */
 	if (pthread_mutex_lock(&ps_mtx_cpu)) {
 		ps_print_error_and_exit(
 			"Posix arch core: error on pthread_mutex_lock()\n");
