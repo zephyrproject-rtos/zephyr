@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include "hw_models_top.h"
 #include "irq_ctrl.h"
+#include "board_soc.h"
 
 /*set this to 1 to run in real time, to 0 to run as fast as possible*/
 #define CONFIG_ARCH_POSIX_RUN_AT_REAL_TIME 1
@@ -77,13 +78,14 @@ void hwtimer_timer_reached(void)
 	if (silent_ticks > 0) {
 		silent_ticks -= 1;
 	} else {
-		hw_irq_controller(TIMER);
+		hw_irq_controller_set_irq(TIMER_TICK_IRQ);
 	}
 }
 
 
-
-
+#include "irq.h"
+#include "device.h"
+#include "drivers/system_timer.h"
 
 /**
  * Return the current HW cycle counter
@@ -94,7 +96,7 @@ uint32_t _timer_cycle_get_32(void)
 	return hwm_get_time();
 }
 
-
+#ifdef CONFIG_TICKLESS_IDLE
 void _timer_idle_enter(int32_t sys_ticks)
 {
 	silent_ticks = sys_ticks;
@@ -103,4 +105,21 @@ void _timer_idle_enter(int32_t sys_ticks)
 void _timer_idle_exit(void)
 {
 	silent_ticks = 0;
+}
+#endif
+
+static void sp_timer_isr(void *arg)
+{
+	ARG_UNUSED(arg);
+	_sys_clock_tick_announce();
+}
+
+int _sys_clock_driver_init(struct device *device)
+{
+	ARG_UNUSED(device);
+
+	IRQ_CONNECT(TIMER_TICK_IRQ, 1, sp_timer_isr, 0, 0);
+	irq_enable(TIMER_TICK_IRQ);
+
+	return 0;
 }

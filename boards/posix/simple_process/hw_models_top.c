@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include "hw_models_top.h"
 #include "timer_model.h"
+#include "irq_ctrl.h"
 
 
 static hwtime_t device_time; /*The actual time as known by the device*/
@@ -18,10 +19,12 @@ static hwtime_t end_of_time = NEVER; /*When will this device stop*/
 
 /* List of HW model timers: */
 extern hwtime_t HWTimer_timer; /*When does the timer_model want to be called*/
+extern hwtime_t irq_ctrl_timer;
 
-typedef enum { HWTimer = 0, Number_of_timers, None } timer_types_t;
+typedef enum { HWTimer = 0, IRQCnt, Number_of_timers, None } timer_types_t;
 static hwtime_t *Timer_list[Number_of_timers] = {
 	&HWTimer_timer,
+	&irq_ctrl_timer
 };
 static timer_types_t next_timer_index = None;
 static hwtime_t next_timer_time;
@@ -79,6 +82,9 @@ void hwm_main_loop(void)
 		case HWTimer:
 			hwtimer_timer_reached();
 			break;
+		case IRQCnt:
+			hw_irq_ctr_timer_triggered();
+			break;
 		default:
 			ps_print_error_and_exit(
 					"next_timer_index corrupted\n");
@@ -90,7 +96,7 @@ void hwm_main_loop(void)
 }
 
 /**
- * Set the simulated time when the process with stop
+ * Set the simulated time when the process will stop
  */
 void hwm_set_end_of_time(hwtime_t new_end_of_time)
 {
@@ -109,6 +115,7 @@ hwtime_t hwm_get_time(void)
 void hwm_init(void)
 {
 	hwtimer_init();
+	hw_irq_ctrl_init();
 
 	hwm_find_next_timer();
 }
@@ -119,6 +126,7 @@ void hwm_init(void)
 void hwm_cleanup(void)
 {
 	hwtimer_cleanup();
+	hw_irq_ctrl_cleanup();
 }
 
 
