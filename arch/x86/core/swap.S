@@ -143,7 +143,9 @@ SECTION_FUNC(TEXT, __swap)
 
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
 	/* Register the context switch */
+	push %edx
 	call	_sys_k_event_logger_context_switch
+	pop %edx
 #endif
 	movl	_kernel_offset_to_ready_q_cache(%edi), %eax
 
