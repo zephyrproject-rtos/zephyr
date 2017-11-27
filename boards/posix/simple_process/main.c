@@ -23,7 +23,7 @@
 #include "hw_models_top.h"
 #include <stdlib.h>
 
-#define STOP_AFTER_5_SECONDS 1
+#define STOP_AFTER_5_SECONDS 0
 
 
 void main_clean_up(void)
