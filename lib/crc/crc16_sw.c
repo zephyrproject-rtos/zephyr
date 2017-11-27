@@ -34,3 +34,16 @@ u16_t crc16(const u8_t *src, size_t len, u16_t polynomial,
 
 	return crc;
 }
+
+u16_t crc16_ccitt(u16_t seed, const u8_t *src, size_t len)
+{
+	for (; len > 0; len--) {
+		u8_t e, f;
+
+		e = seed ^ *src++;
+		f = e ^ (e << 4);
+		seed = (seed >> 8) ^ (f << 8) ^ (f << 3) ^ (f >> 4);
+	}
+
+	return seed;
+}
