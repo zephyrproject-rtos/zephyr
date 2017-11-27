@@ -8,7 +8,7 @@ if(CONFIG_HAS_STLIB)
   if(CONFIG_VL53L0X)
     zephyr_include_directories(
 	sensor/vl53l0x/api/core/inc
-        ${PROJECT_SOURCE_DIR}/drivers/sensor/vl53l0x
+	${PROJECT_SOURCE_DIR}/drivers/sensor/vl53l0x
     )
 
     zephyr_sources(sensor/vl53l0x/api/core/src/vl53l0x_api.c)
