@@ -10,6 +10,7 @@
  */
 
 #include <stdlib.h>
+#include <ctype.h>
 #include <zephyr.h>
 #include <shell/shell.h>
 #include <misc/printk.h>
@@ -436,9 +437,18 @@ static int cmd_reset(int argc, char *argv[])
 	return 0;
 }
 
+static u8_t str2u8(const char *str)
+{
+	if (isdigit(str[0])) {
+		return strtoul(str, NULL, 0);
+	}
+
+	return (!strcmp(str, "on") || !strcmp(str, "enable"));
+}
+
 static bool str2bool(const char *str)
 {
-	return (!strcmp(str, "on") || !strcmp(str, "enable"));
+	return str2u8(str);
 }
 
 #if defined(CONFIG_BT_MESH_LOW_POWER)
@@ -747,7 +757,7 @@ static int cmd_beacon(int argc, char *argv[])
 	if (argc < 2) {
 		err = bt_mesh_cfg_beacon_get(net.net_idx, net.dst, &status);
 	} else {
-		u8_t val = str2bool(argv[1]);
+		u8_t val = str2u8(argv[1]);
 
 		err = bt_mesh_cfg_beacon_set(net.net_idx, net.dst, val,
 					     &status);
@@ -794,7 +804,7 @@ static int cmd_friend(int argc, char *argv[])
 	if (argc < 2) {
 		err = bt_mesh_cfg_friend_get(net.net_idx, net.dst, &frnd);
 	} else {
-		u8_t val = strtoul(argv[1], NULL, 0);
+		u8_t val = str2u8(argv[1]);
 
 		err = bt_mesh_cfg_friend_set(net.net_idx, net.dst, val, &frnd);
 	}
@@ -817,7 +827,7 @@ static int cmd_gatt_proxy(int argc, char *argv[])
 	if (argc < 2) {
 		err = bt_mesh_cfg_gatt_proxy_get(net.net_idx, net.dst, &proxy);
 	} else {
-		u8_t val = strtoul(argv[1], NULL, 0);
+		u8_t val = str2u8(argv[1]);
 
 		err = bt_mesh_cfg_gatt_proxy_set(net.net_idx, net.dst, val,
 						 &proxy);
@@ -842,7 +852,7 @@ static int cmd_relay(int argc, char *argv[])
 		err = bt_mesh_cfg_relay_get(net.net_idx, net.dst, &relay,
 					    &transmit);
 	} else {
-		u8_t val = strtoul(argv[1], NULL, 0);
+		u8_t val = str2u8(argv[1]);
 		u8_t count, interval, new_transmit;
 
 		if (val) {
