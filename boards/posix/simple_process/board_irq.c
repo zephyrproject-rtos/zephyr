@@ -6,6 +6,8 @@
  */
 
 #include "irq_offload.h"
+#include <kernel_structs.h>
+
 
 /**
  * @brief Disable all interrupts on the CPU
@@ -99,7 +101,9 @@ int ps_get_current_irq(void)
  */
 void irq_offload(irq_offload_routine_t routine, void *parameter)
 {
+	_kernel.nested++;
 	routine(parameter);
+	_kernel.nested--;
 }
 
 
