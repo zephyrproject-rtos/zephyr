@@ -14,6 +14,7 @@
 #include <clock_control.h>
 #include <bluetooth/hci.h>
 #include <misc/util.h>
+#include <misc/byteorder.h>
 
 #include "ll.h"
 
@@ -1205,6 +1206,7 @@ static u32_t isr_rx_scan_report(u8_t rssi_ready, u8_t rl_idx, bool dir_report)
 {
 	struct radio_pdu_node_rx *node_rx;
 	struct pdu_adv *pdu_adv_rx;
+	u8_t *extra;
 
 	node_rx = packet_rx_reserve_get(3);
 	if (node_rx == 0) {
@@ -1241,21 +1243,30 @@ static u32_t isr_rx_scan_report(u8_t rssi_ready, u8_t rl_idx, bool dir_report)
 		node_rx->hdr.type = NODE_RX_TYPE_REPORT;
 	}
 
-	/* save the RSSI value */
 	pdu_adv_rx = (void *)node_rx->pdu_data;
-	((u8_t *)pdu_adv_rx)[offsetof(struct pdu_adv, payload) +
-			     pdu_adv_rx->len] =
-		(rssi_ready) ? (radio_rssi_get() & 0x7f) : 0x7f;
+	extra = &((u8_t *)pdu_adv_rx)[offsetof(struct pdu_adv, payload) +
+				      pdu_adv_rx->len];
+	/* save the RSSI value */
+	*extra = (rssi_ready) ? (radio_rssi_get() & 0x7f) : 0x7f;
+	extra += PDU_AC_SZ_RSSI;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	/* save the resolving list index. */
-	((u8_t *)pdu_adv_rx)[offsetof(struct pdu_adv, payload) +
-			     pdu_adv_rx->len + 1] = rl_idx;
+	*extra = rl_idx;
+	extra += PDU_AC_SZ_PRIV;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 #if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
 	/* save the directed adv report flag */
-	((u8_t *)pdu_adv_rx)[offsetof(struct pdu_adv, payload) +
-			     pdu_adv_rx->len + 2] = dir_report ? 1 : 0;
+	*extra = dir_report ? 1 : 0;
+	extra += PDU_AC_SZ_SCFP;
+#endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+	if (node_rx->hdr.type == NODE_RX_TYPE_MESH_REPORT) {
+		/* save the directed adv report flag */
+		*extra = _radio.scanner.chan - 1;
+		extra++;
+		sys_put_le32(_radio.ticks_anchor, extra);
+	}
 #endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
 
 	packet_rx_enqueue();
