@@ -1150,10 +1150,6 @@ static bool friend_lpn_matches(struct bt_mesh_friend *frnd, u16_t net_idx,
 {
 	int i;
 
-	BT_DBG("frnd->established %u frnd->lpn 0x%04x frnd->net_idx 0x%04x",
-	       frnd->established, frnd->lpn, frnd->net_idx);
-	BT_DBG("addr 0x%04x net_idx 0x%04x", addr, net_idx);
-
 	if (!frnd->established) {
 		return false;
 	}
@@ -1183,15 +1179,17 @@ bool bt_mesh_friend_match(u16_t net_idx, u16_t addr)
 {
 	int i;
 
-	BT_DBG("net_idx 0x%04x addr 0x%04x", net_idx, addr);
-
 	for (i = 0; i < ARRAY_SIZE(bt_mesh.frnd); i++) {
 		struct bt_mesh_friend *frnd = &bt_mesh.frnd[i];
 
 		if (friend_lpn_matches(frnd, net_idx, addr)) {
+			BT_DBG("LPN 0x%04x matched address 0x%04x",
+			       frnd->lpn, addr);
 			return true;
 		}
 	}
+
+	BT_DBG("No matching LPN for address 0x%04x", addr);
 
 	return false;
 }
