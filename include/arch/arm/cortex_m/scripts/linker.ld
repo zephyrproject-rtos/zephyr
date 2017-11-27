@@ -139,6 +139,8 @@ SECTIONS
 	__exidx_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
+	_image_rodata_start = .;
+
 #include <linker/common-rom.ld>
 
     SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
@@ -167,6 +169,7 @@ SECTIONS
 	. = ALIGN(4);
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
+	_image_rodata_end = .;
 	_image_rom_end = .;
 
     GROUP_END(ROMABLE_REGION)
