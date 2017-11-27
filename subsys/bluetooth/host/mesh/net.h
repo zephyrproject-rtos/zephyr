@@ -27,21 +27,6 @@ struct bt_mesh_app_key {
 	} keys[2];
 };
 
-/* Friendship Credentials */
-struct bt_mesh_friend_cred {
-	u16_t net_idx;
-	u16_t addr;
-
-	u16_t lpn_counter;
-	u16_t frnd_counter;
-
-	struct {
-		u8_t nid;         /* NID */
-		u8_t enc[16];     /* EncKey */
-		u8_t privacy[16]; /* PrivacyKey */
-	} cred[2];
-};
-
 struct bt_mesh_subnet {
 	u32_t beacon_sent;        /* Timestamp of last sent beacon */
 	u8_t  beacons_last;       /* Number of beacons during last
@@ -279,21 +264,6 @@ int bt_mesh_net_create(u16_t idx, u8_t flags, const u8_t key[16],
 
 u8_t bt_mesh_net_flags(struct bt_mesh_subnet *sub);
 
-int bt_mesh_friend_cred_get(struct bt_mesh_subnet *sub, u16_t addr, u8_t *nid,
-			    const u8_t **enc, const u8_t **priv);
-int bt_mesh_friend_cred_set(struct bt_mesh_friend_cred *cred, u8_t idx,
-			    const u8_t net_key[16]);
-void bt_mesh_friend_cred_refresh(u16_t net_idx);
-int bt_mesh_friend_cred_update(u16_t net_idx, u8_t idx,
-			       const u8_t net_key[16]);
-struct bt_mesh_friend_cred *bt_mesh_friend_cred_add(u16_t net_idx,
-						    const u8_t net_key[16],
-						    u8_t idx, u16_t addr,
-						    u16_t lpn_counter,
-						    u16_t frnd_counter);
-void bt_mesh_friend_cred_clear(struct bt_mesh_friend_cred *cred);
-int bt_mesh_friend_cred_del(u16_t net_idx, u16_t addr);
-
 bool bt_mesh_kr_update(struct bt_mesh_subnet *sub, u8_t new_kr, bool new_key);
 
 void bt_mesh_net_revoke_keys(struct bt_mesh_subnet *sub);
@@ -327,3 +297,28 @@ void bt_mesh_net_recv(struct net_buf_simple *data, s8_t rssi,
 		      enum bt_mesh_net_if net_if);
 
 void bt_mesh_net_init(void);
+
+/* Friendship Credential Management */
+struct friend_cred {
+	u16_t net_idx;
+	u16_t addr;
+
+	u16_t lpn_counter;
+	u16_t frnd_counter;
+
+	struct {
+		u8_t nid;         /* NID */
+		u8_t enc[16];     /* EncKey */
+		u8_t privacy[16]; /* PrivacyKey */
+	} cred[2];
+};
+
+int friend_cred_get(struct bt_mesh_subnet *sub, u16_t addr, u8_t *nid,
+			    const u8_t **enc, const u8_t **priv);
+int friend_cred_set(struct friend_cred *cred, u8_t idx, const u8_t net_key[16]);
+void friend_cred_refresh(u16_t net_idx);
+int friend_cred_update(struct bt_mesh_subnet *sub);
+struct friend_cred *friend_cred_create(struct bt_mesh_subnet *sub, u16_t addr,
+				       u16_t lpn_counter, u16_t frnd_counter);
+void friend_cred_clear(struct friend_cred *cred);
+int friend_cred_del(u16_t net_idx, u16_t addr);

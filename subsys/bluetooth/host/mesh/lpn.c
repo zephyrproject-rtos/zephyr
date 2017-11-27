@@ -213,7 +213,7 @@ static void clear_friendship(bool force, bool disable)
 
 	k_delayed_work_cancel(&lpn->timer);
 
-	bt_mesh_friend_cred_del(bt_mesh.sub[0].net_idx, lpn->frnd);
+	friend_cred_del(bt_mesh.sub[0].net_idx, lpn->frnd);
 
 	if (lpn->clear_success) {
 		lpn->old_friend = BT_MESH_ADDR_UNASSIGNED;
@@ -482,7 +482,7 @@ int bt_mesh_lpn_friend_offer(struct bt_mesh_net_rx *rx,
 	struct bt_mesh_ctl_friend_offer *msg = (void *)buf->data;
 	struct bt_mesh_lpn *lpn = &bt_mesh.lpn;
 	struct bt_mesh_subnet *sub = rx->sub;
-	struct bt_mesh_friend_cred *cred;
+	struct friend_cred *cred;
 	u16_t frnd_counter;
 	int err;
 
@@ -509,20 +509,10 @@ int bt_mesh_lpn_friend_offer(struct bt_mesh_net_rx *rx,
 
 	lpn->frnd = rx->ctx.addr;
 
-	cred = bt_mesh_friend_cred_add(sub->net_idx, sub->keys[0].net, 0,
-				       lpn->frnd, lpn->counter, frnd_counter);
+	cred = friend_cred_create(sub, lpn->frnd, lpn->counter, frnd_counter);
 	if (!cred) {
 		lpn->frnd = BT_MESH_ADDR_UNASSIGNED;
 		return -ENOMEM;
-	}
-
-	if (sub->kr_flag) {
-		err = bt_mesh_friend_cred_set(cred, 1, sub->keys[1].net);
-		if (err) {
-			bt_mesh_friend_cred_clear(cred);
-			lpn->frnd = BT_MESH_ADDR_UNASSIGNED;
-			return err;
-		}
 	}
 
 	/* TODO: Add offer acceptance criteria check */
@@ -534,7 +524,7 @@ int bt_mesh_lpn_friend_offer(struct bt_mesh_net_rx *rx,
 
 	err = send_friend_poll();
 	if (err) {
-		bt_mesh_friend_cred_clear(cred);
+		friend_cred_clear(cred);
 		lpn->frnd = BT_MESH_ADDR_UNASSIGNED;
 		lpn->recv_win = 0;
 		lpn->queue_size = 0;

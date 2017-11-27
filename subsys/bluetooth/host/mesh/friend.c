@@ -160,7 +160,7 @@ static void friend_clear(struct bt_mesh_friend *frnd)
 
 	k_delayed_work_cancel(&frnd->timer);
 
-	bt_mesh_friend_cred_del(bt_mesh.sub[0].net_idx, frnd->lpn);
+	friend_cred_del(frnd->net_idx, frnd->lpn);
 
 	if (frnd->last) {
 		net_buf_unref(frnd->last);
@@ -325,9 +325,8 @@ static struct net_buf *create_friend_pdu(struct bt_mesh_friend *frnd,
 		priv = sub->keys[sub->kr_flag].privacy;
 		nid = sub->keys[sub->kr_flag].nid;
 	} else {
-		if (bt_mesh_friend_cred_get(sub, frnd->lpn, &nid, &enc,
-					    &priv)) {
-			BT_ERR("bt_mesh_friend_cred_get failed");
+		if (friend_cred_get(sub, frnd->lpn, &nid, &enc, &priv)) {
+			BT_ERR("friend_cred_get failed");
 			goto failed;
 		}
 	}
@@ -861,8 +860,7 @@ init_friend:
 	k_delayed_work_submit(&frnd->timer,
 			      offer_delay(frnd, rx->rssi, msg->criteria));
 
-	bt_mesh_friend_cred_add(sub->net_idx, sub->keys[0].net, 0,
-				frnd->lpn, frnd->lpn_counter, frnd->counter);
+	friend_cred_create(sub, frnd->lpn, frnd->lpn_counter, frnd->counter);
 
 	enqueue_offer(frnd, rx->rssi);
 

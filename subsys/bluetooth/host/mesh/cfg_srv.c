@@ -1999,7 +1999,7 @@ static void net_key_update(struct bt_mesh_model *model,
 	err = bt_mesh_net_keys_create(&sub->keys[1], buf->data);
 	if (!err && (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) ||
 		     IS_ENABLED(CONFIG_BT_MESH_FRIEND))) {
-		err = bt_mesh_friend_cred_update(ctx->net_idx, 1, buf->data);
+		err = friend_cred_update(sub);
 	}
 
 	if (err) {
@@ -2608,7 +2608,7 @@ static void krp_set(struct bt_mesh_model *model, struct bt_mesh_msg_ctx *ctx,
 		bt_mesh_net_revoke_keys(sub);
 		if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER) ||
 		    IS_ENABLED(CONFIG_BT_MESH_FRIEND)) {
-			bt_mesh_friend_cred_refresh(ctx->net_idx);
+			friend_cred_refresh(ctx->net_idx);
 		}
 		sub->kr_phase = BT_MESH_KR_NORMAL;
 		sub->kr_flag = 0;
