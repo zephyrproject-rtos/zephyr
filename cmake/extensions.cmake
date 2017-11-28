@@ -103,6 +103,12 @@ function(zephyr_cc_option)
   endforeach()
 endfunction()
 
+function(zephyr_cc_option_nocheck)
+  foreach(arg ${ARGV})
+    target_compile_options(zephyr_interface INTERFACE ${arg})
+  endforeach()
+endfunction()
+
 function(zephyr_cc_option_fallback option1 option2)
     target_cc_option_fallback(zephyr_interface INTERFACE ${option1} ${option2})
 endfunction()
