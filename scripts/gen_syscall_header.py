@@ -40,7 +40,32 @@ def gen_fn(ret, argc, name, extern=False):
                 sys.stdout.write(", ")
     sys.stdout.write(")")
 
-def gen_make_syscall(ret, argc):
+def tabs(count):
+    sys.stdout.write("\t" * count);
+
+def gen_make_syscall(ret, argc, tabcount):
+    tabs(tabcount)
+
+    # The core kernel is built with the --no-whole-archive linker option.
+    # For all the individual .o files which make up the kernel, if there
+    # are no external references to symbols within these object files,
+    # everything in the object file is dropped.
+    #
+    # This has a subtle interaction with system call handlers. If an object
+    # file has system call handler inside it, and nothing else in the
+    # object file is referenced, then the linker will prefer the weak
+    # version of the handler in the generated syscall_dispatch.c. The
+    # user will get an "unimplemented system call" error if the associated
+    # system call for that handler is made.
+    #
+    # Fix this by making a fake reference to the handler function at the
+    # system call site. The address gets stored inside a special section
+    # "hndlr_ref".  This is enough to prevent the handlers from being
+    # dropped, and the hndlr_ref section is itself dropped from the binary
+    # from gc-sections; these references will not consume space.
+
+    sys.stdout.write("static _GENERIC_SECTION(hndlr_ref) __used void *href = (void *)&_handler_##name; \\\n")
+    tabs(tabcount)
     if (ret != Retval.VOID):
         sys.stdout.write("return (ret)")
     if (argc <= 6 and ret != Retval.U64):
@@ -83,14 +108,12 @@ def gen_defines_inner(ret, argc, kernel_only=False, user_only=False):
         sys.stdout.write("\t\t")
         gen_call_impl(ret, argc)
     elif user_only:
-        sys.stdout.write("\t\t")
-        gen_make_syscall(ret, argc)
+        gen_make_syscall(ret, argc, 2)
     else:
         sys.stdout.write("\t\tif (_is_user_context()) {")
         newline()
 
-        sys.stdout.write("\t\t\t")
-        gen_make_syscall(ret, argc)
+        gen_make_syscall(ret, argc, 3)
 
         sys.stdout.write("\t\t} else {")
         newline()
