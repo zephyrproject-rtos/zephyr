@@ -359,48 +359,6 @@ config NUM_PIPE_ASYNC_MSGS
 endmenu
 
 menu "Memory Pool Options"
-choice
-	prompt "Memory pool block allocation policy"
-	default MEM_POOL_SPLIT_BEFORE_DEFRAG
-	help
-	This option specifies how a memory pool reacts if an unused memory
-	block of the required size is not available.
-
-config MEM_POOL_SPLIT_BEFORE_DEFRAG
-	bool "Split a larger block before merging smaller blocks"
-	help
-	This option instructs a memory pool to try splitting a larger unused
-	block if an unused block of the required size is not available; only
-	if no such blocks exist will the memory pool try merging smaller unused
-	blocks. This policy attempts to limit the cost of performing automatic
-	partial defragmentation of the memory pool, at the cost of fragmenting
-	the memory pool's larger blocks.
-
-config MEM_POOL_DEFRAG_BEFORE_SPLIT
-	bool "Merge smaller blocks before splitting a larger block"
-	help
-	This option instructs a memory pool to try merging smaller unused
-	blocks if an unused block of the required size is not available; only
-	if this does not generate a sufficiently large block will the memory
-	pool try splitting a larger unused block. This policy attempts to
-	preserve the memory pool's larger blocks, at the cost of performing
-	automatic partial defragmentations more frequently.
-
-config MEM_POOL_SPLIT_ONLY
-	bool "Split a larger block, but never merge smaller blocks"
-	help
-	This option instructs a memory pool to try splitting a larger unused
-	block if an unused block of the required size is not available; if no
-	such blocks exist the block allocation operation fails. This policy
-	attempts to limit the cost of defragmenting the memory pool by avoiding
-	automatic partial defragmentation, at the cost of requiring the
-	application to explicitly request a full defragmentation of the memory
-	pool when an allocation fails. Depending on how a memory pool is used,
-	it may be more efficient for a memory pool to perform an occasional
-	full defragmentation than to perform frequent partial defragmentations.
-
-endchoice
-
 config HEAP_MEM_POOL_SIZE
 	int
 	prompt "Heap memory pool size (in bytes)"

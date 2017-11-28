@@ -25,13 +25,10 @@
 
 #define  NUM_BLOCKS     64
 
-#define  DEFRAG_BLK_TEST 2222
-
 /* size of stack area used by each thread */
 #define STACKSIZE 512
 
 K_SEM_DEFINE(ALTERNATE_SEM, 0, 1);
-K_SEM_DEFINE(DEFRAG_SEM, 0, 1);
 K_SEM_DEFINE(REGRESS_SEM, 0, 1);
 K_SEM_DEFINE(HELPER_SEM, 0, 1);
 
@@ -82,19 +79,6 @@ static struct TEST_CASE getwt_set[] = {
 	{ &block_list[2], &POOL_ID, 1024, TENTH_SECOND, -EAGAIN },
 	{ &block_list[3], &POOL_ID, 512, TENTH_SECOND, -EAGAIN },
 	{ &block_list[4], &POOL_ID, 256, TENTH_SECOND, -EAGAIN }
-};
-
-static struct TEST_CASE defrag[] = {
-	{ &block_list[0], &POOL_ID, 64, 0, 0 },
-	{ &block_list[1], &POOL_ID, 64, 0, 0 },
-	{ &block_list[2], &POOL_ID, 64, 0, 0 },
-	{ &block_list[3], &POOL_ID, 64, 0, 0 },
-	{ &block_list[4], &POOL_ID, 256, 0, 0 },
-	{ &block_list[5], &POOL_ID, 256, 0, 0 },
-	{ &block_list[6], &POOL_ID, 256, 0, 0 },
-	{ &block_list[7], &POOL_ID, 1024, 0, 0 },
-	{ &block_list[8], &POOL_ID, 1024, 0, 0 },
-	{ &block_list[9], &POOL_ID, 1024, 0, 0 }
 };
 
 /**
@@ -359,72 +343,6 @@ int pool_block_get_wait_test(void)
 
 /**
  *
- * @brief Task responsible for defragmenting the pool POOL_ID
- *
- * @return N/A
- */
-
-void defrag_task(void)
-{
-	k_sem_take(&DEFRAG_SEM, K_FOREVER);     /* Wait to be activated */
-
-	k_mem_pool_defrag(&POOL_ID);
-
-	k_sem_give(&REGRESS_SEM);   /* defrag_task is finished */
-}
-
-/**
- *
- * pool_defrag_test -
- *
- * @return TC_PASS on success, TC_FAIL on failure
- */
-
-int pool_defrag_test(void)
-{
-	int rv;
-	struct k_mem_block new_block;
-
-	/* Get a bunch of blocks */
-
-	rv = pool_block_get_work("k_mem_pool_alloc", pool_block_get_func,
-				 defrag, ARRAY_SIZE(defrag));
-	if (rv != TC_PASS) {
-		return TC_FAIL;
-	}
-
-
-	k_sem_give(&DEFRAG_SEM);    /* Activate defrag_task */
-
-	/*
-	 * Block on getting another block from the pool.
-	 * This will allow defrag_task to execute so that we can get some
-	 * better code coverage.  500 ms is expected to more than sufficient
-	 * time for defrag_task to finish.
-	 */
-
-	rv = k_mem_pool_alloc(&POOL_ID, &new_block, DEFRAG_BLK_TEST, 500);
-	if (rv != -EAGAIN) {
-		TC_ERROR("k_mem_pool_alloc() returned %d, not %d\n", rv,
-			 -EAGAIN);
-		return TC_FAIL;
-	}
-
-	rv = k_sem_take(&REGRESS_SEM, K_NO_WAIT);
-	if (rv != 0) {
-		TC_ERROR("defrag_task did not finish in allotted time!\n");
-		return TC_FAIL;
-	}
-
-	/* Free the allocated blocks */
-
-	free_blocks(defrag, ARRAY_SIZE(defrag));
-
-	return TC_PASS;
-}
-
-/**
- *
  * @brief Alternate task in the test suite
  *
  * This routine runs at a lower priority than Regression_task().
@@ -557,10 +475,6 @@ void test_mem_pool(void)
 	tc_rc = pool_block_get_wait_test();
 	zassert_equal(tc_rc, TC_PASS, "pool block wait failure");
 
-	TC_PRINT("Testing k_mem_pool_defragment() ...\n");
-	tc_rc = pool_defrag_test();
-	zassert_equal(tc_rc, TC_PASS, "pool defrag failure");
-
 	tc_rc = pool_malloc_test();
 	zassert_equal(tc_rc, TC_PASS, "pool malloc failure");
 }
@@ -568,9 +482,6 @@ void test_mem_pool(void)
 
 K_THREAD_DEFINE(t_alternate, STACKSIZE, alternate_task, NULL, NULL, NULL,
 		6, 0, K_NO_WAIT);
-
-K_THREAD_DEFINE(t_defrag, STACKSIZE, defrag_task, NULL, NULL, NULL,
-		7, 0, K_NO_WAIT);
 
 K_THREAD_DEFINE(t_helper, STACKSIZE, helper_task, NULL, NULL, NULL,
 		7, 0, K_NO_WAIT);
