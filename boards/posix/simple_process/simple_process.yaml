@@ -1,0 +1,8 @@
+identifier: simple_process
+name: Native POSIX port
+type: native
+arch: posix
+toolchain:
+  - zephyr
+testing:
+  default: true

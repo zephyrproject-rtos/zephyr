@@ -1,4 +1,6 @@
+if(NOT CONFIG_ARCH_POSIX)
 zephyr_sources(                         sys_clock_init.c)
+endif()
 zephyr_sources_ifdef(CONFIG_HPET_TIMER  hpet.c)
 zephyr_sources_ifdef(CONFIG_ARCV2_TIMER arcv2_timer0.c)
 zephyr_sources_if_kconfig(              loapic_timer.c)

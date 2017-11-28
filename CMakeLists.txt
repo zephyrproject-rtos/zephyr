@@ -64,6 +64,9 @@ zephyr_include_directories(
   ${STDINCLUDE}
 )
 
+if(NOT CONFIG_ARCH_POSIX)
+	set(TOPT -T)
+endif()
 
 zephyr_compile_definitions(
   KERNEL
@@ -95,10 +98,28 @@ zephyr_compile_options(
   -Wformat
   -Wformat-security
   -Wno-format-zero-length
+  -imacros ${AUTOCONF_H}
+)
+
+
+# FIXME
+if(CONFIG_ARCH_POSIX)
+zephyr_compile_options(
+  -Wno-undef
+  -Wno-implicit-function-declaration
+  )
+else()
+zephyr_compile_options(
   -Wno-main
   -ffreestanding
-  -include ${AUTOCONF_H}
+  )
+endif()
+
+zephyr_compile_options_ifdef(CONFIG_COVERAGE
+  -fprofile-arcs
+  -ftest-coverage
 )
+
 
 zephyr_compile_options(
   $<$<COMPILE_LANGUAGE:C>:-std=c99>
@@ -114,13 +135,15 @@ zephyr_compile_options(
   $<$<COMPILE_LANGUAGE:ASM>:-D_ASMLANGUAGE>
 )
 
+if(NOT CONFIG_ARCH_POSIX)
 zephyr_ld_options(
   -nostartfiles
   -nodefaultlibs
   -nostdlib
   -static
   -no-pie
-  )
+)
+endif()
 
 # ==========================================================================
 #
@@ -235,7 +258,9 @@ endif()
 zephyr_cc_option_ifdef(CONFIG_DEBUG_SECTION_MISMATCH -fno-inline-functions-called-once)
 zephyr_cc_option_ifdef(CONFIG_STACK_USAGE            -fstack-usage)
 
+if(NOT CONFIG_ARCH_POSIX)
 zephyr_compile_options(-nostdinc)
+endif()
 zephyr_system_include_directories(${NOSTDINC})
 
 # Force an error when things like SYS_INIT(foo, ...) occur with a missing header.
@@ -252,9 +277,19 @@ if(IS_TEST)
 endif()
 
 set_ifndef(LINKERFLAGPREFIX -Wl)
+if(NOT CONFIG_ARCH_POSIX)
 zephyr_ld_options(
   ${LINKERFLAGPREFIX},-X
   ${LINKERFLAGPREFIX},-N
+  )
+else()
+zephyr_ld_options(
+  -ldl -pthread
+  -m32
+)
+endif()
+
+zephyr_ld_options(
   ${LINKERFLAGPREFIX},--gc-sections
   ${LINKERFLAGPREFIX},--build-id=none
   )
@@ -434,6 +469,9 @@ if(CONFIG_APPLICATION_MEMORY)
   endforeach()
 endif() # CONFIG_APPLICATION_MEMORY
 
+if(NOT CONFIG_ARCH_POSIX)
+	set(NOSTDINC_F -nostdinc)
+endif()
 get_filename_component(BASE_NAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
 add_custom_command(
   OUTPUT linker.cmd
@@ -443,7 +481,7 @@ add_custom_command(
   # TODO: Remove duplication
   COMMAND ${CMAKE_C_COMPILER}
   -x assembler-with-cpp
-  -nostdinc
+  ${NOSTDINC_F}
   -undef
   -MD -MF linker.cmd.dep -MT ${BASE_NAME}/linker.cmd
   ${ZEPHYR_INCLUDES}
@@ -460,11 +498,14 @@ add_custom_target(
   offsets_h
 )
 
+if(NOT CONFIG_ARCH_POSIX)
+	set(E_START -e__start)
+endif()
 set(zephyr_lnk
   ${LINKERFLAGPREFIX},-Map=${PROJECT_BINARY_DIR}/${KERNEL_MAP_NAME}
   -u_OffsetAbsSyms
   -u_ConfigAbsSyms
-  -e__start
+  ${E_START}
   ${LINKERFLAGPREFIX},--start-group
   ${LINKERFLAGPREFIX},--whole-archive
   ${ZEPHYR_LIBS_PROPERTY}
@@ -617,7 +658,7 @@ get_property(GKSF GLOBAL PROPERTY GENERATED_KERNEL_SOURCE_FILES)
 
 # FIXME: Is there any way to get rid of empty_file.c?
 add_executable(       zephyr_prebuilt misc/empty_file.c)
-target_link_libraries(zephyr_prebuilt -T${PROJECT_BINARY_DIR}/linker.cmd ${zephyr_lnk})
+target_link_libraries(zephyr_prebuilt ${TOPT}${PROJECT_BINARY_DIR}/linker.cmd ${zephyr_lnk})
 set_property(TARGET   zephyr_prebuilt PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker.cmd)
 add_dependencies(     zephyr_prebuilt linker_script offsets)
 
@@ -633,7 +674,7 @@ if(GKOF OR GKSF)
     ${LINKER_SCRIPT_DEP}
     COMMAND ${CMAKE_C_COMPILER}
     -x assembler-with-cpp
-    -nostdinc
+    ${NOSTDINC_F}
     -undef
     -MD -MF linker_pass2.cmd.dep -MT ${BASE_NAME}/linker_pass2.cmd
     ${ZEPHYR_INCLUDES}
@@ -652,7 +693,7 @@ if(GKOF OR GKSF)
     )
 
   add_executable(       kernel_elf misc/empty_file.c ${GKSF})
-  target_link_libraries(kernel_elf ${GKOF} -T${PROJECT_BINARY_DIR}/linker_pass2.cmd ${zephyr_lnk})
+  target_link_libraries(kernel_elf ${GKOF} ${TOPT}${PROJECT_BINARY_DIR}/linker_pass2.cmd ${zephyr_lnk})
   set_property(TARGET   kernel_elf PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_pass2.cmd)
   add_dependencies(     kernel_elf linker_pass2_script)
 else()
@@ -683,6 +724,7 @@ list_append_ifdef(
   post_build_commands
   COMMAND ${CMAKE_OBJCOPY} -S -Obinary -R .comment -R COMMON -R .eh_frame  ${KERNEL_ELF_NAME}    ${KERNEL_BIN_NAME}
   )
+
 list_append_ifdef(
   CONFIG_BUILD_OUTPUT_S19
   post_build_commands
@@ -707,6 +749,12 @@ list_append_ifdef(
   COMMAND ${CMAKE_STRIP}   --strip-all ${KERNEL_ELF_NAME} -o ${KERNEL_STRIP_NAME}
   )
 
+list_append_ifdef(
+  CONFIG_BUILD_OUTPUT_EXE
+  post_build_commands
+  COMMAND ${CMAKE_COMMAND} -E rename ${KERNEL_ELF_NAME}    ${KERNEL_EXE_NAME}
+  )
+
 add_custom_command(
   TARGET ${logical_target_for_zephyr_elf}
   POST_BUILD
@@ -715,7 +763,17 @@ add_custom_command(
   # NB: COMMENT only works for some CMake-Generators
 )
 
-add_subdirectory(cmake/qemu)
+if(EMU_PLATFORM STREQUAL "qemu")
+	add_subdirectory(cmake/qemu)
+elseif(EMU_PLATFORM STREQUAL "native")
+    add_custom_target(run
+      COMMAND
+      ${APPLICATION_BINARY_DIR}/zephyr/${KERNEL_EXE_NAME}
+      WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
+      USES_TERMINAL
+      )
+endif()
+
 add_subdirectory(cmake/flash)
 
 add_subdirectory(cmake/usage)

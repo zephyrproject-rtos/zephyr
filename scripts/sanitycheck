@@ -297,6 +297,56 @@ class Handler:
         self.lock.release()
         return ret
 
+class NativeHandler(Handler):
+    def __init__(self, name, sourcedir, outdir, run_log, valgrind_log, timeout):
+        """Constructor
+
+        @param name Arbitrary name of the created thread
+        @param outdir Working directory containing the test binary
+        @param run_log Absolute path to runtime logs
+        @param valgrind Absolute path to valgrind's log
+        @param timeout Kill the QEMU process if it doesn't finish up within
+            the given number of seconds
+        """
+        super().__init__(name, outdir, run_log, timeout, True)
+
+        self.timeout = timeout
+        self.sourcedir = sourcedir
+        self.outdir = outdir
+        self.run_log = run_log
+        self.valgrind = False
+        self.valgrind_log = valgrind_log
+        self.returncode = 0
+        self.set_state("running", {})
+
+    def handle(self):
+        out_state = "failed"
+
+        with open(self.run_log, "wt") as rl, open(self.valgrind_log, "wt") as vl:
+            try:
+                binary = os.path.join(self.outdir, "zephyr", "zephyr.exe")
+                command = [binary]
+                if shutil.which("valgrind") and self.valgrind:
+                    command = ["valgrind", "--error-exitcode=2",
+                               "--leak-check=full"] + command
+                returncode = subprocess.call(command, timeout=self.timeout,
+                                             stdout=rl, stderr=vl)
+                self.returncode = returncode
+                if returncode != 0:
+                    if self.returncode == 1:
+                        out_state = "failed"
+                    else:
+                        out_state = "failed valgrind"
+                else:
+                    out_state = "passed"
+            except subprocess.TimeoutExpired:
+                out_state = "timeout"
+                self.returncode = 1
+
+        returncode = subprocess.call(["GCOV_PREFIX=" + self.outdir, "gcov", self.sourcedir, "-s", self.outdir], shell=True)
+
+        self.set_state(out_state, {})
+
 class UnitHandler(Handler):
     def __init__(self, name, sourcedir, outdir, run_log, valgrind_log, timeout):
         """Constructor
@@ -809,7 +859,6 @@ class MakeGenerator:
         self._add_goal(outdir)
         build_logfile = os.path.join(outdir, "build.log")
         run_logfile = os.path.join(outdir, "run.log")
-        qemu_logfile = os.path.join(outdir, "qemu.log")
         valgrind_logfile = os.path.join(outdir, "valgrind.log")
         if coverage:
                 args += ["COVERAGE=1"]
@@ -823,6 +872,20 @@ class MakeGenerator:
         self.goals[name] = MakeGoal(name, text, q, self.logfile, build_logfile,
                                     run_logfile, valgrind_logfile)
 
+    def add_native_goal(self, name, directory, outdir, args, timeout=30, coverage=False):
+        self._add_goal(outdir)
+        build_logfile = os.path.join(outdir, "build.log")
+        run_logfile = os.path.join(outdir, "run.log")
+        valgrind_logfile = os.path.join(outdir, "valgrind.log")
+
+        # we handle running in the NativeHandler class
+        text = (self._get_rule_header(name) +
+                self._get_sub_make(name, "building", directory,
+                                   outdir, build_logfile, args) +
+                self._get_rule_footer(name))
+        q = NativeHandler(name, directory, outdir, run_logfile, valgrind_logfile, timeout)
+        self.goals[name] = MakeGoal(name, text, q, self.logfile, build_logfile,
+                                    run_logfile, valgrind_logfile)
 
     def add_test_instance(self, ti, build_only=False, enable_slow=False, coverage=False,
                           extra_args=[]):
@@ -844,6 +907,9 @@ class MakeGenerator:
                                args, ti.test.timeout)
         elif ti.test.type == "unit":
             self.add_unit_goal(ti.name, ti.test.code_location, ti.outdir,
+                               args, ti.test.timeout, coverage)
+        elif ti.platform.type == "native" and (not ti.build_only) and (not build_only):
+            self.add_native_goal(ti.name, ti.test.code_location, ti.outdir,
                                args, ti.test.timeout, coverage)
         else:
             self.add_build_goal(ti.name, ti.test.code_location, ti.outdir,
@@ -937,10 +1003,6 @@ class MakeGenerator:
 # "str" - String
 
 # XXX Be sure to update __doc__ if you change any of this!!
-
-arch_valid_keys = {"name" : {"type" : "str", "required" : True},
-                   "platforms" : {"type" : "list", "required" : True},
-                   "supported_toolchains" : {"type" : "list", "required" : True}}
 
 platform_valid_keys = {"qemu_support" : {"type" : "bool", "default" : False},
                        "supported_toolchains" : {"type" : "list", "default" : []}}
@@ -1126,6 +1188,7 @@ class Platform:
                 self.supported.add(item)
 
         self.qemu_support = True if cp.get('type', "na") == 'qemu' else False
+        self.type = cp.get('type', "na")
         self.arch = cp['arch']
         self.supported_toolchains = cp.get("toolchain", [])
         self.defconfig = None
@@ -1247,6 +1310,7 @@ class TestInstance:
         @return A SizeCalculator object
         """
         fns = glob.glob(os.path.join(self.outdir, "zephyr", "*.elf"))
+        fns.extend(glob.glob(os.path.join(self.outdir, "zephyr", "*.exe")))
         fns = [x for x in fns if not x.endswith('_prebuilt.elf')]
         if (len(fns) != 1):
             raise BuildError("Missing/multiple output ELF binary")

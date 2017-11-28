@@ -1,0 +1,4 @@
+
+config BOARD_SIMPLE_PROCESS
+	bool "Posix simple process"
+	depends on SOC_POSIX

@@ -1,0 +1,4 @@
+
+
+config SOC_POSIX
+	bool "Native POSIX port"

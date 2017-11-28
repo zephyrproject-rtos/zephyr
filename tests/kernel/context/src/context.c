@@ -68,6 +68,8 @@
  * The Cortex-M use the SYSTICK exception for the system timer, which is
  * not considered an IRQ by the irq_enable/Disable APIs.
  */
+#elif defined(CONFIG_ARCH_POSIX) && defined(CONFIG_BOARD_SIMPLE_PROCESS)
+#define TICK_IRQ TIMER_TICK_IRQ
 #else
 /* generate an error */
 #error Timer type is not defined for this platform
