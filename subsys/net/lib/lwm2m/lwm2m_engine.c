@@ -2593,6 +2593,38 @@ static int do_read_op(struct lwm2m_engine_obj *obj,
 	return ret;
 }
 
+static int print_attr(struct net_pkt *pkt, char *buf, u16_t buflen,
+		      sys_slist_t *attr_list)
+{
+	struct lwm2m_attr *attr;
+	int used, base;
+	u8_t digit;
+	s32_t fraction;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(attr_list, attr, node) {
+		/* assuming integer will have float_val.val2 set as 0 */
+		used = snprintk(buf, buflen, ";%s=%d%s",
+				LWM2M_ATTR_STR[attr->type],
+				attr->float_val.val1,
+				attr->float_val.val2 > 0 ? "." : "");
+
+		base = 100000;
+		fraction = attr->float_val.val2;
+		while (fraction && used < buflen && base > 0) {
+			digit = fraction / base;
+			buf[used++] = '0' + digit;
+			fraction -= digit * base;
+			base /= 10;
+		}
+
+		if (!net_pkt_append_all(pkt, used, buf, BUF_ALLOC_TIMEOUT)) {
+			return -ENOMEM;
+		}
+	}
+
+	return 0;
+}
+
 static int do_discover_op(struct lwm2m_engine_context *context, bool well_known)
 {
 	static char disc_buf[24];
@@ -2672,7 +2704,6 @@ static int do_discover_op(struct lwm2m_engine_context *context, bool well_known)
 		}
 
 		if (path->level == 1) {
-			/* TODO: report object attrs (5.4.2) */
 			snprintk(disc_buf, sizeof(disc_buf), "%s</%u>",
 				 reported ? "," : "",
 				 obj_inst->obj->obj_id);
@@ -2680,6 +2711,14 @@ static int do_discover_op(struct lwm2m_engine_context *context, bool well_known)
 						strlen(disc_buf), disc_buf,
 						BUF_ALLOC_TIMEOUT)) {
 				return -ENOMEM;
+			}
+
+			/* report object attrs (5.4.2) */
+			ret = print_attr(out->out_cpkt->pkt,
+					 disc_buf, sizeof(disc_buf),
+					 &obj_inst->obj->attr_list);
+			if (ret < 0) {
+				return ret;
 			}
 
 			reported = true;
@@ -2692,7 +2731,6 @@ static int do_discover_op(struct lwm2m_engine_context *context, bool well_known)
 		}
 
 		if (path->level == 2) {
-			/* TODO: report object instance attrs (5.4.2) */
 			snprintk(disc_buf, sizeof(disc_buf), "%s</%u/%u>",
 				 reported ? "," : "",
 				 obj_inst->obj->obj_id, obj_inst->obj_inst_id);
@@ -2700,6 +2738,14 @@ static int do_discover_op(struct lwm2m_engine_context *context, bool well_known)
 						strlen(disc_buf), disc_buf,
 						BUF_ALLOC_TIMEOUT)) {
 				return -ENOMEM;
+			}
+
+			/* report object instance attrs (5.4.2) */
+			ret = print_attr(out->out_cpkt->pkt,
+					 disc_buf, sizeof(disc_buf),
+					 &obj_inst->attr_list);
+			if (ret < 0) {
+				return ret;
 			}
 
 			reported = true;
@@ -2712,7 +2758,6 @@ static int do_discover_op(struct lwm2m_engine_context *context, bool well_known)
 				continue;
 			}
 
-			/* TODO: report resource attrs when path > 1 (5.4.2) */
 			snprintk(disc_buf, sizeof(disc_buf),
 				 "%s</%u/%u/%u>",
 				 reported ? "," : "",
@@ -2723,6 +2768,16 @@ static int do_discover_op(struct lwm2m_engine_context *context, bool well_known)
 						strlen(disc_buf), disc_buf,
 						BUF_ALLOC_TIMEOUT)) {
 				return -ENOMEM;
+			}
+
+			/* report resource attrs when path > 1 (5.4.2) */
+			if (path->level > 1) {
+				ret = print_attr(out->out_cpkt->pkt,
+					disc_buf, sizeof(disc_buf),
+					&obj_inst->resources[i].attr_list);
+				if (ret < 0) {
+					return ret;
+				}
 			}
 
 			reported = true;
