@@ -919,7 +919,7 @@ static int send_ack(struct bt_mesh_subnet *sub, u16_t src, u16_t dst,
 	u16_t seq_zero = *seq_auth & 0x1fff;
 	u8_t buf[6];
 
-	BT_DBG("SeqZero 0x%04x Block 0x%08x", seq_zero, block);
+	BT_DBG("SeqZero 0x%04x Block 0x%08x OBO %u", seq_zero, block, obo);
 
 	if (bt_mesh_lpn_established()) {
 		BT_WARN("Not sending ack when LPN is enabled");
