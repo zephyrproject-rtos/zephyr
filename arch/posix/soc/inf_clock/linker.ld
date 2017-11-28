@@ -9,6 +9,26 @@
   */
 SECTIONS
  {
+  object_access () :
+ {
+  __object_access_start = .;
+  KEEP(*(".object_access.*"))
+  __object_access_end = .;
+ }
+ devconfig () :
+ {
+  __devconfig_start = .;
+  *(".devconfig.*")
+  KEEP(*(SORT(".devconfig*")))
+  __devconfig_end = .;
+ } /*> ROM*/
+ net_l2 () :
+ {
+  __net_l2_start = .;
+  *(".net_l2.init")
+  KEEP(*(SORT(".net_l2.init*")))
+  __net_l2_end = .;
+ } /*> ROM*/
   initlevel () :
  {
   __device_init_start = .; __device_PRE_KERNEL_1_start = .; KEEP(*(SORT(.init_PRE_KERNEL_1[0-9]))); KEEP(*(SORT(.init_PRE_KERNEL_1[1-9][0-9]))); __device_PRE_KERNEL_2_start = .; KEEP(*(SORT(.init_PRE_KERNEL_2[0-9]))); KEEP(*(SORT(.init_PRE_KERNEL_2[1-9][0-9]))); __device_POST_KERNEL_start = .; KEEP(*(SORT(.init_POST_KERNEL[0-9]))); KEEP(*(SORT(.init_POST_KERNEL[1-9][0-9]))); __device_APPLICATION_start = .; KEEP(*(SORT(.init_APPLICATION[0-9]))); KEEP(*(SORT(.init_APPLICATION[1-9][0-9]))); __device_PRIMARY_start = .; KEEP(*(SORT(.init_PRIMARY[0-9]))); KEEP(*(SORT(.init_PRIMARY[1-9][0-9]))); __device_SECONDARY_start = .; KEEP(*(SORT(.init_SECONDARY[0-9]))); KEEP(*(SORT(.init_SECONDARY[1-9][0-9]))); __device_NANOKERNEL_start = .; KEEP(*(SORT(.init_NANOKERNEL[0-9]))); KEEP(*(SORT(.init_NANOKERNEL[1-9][0-9]))); __device_MICROKERNEL_start = .; KEEP(*(SORT(.init_MICROKERNEL[0-9]))); KEEP(*(SORT(.init_MICROKERNEL[1-9][0-9]))); __device_init_end = .;
@@ -148,7 +168,7 @@ SECTIONS
  {
   __net_if_start = .;
   *(".net_if.*")
-  KEEP(*(SORT(".net_if*")))
+  KEEP(*(SORT(".net_if.*")))
   __net_if_end = .;
  } /*> RAM*/
  net_if_event () :
