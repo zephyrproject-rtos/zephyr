@@ -309,9 +309,13 @@ static void coop_delayed_work_resubmit(int arg1, int arg2)
 		k_delayed_work_submit(&tests[0].work, 1);
 
 		/* Busy wait 1 ms to force a clash with workqueue */
+#if defined(CONFIG_ARCH_POSIX)
+		k_busy_wait(1000);
+#else
 		uptime = k_uptime_get_32();
 		while (k_uptime_get_32() == uptime) {
 		}
+#endif
 	}
 }
 
