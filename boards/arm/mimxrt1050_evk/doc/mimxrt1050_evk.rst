@@ -126,7 +126,7 @@ System Clock
 ============
 
 The MIMXRT1050 SoC is configured to use the 24 MHz external oscillator on the
-board with the on-chip PLL to generate a 528 MHz system clock.
+board with the on-chip PLL to generate a 600 MHz core clock.
 
 Serial Port
 ===========
