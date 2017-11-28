@@ -34,12 +34,21 @@ static struct k_thread tdata[NUM_THREAD];
 /*millisecond per tick*/
 #define MSEC_PER_TICK (sys_clock_us_per_tick / USEC_PER_MSEC)
 /*align to millisecond boundary*/
+#if defined(CONFIG_ARCH_POSIX)
+#define ALIGN_MS_BOUNDARY() \
+	do {				       \
+		u32_t t = k_uptime_get_32();   \
+		while (t == k_uptime_get_32()) \
+			posix_halt_cpu();\
+	} while (0)
+#else
 #define ALIGN_MS_BOUNDARY() \
 	do {\
 		u32_t t = k_uptime_get_32();\
 		while (t == k_uptime_get_32())\
 			;\
 	} while (0)
+#endif
 K_SEM_DEFINE(sema, 0, NUM_THREAD);
 static s64_t elapsed_slice;
 
@@ -57,7 +66,11 @@ static void thread_tslice(void *p1, void *p2, void *p3)
 
 	/*keep the current thread busy for more than one slice*/
 	while (k_uptime_get_32() - t32 < SLEEP_TICKLESS)
+#if defined(CONFIG_ARCH_POSIX)
+		posix_halt_cpu();
+#else
 		;
+#endif
 	k_sem_give(&sema);
 }
 
