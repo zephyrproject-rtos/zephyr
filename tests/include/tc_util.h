@@ -68,6 +68,7 @@
 
 #define TC_PRINT(fmt, ...) PRINT_DATA(fmt, ##__VA_ARGS__)
 #define TC_START(name) PRINT_DATA("starting test - %s\n", name)
+
 #define TC_END(result, fmt, ...) PRINT_DATA(fmt, ##__VA_ARGS__)
 
 /* prints result and the function name */
@@ -80,6 +81,16 @@
 #define TC_END_RESULT(result)                           \
 	_TC_END_RESULT((result), __func__)
 
+#if defined CONFIG_BOARD_SIMPLE_PROCESS
+#define TC_END_POST                                 \
+	do {                                        \
+		extern void main_clean_up(void);    \
+		main_clean_up();                    \
+	} while (0)
+#else
+#define TC_END_POST
+#endif
+
 #define TC_END_REPORT(result)                               \
 	do {                                                    \
 		PRINT_LINE;                                         \
@@ -87,6 +98,7 @@
 		TC_END(result,                                      \
 		       "PROJECT EXECUTION %s\n",               \
 		       (result) == TC_PASS ? "SUCCESSFUL" : "FAILED");	\
+		TC_END_POST;                                            \
 	} while (0)
 
 #define TC_CMD_DEFINE(name)				\
