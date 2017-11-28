@@ -87,6 +87,10 @@
 #define	COAP_OPTION_BUF_LEN	13
 #endif
 
+/* TODO: grab this from server obj */
+#define DEFAULT_SERVER_PMIN	10
+#define DEFAULT_SERVER_PMAX	60
+
 #define MAX_TOKEN_LEN		8
 
 struct observe_node {
@@ -381,9 +385,15 @@ static int engine_add_observer(struct lwm2m_message *msg,
 			       struct lwm2m_obj_path *path,
 			       u16_t format)
 {
+	struct lwm2m_engine_obj *obj = NULL;
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;
 	struct observe_node *obs;
 	struct sockaddr *addr;
+	struct notification_attrs attrs = {
+		.flags = BIT(LWM2M_ATTR_PMIN) || BIT(LWM2M_ATTR_PMAX),
+		.pmin  = DEFAULT_SERVER_PMIN,
+		.pmax  = DEFAULT_SERVER_PMAX,
+	};
 	int i;
 
 	if (!msg || !msg->ctx) {
@@ -400,10 +410,37 @@ static int engine_add_observer(struct lwm2m_message *msg,
 	/* remote addr */
 	addr = &msg->ctx->net_app_ctx.default_ctx->remote;
 
+	/* TODO: get server object for default pmin/pmax
+	 * and observe dup checking
+	 */
+
+	/* make sure this observer doesn't exist already */
+	SYS_SLIST_FOR_EACH_CONTAINER(&engine_observer_list, obs, node) {
+		/* TODO: distinguish server object */
+		if (obs->ctx == msg->ctx &&
+		    memcmp(&obs->path, path, sizeof(*path)) == 0) {
+			/* quietly update the token information */
+			memcpy(obs->token, token, tkl);
+			obs->tkl = tkl;
+
+			SYS_LOG_DBG("OBSERVER DUPLICATE %u/%u/%u(%u) [%s]",
+				    path->obj_id, path->obj_inst_id,
+				    path->res_id, path->level,
+				    lwm2m_sprint_ip_addr(addr));
+
+			return 0;
+		}
+	}
+
 	/* check if object exists */
-	if (!get_engine_obj(path->obj_id)) {
+	obj = get_engine_obj(path->obj_id);
+	if (!obj) {
 		SYS_LOG_ERR("unable to find obj: %u", path->obj_id);
 		return -ENOENT;
+	}
+
+	if (update_attrs(&obj->attr_list, &attrs) < 0) {
+		return -EINVAL;
 	}
 
 	/* check if object instance exists */
@@ -414,6 +451,10 @@ static int engine_add_observer(struct lwm2m_message *msg,
 			SYS_LOG_ERR("unable to find obj_inst: %u/%u",
 				    path->obj_id, path->obj_inst_id);
 			return -ENOENT;
+		}
+
+		if (update_attrs(&obj_inst->attr_list, &attrs) < 0) {
+			return -EINVAL;
 		}
 	}
 
@@ -431,22 +472,10 @@ static int engine_add_observer(struct lwm2m_message *msg,
 				    path->res_id);
 			return -ENOENT;
 		}
-	}
 
-	/* make sure this observer doesn't exist already */
-	SYS_SLIST_FOR_EACH_CONTAINER(&engine_observer_list, obs, node) {
-		if (obs->ctx == msg->ctx &&
-		    memcmp(&obs->path, path, sizeof(*path)) == 0) {
-			/* quietly update the token information */
-			memcpy(obs->token, token, tkl);
-			obs->tkl = tkl;
-
-			SYS_LOG_DBG("OBSERVER DUPLICATE %u/%u/%u(%u) [%s]",
-				    path->obj_id, path->obj_inst_id,
-				    path->res_id, path->level,
-				    lwm2m_sprint_ip_addr(addr));
-
-			return 0;
+		if (update_attrs(&obj_inst->resources[i].attr_list,
+				 &attrs) < 0) {
+			return -EINVAL;
 		}
 	}
 
@@ -471,9 +500,8 @@ static int engine_add_observer(struct lwm2m_message *msg,
 	observe_node_data[i].last_timestamp = k_uptime_get();
 	observe_node_data[i].event_timestamp =
 			observe_node_data[i].last_timestamp;
-	/* TODO: use server object instance or WRITE_ATTR values */
-	observe_node_data[i].min_period_sec = 10;
-	observe_node_data[i].max_period_sec = 60;
+	observe_node_data[i].min_period_sec = attrs.pmin;
+	observe_node_data[i].max_period_sec = max(attrs.pmax, attrs.pmin);
 	observe_node_data[i].format = format;
 	observe_node_data[i].counter = 1;
 	sys_slist_append(&engine_observer_list,
@@ -528,8 +556,7 @@ static void engine_remove_observer_by_id(u16_t obj_id, s32_t obj_inst_id)
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(
 			&engine_observer_list, obs, tmp, node) {
 		if (!(obj_id == obs->path.obj_id &&
-		      (obj_inst_id < 0 ||
-		       obj_inst_id == obs->path.obj_inst_id))) {
+		      obj_inst_id == obs->path.obj_inst_id)) {
 			prev_node = &obs->node;
 			continue;
 		}
