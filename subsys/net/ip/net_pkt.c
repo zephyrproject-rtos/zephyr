@@ -535,10 +535,12 @@ static struct net_pkt *net_pkt_get(struct k_mem_slab *slab,
 
 		if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
 			data_len = max(iface_len, NET_IPV6_MTU);
+			data_len -= NET_IPV6H_LEN;
 		}
 
 		if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
 			data_len = max(iface_len, NET_IPV4_MTU);
+			data_len -= NET_IPV4H_LEN;
 		}
 
 		proto = net_context_get_ip_proto(context);
