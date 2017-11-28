@@ -3663,17 +3663,6 @@ extern int k_mem_pool_alloc(struct k_mem_pool *pool, struct k_mem_block *block,
 extern void k_mem_pool_free(struct k_mem_block *block);
 
 /**
- * @brief Defragment a memory pool.
- *
- * This is a no-op API preserved for backward compatibility only.
- *
- * @param pool Unused
- *
- * @return N/A
- */
-static inline void __deprecated k_mem_pool_defrag(struct k_mem_pool *pool) {}
-
-/**
  * @} end addtogroup mem_pool_apis
  */
 

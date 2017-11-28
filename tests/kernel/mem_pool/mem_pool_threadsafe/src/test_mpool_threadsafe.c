@@ -71,7 +71,6 @@ static void tmpool_api(void *p1, void *p2, void *p3)
 			k_mem_pool_free(&block[i]);
 		}
 	}
-	k_mem_pool_defrag(pool);
 
 	k_sem_give(&sync_sema);
 }

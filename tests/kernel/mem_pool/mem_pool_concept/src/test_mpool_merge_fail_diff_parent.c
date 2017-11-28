@@ -33,7 +33,6 @@ void test_mpool_alloc_merge_failed_diff_parent(void)
 		k_mem_pool_free(&block[i]);
 	}
 	/* 3. request a big block, expected failed to merge*/
-	k_mem_pool_defrag(&mpool1);
 	zassert_true(k_mem_pool_alloc(&mpool1, &block_fail, BLK_SIZE_MAX,
 		TIMEOUT) == -EAGAIN, NULL);
 
