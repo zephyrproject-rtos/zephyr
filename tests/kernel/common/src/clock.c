@@ -6,12 +6,21 @@
 
 #include <ztest.h>
 
+#if defined(CONFIG_ARCH_POSIX)
+#define ALIGN_MS_BOUNDARY		       \
+	do {				       \
+		u32_t t = k_uptime_get_32();   \
+		while (t == k_uptime_get_32()) \
+			ps_halt_cpu();\
+	} while (0)
+#else
 #define ALIGN_MS_BOUNDARY		       \
 	do {				       \
 		u32_t t = k_uptime_get_32();   \
 		while (t == k_uptime_get_32()) \
 			;		       \
 	} while (0)
+#endif
 
 static void tclock_uptime(void)
 {
@@ -21,12 +30,20 @@ static void tclock_uptime(void)
 	/**TESTPOINT: uptime elapse*/
 	t64 = k_uptime_get();
 	while (k_uptime_get() < (t64 + 5))
+#if defined(CONFIG_ARCH_POSIX)
+		ps_halt_cpu();
+#else
 		;
+#endif
 
 	/**TESTPOINT: uptime elapse lower 32-bit*/
 	t32 = k_uptime_get_32();
 	while (k_uptime_get_32() < (t32 + 5))
+#if defined(CONFIG_ARCH_POSIX)
+		ps_halt_cpu();
+#else
 		;
+#endif
 
 	/**TESTPOINT: uptime straddled ms boundary*/
 	t32 = k_uptime_get_32();
@@ -36,12 +53,20 @@ static void tclock_uptime(void)
 	/**TESTPOINT: uptime delta*/
 	d64 = k_uptime_delta(&d64);
 	while (k_uptime_delta(&d64) < 5)
+#if defined(CONFIG_ARCH_POSIX)
+		ps_halt_cpu();
+#else
 		;
+#endif
 
 	/**TESTPOINT: uptime delta lower 32-bit*/
 	k_uptime_delta_32(&d64);
 	while (k_uptime_delta_32(&d64) < 5)
+#if defined(CONFIG_ARCH_POSIX)
+		ps_halt_cpu();
+#else
 		;
+#endif
 
 	/**TESTPOINT: uptime delta straddled ms boundary*/
 	k_uptime_delta_32(&d64);
@@ -59,14 +84,23 @@ static void tclock_cycle(void)
 	/*break if cycle counter wrap around*/
 	while (k_cycle_get_32() > c32 &&
 	       k_cycle_get_32() < (c32 + sys_clock_hw_cycles_per_tick))
+#if defined(CONFIG_ARCH_POSIX)
+		ps_halt_cpu();
+#else
 		;
+#endif
 
 	/**TESTPOINT: cycle/uptime cross check*/
 	c0 = k_cycle_get_32();
 	ALIGN_MS_BOUNDARY;
 	t32 = k_uptime_get_32();
 	while (t32 == k_uptime_get_32())
+#if defined(CONFIG_ARCH_POSIX)
+		ps_halt_cpu();
+#else
 		;
+#endif
+
 	c1 = k_uptime_get_32();
 	/*avoid cycle counter wrap around*/
 	if (c1 > c0) {
