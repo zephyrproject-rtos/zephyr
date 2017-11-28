@@ -103,9 +103,16 @@ static void write_kernram(void)
 
 extern int _k_neg_eagain;
 
+#include <linker/linker-defs.h>
+
 static void write_kernro(void)
 {
 	/* Try to write to kernel RO. */
+	const char *const ptr = (const char *const)&_k_neg_eagain;
+
+	zassert_true(ptr < _image_rodata_end &&
+		     ptr >= _image_rodata_start,
+		     "_k_neg_eagain is not in rodata\n");
 	_k_neg_eagain = -EINVAL;
 	zassert_unreachable("Write to kernel RO did not fault\n");
 }
