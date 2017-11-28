@@ -68,6 +68,9 @@ static void align_to_tick_boundary(void)
 	tick = k_uptime_get_32();
 	while (k_uptime_get_32() == tick) {
 		/* Busy wait to align to tick boundary */
+#if defined(CONFIG_ARCH_POSIX)
+		ps_halt_cpu();
+#endif
 	}
 
 }
