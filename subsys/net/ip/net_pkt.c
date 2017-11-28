@@ -1225,7 +1225,7 @@ u16_t net_pkt_append(struct net_pkt *pkt, u16_t len, const u8_t *data,
 		max_len = pkt->data_len;
 
 #if defined(CONFIG_NET_TCP)
-		if (ctx->tcp) {
+		if (ctx->tcp && (ctx->tcp->send_mss < max_len)) {
 			max_len = ctx->tcp->send_mss;
 		}
 #endif
