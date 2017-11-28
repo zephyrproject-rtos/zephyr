@@ -75,10 +75,9 @@ static void discard_buffer(void)
 		}
 	}
 
-	BT_WARN("Discarding buffer for LPN 0x%04x", frnd->lpn);
-
 	buf = net_buf_slist_get(&frnd->queue);
 	__ASSERT_NO_MSG(buf != NULL);
+	BT_WARN("Discarding buffer %p for LPN 0x%04x", buf, frnd->lpn);
 	net_buf_unref(buf);
 }
 
@@ -163,6 +162,11 @@ static void friend_clear(struct bt_mesh_friend *frnd)
 	friend_cred_del(frnd->net_idx, frnd->lpn);
 
 	if (frnd->last) {
+		/* Cancel the sending if necessary */
+		if (frnd->pending_buf) {
+			BT_MESH_ADV(frnd->last)->busy = 0;
+		}
+
 		net_buf_unref(frnd->last);
 		frnd->last = NULL;
 	}
@@ -184,6 +188,7 @@ static void friend_clear(struct bt_mesh_friend *frnd)
 	frnd->pending_buf = 0;
 	frnd->fsn = 0;
 	frnd->queue_size = 0;
+	frnd->pending_req = 0;
 	memset(frnd->sub_list, 0, sizeof(frnd->sub_list));
 }
 
@@ -440,6 +445,13 @@ static void enqueue_sub_cfm(struct bt_mesh_friend *frnd, u8_t xact)
 	frnd->send_last = 1;
 }
 
+static void friend_recv_delay(struct bt_mesh_friend *frnd)
+{
+	frnd->pending_req = 1;
+	k_delayed_work_submit(&frnd->timer, recv_delay(frnd));
+	BT_DBG("Waiting RecvDelay of %d ms", recv_delay(frnd));
+}
+
 int bt_mesh_friend_sub_add(struct bt_mesh_net_rx *rx,
 			   struct net_buf_simple *buf)
 {
@@ -462,7 +474,7 @@ int bt_mesh_friend_sub_add(struct bt_mesh_net_rx *rx,
 		return 0;
 	}
 
-	k_delayed_work_submit(&frnd->timer, recv_delay(frnd));
+	friend_recv_delay(frnd);
 
 	xact = net_buf_simple_pull_u8(buf);
 
@@ -471,8 +483,6 @@ int bt_mesh_friend_sub_add(struct bt_mesh_net_rx *rx,
 	}
 
 	enqueue_sub_cfm(frnd, xact);
-
-	BT_DBG("Waiting RecvDelay of %d ms", recv_delay(frnd));
 
 	return 0;
 }
@@ -499,7 +509,7 @@ int bt_mesh_friend_sub_rem(struct bt_mesh_net_rx *rx,
 		return 0;
 	}
 
-	k_delayed_work_submit(&frnd->timer, recv_delay(frnd));
+	friend_recv_delay(frnd);
 
 	xact = net_buf_simple_pull_u8(buf);
 
@@ -508,8 +518,6 @@ int bt_mesh_friend_sub_rem(struct bt_mesh_net_rx *rx,
 	}
 
 	enqueue_sub_cfm(frnd, xact);
-
-	BT_DBG("Waiting RecvDelay of %d ms", recv_delay(frnd));
 
 	return 0;
 }
@@ -560,19 +568,24 @@ int bt_mesh_friend_poll(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 		return 0;
 	}
 
-	k_delayed_work_submit(&frnd->timer, recv_delay(frnd));
+	BT_DBG("msg->fsn %u frnd->fsn %u", (msg->fsn & 1), frnd->fsn);
+
+	friend_recv_delay(frnd);
 
 	if (!frnd->established) {
 		BT_DBG("Friendship established with 0x%04x", frnd->lpn);
 		frnd->established = 1;
 	}
 
-	BT_DBG("msg->fsn %u frnd->fsn %u", (msg->fsn & 1), frnd->fsn);
-
 	if (msg->fsn == frnd->fsn && frnd->last) {
 		BT_DBG("Re-sending last PDU");
 		frnd->send_last = 1;
 	} else {
+		if (frnd->last) {
+			net_buf_unref(frnd->last);
+			frnd->last = NULL;
+		}
+
 		frnd->fsn = msg->fsn;
 
 		if (sys_slist_is_empty(&frnd->queue)) {
@@ -580,8 +593,6 @@ int bt_mesh_friend_poll(struct bt_mesh_net_rx *rx, struct net_buf_simple *buf)
 			BT_DBG("Enqueued Friend Update to empty queue");
 		}
 	}
-
-	BT_DBG("Waiting RecvDelay of %d ms", recv_delay(frnd));
 
 	return 0;
 }
@@ -733,7 +744,12 @@ static void enqueue_offer(struct bt_mesh_friend *frnd, s8_t rssi)
 
 	frnd->counter++;
 
-	enqueue_buf(frnd, buf);
+	if (frnd->last) {
+		net_buf_unref(frnd->last);
+	}
+
+	frnd->last = buf;
+	frnd->send_last = 1;
 }
 
 #define RECV_WIN                  CONFIG_BT_MESH_FRIEND_RECV_WIN
@@ -944,6 +960,12 @@ static void buf_send_start(u16_t duration, int err, void *user_data)
 	BT_DBG("err %d", err);
 
 	frnd->pending_buf = 0;
+
+	/* Friend Offer doesn't follow the re-sending semantics */
+	if (!frnd->established) {
+		net_buf_unref(frnd->last);
+		frnd->last = NULL;
+	}
 }
 
 static void buf_send_end(int err, void *user_data)
@@ -952,6 +974,11 @@ static void buf_send_end(int err, void *user_data)
 
 	BT_DBG("err %d", err);
 
+	if (frnd->pending_req) {
+		BT_WARN("Another request before previous completed sending");
+		return;
+	}
+
 	if (frnd->established) {
 		k_delayed_work_submit(&frnd->timer, frnd->poll_to);
 		BT_DBG("Waiting %u ms for next poll", frnd->poll_to);
@@ -959,10 +986,6 @@ static void buf_send_end(int err, void *user_data)
 		/* Friend offer timeout is 1 second */
 		k_delayed_work_submit(&frnd->timer, K_SECONDS(1));
 		BT_DBG("Waiting for first poll");
-
-		/* Friend Offer doesn't follow the re-sending semantics */
-		net_buf_unref(frnd->last);
-		frnd->last = NULL;
 	}
 }
 
@@ -981,31 +1004,30 @@ static void friend_timeout(struct k_work *work)
 	       frnd->send_last, frnd->last);
 
 	if (frnd->send_last && frnd->last) {
-		BT_DBG("Sending frnd->last");
+		BT_DBG("Sending frnd->last %p", frnd->last);
 		frnd->send_last = 0;
 		goto send_last;
 	}
 
-	if (frnd->last) {
-		net_buf_unref(frnd->last);
+	if (frnd->established && !frnd->pending_req) {
+		BT_WARN("Friendship lost with 0x%04x", frnd->lpn);
+		friend_clear(frnd);
+		return;
 	}
 
-	/* If the timeout is triggered without anything in the queue, it
-	 * means that there was no poll/req from the LPN and the timeout
-	 * occured because we hit the poll timeout.
-	 */
 	frnd->last = net_buf_slist_get(&frnd->queue);
 	if (!frnd->last) {
-		BT_WARN("Friendship %s",
-			frnd->established ? "lost" : "not established");
+		BT_WARN("Friendship not established with 0x%04x", frnd->lpn);
 		friend_clear(frnd);
 		return;
 	}
 
 	BT_DBG("Sending buf %p from Friend Queue of LPN 0x%04x",
 	       frnd->last, frnd->lpn);
+	frnd->queue_size--;
 
 send_last:
+	frnd->pending_req = 0;
 	frnd->pending_buf = 1;
 	bt_mesh_adv_send(frnd->last, &buf_sent_cb, frnd);
 }
@@ -1049,6 +1071,7 @@ static void friend_purge_old_ack(struct bt_mesh_friend *frnd, u64_t *seq_auth,
 			BT_DBG("Removing old ack from Friend Queue");
 
 			sys_slist_remove(&frnd->queue, prev, cur);
+			frnd->queue_size--;
 			/* Make sure old slist entry state doesn't remain */
 			buf->frags = NULL;
 
@@ -1066,7 +1089,7 @@ static void friend_lpn_enqueue_rx(struct bt_mesh_friend *frnd,
 	struct friend_pdu_info info;
 	struct net_buf *buf;
 
-	BT_DBG("LPN 0x%04x", frnd->lpn);
+	BT_DBG("LPN 0x%04x queue_size %u", frnd->lpn, frnd->queue_size);
 
 	if (type == BT_MESH_FRIEND_PDU_SINGLE && seq_auth) {
 		friend_purge_old_ack(frnd, seq_auth, rx->ctx.addr);
@@ -1101,7 +1124,8 @@ static void friend_lpn_enqueue_rx(struct bt_mesh_friend *frnd,
 
 	enqueue_friend_pdu(frnd, type, buf);
 
-	BT_DBG("Queued message for LPN 0x%04x", frnd->lpn);
+	BT_DBG("Queued message for LPN 0x%04x, queue_size %u",
+	       frnd->lpn, frnd->queue_size);
 }
 
 static void friend_lpn_enqueue_tx(struct bt_mesh_friend *frnd,
