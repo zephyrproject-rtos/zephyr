@@ -303,15 +303,18 @@ static void coop_delayed_work_resubmit(int arg1, int arg2)
 	ARG_UNUSED(arg2);
 
 	for (i = 0; i < NUM_TEST_ITEMS; i++) {
-		volatile u32_t uptime;
-
 		TC_PRINT(" - Resubmitting delayed work with 1 ms\n");
 		k_delayed_work_submit(&tests[0].work, 1);
 
 		/* Busy wait 1 ms to force a clash with workqueue */
+#if defined(CONFIG_ARCH_POSIX)
+		k_busy_wait(1000);
+#else
+		volatile u32_t uptime;
 		uptime = k_uptime_get_32();
 		while (k_uptime_get_32() == uptime) {
 		}
+#endif
 	}
 }
 
