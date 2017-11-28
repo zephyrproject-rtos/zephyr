@@ -639,7 +639,7 @@ int sprintf_stringtest(void)
 	}
 
 	len = sprintf(buffer, "%s", REALLY_LONG_STRING);
-#ifndef CONFIG_NEWLIB_LIBC
+#if !defined CONFIG_NEWLIB_LIBC && !defined CONFIG_ARCH_POSIX
 	if (len != PRINTF_MAX_STRING_LENGTH) {
 		TC_ERROR("Internals changed. "
 			"Max string length no longer %d got %d\n",
