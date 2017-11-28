@@ -869,6 +869,10 @@ def main():
         extract_reg_prop(chosen['zephyr,sram'], None,
                          defs, "CONFIG_SRAM", 1024, None)
 
+    if 'zephyr,ccm' in chosen:
+        extract_reg_prop(chosen['zephyr,ccm'], None,
+                         defs, "CONFIG_CCM", 1024, None)
+
     name_dict = {
             "CONFIG_UART_CONSOLE_ON_DEV_NAME": "zephyr,console",
             "CONFIG_BT_UART_ON_DEV_NAME": "zephyr,bt-uart",
