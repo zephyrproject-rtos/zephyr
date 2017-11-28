@@ -195,9 +195,7 @@ zephyr_cc_option(-fno-strict-overflow)
 zephyr_cc_option(-Wno-pointer-sign)
 
 if(CONFIG_STACK_CANARIES)
-  zephyr_cc_option(-fstack-protector-all)
-else()
-  zephyr_cc_option(-fno-stack-protector)
+  zephyr_cc_option_nocheck(-fstack-protector-all)
 endif()
 
 if(CONFIG_OVERRIDE_FRAME_POINTER_DEFAULT)
