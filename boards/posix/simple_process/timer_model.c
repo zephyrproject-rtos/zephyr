@@ -12,12 +12,18 @@
 #include "hw_models_top.h"
 #include "irq_ctrl.h"
 #include "board_soc.h"
+#include "zephyr/types.h"
+#include "posix_soc_if.h"
+#include "misc/util.h"
 
 /*set this to 1 to run in real time, to 0 to run as fast as possible*/
 #define CONFIG_ARCH_POSIX_RUN_AT_REAL_TIME 1
 
 
 hwtime_t HWTimer_timer;
+
+hwtime_t HWTimer_tick_timer;
+hwtime_t HWTimer_awake_timer;
 
 static hwtime_t tick_p = 10000; /*period of the ticker*/
 static unsigned int silent_ticks;
@@ -29,10 +35,18 @@ static hwtime_t Boot_time;
 static struct timespec tv;
 #endif
 
+static void hwtimer_update_timer(void)
+{
+	HWTimer_timer = min(HWTimer_tick_timer, HWTimer_awake_timer);
+}
+
+
 void hwtimer_init(void)
 {
 	silent_ticks = 0;
-	HWTimer_timer = tick_p;
+	HWTimer_tick_timer = tick_p;
+	HWTimer_awake_timer = NEVER;
+	hwtimer_update_timer();
 #if (CONFIG_ARCH_POSIX_RUN_AT_REAL_TIME)
 	clock_gettime(CLOCK_MONOTONIC, &tv);
 	Boot_time = tv.tv_sec*1e6 + tv.tv_nsec/1000;
@@ -45,11 +59,10 @@ void hwtimer_cleanup(void)
 
 }
 
-
-void hwtimer_timer_reached(void)
+static void hwtimer_tick_timer_reached(void)
 {
 #if (CONFIG_ARCH_POSIX_RUN_AT_REAL_TIME)
-	hwtime_t expected_realtime = Boot_time + HWTimer_timer;
+	hwtime_t expected_realtime = Boot_time + HWTimer_tick_timer;
 
 	clock_gettime(CLOCK_MONOTONIC, &tv);
 	hwtime_t actual_real_time = tv.tv_sec*1e6 + tv.tv_nsec/1000;
@@ -73,7 +86,8 @@ void hwtimer_timer_reached(void)
 	}
 #endif
 
-	HWTimer_timer += tick_p;
+	HWTimer_tick_timer += tick_p;
+	hwtimer_update_timer();
 
 	if (silent_ticks > 0) {
 		silent_ticks -= 1;
@@ -81,6 +95,47 @@ void hwtimer_timer_reached(void)
 		hw_irq_controller_set_irq(TIMER_TICK_IRQ);
 	}
 }
+
+
+static void hwtimer_awake_timer_reached(void)
+{
+	HWTimer_awake_timer = NEVER;
+	hwtimer_update_timer();
+	hw_irq_controller_set_irq(PHONY_HARD_IRQ);
+}
+
+void hwtimer_timer_reached(void)
+{
+	hwtime_t Now = HWTimer_timer;
+
+	if (HWTimer_awake_timer == Now) {
+		hwtimer_awake_timer_reached();
+	}
+
+	if (HWTimer_tick_timer == Now) {
+		hwtimer_tick_timer_reached();
+	}
+}
+
+
+/**
+ * The timer hw will awake the CPU (without an interrupt)
+ * at least when <time> comes (it may awake it earlier)
+ *
+ * If there was a previous request for an earlier time,
+ * the old one will prevail
+ *
+ * This is meant for k_busy_wait like functionality
+ */
+void hwtimer_wake_in_time(hwtime_t time)
+{
+	if (HWTimer_awake_timer > time) {
+		HWTimer_awake_timer = time;
+		hwtimer_update_timer();
+	}
+}
+
+
 
 
 #include "irq.h"
@@ -123,3 +178,24 @@ int _sys_clock_driver_init(struct device *device)
 
 	return 0;
 }
+
+
+#if defined(CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT)
+/**
+ * Replacement to the kernel k_busy_wait
+ * Will hung this thread (and therefore the whole zephyr)
+ * during usec_to_wait
+ * Note that interrupts may be received in the meanwhile and that therefore this
+ * thread may loose context
+ */
+void k_busy_wait(u32_t usec_to_wait)
+{
+	hwtime_t time_end = hwm_get_time() + usec_to_wait;
+
+	while (hwm_get_time() < time_end) {
+		/*There may be wakes due to other interrupts*/
+		hwtimer_wake_in_time(time_end);
+		ps_halt_cpu();
+	}
+}
+#endif

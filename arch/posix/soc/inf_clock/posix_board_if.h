@@ -6,6 +6,8 @@
 #ifndef _POSIX_CORE_BOARD_PROVIDED_IF_H
 #define _POSIX_CORE_BOARD_PROVIDED_IF_H
 
+#include "zephyr/types.h"
+
 /*
  * This file lists the functions the posix "inf_clock" soc
  * expect the the board to provide
@@ -20,6 +22,10 @@ extern "C" {
 #endif
 
 void pb_irq_handler(void);
+
+#if defined(CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT)
+void k_busy_wait(u32_t usec_to_wait);
+#endif
 
 #ifdef __cplusplus
 }

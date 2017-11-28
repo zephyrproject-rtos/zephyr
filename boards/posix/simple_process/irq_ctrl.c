@@ -11,6 +11,7 @@
 #include "irq_ctrl.h"
 #include "irq_handler.h"
 #include "arch/posix/arch.h" /*for find_lsb_set()*/
+#include "board_soc.h"
 
 hwtime_t irq_ctrl_timer = NEVER;
 
@@ -34,6 +35,7 @@ static uint64_t irq_mask;
  * irq_status != 0 an interrupt will be raised immediately
  */
 static bool irqs_locked;
+static bool lock_ignore;
 
 static uint8_t irq_prio[N_IRQs];
 /*note that prio = 0 == highest, prio=255 == lowest*/
@@ -45,6 +47,7 @@ void hw_irq_ctrl_init(void)
 	irq_mask = 0; /*Let's assume all interrupts are disable at boot*/
 	irq_premask = 0;
 	irqs_locked = false;
+	lock_ignore = false;
 
 	for (int i = 0 ; i < N_IRQs; i++) {
 		irq_prio[i] = 255;
@@ -191,6 +194,8 @@ static inline void hw_irq_controller_irq_raise_prefix(unsigned int irq)
 		if (irq_mask & (1 << irq)) {
 			irq_status |= ((uint64_t)1<<irq);
 		}
+	} else if (irq == PHONY_HARD_IRQ) {
+		lock_ignore = true;
 	}
 }
 
@@ -204,7 +209,7 @@ static inline void hw_irq_controller_irq_raise_prefix(unsigned int irq)
 void hw_irq_controller_set_irq(unsigned int irq)
 {
 	hw_irq_controller_irq_raise_prefix(irq);
-	if (irqs_locked == false) {
+	if ((irqs_locked == false) || (lock_ignore)) {
 		/*
 		 * Awake CPU in 1 delta
 		 * Note that we awake the CPU even if the IRQ is disabled
@@ -223,9 +228,11 @@ static void irq_raising_from_hw_now(void)
 {
 	/*
 	 * We always awake the CPU even if the IRQ was masked,
-	 * but not if irqs are locked
+	 * but not if irqs are locked unless this is due to a
+	 * PHONY_HARD_IRQ
 	 */
-	if (irqs_locked == false) {
+	if ((irqs_locked == false) || (lock_ignore)) {
+		lock_ignore = false;
 		ps_interrupt_raised();
 	}
 }

@@ -65,6 +65,11 @@ void pb_irq_handler(void)
 
 	irq_lock = hw_irq_controller_get_current_lock();
 
+	if (irq_lock) {
+		/*"spurious" wakes can happen with interrupts locked*/
+		return;
+	}
+
 	_kernel.nested++;
 
 	while ((irq_nbr = hw_irq_cont_get_highest_prio_irq()) != -1) {

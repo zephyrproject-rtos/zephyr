@@ -69,6 +69,7 @@ int _is_thread_essential(void)
 	return _current->base.user_options & K_ESSENTIAL;
 }
 
+#if !defined(CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT)
 void k_busy_wait(u32_t usec_to_wait)
 {
 #if defined(CONFIG_TICKLESS_KERNEL) && \
@@ -96,6 +97,7 @@ int saved_always_on = k_enable_sys_clock_always_on();
 	_sys_clock_always_on = saved_always_on;
 #endif
 }
+#endif
 
 #ifdef CONFIG_THREAD_CUSTOM_DATA
 void _impl_k_thread_custom_data_set(void *value)

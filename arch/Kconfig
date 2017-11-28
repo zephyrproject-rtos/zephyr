@@ -37,6 +37,7 @@ config ARCH_POSIX
 	bool "POSIX (native) architecture"
 	select ATOMIC_OPERATIONS_C
 	select ARCH_HAS_CUSTOM_SWAP_TO_MAIN
+	select ARCH_HAS_CUSTOM_BUSY_WAIT
 	select CONSOLE_HAS_DRIVER
 
 endchoice
