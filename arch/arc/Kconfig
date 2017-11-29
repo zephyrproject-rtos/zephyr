@@ -89,6 +89,17 @@ config	RGF_NUM_BANKS
 	register bank, the fast interrupt handler must save
 	and restore general purpose registers.
 
+config ARC_FIRQ
+	bool
+	prompt "FIRQ enable"
+	default y
+	help
+	Fast interrupts are supported (FIRQ). If FIRQ enabled, for interrupts
+	with highest priority, status32 and pc will be saved in aux regs,
+	other regs will be saved according to the number of register bank;
+	If FIRQ is disabled, the handle of interrupts with highest priority
+	will be same with other interrupts.
+
 config	ARC_STACK_CHECKING
 	bool
 	default y if HW_STACK_PROTECTION
