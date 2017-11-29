@@ -790,6 +790,24 @@ static void gatt_proxy_set(struct bt_mesh_model *model,
 	}
 
 	cfg->gatt_proxy = buf->data[0];
+	if (cfg->gatt_proxy == BT_MESH_GATT_PROXY_DISABLED) {
+		int i;
+
+		/* Section 4.2.11.1: "When the GATT Proxy state is set to
+		 * 0x00, the Node Identity state for all subnets shall be set
+		 * to 0x00 and shall not be changed."
+		 */
+		for (i = 0; i < ARRAY_SIZE(bt_mesh.sub); i++) {
+			struct bt_mesh_subnet *sub = &bt_mesh.sub[i];
+
+			if (sub->net_idx != BT_MESH_KEY_UNUSED) {
+				sub->node_id = BT_MESH_NODE_IDENTITY_STOPPED;
+				sub->node_id_start = 0;
+			}
+		}
+	}
+
+	bt_mesh_adv_update();
 
 	sub = bt_mesh_subnet_get(cfg->hb_pub.net_idx);
 	if ((cfg->hb_pub.feat & BT_MESH_FEAT_PROXY) && sub) {
@@ -2198,7 +2216,12 @@ static void node_identity_set(struct bt_mesh_model *model,
 		net_buf_simple_add_u8(msg, STATUS_SUCCESS);
 		net_buf_simple_add_le16(msg, idx);
 
-		if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
+		/* Section 4.2.11.1: "When the GATT Proxy state is set to
+		 * 0x00, the Node Identity state for all subnets shall be set
+		 * to 0x00 and shall not be changed."
+		 */
+		if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) &&
+		    bt_mesh_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED) {
 			sub->node_id = node_id;
 			sub->node_id_start = node_id ? k_uptime_get_32() : 0;
 			bt_mesh_adv_update();
