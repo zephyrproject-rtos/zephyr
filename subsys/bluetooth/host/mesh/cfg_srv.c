@@ -805,6 +805,12 @@ static void gatt_proxy_set(struct bt_mesh_model *model,
 				sub->node_id_start = 0;
 			}
 		}
+
+		/* Section 4.2.11: "Upon transition from GATT Proxy state 0x01
+		 * to GATT Proxy state 0x00 the GATT Bearer Server shall
+		 * disconnect all GATT Bearer Clients.
+		 */
+		bt_mesh_proxy_gatt_disconnect();
 	}
 
 	bt_mesh_adv_update();

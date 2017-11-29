@@ -729,14 +729,11 @@ int bt_mesh_proxy_gatt_enable(void)
 	return 0;
 }
 
-int bt_mesh_proxy_gatt_disable(void)
+void bt_mesh_proxy_gatt_disconnect(void)
 {
 	int i;
 
 	BT_DBG("");
-
-	bt_gatt_service_unregister(&proxy_svc);
-	gatt_svc = MESH_GATT_NONE;
 
 	for (i = 0; i < ARRAY_SIZE(clients); i++) {
 		struct bt_mesh_proxy_client *client = &clients[i];
@@ -744,8 +741,20 @@ int bt_mesh_proxy_gatt_disable(void)
 		if (client->conn && (client->filter_type == WHITELIST ||
 				     client->filter_type == BLACKLIST)) {
 			client->filter_type = NONE;
+			bt_conn_disconnect(client->conn,
+					   BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 		}
 	}
+}
+
+int bt_mesh_proxy_gatt_disable(void)
+{
+	BT_DBG("");
+
+	bt_mesh_proxy_gatt_disconnect();
+
+	bt_gatt_service_unregister(&proxy_svc);
+	gatt_svc = MESH_GATT_NONE;
 
 	return 0;
 }
