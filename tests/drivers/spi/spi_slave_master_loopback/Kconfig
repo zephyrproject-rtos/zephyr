@@ -1,0 +1,43 @@
+config TEST_MASTER_DRV_NAME
+	string "Master SPI DRV name"
+	default "SPI_LOOPBACK_MASTER"
+
+config TEST_SLAVE_DRV_NAME
+	string "Slave SPI DRV Name"
+	default "SPI_LOOPBACK_SLAVE"
+
+config TEST_SPI_SLAVE
+	int "SPI Slave CS index"
+	default 0
+
+config TEST_MASTER_SLOW_FREQ
+	int "Master SPI Slow Frequency"
+	default 128000
+
+config TEST_MASTER_FAST_FREQ
+	int "Master SPI Fast Frequency"
+	default 12000000
+
+config TEST_SLAVE_FREQ
+	int "Slave SPI Frequency"
+	default 24000000
+
+config TEST_SPI_MASTER_CS_GPIO_ENABLE
+	bool "Enable SPI Master CS GPIO"
+	default n
+
+config TEST_MASTER_CS_GPIO_DRV_NAME
+	string "Master SPI GPIO DRV Name"
+	depends on TEST_SPI_MASTER_CS_GPIO_ENABLE
+	default ""
+
+config TEST_MASTER_CS_GPIO_PIN
+	string "Master SPI GPIO Pin"
+	depends on TEST_SPI_MASTER_CS_GPIO_ENABLE
+	default ""
+
+config TEST_SPI_SLAVE_CS_IGNORE
+	bool "Ignore CS Line for SPI Slave"
+	default y
+
+source "$ZEPHYR_BASE/Kconfig.zephyr"
