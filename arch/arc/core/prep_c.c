@@ -87,6 +87,10 @@ static void invalidate_dcache(void)
 
 static void adjust_vector_table_base(void)
 {
+#ifdef CONFIG_ARC_HAS_SECURE
+#undef _ARC_V2_IRQ_VECT_BASE
+#define _ARC_V2_IRQ_VECT_BASE _ARC_V2_IRQ_VECT_BASE_S
+#endif
 	extern struct vector_table _VectorTable;
 	unsigned int vbr;
 	/* if the compiled-in vector table is different

@@ -28,6 +28,11 @@ extern void *_VectorTable;
 #include <kernel_structs.h>
 #include <v2/irq.h>
 
+#ifdef CONFIG_ARC_HAS_SECURE
+#undef _ARC_V2_IRQ_VECT_BASE
+#define _ARC_V2_IRQ_VECT_BASE _ARC_V2_IRQ_VECT_BASE_S
+#endif
+
 static u32_t _arc_v2_irq_unit_device_power_state = DEVICE_PM_ACTIVE_STATE;
 struct arc_v2_irq_unit_ctx {
 	u32_t irq_ctrl; /* Interrupt Context Saving Control Register. */
@@ -68,8 +73,14 @@ static int _arc_v2_irq_unit_init(struct device *unused)
 	 */
 	for (irq = 16; irq < CONFIG_NUM_IRQS; irq++) {
 		_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
+#ifdef CONFIG_ARC_HAS_SECURE
+		_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY,
+			 (CONFIG_NUM_IRQ_PRIO_LEVELS-1) |
+			 _ARC_V2_IRQ_PRIORITY_SECURE); /* lowest priority */
+#else
 		_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY,
 			 (CONFIG_NUM_IRQ_PRIO_LEVELS-1)); /* lowest priority */
+#endif
 		_arc_v2_aux_reg_write(_ARC_V2_IRQ_ENABLE, _ARC_V2_INT_DISABLE);
 		_arc_v2_aux_reg_write(_ARC_V2_IRQ_TRIGGER, _ARC_V2_INT_LEVEL);
 	}
@@ -138,8 +149,14 @@ static int _arc_v2_irq_unit_resume(struct device *dev)
 	 */
 	for (irq = 16; irq < CONFIG_NUM_IRQS; irq++) {
 		_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
+#ifdef CONFIG_ARC_HAS_SECURE
+		_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY,
+				ctx.irq_config[irq - 16] >> 2 |
+				_ARC_V2_IRQ_PRIORITY_SECURE);
+#else
 		_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY,
 				ctx.irq_config[irq - 16] >> 2);
+#endif
 		_arc_v2_aux_reg_write(_ARC_V2_IRQ_TRIGGER,
 				(ctx.irq_config[irq - 16] >> 1) & BIT(0));
 		_arc_v2_aux_reg_write(_ARC_V2_IRQ_ENABLE,

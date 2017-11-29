@@ -94,7 +94,13 @@ static inline void _arc_v2_irq_unit_int_disable(int irq)
 static inline void _arc_v2_irq_unit_prio_set(int irq, unsigned char prio)
 {
 	_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
+#ifdef CONFIG_ARC_HAS_SECURE
+/* if ARC has secure mode, all interrupt should be secure */
+	_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY, prio |
+			 _ARC_V2_IRQ_PRIORITY_SECURE);
+#else
 	_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY, prio);
+#endif
 }
 
 /*
