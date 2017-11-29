@@ -88,22 +88,18 @@ void pb_irq_handler(void)
 
 	_kernel.nested--;
 
-	/*if we are not nesting irq_handler() calls*/
-	if ((get_currently_running_prio() == 256)
-			&& (may_swap)) {
-		posix_thread_status_t *ready_thread_ptr;
-		posix_thread_status_t *this_thread_ptr;
+	/* Call swap if all the following is true:
+	 * 1) may_swap was enabled
+	 * 2) We are not nesting irq_handler calls (interrupts)
+	 * 3) Current thread is preemptible
+	 * 4) Next thread to run in the ready queue is not this thread
+	 */
+	if (may_swap &&
+		(get_currently_running_prio() == 256) &&
+		(_current->base.preempt < _NON_PREEMPT_THRESHOLD) &&
+		(_kernel.ready_q.cache != _current)) {
 
-		ready_thread_ptr = (posix_thread_status_t *)
-			_kernel.ready_q.cache->callee_saved.thread_status;
-
-		this_thread_ptr  = (posix_thread_status_t *)
-			_kernel.current->callee_saved.thread_status;
-
-		if (ready_thread_ptr->thread_idx
-			!= this_thread_ptr->thread_idx) {
-			__swap(irq_lock);
-		}
+		__swap(irq_lock);
 	}
 }
 
