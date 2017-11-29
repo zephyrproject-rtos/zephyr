@@ -579,18 +579,11 @@ def yaml_traverse_inherited(node):
     """
 
     if 'inherits' in node.keys():
-        try:
-            yaml_traverse_inherited(node['inherits']['inherits'])
-        except KeyError:
-            dict_merge(node['inherits'], node)
-            node = node['inherits']
-            node.pop('inherits')
-        except TypeError:
-            #'node['inherits']['inherits'] type is 'list' instead of
-            #expected type 'dtc'
-            #Likely due to use of "-" before attribute in yaml file
-            raise Exception("Element '" + str(node['title']) +
-                            "' uses yaml 'series' instead of 'mapping'")
+        if 'inherits' in node['inherits'].keys():
+            node['inherits'] = yaml_traverse_inherited(node['inherits'])
+        dict_merge(node['inherits'], node)
+        node = node['inherits']
+        node.pop('inherits')
     return node
 
 
