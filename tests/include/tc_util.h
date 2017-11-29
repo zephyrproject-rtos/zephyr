@@ -22,6 +22,10 @@
 #define PRINT_DATA(fmt, ...) printk(fmt, ##__VA_ARGS__)
 #endif /* CONFIG_STDOUT_CONSOLE */
 
+#if defined CONFIG_BOARD_SIMPLE_PROCESS
+#include "pb_main.h"
+#endif
+
 /**
  * @def TC_PRINT_RUN_ID
  * @brief Report a Run ID
@@ -84,8 +88,7 @@
 #if defined CONFIG_BOARD_SIMPLE_PROCESS
 #define TC_END_POST                                 \
 	do {                                        \
-		extern void main_clean_up(void);    \
-		main_clean_up();                    \
+		main_clean_up(0);                    \
 	} while (0)
 #else
 #define TC_END_POST

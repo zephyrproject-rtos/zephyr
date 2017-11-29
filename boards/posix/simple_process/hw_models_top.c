@@ -12,7 +12,7 @@
 #include "hw_models_top.h"
 #include "timer_model.h"
 #include "irq_ctrl.h"
-#include "main.h"
+#include "pb_main.h"
 
 
 static hwtime_t device_time; /*The actual time as known by the device*/

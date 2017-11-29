@@ -14,7 +14,8 @@
 #include <stdlib.h> /*for exit*/
 #include <stdio.h>  /*for printfs*/
 #include <stdarg.h> /*for va args*/
-#include "main.h"
+
+#include "pb_main.h"
 
 
 void ps_print_error_and_exit(const char *format, ...)
