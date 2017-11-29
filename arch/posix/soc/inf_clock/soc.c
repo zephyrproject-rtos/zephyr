@@ -110,6 +110,7 @@ void ps_interrupt_raised(void)
 /**
  * Called from k_cpu_idle(), the idle loop will call
  * this function to set the CPU to "sleep"
+ * Interrupts will be unlocked before calling
  */
 void ps_halt_cpu(void)
 {
@@ -139,7 +140,9 @@ void ps_halt_cpu(void)
  */
 void ps_atomic_halt_cpu(unsigned int imask)
 {
+	ps_irq_full_unlock();
 	ps_halt_cpu();
+	ps_irq_unlock(imask);
 }
 
 
