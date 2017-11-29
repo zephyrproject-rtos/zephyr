@@ -10,6 +10,7 @@ zephyr_sources(
 	xtensa_intr.c
 	xtensa_vectors.S
 	xt_zephyr.S
+	window_vectors.S
 	)
 
 zephyr_sources_ifndef(CONFIG_ATOMIC_OPERATIONS_C atomic.S)
