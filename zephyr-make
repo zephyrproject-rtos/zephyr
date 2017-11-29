@@ -1,0 +1,23 @@
+#!/usr/bin/make -rf
+
+BOARD ?= qemu_x86
+CONF_FILE = prj.conf
+
+TARGETS = run flash debug debugserver ram_report rom_report
+
+all: outdir/${BOARD}/zephyr.elf
+
+outdir/${BOARD}/Makefile: CMakeLists.txt $(CONF_FILE)
+	mkdir -p outdir/${BOARD} && cmake -DCONF_FILE=${CONF_FILE} -DBOARD=${BOARD} -Boutdir/${BOARD} -H.
+
+outdir/${BOARD}/zephyr.elf: outdir/${BOARD}/Makefile
+	$(MAKE) -s -C outdir/${BOARD}
+
+pristine:
+	rm -rf outdir
+
+clean:
+	rm -rf outdir/${BOARD}/
+
+$(TARGETS): outdir/${BOARD}/zephyr.elf
+	$(MAKE) -s -C outdir/${BOARD} $@
