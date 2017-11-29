@@ -749,6 +749,12 @@ static int cmd_iv_update_test(int argc, char *argv[])
 	return 0;
 }
 
+static int cmd_rpl_clear(int argc, char *argv[])
+{
+	bt_mesh_rpl_clear();
+	return 0;
+}
+
 static int cmd_beacon(int argc, char *argv[])
 {
 	u8_t status;
@@ -1857,6 +1863,7 @@ static const struct shell_cmd mesh_commands[] = {
 	{ "net-send", cmd_net_send, "<hex string>" },
 	{ "iv-update", cmd_iv_update, NULL },
 	{ "iv-update-test", cmd_iv_update_test, "<value: off, on>" },
+	{ "rpl-clear", cmd_rpl_clear, NULL },
 
 	/* Configuration Client Model operations */
 	{ "get-comp", cmd_get_comp, "[page]" },
