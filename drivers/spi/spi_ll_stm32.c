@@ -118,36 +118,30 @@ static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 /* Shift a SPI frame as slave. */
 static void spi_stm32_shift_s(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
-	u16_t tx_frame;
-	u16_t rx_frame;
+	if (LL_SPI_IsActiveFlag_TXE(spi) && spi_context_tx_on(&data->ctx)) {
+		u16_t tx_frame = spi_stm32_next_tx(data);
 
-	tx_frame = spi_stm32_next_tx(data);
-	if (LL_SPI_IsActiveFlag_TXE(spi)) {
 		if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
 			LL_SPI_TransmitData8(spi, tx_frame);
-			/* The update is ignored if TX is off. */
 			spi_context_update_tx(&data->ctx, 1, 1);
 		} else {
 			LL_SPI_TransmitData16(spi, tx_frame);
-			/* The update is ignored if TX is off. */
 			spi_context_update_tx(&data->ctx, 2, 1);
 		}
+	} else {
+		LL_SPI_DisableIT_TXE(spi);
 	}
 
-	if (LL_SPI_IsActiveFlag_RXNE(spi)) {
+	if (LL_SPI_IsActiveFlag_RXNE(spi) && spi_context_rx_buf_on(&data->ctx)) {
+		u16_t rx_frame;
+
 		if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
 			rx_frame = LL_SPI_ReceiveData8(spi);
-			if (spi_context_rx_buf_on(&data->ctx)) {
-				UNALIGNED_PUT(rx_frame,
-					      (u8_t *)data->ctx.rx_buf);
-			}
+			UNALIGNED_PUT(rx_frame, (u8_t *)data->ctx.rx_buf);
 			spi_context_update_rx(&data->ctx, 1, 1);
 		} else {
 			rx_frame = LL_SPI_ReceiveData16(spi);
-			if (spi_context_rx_buf_on(&data->ctx)) {
-				UNALIGNED_PUT(rx_frame,
-					      (u16_t *)data->ctx.rx_buf);
-			}
+			UNALIGNED_PUT(rx_frame, (u16_t *)data->ctx.rx_buf);
 			spi_context_update_rx(&data->ctx, 2, 1);
 		}
 	}
