@@ -50,8 +50,13 @@ static void thread_tslice(void *p1, void *p2, void *p3)
 		 * even though,  when timeslice used up the next thread
 		 * should be scheduled in.
 		 */
-		while (k_uptime_get_32() - t32 < BUSY_MS)
+		while (k_uptime_get_32() - t32 < BUSY_MS) {
+#if defined(CONFIG_ARCH_POSIX)
+			ps_halt_cpu(); /*sleep until next irq*/
+#else
 			;
+#endif
+		}
 
 		k_sem_give(&sema1);
 	}
@@ -87,8 +92,13 @@ void test_slice_scheduling(void)
 
 		/* current thread (ztest native) consumed a half timeslice*/
 		t32 = k_uptime_get_32();
-		while (k_uptime_get_32() - t32 < SLICE_SIZE)
+		while (k_uptime_get_32() - t32 < SLICE_SIZE) {
+#if defined(CONFIG_ARCH_POSIX)
+			ps_halt_cpu(); /*sleep until next irq*/
+#else
 			;
+#endif
+		}
 
 		/* relinquish CPU and wait for each thread to complete*/
 		for (int i = 0; i < NUM_THREAD; i++) {
