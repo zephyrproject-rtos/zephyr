@@ -100,7 +100,8 @@ void pb_irq_handler(void)
 		this_thread_ptr  = (posix_thread_status_t *)
 			_kernel.current->callee_saved.thread_status;
 
-		if (ready_thread_ptr->thread_id != this_thread_ptr->thread_id) {
+		if (ready_thread_ptr->thread_idx
+			!= this_thread_ptr->thread_idx) {
 			__swap(irq_lock);
 		}
 	}

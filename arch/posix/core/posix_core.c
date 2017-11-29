@@ -24,10 +24,26 @@
 
 #include <pthread.h>
 #include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "posix_core.h"
 #include "posix_soc_if.h"
 #include "nano_internal.h"
+
+#define PREFIX     "Posix arch core: "
+#define ERPREFIX   PREFIX"error on "
+#define NO_MEM_ERR PREFIX"Can't allocate memory\n"
+
+#define ALLOC_CHUNK_SIZE 64
+static int pc_threads_table_size;
+typedef struct {
+	bool used;        /*is this table entry used*/
+	bool running;     /*is this the currently running thread*/
+	pthread_t thread; /*actual pthread_t as returned by kernel*/
+} pc_threads_table_t;
+
+static pc_threads_table_t *pc_threads_table;
 
 
 /*
@@ -38,117 +54,96 @@ static pthread_cond_t pc_cond_threads = PTHREAD_COND_INITIALIZER;
 /* Mutex for the conditional variable posix_core_cond_threads */
 static pthread_mutex_t pc_mtx_threads = PTHREAD_MUTEX_INITIALIZER;
 /* Token which tells which process is allowed to run now */
-static pthread_t pc_currently_allowed_thread;
+static int pc_currently_allowed_thread;
 
-/*
- * Portability issue: Now we assume in the code below that
- * p_thread_id_t == pthread_t, and simply assign to the p_thread_id_t the
- * pthread_t we get from the linux kernel.
- * This is ok in Linux (as pthread_t is just an unsigned long int)
- * If you want to be more portable just decouple them properly (you cannot
- * assume pthread to be an arithmetic type, or that there is a p_thread_t value
- * your threads will never get (0) )
- * Say, for ex., keep a table in this file with the pthread_t of each spawned
- * thread, and use p_thread_id_t as an index to that table
- */
 
-static void pc_wait_until_allowed(void);
+static void pc_wait_until_allowed(int this_thread_nbr);
 static void *pc_thread_starter(void *arg);
 
 
 /**
  *  Helper function to hung this thread until it is allowed again
- *  (somebody calls posix_core_let_run() with this thread number
+ *  (somebody calls pc_let_run() with this thread number
+ *
+ * Note that we go out of this function (the while loop below)
+ * with the mutex locked by this particular thread.
+ * The mutex is only manually unlocked internally in pthread_cond_wait()
+ * while waiting for pc_cond_threads to be signaled
  */
-static void pc_wait_until_allowed(void)
+static void pc_wait_until_allowed(int this_thread_nbr)
 {
-	pthread_t this_thread_nbr = pthread_self();
+	pc_threads_table[this_thread_nbr].running = false;
 
 	while (!pthread_equal(this_thread_nbr,
-		pc_currently_allowed_thread)) {
+			      pc_currently_allowed_thread)) {
 
 		pthread_cond_wait(&pc_cond_threads,
 				  &pc_mtx_threads);
 	}
-/*
- * Note that we go out of this while loop with the mutex locked by this
- * particular thread. The mutex is only unlocked internally in
- * pthread_cond_wait() [in posix_core_swap()] while waiting for cond to be
- * signaled
- */
+
+	pc_threads_table[this_thread_nbr].running = true;
 
 	if (POSIX_ARCH_DEBUG_PRINTS) {
-		ps_print_trace(
-			"Posix arch core: Thread %lu: I'm allowed to run!\n",
-			this_thread_nbr);
+		ps_print_trace(PREFIX"Thread %i: I'm allowed to run!\n",
+				this_thread_nbr);
 	}
 }
 
 
 /**
- *  Helper function to let the thread with id <next_allowed_thread_nbr> run
- *  Note: posix_core_let_run() can only be called with the mutex locked
+ *  Helper function to let the thread <next_allowed_thread_nbr> run
+ *  Note: pc_let_run() can only be called with the mutex locked
  */
-static void pc_let_run(p_thread_id_t next_allowed_thread_nbr)
+static void pc_let_run(int next_allowed_thread_nbr)
 {
 	if (POSIX_ARCH_DEBUG_PRINTS) {
-		ps_print_trace("Posix arch core: We let thread %lu run\n",
+		ps_print_trace(PREFIX"We let thread %i run\n",
 				next_allowed_thread_nbr);
 	}
 
 	pc_currently_allowed_thread = next_allowed_thread_nbr;
 
+	/*
+	 * We let all threads know one is able to run now (it may even be us
+	 * again if fancied)
+	 * Note that as we hold the mutex, they are going to be blocked until
+	 * we reach our own pc_wait_until_allowed() while loop
+	 */
 	if (pthread_cond_broadcast(&pc_cond_threads)) {
-/*
- * we let all threads know one is able to run now (it may even be us again
- * if fancied)
- * Note that as we hold the mutex, they are going to be blocked until we reach
- * our own wait_util_allowed() while loop
- */
-		ps_print_error_and_exit(
-			"Posix arch core: error on pthread_cond_signal()\n");
+		ps_print_error_and_exit(ERPREFIX"pthread_cond_signal()\n");
 	}
 }
 
 /**
  * Let the ready thread run and lock this thread until it is allowed again
  *
- * Note that <next_allowed_thread_nbr> is an opaque type
- * representing a thread id/number which only needs to be understood
- * by this file functions
- *
  * called from __swap() which does the picking from the kernel structures
  */
-void pc_swap(p_thread_id_t next_allowed_thread_nbr)
+void pc_swap(int next_allowed_thread_nbr, int this_thread_nbr)
 {
 	pc_let_run(next_allowed_thread_nbr);
-	pc_wait_until_allowed();
+	pc_wait_until_allowed(this_thread_nbr);
 }
 
 /**
- * Let the ready thread (main) run and exit (init)
+ * Let the ready thread (main) run, and exit this thread (init)
  *
  * Called from _arch_switch_to_main_thread() which does the picking from the
  * kernel structures
+ *
+ * Note that we could have just done a swap(), but that would have left the
+ * init thread lingering. Instead here we exit the init thread after enabling
+ * the new one
  */
-void posix_core_main_thread_start(p_thread_id_t next_allowed_thread_nbr)
+void posix_core_main_thread_start(int next_allowed_thread_nbr)
 {
-	if (0) {
-		pc_swap(next_allowed_thread_nbr);
-	} else {
-		pc_let_run(next_allowed_thread_nbr);
+	pc_let_run(next_allowed_thread_nbr);
 
-		if (pthread_mutex_unlock(&pc_mtx_threads)) {
-			ps_print_error_and_exit(
-			"Posix arch core: error on pthread_mutex_lock()\n");
-		}
-
-		pthread_exit(NULL);
-/*
- * The only reason to have this is to be a bit more tidy and not let the init
- * thread lingering around
- */
+	if (pthread_mutex_unlock(&pc_mtx_threads)) {
+		ps_print_error_and_exit(ERPREFIX"pthread_mutex_lock()\n");
 	}
+
+	pthread_exit(NULL);
 }
 
 
@@ -165,37 +160,70 @@ static void *pc_thread_starter(void *arg)
 	/*we detach ourselves so nobody needs to join to us*/
 	pthread_detach(pthread_self());
 
+	/*
+	 * We block until all other running threads reach the while loop
+	 * in pc_wait_until_allowed() and they release the mutex
+	 */
 	if (pthread_mutex_lock(&pc_mtx_threads)) {
-/*
- * We block until all other running threads reach the while loop in
- * posix_core_wait_until_allowed() and they release the mutex while they wait
- * for somebody to signal that they are allowed to run
- */
-		ps_print_error_and_exit(
-			"Posix arch core: error on pthread_mutex_lock()\n");
+		ps_print_error_and_exit(ERPREFIX"pthread_mutex_lock()\n");
 	}
 
-/*
- * The thread would try to execute immediately, so we need to block it until
- * allowed
- */
-	pc_wait_until_allowed();
+	/*
+	 * The thread would try to execute immediately, so we block it
+	 * until allowed
+	 */
+	pc_wait_until_allowed(ptr->thread_idx);
 
 	pc_new_thread_pre_start();
 
 	_thread_entry(ptr->entry_point, ptr->arg1, ptr->arg2, ptr->arg3);
 
-/*
- * we only reach this point if the thread actually returns which should not
- * happen
- */
+	/*
+	 * we only reach this point if the thread actually returns which should
+	 * not happen
+	 */
 	if (POSIX_ARCH_DEBUG_PRINTS) {
-		ps_print_trace(
-			"Posix arch core: Thread %lu ended\n",
-			pthread_self());
+		ps_print_trace(PREFIX"Thread %i [%lu] ended!?!\n",
+				ptr->thread_idx,
+				pthread_self());
 	}
 
 	return NULL;
+}
+
+/**
+ * Return the first free entry index in the threads table
+ */
+static int pc_ttable_get_empty_slot(void)
+{
+
+	for (int i = 0; i < pc_threads_table_size; i++) {
+		if (pc_threads_table[i].used == false) {
+			return i;
+		}
+	}
+
+	/*
+	 * else, we run out table without finding an index
+	 * => we expand the table
+	 */
+
+	pc_threads_table = realloc(pc_threads_table,
+				(pc_threads_table_size + ALLOC_CHUNK_SIZE)
+				* sizeof(pc_threads_table_t));
+	if (pc_threads_table == NULL) {
+		ps_print_error_and_exit(NO_MEM_ERR);
+	}
+
+	/*Clear new piece of table*/
+	memset(&pc_threads_table[pc_threads_table_size],
+		0,
+		ALLOC_CHUNK_SIZE * sizeof(pc_threads_table_t));
+
+	pc_threads_table_size += ALLOC_CHUNK_SIZE;
+
+	/*The first newly created entry is good:*/
+	return pc_threads_table_size - ALLOC_CHUNK_SIZE;
 }
 
 /**
@@ -206,18 +234,25 @@ static void *pc_thread_starter(void *arg)
  */
 void pc_new_thread(posix_thread_status_t *ptr)
 {
+	int t_slot;
 
-	if (pthread_create(&(ptr->thread_id), NULL,
-			pc_thread_starter, (void *)ptr)) {
+	t_slot = pc_ttable_get_empty_slot();
+	pc_threads_table[t_slot].used = true;
+	pc_threads_table[t_slot].running = false;
+	ptr->thread_idx = t_slot;
 
-		ps_print_error_and_exit(
-				"Posix arch core: error on pthread_create\n");
+	if (pthread_create(&pc_threads_table[t_slot].thread,
+			   NULL,
+			   pc_thread_starter,
+			   (void *)ptr)) {
+
+		ps_print_error_and_exit(ERPREFIX"pthread_create\n");
 	}
 
 	if (POSIX_ARCH_DEBUG_PRINTS) {
-		ps_print_trace(
-			"Posix arch core: Thread %lu created\n",
-			ptr->thread_id);
+		ps_print_trace(PREFIX"Thread %i [%lu] created\n",
+				ptr->thread_idx,
+				pc_threads_table[t_slot].thread);
 	}
 
 }
@@ -228,26 +263,57 @@ void pc_new_thread(posix_thread_status_t *ptr)
  */
 void pc_init_multithreading(void)
 {
-/*
- * Let's ensure none of the created threads starts until the first thread (the
- * one running _PrepC) is switched out
- *
- * Note that this is not strictly necessary, as all created threads would
- * block on the posix_core_currently_running_process condition before
- * actually doing anything assuming that thread id "0" is an invalid pthread_t.
- *
- * But doing this, means we do not need to assume there is any invalid system
- * thread number
- */
-	if (pthread_mutex_lock(&pc_mtx_threads)) {
-		ps_print_error_and_exit(
-			"Posix arch core: error on pthread_mutex_lock()\n");
+	pc_currently_allowed_thread = -1;
+
+	pc_threads_table = calloc(ALLOC_CHUNK_SIZE, sizeof(pc_threads_table_t));
+	if (pc_threads_table == NULL) {
+		ps_print_error_and_exit(NO_MEM_ERR);
 	}
+
+	pc_threads_table_size = ALLOC_CHUNK_SIZE;
+
+
+	if (pthread_mutex_lock(&pc_mtx_threads)) {
+		ps_print_error_and_exit(ERPREFIX"pthread_mutex_lock()\n");
+	}
+}
+
+/**
+ * Free any allocated memory by the posix core
+ * and clean up (kill all threads, except the running one if the cpu is running
+ * == this thread is the one calling pc_clean_up)
+ */
+void pc_clean_up(int cpu_running)
+{
+
+	if (!pc_threads_table) {
+		return;
+	}
+
+	for (int i = 0; i < pc_threads_table_size; i++) {
+		if ((!pc_threads_table[i].used)
+		    || (pc_threads_table[i].running && cpu_running)) {
+			continue;
+		}
+
+		if (pthread_cancel(pc_threads_table[i].thread)) {
+			ps_print_warning(PREFIX"could not stop thread %i",
+					i);
+		}
+		/*
+		 * if (pthread_join(pc_threads_table[i].thread, NULL)) {
+		 *	ps_print_warning(PREFIX"problem stopping thread %i",
+		 *			i);
+		 * }
+		 */
+	}
+	free(pc_threads_table);
 }
 
 /*
  * NOTE:
  * This will work with or without CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN defined
+ * but to be more tidy we define ARCH_HAS_CUSTOM_SWAP_TO_MAIN in Kconfig
  */
 
 /*
@@ -260,9 +326,4 @@ void pc_init_multithreading(void)
  * underlying thread after allowing another
  */
 
-/*
- * Note:
- * we may want to define a cleanup function (with a weak wrapper)
- * to be called when the program is closing to kill all threads
- * except the running one
- */
+

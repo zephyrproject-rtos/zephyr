@@ -12,6 +12,7 @@
 #include "hw_models_top.h"
 #include "timer_model.h"
 #include "irq_ctrl.h"
+#include "main.h"
 
 
 static hwtime_t device_time; /*The actual time as known by the device*/
@@ -47,7 +48,7 @@ static void hwm_sleep_until_next_timer(void)
 			"\n\n\n\n\n\nAutostopped after %.3Lfs\n",
 			((long double)end_of_time)/1.0e6);
 
-		main_clean_up();
+		main_clean_up(0);
 	}
 }
 

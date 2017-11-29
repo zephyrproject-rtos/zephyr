@@ -26,11 +26,11 @@
 #define STOP_AFTER_5_SECONDS 0
 
 
-void main_clean_up(void)
+void main_clean_up(int exit_code)
 {
 	hwm_cleanup();
-	/*Eventually also cleanup threads in POSIX core*/
-	exit(0);
+	ps_clean_up();
+	exit(exit_code);
 }
 
 /**

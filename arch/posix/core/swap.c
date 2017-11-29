@@ -59,10 +59,11 @@ unsigned int __swap(unsigned int key)
 	posix_thread_status_t *ready_thread_ptr =
 		(posix_thread_status_t *)
 		_kernel.ready_q.cache->callee_saved.thread_status;
-/*
- * posix_thread_status_t * this_thread_ptr  =
- * (posix_thread_status_t *)_kernel.current->callee_saved.thread_status;
- */
+
+	posix_thread_status_t *this_thread_ptr  =
+		(posix_thread_status_t *)
+		_kernel.current->callee_saved.thread_status;
+
 
 	_kernel.current = _kernel.ready_q.cache;
 
@@ -72,7 +73,8 @@ unsigned int __swap(unsigned int key)
  * signal to whomever is allowed to run to continue
  */
 	{
-		pc_swap(ready_thread_ptr->thread_id);
+		pc_swap(ready_thread_ptr->thread_idx,
+			this_thread_ptr->thread_idx);
 	} /*when we continue, _kernel->current points back to this thread*/
 
 	irq_unlock(_kernel.current->callee_saved.key);
@@ -100,7 +102,7 @@ void _arch_switch_to_main_thread(struct k_thread *main_thread,
 			_kernel.ready_q.cache->callee_saved.thread_status;
 	_kernel.current = _kernel.ready_q.cache;
 
-	posix_core_main_thread_start(ready_thread_ptr->thread_id);
+	posix_core_main_thread_start(ready_thread_ptr->thread_idx);
 }
 #endif
 

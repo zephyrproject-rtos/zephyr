@@ -208,10 +208,7 @@ void ps_boot_cpu(void)
 
 void ps_clean_up(void)
 {
-  /* Placeholder
-   * Eventually kill all zephyr threads,
-   * except this one if the cpu is not halted
-   */
+	pc_clean_up(ps_is_cpu_running());
 }
 
 

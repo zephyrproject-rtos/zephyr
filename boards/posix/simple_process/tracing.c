@@ -14,6 +14,7 @@
 #include <stdlib.h> /*for exit*/
 #include <stdio.h>  /*for printfs*/
 #include <stdarg.h> /*for va args*/
+#include "main.h"
 
 
 void ps_print_error_and_exit(const char *format, ...)
@@ -23,7 +24,7 @@ void ps_print_error_and_exit(const char *format, ...)
 	va_start(variable_args, format);
 	vfprintf(stderr, format, variable_args);
 	va_end(variable_args);
-	exit(1);
+	main_clean_up(1);
 }
 
 void ps_print_warning(const char *format, ...)
