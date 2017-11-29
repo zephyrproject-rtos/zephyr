@@ -6,6 +6,9 @@
 
 #include <ztest.h>
 #include <stdio.h>
+#ifdef KERNEL
+__kernel static struct k_thread ztest_thread;
+#endif
 
 enum {
 	TEST_PHASE_SETUP,
@@ -23,6 +26,15 @@ static int cleanup_test(struct unit_test *test)
 	int mock_status;
 
 	mock_status = _cleanup_mock();
+
+#ifdef KERNEL
+	/* we need to remove the ztest_thread information from the timeout_q.
+	 * Because we reuse the same k_thread structure this would
+	 * causes some problems.
+	 */
+	k_thread_abort(&ztest_thread);
+#endif
+
 	if (!ret && mock_status == 1) {
 		PRINT("Test %s failed: Unused mock parameter values\n",
 		      test->name);
@@ -139,7 +151,7 @@ out:
 #if CONFIG_ZTEST_STACKSIZE & (STACK_ALIGN - 1)
     #error "CONFIG_ZTEST_STACKSIZE must be a multiple of the stack alignment"
 #endif
-__kernel static struct k_thread ztest_thread;
+
 static K_THREAD_STACK_DEFINE(thread_stack, CONFIG_ZTEST_STACKSIZE +
 			     CONFIG_TEST_EXTRA_STACKSIZE);
 
