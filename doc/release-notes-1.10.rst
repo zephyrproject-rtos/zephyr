@@ -67,7 +67,13 @@ Networking
 Bluetooth
 *********
 
-* details ...
+* Multiple qualification-related fixes for Bluetooth Mesh
+* Support for Bluetooth Mesh Friend Node role
+* Support for Bluetooth Mesh Foundation Client Models
+* New Bluetooth Mesh shell module and test application
+* Support for PA/LNA amplifiers in the BLE Controller
+* Support for additional VS commands in the BLE Controller
+* Multiple stability fixes for the BLE Controller
 
 Build and Infrastructure
 ************************
