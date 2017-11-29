@@ -350,6 +350,7 @@ int bt_mesh_proxy_identity_enable(void)
 	}
 
 	sub->node_id = BT_MESH_NODE_IDENTITY_RUNNING;
+	sub->node_id_start = k_uptime_get_32();
 	bt_mesh_adv_update();
 
 	return 0;
