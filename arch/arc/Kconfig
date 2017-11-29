@@ -149,6 +149,13 @@ config CODE_DENSITY
 	help
 	Enable code density option to get better code density
 
+config ARC_HAS_SECURE
+	bool
+	#  a hidden option
+	default n
+	help
+	This opiton is enabled when ARC core supports secure mode
+
 menu "ARC MPU Options"
 depends on CPU_HAS_MPU
 

@@ -22,6 +22,7 @@ extern "C" {
 #define _ARC_V2_LP_START 0x002
 #define _ARC_V2_LP_END 0x003
 #define _ARC_V2_IDENTITY 0x004
+#define _ARC_V2_SEC_STAT 0x09
 #define _ARC_V2_STATUS32 0x00a
 #define _ARC_V2_STATUS32_P0 0x00b
 #define _ARC_V2_AUX_IRQ_CTRL 0x00e
@@ -34,6 +35,7 @@ extern "C" {
 #define _ARC_V2_TMR0_CONTROL 0x022
 #define _ARC_V2_TMR0_LIMIT 0x023
 #define _ARC_V2_IRQ_VECT_BASE    0x025
+#define _ARC_V2_IRQ_VECT_BASE_S 0x26
 #define _ARC_V2_AUX_IRQ_ACT 0x043
 #define _ARC_V2_DC_IVDC 0x047
 #define _ARC_V2_DC_CTRL 0x048
@@ -112,6 +114,9 @@ extern "C" {
 #define _ARC_V2_STATUS32_ES (1 << 15)
 #define _ARC_V2_STATUS32_RB(x) ((x) << 16)
 #define _ARC_V2_STATUS32_IE (1 << 31)
+
+/* interrupt related bits */
+#define _ARC_V2_IRQ_PRIORITY_SECURE 0x100
 
 /* exception cause register masks */
 #define _ARC_V2_ECR_VECTOR(X) ((X & 0xff0000) >> 16)

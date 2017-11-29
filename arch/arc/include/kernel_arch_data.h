@@ -39,6 +39,41 @@ extern "C" {
 #endif
 
 #ifndef _ASMLANGUAGE
+#ifdef CONFIG_ARC_HAS_SECURE
+struct _irq_stack_frame {
+	u32_t lp_end;
+	u32_t lp_start;
+	u32_t lp_count;
+#ifdef CONFIG_CODE_DENSITY
+	/*
+	 * Currently unsupported. This is where those registers are
+	 * automatically pushed on the stack by the CPU when taking a regular
+	 * IRQ.
+	 */
+	u32_t ei_base;
+	u32_t ldi_base;
+	u32_t jli_base;
+#endif
+	u32_t r0;
+	u32_t r1;
+	u32_t r2;
+	u32_t r3;
+	u32_t r4;
+	u32_t r5;
+	u32_t r6;
+	u32_t r7;
+	u32_t r8;
+	u32_t r9;
+	u32_t r10;
+	u32_t r11;
+	u32_t r12;
+	u32_t r13;
+	u32_t blink;
+	u32_t pc;
+	u32_t sec_stat;
+	u32_t status32;
+};
+#else
 struct _irq_stack_frame {
 	u32_t r0;
 	u32_t r1;
@@ -71,6 +106,7 @@ struct _irq_stack_frame {
 	u32_t pc;
 	u32_t status32;
 };
+#endif
 
 typedef struct _irq_stack_frame _isf_t;
 

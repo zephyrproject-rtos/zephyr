@@ -164,7 +164,7 @@ _swap_already_in_irq:
 .balign 4
 _return_from_exc_irq:
 	_pop_irq_stack_frame
-	sub_s sp, sp, 8
+	sub_s sp, sp, ___isf_t_status32_OFFSET - ___isf_t_pc_OFFSET + 4
 
 _return_from_exc:
 
@@ -173,7 +173,7 @@ _return_from_exc:
 	sr ilink, [_ARC_V2_ERET]
 
 	/* put status32 into estatus */
-	ld ilink, [sp, 4] /* status32 into ilink */
+	ld ilink, [sp, ___isf_t_status32_OFFSET - ___isf_t_pc_OFFSET] /* status32 into ilink */
 	sr ilink, [_ARC_V2_ERSTATUS]
-	add_s sp, sp, 8
+	add_s sp, sp, ___isf_t_status32_OFFSET - ___isf_t_pc_OFFSET + 4
 	rtie

@@ -192,12 +192,29 @@ _rirq_return_from_coop:
 
 	/* carve fake stack */
 
+#ifdef  CONFIG_ARC_HAS_SECURE
+/* a) status32/pc are already on the stack
+ * 	pc
+ * 	status
+ * b) make a space for sec_stat
+ * c) adjust the right place for sec_stat and pc
+ *	pc
+ *	sec_stat
+ *	status
+ * d) a real value will be pushed in r0
+ */
+	ld_s r0, [sp]
+	push_s r0
+	lr r0, [_ARC_V2_SEC_STAT]
+	st_s r0, [sp, 4]
+	sub sp, sp, (___isf_t_SIZEOF - 16)
+#else
 	/*
 	 * a) status32/pc are already on the stack
 	 * b) a real value will be pushed in r0
 	 */
 	sub sp, sp, (___isf_t_SIZEOF - 12)
-
+#endif
 	/* push return value on stack */
 	ld_s r0, [r2, _thread_offset_to_return_value]
 	push_s r0
