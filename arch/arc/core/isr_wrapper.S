@@ -229,6 +229,7 @@ From RIRQ:
  */
 
 SECTION_FUNC(TEXT, _isr_wrapper)
+#if CONFIG_ARC_FIRQ
 #if CONFIG_RGF_NUM_BANKS == 1
 	st r0,[saved_r0]
 #endif
@@ -284,6 +285,11 @@ rirq_path:
 	mov.z r2, _firq_enter
 	mov.nz r3, _rirq_exit
 	mov.nz r2, _rirq_enter
+	j_s [r2]
+#endif
+#else
+	mov r3, _rirq_exit
+	mov r2, _rirq_enter
 	j_s [r2]
 #endif
 
