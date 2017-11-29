@@ -6,21 +6,18 @@
 #ifndef _POSIX_CORE_H
 #define _POSIX_CORE_H
 
+#include "kernel.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/*TODO: with the current compile script we can safely include kernel.h here*/
-typedef void (*_posix_core_thread_entry_t)(void *, void *, void *);
-/* we redefine here the kernel.h _thread_entry_t to not need to include the
- * kernel.h and all its dependencies
- */
 
 /*Type for unique thread identifiers*/
 typedef unsigned long int p_thread_id_t;
 
 typedef struct {
-	_posix_core_thread_entry_t entry_point;
+	k_thread_entry_t entry_point;
 	void *arg1;
 	void *arg2;
 	void *arg3;

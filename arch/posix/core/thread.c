@@ -67,7 +67,7 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 				- sizeof(*thread_status));
 
 	/* _thread_entry() arguments */
-	thread_status->entry_point = (_posix_core_thread_entry_t)thread_func;
+	thread_status->entry_point = thread_func;
 	thread_status->arg1 = arg1;
 	thread_status->arg2 = arg2;
 	thread_status->arg3 = arg3;

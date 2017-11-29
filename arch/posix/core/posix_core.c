@@ -27,6 +27,7 @@
 
 #include "posix_core.h"
 #include "posix_soc_if.h"
+#include "nano_internal.h"
 
 
 /*
@@ -181,11 +182,6 @@ static void *pc_thread_starter(void *arg)
 	pc_wait_until_allowed();
 
 	pc_new_thread_pre_start();
-
-	/*Once allowed, we jump to the actual thread entry point:*/
-	/*TODO include "nano_internal.h"*/
-	extern void _thread_entry(void (*entry)(void *, void *, void *),
-				  void *p1, void *p2, void *p3);
 
 	_thread_entry(ptr->entry_point, ptr->arg1, ptr->arg2, ptr->arg3);
 
