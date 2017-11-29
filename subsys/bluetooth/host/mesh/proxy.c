@@ -703,8 +703,9 @@ static struct bt_gatt_attr proxy_attrs[] = {
 	BT_GATT_DESCRIPTOR(BT_UUID_MESH_PROXY_DATA_OUT, BT_GATT_PERM_NONE,
 			   NULL, NULL, NULL),
 	/* Add custom CCC as clients need to be tracked individually */
-	BT_GATT_DESCRIPTOR(BT_UUID_GATT_CCC, BT_GATT_PERM_WRITE, proxy_ccc_read,
-			   proxy_ccc_write, &proxy_ccc_val),
+	BT_GATT_DESCRIPTOR(BT_UUID_GATT_CCC,
+			   BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
+			   proxy_ccc_read, proxy_ccc_write, &proxy_ccc_val),
 };
 
 static struct bt_gatt_service proxy_svc = BT_GATT_SERVICE(proxy_attrs);
