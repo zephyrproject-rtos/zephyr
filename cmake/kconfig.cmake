@@ -2,6 +2,7 @@
 # conf/mconf needs to be run from a different directory because of: ZEP-1963
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig/include/generated)
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig/include/config)
+file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/include/generated)
 
 set_ifndef(KCONFIG_ROOT ${PROJECT_SOURCE_DIR}/Kconfig)
 

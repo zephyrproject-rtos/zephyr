@@ -291,6 +291,17 @@ add_subdirectory(arch)
 add_subdirectory(drivers)
 add_subdirectory(tests)
 
+set(syscall_macros_h ${ZEPHYR_BINARY_DIR}/include/generated/syscall_macros.h)
+
+add_custom_target(syscall_macros_h_target DEPENDS ${syscall_macros_h})
+add_custom_command(                       OUTPUT  ${syscall_macros_h}
+  COMMAND
+  ${PYTHON_EXECUTABLE}
+  ${PROJECT_SOURCE_DIR}/scripts/gen_syscall_header.py
+  > ${syscall_macros_h}
+  DEPENDS ${PROJECT_SOURCE_DIR}/scripts/gen_syscall_header.py
+  )
+
 # Generate offsets.c.obj from offsets.c
 # Generate offsets.h     from offsets.c.obj
 
@@ -300,6 +311,7 @@ set(OFFSETS_H_PATH ${PROJECT_BINARY_DIR}/include/generated/offsets.h)
 
 add_library(offsets STATIC ${OFFSETS_C_PATH})
 target_link_libraries(offsets zephyr_interface)
+add_dependencies(offsets syscall_macros_h_target)
 
 add_custom_command(
   OUTPUT ${OFFSETS_H_PATH}
