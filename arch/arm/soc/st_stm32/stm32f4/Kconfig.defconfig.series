@@ -69,6 +69,19 @@ config USB_DC_STM32_RAM_SIZE
         int
         default 1280
 
+if USB_CDC_ACM
+
+config CDC_ACM_INT_EP_ADDR
+       default 0x81
+
+config CDC_ACM_IN_EP_ADDR
+       default 0x82
+
+config CDC_ACM_OUT_EP_ADDR
+       default 0x03
+
+endif # USB_CDC_ACM
+
 endif #USB
 
 if WATCHDOG
