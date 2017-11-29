@@ -163,7 +163,8 @@ static void *zephyr_wrapper(void *a)
 	pthread_detach(zephyr_thread);
 
 	/*Start Zephyr:*/
-	_PrepC(); /*this does not return*/
+	_Cstart();
+	CODE_UNREACHABLE;
 
 	return NULL;
 }

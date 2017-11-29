@@ -36,7 +36,7 @@ void pc_init_multithreading(void);
 
 void pc_new_thread_pre_start(void); /*defined in thread.c*/
 
-void _PrepC(void);
+void _Cstart(void);
 
 #ifdef __cplusplus
 }
