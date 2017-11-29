@@ -14,30 +14,28 @@
 #define AUX_MPU_RDP_KE  0x040    /* only allow kernel execution */
 #define AUX_MPU_RDP_KW  0x080    /* only allow kernel write */
 #define AUX_MPU_RDP_KR  0x100    /* only allow kernel read */
+#define AUX_MPU_RDP_S	0x8000   /* secure */
+#define AUX_MPU_RDP_N 	0x0000   /* normal */
 
 
 
 /* Some helper defines for common regions */
-#define REGION_RAM_ATTR(size) \
+#define REGION_RAM_ATTR	\
 			(AUX_MPU_RDP_UW | AUX_MPU_RDP_UR | \
-			 AUX_MPU_RDP_KW | AUX_MPU_RDP_KR | \
-			 size)
+			 AUX_MPU_RDP_KW | AUX_MPU_RDP_KR)
 
-#define REGION_FLASH_ATTR(size) \
+#define REGION_FLASH_ATTR \
 			(AUX_MPU_RDP_UE | AUX_MPU_RDP_UR | \
-			 AUX_MPU_RDP_KE | AUX_MPU_RDP_KR | \
-			 size)
+			 AUX_MPU_RDP_KE | AUX_MPU_RDP_KR)
 
-#define REGION_IO_ATTR(size) \
+#define REGION_IO_ATTR \
+			(AUX_MPU_RDP_UW | AUX_MPU_RDP_UR | \
+			 AUX_MPU_RDP_KW | AUX_MPU_RDP_KR)
+
+#define REGION_ALL_ATTR \
 			(AUX_MPU_RDP_UW | AUX_MPU_RDP_UR | \
 			 AUX_MPU_RDP_KW | AUX_MPU_RDP_KR | \
-			 size)
-
-#define REGION_ALL_ATTR(size) \
-			(AUX_MPU_RDP_UW | AUX_MPU_RDP_UR | \
-			 AUX_MPU_RDP_KW | AUX_MPU_RDP_KR | \
-			 AUX_MPU_RDP_KE | AUX_MPU_RDP_UE | \
-			 size)
+			 AUX_MPU_RDP_KE | AUX_MPU_RDP_UE)
 
 
 #define REGION_32B      0x200
@@ -71,18 +69,20 @@
 
 /* Region definition data structure */
 struct arc_mpu_region {
-	/* Region Base Address */
-	u32_t base;
 	/* Region Name */
 	const char *name;
+	/* Region Base Address */
+	u32_t base;
+	u32_t size;
 	/* Region Attributes */
 	u32_t attr;
 };
 
-#define MPU_REGION_ENTRY(_name, _base, _attr) \
+#define MPU_REGION_ENTRY(_name, _base, _size, _attr) \
 	{\
 		.name = _name, \
 		.base = _base, \
+		.size = _size, \
 		.attr = _attr, \
 	}
 

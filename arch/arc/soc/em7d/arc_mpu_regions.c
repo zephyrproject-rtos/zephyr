@@ -12,24 +12,28 @@ static struct arc_mpu_region mpu_regions[] = {
 	/* Region ICCM */
 	MPU_REGION_ENTRY("ICCM",
 			 CONFIG_ICCM_BASE_ADDRESS,
-			 REGION_FLASH_ATTR(REGION_256K)),
+			 CONFIG_ICCM_SIZE * 1024,
+			 REGION_FLASH_ATTR),
 #endif
 #if CONFIG_DCCM_SIZE > 0
 	/* Region DCCM */
 	MPU_REGION_ENTRY("DCCM",
 			 CONFIG_DCCM_BASE_ADDRESS,
-			 REGION_RAM_ATTR(REGION_128K)),
+			 CONFIG_DCCM_SIZE * 1024,
+			 REGION_RAM_ATTR),
 #endif
 #if CONFIG_SRAM_SIZE > 0
 	/* Region DDR RAM */
 	MPU_REGION_ENTRY("DDR RAM",
 			CONFIG_SRAM_BASE_ADDRESS,
-			REGION_ALL_ATTR(REGION_128M)),
+			CONFIG_SRAM_SIZE * 1024,
+			REGION_ALL_ATTR),
 #endif
 	/* Region Peripheral */
 	MPU_REGION_ENTRY("PERIPHERAL",
 			 0xF0000000,
-			 REGION_IO_ATTR(REGION_64K)),
+			 64 * 1024,
+			 REGION_IO_ATTR),
 };
 
 struct arc_mpu_config mpu_config = {

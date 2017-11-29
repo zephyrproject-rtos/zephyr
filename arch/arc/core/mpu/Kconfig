@@ -36,4 +36,4 @@ config ARC_MPU
 	select ARC_CORE_MPU
 	default n
 	help
-	  Target has ARC MPU (currently only works for EMSK 2.2 ARCEM7D)
+	  Target has ARC MPU (currently only works for EMSK 2.2/2.3 ARCEM7D)
