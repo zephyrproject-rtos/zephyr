@@ -17,6 +17,8 @@ extern "C" {
 void pb_irq_handler_im_from_sw(void);
 void pb_sw_set_pending_IRQ(unsigned int IRQn);
 void pb_sw_clear_pending_IRQ(unsigned int IRQn);
+unsigned int _arch_irq_lock(void);
+void _arch_irq_unlock(unsigned int key);
 
 #ifdef __cplusplus
 }

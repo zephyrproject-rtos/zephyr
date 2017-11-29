@@ -8,6 +8,7 @@
  */
 
 #include <stdint.h>
+#include "irq_handler.h"
 #include "irq_offload.h"
 #include "kernel_structs.h"
 #include "irq_ctrl.h"
@@ -15,7 +16,6 @@
 #include "board_soc.h"
 #include "sw_isr_table.h"
 #include "soc.h"
-#include "irq_handler.h"
 
 
 typedef void (*normal_irq_f_ptr)(void *);
