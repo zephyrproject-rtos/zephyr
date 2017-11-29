@@ -148,7 +148,7 @@ volatile int *ptr = NULL;
 #if defined(CONFIG_X86)
 volatile size_t size = MMU_PAGE_SIZE;
 #elif defined(CONFIG_ARM) && defined(CONFIG_PRIVILEGED_STACK_SIZE)
-volatile size_t size = CONFIG_PRIVILEGED_STACK_SIZE;
+volatile size_t size = CONFIG_ZTEST_STACKSIZE - CONFIG_PRIVILEGED_STACK_SIZE;
 #else
 volatile size_t size = 512;
 #endif
