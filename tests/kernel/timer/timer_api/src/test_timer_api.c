@@ -74,19 +74,7 @@ static void status_expire(struct k_timer *timer)
 
 static void busy_wait_ms(s32_t ms)
 {
-#ifdef CONFIG_TICKLESS_KERNEL
-	k_enable_sys_clock_always_on();
-#endif
-	s32_t deadline = k_uptime_get() + ms;
-
-	volatile s32_t now = k_uptime_get();
-
-	while (now < deadline) {
-		now = k_uptime_get();
-	}
-#ifdef CONFIG_TICKLESS_KERNEL
-	k_disable_sys_clock_always_on();
-#endif
+	k_busy_wait(ms*1000);
 }
 
 static void status_stop(struct k_timer *timer)
