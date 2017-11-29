@@ -8,11 +8,6 @@ zephyr_cc_option(--param l1-cache-line-size=32)
 
 zephyr_cc_option_ifdef(CONFIG_CODE_DENSITY -mcode-density)
 
-if(CONFIG_BOARD_EM_STARTERKIT_R23)
-  message(FATAL "em7d from em starterkit 2.3 is not supported")
-endif()
-
-
 zephyr_sources(
   soc.c
   soc_config.c
