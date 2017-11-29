@@ -66,16 +66,6 @@ include($ENV{ZEPHYR_BASE}/cmake/extensions.cmake)
 
 find_package(PythonInterp 3.4)
 
-# Generate syscall_macros.h at configure-time because it has virtually
-# no dependencies
-file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/include/generated)
-execute_process(
-  COMMAND
-  ${PYTHON_EXECUTABLE}
-  $ENV{ZEPHYR_BASE}/scripts/gen_syscall_header.py
-  OUTPUT_FILE ${ZEPHYR_BINARY_DIR}/include/generated/syscall_macros.h
-  )
-
 if(NOT ZEPHYR_GCC_VARIANT)
   set(ZEPHYR_GCC_VARIANT $ENV{ZEPHYR_GCC_VARIANT})
 endif()
