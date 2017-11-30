@@ -59,6 +59,13 @@ extern "C" {
 #define I2C_MODE_MASTER			(1 << 4)
 
 /*
+ * The following #defines are used to configure the I2C slave device
+ */
+
+/** Slave device responds to 10-bit addressing. */
+#define I2C_SLAVE_FLAGS_ADDR_10_BITS		I2C_ADDR_10_BITS
+
+/*
  * I2C_MSG_* are I2C Message flags.
  */
 
@@ -110,16 +117,66 @@ union __deprecated dev_config {
  * These are for internal use only, so skip these in
  * public documentation.
  */
+struct i2c_slave_config;
+
+typedef int (*i2c_slave_write_requested_cb_t)(
+		struct i2c_slave_config *config);
+typedef int (*i2c_slave_read_requested_cb_t)(
+		struct i2c_slave_config *config, u8_t *val);
+typedef int (*i2c_slave_write_received_cb_t)(
+		struct i2c_slave_config *config, u8_t val);
+typedef int (*i2c_slave_read_processed_cb_t)(
+		struct i2c_slave_config *config, u8_t *val);
+typedef int (*i2c_slave_stop_cb_t)(struct i2c_slave_config *config);
+
+struct i2c_slave_callbacks {
+	/** callback function being called when write is requested */
+	i2c_slave_write_requested_cb_t write_requested;
+	/** callback function being called when read is requested */
+	i2c_slave_read_requested_cb_t read_requested;
+	/** callback function being called when byte has been received */
+	i2c_slave_write_received_cb_t write_received;
+	/** callback function being called when byte has been sent */
+	i2c_slave_read_processed_cb_t read_processed;
+	/** callback function being called when stop occurs on the bus */
+	i2c_slave_stop_cb_t stop;
+};
+
+struct i2c_slave_config {
+	/** Private, do not modify */
+	sys_snode_t node;
+	/** Flags for the slave device defined by I2C_SLAVE_FLAGS_* constants */
+	u8_t flags;
+	/** Address for this slave device */
+	u16_t address;
+	/** Callback functions */
+	const struct i2c_slave_callbacks *callbacks;
+};
+
 typedef int (*i2c_api_configure_t)(struct device *dev,
 				   u32_t dev_config);
 typedef int (*i2c_api_full_io_t)(struct device *dev,
 				 struct i2c_msg *msgs,
 				 u8_t num_msgs,
 				 u16_t addr);
+typedef int (*i2c_api_slave_register_t)(struct device *dev,
+					struct i2c_slave_config *cfg);
+typedef int (*i2c_api_slave_unregister_t)(struct device *dev,
+					  struct i2c_slave_config *cfg);
 
 struct i2c_driver_api {
 	i2c_api_configure_t configure;
 	i2c_api_full_io_t transfer;
+	i2c_api_slave_register_t slave_register;
+	i2c_api_slave_unregister_t slave_unregister;
+};
+
+typedef int (*i2c_slave_api_register_t)(struct device *dev);
+typedef int (*i2c_slave_api_unregister_t)(struct device *dev);
+
+struct i2c_slave_driver_api {
+	i2c_slave_api_register_t driver_register;
+	i2c_slave_api_unregister_t driver_unregister;
 };
 /**
  * @endcond
@@ -173,6 +230,116 @@ static inline int _impl_i2c_transfer(struct device *dev,
 	const struct i2c_driver_api *api = dev->driver_api;
 
 	return api->transfer(dev, msgs, num_msgs, addr);
+}
+
+/**
+ * @brief Registers the provided config as Slave device
+ *
+ * Enable I2C slave mode for the 'dev' I2C bus driver using the provided
+ * 'config' struct containing the functions and parameters to send bus
+ * events. The I2C slave will be registered at the address provided as 'address'
+ * struct member. Addressing mode - 7 or 10 bit - depends on the 'flags'
+ * struct member. Any I2C bus events related to the slave mode will be passed
+ * onto I2C slave device driver via a set of callback functions provided in
+ * the 'callbacks' struct member.
+ *
+ * Most of the existing hardware allows simultaneous support for master
+ * and slave mode. This is however not guaranteed.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param cfg Config struct with functions and parameters used by the I2C driver
+ * to send bus events
+ *
+ * @retval 0 Is successful
+ * @retval -EINVAL If parameters are invalid
+ * @retval -EIO General input / output error.
+ * @retval -ENOTSUP If slave mode is not supported
+ */
+__syscall int i2c_slave_register(struct device *dev,
+				 struct i2c_slave_config *cfg);
+
+static inline int _impl_i2c_slave_register(struct device *dev,
+					   struct i2c_slave_config *cfg)
+{
+	const struct i2c_driver_api *api = dev->driver_api;
+
+	if (!api->slave_register) {
+		return -ENOTSUP;
+	}
+
+	return api->slave_register(dev, cfg);
+}
+
+/**
+ * @brief Unregisters the provided config as Slave device
+ *
+ * This routine disables I2C slave mode for the 'dev' I2C bus driver using
+ * the provided 'config' struct containing the functions and parameters
+ * to send bus events.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param cfg Config struct with functions and parameters used by the I2C driver
+ * to send bus events
+ *
+ * @retval 0 Is successful
+ * @retval -EINVAL If parameters are invalid
+ * @retval -ENOTSUP If slave mode is not supported
+ */
+__syscall int i2c_slave_unregister(struct device *dev,
+				   struct i2c_slave_config *cfg);
+
+static inline int _impl_i2c_slave_unregister(struct device *dev,
+					     struct i2c_slave_config *cfg)
+{
+	const struct i2c_driver_api *api = dev->driver_api;
+
+	if (!api->slave_unregister) {
+		return -ENOTSUP;
+	}
+
+	return api->slave_unregister(dev, cfg);
+}
+
+/**
+ * @brief Intructs the I2C Slave device to register itself to the I2C Controller
+ *
+ * This routine instructs the I2C Slave device to register itself to the I2C
+ * Controller.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ *
+ * @retval 0 Is successful
+ * @retval -EINVAL If parameters are invalid
+ * @retval -EIO General input / output error.
+ */
+__syscall int i2c_slave_driver_register(struct device *dev);
+
+static inline int _impl_i2c_slave_driver_register(struct device *dev)
+{
+	const struct i2c_slave_driver_api *api = dev->driver_api;
+
+	return api->driver_register(dev);
+}
+
+/**
+ * @brief Intructs the I2C Slave device to unregister itself from the I2C
+ * Controller
+ *
+ * This routine instructs the I2C Slave device to unregister itself from the I2C
+ * Controller.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ *
+ * @retval 0 Is successful
+ * @retval -EINVAL If parameters are invalid
+ */
+__syscall int i2c_slave_driver_unregister(struct device *dev);
+
+static inline int _impl_i2c_slave_driver_unregister(struct device *dev)
+{
+	const struct i2c_slave_driver_api *api = dev->driver_api;
+
+	return api->driver_unregister(dev);
 }
 
 /*
