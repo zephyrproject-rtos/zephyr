@@ -42,24 +42,18 @@
 
 static struct k_delayed_work beacon_timer;
 
-static struct {
-	u16_t net_idx;
-	u8_t  data[21];
-} beacon_cache[CONFIG_BT_MESH_SUBNET_COUNT];
-
 static struct bt_mesh_subnet *cache_check(u8_t data[21])
 {
-	struct bt_mesh_subnet *sub;
 	int i;
 
-	for (i = 0; i < ARRAY_SIZE(beacon_cache); i++) {
-		if (memcmp(beacon_cache[i].data, data, 21)) {
+	for (i = 0; i < ARRAY_SIZE(bt_mesh.sub); i++) {
+		struct bt_mesh_subnet *sub = &bt_mesh.sub[i];
+
+		if (sub->net_idx == BT_MESH_KEY_UNUSED) {
 			continue;
 		}
 
-		sub = bt_mesh_subnet_get(beacon_cache[i].net_idx);
-		if (sub) {
-			BT_DBG("Match found in cache");
+		if (!memcmp(sub->beacon_cache, data, 21)) {
 			return sub;
 		}
 	}
@@ -67,9 +61,9 @@ static struct bt_mesh_subnet *cache_check(u8_t data[21])
 	return NULL;
 }
 
-static void cache_add(u8_t data[21], u16_t net_idx)
+static void cache_add(u8_t data[21], struct bt_mesh_subnet *sub)
 {
-	memcpy(beacon_cache[net_idx].data, data, 21);
+	memcpy(sub->beacon_cache, data, 21);
 }
 
 static void beacon_complete(int err, void *user_data)
@@ -278,7 +272,7 @@ static void secure_beacon_recv(struct net_buf_simple *buf)
 		return;
 	}
 
-	cache_add(data, sub->net_idx);
+	cache_add(data, sub);
 
 	/* If we have NetKey0 accept initiation only from it */
 	if (bt_mesh_subnet_get(BT_MESH_KEY_PRIMARY) &&

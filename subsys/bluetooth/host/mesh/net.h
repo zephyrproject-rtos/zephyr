@@ -36,6 +36,8 @@ struct bt_mesh_subnet {
 				   * currently ongoing window.
 				   */
 
+	u8_t  beacon_cache[21];   /* Cached last authenticated beacon */
+
 	u16_t net_idx;            /* NetKeyIndex */
 
 	bool  kr_flag;            /* Key Refresh Flag */
