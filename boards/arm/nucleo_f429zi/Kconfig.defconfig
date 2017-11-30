@@ -22,6 +22,9 @@ if NETWORKING
 config NET_L2_ETHERNET
 	def_bool y
 
+config ETH_STM32_HAL
+	def_bool y
+
 endif # NETWORKING
 
 endif # BOARD_NUCLEO_F429ZI
