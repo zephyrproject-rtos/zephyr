@@ -8,7 +8,4 @@ config BUILD_OUTPUT_BIN
 config BOARD
 	default qemu_x86
 
-config CPU_HAS_FPU
-	def_bool y if !X86_IAMCU
-
 endif # BOARD_QEMU_X86
