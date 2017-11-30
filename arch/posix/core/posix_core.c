@@ -310,11 +310,6 @@ void pc_clean_up(int cpu_running)
 	free(pc_threads_table);
 }
 
-/*
- * NOTE:
- * This will work with or without CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN defined
- * but to be more tidy we define ARCH_HAS_CUSTOM_SWAP_TO_MAIN in Kconfig
- */
 
 /*
  * NOTE:
