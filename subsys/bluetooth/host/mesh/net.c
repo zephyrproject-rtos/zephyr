@@ -602,9 +602,24 @@ bool bt_mesh_iv_update(void)
 		bt_mesh_net_iv_update(bt_mesh.iv_index + 1, true);
 	}
 
+	bt_mesh_net_sec_update(NULL);
+
 	return bt_mesh.iv_update;
 }
 #endif /* CONFIG_BT_MESH_IV_UPDATE_TEST */
+
+/* Used for sending immediate beacons to Friend queues and GATT clients */
+void bt_mesh_net_sec_update(struct bt_mesh_subnet *sub)
+{
+	if (IS_ENABLED(CONFIG_BT_MESH_FRIEND)) {
+		bt_mesh_friend_sec_update(sub ? sub->net_idx : BT_MESH_KEY_ANY);
+	}
+
+	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) &&
+	    bt_mesh_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED) {
+		bt_mesh_proxy_beacon_send(sub);
+	}
+}
 
 bool bt_mesh_net_iv_update(u32_t iv_index, bool iv_update)
 {
@@ -758,10 +773,7 @@ int bt_mesh_net_resend(struct bt_mesh_subnet *sub, struct net_buf *buf,
 	if (!bt_mesh.iv_update && bt_mesh.seq > IV_UPDATE_SEQ_LIMIT) {
 		bt_mesh_beacon_ivu_initiator(true);
 		bt_mesh_net_iv_update(bt_mesh.iv_index + 1, true);
-
-		if (IS_ENABLED(CONFIG_BT_MESH_FRIEND)) {
-			bt_mesh_friend_sec_update(BT_MESH_KEY_ANY);
-		}
+		bt_mesh_net_sec_update(NULL);
 	}
 
 	return 0;

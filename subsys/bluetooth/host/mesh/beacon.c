@@ -25,7 +25,6 @@
 #include "crypto.h"
 #include "beacon.h"
 #include "foundation.h"
-#include "friend.h"
 
 #define UNPROVISIONED_INTERVAL     K_SECONDS(5)
 #define PROVISIONED_INTERVAL       K_SECONDS(10)
@@ -302,12 +301,12 @@ static void secure_beacon_recv(struct net_buf_simple *buf)
 		bt_mesh_net_beacon_update(sub);
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MESH_FRIEND) && (iv_change || kr_change)) {
-		if (iv_change) {
-			bt_mesh_friend_sec_update(BT_MESH_KEY_ANY);
-		} else {
-			bt_mesh_friend_sec_update(sub->net_idx);
-		}
+	if (iv_change) {
+		/* Update all subnets */
+		bt_mesh_net_sec_update(NULL);
+	} else if (kr_change) {
+		/* Key Refresh without IV Update only impacts one subnet */
+		bt_mesh_net_sec_update(sub);
 	}
 
 update_stats:
