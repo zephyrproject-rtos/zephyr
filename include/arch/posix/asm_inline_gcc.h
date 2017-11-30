@@ -29,6 +29,7 @@ extern "C" {
 #include <toolchain/common.h>
 #include <zephyr/types.h>
 #include <sys_io.h>
+#include "posix_soc_if.h"
 
 /**
  *

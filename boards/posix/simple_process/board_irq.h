@@ -14,6 +14,9 @@
 extern "C" {
 #endif
 
+void _isr_declare(unsigned int irq_p, int flags, void isr_p(void *),
+		void *isr_param_p);
+void _irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags);
 
 /**
  * Configure a static interrupt.

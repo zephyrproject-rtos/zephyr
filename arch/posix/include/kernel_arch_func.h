@@ -10,6 +10,7 @@
 #ifndef _kernel_arch_func__h_
 #define _kernel_arch_func__h_
 
+#include "kernel.h"
 #include <toolchain/common.h>
 #include "posix_core.h"
 
@@ -17,6 +18,12 @@
 
 #ifdef __cplusplus
 extern "C" {
+#endif
+
+#if defined(CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN)
+void _arch_switch_to_main_thread(struct k_thread *main_thread,
+		k_thread_stack_t *main_stack,
+		size_t main_stack_size, k_thread_entry_t _main);
 #endif
 
 /**

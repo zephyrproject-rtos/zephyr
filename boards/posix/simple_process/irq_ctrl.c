@@ -12,6 +12,7 @@
 #include "irq_handler.h"
 #include "arch/posix/arch.h" /*for find_lsb_set()*/
 #include "board_soc.h"
+#include "posix_soc.h"
 
 hwtime_t irq_ctrl_timer = NEVER;
 

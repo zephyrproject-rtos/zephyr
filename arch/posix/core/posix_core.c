@@ -31,6 +31,7 @@
 #include "posix_soc_if.h"
 #include "nano_internal.h"
 #include "kernel_structs.h"
+#include "ksched.h"
 
 #define PREFIX     "POSIX arch core: "
 #define ERPREFIX   PREFIX"error on "
@@ -118,6 +119,9 @@ static void pc_let_run(int next_allowed_thread_nbr)
 
 static void pc_preexit_cleanup(void)
 {
+	/*
+	 * Release the mutex so the next allowed thread can run
+	 */
 	if (pthread_mutex_unlock(&pc_mtx_threads)) {
 		ps_print_error_and_exit(ERPREFIX"pthread_mutex_unlock()\n");
 	}
@@ -366,6 +370,8 @@ void pc_abort_thread(int thread_idx)
 	 */
 }
 
+
+extern void _k_thread_single_abort(struct k_thread *thread);
 
 #if defined(CONFIG_ARCH_HAS_THREAD_ABORT)
 void _impl_k_thread_abort(k_tid_t thread)

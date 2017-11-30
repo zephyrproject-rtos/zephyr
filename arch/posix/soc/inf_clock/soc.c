@@ -31,6 +31,7 @@
 #include "posix_soc.h"
 #include "posix_board_if.h"
 #include "posix_core.h"
+#include "nano_internal.h"
 
 #define PREFIX "Posix arch core: "
 #define ERPREFIX PREFIX"error on "

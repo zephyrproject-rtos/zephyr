@@ -23,7 +23,7 @@ void hwm_init(void);
 void hwm_cleanup(void);
 void hwm_set_end_of_time(hwtime_t new_end_of_time);
 hwtime_t hwm_get_time(void);
-
+void hwm_find_next_timer(void);
 
 #ifdef __cplusplus
 }

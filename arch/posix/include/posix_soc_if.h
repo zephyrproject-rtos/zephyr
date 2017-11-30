@@ -28,6 +28,8 @@ void ps_atomic_halt_cpu(unsigned int imask);
 
 #include "soc_irq.h" /*Must exist and define _ARCH_IRQ/ISR_* macros*/
 
+unsigned int _arch_irq_lock(void);
+void _arch_irq_unlock(unsigned int key);
 void _arch_irq_enable(unsigned int irq);
 void _arch_irq_disable(unsigned int irq);
 int  _arch_irq_is_enabled(unsigned int irq);

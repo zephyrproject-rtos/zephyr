@@ -13,6 +13,7 @@
 #include "timer_model.h"
 #include "irq_ctrl.h"
 #include "posix_board_if.h"
+#include "posix_soc_if.h"
 
 
 static hwtime_t device_time; /*The actual time as known by the device*/
