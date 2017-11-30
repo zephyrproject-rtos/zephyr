@@ -73,6 +73,7 @@ static inline u32_t _get_region_attr_by_type(u32_t type, u32_t size)
 	/* no Write and Execute to guard region */
 #if CONFIG_ARC_MPU_VER == 2
 		u8_t bits = find_msb_set(size) + 1;
+
 		return  AUX_MPU_RDP_REGION_SIZE(bits) |
 			AUX_MPU_RDP_UR | AUX_MPU_RDP_KR;
 #elif CONFIG_ARC_MPU_VER == 3
@@ -87,7 +88,7 @@ static inline u32_t _get_region_attr_by_type(u32_t type, u32_t size)
 static inline void _region_init(u32_t index, u32_t region_addr, u32_t size,
 			 u32_t region_attr)
 {
-/* ARC MPU version 2 and verison 3 have different aux reg interface */
+/* ARC MPU version 2 and version 3 have different aux reg interface */
 #if CONFIG_ARC_MPU_VER == 2
 	u8_t bits = find_msb_set(size) + 1;
 	index = 2 * index;
@@ -126,6 +127,7 @@ static inline void _region_init(u32_t index, u32_t region_addr, u32_t size,
 static inline s32_t _mpu_probe(u32_t addr)
 {
 	u32_t val;
+
 	_arc_v2_aux_reg_write(_ARC_V2_MPU_PROBE, addr);
 	val = _arc_v2_aux_reg_read(_ARC_V2_MPU_INDEX);
 
@@ -215,7 +217,7 @@ void arc_core_mpu_configure(u8_t type, u32_t base, u32_t size)
 
 	_region_init(region_index, base, size, region_attr);
 #elif CONFIG_ARC_MPU_VER == 3
-	static s32_t last_index = 0;
+	static s32_t last_index;
 	s32_t index;
 	u32_t last_region = _get_num_regions() - 1;
 
@@ -237,21 +239,21 @@ void arc_core_mpu_configure(u8_t type, u32_t base, u32_t size)
 	 */
 	index = _mpu_probe(base);
 
-	/* ARC MPU version doesnot support region overlap.
-	 * So it can not be directly used for stack/stack guard prtocet.
+	/* ARC MPU version doesn't support region overlap.
+	 * So it can not be directly used for stack/stack guard protect
 	 * One way to do this is splitting the ram region as follow:
 	 *
 	 *  Take THREAD_STACK_GUARD_REGION as example:
-	 *  RAM region 0: the ram region before THREAD_STACK_GUARD_REGION,rw
+	 *  RAM region 0: the ram region before THREAD_STACK_GUARD_REGION, rw
 	 *  RAM THREAD_STACK_GUARD_REGION: RO
 	 *  RAM region 1: the region after THREAD_STACK_GUARD_REGIO, same
-	 *  		  as region 0
+	 *                as region 0
 	 */
 
 	if (index >= 0) {  /* need to split, only 1 split is allowed */
 		/* find the correct region to mpu_config.mpu_regions */
 		if (index == last_region) {
-			/* already splitted */
+			/* already split */
 			index = last_index;
 		} else {
 			/* new split */

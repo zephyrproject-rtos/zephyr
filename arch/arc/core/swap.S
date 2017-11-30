@@ -173,7 +173,7 @@ _return_from_exc:
 	sr ilink, [_ARC_V2_ERET]
 
 	/* put status32 into estatus */
-	ld ilink, [sp, ___isf_t_status32_OFFSET - ___isf_t_pc_OFFSET] /* status32 into ilink */
+	ld ilink, [sp, ___isf_t_status32_OFFSET - ___isf_t_pc_OFFSET]
 	sr ilink, [_ARC_V2_ERSTATUS]
 	add_s sp, sp, ___isf_t_status32_OFFSET - ___isf_t_pc_OFFSET + 4
 	rtie
