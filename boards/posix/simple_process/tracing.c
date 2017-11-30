@@ -15,7 +15,7 @@
 #include <stdio.h>  /*for printfs*/
 #include <stdarg.h> /*for va args*/
 
-#include "pb_main.h"
+#include "posix_board_if.h"
 
 
 void ps_print_error_and_exit(const char *format, ...)

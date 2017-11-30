@@ -14,6 +14,7 @@
 extern "C" {
 #endif
 
+void ps_clean_up(void);
 
 #ifdef __cplusplus
 }

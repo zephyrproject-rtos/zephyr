@@ -32,6 +32,9 @@
 #include "posix_board_if.h"
 #include "posix_core.h"
 
+#define PREFIX "Posix arch core: "
+#define ERPREFIX PREFIX"error on "
+
 /******************************************
  * CPU boot, halt and interrupt handling: *
  ******************************************/
@@ -42,6 +45,8 @@ static pthread_cond_t  ps_cond_cpu  = PTHREAD_COND_INITIALIZER;
 static pthread_mutex_t ps_mtx_cpu   = PTHREAD_MUTEX_INITIALIZER;
 /*variable which tells if the CPU is halted (1) or not (0)*/
 static bool ps_cpu_halted = true;
+
+static bool terminate;
 
 int ps_is_cpu_running(void)
 {
@@ -61,8 +66,7 @@ int ps_is_cpu_running(void)
 static void ps_change_cpu_state_and_wait(bool halted)
 {
 	if (pthread_mutex_lock(&ps_mtx_cpu)) {
-		ps_print_error_and_exit(
-			"Posix arch core: error on pthread_mutex_lock()\n");
+		ps_print_error_and_exit(ERPREFIX"pthread_mutex_lock()\n");
 	}
 
 	ps_cpu_halted = halted;
@@ -72,8 +76,7 @@ static void ps_change_cpu_state_and_wait(bool halted)
  * either posix_soc_halt_cpu() [in the idle thread]
  * or the HW models
  */
-		ps_print_error_and_exit(
-			"Posix arch core: error on pthread_cond_signal()\n");
+		ps_print_error_and_exit(ERPREFIX"pthread_cond_signal()\n");
 	}
 
 	while (ps_cpu_halted == halted) {
@@ -89,8 +92,7 @@ static void ps_change_cpu_state_and_wait(bool halted)
 	}
 
 	if (pthread_mutex_unlock(&ps_mtx_cpu)) {
-		ps_print_error_and_exit(
-			"Posix arch core: error on pthread_mutex_lock()\n");
+		ps_print_error_and_exit(ERPREFIX"pthread_mutex_unlock()\n");
 	}
 }
 
@@ -100,10 +102,18 @@ static void ps_change_cpu_state_and_wait(bool halted)
  */
 void ps_interrupt_raised(void)
 {
-/* We change the CPU to running state (we awake it), and hung this thread until
- * it is set to idle again
- */
+	/* We change the CPU to running state (we awake it), and hung this
+	 * thread until it is set to idle again
+	 */
 	ps_change_cpu_state_and_wait(false);
+
+	/*
+	 * If while the SW was running it was decided to terminate the execution
+	 * we stop immediately.
+	 */
+	if (terminate) {
+		main_clean_up(0);
+	}
 }
 
 
@@ -155,8 +165,7 @@ static void *zephyr_wrapper(void *a)
 	pthread_t zephyr_thread = pthread_self();
 
 	if (POSIX_ARCH_SOC_DEBUG_PRINTS) {
-		ps_print_trace(
-			"Posix arch core: Zephyr init started (%lu)\n",
+		ps_print_trace(PREFIX"Zephyr init started (%lu)\n",
 			zephyr_thread);
 	}
 
@@ -183,8 +192,7 @@ void ps_boot_cpu(void)
 
 	/*Create a thread for Zephyr init:*/
 	if (pthread_create(&zephyr_thread, NULL, zephyr_wrapper, NULL)) {
-		ps_print_error_and_exit(
-			"Posix arch core: error on pthread_create\n");
+		ps_print_error_and_exit(ERPREFIX"pthread_create\n");
 	}
 
 	/*
@@ -192,23 +200,29 @@ void ps_boot_cpu(void)
 	 * (as gone to idle)
 	 */
 	if (pthread_mutex_lock(&ps_mtx_cpu)) {
-		ps_print_error_and_exit(
-			"Posix arch core: error on pthread_mutex_lock()\n");
+		ps_print_error_and_exit(ERPREFIX"pthread_mutex_lock()\n");
 	}
 	while (ps_cpu_halted == false) {
 		pthread_cond_wait(&ps_cond_cpu, &ps_mtx_cpu);
 	}
 	if (pthread_mutex_unlock(&ps_mtx_cpu)) {
-		ps_print_error_and_exit(
-			"Posix arch core: error on pthread_mutex_lock()\n");
+		ps_print_error_and_exit(ERPREFIX"pthread_mutex_unlock()\n");
 	}
 
 }
 
-
 void ps_clean_up(void)
 {
-	pc_clean_up(ps_is_cpu_running());
+	/*
+	 * If we are being called from a SW thread (!ps_cpu_halted),
+	 * we give back control to the HW thread and tell it to terminate
+	 * Otherwise we can cleanup
+	 */
+	if (ps_cpu_halted) {
+		pc_clean_up();
+	} else {
+		terminate = true;
+		ps_change_cpu_state_and_wait(true);
+	}
 }
-
 

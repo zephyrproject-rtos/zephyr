@@ -12,7 +12,7 @@
 #include "hw_models_top.h"
 #include "timer_model.h"
 #include "irq_ctrl.h"
-#include "pb_main.h"
+#include "posix_board_if.h"
 
 
 static hwtime_t device_time; /*The actual time as known by the device*/
@@ -43,7 +43,7 @@ static void hwm_sleep_until_next_timer(void)
 			next_timer_index);
 	}
 
-	if (device_time > end_of_time) {
+	if (device_time >= end_of_time) {
 		ps_print_trace(
 			"\n\n\n\n\n\nAutostopped after %.3Lfs\n",
 			((long double)end_of_time)/1.0e6);
@@ -52,6 +52,10 @@ static void hwm_sleep_until_next_timer(void)
 	}
 }
 
+void pb_terminate_asap(void)
+{
+	end_of_time = device_time;
+}
 
 /**
  * Find in between all timers which is the next one
@@ -123,6 +127,8 @@ void hwm_init(void)
 
 /**
  * Function to free any resources allocated by the HW models
+ * Note that this function needs to be designed so it is possible
+ * to call it more than once during cleanup
  */
 void hwm_cleanup(void)
 {

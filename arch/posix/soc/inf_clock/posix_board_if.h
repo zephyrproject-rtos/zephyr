@@ -22,6 +22,7 @@ extern "C" {
 #endif
 
 void pb_irq_handler(void);
+void main_clean_up(int exit_code);
 
 #if defined(CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT)
 void k_busy_wait(u32_t usec_to_wait);

@@ -96,13 +96,12 @@ void _arch_switch_to_main_thread(struct k_thread *main_thread,
 		k_thread_stack_t main_stack,
 		size_t main_stack_size, k_thread_entry_t _main)
 {
-
 	posix_thread_status_t *ready_thread_ptr =
 			(posix_thread_status_t *)
 			_kernel.ready_q.cache->callee_saved.thread_status;
 	_kernel.current = _kernel.ready_q.cache;
 
-	posix_core_main_thread_start(ready_thread_ptr->thread_idx);
+	pc_main_thread_start(ready_thread_ptr->thread_idx);
 }
 #endif
 

@@ -22,14 +22,23 @@
 #include <soc.h>
 #include "hw_models_top.h"
 #include <stdlib.h>
+#include "misc/util.h"
 
 #define STOP_AFTER_5_SECONDS 0
 
 
 void main_clean_up(int exit_code)
 {
-	hwm_cleanup();
+	static int max_exit_code;
+
+	max_exit_code = max(exit_code, max_exit_code);
+	/*
+	 * ps_clean_up may not return if this is called from a SW thread,
+	 * but instead it would get main_clean_up() recalled again
+	 * ASAP from the HW thread
+	 */
 	ps_clean_up();
+	hwm_cleanup();
 	exit(exit_code);
 }
 

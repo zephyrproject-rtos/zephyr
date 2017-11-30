@@ -67,8 +67,8 @@ static void *pc_thread_starter(void *arg);
  *
  * Note that we go out of this function (the while loop below)
  * with the mutex locked by this particular thread.
- * The mutex is only manually unlocked internally in pthread_cond_wait()
- * while waiting for pc_cond_threads to be signaled
+ * In normal circumstances, the mutex is only unlocked internally in
+ * pthread_cond_wait() while waiting for pc_cond_threads to be signaled
  */
 static void pc_wait_until_allowed(int this_thread_nbr)
 {
@@ -135,17 +135,33 @@ void pc_swap(int next_allowed_thread_nbr, int this_thread_nbr)
  * init thread lingering. Instead here we exit the init thread after enabling
  * the new one
  */
-void posix_core_main_thread_start(int next_allowed_thread_nbr)
+void pc_main_thread_start(int next_allowed_thread_nbr)
 {
+
 	pc_let_run(next_allowed_thread_nbr);
 
 	if (pthread_mutex_unlock(&pc_mtx_threads)) {
-		ps_print_error_and_exit(ERPREFIX"pthread_mutex_lock()\n");
+		ps_print_error_and_exit(ERPREFIX"pthread_mutex_unlock()\n");
 	}
+
+	/*the thread was already detached in soc.c*/
 
 	pthread_exit(NULL);
 }
 
+
+static void pc_cleanupHandler(void *arg)
+{
+	/*
+	 * Closing down, let the next thread run to cleanup
+	 */
+	if (pthread_mutex_unlock(&pc_mtx_threads)) {
+		ps_print_error_and_exit(ERPREFIX"pthread_mutex_unlock()\n");
+	}
+
+	/*we detach ourselves so nobody needs to join to us*/
+	pthread_detach(pthread_self());
+}
 
 /**
  * Helper function to start a Zephyr thread as a POSIX thread:
@@ -157,9 +173,6 @@ static void *pc_thread_starter(void *arg)
 {
 	posix_thread_status_t *ptr = (posix_thread_status_t *) arg;
 
-	/*we detach ourselves so nobody needs to join to us*/
-	pthread_detach(pthread_self());
-
 	/*
 	 * We block until all other running threads reach the while loop
 	 * in pc_wait_until_allowed() and they release the mutex
@@ -167,6 +180,8 @@ static void *pc_thread_starter(void *arg)
 	if (pthread_mutex_lock(&pc_mtx_threads)) {
 		ps_print_error_and_exit(ERPREFIX"pthread_mutex_lock()\n");
 	}
+
+	pthread_cleanup_push(pc_cleanupHandler, NULL);
 
 	/*
 	 * The thread would try to execute immediately, so we block it
@@ -180,13 +195,18 @@ static void *pc_thread_starter(void *arg)
 
 	/*
 	 * we only reach this point if the thread actually returns which should
-	 * not happen
+	 * not happen. But we handle it gracefully just in case
 	 */
 	if (POSIX_ARCH_DEBUG_PRINTS) {
 		ps_print_trace(PREFIX"Thread %i [%lu] ended!?!\n",
 				ptr->thread_idx,
 				pthread_self());
 	}
+
+	pc_threads_table[ptr->thread_idx].running = false;
+	pc_threads_table[ptr->thread_idx].used = false;
+
+	pthread_cleanup_pop(1); /*we release the mutex to allow for cleanup*/
 
 	return NULL;
 }
@@ -279,11 +299,11 @@ void pc_init_multithreading(void)
 }
 
 /**
- * Free any allocated memory by the posix core
- * and clean up (kill all threads, except the running one if the cpu is running
- * == this thread is the one calling pc_clean_up)
+ * Free any allocated memory by the posix core and clean up.
+ * Note that this function cannot be called from a SW thread
+ * (the CPU is assumed halted)
  */
-void pc_clean_up(int cpu_running)
+void pc_clean_up(void)
 {
 
 	if (!pc_threads_table) {
@@ -291,8 +311,7 @@ void pc_clean_up(int cpu_running)
 	}
 
 	for (int i = 0; i < pc_threads_table_size; i++) {
-		if ((!pc_threads_table[i].used)
-		    || (pc_threads_table[i].running && cpu_running)) {
+		if (!pc_threads_table[i].used) {
 			continue;
 		}
 
@@ -300,14 +319,13 @@ void pc_clean_up(int cpu_running)
 			ps_print_warning(PREFIX"could not stop thread %i",
 					i);
 		}
-		/*
-		 * if (pthread_join(pc_threads_table[i].thread, NULL)) {
-		 *	ps_print_warning(PREFIX"problem stopping thread %i",
-		 *			i);
-		 * }
-		 */
 	}
+	if (pthread_mutex_unlock(&pc_mtx_threads)) {
+		ps_print_error_and_exit(ERPREFIX"pthread_mutex_unlock()\n");
+	}
+
 	free(pc_threads_table);
+	pc_threads_table = NULL;
 }
 
 

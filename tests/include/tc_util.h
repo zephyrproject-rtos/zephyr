@@ -23,7 +23,7 @@
 #endif /* CONFIG_STDOUT_CONSOLE */
 
 #if defined CONFIG_BOARD_SIMPLE_PROCESS
-#include "pb_main.h"
+#include "posix_board_if.h"
 #endif
 
 /**
