@@ -120,6 +120,7 @@ error:
 	k_sem_give(&data->device_sync_sem);
 }
 
+#ifndef CONFIG_I2C_STM32_COMBINED_INTERRUPT
 void stm32_i2c_error_isr(void *arg)
 {
 	const struct i2c_stm32_config *cfg = DEV_CFG((struct device *)arg);
@@ -135,6 +136,25 @@ void stm32_i2c_error_isr(void *arg)
 
 	k_sem_give(&data->device_sync_sem);
 }
+#endif
+
+#ifdef CONFIG_I2C_STM32_COMBINED_INTERRUPT
+void stm32_i2c_combined_isr(void *arg)
+{
+	const struct i2c_stm32_config *cfg = DEV_CFG((struct device *)arg);
+	struct i2c_stm32_data *data = DEV_DATA((struct device *)arg);
+	I2C_TypeDef *i2c = cfg->i2c;
+
+	if (LL_I2C_IsActiveFlag_NACK(i2c)) {
+		LL_I2C_ClearFlag_NACK(i2c);
+		data->current.is_nack = 1;
+
+		k_sem_give(&data->device_sync_sem);
+	} else {
+		stm32_i2c_event_isr(arg);
+	}
+}
+#endif
 
 int stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg,
 			u8_t *next_msg_flags, uint16_t slave)

@@ -114,14 +114,14 @@ config I2C_STM32_V1
 	  driver also supports the F2 and L1 series.
 
 config I2C_STM32_V2
-	bool "STM32 V2 Driver (F3/L4X)"
+	bool "STM32 V2 Driver (F0/F3/L4X)"
 	depends on SOC_FAMILY_STM32
-	depends on SOC_SERIES_STM32F3X || SOC_SERIES_STM32L4X
+	depends on SOC_SERIES_STM32F0X || SOC_SERIES_STM32F3X || SOC_SERIES_STM32L4X
 	select HAS_DTS_I2C
 	default n
 	help
-	  Enable I2C support on the STM32 F3 and L4X family of processors. This
-	  driver also supports the F0, F7 and L0 series.
+	  Enable I2C support on the STM32 F0, F3 and L4X family of processors.
+	  This driver also supports the F7 and L0 series.
 
 config I2C_STM32_INTERRUPT
 	bool "STM32 MCU I2C Interrupt Support"
@@ -129,6 +129,11 @@ config I2C_STM32_INTERRUPT
 	default n
 	help
 	  Enable Interrupt support for the I2C Driver
+
+config I2C_STM32_COMBINED_INTERRUPT
+	bool
+	depends on I2C_STM32_INTERRUPT
+	default y if SOC_SERIES_STM32F0X
 
 config I2C_BITBANG
 	bool
