@@ -78,7 +78,19 @@ Bluetooth
 Build and Infrastructure
 ************************
 
-* details ...
+* The Zephyr project has migrated to CMake, an important step in a
+  larger effort to make Zephyr easier to use for application developers
+  working on different platforms with different development environment
+  needs.  This change retains Kconfig as-is, and replaces all Makefiles
+  with corresponding CMakeLists.txt.  The DSL-like Make language that
+  KBuild offers is replaced by a set of CMake extensions that provide
+  either simple one-to-one translations of KBuild features or introduce
+  new concepts that replace KBuild concepts. Please re-read the Getting
+  Started guide
+  (http://docs.zephyrproject.org/getting_started/getting_started.html)
+  with updated instructions for setting up and developing on your host-OS.
+  You *will* need to port your own out-of-tree scripts and Makefiles to
+  CMake.
 
 Libraries
 *********
@@ -93,7 +105,21 @@ HALs
 Documentation
 *************
 
-* details ...
+* Missing API documentation caused by doxygen subgroups and missing
+  Sphinx directives now included.
+* Note added to release doc pages mentioning more current content could
+  be available from the master branch version of the documentation.
+* Documentation updated to use CMake (vs. Make) in all examples.
+* Getting Started Guide material updated to include CMake dependencies
+  and build instructions.
+* Instead of hiding all expected warnings from the document build
+  process (there are some known doxygen/sphinx issues), the build
+  now outputs all warnings, and then reports
+  if any new/unexpected warnings or errors were detected.
+* Obsolete V1 to V2 porting material removed.
+* Continued updates to documentation for new board support, new samples,
+  and new features.
+* Integration of documentation with new zephyrproject.org website
 
 Tests and Samples
 *****************
