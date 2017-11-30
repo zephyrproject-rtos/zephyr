@@ -150,7 +150,7 @@ static void filter_add(struct bt_mesh_proxy_client *client, u16_t addr)
 {
 	int i;
 
-	BT_DBG("addr 0x%02x", addr);
+	BT_DBG("addr 0x%04x", addr);
 
 	if (addr == BT_MESH_ADDR_UNASSIGNED) {
 		return;
@@ -174,7 +174,7 @@ static void filter_remove(struct bt_mesh_proxy_client *client, u16_t addr)
 {
 	int i;
 
-	BT_DBG("addr 0x%02x", addr);
+	BT_DBG("addr 0x%04x", addr);
 
 	if (addr == BT_MESH_ADDR_UNASSIGNED) {
 		return;
