@@ -185,7 +185,9 @@ static void seg_tx_reset(struct seg_tx *tx)
 		/* bt_mesh_net_iv_update() will re-enable the flag if this
 		 * wasn't the only transfer.
 		 */
-		bt_mesh_net_iv_update(bt_mesh.iv_index, false);
+		if (bt_mesh_net_iv_update(bt_mesh.iv_index, false)) {
+			bt_mesh_net_sec_update(NULL);
+		}
 	}
 }
 
