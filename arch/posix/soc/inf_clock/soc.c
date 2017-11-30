@@ -169,8 +169,6 @@ static void *zephyr_wrapper(void *a)
 			zephyr_thread);
 	}
 
-	pthread_detach(zephyr_thread);
-
 	/*Start Zephyr:*/
 	_Cstart();
 	CODE_UNREACHABLE;
