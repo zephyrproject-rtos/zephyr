@@ -64,9 +64,11 @@ void arc_core_mpu_default(u32_t region_attr);
  *
  * @param   index   MPU region index
  * @param   base    base address
+ * @param   size    size of region
  * @param   region_attr region attribute
  */
-void arc_core_mpu_region(u32_t index, u32_t base, u32_t size, u32_t region_attr);
+void arc_core_mpu_region(u32_t index, u32_t base, u32_t size,
+			 u32_t region_attr);
 
 /**
  * @brief configure the base address and size for an MPU region

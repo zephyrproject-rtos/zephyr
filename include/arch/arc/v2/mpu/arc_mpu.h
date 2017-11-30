@@ -14,8 +14,8 @@
 #define AUX_MPU_RDP_KE  0x040    /* only allow kernel execution */
 #define AUX_MPU_RDP_KW  0x080    /* only allow kernel write */
 #define AUX_MPU_RDP_KR  0x100    /* only allow kernel read */
-#define AUX_MPU_RDP_S	0x8000   /* secure */
-#define AUX_MPU_RDP_N 	0x0000   /* normal */
+#define AUX_MPU_RDP_S   0x8000   /* secure */
+#define AUX_MPU_RDP_N   0x0000   /* normal */
 
 
 
