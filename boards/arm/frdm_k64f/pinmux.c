@@ -8,9 +8,17 @@
 #include <pinmux.h>
 #include <fsl_port.h>
 
+#include "pinmux/pinmux.h"
+#include "pinmux_nxp.h"
+
+/* Include pinmux configuration generated file */
+#include <nxp_kinetis_pinmux_init.h>
+
 static int frdm_k64f_pinmux_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
+
+	struct device *port;
 
 #ifdef CONFIG_PINMUX_MCUX_PORTA
 	struct device *porta =
@@ -31,12 +39,6 @@ static int frdm_k64f_pinmux_init(struct device *dev)
 #ifdef CONFIG_PINMUX_MCUX_PORTE
 	struct device *porte =
 		device_get_binding(CONFIG_PINMUX_MCUX_PORTE_NAME);
-#endif
-
-#ifdef CONFIG_UART_MCUX_0
-	/* UART0 RX, TX */
-	pinmux_pin_set(portb, 16, PORT_PCR_MUX(kPORT_MuxAlt3));
-	pinmux_pin_set(portb, 17, PORT_PCR_MUX(kPORT_MuxAlt3));
 #endif
 
 #ifdef CONFIG_UART_MCUX_3
@@ -111,6 +113,30 @@ static int frdm_k64f_pinmux_init(struct device *dev)
 	pinmux_pin_set(portc, 18, PORT_PCR_MUX(kPORT_MuxAlt4));
 	pinmux_pin_set(portc, 19, PORT_PCR_MUX(kPORT_MuxAlt4));
 #endif
+
+
+	/* Parse nxp_kinetis_pinmux_instances array provided */
+	/* in dts based generated file nxp_kinetis_pinmux_instances.h */
+	/* Array holds instances_pinconfig structures which contain */
+	/* pin configuration for each pinmux instance */
+	for (int i = 0; i < ARRAY_SIZE(nxp_kinetis_pinmux_instances); i++) {
+
+		int size = nxp_kinetis_pinmux_instances[i].instance_npins;
+		const struct pin_config *pinconf =
+			nxp_kinetis_pinmux_instances[i].instance_pins;
+
+		/* For each pinmux instance, get device binding */
+		/* and set each pin individually */
+
+		port =
+		   device_get_binding(nxp_kinetis_pinmux_instances[i].instance);
+
+		for (int p = 0; p < size; p++) {
+			pinmux_pin_set(port,
+				       pinconf[p].pin_num,
+				       pinconf[p].mode);
+		}
+	}
 
 	return 0;
 }
