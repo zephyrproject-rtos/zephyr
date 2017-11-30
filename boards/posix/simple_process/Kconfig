@@ -1,0 +1,18 @@
+
+if BOARD_SIMPLE_PROCESS
+
+comment "Simple process (POSIX) Options"
+
+config SIMPLE_PROCESS_SLOWDOWN_TO_REAL_TIME
+	bool "Slow down exectution to real time"
+	depends on BOARD_SIMPLE_PROCESS
+	default n
+	help
+	When selected the execution of the process will be slowed down to real time.
+	(it there is a lot of load it may be slower than real time)
+	If left unselected, the process will run as fast as possible.
+	Note that this only decouples simulated time from real/wall time. In either
+	case the zephyr kernel and application cannot tell the diffence unless they
+	interact with some other driver/device which runs at real time.
+
+endif

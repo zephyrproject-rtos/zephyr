@@ -17,7 +17,7 @@
 #include "misc/util.h"
 
 /*set this to 1 to run in real time, to 0 to run as fast as possible*/
-#define CONFIG_ARCH_POSIX_RUN_AT_REAL_TIME 1
+/*#define CONFIG_SIMPLE_PROCESS_SLOWDOWN_TO_REAL_TIME 1*/
 
 
 hwtime_t HWTimer_timer;
@@ -28,7 +28,7 @@ hwtime_t HWTimer_awake_timer;
 static hwtime_t tick_p = 10000; /*period of the ticker*/
 static unsigned int silent_ticks;
 
-#if (CONFIG_ARCH_POSIX_RUN_AT_REAL_TIME)
+#if (CONFIG_SIMPLE_PROCESS_SLOWDOWN_TO_REAL_TIME)
 #include <time.h>
 
 static hwtime_t Boot_time;
@@ -47,7 +47,7 @@ void hwtimer_init(void)
 	HWTimer_tick_timer = tick_p;
 	HWTimer_awake_timer = NEVER;
 	hwtimer_update_timer();
-#if (CONFIG_ARCH_POSIX_RUN_AT_REAL_TIME)
+#if (CONFIG_SIMPLE_PROCESS_SLOWDOWN_TO_REAL_TIME)
 	clock_gettime(CLOCK_MONOTONIC, &tv);
 	Boot_time = tv.tv_sec*1e6 + tv.tv_nsec/1000;
 #endif
@@ -61,7 +61,7 @@ void hwtimer_cleanup(void)
 
 static void hwtimer_tick_timer_reached(void)
 {
-#if (CONFIG_ARCH_POSIX_RUN_AT_REAL_TIME)
+#if (CONFIG_SIMPLE_PROCESS_SLOWDOWN_TO_REAL_TIME)
 	hwtime_t expected_realtime = Boot_time + HWTimer_tick_timer;
 
 	clock_gettime(CLOCK_MONOTONIC, &tv);
