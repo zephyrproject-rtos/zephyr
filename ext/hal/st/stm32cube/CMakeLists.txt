@@ -28,6 +28,8 @@ if(CONFIG_SOC_SERIES_STM32F0X)
   zephyr_sources(stm32f0xx/drivers/src/stm32f0xx_hal.c)
   zephyr_sources(stm32f0xx/drivers/src/stm32f0xx_hal_rcc.c)
   zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_STM32_CUBE stm32f0xx/drivers/src/stm32f0xx_ll_utils.c)
+  zephyr_sources_ifdef(CONFIG_I2C_STM32_V2 stm32f0xx/drivers/src/stm32f0xx_ll_i2c.c)
+  zephyr_sources_ifdef(CONFIG_I2C_STM32_V2 stm32f0xx/drivers/src/stm32f0xx_ll_rcc.c)
   zephyr_sources(stm32f0xx/soc/system_stm32f0xx.c)
 endif()
 
