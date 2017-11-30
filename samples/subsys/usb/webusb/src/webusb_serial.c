@@ -148,13 +148,13 @@ struct dev_common_descriptor {
 		struct usb_product_descriptor {
 			u8_t bLength;
 			u8_t bDescriptorType;
-			u8_t bString[0x0E - 1];
+			u8_t bString[0x0E - 2];
 		} __packed unicode_product;
 
 		struct usb_sn_descriptor {
 			u8_t bLength;
 			u8_t bDescriptorType;
-			u8_t bString[0x0C - 1];
+			u8_t bString[0x0C - 2];
 		} __packed unicode_sn;
 	} __packed string_descr;
 	struct usb_desc_header term_descr;
