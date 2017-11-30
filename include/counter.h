@@ -13,8 +13,8 @@
 #define __COUNTER_H__
 
 /**
- * @brief COUNTER Interface
- * @defgroup counter_interface COUNTER Interface
+ * @brief Counter Interface
+ * @defgroup counter_interface Counter Interface
  * @ingroup io_interfaces
  * @{
  */

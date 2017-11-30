@@ -14,6 +14,10 @@ as described in the :ref:`kernel`.
    :local:
    :backlinks: top
 
+.. comment
+   not documenting
+   .. doxygengroup:: kernel_apis
+
 Threads
 *******
 
@@ -145,6 +149,12 @@ data items.
 .. doxygengroup:: stack_apis
    :project: Zephyr
 
+Queues
+******
+
+.. doxygengroup:: queue_apis
+   :project: Zephyr
+
 Message Queues
 **************
 
@@ -175,6 +185,12 @@ variable-size chunks of data, in whole or in part.
 .. doxygengroup:: pipe_apis
    :project: Zephyr
 
+Asynchronous Polling
+********************
+
+.. doxygengroup:: poll_apis
+   :project: Zephyr
+
 Interrupt Service Routines (ISRs)
 *********************************
 
@@ -196,6 +212,12 @@ The atomic services enable multiple threads and ISRs to read and modify
     All atomic services APIs can be used by both threads and ISRs.
 
 .. doxygengroup:: atomic_apis
+   :project: Zephyr
+
+Profiling
+*********
+
+.. doxygengroup:: profiling_apis
    :project: Zephyr
 
 Floating Point Services

@@ -13,6 +13,11 @@ depends on relevant Kconfig options. For instance IPv6 related
 APIs will not be present if :option:`CONFIG_NET_IPV6` has not
 been selected.
 
+.. comment
+   not documenting
+   .. doxygengroup:: networking
+   .. doxygengroup:: arp
+
 Network core helpers
 ********************
 
@@ -95,6 +100,12 @@ UDP
 ***
 
 .. doxygengroup:: udp
+   :project: Zephyr
+
+Hostname Configuration Library
+******************************
+
+.. doxygengroup:: net_hostname
    :project: Zephyr
 
 Network technologies
