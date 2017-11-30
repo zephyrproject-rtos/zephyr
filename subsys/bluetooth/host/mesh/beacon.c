@@ -135,7 +135,8 @@ static int secure_beacon_send(void)
 		}
 
 		time_diff = now - sub->beacon_sent;
-		if (time_diff < BEACON_THRESHOLD(sub)) {
+		if (time_diff < K_SECONDS(600) &&
+		    time_diff < BEACON_THRESHOLD(sub)) {
 			continue;
 		}
 
