@@ -57,3 +57,9 @@ Z_SYSCALL_HANDLER(i2c_transfer, dev, msgs, num_msgs, addr)
 				      (u8_t)num_msgs, (u16_t)addr,
 				      ssf);
 }
+
+Z_SYSCALL_HANDLER1_SIMPLE(i2c_slave_driver_register, K_OBJ_DRIVER_I2C,
+			  struct device *);
+
+Z_SYSCALL_HANDLER1_SIMPLE(i2c_slave_driver_unregister, K_OBJ_DRIVER_I2C,
+			  struct device *);
