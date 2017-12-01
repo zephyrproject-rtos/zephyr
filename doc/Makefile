@@ -73,7 +73,7 @@ content: scripts/extract_content.py
 	$(Q)$<
 
 kconfig: scripts/genrest/genrest.py
-	$(Q)srctree=../ KERNELVERSION=1.9.99 SRCARCH=x86 python $< ../Kconfig reference/kconfig/
+	$(Q)srctree=../ KERNELVERSION=1.9.99 SRCARCH=x86 python3 $< ../Kconfig reference/kconfig/
 
 
 prep: doxy content kconfig
