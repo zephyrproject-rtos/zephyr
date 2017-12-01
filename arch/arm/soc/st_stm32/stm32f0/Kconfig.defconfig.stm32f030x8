@@ -13,7 +13,7 @@ config SOC
 
 config FLASH_PAGE_SIZE
 	hex
-	default 0x800
+	default 0x400
 
 config NUM_IRQS
 	int
