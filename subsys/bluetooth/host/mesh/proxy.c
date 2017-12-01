@@ -1018,16 +1018,57 @@ static int net_id_adv(struct bt_mesh_subnet *sub)
 	return 0;
 }
 
-static s32_t gatt_proxy_advertise(void)
+static bool advertise_subnet(struct bt_mesh_subnet *sub)
 {
-	/* TODO: Add support for multiple subnets */
-	struct bt_mesh_subnet *sub = &bt_mesh.sub[0];
+	if (sub->net_idx == BT_MESH_KEY_UNUSED) {
+		return false;
+	}
+
+	return (sub->node_id == BT_MESH_NODE_IDENTITY_RUNNING ||
+		bt_mesh_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED);
+}
+
+static struct bt_mesh_subnet *next_sub(void)
+{
+	static int next_idx;
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(bt_mesh.sub); i++) {
+		struct bt_mesh_subnet *sub;
+
+		sub = &bt_mesh.sub[(i + next_idx) % ARRAY_SIZE(bt_mesh.sub)];
+		if (advertise_subnet(sub)) {
+			next_idx = (next_idx + 1) % ARRAY_SIZE(bt_mesh.sub);
+			return sub;
+		}
+	}
+
+	return NULL;
+}
+
+static int sub_count(void)
+{
+	int i, count = 0;
+
+	for (i = 0; i < ARRAY_SIZE(bt_mesh.sub); i++) {
+		struct bt_mesh_subnet *sub = &bt_mesh.sub[i];
+
+		if (advertise_subnet(sub)) {
+			count++;
+		}
+	}
+
+	return count;
+}
+
+static s32_t gatt_proxy_advertise(struct bt_mesh_subnet *sub)
+{
 	s32_t remaining = K_FOREVER;
 
 	BT_DBG("");
 
-	if (sub->net_idx == BT_MESH_KEY_UNUSED) {
-		BT_WARN("First subnet is not valid");
+	if (!sub) {
+		BT_WARN("No subnets to advertise on");
 		return remaining;
 	}
 
@@ -1046,10 +1087,19 @@ static s32_t gatt_proxy_advertise(void)
 		}
 	}
 
-	if (sub->node_id == BT_MESH_NODE_IDENTITY_STOPPED &&
-	    bt_mesh_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED) {
-		net_id_adv(sub);
+	if (sub->node_id == BT_MESH_NODE_IDENTITY_STOPPED) {
+		if (bt_mesh_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED) {
+			net_id_adv(sub);
+		} else {
+			return gatt_proxy_advertise(next_sub());
+		}
 	}
+
+	if (sub_count() > 1 && (remaining > K_SECONDS(10) || remaining < 0)) {
+		remaining = K_SECONDS(10);
+	}
+
+	BT_DBG("Advertising %d ms for net_idx 0x%04x", remaining, sub->net_idx);
 
 	return remaining;
 }
@@ -1088,7 +1138,7 @@ s32_t bt_mesh_proxy_adv_start(void)
 
 #if defined(CONFIG_BT_MESH_GATT_PROXY)
 	if (bt_mesh_is_provisioned()) {
-		return gatt_proxy_advertise();
+		return gatt_proxy_advertise(next_sub());
 	}
 #endif /* GATT_PROXY */
 
