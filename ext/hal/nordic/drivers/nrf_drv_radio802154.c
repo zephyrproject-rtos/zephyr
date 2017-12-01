@@ -34,32 +34,10 @@
  *
  */
 
-// Number of slots containing short addresses of nodes for which
-// pending data is stored.
-#define RADIO_PENDING_SHORT_ADDRESSES 1
 
-// Number of slots containing extended addresses of nodes for which
-// pending data is stored.
-#define RADIO_PENDING_EXTENDED_ADDRESSES 1
-
-// Number of buffers in receive queue.
-#define RADIO_RX_BUFFERS 1
-
-// CCA mode
-#if defined(CONFIG_IEEE802154_NRF5_CCA_MODE_ED)
-#define RADIO_CCA_MODE NRF_RADIO_CCA_MODE_ED
-#elif defined(CONFIG_IEEE802154_NRF5_CCA_MODE_CARRIER)
-#define RADIO_CCA_MODE NRF_RADIO_CCA_MODE_CARRIER
-#elif defined(CONFIG_IEEE802154_NRF5_CCA_MODE_CARRIER_AND_ED)
-#define RADIO_CCA_MODE  NRF_RADIO_CCA_MODE_CARRIER_AND_ED
-#elif defined(CONFIG_IEEE802154_NRF5_CCA_MODE_CARRIER_OR_ED)
-#define RADIO_CCA_MODE  NRF_RADIO_CCA_MODE_CARRIER_OR_ED
+#ifdef __ZEPHYR__
+#include "nrf_drv_radio802154_zephyr_config.h"
 #endif
-
-// CCA mode options
-#define RADIO_CCA_CORR_LIMIT     CONFIG_IEEE802154_NRF5_CCA_CORR_LIMIT
-#define RADIO_CCA_CORR_THRESHOLD CONFIG_IEEE802154_NRF5_CCA_CORR_THRESHOLD
-#define RADIO_CCA_ED_THRESHOLD   CONFIG_IEEE802154_NRF5_CCA_ED_THRESHOLD
 
 #include "nrf_drv_radio802154.h"
 
