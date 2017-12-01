@@ -34,6 +34,11 @@
  *
  */
 
+
+#ifdef __ZEPHYR__
+#include "nrf_drv_radio802154_zephyr_config.h"
+#endif
+
 #include "nrf_drv_radio802154.h"
 
 #include <assert.h>
