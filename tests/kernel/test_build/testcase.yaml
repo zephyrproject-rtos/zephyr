@@ -12,3 +12,7 @@ tests:
       build_only: true
       extra_args: CONF_FILE=runtime_nmi.conf
       tags: apps
+  - test_optimize_O0:
+      build_only: true
+      extra_args: EXTRA_CFLAGS=-O0
+      tags: apps
