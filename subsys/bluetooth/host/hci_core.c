@@ -4849,10 +4849,10 @@ struct net_buf *bt_buf_get_rx(enum bt_buf_type type, s32_t timeout)
 		 "Invalid buffer type requested");
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
-	if (type == BT_BUF_EVT) {
-		buf = net_buf_alloc(&hci_rx_pool, timeout);
-	} else {
+	if ((bt_dev.supported_commands[10] & 0x20) && (type != BT_BUF_EVT)) {
 		buf = net_buf_alloc(&acl_in_pool, timeout);
+	} else {
+		buf = net_buf_alloc(&hci_rx_pool, timeout);
 	}
 #else
 	buf = net_buf_alloc(&hci_rx_pool, timeout);
