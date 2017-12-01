@@ -918,10 +918,8 @@ static int cmd_app_key_add(int argc, char *argv[])
 		memcpy(key_val, default_key, sizeof(key_val));
 	}
 
-	/* TODO: decode key value that's given in hex */
-
 	err = bt_mesh_cfg_app_key_add(net.net_idx, net.dst, key_net_idx,
-				      key_app_idx, default_key, &status);
+				      key_app_idx, key_val, &status);
 	if (err) {
 		printk("Unable to send App Key Add (err %d)\n", err);
 		return 0;
