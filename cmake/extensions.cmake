@@ -117,7 +117,7 @@ endfunction()
 # includes, options).
 #
 # The naming convention follows:
-# zephyr_get_${build_information}${format}(x)
+# zephyr_get_${build_information}_for_lang${format}(lang x)
 # Where
 #  the argument 'x' is written with the result
 # and
@@ -128,67 +128,137 @@ endfunction()
 #   - compile_options               # misc. compiler flags
 # and
 #  ${format} can be
-#  the empty string '', signifying that it should be returned as a list
-#  _as_string signifying that it should be returned as a string
+#   - the empty string '', signifying that it should be returned as a list
+#   - _as_string signifying that it should be returned as a string
+# and
+#  ${lang} can be one of
+#   - C
+#   - CXX
+#   - ASM
 #
 # e.g.
-# zephyr_get_include_directories(x)
+# zephyr_get_include_directories_for_lang(ASM x)
 # writes "-Isome_dir;-Isome/other/dir" to x
 
-# Utility macro used by the below macros.
+function(zephyr_get_include_directories_for_lang_as_string lang i)
+  zephyr_get_include_directories_for_lang(${lang} list_of_flags)
+
+  convert_list_of_flags_to_string_of_flags(list_of_flags str_of_flags)
+
+  set(${i} ${str_of_flags} PARENT_SCOPE)
+endfunction()
+
+function(zephyr_get_system_include_directories_for_lang_as_string lang i)
+  zephyr_get_system_include_directories_for_lang(${lang} list_of_flags)
+
+  convert_list_of_flags_to_string_of_flags(list_of_flags str_of_flags)
+
+  set(${i} ${str_of_flags} PARENT_SCOPE)
+endfunction()
+
+function(zephyr_get_compile_definitions_for_lang_as_string lang i)
+  zephyr_get_compile_definitions_for_lang(${lang} list_of_flags)
+
+  convert_list_of_flags_to_string_of_flags(list_of_flags str_of_flags)
+
+  set(${i} ${str_of_flags} PARENT_SCOPE)
+endfunction()
+
+function(zephyr_get_compile_options_for_lang_as_string lang i)
+  zephyr_get_compile_options_for_lang(${lang} list_of_flags)
+
+  convert_list_of_flags_to_string_of_flags(list_of_flags str_of_flags)
+
+  set(${i} ${str_of_flags} PARENT_SCOPE)
+endfunction()
+
+function(zephyr_get_include_directories_for_lang lang i)
+  get_property_and_add_prefix(flags zephyr_interface INTERFACE_INCLUDE_DIRECTORIES -I)
+
+  process_flags(${lang} flags output_list)
+
+  set(${i} ${output_list} PARENT_SCOPE)
+endfunction()
+
+function(zephyr_get_system_include_directories_for_lang lang i)
+  get_property_and_add_prefix(flags zephyr_interface INTERFACE_SYSTEM_INCLUDE_DIRECTORIES -isystem)
+
+  process_flags(${lang} flags output_list)
+
+  set(${i} ${output_list} PARENT_SCOPE)
+endfunction()
+
+function(zephyr_get_compile_definitions_for_lang lang i)
+  get_property_and_add_prefix(flags zephyr_interface INTERFACE_COMPILE_DEFINITIONS -D)
+
+  process_flags(${lang} flags output_list)
+
+  set(${i} ${output_list} PARENT_SCOPE)
+endfunction()
+
+function(zephyr_get_compile_options_for_lang lang i)
+  get_property(flags TARGET zephyr_interface PROPERTY INTERFACE_COMPILE_OPTIONS)
+
+  process_flags(${lang} flags output_list)
+
+  set(${i} ${output_list} PARENT_SCOPE)
+endfunction()
+
+function(process_flags lang input output)
+  # The flags might contains compile language generator expressions that
+  # look like this:
+  # $<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions>
+  #
+  # Flags that don't specify a language like this apply to all
+  # languages.
+  #
+  # See COMPILE_LANGUAGE in
+  # https://cmake.org/cmake/help/v3.3/manual/cmake-generator-expressions.7.html
+  #
+  # To deal with this, we apply a regex to extract the flag and also
+  # to find out if the language matches.
+  #
+  # If this doesn't work out we might need to ban the use of
+  # COMPILE_LANGUAGE and instead partition C, CXX, and ASM into
+  # different libraries
+  set(languages C CXX ASM)
+
+  set(tmp_list "")
+
+  foreach(flag ${${input}})
+    set(is_compile_lang_generator_expression 0)
+    foreach(l ${languages})
+      if(flag MATCHES "<COMPILE_LANGUAGE:${l}>:([^>]+)>")
+        set(is_compile_lang_generator_expression 1)
+        if(${l} STREQUAL ${lang})
+          list(APPEND tmp_list ${CMAKE_MATCH_1})
+          break()
+        endif()
+      endif()
+    endforeach()
+
+    if(NOT is_compile_lang_generator_expression)
+      list(APPEND tmp_list ${flag})
+    endif()
+  endforeach()
+
+  set(${output} ${tmp_list} PARENT_SCOPE)
+endfunction()
+
+function(convert_list_of_flags_to_string_of_flags ptr_list_of_flags string_of_flags)
+  # Convert the list to a string so we can do string replace
+  # operations on it and replace the ";" list separators with a
+  # whitespace so the flags are spaced out
+  string(REPLACE ";"  " "  locally_scoped_string_of_flags "${${ptr_list_of_flags}}")
+
+  # Set the output variable in the parent scope
+  set(${string_of_flags} ${locally_scoped_string_of_flags} PARENT_SCOPE)
+endfunction()
+
 macro(get_property_and_add_prefix result target property prefix)
   get_property(target_property TARGET ${target} PROPERTY ${property})
   foreach(x ${target_property})
     list(APPEND ${result} ${prefix}${x})
-  endforeach()
-endmacro()
-
-macro(zephyr_get_include_directories i)
-  get_property_and_add_prefix(${i} zephyr_interface INTERFACE_INCLUDE_DIRECTORIES -I)
-endmacro()
-
-macro(zephyr_get_system_include_directories i)
-  get_property_and_add_prefix(${i} zephyr_interface INTERFACE_SYSTEM_INCLUDE_DIRECTORIES -isystem)
-endmacro()
-
-macro(zephyr_get_compile_definitions i)
-  get_property_and_add_prefix(${i} zephyr_interface INTERFACE_COMPILE_DEFINITIONS -D)
-endmacro()
-
-macro(zephyr_get_compile_options i)
-  get_property(${i} TARGET zephyr_interface PROPERTY INTERFACE_COMPILE_OPTIONS)
-endmacro()
-
-macro(zephyr_get_include_directories_as_string i)
-  zephyr_get_include_directories(${i})
-
-  string(REPLACE ";"  " "   ${i} ${${i}})
-  string(REPLACE "-I" " -I" ${i} ${${i}})
-endmacro()
-
-macro(zephyr_get_system_include_directories_as_string i)
-  get_property_and_add_prefix(${i} zephyr_interface INTERFACE_SYSTEM_INCLUDE_DIRECTORIES -isystem)
-
-  string(REPLACE ";"  " "               ${i} ${${i}})
-  string(REPLACE "-isystem" " -isystem" ${i} ${${i}})
-endmacro()
-
-macro(zephyr_get_compile_definitions_as_string i)
-  get_property_and_add_prefix(${i} zephyr_interface INTERFACE_COMPILE_DEFINITIONS -D)
-
-  string(REPLACE ";"  " "   ${i} ${${i}})
-  string(REPLACE "-D" " -D" ${i} ${${i}})
-endmacro()
-
-macro(zephyr_get_compile_options_as_string i)
-  zephyr_get_compile_options(j)
-
-  foreach(__opt__ ${j})
-    if(__opt__ MATCHES "<COMPILE_LANGUAGE:")
-      # TODO: Support COMPILE_LANGUAGE generator expressions
-      continue()
-    endif()
-    set(${i} "${${i}} ${__opt__}")
   endforeach()
 endmacro()
 
