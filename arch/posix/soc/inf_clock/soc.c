@@ -72,22 +72,23 @@ static void ps_change_cpu_state_and_wait(bool halted)
 
 	ps_cpu_halted = halted;
 
+	/* We let the other side know the CPU has changed state
+	 * either posix_soc_halt_cpu() [in the idle thread]
+	 * or the HW models
+	 */
 	if (pthread_cond_signal(&ps_cond_cpu)) {
-/* We let the other side know the CPU has changed state
- * either posix_soc_halt_cpu() [in the idle thread]
- * or the HW models
- */
 		ps_print_error_and_exit(ERPREFIX"pthread_cond_signal()\n");
 	}
 
+	/* We wait until the CPU state has been changed. Either:
+	 * we just awoke it, and therefore wait until the CPU has run until
+	 * completion before continuing (before letting the HW models do
+	 * anything else)
+	 *  or
+	 * we are just hanging it, and therefore wait until the HW models awake
+	 * it again
+	 */
 	while (ps_cpu_halted == halted) {
-/* We wait until the CPU state has been changed. Either:
- * we just awoke it, and therefore wait until the CPU has run until completion
- * before continuing (before letting the HW models do anything else)
- * or
- * we are just hunging it, and therefore wait until the HW models awake it
- * again
- */
 		/*Here we unlock the mutex while waiting*/
 		pthread_cond_wait(&ps_cond_cpu, &ps_mtx_cpu);
 	}
@@ -207,9 +208,14 @@ void ps_boot_cpu(void)
 	if (pthread_mutex_unlock(&ps_mtx_cpu)) {
 		ps_print_error_and_exit(ERPREFIX"pthread_mutex_unlock()\n");
 	}
-
+	if (terminate) {
+		main_clean_up(0);
+	}
 }
 
+/**
+ * Clean up all memory allocated by the SOC and POSIX core
+ */
 void ps_clean_up(void)
 {
 	/*
@@ -219,9 +225,28 @@ void ps_clean_up(void)
 	 */
 	if (ps_cpu_halted) {
 		pc_clean_up();
-	} else {
+	} else if (terminate == false) {
 		terminate = true;
-		ps_change_cpu_state_and_wait(true);
+		if (pthread_mutex_lock(&ps_mtx_cpu)) {
+			ps_print_error_and_exit(
+					ERPREFIX"pthread_mutex_lock()\n");
+		}
+		ps_cpu_halted = true;
+		if (pthread_mutex_unlock(&ps_mtx_cpu)) {
+			ps_print_error_and_exit(
+					ERPREFIX"pthread_mutex_unlock()\n");
+		}
+		if (pthread_cond_signal(&ps_cond_cpu)) {
+			ps_print_error_and_exit(
+					ERPREFIX"pthread_cond_signal()\n");
+		}
+		while (1) {
+			sleep(1);
+			/* This SW thread will wait until being cancelled from
+			 * the HW thread. sleep() is a cancellation point, so it
+			 * won't really wait 1 second
+			 */
+		}
 	}
 }
 

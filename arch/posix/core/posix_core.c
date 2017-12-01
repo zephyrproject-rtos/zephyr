@@ -318,6 +318,12 @@ void pc_init_multithreading(void)
  * Free any allocated memory by the posix core and clean up.
  * Note that this function cannot be called from a SW thread
  * (the CPU is assumed halted)
+ *
+ * This function cannot guarantee the threads will be cancelled
+ * before the HW thread exists. The only way to do that, would be
+ * to wait for each of them in a join (without detaching them, but
+ * that could lead to locks in some convoluted cases => we prefer the
+ * supposed memory leak report from valgrind)
  */
 void pc_clean_up(void)
 {
@@ -336,9 +342,6 @@ void pc_clean_up(void)
 				PREFIX"cleanup: could not stop thread %i\n",
 				i);
 		}
-	}
-	if (pthread_mutex_unlock(&pc_mtx_threads)) {
-		ps_print_error_and_exit(ERPREFIX"pthread_mutex_unlock()\n");
 	}
 
 	free(pc_threads_table);
