@@ -46,13 +46,13 @@ static int shell_cmd_cycles(int argc, char *argv[])
 }
 
 #if defined(CONFIG_OBJECT_TRACING) && defined(CONFIG_THREAD_MONITOR)
-static int shell_cmd_tasks(int argc, char *argv[])
+static int shell_cmd_threads(int argc, char *argv[])
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 	struct k_thread *thread_list = NULL;
 
-	printk("tasks:\n");
+	printk("Threads:\n");
 
 	thread_list   = (struct k_thread *)SYS_THREAD_MONITOR_HEAD;
 	while (thread_list != NULL) {
@@ -81,7 +81,7 @@ struct shell_cmd kernel_commands[] = {
 	{ "uptime", shell_cmd_uptime, "show system uptime in milliseconds" },
 	{ "cycles", shell_cmd_cycles, "show system hardware cycles" },
 #if defined(CONFIG_OBJECT_TRACING) && defined(CONFIG_THREAD_MONITOR)
-	{ "tasks", shell_cmd_tasks, "show running tasks" },
+	{ "threads", shell_cmd_threads, "show running threads" },
 #endif
 #if defined(CONFIG_INIT_STACKS)
 	{ "stacks", shell_cmd_stack, "show system stacks" },
