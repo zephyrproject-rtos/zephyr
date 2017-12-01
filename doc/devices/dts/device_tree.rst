@@ -76,10 +76,9 @@ information is placed in a header file that is used by the rest of the code as
 the project is compiled.
 
 A temporary fixup file is required for device tree support on most devices.
-This .fixup file resides in the dts architecture directory and has the same
-name as the master .dts file.  The only difference is the suffix is .fixup.
-This fixup file maps the generated include information to the current
-driver/source usage.
+This .fixup file by default resides in the board directory and is named
+dts.fixup.  This fixup file maps the generated include information to the
+current driver/source usage.
 
 Device tree file formats
 ************************
@@ -96,12 +95,12 @@ Example: FRDM K64F Board and Hexiwear K64
 Both of these boards are based on the same NXP Kinetis SoC family, the K6X.  The
 following shows the include hierarchy for both boards.
 
-dts/arm/frdm_k64.dts includes the following two files::
+boards/arm/frdm_k64f/frdm_k64f.dts includes the following files::
 
   dts/arm/nxp/nxp_k6x.dtsi
   dts/arm/armv7-m.dtsi
 
-dts/arm/hexiwear_k64.dts includes the same two files::
+boards/arm/hexiwear_k64/hexiwear_k64.dts includes the same files::
 
   dts/arm/nxp/nxp_k6x.dtsi
   dts/arm/armv7-m.dtsi
@@ -114,7 +113,7 @@ Currently supported boards
 **************************
 
 Device tree is currently supported on all ARM targets.  Support for all other
-architectures is to be completed by release 1.9.
+architectures is to be completed by release 1.11.
 
 Adding support for a board
 **************************
@@ -156,10 +155,9 @@ The following is a more precise list of required files:
 
   * Add architecture-specific DTS directory, if not already present.
     Example: dts/arm for ARM.
-  * Add target to dts/<ARCH>/Makefile or create Makefile if not present
   * Add target specific device tree files for base SoC.  These should be
     .dtsi files to be included in the board-specific device tree files.
-  * Add target specific YAML files in the dts/<ARCH>/yaml directory.
+  * Add target specific YAML files in the dts/bindings/ directory.
     Create the yaml directory if not present.
 
 * SoC family support
@@ -204,24 +202,24 @@ Assuming the current working directory is the ZEPHYR_BASE, the directory
 hierarchy looks like the following::
 
   dts/common/
-  dts/common/yaml
   dts/<ARCH>/
-  dts/<ARCH>/yaml
+  dts/bindings/
+  boards/<ARCH>/<BOARD>/
 
 The common directories contain a skeleton.dtsi include file that defines the
 address and size cells.  The yaml subdirectory contains common yaml files for
 Zephyr-specific nodes/properties and generic device properties common across
 architectures.
 
-Example: DTS/YAML files for NXP FRDM K64F::
+Example: Subset of DTS/YAML files for NXP FRDM K64F (Subject to Change)::
 
   dts/arm/armv7-m.dtsi
   dts/arm/k6x/nxp_k6x.dtsi
-  dts/arm/frdm_k64f.dts
-  dts/arm/yaml/arm,v7m-nvic.yaml
-  dts/arm/yaml/k64gpio.yaml
-  dts/arm/yaml/k64pinmux.yaml
-  dts/arm/yaml/k64uart.yaml
+  boards/arm/frdm_k64f/frdm_k64f.dts
+  dts/bindings/interrupt-controller/arm,v7m-nvic.yaml
+  dts/bindings/gpio/nxp,kinetis-gpio.yaml
+  dts/bindings/pinctrl/nxp,kinetis-pinmux.yaml
+  dts/bindings/serial/nxp,kinetis-uart.yaml
 
 YAML definitions for device nodes
 *********************************
@@ -243,7 +241,7 @@ YAML files reside in a subdirectory inside the common and architecture-specific
 device tree directories.  A YAML template file is provided to show the required
 format.  This file is located at::
 
-  dts/common/yaml/device_node.yaml.template
+  dts/bindings/device_node.yaml.template
 
 YAML files must end in a .yaml suffix.  YAML files are scanned during the
 information extraction phase and are matched to device tree nodes via the
