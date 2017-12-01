@@ -20,6 +20,12 @@ typedef struct {
 	void *arg3;
 
 	int thread_idx;
+
+#if defined(CONFIG_ARCH_HAS_THREAD_ABORT)
+	/* The kernel may indicate that a thread has been aborted several */
+	/* times */
+	int aborted;
+#endif
 } posix_thread_status_t;
 
 

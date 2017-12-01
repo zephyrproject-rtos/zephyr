@@ -71,8 +71,12 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	thread_status->arg1 = arg1;
 	thread_status->arg2 = arg2;
 	thread_status->arg3 = arg3;
+#if defined(CONFIG_ARCH_HAS_THREAD_ABORT)
+	thread_status->aborted = 0;
+#endif
 
 	thread->callee_saved.thread_status = (u32_t)thread_status;
+
 
 	pc_new_thread(thread_status);
 

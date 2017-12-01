@@ -33,7 +33,7 @@
 #include "posix_core.h"
 #include "nano_internal.h"
 
-#define PREFIX "Posix arch core: "
+#define PREFIX "POSIX SOC: "
 #define ERPREFIX PREFIX"error on "
 
 /******************************************
@@ -58,7 +58,7 @@ int ps_is_cpu_running(void)
 
 /**
  * Helper function which changes the status of the CPU (halted or running)
- * and waits until somebody else changes it to the oposite
+ * and waits until somebody else changes it to the opposite
  *
  * This is how the idle thread halts the CPU and gets halted until the HW models
  * raise a new interrupt and how the HW models awake the CPU, and wait for it to
@@ -70,14 +70,17 @@ static void ps_change_cpu_state_and_wait(bool halted)
 		ps_print_error_and_exit(ERPREFIX"pthread_mutex_lock()\n");
 	}
 
+	if (POSIX_ARCH_SOC_DEBUG_PRINTS) {
+		ps_print_trace(PREFIX"Going to halted = %d\n", halted);
+	}
 	ps_cpu_halted = halted;
 
 	/* We let the other side know the CPU has changed state
 	 * either posix_soc_halt_cpu() [in the idle thread]
 	 * or the HW models
 	 */
-	if (pthread_cond_signal(&ps_cond_cpu)) {
-		ps_print_error_and_exit(ERPREFIX"pthread_cond_signal()\n");
+	if (pthread_cond_broadcast(&ps_cond_cpu)) {
+		ps_print_error_and_exit(ERPREFIX"pthread_cond_broadcast()\n");
 	}
 
 	/* We wait until the CPU state has been changed. Either:
@@ -91,6 +94,10 @@ static void ps_change_cpu_state_and_wait(bool halted)
 	while (ps_cpu_halted == halted) {
 		/*Here we unlock the mutex while waiting*/
 		pthread_cond_wait(&ps_cond_cpu, &ps_mtx_cpu);
+	}
+
+	if (POSIX_ARCH_SOC_DEBUG_PRINTS) {
+		ps_print_trace(PREFIX"Awaken after halted = %d\n", halted);
 	}
 
 	if (pthread_mutex_unlock(&ps_mtx_cpu)) {
@@ -164,6 +171,14 @@ void ps_atomic_halt_cpu(unsigned int imask)
  */
 static void *zephyr_wrapper(void *a)
 {
+	/*Ensure ps_boot_cpu has reached the cond loop*/
+	if (pthread_mutex_lock(&ps_mtx_cpu)) {
+		ps_print_error_and_exit(ERPREFIX"pthread_mutex_lock()\n");
+	}
+	if (pthread_mutex_unlock(&ps_mtx_cpu)) {
+		ps_print_error_and_exit(ERPREFIX"pthread_mutex_unlock()\n");
+	}
+
 	pthread_t zephyr_thread = pthread_self();
 
 	if (POSIX_ARCH_SOC_DEBUG_PRINTS) {
@@ -186,6 +201,10 @@ static void *zephyr_wrapper(void *a)
  */
 void ps_boot_cpu(void)
 {
+	if (pthread_mutex_lock(&ps_mtx_cpu)) {
+		ps_print_error_and_exit(ERPREFIX"pthread_mutex_lock()\n");
+	}
+
 	ps_cpu_halted = false;
 
 	pthread_t zephyr_thread;
@@ -199,15 +218,13 @@ void ps_boot_cpu(void)
 	 * And we wait until Zephyr has run til completion
 	 * (as gone to idle)
 	 */
-	if (pthread_mutex_lock(&ps_mtx_cpu)) {
-		ps_print_error_and_exit(ERPREFIX"pthread_mutex_lock()\n");
-	}
 	while (ps_cpu_halted == false) {
 		pthread_cond_wait(&ps_cond_cpu, &ps_mtx_cpu);
 	}
 	if (pthread_mutex_unlock(&ps_mtx_cpu)) {
 		ps_print_error_and_exit(ERPREFIX"pthread_mutex_unlock()\n");
 	}
+
 	if (terminate) {
 		main_clean_up(0);
 	}
@@ -231,14 +248,16 @@ void ps_clean_up(void)
 			ps_print_error_and_exit(
 					ERPREFIX"pthread_mutex_lock()\n");
 		}
+
 		ps_cpu_halted = true;
+
+		if (pthread_cond_broadcast(&ps_cond_cpu)) {
+			ps_print_error_and_exit(
+					ERPREFIX"pthread_cond_broadcast()\n");
+		}
 		if (pthread_mutex_unlock(&ps_mtx_cpu)) {
 			ps_print_error_and_exit(
 					ERPREFIX"pthread_mutex_unlock()\n");
-		}
-		if (pthread_cond_signal(&ps_cond_cpu)) {
-			ps_print_error_and_exit(
-					ERPREFIX"pthread_cond_signal()\n");
 		}
 		while (1) {
 			sleep(1);
