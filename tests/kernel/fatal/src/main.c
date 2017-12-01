@@ -128,6 +128,11 @@ void testing_fatal(void)
 {
 	int expected_reason;
 
+#if defined(CONFIG_ARCH_POSIX)
+	ARG_UNUSED(expected_reason);
+	ARG_UNUSED(overflow_stack);
+#endif
+
 	rv = TC_PASS;
 
 	/*
