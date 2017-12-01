@@ -6,3 +6,4 @@ tests:
       build_only: true
       tags: apps
       toolchain_exclude: issm
+      arch_exclude: posix
