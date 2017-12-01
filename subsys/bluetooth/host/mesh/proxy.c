@@ -1038,7 +1038,7 @@ static s32_t gatt_proxy_advertise(void)
 
 		if (active < NODE_ID_TIMEOUT) {
 			remaining = NODE_ID_TIMEOUT - active;
-			BT_DBG("Node ID active for %u ms, %u ms remaining",
+			BT_DBG("Node ID active for %u ms, %d ms remaining",
 			       active, remaining);
 			node_id_adv(sub);
 		} else {
