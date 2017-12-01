@@ -137,6 +137,42 @@ static void relay_status(struct bt_mesh_model *model,
 	k_sem_give(&cli->op_sync);
 }
 
+struct net_key_param {
+	u8_t *status;
+	u16_t net_idx;
+};
+
+static void net_key_status(struct bt_mesh_model *model,
+			   struct bt_mesh_msg_ctx *ctx,
+			   struct net_buf_simple *buf)
+{
+	struct net_key_param *param;
+	u16_t net_idx, app_idx;
+	u8_t status;
+
+	BT_DBG("net_idx 0x%04x app_idx 0x%04x src 0x%04x len %u: %s",
+	       ctx->net_idx, ctx->app_idx, ctx->addr, buf->len,
+	       bt_hex(buf->data, buf->len));
+
+	if (cli->op_pending != OP_NET_KEY_STATUS) {
+		BT_WARN("Unexpected Net Key Status message");
+		return;
+	}
+
+	status = net_buf_simple_pull_u8(buf);
+	key_idx_unpack(buf, &net_idx, &app_idx);
+
+	param = cli->op_param;
+	if (param->net_idx != net_idx) {
+		BT_WARN("Net Key Status key index does not match");
+		return;
+	}
+
+	*param->status = status;
+
+	k_sem_give(&cli->op_sync);
+}
+
 struct app_key_param {
 	u8_t *status;
 	u16_t net_idx;
@@ -429,6 +465,7 @@ const struct bt_mesh_model_op bt_mesh_cfg_cli_op[] = {
 	{ OP_FRIEND_STATUS,          1,   friend_status },
 	{ OP_GATT_PROXY_STATUS,      1,   gatt_proxy_status },
 	{ OP_RELAY_STATUS,           2,   relay_status },
+	{ OP_NET_KEY_STATUS,         3,   net_key_status },
 	{ OP_APP_KEY_STATUS,         4,   app_key_status },
 	{ OP_MOD_APP_STATUS,         7,   mod_app_status },
 	{ OP_MOD_PUB_STATUS,         12,  mod_pub_status },
@@ -671,6 +708,44 @@ int bt_mesh_cfg_relay_set(u16_t net_idx, u16_t addr, u8_t new_relay,
 	}
 
 	return cli_wait(&param, OP_RELAY_STATUS);
+}
+
+int bt_mesh_cfg_net_key_add(u16_t net_idx, u16_t addr, u16_t key_net_idx,
+			    const u8_t net_key[16], u8_t *status)
+{
+	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 18 + 4);
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = net_idx,
+		.app_idx = BT_MESH_KEY_DEV,
+		.addr = addr,
+		.send_ttl = BT_MESH_TTL_DEFAULT,
+	};
+	struct net_key_param param = {
+		.status = status,
+		.net_idx = key_net_idx,
+	};
+	int err;
+
+	err = check_cli();
+	if (err) {
+		return err;
+	}
+
+	bt_mesh_model_msg_init(msg, OP_NET_KEY_ADD);
+	net_buf_simple_add_le16(msg, key_net_idx);
+	net_buf_simple_add_mem(msg, net_key, 16);
+
+	err = bt_mesh_model_send(cli->model, &ctx, msg, NULL, NULL);
+	if (err) {
+		BT_ERR("model_send() failed (err %d)", err);
+		return err;
+	}
+
+	if (!status) {
+		return 0;
+	}
+
+	return cli_wait(&param, OP_NET_KEY_STATUS);
 }
 
 int bt_mesh_cfg_app_key_add(u16_t net_idx, u16_t addr, u16_t key_net_idx,
