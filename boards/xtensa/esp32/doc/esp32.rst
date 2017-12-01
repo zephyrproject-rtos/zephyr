@@ -6,16 +6,13 @@ ESP32
 Overview
 ********
 
-From Wikipedia:
 
-::
-
-   ESP32 is a series of low cost, low power system on a chip microcontrollers
-   with integrated Wi-Fi & dual-mode Bluetooth.  The ESP32 series employs a
-   Tensilica Xtensa LX6 microprocessor in both dual-core and single-core
-   variations.  ESP32 is created and developed by Espressif Systems, a
-   Shanghai-based Chinese company, and is manufactured by TSMC using their 40nm
-   process. [1]_
+ESP32 is a series of low cost, low power system on a chip microcontrollers
+with integrated Wi-Fi & dual-mode Bluetooth.  The ESP32 series employs a
+Tensilica Xtensa LX6 microprocessor in both dual-core and single-core
+variations.  ESP32 is created and developed by Espressif Systems, a
+Shanghai-based Chinese company, and is manufactured by TSMC using their 40nm
+process. [1]_
 
 The features include the following:
 
