@@ -47,7 +47,7 @@ def print_items(items, outdir, indent):
                 config = open("%s/%s.rst" % (outdir, var), "w")
                 config.write(":orphan:\n\n")
                 config.write(".. title:: %s\n\n" %item.get_name())
-                config.write(".. option:: CONFIG_%s:\n" %item.get_name())
+                config.write(".. option:: CONFIG_%s\n" %item.get_name())
                 config.write(".. _CONFIG_%s:\n" %item.get_name())
                 if text:
                     config.write("\n%s\n\n" %text)
