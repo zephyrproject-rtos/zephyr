@@ -6,6 +6,26 @@ Getting Started Guide
 Use this guide to get started with your :ref:`Zephyr <introducing_zephyr>`
 development.
 
+Checking Out the Source Code Anonymously
+****************************************
+
+The Zephyr source code is hosted in a GitHub repo that supports
+anonymous cloning via git. There are scripts and such in this repo that
+you'll need to set up your development environment, and we'll be using
+Git to get this repo.  (If you don't have Git installed, see the
+beginning of the OS-specific instructions below for help.)
+
+We'll begin by
+using Git to clone the repository anonymously. Enter:
+
+.. code-block:: console
+
+   $ cd ~
+   $ git clone https://github.com/zephyrproject-rtos/zephyr.git
+
+You have successfully checked out a copy of the source code to your local
+machine in the ~/zephyr folder.
+
 Set Up the Development Environment
 **********************************
 
@@ -24,21 +44,6 @@ Use the following procedures to create a new development environment.
    installation_mac.rst
    installation_win.rst
 
-
-Checking Out the Source Code Anonymously
-========================================
-
-The code is hosted in a GitHub repo that supports
-anonymous cloning via git.
-
-To clone the repository anonymously, enter:
-
-.. code-block:: console
-
-   $ git clone https://github.com/zephyrproject-rtos/zephyr.git
-
-You have successfully checked out a copy of the source code to your local
-machine.
 
 .. _getting_started_run_sample:
 

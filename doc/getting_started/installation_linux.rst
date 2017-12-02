@@ -67,6 +67,7 @@ Install the required packages in a Fedora host system with:
 
 Install additional packages required for development with Zephyr::
 
+   $ cd ~/zephyr  # or to your directory where zephyr is cloned
    $ pip3 install --user -r scripts/requirements.txt
 
 CMake version 3.8.2 or higher is required. Check what version you have using

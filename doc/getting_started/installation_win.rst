@@ -73,6 +73,7 @@ environment for Windows. Follow the steps below to set it up:
       $ curl -O 'https://bootstrap.pypa.io/get-pip.py'
       $ ./get-pip.py
       $ rm get-pip.py
+      $ cd ~/zephyr   # or to the folder where you cloned the zephyr repo
       $ pip install --user -r scripts/requirements.txt
 
 #. The build system should now be ready to work with any toolchain installed in
