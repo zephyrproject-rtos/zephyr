@@ -61,6 +61,7 @@ Install tools to build Zephyr binaries:
    $ curl -O 'https://bootstrap.pypa.io/get-pip.py'
    $ ./get-pip.py
    $ rm get-pip.py
+   $ cd ~/zephyr   # or to the folder where you cloned the zephyr repo
    $ pip3 install --user -r scripts/requirements.txt
 
 Source :file:`zephyr-env.sh` wherever you have cloned the Zephyr Git repository:
