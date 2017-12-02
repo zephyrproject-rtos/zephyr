@@ -156,6 +156,12 @@ config OUTPUT_STAT
 	help
 	  Create a stat file using readelf -e <elf>
 
+config OUTPUT_DISASSEMBLY
+	bool "Create a disassembly file"
+	default y
+	help
+	  Create an .lst file with the assembly listing of the firmware.
+
 config BUILD_OUTPUT_HEX
 	bool "Build a binary in HEX format"
 	default n
