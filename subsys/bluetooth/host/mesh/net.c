@@ -1179,14 +1179,26 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 		goto done;
 	}
 
-	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
+	/* Sending to the GATT bearer should only happen if GATT Proxy
+	 * is enabled or the message originates from the local node.
+	 */
+	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) &&
+	    (bt_mesh_gatt_proxy_get() == BT_MESH_GATT_PROXY_ENABLED ||
+	     rx->net_if == BT_MESH_NET_IF_LOCAL)) {
 		if (bt_mesh_proxy_relay(&buf->b, rx->dst) &&
-			    BT_MESH_ADDR_IS_UNICAST(rx->dst)) {
+		    BT_MESH_ADDR_IS_UNICAST(rx->dst)) {
 			goto done;
 		}
 	}
 
-	bt_mesh_adv_send(buf, NULL, NULL);
+	/* Relaying to the Advertising bearer should only happen if the
+	 * Relay state is set to enabled, or if the packet has been
+	 * received over some other bearer than Advertising.
+	 */
+	if (bt_mesh_relay_get() == BT_MESH_RELAY_ENABLED ||
+	    rx->net_if != BT_MESH_NET_IF_ADV) {
+		bt_mesh_adv_send(buf, NULL, NULL);
+	}
 
 done:
 	net_buf_unref(buf);
