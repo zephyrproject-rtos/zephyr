@@ -1135,7 +1135,16 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 
 	BT_DBG("TTL %u CTL %u dst 0x%04x", rx->ctx.recv_ttl, rx->ctl, rx->dst);
 
-	transmit = bt_mesh_relay_retransmit_get();
+	/* The Relay Retransmit state is only applied to adv-adv relaying.
+	 * Anything else (like GATT to adv, or locally originated packets)
+	 * use the Network Transmit state.
+	 */
+	if (rx->net_if == BT_MESH_NET_IF_ADV) {
+		transmit = bt_mesh_relay_retransmit_get();
+	} else {
+		transmit = bt_mesh_net_transmit_get();
+	}
+
 	buf = bt_mesh_adv_create(BT_MESH_ADV_DATA,
 				 BT_MESH_TRANSMIT_COUNT(transmit),
 				 BT_MESH_TRANSMIT_INT(transmit), K_NO_WAIT);
