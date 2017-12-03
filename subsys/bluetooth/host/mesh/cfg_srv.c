@@ -908,14 +908,20 @@ static void relay_set(struct bt_mesh_model *model,
 	if (!cfg) {
 		BT_WARN("No Configuration Server context available");
 	} else if (buf->data[0] == 0x00 || buf->data[0] == 0x01) {
-		bool change = (cfg->relay != buf->data[0]);
 		struct bt_mesh_subnet *sub;
+		bool change;
 
-		cfg->relay = buf->data[0];
-		cfg->relay_retransmit = buf->data[1];
+		if (cfg->relay == BT_MESH_RELAY_NOT_SUPPORTED) {
+			change = false;
+		} else {
+			change = (cfg->relay != buf->data[0]);
+			cfg->relay = buf->data[0];
+			cfg->relay_retransmit = buf->data[1];
+		}
 
-		BT_DBG("Relay 0x%02x Retransmit 0x%02x (count %u interval %u)",
-		       cfg->relay, cfg->relay_retransmit,
+		BT_DBG("Relay 0x%02x (%s) xmit 0x%02x (count %u interval %u)",
+		       cfg->relay, change ? "changed" : "not changed",
+		       cfg->relay_retransmit,
 		       BT_MESH_TRANSMIT_COUNT(cfg->relay_retransmit),
 		       BT_MESH_TRANSMIT_INT(cfg->relay_retransmit))
 
