@@ -171,7 +171,7 @@ action that makes it unready, the scheduler will switch the locking thread out
 and allow other threads to execute. When the locking thread again
 becomes the current thread, its non-preemptible status is maintained.
 
-.. note:
+.. note::
     Locking out the scheduler is a more efficient way for a preemptible thread
     to inhibit preemption than changing its priority level to a negative value.
 
