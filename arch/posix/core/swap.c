@@ -31,18 +31,14 @@
  * @return -EAGAIN, or a return value set by a call to
  * _set_thread_return_value()
  *
- * C function prototype:
- *
- * unsigned int __swap (unsigned int key);
- *
  */
 
 unsigned int __swap(unsigned int key)
 {
 /*
  * struct k_thread * _kernel.current is the currently runnig thread
- * struct k_thread * _kernel.ready_q.cache contains next thread to run (cannot
- * be NULL)
+ * struct k_thread * _kernel.ready_q.cache contains the next thread to run
+ * (cannot be NULL)
  *
  * Here a "real" arch would save all processor registers, stack pointer and so
  * forth.
@@ -68,15 +64,16 @@ unsigned int __swap(unsigned int key)
 
 	_kernel.current = _kernel.ready_q.cache;
 
-/*
- * Here a "real" arch would load all processor registers for the thread to run
- * In this arch case, we just block this thread until allowed to run later, and
- * signal to whomever is allowed to run to continue
- */
+	/*
+	 * Here a "real" arch would load all processor registers for the thread
+	 * to run. In this arch case, we just block this thread until allowed to
+	 * run later, and signal to whomever is allowed to run to continue.
+	 */
 	{
 		pc_swap(ready_thread_ptr->thread_idx,
 			this_thread_ptr->thread_idx);
-	} /*when we continue, _kernel->current points back to this thread*/
+	}
+	/*when we continue, _kernel->current points back to this thread*/
 
 	irq_unlock(_kernel.current->callee_saved.key);
 
@@ -90,7 +87,7 @@ unsigned int __swap(unsigned int key)
  * This is just a version of __swap() in which we do not save anything about the
  * current thread.
  *
- * Note that we will never come back to this thread.
+ * Note that we will never come back to this thread:
  * posix_core_main_thread_start() does never return
  */
 void _arch_switch_to_main_thread(struct k_thread *main_thread,

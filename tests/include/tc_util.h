@@ -22,7 +22,7 @@
 #define PRINT_DATA(fmt, ...) printk(fmt, ##__VA_ARGS__)
 #endif /* CONFIG_STDOUT_CONSOLE */
 
-#if defined CONFIG_BOARD_SIMPLE_PROCESS
+#if defined CONFIG_ARCH_POSIX
 #include "posix_board_if.h"
 #endif
 
@@ -72,7 +72,6 @@
 
 #define TC_PRINT(fmt, ...) PRINT_DATA(fmt, ##__VA_ARGS__)
 #define TC_START(name) PRINT_DATA("starting test - %s\n", name)
-
 #define TC_END(result, fmt, ...) PRINT_DATA(fmt, ##__VA_ARGS__)
 
 /* prints result and the function name */
@@ -85,7 +84,7 @@
 #define TC_END_RESULT(result)                           \
 	_TC_END_RESULT((result), __func__)
 
-#if defined CONFIG_BOARD_SIMPLE_PROCESS
+#if defined CONFIG_ARCH_POSIX
 #define TC_END_POST                                 \
 	do {                                        \
 		main_clean_up(0);                    \

@@ -6,9 +6,6 @@
 
 /**
  * Functions to print errors and traces
- *
- * A "board" meant to provide hooks into a simulator framework
- * can redefine them to route to that framework tracing facility
  */
 
 #include <stdlib.h> /*for exit*/

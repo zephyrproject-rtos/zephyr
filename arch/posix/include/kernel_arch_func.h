@@ -38,7 +38,7 @@ void _arch_switch_to_main_thread(struct k_thread *main_thread,
  */
 static inline void kernel_arch_init(void)
 {
-/*Nothing to be done*/
+	/*Nothing to be done*/
 }
 
 

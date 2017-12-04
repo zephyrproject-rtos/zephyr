@@ -17,11 +17,11 @@ static int printk_init(struct device *arg)
 {
 	ARG_UNUSED(arg);
 
-/*let's ensure that even if we are redirecting to a file, we get stdout and
- * stderr line buffered (default for console). Note that glibc ignores
- * size. But just in case we set a reasonable number in case somebody tries
- * to compile against a different library
- */
+	/* Let's ensure that even if we are redirecting to a file, we get stdout
+	 * and stderr line buffered (default for console). Note that glibc
+	 * ignores size. But just in case we set a reasonable number in case
+	 * somebody tries to compile against a different library
+	 */
 	setvbuf(stdout, NULL, _IOLBF, 512);
 	setvbuf(stderr, NULL, _IOLBF, 512);
 
@@ -35,8 +35,5 @@ static int printk_init(struct device *arg)
 #define CONFIG_POSIX_PRINTK_INIT_PRIORITY 50
 SYS_INIT(printk_init, PRE_KERNEL_1, CONFIG_POSIX_PRINTK_INIT_PRIORITY);
 /*TODO: move all this to a driver in the driver/ folder*/
-
-
-
 
 

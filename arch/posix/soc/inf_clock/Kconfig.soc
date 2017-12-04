@@ -7,7 +7,7 @@ config SOC_POSIX
 	clock. That means the CPU will always run in zero time until completion after
 	each wake reason (e.g. interrupts), before going back to idle. Note that an
 	infinite loop in the code which does not sleep the CPU will cause the process
-	to apeared "hung", as simulated time does not advance while the cpu does not
+	to apeared "hang", as simulated time does not advance while the cpu does not
 	sleep. Therefore do not use busy waits while waiting for something to happen
 	(if needed use k_busy_wait()).
 	Note that the interrupt handling is provided by the board.

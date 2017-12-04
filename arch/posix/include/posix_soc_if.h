@@ -7,8 +7,8 @@
 #define _POSIX_CORE_SOC_PROVIDED_IF_H
 
 /*
- * This file lists the functions the posix architecture core
- * expect the the SOC or board to provide
+ * This file lists the functions the POSIX architecture core expects the
+ * SOC or board will provide
  *
  * All functions listed here must be provided by the implementation of the SOC
  * or all its boards

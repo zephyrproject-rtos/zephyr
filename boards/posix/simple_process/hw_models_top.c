@@ -37,30 +37,25 @@ static void hwm_sleep_until_next_timer(void)
 	if (next_timer_time >= device_time) {
 		device_time = next_timer_time;
 	} else {
-		ps_print_warning(
-"next_timer_time corrupted (%"PRItime"<= %"PRItime", Timertype=%i)\n",
-			next_timer_time,
-			device_time,
-			next_timer_index);
+		ps_print_warning("next_timer_time corrupted (%"PRItime"<= %"
+				PRItime", Timertype=%i)\n",
+				next_timer_time,
+				device_time,
+				next_timer_index);
 	}
 
 	if (device_time >= end_of_time) {
-		ps_print_trace(
-			"\n\n\n\n\n\nAutostopped after %.3Lfs\n",
-			((long double)end_of_time)/1.0e6);
+		ps_print_trace("\n\n\n\n\n\nAutostopped after %.3Lfs\n",
+				((long double)end_of_time)/1.0e6);
 
 		main_clean_up(0);
 	}
 }
 
-void pb_terminate_asap(void)
-{
-	end_of_time = device_time;
-}
 
 /**
  * Find in between all timers which is the next one
- * and update  next_timer_to_trigger* accordingly
+ * and update  next_timer_* accordingly
  */
 void hwm_find_next_timer(void)
 {
@@ -89,11 +84,10 @@ void hwm_main_loop(void)
 			hwtimer_timer_reached();
 			break;
 		case IRQCnt:
-			hw_irq_ctr_timer_triggered();
+			hw_irq_ctrl_timer_triggered();
 			break;
 		default:
-			ps_print_error_and_exit(
-					"next_timer_index corrupted\n");
+			ps_print_error_and_exit("next_timer_index corrupted\n");
 			break;
 		}
 
@@ -109,6 +103,9 @@ void hwm_set_end_of_time(hwtime_t new_end_of_time)
 	end_of_time = new_end_of_time;
 }
 
+/**
+ * Return the current time as known by the device
+ */
 hwtime_t hwm_get_time(void)
 {
 	return device_time;

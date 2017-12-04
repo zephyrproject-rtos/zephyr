@@ -44,13 +44,11 @@ void _irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags);
  */
 #define _ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
 ({ \
-	_isr_declare(irq_p, ISR_FLAG_DIRECT, isr_p, NULL); \
+	_isr_declare(irq_p, ISR_FLAG_DIRECT, (void (*)(void *))isr_p, NULL); \
 	_irq_priority_set(irq_p, priority_p, flags_p); \
 	irq_p; \
 })
 
-/*extern void _arch_isr_direct_header(void);*/
-/*#define _ARCH_ISR_DIRECT_HEADER() _arch_isr_direct_header()*/
 
 /**
  * The return of "name(void)" is the indicaton of the interrupt
@@ -60,10 +58,9 @@ void _irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags);
  */
 #define _ARCH_ISR_DIRECT_DECLARE(name) \
 	static inline int name##_body(void); \
-	/*__attribute__ ((interrupt ("IRQ")))*/ int name(void) \
+	int name(void) \
 	{ \
 		int check_reschedule; \
-		/*ISR_DIRECT_HEADER();*/ \
 		check_reschedule = name##_body(); \
 		return check_reschedule; \
 	} \

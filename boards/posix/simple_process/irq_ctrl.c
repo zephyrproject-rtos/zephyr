@@ -3,7 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * HW side of the irq handling
+ * HW IRQ controller model
  */
 
 #include <stdbool.h>
@@ -36,9 +36,9 @@ static uint64_t irq_mask;
  * irq_status != 0 an interrupt will be raised immediately
  */
 static bool irqs_locked;
-static bool lock_ignore;
+static bool lock_ignore; /*For the hard fake IRQ, temporarily ignore lock*/
 
-static uint8_t irq_prio[N_IRQs];
+static uint8_t irq_prio[N_IRQs]; /*Priority of each interrupt*/
 /*note that prio = 0 == highest, prio=255 == lowest*/
 
 static int currently_running_prio = 256; /*255 is the lowest prio interrupt*/
@@ -60,12 +60,12 @@ void hw_irq_ctrl_cleanup(void)
 	/*Nothing to be done*/
 }
 
-void set_currently_running_prio(int new)
+void hw_irq_ctrl_set_cur_prio(int new)
 {
 	currently_running_prio = new;
 }
 
-int get_currently_running_prio(void)
+int hw_irq_ctrl_get_cur_prio(void)
 {
 	return currently_running_prio;
 }
@@ -81,19 +81,18 @@ uint8_t hw_irq_ctrl_get_prio(unsigned int irq)
 }
 
 /**
- * Get the currently pending highest priority interrupt
- * which has a priority higher than a possibly currently running
- * interrupt
+ * Get the currently pending highest priority interrupt which has a priority
+ * higher than a possibly currently running interrupt
  *
  * If none, return -1
  */
-int hw_irq_cont_get_highest_prio_irq(void)
+int hw_irq_ctrl_get_highest_prio_irq(void)
 {
 	if (irqs_locked) {
 		return -1;
 	}
 
-	uint64_t irq_status = hw_irq_controller_get_irq_status();
+	uint64_t irq_status = hw_irq_ctrl_get_irq_status();
 	int winner = -1;
 	int winner_prio = 256;
 
@@ -111,12 +110,12 @@ int hw_irq_cont_get_highest_prio_irq(void)
 }
 
 
-uint32_t hw_irq_controller_get_current_lock(void)
+uint32_t hw_irq_ctrl_get_current_lock(void)
 {
 	return irqs_locked;
 }
 
-uint32_t hw_irq_controller_change_lock(uint32_t new_lock)
+uint32_t hw_irq_ctrl_change_lock(uint32_t new_lock)
 {
 	uint32_t previous_lock = irqs_locked;
 
@@ -130,39 +129,39 @@ uint32_t hw_irq_controller_change_lock(uint32_t new_lock)
 	return previous_lock;
 }
 
-uint64_t hw_irq_controller_get_irq_status(void)
+uint64_t hw_irq_ctrl_get_irq_status(void)
 {
 	return irq_status;
 }
 
-void hw_irq_controller_clear_all_enabled_irqs(void)
+void hw_irq_ctrl_clear_all_enabled_irqs(void)
 {
 	irq_status  = 0;
 	irq_premask &= ~irq_mask;
 }
 
-void hw_irq_controller_clear_all_irqs(void)
+void hw_irq_ctrl_clear_all_irqs(void)
 {
 	irq_status  = 0;
 	irq_premask = 0;
 }
 
-void hw_irq_controller_disable_irq(unsigned int irq)
+void hw_irq_ctrl_disable_irq(unsigned int irq)
 {
 	irq_mask &= ~((uint64_t)1<<irq);
 }
 
-int hw_irq_controller_is_irq_enabled(unsigned int irq)
+int hw_irq_ctrl_is_irq_enabled(unsigned int irq)
 {
 	return (irq_mask & ((uint64_t)1 << irq))?1:0;
 }
 
-uint64_t hw_irq_controller_get_irq_mask(void)
+uint64_t hw_irq_ctrl_get_irq_mask(void)
 {
 	return irq_mask;
 }
 
-void hw_irq_controller_clear_irq(unsigned int irq)
+void hw_irq_ctrl_clear_irq(unsigned int irq)
 {
 	irq_status  &= ~((uint64_t)1<<irq);
 	irq_premask &= ~((uint64_t)1<<irq);
@@ -174,20 +173,19 @@ void hw_irq_controller_clear_irq(unsigned int irq)
  *
  * This function may only be called from SW threads
  *
- * If the enabled interrupt is pending, it will actually
- * inmmediately vector to its interrupt handler
- * and continue (maybe with some swap() before)
+ * If the enabled interrupt is pending, it will immediately vector to its
+ * interrupt handler and continue (maybe with some swap() before)
  */
-void hw_irq_controller_enable_irq(unsigned int irq)
+void hw_irq_ctrl_enable_irq(unsigned int irq)
 {
 	irq_mask |= ((uint64_t)1<<irq);
 	if (irq_premask & ((uint64_t)1<<irq)) { /*if the interrupt is pending*/
-		hw_irq_irq_controller_raise_im_from_sw(irq);
+		hw_irq_ctrl_raise_im_from_sw(irq);
 	}
 }
 
 
-static inline void hw_irq_controller_irq_raise_prefix(unsigned int irq)
+static inline void hw_irq_ctrl_irq_raise_prefix(unsigned int irq)
 {
 	if (irq < N_IRQs) {
 		irq_premask |= ((uint64_t)1<<irq);
@@ -204,12 +202,11 @@ static inline void hw_irq_controller_irq_raise_prefix(unsigned int irq)
  * Set/Raise an interrupt
  *
  * This function is meant to be used by either the SW manual IRQ raising
- * or by HW which wants the IRQ to be raised
- * in one delta cycle from now
+ * or by HW which wants the IRQ to be raised in one delta cycle from now
  */
-void hw_irq_controller_set_irq(unsigned int irq)
+void hw_irq_ctrl_set_irq(unsigned int irq)
 {
-	hw_irq_controller_irq_raise_prefix(irq);
+	hw_irq_ctrl_irq_raise_prefix(irq);
 	if ((irqs_locked == false) || (lock_ignore)) {
 		/*
 		 * Awake CPU in 1 delta
@@ -240,31 +237,32 @@ static void irq_raising_from_hw_now(void)
 
 /**
  * Set/Raise an interrupt inmediately.
+ * Like hw_irq_ctrl_set_irq() but awake immediately the CPU instead of in
+ * 1 delta cycle
  *
- * Like hw_irq_controller_set_irq()
- * but awake inmediately the CPU instead of in 1 delta cycle
- * (call only from HW)
+ * Call only from HW threads
  */
-void hw_irq_irq_controller_raise_im(unsigned int irq)
+void hw_irq_ctrl_raise_im(unsigned int irq)
 {
-	hw_irq_controller_irq_raise_prefix(irq);
+	hw_irq_ctrl_irq_raise_prefix(irq);
 	irq_raising_from_hw_now();
 }
 
 /**
- * Like hw_irq_irq_controller_raise_im() but for SW threads
- * (call only from SW threads)
+ * Like hw_irq_ctrl_raise_im() but for SW threads
+ *
+ * Call only from SW threads
  */
-void hw_irq_irq_controller_raise_im_from_sw(unsigned int irq)
+void hw_irq_ctrl_raise_im_from_sw(unsigned int irq)
 {
-	hw_irq_controller_irq_raise_prefix(irq);
+	hw_irq_ctrl_irq_raise_prefix(irq);
 
 	if (irqs_locked == false) {
 		pb_irq_handler_im_from_sw();
 	}
 }
 
-void hw_irq_ctr_timer_triggered(void)
+void hw_irq_ctrl_timer_triggered(void)
 {
 	irq_ctrl_timer = NEVER;
 	irq_raising_from_hw_now();

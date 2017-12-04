@@ -13,10 +13,10 @@
  *   and you go for lunch in the middle of the debug session.
  *
  * This is achieved as follows:
- * The HW models run in their own simulated time. We do not in any way attempt
+ * The HW models run in their own simulated time. We do really not attempt
  * to link ourselves to the actual real time / wall time of the machine as this
  * would make execution undeterministic and debugging or instrumentation not
- * really possible.
+ * really possible. Although we may slow the run to real time.
  */
 
 #include <soc.h>
@@ -50,7 +50,8 @@ void main_clean_up(int exit_code)
  * simulation engine, with some proper HW models and whatnot
  *
  * This is just a very simple demo which is able to run some of the sample
- * apps (hello world, synchronization, philosophers)
+ * apps (hello world, synchronization, philosophers) and run the sanity-check
+ * regression
  */
 int main(void)
 {

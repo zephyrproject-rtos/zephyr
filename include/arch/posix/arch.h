@@ -11,7 +11,6 @@
  * This header contains the POSIX arch specific kernel interface.
  * It is included by the generic kernel interface header (include/arch/cpu.h)
  *
- * Starts as a cut down copy of the NIOS one
  */
 
 

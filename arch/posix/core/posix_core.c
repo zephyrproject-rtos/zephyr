@@ -15,8 +15,23 @@
 /**
  * Principle of operation:
  *
- * The Zephyr OS and its app run as a set of threads. Only one of this thread is
- * run at a time ( using pc_{cond|mtx}_threads )
+ * The Zephyr OS and its app run as a set of native pthreads.
+ * The Zephyr OS only sees one of this thread executing at a time.
+ * Which is running is controlled using pc_{cond|mtx}_threads and
+ * pc_currently_allowed_thread.
+ *
+ * The main part of the execution of each thread will occur in a fully
+ * synchronous and deterministic manner, and only when commanded by the Zephyr
+ * kernel.
+ * But the creation of a thread will spawn a new pthread whose start
+ * is asynchronous to the rest, until synchronized in pc_wait_until_allowed()
+ * below.
+ * Similarly aborting and canceling threads execute a tail in a quite
+ * asynchronous manner.
+ *
+ * This implementation is meant to be portable in between POSIX systems.
+ * A table (pc_threads_table) is used to abstract the native pthreads.
+ * And index in this table is used to identify threads in the IF to the kernel.
  *
  */
 
@@ -47,13 +62,13 @@ static int pc_threads_table_size;
 typedef struct {
 	enum {NotUsed = 0, Used, Aborting, Aborted, Failed} state;
 	bool running;     /*is this the currently running thread*/
-	pthread_t thread; /*actual pthread_t as returned by kernel*/
-	int thead_cnt; /*for debug. unique, consecutive, thread number*/
+	pthread_t thread; /*actual pthread_t as returned by native kernel*/
+	int thead_cnt; /*for debugging. Unique, consecutive, thread number*/
 } pc_threads_table_t;
 
 static pc_threads_table_t *pc_threads_table;
 
-static int thread_create_count;
+static int thread_create_count; /*For debugging. Thread creation counter*/
 
 /*
  * Conditional variable to block/awake all threads during swaps()
@@ -65,12 +80,15 @@ static pthread_mutex_t pc_mtx_threads = PTHREAD_MUTEX_INITIALIZER;
 /* Token which tells which process is allowed to run now */
 static int pc_currently_allowed_thread;
 
-static bool pc_terminate;
+static bool pc_terminate; /*Are we terminating the program == cleaning up*/
 
 static void pc_wait_until_allowed(int this_th_nbr);
 static void *pc_thread_starter(void *arg);
 static void pc_preexit_cleanup(void);
 
+/**
+ * Helper function, run by a thread is being aborted
+ */
 static void pc_abort_tail(int this_th_nbr)
 {
 	if (POSIX_ARCH_DEBUG_PRINTS) {
@@ -88,7 +106,7 @@ static void pc_abort_tail(int this_th_nbr)
 }
 
 /**
- *  Helper function to hung this thread until it is allowed again
+ *  Helper function to block this thread until it is allowed again
  *  (somebody calls pc_let_run() with this thread number
  *
  * Note that we go out of this function (the while loop below)
@@ -107,9 +125,10 @@ static void pc_wait_until_allowed(int this_th_nbr)
 				this_th_nbr,
 				__func__);
 	}
+
 	while (this_th_nbr != pc_currently_allowed_thread) {
-		pthread_cond_wait(&pc_cond_threads,
-				  &pc_mtx_threads);
+		pthread_cond_wait(&pc_cond_threads, &pc_mtx_threads);
+
 		if (pc_threads_table &&
 		    (pc_threads_table[this_th_nbr].state == Aborting)) {
 			pc_abort_tail(this_th_nbr);
@@ -129,8 +148,8 @@ static void pc_wait_until_allowed(int this_th_nbr)
 
 
 /**
- *  Helper function to let the thread <next_allowed_th> run
- *  Note: pc_let_run() can only be called with the mutex locked
+ * Helper function to let the thread <next_allowed_th> run
+ * Note: pc_let_run() can only be called with the mutex locked
  */
 static void pc_let_run(int next_allowed_th)
 {
@@ -170,7 +189,7 @@ static void pc_preexit_cleanup(void)
 
 
 /**
- * Let the ready thread run and lock this thread until it is allowed again
+ * Let the ready thread run and block this thread until it is allowed again
  *
  * called from __swap() which does the picking from the kernel structures
  */
@@ -213,7 +232,9 @@ void pc_main_thread_start(int next_allowed_thread_nbr)
 	pthread_exit(NULL);
 }
 
-
+/**
+ * Handler called when any thread is cancelled or exits
+ */
 static void pc_cleanupHandler(void *arg)
 {
 	/*
@@ -248,7 +269,7 @@ static void pc_cleanupHandler(void *arg)
  * Helper function to start a Zephyr thread as a POSIX thread:
  *  It will block the thread until a __swap() is called for it
  *
- * Spawned from posix_core_new_thread() below
+ * Spawned from pc_new_thread() below
  */
 static void *pc_thread_starter(void *arg)
 {
@@ -301,7 +322,7 @@ static void *pc_thread_starter(void *arg)
 	pc_threads_table[ptr->thread_idx].running = false;
 	pc_threads_table[ptr->thread_idx].state = Failed;
 
-	pthread_cleanup_pop(1); /*we release the mutex to allow for cleanup*/
+	pthread_cleanup_pop(1);
 
 	return NULL;
 }
@@ -364,7 +385,7 @@ void pc_new_thread(posix_thread_status_t *ptr)
 			   pc_thread_starter,
 			   (void *)ptr)) {
 
-		ps_print_error_and_exit(ERPREFIX"pthread_create\n");
+		ps_print_error_and_exit(ERPREFIX"pthread_create()\n");
 	}
 
 	if (POSIX_ARCH_DEBUG_PRINTS) {
@@ -403,13 +424,16 @@ void pc_init_multithreading(void)
 /**
  * Free any allocated memory by the posix core and clean up.
  * Note that this function cannot be called from a SW thread
- * (the CPU is assumed halted)
+ * (the CPU is assumed halted. Otherwise we will cancel ourselves)
  *
- * This function cannot guarantee the threads will be cancelled
- * before the HW thread exists. The only way to do that, would be
- * to wait for each of them in a join (without detaching them, but
- * that could lead to locks in some convoluted cases => we prefer the
- * supposed memory leak report from valgrind)
+ * This function cannot guarantee the threads will be cancelled before the HW
+ * thread exists. The only way to do that, would be  to wait for each of them in
+ * a join (without detaching them, but that could lead to locks in some
+ * convoluted cases. As a call to this function can come from an ASSERT or other
+ * error termination, we better do not assume things are working fine.
+ * => we prefer the supposed memory leak report from valgrind, and ensure we
+ * will not hang
+ *
  */
 void pc_clean_up(void)
 {
@@ -453,9 +477,10 @@ void pc_abort_thread(int thread_idx)
 	pc_threads_table[thread_idx].state = Aborting;
 	/*
 	 * Note: the native thread will linger in RAM until it catches the
-	 * mutex during the next pc_swap()
-	 * Note that even if we would cancel the thread here, that would be the
-	 * case, but with a cancel the mutex state would be uncontrolled
+	 * mutex or awakes on the condition.
+	 * Note that even if we would pthread_cancel() the thread here, that
+	 * would be the case, but with a pthread_cancel() the mutex state would
+	 * be uncontrolled
 	 */
 }
 
@@ -488,9 +513,9 @@ void _impl_k_thread_abort(k_tid_t thread)
 			pc_tstatus->aborted = 1;
 		} else {
 			ps_print_warning(
-				PREFIX"Kernel is trying to abort and swap out "
-				"of an already aborted thread %i. This should "
-				"NOT have happened\n",
+				PREFIX"The kernel is trying to abort and swap "
+				"out of an already aborted thread %i. This "
+				"should NOT have happened\n",
 				thread_idx);
 		}
 		pc_threads_table[thread_idx].state = Aborting;

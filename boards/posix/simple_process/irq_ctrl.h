@@ -15,25 +15,25 @@ extern "C" {
 
 void hw_irq_ctrl_init(void);
 void hw_irq_ctrl_cleanup(void);
-void hw_irq_ctr_timer_triggered(void);
+void hw_irq_ctrl_timer_triggered(void);
 
-void set_currently_running_prio(int new);
-int get_currently_running_prio(void);
+void hw_irq_ctrl_set_cur_prio(int new);
+int hw_irq_ctrl_get_cur_prio(void);
 
 void hw_irq_ctrl_prio_set(unsigned int irq, unsigned int prio);
 uint8_t hw_irq_ctrl_get_prio(unsigned int irq);
 
-int hw_irq_cont_get_highest_prio_irq(void);
-uint32_t hw_irq_controller_get_current_lock(void);
-uint32_t hw_irq_controller_change_lock(uint32_t new_lock);
-uint64_t hw_irq_controller_get_irq_status(void);
-void hw_irq_controller_disable_irq(unsigned int irq);
-int hw_irq_controller_is_irq_enabled(unsigned int irq);
-void hw_irq_controller_clear_irq(unsigned int irq);
-void hw_irq_controller_enable_irq(unsigned int irq);
-void hw_irq_controller_set_irq(unsigned int irq);
-void hw_irq_irq_controller_raise_im(unsigned int irq);
-void hw_irq_irq_controller_raise_im_from_sw(unsigned int irq);
+int hw_irq_ctrl_get_highest_prio_irq(void);
+uint32_t hw_irq_ctrl_get_current_lock(void);
+uint32_t hw_irq_ctrl_change_lock(uint32_t new_lock);
+uint64_t hw_irq_ctrl_get_irq_status(void);
+void hw_irq_ctrl_disable_irq(unsigned int irq);
+int hw_irq_ctrl_is_irq_enabled(unsigned int irq);
+void hw_irq_ctrl_clear_irq(unsigned int irq);
+void hw_irq_ctrl_enable_irq(unsigned int irq);
+void hw_irq_ctrl_set_irq(unsigned int irq);
+void hw_irq_ctrl_raise_im(unsigned int irq);
+void hw_irq_ctrl_raise_im_from_sw(unsigned int irq);
 
 
 #define N_IRQs 32

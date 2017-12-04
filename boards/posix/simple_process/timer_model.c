@@ -5,7 +5,10 @@
  */
 
 /**
- * This file provides both a model of a HW timer and its driver
+ * This file provides both a model of a simple HW timer and its driver
+ *
+ * If you want this timer model to slow down the execution to real time
+ * set (CONFIG_)SIMPLE_PROCESS_SLOWDOWN_TO_REAL_TIME
  */
 
 #include <stdint.h>
@@ -15,9 +18,6 @@
 #include "zephyr/types.h"
 #include "posix_soc_if.h"
 #include "misc/util.h"
-
-/*set this to 1 to run in real time, to 0 to run as fast as possible*/
-/*#define CONFIG_SIMPLE_PROCESS_SLOWDOWN_TO_REAL_TIME 1*/
 
 
 hwtime_t HWTimer_timer;
@@ -73,15 +73,13 @@ static void hwtimer_tick_timer_reached(void)
 		struct timespec requested_time;
 		struct timespec remaining;
 
-		requested_time.tv_sec = diff / 1e6;
-		requested_time.tv_nsec =
-				(diff - requested_time.tv_sec*1e6)*1e3;
+		requested_time.tv_sec  = diff / 1e6;
+		requested_time.tv_nsec = (diff - requested_time.tv_sec*1e6)*1e3;
 
 		int s = nanosleep(&requested_time, &remaining);
 
 		if (s == -1) {
-			ps_print_trace(
-					"Interrupted or error\n");
+			ps_print_trace("Interrupted or error\n");
 		}
 	}
 #endif
@@ -92,7 +90,7 @@ static void hwtimer_tick_timer_reached(void)
 	if (silent_ticks > 0) {
 		silent_ticks -= 1;
 	} else {
-		hw_irq_controller_set_irq(TIMER_TICK_IRQ);
+		hw_irq_ctrl_set_irq(TIMER_TICK_IRQ);
 	}
 }
 
@@ -101,7 +99,7 @@ static void hwtimer_awake_timer_reached(void)
 {
 	HWTimer_awake_timer = NEVER;
 	hwtimer_update_timer();
-	hw_irq_controller_set_irq(PHONY_HARD_IRQ);
+	hw_irq_ctrl_set_irq(PHONY_HARD_IRQ);
 }
 
 void hwtimer_timer_reached(void)
@@ -119,13 +117,12 @@ void hwtimer_timer_reached(void)
 
 
 /**
- * The timer hw will awake the CPU (without an interrupt)
- * at least when <time> comes (it may awake it earlier)
+ * The timer HW will awake the CPU (without an interrupt) at least when <time>
+ * comes (it may awake it earlier)
  *
- * If there was a previous request for an earlier time,
- * the old one will prevail
+ * If there was a previous request for an earlier time, the old one will prevail
  *
- * This is meant for k_busy_wait like functionality
+ * This is meant for k_busy_wait() like functionality
  */
 void hwtimer_wake_in_time(hwtime_t time)
 {
@@ -182,9 +179,9 @@ int _sys_clock_driver_init(struct device *device)
 
 #if defined(CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT)
 /**
- * Replacement to the kernel k_busy_wait
- * Will hung this thread (and therefore the whole zephyr)
- * during usec_to_wait
+ * Replacement to the kernel k_busy_wait()
+ * Will block this thread (and therefore the whole zephyr) during usec_to_wait
+ *
  * Note that interrupts may be received in the meanwhile and that therefore this
  * thread may loose context
  */

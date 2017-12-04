@@ -13,32 +13,31 @@
  * HW models.
  *
  * The HW models raising an interrupt will "awake the cpu" by calling
- * posix_soc_interrupt_raised() which will transfer control to the irq handler,
- * which will run inside zephyr contenxt. After which a __swap() to whatever
- * Zephyr task may follow.
+ * ps_interrupt_raised() which will transfer control to the irq handler,
+ * which will run inside SW/Zephyr contenxt. After which a __swap() to whatever
+ * Zephyr thread may follow.
  * Again, once Zephyr is done, control is given back to the HW models.
  *
  *
  * The Zephyr OS+APP code and the HW models are gated by a mutex +
  * condition as there is no reason to let the zephyr threads run while the
- * models run or vice versa
+ * HW models run or vice versa
  *
  */
 
 #include <pthread.h>
 #include <stdbool.h>
+#include <unistd.h>
 #include "posix_soc_if.h"
 #include "posix_soc.h"
 #include "posix_board_if.h"
 #include "posix_core.h"
 #include "nano_internal.h"
 
+#define POSIX_ARCH_SOC_DEBUG_PRINTS 0
+
 #define PREFIX "POSIX SOC: "
 #define ERPREFIX PREFIX"error on "
-
-/******************************************
- * CPU boot, halt and interrupt handling: *
- ******************************************/
 
 /*conditional variable to know if the CPU is running or halted/idling*/
 static pthread_cond_t  ps_cond_cpu  = PTHREAD_COND_INITIALIZER;
@@ -47,22 +46,25 @@ static pthread_mutex_t ps_mtx_cpu   = PTHREAD_MUTEX_INITIALIZER;
 /*variable which tells if the CPU is halted (1) or not (0)*/
 static bool ps_cpu_halted = true;
 
-static bool terminate;
+static bool terminate; /*Is the program being closed*/
+
 
 int ps_is_cpu_running(void)
 {
 	return !ps_cpu_halted;
 }
 
-#define POSIX_ARCH_SOC_DEBUG_PRINTS 0
 
 /**
  * Helper function which changes the status of the CPU (halted or running)
  * and waits until somebody else changes it to the opposite
  *
+ * Both HW and SW threads will use this function to transfer control to the
+ * other side.
+ *
  * This is how the idle thread halts the CPU and gets halted until the HW models
- * raise a new interrupt and how the HW models awake the CPU, and wait for it to
- * complete and go to idle before continuing
+ * raise a new interrupt; and how the HW models awake the CPU, and wait for it
+ * to complete and go to idle.
  */
 static void ps_change_cpu_state_and_wait(bool halted)
 {
@@ -75,10 +77,7 @@ static void ps_change_cpu_state_and_wait(bool halted)
 	}
 	ps_cpu_halted = halted;
 
-	/* We let the other side know the CPU has changed state
-	 * either posix_soc_halt_cpu() [in the idle thread]
-	 * or the HW models
-	 */
+	/* We let the other side know the CPU has changed state */
 	if (pthread_cond_broadcast(&ps_cond_cpu)) {
 		ps_print_error_and_exit(ERPREFIX"pthread_cond_broadcast()\n");
 	}
@@ -111,8 +110,8 @@ static void ps_change_cpu_state_and_wait(bool halted)
  */
 void ps_interrupt_raised(void)
 {
-	/* We change the CPU to running state (we awake it), and hung this
-	 * thread until it is set to idle again
+	/* We change the CPU to running state (we awake it), and block this
+	 * thread until the CPU is hateld again
 	 */
 	ps_change_cpu_state_and_wait(false);
 
@@ -127,30 +126,29 @@ void ps_interrupt_raised(void)
 
 
 /**
- * Called from k_cpu_idle(), the idle loop will call
- * this function to set the CPU to "sleep"
- * Interrupts will be unlocked before calling
+ * Called from k_cpu_idle(), the idle loop will call this function to set the
+ * CPU to "sleep".
+ * Interrupts should be unlocked before calling
  */
 void ps_halt_cpu(void)
 {
-/* We change the CPU to halted state, and hung this thread until it is set
- * running again
- */
+	/* We change the CPU to halted state, and block this thread until it is
+	 * set running again
+	 */
 	ps_change_cpu_state_and_wait(true);
 
-/* We are awaken when some interrupt comes => let the "irq handler" check
- * what interrupt was raised and call the appropriate irq handler
- * That may trigger a __swap() to another zephyr thread
- */
-
+	/* We are awaken when some interrupt comes => let the "irq handler"
+	 * check what interrupt was raised and call the appropriate irq handler
+	 * That may trigger a __swap() to another Zephyr thread
+	 */
 	pb_irq_handler();
 
-/*
- * When the interrupt handler is back we go back to the idle loop (which will
- * just call us back)
- * Note that when we are coming back from the irq_handler the zephyr kernel
- * has swapped back to the idle thread
- */
+	/*
+	 * When the interrupt handler is back we go back to the idle loop (which
+	 * will just call us back)
+	 * Note that when we are coming back from the irq_handler the Zephyr
+	 * kernel has swapped back to the idle thread
+	 */
 }
 
 
@@ -166,8 +164,8 @@ void ps_atomic_halt_cpu(unsigned int imask)
 
 
 /**
- * Just a wrapper function to call zephyrs _PrepC()
- * called from posix_soc_boot_cpu()
+ * Just a wrapper function to call Zephyr's _Cstart()
+ * called from ps_boot_cpu()
  */
 static void *zephyr_wrapper(void *a)
 {
@@ -179,9 +177,9 @@ static void *zephyr_wrapper(void *a)
 		ps_print_error_and_exit(ERPREFIX"pthread_mutex_unlock()\n");
 	}
 
-	pthread_t zephyr_thread = pthread_self();
-
 	if (POSIX_ARCH_SOC_DEBUG_PRINTS) {
+		pthread_t zephyr_thread = pthread_self();
+
 		ps_print_trace(PREFIX"Zephyr init started (%lu)\n",
 			zephyr_thread);
 	}
@@ -196,8 +194,8 @@ static void *zephyr_wrapper(void *a)
 
 /**
  * The HW models will call this function to "boot" the CPU
- * == spawn the zephyr init thread, which will then spawn
- * anything it wants, and run until the cpu is set back in idle again
+ * == spawn the Zephyr init thread, which will then spawn
+ * anything it wants, and run until the CPU is set back to idle again
  */
 void ps_boot_cpu(void)
 {
@@ -214,10 +212,7 @@ void ps_boot_cpu(void)
 		ps_print_error_and_exit(ERPREFIX"pthread_create\n");
 	}
 
-	/*
-	 * And we wait until Zephyr has run til completion
-	 * (as gone to idle)
-	 */
+	/* And we wait until Zephyr has run til completion (has gone to idle) */
 	while (ps_cpu_halted == false) {
 		pthread_cond_wait(&ps_cond_cpu, &ps_mtx_cpu);
 	}
@@ -232,18 +227,25 @@ void ps_boot_cpu(void)
 
 /**
  * Clean up all memory allocated by the SOC and POSIX core
+ *
+ * This function can be called from both HW and SW threads
  */
 void ps_clean_up(void)
 {
 	/*
-	 * If we are being called from a SW thread (!ps_cpu_halted),
-	 * we give back control to the HW thread and tell it to terminate
-	 * Otherwise we can cleanup
+	 * If we are being called from a HW thread we can cleanup
+	 *
+	 * Otherwise (!ps_cpu_halted) we give back control to the HW thread and
+	 * tell it to terminate ASAP
 	 */
 	if (ps_cpu_halted) {
+
 		pc_clean_up();
+
 	} else if (terminate == false) {
+
 		terminate = true;
+
 		if (pthread_mutex_lock(&ps_mtx_cpu)) {
 			ps_print_error_and_exit(
 					ERPREFIX"pthread_mutex_lock()\n");

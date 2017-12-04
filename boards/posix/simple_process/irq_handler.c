@@ -26,20 +26,12 @@ static isr_table_entry_t irq_vector_table[N_IRQs] = { { 0 } };
 
 static int currently_running_irq = -1;
 
-/**
- * When an interrupt is raised, this function is called to handle it
- * and, if needed, swap to a re-enabled thread
- *
- * Note that even that this function is executing in a Zephyr thread,
- * it is effectively the model of the interrupt controller passing context to
- * the irq handler and therefore its priority handling
- */
 
 static inline void vector_to_irq(int irq_nbr, int *may_swap)
 {
 	if (irq_vector_table[irq_nbr].func == NULL) {
-		ps_print_error_and_exit(
-			"Received irq %i without a registered handler\n",
+		ps_print_error_and_exit("Received irq %i without a registered "
+					"handler\n",
 					irq_nbr);
 	} else {
 		if (irq_vector_table[irq_nbr].flags & ISR_FLAG_DIRECT) {
@@ -57,13 +49,21 @@ static inline void vector_to_irq(int irq_nbr, int *may_swap)
 	}
 }
 
+/**
+ * When an interrupt is raised, this function is called to handle it and, if
+ * needed, swap to a re-enabled thread
+ *
+ * Note that even that this function is executing in a Zephyr thread,  it is
+ * effectively the model of the interrupt controller passing context to the IRQ
+ * handler and therefore its priority handling
+ */
 void pb_irq_handler(void)
 {
 	uint64_t irq_lock;
 	int irq_nbr;
 	int may_swap = 0;
 
-	irq_lock = hw_irq_controller_get_current_lock();
+	irq_lock = hw_irq_ctrl_get_current_lock();
 
 	if (irq_lock) {
 		/*"spurious" wakes can happen with interrupts locked*/
@@ -72,18 +72,18 @@ void pb_irq_handler(void)
 
 	_kernel.nested++;
 
-	while ((irq_nbr = hw_irq_cont_get_highest_prio_irq()) != -1) {
-		int last_current_running_prio = get_currently_running_prio();
+	while ((irq_nbr = hw_irq_ctrl_get_highest_prio_irq()) != -1) {
+		int last_current_running_prio = hw_irq_ctrl_get_cur_prio();
 		int last_running_irq = currently_running_irq;
 
-		set_currently_running_prio(hw_irq_ctrl_get_prio(irq_nbr));
-		hw_irq_controller_clear_irq(irq_nbr);
+		hw_irq_ctrl_set_cur_prio(hw_irq_ctrl_get_prio(irq_nbr));
+		hw_irq_ctrl_clear_irq(irq_nbr);
 
 		currently_running_irq = irq_nbr;
 		vector_to_irq(irq_nbr, &may_swap);
 		currently_running_irq = last_running_irq;
 
-		set_currently_running_prio(last_current_running_prio);
+		hw_irq_ctrl_set_cur_prio(last_current_running_prio);
 	}
 
 	_kernel.nested--;
@@ -95,7 +95,7 @@ void pb_irq_handler(void)
 	 * 4) Next thread to run in the ready queue is not this thread
 	 */
 	if (may_swap &&
-		(get_currently_running_prio() == 256) &&
+		(hw_irq_ctrl_get_cur_prio() == 256) &&
 		(_current->base.preempt < _NON_PREEMPT_THRESHOLD) &&
 		(_kernel.ready_q.cache != _current)) {
 
@@ -105,20 +105,22 @@ void pb_irq_handler(void)
 
 
 /**
- * Thru this function the irq controller can raise an immediate
- * interrupt which will interrupt the SW itself
- * (this function can only be called from the HW model, from SW threads)
+ * Thru this function the IRQ controller can raise an immediate  interrupt which
+ * will interrupt the SW itself
+ * (this function should only be called from the HW model code, from SW threads)
  */
 void pb_irq_handler_im_from_sw(void)
 {
-  /*
-   * if a higher priority interrupt than the possibly currently running is
-   * pending we go immediately into irq_handler() to vector into its handler
-   */
-	if (hw_irq_cont_get_highest_prio_irq() != -1) {
+	/*
+	 * if a higher priority interrupt than the possibly currently running is
+	 * pending we go immediately into irq_handler() to vector into its
+	 * handler
+	 */
+	if (hw_irq_ctrl_get_highest_prio_irq() != -1) {
 		if (!ps_is_cpu_running()) {
-			ps_print_error_and_exit("programming error: \
-nrf_irq_cont_handler_irq_im_from_sw() called from HW model thread\n");
+			ps_print_error_and_exit("programming error: "
+					"nrf_irq_cont_handler_irq_im_from_sw() "
+					"called from a HW model thread\n");
 		}
 		pb_irq_handler();
 	}
@@ -134,7 +136,7 @@ nrf_irq_cont_handler_irq_im_from_sw() called from HW model thread\n");
  * this key can be passed to irq_unlock() to re-enable interrupts.
  *
  * The lock-out key should only be used as the argument to the irq_unlock()
- * API.  It should never be used to manually re-enable interrupts or to inspect
+ * API. It should never be used to manually re-enable interrupts or to inspect
  * or manipulate the contents of the source register.
  *
  * This function can be called recursively: it will return a key to return the
@@ -158,7 +160,7 @@ nrf_irq_cont_handler_irq_im_from_sw() called from HW model thread\n");
  */
 unsigned int ps_irq_lock(void)
 {
-	return hw_irq_controller_change_lock(true);
+	return hw_irq_ctrl_change_lock(true);
 }
 
 unsigned int _arch_irq_lock(void)
@@ -168,11 +170,11 @@ unsigned int _arch_irq_lock(void)
 
 /**
  *
- * @brief Enable all interrupts on the CPU (inline)
+ * @brief Enable all interrupts on the CPU
  *
- * This routine re-enables interrupts on the CPU.  The @a key parameter
- * is an board-dependent lock-out key that is returned by a previous
- * invocation of board_irq_lock().
+ * This routine re-enables interrupts on the CPU.  The @a key parameter is a
+ * board-dependent lock-out key that is returned by a previous invocation of
+ * board_irq_lock().
  *
  * This routine can be called from either interrupt, task or fiber level.
  *
@@ -181,7 +183,7 @@ unsigned int _arch_irq_lock(void)
  */
 void ps_irq_unlock(unsigned int key)
 {
-	hw_irq_controller_change_lock(key);
+	hw_irq_ctrl_change_lock(key);
 }
 
 void _arch_irq_unlock(unsigned int key)
@@ -192,22 +194,22 @@ void _arch_irq_unlock(unsigned int key)
 
 void ps_irq_full_unlock(void)
 {
-	hw_irq_controller_change_lock(false);
+	hw_irq_ctrl_change_lock(false);
 }
 
 void _arch_irq_enable(unsigned int irq)
 {
-	hw_irq_controller_enable_irq(irq);
+	hw_irq_ctrl_enable_irq(irq);
 }
 
 void _arch_irq_disable(unsigned int irq)
 {
-	hw_irq_controller_disable_irq(irq);
+	hw_irq_ctrl_disable_irq(irq);
 }
 
 int _arch_irq_is_enabled(unsigned int irq)
 {
-	return hw_irq_controller_is_irq_enabled(irq);
+	return hw_irq_ctrl_is_irq_enabled(irq);
 }
 
 void _arch_isr_direct_header(void)
@@ -225,10 +227,8 @@ int ps_get_current_irq(void)
 /**
  * Configure a static interrupt.
  *
- * _ISR_DECLARE will populate the interrupt table table
- * with the interrupt's parameters,
- * the vector table and the software ISR table. This is all done at
- * build-time.
+ * _isr_declare will populate the interrupt table table with the interrupt's
+ * parameters, the vector table and the software ISR table.
  *
  * We additionally set the priority in the interrupt controller at
  * runtime.
@@ -254,11 +254,7 @@ void _isr_declare(unsigned int irq_p, int flags, void isr_p(void *),
  *
  * @brief Set an interrupt's priority
  *
- * Lower values take priority over higher values. Special case priorities are
- * expressed via mutually exclusive flags.
-
- * The priority is verified if ASSERT_ON is enabled; max priority level
- * depends on CONFIG_NUM_IRQ_PRIO_LEVELS.
+ * Lower values take priority over higher values.
  *
  * @return N/A
  */
@@ -273,13 +269,13 @@ void _irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
  * Similar to ARM's NVIC_SetPendingIRQ
  * set a pending IRQ from SW
  *
- * Note that this will interrupt immediately if the interrupt
- * is not masked and irqs are not locked, and this interrupt is higher
- * priority than a possibly currently running interrupt
+ * Note that this will interrupt immediately if the interrupt is not masked and
+ * IRQs are not locked, and this interrupt has higher priority than a possibly
+ * currently running interrupt
  */
 void pb_sw_set_pending_IRQ(unsigned int IRQn)
 {
-	hw_irq_irq_controller_raise_im_from_sw(IRQn);
+	hw_irq_ctrl_raise_im_from_sw(IRQn);
 }
 
 
@@ -289,7 +285,7 @@ void pb_sw_set_pending_IRQ(unsigned int IRQn)
  */
 void pb_sw_clear_pending_IRQ(unsigned int IRQn)
 {
-	hw_irq_controller_clear_irq(IRQn);
+	hw_irq_ctrl_clear_irq(IRQn);
 }
 
 /**
