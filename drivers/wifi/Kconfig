@@ -1,0 +1,39 @@
+# Kconfig - WiFi drivers configuration options
+
+#
+# Copyright (c) 2017 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig WIFI
+	bool "add support for WiFi Drivers"
+	default n
+
+if WIFI
+
+config SYS_LOG_WIFI_LEVEL
+	int "WiFi driver log level"
+	depends on SYS_LOG
+	default 0
+	range 0 4
+	help
+	  Sets log level for WiFi Device Drivers.
+	  Levels are:
+	  0 OFF, do not write
+	  1 ERROR, only write SYS_LOG_ERR
+	  2 WARNING, write SYS_LOG_WRN in addition to previous level
+	  3 INFO, write SYS_LOG_INF in addition to previous levels
+	  4 DEBUG, write SYS_LOG_DBG in addition to previous levels
+
+config WIFI_INIT_PRIORITY
+	int "WiFi driver init priority"
+	depends on WIFI
+	default 80
+	help
+	  WiFi device driver initialization priority.
+	  Do not mess with it unless you know what you are doing.
+	  Note that the priority needs to be lower than the net stack
+	  so that it can start before the networking sub-system.
+
+endif # WIFI
