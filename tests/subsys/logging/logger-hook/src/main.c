@@ -7,6 +7,7 @@
 #define SYS_LOG_DOMAIN "syslogger"
 
 #include <zephyr.h>
+#include <ztest.h>
 #include <misc/printk.h>
 #include <logging/sys_log.h>
 #include <stdio.h>
@@ -49,7 +50,8 @@ void vlog_cbuf_put(const char *format, va_list args)
 	int buf_size = 0;
 
 	buf_size += vsnprintf(&buf[buf_size], sizeof(buf), format, args);
-	logger_put(&log_cbuffer, buf, buf_size);
+	zassert_false(logger_put(&log_cbuffer, buf, buf_size),
+		      "logger put error\n");
 }
 
 void log_cbuf_put(const char *format, ...)
@@ -61,7 +63,7 @@ void log_cbuf_put(const char *format, ...)
 	va_end(args);
 }
 
-void main(void)
+void test_logging(void)
 {
 #ifndef CONFIG_SYS_LOG
 	printk("syslog hook sample configuration is not set correctly %s\n",
@@ -92,9 +94,16 @@ static inline void ring_buf_print(struct ring_buf *buf)
 			       (u32_t *)data, &size32);
 	irq_unlock(key);
 
+	zassert_equal(ret, 0, "Error when reading ring buffer (%d)\n", ret);
 	if (ret == 0) {
 		printk("%s", data);
 	} else {
 		printk("Error when reading ring buffer (%d)\n", ret);
 	}
+}
+
+void test_main(void)
+{
+	ztest_test_suite(test_log, ztest_unit_test(test_logging));
+	ztest_run_test_suite(test_log);
 }
