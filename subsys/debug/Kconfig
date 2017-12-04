@@ -113,13 +113,6 @@ config ASSERT_LEVEL
 	Level 1: on + warning in every file that includes __assert.h
 	Level 2: on + no warning
 
-config DEBUG_TRACING_KERNEL_OBJECTS
-	bool "Kernel object tracing (deprecated)"
-	select OBJECT_TRACING
-	default n
-	help
-	  For backward compatibility only
-
 config OBJECT_TRACING
 	bool
 	prompt "Kernel object tracing"
