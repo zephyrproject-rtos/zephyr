@@ -803,8 +803,8 @@ void _x86_mmu_get_flags(void *addr,
  *
  * @param ptr Starting memory address which must be page-aligned
  * @param size Size of the region, must be page size multiple
- * @flags Value of bits to set in the page table entries
- * @mask Mask indicating which particular bits in the page table entries to
+ * @param flags Value of bits to set in the page table entries
+ * @param mask Mask indicating which particular bits in the page table entries to
  *	 modify
  */
 
