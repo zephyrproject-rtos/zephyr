@@ -97,4 +97,18 @@ source "subsys/net/ip/l2/ieee802154/Kconfig"
 
 source "subsys/net/ip/l2/openthread/Kconfig"
 
+config NET_L2_WIFI_MGMT
+	bool "Enable WiFi Management support"
+	default n
+	help
+	Add support for WiFi Management interface.
+
+config NET_DEBUG_L2_WIFI_MGMT
+	bool "Debug WiFi Management layer"
+	default n
+	default y if NET_LOG_GLOBAL
+	depends on NET_LOG && NET_L2_WIFI_MGMT
+	help
+	Enables WiFi management interface to output debug messages
+
 endmenu

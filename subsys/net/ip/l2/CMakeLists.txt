@@ -1,6 +1,7 @@
 if(CONFIG_NET_L2_BT OR
     CONFIG_NET_L2_BT_SHELL OR
-    CONFIG_NET_L2_DUMMY)
+    CONFIG_NET_L2_DUMMY OR
+    CONFIG_NET_L2_WIFI_MGMT)
 
   zephyr_library()
   zephyr_library_include_directories(. ..)
@@ -11,6 +12,7 @@ if(CONFIG_NET_L2_BT OR
   zephyr_library_sources_ifdef(CONFIG_NET_L2_BT       bluetooth.c)
   zephyr_library_sources_ifdef(CONFIG_NET_L2_BT_SHELL bluetooth_shell.c)
   zephyr_library_sources_ifdef(CONFIG_NET_L2_DUMMY    dummy.c)
+  zephyr_library_sources_ifdef(CONFIG_NET_L2_WIFI_MGMT wifi_mgmt.c)
 
 endif()
 
