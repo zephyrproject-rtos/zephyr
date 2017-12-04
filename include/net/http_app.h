@@ -542,7 +542,7 @@ int http_server_set_tls(struct http_ctx *ctx,
 /**
  * @brief Enable HTTP server that is related to this context.
  *
- * @detail The HTTP server will start to serve request after this.
+ * @details The HTTP server will start to serve request after this.
  *
  * @param ctx Http context.
  *
@@ -553,7 +553,7 @@ int http_server_enable(struct http_ctx *ctx);
 /**
  * @brief Disable HTTP server that is related to this context.
  *
- * @detail The HTTP server will stop to serve request after this.
+ * @details The HTTP server will stop to serve request after this.
  *
  * @param ctx Http context.
  *
@@ -590,7 +590,7 @@ int http_server_del_url(struct http_server_urls *urls, const char *url);
 /**
  * @brief Add default URL handler.
  *
- * @detail If no URL handler is found, then call this handler. There can
+ * @details If no URL handler is found, then call this handler. There can
  * be only one default handler in the URL struct. The callback can decide
  * if the connection request is dropped or passed.
  *
@@ -607,7 +607,7 @@ struct http_root_url *http_server_add_default(struct http_server_urls *urls,
 /**
  * @brief Delete the default URL handler.
  *
- * @detail Unregister the previously registered default URL handler.
+ * @details Unregister the previously registered default URL handler.
  *
  * @param urls URL struct that will contain all the URLs the user has
  * registered.
@@ -779,7 +779,7 @@ static inline int http_client_send_get_req(struct http_ctx *http_ctx,
 /**
  * @brief Initialize user-supplied HTTP context.
  *
- * @detail Caller can set the various fields in http_ctx after this call
+ * @details Caller can set the various fields in http_ctx after this call
  * if needed.
  *
  * @param http_ctx HTTP context.
@@ -806,7 +806,7 @@ int http_client_init(struct http_ctx *http_ctx,
 /**
  * @brief Initialize user-supplied HTTP context when using HTTPS.
  *
- * @detail Caller can set the various fields in http_ctx after this call
+ * @details Caller can set the various fields in http_ctx after this call
  * if needed.
  *
  * @param ctx HTTPS context.
