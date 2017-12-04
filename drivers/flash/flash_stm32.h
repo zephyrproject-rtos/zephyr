@@ -10,13 +10,18 @@
 
 #include <flash_registers.h>
 
-#if defined(CONFIG_SOC_SERIES_STM32L4X)
+#if defined(CONFIG_SOC_SERIES_STM32L4X) || \
+	defined(CONFIG_SOC_SERIES_STM32F0X)
 #include <clock_control.h>
 #include <clock_control/stm32_clock_control.h>
 #endif
 
 struct flash_stm32_priv {
-#if defined(CONFIG_SOC_SERIES_STM32F4X)
+#if defined(CONFIG_SOC_SERIES_STM32F0X)
+	struct stm32f0x_flash *regs;
+	/* clock subsystem driving this peripheral */
+	struct stm32_pclken pclken;
+#elif defined(CONFIG_SOC_SERIES_STM32F4X)
 	struct stm32f4x_flash *regs;
 #elif defined(CONFIG_SOC_SERIES_STM32L4X)
 	struct stm32l4x_flash *regs;
