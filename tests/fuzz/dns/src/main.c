@@ -1,8 +1,7 @@
 /*
  * main.c - DNS Fuzz testing client
  *
- * Boots up and starts making DNS requests for www.zephyrproject.org until it
- * receives a TCP connection on port 4242, which is its signal to shutdown.
+ * Boots up and starts making DNS requests for www.zephyrproject.org.
  *
  * Copyright (c) 2017 Intel Corporation
  *
