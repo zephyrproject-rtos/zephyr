@@ -59,4 +59,25 @@ enum net_event_wifi_cmd {
 #define NET_EVENT_WIFI_DISCONNECT_RESULT			\
 	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_DISCONNECT_RESULT)
 
+
+#ifdef CONFIG_WIFI_OFFLOAD
+
+#include <net/net_if.h>
+
+struct net_wifi_mgmt_offload {
+	/**
+	 * Mandatory to get in first position.
+	 * A network device should indeed provide a pointer on such
+	 * net_if_api structure. So we make current structure pointer
+	 * that can be casted to a net_if_api structure pointer.
+	 */
+	struct net_if_api iface_api;
+
+	int (*scan)(struct device *dev);
+	int (*connect)(struct device *dev);
+	int (*disconnect)(struct device *dev);
+};
+
+#endif /* CONFIG_WIFI_OFFLOAD */
+
 #endif /* __WIFI_MGMT_H__ */

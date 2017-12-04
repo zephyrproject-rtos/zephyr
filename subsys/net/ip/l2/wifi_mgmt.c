@@ -18,6 +18,13 @@
 static int wifi_connect(u32_t mgmt_request, struct net_if *iface,
 			void *data, size_t len)
 {
+	if (net_if_is_ip_offloaded(iface)) {
+		struct net_wifi_mgmt_offload *off_api =
+			(struct net_wifi_mgmt_offload *) iface->dev->driver_api;
+
+		return off_api->connect(iface->dev);
+	}
+
 	return -ENETDOWN;
 }
 
@@ -27,6 +34,13 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_CONNECT, wifi_connect);
 static int wifi_scan(u32_t mgmt_request, struct net_if *iface,
 		     void *data, size_t len)
 {
+	if (net_if_is_ip_offloaded(iface)) {
+		struct net_wifi_mgmt_offload *off_api =
+			(struct net_wifi_mgmt_offload *) iface->dev->driver_api;
+
+		return off_api->scan(iface->dev);
+	}
+
 	return -ENETDOWN;
 }
 
@@ -36,6 +50,13 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_SCAN, wifi_scan);
 static int wifi_disconnect(u32_t mgmt_request, struct net_if *iface,
 			   void *data, size_t len)
 {
+	if (net_if_is_ip_offloaded(iface)) {
+		struct net_wifi_mgmt_offload *off_api =
+			(struct net_wifi_mgmt_offload *) iface->dev->driver_api;
+
+		return off_api->disconnect(iface->dev);
+	}
+
 	return -ENETDOWN;
 }
 

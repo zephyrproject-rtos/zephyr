@@ -36,4 +36,10 @@ config WIFI_INIT_PRIORITY
 	  Note that the priority needs to be lower than the net stack
 	  so that it can start before the networking sub-system.
 
+config WIFI_OFFLOAD
+	bool "Support offloaded WiFi device drivers"
+	default n
+	help
+	  Enable support for Full-MAC WiFi devices.
+
 endif # WIFI
