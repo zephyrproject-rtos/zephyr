@@ -22,6 +22,7 @@
 #include <kernel.h>
 #include <net/net_pkt.h>
 #include <net/net_if.h>
+#include <net/ethernet.h>
 
 #include "fsl_enet.h"
 #include "fsl_phy.h"
@@ -571,7 +572,15 @@ static void net_if_mcast_cb(struct net_if *iface,
 			    const struct in6_addr *addr,
 			    bool is_joined)
 {
-	/* TBD */
+	struct net_eth_addr mac_addr;
+
+	net_eth_ipv6_mcast_to_mac_addr(addr, &mac_addr);
+
+	if (is_joined) {
+		ENET_AddMulticastGroup(ENET, mac_addr.addr);
+	} else {
+		ENET_LeaveMulticastGroup(ENET, mac_addr.addr);
+	}
 }
 #endif /* CONFIG_NET_IPV6 */
 
