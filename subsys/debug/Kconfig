@@ -20,7 +20,7 @@ config STACK_USAGE
 	bool "Generate stack usage information"
 	default n
 	help
-	Generate  an extra file that specifies the maximum amount of stack used,
+	Generate an extra file that specifies the maximum amount of stack used,
 	on a per-function basis.
 
 config STACK_SENTINEL
