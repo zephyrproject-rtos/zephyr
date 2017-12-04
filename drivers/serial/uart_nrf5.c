@@ -95,8 +95,8 @@ struct uart_nrf5_dev_data_t {
 	((volatile struct _uart *)(DEV_CFG(dev))->base)
 
 #define UART_IRQ_MASK_RX	(1 << 2)
-#define UART_IRQ_MASK_TX	(1 << 3)
-#define UART_IRQ_MASK_ERROR	(1 << 4)
+#define UART_IRQ_MASK_TX	(1 << 7)
+#define UART_IRQ_MASK_ERROR	(1 << 9)
 
 static const struct uart_driver_api uart_nrf5_driver_api;
 
