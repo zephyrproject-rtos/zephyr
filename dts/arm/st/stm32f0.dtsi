@@ -20,8 +20,12 @@
 			reg = <0>;
 		};
 	};
+
 	flash0: flash@8000000 {
+		compatible = "soc-nv-flash";
 		reg = <0x08000000 DT_FLASH_SIZE>;
+
+		write-block-size = <2>;
 	};
 
 	sram0: memory@20000000 {
