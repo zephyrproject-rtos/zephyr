@@ -85,6 +85,15 @@ static inline bool net_eth_is_addr_multicast(struct net_eth_addr *addr)
 
 const struct net_eth_addr *net_eth_broadcast_addr(void);
 
+/**
+ * @brief Convert IPv6 multicast address to Ethernet address.
+ *
+ * @param ipv6_addr IPv6 multicast address
+ * @param mac_addr Output buffer for Ethernet address
+ */
+void net_eth_ipv6_mcast_to_mac_addr(const struct in6_addr *ipv6_addr,
+				    struct net_eth_addr *mac_addr);
+
 #ifdef __cplusplus
 }
 #endif
