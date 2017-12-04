@@ -5,18 +5,18 @@
  */
 
 /**
- * Here is where things actually happen for the posix arch
+ * Here is where things actually happen for the POSIX arch
  *
- * we isolate all functions here, to ensure they can be compiled as
- * indepednently as possible to the remainder of Zephyr to avoid name clashes
- * as Zephyr does provide functions with the same names as the Posix threads
+ * We isolate all functions here, to ensure they can be compiled as
+ * independently as possible to the remainder of Zephyr to avoid name clashes
+ * as Zephyr does provide functions with the same names as the POSIX threads
  * functions
  */
 /**
  * Principle of operation:
  *
  * The Zephyr OS and its app run as a set of threads. Only one of this thread is
- * run at a time ( using posix_core_{cond|mtx}_threads )
+ * run at a time ( using pc_{cond|mtx}_threads )
  *
  */
 
