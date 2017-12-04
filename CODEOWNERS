@@ -68,6 +68,7 @@ drivers/bluetooth/*                      @sjanc @jhedberg @Vudentz
 drivers/clock_control/*stm32f4*          @rsalveti @idlethread
 drivers/ethernet/*                       @jukkar @tbursztyka
 drivers/flash/*                          @nashif
+drivers/flash/*stm32*                    @superna9999
 drivers/gpio/*stm32*                     @rsalveti @idlethread
 drivers/gpio/gpio_pulpino.c              @fractalclone
 drivers/ieee802154/*                     @jukkar @tbursztyka
