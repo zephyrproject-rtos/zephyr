@@ -16,7 +16,7 @@
 #include <init.h>
 #include <soc.h>
 
-#include <flash_stm32.h>
+#include "flash_stm32.h"
 
 #define STM32L4X_PAGE_SHIFT	11
 
