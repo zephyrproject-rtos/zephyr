@@ -9,11 +9,15 @@
 #
 # IEEE 802.15.4 options
 #
-menu "IEEE 802.15.4 drivers options"
+menuconfig IEEE802154
+	bool "IEEE 802.15.4 drivers options"
+	default n
+	default y if NET_L2_IEEE802154
+
+if IEEE802154
 
 config SYS_LOG_IEEE802154_DRIVER_LEVEL
-	int
-	prompt "IEEE802154 driver log level"
+	int "IEEE802154 driver log level"
 	depends on SYS_LOG
 	default 0
 	help
@@ -51,8 +55,7 @@ source "drivers/ieee802154/Kconfig.nrf5"
 
 menuconfig IEEE802154_UPIPE
 	bool "UART PIPE fake radio driver support for QEMU"
-	depends on BOARD_QEMU_X86
-	select NETWORKING
+	depends on BOARD_QEMU_X86 && NETWORKING
 	select UART_PIPE
 	default n
 
@@ -61,4 +64,4 @@ config IEEE802154_UPIPE_DRV_NAME
 	default "IEEE802154_UPIPE"
 	depends on IEEE802154_UPIPE
 
-endmenu
+endif # IEEE802154

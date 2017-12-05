@@ -9,7 +9,6 @@
 menuconfig  IEEE802154_KW41Z
 	bool "NXP KW41Z Driver support"
 	depends on NETWORKING
-	select NET_L2_IEEE802154
 	select NEWLIB_LIBC
 	default n
 
