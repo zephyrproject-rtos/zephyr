@@ -1,13 +1,14 @@
 sample:
-  description: An example to illustrate the usage of crypto APIs
+  description: An example to illustrate the usage of
+    crypto APIs
   name: Crypto APIs
 tests:
-  - test-micro:
-      platform_whitelist: qemu_x86
-      build_only: true
-      tags: crypto
-  - test-mbedtls:
-      platform_whitelist: qemu_x86
-      build_only: true
-      extra_args: CONF_FILE=prj_mtls_shim.conf
-      tags: crypto
+  test-mbedtls:
+    build_only: true
+    extra_args: CONF_FILE=prj_mtls_shim.conf
+    platform_whitelist: qemu_x86
+    tags: crypto
+  test-micro:
+    build_only: true
+    platform_whitelist: qemu_x86
+    tags: crypto

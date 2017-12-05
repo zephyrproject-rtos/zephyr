@@ -6,7 +6,7 @@ sample:
   name: Environmental Sensing (Application Processor
     Part)
 tests:
-  - test:
-      build_only: true
-      platform_whitelist: arduino_101
-      tags: samples
+  test:
+    build_only: true
+    platform_whitelist: arduino_101
+    tags: samples
