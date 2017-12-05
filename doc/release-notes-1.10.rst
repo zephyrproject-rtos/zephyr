@@ -35,7 +35,6 @@ Kernel
   to have those pointers validated; userspace must never be able to crash the
   kernel by passing it garbage.
 
-
 Architectures
 *************
 
@@ -113,8 +112,6 @@ Libraries / Subsystems
   by include/entropy.h.
 * TinyCrypt updated to version 0.2.8
 
-
-
 HALs
 ****
 
@@ -150,7 +147,6 @@ Tests and Samples
 * Benchmarking: cleanup of the benchmarking code
 * Add userspace protection tests
 * Move all tests to ztest and cleanup coding style and formatting
-
 
 Issue Related Items
 *******************
