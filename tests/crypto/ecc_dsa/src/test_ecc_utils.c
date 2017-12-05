@@ -237,7 +237,7 @@ int keygen_vectors(char **d_vec, char **qx_vec, char **qy_vec, int tests,
 		 * Feed prvkey vector as padded random seed into ecc_make_key.
 		 * Internal mod-reduction will be zero-op and generate correct prv/pub
 		 */
-		memset(d, 0, NUM_ECC_WORDS);
+		memset(d, 0, sizeof(d));
 		string2scalar(d, NUM_ECC_WORDS, d_vec[i]);
 
 		uint8_t pub_bytes[2 * NUM_ECC_BYTES];
