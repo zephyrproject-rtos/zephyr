@@ -113,6 +113,9 @@ static struct bt_mesh_proxy_client *find_client(struct bt_conn *conn)
 }
 
 #if defined(CONFIG_BT_MESH_GATT_PROXY)
+/* Next subnet in queue to be advertised */
+static int next_idx;
+
 static int proxy_segment_and_send(struct bt_conn *conn, u8_t type,
 				  struct net_buf_simple *msg);
 
@@ -341,6 +344,9 @@ void bt_mesh_proxy_identity_start(struct bt_mesh_subnet *sub)
 {
 	sub->node_id = BT_MESH_NODE_IDENTITY_RUNNING;
 	sub->node_id_start = k_uptime_get_32();
+
+	/* Prioritize the recently enabled subnet */
+	next_idx = sub - bt_mesh.sub;
 }
 
 void bt_mesh_proxy_identity_stop(struct bt_mesh_subnet *sub)
@@ -1041,7 +1047,6 @@ static bool advertise_subnet(struct bt_mesh_subnet *sub)
 
 static struct bt_mesh_subnet *next_sub(void)
 {
-	static int next_idx;
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(bt_mesh.sub); i++) {
