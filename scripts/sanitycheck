@@ -872,7 +872,6 @@ class MakeGenerator:
             args.append("OVERLAY_CONFIG=%s" %
                         os.path.join(ti.outdir, "overlay.conf"))
 
-        args.append("ARCH={}" .format(ti.platform.arch))
         args.append("BOARD={}".format(ti.platform.name))
         args.extend(extra_args)
         if (ti.platform.qemu_support and (not ti.build_only) and
@@ -1520,7 +1519,6 @@ class TestSuite:
                     if (tc.tc_filter and (plat.default or all_plats or platform_filter)
                             and toolchain in plat.supported_toolchains):
                         args = tc.extra_args[:]
-                        args.append("ARCH={}" .format(plat.arch))
                         args.append("BOARD={}".format(plat.name))
                         args.extend(extra_args)
                         # FIXME would be nice to use a common outdir for this so that
