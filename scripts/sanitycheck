@@ -1427,7 +1427,6 @@ class TestSuite:
         tag_filter = args.tag
         exclude_tag = args.exclude_tag
         config_filter = args.config
-        platform_limit = args.platform_limit
         extra_args = args.extra_args
         all_plats = args.all
 
@@ -1685,7 +1684,7 @@ class TestSuite:
                                 instance_list))
                         self.add_instances(instances)
                     else:
-                        self.add_instances(instance_list[:platform_limit])
+                        self.add_instances(instance_list[:1])
 
                     for instance in list(
                             filter(lambda tc: not tc.platform.default, instance_list)):
@@ -1909,14 +1908,6 @@ def parse_arguments():
         "specified. If this option is not used, then platforms marked "
         "as default in the platform metadata file will be chosen "
         "to build and test. ")
-    parser.add_argument(
-        "-L", "--platform-limit", action="store", type=int, metavar="N",
-        default=1,
-        help="Controls what platforms are tested if --platform or "
-        "--all are not used. For each architecture specified by "
-        "--arch (defaults to all of them), choose the first "
-        "N platforms to test in the arch-specific .yaml file "
-        "'platforms' list. Defaults to 1.")
     parser.add_argument(
         "-a", "--arch", action="append",
         help="Arch filter for testing. Takes precedence over --platform. "
