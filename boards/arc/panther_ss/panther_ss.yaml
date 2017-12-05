@@ -7,6 +7,6 @@ flash: 152
 toolchain:
   - zephyr
 testing:
-        ignore_tags:
-          - net
-          - bluetooth
+  ignore_tags:
+    - net
+    - bluetooth

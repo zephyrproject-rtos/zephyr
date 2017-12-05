@@ -16,6 +16,6 @@ supported:
   - rtc
   - watchdog
 testing:
-        ignore_tags:
-          - net
-          - bluetooth
+  ignore_tags:
+     - net
+     - bluetooth
