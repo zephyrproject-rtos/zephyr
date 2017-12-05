@@ -1083,6 +1083,7 @@ static int sub_count(void)
 static s32_t gatt_proxy_advertise(struct bt_mesh_subnet *sub)
 {
 	s32_t remaining = K_FOREVER;
+	int subnet_count;
 
 	BT_DBG("");
 
@@ -1113,8 +1114,22 @@ static s32_t gatt_proxy_advertise(struct bt_mesh_subnet *sub)
 		}
 	}
 
-	if (sub_count() > 1 && (remaining > K_SECONDS(10) || remaining < 0)) {
-		remaining = K_SECONDS(10);
+	subnet_count = sub_count();
+	BT_DBG("sub_count %u", subnet_count);
+	if (subnet_count > 1) {
+		s32_t max_timeout;
+
+		/* We use NODE_ID_TIMEOUT as a starting point since it may
+		 * be less than 60 seconds. Divide this period into at least
+		 * 6 slices, but make sure that a slice is at least one
+		 * second long (to avoid excessive rotation).
+		 */
+		max_timeout = NODE_ID_TIMEOUT / max(subnet_count, 6);
+		max_timeout = max(max_timeout, K_SECONDS(1));
+
+		if (remaining > max_timeout || remaining < 0) {
+			remaining = max_timeout;
+		}
 	}
 
 	BT_DBG("Advertising %d ms for net_idx 0x%04x", remaining, sub->net_idx);
