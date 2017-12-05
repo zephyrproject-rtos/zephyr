@@ -357,8 +357,7 @@ void bt_mesh_proxy_identity_stop(struct bt_mesh_subnet *sub)
 
 int bt_mesh_proxy_identity_enable(void)
 {
-	/* FIXME: Add support for multiple subnets */
-	struct bt_mesh_subnet *sub = &bt_mesh.sub[0];
+	int i, count = 0;
 
 	BT_DBG("");
 
@@ -366,20 +365,24 @@ int bt_mesh_proxy_identity_enable(void)
 		return -EAGAIN;
 	}
 
-	if (sub->net_idx == BT_MESH_KEY_UNUSED) {
-		return -ENOENT;
+	for (i = 0; i < ARRAY_SIZE(bt_mesh.sub); i++) {
+		struct bt_mesh_subnet *sub = &bt_mesh.sub[i];
+
+		if (sub->net_idx == BT_MESH_KEY_UNUSED) {
+			continue;
+		}
+
+		if (sub->node_id == BT_MESH_NODE_IDENTITY_NOT_SUPPORTED) {
+			continue;
+		}
+
+		bt_mesh_proxy_identity_start(sub);
+		count++;
 	}
 
-	if (sub->node_id == BT_MESH_NODE_IDENTITY_NOT_SUPPORTED) {
-		return -ENOTSUP;
+	if (count) {
+		bt_mesh_adv_update();
 	}
-
-	if (sub->node_id == BT_MESH_NODE_IDENTITY_RUNNING) {
-		return 0;
-	}
-
-	bt_mesh_proxy_identity_start(sub);
-	bt_mesh_adv_update();
 
 	return 0;
 }
