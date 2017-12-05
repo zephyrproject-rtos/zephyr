@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2017 Arthur Sfez
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include <kernel.h>
 #include <device.h>
 #include <init.h>
