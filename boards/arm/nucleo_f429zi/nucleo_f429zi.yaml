@@ -1,0 +1,7 @@
+identifier: nucleo_f429zi
+name: NUCLEO-F429ZI
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb
