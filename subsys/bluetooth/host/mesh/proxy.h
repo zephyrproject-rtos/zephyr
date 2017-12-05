@@ -28,6 +28,9 @@ struct net_buf_simple *bt_mesh_proxy_get_buf(void);
 s32_t bt_mesh_proxy_adv_start(void);
 void bt_mesh_proxy_adv_stop(void);
 
+void bt_mesh_proxy_identity_start(struct bt_mesh_subnet *sub);
+void bt_mesh_proxy_identity_stop(struct bt_mesh_subnet *sub);
+
 bool bt_mesh_proxy_relay(struct net_buf_simple *buf, u16_t dst);
 void bt_mesh_proxy_addr_add(struct net_buf_simple *buf, u16_t addr);
 
