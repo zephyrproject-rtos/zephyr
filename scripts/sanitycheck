@@ -678,7 +678,7 @@ class MakeGenerator:
 \t\t-B{outdir}\\
 \t\t-DEXTRA_CFLAGS="-Werror {cflags}"\\
 \t\t-DEXTRA_AFLAGS=-Wa,--fatal-warnings\\
-\t\t-DEXTRA_LDFLAGS=--fatal-warnings\\
+\t\t-DEXTRA_LDFLAGS=-Wl,--fatal-warnings\\
 \t\t{args}\\
 \t\t>{logfile} 2>&1
 \t$(MAKE) -C {outdir}\\
