@@ -40,11 +40,29 @@ Architectures
 
 * nrf52: Add support for LOW_POWER state and SYSTEM_OFF
 * Architecture specific memory domain APIs added
+* Added support for the following ARM SoCs:
+
+  * NXP i.MX RT1052
+  * Silabs EFM32WG
+  * STM F0
+  * TI MSP432P4xx
 
 Boards
 ******
 
 * Power Management for nrf52 series SOC
+* Added support for the following ARM boards:
+
+  * 96b_neonkey
+  * efm32wg_stk3800
+  * mimxrt1050_evk
+  * msp_exp432p401r_launchxl
+  * nucleo_f030r8
+  * nucleo_f091rc
+  * stm32f411e_disco
+  * stm32f412g_disco
+  * stm32l476g_disco
+  * usb_kw24d512
 
 Drivers and Sensors
 *******************
