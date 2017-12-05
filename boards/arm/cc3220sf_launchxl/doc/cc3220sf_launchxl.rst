@@ -7,7 +7,8 @@ Overview
 ********
 The SimpleLink Wi-Fi CC3220SF LaunchPad development kit (CC3220SF-LAUNCHXL)
 highlights CC3220SF, a single-chip wireless microcontroller (MCU) with
-1MB Flash, 256KB of RAM and enhanced security features.
+1MB internal flash, 4MB external serial flash, 256KB of RAM and enhanced
+security features.
 
 See the `TI CC3220 Product Page`_ for details.
 
@@ -35,7 +36,7 @@ Hardware
 The CC3220SF SoC has two MCUs:
 
 #. Applications MCU - an ARM |reg| Cortex |reg|-M4 Core at 80 MHz, with 256Kb RAM,
-   and access to external serial 1Mb flash with bootloader and peripheral
+   and access to external serial 4MB flash with bootloader and peripheral
    drivers in ROM.
 
 #. Network Coprocessor (NWP) - a dedicated ARM MCU, which completely
