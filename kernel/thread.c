@@ -403,45 +403,6 @@ int _impl_k_thread_cancel(k_tid_t tid)
 _SYSCALL_HANDLER1_SIMPLE(k_thread_cancel, K_OBJ_THREAD, struct k_thread *);
 #endif
 
-static inline int is_in_any_group(struct _static_thread_data *thread_data,
-				  u32_t groups)
-{
-	return !!(thread_data->init_groups & groups);
-}
-
-void _k_thread_group_op(u32_t groups, void (*func)(struct k_thread *))
-{
-	unsigned int  key;
-
-	__ASSERT(!_is_in_isr(), "");
-
-	_sched_lock();
-
-	/* Invoke func() on each static thread in the specified group set. */
-
-	_FOREACH_STATIC_THREAD(thread_data) {
-		if (is_in_any_group(thread_data, groups)) {
-			key = irq_lock();
-			func(thread_data->init_thread);
-			irq_unlock(key);
-		}
-	}
-
-	/*
-	 * If the current thread is still in a ready state, then let the
-	 * "unlock scheduler" code determine if any rescheduling is needed.
-	 */
-	if (_is_thread_ready(_current)) {
-		k_sched_unlock();
-		return;
-	}
-
-	/* The current thread is no longer in a ready state--reschedule. */
-	key = irq_lock();
-	_sched_unlock_no_reschedule();
-	_Swap(key);
-}
-
 void _k_thread_single_start(struct k_thread *thread)
 {
 	_mark_thread_as_started(thread);
@@ -613,27 +574,6 @@ void _init_thread_base(struct _thread_base *thread_base, int priority,
 	/* swap_data does not need to be initialized */
 
 	_init_thread_timeout(thread_base);
-}
-
-u32_t _k_thread_group_mask_get(struct k_thread *thread)
-{
-	struct _static_thread_data *thread_data = thread->init_data;
-
-	return thread_data->init_groups;
-}
-
-void _k_thread_group_join(u32_t groups, struct k_thread *thread)
-{
-	struct _static_thread_data *thread_data = thread->init_data;
-
-	thread_data->init_groups |= groups;
-}
-
-void _k_thread_group_leave(u32_t groups, struct k_thread *thread)
-{
-	struct _static_thread_data *thread_data = thread->init_data;
-
-	thread_data->init_groups &= ~groups;
 }
 
 void k_thread_access_grant(struct k_thread *thread, ...)
