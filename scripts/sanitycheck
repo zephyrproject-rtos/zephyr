@@ -15,7 +15,8 @@ the test case, which only needs to be unique for the test cases specified in
 that testcase meta-data. The full canonical name for each test case is <path to
 test case>/<block>.
 
-Each test block in the testcase meta data can define the following key/value pairs:
+Each test block in the testcase meta data can define the following key/value
+pairs:
 
   tags: <list of tags> (required)
     A set of string tags for the testcase. Usually pertains to
@@ -160,9 +161,7 @@ Most everyday users will run with no arguments.
 import argparse
 import os
 import sys
-import configparser
 import re
-import tempfile
 import subprocess
 import multiprocessing
 import select
@@ -178,28 +177,28 @@ import xml.etree.ElementTree as ET
 from xml.sax.saxutils import escape
 from collections import OrderedDict
 from itertools import islice
-import yaml
 
 import logging
+from sanity_chk import scl
+from sanity_chk import expr_parser
+
 log_format = "%(levelname)s %(name)s::%(module)s.%(funcName)s():%(lineno)d: %(message)s"
-logging.basicConfig(format = log_format, level = 30)
+logging.basicConfig(format=log_format, level=30)
 
 if "ZEPHYR_BASE" not in os.environ:
     sys.stderr.write("$ZEPHYR_BASE environment variable undefined.\n")
     exit(1)
 ZEPHYR_BASE = os.environ["ZEPHYR_BASE"]
 
-from sanity_chk import scl
 
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/"))
 
-from sanity_chk import expr_parser
 
 VERBOSE = 0
 LAST_SANITY = os.path.join(ZEPHYR_BASE, "scripts", "sanity_chk",
                            "last_sanity.csv")
 LAST_SANITY_XUNIT = os.path.join(ZEPHYR_BASE, "scripts", "sanity_chk",
-                           "last_sanity.xml")
+                                 "last_sanity.xml")
 RELEASE_DATA = os.path.join(ZEPHYR_BASE, "scripts", "sanity_chk",
                             "sanity_last_release.csv")
 CPU_COUNTS = multiprocessing.cpu_count()
@@ -217,11 +216,14 @@ else:
     COLOR_GREEN = ""
     COLOR_YELLOW = ""
 
+
 class SanityCheckException(Exception):
     pass
 
+
 class SanityRuntimeError(SanityCheckException):
     pass
+
 
 class ConfigurationError(SanityCheckException):
     def __init__(self, cfile, message):
@@ -231,16 +233,21 @@ class ConfigurationError(SanityCheckException):
     def __str__(self):
         return repr(self.cfile + ": " + self.message)
 
+
 class MakeError(SanityCheckException):
     pass
+
 
 class BuildError(MakeError):
     pass
 
+
 class ExecutionError(MakeError):
     pass
 
+
 log_file = None
+
 
 # Debug Functions
 def info(what):
@@ -250,23 +257,28 @@ def info(what):
         log_file.write(what + "\n")
         log_file.flush()
 
+
 def error(what):
     sys.stderr.write(COLOR_RED + what + COLOR_NORMAL + "\n")
     if log_file:
         log_file(what + "\n")
         log_file.flush()
 
+
 def debug(what):
     if VERBOSE >= 1:
         info(what)
+
 
 def verbose(what):
     if VERBOSE >= 2:
         info(what)
 
+
 class Handler:
     RUN_PASSED = "PROJECT EXECUTION SUCCESSFUL"
     RUN_FAILED = "PROJECT EXECUTION FAILED"
+
     def __init__(self, name, outdir, log_fn, timeout, unit=False):
         """Constructor
 
@@ -297,8 +309,10 @@ class Handler:
         self.lock.release()
         return ret
 
+
 class UnitHandler(Handler):
-    def __init__(self, name, sourcedir, outdir, run_log, valgrind_log, timeout):
+    def __init__(self, name, sourcedir, outdir,
+                 run_log, valgrind_log, timeout):
         """Constructor
 
         @param name Arbitrary name of the created thread
@@ -342,9 +356,11 @@ class UnitHandler(Handler):
                 out_state = "timeout"
                 self.returncode = 1
 
-        returncode = subprocess.call(["GCOV_PREFIX=" + self.outdir, "gcov", self.sourcedir, "-s", self.outdir], shell=True)
+        returncode = subprocess.call(
+            ["GCOV_PREFIX=" + self.outdir, "gcov", self.sourcedir, "-s", self.outdir], shell=True)
 
         self.set_state(out_state, {})
+
 
 class QEMUHandler(Handler):
     """Spawns a thread to monitor QEMU output from pipes
@@ -476,6 +492,7 @@ class QEMUHandler(Handler):
     def get_fifo(self):
         return self.fifo_fn
 
+
 class SizeCalculator:
 
     alloc_sections = ["bss", "noinit", "app_bss", "app_noinit"]
@@ -507,10 +524,13 @@ class SizeCalculator:
             raise SanityRuntimeError("%s is not an ELF binary" % filename)
 
         # Search for CONFIG_XIP in the ELF's list of symbols using NM and AWK.
-        # GREP can not be used as it returns an error if the symbol is not found.
-        is_xip_command = "nm " + filename + " | awk '/CONFIG_XIP/ { print $3 }'"
-        is_xip_output = subprocess.check_output(is_xip_command, shell=True,
-                            stderr=subprocess.STDOUT).decode("utf-8").strip()
+        # GREP can not be used as it returns an error if the symbol is not
+        # found.
+        is_xip_command = "nm " + filename + \
+            " | awk '/CONFIG_XIP/ { print $3 }'"
+        is_xip_output = subprocess.check_output(
+            is_xip_command, shell=True, stderr=subprocess.STDOUT).decode(
+            "utf-8").strip()
         if is_xip_output.endswith("no symbols"):
             raise SanityRuntimeError("%s has no symbol information" % filename)
         self.is_xip = (len(is_xip_output) != 0)
@@ -551,8 +571,8 @@ class SizeCalculator:
     def _calculate_sizes(self):
         """ Calculate RAM and ROM usage by section """
         objdump_command = "objdump -h " + self.filename
-        objdump_output = subprocess.check_output(objdump_command,
-                                        shell=True).decode("utf-8").splitlines()
+        objdump_output = subprocess.check_output(
+            objdump_command, shell=True).decode("utf-8").splitlines()
 
         for line in objdump_output:
             words = line.split()
@@ -598,9 +618,9 @@ class SizeCalculator:
                 if name not in self.extra_sections:
                     recognized = False
 
-            self.sections.append({"name" : name, "load_addr" : load_addr,
-                                  "size" : size, "virt_addr" : virt_addr,
-                                  "type" : stype, "recognized" : recognized})
+            self.sections.append({"name": name, "load_addr": load_addr,
+                                  "size": size, "virt_addr": virt_addr,
+                                  "type": stype, "recognized": recognized})
 
 
 class MakeGoal:
@@ -611,6 +631,7 @@ class MakeGoal:
     MakeGenerator is used for tasks outside of building tests (such as
     defconfigs) which is why MakeGoal is a separate class from TestInstance.
     """
+
     def __init__(self, name, text, qemu, make_log, build_log, run_log,
                  qemu_log):
         self.name = name
@@ -688,9 +709,10 @@ class MakeGenerator:
 
     GOAL_FOOTER_TMPL = "\t@echo sanity_test_finished {goal} >&2\n\n"
 
-    re_make = re.compile("sanity_test_([A-Za-z0-9]+) (.+)|$|make[:] \*\*\* \[(.+:.+: )?(.+)\] Error.+$")
+    re_make = re.compile(
+        "sanity_test_([A-Za-z0-9]+) (.+)|$|make[:] \*\*\* \[(.+:.+: )?(.+)\] Error.+$")
 
-    def __init__(self, base_outdir, asserts=False,  deprecations=False):
+    def __init__(self, base_outdir, asserts=False, deprecations=False):
         """MakeGenerator constructor
 
         @param base_outdir Intended to be the base out directory. A make.log
@@ -710,20 +732,19 @@ class MakeGenerator:
     def _get_rule_header(self, name):
         return MakeGenerator.GOAL_HEADER_TMPL.format(goal=name)
 
-    def _get_sub_make(self, name, phase, workdir, outdir, logfile, args, make_args=""):
+    def _get_sub_make(self, name, phase, workdir, outdir,
+                      logfile, args, make_args=""):
         """
         @param      args Arguments given to CMake
         @param make_args Arguments given to the Makefile generated by CMake
         """
         verb = "1" if VERBOSE else "0"
-        args      = " ".join(["-D{}".format(a) for a in args])
-        #print(make_args)
-        #make_args = " ".join(make_args)
+        args = " ".join(["-D{}".format(a) for a in args])
 
         if self.asserts:
-            cflags="-DCONFIG_ASSERT=1 -D__ASSERT_ON=2"
+            cflags = "-DCONFIG_ASSERT=1 -D__ASSERT_ON=2"
         else:
-            cflags=""
+            cflags = ""
 
         if self.deprecations:
             cflags = cflags + "  -Wno-deprecated-declarations"
@@ -747,7 +768,8 @@ class MakeGenerator:
         if not os.path.exists(outdir):
             os.makedirs(outdir)
 
-    def add_build_goal(self, name, directory, outdir, args, buildlog, make_args=""):
+    def add_build_goal(self, name, directory, outdir,
+                       args, buildlog, make_args=""):
         """Add a goal to invoke a Kbuild session
 
         @param name A unique string name for this build goal. The results
@@ -761,12 +783,25 @@ class MakeGenerator:
         """
         self._add_goal(outdir)
         build_logfile = os.path.join(outdir, buildlog)
-        text = (self._get_rule_header(name) +
-                self._get_sub_make(name, "building", directory,
-                                   outdir, build_logfile, args, make_args=make_args) +
-                self._get_rule_footer(name))
-        self.goals[name] = MakeGoal(name, text, None, self.logfile, build_logfile,
-                                    None, None)
+        text = (
+            self._get_rule_header(name) +
+            self._get_sub_make(
+                name,
+                "building",
+                directory,
+                outdir,
+                build_logfile,
+                args,
+                make_args=make_args) +
+            self._get_rule_footer(name))
+        self.goals[name] = MakeGoal(
+            name,
+            text,
+            None,
+            self.logfile,
+            build_logfile,
+            None,
+            None)
 
     def add_qemu_goal(self, name, directory, outdir, args, timeout=30):
         """Add a goal to build a Zephyr project and then run it under QEMU
@@ -805,27 +840,28 @@ class MakeGenerator:
         self.goals[name] = MakeGoal(name, text, q, self.logfile, build_logfile,
                                     run_logfile, qemu_logfile)
 
-    def add_unit_goal(self, name, directory, outdir, args, timeout=30, coverage=False):
+    def add_unit_goal(self, name, directory, outdir,
+                      args, timeout=30, coverage=False):
         self._add_goal(outdir)
         build_logfile = os.path.join(outdir, "build.log")
         run_logfile = os.path.join(outdir, "run.log")
-        qemu_logfile = os.path.join(outdir, "qemu.log")
         valgrind_logfile = os.path.join(outdir, "valgrind.log")
         if coverage:
-                args += ["COVERAGE=1"]
+            args += ["COVERAGE=1"]
 
         # we handle running in the UnitHandler class
         text = (self._get_rule_header(name) +
                 self._get_sub_make(name, "building", directory,
                                    outdir, build_logfile, args) +
                 self._get_rule_footer(name))
-        q = UnitHandler(name, directory, outdir, run_logfile, valgrind_logfile, timeout)
+        q = UnitHandler(name, directory, outdir, run_logfile,
+                        valgrind_logfile, timeout)
         self.goals[name] = MakeGoal(name, text, q, self.logfile, build_logfile,
                                     run_logfile, valgrind_logfile)
 
-
-    def add_test_instance(self, ti, build_only=False, enable_slow=False, coverage=False,
-                          extra_args=[]):
+    def add_test_instance(
+            self, ti, build_only=False, enable_slow=False, coverage=False,
+            extra_args=[]):
         """Add a goal to build/test a TestInstance object
 
         @param ti TestInstance object to build. The status dictionary returned
@@ -833,13 +869,14 @@ class MakeGenerator:
         """
         args = ti.test.extra_args[:]
         if len(ti.test.extra_configs) > 0:
-            args.append("OVERLAY_CONFIG=%s" % os.path.join(ti.outdir, "overlay.conf"))
+            args.append("OVERLAY_CONFIG=%s" %
+                        os.path.join(ti.outdir, "overlay.conf"))
 
         args.append("ARCH={}" .format(ti.platform.arch))
         args.append("BOARD={}".format(ti.platform.name))
         args.extend(extra_args)
         if (ti.platform.qemu_support and (not ti.build_only) and
-            (not build_only) and (enable_slow or not ti.test.slow)):
+                (not build_only) and (enable_slow or not ti.test.slow)):
             self.add_qemu_goal(ti.name, ti.test.code_location, ti.outdir,
                                args, ti.test.timeout)
         elif ti.test.type == "unit":
@@ -847,7 +884,7 @@ class MakeGenerator:
                                args, ti.test.timeout, coverage)
         else:
             self.add_build_goal(ti.name, ti.test.code_location, ti.outdir,
-                    args, "build.log")
+                                args, "build.log")
 
     def execute(self, callback_fn=None, context=None):
         """Execute all the registered build goals
@@ -872,7 +909,8 @@ class MakeGenerator:
             tf.write("all: %s\n" % (" ".join(self.goals.keys())))
             tf.flush()
 
-            cmd = ["make", "-k", "-j", str(CPU_COUNTS * 2), "-f", tf.name, "all"]
+            cmd = ["make", "-k", "-j",
+                   str(CPU_COUNTS * 2), "-f", tf.name, "all"]
             p = subprocess.Popen(cmd, stderr=subprocess.PIPE,
                                  stdout=devnull)
 
@@ -890,7 +928,6 @@ class MakeGenerator:
                 else:
                     goal = self.goals[name]
                     goal.make_state = state
-
 
                 if error:
                     # Sometimes QEMU will run an image and then crash out, which
@@ -938,38 +975,39 @@ class MakeGenerator:
 
 # XXX Be sure to update __doc__ if you change any of this!!
 
-arch_valid_keys = {"name" : {"type" : "str", "required" : True},
-                   "platforms" : {"type" : "list", "required" : True},
-                   "supported_toolchains" : {"type" : "list", "required" : True}}
+arch_valid_keys = {"name": {"type": "str", "required": True},
+                   "platforms": {"type": "list", "required": True},
+                   "supported_toolchains": {"type": "list", "required": True}}
 
-platform_valid_keys = {"qemu_support" : {"type" : "bool", "default" : False},
-                       "supported_toolchains" : {"type" : "list", "default" : []}}
+platform_valid_keys = {"qemu_support": {"type": "bool", "default": False},
+                       "supported_toolchains": {"type": "list", "default": []}}
 
-testcase_valid_keys = {"tags" : {"type" : "set", "required" : False},
-                       "type" : {"type" : "str", "default": "integration"},
-                       "extra_args" : {"type" : "list"},
-                       "extra_configs" : {"type" : "list"},
-                       "build_only" : {"type" : "bool", "default" : False},
-                       "build_on_all" : {"type" : "bool", "default" : False},
-                       "skip" : {"type" : "bool", "default" : False},
-                       "slow" : {"type" : "bool", "default" : False},
-                       "timeout" : {"type" : "int", "default" : 60},
-                       "min_ram" : {"type" : "int", "default" : 8},
-                       "depends_on": {"type" : "set"},
-                       "min_flash" : {"type" : "int", "default" : 32},
-                       "arch_whitelist" : {"type" : "set"},
-                       "arch_exclude" : {"type" : "set"},
-                       "extra_sections" : {"type" : "list", "default" : []},
-                       "platform_exclude" : {"type" : "set"},
-                       "platform_whitelist" : {"type" : "set"},
-                       "toolchain_exclude" : {"type" : "set"},
-                       "toolchain_whitelist" : {"type" : "set"},
-                       "filter" : {"type" : "str"}}
+testcase_valid_keys = {"tags": {"type": "set", "required": False},
+                       "type": {"type": "str", "default": "integration"},
+                       "extra_args": {"type": "list"},
+                       "extra_configs": {"type": "list"},
+                       "build_only": {"type": "bool", "default": False},
+                       "build_on_all": {"type": "bool", "default": False},
+                       "skip": {"type": "bool", "default": False},
+                       "slow": {"type": "bool", "default": False},
+                       "timeout": {"type": "int", "default": 60},
+                       "min_ram": {"type": "int", "default": 8},
+                       "depends_on": {"type": "set"},
+                       "min_flash": {"type": "int", "default": 32},
+                       "arch_whitelist": {"type": "set"},
+                       "arch_exclude": {"type": "set"},
+                       "extra_sections": {"type": "list", "default": []},
+                       "platform_exclude": {"type": "set"},
+                       "platform_whitelist": {"type": "set"},
+                       "toolchain_exclude": {"type": "set"},
+                       "toolchain_whitelist": {"type": "set"},
+                       "filter": {"type": "str"}}
 
 
 class SanityConfigParser:
     """Class to read test case files with semantic checking
     """
+
     def __init__(self, filename, schema):
         """Instantiate a new SanityConfigParser object
 
@@ -985,7 +1023,7 @@ class SanityConfigParser:
             self.common = self.data['common']
 
     def _cast_value(self, value, typestr):
-        if type(value) is str:
+        if isinstance(value, str):
             v = value.strip()
         if typestr == "str":
             return v
@@ -999,9 +1037,9 @@ class SanityConfigParser:
         elif typestr == "bool":
             return value
 
-        elif typestr.startswith("list") and type(value) is list:
+        elif typestr.startswith("list") and isinstance(value, list):
             return value
-        elif typestr.startswith("list") and type(value) is str:
+        elif typestr.startswith("list") and isinstance(value, str):
             vs = v.split()
             if len(typestr) > 4 and typestr[4] == ":":
                 return [self._cast_value(vsi, typestr[5:]) for vsi in vs]
@@ -1016,7 +1054,8 @@ class SanityConfigParser:
                 return set(vs)
 
         else:
-            raise ConfigurationError(self.filename, "unknown type '%s'" % value)
+            raise ConfigurationError(
+                self.filename, "unknown type '%s'" % value)
 
     def section(self, name):
         return self.tests.get(name, {})
@@ -1051,12 +1090,13 @@ class SanityConfigParser:
             d[k] = v
         for k, v in self.section(section).items():
             if k not in valid_keys:
-                raise ConfigurationError(self.filename,
-                        "Unknown config key '%s' in definition for '%s'"
-                        % (k, section))
+                raise ConfigurationError(
+                    self.filename,
+                    "Unknown config key '%s' in definition for '%s'" %
+                    (k, section))
 
             if k in d:
-                if type(d[k]) is str:
+                if isinstance(d[k], str):
                     d[k] += " " + v
             else:
                 d[k] = v
@@ -1068,9 +1108,10 @@ class SanityConfigParser:
                     required = False
 
                 if required:
-                    raise ConfigurationError(self.filename,
-                                             "missing required value for '%s' in section '%s'"
-                                             % (k, section))
+                    raise ConfigurationError(
+                        self.filename,
+                        "missing required value for '%s' in section '%s'" %
+                        (k, section))
                 else:
                     if "default" in kinfo:
                         default = kinfo["default"]
@@ -1081,9 +1122,9 @@ class SanityConfigParser:
                 try:
                     d[k] = self._cast_value(d[k], kinfo["type"])
                 except ValueError as ve:
-                    raise ConfigurationError(self.filename,
-                                             "bad %s value '%s' for key '%s' in section '%s'"
-                                             % (kinfo["type"], d[k], k, section))
+                    raise ConfigurationError(
+                        self.filename, "bad %s value '%s' for key '%s' in section '%s'" %
+                        (kinfo["type"], d[k], k, section))
 
         return d
 
@@ -1094,8 +1135,11 @@ class Platform:
     Maps directly to BOARD when building"""
 
     yaml_platform_schema = scl.yaml_load(
-        os.path.join(os.environ['ZEPHYR_BASE'],
-                     "scripts", "sanity_chk", "sanitycheck-platform-schema.yaml"))
+        os.path.join(
+            os.environ['ZEPHYR_BASE'],
+            "scripts",
+            "sanity_chk",
+            "sanitycheck-platform-schema.yaml"))
 
     def __init__(self, cfile):
         """Constructor.
@@ -1135,6 +1179,7 @@ class Platform:
 class Architecture:
     """Class representing metadata for a particular architecture
     """
+
     def __init__(self, name, platforms):
         """Architecture constructor
 
@@ -1152,6 +1197,7 @@ class Architecture:
 class TestCase:
     """Class representing a test application
     """
+
     def __init__(self, testcase_root, workdir, name, tc_dict, yamlfile):
         """TestCase constructor.
 
@@ -1197,15 +1243,14 @@ class TestCase:
         self.min_flash = tc_dict["min_flash"]
         self.extra_sections = tc_dict["extra_sections"]
 
-        self.path = os.path.normpath(os.path.join(os.path.abspath(testcase_root).replace(ZEPHYR_BASE + "/",''), workdir, name))
+        self.path = os.path.normpath(os.path.join(os.path.abspath(
+            testcase_root).replace(ZEPHYR_BASE + "/", ''), workdir, name))
         self.name = os.path.join(self.path)
         self.defconfig = {}
         self.yamlfile = yamlfile
 
-
     def __repr__(self):
         return self.name
-
 
 
 class TestInstance:
@@ -1216,6 +1261,7 @@ class TestInstance:
     @param base_outdir Base directory for all test results. The actual
         out directory used is <outdir>/<platform>/<test case name>
     """
+
     def __init__(self, test, platform, base_outdir, build_only=False,
                  slow=False, coverage=False):
         self.test = test
@@ -1233,7 +1279,6 @@ class TestInstance:
             content = "\n".join(self.test.extra_configs)
             f.write(content)
             f.close()
-
 
     def calculate_sizes(self):
         """Get the RAM/ROM sizes of a test case.
@@ -1257,9 +1302,8 @@ def defconfig_cb(context, goals, goal):
     if not goal.failed:
         return
 
-
     info("%sCould not build defconfig for %s%s" %
-         (COLOR_RED, goal.name, COLOR_NORMAL));
+         (COLOR_RED, goal.name, COLOR_NORMAL))
     if INLINE_LOGS:
         with open(goal.get_error_log()) as fp:
             data = fp.read()
@@ -1279,7 +1323,6 @@ class TestSuite:
 
     def __init__(self, board_root_list, testcase_roots, outdir, coverage):
         # Keep track of which test cases we've filtered out and why
-        discards = {}
         self.arches = {}
         self.testcases = {}
         self.platforms = []
@@ -1307,15 +1350,16 @@ class TestSuite:
                 dirnames[:] = []
                 yaml_path = os.path.join(dirpath, filename)
                 try:
-                    parsed_data = SanityConfigParser(yaml_path, self.yaml_tc_schema)
+                    parsed_data = SanityConfigParser(
+                        yaml_path, self.yaml_tc_schema)
                 except RuntimeError as e:
                     error("E: %s: can't load: %s" % (yaml_path, e))
 
                 workdir = os.path.relpath(dirpath, testcase_root)
 
-                print(parsed_data.tests)
                 for name, section in parsed_data.tests.items():
-                    tc_dict = parsed_data.get_section(name, testcase_valid_keys)
+                    tc_dict = parsed_data.get_section(
+                        name, testcase_valid_keys)
                     tc = TestCase(testcase_root, workdir, name, tc_dict,
                                   yaml_path)
 
@@ -1324,7 +1368,9 @@ class TestSuite:
         for board_root in board_root_list:
             board_root = os.path.abspath(board_root)
 
-            debug("Reading platform configuration files under %s..." % board_root)
+            debug(
+                "Reading platform configuration files under %s..." %
+                board_root)
             for fn in glob.glob(os.path.join(board_root, "*", "*", "*.yaml")):
                 verbose("Found plaform configuration " + fn)
                 try:
@@ -1337,7 +1383,7 @@ class TestSuite:
         for p in self.platforms:
             arches.append(p.arch)
         for a in list(set(arches)):
-            aplatforms = [ p for p in self.platforms if p.arch == a ]
+            aplatforms = [p for p in self.platforms if p.arch == a]
             arch = Architecture(a, aplatforms)
             self.arches[a] = arch
 
@@ -1359,8 +1405,8 @@ class TestSuite:
 
     def load_from_file(self, file):
         if not os.path.exists(file):
-            raise SanityRuntimeError("Couldn't find input file with list of tests.")
-        result = []
+            raise SanityRuntimeError(
+                "Couldn't find input file with list of tests.")
         with open(file, "r") as fp:
             cr = csv.reader(fp)
             instance_list = []
@@ -1436,7 +1482,8 @@ class TestSuite:
                     if testcase_filter and tc_name not in testcase_filter:
                         continue
 
-                    if last_failed and (tc.name, plat.name) not in failed_tests:
+                    if last_failed and (
+                            tc.name, plat.name) not in failed_tests:
                         continue
 
                     if arch_filter and arch_name not in arch_filter:
@@ -1464,7 +1511,8 @@ class TestSuite:
                         continue
 
                     if tc.depends_on:
-                        dep_intersection = tc.depends_on.intersection(set(plat.supported))
+                        dep_intersection = tc.depends_on.intersection(
+                            set(plat.supported))
                         if dep_intersection != set(tc.depends_on):
                             continue
 
@@ -1477,8 +1525,8 @@ class TestSuite:
                     if tc.toolchain_whitelist and toolchain not in tc.toolchain_whitelist:
                         continue
 
-                    if (tc.tc_filter and (plat.default or all_plats or platform_filter) and
-                        toolchain in plat.supported_toolchains):
+                    if (tc.tc_filter and (plat.default or all_plats or platform_filter)
+                            and toolchain in plat.supported_toolchains):
                         args = tc.extra_args[:]
                         args.append("ARCH={}" .format(plat.arch))
                         args.append("BOARD={}".format(plat.name))
@@ -1486,13 +1534,19 @@ class TestSuite:
                         # FIXME would be nice to use a common outdir for this so that
                         # conf, gen_idt, etc aren't rebuilt for every  combination,
                         # need a way to avoid different Make processes from clobbering
-                        # each other since they all try to build them simultaneously
+                        # each other since they all try to build them
+                        # simultaneously
 
                         o = os.path.join(self.outdir, plat.name, tc.path)
-                        dlist[tc, plat, tc.name.split("/")[-1]] = os.path.join(o,"zephyr", ".config")
-                        goal = "_".join([plat.name, "_".join(tc.name.split("/")), "config-sanitycheck"])
-                        mg.add_build_goal(goal, os.path.join(ZEPHYR_BASE, tc.code_location), o,
-                                args, "config-sanitycheck.log", make_args="config-sanitycheck")
+                        dlist[tc, plat, tc.name.split(
+                            "/")[-1]] = os.path.join(o, "zephyr", ".config")
+                        goal = "_".join([plat.name, "_".join(
+                            tc.name.split("/")), "config-sanitycheck"])
+                        mg.add_build_goal(
+                            goal, os.path.join(
+                                ZEPHYR_BASE, tc.code_location),
+                            o, args, "config-sanitycheck.log",
+                            make_args="config-sanitycheck")
 
         info("Building testcase defconfigs...")
         results = mg.execute(defconfig_cb)
@@ -1543,7 +1597,8 @@ class TestSuite:
                         discards[instance] = "Testcase name filter"
                         continue
 
-                    if last_failed and (tc.name, plat.name) not in failed_tests:
+                    if last_failed and (
+                            tc.name, plat.name) not in failed_tests:
                         discards[instance] = "Passed or skipped during last run"
                         continue
 
@@ -1588,7 +1643,8 @@ class TestSuite:
                         continue
 
                     if tc.depends_on:
-                        dep_intersection = tc.depends_on.intersection(set(plat.supported))
+                        dep_intersection = tc.depends_on.intersection(
+                            set(plat.supported))
                         if dep_intersection != set(tc.depends_on):
                             discards[instance] = "No hardware support"
                             continue
@@ -1601,7 +1657,7 @@ class TestSuite:
                         discards[instance] = "Excluded tags per platform"
                         continue
 
-                    defconfig = {"ARCH" : arch.name, "PLATFORM" : plat.name}
+                    defconfig = {"ARCH": arch.name, "PLATFORM": plat.name}
                     defconfig.update(os.environ)
                     for p, tdefconfig in tc.defconfig.items():
                         if p == plat:
@@ -1612,11 +1668,13 @@ class TestSuite:
                         try:
                             res = expr_parser.parse(tc.tc_filter, defconfig)
                         except (ValueError, SyntaxError) as se:
-                            sys.stderr.write("Failed processing %s\n" % tc.yamlfile)
+                            sys.stderr.write(
+                                "Failed processing %s\n" % tc.yamlfile)
                             raise se
                         if not res:
-                            discards[instance] = ("defconfig doesn't satisfy expression '%s'" %
-                                    tc.tc_filter)
+                            discards[instance] = (
+                                "defconfig doesn't satisfy expression '%s'" %
+                                tc.tc_filter)
                             continue
 
                     instance.create_overlay()
@@ -1628,12 +1686,16 @@ class TestSuite:
 
                 if default_platforms and not tc.build_on_all:
                     if not tc.platform_whitelist:
-                        instances = list(filter(lambda tc: tc.platform.default, instance_list))
+                        instances = list(
+                            filter(
+                                lambda tc: tc.platform.default,
+                                instance_list))
                         self.add_instances(instances)
                     else:
                         self.add_instances(instance_list[:platform_limit])
 
-                    for instance in list(filter(lambda tc: not tc.platform.default, instance_list)):
+                    for instance in list(
+                            filter(lambda tc: not tc.platform.default, instance_list)):
                         discards[instance] = "Not a default test platform"
                 else:
                     self.add_instances(instance_list)
@@ -1644,8 +1706,8 @@ class TestSuite:
         for ti in ti_list:
             self.instances[ti.name] = ti
 
-    def execute(self, cb, cb_context, build_only, enable_slow, enable_asserts, enable_deprecations,
-                extra_args):
+    def execute(self, cb, cb_context, build_only, enable_slow,
+                enable_asserts, enable_deprecations, extra_args):
 
         def calc_one_elf_size(name, goal):
             if not goal.failed:
@@ -1655,15 +1717,17 @@ class TestSuite:
                 goal.metrics["rom_size"] = sc.get_rom_size()
                 goal.metrics["unrecognized"] = sc.unrecognized_sections()
 
-        mg = MakeGenerator(self.outdir, asserts=enable_asserts, deprecations=enable_deprecations)
+        mg = MakeGenerator(self.outdir, asserts=enable_asserts,
+                           deprecations=enable_deprecations)
         for i in self.instances.values():
-            mg.add_test_instance(i, build_only, enable_slow, self.coverage, extra_args)
+            mg.add_test_instance(i, build_only, enable_slow,
+                                 self.coverage, extra_args)
         self.goals = mg.execute(cb, cb_context)
 
         # Parallelize size calculation
         executor = concurrent.futures.ThreadPoolExecutor(CPU_COUNTS)
-        futures = [executor.submit(calc_one_elf_size, name, goal) \
-                        for name, goal in self.goals.items()]
+        futures = [executor.submit(calc_one_elf_size, name, goal)
+                   for name, goal in self.goals.items()]
         concurrent.futures.wait(futures)
 
         return self.goals
@@ -1674,26 +1738,26 @@ class TestSuite:
             cw = csv.DictWriter(csvfile, fieldnames, lineterminator=os.linesep)
             for instance in self.instances.values():
                 rowdict = {
-                           "path": os.path.dirname(instance.test.name),
-                           "test" : os.path.basename(instance.test.name),
-                           "platform" : instance.platform.name,
-                           "arch" : instance.platform.arch
-                           }
+                    "path": os.path.dirname(instance.test.name),
+                    "test": os.path.basename(instance.test.name),
+                    "platform": instance.platform.name,
+                    "arch": instance.platform.arch
+                }
                 cw.writerow(rowdict)
 
     def discard_report(self, filename):
-        if self.discards == None:
-            raise SanityRuntimeException("apply_filters() hasn't been run!")
+        if self.discards is None:
+            raise SanityRuntimeError("apply_filters() hasn't been run!")
 
         with open(filename, "wt") as csvfile:
             fieldnames = ["test", "arch", "platform", "reason"]
             cw = csv.DictWriter(csvfile, fieldnames, lineterminator=os.linesep)
             cw.writeheader()
             for instance, reason in self.discards.items():
-                rowdict = {"test" : instance.test.name,
-                           "arch" : instance.platform.arch,
-                           "platform" : instance.platform.name,
-                           "reason" : reason}
+                rowdict = {"test": instance.test.name,
+                           "arch": instance.platform.arch,
+                           "platform": instance.platform.name,
+                           "reason": reason}
                 cw.writerow(rowdict)
 
     def compare_metrics(self, filename):
@@ -1701,8 +1765,8 @@ class TestSuite:
         interesting_metrics = [("ram_size", int, True),
                                ("rom_size", int, True)]
 
-        if self.goals == None:
-            raise SanityRuntimeException("execute() hasn't been run!")
+        if self.goals is None:
+            raise SanityRuntimeError("execute() hasn't been run!")
 
         if not os.path.exists(filename):
             info("Cannot compare metrics, %s not found" % filename)
@@ -1737,8 +1801,8 @@ class TestSuite:
         return results
 
     def testcase_xunit_report(self, filename, duration, args):
-        if self.goals == None:
-            raise SanityRuntimeException("execute() hasn't been run!")
+        if self.goals is None:
+            raise SanityRuntimeError("execute() hasn't been run!")
 
         fails = 0
         passes = 0
@@ -1760,11 +1824,14 @@ class TestSuite:
         if os.path.exists(filename) and append:
             tree = ET.parse(filename)
             eleTestsuites = tree.getroot()
-            eleTestsuite =  tree.findall('testsuite')[0];
+            eleTestsuite = tree.findall('testsuite')[0]
         else:
             eleTestsuites = ET.Element('testsuites')
-            eleTestsuite = ET.SubElement(eleTestsuites, 'testsuite', name=run, time="%d" %duration,
-                    tests="%d" %(errors + passes + fails),  failures="%d" %fails,  errors="%d" %errors, skip="0")
+            eleTestsuite = ET.SubElement(eleTestsuites, 'testsuite',
+                                         name=run, time="%d" % duration,
+                                         tests="%d" % (errors + passes + fails),
+                                         failures="%d" % fails,
+                                         errors="%d" % errors, skip="0")
 
         handler_time = "0"
         for name, goal in self.goals.items():
@@ -1772,16 +1839,24 @@ class TestSuite:
             i = self.instances[name]
             if append:
                 for tc in eleTestsuite.findall('testcase'):
-                    if tc.get('classname') == "%s:%s" %(i.platform.name, i.test.name):
+                    if tc.get('classname') == "%s:%s" % (
+                            i.platform.name, i.test.name):
                         eleTestsuite.remove(tc)
 
             if not goal.failed and goal.qemu:
-                    handler_time = "%s" %(goal.metrics["handler_time"])
+                handler_time = "%s" % (goal.metrics["handler_time"])
 
-            eleTestcase = ET.SubElement(eleTestsuite, 'testcase', classname="%s:%s" %(i.platform.name, i.test.name), name="%s" %(name), time=handler_time)
+            eleTestcase = ET.SubElement(
+                eleTestsuite, 'testcase', classname="%s:%s" %
+                (i.platform.name, i.test.name), name="%s" %
+                (name), time=handler_time)
             if goal.failed:
-                failure = ET.SubElement(eleTestcase, 'failure', type="failure", message=goal.reason)
-                p = ("%s/%s/%s" %(args.outdir, i.platform.name, i.test.name))
+                failure = ET.SubElement(
+                    eleTestcase,
+                    'failure',
+                    type="failure",
+                    message=goal.reason)
+                p = ("%s/%s/%s" % (args.outdir, i.platform.name, i.test.name))
                 bl = os.path.join(p, "build.log")
                 if goal.reason != 'build_error':
                     bl = os.path.join(p, "qemu.log")
@@ -1799,8 +1874,8 @@ class TestSuite:
         f.close()
 
     def testcase_report(self, filename):
-        if self.goals == None:
-            raise SanityRuntimeException("execute() hasn't been run!")
+        if self.goals is None:
+            raise SanityRuntimeError("execute() hasn't been run!")
 
         with open(filename, "wt") as csvfile:
             fieldnames = ["test", "arch", "platform", "passed", "status",
@@ -1810,11 +1885,11 @@ class TestSuite:
             cw.writeheader()
             for name, goal in self.goals.items():
                 i = self.instances[name]
-                rowdict = {"test" : i.test.name,
-                           "arch" : i.platform.arch,
-                           "platform" : i.platform.name,
-                           "extra_args" : " ".join(i.test.extra_args),
-                           "qemu" : i.platform.qemu_support}
+                rowdict = {"test": i.test.name,
+                           "arch": i.platform.arch,
+                           "platform": i.platform.name,
+                           "extra_args": " ".join(i.test.extra_args),
+                           "qemu": i.platform.qemu_support}
                 if goal.failed:
                     rowdict["passed"] = False
                     rowdict["status"] = goal.reason
@@ -1829,139 +1904,181 @@ class TestSuite:
 
 def parse_arguments():
 
-    parser = argparse.ArgumentParser(description = __doc__,
-                                     formatter_class = argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.fromfile_prefix_chars = "+"
 
-    parser.add_argument("-p", "--platform", action="append",
-            help="Platform filter for testing. This option may be used multiple "
-                 "times. Testcases will only be built/run on the platforms "
-                 "specified. If this option is not used, then platforms marked "
-                 "as default in the platform metadata file will be chosen "
-                 "to build and test. ")
-    parser.add_argument("-L", "--platform-limit", action="store", type=int,
-            metavar="N", default=1,
-            help="Controls what platforms are tested if --platform or "
-                 "--all are not used. For each architecture specified by "
-                 "--arch (defaults to all of them), choose the first "
-                 "N platforms to test in the arch-specific .yaml file "
-                 "'platforms' list. Defaults to 1.")
-    parser.add_argument("-a", "--arch", action="append",
-            help="Arch filter for testing. Takes precedence over --platform. "
-                 "If unspecified, test all arches. Multiple invocations "
-                 "are treated as a logical 'or' relationship")
-    parser.add_argument("-t", "--tag", action="append",
-            help="Specify tags to restrict which tests to run by tag value. "
-                 "Default is to not do any tag filtering. Multiple invocations "
-                 "are treated as a logical 'or' relationship")
+    parser.add_argument(
+        "-p", "--platform", action="append",
+        help="Platform filter for testing. This option may be used multiple "
+        "times. Testcases will only be built/run on the platforms "
+        "specified. If this option is not used, then platforms marked "
+        "as default in the platform metadata file will be chosen "
+        "to build and test. ")
+    parser.add_argument(
+        "-L", "--platform-limit", action="store", type=int, metavar="N",
+        default=1,
+        help="Controls what platforms are tested if --platform or "
+        "--all are not used. For each architecture specified by "
+        "--arch (defaults to all of them), choose the first "
+        "N platforms to test in the arch-specific .yaml file "
+        "'platforms' list. Defaults to 1.")
+    parser.add_argument(
+        "-a", "--arch", action="append",
+        help="Arch filter for testing. Takes precedence over --platform. "
+        "If unspecified, test all arches. Multiple invocations "
+        "are treated as a logical 'or' relationship")
+    parser.add_argument(
+        "-t", "--tag", action="append",
+        help="Specify tags to restrict which tests to run by tag value. "
+        "Default is to not do any tag filtering. Multiple invocations "
+        "are treated as a logical 'or' relationship")
     parser.add_argument("-e", "--exclude-tag", action="append",
-            help="Specify tags of tests that should not run. "
-                 "Default is to run all tests with all tags.")
-    parser.add_argument("-f", "--only-failed", action="store_true",
-            help="Run only those tests that failed the previous sanity check "
-                 "invocation.")
-    parser.add_argument("-c", "--config", action="append",
-            help="Specify platform configuration values filtering. This can be "
-                 "specified two ways: <config>=<value> or just <config>. The "
-                 "defconfig for all platforms will be "
-                 "checked. For the <config>=<value> case, only match defconfig "
-                 "that have that value defined. For the <config> case, match "
-                 "defconfig that have that value assigned to any value. "
-                 "Prepend a '!' to invert the match.")
-    parser.add_argument("-s", "--test", action="append",
-            help="Run only the specified test cases. These are named by "
-                 "<path to test project relative to "
-                 "--testcase-root>/<testcase.yaml section name>")
-    parser.add_argument("-l", "--all", action="store_true",
-            help="Build/test on all platforms. Any --platform arguments "
-                 "ignored.")
+                        help="Specify tags of tests that should not run. "
+                        "Default is to run all tests with all tags.")
+    parser.add_argument(
+        "-f",
+        "--only-failed",
+        action="store_true",
+        help="Run only those tests that failed the previous sanity check "
+        "invocation.")
+    parser.add_argument(
+        "-c", "--config", action="append",
+        help="Specify platform configuration values filtering. This can be "
+        "specified two ways: <config>=<value> or just <config>. The "
+        "defconfig for all platforms will be "
+        "checked. For the <config>=<value> case, only match defconfig "
+        "that have that value defined. For the <config> case, match "
+        "defconfig that have that value assigned to any value. "
+        "Prepend a '!' to invert the match.")
+    parser.add_argument(
+        "-s", "--test", action="append",
+        help="Run only the specified test cases. These are named by "
+        "<path to test project relative to "
+        "--testcase-root>/<testcase.yaml section name>")
+    parser.add_argument(
+        "-l", "--all", action="store_true",
+        help="Build/test on all platforms. Any --platform arguments "
+        "ignored.")
 
-    parser.add_argument("-o", "--testcase-report",
-            help="Output a CSV spreadsheet containing results of the test run")
-    parser.add_argument("-d", "--discard-report",
-            help="Output a CSV spreadsheet showing tests that were skipped "
-                 "and why")
+    parser.add_argument(
+        "-o", "--testcase-report",
+        help="Output a CSV spreadsheet containing results of the test run")
+    parser.add_argument(
+        "-d", "--discard-report",
+        help="Output a CSV spreadsheet showing tests that were skipped "
+        "and why")
     parser.add_argument("--compare-report",
-            help="Use this report file for size comparison")
+                        help="Use this report file for size comparison")
 
-    parser.add_argument("-B", "--subset",
-            help="Only run a subset of the tests, 1/4 for running the first 25%%, "
-                 "3/5 means run the 3rd fifth of the total. "
-                 "This option is useful when running a large number of tests on "
-                 "different hosts to speed up execution time.")
-    parser.add_argument("-y", "--dry-run", action="store_true",
-            help="Create the filtered list of test cases, but don't actually "
-                 "run them. Useful if you're just interested in "
-                 "--discard-report")
+    parser.add_argument(
+        "-B", "--subset",
+        help="Only run a subset of the tests, 1/4 for running the first 25%%, "
+        "3/5 means run the 3rd fifth of the total. "
+        "This option is useful when running a large number of tests on "
+        "different hosts to speed up execution time.")
+    parser.add_argument(
+        "-y", "--dry-run", action="store_true",
+        help="Create the filtered list of test cases, but don't actually "
+        "run them. Useful if you're just interested in "
+        "--discard-report")
 
-    parser.add_argument("-r", "--release", action="store_true",
-            help="Update the benchmark database with the results of this test "
-                 "run. Intended to be run by CI when tagging an official "
-                 "release. This database is used as a basis for comparison "
-                 "when looking for deltas in metrics such as footprint")
+    parser.add_argument(
+        "-r", "--release", action="store_true",
+        help="Update the benchmark database with the results of this test "
+        "run. Intended to be run by CI when tagging an official "
+        "release. This database is used as a basis for comparison "
+        "when looking for deltas in metrics such as footprint")
     parser.add_argument("-w", "--warnings-as-errors", action="store_true",
-            help="Treat warning conditions as errors")
-    parser.add_argument("-v", "--verbose", action="count", default=0,
-            help="Emit debugging information, call multiple times to increase "
-                 "verbosity")
-    parser.add_argument("-i", "--inline-logs", action="store_true",
-            help="Upon test failure, print relevant log data to stdout "
-                 "instead of just a path to it")
+                        help="Treat warning conditions as errors")
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="count",
+        default=0,
+        help="Emit debugging information, call multiple times to increase "
+        "verbosity")
+    parser.add_argument(
+        "-i", "--inline-logs", action="store_true",
+        help="Upon test failure, print relevant log data to stdout "
+        "instead of just a path to it")
     parser.add_argument("--log-file", metavar="FILENAME", action="store",
-            help="log also to file")
-    parser.add_argument("-m", "--last-metrics", action="store_true",
-            help="Instead of comparing metrics from the last --release, "
-                 "compare with the results of the previous sanity check "
-                 "invocation")
-    parser.add_argument("-u", "--no-update", action="store_true",
-            help="do not update the results of the last run of the sanity "
-                 "checks")
-    parser.add_argument("-F", "--load-tests", metavar="FILENAME", action="store",
-            help="Load list of tests to be run from file.")
+                        help="log also to file")
+    parser.add_argument(
+        "-m", "--last-metrics", action="store_true",
+        help="Instead of comparing metrics from the last --release, "
+        "compare with the results of the previous sanity check "
+        "invocation")
+    parser.add_argument(
+        "-u",
+        "--no-update",
+        action="store_true",
+        help="do not update the results of the last run of the sanity "
+        "checks")
+    parser.add_argument(
+        "-F",
+        "--load-tests",
+        metavar="FILENAME",
+        action="store",
+        help="Load list of tests to be run from file.")
 
-    parser.add_argument("-E", "--save-tests", metavar="FILENAME", action="store",
-            help="Save list of tests to be run to file.")
+    parser.add_argument(
+        "-E",
+        "--save-tests",
+        metavar="FILENAME",
+        action="store",
+        help="Save list of tests to be run to file.")
 
-    parser.add_argument("-b", "--build-only", action="store_true",
-            help="Only build the code, do not execute any of it in QEMU")
-    parser.add_argument("-j", "--jobs", type=int,
-            help="Number of cores to use when building, defaults to "
-                 "number of CPUs * 2")
-    parser.add_argument("-H", "--footprint-threshold", type=float, default=5,
-            help="When checking test case footprint sizes, warn the user if "
-                 "the new app size is greater then the specified percentage "
-                 "from the last release. Default is 5. 0 to warn on any "
-                 "increase on app size")
-    parser.add_argument("-D", "--all-deltas", action="store_true",
-            help="Show all footprint deltas, positive or negative. Implies "
-                "--footprint-threshold=0")
+    parser.add_argument(
+        "-b", "--build-only", action="store_true",
+        help="Only build the code, do not execute any of it in QEMU")
+    parser.add_argument(
+        "-j", "--jobs", type=int,
+        help="Number of cores to use when building, defaults to "
+        "number of CPUs * 2")
+    parser.add_argument(
+        "-H", "--footprint-threshold", type=float, default=5,
+        help="When checking test case footprint sizes, warn the user if "
+        "the new app size is greater then the specified percentage "
+        "from the last release. Default is 5. 0 to warn on any "
+        "increase on app size")
+    parser.add_argument(
+        "-D", "--all-deltas", action="store_true",
+        help="Show all footprint deltas, positive or negative. Implies "
+        "--footprint-threshold=0")
     parser.add_argument("-O", "--outdir",
-            default="%s/sanity-out" % ZEPHYR_BASE,
-            help="Output directory for logs and binaries.")
-    parser.add_argument("-n", "--no-clean", action="store_true",
-            help="Do not delete the outdir before building. Will result in "
-                 "faster compilation since builds will be incremental")
-    parser.add_argument("-T", "--testcase-root", action="append", default=[],
-            help="Base directory to recursively search for test cases. All "
-                 "testcase.yaml files under here will be processed. May be "
-                 "called multiple times. Defaults to the 'samples' and "
-                 "'tests' directories in the Zephyr tree.")
-    board_root_list = ["%s/boards" % ZEPHYR_BASE , "%s/scripts/sanity_chk/boards" % ZEPHYR_BASE]
-    parser.add_argument("-A", "--board-root", action="append",
-            default=board_root_list,
-            help="Directory to search for board configuration files. All .yaml "
-                 "files in the directory will be processed.")
-    parser.add_argument("-z", "--size", action="append",
-            help="Don't run sanity  checks. Instead, produce a report to "
-                 "stdout detailing RAM/ROM sizes on the specified filenames. "
-                 "All other command line arguments ignored.")
-    parser.add_argument("-S", "--enable-slow", action="store_true",
-            help="Execute time-consuming test cases that have been marked "
-                 "as 'slow' in testcase.yaml. Normally these are only built.")
+                        default="%s/sanity-out" % ZEPHYR_BASE,
+                        help="Output directory for logs and binaries.")
+    parser.add_argument(
+        "-n", "--no-clean", action="store_true",
+        help="Do not delete the outdir before building. Will result in "
+        "faster compilation since builds will be incremental")
+    parser.add_argument(
+        "-T", "--testcase-root", action="append", default=[],
+        help="Base directory to recursively search for test cases. All "
+        "testcase.yaml files under here will be processed. May be "
+        "called multiple times. Defaults to the 'samples' and "
+        "'tests' directories in the Zephyr tree.")
+    board_root_list = ["%s/boards" % ZEPHYR_BASE,
+                       "%s/scripts/sanity_chk/boards" % ZEPHYR_BASE]
+    parser.add_argument(
+        "-A", "--board-root", action="append", default=board_root_list,
+        help="Directory to search for board configuration files. All .yaml "
+        "files in the directory will be processed.")
+    parser.add_argument(
+        "-z", "--size", action="append",
+        help="Don't run sanity  checks. Instead, produce a report to "
+        "stdout detailing RAM/ROM sizes on the specified filenames. "
+        "All other command line arguments ignored.")
+    parser.add_argument(
+        "-S", "--enable-slow", action="store_true",
+        help="Execute time-consuming test cases that have been marked "
+        "as 'slow' in testcase.yaml. Normally these are only built.")
     parser.add_argument("-R", "--enable-asserts", action="store_true",
-            help="Build all test cases with assertions enabled.")
+                        help="Build all test cases with assertions enabled.")
     parser.add_argument("-Q", "--error-on-deprecations", action="store_false",
-            help="Error on deprecation warnings.")
+                        help="Error on deprecation warnings.")
 
     parser.add_argument(
         "-x", "--extra-args", action="append", default=[],
@@ -1979,9 +2096,10 @@ def parse_arguments():
     )
 
     parser.add_argument("-C", "--coverage", action="store_true",
-            help="Scan for unit test coverage with gcov + lcov.")
+                        help="Scan for unit test coverage with gcov + lcov.")
 
     return parser.parse_args()
+
 
 def log_info(filename):
     filename = os.path.relpath(os.path.realpath(filename))
@@ -2001,6 +2119,7 @@ def log_info(filename):
     else:
         info("\tsee: " + COLOR_YELLOW + filename + COLOR_NORMAL)
 
+
 def terse_test_cb(instances, goals, goal):
     total_tests = len(goals)
     total_done = 0
@@ -2014,17 +2133,24 @@ def terse_test_cb(instances, goals, goal):
 
     if goal.failed:
         i = instances[goal.name]
-        info("\n\n{:<25} {:<50} {}FAILED{}: {}".format(i.platform.name,
-             i.test.name, COLOR_RED, COLOR_NORMAL, goal.reason))
+        info(
+            "\n\n{:<25} {:<50} {}FAILED{}: {}".format(
+                i.platform.name,
+                i.test.name,
+                COLOR_RED,
+                COLOR_NORMAL,
+                goal.reason))
         log_info(goal.get_error_log())
         info("")
 
-    sys.stdout.write("\rtotal complete: %s%4d/%4d%s  %2d%%  failed: %s%4d%s" % (
-                     COLOR_GREEN, total_done, total_tests, COLOR_NORMAL,
-                     int((float(total_done) / total_tests) * 100),
-                     COLOR_RED if total_failed > 0 else COLOR_NORMAL,
-                     total_failed, COLOR_NORMAL))
+    sys.stdout.write(
+        "\rtotal complete: %s%4d/%4d%s  %2d%%  failed: %s%4d%s" %
+        (COLOR_GREEN, total_done, total_tests, COLOR_NORMAL,
+         int((float(total_done) / total_tests) * 100),
+         COLOR_RED if total_failed > 0 else COLOR_NORMAL, total_failed,
+         COLOR_NORMAL))
     sys.stdout.flush()
+
 
 def chatty_test_cb(instances, goals, goal):
     i = instances[goal.name]
@@ -2055,8 +2181,9 @@ def size_report(sc):
               v["type"]))
 
     info("Totals: %d bytes (ROM), %d bytes (RAM)" %
-             (sc.rom_size, sc.ram_size))
+         (sc.rom_size, sc.ram_size))
     info("")
+
 
 def generate_coverage(outdir, ignores):
     with open(os.path.join(outdir, "coverage.log"), "a") as coveragelog:
@@ -2066,17 +2193,20 @@ def generate_coverage(outdir, ignores):
                          "--output-file", coveragefile], stdout=coveragelog)
         # We want to remove tests/* and tests/ztest/test/* but save tests/ztest
         subprocess.call(["lcov", "--extract", coveragefile,
-                        os.path.join(ZEPHYR_BASE, "tests", "ztest", "*"),
-                        "--output-file", ztestfile], stdout=coveragelog)
+                         os.path.join(ZEPHYR_BASE, "tests", "ztest", "*"),
+                         "--output-file", ztestfile], stdout=coveragelog)
         subprocess.call(["lcov", "--remove", ztestfile,
-                        os.path.join(ZEPHYR_BASE, "tests/ztest/test/*"),
-                        "--output-file", ztestfile], stdout=coveragelog)
+                         os.path.join(ZEPHYR_BASE, "tests/ztest/test/*"),
+                         "--output-file", ztestfile], stdout=coveragelog)
         for i in ignores:
-            subprocess.call(["lcov", "--remove", coveragefile, i,
-                            "--output-file", coveragefile], stdout=coveragelog)
+            subprocess.call(
+                ["lcov", "--remove", coveragefile, i, "--output-file",
+                 coveragefile],
+                stdout=coveragelog)
         subprocess.call(["genhtml", "-output-directory",
-                        os.path.join(outdir, "coverage"),
-                        coveragefile, ztestfile], stdout=coveragelog)
+                         os.path.join(outdir, "coverage"),
+                         coveragefile, ztestfile], stdout=coveragelog)
+
 
 def main():
     start_time = time.time()
@@ -2099,9 +2229,9 @@ def main():
     if args.subset:
         subset, sets = args.subset.split("/")
         if int(subset) > 0 and int(sets) >= int(subset):
-            info("Running only a subset: %s/%s" %(subset,sets))
+            info("Running only a subset: %s/%s" % (subset, sets))
         else:
-            error("You have provided a wrong subset value: %s." %args.subset)
+            error("You have provided a wrong subset value: %s." % args.subset)
             return
 
     if os.path.exists(args.outdir) and not args.no_clean:
@@ -2112,7 +2242,8 @@ def main():
         args.testcase_root = [os.path.join(ZEPHYR_BASE, "tests"),
                               os.path.join(ZEPHYR_BASE, "samples")]
 
-    ts = TestSuite(args.board_root, args.testcase_root, args.outdir, args.coverage)
+    ts = TestSuite(args.board_root, args.testcase_root,
+                   args.outdir, args.coverage)
 
     discards = []
     if args.load_tests:
@@ -2125,28 +2256,32 @@ def main():
 
     if VERBOSE > 1:
         for i, reason in discards.items():
-            debug("{:<25} {:<50} {}SKIPPED{}: {}".format(i.platform.name,
-                  i.test.name, COLOR_YELLOW, COLOR_NORMAL, reason))
+            debug(
+                "{:<25} {:<50} {}SKIPPED{}: {}".format(
+                    i.platform.name,
+                    i.test.name,
+                    COLOR_YELLOW,
+                    COLOR_NORMAL,
+                    reason))
 
-    ts.instances = OrderedDict(sorted(ts.instances.items(), key=lambda t: t[0]))
-
+    ts.instances = OrderedDict(
+        sorted(ts.instances.items(), key=lambda t: t[0]))
 
     if args.save_tests:
         ts.run_report(args.save_tests)
         return
 
-
     if args.subset:
         subset, sets = args.subset.split("/")
         total = len(ts.instances)
         per_set = round(total / int(sets))
-        start = (int(subset) - 1 ) * per_set
+        start = (int(subset) - 1) * per_set
         if subset == sets:
             end = total
         else:
             end = start + per_set
 
-        sliced_instances = islice(ts.instances.items(),start, end)
+        sliced_instances = islice(ts.instances.items(), start, end)
         ts.instances = OrderedDict(sliced_instances)
 
     info("%d tests selected, %d tests discarded due to filters" %
@@ -2156,13 +2291,23 @@ def main():
         return
 
     if VERBOSE or not TERMINAL:
-        goals = ts.execute(chatty_test_cb, ts.instances, args.build_only,
-                           args.enable_slow, args.enable_asserts, args.error_on_deprecations,
-                           args.extra_args)
+        goals = ts.execute(
+            chatty_test_cb,
+            ts.instances,
+            args.build_only,
+            args.enable_slow,
+            args.enable_asserts,
+            args.error_on_deprecations,
+            args.extra_args)
     else:
-        goals = ts.execute(terse_test_cb, ts.instances, args.build_only,
-                           args.enable_slow, args.enable_asserts, args.error_on_deprecations,
-                           args.extra_args)
+        goals = ts.execute(
+            terse_test_cb,
+            ts.instances,
+            args.build_only,
+            args.enable_slow,
+            args.enable_asserts,
+            args.error_on_deprecations,
+            args.extra_args)
         info("")
 
     # figure out which report to use for size comparison
@@ -2212,9 +2357,9 @@ def main():
 
     duration = time.time() - start_time
     info("%s%d of %d%s tests passed with %s%d%s warnings in %d seconds" %
-          (COLOR_RED if failed else COLOR_GREEN, len(goals) - failed,
-           len(goals), COLOR_NORMAL, COLOR_YELLOW if warnings else COLOR_NORMAL,
-           warnings, COLOR_NORMAL, duration))
+         (COLOR_RED if failed else COLOR_GREEN, len(goals) - failed,
+          len(goals), COLOR_NORMAL, COLOR_YELLOW if warnings else COLOR_NORMAL,
+          warnings, COLOR_NORMAL, duration))
 
     if args.testcase_report:
         ts.testcase_report(args.testcase_report)
@@ -2227,6 +2372,7 @@ def main():
         log_file.close()
     if failed or (warnings and args.warnings_as_errors):
         sys.exit(1)
+
 
 if __name__ == "__main__":
     main()
