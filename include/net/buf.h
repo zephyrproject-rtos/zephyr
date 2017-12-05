@@ -57,7 +57,7 @@ extern "C" {
  *  This is a simpler variant of the net_buf object (in fact net_buf uses
  *  net_buf_simple internally). It doesn't provide any kind of reference
  *  counting, user data, dynamic allocation, or in general the ability to
- *  pass through nano-kernel objects such as FIFOs.
+ *  pass through kernel objects such as FIFOs.
  *
  *  The main use of this is for scenarios where the meta-data of the normal
  *  net_buf isn't needed and causes too much overhead. This could be e.g.

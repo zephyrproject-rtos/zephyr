@@ -6,7 +6,7 @@
 
 /*
  * @file
- * @brief Test nanokernel sleep and wakeup APIs
+ * @brief Test sleep and wakeup APIs
  *
  * This module tests the following sleep and wakeup scenarios:
  * 1. k_sleep() without cancellation

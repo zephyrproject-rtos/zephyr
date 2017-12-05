@@ -42,10 +42,10 @@ K_THREAD_STACK_DEFINE(coop_stack, STACKSIZE);
 
 /*
  * @class cpp_semaphore
- * @brief nano semaphore
+ * @brief Semaphore
  *
  * Class derives from the pure virtual semaphore class and
- * implements it's methods for the nanokernel semaphore
+ * implements it's methods for the semaphore
  */
 class cpp_semaphore: public semaphore {
 protected:
