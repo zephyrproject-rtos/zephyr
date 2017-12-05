@@ -2,10 +2,10 @@ sample:
   description: TBD
   name: TBD
 tests:
-  - test_15_4:
-      build_only: true
-      extra_configs:
-        - CONFIG_USB_DEVICE_VID=0xDEAD
-        - CONFIG_USB_DEVICE_PID=0xBEEF
-      depends_on: ieee802154 usb_device
-      tags: net ieee802154 usb
+  test_15_4:
+    build_only: true
+    depends_on: ieee802154 usb_device
+    extra_configs:
+      - CONFIG_USB_DEVICE_VID=0xDEAD
+      - CONFIG_USB_DEVICE_PID=0xBEEF
+    tags: net ieee802154 usb

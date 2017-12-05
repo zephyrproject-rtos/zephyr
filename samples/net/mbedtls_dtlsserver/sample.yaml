@@ -1,7 +1,7 @@
 sample:
   name: DTLS Server
 tests:
-  - test:
-      build_only: true
-      depends_on: netif
-      tags: net
+  test:
+    build_only: true
+    depends_on: netif
+    tags: net

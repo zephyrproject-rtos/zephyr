@@ -1,5 +1,5 @@
 tests:
-  - test_aio:
-      build_only: true
-      depends_on: aio
-      tags: drivers
+  test_aio:
+    build_only: true
+    depends_on: aio
+    tags: drivers

@@ -1,3 +1,3 @@
 tests:
-  - test:
-      tags: bat_commit core userspace
+  test:
+    tags: bat_commit core userspace

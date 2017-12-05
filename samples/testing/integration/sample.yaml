@@ -2,5 +2,5 @@ sample:
   description: TBD
   name: TBD
 tests:
-  - test:
-      tags: my_tags
+  test:
+    tags: my_tags

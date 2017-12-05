@@ -1,4 +1,4 @@
 tests:
-  - test:
-     depends_on: adc
-     tags: driver adc
+  test:
+    depends_on: adc
+    tags: driver adc
