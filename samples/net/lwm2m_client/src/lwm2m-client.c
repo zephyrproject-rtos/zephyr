@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2017 Open Source Foundries Limited.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -54,6 +55,36 @@ static struct device *led_dev;
 static u32_t led_state;
 
 static struct lwm2m_ctx client;
+
+#if defined(CONFIG_NET_APP_DTLS)
+#if !defined(CONFIG_NET_APP_TLS_STACK_SIZE)
+#define CONFIG_NET_APP_TLS_STACK_SIZE		30000
+#endif /* CONFIG_NET_APP_TLS_STACK_SIZE */
+
+#define HOSTNAME "localhost"   /* for cert verification if that is enabled */
+
+/* The result buf size is set to large enough so that we can receive max size
+ * buf back. Note that mbedtls needs also be configured to have equal size
+ * value for its buffer size. See MBEDTLS_SSL_MAX_CONTENT_LEN option in DTLS
+ * config file.
+ */
+#define RESULT_BUF_SIZE 1500
+
+NET_APP_TLS_POOL_DEFINE(dtls_pool, 10);
+
+/* "000102030405060708090a0b0c0d0e0f" */
+static unsigned char client_psk[] = {
+	0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+	0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f
+};
+
+static const char client_psk_id[] = "Client_identity";
+
+static u8_t dtls_result[RESULT_BUF_SIZE];
+NET_STACK_DEFINE(NET_APP_DTLS, net_app_dtls_stack,
+		 CONFIG_NET_APP_TLS_STACK_SIZE, CONFIG_NET_APP_TLS_STACK_SIZE);
+#endif /* CONFIG_NET_APP_DTLS */
+
 static struct k_sem quit_lock;
 
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT)
@@ -318,6 +349,19 @@ void main(void)
 	client.tx_slab = tx_udp_slab;
 	client.data_pool = data_udp_pool;
 #endif
+
+#if defined(CONFIG_NET_APP_DTLS)
+	client.client_psk = client_psk;
+	client.client_psk_len = 16;
+	client.client_psk_id = (char *)client_psk_id;
+	client.client_psk_id_len = strlen(client_psk_id);
+	client.cert_host = HOSTNAME;
+	client.dtls_pool = &dtls_pool;
+	client.dtls_result_buf = dtls_result;
+	client.dtls_result_buf_len = RESULT_BUF_SIZE;
+	client.dtls_stack = net_app_dtls_stack;
+	client.dtls_stack_len = K_THREAD_STACK_SIZEOF(net_app_dtls_stack);
+#endif /* CONFIG_NET_APP_DTLS */
 
 #if defined(CONFIG_NET_IPV6)
 	ret = lwm2m_rd_client_start(&client, CONFIG_NET_APP_PEER_IPV6_ADDR,
