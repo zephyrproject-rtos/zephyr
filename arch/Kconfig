@@ -18,6 +18,7 @@ config ARC
 
 config ARM
 	bool "ARM architecture"
+	select ARCH_HAS_THREAD_ABORT
 
 config X86
 	bool "x86 architecture"
@@ -161,6 +162,13 @@ config ARCH_HAS_USERSPACE
 	bool
 
 config ARCH_HAS_EXECUTABLE_PAGE_BIT
+	bool
+
+#
+# Other architecture related options
+#
+
+config ARCH_HAS_THREAD_ABORT
 	bool
 
 #
