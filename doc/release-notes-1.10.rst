@@ -5,7 +5,7 @@
 Zephyr Kernel 1.10.0
 #####################
 
-DRAFT: We are pleased to announce the release of Zephyr kernel version 1.10.0.
+We are pleased to announce the release of Zephyr kernel version 1.10.0.
 
 Major enhancements with this release include:
 
@@ -22,6 +22,7 @@ Kernel
 
 * Remove deprecated k_mem_pool_defrag code
 * Add the following application-facing memory domain APIs:
+
   * k_mem_domain_init() - to initialize a memory domain
   * k_mem_domain_destroy() - to destroy a memory domain
   * k_mem_domain_add_partition() - to add a partition into a domain
