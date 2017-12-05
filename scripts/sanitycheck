@@ -828,7 +828,7 @@ class MakeGenerator:
         run_logfile = os.path.join(outdir, "run.log")
         qemu_logfile = os.path.join(outdir, "qemu.log")
 
-        q = QEMUHandler(name, outdir, qemu_logfile, timeout)
+        qemu = QEMUHandler(name, outdir, qemu_logfile, timeout)
         args.append("QEMU_PIPE=%s" % q.get_fifo())
         text = (self._get_rule_header(name) +
                 self._get_sub_make(name, "building", directory,
@@ -837,7 +837,7 @@ class MakeGenerator:
                                    outdir, run_logfile,
                                    args, make_args="run") +
                 self._get_rule_footer(name))
-        self.goals[name] = MakeGoal(name, text, q, self.logfile, build_logfile,
+        self.goals[name] = MakeGoal(name, text, qemu, self.logfile, build_logfile,
                                     run_logfile, qemu_logfile)
 
     def add_unit_goal(self, name, directory, outdir,
@@ -854,9 +854,9 @@ class MakeGenerator:
                 self._get_sub_make(name, "building", directory,
                                    outdir, build_logfile, args) +
                 self._get_rule_footer(name))
-        q = UnitHandler(name, directory, outdir, run_logfile,
+        unit = UnitHandler(name, directory, outdir, run_logfile,
                         valgrind_logfile, timeout)
-        self.goals[name] = MakeGoal(name, text, q, self.logfile, build_logfile,
+        self.goals[name] = MakeGoal(name, text, unit, self.logfile, build_logfile,
                                     run_logfile, valgrind_logfile)
 
     def add_test_instance(
