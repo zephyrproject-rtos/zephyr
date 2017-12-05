@@ -975,9 +975,14 @@ class SanityConfigParser:
 
         @param filename Source .yaml file to read
         """
-        cp = scl.yaml_load_verify(filename, schema)
+        self.data = scl.yaml_load_verify(filename, schema)
         self.filename = filename
-        self.cp = cp
+        self.tests = {}
+        self.common = {}
+        if 'tests' in self.data:
+            self.tests = self.data['tests']
+        if 'common' in self.data:
+            self.common = self.data['common']
 
     def _cast_value(self, value, typestr):
         if type(value) is str:
@@ -1014,17 +1019,9 @@ class SanityConfigParser:
             raise ConfigurationError(self.filename, "unknown type '%s'" % value)
 
     def section(self, name):
-        for s in self.sections():
-            if name in s:
-                return s.get(name, {})
+        return self.tests.get(name, {})
 
-    def sections(self):
-        """Get the set of test sections within the .yaml file
-
-        @return a list of string section names"""
-        return self.cp['tests']
-
-    def get_section(self, section, valid_keys, common):
+    def get_section(self, section, valid_keys):
         """Get a dictionary representing the keys/values within a section
 
         @param section The section in the .yaml file to retrieve data from
@@ -1050,7 +1047,7 @@ class SanityConfigParser:
         """
 
         d = {}
-        for k, v in common.items():
+        for k, v in self.common.items():
             d[k] = v
         for k, v in self.section(section).items():
             if k not in valid_keys:
@@ -1110,24 +1107,24 @@ class Platform:
             See the Architecture class.
         """
         scp = SanityConfigParser(cfile, self.yaml_platform_schema)
-        cp = scp.cp
+        data = scp.data
 
-        self.name = cp['identifier']
+        self.name = data['identifier']
         # if no RAM size is specified by the board, take a default of 128K
-        self.ram = cp.get("ram", 128)
-        testing = cp.get("testing", {})
+        self.ram = data.get("ram", 128)
+        testing = data.get("testing", {})
         self.ignore_tags = testing.get("ignore_tags", [])
         self.default = testing.get("default", False)
         # if no flash size is specified by the board, take a default of 512K
-        self.flash = cp.get("flash", 512)
+        self.flash = data.get("flash", 512)
         self.supported = set()
-        for supp_feature in cp.get("supported", []):
+        for supp_feature in data.get("supported", []):
             for item in supp_feature.split(":"):
                 self.supported.add(item)
 
-        self.qemu_support = True if cp.get('type', "na") == 'qemu' else False
-        self.arch = cp['arch']
-        self.supported_toolchains = cp.get("toolchain", [])
+        self.qemu_support = True if data.get('type', "na") == 'qemu' else False
+        self.arch = data['arch']
+        self.supported_toolchains = data.get("toolchain", [])
         self.defconfig = None
         pass
 
@@ -1310,19 +1307,15 @@ class TestSuite:
                 dirnames[:] = []
                 yaml_path = os.path.join(dirpath, filename)
                 try:
-                    cp = SanityConfigParser(yaml_path, self.yaml_tc_schema)
+                    parsed_data = SanityConfigParser(yaml_path, self.yaml_tc_schema)
                 except RuntimeError as e:
                     error("E: %s: can't load: %s" % (yaml_path, e))
 
                 workdir = os.path.relpath(dirpath, testcase_root)
 
-                common = {}
-                if 'common' in cp.cp:
-                    common = cp.cp['common']
-
-                for section in cp.sections():
-                    name = list(section.keys())[0]
-                    tc_dict = cp.get_section(name, testcase_valid_keys, common)
+                print(parsed_data.tests)
+                for name, section in parsed_data.tests.items():
+                    tc_dict = parsed_data.get_section(name, testcase_valid_keys)
                     tc = TestCase(testcase_root, workdir, name, tc_dict,
                                   yaml_path)
 
