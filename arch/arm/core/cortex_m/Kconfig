@@ -182,9 +182,4 @@ config ZERO_LATENCY_IRQS
 	Note that this is a somewhat dangerous option: ISRs of priority zero
 	interrupts cannot use any kernel functionality.
 
-config ARCH_HAS_THREAD_ABORT
-	bool
-	# omit prompt to signify a "hidden" option
-	default y
-
 endmenu
