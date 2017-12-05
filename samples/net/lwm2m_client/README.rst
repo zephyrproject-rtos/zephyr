@@ -37,6 +37,9 @@ samples/net/lwm2m_client directory:
 - :file:`prj.conf`
   This is the standard default config.
 
+- :file:`prj_dtls.conf`
+  This config is the same as the standard but enables DTLS support via MBEDTLS.
+
 Build the lwm2m-client sample application like this:
 
 .. zephyr-app-commands::
@@ -77,8 +80,32 @@ configurations in ``prj.conf``::
     CONFIG_NET_IPV6=n
     CONFIG_NET_APP_NEED_IPV6=n
 
-Sample output
-=============
+DTLS Support
+============
+
+To build the lwm2m-client sample for QEMU with DTLS support do the following:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/lwm2m_client
+   :board: qemu_x86
+   :conf: prj_dtls.conf
+   :goals: run
+   :compact:
+
+Setup DTLS security in Leshan Demo Server:
+
+- Open up the Leshan Demo Server web UI
+- Click on "Security"
+- Click on "Add new client security configuration"
+- Enter the following data:
+    Client endpoint: qemu_x86
+    Security mode: Pre-Shared Key
+    Identity: Client_identity
+    Key: 000102030405060708090a0b0c0d0e0f
+- Start the Zephyr sample
+
+Sample output without DTLS enabled
+==================================
 
 The following is sample output from the QEMU console.  First, LwM2M engine is
 initialized.  Then, several LwM2M Smart Objects register themselves with the
