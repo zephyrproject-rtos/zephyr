@@ -161,14 +161,26 @@ static u8_t get_sm_state(int index)
 static int find_clients_index(const struct sockaddr *addr)
 {
 	int index = -1, i;
-	struct sockaddr *remote;
+	struct sockaddr *remote = NULL;
+	struct net_app_ctx *net_app_ctx;
 
 	for (i = 0; i < client_count; i++) {
 		if (!clients[i].ctx) {
 			continue;
 		}
 
-		remote = &clients[i].ctx->net_app_ctx.default_ctx->remote;
+		net_app_ctx = &clients[i].ctx->net_app_ctx;
+
+#if defined(CONFIG_NET_APP_DTLS)
+		if (net_app_ctx->dtls.ctx) {
+			remote = &net_app_ctx->dtls.ctx->remote;
+		}
+#endif
+
+		if (!remote) {
+			remote = &net_app_ctx->default_ctx->remote;
+		}
+
 		if (remote->sa_family != addr->sa_family) {
 			continue;
 		}
@@ -505,6 +517,7 @@ static int sm_do_bootstrap(int index)
 	struct lwm2m_message *msg;
 	struct net_app_ctx *app_ctx = NULL;
 	int ret;
+	struct sockaddr *remote = NULL;
 
 	if (clients[index].use_bootstrap &&
 	    clients[index].bootstrapped == 0 &&
@@ -538,9 +551,18 @@ static int sm_do_bootstrap(int index)
 					  query_buffer, strlen(query_buffer));
 
 		/* log the bootstrap attempt */
+#if defined(CONFIG_NET_APP_DTLS)
+		if (app_ctx->dtls.ctx) {
+			remote = &app_ctx->dtls.ctx->remote;
+		}
+#endif
+
+		if (!remote) {
+			remote = &app_ctx->default_ctx->remote;
+		}
+
 		SYS_LOG_DBG("Register ID with bootstrap server [%s] as '%s'",
-			    lwm2m_sprint_ip_addr(
-				&app_ctx->default_ctx->remote),
+			    lwm2m_sprint_ip_addr(remote),
 			    query_buffer);
 
 		ret = lwm2m_send_message(msg);
@@ -611,6 +633,7 @@ static int sm_send_registration(int index, bool send_obj_support_data,
 	struct lwm2m_message *msg;
 	u16_t client_data_len;
 	int ret;
+	struct sockaddr *remote = NULL;
 
 	app_ctx = &clients[index].ctx->net_app_ctx;
 	msg = lwm2m_get_message(clients[index].ctx);
@@ -693,8 +716,18 @@ static int sm_send_registration(int index, bool send_obj_support_data,
 	}
 
 	/* log the registration attempt */
+#if defined(CONFIG_NET_APP_DTLS)
+	if (app_ctx->dtls.ctx) {
+		remote = &app_ctx->dtls.ctx->remote;
+	}
+#endif
+
+	if (!remote) {
+		remote = &app_ctx->default_ctx->remote;
+	}
+
 	SYS_LOG_DBG("registration sent [%s]",
-		    lwm2m_sprint_ip_addr(&app_ctx->default_ctx->remote));
+		    lwm2m_sprint_ip_addr(remote));
 
 	return 0;
 
