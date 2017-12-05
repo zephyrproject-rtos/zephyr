@@ -252,7 +252,7 @@ __csSet:
 	 * dual-purposing of this area of memory is safe since
 	 * interrupts are disabled until the first context switch.
 	 *
-	 * nano_init.c enforces that the _interrupt_stack pointer and
+	 * kernel/init.c enforces that the _interrupt_stack pointer and
 	 * the ISR stack size are some multiple of STACK_ALIGN, which
 	 * is at least 4.
 	 *
