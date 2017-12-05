@@ -1432,6 +1432,32 @@ Commands and responses:
 
 		In case of an error, the error response will be returned.
 
+	Opcode 0x08 - IV Update Test Mode
+		Controller Index:	<controller id>
+		Command parameters:	Toggle (1 octet)
+
+		Valid Toggle values:
+					0x00 = Disable
+					0x01 = Enable
+
+		This command is used to toggle the IV Update test mode.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x09 - IV Update toggle state
+		Controller Index:	<controller id>
+		Command parameters:	<none>
+		Response parameters:	Toggle (1 octet)
+
+		Valid Toggle response values:
+					0x00 = Normal State
+					0x01 = IV Update in Progress State
+
+		This command is used to make a IV Update state transition
+		while in IV Update test mode, ignoring the 96 hour limit.
+
+		In case of an error, the error response will be returned.
+
 	Opcode 0x0d - Low Power Node
 		Controller Index:	<controller id>
 		Command parameters:	Toggle (1 octet)
