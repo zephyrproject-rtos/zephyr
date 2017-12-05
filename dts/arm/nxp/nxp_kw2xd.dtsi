@@ -1,6 +1,7 @@
 #include <arm/armv7-m.dtsi>
 #include <dt-bindings/clock/kinetis_sim.h>
 #include <dt-bindings/i2c/i2c.h>
+#include <dt-bindings/pinctrl/mcux-pinctrl.h>
 
 / {
 	cpus {
@@ -141,7 +142,7 @@
 			uart0_default: uart0_default {
 				rx-tx {
 					pins = <1>, <2>;
-					function = <2>;
+					function = <MCUX_FUNC_ALT_2>;
 				};
 			};
 		};
@@ -155,7 +156,7 @@
 			spi1_default: spi1_default {
 				miso-mosi-clk {
 					pins = <17>, <16>, <11>;
-					function = <2>;
+					function = <MCUX_FUNC_ALT_2>;
 				};
 			};
 		};
@@ -176,7 +177,7 @@
 			uart2_default: uart2_default {
 				rx-tx {
 					pins = <2>, <3>;
-					function = <3>;
+					function = <MCUX_FUNC_ALT_3>;
 				};
 			};
 		};

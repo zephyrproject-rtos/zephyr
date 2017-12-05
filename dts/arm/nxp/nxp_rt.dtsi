@@ -6,6 +6,7 @@
 
 #include <arm/armv7-m.dtsi>
 #include <dt-bindings/clock/imx_ccm.h>
+#include <dt-bindings/pinctrl/mcux-pinctrl.h>
 
 / {
 	cpus {

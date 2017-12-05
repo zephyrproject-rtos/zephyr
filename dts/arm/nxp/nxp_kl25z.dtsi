@@ -1,6 +1,7 @@
 #include "armv6-m.dtsi"
 #include <dt-bindings/clock/kinetis_sim.h>
 #include <dt-bindings/i2c/i2c.h>
+#include <dt-bindings/pinctrl/mcux-pinctrl.h>
 
 / {
 	cpus {
