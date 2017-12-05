@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2017 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include <ztest_assert.h>
 #include <net/socket.h>
 
