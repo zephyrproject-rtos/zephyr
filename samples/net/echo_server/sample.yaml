@@ -13,6 +13,9 @@ tests:
   - test_mcr20a:
       extra_args: CONF_FILE="prj_frdm_k64f_mcr20a.conf"
       platform_whitelist: frdm_k64f
+  - test_nrf:
+      extra_args: CONF_FILE="prj_nrf5.conf"
+      platform_whitelist: nrf52840_pca10056
   - test_bt:
       extra_args: CONF_FILE="prj_bt.conf"
       platform_whitelist: qemu_x86
