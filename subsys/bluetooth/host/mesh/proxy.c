@@ -656,8 +656,6 @@ int bt_mesh_proxy_prov_disable(void)
 
 #endif /* CONFIG_BT_MESH_PB_GATT */
 
-
-
 #if defined(CONFIG_BT_MESH_GATT_PROXY)
 static ssize_t proxy_ccc_write(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr,
