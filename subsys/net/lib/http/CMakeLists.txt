@@ -1,4 +1,3 @@
-zephyr_link_interface_ifdef(CONFIG_MBEDTLS mbedTLS)
 zephyr_library()
 
 if(CONFIG_HTTP_PARSER_STRICT)
@@ -18,4 +17,5 @@ else()
   zephyr_library_sources_ifdef(CONFIG_HTTP_CLIENT http_client.c)
 endif()
 
+zephyr_link_interface_ifdef(CONFIG_MBEDTLS mbedTLS)
 zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
