@@ -813,18 +813,6 @@ void _x86_mmu_set_flags(void *ptr,
 			x86_page_entry_data_t flags,
 			x86_page_entry_data_t mask);
 
-#ifdef CONFIG_USERSPACE
-/**
- * @brief Load the memory domain for the thread.
- *
- * If the memory domain is used this API will configure the page tables
- * according to the memory domain partition attributes.
- *
- * @param thread k_thread structure for the thread which is to configured.
- */
-void _x86_mmu_mem_domain_load(struct k_thread *thread);
-#endif
-
 #endif /* CONFIG_X86_MMU */
 
 #endif /* !_ASMLANGUAGE */

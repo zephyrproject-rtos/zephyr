@@ -97,6 +97,18 @@ static inline unsigned int _Swap(unsigned int key)
 extern int _arch_mem_domain_max_partitions_get(void);
 
 /**
+ * @brief Configure the memory domain of the thread.
+ *
+ * A memory domain is a container data structure containing some number of
+ * memory partitions, where each partition represents a memory range with
+ * access policies. This api will configure the appropriate hardware
+ * registers to make it work.
+ *
+ * @param thread Thread which needs to be configured.
+ */
+extern void _arch_mem_domain_configure(struct k_thread *thread);
+
+/**
  * @brief Remove a partition from the memory domain
  *
  * A memory domain contains multiple partitions and this API provides the

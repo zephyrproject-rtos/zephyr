@@ -262,10 +262,16 @@ static inline void _x86_mem_domain_pages_update(struct k_mem_domain *mem_domain,
 
 
 /* Load the required parttions of the new incoming thread */
-void _x86_mmu_mem_domain_load(struct k_thread *thread)
+static inline void _x86_mmu_mem_domain_load(struct k_thread *thread)
 {
 	_x86_mem_domain_pages_update(thread->mem_domain_info.mem_domain,
 				     X86_MEM_DOMAIN_SET_PAGES);
+}
+
+/* Load the partitions of the thread. */
+void _arch_mem_domain_configure(struct k_thread *thread)
+{
+	_x86_mmu_mem_domain_load(thread);
 }
 
 /* Destroy or reset the mmu page tables when necessary.
