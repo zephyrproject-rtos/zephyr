@@ -6,6 +6,5 @@ zephyr_library_sources(
 	irq_handler.c
 	irq_ctrl.c
 	main.c
-	misc.c
 	tracing.c
 	)

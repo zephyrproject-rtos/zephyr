@@ -5,7 +5,7 @@
  */
 
 #include <stdio.h>
-#include <init.h>
+#include "init.h"
 
 /**
  *
@@ -31,9 +31,5 @@ static int printk_init(struct device *arg)
 	return 0;
 }
 
-/*TODO move this define to autoconf*/
-#define CONFIG_POSIX_PRINTK_INIT_PRIORITY 50
-SYS_INIT(printk_init, PRE_KERNEL_1, CONFIG_POSIX_PRINTK_INIT_PRIORITY);
-/*TODO: move all this to a driver in the driver/ folder*/
-
+SYS_INIT(printk_init, PRE_KERNEL_1, CONFIG_POSIX_SP_CONSOLE_INIT_PRIORITY);
 
