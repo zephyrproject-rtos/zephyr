@@ -811,3 +811,21 @@ macro(assert_exists var)
     message(FATAL_ERROR "No such file or directory: ${var}: '${${var}}'")
   endif()
 endmacro()
+
+# Usage:
+#   assert_with_usage(BOARD_DIR "No board named '${BOARD}' found")
+#
+# will print an error message, show usage, and then end executioon
+# with a FATAL_ERROR if the test fails.
+macro(assert_with_usage test comment)
+  if(NOT ${test})
+    message(${comment})
+    message("see usage:")
+    execute_process(
+      COMMAND
+      ${CMAKE_COMMAND} -P $ENV{ZEPHYR_BASE}/cmake/usage/usage.cmake
+      )
+    message(FATAL_ERROR "Invalid usage")
+  endif()
+endmacro()
+
