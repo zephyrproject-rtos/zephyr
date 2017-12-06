@@ -174,7 +174,7 @@ void _x86_swap_update_page_tables(struct k_thread *incoming,
 		  * is set back to default state.
 		  */
 		_arch_mem_domain_destroy(outgoing->mem_domain_info.mem_domain);
-		_x86_mmu_mem_domain_load(incoming);
+		_arch_mem_domain_configure(incoming);
 	}
 }
 

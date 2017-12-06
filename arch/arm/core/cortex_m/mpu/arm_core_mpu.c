@@ -48,6 +48,11 @@ void configure_mpu_mem_domain(struct k_thread *thread)
 	arm_core_mpu_enable();
 }
 
+void _arch_mem_domain_configure(struct k_thread *thread)
+{
+	configure_mpu_mem_domain(thread);
+}
+
 int _arch_mem_domain_max_partitions_get(void)
 {
 	return arm_core_mpu_get_max_domain_partition_regions();
