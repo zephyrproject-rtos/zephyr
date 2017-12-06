@@ -31,8 +31,8 @@ Kernel
   * k_mem_domain_remove_thread() - to remove a thread from a domain
 * add k_calloc() which uses kernel heap to implement traditional calloc()
   semantics.
-* Introduce object validation mechanism: All system calls made from userspace
-  which involve pointers to kernel objects (including device drivers) will need
+* Introduce object validation mechanism: All system calls made from userspace,
+  which involve pointers to kernel objects (including device drivers), will need
   to have those pointers validated; userspace must never be able to crash the
   kernel by passing it garbage.
 
@@ -77,12 +77,12 @@ Networking
 * HTTP API changed to use net-app API. Old HTTP API is deprecated.
 * Loopback network interface support added. This is used in testing only.
 * LWM2M multi-fragment network packet support added.
-* New CoAP library implementation which supports longer network packets.
+* New CoAP library implementation, supporting longer network packets.
 * Old ZoAP library deprecated.
 * mDNS (multicast DNS) support added.
 * SNTP (Simple Network Time Protocol) client library added.
 * Various fixes for: TCP, RPL, ARP, DNS, LWM2M, Ethernet, net-app API, Network
-  shell, BSD socket API
+  shell, and BSD socket API
 * Network management API fixes.
 * Networking sample application fixes.
 * 6lo IPv6 header compression fixes.
@@ -146,11 +146,12 @@ Documentation
 
 * Missing API documentation caused by doxygen subgroups and missing
   Sphinx directives now included.
-* Note added to release doc pages mentioning more current content could
+* Note added to all released doc pages mentioning more current content could
   be available from the master branch version of the documentation.
-* Documentation updated to use CMake (vs. Make) in all examples.
+* Documentation updated to use CMake (vs. Make) in all examples, and
+  using a new Sphinx extension to keep examples consistent.
 * Getting Started Guide material updated to include CMake dependencies
-  and build instructions.
+  and build instructions required for version 1.10.
 * Instead of hiding all expected warnings from the document build
   process (there are some known doxygen/sphinx issues), the build
   now outputs all warnings, and then reports
@@ -158,7 +159,9 @@ Documentation
 * Obsolete V1 to V2 porting material removed.
 * Continued updates to documentation for new board support, new samples,
   and new features.
-* Integration of documentation with new zephyrproject.org website
+* Integration of documentation with new zephyrproject.org website.
+* Documentation moved to docs.zephyrproject.org site (with redirection
+  from zephyrproject.org/doc)
 
 Tests and Samples
 *****************
@@ -169,6 +172,9 @@ Tests and Samples
 
 Issue Related Items
 *******************
+
+These GitHub issues were addressed since the previous 1.9.0 tagged
+release:
 
 .. comment  List derived from Jira/GitHub Issue query: ...
 
@@ -207,7 +213,7 @@ Issue Related Items
 * :github:`1544` - regression: net: K64F: DHCP seems to fail a lot after 91041f9e
 * :github:`1558` - Master reports itself as if it was 1.9.0 release
 * :github:`1571` - Update to latest tinycrypt: v0.2.8
-* :github:`1573` - tests/net/lib/http_header_fields/ fails with CONFIG_HTTP_PARSER_STRICT enabeld
+* :github:`1573` - tests/net/lib/http_header_fields/ fails with CONFIG_HTTP_PARSER_STRICT enabled
 * :github:`1580` - checkpatch output in shippable log displays without line breaks
 * :github:`1581` - two tests fail in qemu_cortex_m3 with new SDK
 * :github:`1597` - remove deprecated k_mem_pool_defrag()
@@ -224,7 +230,7 @@ Issue Related Items
 * :github:`1885` - Display Interface
 * :github:`1902` - uWeave
 * :github:`2011` - tcf: add support for running altera_max10 binaries
-* :github:`2035` - doc: remove workaround for sphinx issue once 1.5 is releaed
+* :github:`2035` - doc: remove workaround for sphinx issue once 1.5 is released
 * :github:`2202` - sporadic bad RAM pointer error under qemu_nios2
 * :github:`2277` - Update to a more recent version of micro-ecc in Zephyr
 * :github:`2281` - purge usage of platform_whitelist
@@ -315,7 +321,7 @@ Issue Related Items
 * :github:`4001` - GENERATED_KERNEL_OBJECT_FILES end up in application memory
 * :github:`4004` - integrate printk() with console subsystem
 * :github:`4009` - I2C API is mixing two incompatible definitions of bit-fields
-* :github:`4014` - memory protection: implict kernel object permissions
+* :github:`4014` - memory protection: implicit kernel object permissions
 * :github:`4016` - bluetooth linker not connected
 * :github:`4022` - net: "queue: Use k_poll if enabled" commit regressed BSD Sockets performance
 * :github:`4026` - CC3220 WiFi Host Driver support
@@ -336,14 +342,14 @@ Issue Related Items
 * :github:`4046` - BLE Central and BLE Peripheral roles at a moment on nRF52832
 * :github:`4048` - HTTP Request Timeout Not Working
 * :github:`4049` - AMP - Multi-core
-* :github:`4050` - zephyr.git/tests/kernel/obj_validation/testcase.yaml#test :Evalution failure
+* :github:`4050` - zephyr.git/tests/kernel/obj_validation/testcase.yaml#test :Evaluation failure
 * :github:`4051` - Coverity issue seen with CID: 177219 , in file: /drivers/flash/flash_stm32f4x.c
 * :github:`4054` - [CID: 177215 ], in file: /tests/subsys/dfu/mcuboot/src/main.c
 * :github:`4055` - Coverity issue seen with CID: 177214 , in file: /samples/boards/microbit/pong/src/ble.c
 * :github:`4056` - Coverity issue seen with CID: 177213 , in file: /tests/net/ipv6_fragment/src/main.c
 * :github:`4057` - Coverity issue seen with CID: 170744, in file: /samples/boards/microbit/pong/src/ble.c
 * :github:`4058` - samples/net/http_client: The HTTP client failed to  send the GET request
-* :github:`4059` -  zephyr.git/tests/net/ipv6/testcase.yaml#test  :evalution failed
+* :github:`4059` -  zephyr.git/tests/net/ipv6/testcase.yaml#test  :evaluation failed
 * :github:`4068` - [BLE, nRF51822] Error -ENOMEM when use  bt_gatt_write_without_response function
 * :github:`4099` - Add some docs to samples/net/ieee802154/hw
 * :github:`4131` - gen_syscalls.py may choke on non-ascii chars
@@ -352,12 +358,12 @@ Issue Related Items
 * :github:`4162` - build error in http_get sample
 * :github:`4165` - ieee802154_uart_pipe.c: warning: return from incompatible pointer type
 * :github:`4182` - NET_APP_SETTINGS for 15.4 doesn't seem to work (if to trust 15.4 shell)
-* :github:`4186` - tcf.git/examples/test_network_linux_zephyr.py#_test  :Compelition failure
+* :github:`4186` - tcf.git/examples/test_network_linux_zephyr.py#_test  :Compilation failure
 * :github:`4188` - samples /net/echo_server:failed to send packets to client
 * :github:`4189` - ieee802154_settings.c is duplicated in the codebase
 * :github:`4190` - samples/net/echo_client :failed to send data
 * :github:`4193` - Zephyr libc(snprintf) is not comply with ISO standard.
-* :github:`4195` - tests/net/udp/test_udp.py#_ipv4_udp : evalution failed
+* :github:`4195` - tests/net/udp/test_udp.py#_ipv4_udp : evaluation failed
 * :github:`4239` - unit tests broken in sanitycheck
 * :github:`4249` - where is auto-pts py script of zephyr?
 * :github:`4258` - samples/net/zoap_server : unable to communicate between zoap client and server
@@ -381,7 +387,7 @@ Issue Related Items
 * :github:`4395` - Coverity issue seen with CID: 178059
 * :github:`4396` - Coverity issue seen with CID: 178060
 * :github:`4397` - Coverity issue seen with CID: 178064
-* :github:`4398` - zephyr/tests/crypto/ccm_mode :-Evalution failed due to esp32
+* :github:`4398` - zephyr/tests/crypto/ccm_mode :-Evaluation failed due to esp32
 * :github:`4419` - 6LoWPAN - source address uncompress corner case
 * :github:`4421` - net: Duplicated functionality between net_pkt_get_src_addr() and net_context.c:create_sockaddr()
 * :github:`4424` - Turning on network debug message w/ LwM2M sample client will result in stack check failure
@@ -459,7 +465,7 @@ Issue Related Items
 * :github:`4881` - device_get_binding() returns failure in sample/drivers/crypto
 * :github:`4889` - Flashing EM Starterkit with EM7D fails on master
 * :github:`4899` - Convert opensda doc to CMake
-* :github:`4901` - net: tcp: RST is sent after last ack is recieved
+* :github:`4901` - net: tcp: RST is sent after last ack is received
 * :github:`4904` - cmake: BOOT_BANNER disappeared
 * :github:`4905` - cmake: flashing for quark_se_devboard is broken
 * :github:`4910` - BT host CMakeLists.txt code should be agnostic to the FS implementation
@@ -486,12 +492,12 @@ Issue Related Items
 * :github:`5060` - [Coverity CID: 179249] Incorrect expression in /tests/kernel/fatal/src/main.c
 * :github:`5061` - [Coverity CID: 179248] Control flow issues in /samples/net/zperf/src/zperf_tcp_receiver.c
 * :github:`5062` - [Coverity CID: 179247] Incorrect expression in /tests/kernel/fatal/src/main.c
-* :github:`5063` - samples/bluetooth: central_hr sample app is not connecting with peripherl sample app on arduino_101.
+* :github:`5063` - samples/bluetooth: central_hr sample app is not connecting with peripheral sample app on arduino_101.
 * :github:`5085` - bug: dts: stm32f1: wrong pinctrl base address
 * :github:`5087` - Samples/bluetooth: Failed to connect with eddystone sample app on arduino_101.
 * :github:`5090` - no makefile in zephyr/samples/bluetooth/mesh examples
 * :github:`5097` - zephyr_library_*() configuration has lower precedence than global zephyr_*()  configuration
-* :github:`5107` - Default parition addressing for nrf52_pca10040 is incompatible
+* :github:`5107` - Default partition addressing for nrf52_pca10040 is incompatible
 * :github:`5116` - [Coverity CID: 179986] Null pointer dereferences in /subsys/bluetooth/host/mesh/access.c
 * :github:`5117` - [Coverity CID: 179985] Error handling issues in /subsys/bluetooth/host/mesh/cfg_srv.c
 * :github:`5118` - [Coverity CID: 179984] Memory - corruptions in /drivers/ethernet/eth_mcux.c
@@ -514,7 +520,7 @@ Issue Related Items
 * :github:`5177` - hci_usb: Linking error
 * :github:`5184` - kernel system call handlers missing due to -Wl,--no-whole-archive
 * :github:`5186` - gen_syscall_header_py is being run at the wrong time
-* :github:`5189` - tests/subsys/fs/nffs_fs_api:-Evalution failed
+* :github:`5189` - tests/subsys/fs/nffs_fs_api:-Evaluation failed
 * :github:`5207` - Bluetooth subsystem uses acl_in_pool even for controllers not supporting flow control
 * :github:`5211` - Kconfig: CPU_HAS_FPU dependencies problem
 * :github:`5223` - CMake: Recent changes broke 3rd-party build system integration again
