@@ -133,66 +133,9 @@ void hwtimer_wake_in_time(hwtime_t time)
 }
 
 
-
-
-#include "irq.h"
-#include "device.h"
-#include "drivers/system_timer.h"
-
-/**
- * Return the current HW cycle counter
- * (number of microseconds since boot in 32bits)
- */
-uint32_t _timer_cycle_get_32(void)
-{
-	return hwm_get_time();
-}
-
-#ifdef CONFIG_TICKLESS_IDLE
-void _timer_idle_enter(int32_t sys_ticks)
+void hwtimer_set_silent_ticks(int sys_ticks)
 {
 	silent_ticks = sys_ticks;
 }
 
-void _timer_idle_exit(void)
-{
-	silent_ticks = 0;
-}
-#endif
 
-static void sp_timer_isr(void *arg)
-{
-	ARG_UNUSED(arg);
-	_sys_clock_tick_announce();
-}
-
-int _sys_clock_driver_init(struct device *device)
-{
-	ARG_UNUSED(device);
-
-	IRQ_CONNECT(TIMER_TICK_IRQ, 1, sp_timer_isr, 0, 0);
-	irq_enable(TIMER_TICK_IRQ);
-
-	return 0;
-}
-
-
-#if defined(CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT)
-/**
- * Replacement to the kernel k_busy_wait()
- * Will block this thread (and therefore the whole zephyr) during usec_to_wait
- *
- * Note that interrupts may be received in the meanwhile and that therefore this
- * thread may loose context
- */
-void k_busy_wait(u32_t usec_to_wait)
-{
-	hwtime_t time_end = hwm_get_time() + usec_to_wait;
-
-	while (hwm_get_time() < time_end) {
-		/*There may be wakes due to other interrupts*/
-		hwtimer_wake_in_time(time_end);
-		ps_halt_cpu();
-	}
-}
-#endif

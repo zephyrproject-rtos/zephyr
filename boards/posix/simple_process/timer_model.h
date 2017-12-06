@@ -17,6 +17,7 @@ void hwtimer_init(void);
 void hwtimer_cleanup(void);
 void hwtimer_timer_reached(void);
 void hwtimer_wake_in_time(hwtime_t time);
+void hwtimer_set_silent_ticks(int sys_ticks);
 
 #ifdef __cplusplus
 }
