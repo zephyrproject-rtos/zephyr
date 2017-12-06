@@ -521,3 +521,4 @@ Issue Related Items
 * :github:`5265` - ROM size increase due Zephyr compile options not stripping unused functions
 * :github:`5266` - Ensure the Licensing page is up-to-date for the release
 * :github:`5286` - NET_L2: Symbols from the L2 implementation layer are exposed to users of L2
+* :github:`5298` - Endless loop in uart pipe
