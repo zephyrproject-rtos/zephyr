@@ -164,7 +164,7 @@ def p_error(p):
     else:
         raise SyntaxError("Unexpected end of expression")
 
-parser = yacc.yacc()
+parser = yacc.yacc(debug=0)
 
 def ast_sym(ast, env):
     if ast in env:
