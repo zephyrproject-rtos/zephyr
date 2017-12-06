@@ -18,11 +18,25 @@
 static int wifi_connect(u32_t mgmt_request, struct net_if *iface,
 			void *data, size_t len)
 {
+	struct wifi_connect_req_params *params =
+		(struct wifi_connect_req_params *)data;
+
+	if ((params->security > WIFI_SECURITY_TYPE_PSK) ||
+	    (params->psk_length < 8) || (params->psk_length > 64) ||
+	    (params->ssid_length > WIFI_SSID_MAX_LEN) ||
+	    ((params->security == WIFI_SECURITY_TYPE_PSK) &&
+	     (params->psk_length == 0)) ||
+	    ((params->channel != WIFI_MGMT_CHANNEL_ANY) &&
+	     (params->channel > WIFI_MGMT_CHANNEL_MAX)) ||
+	    !params->ssid || !params->psk) {
+		return -EINVAL;
+	}
+
 	if (net_if_is_ip_offloaded(iface)) {
 		struct net_wifi_mgmt_offload *off_api =
 			(struct net_wifi_mgmt_offload *) iface->dev->driver_api;
 
-		return off_api->connect(iface->dev);
+		return off_api->connect(iface->dev, params);
 	}
 
 	return -ENETDOWN;
@@ -30,6 +44,16 @@ static int wifi_connect(u32_t mgmt_request, struct net_if *iface,
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_CONNECT, wifi_connect);
 
+static void _scan_result_cb(struct net_if *iface,
+			    struct wifi_scan_result *entry)
+{
+	if (!iface || !entry) {
+		return;
+	}
+
+	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_SCAN_RESULT, iface,
+					entry, sizeof(struct wifi_scan_result));
+}
 
 static int wifi_scan(u32_t mgmt_request, struct net_if *iface,
 		     void *data, size_t len)
@@ -61,3 +85,25 @@ static int wifi_disconnect(u32_t mgmt_request, struct net_if *iface,
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_DISCONNECT, wifi_disconnect);
+
+void wifi_mgmt_raise_connect_result_event(struct net_if *iface, int status)
+{
+	struct wifi_status cnx_status = {
+		.status = status,
+	};
+
+	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_CONNECT_RESULT,
+					iface, &cnx_status,
+					sizeof(struct wifi_status));
+}
+
+void wifi_mgmt_raise_disconnect_result_event(struct net_if *iface, int status)
+{
+	struct wifi_status cnx_status = {
+		.status = status,
+	};
+
+	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_DISCONNECT_RESULT,
+					iface, &dcnx_status,
+					sizeof(struct wifi_status));
+}
