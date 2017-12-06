@@ -96,6 +96,6 @@ Signaling a network event
 You can signal a specific network event using the :cpp:func:`net_mgmt_notify()`
 function and provide the network event code. See
 :file:`include/net/net_mgmt.h` for details. As for the management request
-code, event code can be also found on specific L2 technology headers,
-for example :file:`include/net/ieee802154.h` would be the right place if
+code, event code can be also found on specific L2 technology mgmt headers,
+for example :file:`include/net/ieee802154_mgmt.h` would be the right place if
 802.15.4 L2 is the technology one wants to listen to events.
