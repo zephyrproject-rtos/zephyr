@@ -147,22 +147,39 @@ if(EMU_PLATFORM)
 
   list(APPEND MORE_FLAGS_FOR_debugserver -s -S)
 
+  set(QEMU_CUSTOM_TARGET
+    ${PRE_QEMU_COMMANDS}
+    ${PRE_QEMU_COMMANDS_FOR_${target}}
+    COMMAND
+    ${QEMU}
+    ${QEMU_FLAGS_${ARCH}}
+    -pidfile qemu\${QEMU_INSTANCE}.pid
+    ${QEMU_FLAGS}
+    ${QEMU_EXTRA_FLAGS}
+    ${MORE_FLAGS_FOR_${target}}
+    )
+
+  # QEMU, in Jailhouse's case, is not emulating Zephyr's hardware
+  # directly, but the root cell/system, with a mount point reaching
+  # the kernel itself available
+  if(NOT ${BOARD} STREQUAL "x86_jailhouse")
+    set(QEMU_CUSTOM_TARGET
+      ${QEMU_CUSTOM_TARGET}
+      -kernel $<TARGET_FILE:${logical_target_for_zephyr_elf}>
+      )
+  endif()
+
+  set(QEMU_CUSTOM_TARGET
+    ${QEMU_CUSTOM_TARGET}
+    DEPENDS ${logical_target_for_zephyr_elf}
+    WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
+    COMMENT "${QEMU_PIPE_COMMENT}[QEMU] CPU: ${QEMU_CPU_TYPE_${ARCH}}"
+    USES_TERMINAL
+    )
+
   foreach(target ${qemu_targets})
     add_custom_target(${target}
-      ${PRE_QEMU_COMMANDS}
-      ${PRE_QEMU_COMMANDS_FOR_${target}}
-      COMMAND
-      ${QEMU}
-      ${QEMU_FLAGS_${ARCH}}
-      -pidfile qemu\${QEMU_INSTANCE}.pid
-      ${QEMU_FLAGS}
-      ${QEMU_EXTRA_FLAGS}
-      ${MORE_FLAGS_FOR_${target}}
-      -kernel $<TARGET_FILE:${logical_target_for_zephyr_elf}>
-      DEPENDS ${logical_target_for_zephyr_elf}
-      WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
-      COMMENT "${QEMU_PIPE_COMMENT}[QEMU] CPU: ${QEMU_CPU_TYPE_${ARCH}}"
-      USES_TERMINAL
+      ${QEMU_CUSTOM_TARGET}
       )
   endforeach()
 else()
