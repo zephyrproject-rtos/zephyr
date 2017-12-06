@@ -8909,6 +8909,12 @@ static u32_t conn_update_req(struct connection *conn)
 		return 1;
 	}
 
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+	if (conn->llcp_conn_param.req != conn->llcp_conn_param.ack) {
+		return 1;
+	}
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+
 	if (!conn->role) {
 		conn->llcp.conn_upd.win_size = 1;
 		conn->llcp.conn_upd.win_offset_us = 0;
@@ -8942,7 +8948,7 @@ static u32_t conn_update_req(struct connection *conn)
 		conn->llcp_conn_param.ack--;
 
 		return 0;
-#endif /* !CONFIG_BT_CTLR_CONN_PARAM_REQ */
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 	}
 
