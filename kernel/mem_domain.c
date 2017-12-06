@@ -158,6 +158,10 @@ void k_mem_domain_add_thread(struct k_mem_domain *domain, k_tid_t thread)
 			 &thread->mem_domain_info.mem_domain_q_node);
 	thread->mem_domain_info.mem_domain = domain;
 
+	if (_current == thread) {
+		_arch_mem_domain_configure(thread);
+	}
+
 	irq_unlock(key);
 }
 
