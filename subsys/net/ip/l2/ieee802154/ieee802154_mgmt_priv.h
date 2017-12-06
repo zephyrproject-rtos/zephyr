@@ -6,11 +6,11 @@
 
 /**
  * @file
- * @brief IEEE 802.15.4 Management
+ * @brief IEEE 802.15.4 Private Management
  */
 
-#ifndef __IEEE802154_MGMT_H__
-#define __IEEE802154_MGMT_H__
+#ifndef __IEEE802154_MGMT_PRIV_H__
+#define __IEEE802154_MGMT_PRIV_H__
 
 #include "ieee802154_frame.h"
 
@@ -54,4 +54,4 @@ enum net_verdict ieee802154_handle_mac_command(struct net_if *iface,
 
 #endif /* CONFIG_NET_MGMT */
 
-#endif /* __IEEE802154_MGMT_H__ */
+#endif /* __IEEE802154_MGMT_PRIV_H__ */

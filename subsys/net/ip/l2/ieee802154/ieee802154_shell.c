@@ -15,9 +15,8 @@
 #include <misc/printk.h>
 
 #include <net/net_if.h>
-#include <net/ieee802154.h>
+#include <net/ieee802154_mgmt.h>
 
-#include "ieee802154_mgmt.h"
 #include "ieee802154_frame.h"
 
 #define IEEE802154_SHELL_MODULE "ieee15_4"

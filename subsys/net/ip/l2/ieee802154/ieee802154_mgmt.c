@@ -15,10 +15,11 @@
 
 #include <net/net_if.h>
 #include <net/ieee802154_radio.h>
+#include <net/ieee802154_mgmt.h>
 #include <net/ieee802154.h>
 
 #include "ieee802154_frame.h"
-#include "ieee802154_mgmt.h"
+#include "ieee802154_mgmt_priv.h"
 #include "ieee802154_security.h"
 #include "ieee802154_utils.h"
 

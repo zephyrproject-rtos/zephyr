@@ -12,7 +12,7 @@
 #include <net/net_if.h>
 #include <net/net_core.h>
 #include <net/net_mgmt.h>
-#include <net/ieee802154.h>
+#include <net/ieee802154_mgmt.h>
 
 int _net_app_ieee802154_setup(void)
 {
