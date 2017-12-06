@@ -5156,6 +5156,9 @@ static void mayfly_sched_win_offset_select(void *params)
 		/* procedure request acked */
 		conn->llcp_ack = conn->llcp_req;
 
+		/* CPR request acked */
+		conn->llcp_conn_param.ack = conn->llcp_conn_param.req;
+
 		/* reset mutex */
 		_radio.conn_upd = NULL;
 
