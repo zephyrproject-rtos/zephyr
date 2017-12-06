@@ -202,7 +202,7 @@ Debugging With UFM Flashed Image
 You can debug an application in the usual way.  Here is an example.
 
 .. zephyr-app-commands::
-   :zephyr-app: tests/crypto/test_sha256
+   :zephyr-app: samples/hello_world
    :board: altera_max10
    :goals: debug
 
@@ -210,21 +210,15 @@ You will see output similar to the following:
 
 .. code-block:: console
 
-   Nios II GDB server running on port 14777
+   Nios II GDB server running on port 3335
    Ignoring --stop option because --tcpport also specified
-   Python Exception <type 'exceptions.ImportError'> No module named gdb:
-   /opt/zephyr-sdk/sysroots/i686-pokysdk-linux/usr/bin/nios2-poky-elf/nios2-poky-elf-gdb: warning:
-   Could not load the Python gdb module from `/opt/zephyr-sdk/2.0.1/sysroots/i686-pokysdk-linux/usr/share/gdb/python'.
-   Limited Python support is available from the _gdb module.
-   Suggest passing --data-directory=/path/to/gdb/data-directory.
-
-   GNU gdb (GDB) 7.9.1
-   Copyright (C) 2015 Free Software Foundation, Inc.
+   GNU gdb (GDB) 7.11.0.20160511-git
+   Copyright (C) 2016 Free Software Foundation, Inc.
    License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
    This is free software: you are free to change and redistribute it.
    There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
    and "show warranty" for details.
-   This GDB was configured as "--host=i686-pokysdk-linux --target=nios2-poky-elf".
+   This GDB was configured as "--host=x86_64-pokysdk-linux --target=nios2-zephyr-elf".
    Type "show configuration" for configuration details.
    For bug reporting instructions, please see:
    <http://www.gnu.org/software/gdb/bugs/>.
@@ -232,26 +226,22 @@ You will see output similar to the following:
    <http://www.gnu.org/software/gdb/documentation/>.
    For help, type "help".
    Type "apropos word" to search for commands related to "word"...
-   Reading symbols from /projects/zephyr2/tests/crypto/test_sha256/outdir/zephyr.elf...done.
-   Remote debugging using :14777
-   Using cable "USB-BlasterII [1-1.6.1]", device 1, instance 0x00
+   Reading symbols from /projects/zephyr/samples/hello_world/build/zephyr/zephyr.elf...done.
+   Remote debugging using :3335
+   Using cable "USB-BlasterII [3-1.3]", device 1, instance 0x00
    Resetting and pausing target processor: OK
-   Listening on port 14777 for connection from GDB: accepted
-   vprintf (format=<optimized out>, vargs=<optimized out>)
-       at /projects/zephyr2/lib/libc/minimal/source/stdout/fprintf.c:61
-   61 {
-   (gdb) b nano_init
-   Breakpoint 1 at 0x1de8: file /projects/zephyr2/kernel/nanokernel/nano_init.c, line 207.
+   Listening on port 3335 for connection from GDB: accepted
+   isr_tables_syms () at /projects/zephyr/arch/common/isr_tables.c:63
+   63      GEN_ABSOLUTE_SYM(__ISR_LIST_SIZEOF, sizeof(struct _isr_list));
+   (gdb) b _PrepC
+   Breakpoint 1 at 0xdf0: file /projects/zephyr/arch/nios2/core/prep_c.c, line 36.
+   (gdb) b _Cstart
+   Breakpoint 2 at 0x1254: file /projects/zephyr/kernel/init.c, line 348.
    (gdb) c
    Continuing.
 
-   Breakpoint 1, _Cstart () at /projects/zephyr2/kernel/nanokernel/nano_init.c:323
-   323      nano_init((struct tcs *)&dummyTCS);
-   (gdb) bt
-   Python Exception <type 'exceptions.ImportError'> No module named gdb.frames:
-   #0  _Cstart () at /projects/zephyr2/kernel/nanokernel/nano_init.c:323
-   #1  0x00003ca4 in _PrepC () at /projects/zephyr2/arch/nios2/core/prep_c.c:61
-   #2  0x00003ccc in __start () at /projects/zephyr2/arch/nios2/core/crt0.S:155
+   Breakpoint 2, _Cstart () at /projects/zephyr/kernel/init.c:348
+   348     {
    (gdb)
 
 To start debugging manually:
