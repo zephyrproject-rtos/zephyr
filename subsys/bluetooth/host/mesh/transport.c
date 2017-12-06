@@ -30,6 +30,7 @@
 #include "access.h"
 #include "foundation.h"
 #include "transport.h"
+#include "../testing.h"
 
 #define AID_MASK                    ((u8_t)(BIT_MASK(6)))
 
@@ -1275,6 +1276,11 @@ int bt_mesh_trans_recv(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx)
 	net_buf_simple_pull(buf, BT_MESH_NET_HDR_LEN);
 
 	BT_DBG("Payload %s", bt_hex(buf->data, buf->len));
+
+	if (IS_ENABLED(CONFIG_BT_TESTING)) {
+		bt_test_mesh_net_recv(rx->ctx.recv_ttl, rx->ctl, rx->ctx.addr,
+				      rx->dst, buf->data, buf->len);
+	}
 
 	/* If LPN mode is enabled messages are only accepted when we've
 	 * requested the Friend to send them. The messages must also

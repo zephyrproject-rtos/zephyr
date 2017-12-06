@@ -444,6 +444,12 @@ config BT_DEBUG_SDP
 		This option enables debug support for the Bluetooth
 		Service Discovery Protocol (SDP).
 
+config BT_TESTING
+	bool "Bluetooth Testing"
+	help
+	  This option enables custom Bluetooth testing interface.
+	  Shall only be used for testing purposes.
+
 endif # BT_DEBUG
 
 config BT_BREDR
