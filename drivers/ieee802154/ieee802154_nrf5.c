@@ -21,6 +21,9 @@
 #include <net/net_if.h>
 #include <net/net_pkt.h>
 
+// TODO: Review, does it make sense to include this here?
+// #include <net/net_l2_impl.h>
+
 #include <misc/byteorder.h>
 #include <string.h>
 #include <random/rand32.h>

@@ -19,6 +19,8 @@
 #include <net/net_if.h>
 #include <net/net_pkt.h>
 
+#include <net/net_l2_impl.h>
+
 #include <console/uart_pipe.h>
 #include <net/ieee802154_radio.h>
 
