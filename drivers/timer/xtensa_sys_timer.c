@@ -31,6 +31,20 @@
  * according to his HW.
  */
 
+/* Map CCOMPAREn timer number to interrupt number.  Really this should
+ * be a kconfig, but for legacy reasons we honor xtensa_rtos.h config
+ * instead.
+ */
+#if XT_TIMER_INDEX == 0
+#define TIMER_IRQ XCHAL_TIMER0_INTERRUPT
+#elif XT_TIMER_INDEX == 1
+#define TIMER_IRQ XCHAL_TIMER1_INTERRUPT
+#elif XT_TIMER_INDEX == 2
+#define TIMER_IRQ XCHAL_TIMER2_INTERRUPT
+#else
+#error Unrecognized/unset XT_TIMER_INDEX
+#endif
+
 #define MAX_TIMER_CYCLES 0xFFFFFFFF
 /* Abstraction macros to access the timer fire time register */
 #if CONFIG_XTENSA_INTERNAL_TIMER || (CONFIG_XTENSA_TIMER_IRQ < 0)
@@ -490,6 +504,8 @@ void _timer_int_handler(void *params)
  */
 int _sys_clock_driver_init(struct device *device)
 {
+	IRQ_CONNECT(TIMER_IRQ, 0, _timer_int_handler, 0, 0);
+
 #if CONFIG_XTENSA_INTERNAL_TIMER || (CONFIG_XTENSA_TIMER_IRQ < 0)
 	_xt_tick_divisor_init();
 	/* Set up periodic tick timer (assume enough time to complete init). */
