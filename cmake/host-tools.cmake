@@ -40,20 +40,5 @@ find_program(
   openocd
   )
 
-# qemu is an optional dependency
-if("${ARCH}" STREQUAL "x86")
-  if("${BOARD}" STREQUAL "x86_jailhouse")
-    set(QEMU_binary_suffix x86_64)
-  else()
-    set(QEMU_binary_suffix i386)
-  endif()
-else()
-  set(QEMU_binary_suffix ${ARCH})
-endif()
-find_program(
-  QEMU
-  qemu-system-${QEMU_binary_suffix}
-  )
-
 # TODO: Should we instead find one qemu binary for each ARCH?
 # TODO: This will probably need to be re-organized when there exists more than one SDK.

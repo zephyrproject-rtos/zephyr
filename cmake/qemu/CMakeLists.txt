@@ -1,6 +1,16 @@
 if(EMU_PLATFORM)
   # TODO: Support more emulators
 
+  if("${ARCH}" STREQUAL "x86")
+    set_ifndef(QEMU_binary_suffix i386)
+  else()
+    set_ifndef(QEMU_binary_suffix ${ARCH})
+  endif()
+  find_program(
+    QEMU
+    qemu-system-${QEMU_binary_suffix}
+    )
+
   set(qemu_targets
     run
     debugserver
