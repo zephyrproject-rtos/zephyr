@@ -1548,3 +1548,15 @@ Events:
 
 		This event indicates that provisioning link has been closed on
 		given bearer.
+
+	Opcode 0x86 - Network receive Event
+
+		Controller Index:	<controller id>
+		Event parameters:	TTL (1 octet)
+					CTL (1 octet)
+					SRC (2 octets)
+					DST (2 octets)
+					Payload_Len (1 octet)
+					Payload (variable)
+
+		This event indicates reception of network packet.
