@@ -22,6 +22,7 @@
 #include <net/net_l2.h>
 #include <net/net_context.h>
 #include <net/net_offload.h>
+#include <net/wifi_mgmt.h>
 
 #include <misc/printk.h>
 
@@ -110,6 +111,14 @@ typedef struct {
 #include <driver/include/m2m_wifi.h>
 #include <socket/include/m2m_socket_host_if.h>
 
+#if defined(CONFIG_WIFI_WINC1500_REGION_NORTH_AMERICA)
+#define WINC1500_REGION		NORTH_AMERICA
+#elif defined(CONFIG_WIFI_WINC1500_REGION_EUROPE)
+#define WINC1500_REGION		EUROPE
+#elif defined(CONFIG_WIFI_WINC1500_REGION_ASIA)
+#define WINC1500_REGION		ASIA
+#endif
+
 #define WINC1500_BIND_TIMEOUT 500
 #define WINC1500_LISTEN_TIMEOUT 500
 
@@ -142,6 +151,10 @@ struct winc1500_data {
 		CONFIG_WIFI_WINC1500_OFFLOAD_MAX_SOCKETS];
 	struct net_if *iface;
 	unsigned char mac[6];
+	scan_result_cb_t scan_cb;
+	u8_t scan_result;
+	bool connecting;
+	bool connected;
 };
 
 static struct winc1500_data w1500_data;
@@ -609,12 +622,26 @@ static void handle_wifi_con_state_changed(void *pvMsg)
 
 	switch (pstrWifiState->u8CurrState) {
 	case M2M_WIFI_DISCONNECTED:
-		/* TODO status disconnected */
-		SYS_LOG_DBG("Disconnected");
+		SYS_LOG_DBG("Disconnected (%u)", pstrWifiState->u8ErrCode);
+
+		if (w1500_data.connecting) {
+			wifi_mgmt_raise_connect_result_event(w1500_data.iface,
+					pstrWifiState->u8ErrCode ? -EIO : 0);
+			w1500_data.connecting = false;
+
+			break;
+		}
+
+		w1500_data.connected = false;
+		wifi_mgmt_raise_disconnect_result_event(w1500_data.iface, 0);
+
 		break;
 	case M2M_WIFI_CONNECTED:
-		/* TODO status connected */
-		SYS_LOG_DBG("Connected");
+		SYS_LOG_DBG("Connected (%u)", pstrWifiState->u8ErrCode);
+
+		w1500_data.connected = true;
+		wifi_mgmt_raise_connect_result_event(w1500_data.iface, 0);
+
 		break;
 	case M2M_WIFI_UNDEF:
 		/* TODO status undefined*/
@@ -646,6 +673,84 @@ static void handle_wifi_dhcp_conf(void *pvMsg)
 	net_if_ipv4_addr_add(w1500_data.iface, &addr, NET_ADDR_DHCP, 0);
 }
 
+static void reset_scan_data(void)
+{
+	w1500_data.scan_cb = NULL;
+	w1500_data.scan_result = 0;
+}
+
+static void handle_scan_result(void *pvMsg)
+{
+	tstrM2mWifiscanResult *pstrScanResult = (tstrM2mWifiscanResult *)pvMsg;
+	struct wifi_scan_result result;
+
+	if (!w1500_data.scan_cb) {
+		return;
+	}
+
+	if (pstrScanResult->u8AuthType == M2M_WIFI_SEC_OPEN) {
+		result.security = WIFI_SECURITY_TYPE_NONE;
+	} else if (pstrScanResult->u8AuthType == M2M_WIFI_SEC_WPA_PSK) {
+		result.security = WIFI_SECURITY_TYPE_PSK;
+	} else {
+		SYS_LOG_DBG("Security %u not supported",
+			    pstrScanResult->u8AuthType);
+		goto out;
+	}
+
+	memcpy(result.ssid, pstrScanResult->au8SSID, WIFI_SSID_MAX_LEN);
+	result.ssid_length = strlen(result.ssid);
+
+	result.channel = pstrScanResult->u8ch;
+	result.rssi = pstrScanResult->s8rssi;
+
+	w1500_data.scan_cb(w1500_data.iface, 0, &result);
+
+	k_yield();
+
+out:
+	if (w1500_data.scan_result < m2m_wifi_get_num_ap_found()) {
+		m2m_wifi_req_scan_result(w1500_data.scan_result);
+		w1500_data.scan_result++;
+	} else {
+		w1500_data.scan_cb(w1500_data.iface, 0, NULL);
+		reset_scan_data();
+	}
+}
+
+static void handle_scan_done(void *pvMsg)
+{
+	tstrM2mScanDone	*pstrInfo = (tstrM2mScanDone *)pvMsg;
+
+	if (!w1500_data.scan_cb) {
+		return;
+	}
+
+	if (pstrInfo->s8ScanState != M2M_SUCCESS) {
+		w1500_data.scan_cb(w1500_data.iface, -EIO, NULL);
+		reset_scan_data();
+
+		SYS_LOG_ERR("Scan failed.");
+
+		return;
+	}
+
+	w1500_data.scan_result = 0;
+
+	if (pstrInfo->u8NumofCh >= 1) {
+		SYS_LOG_DBG("Requesting results (%u)",
+			    m2m_wifi_get_num_ap_found());
+
+		m2m_wifi_req_scan_result(w1500_data.scan_result);
+		w1500_data.scan_result++;
+	} else {
+		SYS_LOG_DBG("No AP found");
+
+		w1500_data.scan_cb(w1500_data.iface, 0, NULL);
+		reset_scan_data();
+	}
+}
+
 static void winc1500_wifi_cb(u8_t message_type, void *pvMsg)
 {
 	SYS_LOG_DBG("Msg Type %d %s",
@@ -657,6 +762,12 @@ static void winc1500_wifi_cb(u8_t message_type, void *pvMsg)
 		break;
 	case M2M_WIFI_REQ_DHCP_CONF:
 		handle_wifi_dhcp_conf(pvMsg);
+		break;
+	case M2M_WIFI_RESP_SCAN_RESULT:
+		handle_scan_result(pvMsg);
+		break;
+	case M2M_WIFI_RESP_SCAN_DONE:
+		handle_scan_done(pvMsg);
 		break;
 	default:
 		break;
@@ -856,6 +967,79 @@ static void winc1500_thread(void)
 	}
 }
 
+static int winc1500_mgmt_scan(struct device *dev, scan_result_cb_t cb)
+{
+	if (w1500_data.scan_cb) {
+		return -EALREADY;
+	}
+
+	w1500_data.scan_cb = cb;
+
+	if (m2m_wifi_request_scan(M2M_WIFI_CH_ALL)) {
+		w1500_data.scan_cb = NULL;
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static int winc1500_mgmt_connect(struct device *dev,
+				 struct wifi_connect_req_params *params)
+{
+	u8_t ssid[M2M_MAX_SSID_LEN];
+	tuniM2MWifiAuth psk;
+	u8_t security;
+	u16_t channel;
+	void *auth;
+
+	memcpy(ssid, params->ssid, params->ssid_length);
+	ssid[params->ssid_length] = '\0';
+
+	if (params->security == WIFI_SECURITY_TYPE_PSK) {
+		memcpy(psk.au8PSK, params->psk, params->psk_length);
+		psk.au8PSK[params->psk_length] = '\0';
+		auth = &psk;
+
+		security = M2M_WIFI_SEC_WPA_PSK;
+	} else {
+		auth = NULL;
+		security = M2M_WIFI_SEC_OPEN;
+	}
+
+	if (params->channel == WIFI_CHANNEL_ANY) {
+		channel = M2M_WIFI_CH_ALL;
+	} else {
+		channel = params->channel;
+	}
+
+	SYS_LOG_DBG("Connecting to %s (%u) on channel %u %s security (%s)",
+		    ssid, params->ssid_length,
+		    channel == M2M_WIFI_CH_ALL ? "unknown" : channel,
+		    security == M2M_WIFI_SEC_OPEN ? "without" : "with",
+		    params->psk ? (char *)psk.au8PSK : "");
+
+	if (m2m_wifi_connect((char *)ssid, params->ssid_length,
+			     security, auth, channel)) {
+		return -EIO;
+	}
+
+	w1500_data.connecting = true;
+
+	return 0;
+}
+
+static int winc1500_mgmt_disconnect(struct device *device)
+{
+	if (!w1500_data.connected) {
+		return -EALREADY;
+	}
+
+	if (m2m_wifi_disconnect()) {
+		return -EIO;
+	}
+
+	return 0;
+}
 
 static void winc1500_iface_init(struct net_if *iface)
 {
@@ -872,8 +1056,11 @@ static void winc1500_iface_init(struct net_if *iface)
 	w1500_data.iface = iface;
 }
 
-static const struct net_if_api winc1500_api = {
-	.init = winc1500_iface_init,
+static const struct net_wifi_mgmt_offload winc1500_api = {
+	.iface_api.init = winc1500_iface_init,
+	.scan		= winc1500_mgmt_scan,
+	.connect	= winc1500_mgmt_connect,
+	.disconnect	= winc1500_mgmt_disconnect,
 };
 
 static int winc1500_init(struct device *dev)
@@ -881,19 +1068,21 @@ static int winc1500_init(struct device *dev)
 	tstrWifiInitParam param = {
 		.pfAppWifiCb = winc1500_wifi_cb,
 	};
-	tuniM2MWifiAuth creds = {
-		.au8PSK = CONFIG_WIFI_WINC1500_PSK,
-	};
 	unsigned char is_valid;
 	int ret;
 
 	ARG_UNUSED(dev);
+
+	w1500_data.connecting = false;
+	w1500_data.connected = false;
 
 	ret = m2m_wifi_init(&param);
 	if (ret) {
 		SYS_LOG_ERR("m2m_wifi_init return error!(%d)", ret);
 		return -EIO;
 	}
+
+	m2m_wifi_set_scan_region(WINC1500_REGION);
 
 	socketInit();
 	registerSocketCallback(winc1500_socket_cb, NULL);
@@ -914,19 +1103,6 @@ static int winc1500_init(struct device *dev)
 			(k_thread_entry_t)winc1500_thread, NULL, NULL, NULL,
 			K_PRIO_COOP(CONFIG_WIFI_WINC1500_THREAD_PRIO),
 			0, K_NO_WAIT);
-
-	SYS_LOG_DBG("Connecting to %s (%u) with %s",
-		    CONFIG_WIFI_WINC1500_SSID,
-		    CONFIG_WIFI_WINC1500_SSID_LENGTH,
-		    CONFIG_WIFI_WINC1500_PSK);
-
-	ret = m2m_wifi_connect(CONFIG_WIFI_WINC1500_SSID,
-			       CONFIG_WIFI_WINC1500_SSID_LENGTH,
-			       M2M_WIFI_SEC_WPA_PSK, &creds,
-			       M2M_WIFI_CH_ALL);
-	if (ret) {
-		SYS_LOG_WRN("Connecting to wifi does not seem to work");
-	}
 
 	SYS_LOG_DBG("WINC1500 driver Initialized");
 
