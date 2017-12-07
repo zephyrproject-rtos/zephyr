@@ -15,6 +15,8 @@
 #include <kernel.h>
 #include <net/net_pkt.h>
 
+#include <net/ieee802154.h>
+
 #define IEEE802154_MTU				127
 #define IEEE802154_MIN_LENGTH			3
 /* See Section 5.2.1.4 */

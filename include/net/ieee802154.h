@@ -12,6 +12,7 @@
 #ifndef __IEEE802154_H__
 #define __IEEE802154_H__
 
+#include <net/net_l2.h>
 #include <net/ieee802154_mgmt.h>
 #include <crypto/cipher_structs.h>
 
@@ -67,6 +68,8 @@ struct ieee802154_context {
 	u8_t associated		: 1;
 	u8_t _unused		: 5;
 };
+
+#define IEEE802154_L2_CTX_TYPE	struct ieee802154_context
 
 #ifdef __cplusplus
 }

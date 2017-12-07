@@ -14,6 +14,7 @@
 
 #include <device.h>
 #include <net/net_if.h>
+#include <net/ieee802154.h>
 
 #ifdef __cplusplus
 extern "C" {
