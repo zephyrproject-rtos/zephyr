@@ -50,7 +50,7 @@ static bool is_leave_msg_ok;
 static bool is_query_received;
 static bool is_report_sent;
 static bool ignore_already;
-static struct k_sem wait_data;
+K_SEM_DEFINE(wait_data, 0, UINT_MAX);
 
 #define WAIT_TIME 500
 #define WAIT_TIME_LONG MSEC_PER_SEC
@@ -188,16 +188,14 @@ static void mld_setup(void)
 				      NET_ADDR_MANUAL, 0);
 
 	zassert_not_null(ifaddr, "Cannot add IPv6 address");
-
-	/* The semaphore is there to wait the data to be received. */
-	k_sem_init(&wait_data, 0, UINT_MAX);
 }
 
 static void join_group(void)
 {
 	int ret;
 
-	net_ipv6_addr_create(&mcast_addr, 0xff02, 0, 0, 0, 0, 0, 0, 0x0001);
+	/* Using adhoc multicast group outside standard range */
+	net_ipv6_addr_create(&mcast_addr, 0xff10, 0, 0, 0, 0, 0, 0, 0x0001);
 
 	ret = net_ipv6_mld_join(iface, &mcast_addr);
 
@@ -215,7 +213,7 @@ static void leave_group(void)
 {
 	int ret;
 
-	net_ipv6_addr_create(&mcast_addr, 0xff02, 0, 0, 0, 0, 0, 0, 0x0001);
+	net_ipv6_addr_create(&mcast_addr, 0xff10, 0, 0, 0, 0, 0, 0, 0x0001);
 
 	ret = net_ipv6_mld_leave(iface, &mcast_addr);
 
