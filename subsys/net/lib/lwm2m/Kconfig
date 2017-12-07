@@ -163,14 +163,6 @@ config LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_ADDR
 	help
 	  Network address of the CoAP proxy server.
 
-config LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_URI_PATH
-	string "CoAP URI path element used by the proxy"
-	default "coap2http"
-	help
-	  CoAP URI path element exported by the CoAP proxy server.
-	  Defaults to coap2http, which is the URI path used by the
-	  Californium CoAP-HTTP proxy.
-
 endif # LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT
 
 config LWM2M_RW_JSON_SUPPORT
