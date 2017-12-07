@@ -6,7 +6,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-BOARD ?= qemu_x86
+BOARD ?= mystm32f4
 CONF_FILE ?= prj_$(BOARD).conf
 
 include $(ZEPHYR_BASE)/Makefile.inc
