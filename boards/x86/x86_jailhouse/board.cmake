@@ -11,6 +11,10 @@ if(NOT CONFIG_REBOOT)
   set(REBOOT_FLAG -no-reboot)
 endif()
 
+if (NOT DEFINED JAILHOUSE_QEMU_IMG_FILE)
+  message(FATAL_ERROR "You have to provide a valid qcow2 QEMU image to be a Jailhouse root cell (variable JAILHOUSE_QEMU_IMG_FILE)!")
+endif()
+
 set(QEMU_CPU_TYPE_${ARCH} kvm64,-kvm_pv_eoi,-kvm_steal_time,-kvm_asyncpf,-kvmclock,+vmx,+x2apic,+arat)
 set(QEMU_FLAGS_${ARCH}
   -machine q35,kernel_irqchip=split
