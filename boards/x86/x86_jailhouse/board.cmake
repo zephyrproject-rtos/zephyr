@@ -2,6 +2,11 @@ set(EMU_PLATFORM qemu)
 
 set(QEMU_binary_suffix x86_64)
 
+# QEMU, in Jailhouse's case, is not emulating Zephyr's hardware
+# directly, but the root cell/system, with a mount point reaching
+# the kernel itself available
+set(QEMU_KERNEL_OPTION ";")
+
 if(NOT CONFIG_REBOOT)
   set(REBOOT_FLAG -no-reboot)
 endif()
