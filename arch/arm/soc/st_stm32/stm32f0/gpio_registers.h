@@ -66,6 +66,7 @@ union syscfg__exticr {
 
 struct stm32f0x_syscfg {
 	union syscfg_cfgr1 cfgr1;
+	u32_t rsvd;
 	union syscfg__exticr exticr1;
 	union syscfg__exticr exticr2;
 	union syscfg__exticr exticr3;
