@@ -80,6 +80,16 @@
 #include <offsets_short.h>
 #include "xtensa_rtos.h"
 
+#define GEN_MED_INTERRUPT(l)                                            \
+    (XCHAL_NUM_INTLEVELS >= (l) &&                                      \
+     XCHAL_DEBUGLEVEL != (l) &&                                         \
+     XCHAL_EXCM_LEVEL >= (l))
+
+#define GEN_HIGH_INTERRUPT(l)                                           \
+    (XCHAL_NUM_INTLEVELS >= (l) &&                                      \
+     XCHAL_DEBUGLEVEL != (l) &&                                         \
+     (XCHAL_EXCM_LEVEL < (l) && !defined(CONFIG_XTENSA_OMIT_HIGH_INTERRUPTS)))
+
 /*
  * Defines used to access _xtos_interrupt_table.
  */
@@ -1015,7 +1025,7 @@ _xt_lowint1:
  * repeated 5 times!!
  */
 
-#if XCHAL_EXCM_LEVEL >= 2
+#if GEN_MED_INTERRUPT(2)
 
     .begin      literal_prefix .Level2InterruptVector
     .section    .Level2InterruptVector.text, "ax"
@@ -1088,7 +1098,7 @@ _xt_medint2_exit:
 
 #endif  /* Level 2 */
 
-#if XCHAL_EXCM_LEVEL >= 3
+#if GEN_MED_INTERRUPT(3)
 
     .begin      literal_prefix .Level3InterruptVector
     .section    .Level3InterruptVector.text, "ax"
@@ -1161,12 +1171,7 @@ _xt_medint3_exit:
 
 #endif  /* Level 3 */
 
-/* FIXME: For some reason, the HAL provided by the ESP32 port of FreeRTOS,
- * that Zephyr uses, defines XCHAL_EXCM_LEVEL to 3.  That essentially
- * enables the other _Level4Vector routine, that doesn't work on ESP32.
- * This is tracked by: https://jira.zephyrproject.org/browse/ZEP-2570
- */
-#if defined(CONFIG_SOC_ESP32) || (XCHAL_EXCM_LEVEL >= 4)
+#if GEN_MED_INTERRUPT(4)
 
     .begin      literal_prefix .Level4InterruptVector
     .section    .Level4InterruptVector.text, "ax"
@@ -1238,7 +1243,7 @@ _xt_medint4_exit:
 
 #endif  /* Level 4 */
 
-#if XCHAL_EXCM_LEVEL >= 5
+#if GEN_MED_INTERRUPT(5)
 
     .begin      literal_prefix .Level5InterruptVector
     .section    .Level5InterruptVector.text, "ax"
@@ -1310,7 +1315,7 @@ _xt_medint5_exit:
 
 #endif  /* Level 5 */
 
-#if XCHAL_EXCM_LEVEL >= 6
+#if GEN_MED_INTERRUPT(6)
 
     .begin      literal_prefix .Level6InterruptVector
     .section    .Level6InterruptVector.text, "ax"
@@ -1418,7 +1423,7 @@ _xt_medint6_exit:
  * Systems tools documentation: "Microprocessor Programmer's Guide".
  */
 
-#if XCHAL_NUM_INTLEVELS >=2 && XCHAL_EXCM_LEVEL <2 && XCHAL_DEBUGLEVEL !=2
+#if GEN_HIGH_INTERRUPT(2)
 
     .begin      literal_prefix .Level2InterruptVector
     .section    .Level2InterruptVector.text, "ax"
@@ -1455,7 +1460,7 @@ _xt_highint2:
 
 #endif  /* Level 2 */
 
-#if XCHAL_NUM_INTLEVELS >=3 && XCHAL_EXCM_LEVEL <3 && XCHAL_DEBUGLEVEL !=3
+#if GEN_HIGH_INTERRUPT(3)
 
     .begin      literal_prefix .Level3InterruptVector
     .section    .Level3InterruptVector.text, "ax"
@@ -1493,7 +1498,7 @@ _xt_highint3:
 
 #endif  /* Level 3 */
 
-#if !defined(CONFIG_SOC_ESP32) && XCHAL_NUM_INTLEVELS >=4 && XCHAL_EXCM_LEVEL <4 && XCHAL_DEBUGLEVEL !=4
+#if GEN_HIGH_INTERRUPT(4)
 
     .begin      literal_prefix .Level4InterruptVector
     .section    .Level4InterruptVector.text, "ax"
@@ -1531,8 +1536,7 @@ _xt_highint4:
 
 #endif  /* Level 4 */
 
-#if XCHAL_NUM_INTLEVELS >=5 && XCHAL_EXCM_LEVEL <5 && XCHAL_DEBUGLEVEL !=5
-
+#if GEN_HIGH_INTERRUPT(5)
     .begin      literal_prefix .Level5InterruptVector
     .section    .Level5InterruptVector.text, "ax"
     .global     _Level5Vector
@@ -1571,7 +1575,7 @@ _xt_highint5:
 
 #endif  /* Level 5 */
 
-#if XCHAL_NUM_INTLEVELS >=6 && XCHAL_EXCM_LEVEL <6 && XCHAL_DEBUGLEVEL !=6
+#if GEN_HIGH_INTERRUPT(6)
 
     .begin      literal_prefix .Level6InterruptVector
     .section    .Level6InterruptVector.text, "ax"
