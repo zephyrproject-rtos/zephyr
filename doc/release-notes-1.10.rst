@@ -9,11 +9,14 @@ We are pleased to announce the release of Zephyr kernel version 1.10.0.
 
 Major enhancements with this release include:
 
-* Integration with MCUBOOT Bootloader
-* Additional implementation of MMU/MPU support
-* Build and Configuration System (CMake)
+* Initial alpha-quality thread-level memory protection on x86, userspace and memory
+  domains
+* Major overhaul to the build system and a switch from Kbuild to CMake.
 * Newtron Flash Filesystem (NFFS) Support
-* Increased testsuite coverage
+* Increased testsuite coverage and migrated majority of testcases to use ztest
+* Integration with MCUBOOT Bootloader
+* Additional SoC, platform and driver support for many of the already supported
+  platforms.
 
 The following sections provide detailed lists of changes by component.
 
@@ -21,6 +24,17 @@ Kernel
 ******
 
 * Remove deprecated k_mem_pool_defrag code
+* Initial alpha-quality thread-level memory protection on x86, userspace and memory
+  domains:
+
+  * Same kernel & driver APIs for kernel and user mode threads
+  * System calls for privilege elevation
+  * Stack overflow protection
+  * Kernel object and device driver permission tracking
+  * Simple app vs. kernel memory separation
+  * Memory domain APIs for fine-tuning memory region permissions
+  * Stack memory protection from other threads
+
 * Add the following application-facing memory domain APIs:
 
   * k_mem_domain_init() - to initialize a memory domain
@@ -41,6 +55,7 @@ Architectures
 
 * nrf52: Add support for LOW_POWER state and SYSTEM_OFF
 * Architecture specific memory domain APIs added
+* Tickless Kernel Implementation for Xtensa
 * Added support for the following ARM SoCs:
 
   * NXP i.MX RT1052
@@ -50,7 +65,9 @@ Architectures
 
 Boards
 ******
-
+* Jailhouse port: The port will enable Zephyr to run as a guest OS on x86-64
+  systems. It comes with a test on QEMU to validate that, thus this new board
+  introduction.
 * Power Management for nrf52 series SOC
 * Added support for the following ARM boards:
 
@@ -70,6 +87,13 @@ Drivers and Sensors
 
 * timer: Add Support for TICKLESS KERNEL in xtensa_sys_timer
 * Rename `random` to `entropy`
+* Add Atmel SAM I2S (SSC) driver
+* Add Atmel SAM DMA (XDMAC) driver
+* Add plantower PMS7003 Driver
+* Add Altera shim driver for JTAG UART soft IP
+* Add Altera shim driver for timer soft IP
+* Introduce mcux ccm driver
+* Introduce mcux igpio shim driver
 
 Networking
 **********
@@ -78,7 +102,7 @@ Networking
 * Loopback network interface support added. This is used in testing only.
 * LWM2M multi-fragment network packet support added.
 * New CoAP library implementation, supporting longer network packets.
-* Old ZoAP library deprecated.
+* Deprecated ZoAP library.
 * mDNS (multicast DNS) support added.
 * SNTP (Simple Network Time Protocol) client library added.
 * Various fixes for: TCP, RPL, ARP, DNS, LWM2M, Ethernet, net-app API, Network
@@ -444,6 +468,7 @@ release:
 * :github:`4757` - kw41z-frdm: assertion failure while setting IRQ priority
 * :github:`4759` - [PTS] GATT/CL/GAW/BV-02-C fails with INCONC
 * :github:`4760` - stm32f4_disco and frdm_k64f  samples/basic/blink_led ,Choose supported PWM driver
+* :github:`4766` - tests: mem_pool: Fixed memory pool test case failure on quark d2000
 * :github:`4780` - [Coverity CID: 178794] Error handling issues in /tests/subsys/dfu/mcuboot/src/main.c
 * :github:`4781` - [Coverity CID: 178793] Incorrect expression in /tests/kernel/static_idt/src/static_idt.c
 * :github:`4782` - [Coverity CID: 178792] Memory - illegal accesses in /subsys/net/lib/http/http_app_server.c
