@@ -11,6 +11,8 @@ zephyr_sources(
 	xtensa_vectors.S
 	xt_zephyr.S
 	window_vectors.S
+	xtensa-asm2-util.S
+	xtensa-asm2.c
 	)
 
 zephyr_sources_ifndef(CONFIG_ATOMIC_OPERATIONS_C atomic.S)
