@@ -1,5 +1,7 @@
 set(EMU_PLATFORM qemu)
 
+set(QEMU_binary_suffix x86_64)
+
 if(NOT CONFIG_REBOOT)
   set(REBOOT_FLAG -no-reboot)
 endif()
