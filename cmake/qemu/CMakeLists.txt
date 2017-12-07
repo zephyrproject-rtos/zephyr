@@ -159,6 +159,7 @@ if(EMU_PLATFORM)
       ${QEMU_EXTRA_FLAGS}
       ${MORE_FLAGS_FOR_${target}}
       -kernel $<TARGET_FILE:${logical_target_for_zephyr_elf}>
+      DEPENDS ${logical_target_for_zephyr_elf}
       WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
       COMMENT "${QEMU_PIPE_COMMENT}[QEMU] CPU: ${QEMU_CPU_TYPE_${ARCH}}"
       USES_TERMINAL
