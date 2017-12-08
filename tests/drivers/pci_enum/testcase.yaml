@@ -1,4 +1,4 @@
 tests:
   test:
     depends_on: pci
-    tags: samples
+    tags: drivers pci
