@@ -1,8 +1,7 @@
 sample:
-  description: TBD
-  name: TBD
+  name: MCP9808 Temperature Sensor
 tests:
   test:
-    build_only: true
-    platform_whitelist: frdm_k64f quark_d2000_crb
+    harness: sensor
     tags: samples sensor
+    depends_on: i2c
