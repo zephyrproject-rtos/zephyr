@@ -33,6 +33,22 @@ void configure_mpu_stack_guard(struct k_thread *thread)
 
 #if defined(CONFIG_USERSPACE)
 /*
+ * @brief Configure MPU user context
+ *
+ * This function configures the thread's user context.
+ * The functionality is meant to be used during context switch.
+ *
+ * @param thread thread info data structure.
+ */
+void configure_mpu_user_context(struct k_thread *thread)
+{
+	SYS_LOG_DBG("configure user thread %p's context", thread);
+	arm_core_mpu_disable();
+	arm_core_mpu_configure_user_context(thread);
+	arm_core_mpu_enable();
+}
+
+/*
  * @brief Configure MPU memory domain
  *
  * This function configures per thread memory domain reprogramming the MPU.
