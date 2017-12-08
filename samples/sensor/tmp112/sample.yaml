@@ -1,8 +1,7 @@
 sample:
-  description: TBD
-  name: TBD
+  name: TMP112 Sensor Sample
 tests:
   test:
-    build_only: true
-    platform_whitelist: frdm_k64f quark_d2000_crb
+    harness: sensor
     tags: samples
+    depends_on: i2c
