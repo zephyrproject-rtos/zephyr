@@ -1,8 +1,7 @@
 sample:
-  description: TBD
-  name: TBD
+  name: BMI160 Sensor Sample
 tests:
   test:
-    build_only: true
-    platform_whitelist: arduino_101_sss
+    harness: sensor
     tags: sensors
+    depends_on: spi gpio
