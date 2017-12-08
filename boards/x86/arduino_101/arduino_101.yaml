@@ -11,3 +11,4 @@ supported:
   - aio
   - spi
   - i2c
+  - dma

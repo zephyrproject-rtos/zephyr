@@ -15,6 +15,7 @@ supported:
   - aio
   - rtc
   - watchdog
+  - dma
 testing:
   ignore_tags:
      - net
