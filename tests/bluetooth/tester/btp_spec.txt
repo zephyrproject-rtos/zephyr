@@ -1470,6 +1470,27 @@ Commands and responses:
 
 		In case of an error, the error response will be returned.
 
+	Opcode 0x0b - Health Generate Faults
+		Controller Index:	<controller id>
+		Command parameters:	<none>
+		Response parameters:	Test_ID (1 octet)
+					Current_Faults_Count (1 octet)
+					Registered_Faults_Count (1 octet)
+					Current_Faults (variable)
+					Registered_Faults (variable)
+
+		This command is used to generate health faults on IUT.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x0c - Health Clear Faults
+		Controller Index:	<controller id>
+		Command parameters:	<none>
+
+		This command is used to clear fault arrays on IUT.
+
+		In case of an error, the error response will be returned.
+
 	Opcode 0x0d - Low Power Node
 		Controller Index:	<controller id>
 		Command parameters:	Toggle (1 octet)
