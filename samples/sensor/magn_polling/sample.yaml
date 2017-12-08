@@ -1,8 +1,7 @@
 sample:
-  description: TBD
-  name: TBD
+  name: BMC150 Magnetometer Sample
 tests:
   test:
-    build_only: true
-    platform_whitelist: quark_d2000_crb
+    harness: sensor
     tags: samples
+    depends_on: i2c gpio
