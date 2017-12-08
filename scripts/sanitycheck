@@ -1309,6 +1309,7 @@ class TestCase:
         self.toolchain_whitelist = tc_dict["toolchain_whitelist"]
         self.tc_filter = tc_dict["filter"]
         self.timeout = tc_dict["timeout"]
+        self.harness = tc_dict["harness"]
         self.build_only = tc_dict["build_only"]
         self.build_on_all = tc_dict["build_on_all"]
         self.slow = tc_dict["slow"]
@@ -1342,7 +1343,9 @@ class TestInstance:
         self.platform = platform
         self.name = os.path.join(platform.name, test.name)
         self.outdir = os.path.join(base_outdir, platform.name, test.path)
-        self.build_only = build_only or test.build_only
+        # TODO: Support harness in sanitycheck, now we do not run on anything
+        # that requires a harness
+        self.build_only = build_only or test.build_only or (test.harness != '')
 
     def create_overlay(self):
         if len(self.test.extra_configs) > 0:
