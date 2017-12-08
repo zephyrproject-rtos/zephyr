@@ -4,5 +4,5 @@ sample:
 tests:
   test:
     harness: sensor
-    platform_whitelist: arduino_101_sss
-    tags: samples
+    tags: samples sensor
+    depends_on: i2c gpio
