@@ -1,9 +1,6 @@
 sample:
-  description: TBD
-  name: TBD
+  name: RTC Driver Sample
 tests:
   test:
-    build_only: true
-    platform_whitelist: quark_d2000_crb quark_se_c1000_devboard
-      arduino_101
     tags: drivers
+    depends_on: rtc
