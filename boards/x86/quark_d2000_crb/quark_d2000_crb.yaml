@@ -16,6 +16,7 @@ supported:
   - rtc
   - watchdog
   - dma
+  - pwm
 testing:
   ignore_tags:
      - net

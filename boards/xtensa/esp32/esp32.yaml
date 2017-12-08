@@ -4,3 +4,9 @@ type: mcu
 arch: xtensa
 toolchain:
   - espressif
+supported:
+  - gpio
+  - i2c
+  - watchdog
+  - uart
+  - pinmux
