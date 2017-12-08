@@ -27,3 +27,10 @@ tests:
     min_ram: 32
     platform_exclude: zedboard_pulpino
     tags: drivers footprint
+  test_nsim:
+    build_only: true
+    platform_whitelist: em_starterkit
+    extra_configs:
+      - CONFIG_NSIM=y
+      - CONFIG_UART_NSIM=y
+
