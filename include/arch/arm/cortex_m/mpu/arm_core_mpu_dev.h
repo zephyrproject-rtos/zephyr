@@ -30,9 +30,11 @@ extern "C" {
  * be managed inside the MPU driver and not escalated.
  */
 /* Thread Stack Region Intent Type */
+#define THREAD_STACK_USER_REGION 0x0	/* fake region for user mode stack */
 #define THREAD_STACK_REGION 0x1
-#define THREAD_STACK_GUARD_REGION 0x2
-#define THREAD_DOMAIN_PARTITION_REGION 0x3
+#define THREAD_APP_DATA_REGION 0x2
+#define THREAD_STACK_GUARD_REGION 0x3
+#define THREAD_DOMAIN_PARTITION_REGION 0x4
 
 #if defined(CONFIG_ARM_CORE_MPU)
 struct k_mem_domain;
