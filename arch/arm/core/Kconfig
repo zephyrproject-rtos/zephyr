@@ -23,7 +23,7 @@ config CPU_CORTEX_M
 	select HAS_FLASH_LOAD_OFFSET
 	select HAS_DTS
 	select ARCH_HAS_STACK_PROTECTION if ARM_CORE_MPU
-	select ARCH_HAS_USERSPACE if ARM_USERSPACE
+	select ARCH_HAS_USERSPACE if ARM_CORE_MPU
 	help
 	  This option signifies the use of a CPU of the Cortex-M family.
 
@@ -41,14 +41,6 @@ config ARM_STACK_PROTECTION
 	help
 	  This option enables MPU stack guard to cause a system fatal error
 	  if the bounds of the current process stack are overflowed.
-
-config ARM_USERSPACE
-	bool
-	default n
-	help
-	  This option enables APIs to drop a thread's privileges,	supporting
-	  user-level threads that are protected from each other and from
-	  crashing the kernel.
 
 menu "Architectue Floating Point Options"
 depends on CPU_HAS_FPU

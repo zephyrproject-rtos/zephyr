@@ -19,6 +19,10 @@
 #include <string.h>
 #endif /* CONFIG_INIT_STACKS */
 
+#ifdef CONFIG_USERSPACE
+extern u8_t *_k_priv_stack_find(void *obj);
+#endif
+
 /**
  *
  * @brief Initialize a new thread from its stack space
@@ -58,16 +62,33 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 	_ASSERT_VALID_PRIO(priority, pEntry);
 
+#if CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
+	char *stackEnd = pStackMem + stackSize - MPU_GUARD_ALIGN_AND_SIZE;
+#else
 	char *stackEnd = pStackMem + stackSize;
+#endif
 	struct __esf *pInitCtx;
-	_new_thread_init(thread, pStackMem, stackSize, priority, options);
+
+	_new_thread_init(thread, pStackMem, stackEnd - pStackMem, priority,
+			 options);
 
 	/* carve the thread entry struct from the "base" of the stack */
-
 	pInitCtx = (struct __esf *)(STACK_ROUND_DOWN(stackEnd -
 						     sizeof(struct __esf)));
 
-	pInitCtx->pc = ((u32_t)_thread_entry) & 0xfffffffe;
+#if CONFIG_USERSPACE
+	if (options & K_USER) {
+		pInitCtx->pc = (u32_t)_arch_user_mode_enter;
+	} else {
+		pInitCtx->pc = (u32_t)_thread_entry;
+	}
+#else
+	pInitCtx->pc = (u32_t)_thread_entry;
+#endif
+
+	/* force ARM mode by clearing LSB of address */
+	pInitCtx->pc &= 0xfffffffe;
+
 	pInitCtx->a1 = (u32_t)pEntry;
 	pInitCtx->a2 = (u32_t)parameter1;
 	pInitCtx->a3 = (u32_t)parameter2;
@@ -77,6 +98,12 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 	thread->callee_saved.psp = (u32_t)pInitCtx;
 	thread->arch.basepri = 0;
+
+#if CONFIG_USERSPACE
+	thread->arch.mode = 0;
+	thread->arch.priv_stack_start = 0;
+	thread->arch.priv_stack_size = 0;
+#endif
 
 	/* swap_return_value can contain garbage */
 
@@ -94,3 +121,23 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	thread_monitor_init(thread);
 #endif
 }
+
+#ifdef CONFIG_USERSPACE
+
+FUNC_NORETURN void _arch_user_mode_enter(k_thread_entry_t user_entry,
+	void *p1, void *p2, void *p3)
+{
+
+	/* Set up privileged stack before entering user mode */
+	_current->arch.priv_stack_start =
+		(u32_t)_k_priv_stack_find(_current->stack_obj);
+	_current->arch.priv_stack_size =
+		(u32_t)CONFIG_PRIVILEGED_STACK_SIZE;
+
+	_arm_userspace_enter(user_entry, p1, p2, p3,
+			     (u32_t)_current->stack_info.start,
+			     _current->stack_info.size);
+	CODE_UNREACHABLE;
+}
+
+#endif

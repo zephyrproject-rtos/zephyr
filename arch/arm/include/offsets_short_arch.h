@@ -27,6 +27,9 @@
 	(___thread_t_arch_OFFSET + ___thread_arch_t_preempt_float_OFFSET)
 
 #ifdef CONFIG_USERSPACE
+#define _thread_offset_to_mode \
+	(___thread_t_arch_OFFSET + ___thread_arch_t_mode_OFFSET)
+
 #define _thread_offset_to_priv_stack_start \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_priv_stack_start_OFFSET)
 #endif

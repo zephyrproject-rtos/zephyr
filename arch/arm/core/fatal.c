@@ -87,3 +87,14 @@ void _do_kernel_oops(const NANO_ESF *esf)
 {
 	_NanoFatalErrorHandler(esf->r0, esf);
 }
+
+FUNC_NORETURN void _arch_syscall_oops(void *ssf_ptr)
+{
+	u32_t *ssf_contents = ssf_ptr;
+	NANO_ESF oops_esf = { 0 };
+
+	oops_esf.pc = ssf_contents[3];
+
+	_do_kernel_oops(&oops_esf);
+	CODE_UNREACHABLE;
+}

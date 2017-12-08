@@ -96,6 +96,12 @@ extern void k_cpu_atomic_idle(unsigned int key);
 
 extern void _IntLibInit(void);
 
+
+extern FUNC_NORETURN void _arm_userspace_enter(k_thread_entry_t user_entry,
+					       void *p1, void *p2, void *p3,
+					       u32_t stack_end,
+					       u32_t stack_start);
+
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus

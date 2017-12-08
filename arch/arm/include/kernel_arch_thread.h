@@ -94,6 +94,12 @@ struct _thread_arch {
 	 */
 	struct _preempt_float  preempt_float;
 #endif
+
+#ifdef CONFIG_USERSPACE
+	u32_t mode;
+	u32_t priv_stack_start;
+	u32_t priv_stack_size;
+#endif
 };
 
 typedef struct _thread_arch _thread_arch_t;

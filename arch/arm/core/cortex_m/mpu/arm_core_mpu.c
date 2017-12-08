@@ -23,10 +23,18 @@
  */
 void configure_mpu_stack_guard(struct k_thread *thread)
 {
+	u32_t guard_size = MPU_GUARD_ALIGN_AND_SIZE;
+#if defined(CONFIG_USERSPACE)
+	u32_t guard_start = thread->arch.priv_stack_start ?
+			    (u32_t)thread->arch.priv_stack_start :
+			    (u32_t)thread->stack_obj;
+#else
+	u32_t guard_start = thread->stack_info.start;
+#endif
+
 	arm_core_mpu_disable();
-	arm_core_mpu_configure(THREAD_STACK_GUARD_REGION,
-			thread->stack_info.start - MPU_GUARD_ALIGN_AND_SIZE,
-			thread->stack_info.size);
+	arm_core_mpu_configure(THREAD_STACK_GUARD_REGION, guard_start,
+			       guard_size);
 	arm_core_mpu_enable();
 }
 #endif
