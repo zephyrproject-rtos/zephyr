@@ -3,6 +3,6 @@ sample:
   name: TBD
 tests:
   test:
-    build_only: true
+    harness: sensor
     platform_whitelist: arduino_101_sss
     tags: samples
