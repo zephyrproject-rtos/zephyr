@@ -38,6 +38,9 @@ mapping:
      "filter":
        type: str
        required: no
+     "harness":
+       type: str
+       required: no
      "min_ram":
        type: int
        required: no
@@ -128,6 +131,9 @@ mapping:
                type: str
                required: no
              "filter":
+               type: str
+               required: no
+             "harness":
                type: str
                required: no
              "min_ram":
