@@ -76,21 +76,18 @@
 /* The ENDADDR field has the last 5 bit reserved and set to 1 */
 #define ENDADDR_ROUND(x) (x - 0x1F)
 
+#define REGION_USER_MODE_ATTR (MPU_REGION_READ | \
+				MPU_REGION_WRITE | \
+				MPU_REGION_SU)
+
 /* Some helper defines for common regions */
 #if defined(CONFIG_MPU_ALLOW_FLASH_WRITE)
-#define REGION_RAM_ATTR	  (MPU_REGION_READ | \
-			   MPU_REGION_WRITE | \
-			   MPU_REGION_EXEC | \
-			   MPU_REGION_SU)
+#define REGION_RAM_ATTR	  (MPU_REGION_SU_RWX)
 
-#define REGION_FLASH_ATTR (MPU_REGION_READ | \
-			   MPU_REGION_WRITE | \
-			   MPU_REGION_EXEC | \
-			   MPU_REGION_SU)
+#define REGION_FLASH_ATTR (MPU_REGION_SU_RWX)
+
 #else
-#define REGION_RAM_ATTR	  (MPU_REGION_READ | \
-			   MPU_REGION_WRITE | \
-			   MPU_REGION_SU)
+#define REGION_RAM_ATTR	  (MPU_REGION_SU_RW)
 
 #define REGION_FLASH_ATTR (MPU_REGION_READ | \
 			   MPU_REGION_EXEC | \
@@ -102,8 +99,10 @@
 			   MPU_REGION_EXEC | \
 			   MPU_REGION_SU)
 
-#define REGION_RO_ATTR	  (MPU_REGION_READ | \
-			   MPU_REGION_SU)
+#define REGION_RO_ATTR	  (MPU_REGION_READ | MPU_REGION_SU)
+
+#define REGION_USER_RO_ATTR (MPU_REGION_READ | \
+			     MPU_REGION_SU)
 
 #define REGION_DEBUG_ATTR  MPU_REGION_SU
 

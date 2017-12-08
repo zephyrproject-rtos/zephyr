@@ -101,9 +101,12 @@ struct arm_mpu {
 #define DEVICE_NON_SHAREABLE				(2 << 19)
 
 /* Some helper defines for common regions */
-#define REGION_RAM_ATTR(size) \
+#define REGION_USER_RAM_ATTR(size) \
 		(NORMAL_OUTER_INNER_NON_CACHEABLE_NON_SHAREABLE | \
 		 NOT_EXEC | size | FULL_ACCESS)
+#define REGION_RAM_ATTR(size) \
+		(NORMAL_OUTER_INNER_NON_CACHEABLE_NON_SHAREABLE | \
+		 NOT_EXEC | size | P_RW_U_NA)
 #if defined(CONFIG_MPU_ALLOW_FLASH_WRITE)
 #define REGION_FLASH_ATTR(size) \
 		(NORMAL_OUTER_INNER_NON_CACHEABLE_NON_SHAREABLE | size | \
