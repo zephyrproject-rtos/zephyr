@@ -1,8 +1,7 @@
 sample:
-  description: TBD
-  name: TBD
+  name: HTS221 Temperature and Humidity Monitor
 tests:
   test:
-    build_only: true
-    platform_whitelist: disco_l475_iot1
+    harness: sensor
     tags: samples sensor
+    depends_on: i2c
