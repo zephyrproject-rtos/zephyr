@@ -1,0 +1,4 @@
+tests:
+  test:
+    tags: drivers aio
+    depends_on: aio
