@@ -1078,7 +1078,9 @@ testcase_valid_keys = {"tags": {"type": "set", "required": False},
                        "platform_whitelist": {"type": "set"},
                        "toolchain_exclude": {"type": "set"},
                        "toolchain_whitelist": {"type": "set"},
-                       "filter": {"type": "str"}}
+                       "filter": {"type": "str"},
+                       "harness": {"type": "str"}
+                       }
 
 
 class SanityConfigParser:
