@@ -249,6 +249,11 @@ void arm_core_mpu_configure(u8_t type, u32_t base, u32_t size)
 }
 
 #if defined(CONFIG_USERSPACE)
+void arm_core_mpu_configure_user_context(struct k_thread *thread)
+{
+	return 0;
+}
+
 /**
  * @brief configure MPU regions for the memory partitions of the memory domain
  *

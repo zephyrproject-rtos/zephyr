@@ -37,6 +37,7 @@ extern "C" {
 #if defined(CONFIG_ARM_CORE_MPU)
 struct k_mem_domain;
 struct k_mem_partition;
+struct k_thread;
 
 /* ARM Core MPU Driver API */
 
@@ -70,6 +71,13 @@ void arm_core_mpu_configure(u8_t type, u32_t base, u32_t size);
  * @param   mem_domain    memory domain that thread belongs to
  */
 void arm_core_mpu_configure_mem_domain(struct k_mem_domain *mem_domain);
+
+/**
+ * @brief configure MPU regions for a user thread's context
+ *
+ * @param	thread	thread to configure
+ */
+void arm_core_mpu_configure_user_context(struct k_thread *thread);
 
 /**
  * @brief configure MPU region for a single memory partition
