@@ -1,8 +1,7 @@
 sample:
-  description: TBD
-  name: TBD
+  name: BMM150 Sensor Sample
 tests:
   test:
-    build_only: true
-    platform_whitelist: arduino_101
+    harness: sensor
     tags: samples sensor
+    depends_on: gpio i2c
