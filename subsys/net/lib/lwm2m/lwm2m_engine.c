@@ -886,34 +886,42 @@ cleanup:
 int lwm2m_send_message(struct lwm2m_message *msg)
 {
 	int ret;
+	struct net_pkt *pkt;
 
 	if (!msg || !msg->ctx) {
 		SYS_LOG_ERR("LwM2M message is invalid.");
 		return -EINVAL;
 	}
 
+	/* protect the packet from being released inbetween net_app_send_pkt()
+	 * to coap_pending_cycle()
+	 */
+	pkt = msg->cpkt.pkt;
+	net_pkt_ref(pkt);
+
 	msg->send_attempts++;
 	ret = net_app_send_pkt(&msg->ctx->net_app_ctx, msg->cpkt.pkt,
 			       &msg->ctx->net_app_ctx.default_ctx->remote,
 			       NET_SOCKADDR_MAX_SIZE, K_NO_WAIT, NULL);
 	if (ret < 0) {
-		return ret;
+		goto out;
 	}
 
 	if (msg->type == COAP_TYPE_CON) {
 		if (msg->send_attempts > 1) {
-			return 0;
+			goto out;
 		}
 
 		coap_pending_cycle(msg->pending);
 		k_delayed_work_submit(&msg->ctx->retransmit_work,
 				      msg->pending->timeout);
 	} else {
-		/* if we're not expecting an ACK, free up the msg data */
 		lwm2m_reset_message(msg, true);
 	}
 
-	return 0;
+out:
+	net_pkt_unref(pkt);
+	return ret;
 }
 
 u16_t lwm2m_get_rd_data(u8_t *client_data, u16_t size)
