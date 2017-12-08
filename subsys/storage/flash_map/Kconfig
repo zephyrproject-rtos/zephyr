@@ -1,0 +1,28 @@
+# Kconfig - Flash map abstraction module
+#
+# Copyright (c) 2017 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+#
+# Flash map
+#
+
+menuconfig FLASH_MAP
+	bool
+	prompt "Flash map abstraction module"
+	default n
+	depends on FLASH
+	help
+	  Enable support of flash map abstraction.
+
+config FLASH_MAP_CUSTOM
+	bool
+	prompt "Custom flash map description"
+	default n
+	depends on FLASH_MAP
+	help
+	  This option enables custom flash map description.
+	  User must provide such a description in place of default on
+	  if had enabled this option.

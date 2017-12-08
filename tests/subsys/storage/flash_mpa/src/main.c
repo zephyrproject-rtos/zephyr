@@ -1,0 +1,103 @@
+/*
+ * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2015 Runtime Inc
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <ztest.h>
+#include <flash.h>
+#include <flash_map.h>
+
+
+
+#define FLASH_AREA_BOOTLOADER                    0
+#define FLASH_AREA_IMAGE_0                       1
+#define FLASH_AREA_IMAGE_1                       2
+#define FLASH_AREA_IMAGE_SCRATCH                 3
+
+extern int flash_map_entries;
+struct flash_sector fs_sectors[256];
+
+/*
+ * Test flash_area_to_sectors()
+ */
+void flash_map_test_case_2(void)
+{
+	const struct flash_area *fa;
+	int sec_cnt;
+	int i;
+	int rc;
+	off_t off;
+	u8_t wd[256];
+	u8_t rd[256];
+	struct device *flash_dev;
+
+	rc = flash_area_open(FLASH_AREA_IMAGE_1, &fa);
+	zassert_true(rc == 0, "flash_area_open() fail");
+
+	/* First erase the area so it's ready for use. */
+	flash_dev = device_get_binding(CONFIG_SOC_FLASH_NRF5_DEV_NAME);
+	rc = flash_erase(flash_dev, fa->fa_off, fa->fa_size);
+	zassert_true(rc == 0, "flash area erase fail");
+
+	memset(wd, 0xa5, sizeof(wd));
+
+	rc = flash_area_get_sectors(FLASH_AREA_IMAGE_1, &sec_cnt, fs_sectors);
+	zassert_true(rc == 0, "flash_area_get_sectors failed");
+
+	/* write stuff to beginning of every sector */
+	off = 0;
+	for (i = 0; i < sec_cnt; i++) {
+		rc = flash_area_write(fa, off, wd, sizeof(wd));
+		zassert_true(rc == 0, "flash_area_write() fail");
+
+		/* read it back via hal_flash_Read() */
+		rc = flash_read(flash_dev, fa->fa_off + off, rd, sizeof(rd));
+		zassert_true(rc == 0, "hal_flash_read() fail");
+
+		rc = memcmp(wd, rd, sizeof(wd));
+		zassert_true(rc == 0, "read data != write data");
+
+		(void) flash_write_protection_set(flash_dev, false);
+		/* write stuff to end of area */
+		rc = flash_write(flash_dev, fa->fa_off + off +
+					    fs_sectors[i].fs_size - sizeof(wd),
+				 wd, sizeof(wd));
+		zassert_true(rc == 0, "hal_flash_write() fail");
+
+		/* and read it back */
+		memset(rd, 0, sizeof(rd));
+		rc = flash_area_read(fa, off + fs_sectors[i].fs_size -
+					 sizeof(rd),
+				     rd, sizeof(rd));
+		zassert_true(rc == 0, "hal_flash_read() fail");
+
+		rc = memcmp(wd, rd, sizeof(rd));
+		zassert_true(rc == 0, "read data != write data");
+
+		off += fs_sectors[i].fs_size;
+	}
+
+	/* erase it */
+	rc = flash_area_erase(fa, 0, fa->fa_size);
+	zassert_true(rc == 0, "read data != write data");
+
+	/* should read back ff all throughout*/
+	memset(wd, 0xff, sizeof(wd));
+	for (off = 0; off < fa->fa_size; off += sizeof(rd)) {
+		rc = flash_area_read(fa, off, rd, sizeof(rd));
+		zassert_true(rc == 0, "hal_flash_read() fail");
+
+		rc = memcmp(wd, rd, sizeof(rd));
+		zassert_true(rc == 0, "area not erased");
+	}
+
+}
+
+void test_main(void *p1, void *p2, void *p3)
+{
+	ztest_test_suite(test_flash_map,
+			 ztest_unit_test(flash_map_test_case_2));
+	ztest_run_test_suite(test_flash_map);
+}
