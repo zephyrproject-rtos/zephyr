@@ -1,5 +1,5 @@
 tests:
   test:
     filter: not CONFIG_SOC_QUARK_SE_C1000_SS
-    tags: core
     platform_exclude: native_posix
+    tags: drivers ipc
