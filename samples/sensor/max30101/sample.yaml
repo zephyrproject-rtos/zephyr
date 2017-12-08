@@ -3,6 +3,7 @@ sample:
   name: TBD
 tests:
   test:
-    build_only: true
-    platform_whitelist: hexiwear_k64
+    harness: sensor
     tags: samples sensor
+    platform_whitelist: hexiwear_k64
+    depends_on: i2c
