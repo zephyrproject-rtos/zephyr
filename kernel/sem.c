@@ -27,6 +27,7 @@
 #include <ksched.h>
 #include <init.h>
 #include <syscall_handler.h>
+#include <nano_internal.h>
 
 extern struct k_sem _k_sem_list_start[];
 extern struct k_sem _k_sem_list_end[];

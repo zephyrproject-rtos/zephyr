@@ -24,6 +24,7 @@
 #include <wait_q.h>
 #include <atomic.h>
 #include <syscall_handler.h>
+#include <nano_internal.h>
 
 extern struct _static_thread_data _static_thread_data_list_start[];
 extern struct _static_thread_data _static_thread_data_list_end[];
