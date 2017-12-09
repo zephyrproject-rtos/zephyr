@@ -19,7 +19,6 @@ GTEXT(_Fault)
 
 GTEXT(_k_neg_eagain)
 GTEXT(_is_next_thread_current)
-GTEXT(_get_next_ready_thread)
 
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
 GTEXT(_sys_k_event_logger_context_switch)
