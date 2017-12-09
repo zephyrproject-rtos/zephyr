@@ -1,9 +1,6 @@
 sample:
-  description: TBD
-  name: TBD
+  name: Watchdog Driver Sample
 tests:
   test:
-    build_only: true
-    platform_whitelist: quark_d2000_crb quark_se_test_board
-      v2m_beetle nucleo_f334r8 96b_carbon
     tags: drivers
+    depends_on: watchdog
