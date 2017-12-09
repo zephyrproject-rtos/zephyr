@@ -10,6 +10,7 @@
 #include <init.h>
 #include <string.h>
 #include <misc/__assert.h>
+#include <nano_internal.h>
 
 /* Linker-defined symbols bound the static pool structs */
 extern struct k_mem_pool _k_mem_pool_list_start[];

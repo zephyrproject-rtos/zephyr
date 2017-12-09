@@ -36,6 +36,7 @@
 #include <errno.h>
 #include <init.h>
 #include <syscall_handler.h>
+#include <nano_internal.h>
 
 #define RECORD_STATE_CHANGE(mutex) do { } while ((0))
 #define RECORD_CONFLICT(mutex) do { } while ((0))

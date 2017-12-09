@@ -8,6 +8,7 @@
 #include <pthread.h>
 #include "ksched.h"
 #include "wait_q.h"
+#include <nano_internal.h>
 
 void ready_one_thread(_wait_q_t *wq);
 
