@@ -469,6 +469,18 @@ struct k_thread {
 	k_thread_stack_t *stack_obj;
 #endif /* CONFIG_USERSPACE */
 
+#if defined(CONFIG_USE_SWITCH)
+	/* When using __switch() a few previously arch-specific items
+	 * become part of the core OS
+	 */
+
+	/* _Swap() return value */
+	int swap_retval;
+
+	/* Context handle returned via _arch_switch() */
+	void *switch_handle;
+#endif
+
 	/* arch-specifics: must always be at the end */
 	struct _thread_arch arch;
 };
