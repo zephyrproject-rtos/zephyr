@@ -48,3 +48,17 @@ void *xtensa_init_stack(int *stack_top,
 	bsa[-9] = bsa;
 	return &bsa[-9];
 }
+
+void _new_thread(struct k_thread *thread, k_thread_stack_t *stack, size_t sz,
+		 k_thread_entry_t entry, void *p1, void *p2, void *p3,
+		 int prio, unsigned int opts)
+{
+	char *base = K_THREAD_STACK_BUFFER(stack);
+	char *top = base + sz;
+
+	__ASSERT((((size_t)top) & 3) == 0, "Misaligned stack");
+
+	_new_thread_init(thread, base, sz, prio, opts);
+
+	thread->switch_handle = xtensa_init_stack(top, entry, p1, p2, p3);
+}
