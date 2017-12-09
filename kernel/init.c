@@ -27,6 +27,7 @@
 #include <version.h>
 #include <string.h>
 #include <misc/dlist.h>
+#include <nano_internal.h>
 
 /* kernel build timestamp items */
 
