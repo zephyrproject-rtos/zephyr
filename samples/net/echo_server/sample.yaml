@@ -1,5 +1,5 @@
 common:
-  build_only: true
+  harness: net
   tags: net
 sample:
   description: Test core network features using a client/server
@@ -23,7 +23,7 @@ tests:
     extra_args: CONF_FILE="prj_nrf5.conf"
     platform_whitelist: nrf52840_pca10056
   test_usbnet:
-    build_only: true
+    harness: net
     extra_args: CONF_FILE="prj_netusb.conf"
     extra_configs:
       - CONFIG_USB_DEVICE_VID=0xDEAD
@@ -31,7 +31,7 @@ tests:
     platform_whitelist: quark_se_c1000_devboard 96b_carbon
     tags: net usb
   test_usbnet_composite:
-    build_only: true
+    harness: net
     extra_args: CONF_FILE="prj_netusb.conf"
     extra_configs:
       - CONFIG_USB_COMPOSITE_DEVICE=y

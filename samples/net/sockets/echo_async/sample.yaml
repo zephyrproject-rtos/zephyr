@@ -4,6 +4,6 @@ sample:
   name: socket_echo_async
 tests:
   test:
-    build_only: true
+    harness: net
     platform_whitelist: qemu_x86
     tags: net

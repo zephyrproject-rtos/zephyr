@@ -1,5 +1,5 @@
 common:
-  build_only: true
+  harness: net
   depends_on: ieee802154
   tags: net rpl ieee802154
 sample:
