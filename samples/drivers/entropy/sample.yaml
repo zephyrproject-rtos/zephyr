@@ -1,7 +1,6 @@
 sample:
-  description: TBD
-  name: TBD
+  name: Sample for the entropy gathering driver
 tests:
   test:
-    build_only: true
     tags: samples
+    filter: CONFIG_ENTROPY_HAS_DRIVER
