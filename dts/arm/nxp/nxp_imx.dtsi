@@ -1,0 +1,81 @@
+/*
+ * Copyright (c) 2017, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+#include <dt-bindings/clock/imx_ccm.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4";
+			reg = <0>;
+		};
+	};
+
+	soc {
+
+		tcram: tcram@1fff8000 {
+			compatible = "nxp,imx-tcram";
+			reg = <0x1fff8000 0x8000>;
+			label = "TCRAM";
+
+			clock-controller;
+			#clocks-cells = <3>;
+		};
+
+		ocram: ocram@00900000 {
+			compatible = "nxp,imx-ocram";
+			reg = <0x00900000 0x20000>;
+			label = "OCRAM";
+
+			clock-controller;
+			#clocks-cells = <3>;
+		};
+
+
+		ddram: ddram@10000000 {
+			compatible = "nxp,imx-ddram";
+			reg = <0x10000000 0x10000000>;
+			label = "CCM";
+
+			clock-controller;
+			#clocks-cells = <3>;
+		};
+
+
+
+		gpio1: gpio@30200000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x30200000 0x4000>;
+			interrupts = <62 0>, <63 0>;
+			label = "GPIO_1";
+		};
+
+
+		iomuxc: iomuxc@30330000 {
+			reg = <0x30330000 0x4000>;
+			label = "PINMUX_0";
+		};
+
+
+		uart2: uart@30890000 {
+			compatible = "nxp,imx-uart";
+			reg = <0x30890000 0x4000>;
+			interrupts = <27 0>;
+			label = "UART_2";
+			status = "disabled";
+		};
+
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};

@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2017, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_imx.dtsi>
+
+/ {
+	model = "TORADEX Colibir IMX7D board";
+	compatible = "nxp,mcimx7d_m4";
+
+	aliases {
+		gpio_1= &gpio1;
+		uart_2 = &uart2;
+	};
+
+	chosen {
+		zephyr,flash = &tcram;
+		zephyr,sram = &ocram;
+		zephyr,console = &uart2;
+	};
+};
+
+&uart2 {
+	status = "ok";
+	current-speed = <115200>;
+};

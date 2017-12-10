@@ -20,6 +20,8 @@ source "ext/hal/nordic/Kconfig"
 
 source "ext/hal/nxp/mcux/Kconfig"
 
+source "ext/hal/nxp/imx/Kconfig"
+
 source "ext/hal/qmsi/Kconfig"
 
 source "ext/hal/silabs/gecko/Kconfig"
