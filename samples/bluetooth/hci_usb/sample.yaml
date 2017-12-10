@@ -3,7 +3,7 @@ sample:
   name: TBD
 tests:
   test_x86:
-    build_only: true
+    harness: bluetooth
     depends_on: usb_device
     extra_configs:
       - CONFIG_USB_DEVICE_VID=0xDEAD

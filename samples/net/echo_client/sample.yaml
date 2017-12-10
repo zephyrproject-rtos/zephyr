@@ -1,5 +1,5 @@
 common:
-  build_only: true
+  harness: net
   tags: net
 sample:
   description: Test core network features using a client/server

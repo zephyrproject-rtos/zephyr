@@ -4,5 +4,5 @@ sample:
 tests:
   test:
     arch_whitelist: x86
-    build_only: true
+    harness: bluetooth
     tags: bluetooth
