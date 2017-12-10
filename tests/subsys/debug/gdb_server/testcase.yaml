@@ -1,5 +1,0 @@
-tests:
-  test:
-    build_only: true
-    platform_whitelist: qemu_x86
-    tags: apps
