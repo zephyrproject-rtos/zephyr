@@ -1,8 +1,7 @@
 sample:
-  description: TBD
-  name: TBD
+  name: Blinky Sample
 tests:
   test:
-    build_only: true
     platform_whitelist: arduino_101
     tags: samples
+    depends_on: gpio

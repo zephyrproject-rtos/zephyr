@@ -1,13 +1,12 @@
 sample:
-  description: TBD
-  name: TBD
+  name: MPU Stack Guard
 tests:
   test:
-    build_only: true
     tags: apps
+    harness: console
   test_stack_guard:
     arch_whitelist: arm
-    build_only: true
     extra_args: CONF_FILE=prj_stack_guard.conf
     filter: CONFIG_MPU_STACK_GUARD
     tags: apps
+    harness: console
