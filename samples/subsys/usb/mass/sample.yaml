@@ -1,8 +1,6 @@
 sample:
-  description: TBD
-  name: TBD
+  name: Mass Storage
 tests:
   test:
-    build_only: true
     platform_whitelist: arduino_101
     tags: msd usb

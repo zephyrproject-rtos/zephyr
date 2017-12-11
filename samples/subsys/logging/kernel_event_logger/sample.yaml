@@ -4,6 +4,6 @@ sample:
   name: Kernel event logger Sample
 tests:
   test:
-    build_only: true
     platform_whitelist: qemu_x86
     tags: apps
+    harness: console

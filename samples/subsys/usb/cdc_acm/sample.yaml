@@ -1,9 +1,8 @@
 sample:
-  description: TBD
-  name: TBD
+  name: CDC ACM USB
 tests:
   test_x86:
-    build_only: true
     depends_on: usb_device
     platform_whitelist: arduino_101
     tags: usb
+    harness: console
