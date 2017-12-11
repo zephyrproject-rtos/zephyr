@@ -5,5 +5,5 @@ sample:
 tests:
   test:
     build_on_all: true
-    build_only: true
     tags: apps
+    harness: console

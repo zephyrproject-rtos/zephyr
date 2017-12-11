@@ -1,9 +1,7 @@
 sample:
-  description: TBD
-  name: TBD
+  name: Console over USB
 tests:
   test:
-    build_only: true
     depends_on: usb_device
     platform_whitelist: arduino_101
     tags: usb

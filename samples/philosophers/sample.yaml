@@ -1,7 +1,6 @@
 sample:
-  description: TBD
-  name: TBD
+  name: Dining Philosophers
 tests:
   test:
-    build_only: true
-    tags: apps
+    tags: samples
+    harness: console
