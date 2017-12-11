@@ -519,12 +519,75 @@ static void sw_switch(u8_t dir, u8_t phy_curr, u8_t flags_curr, u8_t phy_next,
 			radio_rx_chain_delay_get(phy_curr, 1);
 
 		NRF_PPI->CH[ppi].TEP = (u32_t)&(NRF_RADIO->TASKS_TXEN);
+
+#if defined(CONFIG_SOC_NRF52840)
+		if (phy_curr & BIT(2)) {
+			u8_t ppi_en = 16 + sw_tifs_toggle;
+			u8_t cc = 2 + sw_tifs_toggle;
+			u8_t ppi_dis = 8 + sw_tifs_toggle;
+			u32_t delay;
+
+			delay = radio_tx_ready_delay_get(phy_next, flags_next) +
+				radio_rx_chain_delay_get(phy_curr, 0);
+
+			NRF_TIMER1->CC[cc] = NRF_TIMER1->CC[sw_tifs_toggle];
+
+			if (delay < NRF_TIMER1->CC[cc]) {
+				NRF_TIMER1->CC[cc] -= delay;
+			} else {
+				NRF_TIMER1->CC[cc] = 1;
+			}
+
+			NRF_PPI->CH[ppi_en].EEP = (u32_t)
+				&(NRF_TIMER1->EVENTS_COMPARE[cc]);
+			NRF_PPI->CH[ppi_en].TEP = (u32_t)
+				&(NRF_RADIO->TASKS_TXEN);
+
+			NRF_PPI->CH[ppi_dis].EEP = (u32_t)
+				&(NRF_TIMER1->EVENTS_COMPARE[cc]);
+			NRF_PPI->CH[ppi_dis].TEP = (u32_t)
+				&(NRF_PPI->TASKS_CHG[sw_tifs_toggle].DIS);
+
+			NRF_PPI->CH[18].EEP = (u32_t)
+				&(NRF_RADIO->EVENTS_RATEBOOST);
+			NRF_PPI->CH[18].TEP = (u32_t)
+				&(NRF_TIMER1->TASKS_CAPTURE[sw_tifs_toggle]);
+
+			NRF_PPI->CHENSET = PPI_CHEN_CH18_Msk;
+		} else {
+			u8_t ppi_en = 16 + sw_tifs_toggle;
+			u8_t ppi_dis = 8 + sw_tifs_toggle;
+
+			NRF_PPI->CH[ppi_en].EEP = 0;
+			NRF_PPI->CH[ppi_en].TEP = 0;
+
+			NRF_PPI->CH[ppi_dis].EEP = (u32_t)
+				&(NRF_TIMER1->EVENTS_COMPARE[sw_tifs_toggle]);
+			NRF_PPI->CH[ppi_dis].TEP = (u32_t)
+				&(NRF_PPI->TASKS_CHG[sw_tifs_toggle].DIS);
+		}
+#endif /* CONFIG_SOC_NRF52840 */
 	} else {
 		delay = radio_rx_ready_delay_get(phy_next) -
 			radio_tx_chain_delay_get(phy_curr, flags_curr) +
 			4; /* 4us as +/- active jitter */
 
 		NRF_PPI->CH[ppi].TEP = (u32_t)&(NRF_RADIO->TASKS_RXEN);
+
+#if defined(CONFIG_SOC_NRF52840)
+		if (1) {
+			u8_t ppi_en = 16 + sw_tifs_toggle;
+			u8_t ppi_dis = 8 + sw_tifs_toggle;
+
+			NRF_PPI->CH[ppi_en].EEP = 0;
+			NRF_PPI->CH[ppi_en].TEP = 0;
+
+			NRF_PPI->CH[ppi_dis].EEP = (u32_t)
+				&(NRF_TIMER1->EVENTS_COMPARE[sw_tifs_toggle]);
+			NRF_PPI->CH[ppi_dis].TEP = (u32_t)
+				&(NRF_PPI->TASKS_CHG[sw_tifs_toggle].DIS);
+		}
+#endif /* CONFIG_SOC_NRF52840 */
 	}
 
 	if (delay < NRF_TIMER1->CC[sw_tifs_toggle]) {
@@ -656,10 +719,17 @@ u32_t radio_bc_has_match(void)
 void radio_tmr_status_reset(void)
 {
 	NRF_RTC0->EVTENCLR = RTC_EVTENCLR_COMPARE2_Msk;
+#if defined(CONFIG_SOC_NRF52840)
 	NRF_PPI->CHENCLR =
 	    (PPI_CHEN_CH0_Msk | PPI_CHEN_CH1_Msk | PPI_CHEN_CH2_Msk |
 	     PPI_CHEN_CH3_Msk | PPI_CHEN_CH4_Msk | PPI_CHEN_CH5_Msk |
-	     PPI_CHEN_CH6_Msk | PPI_CHEN_CH13_Msk);
+	     PPI_CHEN_CH6_Msk | PPI_CHEN_CH13_Msk | PPI_CHEN_CH18_Msk);
+#else /* CONFIG_SOC_NRF52840 */
+	NRF_PPI->CHENCLR =
+	    (PPI_CHEN_CH0_Msk | PPI_CHEN_CH1_Msk | PPI_CHEN_CH2_Msk |
+	     PPI_CHEN_CH3_Msk | PPI_CHEN_CH4_Msk | PPI_CHEN_CH5_Msk |
+	     PPI_CHEN_CH6_Msk);
+#endif /* CONFIG_SOC_NRF52840 */
 }
 
 void radio_tmr_tifs_set(u32_t tifs)
@@ -710,6 +780,10 @@ u32_t radio_tmr_start(u8_t trx, u32_t ticks_start, u32_t remainder)
 	NRF_PPI->CH[7].EEP = (u32_t)&(NRF_RADIO->EVENTS_END);
 	NRF_PPI->CH[7].TEP = (u32_t)&(NRF_TIMER1->TASKS_CLEAR);
 
+#if defined(CONFIG_SOC_NRF52840)
+	NRF_PPI->CHG[0] = PPI_CHG_CH8_Msk | PPI_CHG_CH11_Msk | PPI_CHG_CH16_Msk;
+	NRF_PPI->CHG[1] = PPI_CHG_CH9_Msk | PPI_CHG_CH12_Msk | PPI_CHG_CH17_Msk;
+#else /* CONFIG_SOC_NRF52840 */
 	NRF_PPI->CH[8].EEP = (u32_t)&(NRF_TIMER1->EVENTS_COMPARE[0]);
 	NRF_PPI->CH[8].TEP = (u32_t)&(NRF_PPI->TASKS_CHG[0].DIS);
 
@@ -718,6 +792,7 @@ u32_t radio_tmr_start(u8_t trx, u32_t ticks_start, u32_t remainder)
 
 	NRF_PPI->CHG[0] = PPI_CHG_CH8_Msk | PPI_CHG_CH11_Msk;
 	NRF_PPI->CHG[1] = PPI_CHG_CH9_Msk | PPI_CHG_CH12_Msk;
+#endif /* CONFIG_SOC_NRF52840 */
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
 	return remainder;
