@@ -231,12 +231,34 @@ _xstack_returned_\@:
 	l32i a2, a1, 0
 	l32i a2, a2, BSA_SCRATCH_OFF
 
+	/* There's a gotcha with level 1 handlers: the INTLEVEL field
+	 * gets left at zero and not set like high priority interrupts
+	 * do.  That works fine for exceptions, but for L1 interrupts,
+	 * when we unmask EXCM below, the CPU will just fire the
+	 * interrupt again and get stuck in a loop blasting save
+	 * frames down the stack to the bottom of memory.  It would be
+	 * good to put this code into the L1 handler only, but there's
+	 * not enough room in the vector without some work there to
+	 * squash it some.  Next choice would be to make this a macro
+	 * argument and expand two versions of this handler.  An
+	 * optimization FIXME, I guess.
+	 */
+	rsr.PS a0
+	movi a3, PS_INTLEVEL_MASK
+	and a0, a0, a3
+	bnez a0, _not_l1
+	rsr.PS a0
+	movi a3, PS_INTLEVEL(1)
+	or a0, a0, a3
+	wsr.PS a0
+_not_l1:
+
 	/* Unmask EXCM bit so C code can spill/fill in window
 	 * exceptions.  Note interrupts are already fully masked by
 	 * INTLEVEL, so this is safe.
 	 */
 	rsr.PS a0
-	movi a3, ~16
+	movi a3, ~(PS_EXCM_MASK)
 	and a0, a0, a3
 	wsr.PS a0
 	rsync
@@ -272,14 +294,14 @@ _do_call_\@:
 	s32i a0, a3, \NEST_OFF
 
 	/* Last trick: the called function returned the "next" handle
-         * to restore to in A6 (the call4'd function's A2).  If this
-         * is not the same handle as we started with, we need to do a
-         * register spill before restoring, for obvious reasons.
-         * Remember to mask interrupts (which have been unmasked
-         * during the handler execution) while we muck with the
-         * windows.  The restore will unmask them as needed.
-         */
-        beq a6, a1, _restore_\@
+	 * to restore to in A6 (the call4'd function's A2).  If this
+	 * is not the same handle as we started with, we need to do a
+	 * register spill before restoring, for obvious reasons.
+	 * Remember to mask interrupts (which have been unmasked
+	 * during the handler execution) while we muck with the
+	 * windows.  The restore will unmask them as needed.
+	 */
+	beq a6, a1, _restore_\@
 	rsil a0, XCHAL_NMILEVEL
 	SPILL_ALL_WINDOWS
 	mov a1, a6
@@ -297,17 +319,21 @@ _restore_\@:
  * entry code (defined via EXCINT_HANDLER) and a C handler for this
  * particular level.
  *
- * FIXME: needs special handling for exceptions (level 1): it's "EPC"
- * and not "EPC1" (though IIRC the assembler makes this work).
- * And there is no EPS: instead PS is simply the interrupted PS
- * with EXCM flipped from 0 to 1.
- *
- * FIXME: needs better locking.  The hardware will NOT mask out "high
- * priority" exceptions on arrival here, so we have to do it ourselves
- * with RSIL.
+ * Note that the linker sections for some levels get special names for
+ * no particularly good reason.  Only level 1 has any code generation
+ * difference, because it is the legacy exception level that predates
+ * the EPS/EPC registers.
  */
 .macro DEF_EXCINT LVL, ENTRY_SYM, C_HANDLER_SYM
+.if \LVL == 1
+.pushsection .UserExceptionVector.text, "ax"
+.elseif \LVL == XCHAL_DEBUGLEVEL
+.pushsection .DebugExceptionVector.text, "ax"
+.elseif \LVL == XCHAL_NMILEVEL
+.pushsection .NMIExceptionVector.text, "ax"
+.else
 .pushsection .Level\LVL\()InterruptVector.text, "ax"
+.endif
 .global _Level\LVL\()Vector
 _Level\LVL\()Vector:
 	addi a1, a1, -BASE_SAVE_AREA_SIZE
@@ -315,8 +341,21 @@ _Level\LVL\()Vector:
 	s32i a2, a1, BSA_A2_OFF
 	s32i a3, a1, BSA_A3_OFF
 
+	/* Level "1" is the exception handler, which uses a different
+	 * calling convention.  No special register holds the
+	 * interrupted PS, instead we just assume that the CPU has
+	 * turned on the EXCM bit and set INTLEVEL.
+	 */
+.if \LVL == 1
+	rsr.PS a0
+	movi a2, ~(PS_EXCM_MASK | PS_INTLEVEL_MASK)
+	and a0, a0, a2
+	s32i a0, a1, BSA_PS_OFF
+.else
 	rsr.EPS\LVL a0
 	s32i a0, a1, BSA_PS_OFF
+.endif
+
 	rsr.EPC\LVL a0
 	s32i a0, a1, BSA_PC_OFF
 

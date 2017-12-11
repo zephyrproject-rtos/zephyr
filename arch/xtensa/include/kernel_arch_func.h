@@ -26,6 +26,8 @@ extern void ReservedInterruptHandler(unsigned int intNo);
 /* Defined in xtensa_context.S */
 extern void _xt_coproc_init(void);
 
+extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
+
 /**
  *
  * @brief Performs architecture-specific initialization
@@ -39,7 +41,23 @@ extern void _xt_coproc_init(void);
 static ALWAYS_INLINE void kernel_arch_init(void)
 {
 	_kernel.nested = 0;
-#if XCHAL_CP_NUM > 0
+
+#if CONFIG_XTENSA_ASM2
+	_kernel.irq_stack = (K_THREAD_STACK_BUFFER(_interrupt_stack) +
+			     CONFIG_ISR_STACK_SIZE);
+
+	/* The asm2 scheme keeps the kernel pointer in MISC0 for easy
+	 * access.  That saves 4 bytes of immediate value to store the
+	 * address when compared to the legacy scheme.  But in SMP
+	 * this record is a per-CPU thing and having it stored in a SR
+	 * already is a big win.
+	 */
+	void *cpuptr = &_kernel;
+
+	__asm__ volatile("wsr.MISC0 %0; rsync" : : "r"(cpuptr));
+#endif
+
+#if !defined(CONFIG_XTENSA_ASM2) && XCHAL_CP_NUM > 0
 	/* Initialize co-processor management for threads.
 	 * Leave CPENABLE alone.
 	 */
