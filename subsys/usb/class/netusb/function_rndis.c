@@ -612,6 +612,20 @@ static int rndis_set_handle(u8_t *data, u32_t len)
 	u32_t object_id;
 	u8_t *param;
 
+	if (len < sizeof(*cmd)) {
+		SYS_LOG_ERR("Packet is shorter then header");
+		return -EINVAL;
+	}
+
+	/* Parameter starts at offset buf_offset of the req_id field ;) */
+	param = (u8_t *)&cmd->req_id + sys_le32_to_cpu(cmd->buf_offset);
+
+	if (len - ((u32_t)param - (u32_t)cmd) !=
+	    sys_le32_to_cpu(cmd->buf_len)) {
+		SYS_LOG_ERR("Packet parsing error");
+		return -EINVAL;
+	}
+
 	buf = net_buf_alloc(&rndis_tx_pool, K_NO_WAIT);
 	if (!buf) {
 		SYS_LOG_ERR("Cannot get free buffer");
@@ -630,11 +644,14 @@ static int rndis_set_handle(u8_t *data, u32_t len)
 	rsp->len = sys_cpu_to_le32(sizeof(*rsp));
 	rsp->req_id = cmd->req_id; /* same endianness */
 
-	/* Parameter starts at the beginning of req_id field ;) */
-	param = (u8_t *)&cmd->req_id + sys_le32_to_cpu(cmd->buf_offset);
-
 	switch (object_id) {
 	case RNDIS_OBJECT_ID_GEN_PKT_FILTER:
+		if (sys_le32_to_cpu(cmd->buf_len) < sizeof(rndis.net_filter)) {
+			SYS_LOG_ERR("Packet is too small");
+			rsp->status = RNDIS_CMD_STATUS_INVALID_DATA;
+			break;
+		}
+
 		rndis.net_filter = sys_get_le32(param);
 		SYS_LOG_DBG("RNDIS_OBJECT_ID_GEN_PKT_FILTER 0x%x",
 			    rndis.net_filter);
@@ -642,8 +659,7 @@ static int rndis_set_handle(u8_t *data, u32_t len)
 		rsp->status = sys_cpu_to_le32(RNDIS_CMD_STATUS_SUCCESS);
 		break;
 	case RNDIS_OBJECT_ID_802_3_MCAST_LIST:
-		SYS_LOG_DBG("RNDIS_OBJECT_ID_802_3_MCAST_LIST 0x%x",
-			    sys_get_le32(param));
+		SYS_LOG_DBG("RNDIS_OBJECT_ID_802_3_MCAST_LIST");
 		/* ignore for now */
 		rsp->status = sys_cpu_to_le32(RNDIS_CMD_STATUS_SUCCESS);
 		break;
