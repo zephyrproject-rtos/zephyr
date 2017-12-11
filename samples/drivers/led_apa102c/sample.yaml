@@ -1,8 +1,7 @@
 sample:
-  description: TBD
-  name: TBD
+  name: Utilize APA102C LED on Arduino 101
 tests:
   test:
-    build_only: true
     platform_whitelist: arduino_101
     tags: samples
+    depends_on: gpio

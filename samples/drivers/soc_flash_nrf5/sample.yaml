@@ -1,8 +1,6 @@
 sample:
-  description: TBD
-  name: TBD
+  name: SoC Flash on NRF52
 tests:
   test:
-    build_only: true
     platform_whitelist: nrf52_pca10040
     tags: apps
