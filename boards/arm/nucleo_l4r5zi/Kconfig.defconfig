@@ -1,0 +1,57 @@
+# Kconfig - STM32L4R5ZI Nucleo board configuration
+#
+# Copyright (c) 2018 Pushpal Sidhu
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_NUCLEO_L4R5ZI
+
+config BOARD
+	default "nucleo_l4r5zi"
+
+if UART_CONSOLE
+
+config UART_STM32_PORT_2
+	default y
+
+endif # UART_CONSOLE
+
+if I2C
+
+config I2C_1
+	default y
+
+endif # I2C
+
+if SPI
+
+config SPI_1
+	default y
+
+config SPI_STM32_INTERRUPT
+	default y
+
+endif # SPI
+
+if PWM
+
+config PWM_STM32_2
+	default y
+
+endif # PWM
+
+if NETWORKING
+
+config USB
+	default y
+
+config USB_DEVICE_STACK
+	default y
+
+config USB_DEVICE_NETWORK_EEM
+	default y
+
+endif # NETWORKING
+
+endif # BOARD_NUCLEO_L4R5ZI
