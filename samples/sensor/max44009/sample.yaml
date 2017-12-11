@@ -1,8 +1,8 @@
 sample:
-  description: TBD
-  name: TBD
+  name: MAX44009 light sensor
 tests:
   test:
-    build_only: true
     platform_whitelist: frdm_k64f quark_d2000_crb
     tags: apps
+    harness: sensor
+    depends_on: i2c

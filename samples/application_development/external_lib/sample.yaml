@@ -1,8 +1,7 @@
 sample:
-  description: TBD
-  name: TBD
+  name: External Library
 tests:
   test:
-    build_only: true
     platform_whitelist: qemu_x86
-    tags: appdev
+    tags: external
+    harness: console

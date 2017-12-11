@@ -1,8 +1,6 @@
 sample:
-  description: TBD
-  name: TBD
+  name: BB micro:bit Display
 tests:
   test:
-    build_only: true
     platform_whitelist: bbc_microbit
     tags: samples

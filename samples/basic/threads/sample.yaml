@@ -4,6 +4,6 @@ sample:
   name: Basic Thread Demo
 tests:
   test:
-    build_only: true
     platform_whitelist: 96b_carbon
     tags: samples
+    depends_on: gpio

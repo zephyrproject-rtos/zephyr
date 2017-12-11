@@ -1,7 +1,6 @@
 sample:
-  description: TBD
-  name: TBD
+  name: Temperature Sensor
 tests:
   test:
-    build_only: true
     tags: samples
+    harness: sensor
