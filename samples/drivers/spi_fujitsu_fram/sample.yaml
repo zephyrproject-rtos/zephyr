@@ -1,8 +1,7 @@
 sample:
-  description: TBD
-  name: TBD
+  name: SPI FRAM Module Sample
 tests:
   test:
-    build_only: true
     platform_whitelist: arduino_101
     tags: apps
+    harness: fram

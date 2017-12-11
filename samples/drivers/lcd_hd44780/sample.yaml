@@ -1,8 +1,7 @@
 sample:
-  description: TBD
-  name: TBD
+  name: Display text strings on HD44780 based 20x4 LCD controller
 tests:
   test:
-    build_only: true
-    filter: CONFIG_SOC_ATMEL_SAM3
+    platform_whitelist: arduino_due
     tags: samples
+    harness: display
