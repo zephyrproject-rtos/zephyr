@@ -399,9 +399,9 @@ u32_t radio_rx_chain_delay_get(u8_t phy, u8_t flags)
 		return 5; /* ceil(5) */
 	case BIT(2):
 		if (flags & 0x01) {
-			return 30; /* ciel(29.6) */
+			return 30; /* ceil(29.6) */
 		} else {
-			return 20; /* ciel(19.6) */
+			return 25; /* this is manually measured approx. */
 		}
 	}
 #else /* !CONFIG_SOC_NRF52840 */
