@@ -64,6 +64,9 @@ static void supported_services(u8_t *data, u16_t len)
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 	tester_set_bit(buf, BTP_SERVICE_ID_L2CAP);
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
+#if defined(CONFIG_BT_MESH)
+	tester_set_bit(buf, BTP_SERVICE_ID_MESH);
+#endif /* CONFIG_BT_MESH */
 
 	tester_send(BTP_SERVICE_ID_CORE, CORE_READ_SUPPORTED_SERVICES,
 		    BTP_INDEX_NONE, (u8_t *) rp, sizeof(buf));
@@ -90,6 +93,11 @@ static void register_service(u8_t *data, u16_t len)
 		status = tester_init_l2cap();
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 		break;
+#if defined(CONFIG_BT_MESH)
+	case BTP_SERVICE_ID_MESH:
+		status = tester_init_mesh();
+		break;
+#endif /* CONFIG_BT_MESH */
 	default:
 		status = BTP_STATUS_FAILED;
 		break;
@@ -158,6 +166,12 @@ static void cmd_handler(void *p1, void *p2, void *p3)
 					    cmd->hdr.data, len);
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 			break;
+#if defined(CONFIG_BT_MESH)
+		case BTP_SERVICE_ID_MESH:
+			tester_handle_mesh(cmd->hdr.opcode, cmd->hdr.index,
+					   cmd->hdr.data, len);
+			break;
+#endif /* CONFIG_BT_MESH */
 		default:
 			tester_rsp(cmd->hdr.service, cmd->hdr.opcode,
 				   cmd->hdr.index, BTP_STATUS_FAILED);
