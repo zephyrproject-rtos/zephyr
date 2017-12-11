@@ -41,7 +41,7 @@ set_global_assignment -name FAMILY "MAX 10"
 set_global_assignment -name DEVICE 10M50DAF484C6GES
 set_global_assignment -name ORIGINAL_QUARTUS_VERSION 16.0.0
 set_global_assignment -name PROJECT_CREATION_TIME_DATE "16:01:48  APRIL 27, 2016"
-set_global_assignment -name LAST_QUARTUS_VERSION 16.0.0
+set_global_assignment -name LAST_QUARTUS_VERSION "17.0.0 Standard Edition"
 set_global_assignment -name TOP_LEVEL_ENTITY ghrd_10m50da_top
 set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
 set_global_assignment -name UNIPHY_SEQUENCER_DQS_CONFIG_ENABLE ON
@@ -52,7 +52,7 @@ set_global_assignment -name CYCLONEII_OPTIMIZATION_TECHNIQUE SPEED
 set_global_assignment -name SYNTH_TIMING_DRIVEN_SYNTHESIS ON
 set_global_assignment -name OPTIMIZE_HOLD_TIMING "ALL PATHS"
 set_global_assignment -name FITTER_EFFORT "STANDARD FIT"
-set_global_assignment -name ENABLE_SIGNALTAP OFF
+set_global_assignment -name ENABLE_SIGNALTAP ON
 set_global_assignment -name PHYSICAL_SYNTHESIS_COMBO_LOGIC ON
 set_global_assignment -name PHYSICAL_SYNTHESIS_REGISTER_RETIMING ON
 set_global_assignment -name PHYSICAL_SYNTHESIS_REGISTER_DUPLICATION ON
@@ -74,7 +74,7 @@ set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -rise
 set_global_assignment -name OUTPUT_IO_TIMING_NEAR_END_VMEAS "HALF VCCIO" -fall
 set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -rise
 set_global_assignment -name OUTPUT_IO_TIMING_FAR_END_VMEAS "HALF SIGNAL SWING" -fall
-set_global_assignment -name SEED 2
+set_global_assignment -name SEED 16
 set_global_assignment -name OPTIMIZATION_MODE "AGGRESSIVE PERFORMANCE"
 set_global_assignment -name ROUTER_REGISTER_DUPLICATION ON
 set_global_assignment -name FINAL_PLACEMENT_OPTIMIZATION ALWAYS
@@ -396,4 +396,17 @@ set_global_assignment -name VERILOG_FILE ghrd_10m50da_top.v
 set_global_assignment -name QIP_FILE ghrd_10m50da/synthesis/ghrd_10m50da.qip
 set_global_assignment -name SDC_FILE ghrd_timing.sdc
 
+set_location_assignment PIN_A10 -to i2c_scl
+set_location_assignment PIN_B15 -to i2c_sda
+set_location_assignment PIN_B7 -to spi_sclk
+set_location_assignment PIN_A6 -to spi_miso
+set_location_assignment PIN_C8 -to spi_mosi
+set_location_assignment PIN_C7 -to spi_ssn
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to spi_miso
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to spi_mosi
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to spi_sclk
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to spi_ssn
+set_instance_assignment -name IO_STANDARD "3.3-V LVCMOS" -to fpga_reset_n
+set_global_assignment -name USE_SIGNALTAP_FILE output_files/uart.stp
+set_global_assignment -name SIGNALTAP_FILE output_files/uart.stp
 set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
