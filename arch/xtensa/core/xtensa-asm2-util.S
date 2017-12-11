@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <xtensa-asm2-s.h>
+#include <offsets.h>
 
 /*
  * xtensa_save_high_regs
@@ -207,3 +208,60 @@ xtensa_switch:
 	j _restore_context
 _switch_restore_pc:
 	retw
+
+#ifdef CONFIG_XTENSA_ASM2
+
+/* Define our entry handler to load the struct kernel_t from the
+ * MISC0 special register, and to find the nest and irq_stack values
+ * at the precomputed offsets.
+ */
+.align 4
+_handle_excint:
+	EXCINT_HANDLER MISC0, ___kernel_t_nested_OFFSET, ___kernel_t_irq_stack_OFFSET
+
+/* Define the actual vectors for the hardware-defined levels with
+ * DEF_EXCINT.  These load a C handler address and jump to our handler
+ * above.
+ */
+
+DEF_EXCINT 1, _handle_excint, xtensa_excint1_c
+
+#if XCHAL_NMILEVEL >= 2
+DEF_EXCINT 2, _handle_excint, xtensa_int2_c
+#endif
+
+#if XCHAL_NMILEVEL >= 3
+DEF_EXCINT 3, _handle_excint, xtensa_int3_c
+#endif
+
+#if XCHAL_NMILEVEL >= 4
+DEF_EXCINT 4, _handle_excint, xtensa_int4_c
+#endif
+
+#if XCHAL_NMILEVEL >= 5
+DEF_EXCINT 5, _handle_excint, xtensa_int5_c
+#endif
+
+#if XCHAL_NMILEVEL >= 6
+DEF_EXCINT 6, _handle_excint, xtensa_int6_c
+#endif
+
+#if XCHAL_NMILEVEL >= 7
+DEF_EXCINT 7, _handle_excint, xtensa_int7_c
+#endif
+
+/* In theory you can have levels up to 15, but known hardware only uses 7. */
+#if XCHAL_NMILEVEL > 7
+#error More interrupts than expected.
+#endif
+
+/* We don't actually use "kernel mode" currently.  Populate the vector
+ * out of simple caution in case app code clears the UM bit by mistake.
+ */
+.pushsection .KernelExceptionVector.text, "ax"
+.global _KernelExceptionVector
+_KernelExceptionVector:
+	j _Level1Vector
+.popsection
+
+#endif /* CONFIG_XTENSA_ASM2 */
