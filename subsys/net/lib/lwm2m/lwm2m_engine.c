@@ -2210,6 +2210,7 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 				    struct lwm2m_engine_context *context)
 {
+	bool update_observe_node = false;
 	char opt_buf[COAP_OPTION_BUF_LEN];
 	int nr_opt, ret = 0;
 	struct coap_option options[NR_LWM2M_ATTR];
@@ -2219,6 +2220,7 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 	struct lwm2m_obj_path *path;
 	struct lwm2m_attr *attr, *tmp;
 	struct notification_attrs nattrs = { 0 };
+	struct observe_node *obs;
 	sys_slist_t *attr_list;
 	sys_snode_t *prev_node = NULL;
 	u8_t type = 0;
@@ -2388,6 +2390,11 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 			SYS_LOG_DBG("Unset attr %s", LWM2M_ATTR_STR[type]);
 			sys_slist_remove(attr_list, prev_node, &attr->node);
 			memset(attr, 0, sizeof(*attr));
+
+			if (type <= LWM2M_ATTR_PMAX) {
+				update_observe_node = true;
+			}
+
 			continue;
 		}
 
@@ -2395,8 +2402,18 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 		nattrs.flags &= ~BIT(type);
 
 		if (type <= LWM2M_ATTR_PMAX) {
+			if (attr->int_val == *(s32_t *)nattr_ptrs[type]) {
+				continue;
+			}
+
 			attr->int_val = *(s32_t *)nattr_ptrs[type];
+			update_observe_node = true;
 		} else {
+			if (!memcmp(&attr->float_val, nattr_ptrs[type],
+				    sizeof(float32_value_t))) {
+				continue;
+			}
+
 			memcpy(&attr->float_val, nattr_ptrs[type],
 			       sizeof(float32_value_t));
 		}
@@ -2429,6 +2446,7 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 		attr->used = true;
 		if (type <= LWM2M_ATTR_PMAX) {
 			attr->int_val = *(s32_t *)nattr_ptrs[type];
+			update_observe_node = true;
 		} else {
 			memcpy(&attr->float_val, nattr_ptrs[type],
 			       sizeof(float32_value_t));
@@ -2438,6 +2456,75 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 		nattrs.flags &= ~BIT(type);
 		SYS_LOG_DBG("Add %s to %d.%06d", LWM2M_ATTR_STR[type],
 			    attr->float_val.val1, attr->float_val.val2);
+	}
+
+	/* check only pmin/pmax */
+	if (!update_observe_node) {
+		return 0;
+	}
+
+	/* update observe_node accordingly */
+	SYS_SLIST_FOR_EACH_CONTAINER(&engine_observer_list, obs, node) {
+		/* updated path is deeper than obs node, skip */
+		if (path->level > obs->path.level) {
+			continue;
+		}
+
+		/* check obj id matched or not */
+		if (path->obj_id != obs->path.obj_id) {
+			continue;
+		}
+
+		/* TODO: grab default from server obj */
+		nattrs.pmin = DEFAULT_SERVER_PMIN;
+		nattrs.pmax = DEFAULT_SERVER_PMAX;
+
+		update_attrs(&obj->attr_list, &nattrs);
+
+		if (obs->path.level > 1) {
+			if (path->level > 1 &&
+			    path->obj_inst_id != obs->path.obj_inst_id) {
+				continue;
+			}
+
+			/* get obj_inst */
+			if (!obj_inst || obj_inst->obj_inst_id !=
+					 obs->path.obj_inst_id) {
+				obj_inst = get_engine_obj_inst(
+						obs->path.obj_id,
+						obs->path.obj_inst_id);
+				if (!obj_inst) {
+					return -ENOENT;
+				}
+			}
+
+			update_attrs(&obj_inst->attr_list, &nattrs);
+		}
+
+		if (obs->path.level > 2) {
+			if (path->level > 2 &&
+			    path->res_id != obs->path.res_id) {
+				continue;
+			}
+
+			if (!res || res->res_id != obs->path.res_id) {
+				ret = engine_get_resource(&obs->path, &res);
+				if (ret < 0) {
+					return ret;
+				}
+			}
+
+			update_attrs(&res->attr_list, &nattrs);
+		}
+
+		SYS_LOG_DBG("%d/%d/%d(%d) updated from %d/%d to %u/%u",
+			    obs->path.obj_id, obs->path.obj_inst_id,
+			    obs->path.res_id, obs->path.level,
+			    obs->min_period_sec, obs->max_period_sec,
+			    nattrs.pmin, max(nattrs.pmin, nattrs.pmax));
+		obs->min_period_sec = (u32_t)nattrs.pmin;
+		obs->max_period_sec = (u32_t)max(nattrs.pmin, nattrs.pmax);
+		memset(&nattrs, 0, sizeof(nattrs));
 	}
 
 	return 0;
