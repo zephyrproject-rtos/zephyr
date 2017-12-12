@@ -13,5 +13,6 @@ tests:
     extra_args: CONF_FILE=runtime_nmi.conf
     tags: apps
   test_gdb_server:
+    build_only: true
     extra_configs:
       - CONFIG_GDB_SERVER=y
