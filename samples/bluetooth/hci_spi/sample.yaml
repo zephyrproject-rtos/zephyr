@@ -3,7 +3,7 @@ sample:
     via SPI.
   name: Bluetooth HCI SPI
 tests:
-  - test:
-      build_only: true
-      platform_whitelist: 96b_carbon_nrf51 nrf51_pca10028
-      tags: samples bluetooth spi
+  test:
+    build_only: true
+    platform_whitelist: 96b_carbon_nrf51 nrf51_pca10028
+    tags: samples bluetooth spi

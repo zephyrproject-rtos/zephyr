@@ -164,7 +164,10 @@ def p_error(p):
     else:
         raise SyntaxError("Unexpected end of expression")
 
-parser = yacc.yacc()
+if "PARSETAB_DIR" not in os.environ:
+    parser = yacc.yacc(debug=0)
+else:
+    parser = yacc.yacc(debug=0, outputdir=os.environ["PARSETAB_DIR"])
 
 def ast_sym(ast, env):
     if ast in env:

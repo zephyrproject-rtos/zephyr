@@ -467,17 +467,6 @@ static void dad_timeout(struct k_work *work)
 		 * in this case as the address is our own one.
 		 */
 		net_ipv6_nbr_rm(iface, &ifaddr->address.in6_addr);
-
-		/* We join the allnodes group from here so that we have
-		 * a link local address defined. If done from ifup(),
-		 * we would only get unspecified address as a source
-		 * address. The allnodes multicast group is only joined
-		 * once in this case as the net_ipv6_mcast_join() checks
-		 * if we have already joined.
-		 */
-		join_mcast_allnodes(iface);
-
-		join_mcast_solicit_node(iface, &ifaddr->address.in6_addr);
 	}
 }
 
@@ -712,6 +701,17 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 		NET_DBG("[%d] interface %p address %s type %s added", i, iface,
 			net_sprint_ipv6_addr(addr),
 			net_addr_type2str(addr_type));
+
+		/* RFC 4862 5.4.2
+		 * "Before sending a Neighbor Solicitation, an interface
+		 * MUST join the all-nodes multicast address and the
+		 * solicited-node multicast address of the tentative address."
+		 */
+		/* The allnodes multicast group is only joined once as
+		 * net_ipv6_mcast_join() checks if we have already joined.
+		 */
+		join_mcast_allnodes(iface);
+		join_mcast_solicit_node(iface, &iface->ipv6.unicast[i].address.in6_addr);
 
 		net_if_ipv6_start_dad(iface, &iface->ipv6.unicast[i]);
 

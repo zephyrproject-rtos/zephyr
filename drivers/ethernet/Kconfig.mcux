@@ -17,10 +17,10 @@ menuconfig ETH_MCUX
 if ETH_MCUX
 config ETH_MCUX_PROMISCUOUS_MODE
 	bool "Enable promiscuous mode"
-	default n if !NET_IPV6
-	default y if NET_IPV6
+	default n
 	help
-	  Place the ethernet receiver in promiscuous mode.
+	  Place the Ethernet receiver in promiscuous mode. This may be useful
+	  for debugging and not needed for normal work.
 
 config ETH_MCUX_PHY_TICK_MS
 	int "PHY poll period (ms)"

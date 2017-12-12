@@ -1366,6 +1366,18 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 		conn = _radio.scanner.conn;
 		_radio.scanner.conn = NULL;
 
+		/* Calculate master slot */
+		conn->hdr.ticks_active_to_start = _radio.ticks_active_to_start;
+		conn->hdr.ticks_xtal_to_start =
+			TICKER_US_TO_TICKS(RADIO_TICKER_XTAL_OFFSET_US);
+		conn->hdr.ticks_preempt_to_start =
+			TICKER_US_TO_TICKS(RADIO_TICKER_PREEMPT_PART_MIN_US);
+		conn->hdr.ticks_slot = _radio.scanner.ticks_conn_slot;
+		ticks_slot_offset = (conn->hdr. ticks_active_to_start <
+				     conn->hdr.ticks_xtal_to_start) ?
+				    conn->hdr.ticks_xtal_to_start :
+				    conn->hdr.ticks_active_to_start;
+
 		/* Tx the connect request packet */
 		pdu_adv_tx = (struct pdu_adv *)radio_pkt_scratch_get();
 		pdu_adv_tx->type = PDU_ADV_TYPE_CONNECT_IND;
@@ -1421,7 +1433,8 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 			conn_space_us = conn_offset_us;
 			pdu_adv_tx->payload.connect_ind.lldata.win_offset = 0;
 		} else {
-			conn_space_us = _radio.scanner.win_offset_us;
+			conn_space_us = _radio.scanner.win_offset_us +
+					ticks_slot_offset;
 			while ((conn_space_us & ((u32_t)1 << 31)) ||
 			       (conn_space_us < conn_offset_us)) {
 				conn_space_us += conn_interval_us;
@@ -1565,19 +1578,6 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 
 			packet_rx_enqueue();
 		}
-
-		/* Calculate master slot */
-		conn->hdr.ticks_slot = _radio.scanner.ticks_conn_slot;
-		conn->hdr.ticks_active_to_start = _radio.ticks_active_to_start;
-		conn->hdr.ticks_xtal_to_start =
-			TICKER_US_TO_TICKS(RADIO_TICKER_XTAL_OFFSET_US);
-		conn->hdr.ticks_preempt_to_start =
-			TICKER_US_TO_TICKS(RADIO_TICKER_PREEMPT_PART_MIN_US);
-		ticks_slot_offset =
-			(conn->hdr. ticks_active_to_start <
-			 conn->hdr.ticks_xtal_to_start) ?
-			conn->hdr.ticks_xtal_to_start :
-			conn->hdr.ticks_active_to_start;
 
 		/* Stop Scanner */
 		ticker_status = ticker_stop(RADIO_TICKER_INSTANCE_ID_RADIO,
@@ -4794,23 +4794,10 @@ static void sched_after_mstr_free_slot_get(u8_t user_id,
 		conn = mem_get(_radio.conn_pool, CONNECTION_T_SIZE,
 			       (ticker_id - RADIO_TICKER_ID_FIRST_CONNECTION));
 		if (conn && !conn->role) {
-			u32_t ticks_to_expire_normal = ticks_to_expire;
-
-			if (conn->hdr.ticks_xtal_to_start & ((u32_t)1 << 31)) {
-				u32_t ticks_prepare_to_start =
-					(conn->hdr.ticks_active_to_start >
-					 conn->hdr.ticks_preempt_to_start) ?
-					conn->hdr.ticks_active_to_start :
-					conn->hdr.ticks_preempt_to_start;
-
-				ticks_to_expire_normal -=
-					((conn->hdr.ticks_xtal_to_start &
-					  (~((u32_t)1 << 31))) -
-					 ticks_prepare_to_start);
-			}
+			u32_t ticks_prepare_to_start;
 
 			if ((ticker_id_prev != 0xFF) &&
-			    (ticker_ticks_diff_get(ticks_to_expire_normal,
+			    (ticker_ticks_diff_get(ticks_to_expire,
 						   ticks_to_expire_prev) >
 			     (ticks_slot_prev_abs + ticks_slot_abs +
 			      TICKER_US_TO_TICKS(RADIO_TICKER_JITTER_US << 2)))) {
@@ -4818,17 +4805,31 @@ static void sched_after_mstr_free_slot_get(u8_t user_id,
 			}
 
 			ticker_id_prev = ticker_id;
-			ticks_to_expire_prev = ticks_to_expire_normal;
-			ticks_slot_prev_abs =
-				TICKER_US_TO_TICKS(RADIO_TICKER_XTAL_OFFSET_US) +
-				conn->hdr.ticks_slot;
+			ticks_to_expire_prev = ticks_to_expire;
+
+			if (conn->hdr.ticks_xtal_to_start & BIT(31)) {
+				ticks_prepare_to_start =
+					(conn->hdr.ticks_active_to_start >
+					 conn->hdr.ticks_preempt_to_start) ?
+					conn->hdr.ticks_active_to_start :
+					conn->hdr.ticks_preempt_to_start;
+			} else {
+				ticks_prepare_to_start =
+					(conn->hdr.ticks_active_to_start >
+					 conn->hdr.ticks_xtal_to_start) ?
+					conn->hdr.ticks_active_to_start :
+					conn->hdr.ticks_xtal_to_start;
+			}
+
+			ticks_slot_prev_abs = conn->hdr.ticks_slot +
+					      ticks_prepare_to_start;
 		}
 	}
 
 	if (ticker_id_prev != 0xff) {
 		*us_offset = TICKER_TICKS_TO_US(ticks_to_expire_prev +
 						ticks_slot_prev_abs) +
-			(RADIO_TICKER_JITTER_US << 1);
+			(RADIO_TICKER_JITTER_US << 2);
 	}
 }
 

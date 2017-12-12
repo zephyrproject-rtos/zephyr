@@ -253,17 +253,17 @@ explained in this document.
 ::
 
         tests:
-          - test:
-              build_only: true
-              platform_whitelist: qemu_cortex_m3 qemu_x86 arduino_101
-              tags: bluetooth
-          - test_br:
-              build_only: true
-              extra_args: CONF_FILE="prj_br.conf"
-              filter: not CONFIG_DEBUG
-              platform_exclude: quark_d2000_crb
-              platform_whitelist: qemu_cortex_m3 qemu_x86
-              tags: bluetooth
+          test:
+            build_only: true
+            platform_whitelist: qemu_cortex_m3 qemu_x86 arduino_101
+            tags: bluetooth
+          test_br:
+            build_only: true
+            extra_args: CONF_FILE="prj_br.conf"
+            filter: not CONFIG_DEBUG
+            platform_exclude: quark_d2000_crb
+            platform_whitelist: qemu_cortex_m3 qemu_x86
+            tags: bluetooth
 
 
 A sample with tests will have the same structure with additional information
@@ -276,16 +276,16 @@ related to the sample and what is being demonstrated:
           description: Hello World sample, the simplest Zephyr application
           platforms: all
         tests:
-          - test:
-              build_only: true
-              tags: samples tests
-              min_ram: 16
-          - singlethread:
-              build_only: true
-              extra_args: CONF_FILE=prj_single.conf
-              filter: not CONFIG_BT and not CONFIG_GPIO_SCH
-              tags: samples tests
-              min_ram: 16
+          test:
+            build_only: true
+            tags: samples tests
+            min_ram: 16
+          singlethread:
+            build_only: true
+            extra_args: CONF_FILE=prj_single.conf
+            filter: not CONFIG_BT and not CONFIG_GPIO_SCH
+            tags: samples tests
+            min_ram: 16
 
 The full canonical name for each test case is:
 
@@ -321,13 +321,13 @@ extra_configs: <list of extra configurations>
         common:
           tags: drivers adc
         tests:
-          - test:
-              depends_on: adc
-          - test_resolution_6:
-              extra_configs:
-                - CONFIG_ADC_QMSI_SAMPLE_WIDTH=6
-              platform_whitelist: quark_se_c1000_ss_devboard
-              tags: hwtest
+          test:
+            depends_on: adc
+          test_resolution_6:
+            extra_configs:
+              - CONFIG_ADC_QMSI_SAMPLE_WIDTH=6
+            platform_whitelist: quark_se_c1000_ss_devboard
+            tags: hwtest
 
 
 build_only: <True|False> (default False)

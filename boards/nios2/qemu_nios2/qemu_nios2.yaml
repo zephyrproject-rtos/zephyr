@@ -5,7 +5,7 @@ arch: nios2
 toolchain:
   - zephyr
 testing:
-        default: true
-        ignore_tags:
-          - net
-          - bluetooth
+  default: true
+  ignore_tags:
+    - net
+    - bluetooth

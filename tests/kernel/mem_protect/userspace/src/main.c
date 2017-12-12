@@ -38,15 +38,6 @@ static void is_usermode(void)
 	zassert_true(_is_user_context(), "thread left in kernel mode\n");
 }
 
-static void priv_insn(void)
-{
-	/* Try to invoke what should require a privileged instruction. */
-	unsigned int key = irq_lock();
-
-	irq_unlock(key); /* just in case we succeeded */
-	zassert_unreachable("irq_lock did not fault\n");
-}
-
 static void write_control(void)
 {
 	/* Try to write to a control register. */
@@ -56,16 +47,22 @@ static void write_control(void)
 		"and $0xfffeffff, %eax;\n\t"
 		"mov %eax, %cr0;\n\t"
 		);
+	zassert_unreachable("Write to control register did not fault\n");
 #elif defined(CONFIG_ARM)
+	unsigned int msr_value;
 	__asm__ volatile (
-		"mrs r2, CONTROL;\n\t"
-		"bic r2, #1;\n\t"
-		"msr CONTROL, r2;\n\t"
+		"mrs %0, CONTROL;\n\t"
+		"bic %0, #1;\n\t"
+		"msr CONTROL, %0;\n\t"
+		"mrs %0, CONTROL;\n\t"
+		: "=r" (msr_value)::
 		);
+	zassert_true((msr_value & 1),
+		      "Write to control register was successful\n");
 #else
 #error "Not implemented for this architecture"
-#endif
 	zassert_unreachable("Write to control register did not fault\n");
+#endif
 }
 
 static void disable_mmu_mpu(void)
@@ -148,7 +145,7 @@ volatile int *ptr = NULL;
 #if defined(CONFIG_X86)
 volatile size_t size = MMU_PAGE_SIZE;
 #elif defined(CONFIG_ARM) && defined(CONFIG_PRIVILEGED_STACK_SIZE)
-volatile size_t size = CONFIG_PRIVILEGED_STACK_SIZE;
+volatile size_t size = CONFIG_ZTEST_STACKSIZE - CONFIG_PRIVILEGED_STACK_SIZE;
 #else
 volatile size_t size = 512;
 #endif
@@ -223,7 +220,6 @@ void test_main(void)
 			      NULL);
 	ztest_test_suite(test_userspace,
 			 ztest_user_unit_test(is_usermode),
-			 ztest_user_unit_test(priv_insn),
 			 ztest_user_unit_test(write_control),
 			 ztest_user_unit_test(disable_mmu_mpu),
 			 ztest_user_unit_test(read_kernram),

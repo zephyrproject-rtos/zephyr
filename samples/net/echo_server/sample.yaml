@@ -1,39 +1,41 @@
-sample:
-  name: Echo Server
-  description: Test core network features using a client/server sample
 common:
-  tags: net
   build_only: true
+  tags: net
+sample:
+  description: Test core network features using a client/server
+    sample
+  name: Echo Server
 tests:
-  - test:
-      platform_whitelist: qemu_x86 sam_e70_xplained frdm_k64f qemu_cortex_m3 arduino_101
-  - test_802154:
-      extra_args: CONF_FILE="prj_qemu_802154.conf"
-      platform_whitelist: qemu_x86
-  - test_mcr20a:
-      extra_args: CONF_FILE="prj_frdm_k64f_mcr20a.conf"
-      platform_whitelist: frdm_k64f
-  - test_nrf:
-      extra_args: CONF_FILE="prj_nrf5.conf"
-      platform_whitelist: nrf52840_pca10056
-  - test_bt:
-      extra_args: CONF_FILE="prj_bt.conf"
-      platform_whitelist: qemu_x86
-      tags: bluetooth
-  - test_usbnet:
-      build_only: true
-      extra_args: CONF_FILE="prj_netusb.conf"
-      extra_configs:
-        - CONFIG_USB_DEVICE_VID=0xDEAD
-        - CONFIG_USB_DEVICE_PID=0xBEEF
-      platform_whitelist: quark_se_c1000_devboard 96b_carbon
-      tags: net usb
-  - test_usbnet_composite:
-      build_only: true
-      extra_args: CONF_FILE="prj_netusb.conf"
-      extra_configs:
-        - CONFIG_USB_COMPOSITE_DEVICE=y
-        - CONFIG_USB_DEVICE_VID=0xDEAD
-        - CONFIG_USB_DEVICE_PID=0xBEEF
-      platform_whitelist: quark_se_c1000_devboard 96b_carbon
-      tags: net usb
+  test:
+    platform_whitelist: qemu_x86 sam_e70_xplained frdm_k64f
+      qemu_cortex_m3 arduino_101
+  test_802154:
+    extra_args: CONF_FILE="prj_qemu_802154.conf"
+    platform_whitelist: qemu_x86
+  test_bt:
+    extra_args: CONF_FILE="prj_bt.conf"
+    platform_whitelist: qemu_x86
+    tags: bluetooth
+  test_mcr20a:
+    extra_args: CONF_FILE="prj_frdm_k64f_mcr20a.conf"
+    platform_whitelist: frdm_k64f
+  test_nrf:
+    extra_args: CONF_FILE="prj_nrf5.conf"
+    platform_whitelist: nrf52840_pca10056
+  test_usbnet:
+    build_only: true
+    extra_args: CONF_FILE="prj_netusb.conf"
+    extra_configs:
+      - CONFIG_USB_DEVICE_VID=0xDEAD
+      - CONFIG_USB_DEVICE_PID=0xBEEF
+    platform_whitelist: quark_se_c1000_devboard 96b_carbon
+    tags: net usb
+  test_usbnet_composite:
+    build_only: true
+    extra_args: CONF_FILE="prj_netusb.conf"
+    extra_configs:
+      - CONFIG_USB_COMPOSITE_DEVICE=y
+      - CONFIG_USB_DEVICE_VID=0xDEAD
+      - CONFIG_USB_DEVICE_PID=0xBEEF
+    platform_whitelist: quark_se_c1000_devboard 96b_carbon
+    tags: net usb

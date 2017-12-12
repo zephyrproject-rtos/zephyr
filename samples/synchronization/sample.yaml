@@ -3,7 +3,7 @@ sample:
     basic sanity of the kernel.
   name: Synchronization Sample
 tests:
-  - test:
-      build_on_all: true
-      build_only: true
-      tags: apps
+  test:
+    build_on_all: true
+    build_only: true
+    tags: apps

@@ -1,8 +1,9 @@
 sample:
-  description: A basic demo to showcase multi-threading using K_THREAD_DEFINE
+  description: A basic demo to showcase multi-threading
+    using K_THREAD_DEFINE
   name: Basic Thread Demo
 tests:
-  - test:
-      build_only: true
-      platform_whitelist: 96b_carbon
-      tags: samples
+  test:
+    build_only: true
+    platform_whitelist: 96b_carbon
+    tags: samples

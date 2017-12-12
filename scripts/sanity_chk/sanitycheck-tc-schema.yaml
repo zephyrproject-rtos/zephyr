@@ -89,12 +89,9 @@ mapping:
   # maps maps, shall just be a sequence of maps
   # maybe it is just an artifact?
   "tests":
-    type: seq
-    required: yes
-    sequence:
-      - type: map
-        matching-rule: "any"
-        mapping:
+      type: map
+      matching-rule: "any"
+      mapping:
           # The key for the testname is any, so
           # regex;(([a-zA-Z0-9_]+)) for this to work, note below we
           # make it required: no

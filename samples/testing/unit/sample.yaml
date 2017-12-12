@@ -2,6 +2,6 @@ sample:
   description: TBD
   name: TBD
 tests:
-  - test:
-      tags: buf
-      type: unit
+  test:
+    tags: buf
+    type: unit

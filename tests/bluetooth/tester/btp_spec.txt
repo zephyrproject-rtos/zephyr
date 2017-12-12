@@ -1111,6 +1111,47 @@ Commands and responses:
 
 		In case of an error, the error response will be returned.
 
+	Opcode 0x1c - Get Attributes
+
+		Controller Index:	<controller id>
+		Command parameters:	Start Handle (2 octets)
+					End Handle (2 octets)
+					Type_Length (1 octet)
+					Type (2 or 16 octets)
+		Response parameters:	Attributes_Count (1 octet)
+					[array] Attribute (variable)
+
+		Object Attribute is defined as:
+					Handle (2 octets)
+					Permission (1 octet)
+					Type_Length (1 octet)
+					Type (2 or 16 octets)
+
+		Valid Type_Length parameter values:
+					0x02 = UUID16
+					0x10 = UUID128
+
+		This procedure is used to query GATT Server for attributes based
+		on given search pattern. Attributes can be searched using
+		Attribute Handle range and Attribute Type.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x1d - Get Attribute Value
+
+		Controller Index:	<controller id>
+		Command parameters:	Handle (2 octets)
+		Response parameters:	ATT_Response (1 octet)
+					Value_Length (2 octet)
+					Value (variable)
+
+		This procedure is used to query GATT Server for attribute value.
+		In case of long attribute value, multiple responses will be
+		sent. BTP_STATUS_SUCCESS response indicates the procedure is
+		finished.
+
+		In case of an error, the error response will be returned.
+
 Events:
 	Opcode 0x80 - Notification/Indication Received
 
@@ -1422,3 +1463,29 @@ Events:
 		Event parameters:	<none>
 
 		This event indicate that node was provisioned.
+
+	Opcode 0x84 - Link open Event
+
+		Controller Index:	<controller id>
+		Event parameters:	Bearer (1 octet)
+
+		Valid Bearer parameter values:
+
+					0x00 = PB-ADV
+					0x01 = PB-GATT
+
+		This event indicates that provisioning link has been opened on
+		given bearer.
+
+	Opcode 0x85 - Link closed Event
+
+		Controller Index:	<controller id>
+		Event parameters:	Bearer (1 octet)
+
+		Valid Bearer parameter values:
+
+					0x00 = PB-ADV
+					0x01 = PB-GATT
+
+		This event indicates that provisioning link has been closed on
+		given bearer.

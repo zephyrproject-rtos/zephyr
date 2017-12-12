@@ -24,7 +24,7 @@ b) From a terminal window, type:
 
     $ cd $ZEPHYR_BASE/samples/net/mbedtls_sslclient
     $ mkdir qemu_build && cd qemu_build
-    $ cmake -DBOARD=<board to use> -DCONF_FILE=<your desired conf file> ..
+    $ cmake -DBOARD=<board to use> ..
 
 c) Copy the binary (outdir/zephyr.strip) to the Galileo's boot
    device. Insert the boot device.

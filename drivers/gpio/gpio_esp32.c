@@ -154,8 +154,9 @@ static int gpio_esp32_config(struct device *dev, int access_op,
 	}
 
 	if (flags & GPIO_DIR_OUT) {
-		pinmux_pin_input_enable(data->pinmux, pin,
+		r = pinmux_pin_input_enable(data->pinmux, pin,
 					PINMUX_OUTPUT_ENABLED);
+		assert(r >= 0);
 	} else {
 		pinmux_pin_input_enable(data->pinmux, pin,
 					PINMUX_INPUT_ENABLED);

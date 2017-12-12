@@ -9,6 +9,7 @@
 #include <misc/util.h>
 
 #define BTP_MTU 1024
+#define BTP_DATA_MAX_SIZE (BTP_MTU - sizeof(struct btp_hdr))
 
 #define BTP_INDEX_NONE		0xff
 
@@ -514,6 +515,34 @@ struct gatt_cfg_notify_cmd {
 	u8_t address[6];
 	u8_t enable;
 	u16_t ccc_handle;
+} __packed;
+
+#define GATT_GET_ATTRIBUTES		0x1c
+struct gatt_get_attributes_cmd {
+	u16_t start_handle;
+	u16_t end_handle;
+	u8_t type_length;
+	u8_t type[0];
+} __packed;
+struct gatt_get_attributes_rp {
+	u8_t attrs_count;
+	u8_t attrs[0];
+} __packed;
+struct gatt_attr {
+	u16_t handle;
+	u8_t permission;
+	u8_t type_length;
+	u8_t type[0];
+} __packed;
+
+#define GATT_GET_ATTRIBUTE_VALUE	0x1d
+struct gatt_get_attribute_value_cmd {
+	u16_t handle;
+} __packed;
+struct gatt_get_attribute_value_rp {
+	u8_t att_response;
+	u16_t value_length;
+	u8_t value[0];
 } __packed;
 
 /* GATT events */

@@ -1,19 +1,21 @@
-sample:
-  description: Test core network features using a client/server sample
-  name: Echo Client
 common:
-  tags: net
   build_only: true
+  tags: net
+sample:
+  description: Test core network features using a client/server
+    sample
+  name: Echo Client
 tests:
-  - test:
-      platform_whitelist: qemu_x86 frdm_k64f sam_e70_xplained qemu_cortex_m3 arduino_101
-  - test_802154:
-      extra_args: CONF_FILE="prj_qemu_802154.conf"
-      platform_whitelist: qemu_x86
-  - test_bt:
-      extra_args: CONF_FILE="prj_bt.conf"
-      platform_whitelist: qemu_x86
-      tags: bluetooth
-  - test_cc2520:
-      extra_args: CONF_FILE="prj_frdm_k64f_cc2520.conf"
-      platform_whitelist: frdm_k64f
+  test:
+    platform_whitelist: qemu_x86 frdm_k64f sam_e70_xplained
+      qemu_cortex_m3 arduino_101
+  test_802154:
+    extra_args: CONF_FILE="prj_qemu_802154.conf"
+    platform_whitelist: qemu_x86
+  test_bt:
+    extra_args: CONF_FILE="prj_bt.conf"
+    platform_whitelist: qemu_x86
+    tags: bluetooth
+  test_cc2520:
+    extra_args: CONF_FILE="prj_frdm_k64f_cc2520.conf"
+    platform_whitelist: frdm_k64f
