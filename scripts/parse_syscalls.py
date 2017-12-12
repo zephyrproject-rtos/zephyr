@@ -20,17 +20,20 @@ __syscall\s+                    # __syscall attribute, must be first
 
 typename_regex = re.compile(r'(.*?)([A-Za-z0-9_]+)$')
 
+
 class SyscallParseException(Exception):
     pass
 
 
 def typename_split(item):
     if "[" in item:
-        raise SyscallParseException("Please pass arrays to syscalls as pointers, unable to process '%s'"
-                % item)
+        raise SyscallParseException(
+            "Please pass arrays to syscalls as pointers, unable to process '%s'" %
+            item)
 
     if "(" in item:
-        raise SyscallParseException("Please use typedefs for function pointers")
+        raise SyscallParseException(
+            "Please use typedefs for function pointers")
 
     mo = typename_regex.match(item)
     if not mo:
@@ -115,16 +118,20 @@ def analyze_headers(base_path):
 
     return ret
 
+
 def parse_args():
     global args
-    parser = argparse.ArgumentParser(description = __doc__,
-            formatter_class = argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
 
     parser.add_argument("-i", "--include", required=True,
-            help="Base include directory")
-    parser.add_argument("-j", "--json-file", required=True,
-            help="Write system call prototype information as json to file")
+                        help="Base include directory")
+    parser.add_argument(
+        "-j", "--json-file", required=True,
+        help="Write system call prototype information as json to file")
     args = parser.parse_args()
+
 
 def main():
     parse_args()
@@ -151,6 +158,7 @@ def main():
     else:
         with open(path, 'w') as fp:
             fp.write(new)
+
 
 if __name__ == "__main__":
     main()
