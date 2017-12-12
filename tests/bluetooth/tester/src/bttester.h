@@ -708,6 +708,13 @@ struct mesh_input_string_cmd {
 	u8_t string[0];
 } __packed;
 
+#define MESH_LPN			0x0d
+struct mesh_lpn_set_cmd {
+	u8_t enable;
+} __packed;
+
+#define MESH_LPN_POLL			0x0e
+
 /* events */
 #define MESH_EV_OUT_NUMBER_ACTION	0x80
 struct mesh_out_number_action_ev {
