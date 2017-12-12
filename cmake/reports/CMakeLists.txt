@@ -7,6 +7,8 @@ foreach(report ram_report rom_report)
     ${PYTHON_EXECUTABLE}
     $ENV{ZEPHYR_BASE}/scripts/footprint/size_report
     ${flag_for_${report}}
+    --objdump ${CMAKE_OBJDUMP}
+    --nm      ${CMAKE_NM}
     -o ${PROJECT_BINARY_DIR}
     DEPENDS ${logical_target_for_zephyr_elf}
     )
