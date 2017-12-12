@@ -8,7 +8,6 @@ zephyr_compile_options(
   -m32
   -MMD
   -MP
-  ${TOOLCHAIN_C_FLAGS}
   ${ARCH_FLAG}
   -include ${PROJECT_SOURCE_DIR}/arch/posix/include/posix_cheats.h
   )

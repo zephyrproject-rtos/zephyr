@@ -103,6 +103,7 @@ zephyr_compile_options(
   -ffreestanding
   -Wno-main
   ${NOSTDINC_F}
+  ${TOOLCHAIN_C_FLAGS}
 )
 
 zephyr_compile_options(
@@ -230,6 +231,7 @@ else() # GCC assumed
     -Wno-unused-but-set-variable
     -fno-reorder-functions
     )
+
   if(NOT ${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "xcc")
     zephyr_cc_option(-fno-defer-pop)
   endif()
@@ -637,6 +639,14 @@ set(zephyr_lnk
   )
 
 if(CONFIG_GEN_ISR_TABLES)
+  if(CONFIG_GEN_SW_ISR_TABLE)
+    list(APPEND GEN_ISR_TABLE_EXTRA_ARG --sw-isr-table)
+  endif()
+
+  if(CONFIG_GEN_IRQ_VECTOR_TABLE)
+    list(APPEND GEN_ISR_TABLE_EXTRA_ARG --vector-table)
+  endif()
+
   # isr_tables.c is generated from zephyr_prebuilt by
   # gen_isr_tables.py
   add_custom_command(
@@ -653,8 +663,7 @@ if(CONFIG_GEN_ISR_TABLES)
     --kernel $<TARGET_FILE:zephyr_prebuilt>
     --intlist isrList.bin
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--debug>
-    --sw-isr-table
-    --vector-table
+    ${GEN_ISR_TABLE_EXTRA_ARG}
     DEPENDS zephyr_prebuilt
     )
   set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_SOURCE_FILES isr_tables.c)
