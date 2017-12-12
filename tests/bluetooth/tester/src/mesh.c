@@ -62,6 +62,9 @@ static void supported_commands(u8_t *data, u16_t len)
 	tester_set_bit(buf->data, MESH_INPUT_NUMBER);
 	tester_set_bit(buf->data, MESH_INPUT_STRING);
 	/* 2nd octet */
+	memset(net_buf_simple_add(buf, 1), 0, 1);
+	tester_set_bit(buf->data, MESH_LPN);
+	tester_set_bit(buf->data, MESH_LPN_POLL);
 
 	tester_send(BTP_SERVICE_ID_MESH, MESH_READ_SUPPORTED_COMMANDS,
 		    CONTROLLER_INDEX, buf->data, buf->len);
@@ -443,6 +446,39 @@ rsp:
 		   status);
 }
 
+static void lpn(u8_t *data, u16_t len)
+{
+	struct mesh_lpn_set_cmd *cmd = (void *) data;
+	bool enable;
+	int err;
+
+	SYS_LOG_DBG("enable 0x%02x", cmd->enable);
+
+	enable = cmd->enable ? true : false;
+	err = bt_mesh_lpn_set(enable);
+	if (err) {
+		SYS_LOG_ERR("Failed to toggle LPN (err %d)", err);
+	}
+
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_LPN, CONTROLLER_INDEX,
+		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+}
+
+static void lpn_poll(u8_t *data, u16_t len)
+{
+	int err;
+
+	SYS_LOG_DBG("");
+
+	err = bt_mesh_lpn_poll();
+	if (err) {
+		SYS_LOG_ERR("Failed to send poll msg (err %d)", err);
+	}
+
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_LPN_POLL, CONTROLLER_INDEX,
+		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+}
+
 void tester_handle_mesh(u8_t opcode, u8_t index, u8_t *data, u16_t len)
 {
 	switch (opcode) {
@@ -466,6 +502,12 @@ void tester_handle_mesh(u8_t opcode, u8_t index, u8_t *data, u16_t len)
 		break;
 	case MESH_INPUT_STRING:
 		input_string(data, len);
+		break;
+	case MESH_LPN:
+		lpn(data, len);
+		break;
+	case MESH_LPN_POLL:
+		lpn_poll(data, len);
 		break;
 	default:
 		tester_rsp(BTP_SERVICE_ID_MESH, opcode, index,
