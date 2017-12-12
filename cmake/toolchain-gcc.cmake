@@ -90,11 +90,11 @@ get_filename_component(LIBGCC_DIR ${LIBGCC_DIR} DIRECTORY)
 
 assert(LIBGCC_DIR "LIBGCC_DIR not found")
 
-LIST(APPEND LIB_INCLUDE_DIR -L${LIBGCC_DIR})
+LIST(APPEND LIB_INCLUDE_DIR "-L\"${LIBGCC_DIR}\"")
 LIST(APPEND TOOLCHAIN_LIBS gcc)
 
 set(LIBC_INCLUDE_DIR ${SYSROOT_DIR}/include)
-set(LIBC_LIBRARY_DIR ${SYSROOT_DIR}/lib/${NEWLIB_DIR})
+set(LIBC_LIBRARY_DIR "\"${SYSROOT_DIR}\"/lib/${NEWLIB_DIR}")
 
 # For CMake to be able to test if a compiler flag is supported by the
 # toolchain we need to give CMake the necessary flags to compile and
@@ -103,7 +103,7 @@ set(LIBC_LIBRARY_DIR ${SYSROOT_DIR}/lib/${NEWLIB_DIR})
 # CMake checks compiler flags with check_c_compiler_flag() (Which we
 # wrap with target_cc_option() in extentions.cmake)
 foreach(isystem_include_dir ${NOSTDINC})
-  list(APPEND isystem_include_flags -isystem ${isystem_include_dir})
+  list(APPEND isystem_include_flags -isystem "\"${isystem_include_dir}\"")
 endforeach()
 set(CMAKE_REQUIRED_FLAGS -nostartfiles -nostdlib ${isystem_include_flags} -Wl,--unresolved-symbols=ignore-in-object-files)
 string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
