@@ -10,4 +10,3 @@ fd.seek(0x12)
 # Write 0x03 which is EM_386 to e_machine
 fd.write(b'\x03')
 fd.close()
-

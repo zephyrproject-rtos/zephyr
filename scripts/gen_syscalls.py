@@ -83,15 +83,16 @@ u32_t %s(u32_t arg1, u32_t arg2, u32_t arg3,
 
 def parse_args():
     global args
-    parser = argparse.ArgumentParser(description = __doc__,
-            formatter_class = argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
 
     parser.add_argument("-i", "--json-file", required=True,
-            help="Read syscall information from json file")
+                        help="Read syscall information from json file")
     parser.add_argument("-d", "--syscall-dispatch", required=True,
-            help="output C system call dispatch table file")
+                        help="output C system call dispatch table file")
     parser.add_argument("-o", "--base-output", required=True,
-            help="Base output directory for syscall macro headers")
+                        help="Base output directory for syscall macro headers")
     args = parser.parse_args()
 
 
@@ -137,6 +138,6 @@ def main():
         with open(out_fn, "w") as fp:
             fp.write(header)
 
+
 if __name__ == "__main__":
     main()
-

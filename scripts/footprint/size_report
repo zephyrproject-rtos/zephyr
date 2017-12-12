@@ -10,11 +10,10 @@
 import os
 import re
 from optparse import OptionParser
-import sys
-import argparse
 import subprocess
 import json
 import operator
+
 
 class bcolors:
     HEADER = '\033[95m'
@@ -50,20 +49,23 @@ parser.add_option("-n", "--nm", type="string", dest="bin_nm",
 # Return a dict containing symbol_name: path/to/file/where/it/originates
 # for all symbols from the .elf file. Optionnaly strips the path according
 # to the passed sub-path
-def load_symbols_and_paths(bin_nm, elf_file, path_to_strip = None):
+
+
+def load_symbols_and_paths(bin_nm, elf_file, path_to_strip=None):
     symbols_paths = {}
-    nm_out = subprocess.check_output([bin_nm, elf_file, "-S", "-l", "--size-sort", "--radix=d"])
+    nm_out = subprocess.check_output(
+        [bin_nm, elf_file, "-S", "-l", "--size-sort", "--radix=d"])
     for line in nm_out.decode('utf8').split('\n'):
         fields = line.replace('\t', ' ').split(' ')
         # Get rid of trailing empty field
         if len(fields) == 1 and fields[0] == '':
             continue
-        assert len(fields)>=4
-        if len(fields)<5:
+        assert len(fields) >= 4
+        if len(fields) < 5:
             path = ":/" + fields[3]
         else:
             path = fields[4].split(':')[0]
-        if path_to_strip != None:
+        if path_to_strip is not None:
             if path_to_strip in path:
                 path = path.replace(path_to_strip, "") + '/' + fields[3]
             else:
@@ -71,53 +73,64 @@ def load_symbols_and_paths(bin_nm, elf_file, path_to_strip = None):
         symbols_paths[fields[3]] = path
     return symbols_paths
 
+
 def get_section_size(f, section_name):
     decimal_size = 0
-    re_res = re.search(r"(.*] "+section_name+".*)", f, re.MULTILINE)
-    if re_res != None :
+    re_res = re.search(r"(.*] " + section_name + ".*)", f, re.MULTILINE)
+    if re_res is not None:
         # Replace multiple spaces with one space
         # Skip first characters to avoid having 1 extra random space
         res = ' '.join(re_res.group(1).split())[5:]
         decimal_size = int(res.split()[4], 16)
     return decimal_size
 
-def get_footprint_from_bin_and_statfile(bin_file, stat_file, total_flash, total_ram):
-    """Compute flash and RAM memory footprint from a .bin and.stat file"""
+
+def get_footprint_from_bin_and_statfile(
+        bin_file, stat_file, total_flash, total_ram):
+    """Compute flash and RAM memory footprint from a .bin and .stat file"""
     f = open(stat_file).read()
 
     # Get kctext + text + ctors + rodata + kcrodata segment size
     total_used_flash = os.path.getsize(bin_file)
 
-    #getting used ram on target
-    total_used_ram = (get_section_size(f, "noinit") + get_section_size(f, "bss")
-        + get_section_size(f, "initlevel") + get_section_size(f, "datas") + get_section_size(f, ".data")
-        + get_section_size(f, ".heap") + get_section_size(f, ".stack") + get_section_size(f, ".bss")
-        + get_section_size(f, ".panic_section"))
+    # getting used ram on target
+    total_used_ram = (get_section_size(f, "noinit") +
+                      get_section_size(f, "bss") +
+                      get_section_size(f, "initlevel") +
+                      get_section_size(f, "datas") +
+                      get_section_size(f, ".data") +
+                      get_section_size(f, ".heap") +
+                      get_section_size(f, ".stack") +
+                      get_section_size(f, ".bss") +
+                      get_section_size(f, ".panic_section"))
 
     total_percent_ram = 0
     total_percent_flash = 0
     if total_ram > 0:
         total_percent_ram = float(total_used_ram) / total_ram * 100
-    if total_flash >0:
+    if total_flash > 0:
         total_percent_flash = float(total_used_flash) / total_flash * 100
 
-    res = { "total_flash": total_used_flash,
-            "percent_flash": total_percent_flash,
-            "total_ram": total_used_ram,
-            "percent_ram": total_percent_ram}
+    res = {"total_flash": total_used_flash,
+           "percent_flash": total_percent_flash,
+           "total_ram": total_used_ram,
+           "percent_ram": total_percent_ram}
     return res
 
-def generate_target_memory_section(bin_objdump, bin_nm, out, kernel_name, source_dir, features_json):
+
+def generate_target_memory_section(
+        bin_objdump, bin_nm, out, kernel_name, source_dir, features_json):
     features_path_data = None
     try:
         features_path_data = json.loads(open(features_json, 'r').read())
-    except:
+    except BaseException:
         pass
 
-    bin_file_abs = os.path.join(out, kernel_name+'.bin')
-    elf_file_abs = os.path.join(out, kernel_name+'.elf')
+    bin_file_abs = os.path.join(out, kernel_name + '.bin')
+    elf_file_abs = os.path.join(out, kernel_name + '.elf')
 
-     # First deal with size on flash. These are the symbols flagged as LOAD in objdump output
+    # First deal with size on flash. These are the symbols flagged as LOAD in
+    # objdump output
     size_out = subprocess.check_output([bin_objdump, "-hw", elf_file_abs])
     loaded_section_total = 0
     loaded_section_names = []
@@ -127,9 +140,11 @@ def generate_target_memory_section(bin_objdump, bin_nm, out, kernel_name, source
     ram_section_names_sizes = {}
     for line in size_out.decode('utf8').split('\n'):
         if "LOAD" in line:
-            loaded_section_total = loaded_section_total + int(line.split()[2], 16)
+            loaded_section_total = loaded_section_total + \
+                int(line.split()[2], 16)
             loaded_section_names.append(line.split()[1])
-            loaded_section_names_sizes[line.split()[1]] = int(line.split()[2], 16)
+            loaded_section_names_sizes[line.split()[1]] = int(
+                line.split()[2], 16)
         if "ALLOC" in line and "READONLY" not in line and "rodata" not in line and "CODE" not in line:
             ram_section_total = ram_section_total + int(line.split()[2], 16)
             ram_section_names.append(line.split()[1])
@@ -147,7 +162,7 @@ def generate_target_memory_section(bin_objdump, bin_nm, out, kernel_name, source
         splitted_path = path.split('/')
         cur = None
         for p in splitted_path:
-            if cur == None:
+            if cur is None:
                 cur = p
             else:
                 cur = cur + '/' + p
@@ -175,7 +190,6 @@ def generate_target_memory_section(bin_objdump, bin_nm, out, kernel_name, source
     def _max_sibling_size(tree, node):
         siblings = _siblings_for_node(tree, node)
         return max([tree[e] for e in siblings])
-
 
     # Extract the list of symbols a second time but this time using the objdump tool
     # which provides more info as nm
@@ -213,21 +227,24 @@ def generate_target_memory_section(bin_objdump, bin_nm, out, kernel_name, source
 
     def _check_all_symbols(symbols_struct, features_list):
         out = ""
-        sorted_nodes = sorted(symbols_struct.items(), key=operator.itemgetter(0))
+        sorted_nodes = sorted(symbols_struct.items(),
+                              key=operator.itemgetter(0))
         named_symbol_filter = re.compile('.*\.[a-zA-Z]+/.*')
         out_symbols_filter = re.compile('^:/')
         for symbpath in sorted_nodes:
             matched = 0
             # The files and folders (not matching regex) are discarded
             # like: folder folder/file.ext
-            is_symbol=named_symbol_filter.match(symbpath[0])
-            is_generated=out_symbols_filter.match(symbpath[0])
-            if is_symbol == None and is_generated == None:
+            is_symbol = named_symbol_filter.match(symbpath[0])
+            is_generated = out_symbols_filter.match(symbpath[0])
+            if is_symbol is None and is_generated is None:
                 continue
             # The symbols inside a file are kept: folder/file.ext/symbol
             # and unrecognized paths too (":/")
             for feature in features_list:
-                matched = matched + _does_symbol_matches_feature(symbpath[0], symbpath[1], feature)
+                matched = matched + \
+                    _does_symbol_matches_feature(
+                        symbpath[0], symbpath[1], feature)
             if matched is 0:
                 out += "UNCATEGORIZED: %s %d<br/>" % (symbpath[0], symbpath[1])
         return out
@@ -239,7 +256,8 @@ def generate_target_memory_section(bin_objdump, bin_nm, out, kernel_name, source
             # filter out if the include-filter is not in the symbol string
             if inc_path not in symbol:
                 continue
-            # if the symbol match the include-filter, check against exclude-filter
+            # if the symbol match the include-filter, check against
+            # exclude-filter
             is_excluded = 0
             for exc_path in feature["excludes"]:
                 if exc_path in symbol:
@@ -256,15 +274,13 @@ def generate_target_memory_section(bin_objdump, bin_nm, out, kernel_name, source
             matched = matched + child_matched
         return matched
 
-
-
     # Create a simplified tree keeping only the most important contributors
     # This is used for the pie diagram summary
-    min_parent_size = bin_size/25
-    min_sibling_size = bin_size/35
+    min_parent_size = bin_size / 25
+    min_sibling_size = bin_size / 35
     tmp = {}
     for e in data_nodes:
-        if _parent_for_node(e) == None:
+        if _parent_for_node(e) is None:
             continue
         if data_nodes[_parent_for_node(e)] < min_parent_size:
             continue
@@ -290,10 +306,9 @@ def generate_target_memory_section(bin_objdump, bin_nm, out, kernel_name, source
         else:
             filtered_data_nodes[e] = tmp[e]
 
-
     def _parent_level_3_at_most(node):
         e = _parent_for_node(node)
-        while e.count('/')>2:
+        while e.count('/') > 2:
             e = _parent_for_node(e)
         return e
 
@@ -303,14 +318,15 @@ def generate_target_memory_section(bin_objdump, bin_nm, out, kernel_name, source
 def print_tree(data, total, depth):
     base = os.environ['ZEPHYR_BASE']
     totp = 0
-    print('{:92s} {:10s} {:8s}'.format(bcolors.FAIL + "Path", "Size", "%" + bcolors.ENDC))
+    print('{:92s} {:10s} {:8s}'.format(
+        bcolors.FAIL + "Path", "Size", "%" + bcolors.ENDC))
     print("'='*110i")
     for i in sorted(data):
         p = i.split("/")
         if depth and len(p) > depth:
             continue
 
-        percent = 100 * float(data[i])/float(total)
+        percent = 100 * float(data[i]) / float(total)
         percent_c = percent
         if len(p) < 2:
             totp += percent
@@ -320,11 +336,13 @@ def print_tree(data, total, depth):
                 s = bcolors.WARNING + p[-1] + bcolors.ENDC
             else:
                 s = bcolors.OKBLUE + p[-1] + bcolors.ENDC
-            print('{:80s} {:20d} {:8.2f}%'.format("  "*(len(p)-1) + s, data[i], percent_c ))
+            print('{:80s} {:20d} {:8.2f}%'.format(
+                "  " * (len(p) - 1) + s, data[i], percent_c))
         else:
-            print('{:80s} {:20d} {:8.2f}%'.format(bcolors.OKBLUE + i + bcolors.ENDC, data[i], percent_c ))
+            print('{:80s} {:20d} {:8.2f}%'.format(
+                bcolors.OKBLUE + i + bcolors.ENDC, data[i], percent_c))
 
-    print('='*110)
+    print('=' * 110)
     print('{:92d}'.format(total))
     return totp
 
@@ -332,14 +350,18 @@ def print_tree(data, total, depth):
 binary = os.path.join(options.outdir, options.binary + ".elf")
 
 if options.outdir and os.path.exists(binary):
-    fp =  get_footprint_from_bin_and_statfile("%s/%s.bin" %(options.outdir, options.binary),
-            "%s/%s.stat" %(options.outdir,options.binary), 0, 0 )
+    fp = get_footprint_from_bin_and_statfile(
+        "%s/%s.bin" % (options.outdir, options.binary),
+        "%s/%s.stat" % (options.outdir, options.binary),
+        0, 0)
     base = os.environ['ZEPHYR_BASE']
-    ram, data = generate_target_memory_section(options.bin_objdump, options.bin_nm, options.outdir, options.binary, base + '/',  None)
+    ram, data = generate_target_memory_section(
+        options.bin_objdump, options.bin_nm, options.outdir, options.binary,
+        base + '/', None)
     if options.rom:
         print_tree(data, fp['total_flash'], options.depth)
     if options.ram:
         print_tree(ram, fp['total_ram'], options.depth)
 
 else:
-    print("%s does not exist." %(binary))
+    print("%s does not exist." % (binary))
