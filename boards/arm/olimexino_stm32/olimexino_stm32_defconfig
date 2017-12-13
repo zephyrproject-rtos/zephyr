@@ -16,6 +16,9 @@ CONFIG_UART_CONSOLE=y
 # enable I2C driver
 CONFIG_I2C=y
 
+# enable SPI
+CONFIG_SPI=y
+
 # enable pinmux
 CONFIG_PINMUX=y
 
