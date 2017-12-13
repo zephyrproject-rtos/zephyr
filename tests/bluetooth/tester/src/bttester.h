@@ -715,6 +715,15 @@ struct mesh_ivu_test_mode_cmd {
 
 #define MESH_IVU_TOGGLE_STATE			0x09
 
+#define MESH_NET_SEND			0x0a
+struct mesh_net_send_cmd {
+	u8_t ttl;
+	u16_t src;
+	u16_t dst;
+	u8_t payload_len;
+	u8_t payload[0];
+} __packed;
+
 #define MESH_LPN			0x0d
 struct mesh_lpn_set_cmd {
 	u8_t enable;

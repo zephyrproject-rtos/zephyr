@@ -37,6 +37,9 @@ static u8_t input_size;
 static u8_t dev_uuid[16];
 static u8_t static_auth[16];
 
+/* Vendor Model data */
+#define VND_MODEL_ID_1 0x1234
+
 static struct {
 	u16_t local;
 	u16_t dst;
@@ -65,6 +68,7 @@ static void supported_commands(u8_t *data, u16_t len)
 	memset(net_buf_simple_add(buf, 1), 0, 1);
 	tester_set_bit(buf->data, MESH_IVU_TEST_MODE);
 	tester_set_bit(buf->data, MESH_IVU_TOGGLE_STATE);
+	tester_set_bit(buf->data, MESH_NET_SEND);
 	tester_set_bit(buf->data, MESH_LPN);
 	tester_set_bit(buf->data, MESH_LPN_POLL);
 
@@ -178,8 +182,13 @@ static struct bt_mesh_model root_models[] = {
 	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),
 };
 
+static struct bt_mesh_model vnd_models[] = {
+	BT_MESH_MODEL_VND(CID_LOCAL, VND_MODEL_ID_1, BT_MESH_MODEL_NO_OPS, NULL,
+			  NULL),
+};
+
 static struct bt_mesh_elem elements[] = {
-	BT_MESH_ELEM(0, root_models, BT_MESH_MODEL_NONE),
+	BT_MESH_ELEM(0, root_models, vnd_models),
 };
 
 static void link_open(bt_mesh_prov_bearer_t bearer)
@@ -382,6 +391,9 @@ static void init(u8_t *data, u16_t len)
 		}
 	}
 
+	/* Set device key for vendor model */
+	vnd_models[0].keys[0] = BT_MESH_KEY_DEV;
+
 rsp:
 	tester_rsp(BTP_SERVICE_ID_MESH, MESH_INIT, CONTROLLER_INDEX,
 		   status);
@@ -508,6 +520,34 @@ static void lpn_poll(u8_t *data, u16_t len)
 		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
 }
 
+static void net_send(u8_t *data, u16_t len)
+{
+	struct mesh_net_send_cmd *cmd = (void *) data;
+	struct net_buf_simple *msg = NET_BUF_SIMPLE(UINT8_MAX);
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = net.net_idx,
+		.app_idx = BT_MESH_KEY_DEV,
+		.addr = sys_le16_to_cpu(cmd->dst),
+		.send_ttl = cmd->ttl,
+	};
+	int err;
+
+	SYS_LOG_DBG("ttl 0x%02x dst 0x%04x payload_len %d", ctx.send_ttl,
+		    ctx.addr, cmd->payload_len);
+
+	net_buf_simple_init(msg, 0);
+
+	net_buf_simple_add_mem(msg, cmd->payload, cmd->payload_len);
+
+	err = bt_mesh_model_send(&vnd_models[0], &ctx, msg, NULL, NULL);
+	if (err) {
+		SYS_LOG_ERR("Failed to send (err %d)", err);
+	}
+
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_NET_SEND, CONTROLLER_INDEX,
+		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+}
+
 void tester_handle_mesh(u8_t opcode, u8_t index, u8_t *data, u16_t len)
 {
 	switch (opcode) {
@@ -543,6 +583,9 @@ void tester_handle_mesh(u8_t opcode, u8_t index, u8_t *data, u16_t len)
 		break;
 	case MESH_LPN_POLL:
 		lpn_poll(data, len);
+		break;
+	case MESH_NET_SEND:
+		net_send(data, len);
 		break;
 	default:
 		tester_rsp(BTP_SERVICE_ID_MESH, opcode, index,
