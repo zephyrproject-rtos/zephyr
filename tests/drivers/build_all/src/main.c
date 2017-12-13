@@ -6,6 +6,7 @@
 
 #include <zephyr.h>
 #include <misc/printk.h>
+#include <tc_util.h>
 
 
 /*
@@ -16,6 +17,11 @@
 
 void main(void)
 {
+	TC_START("test_build");
+
 	printk("Hello World!\n");
+
+	TC_END_RESULT(TC_PASS);
+	TC_END_REPORT(TC_PASS);
 }
 
