@@ -91,8 +91,8 @@ config NET_L2_IEEE802154_SHELL
 	select CONSOLE_SHELL
 	depends on NET_L2_IEEE802154_RFD
 	help
-	This can be used for testing 15.4 through the console via exposing
-	a shell module named "ieee15_4".
+	  This can be used for testing 15.4 through the console via exposing
+	  a shell module named "ieee15_4".
 
 config NET_L2_IEEE802154_FRAGMENT
 	bool "Enable 802.15.4 fragmentation support"
@@ -130,17 +130,17 @@ config NET_L2_IEEE802154_SECURITY
 	bool "Enable IEEE 802.15.4 security [EXPERIMENTAL]"
 	default n
 	help
-	Enable 802.15.4 frame security handling, in order to bring data
-	confidentiality and authenticity.
+	  Enable 802.15.4 frame security handling, in order to bring data
+	  confidentiality and authenticity.
 
 config NET_L2_IEEE802154_SECURITY_CRYPTO_DEV_NAME
 	string "Crypto device name used for <en/de>cryption"
 	default ""
 	depends on NET_L2_IEEE802154_SECURITY
 	help
-	This option should be used to set the crypto device name that
-	IEEE 802.15.4 soft MAC will use to run authentication, encryption and
-	decryption operations on incoming/outgoing frames.
+	  This option should be used to set the crypto device name that
+	  IEEE 802.15.4 soft MAC will use to run authentication, encryption and
+	  decryption operations on incoming/outgoing frames.
 
 source "subsys/net/ip/l2/ieee802154/Kconfig.radio"
 

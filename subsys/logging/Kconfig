@@ -71,6 +71,6 @@ config SYS_LOG_EXT_HOOK
 	depends on SYS_LOG
 	default n
 	help
-	Use external hook function for logging.
+	  Use external hook function for logging.
 endmenu
 

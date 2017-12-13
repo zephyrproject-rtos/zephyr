@@ -13,7 +13,7 @@ menuconfig RTC
 	bool "Real-Time Clock"
 	default n
 	help
-	Enable options for Real-Time Clock drivers.
+	  Enable options for Real-Time Clock drivers.
 
 if RTC
 
@@ -23,26 +23,26 @@ config RTC_QMSI
 	depends on QMSI
 	default n
 	help
-	Build QMSI RTC driver.
+	  Build QMSI RTC driver.
 
 config RTC_0_NAME
 	string "Driver instance name"
 	default "RTC_0"
 	depends on RTC
 	help
-	RTC driver instance name
+	  RTC driver instance name
 
 config RTC_0_IRQ_PRI
 	int "RTC Driver Interrupt priority"
 	depends on RTC_QMSI
 	help
-	RTC interrupt priority.
+	  RTC interrupt priority.
 
 config RTC_QMSI_API_REENTRANCY
 	bool
 	prompt "RTC shim driver API reentrancy"
 	default n
 	help
-	Enable support for RTC shim driver API reentrancy.
+	  Enable support for RTC shim driver API reentrancy.
 
 endif # RTC

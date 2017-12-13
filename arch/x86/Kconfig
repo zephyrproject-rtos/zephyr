@@ -37,7 +37,7 @@ config CPU_ATOM
 	select ARCH_HAS_STACK_PROTECTION if X86_MMU
 	select ARCH_HAS_USERSPACE if X86_MMU
 	help
-	This option signifies the use of a CPU from the Atom family.
+	  This option signifies the use of a CPU from the Atom family.
 
 config CPU_MINUTEIA
 	# Hidden
@@ -45,7 +45,7 @@ config CPU_MINUTEIA
 	select ARCH_HAS_USERSPACE if X86_MMU
 	bool
 	help
-	This option signifies the use of a CPU from the Minute IA family.
+	  This option signifies the use of a CPU from the Minute IA family.
 
 menu "Processor Capabilities"
 
@@ -54,12 +54,12 @@ config X86_IAMCU
 	default n
 	prompt "IAMCU calling convention"
 	help
-	The IAMCU calling convention changes the X86 C calling convention to
-	pass some arguments via registers allowing for code size and performance
-	improvements.  Great care needs to be taken if you have assembly code
-	that will be called from C or C code called from assembly code, the
-	assembly code will need to be updated to conform to the new calling
-	convention.  If in doubt say N
+	  The IAMCU calling convention changes the X86 C calling convention to
+	  pass some arguments via registers allowing for code size and performance
+	  improvements.  Great care needs to be taken if you have assembly code
+	  that will be called from C or C code called from assembly code, the
+	  assembly code will need to be updated to conform to the new calling
+	  convention.  If in doubt say N
 
 menu "Memory Management"
 config X86_MMU
@@ -67,8 +67,8 @@ config X86_MMU
 	default n
 	prompt "Enable Memory Management Unit"
 	help
-	This options enables the memory management unit present in x86. Enabling
-	this will create boot time page table structure.
+	  This options enables the memory management unit present in x86. Enabling
+	  this will create boot time page table structure.
 
 config X86_PAE_MODE
 	bool
@@ -76,23 +76,23 @@ config X86_PAE_MODE
 	default n
 	prompt "Enable PAE page tables"
 	help
-	When selected the Page address extension mode is enabled. The PAE
-	page tables provides a mechanism to selectively disable execution.
-	So any Page Table Entry (PTE) that sets the XD bit will have all
-	instruction fetches disabled in that 4KB region. The amount of RAM
-	needed for PAE tables is more than twice that of 32-Bit paging
-	because each PAE entry is 64bits wide.
-	Note: Do not enable in RAM constrained devices.
+	  When selected the Page address extension mode is enabled. The PAE
+	  page tables provides a mechanism to selectively disable execution.
+	  So any Page Table Entry (PTE) that sets the XD bit will have all
+	  instruction fetches disabled in that 4KB region. The amount of RAM
+	  needed for PAE tables is more than twice that of 32-Bit paging
+	  because each PAE entry is 64bits wide.
+	  Note: Do not enable in RAM constrained devices.
 endmenu
 
 config X86_ENABLE_TSS
 	bool
 	help
-	This hidden option enables defining a Task State Segment (TSS) for
-	kernel execution. This is needed to handle double-faults or
-	do privilege elevation. It also defines a special TSS and handler
-	for correctly handling double-fault exceptions, instead of just
-	letting the system triple-fault and reset.
+	  This hidden option enables defining a Task State Segment (TSS) for
+	  kernel execution. This is needed to handle double-faults or
+	  do privilege elevation. It also defines a special TSS and handler
+	  for correctly handling double-fault exceptions, instead of just
+	  letting the system triple-fault and reset.
 
 config X86_STACK_PROTECTION
 	bool
@@ -101,9 +101,9 @@ config X86_STACK_PROTECTION
 	select GDT_DYNAMIC
 	select X86_ENABLE_TSS
 	help
-	This option leverages the MMU to cause a system fatal error if the
-	bounds of the current process stack are overflowed. This is done
-	by preceding all stack areas with a 4K guard page.
+	  This option leverages the MMU to cause a system fatal error if the
+	  bounds of the current process stack are overflowed. This is done
+	  by preceding all stack areas with a 4K guard page.
 
 config X86_USERSPACE
 	bool
@@ -113,9 +113,9 @@ config X86_USERSPACE
 	select GDT_DYNAMIC
 	select X86_ENABLE_TSS
 	help
-	This option enables APIs to drop a thread's privileges down to ring 3,
-	supporting user-level threads that are protected from each other and
-	from crashing the kernel.
+	  This option enables APIs to drop a thread's privileges down to ring 3,
+	  supporting user-level threads that are protected from each other and
+	  from crashing the kernel.
 
 menu "Architecture Floating Point Options"
 depends on CPU_HAS_FPU
@@ -126,7 +126,7 @@ config SSE
 	depends on FLOAT
 	default n
 	help
-	This option enables the use of SSE registers by threads.
+	  This option enables the use of SSE registers by threads.
 
 config SSE_FP_MATH
 	bool
@@ -134,15 +134,15 @@ config SSE_FP_MATH
 	depends on SSE
 	default n
 	help
-	This option allows the compiler to generate SSEx instructions for
-	performing floating point math. This can greatly improve performance
-	when exactly the same operations are to be performed on multiple
-	data objects; however, it can also significantly reduce performance
-	when preemptive task switches occur because of the larger register
-	set that must be saved and restored.
+	  This option allows the compiler to generate SSEx instructions for
+	  performing floating point math. This can greatly improve performance
+	  when exactly the same operations are to be performed on multiple
+	  data objects; however, it can also significantly reduce performance
+	  when preemptive task switches occur because of the larger register
+	  set that must be saved and restored.
 
-	Disabling this option means that the compiler utilizes only the
-	x87 instruction set for floating point operations.
+	  Disabling this option means that the compiler utilizes only the
+	  x87 instruction set for floating point operations.
 endmenu
 
 choice
@@ -154,7 +154,7 @@ config REBOOT_RST_CNT
 	bool
 	prompt "Reboot via RST_CNT register"
 	help
-	Reboot via the RST_CNT register, going back to BIOS.
+	  Reboot via the RST_CNT register, going back to BIOS.
 
 endchoice
 
@@ -163,8 +163,8 @@ config ISA_IA32
 	bool
 	default y
 	help
-	This option signifies the use of a CPU based on the Intel IA-32
-	instruction set architecture.
+	  This option signifies the use of a CPU based on the Intel IA-32
+	  instruction set architecture.
 
 config IA32_LEGACY_IO_PORTS
 	bool
@@ -172,26 +172,26 @@ config IA32_LEGACY_IO_PORTS
 	default n
 	depends on ISA_IA32
 	help
-	This option enables IA32 legacy IO ports. Note these are much slower
-	than memory access, so they should be used in last resort.
+	  This option enables IA32 legacy IO ports. Note these are much slower
+	  than memory access, so they should be used in last resort.
 
 config CMOV
 	def_bool n
 	help
-	This option signifies the use of an Intel CPU that supports
-	the CMOV instruction.
+	  This option signifies the use of an Intel CPU that supports
+	  the CMOV instruction.
 
 config CACHE_LINE_SIZE_DETECT
 	bool
 	prompt "Detect cache line size at runtime"
 	default y
 	help
-	This option enables querying the CPUID register for finding the cache line
-	size at the expense of taking more memory and code and a slightly increased
-	boot time.
+	  This option enables querying the CPUID register for finding the cache line
+	  size at the expense of taking more memory and code and a slightly increased
+	  boot time.
 
-	If the CPU's cache line size is known in advance, disable this option and
-	manually enter the value for CACHE_LINE_SIZE.
+	  If the CPU's cache line size is known in advance, disable this option and
+	  manually enter the value for CACHE_LINE_SIZE.
 
 config CACHE_LINE_SIZE
 	int
@@ -200,9 +200,9 @@ config CACHE_LINE_SIZE
 	default 64 if CPU_ATOM
 	default 0
 	help
-	Size in bytes of a CPU cache line.
+	  Size in bytes of a CPU cache line.
 
-	Detect automatically at runtime by selecting CACHE_LINE_SIZE_DETECT.
+	  Detect automatically at runtime by selecting CACHE_LINE_SIZE_DETECT.
 
 config CLFLUSH_INSTRUCTION_SUPPORTED
 	bool
@@ -210,12 +210,12 @@ config CLFLUSH_INSTRUCTION_SUPPORTED
 	depends on !CLFLUSH_DETECT && CACHE_FLUSHING
 	default n
 	help
-	An implementation of sys_cache_flush() that uses CLFLUSH is made
-	available, instead of the one using WBINVD.
+	  An implementation of sys_cache_flush() that uses CLFLUSH is made
+	  available, instead of the one using WBINVD.
 
-	This option should only be enabled if it is known in advance that the
-	CPU supports the CLFLUSH instruction. It disables runtime detection of
-	CLFLUSH support thereby reducing both memory footprint and boot time.
+	  This option should only be enabled if it is known in advance that the
+	  CPU supports the CLFLUSH instruction. It disables runtime detection of
+	  CLFLUSH support thereby reducing both memory footprint and boot time.
 
 config CLFLUSH_DETECT
 	bool
@@ -223,15 +223,15 @@ config CLFLUSH_DETECT
 	depends on CACHE_FLUSHING
 	default n
 	help
-	This option should be enabled if it is not known in advance whether the
-	CPU supports the CLFLUSH instruction or not.
+	  This option should be enabled if it is not known in advance whether the
+	  CPU supports the CLFLUSH instruction or not.
 
-	The CPU is queried at boot time to determine which of the multiple
-	implementations of sys_cache_flush() linked into the image is the
-	correct one to use.
+	  The CPU is queried at boot time to determine which of the multiple
+	  implementations of sys_cache_flush() linked into the image is the
+	  correct one to use.
 
-	If the CPU's support (or lack thereof) of CLFLUSH is known in advance, then
-	disable this option and set CLFLUSH_INSTRUCTION_SUPPORTED as appropriate.
+	  If the CPU's support (or lack thereof) of CLFLUSH is known in advance, then
+	  disable this option and set CLFLUSH_INSTRUCTION_SUPPORTED as appropriate.
 
 config ARCH_CACHE_FLUSH_DETECT
 	bool
@@ -243,24 +243,24 @@ config CACHE_FLUSHING
 	default n
 	prompt "Enable cache flushing mechanism"
 	help
-	This links in the sys_cache_flush() function. A mechanism for flushing the
-	cache must be selected as well. By default, that mechanism is discovered at
-	runtime.
+	  This links in the sys_cache_flush() function. A mechanism for flushing the
+	  cache must be selected as well. By default, that mechanism is discovered at
+	  runtime.
 
 config PIC_DISABLE
 	bool "Disable PIC"
 	default n
 	help
-	This option disables all interrupts on the PIC
+	  This option disables all interrupts on the PIC
 
 
 config X86_KERNEL_OOPS
 	bool "Enable handling of kernel oops as an exception"
 	default y
 	help
-	Enable handling of k_oops() API as a CPU exception, which will provide
-	extra debugging information such as program counter and register
-	values when the oops is triggered. Requires an entry in the IDT.
+	  Enable handling of k_oops() API as a CPU exception, which will provide
+	  extra debugging information such as program counter and register
+	  values when the oops is triggered. Requires an entry in the IDT.
 
 config X86_KERNEL_OOPS_VECTOR
 	int "IDT vector to use for kernel oops"
@@ -269,10 +269,10 @@ config X86_KERNEL_OOPS_VECTOR
 	range 32 255
 	depends on X86_KERNEL_OOPS
 	help
-	Specify the IDT vector to use for the kernel oops exception handler.
-	The default should be fine for most arches, but on systems like MVIC
-	where there is a fixed IRQ-to-vector mapping another value may be
-	needed to avoid collision.
+	  Specify the IDT vector to use for the kernel oops exception handler.
+	  The default should be fine for most arches, but on systems like MVIC
+	  where there is a fixed IRQ-to-vector mapping another value may be
+	  needed to avoid collision.
 
 config IRQ_OFFLOAD_VECTOR
 	int "IDT vector to use for IRQ offload"
@@ -281,10 +281,10 @@ config IRQ_OFFLOAD_VECTOR
 	range 32 255
 	depends on IRQ_OFFLOAD
 	help
-	Specify the IDT vector to use for the IRQ offload interrupt handler.
-	The default should be fine for most arches, but on systems like MVIC
-	where there is a fixed IRQ-to-vector mapping another value may be
-	needed to avoid collision.
+	  Specify the IDT vector to use for the IRQ offload interrupt handler.
+	  The default should be fine for most arches, but on systems like MVIC
+	  where there is a fixed IRQ-to-vector mapping another value may be
+	  needed to avoid collision.
 
 
 config XIP
@@ -294,8 +294,8 @@ config X86_FIXED_IRQ_MAPPING
 	bool
 	default n
 	help
-	Specify whether the current interrupt controller in use has a fixed
-	mapping between IDT vectors and IRQ lines.
+	  Specify whether the current interrupt controller in use has a fixed
+	  mapping between IDT vectors and IRQ lines.
 
 endmenu
 

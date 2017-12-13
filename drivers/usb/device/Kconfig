@@ -13,13 +13,13 @@ config USB_DW
 	prompt "Designware USB Device Controller Driver"
 	default n
 	help
-	Designware USB Device Controller Driver.
+	  Designware USB Device Controller Driver.
 
 config USB_DW_IRQ_PRI
 	int "DesignWare USB Driver Interrupt priority"
 	depends on USB_DW
 	help
-	USB interrupt priority.
+	  USB interrupt priority.
 
 config USB_DC_STM32
 	bool
@@ -28,30 +28,30 @@ config USB_DC_STM32
 	depends on SOC_SERIES_STM32F4X
 	default n
 	help
-	STM32 family USB device controller Driver.
+	  STM32 family USB device controller Driver.
 
 config USB_DC_STM32_IRQ_PRI
 	int "USB STM32 Driver Interrupt priority"
 	depends on USB_DC_STM32
 	default 3
 	help
-	USB interrupt priority.
+	  USB interrupt priority.
 
 config USB_DC_STM32_EP_NUM
 	int
 	depends on USB_DC_STM32
 	default 4
 	help
-	Number of supported endpoints (including ep0).
+	  Number of supported endpoints (including ep0).
 
 config USB_DC_STM32_RAM_SIZE
 	int
 	depends on USB_DC_STM32
 	default 512
 	help
-	Total size in bytes for RX/TX buffering (FIFO, PMA...)
-	In case of USB-OTG-FS controller, datasheet defines a shared FIFO size.
-	For USB device controller, datasheet defines USB packet SRAM size.
+	  Total size in bytes for RX/TX buffering (FIFO, PMA...)
+	  In case of USB-OTG-FS controller, datasheet defines a shared FIFO size.
+	  For USB device controller, datasheet defines USB packet SRAM size.
 
 config SYS_LOG_USB_DRIVER_LEVEL
 	int
@@ -59,18 +59,18 @@ config SYS_LOG_USB_DRIVER_LEVEL
 	depends on SYS_LOG
 	default 0
 	help
-	Sets log level for USB driver
+	  Sets log level for USB driver
 
-	Levels are:
+	  Levels are:
 
-	- 0 OFF, do not write
+	  - 0 OFF, do not write
 
-	- 1 ERROR, only write SYS_LOG_ERR
+	  - 1 ERROR, only write SYS_LOG_ERR
 
-	- 2 WARNING, write SYS_LOG_WRN in addition to previous level
+	  - 2 WARNING, write SYS_LOG_WRN in addition to previous level
 
-	- 3 INFO, write SYS_LOG_INF in addition to previous levels
+	  - 3 INFO, write SYS_LOG_INF in addition to previous levels
 
-	- 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
+	  - 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
 
 endif # USB

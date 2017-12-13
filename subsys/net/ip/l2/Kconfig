@@ -11,16 +11,16 @@ config NET_L2_DUMMY
 	default n
 	default y if !NET_L2_ETHERNET && NET_TEST
 	help
-	Add a dummy L2 layer driver. This is usually only needed when
-	simulating a network interface when running network stack inside QEMU.
+	  Add a dummy L2 layer driver. This is usually only needed when
+	  simulating a network interface when running network stack inside QEMU.
 
 config NET_L2_ETHERNET
 	bool "Enable Ethernet support"
 	default n
 	help
-	Add support for Ethernet, enabling selecting relevant hardware drivers.
-	If NET_SLIP_TAP is selected, NET_L2_ETHERNET will enable to fully
-	simulate Ethernet through SLIP.
+	  Add support for Ethernet, enabling selecting relevant hardware drivers.
+	  If NET_SLIP_TAP is selected, NET_L2_ETHERNET will enable to fully
+	  simulate Ethernet through SLIP.
 
 config NET_DEBUG_L2_ETHERNET
 	bool "Debug Ethernet L2 layer"
@@ -28,13 +28,13 @@ config NET_DEBUG_L2_ETHERNET
 	default y if NET_LOG_GLOBAL
 	depends on NET_LOG
 	help
-	Enables Ethernet L2 output debug messages
+	  Enables Ethernet L2 output debug messages
 
 config NET_OFFLOAD
 	bool "Offload IP stack [EXPERIMENTAL]"
 	default n
 	help
-	Enables TCP/IP stack to be offload to a co-processor.
+	  Enables TCP/IP stack to be offload to a co-processor.
 
 config NET_DEBUG_NET_OFFLOAD
 	bool "Debug Net Offload Layer"
@@ -43,7 +43,7 @@ config NET_DEBUG_NET_OFFLOAD
 	depends on NET_LOG
 	depends on NET_OFFLOAD
 	help
-	Enables offload TCP/IP stack output debug messages.
+	  Enables offload TCP/IP stack output debug messages.
 
 config NET_L2_BT
 	bool "Enable Bluetooth support"
@@ -64,11 +64,11 @@ config NET_L2_BT_ZEP1656
 	depends on NET_L2_BT
 	default n
 	help
-	This workaround is necessary to interoperate with Linux up to 4.10 but
-	it might not be compliant with RFC 7668 as it cause the stack to skip
-	Neighbor Discovery cache causing the destination link address to be
-	omitted. For more details why this is needed see:
-	https://jira.zephyrproject.org/browse/ZEP-1656
+	  This workaround is necessary to interoperate with Linux up to 4.10 but
+	  it might not be compliant with RFC 7668 as it cause the stack to skip
+	  Neighbor Discovery cache causing the destination link address to be
+	  omitted. For more details why this is needed see:
+	  https://jira.zephyrproject.org/browse/ZEP-1656
 
 config NET_L2_BT_SEC_LEVEL
 	int "Security level of Bluetooth Link"
@@ -76,11 +76,11 @@ config NET_L2_BT_SEC_LEVEL
 	default 1
 	range 1 4
 	help
-	Security level of Bluetooth Link:
-	Level 1 (BT_SECURITY_LOW) = No encryption or authentication required
-	Level 2 (BT_SECURITY_MEDIUM) = Only encryption required
-	Level 3 (BT_SECURITY_HIGH) = Encryption and authentication required
-	Level 4 (BT_SECURITY_FIPS) = Secure connection required
+	  Security level of Bluetooth Link:
+	  Level 1 (BT_SECURITY_LOW) = No encryption or authentication required
+	  Level 2 (BT_SECURITY_MEDIUM) = Only encryption required
+	  Level 3 (BT_SECURITY_HIGH) = Encryption and authentication required
+	  Level 4 (BT_SECURITY_FIPS) = Secure connection required
 
 config NET_DEBUG_L2_BT
 	bool "Debug Bluetooth L2 layer"
@@ -89,7 +89,7 @@ config NET_DEBUG_L2_BT
 	depends on NET_LOG
 	depends on NET_L2_BT
 	help
-	Enables Bluetooth L2 output debug messages
+	  Enables Bluetooth L2 output debug messages
 
 config NET_L2_BT_MGMT
 	bool "Enable Bluetooth Network Management support"
@@ -104,8 +104,8 @@ config NET_L2_BT_SHELL
 	select CONSOLE_SHELL
 	select NET_L2_BT_MGMT
 	help
-	This can be used for testing Bluetooth management commands through the
-	console via a shell module named "net_bt".
+	  This can be used for testing Bluetooth management commands through the
+	  console via a shell module named "net_bt".
 
 source "subsys/net/ip/l2/ieee802154/Kconfig"
 
@@ -114,15 +114,15 @@ config NET_ARP
 	default y
 	depends on NET_IPV4 && NET_L2_ETHERNET
 	help
-	Enable ARP support. This is necessary on hardware that requires it to
-	get IPv4 working (like Ethernet devices).
+	  Enable ARP support. This is necessary on hardware that requires it to
+	  get IPv4 working (like Ethernet devices).
 
 config NET_ARP_TABLE_SIZE
 	int "Number of entries in ARP table."
 	depends on NET_ARP
 	default 2
 	help
-	Each entry in the ARP table consumes 22 bytes of memory.
+	  Each entry in the ARP table consumes 22 bytes of memory.
 
 config NET_DEBUG_ARP
 	bool "Debug IPv4 ARP"
@@ -130,6 +130,6 @@ config NET_DEBUG_ARP
 	default n
 	default y if NET_LOG_GLOBAL
 	help
-	Enables core ARP code part to output debug messages
+	  Enables core ARP code part to output debug messages
 
 endmenu

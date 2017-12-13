@@ -14,11 +14,11 @@ config NET_RAW_MODE
 	bool
 	default n
 	help
-	This is a very specific option used to built only the very minimal
-	part of the net stack in order to get network drivers working without
-	any net stack above: core, L2 etc... Basically this will build only
-	net_pkt part. It is currently used only by IEEE 802.15.4 drivers,
-	though any type of net drivers could use it.
+	  This is a very specific option used to built only the very minimal
+	  part of the net stack in order to get network drivers working without
+	  any net stack above: core, L2 etc... Basically this will build only
+	  net_pkt part. It is currently used only by IEEE 802.15.4 drivers,
+	  though any type of net drivers could use it.
 
 if !NET_RAW_MODE
 
@@ -26,8 +26,8 @@ config NET_INIT_PRIO
 	int
 	default 90
 	help
-	Network initialization priority level. This number tells how
-	early in the boot the network stack is initialized.
+	  Network initialization priority level. This number tells how
+	  early in the boot the network stack is initialized.
 
 source "subsys/net/ip/Kconfig.debug"
 
@@ -40,15 +40,15 @@ config NET_SHELL
 	default n
 	select CONSOLE_SHELL
 	help
-	Activate shell module that provides network commands like
-	ping to the console.
+	  Activate shell module that provides network commands like
+	  ping to the console.
 
 config NET_IP_ADDR_CHECK
 	bool "Check IP address validity before sending IP packet"
 	default y
 	help
-	Check that either the source or destination address is
-	correct before sending either IPv4 or IPv6 network packet.
+	  Check that either the source or destination address is
+	  correct before sending either IPv4 or IPv6 network packet.
 
 config NET_MAX_ROUTERS
 	int "How many routers are supported"
@@ -57,7 +57,7 @@ config NET_MAX_ROUTERS
 	default 1 if !NET_IPV4 && NET_IPV6
 	range 1 254
 	help
-	The value depends on your network needs.
+	  The value depends on your network needs.
 
 # Normally the route support is enabled by RPL or similar technology
 # that needs to use the routing infrastructure.
@@ -72,14 +72,14 @@ config	NET_MAX_ROUTES
 	default NET_IPV6_MAX_NEIGHBORS
 	depends on NET_ROUTE
 	help
-	This determines how many entries can be stored in routing table.
+	  This determines how many entries can be stored in routing table.
 
 config	NET_MAX_NEXTHOPS
 	int "Max number of next hop entries stored."
 	default NET_MAX_ROUTES
 	depends on NET_ROUTE
 	help
-	This determines how many entries can be stored in nexthop table.
+	  This determines how many entries can be stored in nexthop table.
 
 config NET_ROUTE_MCAST
 	bool
@@ -91,29 +91,29 @@ config	NET_MAX_MCAST_ROUTES
 	default 1
 	depends on NET_ROUTE_MCAST
 	help
-	This determines how many entries can be stored in multicast
-	routing table.
+	  This determines how many entries can be stored in multicast
+	  routing table.
 
 config NET_TCP
 	bool "Enable TCP"
 	default n
 	help
-	The value depends on your network needs.
+	  The value depends on your network needs.
 
 config NET_TCP_CHECKSUM
 	bool "Check TCP checksum"
 	default y
 	depends on NET_TCP
 	help
-	Enables TCP handler to check TCP checksum. If the checksum is invalid,
-	then the packet is discarded.
+	  Enables TCP handler to check TCP checksum. If the checksum is invalid,
+	  then the packet is discarded.
 
 config NET_DEBUG_TCP
 	bool "Debug TCP"
 	default n
 	depends on NET_TCP && NET_LOG
 	help
-	Enables TCP handler output debug messages
+	  Enables TCP handler output debug messages
 
 config NET_TCP_BACKLOG_SIZE
 	int "Number of simultaneous incoming TCP connections"
@@ -121,28 +121,28 @@ config NET_TCP_BACKLOG_SIZE
 	default 1
 	range 1 128
 	help
-	The number of simultaneous TCP connection attempts, i.e. outstanding
-	TCP connections waiting for initial ACK.
+	  The number of simultaneous TCP connection attempts, i.e. outstanding
+	  TCP connections waiting for initial ACK.
 
 config NET_TCP_TIME_WAIT
 	bool "Enable TCP TIME_WAIT timeouts"
 	depends on NET_TCP
 	default n
 	help
-	Officially, the TCP standard requires a 4 minute timeout on
-	connection close before that particular port pair can be used
-	again.  This requires that the net_context and net_tcp structs
-	persist for the full duration, so has non-trivial memory costs
-	and is optional.  Modern systems with well-randomized sequence
-	numbers don't need this, but it is present for specification
-	compliance where needed.
+	  Officially, the TCP standard requires a 4 minute timeout on
+	  connection close before that particular port pair can be used
+	  again.  This requires that the net_context and net_tcp structs
+	  persist for the full duration, so has non-trivial memory costs
+	  and is optional.  Modern systems with well-randomized sequence
+	  numbers don't need this, but it is present for specification
+	  compliance where needed.
 
 config NET_TCP_2MSL_TIME
 	int "How long to wait in TIME_WAIT (in seconds)"
 	depends on NET_TCP_TIME_WAIT
 	default 240
 	help
-	The value is in seconds.
+	  The value is in seconds.
 
 config NET_TCP_ACK_TIMEOUT
 	int "How long to wait for ACK (in milliseconds)"
@@ -150,9 +150,9 @@ config NET_TCP_ACK_TIMEOUT
 	default 1000
 	range 1 2147483647
 	help
-	This value affects the timeout when waiting ACK to arrive in
-	various TCP states. The value is in milliseconds. Note that
-	having a very low value here could prevent connectivity.
+	  This value affects the timeout when waiting ACK to arrive in
+	  various TCP states. The value is in milliseconds. Note that
+	  having a very low value here could prevent connectivity.
 
 config NET_TCP_INIT_RETRANSMISSION_TIMEOUT
 	int "Initial value of Retransmission Timeout (RTO) (in milliseconds)"
@@ -160,48 +160,48 @@ config NET_TCP_INIT_RETRANSMISSION_TIMEOUT
 	default 200
 	range 100 60000
 	help
-	This value affects the timeout between initial retransmission
-	of TCP data packets. The value is in milliseconds.
+	  This value affects the timeout between initial retransmission
+	  of TCP data packets. The value is in milliseconds.
 
 config NET_TCP_RETRY_COUNT
 	int "Maximum number of TCP segment retransmissions"
 	depends on NET_TCP
 	default 9
 	help
-	The following formula can be used to determine the time (in ms)
-	that a segment will be be buffered awaiting retransmission:
-	n=NET_TCP_RETRY_COUNT
-	Sum((1<<n) * NET_TCP_INIT_RETRANSMISSION_TIMEOUT)
-	n=0
-	With the default value of 9, the IP stack will try to
-	retransmit for up to 1:42 minutes.  This is as close as possible
-	to the minimum value recommended by RFC1122 (1:40 minutes).
-	Only 5 bits are dedicated for the retransmission count, so accepted
-	values are in the 0-31 range.  It's highly recommended to not go
-	below 9, though.
-	Should a retransmission timeout occur, the receive callback is
-	called with -ECONNRESET error code and the context is dereferenced.
+	  The following formula can be used to determine the time (in ms)
+	  that a segment will be be buffered awaiting retransmission:
+	  n=NET_TCP_RETRY_COUNT
+	  Sum((1<<n) * NET_TCP_INIT_RETRANSMISSION_TIMEOUT)
+	  n=0
+	  With the default value of 9, the IP stack will try to
+	  retransmit for up to 1:42 minutes.  This is as close as possible
+	  to the minimum value recommended by RFC1122 (1:40 minutes).
+	  Only 5 bits are dedicated for the retransmission count, so accepted
+	  values are in the 0-31 range.  It's highly recommended to not go
+	  below 9, though.
+	  Should a retransmission timeout occur, the receive callback is
+	  called with -ECONNRESET error code and the context is dereferenced.
 
 config NET_UDP
 	bool "Enable UDP"
 	default y
 	help
-	The value depends on your network needs.
+	  The value depends on your network needs.
 
 config NET_UDP_CHECKSUM
 	bool "Check UDP checksum"
 	default y
 	depends on NET_UDP
 	help
-	Enables UDP handler to check UDP checksum. If the checksum is invalid,
-	then the packet is discarded.
+	  Enables UDP handler to check UDP checksum. If the checksum is invalid,
+	  then the packet is discarded.
 
 config NET_DEBUG_UDP
 	bool "Debug UDP"
 	default n
 	depends on NET_UDP && NET_LOG
 	help
-	Enables UDP handler output debug messages
+	  Enables UDP handler output debug messages
 
 config NET_MAX_CONN
 	int "How many network connections are supported"
@@ -209,50 +209,50 @@ config NET_MAX_CONN
 	default 4
 	default 8 if NET_IPV6 && NET_IPV4
 	help
-	The value depends on your network needs. The value
-	should include both UDP and TCP connections.
+	  The value depends on your network needs. The value
+	  should include both UDP and TCP connections.
 
 config NET_CONN_CACHE
 	bool "Cache network connections"
 	depends on NET_UDP || NET_TCP
 	default n
 	help
-	Caching takes slight more memory but will speedup connection
-	handling of UDP and TCP connections.
+	  Caching takes slight more memory but will speedup connection
+	  handling of UDP and TCP connections.
 
 config NET_MAX_CONTEXTS
 	int "Number of network contexts to allocate"
 	default 6
 	help
-	Each network context is used to describe a network 5-tuple that
-	is used when listening or sending network traffic. This is very
-	similar as one could call a network socket in some other systems.
+	  Each network context is used to describe a network 5-tuple that
+	  is used when listening or sending network traffic. This is very
+	  similar as one could call a network socket in some other systems.
 
 config NET_CONTEXT_NET_PKT_POOL
 	bool "Enable net_buf TX pool / context"
 	default n
 	default y if NET_TCP && NET_6LO
 	help
-	If enabled, then it is possible to fine-tune network packet pool
-	for each context when sending network data. If this setting is
-	enabled, then you should define the context pools in your application
-	using NET_PKT_TX_POOL_DEFINE() and NET_PKT_DATA_POOL_DEFINE()
-	macros and tie these pools to desired context using the
-	net_context_setup_pools() function.
+	  If enabled, then it is possible to fine-tune network packet pool
+	  for each context when sending network data. If this setting is
+	  enabled, then you should define the context pools in your application
+	  using NET_PKT_TX_POOL_DEFINE() and NET_PKT_DATA_POOL_DEFINE()
+	  macros and tie these pools to desired context using the
+	  net_context_setup_pools() function.
 
 config NET_CONTEXT_SYNC_RECV
 	bool "Support synchronous functionality in net_context_recv() API"
 	default y
 	help
-	You can disable sync support to save some memory if you are calling
-	net_context_recv() in async way only when timeout is set to 0.
+	  You can disable sync support to save some memory if you are calling
+	  net_context_recv() in async way only when timeout is set to 0.
 
 config NET_CONTEXT_CHECK
 	bool "Check options when calling various net_context functions"
 	default y
 	help
-	If you know that the options passed to net_context...() functions
-	are ok, then you can disable the checks to save some memory.
+	  If you know that the options passed to net_context...() functions
+	  are ok, then you can disable the checks to save some memory.
 
 config NET_TEST
 	bool "Network Testing"
@@ -279,15 +279,15 @@ config NET_TRICKLE
 	bool "Enable Trickle library"
 	default n
 	help
-	Normally this is enabled automatically if needed,
-	so say 'n' if unsure.
+	  Normally this is enabled automatically if needed,
+	  so say 'n' if unsure.
 
 config NET_DEBUG_TRICKLE
 	bool "Debug Trickle algorithm"
 	default n
 	depends on NET_TRICKLE && NET_LOG
 	help
-	Enables Trickle library output debug messages
+	  Enables Trickle library output debug messages
 
 endif # NET_RAW_MODE
 
@@ -295,51 +295,51 @@ config NET_PKT_RX_COUNT
 	int "How many packet receives can be pending at the same time"
 	default 4
 	help
-	Each RX buffer will occupy smallish amount of memory.
-	See include/net/net_pkt.h and the sizeof(struct net_pkt)
+	  Each RX buffer will occupy smallish amount of memory.
+	  See include/net/net_pkt.h and the sizeof(struct net_pkt)
 
 config NET_PKT_TX_COUNT
 	int "How many packet sends can be pending at the same time"
 	default 2
 	help
-	Each TX buffer will occupy smallish amount of memory.
-	See include/net/net_pkt.h and the sizeof(struct net_pkt)
+	  Each TX buffer will occupy smallish amount of memory.
+	  See include/net/net_pkt.h and the sizeof(struct net_pkt)
 
 config NET_BUF_RX_COUNT
 	int "How many network buffers are allocated for receiving data"
 	default 16
 	help
-	Each data buffer will occupy CONFIG_NET_BUF_DATA_SIZE + smallish
-	header (sizeof(struct net_buf)) amount of data.
+	  Each data buffer will occupy CONFIG_NET_BUF_DATA_SIZE + smallish
+	  header (sizeof(struct net_buf)) amount of data.
 
 config NET_BUF_TX_COUNT
 	int "How many network buffers are allocated for sending data"
 	default 16
 	help
-	Each data buffer will occupy CONFIG_NET_BUF_DATA_SIZE + smallish
-	header (sizeof(struct net_buf)) amount of data.
+	  Each data buffer will occupy CONFIG_NET_BUF_DATA_SIZE + smallish
+	  header (sizeof(struct net_buf)) amount of data.
 
 config NET_BUF_DATA_SIZE
 	int "Size of each network data fragment"
 	default 128
 	default 125 if NET_L2_IEEE802154
 	help
-	This value tells what is the size of the data fragment that is
-	received from the network.
-	Example: For IEEE 802.15.4, the network packet is 127 bytes long,
-	which leaves in worst case 81 bytes for user data (MTU).
-	In order to be able to receive at least full IPv6 packet which
-	has a size of 1280 bytes, the one should allocate 16 fragments here.
+	  This value tells what is the size of the data fragment that is
+	  received from the network.
+	  Example: For IEEE 802.15.4, the network packet is 127 bytes long,
+	  which leaves in worst case 81 bytes for user data (MTU).
+	  In order to be able to receive at least full IPv6 packet which
+	  has a size of 1280 bytes, the one should allocate 16 fragments here.
 
 config NET_BUF_USER_DATA_SIZE
 	int "Size of user_data reserved"
 	default 0
 	default 4 if NET_L2_BT
 	help
-	This is for drivers to set how much user_data shall be included in
-	each network data fragment.
-	Example: For Bluetooth, the user_data shall be at least 4 bytes as
-	that is used for identifying the type of data they are carrying.
+	  This is for drivers to set how much user_data shall be included in
+	  each network data fragment.
+	  Example: For Bluetooth, the user_data shall be at least 4 bytes as
+	  that is used for identifying the type of data they are carrying.
 
 source "subsys/net/ip/Kconfig.stack"
 

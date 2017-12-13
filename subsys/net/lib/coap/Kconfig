@@ -11,7 +11,7 @@ config COAP
 	prompt "CoAP Support"
 	default n
 	help
-	This option enables the CoAP implementation.
+	  This option enables the CoAP implementation.
 
 # This setting is only used by unit test. Do not enable it in applications
 config COAP_TEST_API_ENABLE
@@ -19,7 +19,7 @@ config COAP_TEST_API_ENABLE
 	default n
 	depends on COAP
 	help
-	Do not enable this for normal use.
+	  Do not enable this for normal use.
 
 config COAP_WELL_KNOWN_BLOCK_WISE
 	bool
@@ -27,11 +27,11 @@ config COAP_WELL_KNOWN_BLOCK_WISE
 	default n
 	depends on COAP
 	help
-	This option enables the block wise support of CoAP response
-	to ./well-known/core request. Without this option all resource's
-	information will be sent in a single IP packet (can be multiple
-	fragments depends on MTU size). This will be useful in mesh kind
-	of networks.
+	  This option enables the block wise support of CoAP response
+	  to ./well-known/core request. Without this option all resource's
+	  information will be sent in a single IP packet (can be multiple
+	  fragments depends on MTU size). This will be useful in mesh kind
+	  of networks.
 
 config COAP_WELL_KNOWN_BLOCK_WISE_SIZE
 	int
@@ -39,32 +39,32 @@ config COAP_WELL_KNOWN_BLOCK_WISE_SIZE
 	default 32
 	depends on COAP_WELL_KNOWN_BLOCK_WISE
 	help
-	Maximum size of CoAP block. Valid values are 16, 32, 64, 128,
-	256, 512 and 1024.
+	  Maximum size of CoAP block. Valid values are 16, 32, 64, 128,
+	  256, 512 and 1024.
 
 config COAP_EXTENDED_OPTIONS_LEN
 	bool "Support for CoAP extended options"
 	default n
 	depends on COAP
 	help
-	This option enables the parsing of extended CoAP options length.
-	CoAP extended options length can be 2 byte value, which
-	requires more memory. User can save memory by disabling this.
-	That means only length of maximum 12 bytes are supported by default.
-	Enable this if length field going to bigger that 12.
+	  This option enables the parsing of extended CoAP options length.
+	  CoAP extended options length can be 2 byte value, which
+	  requires more memory. User can save memory by disabling this.
+	  That means only length of maximum 12 bytes are supported by default.
+	  Enable this if length field going to bigger that 12.
 
 config COAP_EXTENDED_OPTIONS_LEN_VALUE
 	int "CoAP extended options length value"
 	default 13
 	depends on COAP_EXTENDED_OPTIONS_LEN
 	help
-	This option specifies the maximum value of length field when
-	COAP_EXTENDED_OPTIONS_LEN is enabled. Define the value according to
-	user requirement.
+	  This option specifies the maximum value of length field when
+	  COAP_EXTENDED_OPTIONS_LEN is enabled. Define the value according to
+	  user requirement.
 
 config NET_DEBUG_COAP
 	bool "Debug COAP"
 	default n
 	depends on COAP && NET_LOG
 	help
-	Enables CoaP output debug messages
+	  Enables CoaP output debug messages

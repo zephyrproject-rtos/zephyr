@@ -12,7 +12,7 @@ menuconfig TMP112
 	depends on I2C
 	default n
 	help
-	Enable driver for TMP112 infrared thermopile sensors.
+	  Enable driver for TMP112 infrared thermopile sensors.
 
 config TMP112_NAME
 	string
@@ -20,19 +20,19 @@ config TMP112_NAME
 	default "TMP112"
 	depends on TMP112
 	help
-	Device name with which the TMP112 sensor is identified.
+	  Device name with which the TMP112 sensor is identified.
 
 config TMP112_I2C_ADDR
 	hex "I2C address for TMP112"
 	depends on TMP112
 	default 0x48
 	help
-	I2C address of the TMP112 sensor.
+	  I2C address of the TMP112 sensor.
 
-	0x48: A0 connected GND and A1 connected to GND.
-	0x49: A0 connected VDD and A1 connected to GND.
-	0x4A: A0 connected SDA and A1 connected to GND.
-	0x4B: A0 connected SCL and A1 connected to GND.
+	  0x48: A0 connected GND and A1 connected to GND.
+	  0x49: A0 connected VDD and A1 connected to GND.
+	  0x4A: A0 connected SDA and A1 connected to GND.
+	  0x4B: A0 connected SCL and A1 connected to GND.
 
 
 config TMP112_I2C_MASTER_DEV_NAME
@@ -41,5 +41,5 @@ config TMP112_I2C_MASTER_DEV_NAME
 	depends on TMP112
 	default "I2C_0"
 	help
-	Specify the device name of the I2C master device to which the
-	TMP112 chip is connected.
+	  Specify the device name of the I2C master device to which the
+	  TMP112 chip is connected.

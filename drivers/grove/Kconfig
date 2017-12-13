@@ -36,16 +36,16 @@ config GROVE_LCD_RGB
 	depends on GROVE
 	prompt "Enable the Seeed Grove LCD RGB Backlight"
 	help
-	Setting this value will enable driver support for the Groove-LCD RGB
-	Backlight.
+	  Setting this value will enable driver support for the Groove-LCD RGB
+	  Backlight.
 
 config GROVE_LCD_RGB_I2C_MASTER_DEV_NAME
 	string "I2C Master where Grove LCD is connected"
 	depends on GROVE_LCD_RGB
 	default "I2C_0"
 	help
-	Specify the device name of the I2C master device to which the
-	Grove LCD is connected.
+	  Specify the device name of the I2C master device to which the
+	  Grove LCD is connected.
 
 config GROVE_LIGHT_SENSOR
 	bool

@@ -12,8 +12,8 @@ menuconfig NET_APP
 	select NET_MGMT
 	select NET_MGMT_EVENT
 	help
-	Enable API that helps to create client/server network applications.
-	This API is experimental and subject to change.
+	  Enable API that helps to create client/server network applications.
+	  This API is experimental and subject to change.
 
 if NET_APP
 
@@ -21,9 +21,9 @@ config NET_APP_AUTO_INIT
 	bool "Init networking support automatically during device startup"
 	default y
 	help
-	If this option is set, then the net_app API is automatically
-	initialized when the device is started. If you do not wish to do
-	this, then disable this and call net_app_init() in your application.
+	  If this option is set, then the net_app API is automatically
+	  initialized when the device is started. If you do not wish to do
+	  this, then disable this and call net_app_init() in your application.
 
 config NET_APP_INIT_PRIO
 	int "Startup priority for the network application init"
@@ -35,64 +35,64 @@ config NET_APP_INIT_TIMEOUT
 	default 30
 	depends on NET_APP_AUTO_INIT
 	help
-	The value is in seconds. If for example IPv4 address from DHCPv4 is not
-	received within this limit, then the net_app_init() call will fail
-	during the device startup.
+	  The value is in seconds. If for example IPv4 address from DHCPv4 is not
+	  received within this limit, then the net_app_init() call will fail
+	  during the device startup.
 
 config NET_APP_NEED_IPV6
 	bool "This application wants IPv6 support"
 	depends on NET_APP_AUTO_INIT
 	select NET_IPV6
 	help
-	The network application needs IPv6 support to function properly.
-	This option makes sure the network application is initialized properly
-	in order to use IPv6.
+	  The network application needs IPv6 support to function properly.
+	  This option makes sure the network application is initialized properly
+	  in order to use IPv6.
 
 config NET_APP_NEED_IPV6_ROUTER
 	bool "This application wants IPv6 router to exists"
 	depends on NET_APP_AUTO_INIT
 	depends on NET_IPV6
 	help
-	The network application needs IPv6 router to exists before continuing.
-	What this means that the application wants to wait until it receives
-	IPv6 router advertisement message before continuing.
+	  The network application needs IPv6 router to exists before continuing.
+	  What this means that the application wants to wait until it receives
+	  IPv6 router advertisement message before continuing.
 
 config NET_APP_NEED_IPV4
 	bool "This application wants IPv4 support"
 	depends on NET_APP_AUTO_INIT
 	select NET_IPV4
 	help
-	The network application needs IPv4 support to function properly.
-	This option makes sure the network application is initialized properly
-	in order to use IPv4.
+	  The network application needs IPv4 support to function properly.
+	  This option makes sure the network application is initialized properly
+	  in order to use IPv4.
 
 config NET_DEBUG_APP
 	bool "Debug net app library"
 	default n
 	default y if NET_LOG_GLOBAL
 	help
-	Enables net app library to output debug messages
+	  Enables net app library to output debug messages
 
 config NET_APP_SERVER
 	bool "Enable server support"
 	default n
 	help
-	Enables net app library server APIs.
+	  Enables net app library server APIs.
 
 config NET_APP_SERVER_NUM_CONN
 	int "Number of simultaneous incoming connections"
 	default 1
 	depends on NET_APP_SERVER
 	help
-	Tells how many simultaneous incoming connections the server instance can
-	support. The value of CONFIG_NET_TCP_BACKLOG_SIZE must be greater than
-	or equal to CONFIG_NET_APP_SERVER_NUM_CONN.
+	  Tells how many simultaneous incoming connections the server instance can
+	  support. The value of CONFIG_NET_TCP_BACKLOG_SIZE must be greater than
+	  or equal to CONFIG_NET_APP_SERVER_NUM_CONN.
 
 config NET_APP_CLIENT
 	bool "Enable client support"
 	default n
 	help
-	Enables net app library client APIs.
+	  Enables net app library client APIs.
 
 config NET_APP_TLS
 	bool "Enable TLS support for TCP applications"
@@ -100,7 +100,7 @@ config NET_APP_TLS
 	depends on NET_TCP
 	select MBEDTLS
 	help
-	Enables net app library to use TLS for encrypted communication.
+	  Enables net app library to use TLS for encrypted communication.
 
 config NET_APP_DTLS
 	bool "Enable DTLS support for UDP applications"
@@ -108,15 +108,15 @@ config NET_APP_DTLS
 	select MBEDTLS
 	default n
 	help
-	Enables net app library to use DTLS for encrypted UDP communication.
+	  Enables net app library to use DTLS for encrypted UDP communication.
 
 config NET_APP_DTLS_TIMEOUT
 	int "DTLS session timeout"
 	depends on NET_APP_DTLS
 	default 15
 	help
-	If a DTLS session does not have any activity, then disconnect
-	the session. The value is in seconds.
+	  If a DTLS session does not have any activity, then disconnect
+	  the session. The value is in seconds.
 
 config NET_DEBUG_APP_TLS_LEVEL
 	int "Debug level for mbedtls in net app library"
@@ -124,21 +124,21 @@ config NET_DEBUG_APP_TLS_LEVEL
 	default 0
 	range 0 4
 	help
-	Sets log level for the mbedtls when debugging net_app library.
-	Levels are (from ext/lib/crypto/mbedtls/include/mbedtls/debug.h):
-	0 No debug
-	1 Error
-	2 State change
-	3 Information
-	4 Verbose
+	  Sets log level for the mbedtls when debugging net_app library.
+	  Levels are (from ext/lib/crypto/mbedtls/include/mbedtls/debug.h):
+	  0 No debug
+	  1 Error
+	  2 State change
+	  3 Information
+	  4 Verbose
 
 config NET_APP_TLS_STACK_SIZE
 	int "TLS handler thread stack size"
 	default 8192
 	depends on NET_APP_TLS || NET_APP_DTLS
 	help
-	TLS handler thread stack size. The mbedtls routines will use this stack
-	thus it is by default very large.
+	  TLS handler thread stack size. The mbedtls routines will use this stack
+	  thus it is by default very large.
 
 endif # NET_APP
 
@@ -147,11 +147,11 @@ menuconfig NET_APP_SETTINGS
 	default n
 	depends on NET_APP
 	help
-	Allow IP addresses to be set in config file for
-	networking client/server sample applications, or
-	some link-layer dedicated settings like the channel.
-	Beware this is not meant to be used for proper
-	provisioning but quick sampling/testing.
+	  Allow IP addresses to be set in config file for
+	  networking client/server sample applications, or
+	  some link-layer dedicated settings like the channel.
+	  Beware this is not meant to be used for proper
+	  provisioning but quick sampling/testing.
 
 if NET_APP_SETTINGS
 
@@ -267,8 +267,8 @@ config NET_APP_BT_NODE
 	default n
 	select NET_L2_BT_MGMT
 	help
-	Enables application to operate in node mode which requires GATT
-	service to be registered and start advertising as peripheral.
+	  Enables application to operate in node mode which requires GATT
+	  service to be registered and start advertising as peripheral.
 
 endif # NET_L2_BT
 

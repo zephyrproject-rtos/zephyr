@@ -14,7 +14,7 @@ config CONSOLE_SHELL
 	default n
 	select CONSOLE_HANDLER
 	help
-	Shell implementation based on CONSOLE_HANDLER.
+	  Shell implementation based on CONSOLE_HANDLER.
 
 
 if CONSOLE_SHELL
@@ -24,13 +24,13 @@ config CONSOLE_SHELL_STACKSIZE
 	prompt "Console handler shell stack size"
 	default 2000
 	help
-	Stack size for the console handler shell.
+	  Stack size for the console handler shell.
 
 config CONSOLE_SHELL_MAX_CMD_QUEUED
 	int "Shell's command queue size"
 	default 3
 	help
-	Maximum size of the queue for input commands.
+	  Maximum size of the queue for input commands.
 
 source "subsys/shell/modules/Kconfig"
 

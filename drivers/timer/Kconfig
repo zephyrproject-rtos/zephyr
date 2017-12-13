@@ -18,45 +18,45 @@ config HPET_TIMER
 	select LOAPIC
 	select TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 	help
-	This option selects High Precision Event Timer (HPET) as a
-	system timer.
+	  This option selects High Precision Event Timer (HPET) as a
+	  system timer.
 
 config HPET_TIMER_LEGACY_EMULATION
 	bool "HPET timer legacy emulation mode"
 	default n
 	depends on HPET_TIMER
 	help
-	This option switches HPET to legacy emulation mode.
-	In this mode 8254 PIT is disabled, HPET timer0 is connected
-	to IOAPIC IRQ2, timer1 -- to IOAPIC IRQ8.
+	  This option switches HPET to legacy emulation mode.
+	  In this mode 8254 PIT is disabled, HPET timer0 is connected
+	  to IOAPIC IRQ2, timer1 -- to IOAPIC IRQ8.
 
 config HPET_TIMER_DEBUG
 	bool "Enable HPET debug output"
 	default n
 	depends on HPET_TIMER && PRINTK
 	help
-	This option enables HPET debugging output.
+	  This option enables HPET debugging output.
 
 config HPET_TIMER_BASE_ADDRESS
 	hex "HPET Base Address"
 	default 0xFED00000
 	depends on HPET_TIMER
 	help
-	This options specifies the base address of the HPET timer device.
+	  This options specifies the base address of the HPET timer device.
 
 config HPET_TIMER_IRQ
 	int "HPET Timer IRQ"
 	default 20
 	depends on HPET_TIMER
 	help
-	This option specifies the IRQ used by the HPET timer.
+	  This option specifies the IRQ used by the HPET timer.
 
 config HPET_TIMER_IRQ_PRIORITY
 	int "HPET Timer IRQ Priority"
 	default 4
 	depends on HPET_TIMER
 	help
-	This option specifies the IRQ priority used by the HPET timer.
+	  This option specifies the IRQ priority used by the HPET timer.
 
 choice
 depends on HPET_TIMER
@@ -66,22 +66,22 @@ default HPET_TIMER_FALLING_EDGE
 config HPET_TIMER_FALLING_EDGE
 	bool "Falling Edge"
 	help
-	This option signifies that the HPET timer uses falling edge interrupts.
+	  This option signifies that the HPET timer uses falling edge interrupts.
 
 config HPET_TIMER_RISING_EDGE
 	bool "Rising Edge"
 	help
-	This option signifies that the HPET timer uses rising edge interrupts.
+	  This option signifies that the HPET timer uses rising edge interrupts.
 
 config HPET_TIMER_LEVEL_HIGH
 	bool "Level High"
 	help
-	This option signifies that the HPET timer uses level high interrupts.
+	  This option signifies that the HPET timer uses level high interrupts.
 
 config HPET_TIMER_LEVEL_LOW
 	bool "Level Low"
 	help
-	This option signifies that the HPET timer uses level low interrupts.
+	  This option signifies that the HPET timer uses level low interrupts.
 
 endchoice
 
@@ -90,21 +90,21 @@ config LOAPIC_TIMER
 	depends on (LOAPIC || MVIC) && X86
 	default n
 	help
-	This option selects LOAPIC timer as a system timer.
+	  This option selects LOAPIC timer as a system timer.
 
 config LOAPIC_TIMER_IRQ
 	int "Local APIC Timer IRQ"
 	default 24
 	depends on LOAPIC_TIMER
 	help
-	This option specifies the IRQ used by the LOAPIC timer.
+	  This option specifies the IRQ used by the LOAPIC timer.
 
 config LOAPIC_TIMER_IRQ_PRIORITY
 	int "Local APIC Timer IRQ Priority"
 	default 2
 	depends on LOAPIC_TIMER
 	help
-	This options specifies the IRQ priority used by the LOAPIC timer.
+	  This options specifies the IRQ priority used by the LOAPIC timer.
 
 config TSC_CYCLES_PER_SEC
 	int
@@ -112,92 +112,92 @@ config TSC_CYCLES_PER_SEC
 	default 0
 	depends on LOAPIC_TIMER
 	help
-	The x86 implementation of LOAPIC k_cycle_get_32() relies on the x86 TSC.
-	This runs at the CPU speed and not the bus speed. If set to 0, the
-	value of CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC will be used instead;
-	many MCUs these values are the same.
+	  The x86 implementation of LOAPIC k_cycle_get_32() relies on the x86 TSC.
+	  This runs at the CPU speed and not the bus speed. If set to 0, the
+	  value of CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC will be used instead;
+	  many MCUs these values are the same.
 
 config ARCV2_TIMER
 	bool "ARC Timer"
 	default y
 	depends on ARC
 	help
-	This module implements a kernel device driver for the ARCv2 processor timer 0
-	and provides the standard "system clock driver" interfaces.
+	  This module implements a kernel device driver for the ARCv2 processor timer 0
+	  and provides the standard "system clock driver" interfaces.
 
 config ARCV2_TIMER_IRQ_PRIORITY
 	int "ARC timer interrupt priority"
 	default 0
 	depends on ARCV2_TIMER
 	help
-	This option specifies the IRQ priority used by the ARC timer. Lower
-	values have higher priority.
+	  This option specifies the IRQ priority used by the ARC timer. Lower
+	  values have higher priority.
 
 config CORTEX_M_SYSTICK
 	bool "Cortex-M SYSTICK timer"
 	default y
 	depends on CPU_HAS_SYSTICK
 	help
-	This module implements a kernel device driver for the Cortex-M processor
-	SYSTICK timer and provides the standard "system clock driver" interfaces.
+	  This module implements a kernel device driver for the Cortex-M processor
+	  SYSTICK timer and provides the standard "system clock driver" interfaces.
 
 config ALTERA_AVALON_TIMER
 	bool "Altera Avalon Interval Timer"
 	default y
 	depends on NIOS2
 	help
-	This module implements a kernel device driver for the Altera Avalon
-	Interval Timer as described in the Embedded IP documentation, for use
-	with Nios II and possibly other Altera soft CPUs. It provides the
-	standard "system clock driver" interfaces.
+	  This module implements a kernel device driver for the Altera Avalon
+	  Interval Timer as described in the Embedded IP documentation, for use
+	  with Nios II and possibly other Altera soft CPUs. It provides the
+	  standard "system clock driver" interfaces.
 
 config NRF_RTC_TIMER
 	bool "nRF Real Time Counter (NRF_RTC1) Timer"
 	default y
 	depends on SOC_FAMILY_NRF5 && CLOCK_CONTROL_NRF5
 	help
-	This module implements a kernel device driver for the nRF Real Time
-	Counter NRF_RTC1 and provides the standard "system clock driver"
-	interfaces.
+	  This module implements a kernel device driver for the nRF Real Time
+	  Counter NRF_RTC1 and provides the standard "system clock driver"
+	  interfaces.
 
 config PULPINO_TIMER
 	bool "pulpino Timer"
 	default y
 	depends on SOC_RISCV32_PULPINO
 	help
-	This module implements a kernel device driver for the pulpino processor
-	timer driver. It provides the standard "system clock driver" interfaces.
+	  This module implements a kernel device driver for the pulpino processor
+	  timer driver. It provides the standard "system clock driver" interfaces.
 
 config RISCV_MACHINE_TIMER
 	bool "RISCV Machine Timer"
 	default n
 	depends on SOC_FAMILY_RISCV_PRIVILEGE
 	help
-	This module implements a kernel device driver for the generic RISCV machine
-	timer driver. It provides the standard "system clock driver" interfaces.
+	  This module implements a kernel device driver for the generic RISCV machine
+	  timer driver. It provides the standard "system clock driver" interfaces.
 
 config XTENSA_TIMER
 	bool "Xtensa timer support"
 	depends on XTENSA
 	default y
 	help
-	This module implements a kernel device driver for the Xtensa processor and
-	provides the standard "system clock driver" interfaces.
-	If unchecked, no timer will be used.
-	If checked it will use either an internal timer (default option) or an
-	external timer. In that case one shall unselect XTENSA_INTERNAL_TIMER and
-	define XTENSA_TIMER_IRQ and XTENSA_TIMER_IRQ_PRIORITY.
+	  This module implements a kernel device driver for the Xtensa processor and
+	  provides the standard "system clock driver" interfaces.
+	  If unchecked, no timer will be used.
+	  If checked it will use either an internal timer (default option) or an
+	  external timer. In that case one shall unselect XTENSA_INTERNAL_TIMER and
+	  define XTENSA_TIMER_IRQ and XTENSA_TIMER_IRQ_PRIORITY.
 
 config XTENSA_INTERNAL_TIMER
 	bool "Xtensa internal timer"
 	depends on XTENSA_TIMER
 	default y
 	help
-	This module implements a kernel device driver for the Xtensa processor
-	internal timer and provides the standard "system clock driver" interfaces.
-	If unchecked, an external timer will be used. It will rely on a tick
-	interrupt connected to an IRQ line. In this case one shall define
-	both XTENSA_TIMER_IRQ and XTENSA_TIMER_IRQ_PRIORITY.
+	  This module implements a kernel device driver for the Xtensa processor
+	  internal timer and provides the standard "system clock driver" interfaces.
+	  If unchecked, an external timer will be used. It will rely on a tick
+	  interrupt connected to an IRQ line. In this case one shall define
+	  both XTENSA_TIMER_IRQ and XTENSA_TIMER_IRQ_PRIORITY.
 
 config XTENSA_TIMER_IRQ
 	int "Xtensa external timer interrupt number"
@@ -205,10 +205,10 @@ config XTENSA_TIMER_IRQ
 	range -1 31
 	default -1
 	help
-	This is the number of interrupt line used by the external timer.
-	The special value of -1 allows using the internal timer in order to
-	emulate an external timer. This is generally useful for running the project on
-	a simulator	where it is hard to emulate an external interrupt.
+	  This is the number of interrupt line used by the external timer.
+	  The special value of -1 allows using the internal timer in order to
+	  emulate an external timer. This is generally useful for running the project on
+	  a simulator	where it is hard to emulate an external interrupt.
 
 config XTENSA_TIMER_IRQ_PRIORITY
 	int "Xtensa external timer interrupt priority"
@@ -216,29 +216,29 @@ config XTENSA_TIMER_IRQ_PRIORITY
 	range 1 6
 	default 1
 	help
-	This is the priority of interrupt line.
+	  This is the priority of interrupt line.
 
 config SYSTEM_CLOCK_DISABLE
 	bool "API to disable system clock"
 	default n
 	help
-	This option enables the sys_clock_disable() API in the kernel. It is
-	needed by some subsystems (which will automatically select it), but is
-	rarely needed by applications.
+	  This option enables the sys_clock_disable() API in the kernel. It is
+	  needed by some subsystems (which will automatically select it), but is
+	  rarely needed by applications.
 
 config TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
 	bool "Timer queries its hardware to find its frequency at runtime"
 	default n
 	help
-	The drivers select this option automatically when needed. Do not modify
-	this unless you have a very good reason for it.
+	  The drivers select this option automatically when needed. Do not modify
+	  this unless you have a very good reason for it.
 
 config SYSTEM_CLOCK_INIT_PRIORITY
 	int "System clock driver initialization priority"
 	default 0
 	help
-	This options can be used to set a specific initialization priority
-	value for the system clock driver. As driver initialization  might need
-	the clock to be running already, you should let the default value as it
-	is (0).
+	  This options can be used to set a specific initialization priority
+	  value for the system clock driver. As driver initialization  might need
+	  the clock to be running already, you should let the default value as it
+	  is (0).
 endmenu

@@ -12,41 +12,41 @@ config DEBUG
 	bool "Build kernel with debugging enabled"
 	default n
 	help
-	Build a kernel suitable for debugging.  Right now, this option
-	only disables optimization, more debugging variants can be selected
-	from here to allow more debugging.
+	  Build a kernel suitable for debugging.  Right now, this option
+	  only disables optimization, more debugging variants can be selected
+	  from here to allow more debugging.
 
 config STACK_USAGE
 	bool "Generate stack usage information"
 	default n
 	help
-	Generate an extra file that specifies the maximum amount of stack used,
-	on a per-function basis.
+	  Generate an extra file that specifies the maximum amount of stack used,
+	  on a per-function basis.
 
 config STACK_SENTINEL
 	bool "Enable stack sentinel"
 	select THREAD_STACK_INFO
 	default n
 	help
-	Store a magic value at the lowest addresses of a thread's stack.
-	Periodically check that this value is still present and kill the
-	thread gracefully if it isn't. This is currently checked in four
-	places:
+	  Store a magic value at the lowest addresses of a thread's stack.
+	  Periodically check that this value is still present and kill the
+	  thread gracefully if it isn't. This is currently checked in four
+	  places:
 
-	1) Upon any context switch for the outgoing thread
-	2) Any hardware interrupt that doesn't context switch, the check is
-	   performed for the interrupted thread
-	3) When a thread returns from its entry point
-	4) When a thread calls k_yield() but doesn't context switch
+	  1) Upon any context switch for the outgoing thread
+	  2) Any hardware interrupt that doesn't context switch, the check is
+	     performed for the interrupted thread
+	  3) When a thread returns from its entry point
+	  4) When a thread calls k_yield() but doesn't context switch
 
-	This feature doesn't prevent corruption and the system may be
-	in an unusable state. However, given the bizarre behavior associated
-	with stack overflows, knowledge that this is happening is very
-	useful.
+	  This feature doesn't prevent corruption and the system may be
+	  in an unusable state. However, given the bizarre behavior associated
+	  with stack overflows, knowledge that this is happening is very
+	  useful.
 
-	This feature is intended for those systems which lack hardware support
-	for stack overflow protection, or have insufficient system resources
-	to use that hardware support.
+	  This feature is intended for those systems which lack hardware support
+	  for stack overflow protection, or have insufficient system resources
+	  to use that hardware support.
 
 config PRINTK
 	bool
@@ -54,10 +54,10 @@ config PRINTK
 	depends on CONSOLE_HAS_DRIVER
 	default y
 	help
-	This option directs printk() debugging output to the supported
-	console device, rather than suppressing the generation
-	of printk() output entirely. Output is sent immediately, without
-	any mutual exclusion or buffering.
+	  This option directs printk() debugging output to the supported
+	  console device, rather than suppressing the generation
+	  of printk() output entirely. Output is sent immediately, without
+	  any mutual exclusion or buffering.
 
 config PRINTK_BUFFER_SIZE
 	int
@@ -66,9 +66,9 @@ config PRINTK_BUFFER_SIZE
 	depends on USERSPACE
 	default 32
 	help
-	If userspace is enabled, printk() calls are buffered so that we do
-	not have to make a system call for every character emitted. Specify
-	the size of this buffer.
+	  If userspace is enabled, printk() calls are buffered so that we do
+	  not have to make a system call for every character emitted. Specify
+	  the size of this buffer.
 
 config STDOUT_CONSOLE
 	bool
@@ -76,28 +76,28 @@ config STDOUT_CONSOLE
 	depends on CONSOLE_HAS_DRIVER
 	default n
 	help
-	This option directs standard output (e.g. printf) to the console
-	device, rather than suppressing it entirely.
+	  This option directs standard output (e.g. printf) to the console
+	  device, rather than suppressing it entirely.
 
 config EARLY_CONSOLE
 	bool
 	prompt "Send stdout at the earliest stage possible"
 	default n
 	help
-	This option will enable stdout as early as possible, for debugging
-	purpose. For instance, in case of STDOUT_CONSOLE being set it will
-	initialize its driver earlier than normal, in order to get the stdout
-	sent through the console at the earliest stage possible.
+	  This option will enable stdout as early as possible, for debugging
+	  purpose. For instance, in case of STDOUT_CONSOLE being set it will
+	  initialize its driver earlier than normal, in order to get the stdout
+	  sent through the console at the earliest stage possible.
 
 config ASSERT
 	bool
 	prompt "Enable __ASSERT() macro"
 	default n
 	help
-	This enables the __ASSERT() macro in the kernel code. If an assertion
-	fails, the calling thread is put on an infinite tight loop. Since
-	enabling this adds a significant footprint, it should only be enabled
-	in a non-production system.
+	  This enables the __ASSERT() macro in the kernel code. If an assertion
+	  fails, the calling thread is put on an infinite tight loop. Since
+	  enabling this adds a significant footprint, it should only be enabled
+	  in a non-production system.
 
 config ASSERT_LEVEL
 	int
@@ -106,38 +106,38 @@ config ASSERT_LEVEL
 	range 0 2
 	depends on ASSERT
 	help
-	This option specifies the assertion level used by the __ASSERT()
-	macro. It can be set to one of three possible values:
+	  This option specifies the assertion level used by the __ASSERT()
+	  macro. It can be set to one of three possible values:
 
-	Level 0: off
-	Level 1: on + warning in every file that includes __assert.h
-	Level 2: on + no warning
+	  Level 0: off
+	  Level 1: on + warning in every file that includes __assert.h
+	  Level 2: on + no warning
 
 config OBJECT_TRACING
 	bool
 	prompt "Kernel object tracing"
 	default n
 	help
-	This option enable the feature for tracing kernel objects. This option
-	is for debug purposes and increases the memory footprint of the kernel.
+	  This option enable the feature for tracing kernel objects. This option
+	  is for debug purposes and increases the memory footprint of the kernel.
 
 config OVERRIDE_FRAME_POINTER_DEFAULT
 	bool
 	prompt "Override compiler defaults for -fomit-frame-pointer"
 	default n
 	help
-	Omitting the frame pointer prevents the compiler from putting the stack
-	frame pointer into a register. Saves a few instructions in function
-	prologues/epilogues and frees up a register for general-purpose use,
-	which can provide good performance improvements on register-constrained
-	architectures like x86. On some architectures (including x86) omitting
-	frame pointers impedes debugging as local variables are harder to
-	locate. At -O1 and above gcc will enable -fomit-frame-pointer
-	automatically but only if the architecture does not require if for
-	effective debugging.
+	  Omitting the frame pointer prevents the compiler from putting the stack
+	  frame pointer into a register. Saves a few instructions in function
+	  prologues/epilogues and frees up a register for general-purpose use,
+	  which can provide good performance improvements on register-constrained
+	  architectures like x86. On some architectures (including x86) omitting
+	  frame pointers impedes debugging as local variables are harder to
+	  locate. At -O1 and above gcc will enable -fomit-frame-pointer
+	  automatically but only if the architecture does not require if for
+	  effective debugging.
 
-	Choose Y if you want to override the default frame pointer behavior
-	of your compiler, otherwise choose N.
+	  Choose Y if you want to override the default frame pointer behavior
+	  of your compiler, otherwise choose N.
 
 config OMIT_FRAME_POINTER
 	bool
@@ -145,15 +145,15 @@ config OMIT_FRAME_POINTER
 	default n
 	depends on OVERRIDE_FRAME_POINTER_DEFAULT
 	help
-	Choose Y for best performance. On some architectures (including x86)
-	this will favor code size and performance over debugability.
+	  Choose Y for best performance. On some architectures (including x86)
+	  this will favor code size and performance over debugability.
 
-	Choose N in you wish to retain the frame pointer. This option may
-	be useful if your application uses runtime backtracing and does not
-	support parsing unwind tables.
+	  Choose N in you wish to retain the frame pointer. This option may
+	  be useful if your application uses runtime backtracing and does not
+	  support parsing unwind tables.
 
-	If unsure, disable OVERRIDE_FRAME_POINTER_DEFAULT to allow the compiler
-	to adopt sensible defaults for your architecture.
+	  If unsure, disable OVERRIDE_FRAME_POINTER_DEFAULT to allow the compiler
+	  to adopt sensible defaults for your architecture.
 
 
 #
@@ -164,10 +164,10 @@ config DEBUG_INFO
 	default n
 	depends on X86
 	help
-	This option enables the addition of various information that can be used
-	by debuggers in debugging the system.
+	  This option enables the addition of various information that can be used
+	  by debuggers in debugging the system.
 
-	NOTE: Does not currently work with the x86 IAMCU ABI.
+	  NOTE: Does not currently work with the x86 IAMCU ABI.
 
 #
 # Miscellaneous debugging options

@@ -11,7 +11,7 @@ config CPU_CORTEX
 	# Omit prompt to signify "hidden" option
 	default n
 	help
-	This option signifies the use of a CPU of the Cortex family.
+	  This option signifies the use of a CPU of the Cortex family.
 
 config CPU_CORTEX_M
 	bool
@@ -25,30 +25,30 @@ config CPU_CORTEX_M
 	select ARCH_HAS_STACK_PROTECTION if ARM_CORE_MPU
 	select ARCH_HAS_USERSPACE if ARM_CORE_MPU
 	help
-	This option signifies the use of a CPU of the Cortex-M family.
+	  This option signifies the use of a CPU of the Cortex-M family.
 
 config CPU_HAS_SYSTICK
 	bool
 	# Omit prompt to signify "hidden" option
 	default n
 	help
-	This option is enabled when the CPU has systick timer implemented.
+	  This option is enabled when the CPU has systick timer implemented.
 
 config ARM_STACK_PROTECTION
 	bool
 	default y if HW_STACK_PROTECTION
 	select MPU_STACK_GUARD if ARM_CORE_MPU
 	help
-	This option enables MPU stack guard to cause a system fatal error
-	if the bounds of the current process stack are overflowed.
+	  This option enables MPU stack guard to cause a system fatal error
+	  if the bounds of the current process stack are overflowed.
 
 config ARM_USERSPACE
 	bool
 	default y if USERSPACE
 	help
-	This option enables APIs to drop a thread's privileges,	supporting
-	user-level threads that are protected from each other and from
-	crashing the kernel.
+	  This option enables APIs to drop a thread's privileges,	supporting
+	  user-level threads that are protected from each other and from
+	  crashing the kernel.
 
 menu "Architectue Floating Point Options"
 depends on CPU_HAS_FPU
@@ -62,16 +62,16 @@ config FP_HARDABI
 	bool "Floating point Hard ABI"
 	depends on FLOAT
 	help
-	This option selects the Floating point ABI in which hardware floating
-	point instructions are generated and uses FPU-specific calling
-	conventions
+	  This option selects the Floating point ABI in which hardware floating
+	  point instructions are generated and uses FPU-specific calling
+	  conventions
 
 config FP_SOFTABI
 	bool "Floating point Soft ABI"
 	depends on FLOAT
 	help
-	This option selects the Floating point ABI in which hardware floating
-	point instructions are generated but soft-float calling conventions.
+	  This option selects the Floating point ABI in which hardware floating
+	  point instructions are generated but soft-float calling conventions.
 
 endchoice
 

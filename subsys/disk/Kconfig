@@ -11,7 +11,7 @@ config DISK_ACCESS
 	default n
 	prompt "Enable Disk Interface"
 	help
-	Enable disk access over a supported media backend like FLASH or RAM
+	  Enable disk access over a supported media backend like FLASH or RAM
 
 if DISK_ACCESS
 choice
@@ -20,15 +20,15 @@ choice
 config DISK_ACCESS_RAM
 	bool "RAM Disk"
 	help
-	RAM buffer used to emulate storage disk.
-	This option can used to test the file
-	system.
+	  RAM buffer used to emulate storage disk.
+	  This option can used to test the file
+	  system.
 
 config DISK_ACCESS_FLASH
 	bool "Flash"
 	select FLASH
 	help
-	Flash device is used for the file system.
+	  Flash device is used for the file system.
 
 endchoice
 
@@ -41,31 +41,31 @@ config DISK_FLASH_DEV_NAME
 config DISK_FLASH_START
 	hex
 	help
-	This is start address of the flash to be used as storage backend.
+	  This is start address of the flash to be used as storage backend.
 
 config DISK_FLASH_MAX_RW_SIZE
 	int
 	help
-	This is the maximum number of bytes that the
-	flash_write API can do per invocation.
-	API.
+	  This is the maximum number of bytes that the
+	  flash_write API can do per invocation.
+	  API.
 
 config DISK_FLASH_ERASE_ALIGNMENT
 	hex
 	help
-	This is the start address alignment required by
-	the flash component.
+	  This is the start address alignment required by
+	  the flash component.
 
 config DISK_ERASE_BLOCK_SIZE
 	hex
 	help
-	This is typically the minimum block size that
-	is erased at one time in flash storage.
+	  This is typically the minimum block size that
+	  is erased at one time in flash storage.
 
 config DISK_VOLUME_SIZE
 	hex
 	help
-	This is the file system volume size in bytes.
+	  This is the file system volume size in bytes.
 
 endif # DISK_ACCESS_FLASH
 endif # DISK_ACCESS

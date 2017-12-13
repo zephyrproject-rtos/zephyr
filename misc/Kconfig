@@ -12,8 +12,8 @@ menu "Linker Options"
 config HAS_FLASH_LOAD_OFFSET
 	bool
 	help
-	This option is selected by targets having a FLASH_LOAD_OFFSET
-	and FLASH_LOAD_SIZE.
+	  This option is selected by targets having a FLASH_LOAD_OFFSET
+	  and FLASH_LOAD_SIZE.
 
 if !HAS_DTS
 config FLASH_LOAD_OFFSET
@@ -21,88 +21,88 @@ config FLASH_LOAD_OFFSET
 	default 0
 	depends on HAS_FLASH_LOAD_OFFSET
 	help
-	This option specifies the byte offset from the beginning of flash that
-	the kernel should be loaded into. Changing this value from zero will
-	affect the Zephyr image's link, and will decrease the total amount of
-	flash available for use by application code.
+	  This option specifies the byte offset from the beginning of flash that
+	  the kernel should be loaded into. Changing this value from zero will
+	  affect the Zephyr image's link, and will decrease the total amount of
+	  flash available for use by application code.
 
-	If unsure, leave at the default value 0.
+	  If unsure, leave at the default value 0.
 
 config FLASH_LOAD_SIZE
 	hex "Kernel load size"
 	default 0
 	depends on HAS_FLASH_LOAD_OFFSET
 	help
-	If non-zero, this option specifies the size, in bytes, of the flash
-	area that the Zephyr image will be allowed to occupy.  If zero, the
-	image will be able to occupy from the FLASH_LOAD_OFFSET to the end of
-	the device.
+	  If non-zero, this option specifies the size, in bytes, of the flash
+	  area that the Zephyr image will be allowed to occupy.  If zero, the
+	  image will be able to occupy from the FLASH_LOAD_OFFSET to the end of
+	  the device.
 
-	If unsure, leave at the default value 0.
+	  If unsure, leave at the default value 0.
 endif
 
 config TEXT_SECTION_OFFSET
 	hex "TEXT section offset"
 	default 0
 	help
-	This sets and offset before the text section and allows booting images
-	with custom headers that are inserted at the beginning of the image.
+	  This sets and offset before the text section and allows booting images
+	  with custom headers that are inserted at the beginning of the image.
 
 config HAVE_CUSTOM_LINKER_SCRIPT
 	prompt "Custom linker scripts provided"
 	def_bool n
 	help
-	Set this option if you have a custom linker script which needed to
-	be define in CUSTOM_LINKER_SCRIPT.
+	  Set this option if you have a custom linker script which needed to
+	  be define in CUSTOM_LINKER_SCRIPT.
 
 config CUSTOM_LINKER_SCRIPT
 	string "Path to custom linker script"
 	default ""
 	depends on HAVE_CUSTOM_LINKER_SCRIPT
 	help
-	Path to the linker script to be used instead of the one define by the
-	board.
+	  Path to the linker script to be used instead of the one define by the
+	  board.
 
-	The linker script must be based on a version provided by Zephyr since
-	the kernel can expect a certain layout/certain regions.
+	  The linker script must be based on a version provided by Zephyr since
+	  the kernel can expect a certain layout/certain regions.
 
-	This is useful when an application needs to add sections into the
-	linker script and avoid having to change the script provided by
-	Zephyr.
+	  This is useful when an application needs to add sections into the
+	  linker script and avoid having to change the script provided by
+	  Zephyr.
 
 config CUSTOM_RODATA_LD
 	bool "Include custom-rodata.ld"
 	default n
 	help
-	Include a customized linker script fragment for inserting additional
-	data and linker directives into the rodata section.
+	  Include a customized linker script fragment for inserting additional
+	  data and linker directives into the rodata section.
 
 config CUSTOM_RWDATA_LD
 	bool "Include custom-rwdata.ld"
 	default n
 	help
-	Include a customized linker script fragment for inserting additional
-	data and linker directives into the data section.
+	  Include a customized linker script fragment for inserting additional
+	  data and linker directives into the data section.
 
 config CUSTOM_SECTIONS_LD
 	bool "Include custom-sections.ld"
 	default n
 	help
-	Include a customized linker script fragment for inserting additional
-	arbitrary sections.
+	  Include a customized linker script fragment for inserting additional
+	  arbitrary sections.
 
 config LINK_WHOLE_ARCHIVE
 	bool "Allow linking with --whole-archive"
 	default n
 	help
-	This options allows linking external libraries with the
-	--whole-archive option to keep all symbols.
+	  This options allows linking external libraries with the
+	  --whole-archive option to keep all symbols.
 
 config KERNEL_ENTRY
 	string "Kernel entry symbol"
 	default "__start"
 	help
-	Code entry symbol, to be set at linking phase.
+	  Code entry symbol, to be set at linking phase.
 
 config CHECK_LINK_MAP
 	bool "Check linker map"
@@ -117,28 +117,28 @@ menu "Compiler Options"
 config CROSS_COMPILE
 	string "Cross-compiler tool prefix"
 	help
-	Same as running 'make CROSS_COMPILE=prefix-' but stored for
-	default make runs in this kernel build directory.  You don't
-	need to set this unless you want the configured kernel build
-	directory to select the cross-compiler automatically.
+	  Same as running 'make CROSS_COMPILE=prefix-' but stored for
+	  default make runs in this kernel build directory.  You don't
+	  need to set this unless you want the configured kernel build
+	  directory to select the cross-compiler automatically.
 
 config COMPILER_OPT
 	string
 	prompt "Custom compiler options"
 	default ""
 	help
-	This option is a free-form string that is passed to the compiler
-	when building all parts of a project (i.e. kernel).
-	The compiler options specified by this string supplement the
-	predefined set of compiler supplied by the build system,
-	and can be used to change compiler optimization, warning and error
-	messages, and so on.
+	  This option is a free-form string that is passed to the compiler
+	  when building all parts of a project (i.e. kernel).
+	  The compiler options specified by this string supplement the
+	  predefined set of compiler supplied by the build system,
+	  and can be used to change compiler optimization, warning and error
+	  messages, and so on.
 
 config TOOLCHAIN_VARIANT
 	string "Cross-compiler variant name"
 	help
-	For optimized compilers with reduced features, specify the name
-	of the variant.
+	  For optimized compilers with reduced features, specify the name
+	  of the variant.
 
 endmenu
 
@@ -200,7 +200,7 @@ config PERFORMANCE_METRICS
 	prompt "Enable performance metrics [EXPERIMENTAL]"
 	default n
 	help
-	Enable Performance Metrics.
+	  Enable Performance Metrics.
 
 config BOOT_TIME_MEASUREMENT
 	bool
@@ -208,11 +208,11 @@ config BOOT_TIME_MEASUREMENT
 	default n
 	depends on PERFORMANCE_METRICS
 	help
-	This option enables the recording of timestamps during system start
-	up. The global variable __start_time_stamp records the time kernel begins
-	executing, while __main_time_stamp records when main() begins executing,
-	and __idle_time_stamp records when the CPU becomes idle. All values are
-	recorded in terms of CPU clock cycles since system reset.
+	  This option enables the recording of timestamps during system start
+	  up. The global variable __start_time_stamp records the time kernel begins
+	  executing, while __main_time_stamp records when main() begins executing,
+	  and __idle_time_stamp records when the CPU becomes idle. All values are
+	  recorded in terms of CPU clock cycles since system reset.
 
 config CPU_CLOCK_FREQ_MHZ
 	int
@@ -220,8 +220,8 @@ config CPU_CLOCK_FREQ_MHZ
 	default 20
 	depends on BOOT_TIME_MEASUREMENT
 	help
-	This option specifies the CPU Clock Frequency in MHz in order to
-	convert Intel RDTSC timestamp to microseconds.
+	  This option specifies the CPU Clock Frequency in MHz in order to
+	  convert Intel RDTSC timestamp to microseconds.
 
 endmenu
 
@@ -233,8 +233,8 @@ config IS_BOOTLOADER
 	depends on XIP
 	depends on ARM
 	help
-	This option indicates that Zephyr will act as a bootloader to execute
-	a separate Zephyr image payload.
+	  This option indicates that Zephyr will act as a bootloader to execute
+	  a separate Zephyr image payload.
 
 config BOOTLOADER_SRAM_SIZE
 	int "SRAM reserved for when Zephyr acts as a bootloader"
@@ -242,8 +242,8 @@ config BOOTLOADER_SRAM_SIZE
 	depends on !XIP || IS_BOOTLOADER
 	depends on ARM
 	help
-	This option specifies the amount of SRAM (measure in kB) reserved for
-	when Zephyr is to act as a bootloader.
+	  This option specifies the amount of SRAM (measure in kB) reserved for
+	  when Zephyr is to act as a bootloader.
 
 config BOOTLOADER_KEXEC
 	bool
@@ -251,8 +251,8 @@ config BOOTLOADER_KEXEC
 	depends on X86
 	default n
 	help
-	This option signifies that Linux boots the kernel using kexec system call
-	and utility. This method is used to boot the kernel over the network.
+	  This option signifies that Linux boots the kernel using kexec system call
+	  and utility. This method is used to boot the kernel over the network.
 
 config BOOTLOADER_UNKNOWN
 	bool
@@ -260,10 +260,10 @@ config BOOTLOADER_UNKNOWN
 	default n
 	depends on X86
 	help
-	This option signifies that the target has a generic bootloader
-	or that it supports multiple ways of booting and it isn't clear
-	at build time which method is to be used. When this option is enabled
-	the board may have to do extra work to ensure a proper startup.
+	  This option signifies that the target has a generic bootloader
+	  or that it supports multiple ways of booting and it isn't clear
+	  at build time which method is to be used. When this option is enabled
+	  the board may have to do extra work to ensure a proper startup.
 
 config BOOTLOADER_CONTEXT_RESTORE
 	bool
@@ -271,16 +271,16 @@ config BOOTLOADER_CONTEXT_RESTORE
 	default y
 	depends on SYS_POWER_DEEP_SLEEP && BOOTLOADER_CONTEXT_RESTORE_SUPPORTED
 	help
-	This option signifies that the target has a bootloader
-	that restores CPU context upon resuming from deep sleep
-	power state.
+	  This option signifies that the target has a bootloader
+	  that restores CPU context upon resuming from deep sleep
+	  power state.
 
 config REBOOT
 	bool "Reboot functionality"
 	default n
 	select SYSTEM_CLOCK_DISABLE
 	help
-	Enable the sys_reboot() API. Enabling this can drag in other subsystems
-	needed to perform a "safe" reboot (e.g. SYSTEM_CLOCK_DISABLE, to stop the
-	system clock before issuing a reset).
+	  Enable the sys_reboot() API. Enabling this can drag in other subsystems
+	  needed to perform a "safe" reboot (e.g. SYSTEM_CLOCK_DISABLE, to stop the
+	  system clock before issuing a reset).
 endmenu

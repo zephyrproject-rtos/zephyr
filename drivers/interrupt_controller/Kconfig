@@ -15,81 +15,81 @@ config LOAPIC
 	select IOAPIC
 	depends on X86
 	help
-	This option selects local APIC as the interrupt controller.
+	  This option selects local APIC as the interrupt controller.
 
 config LOAPIC_BASE_ADDRESS
 	hex "Local APIC Base Address"
 	default 0xFEE00000
 	depends on LOAPIC
 	help
-	This option specifies the base address of the Local APIC device.
+	  This option specifies the base address of the Local APIC device.
 
 config LOAPIC_SPURIOUS_VECTOR
 	bool "Handle LOAPIC spurious interrupts"
 	default n
 	depends on LOAPIC
 	help
-	A special situation may occur when a processor raises its task
-	priority to be greater than or equal to the level of the
-	interrupt for which the processor INTR signal is currently being
-	asserted. If at the time the INTA cycle is issued, the
-	interrupt that was to be dispensed has become masked (programmed
-	by software), the local APIC will deliver a spurious-interrupt
-	vector. Dispensing the spurious-interrupt vector does not affect
-	the ISR, so the handler for this vector should return without an EOI.
-	From x86 manual Volume 3 Section 10.9.
+	  A special situation may occur when a processor raises its task
+	  priority to be greater than or equal to the level of the
+	  interrupt for which the processor INTR signal is currently being
+	  asserted. If at the time the INTA cycle is issued, the
+	  interrupt that was to be dispensed has become masked (programmed
+	  by software), the local APIC will deliver a spurious-interrupt
+	  vector. Dispensing the spurious-interrupt vector does not affect
+	  the ISR, so the handler for this vector should return without an EOI.
+	  From x86 manual Volume 3 Section 10.9.
 
 config LOAPIC_SPURIOUS_VECTOR_ID
 	int "LOAPIC spurious vector ID"
 	default -1
 	depends on LOAPIC_SPURIOUS_VECTOR
 	help
-	IDT vector to use for spurious LOAPIC interrupts. Note that some
-	arches (P6, Pentium) ignore the low 4 bits and fix them at 0xF.
-	If this value is left at -1 the last entry in the IDT will be used.
+	  IDT vector to use for spurious LOAPIC interrupts. Note that some
+	  arches (P6, Pentium) ignore the low 4 bits and fix them at 0xF.
+	  If this value is left at -1 the last entry in the IDT will be used.
 
 config IOAPIC
 	bool "IO-APIC"
 	default y
 	depends on LOAPIC
 	help
-	This option signifies that the target has an IO-APIC device. This
-	capability allows IO-APIC-dependent code to be included.
+	  This option signifies that the target has an IO-APIC device. This
+	  capability allows IO-APIC-dependent code to be included.
 
 config IOAPIC_DEBUG
 	bool "IO-APIC Debugging"
 	default n
 	depends on IOAPIC
 	help
-	Enable debugging for IO-APIC driver.
+	  Enable debugging for IO-APIC driver.
 
 config IOAPIC_BASE_ADDRESS
 	hex "IO-APIC Base Address"
 	default 0xFEC00000
 	depends on IOAPIC
 	help
-	This option specifies the base address of the IO-APIC device.
+	  This option specifies the base address of the IO-APIC device.
 
 config IOAPIC_NUM_RTES
 	int "Number of Redirection Table Entries available"
 	default 24
 	depends on IOAPIC
 	help
-	This option indicates the maximum number of Redirection Table Entries
-	(RTEs) (one per IRQ available to the IO-APIC) made available to the
-	kernel, regardless of the number provided by the hardware itself. For
-	most efficient usage of memory, it should match the number of IRQ lines
-	needed by devices connected to the IO-APIC.
+	  This option indicates the maximum number of Redirection Table Entries
+	  (RTEs) (one per IRQ available to the IO-APIC) made available to the
+	  kernel, regardless of the number provided by the hardware itself. For
+	  most efficient usage of memory, it should match the number of IRQ lines
+	  needed by devices connected to the IO-APIC.
 
 config IOAPIC_MASK_RTE
 	bool "Mask out RTE entries on boot"
 	default y
 	depends on IOAPIC
 	help
-	At boot, mask all IOAPIC RTEs if they may be in an undefined state.
-	You don't need this if the RTEs are either all guaranteed to be masked
-	when the OS starts up, or a previous boot stage has done some IOAPIC
-	configuration that needs to be preserved.
+	  At boot, mask all IOAPIC RTEs if they may be in an undefined state.
+	  You don't need this if the RTEs are either all guaranteed to be masked
+	  when the OS starts up, or a previous boot stage has done some IOAPIC
+	  configuration that needs to be preserved.
 
 config MVIC
 	bool "Intel Quark D2000 Interrupt Controller (MVIC)"
@@ -97,11 +97,11 @@ config MVIC
 	depends on X86
 	select X86_FIXED_IRQ_MAPPING
 	help
-	The MVIC (Intel Quark microcontroller D2000 Interrupt Controller) is
-	configured by default to support 32 external interrupt lines. Unlike the
-	traditional IA LAPIC/IOAPIC, the interrupt vectors in MVIC are fixed and
-	not programmable. In addition, the priorities of these interrupt
-	lines are also fixed.
+	  The MVIC (Intel Quark microcontroller D2000 Interrupt Controller) is
+	  configured by default to support 32 external interrupt lines. Unlike the
+	  traditional IA LAPIC/IOAPIC, the interrupt vectors in MVIC are fixed and
+	  not programmable. In addition, the priorities of these interrupt
+	  lines are also fixed.
 
 config MVIC_TIMER_IRQ
 	int "IRQ line to use for timer interrupt"
@@ -109,20 +109,20 @@ config MVIC_TIMER_IRQ
 	default 10
 	depends on MVIC
 	help
-	Specify the IRQ line to use for the timer interrupt. This should be
-	an IRQ line unused by any hardware. If nested interrupts are enabled,
-	higher interrupt lines have priority.
+	  Specify the IRQ line to use for the timer interrupt. This should be
+	  an IRQ line unused by any hardware. If nested interrupts are enabled,
+	  higher interrupt lines have priority.
 
 config ARCV2_INTERRUPT_UNIT
 	bool "ARCv2 Interrupt Unit"
 	default y
 	depends on ARC
 	help
-	The ARCv2 interrupt unit has 16 allocated exceptions associated with
-	vectors 0 to 15 and 240 interrupts associated with vectors 16 to 255.
-	The interrupt unit is optional in the ARCv2-based processors. When
-	building a processor, you can configure the processor to include an
-	interrupt unit. The ARCv2 interrupt unit is highly programmable.
+	  The ARCv2 interrupt unit has 16 allocated exceptions associated with
+	  vectors 0 to 15 and 240 interrupts associated with vectors 16 to 255.
+	  The interrupt unit is optional in the ARCv2-based processors. When
+	  building a processor, you can configure the processor to include an
+	  interrupt unit. The ARCv2 interrupt unit is highly programmable.
 
 config PLIC_FE310
 	bool "SiFive Freedom E310 Platform Level Interrupt Controller (PLIC)"
@@ -130,8 +130,8 @@ config PLIC_FE310
 	depends on SOC_RISCV32_FE310
 	select RISCV_HAS_PLIC
 	help
-	SiFive Freedom E310 Platform Level Interrupt Controller provides support
-	for external interrupt lines defined by the FE310 SOC;
+	  SiFive Freedom E310 Platform Level Interrupt Controller provides support
+	  for external interrupt lines defined by the FE310 SOC;
 
 source "drivers/interrupt_controller/Kconfig.stm32"
 

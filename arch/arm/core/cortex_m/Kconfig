@@ -11,44 +11,44 @@ config ISA_THUMB2
 	# Omit prompt to signify "hidden" option
 	default n
 	help
-	From: http://www.arm.com/products/processors/technologies/instruction-set-architectures.php
+	  From: http://www.arm.com/products/processors/technologies/instruction-set-architectures.php
 
-	Thumb-2 technology is the instruction set underlying the ARM Cortex
-	architecture which provides enhanced levels of performance, energy
-	efficiency, and code density for a wide range of embedded
-	applications.
+	  Thumb-2 technology is the instruction set underlying the ARM Cortex
+	  architecture which provides enhanced levels of performance, energy
+	  efficiency, and code density for a wide range of embedded
+	  applications.
 
-	Thumb-2 technology builds on the success of Thumb, the innovative
-	high code density instruction set for ARM microprocessor cores, to
-	increase the power of the ARM microprocessor core available to
-	developers of low cost, high performance systems.
+	  Thumb-2 technology builds on the success of Thumb, the innovative
+	  high code density instruction set for ARM microprocessor cores, to
+	  increase the power of the ARM microprocessor core available to
+	  developers of low cost, high performance systems.
 
-	The technology is backwards compatible with existing ARM and Thumb
-	solutions, while significantly extending the features available to
-	the Thumb instructions set. This allows more of the application to
-	benefit from the best in class code density of Thumb.
+	  The technology is backwards compatible with existing ARM and Thumb
+	  solutions, while significantly extending the features available to
+	  the Thumb instructions set. This allows more of the application to
+	  benefit from the best in class code density of Thumb.
 
-	For performance optimized code Thumb-2 technology uses 31 percent
-	less memory to reduce system cost, while providing up to 38 percent
-	higher performance than existing high density code, which can be used
-	to prolong battery-life or to enrich the product feature set. Thumb-2
-	technology is featured in the  processor, and in all ARMv7
-	architecture-based processors.
+	  For performance optimized code Thumb-2 technology uses 31 percent
+	  less memory to reduce system cost, while providing up to 38 percent
+	  higher performance than existing high density code, which can be used
+	  to prolong battery-life or to enrich the product feature set. Thumb-2
+	  technology is featured in the  processor, and in all ARMv7
+	  architecture-based processors.
 
 config CPU_CORTEX_M_HAS_BASEPRI
 	bool
 	# Omit prompt to signify "hidden" option
 	default n
 	help
-	This option signifies the CPU has the BASEPRI register.
+	  This option signifies the CPU has the BASEPRI register.
 
 config CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS
 	bool
 	# Omit prompt to signify "hidden" option
 	default n
 	help
-	This option signifies the CPU faults other than the hard fault, and
-	needs to reserve a priority for them.
+	  This option signifies the CPU faults other than the hard fault, and
+	  needs to reserve a priority for them.
 
 config ARMV6_M
 	bool
@@ -57,7 +57,7 @@ config ARMV6_M
 	select ATOMIC_OPERATIONS_C
 	select ISA_THUMB2
 	help
-	This option signifies the use of an ARMv6-M processor implementation.
+	  This option signifies the use of an ARMv6-M processor implementation.
 
 config ARMV7_M
 	bool
@@ -68,35 +68,35 @@ config ARMV7_M
 	select CPU_CORTEX_M_HAS_BASEPRI
 	select CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS
 	help
-	This option signifies the use of an ARMv7-M processor implementation.
+	  This option signifies the use of an ARMv7-M processor implementation.
 
 config CPU_CORTEX_M0
 	bool
 	# Omit prompt to signify "hidden" option
 	select ARMV6_M
 	help
-	This option signifies the use of a Cortex-M0 CPU
+	  This option signifies the use of a Cortex-M0 CPU
 
 config CPU_CORTEX_M0PLUS
 	bool
 	# Omit prompt to signify "hidden" option
 	select ARMV6_M
 	help
-	This option signifies the use of a Cortex-M0+ CPU
+	  This option signifies the use of a Cortex-M0+ CPU
 
 config CPU_CORTEX_M3
 	bool
 	# Omit prompt to signify "hidden" option
 	select ARMV7_M
 	help
-	This option signifies the use of a Cortex-M3 CPU
+	  This option signifies the use of a Cortex-M3 CPU
 
 config CPU_CORTEX_M4
 	bool
 	# Omit prompt to signify "hidden" option
 	select ARMV7_M
 	help
-	This option signifies the use of a Cortex-M4 CPU
+	  This option signifies the use of a Cortex-M4 CPU
 
 config CPU_CORTEX_M7
 	bool
@@ -104,7 +104,7 @@ config CPU_CORTEX_M7
 	select ARMV7_M
 	default n
 	help
-	This option signifies the use of a Cortex-M7 CPU
+	  This option signifies the use of a Cortex-M7 CPU
 
 menu "ARM Cortex-M options"
 	depends on CPU_CORTEX_M
@@ -117,17 +117,17 @@ config DATA_ENDIANNESS_LITTLE
 	bool
 	default y
 	help
-	This is driven by the processor implementation, since it is fixed in
-	hardware. The board should set this value to 'n' if the data is
-	implemented as big endian.
+	  This is driven by the processor implementation, since it is fixed in
+	  hardware. The board should set this value to 'n' if the data is
+	  implemented as big endian.
 
 config STACK_ALIGN_DOUBLE_WORD
 	bool
 	prompt "Align stacks on double-words (8 octets)"
 	default y
 	help
-	This is needed to conform to AAPCS, the procedure call standard for
-	the ARM. It wastes stack space.
+	  This is needed to conform to AAPCS, the procedure call standard for
+	  the ARM. It wastes stack space.
 
 config RUNTIME_NMI
 	bool
@@ -135,10 +135,10 @@ config RUNTIME_NMI
 	select REBOOT
 	default n
 	help
-	The kernel provides a simple NMI handler that simply hangs in a tight
-	loop if triggered. This fills the requirement that there must be an
-	NMI handler installed when the CPU boots. If a custom handler is
-	needed, enable this option and attach it via _NmiHandlerSet().
+	  The kernel provides a simple NMI handler that simply hangs in a tight
+	  loop if triggered. This fills the requirement that there must be an
+	  NMI handler installed when the CPU boots. If a custom handler is
+	  needed, enable this option and attach it via _NmiHandlerSet().
 
 config FAULT_DUMP
 	int
@@ -146,15 +146,15 @@ config FAULT_DUMP
 	default 2
 	range 0 2
 	help
-	Different levels for display information when a fault occurs.
+	  Different levels for display information when a fault occurs.
 
-	2: The default. Display specific and verbose information. Consumes
+	  2: The default. Display specific and verbose information. Consumes
 		the most memory (long strings).
 
-	1: Display general and short information. Consumes less memory
+	  1: Display general and short information. Consumes less memory
 		(short strings).
 
-	0: Off.
+	  0: Off.
 
 config XIP
 	default y
@@ -172,15 +172,15 @@ config ZERO_LATENCY_IRQS
 	default n
 	depends on CPU_CORTEX_M_HAS_BASEPRI
 	help
-	Interrupt locking is done by setting exception masking to priority
-	one, thus allowing exception of priority zero to still come in. By
-	default, the kernel verifies, via __ASSERT() statements, that the
-	interrupt priority is not set to zero when either connecting them or
-	setting their priority. Enabling this option disables the check,
-	thus allowing setting the priority of interrupts to zero.
+	  Interrupt locking is done by setting exception masking to priority
+	  one, thus allowing exception of priority zero to still come in. By
+	  default, the kernel verifies, via __ASSERT() statements, that the
+	  interrupt priority is not set to zero when either connecting them or
+	  setting their priority. Enabling this option disables the check,
+	  thus allowing setting the priority of interrupts to zero.
 
-	Note that this is a somewhat dangerous option: ISRs of priority zero
-	interrupts cannot use any kernel functionality.
+	  Note that this is a somewhat dangerous option: ISRs of priority zero
+	  interrupts cannot use any kernel functionality.
 
 config ARCH_HAS_THREAD_ABORT
 	bool

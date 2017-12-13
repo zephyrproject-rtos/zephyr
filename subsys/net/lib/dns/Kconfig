@@ -9,7 +9,7 @@ config DNS_RESOLVER
 	prompt "DNS resolver"
 	default n
 	help
-	This option enables the DNS client side support for Zephyr
+	  This option enables the DNS client side support for Zephyr
 
 if DNS_RESOLVER
 
@@ -17,18 +17,18 @@ config MDNS_RESOLVER
 	bool "Enable mDNS support"
 	default n
 	help
-	This option enables multicast DNS client side support.
-	See RFC 6762 for details.
+	  This option enables multicast DNS client side support.
+	  See RFC 6762 for details.
 
 config DNS_RESOLVER_ADDITIONAL_BUF_CTR
 	int
 	prompt "Additional DNS buffers"
 	default 0
 	help
-	Number of additional buffers available for the DNS resolver.
-	The DNS resolver requires at least one buffer. This option
-	enables additional buffers required for multiple concurrent
-	DNS connections.
+	  Number of additional buffers available for the DNS resolver.
+	  The DNS resolver requires at least one buffer. This option
+	  enables additional buffers required for multiple concurrent
+	  DNS connections.
 
 config DNS_RESOLVER_ADDITIONAL_QUERIES
 	int
@@ -36,26 +36,26 @@ config DNS_RESOLVER_ADDITIONAL_QUERIES
 	range 0 2
 	default 1
 	help
-	Number of additional DNS queries that the DNS resolver may
-	generate when the RR ANSWER only contains CNAME(s).
-	The maximum value of this variable is constrained to avoid
-	'alias loops'.
+	  Number of additional DNS queries that the DNS resolver may
+	  generate when the RR ANSWER only contains CNAME(s).
+	  The maximum value of this variable is constrained to avoid
+	  'alias loops'.
 
 config DNS_RESOLVER_MAX_SERVERS
 	int "Number of DNS server addresses"
 	range 1 NET_MAX_CONTEXTS
 	default 1
 	help
-	Max number of DNS servers that we can connect to. Normally one
-	DNS server is enough. Each connection to DNS server will use one
-	network context.
+	  Max number of DNS servers that we can connect to. Normally one
+	  DNS server is enough. Each connection to DNS server will use one
+	  network context.
 
 menuconfig DNS_SERVER_IP_ADDRESSES
 	bool "Set DNS server IP addresses"
 	default n
 	help
-	Allow DNS IP addresses to be set in config file for
-	networking applications.
+	  Allow DNS IP addresses to be set in config file for
+	  networking applications.
 
 if DNS_SERVER_IP_ADDRESSES
 
@@ -63,42 +63,42 @@ config DNS_SERVER1
 	string "DNS server 1"
 	default ""
 	help
-	DNS server IP address 1. The address can be either IPv4 or IPv6
-	address. An optional port number can be given.
-	Following syntax is supported:
-	192.0.2.1
-	192.0.2.1:5353
-	2001:db8::1
-	[2001:db8::1]:5353
-	It is not mandatory to use this Kconfig option at all.
-	The one calling dns_resolve_init() can use this option or not
-	to populate the server list. If the DNS server addresses are
-	set here, then we automatically create default DNS context
-	for the user.
+	  DNS server IP address 1. The address can be either IPv4 or IPv6
+	  address. An optional port number can be given.
+	  Following syntax is supported:
+	  192.0.2.1
+	  192.0.2.1:5353
+	  2001:db8::1
+	  [2001:db8::1]:5353
+	  It is not mandatory to use this Kconfig option at all.
+	  The one calling dns_resolve_init() can use this option or not
+	  to populate the server list. If the DNS server addresses are
+	  set here, then we automatically create default DNS context
+	  for the user.
 
 config DNS_SERVER2
 	string "DNS server 2"
 	default ""
 	help
-	See help in "DNS server 1" option.
+	  See help in "DNS server 1" option.
 
 config DNS_SERVER3
 	string "DNS server 3"
 	default ""
 	help
-	See help in "DNS server 1" option.
+	  See help in "DNS server 1" option.
 
 config DNS_SERVER4
 	string "DNS server 4"
 	default ""
 	help
-	See help in "DNS server 1" option.
+	  See help in "DNS server 1" option.
 
 config DNS_SERVER5
 	string "DNS server 5"
 	default ""
 	help
-	See help in "DNS server 1" option.
+	  See help in "DNS server 1" option.
 
 endif # DNS_SERVER_IP_ADDRESSES
 
@@ -106,15 +106,15 @@ config DNS_NUM_CONCUR_QUERIES
 	int "Number of simultaneous DNS queries per one DNS context"
 	default 1
 	help
-	This defines how many concurrent DNS queries can be generated using
-	same DNS context. Normally 1 is a good default value.
+	  This defines how many concurrent DNS queries can be generated using
+	  same DNS context. Normally 1 is a good default value.
 
 config NET_DEBUG_DNS_RESOLVE
 	bool "Debug DNS resolver"
 	default n
 	default y if NET_LOG_GLOBAL
 	help
-	Enables DNS resolver code to output debug messages
+	  Enables DNS resolver code to output debug messages
 
 endif # DNS_RESOLVER
 
@@ -124,12 +124,12 @@ config MDNS_RESPONDER
 	select NET_IPV6_MLD if NET_IPV6
 	depends on NET_HOSTNAME_ENABLE
 	help
-	This option enables the mDNS responder support for Zephyr.
-	It will listen well-known address ff02::fb and 224.0.0.251.
-	Currently this only returns IP address information.
-	You must set CONFIG_NET_HOSTNAME to some meaningful value and
-	then mDNS will start to respond to <hostname>.local mDNS queries.
-	See RFC 6762 for more details about mDNS.
+	  This option enables the mDNS responder support for Zephyr.
+	  It will listen well-known address ff02::fb and 224.0.0.251.
+	  Currently this only returns IP address information.
+	  You must set CONFIG_NET_HOSTNAME to some meaningful value and
+	  then mDNS will start to respond to <hostname>.local mDNS queries.
+	  See RFC 6762 for more details about mDNS.
 
 if MDNS_RESPONDER
 
@@ -137,27 +137,27 @@ config MDNS_RESPONDER_TTL
 	int "Time-to-Live of returned DNS name"
 	default 600
 	help
-	DNS answers will use the TTL (in seconds).
+	  DNS answers will use the TTL (in seconds).
 
 config MDNS_RESPONDER_INIT_PRIO
 	int "Startup priority for the mDNS responder init"
 	default 96
 	help
-	Note that if NET_APP_AUTO_INIT is enabled, then this value
-	should be bigger than its value.
+	  Note that if NET_APP_AUTO_INIT is enabled, then this value
+	  should be bigger than its value.
 
 config NET_DEBUG_MDNS_RESPONDER
 	bool "Debug mDNS responder"
 	default n
 	default y if NET_LOG_GLOBAL
 	help
-	Enables mDNS responder code to output debug messages
+	  Enables mDNS responder code to output debug messages
 
 config MDNS_RESOLVER_ADDITIONAL_BUF_CTR
 	int
 	prompt "Additional DNS buffers"
 	default 0
 	help
-	Number of additional buffers available for the mDNS responder.
+	  Number of additional buffers available for the mDNS responder.
 
 endif # MDNS_RESPONDER

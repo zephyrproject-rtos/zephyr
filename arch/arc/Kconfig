@@ -32,7 +32,7 @@ config	CPU_ARCEM4
 	select CPU_ARCV2
 	select ATOMIC_OPERATIONS_C
 	help
-	This option signifies the use of an ARC EM4 CPU
+	  This option signifies the use of an ARC EM4 CPU
 
 endmenu
 
@@ -82,12 +82,12 @@ config	RGF_NUM_BANKS
 	range 1 2
 	default 2
 	help
-	The ARC CPU can be configured to have more than one register
-	bank. If fast interrupts are supported (FIRQ), the 2nd
-	register bank, in the set, will be used by FIRQ interrupts.
-	If fast interrupts are supported but there is only 1
-	register bank, the fast interrupt handler must save
-	and restore general purpose registers.
+	  The ARC CPU can be configured to have more than one register
+	  bank. If fast interrupts are supported (FIRQ), the 2nd
+	  register bank, in the set, will be used by FIRQ interrupts.
+	  If fast interrupts are supported but there is only 1
+	  register bank, the fast interrupt handler must save
+	  and restore general purpose registers.
 
 config	ARC_STACK_CHECKING
 	bool
@@ -103,15 +103,15 @@ config	FAULT_DUMP
 	default 2
 	range 0 2
 	help
-	Different levels for display information when a fault occurs.
+	  Different levels for display information when a fault occurs.
 
-	2: The default. Display specific and verbose information. Consumes
+	  2: The default. Display specific and verbose information. Consumes
 		the most memory (long strings).
 
-	1: Display general and short information. Consumes less memory
+	  1: Display general and short information. Consumes less memory
 		(short strings).
 
-	0: Off.
+	  0: Off.
 
 config	XIP
 	default n if NSIM
@@ -128,15 +128,15 @@ config HARVARD
 	bool
 	default n
 	help
-	The ARC CPU can be configured to have two busses;
-	one for instruction fetching and another that serves as a data bus.
+	  The ARC CPU can be configured to have two busses;
+	  one for instruction fetching and another that serves as a data bus.
 
 config CODE_DENSITY
 	prompt "Code Density Option"
 	bool
 	default n
 	help
-	Enable code density option to get better code density
+	  Enable code density option to get better code density
 
 menu "ARC MPU Options"
 depends on CPU_HAS_MPU
@@ -157,58 +157,58 @@ if !HAS_DTS
 config ICCM_SIZE
 	int "ICCM Size in kB"
 	help
-	This option specifies the size of the ICCM in kB.  It is normally set by
-	the board's defconfig file and the user should generally avoid modifying
-	it via the menu configuration.
+	  This option specifies the size of the ICCM in kB.  It is normally set by
+	  the board's defconfig file and the user should generally avoid modifying
+	  it via the menu configuration.
 
 config ICCM_BASE_ADDRESS
 	hex "ICCM Base Address"
 	help
-	This option specifies the base address of the ICCM on the board.  It is
-	normally set by the board's defconfig file and the user should generally
-	avoid modifying it via the menu configuration.
+	  This option specifies the base address of the ICCM on the board.  It is
+	  normally set by the board's defconfig file and the user should generally
+	  avoid modifying it via the menu configuration.
 
 config DCCM_SIZE
 	int "DCCM Size in kB"
 	help
-	This option specifies the size of the DCCM in kB.  It is normally set by
-	the board's defconfig file and the user should generally avoid modifying
-	it via the menu configuration.
+	  This option specifies the size of the DCCM in kB.  It is normally set by
+	  the board's defconfig file and the user should generally avoid modifying
+	  it via the menu configuration.
 
 config DCCM_BASE_ADDRESS
 	hex "DCCM Base Address"
 	help
-	This option specifies the base address of the DCCM on the board.  It is
-	normally set by the board's defconfig file and the user should generally
-	avoid modifying it via the menu configuration.
+	  This option specifies the base address of the DCCM on the board.  It is
+	  normally set by the board's defconfig file and the user should generally
+	  avoid modifying it via the menu configuration.
 
 config SRAM_SIZE
 	int "SRAM Size in kB"
 	help
-	This option specifies the size of the SRAM in kB.  It is normally set by
-	the board's defconfig file and the user should generally avoid modifying
-	it via the menu configuration.
+	  This option specifies the size of the SRAM in kB.  It is normally set by
+	  the board's defconfig file and the user should generally avoid modifying
+	  it via the menu configuration.
 
 config SRAM_BASE_ADDRESS
 	hex "SRAM Base Address"
 	help
-	This option specifies the base address of the SRAM on the board.  It is
-	normally set by the board's defconfig file and the user should generally
-	avoid modifying it via the menu configuration.
+	  This option specifies the base address of the SRAM on the board.  It is
+	  normally set by the board's defconfig file and the user should generally
+	  avoid modifying it via the menu configuration.
 
 config FLASH_SIZE
 	int "Flash Size in kB"
 	help
-	This option specifies the size of the flash in kB.  It is normally set by
-	the board's defconfig file and the user should generally avoid modifying
-	it via the menu configuration.
+	  This option specifies the size of the flash in kB.  It is normally set by
+	  the board's defconfig file and the user should generally avoid modifying
+	  it via the menu configuration.
 
 config FLASH_BASE_ADDRESS
 	hex "Flash Base Address"
 	help
-	This option specifies the base address of the flash on the board.  It is
-	normally set by the board's defconfig file and the user should generally
-	avoid modifying it via the menu configuration.
+	  This option specifies the base address of the flash on the board.  It is
+	  normally set by the board's defconfig file and the user should generally
+	  avoid modifying it via the menu configuration.
 endif
 
 config CACHE_LINE_SIZE_DETECT
@@ -216,21 +216,21 @@ config CACHE_LINE_SIZE_DETECT
 	prompt "Detect d-cache line size at runtime"
 	default n
 	help
-	This option enables querying the d-cache build register for finding
-	the d-cache line size at the expense of taking more memory and code
-	and a slightly increased boot time.
+	  This option enables querying the d-cache build register for finding
+	  the d-cache line size at the expense of taking more memory and code
+	  and a slightly increased boot time.
 
-	If the CPU's d-cache line size is known in advance, disable this
-	option and manually enter the value for CACHE_LINE_SIZE.
+	  If the CPU's d-cache line size is known in advance, disable this
+	  option and manually enter the value for CACHE_LINE_SIZE.
 
 config CACHE_LINE_SIZE
 	int
 	prompt "Cache line size" if !CACHE_LINE_SIZE_DETECT
 	default 32
 	help
-	Size in bytes of a CPU d-cache line.
+	  Size in bytes of a CPU d-cache line.
 
-	Detect automatically at runtime by selecting CACHE_LINE_SIZE_DETECT.
+	  Detect automatically at runtime by selecting CACHE_LINE_SIZE_DETECT.
 
 config ARCH_CACHE_FLUSH_DETECT
 	bool
@@ -241,10 +241,10 @@ config CACHE_FLUSHING
 	default n
 	prompt "Enable d-cache flushing mechanism"
 	help
-	This links in the sys_cache_flush() function, which provides a
-	way to flush multiple lines of the d-cache.
-	If the d-cache is present, set this to y.
-	If the d-cache is NOT present, set this to n.
+	  This links in the sys_cache_flush() function, which provides a
+	  way to flush multiple lines of the d-cache.
+	  If the d-cache is present, set this to y.
+	  If the d-cache is NOT present, set this to n.
 
 endmenu
 

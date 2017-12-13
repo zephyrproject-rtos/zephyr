@@ -27,35 +27,35 @@ config INCLUDE_RESET_VECTOR
 	bool "Include Reset vector"
 	default n
 	help
-	Include the reset vector stub that inits CPU and then jumps to __start
+	  Include the reset vector stub that inits CPU and then jumps to __start
 
 config RISCV_SOC_CONTEXT_SAVE
 	bool "Enable SOC-based context saving in IRQ handler"
 	default n
 	help
-	Enable SOC-based context saving, for SOCS which require saving of
-	extra registers when entering an interrupt/exception
+	  Enable SOC-based context saving, for SOCS which require saving of
+	  extra registers when entering an interrupt/exception
 
 config RISCV_SOC_INTERRUPT_INIT
 	bool "Enable SOC-based interrupt initialization"
 	default n
 	help
-	Enable SOC-based interrupt initialization
-	(call soc_interrupt_init, within _IntLibInit when enabled)
+	  Enable SOC-based interrupt initialization
+	  (call soc_interrupt_init, within _IntLibInit when enabled)
 
 config RISCV_GENERIC_TOOLCHAIN
 	bool "Compile using generic riscv32 toolchain"
 	default y
 	help
-	Compile using generic riscv32 toolchain.
-	Allow SOCs that have custom extended riscv ISA to still
-	compile with generic riscv32 toolchain.
+	  Compile using generic riscv32 toolchain.
+	  Allow SOCs that have custom extended riscv ISA to still
+	  compile with generic riscv32 toolchain.
 
 config RISCV_HAS_CPU_IDLE
 	bool "Does SOC has CPU IDLE instruction"
 	default n
 	help
-	Does SOC has CPU IDLE instruction
+	  Does SOC has CPU IDLE instruction
 
 config GEN_ISR_TABLES
 	default y

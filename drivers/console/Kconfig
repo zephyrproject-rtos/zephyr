@@ -17,15 +17,15 @@ config CONSOLE_INPUT_MAX_LINE_LEN
 	int "Console maximum input line length"
 	default 128
 	help
-	This option can be used to modify the maximum length a console input
-	can be.
+	  This option can be used to modify the maximum length a console input
+	  can be.
 
 config CONSOLE_HAS_DRIVER
 	bool
 	default n
 	help
-	This is an option to be enabled by console drivers to signal
-	that some kind of console exists.
+	  This is an option to be enabled by console drivers to signal
+	  that some kind of console exists.
 
 config CONSOLE_HANDLER
 	bool
@@ -34,8 +34,8 @@ config CONSOLE_HANDLER
 	select UART_INTERRUPT_DRIVEN
 	default n
 	help
-	This option enables console input handler allowing to write simple
-	interaction between serial console and the OS.
+	  This option enables console input handler allowing to write simple
+	  interaction between serial console and the OS.
 
 config UART_CONSOLE
 	bool
@@ -44,8 +44,8 @@ config UART_CONSOLE
 	depends on SERIAL && SERIAL_HAS_DRIVER
 	select CONSOLE_HAS_DRIVER
 	help
-	Enable this option to use one UART for console. Make sure
-	CONFIG_UART_CONSOLE_ON_DEV_NAME is also set correctly.
+	  Enable this option to use one UART for console. Make sure
+	  CONFIG_UART_CONSOLE_ON_DEV_NAME is also set correctly.
 
 if !HAS_DTS
 config UART_CONSOLE_ON_DEV_NAME
@@ -53,8 +53,8 @@ config UART_CONSOLE_ON_DEV_NAME
 	default "UART_0"
 	depends on UART_CONSOLE
 	help
-	This option specifies the name of UART device to be used for
-	UART console.
+	  This option specifies the name of UART device to be used for
+	  UART console.
 endif
 
 config UART_CONSOLE_INIT_PRIORITY
@@ -73,11 +73,11 @@ config UART_CONSOLE_DEBUG_SERVER_HOOKS
 	default n
 	depends on UART_CONSOLE
 	help
-	This option allows a debug server agent such as GDB to take over the
-	handling of traffic that goes through the console logic. The debug
-	server looks at characters received and decides to handle them itself if
-	they are some sort of control characters, or let the regular console
-	code handle them if they are of no special significance to it.
+	  This option allows a debug server agent such as GDB to take over the
+	  handling of traffic that goes through the console logic. The debug
+	  server looks at characters received and decides to handle them itself if
+	  they are some sort of control characters, or let the regular console
+	  code handle them if they are of no special significance to it.
 
 config USB_UART_CONSOLE
 	bool
@@ -87,11 +87,11 @@ config USB_UART_CONSOLE
 	select USB_CDC_ACM
 	default n
 	help
-	Enable this option to use the USB UART for console output. The output
-	can be viewed from the USB host via /dev/ttyACM* port. Note that console
-	inputs from the USB UART are not functional yet. Also since the USB
-	layer currently doesn't support multiple interfaces, this shouldn't be
-	selected in conjunction with say USB Mass Storage.
+	  Enable this option to use the USB UART for console output. The output
+	  can be viewed from the USB host via /dev/ttyACM* port. Note that console
+	  inputs from the USB UART are not functional yet. Also since the USB
+	  layer currently doesn't support multiple interfaces, this shouldn't be
+	  selected in conjunction with say USB Mass Storage.
 
 config USB_UART_DTR_WAIT
 	bool
@@ -99,9 +99,9 @@ config USB_UART_DTR_WAIT
 	default n
 	depends on USB_UART_CONSOLE
 	help
-	Enable this option to use flow control on the console. The uart console
-	waits until the DTR is asserted by the host.
-	Note: Disabling this might lead to missing console prints.
+	  Enable this option to use flow control on the console. The uart console
+	  waits until the DTR is asserted by the host.
+	  Note: Disabling this might lead to missing console prints.
 
 config RAM_CONSOLE
 	bool
@@ -109,17 +109,17 @@ config RAM_CONSOLE
 	select CONSOLE_HAS_DRIVER
 	default n
 	help
-	Emit console messages to a RAM buffer "ram_console" which can
-	be examined at runtime with a debugger. Useful in board bring-up
-	if there aren't any working serial drivers.
+	  Emit console messages to a RAM buffer "ram_console" which can
+	  be examined at runtime with a debugger. Useful in board bring-up
+	  if there aren't any working serial drivers.
 
 config RAM_CONSOLE_BUFFER_SIZE
 	int "Ram Console buffer size"
 	default 1024
 	depends on RAM_CONSOLE
 	help
-	Size of the RAM console buffer. Messages will wrap around if the
-	length is exceeded.
+	  Size of the RAM console buffer. Messages will wrap around if the
+	  length is exceeded.
 
 config RTT_CONSOLE
 	bool
@@ -128,9 +128,9 @@ config RTT_CONSOLE
 	select CONSOLE_HAS_DRIVER
 	default n
 	help
-	Emit console messages to a RAM buffer that is then read by the
-	Segger J-Link software and displayed on a computer in real-time.
-	Requires support for Segger J-Link on the companion IC onboard.
+	  Emit console messages to a RAM buffer that is then read by the
+	  Segger J-Link software and displayed on a computer in real-time.
+	  Requires support for Segger J-Link on the companion IC onboard.
 
 config IPM_CONSOLE_SENDER
 	bool
@@ -138,7 +138,7 @@ config IPM_CONSOLE_SENDER
 	select CONSOLE_HAS_DRIVER
 	default n
 	help
-	Enable the sending side of IPM console
+	  Enable the sending side of IPM console
 
 config IPM_CONSOLE_RECEIVER
 	bool
@@ -146,7 +146,7 @@ config IPM_CONSOLE_RECEIVER
 	select RING_BUFFER
 	default n
 	help
-	Enable the receiving side of IPM console
+	  Enable the receiving side of IPM console
 
 config IPM_CONSOLE_STACK_SIZE
 	int
@@ -154,9 +154,9 @@ config IPM_CONSOLE_STACK_SIZE
 	depends on IPM_CONSOLE_RECEIVER
 	default 512
 	help
-	Each instance of the IPM console receiver driver creates a worker
-	thread to print out incoming messages from the remote CPU. Specify the
-	stack size for these threads here.
+	  Each instance of the IPM console receiver driver creates a worker
+	  thread to print out incoming messages from the remote CPU. Specify the
+	  stack size for these threads here.
 
 config IPM_CONSOLE_INIT_PRIORITY
 	int
@@ -174,10 +174,10 @@ config	UART_PIPE
 	select UART_INTERRUPT_DRIVEN
 	default n
 	help
-	Enable pipe UART driver. This driver allows application to communicate
-	over UART with custom defined protocol. Driver doesn't inspect received
-	data (as contrary to console UART driver) and all aspects of received
-	protocol data are handled by application provided callback.
+	  Enable pipe UART driver. This driver allows application to communicate
+	  over UART with custom defined protocol. Driver doesn't inspect received
+	  data (as contrary to console UART driver) and all aspects of received
+	  protocol data are handled by application provided callback.
 
 if !HAS_DTS
 config UART_PIPE_ON_DEV_NAME
@@ -185,8 +185,8 @@ config UART_PIPE_ON_DEV_NAME
 	default "UART_0"
 	depends on UART_PIPE
 	help
-	This option specifies the name of UART device to be used
-	for pipe UART.
+	  This option specifies the name of UART device to be used
+	  for pipe UART.
 endif
 
 config XTENSA_SIM_CONSOLE
@@ -196,7 +196,7 @@ config XTENSA_SIM_CONSOLE
 	select CONSOLE_HAS_DRIVER
 	default y
 	help
-	Use simulator console to print messages.
+	  Use simulator console to print messages.
 
 config XTENSA_CONSOLE_INIT_PRIORITY
 	int

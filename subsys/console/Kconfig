@@ -11,7 +11,7 @@ config CONSOLE_PULL
 	default n
 	prompt "Enable pull-style Console access"
 	help
-	Get data from console using getchar/getline calls
+	  Get data from console using getchar/getline calls
 
 if CONSOLE_PULL
 choice

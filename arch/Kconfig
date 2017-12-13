@@ -42,42 +42,42 @@ config HW_STACK_PROTECTION
 	bool "Hardware Stack Protection"
 	depends on ARCH_HAS_STACK_PROTECTION
 	help
-	Select this option to enable hardware-based platform features to
-	catch stack overflows when the system is running in privileged
-	mode. If CONFIG_USERSPACE is not enabled, the system is always
-	running in privileged mode.
+	  Select this option to enable hardware-based platform features to
+	  catch stack overflows when the system is running in privileged
+	  mode. If CONFIG_USERSPACE is not enabled, the system is always
+	  running in privileged mode.
 
-	Note that this does not necessarily prevent corruption and assertions
-	about the overall system state when a fault is triggered cannot be
-	made.
+	  Note that this does not necessarily prevent corruption and assertions
+	  about the overall system state when a fault is triggered cannot be
+	  made.
 
 config USERSPACE
 	bool "User mode threads (EXPERIMENTAL)"
 	depends on ARCH_HAS_USERSPACE
 	help
-	When enabled, threads may be created or dropped down to user mode,
-	which has significantly restricted permissions and must interact
-	with the kernel via system calls. See Zephyr documentation for more
-	details	about this feature.
+	  When enabled, threads may be created or dropped down to user mode,
+	  which has significantly restricted permissions and must interact
+	  with the kernel via system calls. See Zephyr documentation for more
+	  details	about this feature.
 
-	If a user thread overflows its stack, this will be caught and the
-	kernel itself will be shielded from harm. Enabling this option
-	may or may not catch stack overflows when the system is in
-	privileged mode or handling a system call; to ensure these are always
-	caught, enable CONFIG_HW_STACK_PROTECTION.
+	  If a user thread overflows its stack, this will be caught and the
+	  kernel itself will be shielded from harm. Enabling this option
+	  may or may not catch stack overflows when the system is in
+	  privileged mode or handling a system call; to ensure these are always
+	  caught, enable CONFIG_HW_STACK_PROTECTION.
 
-	This feature is under heavy development and APIs related to it are
-	subject to change, even if declared non-private.
+	  This feature is under heavy development and APIs related to it are
+	  subject to change, even if declared non-private.
 
 config MAX_THREAD_BYTES
 	int "Bytes to use when tracking object thread permissions"
 	default 2
 	depends on USERSPACE
 	help
-	Every kernel object will have an associated bitfield to store
-	thread permissions for that object. This controls the size of the
-	bitfield (in bytes) and imposes a limit on how many threads can
-	be created in the system.
+	  Every kernel object will have an associated bitfield to store
+	  thread permissions for that object. This controls the size of the
+	  bitfield (in bytes) and imposes a limit on how many threads can
+	  be created in the system.
 
 config SIMPLE_FATAL_ERROR_HANDLER
 	prompt "Simple system fatal error handler"
@@ -85,10 +85,10 @@ config SIMPLE_FATAL_ERROR_HANDLER
 	default n
 	default y if !MULTITHREADING
 	help
-	Provides an implementation of _SysFatalErrorHandler() that hard hangs
-	instead of aborting the faulting thread, and does not print anything,
-	for footprint-concerned systems. Only enable this option if you do not
-	want debug capabilities in case of system fatal error.
+	  Provides an implementation of _SysFatalErrorHandler() that hard hangs
+	  instead of aborting the faulting thread, and does not print anything,
+	  for footprint-concerned systems. Only enable this option if you do not
+	  want debug capabilities in case of system fatal error.
 
 menu "Interrupt Configuration"
 #
@@ -99,9 +99,9 @@ config GEN_ISR_TABLES
 	prompt "Use generated IRQ tables"
 	default n
 	help
-	This option controls whether a platform uses the gen_isr_tables
-	script to generate its interrupt tables. This mechanism will create
-	an appropriate hardware vector table and/or software IRQ table.
+	  This option controls whether a platform uses the gen_isr_tables
+	  script to generate its interrupt tables. This mechanism will create
+	  an appropriate hardware vector table and/or software IRQ table.
 
 config GEN_IRQ_VECTOR_TABLE
 	bool
@@ -109,12 +109,12 @@ config GEN_IRQ_VECTOR_TABLE
 	default y
 	depends on GEN_ISR_TABLES
 	help
-	This option controls whether a platform using gen_isr_tables
-	needs an interrupt vector table created. Only disable this if the
-	platform does not use a vector table at all, or requires the vector
-	table to be in a format that is not an array of function pointers
-	indexed by IRQ line. In the latter case, the vector table must be
-	supplied by the application or architecture code.
+	  This option controls whether a platform using gen_isr_tables
+	  needs an interrupt vector table created. Only disable this if the
+	  platform does not use a vector table at all, or requires the vector
+	  table to be in a format that is not an array of function pointers
+	  indexed by IRQ line. In the latter case, the vector table must be
+	  supplied by the application or architecture code.
 
 config GEN_SW_ISR_TABLE
 	bool
@@ -122,22 +122,22 @@ config GEN_SW_ISR_TABLE
 	default y
 	depends on GEN_ISR_TABLES
 	help
-	This option controls whether a platform using gen_isr_tables
-	needs a software ISR table table created. This is an array of struct
-	_isr_table_entry containing the interrupt service routine and supplied
-	parameter.
+	  This option controls whether a platform using gen_isr_tables
+	  needs a software ISR table table created. This is an array of struct
+	  _isr_table_entry containing the interrupt service routine and supplied
+	  parameter.
 
 config GEN_IRQ_START_VECTOR
 	int
 	default 0
 	depends on GEN_ISR_TABLES
 	help
-	On some architectures, part of the vector table may be reserved for
-	system exceptions and is declared separately from the tables
-	created by gen_isr_tables.py. When creating these tables, this value
-	will be subtracted from CONFIG_NUM_IRQS to properly size them.
-	This is a hidden option which needs to be set per architecture and
-	left alone.
+	  On some architectures, part of the vector table may be reserved for
+	  system exceptions and is declared separately from the tables
+	  created by gen_isr_tables.py. When creating these tables, this value
+	  will be subtracted from CONFIG_NUM_IRQS to properly size them.
+	  This is a hidden option which needs to be set per architecture and
+	  left alone.
 
 
 config IRQ_OFFLOAD
@@ -172,24 +172,24 @@ config SYS_POWER_LOW_POWER_STATE_SUPPORTED
 	bool
 	default n
 	help
-	This option signifies that the target supports the SYS_POWER_LOW_POWER_STATE
-	configuration option.
+	  This option signifies that the target supports the SYS_POWER_LOW_POWER_STATE
+	  configuration option.
 
 config SYS_POWER_DEEP_SLEEP_SUPPORTED
 	# Hidden
 	bool
 	default n
 	help
-	This option signifies that the target supports the SYS_POWER_DEEP_SLEEP
-	configuration option.
+	  This option signifies that the target supports the SYS_POWER_DEEP_SLEEP
+	  configuration option.
 
 config BOOTLOADER_CONTEXT_RESTORE_SUPPORTED
 	# Hidden
 	bool
 	default n
 	help
-	This option signifies that the target has options of bootloaders
-	that support context restore upon resume from deep sleep
+	  This option signifies that the target has options of bootloaders
+	  that support context restore upon resume from deep sleep
 
 
 # End hidden CPU family configs
@@ -217,11 +217,11 @@ config FLOAT
 	prompt "Floating point registers"
 	default n
 	help
-	This option allows threads to use the floating point registers.
-	By default, only a single thread may use the registers.
+	  This option allows threads to use the floating point registers.
+	  By default, only a single thread may use the registers.
 
-	Disabling this option means that any thread that uses a
-	floating point register will get a fatal exception.
+	  Disabling this option means that any thread that uses a
+	  floating point register will get a fatal exception.
 
 config FP_SHARING
 	bool
@@ -229,8 +229,8 @@ config FP_SHARING
 	depends on FLOAT
 	default n
 	help
-	This option allows multiple threads to use the floating point
-	registers.
+	  This option allows multiple threads to use the floating point
+	  registers.
 
 endmenu
 
@@ -248,38 +248,38 @@ config FLASH_HAS_PAGE_LAYOUT
 config ARCH
 	string
 	help
-	System architecture string.
+	  System architecture string.
 
 config SOC
 	string
 	help
-	SoC name which can be found under arch/<arch>/soc/<soc name>.
-	This option holds the directory name used by the build system to locate
-	the correct linker and header files for the SoC. This option will go away
-	once all SoCs are using family/series structure.
+	  SoC name which can be found under arch/<arch>/soc/<soc name>.
+	  This option holds the directory name used by the build system to locate
+	  the correct linker and header files for the SoC. This option will go away
+	  once all SoCs are using family/series structure.
 
 config SOC_SERIES
 	string
 	help
-	SoC series name which can be found under arch/<arch>/soc/<family>/<series>.
-	This option holds the directory name used by the build system to locate
-	the correct linker and header files.
+	  SoC series name which can be found under arch/<arch>/soc/<family>/<series>.
+	  This option holds the directory name used by the build system to locate
+	  the correct linker and header files.
 
 config SOC_FAMILY
 	string
 	help
-	SoC family name which can be found under arch/<arch>/soc/<family>.
-	This option holds the directory name used by the build system to locate
-	the correct linker and header files.
+	  SoC family name which can be found under arch/<arch>/soc/<family>.
+	  This option holds the directory name used by the build system to locate
+	  the correct linker and header files.
 
 config BOARD
 	string
 	help
-	This option holds the name of the board and is used to locate the files
-	related to the board in the source tree (under boards/).
-	The Board is the first location where we search for a linker.ld file,
-	if not found we look for the linker file in
-	arch/<arch>/soc/<family>/<series>
+	  This option holds the name of the board and is used to locate the files
+	  related to the board in the source tree (under boards/).
+	  The Board is the first location where we search for a linker.ld file,
+	  if not found we look for the linker file in
+	  arch/<arch>/soc/<family>/<series>
 
 
 source "arch/*/Kconfig"

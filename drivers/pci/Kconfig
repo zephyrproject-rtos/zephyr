@@ -12,7 +12,7 @@ menuconfig PCI
 	prompt "PCI Settings"
 	depends on X86
 	help
-	This options enables support of PCI bus for device drivers.
+	  This options enables support of PCI bus for device drivers.
 
 if PCI
 config PCI_ENUMERATION
@@ -20,20 +20,20 @@ config PCI_ENUMERATION
 	prompt "Enable PCI device enumeration"
 	default n
 	help
-	This option enables the PCI enumeration for device drivers.
-	This might be useful along with PCI_DEBUG to find out which
-	are the PCI settings of the devices. Once those are known and
-	statically set in every relevant driver's configuration, it
-	might be wise to disable this option to remove useless code.
+	  This option enables the PCI enumeration for device drivers.
+	  This might be useful along with PCI_DEBUG to find out which
+	  are the PCI settings of the devices. Once those are known and
+	  statically set in every relevant driver's configuration, it
+	  might be wise to disable this option to remove useless code.
 
 config PCI_LEGACY_BRIDGE
 	bool
 	prompt "PCI legacy bridge device support"
 	default n
 	help
-	This option adds support for PCI legacy bridge device, that
-	allows direct setup of the PCI interrupt pin to IRQ number
-	mapping.
+	  This option adds support for PCI legacy bridge device, that
+	  allows direct setup of the PCI interrupt pin to IRQ number
+	  mapping.
 
 config PCI_LEGACY_BRIDGE_BUS
 	int "PCI Legacy Bridge Bus number"
@@ -60,7 +60,7 @@ config PCI_DEBUG
 	prompt "Enable PCI debugging"
 	default n
 	help
-	This options enables PCI debugging functions
+	  This options enables PCI debugging functions
 
 endif
 

@@ -13,7 +13,7 @@ config JSON_LIBRARY
 	default N
 	prompt "Build JSON library"
 	help
-	Build a minimal JSON parsing/encoding library. Used by sample
-	applications such as the NATS client.
+	  Build a minimal JSON parsing/encoding library. Used by sample
+	  applications such as the NATS client.
 
 endmenu

@@ -22,7 +22,7 @@ config PINMUX_NAME
 	depends on PINMUX
 	default "PINMUX"
 	help
-	The name of the pinmux driver.
+	  The name of the pinmux driver.
 
 config PINMUX_INIT_PRIORITY
 	int
