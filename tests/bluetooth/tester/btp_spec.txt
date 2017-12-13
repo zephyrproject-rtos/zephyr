@@ -1447,11 +1447,6 @@ Commands and responses:
 	Opcode 0x09 - IV Update toggle state
 		Controller Index:	<controller id>
 		Command parameters:	<none>
-		Response parameters:	Toggle (1 octet)
-
-		Valid Toggle response values:
-					0x00 = Normal State
-					0x01 = IV Update in Progress State
 
 		This command is used to make a IV Update state transition
 		while in IV Update test mode, ignoring the 96 hour limit.
