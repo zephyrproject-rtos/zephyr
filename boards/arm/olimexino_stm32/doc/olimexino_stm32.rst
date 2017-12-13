@@ -43,6 +43,8 @@ hardware features:
 +-----------+------------+----------------------+
 | I2C       | on-chip    | i2c                  |
 +-----------+------------+----------------------+
+| SPI       | on-chip    | spi                  |
++-----------+------------+----------------------+
 
 Other hardware features are not supported by the Zephyr kernel.
 
@@ -298,6 +300,16 @@ Serial Port
 
 OLIMEXINO-STM32 board has up to 3 U(S)ARTs. The Zephyr console output is
 assigned to USART1. Default settings are 115200 8N1.
+
+SPI
+===
+
+OLIMEXINO-STM32 board has up to 2 SPIs. The default SPI mapping for Zephyr is:
+
+- SPI1_NSS  : PA4
+- SPI1_SCK  : PA5
+- SPI1_MISO : PA6
+- SPI1_MOSI : PA7
 
 I2C
 ===
