@@ -11,7 +11,7 @@ config FILE_SYSTEM
 	select DISK_ACCESS
 	default n
 	help
-	Enables support for file system.
+	  Enables support for file system.
 
 if FILE_SYSTEM
 
@@ -27,15 +27,15 @@ config NO_FS
 config FAT_FILESYSTEM_ELM
 	bool "ELM FAT File System"
 	help
-	Use the ELM FAT File system implementation.
+	  Use the ELM FAT File system implementation.
 
 config FILE_SYSTEM_NFFS
 	bool "NFFS file system support"
 	select FLASH_PAGE_LAYOUT
 	help
-	Enables NFFS file system support.
-	Note: NFFS requires 1-byte unaligned access to flash thus it
-	will not work on devices that support only aligned flash access.
+	  Enables NFFS file system support.
+	  Note: NFFS requires 1-byte unaligned access to flash thus it
+	  will not work on devices that support only aligned flash access.
 
 endchoice
 
@@ -43,8 +43,8 @@ config FILE_SYSTEM_SHELL
 	bool "Enable file system shell"
 	depends on CONSOLE_SHELL
 	help
-	This shell provides basic browsing of the contents of the
-	file system.
+	  This shell provides basic browsing of the contents of the
+	  file system.
 
 
 menu "NFFS Settings"

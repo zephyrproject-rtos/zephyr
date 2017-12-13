@@ -12,8 +12,8 @@ menuconfig BMI160
 	depends on SPI_LEGACY_API
 	default n
 	help
-	Enable Bosch BMI160 inertial measurement unit that provides acceleration
-	and angular rate measurements.
+	  Enable Bosch BMI160 inertial measurement unit that provides acceleration
+	  and angular rate measurements.
 
 config BMI160_NAME
 	string "Driver's name"

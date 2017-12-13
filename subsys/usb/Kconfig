@@ -12,7 +12,7 @@ menuconfig USB_DEVICE_STACK
 	depends on USB
 	default n
 	help
-	Enable USB device stack.
+	  Enable USB device stack.
 
 if USB_DEVICE_STACK
 
@@ -22,51 +22,51 @@ config SYS_LOG_USB_LEVEL
 	default 0
 	depends on SYS_LOG
 	help
-	This option sets log level for the USB device stack.
+	  This option sets log level for the USB device stack.
 
-	Levels are:
+	  Levels are:
 
-	- 0 OFF, do not write
+	  - 0 OFF, do not write
 
-	- 1 ERROR, only write SYS_LOG_ERR
+	  - 1 ERROR, only write SYS_LOG_ERR
 
-	- 2 WARNING, write SYS_LOG_WRN in addition to previous level
+	  - 2 WARNING, write SYS_LOG_WRN in addition to previous level
 
-	- 3 INFO, write SYS_LOG_INF in addition to previous levels
+	  - 3 INFO, write SYS_LOG_INF in addition to previous levels
 
-	- 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
+	  - 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
 
 config USB_DEVICE_VID
 	hex
 	prompt "USB Vendor ID"
 	default 0xDEAD
 	help
-	USB device vendor ID. MUST be configured by vendor.
+	  USB device vendor ID. MUST be configured by vendor.
 
 config USB_DEVICE_PID
 	hex
 	prompt "USB Product ID"
 	default 0xBEEF
 	help
-	USB device product ID. MUST be configured by vendor.
+	  USB device product ID. MUST be configured by vendor.
 
 config USB_DEVICE_MANUFACTURER
 	string
 	default "ZEPHYR"
 	help
-	USB device Manufacturer string
+	  USB device Manufacturer string
 
 config USB_DEVICE_PRODUCT
 	string
 	default "USB-DEV"
 	help
-	USB device Product string
+	  USB device Product string
 
 config USB_DEVICE_SN
 	string
 	default "0.01"
 	help
-	USB device SerialNumber string
+	  USB device SerialNumber string
 
 config USB_COMPOSITE_DEVICE
 	bool
@@ -74,7 +74,7 @@ config USB_COMPOSITE_DEVICE
 	depends on USB
 	default n
 	help
-	Enable composite USB device driver.
+	  Enable composite USB device driver.
 
 config USB_COMPOSITE_BUFFER_SIZE
 	int

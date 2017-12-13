@@ -2,10 +2,10 @@
 config BOARD_DEPRECATED
 	string
 	help
-	This hidden option is set in the board configuration and indicates
-	the Zephyr release that the board configuration will be removed.
-	When set, any build for that board will generate a clearly visible
-	deprecation warning.
+	  This hidden option is set in the board configuration and indicates
+	  the Zephyr release that the board configuration will be removed.
+	  When set, any build for that board will generate a clearly visible
+	  deprecation warning.
 
 config QEMU_TARGET
 	bool

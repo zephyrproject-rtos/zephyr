@@ -10,6 +10,6 @@ menuconfig USB
 	bool "USB"
 	default n
 	help
-	Enable USB drivers.
+	  Enable USB drivers.
 
 source "drivers/usb/device/Kconfig"

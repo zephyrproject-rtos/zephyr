@@ -13,14 +13,14 @@ config USB_CDC_ACM
 	prompt "USB CDC ACM Device Class Driver"
 	default n
 	help
-	USB CDC ACM device class driver
+	  USB CDC ACM device class driver
 
 config CDC_ACM_PORT_NAME
 	string "CDC ACM class device driver port name"
 	depends on USB_CDC_ACM
 	default "CDC_ACM"
 	help
-	Port name through which CDC ACM class device driver is accessed
+	  Port name through which CDC ACM class device driver is accessed
 
 config CDC_ACM_INT_EP_ADDR
 	hex "CDC ACM Interrupt Endpoint address"
@@ -28,7 +28,7 @@ config CDC_ACM_INT_EP_ADDR
 	default 0x85
 	range 0x81 0x8f
 	help
-	CDC ACM class interrupt endpoint address
+	  CDC ACM class interrupt endpoint address
 
 config CDC_ACM_IN_EP_ADDR
 	hex "CDC ACM BULK IN Endpoint address"
@@ -36,7 +36,7 @@ config CDC_ACM_IN_EP_ADDR
 	default 0x84
 	range 0x81 0x8f
 	help
-	CDC ACM class IN endpoint address
+	  CDC ACM class IN endpoint address
 
 config CDC_ACM_OUT_EP_ADDR
 	hex "CDC ACM BULK OUT Endpoint address"
@@ -44,21 +44,21 @@ config CDC_ACM_OUT_EP_ADDR
 	default 0x03
 	range 0x01 0x0f
 	help
-	CDC ACM class OUT endpoint address
+	  CDC ACM class OUT endpoint address
 
 config CDC_ACM_INTERRUPT_EP_MPS
 	int
 	depends on USB_CDC_ACM
 	default 16
 	help
-	CDC ACM class interrupt IN endpoint size
+	  CDC ACM class interrupt IN endpoint size
 
 config CDC_ACM_BULK_EP_MPS
 	int
 	depends on USB_CDC_ACM
 	default 64
 	help
-	CDC ACM class bulk endpoints size
+	  CDC ACM class bulk endpoints size
 
 config SYS_LOG_USB_CDC_ACM_LEVEL
 	int
@@ -66,19 +66,19 @@ config SYS_LOG_USB_CDC_ACM_LEVEL
 	depends on USB_CDC_ACM && SYS_LOG
 	default 0
 	help
-	Sets log level for USB CDC ACM device class driver
+	  Sets log level for USB CDC ACM device class driver
 
-	Levels are:
+	  Levels are:
 
-	- 0 OFF, do not write
+	  - 0 OFF, do not write
 
-	- 1 ERROR, only write SYS_LOG_ERR
+	  - 1 ERROR, only write SYS_LOG_ERR
 
-	- 2 WARNING, write SYS_LOG_WRN in addition to previous level
+	  - 2 WARNING, write SYS_LOG_WRN in addition to previous level
 
-	- 3 INFO, write SYS_LOG_INF in addition to previous levels
+	  - 3 INFO, write SYS_LOG_INF in addition to previous levels
 
-	- 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
+	  - 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
 
 config USB_MASS_STORAGE
 	bool
@@ -86,7 +86,7 @@ config USB_MASS_STORAGE
 	select DISK_ACCESS
 	default n
 	help
-	USB Mass Storage device class driver
+	  USB Mass Storage device class driver
 
 config MASS_STORAGE_IN_EP_ADDR
 	hex
@@ -94,7 +94,7 @@ config MASS_STORAGE_IN_EP_ADDR
 	default 0x82
 	range 0x81 0x8f
 	help
-	Mass storage device class IN endpoint address
+	  Mass storage device class IN endpoint address
 
 config MASS_STORAGE_OUT_EP_ADDR
 	hex
@@ -102,7 +102,7 @@ config MASS_STORAGE_OUT_EP_ADDR
 	default 0x01
 	range 0x01 0x0f
 	help
-	Mass storage device class OUT endpoint address
+	  Mass storage device class OUT endpoint address
 
 config MASS_STORAGE_BULK_EP_MPS
 	int
@@ -110,7 +110,7 @@ config MASS_STORAGE_BULK_EP_MPS
 	default 64
 	range 8 64
 	help
-	Mass storage device class bulk endpoints size
+	  Mass storage device class bulk endpoints size
 
 config SYS_LOG_USB_MASS_STORAGE_LEVEL
 	int
@@ -118,19 +118,19 @@ config SYS_LOG_USB_MASS_STORAGE_LEVEL
 	depends on USB_MASS_STORAGE && SYS_LOG
 	default 0
 	help
-	Sets log level for USB Mass Storage device class driver
+	  Sets log level for USB Mass Storage device class driver
 
-	Levels are:
+	  Levels are:
 
-	- 0 OFF, do not write
+	  - 0 OFF, do not write
 
-	- 1 ERROR, only write SYS_LOG_ERR
+	  - 1 ERROR, only write SYS_LOG_ERR
 
-	- 2 WARNING, write SYS_LOG_WRN in addition to previous level
+	  - 2 WARNING, write SYS_LOG_WRN in addition to previous level
 
-	- 3 INFO, write SYS_LOG_INF in addition to previous levels
+	  - 3 INFO, write SYS_LOG_INF in addition to previous levels
 
-	- 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
+	  - 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
 
 source "subsys/usb/class/netusb/Kconfig"
 

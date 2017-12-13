@@ -11,7 +11,7 @@ config ZOAP
 	prompt "CoAP Support"
 	default n
 	help
-	This option enables the Zoap implementation of CoAP.
+	  This option enables the Zoap implementation of CoAP.
 
 # This setting is only used by unit test. Do not enable it in applications
 config ZOAP_TEST_API_ENABLE
@@ -19,7 +19,7 @@ config ZOAP_TEST_API_ENABLE
 	default n
 	depends on ZOAP
 	help
-	Do not enable this for normal use.
+	  Do not enable this for normal use.
 
 config ZOAP_WELL_KNOWN_BLOCK_WISE
 	bool
@@ -27,11 +27,11 @@ config ZOAP_WELL_KNOWN_BLOCK_WISE
 	default n
 	depends on ZOAP
 	help
-	This option enables the block wise support of CoAP response
-	to ./well-known/core request. Without this option all resource's
-	information will be sent in a single IP packet (can be multiple
-	fragments depends on MTU size). This will be useful in mesh kind
-	of networks.
+	  This option enables the block wise support of CoAP response
+	  to ./well-known/core request. Without this option all resource's
+	  information will be sent in a single IP packet (can be multiple
+	  fragments depends on MTU size). This will be useful in mesh kind
+	  of networks.
 
 config ZOAP_WELL_KNOWN_BLOCK_WISE_SIZE
 	int
@@ -39,5 +39,5 @@ config ZOAP_WELL_KNOWN_BLOCK_WISE_SIZE
 	default 32
 	depends on ZOAP_WELL_KNOWN_BLOCK_WISE
 	help
-	Maximum size of CoAP block. Valid values are 16, 32, 64, 128,
-	256, 512 and 1024.
+	  Maximum size of CoAP block. Valid values are 16, 32, 64, 128,
+	  256, 512 and 1024.

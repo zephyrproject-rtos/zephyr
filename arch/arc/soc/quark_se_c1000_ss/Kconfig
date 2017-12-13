@@ -11,8 +11,8 @@ config QUARK_SE_SS_IPM_IRQ_PRI
 	int "IPM interrupt priority"
 	default 1
 	help
-	Priority level for interrupts coming in from the inter-processor
-	mailboxes.
+	  Priority level for interrupts coming in from the inter-processor
+	  mailboxes.
 
 endif # IPM
 endif # SOC_QUARK_SE_C1000_SS

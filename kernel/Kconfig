@@ -14,14 +14,14 @@ config MULTITHREADING
 	prompt "Multi-threading"
 	default y
 	help
-	If disabled, only the main thread is available, so a main() function
-	must be provided. Interrupts are available. Kernel objects will most
-	probably not behave as expected, especially with regards to pending,
-	since the main thread cannot pend, it being the only thread in the
-	system.
+	  If disabled, only the main thread is available, so a main() function
+	  must be provided. Interrupts are available. Kernel objects will most
+	  probably not behave as expected, especially with regards to pending,
+	  since the main thread cannot pend, it being the only thread in the
+	  system.
 
-	Many drivers and subsystems will not work with this option; use only
-	when you REALLY know what you are doing.
+	  Many drivers and subsystems will not work with this option; use only
+	  when you REALLY know what you are doing.
 
 config NUM_COOP_PRIORITIES
 	int
@@ -30,28 +30,28 @@ config NUM_COOP_PRIORITIES
 	default 1 if !MULTITHREADING
 	range 0 128
 	help
-	Number of cooperative priorities configured in the system. Gives access
-	to priorities:
+	  Number of cooperative priorities configured in the system. Gives access
+	  to priorities:
 
 		K_PRIO_COOP(0) to K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1)
 
-	or seen another way, priorities:
+	  or seen another way, priorities:
 
 		-CONFIG_NUM_COOP_PRIORITIES to -1
 
-	This can be set to zero to disable cooperative scheduling. Cooperative
-	threads always preempt preemptible threads.
+	  This can be set to zero to disable cooperative scheduling. Cooperative
+	  threads always preempt preemptible threads.
 
-	Each priority requires an extra 8 bytes of RAM. Each set of 32 extra
-	total priorities require an extra 4 bytes and add one possible
-	iteration to loops that search for the next thread to run.
+	  Each priority requires an extra 8 bytes of RAM. Each set of 32 extra
+	  total priorities require an extra 4 bytes and add one possible
+	  iteration to loops that search for the next thread to run.
 
-	The total number of priorities is
+	  The total number of priorities is
 
 	   NUM_COOP_PRIORITIES + NUM_PREEMPT_PRIORITIES + 1
 
-	The extra one is for the idle thread, which must run at the lowest
-	priority, and be the only thread at that priority.
+	  The extra one is for the idle thread, which must run at the lowest
+	  priority, and be the only thread at that priority.
 
 config NUM_PREEMPT_PRIORITIES
 	int
@@ -60,21 +60,21 @@ config NUM_PREEMPT_PRIORITIES
 	default 0 if !MULTITHREADING
 	range 0 128
 	help
-	Number of preemptible priorities available in the system. Gives access
-	to priorities 0 to CONFIG_NUM_PREEMPT_PRIORITIES - 1.
+	  Number of preemptible priorities available in the system. Gives access
+	  to priorities 0 to CONFIG_NUM_PREEMPT_PRIORITIES - 1.
 
-	This can be set to 0 to disable preemptible scheduling.
+	  This can be set to 0 to disable preemptible scheduling.
 
-	Each priority requires an extra 8 bytes of RAM. Each set of 32 extra
-	total priorities require an extra 4 bytes and add one possible
-	iteration to loops that search for the next thread to run.
+	  Each priority requires an extra 8 bytes of RAM. Each set of 32 extra
+	  total priorities require an extra 4 bytes and add one possible
+	  iteration to loops that search for the next thread to run.
 
-	The total number of priorities is
+	  The total number of priorities is
 
 	   NUM_COOP_PRIORITIES + NUM_PREEMPT_PRIORITIES + 1
 
-	The extra one is for the idle thread, which must run at the lowest
-	priority, and be the only thread at that priority.
+	  The extra one is for the idle thread, which must run at the lowest
+	  priority, and be the only thread at that priority.
 
 config MAIN_THREAD_PRIORITY
 	int
@@ -82,8 +82,8 @@ config MAIN_THREAD_PRIORITY
 	default 0
 	default -2 if !PREEMPT_ENABLED
 	help
-	Priority at which the initialization thread runs, including the start
-	of the main() function. main() can then change its priority if desired.
+	  Priority at which the initialization thread runs, including the start
+	  of the main() function. main() can then change its priority if desired.
 
 config COOP_ENABLED
 	bool
@@ -106,11 +106,11 @@ config MAIN_STACK_SIZE
 	default 1024
 	default 512 if ZTEST
 	help
-	When the initialization is complete, the thread executing it then
-	executes the main() routine, so as to reuse the stack used by the
-	initialization, which would be wasted RAM otherwise.
+	  When the initialization is complete, the thread executing it then
+	  executes the main() routine, so as to reuse the stack used by the
+	  initialization, which would be wasted RAM otherwise.
 
-	After initialization is complete, the thread runs main().
+	  After initialization is complete, the thread runs main().
 
 config IDLE_STACK_SIZE
 	int
@@ -120,54 +120,54 @@ config IDLE_STACK_SIZE
 	default 512 if RISCV32
 	default 1024 if XTENSA
 	help
-	Depending on the work that the idle task must do, most likely due to
-	power management but possibly to other features like system event
-	logging (e.g. logging when the system goes to sleep), the idle thread
-	may need more stack space than the default value.
+	  Depending on the work that the idle task must do, most likely due to
+	  power management but possibly to other features like system event
+	  logging (e.g. logging when the system goes to sleep), the idle thread
+	  may need more stack space than the default value.
 
 config ISR_STACK_SIZE
 	int
 	prompt "ISR and initialization stack size (in bytes)"
 	default 2048
 	help
-	This option specifies the size of the stack used by interrupt
-	service routines (ISRs), and during kernel initialization.
+	  This option specifies the size of the stack used by interrupt
+	  service routines (ISRs), and during kernel initialization.
 
 config THREAD_STACK_INFO
 	bool
 	prompt "Thread stack info"
 	default n
 	help
-	This option allows each thread to store the thread stack info into
-	the k_thread data structure.
+	  This option allows each thread to store the thread stack info into
+	  the k_thread data structure.
 
 config  THREAD_CUSTOM_DATA
 	bool
 	prompt "Thread custom data"
 	default n
 	help
-	This option allows each thread to store 32 bits of custom data,
-	which can be accessed using the k_thread_custom_data_xxx() APIs.
+	  This option allows each thread to store 32 bits of custom data,
+	  which can be accessed using the k_thread_custom_data_xxx() APIs.
 
 config ERRNO
 	bool
 	prompt "Enable errno support"
 	default y
 	help
-	Enable per-thread errno in the kernel. Application and library code must
-	include errno.h provided by the C library (libc) to use the errno
-	symbol. The C library must access the per-thread errno via the
-	_get_errno() symbol.
+	  Enable per-thread errno in the kernel. Application and library code must
+	  include errno.h provided by the C library (libc) to use the errno
+	  symbol. The C library must access the per-thread errno via the
+	  _get_errno() symbol.
 
 config APPLICATION_MEMORY
 	bool
 	prompt "Split kernel and application memory"
 	default n
 	help
-	For all read-write memory sections (namely bss, noinit, data),
-	separate them into application and kernel areas. The application area
-	will have the project-level application objects and any libraries
-	including the C library in it.
+	  For all read-write memory sections (namely bss, noinit, data),
+	  separate them into application and kernel areas. The application area
+	  will have the project-level application objects and any libraries
+	  including the C library in it.
 
 menu "Kernel Debugging and Metrics"
 config KERNEL_DEBUG
@@ -197,20 +197,20 @@ config BOOT_DELAY
 	prompt "Boot delay in milliseconds"
 	default 0
 	help
-	This option delays bootup for the specified amount of
-	milliseconds. This is used to allow serial ports to get ready
-	before starting to print information on them during boot, as
-	some systems might boot to fast for a receiving endpoint to
-	detect the new USB serial bus, enumerate it and get ready to
-	receive before it actually gets data. A similar effect can be
-	achieved by waiting for DCD on the serial port--however, not
-	all serial ports have DCD.
+	  This option delays bootup for the specified amount of
+	  milliseconds. This is used to allow serial ports to get ready
+	  before starting to print information on them during boot, as
+	  some systems might boot to fast for a receiving endpoint to
+	  detect the new USB serial bus, enumerate it and get ready to
+	  receive before it actually gets data. A similar effect can be
+	  achieved by waiting for DCD on the serial port--however, not
+	  all serial ports have DCD.
 
 config BUILD_TIMESTAMP
 	bool
 	prompt "Build Timestamp"
 	help
-	Build timestamp and add it to the boot banner.
+	  Build timestamp and add it to the boot banner.
 
 config INT_LATENCY_BENCHMARK
 	bool
@@ -218,21 +218,21 @@ config INT_LATENCY_BENCHMARK
 	default n
 	depends on ARCH="x86"
 	help
-	This option enables the tracking of interrupt latency metrics;
-	the exact set of metrics being tracked is board-dependent.
-	Tracking begins when int_latency_init() is invoked by an application.
-	The metrics are displayed (and a new sampling interval is started)
-	each time int_latency_show() is called thereafter.
+	  This option enables the tracking of interrupt latency metrics;
+	  the exact set of metrics being tracked is board-dependent.
+	  Tracking begins when int_latency_init() is invoked by an application.
+	  The metrics are displayed (and a new sampling interval is started)
+	  each time int_latency_show() is called thereafter.
 
 config EXECUTION_BENCHMARKING
 	bool
 	prompt "Timing metrics "
 	default n
 	help
-	This option enables the tracking of various times inside the kernel
-	the exact set of metrics being tracked is board-dependent.
-	All timing measurements are enabled for X86 and ARM based architectures.
-	In other architectures only a subset are enabled.
+	  This option enables the tracking of various times inside the kernel
+	  the exact set of metrics being tracked is board-dependent.
+	  All timing measurements are enabled for X86 and ARM based architectures.
+	  In other architectures only a subset are enabled.
 
 config THREAD_MONITOR
 	bool
@@ -269,24 +269,24 @@ menu "Atomic Operations"
 config ATOMIC_OPERATIONS_BUILTIN
 	bool
 	help
-	Use the compiler builtin functions for atomic operations. This is
-	the preferred method. However, support for all arches in GCC is
-	incomplete.
+	  Use the compiler builtin functions for atomic operations. This is
+	  the preferred method. However, support for all arches in GCC is
+	  incomplete.
 
 config ATOMIC_OPERATIONS_CUSTOM
 	bool
 	help
-	Use when there isn't support for compiler built-ins, but you have
-	written optimized assembly code under arch/ which implements these.
+	  Use when there isn't support for compiler built-ins, but you have
+	  written optimized assembly code under arch/ which implements these.
 
 config ATOMIC_OPERATIONS_C
 	bool
 	help
-	Use atomic operations routines that are implemented entirely
-	in C by locking interrupts. Selected by architectures which either
-	do not have support for atomic operations in their instruction
-	set, or haven't been implemented yet during bring-up, and also
-	the compiler does not have support for the atomic __sync_* builtins.
+	  Use atomic operations routines that are implemented entirely
+	  in C by locking interrupts. Selected by architectures which either
+	  do not have support for atomic operations in their instruction
+	  set, or haven't been implemented yet during bring-up, and also
+	  the compiler does not have support for the atomic __sync_* builtins.
 endmenu
 
 menu "Timer API Options"
@@ -296,8 +296,8 @@ config TIMESLICING
 	default y
 	depends on SYS_CLOCK_EXISTS && (NUM_PREEMPT_PRIORITIES != 0)
 	help
-	This option enables time slicing between preemptible threads of
-	equal priority.
+	  This option enables time slicing between preemptible threads of
+	  equal priority.
 
 config TIMESLICE_SIZE
 	int "Time slice size (in ms)"
@@ -305,10 +305,10 @@ config TIMESLICE_SIZE
 	range 0 2147483647
 	depends on TIMESLICING
 	help
-	This option specifies the maximum amount of time a thread can execute
-	before other threads of equal priority are given an opportunity to run.
-	A time slice size of zero means "no limit" (i.e. an infinitely large
-	time slice).
+	  This option specifies the maximum amount of time a thread can execute
+	  before other threads of equal priority are given an opportunity to run.
+	  A time slice size of zero means "no limit" (i.e. an infinitely large
+	  time slice).
 
 config TIMESLICE_PRIORITY
 	int "Time slicing thread priority ceiling"
@@ -316,19 +316,19 @@ config TIMESLICE_PRIORITY
 	range 0 NUM_PREEMPT_PRIORITIES
 	depends on TIMESLICING
 	help
-	This option specifies the thread priority level at which time slicing
-	takes effect; threads having a higher priority than this ceiling are
-	not subject to time slicing.
+	  This option specifies the thread priority level at which time slicing
+	  takes effect; threads having a higher priority than this ceiling are
+	  not subject to time slicing.
 
 config POLL
 	bool
 	prompt "async I/O framework"
 	default n
 	help
-	Asynchronous notification framework. Enable the k_poll() and
-	k_poll_signal() APIs.  The former can wait on multiple events
-	concurrently, which can be either directly triggered or triggered by
-	the availability of some kernel objects (semaphores and fifos).
+	  Asynchronous notification framework. Enable the k_poll() and
+	  k_poll_signal() APIs.  The former can wait on multiple events
+	  concurrently, which can be either directly triggered or triggered by
+	  the availability of some kernel objects (semaphores and fifos).
 
 endmenu
 
@@ -338,23 +338,23 @@ config NUM_MBOX_ASYNC_MSGS
 	int "Maximum number of in-flight asynchronous mailbox messages"
 	default 10
 	help
-	This option specifies the total number of asynchronous mailbox
-	messages that can exist simultaneously, across all mailboxes
-	in the system.
+	  This option specifies the total number of asynchronous mailbox
+	  messages that can exist simultaneously, across all mailboxes
+	  in the system.
 
-	Setting this option to 0 disables support for asynchronous
-	mailbox messages.
+	  Setting this option to 0 disables support for asynchronous
+	  mailbox messages.
 
 config NUM_PIPE_ASYNC_MSGS
 	int "Maximum number of in-flight asynchronous pipe messages"
 	default 10
 	help
-	This option specifies the total number of asynchronous pipe
-	messages that can exist simultaneously, across all pipes in
-	the system.
+	  This option specifies the total number of asynchronous pipe
+	  messages that can exist simultaneously, across all pipes in
+	  the system.
 
-	Setting this option to 0 disables support for asynchronous
-	pipe messages.
+	  Setting this option to 0 disables support for asynchronous
+	  pipe messages.
 
 endmenu
 
@@ -364,10 +364,10 @@ config HEAP_MEM_POOL_SIZE
 	prompt "Heap memory pool size (in bytes)"
 	default 0
 	help
-	This option specifies the size of the heap memory pool used when
-	dynamically allocating memory using k_malloc(). Supported values
-	are: 256, 1024, 4096, and 16384. A size of zero means that no
-	heap memory pool is defined.
+	  This option specifies the size of the heap memory pool used when
+	  dynamically allocating memory using k_malloc(). Supported values
+	  are: 256, 1024, 4096, and 16384. A size of zero means that no
+	  heap memory pool is defined.
 endmenu
 
 
@@ -376,42 +376,42 @@ config ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	# hidden
 	default n
 	help
-	It's possible that an architecture port cannot use _Swap() to swap to
-	the _main() thread, but instead must do something custom. It must
-	enable this option in that case.
+	  It's possible that an architecture port cannot use _Swap() to swap to
+	  the _main() thread, but instead must do something custom. It must
+	  enable this option in that case.
 
 config SYS_CLOCK_TICKS_PER_SEC
 	int
 	prompt "System tick frequency (in ticks/second)"
 	default 100
 	help
-	This option specifies the frequency of the system clock in Hz.
+	  This option specifies the frequency of the system clock in Hz.
 
-	Depending on the choice made, an amount of possibly expensive math must
-	occur when converting ticks to milliseconds and vice-versa. Some values
-	are optimized, and yield significantly less math.
+	  Depending on the choice made, an amount of possibly expensive math must
+	  occur when converting ticks to milliseconds and vice-versa. Some values
+	  are optimized, and yield significantly less math.
 
-	The optimal values from a computational point-of-view are 1000, 500,
-	250 and 125, since in these cases there is either no computation
-	required, or it is all done via bit-shifting. These also give a
-	granularity from 1ms to 8ms.
+	  The optimal values from a computational point-of-view are 1000, 500,
+	  250 and 125, since in these cases there is either no computation
+	  required, or it is all done via bit-shifting. These also give a
+	  granularity from 1ms to 8ms.
 
-	Other good values are 100, 50, 25, 20 and 10. In this case, some math
-	is required but is minimized. These are also values that necessitate a
-	reduced number of clock interrupts per second, at the cost of
-	granularity (10ms to 100ms).
+	  Other good values are 100, 50, 25, 20 and 10. In this case, some math
+	  is required but is minimized. These are also values that necessitate a
+	  reduced number of clock interrupts per second, at the cost of
+	  granularity (10ms to 100ms).
 
-	All other values require some extensive 64-bit math, and in some
-	configurations even require calls to compiler built-in functions, and
-	can require a non-trivial extra amount of stack space (e.g. around 80
-	bytes on x86).
+	  All other values require some extensive 64-bit math, and in some
+	  configurations even require calls to compiler built-in functions, and
+	  can require a non-trivial extra amount of stack space (e.g. around 80
+	  bytes on x86).
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int "System clock's h/w timer frequency"
 	help
-	This option specifies the frequency of the hardware timer used for the
-	system clock (in Hz). This option is set by the board's Kconfig file
-	and the user should generally avoid modifying it via the menu configuration.
+	  This option specifies the frequency of the hardware timer used for the
+	  system clock (in Hz). This option is set by the board's Kconfig file
+	  and the user should generally avoid modifying it via the menu configuration.
 
 config SYS_CLOCK_EXISTS
 	bool
@@ -419,17 +419,17 @@ config SYS_CLOCK_EXISTS
 	default y
 	default n if (SYS_CLOCK_TICKS_PER_SEC = 0)
 	help
-	This option specifies that the kernel lacks timer support.
+	  This option specifies that the kernel lacks timer support.
 
 config INIT_STACKS
 	bool
 	prompt "Initialize stack areas"
 	default n
 	help
-	This option instructs the kernel to initialize stack areas with a
-	known value (0xaa) before they are first used, so that the high
-	water mark can be easily determined. This applies to the stack areas
-	for threads.
+	  This option instructs the kernel to initialize stack areas with a
+	  known value (0xaa) before they are first used, so that the high
+	  water mark can be easily determined. This applies to the stack areas
+	  for threads.
 
 config XIP
 	bool
@@ -446,9 +446,9 @@ config RING_BUFFER
 	prompt "Enable ring buffers"
 	default n
 	help
-	Enable usage of ring buffers. This is similar to kernel FIFOs but ring
-	buffers manage their own buffer memory and can store arbitrary data.
-	For optimal performance, use buffer sizes that are a power of 2.
+	  Enable usage of ring buffers. This is similar to kernel FIFOs but ring
+	  buffers manage their own buffer memory and can store arbitrary data.
+	  For optimal performance, use buffer sizes that are a power of 2.
 
 menu "Initialization Priorities"
 
@@ -457,33 +457,33 @@ config KERNEL_INIT_PRIORITY_OBJECTS
 	prompt "Kernel objects initialization priority"
 	default 30
 	help
-	Kernel objects use this priority for initialization. This
-	priority needs to be higher than minimal default initialization
-	priority.
+	  Kernel objects use this priority for initialization. This
+	  priority needs to be higher than minimal default initialization
+	  priority.
 
 config KERNEL_INIT_PRIORITY_DEFAULT
 	int
 	prompt "Default init priority"
 	default 40
 	help
-	Default minimal init priority for each init level.
+	  Default minimal init priority for each init level.
 
 config KERNEL_INIT_PRIORITY_DEVICE
 	int
 	prompt "Default init priority for device drivers"
 	default 50
 	help
-	Device driver, that depends on common components, such as
-	interrupt controller, but does not depend on other devices,
-	uses this init priority.
+	  Device driver, that depends on common components, such as
+	  interrupt controller, but does not depend on other devices,
+	  uses this init priority.
 
 config APPLICATION_INIT_PRIORITY
 	int
 	prompt "Default init priority for application level drivers"
 	default 90
 	help
-	This priority level is for end-user drivers such as sensors and display
-	which have no inward dependencies.
+	  This priority level is for end-user drivers such as sensors and display
+	  which have no inward dependencies.
 
 config PTHREAD_IPC
 	bool
@@ -502,18 +502,18 @@ config STACK_CANARIES
 	prompt "Compiler stack canaries"
 	default n
 	help
-	This option enables compiler stack canaries support kernel functions.
+	  This option enables compiler stack canaries support kernel functions.
 
-	If stack canaries are supported by the compiler, it will emit
-	extra code that inserts a canary value into the stack frame when
-	a function is entered and validates this value upon exit.
-	Stack corruption (such as that caused by buffer overflow) results
-	in a fatal error condition for the running entity.
-	Enabling this option can result in a significant increase
-	in footprint and an associated decrease in performance.
+	  If stack canaries are supported by the compiler, it will emit
+	  extra code that inserts a canary value into the stack frame when
+	  a function is entered and validates this value upon exit.
+	  Stack corruption (such as that caused by buffer overflow) results
+	  in a fatal error condition for the running entity.
+	  Enabling this option can result in a significant increase
+	  in footprint and an associated decrease in performance.
 
-	If stack canaries are not supported by the compiler, enabling this
-	option has no effect.
+	  If stack canaries are not supported by the compiler, enabling this
+	  option has no effect.
 
 config EXECUTE_XOR_WRITE
 	bool "Enable W^X for memory partitions"
@@ -521,12 +521,12 @@ config EXECUTE_XOR_WRITE
 	depends on ARCH_HAS_EXECUTABLE_PAGE_BIT
 	default y
 	help
-	When enabled, will enforce that a writable page isn't executable
-	and vice versa.  This might not be acceptable in all scenarios,
-	so this option is given for those unafraid of shooting themselves
-	in the foot.
+	  When enabled, will enforce that a writable page isn't executable
+	  and vice versa.  This might not be acceptable in all scenarios,
+	  so this option is given for those unafraid of shooting themselves
+	  in the foot.
 
-	If unsure, say Y.
+	  If unsure, say Y.
 
 endmenu
 
@@ -537,7 +537,7 @@ config MAX_DOMAIN_PARTITIONS
 	range 0 255
 	depends on USERSPACE
 	help
-	Configure the maximum number of partitions per memory domain.
+	  Configure the maximum number of partitions per memory domain.
 
 source "kernel/Kconfig.event_logger"
 

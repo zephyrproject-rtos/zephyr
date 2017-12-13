@@ -3,22 +3,22 @@ menuconfig IPM
 	prompt "IPM drivers"
 	default n
 	help
-	Include interrupt-based inter-processor mailboxes
-	drivers in system configuration
+	  Include interrupt-based inter-processor mailboxes
+	  drivers in system configuration
 
 config IPM_QUARK_SE
 	bool "Quark SE IPM driver"
 	default n
 	depends on IPM
 	help
-	Driver for Quark SE mailboxes
+	  Driver for Quark SE mailboxes
 
 config IPM_QUARK_SE_MASTER
 	bool "Quark SE IPM master controller"
 	default n
 	depends on IPM_QUARK_SE
 	help
-	Enable this for the first CPU that initializes IPM.
-	Sets up the initial interrupt mask and clears out all
-	channels. Should be turned on for one CPU only.
+	  Enable this for the first CPU that initializes IPM.
+	  Sets up the initial interrupt mask and clears out all
+	  channels. Should be turned on for one CPU only.
 

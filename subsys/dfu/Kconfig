@@ -47,16 +47,16 @@ config SYS_LOG_IMG_MANAGER_LEVEL
 	default 0
 	range 0 4
 	help
-	Sets log level for the image manager.
-	Levels are:
+	  Sets log level for the image manager.
+	  Levels are:
 
-	- 0 OFF: do not write
+	  - 0 OFF: do not write
 
-	- 1 ERROR: only write SYS_LOG_ERR
+	  - 1 ERROR: only write SYS_LOG_ERR
 
-	- 2 WARNING: write SYS_LOG_WRN in addition to previous level
+	  - 2 WARNING: write SYS_LOG_WRN in addition to previous level
 
-	- 3 INFO: write SYS_LOG_INF in addition to previous levels
+	  - 3 INFO: write SYS_LOG_INF in addition to previous levels
 
-	- 4 DEBUG: write SYS_LOG_DBG in addition to previous levels
+	  - 4 DEBUG: write SYS_LOG_DBG in addition to previous levels
 endmenu

@@ -8,8 +8,8 @@ config ZTEST
 	bool "Zephyr testing framework"
 	default n
 	help
-	Enable the Zephyr testing framework. You should enable this only
-	if you're writing automated tests.
+	  Enable the Zephyr testing framework. You should enable this only
+	  if you're writing automated tests.
 
 config ZTEST_STACKSIZE
 	int "Test function thread stack size"
@@ -29,23 +29,23 @@ config ZTEST_ASSERT_VERBOSE
 	depends on ZTEST
 	default 1
 	help
-	Set verbosity level for assertions.
-	Assertion verbosity levels:
-	0 Write only file and line for failed assertions
-	1 Write file, line number, function and reason for failed assertions
-	2 Log also successful assertions
+	  Set verbosity level for assertions.
+	  Assertion verbosity levels:
+	  0 Write only file and line for failed assertions
+	  1 Write file, line number, function and reason for failed assertions
+	  2 Log also successful assertions
 
 config ZTEST_MOCKING
 	bool "Mocking support functions"
 	depends on ZTEST
 	default n
 	help
-	Enable mocking support for Ztest. This allows the test to set
-	return values and expected parameters to functions.
+	  Enable mocking support for Ztest. This allows the test to set
+	  return values and expected parameters to functions.
 
 config ZTEST_PARAMETER_COUNT
 	int "Count of parameters or return values reserved"
 	depends on ZTEST_MOCKING
 	default 1
 	help
-	Maximum amount of concurrent return values / expected parameters.
+	  Maximum amount of concurrent return values / expected parameters.

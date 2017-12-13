@@ -11,7 +11,7 @@ config NESTED_INTERRUPTS
 	prompt "Enable nested interrupts"
 	default y
 	help
-	This option enables support for nested interrupts.
+	  This option enables support for nested interrupts.
 
 config EXCEPTION_DEBUG
 	bool
@@ -19,10 +19,10 @@ config EXCEPTION_DEBUG
 	default y
 	depends on PRINTK
 	help
-	Install handlers for various CPU exception/trap vectors to
-	make debugging them easier, at a small expense in code size.
-	This prints out the specific exception vector and any associated
-	error codes.
+	  Install handlers for various CPU exception/trap vectors to
+	  make debugging them easier, at a small expense in code size.
+	  This prints out the specific exception vector and any associated
+	  error codes.
 
 menu "Memory Layout Options"
 
@@ -32,9 +32,9 @@ config IDT_NUM_VECTORS
 	default 256
 	range 32 256
 	help
-	This option specifies the number of interrupt vector entries in the
-	Interrupt Descriptor Table (IDT). By default all 256 vectors are
-	supported in an IDT requiring 2048 bytes of memory.
+	  This option specifies the number of interrupt vector entries in the
+	  Interrupt Descriptor Table (IDT). By default all 256 vectors are
+	  supported in an IDT requiring 2048 bytes of memory.
 
 config MAX_IRQ_LINES
 	int
@@ -42,18 +42,18 @@ config MAX_IRQ_LINES
 	default 128
 	range 0 256
 	help
-	This option specifies the number of IRQ lines in the system.
-	It can be tuned to save some bytes in ROM, as it determines the
-	size of the _irq_to_interrupt_vector_table, which is used at runtime
-	to program to the PIC the association between vectors and
-	interrupts.
+	  This option specifies the number of IRQ lines in the system.
+	  It can be tuned to save some bytes in ROM, as it determines the
+	  size of the _irq_to_interrupt_vector_table, which is used at runtime
+	  to program to the PIC the association between vectors and
+	  interrupts.
 
 if !HAS_DTS
 config PHYS_LOAD_ADDR
 	hex "Physical load address"
 	# Default value must be supplied by platform
 	help
-	This option specifies the physical address where the kernel is loaded.
+	  This option specifies the physical address where the kernel is loaded.
 endif
 
 if !HAS_DTS
@@ -61,39 +61,39 @@ config PHYS_RAM_ADDR
 	hex "Physical RAM address"
 	# Default value must be supplied by platform
 	help
-	This option specifies the physical RAM address of the selected SoC.
+	  This option specifies the physical RAM address of the selected SoC.
 endif
 
 config RAM_SIZE
 	int "Amount of RAM given to the kernel (in kB)"
 	help
-	This option specifies the amount of RAM given to the kernel. It must
-	not exceed the amount available on the target.  When running an XIP
-	kernel, it must be large enough to contain the data, bss and noinit
-	sections.  When not running an XIP kernel, it must be large enough to
-	contain the full image.
+	  This option specifies the amount of RAM given to the kernel. It must
+	  not exceed the amount available on the target.  When running an XIP
+	  kernel, it must be large enough to contain the data, bss and noinit
+	  sections.  When not running an XIP kernel, it must be large enough to
+	  contain the full image.
 
-	The default value is specified by the board.
+	  The default value is specified by the board.
 
 config ROM_SIZE
 	int "Amount of ROM given to the kernel (in kB)" if XIP
 	help
-	This option specifies the amount of ROM given to the kernel. It must
-	not exceed the amount available on the target.  It must also be large
-	enough to contain the full image.
+	  This option specifies the amount of ROM given to the kernel. It must
+	  not exceed the amount available on the target.  It must also be large
+	  enough to contain the full image.
 
-	The default value is specified by the board.
+	  The default value is specified by the board.
 
 config SET_GDT
 	bool
 	prompt "Setup GDT as part of boot process"
 	default y
 	help
-	This option sets up the GDT as part of the boot process. However,
-	this may conflict with some security scenarios where the GDT is
-	already appropriately set by an earlier bootloader stage, in which
-	case this should be disabled. If disabled, the global _gdt pointer
-	will not be available.
+	  This option sets up the GDT as part of the boot process. However,
+	  this may conflict with some security scenarios where the GDT is
+	  already appropriately set by an earlier bootloader stage, in which
+	  case this should be disabled. If disabled, the global _gdt pointer
+	  will not be available.
 
 config GDT_DYNAMIC
 	bool
@@ -101,7 +101,7 @@ config GDT_DYNAMIC
 	depends on SET_GDT
 	default n
 	help
-	This option stores the GDT in RAM instead of ROM, so that it may
-	be modified at runtime at the expense of some memory.
+	  This option stores the GDT in RAM instead of ROM, so that it may
+	  be modified at runtime at the expense of some memory.
 
 endmenu

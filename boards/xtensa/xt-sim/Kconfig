@@ -7,6 +7,6 @@ config XTENSA_XTSC_INC
 	string "Xtensa XTSC extension include file"
 	depends on SIMULATOR_XTENSA
 	help
-	If you want to use xtsc-run with an extended core, then you can put here the
-	path to the include file of the extension model. This path can either be
-	absolute or relative to the execution directory.
+	  If you want to use xtsc-run with an extended core, then you can put here the
+	  path to the include file of the extension model. This path can either be
+	  absolute or relative to the execution directory.

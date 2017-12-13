@@ -11,7 +11,7 @@ menuconfig SERIAL
 	prompt "Serial Drivers"
 	default n
 	help
-	Enable options for serial drivers.
+	  Enable options for serial drivers.
 
 if SERIAL
 
@@ -21,16 +21,16 @@ config SERIAL_HAS_DRIVER
 	bool
 	default n
 	help
-	This is an option to be enabled by individual serial driver
-	to signal that there is a serial driver. This is being used
-	by other drivers which are dependent on serial.
+	  This is an option to be enabled by individual serial driver
+	  to signal that there is a serial driver. This is being used
+	  by other drivers which are dependent on serial.
 
 config SERIAL_SUPPORT_INTERRUPT
 	bool
 	default n
 	help
-	This is an option to be enabled by individual serial driver
-	to signal that the driver and hardware supports interrupts.
+	  This is an option to be enabled by individual serial driver
+	  to signal that the driver and hardware supports interrupts.
 
 config UART_INTERRUPT_DRIVEN
 	bool
@@ -38,28 +38,28 @@ config UART_INTERRUPT_DRIVEN
 	default n
 	depends on SERIAL_SUPPORT_INTERRUPT
 	help
-	This option enables interrupt support for UART allowing console
-	input and other UART based drivers.
+	  This option enables interrupt support for UART allowing console
+	  input and other UART based drivers.
 
 config UART_LINE_CTRL
 	bool "Enable Serial Line Control API"
 	default n
 	help
-	This enables the API for apps to control the serial line,
-	such as baud rate, CTS and RTS.
+	  This enables the API for apps to control the serial line,
+	  such as baud rate, CTS and RTS.
 
-	Implementation is up to individual driver.
+	  Implementation is up to individual driver.
 
-	Says no if not sure.
+	  Says no if not sure.
 
 config UART_DRV_CMD
 	bool "Enable driver commands API"
 	default n
 	help
-	This enables the API to send extra commands to drivers.
-	This allows drivers to expose hardware specific functions.
+	  This enables the API to send extra commands to drivers.
+	  This allows drivers to expose hardware specific functions.
 
-	Says no if not sure.
+	  Says no if not sure.
 
 comment "Serial Drivers"
 

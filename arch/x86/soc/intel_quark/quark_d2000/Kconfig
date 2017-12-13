@@ -12,15 +12,15 @@ config BSP_SHARED_GDT_RAM_ADDR
 	hex "Address of the shared RAM with the QMSI Bootloader"
 	default 0x00281FE0
 	help
-	Address of the memory shared between the BSP and the Bootloader in order
-	to store the GDT.
+	  Address of the memory shared between the BSP and the Bootloader in order
+	  to store the GDT.
 
 config BSP_SHARED_GDT_RAM_SIZE
 	hex "Size of the shared RAM with the QMSI Bootloader"
 	depends on !SET_GDT
 	default 0x20
 	help
-	Size of the memory shared between the BSP and the Bootloader in order
-	to store the GDT.
+	  Size of the memory shared between the BSP and the Bootloader in order
+	  to store the GDT.
 
 endif #SOC_QUARK_D2000_X86

@@ -11,5 +11,5 @@ config BT_SHELL
 	default n
 	select CONSOLE_SHELL
 	help
-	Activate shell module that provides Bluetooth commands to the
-	console.
+	  Activate shell module that provides Bluetooth commands to the
+	  console.

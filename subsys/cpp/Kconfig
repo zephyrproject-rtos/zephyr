@@ -3,5 +3,5 @@ config CPLUSPLUS
 	bool "Enable C++ support for the application"
 	default n
 	help
-	This option enables the use of applications built with C++.
+	  This option enables the use of applications built with C++.
 

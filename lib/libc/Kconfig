@@ -12,23 +12,23 @@ config NEWLIB_LIBC
 	bool
 	prompt "Build with newlib c library"
 	help
-	Build with newlib library. The newlib library is expected to be
-	part of the SDK in this case.
+	  Build with newlib library. The newlib library is expected to be
+	  part of the SDK in this case.
 
 config NEWLIB_LIBC_FLOAT_PRINTF
 	bool "Build with newlib float printf"
 	default n
 	depends on NEWLIB_LIBC
 	help
-	Build with floating point printf enabled. This will increase the size of
-	the image.
+	  Build with floating point printf enabled. This will increase the size of
+	  the image.
 
 config NEWLIB_LIBC_FLOAT_SCANF
 	bool "Build with newlib float scanf"
 	default n
 	depends on NEWLIB_LIBC
 	help
-	Build with floating point scanf enabled. This will increase the size of
-	the image.
+	  Build with floating point scanf enabled. This will increase the size of
+	  the image.
 
 endmenu

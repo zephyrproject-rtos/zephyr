@@ -28,42 +28,42 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 2000000
 	range 1000000 1000000000
 	help
-	This option specifies hardware clock.
+	  This option specifies hardware clock.
 
 config XTENSA_NO_IPC
 	bool "Core has no IPC support"
 	select ATOMIC_OPERATIONS_C
 	default n
 	help
-	Uncheck this if you core does not implement "SCOMPARE1" register and "s32c1i"
-	instruction.
+	  Uncheck this if you core does not implement "SCOMPARE1" register and "s32c1i"
+	  instruction.
 
 config SW_ISR_TABLE
 	bool
 	prompt "Enable software interrupt handler table"
 	default y
 	help
-	Enable an interrupt handler table implemented in software. This
-	table, unlike ISRs connected directly in the vector table, allow
-	a parameter to be passed to the interrupt handlers. Also, invoking
-	the exception/interrupt exit stub is automatically done.
+	  Enable an interrupt handler table implemented in software. This
+	  table, unlike ISRs connected directly in the vector table, allow
+	  a parameter to be passed to the interrupt handlers. Also, invoking
+	  the exception/interrupt exit stub is automatically done.
 
 config XTENSA_RESET_VECTOR
 	bool
 	prompt "Build reset vector code"
 	default y
 	help
-	This option controls whether the initial reset vector code is built.
-	This is always needed for the simulator. Real boards may already
-	implement this in boot ROM.
+	  This option controls whether the initial reset vector code is built.
+	  This is always needed for the simulator. Real boards may already
+	  implement this in boot ROM.
 
 config XTENSA_USE_CORE_CRT1
 	bool
 	prompt "Use crt1.S from core"
 	default y
 	help
-	SoC or boards might define their own __start by setting this setting
-	to false.
+	  SoC or boards might define their own __start by setting this setting
+	  to false.
 
 menu "Specific core configuration"
 

@@ -14,49 +14,49 @@ config PINMUX_GALILEO_EXP0_NAME
 	depends on PINMUX && BOARD_GALILEO
 	default "EXP0"
 	help
-	The name of the GPIO expander labeled as EXP0 in the schematic.
+	  The name of the GPIO expander labeled as EXP0 in the schematic.
 
 config PINMUX_GALILEO_EXP1_NAME
 	string "Name of the GPIO expander 1"
 	depends on PINMUX && BOARD_GALILEO
 	default "EXP1"
 	help
-	The name of the GPIO expander labeled as EXP1 in the schematic.
+	  The name of the GPIO expander labeled as EXP1 in the schematic.
 
 config PINMUX_GALILEO_EXP2_NAME
 	string "Name of the GPIO expander 2"
 	depends on PINMUX && BOARD_GALILEO
 	default "EXP2"
 	help
-	The name of the GPIO expander labeled as EXP2 in the schematic.
+	  The name of the GPIO expander labeled as EXP2 in the schematic.
 
 config PINMUX_GALILEO_PWM0_NAME
 	string "Name of the PWM LED expander 0"
 	depends on PINMUX && BOARD_GALILEO
 	default "PWM0"
 	help
-	The name of the PWM LED expander labeled as PWM0 in the schematic.
+	  The name of the PWM LED expander labeled as PWM0 in the schematic.
 
 config PINMUX_GALILEO_GPIO_DW_NAME
 	string "Name of the DesignWare GPIO"
 	depends on PINMUX && BOARD_GALILEO
 	default "GPIO_0"
 	help
-	The name of the DesignWare GPIO with GPIO<0>..GPIO<7> in the schematic.
+	  The name of the DesignWare GPIO with GPIO<0>..GPIO<7> in the schematic.
 
 config PINMUX_GALILEO_GPIO_INTEL_CW_NAME
 	string "Name of the Legacy Bridge Core Well GPIO"
 	depends on PINMUX && BOARD_GALILEO
 	default "GPIO_M0"
 	help
-	The name of the Legacy Bridge Core Well GPIO with GPIO<8>..GPIO<9>
-	in the schematic.
+	  The name of the Legacy Bridge Core Well GPIO with GPIO<8>..GPIO<9>
+	  in the schematic.
 
 config PINMUX_GALILEO_GPIO_INTEL_RW_NAME
 	string "Name of the Legacy Bridge Resume Well GPIO"
 	depends on PINMUX && BOARD_GALILEO
 	default "GPIO_M1"
 	help
-	The name of the Legacy Bridge Resume Well GPIO with
-	GPIO_SUS<0>..GPIO_SUS<5> in the schematic.
+	  The name of the Legacy Bridge Resume Well GPIO with
+	  GPIO_SUS<0>..GPIO_SUS<5> in the schematic.
 endif
