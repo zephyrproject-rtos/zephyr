@@ -26,6 +26,8 @@
 
 #define STOP_AFTER_5_SECONDS 0
 
+static int __argc__;
+static char **__argv__;
 
 void main_clean_up(int exit_code)
 {
@@ -40,6 +42,12 @@ void main_clean_up(int exit_code)
 	ps_clean_up();
 	hwm_cleanup();
 	exit(exit_code);
+}
+
+char **posix_get_argv(int *argc)
+{
+	*argc = __argc__;
+	return __argv__;
 }
 
 /**
