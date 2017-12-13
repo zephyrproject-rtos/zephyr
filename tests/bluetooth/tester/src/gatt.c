@@ -1727,7 +1727,7 @@ static u8_t get_attrs_rp(const struct bt_gatt_attr *attr, void *user_data)
 	gatt_attr->handle = sys_cpu_to_le16(attr->handle);
 	gatt_attr->permission = attr->perm;
 
-	if (foreach->uuid->type == BT_UUID_TYPE_16) {
+	if (attr->uuid->type == BT_UUID_TYPE_16) {
 		gatt_attr->type_length = 2;
 		net_buf_simple_add_le16(foreach->buf,
 					BT_UUID_16(attr->uuid)->val);
