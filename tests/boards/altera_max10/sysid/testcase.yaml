@@ -1,0 +1,4 @@
+tests:
+  test:
+    platform_whitelist: altera_max10
+    tags: sysid
