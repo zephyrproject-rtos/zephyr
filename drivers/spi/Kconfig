@@ -54,7 +54,7 @@ config SPI_STM32
 	bool
 	prompt "STM32 MCU SPI controller driver"
 	depends on SPI && SOC_FAMILY_STM32
-	depends on SOC_SERIES_STM32L4X || SOC_SERIES_STM32F0X || SOC_SERIES_STM32F3X || SOC_SERIES_STM32F4X
+	depends on SOC_SERIES_STM32L4X || SOC_SERIES_STM32F0X || SOC_SERIES_STM32F3X || SOC_SERIES_STM32F4X || SOC_SERIES_STM32F1X
 	default n
 	help
 	  Enable SPI support on the STM32 family of processors.
