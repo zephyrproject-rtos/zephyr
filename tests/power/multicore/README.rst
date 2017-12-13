@@ -103,13 +103,15 @@ commands:
 
 ::
 
-    $ cd tests/power/multicore/lmt TEST_CASE=sleep-success
+    $ cd tests/power/multicore/lmt
+    $ mkdir build && cd build
+    $ cmake -DBOARD=quark_se_c1000_devboard -DTEST_CASE=sleep-success ..
     $ make
 
-When 'TEST_CASE=sleep-fail', application is busy for 5 seconds and idle for 15
-seconds. This means that ARC core will be busy when LMT core tries to enter in
-DEEP_SLEEP, and it will fail. In this case the output on your console should
-look like this:
+When test case compiled with no flags enabled, the application is busy
+for 5 seconds and idle for 15 seconds. This means that ARC core will be
+busy when LMT core tries to enter in DEEP_SLEEP, and it will fail.
+In this case the output on your console should look like this:
 
 ::
 
@@ -134,7 +136,9 @@ commands:
 ::
 
     $ cd tests/power/multicore/lmt
-    $ make TEST_CASE=sleep-fail
+    $ mkdir build && cd build
+    $ cmake -DBOARD=quark_se_c1000_devboard ..
+    $ make
 
 The application uses UART_1 device as console output device, which is the
 default console device.
