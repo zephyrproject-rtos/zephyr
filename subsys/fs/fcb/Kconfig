@@ -1,0 +1,18 @@
+# Kconfig - Flash Circular Buffer module
+#
+# Copyright (c) 2017 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+#
+# Flash Circular Buffer
+#
+
+config FCB
+	bool
+	prompt "Flash Circular Buffer support"
+	default n
+	depends on FLASH_MAP
+	help
+	  Enable support of Flash Circular Buffer.
