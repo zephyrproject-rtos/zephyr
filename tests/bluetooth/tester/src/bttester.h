@@ -764,6 +764,16 @@ struct mesh_prov_link_closed_ev {
 	u8_t bearer;
 } __packed;
 
+#define MESH_EV_NET_RECV		0x86
+struct mesh_net_recv_ev {
+	u8_t ttl;
+	u8_t ctl;
+	u16_t src;
+	u16_t dst;
+	u8_t payload_len;
+	u8_t payload[0];
+} __packed;
+
 void tester_init(void);
 void tester_rsp(u8_t service, u8_t opcode, u8_t index, u8_t status);
 void tester_send(u8_t service, u8_t opcode, u8_t index, u8_t *data,
