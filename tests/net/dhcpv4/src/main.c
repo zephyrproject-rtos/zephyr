@@ -25,6 +25,11 @@
 #include <net/udp.h>
 #include <string.h>
 
+#include <sys/mman.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+
 #include <tc_util.h>
 #include <ztest.h>
 
@@ -32,7 +37,7 @@
 #include "net_private.h"
 
 /* Sample DHCP offer (382 bytes) */
-static const unsigned char offer[382] = {
+static const unsigned char sample_offer[382] = {
 	/* OP    HTYPE HLEN  HOPS */
 	   0x02, 0x01, 0x06, 0x00,
 	/* XID */
@@ -116,6 +121,8 @@ static const unsigned char offer[382] = {
 	/* ??? */
 	   0xff
 };
+static char *offer;
+static size_t offer_size;
 
 /* Sample DHCPv4 ACK */
 static const unsigned char ack[382] = {
@@ -252,7 +259,7 @@ static void set_ipv4_header(struct net_pkt *pkt)
 	ipv4->vhl = 0x45; /* IP version and header length */
 	ipv4->tos = 0x00;
 
-	length = sizeof(offer) + sizeof(struct net_ipv4_hdr) +
+	length = offer_size + sizeof(struct net_ipv4_hdr) +
 		 sizeof(struct net_udp_hdr);
 
 	ipv4->len[1] = length;
@@ -278,7 +285,7 @@ static void set_udp_header(struct net_pkt *pkt)
 	udp->src_port = htons(SERVER_PORT);
 	udp->dst_port = htons(CLIENT_PORT);
 
-	length = sizeof(offer) + sizeof(struct net_udp_hdr);
+	length = offer_size + sizeof(struct net_udp_hdr);
 	udp->len = htons(length);
 	udp->chksum = 0;
 }
@@ -287,7 +294,7 @@ struct net_pkt *prepare_dhcp_offer(struct net_if *iface, u32_t xid)
 {
 	struct net_pkt *pkt;
 	struct net_buf *frag;
-	int bytes, remaining = sizeof(offer), pos = 0;
+	int bytes, remaining = offer_size, pos = 0;
 	u16_t offset;
 
 	pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
@@ -643,9 +650,55 @@ void test_dhcp(void)
 }
 
 /**test case main entry */
-void test_main(void)
+int test_main(int argc, char *argv[])
 {
+	int fd;
+	struct stat st;
+
+	if (argc != 2) {
+		TC_PRINT("Usage: %s input-test-file\n", argv[0]);
+		TC_END_REPORT(TC_FAIL);
+		return 1;
+	}
+
+	if (!strcmp(argv[1], "--dump-sample-offer")) {
+		int i;
+
+		for (i = 0; i < sizeof(sample_offer); i++) {
+			putchar(sample_offer[i]);
+		}
+
+		return 0;
+	}
+
+	fd = open(argv[1], O_RDONLY);
+	if (fd < 0) {
+		TC_PRINT("Could not open %s: %s", argv[1], strerror(errno));
+		TC_END_REPORT(TC_FAIL);
+		return 1;
+	}
+
+	if (fstat(fd, &st) < 0) {
+		TC_PRINT("Could not stat %s: %s", argv[1], strerror(errno));
+		TC_END_REPORT(TC_FAIL);
+		return 1;
+	}
+
+	offer = mmap(NULL, st.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+	close(fd);
+	if (offer == (void *)MAP_FAILED) {
+		TC_PRINT("Could not mmap %s: %s", argv[1], strerror(errno));
+		TC_END_REPORT(TC_FAIL);
+		return 1;
+	}
+
+	offer_size = st.st_size;
+
 	ztest_test_suite(test_dhcpv4,
 			ztest_unit_test(test_dhcp));
 	ztest_run_test_suite(test_dhcpv4);
+
+	munmap(offer, st.st_size);
+
+	return 0;
 }
