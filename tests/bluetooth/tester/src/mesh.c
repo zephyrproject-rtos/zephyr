@@ -63,6 +63,8 @@ static void supported_commands(u8_t *data, u16_t len)
 	tester_set_bit(buf->data, MESH_INPUT_STRING);
 	/* 2nd octet */
 	memset(net_buf_simple_add(buf, 1), 0, 1);
+	tester_set_bit(buf->data, MESH_IVU_TEST_MODE);
+	tester_set_bit(buf->data, MESH_IVU_TOGGLE_STATE);
 	tester_set_bit(buf->data, MESH_LPN);
 	tester_set_bit(buf->data, MESH_LPN_POLL);
 
@@ -446,6 +448,33 @@ rsp:
 		   status);
 }
 
+static void iv_update_test_mode(u8_t *data, u16_t len)
+{
+	const struct mesh_ivu_test_mode_cmd *cmd = (void *) data;
+
+	SYS_LOG_DBG("toggle 0x%02x", cmd->toggle);
+
+	bt_mesh_iv_update_test(cmd->toggle ? true : false);
+
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_IVU_TEST_MODE, CONTROLLER_INDEX,
+		   BTP_STATUS_SUCCESS);
+}
+
+static void iv_update_toggle_state(u8_t *data, u16_t len)
+{
+	const struct mesh_ivu_toggle_state_cmd *cmd = (void *) data;
+	bool ret = true;
+
+	SYS_LOG_DBG("toggle 0x%02x", cmd->toggle);
+
+	if (cmd->toggle) {
+		ret = bt_mesh_iv_update();
+	}
+
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_IVU_TOGGLE_STATE, CONTROLLER_INDEX,
+		   ret ? BTP_STATUS_SUCCESS : BTP_STATUS_FAILED);
+}
+
 static void lpn(u8_t *data, u16_t len)
 {
 	struct mesh_lpn_set_cmd *cmd = (void *) data;
@@ -502,6 +531,12 @@ void tester_handle_mesh(u8_t opcode, u8_t index, u8_t *data, u16_t len)
 		break;
 	case MESH_INPUT_STRING:
 		input_string(data, len);
+		break;
+	case MESH_IVU_TEST_MODE:
+		iv_update_test_mode(data, len);
+		break;
+	case MESH_IVU_TOGGLE_STATE:
+		iv_update_toggle_state(data, len);
 		break;
 	case MESH_LPN:
 		lpn(data, len);

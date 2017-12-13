@@ -708,6 +708,16 @@ struct mesh_input_string_cmd {
 	u8_t string[0];
 } __packed;
 
+#define MESH_IVU_TEST_MODE		0x08
+struct mesh_ivu_test_mode_cmd {
+	u8_t toggle;
+} __packed;
+
+#define MESH_IVU_TOGGLE_STATE		0x09
+struct mesh_ivu_toggle_state_cmd {
+	u8_t toggle;
+} __packed;
+
 #define MESH_LPN			0x0d
 struct mesh_lpn_set_cmd {
 	u8_t enable;
