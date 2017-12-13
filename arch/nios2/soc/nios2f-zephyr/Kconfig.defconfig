@@ -8,6 +8,9 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
 	default 50000000
 
+config ALTERA_AVALON_SYSID
+	def_bool y
+
 if UART_NS16550
 
 config UART_NS16550_PCI
