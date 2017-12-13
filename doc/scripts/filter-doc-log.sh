@@ -19,19 +19,27 @@ if [ -z "${LOG_FILE}" ]; then
         exit 1
 fi
 
+# When running in background, detached from terminal jobs, tput will
+# fail; we usually can tell because there is no TERM env variable.
+if [ -z "${TERM:-}" ]; then
+    TPUT="true"
+else
+    TPUT="tput"
+fi
+
 if [ -s "${LOG_FILE}" ]; then
    $KI_SCRIPT --config-dir ${CONFIG_DIR} ${LOG_FILE} > doc.warnings 2>&1
    if [ -s doc.warnings ]; then
 	   echo
 	   echo -e "${red}New errors/warnings found, please fix them:"
 	   echo -e "=============================================="
-	   tput sgr0
+	   $TPUT sgr0
 	   echo
 	   cat doc.warnings
 	   echo
    else
 	   echo -e "${green}No new errors/warnings."
-	   tput sgr0
+	   $TPUT sgr0
    fi
 
 else
