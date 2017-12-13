@@ -48,6 +48,10 @@
 #include <stm32f1xx_ll_i2c.h>
 #endif
 
+#ifdef CONFIG_SPI_STM32
+#include <stm32f1xx_ll_spi.h>
+#endif
+
 #ifdef CONFIG_IWDG_STM32
 #include <stm32f1xx_ll_iwdg.h>
 #endif
