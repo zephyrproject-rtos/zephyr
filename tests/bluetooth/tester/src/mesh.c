@@ -10,6 +10,7 @@
 
 #include <errno.h>
 #include <bluetooth/mesh.h>
+#include <bluetooth/testing.h>
 #include <misc/byteorder.h>
 #include "bttester.h"
 
@@ -594,7 +595,44 @@ void tester_handle_mesh(u8_t opcode, u8_t index, u8_t *data, u16_t len)
 	}
 }
 
+void net_recv_ev(u8_t ttl, u8_t ctl, u16_t src, u16_t dst, const void *payload,
+		 size_t payload_len)
+{
+	struct net_buf_simple *buf = NET_BUF_SIMPLE(UINT8_MAX);
+	struct mesh_net_recv_ev *ev;
+
+	SYS_LOG_DBG("ttl 0x%02x ctl 0x%02x src 0x%04x dst 0x%04x "
+		    "payload_len %d", ttl, ctl, src, dst, payload_len);
+
+	net_buf_simple_init(buf, 0);
+
+	if (payload_len > net_buf_simple_tailroom(buf)) {
+		SYS_LOG_ERR("Payload size exceeds buffer size");
+
+		return;
+	}
+
+	ev = net_buf_simple_add(buf, sizeof(*ev));
+	ev->ttl = ttl;
+	ev->ctl = ctl;
+	ev->src = sys_cpu_to_le16(src);
+	ev->dst = sys_cpu_to_le16(dst);
+	ev->payload_len = payload_len;
+	net_buf_simple_add_mem(buf, payload, payload_len);
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_EV_NET_RECV, CONTROLLER_INDEX,
+		    buf->data, buf->len);
+}
+
+static struct bt_test_cb bt_test_cb = {
+	.mesh_net_recv = net_recv_ev,
+};
+
 u8_t tester_init_mesh(void)
 {
+	if (IS_ENABLED(CONFIG_BT_TESTING)) {
+		bt_test_cb_register(&bt_test_cb);
+	}
+
 	return BTP_STATUS_SUCCESS;
 }
