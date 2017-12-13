@@ -4,3 +4,8 @@ project(NONE)
 target_include_directories(app PRIVATE $ENV{ZEPHYR_BASE}/drivers)
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources})
+if(TEST_CASE STREQUAL sleep-success)
+    target_compile_definitions(app PRIVATE
+	    -DTEST_CASE_SLEEP_SUCCESS
+	)
+endif()
