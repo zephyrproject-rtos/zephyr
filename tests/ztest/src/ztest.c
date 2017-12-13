@@ -247,9 +247,22 @@ void _ztest_run_test_suite(const char *name, struct unit_test *suite)
 	test_status = (test_status || fail) ? 1 : 0;
 }
 
-void test_main(void);
 
-#ifndef KERNEL
+#if defined(CONFIG_ARCH_POSIX)
+int test_main(int argc, char *argv[]);
+char **posix_get_argv(int *argc);
+
+int main(void)
+{
+	int argc;
+	char **argv = posix_get_argv(&argc);
+
+	_init_mock();
+
+	return test_main(argc, argv);
+}
+#elif defined(KERNEL)
+void test_main(void);
 int main(void)
 {
 	_init_mock();
@@ -258,6 +271,7 @@ int main(void)
 	return test_status;
 }
 #else
+void test_main(void);
 void main(void)
 {
 	_init_mock();

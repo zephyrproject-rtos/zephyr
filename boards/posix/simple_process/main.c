@@ -61,8 +61,10 @@ char **posix_get_argv(int *argc)
  * apps (hello world, synchronization, philosophers) and run the sanity-check
  * regression
  */
-int main(void)
+int main(int argc, char *argv[])
 {
+	__argc__ = argc;
+	__argv__ = argv;
 
 	hwm_init();
 
