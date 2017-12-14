@@ -16,6 +16,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
 
     def __init__(self, target,
                  flashtool='pyocd-flashtool', flash_addr=0x0,
+                 flashtool_opts=None,
                  gdb=None, gdbserver='pyocd-gdbserver',
                  gdb_port=DEFAULT_PYOCD_GDB_PORT, tui=False,
                  bin_name=None, elf_name=None,
@@ -42,6 +43,8 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
             daparg_args = ['-da', daparg]
         self.daparg_args = daparg_args
 
+        self.flashtool_extra = flashtool_opts if flashtool_opts else []
+
     @classmethod
     def name(cls):
         return 'pyocd'
@@ -56,9 +59,12 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
                             help='target override')
 
         parser.add_argument('--daparg',
-                            help='Additional arguments to pyocd tool')
+                            help='Additional -da arguments to pyocd tool')
         parser.add_argument('--flashtool', default='pyocd-flashtool',
                             help='flash tool path, default is pyocd-flashtool')
+        parser.add_argument('--flashtool-opt', default=[], action='append',
+                            help='''Additional options for pyocd-flashtool,
+                            e.g. -ce to chip erase''')
         parser.add_argument('--gdbserver', default='pyocd-gdbserver',
                             help='GDB server, default is pyocd-gdbserver')
         parser.add_argument('--gdb-port', default=DEFAULT_PYOCD_GDB_PORT,
@@ -87,6 +93,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
 
         return PyOcdBinaryRunner(
             args.target, flashtool=args.flashtool,
+            flashtool_opts=args.flashtool_opt,
             flash_addr=flash_addr, gdb=args.gdb,
             gdbserver=args.gdbserver, gdb_port=args.gdb_port, tui=args.tui,
             bin_name=args.kernel_bin, elf_name=args.kernel_elf,
@@ -110,6 +117,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
                self.daparg_args +
                self.target_args +
                self.board_args +
+               self.flashtool_extra +
                [self.bin_name])
 
         print('Flashing Target Device')
