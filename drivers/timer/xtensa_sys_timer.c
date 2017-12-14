@@ -430,6 +430,20 @@ void _timer_idle_exit(void)
 extern void _zxt_tick_timer_init(void);
 unsigned int _xt_tick_divisor;  /* cached number of cycles per tick */
 
+#ifdef CONFIG_XTENSA_ASM2
+void _zxt_tick_timer_init(void)
+{
+	int val;
+
+	__asm__ volatile("rsr.intenable %0" : "=r"(val));
+	val |= 1 << TIMER_IRQ;
+	__asm__ volatile("wsr.intenable %0" : : "r"(val));
+	__asm__ volatile("rsync");
+
+	SET_TIMER_FIRE_TIME(GET_TIMER_CURRENT_TIME() + _xt_tick_divisor);
+}
+#endif
+
 /*
  * Compute and initialize at run-time the tick divisor (the number of
  * processor clock cycles in an RTOS tick, used to set the tick timer).
@@ -465,6 +479,18 @@ void _xt_tick_divisor_init(void)
 void _timer_int_handler(void *params)
 {
 	ARG_UNUSED(params);
+
+#ifdef CONFIG_XTENSA_ASM2
+	/* FIXME: the legacy xtensa code did this in the assembly
+	 * hook, and was a little more sophisticated.  We should track
+	 * the delta from the last set time, not the current time.
+	 * And the earlier code was even prepared to handle missed
+	 * ticks by calling the handler function multiple times if the
+	 * delta was more than one _xt_tick_divisor.
+	 */
+	SET_TIMER_FIRE_TIME(GET_TIMER_CURRENT_TIME() + _xt_tick_divisor);
+#endif
+
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT
 	extern void _sys_k_event_logger_interrupt(void);
 	_sys_k_event_logger_interrupt();
