@@ -60,13 +60,6 @@ static struct k_thread *_get_ready_q_head(void)
 }
 #endif
 
-/* find which one is the next thread to run */
-/* must be called with interrupts locked */
-static ALWAYS_INLINE struct k_thread *_get_next_ready_thread(void)
-{
-	return _ready_q.cache;
-}
-
 /*
  * Add thread to the ready queue, in the slot for its priority; the thread
  * must not be on a wait queue.

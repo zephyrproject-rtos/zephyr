@@ -32,6 +32,13 @@ extern s32_t _ms_to_ticks(s32_t ms);
 #endif
 extern void idle(void *, void *, void *);
 
+/* find which one is the next thread to run */
+/* must be called with interrupts locked */
+static ALWAYS_INLINE struct k_thread *_get_next_ready_thread(void)
+{
+	return _ready_q.cache;
+}
+
 static inline int _is_idle_thread(void *entry_point)
 {
 	return entry_point == idle;
