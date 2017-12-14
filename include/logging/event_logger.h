@@ -22,7 +22,7 @@ extern "C" {
 
 #include <kernel.h>
 #include <errno.h>
-#include <misc/ring_buffer.h>
+#include <ring_buffer.h>
 
 struct event_logger {
 	struct k_sem sync_sema;

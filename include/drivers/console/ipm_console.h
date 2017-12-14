@@ -11,7 +11,7 @@
 
 #include <kernel.h>
 #include <device.h>
-#include <misc/ring_buffer.h>
+#include <ring_buffer.h>
 
 #ifdef __cplusplus
 extern "C" {

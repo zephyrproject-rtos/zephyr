@@ -9,7 +9,7 @@
 #include <errno.h>
 
 #include <kernel.h>
-#include <misc/ring_buffer.h>
+#include <ring_buffer.h>
 #include <misc/printk.h>
 #include <stdio.h>
 #include <ipm.h>
