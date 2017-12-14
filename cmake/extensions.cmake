@@ -119,7 +119,7 @@ endfunction()
 # includes, options).
 #
 # The naming convention follows:
-# zephyr_get_${build_information}_for_lang${format}(lang x)
+# zephyr_get_${build_information}_for_lang${format}(lang x [SKIP_PREFIX])
 # Where
 #  the argument 'x' is written with the result
 # and
@@ -138,12 +138,19 @@ endfunction()
 #   - CXX
 #   - ASM
 #
+# SKIP_PREFIX
+#
+# By default the result will be returned ready to be passed directly
+# to a compiler, e.g. prefixed with -D, or -I, but it is possible to
+# omit this prefix by specifying 'SKIP_PREFIX' . This option has no
+# effect for 'compile_options'.
+#
 # e.g.
 # zephyr_get_include_directories_for_lang(ASM x)
 # writes "-Isome_dir;-Isome/other/dir" to x
 
 function(zephyr_get_include_directories_for_lang_as_string lang i)
-  zephyr_get_include_directories_for_lang(${lang} list_of_flags)
+  zephyr_get_include_directories_for_lang(${lang} list_of_flags ${ARGN})
 
   convert_list_of_flags_to_string_of_flags(list_of_flags str_of_flags)
 
@@ -151,7 +158,7 @@ function(zephyr_get_include_directories_for_lang_as_string lang i)
 endfunction()
 
 function(zephyr_get_system_include_directories_for_lang_as_string lang i)
-  zephyr_get_system_include_directories_for_lang(${lang} list_of_flags)
+  zephyr_get_system_include_directories_for_lang(${lang} list_of_flags ${ARGN})
 
   convert_list_of_flags_to_string_of_flags(list_of_flags str_of_flags)
 
@@ -159,7 +166,7 @@ function(zephyr_get_system_include_directories_for_lang_as_string lang i)
 endfunction()
 
 function(zephyr_get_compile_definitions_for_lang_as_string lang i)
-  zephyr_get_compile_definitions_for_lang(${lang} list_of_flags)
+  zephyr_get_compile_definitions_for_lang(${lang} list_of_flags ${ARGN})
 
   convert_list_of_flags_to_string_of_flags(list_of_flags str_of_flags)
 
@@ -175,7 +182,10 @@ function(zephyr_get_compile_options_for_lang_as_string lang i)
 endfunction()
 
 function(zephyr_get_include_directories_for_lang lang i)
-  get_property_and_add_prefix(flags zephyr_interface INTERFACE_INCLUDE_DIRECTORIES -I)
+  get_property_and_add_prefix(flags zephyr_interface INTERFACE_INCLUDE_DIRECTORIES
+    "-I"
+    ${ARGN}
+    )
 
   process_flags(${lang} flags output_list)
 
@@ -183,7 +193,10 @@ function(zephyr_get_include_directories_for_lang lang i)
 endfunction()
 
 function(zephyr_get_system_include_directories_for_lang lang i)
-  get_property_and_add_prefix(flags zephyr_interface INTERFACE_SYSTEM_INCLUDE_DIRECTORIES -isystem)
+  get_property_and_add_prefix(flags zephyr_interface INTERFACE_SYSTEM_INCLUDE_DIRECTORIES
+    "-isystem"
+    ${ARGN}
+    )
 
   process_flags(${lang} flags output_list)
 
@@ -191,7 +204,10 @@ function(zephyr_get_system_include_directories_for_lang lang i)
 endfunction()
 
 function(zephyr_get_compile_definitions_for_lang lang i)
-  get_property_and_add_prefix(flags zephyr_interface INTERFACE_COMPILE_DEFINITIONS -D)
+  get_property_and_add_prefix(flags zephyr_interface INTERFACE_COMPILE_DEFINITIONS
+    "-D"
+    ${ARGN}
+    )
 
   process_flags(${lang} flags output_list)
 
@@ -204,6 +220,20 @@ function(zephyr_get_compile_options_for_lang lang i)
   process_flags(${lang} flags output_list)
 
   set(${i} ${output_list} PARENT_SCOPE)
+endfunction()
+
+# This function writes a dict to it's output parameter
+# 'return_dict'. The dict has information about the parsed arguments,
+#
+# Usage:
+#   zephyr_get_parse_args(foo ${ARGN})
+#   print(foo_STRIP_PREFIX) # foo_STRIP_PREFIX might be set to 1
+function(zephyr_get_parse_args return_dict)
+  foreach(x ${ARGN})
+    if(x STREQUAL STRIP_PREFIX)
+      set(${return_dict}_STRIP_PREFIX 1 PARENT_SCOPE)
+    endif()
+  endforeach()
 endfunction()
 
 function(process_flags lang input output)
@@ -258,9 +288,17 @@ function(convert_list_of_flags_to_string_of_flags ptr_list_of_flags string_of_fl
 endfunction()
 
 macro(get_property_and_add_prefix result target property prefix)
+  zephyr_get_parse_args(args ${ARGN})
+
+  if(args_STRIP_PREFIX)
+    set(maybe_prefix "")
+  else()
+    set(maybe_prefix ${prefix})
+  endif()
+
   get_property(target_property TARGET ${target} PROPERTY ${property})
   foreach(x ${target_property})
-    list(APPEND ${result} ${prefix}${x})
+    list(APPEND ${result} ${maybe_prefix}${x})
   endforeach()
 endmacro()
 
