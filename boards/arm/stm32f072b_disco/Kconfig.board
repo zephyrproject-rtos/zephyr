@@ -1,0 +1,10 @@
+# Kconfig - STM32F072B-DISCO board configuration
+#
+# Copyright (c) 2017 Clage GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BOARD_STM32F072B_DISCO
+	bool "STM32F072B-DISCO Development Board"
+	depends on SOC_STM32F072XB
