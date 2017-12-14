@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <misc/ring_buffer.h>
+#include <ring_buffer.h>
 
 /**
  * Internal data structure for a buffer header.

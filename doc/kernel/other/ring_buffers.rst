@@ -173,7 +173,7 @@ A data item is removed from a ring buffer by calling
 APIs
 ****
 
-The following ring buffer APIs are provided by :file:`include/misc/ring_buffer.h`:
+The following ring buffer APIs are provided by :file:`include/ring_buffer.h`:
 
 * :cpp:func:`SYS_RING_BUF_DECLARE_POW2()`
 * :cpp:func:`SYS_RING_BUF_DECLARE_SIZE()`

@@ -10,7 +10,7 @@
  */
 
 #include <logging/event_logger.h>
-#include <misc/ring_buffer.h>
+#include <ring_buffer.h>
 #include <kernel_structs.h>
 
 void sys_event_logger_init(struct event_logger *logger,

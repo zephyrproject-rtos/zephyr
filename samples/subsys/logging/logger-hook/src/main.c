@@ -10,7 +10,7 @@
 #include <misc/printk.h>
 #include <logging/sys_log.h>
 #include <stdio.h>
-#include <misc/ring_buffer.h>
+#include <ring_buffer.h>
 
 #define LOG_BUF_SIZE (512)
 
