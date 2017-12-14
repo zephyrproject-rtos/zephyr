@@ -31,12 +31,16 @@ target_sources_ifdef(CONFIG_ATOMIC_OPERATIONS_C   kernel PRIVATE atomic_c.c)
 target_sources_ifdef(CONFIG_PTHREAD_IPC           kernel PRIVATE pthread.c)
 target_sources_if_kconfig(                        kernel PRIVATE poll.c)
 
+# The last 2 files inside the target_sources_ifdef should be
+# userspace_handler.c and userspace.c. If not the linker would complain.
+# This order has to be maintained. Any new file should be placed
+# above these 2 files.
 target_sources_ifdef(
   CONFIG_USERSPACE
   kernel PRIVATE
-  userspace.c
-  userspace_handler.c
   mem_domain.c
+  userspace_handler.c
+  userspace.c
   )
 
 add_dependencies(kernel offsets_h)
