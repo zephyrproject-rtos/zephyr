@@ -42,6 +42,12 @@ environment for Windows. Follow the steps below to set it up:
         Make sure you start ``MSYS2 MSYS Shell``, not ``MSYS2 MinGW Shell``.
 
    .. note::
+
+        If you need to inherit the existing Windows environment variables into
+        MSYS2 you will need to create a **Windows** environment variable like so::
+        ``MSYS2_PATH_TYPE=inherit``.
+
+   .. note::
         There are multiple ``export`` statements in this tutorial. You can avoid
         typing them every time by placing them at the bottom of your
         ``~/.bash_profile`` file.
