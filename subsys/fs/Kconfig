@@ -8,7 +8,6 @@ menu "File Systems"
 
 config FILE_SYSTEM
 	bool "File system support"
-	select DISK_ACCESS
 	default n
 	help
 	  Enables support for file system.
@@ -26,6 +25,7 @@ config NO_FS
 
 config FAT_FILESYSTEM_ELM
 	bool "ELM FAT File System"
+	select DISK_ACCESS
 	help
 	  Use the ELM FAT File system implementation.
 
