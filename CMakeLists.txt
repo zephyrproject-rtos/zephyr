@@ -568,7 +568,20 @@ add_custom_target(
   DEPENDS
   linker.cmd
   offsets_h
-)
+  )
+
+# Give the 'linker_script' target all of the include directories so
+# that cmake can successfully find the linker_script's header
+# dependencies.
+zephyr_get_include_directories_for_lang(C
+  ZEPHYR_INCLUDE_DIRS
+  STRIP_PREFIX # Don't use a -I prefix
+  )
+set_property(TARGET
+  linker_script
+  PROPERTY INCLUDE_DIRECTORIES
+  ${ZEPHYR_INCLUDE_DIRS}
+  )
 
 get_property(E_KERNEL_ENTRY GLOBAL PROPERTY E_KERNEL_ENTRY)
 
@@ -757,6 +770,11 @@ if(GKOF OR GKSF)
     linker_pass2.cmd
     offsets_h
     )
+  set_property(TARGET
+    linker_pass2_script
+    PROPERTY INCLUDE_DIRECTORIES
+    ${ZEPHYR_INCLUDE_DIRS}
+  )
 
   add_executable(       kernel_elf misc/empty_file.c ${GKSF})
   target_link_libraries(kernel_elf ${GKOF} ${TOPT} ${PROJECT_BINARY_DIR}/linker_pass2.cmd ${zephyr_lnk})
