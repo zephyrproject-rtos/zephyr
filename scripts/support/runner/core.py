@@ -20,6 +20,21 @@ import signal
 import subprocess
 
 
+# Turn on to enable just printing the commands that would be run,
+# without actually running them. This can break runners that are expecting
+# output or if one command depends on another, so it's just for debugging.
+DEBUG = False
+
+
+class _DebugDummyPopen:
+
+    def terminate(self):
+        pass
+
+    def wait(self):
+        pass
+
+
 def quote_sh_list(cmd):
     '''Transform a command from list into shell string form.'''
     fmt = ' '.join('{}' for _ in cmd)
@@ -410,8 +425,12 @@ class ZephyrBinaryRunner(abc.ABC):
         subprocess and check that it executed correctly, rather than
         using subprocess directly, to keep accurate debug logs.
         '''
-        if self.debug:
+        if DEBUG or self.debug:
             print(quote_sh_list(cmd))
+
+        if DEBUG:
+            return
+
         try:
             subprocess.check_call(cmd)
         except subprocess.CalledProcessError:
@@ -427,6 +446,10 @@ class ZephyrBinaryRunner(abc.ABC):
         '''
         if self.debug:
             print(quote_sh_list(cmd))
+
+        if DEBUG:
+            return b''
+
         try:
             return subprocess.check_output(cmd)
         except subprocess.CalledProcessError:
@@ -446,7 +469,10 @@ class ZephyrBinaryRunner(abc.ABC):
         elif system in {'Linux', 'Darwin'}:
             preexec = os.setsid
 
-        if self.debug:
+        if DEBUG or self.debug:
             print(quote_sh_list(cmd))
+
+        if DEBUG:
+            return _DebugDummyPopen()
 
         return subprocess.Popen(cmd, creationflags=cflags, preexec_fn=preexec)
