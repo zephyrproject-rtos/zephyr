@@ -757,7 +757,7 @@ class MakeGenerator:
 \t\t-B{outdir}\\
 \t\t-DEXTRA_CFLAGS="-Werror {cflags}"\\
 \t\t-DEXTRA_AFLAGS=-Wa,--fatal-warnings\\
-\t\t-DEXTRA_LDFLAGS=-Wl,--fatal-warnings\\
+\t\t-DEXTRA_LDFLAGS="{ldflags}"\\
 \t\t{args}\\
 \t\t>{logfile} 2>&1
 \t$(MAKE) -C {outdir}\\
@@ -798,6 +798,7 @@ class MakeGenerator:
         """
         verb = "1" if VERBOSE else "0"
         args = " ".join(["-D{}".format(a) for a in args])
+        ldflags = ""
 
         if self.asserts:
             cflags = "-DCONFIG_ASSERT=1 -D__ASSERT_ON=2"
@@ -807,11 +808,15 @@ class MakeGenerator:
         if self.deprecations:
             cflags = cflags + "  -Wno-deprecated-declarations"
 
+        if not "native_posix" in args:
+            ldflags="-Wl,--fatal-warnings"
+
         return MakeGenerator.MAKE_RULE_TMPL.format(
             phase=phase,
             goal=name,
             outdir=outdir,
             cflags=cflags,
+            ldflags=ldflags,
             directory=workdir,
             verb=verb,
             args=args,
