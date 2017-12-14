@@ -1,5 +1,5 @@
 tests:
   test:
-    arch_whitelist: x86 arm
+    arch_whitelist: x86 arm posix
     filter: CONFIG_PRINTK
     tags: benchmark

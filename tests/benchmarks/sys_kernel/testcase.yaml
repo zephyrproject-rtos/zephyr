@@ -1,5 +1,5 @@
 tests:
   test:
-    arch_whitelist: x86
+    arch_exclude: nios2 riscv32 xtensa
     min_ram: 32
     tags: benchmark
