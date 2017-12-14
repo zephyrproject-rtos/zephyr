@@ -724,6 +724,17 @@ struct mesh_net_send_cmd {
 	u8_t payload[0];
 } __packed;
 
+#define MESH_HEALTH_GENERATE_FAULTS	0x0b
+struct mesh_health_generate_faults_rp {
+	u8_t test_id;
+	u8_t cur_faults_count;
+	u8_t reg_faults_count;
+	u8_t current_faults[0];
+	u8_t registered_faults[0];
+} __packed;
+
+#define MESH_HEALTH_CLEAR_FAULTS	0x0c
+
 #define MESH_LPN			0x0d
 struct mesh_lpn_set_cmd {
 	u8_t enable;
