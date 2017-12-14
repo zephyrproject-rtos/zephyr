@@ -23,6 +23,8 @@ static void unhandled_exception_trampoline(XtExcFrame *frame)
 	CODE_UNREACHABLE;
 }
 
+typedef void (*xt_exc_handler)(XtExcFrame *);
+
 xt_exc_handler _xt_exception_table[XCHAL_EXCCAUSE_NUM] __aligned(4) = {
 	[0 ... (XCHAL_EXCCAUSE_NUM - 1)] = unhandled_exception_trampoline
 };
