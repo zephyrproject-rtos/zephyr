@@ -57,6 +57,11 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument("--dfuse", default=False, action='store_true',
                             help='''set if target is a DfuSe device;
                             implies --dt-flash.''')
+        parser.add_argument("--dfuse-modifiers", default='leave',
+                            help='''colon-separated list of DfuSe modifiers
+                            (default is "leave", which starts execution
+                            immediately); --dfuse must also be given for this
+                            option to take effect.''')
         parser.add_argument('--dfu-util', default='dfu-util',
                             help='dfu-util executable; defaults to "dfu-util"')
 
@@ -69,7 +74,7 @@ class DfuUtilBinaryRunner(ZephyrBinaryRunner):
             args.dt_flash = True  # --dfuse implies --dt-flash.
             build_conf = BuildConfiguration(os.getcwd())
             dcfg = DfuSeConfig(address=cls.get_flash_address(args, build_conf),
-                               options="leave")
+                               options=args.dfuse_modifiers)
         else:
             dcfg = None
 
