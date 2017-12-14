@@ -31,6 +31,13 @@ config PWM_STM32_1_DEV_NAME
 	help
 	  Specify the device name for the PWM driver.
 
+config PWM_STM32_1_PRESCALER
+	int "STM32 PWM 1 Prescaler"
+	default 10000
+	depends on PWM_STM32_1
+	help
+	  Clock prescaler at the input of the timer.
+
 config PWM_STM32_2
 	bool "STM32 PWM 2 Output"
 	depends on PWM_STM32
@@ -45,6 +52,13 @@ config PWM_STM32_2_DEV_NAME
 	depends on PWM_STM32_2
 	help
 	  Specify the device name for the PWM driver.
+
+config PWM_STM32_2_PRESCALER
+	int "STM32 PWM 2 Prescaler"
+	default 0
+	depends on PWM_STM32_2
+	help
+	  Clock prescaler at the input of the timer.
 
 config PWM_STM32_3
 	bool "STM32 PWM 3 Output"
@@ -61,6 +75,13 @@ config PWM_STM32_3_DEV_NAME
 	help
 	  Specify the device name for the PWM driver.
 
+config PWM_STM32_3_PRESCALER
+	int "STM32 PWM 3 Prescaler"
+	default 10000
+	depends on PWM_STM32_3
+	help
+	  Clock prescaler at the input of the timer.
+
 config PWM_STM32_4
 	bool "STM32 PWM 4 Output"
 	depends on PWM_STM32
@@ -75,6 +96,13 @@ config PWM_STM32_4_DEV_NAME
 	depends on PWM_STM32_4
 	help
 	  Specify the device name for the PWM driver.
+
+config PWM_STM32_4_PRESCALER
+	int "STM32 PWM 4 Prescaler"
+	default 10000
+	depends on PWM_STM32_4
+	help
+	  Clock prescaler at the input of the timer.
 
 config PWM_STM32_5
 	bool "STM32 PWM 5 Output"
@@ -91,6 +119,13 @@ config PWM_STM32_5_DEV_NAME
 	help
 	  Specify the device name for the PWM driver.
 
+config PWM_STM32_5_PRESCALER
+	int "STM32 PWM 5 Prescaler"
+	default 0
+	depends on PWM_STM32_5
+	help
+	  Clock prescaler at the input of the timer.
+
 config PWM_STM32_6
 	bool "STM32 PWM 6 Output"
 	depends on PWM_STM32
@@ -105,6 +140,13 @@ config PWM_STM32_6_DEV_NAME
 	depends on PWM_STM32_6
 	help
 	  Specify the device name for the PWM driver.
+
+config PWM_STM32_6_PRESCALER
+	int "STM32 PWM 6 Prescaler"
+	default 10000
+	depends on PWM_STM32_6
+	help
+	  Clock prescaler at the input of the timer.
 
 config PWM_STM32_7
 	bool "STM32 PWM 7 Output"
@@ -121,6 +163,13 @@ config PWM_STM32_7_DEV_NAME
 	help
 	  Specify the device name for the PWM driver.
 
+config PWM_STM32_7_PRESCALER
+	int "STM32 PWM 7 Prescaler"
+	default 10000
+	depends on PWM_STM32_7
+	help
+	  Clock prescaler at the input of the timer.
+
 config PWM_STM32_8
 	bool "STM32 PWM 8 Output"
 	depends on PWM_STM32
@@ -135,6 +184,13 @@ config PWM_STM32_8_DEV_NAME
 	depends on PWM_STM32_8
 	help
 	  Specify the device name for the PWM driver.
+
+config PWM_STM32_8_PRESCALER
+	int "STM32 PWM 8 Prescaler"
+	default 10000
+	depends on PWM_STM32_8
+	help
+	  Clock prescaler at the input of the timer.
 
 config PWM_STM32_9
 	bool "STM32 PWM 9 Output"
@@ -151,6 +207,13 @@ config PWM_STM32_9_DEV_NAME
 	help
 	  Specify the device name for the PWM driver.
 
+config PWM_STM32_9_PRESCALER
+	int "STM32 PWM 9 Prescaler"
+	default 10000
+	depends on PWM_STM32_9
+	help
+	  Clock prescaler at the input of the timer.
+
 config PWM_STM32_10
 	bool "STM32 PWM 10 Output"
 	depends on PWM_STM32
@@ -165,6 +228,13 @@ config PWM_STM32_10_DEV_NAME
 	depends on PWM_STM32_10
 	help
 	  Specify the device name for the PWM driver.
+
+config PWM_STM32_10_PRESCALER
+	int "STM32 PWM 10 Prescaler"
+	default 10000
+	depends on PWM_STM32_10
+	help
+	  Clock prescaler at the input of the timer.
 
 config PWM_STM32_11
 	bool "STM32 PWM 11 Output"
@@ -181,6 +251,13 @@ config PWM_STM32_11_DEV_NAME
 	help
 	  Specify the device name for the PWM driver.
 
+config PWM_STM32_11_PRESCALER
+	int "STM32 PWM 11 Prescaler"
+	default 10000
+	depends on PWM_STM32_11
+	help
+	  Clock prescaler at the input of the timer.
+
 config PWM_STM32_12
 	bool "STM32 PWM 12 Output"
 	depends on PWM_STM32
@@ -195,6 +272,13 @@ config PWM_STM32_12_DEV_NAME
 	depends on PWM_STM32_12
 	help
 	  Specify the device name for the PWM driver.
+
+config PWM_STM32_12_PRESCALER
+	int "STM32 PWM 12 Prescaler"
+	default 10000
+	depends on PWM_STM32_12
+	help
+	  Clock prescaler at the input of the timer.
 
 config PWM_STM32_13
 	bool "STM32 PWM 13 Output"
@@ -211,6 +295,13 @@ config PWM_STM32_13_DEV_NAME
 	help
 	  Specify the device name for the PWM driver.
 
+config PWM_STM32_13_PRESCALER
+	int "STM32 PWM 13 Prescaler"
+	default 10000
+	depends on PWM_STM32_13
+	help
+	  Clock prescaler at the input of the timer.
+
 config PWM_STM32_14
 	bool "STM32 PWM 14 Output"
 	depends on PWM_STM32
@@ -225,6 +316,13 @@ config PWM_STM32_14_DEV_NAME
 	depends on PWM_STM32_14
 	help
 	  Specify the device name for the PWM driver.
+
+config PWM_STM32_14_PRESCALER
+	int "STM32 PWM 14 Prescaler"
+	default 10000
+	depends on PWM_STM32_14
+	help
+	  Clock prescaler at the input of the timer.
 
 config PWM_STM32_15
 	bool "STM32 PWM 15 Output"
@@ -241,6 +339,13 @@ config PWM_STM32_15_DEV_NAME
 	help
 	  Specify the device name for the PWM driver.
 
+config PWM_STM32_15_PRESCALER
+	int "STM32 PWM 15 Prescaler"
+	default 10000
+	depends on PWM_STM32_15
+	help
+	  Clock prescaler at the input of the timer.
+
 config PWM_STM32_16
 	bool "STM32 PWM 16 Output"
 	depends on PWM_STM32
@@ -255,6 +360,13 @@ config PWM_STM32_16_DEV_NAME
 	depends on PWM_STM32_16
 	help
 	  Specify the device name for the PWM driver.
+
+config PWM_STM32_16_PRESCALER
+	int "STM32 PWM 16 Prescaler"
+	default 10000
+	depends on PWM_STM32_16
+	help
+	  Clock prescaler at the input of the timer.
 
 config PWM_STM32_17
 	bool "STM32 PWM 17 Output"
@@ -271,6 +383,13 @@ config PWM_STM32_17_DEV_NAME
 	help
 	  Specify the device name for the PWM driver.
 
+config PWM_STM32_17_PRESCALER
+	int "STM32 PWM 17 Prescaler"
+	default 10000
+	depends on PWM_STM32_17
+	help
+	  Clock prescaler at the input of the timer.
+
 config PWM_STM32_18
 	bool "STM32 PWM 18 Output"
 	depends on PWM_STM32
@@ -285,6 +404,13 @@ config PWM_STM32_18_DEV_NAME
 	depends on PWM_STM32_18
 	help
 	  Specify the device name for the PWM driver.
+
+config PWM_STM32_18_PRESCALER
+	int "STM32 PWM 18 Prescaler"
+	default 10000
+	depends on PWM_STM32_18
+	help
+	  Clock prescaler at the input of the timer.
 
 config PWM_STM32_19
 	bool "STM32 PWM 19 Output"
@@ -301,6 +427,13 @@ config PWM_STM32_19_DEV_NAME
 	help
 	  Specify the device name for the PWM driver.
 
+config PWM_STM32_19_PRESCALER
+	int "STM32 PWM 19 Prescaler"
+	default 10000
+	depends on PWM_STM32_19
+	help
+	  Clock prescaler at the input of the timer.
+
 config PWM_STM32_20
 	bool "STM32 PWM 20 Output"
 	depends on PWM_STM32
@@ -315,3 +448,10 @@ config PWM_STM32_20_DEV_NAME
 	depends on PWM_STM32_20
 	help
 	  Specify the device name for the PWM driver.
+
+config PWM_STM32_20_PRESCALER
+	int "STM32 PWM 20 Prescaler"
+	default 10000
+	depends on PWM_STM32_20
+	help
+	  Clock prescaler at the input of the timer.
