@@ -2,5 +2,5 @@ sample:
   name: Bluetooth Mesh
 tests:
   test:
-    platform_whitelist: nrf52840-pca10056
+    platform_whitelist: nrf52840_pca10056
     tags: bluetooth
