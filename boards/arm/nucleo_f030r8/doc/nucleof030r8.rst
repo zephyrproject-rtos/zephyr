@@ -81,6 +81,8 @@ The Zephyr nucleo_f030r8 board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | IWDG      | on-chip    | independent watchdog                |
 +-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c controller                      |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported in this Zephyr port.
 
@@ -109,6 +111,10 @@ Default Zephyr Peripheral Mapping:
 - UART_1_RX : PA10
 - UART_2_TX : PA2
 - UART_2_RX : PA3
+- I2C1_SCL : PB8
+- I2C1_SDA : PB9
+- I2C2_SCL : PA11
+- I2C2_SDA : PA12
 
 For mode details please refer to `STM32 Nucleo-64 board User Manual`_.
 
