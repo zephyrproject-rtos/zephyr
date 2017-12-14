@@ -6,7 +6,7 @@
 
 #include <ztest.h>
 
-#include <drivers/crc/crc16_sw.c>
+#include <lib/crc/crc16_sw.c>
 
 void test_crc16(void)
 {

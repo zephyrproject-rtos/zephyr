@@ -1,5 +1,4 @@
 add_subdirectory(console)
-add_subdirectory(crc)
 add_subdirectory(display)
 add_subdirectory(interrupt_controller)
 
