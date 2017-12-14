@@ -19,7 +19,7 @@ properties:
       generation: define
       category: required
 
-cell_string: clocks
+cell_string: CLOCKS
 
 "#cells":
   - bus
