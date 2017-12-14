@@ -70,6 +70,8 @@ static void supported_commands(u8_t *data, u16_t len)
 	tester_set_bit(buf->data, MESH_IVU_TEST_MODE);
 	tester_set_bit(buf->data, MESH_IVU_TOGGLE_STATE);
 	tester_set_bit(buf->data, MESH_NET_SEND);
+	tester_set_bit(buf->data, MESH_HEALTH_GENERATE_FAULTS);
+	tester_set_bit(buf->data, MESH_HEALTH_CLEAR_FAULTS);
 	tester_set_bit(buf->data, MESH_LPN);
 	tester_set_bit(buf->data, MESH_LPN_POLL);
 
@@ -549,6 +551,57 @@ static void net_send(u8_t *data, u16_t len)
 		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
 }
 
+static void health_generate_faults(u8_t *data, u16_t len)
+{
+	struct mesh_health_generate_faults_rp *rp;
+	struct net_buf_simple *buf = NET_BUF_SIMPLE(sizeof(*rp) +
+						    sizeof(cur_faults) +
+						    sizeof(reg_faults));
+	u8_t some_faults[] = { 0x01, 0x02, 0x03, 0xff, 0x06 };
+	u8_t cur_faults_count, reg_faults_count;
+	int err;
+
+	net_buf_simple_init(buf, 0);
+
+	rp = net_buf_simple_add(buf, sizeof(*rp));
+
+	cur_faults_count = min(sizeof(cur_faults), sizeof(some_faults));
+	memcpy(cur_faults, some_faults, cur_faults_count);
+	net_buf_simple_add_mem(buf, cur_faults, cur_faults_count);
+	rp->cur_faults_count = cur_faults_count;
+
+	reg_faults_count = min(sizeof(reg_faults), sizeof(some_faults));
+	memcpy(reg_faults, some_faults, reg_faults_count);
+	net_buf_simple_add_mem(buf, reg_faults, reg_faults_count);
+	rp->reg_faults_count = reg_faults_count;
+
+	err = bt_mesh_fault_update(&elements[0]);
+	if (err) {
+		SYS_LOG_ERR("Failed to send health publication (err %d)", err);
+
+		tester_rsp(BTP_SERVICE_ID_MESH, MESH_HEALTH_GENERATE_FAULTS,
+			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
+
+		return;
+	}
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_HEALTH_GENERATE_FAULTS,
+		    CONTROLLER_INDEX, buf->data, buf->len);
+}
+
+static void health_clear_faults(u8_t *data, u16_t len)
+{
+	SYS_LOG_DBG("");
+
+	memset(cur_faults, 0, sizeof(cur_faults));
+	memset(reg_faults, 0, sizeof(reg_faults));
+
+	bt_mesh_fault_update(&elements[0]);
+
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_HEALTH_CLEAR_FAULTS,
+		   CONTROLLER_INDEX, BTP_STATUS_SUCCESS);
+}
+
 void tester_handle_mesh(u8_t opcode, u8_t index, u8_t *data, u16_t len)
 {
 	switch (opcode) {
@@ -587,6 +640,12 @@ void tester_handle_mesh(u8_t opcode, u8_t index, u8_t *data, u16_t len)
 		break;
 	case MESH_NET_SEND:
 		net_send(data, len);
+		break;
+	case MESH_HEALTH_GENERATE_FAULTS:
+		health_generate_faults(data, len);
+		break;
+	case MESH_HEALTH_CLEAR_FAULTS:
+		health_clear_faults(data, len);
 		break;
 	default:
 		tester_rsp(BTP_SERVICE_ID_MESH, opcode, index,
