@@ -4,10 +4,6 @@ config ZEPHYR_BASE
 	string
 	option env="ZEPHYR_BASE"
 
-config APPLICATION_BASE
-	string
-	option env="PROJECT_BASE"
-
 source "$ZEPHYR_BASE/Kconfig.zephyr"
 
 # Your application configuration options go here.
