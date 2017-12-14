@@ -2,6 +2,10 @@ tests:
   test:
     arch_whitelist: x86 arm
     min_ram: 32
-    slow: true
     tags: benchmark
+    slow: true
     timeout: 300
+  test_posix:
+    arch_whitelist: posix
+    min_ram: 32
+    tags: benchmark
