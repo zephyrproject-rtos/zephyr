@@ -310,6 +310,7 @@ static void eth0_iface_init(struct net_if *iface)
 	struct device *dev;
 	struct eth_stm32_hal_dev_data *dev_data;
 	ETH_HandleTypeDef *heth;
+	u8_t hal_ret;
 
 	__ASSERT_NO_MSG(iface != NULL);
 
@@ -323,6 +324,19 @@ static void eth0_iface_init(struct net_if *iface)
 
 	dev_data->iface = iface;
 
+#if defined(CONFIG_ETH_STM32_HAL_RANDOM_MAC)
+	generate_mac(dev_data->mac_addr);
+#endif
+
+	heth->Init.MACAddr = dev_data->mac_addr;
+
+	hal_ret = HAL_ETH_Init(heth);
+
+	if (hal_ret != HAL_OK) {
+		SYS_LOG_ERR("HAL_ETH_Init failed: %d\n", hal_ret);
+		return;
+	}
+
 	/* Initialize semaphores */
 	k_mutex_init(&dev_data->tx_mutex);
 	k_sem_init(&dev_data->rx_int_sem, 0, UINT_MAX);
@@ -334,16 +348,6 @@ static void eth0_iface_init(struct net_if *iface)
 			K_PRIO_COOP(CONFIG_ETH_STM32_HAL_RX_THREAD_PRIO),
 			0, K_NO_WAIT);
 
-#if defined(CONFIG_ETH_STM32_HAL_RANDOM_MAC)
-	generate_mac(dev_data->mac_addr);
-#endif
-
-	heth->Init.MACAddr = dev_data->mac_addr;
-
-	if (HAL_ETH_Init(heth) != HAL_OK) {
-		SYS_LOG_ERR("HAL_ETH_Init failed\n");
-	}
-
 	HAL_ETH_DMATxDescListInit(heth, dma_tx_desc_tab,
 		&dma_tx_buffer[0][0], ETH_TXBUFNB);
 	HAL_ETH_DMARxDescListInit(heth, dma_rx_desc_tab,
@@ -352,6 +356,11 @@ static void eth0_iface_init(struct net_if *iface)
 	HAL_ETH_Start(heth);
 
 	disable_mcast_filter(heth);
+
+	SYS_LOG_DBG("MAC %02x:%02x:%02x:%02x:%02x:%02x",
+		    dev_data->mac_addr[0], contdev_dataext->mac_addr[1],
+		    dev_data->mac_addr[2], dev_data->mac_addr[3],
+		    dev_data->mac_addr[4], dev_data->mac_addr[5]);
 
 	/* Register Ethernet MAC Address with the upper layer */
 	net_if_set_link_addr(iface, dev_data->mac_addr,
@@ -412,4 +421,3 @@ static struct eth_stm32_hal_dev_data eth0_data = {
 NET_DEVICE_INIT(eth0_stm32_hal, CONFIG_ETH_STM32_HAL_NAME, eth_initialize,
 	&eth0_data, &eth0_config, CONFIG_ETH_INIT_PRIORITY, &eth0_api,
 	ETHERNET_L2, NET_L2_GET_CTX_TYPE(ETHERNET_L2), ETH_STM32_HAL_MTU);
-
