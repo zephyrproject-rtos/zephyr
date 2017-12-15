@@ -1,0 +1,8 @@
+sample:
+  description: TBD
+  name: TBD
+tests:
+  test:
+    build_only: true
+    platform_whitelist: disco_l475_iot1
+    tags: samples sensor
