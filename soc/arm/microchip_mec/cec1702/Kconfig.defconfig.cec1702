@@ -1,0 +1,21 @@
+# Microchip CEC1702
+
+# Copyright (c) 2019 Crypta Labs Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_CEC1702
+
+config SOC
+	default "cec1702"
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 48000000
+
+if SERIAL
+
+config UART_NS16550
+	default y
+
+endif # SERIAL
+
+endif # SOC_CEC1702

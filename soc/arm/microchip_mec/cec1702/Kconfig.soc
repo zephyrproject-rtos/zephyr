@@ -1,0 +1,14 @@
+# Kconfig - Microchip CEC MCU line
+#
+# Copyright (c) 2019 Crypta Labs Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+        prompt "CEC1702 Selection"
+        depends on SOC_SERIES_CEC1702
+
+config SOC_CEC1702
+        bool "CEC1702"
+
+endchoice
