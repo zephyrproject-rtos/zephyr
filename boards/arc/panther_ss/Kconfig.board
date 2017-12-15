@@ -1,4 +1,0 @@
-
-config BOARD_PANTHER_SS
-	bool "Panther - Sensor Sub System"
-	depends on SOC_QUARK_SE_C1000_SS

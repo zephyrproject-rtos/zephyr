@@ -1,7 +1,0 @@
-
-if BOARD_PANTHER_SS
-
-config BOARD
-	default "panther_ss"
-
-endif # BOARD_PANTHER_SS
