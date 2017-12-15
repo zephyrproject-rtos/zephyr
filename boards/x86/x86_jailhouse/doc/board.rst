@@ -63,20 +63,20 @@ tests in a QEMU emulated environment (we assume the same QEMU
 configuration used to accommodate Jailhouse's configs/qemu-x86.c root
 cell configuration).
 
-For example, with the :ref:`synchronization_sample`, first set
-``JAILHOUSE_QEMU_IMG_FILE`` to the path to the :file:`.qcow2` file.
-Then:
+For example, with the :ref:`synchronization_sample`:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/synchronization
    :board: x86_jailhouse
-   :goals: run
+   :gen-args: -DJAILHOUSE_QEMU_IMG_FILE=some/valid.qcow2
+   :goals: build run
 
 This assumes the user has the binary qemu-system-x86_64 in their
 system (not provided by Zephyr's toolchain). This is because the base
 system here will be 64-bit and Zephyr will boot as a virtual guest in
-it. The qcow2 image must contain the base image with Jailhouse
-installed (not provided by Zephyr's SDK, again).
+it. The variable ``JAILHOUSE_QEMU_IMG_FILE`` is the path to a
+:file:`.qcow2` file. This qcow2 image must contain the base image with
+Jailhouse installed (not provided by Zephyr's SDK, again).
 
 This will build an image with the synchronization sample app and mount
 the current directory inside QEMU under /mnt.
