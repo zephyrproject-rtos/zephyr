@@ -680,7 +680,7 @@ endmacro()
 # See 3.1 *_ifdef
 function(set_ifndef variable value)
   if(NOT ${variable})
-    set(${variable} ${value} PARENT_SCOPE)
+    set(${variable} ${value} ${ARGN} PARENT_SCOPE)
   endif()
 endfunction()
 
