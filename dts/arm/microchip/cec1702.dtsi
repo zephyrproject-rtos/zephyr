@@ -1,0 +1,45 @@
+/dts-v1/;
+
+#include "armv7-m.dtsi"
+
+/ {
+	compatible = "microchip,cec1702";
+
+	cpus {
+		cpu0 {
+			compatible = "arm,cortex-m4";
+		};
+	};
+
+	flash0: flash@000B0000 {
+		reg = <0x000B0000 0x68000>;
+	};
+
+	sram0: memory@00118000 {
+		compatible = "sram";
+		reg = <0x00118000 0x10000>;
+	};
+
+	soc {
+		uart0: uart@400f2400 {
+			compatible = "ns16550";
+			reg = <0x400f2400 0x400>;
+			interrupts = <40 0>;
+			current-speed = <38400>;
+			label = "UART_0";
+			reg-shift = <0>;
+		};
+		uart1: uart@400f2800 {
+			compatible = "ns16550";
+			reg = <0x400f2800 0x400>;
+			interrupts = <41 0>;
+			current-speed = <38400>;
+			label = "UART_1";
+			reg-shift = <0>;
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

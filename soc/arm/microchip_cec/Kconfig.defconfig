@@ -1,0 +1,17 @@
+if SOC_SERIES_CEC
+
+config SOC
+	string
+	default "microchip_cec"
+
+config NUM_IRQS
+	int
+	# must be >= the highest interrupt number used
+	# - include the UART interrupts
+	default 42
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 48000000
+
+endif

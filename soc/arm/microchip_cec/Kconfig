@@ -1,0 +1,8 @@
+choice
+	prompt "Microchip CECxxxx MCU Selection"
+	depends on SOC_SERIES_CEC
+
+config SOC_CEC1702
+	bool "CEC1702"
+
+endchoice
