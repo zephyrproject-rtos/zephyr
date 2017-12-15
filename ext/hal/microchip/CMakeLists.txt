@@ -1,0 +1,1 @@
+zephyr_include_directories_ifdef(CONFIG_HAS_CEC_HAL cec)
