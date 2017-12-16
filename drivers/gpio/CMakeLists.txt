@@ -1,3 +1,4 @@
+zephyr_sources_ifdef(CONFIG_GPIO_ALTERA_NIOS2 gpio_altera_nios2.c)
 zephyr_sources_ifdef(CONFIG_GPIO_ATMEL_SAM3 gpio_atmel_sam3.c)
 zephyr_sources_ifdef(CONFIG_GPIO_CC2650     gpio_cc2650.c)
 zephyr_sources_ifdef(CONFIG_GPIO_CC32XX     gpio_cc32xx.c)
