@@ -160,6 +160,14 @@ config SPI_5_OP_MODES
 
 endif # SPI_5
 
+config SPI_CEC_QMSPI
+	bool
+	prompt "CEC MCU QMSPI controller driver"
+	depends on SPI && SOC_SERIES_CEC
+	default n
+	help
+	  Enable Quad Master SPI support on the CEC series of processors.
+
 config SPI_INTEL
 	bool "Intel SPI controller driver"
 	depends on CPU_MINUTEIA

@@ -363,6 +363,23 @@ static inline size_t spi_context_longest_current_buf(struct spi_context *ctx)
 	return ctx->rx_len;
 }
 
+static inline size_t spi_context_transfer_length(struct spi_context *ctx)
+{
+	size_t i, rx = 0, tx = 0;
+
+	for (i = 0; i < ctx->rx_count; i++) {
+		rx += ctx->current_rx[i].len;
+	}
+	for (i = 0; i < ctx->tx_count; i++) {
+		tx += ctx->current_tx[i].len;
+	}
+	if (tx > rx) {
+		return tx;
+	}
+	return rx;
+}
+
+
 #ifdef __cplusplus
 }
 #endif

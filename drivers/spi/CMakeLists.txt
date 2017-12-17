@@ -1,5 +1,6 @@
 zephyr_library()
 
+zephyr_library_sources_ifdef(CONFIG_SPI_CEC_QMSPI	spi_cec_qmspi.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_DW		spi_dw.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_INTEL		spi_intel.c)
 zephyr_library_sources_ifdef(CONFIG_SPI_STM32		spi_ll_stm32.c)

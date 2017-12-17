@@ -32,6 +32,7 @@ Following devices are supported:
 - Nested Vectored Interrupt Controller (NVIC)
 - System Tick System Clock (SYSTICK)
 - Serial Ports (NS16550)
+- Quad Master-only SPI controller (QMSPI)
 
 
 Connections and IOs
