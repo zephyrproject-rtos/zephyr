@@ -342,4 +342,6 @@ if SPI_LEGACY_API
 source "drivers/spi/Kconfig.nrf5_legacy"
 endif
 
+source "drivers/spi/Kconfig.sam0"
+
 endif # SPI
