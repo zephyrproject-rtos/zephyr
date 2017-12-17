@@ -10,5 +10,6 @@ zephyr_sources_ifdef(CONFIG_SPI_MCUX_DSPI 	spi_mcux_dspi.c)
 zephyr_sources_ifdef(CONFIG_SPI_QMSI 		spi_qmsi.c)
 zephyr_sources_ifdef(CONFIG_SPI_QMSI_SS 	spi_qmsi_ss.c)
 zephyr_sources_ifdef(CONFIG_SPI_STM32 		spi_ll_stm32.c)
+zephyr_sources_ifdef(CONFIG_SPI_SAM0 		spi_sam0.c)
 
 zephyr_sources_ifdef(CONFIG_USERSPACE   spi_handlers.c)
