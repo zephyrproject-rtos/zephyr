@@ -128,6 +128,10 @@ static void dump_stack(int *stack)
 #if CONFIG_XTENSA_ASM2
 static inline void *restore_stack(void *interrupted_stack)
 {
+	if (!_is_preempt(_kernel.current)) {
+		return interrupted_stack;
+	}
+
 	int key = irq_lock();
 
 	_kernel.current->switch_handle = interrupted_stack;
