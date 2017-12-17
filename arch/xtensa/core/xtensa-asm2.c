@@ -9,6 +9,7 @@
 #include <kernel.h>
 #include <ksched.h>
 #include <kernel_structs.h>
+#include <nano_internal.h>
 #include <_soc_inthandlers.h>
 
 void *xtensa_init_stack(int *stack_top,
@@ -27,23 +28,23 @@ void *xtensa_init_stack(int *stack_top,
 
 	memset(bsa, 0, bsasz);
 
-	bsa[BSA_PC_OFF/4] = entry;
+	bsa[BSA_PC_OFF/4] = _thread_entry;
 	bsa[BSA_PS_OFF/4] = (void *)(PS_WOE | PS_UM | PS_CALLINC(1));
 
-	/* Arguments.  Remember these start at A6, which will be
-	 * rotated into A2 by the ENTRY instruction that begins the
-	 * entry function.  And A4-A7 and A8-A11 are optional quads
-	 * that live below the BSA!
+	/* Arguments to _thread_entry().  Remember these start at A6,
+	 * which will be rotated into A2 by the ENTRY instruction that
+	 * begins the C function.  And A4-A7 and A8-A11 are optional
+	 * quads that live below the BSA!
 	 */
-	bsa[-1] = arg2; /* a7 */
-	bsa[-2] = arg1; /* a6 */
-	bsa[-3] = 0;    /* a5 */
-	bsa[-4] = 0;    /* a4 */
+	bsa[-1] = arg1;  /* a7 */
+	bsa[-2] = entry; /* a6 */
+	bsa[-3] = 0;     /* a5 */
+	bsa[-4] = 0;     /* a4 */
 
-	bsa[-5] = 0;    /* a11 */
-	bsa[-6] = 0;    /* a10 */
-	bsa[-7] = 0;    /* a9 */
-	bsa[-8] = arg3; /* a8 */
+	bsa[-5] = 0;     /* a11 */
+	bsa[-6] = 0;     /* a10 */
+	bsa[-7] = arg3;  /* a9 */
+	bsa[-8] = arg2;  /* a8 */
 
 	/* Finally push the BSA pointer and return the stack pointer
 	 * as the handle
