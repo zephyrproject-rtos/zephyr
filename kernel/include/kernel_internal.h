@@ -75,6 +75,7 @@ extern void _check_stack_sentinel(void);
 static inline unsigned int _Swap(unsigned int key)
 {
 	struct k_thread *new_thread, *old_thread;
+	int ret;
 
 	old_thread = _kernel.current;
 
@@ -89,9 +90,11 @@ static inline unsigned int _Swap(unsigned int key)
 	_arch_switch(new_thread->switch_handle,
 		     &old_thread->switch_handle);
 
+	ret = _kernel.current->swap_retval;
+
 	irq_unlock(key);
 
-	return _kernel.current->swap_retval;
+	return ret;
 }
 
 #else /* !CONFIG_USE_SWITCH */

@@ -138,6 +138,17 @@ extern struct _kernel _kernel;
 
 #include <kernel_arch_func.h>
 
+#if CONFIG_USE_SWITCH
+/* This is a arch function traditionally, but when the switch-based
+ * _Swap() is in use it's a simple inline provided by the kernel.
+ */
+static ALWAYS_INLINE void
+_set_thread_return_value(struct k_thread *thread, unsigned int value)
+{
+	thread->swap_retval = value;
+}
+#endif
+
 static ALWAYS_INLINE void
 _set_thread_return_value_with_data(struct k_thread *thread,
 				   unsigned int value,
