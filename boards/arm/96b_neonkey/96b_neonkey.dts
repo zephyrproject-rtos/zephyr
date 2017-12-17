@@ -71,7 +71,8 @@
 };
 
 &i2c3 {
-	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "ok";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
 
 	lp3943@60 {
 		compatible = "ti,lp3943";
