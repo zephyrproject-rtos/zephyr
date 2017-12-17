@@ -78,11 +78,13 @@ static ALWAYS_INLINE void kernel_arch_init(void)
  *
  * @return N/A
  */
+#if !CONFIG_USE_SWITCH
 static ALWAYS_INLINE void
 _set_thread_return_value(struct k_thread *thread, unsigned int value)
 {
 	thread->callee_saved.retval = value;
 }
+#endif
 
 extern void k_cpu_atomic_idle(unsigned int imask);
 
