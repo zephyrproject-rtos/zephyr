@@ -51,6 +51,10 @@
 #include <stm32l4xx_ll_iwdg.h>
 #endif
 
+#ifdef CONFIG_ENTROPY_STM32_RNG
+#include <stm32l4xx_ll_rng.h>
+#endif
+
 /* For IMG_MANAGER */
 #if defined(CONFIG_SOC_FLASH_STM32)
 #define FLASH_DRIVER_NAME	CONFIG_SOC_FLASH_STM32_DEV_NAME
