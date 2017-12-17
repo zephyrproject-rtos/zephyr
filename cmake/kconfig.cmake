@@ -112,7 +112,7 @@ endif()
 if(CREATE_NEW_DOTCONFIG)
   execute_process(
     COMMAND
-    ${PROJECT_SOURCE_DIR}/scripts/kconfig/merge_config.sh
+    ${PROJECT_SOURCE_DIR}/scripts/kconfig/merge_config.py
     -m
     -q
     -O ${PROJECT_BINARY_DIR}
