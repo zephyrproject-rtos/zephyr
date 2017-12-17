@@ -1,0 +1,38 @@
+#
+# Copyright (c) 2018 Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# Top-level configuration file for LED drivers.
+
+menuconfig LED
+	bool "LED drivers"
+	default n
+	help
+		Include LED drivers in the system configuration.
+
+if LED
+
+config SYS_LOG_LED_LEVEL
+	int "LED system log level"
+	depends on SYS_LOG
+	default 0
+	range 0 4
+	help
+		Sets the log level for LED drivers. You must have
+		system logging enabled.
+		Levels are:
+		0 OFF, do not write
+		1 ERROR, only write SYS_LOG_ERR
+		2 WARNING, write SYS_LOG_WRN in addition to previous level
+		3 INFO, write SYS_LOG_INF in addition to previous levels
+		4 DEBUG, write SYS_LOG_DBG in addition to previous levels
+
+config LED_INIT_PRIORITY
+	int "LED initialization priority"
+	default 90
+	help
+	  System initialization priority for LED drivers.
+
+endif # LED
