@@ -93,4 +93,6 @@ source "drivers/flash/Kconfig.sam0"
 
 source "drivers/flash/Kconfig.w25qxxdv"
 
+source "drivers/flash/Kconfig.spi"
+
 endif

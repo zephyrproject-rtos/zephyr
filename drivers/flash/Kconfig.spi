@@ -1,0 +1,107 @@
+# Kconfig.spi - SPI Flash driver configuration options
+
+#
+# Copyright (c) 2018 Findlay Feng
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SPI_FLASH
+	bool "SPI NOR Flash"
+	depends on SPI && FLASH
+	default n
+	select FLASH_HAS_DRIVER_ENABLED
+	help
+	  Enable options for SPI Flash drivers.
+	  Identify devices through the SFDP protocol.
+	  See https://www.jedec.org/system/files/docs/JESD216B.pdf
+
+if SPI_FLASH
+
+config	SYS_LOG_SPI_FLASH_LEVEL
+	int
+	prompt "SPI FLASH driver log level"
+	depends on SYS_LOG && SPI_FLASH
+	default 0
+	range 0 4
+	help
+	  Sets log level for SLIP driver.
+	  Levels are:
+	  0 OFF, do not write
+	  1 ERROR, only write SYS_LOG_ERR
+	  2 WARNING, write SYS_LOG_WRN in addition to previous level
+	  3 INFO, write SYS_LOG_INF in addition to previous levels
+	  4 DEBUG, write SYS_LOG_DBG in addition to previous levels
+
+config SPI_FLASH_SPI_NAME
+	string
+	prompt "SPI controller device name"
+	depends on SPI_FLASH
+	default "SPI_0"
+
+config SPI_FLASH_DRV_NAME
+	string
+	prompt "SPI flash device name"
+	depends on SPI_FLASH
+	default "SPI_FLASH"
+
+config SPI_FLASH_SPI_SLAVE
+	int "SPI slave linked to SPI flash"
+	depends on SPI_FLASH
+	default 0
+	help
+	  This option sets the SPI slave number the SPI controller has to switch
+	  to when dealing with SPI flash chip.
+
+config SPI_FLASH_INIT_PRIORITY
+	int "SPI FLASH driver initialization priority"
+	depends on SPI_FLASH
+	default 80
+	help
+	  Device driver initialization priority.
+	  Device is connected to SPI bus, it has to
+	  be initialized after SPI driver.
+
+config SPI_FLASH_SPI_FREQ_0
+	int "SPI system frequency"
+	depends on SPI_FLASH
+	default 80000000
+	help
+	  This option sets the SPI controller's frequency. Beware this value
+	  depends on the SPI controller being used and also on the system
+	  clock.
+
+config SPI_FLASH_GPIO_SPI_CS
+	bool "Manage SPI CS through a GPIO pin"
+	depends on SPI_FLASH
+	default n
+	help
+	  This option is useful if one needs to manage SPI CS through a GPIO
+	  pin to by-pass the SPI controller's CS logic.
+
+config SPI_FLASH_GPIO_SPI_CS_DRV_NAME
+	string "GPIO driver's name to use to drive SPI CS through"
+	depends on SPI_FLASH_GPIO_SPI_CS
+	default ""
+	help
+	  This option is mandatory to set which GPIO controller to use in order
+	  to actually emulate the SPI CS.
+
+config SPI_FLASH_GPIO_SPI_CS_PIN
+	int "GPIO PIN to use to drive SPI CS through"
+	default 0
+	depends on SPI_FLASH_GPIO_SPI_CS
+	help
+	  This option is mandatory to set which GPIO pin to use in order
+	  to actually emulate the SPI CS.
+
+config SPI_FLASH_GPIO_CS_WAIT_DELAY
+	int "Delay time in us"
+        depends on SPI_FLASH_GPIO_SPI_CS
+	default 0
+	help
+	  This is the wait delay (in us) to allow for CS switching to take effect
+
+endif # SPI_FLASH
+
+gsource "drivers/flash/Kconfig.spi.*"
