@@ -64,7 +64,9 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack, size_t sz,
 {
 	char *base = K_THREAD_STACK_BUFFER(stack);
 	char *top = base + sz;
-	__ASSERT((((size_t)top) & 3) == 0, "Misaligned stack");
+
+	/* Align downward.  The API as specified requires a runtime check. */
+	top = (char *)(((unsigned int)top) & ~3);
 
 	_new_thread_init(thread, base, sz, prio, opts);
 
