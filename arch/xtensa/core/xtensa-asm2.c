@@ -16,6 +16,9 @@ void *xtensa_init_stack(int *stack_top,
 			void (*entry)(void *, void *, void *),
 			void *arg1, void *arg2, void *arg3)
 {
+	/* Align downward.  The API as specified requires a runtime check. */
+	stack_top = (int *)(((unsigned int)stack_top) & ~3);
+
 	/* We cheat and shave 16 bytes off, the top four words are the
 	 * A0-A3 spill area for the caller of the entry function,
 	 * which doesn't exist.  It will never be touched, so we
