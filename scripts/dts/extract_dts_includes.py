@@ -422,7 +422,7 @@ def extract_property(node_compat, yaml, node_address, y_key, y_val, names,
         extract_pinctrl(node_address, yaml,
                         reduced[node_address]['props'][y_key],
                         names[p_index], p_index, defs, def_label)
-    elif 'clocks' in y_key:
+    elif 'clocks' in y_key or 'gpios' in y_key:
         extract_cells(node_address, yaml, y_key,
                       names, 0, prefix, defs, def_label)
     else:
