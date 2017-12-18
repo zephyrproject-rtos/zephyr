@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-'''Runner for debugging with JLink.'''
+'''Runner for debugging with J-Link.'''
 
 from .core import ZephyrBinaryRunner, RunnerCaps
 
@@ -13,13 +13,14 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for the J-Link GDB server.'''
 
     def __init__(self, device,
-                 gdbserver='JLinkGDBServer', iface='swd', elf_name=None,
-                 gdb=None, gdb_port=DEFAULT_JLINK_GDB_PORT, tui=False,
-                 debug=False):
+                 gdbserver='JLinkGDBServer', iface='swd', speed='auto',
+                 elf_name=None, gdb=None, gdb_port=DEFAULT_JLINK_GDB_PORT,
+                 tui=False, debug=False):
         super(JLinkBinaryRunner, self).__init__(debug=debug)
         self.device = device
         self.gdbserver_cmd = [gdbserver]
         self.iface = iface
+        self.speed = speed
         self.elf_name = elf_name
         self.gdb_cmd = [gdb] if gdb is not None else None
         self.gdb_port = gdb_port
@@ -41,6 +42,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         # Optional:
         parser.add_argument('--iface', default='swd',
                             help='interface to use, default is swd')
+        parser.add_argument('--speed', default='auto',
+                            help='interface speed, default is autodetect')
         parser.add_argument('--tui', default=False, action='store_true',
                             help='if given, GDB uses -tui')
         parser.add_argument('--gdbserver', default='JLinkGDBServer',
@@ -52,17 +55,20 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
     @classmethod
     def create_from_args(cls, args):
         return JLinkBinaryRunner(args.device, gdbserver=args.gdbserver,
-                                 iface=args.iface, elf_name=args.kernel_elf,
+                                 iface=args.iface, speed=args.speed,
+                                 elf_name=args.kernel_elf,
                                  gdb=args.gdb, gdb_port=args.gdb_port,
                                  tui=args.tui, debug=args.verbose)
 
     def print_gdbserver_message(self):
-        print('JLink GDB server running on port {}'.format(self.gdb_port))
+        print('J-Link GDB server running on port {}'.format(self.gdb_port))
 
     def do_run(self, command, **kwargs):
         server_cmd = (self.gdbserver_cmd +
-                      ['-port', str(self.gdb_port),
+                      ['-select', 'usb', # only USB connections supported
+                       '-port', str(self.gdb_port),
                        '-if', self.iface,
+                       '-speed', self.speed,
                        '-device', self.device,
                        '-silent',
                        '-singlerun'])
