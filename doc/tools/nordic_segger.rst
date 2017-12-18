@@ -78,6 +78,38 @@ and ``<x>`` is either 1 for nRF51-based boards or 2 for nRF52-based boards
 
 Where ``<x>`` is either 1 for nRF51-based boards or 2 for nRF52-based boards
 
+Debugging with GDB
+******************
+
+**Note**: The instructions in this section are common to all Operating Systems.
+
+Once the application is flashed into the board, you can debug using GDB or try
+a visual debugger such as Segger Ozone, descibed in :ref:`nordic_segger_ozone`.
+
+# Start the J-Link GDB server on one terminal window:
+
+   .. code-block:: console
+
+   $ JLinkGDBServer -device nrf5<x> -if swd -speed 4000
+
+   Where ``<x>`` is either 1 for nRF51-based boards or 2 for nRF52-based boards
+
+# Find ``arm-zephyr-eabi-gdb`` or ``arm-none-eabi-gdb`` depending on whether
+  you are running the Zephyr SDK or you have installed the GNU ARM Embedded
+  toolchain, and run it on another terminal window against ``zephyr.elf``:
+
+   .. code-block:: console
+
+   $ <path to gdb>/arm-zephyr-eabi-gdb zephyr/zephyr.elf
+   or
+   $ <path to gdb>/arm-none-eabi-gdb zephyr/zephyr.elf
+
+# Once in the GDB shell, connect to the remote target and you are ready to go:
+
+   .. code-block:: console
+
+   (gdb) target remote localhost:2331
+
 USB CDC ACM Serial Port Setup
 *****************************
 
@@ -180,6 +212,8 @@ GNU/Linux and macOS (OS X)
   * RTT Control Block address: auto-detection
   * RTT Channel name or index: 0
   * Output file: filename or ``/dev/stdout`` to display on the terminal directly
+
+.. _nordic_segger_ozone:
 
 Segger Ozone
 ************
