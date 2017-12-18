@@ -6,18 +6,10 @@
 
 #include <kernel.h>
 #include <pthread.h>
-#include "include/ksched.h"
-#include "include/wait_q.h"
+#include "ksched.h"
+#include "wait_q.h"
 
-static void ready_one_thread(_wait_q_t *wq)
-{
-	struct k_thread *th = _unpend_first_thread(wq);
-
-	if (th) {
-		_abort_thread_timeout(th);
-		_ready_thread(th);
-	}
-}
+void ready_one_thread(_wait_q_t *wq);
 
 static int cond_wait(pthread_cond_t *cv, pthread_mutex_t *mut, int timeout)
 {
@@ -101,40 +93,3 @@ int pthread_cond_timedwait(pthread_cond_t *cv, pthread_mutex_t *mut,
 	return cond_wait(cv, mut, _ts_to_ms(to));
 }
 
-int pthread_mutex_trylock(pthread_mutex_t *m)
-{
-	int key = irq_lock(), ret = -EBUSY;
-
-	if (m->sem->count) {
-		m->sem->count = 0;
-		ret = 0;
-	}
-
-	irq_unlock(key);
-
-	return ret;
-}
-
-int pthread_barrier_wait(pthread_barrier_t *b)
-{
-	int key = irq_lock();
-
-	b->count++;
-
-	if (b->count >= b->max) {
-		b->count = 0;
-
-		while (!sys_dlist_is_empty(&b->wait_q)) {
-			ready_one_thread(&b->wait_q);
-		}
-
-		if (!__must_switch_threads()) {
-			irq_unlock(key);
-			return 0;
-		}
-	} else {
-		_pend_current_thread(&b->wait_q, K_FOREVER);
-	}
-
-	return _Swap(key);
-}
