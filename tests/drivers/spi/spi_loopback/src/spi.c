@@ -225,9 +225,10 @@ static int spi_rx_half_end(struct spi_config *spi_conf)
 			.len = BUF_SIZE,
 		},
 	};
+	u8_t dummy_rx_buf[8] = {};
 	struct spi_buf rx_bufs[] = {
 		{
-			.buf = NULL,
+			.buf = dummy_rx_buf,
 			.len = 8,
 		},
 		{
@@ -271,9 +272,10 @@ static int spi_rx_every_4(struct spi_config *spi_conf)
 			.len = BUF_SIZE,
 		},
 	};
+	u8_t dummy_rx_buf[4] = {};
 	struct spi_buf rx_bufs[] = {
 		{
-			.buf = NULL,
+			.buf = dummy_rx_buf,
 			.len = 4,
 		},
 		{
@@ -281,7 +283,7 @@ static int spi_rx_every_4(struct spi_config *spi_conf)
 			.len = 4,
 		},
 		{
-			.buf = NULL,
+			.buf = dummy_rx_buf,
 			.len = 4,
 		},
 		{
