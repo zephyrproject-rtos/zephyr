@@ -94,8 +94,8 @@ SECTIONS
 	KEEP(*(.dbghdr))
 	KEEP(*(".dbghdr.*"))
 #endif
-	_vector_start = .;
 	. = CONFIG_TEXT_SECTION_OFFSET;
+	_vector_start = .;
 	KEEP(*(.exc_vector_table))
 	KEEP(*(".exc_vector_table.*"))
 
