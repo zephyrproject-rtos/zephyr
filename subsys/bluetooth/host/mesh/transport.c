@@ -17,6 +17,7 @@
 
 #include <bluetooth/hci.h>
 #include <bluetooth/mesh.h>
+#include <bluetooth/testing.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_TRANS)
 #include "common/log.h"
@@ -30,7 +31,6 @@
 #include "access.h"
 #include "foundation.h"
 #include "transport.h"
-#include "../testing.h"
 
 #define AID_MASK                    ((u8_t)(BIT_MASK(6)))
 

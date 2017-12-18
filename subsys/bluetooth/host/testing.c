@@ -7,7 +7,7 @@
 #include <zephyr.h>
 #include <stddef.h>
 
-#include "testing.h"
+#include <bluetooth/testing.h>
 
 static sys_slist_t cb_slist;
 
