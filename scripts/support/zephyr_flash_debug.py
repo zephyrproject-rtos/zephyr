@@ -91,8 +91,15 @@ def main():
     try:
         handlers[args.top_command](args)
     except Exception as e:
-        print('Error: {}'.format(e), file=sys.stderr)
-        raise
+        if args.verbose:
+            raise
+        else:
+            print('Error: {}'.format(e), file=sys.stderr)
+            print(('(Re-run as "{} --verbose {} ..." '
+                   'or set CMAKE_VERBOSE_MAKEFILE for a stack trace.)').format(
+                       sys.argv[0], args.top_command),
+                  file=sys.stderr)
+            sys.exit(1)
 
 
 if __name__ == '__main__':
