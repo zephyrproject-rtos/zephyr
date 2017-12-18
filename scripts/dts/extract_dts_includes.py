@@ -66,21 +66,7 @@ def find_parent_irq_node(node_address):
             interrupt_parent = reduced[address]['props'].get(
                 'interrupt-parent')
 
-    return reduced[phandles[interrupt_parent]]
-
-def find_parent_prop(node_address, prop):
-    parent_address = ''
-
-    for comp in node_address.split('/')[1:-1]:
-        parent_address += '/' + comp
-
-    if prop in reduced[parent_address]['props']:
-        parent_prop = reduced[parent_address]['props'].get(prop)
-    else:
-        raise Exception("Parent of node " + node_address +
-                        " has no " + prop + " property")
-
-    return parent_prop
+    return phandles[interrupt_parent]
 
 def extract_interrupts(node_address, yaml, y_key, names, defs, def_label):
     node = reduced[node_address]
@@ -100,22 +86,16 @@ def extract_interrupts(node_address, yaml, y_key, names, defs, def_label):
         prop_alias = {}
         l_idx = [str(index)]
 
-        if y_key == 'interrupts-extended':
-            cell_parent = reduced[phandles[props.pop(0)]]
+        try:
+            name = [convert_string_to_label(names.pop(0))]
+        except:
             name = []
-        else:
-            try:
-                name = [convert_string_to_label(names.pop(0))]
-            except:
-                name = []
 
-            cell_parent = irq_parent
-
-        cell_yaml = yaml[get_compat(cell_parent)]
+        cell_yaml = yaml[get_compat(irq_parent)]
         l_cell_prefix = [yaml[get_compat(irq_parent)].get(
             'cell_string', []).upper()]
 
-        for i in range(cell_parent['props']['#interrupt-cells']):
+        for i in range(reduced[irq_parent]['props']['#interrupt-cells']):
             l_cell_name = [cell_yaml['#cells'][i].upper()]
             if l_cell_name == l_cell_prefix:
                 l_cell_name = []
@@ -214,15 +194,17 @@ def extract_cells(node_address, yaml, y_key, names, index, prefix, defs,
     try:
         props = list(reduced[node_address]['props'].get(y_key))
     except:
-        props = [reduced[node_address]['props'].get(y_key)]
+        props = reduced[node_address]['props'].get(y_key)
 
-    cell_parent = reduced[phandles[props.pop(0)]]
+    cell_parent = phandles[props.pop(0)]
+
 
     try:
         cell_yaml = yaml[get_compat(cell_parent)]
     except:
         raise Exception(
-            "Could not find yaml description for " + cell_parent['name'])
+            "Could not find yaml description for " +
+                reduced[cell_parent]['name'])
 
     try:
         name = names.pop(0).upper()
@@ -237,9 +219,9 @@ def extract_cells(node_address, yaml, y_key, names, index, prefix, defs,
     prop_def = {}
     prop_alias = {}
 
-    for k in cell_parent['props'].keys():
+    for k in reduced[cell_parent]['props'].keys():
         if k[0] == '#' and '-cells' in k:
-            for i in range(cell_parent['props'].get(k)):
+            for i in range(reduced[cell_parent]['props'].get(k)):
                 l_cellname = [str(cell_yaml['#cells'][i]).upper()]
                 if l_cell == l_cellname:
                     label = l_base + l_cell + l_idx
@@ -282,10 +264,8 @@ def extract_pinctrl(node_address, yaml, pinconf, names, index, defs,
     prop_def = {}
     for p in prop_list:
         pin_node_address = phandles[p]
-        parent_address = '/'.join(pin_node_address.split('/')[:-1])
         pin_subnode = '/'.join(pin_node_address.split('/')[-1:])
-        pin_parent = reduced[parent_address]
-        cell_yaml = yaml[get_compat(pin_parent)]
+        cell_yaml = yaml[get_compat(pin_node_address)]
         cell_prefix = cell_yaml.get('cell_string', None)
         post_fix = []
 
@@ -434,7 +414,7 @@ def extract_property(node_compat, yaml, node_address, y_key, y_val, names,
 def extract_node_include_info(reduced, root_node_address, sub_node_address,
                               yaml, defs, structs, y_sub):
     node = reduced[sub_node_address]
-    node_compat = get_compat(reduced[root_node_address])
+    node_compat = get_compat(root_node_address)
     label_override = None
 
     if node_compat not in yaml.keys():
@@ -706,7 +686,7 @@ def generate_node_definitions(yaml_list):
     structs = {}
 
     for k, v in reduced.items():
-        node_compat = get_compat(v)
+        node_compat = get_compat(k)
         if node_compat is not None and node_compat in yaml_list:
             extract_node_include_info(
                 reduced, k, k, yaml_list, defs, structs, None)
