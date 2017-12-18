@@ -40,8 +40,13 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
         snrs = self.check_output(['nrfjprog', '--ids'])
         snrs = snrs.decode(sys.getdefaultencoding()).strip().splitlines()
 
-        if len(snrs) == 1:
-            return snrs[0]
+        if len(snrs) == 0:
+            raise Exception('"nrfjprog --ids" did not find a board; Is the board connected?')
+        elif len(snrs) == 1:
+            board_snr = snrs[0]
+            if board_snr == '0':
+                raise Exception('"nrfjprog --ids" returned 0; is a debugger already connected?')
+            return board_snr
 
         print('There are multiple boards connected.')
         for i, snr in enumerate(snrs, 1):
