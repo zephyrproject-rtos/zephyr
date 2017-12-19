@@ -219,47 +219,55 @@ static void write_kernel_data(void)
 /*
  * volatile to avoid compiler mischief.
  */
-volatile int *ptr = NULL;
+volatile int *priv_stack_ptr;
 #if defined(CONFIG_X86)
-volatile size_t size = MMU_PAGE_SIZE;
-#elif defined(CONFIG_ARM)
-#if defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
-volatile size_t size = POW2_CEIL(CONFIG_ZTEST_STACKSIZE);
-#else
-volatile size_t size = CONFIG_ZTEST_STACKSIZE + MPU_GUARD_ALIGN_AND_SIZE;
+/*
+ * We can't inline this in the code or make it static
+ * or local without triggering a warning on -Warray-bounds.
+ */
+size_t size = MMU_PAGE_SIZE;
 #endif
+
+static void read_priv_stack(void)
+{
+	/* Try to read from privileged stack. */
+#if defined(CONFIG_X86)
+	int s[1];
+
+	s[0] = 0;
+	priv_stack_ptr = &s[0];
+	priv_stack_ptr = (int *)((unsigned char *)priv_stack_ptr - size);
+#elif defined(CONFIG_ARM)
+	/* priv_stack_ptr set by test_main() */
 #else
 #error "Not implemented for this architecture"
 #endif
-
-static void read_kernel_stack(void)
-{
-	/* Try to read from kernel stack. */
-	int s[1];
-
-	s[0] = 0;
-	ptr = &s[0];
-	ptr = (int *)((unsigned char *)ptr - size);
 	expect_fault = true;
 	expected_reason = REASON_HW_EXCEPTION;
 	BARRIER();
-	printk("%d\n", *ptr);
-	zassert_unreachable("Read from kernel stack did not fault\n");
+	printk("%d\n", *priv_stack_ptr);
+	zassert_unreachable("Read from privileged stack did not fault\n");
 }
 
-static void write_kernel_stack(void)
+static void write_priv_stack(void)
 {
-	/* Try to write to kernel stack. */
+	/* Try to write to privileged stack. */
+#if defined(CONFIG_X86)
 	int s[1];
 
 	s[0] = 0;
-	ptr = &s[0];
-	ptr = (int *)((unsigned char *)ptr - size);
+	priv_stack_ptr = &s[0];
+	priv_stack_ptr = (int *)((unsigned char *)priv_stack_ptr - size);
+#elif defined(CONFIG_ARM)
+	/* priv_stack_ptr set by test_main() */
+#else
+#error "Not implemented for this architecture"
+#endif
 	expect_fault = true;
 	expected_reason = REASON_HW_EXCEPTION;
 	BARRIER();
-	*ptr = 42;
-	zassert_unreachable("Write to kernel stack did not fault\n");
+	*priv_stack_ptr = 42;
+	zassert_unreachable("Write to privileged stack did not fault\n");
 }
 
 
@@ -492,8 +500,16 @@ static void read_kobject_user_pipe(void)
 		"did not fault\n");
 }
 
+#if defined(CONFIG_ARM)
+extern u8_t *_k_priv_stack_find(void *obj);
+extern k_thread_stack_t ztest_thread_stack[];
+#endif
+
 void test_main(void)
 {
+#if defined(CONFIG_ARM)
+	priv_stack_ptr = (int *)_k_priv_stack_find(ztest_thread_stack);
+#endif
 	k_thread_access_grant(k_current_get(),
 			      &kthread_thread, &kthread_stack,
 			      &uthread_thread, &uthread_stack,
@@ -510,8 +526,8 @@ void test_main(void)
 			 ztest_user_unit_test(write_kerntext),
 			 ztest_user_unit_test(read_kernel_data),
 			 ztest_user_unit_test(write_kernel_data),
-			 ztest_user_unit_test(read_kernel_stack),
-			 ztest_user_unit_test(write_kernel_stack),
+			 ztest_user_unit_test(read_priv_stack),
+			 ztest_user_unit_test(write_priv_stack),
 			 ztest_user_unit_test(pass_user_object),
 			 ztest_user_unit_test(pass_noperms_object),
 			 ztest_user_unit_test(start_kernel_thread),
