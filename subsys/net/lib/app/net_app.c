@@ -1045,17 +1045,9 @@ int net_app_close(struct net_app_ctx *ctx)
 		 */
 #if defined(CONFIG_NET_IPV4)
 		net_sin(&ctx->ipv4.local)->sin_port = 0;
-
-		if (ctx->ipv4.ctx) {
-			net_sin_ptr(&ctx->ipv4.ctx->local)->sin_port = 0;
-		}
 #endif
 #if defined(CONFIG_NET_IPV6)
 		net_sin6(&ctx->ipv6.local)->sin6_port = 0;
-
-		if (ctx->ipv6.ctx) {
-			net_sin6_ptr(&ctx->ipv6.ctx->local)->sin6_port = 0;
-		}
 #endif
 	}
 #endif
@@ -1110,17 +1102,9 @@ int net_app_close2(struct net_app_ctx *ctx, struct net_context *net_ctx)
 		 */
 #if defined(CONFIG_NET_IPV4)
 		net_sin(&ctx->ipv4.local)->sin_port = 0;
-
-		if (net_ctx == ctx->ipv4.ctx) {
-			net_sin_ptr(&ctx->ipv4.ctx->local)->sin_port = 0;
-		}
 #endif
 #if defined(CONFIG_NET_IPV6)
 		net_sin6(&ctx->ipv6.local)->sin6_port = 0;
-
-		if (net_ctx == ctx->ipv6.ctx) {
-			net_sin6_ptr(&ctx->ipv6.ctx->local)->sin6_port = 0;
-		}
 #endif
 	}
 #endif
