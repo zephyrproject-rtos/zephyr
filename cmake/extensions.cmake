@@ -520,17 +520,28 @@ endmacro()
 # provides glue between CMake and the runner invocation script,
 # zephyr_flash_debug.py.
 
-# This function is intended for board.cmake files.
+# This function is intended for board.cmake files and application
+# CMakeLists.txt files.
 #
-# Usage:
+# Usage from board.cmake files:
 #   board_runner_args(runner "--some-arg=val1" "--another-arg=val2")
 #
-# Will ensure the command line to zephyr_flash_debug.py contains:
+# The build system will then ensure the command line to
+# zephyr_flash_debug.py contains:
 #   --some-arg=val1 --another-arg=val2
 #
-# in the flash, debug, and debugserver target recipes, as
-# appropriate. These settings will override any defaults provided by
-# the build system.
+# Within application CMakeLists.txt files, ensure that all calls to
+# board_runner_args() are part of a macro named app_set_runner_args(),
+# like this, which is defined before including the boilerplate file:
+#   macro(app_set_runner_args)
+#     board_runner_args(runner "--some-app-setting=value")
+#   endmacro()
+#
+# The build system tests for the existence of the macro and will
+# invoke it at the appropriate time if it is defined.
+#
+# Any explicitly provided settings given by this function override
+# defaults provided by the build system.
 function(board_runner_args runner)
   string(MAKE_C_IDENTIFIER ${runner} runner_id)
   # Note the "_EXPLICIT_" here, and see below.
@@ -554,8 +565,16 @@ endfunction()
 # precedence, except for arguments which can be given multiple times
 # (use these with caution).
 function(board_finalize_runner_args runner)
+  # If the application provided a macro to add additional runner
+  # arguments, handle them.
+  if(COMMAND app_set_runner_args)
+    app_set_runner_args()
+  endif()
+
+  # Retrieve the list of explicitly set arguments.
   string(MAKE_C_IDENTIFIER ${runner} runner_id)
   get_property(explicit GLOBAL PROPERTY "BOARD_RUNNER_ARGS_EXPLICIT_${runner_id}")
+
   # Note no _EXPLICIT_ here. This property contains the final list.
   set_property(GLOBAL APPEND PROPERTY BOARD_RUNNER_ARGS_${runner_id}
     # Default arguments from the common runner file come first.
