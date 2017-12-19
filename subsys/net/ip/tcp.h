@@ -130,6 +130,9 @@ struct net_tcp {
 	/** Retransmit timer */
 	struct k_delayed_work retry_timer;
 
+	/** TIME_WAIT timer */
+	struct k_delayed_work timewait_timer;
+
 	/** List pointer used for TCP retransmit buffering */
 	sys_slist_t sent_list;
 
