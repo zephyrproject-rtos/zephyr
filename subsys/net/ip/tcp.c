@@ -263,6 +263,11 @@ static void retry_timer_cancel(struct net_tcp *tcp)
 	k_delayed_work_cancel(&tcp->retry_timer);
 }
 
+static void timewait_timer_cancel(struct net_tcp *tcp)
+{
+	k_delayed_work_cancel(&tcp->timewait_timer);
+}
+
 int net_tcp_release(struct net_tcp *tcp)
 {
 	struct net_pkt *pkt;
@@ -284,6 +289,7 @@ int net_tcp_release(struct net_tcp *tcp)
 
 	ack_timer_cancel(tcp);
 	fin_timer_cancel(tcp);
+	timewait_timer_cancel(tcp);
 
 	net_tcp_change_state(tcp, NET_TCP_CLOSED);
 	tcp->context = NULL;
