@@ -46,6 +46,7 @@ static void supported_commands(u8_t *data, u16_t len)
 	tester_set_bit(buf, CORE_READ_SUPPORTED_COMMANDS);
 	tester_set_bit(buf, CORE_READ_SUPPORTED_SERVICES);
 	tester_set_bit(buf, CORE_REGISTER_SERVICE);
+	tester_set_bit(buf, CORE_UNREGISTER_SERVICE);
 
 	tester_send(BTP_SERVICE_ID_CORE, CORE_READ_SUPPORTED_COMMANDS,
 		    BTP_INDEX_NONE, (u8_t *) rp, sizeof(buf));
@@ -108,6 +109,37 @@ rsp:
 		   status);
 }
 
+static void unregister_service(u8_t *data, u16_t len)
+{
+	struct core_unregister_service_cmd *cmd = (void *) data;
+	u8_t status;
+
+	switch (cmd->id) {
+	case BTP_SERVICE_ID_GAP:
+		status = tester_unregister_gap();
+		break;
+	case BTP_SERVICE_ID_GATT:
+		status = tester_unregister_gatt();
+		break;
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
+	case BTP_SERVICE_ID_L2CAP:
+		status = tester_unregister_l2cap();
+		break;
+#endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
+#if defined(CONFIG_BT_MESH)
+	case BTP_SERVICE_ID_MESH:
+		status = tester_unregister_mesh();
+		break;
+#endif /* CONFIG_BT_MESH */
+	default:
+		status = BTP_STATUS_FAILED;
+		break;
+	}
+
+	tester_rsp(BTP_SERVICE_ID_CORE, CORE_UNREGISTER_SERVICE, BTP_INDEX_NONE,
+		   status);
+}
+
 static void handle_core(u8_t opcode, u8_t index, u8_t *data,
 			u16_t len)
 {
@@ -125,6 +157,9 @@ static void handle_core(u8_t opcode, u8_t index, u8_t *data,
 		return;
 	case CORE_REGISTER_SERVICE:
 		register_service(data, len);
+		return;
+	case CORE_UNREGISTER_SERVICE:
+		unregister_service(data, len);
 		return;
 	default:
 		tester_rsp(BTP_SERVICE_ID_CORE, opcode, BTP_INDEX_NONE,

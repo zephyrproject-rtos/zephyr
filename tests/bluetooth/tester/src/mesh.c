@@ -636,3 +636,8 @@ u8_t tester_init_mesh(void)
 
 	return BTP_STATUS_SUCCESS;
 }
+
+u8_t tester_unregister_mesh(void)
+{
+	return BTP_STATUS_SUCCESS;
+}

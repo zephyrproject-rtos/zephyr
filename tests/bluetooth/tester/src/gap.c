@@ -742,3 +742,8 @@ u8_t tester_init_gap(void)
 
 	return BTP_STATUS_SUCCESS;
 }
+
+u8_t tester_unregister_gap(void)
+{
+	return BTP_STATUS_SUCCESS;
+}
