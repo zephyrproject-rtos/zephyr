@@ -213,7 +213,7 @@ void ctr_mode(void)
 	struct cipher_pkt decrypt;
 	u8_t encrypted[64] = {0};
 	u8_t decrypted[64] = {0};
-	u8_t iv[12] = {
+	u8_t iv1[12] = {
 		0xf0, 0xf1, 0xf2, 0xf3, 0xf4, 0xf5, 0xf6, 0xf7,
 		0xf8, 0xf9, 0xfa, 0xfb
 	};
@@ -249,7 +249,7 @@ void ctr_mode(void)
 	encrypt.out_buf_max = sizeof(encrypted);
 	encrypt.out_buf = encrypted;
 
-	if (cipher_ctr_op(&ini, &encrypt, iv)) {
+	if (cipher_ctr_op(&ini, &encrypt, iv1)) {
 		SYS_LOG_ERR("CTR mode ENCRYPT - Failed");
 		goto out;
 	}
@@ -276,7 +276,7 @@ void ctr_mode(void)
 	decrypt.out_buf = decrypted;
 	decrypt.out_buf_max = sizeof(decrypted);
 
-	if (cipher_ctr_op(&ini, &decrypt, iv)) {
+	if (cipher_ctr_op(&ini, &decrypt, iv1)) {
 		SYS_LOG_ERR("CTR mode DECRYPT - Failed");
 		goto out;
 	}
