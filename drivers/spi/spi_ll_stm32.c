@@ -266,13 +266,13 @@ static int spi_stm32_configure(struct spi_config *config)
 	LL_SPI_Disable(spi);
 	LL_SPI_SetBaudRatePrescaler(spi, scaler[br - 1]);
 
-	if (SPI_MODE_GET(config->operation) ==  SPI_MODE_CPOL) {
+	if (SPI_MODE_GET(config->operation) & SPI_MODE_CPOL) {
 		LL_SPI_SetClockPolarity(spi, LL_SPI_POLARITY_HIGH);
 	} else {
 		LL_SPI_SetClockPolarity(spi, LL_SPI_POLARITY_LOW);
 	}
 
-	if (SPI_MODE_GET(config->operation) == SPI_MODE_CPHA) {
+	if (SPI_MODE_GET(config->operation) & SPI_MODE_CPHA) {
 		LL_SPI_SetClockPhase(spi, LL_SPI_PHASE_2EDGE);
 	} else {
 		LL_SPI_SetClockPhase(spi, LL_SPI_PHASE_1EDGE);
