@@ -189,6 +189,45 @@ def extract_reg_prop(node_address, names, defs, def_label, div, post_label):
         index += 1
 
 
+def extract_controller(node_address, y_key, prefix, defs, def_label):
+    try:
+        props = list(reduced[node_address]['props'].get(y_key))
+    except:
+        props = reduced[node_address]['props'].get(y_key)
+
+    # get controller node (referenced via phandle)
+    cell_parent = phandles[props[0]]
+
+    try:
+       l_cell = reduced[cell_parent]['props'].get('label')
+    except KeyError:
+        l_cell = None
+
+    if l_cell is not None:
+
+        l_base = def_label.split('/')
+        l_base += prefix
+
+        prop_def = {}
+        prop_alias = {}
+
+        for k in reduced[cell_parent]['props']:
+            if 'controller' in k:
+                l_cellname = convert_string_to_label(str(k))
+        label = l_base + [l_cellname]
+        prop_def['_'.join(label)] = "\"" + l_cell + "\""
+
+        #generate defs also if node is referenced as an alias in dts
+        if node_address in aliases:
+            for i in aliases[node_address]:
+                alias_label = \
+                    convert_string_to_label(i)
+                alias = [alias_label] + label[1:]
+                prop_alias['_'.join(alias)] = '_'.join(label)
+
+        insert_defs(node_address, defs, prop_def, prop_alias)
+
+
 def extract_cells(node_address, yaml, y_key, names, index, prefix, defs,
                   def_label):
     try:
@@ -403,6 +442,7 @@ def extract_property(node_compat, yaml, node_address, y_key, y_val, names,
                         reduced[node_address]['props'][y_key],
                         names[p_index], p_index, defs, def_label)
     elif 'clocks' in y_key or 'gpios' in y_key:
+        extract_controller(node_address, y_key, prefix, defs, def_label)
         extract_cells(node_address, yaml, y_key,
                       names, 0, prefix, defs, def_label)
     else:
