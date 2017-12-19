@@ -1940,3 +1940,8 @@ u8_t tester_init_gatt(void)
 
 	return BTP_STATUS_SUCCESS;
 }
+
+u8_t tester_unregister_gatt(void)
+{
+	return BTP_STATUS_SUCCESS;
+}

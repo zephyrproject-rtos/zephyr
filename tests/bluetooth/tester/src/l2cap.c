@@ -350,3 +350,8 @@ u8_t tester_init_l2cap(void)
 {
 	return BTP_STATUS_SUCCESS;
 }
+
+u8_t tester_unregister_l2cap(void)
+{
+	return BTP_STATUS_SUCCESS;
+}

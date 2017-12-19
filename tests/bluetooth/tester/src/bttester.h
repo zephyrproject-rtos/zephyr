@@ -57,6 +57,11 @@ struct core_register_service_cmd {
 	u8_t id;
 } __packed;
 
+#define CORE_UNREGISTER_SERVICE		0x04
+struct core_unregister_service_cmd {
+	u8_t id;
+} __packed;
+
 /* events */
 #define CORE_EV_IUT_READY		0x80
 
@@ -791,19 +796,23 @@ void tester_send(u8_t service, u8_t opcode, u8_t index, u8_t *data,
 		 size_t len);
 
 u8_t tester_init_gap(void);
+u8_t tester_unregister_gap(void);
 void tester_handle_gap(u8_t opcode, u8_t index, u8_t *data,
 		       u16_t len);
 u8_t tester_init_gatt(void);
+u8_t tester_unregister_gatt(void);
 void tester_handle_gatt(u8_t opcode, u8_t index, u8_t *data,
 			u16_t len);
 
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 u8_t tester_init_l2cap(void);
+u8_t tester_unregister_l2cap(void);
 void tester_handle_l2cap(u8_t opcode, u8_t index, u8_t *data,
 			 u16_t len);
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
 #if defined(CONFIG_BT_MESH)
 u8_t tester_init_mesh(void);
+u8_t tester_unregister_mesh(void);
 void tester_handle_mesh(u8_t opcode, u8_t index, u8_t *data, u16_t len);
 #endif /* CONFIG_BT_MESH */
