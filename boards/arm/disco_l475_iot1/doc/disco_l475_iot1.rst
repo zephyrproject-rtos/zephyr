@@ -1,7 +1,7 @@
 .. _disco_l475_iot1_board:
 
-ST Disco L475 IOT01
-###################
+ST Disco L475 IOT01 (B-L475E-IOT01A)
+####################################
 
 Overview
 ********
