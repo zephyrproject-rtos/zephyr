@@ -774,6 +774,18 @@ add_custom_command(
   # NB: COMMENT only works for some CMake-Generators
 )
 
+if(CONFIG_OUTPUT_PRINT_MEMORY_USAGE)
+  # Use --print-memory-usage with the first link.
+  #
+  # Don't use this option with the second link because seeing it twice
+  # could confuse users and using it on the second link would suppress
+  # it when the first link has a ram/flash-usage issue.
+  set(option ${LINKERFLAGPREFIX},--print-memory-usage)
+  string(MAKE_C_IDENTIFIER check${option} check)
+  check_c_compiler_flag(${option} ${check})
+  target_link_libraries_ifdef(${check} zephyr_prebuilt ${option})
+endif()
+
 add_subdirectory(cmake/qemu)
 add_subdirectory(cmake/flash)
 

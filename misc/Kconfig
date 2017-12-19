@@ -162,6 +162,20 @@ config OUTPUT_DISASSEMBLY
 	help
 	  Create an .lst file with the assembly listing of the firmware.
 
+config OUTPUT_PRINT_MEMORY_USAGE
+	bool "Print memory usage to stdout"
+	default y
+	help
+	  If the toolchain supports it, this option will pass
+	  --print-memory-region to the linker when it is doing it's first
+	  linker pass. Note that the memory regions are symbolic concepts
+	  defined by the linker scripts and do not necessarily map
+	  directly to the real physical address space. Take also note that
+	  some platforms do two passes of the linker so the results do not
+	  match exactly to the final elf file. See also rom_report,
+	  ram_report and
+	  https://sourceware.org/binutils/docs/ld/MEMORY.html
+
 config BUILD_OUTPUT_HEX
 	bool "Build a binary in HEX format"
 	default n
