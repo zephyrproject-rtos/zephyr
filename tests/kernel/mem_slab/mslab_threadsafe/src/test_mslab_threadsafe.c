@@ -42,13 +42,13 @@ static void tmslab_api(void *p1, void *p2, void *p3)
 	while (i--) {
 		memset(block, 0, sizeof(block));
 
-		for (int i = 0; i < BLK_NUM; i++) {
-			k_mem_slab_alloc(slab, &block[i], TIMEOUT);
+		for (int j = 0; j < BLK_NUM; j++) {
+			k_mem_slab_alloc(slab, &block[j], TIMEOUT);
 		}
-		for (int i = 0; i < BLK_NUM; i++) {
-			if (block[i]) {
-				k_mem_slab_free(slab, &block[i]);
-				block[i] = NULL;
+		for (int j = 0; j < BLK_NUM; j++) {
+			if (block[j]) {
+				k_mem_slab_free(slab, &block[j]);
+				block[j] = NULL;
 			}
 		}
 	}

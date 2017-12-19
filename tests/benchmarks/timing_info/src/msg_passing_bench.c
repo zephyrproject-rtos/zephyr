@@ -314,23 +314,23 @@ void msg_passing_bench(void)
 
 void thread_producer_msgq_w_cxt_switch(void *p1, void *p2, void *p3)
 {
-	int data_to_send = 5050;
+	int to_send = 5050;
 
 	__read_swap_end_time_value = 1;
 	TIMING_INFO_PRE_READ();
 	__msg_q_put_w_cxt_start_time = (u32_t) TIMING_INFO_OS_GET_TIME();
-	k_msgq_put(&benchmark_q, &data_to_send, K_NO_WAIT);
+	k_msgq_put(&benchmark_q, &to_send, K_NO_WAIT);
 }
 
 
 void thread_producer_msgq_wo_cxt_switch(void *p1, void *p2, void *p3)
 {
-	int data_to_send = 5050;
+	int to_send = 5050;
 
 	TIMING_INFO_PRE_READ();
 	__msg_q_put_wo_cxt_start_time = TIMING_INFO_OS_GET_TIME();
 
-	k_msgq_put(&benchmark_q, &data_to_send, K_NO_WAIT);
+	k_msgq_put(&benchmark_q, &to_send, K_NO_WAIT);
 
 	TIMING_INFO_PRE_READ();
 	__msg_q_put_wo_cxt_end_time = TIMING_INFO_OS_GET_TIME();
