@@ -5,4 +5,5 @@ zephyr_sources(
   mpu_regions.c
   power.c
   soc.c
+  soc_post_kernel.c
   )
