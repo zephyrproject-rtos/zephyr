@@ -7,12 +7,6 @@ import re
 def arguments_parse():
     parser = argparse.ArgumentParser()
     parser.add_argument('-q', dest="quiet", action='store_true')
-    parser.add_argument(
-        '-m', dest='runmake', action='store_false',
-        help='only merge the fragments, do not execute the make command')
-    parser.add_argument(
-        '-n', dest='alltarget', action='store_const', const='allnoconfig',
-        default='alldefconfig', help='use allnoconfig instead of alldefconfig')
     parser.add_argument('-r', dest='warnredun', action='store_true',
                         help='list redundant entries when merging fragments')
     parser.add_argument('-O', dest='output_dir',
@@ -22,70 +16,78 @@ def arguments_parse():
     return parser.parse_args()
 
 
-def get_config_list(config_file):
-    cfg_list = []
-    pattern = re.compile('^(# ){0,1}(CONFIG_[a-zA-Z0-9_]*)[= ].*')
-    with open(config_file, 'r') as file:
-        for line in file:
-            match = pattern.match(line)
-            if match:
-                if match.group(2):
-                    config_name = match.group(2)
-                else:
-                    config_name = match.group(1)
-                cfg_list.append((config_name, match.group(0), ))
-    return cfg_list
+def get_config_name(line):
+    # '# CONFIG_FOO is not set' should be treated by merge_config as a
+    # state like any other
 
+    is_not_set_pattern = re.compile('^# (CONFIG_[a-zA-Z0-9_]*) is not set.*')
+    pattern            = re.compile('^(CONFIG_[a-zA-Z0-9_]*)[= ].*')
 
-def remove_config(initfile_content, cfg):
-    pattern = re.compile("{}[ =]".format(cfg))
-    lines = initfile_content.split("\n")
-    new_lines = []
+    match            =            pattern.match(line)
+    match_is_not_set = is_not_set_pattern.match(line)
 
-    for line in lines:
-        match = pattern.match(line)
-        if not match:
-            new_lines.append(line)
-    initfile_content = "\n".join(new_lines)
-    return initfile_content
+    if match_is_not_set:
+        return match_is_not_set.group(1)
+    elif match:
+        return match.group(1)
 
-
-def append_files(f1, initfile_content):
-    fin = open(f1, "r")
-    data2 = fin.read()
-    fin.close()
-    return(initfile_content + data2)
-
+    return "" # No match
 
 def main():
     args = arguments_parse()
-    init_file = open(args.config[0])
-    initfile_content = init_file.read()
-    init_file.close()
-    print("-- Using %s as base" % args.config[0])
 
-    for config_file in args.config[1:]:
-        print("-- Merging %s" % config_file)
-        cfg_list = get_config_list(config_file)
+    # Create a datastructure in 'conf' that looks like this:
+    # [
+    #   ("CONFIG_UART", "CONFIG_UART=y"),
+    #   ("CONFIG_ARM", "# CONFIG_ARM is not set")
+    # ]
+    # In other words [(config_name, config_line), ... ]
+    #
+    # Note that "# CONFIG_ARM is not set" is not the same as a
+    # comment, it has meaning (for now).
+    # https://github.com/zephyrproject-rtos/zephyr/issues/5443
+    conf = []
+    for i, fragment_path in enumerate(args.config):
+        with open(fragment_path, "r") as f:
+            fragment = f.read()
+        fragment_list = fragment.split("\n")
 
-        for cfg, full in cfg_list:
-            prev=list(filter(lambda x: cfg in x, initfile_content.split("\n")))
-            if len(prev) > 0 and prev[0] != full and not args.quiet:
-                print("-- Value of {} is redefined by fragment {}".format(cfg, config_file))
-                print("-- Previous value: {}".format(prev[0]))
-                print("-- New value: {}".format(full))
-            elif args.warnredun:
-                print("Value of %s is redundant by fragment %s" % (cfg, config_file))
+        fragment_conf = []
+        for line in fragment_list:
+            config_name = get_config_name(line)
+            if config_name:
+                fragment_conf.append( (config_name, line) )
 
-            initfile_content = remove_config(initfile_content, cfg)
+        if i == 0:
+            print("-- Using {} as base".format(fragment_path))
+        else:
+            print("-- Merging {}".format(fragment_path))
 
-        initfile_content = append_files(config_file, initfile_content)
+            for config_name, line in fragment_conf:
+                for (i, (prev_config_name, prev_line)) in enumerate(list(conf)):
+                    if config_name == prev_config_name:
+                        # The fragment is defining a config that has
+                        # already been defined, the fragment has
+                        # priority, so we remove the existing entry
+                        # and then possibly issue a warning.
+                        conf.pop(i)
 
-    if args.runmake:
-        print("Running make not yet supported")
-    else:
-        with open('%s/.config' % args.output_dir, 'w') as file:
-            file.write(initfile_content)
+                        is_redundant = line == prev_line
+                        is_redefine  = line != prev_line
+                        if not args.quiet:
+                            if is_redefine:
+                                print("-- Value of {} is redefined by fragment {}".format(config_name, fragment_path))
+                                print("-- Previous value: {}".format(prev_line))
+                                print("-- New value: {}".format(line))
+
+                            if is_redundant and args.warnredun:
+                                print("-- Value of {} is redundant by fragment {}".format(config_name, fragment_path))
+
+        conf.extend(fragment_conf)
+
+    with open('{}/.config'.format(args.output_dir), 'w') as f:
+        for (config_name, line) in conf:
+            f.write("{}\n".format(line))
 
 if __name__ == "__main__":
     main()
