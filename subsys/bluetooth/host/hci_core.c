@@ -2646,10 +2646,28 @@ static void hci_encrypt_key_refresh_complete(struct net_buf *buf)
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
 
 #if defined(CONFIG_BT_SMP)
+static void le_ltk_neg_reply(u16_t handle)
+{
+	struct bt_hci_cp_le_ltk_req_neg_reply *cp;
+	struct net_buf *buf;
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_LTK_REQ_NEG_REPLY, sizeof(*cp));
+	if (!buf) {
+		BT_ERR("Out of command buffers");
+
+		return;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = handle;
+
+	bt_hci_cmd_send(BT_HCI_OP_LE_LTK_REQ_NEG_REPLY, buf);
+}
+
 static void le_ltk_request(struct net_buf *buf)
 {
 	struct bt_hci_evt_le_ltk_request *evt = (void *)buf->data;
-	struct bt_hci_cp_le_ltk_req_neg_reply *cp;
+	struct bt_hci_cp_le_ltk_req_reply *cp;
 	struct bt_conn *conn;
 	u16_t handle;
 	u8_t tk[16];
@@ -2671,8 +2689,6 @@ static void le_ltk_request(struct net_buf *buf)
 	 * Both legacy STK and LE SC LTK have rand and ediv equal to zero.
 	 */
 	if (evt->rand == 0 && evt->ediv == 0 && bt_smp_get_tk(conn, tk)) {
-		struct bt_hci_cp_le_ltk_req_reply *cp;
-
 		buf = bt_hci_cmd_create(BT_HCI_OP_LE_LTK_REQ_REPLY,
 					sizeof(*cp));
 		if (!buf) {
@@ -2698,8 +2714,6 @@ static void le_ltk_request(struct net_buf *buf)
 
 	if (conn->le.keys && (conn->le.keys->keys & BT_KEYS_LTK_P256) &&
 	    evt->rand == 0 && evt->ediv == 0) {
-		struct bt_hci_cp_le_ltk_req_reply *cp;
-
 		buf = bt_hci_cmd_create(BT_HCI_OP_LE_LTK_REQ_REPLY,
 					sizeof(*cp));
 		if (!buf) {
@@ -2726,9 +2740,6 @@ static void le_ltk_request(struct net_buf *buf)
 	if (conn->le.keys && (conn->le.keys->keys & BT_KEYS_SLAVE_LTK) &&
 	    conn->le.keys->slave_ltk.rand == evt->rand &&
 	    conn->le.keys->slave_ltk.ediv == evt->ediv) {
-		struct bt_hci_cp_le_ltk_req_reply *cp;
-		struct net_buf *buf;
-
 		buf = bt_hci_cmd_create(BT_HCI_OP_LE_LTK_REQ_REPLY,
 					sizeof(*cp));
 		if (!buf) {
@@ -2752,16 +2763,7 @@ static void le_ltk_request(struct net_buf *buf)
 	}
 #endif /* !CONFIG_BT_SMP_SC_ONLY */
 
-	buf = bt_hci_cmd_create(BT_HCI_OP_LE_LTK_REQ_NEG_REPLY, sizeof(*cp));
-	if (!buf) {
-		BT_ERR("Out of command buffers");
-		goto done;
-	}
-
-	cp = net_buf_add(buf, sizeof(*cp));
-	cp->handle = evt->handle;
-
-	bt_hci_cmd_send(BT_HCI_OP_LE_LTK_REQ_NEG_REPLY, buf);
+	le_ltk_neg_reply(evt->handle);
 
 done:
 	bt_conn_unref(conn);
@@ -3578,8 +3580,7 @@ static int le_set_event_mask(void)
 static int le_init(void)
 {
 	struct bt_hci_cp_write_le_host_supp *cp_le;
-	struct net_buf *buf;
-	struct net_buf *rsp;
+	struct net_buf *buf, *rsp;
 	int err;
 
 	/* For now we only support LE capable controllers */
@@ -3642,7 +3643,6 @@ static int le_init(void)
 	    BT_FEAT_LE_DLE(bt_dev.le.features)) {
 		struct bt_hci_cp_le_write_default_data_len *cp;
 		struct bt_hci_rp_le_read_max_data_len *rp;
-		struct net_buf *buf, *rsp;
 		u16_t tx_octets, tx_time;
 
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_MAX_DATA_LEN, NULL,
@@ -3677,7 +3677,6 @@ static int le_init(void)
 	if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
 	    BT_FEAT_LE_PRIVACY(bt_dev.le.features)) {
 		struct bt_hci_rp_le_read_rl_size *rp;
-		struct net_buf *rsp;
 
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_RL_SIZE, NULL,
 					   &rsp);

@@ -1524,7 +1524,7 @@ void ticker_trigger(u8_t instance_index)
 u32_t ticker_start(u8_t instance_index, u8_t user_id, u8_t ticker_id,
 		   u32_t ticks_anchor, u32_t ticks_first, u32_t ticks_periodic,
 		   u32_t remainder_periodic, u16_t lazy, u16_t ticks_slot,
-		   ticker_timeout_func ticker_timeout_func, void *context,
+		   ticker_timeout_func fp_timeout_func, void *context,
 		   ticker_op_func fp_op_func, void *op_context)
 {
 	struct ticker_instance *instance = &_instance[instance_index];
@@ -1552,7 +1552,7 @@ u32_t ticker_start(u8_t instance_index, u8_t user_id, u8_t ticker_id,
 	user_op->params.start.remainder_periodic = remainder_periodic;
 	user_op->params.start.ticks_slot = ticks_slot;
 	user_op->params.start.lazy = lazy;
-	user_op->params.start.fp_timeout_func = ticker_timeout_func;
+	user_op->params.start.fp_timeout_func = fp_timeout_func;
 	user_op->params.start.context = context;
 	user_op->status = TICKER_STATUS_BUSY;
 	user_op->fp_op_func = fp_op_func;
