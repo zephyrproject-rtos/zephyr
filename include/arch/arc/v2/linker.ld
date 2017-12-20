@@ -21,6 +21,8 @@
 #include <linker/linker-defs.h>
 #include <linker/linker-tool.h>
 
+#define KOBJECT_TEXT_AREA 256
+
 /* physical address of RAM */
 #ifdef CONFIG_HARVARD
 	#define ROMABLE_REGION ICCM
@@ -81,8 +83,11 @@ SECTIONS {
 		*(".text.*")
 		*(.gnu.linkonce.t.*)
 
-		_image_text_end = .;
+#include <linker/kobject-text.ld>
 	} GROUP_LINK_IN(ROMABLE_REGION)
+
+	_image_text_end = .;
+	_image_rodata_start = .;
 
 #include <linker/common-rom.ld>
 
@@ -98,34 +103,49 @@ SECTIONS {
 #include <custom-rodata.ld>
 #endif
 
+#include <linker/kobject-rom.ld>
+
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
+	_image_rodata_end = .;
 	_image_rom_end = .;
-	__data_rom_start = ALIGN(4);	/* XIP imaged DATA ROM start addr */
 
 	GROUP_END(ROMABLE_REGION)
 
 	GROUP_START(RAMABLE_REGION)
 
-	SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,) {
-
-/* when XIP, .text is in ROM, but vector table must be at start of .data */
-
+#ifdef CONFIG_APPLICATION_MEMORY
+	SECTION_DATA_PROLOGUE(_APP_DATA_SECTION_NAME, (OPTIONAL),)
+	{
+		__app_ram_start = .;
+		__app_data_ram_start = .;
 		_image_ram_start = .;
-		__data_ram_start = .;
-		*(.data)
-		*(".data.*")
-
-#ifdef CONFIG_CUSTOM_RWDATA_LD
-/* Located in project source directory */
-#include <custom-rwdata.ld>
-#endif
-
+		APP_INPUT_SECTION(.data)
+		APP_INPUT_SECTION(".data.*")
+		__app_data_ram_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-#include <linker/common-ram.ld>
+	__app_data_rom_start = LOADADDR(_APP_DATA_SECTION_NAME);
 
-	__data_ram_end = .;
+	SECTION_PROLOGUE(_APP_BSS_SECTION_NAME, (NOLOAD OPTIONAL),)
+	{
+		__app_bss_start = .;
+		APP_INPUT_SECTION(.bss)
+		APP_INPUT_SECTION(".bss.*")
+		APP_INPUT_SECTION(COMMON)
+		__app_bss_end = .;
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+
+	__app_bss_num_words = (__app_bss_end - __app_bss_start) >> 2;
+
+	SECTION_PROLOGUE(_APP_NOINIT_SECTION_NAME, (NOLOAD OPTIONAL),)
+	{
+		APP_INPUT_SECTION(.noinit)
+		APP_INPUT_SECTION(".noinit.*")
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+
+	__app_ram_end = .;
+#endif /* CONFIG_APPLICATION_MEMORY */
 
 	SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),) {
 		/*
@@ -134,9 +154,16 @@ SECTIONS {
 		 */
 		. = ALIGN(4);
 		__bss_start = .;
-		*(.bss)
-		*(".bss.*")
-		COMMON_SYMBOLS
+
+#ifndef CONFIG_APPLICATION_MEMORY
+		_image_ram_start = .;
+#endif
+		__kernel_ram_start = .;
+		KERNEL_INPUT_SECTION(.bss)
+		KERNEL_INPUT_SECTION(".bss.*")
+		KERNEL_INPUT_SECTION(COMMON)
+		*(".kernel_bss.*")
+
 		/*
 		 * BSP clears this memory in words only and doesn't clear any
 		 * potential left over bytes.
@@ -149,26 +176,42 @@ SECTIONS {
 		 * This section is used for non-initialized objects that
 		 * will not be cleared during the boot process.
 		 */
-		*(.noinit)
-		*(".noinit.*")
+		 KERNEL_INPUT_SECTION(.noinit)
+		 KERNEL_INPUT_SECTION(".noinit.*")
+		 *(".kernel_noinit.*")
 
 	} GROUP_LINK_IN(RAMABLE_REGION)
+
+	SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,) {
+
+/* when XIP, .text is in ROM, but vector table must be at start of .data */
+		__data_ram_start = .;
+		KERNEL_INPUT_SECTION(.data)
+		KERNEL_INPUT_SECTION(".data.*")
+		*(".kernel.*")
+
+#ifdef CONFIG_CUSTOM_RWDATA_LD
+/* Located in project source directory */
+#include <custom-rwdata.ld>
+#endif
+
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
+	__data_rom_start = LOADADDR(_DATA_SECTION_NAME);
+
+#include <linker/common-ram.ld>
+#include <linker/kobject.ld>
+
+	__data_ram_end = .;
 
 	/* Define linker symbols */
 	_image_ram_end = .;
 	_end = .; /* end of image */
 
+	__kernel_ram_end = .;
+	__kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
+
 	GROUP_END(RAMABLE_REGION)
-
-	/* Data Closely Coupled Memory (DCCM) */
-	GROUP_START(DCCM)
-	GROUP_END(DCCM)
-
-	SECTION_PROLOGUE(initlevel_error, (OPTIONAL),)
-	{
-		DEVICE_INIT_UNDEFINED_SECTION()
-	}
-	ASSERT(SIZEOF(initlevel_error) == 0, "Undefined initialization levels used.")
 
 #ifdef CONFIG_CUSTOM_SECTIONS_LD
 /* Located in project source directory */

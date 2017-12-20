@@ -47,7 +47,7 @@
 
 
 /**
- * @brief Get the number of supported mpu regions
+ * @brief Get the number of supported MPU regions
  *
  */
 static inline u8_t _get_num_regions(void)
@@ -59,26 +59,18 @@ static inline u8_t _get_num_regions(void)
 	return (u8_t)num;
 }
 
-
 /**
  * This internal function is utilized by the MPU driver to parse the intent
  * type (i.e. THREAD_STACK_REGION) and return the correct parameter set.
  */
-static inline u32_t _get_region_attr_by_type(u32_t type, u32_t size)
+static inline u32_t _get_region_attr_by_type(u32_t type)
 {
 	switch (type) {
 	case THREAD_STACK_REGION:
 		return 0;
 	case THREAD_STACK_GUARD_REGION:
 	/* no Write and Execute to guard region */
-#if CONFIG_ARC_MPU_VER == 2
-		u8_t bits = find_msb_set(size) + 1;
-
-		return  AUX_MPU_RDP_REGION_SIZE(bits) |
-			AUX_MPU_RDP_UR | AUX_MPU_RDP_KR;
-#elif CONFIG_ARC_MPU_VER == 3
 		return AUX_MPU_RDP_UR | AUX_MPU_RDP_KR;
-#endif
 	default:
 		/* Size 0 region */
 		return 0;
@@ -90,15 +82,23 @@ static inline void _region_init(u32_t index, u32_t region_addr, u32_t size,
 {
 /* ARC MPU version 2 and version 3 have different aux reg interface */
 #if CONFIG_ARC_MPU_VER == 2
-	u8_t bits = find_msb_set(size) + 1;
+	u8_t bits = find_msb_set(size) - 1;
 	index = 2 * index;
 
 	if (bits < ARC_FEATURE_MPU_ALIGNMENT_BITS) {
 		bits = ARC_FEATURE_MPU_ALIGNMENT_BITS;
 	}
 
-	region_addr |= (AUX_MPU_RDP_REGION_SIZE(bits) |
-			 AUX_MPU_RDB_VALID_MASK);
+	if ((1 << bits) < size) {
+		bits++;
+	}
+
+	if (size > 0) {
+		region_attr |= AUX_MPU_RDP_REGION_SIZE(bits);
+		region_addr |= AUX_MPU_RDB_VALID_MASK;
+	} else {
+		region_addr = 0;
+	}
 
 	_arc_v2_aux_reg_write(_ARC_V2_MPU_RDP0 + index, region_attr);
 	_arc_v2_aux_reg_write(_ARC_V2_MPU_RDB0 + index, region_addr);
@@ -109,11 +109,12 @@ static inline void _region_init(u32_t index, u32_t region_addr, u32_t size,
 		size = (1 << ARC_FEATURE_MPU_ALIGNMENT_BITS);
 	}
 
-/* all mpu regions SID are the same: 1, the default SID */
+/* all MPU regions SID are the same: 1, the default SID */
 	if (region_attr) {
 		region_attr |=  (AUX_MPU_RDB_VALID_MASK | AUX_MPU_RDP_S |
 				 AUX_MPU_RPER_SID1);
 	}
+
 	_arc_v2_aux_reg_write(_ARC_V2_MPU_INDEX, index);
 	_arc_v2_aux_reg_write(_ARC_V2_MPU_RSTART, region_addr);
 	_arc_v2_aux_reg_write(_ARC_V2_MPU_REND,
@@ -121,7 +122,6 @@ static inline void _region_init(u32_t index, u32_t region_addr, u32_t size,
 	_arc_v2_aux_reg_write(_ARC_V2_MPU_RPER, region_attr);
 #endif
 }
-
 
 #if CONFIG_ARC_MPU_VER == 3
 static inline s32_t _mpu_probe(u32_t addr)
@@ -140,6 +140,136 @@ static inline s32_t _mpu_probe(u32_t addr)
 }
 #endif
 
+/**
+ * This internal function is utilized by the MPU driver to parse the intent
+ * type (i.e. THREAD_STACK_REGION) and return the correct region index.
+ */
+static inline u32_t _get_region_index_by_type(u32_t type)
+{
+	/*
+	 * The new MPU regions are allocated per type after the statically
+	 * configured regions. The type is one-indexed rather than
+	 * zero-indexed.
+	 *
+	 * For ARC MPU v2, the smaller index has higher priority, so the
+	 * index is allocated in reverse order. Static regions start from
+	 * the biggest index, then thread related regions.
+	 *
+	 * For ARC MPU v3, each index has the same priority, so the index is
+	 * allocated from small to big. Static regions start from 0, then
+	 * thread related regions.
+	 */
+	switch (type) {
+#if CONFIG_ARC_MPU_VER  == 2
+	case THREAD_STACK_REGION:
+		return _get_num_regions() - mpu_config.num_regions - type;
+	case THREAD_STACK_GUARD_REGION:
+		return _get_num_regions() - mpu_config.num_regions - type;
+	case THREAD_DOMAIN_PARTITION_REGION:
+#if defined(CONFIG_MPU_STACK_GUARD)
+		return _get_num_regions() - mpu_config.num_regions - type;
+#else
+		/*
+		 * Start domain partition region from stack guard region
+		 * since stack guard is not enabled.
+		 */
+		return _get_num_regions() - mpu_config.num_regions - type + 1;
+#endif
+#elif CONFIG_ARC_MPU_VER == 3
+	case THREAD_STACK_REGION:
+		return mpu_config.num_regions + type - 1;
+	case THREAD_STACK_GUARD_REGION:
+		return mpu_config.num_regions + type - 1;
+	case THREAD_DOMAIN_PARTITION_REGION:
+#if defined(CONFIG_MPU_STACK_GUARD)
+		return mpu_config.num_regions + type - 1;
+#else
+		/*
+		 * Start domain partition region from stack guard region
+		 * since stack guard is not enabled.
+		 */
+		return mpu_config.num_regions + type - 2;
+#endif
+#endif
+	default:
+		__ASSERT(0, "Unsupported type");
+		return 0;
+	}
+}
+
+/**
+ * This internal function checks if region is enabled or not
+ */
+static inline int _is_enabled_region(u32_t r_index)
+{
+#if CONFIG_ARC_MPU_VER == 2
+	return ((_arc_v2_aux_reg_read(_ARC_V2_MPU_RDB0 + 2 * r_index)
+		& AUX_MPU_RDB_VALID_MASK) == AUX_MPU_RDB_VALID_MASK);
+#elif CONFIG_ARC_MPU_VER == 3
+	_arc_v2_aux_reg_write(_ARC_V2_MPU_INDEX, r_index);
+	return ((_arc_v2_aux_reg_read(_ARC_V2_MPU_RPER) &
+		 AUX_MPU_RDB_VALID_MASK) == AUX_MPU_RDB_VALID_MASK);
+#endif
+}
+
+/**
+ * This internal function check if the given buffer in in the region
+ */
+static inline int _is_in_region(u32_t r_index, u32_t start, u32_t size)
+{
+#if CONFIG_ARC_MPU_VER == 2
+	u32_t r_addr_start;
+	u32_t r_addr_end;
+	u32_t r_size_lshift;
+
+	r_addr_start = _arc_v2_aux_reg_read(_ARC_V2_MPU_RDB0 + 2 * r_index)
+			& (~AUX_MPU_RDB_VALID_MASK);
+	r_size_lshift = _arc_v2_aux_reg_read(_ARC_V2_MPU_RDB0 + 2 * r_index)
+			& AUX_MPU_RDP_ATTR_MASK;
+	r_size_lshift = (r_size_lshift & 0x3) | ((r_size_lshift >> 7) & 0x1C);
+	r_addr_end = r_addr_start  + (1 << (r_size_lshift + 1));
+
+	if (start >= r_addr_start && (start + size) < r_addr_end) {
+		return 1;
+	}
+
+#elif CONFIG_ARC_MPU_VER == 3
+
+	if ((r_index == _mpu_probe(start)) &&
+		(r_index == _mpu_probe(start + size))) {
+		return 1;
+	}
+#endif
+
+
+
+	return 0;
+}
+
+/**
+ * This internal function check if the region is user accessible or not
+ */
+static inline int _is_user_accessible_region(u32_t r_index, int write)
+{
+	u32_t r_ap;
+
+#if CONFIG_ARC_MPU_VER == 2
+	r_ap = _arc_v2_aux_reg_read(_ARC_V2_MPU_RDP0 + 2 * r_index);
+#elif CONFIG_ARC_MPU_VER == 3
+	_arc_v2_aux_reg_write(_ARC_V2_MPU_INDEX, r_index);
+	r_ap = _arc_v2_aux_reg_read(_ARC_V2_MPU_RPER);
+#endif
+	r_ap &= AUX_MPU_RDP_ATTR_MASK;
+
+	if (write) {
+		return ((r_ap & (AUX_MPU_RDP_UW | AUX_MPU_RDP_KW)) ==
+			(AUX_MPU_RDP_UW | AUX_MPU_RDP_KW));
+	}
+
+	return ((r_ap & (AUX_MPU_RDP_UR | AUX_MPU_RDP_KR)) ==
+			(AUX_MPU_RDP_UR | AUX_MPU_RDP_KR));
+}
+
 /* ARC Core MPU Driver API Implementation for ARC MPU */
 
 /**
@@ -153,7 +283,7 @@ void arc_core_mpu_enable(void)
 		_arc_v2_aux_reg_read(_ARC_V2_MPU_EN) | AUX_MPU_EN_ENABLE);
 
 	/* MPU is always enabled, use default region to
-	 * simulate mpu enable
+	 * simulate MPU enable
 	 */
 #elif CONFIG_ARC_MPU_VER == 3
 	arc_core_mpu_default(0);
@@ -171,12 +301,11 @@ void arc_core_mpu_disable(void)
 		_arc_v2_aux_reg_read(_ARC_V2_MPU_EN) & AUX_MPU_EN_DISABLE);
 #elif CONFIG_ARC_MPU_VER == 3
 	/* MPU is always enabled, use default region to
-	 * simulate mpu disable
+	 * simulate MPU disable
 	 */
 	arc_core_mpu_default(REGION_ALL_ATTR);
 #endif
 }
-
 
 /**
  * @brief configure the base address and size for an MPU region
@@ -187,10 +316,14 @@ void arc_core_mpu_disable(void)
  */
 void arc_core_mpu_configure(u8_t type, u32_t base, u32_t size)
 {
-	u32_t region_index;
-	u32_t region_attr;
+	u32_t region_index =  _get_region_index_by_type(type);
+	u32_t region_attr = _get_region_attr_by_type(type);
 
 	SYS_LOG_DBG("Region info: 0x%x 0x%x", base, size);
+
+	if (region_attr == 0) {
+		return;
+	}
 	/*
 	 * The new MPU regions are allocated per type before
 	 * the statically configured regions.
@@ -200,38 +333,12 @@ void arc_core_mpu_configure(u8_t type, u32_t base, u32_t size)
 	 * For ARC MPU v2, MPU regions can be overlapped, smaller
 	 * region index has higher priority.
 	 */
-
-	region_index = _get_num_regions() - mpu_config.num_regions;
-
-	if (type > region_index) {
-		return;
-	}
-
-	region_index -= type;
-
-	region_attr = _get_region_attr_by_type(type, size);
-
-	if (region_attr == 0) {
-		return;
-	}
-
 	_region_init(region_index, base, size, region_attr);
 #elif CONFIG_ARC_MPU_VER == 3
 	static s32_t last_index;
 	s32_t index;
 	u32_t last_region = _get_num_regions() - 1;
 
-	region_index = mpu_config.num_regions + type - 1;
-
-	if (region_index > last_region) {
-		return;
-	}
-
-	region_attr = _get_region_attr_by_type(type, size);
-
-	if (region_attr == 0) {
-		return;
-	}
 
 	/* use hardware probe to find the region maybe split.
 	 * another way is to look up the mpu_config.mpu_regions
@@ -290,9 +397,8 @@ void arc_core_mpu_default(u32_t region_attr)
 	_arc_v2_aux_reg_write(_ARC_V2_MPU_EN, region_attr | val);
 }
 
-
 /**
- * @brief configure the mpu region
+ * @brief configure the MPU region
  *
  * @param   index   MPU region index
  * @param   base    base address
@@ -309,6 +415,161 @@ void arc_core_mpu_region(u32_t index, u32_t base, u32_t size,
 
 	_region_init(index, base, size, region_attr);
 }
+
+#if defined(CONFIG_USERSPACE)
+/**
+ * @brief configure MPU regions for the memory partitions of the memory domain
+ *
+ * @param   mem_domain    memory domain that thread belongs to
+ */
+void arc_core_mpu_configure_mem_domain(struct k_mem_domain *mem_domain)
+{
+	s32_t region_index =
+		_get_region_index_by_type(THREAD_DOMAIN_PARTITION_REGION);
+	u32_t num_partitions;
+	struct k_mem_partition *pparts;
+
+	if (mem_domain) {
+		SYS_LOG_DBG("configure domain: %p", mem_domain);
+		num_partitions = mem_domain->num_partitions;
+		pparts = mem_domain->partitions;
+	} else {
+		SYS_LOG_DBG("disable domain partition regions");
+		num_partitions = 0;
+		pparts = NULL;
+	}
+#if CONFIG_ARC_MPU_VER == 2
+	for (; region_index >= 0; region_index--) {
+#elif CONFIG_ARC_MPU_VER == 3
+/*
+ * Note: For ARC MPU v3, overlapping is not allowed, so the following
+ * partitions/region may be overlapped with each other or regions in
+ * mpu_config. This will cause EV_MachineCheck exception (ECR = 0x030600).
+ * Although split mechanism is used for stack guard region to avoid this,
+ * it doesn't work for memory domain, because the dynamic region numbers.
+ * So be careful to avoid the overlap situation.
+ */
+	for (; region_index <  _get_num_regions() - 1; region_index++) {
+#endif
+		if (num_partitions && pparts->size) {
+			SYS_LOG_DBG("set region 0x%x 0x%x 0x%x",
+				    region_index, pparts->start, pparts->size);
+			_region_init(region_index, pparts->start, pparts->size,
+					pparts->attr);
+			num_partitions--;
+		} else {
+			SYS_LOG_DBG("disable region 0x%x", region_index);
+			/* Disable region */
+			_region_init(region_index, 0, 0, 0);
+		}
+		pparts++;
+	}
+}
+
+/**
+ * @brief configure MPU region for a single memory partition
+ *
+ * @param   part_index  memory partition index
+ * @param   part        memory partition info
+ */
+void arc_core_mpu_configure_mem_partition(u32_t part_index,
+					  struct k_mem_partition *part)
+{
+	u32_t region_index =
+		_get_region_index_by_type(THREAD_DOMAIN_PARTITION_REGION);
+
+	SYS_LOG_DBG("configure partition index: %u", part_index);
+
+	if (part) {
+		SYS_LOG_DBG("set region 0x%x 0x%x 0x%x",
+			    region_index + part_index, part->start, part->size);
+		_region_init(region_index, part->start, part->size,
+				part->attr);
+	} else {
+		SYS_LOG_DBG("disable region 0x%x", region_index + part_index);
+		/* Disable region */
+		_region_init(region_index + part_index, 0, 0, 0);
+	}
+}
+
+/**
+ * @brief Reset MPU region for a single memory partition
+ *
+ * @param   part_index  memory partition index
+ */
+void arc_core_mpu_mem_partition_remove(u32_t part_index)
+{
+	u32_t region_index =
+		_get_region_index_by_type(THREAD_DOMAIN_PARTITION_REGION);
+
+	SYS_LOG_DBG("disable region 0x%x", region_index + part_index);
+	/* Disable region */
+	_region_init(region_index + part_index, 0, 0, 0);
+}
+
+/**
+ * @brief get the maximum number of free regions for memory domain partitions
+ */
+int arc_core_mpu_get_max_domain_partition_regions(void)
+{
+#if CONFIG_ARC_MPU_VER == 2
+	return _get_region_index_by_type(THREAD_DOMAIN_PARTITION_REGION) + 1;
+#elif CONFIG_ARC_MPU_VER == 3
+	/*
+	 * Subtract the start of domain partition regions and 1 reserved region
+	 * from total regions will get the maximum number of free regions for
+	 * memory domain partitions.
+	 */
+	return _get_num_regions() -
+		_get_region_index_by_type(THREAD_DOMAIN_PARTITION_REGION) - 1;
+#endif
+}
+
+/**
+ * @brief validate the given buffer is user accessible or not
+ */
+int arc_core_mpu_buffer_validate(void *addr, size_t size, int write)
+{
+	s32_t r_index;
+
+
+	/*
+	 * For ARC MPU v2, smaller region number takes priority.
+	 * we can stop the iteration immediately once we find the
+	 * matched region that grants permission or denies access.
+	 *
+	 * For ARC MPU v3, overlapping is not supported.
+	 * we can stop the iteration immediately once we find the
+	 * matched region that grants permission or denies access.
+	 */
+#if CONFIG_ARC_MPU_VER == 2
+	for (r_index = 0; r_index < _get_num_regions(); r_index++) {
+		if (!_is_enabled_region(r_index) ||
+		    !_is_in_region(r_index, (u32_t)addr, size)) {
+			continue;
+		}
+
+		if (_is_user_accessible_region(r_index, write)) {
+			return 0;
+		} else {
+			return -EPERM;
+		}
+	}
+#elif CONFIG_ARC_MPU_VER == 3
+	r_index = _mpu_probe((u32_t)addr);
+	/*  match and the area is in one region */
+	if (r_index >= 0 && r_index == _mpu_probe((u32_t)addr + size)) {
+		if (_is_user_accessible_region(r_index, write)) {
+			return 0;
+		} else {
+			return -EPERM;
+		}
+	}
+#endif
+
+	return -EPERM;
+}
+#endif /* CONFIG_USERSPACE */
 
 /* ARC MPU Driver Initial Setup */
 
@@ -337,8 +598,8 @@ static void _arc_mpu_config(void)
 	u32_t r_index;
 	/*
 	 * the MPU regions are filled in the reverse order.
-	 * According to ARCv2 ISA, the mpu region with smaller
-	 * index has higher priority. The static background mpu
+	 * According to ARCv2 ISA, the MPU region with smaller
+	 * index has higher priority. The static background MPU
 	 * regions in mpu_config will be in the bottom. Then
 	 * the special type regions will be above.
 	 *
@@ -346,16 +607,16 @@ static void _arc_mpu_config(void)
 	r_index = num_regions - mpu_config.num_regions;
 
 	/* clear all the regions first */
-	for (i = 0; i < num_regions; i++) {
+	for (i = 0; i < r_index; i++) {
 		_region_init(i, 0, 0, 0);
 	}
 
 	/* configure the static regions */
-	for (r_index = 0; i < num_regions; i++) {
-		_region_init(i,
-			mpu_config.mpu_regions[r_index].base,
-			mpu_config.mpu_regions[r_index].size,
-			mpu_config.mpu_regions[r_index].attr);
+	for (i = 0; i < mpu_config.num_regions; i++) {
+		_region_init(r_index,
+			mpu_config.mpu_regions[i].base,
+			mpu_config.mpu_regions[i].size,
+			mpu_config.mpu_regions[i].attr);
 		r_index++;
 	}
 
