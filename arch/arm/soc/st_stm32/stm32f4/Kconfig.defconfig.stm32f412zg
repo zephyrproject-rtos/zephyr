@@ -15,4 +15,11 @@ config NUM_IRQS
 	int
 	default 97
 
+if ENTROPY_GENERATOR
+
+config ENTROPY_STM32_RNG
+	def_bool y
+
+endif # ENTROPY_GENERATOR
+
 endif # SOC_STM32F412ZG
