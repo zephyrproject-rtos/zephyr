@@ -34,4 +34,11 @@ config GPIO_STM32_PORTK
 
 endif # GPIO_STM32
 
+if ENTROPY_GENERATOR
+
+config ENTROPY_STM32_RNG
+	def_bool y
+
+endif # ENTROPY_GENERATOR
+
 endif # SOC_STM32F469XI

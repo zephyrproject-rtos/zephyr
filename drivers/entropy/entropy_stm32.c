@@ -17,6 +17,12 @@
 #include <clock_control.h>
 #include <clock_control/stm32_clock_control.h>
 
+#if !defined(CONFIG_SOC_SERIES_STM32L4X) && !defined(CONFIG_SOC_SERIES_STM32F4X)
+#error RNG only available on STM32F4 and STM32L4 series
+#elif defined(CONFIG_SOC_STM32F401XE)
+#error RNG not available on STM32F401 based SoCs
+#else
+
 struct entropy_stm32_rng_dev_cfg {
 	struct stm32_pclken pclken;
 };
@@ -204,3 +210,5 @@ DEVICE_AND_API_INIT(entropy_stm32_rng, CONFIG_ENTROPY_NAME,
 		    &entropy_stm32_rng_data, &entropy_stm32_rng_config,
 		    PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &entropy_stm32_rng_api);
+
+#endif

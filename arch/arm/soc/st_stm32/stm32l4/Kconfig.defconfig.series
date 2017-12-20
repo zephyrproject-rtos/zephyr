@@ -20,4 +20,11 @@ config  I2C_STM32_V2
 
 endif # I2C
 
+if ENTROPY_GENERATOR
+
+config ENTROPY_STM32_RNG
+	def_bool y
+
+endif # ENTROPY_GENERATOR
+
 endif # SOC_SERIES_STM32L4X
