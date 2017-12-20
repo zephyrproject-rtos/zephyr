@@ -28,7 +28,7 @@
 
 	soc {
 		uart0: uart@400f2400 {
-			compatible = "ns16550";
+			compatible = "ns16550", "microchip,xec-ns16550";
 			reg = <0x400f2400 0x400>;
 			interrupts = <40 0>;
 			clock-frequency = <1843200>;
@@ -36,7 +36,7 @@
 			reg-shift = <0>;
 		};
 		uart1: uart@400f2800 {
-			compatible = "ns16550";
+			compatible = "ns16550", "microchip,xec-ns16550";
 			reg = <0x400f2800 0x400>;
 			interrupts = <41 0>;
 			clock-frequency = <1843200>;

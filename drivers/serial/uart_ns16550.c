@@ -79,6 +79,10 @@ BUILD_ASSERT_MSG(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 #define REG_DLF 0xC0  /* Divisor Latch Fraction         */
 #define REG_PCP 0x200 /* PRV_CLOCK_PARAMS (Apollo Lake) */
 
+/* equates for baud rate divisor register */
+
+#define BRD_MCHP_XEC_BAUD_CLK_SEL 0x8000 /* microchip uart: use system clock */
+
 /* equates for interrupt enable register */
 
 #define IER_RXRDY 0x01 /* receiver data ready */
@@ -296,6 +300,11 @@ static void set_baud_rate(struct device *dev, u32_t baud_rate)
 		 */
 		divisor = ((dev_cfg->devconf.sys_clk_freq + (baud_rate << 3))
 					/ baud_rate) >> 4;
+#if defined(DT_COMPAT_MICROCHIP_XEC_NS16550)
+		if (dev_cfg->devconf.sys_clk_freq == CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC) {
+			divisor |= BRD_MCHP_XEC_BAUD_CLK_SEL;
+		}
+#endif
 
 		/* set the DLAB to access the baud rate divisor registers */
 		lcr_cache = INBYTE(LCR(dev));
