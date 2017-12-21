@@ -225,3 +225,33 @@ rely on testing in the QEMU emulation environment only.
 
 
 .. _GCC ARM Embedded: https://launchpad.net/gcc-arm-embedded
+
+Running a Sample Application natively (POSIX OS)
+================================================
+
+It is also possible to compile some of the sample and test applications to run
+as native process on a POSIX OS (e.g. Linux).
+To be able to do this, remember to have installed the 32 bit libC if your OS is
+natively 64bit.
+
+To compile and run an application in this way, type:
+
+.. code-block:: console
+
+   $ cd $ZEPHYR_BASE/samples/hello_world
+   $ mkdir build && cd build
+   $ cmake -DBOARD=native_posix ..
+   $ make
+
+and then:
+
+.. code-block:: console
+
+   $ make run
+   # or just:
+   $ zephyr/zephyr.exe
+   # Press Ctrl+C to exit
+
+This executable can be instrumented like any other Linux process. For ex. with gdb
+or valgrind.
+Note that the native port is currently only tested in Linux.

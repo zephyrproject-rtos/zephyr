@@ -198,11 +198,28 @@ config XTENSA_SIM_CONSOLE
 	help
 	  Use simulator console to print messages.
 
+config NATIVE_POSIX_CONSOLE
+	bool
+	prompt "Print to console"
+	depends on BOARD_NATIVE_POSIX
+	select CONSOLE_HAS_DRIVER
+	default y
+	help
+	  Use native console to print messages.
+
 config XTENSA_CONSOLE_INIT_PRIORITY
 	int
 	prompt "Init priority"
 	default 60
 	depends on XTENSA_SIM_CONSOLE
+	help
+	  Device driver initialization priority.
+
+config NATIVE_POSIX_CONSOLE_INIT_PRIORITY
+	int
+	prompt "Init priority"
+	default 60
+	depends on NATIVE_POSIX_CONSOLE
 	help
 	  Device driver initialization priority.
 
