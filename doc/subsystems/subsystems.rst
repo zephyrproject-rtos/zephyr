@@ -23,3 +23,4 @@ to applications.
    usb/usb.rst
    settings/settings.rst
    nvs/nvs.rst
+   disk/sdhc.rst
