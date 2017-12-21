@@ -8,7 +8,9 @@
 #include <device.h>
 #include <gpio.h>
 #include <misc/printk.h>
+#include <misc/__assert.h>
 #include <board.h>
+#include <string.h>
 
 /* size of stack area used by each thread */
 #define STACKSIZE 1024
@@ -17,54 +19,65 @@
 #define PRIORITY 7
 
 /* Change this if you have an LED connected to a custom port */
-#define PORT0	LED0_GPIO_PORT
-#define PORT1	LED1_GPIO_PORT
+#define PORT0   LED0_GPIO_PORT
+#define PORT1   LED1_GPIO_PORT
 
 /* Change this if you have an LED connected to a custom pin */
-#define LED0	LED0_GPIO_PIN
-#define LED1	LED1_GPIO_PIN
+#define LED0    LED0_GPIO_PIN
+#define LED1    LED1_GPIO_PIN
 
+struct printk_data_t {
+	void *fifo_reserved; /* 1st word reserved for use by fifo */
+	u32_t led;
+	u32_t cnt;
+};
+
+K_FIFO_DEFINE(printk_fifo);
+
+void blink(const char *port, u32_t sleep_ms, u32_t led, u32_t id)
+{
+	int cnt = 0;
+	struct device *gpio_dev;
+
+	gpio_dev = device_get_binding(port);
+	__ASSERT_NO_MSG(gpio_dev != NULL);
+
+	gpio_pin_configure(gpio_dev, led, GPIO_DIR_OUT);
+
+	while (1) {
+		gpio_pin_write(gpio_dev, led, cnt % 2);
+
+		struct printk_data_t tx_data = { .led = id, .cnt = cnt };
+
+		size_t size = sizeof(struct printk_data_t);
+		char *mem_ptr = k_malloc(size);
+		__ASSERT_NO_MSG(mem_ptr != 0);
+
+		memcpy(mem_ptr, &tx_data, size);
+
+		k_fifo_put(&printk_fifo, mem_ptr);
+
+		k_sleep(sleep_ms);
+		cnt++;
+	}
+}
 
 void blink1(void)
 {
-	int cnt = 0;
-	struct device *gpioa;
-
-	gpioa = device_get_binding(PORT0);
-	gpio_pin_configure(gpioa, LED0, GPIO_DIR_OUT);
-	while (1) {
-		gpio_pin_write(gpioa, LED0, (cnt + 1) % 2);
-		k_sleep(100);
-		cnt++;
-	}
+	blink(PORT0, 100, LED0, 0);
 }
 
 void blink2(void)
 {
-	int cnt = 0;
-	struct device *gpiod;
-
-	gpiod = device_get_binding(PORT1);
-	gpio_pin_configure(gpiod, LED1, GPIO_DIR_OUT);
-	while (1) {
-		gpio_pin_write(gpiod, LED1, cnt % 2);
-		k_sleep(1000);
-		cnt++;
-	}
+	blink(PORT1, 1000, LED1, 1);
 }
 
 void uart_out(void)
 {
-	int cnt = 1;
-
 	while (1) {
-		printk("Toggle USR1 LED: Counter = %d\n", cnt);
-		if (cnt >= 10) {
-			printk("Toggle USR2 LED: Counter = %d\n", cnt);
-			cnt = 0;
-		}
-		k_sleep(100);
-		cnt++;
+		struct printk_data_t *rx_data = k_fifo_get(&printk_fifo, K_FOREVER);
+		printk("Toggle USR%d LED: Counter = %d\n", rx_data->led, rx_data->cnt);
+		k_free(rx_data);
 	}
 }
 
