@@ -811,6 +811,14 @@ endif()
 
 if(EMU_PLATFORM)
   include($ENV{ZEPHYR_BASE}/cmake/emu/${EMU_PLATFORM}.cmake)
+else()
+  add_custom_target(run
+    COMMAND
+    ${CMAKE_COMMAND} -E echo
+    "==================================================="
+	"Emulation/Simulation not supported with this board."
+    "==================================================="
+    )
 endif()
 
 add_subdirectory(cmake/flash)
