@@ -36,6 +36,13 @@ config DISK_ACCESS_FLASH
 	help
 	  Flash device is used for the file system.
 
+config DISK_ACCESS_SDHC
+	bool "SDHC card over SPI"
+	select SPI
+	select FLASH
+	help
+	  File system on a SDHC card accessed over SPI.
+
 endif # DISK_ACCESS
 
 if DISK_ACCESS_RAM
@@ -90,4 +97,15 @@ config DISK_VOLUME_SIZE
 	  This is the file system volume size in bytes.
 
 endif # DISK_ACCESS_FLASH
+
+if DISK_ACCESS_SDHC
+
+config DISK_SDHC_VOLUME_NAME
+	string "SDHC Disk mount point or drive name"
+	default "SDHC"
+	help
+	  Disk name as per file system naming guidelines.
+
+endif # DISK_ACCESS_SDHC
+
 endmenu
