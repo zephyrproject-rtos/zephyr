@@ -127,7 +127,8 @@ int nffs_os_mempool_free(nffs_os_mempool_t *pool, void *block)
 	return 0;
 }
 
-int nffs_os_flash_read(u8_t id, u32_t address, void *dst, u32_t num_bytes)
+int nffs_os_flash_read(uint8_t id, uint32_t address, void *dst,
+		uint32_t num_bytes)
 {
 	int rc;
 
@@ -136,8 +137,8 @@ int nffs_os_flash_read(u8_t id, u32_t address, void *dst, u32_t num_bytes)
 	return rc;
 }
 
-int nffs_os_flash_write(u8_t id, u32_t address, const void *src,
-			u32_t num_bytes)
+int nffs_os_flash_write(uint8_t id, uint32_t address, const void *src,
+		uint32_t num_bytes)
 {
 	int rc;
 
@@ -154,7 +155,7 @@ int nffs_os_flash_write(u8_t id, u32_t address, const void *src,
 	return rc;
 }
 
-int nffs_os_flash_erase(u8_t id, u32_t address, u32_t num_bytes)
+int nffs_os_flash_erase(uint8_t id, uint32_t address, uint32_t num_bytes)
 {
 	int rc;
 
@@ -171,7 +172,8 @@ int nffs_os_flash_erase(u8_t id, u32_t address, u32_t num_bytes)
 	return rc;
 }
 
-int nffs_os_flash_info(u8_t id, u32_t sector, u32_t *address, u32_t *size)
+int nffs_os_flash_info(uint8_t id, uint32_t sector, uint32_t *address,
+		uint32_t *size)
 {
 	struct flash_pages_info pi;
 	int rc;
@@ -185,8 +187,8 @@ int nffs_os_flash_info(u8_t id, u32_t sector, u32_t *address, u32_t *size)
 	return 0;
 }
 
-u16_t nffs_os_crc16_ccitt(u16_t initial_crc, const void *buf, int len,
-			  int final)
+uint16_t nffs_os_crc16_ccitt(uint16_t initial_crc, const void *buf, int len,
+		int final)
 {
 	return crc16(buf, len, 0x1021, initial_crc, final);
 }
@@ -195,7 +197,7 @@ static int inode_to_dirent(struct nffs_inode_entry *inode,
 			   struct fs_dirent *entry)
 {
 	u8_t name_len;
-	u32_t size;
+	uint32_t size;
 	int rc;
 
 	rc = nffs_inode_read_filename(inode, sizeof(entry->name), entry->name,
@@ -268,7 +270,7 @@ int fs_unlink(const char *path)
 
 ssize_t fs_read(fs_file_t *zfp, void *ptr, size_t size)
 {
-	u32_t br;
+	uint32_t br;
 	int rc;
 
 	k_mutex_lock(&nffs_lock, K_FOREVER);
@@ -304,7 +306,7 @@ ssize_t fs_write(fs_file_t *zfp, const void *ptr, size_t size)
 
 int fs_seek(fs_file_t *zfp, off_t offset, int whence)
 {
-	u32_t len;
+	uint32_t len;
 	u32_t pos;
 	int rc;
 
