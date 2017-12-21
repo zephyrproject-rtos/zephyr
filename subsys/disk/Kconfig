@@ -30,6 +30,12 @@ config DISK_ACCESS_FLASH
 	help
 	  Flash device is used for the file system.
 
+config DISK_ACCESS_SDHC
+	bool "SDHC card over SPI"
+	select FLASH
+	help
+	  File system on a SDHC card accessed over SPI.
+
 endchoice
 
 if DISK_ACCESS_FLASH
