@@ -1,7 +1,7 @@
 SM PICS
 #######
 
-PTS version: 7.0.1
+PTS version: 7.2.0
 
 \* - different than PTS defaults
 
@@ -69,6 +69,7 @@ TSPC_SM_5_1	True		Encryption Setup using STK (C.3)
 TSPC_SM_5_2	True		Encryption Setup using LTK (O)
 TSPC_SM_5_3	True		Slave Initiated Security (C.1)
 TSPC_SM_5_4	True		Slave Initiated Security - Master response(C.2)
+TSPC_SM_5_5	True		Link Key Conversion Function h7 (C.4)
 ===============	===========	=======================================
 
 

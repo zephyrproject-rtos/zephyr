@@ -1,7 +1,7 @@
 L2CAP PICS
 ##########
 
-PTS version: 7.0.1
+PTS version: 7.2.0
 
 * - different than PTS defaults
 
@@ -98,6 +98,7 @@ TSPC_L2CAP_2_43		True		Send Connection Parameter Update
 					Response
 TSPC_L2CAP_2_44		False (*)	Extended Flow Specification for AMP
 TSPC_L2CAP_2_45		True		Send disconnect request command
+TSPC_L2CAP_2_45a	True		Send disconnect request command - LE
 TSCP_L2CAP_2_46		True		Support LE Credit Based Flow Control
 					Mode
 TSCP_L2CAP_2_47		True		Support for LE Data Channel
