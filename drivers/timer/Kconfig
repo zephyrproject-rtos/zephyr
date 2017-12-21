@@ -176,6 +176,14 @@ config RISCV_MACHINE_TIMER
 	  This module implements a kernel device driver for the generic RISCV machine
 	  timer driver. It provides the standard "system clock driver" interfaces.
 
+config NATIVE_POSIX_TIMER
+	bool "(POSIX) native_posix timer driver"
+	default y
+	depends on BOARD_NATIVE_POSIX
+	help
+	This module implements a kernel device driver for the native_posix HW timer
+	model
+
 config XTENSA_TIMER
 	bool "Xtensa timer support"
 	depends on XTENSA
@@ -241,4 +249,5 @@ config SYSTEM_CLOCK_INIT_PRIORITY
 	  value for the system clock driver. As driver initialization  might need
 	  the clock to be running already, you should let the default value as it
 	  is (0).
+
 endmenu

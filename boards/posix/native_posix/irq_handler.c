@@ -1,0 +1,301 @@
+/*
+ * Copyright (c) 2014 Wind River Systems, Inc.
+ * Copyright (c) 2017 Oticon A/S
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * SW side of the IRQ handling
+ */
+
+#include <stdint.h>
+#include "irq_handler.h"
+#include "irq_offload.h"
+#include "kernel_structs.h"
+#include "irq_ctrl.h"
+#include "posix_core.h"
+#include "board_soc.h"
+#include "sw_isr_table.h"
+#include "soc.h"
+
+
+typedef void (*normal_irq_f_ptr)(void *);
+typedef int (*direct_irq_f_ptr)(void);
+
+typedef struct _isr_list isr_table_entry_t;
+static isr_table_entry_t irq_vector_table[N_IRQS] = { { 0 } };
+
+static int currently_running_irq = -1;
+
+
+static inline void vector_to_irq(int irq_nbr, int *may_swap)
+{
+	if (irq_vector_table[irq_nbr].func == NULL) {
+		posix_print_error_and_exit("Received irq %i without a "
+					"registered handler\n",
+					irq_nbr);
+	} else {
+		if (irq_vector_table[irq_nbr].flags & ISR_FLAG_DIRECT) {
+			*may_swap |= ((direct_irq_f_ptr)
+					irq_vector_table[irq_nbr].func)();
+		} else {
+			((normal_irq_f_ptr)irq_vector_table[irq_nbr].func)
+					(irq_vector_table[irq_nbr].param);
+			*may_swap = 1;
+			/*
+			 * TODO: look into how this kind of ISRs are meant
+			 * to be wrapped
+			 */
+		}
+	}
+}
+
+/**
+ * When an interrupt is raised, this function is called to handle it and, if
+ * needed, swap to a re-enabled thread
+ *
+ * Note that even that this function is executing in a Zephyr thread,  it is
+ * effectively the model of the interrupt controller passing context to the IRQ
+ * handler and therefore its priority handling
+ */
+void posix_irq_handler(void)
+{
+	uint64_t irq_lock;
+	int irq_nbr;
+	int may_swap = 0;
+
+	irq_lock = hw_irq_ctrl_get_current_lock();
+
+	if (irq_lock) {
+		/* "spurious" wakes can happen with interrupts locked */
+		return;
+	}
+
+	_kernel.nested++;
+
+	while ((irq_nbr = hw_irq_ctrl_get_highest_prio_irq()) != -1) {
+		int last_current_running_prio = hw_irq_ctrl_get_cur_prio();
+		int last_running_irq = currently_running_irq;
+
+		hw_irq_ctrl_set_cur_prio(hw_irq_ctrl_get_prio(irq_nbr));
+		hw_irq_ctrl_clear_irq(irq_nbr);
+
+		currently_running_irq = irq_nbr;
+		vector_to_irq(irq_nbr, &may_swap);
+		currently_running_irq = last_running_irq;
+
+		hw_irq_ctrl_set_cur_prio(last_current_running_prio);
+	}
+
+	_kernel.nested--;
+
+	/* Call swap if all the following is true:
+	 * 1) may_swap was enabled
+	 * 2) We are not nesting irq_handler calls (interrupts)
+	 * 3) Current thread is preemptible
+	 * 4) Next thread to run in the ready queue is not this thread
+	 */
+	if (may_swap &&
+		(hw_irq_ctrl_get_cur_prio() == 256) &&
+		(_current->base.preempt < _NON_PREEMPT_THRESHOLD) &&
+		(_kernel.ready_q.cache != _current)) {
+
+		__swap(irq_lock);
+	}
+}
+
+
+/**
+ * Thru this function the IRQ controller can raise an immediate  interrupt which
+ * will interrupt the SW itself
+ * (this function should only be called from the HW model code, from SW threads)
+ */
+void posix_irq_handler_im_from_sw(void)
+{
+	/*
+	 * if a higher priority interrupt than the possibly currently running is
+	 * pending we go immediately into irq_handler() to vector into its
+	 * handler
+	 */
+	if (hw_irq_ctrl_get_highest_prio_irq() != -1) {
+		if (!posix_is_cpu_running()) {
+			posix_print_error_and_exit("programming error: "
+					"nrf_irq_cont_handler_irq_im_from_sw() "
+					"called from a HW model thread\n");
+		}
+		posix_irq_handler();
+	}
+}
+
+
+/**
+ * @brief Disable all interrupts on the CPU
+ *
+ * This routine disables interrupts.  It can be called from either interrupt,
+ * task or fiber level.  This routine returns an architecture-dependent
+ * lock-out key representing the "interrupt disable state" prior to the call;
+ * this key can be passed to irq_unlock() to re-enable interrupts.
+ *
+ * The lock-out key should only be used as the argument to the irq_unlock()
+ * API. It should never be used to manually re-enable interrupts or to inspect
+ * or manipulate the contents of the source register.
+ *
+ * This function can be called recursively: it will return a key to return the
+ * state of interrupt locking to the previous level.
+ *
+ * WARNINGS
+ * Invoking a kernel routine with interrupts locked may result in
+ * interrupts being re-enabled for an unspecified period of time.  If the
+ * called routine blocks, interrupts will be re-enabled while another
+ * thread executes, or while the system is idle.
+ *
+ * The "interrupt disable state" is an attribute of a thread.  Thus, if a
+ * fiber or task disables interrupts and subsequently invokes a kernel
+ * routine that causes the calling thread to block, the interrupt
+ * disable state will be restored when the thread is later rescheduled
+ * for execution.
+ *
+ * @return An architecture-dependent lock-out key representing the
+ * "interrupt disable state" prior to the call.
+ *
+ */
+unsigned int posix_irq_lock(void)
+{
+	return hw_irq_ctrl_change_lock(true);
+}
+
+unsigned int _arch_irq_lock(void)
+{
+	return posix_irq_lock();
+}
+
+/**
+ *
+ * @brief Enable all interrupts on the CPU
+ *
+ * This routine re-enables interrupts on the CPU.  The @a key parameter is a
+ * board-dependent lock-out key that is returned by a previous invocation of
+ * board_irq_lock().
+ *
+ * This routine can be called from either interrupt, task or fiber level.
+ *
+ * @return N/A
+ *
+ */
+void posix_irq_unlock(unsigned int key)
+{
+	hw_irq_ctrl_change_lock(key);
+}
+
+void _arch_irq_unlock(unsigned int key)
+{
+	posix_irq_unlock(key);
+}
+
+
+void posix_irq_full_unlock(void)
+{
+	hw_irq_ctrl_change_lock(false);
+}
+
+void _arch_irq_enable(unsigned int irq)
+{
+	hw_irq_ctrl_enable_irq(irq);
+}
+
+void _arch_irq_disable(unsigned int irq)
+{
+	hw_irq_ctrl_disable_irq(irq);
+}
+
+int _arch_irq_is_enabled(unsigned int irq)
+{
+	return hw_irq_ctrl_is_irq_enabled(irq);
+}
+
+void _arch_isr_direct_header(void)
+{
+	/* Nothing to be done */
+}
+
+int posix_get_current_irq(void)
+{
+	return currently_running_irq;
+}
+
+
+
+/**
+ * Configure a static interrupt.
+ *
+ * _isr_declare will populate the interrupt table table with the interrupt's
+ * parameters, the vector table and the software ISR table.
+ *
+ * We additionally set the priority in the interrupt controller at
+ * runtime.
+ *
+ * @param irq_p IRQ line number
+ * @param flags [plug it directly (1), or as a SW managed interrupt (0)]
+ * @param isr_p Interrupt service routine
+ * @param isr_param_p ISR parameter
+ * @param flags_p IRQ options
+ */
+void _isr_declare(unsigned int irq_p, int flags, void isr_p(void *),
+		void *isr_param_p)
+{
+	irq_vector_table[irq_p].irq   = irq_p;
+	irq_vector_table[irq_p].func  = isr_p;
+	irq_vector_table[irq_p].param = isr_param_p;
+	irq_vector_table[irq_p].flags = flags;
+}
+
+
+/*
+ * @internal
+ *
+ * @brief Set an interrupt's priority
+ *
+ * Lower values take priority over higher values.
+ *
+ * @return N/A
+ */
+void _irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
+{
+	hw_irq_ctrl_prio_set(irq, prio);
+}
+
+
+
+/**
+ * Similar to ARM's NVIC_SetPendingIRQ
+ * set a pending IRQ from SW
+ *
+ * Note that this will interrupt immediately if the interrupt is not masked and
+ * IRQs are not locked, and this interrupt has higher priority than a possibly
+ * currently running interrupt
+ */
+void posix_sw_set_pending_IRQ(unsigned int IRQn)
+{
+	hw_irq_ctrl_raise_im_from_sw(IRQn);
+}
+
+
+/**
+ * Similar to ARM's NVIC_ClearPendingIRQ
+ * clear a pending irq from SW
+ */
+void posix_sw_clear_pending_IRQ(unsigned int IRQn)
+{
+	hw_irq_ctrl_clear_irq(IRQn);
+}
+
+/**
+ * @brief Run a function in interrupt context
+ *
+ * In this simple board, the function can just be run directly
+ */
+void irq_offload(irq_offload_routine_t routine, void *parameter)
+{
+	_kernel.nested++;
+	routine(parameter);
+	_kernel.nested--;
+}

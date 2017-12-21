@@ -1,0 +1,10 @@
+
+config BOARD_NATIVE_POSIX
+	bool "Posix simple process"
+	depends on SOC_POSIX
+	select NATIVE_POSIX_TIMER
+	help
+	  Will produce a console Linux process which can be executed natively.
+	  It provides some minimal needed models:
+	  An interrupt controller, timer (system tick), and redirects kernel prints to
+	  stdout.
