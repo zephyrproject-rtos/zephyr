@@ -86,8 +86,8 @@ static int stm32f0_init(struct device *arg)
 	irq_unlock(key);
 
 	/* Update CMSIS SystemCoreClock variable (HCLK) */
-	/* At reset, System core clock is set to 4MHz */
-	SystemCoreClock = 4000000;
+	/* At reset, system core clock is set to 8 MHz from HSI */
+	SystemCoreClock = 8000000;
 
 	return 0;
 }
