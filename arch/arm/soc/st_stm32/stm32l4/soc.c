@@ -54,7 +54,7 @@ static int stm32l4_init(struct device *arg)
 	irq_unlock(key);
 
 	/* Update CMSIS SystemCoreClock variable (HCLK) */
-	/* At reset, System core clock is set to 4MHz */
+	/* At reset, system core clock is set to 4 MHz from MSI */
 	SystemCoreClock = 4000000;
 
 	return 0;

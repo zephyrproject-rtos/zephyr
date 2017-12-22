@@ -53,14 +53,9 @@ static int st_stm32f4_init(struct device *arg)
 
 	irq_unlock(key);
 
-#ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
 	/* Update CMSIS SystemCoreClock variable (HCLK) */
-	/* At reset, System core clock is set to 4MHz */
-	SystemCoreClock = 4000000;
-#else
-	/* Update CMSIS SystemCoreClock variable (HCLK) */
-	SystemCoreClock = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
-#endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
+	/* At reset, system core clock is set to 16 MHz from HSI */
+	SystemCoreClock = 16000000;
 
 	return 0;
 }
