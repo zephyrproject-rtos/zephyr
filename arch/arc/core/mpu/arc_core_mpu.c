@@ -67,6 +67,14 @@ void _arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 }
 
 /*
+ * Configure MPU memory domain
+ */
+void _arch_mem_domain_configure(struct k_thread *thread)
+{
+	configure_mpu_mem_domain(thread);
+}
+
+/*
  * Destroy MPU regions for the mem domain
  */
 void _arch_mem_domain_destroy(struct k_mem_domain *domain)
