@@ -306,6 +306,7 @@ function(generate_inc_file_for_target
 
   string(REPLACE "/" "_" generated_target_name ${generated_target_name})
   string(REPLACE "." "_" generated_target_name ${generated_target_name})
+  string(REPLACE "@" "_" generated_target_name ${generated_target_name})
 
   add_custom_target(${generated_target_name} DEPENDS ${generated_file})
   add_dependencies(${target} ${generated_target_name})
