@@ -7,6 +7,7 @@
 #
 
 menu "C Library"
+depends on !NATIVE_APPLICATION
 
 config NEWLIB_LIBC
 	bool

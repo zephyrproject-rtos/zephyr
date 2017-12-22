@@ -122,6 +122,13 @@ config CROSS_COMPILE
 	  need to set this unless you want the configured kernel build
 	  directory to select the cross-compiler automatically.
 
+config NATIVE_APPLICATION
+	bool "Build as a native host application"
+	default n
+	help
+	  Build as a native application that can run on the host and using
+	  resources and libraries provided by the host.
+
 config COMPILER_OPT
 	string
 	prompt "Custom compiler options"
