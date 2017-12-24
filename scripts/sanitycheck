@@ -217,7 +217,6 @@ else:
     COLOR_GREEN = ""
     COLOR_YELLOW = ""
 
-
 class SanityCheckException(Exception):
     pass
 
@@ -275,12 +274,20 @@ def verbose(what):
     if VERBOSE >= 2:
         info(what)
 
+class HarnessImporter:
+
+    def __init__(self, name):
+        sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/sanity_chk"))
+        module = __import__("harness")
+        if name:
+            my_class = getattr(module, name)
+        else:
+            my_class = getattr(module, "Test")
+
+        self.instance = my_class()
 
 class Handler:
-    RUN_PASSED = "PROJECT EXECUTION SUCCESSFUL"
-    RUN_FAILED = "PROJECT EXECUTION FAILED"
-
-    def __init__(self, name, outdir, log_fn, timeout, unit=False):
+    def __init__(self, instance):
         """Constructor
 
         @param name Arbitrary name of the created thread
@@ -296,7 +303,6 @@ class Handler:
         self.metrics["handler_time"] = 0
         self.metrics["ram_size"] = 0
         self.metrics["rom_size"] = 0
-        self.unit = unit
 
     def set_state(self, state, metrics):
         self.lock.acquire()
@@ -311,7 +317,7 @@ class Handler:
         return ret
 
 class NativeHandler(Handler):
-    def __init__(self, name, sourcedir, outdir, run_log, valgrind_log, timeout):
+    def __init__(self, instance):
         """Constructor
 
         @param name Arbitrary name of the created thread
@@ -321,58 +327,68 @@ class NativeHandler(Handler):
         @param timeout Kill the QEMU process if it doesn't finish up within
             the given number of seconds
         """
-        super().__init__(name, outdir, run_log, timeout, True)
+        super().__init__(instance)
 
-        self.timeout = timeout
-        self.sourcedir = sourcedir
-        self.outdir = outdir
-        self.run_log = run_log
+        self.instance = instance
+        self.timeout = instance.test.timeout
+        self.sourcedir = instance.test.code_location
+        self.outdir = instance.outdir
+        self.run_log = os.path.join(self.outdir, "run.log")
+        self.valgrind_log = os.path.join(self.outdir, "valgrind.log")
         self.valgrind = False
-        self.valgrind_log = valgrind_log
         self.returncode = 0
         self.set_state("running", {})
+
+    def output_reader(self, proc, harness):
+        for line in iter(proc.stdout.readline, b''):
+            verbose("NATIVE: {0}".format(line.decode('utf-8').rstrip()))
+            harness.handle(line.decode('utf-8').rstrip())
+            if harness.state:
+                proc.terminate()
+                break
 
     def handle(self):
         out_state = "failed"
 
-        with open(self.run_log, "wt") as rl, open(self.valgrind_log, "wt") as vl:
-            try:
-                binary = os.path.join(self.outdir, "zephyr", "zephyr.exe")
-                command = [binary]
-                if shutil.which("valgrind") and self.valgrind:
-                    command = ["valgrind", "--error-exitcode=2",
-                               "--leak-check=full"] + command
-                returncode = subprocess.call(command, timeout=self.timeout,
-                                             stdout=rl, stderr=vl)
-                self.returncode = returncode
-                if returncode != 0:
-                    if self.returncode == 1:
-                        out_state = "failed"
-                    else:
-                        out_state = "failed valgrind"
+        harness_name = self.instance.test.harness.capitalize()
+        harness_import = HarnessImporter(harness_name)
+        harness = harness_import.instance
+        harness.configure(self.instance)
 
-            except subprocess.TimeoutExpired:
+        binary = os.path.join(self.outdir, "zephyr", "zephyr.exe")
+        command = [binary]
+        if shutil.which("valgrind") and self.valgrind:
+            command = ["valgrind", "--error-exitcode=2",
+                       "--leak-check=full"] + command
+
+        with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as proc:
+            t = threading.Thread(target=self.output_reader, args=(proc, harness, ))
+            t.start()
+            t.join(self.timeout)
+            if t.is_alive():
+                proc.terminate()
                 out_state = "timeout"
-                self.returncode = 1
+                t.join()
 
-        with open(self.run_log, "r") as rl:
-            for line in rl.readlines():
-                line = line.strip()
-                if self.RUN_PASSED in line:
-                    out_state = "passed"
-                    break
-
-                if self.RUN_FAILED in line:
+            proc.wait()
+            self.returncode = proc.returncode
+            if proc.returncode != 0:
+                if self.returncode == 1:
                     out_state = "failed"
-                    break
+                else:
+                    out_state = "failed valgrind"
 
-        returncode = subprocess.call(["GCOV_PREFIX=" + self.outdir, "gcov", self.sourcedir, "-s", self.outdir], shell=True)
+        #print(" ".join(["GCOV_PREFIX=" + self.outdir, "gcov", self.sourcedir, "-b", "-s", self.outdir]))
+        returncode = subprocess.call(["GCOV_PREFIX=" + self.outdir, "gcov", self.sourcedir, "-b", "-s", self.outdir], shell=True)
 
-        self.set_state(out_state, {})
+        if harness.state:
+            self.set_state(harness.state, {})
+        else:
+            self.set_state(out_state, {})
+
 
 class UnitHandler(Handler):
-    def __init__(self, name, sourcedir, outdir,
-                 run_log, valgrind_log, timeout):
+    def __init__(self, instance):
         """Constructor
 
         @param name Arbitrary name of the created thread
@@ -382,13 +398,13 @@ class UnitHandler(Handler):
         @param timeout Kill the QEMU process if it doesn't finish up within
             the given number of seconds
         """
-        super().__init__(name, outdir, run_log, timeout, True)
+        super().__init__(instance)
 
-        self.timeout = timeout
-        self.sourcedir = sourcedir
-        self.outdir = outdir
-        self.run_log = run_log
-        self.valgrind_log = valgrind_log
+        self.timeout = instance.test.timeout
+        self.sourcedir = instance.test.code_location
+        self.outdir = instance.outdir
+        self.run_log = os.path.join(self.outdir, "run.log")
+        self.valgrind_log = os.path.join(self.outdir, "valgrind.log")
         self.returncode = 0
         self.set_state("running", {})
 
@@ -432,7 +448,7 @@ class QEMUHandler(Handler):
     """
 
     @staticmethod
-    def _thread(handler, timeout, outdir, logfile, fifo_fn, pid_fn, results):
+    def _thread(handler, timeout, outdir, logfile, fifo_fn, pid_fn, results, harness):
         fifo_in = fifo_fn + ".in"
         fifo_out = fifo_fn + ".out"
 
@@ -486,12 +502,9 @@ class QEMUHandler(Handler):
             line = line.strip()
             verbose("QEMU: %s" % line)
 
-            if line == handler.RUN_PASSED:
-                out_state = "passed"
-                break
-
-            if line == handler.RUN_FAILED:
-                out_state = "failed"
+            harness.handle(line)
+            if harness.state:
+                out_state = harness.state
                 break
 
             # TODO: Add support for getting numerical performance data
@@ -519,7 +532,7 @@ class QEMUHandler(Handler):
         os.unlink(fifo_in)
         os.unlink(fifo_out)
 
-    def __init__(self, name, outdir, log_fn, timeout):
+    def __init__(self, instance):
         """Constructor
 
         @param name Arbitrary name of the created thread
@@ -529,22 +542,34 @@ class QEMUHandler(Handler):
         @param timeout Kill the QEMU process if it doesn't finish up within
             the given number of seconds
         """
-        super().__init__(name, outdir, log_fn, timeout)
+
+
+        super().__init__(instance)
+        outdir = instance.outdir
+        timeout = instance.test.timeout
+        name = instance.name
+        run_log = os.path.join(outdir, "run.log")
+        qemu_log = os.path.join(outdir, "qemu.log")
+
         self.results = {}
 
         # We pass this to QEMU which looks for fifos with .in and .out
         # suffixes.
-        self.fifo_fn = os.path.join(outdir, "qemu-fifo")
+        self.fifo_fn = os.path.join(instance.outdir, "qemu-fifo")
 
-        self.pid_fn = os.path.join(outdir, "qemu.pid")
+        self.pid_fn = os.path.join(instance.outdir, "qemu.pid")
         if os.path.exists(self.pid_fn):
             os.unlink(self.pid_fn)
 
-        self.log_fn = log_fn
+        self.log_fn = qemu_log
+
+        harness_import = HarnessImporter(instance.test.harness.capitalize())
+        harness = harness_import.instance
+        harness.configure(instance)
         self.thread = threading.Thread(name=name, target=QEMUHandler._thread,
                                        args=(self, timeout, outdir,
                                              self.log_fn, self.fifo_fn,
-                                             self.pid_fn, self.results))
+                                             self.pid_fn, self.results, harness))
         self.thread.daemon = True
         verbose("Spawning QEMU process for %s" % name)
         self.thread.start()
@@ -843,6 +868,11 @@ class MakeGenerator:
         if not os.path.exists(outdir):
             os.makedirs(outdir)
 
+    def add_instance_build_goal(self, instance, args, buildlog, make_args=""):
+
+        self.add_build_goal(instance.name, instance.test.code_location,
+                instance.outdir, args, buildlog, make_args)
+
     def add_build_goal(self, name, directory, outdir,
                        args, buildlog, make_args=""):
         """Add a goal to invoke a Kbuild session
@@ -878,7 +908,7 @@ class MakeGenerator:
             None,
             None)
 
-    def add_qemu_goal(self, name, directory, outdir, args, timeout=30):
+    def add_qemu_goal(self, instance, args):
         """Add a goal to build a Zephyr project and then run it under QEMU
 
         The generated make goal invokes Make twice, the first time it will
@@ -898,12 +928,16 @@ class MakeGenerator:
             to run before automatically killing it. Default is 30 seconds.
         """
 
-        self._add_goal(outdir)
+        name = instance.name
+        directory = instance.test.code_location
+        outdir = instance.outdir
+
         build_logfile = os.path.join(outdir, "build.log")
         run_logfile = os.path.join(outdir, "run.log")
         qemu_logfile = os.path.join(outdir, "qemu.log")
+        self._add_goal(outdir)
 
-        qemu_handler = QEMUHandler(name, outdir, qemu_logfile, timeout)
+        qemu_handler = QEMUHandler(instance)
         args.append("QEMU_PIPE=%s" % qemu_handler.get_fifo())
         text = (self._get_rule_header(name) +
                 self._get_sub_make(name, "building", directory,
@@ -915,8 +949,12 @@ class MakeGenerator:
         self.goals[name] = MakeGoal(name, text, qemu_handler, self.logfile, build_logfile,
                                     run_logfile, qemu_logfile)
 
-    def add_unit_goal(self, name, directory, outdir,
-                      args, timeout=30, coverage=False):
+    def add_unit_goal(self, instance, args, timeout=30, coverage=False):
+        outdir = instance.outdir
+        timeout = instance.test.timeout
+        name = instance.name
+        directory = instance.test.code_location
+
         self._add_goal(outdir)
         build_logfile = os.path.join(outdir, "build.log")
         run_logfile = os.path.join(outdir, "run.log")
@@ -929,11 +967,17 @@ class MakeGenerator:
                 self._get_sub_make(name, "building", directory,
                                    outdir, build_logfile, args) +
                 self._get_rule_footer(name))
-        unit_handler = UnitHandler(name, directory, outdir, run_logfile, valgrind_logfile, timeout)
+        unit_handler = UnitHandler(instance)
         self.goals[name] = MakeGoal(name, text, unit_handler, self.logfile, build_logfile,
                                     run_logfile, valgrind_logfile)
 
-    def add_native_goal(self, name, directory, outdir, args, timeout=30, coverage=False):
+    def add_native_goal(self, instance, args, coverage=False):
+
+        outdir = instance.outdir
+        timeout = instance.test.timeout
+        name = instance.name
+        directory = instance.test.code_location
+
         self._add_goal(outdir)
         build_logfile = os.path.join(outdir, "build.log")
         run_logfile = os.path.join(outdir, "run.log")
@@ -944,7 +988,7 @@ class MakeGenerator:
                 self._get_sub_make(name, "building", directory,
                                    outdir, build_logfile, args) +
                 self._get_rule_footer(name))
-        native_handler = NativeHandler(name, directory, outdir, run_logfile, valgrind_logfile, timeout)
+        native_handler = NativeHandler(instance)
         self.goals[name] = MakeGoal(name, text, native_handler, self.logfile, build_logfile,
                                     run_logfile, valgrind_logfile)
 
@@ -964,17 +1008,13 @@ class MakeGenerator:
         args.extend(extra_args)
         if (ti.platform.qemu_support and (not ti.build_only) and
                 (not build_only) and (enable_slow or not ti.test.slow)):
-            self.add_qemu_goal(ti.name, ti.test.code_location, ti.outdir,
-                               args, ti.test.timeout)
+            self.add_qemu_goal(ti, args)
         elif ti.test.type == "unit":
-            self.add_unit_goal(ti.name, ti.test.code_location, ti.outdir,
-                               args, ti.test.timeout, coverage)
+            self.add_unit_goal(ti, args, coverage)
         elif ti.platform.type == "native" and (not ti.build_only) and (not build_only):
-            self.add_native_goal(ti.name, ti.test.code_location, ti.outdir,
-                               args, ti.test.timeout, coverage)
+            self.add_native_goal(ti, args, coverage)
         else:
-            self.add_build_goal(ti.name, ti.test.code_location, ti.outdir,
-                                args, "build.log")
+            self.add_instance_build_goal(ti, args, "build.log")
 
     def execute(self, callback_fn=None, context=None):
         """Execute all the registered build goals
@@ -1029,8 +1069,7 @@ class MakeGenerator:
 
                     if state == "finished":
                         if goal.handler:
-                            if goal.handler.unit:
-                                # We can't run unit tests with Make
+                            if hasattr(goal.handler, "handle"):
                                 goal.handler.handle()
                                 if goal.handler.returncode == 2:
                                     goal.handler_log = goal.handler.valgrind_log
@@ -1087,7 +1126,8 @@ testcase_valid_keys = {"tags": {"type": "set", "required": False},
                        "toolchain_exclude": {"type": "set"},
                        "toolchain_whitelist": {"type": "set"},
                        "filter": {"type": "str"},
-                       "harness": {"type": "str"}
+                       "harness": {"type": "str"},
+                       "harness_config": {"type": "map"}
                        }
 
 
@@ -1140,6 +1180,8 @@ class SanityConfigParser:
             else:
                 return set(vs)
 
+        elif typestr.startswith("map"):
+            return value
         else:
             raise ConfigurationError(
                 self.filename, "unknown type '%s'" % value)
@@ -1319,6 +1361,7 @@ class TestCase:
         self.tc_filter = tc_dict["filter"]
         self.timeout = tc_dict["timeout"]
         self.harness = tc_dict["harness"]
+        self.harness_config = tc_dict["harness_config"]
         self.build_only = tc_dict["build_only"]
         self.build_on_all = tc_dict["build_on_all"]
         self.slow = tc_dict["slow"]
@@ -1352,9 +1395,7 @@ class TestInstance:
         self.platform = platform
         self.name = os.path.join(platform.name, test.name)
         self.outdir = os.path.join(base_outdir, platform.name, test.path)
-        # TODO: Support harness in sanitycheck, now we do not run on anything
-        # that requires a harness
-        self.build_only = build_only or test.build_only or (test.harness != '')
+        self.build_only = build_only or test.build_only or (test.harness and test.harness != 'console')
 
     def create_overlay(self):
         if len(self.test.extra_configs) > 0:
@@ -1629,11 +1670,10 @@ class TestSuite:
                             "/")[-1]] = os.path.join(o, "zephyr", ".config")
                         goal = "_".join([plat.name, "_".join(
                             tc.name.split("/")), "config-sanitycheck"])
-                        mg.add_build_goal(
-                            goal, os.path.join(
-                                ZEPHYR_BASE, tc.code_location),
-                            o, args, "config-sanitycheck.log",
-                            make_args="config-sanitycheck")
+                        mg.add_build_goal(goal,
+                                os.path.join(ZEPHYR_BASE, tc.code_location),
+                                o, args,
+                                "config-sanitycheck.log", make_args="config-sanitycheck")
 
         info("Building testcase defconfigs...")
         results = mg.execute(defconfig_cb)
@@ -2289,7 +2329,7 @@ def generate_coverage(outdir, ignores):
                 ["lcov", "--remove", coveragefile, i, "--output-file",
                  coveragefile],
                 stdout=coveragelog)
-        subprocess.call(["genhtml", "-output-directory",
+        subprocess.call(["genhtml", "--legend", "-output-directory",
                          os.path.join(outdir, "coverage"),
                          coveragefile, ztestfile], stdout=coveragelog)
 
