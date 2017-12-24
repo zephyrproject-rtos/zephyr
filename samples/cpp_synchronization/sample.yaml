@@ -6,3 +6,9 @@ tests:
     toolchain_exclude: issm
     arch_exclude: posix
     harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "Create semaphore (.*)"
+        - "main: Hello World!"
+        - "coop_thread_entry: Hello World!"
