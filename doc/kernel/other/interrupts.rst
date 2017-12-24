@@ -57,6 +57,58 @@ nesting support is enabled.
     alter its behavior depending on whether it is executing as part of
     a thread or as part of an ISR.
 
+Multi-level Interrupt handling
+==============================
+
+A hardware platform can support more interrupt lines than natively-provided
+through the use of one or more nested interrupt controllers.  Sources of
+hardware interrupts are combined into one line that is then routed to
+the parent controller.
+
+If nested interrupt controllers are supported, :option:`CONFIG_MULTI_LEVEL_INTERRUPTS`
+should be set to 1, and :option:`CONFIG_2ND_LEVEL_INTERRUPTS` and
+:option:`CONFIG_3RD_LEVEL_INTERRUPTS` configured as well, based on the
+hardware architecture.
+
+A unique 32-bit interrupt number is assigned with information
+embedded in it to select and invoke the correct Interrupt
+Service Routine (ISR). Each interrupt level is given a byte within this 32-bit
+number, providing support for up to four interrupt levels using this arch, as
+illustrated and explained below:
+
+.. code-block:: none
+
+                 9             2   0
+           _ _ _ _ _ _ _ _ _ _ _ _ _         (LEVEL 1)
+         5       |         A   |
+       _ _ _ _ _ _ _         _ _ _ _ _ _ _   (LEVEL 2)
+         |   C                       B
+       _ _ _ _ _ _ _                         (LEVEL 3)
+               D
+
+There are three interrupt levels shown here.
+
+* LEVEL 1 has 12 interrupt lines, with two lines (2 and 9) connected
+  to nested controllers.
+* One of the LEVEL 2 controllers has interrupt line 5 connected to
+  a LEVEL 3 nested controller.
+* The other LEVEL 2 controller has no nested controllers.
+
+Here's how unique interrupt numbers are generated for each
+hardware interrupt.  Let's consider four interrupts shown above
+as A, B, C, and D:
+
+.. code-block:: none
+
+   A -> 0x00000004
+   B -> 0x00000302
+   C -> 0x00000409
+   D -> 0x00030609
+
+.. note::
+   The bit positions for LEVEL 2 and onward are offset by 1, as 0 means that
+   interrupt number is not present for that level.
+
 Preventing Interruptions
 ========================
 

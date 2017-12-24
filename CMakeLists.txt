@@ -630,6 +630,7 @@ if(CONFIG_GEN_ISR_TABLES)
     COMMAND ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/arch/common/gen_isr_tables.py
     --output-source isr_tables.c
+    --kernel $<TARGET_FILE:zephyr_prebuilt>
     --intlist isrList.bin
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--debug>
     --sw-isr-table
