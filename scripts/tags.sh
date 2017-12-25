@@ -5,138 +5,40 @@
 # mode may be any of: tags, TAGS, cscope
 #
 # Uses the following environment variables:
-# ARCH, SUBARCH, SRCARCH, srctree, src, obj
+# ARCH, SOC, BOARD, ZEPHYR_BASE
 
-if [ "$KBUILD_VERBOSE" = "1" ]; then
-	set -x
-fi
-
-# RCS_FIND_IGNORE has escaped ()s -- remove them.
-ignore="$(echo "$RCS_FIND_IGNORE" | sed 's|\\||g' )"
-# tags and cscope files should also ignore MODVERSION *.mod.c files
-ignore="$ignore ( -name *.mod.c ) -prune -o"
-
-# Do not use full path if we do not use O=.. builds
-# Use make O=. {tags|cscope}
-# to force full paths for a non-O= build
-if [ "${KBUILD_SRC}" = "" ]; then
-	tree=
-else
-	tree=${srctree}/
-fi
-
-# ignore userspace tools
-ignore="$ignore ( -path ${tree}tools ) -prune -o"
-
-# Find all available archs
-find_all_archs()
-{
-	ALLSOURCE_ARCHS=""
-	for arch in `ls ${tree}arch`; do
-		ALLSOURCE_ARCHS="${ALLSOURCE_ARCHS} "${arch##\/}
-	done
-}
-
-# Detect if ALLSOURCE_ARCHS is set. If not, we assume SRCARCH
-if [ "${ALLSOURCE_ARCHS}" = "" ]; then
-	ALLSOURCE_ARCHS=${SRCARCH}
-elif [ "${ALLSOURCE_ARCHS}" = "all" ]; then
-	find_all_archs
-fi
-
-# find sources in arch/$ARCH
-find_arch_sources()
-{
-	for i in $archincludedir; do
-		prune="$prune -wholename $i -prune -o"
-	done
-	find ${tree}arch/$1 $ignore $subarchprune $prune -name "$2" \
-		-not -type l -print;
-}
-
-# find sources in arch/$1/include
-find_arch_include_sources()
-{
-	include=$(find ${tree}arch/$1/ $subarchprune \
-					-name include -type d -print);
-	if [ -n "$include" ]; then
-		archincludedir="$archincludedir $include"
-		find $include $ignore -name "$2" -not -type l -print;
-	fi
-}
-
-# find sources in include/
-find_include_sources()
-{
-	find ${tree}include $ignore -name config -prune -o -name "$1" \
-		-not -type l -print;
-}
-
-# find sources in rest of tree
-# we could benefit from a list of dirs to search in here
-find_other_sources()
-{
-	find ${tree}* $ignore \
-	     \( -name include -o -name arch -o -name '.tmp_*' \) -prune -o \
-	       -name "$1" -not -type l -print;
-}
 
 find_sources()
 {
-	find_arch_sources $1 "$2"
+	find "$1" -name "$2"
 }
 
+# Looks for assembly, c and header files of selected architectures
 all_sources()
 {
-	find_arch_include_sources ${SRCARCH} '*.[chS]'
-	if [ ! -z "$archinclude" ]; then
-		find_arch_include_sources $archinclude '*.[chS]'
-	fi
-	find_include_sources '*.[chS]'
-	for arch in $ALLSOURCE_ARCHS
+	for dir in $ALLSOURCES
 	do
-		find_sources $arch '*.[chS]'
-	done
-	find_other_sources '*.[chS]'
-}
-
-all_compiled_sources()
-{
-	for i in $(all_sources); do
-		case "$i" in
-			*.[cS])
-				j=${i/\.[cS]/\.o}
-				if [ -e $j ]; then
-					echo $i
-				fi
-				;;
-			*)
-				echo $i
-				;;
-		esac
+		find_sources "$dir" '*.[chS]'
 	done
 }
 
 all_target_sources()
 {
-	if [ -n "$COMPILED_SOURCE" ]; then
-		all_compiled_sources
-	else
-		all_sources
-	fi
+	all_sources
 }
 
 all_kconfigs()
 {
-	for arch in $ALLSOURCE_ARCHS; do
-		find_sources $arch 'Kconfig*'
+	for dir in $ALLSOURCES; do
+		find_sources $dir 'Kconfig*'
 	done
-	find_other_sources 'Kconfig*'
 }
 
 all_defconfigs()
 {
-	find_sources $ALLSOURCE_ARCHS "defconfig"
+	for dir in $ALLSOURCES; do
+		find_sources $dir 'defconfig*'
+	done
 }
 
 docscope()
@@ -288,32 +190,33 @@ xtags()
 	fi
 }
 
-# Support um (which uses SUBARCH)
-if [ "${ARCH}" = "um" ]; then
-	if [ "$SUBARCH" = "i386" ]; then
-		archinclude=x86
-	elif [ "$SUBARCH" = "x86_64" ]; then
-		archinclude=x86
-	else
-		archinclude=${SUBARCH}
-	fi
-elif [ "${SRCARCH}" = "arm" -a "${SUBARCH}" != "" ]; then
-	subarchdir=$(find ${tree}arch/$SRCARCH/ -name "mach-*" -type d -o \
-							-name "plat-*" -type d);
-	for i in $subarchdir; do
-		case "$i" in
-			*"mach-"${SUBARCH})
-				;;
-			*"plat-"${SUBARCH})
-				;;
-			*)
-				subarchprune="$subarchprune \
-						-wholename $i -prune -o"
-				;;
-		esac
-	done
+
+# Used for debugging
+if [ "$TAGS_VERBOSE" = "1" ]; then
+	set -x
 fi
 
+# Set project base directory
+if [ "${ZEPHYR_BASE}" = "" ]; then
+	echo "error: run zephyr-env.sh before $0"
+	exit 1
+fi
+tree="${ZEPHYR_BASE}/"
+
+# List of always explored directories
+COMMON_DIRS="drivers dts ext include kernel lib misc subsys"
+
+# Detect if ARCH is set. If not, we look for all archs
+if [ "${ARCH}" = "" ]; then
+	ALLSOURCES="${COMMON_DIRS} arch boards"
+else
+	ALLSOURCES="${COMMON_DIRS} arch/${ARCH} boards/${ARCH}"
+fi
+
+# TODO: detect if BOARD is set so we can select certain files
+
+
+# Perform main action
 remove_structs=
 case "$1" in
 	"cscope")
@@ -334,6 +237,9 @@ case "$1" in
 		rm -f TAGS
 		xtags etags
 		remove_structs=y
+		;;
+	*)
+		echo "error: incorrect parameter"
 		;;
 esac
 
