@@ -125,6 +125,12 @@ int k_delayed_work_cancel(struct k_delayed_work *work)
 	}
 
 	if (k_work_pending(&work->work)) {
+                /*
+                 * [Sanechips] clear bit of work.flags,
+                 * when remove from the queue if already submitted.
+                 */
+		atomic_clear_bit(work->work.flags,K_WORK_STATE_PENDING);
+
 		/* Remove from the queue if already submitted */
 		if (!k_queue_remove(&work->work_q->queue, &work->work)) {
 			irq_unlock(key);
