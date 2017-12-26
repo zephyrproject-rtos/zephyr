@@ -146,7 +146,14 @@ static inline int register_event(struct k_poll_event *event,
 /* must be called with interrupts locked */
 static inline void clear_event_registration(struct k_poll_event *event)
 {
-	event->poller = NULL;
+        /*
+	 * [Sanechips] If this event has been deleted by clear_event_registrations,
+	 * and there is other thread's event in the event list. Re-delete may cause
+	 * other threads never get scheduled anymore.
+	 */
+	if (event->poller == NULL) {
+	        return ;
+        }
 
 	switch (event->type) {
 	case K_POLL_TYPE_SEM_AVAILABLE:
