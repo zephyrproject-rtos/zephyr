@@ -152,9 +152,11 @@ static inline void clear_event_registration(struct k_poll_event *event)
 	 * other threads never get scheduled anymore.
 	 */
 	if (event->poller == NULL) {
-	        return ;
-        }
+		return ;
+	}
 
+	event->poller = NULL;
+	
 	switch (event->type) {
 	case K_POLL_TYPE_SEM_AVAILABLE:
 		__ASSERT(event->sem, "invalid semaphore\n");
