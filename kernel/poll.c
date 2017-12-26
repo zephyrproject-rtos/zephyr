@@ -154,7 +154,9 @@ static inline void clear_event_registration(struct k_poll_event *event)
 	if (event->poller == NULL) {
 	        return ;
         }
-
+	
+	event->poller = NULL;
+	
 	switch (event->type) {
 	case K_POLL_TYPE_SEM_AVAILABLE:
 		__ASSERT(event->sem, "invalid semaphore\n");
