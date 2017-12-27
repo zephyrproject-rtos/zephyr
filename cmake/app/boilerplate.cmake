@@ -53,6 +53,12 @@ define_property(GLOBAL PROPERTY ZEPHYR_LIBS
 zephyr_library() appends libs to this list.")
 set_property(GLOBAL PROPERTY ZEPHYR_LIBS "")
 
+define_property(GLOBAL PROPERTY ZEPHYR_INTERFACE_LIBS
+    BRIEF_DOCS "Global list of all Zephyr interface libs that should be linked in."
+    FULL_DOCS  "Global list of all Zephyr interface libs that should be linked in.
+zephyr_interface_library_named() appends libs to this list.")
+set_property(GLOBAL PROPERTY ZEPHYR_INTERFACE_LIBS "")
+
 define_property(GLOBAL PROPERTY GENERATED_KERNEL_OBJECT_FILES
   BRIEF_DOCS "Object files that are generated after Zephyr has been linked once."
   FULL_DOCS "\
@@ -247,3 +253,24 @@ zephyr_library_named(app)
 
 add_subdirectory($ENV{ZEPHYR_BASE} ${__build_dir})
 
+# Link 'app' with the Zephyr interface libraries.
+#
+# NB: This must be done in boilerplate.cmake because 'app' can only be
+# modified in the CMakeLists.txt file that created it. And it must be
+# done after 'add_subdirectory($ENV{ZEPHYR_BASE} ${__build_dir})'
+# because interface libraries are defined while processing that
+# subdirectory.
+get_property(ZEPHYR_INTERFACE_LIBS_PROPERTY GLOBAL PROPERTY ZEPHYR_INTERFACE_LIBS)
+foreach(boilerplate_lib ${ZEPHYR_INTERFACE_LIBS_PROPERTY})
+  # Linking 'app' with 'boilerplate_lib' causes 'app' to inherit the INTERFACE
+  # properties of 'boilerplate_lib'. The most common property is 'include
+  # directories', but it is also possible to have defines and compiler
+  # flags in the interface of a library.
+  #
+  string(TOUPPER ${boilerplate_lib} boilerplate_lib_upper_case) # Support lowercase lib names
+  target_link_libraries_ifdef(
+    CONFIG_APP_LINK_WITH_${boilerplate_lib_upper_case}
+    app
+    ${boilerplate_lib}
+    )
+endforeach()

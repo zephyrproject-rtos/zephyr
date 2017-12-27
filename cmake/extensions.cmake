@@ -7,6 +7,7 @@ include(CheckCXXCompilerFlag)
 # 1. Zephyr-aware extensions
 # 1.1. zephyr_*
 # 1.2. zephyr_library_*
+# 1.2.1 zephyr_interface_library_*
 # 1.3. generate_inc_*
 # 1.4. board_*
 # 2. Kconfig-aware extensions
@@ -436,6 +437,36 @@ endfunction()
 function(zephyr_append_cmake_library library)
   set_property(GLOBAL APPEND PROPERTY ZEPHYR_LIBS ${library})
 endfunction()
+
+# 1.2.1 zephyr_interface_library_*
+#
+# A Zephyr interface library is a thin wrapper over a CMake INTERFACE
+# library. The most important responsibility of this abstraction is to
+# ensure that when a user KConfig-enables a library then the header
+# files of this library will be accessible to the 'app' library.
+#
+# This is done because when a user uses Kconfig to enable a library he
+# expects to be able to include it's header files and call it's
+# functions out-of-the box.
+#
+# A Zephyr interface library should be used when there exists some
+# build information (include directories, defines, compiler flags,
+# etc.) that should be applied to a set of Zephyr libraries and 'app'
+# might be one of these libraries.
+#
+# Zephyr libraries must explicitly call
+# zephyr_library_link_libraries(<interface_library>) to use this build
+# information. 'app' is treated as a special case for usability
+# reasons; a Kconfig option (CONFIG_APP_LINK_WITH_<interface_library>)
+# should exist for each interface_library and will determine if 'app'
+# links with the interface_library.
+#
+# This API has a constructor like the zephyr_library API has, but it
+# does not have wrappers over the other cmake target functions.
+macro(zephyr_interface_library_named name)
+  add_library(${name} INTERFACE)
+  set_property(GLOBAL APPEND PROPERTY ZEPHYR_INTERFACE_LIBS ${name})
+endmacro()
 
 # 1.4. board_*
 #
