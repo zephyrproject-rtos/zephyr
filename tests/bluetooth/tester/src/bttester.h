@@ -747,6 +747,14 @@ struct mesh_lpn_set_cmd {
 
 #define MESH_LPN_POLL			0x0e
 
+#define MESH_MODEL_SEND			0x0f
+struct mesh_model_send_cmd {
+	u16_t src;
+	u16_t dst;
+	u8_t payload_len;
+	u8_t payload[0];
+} __packed;
+
 /* events */
 #define MESH_EV_OUT_NUMBER_ACTION	0x80
 struct mesh_out_number_action_ev {
