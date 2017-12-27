@@ -301,12 +301,17 @@ function(generate_inc_file_for_target
   # targets
 
   # But first create a unique name for the custom target
-  # Replace / with _ (driver/serial => driver_serial) and . with _
-  set(generated_target_name ${generated_file})
+  string(
+    RANDOM
+    LENGTH 8
+    random_chars
+    )
 
-  string(REPLACE "/" "_" generated_target_name ${generated_target_name})
-  string(REPLACE "." "_" generated_target_name ${generated_target_name})
-  string(REPLACE "@" "_" generated_target_name ${generated_target_name})
+  get_filename_component(basename ${generated_file} NAME)
+  string(REPLACE "." "_" basename ${basename})
+  string(REPLACE "@" "_" basename ${basename})
+
+  set(generated_target_name "gen_${basename}_${random_chars}")
 
   add_custom_target(${generated_target_name} DEPENDS ${generated_file})
   add_dependencies(${target} ${generated_target_name})
