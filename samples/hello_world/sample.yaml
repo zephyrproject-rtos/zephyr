@@ -6,6 +6,10 @@ sample:
 common:
     tags: samples
     harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Hello World! (.*)"
 tests:
   singlethread:
     extra_args: CONF_FILE=prj_single.conf
