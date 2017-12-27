@@ -783,10 +783,10 @@ if(CONFIG_OUTPUT_PRINT_MEMORY_USAGE)
   set(option ${LINKERFLAGPREFIX},--print-memory-usage)
   string(MAKE_C_IDENTIFIER check${option} check)
 
-  set(SAVED_CMAKE_REQUIRED_FLAGS CMAKE_REQUIRED_FLAGS)
+  set(SAVED_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
   set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${option}")
   check_c_compiler_flag("" ${check})
-  set(CMAKE_REQUIRED_FLAGS SAVED_CMAKE_REQUIRED_FLAGS)
+  set(CMAKE_REQUIRED_FLAGS ${SAVED_CMAKE_REQUIRED_FLAGS})
 
   target_link_libraries_ifdef(${check} zephyr_prebuilt ${option})
 endif()
