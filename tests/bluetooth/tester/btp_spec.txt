@@ -1507,6 +1507,17 @@ Commands and responses:
 
 		In case of an error, the error response will be returned.
 
+	Opcode 0x0f - Model Send
+		Controller Index:	<controller id>
+		Command parameters:	SRC (2 octets)
+					DST (2 octets)
+					Payload_Len (1 octet)
+					Payload (variable)
+
+		This command is used to send Mesh model message.
+
+		In case of an error, the error response will be returned.
+
 Events:
 	Opcode 0x80 - Output number action Event
 

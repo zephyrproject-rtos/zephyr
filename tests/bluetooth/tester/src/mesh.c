@@ -41,6 +41,15 @@ static u8_t static_auth[16];
 /* Vendor Model data */
 #define VND_MODEL_ID_1 0x1234
 
+/* Model send data */
+#define MODEL_BOUNDS_MAX 2
+
+static struct model_data {
+	struct bt_mesh_model *model;
+	u16_t addr;
+	u16_t appkey_idx;
+} model_bound[MODEL_BOUNDS_MAX];
+
 static struct {
 	u16_t local;
 	u16_t dst;
@@ -66,7 +75,6 @@ static void supported_commands(u8_t *data, u16_t len)
 	tester_set_bit(buf->data, MESH_INPUT_NUMBER);
 	tester_set_bit(buf->data, MESH_INPUT_STRING);
 	/* 2nd octet */
-	memset(net_buf_simple_add(buf, 1), 0, 1);
 	tester_set_bit(buf->data, MESH_IVU_TEST_MODE);
 	tester_set_bit(buf->data, MESH_IVU_TOGGLE_STATE);
 	tester_set_bit(buf->data, MESH_NET_SEND);
@@ -74,6 +82,7 @@ static void supported_commands(u8_t *data, u16_t len)
 	tester_set_bit(buf->data, MESH_HEALTH_CLEAR_FAULTS);
 	tester_set_bit(buf->data, MESH_LPN);
 	tester_set_bit(buf->data, MESH_LPN_POLL);
+	tester_set_bit(buf->data, MESH_MODEL_SEND);
 
 	tester_send(BTP_SERVICE_ID_MESH, MESH_READ_SUPPORTED_COMMANDS,
 		    CONTROLLER_INDEX, buf->data, buf->len);
@@ -602,6 +611,54 @@ static void health_clear_faults(u8_t *data, u16_t len)
 		   CONTROLLER_INDEX, BTP_STATUS_SUCCESS);
 }
 
+static void model_send(u8_t *data, u16_t len)
+{
+	struct mesh_model_send_cmd *cmd = (void *) data;
+	struct net_buf_simple *msg = NET_BUF_SIMPLE(UINT8_MAX);
+	struct bt_mesh_msg_ctx ctx = {
+		.net_idx = net.net_idx,
+		.app_idx = BT_MESH_KEY_DEV,
+		.addr = sys_le16_to_cpu(cmd->dst),
+		.send_ttl = BT_MESH_TTL_DEFAULT,
+	};
+	struct bt_mesh_model *model = NULL;
+	int err, i;
+	u16_t src = sys_le16_to_cpu(cmd->src);
+
+	/* Lookup source address */
+	for (i = 0; i < ARRAY_SIZE(model_bound); i++) {
+		if (model_bound[i].model->elem->addr == src) {
+			model = model_bound[i].model;
+			ctx.app_idx = model_bound[i].appkey_idx;
+
+			break;
+		}
+	}
+
+	if (!model) {
+		SYS_LOG_ERR("Model not found");
+		err = -EINVAL;
+
+		goto fail;
+	}
+
+	SYS_LOG_DBG("src 0x%04x dst 0x%04x model %p payload_len %d", src,
+		    ctx.addr, model, cmd->payload_len);
+
+	net_buf_simple_init(msg, 0);
+
+	net_buf_simple_add_mem(msg, cmd->payload, cmd->payload_len);
+
+	err = bt_mesh_model_send(model, &ctx, msg, NULL, NULL);
+	if (err) {
+		SYS_LOG_ERR("Failed to send (err %d)", err);
+	}
+
+fail:
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_MODEL_SEND, CONTROLLER_INDEX,
+		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+}
+
 void tester_handle_mesh(u8_t opcode, u8_t index, u8_t *data, u16_t len)
 {
 	switch (opcode) {
@@ -647,6 +704,9 @@ void tester_handle_mesh(u8_t opcode, u8_t index, u8_t *data, u16_t len)
 	case MESH_HEALTH_CLEAR_FAULTS:
 		health_clear_faults(data, len);
 		break;
+	case MESH_MODEL_SEND:
+		model_send(data, len);
+		break;
 	default:
 		tester_rsp(BTP_SERVICE_ID_MESH, opcode, index,
 			   BTP_STATUS_UNKNOWN_CMD);
@@ -683,8 +743,52 @@ void net_recv_ev(u8_t ttl, u8_t ctl, u16_t src, u16_t dst, const void *payload,
 		    buf->data, buf->len);
 }
 
+static void model_bound_cb(u16_t addr, struct bt_mesh_model *model,
+			   u16_t key_idx)
+{
+	int i;
+
+	SYS_LOG_DBG("remote addr 0x%04x key_idx 0x%04x model %p",
+		    addr, key_idx, model);
+
+	for (i = 0; i < ARRAY_SIZE(model_bound); i++) {
+		if (!model_bound[i].model) {
+			model_bound[i].model = model;
+			model_bound[i].addr = addr;
+			model_bound[i].appkey_idx = key_idx;
+
+			return;
+		}
+	}
+
+	SYS_LOG_ERR("model_bound is full");
+}
+
+static void model_unbound_cb(u16_t addr, struct bt_mesh_model *model,
+			     u16_t key_idx)
+{
+	int i;
+
+	SYS_LOG_DBG("remote addr 0x%04x key_idx 0x%04x model %p",
+		    addr, key_idx, model);
+
+	for (i = 0; i < ARRAY_SIZE(model_bound); i++) {
+		if (model_bound[i].model == model) {
+			model_bound[i].model = NULL;
+			model_bound[i].addr = 0x0000;
+			model_bound[i].appkey_idx = BT_MESH_KEY_UNUSED;
+
+			return;
+		}
+	}
+
+	SYS_LOG_INF("model not found");
+}
+
 static struct bt_test_cb bt_test_cb = {
 	.mesh_net_recv = net_recv_ev,
+	.mesh_model_bound = model_bound_cb,
+	.mesh_model_unbound = model_unbound_cb,
 };
 
 u8_t tester_init_mesh(void)
