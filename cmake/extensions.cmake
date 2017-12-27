@@ -832,7 +832,12 @@ endfunction()
 function(target_ld_options target scope)
   foreach(option ${ARGN})
     string(MAKE_C_IDENTIFIER check${option} check)
-    check_c_compiler_flag(${option} ${check})
+
+    set(SAVED_CMAKE_REQUIRED_FLAGS ${CMAKE_REQUIRED_FLAGS})
+    set(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${option}")
+    check_c_compiler_flag("" ${check})
+    set(CMAKE_REQUIRED_FLAGS ${SAVED_CMAKE_REQUIRED_FLAGS})
+
     target_link_libraries_ifdef(${check} ${target} ${scope} ${option})
   endforeach()
 endfunction()
