@@ -1192,11 +1192,14 @@ NET_CONN_CB(tcp_established)
 
 	/* Handle TCP state transition */
 	if (tcp_flags & NET_TCP_ACK) {
+		if (!net_tcp_ack_received(context,
+				     sys_get_be32(tcp_hdr->ack))) {
+			return NET_DROP;
+		}
+
 		/* TCP state might be changed after maintaining the sent pkt
 		 * list, e.g., an ack of FIN is received.
 		 */
-		net_tcp_ack_received(context,
-				     sys_get_be32(tcp_hdr->ack));
 
 		if (net_tcp_get_state(context->tcp)
 			   == NET_TCP_FIN_WAIT_1) {

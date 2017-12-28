@@ -901,7 +901,7 @@ int net_tcp_send_data(struct net_context *context)
 	return 0;
 }
 
-void net_tcp_ack_received(struct net_context *ctx, u32_t ack)
+bool net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 {
 	struct net_tcp *tcp = ctx->tcp;
 	sys_slist_t *list = &ctx->tcp->sent_list;
@@ -909,6 +909,16 @@ void net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 	struct net_pkt *pkt;
 	u32_t seq;
 	bool valid_ack = false;
+
+	if (net_tcp_seq_greater(ack, ctx->tcp->send_seq)) {
+		NET_ERR("ctx %p: ACK for unsent data", ctx);
+		net_stats_update_tcp_seg_ackerr();
+		/* RFC 793 doesn't say that invalid ack sequence is an error
+		 * in the general case, but we implement tighter checking,
+		 * and consider entire packet invalid.
+		 */
+		return false;
+	}
 
 	if (IS_ENABLED(CONFIG_NET_STATISTICS_TCP) &&
 	    sys_slist_is_empty(list)) {
@@ -981,6 +991,8 @@ void net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 			net_tcp_send_data(ctx);
 		}
 	}
+
+	return true;
 }
 
 void net_tcp_init(void)
