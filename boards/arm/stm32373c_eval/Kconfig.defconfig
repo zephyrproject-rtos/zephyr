@@ -10,4 +10,11 @@ if BOARD_STM32373C_EVAL
 config BOARD
 	default stm32373c_eval
 
+if UART_CONSOLE
+
+config UART_STM32_PORT_2
+	default y
+
+endif # UART_CONSOLE
+
 endif # BOARD_STM32373C_EVAL

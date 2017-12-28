@@ -19,4 +19,14 @@ config NUM_IRQS
 	int
 	default 82
 
+if GPIO_STM32
+
+config GPIO_STM32_PORTE
+	default y
+
+config GPIO_STM32_PORTF
+	default y
+
+endif # GPIO_STM32
+
 endif # SOC_STM32F373XC
