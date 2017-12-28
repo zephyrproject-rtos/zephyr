@@ -11,24 +11,15 @@ CONFIG_STM32_ARM_MPU_ENABLE=y
 
 # Serial Drivers
 CONFIG_SERIAL=y
-CONFIG_SERIAL_HAS_DRIVER=y
 CONFIG_UART_INTERRUPT_DRIVEN=y
-CONFIG_UART_STM32=y
-# enable USART2 - passthrough to STLINK v2 connector
-CONFIG_UART_STM32_PORT_2=y
-# enable console on this port by default
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
 
 # enable pinmux
 CONFIG_PINMUX=y
-CONFIG_PINMUX_STM32=y
 
-# enable GPIO ports A, B, C
+# enable GPIO
 CONFIG_GPIO=y
-# add GPIO ports not enabled in SoC
-CONFIG_GPIO_STM32_PORTD=y
-CONFIG_GPIO_STM32_PORTE=y
 
 # clock configuration
 CONFIG_CLOCK_CONTROL=y
