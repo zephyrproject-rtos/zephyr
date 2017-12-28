@@ -1587,3 +1587,11 @@ Events:
 					Payload (variable)
 
 		This event indicates reception of network packet.
+
+	Opcode 0x87 - Invalid BearerOpcode Event
+
+		Controller Index:	<controller id>
+		Event parameters:	Opcode (1 octet)
+
+		This event indicates reception of provisioning message with
+		invalid RFU BearerOpcode.

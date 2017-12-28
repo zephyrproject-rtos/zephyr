@@ -60,3 +60,14 @@ void bt_test_mesh_model_unbound(u16_t addr, struct bt_mesh_model *model,
 		}
 	}
 }
+
+void bt_test_mesh_prov_invalid_bearer(u8_t opcode)
+{
+	struct bt_test_cb *cb;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&cb_slist, cb, node) {
+		if (cb->mesh_prov_invalid_bearer) {
+			cb->mesh_prov_invalid_bearer(opcode);
+		}
+	}
+}
