@@ -25,7 +25,7 @@
 /* PC_9 output: 1: LD2 off, LD3 on */
 /* PC_9 output: 0: LD2 on, LD3 off */
 /* PC_9 input: LD3 off, LD3 off */
-/* LD3 yelllow: Wifi activity */
+/* LD3 yellow: Wifi activity */
 #define LD3_GPIO_PORT	"GPIOC"
 #define LD3_GPIO_PIN	9
 /* LD4 blue: BT activity */

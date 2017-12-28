@@ -91,7 +91,7 @@ config USB_UART_CONSOLE
 	  can be viewed from the USB host via /dev/ttyACM* port. Note that console
 	  inputs from the USB UART are not functional yet. Also since the USB
 	  layer currently doesn't support multiple interfaces, this shouldn't be
-	  selected in conjunction with say USB Mass Storage.
+	  selected in conjunction with, say, USB Mass Storage.
 
 config USB_UART_DTR_WAIT
 	bool

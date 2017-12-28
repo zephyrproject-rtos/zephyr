@@ -295,7 +295,7 @@ int net_app_init(const char *app_info, u32_t flags, s32_t timeout)
 		count = timeout / 1000 + 1;
 	}
 
-	/* Loop here until until we are ready to continue. As we might need
+	/* Loop here until we are ready to continue. As we might need
 	 * to wait multiple events, sleep smaller amounts of data.
 	 */
 	while (count--) {

@@ -729,7 +729,7 @@ int net_context_sendto(struct net_pkt *pkt,
  * This is similar as BSD recv() function.
  * Note that net_context_bind() should be called before net_context_recv().
  * Default random port number is assigned to local port. Only bind() will
- * updates connection information from context. If recv() is called before
+ * update connection information from context. If recv() is called before
  * bind() call, it may refuse to bind to a context which already has
  * a connection associated.
  *

@@ -2417,7 +2417,7 @@ static inline int k_delayed_work_submit(struct k_delayed_work *work,
  *
  * This routine computes the (approximate) time remaining before a
  * delayed work gets executed. If the delayed work is not waiting to be
- * schedules, it returns zero.
+ * scheduled, it returns zero.
  *
  * @param work     Delayed work item.
  *

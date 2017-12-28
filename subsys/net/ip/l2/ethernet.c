@@ -227,8 +227,8 @@ static enum net_verdict ethernet_send(struct net_if *iface,
 			NET_DBG("Sending arp pkt %p (orig %p) to iface %p",
 				arp_pkt, pkt, iface);
 
-			/* Either pkt went to ARP pending queue
-			 * or there was not space in the queue anymore
+			/* Either pkt went to ARP pending queue or
+			 * there was no space in the queue anymore.
 			 */
 			net_pkt_unref(pkt);
 

@@ -89,7 +89,7 @@ struct net_ipv6_nbr_data {
 	/** Reachable timer. */
 	struct k_delayed_work reachable;
 
-	/** Neighbor Solicitation timer for DAD */
+	/** Neighbor Solicitation reply timer */
 	struct k_delayed_work send_ns;
 
 	/** State of the neighbor discovery */
