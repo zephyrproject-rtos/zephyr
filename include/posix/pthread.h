@@ -7,6 +7,7 @@
 #ifndef __PTHREAD_H__
 #define __PTHREAD_H__
 
+#include <kernel.h>
 #ifdef CONFIG_NEWLIB_LIBC
 #include <time.h>
 #else
@@ -20,6 +21,46 @@ struct timespec {
 #endif	/* CONFIG_NEWLIB_LIBC */
 
 #include "sys/types.h"
+#include "sched.h"
+
+enum pthread_state {
+	/* The thread is running and joinable. */
+	PTHREAD_JOINABLE = 0,
+	/* The thread is running and detached. */
+	PTHREAD_DETACHED,
+	/* A joinable thread exited and its return code is available. */
+	PTHREAD_EXITED,
+	/* The thread structure is unallocated and available for reuse. */
+	PTHREAD_TERMINATED
+};
+
+struct posix_thread {
+	struct k_thread thread;
+
+	/* Exit status */
+	void *retval;
+
+	/* Pthread cancellation */
+	int cancel_state;
+	int cancel_pending;
+	struct k_sem cancel_lock_sem;
+	pthread_mutex_t cancel_lock;
+
+	/* Pthread State */
+	enum pthread_state state;
+	pthread_mutex_t state_lock;
+	struct k_sem state_lock_sem;
+	pthread_cond_t state_cond;
+};
+
+/* Pthread detach/joinable */
+#define PTHREAD_CREATE_JOINABLE     0
+#define PTHREAD_CREATE_DETACHED     1
+
+/* Pthread cancellation */
+#define _PTHREAD_CANCEL_POS	0
+#define PTHREAD_CANCEL_ENABLE	(0 << _PTHREAD_CANCEL_POS)
+#define PTHREAD_CANCEL_DISABLE	(1 << _PTHREAD_CANCEL_POS)
 
 static inline s32_t _ts_to_ms(const struct timespec *to)
 {
@@ -358,5 +399,58 @@ int pthread_mutexattr_settype(pthread_mutexattr_t *, int);
 int pthread_barrierattr_getpshared(const pthread_barrierattr_t *, int *);
 int pthread_barrierattr_setpshared(pthread_barrierattr_t *, int);
 */
+
+/* Base Pthread related APIs */
+
+/**
+ * @brief Obtain ID of the calling thread.
+ *
+ * The results of calling this API from threads not created with
+ * pthread_create() are undefined.
+ *
+ * See IEEE 1003.1
+ */
+static inline pthread_t pthread_self(void)
+{
+	return (pthread_t)k_current_get();
+}
+
+
+/**
+ * @brief Compare thread IDs.
+ *
+ * See IEEE 1003.1
+ */
+static inline int pthread_equal(pthread_t pt1, pthread_t pt2)
+{
+	return (pt1 == pt2);
+}
+
+int pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *stacksize);
+int pthread_attr_setschedpolicy(pthread_attr_t *attr, int policy);
+int pthread_attr_getschedpolicy(const pthread_attr_t *attr, int *policy);
+int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate);
+int pthread_attr_getdetachstate(const pthread_attr_t *attr, int *detachstate);
+int pthread_attr_init(pthread_attr_t *attr);
+int pthread_attr_destroy(pthread_attr_t *attr);
+int pthread_attr_getschedparam(const pthread_attr_t *attr,
+			       struct sched_param *schedparam);
+int pthread_getschedparam(pthread_t pthread, int *policy,
+			  struct sched_param *param);
+int pthread_attr_getstack(const pthread_attr_t *attr,
+			  void **stackaddr, size_t *stacksize);
+int pthread_attr_setstack(pthread_attr_t *attr, void *stackaddr,
+			  size_t stacksize);
+void pthread_exit(void *retval);
+int pthread_join(pthread_t thread, void **status);
+int pthread_cancel(pthread_t pthread);
+int pthread_detach(pthread_t thread);
+int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
+		   void *(*threadroutine)(void *), void *arg);
+int pthread_setcancelstate(int state, int *oldstate);
+int pthread_attr_setschedparam(pthread_attr_t *attr,
+			       const struct sched_param *schedparam);
+int pthread_setschedparam(pthread_t pthread, int policy,
+			  const struct sched_param *param);
 
 #endif /* __PTHREAD_H__ */

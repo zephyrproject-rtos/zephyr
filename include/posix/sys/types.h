@@ -12,11 +12,24 @@
 extern "C" {
 #endif
 
-#ifdef CONFIG_NEWLIB_LIBC
 #include_next <sys/types.h>
-#endif	/* CONFIG_NEWLIB_LIBC */
 
 #ifdef CONFIG_PTHREAD_IPC
+
+/* Thread attributes */
+typedef struct pthread_attr_t {
+	int priority;
+	void *stack;
+	size_t stacksize;
+	u32_t flags;
+	u32_t delayedstart;
+	u32_t schedpolicy;
+	s32_t detachstate;
+	u32_t initialized;
+} pthread_attr_t;
+
+typedef void *pthread_t;
+
 /* Mutex */
 typedef struct pthread_mutex {
 	struct k_sem *sem;
@@ -26,7 +39,7 @@ typedef struct pthread_mutexattr {
 	int unused;
 } pthread_mutexattr_t;
 
-/* Confition Variables */
+/* Condition variables */
 typedef struct pthread_cond {
 	_wait_q_t wait_q;
 } pthread_cond_t;

@@ -500,9 +500,19 @@ config PTHREAD_IPC
 	prompt "POSIX pthread IPC API"
 	default n
 	help
-        This enables a mostly-standards-compliant implementation of
-        the pthread mutex, condition variable and barrier IPC
-        mechanisms.
+	  This enables a mostly-standards-compliant implementation of
+	  the pthread mutex, condition variable and barrier IPC
+	  mechanisms.
+
+if PTHREAD_IPC
+config MAX_PTHREAD_COUNT
+	int
+	prompt "Maximum pthread count in POSIX application"
+	default 5
+	range 0 255
+	help
+	  Mention maximum number of threads in POSIX compliant application.
+endif
 endmenu
 
 menu "Security Options"
