@@ -190,6 +190,8 @@ struct bt_hci_rp_mesh_get_opts {
 	u8_t      evt_prefix;
 } __packed;
 
+#define BT_HCI_MESH_PATTERN_LEN_MAX            0x0f
+
 #define BT_HCI_OC_MESH_SET_SCAN_FILTER         0x01
 struct bt_hci_mesh_pattern {
 	u8_t pattern_len;
