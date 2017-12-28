@@ -16,5 +16,12 @@ config NUM_IRQS
 	int
 	default 82
 
+if GPIO_STM32
+
+config GPIO_STM32_PORTH
+	default y
+
+endif # GPIO_STM32
+
 endif # SOC_STM32L432XC
 
