@@ -31,6 +31,7 @@
 #define pthread_barrier_t      zap_pthread_barrier_t
 #define pthread_barrierattr_t  zap_pthread_barrierattr_t
 
+#define pthread_create(...)		zap_pthread_create(__VA_ARGS__)
 #define pthread_cond_init(...)        zap_pthread_cond_init(__VA_ARGS__)
 #define pthread_cond_destroy(...)     zap_pthread_cond_destroy(__VA_ARGS__)
 #define pthread_cond_signal(...)      zap_pthread_cond_signal(__VA_ARGS__)
