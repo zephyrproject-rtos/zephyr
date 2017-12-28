@@ -667,8 +667,8 @@ static void tcp_cb(struct net_tcp *tcp, void *user_data)
 	int *count = user_data;
 	u16_t recv_mss = net_tcp_get_recv_mss(tcp);
 
-	printk("%p    %5u     %5u %10u %10u %5u   %s\n",
-	       tcp,
+	printk("%p %p   %5u    %5u %10u %10u %5u   %s\n",
+	       tcp, tcp->context,
 	       ntohs(net_sin6_ptr(&tcp->context->local)->sin6_port),
 	       ntohs(net_sin6(&tcp->context->remote)->sin6_port),
 	       tcp->send_seq, tcp->send_ack, recv_mss,
@@ -1161,7 +1161,7 @@ int net_shell_cmd_conn(int argc, char *argv[])
 #endif
 
 #if defined(CONFIG_NET_TCP)
-	printk("\nTCP        Src port  Dst port   Send-Seq   Send-Ack  MSS"
+	printk("\nTCP        Context   Src port Dst port   Send-Seq   Send-Ack  MSS"
 	       "%s\n", IS_ENABLED(CONFIG_NET_DEBUG_TCP) ? "    State" : "");
 
 	count = 0;
