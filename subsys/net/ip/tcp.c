@@ -920,11 +920,6 @@ bool net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 		return false;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_STATISTICS_TCP) &&
-	    sys_slist_is_empty(list)) {
-		net_stats_update_tcp_seg_ackerr();
-	}
-
 	while (!sys_slist_is_empty(list)) {
 		struct net_tcp_hdr hdr, *tcp_hdr;
 
@@ -945,7 +940,6 @@ bool net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 		seq = sys_get_be32(tcp_hdr->seq) + net_pkt_appdatalen(pkt) - 1;
 
 		if (!net_tcp_seq_greater(ack, seq)) {
-			net_stats_update_tcp_seg_ackerr();
 			break;
 		}
 
