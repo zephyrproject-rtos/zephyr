@@ -776,10 +776,23 @@ static void model_unbound_cb(u16_t addr, struct bt_mesh_model *model,
 	SYS_LOG_INF("model not found");
 }
 
+static void invalid_bearer_cb(u8_t opcode)
+{
+	struct mesh_invalid_bearer_ev ev = {
+		.opcode = opcode,
+	};
+
+	SYS_LOG_DBG("opcode 0x%02x", opcode);
+
+	tester_send(BTP_SERVICE_ID_MESH, MESH_EV_INVALID_BEARER,
+		    CONTROLLER_INDEX, (u8_t *) &ev, sizeof(ev));
+}
+
 static struct bt_test_cb bt_test_cb = {
 	.mesh_net_recv = net_recv_ev,
 	.mesh_model_bound = model_bound_cb,
 	.mesh_model_unbound = model_unbound_cb,
+	.mesh_prov_invalid_bearer = invalid_bearer_cb,
 };
 
 u8_t tester_init_mesh(void)
