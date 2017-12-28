@@ -10,4 +10,18 @@ if BOARD_NUCLEO_F103RB
 config BOARD
 	default nucleo_f103rb
 
+if UART_CONSOLE
+
+config UART_STM32_PORT_2
+	default y
+
+endif # UART_CONSOLE
+
+if PWM
+
+config PWM_STM32_1
+	default y
+
+endif # PWM
+
 endif # BOARD_NUCLEO_F103RB
