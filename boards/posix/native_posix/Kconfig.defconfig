@@ -7,6 +7,9 @@ config BUILD_OUTPUT_BIN
 config BUILD_OUTPUT_EXE
 	default y
 
+config OUTPUT_PRINT_MEMORY_USAGE
+	default n
+
 config BOARD
 	default "native_posix"
 
