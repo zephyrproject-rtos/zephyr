@@ -356,8 +356,9 @@ int net_tcp_send_pkt(struct net_pkt *pkt);
  *
  * @param cts Context
  * @param seq Received ACK sequence number
+ * @return False if ACK sequence number is invalid, true otherwise
  */
-void net_tcp_ack_received(struct net_context *ctx, u32_t ack);
+bool net_tcp_ack_received(struct net_context *ctx, u32_t ack);
 
 /**
  * @brief Calculates and returns the MSS for a given TCP context
