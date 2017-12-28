@@ -10,4 +10,18 @@ if BOARD_OLIMEXINO_STM32
 config BOARD
 	default olimexino_stm32
 
+if UART_CONSOLE
+
+config UART_STM32_PORT_1
+	default y
+
+endif # UART_CONSOLE
+
+if I2C
+
+config I2C_2
+	default y
+
+endif # I2C
+
 endif # BOARD_OLIMEXINO_STM32

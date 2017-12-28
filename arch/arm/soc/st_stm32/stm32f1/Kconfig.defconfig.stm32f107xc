@@ -15,4 +15,11 @@ config NUM_IRQS
 	int
 	default 68
 
+if GPIO_STM32
+
+config GPIO_STM32_PORTE
+	default y
+
+endif # GPIO_STM32
+
 endif # SOC_STM32F107XC
