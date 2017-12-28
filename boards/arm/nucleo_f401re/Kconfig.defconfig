@@ -10,4 +10,25 @@ if BOARD_NUCLEO_F401RE
 config BOARD
 	default nucleo_f401re
 
+if UART_CONSOLE
+
+config UART_STM32_PORT_2
+	default y
+
+endif # UART_CONSOLE
+
+if I2C
+
+config I2C_1
+	default y
+
+endif # I2C
+
+if PWM
+
+config PWM_STM32_2
+	default y
+
+endif # PWM
+
 endif # BOARD_NUCLEO_F401RE

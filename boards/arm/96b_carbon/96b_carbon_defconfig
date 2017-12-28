@@ -9,17 +9,19 @@ CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
 # Enable MPU
 CONFIG_STM32_ARM_MPU_ENABLE=y
 
-# enable USART1 - passthrough to FT230XQ
-CONFIG_UART_STM32_PORT_1=y
+CONFIG_SERIAL=y
 
-# enable I2C1
+# console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+# enable I2C
 CONFIG_I2C=y
-CONFIG_I2C_STM32_V1=y
 
 # enable pinmux
 CONFIG_PINMUX=y
 
-# enable GPIO ports A, B, C, D
+# enable GPIO
 CONFIG_GPIO=y
 
 # clock configuration

@@ -10,4 +10,12 @@ if BOARD_NUCLEO_F413ZH
 config BOARD
 	default nucleo_f413zh
 
+
+if UART_CONSOLE
+
+config UART_STM32_PORT_3
+	default y
+
+endif # UART_CONSOLE
+
 endif # BOARD_NUCLEO_F413ZH

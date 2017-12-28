@@ -12,47 +12,18 @@ source "arch/arm/soc/st_stm32/stm32f4/Kconfig.defconfig.stm32f4*"
 config SOC_SERIES
 	default stm32f4
 
-config SERIAL
-	def_bool y
-
-if SERIAL
-
-config CONSOLE
-	def_bool y
-
-config UART_CONSOLE
-	def_bool y
-
-config UART_STM32
-	def_bool y
-
-endif #SERIAL
-
-if GPIO
-
-config GPIO_STM32
-	def_bool y
-
-config GPIO_STM32_PORTA
-	def_bool y
-
-config GPIO_STM32_PORTB
-	def_bool y
-
-config GPIO_STM32_PORTC
-	def_bool y
+if GPIO_STM32
 
 config GPIO_STM32_PORTD
-       def_bool y
+	default y
 
-endif #GPIO
+config GPIO_STM32_PORTE
+	default y
 
-if PINMUX
+config GPIO_STM32_PORTH
+	default y
 
-config PINMUX_STM32
-	def_bool y
-
-endif #PINMUX
+endif # GPIO_STM32
 
 if USB
 
@@ -72,23 +43,23 @@ config USB_DC_STM32_RAM_SIZE
 if USB_CDC_ACM
 
 config CDC_ACM_INT_EP_ADDR
-       default 0x81
+	default 0x81
 
 config CDC_ACM_IN_EP_ADDR
-       default 0x82
+	default 0x82
 
 config CDC_ACM_OUT_EP_ADDR
-       default 0x03
+	default 0x03
 
 endif # USB_CDC_ACM
 
 endif #USB
 
-if WATCHDOG
+if I2C && (I2C_1 || I2C_2 || I2C_3)
 
-config IWDG_STM32
+config  I2C_STM32_V1
 	def_bool y
 
-endif # WATCHDOG
+endif # I2C
 
 endif # SOC_SERIES_STM32F4X
