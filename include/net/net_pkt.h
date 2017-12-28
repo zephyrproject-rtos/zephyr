@@ -1095,7 +1095,7 @@ struct net_buf *net_frag_read(struct net_buf *frag, u16_t offset,
  * length of data is placed in multiple fragments, this function will skip from
  * all fragments until it reaches N number of bytes. This function is useful
  * when unwanted data (e.g. reserved or not supported data in message) is part
- * of fragment and want to skip it.
+ * of fragment and we want to skip it.
  *
  * @param frag Network buffer fragment.
  * @param offset Offset of input buffer.

@@ -21,7 +21,7 @@ config DISK_ACCESS_RAM
 	bool "RAM Disk"
 	help
 	  RAM buffer used to emulate storage disk.
-	  This option can used to test the file
+	  This option can be used to test the file
 	  system.
 
 config DISK_ACCESS_FLASH
@@ -47,7 +47,7 @@ config DISK_FLASH_MAX_RW_SIZE
 	int
 	help
 	  This is the maximum number of bytes that the
-	  flash_write API can do per invocation.
+	  flash_write API can accept per invocation.
 	  API.
 
 config DISK_FLASH_ERASE_ALIGNMENT

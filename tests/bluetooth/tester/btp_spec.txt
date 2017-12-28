@@ -12,7 +12,7 @@ and implementation under test (IUT).
 
 The protocol is SOCK_STREAM based and follows a strict PDU specification
 with a generic header and initial registration exchange. The communication is
-driver from tester with commands/response exchange. The protocol is single PDU
+driven from tester with commands/response exchange. The protocol is single PDU
 exchanged based, meaning every command requires a response. IUT will use events
 to signal notifications.
 
