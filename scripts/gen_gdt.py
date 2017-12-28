@@ -129,6 +129,8 @@ def parse_args():
     parser.add_argument("-o", "--output-gdt", required=True,
                         help="output GDT binary")
     args = parser.parse_args()
+    if "VERBOSE" in os.environ:
+        args.verbose = 1
 
 
 def main():

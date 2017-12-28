@@ -17,6 +17,7 @@ such as OpenOCD, pyOCD, etc.
 import argparse
 import functools
 import sys
+import os
 
 from runner.core import ZephyrBinaryRunner
 
@@ -83,6 +84,9 @@ def main():
         handlers[cls.name()] = functools.partial(runner_handler, cls)
 
     args = top_parser.parse_args()
+    if "VERBOSE" in os.environ:
+        args.verbose = 1
+
     if args.top_command is None:
         choices = ', '.join(handlers.keys())
         print('Missing command or runner; choices: {}'.format(choices),

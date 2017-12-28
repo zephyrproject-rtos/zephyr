@@ -1114,6 +1114,8 @@ def parse_args():
                         help="Print debugging information. Multiple "
                              "invocations increase verbosity")
     args = parser.parse_args()
+    if "VERBOSE" in os.environ:
+        args.verbose = 1
 
 
 # the format for writing in the binary file would be decided by the
