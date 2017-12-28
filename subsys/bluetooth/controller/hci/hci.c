@@ -58,6 +58,18 @@ static s32_t dup_count;
 static u32_t dup_curr;
 #endif
 
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+struct scan_filter {
+	u8_t count;
+	u8_t lengths[CONFIG_BT_CTLR_MESH_SF_PATTERNS];
+	u8_t patterns[CONFIG_BT_CTLR_MESH_SF_PATTERNS]
+		     [BT_HCI_MESH_PATTERN_LEN_MAX];
+};
+
+static struct scan_filter scan_filters[CONFIG_BT_CTLR_MESH_SCAN_FILTERS];
+static u8_t sf_curr;
+#endif
+
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 s32_t    hci_hbuf_total;
 u32_t    hci_hbuf_sent;
@@ -222,9 +234,19 @@ static void reset(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_evt_cc_status *ccst;
 
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(scan_filters); i++) {
+		scan_filters[i].count = 0;
+	}
+	sf_curr = 0xFF;
+#endif
+
 #if CONFIG_BT_CTLR_DUP_FILTER_LEN > 0
 	dup_count = -1;
 #endif
+
 	/* reset event masks */
 	event_mask = DEFAULT_EVENT_MASK;
 	event_mask_page_2 = DEFAULT_EVENT_MASK_PAGE_2;
@@ -235,6 +257,7 @@ static void reset(struct net_buf *buf, struct net_buf **evt)
 		ccst = cmd_complete(evt, sizeof(*ccst));
 		ccst->status = 0x00;
 	}
+
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 	hci_hbuf_total = 0;
 	hci_hbuf_sent = 0;
@@ -1954,11 +1977,57 @@ static void mesh_get_opts(struct net_buf *buf, struct net_buf **evt)
 	rp->min_tx_power = -30;
 	/*@todo: nRF51 only */
 	rp->max_tx_power = 4;
-	rp->max_scan_filter = 0;
-	rp->max_filter_pattern = 0;
+	rp->max_scan_filter = CONFIG_BT_CTLR_MESH_SCAN_FILTERS;
+	rp->max_filter_pattern = CONFIG_BT_CTLR_MESH_SF_PATTERNS;
 	rp->max_adv_slot = 1;
 	rp->evt_prefix_len = 0x01;
 	rp->evt_prefix = BT_HCI_MESH_EVT_PREFIX;
+}
+
+static void mesh_set_scan_filter(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_mesh_set_scan_filter *cmd = (void *)buf->data;
+	struct bt_hci_rp_mesh_set_scan_filter *rp;
+	u8_t filter = cmd->scan_filter - 1;
+	struct scan_filter *f;
+	u8_t status = 0x00;
+	u8_t i;
+
+	if (filter > ARRAY_SIZE(scan_filters) ||
+	    cmd->num_patterns > CONFIG_BT_CTLR_MESH_SF_PATTERNS) {
+		status = BT_HCI_ERR_INVALID_PARAM;
+		goto exit;
+	}
+
+	if (filter == sf_curr) {
+		status = BT_HCI_ERR_CMD_DISALLOWED;
+		goto exit;
+	}
+
+	/* duplicate filtering not supported yet */
+	if (cmd->filter_dup) {
+		status = BT_HCI_ERR_INVALID_PARAM;
+		goto exit;
+	}
+
+	f = &scan_filters[filter];
+	for (i = 0; i < cmd->num_patterns; i++) {
+		if (!cmd->patterns[i].pattern_len ||
+		    cmd->patterns[i].pattern_len > BT_HCI_MESH_PATTERN_LEN_MAX) {
+			status = BT_HCI_ERR_INVALID_PARAM;
+			goto exit;
+		}
+		f->lengths[i] = cmd->patterns[i].pattern_len;
+		memcpy(f->patterns[i], cmd->patterns[i].pattern, f->lengths[i]);
+	}
+
+	f->count = cmd->num_patterns;
+
+exit:
+	rp = cmd_complete(evt, sizeof(*rp));
+	rp->status = status;
+	rp->opcode = BT_HCI_OC_MESH_SET_SCAN_FILTER;
+	rp->scan_filter = filter + 1;
 }
 
 static void mesh_advertise(struct net_buf *buf, struct net_buf **evt)
@@ -1974,6 +2043,10 @@ static void mesh_advertise(struct net_buf *buf, struct net_buf **evt)
 				   cmd->retx_count, cmd->retx_interval,
 				   cmd->scan_duration, cmd->scan_delay,
 				   cmd->scan_filter, cmd->data_len, cmd->data);
+	if (!status) {
+		/* Yields 0xFF if no scan filter selected */
+		sf_curr = cmd->scan_filter - 1;
+	}
 
 	rp = cmd_complete(evt, sizeof(*rp));
 	rp->status = status;
@@ -1989,6 +2062,10 @@ static void mesh_advertise_cancel(struct net_buf *buf, struct net_buf **evt)
 	u8_t status;
 
 	status = ll_mesh_advertise_cancel(adv_slot);
+	if (!status) {
+		/* Yields 0xFF if no scan filter selected */
+		sf_curr = 0xFF;
+	}
 
 	rp = cmd_complete(evt, sizeof(*rp));
 	rp->status = status;
@@ -2014,6 +2091,10 @@ static int mesh_cmd_handle(struct net_buf *cmd, struct net_buf **evt)
 	switch (mesh_op) {
 	case BT_HCI_OC_MESH_GET_OPTS:
 		mesh_get_opts(cmd, evt);
+		break;
+
+	case BT_HCI_OC_MESH_SET_SCAN_FILTER:
+		mesh_set_scan_filter(cmd, evt);
 		break;
 
 	case BT_HCI_OC_MESH_ADVERTISE:
@@ -2306,6 +2387,24 @@ static inline void le_dir_adv_report(struct pdu_adv *adv, struct net_buf *buf,
 #endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
+
+static inline bool scan_filter_apply(u8_t filter, u8_t *data, u8_t len)
+{
+	struct scan_filter *f = &scan_filters[filter];
+	int i;
+
+	/* No patterns means filter out all advertising packets */
+	for (i = 0; i < f->count; i++) {
+		/* Require at least the length of the pattern */
+		if (len >= f->lengths[i] &&
+		    !memcmp(data, f->patterns[i], f->lengths[i])) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static inline void le_mesh_scan_report(struct pdu_adv *adv, struct net_buf *buf,
 				       s8_t rssi, u8_t *extra)
 {
@@ -2315,8 +2414,15 @@ static inline void le_mesh_scan_report(struct pdu_adv *adv, struct net_buf *buf,
 	u32_t instant;
 	u8_t chan;
 
-	/*@todo: add event filtering */
 	LL_ASSERT(adv->type == PDU_ADV_TYPE_NONCONN_IND);
+
+	/* Filter based on currently active Scan Filter */
+	if (sf_curr < ARRAY_SIZE(scan_filters) &&
+	    !scan_filter_apply(sf_curr, &adv->payload.adv_ind.data[0],
+			       data_len)) {
+		/* Drop the report */
+		return;
+	}
 
 	chan = *extra;
 	extra++;
