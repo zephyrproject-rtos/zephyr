@@ -7,6 +7,7 @@ set(arch_list
   arm
   nios2
   riscv32
+  posix
   x86
   xtensa
   )
