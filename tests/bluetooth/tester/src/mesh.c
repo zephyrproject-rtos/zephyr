@@ -568,7 +568,6 @@ static void health_generate_faults(u8_t *data, u16_t len)
 						    sizeof(reg_faults));
 	u8_t some_faults[] = { 0x01, 0x02, 0x03, 0xff, 0x06 };
 	u8_t cur_faults_count, reg_faults_count;
-	int err;
 
 	net_buf_simple_init(buf, 0);
 
@@ -584,15 +583,7 @@ static void health_generate_faults(u8_t *data, u16_t len)
 	net_buf_simple_add_mem(buf, reg_faults, reg_faults_count);
 	rp->reg_faults_count = reg_faults_count;
 
-	err = bt_mesh_fault_update(&elements[0]);
-	if (err) {
-		SYS_LOG_ERR("Failed to send health publication (err %d)", err);
-
-		tester_rsp(BTP_SERVICE_ID_MESH, MESH_HEALTH_GENERATE_FAULTS,
-			   CONTROLLER_INDEX, BTP_STATUS_FAILED);
-
-		return;
-	}
+	bt_mesh_fault_update(&elements[0]);
 
 	tester_send(BTP_SERVICE_ID_MESH, MESH_HEALTH_GENERATE_FAULTS,
 		    CONTROLLER_INDEX, buf->data, buf->len);
