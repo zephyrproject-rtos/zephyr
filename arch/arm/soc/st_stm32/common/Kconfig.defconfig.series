@@ -1,0 +1,64 @@
+# Kconfig.defconfig.series - ST Microelectronics STM32 all MCU lines
+#
+# Copyright (c) 2017, I-SENSE group of ICCS
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_FAMILY_STM32
+
+if SERIAL
+
+config UART_STM32
+	def_bool y
+
+endif #SERIAL
+
+if GPIO
+
+config GPIO_STM32
+	def_bool y
+
+config GPIO_STM32_PORTA
+	def_bool y
+
+config GPIO_STM32_PORTB
+	def_bool y
+
+config GPIO_STM32_PORTC
+	def_bool y
+
+endif #GPIO
+
+if PINMUX
+
+config PINMUX_STM32
+	def_bool y
+
+endif #PINMUX
+
+if WATCHDOG
+
+config IWDG_STM32
+	def_bool y
+
+endif # WATCHDOG
+
+if PWM
+
+config PWM_STM32
+	def_bool y
+
+endif # PWM
+
+if SPI && (SPI_1 || SPI_2 || SPI_3)
+
+config SPI_STM32
+	def_bool y
+
+config SPI_LEGACY_API
+	def_bool n
+
+endif # SPI
+
+endif # SOC_FAMILY_STM32
