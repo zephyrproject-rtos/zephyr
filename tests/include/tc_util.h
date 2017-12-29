@@ -84,14 +84,7 @@
 #define TC_END_RESULT(result)                           \
 	_TC_END_RESULT((result), __func__)
 
-#if defined CONFIG_ARCH_POSIX
-#define TC_END_POST                                 \
-	do {                                        \
-		main_clean_up(0);                    \
-	} while (0)
-#else
 #define TC_END_POST
-#endif
 
 #define TC_END_REPORT(result)                               \
 	do {                                                    \
