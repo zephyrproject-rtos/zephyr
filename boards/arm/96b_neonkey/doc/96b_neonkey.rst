@@ -134,7 +134,7 @@ Here is an example for building the :ref:`hello_world` application.
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: 96b_neonkey
-   :goals: build flash
+   :goals: build
 
 Flashing
 ========
