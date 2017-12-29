@@ -1508,7 +1508,7 @@ static int cmd_provision(int argc, char *argv[])
 	addr = strtoul(argv[2], NULL, 0);
 
 	if (argc > 3) {
-		iv_index = strtoul(argv[1], NULL, 0);
+		iv_index = strtoul(argv[3], NULL, 0);
 	} else {
 		iv_index = 0;
 	}
