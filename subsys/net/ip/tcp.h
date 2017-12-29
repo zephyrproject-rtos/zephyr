@@ -133,9 +133,6 @@ struct net_tcp {
 	/** List pointer used for TCP retransmit buffering */
 	sys_slist_t sent_list;
 
-	/** Max acknowledgment. */
-	u32_t recv_max_ack;
-
 	/** Current sequence number. */
 	u32_t send_seq;
 

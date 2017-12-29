@@ -96,7 +96,6 @@ static int send_reset(struct net_context *context, struct sockaddr *remote);
 static struct tcp_backlog_entry {
 	struct net_tcp *tcp;
 	struct sockaddr remote;
-	u32_t recv_max_ack;
 	u32_t send_seq;
 	u32_t send_ack;
 	u16_t send_mss;
@@ -200,7 +199,6 @@ static int tcp_backlog_syn(struct net_pkt *pkt, struct net_context *context,
 		return ret;
 	}
 
-	tcp_backlog[empty_slot].recv_max_ack = context->tcp->recv_max_ack;
 	tcp_backlog[empty_slot].send_seq = context->tcp->send_seq;
 	tcp_backlog[empty_slot].send_ack = context->tcp->send_ack;
 	tcp_backlog[empty_slot].send_mss = send_mss;
@@ -235,7 +233,6 @@ static int tcp_backlog_ack(struct net_pkt *pkt, struct net_context *context)
 
 	memcpy(&context->remote, &tcp_backlog[r].remote,
 		sizeof(struct sockaddr));
-	context->tcp->recv_max_ack = tcp_backlog[r].recv_max_ack;
 	context->tcp->send_seq = tcp_backlog[r].send_seq + 1;
 	context->tcp->send_ack = tcp_backlog[r].send_ack;
 	context->tcp->send_mss = tcp_backlog[r].send_mss;
@@ -1299,7 +1296,6 @@ NET_CONN_CB(tcp_synack_received)
 	if (NET_TCP_FLAGS(tcp_hdr) & NET_TCP_SYN) {
 		context->tcp->send_ack =
 			sys_get_be32(tcp_hdr->seq) + 1;
-		context->tcp->recv_max_ack = context->tcp->send_seq + 1;
 	}
 	/*
 	 * If we receive SYN, we send SYN-ACK and go to SYN_RCVD state.
@@ -1674,7 +1670,6 @@ NET_CONN_CB(tcp_syn_rcvd)
 		context->tcp->send_seq = tcp_init_isn();
 		context->tcp->send_ack =
 			sys_get_be32(tcp_hdr->seq) + 1;
-		context->tcp->recv_max_ack = context->tcp->send_seq + 1;
 
 		/* Get MSS from TCP options here*/
 
