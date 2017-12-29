@@ -4,6 +4,10 @@ sample:
   name: Kernel event logger Sample
 tests:
   test:
-    platform_whitelist: qemu_x86
-    tags: apps
+    tags: apps logging events
     harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "thread = (.*), is moved to = REDAY_Q ,at time = (\\d+)"
+        - "tid of context switched thread = (.*) at time = (\\d+)"
