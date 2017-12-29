@@ -83,6 +83,12 @@ static void supported_commands(u8_t *data, u16_t len)
 	tester_set_bit(buf->data, MESH_LPN);
 	tester_set_bit(buf->data, MESH_LPN_POLL);
 	tester_set_bit(buf->data, MESH_MODEL_SEND);
+	/* 3rd octet */
+	memset(net_buf_simple_add(buf, 1), 0, 1);
+#if defined(CONFIG_BT_TESTING)
+	tester_set_bit(buf->data, MESH_LPN_SUBSCRIBE);
+	tester_set_bit(buf->data, MESH_LPN_UNSUBSCRIBE);
+#endif /* CONFIG_BT_TESTING */
 
 	tester_send(BTP_SERVICE_ID_MESH, MESH_READ_SUPPORTED_COMMANDS,
 		    CONTROLLER_INDEX, buf->data, buf->len);
@@ -650,6 +656,42 @@ fail:
 		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
 }
 
+#if defined(CONFIG_BT_TESTING)
+static void lpn_subscribe(u8_t *data, u16_t len)
+{
+	struct mesh_lpn_subscribe_cmd *cmd = (void *) data;
+	u16_t address = sys_le16_to_cpu(cmd->address);
+	int err;
+
+	SYS_LOG_DBG("address 0x%04x", address);
+
+	err = bt_test_mesh_lpn_group_add(address);
+	if (err) {
+		SYS_LOG_ERR("Failed to subscribe (err %d)", err);
+	}
+
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_LPN_SUBSCRIBE, CONTROLLER_INDEX,
+		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+}
+
+static void lpn_unsubscribe(u8_t *data, u16_t len)
+{
+	struct mesh_lpn_unsubscribe_cmd *cmd = (void *) data;
+	u16_t address = sys_le16_to_cpu(cmd->address);
+	int err;
+
+	SYS_LOG_DBG("address 0x%04x", address);
+
+	err = bt_test_mesh_lpn_group_remove(&address, 1);
+	if (err) {
+		SYS_LOG_ERR("Failed to unsubscribe (err %d)", err);
+	}
+
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_LPN_UNSUBSCRIBE, CONTROLLER_INDEX,
+		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+}
+#endif /* CONFIG_BT_TESTING */
+
 void tester_handle_mesh(u8_t opcode, u8_t index, u8_t *data, u16_t len)
 {
 	switch (opcode) {
@@ -698,6 +740,14 @@ void tester_handle_mesh(u8_t opcode, u8_t index, u8_t *data, u16_t len)
 	case MESH_MODEL_SEND:
 		model_send(data, len);
 		break;
+#if defined(CONFIG_BT_TESTING)
+	case MESH_LPN_SUBSCRIBE:
+		lpn_subscribe(data, len);
+		break;
+	case MESH_LPN_UNSUBSCRIBE:
+		lpn_unsubscribe(data, len);
+		break;
+#endif /* CONFIG_BT_TESTING */
 	default:
 		tester_rsp(BTP_SERVICE_ID_MESH, opcode, index,
 			   BTP_STATUS_UNKNOWN_CMD);
