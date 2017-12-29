@@ -18,6 +18,7 @@ struct timespec {
 	s32_t tv_nsec;
 };
 #endif
+#include "pthread_sched.h"
 
 static inline s32_t _ts_to_ms(const struct timespec *to)
 {
