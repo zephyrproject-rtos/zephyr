@@ -10,6 +10,9 @@
 #include <bluetooth/mesh.h>
 #include <bluetooth/testing.h>
 
+#include "mesh/net.h"
+#include "mesh/lpn.h"
+
 #include "testing.h"
 
 static sys_slist_t cb_slist;
@@ -70,4 +73,18 @@ void bt_test_mesh_prov_invalid_bearer(u8_t opcode)
 			cb->mesh_prov_invalid_bearer(opcode);
 		}
 	}
+}
+
+int bt_test_mesh_lpn_group_add(u16_t group)
+{
+	bt_mesh_lpn_group_add(group);
+
+	return 0;
+}
+
+int bt_test_mesh_lpn_group_remove(u16_t *groups, size_t groups_count)
+{
+	bt_mesh_lpn_group_del(groups, groups_count);
+
+	return 0;
 }

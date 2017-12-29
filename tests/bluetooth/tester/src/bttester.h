@@ -755,6 +755,16 @@ struct mesh_model_send_cmd {
 	u8_t payload[0];
 } __packed;
 
+#define MESH_LPN_SUBSCRIBE		0x10
+struct mesh_lpn_subscribe_cmd {
+	u16_t address;
+} __packed;
+
+#define MESH_LPN_UNSUBSCRIBE		0x11
+struct mesh_lpn_unsubscribe_cmd {
+	u16_t address;
+} __packed;
+
 /* events */
 #define MESH_EV_OUT_NUMBER_ACTION	0x80
 struct mesh_out_number_action_ev {

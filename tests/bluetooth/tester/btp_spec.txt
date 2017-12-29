@@ -1518,6 +1518,24 @@ Commands and responses:
 
 		In case of an error, the error response will be returned.
 
+	Opcode 0x10 - Low Power Node Subscribe
+		Controller Index:	<controller id>
+		Command parameters:	Address (2 octets)
+
+		This command is used to send out a Friend Subscription List
+		Add message message.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x11 - Low Power Node Unsubscribe
+		Controller Index:	<controller id>
+		Command parameters:	Address (2 octets)
+
+		This command is used to send out a Friend Subscription List
+		Remove message.
+
+		In case of an error, the error response will be returned.
+
 Events:
 	Opcode 0x80 - Output number action Event
 
