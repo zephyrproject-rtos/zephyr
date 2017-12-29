@@ -717,8 +717,8 @@ int net_ipv6_finalize_raw(struct net_pkt *pkt, u8_t next_header)
 
 	total_len -= sizeof(struct net_ipv6_hdr);
 
-	NET_IPV6_HDR(pkt)->len[0] = total_len / 256;
-	NET_IPV6_HDR(pkt)->len[1] = total_len - NET_IPV6_HDR(pkt)->len[0] * 256;
+	NET_IPV6_HDR(pkt)->len[0] = total_len >> 8;
+	NET_IPV6_HDR(pkt)->len[1] = total_len & 0xff;
 
 #if defined(CONFIG_NET_UDP)
 	if (next_header == IPPROTO_UDP) {
@@ -3023,8 +3023,8 @@ static void reassemble_packet(struct net_ipv6_reassembly *reass)
 
 	len = net_pkt_get_len(pkt) - sizeof(struct net_ipv6_hdr);
 
-	NET_IPV6_HDR(pkt)->len[0] = len / 256;
-	NET_IPV6_HDR(pkt)->len[1] = len - NET_IPV6_HDR(pkt)->len[0] * 256;
+	NET_IPV6_HDR(pkt)->len[0] = len >> 8;
+	NET_IPV6_HDR(pkt)->len[1] = len & 0xff;
 
 	NET_DBG("New pkt %p IPv6 len is %d bytes", pkt, len);
 
