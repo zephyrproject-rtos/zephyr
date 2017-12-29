@@ -765,6 +765,8 @@ struct mesh_lpn_unsubscribe_cmd {
 	u16_t address;
 } __packed;
 
+#define MESH_RPL_CLEAR			0x12
+
 /* events */
 #define MESH_EV_OUT_NUMBER_ACTION	0x80
 struct mesh_out_number_action_ev {

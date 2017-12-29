@@ -89,6 +89,12 @@ int bt_test_mesh_lpn_group_add(u16_t group);
  */
 int bt_test_mesh_lpn_group_remove(u16_t *groups, size_t groups_count);
 
+/** Clear replay protection list cache.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_test_mesh_rpl_clear(void);
+
 /**
  * @}
  */
