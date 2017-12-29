@@ -4,6 +4,8 @@ tests:
   test:
     tags: apps
     harness: console
+    # We do not handle segfaults here
+    platform_exclude: native_posix
   test_stack_guard:
     arch_whitelist: arm
     extra_args: CONF_FILE=prj_stack_guard.conf

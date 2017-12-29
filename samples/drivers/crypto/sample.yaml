@@ -9,5 +9,25 @@ common:
 tests:
   test-mbedtls:
     extra_args: CONF_FILE=prj_mtls_shim.conf
+    harness_config:
+      type: multi_line
+      regex:
+        - "\\[general\\] \\[INF\\] .*: Cipher Sample"
+        - "\\[general\\] \\[INF\\] ccm_mode: CCM Mode"
+        - "\\[general\\] \\[INF\\] ccm_mode: CCM mode ENCRYPT - Match"
+        - "\\[general\\] \\[INF\\] ccm_mode: CCM mode DECRYPT - Match"
   test-micro:
     tags: micro
+    harness_config:
+      type: multi_line
+      regex:
+        - "\\[general\\] \\[INF\\] .*: Cipher Sample"
+        - "\\[general\\] \\[INF\\] cbc_mode: CBC Mode"
+        - "\\[general\\] \\[INF\\] cbc_mode: CBC mode ENCRYPT - Match"
+        - "\\[general\\] \\[INF\\] cbc_mode: CBC mode DECRYPT - Match"
+        - "\\[general\\] \\[INF\\] ctr_mode: CTR Mode"
+        - "\\[general\\] \\[INF\\] ctr_mode: CTR mode ENCRYPT - Match"
+        - "\\[general\\] \\[INF\\] ctr_mode: CTR mode DECRYPT - Match"
+        - "\\[general\\] \\[INF\\] ccm_mode: CCM Mode"
+        - "\\[general\\] \\[INF\\] ccm_mode: CCM mode ENCRYPT - Match"
+        - "\\[general\\] \\[INF\\] ccm_mode: CCM mode DECRYPT - Match"
