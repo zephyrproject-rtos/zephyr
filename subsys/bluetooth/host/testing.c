@@ -12,6 +12,7 @@
 
 #include "mesh/net.h"
 #include "mesh/lpn.h"
+#include "mesh/transport.h"
 
 #include "testing.h"
 
@@ -85,6 +86,13 @@ int bt_test_mesh_lpn_group_add(u16_t group)
 int bt_test_mesh_lpn_group_remove(u16_t *groups, size_t groups_count)
 {
 	bt_mesh_lpn_group_del(groups, groups_count);
+
+	return 0;
+}
+
+int bt_test_mesh_rpl_clear(void)
+{
+	bt_mesh_rpl_clear();
 
 	return 0;
 }

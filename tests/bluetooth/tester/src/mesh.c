@@ -88,6 +88,7 @@ static void supported_commands(u8_t *data, u16_t len)
 #if defined(CONFIG_BT_TESTING)
 	tester_set_bit(buf->data, MESH_LPN_SUBSCRIBE);
 	tester_set_bit(buf->data, MESH_LPN_UNSUBSCRIBE);
+	tester_set_bit(buf->data, MESH_RPL_CLEAR);
 #endif /* CONFIG_BT_TESTING */
 
 	tester_send(BTP_SERVICE_ID_MESH, MESH_READ_SUPPORTED_COMMANDS,
@@ -690,6 +691,21 @@ static void lpn_unsubscribe(u8_t *data, u16_t len)
 	tester_rsp(BTP_SERVICE_ID_MESH, MESH_LPN_UNSUBSCRIBE, CONTROLLER_INDEX,
 		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
 }
+
+static void rpl_clear(u8_t *data, u16_t len)
+{
+	int err;
+
+	SYS_LOG_DBG("");
+
+	err = bt_test_mesh_rpl_clear();
+	if (err) {
+		SYS_LOG_ERR("Failed to clear RPL (err %d)", err);
+	}
+
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_RPL_CLEAR, CONTROLLER_INDEX,
+		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+}
 #endif /* CONFIG_BT_TESTING */
 
 void tester_handle_mesh(u8_t opcode, u8_t index, u8_t *data, u16_t len)
@@ -746,6 +762,9 @@ void tester_handle_mesh(u8_t opcode, u8_t index, u8_t *data, u16_t len)
 		break;
 	case MESH_LPN_UNSUBSCRIBE:
 		lpn_unsubscribe(data, len);
+		break;
+	case MESH_RPL_CLEAR:
+		rpl_clear(data, len);
 		break;
 #endif /* CONFIG_BT_TESTING */
 	default:
