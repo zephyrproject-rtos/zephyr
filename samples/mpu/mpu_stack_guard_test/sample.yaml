@@ -6,6 +6,13 @@ tests:
     harness: console
     # We do not handle segfaults here
     platform_exclude: native_posix
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - "Fatal fault in thread 0x[0-9a-f]+! Aborting."
+        - "STACK_ALIGN.*"
+        - "Canary Initial Value = 0x[0-9a-f]+ threads 0x[0-9a-f]+"
   test_stack_guard:
     arch_whitelist: arm
     extra_args: CONF_FILE=prj_stack_guard.conf
