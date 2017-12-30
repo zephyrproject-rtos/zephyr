@@ -16,8 +16,10 @@ endif()
 zephyr_compile_options(
   -ffreestanding
   -march=armv7-m
-  -mcpu=cortex-m3
-  -mfloat-abi=soft -mthumb
+  -mcpu=cortex-m4
+  -mfloat-abi=soft
+  -mthumb
+  #-mfpu=vfpv3
   #-mabi=aapcs
   ${TOOLCHAIN_C_FLAGS}
   ${ARCH_FLAG}
