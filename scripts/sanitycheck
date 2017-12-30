@@ -1507,19 +1507,20 @@ class TestSuite:
                 instance_list.append(instance)
             self.add_instances(instance_list)
 
-    def apply_filters(self, args, toolchain):
+    def apply_filters(self):
 
+        toolchain = os.environ.get("ZEPHYR_GCC_VARIANT", None)
         instances = []
         discards = {}
-        platform_filter = args.platform
-        last_failed = args.only_failed
-        testcase_filter = args.test
-        arch_filter = args.arch
-        tag_filter = args.tag
-        exclude_tag = args.exclude_tag
-        config_filter = args.config
-        extra_args = args.extra_args
-        all_plats = args.all
+        platform_filter = options.platform
+        last_failed = options.only_failed
+        testcase_filter = options.test
+        arch_filter = options.arch
+        tag_filter = options.tag
+        exclude_tag = options.exclude_tag
+        config_filter = options.config
+        extra_args = options.extra_args
+        all_plats = options.all
 
         verbose("platform filter: " + str(platform_filter))
         verbose("    arch_filter: " + str(arch_filter))
@@ -1882,7 +1883,7 @@ class TestSuite:
                                 lower_better))
         return results
 
-    def testcase_xunit_report(self, filename, duration, args):
+    def testcase_xunit_report(self, filename, duration):
         if self.goals is None:
             raise SanityRuntimeError("execute() hasn't been run!")
 
@@ -1901,7 +1902,7 @@ class TestSuite:
 
         run = "Sanitycheck"
         eleTestsuite = None
-        append = args.only_failed
+        append = options.only_failed
 
         if os.path.exists(filename) and append:
             tree = ET.parse(filename)
@@ -1938,7 +1939,7 @@ class TestSuite:
                     'failure',
                     type="failure",
                     message=goal.reason)
-                p = ("%s/%s/%s" % (args.outdir, i.platform.name, i.test.name))
+                p = ("%s/%s/%s" % (options.outdir, i.platform.name, i.test.name))
                 bl = os.path.join(p, "build.log")
                 if goal.reason != 'build_error':
                     bl = os.path.join(p, "qemu.log")
@@ -2290,7 +2291,6 @@ def main():
     global VERBOSE, INLINE_LOGS, CPU_COUNTS, log_file
     global options
     options = parse_arguments()
-    toolchain = os.environ.get("ZEPHYR_GCC_VARIANT", None)
 
     if options.size:
         for fn in options.size:
@@ -2327,7 +2327,7 @@ def main():
     if options.load_tests:
         ts.load_from_file(options.load_tests)
     else:
-        discards = ts.apply_filters(options, toolchain)
+        discards = ts.apply_filters()
 
     if options.discard_report:
         ts.discard_report(options.discard_report)
@@ -2442,7 +2442,7 @@ def main():
     if options.testcase_report:
         ts.testcase_report(options.testcase_report)
     if not options.no_update:
-        ts.testcase_xunit_report(LAST_SANITY_XUNIT, duration, options)
+        ts.testcase_xunit_report(LAST_SANITY_XUNIT, duration)
         ts.testcase_report(LAST_SANITY)
     if options.release:
         ts.testcase_report(RELEASE_DATA)
