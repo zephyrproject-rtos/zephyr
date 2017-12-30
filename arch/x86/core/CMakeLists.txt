@@ -3,7 +3,7 @@ if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
   zephyr_compile_options_ifndef(CONFIG_X86_IAMCU $<$<COMPILE_LANGUAGE:ASM>:-no-integrated-as>)
 endif()
 
-zephyr_compile_options($<$<COMPILE_LANGUAGE:ASM>:-Wa,--divide>)
+#zephyr_compile_options($<$<COMPILE_LANGUAGE:ASM>:-Wa,--divide>)
 
 add_subdirectory_ifdef(CONFIG_DEBUG_INFO debug)
 
