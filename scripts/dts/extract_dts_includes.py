@@ -16,104 +16,7 @@ import argparse
 import collections
 
 from devicetree import parse_file
-
-# globals
-phandles = {}
-aliases = {}
-chosen = {}
-reduced = {}
-
-regs_config = {
-    'zephyr,flash' : 'CONFIG_FLASH',
-    'zephyr,sram'  : 'CONFIG_SRAM',
-    'zephyr,ccm'   : 'CONFIG_CCM'
-}
-
-name_config = {
-    'zephyr,console'     : 'CONFIG_UART_CONSOLE_ON_DEV_NAME',
-    'zephyr,bt-uart'     : 'CONFIG_BT_UART_ON_DEV_NAME',
-    'zephyr,uart-pipe'   : 'CONFIG_UART_PIPE_ON_DEV_NAME',
-    'zephyr,bt-mon-uart' : 'CONFIG_BT_MONITOR_ON_DEV_NAME',
-    'zephyr,uart-mcumgr' : 'CONFIG_UART_MCUMGR_ON_DEV_NAME'
-}
-
-def convert_string_to_label(s):
-    # Transmute ,- to _
-    s = s.replace("-", "_")
-    s = s.replace(",", "_")
-    s = s.replace("@", "_")
-    return s
-
-
-def get_all_compatibles(d, name, comp_dict):
-    if 'props' in d:
-        compat = d['props'].get('compatible')
-        enabled = d['props'].get('status')
-
-    if enabled == "disabled":
-        return comp_dict
-
-    if compat is not None:
-        comp_dict[name] = compat
-
-    if name != '/':
-        name += '/'
-
-    if isinstance(d, dict):
-        if d['children']:
-            for k, v in d['children'].items():
-                get_all_compatibles(v, name + k, comp_dict)
-
-    return comp_dict
-
-
-def get_aliases(root):
-    if 'children' in root:
-        if 'aliases' in root['children']:
-            for k, v in root['children']['aliases']['props'].items():
-                aliases[v] = k
-
-
-def get_compat(node):
-
-    compat = None
-
-    if 'props' in node:
-        compat = node['props'].get('compatible')
-
-    if isinstance(compat, list):
-        compat = compat[0]
-
-    return compat
-
-
-def get_chosen(root):
-
-    if 'children' in root:
-        if 'chosen' in root['children']:
-            for k, v in root['children']['chosen']['props'].items():
-                chosen[k] = v
-
-
-def get_phandles(root, name, handles):
-
-    if 'props' in root:
-        handle = root['props'].get('phandle')
-        enabled = root['props'].get('status')
-
-    if enabled == "disabled":
-        return
-
-    if handle is not None:
-        phandles[handle] = name
-
-    if name != '/':
-        name += '/'
-
-    if isinstance(root, dict):
-        if root['children']:
-            for k, v in root['children'].items():
-                get_phandles(v, name + k, handles)
+from extract.globals import *
 
 
 class Loader(yaml.Loader):
@@ -154,46 +57,6 @@ class Loader(yaml.Loader):
                     filepath = os.path.join(root, filename)
         with open(filepath, 'r') as f:
             return yaml.load(f, Loader)
-
-
-def insert_defs(node_address, defs, new_defs, new_aliases):
-    if node_address in defs:
-        if 'aliases' in defs[node_address]:
-            defs[node_address]['aliases'].update(new_aliases)
-        else:
-            defs[node_address]['aliases'] = new_aliases
-
-        defs[node_address].update(new_defs)
-    else:
-        new_defs['aliases'] = new_aliases
-        defs[node_address] = new_defs
-
-
-def find_node_by_path(nodes, path):
-    d = nodes
-    for k in path[1:].split('/'):
-        d = d['children'][k]
-
-    return d
-
-
-def get_reduced(nodes, path):
-    # compress nodes list to nodes w/ paths, add interrupt parent
-    if 'props' in nodes:
-        status = nodes['props'].get('status')
-
-        if status == "disabled":
-            return
-
-    if isinstance(nodes, dict):
-        reduced[path] = dict(nodes)
-        reduced[path].pop('children', None)
-        if path != '/':
-            path += '/'
-        if nodes['children']:
-            for k, v in nodes['children'].items():
-                get_reduced(v, path + k)
-
 
 def find_parent_irq_node(node_address):
     address = ''
@@ -473,16 +336,6 @@ def extract_string_prop(node_address, yaml, key, label, defs):
     else:
         defs[node_address] = prop_def
 
-
-def get_node_label(node_compat, node_address):
-
-    def_label = convert_string_to_label(node_compat.upper())
-    if '@' in node_address:
-        def_label += '_' + node_address.split('@')[-1].upper()
-    else:
-        def_label += convert_string_to_label(node_address.upper())
-
-    return def_label
 
 def extract_property(node_compat, yaml, node_address, y_key, y_val, names,
                      prefix, defs, label_override):
