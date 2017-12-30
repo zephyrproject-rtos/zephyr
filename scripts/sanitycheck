@@ -1063,10 +1063,6 @@ class MakeGenerator:
 
 # XXX Be sure to update __doc__ if you change any of this!!
 
-arch_valid_keys = {"name": {"type": "str", "required": True},
-                   "platforms": {"type": "list", "required": True},
-                   "supported_toolchains": {"type": "list", "required": True}}
-
 platform_valid_keys = {"qemu_support": {"type": "bool", "default": False},
                        "supported_toolchains": {"type": "list", "default": []}}
 
