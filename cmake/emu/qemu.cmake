@@ -54,10 +54,6 @@ if(QEMU_NET_STACK)
     server
     )
 
-  list(APPEND QEMU_FLAGS
-    -serial none
-    )
-
   foreach(target ${qemu_targets})
     if((${target} STREQUAL client) OR (${target} STREQUAL server))
       list(APPEND MORE_FLAGS_FOR_${target}
