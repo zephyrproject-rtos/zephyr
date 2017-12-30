@@ -1945,11 +1945,9 @@ class TestSuite:
                     bl = os.path.join(p, "qemu.log")
 
                 if os.path.exists(bl):
-                    with open(bl, "r") as f:
-                        log = f.read()
-                        ansi_escape = re.compile(r'\x1b[^m]*m')
-                        output = ansi_escape.sub('', str(log))
-                        failure.text = (escape(output))
+                    with open(bl, "rb") as f:
+                        log = f.read().decode("utf-8")
+                        failure.text = log
 
         result = ET.tostring(eleTestsuites)
         f = open(filename, 'wb')
