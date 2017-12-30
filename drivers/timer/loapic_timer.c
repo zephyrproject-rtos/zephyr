@@ -243,7 +243,6 @@ static inline void divide_configuration_register_set(void)
  *
  * @return N/A
  */
-#ifdef CONFIG_TICKLESS_KERNEL
 static inline u32_t current_count_register_get(void)
 {
 #ifndef CONFIG_JAILHOUSE_X2APIC
@@ -252,7 +251,6 @@ static inline u32_t current_count_register_get(void)
 	return read_x2apic(LOAPIC_TIMER_CCR >> 4);
 #endif
 }
-#endif
 
 #if defined(CONFIG_TICKLESS_IDLE)
 /**

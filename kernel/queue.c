@@ -67,13 +67,15 @@ static void prepare_thread_to_run(struct k_thread *thread, void *data)
 }
 #endif /* CONFIG_POLL */
 
-#ifdef CONFIG_POLL
 /* returns 1 if a reschedule must take place, 0 otherwise */
 static inline int handle_poll_events(struct k_queue *queue, u32_t state)
 {
+#ifdef CONFIG_POLL
 	return _handle_obj_poll_events(&queue->poll_events, state);
-}
+#else
+	return 0;
 #endif
+}
 
 void k_queue_cancel_wait(struct k_queue *queue)
 {
