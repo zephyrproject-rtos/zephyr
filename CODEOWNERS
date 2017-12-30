@@ -152,8 +152,8 @@ samples/net/http_server/*                @jukkar @tbursztyka
 samples/net/lwm2m_client/*               @mike-scott
 samples/net/mbedtls_sslclient/*          @nashif
 samples/net/mqtt_publisher/*             @jukkar @tbursztyka
-samples/net/zoap_client/*                @vcgomes
-samples/net/zoap_server/*                @vcgomes
+samples/net/coap_client/*                @rveerama1
+samples/net/coap_server/*                @rveerama1
 samples/sensor/*                         @bogdan-davidoaia
 samples/subsys/usb                       @youvedeep @andyross
 scripts/expr_parser.py                   @andrewboie
@@ -169,7 +169,7 @@ subsys/net/lib/dns/*                     @jukkar @tbursztyka
 subsys/net/lib/http/*                    @jukkar @tbursztyka
 subsys/net/lib/lwm2m/*                   @mike-scott
 subsys/net/lib/mqtt/*                    @jukkar @tbursztyka
-subsys/net/lib/zoap/*                    @vcgomes
+subsys/net/lib/coap/*                    @rveerama1
 subsys/usb                               @youvedeep @andyross
 tests/bluetooth/*                        @sjanc @jhedberg @Vudentz
 tests/crypto/*                           @lpereira
@@ -181,5 +181,5 @@ tests/net/buf/*                          @jukkar @jhedberg @tbursztyka
 tests/net/lib/*                          @jukkar @tbursztyka
 tests/net/lib/http_header_fields/*       @jukkar @tbursztyka
 tests/net/lib/mqtt_packet/*              @jukkar @tbursztyka
-tests/net/lib/zoap/*                     @vcgomes
+tests/net/lib/coap/*                     @rveerama1
 tests/subsys/fs/*                        @nashif
