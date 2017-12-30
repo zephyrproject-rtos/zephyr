@@ -2278,48 +2278,49 @@ def generate_coverage(outdir, ignores):
 def main():
     start_time = time.time()
     global VERBOSE, INLINE_LOGS, CPU_COUNTS, log_file
-    args = parse_arguments()
+    global options
+    options = parse_arguments()
     toolchain = os.environ.get("ZEPHYR_GCC_VARIANT", None)
 
-    if args.size:
-        for fn in args.size:
+    if options.size:
+        for fn in options.size:
             size_report(SizeCalculator(fn, []))
         sys.exit(0)
 
-    VERBOSE += args.verbose
-    INLINE_LOGS = args.inline_logs
-    if args.log_file:
-        log_file = open(args.log_file, "w")
-    if args.jobs:
-        CPU_COUNTS = args.jobs
+    VERBOSE += options.verbose
+    INLINE_LOGS = options.inline_logs
+    if options.log_file:
+        log_file = open(options.log_file, "w")
+    if options.jobs:
+        CPU_COUNTS = options.jobs
 
-    if args.subset:
-        subset, sets = args.subset.split("/")
+    if options.subset:
+        subset, sets = options.subset.split("/")
         if int(subset) > 0 and int(sets) >= int(subset):
             info("Running only a subset: %s/%s" % (subset, sets))
         else:
-            error("You have provided a wrong subset value: %s." % args.subset)
+            error("You have provided a wrong subset value: %s." % options.subset)
             return
 
-    if os.path.exists(args.outdir) and not args.no_clean:
-        info("Cleaning output directory " + args.outdir)
-        shutil.rmtree(args.outdir)
+    if os.path.exists(options.outdir) and not options.no_clean:
+        info("Cleaning output directory " + options.outdir)
+        shutil.rmtree(options.outdir)
 
-    if not args.testcase_root:
-        args.testcase_root = [os.path.join(ZEPHYR_BASE, "tests"),
+    if not options.testcase_root:
+        options.testcase_root = [os.path.join(ZEPHYR_BASE, "tests"),
                               os.path.join(ZEPHYR_BASE, "samples")]
 
-    ts = TestSuite(args.board_root, args.testcase_root,
-                   args.outdir, args.coverage)
+    ts = TestSuite(options.board_root, options.testcase_root,
+                   options.outdir, options.coverage)
 
     discards = []
-    if args.load_tests:
-        ts.load_from_file(args.load_tests)
+    if options.load_tests:
+        ts.load_from_file(options.load_tests)
     else:
-        discards = ts.apply_filters(args, toolchain)
+        discards = ts.apply_filters(options, toolchain)
 
-    if args.discard_report:
-        ts.discard_report(args.discard_report)
+    if options.discard_report:
+        ts.discard_report(options.discard_report)
 
     if VERBOSE > 1:
         for i, reason in discards.items():
@@ -2334,12 +2335,12 @@ def main():
     ts.instances = OrderedDict(
         sorted(ts.instances.items(), key=lambda t: t[0]))
 
-    if args.save_tests:
-        ts.run_report(args.save_tests)
+    if options.save_tests:
+        ts.run_report(options.save_tests)
         return
 
-    if args.subset:
-        subset, sets = args.subset.split("/")
+    if options.subset:
+        subset, sets = options.subset.split("/")
         total = len(ts.instances)
         per_set = round(total / int(sets))
         start = (int(subset) - 1) * per_set
@@ -2354,33 +2355,33 @@ def main():
     info("%d tests selected, %d tests discarded due to filters" %
          (len(ts.instances), len(discards)))
 
-    if args.dry_run:
+    if options.dry_run:
         return
 
     if VERBOSE or not TERMINAL:
         goals = ts.execute(
             chatty_test_cb,
             ts.instances,
-            args.build_only,
-            args.enable_slow,
-            args.enable_asserts,
-            args.error_on_deprecations,
-            args.extra_args)
+            options.build_only,
+            options.enable_slow,
+            options.enable_asserts,
+            options.error_on_deprecations,
+            options.extra_args)
     else:
         goals = ts.execute(
             terse_test_cb,
             ts.instances,
-            args.build_only,
-            args.enable_slow,
-            args.enable_asserts,
-            args.error_on_deprecations,
-            args.extra_args)
+            options.build_only,
+            options.enable_slow,
+            options.enable_asserts,
+            options.error_on_deprecations,
+            options.extra_args)
         info("")
 
     # figure out which report to use for size comparison
-    if args.compare_report:
-        report_to_use = args.compare_report
-    elif args.last_metrics:
+    if options.compare_report:
+        report_to_use = options.compare_report
+    elif options.last_metrics:
         report_to_use = LAST_SANITY
     else:
         report_to_use = RELEASE_DATA
@@ -2389,24 +2390,24 @@ def main():
     warnings = 0
     if deltas:
         for i, metric, value, delta, lower_better in deltas:
-            if not args.all_deltas and ((delta < 0 and lower_better) or
+            if not options.all_deltas and ((delta < 0 and lower_better) or
                                         (delta > 0 and not lower_better)):
                 continue
 
             percentage = (float(delta) / float(value - delta))
-            if not args.all_deltas and (percentage <
-                                        (args.footprint_threshold / 100.0)):
+            if not options.all_deltas and (percentage <
+                                        (options.footprint_threshold / 100.0)):
                 continue
 
             info("{:<25} {:<60} {}{}{}: {} {:<+4}, is now {:6} {:+.2%}".format(
                  i.platform.name, i.test.name, COLOR_YELLOW,
-                 "INFO" if args.all_deltas else "WARNING", COLOR_NORMAL,
+                 "INFO" if options.all_deltas else "WARNING", COLOR_NORMAL,
                  metric, delta, value, percentage))
             warnings += 1
 
     if warnings:
         info("Deltas based on metrics from last %s" %
-             ("release" if not args.last_metrics else "run"))
+             ("release" if not options.last_metrics else "run"))
 
     failed = 0
     for name, goal in goals.items():
@@ -2418,9 +2419,9 @@ def main():
                   str(goal.metrics["unrecognized"])))
             failed += 1
 
-    if args.coverage:
+    if options.coverage:
         info("Generating coverage files...")
-        generate_coverage(args.outdir, ["tests/*", "samples/*"])
+        generate_coverage(options.outdir, ["tests/*", "samples/*"])
 
     duration = time.time() - start_time
     info("%s%d of %d%s tests passed with %s%d%s warnings in %d seconds" %
@@ -2428,16 +2429,16 @@ def main():
           len(goals), COLOR_NORMAL, COLOR_YELLOW if warnings else COLOR_NORMAL,
           warnings, COLOR_NORMAL, duration))
 
-    if args.testcase_report:
-        ts.testcase_report(args.testcase_report)
-    if not args.no_update:
-        ts.testcase_xunit_report(LAST_SANITY_XUNIT, duration, args)
+    if options.testcase_report:
+        ts.testcase_report(options.testcase_report)
+    if not options.no_update:
+        ts.testcase_xunit_report(LAST_SANITY_XUNIT, duration, options)
         ts.testcase_report(LAST_SANITY)
-    if args.release:
+    if options.release:
         ts.testcase_report(RELEASE_DATA)
     if log_file:
         log_file.close()
-    if failed or (warnings and args.warnings_as_errors):
+    if failed or (warnings and options.warnings_as_errors):
         sys.exit(1)
 
 
