@@ -1,8 +1,12 @@
 
 set(CLANG_ROOT $ENV{CLANG_ROOT_DIR})
 
+if(CONFIG_ARM)
 set(triple arm-none-eabi)
-#set(triple i686-pc-none-elf)
+set(CMAKE_EXE_LINKER_FLAGS_INIT "--specs=nosys.specs")
+elseif(CONFIG_X86)
+set(triple i686-pc-none-elf)
+endif()
 #set(triple i386-pc-elfiamcu)
 
 set(CMAKE_C_COMPILER          ${CLANG_ROOT}/bin/clang)
@@ -20,7 +24,6 @@ set(CMAKE_OBJCOPY             objcopy CACHE INTERNAL " " FORCE)
 set(CMAKE_READELF             readelf CACHE INTERNAL " " FORCE)
 
 
-set(CMAKE_EXE_LINKER_FLAGS_INIT "--specs=nosys.specs")
 
 
 set(NOSTDINC "")
