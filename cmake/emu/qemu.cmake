@@ -13,6 +13,13 @@ set(qemu_targets
   debugserver
   )
 
+set(QEMU_FLAGS -pidfile)
+if(${CMAKE_GENERATOR} STREQUAL "Unix Makefiles")
+  list(APPEND QEMU_FLAGS qemu\${QEMU_INSTANCE}.pid)
+else()
+  list(APPEND QEMU_FLAGS qemu${QEMU_INSTANCE}.pid)
+endif()
+
 # We can set "default" value for QEMU_PTY & QEMU_PIPE on cmake invocation.
 if(QEMU_PTY)
   # Send console output to a pseudo-tty, used for running automated tests
@@ -28,7 +35,18 @@ endif()
 
 # But also can set QEMU_PTY & QEMU_PIPE on *make* (not cmake) invocation,
 # like it was before cmake.
-set(QEMU_FLAGS -serial \${if \${QEMU_PTY}, pty, \${if \${QEMU_PIPE}, pipe:\${QEMU_PIPE}, ${CMAKE_QEMU_SERIAL0}}})
+if(${CMAKE_GENERATOR} STREQUAL "Unix Makefiles")
+  list(APPEND QEMU_FLAGS
+    -serial
+    \${if \${QEMU_PTY}, pty, \${if \${QEMU_PIPE}, pipe:\${QEMU_PIPE}, ${CMAKE_QEMU_SERIAL0}}}
+    # NB: \$ is not supported by Ninja
+    )
+else()
+  list(APPEND QEMU_FLAGS
+    -serial
+    ${CMAKE_QEMU_SERIAL0}
+    )
+endif()
 
 # Add a BT serial device when building for bluetooth, unless the
 # application explicitly opts out with NO_QEMU_SERIAL_BT_SERVER.
@@ -68,8 +86,15 @@ if(QEMU_NET_STACK)
       # QEMU_INSTANCE is a command line argument to *make* (not cmake). By
       # appending the instance name to the pid file we can easily run more
       # instances of the same sample.
+
+      if(${CMAKE_GENERATOR} STREQUAL "Unix Makefiles")
+        set(tmp_file unix:/tmp/slip.sock\${QEMU_INSTANCE})
+      else()
+        set(tmp_file unix:/tmp/slip.sock${QEMU_INSTANCE})
+      endif()
+
       list(APPEND MORE_FLAGS_FOR_${target}
-        -serial unix:/tmp/slip.sock\${QEMU_INSTANCE}
+        -serial ${tmp_file}
         )
     endif()
   endforeach()
@@ -165,7 +190,6 @@ foreach(target ${qemu_targets})
     COMMAND
     ${QEMU}
     ${QEMU_FLAGS_${ARCH}}
-    -pidfile qemu\${QEMU_INSTANCE}.pid
     ${QEMU_FLAGS}
     ${QEMU_EXTRA_FLAGS}
     ${MORE_FLAGS_FOR_${target}}
