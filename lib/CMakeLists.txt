@@ -1,4 +1,5 @@
 add_subdirectory(crc)
+add_subdirectory(quad_math)
 add_subdirectory_ifdef(CONFIG_JSON_LIBRARY          json)
 if(NOT CONFIG_NATIVE_APPLICATION)
 add_subdirectory(libc)
