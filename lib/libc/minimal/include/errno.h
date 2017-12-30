@@ -126,6 +126,8 @@ extern int *__errno(void);
 #define ETIME 79   /* STREAMS timeout occurred */
 #define ENOMSG 80  /* Unexpected message type */
 
+#define EILSEQ 138 /* Illegal byte sequence */
+
 #ifdef __cplusplus
 }
 #endif
