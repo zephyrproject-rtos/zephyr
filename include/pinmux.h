@@ -12,6 +12,12 @@
 #ifndef __INCLUDE_PINMUX_H
 #define __INCLUDE_PINMUX_H
 
+#if CONFIG_PINCTRL
+/* PINMUX is provided by PINCTRL */
+#include <pinctrl.h>
+#else
+/* Legacy Pinmux Interface */
+
 /**
  * @brief Pinmux Interface
  * @defgroup pinmux_interface Pinmux Interface
@@ -110,5 +116,7 @@ static inline int pinmux_pin_input_enable(struct device *dev, u32_t pin,
  *
  * @}
  */
+
+#endif /* !defined(CONFIG_PINCTRL) */
 
 #endif /* __INCLUDE_PINMUX_H */
