@@ -90,14 +90,14 @@ config BSP_SHARED_RESTORE_INFO_SIZE
 	  Size of the memory shared between the BSP and the Bootloader in order
 	  to store restore information.
 
-config BSP_SHARED_GDT_RAM_ADDR
+config SHARED_GDT_RAM_ADDR
 	hex "Address of the GDT in RAM shared with the QMSI Bootloader"
 	default 0xA8013FE0
 	help
 	  Address of the memory shared between the BSP and the Bootloader in order
 	  to store the GDT.
 
-config BSP_SHARED_GDT_RAM_SIZE
+config SHARED_GDT_RAM_SIZE
 	hex "Size of the GDT in RAM shared with the QMSI Bootloader"
 	default 0x20
 	help
