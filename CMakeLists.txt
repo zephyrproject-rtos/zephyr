@@ -215,6 +215,7 @@ zephyr_compile_options(${CONFIG_COMPILER_OPT})
 
 # TODO: This Clang check is broken
 if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
+  set(ENABLE_QUADMATH 1)
   zephyr_cc_option(
     #FIXME: need to fix all of those
     -Wno-sometimes-uninitialized
