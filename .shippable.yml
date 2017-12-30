@@ -72,6 +72,7 @@ build:
       - mkdir -p shippable/codecoverage
       - source zephyr-env.sh
       - gcovr -r ${ZEPHYR_BASE} -x > shippable/codecoverage/coverage.xml
+      - bash <(curl -s https://codecov.io/bash)
       - rm -rf sanity-out out-2nd-pass
       - >
           if [ -e compliance.xml ]; then
@@ -86,6 +87,8 @@ build:
       - mkdir -p shippable/codecoverage
       - source zephyr-env.sh
       - gcovr -r ${ZEPHYR_BASE} -x > shippable/codecoverage/coverage.xml
+      - rm -rf ccache
+      - bash <(curl -s https://codecov.io/bash)
       - rm -rf sanity-out out-2nd-pass
       - >
           if [ -e compliance.xml ]; then
