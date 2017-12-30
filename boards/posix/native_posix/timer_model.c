@@ -76,11 +76,7 @@ static void hwtimer_tick_timer_reached(void)
 		requested_time.tv_sec  = diff / 1e6;
 		requested_time.tv_nsec = (diff - requested_time.tv_sec*1e6)*1e3;
 
-		int s = nanosleep(&requested_time, &remaining);
-
-		if (s == -1) {
-			posix_print_trace("Interrupted or error\n");
-		}
+		nanosleep(&requested_time, &remaining);
 	}
 #endif
 

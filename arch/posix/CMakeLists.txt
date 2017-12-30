@@ -20,7 +20,7 @@ zephyr_link_libraries_ifdef(CONFIG_COVERAGE
 	-lgcov
 	)
 
-zephyr_compile_definitions(_POSIX_C_SOURCE=199309)
+zephyr_compile_definitions(_POSIX_C_SOURCE=200809)
 
 zephyr_ld_options(
   -ldl
