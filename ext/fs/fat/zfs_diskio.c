@@ -88,7 +88,6 @@ DRESULT disk_write(BYTE pdrv, const BYTE *buff, DWORD sector, UINT count)
 DRESULT disk_ioctl(BYTE pdrv, BYTE cmd, void *buff)
 {
 	int ret =  RES_OK;
-	uint32_t tmp = 0;
 
 	switch (cmd) {
 	case CTRL_SYNC:
@@ -98,11 +97,9 @@ DRESULT disk_ioctl(BYTE pdrv, BYTE cmd, void *buff)
 		break;
 
 	case GET_SECTOR_COUNT:
-		if (disk_access_ioctl(DISK_IOCTL_GET_DISK_SIZE, &tmp) != 0) {
+		if (disk_access_ioctl(DISK_IOCTL_GET_SECTOR_COUNT, buff) != 0) {
 			ret = RES_ERROR;
-		} else {
-			*(uint32_t *) buff = (tmp / _MIN_SS) ;
-		}
+                }
 		break;
 
 	case GET_BLOCK_SIZE:
