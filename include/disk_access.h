@@ -29,12 +29,12 @@ extern "C" {
 #define DISK_IOCTL_GET_SECTOR_COUNT		1
 /* Get the size of a disk SECTOR in bytes */
 #define DISK_IOCTL_GET_SECTOR_SIZE		2
-/* Get the size of the disk in bytes */
-#define DISK_IOCTL_GET_DISK_SIZE		3
 /* How many  sectors constitute a FLASH Erase block */
 #define DISK_IOCTL_GET_ERASE_BLOCK_SZ		4
 /* Commit any cached read/writes to disk */
 #define DISK_IOCTL_CTRL_SYNC			5
+
+/* 3 is reserved.  It used to be DISK_IOCTL_GET_DISK_SIZE */
 
 /* Possible return bitmasks for disk_status() */
 #define DISK_STATUS_OK			0x00
