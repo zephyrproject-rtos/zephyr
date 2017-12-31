@@ -404,25 +404,6 @@ endforeach()
 
 get_property(OUTPUT_FORMAT        GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT)
 
-# Run the pre-processor on the linker script
-#
-# Deal with the un-preprocessed linker scripts differently with
-# different generators.
-if(CMAKE_GENERATOR STREQUAL "Unix Makefiles")
-  # Note that the IMPLICIT_DEPENDS option is currently supported only
-  # for Makefile generators and will be ignored by other generators.
-  set(LINKER_SCRIPT_DEP IMPLICIT_DEPENDS C ${LINKER_SCRIPT})
-elseif(CMAKE_GENERATOR STREQUAL "Ninja")
-  # Using DEPFILE with other generators than Ninja is an error.
-  set(LINKER_SCRIPT_DEP DEPFILE ${PROJECT_BINARY_DIR}/linker.cmd.dep)
-else()
-  # TODO: How would the linker script dependencies work for non-linker
-  # script generators.
-  message(STATUS "Warning; this generator is not well supported. The
-  Linker script may not be regenerated when it should.")
-  set(LINKER_SCRIPT_DEP "")
-endif()
-
 get_property(LINKER_SCRIPT_DEFINES GLOBAL PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES)
 
 if(CONFIG_APPLICATION_MEMORY)
@@ -527,6 +508,22 @@ function(construct_add_custom_command_for_linker_pass linker_pass_number output_
     set(LINKER_PASS_DEFINE "")
   else()
     set(LINKER_PASS_DEFINE -DLINKER_PASS${linker_pass_number})
+  endif()
+
+  # Different generators deal with depfiles differently.
+  if(CMAKE_GENERATOR STREQUAL "Unix Makefiles")
+    # Note that the IMPLICIT_DEPENDS option is currently supported only
+    # for Makefile generators and will be ignored by other generators.
+    set(LINKER_SCRIPT_DEP IMPLICIT_DEPENDS C ${LINKER_SCRIPT})
+  elseif(CMAKE_GENERATOR STREQUAL "Ninja")
+    # Using DEPFILE with other generators than Ninja is an error.
+    set(LINKER_SCRIPT_DEP DEPFILE ${PROJECT_BINARY_DIR}/${linker_cmd_file_name}.dep)
+  else()
+    # TODO: How would the linker script dependencies work for non-linker
+    # script generators.
+    message(STATUS "Warning; this generator is not well supported. The
+  Linker script may not be regenerated when it should.")
+    set(LINKER_SCRIPT_DEP "")
   endif()
 
   set(${output_variable}
