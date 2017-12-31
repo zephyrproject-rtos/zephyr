@@ -339,13 +339,18 @@ class NativeHandler(Handler):
         self.returncode = 0
         self.set_state("running", {})
 
-    def output_reader(self, proc, harness):
+    def _output_reader(self, proc, harness):
+        log_out_fp = open(self.run_log, "wt")
         for line in iter(proc.stdout.readline, b''):
             verbose("NATIVE: {0}".format(line.decode('utf-8').rstrip()))
+            log_out_fp.write(line.decode('utf-8'))
+            log_out_fp.flush()
             harness.handle(line.decode('utf-8').rstrip())
             if harness.state:
                 proc.terminate()
                 break
+
+        log_out_fp.close()
 
     def handle(self):
         out_state = "failed"
@@ -362,7 +367,7 @@ class NativeHandler(Handler):
                        "--leak-check=full"] + command
 
         with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as proc:
-            t = threading.Thread(target=self.output_reader, args=(proc, harness, ))
+            t = threading.Thread(target=self._output_reader, args=(proc, harness, ))
             t.start()
             t.join(self.timeout)
             if t.is_alive():
@@ -378,7 +383,6 @@ class NativeHandler(Handler):
                 else:
                     out_state = "failed valgrind"
 
-        #print(" ".join(["GCOV_PREFIX=" + self.outdir, "gcov", self.sourcedir, "-b", "-s", self.outdir]))
         returncode = subprocess.call(["GCOV_PREFIX=" + self.outdir, "gcov", self.sourcedir, "-b", "-s", self.outdir], shell=True)
 
         if harness.state:
