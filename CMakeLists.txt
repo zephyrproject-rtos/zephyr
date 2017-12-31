@@ -508,24 +508,52 @@ if(CONFIG_APPLICATION_MEMORY)
   endforeach()
 endif() # CONFIG_APPLICATION_MEMORY
 
+function(construct_add_custom_command_for_linker_pass linker_pass_number output_variable)
+  if(linker_pass_number EQUAL 1)
+    set(is_first_pass 1)
+  elseif(linker_pass_number GREATER 1)
+    set(is_first_pass 0)
+  else()
+    assert(0 "Unreachable code")
+  endif()
+
+  if(is_first_pass)
+    set(linker_cmd_file_name linker.cmd)
+  else()
+    set(linker_cmd_file_name linker_pass${linker_pass_number}.cmd)
+  endif()
+
+  if(is_first_pass)
+    set(LINKER_PASS_DEFINE "")
+  else()
+    set(LINKER_PASS_DEFINE -DLINKER_PASS${linker_pass_number})
+  endif()
+
+  set(${output_variable}
+    OUTPUT ${linker_cmd_file_name}
+    DEPENDS ${LINKER_SCRIPT}
+    ${LINKER_SCRIPT_DEP}
+    COMMAND ${CMAKE_C_COMPILER}
+    -x assembler-with-cpp
+    ${NOSTDINC_F}
+    -undef
+    -MD -MF ${linker_cmd_file_name}.dep -MT ${BASE_NAME}/${linker_cmd_file_name}
+    ${ZEPHYR_INCLUDES}
+    ${LINKER_SCRIPT_DEFINES}
+    ${LINKER_PASS_DEFINE}
+    -E ${LINKER_SCRIPT} -P
+    -o ${linker_cmd_file_name}
+    VERBATIM
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+
+    PARENT_SCOPE
+    )
+endfunction()
+
 get_filename_component(BASE_NAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
+construct_add_custom_command_for_linker_pass(1 custom_command)
 add_custom_command(
-  OUTPUT linker.cmd
-  DEPENDS ${LINKER_SCRIPT}
-  ${LINKER_SCRIPT_DEP}
-  # NB: This COMMAND is copy-pasted to generate linker_pass2.cmd
-  # TODO: Remove duplication
-  COMMAND ${CMAKE_C_COMPILER}
-  -x assembler-with-cpp
-  ${NOSTDINC_F}
-  -undef
-  -MD -MF linker.cmd.dep -MT ${BASE_NAME}/linker.cmd
-  ${ZEPHYR_INCLUDES}
-  ${LINKER_SCRIPT_DEFINES}
-  -E ${LINKER_SCRIPT} -P
-  -o linker.cmd
-  VERBATIM
-  WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+  ${custom_command}
 )
 add_custom_target(
   linker_script
@@ -709,24 +737,11 @@ if(GKOF OR GKSF)
   set(logical_target_for_zephyr_elf kernel_elf)
 
   # The second linker pass uses the same source linker script of the
-  # first pass (LINKER_SCRIPT), but this time preprocessed with the
-  # define LINKER_PASS2.
+  # first pass (LINKER_SCRIPT), but this time with a different output
+  # file and preprocessed with the define LINKER_PASS2.
+  construct_add_custom_command_for_linker_pass(2 custom_command)
   add_custom_command(
-    OUTPUT linker_pass2.cmd
-    DEPENDS ${LINKER_SCRIPT}
-    ${LINKER_SCRIPT_DEP}
-    COMMAND ${CMAKE_C_COMPILER}
-    -x assembler-with-cpp
-    ${NOSTDINC_F}
-    -undef
-    -MD -MF linker_pass2.cmd.dep -MT ${BASE_NAME}/linker_pass2.cmd
-    ${ZEPHYR_INCLUDES}
-    ${LINKER_SCRIPT_DEFINES}
-    -DLINKER_PASS2
-    -E ${LINKER_SCRIPT} -P
-    -o linker_pass2.cmd
-    VERBATIM
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    ${custom_command}
     )
   add_custom_target(
     linker_pass2_script
