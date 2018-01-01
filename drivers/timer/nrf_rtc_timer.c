@@ -53,7 +53,7 @@ static u32_t expected_sys_ticks;
 #endif /* CONFIG_TICKLESS_IDLE */
 
 #ifdef CONFIG_TICKLESS_KERNEL
-int32_t _get_max_clock_time(void);
+s32_t _get_max_clock_time(void);
 #endif /* CONFIG_TICKLESS_KERNEL */
 
 /*
@@ -220,7 +220,7 @@ void _timer_idle_enter(s32_t sys_ticks)
  * returns : total number of sys ticks programmed.
  */
 
-uint32_t _get_program_time(void)
+u32_t _get_program_time(void)
 {
 	return expected_sys_ticks;
 }
@@ -231,7 +231,7 @@ uint32_t _get_program_time(void)
  * returns : total number of sys ticks remaining since last RTC programming.
  */
 
-uint32_t _get_remaining_program_time(void)
+u32_t _get_remaining_program_time(void)
 {
 
 	if (!expected_sys_ticks) {
@@ -247,7 +247,7 @@ uint32_t _get_remaining_program_time(void)
  * returns : total number of sys ticks passed since last RTC programming.
  */
 
-uint32_t _get_elapsed_program_time(void)
+u32_t _get_elapsed_program_time(void)
 {
 	u32_t rtc_now, rtc_prev, rtc_elapsed;
 
@@ -279,7 +279,7 @@ uint32_t _get_elapsed_program_time(void)
  * 3. Calls routine to set rtc interrupt.
  */
 
-void _set_time(uint32_t time)
+void _set_time(u32_t time)
 {
 	if (!time) {
 		expected_sys_ticks = 0;
@@ -310,7 +310,7 @@ void _set_time(uint32_t time)
  *
  * returns : difference between current systick and Maximum possible systick.
  */
-int32_t _get_max_clock_time(void)
+s32_t _get_max_clock_time(void)
 {
 	u32_t rtc_now, rtc_prev, rtc_away, sys_away = 0;
 
@@ -351,7 +351,7 @@ void _enable_sys_clock(void)
  * returns : total number of sys ticks passed since device bootup.
  */
 
-uint64_t _get_elapsed_clock_time(void)
+u64_t _get_elapsed_clock_time(void)
 {
 	u64_t elapsed;
 	u32_t rtc_now, rtc_elapsed, rtc_prev, sys_elapsed;
