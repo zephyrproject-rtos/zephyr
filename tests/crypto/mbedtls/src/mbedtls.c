@@ -435,6 +435,4 @@ void test_mbedtls(void)
 #endif
 	}
 
-	while (1) {
-	}
 }
