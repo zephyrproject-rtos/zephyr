@@ -1,6 +1,7 @@
 zephyr_cc_option_ifdef(CONFIG_LTO -flto)
 
 zephyr_compile_options(
+  -Wno-format-truncation
   -fno-freestanding
   -Wno-undef
   -Wno-implicit-function-declaration
