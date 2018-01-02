@@ -978,6 +978,11 @@ static void seg_ack(struct k_work *work)
 		send_ack(rx->sub, rx->dst, rx->src, rx->ttl,
 			 &rx->seq_auth, 0, rx->obo);
 		seg_rx_reset(rx);
+
+		if (IS_ENABLED(CONFIG_BT_TESTING)) {
+			bt_test_mesh_trans_incomp_timer_exp();
+		}
+
 		return;
 	}
 

@@ -815,6 +815,8 @@ struct mesh_invalid_bearer_ev {
 	u8_t opcode;
 } __packed;
 
+#define MESH_EV_INCOMP_TIMER_EXP	0x88
+
 void tester_init(void);
 void tester_rsp(u8_t service, u8_t opcode, u8_t index, u8_t status);
 void tester_send(u8_t service, u8_t opcode, u8_t index, u8_t *data,
