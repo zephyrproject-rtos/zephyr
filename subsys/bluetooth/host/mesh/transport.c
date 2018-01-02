@@ -17,10 +17,11 @@
 
 #include <bluetooth/hci.h>
 #include <bluetooth/mesh.h>
-#include <bluetooth/testing.h>
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_MESH_DEBUG_TRANS)
 #include "common/log.h"
+
+#include "../testing.h"
 
 #include "crypto.h"
 #include "adv.h"
