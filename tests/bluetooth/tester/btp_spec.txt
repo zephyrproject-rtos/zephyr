@@ -1613,3 +1613,11 @@ Events:
 
 		This event indicates reception of provisioning message with
 		invalid RFU BearerOpcode.
+
+	Opcode 0x88 - Transport Incomplete Timer Expired Event
+
+		Controller Index:	<controller id>
+		Event parameters:	<none>
+
+		This event indicates that segmented message incomplete timer
+		expired.
