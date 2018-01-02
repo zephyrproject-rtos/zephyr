@@ -51,20 +51,6 @@ void bt_test_cb_register(struct bt_test_cb *cb);
  */
 void bt_test_cb_unregister(struct bt_test_cb *cb);
 
-/** Indicate reception of Mesh Network PDU
- *
- *  This will call registered mesh_net_recv callbacks.
- *
- *  @param ttl Time To Live
- *  @param ctl Network Control
- *  @param src Source address
- *  @param dst Destination address
- *  @param payload Payload after decryption with the NetKey
- *  @param payload_len Payload length
- */
-void bt_test_mesh_net_recv(u8_t ttl, u8_t ctl, u16_t src, u16_t dst,
-			   const void *payload, size_t payload_len);
-
 /** Send Friend Subscription List Add message.
  *
  *  Used by Low Power node to send the group address for which messages are to
