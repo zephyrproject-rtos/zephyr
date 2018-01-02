@@ -467,7 +467,17 @@ if(CONFIG_APPLICATION_MEMORY)
       string(SUBSTRING ${fixed_path} 1 -1 fixed_path)
     endif()
 
-    list(APPEND ks "${fixed_path}lib${target_name}.a")
+    set(fixed_path "${fixed_path}lib${target_name}.a")
+
+    if(CMAKE_GENERATOR STREQUAL "Ninja")
+      # Ninja invokes the linker from the root of the build directory
+      # (APPLICATION_BINARY_DIR) instead of from the build/zephyr
+      # directory (PROJECT_BINARY_DIR). So for linker-defs.h to get
+      # the correct path we need to prefix with zephyr/.
+      set(fixed_path "zephyr/${fixed_path}")
+    endif()
+
+    list(APPEND ks ${fixed_path})
   endforeach()
 
   # We are done constructing kernel_object_file_list, now we inject this
