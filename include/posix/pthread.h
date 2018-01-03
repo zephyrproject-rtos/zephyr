@@ -17,28 +17,14 @@ struct timespec {
 	s32_t tv_sec;
 	s32_t tv_nsec;
 };
-#endif
+#endif	/* CONFIG_NEWLIB_LIBC */
+
+#include "sys/types.h"
 
 static inline s32_t _ts_to_ms(const struct timespec *to)
 {
 	return (to->tv_sec * 1000) + (to->tv_nsec / 1000000);
 }
-
-typedef struct pthread_mutex {
-	struct k_sem *sem;
-} pthread_mutex_t;
-
-typedef struct pthread_mutexattr {
-	int unused;
-} pthread_mutexattr_t;
-
-typedef struct pthread_cond {
-	_wait_q_t wait_q;
-} pthread_cond_t;
-
-typedef struct pthread_condattr {
-	int unused;
-} pthread_condattr_t;
 
 /**
  * @brief Declare a pthread condition variable
@@ -259,16 +245,6 @@ static inline int pthread_mutexattr_destroy(pthread_mutexattr_t *m)
  */
 /* #define PTHREAD_MUTEX_INITIALIZER */
 /* #define PTHREAD_COND_INITIALIZER */
-
-typedef struct pthread_barrier {
-	_wait_q_t wait_q;
-	int max;
-	int count;
-} pthread_barrier_t;
-
-typedef struct pthread_barrierattr {
-	int unused;
-} pthread_barrierattr_t;
 
 /**
  * @brief Declare a pthread barrier
