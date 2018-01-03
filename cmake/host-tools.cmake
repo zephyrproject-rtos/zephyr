@@ -12,12 +12,14 @@ if(${DTC} STREQUAL DTC-NOTFOUND)
   message(FATAL_ERROR "Unable to find dtc")
 endif()
 
-find_program(
-  KCONFIG_CONF
-  conf
-  )
-if(${KCONFIG_CONF} STREQUAL KCONFIG_CONF-NOTFOUND)
-  message(FATAL_ERROR "Unable to find the Kconfig program 'conf'")
+if (NOT WIN32)
+  find_program(
+    KCONFIG_CONF
+    conf
+    )
+  if(${KCONFIG_CONF} STREQUAL KCONFIG_CONF-NOTFOUND)
+    message(FATAL_ERROR "Unable to find the Kconfig program 'conf'")
+  endif()
 endif()
 
 find_program(

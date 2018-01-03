@@ -38,16 +38,26 @@ set(COMMAND_FOR_oldconfig  ${KCONFIG_CONF} --oldconfig    ${KCONFIG_ROOT})
 set(COMMAND_FOR_xconfig    qconf                          ${KCONFIG_ROOT})
 
 foreach(kconfig_target ${kconfig_target_list})
-  add_custom_target(
-    ${kconfig_target}
-    ${CMAKE_COMMAND} -E env
-    srctree=${PROJECT_SOURCE_DIR}
-    KERNELVERSION=${PROJECT_VERSION}
-    KCONFIG_CONFIG=${DOTCONFIG}
-    ${COMMAND_FOR_${kconfig_target}}
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig
-    USES_TERMINAL
-    )
+  if (NOT WIN32)
+    add_custom_target(
+      ${kconfig_target}
+      ${CMAKE_COMMAND} -E env
+      srctree=${PROJECT_SOURCE_DIR}
+      KERNELVERSION=${PROJECT_VERSION}
+      KCONFIG_CONFIG=${DOTCONFIG}
+      ${COMMAND_FOR_${kconfig_target}}
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig
+      USES_TERMINAL
+      )
+  else()
+    add_custom_target(
+      ${kconfig_target}
+      ${CMAKE_COMMAND} -E echo
+        "========================================="
+	"Reconfiguration not supported on Windows."
+        "========================================="
+      )
+  endif()
 endforeach()
 
 # Bring in extra configuration files dropped in by the user or anyone else;
@@ -112,25 +122,15 @@ endif()
 if(CREATE_NEW_DOTCONFIG)
   execute_process(
     COMMAND
-    ${PROJECT_SOURCE_DIR}/scripts/kconfig/merge_config.sh
-    -m
-    -q
-    -O ${PROJECT_BINARY_DIR}
+    ${PYTHON_EXECUTABLE}
+    ${PROJECT_SOURCE_DIR}/scripts/kconfig/kconfig.py
+    ${KCONFIG_ROOT}
+    ${PROJECT_BINARY_DIR}/.config
+    ${PROJECT_BINARY_DIR}/include/generated/autoconf.h
     ${merge_config_files}
     WORKING_DIRECTORY ${APPLICATION_SOURCE_DIR}
     # The working directory is set to the app dir such that the user
     # can use relative paths in CONF_FILE, e.g. CONF_FILE=nrf5.conf
-    RESULT_VARIABLE ret
-  )
-  if(NOT "${ret}" STREQUAL "0")
-    message(FATAL_ERROR "command failed with return code: ${ret}")
-  endif()
-
-  execute_process(
-	  COMMAND ${KCONFIG_CONF}
-      --olddefconfig
-      ${KCONFIG_ROOT}
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig
     RESULT_VARIABLE ret
   )
   if(NOT "${ret}" STREQUAL "0")
@@ -147,14 +147,6 @@ endif()
 foreach(merge_config_input ${merge_config_files} ${DOTCONFIG})
   set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${merge_config_input})
 endforeach()
-
-message(STATUS "Generating zephyr/include/generated/autoconf.h")
-execute_process(
-	COMMAND ${KCONFIG_CONF}
-    --silentoldconfig
-    ${KCONFIG_ROOT}
-  WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig
-)
 
 add_custom_target(config-sanitycheck DEPENDS ${DOTCONFIG})
 
