@@ -540,7 +540,8 @@ function(construct_add_custom_command_for_linker_pass linker_pass_number output_
     ${ZEPHYR_INCLUDES}
     ${LINKER_SCRIPT_DEFINES}
     ${LINKER_PASS_DEFINE}
-    -E ${LINKER_SCRIPT} -P
+    -E ${LINKER_SCRIPT}
+    -P # Prevent generation of debug `#line' directives.
     -o ${linker_cmd_file_name}
     VERBATIM
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
