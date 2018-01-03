@@ -272,15 +272,16 @@ following exceptions:
   comment, ``//``, is not allowed.
 * Use ``/**  */`` for doxygen comments that need to appear in the documentation.
 
-The Linux kernel GPL-licensed tool ``checkpatch`` is used to check coding
-style conformity. Checkpatch is available in the scripts directory. To invoke
-it when committing code, edit your *.git/hooks/pre-commit* file to contain:
+The Linux kernel GPL-licensed tool ``checkpatch`` is used to check
+coding style conformity. Checkpatch is available in the scripts
+directory. To invoke it when committing code, make the file
+*$ZEPHYR_BASE/.git/hooks/pre-commit* executable and edit it to contain:
 
 .. code-block:: bash
 
     #!/bin/sh
     set -e exec
-    exec git diff --cached | ${ZEPHYR_BASE}/scripts/checkpatch.pl - || true
+    exec git diff --cached | ${ZEPHYR_BASE}/scripts/checkpatch.pl -
 
 .. _Contribution workflow:
 
