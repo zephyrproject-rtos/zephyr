@@ -67,8 +67,13 @@ zephyr_include_directories(
 zephyr_compile_definitions(
   KERNEL
   __ZEPHYR__=1
+)
+
+if(NOT CONFIG_COVERAGE)
+zephyr_compile_definitions(
   _FORTIFY_SOURCE=2
 )
+endif()
 
 # We need to set an optimization level.
 # Default to -Os
@@ -79,10 +84,13 @@ zephyr_compile_definitions(
 #
 # Finally, the user can use Kconfig to add compiler options that will
 # come after these options and override them
-set_ifndef(OPTIMIZE_FOR_SIZE_FLAG  "-Os")
-set_ifndef(OPTIMIZE_FOR_DEBUG_FLAG "-Og")
+set_ifndef(OPTIMIZE_FOR_SIZE_FLAG     "-Os")
+set_ifndef(OPTIMIZE_FOR_DEBUG_FLAG    "-Og")
+set_ifndef(OPTIMIZE_FOR_COVERAGE_FLAG "-O0")
 if(CONFIG_DEBUG)
   set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_DEBUG_FLAG})
+elseif(CONFIG_COVERAGE)
+  set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_COVERAGE_FLAG})
 else()
   set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_SIZE_FLAG}) # Default
 endif()
