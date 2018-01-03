@@ -69,12 +69,13 @@ build:
       - ccache -s
     on_failure:
       - rm -rf ccache
-      - bash <(curl -s https://codecov.io/bash) -f '!*.lst' -X coveragepy
       - mkdir -p shippable/testresults
       - mkdir -p shippable/codecoverage
       - source zephyr-env.sh
       - gcovr -r ${ZEPHYR_BASE} -x > shippable/codecoverage/coverage.xml
+      - mv sanity-out/native_posix/ coverage_native_posix/
       - rm -rf sanity-out out-2nd-pass
+      - bash <(curl -s https://codecov.io/bash) -f '!*.lst' -X coveragepy
       - >
           if [ -e compliance.xml ]; then
             cp compliance.xml shippable/testresults/;
@@ -85,12 +86,13 @@ build:
           fi;
     on_success:
       - rm -rf ccache
-      - bash <(curl -s https://codecov.io/bash) -f '!*.lst' -X coveragepy
       - mkdir -p shippable/testresults
       - mkdir -p shippable/codecoverage
       - source zephyr-env.sh
       - gcovr -r ${ZEPHYR_BASE} -x > shippable/codecoverage/coverage.xml
+      - mv sanity-out/native_posix/ coverage_native_posix/
       - rm -rf sanity-out out-2nd-pass
+      - bash <(curl -s https://codecov.io/bash) -f '!*.lst' -X coveragepy
       - >
           if [ -e compliance.xml ]; then
             cp compliance.xml shippable/testresults/;
