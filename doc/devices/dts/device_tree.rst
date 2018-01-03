@@ -30,7 +30,7 @@ create the application image.
 Device tree uses a specific format to describe the device nodes in a system.
 This format is described in `EPAPR document`_.
 
-.. _EPAPR document: http://www.devicetree.org/specifications-pdf
+.. _EPAPR document: https://www.devicetree.org/downloads/devicetree-specification-v0.1-20160524.pdf
 
 More device tree information can be found at the `device tree repository`_.
 
