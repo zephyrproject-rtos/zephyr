@@ -9,8 +9,8 @@
 #include <nordic/nrf52832.dtsi>
 
 / {
-	model = "Nordic PCA10040 Dev Kit";
-	compatible = "nordic,pca10040-dk", "nordic,nrf52832-qfaa",
+	model = "Sparkfun nRF52832 Breakout";
+	compatible = "sparkfun,nrf52832", "nordic,nrf52832-qfaa",
 		     "nordic,nrf52832";
 
 	chosen {
@@ -21,9 +21,9 @@
 };
 
 &uart0 {
-	status = "ok";
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
+	status = "ok";
 };
 
 &flash0 {
@@ -47,11 +47,11 @@
 		};
 		slot0_partition: partition@c000 {
 			label = "image-0";
-			reg = <0x0000C000 0x32000>;
+			reg = <0x0000c000 0x32000>;
 		};
 		slot1_partition: partition@3e000 {
 			label = "image-1";
-			reg = <0x0003E000 0x32000>;
+			reg = <0x0003e000 0x32000>;
 		};
 		scratch_partition: partition@70000 {
 			label = "image-scratch";
@@ -61,8 +61,7 @@
 		/*
 		 * The flash starting at 0x0007a000 and ending at
 		 * 0x0007ffff (sectors 122-127) is reserved for use
-		 * by the application. If enabled, partition for NFFS
-		 * will be created in this area.
+		 * by the application.
 		 */
 
 #if defined(CONFIG_FILE_SYSTEM_NFFS)
