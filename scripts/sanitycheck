@@ -1437,17 +1437,19 @@ class TestSuite:
                 try:
                     parsed_data = SanityConfigParser(
                         yaml_path, self.yaml_tc_schema)
-                except RuntimeError as e:
-                    error("E: %s: can't load: %s" % (yaml_path, e))
 
-                workdir = os.path.relpath(dirpath, testcase_root)
+                    workdir = os.path.relpath(dirpath, testcase_root)
 
-                for name in parsed_data.tests.keys():
-                    tc_dict = parsed_data.get_test(name, testcase_valid_keys)
-                    tc = TestCase(testcase_root, workdir, name, tc_dict,
-                                  yaml_path)
+                    for name in parsed_data.tests.keys():
+                        tc_dict = parsed_data.get_test(name, testcase_valid_keys)
+                        tc = TestCase(testcase_root, workdir, name, tc_dict,
+                                      yaml_path)
 
-                    self.testcases[tc.name] = tc
+                        self.testcases[tc.name] = tc
+
+                except Exception as e:
+                    error("E: %s: can't load (skipping): %s" % (yaml_path, e))
+
 
         for board_root in board_root_list:
             board_root = os.path.abspath(board_root)
