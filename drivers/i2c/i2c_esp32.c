@@ -348,7 +348,7 @@ static int i2c_esp32_wait(struct device *dev,
 	}
 
 	/* Wait for I2C bus to finish its business */
-	while (sys_read32(I2C_INT_STATUS_REG(config->index)) & I2C_BUS_BUSY) {
+	while (sys_read32(I2C_SR_REG(config->index)) & I2C_BUS_BUSY) {
 		ret = i2c_esp32_spin_yield(&counter);
 		if (ret < 0) {
 			return ret;
