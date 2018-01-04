@@ -105,6 +105,18 @@ add_custom_target(
   # Equivalent to rm -rf build/*
   )
 
+# Must be run before kconfig.cmake
+if(MSYS)
+  execute_process(
+    COMMAND
+    ${PYTHON_EXECUTABLE} $ENV{ZEPHYR_BASE}/scripts/check_host_is_ok.py
+    RESULT_VARIABLE ret
+    )
+  if(NOT "${ret}" STREQUAL "0")
+    message(FATAL_ERROR "command failed with return code: ${ret}")
+  endif()
+endif()
+
 # The BOARD can be set by 3 sources. Through environment variables,
 # through the cmake CLI, and through CMakeLists.txt.
 #
