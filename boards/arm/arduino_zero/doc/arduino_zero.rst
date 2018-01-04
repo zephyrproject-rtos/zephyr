@@ -47,6 +47,8 @@ features:
 +-----------+------------+--------------------------------------+
 | USART     | on-chip    | Serial ports                         |
 +-----------+------------+--------------------------------------+
+| SPI       | on-chip    | Serial Peripheral Interface ports    |
++-----------+------------+--------------------------------------+
 
 Other hardware features are not currently supported by Zephyr.
 
@@ -70,9 +72,15 @@ libraries.
 Serial Port
 ===========
 
-The SAMD21 MCU has 5 SERCOM based USARTs. One of the USARTs
+The SAMD21 MCU has 6 SERCOM based USARTs. One of the USARTs
 (SERCOM5) is connected to the onboard Atmel Embedded Debugger (EDBG).
 SERCOM0 is available on the D0/D1 pins.
+
+SPI Port
+========
+
+The SAMD21 MCU has 6 SERCOM based SPIs.  On the Arduino Zero, SPI4 is
+available on the 6 pin connector at the edge of the board.
 
 Programming and Debugging
 *************************
