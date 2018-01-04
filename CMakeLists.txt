@@ -617,7 +617,7 @@ if(CONFIG_GEN_ISR_TABLES)
     $ENV{ZEPHYR_BASE}/arch/common/gen_isr_tables.py
     --output-source isr_tables.c
     --intlist isrList.bin
-    --debug
+    $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--debug>
     --sw-isr-table
     --vector-table
     DEPENDS zephyr_prebuilt
