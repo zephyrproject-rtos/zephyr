@@ -12,9 +12,8 @@ import os
 ISR_FLAG_DIRECT = (1 << 0)
 
 def debug(text):
-    if not args.debug:
-        return
-    sys.stdout.write(os.path.basename(sys.argv[0]) + ": " + text + "\n")
+    if args.debug:
+        sys.stdout.write(os.path.basename(sys.argv[0]) + ": " + text + "\n")
 
 def error(text):
     sys.stderr.write(os.path.basename(sys.argv[0]) + ": " + text + "\n")
