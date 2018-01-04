@@ -1247,9 +1247,10 @@ class Platform:
             for item in supp_feature.split(":"):
                 self.supported.add(item)
 
-        self.qemu_support = True if data.get('type', "na") == 'qemu' else False
+        self.qemu_support = True if data.get('simulation', "na") == 'qemu' else False
         self.arch = data['arch']
         self.type = data.get('type', "na")
+        self.simulation = data.get('simulation', "na")
         self.supported_toolchains = data.get("toolchain", [])
         self.defconfig = None
         pass
