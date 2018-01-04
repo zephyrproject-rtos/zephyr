@@ -26,9 +26,9 @@ extern "C" {
  *
  * Part 2: The least significant byte is reserved for future use.
  */
-#define SYS_KERNEL_VER_MAJOR(ver) ((ver >> 24) & 0xFF)
-#define SYS_KERNEL_VER_MINOR(ver) ((ver >> 16) & 0xFF)
-#define SYS_KERNEL_VER_PATCHLEVEL(ver) ((ver >> 8) & 0xFF)
+#define SYS_KERNEL_VER_MAJOR(ver) (((ver) >> 24) & 0xFF)
+#define SYS_KERNEL_VER_MINOR(ver) (((ver) >> 16) & 0xFF)
+#define SYS_KERNEL_VER_PATCHLEVEL(ver) (((ver) >> 8) & 0xFF)
 
 /* kernel version routines */
 
