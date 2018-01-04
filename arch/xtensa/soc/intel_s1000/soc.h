@@ -72,7 +72,17 @@
 #define I2C_DW_IRQ_FLAGS			0
 #define I2C_DW_CLOCK_SPEED			38
 
+/* address of DMA ownership register. We need to properly configure
+ * this register in order to access the DMA registers.
+ */
+#define CAVS_DMA0_OWNERSHIP_REG			(0x00071A60)
+#define CAVS_DMA1_OWNERSHIP_REG			(0x00071A62)
+#define CAVS_DMA2_OWNERSHIP_REG			(0x00071A64)
+
 extern void _soc_irq_enable(u32_t irq);
 extern void _soc_irq_disable(u32_t irq);
+extern void setup_ownership_dma0(void);
+extern void setup_ownership_dma1(void);
+extern void setup_ownership_dma2(void);
 
 #endif /* __INC_SOC_H */

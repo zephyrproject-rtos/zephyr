@@ -66,10 +66,19 @@ config SYS_LOG_DMA_LEVEL
 	  3 INFO, write SYS_LOG_INF in addition to previous levels
 	  4 DEBUG, write SYS_LOG_DBG in addition to previous levels
 
+config DCACHE_WRITEBACK
+	bool
+	prompt "Data Cache Writeback"
+	default n
+	help
+	  Cache configuration for "Writeback".
+
 source "drivers/dma/Kconfig.qmsi"
 
 source "drivers/dma/Kconfig.stm32f4x"
 
 source "drivers/dma/Kconfig.sam_xdmac"
+
+source "drivers/dma/Kconfig.cavs"
 
 endif # DMA

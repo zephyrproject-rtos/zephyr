@@ -138,3 +138,19 @@ void _soc_irq_disable(u32_t irq)
 		}
 	}
 }
+
+/* Setup DMA ownership registers */
+void setup_ownership_dma0(void)
+{
+	*(volatile u16_t *)CAVS_DMA0_OWNERSHIP_REG = 0x80FF;
+}
+
+void setup_ownership_dma1(void)
+{
+	*(volatile u16_t *)CAVS_DMA1_OWNERSHIP_REG = 0x80FF;
+}
+
+void setup_ownership_dma2(void)
+{
+	*(volatile u16_t *)CAVS_DMA2_OWNERSHIP_REG = 0x80FF;
+}
