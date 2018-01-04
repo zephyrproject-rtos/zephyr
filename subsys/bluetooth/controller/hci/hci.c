@@ -1095,6 +1095,7 @@ static void le_conn_update(struct net_buf *buf, struct net_buf **evt)
 	*evt = cmd_status((!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED);
 }
 
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 static void le_conn_param_req_reply(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_conn_param_req_reply *cmd = (void *)buf->data;
@@ -1133,6 +1134,7 @@ static void le_conn_param_req_neg_reply(struct net_buf *buf,
 	rp->status = (!status) ?  0x00 : BT_HCI_ERR_CMD_DISALLOWED;
 	rp->handle = sys_cpu_to_le16(handle);
 }
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 static void le_set_data_len(struct net_buf *buf, struct net_buf **evt)
@@ -1559,6 +1561,7 @@ static int controller_cmd_handle(u16_t  ocf, struct net_buf *cmd,
 		le_conn_update(cmd, evt);
 		break;
 
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 	case BT_OCF(BT_HCI_OP_LE_CONN_PARAM_REQ_REPLY):
 		le_conn_param_req_reply(cmd, evt);
 		break;
@@ -1566,6 +1569,7 @@ static int controller_cmd_handle(u16_t  ocf, struct net_buf *cmd,
 	case BT_OCF(BT_HCI_OP_LE_CONN_PARAM_REQ_NEG_REPLY):
 		le_conn_param_req_neg_reply(cmd, evt);
 		break;
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case BT_OCF(BT_HCI_OP_LE_SET_DATA_LEN):
@@ -2707,6 +2711,7 @@ static void remote_version_info(struct pdu_data *pdu_data, u16_t handle,
 	ep->subversion = sys_cpu_to_le16(ver_ind->sub_version_number);
 }
 
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 static void le_conn_param_req(struct pdu_data *pdu_data, u16_t handle,
 			      struct net_buf *buf)
 {
@@ -2731,7 +2736,9 @@ static void le_conn_param_req(struct pdu_data *pdu_data, u16_t handle,
 	sep->latency = pdu_data->payload.llctrl.ctrldata.conn_param_req.latency;
 	sep->timeout = pdu_data->payload.llctrl.ctrldata.conn_param_req.timeout;
 }
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 static void le_data_len_change(struct pdu_data *pdu_data, u16_t handle,
 			       struct net_buf *buf)
 {
@@ -2754,6 +2761,7 @@ static void le_data_len_change(struct pdu_data *pdu_data, u16_t handle,
 	sep->max_rx_time =
 		pdu_data->payload.llctrl.ctrldata.length_rsp.max_rx_time;
 }
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 static void encode_data_ctrl(struct radio_pdu_node_rx *node_rx,
 			     struct pdu_data *pdu_data, struct net_buf *buf)
@@ -2788,14 +2796,18 @@ static void encode_data_ctrl(struct radio_pdu_node_rx *node_rx,
 		break;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 	case PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ:
 		le_conn_param_req(pdu_data, handle, buf);
 		break;
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PDU_DATA_LLCTRL_TYPE_LENGTH_REQ:
 	case PDU_DATA_LLCTRL_TYPE_LENGTH_RSP:
 		le_data_len_change(pdu_data, handle, buf);
 		break;
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 	case PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP:
 		le_unknown_rsp(pdu_data, handle, buf);
