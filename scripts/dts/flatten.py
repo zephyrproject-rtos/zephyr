@@ -41,7 +41,11 @@ def to_dts_value(root, value):
         if all(is_number(v) for v in value):
             return '<%s>' % ' '.join(formatted)
 
-        return ', '.join(formatted)
+        # VERY UGLY HACK, just to get things going
+        formatted = ' '.join(formatted)
+        formatted = formatted.replace('>','')
+        formatted = formatted.replace('<','')
+        return '<' + formatted + '>'
 
     if isinstance(value, int):
         return '0x%x' % value
@@ -49,17 +53,20 @@ def to_dts_value(root, value):
     if isinstance(value, dict) and 'ref' in value:
         return find_phandle(root, value['ref'])
 
+    if value.startswith("0x"):
+        return '<%s>' % value
+
     return '"%s"' % value
 
 
 def dump_tree(root, tree, output, indent=0):
-    indent_str = '    ' * indent
+    indent_str = '\t' * indent
 
     for k, v in tree.items():
         if not v or not 'label' in v:
             continue
 
-        prop_indent = '    ' * (indent + 1)
+        prop_indent = '\t' * (indent + 1)
 
         output.write(indent_str)
 
@@ -72,8 +79,12 @@ def dump_tree(root, tree, output, indent=0):
             if isinstance(value, dict) and value.get('empty', False):
                 output.write('%s%s;\n' % (prop_indent, prop))
             else:
-                value = to_dts_value(root, value)
-                output.write('%s%s = %s;\n' % (prop_indent, prop, value))
+                if isinstance(value, int):
+                    value = to_dts_value(root, value)
+                    output.write('%s%s = %s;\n' % (prop_indent, prop, value))
+                else:
+                    value = to_dts_value(root, value)
+                    output.write('%s%s = %s;\n' % (prop_indent, prop, value))
 
         if v['children']:
             dump_tree(root, v['children'], output, indent + 1)
@@ -156,7 +167,10 @@ def resolve_refs(tree):
 
         for k, v in branch.get('props', {}).items():
             if isinstance(v, dict) and 'ref' in v:
-                branch['props'][k] = build_path(root, v['ref'])
+                if 'compatible' in branch['props']:
+                    branch['props'][k] = find_phandle(root, v['ref'])
+                else:
+                    branch['props'][k] = build_path(root, v['ref'])
         for k, v in branch.get('children', {}).items():
             if isinstance(v, dict):
                 resolve_refs_items(root, v)
