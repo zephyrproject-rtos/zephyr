@@ -2071,7 +2071,7 @@ static const struct shell_cmd bt_commands[] = {
 	{ "test_tx", cmd_test_tx, "<chan> <len> <type> <phy>" },
 	{ "test_rx", cmd_test_rx, "<chan> <phy> <mod_idx>" },
 	{ "test_end", cmd_test_end, HELP_NONE},
-#endif /* CONFIG_BT_CTLR_ADV_EXT */
+#endif /* CONFIG_BT_CTLR_DTM */
 	{ NULL, NULL, NULL }
 };
 
