@@ -2797,7 +2797,7 @@ static void heartbeat_pub_set(struct bt_mesh_model *model,
 
 	cfg->hb_pub.dst = dst;
 	cfg->hb_pub.period = param->period_log;
-	cfg->hb_pub.feat = feat;
+	cfg->hb_pub.feat = feat & BT_MESH_FEAT_SUPPORTED;
 	cfg->hb_pub.net_idx = idx;
 
 	if (dst == BT_MESH_ADDR_UNASSIGNED) {
