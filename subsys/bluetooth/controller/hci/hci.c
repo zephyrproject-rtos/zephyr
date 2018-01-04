@@ -1981,7 +1981,7 @@ int hci_acl_handle(struct net_buf *buf, struct net_buf **evt)
 	flags = bt_acl_flags(handle);
 	handle = bt_acl_handle(handle);
 
-	radio_pdu_node_tx = radio_tx_mem_acquire();
+	radio_pdu_node_tx = ll_tx_mem_acquire();
 	if (!radio_pdu_node_tx) {
 		BT_ERR("Tx Buffer Overflow");
 		data_buf_overflow(evt);
@@ -1997,9 +1997,9 @@ int hci_acl_handle(struct net_buf *buf, struct net_buf **evt)
 	pdu_data->len = len;
 	memcpy(&pdu_data->payload.lldata[0], buf->data, len);
 
-	if (radio_tx_mem_enqueue(handle, radio_pdu_node_tx)) {
+	if (ll_tx_mem_enqueue(handle, radio_pdu_node_tx)) {
 		BT_ERR("Invalid Tx Enqueue");
-		radio_tx_mem_release(radio_pdu_node_tx);
+		ll_tx_mem_release(radio_pdu_node_tx);
 		return -EINVAL;
 	}
 
