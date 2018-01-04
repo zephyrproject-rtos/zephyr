@@ -29,6 +29,7 @@
 
 #define MY_SHELL_MODULE "btshell"
 
+#if defined(CONFIG_BT_CONN)
 static bool hrs_simulate;
 
 static int cmd_hrs_simulate(int argc, char *argv[])
@@ -58,13 +59,16 @@ static int cmd_hrs_simulate(int argc, char *argv[])
 
 	return 0;
 }
+#endif /* CONFIG_BT_CONN */
 
 #define HELP_NONE "[none]"
 #define HELP_ADDR_LE "<address: XX:XX:XX:XX:XX:XX> <type: (public|random)>"
 
 static const struct shell_cmd commands[] = {
+#if defined(CONFIG_BT_CONN)
 	{ "hrs-simulate", cmd_hrs_simulate,
 	  "register and simulate Heart Rate Service <value: on, off>" },
+#endif /* CONFIG_BT_CONN */
 	{ NULL, NULL }
 };
 
@@ -80,9 +84,11 @@ void main(void)
 	while (1) {
 		k_sleep(MSEC_PER_SEC);
 
+#if defined(CONFIG_BT_CONN)
 		/* Heartrate measurements simulation */
 		if (hrs_simulate) {
 			hrs_notify();
 		}
+#endif /* CONFIG_BT_CONN */
 	}
 }
