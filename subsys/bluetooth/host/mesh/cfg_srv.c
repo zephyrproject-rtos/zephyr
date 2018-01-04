@@ -348,11 +348,9 @@ static u8_t mod_unbind(struct bt_mesh_model *model, u16_t key_idx)
 			_mod_pub_set(model, BT_MESH_ADDR_UNASSIGNED,
 				     0, 0, 0, 0, 0);
 		}
-
-		return STATUS_SUCCESS;
 	}
 
-	return STATUS_CANNOT_BIND;
+	return STATUS_SUCCESS;
 }
 
 static struct bt_mesh_app_key *app_key_alloc(u16_t app_idx)
