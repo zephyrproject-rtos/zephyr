@@ -10,8 +10,7 @@
 
 int ll_init(struct k_sem *sem_rx);
 void ll_reset(void);
-void ll_radio_state_abort(void);
-u32_t ll_radio_state_is_idle(void);
+
 u8_t *ll_addr_get(u8_t addr_type, u8_t *p_bdaddr);
 void ll_addr_set(u8_t addr_type, u8_t const *const p_bdaddr);
 
@@ -71,7 +70,6 @@ u32_t ll_start_enc_req_send(u16_t handle, u8_t err_code,
 u32_t ll_feature_req_send(u16_t handle);
 u32_t ll_version_ind_send(u16_t handle);
 u32_t ll_terminate_ind_send(u16_t handle, u8_t reason);
-void ll_timeslice_ticker_id_get(u8_t * const instance_index, u8_t * const user_id);
 u32_t ll_rssi_get(u16_t handle, u8_t *rssi);
 u32_t ll_tx_pwr_lvl_get(u16_t handle, u8_t type, s8_t *tx_pwr_lvl);
 void ll_tx_pwr_get(s8_t *min, s8_t *max);
@@ -88,5 +86,20 @@ void ll_length_max_get(u16_t *max_tx_octets, u16_t *max_tx_time,
 u32_t ll_phy_get(u16_t handle, u8_t *tx, u8_t *rx);
 u32_t ll_phy_default_set(u8_t tx, u8_t rx);
 u32_t ll_phy_req_send(u16_t handle, u8_t tx, u8_t flags, u8_t rx);
+
+/* Downstream - Data */
+void *ll_tx_mem_acquire(void);
+void ll_tx_mem_release(void *node_tx);
+u32_t ll_tx_mem_enqueue(u16_t handle, void *node_tx);
+
+/* Upstream - Num. Completes, Events and Data */
+u8_t ll_rx_get(void **node_rx, u16_t *handle);
+void ll_rx_dequeue(void);
+void ll_rx_mem_release(void **node_rx);
+
+/* External co-operation */
+void ll_timeslice_ticker_id_get(u8_t * const instance_index, u8_t * const user_id);
+void ll_radio_state_abort(void);
+u32_t ll_radio_state_is_idle(void);
 
 #endif /* _LL_H_ */

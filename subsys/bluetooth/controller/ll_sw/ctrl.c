@@ -10505,7 +10505,7 @@ u32_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
 		return 1;
 	}
 
-	node_tx = radio_tx_mem_acquire();
+	node_tx = ll_tx_mem_acquire();
 	if (node_tx) {
 		struct pdu_data *pdu_data_tx;
 
@@ -10543,13 +10543,13 @@ u32_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
 			pdu_data_tx->payload.llctrl.opcode =
 			    PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ;
 		} else {
-			radio_tx_mem_release(node_tx);
+			ll_tx_mem_release(node_tx);
 
 			return 1;
 		}
 
-		if (radio_tx_mem_enqueue(handle, node_tx)) {
-			radio_tx_mem_release(node_tx);
+		if (ll_tx_mem_enqueue(handle, node_tx)) {
+			ll_tx_mem_release(node_tx);
 
 			return 1;
 		}
@@ -10880,7 +10880,7 @@ static u8_t tx_cmplt_get(u16_t *handle, u8_t *first, u8_t last)
 	return cmplt;
 }
 
-u8_t radio_rx_get(struct radio_pdu_node_rx **radio_pdu_node_rx, u16_t *handle)
+u8_t ll_rx_get(void **node_rx, u16_t *handle)
 {
 	u8_t cmplt;
 
@@ -10907,21 +10907,21 @@ u8_t radio_rx_get(struct radio_pdu_node_rx **radio_pdu_node_rx, u16_t *handle)
 			} while ((cmplt_prev != 0) ||
 				 (cmplt_prev != cmplt_curr));
 
-			*radio_pdu_node_rx = _radio_pdu_node_rx;
+			*node_rx = _radio_pdu_node_rx;
 		} else {
-			*radio_pdu_node_rx = NULL;
+			*node_rx = NULL;
 		}
 	} else {
 		cmplt = tx_cmplt_get(handle, &_radio.packet_release_first,
 				     _radio.packet_release_last);
 
-		*radio_pdu_node_rx = NULL;
+		*node_rx = NULL;
 	}
 
 	return cmplt;
 }
 
-void radio_rx_dequeue(void)
+void ll_rx_dequeue(void)
 {
 	struct radio_pdu_node_rx *radio_pdu_node_rx = NULL;
 	memq_link_t *link;
@@ -11027,12 +11027,12 @@ void radio_rx_dequeue(void)
 	}
 }
 
-void radio_rx_mem_release(struct radio_pdu_node_rx **radio_pdu_node_rx)
+void ll_rx_mem_release(void **node_rx)
 {
 	struct radio_pdu_node_rx *_radio_pdu_node_rx;
 	struct connection *conn;
 
-	_radio_pdu_node_rx = *radio_pdu_node_rx;
+	_radio_pdu_node_rx = *node_rx;
 	while (_radio_pdu_node_rx) {
 		struct radio_pdu_node_rx *_radio_pdu_node_rx_free;
 
@@ -11095,7 +11095,7 @@ void radio_rx_mem_release(struct radio_pdu_node_rx **radio_pdu_node_rx)
 		}
 	}
 
-	*radio_pdu_node_rx = _radio_pdu_node_rx;
+	*node_rx = _radio_pdu_node_rx;
 
 	packet_rx_allocate(0xff);
 }
@@ -11184,12 +11184,12 @@ u8_t radio_rx_fc_get(u16_t *handle)
 	return 0;
 }
 
-struct radio_pdu_node_tx *radio_tx_mem_acquire(void)
+void *ll_tx_mem_acquire(void)
 {
 	return mem_acquire(&_radio.pkt_tx_data_free);
 }
 
-void radio_tx_mem_release(struct radio_pdu_node_tx *node_tx)
+void ll_tx_mem_release(void *node_tx)
 {
 	mem_release(node_tx, &_radio.pkt_tx_data_free);
 }
@@ -11204,7 +11204,7 @@ static void ticker_op_latency_cancelled(u32_t ticker_status, void *params)
 	conn->slave.latency_cancel = 0;
 }
 
-u32_t radio_tx_mem_enqueue(u16_t handle, struct radio_pdu_node_tx *node_tx)
+u32_t ll_tx_mem_enqueue(u16_t handle, void *node_tx)
 {
 	u8_t last;
 	struct connection *conn;
@@ -11215,7 +11215,7 @@ u32_t radio_tx_mem_enqueue(u16_t handle, struct radio_pdu_node_tx *node_tx)
 		last = 0;
 	}
 
-	pdu_data = (struct pdu_data *)node_tx->pdu_data;
+	pdu_data = (void *)((struct radio_pdu_node_tx *)node_tx)->pdu_data;
 	conn = connection_get(handle);
 	if (!conn || (last == _radio.packet_tx_first)) {
 		return 1;
@@ -11227,7 +11227,7 @@ u32_t radio_tx_mem_enqueue(u16_t handle, struct radio_pdu_node_tx *node_tx)
 				    offsetof(struct pdu_data, payload)));
 
 	_radio.pkt_tx[_radio.packet_tx_last].handle = handle;
-	_radio.pkt_tx[_radio.packet_tx_last].  node_tx = node_tx;
+	_radio.pkt_tx[_radio.packet_tx_last].node_tx = node_tx;
 	_radio.packet_tx_last = last;
 
 	/* break slave latency */
