@@ -1,0 +1,11 @@
+set(EMU_PLATFORM qemu)
+
+set(QEMU_CPU_TYPE_${ARCH} cortex-m3)
+set(QEMU_FLAGS_${ARCH}
+  -cpu ${QEMU_CPU_TYPE_${ARCH}}
+  -machine mps2-an385
+  -nographic
+  -vga none
+  )
+
+set(BOARD_DEBUG_RUNNER qemu)
