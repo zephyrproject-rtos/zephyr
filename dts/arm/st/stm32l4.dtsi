@@ -102,6 +102,26 @@
 			status = "disabled";
 			label= "I2C_2";
 		};
+
+		spi1: spi@40013000 {
+			compatible = "st,stm32-spi-fifo";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40013000 0x400>;
+			interrupts = <35 5>;
+			status = "disabled";
+			label = "SPI_1";
+		};
+
+		spi2: spi@40003800 {
+			compatible = "st,stm32-spi-fifo";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40003800 0x400>;
+			interrupts = <36 5>;
+			status = "disabled";
+			label = "SPI_2";
+		};
 	};
 };
 

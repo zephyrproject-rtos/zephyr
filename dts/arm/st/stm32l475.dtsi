@@ -49,5 +49,15 @@
 			status = "disabled";
 			label= "I2C_3";
 		};
+
+		spi3: spi@40003C00 {
+			compatible = "st,stm32-spi-fifo";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40003C00 0x400>;
+			interrupts = <51 5>;
+			status = "disabled";
+			label = "SPI_3";
+		};
 	};
 };
