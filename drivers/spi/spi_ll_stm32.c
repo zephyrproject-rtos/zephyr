@@ -465,7 +465,7 @@ static void spi_stm32_irq_config_func_1(struct device *port);
 #endif
 
 static const struct spi_stm32_config spi_stm32_cfg_1 = {
-	.spi = (SPI_TypeDef *) SPI1_BASE,
+	.spi = (SPI_TypeDef *) CONFIG_SPI_1_BASE_ADDRESS,
 	.pclken = {
 #ifdef CONFIG_SOC_SERIES_STM32F0X
 		.enr = LL_APB1_GRP2_PERIPH_SPI1,
@@ -493,9 +493,9 @@ DEVICE_AND_API_INIT(spi_stm32_1, CONFIG_SPI_1_NAME, &spi_stm32_init,
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 static void spi_stm32_irq_config_func_1(struct device *dev)
 {
-	IRQ_CONNECT(SPI1_IRQn, CONFIG_SPI_1_IRQ_PRI,
+	IRQ_CONNECT(CONFIG_SPI_1_IRQ, CONFIG_SPI_1_IRQ_PRI,
 		    spi_stm32_isr, DEVICE_GET(spi_stm32_1), 0);
-	irq_enable(SPI1_IRQn);
+	irq_enable(CONFIG_SPI_1_IRQ);
 }
 #endif
 
@@ -508,7 +508,7 @@ static void spi_stm32_irq_config_func_2(struct device *port);
 #endif
 
 static const struct spi_stm32_config spi_stm32_cfg_2 = {
-	.spi = (SPI_TypeDef *) SPI2_BASE,
+	.spi = (SPI_TypeDef *) CONFIG_SPI_2_BASE_ADDRESS,
 	.pclken = {
 		.enr = LL_APB1_GRP1_PERIPH_SPI2,
 		.bus = STM32_CLOCK_BUS_APB1
@@ -531,9 +531,9 @@ DEVICE_AND_API_INIT(spi_stm32_2, CONFIG_SPI_2_NAME, &spi_stm32_init,
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 static void spi_stm32_irq_config_func_2(struct device *dev)
 {
-	IRQ_CONNECT(SPI2_IRQn, CONFIG_SPI_2_IRQ_PRI,
+	IRQ_CONNECT(CONFIG_SPI_2_IRQ, CONFIG_SPI_2_IRQ_PRI,
 		    spi_stm32_isr, DEVICE_GET(spi_stm32_2), 0);
-	irq_enable(SPI2_IRQn);
+	irq_enable(CONFIG_SPI_2_IRQ);
 }
 #endif
 
@@ -546,7 +546,7 @@ static void spi_stm32_irq_config_func_3(struct device *port);
 #endif
 
 static const  struct spi_stm32_config spi_stm32_cfg_3 = {
-	.spi = (SPI_TypeDef *) SPI3_BASE,
+	.spi = (SPI_TypeDef *) CONFIG_SPI_3_BASE_ADDRESS,
 	.pclken = {
 		.enr = LL_APB1_GRP1_PERIPH_SPI3,
 		.bus = STM32_CLOCK_BUS_APB1
@@ -569,9 +569,9 @@ DEVICE_AND_API_INIT(spi_stm32_3, CONFIG_SPI_3_NAME, &spi_stm32_init,
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 static void spi_stm32_irq_config_func_3(struct device *dev)
 {
-	IRQ_CONNECT(SPI3_IRQn, CONFIG_SPI_3_IRQ_PRI,
+	IRQ_CONNECT(CONFIG_SPI_3_IRQ, CONFIG_SPI_3_IRQ_PRI,
 		    spi_stm32_isr, DEVICE_GET(spi_stm32_3), 0);
-	irq_enable(SPI3_IRQn);
+	irq_enable(CONFIG_SPI_3_IRQ);
 }
 #endif
 

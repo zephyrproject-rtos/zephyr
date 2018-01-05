@@ -55,6 +55,7 @@ config SPI_STM32
 	prompt "STM32 MCU SPI controller driver"
 	depends on SPI && SOC_FAMILY_STM32
 	depends on SOC_SERIES_STM32L4X || SOC_SERIES_STM32F0X || SOC_SERIES_STM32F3X || SOC_SERIES_STM32F4X
+	select HAS_DTS_SPI
 	default n
 	help
 	  Enable SPI support on the STM32 family of processors.
@@ -149,13 +150,13 @@ config SPI_1
 config SPI_1_NAME
 	string
 	prompt "SPI port 1 device name"
-	depends on SPI_1
+	depends on SPI_1 && !HAS_DTS_SPI
 	default "SPI_1"
 
 config SPI_1_IRQ_PRI
 	int
 	prompt "Port 0 interrupt priority"
-	depends on SPI_1
+	depends on SPI_1 && !HAS_DTS_SPI
 
 config SPI_1_DEFAULT_CFG
 	hex "Port 1 default configuration"
@@ -188,13 +189,13 @@ config SPI_2
 config SPI_2_NAME
 	string
 	prompt "SPI port 2 device name"
-	depends on SPI_2
+	depends on SPI_2 && !HAS_DTS_SPI
 	default "SPI_2"
 
 config SPI_2_IRQ_PRI
 	int
 	prompt "Port 2 interrupt priority"
-	depends on SPI_2
+	depends on SPI_2 && !HAS_DTS_SPI
 
 config SPI_2_DEFAULT_CFG
 	hex "Port 2 default configuration"
@@ -227,13 +228,13 @@ config SPI_3
 config SPI_3_NAME
 	string
 	prompt "SPI port 3 device name"
-	depends on SPI_3
+	depends on SPI_3 && !HAS_DTS_SPI
 	default "SPI_3"
 
 config SPI_3_IRQ_PRI
 	int
 	prompt "Port 3 interrupt priority"
-	depends on SPI_3
+	depends on SPI_3 && !HAS_DTS_SPI
 
 config SPI_SS_INIT_PRIORITY
 	int "Init priority"
