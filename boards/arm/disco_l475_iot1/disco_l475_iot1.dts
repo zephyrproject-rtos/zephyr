@@ -66,6 +66,14 @@
 	};
 };
 
+&spi1 {
+	status = "ok";
+};
+
+&spi3 {
+	status = "ok";
+};
+
 &flash0 {
 	partitions {
 		/*
