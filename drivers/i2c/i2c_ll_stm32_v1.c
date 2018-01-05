@@ -455,7 +455,7 @@ s32_t stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg,
 
 			for (u32_t counter = 2; counter > 0; counter--) {
 				len--;
-				*data->current.buf = LL_I2C_ReceiveData8(i2c);
+				*buf = LL_I2C_ReceiveData8(i2c);
 				buf++;
 			}
 
