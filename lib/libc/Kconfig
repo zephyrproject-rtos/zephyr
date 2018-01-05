@@ -37,6 +37,7 @@ config STDOUT_CONSOLE
 	prompt "Send stdout to console"
 	depends on CONSOLE_HAS_DRIVER
 	default n
+	default y if NEWLIB_LIBC
 	help
 	  This option directs standard output (e.g. printf) to the console
 	  device, rather than suppressing it entirely. See also EARLY_CONSOLE
