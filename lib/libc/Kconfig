@@ -32,4 +32,14 @@ config NEWLIB_LIBC_FLOAT_SCANF
 	  Build with floating point scanf enabled. This will increase the size of
 	  the image.
 
+config STDOUT_CONSOLE
+	bool
+	prompt "Send stdout to console"
+	depends on CONSOLE_HAS_DRIVER
+	default n
+	help
+	  This option directs standard output (e.g. printf) to the console
+	  device, rather than suppressing it entirely. See also EARLY_CONSOLE
+	  option.
+
 endmenu
