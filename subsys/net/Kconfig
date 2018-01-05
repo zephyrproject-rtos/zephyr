@@ -18,7 +18,6 @@ config NET_BUF
 config NET_BUF_LOG
 	bool "Network buffer logging"
 	depends on NET_BUF
-	select STDOUT_CONSOLE
 	select SYS_LOG
 	default n
 	help
@@ -54,7 +53,6 @@ config NET_BUF_WARN_ALLOC_INTERVAL
 config NET_BUF_SIMPLE_LOG
 	bool "Network buffer memory debugging"
 	depends on NET_BUF_LOG
-	select STDOUT_CONSOLE
 	select SYS_LOG
 	default n
 	help
