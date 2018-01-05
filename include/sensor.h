@@ -121,6 +121,17 @@ enum sensor_channel {
 	SENSOR_CHAN_PM_10,
 	/** Distance. From sensor to target, in meters */
 	SENSOR_CHAN_DISTANCE,
+
+	/** CO2 level, in parts per million (ppm) **/
+	SENSOR_CHAN_CO2,
+	/** VOC level, in parts per billion (ppb) **/
+	SENSOR_CHAN_VOC,
+
+	/** Voltage, in volts **/
+	SENSOR_CHAN_VOLTAGE,
+	/** Current, in amps **/
+	SENSOR_CHAN_CURRENT,
+
 	/** All channels. */
 	SENSOR_CHAN_ALL,
 };
