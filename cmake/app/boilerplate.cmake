@@ -217,8 +217,9 @@ set(CMAKE_C_COMPILER_FORCED   1)
 set(CMAKE_CXX_COMPILER_FORCED 1)
 
 # Determine if the application is in zephyr/tests, if so it is a test
-# and must be built differently
-string(REGEX MATCH "^$ENV{ZEPHYR_BASE}/tests" match ${APPLICATION_SOURCE_DIR})
+# and must be built differently (Also, expand symlinks).
+get_filename_component(APPLICATION_SOURCE_DIR_REALPATH ${APPLICATION_SOURCE_DIR} REALPATH CACHE)
+string(REGEX MATCH "^$ENV{ZEPHYR_BASE}/tests" match ${APPLICATION_SOURCE_DIR_REALPATH})
 if(match)
   set(IS_TEST 1)
 endif()
