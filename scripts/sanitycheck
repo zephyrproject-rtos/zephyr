@@ -177,6 +177,7 @@ import xml.etree.ElementTree as ET
 from xml.sax.saxutils import escape
 from collections import OrderedDict
 from itertools import islice
+from functools import cmp_to_key
 
 import logging
 from sanity_chk import scl
@@ -2344,14 +2345,23 @@ def main():
                     COLOR_NORMAL,
                     reason))
 
-    ts.instances = OrderedDict(
-        sorted(ts.instances.items(), key=lambda t: t[0]))
+
+    def native_posix_first(a, b):
+        if a[0].startswith('native_posix'):
+            return -1
+        if b[0].startswith('native_posix'):
+            return 1
+        return (a > b) - (a < b)
+
+    ts.instances = OrderedDict(sorted(ts.instances.items(),
+                               key=cmp_to_key(native_posix_first)))
 
     if options.save_tests:
         ts.run_report(options.save_tests)
         return
 
     if options.subset:
+
         subset, sets = options.subset.split("/")
         total = len(ts.instances)
         per_set = round(total / int(sets))
