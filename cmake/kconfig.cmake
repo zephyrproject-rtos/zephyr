@@ -19,10 +19,6 @@ set(ENV{KERNELVERSION}      ${PROJECT_VERSION})
 set(ENV{KCONFIG_CONFIG}     ${DOTCONFIG})
 set(ENV{KCONFIG_AUTOHEADER} ${AUTOCONF_H})
 
-if(IS_TEST)
-  list(APPEND OVERLAY_CONFIG $ENV{ZEPHYR_BASE}/tests/include/test.config)
-endif()
-
 set(kconfig_target_list
   config
   gconfig
