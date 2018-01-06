@@ -5,7 +5,7 @@ compiler: gcc
 env:
     global:
         - SDK=0.9.2
-        - SANITYCHECK_OPTIONS=" --inline-logs -R"
+        - SANITYCHECK_OPTIONS=" --inline-logs -N"
         - SANITYCHECK_OPTIONS_RETRY="${SANITYCHECK_OPTIONS} --only-failed --outdir=out-2nd-pass"
         - ZEPHYR_SDK_INSTALL_DIR=/opt/sdk/zephyr-sdk-0.9.2
         - ZEPHYR_GCC_VARIANT=zephyr
@@ -28,7 +28,7 @@ build:
         options: "-e HOME=/home/buildslave --privileged=true --tty --net=bridge --user buildslave"
 
     ci:
-      - sudo apt-get install gcovr gcc-6-multilib
+      - sudo apt-get install gcovr gcc-6-multilib ninja-build
       - export CCACHE_DIR=${SHIPPABLE_BUILD_DIR}/ccache/.ccache
       - >
         if [ "$IS_PULL_REQUEST" = "true" ]; then
@@ -56,15 +56,15 @@ build:
             ./scripts/ci/get_modified_boards.py --commits origin/${PULL_REQUEST_BASE_BRANCH}..HEAD > modified_boards.args;
 
             if [ -s modified_boards.args ]; then
-              ./scripts/sanitycheck +modified_boards.args --save-tests test_file.txt;
+              ./scripts/sanitycheck ${SANITYCHECK_OPTIONS} +modified_boards.args --save-tests test_file.txt;
             fi;
             if [ -s modified_tests.args ]; then
-              ./scripts/sanitycheck +modified_tests.args --save-tests test_file.txt;
+              ./scripts/sanitycheck ${SANITYCHECK_OPTIONS} +modified_tests.args --save-tests test_file.txt;
             fi;
             rm -f modified_tests.args modified_boards.args;
           fi;
       - ./scripts/sanitycheck ${SANITYCHECK_OPTIONS} --save-tests test_file.txt
-      - ./scripts/sanitycheck  --load-tests test_file.txt --subset ${MATRIX_BUILD}/${MATRIX_BUILDS} || ./scripts/sanitycheck ${SANITYCHECK_OPTIONS_RETRY} || ./scripts/sanitycheck ${SANITYCHECK_OPTIONS_RETRY}
+      - ./scripts/sanitycheck ${SANITYCHECK_OPTIONS} --load-tests test_file.txt --subset ${MATRIX_BUILD}/${MATRIX_BUILDS} || ./scripts/sanitycheck ${SANITYCHECK_OPTIONS_RETRY} || ./scripts/sanitycheck ${SANITYCHECK_OPTIONS_RETRY}
       - rm test_file.txt
       - ccache -s
     on_failure:
