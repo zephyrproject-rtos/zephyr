@@ -162,6 +162,14 @@
 			reg = <0x41004480 0x80>;
 			label = "PORTB";
 		};
+
+		usb0: usb@41005000 {
+			compatible = "atmel,sam0-usb";
+			reg = <0x41005000 0x1000>;
+			interrupts = <7 0>;
+			num-bidir-endpoints = <8>;
+			label = "USB0";
+		};
 	};
 };
 
