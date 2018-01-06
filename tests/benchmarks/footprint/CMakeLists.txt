@@ -7,6 +7,8 @@ macro(set_conf_file)
     set(CONF_FILE $ENV{ZEPHYR_BASE}/tests/benchmarks/footprint/${TEST}/${BOARD}.conf)
   elseif(EXISTS   $ENV{ZEPHYR_BASE}/tests/benchmarks/footprint/${TEST}/${ARCH}.conf)
     set(CONF_FILE $ENV{ZEPHYR_BASE}/tests/benchmarks/footprint/${TEST}/${ARCH}.conf)
+  else()
+    set(CONF_FILE $ENV{ZEPHYR_BASE}/tests/benchmarks/footprint/prj.conf)
   endif()
 endmacro()
 
