@@ -181,8 +181,8 @@ config NATIVE_POSIX_TIMER
 	default y
 	depends on BOARD_NATIVE_POSIX
 	help
-	This module implements a kernel device driver for the native_posix HW timer
-	model
+	  This module implements a kernel device driver for the native_posix HW timer
+	  model
 
 config XTENSA_TIMER
 	bool "Xtensa timer support"
