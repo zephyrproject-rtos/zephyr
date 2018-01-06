@@ -252,10 +252,6 @@ zephyr_cc_option(-Werror=implicit-int)
 # TODO: Archiver arguments
 # ar_option(D)
 
-if(IS_TEST)
-  add_subdirectory(cmake/test)
-endif()
-
 set_ifndef(LINKERFLAGPREFIX -Wl)
 
 if(NOT CONFIG_NATIVE_APPLICATION)
