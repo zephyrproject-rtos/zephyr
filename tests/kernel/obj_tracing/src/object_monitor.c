@@ -9,7 +9,6 @@
 #include <zephyr.h>
 #include <ztest.h>
 #include <tc_util.h>
-#include <util_test_common.h>
 #include <debug/object_tracing.h>
 #include "phil.h"
 

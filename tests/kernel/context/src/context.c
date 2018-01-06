@@ -21,8 +21,6 @@
 #include <irq_offload.h>
 #include <ztest.h>
 
-#include <util_test_common.h>
-
 /*
  * Include board.h from platform to get IRQ number.
  * NOTE: Cortex-M does not need IRQ numbers
