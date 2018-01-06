@@ -1,5 +1,3 @@
-/* timestamp.h - macroses for measuring time in benchmarking tests */
-
 /*
  * Copyright (c) 2012-2015 Wind River Systems, Inc.
  *
@@ -7,7 +5,8 @@
  */
 
 /*
- * DESCRIPTION
+ * @file macroses for measuring time in benchmarking tests
+ *
  * This file contains the macroses for taking and converting time for
  * benchmarking tests.
  */
