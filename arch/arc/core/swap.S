@@ -71,7 +71,7 @@ SECTION_FUNC(TEXT, __swap)
 	st _CAUSE_COOP, [r2, _thread_offset_to_relinquish_cause]
 
 	/*
-         * Carve space for the return value. Setting it to a defafult of
+         * Carve space for the return value. Setting it to a default of
          * -EAGAIN eliminates the need for the timeout code to set it.
          * If another value is ever needed, it can be modified with
          * _set_thread_return_value().
