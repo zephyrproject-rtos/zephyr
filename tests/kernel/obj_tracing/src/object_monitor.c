@@ -1,5 +1,3 @@
-/* object_monitor.c - object monitor */
-
 /*
  * Copyright (c) 2016 Intel Corporation.
  *
@@ -13,9 +11,10 @@
 #include "phil.h"
 
 /**
+ * @brief object monitor
  *
- * @brief Thread that traverses, counts and reports
- * the kernel objects in the philosophers application.
+ * Thread that traverses, counts and reports the kernel objects in the
+ * philosophers application.
  *
  */
 

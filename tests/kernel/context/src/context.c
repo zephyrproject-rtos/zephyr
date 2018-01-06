@@ -1,5 +1,3 @@
-/* context.c - test context and thread APIs */
-
 /*
  * Copyright (c) 2012-2015 Wind River Systems, Inc.
  *
@@ -7,7 +5,8 @@
  */
 
 /*
- * DESCRIPTION
+ * @brief test context and thread APIs
+ *
  * This module tests the following CPU and thread related routines:
  * k_thread_create, k_yield(), k_is_in_isr(),
  * k_current_get(), k_cpu_idle(), k_cpu_atomic_idle(),
