@@ -8,6 +8,13 @@ menu Testing
 
 source "tests/ztest/Kconfig"
 
+config TEST
+	bool "Mark project as a test"
+	default n
+	help
+	  Mark a project or an application as a test. This will enable a few
+	  test defaults.
+
 config TEST_EXTRA_STACKSIZE
 	int "Test function thread stack size"
 	default 0
