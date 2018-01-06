@@ -39,6 +39,15 @@ config USB_DC_STM32
 	help
 	  STM32 family USB device controller Driver.
 
+config USB_DC_SAM0
+	bool
+	prompt "SAM0 series USB Device Controller driver"
+	depends on SOC_FAMILY_SAM0
+	select USB_DEVICE_DRIVER
+	default n
+	help
+	  SAM0 family USB device controller Driver.
+
 config SYS_LOG_USB_DRIVER_LEVEL
 	int
 	prompt "USB driver log level"
