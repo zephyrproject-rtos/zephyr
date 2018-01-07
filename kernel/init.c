@@ -14,7 +14,7 @@
 #include <zephyr.h>
 #include <offsets_short.h>
 #include <kernel.h>
-#include <misc/printk.h>
+#include <logging/sys_log.h>
 #include <misc/stack.h>
 #include <random/rand32.h>
 #include <linker/sections.h>
@@ -28,6 +28,7 @@
 #include <string.h>
 #include <misc/dlist.h>
 #include <boot.h>
+#include <misc/printk.h>
 
 
 /* boot time measurement items */
@@ -157,11 +158,17 @@ static void _main(void *unused1, void *unused2, void *unused3)
 
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_POST_KERNEL);
 	if (boot_delay > 0) {
-		printk("***** delaying boot " STRINGIFY(CONFIG_BOOT_DELAY)
-		       "ms (per build configuration) *****\n");
+		SYS_LOG_INF("delaying boot %d "
+		       "ms (per build configuration)", boot_delay);
 		k_busy_wait(CONFIG_BOOT_DELAY * USEC_PER_MSEC);
+		SYS_LOG_INF("delayed boot of %d ms done.", boot_delay);
 	}
-	PRINT_BOOT_BANNER();
+#if defined(CONFIG_BOOT_BANNER)
+	SYS_LOG_INF("Welcome to Zephyr v%s", KERNEL_VERSION_STRING);
+#if CONFIG_BUILD_TIMESTAMP
+	SYS_LOG_INF("Built on: %s", build_timestamp);
+#endif
+#endif
 
 	/* Final init level before app starts */
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_APPLICATION);
