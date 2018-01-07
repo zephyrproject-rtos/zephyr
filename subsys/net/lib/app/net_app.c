@@ -1014,6 +1014,12 @@ int net_app_close(struct net_app_ctx *ctx)
 		ctx->cb.close(ctx, 0, ctx->user_data);
 	}
 
+#if defined(CONFIG_NET_APP_TLS) || defined(CONFIG_NET_APP_DTLS)
+	if (ctx->is_tls) {
+		_net_app_tls_trigger_close(ctx);
+	}
+#endif
+
 #if defined(CONFIG_NET_APP_SERVER) && defined(CONFIG_NET_TCP)
 	if (net_ctx && ctx->app_type == NET_APP_SERVER) {
 		int i;
