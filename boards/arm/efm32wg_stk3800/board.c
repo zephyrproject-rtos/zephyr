@@ -7,7 +7,7 @@
 #include <init.h>
 #include <board.h>
 #include <gpio.h>
-#include <misc/printk.h>
+#include <logging/sys_log.h>
 
 static int efm32wg_stk3800_init(struct device *dev)
 {
@@ -19,7 +19,7 @@ static int efm32wg_stk3800_init(struct device *dev)
 	bce_dev = device_get_binding(BC_ENABLE_GPIO_NAME);
 
 	if (!bce_dev) {
-		printk("Board controller gpio port was not found!\n");
+		SYS_LOG_ERR("Board controller gpio port was not found!");
 		return -ENODEV;
 	}
 

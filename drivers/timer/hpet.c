@@ -48,6 +48,7 @@
 #include <drivers/ioapic.h>
 #include <drivers/system_timer.h>
 #include <kernel_structs.h>
+#include <logging/sys_log.h>
 
 #include <board.h>
 
@@ -164,13 +165,6 @@
 static u32_t main_count_first_irq_value;
 static u32_t main_count_expected_value;
 extern u32_t _hw_irq_to_c_handler_latency;
-#endif
-
-#ifdef CONFIG_HPET_TIMER_DEBUG
-#include <misc/printk.h>
-#define DBG(...) printk(__VA_ARGS__)
-#else
-#define DBG(...)
 #endif
 
 #ifdef CONFIG_TICKLESS_IDLE
@@ -604,11 +598,11 @@ int _sys_clock_driver_init(struct device *device)
 
 	counter_load_value = (u32_t)(tickFempto / hpetClockPeriod);
 
-	DBG("\n\nHPET: configuration: 0x%x, clock period: 0x%x (%d pico-s)\n",
+	SYS_LOG_DBG("configuration: 0x%x, clock period: 0x%x (%d pico-s)",
 	       (u32_t)(*_HPET_GENERAL_CAPS),
 	       (u32_t)hpetClockPeriod, (u32_t)hpetClockPeriod / 1000);
 
-	DBG("HPET: timer0: available interrupts mask 0x%x\n",
+	SYS_LOG_DBG("timer0: available interrupts mask 0x%x",
 	       (u32_t)(*_HPET_TIMER0_CONFIG_CAPS >> 32));
 
 	/* Initialize sys_clock_hw_cycles_per_tick/sec */

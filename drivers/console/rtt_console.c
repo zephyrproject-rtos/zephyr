@@ -10,7 +10,6 @@
 
 
 #include <kernel.h>
-#include <misc/printk.h>
 #include <device.h>
 #include <init.h>
 #include <rtt/SEGGER_RTT.h>

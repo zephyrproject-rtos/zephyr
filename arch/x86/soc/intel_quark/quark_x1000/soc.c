@@ -18,7 +18,6 @@
 #include <kernel.h>
 #include <init.h>
 #include <device.h>
-#include <misc/printk.h>
 #include <misc/__assert.h>
 #include "soc.h"
 #include <uart.h>

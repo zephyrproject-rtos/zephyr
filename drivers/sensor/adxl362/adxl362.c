@@ -10,9 +10,7 @@
 #include <sensor.h>
 #include <init.h>
 #include <gpio.h>
-#include <misc/printk.h>
 #include <misc/byteorder.h>
-#include <misc/__assert.h>
 #include <spi.h>
 
 #include "adxl362.h"

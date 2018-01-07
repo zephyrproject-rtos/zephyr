@@ -15,13 +15,14 @@
 #include <errno.h>
 
 #include <kernel.h>
-#include <misc/printk.h>
 #include <misc/__assert.h>
 #include "soc.h"
 #include <uart.h>
 #include <init.h>
 #include "shared_mem.h"
 #include <mmustructs.h>
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_ARC_INIT_LEVEL
+#include <logging/sys_log.h>
 
 
 #ifdef CONFIG_X86_MMU
@@ -50,9 +51,6 @@ MMU_BOOT_REGION(0xB0500000, 256*1024, MMU_ENTRY_WRITE);
 #define SCSS_REG_VAL(offset) \
 	(*((volatile u32_t *)(SCSS_REGISTER_BASE+offset)))
 
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_ARC_INIT_LEVEL
-#include <logging/sys_log.h>
-
 /**
  *
  * @brief ARC Init
@@ -70,7 +68,7 @@ int _arc_init(struct device *arg)
 
 	if (!SCSS_REG_VAL(SCSS_SS_STS)) {
 		/* ARC shouldn't already be running! */
-		printk("ARC core already running!");
+		SYS_LOG_ERR("ARC core already running!");
 		return -EIO;
 	}
 

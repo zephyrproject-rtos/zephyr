@@ -16,7 +16,6 @@
 #include <net/net_pkt.h>
 #include <net/net_if.h>
 #include <soc.h>
-#include <misc/printk.h>
 #include <clock_control.h>
 #include <clock_control/stm32_clock_control.h>
 

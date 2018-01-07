@@ -12,7 +12,6 @@
  * Includes also adding basic framework commands to shell commands.
  */
 
-#include <misc/printk.h>
 #include <shell/shell.h>
 #include <init.h>
 

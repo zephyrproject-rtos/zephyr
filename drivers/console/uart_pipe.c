@@ -12,12 +12,9 @@
  */
 
 #include <kernel.h>
-
 #include <board.h>
 #include <uart.h>
-
 #include <console/uart_pipe.h>
-#include <misc/printk.h>
 
 static struct device *uart_pipe_dev;
 
