@@ -8,6 +8,8 @@
 
 #include <zephyr.h>
 #include <ztest.h>
+#include <device.h>
+#include <init.h>
 #include <misc/printk.h>
 #include <logging/sys_log.h>
 #include <stdio.h>
@@ -63,15 +65,35 @@ void log_cbuf_put(const char *format, ...)
 	va_end(args);
 }
 
+/**
+ * Initialize the buffer and install hook very early on to capture syslog
+ * during the boot process
+ */
+int init_logger_hook(struct device *dev)
+{
+	ARG_UNUSED(dev);
+	sys_ring_buf_init(&log_cbuffer.ring_buffer, LOG_BUF_SIZE,
+			  logger_buffer);
+	syslog_hook_install(log_cbuf_put);
+	return 0;
+}
+
+SYS_INIT(init_logger_hook, PRE_KERNEL_1, 0);
+
+
 void test_logging(void)
 {
 #ifndef CONFIG_SYS_LOG
 	printk("syslog hook sample configuration is not set correctly %s\n",
 	       CONFIG_ARCH);
 #else
-	sys_ring_buf_init(&log_cbuffer.ring_buffer, LOG_BUF_SIZE,
-			  logger_buffer);
-	syslog_hook_install(log_cbuf_put);
+	/*
+	 * empty buffer from everything that happened before we reached
+	 * application
+	 */
+	while (sys_ring_buf_is_empty(&log_cbuffer.ring_buffer) == 0) {
+		ring_buf_print(&log_cbuffer.ring_buffer);
+	}
 	SYS_LOG_ERR("SYS LOG ERR is ACTIVE");
 	ring_buf_print(&log_cbuffer.ring_buffer);
 	SYS_LOG_WRN("SYS LOG WRN is ACTIVE");
