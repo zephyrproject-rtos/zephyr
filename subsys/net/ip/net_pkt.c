@@ -1203,7 +1203,7 @@ u16_t net_pkt_append(struct net_pkt *pkt, u16_t len, const u8_t *data,
 		    s32_t timeout)
 {
 	struct net_buf *frag;
-	struct net_context *ctx;
+	struct net_context *ctx = NULL;
 	u16_t max_len, appended;
 
 	if (!pkt || !data) {
@@ -1219,7 +1219,10 @@ u16_t net_pkt_append(struct net_pkt *pkt, u16_t len, const u8_t *data,
 		net_pkt_frag_add(pkt, frag);
 	}
 
-	ctx = net_pkt_context(pkt);
+	if (pkt->slab != &rx_pkts) {
+		ctx = net_pkt_context(pkt);
+	}
+
 	if (ctx) {
 		/* Make sure we don't send more data in one packet than
 		 * protocol or MTU allows when there is a context for the
