@@ -19,6 +19,9 @@ config TEST_EXTRA_STACKSIZE
 	int "Test function thread stack size"
 	default 0
 	default 768 if XTENSA
+	help
+	  Additional stack for tests on some platform where default is not
+	  enough.
 
 config COVERAGE
 	bool "Create coverage data"
