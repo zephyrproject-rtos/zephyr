@@ -62,6 +62,13 @@
 		_k_sem_list_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
+	SECTION_DATA_PROLOGUE(_sys_ring_buf_area, (OPTIONAL), SUBALIGN(4))
+	{
+		_sys_ring_buf_list_start = .;
+		KEEP(*(SORT_BY_NAME("._sys_ring_buf.static.*")))
+		_sys_ring_buf_list_end = .;
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
 	SECTION_DATA_PROLOGUE(_k_mutex_area, (OPTIONAL), SUBALIGN(4))
 	{
 		_k_mutex_list_start = .;
