@@ -76,7 +76,7 @@ endif()
 
 execute_process(
   COMMAND ${CMAKE_C_COMPILER} ${TOOLCHAIN_C_FLAGS} --print-libgcc-file-name
-  OUTPUT_VARIABLE LIBGCC_DIR
+  OUTPUT_VARIABLE LIBGCC_FILE_NAME
   OUTPUT_STRIP_TRAILING_WHITESPACE
   )
 
@@ -86,9 +86,11 @@ execute_process(
   OUTPUT_STRIP_TRAILING_WHITESPACE
   )
 
-get_filename_component(LIBGCC_DIR ${LIBGCC_DIR} DIRECTORY)
+assert_exists(LIBGCC_FILE_NAME)
 
-assert(LIBGCC_DIR "LIBGCC_DIR not found")
+get_filename_component(LIBGCC_DIR ${LIBGCC_FILE_NAME} DIRECTORY)
+
+assert_exists(LIBGCC_DIR)
 
 LIST(APPEND LIB_INCLUDE_DIR "-L\"${LIBGCC_DIR}\"")
 LIST(APPEND TOOLCHAIN_LIBS gcc)
