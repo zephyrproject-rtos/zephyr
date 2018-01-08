@@ -72,7 +72,7 @@ environment for Windows. Follow the steps below to set it up:
    .. code-block:: console
 
       $ cd ~
-      $ git clone https://github.com/zephyrproject-rtos/zephyr.git
+      $ git clone --config core.autocrlf=false https://github.com/zephyrproject-rtos/zephyr.git
 
 #. Install pip and the required Python modules::
 
