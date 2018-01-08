@@ -20,11 +20,7 @@ The sample exports the following resources through a CoAP server role:
 .. code-block:: none
 
    /led
-   /ipv6/neighbors
-   /rpl-info
-   /rpl-info/parent
-   /rpl-info/rank
-   /rpl-info/link-metric
+   /rpl-obs
 
 These resources allow you to toggle an on-board LED (if available) and build
 the RPL mesh network topology from node RPL information.
@@ -32,33 +28,11 @@ the RPL mesh network topology from node RPL information.
 Building And Running
 ********************
 
-If you're using a Sparrow border router, follow the steps below to build and
-run Sparrow BR.  (Sparrow has its own TLV mechanism to build topology that
-Zephyr doesn't support.)  A patch is provided in the sample folder to to support
-building topology with CoAP-based responses.
+Running BR
+==========
 
-Running Sparrow BR
-==================
-
-.. code-block:: console
-
-   git clone https://github.com/sics-iot/sparrow.git
-   cd sparrow
-   git am 0001-Added-CoAP-support-for-Sparrow-Border-Router.patch
-   cd products/sparrow-border-router
-   sudo make connect-high PORT=/dev/ttyACM0
-
-If your PC is using an http proxy, you should unset it for this sample.
-Wait until the border router is up and running. The python script used below
-will run a web-based UI.
-
-.. code-block:: console
-
-   cd examples/sparrow
-   ./wsdemoserver.py
-
-Wait until you see "Connected" message on console. Unset proxy in browser
-and open 127.0.0.1:8000.
+Follow the instructions from :ref:`rpl-border-router-sample` to run Zephyr
+RPL border router.
 
 Running RPL node
 ================
