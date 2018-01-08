@@ -91,62 +91,27 @@ foreach(f ${merge_config_files_with_absolute_paths})
   endif()
 endforeach()
 
-# Calculate a checksum of merge_config_files to determine if we need
-# to re-generate .config
-set(merge_config_files_checksum "")
-foreach(f ${merge_config_files_with_absolute_paths})
-  file(MD5 ${f} checksum)
-  set(merge_config_files_checksum "${merge_config_files_checksum}${checksum}")
-endforeach()
-
-# Create a new .config if it does not exists, or if the checksum of
-# the dependencies has changed
-set(merge_config_files_checksum_file ${PROJECT_BINARY_DIR}/.cmake.dotconfig.checksum)
-set(CREATE_NEW_DOTCONFIG "")
-if(NOT EXISTS ${DOTCONFIG})
-  set(CREATE_NEW_DOTCONFIG 1)
-else()
-  # Read out what the checksum was previously
-  file(READ
-    ${merge_config_files_checksum_file}
-    merge_config_files_checksum_prev
-    )
-  set(CREATE_NEW_DOTCONFIG 1)
-  if(
-      ${merge_config_files_checksum} STREQUAL
-      ${merge_config_files_checksum_prev}
-      )
-    set(CREATE_NEW_DOTCONFIG 0)
-  endif()
-endif()
-if(CREATE_NEW_DOTCONFIG)
-  execute_process(
-    COMMAND
-    ${PYTHON_EXECUTABLE}
-    ${PROJECT_SOURCE_DIR}/scripts/kconfig/kconfig.py
-    ${KCONFIG_ROOT}
-    ${PROJECT_BINARY_DIR}/.config
-    ${PROJECT_BINARY_DIR}/include/generated/autoconf.h
-    ${merge_config_files}
-    WORKING_DIRECTORY ${APPLICATION_SOURCE_DIR}
-    # The working directory is set to the app dir such that the user
-    # can use relative paths in CONF_FILE, e.g. CONF_FILE=nrf5.conf
-    RESULT_VARIABLE ret
-  )
-  if(NOT "${ret}" STREQUAL "0")
-    message(FATAL_ERROR "command failed with return code: ${ret}")
-  endif()
-
-  file(WRITE
-    ${merge_config_files_checksum_file}
-    ${merge_config_files_checksum}
-    )
-endif()
-
 # Force CMAKE configure when the configuration files changes.
 foreach(merge_config_input ${merge_config_files} ${DOTCONFIG})
   set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${merge_config_input})
 endforeach()
+
+execute_process(
+  COMMAND
+  ${PYTHON_EXECUTABLE}
+  ${PROJECT_SOURCE_DIR}/scripts/kconfig/kconfig.py
+  ${KCONFIG_ROOT}
+  ${PROJECT_BINARY_DIR}/.config
+  ${PROJECT_BINARY_DIR}/include/generated/autoconf.h
+  ${merge_config_files}
+  WORKING_DIRECTORY ${APPLICATION_SOURCE_DIR}
+  # The working directory is set to the app dir such that the user
+  # can use relative paths in CONF_FILE, e.g. CONF_FILE=nrf5.conf
+  RESULT_VARIABLE ret
+  )
+if(NOT "${ret}" STREQUAL "0")
+  message(FATAL_ERROR "command failed with return code: ${ret}")
+endif()
 
 add_custom_target(config-sanitycheck DEPENDS ${DOTCONFIG})
 
