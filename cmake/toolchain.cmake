@@ -16,5 +16,5 @@ include(${ZEPHYR_BASE}/cmake/toolchain-${ZEPHYR_GCC_VARIANT}.cmake)
 endif()
 
 # Configure the toolchain based on what toolchain technology is used
-# (gcc clang etc.)
+# (gcc, host-gcc etc.)
 include(${ZEPHYR_BASE}/cmake/toolchain-${COMPILER}.cmake OPTIONAL)
