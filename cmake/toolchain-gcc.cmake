@@ -93,8 +93,12 @@ assert(LIBGCC_DIR "LIBGCC_DIR not found")
 LIST(APPEND LIB_INCLUDE_DIR "-L\"${LIBGCC_DIR}\"")
 LIST(APPEND TOOLCHAIN_LIBS gcc)
 
-set(LIBC_INCLUDE_DIR ${SYSROOT_DIR}/include)
-set(LIBC_LIBRARY_DIR "\"${SYSROOT_DIR}\"/lib/${NEWLIB_DIR}")
+if(SYSROOT_DIR)
+  # The toolchain has specified a sysroot dir that we can use to set
+  # the libc path's
+  set(LIBC_INCLUDE_DIR ${SYSROOT_DIR}/include)
+  set(LIBC_LIBRARY_DIR "\"${SYSROOT_DIR}\"/lib/${NEWLIB_DIR}")
+endif()
 
 # For CMake to be able to test if a compiler flag is supported by the
 # toolchain we need to give CMake the necessary flags to compile and

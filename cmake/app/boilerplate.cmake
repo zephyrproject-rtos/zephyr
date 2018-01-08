@@ -88,14 +88,6 @@ include(${ZEPHYR_BASE}/cmake/extensions.cmake)
 
 find_package(PythonInterp 3.4)
 
-if(NOT ZEPHYR_GCC_VARIANT)
-  set(ZEPHYR_GCC_VARIANT $ENV{ZEPHYR_GCC_VARIANT})
-endif()
-set(ZEPHYR_GCC_VARIANT ${ZEPHYR_GCC_VARIANT} CACHE STRING "Zephyr GCC variant")
-if(NOT ZEPHYR_GCC_VARIANT)
-  message(FATAL_ERROR "ZEPHYR_GCC_VARIANT not set")
-endif()
-
 if(${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_BINARY_DIR})
   message(FATAL_ERROR "Source directory equals build directory.\
  In-source builds are not supported.\
