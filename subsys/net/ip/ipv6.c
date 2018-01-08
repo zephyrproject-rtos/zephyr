@@ -268,6 +268,7 @@ static inline void nbr_free(struct net_nbr *nbr)
 	k_delayed_work_cancel(&net_ipv6_nbr_data(nbr)->reachable);
 
 	net_nbr_unref(nbr);
+	net_nbr_unlink(nbr, NULL);
 }
 
 bool net_ipv6_nbr_rm(struct net_if *iface, struct in6_addr *addr)
