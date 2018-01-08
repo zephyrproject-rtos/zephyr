@@ -305,6 +305,7 @@ static inline void nbr_free(struct net_nbr *nbr)
 	NET_DBG("nbr %p", nbr);
 
 	net_nbr_unref(nbr);
+	net_nbr_unlink(nbr, NULL);
 }
 
 static struct net_nbr *nbr_add(struct net_if *iface,
