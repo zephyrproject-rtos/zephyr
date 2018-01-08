@@ -166,8 +166,8 @@ must be installed.
       You only need to do this once after cloning the git repository.
 
 Now that the host tools are installed, a 3rd party cross compiler must
-be installed. See :ref:`below <third_party_x_compilers>` for
-installing a cross compiler.
+be installed. See `Using Custom and 3rd Party Cross Compilers`_ for
+details.
 
 .. _third_party_x_compilers:
 
@@ -176,8 +176,8 @@ Using Custom and 3rd Party Cross Compilers
 
 To use a 3rd party cross compiler that is not provided by the Zephyr
 SDK, follow the steps below. It is possible to use a 3rd party cross
-compiler and still use the Zephyr SDK's host tools. See :ref:`the
-section above <sdkless_builds>` for details.
+compiler and still use the Zephyr SDK's host tools. See `Building
+without the Zephyr SDK`_ for details.
 
 #. We will use the `GCC ARM Embedded`_ compiler for this example, download the
    package suitable for your operating system from the `GCC ARM Embedded`_ website
