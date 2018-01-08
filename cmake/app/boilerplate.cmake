@@ -27,22 +27,13 @@ if(uname_output MATCHES "MSYS")
   set(MSYS 1)
 endif()
 
-# CMake version 3.8.2 is the only supported version. Version 3.9 is
-# not supported because it introduced a warning that we do not wish to
+# CMake version 3.8.2 is the minimum supported version. Version 3.9 is
+# supported but it introduced a warning that we do not wish to
 # show to users. Specifically, it displays a warning when an OLD
 # policy is used, but we need policy CMP0000 set to OLD to avoid
 # copy-pasting cmake_minimum_required across application
 # CMakeLists.txt files.
-#
-# An exception to the above is MSYS, MSYS is allowed to use 3.6.0
-# because MSYS does not support 3.8, this will be set back to 3.8 when
-# https://github.com/zephyrproject-rtos/zephyr/issues/4687 is
-# resolved.
-if(MSYS)
-  cmake_minimum_required(VERSION 3.6.0)
-else()
-  cmake_minimum_required(VERSION 3.8.2)
-endif()
+cmake_minimum_required(VERSION 3.8.2)
 
 cmake_policy(SET CMP0000 OLD)
 cmake_policy(SET CMP0002 NEW)
