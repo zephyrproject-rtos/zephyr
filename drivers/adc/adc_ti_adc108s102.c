@@ -10,7 +10,6 @@
 
 #include <kernel.h>
 #include <misc/util.h>
-#define SYS_LOG_NO_NEWLINE
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_ADC_LEVEL
 #include <logging/sys_log.h>
 #include <string.h>
@@ -22,7 +21,7 @@ static inline int _ti_adc108s102_sampling(struct device *dev)
 {
 	struct ti_adc108s102_data *adc = dev->driver_data;
 
-	SYS_LOG_DBG("Sampling!\n");
+	SYS_LOG_DBG("Sampling!");
 
 	/* SPI deals with u8_t buffers so multiplying by 2 the length */
 	return spi_transceive(adc->spi, adc->cmd_buffer,
@@ -76,7 +75,7 @@ static inline s32_t _ti_adc108s102_prepare(struct device *dev)
 			continue;
 		}
 
-		SYS_LOG_DBG("Requesting channel %d\n", entry->channel_id);
+		SYS_LOG_DBG("Requesting channel %d", entry->channel_id);
 		adc->cmd_buffer[adc->cmd_buf_len] =
 				ADC108S102_CHANNEL_CMD(entry->channel_id);
 
@@ -210,7 +209,7 @@ static int ti_adc108s102_init(struct device *dev)
 		return -EPERM;
 	}
 
-	SYS_LOG_DBG("ADC108s102 initialized\n");
+	SYS_LOG_DBG("ADC108s102 initialized");
 
 	dev->driver_api = &ti_adc108s102_api;
 
