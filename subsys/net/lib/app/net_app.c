@@ -2068,7 +2068,6 @@ reset:
 				ctx->tls.mbedtls.ssl_ctx.hdr = NULL;
 			}
 
-			pkt->data_len = len;
 			ret = net_pkt_append_all(pkt, len,
 						 ctx->tls.request_buf,
 						 BUF_ALLOC_TIMEOUT);
