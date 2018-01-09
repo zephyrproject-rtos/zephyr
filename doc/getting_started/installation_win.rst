@@ -70,9 +70,7 @@ environment for Windows. Follow the steps below to set it up:
    into your home directory using Git.  (Some Zephyr tools require
    Unix-style line endings, so we'll configure Git for this repo to
    not do the automatic Unix/Windows line ending conversion (using
-   ``--config core.autocrlf=false``).  Tools within the MSYS2 shell,
-   such as vim, will behave properly but Windows tools such as notepad
-   won't.)
+   ``--config core.autocrlf=false``).
 
    .. code-block:: console
 
