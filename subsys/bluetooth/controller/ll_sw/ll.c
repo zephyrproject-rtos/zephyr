@@ -75,67 +75,6 @@ static u8_t MALIGN(4) _radio[LL_MEM_TOTAL];
 
 static struct k_sem *sem_recv;
 
-void mayfly_enable_cb(u8_t caller_id, u8_t callee_id, u8_t enable)
-{
-	(void)caller_id;
-
-	LL_ASSERT(callee_id == MAYFLY_CALL_ID_1);
-
-	if (enable) {
-		irq_enable(SWI4_IRQn);
-	} else {
-		irq_disable(SWI4_IRQn);
-	}
-}
-
-u32_t mayfly_is_enabled(u8_t caller_id, u8_t callee_id)
-{
-	(void)caller_id;
-
-	if (callee_id == MAYFLY_CALL_ID_0) {
-		return irq_is_enabled(RTC0_IRQn);
-	} else if (callee_id == MAYFLY_CALL_ID_1) {
-		return irq_is_enabled(SWI4_IRQn);
-	}
-
-	LL_ASSERT(0);
-
-	return 0;
-}
-
-u32_t mayfly_prio_is_equal(u8_t caller_id, u8_t callee_id)
-{
-#if (RADIO_TICKER_USER_ID_WORKER_PRIO == RADIO_TICKER_USER_ID_JOB_PRIO)
-	return (caller_id == callee_id) ||
-	       ((caller_id == MAYFLY_CALL_ID_0) &&
-		(callee_id == MAYFLY_CALL_ID_1)) ||
-	       ((caller_id == MAYFLY_CALL_ID_1) &&
-		(callee_id == MAYFLY_CALL_ID_0));
-#else
-	return caller_id == callee_id;
-#endif
-}
-
-void mayfly_pend(u8_t caller_id, u8_t callee_id)
-{
-	(void)caller_id;
-
-	switch (callee_id) {
-	case MAYFLY_CALL_ID_0:
-		NVIC_SetPendingIRQ(RTC0_IRQn);
-		break;
-
-	case MAYFLY_CALL_ID_1:
-		NVIC_SetPendingIRQ(SWI4_IRQn);
-		break;
-
-	case MAYFLY_CALL_ID_PROGRAM:
-	default:
-		LL_ASSERT(0);
-		break;
-	}
-}
-
 void radio_active_callback(u8_t active)
 {
 }
