@@ -10,14 +10,18 @@
 #include <kernel_structs.h>
 #include <irq_offload.h>
 
-#define STACKSIZE 2048
+#if defined(CONFIG_X86) && defined(CONFIG_X86_MMU)
+#define STACKSIZE (8192)
+#else
+#define  STACKSIZE (2048)
+#endif
 #define MAIN_PRIORITY 7
 #define PRIORITY 5
 
 static K_THREAD_STACK_DEFINE(alt_stack, STACKSIZE);
 
 #ifdef CONFIG_STACK_SENTINEL
-#define OVERFLOW_STACKSIZE 1024
+#define OVERFLOW_STACKSIZE (STACKSIZE / 2)
 static k_thread_stack_t *overflow_stack =
 		alt_stack + (STACKSIZE - OVERFLOW_STACKSIZE);
 #else
