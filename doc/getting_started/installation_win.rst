@@ -66,8 +66,13 @@ environment for Windows. Follow the steps below to set it up:
       $ pacman -Syu
       $ pacman -S git cmake make gcc dtc diffutils ncurses-devel python3 gperf
 
-#. From within the MSYS2 MSYS Shell, clone a copy of the Zephyr source into
-   your home directory using Git:
+#. From within the MSYS2 MSYS Shell, clone a copy of the Zephyr source
+   into your home directory using Git.  (Some Zephyr tools require
+   Unix-style line endings, so we'll configure Git for this repo to
+   not do the automatic Unix/Windows line ending conversion (using
+   ``--config core.autocrlf=false``).  Tools within the MSYS2 shell,
+   such as vim, will behave properly but Windows tools such as notepad
+   won't.)
 
    .. code-block:: console
 
