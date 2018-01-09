@@ -11,3 +11,4 @@ tests:
   test_quark_se_c1000_devboard:
     extra_args: CONF_FILE="prj_quark_se_c1000_devboard.conf"
     platform_whitelist: quark_se_c1000_devboard
+    filter: ASSERT == 0
