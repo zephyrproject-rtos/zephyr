@@ -19,7 +19,7 @@ config WDT_SAM_DISABLE_AT_BOOT
 	help
 	  Select this option to disable the WDT during boot.
 
-config WDT_SAM_DEVICE_NAME
+config WDT_0_NAME
 	string "Device name for Watchdog (WDT)"
 	depends on WDT_SAM
 	default "WDT"

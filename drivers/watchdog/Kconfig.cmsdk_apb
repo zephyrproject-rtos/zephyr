@@ -25,7 +25,7 @@ config WDOG_CMSDK_APB_START_AT_BOOT
 	  it must be reloaded before the counter reaches 0, otherwise
 	  the MCU will be reset.
 
-config WDOG_CMSDK_APB_DEVICE_NAME
+config WDT_0_NAME
 	string "Device name for CMSDK APB Watchdog"
 	depends on WDOG_CMSDK_APB
 	default "WATCHDOG_0"
