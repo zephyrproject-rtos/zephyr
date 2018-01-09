@@ -1714,6 +1714,10 @@ static void mod_sub_va_del(struct bt_mesh_model *model,
 		goto send_status;
 	}
 
+	if (IS_ENABLED(CONFIG_BT_MESH_LOW_POWER)) {
+		bt_mesh_lpn_group_del(&sub_addr, 1);
+	}
+
 	match = bt_mesh_model_find_group(mod, sub_addr);
 	if (match) {
 		*match = BT_MESH_ADDR_UNASSIGNED;
