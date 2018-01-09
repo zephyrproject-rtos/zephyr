@@ -47,7 +47,7 @@ ExternalProject_Add(
   )
 
 # Create a wrapper CMake library that our app can link with
-add_library(mylib_lib STATIC IMPORTED)
+add_library(mylib_lib STATIC IMPORTED GLOBAL)
 add_dependencies(
   mylib_lib
   mylib_project
