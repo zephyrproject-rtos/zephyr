@@ -152,6 +152,8 @@ static inline void *restore_stack(void *interrupted_stack)
 
 	irq_unlock(key);
 
+	_check_stack_sentinel();
+
 	return ret;
 }
 #endif
