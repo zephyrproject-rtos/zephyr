@@ -14,7 +14,8 @@ schema = {
                 { "$ref": "#/definitions/interface_configuration" },
                 { "$ref": "#/definitions/rpl_configuration" },
                 { "$ref": "#/definitions/neighbors" },
-                { "$ref": "#/definitions/routes" }
+                { "$ref": "#/definitions/routes" },
+                { "$ref": "#/definitions/topology" }
             ]
         }
     },
@@ -80,6 +81,7 @@ schema = {
 	    "items": {
 	        "type": "object",
                 "items" : {
+                    "Operation" : "string",
 	            "IPv6 address": "string",
 	            "Link address": "string",
 	            "Is router": "string",
@@ -98,6 +100,43 @@ schema = {
                     "IPv6 prefix": "string",
                     "IPv6 address": "string",
                     "Link address": "string"
+                }
+            }
+        },
+
+        "topology": {
+            "type": "object",
+            "properties": {
+                "nodes": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "id": {
+                                "type": "integer"
+                             },
+                            "label": {
+                                "type": "string"
+                            },
+                            "title": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "edges": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "from": {
+                                "type": "integer"
+                            },
+                            "to": {
+                                "type": "integer"
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -230,6 +269,10 @@ validate(
                         "Link address": "77:11:22:33:44:55:66:00",
 	                "Is router": "false",
 	                "Link metric": "1"
+                    },
+                    {
+                        "Operation" : "delete",
+                        "IPv6 address": "2001:db8::3"
                     }
                 ]
             },
@@ -276,9 +319,7 @@ validate(
                     },
                     {
                         "Operation" : "delete",
-                        "IPv6 prefix" : "fde3:2cda:3eea:4d14:212:4b00:0:3/128",
-                        "IPv6 address" : "fe80::212:4b00:0:3",
-                        "Link address" : "00:12:4B:00:00:00:00:03"
+                        "IPv6 prefix" : "fde3:2cda:3eea:4d14:212:4b00:0:3/128"
                     }
 
                 ]
@@ -287,6 +328,26 @@ validate(
                 "0x20009a30": [
                 ]
             }
-        ]
+        ],
 
+        "topology" : {
+            "nodes": [
+                {
+                    "id": 1,
+                    "label": "N1",
+                    "title": "Node 1"
+                },
+                {
+                    "id": 2,
+                    "label": "N2",
+                    "title": "Node 2"
+                }
+                ],
+            "edges": [
+                {
+                    "from": 1,
+                    "to": 2
+                }
+                ]
+            }
     }, schema)

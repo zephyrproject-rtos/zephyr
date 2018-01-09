@@ -8,8 +8,10 @@ var connected;
 var first_run;
 var ws;
 var interfaces;
-var header_added;
 var column;
+var iface_table_id;
+var neighbors_table_id;
+var routes_table_id;
 
 function init() {
     ws = new WebSocket(location.origin.replace("http", "ws") + "/ws");
@@ -18,6 +20,9 @@ function init() {
     first_run = "true";
     connected = "false";
     changeConnectText();
+    createIfaceTable();
+    createNeighborTable();
+    createRouteTable();
 
     ws.onopen = function() {
 	output("Connection opened");
@@ -48,7 +53,7 @@ function init() {
 	try {
 	    if (info.neighbors.length > 0) {
 		output("Neighbor information received");
-		print_neighbors(info.neighbors);
+		add_neighbors(info.neighbors);
 	    }
 	} catch(err) {
 	}
@@ -56,7 +61,15 @@ function init() {
 	try {
 	    if (info.routes.length > 0) {
 		output("Route information received");
-		print_routes(info.routes);
+		add_routes(info.routes);
+	    }
+	} catch(err) {
+	}
+
+	try {
+	    if (info.topology.nodes.length > 0) {
+		output("Topology information received");
+		draw_topology(info.topology);
 	    }
 	} catch(err) {
 	}
@@ -86,47 +99,28 @@ function print_iface_configuration(config) {
 }
 
 function print_iface(iface) {
-    header_added = false;
 
     for (const property in iface) {
 	var table_id = "iface_table_" + property;
 
 	//output("iface " + property);
 
-	table_create(document.getElementById("iface"), table_id);
-
-	print_iface_settings(iface, property, table_id);
+	print_iface_settings(iface, property);
     }
 }
 
-function print_iface_settings(iface, property, table_id) {
-    var row = table_insert_row(table_id);
-    var head_row;
-    var thead;
+function print_iface_settings(iface, property) {
+    var row = table_insert_row(iface_table_id);
 
     column = 0;
 
-    if (!header_added) {
-	var table = document.getElementById(table_id);
-	thead = table.createTHead();
-	head_row = thead.insertRow();
-    }
-
     for (const value in property) {
-	print_iface_data(property, iface[property][value], table_id,
-			 head_row, row, column++);
+	print_iface_data(property, iface[property][value], row, column++);
     }
-
-    header_added = true;
 }
 
-function print_iface_data(iface_id, setting, table_id, head_row,
-			  row, column) {
+function print_iface_data(iface_id, setting, row, column) {
     for (const key in setting) {
-	if (!header_added) {
-	    table_column_header(table_id, head_row, key, column);
-	}
-
 	if (key == "Type") {
 	    interfaces[iface_id] = setting[key];
 	}
@@ -142,11 +136,11 @@ function print_iface_data(iface_id, setting, table_id, head_row,
 		}
 	    }
 
-	    //output("insert " + table_id + " " + addresses + " to column " + column);
-	    table_add_data(table_id, row, addresses, column, "wrappable");
+	    //output("insert " + iface_table_id + " " + addresses + " to column " + column);
+	    table_add_data(iface_table_id, row, addresses, column, "wrappable");
 	} else {
-	    //output("insert " + table_id + " " + setting[key].toString() + " to column " + column);
-	    table_add_data(table_id, row, setting[key], column);
+	    //output("insert " + iface_table_id + " " + setting[key].toString() + " to column " + column);
+	    table_add_data(iface_table_id, row, setting[key], column);
 	}
     }
 }
@@ -174,49 +168,107 @@ function print_rpl(label, property, table_id) {
     table_add_data(table_id, row, property, 1);
 }
 
-function print_neighbors(config) {
-    var table_id = "neighbors_table";
-    header_added = false;
-    table_create(document.getElementById("neighbors"), table_id);
-
+function add_neighbors(config) {
     for (var i = 0; i < config.length; i++) {
-	print_neighbor_iface_data(config[i], table_id);
+	add_neighbor_iface_data(config[i]);
     }
 }
 
-function print_neighbor_iface_data(iface, table_id) {
+function add_neighbor_iface_data(iface) {
+    for (const value in iface) {
+	//output("value " + value.toString());
+	if (interfaces[value] == "IEEE 802.15.4") {
+	    add_neighbor_data(iface, iface[value]);
+	}
+    }
+}
+
+function toogle(b) {
+   var req = new Object();
+   var details = new Object();
+   var jsonString;
+
+   details.command = "toggle";
+   details.ipv6_addr = b.getAttribute("IPv6_address");
+
+   req.coap = details;
+
+   jsonString = JSON.stringify(req);
+   //output("request " + jsonString);
+
+   if (connected == "true") {
+        ws.send(jsonString);
+   }
+}
+
+function add_neighbor_data(iface, property) {
+    for (var i = 0; i < property.length; i++) {
+        //output("property " + property[i].toString());
+        if (property[i]["Operation"] == "delete") {
+            delete_neighbor(property[i]["IPv6 address"]);
+        } else {
+            var neighbor_row = table_insert_row(neighbors_table_id);
+            var value = property[i]["IPv6 address"];
+            var toggle;
+
+            toggle = table_add_button(neighbors_table_id, neighbor_row, 'Toggle', 'Resources', '', "toggle(this);");
+            toggle.setAttribute("IPv6_address", value);
+
+            neighbor_row.setAttribute("IPv6_address", value);
+
+            table_add_data(neighbors_table_id, neighbor_row, value, 'IP address', '');
+        }
+    }
+}
+
+function delete_neighbor(ipv6_addr) {
+    var table = document.getElementById(neighbors_table_id);
+
+    for (var i = 0, row; row = table.rows[i]; i++) {
+        if (row.getAttribute("IPv6_address") == ipv6_addr) {
+            output("deleting " + ipv6_addr);
+            table.deleteRow(i);
+            return;
+        }
+    }
+}
+
+function add_routes(config) {
+    for (var i = 0; i < config.length; i++) {
+	add_route_iface_data(config[i]);
+    }
+}
+
+function add_route_iface_data(iface) {
     for (const value in iface) {
 	//output("iface " + value.toString());
-	print_neighbor_data(iface[value], table_id);
+	add_route_data(iface[value]);
     }
 }
 
-function print_neighbor_data(property, table_id) {
+function add_route_data(property) {
     for (var i = 0; i < property.length; i++) {
-	print_table_values(property[i], table_id);
+        if (property[i]["Operation"] == "delete") {
+		delete_route(property[i]["IPv6 prefix"]);
+	} else {
+            var route_row = table_insert_row(routes_table_id);
+
+            table_add_data(routes_table_id, route_row, property[i]["Link address"], 'Link address', '');
+            table_add_data(routes_table_id, route_row, property[i]["IPv6 prefix"], 'IPv6 prefix', '');
+            route_row.setAttribute("IPv6_prefix", property[i]["IPv6 prefix"]);
+	}
     }
 }
 
-function print_routes(config) {
-    var table_id = "routes_table";
-    header_added = false;
-    table_create(document.getElementById("routes"), table_id);
+function delete_route(ipv6_prefix) {
+    var table = document.getElementById(routes_table_id);
 
-    for (var i = 0; i < config.length; i++) {
-	print_route_iface_data(config[i], table_id);
-    }
-}
-
-function print_route_iface_data(iface, table_id) {
-    for (const value in iface) {
-	//output("iface " + value.toString());
-	print_route_data(iface[value], table_id);
-    }
-}
-
-function print_route_data(property, table_id) {
-    for (var i = 0; i < property.length; i++) {
-	print_table_values(property[i], table_id);
+    for (var i = 0, row; row = table.rows[i]; i++) {
+        if (row.getAttribute("IPv6_prefix") == ipv6_prefix) {
+            output("deleting " + ipv6_prefix);
+            table.deleteRow(i);
+            return;
+        }
     }
 }
 
@@ -238,7 +290,6 @@ function print_table_values(property, table_id) {
 	    table_column_header(table_id, head_row, value, column);
 	}
 
-	//output("insert " + table_id + " " + property[value] + " to column " + column);
 	table_add_data(table_id, row, property[value], column++);
     }
 
@@ -247,6 +298,16 @@ function print_table_values(property, table_id) {
 
 function select_default_tab() {
     configuration();
+}
+
+function draw_topology(topology) {
+    var network;
+    var options = { interaction: { hover: true } };
+
+    var container = document.getElementById('topology');
+    container.innerHTML = "";
+
+    network = new vis.Network(container, topology, options);
 }
 
 function configuration() {
@@ -364,7 +425,6 @@ function table_insert_row(table_id) {
 
 function table_add_data(table_id, row, value, column, cell_class) {
     var escaped_value = escape(value);
-
     var table = document.getElementById(table_id);
     var cell_value  = row.insertCell(column);
     var text_value = document.createTextNode(escaped_value);
@@ -374,4 +434,67 @@ function table_add_data(table_id, row, value, column, cell_class) {
     if (cell_class) {
 	cell_value.className = cell_class;
     }
+}
+
+function table_add_button(table_id, row, value, column, cell_class, on_click) {
+    var escaped_value = escape(value);
+    var table = document.getElementById(table_id);
+    var cell_value  = row.insertCell(column);
+    var button = document.createElement('input');
+
+    button.setAttribute('type', 'button');
+    button.setAttribute('value', value);
+
+    cell_value.appendChild(button);
+
+    if (cell_class) {
+        cell_value.className = cell_class;
+    }
+
+    if (on_click) {
+       button.setAttribute("onclick", on_click);
+    }
+
+    return button;
+}
+
+function createNeighborTable() {
+    var table;
+
+    neighbors_table_id = "neighbors_table";
+    table_create(document.getElementById("neighbors"), neighbors_table_id);
+    table = document.getElementById(neighbors_table_id);
+
+    thead = table.createTHead();
+    head_row = thead.insertRow();
+    table_column_header(neighbors_table_id, head_row, 'IP address', 0);
+    table_column_header(neighbors_table_id, head_row, 'Resources', 1);
+}
+
+function createRouteTable() {
+    var table;
+
+    routes_table_id = "routes_table";
+    table_create(document.getElementById("routes"), routes_table_id);
+    table = document.getElementById(routes_table_id);
+
+    thead = table.createTHead();
+    head_row = thead.insertRow();
+    table_column_header(routes_table_id, head_row, 'IPv6 prefix', 0);
+    table_column_header(routes_table_id, head_row, 'Link address', 1);
+}
+
+function createIfaceTable() {
+    var table;
+
+    iface_table_id = "iface_table";
+    table_create(document.getElementById("iface"), iface_table_id);
+    table = document.getElementById(iface_table_id);
+
+    thead = table.createTHead();
+    head_row = thead.insertRow();
+    table_column_header(iface_table_id, head_row, 'Type', 0);
+    table_column_header(iface_table_id, head_row, 'MTU', 1);
+    table_column_header(iface_table_id, head_row, 'Link Address', 2);
+    table_column_header(iface_table_id, head_row, 'IPv6', 3);
 }

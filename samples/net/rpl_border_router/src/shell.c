@@ -32,8 +32,42 @@ int br_repair(int argc, char *argv[])
 	return 0;
 }
 
+int coap_send(int argc, char *argv[])
+{
+	struct in6_addr peer_addr;
+	enum coap_request_type type;
+	int r;
+
+	if (argc != 3 || !argv[1] || !argv[2]) {
+		NET_INFO("Invalid arguments");
+		return -EINVAL;
+	}
+
+	r = net_addr_pton(AF_INET6, argv[2], &peer_addr);
+	if (r < 0) {
+		return -EINVAL;
+	}
+
+	if (strcmp(argv[1], "toggle") == 0) {
+		type = COAP_REQ_TOGGLE_LED;
+	} else if (strcmp(argv[1], "rpl_obs") == 0) {
+		type = COAP_REQ_RPL_OBS;
+	} else {
+		NET_INFO("Invalid arguments");
+		return -EINVAL;
+	}
+
+	coap_send_request(&peer_addr, type, NULL, NULL);
+
+	return 0;
+}
+
 static struct shell_cmd br_commands[] = {
 	/* Keep the commands in alphabetical order */
+	{ "coap", coap_send, "\n\tSend CoAP commands to Node\n"
+			"toggle <host>\n\tToggle the LED on Node\n"
+			"rpl_obs <host>\n\tSet RPL observer on Node\n"
+	},
 	{ "repair", br_repair,
 		"\n\tGlobal repair RPL network" },
 	{ NULL, NULL, NULL }

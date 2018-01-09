@@ -7,8 +7,9 @@ Overview
 ********
 
 The RPL border router sample application for Zephyr provides a HTTP(S) server
-and net shell for management purposes. Typically it would be used to connect to
-IEEE 802.15.4 network but Bluetooth IPSP network functionality is also possible.
+and net shell for management purposes. Typically border router would be used to
+connect to IEEE 802.15.4 network but Bluetooth IPSP network functionality is
+also possible.
 
 The source code for this sample application can be found at:
 :file:`samples/net/rpl_border_router`.
@@ -20,13 +21,13 @@ Requirements
 - Linux machine with web browser and the screen terminal emulator (optional).
 - Ethernet access for management purposes (optional).
 
-Note that there is no support for running RPL border router in QEMU, as the
-border router requires access to a real radio network technology like
-IEEE 802.15.4 which is not available in QEMU.
+Note that there is no support for running an RPL border router in QEMU, as the
+border router requires access to a real radio network technology such as
+IEEE 802.15.4, which is not available in QEMU.
 
-For testing purposes it is possible to compile the RPL border router for QEMU
-and do some testing with the web UI. But with QEMU, it is not possible to
-connect to RPL network and get information about the RPL nodes.
+For testing purposes you can compile the RPL border router for QEMU and do some
+testing with the web UI. But with QEMU, it is not possible to connect to RPL
+network and get information about the RPL nodes.
 
 Building and Running
 ********************
@@ -45,38 +46,24 @@ can be defined in the project configuration file:
 	CONFIG_NET_APP_MY_IPV4_ADDR="192.0.2.1"
 
 Note that the IPv4 address is only used for connection to the integrated web
-server that provides admin web page for management purposes. The web server
+server that provides an admin web page for management purposes. The web server
 can also be connected using IPv6 address. If you do not have a web management
-network interface toward your host computer, then IPv4 support can be disabled
-in configuration file by setting :option:`CONFIG_NET_IPV4` to "n".
+network interface for your host computer, then IPv4 support can be disabled
+in the configuration file by setting :option:`CONFIG_NET_IPV4` to "n".
 The RPL router uses only IPv6 when routing the network traffic.
 
 Note that the default project configuration file
 :file:`samples/net/rpl_border_router/prj.conf` does not currently provide
-a working system as there is no boards that would provide suitable network
+a working system as there are no boards that would provide suitable network
 interface support. The prj.conf file is provided only to compile test the
 border router sample application.
 
 It is possible to use the border router application with these boards and
 add-on cards:
 
-* FRDM-K64F with TI CC2520 card. See
-  https://wiki.zephyrproject.org/index.php?title=TI_CC2520
-  for instructions for wiring etc.
+* `FRDM-K64F with Freescale CR20A card <http://www.nxp.com/products/developer-resources/hardware-development-tools/freedom-development-boards/freedom-development-board-for-mcr20a-wireless-transceiver:FRDM-CR20A>`_
 
-* FRDM-K64F with Freescale CR20A card.
-  http://www.nxp.com/products/developer-resources/hardware-development-tools/freedom-development-boards/freedom-development-board-for-mcr20a-wireless-transceiver:FRDM-CR20A
-
-You can build the application like this for CC2520:
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/net/rpl_border_router
-   :board: frdm_k64f
-   :conf: prj_frdm_k64f_cc2520.conf
-   :goals: build flash
-   :compact:
-
-and for CR20A like this:
+You can build the application like this for CR20A:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/rpl_border_router

@@ -28,11 +28,14 @@
 
 #include <net/net_context.h>
 #include <net/websocket.h>
+#include <net/net_mgmt.h>
+#include <net/net_event.h>
+#include <json.h>
 
-#include "../../../subsys/net/ip/ipv6.h"
-#include "../../../subsys/net/ip/route.h"
-#include "../../../subsys/net/ip/rpl.h"
-#include "../../../subsys/net/ip/net_private.h"
+#include "ipv6.h"
+#include "route.h"
+#include "rpl.h"
+#include "net_private.h"
 
 #include "config.h"
 
@@ -44,6 +47,7 @@ struct user_data {
 	char buf[MAX_BUF_LEN];
 	struct http_ctx *ctx;
 	struct net_if *iface;
+	const struct sockaddr *dst;
 	int msg_count;
 	int iface_count;
 	int nbr_count;
@@ -52,12 +56,14 @@ struct user_data {
 };
 
 static struct {
-	struct net_if *iface;
 	struct sockaddr auth_addr;
 	bool auth_ok;
 } rpl;
 
-static int http_serve_index_html(struct http_ctx *ctx);
+static const struct sockaddr *ws_dst;
+
+static int http_serve_index_html(struct http_ctx *ctx,
+				 const struct sockaddr *dst);
 
 #if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
 NET_PKT_TX_SLAB_DEFINE(http_srv_tx, 64);
@@ -106,6 +112,8 @@ K_MEM_POOL_DEFINE(ssl_rx_pool, 4, 64, RX_FIFO_DEPTH, 4);
 #else /* CONFIG_HTTPS */
 #define APP_BANNER "Zephyr HTTP server for border router"
 #endif /* CONFIG_HTTPS */
+
+static K_SEM_DEFINE(ws_reply, 0, UINT_MAX);
 
 /*
  * Note that the http_ctx and http_server_urls are quite large so be
@@ -209,22 +217,23 @@ static bool check_file_size(const char *file, size_t size)
 #endif /* CONFIG_HTTPS */
 
 static int http_response(struct http_ctx *ctx, const char *header,
-			 const char *payload, size_t payload_len)
+			 const char *payload, size_t payload_len,
+			 const struct sockaddr *dst)
 {
 	int ret;
 
-	ret = http_add_header(ctx, header, NULL);
+	ret = http_add_header(ctx, header, dst, NULL);
 	if (ret < 0) {
 		NET_ERR("Cannot add HTTP header (%d)", ret);
 		return ret;
 	}
 
-	ret = http_add_header(ctx, HTTP_CRLF, NULL);
+	ret = http_add_header(ctx, HTTP_CRLF, dst, NULL);
 	if (ret < 0) {
 		return ret;
 	}
 
-	ret = http_send_chunk(ctx, payload, payload_len, NULL);
+	ret = http_send_chunk(ctx, payload, payload_len, dst, NULL);
 	if (ret < 0) {
 		NET_ERR("Cannot send data to peer (%d)", ret);
 		return ret;
@@ -233,7 +242,8 @@ static int http_response(struct http_ctx *ctx, const char *header,
 	return http_send_flush(ctx, NULL);
 }
 
-static int http_response_soft_404(struct http_ctx *ctx)
+static int http_response_soft_404(struct http_ctx *ctx,
+				  const struct sockaddr *dst)
 {
 	static const char *not_found =
 		HTML_HEADER
@@ -241,20 +251,24 @@ static int http_response_soft_404(struct http_ctx *ctx)
 		HTML_FOOTER;
 
 	return http_response(ctx, HTTP_STATUS_200_OK, not_found,
-			     strlen(not_found));
+			     strlen(not_found), dst);
 }
 
-int http_response_401(struct http_ctx *ctx)
+int http_response_401(struct http_ctx *ctx,
+		      const struct sockaddr *dst)
 {
-	return http_response(ctx, HTTP_401_STATUS_US, "", 0);
+	return http_response(ctx, HTTP_401_STATUS_US, "", 0, dst);
 }
 
 static int http_basic_auth(struct http_ctx *ctx,
-			   enum http_connection_type type)
+			   enum http_connection_type type,
+			   const struct sockaddr *dst)
 {
 	const char auth_str[] = HTTP_CRLF "Authorization: Basic ";
 	int ret = 0;
 	char *ptr;
+
+	NET_DBG("");
 
 	ptr = strstr(ctx->http.field_values[0].key, auth_str);
 	if (ptr) {
@@ -269,7 +283,7 @@ static int http_basic_auth(struct http_ctx *ctx,
 
 		end = strstr(ptr + 2, HTTP_CRLF);
 		if (!end) {
-			ret = http_response_401(ctx);
+			ret = http_response_401(ctx, dst);
 			goto close;
 		}
 
@@ -279,7 +293,7 @@ static int http_basic_auth(struct http_ctx *ctx,
 		ret = mbedtls_base64_decode(output, sizeof(output) - 1,
 					    &olen, ptr + alen, ilen);
 		if (ret) {
-			ret = http_response_401(ctx);
+			ret = http_response_401(ctx, dst);
 			goto close;
 		}
 
@@ -297,22 +311,23 @@ static int http_basic_auth(struct http_ctx *ctx,
 				return 0;
 			}
 
-			ret = http_serve_index_html(ctx);
+			ret = http_serve_index_html(ctx, dst);
 			goto close;
 		}
 
-		ret = http_response_401(ctx);
+		ret = http_response_401(ctx, dst);
 		goto close;
 	}
 
-	ret = http_response_401(ctx);
+	ret = http_response_401(ctx, dst);
 
 close:
 	http_close(ctx);
 	return ret;
 }
 
-static int http_serve_index_html(struct http_ctx *ctx)
+static int http_serve_index_html(struct http_ctx *ctx,
+				 const struct sockaddr *dst)
 {
 	static const char index_html_gz[] = {
 #include "index.html.gz.inc"
@@ -323,10 +338,11 @@ static int http_serve_index_html(struct http_ctx *ctx)
 	NET_DBG("Sending index.html (%zd bytes) to client",
 		sizeof(index_html_gz));
 	return http_response(ctx, HTTP_STATUS_200_OK_GZ, index_html_gz,
-			     sizeof(index_html_gz));
+			     sizeof(index_html_gz), dst);
 }
 
-static int http_serve_style_css(struct http_ctx *ctx)
+static int http_serve_style_css(struct http_ctx *ctx,
+				const struct sockaddr *dst)
 {
 	static const char style_css_gz[] = {
 #include "style.css.gz.inc"
@@ -338,10 +354,12 @@ static int http_serve_style_css(struct http_ctx *ctx)
 		sizeof(style_css_gz));
 	return http_response(ctx, HTTP_STATUS_200_OK_GZ_CSS,
 			     style_css_gz,
-			     sizeof(style_css_gz));
+			     sizeof(style_css_gz),
+			     dst);
 }
 
-static int http_serve_br_js(struct http_ctx *ctx)
+static int http_serve_br_js(struct http_ctx *ctx,
+			    const struct sockaddr *dst)
 {
 	static const char br_js_gz[] = {
 #include "br.js.gz.inc"
@@ -353,10 +371,11 @@ static int http_serve_br_js(struct http_ctx *ctx)
 		sizeof(br_js_gz));
 	return http_response(ctx, HTTP_STATUS_200_OK_GZ_CSS,
 			     br_js_gz,
-			     sizeof(br_js_gz));
+			     sizeof(br_js_gz), dst);
 }
 
-static int http_serve_favicon_ico(struct http_ctx *ctx)
+static int http_serve_favicon_ico(struct http_ctx *ctx,
+				  const struct sockaddr *dst)
 {
 	static const char favicon_ico_gz[] = {
 #include "favicon.ico.gz.inc"
@@ -367,7 +386,7 @@ static int http_serve_favicon_ico(struct http_ctx *ctx)
 	NET_DBG("Sending favicon.ico (%zd bytes) to client",
 		sizeof(favicon_ico_gz));
 	return http_response(ctx, HTTP_STATUS_200_OK_GZ, favicon_ico_gz,
-			     sizeof(favicon_ico_gz));
+			     sizeof(favicon_ico_gz), dst);
 }
 
 static bool check_addr(struct http_ctx *ctx)
@@ -403,6 +422,8 @@ static const char *addrtype2str(enum net_addr_type addr_type)
 		return "DHCP";
 	case NET_ADDR_MANUAL:
 		return "manual";
+	case NET_ADDR_OVERRIDABLE:
+		return "overridable";
 	}
 
 	return "invalid";
@@ -424,7 +445,8 @@ static const char *addrstate2str(enum net_addr_state addr_state)
 	return "invalid";
 }
 
-static int append_and_send_data(struct user_data *data, bool final,
+static int append_and_send_data(struct user_data *data,
+				bool final,
 				const char *fmt, ...)
 {
 	enum ws_opcode opcode = WS_OPCODE_CONTINUE;
@@ -443,7 +465,7 @@ static int append_and_send_data(struct user_data *data, bool final,
 		}
 
 		ret = ws_send_msg_to_client(data->ctx, data->buf, len,
-					    opcode, final, NULL);
+					    opcode, final, data->dst, NULL);
 		if (ret < 0) {
 			NET_DBG("Could not send %d bytes data to client", len);
 			goto out;
@@ -461,7 +483,7 @@ static int append_and_send_data(struct user_data *data, bool final,
 	}
 
 	ret = ws_send_msg_to_client(data->ctx, data->buf, len,
-				    opcode, final, NULL);
+				    opcode, final, data->dst, NULL);
 	if (ret < 0) {
 		NET_DBG("Could not send %d bytes data to client", len);
 		goto out;
@@ -483,7 +505,7 @@ static void append_unicast_addr(struct net_if *iface, struct user_data *data)
 	int printed, count;
 
 	for (i = 0, printed = 0, count = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
-		unicast = &iface->ipv6.unicast[i];
+		unicast = &iface->config.ip.ipv6->unicast[i];
 
 		if (!unicast->is_used) {
 			continue;
@@ -542,31 +564,31 @@ out:
 static const char *iface2str(struct net_if *iface)
 {
 #ifdef CONFIG_NET_L2_IEEE802154
-	if (iface->l2 == &NET_L2_GET_NAME(IEEE802154)) {
+	if (iface->if_dev->l2 == &NET_L2_GET_NAME(IEEE802154)) {
 		return "IEEE 802.15.4";
 	}
 #endif
 
 #ifdef CONFIG_NET_L2_ETHERNET
-	if (iface->l2 == &NET_L2_GET_NAME(ETHERNET)) {
+	if (iface->if_dev->l2 == &NET_L2_GET_NAME(ETHERNET)) {
 		return "Ethernet";
 	}
 #endif
 
 #ifdef CONFIG_NET_L2_DUMMY
-	if (iface->l2 == &NET_L2_GET_NAME(DUMMY)) {
+	if (iface->if_dev->l2 == &NET_L2_GET_NAME(DUMMY)) {
 		return "Dummy";
 	}
 #endif
 
 #ifdef CONFIG_NET_L2_BT
-	if (iface->l2 == &NET_L2_GET_NAME(BLUETOOTH)) {
+	if (iface->if_dev->l2 == &NET_L2_GET_NAME(BLUETOOTH)) {
 		return "Bluetooth";
 	}
 #endif
 
 #ifdef CONFIG_NET_L2_OFFLOAD
-	if (iface->l2 == &NET_L2_GET_NAME(OFFLOAD_IP)) {
+	if (iface->if_dev->l2 == &NET_L2_GET_NAME(OFFLOAD_IP)) {
 		return "IP Offload";
 	}
 #endif
@@ -597,14 +619,14 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	}
 
 	ret = append_and_send_data(data, false, "{\"Link address\":\"%s\"},",
-				   net_sprint_ll_addr(iface->link_addr.addr,
-						      iface->link_addr.len));
+			   net_sprint_ll_addr(iface->if_dev->link_addr.addr,
+					      iface->if_dev->link_addr.len));
 	if (ret < 0) {
 		goto out;
 	}
 
 	ret = append_and_send_data(data, false, "{\"MTU\":\"%d\"},",
-				   iface->mtu);
+				   iface->if_dev->mtu);
 	if (ret < 0) {
 		goto out;
 	}
@@ -626,7 +648,8 @@ out:
 	}
 }
 
-static int send_iface_configuration(struct http_ctx *ctx)
+static int send_iface_configuration(struct http_ctx *ctx,
+				    const struct sockaddr *dst)
 {
 	struct user_data data;
 	int ret;
@@ -634,6 +657,7 @@ static int send_iface_configuration(struct http_ctx *ctx)
 	data.ctx = ctx;
 	data.iface_count = 0;
 	data.msg_count = 0;
+	data.dst = dst;
 
 	ret = append_and_send_data(&data, false,
 				   "{\"interface_configuration\":[");
@@ -926,13 +950,15 @@ out:
 	return ret;
 }
 
-static int send_rpl_configuration(struct http_ctx *ctx)
+static int send_rpl_configuration(struct http_ctx *ctx,
+				  const struct sockaddr *dst)
 {
 	struct user_data data;
 	int ret;
 
 	data.ctx = ctx;
 	data.msg_count = 0;
+	data.dst = dst;
 
 	ret = append_and_send_data(&data, false, "{\"rpl_configuration\":[");
 	if (ret < 0) {
@@ -941,7 +967,7 @@ static int send_rpl_configuration(struct http_ctx *ctx)
 
 	ret = add_rpl_config(&data);
 	if (ret < 0) {
-		NET_ERR("Could not setup RPL configuration");
+		NET_ERR("Could not send RPL configuration");
 		goto out;
 	}
 
@@ -956,9 +982,8 @@ out:
 	return ret;
 }
 
-static void nbr_cb(struct net_nbr *nbr, void *user_data)
+static void append_nbr(struct net_nbr *nbr, struct user_data *data)
 {
-	struct user_data *data = user_data;
 	int ret;
 
 	if (data->iface != nbr->iface) {
@@ -1021,7 +1046,16 @@ out:
 	data->failure = ret;
 }
 
-static int send_ipv6_neighbors(struct http_ctx *ctx)
+static void nbr_cb(struct net_nbr *nbr, void *user_data)
+{
+	struct user_data *data = user_data;
+
+	append_nbr(nbr, data);
+}
+
+static int send_ipv6_neighbors(struct http_ctx *ctx,
+			       const struct sockaddr *dst,
+			       struct net_nbr *nbr)
 {
 	struct user_data data;
 	int ret;
@@ -1029,6 +1063,7 @@ static int send_ipv6_neighbors(struct http_ctx *ctx)
 	data.ctx = ctx;
 	data.iface = NULL;
 	data.msg_count = 0;
+	data.dst = dst;
 
 	ret = append_and_send_data(&data, false, "{\"neighbors\":[");
 	if (ret < 0) {
@@ -1038,7 +1073,11 @@ static int send_ipv6_neighbors(struct http_ctx *ctx)
 	data.nbr_count = 0;
 	data.iface_count = 0;
 
-	net_ipv6_nbr_foreach(nbr_cb, &data);
+	if (!nbr) {
+		net_ipv6_nbr_foreach(nbr_cb, &data);
+	} else {
+		append_nbr(nbr, &data);
+	}
 
 	if (data.failure < 0) {
 		ret = data.failure;
@@ -1066,9 +1105,54 @@ out:
 	return ret;
 }
 
-static void route_cb(struct net_route_entry *entry, void *user_data)
+static int send_ipv6_neighbor_deletion(struct http_ctx *ctx,
+				       const struct sockaddr *dst,
+				       struct net_if *iface,
+				       struct in6_addr *addr)
 {
-	struct user_data *data = user_data;
+	struct user_data data;
+	int ret;
+
+	data.ctx = ctx;
+	data.iface = NULL;
+	data.dst = dst;
+
+	ret = append_and_send_data(&data, false, "{\"neighbors\":[");
+	if (ret < 0) {
+		goto out;
+	}
+
+	ret = append_and_send_data(&data, false, "{\"%p\":[{", iface);
+	if (ret < 0) {
+		goto out;
+	}
+
+	ret = add_string(&data, "Operation", "delete", true);
+	if (ret < 0) {
+		goto out;
+	}
+
+	ret = add_string(&data, "IPv6 address",
+			 net_sprint_ipv6_addr(addr), false);
+	if (ret < 0) {
+		goto out;
+	}
+
+	ret = append_and_send_data(&data, true, "}]}]}");
+	if (ret < 0) {
+		goto out;
+	}
+
+	return ret;
+
+out:
+	NET_DBG("Cannot send neighbor information");
+
+	return ret;
+}
+
+static void append_route(struct net_route_entry *entry, struct user_data *data)
+{
 	struct net_route_nexthop *nexthop_route;
 	int ret = 0;
 
@@ -1121,7 +1205,16 @@ out:
 	data->failure = ret;
 }
 
-static void iface_cb_for_routes(struct net_if *iface, void *user_data)
+static void route_cb(struct net_route_entry *entry, void *user_data)
+{
+	struct user_data *data = user_data;
+
+	append_route(entry, data);
+}
+
+static void append_route_iface(struct net_if *iface,
+			       struct net_route_entry *route,
+			       void *user_data)
 {
 	struct user_data *data = user_data;
 	int ret;
@@ -1140,7 +1233,11 @@ static void iface_cb_for_routes(struct net_if *iface, void *user_data)
 	data->iface = iface;
 	data->route_count = 0;
 
-	net_route_foreach(route_cb, data);
+	if (!route) {
+		net_route_foreach(route_cb, data);
+	} else {
+		append_route(route, data);
+	}
 
 	data->iface_count++;
 
@@ -1156,7 +1253,15 @@ out:
 	}
 }
 
-static int send_ipv6_routes(struct http_ctx *ctx)
+static void iface_cb_for_routes(struct net_if *iface, void *user_data)
+{
+	append_route_iface(iface, NULL, user_data);
+}
+
+static int send_ipv6_routes(struct http_ctx *ctx,
+			    const struct sockaddr *dst,
+			    struct net_if *iface,
+			    struct net_route_entry *route)
 {
 	struct user_data data;
 	int ret;
@@ -1164,13 +1269,18 @@ static int send_ipv6_routes(struct http_ctx *ctx)
 	data.ctx = ctx;
 	data.iface_count = 0;
 	data.msg_count = 0;
+	data.dst = dst;
 
 	ret = append_and_send_data(&data, false, "{\"routes\":[");
 	if (ret < 0) {
 		goto out;
 	}
 
-	net_if_foreach(iface_cb_for_routes, &data);
+	if (!iface && !route) {
+		net_if_foreach(iface_cb_for_routes, &data);
+	} else {
+		append_route_iface(iface, route, &data);
+	}
 
 	ret = append_and_send_data(&data, true, "]}");
 	if (ret < 0) {
@@ -1183,37 +1293,246 @@ out:
 	return ret;
 }
 
-static void ws_send_info(struct http_ctx *ctx)
+static int send_ipv6_route_deletion(struct http_ctx *ctx,
+				    const struct sockaddr *dst,
+				    struct net_if *iface,
+				    struct net_event_ipv6_route *info)
+{
+	struct user_data data;
+	int ret;
+
+	data.ctx = ctx;
+	data.dst = dst;
+
+	ret = append_and_send_data(&data, false, "{\"routes\":[");
+	if (ret < 0) {
+		goto out;
+	}
+
+	ret = append_and_send_data(&data, false, "{\"%p\":[", iface);
+	if (ret < 0) {
+		goto out;
+	}
+
+	ret = append_and_send_data(&data, false, "{\"Operation\":\"delete\",");
+	if (ret < 0) {
+		goto out;
+	}
+
+	ret = append_and_send_data(&data, false,
+				   "\"IPv6 prefix\":\"%s/%d\"",
+				   net_sprint_ipv6_addr(&info->addr),
+				   info->prefix_len);
+	if (ret < 0) {
+		goto out;
+	}
+
+	ret = append_and_send_data(&data, true, "}]}]}");
+	if (ret < 0) {
+		goto out;
+	}
+
+	return ret;
+
+out:
+	return ret;
+}
+
+static void calculate_edges(void)
+{
+	u8_t i, j, k;
+
+	k = 0;
+
+	for (i = 1; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
+		if (!topology.nodes[i].used) {
+			continue;
+		}
+
+		for (j = 0; j < CONFIG_NET_IPV6_MAX_NEIGHBORS; j++) {
+			if (!topology.nodes[j].used) {
+				continue;
+			}
+
+			if (!net_ipv6_addr_cmp(&topology.nodes[i].parent,
+					       &topology.nodes[j].addr)) {
+				continue;
+			}
+
+			topology.edges[k].from = topology.nodes[i].id;
+			topology.edges[k].to = topology.nodes[j].id;
+			topology.edges[k].used = true;
+
+			k++;
+			break;
+
+		}
+	}
+}
+
+static int send_topology_information(struct http_ctx *ctx,
+				     const struct sockaddr *dst)
+{
+	struct user_data data;
+	u8_t i;
+	int ret;
+
+	data.ctx = ctx;
+	data.iface_count = 0;
+	data.msg_count = 0;
+	data.dst = dst;
+
+	calculate_edges();
+
+	ret = append_and_send_data(&data, false, "{\"topology\":{");
+	if (ret < 0) {
+		goto out;
+	}
+
+	ret = append_and_send_data(&data, false, "\"nodes\":[");
+	if (ret < 0) {
+		goto out;
+	}
+
+	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
+		if (!topology.nodes[i].used) {
+			continue;
+		}
+
+		ret = append_and_send_data(&data, false, i == 0 ? "{" : ",{");
+		if (ret < 0) {
+			goto out;
+		}
+
+		ret = add_int(&data, "id", topology.nodes[i].id, true);
+		if (ret < 0) {
+			goto out;
+		}
+
+		ret = add_string(&data, "label",
+				 topology.nodes[i].label, false);
+		if (ret < 0) {
+			goto out;
+		}
+
+		ret = add_string(&data, "title",
+				 net_sprint_ipv6_addr(&topology.nodes[i].addr),
+				 false);
+		if (ret < 0) {
+			goto out;
+		}
+
+		ret = append_and_send_data(&data, false, "}");
+		if (ret < 0) {
+			goto out;
+		}
+	}
+
+	ret = append_and_send_data(&data, false, "],\"edges\":[");
+	if (ret < 0) {
+		goto out;
+	}
+
+	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
+		if (!topology.edges[i].used) {
+			continue;
+		}
+
+		ret = append_and_send_data(&data, false, i == 0 ? "{" : ",{");
+		if (ret < 0) {
+			goto out;
+		}
+
+		ret = add_int(&data, "from", topology.edges[i].from, true);
+		if (ret < 0) {
+			goto out;
+		}
+
+		ret = add_int(&data, "to", topology.edges[i].to, false);
+		if (ret < 0) {
+			goto out;
+		}
+
+		ret = append_and_send_data(&data, false, "}");
+		if (ret < 0) {
+			goto out;
+		}
+	}
+
+	ret = append_and_send_data(&data, true, "]}}");
+	if (ret < 0) {
+		goto out;
+	}
+
+	return ret;
+
+out:
+	return ret;
+}
+
+static void ws_send_info(struct http_ctx *ctx,
+			 const struct sockaddr *dst)
 {
 	int ret;
 
-	ret = send_iface_configuration(ctx);
+	ret = send_iface_configuration(ctx, dst);
 	if (ret < 0) {
 		NET_ERR("Cannot send interface configuration (%d)", ret);
 	}
 
-	ret = send_rpl_configuration(ctx);
+	ret = send_rpl_configuration(ctx, dst);
 	if (ret < 0) {
 		NET_ERR("Cannot send RPL configuration (%d)", ret);
 	}
 
-	ret = send_ipv6_neighbors(ctx);
+	ret = send_ipv6_neighbors(ctx, dst, NULL);
 	if (ret < 0) {
 		NET_ERR("Cannot send neighbor information (%d)", ret);
+		return;
 	}
 
-	ret = send_ipv6_routes(ctx);
+	ret = send_ipv6_routes(ctx, dst, NULL, NULL);
 	if (ret < 0) {
 		NET_ERR("Cannot send route information (%d)", ret);
+		return;
 	}
+
+	ret = send_topology_information(ctx, dst);
+	if (ret < 0) {
+		NET_ERR("Cannot send topology information (%d)", ret);
+	}
+}
+
+struct ws_http_ctx {
+	struct http_ctx *ctx;
+	const struct sockaddr *dst;
+	bool data_set;
+};
+
+static struct ws_http_ctx ws_ctx;
+
+static void ws_serve_replies(void)
+{
+	ws_send_info(ws_ctx.ctx, ws_ctx.dst);
+
+	ws_ctx.data_set = false;
 }
 
 static void http_connected(struct http_ctx *ctx,
 			   enum http_connection_type type,
+			   const struct sockaddr *dst,
 			   void *user_data)
 {
 	char url[32];
 	int len = min(sizeof(url), ctx->http.url_len);
+
+	NET_DBG("");
+
+	if (0 && (!rpl.auth_ok || !check_addr(ctx))) {
+		rpl.auth_ok = false;
+		http_basic_auth(ctx, type, dst);
+		return;
+	}
 
 	memcpy(url, ctx->http.url, len);
 	url[len] = '\0';
@@ -1222,64 +1541,150 @@ static void http_connected(struct http_ctx *ctx,
 		type == HTTP_CONNECTION ? "HTTP" :
 		(type == WS_CONNECTION ? "WS" : "<unknown>"), url);
 
-	if (0 && (!rpl.auth_ok || !check_addr(ctx))) {
-		rpl.auth_ok = false;
-		http_basic_auth(ctx, type);
-		return;
-	}
-
 	if (type == HTTP_CONNECTION) {
 		if (strncmp(ctx->http.url, "/",
 			    ctx->http.url_len) == 0) {
-			http_serve_index_html(ctx);
+			http_serve_index_html(ctx, dst);
 			http_close(ctx);
 			return;
 		}
 
 		if (strncmp(ctx->http.url, "/index.html",
 			    ctx->http.url_len) == 0) {
-			http_serve_index_html(ctx);
+			http_serve_index_html(ctx, dst);
 			http_close(ctx);
 			return;
 		}
 
 		if (strncmp(ctx->http.url, "/br.js",
 			    ctx->http.url_len) == 0) {
-			http_serve_br_js(ctx);
+			http_serve_br_js(ctx, dst);
 			http_close(ctx);
 			return;
 		}
 
 		if (strncmp(ctx->http.url, "/style.css",
 			    ctx->http.url_len) == 0) {
-			http_serve_style_css(ctx);
+			http_serve_style_css(ctx, dst);
 			http_close(ctx);
 			return;
 		}
 
 		if (strncmp(ctx->http.url, "/favicon.ico",
 			    ctx->http.url_len) == 0) {
-			http_serve_favicon_ico(ctx);
+			http_serve_favicon_ico(ctx, dst);
 			http_close(ctx);
 			return;
 		}
 	} else if (type == WS_CONNECTION) {
-		if (strncmp(ctx->http.url, "/ws",
-			    ctx->http.url_len) == 0) {
-			ws_send_info(ctx);
-			return;
+		if (strncmp(ctx->http.url, "/ws", ctx->http.url_len) == 0) {
+			ws_ctx.ctx = ctx;
+			ws_ctx.dst = dst;
+			ws_dst = dst;
+			ws_ctx.data_set = true;
+			k_sem_give(&ws_reply);
 		}
 	}
+}
+
+/**
+ * The sample coap JSON command from WebUI looks like this.
+ * {"coap":{"command":"led_on","ipv6_addr":"fe80::212:4b00:0:2"}}
+ */
+
+#define JSON_COAP_PREFIX "{\"coap\":"
+#define MAX_PAYLOAD_LEN	100
+struct coap_command {
+	const char *command;
+	const char *ipv6_addr;
+};
+
+struct rpl_coap_req {
+	struct coap_command coap;
+};
+
+static const struct json_obj_descr command_descr[] = {
+	JSON_OBJ_DESCR_PRIM(struct coap_command, command, JSON_TOK_STRING),
+	JSON_OBJ_DESCR_PRIM(struct coap_command, ipv6_addr, JSON_TOK_STRING),
+};
+
+static const struct json_obj_descr coap_descr[] = {
+	JSON_OBJ_DESCR_OBJECT(struct rpl_coap_req, coap, command_descr),
+};
+
+static void handle_coap_request(struct http_ctx *ctx,
+				struct net_pkt *pkt,
+				void *user_data)
+{
+	struct rpl_coap_req req;
+	struct net_buf *frag;
+	struct in6_addr peer_addr;
+	enum coap_request_type type;
+	char payload[MAX_PAYLOAD_LEN];
+	u8_t *ptr;
+	u8_t len;
+	u16_t pos;
+	int ret;
+
+	len = net_pkt_appdatalen(pkt);
+	if (len > MAX_PAYLOAD_LEN - 1) {
+		NET_ERR("Can't handle payload more than %d(%d)",
+			MAX_PAYLOAD_LEN, len);
+	}
+
+	frag = pkt->frags;
+	ptr = net_pkt_appdata(pkt);
+
+	pos = (u16_t)(ptr - frag->data);
+
+	frag = net_frag_read(frag, pos, &pos, len, &payload[0]);
+	if (!frag && pos == 0xffff) {
+		NET_WARN("Failed to read payload");
+		return;
+	}
+
+	payload[len] = '\0';
+
+	ret = json_obj_parse((char *)payload, len, coap_descr,
+			     ARRAY_SIZE(coap_descr), &req);
+	if (ret < 0) {
+		NET_ERR("Failed to parse JSON string %d", ret);
+		return;
+	}
+
+	ret = net_addr_pton(AF_INET6, req.coap.ipv6_addr, &peer_addr);
+	if (ret < 0) {
+		NET_WARN("Invalid peer address %s", req.coap.ipv6_addr);
+		return;
+	}
+
+	if (strcmp(req.coap.command, "toggle") == 0) {
+		type = COAP_REQ_TOGGLE_LED;
+	} else {
+		NET_WARN("Invalid coap command %s", req.coap.command);
+		return;
+	}
+
+	coap_send_request(&peer_addr, type, NULL, NULL);
+	NET_DBG("Send CoAP request '%s'-'%s'", req.coap.command,
+		req.coap.ipv6_addr);
 }
 
 static void http_received(struct http_ctx *ctx,
 			  struct net_pkt *pkt,
 			  int status,
 			  u32_t flags,
+			  const struct sockaddr *dst,
 			  void *user_data)
 {
 	if (!status) {
 		NET_DBG("Received %d bytes data", net_pkt_appdatalen(pkt));
+
+		if (!strncmp((char *)net_pkt_appdata(pkt), JSON_COAP_PREFIX,
+			     sizeof(JSON_COAP_PREFIX) - 1)) {
+			handle_coap_request(ctx, pkt, user_data);
+		}
+
 
 		if (pkt) {
 			net_pkt_unref(pkt);
@@ -1320,17 +1725,164 @@ static const char *get_string(int str_len, const char *str)
 }
 
 static enum http_verdict default_handler(struct http_ctx *ctx,
-				       enum http_connection_type type)
+					 enum http_connection_type type,
+					 const struct sockaddr *dst)
 {
 	NET_DBG("No handler for %s URL %s",
 		type == HTTP_CONNECTION ? "HTTP" : "WS",
 		get_string(ctx->http.url_len, ctx->http.url));
 
 	if (type == HTTP_CONNECTION) {
-		http_response_soft_404(ctx);
+		http_response_soft_404(ctx, dst);
 	}
 
 	return HTTP_VERDICT_DROP;
+}
+
+static void coap_obs_cb(struct coap_packet *response, void *user_data)
+{
+	int ret;
+
+	ret = send_topology_information(&http_ctx, ws_dst);
+	if (ret < 0) {
+		NET_ERR("Cannot send topology (%d)", ret);
+	}
+}
+
+static struct net_mgmt_event_callback br_mgmt_cb;
+static void mgmt_cb(struct net_mgmt_event_callback *cb,
+		    u32_t mgmt_event, struct net_if *iface)
+{
+#if !defined(CONFIG_NET_L2_IEEE802154)
+	NET_DBG("CONFIG_NET_L2_IEEE802154 not enabled");
+	return;
+#endif
+	struct net_if *iface_802154 = net_if_get_ieee802154();
+	struct net_event_ipv6_route *route_info;
+	struct net_event_ipv6_nbr *nbr_info;
+	struct net_route_entry *route;
+	struct net_nbr *nbr;
+	int ret;
+
+	if (iface_802154 != iface) {
+		return;
+	}
+
+	if (!cb->info) {
+		return;
+	}
+
+	if (mgmt_event == NET_EVENT_IPV6_NBR_ADD) {
+		nbr_info = (struct net_event_ipv6_nbr *)cb->info;
+		if (!nbr_info) {
+			NET_ERR("Invalid info received on event");
+			return;
+		}
+
+		nbr = net_ipv6_nbr_lookup(iface, &nbr_info->addr);
+		if (!nbr || !net_ipv6_nbr_data(nbr)) {
+			NET_ERR("Invalid neighbor data received");
+			return;
+		}
+
+		NET_DBG("NBR add %s", net_sprint_ipv6_addr(&nbr_info->addr));
+
+		ret = send_ipv6_neighbors(&http_ctx, ws_dst, nbr);
+		if (ret < 0) {
+			NET_ERR("Cannot send neighbor information (%d)", ret);
+			return;
+		}
+	} else if (mgmt_event == NET_EVENT_IPV6_NBR_DEL) {
+		nbr_info = (struct net_event_ipv6_nbr *)cb->info;
+		if (!nbr_info) {
+			NET_ERR("Invalid info received on event");
+			return;
+		}
+
+		NET_DBG("NBR del %s", net_sprint_ipv6_addr(&nbr_info->addr));
+
+		ret = send_ipv6_neighbor_deletion(&http_ctx, ws_dst, iface,
+						  &nbr_info->addr);
+		if (ret < 0) {
+			NET_ERR("Cannot send neighbor information (%d)", ret);
+			return;
+		}
+	} else if (mgmt_event == NET_EVENT_IPV6_ROUTE_ADD) {
+		route_info = (struct net_event_ipv6_route *)cb->info;
+		if (!route_info) {
+			NET_ERR("Invalid info received on event");
+			return;
+		}
+
+		route = net_route_lookup(iface, &route_info->addr);
+		if (!route) {
+			NET_ERR("Invalid route entry received");
+			return;
+		}
+
+		NET_DBG("ROUTE add addr %s/%d",
+			net_sprint_ipv6_addr(&route_info->addr),
+			route_info->prefix_len);
+		{
+			NET_DBG("ROUTE add nexthop %s",
+				net_sprint_ipv6_addr(&route_info->nexthop));
+
+		}
+
+		coap_send_request(&route_info->nexthop,
+				  COAP_REQ_RPL_OBS, coap_obs_cb, NULL);
+
+		ret = send_ipv6_routes(&http_ctx, ws_dst, iface, route);
+		if (ret < 0) {
+			NET_ERR("Cannot send route information (%d)", ret);
+			return;
+		}
+	} else if (mgmt_event == NET_EVENT_IPV6_ROUTE_DEL) {
+		route_info = (struct net_event_ipv6_route *)cb->info;
+		if (!route_info) {
+			NET_ERR("Invalid info received on event");
+			return;
+		}
+
+		NET_DBG("ROUTE del addr %s/%d",
+			net_sprint_ipv6_addr(&route_info->addr),
+			route_info->prefix_len);
+		{
+			NET_DBG("ROUTE del nexthop %s",
+				net_sprint_ipv6_addr(&route_info->nexthop));
+
+		}
+
+		ret = send_ipv6_route_deletion(&http_ctx, ws_dst, iface,
+					       route_info);
+		if (ret < 0) {
+			NET_ERR("Cannot send route information (%d)", ret);
+			return;
+		}
+
+		coap_remove_node_from_topology(&route_info->nexthop);
+
+		ret = send_topology_information(&http_ctx, ws_dst);
+		if (ret < 0) {
+			NET_ERR("Cannot send topology information (%d)", ret);
+		}
+	}
+}
+
+#define WS_HTTP_STACK_SIZE	2500
+NET_STACK_DEFINE(WS_HTTP, ws_http_stack, WS_HTTP_STACK_SIZE,
+		 WS_HTTP_STACK_SIZE);
+static struct k_thread ws_http_thread_data;
+
+static void ws_http_thread(void)
+{
+	while (1) {
+		k_sem_take(&ws_reply, K_FOREVER);
+
+		if (ws_ctx.data_set) {
+			ws_serve_replies();
+		}
+	}
 }
 
 void start_http_server(struct net_if *iface)
@@ -1363,7 +1915,7 @@ void start_http_server(struct net_if *iface)
 	net_sin(&addr)->sin_port = htons(ZEPHYR_PORT);
 
 	/* In this example, listen only IPv4 */
-	addr.family = AF_INET;
+	addr.sa_family = AF_INET;
 
 	server_addr = &addr;
 
@@ -1372,10 +1924,10 @@ void start_http_server(struct net_if *iface)
 	memset(&addr, 0, sizeof(addr));
 
 	/* In this example, listen only IPv6 */
-	addr.family = AF_INET6;
+	addr.sa_family = AF_INET6;
 	net_sin6(&addr)->sin6_port = htons(ZEPHYR_PORT);
 
-	ret = net_ipaddr_parse(ZEPHYR_ADDR, &addr);
+	ret = net_ipaddr_parse(ZEPHYR_ADDR, strlen(ZEPHYR_ADDR), &addr);
 	if (ret < 0) {
 		NET_ERR("Cannot set local address (%d)", ret);
 		panic(NULL);
@@ -1405,6 +1957,7 @@ void start_http_server(struct net_if *iface)
 		return;
 	}
 
+
 	http_set_cb(&http_ctx, http_connected, http_received, http_sent,
 		    http_closed);
 
@@ -1429,7 +1982,20 @@ void start_http_server(struct net_if *iface)
 
 	http_server_enable(&http_ctx);
 
-	rpl.iface = iface;
+	net_mgmt_init_event_callback(&br_mgmt_cb, mgmt_cb,
+				     NET_EVENT_IPV6_NBR_ADD |
+				     NET_EVENT_IPV6_NBR_DEL |
+				     NET_EVENT_IPV6_ROUTE_ADD |
+				     NET_EVENT_IPV6_ROUTE_DEL);
+	net_mgmt_add_event_callback(&br_mgmt_cb);
+
+	/* Run http(WS) replies in separate thread */
+	k_sem_init(&ws_reply, 0, UINT_MAX);
+
+	k_thread_create(&ws_http_thread_data, ws_http_stack,
+			K_THREAD_STACK_SIZEOF(ws_http_stack),
+			(k_thread_entry_t)ws_http_thread, NULL, NULL, NULL,
+			K_PRIO_COOP(10), 0, 0);
 }
 
 void stop_http_server(void)
