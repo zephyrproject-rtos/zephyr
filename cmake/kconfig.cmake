@@ -37,6 +37,11 @@ set(COMMAND_FOR_menuconfig ${KCONFIG_MCONF}               ${KCONFIG_ROOT})
 set(COMMAND_FOR_oldconfig  ${KCONFIG_CONF} --oldconfig    ${KCONFIG_ROOT})
 set(COMMAND_FOR_xconfig    qconf                          ${KCONFIG_ROOT})
 
+# Set environment variables so that Kconfig can prune Kconfig source
+# files for other architectures
+set(ENV{ENV_VAR_ARCH}         ${ARCH})
+set(ENV{ENV_VAR_BOARD_DIR}    ${BOARD_DIR})
+
 foreach(kconfig_target ${kconfig_target_list})
   if (NOT WIN32)
     add_custom_target(
@@ -45,6 +50,8 @@ foreach(kconfig_target ${kconfig_target_list})
       srctree=${PROJECT_SOURCE_DIR}
       KERNELVERSION=${PROJECT_VERSION}
       KCONFIG_CONFIG=${DOTCONFIG}
+      ENV_VAR_ARCH=$ENV{ENV_VAR_ARCH}
+      ENV_VAR_BOARD_DIR=$ENV{ENV_VAR_BOARD_DIR}
       ${COMMAND_FOR_${kconfig_target}}
       WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig
       USES_TERMINAL

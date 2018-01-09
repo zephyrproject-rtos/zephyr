@@ -298,6 +298,6 @@ config BOARD
 	  arch/<arch>/soc/<family>/<series>
 
 
-source "arch/*/Kconfig"
+source "arch/$ENV_VAR_SYM_ARCH/Kconfig"
 
 source "boards/Kconfig"
