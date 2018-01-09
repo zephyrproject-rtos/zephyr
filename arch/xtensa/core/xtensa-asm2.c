@@ -149,6 +149,8 @@ static inline void *restore_stack(void *interrupted_stack)
 	void *ret = _kernel.current->switch_handle;
 	irq_unlock(key);
 
+	_check_stack_sentinel();
+
 	return ret;
 }
 #endif
