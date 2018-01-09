@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017 Nordic Semiconductor ASA
+ * Copyright (c) 2016-2018 Nordic Semiconductor ASA
  * Copyright (c) 2016 Vinayak Kariappa Chettimada
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -16,6 +16,11 @@
 #include <misc/util.h>
 
 #include "ll.h"
+
+#if defined(CONFIG_SOC_FAMILY_NRF5)
+#include "hal/nrf5/ticker.h"
+#endif /* CONFIG_SOC_FAMILY_NRF5 */
+
 #include "hal/cpu.h"
 #include "hal/rand.h"
 #include "hal/ecb.h"
@@ -1106,14 +1111,14 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 
 		/* calculate slave slot */
 		conn->hdr.ticks_slot =
-			TICKER_US_TO_TICKS(RADIO_TICKER_START_PART_US +
-					   rx_ready_delay + 328 + RADIO_TIFS +
-					   328);
+			HAL_TICKER_US_TO_TICKS(RADIO_TICKER_START_PART_US +
+					       rx_ready_delay + 328 +
+					       RADIO_TIFS + 328);
 		conn->hdr.ticks_active_to_start = _radio.ticks_active_to_start;
 		conn->hdr.ticks_xtal_to_start =
-			TICKER_US_TO_TICKS(RADIO_TICKER_XTAL_OFFSET_US);
+			HAL_TICKER_US_TO_TICKS(RADIO_TICKER_XTAL_OFFSET_US);
 		conn->hdr.ticks_preempt_to_start =
-			TICKER_US_TO_TICKS(RADIO_TICKER_PREEMPT_PART_MIN_US);
+			HAL_TICKER_US_TO_TICKS(RADIO_TICKER_PREEMPT_PART_MIN_US);
 		ticks_slot_offset =
 			(conn->hdr.ticks_active_to_start <
 			 conn->hdr.ticks_xtal_to_start) ?
@@ -1155,9 +1160,9 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 		     RADIO_TICKER_USER_ID_WORKER,
 		     RADIO_TICKER_ID_FIRST_CONNECTION + conn->handle,
 		     (_radio.ticks_anchor - ticks_slot_offset),
-		     TICKER_US_TO_TICKS(conn_offset_us),
-		     TICKER_US_TO_TICKS(conn_interval_us),
-		     TICKER_REMAINDER(conn_interval_us), TICKER_NULL_LAZY,
+		     HAL_TICKER_US_TO_TICKS(conn_offset_us),
+		     HAL_TICKER_US_TO_TICKS(conn_interval_us),
+		     HAL_TICKER_REMAINDER(conn_interval_us), TICKER_NULL_LAZY,
 		     (ticks_slot_offset + conn->hdr.ticks_slot),
 		     event_slave_prepare, conn, ticker_success_assert,
 		     (void *)__LINE__);
@@ -1329,7 +1334,7 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 				      (_radio.fc_req == _radio.fc_ack)) &&
 	    isr_scan_init_check(pdu_adv_rx, rl_idx) &&
 	    ((radio_tmr_end_get() + 502 + (RADIO_TICKER_JITTER_US << 1)) <
-	     (TICKER_TICKS_TO_US(_radio.scanner.hdr.ticks_slot) -
+	     (HAL_TICKER_TICKS_TO_US(_radio.scanner.hdr.ticks_slot) -
 	      RADIO_TICKER_START_PART_US))) {
 		struct radio_le_conn_cmplt *radio_le_conn_cmplt;
 		struct radio_pdu_node_rx *node_rx;
@@ -1364,9 +1369,9 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 		/* Calculate master slot */
 		conn->hdr.ticks_active_to_start = _radio.ticks_active_to_start;
 		conn->hdr.ticks_xtal_to_start =
-			TICKER_US_TO_TICKS(RADIO_TICKER_XTAL_OFFSET_US);
+			HAL_TICKER_US_TO_TICKS(RADIO_TICKER_XTAL_OFFSET_US);
 		conn->hdr.ticks_preempt_to_start =
-			TICKER_US_TO_TICKS(RADIO_TICKER_PREEMPT_PART_MIN_US);
+			HAL_TICKER_US_TO_TICKS(RADIO_TICKER_PREEMPT_PART_MIN_US);
 		conn->hdr.ticks_slot = _radio.scanner.ticks_conn_slot;
 		ticks_slot_offset = (conn->hdr.ticks_active_to_start <
 				     conn->hdr.ticks_xtal_to_start) ?
@@ -1421,7 +1426,7 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 		 */
 		if (!_radio.remainder_anchor ||
 		    (_radio.remainder_anchor & BIT(31))) {
-			conn_offset_us -= TICKER_TICKS_TO_US(1);
+			conn_offset_us -= HAL_TICKER_TICKS_TO_US(1);
 		}
 
 		if (_radio.scanner.win_offset_us == 0) {
@@ -1429,7 +1434,7 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 			pdu_adv_tx->connect_ind.win_offset = 0;
 		} else {
 			conn_space_us = _radio.scanner.win_offset_us +
-					TICKER_TICKS_TO_US(ticks_slot_offset);
+				HAL_TICKER_TICKS_TO_US(ticks_slot_offset);
 			while ((conn_space_us & ((u32_t)1 << 31)) ||
 			       (conn_space_us < conn_offset_us)) {
 				conn_space_us += conn_interval_us;
@@ -1446,7 +1451,7 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 		 * ticker_start function for first interval; add a
 		 * tick so as to use the ceiled value.
 		 */
-		conn_space_us += TICKER_TICKS_TO_US(1);
+		conn_space_us += HAL_TICKER_TICKS_TO_US(1);
 
 		pdu_adv_tx->connect_ind.interval =
 			_radio.scanner.conn_interval;
@@ -1594,9 +1599,9 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 				     RADIO_TICKER_ID_FIRST_CONNECTION +
 				     conn->handle,
 				     (_radio.ticks_anchor - ticks_slot_offset),
-				     TICKER_US_TO_TICKS(conn_space_us),
-				     TICKER_US_TO_TICKS(conn_interval_us),
-				     TICKER_REMAINDER(conn_interval_us),
+				     HAL_TICKER_US_TO_TICKS(conn_space_us),
+				     HAL_TICKER_US_TO_TICKS(conn_interval_us),
+				     HAL_TICKER_REMAINDER(conn_interval_us),
 				     TICKER_NULL_LAZY,
 				     (ticks_slot_offset + conn->hdr.ticks_slot),
 				     event_master_prepare, conn,
@@ -3896,13 +3901,12 @@ static inline u32_t isr_close_adv(void)
 			 */
 			ticker_status =
 				ticker_update(RADIO_TICKER_INSTANCE_ID_RADIO,
-					      RADIO_TICKER_USER_ID_WORKER,
-					      RADIO_TICKER_ID_ADV,
-					      TICKER_US_TO_TICKS(random_delay *
-								 1000),
-					      0, 0, 0, 0, 0,
-					      ticker_update_adv_assert,
-					      (void *)__LINE__);
+					RADIO_TICKER_USER_ID_WORKER,
+					RADIO_TICKER_ID_ADV,
+					HAL_TICKER_US_TO_TICKS(random_delay *
+							       1000),
+					0, 0, 0, 0, 0, ticker_update_adv_assert,
+					(void *)__LINE__);
 			LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
 				  (ticker_status == TICKER_STATUS_BUSY) ||
 				  (_radio.ticker_id_stop ==
@@ -4047,18 +4051,18 @@ static inline void isr_close_conn(void)
 				window_widening_event_us;
 			if (start_to_address_actual_us <=
 			    start_to_address_expected_us) {
-				ticks_drift_plus =
-					TICKER_US_TO_TICKS(window_widening_event_us);
-				ticks_drift_minus =
-					TICKER_US_TO_TICKS((u64_t)(start_to_address_expected_us -
-								      start_to_address_actual_us));
+				ticks_drift_plus = HAL_TICKER_US_TO_TICKS(
+					window_widening_event_us);
+				ticks_drift_minus = HAL_TICKER_US_TO_TICKS(
+					(start_to_address_expected_us -
+					 start_to_address_actual_us));
 			} else {
-				ticks_drift_plus =
-					TICKER_US_TO_TICKS(start_to_address_actual_us);
-				ticks_drift_minus =
-					TICKER_US_TO_TICKS(RADIO_TICKER_JITTER_US +
-							   (RADIO_TICKER_JITTER_US << 1) +
-							   preamble_to_addr_us);
+				ticks_drift_plus = HAL_TICKER_US_TO_TICKS(
+					start_to_address_actual_us);
+				ticks_drift_minus = HAL_TICKER_US_TO_TICKS(
+					RADIO_TICKER_JITTER_US +
+					(RADIO_TICKER_JITTER_US << 1) +
+					preamble_to_addr_us);
 			}
 
 			/* Reset window widening, as anchor point sync-ed */
@@ -4718,14 +4722,14 @@ static u32_t preempt_calc(struct shdr *hdr, u8_t ticker_id,
 		ticker_ticks_diff_get(ticker_ticks_now_get(), ticks_at_expire);
 
 	diff += 3;
-	if (diff > TICKER_US_TO_TICKS(RADIO_TICKER_START_PART_US)) {
+	if (diff > HAL_TICKER_US_TO_TICKS(RADIO_TICKER_START_PART_US)) {
 		mayfly_xtal_retain(RADIO_TICKER_USER_ID_WORKER, 0);
 
 		prepare_normal_set(hdr, RADIO_TICKER_USER_ID_WORKER, ticker_id);
 
 		diff += hdr->ticks_preempt_to_start;
 		if (diff <
-			TICKER_US_TO_TICKS(RADIO_TICKER_PREEMPT_PART_MAX_US)) {
+		    HAL_TICKER_US_TO_TICKS(RADIO_TICKER_PREEMPT_PART_MAX_US)) {
 			hdr->ticks_preempt_to_start = diff;
 		}
 
@@ -4798,7 +4802,7 @@ static void mayfly_xtal_stop_calc(void *params)
 	}
 
 	if ((ticks_to_expire - hdr->ticks_slot) >
-	    TICKER_US_TO_TICKS(CONFIG_BT_CTLR_XTAL_THRESHOLD)) {
+	    HAL_TICKER_US_TO_TICKS(CONFIG_BT_CTLR_XTAL_THRESHOLD)) {
 		mayfly_xtal_retain(RADIO_TICKER_USER_ID_JOB, 0);
 		/* Use normal prepare */
 		prepare_normal_set(hdr, RADIO_TICKER_USER_ID_JOB, ticker_id);
@@ -4876,8 +4880,8 @@ static void mayfly_xtal_stop_calc(void *params)
 		 */
 		if (conn_curr &&
 		    (conn_curr->conn_interval == conn->conn_interval)) {
-			u32_t ticks_conn_interval =
-				TICKER_US_TO_TICKS(conn->conn_interval * 1250);
+			u32_t ticks_conn_interval = HAL_TICKER_US_TO_TICKS(
+				conn->conn_interval * 1250);
 
 			/* remove laziness, if any, from
 			 * ticks_to_expire.
@@ -4891,8 +4895,8 @@ static void mayfly_xtal_stop_calc(void *params)
 			 */
 			if (conn_curr->role && !conn->role &&
 			    (ticks_to_expire <
-			     (TICKER_US_TO_TICKS(RADIO_TICKER_XTAL_OFFSET_US +
-						 625) +
+			     (HAL_TICKER_US_TO_TICKS(
+				RADIO_TICKER_XTAL_OFFSET_US + 625) +
 			      conn_curr->hdr.ticks_slot))) {
 				u32_t status;
 
@@ -4902,7 +4906,7 @@ static void mayfly_xtal_stop_calc(void *params)
 				}
 			} else if (!conn_curr->role && conn->role &&
 				   (ticks_to_expire <
-				    (TICKER_US_TO_TICKS(
+				    (HAL_TICKER_US_TO_TICKS(
 					RADIO_TICKER_XTAL_OFFSET_US + 625) +
 				     conn_curr->hdr.ticks_slot))) {
 				u32_t status;
@@ -4971,7 +4975,8 @@ static void sched_after_mstr_free_slot_get(u8_t user_id,
 			    (ticker_ticks_diff_get(ticks_to_expire,
 						   ticks_to_expire_prev) >
 			     (ticks_slot_prev_abs + ticks_slot_abs +
-			      TICKER_US_TO_TICKS(RADIO_TICKER_JITTER_US << 2)))) {
+			      HAL_TICKER_US_TO_TICKS(RADIO_TICKER_JITTER_US <<
+						     2)))) {
 				break;
 			}
 
@@ -4998,9 +5003,9 @@ static void sched_after_mstr_free_slot_get(u8_t user_id,
 	}
 
 	if (ticker_id_prev != 0xff) {
-		*us_offset = TICKER_TICKS_TO_US(ticks_to_expire_prev +
-						ticks_slot_prev_abs) +
-			(RADIO_TICKER_JITTER_US << 2);
+		*us_offset = HAL_TICKER_TICKS_TO_US(ticks_to_expire_prev +
+						    ticks_slot_prev_abs) +
+			     (RADIO_TICKER_JITTER_US << 2);
 	}
 }
 
@@ -5012,15 +5017,15 @@ static void sched_after_mstr_free_offset_get(u16_t conn_interval,
 	u32_t ticks_anchor_offset = ticks_anchor;
 
 	sched_after_mstr_free_slot_get(RADIO_TICKER_USER_ID_JOB,
-				       (TICKER_US_TO_TICKS(
+				       (HAL_TICKER_US_TO_TICKS(
 						RADIO_TICKER_XTAL_OFFSET_US) +
 					ticks_slot), &ticks_anchor_offset,
 				       win_offset_us);
 
 	if (ticks_anchor_offset != ticks_anchor) {
-		*win_offset_us +=
-			TICKER_TICKS_TO_US(ticker_ticks_diff_get(ticks_anchor_offset,
-								 ticks_anchor));
+		*win_offset_us += HAL_TICKER_TICKS_TO_US(
+			ticker_ticks_diff_get(ticks_anchor_offset,
+					      ticks_anchor));
 	}
 
 	if ((*win_offset_us & ((u32_t)1 << 31)) == 0) {
@@ -5177,12 +5182,15 @@ static void sched_free_win_offset_calc(struct connection *conn_curr,
 				       (ticker_ticks_diff_get(ticks_to_expire_normal,
 							      ticks_to_expire_prev) >=
 					(ticks_slot_prev_abs +
-					 TICKER_US_TO_TICKS(RADIO_TICKER_XTAL_OFFSET_US +
-							    625 + 1250) +
+					 HAL_TICKER_US_TO_TICKS(
+						RADIO_TICKER_XTAL_OFFSET_US +
+						625 + 1250) +
 					 conn->hdr.ticks_slot))) {
 					_win_offset =
-						TICKER_TICKS_TO_US(ticks_to_expire_prev +
-								   ticks_slot_prev_abs) / 1250;
+						HAL_TICKER_TICKS_TO_US(
+							ticks_to_expire_prev +
+							ticks_slot_prev_abs) /
+						1250;
 					if (_win_offset >= conn_interval) {
 						ticks_to_expire_prev = 0;
 
@@ -5195,7 +5203,7 @@ static void sched_free_win_offset_calc(struct connection *conn_curr,
 					offset_index++;
 
 					ticks_to_expire_prev +=
-						TICKER_US_TO_TICKS(1250);
+						HAL_TICKER_US_TO_TICKS(1250);
 				}
 
 				*ticks_to_offset_next = ticks_to_expire_prev;
@@ -5208,9 +5216,8 @@ static void sched_free_win_offset_calc(struct connection *conn_curr,
 			ticks_anchor_prev = ticks_anchor;
 			ticker_id_prev = ticker_id;
 			ticks_to_expire_prev = ticks_to_expire_normal;
-			ticks_slot_prev_abs =
-				TICKER_US_TO_TICKS(RADIO_TICKER_XTAL_OFFSET_US +
-						   625 + 1250) +
+			ticks_slot_prev_abs = HAL_TICKER_US_TO_TICKS(
+				RADIO_TICKER_XTAL_OFFSET_US + 625 + 1250) +
 				conn->hdr.ticks_slot;
 		}
 	} while (offset_index < *offset_max);
@@ -5221,9 +5228,9 @@ static void sched_free_win_offset_calc(struct connection *conn_curr,
 		}
 
 		while (offset_index < *offset_max) {
-			_win_offset =
-				TICKER_TICKS_TO_US(ticks_to_expire_prev +
-						   ticks_slot_prev_abs) / 1250;
+			_win_offset = HAL_TICKER_TICKS_TO_US(
+					ticks_to_expire_prev +
+					ticks_slot_prev_abs) / 1250;
 			if (_win_offset >= conn_interval) {
 				ticks_to_expire_prev = 0;
 
@@ -5234,7 +5241,7 @@ static void sched_free_win_offset_calc(struct connection *conn_curr,
 			       &_win_offset, sizeof(u16_t));
 			offset_index++;
 
-			ticks_to_expire_prev += TICKER_US_TO_TICKS(1250);
+			ticks_to_expire_prev += HAL_TICKER_US_TO_TICKS(1250);
 		}
 
 		*ticks_to_offset_next = ticks_to_expire_prev;
@@ -5277,8 +5284,8 @@ static void mayfly_sched_win_offset_select(void *params)
 	u32_t ticks_to_offset;
 	u16_t win_offset_s;
 
-	ticks_to_offset =
-		TICKER_US_TO_TICKS(conn->llcp_conn_param.offset0 * 1250);
+	ticks_to_offset = HAL_TICKER_US_TO_TICKS(conn->llcp_conn_param.offset0 *
+						 1250);
 
 	sched_free_win_offset_calc(conn, 1, &ticks_to_offset,
 				   conn->llcp_conn_param.interval,
@@ -6002,10 +6009,10 @@ static void event_adv(u32_t ticks_at_expire, u32_t remainder,
 				       (u8_t *)wl->bdaddr);
 	}
 
-	remainder_us = radio_tmr_start(1,
-				ticks_at_expire +
-				TICKER_US_TO_TICKS(RADIO_TICKER_START_PART_US),
-				_radio.remainder_anchor);
+	remainder_us = radio_tmr_start(1, ticks_at_expire +
+					  HAL_TICKER_US_TO_TICKS(
+						RADIO_TICKER_START_PART_US),
+				       _radio.remainder_anchor);
 
 	/* capture end of Tx-ed PDU, used to calculate HCTO. */
 	radio_tmr_end_capture();
@@ -6361,10 +6368,10 @@ static void event_scan(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 				       (u8_t *)wl->bdaddr);
 	}
 
-	remainder_us = radio_tmr_start(0,
-				ticks_at_expire +
-				TICKER_US_TO_TICKS(RADIO_TICKER_START_PART_US),
-				_radio.remainder_anchor);
+	remainder_us = radio_tmr_start(0, ticks_at_expire +
+					  HAL_TICKER_US_TO_TICKS(
+						RADIO_TICKER_START_PART_US),
+				       _radio.remainder_anchor);
 
 	/* capture end of Rx-ed PDU, for initiator to calculate first
 	 * master event.
@@ -6396,7 +6403,8 @@ static void event_scan(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 				RADIO_TICKER_USER_ID_WORKER,
 				RADIO_TICKER_ID_SCAN_STOP, ticks_at_expire,
 				_radio.scanner.ticks_window +
-				TICKER_US_TO_TICKS(RADIO_TICKER_START_PART_US),
+				HAL_TICKER_US_TO_TICKS(
+					RADIO_TICKER_START_PART_US),
 				TICKER_NULL_PERIOD, TICKER_NULL_REMAINDER,
 				TICKER_NULL_LAZY, TICKER_NULL_SLOT,
 				event_stop, (void *)STATE_STOP,
@@ -6641,13 +6649,11 @@ static inline u32_t event_conn_upd_prep(struct connection *conn,
 		conn_interval_new = latency *
 			conn->llcp.conn_upd.interval;
 		if (conn_interval_new > conn_interval_old) {
-			ticks_at_expire +=
-				TICKER_US_TO_TICKS((conn_interval_new -
-						    conn_interval_old) * 1250);
+			ticks_at_expire += HAL_TICKER_US_TO_TICKS(
+				(conn_interval_new - conn_interval_old) * 1250);
 		} else {
-			ticks_at_expire -=
-				TICKER_US_TO_TICKS((conn_interval_old -
-						    conn_interval_new) * 1250);
+			ticks_at_expire -= HAL_TICKER_US_TO_TICKS(
+				(conn_interval_old - conn_interval_new) * 1250);
 		}
 		conn->latency_prepare -= (instant_latency - latency);
 
@@ -6683,17 +6689,16 @@ static inline u32_t event_conn_upd_prep(struct connection *conn,
 					conn->slave.window_widening_max_us;
 			}
 
-			ticks_at_expire -=
-				TICKER_US_TO_TICKS(conn->slave.window_widening_periodic_us *
-						   latency);
-			ticks_win_offset =
-				TICKER_US_TO_TICKS((conn->llcp.conn_upd.win_offset_us /
-						    1250) * 1250);
-			periodic_us -=
-				conn->slave.window_widening_periodic_us;
+			ticks_at_expire -= HAL_TICKER_US_TO_TICKS(
+				conn->slave.window_widening_periodic_us *
+				latency);
+			ticks_win_offset = HAL_TICKER_US_TO_TICKS(
+				(conn->llcp.conn_upd.win_offset_us / 1250) *
+				1250);
+			periodic_us -= conn->slave.window_widening_periodic_us;
 		} else {
-			ticks_win_offset =
-				TICKER_US_TO_TICKS(conn->llcp.conn_upd.win_offset_us);
+			ticks_win_offset = HAL_TICKER_US_TO_TICKS(
+				conn->llcp.conn_upd.win_offset_us);
 
 			/* Workaround: Due to the missing remainder param in
 			 * ticker_start function for first interval; add a
@@ -6750,8 +6755,8 @@ static inline u32_t event_conn_upd_prep(struct connection *conn,
 				     RADIO_TICKER_ID_FIRST_CONNECTION +
 				     conn->handle,
 				     ticks_at_expire, ticks_win_offset,
-				     TICKER_US_TO_TICKS(periodic_us),
-				     TICKER_REMAINDER(periodic_us),
+				     HAL_TICKER_US_TO_TICKS(periodic_us),
+				     HAL_TICKER_REMAINDER(periodic_us),
 				     TICKER_NULL_LAZY,
 				     (ticks_slot_offset + conn->hdr.ticks_slot),
 				     conn->role ?
@@ -8124,10 +8129,10 @@ static void event_slave(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 		conn->slave.window_size_prepare_us;
 	conn->slave.window_size_prepare_us = 0;
 
-	remainder_us =
-		radio_tmr_start(0, ticks_at_expire +
-				TICKER_US_TO_TICKS(RADIO_TICKER_START_PART_US),
-				_radio.remainder_anchor);
+	remainder_us = radio_tmr_start(0, ticks_at_expire +
+					  HAL_TICKER_US_TO_TICKS(
+						RADIO_TICKER_START_PART_US),
+				       _radio.remainder_anchor);
 
 	radio_tmr_aa_capture();
 	radio_tmr_aa_save(0);
@@ -8291,9 +8296,10 @@ static void event_master(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 	    (conn->connect_expire && (conn->connect_expire <= 6))) {
 #endif
 		remainder_us = radio_tmr_start(1,
-				ticks_at_expire +
-				TICKER_US_TO_TICKS(RADIO_TICKER_START_PART_US),
-				_radio.remainder_anchor);
+					       ticks_at_expire +
+					       HAL_TICKER_US_TO_TICKS(
+						RADIO_TICKER_START_PART_US),
+					       _radio.remainder_anchor);
 
 		/* capture end of Tx-ed PDU, used to calculate HCTO. */
 		radio_tmr_end_capture();
@@ -8338,10 +8344,11 @@ static void event_master(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 			_radio.packet_rx[_radio.packet_rx_last]->pdu_data);
 
 		/* setup pkticker and hcto */
-		remainder_us =
-			radio_tmr_start(0, ticks_at_expire +
-					TICKER_US_TO_TICKS(RADIO_TICKER_START_PART_US),
-					_radio.remainder_anchor);
+		remainder_us = radio_tmr_start(0,
+					       ticks_at_expire +
+					       HAL_TICKER_US_TO_TICKS(
+						RADIO_TICKER_START_PART_US),
+					       _radio.remainder_anchor);
 
 		radio_tmr_aa_capture();
 		radio_tmr_aa_save(0);
@@ -10041,9 +10048,9 @@ u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 	_radio.advertiser.hdr.ticks_active_to_start =
 		_radio.ticks_active_to_start;
 	_radio.advertiser.hdr.ticks_xtal_to_start =
-		TICKER_US_TO_TICKS(RADIO_TICKER_XTAL_OFFSET_US);
+		HAL_TICKER_US_TO_TICKS(RADIO_TICKER_XTAL_OFFSET_US);
 	_radio.advertiser.hdr.ticks_preempt_to_start =
-		TICKER_US_TO_TICKS(RADIO_TICKER_PREEMPT_PART_MIN_US);
+		HAL_TICKER_US_TO_TICKS(RADIO_TICKER_PREEMPT_PART_MIN_US);
 
 	chan_cnt = util_ones_count_get(&chan_map, sizeof(chan_map));
 
@@ -10058,7 +10065,7 @@ u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 		slot_us = (RADIO_TICKER_START_PART_US + 376 + 152 + 176 +
 			   152 + 376) * chan_cnt;
 	}
-	_radio.advertiser.hdr.ticks_slot = TICKER_US_TO_TICKS(slot_us);
+	_radio.advertiser.hdr.ticks_slot = HAL_TICKER_US_TO_TICKS(slot_us);
 
 	ticks_slot_offset =
 		(_radio.advertiser.hdr.ticks_active_to_start <
@@ -10097,8 +10104,9 @@ u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 			ticker_start(RADIO_TICKER_INSTANCE_ID_RADIO,
 				     RADIO_TICKER_USER_ID_APP,
 				     RADIO_TICKER_ID_ADV_STOP, ticks_now,
-				     TICKER_US_TO_TICKS((u64_t) (1280 * 1000) +
-							RADIO_TICKER_XTAL_OFFSET_US),
+				     HAL_TICKER_US_TO_TICKS(
+					(1280 * 1000) +
+					RADIO_TICKER_XTAL_OFFSET_US),
 				     TICKER_NULL_PERIOD, TICKER_NULL_REMAINDER,
 				     TICKER_NULL_LAZY, TICKER_NULL_SLOT,
 				     event_adv_stop, NULL, ticker_if_done,
@@ -10109,7 +10117,8 @@ u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 				     RADIO_TICKER_USER_ID_APP,
 				     RADIO_TICKER_ID_ADV,
 				     ticker_ticks_now_get(), 0,
-				     TICKER_US_TO_TICKS((u64_t) interval * 625),
+				     HAL_TICKER_US_TO_TICKS((u64_t)interval *
+							    625),
 				     TICKER_NULL_REMAINDER, TICKER_NULL_LAZY,
 				     (ticks_slot_offset +
 				      _radio.advertiser.hdr.ticks_slot),
@@ -10219,27 +10228,27 @@ u32_t radio_scan_enable(u8_t type, u8_t init_addr_type, u8_t *init_addr,
 
 	_radio.scanner.init_addr_type = init_addr_type;
 	memcpy(&_radio.scanner.init_addr[0], init_addr, BDADDR_SIZE);
-	_radio.scanner.ticks_window =
-		TICKER_US_TO_TICKS((u64_t) window * 625);
+	_radio.scanner.ticks_window = HAL_TICKER_US_TO_TICKS((u64_t)window *
+							     625);
 	_radio.scanner.filter_policy = filter_policy;
 
 	_radio.scanner.hdr.ticks_active_to_start =
 		_radio.ticks_active_to_start;
 	_radio.scanner.hdr.ticks_xtal_to_start =
-		TICKER_US_TO_TICKS(RADIO_TICKER_XTAL_OFFSET_US);
+		HAL_TICKER_US_TO_TICKS(RADIO_TICKER_XTAL_OFFSET_US);
 	_radio.scanner.hdr.ticks_preempt_to_start =
-		TICKER_US_TO_TICKS(RADIO_TICKER_PREEMPT_PART_MIN_US);
+		HAL_TICKER_US_TO_TICKS(RADIO_TICKER_PREEMPT_PART_MIN_US);
 	_radio.scanner.hdr.ticks_slot =
 		_radio.scanner.ticks_window +
-		TICKER_US_TO_TICKS(RADIO_TICKER_START_PART_US);
+		HAL_TICKER_US_TO_TICKS(RADIO_TICKER_START_PART_US);
 
-	ticks_interval = TICKER_US_TO_TICKS((u64_t) interval * 625);
+	ticks_interval = HAL_TICKER_US_TO_TICKS((u64_t) interval * 625);
 	if (_radio.scanner.hdr.ticks_slot >
 	    (ticks_interval -
-	     TICKER_US_TO_TICKS(RADIO_TICKER_XTAL_OFFSET_US))) {
+	     HAL_TICKER_US_TO_TICKS(RADIO_TICKER_XTAL_OFFSET_US))) {
 		_radio.scanner.hdr.ticks_slot =
 			(ticks_interval -
-			 TICKER_US_TO_TICKS(RADIO_TICKER_XTAL_OFFSET_US));
+			 HAL_TICKER_US_TO_TICKS(RADIO_TICKER_XTAL_OFFSET_US));
 	}
 
 	ticks_slot_offset =
@@ -10274,9 +10283,9 @@ u32_t radio_scan_enable(u8_t type, u8_t init_addr_type, u8_t *init_addr,
 
 	ret = ticker_start(RADIO_TICKER_INSTANCE_ID_RADIO,
 			   RADIO_TICKER_USER_ID_APP, RADIO_TICKER_ID_SCAN,
-			   (ticks_anchor + TICKER_US_TO_TICKS(us_offset)), 0,
-			   ticks_interval,
-			   TICKER_REMAINDER((u64_t) interval * 625),
+			   (ticks_anchor + HAL_TICKER_US_TO_TICKS(us_offset)),
+			   0, ticks_interval,
+			   HAL_TICKER_REMAINDER((u64_t) interval * 625),
 			   TICKER_NULL_LAZY,
 			   (ticks_slot_offset +
 			    _radio.scanner.hdr.ticks_slot),
@@ -10383,10 +10392,9 @@ u32_t radio_connect_enable(u8_t adv_addr_type, u8_t *adv_addr, u16_t interval,
 	_radio.scanner.conn_interval = interval;
 	_radio.scanner.conn_latency = latency;
 	_radio.scanner.conn_timeout = timeout;
-	_radio.scanner.ticks_conn_slot =
-		TICKER_US_TO_TICKS(RADIO_TICKER_START_PART_US +
-				   radio_tx_ready_delay_get(0, 0) +
-				   328 + RADIO_TIFS + 328);
+	_radio.scanner.ticks_conn_slot = HAL_TICKER_US_TO_TICKS(
+		RADIO_TICKER_START_PART_US + radio_tx_ready_delay_get(0, 0) +
+		328 + RADIO_TIFS + 328);
 
 	conn->handle = 0xFFFF;
 	conn->llcp_features = RADIO_BLE_FEAT;

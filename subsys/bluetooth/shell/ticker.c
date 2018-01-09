@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2018 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,10 @@
 #include <zephyr.h>
 #include <shell/shell.h>
 #include <misc/printk.h>
+
+#if defined(CONFIG_SOC_FAMILY_NRF5)
+#include "../controller/hal/nrf5/ticker.h"
+#endif /* CONFIG_SOC_FAMILY_NRF5 */
 
 #include "../controller/util/memq.h"
 #include "../controller/util/mayfly.h"
@@ -97,7 +101,7 @@ int cmd_ticker_info(int argc, char *argv[])
 
 	printk("Tickers: %u.\n", tickers_count);
 	printk("Tick: %u (%uus).\n", ticks_current,
-	       TICKER_TICKS_TO_US(ticks_current));
+	       HAL_TICKER_TICKS_TO_US(ticks_current));
 
 	if (!tickers_count) {
 		return 0;
@@ -110,7 +114,7 @@ int cmd_ticker_info(int argc, char *argv[])
 	for (i = 0; i < tickers_count; i++) {
 		printk("%03u %08u %08u\n", tickers[i].id,
 		       tickers[i].ticks_to_expire,
-		       TICKER_TICKS_TO_US(tickers[i].ticks_to_expire));
+		       HAL_TICKER_TICKS_TO_US(tickers[i].ticks_to_expire));
 	}
 	printk("---------------------\n");
 
