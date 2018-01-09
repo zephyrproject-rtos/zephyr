@@ -381,18 +381,20 @@ foreach(zephyr_lib ${ZEPHYR_LIBS_PROPERTY})
   # TODO: Could this become an INTERFACE property of zephyr_interface?
   add_dependencies(${zephyr_lib} offsets_h)
 
-  # Verify that all libraries have source files. Libraries without
-  # source files are not supported because they are an indication that
-  # something has been misconfigured.
-  get_target_property(lib_sources ${zephyr_lib} SOURCES)
+  # Verify that all (non-imported) libraries have source
+  # files. Libraries without source files are not supported because
+  # they are an indication that something has been misconfigured.
+  get_target_property(lib_imported ${zephyr_lib} IMPORTED)
+  get_target_property(lib_sources  ${zephyr_lib} SOURCES)
   if(lib_sources STREQUAL lib_sources-NOTFOUND
       AND (NOT (${zephyr_lib} STREQUAL app))
+      AND (NOT lib_imported)
       )
     # app is not checked because it's sources are added to it after
     # this CMakeLists.txt file has been processed
     message(FATAL_ERROR "\
 The Zephyr library '${zephyr_lib}' was created without source files. \
-Empty libraries are not supported. \
+Empty (non-imported) libraries are not supported. \
 Either make sure that the library has the sources it should have, \
 or make sure it is not created when it has no source files.")
   endif()
