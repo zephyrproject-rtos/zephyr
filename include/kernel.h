@@ -1138,7 +1138,7 @@ static inline s64_t __ticks_to_ms(s64_t ticks)
 #endif
 
 #else
-	__ASSERT(ticks == 0, "");
+	__ASSERT(ticks == 0, "ticks not zero");
 	return 0;
 #endif
 }
