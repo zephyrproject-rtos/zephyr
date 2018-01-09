@@ -1743,7 +1743,11 @@ class TestSuite:
                         discards[instance] = "Excluded tags per platform"
                         continue
 
-                    defconfig = {"ARCH": arch.name, "PLATFORM": plat.name}
+                    defconfig = {
+                            "ASSERT": 1 if options.enable_asserts else 0,
+                            "ARCH": arch.name,
+                            "PLATFORM": plat.name
+                            }
                     defconfig.update(os.environ)
                     for p, tdefconfig in tc.defconfig.items():
                         if p == plat:
