@@ -42,8 +42,7 @@
 
 static u64_t state[2];
 static bool initialized;
-
-K_SEM_DEFINE(state_sem, 1, 1);
+static K_SEM_DEFINE(state_sem, 1, 1);
 
 static inline u64_t rotl(const u64_t x, int k)
 {
