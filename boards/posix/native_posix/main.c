@@ -23,6 +23,7 @@
 #include "hw_models_top.h"
 #include <stdlib.h>
 #include "misc/util.h"
+#include "cmdline.h"
 
 #define STOP_AFTER_5_SECONDS 0
 
@@ -54,8 +55,10 @@ void main_clean_up(int exit_code)
  * apps (hello world, synchronization, philosophers) and run the sanity-check
  * regression
  */
-int main(void)
+int main(int argc, char *argv[])
 {
+
+	native_handle_cmd_line(argc, argv);
 
 	hwm_init();
 
