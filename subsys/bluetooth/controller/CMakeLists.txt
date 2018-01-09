@@ -46,6 +46,7 @@ zephyr_library_sources_ifdef(
   hal/nrf5/rand.c
   hal/nrf5/ecb.c
   hal/nrf5/radio/radio.c
+  hal/nrf5/mayfly.c
   )
 
 zephyr_library_include_directories(
