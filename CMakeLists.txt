@@ -289,6 +289,23 @@ endif()
 
 configure_file(version.h.in ${PROJECT_BINARY_DIR}/include/generated/version.h)
 
+# Unfortunately, the order in which CMakeLists.txt code is processed
+# matters so we need to be careful about how we order the processing
+# of subdirectories. One example is "Compiler flags added late in the
+# build are not exported to external build systems #5605"; when we
+# integrate with an external build system we read out all compiler
+# flags when the external project is created. So an external project
+# defined in subsys or ext will not get global flags added by drivers/
+# or tests/ as the subdirectories are ordered now.
+#
+# Another example of when the order matters is the reading and writing
+# of global properties such as ZEPHYR_LIBS or
+# GENERATED_KERNEL_OBJECT_FILES.
+#
+# Arch is placed early because it defines important compiler flags
+# that must be exported to external build systems defined in
+# e.g. subsys/.
+add_subdirectory(arch)
 add_subdirectory(lib)
 add_subdirectory(misc)
 # We use include instead of add_subdirectory to avoid creating a new directory scope.
@@ -298,7 +315,6 @@ include(misc/generated/CMakeLists.txt)
 add_subdirectory(boards)
 add_subdirectory(ext)
 add_subdirectory(subsys)
-add_subdirectory(arch)
 add_subdirectory(drivers)
 add_subdirectory(tests)
 
