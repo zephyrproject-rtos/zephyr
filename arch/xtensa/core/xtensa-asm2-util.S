@@ -7,6 +7,22 @@
 #include <offsets.h>
 
 /*
+ * xtensa_spill_reg_windows
+ *
+ * Globally visible symbol to do register spills.  Useful for unit
+ * testing, or maybe as part of a debug/watchdog/error handler.  Not a
+ * C function, call this via CALL0 (so you probably have to save off
+ * A0, but no other registers need to be spilled).  On return, all
+ * registers not part of the current function will be spilled to
+ * memory.
+ */
+.global xtensa_spill_reg_windows
+.align 4
+xtensa_spill_reg_windows:
+        SPILL_ALL_WINDOWS
+        ret
+
+/*
  * xtensa_save_high_regs
  *
  * Call with CALL0, with A2/A3 available as scratch.  Pushes the high
@@ -117,7 +133,6 @@ _high_restore_done:
  * from switch or an interrupt exit.  Interrupts must be disabled,
  * and register windows should have been spilled.
  *
-
  * Note that exit from the restore is done with the RFI instruction,
  * using the EPCn/EPSn registers.  Those will have been saved already
  * by any interrupt entry so they are save to use.  Note that EPC1 and
