@@ -45,7 +45,7 @@ void main(void)
 		return;
 	}
 
-	mgmt_iface = net_if_get_default();
+	mgmt_iface = net_if_get_first_by_type(&NET_L2_GET_NAME(ETHERNET));
 	if (!mgmt_iface) {
 		NET_INFO("No management network interface found.");
 	} else {
@@ -53,4 +53,8 @@ void main(void)
 	}
 
 	setup_rpl(iface, CONFIG_NET_RPL_PREFIX);
+
+#if defined(CONFIG_COAP)
+	coap_init();
+#endif
 }

@@ -36,3 +36,4 @@ foreach(inc_file
 endforeach()
 
 target_link_libraries_ifdef(CONFIG_MBEDTLS app mbedTLS)
+target_include_directories(app PRIVATE $ENV{ZEPHYR_BASE}/subsys/net/ip)
