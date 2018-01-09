@@ -139,7 +139,10 @@ static inline struct net_buf *encode_node(struct radio_pdu_node_rx *node_rx,
 		break;
 	}
 
+#if defined(CONFIG_BT_LL_SW)
 	radio_rx_fc_set(node_rx->hdr.handle, 0);
+#endif /* CONFIG_BT_LL_SW */
+
 	node_rx->hdr.onion.next = 0;
 	radio_rx_mem_release(&node_rx);
 

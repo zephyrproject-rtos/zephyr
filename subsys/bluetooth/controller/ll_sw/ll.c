@@ -75,11 +75,6 @@ static u8_t MALIGN(4) _radio[LL_MEM_TOTAL];
 
 static struct k_sem *sem_recv;
 
-static struct {
-	u8_t pub_addr[BDADDR_SIZE];
-	u8_t rnd_addr[BDADDR_SIZE];
-} _ll_context;
-
 void mayfly_enable_cb(u8_t caller_id, u8_t callee_id, u8_t enable)
 {
 	(void)caller_id;
@@ -266,34 +261,4 @@ void ll_timeslice_ticker_id_get(u8_t * const instance_index, u8_t * const user_i
 {
 	*user_id = (TICKER_NODES - FLASH_TICKER_NODES); /* The last index in the total tickers */
 	*instance_index = RADIO_TICKER_INSTANCE_ID_RADIO;
-}
-
-u8_t *ll_addr_get(u8_t addr_type, u8_t *bdaddr)
-{
-	if (addr_type > 1) {
-		return NULL;
-	}
-
-	if (addr_type) {
-		if (bdaddr) {
-			memcpy(bdaddr, _ll_context.rnd_addr, BDADDR_SIZE);
-		}
-
-		return _ll_context.rnd_addr;
-	}
-
-	if (bdaddr) {
-		memcpy(bdaddr, _ll_context.pub_addr, BDADDR_SIZE);
-	}
-
-	return _ll_context.pub_addr;
-}
-
-void ll_addr_set(u8_t addr_type, u8_t const *const bdaddr)
-{
-	if (addr_type) {
-		memcpy(_ll_context.rnd_addr, bdaddr, BDADDR_SIZE);
-	} else {
-		memcpy(_ll_context.pub_addr, bdaddr, BDADDR_SIZE);
-	}
 }
