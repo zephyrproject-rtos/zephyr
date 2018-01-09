@@ -11,6 +11,7 @@ source "tests/ztest/Kconfig"
 config TEST
 	bool "Mark project as a test"
 	default n
+	select COVERAGE if NATIVE_APPLICATION
 	help
 	  Mark a project or an application as a test. This will enable a few
 	  test defaults.
