@@ -1,4 +1,4 @@
 tests:
      - test:
-        tags: kernel
-        platform_whitelist: qemu_x86 arduino_101
+        tags: kernel userspace
+        filter: CONFIG_ARCH_HAS_USERSPACE
