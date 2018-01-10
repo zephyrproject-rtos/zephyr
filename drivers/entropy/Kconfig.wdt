@@ -1,0 +1,18 @@
+# Kconfig.wdt - race watchdog timer against system timer to generate entropy
+#
+# Copyright (c) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config ENTROPY_WDT_RNG
+	bool "Use watchdog timer jitter to generate entropy"
+	depends on WATCHDOG
+	select ENTROPY_HAS_DRIVER
+	help
+	  This option enables a "driver" that generates entropy by racing
+	  the watchdog timer against a system timer.  The jitter between
+	  these two drivers is used to generate entropy.  Please refer to
+	  entropy_wdt.c for a more detailed explanation.
+
+	  Enabling this feature will conflict with the use of the watchdog
+	  timer.
