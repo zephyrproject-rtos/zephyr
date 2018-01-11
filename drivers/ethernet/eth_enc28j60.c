@@ -676,7 +676,7 @@ static int eth_net_tx(struct net_if *iface, struct net_pkt *pkt)
 
 	SYS_LOG_DBG("pkt %p (len %u)", pkt, len);
 
-	ret = eth_enc28j60_tx(iface->dev, pkt, len);
+	ret = eth_enc28j60_tx(net_if_get_device(iface), pkt, len);
 	if (ret == 0) {
 		net_pkt_unref(pkt);
 	}

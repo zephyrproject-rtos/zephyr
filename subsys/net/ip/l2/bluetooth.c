@@ -262,7 +262,7 @@ static void bt_iface_init(struct net_if *iface)
 	/* Workaround Linux bug, see:
 	 * https://jira.zephyrproject.org/browse/ZEP-1656
 	 */
-	atomic_set_bit(iface->flags, NET_IF_POINTOPOINT);
+	atomic_set_bit(iface->if_dev->flags, NET_IF_POINTOPOINT);
 #endif
 }
 

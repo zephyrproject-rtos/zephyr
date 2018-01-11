@@ -638,7 +638,8 @@ static void check_local_address(struct net_app_ctx *ctx,
 		/* Just take the first IPv4 address of an interface */
 		iface = net_context_get_iface(net_ctx);
 		if (iface) {
-			laddr = &iface->ipv4.unicast[0].address.in_addr;
+			laddr =
+			    &iface->config.ip.ipv4.unicast[0].address.in_addr;
 			net_ipaddr_copy(&net_sin(&ctx->ipv4.local)->sin_addr,
 					laddr);
 		} else {

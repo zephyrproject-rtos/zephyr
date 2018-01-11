@@ -78,13 +78,17 @@ static inline struct arp_entry *find_entry(struct net_if *iface,
 
 static inline struct in_addr *if_get_addr(struct net_if *iface)
 {
+	struct net_if_config *config;
 	int i;
 
+	config = net_if_config_get(iface);
+
 	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
-		if (iface->ipv4.unicast[i].is_used &&
-		    iface->ipv4.unicast[i].address.family == AF_INET &&
-		    iface->ipv4.unicast[i].addr_state == NET_ADDR_PREFERRED) {
-			return &iface->ipv4.unicast[i].address.in_addr;
+		if (config->ip.ipv4.unicast[i].is_used &&
+		    config->ip.ipv4.unicast[i].address.family == AF_INET &&
+		    config->ip.ipv4.unicast[i].addr_state ==
+							NET_ADDR_PREFERRED) {
+			return &config->ip.ipv4.unicast[i].address.in_addr;
 		}
 	}
 
@@ -226,7 +230,11 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt)
 	 */
 	if (!net_if_ipv4_addr_mask_cmp(net_pkt_iface(pkt),
 				       &NET_IPV4_HDR(pkt)->dst)) {
-		addr = &net_pkt_iface(pkt)->ipv4.gw;
+		struct net_if_config *config;
+
+		config = net_if_config_get(net_pkt_iface(pkt));
+
+		addr = &config->ip.ipv4.gw;
 		if (net_is_ipv4_addr_unspecified(addr)) {
 			NET_ERR("Gateway not set for iface %p",
 				net_pkt_iface(pkt));
