@@ -14,6 +14,15 @@ you use native host tools for compiling, debugging, and analyzing your
 Zephyr application, eliminating the need for architecture-specific
 target hardware in the early phases of development.
 
+.. figure:: native_layers.svg
+    :align: center
+    :alt: Zephyr layering in native build
+    :figclass: align-center
+
+    Zephyr layering when built against an embedded target (left), and
+    targeting the native_posix board (right)
+
+
 Host system dependencies
 ========================
 
@@ -175,5 +184,5 @@ with ``valgrind``.
 
 Because the execution of your Zephyr application is fully deterministic
 (there are no asynchronous or random components), you can execute the
-code multiple times and get the exact same result and instrumenting the
-code does not affect the execution of the code.
+code multiple times and get the exact same result. Instrumenting the
+code does not affect its execution.
