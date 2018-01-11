@@ -322,10 +322,10 @@ int k_mem_pool_alloc(struct k_mem_pool *p, struct k_mem_block *block,
 	return -EAGAIN;
 }
 
-void k_mem_pool_free(struct k_mem_block *block)
+void k_mem_pool_free_id(struct k_mem_block_id *id)
 {
 	int i, key, need_sched = 0;
-	struct k_mem_pool *p = get_pool(block->id.pool);
+	struct k_mem_pool *p = get_pool(id->pool);
 	size_t lsizes[p->n_levels];
 
 	/* As in k_mem_pool_alloc(), we build a table of level sizes
@@ -335,12 +335,11 @@ void k_mem_pool_free(struct k_mem_block *block)
 	 * sublevels.
 	 */
 	lsizes[0] = _ALIGN4(p->max_sz);
-	for (i = 1; i <= block->id.level; i++) {
+	for (i = 1; i <= id->level; i++) {
 		lsizes[i] = _ALIGN4(lsizes[i-1] / 4);
 	}
 
-	free_block(get_pool(block->id.pool), block->id.level,
-		   lsizes, block->id.block);
+	free_block(get_pool(id->pool), id->level, lsizes, id->block);
 
 	/* Wake up anyone blocked on this pool and let them repeat
 	 * their allocation attempts
@@ -361,6 +360,11 @@ void k_mem_pool_free(struct k_mem_block *block)
 	} else {
 		irq_unlock(key);
 	}
+}
+
+void k_mem_pool_free(struct k_mem_block *block)
+{
+	k_mem_pool_free_id(&block->id);
 }
 
 #if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
