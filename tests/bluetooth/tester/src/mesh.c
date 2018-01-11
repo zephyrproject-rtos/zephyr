@@ -196,9 +196,44 @@ static struct bt_mesh_model_pub health_pub = {
 	.msg = BT_MESH_HEALTH_FAULT_MSG(CUR_FAULTS_MAX),
 };
 
+static struct bt_mesh_cfg_cli cfg_cli = {
+};
+
+void show_faults(u8_t test_id, u16_t cid, u8_t *faults, size_t fault_count)
+{
+	size_t i;
+
+	if (!fault_count) {
+		SYS_LOG_DBG("Health Test ID 0x%02x Company ID 0x%04x: "
+			    "no faults", test_id, cid);
+		return;
+	}
+
+	SYS_LOG_DBG("Health Test ID 0x%02x Company ID 0x%04x Fault Count %zu: ",
+		    test_id, cid, fault_count);
+
+	for (i = 0; i < fault_count; i++) {
+		SYS_LOG_DBG("0x%02x", faults[i]);
+	}
+}
+
+static void health_current_status(struct bt_mesh_health_cli *cli, u16_t addr,
+				  u8_t test_id, u16_t cid, u8_t *faults,
+				  size_t fault_count)
+{
+	SYS_LOG_DBG("Health Current Status from 0x%04x", addr);
+	show_faults(test_id, cid, faults, fault_count);
+}
+
+static struct bt_mesh_health_cli health_cli = {
+	.current_status = health_current_status,
+};
+
 static struct bt_mesh_model root_models[] = {
 	BT_MESH_MODEL_CFG_SRV(&cfg_srv),
+	BT_MESH_MODEL_CFG_CLI(&cfg_cli),
 	BT_MESH_MODEL_HEALTH_SRV(&health_srv, &health_pub),
+	BT_MESH_MODEL_HEALTH_CLI(&health_cli),
 };
 
 static struct bt_mesh_model vnd_models[] = {
