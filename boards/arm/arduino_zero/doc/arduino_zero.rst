@@ -84,10 +84,11 @@ Flashing
 
 #. Build the Zephyr kernel and the :ref:`hello_world` sample application:
 
-   .. code-block:: console
-
-      $ cd $ZEPHYR_BASE/samples/hello_world/
-      $ make BOARD=arduino_zero
+	.. zephyr-app-commands::
+	   :zephyr-app: samples/hello_world
+	   :board: arduino_zero
+           :goals: build
+	   :compact:
 
 #. Connect the Arduino Zero to your host computer using the USB debug
    port.
@@ -111,7 +112,11 @@ Flashing
 
    .. code-block:: console
 
-      $ make BOARD=arduino_zero flash
+	.. zephyr-app-commands::
+	   :zephyr-app: samples/hello_world
+	   :board: arduino_zero
+	   :goals: flash
+	   :compact:
 
    You should see "Hello World! arm" in your terminal.
 
