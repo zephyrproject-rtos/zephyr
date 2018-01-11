@@ -103,7 +103,7 @@ def analyze_headers(base_path):
             # toolchain/common.h has the definition of __syscall which we
             # don't want to trip over
             path = os.path.join(root, fn)
-            if not fn.endswith(".h") or path.endswith("toolchain/common.h"):
+            if not fn.endswith(".h") or path.endswith(os.path.join(os.sep, 'toolchain', 'common.h')):
                 continue
 
             with open(path, "r", encoding="utf-8") as fp:
