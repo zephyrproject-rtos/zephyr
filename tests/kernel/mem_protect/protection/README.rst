@@ -19,10 +19,12 @@ Building and Running
 
 This project can be built and executed as follows:
 
-.. code-block:: console
 
-   $ cd tests/protection
-   $ make BOARD=<insert your board here>
+.. zephyr-app-commands::
+   :zephyr-app: tests/kernel/mem_protect/protection
+   :board: <board name>
+   :goals: run
+   :compact:
 
 Connect the board to your host computer using the USB port.
 Flash the generated zephyr.bin on the board.
