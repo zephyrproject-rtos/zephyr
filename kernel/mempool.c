@@ -339,7 +339,7 @@ void k_mem_pool_free_id(struct k_mem_block_id *id)
 		lsizes[i] = _ALIGN4(lsizes[i-1] / 4);
 	}
 
-	free_block(get_pool(id->pool), id->level, lsizes, id->block);
+	free_block(p, id->level, lsizes, id->block);
 
 	/* Wake up anyone blocked on this pool and let them repeat
 	 * their allocation attempts
