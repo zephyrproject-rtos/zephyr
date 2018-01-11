@@ -349,6 +349,7 @@ static inline bool net_is_ipv6_addr_mcast(const struct in6_addr *addr)
 }
 
 struct net_if;
+struct net_if_config;
 
 extern struct net_if_addr *net_if_ipv6_addr_lookup(const struct in6_addr *addr,
 						   struct net_if **iface);

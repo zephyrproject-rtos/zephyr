@@ -580,7 +580,8 @@ class SizeCalculator:
                    "_k_sem_area", "_k_mutex_area", "_k_alert_area",
                    "_k_fifo_area", "_k_lifo_area", "_k_stack_area",
                    "_k_msgq_area", "_k_mbox_area", "_k_pipe_area",
-                   "net_if", "net_if_event", "net_stack", "net_l2_data",
+                   "net_if", "net_if_dev", "net_if_event", "net_stack",
+                   "net_l2_data",
                    "_k_queue_area", "_net_buf_pool_area", "app_datas",
                    "kobject_data", "mmu_tables", "app_pad", "priv_stacks",
                    "ccm_data"]

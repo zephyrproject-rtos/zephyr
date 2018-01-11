@@ -312,7 +312,7 @@ static void eth_mcux_delayed_phy_work(struct k_work *item)
 
 static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 {
-	struct eth_context *context = iface->dev->driver_data;
+	struct eth_context *context = net_if_get_device(iface)->driver_data;
 	const struct net_buf *frag;
 	u8_t *dst;
 	status_t status;

@@ -1208,7 +1208,8 @@ static void check_prefix(struct net_if *iface,
 	}
 
 	if (last_prefix) {
-		set_ip_from_prefix(&iface->link_addr, last_prefix, &addr);
+		set_ip_from_prefix(net_if_get_link_addr(iface),
+				   last_prefix, &addr);
 
 		if (net_if_ipv6_addr_rm(iface, &addr)) {
 			NET_DBG("Removed global IP address %s",
@@ -1217,7 +1218,8 @@ static void check_prefix(struct net_if *iface,
 	}
 
 	if (new_prefix) {
-		set_ip_from_prefix(&iface->link_addr, new_prefix, &addr);
+		set_ip_from_prefix(net_if_get_link_addr(iface),
+				   new_prefix, &addr);
 
 		if (net_if_ipv6_addr_add(iface, &addr, NET_ADDR_AUTOCONF, 0)) {
 			NET_DBG("Added global IP address %s",
@@ -2177,9 +2179,10 @@ static void send_mcast_dao(struct net_rpl_instance *instance)
 
 	/* Send a DAO for own multicast addresses */
 	for (i = 0; i < NET_IF_MAX_IPV6_MADDR; i++) {
-		addr = &instance->iface->ipv6.mcast[i].address.in6_addr;
+		addr =
+		    &instance->iface->config.ip.ipv6.mcast[i].address.in6_addr;
 
-		if (instance->iface->ipv6.mcast[i].is_used &&
+		if (instance->iface->config.ip.ipv6.mcast[i].is_used &&
 		    net_is_ipv6_addr_mcast_global(addr)) {
 
 			net_rpl_dao_send(instance->iface,

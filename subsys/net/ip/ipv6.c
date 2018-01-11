@@ -1023,7 +1023,8 @@ ignore_frag_error:
 	/* Workaround Linux bug, see:
 	 * https://jira.zephyrproject.org/browse/ZEP-1656
 	 */
-	if (atomic_test_bit(net_pkt_iface(pkt)->flags, NET_IF_POINTOPOINT)) {
+	if (atomic_test_bit(net_pkt_iface(pkt)->if_dev->flags,
+			    NET_IF_POINTOPOINT)) {
 		/* Update RPL header */
 		if (net_rpl_update_header(pkt, &NET_IPV6_HDR(pkt)->dst) < 0) {
 			net_pkt_unref(pkt);
@@ -1190,15 +1191,15 @@ struct net_nbr *net_ipv6_get_nbr(struct net_if *iface, u8_t idx)
 
 static inline u8_t get_llao_len(struct net_if *iface)
 {
-	if (iface->link_addr.len == 6) {
+	if (net_if_get_link_addr(iface)->len == 6) {
 		return 8;
-	} else if (iface->link_addr.len == 8) {
+	} else if (net_if_get_link_addr(iface)->len == 8) {
 		return 16;
 	}
 
 	/* What else could it be? */
 	NET_ASSERT_INFO(0, "Invalid link address length %d",
-			iface->link_addr.len);
+			net_if_get_link_addr(iface)->len);
 
 	return 0;
 }
@@ -1314,7 +1315,7 @@ int net_ipv6_send_na(struct net_if *iface, const struct in6_addr *src,
 	net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst, dst);
 	net_ipaddr_copy(&na_hdr->tgt, tgt);
 
-	set_llao(&net_pkt_iface(pkt)->link_addr,
+	set_llao(net_if_get_link_addr(net_pkt_iface(pkt)),
 		 (u8_t *)net_pkt_icmp_data(pkt) + sizeof(struct net_icmp_hdr) +
 					      sizeof(struct net_icmpv6_na_hdr),
 		 llao_len, NET_ICMPV6_ND_OPT_TLLAO);
@@ -1725,7 +1726,8 @@ static void nd_reachable_timeout(struct k_work *work)
 	}
 }
 
-void net_ipv6_nbr_set_reachable_timer(struct net_if *iface, struct net_nbr *nbr)
+void net_ipv6_nbr_set_reachable_timer(struct net_if *iface,
+				      struct net_nbr *nbr)
 {
 	u32_t time;
 
@@ -1768,7 +1770,7 @@ static inline bool handle_na_neighbor(struct net_pkt *pkt,
 	}
 
 	if (tllao_offset) {
-		lladdr.len = net_pkt_iface(pkt)->link_addr.len;
+		lladdr.len = net_if_get_link_addr(net_pkt_iface(pkt))->len;
 
 		frag = net_frag_read(pkt->frags, tllao_offset,
 				     &pos, lladdr.len, lladdr.addr);
@@ -2103,7 +2105,7 @@ int net_ipv6_send_ns(struct net_if *iface,
 
 		net_buf_add(frag, llao_len);
 
-		set_llao(&net_pkt_iface(pkt)->link_addr,
+		set_llao(net_if_get_link_addr(net_pkt_iface(pkt)),
 			 (u8_t *)net_pkt_icmp_data(pkt) +
 					sizeof(struct net_icmp_hdr) +
 					sizeof(struct net_icmpv6_ns_hdr),
@@ -2216,7 +2218,7 @@ int net_ipv6_send_rs(struct net_if *iface)
 	if (!unspec_src) {
 		net_buf_add(frag, llao_len);
 
-		set_llao(&net_pkt_iface(pkt)->link_addr,
+		set_llao(net_if_get_link_addr(net_pkt_iface(pkt)),
 			 (u8_t *)net_pkt_icmp_data(pkt) +
 					 sizeof(struct net_icmp_hdr) +
 					 sizeof(struct net_icmpv6_rs_hdr),
@@ -2531,6 +2533,7 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt)
 	struct net_nbr *nbr = NULL;
 	struct net_icmpv6_ra_hdr hdr, *ra_hdr;
 	struct net_if_router *router;
+	struct net_if_config *config;
 	struct net_buf *frag;
 	u16_t router_lifetime;
 	u32_t reachable_time;
@@ -2719,8 +2722,10 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt)
 		nbr_clear_ns_pending(net_ipv6_nbr_data(nbr));
 	}
 
+	config = net_if_config_get(net_pkt_iface(pkt));
+
 	/* Cancel the RS timer on iface */
-	k_delayed_work_cancel(&net_pkt_iface(pkt)->ipv6.rs_timer);
+	k_delayed_work_cancel(&config->ip.ipv6.rs_timer);
 
 	net_pkt_unref(pkt);
 
@@ -2910,8 +2915,11 @@ int net_ipv6_mld_leave(struct net_if *iface, const struct in6_addr *addr)
 
 static void send_mld_report(struct net_if *iface)
 {
+	struct net_if_config *config;
 	struct net_pkt *pkt;
 	int i, count = 0;
+
+	config = net_if_config_get(iface);
 
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
 				     K_FOREVER);
@@ -2919,12 +2927,13 @@ static void send_mld_report(struct net_if *iface)
 	net_pkt_append_u8(pkt, 0); /* This will be the record count */
 
 	for (i = 0; i < NET_IF_MAX_IPV6_MADDR; i++) {
-		if (!iface->ipv6.mcast[i].is_used ||
-		    !iface->ipv6.mcast[i].is_joined) {
+		if (!config->ip.ipv6.mcast[i].is_used ||
+		    !config->ip.ipv6.mcast[i].is_joined) {
 			continue;
 		}
 
-		pkt = create_mldv2(pkt, &iface->ipv6.mcast[i].address.in6_addr,
+		pkt = create_mldv2(pkt,
+				   &config->ip.ipv6.mcast[i].address.in6_addr,
 				   NET_IPV6_MLDv2_MODE_IS_EXCLUDE, 0);
 		count++;
 	}
