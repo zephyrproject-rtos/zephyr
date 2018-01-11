@@ -29,7 +29,7 @@ class BodyMinLineCount(CommitRule):
         filtered = [x for x in commit.message.body if not x.lower().startswith("signed-off-by") and x != '']
         line_count = len(filtered)
         min_line_count = self.options['min-line-count'].value
-        if line_count <= min_line_count:
+        if line_count < min_line_count:
             message = "Body has no content, should at least have {} line.".format(min_line_count)
             return [RuleViolation(self.id, message, line_nr=1)]
 
