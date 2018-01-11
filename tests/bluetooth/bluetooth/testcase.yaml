@@ -1,4 +1,4 @@
 tests:
   test:
-    platform_whitelist: qemu_x86_iamcu qemu_cortex_m3
+    platform_whitelist: qemu_x86_iamcu qemu_cortex_m3 native_posix
     tags: bluetooth
