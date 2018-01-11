@@ -74,14 +74,17 @@ set(__build_dir ${CMAKE_CURRENT_BINARY_DIR}/zephyr)
 set(PROJECT_BINARY_DIR ${__build_dir})
 set(PROJECT_SOURCE_DIR $ENV{ZEPHYR_BASE})
 
+# Convert path to use the '/' separator
+string(REPLACE "\\" "/" PROJECT_SOURCE_DIR ${PROJECT_SOURCE_DIR})
+
 set(ZEPHYR_BINARY_DIR ${PROJECT_BINARY_DIR})
-set(ZEPHYR_SOURCE_DIR ${PROJECT_SOURCE_DIR})
+set(ZEPHYR_BASE ${PROJECT_SOURCE_DIR})
 
 set(AUTOCONF_H ${__build_dir}/include/generated/autoconf.h)
 # Re-configure (Re-execute all CMakeLists.txt code) when autoconf.h changes
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${AUTOCONF_H})
 
-include($ENV{ZEPHYR_BASE}/cmake/extensions.cmake)
+include(${ZEPHYR_BASE}/cmake/extensions.cmake)
 
 find_package(PythonInterp 3.4)
 
@@ -101,7 +104,7 @@ endif()
 
 add_custom_target(
   pristine
-  COMMAND ${CMAKE_COMMAND} -P $ENV{ZEPHYR_BASE}/cmake/pristine.cmake
+  COMMAND ${CMAKE_COMMAND} -P ${ZEPHYR_BASE}/cmake/pristine.cmake
   # Equivalent to rm -rf build/*
   )
 
@@ -109,7 +112,7 @@ add_custom_target(
 if(MSYS)
   execute_process(
     COMMAND
-    ${PYTHON_EXECUTABLE} $ENV{ZEPHYR_BASE}/scripts/check_host_is_ok.py
+    ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/check_host_is_ok.py
     RESULT_VARIABLE ret
     )
   if(NOT "${ret}" STREQUAL "0")
@@ -185,7 +188,7 @@ set(CACHED_BOARD ${BOARD} CACHE STRING "Selected board")
 # Use BOARD to search zephyr/boards/** for a _defconfig file,
 # e.g. zephyr/boards/arm/96b_carbon_nrf51/96b_carbon_nrf51_defconfig. When
 # found, use that path to infer the ARCH we are building for.
-find_path(BOARD_DIR NAMES "${BOARD}_defconfig" PATHS $ENV{ZEPHYR_BASE}/boards/*/* NO_DEFAULT_PATH)
+find_path(BOARD_DIR NAMES "${BOARD}_defconfig" PATHS ${ZEPHYR_BASE}/boards/*/* NO_DEFAULT_PATH)
 
 assert_with_usage(BOARD_DIR "No board named '${BOARD}' found")
 
@@ -219,17 +222,17 @@ Multiple files may be listed, e.g. CONF_FILE=\"prj1.conf prj2.conf\"")
 set(CMAKE_C_COMPILER_FORCED   1)
 set(CMAKE_CXX_COMPILER_FORCED 1)
 
-include($ENV{ZEPHYR_BASE}/cmake/version.cmake)
-include($ENV{ZEPHYR_BASE}/cmake/host-tools.cmake)
-include($ENV{ZEPHYR_BASE}/cmake/kconfig.cmake)
-include($ENV{ZEPHYR_BASE}/cmake/toolchain.cmake)
+include(${ZEPHYR_BASE}/cmake/version.cmake)
+include(${ZEPHYR_BASE}/cmake/host-tools.cmake)
+include(${ZEPHYR_BASE}/cmake/kconfig.cmake)
+include(${ZEPHYR_BASE}/cmake/toolchain.cmake)
 
 # DTS should be run directly after kconfig because CONFIG_ variables
 # from kconfig and dts should be available at the same time. But
 # running DTS involves running the preprocessor, so we put it behind
 # toolchain. Meaning toolchain.cmake is the only component where
 # kconfig and dts variables aren't available at the same time.
-include($ENV{ZEPHYR_BASE}/dts/dts.cmake)
+include(${ZEPHYR_BASE}/dts/dts.cmake)
 
 set(KERNEL_NAME ${CONFIG_KERNEL_BIN_NAME})
 
@@ -247,13 +250,13 @@ include(${BOARD_DIR}/board.cmake OPTIONAL)
 
 zephyr_library_named(app)
 
-add_subdirectory($ENV{ZEPHYR_BASE} ${__build_dir})
+add_subdirectory(${ZEPHYR_BASE} ${__build_dir})
 
 # Link 'app' with the Zephyr interface libraries.
 #
 # NB: This must be done in boilerplate.cmake because 'app' can only be
 # modified in the CMakeLists.txt file that created it. And it must be
-# done after 'add_subdirectory($ENV{ZEPHYR_BASE} ${__build_dir})'
+# done after 'add_subdirectory(${ZEPHYR_BASE} ${__build_dir})'
 # because interface libraries are defined while processing that
 # subdirectory.
 get_property(ZEPHYR_INTERFACE_LIBS_PROPERTY GLOBAL PROPERTY ZEPHYR_INTERFACE_LIBS)

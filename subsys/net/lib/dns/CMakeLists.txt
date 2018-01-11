@@ -7,6 +7,6 @@ zephyr_library_sources_ifdef(CONFIG_DNS_RESOLVER resolve.c)
 
 if(CONFIG_MDNS_RESPONDER)
   zephyr_library_sources(mdns_responder.c)
-  zephyr_library_include_directories($ENV{ZEPHYR_BASE}/subsys/net/ip)
+  zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/ip)
 endif()
 

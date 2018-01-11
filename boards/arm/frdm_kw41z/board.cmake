@@ -10,5 +10,5 @@ endif()
 board_runner_args(jlink "--device=MKW41Z512xxx4")
 board_runner_args(pyocd "--target=kw41z4")
 
-include($ENV{ZEPHYR_BASE}/boards/common/jlink.board.cmake)
-include($ENV{ZEPHYR_BASE}/boards/common/pyocd.board.cmake)
+include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
+include(${ZEPHYR_BASE}/boards/common/pyocd.board.cmake)
