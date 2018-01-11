@@ -181,8 +181,8 @@ static inline void net_pkt_set_iface(struct net_pkt *pkt, struct net_if *iface)
 	 * the network address that is stored in pkt. This is done here so
 	 * that the address type is properly set and is not forgotten.
 	 */
-	pkt->lladdr_src.type = iface->link_addr.type;
-	pkt->lladdr_dst.type = iface->link_addr.type;
+	pkt->lladdr_src.type = net_if_get_link_addr(iface)->type;
+	pkt->lladdr_dst.type = net_if_get_link_addr(iface)->type;
 }
 
 static inline struct net_if *net_pkt_orig_iface(struct net_pkt *pkt)

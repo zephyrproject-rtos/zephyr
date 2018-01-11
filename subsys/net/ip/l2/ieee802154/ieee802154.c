@@ -312,7 +312,7 @@ NET_L2_INIT(IEEE802154_L2,
 void ieee802154_init(struct net_if *iface)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
-	const u8_t *mac = iface->link_addr.addr;
+	const u8_t *mac = net_if_get_link_addr(iface)->addr;
 	s16_t tx_power = CONFIG_NET_L2_IEEE802154_RADIO_DFLT_TX_POWER;
 	u8_t long_addr[8];
 

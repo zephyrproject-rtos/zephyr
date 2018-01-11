@@ -196,10 +196,13 @@ static inline struct in_addr *if_get_addr(struct net_if *iface)
 	int i;
 
 	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
-		if (iface->ipv4.unicast[i].is_used &&
-		    iface->ipv4.unicast[i].address.family == AF_INET &&
-		    iface->ipv4.unicast[i].addr_state == NET_ADDR_PREFERRED) {
-			return &iface->ipv4.unicast[i].address.in_addr;
+		if (iface->config.ip.ipv4.unicast[i].is_used &&
+		    iface->config.ip.ipv4.unicast[i].address.family ==
+								AF_INET &&
+		    iface->config.ip.ipv4.unicast[i].addr_state ==
+							NET_ADDR_PREFERRED) {
+			return
+			     &iface->config.ip.ipv4.unicast[i].address.in_addr;
 		}
 	}
 
