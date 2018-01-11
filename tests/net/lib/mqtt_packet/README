@@ -12,12 +12,16 @@ Build and Run
 * QEMU x86
 
   Build & run:
+  mkdir build; cd build
+  cmake -DBOARD=qemu_x86 ..
   make run
 
 * Arduino 101
 
   Build:
-  make BOARD=arduino_101
+  mkdir build; cd build
+  cmake -DBOARD=arduino_101 ..
+  make run
 
   Flashing:
   sudo dfu-util -a x86_app -D outdir/arduino_101/zephyr.bin
@@ -28,7 +32,9 @@ Build and Run
 * NXP Freedom-K64F (frdm-k64f)
 
   Build:
-  make pristine && make BOARD=frdm_k64f
+  mkdir build; cd build
+  cmake -DBOARD=frdm_k64f ..
+  make run
 
   Firmware version:
   Version: 0226
