@@ -15,10 +15,14 @@ To test the serial line routines, open a terminal window and type:
 Open another terminal window and type:
 
 For QEMU x86:
-	make pristine && make run
+	mkdir build; cd build
+	cmake -DBOARD=qemu_x86 ..
+	make run
 
 For QEMU ARM:
-	make pristine && make BOARD=qemu_cortex_m3 run
+	mkdir build; cd build
+	cmake -DBOARD=qemu_cortex_m3 ..
+	make run
 
 
 Sample output
