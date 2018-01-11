@@ -1861,6 +1861,7 @@ static enum net_verdict _handle_ipv4_echo_reply(struct net_pkt *pkt)
 	k_sem_give(&ping_timeout);
 	_remove_ipv4_ping_handler();
 
+	net_pkt_unref(pkt);
 	return NET_OK;
 }
 
