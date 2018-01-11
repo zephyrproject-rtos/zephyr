@@ -9,20 +9,9 @@ Building and Running Project:
 
 The demo will run on Arduino 101 and will use the on-board SPI flash.
 
-    make BOARD=arduino_101
-
---------------------------------------------------------------------------------
-
-Troubleshooting:
-
-Problems caused by out-dated project information can be addressed by
-issuing one of the following commands then rebuilding the project:
-
-    make clean          # discard results of previous builds
-                        # but keep existing configuration info
-or
-    make pristine       # discard results of previous builds
-                        # and restore pre-defined configuration info
+       mkdir build; cd build
+       cmake -DBOARD=arduino_101 ..
+       make run
 
 --------------------------------------------------------------------------------
 
