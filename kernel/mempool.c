@@ -387,16 +387,16 @@ void *k_malloc(size_t size)
 	 * get a block large enough to hold an initial (hidden) block
 	 * descriptor, as well as the space the caller requested
 	 */
-	size += sizeof(struct k_mem_block);
+	size += sizeof(struct k_mem_block_id);
 	if (k_mem_pool_alloc(_HEAP_MEM_POOL, &block, size, K_NO_WAIT) != 0) {
 		return NULL;
 	}
 
 	/* save the block descriptor info at the start of the actual block */
-	memcpy(block.data, &block, sizeof(struct k_mem_block));
+	memcpy(block.data, &block.id, sizeof(struct k_mem_block_id));
 
 	/* return address of the user area part of the block to the caller */
-	return (char *)block.data + sizeof(struct k_mem_block);
+	return (char *)block.data + sizeof(struct k_mem_block_id);
 }
 
 
@@ -404,10 +404,10 @@ void k_free(void *ptr)
 {
 	if (ptr != NULL) {
 		/* point to hidden block descriptor at start of block */
-		ptr = (char *)ptr - sizeof(struct k_mem_block);
+		ptr = (char *)ptr - sizeof(struct k_mem_block_id);
 
 		/* return block to the heap memory pool */
-		k_mem_pool_free(ptr);
+		k_mem_pool_free_id(ptr);
 	}
 }
 
