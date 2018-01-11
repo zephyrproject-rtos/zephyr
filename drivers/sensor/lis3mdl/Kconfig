@@ -39,9 +39,10 @@ config LIS3MDL_I2C_MASTER_DEV_NAME
 	  Specify the device name of the I2C master device to which LIS3MDL is
 	  connected.
 
-choice LIS3MDL_TRIGGER_MODE
+choice
 	prompt "Trigger mode"
 	depends on LIS3MDL
+	default LIS3MDL_TRIGGER_GLOBAL_THREAD
 	help
 	  Specify the type of triggering to be used by the driver.
 
