@@ -129,7 +129,7 @@ static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 		return -ENODATA;
 	}
 
-	set_pkt_ll_addr(iface->dev, pkt);
+	set_pkt_ll_addr(net_if_get_device(iface), pkt);
 
 	/* By default we assume that the test is ok */
 	data_failure = false;
@@ -300,7 +300,7 @@ static void test_dio_dummy_input(void)
 
 	msg_sending = NET_RPL_DODAG_INFO_OBJ;
 
-	set_pkt_ll_addr(net_if_get_default()->dev, pkt);
+	set_pkt_ll_addr(net_if_get_device(net_if_get_default()), pkt);
 
 	ret = net_icmpv6_input(pkt, NET_ICMPV6_RPL, msg_sending);
 	if (!ret) {
@@ -393,7 +393,7 @@ static bool net_test_send_ns(void)
 	 */
 	nbr = net_ipv6_nbr_add(iface,
 			       &in6addr_my,
-			       &iface->link_addr,
+			       net_if_get_link_addr(iface),
 			       false,
 			       NET_IPV6_NBR_STATE_REACHABLE);
 	if (!nbr) {

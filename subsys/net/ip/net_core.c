@@ -340,7 +340,7 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 		return -ENODATA;
 	}
 
-	if (!atomic_test_bit(iface->flags, NET_IF_UP)) {
+	if (!atomic_test_bit(iface->if_dev->flags, NET_IF_UP)) {
 		return -ENETDOWN;
 	}
 

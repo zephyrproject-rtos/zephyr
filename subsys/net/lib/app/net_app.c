@@ -310,7 +310,7 @@ int _net_app_set_local_addr(struct sockaddr *addr, const char *myaddr,
 
 		/* For IPv4 we take the first address in the interface */
 		net_ipaddr_copy(&net_sin(addr)->sin_addr,
-				&iface->ipv4.unicast[0].address.in_addr);
+			    &iface->config.ip.ipv4.unicast[0].address.in_addr);
 #else
 		return -EPFNOSUPPORT;
 #endif

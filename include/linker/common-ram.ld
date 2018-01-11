@@ -162,6 +162,14 @@
 		__net_if_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
+	SECTION_DATA_PROLOGUE(net_if_dev, (OPTIONAL), SUBALIGN(4))
+	{
+		__net_if_dev_start = .;
+		*(".net_if_dev.*")
+		KEEP(*(SORT_BY_NAME(".net_if_dev.*")))
+		__net_if_dev_end = .;
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+
 	SECTION_DATA_PROLOGUE(net_if_event, (OPTIONAL), SUBALIGN(4))
 	{
 		__net_if_event_start = .;

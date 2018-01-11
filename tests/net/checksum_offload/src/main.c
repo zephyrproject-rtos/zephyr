@@ -269,13 +269,13 @@ struct user_data {
 static const char *iface2str(struct net_if *iface)
 {
 #ifdef CONFIG_NET_L2_ETHERNET
-	if (iface->l2 == &NET_L2_GET_NAME(ETHERNET)) {
+	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
 		return "Ethernet";
 	}
 #endif
 
 #ifdef CONFIG_NET_L2_DUMMY
-	if (iface->l2 == &NET_L2_GET_NAME(DUMMY)) {
+	if (net_if_l2(iface) == &NET_L2_GET_NAME(DUMMY)) {
 		return "Dummy";
 	}
 #endif
@@ -291,7 +291,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	DBG("Interface %p (%s) [%d]\n", iface, iface2str(iface),
 	    net_if_get_by_iface(iface));
 
-	if (iface->l2 == &NET_L2_GET_NAME(ETHERNET)) {
+	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
 		struct eth_context *eth_ctx =
 			net_if_get_device(iface)->driver_data;
 

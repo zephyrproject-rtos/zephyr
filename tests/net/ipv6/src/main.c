@@ -258,11 +258,11 @@ static bool test_init(void)
 	 * pass.
 	 */
 	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
-		if (iface->ipv6.unicast[i].is_used) {
+		if (iface->config.ip.ipv6.unicast[i].is_used) {
 			continue;
 		}
 
-		ifaddr = &iface->ipv6.unicast[i];
+		ifaddr = &iface->config.ip.ipv6.unicast[i];
 
 		ifaddr->is_used = true;
 		ifaddr->address.family = AF_INET6;
