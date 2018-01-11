@@ -54,11 +54,11 @@ static void _region_init(u32_t index, u32_t region_base,
 		 */
 		__ASSERT(region_base == SYSMPU->WORD[index][0],
 			 "Region %d base address got 0x%08x expected 0x%08x",
-			 index, region_base, SYSMPU->WORD[index][0]);
+			 index, region_base, (u32_t)SYSMPU->WORD[index][0]);
 
 		__ASSERT(region_end == SYSMPU->WORD[index][1],
 			 "Region %d end address got 0x%08x expected 0x%08x",
-			 index, region_end, SYSMPU->WORD[index][1]);
+			 index, region_end, (u32_t)SYSMPU->WORD[index][1]);
 
 		/* Changes to the RGD0_WORD2 alterable fields should be done
 		 * via a write to RGDAAC0.
