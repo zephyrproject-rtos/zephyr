@@ -1,5 +1,5 @@
-include($ENV{ZEPHYR_BASE}/cmake/hex.cmake)
-file(READ $ENV{ZEPHYR_BASE}/VERSION ver)
+include(${ZEPHYR_BASE}/cmake/hex.cmake)
+file(READ ${ZEPHYR_BASE}/VERSION ver)
 
 string(REGEX MATCH "VERSION_MAJOR = ([0-9]*)" _ ${ver})
 set(PROJECT_VERSION_MAJOR ${CMAKE_MATCH_1})

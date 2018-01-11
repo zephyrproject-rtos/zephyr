@@ -279,7 +279,7 @@ else()
   set(LINKER_SCRIPT ${BOARD_DIR}/linker.ld)
   if(NOT EXISTS ${LINKER_SCRIPT})
     # If not available, try an SoC specific linker file
-    set(LINKER_SCRIPT $ENV{ZEPHYR_BASE}/arch/${ARCH}/soc/${SOC_PATH}/linker.ld)
+    set(LINKER_SCRIPT ${ZEPHYR_BASE}/arch/${ARCH}/soc/${SOC_PATH}/linker.ld)
   endif()
 endif()
 
@@ -348,7 +348,7 @@ add_custom_command(OUTPUT include/generated/syscall_dispatch.c ${syscall_list_h}
 # Generate offsets.c.obj from offsets.c
 # Generate offsets.h     from offsets.c.obj
 
-set(OFFSETS_C_PATH $ENV{ZEPHYR_BASE}/arch/${ARCH}/core/offsets/offsets.c)
+set(OFFSETS_C_PATH ${ZEPHYR_BASE}/arch/${ARCH}/core/offsets/offsets.c)
 set(OFFSETS_O_PATH ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/offsets.dir/arch/${ARCH}/core/offsets/offsets.c.obj)
 set(OFFSETS_H_PATH ${PROJECT_BINARY_DIR}/include/generated/offsets.h)
 
@@ -361,7 +361,7 @@ add_dependencies(     offsets
 
 add_custom_command(
   OUTPUT ${OFFSETS_H_PATH}
-  COMMAND ${PYTHON_EXECUTABLE} $ENV{ZEPHYR_BASE}/scripts/gen_offset_header.py
+  COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/gen_offset_header.py
   -i ${OFFSETS_O_PATH}
   -o ${OFFSETS_H_PATH}
   DEPENDS offsets
@@ -612,7 +612,7 @@ if(CONFIG_GEN_ISR_TABLES)
     $<TARGET_FILE:zephyr_prebuilt>
     isrList.bin
     COMMAND ${PYTHON_EXECUTABLE}
-    $ENV{ZEPHYR_BASE}/arch/common/gen_isr_tables.py
+    ${ZEPHYR_BASE}/arch/common/gen_isr_tables.py
     --output-source isr_tables.c
     --intlist isrList.bin
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--debug>
@@ -624,8 +624,8 @@ if(CONFIG_GEN_ISR_TABLES)
 endif()
 
 if(CONFIG_USERSPACE)
-  set(GEN_KOBJ_LIST $ENV{ZEPHYR_BASE}/scripts/gen_kobject_list.py)
-  set(PROCESS_GPERF $ENV{ZEPHYR_BASE}/scripts/process_gperf.py)
+  set(GEN_KOBJ_LIST ${ZEPHYR_BASE}/scripts/gen_kobject_list.py)
+  set(PROCESS_GPERF ${ZEPHYR_BASE}/scripts/process_gperf.py)
 
   set(OBJ_LIST           kobject_hash.gperf)
   set(OUTPUT_SRC_PRE     kobject_hash_preprocessed.c)
@@ -792,7 +792,7 @@ set(post_build_commands "")
 
 list_append_ifdef(CONFIG_CHECK_LINK_MAP
   post_build_commands
-  COMMAND ${PYTHON_EXECUTABLE} $ENV{ZEPHYR_BASE}/scripts/check_link_map.py ${KERNEL_MAP_NAME}
+  COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/check_link_map.py ${KERNEL_MAP_NAME}
   )
 
 list_append_ifdef(
@@ -863,7 +863,7 @@ if(CONFIG_OUTPUT_PRINT_MEMORY_USAGE)
 endif()
 
 if(EMU_PLATFORM)
-  include($ENV{ZEPHYR_BASE}/cmake/emu/${EMU_PLATFORM}.cmake)
+  include(${ZEPHYR_BASE}/cmake/emu/${EMU_PLATFORM}.cmake)
 else()
   add_custom_target(run
     COMMAND

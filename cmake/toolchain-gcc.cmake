@@ -50,7 +50,7 @@ foreach(file_name include include-fixed)
   list(APPEND NOSTDINC ${_OUTPUT})
 endforeach()
 
-include($ENV{ZEPHYR_BASE}/cmake/gcc-m-cpu.cmake)
+include(${ZEPHYR_BASE}/cmake/gcc-m-cpu.cmake)
 
 if("${ARCH}" STREQUAL "arm")
   list(APPEND TOOLCHAIN_C_FLAGS
@@ -58,7 +58,7 @@ if("${ARCH}" STREQUAL "arm")
     -mcpu=${GCC_M_CPU}
     )
 
-  include($ENV{ZEPHYR_BASE}/cmake/fpu-for-gcc-m-cpu.cmake)
+  include(${ZEPHYR_BASE}/cmake/fpu-for-gcc-m-cpu.cmake)
 
   if(CONFIG_FLOAT)
     list(APPEND TOOLCHAIN_C_FLAGS -mfpu=${FPU_FOR_${GCC_M_CPU}})

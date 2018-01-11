@@ -60,7 +60,7 @@ if(CONFIG_HAS_DTS)
     -I${PROJECT_SOURCE_DIR}/drivers
     -undef -D__DTS__
     -P
-    -E $ENV{ZEPHYR_BASE}/misc/empty_file.c
+    -E ${ZEPHYR_BASE}/misc/empty_file.c
     -o ${BOARD_FAMILY}.dts.pre.tmp
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     RESULT_VARIABLE ret

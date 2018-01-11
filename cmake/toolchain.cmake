@@ -12,9 +12,9 @@ set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 if(ZEPHYR_GCC_VARIANT STREQUAL "host" OR CONFIG_ARCH_POSIX)
 	set(COMPILER host-gcc)
 else()
-include($ENV{ZEPHYR_BASE}/cmake/toolchain-${ZEPHYR_GCC_VARIANT}.cmake)
+include(${ZEPHYR_BASE}/cmake/toolchain-${ZEPHYR_GCC_VARIANT}.cmake)
 endif()
 
 # Configure the toolchain based on what toolchain technology is used
 # (gcc clang etc.)
-include($ENV{ZEPHYR_BASE}/cmake/toolchain-${COMPILER}.cmake OPTIONAL)
+include(${ZEPHYR_BASE}/cmake/toolchain-${COMPILER}.cmake OPTIONAL)

@@ -318,7 +318,7 @@ function(generate_inc_file
     OUTPUT ${generated_file}
     COMMAND
     ${PYTHON_EXECUTABLE}
-    $ENV{ZEPHYR_BASE}/scripts/file2hex.py
+    ${ZEPHYR_BASE}/scripts/file2hex.py
     ${ARGN} # Extra arguments are passed to file2hex.py
     --file ${source_file}
     > ${generated_file} # Does pipe redirection work on Windows?
@@ -393,7 +393,7 @@ endmacro()
 # it to the argument "lib_name"
 macro(zephyr_library_get_current_dir_lib_name lib_name)
   # Remove the prefix (/home/sebo/zephyr/driver/serial/CMakeLists.txt => driver/serial/CMakeLists.txt)
-  file(RELATIVE_PATH name $ENV{ZEPHYR_BASE} ${CMAKE_CURRENT_LIST_FILE})
+  file(RELATIVE_PATH name ${ZEPHYR_BASE} ${CMAKE_CURRENT_LIST_FILE})
 
   # Remove the filename (driver/serial/CMakeLists.txt => driver/serial)
   get_filename_component(name ${name} DIRECTORY)
@@ -976,7 +976,7 @@ macro(assert_with_usage test comment)
     message("see usage:")
     execute_process(
       COMMAND
-      ${CMAKE_COMMAND} -P $ENV{ZEPHYR_BASE}/cmake/usage/usage.cmake
+      ${CMAKE_COMMAND} -P ${ZEPHYR_BASE}/cmake/usage/usage.cmake
       )
     message(FATAL_ERROR "Invalid usage")
   endif()
