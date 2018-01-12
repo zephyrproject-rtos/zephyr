@@ -86,6 +86,7 @@ if(CONFIG_HAS_DTS)
 
   # Run extract_dts_includes.py for the header file
   # generated_dts_board.h
+  set_ifndef(DTS_BINDINGS_DIR ${ZEPHYR_BASE}/dts/bindings)
   set_ifndef(DTS_BOARD_FIXUP_FILE ${BOARD_ROOT}/boards/${ARCH}/${BOARD_FAMILY}/dts.fixup)
   if(EXISTS ${DTS_BOARD_FIXUP_FILE})
     set(DTS_BOARD_FIXUP ${DTS_BOARD_FIXUP_FILE})
@@ -105,7 +106,7 @@ if(CONFIG_HAS_DTS)
 
   set(CMD_EXTRACT_DTS_INCLUDES ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/dts/extract_dts_includes.py
     --dts ${BOARD}.dts_compiled
-    --yaml ${ZEPHYR_BASE}/dts/bindings
+    --yaml ${DTS_BINDINGS_DIR}
     ${DTS_FIXUPS}
     --keyvalue ${GENERATED_DTS_BOARD_CONF}
     --include ${GENERATED_DTS_BOARD_H}
