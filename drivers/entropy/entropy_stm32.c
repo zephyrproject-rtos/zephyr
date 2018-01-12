@@ -21,6 +21,8 @@
 #error RNG only available on STM32F4 and STM32L4 series
 #elif defined(CONFIG_SOC_STM32F401XE)
 #error RNG not available on STM32F401 based SoCs
+#elif defined(CONFIG_SOC_STM32F411XE)
+#error RNG not available on STM32F411 based SoCs
 #else
 
 struct entropy_stm32_rng_dev_cfg {
