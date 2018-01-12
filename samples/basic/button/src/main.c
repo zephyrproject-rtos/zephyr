@@ -23,7 +23,12 @@
 
 /* change this to use another GPIO pin */
 #ifdef SW0_GPIO_PIN
-#define PIN     SW0_GPIO_PIN
+#define PIN		SW0_GPIO_PIN
+#if CONFIG_PINCTRL
+#define PIN_MASK	SW0_GPIO_PIN
+#else
+#define PIN_MASK	BIT(SW0_GPIO_PIN)
+#endif
 #else
 #error SW0_GPIO_PIN needs to be set in board.h
 #endif
@@ -72,7 +77,7 @@ void main(void)
 	gpio_pin_configure(gpiob, PIN,
 			   GPIO_DIR_IN | GPIO_INT |  PULL_UP | EDGE);
 
-	gpio_init_callback(&gpio_cb, button_pressed, BIT(PIN));
+	gpio_init_callback(&gpio_cb, button_pressed, PIN_MASK);
 
 	gpio_add_callback(gpiob, &gpio_cb);
 	gpio_pin_enable_callback(gpiob, PIN);
