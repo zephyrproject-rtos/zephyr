@@ -13,16 +13,17 @@ if(CONFIG_USB_COMPOSITE_DEVICE)
     )
 endif()
 
-if(CONFIG_USB_DEVICE_VID EQUAL 0xDEAD)
+if(CONFIG_USB_DEVICE_VID EQUAL 0x2FE3)
   message(WARNING
-    "CONFIG_USB_DEVICE_VID has default test value 0xDEAD.
+    "CONFIG_USB_DEVICE_VID has default value 0x2FE3.
 This value is only for testing and MUST be configured for USB products."
     )
-endif()
 
-if(CONFIG_USB_DEVICE_PID EQUAL 0xBEEF)
-  message(WARNING
-    "CONFIG_USB_DEVICE_PID has default test value 0xBEEF.
+  if(CONFIG_USB_DEVICE_PID EQUAL 0x100)
+    message(WARNING
+      "CONFIG_USB_DEVICE_PID has default value 0x100.
 This value is only for testing and MUST be configured for USB products."
-    )
+      )
+  endif()
+
 endif()
