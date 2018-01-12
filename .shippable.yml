@@ -42,6 +42,10 @@ build:
             echo "- Building Documentation";
             echo "Commit range:" ${COMMIT_RANGE}
             make htmldocs
+            if [ "$?" != "0" ]; then
+              echo "Documentation build failed";
+              exit 1;
+            fi
             if [ -s doc/doc.warnings ]; then
               echo " => New documentation warnings/errors";
               cp doc/doc.warnings doc.warnings
