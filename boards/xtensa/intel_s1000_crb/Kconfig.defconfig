@@ -59,6 +59,13 @@ config I2C_0_DEFAULT_CFG
 config I2C_0_IRQ_PRI
 	default 0
 
+if DMA_CAVS
+
+config HEAP_MEM_POOL_SIZE
+	default 1024
+
+endif # DMA_CAVS
+
 if UART_NS16550
 
 config UART_NS16550_PORT_0

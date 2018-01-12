@@ -10,6 +10,7 @@
 #include <logging/sys_log.h>
 #include <board.h>
 #include <irq_nextlevel.h>
+#include <xtensa/hal.h>
 
 void _soc_irq_enable(u32_t irq)
 {
@@ -153,4 +154,9 @@ void setup_ownership_dma1(void)
 void setup_ownership_dma2(void)
 {
 	*(volatile u16_t *)CAVS_DMA2_OWNERSHIP_REG = 0x80FF;
+}
+
+void dcache_writeback_region(void *addr, size_t size)
+{
+	xthal_dcache_region_writeback(addr, size);
 }

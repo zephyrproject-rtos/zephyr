@@ -72,6 +72,18 @@
 #define I2C_DW_IRQ_FLAGS			0
 #define I2C_DW_CLOCK_SPEED			38
 
+/* low power DMACs */
+#define LP_GP_DMA_SIZE				0x00001000
+#define DW_DMA0_BASE_ADDR			0x0007C000
+#define DW_DMA1_BASE_ADDR			(0x0007C000 +\
+						1 * LP_GP_DMA_SIZE)
+#define DW_DMA2_BASE_ADDR			(0x0007C000 +\
+						2 * LP_GP_DMA_SIZE)
+
+#define DW_DMA0_IRQ				0x00001110
+#define DW_DMA1_IRQ				0x0000010A
+#define DW_DMA2_IRQ				0x0000010D
+
 /* address of DMA ownership register. We need to properly configure
  * this register in order to access the DMA registers.
  */
@@ -79,10 +91,20 @@
 #define CAVS_DMA1_OWNERSHIP_REG			(0x00071A62)
 #define CAVS_DMA2_OWNERSHIP_REG			(0x00071A64)
 
+#define DMA_HANDSHAKE_SSP0_TX			2
+#define DMA_HANDSHAKE_SSP0_RX			3
+#define DMA_HANDSHAKE_SSP1_TX			4
+#define DMA_HANDSHAKE_SSP1_RX			5
+#define DMA_HANDSHAKE_SSP2_TX			6
+#define DMA_HANDSHAKE_SSP2_RX			7
+#define DMA_HANDSHAKE_SSP3_TX			8
+#define DMA_HANDSHAKE_SSP3_RX			9
+
 extern void _soc_irq_enable(u32_t irq);
 extern void _soc_irq_disable(u32_t irq);
 extern void setup_ownership_dma0(void);
 extern void setup_ownership_dma1(void);
 extern void setup_ownership_dma2(void);
+extern void dcache_writeback_region(void *addr, size_t size);
 
 #endif /* __INC_SOC_H */
