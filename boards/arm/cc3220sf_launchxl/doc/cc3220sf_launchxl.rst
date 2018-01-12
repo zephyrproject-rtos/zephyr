@@ -133,15 +133,22 @@ Prerequisites:
 
 #. Update the service pack, and place board in "Development Mode".
 
-   Follow the instructions in Section 3.4 "Download the Application",
-   in the `CC3220 Getting Started Guide`_, except for steps 5 and 6 which
-   select an MCU image.
+   Setting "Development Mode" enables the JTAG interface, necessary
+   for subsequent use of OpenOCD and updating XDS110 firmware.
+
+   Follow the instructions in Section 2.4 "Download the Application",
+   in the `CC3220 Getting Started Guide`_, except for steps 5 and 6 in
+   Section 2.4.1 which select an MCU image.
 
 #. Ensure the XDS-110 emulation firmware is updated.
 
    Download and install the latest `XDS-110 emulation package`_.
+
    Follow the directions here to update the firmware:
    http://processors.wiki.ti.com/index.php/XDS110#Updating_the_XDS110_Firmware
+
+   Note that the emulation package install may place the xdsdfu utility
+   in <install_dir>/ccs_base/common/uscif/xds110/.
 
 #. Ensure CONFIG_XIP=y is set.
 
@@ -219,7 +226,7 @@ CC32xx Wiki:
    http://www.ti.com/lit/ug/swru464/swru464.pdf
 
 .. _CC3220 Getting Started Guide:
-   http://www.ti.com/lit/ug/swru461/swru461.pdf
+   http://www.ti.com/lit/ug/swru461a/swru461a.pdf
 
 .. _UniFlash:
    http://processors.wiki.ti.com/index.php/Category:CCS_UniFlash
@@ -231,4 +238,4 @@ CC32xx Wiki:
    http://www.ti.com/lit/ug/swru463/swru463.pdf
 
 ..  _XDS-110 emulation package:
-   http://processors.wiki.ti.com/index.php/XDS_Emulation_Software_Package#XDS110_Reset_Download
+   http://processors.wiki.ti.com/index.php/XDS_Emulation_Software_Package#XDS_Emulation_Software_.28emupack.29_Download
