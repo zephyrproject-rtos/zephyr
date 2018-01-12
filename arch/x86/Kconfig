@@ -83,6 +83,12 @@ config X86_PAE_MODE
 	  needed for PAE tables is more than twice that of 32-Bit paging
 	  because each PAE entry is 64bits wide.
 	  Note: Do not enable in RAM constrained devices.
+
+config X86_NO_MELTDOWN
+	bool
+	help
+	  This hidden option should be set on a per-SOC basis to indicate that
+	  a particular SOC is not vulnerable to the Meltdown CPU vulnerability.
 endmenu
 
 config X86_ENABLE_TSS
