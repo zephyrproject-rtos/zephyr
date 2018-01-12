@@ -154,7 +154,7 @@ config ARC_HAS_SECURE
 	#  a hidden option
 	default n
 	help
-	  This opiton is enabled when ARC core supports secure mode
+	  This option is enabled when ARC core supports secure mode
 
 menu "ARC MPU Options"
 depends on CPU_HAS_MPU
