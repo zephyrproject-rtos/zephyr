@@ -17,11 +17,24 @@ CONFIG_UART_INTERRUPT_DRIVEN=y
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
 
-# Pinmux Driver
-CONFIG_PINMUX=y
+# Pinctrl driver
+CONFIG_PINCTRL=y
 
 # GPIO Controller
 CONFIG_GPIO=y
+
+# SPI Controller
+CONFIG_SPI=y
+CONFIG_SPI_1=y
+# Enable multiple wait on events in async SPI context
+CONFIG_POLL=y
+
+# CAN controller
+CONFIG_CAN=y
+CONFIG_CAN_INIT_PRIORITY=80
+CONFIG_CAN_1=y
+CONFIG_CAN_STM32=y
+CONFIG_CAN_MAX_FILTER=5
 
 # Clock configuration
 CONFIG_CLOCK_CONTROL=y

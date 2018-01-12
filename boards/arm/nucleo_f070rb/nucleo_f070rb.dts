@@ -20,7 +20,7 @@
 	leds {
 		compatible = "gpio-leds";
 		green_led_2: led@0 {
-			gpios = <&gpioa 5 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpioa GPIO_PORT_PIN5 GPIO_INT_ACTIVE_HIGH>;
 			label = "User LD2";
 		};
 	};
@@ -29,7 +29,7 @@
 		compatible = "gpio-keys";
 		user_button: button@0 {
 			label = "User";
-			gpios = <&gpioc 13 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpioc GPIO_PORT_PIN13 GPIO_INT_ACTIVE_LOW>;
 		};
 	};
 
@@ -64,5 +64,7 @@
 };
 
 &spi1 {
+	pinctrl-0 = <&spi1_master_a>;
+	pinctrl-names = "default";
 	status = "ok";
 };

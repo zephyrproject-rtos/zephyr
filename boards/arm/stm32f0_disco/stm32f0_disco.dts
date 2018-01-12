@@ -20,11 +20,11 @@
 	leds {
 		compatible = "gpio-leds";
 		green_led_3: led@0 {
-			gpios = <&gpioc 9 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpioc GPIO_PORT_PIN9 GPIO_INT_ACTIVE_HIGH>;
 			label = "User LD3";
 		};
 		blue_led_4: led@1 {
-			gpios = <&gpioc 8 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpioc GPIO_PORT_PIN8 GPIO_INT_ACTIVE_HIGH>;
 			label = "User LD4";
 		};
 	};
@@ -33,7 +33,7 @@
 		compatible = "gpio-keys";
 		user_button: button@0 {
 			label = "Key";
-			gpios = <&gpioa 0 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpioa GPIO_PORT_PIN0 GPIO_INT_ACTIVE_LOW>;
 		};
 	};
 

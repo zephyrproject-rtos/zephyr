@@ -1,6 +1,6 @@
 # Kconfig - STM32 Nucleo-64 development board with STM32F091RC MCU
 #
-# Copyright (c) 2017 Bobby Noelte
+# Copyright (c) 2018 Bobby Noelte
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -28,12 +28,6 @@ config I2C_2
 endif # I2C
 
 if SPI
-
-config SPI_1
-	default y
-
-config SPI_2
-	default y
 
 config SPI_STM32_INTERRUPT
 	default y
