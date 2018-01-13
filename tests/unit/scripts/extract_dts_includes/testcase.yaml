@@ -1,0 +1,5 @@
+tests:
+    test:
+      tags: extract_dts_includes
+      timeout: 5
+      type: unit
