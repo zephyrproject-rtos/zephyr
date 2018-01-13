@@ -95,6 +95,10 @@
 #define sched_get_priority_min(...)	zap_sched_get_priority_min(__VA_ARGS__)
 #define sched_get_priority_max(...)	zap_sched_get_priority_max(__VA_ARGS__)
 
+/* Sleep */
+#define sleep(...)			zap_sleep(__VA_ARGS__)
+#define usleep(...)			zap_usleep(__VA_ARGS__)
+
 #endif /* CONFIG_ARCH_POSIX */
 
 #endif
