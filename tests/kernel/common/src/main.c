@@ -15,7 +15,6 @@ extern void atomic_test(void);
 extern void bitfield_test(void);
 extern void intmath_test(void);
 extern void printk_test(void);
-extern void ring_buffer_test(void);
 extern void slist_test(void);
 extern void dlist_test(void);
 extern void rand32_test(void);
@@ -45,7 +44,6 @@ void test_main(void)
 #ifdef CONFIG_PRINTK
 			 ztest_unit_test(printk_test),
 #endif
-			 ztest_unit_test(ring_buffer_test),
 			 ztest_unit_test(slist_test),
 			 ztest_unit_test(dlist_test),
 			 ztest_unit_test(rand32_test),
