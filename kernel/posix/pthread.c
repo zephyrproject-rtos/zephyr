@@ -30,10 +30,8 @@ K_MEM_POOL_DEFINE(posix_thread_pool, sizeof(struct posix_thread),
 		  sizeof(struct posix_thread), CONFIG_MAX_PTHREAD_COUNT, 4);
 static bool is_posix_prio_valid(u32_t priority, int policy)
 {
-	if ((policy == SCHED_RR &&
-	     priority <= CONFIG_NUM_PREEMPT_PRIORITIES) ||
-	    (policy == SCHED_FIFO &&
-	     priority < CONFIG_NUM_COOP_PRIORITIES)) {
+	if (priority >= sched_get_priority_min(policy) &&
+	    priority <= sched_get_priority_max(policy)) {
 		return true;
 	}
 

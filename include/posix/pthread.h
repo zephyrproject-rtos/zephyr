@@ -21,7 +21,7 @@ struct timespec {
 #endif	/* CONFIG_NEWLIB_LIBC */
 
 #include "sys/types.h"
-#include "sched.h"
+#include "posix_sched.h"
 
 enum pthread_state {
 	/* The thread is running and joinable. */
