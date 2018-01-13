@@ -1,34 +1,28 @@
 /*
- * Copyright (c) 2016 Intel Corporation
+ * Copyright (c) 2018 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define SYS_LOG_DOMAIN "syslogger"
-
-#include <zephyr.h>
-#include <ztest.h>
+#include <misc/printk.h>
+#include <shell/shell.h>
+#include <init.h>
+#include <ring_buffer.h>
+#include <logging/sys_log.h>
 #include <device.h>
 #include <init.h>
-#include <misc/printk.h>
-#include <logging/sys_log.h>
 #include <stdio.h>
-#include <ring_buffer.h>
+#include <debug/object_tracing.h>
 
-#define LOG_BUF_SIZE (512)
+#define SHELL_LOGGER "logger"
 
-/**
- * @file
- * @brief using logger hook demo
- */
+#define LOG_BUF_SIZE (CONFIG_LOGGER_BUFFER_SIZE)
 
 u32_t logger_buffer[LOG_BUF_SIZE];
 
 struct log_cbuffer {
 	struct ring_buf ring_buffer;
 } log_cbuffer;
-
-static inline void ring_buf_print(struct ring_buf *buf);
 
 int logger_put(struct log_cbuffer *logger, char *data, u32_t data_size)
 {
@@ -52,8 +46,7 @@ void vlog_cbuf_put(const char *format, va_list args)
 	int buf_size = 0;
 
 	buf_size += vsnprintf(&buf[buf_size], sizeof(buf), format, args);
-	zassert_false(logger_put(&log_cbuffer, buf, buf_size),
-		      "logger put error\n");
+	logger_put(&log_cbuffer, buf, buf_size);
 }
 
 void log_cbuf_put(const char *format, ...)
@@ -80,29 +73,6 @@ int init_logger_hook(struct device *dev)
 
 SYS_INIT(init_logger_hook, PRE_KERNEL_1, 0);
 
-
-void test_logging(void)
-{
-#ifndef CONFIG_SYS_LOG
-	printk("syslog hook sample configuration is not set correctly %s\n",
-	       CONFIG_ARCH);
-#else
-	/*
-	 * empty buffer from everything that happened before we reached
-	 * application
-	 */
-	while (sys_ring_buf_is_empty(&log_cbuffer.ring_buffer) == 0) {
-		ring_buf_print(&log_cbuffer.ring_buffer);
-	}
-	SYS_LOG_ERR("SYS LOG ERR is ACTIVE");
-	ring_buf_print(&log_cbuffer.ring_buffer);
-	SYS_LOG_WRN("SYS LOG WRN is ACTIVE");
-	ring_buf_print(&log_cbuffer.ring_buffer);
-	SYS_LOG_INF("SYS LOG INF is ACTIVE");
-	ring_buf_print(&log_cbuffer.ring_buffer);
-#endif
-}
-
 static inline void ring_buf_print(struct ring_buf *buf)
 {
 	u8_t data[512];
@@ -116,7 +86,6 @@ static inline void ring_buf_print(struct ring_buf *buf)
 			       (u32_t *)data, &size32);
 	irq_unlock(key);
 
-	zassert_equal(ret, 0, "Error when reading ring buffer (%d)\n", ret);
 	if (ret == 0) {
 		printk("%s", data);
 	} else {
@@ -124,8 +93,20 @@ static inline void ring_buf_print(struct ring_buf *buf)
 	}
 }
 
-void test_main(void)
+static int shell_cmd_show(int argc, char *argv[])
 {
-	ztest_test_suite(test_log, ztest_unit_test(test_logging));
-	ztest_run_test_suite(test_log);
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+	while (sys_ring_buf_is_empty(&log_cbuffer.ring_buffer) == 0) {
+		ring_buf_print(&log_cbuffer.ring_buffer);
+	}
+	return 0;
 }
+
+struct shell_cmd logger_commands[] = {
+	{ "show", shell_cmd_show, "Show all log entries." },
+	{ NULL, NULL, NULL }
+};
+
+
+SHELL_REGISTER(SHELL_LOGGER, logger_commands);

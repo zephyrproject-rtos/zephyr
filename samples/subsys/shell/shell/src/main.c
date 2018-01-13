@@ -7,6 +7,7 @@
 #include <zephyr.h>
 #include <misc/printk.h>
 #include <shell/shell.h>
+#include <logging/sys_log.h>
 
 static int shell_cmd_ping(int argc, char *argv[])
 {
@@ -40,5 +41,6 @@ static struct shell_cmd commands[] = {
 
 void main(void)
 {
+	SYS_LOG_INF("Registering %s shell module", MY_SHELL_MODULE);
 	SHELL_REGISTER(MY_SHELL_MODULE, commands);
 }

@@ -7,6 +7,7 @@
  */
 
 #include <ring_buffer.h>
+#include <init.h>
 
 /**
  * Internal data structure for a buffer header.
@@ -19,6 +20,30 @@ struct ring_element {
 	u32_t  length :8;  /**< length in 32-bit chunks */
 	u32_t  value  :8;  /**< Room for small integral values */
 };
+
+extern struct ring_buf _sys_ring_buf_list_start[];
+extern struct ring_buf _sys_ring_buf_list_end[];
+
+#ifdef CONFIG_OBJECT_TRACING
+struct ring_buf   *_trace_list_sys_ring_buf;
+
+/*
+ * Complete initialization of statically defined semaphores.
+ */
+static int init_ring_buf_module(struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	struct ring_buf *ring_buffer;
+
+	for (ring_buffer = _sys_ring_buf_list_start; ring_buffer < _sys_ring_buf_list_end; ring_buffer++) {
+		SYS_TRACING_OBJ_INIT(sys_ring_buf, ring_buffer);
+	}
+	return 0;
+}
+
+SYS_INIT(init_ring_buf_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
+#endif
 
 int sys_ring_buf_put(struct ring_buf *buf, u16_t type, u8_t value,
 		     u32_t *data, u8_t size32)

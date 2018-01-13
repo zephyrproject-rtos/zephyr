@@ -13,3 +13,20 @@ config KERNEL_SHELL
 	help
 	  This shell provides access to basic kernel data like version, uptime
 	  and other useful information.
+
+config LOGGER_SHELL
+	bool "Enable logger shell"
+	default n
+	select RING_BUFFER
+	select SYS_LOG
+	select SYS_LOG_EXT_HOOK
+	help
+	  This shell stores all syslog messages into a ring bugger and displays
+	  them on demand.
+
+config LOGGER_BUFFER_SIZE
+	int
+	default 1024
+	help
+	  Log buffer size. This is the size of the ring buffer that will hold
+	  the syslog entries.
