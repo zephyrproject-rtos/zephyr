@@ -5,6 +5,7 @@ sample:
 common:
   tags: crypto
   harness: console
+  min_ram: 16
 tests:
   test-mbedtls:
     extra_args: CONF_FILE=prj_mtls_shim.conf
