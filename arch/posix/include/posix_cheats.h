@@ -59,7 +59,7 @@
 #define pthread_barrierattr_destroy(...) \
 	zap_pthread_barrierattr_destroy(__VA_ARGS__)
 
-/* pthread */
+/* Pthread */
 #define pthread_attr_init(...)		zap_pthread_attr_init(__VA_ARGS__)
 #define pthread_attr_destroy(...)	zap_pthread_attr_destroy(__VA_ARGS__)
 #define pthread_attr_getschedparam(...) \
@@ -89,6 +89,11 @@
 #define pthread_create(...)		zap_pthread_create(__VA_ARGS__)
 #define pthread_setcancelstate(...)	zap_pthread_setcancelstate(__VA_ARGS__)
 #define pthread_setschedparam(...)	zap_pthread_setschedparam(__VA_ARGS__)
+
+/* Scheduler */
+#define sched_yield(...)		zap_sched_yield(__VA_ARGS__)
+#define sched_get_priority_min(...)	zap_sched_get_priority_min(__VA_ARGS__)
+#define sched_get_priority_max(...)	zap_sched_get_priority_max(__VA_ARGS__)
 
 #endif /* CONFIG_ARCH_POSIX */
 
