@@ -59,6 +59,9 @@ typedef struct pthread_barrierattr {
 	int unused;
 } pthread_barrierattr_t;
 
+/* time related attributes */
+typedef unsigned long useconds_t;
+
 #endif /* CONFIG_PTHREAD_IPC */
 
 #ifdef __cplusplus

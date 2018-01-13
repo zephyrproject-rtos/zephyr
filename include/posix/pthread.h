@@ -22,6 +22,7 @@ struct timespec {
 
 #include "sys/types.h"
 #include "posix_sched.h"
+#include "unistd.h"
 
 enum pthread_state {
 	/* The thread is running and joinable. */
