@@ -1,0 +1,5 @@
+tests:
+    test:
+      tags: pinctrl_lib
+      timeout: 5
+      type: unit
