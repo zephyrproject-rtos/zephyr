@@ -2339,7 +2339,7 @@ def main():
     if options.discard_report:
         ts.discard_report(options.discard_report)
 
-    if VERBOSE > 1:
+    if VERBOSE > 1 and discards:
         for i, reason in discards.items():
             debug(
                 "{:<25} {:<50} {}SKIPPED{}: {}".format(
