@@ -1,0 +1,3 @@
+tests:
+  ringbuffer_api:
+    tags: system
