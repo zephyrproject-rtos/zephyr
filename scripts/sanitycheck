@@ -2340,7 +2340,14 @@ def main():
         ts.discard_report(options.discard_report)
 
     if VERBOSE > 1 and discards:
+        # if we are using command line platform filter, no need to list every
+        # other platform as excluded, we know that already.
+        # Show only the discards that apply to the selected platforms on the
+        # command line
+
         for i, reason in discards.items():
+            if options.platform and i.platform.name not in options.platform:
+                continue
             debug(
                 "{:<25} {:<50} {}SKIPPED{}: {}".format(
                     i.platform.name,
