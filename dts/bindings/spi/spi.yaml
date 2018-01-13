@@ -15,14 +15,22 @@ child:
     bus: spi
 
 properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      generation: define
+
     "#address-cells":
       type: int
       category: required
       description: should be 1.
+
     "#size-cells":
       type: int
       category: required
       description: should be 0.
+
     label:
       type: string
       category: required
@@ -34,5 +42,9 @@ properties:
       category: optional
       generation: define, use-prop-name
 
-
+    pinctrl-\d+:
+      type: array
+      category: optional
+      description: pinmux information for SCK, MOSI, MISO
+      generation: define
 ...
