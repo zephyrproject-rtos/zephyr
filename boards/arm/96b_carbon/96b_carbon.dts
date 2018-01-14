@@ -43,6 +43,14 @@
 
 &spi1 {
 	status = "ok";
+
+	/* Nordic nRF51822-QFAC */
+	bt-hci@0 {
+		compatible = "zephyr,bt-hci-spi";
+		reg = <0>;
+		spi-max-frequency = <2000000>;
+		label = "BT_HCI";
+	};
 };
 
 &spi2 {
