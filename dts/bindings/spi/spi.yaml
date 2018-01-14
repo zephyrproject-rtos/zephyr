@@ -11,6 +11,9 @@ version: 0.1
 description: >
     This binding gives the base structures for all SPI devices
 
+child:
+    bus: spi
+
 properties:
     "#address-cells":
       type: int
