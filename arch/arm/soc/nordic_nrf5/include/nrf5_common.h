@@ -60,6 +60,7 @@
 #define NRF52_IRQ_RTC2_IRQn                    36
 #define NRF52_IRQ_I2S_IRQn                     37
 #define NRF52_IRQ_FPU_IRQn                     38
+#define NRF52_IRQ_SPIM3_IRQn                   47
 
 /**
  * @file UART baudrate divisors for NRF51/NRF52 family processors.

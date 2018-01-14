@@ -111,13 +111,13 @@ config	SPI_0
 config SPI_0_NAME
 	string
 	prompt "SPI port 0 device name"
-	depends on SPI_0
+	depends on SPI_0 && !HAS_DTS_SPI
 	default "SPI_0"
 
 config SPI_0_IRQ_PRI
 	int
 	prompt "Port 0 interrupt priority"
-	depends on SPI_0
+	depends on SPI_0 && !HAS_DTS_SPI
 
 config SPI_0_DEFAULT_CFG
 	hex "Port 0 default configuration"
@@ -341,6 +341,10 @@ source "drivers/spi/Kconfig.mcux_dspi"
 
 if SPI_LEGACY_API
 source "drivers/spi/Kconfig.nrf5_legacy"
+endif
+
+if !SPI_LEGACY_API
+source "drivers/spi/Kconfig.nrf5"
 endif
 
 source "drivers/spi/Kconfig.sam0"
