@@ -1,0 +1,15 @@
+# Kconfig - RISCV32_GOTHAM SOC configuration options
+#
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+choice
+prompt "Gotham SOC implementation"
+depends on SOC_SERIES_RISCV32_GOTHAM
+
+config SOC_RISCV32_GOTHAM
+	bool "GOTHAM SoC implementation"
+	select ATOMIC_OPERATIONS_C
+
+endchoice
