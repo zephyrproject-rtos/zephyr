@@ -170,6 +170,15 @@ config DW_ICTL_INIT_PRIORITY
 	help
 	  DesignWare Interrupt Controller initialization priority.
 
+config PLIC_GOTHAM
+	bool "Gotham Platform Level Interrupt Controller (PLIC)"
+	default y
+	depends on SOC_RISCV32_GOTHAM
+	select RISCV_HAS_PLIC
+	help
+	Gotham Platform Level Interrupt Controller provides support
+	for external interrupt lines defined by the GOTHAM SOC;
+
 source "drivers/interrupt_controller/Kconfig.stm32"
 
 source "drivers/interrupt_controller/Kconfig.multilevel"
