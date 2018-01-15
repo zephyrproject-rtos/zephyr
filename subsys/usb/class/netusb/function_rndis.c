@@ -154,7 +154,7 @@ static int parse_rndis_header(const u8_t *buffer, u32_t buf_len)
 	 */
 	if (len < sys_le32_to_cpu(hdr->payload_offset) +
 	    sys_le32_to_cpu(hdr->payload_len) +
-	    (u8_t *)&hdr->payload_offset - (u8_t *)hdr) {
+	    offsetof(struct rndis_payload_packet, payload_offset)) {
 		SYS_LOG_ERR("Incorrect RNDIS packet");
 		return -EINVAL;
 	}
@@ -897,7 +897,7 @@ static void cmd_thread(void)
 static void rndis_hdr_add(u8_t *buf, u32_t len)
 {
 	struct rndis_payload_packet *hdr = (void *)buf;
-	u32_t offset = (u8_t *)&hdr->payload_offset - (u8_t *)hdr;
+	u32_t offset = offsetof(struct rndis_payload_packet, payload_offset);
 
 	memset(hdr, 0, sizeof(*hdr));
 
