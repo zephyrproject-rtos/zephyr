@@ -450,7 +450,7 @@ def find_kobjects(elf, syms):
                 continue
 
             loc = die.attributes["DW_AT_location"]
-            if loc.form != "DW_FORM_exprloc":
+            if loc.form != "DW_FORM_exprloc" and loc.form != "DW_FORM_block1":
                 debug_die(
                     die,
                     "kernel object '%s' unexpected location format" %
