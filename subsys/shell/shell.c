@@ -13,6 +13,7 @@
 #include <zephyr.h>
 #include <stdio.h>
 #include <string.h>
+#include <version.h>
 
 #include <console/console.h>
 #include <misc/printk.h>
@@ -368,6 +369,8 @@ static void shell(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
+	printk("Zephyr Shell, Zephyr version: %s\n", KERNEL_VERSION_STRING);
+	printk("Type 'help' for a list of available commands\n");
 	while (1) {
 		struct console_input *cmd;
 
