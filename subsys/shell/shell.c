@@ -195,7 +195,7 @@ static const struct shell_cmd *get_cmd(const struct shell_cmd cmds[],
 	return NULL;
 }
 
-static const struct shell_cmd *get_mod_cmd(struct shell_module *module,
+static const struct shell_cmd *get_module_cmd(struct shell_module *module,
 					   const char *cmd_str)
 {
 	return get_cmd(module->commands, cmd_str);
@@ -247,7 +247,7 @@ static int cmd_help(int argc, char *argv[])
 				return -EINVAL;
 			}
 		} else {
-			cmd = get_mod_cmd(module, cmd_str);
+			cmd = get_module_cmd(module, cmd_str);
 			if (cmd) {
 				return show_cmd_help(cmd, true);
 			} else {
@@ -375,7 +375,7 @@ int shell_exec(char *line)
 	}
 
 	if (default_module) {
-		cmd = get_mod_cmd(default_module, argv[0]);
+		cmd = get_module_cmd(default_module, argv[0]);
 	}
 
 	if (!cmd && argc > 1) {
@@ -383,7 +383,7 @@ int shell_exec(char *line)
 
 		module = get_destination_module(argv[0]);
 		if (module) {
-			cmd = get_mod_cmd(module, argv[1]);
+			cmd = get_module_cmd(module, argv[1]);
 			if (cmd) {
 				argc--;
 				argv_start++;
