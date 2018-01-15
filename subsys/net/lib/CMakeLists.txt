@@ -12,3 +12,4 @@ if(CONFIG_HTTP_PARSER_URL
   add_subdirectory(http)
 endif()
 
+add_subdirectory_ifdef(CONFIG_OPENTHREAD_PLAT openthread)
