@@ -39,3 +39,6 @@ tests:
       - CONFIG_USB_DEVICE_PID=0xBEEF
     platform_whitelist: quark_se_c1000_devboard 96b_carbon
     tags: net usb
+  test_openthread:
+    extra_args: CONF_FILE="prj_nrf52840_ot.conf"
+    platform_whitelist: nrf52840_pca10056
