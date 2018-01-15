@@ -2725,13 +2725,17 @@ static int print_attr(struct net_pkt *pkt, char *buf, u16_t buflen,
 
 	SYS_SLIST_FOR_EACH_CONTAINER(attr_list, attr, node) {
 		/* assuming integer will have float_val.val2 set as 0 */
-		used = snprintk(buf, buflen, ";%s=%d%s",
+
+		used = snprintk(buf, buflen, ";%s=%s%d%s",
 				LWM2M_ATTR_STR[attr->type],
+				attr->float_val.val1 == 0 &&
+				attr->float_val.val2 < 0 ? "-" : "",
 				attr->float_val.val1,
-				attr->float_val.val2 > 0 ? "." : "");
+				attr->float_val.val2 != 0 ? "." : "");
 
 		base = 100000;
-		fraction = attr->float_val.val2;
+		fraction = attr->float_val.val2 < 0 ?
+			   -attr->float_val.val2 : attr->float_val.val2;
 		while (fraction && used < buflen && base > 0) {
 			digit = fraction / base;
 			buf[used++] = '0' + digit;
