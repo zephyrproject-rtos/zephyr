@@ -55,10 +55,28 @@
 
 &i2c0 {
 	status = "ok";
+
+	max30101@57 {
+		compatible = "max,max30101";
+		reg = <0x57>;
+		label = "MAX30101";
+	};
 };
 
 &i2c1 {
 	status = "ok";
+
+	fxos8700@1e {
+		compatible = "nxp,fxos8700";
+		reg = <0x1e>;
+		label = "FXOS8700";
+	};
+
+	fxas21002@20 {
+		compatible = "nxp,fxas21002";
+		reg = <0x20>;
+		label = "FXAS21002";
+	};
 };
 
 &uart0 {
