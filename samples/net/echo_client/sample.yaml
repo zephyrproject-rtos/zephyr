@@ -19,3 +19,6 @@ tests:
   test_cc2520:
     extra_args: CONF_FILE="prj_frdm_k64f_cc2520.conf"
     platform_whitelist: frdm_k64f
+  test_openthread:
+    extra_args: CONF_FILE="prj_nrf52840_ot.conf"
+    platform_whitelist: nrf52840_pca10056
