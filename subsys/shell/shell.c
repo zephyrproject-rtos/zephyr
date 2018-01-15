@@ -38,7 +38,12 @@
 /* command table is located in the dedicated memory segment (.shell_) */
 extern struct shell_module __shell_module_start[];
 extern struct shell_module __shell_module_end[];
+
+extern struct shell_cmd __shell_cmd_start[];
+extern struct shell_cmd __shell_cmd_end[];
+
 #define NUM_OF_SHELL_ENTITIES (__shell_module_end - __shell_module_start)
+#define NUM_OF_SHELL_CMDS (__shell_cmd_end - __shell_cmd_start)
 
 static const char *prompt;
 static char default_module_prompt[PROMPT_MAX_LEN];
@@ -196,6 +201,22 @@ static const struct shell_cmd *get_mod_cmd(struct shell_module *module,
 	return get_cmd(module->commands, cmd_str);
 }
 
+static const struct shell_cmd *get_standalone(const char *command)
+{
+	int i;
+
+	for (i = 0; i < NUM_OF_SHELL_CMDS; i++) {
+		if (!strcmp(command, __shell_cmd_start[i].cmd_name)) {
+			return &__shell_cmd_start[i];
+		}
+	}
+
+	return NULL;
+}
+
+/**
+ * Handle internal 'help' command
+ */
 static int cmd_help(int argc, char *argv[])
 {
 	struct shell_module *module = default_module;
@@ -218,16 +239,21 @@ static int cmd_help(int argc, char *argv[])
 		}
 
 		if (!module) {
-			printk("No help found for '%s'\n", cmd_str);
-			return -EINVAL;
-		}
-
-		cmd = get_mod_cmd(module, cmd_str);
-		if (cmd) {
-			return show_cmd_help(cmd, true);
+			cmd = get_standalone(cmd_str);
+			if (cmd) {
+				return show_cmd_help(cmd, true);
+			} else {
+				printk("No help found for '%s'\n", cmd_str);
+				return -EINVAL;
+			}
 		} else {
-			printk("Unknown command '%s'\n", cmd_str);
-			return -EINVAL;
+			cmd = get_mod_cmd(module, cmd_str);
+			if (cmd) {
+				return show_cmd_help(cmd, true);
+			} else {
+				printk("Unknown command '%s'\n", cmd_str);
+				return -EINVAL;
+			}
 		}
 	}
 
@@ -239,13 +265,24 @@ module_help:
 	} else { /* help for all entities */
 		int i;
 
+		printk("[Modules]\n");
+
 		if (NUM_OF_SHELL_ENTITIES == 0) {
 			printk("No registered modules.\n");
-		} else {
-			printk("Available modules:\n");
 		}
+
 		for (i = 0; i < NUM_OF_SHELL_ENTITIES; i++) {
 			printk("%s\n", __shell_module_start[i].module_name);
+		}
+
+		printk("\n[Commands]\n");
+
+		if (NUM_OF_SHELL_CMDS == 0) {
+			printk("No registered commands.\n");
+		}
+
+		for (i = 0; i < NUM_OF_SHELL_CMDS; i++) {
+			printk("%s\n", __shell_cmd_start[i].cmd_name);
 		}
 
 		printk("\nTo select a module, enter 'select <module name>'.\n");
@@ -260,7 +297,7 @@ static int set_default_module(const char *name)
 
 	if (strlen(name) > MODULE_NAME_MAX_LEN) {
 		printk("Module name %s is too long, default is not changed\n",
-			name);
+		       name);
 		return -EINVAL;
 	}
 
@@ -310,6 +347,7 @@ static const struct shell_cmd *get_internal(const char *command)
 	return get_cmd(internal_commands, command);
 }
 
+
 int shell_exec(char *line)
 {
 	char *argv[ARGC_MAX + 1], **argv_start = argv;
@@ -326,7 +364,12 @@ int shell_exec(char *line)
 		goto done;
 	}
 
-	if (argc == 1 && !default_module) {
+	cmd = get_standalone(argv[0]);
+	if (cmd) {
+		goto done;
+	}
+
+	if (argc == 1 && !default_module && NUM_OF_SHELL_CMDS == 0) {
 		printk("No module selected. Use 'select' or 'help'.\n");
 		return -EINVAL;
 	}

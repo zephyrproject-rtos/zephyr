@@ -79,6 +79,21 @@ struct shell_module {
  * Shell array entries must be packed to calculate array size correctly.
  * @param _prompt Optional prompt handler to be set when module is selected.
  */
+
+
+/**
+ * @def SHELL_REGISTER_COMMAND
+ *
+ * @brief Create a standalone command and set it up for boot time
+ * initialization.
+ *
+ * @details This macro define a shell_cmd object hat is automatically
+ * configured by the kernel during system initialization.
+ *
+ * The command will be available in he default module, so it will be available
+ * immediatly when.
+ *
+ */
 #ifdef CONFIG_CONSOLE_SHELL
 #define SHELL_REGISTER(_name, _commands) \
 	SHELL_REGISTER_WITH_PROMPT(_name, _commands, NULL)
@@ -91,9 +106,19 @@ struct shell_module {
 		  .commands = _commands, \
 		  .prompt = _prompt \
 	}
+
+#define SHELL_REGISTER_COMMAND(name, callback, _help) \
+	\
+	const struct shell_cmd (__shell__##name) __used \
+	__attribute__((__section__(".shell_cmd_"))) = { \
+		  .cmd_name = name, \
+		  .cb = callback, \
+		  .help = _help \
+	}
 #else
 #define SHELL_REGISTER(_name, _commands)
 #define SHELL_REGISTER_WITH_PROMPT(_name, _commands, _prompt)
+#define SHELL_REGISTER_COMMAND(_name, _callback, _help)
 #endif
 
 /** @brief Initialize shell with optional prompt, NULL in case no prompt is

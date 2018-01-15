@@ -102,7 +102,10 @@
 #define	SHELL_INIT_SECTIONS()				\
 		__shell_module_start = .;		\
 		KEEP(*(".shell_module_*"));		\
-		__shell_module_end = .;
+		__shell_module_end = .;			\
+		__shell_cmd_start = .;			\
+		KEEP(*(".shell_cmd_*"));		\
+		__shell_cmd_end = .;			\
 
 #ifdef CONFIG_APPLICATION_MEMORY
 
