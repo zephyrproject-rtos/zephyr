@@ -12,7 +12,7 @@
 menuconfig IEEE802154
 	bool "IEEE 802.15.4 drivers options"
 	default n
-	default y if NET_L2_IEEE802154
+	default y if NET_L2_IEEE802154 || NET_L2_OPENTHREAD
 
 if IEEE802154
 
