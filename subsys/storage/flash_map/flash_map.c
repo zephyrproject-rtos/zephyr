@@ -12,6 +12,7 @@
 #include <flash_map.h>
 #include <flash.h>
 #include <soc.h>
+#include <init.h>
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 struct layout_data {
@@ -41,6 +42,7 @@ static const struct driver_map_entry  flash_drivers_map[] = {
 
 const struct flash_area *flash_map;
 extern const int flash_map_entries;
+static struct device *flash_dev[ARRAY_SIZE(flash_drivers_map)];
 
 int flash_area_open(u8_t id, const struct flash_area **fap)
 {
@@ -71,7 +73,7 @@ static struct device *get_flah_dev_from_id(u8_t id)
 {
 	for (int i = 0; i < ARRAY_SIZE(flash_drivers_map); i++) {
 		if (flash_drivers_map[i].id == id) {
-			return device_get_binding(flash_drivers_map[i].name);
+			return flash_dev[i];
 		}
 	}
 
@@ -265,6 +267,15 @@ u8_t flash_area_align(const struct flash_area *fa)
 	return flash_get_write_block_size(dev);
 }
 
-void flash_map_init(void)
+static int flash_map_init(struct device *dev)
 {
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(flash_dev); i++) {
+		flash_dev[i] = device_get_binding(flash_drivers_map[i].name);
+	}
+
+	return 0;
 }
+
+SYS_INIT(flash_map_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
