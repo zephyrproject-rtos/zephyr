@@ -2,6 +2,7 @@
 # Modified from: https://github.com/ulfalizer/Kconfiglib/blob/master/examples/merge_config.py
 from kconfiglib import Kconfig, Symbol, BOOL, STRING, TRISTATE, TRI_TO_STR
 import sys
+import pathlib
 
 if len(sys.argv) < 5:
     print('usage: {} Kconfig dotconfig autoconf conf1 [conf2 ...]'
@@ -18,12 +19,23 @@ kconf.enable_undef_warnings()
 # set up here as well. The approach in examples/allnoconfig_simpler.py could
 # provide an allnoconfig starting state for example.)
 
-print("Using {} as base".format(sys.argv[4]))
-for config in sys.argv[5:]:
-    print("Merging {}".format(config))
-# Create a merged configuration by loading the fragments with replace=False
-for config in sys.argv[4:]:
-    kconf.load_config(config, replace=False)
+dotconfig_path = pathlib.Path(sys.argv[2])
+dotconfig_already_exists = dotconfig_path.exists()
+
+fragments = []
+if dotconfig_already_exists:
+    fragments.append(sys.argv[2])
+else:
+    print("Using {} as base".format(sys.argv[4]))
+    for config in sys.argv[5:]:
+        print("Merging {}".format(config))
+
+    # Create a merged configuration by loading the fragments with replace=False
+    for config in sys.argv[4:]:
+        fragments.append(config)
+
+for fragment in fragments:
+    kconf.load_config(fragment, replace=False)
 
 # Write the merged configuration
 kconf.write_config(sys.argv[2])
