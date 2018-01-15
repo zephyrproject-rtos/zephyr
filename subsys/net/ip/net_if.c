@@ -1507,7 +1507,7 @@ struct net_if_router *net_if_ipv4_router_add(struct net_if *iface,
 bool net_if_ipv4_addr_mask_cmp(struct net_if *iface,
 			       struct in_addr *addr)
 {
-	u32_t subnet = ntohl(addr->s_addr) &
+	u32_t subnet = ntohl(UNALIGNED_GET(&addr->s_addr)) &
 			ntohl(iface->ipv4.netmask.s_addr);
 	int i;
 
