@@ -48,8 +48,8 @@ boards/arm/nucleo_f401re/*               @rsalveti @idlethread
 boards/arm/v2m_beetle/*                  @fvincenzo
 boards/arm/olimexino_stm32/*             @ydamigos
 boards/arm/stm32f3_disco/*               @ydamigos
-boards/nios2/*                           @andrewboie
-boards/nios2/altera_max10/*              @andrewboie
+boards/nios2/*                           @ramakrishnapallala
+boards/nios2/altera_max10/*              @ramakrishnapallala
 boards/riscv32                           @fractalclone
 boards/x86/*                             @andrewboie @youvedeep
 boards/x86/arduino_101/*                 @nashif
@@ -59,7 +59,6 @@ boards/x86/quark_se_c1000_devboard/*     @nashif
 boards/xtensa/*                          @andrewboie
 # All cmake related files
 cmake/*                                  @nashif @SebastianBoe
-CMakeLists.txt                           @nashif @SebastianBoe
 doc/*                                    @dbkinder
 doc/subsystems/bluetooth/*               @sjanc @jhedberg @Vudentz
 drivers/*/*qmsi*                         @nashif
@@ -75,12 +74,12 @@ drivers/ieee802154/*                     @jukkar @tbursztyka
 drivers/interrupt_controller/*           @andrewboie
 drivers/pinmux/stm32/*                   @rsalveti @idlethread
 drivers/sensor/*                         @bogdan-davidoaia
-drivers/serial/uart_altera_jtag.c        @andrewboie
+drivers/serial/uart_altera_jtag.c        @ramakrishnapallala
 drivers/serial/uart_riscv_qemu.c         @fractalclone
-drivers/slip/*                           @jukkar @tbursztyka
+drivers/net/slip/*                       @jukkar @tbursztyka
 drivers/spi/*                            @tbursztyka
 drivers/spi/spi_ll_stm32.*               @superna9999 @mbolivar
-drivers/timer/altera_avalon_timer.c      @andrewboie
+drivers/timer/altera_avalon_timer.c      @ramakrishnapallala
 drivers/timer/pulpino_timer.c            @fractalclone
 drivers/timer/riscv_machine_timer.c      @fractalclone
 drivers/usb                              @youvedeep @andyross
@@ -117,8 +116,6 @@ include/drivers/mvic.h                   @andrewboie
 include/fs.h                             @nashif
 include/fs/*                             @nashif
 include/init.h                           @andrewboie @andyross
-include/init.h                           @youvedeep @nashif
-include/irq.h                            @andrewboie
 include/irq.h                            @andrewboie @andyross
 include/irq_offload.h                    @andrewboie @andyross
 include/kernel.h                         @andrewboie @andyross
@@ -142,6 +139,7 @@ include/toolchain.h                      @andrewboie @andyross
 include/toolchain/*                      @andrewboie @andyross
 include/zephyr.h                         @andrewboie @andyross
 kernel/*                                 @andrewboie @andyross
+kernel/posix/*				 @youvedeep
 kernel/device.c                          @youvedeep @nashif
 kernel/idle.c                            @youvedeep @nashif
 samples/bluetooth/*                      @sjanc @jhedberg @Vudentz
@@ -150,7 +148,7 @@ samples/net/*                            @jukkar @tbursztyka
 samples/net/dns_resolve/*                @jukkar @tbursztyka
 samples/net/http_server/*                @jukkar @tbursztyka
 samples/net/lwm2m_client/*               @mike-scott
-samples/net/mbedtls_sslclient/*          @nashif
+samples/net/mbedtls_sslclient/*          @jukkar
 samples/net/mqtt_publisher/*             @jukkar @tbursztyka
 samples/net/coap_client/*                @rveerama1
 samples/net/coap_server/*                @rveerama1
@@ -158,7 +156,7 @@ samples/sensor/*                         @bogdan-davidoaia
 samples/subsys/usb                       @youvedeep @andyross
 scripts/expr_parser.py                   @andrewboie
 scripts/sanity_chk/*                     @andrewboie
-scripts/sanitycheck                      @andrewboie
+scripts/sanitycheck                      @andrewboie @nashif
 subsys/bluetooth/*                       @sjanc @jhedberg @Vudentz
 subsys/bluetooth/controller/*            @carlescufi @cvinayak
 subsys/fs/*                              @nashif
