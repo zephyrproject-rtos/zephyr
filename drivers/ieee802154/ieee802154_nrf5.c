@@ -21,6 +21,10 @@
 #include <net/net_if.h>
 #include <net/net_pkt.h>
 
+#if defined(CONFIG_NET_L2_OPENTHREAD)
+#include <net/openthread.h>
+#endif
+
 #include <misc/byteorder.h>
 #include <string.h>
 #include <random/rand32.h>
@@ -90,7 +94,9 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 		 * The last 2 bytes contain LQI or FCS, depending if
 		 * automatic CRC handling is enabled or not, respectively.
 		 */
-		if (IS_ENABLED(CONFIG_IEEE802154_RAW_MODE)) {
+		if (IS_ENABLED(CONFIG_IEEE802154_RAW_MODE) ||
+		    IS_ENABLED(CONFIG_NET_L2_OPENTHREAD)) {
+
 			pkt_len = nrf5_radio->rx_psdu[0];
 		} else {
 			pkt_len = nrf5_radio->rx_psdu[0] -  NRF5_FCS_LENGTH;
@@ -423,20 +429,30 @@ static struct ieee802154_radio_api nrf5_radio_api = {
 	.tx = nrf5_tx,
 };
 
-#if defined(CONFIG_IEEE802154_RAW_MODE)
-DEVICE_AND_API_INIT(nrf5_154_radio, CONFIG_IEEE802154_NRF5_DRV_NAME,
-		    nrf5_init, &nrf5_data, &nrf5_radio_cfg,
-		    POST_KERNEL, CONFIG_IEEE802154_NRF5_INIT_PRIO,
-		    &nrf5_radio_api);
-#else
+#if defined(CONFIG_NET_L2_IEEE802154)
+#define L2 IEEE802154_L2
+#define L2_CTX_TYPE NET_L2_GET_CTX_TYPE(IEEE802154_L2)
+#define MTU 125
+#elif defined(CONFIG_NET_L2_OPENTHREAD)
+#define L2 OPENTHREAD_L2
+#define L2_CTX_TYPE NET_L2_GET_CTX_TYPE(OPENTHREAD_L2)
+#define MTU 1280
+#endif
+
+#if defined(CONFIG_NET_L2_IEEE802154) || defined(CONFIG_NET_L2_OPENTHREAD)
 NET_DEVICE_INIT(nrf5_154_radio, CONFIG_IEEE802154_NRF5_DRV_NAME,
 		nrf5_init, &nrf5_data, &nrf5_radio_cfg,
 		CONFIG_IEEE802154_NRF5_INIT_PRIO,
-		&nrf5_radio_api, IEEE802154_L2,
-		NET_L2_GET_CTX_TYPE(IEEE802154_L2), 125);
+		&nrf5_radio_api, L2,
+		L2_CTX_TYPE, MTU);
 
 NET_STACK_INFO_ADDR(RX, nrf5_154_radio,
 		    CONFIG_IEEE802154_NRF5_RX_STACK_SIZE,
 		    CONFIG_IEEE802154_NRF5_RX_STACK_SIZE,
 		    nrf5_data.rx_stack, 0);
+#else
+DEVICE_AND_API_INIT(nrf5_154_radio, CONFIG_IEEE802154_NRF5_DRV_NAME,
+		    nrf5_init, &nrf5_data, &nrf5_radio_cfg,
+		    POST_KERNEL, CONFIG_IEEE802154_NRF5_INIT_PRIO,
+		    &nrf5_radio_api);
 #endif
