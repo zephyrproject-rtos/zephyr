@@ -50,12 +50,6 @@ struct flash_sector {
 };
 
 /*
- * Initializes flash map. Memory will be referenced by flash_map code
- * from this on.
- */
-void flash_map_init(void);
-
-/*
  * Start using flash area.
  */
 int flash_area_open(u8_t id, const struct flash_area **fa);
