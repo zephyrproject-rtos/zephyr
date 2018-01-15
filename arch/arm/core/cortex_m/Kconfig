@@ -50,6 +50,14 @@ config CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS
 	  This option signifies the CPU faults other than the hard fault, and
 	  needs to reserve a priority for them.
 
+config CPU_CORTEX_M0_HAS_VECTOR_TABLE_REMAP
+	bool
+	# Omit prompt to signify "hidden" option
+	default n
+	help
+	  This option signifies the Cortex-M0 has some mechanisms that can map
+	  the vector table to SRAM
+
 config ARMV6_M
 	bool
 	# Omit prompt to signify "hidden" option
