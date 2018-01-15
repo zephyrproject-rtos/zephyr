@@ -7,7 +7,7 @@ zephyr_library_sources(
   hal/nrf5/cntr.c
   hal/nrf5/rand.c
   hal/nrf5/ecb.c
-  hal/nrf5/radio.c
+  hal/nrf5/radio/radio.c
   ticker/ticker.c
   ll_sw/ctrl.c
   ll_sw/crypto.c

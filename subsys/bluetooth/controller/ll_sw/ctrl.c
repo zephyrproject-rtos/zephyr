@@ -1104,7 +1104,7 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 			pdu_adv->payload.connect_ind.lldata.win_size * 1250;
 		conn->slave.window_size_prepare_us = 0;
 
-		rx_ready_delay = radio_rx_ready_delay_get(0);
+		rx_ready_delay = radio_rx_ready_delay_get(0, 0);
 
 		/* calculate slave slot */
 		conn->hdr.ticks_slot =
@@ -3741,7 +3741,7 @@ static inline u32_t isr_close_scan(void)
 
 		radio_gpio_lna_setup();
 		radio_gpio_pa_lna_enable(start_us +
-					 radio_rx_ready_delay_get(0) -
+					 radio_rx_ready_delay_get(0, 0) -
 					 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
 #else /* !CONFIG_BT_CTLR_GPIO_LNA_PIN */
 		ARG_UNUSED(start_us);
@@ -6205,7 +6205,7 @@ static void event_scan(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 #if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
 	radio_gpio_lna_setup();
 	radio_gpio_pa_lna_enable(remainder_us +
-				 radio_rx_ready_delay_get(0) -
+				 radio_rx_ready_delay_get(0, 0) -
 				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
 #else /* !CONFIG_BT_CTLR_GPIO_LNA_PIN */
 	ARG_UNUSED(remainder_us);
@@ -7972,11 +7972,11 @@ static void event_slave(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 	       conn->slave.window_size_event_us;
 
 #if defined(CONFIG_BT_CTLR_PHY)
-	hcto += radio_rx_ready_delay_get(conn->phy_rx);
+	hcto += radio_rx_ready_delay_get(conn->phy_rx, 1);
 	hcto += addr_us_get(conn->phy_rx);
 	hcto += radio_rx_chain_delay_get(conn->phy_rx, 1);
 #else /* !CONFIG_BT_CTLR_PHY */
-	hcto += radio_rx_ready_delay_get(0);
+	hcto += radio_rx_ready_delay_get(0, 0);
 	hcto += addr_us_get(0);
 	hcto += radio_rx_chain_delay_get(0, 0);
 #endif /* !CONFIG_BT_CTLR_PHY */
@@ -7988,11 +7988,11 @@ static void event_slave(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	radio_gpio_pa_lna_enable(remainder_us +
-				 radio_rx_ready_delay_get(conn->phy_rx) -
+				 radio_rx_ready_delay_get(conn->phy_rx, 1) -
 				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
 #else /* !CONFIG_BT_CTLR_PHY */
 	radio_gpio_pa_lna_enable(remainder_us +
-				 radio_rx_ready_delay_get(0) -
+				 radio_rx_ready_delay_get(0, 0) -
 				 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
 #endif /* !CONFIG_BT_CTLR_PHY */
 #endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
@@ -8202,11 +8202,11 @@ static void event_master(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 
 #if defined(CONFIG_BT_CTLR_PHY)
 		radio_gpio_pa_lna_enable(remainder_us +
-			radio_rx_ready_delay_get(conn->phy_rx) -
+			radio_rx_ready_delay_get(conn->phy_rx, 1) -
 			CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
 #else /* !CONFIG_BT_CTLR_PHY */
 		radio_gpio_pa_lna_enable(remainder_us +
-					 radio_rx_ready_delay_get(0) -
+					 radio_rx_ready_delay_get(0, 0) -
 					 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
 #endif /* !CONFIG_BT_CTLR_PHY */
 #endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
