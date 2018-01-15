@@ -32,6 +32,12 @@
 
 &i2c1 {
 	status = "ok";
+
+	fxos8700@1f {
+		compatible = "nxp,fxos8700";
+		reg = <0x1f>;
+		label = "FXOS8700";
+	};
 };
 
 &lpuart0 {
