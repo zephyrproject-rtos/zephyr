@@ -86,7 +86,7 @@ struct shell_module {
 #define SHELL_REGISTER_WITH_PROMPT(_name, _commands, _prompt) \
 	\
 	static struct shell_module (__shell__name) __used \
-	__attribute__((__section__(".shell_"))) = { \
+	__attribute__((__section__(".shell_module_"))) = { \
 		  .module_name = _name, \
 		  .commands = _commands, \
 		  .prompt = _prompt \

@@ -99,10 +99,10 @@
  * their shell commands are automatically initialized by the kernel.
  */
 
-#define	SHELL_INIT_SECTIONS()		\
-		__shell_cmd_start = .;		\
-		KEEP(*(".shell_*"));		\
-		__shell_cmd_end = .;
+#define	SHELL_INIT_SECTIONS()				\
+		__shell_module_start = .;		\
+		KEEP(*(".shell_module_*"));		\
+		__shell_module_end = .;
 
 #ifdef CONFIG_APPLICATION_MEMORY
 

@@ -36,9 +36,9 @@
 #define PROMPT_MAX_LEN (MODULE_NAME_MAX_LEN + PROMPT_SUFFIX)
 
 /* command table is located in the dedicated memory segment (.shell_) */
-extern struct shell_module __shell_cmd_start[];
-extern struct shell_module __shell_cmd_end[];
-#define NUM_OF_SHELL_ENTITIES (__shell_cmd_end - __shell_cmd_start)
+extern struct shell_module __shell_module_start[];
+extern struct shell_module __shell_module_end[];
+#define NUM_OF_SHELL_ENTITIES (__shell_module_end - __shell_module_start)
 
 static const char *prompt;
 static char default_module_prompt[PROMPT_MAX_LEN];
@@ -142,9 +142,9 @@ static struct shell_module *get_destination_module(const char *module_str)
 
 	for (i = 0; i < NUM_OF_SHELL_ENTITIES; i++) {
 		if (!strncmp(module_str,
-			     __shell_cmd_start[i].module_name,
+			     __shell_module_start[i].module_name,
 			     MODULE_NAME_MAX_LEN)) {
-			return &__shell_cmd_start[i];
+			return &__shell_module_start[i];
 		}
 	}
 
@@ -239,9 +239,13 @@ module_help:
 	} else { /* help for all entities */
 		int i;
 
-		printk("Available modules:\n");
+		if (NUM_OF_SHELL_ENTITIES == 0) {
+			printk("No registered modules.\n");
+		} else {
+			printk("Available modules:\n");
+		}
 		for (i = 0; i < NUM_OF_SHELL_ENTITIES; i++) {
-			printk("%s\n", __shell_cmd_start[i].module_name);
+			printk("%s\n", __shell_module_start[i].module_name);
 		}
 
 		printk("\nTo select a module, enter 'select <module name>'.\n");
