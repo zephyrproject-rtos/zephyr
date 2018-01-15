@@ -20,6 +20,145 @@ Windows system with the latest updates installed.
 Installing Requirements and Dependencies
 ****************************************
 
+There are 3 different ways of developing for Zephyr on Microsoft Windows.
+The first one is fully Windows native, whereas the 2 additional ones require
+emulation layers that slow down build times and are not as optimal. All of
+them are presented here for completeness, but unless you have a particular
+requirement for a UNIX tool that is not available on Windows, we strongly
+recommend you use the Windows Command Prompt for performance and minimal
+dependency set.
+
+Using Windows Command Prompt (Recommended, fastest)
+===================================================
+
+The easiest way to install the dependencies natively on Microsoft Windows is
+to use the :program:`Chocolatey` package manager (`Chocolatey website`_).
+If you prefer to install those manually then simply download the required
+packages from their respective websites.
+
+.. note::
+   There are multiple ``set`` statements in this tutorial. You can avoid
+   typing them every time by placing them inside a ``.cmd`` file and
+   running that every time you open a Command Prompt.
+
+#. If you're behind a corporate firewall, you'll likely need to specify a
+   proxy to get access to internet resources::
+
+      > set HTTP_PROXY=http://user:password@proxy.mycompany.com:1234
+      > set HTTPS_PROXY=http://user:password@proxy.mycompany.com:1234
+
+#. Install :program:`Chocolatey` by following the instructions on the
+   `Chocolatey install`_ website.
+
+#. Open a Command Prompt (`cmd.exe`) as an **Administrator**.
+
+#. Optionally disable global confirmation to avoid having to add `-y` to all
+   commands:
+
+   .. code-block:: console
+
+      > choco feature enable -n allowGlobalConfirmation
+
+#. Install CMake and DTC:
+
+   .. code-block:: console
+
+      > choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
+      > choco install dtc-msys2 --version 1.4.4
+
+#. Install the rest of the tools:
+
+   .. code-block:: console
+
+      > choco install git python ninja gperf
+
+#. Close the Command Prompt window.
+
+#. Open a Command Prompt (`cmd.exe`) as a **regular user**.
+
+#. Clone a copy of the Zephyr source into your home directory using Git.
+
+   .. code-block:: console
+
+      > cd %userprofile%
+      > git clone https://github.com/zephyrproject-rtos/zephyr.git
+
+#. Install the required Python modules::
+
+      > cd %userprofile%\zephyr
+      > pip install --user -r scripts/requirements.txt
+
+#. The build system should now be ready to work with any toolchain installed in
+   your system. In the next step you'll find instructions for installing
+   toolchains for building both x86 and ARM applications.
+
+#. Install cross compiler toolchain:
+
+   * For x86, install the 2017 Windows host ISSM toolchain from the Intel
+     Developer Zone: `ISSM Toolchain`_. Use your web browser to
+     download the toolchain's ``tar.gz`` file. You can then use 7-Zip or a
+     similar tool to extract it into a destination folder.
+
+     .. note::
+
+        The ISSM toolset only supports development for Intel |reg| Quark |trade|
+        Microcontrollers, for example, the Arduino 101 board.  (Check out the
+        "Zephyr Development Environment
+        Setup" in this `Getting Started on Arduino 101 with ISSM`_ document.)
+        Additional setup is required to use the ISSM GUI for development.
+
+
+   * For ARM, install GNU ARM Embedded from the ARM developer website:
+     `GNU ARM Embedded`_ (install to :file:`c:\\gccarmemb`).
+
+#. Within the Command Prompt, set up environment variables for the installed
+   tools and for the Zephyr environment:
+
+   For x86:
+
+   .. code-block:: console
+
+      > set ZEPHYR_GCC_VARIANT=issm
+      > set ISSM_INSTALLATION_PATH=c:\issm0-toolchain-windows-2017-01-25
+
+   Use the path where you extracted the ISSM toolchain.
+
+   For ARM:
+
+   .. code-block:: console
+
+      > set ZEPHYR_GCC_VARIANT=gccarmemb
+      > set GCCARMEMB_TOOLCHAIN_PATH=c:\gccarmemb
+
+   And for either, set the `ZEPHYR_BASE` environment variable to the root
+   of the Zephyr repository you cloned:
+
+   .. code-block:: console
+
+      > set ZEPHYR_BASE=%userprofile%\zephyr
+
+#. Finally, you can try building the :ref:`hello_world` sample to check things
+   out.
+
+   To build for the Intel |reg| Quark |trade| (x86-based) Arduino 101:
+
+   .. zephyr-app-commands::
+     :zephyr-app: samples/hello_world
+     :generator: ninja
+     :board: arduino_101
+     :goals: build
+
+   To build for the ARM-based Nordic nRF52 Development Kit:
+
+   .. zephyr-app-commands::
+     :zephyr-app: samples/hello_world
+     :generator: ninja
+     :board: nrf52_pca10040
+     :goals: build
+
+This should check that all the tools and toolchain are set up correctly for
+your own Zephyr development.
+
 Using MSYS2
 ===========
 
@@ -201,6 +340,8 @@ for all supported architectures without the need for a Virtual Machine.
    Started Guide which can be found here: :ref:`installation_linux`
 
 .. _GNU ARM Embedded: https://developer.arm.com/open-source/gnu-toolchain/gnu-rm/downloads
+.. _Chocolatey website: https://chocolatey.org/
+.. _Chocolatey install: https://chocolatey.org/install
 .. _MSYS2 website: http://www.msys2.org/
 .. _ISSM Toolchain: https://software.intel.com/en-us/articles/issm-toolchain-only-download
 .. _Getting Started on Arduino 101 with ISSM: https://software.intel.com/en-us/articles/getting-started-arduino-101genuino-101-with-intel-system-studio-for-microcontrollers
