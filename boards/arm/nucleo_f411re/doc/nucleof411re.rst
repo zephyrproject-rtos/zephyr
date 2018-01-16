@@ -69,14 +69,15 @@ The Zephyr nucleo_f411re board configuration supports the following hardware fea
 +===========+============+=====================================+
 | NVIC      | on-chip    | nested vector interrupt controller  |
 +-----------+------------+-------------------------------------+
-| UART      | on-chip    | serial port-polling;                |
-|           |            | serial port-interrupt               |
+| UART      | on-chip    | serial port                         |
 +-----------+------------+-------------------------------------+
 | PINMUX    | on-chip    | pinmux                              |
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
@@ -116,6 +117,12 @@ Default Zephyr Peripheral Mapping:
 - PWM_2_CH1 : PA0
 - USER_PB : PC13
 - LD2 : PA5
+- I2C1_SDA : PB9
+- I2C1_SCL : PB8
+- I2C2_SDA : PB3
+- I2C2_SCL : PB10
+- I2C3_SDA : PB4
+- I2C3_SCL : PA8
 
 System Clock
 ------------

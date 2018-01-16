@@ -31,3 +31,16 @@
 	pinctrl-names = "default";
 	status = "ok";
 };
+
+&i2c1 {
+	status = "ok";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&i2c2 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&i2c3 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
