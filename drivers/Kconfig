@@ -33,7 +33,7 @@ source "drivers/pci/Kconfig"
 
 source "drivers/gpio/Kconfig"
 
-source "drivers/shared_irq/Kconfig"
+source "drivers/interrupt_controller/Kconfig.shared_irq"
 
 source "drivers/spi/Kconfig"
 

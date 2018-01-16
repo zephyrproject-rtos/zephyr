@@ -1,1 +1,0 @@
-zephyr_sources_if_kconfig(shared_irq.c)
