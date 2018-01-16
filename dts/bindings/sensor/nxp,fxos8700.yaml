@@ -1,0 +1,22 @@
+#
+# Copyright (c) 2018, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: FXOS8700 6-axis accelerometer/magnetometer
+id: nxp,fxos8700
+version: 0.1
+
+description: >
+    This is a representation of the FXOS8700 6-axis accelerometer/magnetometer
+    sensor
+
+inherits:
+    !include i2c-device.yaml
+
+properties:
+    compatible:
+      constraint: "nxp,fxos8700"
+
+...
