@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_spi.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    14-April-2017
   * @brief   Header file of SPI HAL module.
   ******************************************************************************
   * @attention
@@ -308,16 +306,16 @@ typedef struct __SPI_HandleTypeDef
   */
 
 /** @brief  Reset SPI handle state.
-  * @param  __HANDLE__: specifies the SPI Handle.
+  * @param  __HANDLE__ specifies the SPI Handle.
   *         This parameter can be SPI where x: 1, 2, or 3 to select the SPI peripheral.
   * @retval None
   */
 #define __HAL_SPI_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = HAL_SPI_STATE_RESET)
 
 /** @brief  Enable or disable the specified SPI interrupts.
-  * @param  __HANDLE__: specifies the SPI Handle.
+  * @param  __HANDLE__ specifies the SPI Handle.
   *         This parameter can be SPI where x: 1, 2, or 3 to select the SPI peripheral.
-  * @param  __INTERRUPT__: specifies the interrupt source to enable or disable.
+  * @param  __INTERRUPT__ specifies the interrupt source to enable or disable.
   *         This parameter can be one of the following values:
   *            @arg SPI_IT_TXE: Tx buffer empty interrupt enable
   *            @arg SPI_IT_RXNE: RX buffer not empty interrupt enable
@@ -328,9 +326,9 @@ typedef struct __SPI_HandleTypeDef
 #define __HAL_SPI_DISABLE_IT(__HANDLE__, __INTERRUPT__)  ((__HANDLE__)->Instance->CR2 &= (~(__INTERRUPT__)))
 
 /** @brief  Check whether the specified SPI interrupt source is enabled or not.
-  * @param  __HANDLE__: specifies the SPI Handle.
+  * @param  __HANDLE__ specifies the SPI Handle.
   *         This parameter can be SPI where x: 1, 2, or 3 to select the SPI peripheral.
-  * @param  __INTERRUPT__: specifies the SPI interrupt source to check.
+  * @param  __INTERRUPT__ specifies the SPI interrupt source to check.
   *          This parameter can be one of the following values:
   *             @arg SPI_IT_TXE: Tx buffer empty interrupt enable
   *             @arg SPI_IT_RXNE: RX buffer not empty interrupt enable
@@ -340,9 +338,9 @@ typedef struct __SPI_HandleTypeDef
 #define __HAL_SPI_GET_IT_SOURCE(__HANDLE__, __INTERRUPT__) ((((__HANDLE__)->Instance->CR2 & (__INTERRUPT__)) == (__INTERRUPT__)) ? SET : RESET)
 
 /** @brief  Check whether the specified SPI flag is set or not.
-  * @param  __HANDLE__: specifies the SPI Handle.
+  * @param  __HANDLE__ specifies the SPI Handle.
   *         This parameter can be SPI where x: 1, 2, or 3 to select the SPI peripheral.
-  * @param  __FLAG__: specifies the flag to check.
+  * @param  __FLAG__ specifies the flag to check.
   *         This parameter can be one of the following values:
   *            @arg SPI_FLAG_RXNE: Receive buffer not empty flag
   *            @arg SPI_FLAG_TXE: Transmit buffer empty flag
@@ -356,14 +354,14 @@ typedef struct __SPI_HandleTypeDef
 #define __HAL_SPI_GET_FLAG(__HANDLE__, __FLAG__) ((((__HANDLE__)->Instance->SR) & (__FLAG__)) == (__FLAG__))
 
 /** @brief  Clear the SPI CRCERR pending flag.
-  * @param  __HANDLE__: specifies the SPI Handle.
+  * @param  __HANDLE__ specifies the SPI Handle.
   *         This parameter can be SPI where x: 1, 2, or 3 to select the SPI peripheral.
   * @retval None
   */
 #define __HAL_SPI_CLEAR_CRCERRFLAG(__HANDLE__) ((__HANDLE__)->Instance->SR = (uint16_t)(~SPI_FLAG_CRCERR))
 
 /** @brief  Clear the SPI MODF pending flag.
-  * @param  __HANDLE__: specifies the SPI Handle.
+  * @param  __HANDLE__ specifies the SPI Handle.
   *         This parameter can be SPI where x: 1, 2, or 3 to select the SPI peripheral.
   * @retval None
   */
@@ -376,7 +374,7 @@ typedef struct __SPI_HandleTypeDef
   } while(0U)
 
 /** @brief  Clear the SPI OVR pending flag.
-  * @param  __HANDLE__: specifies the SPI Handle.
+  * @param  __HANDLE__ specifies the SPI Handle.
   *         This parameter can be SPI where x: 1, 2, or 3 to select the SPI peripheral.
   * @retval None
   */
@@ -389,7 +387,7 @@ typedef struct __SPI_HandleTypeDef
   } while(0U)
 
 /** @brief  Clear the SPI FRE pending flag.
-  * @param  __HANDLE__: specifies the SPI Handle.
+  * @param  __HANDLE__ specifies the SPI Handle.
   *         This parameter can be SPI where x: 1, 2, or 3 to select the SPI peripheral.
   * @retval None
   */
@@ -401,14 +399,14 @@ typedef struct __SPI_HandleTypeDef
   }while(0U)
 
 /** @brief  Enable the SPI peripheral.
-  * @param  __HANDLE__: specifies the SPI Handle.
+  * @param  __HANDLE__ specifies the SPI Handle.
   *         This parameter can be SPI where x: 1, 2, or 3 to select the SPI peripheral.
   * @retval None
   */
 #define __HAL_SPI_ENABLE(__HANDLE__) ((__HANDLE__)->Instance->CR1 |=  SPI_CR1_SPE)
 
 /** @brief  Disable the SPI peripheral.
-  * @param  __HANDLE__: specifies the SPI Handle.
+  * @param  __HANDLE__ specifies the SPI Handle.
   *         This parameter can be SPI where x: 1, 2, or 3 to select the SPI peripheral.
   * @retval None
   */
@@ -491,21 +489,21 @@ uint32_t             HAL_SPI_GetError(SPI_HandleTypeDef *hspi);
   */
 
 /** @brief  Set the SPI transmit-only mode.
-  * @param  __HANDLE__: specifies the SPI Handle.
+  * @param  __HANDLE__ specifies the SPI Handle.
   *         This parameter can be SPI where x: 1, 2, or 3 to select the SPI peripheral.
   * @retval None
   */
 #define SPI_1LINE_TX(__HANDLE__) ((__HANDLE__)->Instance->CR1 |= SPI_CR1_BIDIOE)
 
 /** @brief  Set the SPI receive-only mode.
-  * @param  __HANDLE__: specifies the SPI Handle.
+  * @param  __HANDLE__ specifies the SPI Handle.
   *         This parameter can be SPI where x: 1, 2, or 3 to select the SPI peripheral.
   * @retval None
   */
 #define SPI_1LINE_RX(__HANDLE__) ((__HANDLE__)->Instance->CR1 &= (~SPI_CR1_BIDIOE))
 
 /** @brief  Reset the CRC calculation of the SPI.
-  * @param  __HANDLE__: specifies the SPI Handle.
+  * @param  __HANDLE__ specifies the SPI Handle.
   *         This parameter can be SPI where x: 1, 2, or 3 to select the SPI peripheral.
   * @retval None
   */

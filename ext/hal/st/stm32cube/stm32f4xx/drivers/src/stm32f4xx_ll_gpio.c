@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f4xx_ll_gpio.c
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    14-April-2017
   * @brief   GPIO LL module driver.
   ******************************************************************************
   * @attention
@@ -209,7 +207,7 @@ ErrorStatus LL_GPIO_DeInit(GPIO_TypeDef *GPIOx)
 /**
   * @brief  Initialize GPIO registers according to the specified parameters in GPIO_InitStruct.
   * @param  GPIOx GPIO Port
-  * @param  GPIO_InitStruct: pointer to a @ref LL_GPIO_InitTypeDef structure
+  * @param  GPIO_InitStruct pointer to a @ref LL_GPIO_InitTypeDef structure
   *         that contains the configuration information for the specified GPIO peripheral.
   * @retval An ErrorStatus enumeration value:
   *          - SUCCESS: GPIO registers are initialized according to GPIO_InitStruct content
@@ -286,7 +284,7 @@ ErrorStatus LL_GPIO_Init(GPIO_TypeDef *GPIOx, LL_GPIO_InitTypeDef *GPIO_InitStru
 
 /**
   * @brief Set each @ref LL_GPIO_InitTypeDef field to default value.
-  * @param GPIO_InitStruct: pointer to a @ref LL_GPIO_InitTypeDef structure
+  * @param GPIO_InitStruct pointer to a @ref LL_GPIO_InitTypeDef structure
   *                          whose fields will be set to default values.
   * @retval None
   */

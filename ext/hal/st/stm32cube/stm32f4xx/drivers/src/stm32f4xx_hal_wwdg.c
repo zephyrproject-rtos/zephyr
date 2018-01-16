@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_wwdg.c
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    14-April-2017
   * @brief   WWDG HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the Window Watchdog (WWDG) peripheral:
@@ -280,7 +278,7 @@ void HAL_WWDG_IRQHandler(WWDG_HandleTypeDef *hwwdg)
 
 /**
   * @brief  WWDG Early Wakeup callback.
-  * @param  hwwdg : pointer to a WWDG_HandleTypeDef structure that contains
+  * @param  hwwdg  pointer to a WWDG_HandleTypeDef structure that contains
   *                the configuration information for the specified WWDG module.
   * @retval None
   */

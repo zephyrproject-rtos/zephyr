@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_cryp_ex.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    14-April-2017
   * @brief   Header file of CRYP HAL Extension module.
   ******************************************************************************
   * @attention
@@ -100,8 +98,8 @@
 /**
   * @brief  Set the phase: Init, header, payload, final. 
   *         This is relevant only for GCM and CCM modes.
-  * @param  __HANDLE__: specifies the CRYP handle.
-  * @param  __PHASE__: The phase.
+  * @param  __HANDLE__ specifies the CRYP handle.
+  * @param  __PHASE__ The phase.
   * @retval None
   */
 #define __HAL_CRYP_SET_PHASE(__HANDLE__, __PHASE__)  do{(__HANDLE__)->Instance->CR &= (uint32_t)(~CRYP_CR_GCM_CCMPH);\

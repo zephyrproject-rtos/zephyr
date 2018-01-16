@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_sdram.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    14-April-2017
   * @brief   Header file of SDRAM HAL module.
   ******************************************************************************
   * @attention
@@ -103,7 +101,7 @@ typedef struct
   */
 
 /** @brief Reset SDRAM handle state
-  * @param  __HANDLE__: specifies the SDRAM handle.
+  * @param  __HANDLE__ specifies the SDRAM handle.
   * @retval None
   */
 #define __HAL_SDRAM_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = HAL_SDRAM_STATE_RESET)

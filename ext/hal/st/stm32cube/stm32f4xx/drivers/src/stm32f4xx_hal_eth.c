@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_eth.c
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    14-April-2017
   * @brief   ETH HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the Ethernet (ETH) peripheral:
@@ -173,7 +171,7 @@ static void ETH_Delay(uint32_t mdelay);
 /**
   * @brief  Initializes the Ethernet MAC and DMA according to default
   *         parameters.
-  * @param  heth: pointer to a ETH_HandleTypeDef structure that contains
+  * @param  heth pointer to a ETH_HandleTypeDef structure that contains
   *         the configuration information for ETHERNET module
   * @retval HAL status
   */
@@ -445,7 +443,7 @@ HAL_StatusTypeDef HAL_ETH_Init(ETH_HandleTypeDef *heth)
 
 /**
   * @brief  De-Initializes the ETH peripheral. 
-  * @param  heth: pointer to a ETH_HandleTypeDef structure that contains
+  * @param  heth pointer to a ETH_HandleTypeDef structure that contains
   *         the configuration information for ETHERNET module
   * @retval HAL status
   */
@@ -469,11 +467,11 @@ HAL_StatusTypeDef HAL_ETH_DeInit(ETH_HandleTypeDef *heth)
 
 /**
   * @brief  Initializes the DMA Tx descriptors in chain mode.
-  * @param  heth: pointer to a ETH_HandleTypeDef structure that contains
+  * @param  heth pointer to a ETH_HandleTypeDef structure that contains
   *         the configuration information for ETHERNET module  
-  * @param  DMATxDescTab: Pointer to the first Tx desc list 
-  * @param  TxBuff: Pointer to the first TxBuffer list
-  * @param  TxBuffCount: Number of the used Tx desc in the list
+  * @param  DMATxDescTab Pointer to the first Tx desc list 
+  * @param  TxBuff Pointer to the first TxBuffer list
+  * @param  TxBuffCount Number of the used Tx desc in the list
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_ETH_DMATxDescListInit(ETH_HandleTypeDef *heth, ETH_DMADescTypeDef *DMATxDescTab, uint8_t *TxBuff, uint32_t TxBuffCount)
@@ -536,11 +534,11 @@ HAL_StatusTypeDef HAL_ETH_DMATxDescListInit(ETH_HandleTypeDef *heth, ETH_DMADesc
 
 /**
   * @brief  Initializes the DMA Rx descriptors in chain mode.
-  * @param  heth: pointer to a ETH_HandleTypeDef structure that contains
+  * @param  heth pointer to a ETH_HandleTypeDef structure that contains
   *         the configuration information for ETHERNET module  
-  * @param  DMARxDescTab: Pointer to the first Rx desc list 
-  * @param  RxBuff: Pointer to the first RxBuffer list
-  * @param  RxBuffCount: Number of the used Rx desc in the list
+  * @param  DMARxDescTab Pointer to the first Rx desc list 
+  * @param  RxBuff Pointer to the first RxBuffer list
+  * @param  RxBuffCount Number of the used Rx desc in the list
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_ETH_DMARxDescListInit(ETH_HandleTypeDef *heth, ETH_DMADescTypeDef *DMARxDescTab, uint8_t *RxBuff, uint32_t RxBuffCount)
@@ -606,7 +604,7 @@ HAL_StatusTypeDef HAL_ETH_DMARxDescListInit(ETH_HandleTypeDef *heth, ETH_DMADesc
 
 /**
   * @brief  Initializes the ETH MSP.
-  * @param  heth: pointer to a ETH_HandleTypeDef structure that contains
+  * @param  heth pointer to a ETH_HandleTypeDef structure that contains
   *         the configuration information for ETHERNET module
   * @retval None
   */
@@ -621,7 +619,7 @@ __weak void HAL_ETH_MspInit(ETH_HandleTypeDef *heth)
 
 /**
   * @brief  DeInitializes ETH MSP.
-  * @param  heth: pointer to a ETH_HandleTypeDef structure that contains
+  * @param  heth pointer to a ETH_HandleTypeDef structure that contains
   *         the configuration information for ETHERNET module
   * @retval None
   */
@@ -663,9 +661,9 @@ __weak void HAL_ETH_MspDeInit(ETH_HandleTypeDef *heth)
 
 /**
   * @brief  Sends an Ethernet frame. 
-  * @param  heth: pointer to a ETH_HandleTypeDef structure that contains
+  * @param  heth pointer to a ETH_HandleTypeDef structure that contains
   *         the configuration information for ETHERNET module
-  * @param  FrameLength: Amount of data to be sent
+  * @param  FrameLength Amount of data to be sent
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_ETH_TransmitFrame(ETH_HandleTypeDef *heth, uint32_t FrameLength)
@@ -777,7 +775,7 @@ HAL_StatusTypeDef HAL_ETH_TransmitFrame(ETH_HandleTypeDef *heth, uint32_t FrameL
 
 /**
   * @brief  Checks for received frames. 
-  * @param  heth: pointer to a ETH_HandleTypeDef structure that contains
+  * @param  heth pointer to a ETH_HandleTypeDef structure that contains
   *         the configuration information for ETHERNET module
   * @retval HAL status
   */
@@ -857,7 +855,7 @@ HAL_StatusTypeDef HAL_ETH_GetReceivedFrame(ETH_HandleTypeDef *heth)
 
 /**
   * @brief  Gets the Received frame in interrupt mode. 
-  * @param  heth: pointer to a ETH_HandleTypeDef structure that contains
+  * @param  heth pointer to a ETH_HandleTypeDef structure that contains
   *         the configuration information for ETHERNET module
   * @retval HAL status
   */
@@ -942,7 +940,7 @@ HAL_StatusTypeDef HAL_ETH_GetReceivedFrame_IT(ETH_HandleTypeDef *heth)
 
 /**
   * @brief  This function handles ETH interrupt request.
-  * @param  heth: pointer to a ETH_HandleTypeDef structure that contains
+  * @param  heth pointer to a ETH_HandleTypeDef structure that contains
   *         the configuration information for ETHERNET module
   * @retval HAL status
   */
@@ -1002,7 +1000,7 @@ void HAL_ETH_IRQHandler(ETH_HandleTypeDef *heth)
 
 /**
   * @brief  Tx Transfer completed callbacks.
-  * @param  heth: pointer to a ETH_HandleTypeDef structure that contains
+  * @param  heth pointer to a ETH_HandleTypeDef structure that contains
   *         the configuration information for ETHERNET module
   * @retval None
   */
@@ -1017,7 +1015,7 @@ __weak void HAL_ETH_TxCpltCallback(ETH_HandleTypeDef *heth)
 
 /**
   * @brief  Rx Transfer completed callbacks.
-  * @param  heth: pointer to a ETH_HandleTypeDef structure that contains
+  * @param  heth pointer to a ETH_HandleTypeDef structure that contains
   *         the configuration information for ETHERNET module
   * @retval None
   */
@@ -1032,7 +1030,7 @@ __weak void HAL_ETH_RxCpltCallback(ETH_HandleTypeDef *heth)
 
 /**
   * @brief  Ethernet transfer error callbacks
-  * @param  heth: pointer to a ETH_HandleTypeDef structure that contains
+  * @param  heth pointer to a ETH_HandleTypeDef structure that contains
   *         the configuration information for ETHERNET module
   * @retval None
   */
@@ -1047,14 +1045,14 @@ __weak void HAL_ETH_ErrorCallback(ETH_HandleTypeDef *heth)
 
 /**
   * @brief  Reads a PHY register
-  * @param  heth: pointer to a ETH_HandleTypeDef structure that contains
+  * @param  heth pointer to a ETH_HandleTypeDef structure that contains
   *         the configuration information for ETHERNET module                  
-  * @param PHYReg: PHY register address, is the index of one of the 32 PHY register. 
+  * @param PHYReg PHY register address, is the index of one of the 32 PHY register. 
   *                This parameter can be one of the following values: 
   *                   PHY_BCR: Transceiver Basic Control Register, 
   *                   PHY_BSR: Transceiver Basic Status Register.   
   *                   More PHY register could be read depending on the used PHY
-  * @param RegValue: PHY register value                  
+  * @param RegValue PHY register value                  
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_ETH_ReadPHYRegister(ETH_HandleTypeDef *heth, uint16_t PHYReg, uint32_t *RegValue)
@@ -1120,13 +1118,13 @@ HAL_StatusTypeDef HAL_ETH_ReadPHYRegister(ETH_HandleTypeDef *heth, uint16_t PHYR
 
 /**
   * @brief  Writes to a PHY register.
-  * @param  heth: pointer to a ETH_HandleTypeDef structure that contains
+  * @param  heth pointer to a ETH_HandleTypeDef structure that contains
   *         the configuration information for ETHERNET module  
-  * @param  PHYReg: PHY register address, is the index of one of the 32 PHY register. 
+  * @param  PHYReg PHY register address, is the index of one of the 32 PHY register. 
   *          This parameter can be one of the following values: 
   *             PHY_BCR: Transceiver Control Register.  
   *             More PHY register could be written depending on the used PHY
-  * @param  RegValue: the value to write
+  * @param  RegValue the value to write
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_ETH_WritePHYRegister(ETH_HandleTypeDef *heth, uint16_t PHYReg, uint32_t RegValue)
@@ -1217,7 +1215,7 @@ HAL_StatusTypeDef HAL_ETH_WritePHYRegister(ETH_HandleTypeDef *heth, uint16_t PHY
 
  /**
   * @brief  Enables Ethernet MAC and DMA reception/transmission 
-  * @param  heth: pointer to a ETH_HandleTypeDef structure that contains
+  * @param  heth pointer to a ETH_HandleTypeDef structure that contains
   *         the configuration information for ETHERNET module
   * @retval HAL status
   */
@@ -1256,7 +1254,7 @@ HAL_StatusTypeDef HAL_ETH_Start(ETH_HandleTypeDef *heth)
 
 /**
   * @brief  Stop Ethernet MAC and DMA reception/transmission 
-  * @param  heth: pointer to a ETH_HandleTypeDef structure that contains
+  * @param  heth pointer to a ETH_HandleTypeDef structure that contains
   *         the configuration information for ETHERNET module
   * @retval HAL status
   */
@@ -1295,9 +1293,9 @@ HAL_StatusTypeDef HAL_ETH_Stop(ETH_HandleTypeDef *heth)
 
 /**
   * @brief  Set ETH MAC Configuration.
-  * @param  heth: pointer to a ETH_HandleTypeDef structure that contains
+  * @param  heth pointer to a ETH_HandleTypeDef structure that contains
   *         the configuration information for ETHERNET module
-  * @param  macconf: MAC Configuration structure  
+  * @param  macconf MAC Configuration structure  
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_ETH_ConfigMAC(ETH_HandleTypeDef *heth, ETH_MACInitTypeDef *macconf)
@@ -1462,9 +1460,9 @@ HAL_StatusTypeDef HAL_ETH_ConfigMAC(ETH_HandleTypeDef *heth, ETH_MACInitTypeDef 
 
 /**
   * @brief  Sets ETH DMA Configuration.
-  * @param  heth: pointer to a ETH_HandleTypeDef structure that contains
+  * @param  heth pointer to a ETH_HandleTypeDef structure that contains
   *         the configuration information for ETHERNET module
-  * @param  dmaconf: DMA Configuration structure  
+  * @param  dmaconf DMA Configuration structure  
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_ETH_ConfigDMA(ETH_HandleTypeDef *heth, ETH_DMAInitTypeDef *dmaconf)
@@ -1570,7 +1568,7 @@ HAL_StatusTypeDef HAL_ETH_ConfigDMA(ETH_HandleTypeDef *heth, ETH_DMAInitTypeDef 
 
 /**
   * @brief  Return the ETH HAL state
-  * @param  heth: pointer to a ETH_HandleTypeDef structure that contains
+  * @param  heth pointer to a ETH_HandleTypeDef structure that contains
   *         the configuration information for ETHERNET module
   * @retval HAL state
   */
@@ -1594,9 +1592,9 @@ HAL_ETH_StateTypeDef HAL_ETH_GetState(ETH_HandleTypeDef *heth)
 
 /**
   * @brief  Configures Ethernet MAC and DMA with default parameters.
-  * @param  heth: pointer to a ETH_HandleTypeDef structure that contains
+  * @param  heth pointer to a ETH_HandleTypeDef structure that contains
   *         the configuration information for ETHERNET module
-  * @param  err: Ethernet Init error
+  * @param  err Ethernet Init error
   * @retval HAL status
   */
 static void ETH_MACDMAConfig(ETH_HandleTypeDef *heth, uint32_t err)
@@ -1851,15 +1849,15 @@ static void ETH_MACDMAConfig(ETH_HandleTypeDef *heth, uint32_t err)
 
 /**
   * @brief  Configures the selected MAC address.
-  * @param  heth: pointer to a ETH_HandleTypeDef structure that contains
+  * @param  heth pointer to a ETH_HandleTypeDef structure that contains
   *         the configuration information for ETHERNET module
-  * @param  MacAddr: The MAC address to configure
+  * @param  MacAddr The MAC address to configure
   *          This parameter can be one of the following values:
   *             @arg ETH_MAC_Address0: MAC Address0 
   *             @arg ETH_MAC_Address1: MAC Address1 
   *             @arg ETH_MAC_Address2: MAC Address2
   *             @arg ETH_MAC_Address3: MAC Address3
-  * @param  Addr: Pointer to MAC address buffer data (6 bytes)
+  * @param  Addr Pointer to MAC address buffer data (6 bytes)
   * @retval HAL status
   */
 static void ETH_MACAddressConfig(ETH_HandleTypeDef *heth, uint32_t MacAddr, uint8_t *Addr)
@@ -1885,7 +1883,7 @@ static void ETH_MACAddressConfig(ETH_HandleTypeDef *heth, uint32_t MacAddr, uint
 
 /**
   * @brief  Enables the MAC transmission.
-  * @param  heth: pointer to a ETH_HandleTypeDef structure that contains
+  * @param  heth pointer to a ETH_HandleTypeDef structure that contains
   *         the configuration information for ETHERNET module  
   * @retval None
   */
@@ -1905,7 +1903,7 @@ static void ETH_MACTransmissionEnable(ETH_HandleTypeDef *heth)
 
 /**
   * @brief  Disables the MAC transmission.
-  * @param  heth: pointer to a ETH_HandleTypeDef structure that contains
+  * @param  heth pointer to a ETH_HandleTypeDef structure that contains
   *         the configuration information for ETHERNET module  
   * @retval None
   */
@@ -1925,7 +1923,7 @@ static void ETH_MACTransmissionDisable(ETH_HandleTypeDef *heth)
 
 /**
   * @brief  Enables the MAC reception.
-  * @param  heth: pointer to a ETH_HandleTypeDef structure that contains
+  * @param  heth pointer to a ETH_HandleTypeDef structure that contains
   *         the configuration information for ETHERNET module   
   * @retval None
   */
@@ -1945,7 +1943,7 @@ static void ETH_MACReceptionEnable(ETH_HandleTypeDef *heth)
 
 /**
   * @brief  Disables the MAC reception.
-  * @param  heth: pointer to a ETH_HandleTypeDef structure that contains
+  * @param  heth pointer to a ETH_HandleTypeDef structure that contains
   *         the configuration information for ETHERNET module   
   * @retval None
   */
@@ -1965,7 +1963,7 @@ static void ETH_MACReceptionDisable(ETH_HandleTypeDef *heth)
 
 /**
   * @brief  Enables the DMA transmission.
-  * @param  heth: pointer to a ETH_HandleTypeDef structure that contains
+  * @param  heth pointer to a ETH_HandleTypeDef structure that contains
   *         the configuration information for ETHERNET module   
   * @retval None
   */
@@ -1977,7 +1975,7 @@ static void ETH_DMATransmissionEnable(ETH_HandleTypeDef *heth)
 
 /**
   * @brief  Disables the DMA transmission.
-  * @param  heth: pointer to a ETH_HandleTypeDef structure that contains
+  * @param  heth pointer to a ETH_HandleTypeDef structure that contains
   *         the configuration information for ETHERNET module   
   * @retval None
   */
@@ -1989,7 +1987,7 @@ static void ETH_DMATransmissionDisable(ETH_HandleTypeDef *heth)
 
 /**
   * @brief  Enables the DMA reception.
-  * @param  heth: pointer to a ETH_HandleTypeDef structure that contains
+  * @param  heth pointer to a ETH_HandleTypeDef structure that contains
   *         the configuration information for ETHERNET module 
   * @retval None
   */
@@ -2001,7 +1999,7 @@ static void ETH_DMAReceptionEnable(ETH_HandleTypeDef *heth)
 
 /**
   * @brief  Disables the DMA reception.
-  * @param  heth: pointer to a ETH_HandleTypeDef structure that contains
+  * @param  heth pointer to a ETH_HandleTypeDef structure that contains
   *         the configuration information for ETHERNET module 
   * @retval None
   */
@@ -2013,7 +2011,7 @@ static void ETH_DMAReceptionDisable(ETH_HandleTypeDef *heth)
 
 /**
   * @brief  Clears the ETHERNET transmit FIFO.
-  * @param  heth: pointer to a ETH_HandleTypeDef structure that contains
+  * @param  heth pointer to a ETH_HandleTypeDef structure that contains
   *         the configuration information for ETHERNET module
   * @retval None
   */
@@ -2033,7 +2031,7 @@ static void ETH_FlushTransmitFIFO(ETH_HandleTypeDef *heth)
 
 /**
   * @brief  This function provides delay (in milliseconds) based on CPU cycles method.
-  * @param  mdelay: specifies the delay time length, in milliseconds.
+  * @param  mdelay specifies the delay time length, in milliseconds.
   * @retval None
   */
 static void ETH_Delay(uint32_t mdelay)

@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_sai.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    14-April-2017
   * @brief   Header file of SAI HAL module.
   ******************************************************************************
   * @attention
@@ -568,14 +566,14 @@ typedef struct __SAI_HandleTypeDef
  */
 
 /** @brief Reset SAI handle state
-  * @param  __HANDLE__: specifies the SAI Handle.
+  * @param  __HANDLE__ specifies the SAI Handle.
   * @retval NoneS
   */
 #define __HAL_SAI_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = HAL_SAI_STATE_RESET)
 
 /** @brief  Enable or disable the specified SAI interrupts.
-  * @param  __HANDLE__: specifies the SAI Handle.
-  * @param  __INTERRUPT__: specifies the interrupt source to enable or disable.
+  * @param  __HANDLE__ specifies the SAI Handle.
+  * @param  __INTERRUPT__ specifies the interrupt source to enable or disable.
   *         This parameter can be one of the following values:
   *            @arg SAI_IT_OVRUDR: Overrun underrun interrupt enable
   *            @arg SAI_IT_MUTEDET: Mute detection interrupt enable
@@ -590,9 +588,9 @@ typedef struct __SAI_HandleTypeDef
 #define __HAL_SAI_DISABLE_IT(__HANDLE__, __INTERRUPT__)  ((__HANDLE__)->Instance->IMR &= (~(__INTERRUPT__)))
 
 /** @brief  Check if the specified SAI interrupt source is enabled or disabled.
-  * @param  __HANDLE__: specifies the SAI Handle.
+  * @param  __HANDLE__ specifies the SAI Handle.
   *         This parameter can be SAI where x: 1, 2, or 3 to select the SAI peripheral.
-  * @param  __INTERRUPT__: specifies the SAI interrupt source to check.
+  * @param  __INTERRUPT__ specifies the SAI interrupt source to check.
   *         This parameter can be one of the following values:
   *            @arg SAI_IT_OVRUDR: Overrun underrun interrupt enable
   *            @arg SAI_IT_MUTEDET: Mute detection interrupt enable
@@ -606,8 +604,8 @@ typedef struct __SAI_HandleTypeDef
 #define __HAL_SAI_GET_IT_SOURCE(__HANDLE__, __INTERRUPT__) ((((__HANDLE__)->Instance->IMR & (__INTERRUPT__)) == (__INTERRUPT__)) ? SET : RESET)
 
 /** @brief  Check whether the specified SAI flag is set or not.
-  * @param  __HANDLE__: specifies the SAI Handle.
-  * @param  __FLAG__: specifies the flag to check.
+  * @param  __HANDLE__ specifies the SAI Handle.
+  * @param  __FLAG__ specifies the flag to check.
   *         This parameter can be one of the following values:
   *            @arg SAI_FLAG_OVRUDR: Overrun underrun flag.
   *            @arg SAI_FLAG_MUTEDET: Mute detection flag.
@@ -621,8 +619,8 @@ typedef struct __SAI_HandleTypeDef
 #define __HAL_SAI_GET_FLAG(__HANDLE__, __FLAG__) ((((__HANDLE__)->Instance->SR) & (__FLAG__)) == (__FLAG__))
 
 /** @brief  Clear the specified SAI pending flag.
-  * @param  __HANDLE__: specifies the SAI Handle.
-  * @param  __FLAG__: specifies the flag to check.
+  * @param  __HANDLE__ specifies the SAI Handle.
+  * @param  __FLAG__ specifies the flag to check.
   *          This parameter can be any combination of the following values:
   *            @arg SAI_FLAG_OVRUDR: Clear Overrun underrun  
   *            @arg SAI_FLAG_MUTEDET: Clear Mute detection 
@@ -636,13 +634,13 @@ typedef struct __SAI_HandleTypeDef
 #define __HAL_SAI_CLEAR_FLAG(__HANDLE__, __FLAG__) ((__HANDLE__)->Instance->CLRFR = (__FLAG__))
 
 /** @brief  Enable SAI
-  * @param  __HANDLE__: specifies the SAI Handle.
+  * @param  __HANDLE__ specifies the SAI Handle.
   * @retval None
   */    
 #define __HAL_SAI_ENABLE(__HANDLE__) ((__HANDLE__)->Instance->CR1 |=  SAI_xCR1_SAIEN)
 
 /** @brief  Disable SAI
-  * @param  __HANDLE__: specifies the SAI Handle.
+  * @param  __HANDLE__ specifies the SAI Handle.
   * @retval None
   */
 #define __HAL_SAI_DISABLE(__HANDLE__) ((__HANDLE__)->Instance->CR1 &=  ~SAI_xCR1_SAIEN)

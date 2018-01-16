@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f4xx_ll_i2c.c
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    14-April-2017
   * @brief   I2C LL module driver.
   ******************************************************************************
   * @attention
@@ -69,9 +67,9 @@
                                                  ((__VALUE__) == LL_I2C_MODE_SMBUS_DEVICE) || \
                                                  ((__VALUE__) == LL_I2C_MODE_SMBUS_DEVICE_ARP))
 
-#define IS_I2C_CLOCK_SPEED(__VALUE__)           (((__VALUE__) > 0U) && ((__VALUE__) <= LL_I2C_MAX_SPEED_FAST))
+#define IS_LL_I2C_CLOCK_SPEED(__VALUE__)        (((__VALUE__) > 0U) && ((__VALUE__) <= LL_I2C_MAX_SPEED_FAST))
 
-#define IS_I2C_DUTY_CYCLE(__VALUE__)            (((__VALUE__) == LL_I2C_DUTYCYCLE_2) || \
+#define IS_LL_I2C_DUTY_CYCLE(__VALUE__)         (((__VALUE__) == LL_I2C_DUTYCYCLE_2) || \
                                                  ((__VALUE__) == LL_I2C_DUTYCYCLE_16_9))
 
 #if  defined(I2C_FLTR_ANOFF)&&defined(I2C_FLTR_DNF)
@@ -169,8 +167,8 @@ uint32_t LL_I2C_Init(I2C_TypeDef *I2Cx, LL_I2C_InitTypeDef *I2C_InitStruct)
 
   /* Check the I2C parameters from I2C_InitStruct */
   assert_param(IS_LL_I2C_PERIPHERAL_MODE(I2C_InitStruct->PeripheralMode));
-  assert_param(IS_I2C_CLOCK_SPEED(I2C_InitStruct->ClockSpeed));
-  assert_param(IS_I2C_DUTY_CYCLE(I2C_InitStruct->DutyCycle));
+  assert_param(IS_LL_I2C_CLOCK_SPEED(I2C_InitStruct->ClockSpeed));
+  assert_param(IS_LL_I2C_DUTY_CYCLE(I2C_InitStruct->DutyCycle));
 #if  defined(I2C_FLTR_ANOFF)&&defined(I2C_FLTR_DNF)
   assert_param(IS_LL_I2C_ANALOG_FILTER(I2C_InitStruct->AnalogFilter));
   assert_param(IS_LL_I2C_DIGITAL_FILTER(I2C_InitStruct->DigitalFilter));

@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_pwr_ex.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    14-April-2017
   * @brief   Header file of PWR HAL Extension module.
   ******************************************************************************
   * @attention
@@ -126,7 +124,7 @@
 
 #if defined(STM32F405xx) || defined(STM32F407xx) || defined(STM32F415xx) || defined(STM32F417xx)
 /** @brief  macros configure the main internal regulator output voltage.
-  * @param  __REGULATOR__: specifies the regulator output voltage to achieve
+  * @param  __REGULATOR__ specifies the regulator output voltage to achieve
   *         a tradeoff between performance and power consumption when the device does
   *         not operate at the maximum frequency (refer to the datasheets for more details).
   *          This parameter can be one of the following values:
@@ -143,7 +141,7 @@
                                                           } while(0U)
 #else
 /** @brief  macros configure the main internal regulator output voltage.
-  * @param  __REGULATOR__: specifies the regulator output voltage to achieve
+  * @param  __REGULATOR__ specifies the regulator output voltage to achieve
   *         a tradeoff between performance and power consumption when the device does
   *         not operate at the maximum frequency (refer to the datasheets for more details).
   *          This parameter can be one of the following values:
@@ -190,7 +188,7 @@
 
 /** @brief  Check PWR flag is set or not.
   * @note   These macros can be used only for STM32F42xx/STM3243xx devices.
-  * @param  __FLAG__: specifies the flag to check.
+  * @param  __FLAG__ specifies the flag to check.
   *         This parameter can be one of the following values:
   *            @arg PWR_FLAG_ODRDY: This flag indicates that the Over-drive mode
   *                                 is ready 
@@ -269,23 +267,23 @@ HAL_StatusTypeDef HAL_PWREx_EnterUnderDriveSTOPMode(uint32_t Regulator, uint8_t 
 /* ------------- PWR registers bit address in the alias region ---------------*/
 /* --- CR Register ---*/
 /* Alias word address of FPDS bit */
-#define FPDS_BIT_NUMBER          POSITION_VAL(PWR_CR_FPDS)
+#define FPDS_BIT_NUMBER          PWR_CR_FPDS_Pos
 #define CR_FPDS_BB               (uint32_t)(PERIPH_BB_BASE + (PWR_CR_OFFSET_BB * 32U) + (FPDS_BIT_NUMBER * 4U))
 
 /* Alias word address of ODEN bit   */
-#define ODEN_BIT_NUMBER          POSITION_VAL(PWR_CR_ODEN)
+#define ODEN_BIT_NUMBER          PWR_CR_ODEN_Pos
 #define CR_ODEN_BB               (uint32_t)(PERIPH_BB_BASE + (PWR_CR_OFFSET_BB * 32U) + (ODEN_BIT_NUMBER * 4U))
 
 /* Alias word address of ODSWEN bit */
-#define ODSWEN_BIT_NUMBER        POSITION_VAL(PWR_CR_ODSWEN)
+#define ODSWEN_BIT_NUMBER        PWR_CR_ODSWEN_Pos
 #define CR_ODSWEN_BB             (uint32_t)(PERIPH_BB_BASE + (PWR_CR_OFFSET_BB * 32U) + (ODSWEN_BIT_NUMBER * 4U))
     
 /* Alias word address of MRLVDS bit */
-#define MRLVDS_BIT_NUMBER        POSITION_VAL(PWR_CR_MRLVDS)
+#define MRLVDS_BIT_NUMBER        PWR_CR_MRLVDS_Pos
 #define CR_MRLVDS_BB             (uint32_t)(PERIPH_BB_BASE + (PWR_CR_OFFSET_BB * 32U) + (MRLVDS_BIT_NUMBER * 4U))
 
 /* Alias word address of LPLVDS bit */
-#define LPLVDS_BIT_NUMBER        POSITION_VAL(PWR_CR_LPLVDS)
+#define LPLVDS_BIT_NUMBER        PWR_CR_LPLVDS_Pos
 #define CR_LPLVDS_BB             (uint32_t)(PERIPH_BB_BASE + (PWR_CR_OFFSET_BB * 32U) + (LPLVDS_BIT_NUMBER * 4U))
 
  /**
@@ -297,12 +295,12 @@ HAL_StatusTypeDef HAL_PWREx_EnterUnderDriveSTOPMode(uint32_t Regulator, uint8_t 
   */  
 /* --- CSR Register ---*/
 /* Alias word address of BRE bit */
-#define BRE_BIT_NUMBER   POSITION_VAL(PWR_CSR_BRE)
+#define BRE_BIT_NUMBER   PWR_CSR_BRE_Pos
 #define CSR_BRE_BB      (uint32_t)(PERIPH_BB_BASE + (PWR_CSR_OFFSET_BB * 32U) + (BRE_BIT_NUMBER * 4U))
 
 #if defined(STM32F469xx) || defined(STM32F479xx)
 /* Alias word address of WUPP bit */
-#define WUPP_BIT_NUMBER   POSITION_VAL(PWR_CSR_WUPP)
+#define WUPP_BIT_NUMBER   PWR_CSR_WUPP_Pos
 #define CSR_WUPP_BB      (PERIPH_BB_BASE + (PWR_CSR_OFFSET_BB * 32U) + (WUPP_BIT_NUMBER * 4U))
 #endif /* STM32F469xx || STM32F479xx */
 /**

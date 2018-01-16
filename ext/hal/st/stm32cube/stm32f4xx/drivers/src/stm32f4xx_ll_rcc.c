@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f4xx_ll_rcc.c
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    14-April-2017
   * @brief   RCC LL module driver.
   ******************************************************************************
   * @attention
@@ -208,6 +206,10 @@ ErrorStatus LL_RCC_DeInit(void)
   /* Set HSION bit */
   LL_RCC_HSI_Enable();
 
+  /* Wait for HSI READY bit */
+  while(LL_RCC_HSI_IsReady() != 1U)
+  {}
+
   /* Reset CFGR register */
   LL_RCC_WriteReg(CFGR, 0x00000000U);
 
@@ -232,6 +234,10 @@ ErrorStatus LL_RCC_DeInit(void)
   /* Set HSITRIM bits to the reset value*/
   LL_RCC_HSI_SetCalibTrimming(0x10U);
 
+  /* Wait for PLL READY bit to be reset */
+  while(LL_RCC_PLL_IsReady() != 0U)
+  {}
+
   /* Reset PLLCFGR register */
   LL_RCC_WriteReg(PLLCFGR, RCC_PLLCFGR_RST_VALUE);
 
@@ -245,11 +251,11 @@ ErrorStatus LL_RCC_DeInit(void)
   LL_RCC_WriteReg(PLLSAICFGR, RCC_PLLSAICFGR_RST_VALUE);
 #endif /* RCC_PLLSAI_SUPPORT */
 
-  /* Reset HSEBYP bit */
-  LL_RCC_HSE_DisableBypass();
-
   /* Disable all interrupts */
   LL_RCC_WriteReg(CIR, 0x00000000U);
+
+  /* Clear all interrupts flags */
+  LL_RCC_WriteReg(CSR, 0x00000000U);
 
   return SUCCESS;
 }

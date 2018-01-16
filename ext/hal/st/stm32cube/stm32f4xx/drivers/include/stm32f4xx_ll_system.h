@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f4xx_ll_system.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    14-April-2017
   * @brief   Header file of SYSTEM LL module.
   @verbatim
   ==============================================================================
@@ -94,12 +92,14 @@ extern "C" {
 #define LL_SYSCFG_REMAP_FLASH              (uint32_t)0x00000000                                  /*!< Main Flash memory mapped at 0x00000000              */
 #define LL_SYSCFG_REMAP_SYSTEMFLASH        SYSCFG_MEMRMP_MEM_MODE_0                              /*!< System Flash memory mapped at 0x00000000            */
 #if defined(FSMC_Bank1)
-#define LL_SYSCFG_REMAP_FSMC               SYSCFG_MEMRMP_MEM_MODE_1                              /*!< FSMC(NOR/PSRAM 1 and 2) mapped at 0x00000000                          */
+#define LL_SYSCFG_REMAP_FSMC               SYSCFG_MEMRMP_MEM_MODE_1                              /*!< FSMC(NOR/PSRAM 1 and 2) mapped at 0x00000000        */
 #endif /* FSMC_Bank1 */
 #if defined(FMC_Bank1)
-#define LL_SYSCFG_REMAP_FMC                SYSCFG_MEMRMP_MEM_MODE_1                              /*!< FMC(NOR/PSRAM 1 and 2) mapped at 0x00000000                          */
+#define LL_SYSCFG_REMAP_FMC                SYSCFG_MEMRMP_MEM_MODE_1                              /*!< FMC(NOR/PSRAM 1 and 2) mapped at 0x00000000         */
+#define LL_SYSCFG_REMAP_SDRAM              SYSCFG_MEMRMP_MEM_MODE_2                              /*!< FMC/SDRAM mapped at 0x00000000                      */
 #endif /* FMC_Bank1 */
 #define LL_SYSCFG_REMAP_SRAM               (SYSCFG_MEMRMP_MEM_MODE_1 | SYSCFG_MEMRMP_MEM_MODE_0) /*!< SRAM1 mapped at 0x00000000                          */
+
 /**
   * @}
   */

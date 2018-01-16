@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_adc.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    14-April-2017
   * @brief   Header file containing functions prototypes of ADC HAL library.
   ******************************************************************************
   * @attention
@@ -455,60 +453,60 @@ typedef struct
   */
 
 /** @brief Reset ADC handle state
-  * @param  __HANDLE__: ADC handle
+  * @param  __HANDLE__ ADC handle
   * @retval None
   */
 #define __HAL_ADC_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = HAL_ADC_STATE_RESET)
 
 /**
   * @brief  Enable the ADC peripheral.
-  * @param  __HANDLE__: ADC handle
+  * @param  __HANDLE__ ADC handle
   * @retval None
   */
 #define __HAL_ADC_ENABLE(__HANDLE__) ((__HANDLE__)->Instance->CR2 |=  ADC_CR2_ADON)
 
 /**
   * @brief  Disable the ADC peripheral.
-  * @param  __HANDLE__: ADC handle
+  * @param  __HANDLE__ ADC handle
   * @retval None
   */
 #define __HAL_ADC_DISABLE(__HANDLE__) ((__HANDLE__)->Instance->CR2 &=  ~ADC_CR2_ADON)
 
 /**
   * @brief  Enable the ADC end of conversion interrupt.
-  * @param  __HANDLE__: specifies the ADC Handle.
-  * @param  __INTERRUPT__: ADC Interrupt.
+  * @param  __HANDLE__ specifies the ADC Handle.
+  * @param  __INTERRUPT__ ADC Interrupt.
   * @retval None
   */
 #define __HAL_ADC_ENABLE_IT(__HANDLE__, __INTERRUPT__) (((__HANDLE__)->Instance->CR1) |= (__INTERRUPT__))
 
 /**
   * @brief  Disable the ADC end of conversion interrupt.
-  * @param  __HANDLE__: specifies the ADC Handle.
-  * @param  __INTERRUPT__: ADC interrupt.
+  * @param  __HANDLE__ specifies the ADC Handle.
+  * @param  __INTERRUPT__ ADC interrupt.
   * @retval None
   */
 #define __HAL_ADC_DISABLE_IT(__HANDLE__, __INTERRUPT__) (((__HANDLE__)->Instance->CR1) &= ~(__INTERRUPT__))
 
 /** @brief  Check if the specified ADC interrupt source is enabled or disabled.
-  * @param  __HANDLE__: specifies the ADC Handle.
-  * @param  __INTERRUPT__: specifies the ADC interrupt source to check.
+  * @param  __HANDLE__ specifies the ADC Handle.
+  * @param  __INTERRUPT__ specifies the ADC interrupt source to check.
   * @retval The new state of __IT__ (TRUE or FALSE).
   */
 #define __HAL_ADC_GET_IT_SOURCE(__HANDLE__, __INTERRUPT__)  (((__HANDLE__)->Instance->CR1 & (__INTERRUPT__)) == (__INTERRUPT__))
 
 /**
   * @brief  Clear the ADC's pending flags.
-  * @param  __HANDLE__: specifies the ADC Handle.
-  * @param  __FLAG__: ADC flag.
+  * @param  __HANDLE__ specifies the ADC Handle.
+  * @param  __FLAG__ ADC flag.
   * @retval None
   */
 #define __HAL_ADC_CLEAR_FLAG(__HANDLE__, __FLAG__) (((__HANDLE__)->Instance->SR) = ~(__FLAG__))
 
 /**
   * @brief  Get the selected ADC's flag status.
-  * @param  __HANDLE__: specifies the ADC Handle.
-  * @param  __FLAG__: ADC flag.
+  * @param  __HANDLE__ specifies the ADC Handle.
+  * @param  __FLAG__ ADC flag.
   * @retval None
   */
 #define __HAL_ADC_GET_FLAG(__HANDLE__, __FLAG__) ((((__HANDLE__)->Instance->SR) & (__FLAG__)) == (__FLAG__))
@@ -616,7 +614,7 @@ uint32_t HAL_ADC_GetError(ADC_HandleTypeDef *hadc);
 
 /**
   * @brief Verification of ADC state: enabled or disabled
-  * @param __HANDLE__: ADC handle
+  * @param __HANDLE__ ADC handle
   * @retval SET (ADC enabled) or RESET (ADC disabled)
   */
 #define ADC_IS_ENABLE(__HANDLE__)                                              \
@@ -626,7 +624,7 @@ uint32_t HAL_ADC_GetError(ADC_HandleTypeDef *hadc);
 /**
   * @brief Test if conversion trigger of regular group is software start
   *        or external trigger.
-  * @param __HANDLE__: ADC handle
+  * @param __HANDLE__ ADC handle
   * @retval SET (software start) or RESET (external trigger)
   */
 #define ADC_IS_SOFTWARE_START_REGULAR(__HANDLE__)                              \
@@ -635,7 +633,7 @@ uint32_t HAL_ADC_GetError(ADC_HandleTypeDef *hadc);
 /**
   * @brief Test if conversion trigger of injected group is software start
   *        or external trigger.
-  * @param __HANDLE__: ADC handle
+  * @param __HANDLE__ ADC handle
   * @retval SET (software start) or RESET (external trigger)
   */
 #define ADC_IS_SOFTWARE_START_INJECTED(__HANDLE__)                             \
@@ -652,7 +650,7 @@ uint32_t HAL_ADC_GetError(ADC_HandleTypeDef *hadc);
 
 /**
   * @brief Clear ADC error code (set it to error code: "no error")
-  * @param __HANDLE__: ADC handle
+  * @param __HANDLE__ ADC handle
   * @retval None
   */
 #define ADC_CLEAR_ERRORCODE(__HANDLE__)                                        \
@@ -742,89 +740,89 @@ uint32_t HAL_ADC_GetError(ADC_HandleTypeDef *hadc);
 
 /**
   * @brief  Set ADC Regular channel sequence length.
-  * @param  _NbrOfConversion_: Regular channel sequence length. 
+  * @param  _NbrOfConversion_ Regular channel sequence length. 
   * @retval None
   */
 #define ADC_SQR1(_NbrOfConversion_) (((_NbrOfConversion_) - (uint8_t)1U) << 20U)
 
 /**
   * @brief  Set the ADC's sample time for channel numbers between 10 and 18.
-  * @param  _SAMPLETIME_: Sample time parameter.
-  * @param  _CHANNELNB_: Channel number.  
+  * @param  _SAMPLETIME_ Sample time parameter.
+  * @param  _CHANNELNB_ Channel number.  
   * @retval None
   */
 #define ADC_SMPR1(_SAMPLETIME_, _CHANNELNB_) ((_SAMPLETIME_) << (3U * (((uint32_t)((uint16_t)(_CHANNELNB_))) - 10U)))
 
 /**
   * @brief  Set the ADC's sample time for channel numbers between 0 and 9.
-  * @param  _SAMPLETIME_: Sample time parameter.
-  * @param  _CHANNELNB_: Channel number.  
+  * @param  _SAMPLETIME_ Sample time parameter.
+  * @param  _CHANNELNB_ Channel number.  
   * @retval None
   */
 #define ADC_SMPR2(_SAMPLETIME_, _CHANNELNB_) ((_SAMPLETIME_) << (3U * ((uint32_t)((uint16_t)(_CHANNELNB_)))))
 
 /**
   * @brief  Set the selected regular channel rank for rank between 1 and 6.
-  * @param  _CHANNELNB_: Channel number.
-  * @param  _RANKNB_: Rank number.    
+  * @param  _CHANNELNB_ Channel number.
+  * @param  _RANKNB_ Rank number.    
   * @retval None
   */
 #define ADC_SQR3_RK(_CHANNELNB_, _RANKNB_) (((uint32_t)((uint16_t)(_CHANNELNB_))) << (5U * ((_RANKNB_) - 1U)))
 
 /**
   * @brief  Set the selected regular channel rank for rank between 7 and 12.
-  * @param  _CHANNELNB_: Channel number.
-  * @param  _RANKNB_: Rank number.    
+  * @param  _CHANNELNB_ Channel number.
+  * @param  _RANKNB_ Rank number.    
   * @retval None
   */
 #define ADC_SQR2_RK(_CHANNELNB_, _RANKNB_) (((uint32_t)((uint16_t)(_CHANNELNB_))) << (5U * ((_RANKNB_) - 7U)))
 
 /**
   * @brief  Set the selected regular channel rank for rank between 13 and 16.
-  * @param  _CHANNELNB_: Channel number.
-  * @param  _RANKNB_: Rank number.    
+  * @param  _CHANNELNB_ Channel number.
+  * @param  _RANKNB_ Rank number.    
   * @retval None
   */
 #define ADC_SQR1_RK(_CHANNELNB_, _RANKNB_) (((uint32_t)((uint16_t)(_CHANNELNB_))) << (5U * ((_RANKNB_) - 13U)))
 
 /**
   * @brief  Enable ADC continuous conversion mode.
-  * @param  _CONTINUOUS_MODE_: Continuous mode.
+  * @param  _CONTINUOUS_MODE_ Continuous mode.
   * @retval None
   */
 #define ADC_CR2_CONTINUOUS(_CONTINUOUS_MODE_) ((_CONTINUOUS_MODE_) << 1U)
 
 /**
   * @brief  Configures the number of discontinuous conversions for the regular group channels.
-  * @param  _NBR_DISCONTINUOUSCONV_: Number of discontinuous conversions.
+  * @param  _NBR_DISCONTINUOUSCONV_ Number of discontinuous conversions.
   * @retval None
   */
-#define ADC_CR1_DISCONTINUOUS(_NBR_DISCONTINUOUSCONV_) (((_NBR_DISCONTINUOUSCONV_) - 1U) << POSITION_VAL(ADC_CR1_DISCNUM))
+#define ADC_CR1_DISCONTINUOUS(_NBR_DISCONTINUOUSCONV_) (((_NBR_DISCONTINUOUSCONV_) - 1U) << ADC_CR1_DISCNUM_Pos)
 
 /**
   * @brief  Enable ADC scan mode.
-  * @param  _SCANCONV_MODE_: Scan conversion mode.
+  * @param  _SCANCONV_MODE_ Scan conversion mode.
   * @retval None
   */
 #define ADC_CR1_SCANCONV(_SCANCONV_MODE_) ((_SCANCONV_MODE_) << 8U)
 
 /**
   * @brief  Enable the ADC end of conversion selection.
-  * @param  _EOCSelection_MODE_: End of conversion selection mode.
+  * @param  _EOCSelection_MODE_ End of conversion selection mode.
   * @retval None
   */
 #define ADC_CR2_EOCSelection(_EOCSelection_MODE_) ((_EOCSelection_MODE_) << 10U)
 
 /**
   * @brief  Enable the ADC DMA continuous request.
-  * @param  _DMAContReq_MODE_: DMA continuous request mode.
+  * @param  _DMAContReq_MODE_ DMA continuous request mode.
   * @retval None
   */
 #define ADC_CR2_DMAContReq(_DMAContReq_MODE_) ((_DMAContReq_MODE_) << 9U)
 
 /**
   * @brief Return resolution bits in CR1 register.
-  * @param __HANDLE__: ADC handle
+  * @param __HANDLE__ ADC handle
   * @retval None
   */
 #define ADC_GET_RESOLUTION(__HANDLE__) (((__HANDLE__)->Instance->CR1) & ADC_CR1_RES)
