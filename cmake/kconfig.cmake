@@ -1,3 +1,53 @@
+####################################################################
+# Definitions
+####################################################################
+
+# KCONFIG_ROOT: (defaults to zephyr/Kconfig), the root of the Kconfig
+# database.
+
+# Kconfig fragment: A key-value format for specifying a configuration;
+# often suffixed with .conf, .config or _defconfig.
+
+# CONF_FILE: A list of fragments defined by either the
+# 'app'/CMakeLists.txt or the user when invoking cmake, will often
+# default to prj.conf or prj_${BOARD}.conf.
+
+# DOTCONFIG: The resulting active project configuration;
+# (build/zephyr/.config) is used to configure the build itself and C
+# source files through preprocessor defines.
+
+# merge_config_files: A prioritized list of fragments. Before the user
+# can configure a project, an initial DOTCONFIG is generated based on
+# this list and KCONFIG_ROOT.
+# The list is comprised of;
+# a ${BOARD}_defconfig,
+# ${CONF_FILE},
+# ${OVERLAY_CONFIG},
+# and any files with the suffix ".conf" in the build directory.
+
+####################################################################
+# Behaviour
+####################################################################
+#
+# A key-value pair in DOTCONFIG is fixed and can only be changed by
+# the user. The user can edit DOTCONFIG by hand or through one of the
+# Kconfig frontends (menuconfig, xconfig etc.).
+#
+# Intuitively, the configuration system shall never change an input
+# given by the user. When the DOTCONFIG becomes invalid
+# wrt. KCONFIG_ROOT the user is warned and instructed to take action.
+#
+####################################################################
+# Use-cases
+####################################################################
+#
+# Editing DOTCONFIG should automatically result in updated Kconfig
+# outputs on the next make/ninja invocation.
+#
+# Zephyr updates that Kconfig-enable new features should be included
+# into existing projects on the next make/ninja invocation. (git pull
+# && make && cat zephyr/.config) # Should show new Kconfig options
+
 # Folders needed for conf/mconf files (kconfig has no method of redirecting all output files).
 # conf/mconf needs to be run from a different directory because of: ZEP-1963
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig/include/generated)
@@ -6,7 +56,6 @@ file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/include/generated)
 
 set_ifndef(KCONFIG_ROOT ${PROJECT_SOURCE_DIR}/Kconfig)
 
-#set(BOARD_DEFCONFIG ${PROJECT_SOURCE_DIR}/boards/${ARCH}/${BOARD}/${BOARD}_defconfig)
 set(BOARD_DEFCONFIG ${BOARD_DIR}/${BOARD}_defconfig)
 set(DOTCONFIG       ${PROJECT_BINARY_DIR}/.config)
 
