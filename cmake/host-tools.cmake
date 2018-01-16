@@ -17,9 +17,6 @@ if (NOT WIN32)
     KCONFIG_CONF
     conf
     )
-  if(${KCONFIG_CONF} STREQUAL KCONFIG_CONF-NOTFOUND)
-    message(FATAL_ERROR "Unable to find the Kconfig program 'conf'")
-  endif()
 endif()
 
 find_program(
