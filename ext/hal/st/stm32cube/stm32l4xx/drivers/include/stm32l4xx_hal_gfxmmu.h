@@ -41,9 +41,10 @@
  extern "C" {
 #endif
 
-#if defined(GFXMMU)
 /* Includes ------------------------------------------------------------------*/
 #include "stm32l4xx_hal_def.h"
+
+#if defined(GFXMMU)
 
 /** @addtogroup STM32L4xx_HAL_Driver
   * @{
@@ -195,7 +196,7 @@ typedef struct
  */
 
 /** @brief  Reset GFXMMU handle state.
-  * @param  __HANDLE__: GFXMMU handle.
+  * @param  __HANDLE__ GFXMMU handle.
   * @retval None
   */
 #define __HAL_GFXMMU_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = HAL_GFXMMU_STATE_RESET)

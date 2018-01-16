@@ -71,10 +71,19 @@
 /** @addtogroup DMA2D_LL_Private_Macros
   * @{
   */
+#if defined(DMA2D_M2M_BLEND_FIXED_COLOR_FG_BG_SUPPORT)
+#define IS_LL_DMA2D_MODE(MODE)          (((MODE) == LL_DMA2D_MODE_M2M)                      || \
+                                         ((MODE) == LL_DMA2D_MODE_M2M_PFC)                  || \
+                                         ((MODE) == LL_DMA2D_MODE_M2M_BLEND)                || \
+                                         ((MODE) == LL_DMA2D_MODE_M2M_BLEND_FIXED_COLOR_FG) || \
+                                         ((MODE) == LL_DMA2D_MODE_M2M_BLEND_FIXED_COLOR_BG) || \
+                                         ((MODE) == LL_DMA2D_MODE_R2M))
+#else
 #define IS_LL_DMA2D_MODE(MODE)          (((MODE) == LL_DMA2D_MODE_M2M)       || \
                                          ((MODE) == LL_DMA2D_MODE_M2M_PFC)   || \
                                          ((MODE) == LL_DMA2D_MODE_M2M_BLEND) || \
                                          ((MODE) == LL_DMA2D_MODE_R2M))
+#endif
 
 #define IS_LL_DMA2D_OCMODE(MODE_ARGB)   (((MODE_ARGB) == LL_DMA2D_OUTPUT_MODE_ARGB8888) || \
                                          ((MODE_ARGB) == LL_DMA2D_OUTPUT_MODE_RGB888)   || \
@@ -271,7 +280,7 @@ void LL_DMA2D_StructInit(LL_DMA2D_InitTypeDef *DMA2D_InitStruct)
   DMA2D_InitStruct->NbrOfLines          = 0x0U;
   DMA2D_InitStruct->NbrOfPixelsPerLines = 0x0U;
 #if defined(DMA2D_LINE_OFFSET_MODE_SUPPORT)
-  DMA2D_InitStruct->LineOffset          = LL_DMA2D_LINE_OFFSET_PIXELS;
+  DMA2D_InitStruct->LineOffsetMode      = LL_DMA2D_LINE_OFFSET_PIXELS;
 #endif /* DMA2D_LINE_OFFSET_MODE_SUPPORT */
   DMA2D_InitStruct->LineOffset          = 0x0U;
   DMA2D_InitStruct->OutputBlue          = 0x0U;

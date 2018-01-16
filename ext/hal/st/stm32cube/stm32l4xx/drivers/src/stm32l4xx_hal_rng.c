@@ -120,17 +120,14 @@ HAL_StatusTypeDef HAL_RNG_Init(RNG_HandleTypeDef *hrng)
   {
     return HAL_ERROR;
   }
-  
+
   assert_param(IS_RNG_ALL_INSTANCE(hrng->Instance));
 #if defined(RNG_CR_CED)
   assert_param(IS_RNG_CED(hrng->Init.ClockErrorDetection));
 #endif /* defined(RNG_CR_CED) */
-#if defined(RNG_CR_BYP)
-  assert_param(IS_RNG_BYPASS(hrng->Init.BypassMode));
-#endif /* defined(RNG_CR_BYP) */
-  
+
   __HAL_LOCK(hrng);
-  
+
   if(hrng->State == HAL_RNG_STATE_RESET)
   {  
     /* Allocate lock resource and initialize it */
@@ -139,7 +136,7 @@ HAL_StatusTypeDef HAL_RNG_Init(RNG_HandleTypeDef *hrng)
     /* Init the low level hardware */
     HAL_RNG_MspInit(hrng);
   }
-  
+
   /* Change RNG peripheral state */
   hrng->State = HAL_RNG_STATE_BUSY;
 
@@ -147,11 +144,7 @@ HAL_StatusTypeDef HAL_RNG_Init(RNG_HandleTypeDef *hrng)
   /* Clock Error Detection configuration */
   MODIFY_REG(hrng->Instance->CR, RNG_CR_CED, hrng->Init.ClockErrorDetection);
 #endif /* defined(RNG_CR_CED) */
-#if defined(RNG_CR_BYP)
-  /* Bypass mode configuration */
-  MODIFY_REG(hrng->Instance->CR, RNG_CR_BYP, hrng->Init.BypassMode);
-#endif /* defined(RNG_CR_BYP) */
-  
+
   /* Enable the RNG Peripheral */
   __HAL_RNG_ENABLE(hrng);
 
@@ -181,26 +174,22 @@ HAL_StatusTypeDef HAL_RNG_DeInit(RNG_HandleTypeDef *hrng)
   /* Clear Clock Error Detection bit */
   CLEAR_BIT(hrng->Instance->CR, RNG_CR_CED);
 #endif /* defined(RNG_CR_CED) */
-#if defined(RNG_CR_BYP)
-  /* Clear Bypass mode bit */
-  CLEAR_BIT(hrng->Instance->CR, RNG_CR_BYP);
-#endif /* defined(RNG_CR_BYP) */
-  
+
   /* Disable the RNG Peripheral */
   CLEAR_BIT(hrng->Instance->CR, RNG_CR_IE | RNG_CR_RNGEN);
-  
+
   /* Clear RNG interrupt status flags */
   CLEAR_BIT(hrng->Instance->SR, RNG_SR_CEIS | RNG_SR_SEIS);
-  
+
   /* DeInit the low level hardware */
   HAL_RNG_MspDeInit(hrng);
-  
+
   /* Update the RNG state */
   hrng->State = HAL_RNG_STATE_RESET; 
 
   /* Release Lock */
   __HAL_UNLOCK(hrng);
-  
+
   /* Return the function status */
   return HAL_OK;
 }

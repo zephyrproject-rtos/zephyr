@@ -80,8 +80,8 @@
 
 /**
   * @brief  Set value of pulses skipping.
-  * @param  hdfsdm_channel : DFSDM channel handle.
-  * @param  PulsesValue: Value of pulses to be skipped.
+  * @param  hdfsdm_channel DFSDM channel handle.
+  * @param  PulsesValue Value of pulses to be skipped.
   *         This parameter must be a number between Min_Data = 0 and Max_Data = 63.
   * @retval HAL status.
   */
@@ -107,8 +107,8 @@ HAL_StatusTypeDef HAL_DFDSMEx_ChannelSetPulsesSkipping(DFSDM_Channel_HandleTypeD
 
 /**
   * @brief  Get value of pulses skipping.
-  * @param  hdfsdm_channel : DFSDM channel handle.
-  * @param  PulsesValue: Value of pulses to be skipped.
+  * @param  hdfsdm_channel DFSDM channel handle.
+  * @param  PulsesValue Value of pulses to be skipped.
   * @retval HAL status.
   */
 HAL_StatusTypeDef HAL_DFDSMEx_ChannelGetPulsesSkipping(DFSDM_Channel_HandleTypeDef *hdfsdm_channel, uint32_t *PulsesValue)

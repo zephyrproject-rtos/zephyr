@@ -623,42 +623,38 @@ typedef struct
 /** @defgroup SDMMC_LL_Interrupt_sources Interrupt Sources
   * @{
   */
-#define SDMMC_IT_CCRCFAIL                    SDMMC_STA_CCRCFAIL
-#define SDMMC_IT_DCRCFAIL                    SDMMC_STA_DCRCFAIL
-#define SDMMC_IT_CTIMEOUT                    SDMMC_STA_CTIMEOUT
-#define SDMMC_IT_DTIMEOUT                    SDMMC_STA_DTIMEOUT
-#define SDMMC_IT_TXUNDERR                    SDMMC_STA_TXUNDERR
-#define SDMMC_IT_RXOVERR                     SDMMC_STA_RXOVERR
-#define SDMMC_IT_CMDREND                     SDMMC_STA_CMDREND
-#define SDMMC_IT_CMDSENT                     SDMMC_STA_CMDSENT
-#define SDMMC_IT_DATAEND                     SDMMC_STA_DATAEND
-#define SDMMC_IT_DBCKEND                     SDMMC_STA_DBCKEND
-#define SDMMC_IT_TXFIFOHE                    SDMMC_STA_TXFIFOHE
-#define SDMMC_IT_RXFIFOHF                    SDMMC_STA_RXFIFOHF
-#define SDMMC_IT_TXFIFOF                     SDMMC_STA_TXFIFOF
-#define SDMMC_IT_RXFIFOF                     SDMMC_STA_RXFIFOF
-#define SDMMC_IT_TXFIFOE                     SDMMC_STA_TXFIFOE
-#define SDMMC_IT_RXFIFOE                     SDMMC_STA_RXFIFOE
-#define SDMMC_IT_SDIOIT                      SDMMC_STA_SDIOIT
+#define SDMMC_IT_CCRCFAIL                    SDMMC_MASK_CCRCFAILIE
+#define SDMMC_IT_DCRCFAIL                    SDMMC_MASK_DCRCFAILIE
+#define SDMMC_IT_CTIMEOUT                    SDMMC_MASK_CTIMEOUTIE
+#define SDMMC_IT_DTIMEOUT                    SDMMC_MASK_DTIMEOUTIE
+#define SDMMC_IT_TXUNDERR                    SDMMC_MASK_TXUNDERRIE
+#define SDMMC_IT_RXOVERR                     SDMMC_MASK_RXOVERRIE
+#define SDMMC_IT_CMDREND                     SDMMC_MASK_CMDRENDIE
+#define SDMMC_IT_CMDSENT                     SDMMC_MASK_CMDSENTIE
+#define SDMMC_IT_DATAEND                     SDMMC_MASK_DATAENDIE
+#define SDMMC_IT_DBCKEND                     SDMMC_MASK_DBCKENDIE
+#define SDMMC_IT_TXFIFOHE                    SDMMC_MASK_TXFIFOHEIE
+#define SDMMC_IT_RXFIFOHF                    SDMMC_MASK_RXFIFOHFIE
+#define SDMMC_IT_RXFIFOF                     SDMMC_MASK_RXFIFOFIE
+#define SDMMC_IT_TXFIFOE                     SDMMC_MASK_TXFIFOEIE
+#define SDMMC_IT_SDIOIT                      SDMMC_MASK_SDIOITIE
 #if defined(STM32L4R5xx) || defined(STM32L4R7xx) || defined(STM32L4R9xx) || defined(STM32L4S5xx) || defined(STM32L4S7xx) || defined(STM32L4S9xx)
-#define SDMMC_IT_DHOLD                       SDMMC_STA_DHOLD
-#define SDMMC_IT_DABORT                      SDMMC_STA_DABORT
-#define SDMMC_IT_DPSMACT                     SDMMC_STA_DPSMACT
-#define SDMMC_IT_CMDACT                      SDMMC_STA_CPSMACT
-#define SDMMC_IT_BUSYD0                      SDMMC_STA_BUSYD0
-#define SDMMC_IT_BUSYD0END                   SDMMC_STA_BUSYD0END
-#define SDMMC_IT_ACKFAIL                     SDMMC_STA_ACKFAIL
-#define SDMMC_IT_ACKTIMEOUT                  SDMMC_STA_ACKTIMEOUT
-#define SDMMC_IT_VSWEND                      SDMMC_STA_VSWEND
-#define SDMMC_IT_CKSTOP                      SDMMC_STA_CKSTOP
-#define SDMMC_IT_IDMATE                      SDMMC_STA_IDMATE
-#define SDMMC_IT_IDMABTC                     SDMMC_STA_IDMABTC
+#define SDMMC_IT_DHOLD                       SDMMC_MASK_DHOLDIE
+#define SDMMC_IT_DABORT                      SDMMC_MASK_DABORTIE
+#define SDMMC_IT_BUSYD0END                   SDMMC_MASK_BUSYD0ENDIE
+#define SDMMC_IT_ACKFAIL                     SDMMC_MASK_ACKFAILIE
+#define SDMMC_IT_ACKTIMEOUT                  SDMMC_MASK_ACKTIMEOUTIE
+#define SDMMC_IT_VSWEND                      SDMMC_MASK_VSWENDIE
+#define SDMMC_IT_CKSTOP                      SDMMC_MASK_CKSTOPIE
+#define SDMMC_IT_IDMABTC                     SDMMC_MASK_IDMABTCIE
 #else
-#define SDMMC_IT_CMDACT                      SDMMC_STA_CMDACT
-#define SDMMC_IT_TXACT                       SDMMC_STA_TXACT
-#define SDMMC_IT_RXACT                       SDMMC_STA_RXACT
-#define SDMMC_IT_TXDAVL                      SDMMC_STA_TXDAVL
-#define SDMMC_IT_RXDAVL                      SDMMC_STA_RXDAVL
+#define SDMMC_IT_CMDACT                      SDMMC_MASK_CMDACTIE
+#define SDMMC_IT_TXACT                       SDMMC_MASK_TXACTIE
+#define SDMMC_IT_RXACT                       SDMMC_MASK_RXACTIE
+#define SDMMC_IT_TXFIFOF                     SDMMC_MASK_TXFIFOFIE
+#define SDMMC_IT_RXFIFOE                     SDMMC_MASK_RXFIFOEIE
+#define SDMMC_IT_TXDAVL                      SDMMC_MASK_TXDAVLIE
+#define SDMMC_IT_RXDAVL                      SDMMC_MASK_RXDAVLIE
 #endif /* STM32L4R5xx || STM32L4R7xx || STM32L4R9xx || STM32L4S5xx || STM32L4S7xx || STM32L4S9xx */
 /**
   * @}
@@ -713,11 +709,26 @@ typedef struct
                                                          SDMMC_FLAG_BUSYD0END  | SDMMC_FLAG_SDIOIT   | SDMMC_FLAG_ACKFAIL  |\
                                                          SDMMC_FLAG_ACKTIMEOUT | SDMMC_FLAG_VSWEND   | SDMMC_FLAG_CKSTOP   |\
                                                          SDMMC_FLAG_IDMATE     | SDMMC_FLAG_IDMABTC))
+
+#define SDMMC_STATIC_CMD_FLAGS               ((uint32_t)(SDMMC_FLAG_CCRCFAIL | SDMMC_FLAG_CTIMEOUT  | SDMMC_FLAG_CMDREND |\
+                                                         SDMMC_FLAG_CMDSENT  | SDMMC_FLAG_BUSYD0END))
+
+#define SDMMC_STATIC_DATA_FLAGS              ((uint32_t)(SDMMC_FLAG_DCRCFAIL | SDMMC_FLAG_DTIMEOUT | SDMMC_FLAG_TXUNDERR |\
+                                                         SDMMC_FLAG_RXOVERR  | SDMMC_FLAG_DATAEND  | SDMMC_FLAG_DHOLD    |\
+                                                         SDMMC_FLAG_DBCKEND  | SDMMC_FLAG_DABORT   | SDMMC_FLAG_IDMATE   |\
+                                                         SDMMC_FLAG_IDMABTC))
+
 #else
 #define SDMMC_STATIC_FLAGS                   ((uint32_t)(SDMMC_FLAG_CCRCFAIL | SDMMC_FLAG_DCRCFAIL | SDMMC_FLAG_CTIMEOUT |\
                                                          SDMMC_FLAG_DTIMEOUT | SDMMC_FLAG_TXUNDERR | SDMMC_FLAG_RXOVERR  |\
                                                          SDMMC_FLAG_CMDREND  | SDMMC_FLAG_CMDSENT  | SDMMC_FLAG_DATAEND  |\
-                                                         SDMMC_FLAG_DBCKEND))
+                                                         SDMMC_FLAG_DBCKEND  | SDMMC_FLAG_SDIOIT))
+
+#define SDMMC_STATIC_CMD_FLAGS               ((uint32_t)(SDMMC_FLAG_CCRCFAIL | SDMMC_FLAG_CTIMEOUT | SDMMC_FLAG_CMDREND |\
+                                                         SDMMC_FLAG_CMDSENT))
+
+#define SDMMC_STATIC_DATA_FLAGS              ((uint32_t)(SDMMC_FLAG_DCRCFAIL | SDMMC_FLAG_DTIMEOUT | SDMMC_FLAG_TXUNDERR |\
+                                                         SDMMC_FLAG_RXOVERR  | SDMMC_FLAG_DATAEND  | SDMMC_FLAG_DBCKEND))
 #endif /* STM32L4R5xx || STM32L4R7xx || STM32L4R9xx || STM32L4S5xx || STM32L4S7xx || STM32L4S9xx */
 
 /**

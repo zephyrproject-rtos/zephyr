@@ -267,14 +267,29 @@ typedef struct
 /** @defgroup DAC_LL_EC_TRIGGER_SOURCE DAC trigger source
   * @{
   */
-#define LL_DAC_TRIG_SOFTWARE               (DAC_CR_TSEL1_2 | DAC_CR_TSEL1_1 | DAC_CR_TSEL1_0) /*!< DAC channel conversion trigger internal (SW start) */
-#define LL_DAC_TRIG_EXT_TIM2_TRGO          (DAC_CR_TSEL1_2                                  ) /*!< DAC channel conversion trigger from external IP: TIM2 TRGO. */
-#define LL_DAC_TRIG_EXT_TIM4_TRGO          (DAC_CR_TSEL1_2                  | DAC_CR_TSEL1_0) /*!< DAC channel conversion trigger from external IP: TIM4 TRGO. */
-#define LL_DAC_TRIG_EXT_TIM5_TRGO          (                 DAC_CR_TSEL1_1 | DAC_CR_TSEL1_0) /*!< DAC channel conversion trigger from external IP: TIM5 TRGO. */
-#define LL_DAC_TRIG_EXT_TIM6_TRGO          0x00000000U                                        /*!< DAC channel conversion trigger from external IP: TIM6 TRGO. */
-#define LL_DAC_TRIG_EXT_TIM7_TRGO          (                 DAC_CR_TSEL1_1                 ) /*!< DAC channel conversion trigger from external IP: TIM7 TRGO. */
-#define LL_DAC_TRIG_EXT_TIM8_TRGO          (                                  DAC_CR_TSEL1_0) /*!< DAC channel conversion trigger from external IP: TIM8 TRGO. */
-#define LL_DAC_TRIG_EXT_EXTI_LINE9         (DAC_CR_TSEL1_2 | DAC_CR_TSEL1_1                 ) /*!< DAC channel conversion trigger from external IP: external interrupt line 9. */
+#if defined (DAC_CR_TSEL1_3)
+#define LL_DAC_TRIG_EXT_TIM1_TRGO          (                                                   DAC_CR_TSEL1_0) /*!< DAC channel conversion trigger from external IP: TIM1 TRGO. */
+#define LL_DAC_TRIG_EXT_TIM2_TRGO          (                                  DAC_CR_TSEL1_1                 ) /*!< DAC channel conversion trigger from external IP: TIM2 TRGO. */
+#define LL_DAC_TRIG_EXT_TIM4_TRGO          (                                  DAC_CR_TSEL1_1 | DAC_CR_TSEL1_0) /*!< DAC channel conversion trigger from external IP: TIM4 TRGO. */
+#define LL_DAC_TRIG_EXT_TIM5_TRGO          (                 DAC_CR_TSEL1_2                                  ) /*!< DAC channel conversion trigger from external IP: TIM4 TRGO. */
+#define LL_DAC_TRIG_EXT_TIM6_TRGO          (                 DAC_CR_TSEL1_2 |                  DAC_CR_TSEL1_0) /*!< DAC channel conversion trigger from external IP: TIM6 TRGO. */
+#define LL_DAC_TRIG_EXT_TIM7_TRGO          (                 DAC_CR_TSEL1_2 | DAC_CR_TSEL1_1                 ) /*!< DAC channel conversion trigger from external IP: TIM7 TRGO. */
+#define LL_DAC_TRIG_EXT_TIM8_TRGO          (                 DAC_CR_TSEL1_2 | DAC_CR_TSEL1_1 | DAC_CR_TSEL1_0) /*!< DAC channel conversion trigger from external IP: TIM8 TRGO. */
+#define LL_DAC_TRIG_EXT_TIM15_TRGO         (DAC_CR_TSEL1_3                                                   ) /*!< DAC channel conversion trigger from external IP: TIM15 TRGO. */
+#define LL_DAC_TRIG_EXT_LPTIM1_OUT_TRGO    (DAC_CR_TSEL1_3                  | DAC_CR_TSEL1_1 | DAC_CR_TSEL1_0) /*!< DAC channel conversion trigger from external IP: LPTIM1 OUT TRGO. */
+#define LL_DAC_TRIG_EXT_LPTIM2_OUT_TRGO    (DAC_CR_TSEL1_3 | DAC_CR_TSEL1_2                                  ) /*!< DAC channel conversion trigger from external IP: LPTIM2 OUT TRGO. */ 
+#define LL_DAC_TRIG_EXT_EXTI_LINE9         (DAC_CR_TSEL1_3 | DAC_CR_TSEL1_2                  | DAC_CR_TSEL1_0) /*!< DAC channel conversion trigger from external IP: external interrupt line 9.  */
+#define LL_DAC_TRIG_SOFTWARE               0x00000000U                                                         /*!< DAC channel conversion trigger internal (SW start) */
+#else
+#define LL_DAC_TRIG_SOFTWARE               (DAC_CR_TSEL1_2 | DAC_CR_TSEL1_1 | DAC_CR_TSEL1_0)                  /*!< DAC channel conversion trigger internal (SW start) */
+#define LL_DAC_TRIG_EXT_TIM2_TRGO          (DAC_CR_TSEL1_2                                  )                  /*!< DAC channel conversion trigger from external IP: TIM2 TRGO. */
+#define LL_DAC_TRIG_EXT_TIM4_TRGO          (DAC_CR_TSEL1_2                  | DAC_CR_TSEL1_0)                  /*!< DAC channel conversion trigger from external IP: TIM4 TRGO. */
+#define LL_DAC_TRIG_EXT_TIM5_TRGO          (                 DAC_CR_TSEL1_1 | DAC_CR_TSEL1_0)                  /*!< DAC channel conversion trigger from external IP: TIM5 TRGO. */
+#define LL_DAC_TRIG_EXT_TIM6_TRGO          0x00000000U                                                         /*!< DAC channel conversion trigger from external IP: TIM6 TRGO. */
+#define LL_DAC_TRIG_EXT_TIM7_TRGO          (                 DAC_CR_TSEL1_1                 )                  /*!< DAC channel conversion trigger from external IP: TIM7 TRGO. */
+#define LL_DAC_TRIG_EXT_TIM8_TRGO          (                                  DAC_CR_TSEL1_0)                  /*!< DAC channel conversion trigger from external IP: TIM8 TRGO. */
+#define LL_DAC_TRIG_EXT_EXTI_LINE9         (DAC_CR_TSEL1_2 | DAC_CR_TSEL1_1                 )                  /*!< DAC channel conversion trigger from external IP: external interrupt line 9. */
+#endif
 
 /**
   * @}
