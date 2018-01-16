@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_qspi.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    14-April-2017
   * @brief   Header file of QSPI HAL module.
   ******************************************************************************
   * @attention
@@ -433,26 +431,26 @@ typedef struct
   */
 
 /** @brief Reset QSPI handle state
-  * @param  __HANDLE__: QSPI handle.
+  * @param  __HANDLE__ QSPI handle.
   * @retval None
   */
 #define __HAL_QSPI_RESET_HANDLE_STATE(__HANDLE__)           ((__HANDLE__)->State = HAL_QSPI_STATE_RESET)
 
 /** @brief  Enable QSPI
-  * @param  __HANDLE__: specifies the QSPI Handle.
+  * @param  __HANDLE__ specifies the QSPI Handle.
   * @retval None
   */ 
 #define __HAL_QSPI_ENABLE(__HANDLE__)                       SET_BIT((__HANDLE__)->Instance->CR, QUADSPI_CR_EN)
 
 /** @brief  Disable QSPI
-  * @param  __HANDLE__: specifies the QSPI Handle.
+  * @param  __HANDLE__ specifies the QSPI Handle.
   * @retval None
   */
 #define __HAL_QSPI_DISABLE(__HANDLE__)                      CLEAR_BIT((__HANDLE__)->Instance->CR, QUADSPI_CR_EN)
 
 /** @brief  Enables the specified QSPI interrupt.
-  * @param  __HANDLE__: specifies the QSPI Handle.
-  * @param  __INTERRUPT__: specifies the QSPI interrupt source to enable.
+  * @param  __HANDLE__ specifies the QSPI Handle.
+  * @param  __INTERRUPT__ specifies the QSPI interrupt source to enable.
   *          This parameter can be one of the following values:
   *            @arg QSPI_IT_TO: QSPI Time out interrupt
   *            @arg QSPI_IT_SM: QSPI Status match interrupt
@@ -465,8 +463,8 @@ typedef struct
 
 
 /** @brief  Disables the specified QSPI interrupt.
-  * @param  __HANDLE__: specifies the QSPI Handle.
-  * @param  __INTERRUPT__: specifies the QSPI interrupt source to disable.
+  * @param  __HANDLE__ specifies the QSPI Handle.
+  * @param  __INTERRUPT__ specifies the QSPI interrupt source to disable.
   *          This parameter can be one of the following values:
   *            @arg QSPI_IT_TO: QSPI Timeout interrupt
   *            @arg QSPI_IT_SM: QSPI Status match interrupt
@@ -478,8 +476,8 @@ typedef struct
 #define __HAL_QSPI_DISABLE_IT(__HANDLE__, __INTERRUPT__)    CLEAR_BIT((__HANDLE__)->Instance->CR, (__INTERRUPT__))
 
 /** @brief  Checks whether the specified QSPI interrupt source is enabled.
-  * @param  __HANDLE__: specifies the QSPI Handle.
-  * @param  __INTERRUPT__: specifies the QSPI interrupt source to check.
+  * @param  __HANDLE__ specifies the QSPI Handle.
+  * @param  __INTERRUPT__ specifies the QSPI interrupt source to check.
   *          This parameter can be one of the following values:
   *            @arg QSPI_IT_TO: QSPI Time out interrupt
   *            @arg QSPI_IT_SM: QSPI Status match interrupt
@@ -492,8 +490,8 @@ typedef struct
 
 /**
   * @brief  Get the selected QSPI's flag status.
-  * @param  __HANDLE__: specifies the QSPI Handle.
-  * @param  __FLAG__: specifies the QSPI flag to check.
+  * @param  __HANDLE__ specifies the QSPI Handle.
+  * @param  __FLAG__ specifies the QSPI flag to check.
   *          This parameter can be one of the following values:
   *            @arg QSPI_FLAG_BUSY: QSPI Busy flag
   *            @arg QSPI_FLAG_TO:   QSPI Time out flag
@@ -506,8 +504,8 @@ typedef struct
 #define __HAL_QSPI_GET_FLAG(__HANDLE__, __FLAG__)           (READ_BIT((__HANDLE__)->Instance->SR, (__FLAG__)) != 0U)
 
 /** @brief  Clears the specified QSPI's flag status.
-  * @param  __HANDLE__: specifies the QSPI Handle.
-  * @param  __FLAG__: specifies the QSPI clear register flag that needs to be set
+  * @param  __HANDLE__ specifies the QSPI Handle.
+  * @param  __FLAG__ specifies the QSPI clear register flag that needs to be set
   *          This parameter can be one of the following values:
   *            @arg QSPI_FLAG_TO: QSPI Time out flag
   *            @arg QSPI_FLAG_SM: QSPI Status match flag

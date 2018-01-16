@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f4xx_ll_rtc.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    14-April-2017
   * @brief   Header file of RTC LL module.
   ******************************************************************************
   * @attention
@@ -2694,7 +2692,7 @@ __STATIC_INLINE void LL_RTC_TS_DisableOnTamper(RTC_TypeDef *RTCx)
   * @brief  Set timestamp Pin
   * @rmtoll TAFCR       TSINSEL      LL_RTC_TS_SetPin
   * @param  RTCx RTC Instance
-  * @param  TSPin: specifies the RTC TimeStamp Pin.
+  * @param  TSPin specifies the RTC TimeStamp Pin.
   *          This parameter can be one of the following values:
   *            @arg LL_RTC_TimeStampPin_Default: RTC_AF1 is used as RTC TimeStamp.
   *            @arg LL_RTC_TimeStampPin_Pos1: RTC_AF2 is selected as RTC TimeStamp. (*)
@@ -2935,7 +2933,7 @@ __STATIC_INLINE void LL_RTC_TAMPER_DisableActiveLevel(RTC_TypeDef *RTCx, uint32_
   * @brief  Set Tamper Pin
   * @rmtoll TAFCR       TAMP1INSEL      LL_RTC_TAMPER_SetPin
   * @param  RTCx RTC Instance
-  * @param  TamperPin: specifies the RTC Tamper Pin.
+  * @param  TamperPin specifies the RTC Tamper Pin.
   *          This parameter can be one of the following values:
   *            @arg LL_RTC_TamperPin_Default: RTC_AF1 is used as RTC Tamper.
   *            @arg LL_RTC_TamperPin_Pos1: RTC_AF2 is selected as RTC Tamper. (*)

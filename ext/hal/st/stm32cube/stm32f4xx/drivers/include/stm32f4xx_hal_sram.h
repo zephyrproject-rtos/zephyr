@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_sram.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    14-April-2017
   * @brief   Header file of SRAM HAL module.
   ******************************************************************************
   * @attention
@@ -116,7 +114,7 @@ typedef struct
   * @{
   */
 /** @brief Reset SRAM handle state
-  * @param  __HANDLE__: SRAM handle
+  * @param  __HANDLE__ SRAM handle
   * @retval None
   */
 #define __HAL_SRAM_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = HAL_SRAM_STATE_RESET)

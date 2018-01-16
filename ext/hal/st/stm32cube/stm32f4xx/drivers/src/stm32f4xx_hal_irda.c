@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_irda.c
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    14-April-2017
   * @brief   IRDA HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the IrDA SIR ENDEC block (IrDA):
@@ -213,7 +211,7 @@ static void IRDA_EndRxTransfer(IRDA_HandleTypeDef *hirda);
 /**
   * @brief  Initializes the IRDA mode according to the specified
   *         parameters in the IRDA_InitTypeDef and create the associated handle.
-  * @param  hirda: pointer to a IRDA_HandleTypeDef structure that contains
+  * @param  hirda pointer to a IRDA_HandleTypeDef structure that contains
   *                the configuration information for the specified IRDA module.
   * @retval HAL status
   */
@@ -274,7 +272,7 @@ HAL_StatusTypeDef HAL_IRDA_Init(IRDA_HandleTypeDef *hirda)
 
 /**
   * @brief  DeInitializes the IRDA peripheral 
-  * @param  hirda: pointer to a IRDA_HandleTypeDef structure that contains
+  * @param  hirda pointer to a IRDA_HandleTypeDef structure that contains
   *                the configuration information for the specified IRDA module.
   * @retval HAL status
   */
@@ -310,7 +308,7 @@ HAL_StatusTypeDef HAL_IRDA_DeInit(IRDA_HandleTypeDef *hirda)
 
 /**
   * @brief  IRDA MSP Init.
-  * @param  hirda: pointer to a IRDA_HandleTypeDef structure that contains
+  * @param  hirda pointer to a IRDA_HandleTypeDef structure that contains
   *                the configuration information for the specified IRDA module.
   * @retval None
   */
@@ -325,7 +323,7 @@ __weak void HAL_IRDA_MspInit(IRDA_HandleTypeDef *hirda)
 
 /**
   * @brief  IRDA MSP DeInit.
-  * @param  hirda: pointer to a IRDA_HandleTypeDef structure that contains
+  * @param  hirda pointer to a IRDA_HandleTypeDef structure that contains
   *                the configuration information for the specified IRDA module.
   * @retval None
   */
@@ -394,11 +392,11 @@ __weak void HAL_IRDA_MspDeInit(IRDA_HandleTypeDef *hirda)
 
 /**
   * @brief  Sends an amount of data in blocking mode.
-  * @param  hirda: pointer to a IRDA_HandleTypeDef structure that contains
+  * @param  hirda pointer to a IRDA_HandleTypeDef structure that contains
   *                the configuration information for the specified IRDA module.
-  * @param  pData: Pointer to data buffer
-  * @param  Size: Amount of data to be sent
-  * @param  Timeout: Specify timeout value  
+  * @param  pData Pointer to data buffer
+  * @param  Size Amount of data to be sent
+  * @param  Timeout Specify timeout value  
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_IRDA_Transmit(IRDA_HandleTypeDef *hirda, uint8_t *pData, uint16_t Size, uint32_t Timeout)
@@ -476,11 +474,11 @@ HAL_StatusTypeDef HAL_IRDA_Transmit(IRDA_HandleTypeDef *hirda, uint8_t *pData, u
 
 /**
   * @brief  Receive an amount of data in blocking mode. 
-  * @param  hirda: pointer to a IRDA_HandleTypeDef structure that contains
+  * @param  hirda pointer to a IRDA_HandleTypeDef structure that contains
   *                the configuration information for the specified IRDA module.
-  * @param  pData: Pointer to data buffer
-  * @param  Size: Amount of data to be received
-  * @param  Timeout: Specify timeout value    
+  * @param  pData Pointer to data buffer
+  * @param  Size Amount of data to be received
+  * @param  Timeout Specify timeout value    
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_IRDA_Receive(IRDA_HandleTypeDef *hirda, uint8_t *pData, uint16_t Size, uint32_t Timeout)
@@ -562,10 +560,10 @@ HAL_StatusTypeDef HAL_IRDA_Receive(IRDA_HandleTypeDef *hirda, uint8_t *pData, ui
 
 /**
   * @brief  Send an amount of data in non blocking mode. 
-  * @param  hirda: pointer to a IRDA_HandleTypeDef structure that contains
+  * @param  hirda pointer to a IRDA_HandleTypeDef structure that contains
   *                the configuration information for the specified IRDA module.
-  * @param  pData: Pointer to data buffer
-  * @param  Size: Amount of data to be sent
+  * @param  pData Pointer to data buffer
+  * @param  Size Amount of data to be sent
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_IRDA_Transmit_IT(IRDA_HandleTypeDef *hirda, uint8_t *pData, uint16_t Size)
@@ -602,10 +600,10 @@ HAL_StatusTypeDef HAL_IRDA_Transmit_IT(IRDA_HandleTypeDef *hirda, uint8_t *pData
 
 /**
   * @brief  Receives an amount of data in non blocking mode. 
-  * @param  hirda: pointer to a IRDA_HandleTypeDef structure that contains
+  * @param  hirda pointer to a IRDA_HandleTypeDef structure that contains
   *                the configuration information for the specified IRDA module.
-  * @param  pData: Pointer to data buffer
-  * @param  Size: Amount of data to be received
+  * @param  pData Pointer to data buffer
+  * @param  Size Amount of data to be received
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_IRDA_Receive_IT(IRDA_HandleTypeDef *hirda, uint8_t *pData, uint16_t Size)
@@ -646,10 +644,10 @@ HAL_StatusTypeDef HAL_IRDA_Receive_IT(IRDA_HandleTypeDef *hirda, uint8_t *pData,
 
 /**
   * @brief  Sends an amount of data in non blocking mode. 
-  * @param  hirda: pointer to a IRDA_HandleTypeDef structure that contains
+  * @param  hirda pointer to a IRDA_HandleTypeDef structure that contains
   *                the configuration information for the specified IRDA module.
-  * @param  pData: Pointer to data buffer
-  * @param  Size: Amount of data to be sent
+  * @param  pData Pointer to data buffer
+  * @param  Size Amount of data to be sent
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_IRDA_Transmit_DMA(IRDA_HandleTypeDef *hirda, uint8_t *pData, uint16_t Size)
@@ -709,10 +707,10 @@ HAL_StatusTypeDef HAL_IRDA_Transmit_DMA(IRDA_HandleTypeDef *hirda, uint8_t *pDat
 
 /**
   * @brief  Receives an amount of data in non blocking mode. 
-  * @param  hirda: pointer to a IRDA_HandleTypeDef structure that contains
+  * @param  hirda pointer to a IRDA_HandleTypeDef structure that contains
   *                the configuration information for the specified IRDA module.
-  * @param  pData: Pointer to data buffer
-  * @param  Size: Amount of data to be received
+  * @param  pData Pointer to data buffer
+  * @param  Size Amount of data to be received
   * @note   When the IRDA parity is enabled (PCE = 1) the data received contain the parity bit.
   * @retval HAL status
   */
@@ -778,7 +776,7 @@ HAL_StatusTypeDef HAL_IRDA_Receive_DMA(IRDA_HandleTypeDef *hirda, uint8_t *pData
     
 /**
   * @brief Pauses the DMA Transfer.
-  * @param  hirda: pointer to a IRDA_HandleTypeDef structure that contains
+  * @param  hirda pointer to a IRDA_HandleTypeDef structure that contains
   *                the configuration information for the specified IRDA module.
   * @retval HAL status
   */
@@ -815,7 +813,7 @@ HAL_StatusTypeDef HAL_IRDA_DMAPause(IRDA_HandleTypeDef *hirda)
 
 /**
   * @brief Resumes the DMA Transfer.
-  * @param  hirda: pointer to a IRDA_HandleTypeDef structure that contains
+  * @param  hirda pointer to a IRDA_HandleTypeDef structure that contains
   *                the configuration information for the specified IRDA module.
   * @retval HAL status
   */
@@ -850,7 +848,7 @@ HAL_StatusTypeDef HAL_IRDA_DMAResume(IRDA_HandleTypeDef *hirda)
 
 /**
   * @brief Stops the DMA Transfer.
-  * @param  hirda: pointer to a IRDA_HandleTypeDef structure that contains
+  * @param  hirda pointer to a IRDA_HandleTypeDef structure that contains
   *                the configuration information for the specified IRDA module.
   * @retval HAL status
   */
@@ -1297,7 +1295,7 @@ HAL_StatusTypeDef HAL_IRDA_AbortReceive_IT(IRDA_HandleTypeDef *hirda)
 
 /**
   * @brief  This function handles IRDA interrupt request.
-  * @param  hirda: pointer to a IRDA_HandleTypeDef structure that contains
+  * @param  hirda pointer to a IRDA_HandleTypeDef structure that contains
   *                the configuration information for the specified IRDA module.
   * @retval None
   */
@@ -1424,7 +1422,7 @@ void HAL_IRDA_IRQHandler(IRDA_HandleTypeDef *hirda)
 
 /**
   * @brief  End ongoing Tx transfer on IRDA peripheral (following error detection or Transmit completion).
-  * @param  hirda: IRDA handle.
+  * @param  hirda IRDA handle.
   * @retval None
   */
 static void IRDA_EndTxTransfer(IRDA_HandleTypeDef *hirda)
@@ -1438,7 +1436,7 @@ static void IRDA_EndTxTransfer(IRDA_HandleTypeDef *hirda)
 
 /**
   * @brief  End ongoing Rx transfer on IRDA peripheral (following error detection or Reception completion).
-  * @param  hirda: IRDA handle.
+  * @param  hirda IRDA handle.
   * @retval None
   */
 static void IRDA_EndRxTransfer(IRDA_HandleTypeDef *hirda)
@@ -1586,7 +1584,7 @@ static void IRDA_DMARxOnlyAbortCallback(DMA_HandleTypeDef *hdma)
 
 /**
   * @brief  Tx Transfer complete callbacks.
-  * @param  hirda: pointer to a IRDA_HandleTypeDef structure that contains
+  * @param  hirda pointer to a IRDA_HandleTypeDef structure that contains
   *                the configuration information for the specified IRDA module.
   * @retval None
   */
@@ -1601,7 +1599,7 @@ __weak void HAL_IRDA_TxCpltCallback(IRDA_HandleTypeDef *hirda)
 
 /**
   * @brief  Tx Half Transfer completed callbacks.
-  * @param  hirda: pointer to a IRDA_HandleTypeDef structure that contains
+  * @param  hirda pointer to a IRDA_HandleTypeDef structure that contains
   *                the configuration information for the specified USART module.
   * @retval None
   */
@@ -1616,7 +1614,7 @@ __weak void HAL_IRDA_TxHalfCpltCallback(IRDA_HandleTypeDef *hirda)
 
 /**
   * @brief  Rx Transfer complete callbacks.
-  * @param  hirda: pointer to a IRDA_HandleTypeDef structure that contains
+  * @param  hirda pointer to a IRDA_HandleTypeDef structure that contains
   *                the configuration information for the specified IRDA module.
   * @retval None
   */
@@ -1631,7 +1629,7 @@ __weak void HAL_IRDA_RxCpltCallback(IRDA_HandleTypeDef *hirda)
 
 /**
   * @brief  Rx Half Transfer complete callbacks.
-  * @param  hirda: pointer to a IRDA_HandleTypeDef structure that contains
+  * @param  hirda pointer to a IRDA_HandleTypeDef structure that contains
   *                the configuration information for the specified IRDA module.
   * @retval None
   */
@@ -1646,7 +1644,7 @@ __weak void HAL_IRDA_RxHalfCpltCallback(IRDA_HandleTypeDef *hirda)
 
 /**
   * @brief IRDA error callbacks.
-  * @param  hirda: pointer to a IRDA_HandleTypeDef structure that contains
+  * @param  hirda pointer to a IRDA_HandleTypeDef structure that contains
   *                the configuration information for the specified IRDA module.
   * @retval None
   */
@@ -1727,7 +1725,7 @@ __weak void HAL_IRDA_AbortReceiveCpltCallback(IRDA_HandleTypeDef *hirda)
 
 /**
   * @brief  Returns the IRDA state.
-  * @param  hirda: pointer to a IRDA_HandleTypeDef structure that contains
+  * @param  hirda pointer to a IRDA_HandleTypeDef structure that contains
   *                the configuration information for the specified IRDA module.
   * @retval HAL state
   */
@@ -1742,7 +1740,7 @@ HAL_IRDA_StateTypeDef HAL_IRDA_GetState(IRDA_HandleTypeDef *hirda)
 
 /**
   * @brief  Return the IARDA error code
-  * @param  hirda : pointer to a IRDA_HandleTypeDef structure that contains
+  * @param  hirda  pointer to a IRDA_HandleTypeDef structure that contains
   *              the configuration information for the specified IRDA.
   * @retval IRDA Error Code
   */
@@ -1757,7 +1755,7 @@ uint32_t HAL_IRDA_GetError(IRDA_HandleTypeDef *hirda)
   
 /**
   * @brief  DMA IRDA transmit process complete callback. 
-  * @param  hdma : DMA handle
+  * @param  hdma  DMA handle
   * @retval None
   */
 static void IRDA_DMATransmitCplt(DMA_HandleTypeDef *hdma)
@@ -1784,7 +1782,7 @@ static void IRDA_DMATransmitCplt(DMA_HandleTypeDef *hdma)
 
 /**
   * @brief DMA IRDA receive process half complete callback 
-  * @param  hdma: pointer to a DMA_HandleTypeDef structure that contains
+  * @param  hdma pointer to a DMA_HandleTypeDef structure that contains
   *                the configuration information for the specified DMA module.
   * @retval None
   */
@@ -1797,7 +1795,7 @@ static void IRDA_DMATransmitHalfCplt(DMA_HandleTypeDef *hdma)
 
 /**
   * @brief  DMA IRDA receive process complete callback. 
-  * @param  hdma: DMA handle
+  * @param  hdma DMA handle
   * @retval None
   */
 static void IRDA_DMAReceiveCplt(DMA_HandleTypeDef *hdma)   
@@ -1825,7 +1823,7 @@ static void IRDA_DMAReceiveCplt(DMA_HandleTypeDef *hdma)
 
 /**
   * @brief DMA IRDA receive process half complete callback 
-  * @param  hdma: pointer to a DMA_HandleTypeDef structure that contains
+  * @param  hdma pointer to a DMA_HandleTypeDef structure that contains
   *                the configuration information for the specified DMA module.
   * @retval None
   */
@@ -1837,7 +1835,7 @@ static void IRDA_DMAReceiveHalfCplt(DMA_HandleTypeDef *hdma)
 
 /**
   * @brief  DMA IRDA communication error callback.
-  * @param  hdma: DMA handle
+  * @param  hdma DMA handle
   * @retval None
   */
 static void IRDA_DMAError(DMA_HandleTypeDef *hdma)
@@ -1905,7 +1903,7 @@ static HAL_StatusTypeDef IRDA_WaitOnFlagUntilTimeout(IRDA_HandleTypeDef *hirda, 
 
  /**
   * @brief  Send an amount of data in non blocking mode. 
-  * @param  hirda: pointer to a IRDA_HandleTypeDef structure that contains
+  * @param  hirda pointer to a IRDA_HandleTypeDef structure that contains
   *                the configuration information for the specified IRDA module.
   * @retval HAL status
   */
@@ -1953,7 +1951,7 @@ static HAL_StatusTypeDef IRDA_Transmit_IT(IRDA_HandleTypeDef *hirda)
 
 /**
   * @brief  Wraps up transmission in non blocking mode.
-  * @param  hirda: pointer to a IRDA_HandleTypeDef structure that contains
+  * @param  hirda pointer to a IRDA_HandleTypeDef structure that contains
   *                the configuration information for the specified IRDA module.
   * @retval HAL status
   */
@@ -1975,7 +1973,7 @@ static HAL_StatusTypeDef IRDA_EndTransmit_IT(IRDA_HandleTypeDef *hirda)
 
 /**
   * @brief  Receives an amount of data in non blocking mode. 
-  * @param  hirda: pointer to a IRDA_HandleTypeDef structure that contains
+  * @param  hirda pointer to a IRDA_HandleTypeDef structure that contains
   *                the configuration information for the specified IRDA module.
   * @retval HAL status
   */
@@ -2042,7 +2040,7 @@ static HAL_StatusTypeDef IRDA_Receive_IT(IRDA_HandleTypeDef *hirda)
 
 /**
   * @brief  Configures the IRDA peripheral. 
-  * @param  hirda: pointer to a IRDA_HandleTypeDef structure that contains
+  * @param  hirda pointer to a IRDA_HandleTypeDef structure that contains
   *                the configuration information for the specified IRDA module.
   * @retval None
   */

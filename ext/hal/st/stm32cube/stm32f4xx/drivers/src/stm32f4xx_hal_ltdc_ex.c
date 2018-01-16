@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_ltdc_ex.c
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    14-April-2017
   * @brief   LTDC Extension HAL module driver.
   ******************************************************************************
   * @attention

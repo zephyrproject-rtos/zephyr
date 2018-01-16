@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_sai_ex.c
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    14-April-2017
   * @brief   SAI Extension HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of SAI extension peripheral:
@@ -109,7 +107,7 @@
 
 /**
   * @brief  Configure SAI Block synchronization mode
-  * @param  hsai: pointer to a SAI_HandleTypeDef structure that contains
+  * @param  hsai pointer to a SAI_HandleTypeDef structure that contains
   *               the configuration information for SAI module.   
   * @retval SAI Clock Input 
   */
@@ -170,7 +168,7 @@ void SAI_BlockSynchroConfig(SAI_HandleTypeDef *hsai)
 }
   /**
   * @brief  Get SAI Input Clock based on SAI source clock selection
-  * @param  hsai: pointer to a SAI_HandleTypeDef structure that contains
+  * @param  hsai pointer to a SAI_HandleTypeDef structure that contains
   *               the configuration information for SAI module.   
   * @retval SAI Clock Input 
   */

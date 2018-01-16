@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f4xx_hal.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    14-April-2017
   * @brief   This file contains all the functions prototypes for the HAL 
   *          module driver.
   ******************************************************************************

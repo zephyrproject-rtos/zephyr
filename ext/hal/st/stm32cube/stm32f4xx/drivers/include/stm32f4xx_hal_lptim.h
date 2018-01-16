@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_lptim.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    14-April-2017
   * @brief   Header file of LPTIM HAL module.
   ******************************************************************************
   * @attention
@@ -342,14 +340,14 @@ typedef struct
   */
 
 /** @brief Reset LPTIM handle state
-  * @param  __HANDLE__: LPTIM handle
+  * @param  __HANDLE__ LPTIM handle
   * @retval None
   */
 #define __HAL_LPTIM_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = HAL_LPTIM_STATE_RESET)
 
 /**
   * @brief  Enable/Disable the LPTIM peripheral.
-  * @param  __HANDLE__: LPTIM handle
+  * @param  __HANDLE__ LPTIM handle
   * @retval None
   */
 #define __HAL_LPTIM_ENABLE(__HANDLE__)   ((__HANDLE__)->Instance->CR |=  (LPTIM_CR_ENABLE))
@@ -357,7 +355,7 @@ typedef struct
 
 /**
   * @brief  Starts the LPTIM peripheral in Continuous or in single mode.
-  * @param  __HANDLE__: DMA handle
+  * @param  __HANDLE__ DMA handle
   * @retval None
   */
 #define __HAL_LPTIM_START_CONTINUOUS(__HANDLE__)  ((__HANDLE__)->Instance->CR |=  LPTIM_CR_CNTSTRT)
@@ -366,24 +364,24 @@ typedef struct
     
 /**
   * @brief  Writes the passed parameter in the Autoreload register.
-  * @param  __HANDLE__: LPTIM handle
-  * @param  __VALUE__ : Autoreload value
+  * @param  __HANDLE__ LPTIM handle
+  * @param  __VALUE__  Autoreload value
   * @retval None
   */
 #define __HAL_LPTIM_AUTORELOAD_SET(__HANDLE__ , __VALUE__)  ((__HANDLE__)->Instance->ARR =  (__VALUE__))
 
 /**
   * @brief  Writes the passed parameter in the Compare register.
-  * @param  __HANDLE__: LPTIM handle
-  * @param  __VALUE__ : Compare value
+  * @param  __HANDLE__ LPTIM handle
+  * @param  __VALUE__  Compare value
   * @retval None
   */
 #define __HAL_LPTIM_COMPARE_SET(__HANDLE__ , __VALUE__)     ((__HANDLE__)->Instance->CMP =  (__VALUE__))
 
 /**
   * @brief  Checks whether the specified LPTIM flag is set or not.
-  * @param  __HANDLE__: LPTIM handle
-  * @param  __FLAG__  : LPTIM flag to check
+  * @param  __HANDLE__ LPTIM handle
+  * @param  __FLAG__   LPTIM flag to check
   *            This parameter can be a value of:
   *            @arg LPTIM_FLAG_DOWN    : Counter direction change up Flag.
   *            @arg LPTIM_FLAG_UP      : Counter direction change down to up Flag.
@@ -398,8 +396,8 @@ typedef struct
 
 /**
   * @brief  Clears the specified LPTIM flag.
-  * @param  __HANDLE__: LPTIM handle.
-  * @param  __FLAG__  : LPTIM flag to clear.
+  * @param  __HANDLE__ LPTIM handle.
+  * @param  __FLAG__   LPTIM flag to clear.
   *            This parameter can be a value of:
   *            @arg LPTIM_FLAG_DOWN    : Counter direction change up Flag.
   *            @arg LPTIM_FLAG_UP      : Counter direction change down to up Flag.
@@ -414,8 +412,8 @@ typedef struct
 
 /**
   * @brief  Enable the specified LPTIM interrupt.
-  * @param  __HANDLE__    : LPTIM handle.
-  * @param  __INTERRUPT__ : LPTIM interrupt to set.
+  * @param  __HANDLE__     LPTIM handle.
+  * @param  __INTERRUPT__  LPTIM interrupt to set.
   *            This parameter can be a value of:
   *            @arg LPTIM_IT_DOWN    : Counter direction change up Interrupt.
   *            @arg LPTIM_IT_UP      : Counter direction change down to up Interrupt.
@@ -430,8 +428,8 @@ typedef struct
 
  /**
   * @brief  Disable the specified LPTIM interrupt.
-  * @param  __HANDLE__    : LPTIM handle.
-  * @param  __INTERRUPT__ : LPTIM interrupt to set.
+  * @param  __HANDLE__     LPTIM handle.
+  * @param  __INTERRUPT__  LPTIM interrupt to set.
   *            This parameter can be a value of:
   *            @arg LPTIM_IT_DOWN    : Counter direction change up Interrupt.
   *            @arg LPTIM_IT_UP      : Counter direction change down to up Interrupt.
@@ -446,8 +444,8 @@ typedef struct
 
     /**
   * @brief  Checks whether the specified LPTIM interrupt is set or not.
-  * @param  __HANDLE__    : LPTIM handle.
-  * @param  __INTERRUPT__ : LPTIM interrupt to check.
+  * @param  __HANDLE__     LPTIM handle.
+  * @param  __INTERRUPT__  LPTIM interrupt to check.
   *            This parameter can be a value of:
   *            @arg LPTIM_IT_DOWN    : Counter direction change up Interrupt.
   *            @arg LPTIM_IT_UP      : Counter direction change down to up Interrupt.
@@ -462,8 +460,8 @@ typedef struct
 #define __HAL_LPTIM_GET_IT_SOURCE(__HANDLE__, __INTERRUPT__) ((((__HANDLE__)->Instance->IER & (__INTERRUPT__)) == (__INTERRUPT__)) ? SET : RESET)
 
 /** @brief  LPTIM Option Register  
-  * @param  __HANDLE__: LPTIM handle
-  * @param   __VALUE__: This parameter can be a value of :
+  * @param  __HANDLE__ LPTIM handle
+  * @param   __VALUE__ This parameter can be a value of :
   *            @arg  LPTIM_OP_PAD_AF                        
   *            @arg  LPTIM_OP_PAD_PA4 
   *            @arg  LPTIM_OP_PAD_PB9                       

@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_cec.c
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    14-April-2017
   * @brief   CEC HAL module driver.
   *          This file provides firmware functions to manage the following 
   *          functionalities of the High Definition Multimedia Interface 
@@ -143,7 +141,7 @@
 /**
   * @brief Initializes the CEC mode according to the specified
   *         parameters in the CEC_InitTypeDef and creates the associated handle .
-  * @param hcec: CEC handle
+  * @param hcec CEC handle
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_CEC_Init(CEC_HandleTypeDef *hcec)
@@ -213,7 +211,7 @@ HAL_StatusTypeDef HAL_CEC_Init(CEC_HandleTypeDef *hcec)
 
 /**
   * @brief DeInitializes the CEC peripheral 
-  * @param hcec: CEC handle
+  * @param hcec CEC handle
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_CEC_DeInit(CEC_HandleTypeDef *hcec)
@@ -266,8 +264,8 @@ HAL_StatusTypeDef HAL_CEC_DeInit(CEC_HandleTypeDef *hcec)
 
 /**
   * @brief Initializes the Own Address of the CEC device
-  * @param hcec: CEC handle
-  * @param  CEC_OwnAddress: The CEC own address.  
+  * @param hcec CEC handle
+  * @param  CEC_OwnAddress The CEC own address.  
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_CEC_SetDeviceAddress(CEC_HandleTypeDef *hcec, uint16_t CEC_OwnAddress)
@@ -313,7 +311,7 @@ HAL_StatusTypeDef HAL_CEC_SetDeviceAddress(CEC_HandleTypeDef *hcec, uint16_t CEC
 
 /**
   * @brief CEC MSP Init
-  * @param hcec: CEC handle
+  * @param hcec CEC handle
   * @retval None
   */
  __weak void HAL_CEC_MspInit(CEC_HandleTypeDef *hcec)
@@ -327,7 +325,7 @@ HAL_StatusTypeDef HAL_CEC_SetDeviceAddress(CEC_HandleTypeDef *hcec, uint16_t CEC
 
 /**
   * @brief CEC MSP DeInit
-  * @param hcec: CEC handle
+  * @param hcec CEC handle
   * @retval None
   */
  __weak void HAL_CEC_MspDeInit(CEC_HandleTypeDef *hcec)
@@ -379,11 +377,11 @@ HAL_StatusTypeDef HAL_CEC_SetDeviceAddress(CEC_HandleTypeDef *hcec, uint16_t CEC
 
 /**
   * @brief Send data in interrupt mode 
-  * @param hcec: CEC handle
-  * @param InitiatorAddress: Initiator logical address
-  * @param DestinationAddress: destination logical address
-  * @param pData: pointer to input byte data buffer
-  * @param Size: amount of data to be sent in bytes (without counting the header).
+  * @param hcec CEC handle
+  * @param InitiatorAddress Initiator logical address
+  * @param DestinationAddress destination logical address
+  * @param pData pointer to input byte data buffer
+  * @param Size amount of data to be sent in bytes (without counting the header).
   *              0 means only the header is sent (ping operation).
   *              Maximum TX size is 15 bytes (1 opcode and up to 14 operands).
   * @retval HAL status
@@ -439,7 +437,7 @@ HAL_StatusTypeDef HAL_CEC_Transmit_IT(CEC_HandleTypeDef *hcec, uint8_t Initiator
 
 /**
   * @brief Get size of the received frame.
-  * @param hcec: CEC handle
+  * @param hcec CEC handle
   * @retval Frame size
   */
 uint32_t HAL_CEC_GetLastReceivedFrameSize(CEC_HandleTypeDef *hcec)
@@ -449,8 +447,8 @@ uint32_t HAL_CEC_GetLastReceivedFrameSize(CEC_HandleTypeDef *hcec)
 
 /**
   * @brief Change Rx Buffer.
-  * @param hcec: CEC handle
-  * @param Rxbuffer: Rx Buffer
+  * @param hcec CEC handle
+  * @param Rxbuffer Rx Buffer
   * @note  This function can be called only inside the HAL_CEC_RxCpltCallback() 
   * @retval Frame size
   */
@@ -461,7 +459,7 @@ void HAL_CEC_ChangeRxBuffer(CEC_HandleTypeDef *hcec, uint8_t* Rxbuffer)
   
 /**
   * @brief This function handles CEC interrupt requests.
-  * @param hcec: CEC handle
+  * @param hcec CEC handle
   * @retval None
   */
 void HAL_CEC_IRQHandler(CEC_HandleTypeDef *hcec)
@@ -566,7 +564,7 @@ void HAL_CEC_IRQHandler(CEC_HandleTypeDef *hcec)
 
 /**
   * @brief Tx Transfer completed callback
-  * @param hcec: CEC handle
+  * @param hcec CEC handle
   * @retval None
   */
  __weak void HAL_CEC_TxCpltCallback(CEC_HandleTypeDef *hcec)
@@ -580,8 +578,8 @@ void HAL_CEC_IRQHandler(CEC_HandleTypeDef *hcec)
 
 /**
   * @brief Rx Transfer completed callback
-  * @param hcec: CEC handle
-  * @param RxFrameSize: Size of frame
+  * @param hcec CEC handle
+  * @param RxFrameSize Size of frame
   * @retval None
   */
 __weak void HAL_CEC_RxCpltCallback(CEC_HandleTypeDef *hcec, uint32_t RxFrameSize)
@@ -596,7 +594,7 @@ __weak void HAL_CEC_RxCpltCallback(CEC_HandleTypeDef *hcec, uint32_t RxFrameSize
 
 /**
   * @brief CEC error callbacks
-  * @param hcec: CEC handle
+  * @param hcec CEC handle
   * @retval None
   */
  __weak void HAL_CEC_ErrorCallback(CEC_HandleTypeDef *hcec)
@@ -627,7 +625,7 @@ __weak void HAL_CEC_RxCpltCallback(CEC_HandleTypeDef *hcec, uint32_t RxFrameSize
   */
 /**
   * @brief return the CEC state
-  * @param hcec: pointer to a CEC_HandleTypeDef structure that contains
+  * @param hcec pointer to a CEC_HandleTypeDef structure that contains
   *              the configuration information for the specified CEC module.
   * @retval HAL state
   */
@@ -642,7 +640,7 @@ HAL_CEC_StateTypeDef HAL_CEC_GetState(CEC_HandleTypeDef *hcec)
 
 /**
   * @brief  Return the CEC error code
-  * @param  hcec : pointer to a CEC_HandleTypeDef structure that contains
+  * @param  hcec  pointer to a CEC_HandleTypeDef structure that contains
   *              the configuration information for the specified CEC.
   * @retval CEC Error Code
   */

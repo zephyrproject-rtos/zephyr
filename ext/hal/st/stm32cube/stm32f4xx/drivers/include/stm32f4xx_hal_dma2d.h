@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_dma2d.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    14-April-2017
   * @brief   Header file of DMA2D HAL module.
   ******************************************************************************
   * @attention
@@ -292,14 +290,14 @@ typedef struct __DMA2D_HandleTypeDef
   */
 
 /** @brief Reset DMA2D handle state
-  * @param  __HANDLE__: specifies the DMA2D handle.
+  * @param  __HANDLE__ specifies the DMA2D handle.
   * @retval None
   */
 #define __HAL_DMA2D_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = HAL_DMA2D_STATE_RESET)
 
 /**
   * @brief  Enable the DMA2D.
-  * @param  __HANDLE__: DMA2D handle
+  * @param  __HANDLE__ DMA2D handle
   * @retval None.
   */
 #define __HAL_DMA2D_ENABLE(__HANDLE__)  ((__HANDLE__)->Instance->CR |= DMA2D_CR_START)
@@ -307,8 +305,8 @@ typedef struct __DMA2D_HandleTypeDef
 /* Interrupt & Flag management */
 /**
   * @brief  Get the DMA2D pending flags.
-  * @param  __HANDLE__: DMA2D handle
-  * @param  __FLAG__: flag to check.
+  * @param  __HANDLE__ DMA2D handle
+  * @param  __FLAG__ flag to check.
   *          This parameter can be any combination of the following values:
   *            @arg DMA2D_FLAG_CE:  Configuration error flag
   *            @arg DMA2D_FLAG_CTC: CLUT transfer complete flag
@@ -322,8 +320,8 @@ typedef struct __DMA2D_HandleTypeDef
 
 /**
   * @brief  Clear the DMA2D pending flags.
-  * @param  __HANDLE__: DMA2D handle
-  * @param  __FLAG__: specifies the flag to clear.
+  * @param  __HANDLE__ DMA2D handle
+  * @param  __FLAG__ specifies the flag to clear.
   *          This parameter can be any combination of the following values:
   *            @arg DMA2D_FLAG_CE:  Configuration error flag
   *            @arg DMA2D_FLAG_CTC: CLUT transfer complete flag
@@ -337,8 +335,8 @@ typedef struct __DMA2D_HandleTypeDef
 
 /**
   * @brief  Enable the specified DMA2D interrupts.
-  * @param  __HANDLE__: DMA2D handle
-  * @param __INTERRUPT__: specifies the DMA2D interrupt sources to be enabled.
+  * @param  __HANDLE__ DMA2D handle
+  * @param __INTERRUPT__ specifies the DMA2D interrupt sources to be enabled.
   *          This parameter can be any combination of the following values:
   *            @arg DMA2D_IT_CE:  Configuration error interrupt mask
   *            @arg DMA2D_IT_CTC: CLUT transfer complete interrupt mask
@@ -352,8 +350,8 @@ typedef struct __DMA2D_HandleTypeDef
 
 /**
   * @brief  Disable the specified DMA2D interrupts.
-  * @param  __HANDLE__: DMA2D handle
-  * @param __INTERRUPT__: specifies the DMA2D interrupt sources to be disabled.
+  * @param  __HANDLE__ DMA2D handle
+  * @param __INTERRUPT__ specifies the DMA2D interrupt sources to be disabled.
   *          This parameter can be any combination of the following values:
   *            @arg DMA2D_IT_CE:  Configuration error interrupt mask
   *            @arg DMA2D_IT_CTC: CLUT transfer complete interrupt mask
@@ -367,8 +365,8 @@ typedef struct __DMA2D_HandleTypeDef
 
 /**
   * @brief  Check whether the specified DMA2D interrupt source is enabled or not.
-  * @param  __HANDLE__: DMA2D handle
-  * @param  __INTERRUPT__: specifies the DMA2D interrupt source to check.
+  * @param  __HANDLE__ DMA2D handle
+  * @param  __INTERRUPT__ specifies the DMA2D interrupt source to check.
   *          This parameter can be one of the following values:
   *            @arg DMA2D_IT_CE:  Configuration error interrupt mask
   *            @arg DMA2D_IT_CTC: CLUT transfer complete interrupt mask

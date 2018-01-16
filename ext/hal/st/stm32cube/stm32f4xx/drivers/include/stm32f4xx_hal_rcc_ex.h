@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_rcc_ex.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    14-April-2017
   * @brief   Header file of RCC HAL Extension module.
   ******************************************************************************
   * @attention
@@ -5723,32 +5721,32 @@ typedef struct
     defined(STM32F412Rx) || defined(STM32F412Cx) || defined(STM32F413xx) || defined(STM32F423xx)
 /** @brief  Macro to configure the main PLL clock source, multiplication and division factors.
   * @note   This function must be used only when the main PLL is disabled.
-  * @param  __RCC_PLLSource__: specifies the PLL entry clock source.
+  * @param  __RCC_PLLSource__ specifies the PLL entry clock source.
   *         This parameter can be one of the following values:
   *            @arg RCC_PLLSOURCE_HSI: HSI oscillator clock selected as PLL clock entry
   *            @arg RCC_PLLSOURCE_HSE: HSE oscillator clock selected as PLL clock entry
   * @note   This clock source (RCC_PLLSource) is common for the main PLL and PLLI2S.  
-  * @param  __PLLM__: specifies the division factor for PLL VCO input clock
+  * @param  __PLLM__ specifies the division factor for PLL VCO input clock
   *         This parameter must be a number between Min_Data = 2 and Max_Data = 63.
   * @note   You have to set the PLLM parameter correctly to ensure that the VCO input
   *         frequency ranges from 1 to 2 MHz. It is recommended to select a frequency
   *         of 2 MHz to limit PLL jitter.
-  * @param  __PLLN__: specifies the multiplication factor for PLL VCO output clock
+  * @param  __PLLN__ specifies the multiplication factor for PLL VCO output clock
   *         This parameter must be a number between Min_Data = 50 and Max_Data = 432.
   * @note   You have to set the PLLN parameter correctly to ensure that the VCO
   *         output frequency is between 100 and 432 MHz.
   *   
-  * @param  __PLLP__: specifies the division factor for main system clock (SYSCLK)
+  * @param  __PLLP__ specifies the division factor for main system clock (SYSCLK)
   *         This parameter must be a number in the range {2, 4, 6, or 8}.
   *           
-  * @param  __PLLQ__: specifies the division factor for OTG FS, SDIO and RNG clocks
+  * @param  __PLLQ__ specifies the division factor for OTG FS, SDIO and RNG clocks
   *         This parameter must be a number between Min_Data = 2 and Max_Data = 15.
   * @note   If the USB OTG FS is used in your application, you have to set the
   *         PLLQ parameter correctly to have 48 MHz clock for the USB. However,
   *         the SDIO and RNG need a frequency lower than or equal to 48 MHz to work
   *         correctly.
   *     
-  * @param  __PLLR__: PLL division factor for I2S, SAI, SYSTEM, SPDIFRX clocks.
+  * @param  __PLLR__ PLL division factor for I2S, SAI, SYSTEM, SPDIFRX clocks.
   *         This parameter must be a number between Min_Data = 2 and Max_Data = 7.
   * @note   This parameter is only available in STM32F446xx/STM32F469xx/STM32F479xx/
             STM32F412Zx/STM32F412Vx/STM32F412Rx/STM32F412Cx/STM32F413xx/STM32F423xx devices.
@@ -5756,33 +5754,33 @@ typedef struct
   */
 #define __HAL_RCC_PLL_CONFIG(__RCC_PLLSource__, __PLLM__, __PLLN__, __PLLP__, __PLLQ__,__PLLR__)  \
                             (RCC->PLLCFGR = ((__RCC_PLLSource__) | (__PLLM__)                   | \
-                            ((__PLLN__) << POSITION_VAL(RCC_PLLCFGR_PLLN))                      | \
-                            ((((__PLLP__) >> 1U) -1U) << POSITION_VAL(RCC_PLLCFGR_PLLP))          | \
-                            ((__PLLQ__) << POSITION_VAL(RCC_PLLCFGR_PLLQ))                      | \
-                            ((__PLLR__) << POSITION_VAL(RCC_PLLCFGR_PLLR))))
+                            ((__PLLN__) << RCC_PLLCFGR_PLLN_Pos)                      | \
+                            ((((__PLLP__) >> 1U) -1U) << RCC_PLLCFGR_PLLP_Pos)          | \
+                            ((__PLLQ__) << RCC_PLLCFGR_PLLQ_Pos)                      | \
+                            ((__PLLR__) << RCC_PLLCFGR_PLLR_Pos)))
 #else
 /** @brief  Macro to configure the main PLL clock source, multiplication and division factors.
   * @note   This function must be used only when the main PLL is disabled.
-  * @param  __RCC_PLLSource__: specifies the PLL entry clock source.
+  * @param  __RCC_PLLSource__ specifies the PLL entry clock source.
   *         This parameter can be one of the following values:
   *            @arg RCC_PLLSOURCE_HSI: HSI oscillator clock selected as PLL clock entry
   *            @arg RCC_PLLSOURCE_HSE: HSE oscillator clock selected as PLL clock entry
   * @note   This clock source (RCC_PLLSource) is common for the main PLL and PLLI2S.  
-  * @param  __PLLM__: specifies the division factor for PLL VCO input clock
+  * @param  __PLLM__ specifies the division factor for PLL VCO input clock
   *         This parameter must be a number between Min_Data = 2 and Max_Data = 63.
   * @note   You have to set the PLLM parameter correctly to ensure that the VCO input
   *         frequency ranges from 1 to 2 MHz. It is recommended to select a frequency
   *         of 2 MHz to limit PLL jitter.
-  * @param  __PLLN__: specifies the multiplication factor for PLL VCO output clock
+  * @param  __PLLN__ specifies the multiplication factor for PLL VCO output clock
   *         This parameter must be a number between Min_Data = 50 and Max_Data = 432
   *         Except for STM32F411xE devices where Min_Data = 192.
   * @note   You have to set the PLLN parameter correctly to ensure that the VCO
   *         output frequency is between 100 and 432 MHz, Except for STM32F411xE devices
   *         where frequency is between 192 and 432 MHz.
-  * @param  __PLLP__: specifies the division factor for main system clock (SYSCLK)
+  * @param  __PLLP__ specifies the division factor for main system clock (SYSCLK)
   *         This parameter must be a number in the range {2, 4, 6, or 8}.
   *           
-  * @param  __PLLQ__: specifies the division factor for OTG FS, SDIO and RNG clocks
+  * @param  __PLLQ__ specifies the division factor for OTG FS, SDIO and RNG clocks
   *         This parameter must be a number between Min_Data = 2 and Max_Data = 15.
   * @note   If the USB OTG FS is used in your application, you have to set the
   *         PLLQ parameter correctly to have 48 MHz clock for the USB. However,
@@ -5792,9 +5790,9 @@ typedef struct
   */
 #define __HAL_RCC_PLL_CONFIG(__RCC_PLLSource__, __PLLM__, __PLLN__, __PLLP__, __PLLQ__)     \
                             (RCC->PLLCFGR = (0x20000000U | (__RCC_PLLSource__) | (__PLLM__)| \
-                            ((__PLLN__) << POSITION_VAL(RCC_PLLCFGR_PLLN))                | \
-                            ((((__PLLP__) >> 1U) -1U) << POSITION_VAL(RCC_PLLCFGR_PLLP))    | \
-                            ((__PLLQ__) << POSITION_VAL(RCC_PLLCFGR_PLLQ))))
+                            ((__PLLN__) << RCC_PLLCFGR_PLLN_Pos)                | \
+                            ((((__PLLP__) >> 1U) -1U) << RCC_PLLCFGR_PLLP_Pos)    | \
+                            ((__PLLQ__) << RCC_PLLCFGR_PLLQ_Pos)))
  #endif /* STM32F410xx || STM32F446xx || STM32F469xx || STM32F479xx || STM32F412Zx || STM32F412Vx || STM32F412Rx || STM32F412Cx */
 /*----------------------------------------------------------------------------*/
                              
@@ -5819,84 +5817,84 @@ typedef struct
   * @note   This macro must be used only when the PLLI2S is disabled.
   * @note   PLLI2S clock source is common with the main PLL (configured in 
   *         HAL_RCC_ClockConfig() API).
-  * @param  __PLLI2SM__: specifies the division factor for PLLI2S VCO input clock
+  * @param  __PLLI2SM__ specifies the division factor for PLLI2S VCO input clock
   *         This parameter must be a number between Min_Data = 2 and Max_Data = 63.
   * @note   You have to set the PLLI2SM parameter correctly to ensure that the VCO input
   *         frequency ranges from 1 to 2 MHz. It is recommended to select a frequency
   *         of 1 MHz to limit PLLI2S jitter.
   *
-  * @param  __PLLI2SN__: specifies the multiplication factor for PLLI2S VCO output clock
+  * @param  __PLLI2SN__ specifies the multiplication factor for PLLI2S VCO output clock
   *         This parameter must be a number between Min_Data = 50 and Max_Data = 432.
   * @note   You have to set the PLLI2SN parameter correctly to ensure that the VCO 
   *         output frequency is between Min_Data = 100 and Max_Data = 432 MHz.
   *
-  * @param  __PLLI2SP__: specifies division factor for SPDIFRX Clock.
+  * @param  __PLLI2SP__ specifies division factor for SPDIFRX Clock.
   *         This parameter must be a number in the range {2, 4, 6, or 8}.
   * @note   the PLLI2SP parameter is only available with STM32F446xx Devices
   *                 
-  * @param  __PLLI2SR__: specifies the division factor for I2S clock
+  * @param  __PLLI2SR__ specifies the division factor for I2S clock
   *         This parameter must be a number between Min_Data = 2 and Max_Data = 7.
   * @note   You have to set the PLLI2SR parameter correctly to not exceed 192 MHz
   *         on the I2S clock frequency.
   *   
-  * @param  __PLLI2SQ__: specifies the division factor for SAI clock
+  * @param  __PLLI2SQ__ specifies the division factor for SAI clock
   *         This parameter must be a number between Min_Data = 2 and Max_Data = 15.
   */
 #define __HAL_RCC_PLLI2S_CONFIG(__PLLI2SM__, __PLLI2SN__, __PLLI2SP__, __PLLI2SQ__, __PLLI2SR__)    \
                                (RCC->PLLI2SCFGR = ((__PLLI2SM__)                                   |\
-                               ((__PLLI2SN__) << POSITION_VAL(RCC_PLLI2SCFGR_PLLI2SN))             |\
-                               ((((__PLLI2SP__) >> 1U) -1U) << POSITION_VAL(RCC_PLLI2SCFGR_PLLI2SP)) |\
-                               ((__PLLI2SQ__) << POSITION_VAL(RCC_PLLI2SCFGR_PLLI2SQ))             |\
-                               ((__PLLI2SR__) << POSITION_VAL(RCC_PLLI2SCFGR_PLLI2SR))))
+                               ((__PLLI2SN__) << RCC_PLLI2SCFGR_PLLI2SN_Pos)             |\
+                               ((((__PLLI2SP__) >> 1U) -1U) << RCC_PLLI2SCFGR_PLLI2SP_Pos) |\
+                               ((__PLLI2SQ__) << RCC_PLLI2SCFGR_PLLI2SQ_Pos)             |\
+                               ((__PLLI2SR__) << RCC_PLLI2SCFGR_PLLI2SR_Pos)))
 #elif defined(STM32F412Zx) || defined(STM32F412Vx) || defined(STM32F412Rx) || defined(STM32F412Cx) ||\
       defined(STM32F413xx) || defined(STM32F423xx)
 /** @brief  Macro to configure the PLLI2S clock multiplication and division factors .
   * @note   This macro must be used only when the PLLI2S is disabled.
   * @note   PLLI2S clock source is common with the main PLL (configured in 
   *         HAL_RCC_ClockConfig() API).
-  * @param  __PLLI2SM__: specifies the division factor for PLLI2S VCO input clock
+  * @param  __PLLI2SM__ specifies the division factor for PLLI2S VCO input clock
   *         This parameter must be a number between Min_Data = 2 and Max_Data = 63.
   * @note   You have to set the PLLI2SM parameter correctly to ensure that the VCO input
   *         frequency ranges from 1 to 2 MHz. It is recommended to select a frequency
   *         of 1 MHz to limit PLLI2S jitter.
   *
-  * @param  __PLLI2SN__: specifies the multiplication factor for PLLI2S VCO output clock
+  * @param  __PLLI2SN__ specifies the multiplication factor for PLLI2S VCO output clock
   *         This parameter must be a number between Min_Data = 50 and Max_Data = 432.
   * @note   You have to set the PLLI2SN parameter correctly to ensure that the VCO 
   *         output frequency is between Min_Data = 100 and Max_Data = 432 MHz.
   *
-  * @param  __PLLI2SR__: specifies the division factor for I2S clock
+  * @param  __PLLI2SR__ specifies the division factor for I2S clock
   *         This parameter must be a number between Min_Data = 2 and Max_Data = 7.
   * @note   You have to set the PLLI2SR parameter correctly to not exceed 192 MHz
   *         on the I2S clock frequency.
   *
-  * @param  __PLLI2SQ__: specifies the division factor for SAI clock
+  * @param  __PLLI2SQ__ specifies the division factor for SAI clock
   *         This parameter must be a number between Min_Data = 2 and Max_Data = 15.
   */
 #define __HAL_RCC_PLLI2S_CONFIG(__PLLI2SM__, __PLLI2SN__, __PLLI2SQ__, __PLLI2SR__)    \
                                (RCC->PLLI2SCFGR = ((__PLLI2SM__)                                   |\
-                               ((__PLLI2SN__) << POSITION_VAL(RCC_PLLI2SCFGR_PLLI2SN))             |\
-                               ((__PLLI2SQ__) << POSITION_VAL(RCC_PLLI2SCFGR_PLLI2SQ))             |\
-                               ((__PLLI2SR__) << POSITION_VAL(RCC_PLLI2SCFGR_PLLI2SR))))
+                               ((__PLLI2SN__) << RCC_PLLI2SCFGR_PLLI2SN_Pos)             |\
+                               ((__PLLI2SQ__) << RCC_PLLI2SCFGR_PLLI2SQ_Pos)             |\
+                               ((__PLLI2SR__) << RCC_PLLI2SCFGR_PLLI2SR_Pos)))
 #else
 /** @brief  Macro to configure the PLLI2S clock multiplication and division factors .
   * @note   This macro must be used only when the PLLI2S is disabled.
   * @note   PLLI2S clock source is common with the main PLL (configured in 
   *         HAL_RCC_ClockConfig() API).
-  * @param  __PLLI2SN__: specifies the multiplication factor for PLLI2S VCO output clock
+  * @param  __PLLI2SN__ specifies the multiplication factor for PLLI2S VCO output clock
   *         This parameter must be a number between Min_Data = 50 and Max_Data = 432.
   * @note   You have to set the PLLI2SN parameter correctly to ensure that the VCO 
   *         output frequency is between Min_Data = 100 and Max_Data = 432 MHz.
   *
-  * @param  __PLLI2SR__: specifies the division factor for I2S clock
+  * @param  __PLLI2SR__ specifies the division factor for I2S clock
   *         This parameter must be a number between Min_Data = 2 and Max_Data = 7.
   * @note   You have to set the PLLI2SR parameter correctly to not exceed 192 MHz
   *         on the I2S clock frequency.
   *
   */
 #define __HAL_RCC_PLLI2S_CONFIG(__PLLI2SN__, __PLLI2SR__)                                                    \
-                               (RCC->PLLI2SCFGR = (((__PLLI2SN__) << POSITION_VAL(RCC_PLLI2SCFGR_PLLI2SN))  |\
-                               ((__PLLI2SR__) << POSITION_VAL(RCC_PLLI2SCFGR_PLLI2SR))))
+                               (RCC->PLLI2SCFGR = (((__PLLI2SN__) << RCC_PLLI2SCFGR_PLLI2SN_Pos)  |\
+                               ((__PLLI2SR__) << RCC_PLLI2SCFGR_PLLI2SR_Pos)))
 #endif /* STM32F446xx */
 
 #if defined(STM32F411xE)
@@ -5905,24 +5903,24 @@ typedef struct
   * @note   This macro must be used only when the PLLI2S is disabled.
   * @note   PLLI2S clock source is common with the main PLL (configured in 
   *         HAL_RCC_ClockConfig() API).
-  * @param  __PLLI2SM__: specifies the division factor for PLLI2S VCO input clock
+  * @param  __PLLI2SM__ specifies the division factor for PLLI2S VCO input clock
   *         This parameter must be a number between Min_Data = 2 and Max_Data = 63.
   * @note   The PLLI2SM parameter is only used with STM32F411xE/STM32F410xx Devices
   * @note   You have to set the PLLI2SM parameter correctly to ensure that the VCO input
   *         frequency ranges from 1 to 2 MHz. It is recommended to select a frequency
   *         of 2 MHz to limit PLLI2S jitter.    
-  * @param  __PLLI2SN__: specifies the multiplication factor for PLLI2S VCO output clock
+  * @param  __PLLI2SN__ specifies the multiplication factor for PLLI2S VCO output clock
   *         This parameter must be a number between Min_Data = 192 and Max_Data = 432.
   * @note   You have to set the PLLI2SN parameter correctly to ensure that the VCO 
   *         output frequency is between Min_Data = 192 and Max_Data = 432 MHz.
-  * @param  __PLLI2SR__: specifies the division factor for I2S clock
+  * @param  __PLLI2SR__ specifies the division factor for I2S clock
   *         This parameter must be a number between Min_Data = 2 and Max_Data = 7.
   * @note   You have to set the PLLI2SR parameter correctly to not exceed 192 MHz
   *         on the I2S clock frequency.
   */
 #define __HAL_RCC_PLLI2S_I2SCLK_CONFIG(__PLLI2SM__, __PLLI2SN__, __PLLI2SR__) (RCC->PLLI2SCFGR = ((__PLLI2SM__)                                                       |\
-                                                                                                  ((__PLLI2SN__) << POSITION_VAL(RCC_PLLI2SCFGR_PLLI2SN))             |\
-                                                                                                  ((__PLLI2SR__) << POSITION_VAL(RCC_PLLI2SCFGR_PLLI2SR))))
+                                                                                                  ((__PLLI2SN__) << RCC_PLLI2SCFGR_PLLI2SN_Pos)             |\
+                                                                                                  ((__PLLI2SR__) << RCC_PLLI2SCFGR_PLLI2SR_Pos)))
 #endif /* STM32F411xE */
 
 #if defined(STM32F427xx) || defined(STM32F437xx) || defined(STM32F429xx) || defined(STM32F439xx) || defined(STM32F469xx) || defined(STM32F479xx)
@@ -5930,15 +5928,15 @@ typedef struct
   * @note   This macro must be used only when the PLLI2S is disabled.
   * @note   PLLI2S clock source is common with the main PLL (configured in 
   *         HAL_RCC_ClockConfig() API)             
-  * @param  __PLLI2SN__: specifies the multiplication factor for PLLI2S VCO output clock.
+  * @param  __PLLI2SN__ specifies the multiplication factor for PLLI2S VCO output clock.
   *         This parameter must be a number between Min_Data = 50 and Max_Data = 432.
   * @note   You have to set the PLLI2SN parameter correctly to ensure that the VCO 
   *         output frequency is between Min_Data = 100 and Max_Data = 432 MHz.
-  * @param  __PLLI2SQ__: specifies the division factor for SAI1 clock.
+  * @param  __PLLI2SQ__ specifies the division factor for SAI1 clock.
   *         This parameter must be a number between Min_Data = 2 and Max_Data = 15. 
   * @note   the PLLI2SQ parameter is only available with STM32F427xx/437xx/429xx/439xx/469xx/479xx 
   *         Devices and can be configured using the __HAL_RCC_PLLI2S_PLLSAICLK_CONFIG() macro
-  * @param  __PLLI2SR__: specifies the division factor for I2S clock
+  * @param  __PLLI2SR__ specifies the division factor for I2S clock
   *         This parameter must be a number between Min_Data = 2 and Max_Data = 7.
   * @note   You have to set the PLLI2SR parameter correctly to not exceed 192 MHz
   *         on the I2S clock frequency.
@@ -5961,79 +5959,79 @@ typedef struct
 #if defined(STM32F446xx)
 /** @brief  Macro to configure the PLLSAI clock multiplication and division factors.
   *
-  * @param  __PLLSAIM__: specifies the division factor for PLLSAI VCO input clock
+  * @param  __PLLSAIM__ specifies the division factor for PLLSAI VCO input clock
   *         This parameter must be a number between Min_Data = 2 and Max_Data = 63.
   * @note   You have to set the PLLSAIM parameter correctly to ensure that the VCO input
   *         frequency ranges from 1 to 2 MHz. It is recommended to select a frequency
   *         of 1 MHz to limit PLLI2S jitter.
   * @note   The PLLSAIM parameter is only used with STM32F446xx Devices
   *             
-  * @param  __PLLSAIN__: specifies the multiplication factor for PLLSAI VCO output clock.
+  * @param  __PLLSAIN__ specifies the multiplication factor for PLLSAI VCO output clock.
   *         This parameter must be a number between Min_Data = 50 and Max_Data = 432.
   * @note   You have to set the PLLSAIN parameter correctly to ensure that the VCO 
   *         output frequency is between Min_Data = 100 and Max_Data = 432 MHz.
   *
-  * @param  __PLLSAIP__: specifies division factor for OTG FS, SDIO and RNG clocks.
+  * @param  __PLLSAIP__ specifies division factor for OTG FS, SDIO and RNG clocks.
   *         This parameter must be a number in the range {2, 4, 6, or 8}.
   * @note   the PLLSAIP parameter is only available with STM32F446xx Devices
   *                 
-  * @param  __PLLSAIQ__: specifies the division factor for SAI clock
+  * @param  __PLLSAIQ__ specifies the division factor for SAI clock
   *         This parameter must be a number between Min_Data = 2 and Max_Data = 15.
   *           
-  * @param  __PLLSAIR__: specifies the division factor for LTDC clock
+  * @param  __PLLSAIR__ specifies the division factor for LTDC clock
   *         This parameter must be a number between Min_Data = 2 and Max_Data = 7.
   * @note   the PLLI2SR parameter is only available with STM32F427/437/429/439xx Devices  
   */
 #define __HAL_RCC_PLLSAI_CONFIG(__PLLSAIM__, __PLLSAIN__, __PLLSAIP__, __PLLSAIQ__, __PLLSAIR__)     \
                                (RCC->PLLSAICFGR = ((__PLLSAIM__)                                   | \
-                               ((__PLLSAIN__) << POSITION_VAL(RCC_PLLSAICFGR_PLLSAIN))             | \
-                               ((((__PLLSAIP__) >> 1U) -1U) << POSITION_VAL(RCC_PLLSAICFGR_PLLSAIP)) | \
-                               ((__PLLSAIQ__) << POSITION_VAL(RCC_PLLSAICFGR_PLLSAIQ)))) 
+                               ((__PLLSAIN__) << RCC_PLLSAICFGR_PLLSAIN_Pos)             | \
+                               ((((__PLLSAIP__) >> 1U) -1U) << RCC_PLLSAICFGR_PLLSAIP_Pos) | \
+                               ((__PLLSAIQ__) << RCC_PLLSAICFGR_PLLSAIQ_Pos))) 
 #endif /* STM32F446xx */
                                  
 #if defined(STM32F469xx) || defined(STM32F479xx)
 /** @brief  Macro to configure the PLLSAI clock multiplication and division factors.
   *             
-  * @param  __PLLSAIN__: specifies the multiplication factor for PLLSAI VCO output clock.
+  * @param  __PLLSAIN__ specifies the multiplication factor for PLLSAI VCO output clock.
   *         This parameter must be a number between Min_Data = 50 and Max_Data = 432.
   * @note   You have to set the PLLSAIN parameter correctly to ensure that the VCO 
   *         output frequency is between Min_Data = 100 and Max_Data = 432 MHz.
   *
-  * @param  __PLLSAIP__: specifies division factor for SDIO and CLK48 clocks.
+  * @param  __PLLSAIP__ specifies division factor for SDIO and CLK48 clocks.
   *         This parameter must be a number in the range {2, 4, 6, or 8}.
   *                 
-  * @param  __PLLSAIQ__: specifies the division factor for SAI clock
+  * @param  __PLLSAIQ__ specifies the division factor for SAI clock
   *         This parameter must be a number between Min_Data = 2 and Max_Data = 15.
   *           
-  * @param  __PLLSAIR__: specifies the division factor for LTDC clock
+  * @param  __PLLSAIR__ specifies the division factor for LTDC clock
   *         This parameter must be a number between Min_Data = 2 and Max_Data = 7.  
   */
 #define __HAL_RCC_PLLSAI_CONFIG(__PLLSAIN__, __PLLSAIP__, __PLLSAIQ__, __PLLSAIR__) \
-                               (RCC->PLLSAICFGR = (((__PLLSAIN__) << POSITION_VAL(RCC_PLLSAICFGR_PLLSAIN))             |\
-                                                   ((((__PLLSAIP__) >> 1U) -1U) << POSITION_VAL(RCC_PLLSAICFGR_PLLSAIP)) |\
-                                                   ((__PLLSAIQ__) << POSITION_VAL(RCC_PLLSAICFGR_PLLSAIQ))             |\
-                                                   ((__PLLSAIR__) << POSITION_VAL(RCC_PLLSAICFGR_PLLSAIR))))
+                               (RCC->PLLSAICFGR = (((__PLLSAIN__) << RCC_PLLSAICFGR_PLLSAIN_Pos)             |\
+                                                   ((((__PLLSAIP__) >> 1U) -1U) << RCC_PLLSAICFGR_PLLSAIP_Pos) |\
+                                                   ((__PLLSAIQ__) << RCC_PLLSAICFGR_PLLSAIQ_Pos)             |\
+                                                   ((__PLLSAIR__) << RCC_PLLSAICFGR_PLLSAIR_Pos)))
 #endif /* STM32F469xx || STM32F479xx */                                 
 
 #if defined(STM32F427xx) || defined(STM32F437xx) || defined(STM32F429xx) || defined(STM32F439xx)
 /** @brief  Macro to configure the PLLSAI clock multiplication and division factors.
   *             
-  * @param  __PLLSAIN__: specifies the multiplication factor for PLLSAI VCO output clock.
+  * @param  __PLLSAIN__ specifies the multiplication factor for PLLSAI VCO output clock.
   *         This parameter must be a number between Min_Data = 50 and Max_Data = 432.
   * @note   You have to set the PLLSAIN parameter correctly to ensure that the VCO 
   *         output frequency is between Min_Data = 100 and Max_Data = 432 MHz.
   *
-  * @param  __PLLSAIQ__: specifies the division factor for SAI clock
+  * @param  __PLLSAIQ__ specifies the division factor for SAI clock
   *         This parameter must be a number between Min_Data = 2 and Max_Data = 15.
   *           
-  * @param  __PLLSAIR__: specifies the division factor for LTDC clock
+  * @param  __PLLSAIR__ specifies the division factor for LTDC clock
   *         This parameter must be a number between Min_Data = 2 and Max_Data = 7.
   * @note   the PLLI2SR parameter is only available with STM32F427/437/429/439xx Devices  
   */
 #define __HAL_RCC_PLLSAI_CONFIG(__PLLSAIN__, __PLLSAIQ__, __PLLSAIR__)                                        \
-                               (RCC->PLLSAICFGR = (((__PLLSAIN__) << POSITION_VAL(RCC_PLLSAICFGR_PLLSAIN))  | \
-                               ((__PLLSAIQ__) << POSITION_VAL(RCC_PLLSAICFGR_PLLSAIQ))                      | \
-                               ((__PLLSAIR__) << POSITION_VAL(RCC_PLLSAICFGR_PLLSAIR))))
+                               (RCC->PLLSAICFGR = (((__PLLSAIN__) << RCC_PLLSAICFGR_PLLSAIN_Pos)  | \
+                               ((__PLLSAIQ__) << RCC_PLLSAICFGR_PLLSAIQ_Pos)                      | \
+                               ((__PLLSAIR__) << RCC_PLLSAICFGR_PLLSAIR_Pos)))
 #endif /* STM32F427xx || STM32F437xx || STM32F429xx || STM32F439xx */
 
 #endif /* STM32F427xx || STM32F437xx || STM32F429xx || STM32F439xx || STM32F446xx || STM32F469xx || STM32F479xx */
@@ -6043,14 +6041,14 @@ typedef struct
 #if defined(STM32F413xx) || defined(STM32F423xx)
 /** @brief  Macro to configure the SAI clock Divider coming from PLLI2S.
   * @note   This function must be called before enabling the PLLI2S.
-  * @param  __PLLI2SDivR__: specifies the PLLI2S division factor for SAI1 clock.
+  * @param  __PLLI2SDivR__ specifies the PLLI2S division factor for SAI1 clock.
   *          This parameter must be a number between 1 and 32.
   *          SAI1 clock frequency = f(PLLI2SR) / __PLLI2SDivR__ 
   */
 #define __HAL_RCC_PLLI2S_PLLSAICLKDIVR_CONFIG(__PLLI2SDivR__) (MODIFY_REG(RCC->DCKCFGR, RCC_DCKCFGR_PLLI2SDIVR, (__PLLI2SDivR__)-1U))
 
 /** @brief  Macro to configure the SAI clock Divider coming from PLL.
-  * @param  __PLLDivR__: specifies the PLL division factor for SAI1 clock.
+  * @param  __PLLDivR__ specifies the PLL division factor for SAI1 clock.
   *          This parameter must be a number between 1 and 32.
   *          SAI1 clock frequency = f(PLLR) / __PLLDivR__ 
   */
@@ -6061,7 +6059,7 @@ typedef struct
     defined(STM32F469xx) || defined(STM32F479xx)
 /** @brief  Macro to configure the SAI clock Divider coming from PLLI2S.
   * @note   This function must be called before enabling the PLLI2S.
-  * @param  __PLLI2SDivQ__: specifies the PLLI2S division factor for SAI1 clock.
+  * @param  __PLLI2SDivQ__ specifies the PLLI2S division factor for SAI1 clock.
   *          This parameter must be a number between 1 and 32.
   *          SAI1 clock frequency = f(PLLI2SQ) / __PLLI2SDivQ__ 
   */
@@ -6069,7 +6067,7 @@ typedef struct
 
 /** @brief  Macro to configure the SAI clock Divider coming from PLLSAI.
   * @note   This function must be called before enabling the PLLSAI.
-  * @param  __PLLSAIDivQ__: specifies the PLLSAI division factor for SAI1 clock .
+  * @param  __PLLSAIDivQ__ specifies the PLLSAI division factor for SAI1 clock .
   *         This parameter must be a number between Min_Data = 1 and Max_Data = 32.
   *         SAI1 clock frequency = f(PLLSAIQ) / __PLLSAIDivQ__  
   */
@@ -6081,7 +6079,7 @@ typedef struct
   * 
   * @note   The LTDC peripheral is only available with STM32F427/437/429/439/469/479xx Devices.
   * @note   This function must be called before enabling the PLLSAI. 
-  * @param  __PLLSAIDivR__: specifies the PLLSAI division factor for LTDC clock .
+  * @param  __PLLSAIDivR__ specifies the PLLSAI division factor for LTDC clock .
   *          This parameter must be a number between Min_Data = 2 and Max_Data = 16.
   *          LTDC clock frequency = f(PLLSAIR) / __PLLSAIDivR__ 
   */
@@ -6096,7 +6094,7 @@ typedef struct
     defined(STM32F479xx)
 /** @brief  Macro to configure the I2S clock source (I2SCLK).
   * @note   This function must be called before enabling the I2S APB clock.
-  * @param  __SOURCE__: specifies the I2S clock source.
+  * @param  __SOURCE__ specifies the I2S clock source.
   *         This parameter can be one of the following values:
   *            @arg RCC_I2SCLKSOURCE_PLLI2S: PLLI2S clock used as I2S clock source.
   *            @arg RCC_I2SCLKSOURCE_EXT: External clock mapped on the I2S_CKIN pin
@@ -6120,7 +6118,7 @@ typedef struct
   * @note   The SAI peripheral is only available with STM32F427/437/429/439/469/479xx Devices.      
   * @note   This function must be called before enabling PLLSAI, PLLI2S and  
   *         the SAI clock.
-  * @param  __SOURCE__: specifies the SAI Block A clock source.
+  * @param  __SOURCE__ specifies the SAI Block A clock source.
   *         This parameter can be one of the following values:
   *            @arg RCC_SAIACLKSOURCE_PLLI2S: PLLI2S_Q clock divided by PLLI2SDIVQ used 
   *                                           as SAI1 Block A clock. 
@@ -6135,7 +6133,7 @@ typedef struct
   * @note   The SAI peripheral is only available with STM32F427/437/429/439/469/479xx Devices.
   * @note   This function must be called before enabling PLLSAI, PLLI2S and  
   *         the SAI clock.
-  * @param  __SOURCE__: specifies the SAI Block B clock source.
+  * @param  __SOURCE__ specifies the SAI Block B clock source.
   *         This parameter can be one of the following values:
   *            @arg RCC_SAIBCLKSOURCE_PLLI2S: PLLI2S_Q clock divided by PLLI2SDIVQ used 
   *                                           as SAI1 Block B clock. 
@@ -6152,7 +6150,7 @@ typedef struct
   * @note   This configuration is only available with STM32F446xx Devices.
   * @note   This function must be called before enabling PLL, PLLSAI, PLLI2S and  
   *         the SAI clock.
-  * @param  __SOURCE__: specifies the SAI1 clock source.
+  * @param  __SOURCE__ specifies the SAI1 clock source.
   *         This parameter can be one of the following values:
   *            @arg RCC_SAI1CLKSOURCE_PLLI2S: PLLI2S_Q clock divided by PLLI2SDIVQ used as SAI1 clock. 
   *            @arg RCC_SAI1CLKSOURCE_PLLSAI: PLLISAI_Q clock divided by PLLSAIDIVQ used as SAI1 clock.
@@ -6175,7 +6173,7 @@ typedef struct
   * @note   This configuration is only available with STM32F446xx Devices.      
   * @note   This function must be called before enabling PLL, PLLSAI, PLLI2S and  
   *         the SAI clock.
-  * @param  __SOURCE__: specifies the SAI2 clock source.
+  * @param  __SOURCE__ specifies the SAI2 clock source.
   *         This parameter can be one of the following values:
   *            @arg RCC_SAI2CLKSOURCE_PLLI2S: PLLI2S_Q clock divided by PLLI2SDIVQ used as SAI2 clock. 
   *            @arg RCC_SAI2CLKSOURCE_PLLSAI: PLLISAI_Q clock divided by PLLSAIDIVQ used as SAI2 clock.
@@ -6196,7 +6194,7 @@ typedef struct
 
 /** @brief  Macro to configure I2S APB1 clock source selection.
   * @note   This function must be called before enabling PLL, PLLI2S and the I2S clock.
-  * @param  __SOURCE__: specifies the I2S APB1 clock source.
+  * @param  __SOURCE__ specifies the I2S APB1 clock source.
   *         This parameter can be one of the following values:
   *            @arg RCC_I2SAPB1CLKSOURCE_PLLI2S: PLLI2S VCO output clock divided by PLLI2SR used as I2S clock. 
   *            @arg RCC_I2SAPB1CLKSOURCE_EXT: External clock mapped on the I2S_CKIN pin used as I2S APB1 clock.
@@ -6216,7 +6214,7 @@ typedef struct
 
 /** @brief  Macro to configure I2S APB2 clock source selection.
   * @note   This function must be called before enabling PLL, PLLI2S and the I2S clock.
-  * @param  __SOURCE__: specifies the SAI Block A clock source.
+  * @param  __SOURCE__ specifies the SAI Block A clock source.
   *         This parameter can be one of the following values:
   *            @arg RCC_I2SAPB2CLKSOURCE_PLLI2S: PLLI2S VCO output clock divided by PLLI2SR used as I2S clock. 
   *            @arg RCC_I2SAPB2CLKSOURCE_EXT: External clock mapped on the I2S_CKIN pin used as I2S APB2 clock.
@@ -6235,7 +6233,7 @@ typedef struct
 #define __HAL_RCC_GET_I2S_APB2_SOURCE() (READ_BIT(RCC->DCKCFGR, RCC_DCKCFGR_I2S2SRC))
 
 /** @brief  Macro to configure the CEC clock.
-  * @param  __SOURCE__: specifies the CEC clock source.
+  * @param  __SOURCE__ specifies the CEC clock source.
   *         This parameter can be one of the following values:
   *            @arg RCC_CECCLKSOURCE_HSI: HSI selected as CEC clock
   *            @arg RCC_CECCLKSOURCE_LSE: LSE selected as CEC clock
@@ -6250,7 +6248,7 @@ typedef struct
 #define __HAL_RCC_GET_CEC_SOURCE() (READ_BIT(RCC->DCKCFGR2, RCC_DCKCFGR2_CECSEL))
 
 /** @brief  Macro to configure the FMPI2C1 clock.
-  * @param  __SOURCE__: specifies the FMPI2C1 clock source.
+  * @param  __SOURCE__ specifies the FMPI2C1 clock source.
   *         This parameter can be one of the following values:
   *            @arg RCC_FMPI2C1CLKSOURCE_PCLK1: PCLK1 selected as FMPI2C1 clock
   *            @arg RCC_FMPI2C1CLKSOURCE_SYSCLK: SYS clock selected as FMPI2C1 clock
@@ -6267,7 +6265,7 @@ typedef struct
 #define __HAL_RCC_GET_FMPI2C1_SOURCE() (READ_BIT(RCC->DCKCFGR2, RCC_DCKCFGR2_FMPI2C1SEL))
 
 /** @brief  Macro to configure the CLK48 clock.
-  * @param  __SOURCE__: specifies the CLK48 clock source.
+  * @param  __SOURCE__ specifies the CLK48 clock source.
   *         This parameter can be one of the following values:
   *            @arg RCC_CLK48CLKSOURCE_PLLQ: PLL VCO Output divided by PLLQ used as CLK48 clock. 
   *            @arg RCC_CLK48CLKSOURCE_PLLSAIP: PLLSAI VCO Output divided by PLLSAIP used as CLK48 clock. 
@@ -6282,7 +6280,7 @@ typedef struct
 #define __HAL_RCC_GET_CLK48_SOURCE() (READ_BIT(RCC->DCKCFGR2, RCC_DCKCFGR2_CK48MSEL))
 
 /** @brief  Macro to configure the SDIO clock.
-  * @param  __SOURCE__: specifies the SDIO clock source.
+  * @param  __SOURCE__ specifies the SDIO clock source.
   *         This parameter can be one of the following values:
   *            @arg RCC_SDIOCLKSOURCE_CLK48: CLK48 output used as SDIO clock. 
   *            @arg RCC_SDIOCLKSOURCE_SYSCLK: System clock output used as SDIO clock. 
@@ -6297,7 +6295,7 @@ typedef struct
 #define __HAL_RCC_GET_SDIO_SOURCE() (READ_BIT(RCC->DCKCFGR2, RCC_DCKCFGR2_SDIOSEL))
 
 /** @brief  Macro to configure the SPDIFRX clock.
-  * @param  __SOURCE__: specifies the SPDIFRX clock source.
+  * @param  __SOURCE__ specifies the SPDIFRX clock source.
   *         This parameter can be one of the following values:
   *            @arg RCC_SPDIFRXCLKSOURCE_PLLR: PLL VCO Output divided by PLLR used as SPDIFRX clock.  
   *            @arg RCC_SPDIFRXCLKSOURCE_PLLI2SP: PLLI2S VCO Output divided by PLLI2SP used as SPDIFRX clock. 
@@ -6315,7 +6313,7 @@ typedef struct
 #if defined(STM32F469xx) || defined(STM32F479xx)
       
 /** @brief  Macro to configure the CLK48 clock.
-  * @param  __SOURCE__: specifies the CLK48 clock source.
+  * @param  __SOURCE__ specifies the CLK48 clock source.
   *         This parameter can be one of the following values:
   *            @arg RCC_CLK48CLKSOURCE_PLLQ: PLL VCO Output divided by PLLQ used as CLK48 clock. 
   *            @arg RCC_CLK48CLKSOURCE_PLLSAIP: PLLSAI VCO Output divided by PLLSAIP used as CLK48 clock. 
@@ -6330,7 +6328,7 @@ typedef struct
 #define __HAL_RCC_GET_CLK48_SOURCE() (READ_BIT(RCC->DCKCFGR, RCC_DCKCFGR_CK48MSEL))
 
 /** @brief  Macro to configure the SDIO clock.
-  * @param  __SOURCE__: specifies the SDIO clock source.
+  * @param  __SOURCE__ specifies the SDIO clock source.
   *         This parameter can be one of the following values:
   *            @arg RCC_SDIOCLKSOURCE_CLK48: CLK48 output used as SDIO clock. 
   *            @arg RCC_SDIOCLKSOURCE_SYSCLK: System clock output used as SDIO clock. 
@@ -6345,7 +6343,7 @@ typedef struct
 #define __HAL_RCC_GET_SDIO_SOURCE() (READ_BIT(RCC->DCKCFGR, RCC_DCKCFGR_SDIOSEL))  
       
 /** @brief  Macro to configure the DSI clock.
-  * @param  __SOURCE__: specifies the DSI clock source.
+  * @param  __SOURCE__ specifies the DSI clock source.
   *         This parameter can be one of the following values:
   *            @arg RCC_DSICLKSOURCE_PLLR: PLLR output used as DSI clock. 
   *            @arg RCC_DSICLKSOURCE_DSIPHY: DSI-PHY output used as DSI clock. 
@@ -6364,7 +6362,7 @@ typedef struct
 #if defined(STM32F412Zx) || defined(STM32F412Vx) || defined(STM32F412Rx) || defined(STM32F412Cx) ||\
     defined(STM32F413xx) || defined(STM32F423xx)
  /** @brief  Macro to configure the DFSDM1 clock.
-  * @param  __DFSDM1_CLKSOURCE__: specifies the DFSDM1 clock source.
+  * @param  __DFSDM1_CLKSOURCE__ specifies the DFSDM1 clock source.
   *         This parameter can be one of the following values:
   *            @arg RCC_DFSDM1CLKSOURCE_PCLK2: PCLK2 clock used as kernel clock. 
   *            @arg RCC_DFSDM1CLKSOURCE_SYSCLK: System clock used as kernal clock.
@@ -6382,7 +6380,7 @@ typedef struct
 /** @brief  Macro to configure DFSDM1 Audio clock source selection.
   * @note   This configuration is only available with STM32F412Zx/STM32F412Vx/STM32F412Rx/STM32F412Cx/
             STM32F413xx/STM32F423xx Devices.
-  * @param  __SOURCE__: specifies the DFSDM1 Audio clock source.
+  * @param  __SOURCE__ specifies the DFSDM1 Audio clock source.
   *         This parameter can be one of the following values:
   *            @arg RCC_DFSDM1AUDIOCLKSOURCE_I2S1: CK_I2S_PCLK1 selected as audio clock
   *            @arg RCC_DFSDM1AUDIOCLKSOURCE_I2S2: CK_I2S_PCLK2 selected as audio clock
@@ -6400,7 +6398,7 @@ typedef struct
 
 #if defined(STM32F413xx) || defined(STM32F423xx)
  /** @brief  Macro to configure the DFSDM2 clock.
-  * @param  __DFSDM2_CLKSOURCE__: specifies the DFSDM1 clock source.
+  * @param  __DFSDM2_CLKSOURCE__ specifies the DFSDM1 clock source.
   *         This parameter can be one of the following values:
   *            @arg RCC_DFSDM2CLKSOURCE_PCLK2: PCLK2 clock used as kernel clock. 
   *            @arg RCC_DFSDM2CLKSOURCE_SYSCLK: System clock used as kernal clock.
@@ -6417,7 +6415,7 @@ typedef struct
 
 /** @brief  Macro to configure DFSDM1 Audio clock source selection.
   * @note   This configuration is only available with STM32F413xx/STM32F423xx Devices.
-  * @param  __SOURCE__: specifies the DFSDM2 Audio clock source.
+  * @param  __SOURCE__ specifies the DFSDM2 Audio clock source.
   *         This parameter can be one of the following values:
   *            @arg RCC_DFSDM2AUDIOCLKSOURCE_I2S1: CK_I2S_PCLK1 selected as audio clock
   *            @arg RCC_DFSDM2AUDIOCLKSOURCE_I2S2: CK_I2S_PCLK2 selected as audio clock
@@ -6436,7 +6434,7 @@ typedef struct
   * @note   The SAI peripheral is only available with STM32F413xx/STM32F423xx Devices.      
   * @note   This function must be called before enabling PLLSAI, PLLI2S and  
   *         the SAI clock.
-  * @param  __SOURCE__: specifies the SAI Block A clock source.
+  * @param  __SOURCE__ specifies the SAI Block A clock source.
   *         This parameter can be one of the following values:
   *            @arg RCC_SAIACLKSOURCE_PLLI2SR: PLLI2S_R clock divided (R2) used as SAI1 Block A clock.
   *            @arg RCC_SAIACLKSOURCE_EXT: External clock mapped on the I2S_CKIN pinused as SAI1 Block A clock.
@@ -6459,7 +6457,7 @@ typedef struct
   * @note   The SAI peripheral is only available with STM32F413xx/STM32F423xx Devices.
   * @note   This function must be called before enabling PLLSAI, PLLI2S and  
   *         the SAI clock.
-  * @param  __SOURCE__: specifies the SAI Block B clock source.
+  * @param  __SOURCE__ specifies the SAI Block B clock source.
   *         This parameter can be one of the following values:
   *            @arg RCC_SAIBCLKSOURCE_PLLI2SR: PLLI2S_R clock divided (R2) used as SAI1 Block A clock.
   *            @arg RCC_SAIBCLKSOURCE_EXT: External clock mapped on the I2S_CKIN pin used as SAI1 Block A clock.
@@ -6479,7 +6477,7 @@ typedef struct
 #define __HAL_RCC_GET_SAI_BLOCKB_SOURCE() (READ_BIT(RCC->DCKCFGR, RCC_DCKCFGR_SAI1BSRC))
 
 /** @brief  Macro to configure the LPTIM1 clock.
-  * @param  __SOURCE__: specifies the LPTIM1 clock source.
+  * @param  __SOURCE__ specifies the LPTIM1 clock source.
   *         This parameter can be one of the following values:
   *            @arg RCC_LPTIM1CLKSOURCE_PCLK1: PCLK selected as LPTIM1 clock
   *            @arg RCC_LPTIM1CLKSOURCE_HSI: HSI clock selected as LPTIM1 clock
@@ -6499,7 +6497,7 @@ typedef struct
 #endif /* STM32F413xx || STM32F423xx */
       
 /** @brief  Macro to configure I2S APB1 clock source selection.
-  * @param  __SOURCE__: specifies the I2S APB1 clock source.
+  * @param  __SOURCE__ specifies the I2S APB1 clock source.
   *         This parameter can be one of the following values:
   *            @arg RCC_I2SAPB1CLKSOURCE_PLLI2S: PLLI2S VCO output clock divided by PLLI2SR.
   *            @arg RCC_I2SAPB1CLKSOURCE_EXT: External clock mapped on the I2S_CKIN pin.
@@ -6518,7 +6516,7 @@ typedef struct
 #define __HAL_RCC_GET_I2S_APB1_SOURCE() (READ_BIT(RCC->DCKCFGR, RCC_DCKCFGR_I2S1SRC))
 
 /** @brief  Macro to configure I2S APB2 clock source selection.
-  * @param  __SOURCE__: specifies the I2S APB2 clock source.
+  * @param  __SOURCE__ specifies the I2S APB2 clock source.
   *         This parameter can be one of the following values:
   *            @arg RCC_I2SAPB2CLKSOURCE_PLLI2S: PLLI2S VCO output clock divided by PLLI2SR.
   *            @arg RCC_I2SAPB2CLKSOURCE_EXT: External clock mapped on the I2S_CKIN pin.
@@ -6538,7 +6536,7 @@ typedef struct
 
 /** @brief  Macro to configure the PLL I2S clock source (PLLI2SCLK).
   * @note   This macro must be called before enabling the I2S APB clock.
-  * @param  __SOURCE__: specifies the I2S clock source.
+  * @param  __SOURCE__ specifies the I2S clock source.
   *         This parameter can be one of the following values:
   *            @arg RCC_PLLI2SCLKSOURCE_PLLSRC: HSI or HSE depending from PLL source Clock.
   *            @arg RCC_PLLI2SCLKSOURCE_EXT: External clock mapped on the I2S_CKIN pin
@@ -6547,7 +6545,7 @@ typedef struct
 #define __HAL_RCC_PLL_I2S_CONFIG(__SOURCE__) (*(__IO uint32_t *) RCC_PLLI2SCFGR_PLLI2SSRC_BB = (__SOURCE__))
       
 /** @brief  Macro to configure the FMPI2C1 clock.
-  * @param  __SOURCE__: specifies the FMPI2C1 clock source.
+  * @param  __SOURCE__ specifies the FMPI2C1 clock source.
   *         This parameter can be one of the following values:
   *            @arg RCC_FMPI2C1CLKSOURCE_PCLK1: PCLK1 selected as FMPI2C1 clock
   *            @arg RCC_FMPI2C1CLKSOURCE_SYSCLK: SYS clock selected as FMPI2C1 clock
@@ -6564,7 +6562,7 @@ typedef struct
 #define __HAL_RCC_GET_FMPI2C1_SOURCE() (READ_BIT(RCC->DCKCFGR2, RCC_DCKCFGR2_FMPI2C1SEL))
 
 /** @brief  Macro to configure the CLK48 clock.
-  * @param  __SOURCE__: specifies the CLK48 clock source.
+  * @param  __SOURCE__ specifies the CLK48 clock source.
   *         This parameter can be one of the following values:
   *            @arg RCC_CLK48CLKSOURCE_PLLQ: PLL VCO Output divided by PLLQ used as CLK48 clock. 
   *            @arg RCC_CLK48CLKSOURCE_PLLI2SQ: PLLI2S VCO Output divided by PLLI2SQ used as CLK48 clock.
@@ -6579,7 +6577,7 @@ typedef struct
 #define __HAL_RCC_GET_CLK48_SOURCE() (READ_BIT(RCC->DCKCFGR2, RCC_DCKCFGR2_CK48MSEL))
 
 /** @brief  Macro to configure the SDIO clock.
-  * @param  __SOURCE__: specifies the SDIO clock source.
+  * @param  __SOURCE__ specifies the SDIO clock source.
   *         This parameter can be one of the following values:
   *            @arg RCC_SDIOCLKSOURCE_CLK48: CLK48 output used as SDIO clock. 
   *            @arg RCC_SDIOCLKSOURCE_SYSCLK: System clock output used as SDIO clock. 
@@ -6597,7 +6595,7 @@ typedef struct
 
 #if defined(STM32F410Tx) || defined(STM32F410Cx) || defined(STM32F410Rx)
 /** @brief  Macro to configure I2S clock source selection.
-  * @param  __SOURCE__: specifies the I2S clock source.
+  * @param  __SOURCE__ specifies the I2S clock source.
   *         This parameter can be one of the following values:
   *            @arg RCC_I2SAPBCLKSOURCE_PLLR: PLL VCO output clock divided by PLLR.
   *            @arg RCC_I2SAPBCLKSOURCE_EXT: External clock mapped on the I2S_CKIN pin.
@@ -6614,7 +6612,7 @@ typedef struct
 #define __HAL_RCC_GET_I2S_SOURCE() (READ_BIT(RCC->DCKCFGR, RCC_DCKCFGR_I2SSRC))
 
 /** @brief  Macro to configure the FMPI2C1 clock.
-  * @param  __SOURCE__: specifies the FMPI2C1 clock source.
+  * @param  __SOURCE__ specifies the FMPI2C1 clock source.
   *         This parameter can be one of the following values:
   *            @arg RCC_FMPI2C1CLKSOURCE_PCLK1: PCLK1 selected as FMPI2C1 clock
   *            @arg RCC_FMPI2C1CLKSOURCE_SYSCLK: SYS clock selected as FMPI2C1 clock
@@ -6631,7 +6629,7 @@ typedef struct
 #define __HAL_RCC_GET_FMPI2C1_SOURCE() (READ_BIT(RCC->DCKCFGR2, RCC_DCKCFGR2_FMPI2C1SEL))
 
 /** @brief  Macro to configure the LPTIM1 clock.
-  * @param  __SOURCE__: specifies the LPTIM1 clock source.
+  * @param  __SOURCE__ specifies the LPTIM1 clock source.
   *         This parameter can be one of the following values:
   *            @arg RCC_LPTIM1CLKSOURCE_PCLK1: PCLK1 selected as LPTIM1 clock
   *            @arg RCC_LPTIM1CLKSOURCE_HSI: HSI clock selected as LPTIM1 clock
@@ -6657,7 +6655,7 @@ typedef struct
     defined(STM32F412Cx) || defined(STM32F413xx) || defined(STM32F423xx)
 /** @brief  Macro to configure the Timers clocks prescalers 
   * @note   This feature is only available with STM32F429x/439x Devices.  
-  * @param  __PRESC__ : specifies the Timers clocks prescalers selection
+  * @param  __PRESC__  specifies the Timers clocks prescalers selection
   *         This parameter can be one of the following values:
   *            @arg RCC_TIMPRES_DESACTIVATED: The Timers kernels clocks prescaler is 
   *                 equal to HPRE if PPREx is corresponding to division by 1 or 2, 

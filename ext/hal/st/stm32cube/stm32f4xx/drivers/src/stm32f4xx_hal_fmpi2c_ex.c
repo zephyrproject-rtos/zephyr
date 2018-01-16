@@ -2,36 +2,31 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_fmpi2c_ex.c
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    14-April-2017
   * @brief   FMPI2C Extended HAL module driver.
-  *          This file provides firmware functions to manage the following 
+  *          This file provides firmware functions to manage the following
   *          functionalities of FMPI2C Extended peripheral:
   *           + Extended features functions
-  *         
+  *
   @verbatim
   ==============================================================================
                ##### FMPI2C peripheral Extended features  #####
   ==============================================================================
-           
+
   [..] Comparing to other previous devices, the FMPI2C interface for STM32F4xx
        devices contains the following additional features
-       
+
        (+) Possibility to disable or enable Analog Noise Filter
        (+) Use of a configured Digital Noise Filter
-       (+) Disable or enable wakeup from Stop mode
-   
+       (+) Disable or enable Fast Mode Plus
+
                      ##### How to use this driver #####
   ==============================================================================
   [..] This driver provides functions to configure Noise Filter and Wake Up Feature
     (#) Configure FMPI2C Analog noise filter using the function HAL_FMPI2CEx_ConfigAnalogFilter()
     (#) Configure FMPI2C Digital noise filter using the function HAL_FMPI2CEx_ConfigDigitalFilter()
-    (#) Configure the enable or disable of FMPI2C Wake Up Mode using the functions :
-          (++) HAL_FMPI2CEx_EnableWakeUp()
-          (++) HAL_FMPI2CEx_DisableWakeUp()
     (#) Configure the enable or disable of fast mode plus driving capability using the functions :
           (++) HAL_FMPI2CEx_EnableFastModePlus()
-          (++) HAL_FMPI2CEx_DisbleFastModePlus()
+          (++) HAL_FMPI2CEx_DisableFastModePlus()
   @endverbatim
   ******************************************************************************
   * @attention
@@ -60,7 +55,7 @@
   * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
-  ******************************************************************************  
+  ******************************************************************************
   */
 
 /* Includes ------------------------------------------------------------------*/
@@ -93,21 +88,21 @@
 
 /** @defgroup FMPI2CEx_Exported_Functions_Group1 Extended features functions
   * @brief    Extended features functions
-  *
-@verbatim   
+ *
+@verbatim
  ===============================================================================
                       ##### Extended features functions #####
- ===============================================================================  
+ ===============================================================================
     [..] This section provides functions allowing to:
-      (+) Configure Noise Filters 
-      (+) Configure Wake Up Feature
+      (+) Configure Noise Filters
+      (+) Configure Fast Mode Plus
 
 @endverbatim
   * @{
   */
-  
+
 /**
-  * @brief  Configure FMPI2C Analog noise filter. 
+  * @brief  Configure FMPI2C Analog noise filter.
   * @param  hfmpi2c Pointer to a FMPI2C_HandleTypeDef structure that contains
   *                the configuration information for the specified FMPI2Cx peripheral.
   * @param  AnalogFilter New state of the Analog filter.
@@ -119,8 +114,8 @@ HAL_StatusTypeDef HAL_FMPI2CEx_ConfigAnalogFilter(FMPI2C_HandleTypeDef *hfmpi2c,
   assert_param(IS_FMPI2C_ALL_INSTANCE(hfmpi2c->Instance));
   assert_param(IS_FMPI2C_ANALOG_FILTER(AnalogFilter));
 
-  if(hfmpi2c->State == HAL_FMPI2C_STATE_READY)
-  { 
+  if (hfmpi2c->State == HAL_FMPI2C_STATE_READY)
+  {
     /* Process Locked */
     __HAL_LOCK(hfmpi2c);
 
@@ -142,7 +137,7 @@ HAL_StatusTypeDef HAL_FMPI2CEx_ConfigAnalogFilter(FMPI2C_HandleTypeDef *hfmpi2c,
     /* Process Unlocked */
     __HAL_UNLOCK(hfmpi2c);
 
-    return HAL_OK; 
+    return HAL_OK;
   }
   else
   {
@@ -151,10 +146,10 @@ HAL_StatusTypeDef HAL_FMPI2CEx_ConfigAnalogFilter(FMPI2C_HandleTypeDef *hfmpi2c,
 }
 
 /**
-  * @brief  Configure FMPI2C Digital noise filter. 
+  * @brief  Configure FMPI2C Digital noise filter.
   * @param  hfmpi2c Pointer to a FMPI2C_HandleTypeDef structure that contains
   *                the configuration information for the specified FMPI2Cx peripheral.
-  * @param  DigitalFilter Coefficient of digital noise filter between 0x00 and 0x0F.
+  * @param  DigitalFilter Coefficient of digital noise filter between Min_Data=0x00 and Max_Data=0x0F.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_FMPI2CEx_ConfigDigitalFilter(FMPI2C_HandleTypeDef *hfmpi2c, uint32_t DigitalFilter)
@@ -165,7 +160,7 @@ HAL_StatusTypeDef HAL_FMPI2CEx_ConfigDigitalFilter(FMPI2C_HandleTypeDef *hfmpi2c
   assert_param(IS_FMPI2C_ALL_INSTANCE(hfmpi2c->Instance));
   assert_param(IS_FMPI2C_DIGITAL_FILTER(DigitalFilter));
 
-  if(hfmpi2c->State == HAL_FMPI2C_STATE_READY)
+  if (hfmpi2c->State == HAL_FMPI2C_STATE_READY)
   {
     /* Process Locked */
     __HAL_LOCK(hfmpi2c);
