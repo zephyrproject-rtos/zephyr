@@ -122,24 +122,31 @@ else()
     set(CREATE_NEW_DOTCONFIG 0)
   endif()
 endif()
-if(CREATE_NEW_DOTCONFIG)
-  execute_process(
-    COMMAND
-    ${PYTHON_EXECUTABLE}
-    ${PROJECT_SOURCE_DIR}/scripts/kconfig/kconfig.py
-    ${KCONFIG_ROOT}
-    ${PROJECT_BINARY_DIR}/.config
-    ${PROJECT_BINARY_DIR}/include/generated/autoconf.h
-    ${merge_config_files}
-    WORKING_DIRECTORY ${APPLICATION_SOURCE_DIR}
-    # The working directory is set to the app dir such that the user
-    # can use relative paths in CONF_FILE, e.g. CONF_FILE=nrf5.conf
-    RESULT_VARIABLE ret
-  )
-  if(NOT "${ret}" STREQUAL "0")
-    message(FATAL_ERROR "command failed with return code: ${ret}")
-  endif()
 
+if(CREATE_NEW_DOTCONFIG)
+  set(merge_fragments ${merge_config_files})
+else()
+  set(merge_fragments ${DOTCONFIG})
+endif()
+
+execute_process(
+  COMMAND
+  ${PYTHON_EXECUTABLE}
+  ${PROJECT_SOURCE_DIR}/scripts/kconfig/kconfig.py
+  ${KCONFIG_ROOT}
+  ${PROJECT_BINARY_DIR}/.config
+  ${PROJECT_BINARY_DIR}/include/generated/autoconf.h
+  ${merge_fragments}
+  WORKING_DIRECTORY ${APPLICATION_SOURCE_DIR}
+  # The working directory is set to the app dir such that the user
+  # can use relative paths in CONF_FILE, e.g. CONF_FILE=nrf5.conf
+  RESULT_VARIABLE ret
+  )
+if(NOT "${ret}" STREQUAL "0")
+  message(FATAL_ERROR "command failed with return code: ${ret}")
+endif()
+
+if(CREATE_NEW_DOTCONFIG)
   file(WRITE
     ${merge_config_files_checksum_file}
     ${merge_config_files_checksum}
