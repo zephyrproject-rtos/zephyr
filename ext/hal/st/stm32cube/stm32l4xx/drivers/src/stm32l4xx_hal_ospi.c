@@ -1447,6 +1447,7 @@ HAL_StatusTypeDef HAL_OSPI_Receive_DMA(OSPI_HandleTypeDef *hospi, uint8_t *pData
   * @param  cfg     : structure that contains the polling configuration information.
   * @param  Timeout : Timeout duration
   * @note   This function is used only in Automatic Polling Mode
+  * @note   This function should not be used when the memory is in octal mode (see Errata Sheet)
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_OSPI_AutoPolling(OSPI_HandleTypeDef *hospi, OSPI_AutoPollingTypeDef *cfg, uint32_t Timeout)
@@ -1522,6 +1523,7 @@ HAL_StatusTypeDef HAL_OSPI_AutoPolling(OSPI_HandleTypeDef *hospi, OSPI_AutoPolli
   * @param  hospi : OSPI handle
   * @param  cfg   : structure that contains the polling configuration information.
   * @note   This function is used only in Automatic Polling Mode
+  * @note   This function should not be used when the memory is in octal mode (see Errata Sheet)
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_OSPI_AutoPolling_IT(OSPI_HandleTypeDef *hospi, OSPI_AutoPollingTypeDef *cfg)

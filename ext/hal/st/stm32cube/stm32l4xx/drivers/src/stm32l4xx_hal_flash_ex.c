@@ -122,7 +122,7 @@ static void              FLASH_OB_GetPCROP(uint32_t * PCROPConfig, uint32_t * PC
   */
 
 /* Exported functions -------------------------------------------------------*/
-/** @defgroup FLASHEx_Exported_Functions FLASH Extended Exported Functions
+/** @defgroup FLASHEx_Exported_Functions FLASHEx Exported Functions
   * @{
   */ 
 

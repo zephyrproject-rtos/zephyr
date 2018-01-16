@@ -1487,7 +1487,7 @@ void HAL_SMARTCARD_IRQHandler(SMARTCARD_HandleTypeDef *hsmartcard)
 #if defined(USART_CR1_FIFOEN)
   if(   (errorflags != RESET)
      && (   (((cr3its & (USART_CR3_RXFTIE | USART_CR3_EIE)) != RESET)
-         || ((cr1its & (USART_CR1_RXNEIE_RXFNEIE | USART_CR1_PEIE)) != RESET))) )
+         ||  ((cr1its & (USART_CR1_RXNEIE_RXFNEIE | USART_CR1_PEIE)) != RESET))) )
 #else
   if(   (errorflags != RESET)
      && (   ((cr3its & USART_CR3_EIE) != RESET)

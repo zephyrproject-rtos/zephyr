@@ -40,21 +40,20 @@
          value, the window size, the window position and the layer start address 
          for foreground or/and background layer using respectively the following 
          functions: HAL_LTDC_SetPixelFormat(), HAL_LTDC_SetAlpha(), HAL_LTDC_SetWindowSize(),
-         HAL_LTDC_SetWindowPosition(), HAL_LTDC_SetAddress.
+         HAL_LTDC_SetWindowPosition() and HAL_LTDC_SetAddress().
 
-     (#) Variant functions with “_NoReload” post fix allows to set the LTDC configuration/settings without immediate reload.
+     (#) Variant functions with _NoReload suffix allows to set the LTDC configuration/settings without immediate reload.
          This is useful in case when the program requires to modify serval LTDC settings (on one or both layers) 
-         then applying(reload) these settings in one shot by calling the function “HAL_LTDC_Reload”
+         then applying(reload) these settings in one shot by calling the function HAL_LTDC_Reload().
 
-         After calling the “_NoReload” functions to set different color/format/layer settings, 
-         the program can call the function  “HAL_LTDC_Reload” To apply(Reload) these settings. 
-         Function “HAL_LTDC_Reload” can be called with the parameter  “ReloadType” 
-         set to LTDC_RELOAD_IMMEDIATE if an immediate reload is required.
-         Function “HAL_LTDC_Reload” can be called with the parameter  “ReloadType” 
-         set to LTDC_RELOAD_VERTICAL_BLANKING if the reload should be done in the next vertical blanking period, 
+         After calling the _NoReload functions to set different color/format/layer settings, 
+         the program shall call the function HAL_LTDC_Reload() to apply(reload) these settings. 
+         Function HAL_LTDC_Reload() can be called with the parameter ReloadType set to LTDC_RELOAD_IMMEDIATE if 
+         an immediate reload is required.
+         Function HAL_LTDC_Reload() can be called with the parameter ReloadType set to LTDC_RELOAD_VERTICAL_BLANKING if
+         the reload should be done in the next vertical blanking period, 
          this option allows to avoid display flicker by applying the new settings during the vertical blanking period.
            
-                     
      (#) To control LTDC state you can use the following function: HAL_LTDC_GetState()               
 
      *** LTDC HAL driver macros list ***

@@ -127,7 +127,7 @@
 /**
   * @brief  Initialize the GFXMMU according to the specified parameters in the
   *         GFXMMU_InitTypeDef structure and initialize the associated handle.
-  * @param  hgfxmmu : GFXMMU handle.
+  * @param  hgfxmmu GFXMMU handle.
   * @retval HAL status.
   */
 HAL_StatusTypeDef HAL_GFXMMU_Init(GFXMMU_HandleTypeDef *hgfxmmu)
@@ -184,7 +184,7 @@ HAL_StatusTypeDef HAL_GFXMMU_Init(GFXMMU_HandleTypeDef *hgfxmmu)
 
 /**
   * @brief  De-initialize the GFXMMU.
-  * @param  hgfxmmu : GFXMMU handle.
+  * @param  hgfxmmu GFXMMU handle.
   * @retval HAL status.
   */
 HAL_StatusTypeDef HAL_GFXMMU_DeInit(GFXMMU_HandleTypeDef *hgfxmmu)
@@ -217,7 +217,7 @@ HAL_StatusTypeDef HAL_GFXMMU_DeInit(GFXMMU_HandleTypeDef *hgfxmmu)
 
 /**
   * @brief  Initialize the GFXMMU MSP.
-  * @param  hgfxmmu : GFXMMU handle.
+  * @param  hgfxmmu GFXMMU handle.
   * @retval None.
   */
 __weak void HAL_GFXMMU_MspInit(GFXMMU_HandleTypeDef *hgfxmmu)
@@ -232,7 +232,7 @@ __weak void HAL_GFXMMU_MspInit(GFXMMU_HandleTypeDef *hgfxmmu)
 
 /**
   * @brief  De-initialize the GFXMMU MSP.
-  * @param  hgfxmmu : GFXMMU handle.
+  * @param  hgfxmmu GFXMMU handle.
   * @retval None.
   */
 __weak void HAL_GFXMMU_MspDeInit(GFXMMU_HandleTypeDef *hgfxmmu)
@@ -266,12 +266,12 @@ __weak void HAL_GFXMMU_MspDeInit(GFXMMU_HandleTypeDef *hgfxmmu)
 
 /**
   * @brief  This function allows to copy LUT from flash to look up RAM.
-  * @param  hgfxmmu : GFXMMU handle.
-  * @param  FirstLine : First line enabled on LUT.
+  * @param  hgfxmmu GFXMMU handle.
+  * @param  FirstLine First line enabled on LUT.
   *         This parameter must be a number between Min_Data = 0 and Max_Data = 1023.
-  * @param  LinesNumber : Number of lines enabled on LUT.
+  * @param  LinesNumber Number of lines enabled on LUT.
   *         This parameter must be a number between Min_Data = 1 and Max_Data = 1024.
-  * @param  Address : Start address of LUT in flash.
+  * @param  Address Start address of LUT in flash.
   * @retval HAL status.
   */
 HAL_StatusTypeDef HAL_GFXMMU_ConfigLut(GFXMMU_HandleTypeDef *hgfxmmu,
@@ -319,10 +319,10 @@ HAL_StatusTypeDef HAL_GFXMMU_ConfigLut(GFXMMU_HandleTypeDef *hgfxmmu,
 
 /**
   * @brief  This function allows to disable a range of LUT lines.
-  * @param  hgfxmmu : GFXMMU handle.
-  * @param  FirstLine : First line to disable on LUT.
+  * @param  hgfxmmu GFXMMU handle.
+  * @param  FirstLine First line to disable on LUT.
   *         This parameter must be a number between Min_Data = 0 and Max_Data = 1023.
-  * @param  LinesNumber : Number of lines to disable on LUT.
+  * @param  LinesNumber Number of lines to disable on LUT.
   *         This parameter must be a number between Min_Data = 1 and Max_Data = 1024.
   * @retval HAL status.
   */
@@ -367,8 +367,8 @@ HAL_StatusTypeDef HAL_GFXMMU_DisableLutLines(GFXMMU_HandleTypeDef *hgfxmmu,
 
 /**
   * @brief  This function allows to configure one line of LUT.
-  * @param  hgfxmmu : GFXMMU handle.
-  * @param  lutLine : LUT line parameters.
+  * @param  hgfxmmu GFXMMU handle.
+  * @param  lutLine LUT line parameters.
   * @retval HAL status.
   */
 HAL_StatusTypeDef HAL_GFXMMU_ConfigLutLine(GFXMMU_HandleTypeDef *hgfxmmu, GFXMMU_LutLineTypeDef *lutLine)
@@ -418,8 +418,8 @@ HAL_StatusTypeDef HAL_GFXMMU_ConfigLutLine(GFXMMU_HandleTypeDef *hgfxmmu, GFXMMU
 
 /**
   * @brief  This function allows to modify physical buffer addresses.
-  * @param  hgfxmmu : GFXMMU handle.
-  * @param  Buffers : Buffers parameters.
+  * @param  hgfxmmu GFXMMU handle.
+  * @param  Buffers Buffers parameters.
   * @retval HAL status.
   */
 HAL_StatusTypeDef HAL_GFXMMU_ModifyBuffers(GFXMMU_HandleTypeDef *hgfxmmu, GFXMMU_BuffersTypeDef *Buffers)
@@ -452,7 +452,7 @@ HAL_StatusTypeDef HAL_GFXMMU_ModifyBuffers(GFXMMU_HandleTypeDef *hgfxmmu, GFXMMU
 
 /**
   * @brief  This function handles the GFXMMU interrupts.
-  * @param  hgfxmmu : GFXMMU handle.
+  * @param  hgfxmmu GFXMMU handle.
   * @retval None.
   */
 void HAL_GFXMMU_IRQHandler(GFXMMU_HandleTypeDef *hgfxmmu)
@@ -479,7 +479,7 @@ void HAL_GFXMMU_IRQHandler(GFXMMU_HandleTypeDef *hgfxmmu)
 
 /**
   * @brief  Error callback. 
-  * @param  hgfxmmu : GFXMMU handle.
+  * @param  hgfxmmu GFXMMU handle.
   * @retval None.
   */
 __weak void HAL_GFXMMU_ErrorCallback(GFXMMU_HandleTypeDef *hgfxmmu)
@@ -512,7 +512,7 @@ __weak void HAL_GFXMMU_ErrorCallback(GFXMMU_HandleTypeDef *hgfxmmu)
 
 /**
   * @brief  This function allows to get the current GFXMMU handle state.
-  * @param  hgfxmmu : GFXMMU handle.
+  * @param  hgfxmmu GFXMMU handle.
   * @retval GFXMMU state.
   */
 HAL_GFXMMU_StateTypeDef HAL_GFXMMU_GetState(GFXMMU_HandleTypeDef *hgfxmmu)
@@ -523,7 +523,7 @@ HAL_GFXMMU_StateTypeDef HAL_GFXMMU_GetState(GFXMMU_HandleTypeDef *hgfxmmu)
 
 /**
   * @brief  This function allows to get the current GFXMMU error code.
-  * @param  hgfxmmu : GFXMMU handle.
+  * @param  hgfxmmu GFXMMU handle.
   * @retval GFXMMU error code.
   */
 uint32_t HAL_GFXMMU_GetError(GFXMMU_HandleTypeDef *hgfxmmu)

@@ -18,17 +18,15 @@
        necessary). Please refer to the Reference manual for connection between peripherals
        and DMA requests.
 
-       __HAL_RCC_DMAMUX1_CLK_ENABLE
-
    (#) For a given Channel, program the required configuration through the following parameters:
        Channel request, Transfer Direction, Source and Destination data formats,
        Circular or Normal mode, Channel Priority level, Source and Destination Increment mode
        using HAL_DMA_Init() function.
 
-       Prior to HAL_DMA_Init the CLK shall be enabled for both DMA & DMAMUX
+       Prior to HAL_DMA_Init the peripheral clock shall be enabled for both DMA & DMAMUX
        thanks to:
-       DMA1 or DMA2: __HAL_RCC_DMA1_CLK_ENABLE() or  __HAL_RCC_DMA2_CLK_ENABLE() ;
-       DMAMUX1:      __HAL_RCC_DMAMUX1_CLK_ENABLE();
+      (##) DMA1 or DMA2: __HAL_RCC_DMA1_CLK_ENABLE() or  __HAL_RCC_DMA2_CLK_ENABLE() ;
+      (##) DMAMUX1:      __HAL_RCC_DMAMUX1_CLK_ENABLE();
 
    (#) Use HAL_DMA_GetState() function to return the DMA state and HAL_DMA_GetError() in case of error
        detection.
@@ -36,6 +34,7 @@
    (#) Use HAL_DMA_Abort() function to abort the current transfer
 
      -@-   In Memory-to-Memory transfer mode, Circular mode is not allowed.
+
      *** Polling mode IO operation ***
      =================================
     [..]
@@ -54,13 +53,12 @@
               In this case the DMA interrupt is configured
           (+) Use HAL_DMA_IRQHandler() called under DMA_IRQHandler() Interrupt subroutine
           (+) At the end of data transfer HAL_DMA_IRQHandler() function is executed and user can
-              add his own function by customization of function pointer XferCpltCallback and
-              XferErrorCallback (i.e. a member of DMA handle structure).
+              add his own function to register callbacks with HAL_DMA_RegisterCallback().
 
      *** DMA HAL driver macros list ***
      =============================================
       [..]
-       Below the list of most used macros in DMA HAL driver.
+       Below the list of macros in DMA HAL driver.
 
        (+) __HAL_DMA_ENABLE: Enable the specified DMA Channel.
        (+) __HAL_DMA_DISABLE: Disable the specified DMA Channel.
@@ -68,7 +66,7 @@
        (+) __HAL_DMA_CLEAR_FLAG: Clear the DMA Channel pending flags.
        (+) __HAL_DMA_ENABLE_IT: Enable the specified DMA Channel interrupts.
        (+) __HAL_DMA_DISABLE_IT: Disable the specified DMA Channel interrupts.
-       (+) __HAL_DMA_GET_IT_SOURCE: Check whether the specified DMA Channel interrupt has occurred or not.
+       (+) __HAL_DMA_GET_IT_SOURCE: Check whether the specified DMA Channel interrupt is enabled or not.
 
      [..]
       (@) You can refer to the DMA HAL driver header file for more useful macros

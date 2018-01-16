@@ -596,7 +596,7 @@ HAL_StatusTypeDef HAL_DMA2D_Abort(DMA2D_HandleTypeDef *hdma2d)
 
   /* Abort the DMA2D transfer */
   /* START bit is reset to make sure not to set it again, in the event the HW clears it
-     between the register read and the register write by the CPU (writing ‘0’ has no 
+     between the register read and the register write by the CPU (writing 0 has no 
      effect on START bitvalue). */
    MODIFY_REG(hdma2d->Instance->CR, DMA2D_CR_ABORT|DMA2D_CR_START, DMA2D_CR_ABORT);
 
@@ -645,7 +645,7 @@ HAL_StatusTypeDef HAL_DMA2D_Suspend(DMA2D_HandleTypeDef *hdma2d)
 
   /* Suspend the DMA2D transfer */
   /* START bit is reset to make sure not to set it again, in the event the HW clears it
-     between the register read and the register write by the CPU (writing ‘0’ has no 
+     between the register read and the register write by the CPU (writing 0 has no 
      effect on START bitvalue). */
   MODIFY_REG(hdma2d->Instance->CR, DMA2D_CR_SUSP|DMA2D_CR_START, DMA2D_CR_SUSP);
 
@@ -700,7 +700,7 @@ HAL_StatusTypeDef HAL_DMA2D_Resume(DMA2D_HandleTypeDef *hdma2d)
 
   /* Resume the DMA2D transfer */
   /* START bit is reset to make sure not to set it again, in the event the HW clears it
-     between the register read and the register write by the CPU (writing ‘0’ has no 
+     between the register read and the register write by the CPU (writing 0 has no 
      effect on START bitvalue). */
   CLEAR_BIT(hdma2d->Instance->CR, (DMA2D_CR_SUSP|DMA2D_CR_START));  
 
