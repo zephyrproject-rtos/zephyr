@@ -1,0 +1,21 @@
+#
+# Copyright (c) 2018, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: MAX30101 heart rate sensor
+id: nxp,max30101
+version: 0.1
+
+description: >
+    This is a representation of the MAX30101 heart rate sensor
+
+inherits:
+    !include i2c-device.yaml
+
+properties:
+    compatible:
+      constraint: "max,max30101"
+
+...
