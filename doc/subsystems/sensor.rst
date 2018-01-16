@@ -1,7 +1,7 @@
 .. _sensor:
 
-Sensor Drivers
-##############
+Sensors
+#######
 
 The sensor subsystem exposes an API to uniformly access sensor devices.
 Common operations are: reading data and executing code when specific
