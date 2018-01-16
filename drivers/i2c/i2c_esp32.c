@@ -181,7 +181,14 @@ static int i2c_esp32_configure_speed(const struct i2c_esp32_config *config,
 	set_mask32(period << I2C_SCL_HIGH_PERIOD_S,
 		   I2C_SCL_HIGH_PERIOD_REG(config->index));
 
-	period /= 2; /* Set hold and setup times to 1/2th of period */
+	/* Set how long period SCL remains low and high in master
+	 * mode, hold and setup times to 1/2th of period
+	 */
+	period /= 2;
+	set_mask32(period << I2C_SCL_LOW_PERIOD_S,
+		   I2C_SCL_LOW_PERIOD_REG(config->index));
+	set_mask32(period << I2C_SCL_HIGH_PERIOD_S,
+		   I2C_SCL_HIGH_PERIOD_REG(config->index));
 	set_mask32(period << I2C_SCL_START_HOLD_TIME_S,
 		   I2C_SCL_START_HOLD_REG(config->index));
 	set_mask32(period << I2C_SCL_RSTART_SETUP_TIME_S,
