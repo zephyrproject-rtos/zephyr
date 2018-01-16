@@ -13,7 +13,7 @@
 #include <ztest.h>
 #include <nano_internal.h>
 
-#define SKIP_SIZE 2
+#define SKIP_SIZE 5
 #define BUFF_SIZE 10
 
 static int status;
