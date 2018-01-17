@@ -70,6 +70,7 @@ In terminal #1, type:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/echo_server
+   :host-os: unix
    :board: qemu_x86
    :goals: run
    :compact:
@@ -166,6 +167,7 @@ Terminal #1:
 .. zephyr-app-commands::
    :zephyr-app: samples/net/echo_server
    :board: qemu_x86
+   :host-os: unix
    :goals: build
    :build-args: server
    :compact:
@@ -178,6 +180,7 @@ Terminal #2:
 .. zephyr-app-commands::
    :zephyr-app: samples/net/echo_client
    :board: qemu_x86
+   :host-os: unix
    :goals: build
    :build-args: client
    :compact:

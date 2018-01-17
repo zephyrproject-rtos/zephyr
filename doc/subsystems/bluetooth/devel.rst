@@ -62,6 +62,7 @@ through a so-called user channel for QEMU to use:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/bluetooth/<sample>
+   :host-os: unix
    :board: qemu_x86
    :goals: run
    :compact:
