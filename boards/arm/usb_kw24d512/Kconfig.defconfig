@@ -33,10 +33,6 @@ config UART_MCUX_0
 
 endif # UART_MCUX
 
-
-config PINMUX
-	def_bool y
-
 if PINMUX_MCUX
 
 config PINMUX_MCUX_PORTA
