@@ -7,7 +7,6 @@
 #ifndef __POSIX_TYPES_H__
 #define __POSIX_TYPES_H__
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -15,6 +14,7 @@ extern "C" {
 #include_next <sys/types.h>
 
 #ifdef CONFIG_PTHREAD_IPC
+#include <kernel.h>
 
 /* Thread attributes */
 typedef struct pthread_attr_t {
@@ -60,6 +60,9 @@ typedef struct pthread_barrierattr {
 } pthread_barrierattr_t;
 
 /* time related attributes */
+#ifndef CONFIG_NEWLIB_LIBC
+typedef u32_t clockid_t;
+#endif /*CONFIG_NEWLIB_LIBC */
 typedef unsigned long useconds_t;
 
 #endif /* CONFIG_PTHREAD_IPC */

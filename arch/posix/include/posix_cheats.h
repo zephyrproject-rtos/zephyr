@@ -31,6 +31,8 @@
 #define pthread_barrier_t      zap_pthread_barrier_t
 #define pthread_barrierattr_t  zap_pthread_barrierattr_t
 #define pthread_attr_t         zap_pthread_attr_t
+#define clockid_t              zap_clockid_t
+#define sched_param            zap_sched_param
 
 /* Condition variables */
 #define pthread_cond_init(...)        zap_pthread_cond_init(__VA_ARGS__)
@@ -98,6 +100,10 @@
 /* Sleep */
 #define sleep(...)			zap_sleep(__VA_ARGS__)
 #define usleep(...)			zap_usleep(__VA_ARGS__)
+
+/* Clock */
+#define clock_gettime(...)		zap_clock_gettime(__VA_ARGS__)
+#define clock_settime(...)		zap_clock_settime(__VA_ARGS__)
 
 #endif /* CONFIG_ARCH_POSIX */
 
