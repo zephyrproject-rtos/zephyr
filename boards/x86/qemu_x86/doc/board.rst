@@ -82,6 +82,7 @@ emulated environment. For example, with the :ref:`synchronization_sample`:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/synchronization
+   :host-os: unix
    :board: qemu_x86
    :goals: run
 
