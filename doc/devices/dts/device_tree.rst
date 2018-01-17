@@ -173,6 +173,10 @@ The following is a more precise list of required files:
   * Add a board level .dts file that includes the SoC family .dtsi files
     and enables the nodes required for that specific board.
   * Board .dts file should specify the SRAM and FLASH devices, if present.
+
+    * Flash device node might specify flash partitions. For more details see
+      :ref:'flash_partitions'
+
   * Add board-specific YAML files, if required.  This would occur if the
     board has additional hardware that is not covered by the SoC family
     .dtsi/.yaml files.
