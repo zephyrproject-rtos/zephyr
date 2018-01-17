@@ -265,6 +265,30 @@ DEF_EXCINT 6, _handle_excint, xtensa_int6_c
 DEF_EXCINT 7, _handle_excint, xtensa_int7_c
 #endif
 
+/* The user exception vector is defined here, as we need to handle
+ * MOVSP exceptions in assembly (the result has to be to unspill the
+ * caller function of the code that took the exception, and that can't
+ * be done in C).  A prototype exists which mucks with the stack frame
+ * from the C handler instead, but that would add a LARGE overhead to
+ * some alloca() calls (those whent he caller has been spilled) just
+ * to save these five cycles during other exceptions and L1
+ * interrupts.  Maybe revisit at some point, with better benchmarking.
+ * Note that _xt_alloca_exc is Xtensa-authored code which expects A0
+ * to have been saved to EXCSAVE1, which is an unfortunate ABI given
+ * that Zephyr code otherwise does not use the EXCSAVE registers.
+ */
+.pushsection .UserExceptionVector.text, "ax"
+.global _Level1RealVector
+_Level1RealVector:
+	wsr.excsave1 a0
+	rsr.exccause a0
+	bnei a0, EXCCAUSE_ALLOCA, _not_alloca
+	j _xt_alloca_exc
+_not_alloca:
+	rsr.excsave1 a0
+	j _Level1Vector
+.popsection
+
 /* In theory you can have levels up to 15, but known hardware only uses 7. */
 #if XCHAL_NMILEVEL > 7
 #error More interrupts than expected.
