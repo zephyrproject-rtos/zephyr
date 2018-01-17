@@ -322,11 +322,14 @@ _restore_\@:
  * Note that the linker sections for some levels get special names for
  * no particularly good reason.  Only level 1 has any code generation
  * difference, because it is the legacy exception level that predates
- * the EPS/EPC registers.
+ * the EPS/EPC registers.  It also lives in the "iram0.text" segment
+ * (which is linked immediately after the vectors) so that an assembly
+ * stub can be loaded into the vector area instead and reach this code
+ * with a simple jump instruction.
  */
 .macro DEF_EXCINT LVL, ENTRY_SYM, C_HANDLER_SYM
 .if \LVL == 1
-.pushsection .UserExceptionVector.text, "ax"
+.pushsection .iram0.text, "ax"
 .elseif \LVL == XCHAL_DEBUGLEVEL
 .pushsection .DebugExceptionVector.text, "ax"
 .elseif \LVL == XCHAL_NMILEVEL
