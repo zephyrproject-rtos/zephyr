@@ -13,3 +13,6 @@ config HAS_NORDIC_HAL
 config HAS_NORDIC_DRIVERS
 	bool
 	select HAS_NORDIC_HAL
+
+config HAS_NRFX
+	bool
