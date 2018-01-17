@@ -2543,7 +2543,7 @@ static struct shell_cmd net_commands[] = {
 		"arp flush\n\tRemove all entries from ARP cache" },
 	{ "conn", net_shell_cmd_conn,
 		"\n\tPrint information about network connections" },
-	{ "dns", net_shell_cmd_dns, "\n\tShow how DNS is configure\n"
+	{ "dns", net_shell_cmd_dns, "\n\tShow how DNS is configured\n"
 		"dns cancel\n\tCancel all pending requests\n"
 		"dns <hostname> [A or AAAA]\n\tQuery IPv4 address (default) or "
 		"IPv6 address for a  host name" },
