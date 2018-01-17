@@ -837,6 +837,8 @@ int dns_resolve_close(struct dns_resolve_context *ctx)
 		}
 	}
 
+	ctx->is_used = false;
+
 	return 0;
 }
 
