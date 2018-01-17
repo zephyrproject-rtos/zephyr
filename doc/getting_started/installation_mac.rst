@@ -94,6 +94,7 @@ To build for the ARM-based Nordic nRF52 Development Kit:
 .. zephyr-app-commands::
   :zephyr-app: samples/hello_world
   :board: nrf52_pca10040
+  :host-os: unix
   :goals: build
 
 .. _setting_up_mac_toolchain:
