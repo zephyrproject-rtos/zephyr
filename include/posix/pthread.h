@@ -8,18 +8,7 @@
 #define __PTHREAD_H__
 
 #include <kernel.h>
-#ifdef CONFIG_NEWLIB_LIBC
 #include <time.h>
-#else
-/* This should probably live somewhere else but Zephyr doesn't
- * currently have a stdc layer to provide it
- */
-struct timespec {
-	s32_t tv_sec;
-	s32_t tv_nsec;
-};
-#endif	/* CONFIG_NEWLIB_LIBC */
-
 #include "sys/types.h"
 #include "posix_sched.h"
 #include "unistd.h"
@@ -62,11 +51,6 @@ struct posix_thread {
 #define _PTHREAD_CANCEL_POS	0
 #define PTHREAD_CANCEL_ENABLE	(0 << _PTHREAD_CANCEL_POS)
 #define PTHREAD_CANCEL_DISABLE	(1 << _PTHREAD_CANCEL_POS)
-
-static inline s32_t _ts_to_ms(const struct timespec *to)
-{
-	return (to->tv_sec * 1000) + (to->tv_nsec / 1000000);
-}
 
 /**
  * @brief Declare a pthread condition variable
