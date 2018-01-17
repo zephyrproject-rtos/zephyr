@@ -15,8 +15,28 @@
 # limitations under the License.
 #
 
+import os
 import sys
 import pprint
+import collections
+
+class FileWrapper:
+  def __init__(self, file_obj):
+    self.file_obj = file_obj
+    self.buffer = ''
+
+  def readline(self):
+    ret = self.buffer
+
+    if not ret.endswith('\n'):
+      ret += self.file_obj.readline()
+
+    self.buffer = ''
+    return ret
+
+  def unread(self, buffer):
+    self.buffer += buffer
+
 
 def read_until(line, fd, end):
   out = [line]
@@ -44,11 +64,22 @@ def remove_comment(line, fd):
     out.append(line[:idx])
     line = read_until(line[idx:], fd, '*/')[-1]
 
-def clean_line(line, fd):
-  return remove_comment(line, fd).strip()
+def remove_preprocessor_directives(line):
+  if line.startswith('# '):
+    return ''
+  return line
 
-def parse_node_name(line):
-  line = line[:-1]
+def clean_line(line, fd):
+  line = remove_preprocessor_directives(line)
+  line = remove_comment(line, fd)
+  line = line.strip()
+  return line
+
+def parse_node_name(fd, line):
+  line, rest = line.split('{', 1)
+
+  if rest:
+    fd.unread(rest + '\n')
 
   if '@' in line:
     line, addr = line.split('@')
@@ -137,7 +168,7 @@ def parse_property(property, fd):
   if not property.endswith(';'):
     raise SyntaxError("parse_property: missing semicolon: %s" % property)
 
-  return property[:-1].strip(), True
+  return property[:-1].strip(), {'empty': True}
 
 def build_node_name(name, addr):
   if addr is None:
@@ -148,29 +179,30 @@ def build_node_name(name, addr):
   return '%s@%s' % (name, addr.strip())
 
 def parse_node(line, fd):
-  label, name, addr, numeric_addr = parse_node_name(line)
+  label, name, addr, numeric_addr = parse_node_name(fd, line)
 
   node = {
     'label': label,
-    'type': type,
     'addr': numeric_addr,
     'children': {},
     'props': {},
     'name': build_node_name(name, addr)
   }
+
   while True:
     line = fd.readline()
     if not line:
       raise SyntaxError("parse_node: Missing } while parsing node")
 
     line = clean_line(line, fd)
+
     if not line:
       continue
 
-    if line == "};":
+    if line == '};':
       break
 
-    if line.endswith('{'):
+    if '{' in line:
       new_node = parse_node(line, fd)
       node['children'][new_node['name']] = new_node
     else:
@@ -179,9 +211,33 @@ def parse_node(line, fd):
 
   return node
 
-def parse_file(fd, ignore_dts_version=False):
+def open_with_include_path(file_path, mode, include_path):
+  for path in include_path:
+    try:
+      fd = open(os.path.join(path, file_path), mode)
+    except IOError:
+      continue
+
+    return FileWrapper(fd)
+
+  raise IOError("Could not find %s in %s" % (file_path, include_path))
+
+def update_node(node, new_node):
+  for k, v in new_node.items():
+    if isinstance(v, collections.Mapping):
+      node[k] = update_node(node.get(k, {}), v)
+    else:
+      node[k] = v
+  return node
+
+def parse_file(fd, ignore_dts_version=False, include_path=[]):
+  fd = FileWrapper(fd)
+
+  include_path.append(os.getcwd())
+
   nodes = {}
   has_v1_tag = False
+
   while True:
     line = fd.readline()
     if not line:
@@ -193,7 +249,7 @@ def parse_file(fd, ignore_dts_version=False):
 
     if line.startswith('/include/ '):
       tag, filename = line.split()
-      with open(filename.strip()[1:-1], "r") as new_fd:
+      with open_with_include_path(filename.strip()[1:-1], "r", include_path) as new_fd:
         nodes.update(parse_file(new_fd, True))
     elif line == '/dts-v1/;':
       has_v1_tag = True
@@ -203,7 +259,6 @@ def parse_file(fd, ignore_dts_version=False):
       end = int(end[:-1], 16)
       label = "reserved_memory_0x%x_0x%x" % (start, end)
       nodes[label] = {
-        'type': 'memory',
         'reg': [start, end],
         'label': label,
         'addr': start,
@@ -214,7 +269,7 @@ def parse_file(fd, ignore_dts_version=False):
         raise SyntaxError("parse_file: Missing /dts-v1/ tag")
 
       new_node = parse_node(line, fd)
-      nodes[new_node['name']] = new_node
+      nodes[new_node['name']] = update_node(nodes.get(new_node['name'], {}), new_node)
     else:
       raise SyntaxError("parse_file: Couldn't understand the line: %s" % line)
   return nodes
