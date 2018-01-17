@@ -57,7 +57,7 @@ Install tools to build Zephyr binaries:
 
 .. code-block:: console
 
-   $ brew install cmake dfu-util doxygen qemu dtc python3 gperf
+   $ brew install cmake ninja dfu-util doxygen qemu dtc python3 gperf
    $ curl -O 'https://bootstrap.pypa.io/get-pip.py'
    $ ./get-pip.py
    $ rm get-pip.py
