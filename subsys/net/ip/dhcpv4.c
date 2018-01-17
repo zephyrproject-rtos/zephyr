@@ -26,6 +26,7 @@
 #include <net/udp.h>
 #include "udp_internal.h"
 #include <net/dhcpv4.h>
+#include <net/dns_resolve.h>
 
 struct dhcp_msg {
 	u8_t op;		/* Message type, 1:BOOTREQUEST, 2:BOOTREPLY */
@@ -743,6 +744,43 @@ static enum net_verdict parse_options(struct net_if *iface,
 			NET_DBG("options_router: %s",
 				net_sprint_ipv4_addr(&router));
 			net_if_ipv4_set_gw(iface, &router);
+			break;
+		}
+		case DHCPV4_OPTIONS_DNS_SERVER: {
+			struct in_addr dns;
+			char dns_string[NET_IPV4_ADDR_LEN];
+			const char *dns_servers[] = {dns_string, NULL};
+
+			/* DNS server option may present 1 or more
+			* addresses. Each 4 bytes in length. DNS
+			* servers should be listed in order
+			* of preference.  Hence we choose the first
+			* and skip the rest.
+			*/
+			if (length % 4 != 0 || length < 4) {
+				NET_ERR("options_dns, bad length");
+				return NET_DROP;
+			}
+
+			frag = net_frag_read(frag, pos, &pos, 4, dns.s4_addr);
+			frag = net_frag_skip(frag, pos, &pos, length - 4);
+			if (!frag && pos) {
+				NET_ERR("options_dns, short packet");
+				return NET_DROP;
+			}
+
+			memset(dns_string, 0, sizeof(dns_string));
+			memcpy(dns_string, net_sprint_ipv4_addr(&dns),
+			       min(strlen(net_sprint_ipv4_addr(&dns)),
+				   sizeof(dns_string) - 1));
+
+			NET_DBG("options_dns: %s", dns_servers[0]);
+
+			// TODO Change this to its own context
+			if (dns_resolve_init(dns_resolve_get_default(), dns_servers) < 0) {
+				NET_DBG("options_dns, failed to set resolve address");
+				return NET_DROP;
+			}
 			break;
 		}
 		case DHCPV4_OPTIONS_LEASE_TIME:
