@@ -45,6 +45,7 @@
 #include "../composite.h"
 
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_MASS_STORAGE_LEVEL
+#define SYS_LOG_DOMAIN "usb/msc"
 #include <logging/sys_log.h>
 
 /* max USB packet size */
@@ -165,20 +166,20 @@ static int mass_storage_class_handle_req(struct usb_setup_packet *pSetup,
 
 	switch (pSetup->bRequest) {
 	case MSC_REQUEST_RESET:
-		SYS_LOG_DBG("\nMSC_REQUEST_RESET");
+		SYS_LOG_DBG("MSC_REQUEST_RESET");
 		msd_state_machine_reset();
 		break;
 
 	case MSC_REQUEST_GET_MAX_LUN:
-		SYS_LOG_DBG("\nMSC_REQUEST_GET_MAX_LUN ");
+		SYS_LOG_DBG("MSC_REQUEST_GET_MAX_LUN");
 		max_lun_count = 0;
 		*data = (u8_t *)(&max_lun_count);
 		*len = 1;
 		break;
 
 	default:
-		SYS_LOG_DBG("Mass Storage unknown request 0x%x, value 0x%x",
-			pSetup->bRequest, pSetup->wValue);
+		SYS_LOG_WRN("Unknown request 0x%x, value 0x%x",
+			    pSetup->bRequest, pSetup->wValue);
 		return -EINVAL;
 	}
 
@@ -189,10 +190,10 @@ static void testUnitReady(void)
 {
 	if (cbw.DataLength != 0) {
 		if ((cbw.Flags & 0x80) != 0) {
-			SYS_LOG_DBG("TUR - BI - STALL");
+			SYS_LOG_WRN("Stall IN endpoint");
 			usb_ep_set_stall(CONFIG_MASS_STORAGE_IN_EP_ADDR);
 		} else {
-			SYS_LOG_DBG("TUR - BO - STALL");
+			SYS_LOG_WRN("Stall OUT endpoint");
 			usb_ep_set_stall(CONFIG_MASS_STORAGE_OUT_EP_ADDR);
 		}
 	}
@@ -307,7 +308,8 @@ static void thread_memory_read_done(void)
 
 	if (usb_write(CONFIG_MASS_STORAGE_IN_EP_ADDR,
 		&page[addr % BLOCK_SIZE], n, NULL) != 0) {
-		SYS_LOG_ERR("usb write failure");
+		SYS_LOG_ERR("Failed to write EP 0x%x",
+			    CONFIG_MASS_STORAGE_IN_EP_ADDR);
 	}
 	addr += n;
 	length -= n;
@@ -389,10 +391,10 @@ static bool infoTransfer(void)
 
 	if (cbw.DataLength != length) {
 		if ((cbw.Flags & 0x80) != 0) {
-			SYS_LOG_WRN("BI - STall, length != ");
+			SYS_LOG_WRN("Stall IN endpoint");
 			usb_ep_set_stall(CONFIG_MASS_STORAGE_IN_EP_ADDR);
 		} else {
-			SYS_LOG_WRN("BO - STall");
+			SYS_LOG_WRN("Stall OUT endpoint");
 			usb_ep_set_stall(CONFIG_MASS_STORAGE_OUT_EP_ADDR);
 		}
 
@@ -406,7 +408,6 @@ static bool infoTransfer(void)
 
 static void fail(void)
 {
-	SYS_LOG_DBG("fail ()");
 	csw.Status = CSW_FAILED;
 	sendCSW();
 }
@@ -466,7 +467,7 @@ static void CBWDecode(u8_t *buf, u16_t size)
 				} else {
 					usb_ep_set_stall(
 					    CONFIG_MASS_STORAGE_OUT_EP_ADDR);
-					SYS_LOG_DBG("BO-STALL");
+					SYS_LOG_WRN("Stall OUT endpoint");
 					csw.Status = CSW_ERROR;
 					sendCSW();
 				}
@@ -481,7 +482,7 @@ static void CBWDecode(u8_t *buf, u16_t size)
 				} else {
 					usb_ep_set_stall(
 					    CONFIG_MASS_STORAGE_IN_EP_ADDR);
-					SYS_LOG_DBG("BI-STALL");
+					SYS_LOG_WRN("Stall IN endpoint");
 					csw.Status = CSW_ERROR;
 					sendCSW();
 				}
@@ -501,7 +502,7 @@ static void CBWDecode(u8_t *buf, u16_t size)
 				} else {
 					usb_ep_set_stall(
 					    CONFIG_MASS_STORAGE_IN_EP_ADDR);
-					SYS_LOG_DBG("VERIFY10 - BI - STALL");
+					SYS_LOG_WRN("Stall IN endpoint");
 					csw.Status = CSW_ERROR;
 					sendCSW();
 				}
@@ -529,7 +530,7 @@ static void memoryVerify(u8_t *buf, u16_t size)
 		size = memory_size - addr;
 		stage = ERROR;
 		usb_ep_set_stall(CONFIG_MASS_STORAGE_OUT_EP_ADDR);
-		SYS_LOG_WRN("BO - STall > MemSz");
+		SYS_LOG_WRN("Stall OUT endpoint");
 	}
 
 	/* beginning of a new block -> load a whole block in RAM */
@@ -544,7 +545,7 @@ static void memoryVerify(u8_t *buf, u16_t size)
 	for (n = 0; n < size; n++) {
 		if (page[addr%BLOCK_SIZE + n] != buf[n]) {
 			SYS_LOG_DBG("Mismatch sector %d offset %d",
-					addr/BLOCK_SIZE, n);
+				    addr/BLOCK_SIZE, n);
 			memOK = false;
 			break;
 		}
@@ -567,7 +568,7 @@ static void memoryWrite(u8_t *buf, u16_t size)
 		size = memory_size - addr;
 		stage = ERROR;
 		usb_ep_set_stall(CONFIG_MASS_STORAGE_OUT_EP_ADDR);
-		SYS_LOG_WRN("BO - STall > MemSz");
+		SYS_LOG_WRN("Stall OUT endpoint");
 	}
 
 	/* we fill an array in RAM of 1 block before writing it in memory */
@@ -628,7 +629,7 @@ static void mass_storage_bulk_out(u8_t ep,
 			memoryVerify(bo_buf, bytes_read);
 			break;
 		default:
-			SYS_LOG_DBG("> BO - PROC_CBW default"
+			SYS_LOG_ERR("> BO - PROC_CBW default"
 					"<<ERROR!!!>>");
 			break;
 		}
@@ -636,7 +637,7 @@ static void mass_storage_bulk_out(u8_t ep,
 
 	/*an error has occurred: stall endpoint and send CSW*/
 	default:
-	SYS_LOG_DBG("> BO - default stalling %d", stage);
+		SYS_LOG_WRN("Stall OUT endpoint, stage: %d", stage);
 		usb_ep_set_stall(ep);
 		csw.Status = CSW_ERROR;
 		sendCSW();
@@ -713,7 +714,7 @@ static void mass_storage_bulk_in(u8_t ep,
 
 	/*an error has occurred*/
 	default:
-		SYS_LOG_DBG("< BI - default stalling %d", stage);
+		SYS_LOG_WRN("Stall IN endpoint, stage: %d", stage);
 		usb_ep_set_stall(CONFIG_MASS_STORAGE_IN_EP_ADDR);
 		sendCSW();
 		break;
@@ -739,7 +740,7 @@ static void mass_storage_status_cb(enum usb_dc_status_code status, u8_t *param)
 		SYS_LOG_DBG("USB device error");
 		break;
 	case USB_DC_RESET:
-		SYS_LOG_DBG("USB device reset detected 4");
+		SYS_LOG_DBG("USB device reset detected");
 		msd_state_machine_reset();
 		msd_init();
 		break;
@@ -762,7 +763,7 @@ static void mass_storage_status_cb(enum usb_dc_status_code status, u8_t *param)
 	default:
 		SYS_LOG_DBG("USB unknown state");
 		break;
-		}
+	}
 }
 
 /* Describe EndPoints configuration */
@@ -803,7 +804,7 @@ static void mass_thread_main(int arg1, int unused)
 		case THREAD_OP_READ_QUEUED:
 			if (disk_access_read(page, (addr/BLOCK_SIZE), 1)) {
 				SYS_LOG_ERR("!! Disk Read Error %d !",
-						addr/BLOCK_SIZE);
+					    addr/BLOCK_SIZE);
 			}
 
 			thread_memory_read_done();
