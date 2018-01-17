@@ -189,13 +189,13 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		return;
 	}
 
+	printk("Link addr : %s\n",
+	       net_sprint_ll_addr(net_if_get_link_addr(iface)->addr,
+				  net_if_get_link_addr(iface)->len));
+	printk("MTU       : %d\n", net_if_get_mtu(iface));
+
 #if defined(CONFIG_NET_VLAN)
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
-		printk("Link addr     : %s\n",
-		       net_sprint_ll_addr(net_if_get_link_addr(iface)->addr,
-					  net_if_get_link_addr(iface)->len));
-		printk("MTU           : %d\n", net_if_get_mtu(iface));
-
 		eth_ctx = net_if_l2_data(iface);
 
 		if (eth_ctx->vlan_enabled) {
@@ -206,7 +206,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 					continue;
 				}
 
-				printk("[%d] VLAN tag  : %d (0x%x)\n", i,
+				printk("VLAN tag  : %d (0x%x)\n",
 				       eth_ctx->vlan[i].tag,
 				       eth_ctx->vlan[i].tag);
 			}
@@ -214,11 +214,6 @@ static void iface_cb(struct net_if *iface, void *user_data)
 			printk("VLAN not enabled\n");
 		}
 	}
-#else
-	printk("Link addr : %s\n", net_sprint_ll_addr(
-		       net_if_get_link_addr(iface)->addr,
-		       net_if_get_link_addr(iface)->len));
-	printk("MTU       : %d\n", net_if_get_mtu(iface));
 #endif
 
 #if defined(CONFIG_NET_IPV6)
@@ -2624,6 +2619,152 @@ int net_shell_cmd_tcp(int argc, char *argv[])
 	return 0;
 }
 
+#if defined(CONFIG_NET_VLAN)
+static void iface_vlan_del_cb(struct net_if *iface, void *user_data)
+{
+	u16_t vlan_tag = POINTER_TO_UINT(user_data);
+	int ret;
+
+	ret = net_eth_vlan_disable(iface, vlan_tag);
+	if (ret < 0) {
+		if (ret != -ESRCH) {
+			printk("Cannot delete VLAN tag %d from interface %p\n",
+			       vlan_tag, iface);
+		}
+
+		return;
+	}
+
+	printk("VLAN tag %d removed from interface %p\n",
+	       vlan_tag, iface);
+}
+
+static void iface_vlan_cb(struct net_if *iface, void *user_data)
+{
+	struct ethernet_context *ctx = net_if_l2_data(iface);
+	int *count = user_data;
+	int i;
+
+	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
+		return;
+	}
+
+	if (*count == 0) {
+		printk("    Interface  Type     Tag\n");
+	}
+
+	if (!ctx->vlan_enabled) {
+		printk("VLAN tag(s) not set\n");
+		return;
+	}
+
+	for (i = 0; i < NET_IF_MAX_CONFIGS; i++) {
+		if (!ctx->vlan[i].iface || ctx->vlan[i].iface != iface) {
+			continue;
+		}
+
+		if (ctx->vlan[i].tag == NET_VLAN_TAG_UNSPEC) {
+			continue;
+		}
+
+		printk("[%d] %p %s %d\n", net_if_get_by_iface(iface), iface,
+		       iface2str(iface, NULL), ctx->vlan[i].tag);
+
+		break;
+	}
+
+	(*count)++;
+}
+#endif /* CONFIG_NET_VLAN */
+
+int net_shell_cmd_vlan(int argc, char *argv[])
+{
+#if defined(CONFIG_NET_VLAN)
+	int arg = 1;
+	int ret;
+	u16_t tag;
+
+	if (argv[arg]) {
+		if (!strcmp(argv[arg], "add")) {
+			/* vlan add <tag> <interface index> */
+			struct net_if *iface;
+			u32_t iface_idx;
+
+			if (!argv[++arg]) {
+				printk("VLAN tag missing.\n");
+				return 0;
+			}
+
+			tag = strtol(argv[arg], NULL, 10);
+
+			if (!argv[++arg]) {
+				printk("Network interface index missing.\n");
+				return 0;
+			}
+
+			iface_idx = strtol(argv[arg], NULL, 10);
+
+			iface = net_if_get_by_index(iface_idx);
+			if (!iface) {
+				printk("Network interface index %d is "
+				       "invalid.\n", iface_idx);
+				return 0;
+			}
+
+			if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
+				printk("Network interface %p is not ethernet "
+				       "interface\n", iface);
+				return 0;
+			}
+
+			ret = net_eth_vlan_enable(iface, tag);
+			if (ret < 0) {
+				if (ret == -ENOENT) {
+					printk("No IP address configured.\n");
+				}
+
+				printk("Cannot set VLAN tag (%d)\n", ret);
+
+				return 0;
+			}
+
+			printk("VLAN tag %d set to interface %p\n", tag,
+			       iface);
+			return 0;
+		}
+
+		if (!strcmp(argv[arg], "del")) {
+			/* vlan del <tag> */
+
+			if (!argv[++arg]) {
+				printk("VLAN tag missing.\n");
+				return 0;
+			}
+
+			tag = strtol(argv[arg], NULL, 10);
+
+			net_if_foreach(iface_vlan_del_cb,
+				       UINT_TO_POINTER((u32_t)tag));
+
+			return 0;
+		}
+
+		printk("Unknown command '%s'\n", argv[arg]);
+		printk("Usage:\n");
+		printk("\tvlan add <tag> <interface index>\n");
+		printk("\tvlan del <tag>\n");
+	} else {
+		int count = 0;
+
+		net_if_foreach(iface_vlan_cb, &count);
+	}
+#else
+	printk("Set CONFIG_NET_VLAN to enable virtual LAN support.\n");
+#endif /* CONFIG_NET_VLAN */
+
+	return 0;
+}
+
 static struct shell_cmd net_commands[] = {
 	/* Keep the commands in alphabetical order */
 	{ "allocs", net_shell_cmd_allocs,
@@ -2658,6 +2799,11 @@ static struct shell_cmd net_commands[] = {
 	{ "tcp", net_shell_cmd_tcp, "connect <ip> port\n\tConnect to TCP peer\n"
 		"tcp send <data>\n\tSend data to peer using TCP\n"
 		"tcp close\n\tClose TCP connection" },
+	{ "vlan", net_shell_cmd_vlan, "\n\tShow VLAN information\n"
+		"vlan add <vlan tag> <interface index>\n"
+		"\tAdd VLAN tag to the network interface\n"
+		"vlan del <vlan tag>\n"
+		"\tDelete VLAN tag from the network interface\n" },
 	{ NULL, NULL, NULL }
 };
 
