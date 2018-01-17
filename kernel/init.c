@@ -359,14 +359,23 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 
 #if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 1
 	init_idle_thread(_idle_thread1, _idle_stack1);
+	_kernel.cpus[1].id = 1;
+	_kernel.cpus[1].irq_stack = K_THREAD_STACK_BUFFER(_interrupt_stack1)
+		+ CONFIG_ISR_STACK_SIZE;
 #endif
 
 #if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 2
 	init_idle_thread(_idle_thread2, _idle_stack2);
+	_kernel.cpus[2].id = 2;
+	_kernel.cpus[2].irq_stack = K_THREAD_STACK_BUFFER(_interrupt_stack2)
+		+ CONFIG_ISR_STACK_SIZE;
 #endif
 
 #if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 3
 	init_idle_thread(_idle_thread3, _idle_stack3);
+	_kernel.cpus[3].id = 3;
+	_kernel.cpus[3].irq_stack = K_THREAD_STACK_BUFFER(_interrupt_stack3)
+		+ CONFIG_ISR_STACK_SIZE;
 #endif
 
 	initialize_timeouts();
@@ -433,6 +442,10 @@ FUNC_NORETURN void _Cstart(void)
 	/* initialize stack canaries */
 #ifdef CONFIG_STACK_CANARIES
 	__stack_chk_guard = (void *)sys_rand32_get();
+#endif
+
+#ifdef CONFIG_SMP
+	smp_init();
 #endif
 
 	/* display boot banner */

@@ -174,6 +174,8 @@ extern void _thread_monitor_exit(struct k_thread *thread);
 	} while (0)
 #endif /* CONFIG_THREAD_MONITOR */
 
+extern void smp_init(void);
+
 #ifdef __cplusplus
 }
 #endif
