@@ -25,9 +25,6 @@ config MCG_FRDIV
 config MCG_FCRDIV
 	default 0
 
-config PINMUX
-	def_bool y
-
 if PINMUX_MCUX
 
 config PINMUX_MCUX_PORTA
