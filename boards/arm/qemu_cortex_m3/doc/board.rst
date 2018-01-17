@@ -73,6 +73,7 @@ emulated environment, for example, with the :ref:`synchronization_sample`:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/synchronization
+   :host-os: unix
    :board: qemu_cortex_m3
    :goals: run
 

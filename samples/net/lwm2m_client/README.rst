@@ -67,6 +67,7 @@ Build the lwm2m-client sample application for QEMU like this:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/lwm2m_client
+   :host-os: unix
    :board: qemu_x86
    :goals: run
    :compact:
@@ -87,6 +88,7 @@ To build the lwm2m-client sample for QEMU with DTLS support do the following:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/lwm2m_client
+   :host-os: unix
    :board: qemu_x86
    :conf: prj_dtls.conf
    :goals: run

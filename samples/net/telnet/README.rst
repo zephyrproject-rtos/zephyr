@@ -33,6 +33,7 @@ Run Zephyr samples/net/telnet application in QEMU:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/telnet
+   :host-os: unix
    :board: qemu_x86
    :goals: run
    :compact:

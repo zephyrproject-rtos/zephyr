@@ -51,6 +51,7 @@ Run Zephyr samples/net/dhcpv4_client application in QEMU:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/dhcpv4_client
+   :host-os: unix
    :board: qemu_x86
    :goals: run
    :compact:
@@ -120,6 +121,7 @@ Build Zephyr samples/net/dhcpv4_client application:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/dhcpv4_client
+   :host-os: unix
    :board: frdm_k64f
    :goals: build flash
    :compact:

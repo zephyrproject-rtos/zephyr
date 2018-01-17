@@ -31,6 +31,7 @@ The easiest way to run this sample is using QEMU:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/console/getchar
+   :host-os: unix
    :board: qemu_x86
    :goals: run
    :compact:

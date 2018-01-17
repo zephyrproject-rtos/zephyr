@@ -24,6 +24,7 @@ on QEMU as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/logging/kernel_event_logger
+   :host-os: unix
    :board: qemu_x86
    :goals: run
    :compact:

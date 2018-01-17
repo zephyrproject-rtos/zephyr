@@ -52,7 +52,7 @@ through a so-called user channel for QEMU to use:
 
    .. code-block:: console
 
-      $ sudo tools/btproxy -u
+      sudo tools/btproxy -u
       Listening on /tmp/bt-server-bredr
 
 #. Choose one of the Bluetooth sample applications located in

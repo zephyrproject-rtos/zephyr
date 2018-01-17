@@ -19,6 +19,7 @@ on QEMU as follows:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
+   :host-os: unix
    :board: qemu_x86
    :goals: run
    :compact:
@@ -28,6 +29,7 @@ single thread: :file:`prj_single.conf`:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
+   :host-os: unix
    :board: qemu_x86
    :conf: prj_single.conf
    :goals: run
