@@ -7,6 +7,8 @@
 
 source "subsys/bluetooth/Kconfig"
 
+source "subsys/lorawan/Kconfig"
+
 source "subsys/console/Kconfig"
 
 source "subsys/cpp/Kconfig"

@@ -1,6 +1,7 @@
 add_subdirectory(debug)
 add_subdirectory(logging)
 add_subdirectory_ifdef(CONFIG_BT                   bluetooth)
+add_subdirectory_ifdef(CONFIG_LORAWAN              lorawan)
 add_subdirectory_ifdef(CONFIG_CONSOLE_PULL         console)
 add_subdirectory_ifdef(CONFIG_CONSOLE_SHELL        shell)
 add_subdirectory_ifdef(CONFIG_CPLUSPLUS            cpp)
