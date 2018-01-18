@@ -850,8 +850,15 @@ def main():
         raise Exception("No information parsed from dts file.")
 
     if 'zephyr,flash' in chosen:
+        node_addr = chosen['zephyr,flash']
         extract_reg_prop(chosen['zephyr,flash'], None,
                          defs, "CONFIG_FLASH", 1024, None)
+
+        flash_keys = ["label", "write-block-size", "erase-block-size"]
+        for key in flash_keys:
+            if key in reduced[node_addr]['props']:
+                prop = reduced[node_addr]['props'][key]
+                extract_single(node_addr, None, prop, key, None, defs, "FLASH")
     else:
         # We will add address/size of 0 for systems with no flash controller
         # This is what they already do in the Kconfig options anyway
