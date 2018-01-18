@@ -76,7 +76,9 @@
 #endif
 #endif
 
+#ifndef SAME_PRIO
 #define SAME_PRIO 0
+#endif
 
 /* end - control behaviour of the demo */
 /***************************************/
