@@ -828,14 +828,14 @@ class MakeGenerator:
         if not "native_posix" in args:
             ldflags="-Wl,--fatal-warnings"
 
-        if options.ninja:
-            generator = "Ninja"
-            generator_cmd = "ninja"
-            verb = "-v" if VERBOSE else ""
-        else:
+        if options.make:
             generator = "Unix Makefiles"
             generator_cmd = "$(MAKE)"
             verb = "VERBOSE=1" if VERBOSE else "VERBOSE=0"
+        else:
+            generator = "Ninja"
+            generator_cmd = "ninja"
+            verb = "-v" if VERBOSE else ""
 
         return MakeGenerator.MAKE_RULE_TMPL.format(
             generator=generator,
@@ -2092,7 +2092,12 @@ def parse_arguments():
 
     parser.add_argument(
         "-N", "--ninja", action="store_true",
-        help="Use the Ninja generator with CMake")
+        help="Use the Ninja generator with CMake. "
+        "This option is deprecated as Ninja is now the default.")
+
+    parser.add_argument(
+        "-M", "--make", action="store_true",
+        help="Use the 'Unix Makefiles' generator with CMake")
 
     parser.add_argument(
         "-y", "--dry-run", action="store_true",
