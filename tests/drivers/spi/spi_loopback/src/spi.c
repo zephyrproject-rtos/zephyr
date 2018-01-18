@@ -48,11 +48,12 @@ struct spi_cs_control spi_cs = {
 #define CS_CTRL_GPIO_DRV_NAME ""
 
 #elif defined(CONFIG_BOARD_NUCLEO_L432KC) || 	\
-      defined(CONFIG_BOARD_DISCO_L475_IOT1) || 	\
-      defined(CONFIG_BOARD_NUCLEO_F091RC) || 	\
-      defined(CONFIG_BOARD_NUCLEO_F334R8) || 	\
-      defined(CONFIG_BOARD_NUCLEO_F401RE) || 	\
-      defined(CONFIG_BOARD_NUCLEO_L476RG)
+	defined(CONFIG_BOARD_DISCO_L475_IOT1) ||\
+	defined(CONFIG_BOARD_NUCLEO_F091RC) ||	\
+	defined(CONFIG_BOARD_NUCLEO_F334R8) ||	\
+	defined(CONFIG_BOARD_NUCLEO_F401RE) ||	\
+	defined(CONFIG_BOARD_NUCLEO_L476RG) ||	\
+	defined(CONFIG_BOARD_ARDUINO_ZERO)
 
 #define SPI_DRV_NAME CONFIG_SPI_1_NAME
 #define SPI_SLAVE 0
@@ -84,6 +85,7 @@ struct spi_cs_control spi_cs = {
 #define BUF_SIZE 17
 u8_t buffer_tx[] = "0123456789abcdef\0";
 u8_t buffer_rx[BUF_SIZE] = {};
+u8_t buffer_bench[512];
 
 /*
  * We need 5x(buffer size) + 1 to print a comma-separated list of each
@@ -163,6 +165,49 @@ static int spi_complete_loop(struct spi_config *spi_conf)
 	if (memcmp(buffer_tx, buffer_rx, BUF_SIZE)) {
 		to_display_format(buffer_tx, BUF_SIZE, buffer_print_tx);
 		to_display_format(buffer_rx, BUF_SIZE, buffer_print_rx);
+		SYS_LOG_ERR("Buffer contents are different: %s",
+			    buffer_print_tx);
+		SYS_LOG_ERR("                           vs: %s",
+			    buffer_print_rx);
+		return -1;
+	}
+
+	SYS_LOG_INF("Passed");
+
+	return 0;
+}
+
+static int spi_rx_only(struct spi_config *spi_conf)
+{
+	/* Reserve a byte at the end to check if the driver over-reads */
+	int len = BUF_SIZE - 1;
+	u8_t expect[sizeof(buffer_rx)];
+	struct spi_buf rx_bufs[] = {
+		{
+			.buf = buffer_rx,
+			.len = len,
+		},
+	};
+	int ret;
+
+	SYS_LOG_INF("Start");
+
+	/* Fill the buffer to ensure it was written to */
+	memset(buffer_rx, 0xAA, sizeof(buffer_rx));
+	memset(expect, 0xAA, sizeof(expect));
+	/* Zephyr transmits zeros so expect to receive zeros */
+	memset(expect, 0, len);
+
+	ret = spi_read(spi_conf, rx_bufs, ARRAY_SIZE(rx_bufs));
+	if (ret) {
+		SYS_LOG_ERR("Code %d", ret);
+		return ret;
+	}
+
+	if (memcmp(buffer_rx, expect, sizeof(buffer_rx))) {
+		to_display_format(expect, sizeof(expect), buffer_print_tx);
+		to_display_format(buffer_rx, sizeof(buffer_rx),
+				  buffer_print_rx);
 		SYS_LOG_ERR("Buffer contents are different: %s",
 			    buffer_print_tx);
 		SYS_LOG_ERR("                           vs: %s",
@@ -325,6 +370,46 @@ static int spi_rx_every_4(struct spi_config *spi_conf)
 	return 0;
 }
 
+/* Performs a basic read/write benchmark */
+static int spi_bench(struct spi_config *spi_conf)
+{
+	u32_t start = k_uptime_get_32();
+	s32_t elapsed;
+	u32_t wrote = 0;
+	struct spi_buf tx_bufs[] = {
+		{
+			.buf = buffer_bench,
+			.len = sizeof(buffer_bench),
+		},
+	};
+	struct spi_buf rx_bufs[] = {
+		{
+			.buf = buffer_bench,
+			.len = sizeof(buffer_bench),
+		},
+	};
+	int ret;
+
+	SYS_LOG_INF("Start");
+
+	do {
+		ret = spi_transceive(spi_conf, tx_bufs, ARRAY_SIZE(tx_bufs),
+				     rx_bufs, ARRAY_SIZE(rx_bufs));
+		if (ret) {
+			SYS_LOG_ERR("Code %d", ret);
+			return -1;
+		}
+		wrote += tx_bufs[0].len;
+		elapsed = k_uptime_get_32() - start;
+	} while (elapsed < K_SECONDS(3));
+
+	SYS_LOG_INF("Transferred %u B in %d ms, %u B/s",
+		    wrote, elapsed, wrote/(elapsed/1000));
+	SYS_LOG_INF("Passed");
+
+	return 0;
+}
+
 static struct k_poll_signal async_sig = K_POLL_SIGNAL_INITIALIZER(async_sig);
 static struct k_poll_event async_evt =
 	K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
@@ -441,17 +526,21 @@ void main(void)
 					  K_PRIO_COOP(7), 0, 0);
 
 	if (spi_complete_loop(&spi_slow) ||
+	    spi_rx_only(&spi_slow) ||
 	    spi_rx_half_start(&spi_slow) ||
 	    spi_rx_half_end(&spi_slow) ||
 	    spi_rx_every_4(&spi_slow) ||
+	    spi_bench(&spi_slow) ||
 	    spi_async_call(&spi_slow)) {
 		goto end;
 	}
 
 	if (spi_complete_loop(&spi_fast) ||
+	    spi_rx_only(&spi_fast) ||
 	    spi_rx_half_start(&spi_fast) ||
 	    spi_rx_half_end(&spi_fast) ||
 	    spi_rx_every_4(&spi_fast) ||
+	    spi_bench(&spi_fast) ||
 	    spi_async_call(&spi_fast)) {
 		goto end;
 	}
