@@ -15,6 +15,18 @@ common:
 tests:
   test:
     tags: samples
+  test_same_prio:
+    extra_args: "-DSAME_PRIO=1"
+  test_static:
+    extra_args: "-DSTATIC_OBJS=1"
+  test_semaphores:
+    extra_args: "-DFORKS=SEMAPHORES"
+  test_stacks:
+    extra_args: "-DFORKS=STACKS"
+  test_fifos:
+    extra_args: "-DFORKS=FIFOS"
+  test_lifos:
+    extra_args: "-DFORKS=LIFOS"
   test_preempt_only:
     extra_configs:
       - CONFIG_NUM_PREEMPT_PRIORITIES=6
