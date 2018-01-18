@@ -97,9 +97,5 @@
 	}						      \
 	while (0)
 
-struct ring_buf;
-
-extern struct ring_buf   *_trace_list_sys_ring_buf;
-
 #endif  /*CONFIG_OBJECT_TRACING*/
 #endif  /*_OBJECT_TRACING_COMMON_H_*/
