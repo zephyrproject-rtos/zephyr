@@ -11,7 +11,6 @@
 #define __RING_BUFFER_H__
 
 #include <kernel.h>
-#include <debug/object_tracing_common.h>
 #include <misc/util.h>
 #include <errno.h>
 
@@ -33,9 +32,6 @@ struct ring_buf {
 	u32_t size;   /**< Size of buf in 32-bit chunks */
 	u32_t *buf;	 /**< Memory region for stored entries */
 	u32_t mask;   /**< Modulo mask if size is a power of 2 */
-#ifdef CONFIG_OBJECT_TRACING
-	struct ring_buf *__next;
-#endif
 };
 
 /**
@@ -118,7 +114,6 @@ static inline void sys_ring_buf_init(struct ring_buf *buf, u32_t size,
 		buf->mask = 0;
 	}
 
-	SYS_TRACING_OBJ_INIT(sys_ring_buf, buf);
 }
 
 /**

@@ -28,8 +28,6 @@ extern struct k_msgq     *_trace_list_k_msgq;
 extern struct k_mbox     *_trace_list_k_mbox;
 extern struct k_pipe     *_trace_list_k_pipe;
 
-extern struct ring_buf   *_trace_list_sys_ring_buf;
-
 /**
  * @def SYS_TRACING_HEAD
  *
