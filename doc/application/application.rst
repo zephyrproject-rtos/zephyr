@@ -6,8 +6,11 @@ Application Development Primer
 .. note::
 
    In this document, we'll assume your **application directory** is
-   :file:`~/app`, and that its **build directory** is :file:`~/app/build`.
+   :file:`<home>/app`, and that its **build directory** is
+   :file:`<home>/app/build`.
    (These terms are defined in the following Overview.)
+   On Linux/macOS, <home> is equivalent to ``~``, whereas on Windows it's
+   ``%userprofile%``.
 
 Overview
 ********
@@ -30,7 +33,7 @@ An application in its simplest form has the following contents:
 
 .. code-block:: none
 
-   ~/app
+   <home>/app
    ├── CMakeLists.txt
    ├── prj.conf
    └── src
@@ -67,10 +70,8 @@ generated in a build directory; Zephyr does not support "in-tree" builds.
 The following sections describe how to create, build, and run Zephyr
 applications, followed by more detailed reference material.
 
-
 Creating an Application
 ***********************
-
 
 Follow these steps to create a new application directory. (Refer to
 :ref:`samples-and-demos` for existing applications provided as part of Zephyr.)
@@ -84,7 +85,7 @@ Follow these steps to create a new application directory. (Refer to
 
    .. code-block:: console
 
-      $ mkdir app
+      mkdir app
 
 #. It's recommended to place all application source code in a subdirectory
    named :file:`src`.  This makes it easier to distinguish between project
@@ -94,8 +95,8 @@ Follow these steps to create a new application directory. (Refer to
 
    .. code-block:: console
 
-      $ cd app
-      $ mkdir src
+      cd app
+      mkdir src
 
 #. Create a :file:`CMakeLists.txt` file in your application directory with the
    following contents:
@@ -131,11 +132,10 @@ shown above in :file:`CMakeLists.txt`. The following important variables
 configure the Zephyr build system:
 
 * :makevar:`ZEPHYR_BASE`: Sets the path to the Zephyr base directory.  This is
-  usually an environment variable set by the :file:`zephyr-env.sh` script, as
-  you learned when getting started with Zephyr in
-  :ref:`getting_started_run_sample`. You can also select a specific Zephyr base
-  directory by replacing ``$ENV{ZEPHYR_BASE}`` with the specific base you'd
-  like to use instead.
+  usually an environment variable set by the :file:`zephyr-env.sh` script on
+  Linux/macOS or manually on Windows, as you learned when getting started
+  with Zephyr in :ref:`getting_started_run_sample`. You can also set
+  :makevar:`ZEPHYR_BASE`: explicitly on Linux and macOS if you want to.
 
 * :makevar:`BOARD`: Selects the board that the application's build will use for
   the default configuration. This can be defined in the environment, in your
@@ -157,12 +157,14 @@ The Zephyr build system compiles and links all components of an application
 into a single application image that can be run on simulated hardware or real
 hardware.
 
+As described in :ref:`getting_started_cmake`, on Linux and macOS you can choose
+between the `make` and `ninja` generators, whereas on Windows you need to use
+`ninja`. For simplicity we will use `ninja` throughout this guide.
 
 Basics
 ======
 
-
-#. Navigate to the application directory :file:`~/app`.
+#. Navigate to the application directory :file:`<home>/app`.
 
 #. Enter the following commands to build the application's
    :file:`zephyr.elf` image using the configuration settings for the
@@ -170,10 +172,10 @@ Basics
 
    .. code-block:: console
 
-       $ mkdir build
-       $ cd build
-       $ cmake ..
-       $ make
+       mkdir build
+       cd build
+       cmake -GNinja ..
+       ninja
 
    If desired, you can build the application using the configuration settings
    specified in an alternate :file:`.conf` file using the :code:`CONF_FILE`
@@ -182,10 +184,13 @@ Basics
 
    .. code-block:: console
 
+       # On Linux/macOS
+       export CONF_FILE=prj.alternate.conf
+       # On Windows
+       set CONF_FILE=prj.alternate.conf
 
-       $ export CONF_FILE=prj.alternate.conf
-       $ cmake ..
-       $ make
+       cmake -GNinja ..
+       ninja
 
    If desired, you can generate project files for a different board
    type than the one specified in the application's
@@ -195,17 +200,14 @@ Basics
    Both the :code:`CONF_FILE` and :code:`BOARD` parameters can be specified
    when building the application.
 
-
 Build Directory Contents
 ========================
 
-
-When using the Ninja backend instead of the Make backend, a build
-directory looks like this:
+When using the Ninja generator a build directory looks like this:
 
 .. code-block:: none
 
-   ~/app/build
+   <home>/app/build
    ├── build.ninja
    ├── CMakeCache.txt
    ├── CMakeFiles
@@ -236,10 +238,8 @@ described above.)
   kernel binary. Other binary output formats, such as :file:`.hex` and
   :file:`.bin`, are also supported.
 
-
 Rebuilding an Application
 =========================
-
 
 Application development is usually fastest when changes are continually tested.
 Frequently rebuilding your application makes debugging less painful
@@ -260,7 +260,7 @@ following procedure:
 
 
 #. Open a terminal console on your host computer, and navigate to the
-   build directory :file:`~/app/build`.
+   build directory :file:`<home>/app/build`.
 
 #. Enter the following command to delete the application's generated
    files, except for the :file:`.config` file that contains the
@@ -268,7 +268,7 @@ following procedure:
 
    .. code-block:: console
 
-       $ make clean
+       ninja clean
 
    Alternatively, enter the following command to delete *all*
    generated files, including the :file:`.config` files that contain
@@ -277,7 +277,7 @@ following procedure:
 
    .. code-block:: console
 
-       $ make pristine
+       ninja pristine
 
 #. Rebuild the application normally following the steps specified
    in :ref:`build_an_application` above.
@@ -288,13 +288,10 @@ following procedure:
 Run an Application
 ******************
 
-
 An application image can be run on a real board or emulated hardware.
-
 
 Running on a Board
 ==================
-
 
 Most boards supported by Zephyr let you flash a compiled binary using
 the CMake ``flash`` target to copy the binary to the board and run it.
@@ -306,12 +303,12 @@ hardware:
 #. Make sure your board is attached to your host computer. Usually, you'll do
    this via USB.
 
-#. Run this console command from the build directory, :file:`~/app/build`, to
-   flash the compiled Zephyr binary and run it on your board:
+#. Run this console command from the build directory, :file:`<home>/app/build`,
+   to flash the compiled Zephyr binary and run it on your board:
 
    .. code-block:: console
 
-      $ make flash
+      ninja flash
 
 The Zephyr build system integrates with the board support files to
 use hardware-specific tools to flash the Zephyr binary to your
@@ -335,11 +332,10 @@ for additional information on how to flash your board.
 Running in an Emulator
 ======================
 
-
-The kernel has built-in emulator support for QEMU. It allows you to
-run and test an application virtually, before (or in lieu of) loading
-and running it on actual target hardware. Follow these instructions to
-run an application via QEMU:
+The kernel has built-in emulator support for QEMU (on Linux/macOS only, this
+is not yet supported on Windows). It allows you to run and test an application
+virtually, before (or in lieu of) loading and running it on actual target
+hardware. Follow these instructions to run an application via QEMU:
 
 #. Build your application for one of the QEMU boards, as described in
    :ref:`build_an_application`.
@@ -349,12 +345,12 @@ run an application via QEMU:
    - ``qemu_x86`` to emulate running on an x86-based board
    - ``qemu_cortex_m3`` to emulate running on an ARM Cortex M3-based board
 
-#. Run this console command from the build directory, :file:`~/app/build`, to
-   flash the compiled Zephyr binary and run it in QEMU:
+#. Run this console command from the build directory, :file:`<home>/app/build`,
+   to flash the compiled Zephyr binary and run it in QEMU:
 
    .. code-block:: console
 
-      $ make run
+      ninja run
 
 #. Press :kbd:`Ctrl A, X` to stop the application from running
    in QEMU.
@@ -365,12 +361,10 @@ run an application via QEMU:
 Each time you execute the run command, your application is rebuilt and run
 again.
 
-
 .. _application_debugging:
 
 Application Debugging
 *********************
-
 
 This section is a quick hands-on reference to start debugging your
 application with QEMU. Most content in this section is already covered in
@@ -417,7 +411,7 @@ the following inside the build directory of an application:
 
 .. code-block:: bash
 
-   make debugserver
+   ninja debugserver
 
 The build system will start a QEMU instance with the CPU halted at startup
 and with a GDB server instance listening at the TCP port 1234.
@@ -449,7 +443,7 @@ corresponds to :file:`zephyr.elf` file:
 
 .. code-block:: bash
 
-   $ ..../path/to/gdb --tui zephyr.elf
+   ..../path/to/gdb --tui zephyr.elf
 
 .. note::
 
@@ -734,28 +728,32 @@ application's :file:`.config` manually, using a configurator tool is
 preferred, since it correctly handles dependencies between options.
 
 
-#. Generate a Make build system, and use it to run ``make
+#. Generate a Make build system, and use it to run ``ninja
    menuconfig`` as follows.
 
-   a) Using CMake, create a build directory (:file:`~/app/build`) from
-      your application directory (:file:`~/app`).
+   a) Using CMake, create a build directory (:file:`<home>/app/build`) from
+      your application directory (:file:`<home>/app`).
 
-      For example, on a Unix shell:
+      For example, on a shell or command prompt:
 
       .. code-block:: bash
 
-         $ cd ~/app
-         $ mkdir build && cd build
-         $ cmake ..
+         # On Linux/macOS
+         cd ~/app
+         # On Windows
+         cd %userprofile%\app
 
-   b) Run ``make menuconfig`` from the build directory
-      (:file:`~/app/build`).
+         mkdir build && cd build
+         cmake -GNinja ..
+
+   b) Run ``ninja menuconfig`` from the build directory
+      (:file:`<home>/app/build`).
 
       Continuing the above Unix shell example:
 
       .. code-block:: bash
 
-          $ make menuconfig
+          ninja menuconfig
 
       A question-based menu opens that allows you to set individual
       configuration options.
