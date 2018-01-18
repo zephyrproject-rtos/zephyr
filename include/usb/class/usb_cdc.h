@@ -24,9 +24,6 @@
 /** CDC Specification release number in BCD format */
 #define CDC_SRN_1_20			0x0120
 
-/** CDC Class Code */
-#define COMMUNICATION_DEVICE_CLASS	0x02
-
 /** Communications Class Subclass Codes */
 #define ACM_SUBCLASS			0x02
 #define ECM_SUBCLASS			0x06
