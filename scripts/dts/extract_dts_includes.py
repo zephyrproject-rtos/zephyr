@@ -877,7 +877,8 @@ def main():
             "CONFIG_UART_CONSOLE_ON_DEV_NAME": "zephyr,console",
             "CONFIG_BT_UART_ON_DEV_NAME": "zephyr,bt-uart",
             "CONFIG_UART_PIPE_ON_DEV_NAME": "zephyr,uart-pipe",
-            "CONFIG_BT_MONITOR_ON_DEV_NAME": "zephyr,bt-mon-uart"
+            "CONFIG_BT_MONITOR_ON_DEV_NAME": "zephyr,bt-mon-uart",
+            "CONFIG_UART_MCUMGR_ON_DEV_NAME": "zephyr,uart-mcumgr",
             }
 
     for k, v in name_dict.items():
