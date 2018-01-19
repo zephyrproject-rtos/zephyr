@@ -9,6 +9,7 @@
 #include <tc_util.h>
 #include <kernel_structs.h>
 #include <irq_offload.h>
+#include <nano_internal.h>
 
 #if defined(CONFIG_X86) && defined(CONFIG_X86_MMU)
 #define STACKSIZE (8192)
