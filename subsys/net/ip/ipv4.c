@@ -69,10 +69,9 @@ struct net_pkt *net_ipv4_create(struct net_context *context,
 				const struct in_addr *src,
 				const struct in_addr *dst)
 {
-	struct net_if_config *config;
+	struct net_if_ipv4 *ipv4 = net_pkt_iface(pkt)->config.ip.ipv4;
 
-	config = net_if_config_get(net_pkt_iface(pkt));
-
+	NET_ASSERT(ipv4);
 	NET_ASSERT(((struct sockaddr_in_ptr *)&context->local)->sin_addr);
 
 	if (!src) {
@@ -81,7 +80,7 @@ struct net_pkt *net_ipv4_create(struct net_context *context,
 
 	if (net_is_ipv4_addr_unspecified(src)
 	    || net_is_ipv4_addr_mcast(src)) {
-		src = &config->ip.ipv4.unicast[0].address.in_addr;
+		src = &ipv4->unicast[0].address.in_addr;
 	}
 
 	return net_ipv4_create_raw(pkt,

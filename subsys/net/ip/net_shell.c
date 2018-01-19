@@ -161,10 +161,13 @@ static void iface_cb(struct net_if *iface, void *user_data)
 #if defined(CONFIG_NET_IPV6)
 	struct net_if_ipv6_prefix *prefix;
 	struct net_if_router *router;
+	struct net_if_ipv6 *ipv6;
+#endif
+#if defined(CONFIG_NET_IPV4)
+	struct net_if_ipv4 *ipv4;
 #endif
 	struct net_if_addr *unicast;
 	struct net_if_mcast_addr *mcast;
-	struct net_if_config *config;
 	const char *extra;
 	int i, count;
 
@@ -179,19 +182,19 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		return;
 	}
 
-	config = &iface->config;
-
-	printk("Link addr : %s\n", net_sprint_ll_addr(
-		       net_if_get_link_addr(iface)->addr,
-		       net_if_get_link_addr(iface)->len));
+	printk("Link addr : %s\n",
+	       net_sprint_ll_addr(net_if_get_link_addr(iface)->addr,
+				  net_if_get_link_addr(iface)->len));
 	printk("MTU       : %d\n", net_if_get_mtu(iface));
 
 #if defined(CONFIG_NET_IPV6)
 	count = 0;
 
+	ipv6 = iface->config.ip.ipv6;
+
 	printk("IPv6 unicast addresses (max %d):\n", NET_IF_MAX_IPV6_ADDR);
-	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
-		unicast = &config->ip.ipv6.unicast[i];
+	for (i = 0; ipv6 && i < NET_IF_MAX_IPV6_ADDR; i++) {
+		unicast = &ipv6->unicast[i];
 
 		if (!unicast->is_used) {
 			continue;
@@ -212,8 +215,8 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	count = 0;
 
 	printk("IPv6 multicast addresses (max %d):\n", NET_IF_MAX_IPV6_MADDR);
-	for (i = 0; i < NET_IF_MAX_IPV6_MADDR; i++) {
-		mcast = &config->ip.ipv6.mcast[i];
+	for (i = 0; ipv6 && i < NET_IF_MAX_IPV6_MADDR; i++) {
+		mcast = &ipv6->mcast[i];
 
 		if (!mcast->is_used) {
 			continue;
@@ -232,8 +235,8 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	count = 0;
 
 	printk("IPv6 prefixes (max %d):\n", NET_IF_MAX_IPV6_PREFIX);
-	for (i = 0; i < NET_IF_MAX_IPV6_PREFIX; i++) {
-		prefix = &config->ip.ipv6.prefix[i];
+	for (i = 0; ipv6 && i < NET_IF_MAX_IPV6_PREFIX; i++) {
+		prefix = &ipv6->prefix[i];
 
 		if (!prefix->is_used) {
 			continue;
@@ -259,14 +262,16 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		       router->is_infinite ? " infinite" : "");
 	}
 
-	printk("IPv6 hop limit           : %d\n",
-	       config->ip.ipv6.hop_limit);
-	printk("IPv6 base reachable time : %d\n",
-	       config->ip.ipv6.base_reachable_time);
-	printk("IPv6 reachable time      : %d\n",
-	       config->ip.ipv6.reachable_time);
-	printk("IPv6 retransmit timer    : %d\n",
-	       config->ip.ipv6.retrans_timer);
+	if (ipv6) {
+		printk("IPv6 hop limit           : %d\n",
+		       ipv6->hop_limit);
+		printk("IPv6 base reachable time : %d\n",
+		       ipv6->base_reachable_time);
+		printk("IPv6 reachable time      : %d\n",
+		       ipv6->reachable_time);
+		printk("IPv6 retransmit timer    : %d\n",
+		       ipv6->retrans_timer);
+	}
 
 #endif /* CONFIG_NET_IPV6 */
 
@@ -288,10 +293,11 @@ static void iface_cb(struct net_if *iface, void *user_data)
 
 	count = 0;
 
-	printk("IPv4 unicast addresses (max %d):\n",
-	       NET_IF_MAX_IPV4_ADDR);
-	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
-		unicast = &config->ip.ipv4.unicast[i];
+	ipv4 = iface->config.ip.ipv4;
+
+	printk("IPv4 unicast addresses (max %d):\n", NET_IF_MAX_IPV4_ADDR);
+	for (i = 0; ipv4 && i < NET_IF_MAX_IPV4_ADDR; i++) {
+		unicast = &ipv4->unicast[i];
 
 		if (!unicast->is_used) {
 			continue;
@@ -312,10 +318,9 @@ static void iface_cb(struct net_if *iface, void *user_data)
 
 	count = 0;
 
-	printk("IPv4 multicast addresses (max %d):\n",
-	       NET_IF_MAX_IPV4_MADDR);
-	for (i = 0; i < NET_IF_MAX_IPV4_MADDR; i++) {
-		mcast = &config->ip.ipv4.mcast[i];
+	printk("IPv4 multicast addresses (max %d):\n", NET_IF_MAX_IPV4_MADDR);
+	for (i = 0; ipv4 && i < NET_IF_MAX_IPV4_MADDR; i++) {
+		mcast = &ipv4->mcast[i];
 
 		if (!mcast->is_used) {
 			continue;
@@ -331,25 +336,27 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		printk("\t<none>\n");
 	}
 
-	printk("IPv4 gateway : %s\n",
-	       net_sprint_ipv4_addr(&config->ip.ipv4.gw));
-	printk("IPv4 netmask : %s\n",
-	       net_sprint_ipv4_addr(&config->ip.ipv4.netmask));
+	if (ipv4) {
+		printk("IPv4 gateway : %s\n",
+		       net_sprint_ipv4_addr(&ipv4->gw));
+		printk("IPv4 netmask : %s\n",
+		       net_sprint_ipv4_addr(&ipv4->netmask));
+	}
 #endif /* CONFIG_NET_IPV4 */
 
 #if defined(CONFIG_NET_DHCPV4)
 	printk("DHCPv4 lease time : %u\n",
-	       config->dhcpv4.lease_time);
+	       iface->config.dhcpv4.lease_time);
 	printk("DHCPv4 renew time : %u\n",
-	       config->dhcpv4.renewal_time);
+	       iface->config.dhcpv4.renewal_time);
 	printk("DHCPv4 server     : %s\n",
-	       net_sprint_ipv4_addr(&config->dhcpv4.server_id));
+	       net_sprint_ipv4_addr(&iface->config.dhcpv4.server_id));
 	printk("DHCPv4 requested  : %s\n",
-	       net_sprint_ipv4_addr(&config->dhcpv4.requested_ip));
+	       net_sprint_ipv4_addr(&iface->config.dhcpv4.requested_ip));
 	printk("DHCPv4 state      : %s\n",
-	       net_dhcpv4_state_name(config->dhcpv4.state));
+	       net_dhcpv4_state_name(iface->config.dhcpv4.state));
 	printk("DHCPv4 attempts   : %d\n",
-	       config->dhcpv4.attempts);
+	       iface->config.dhcpv4.attempts);
 #endif /* CONFIG_NET_DHCPV4 */
 }
 
@@ -2259,7 +2266,7 @@ static void get_my_ipv4_addr(struct net_if *iface,
 {
 	/* Just take the first IPv4 address of an interface. */
 	memcpy(&net_sin(myaddr)->sin_addr,
-	       &iface->config.ip.ipv4.unicast[0].address.in_addr,
+	       &iface->config.ip.ipv4->unicast[0].address.in_addr,
 	       sizeof(struct in_addr));
 
 	net_sin(myaddr)->sin_port = 0; /* let the IP stack to select */
