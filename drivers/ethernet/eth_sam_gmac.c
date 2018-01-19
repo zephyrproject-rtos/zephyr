@@ -835,6 +835,8 @@ static void eth0_iface_init(struct net_if *iface)
 
 	/* Set up link parameters */
 	link_configure(cfg->regs, link_status);
+
+	ethernet_init(iface);
 }
 
 static enum eth_hw_caps eth_gmac_get_capabilities(struct device *dev)

@@ -15,6 +15,7 @@
 #include <misc/__assert.h>
 #include <net/net_core.h>
 #include <net/net_pkt.h>
+#include <net/ethernet.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
@@ -327,6 +328,8 @@ static void eth_initialize(struct net_if *iface)
 	if (r < 0) {
 		SYS_LOG_ERR("Could not initialize ethernet device: %d", r);
 	}
+
+	ethernet_init(iface);
 }
 
 /* Bindings to the plaform */

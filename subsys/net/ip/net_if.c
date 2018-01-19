@@ -2328,6 +2328,24 @@ void net_if_init(void)
 #endif
 	}
 #endif /* CONFIG_NET_IPV6 */
+
+#if defined(CONFIG_NET_VLAN)
+	/* Make sure that we do not have too many network interfaces
+	 * compared to the number of VLAN interfaces.
+	 */
+	for (iface = __net_if_start, if_count = 0;
+	     iface != __net_if_end; iface++) {
+		if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
+			if_count++;
+		}
+	}
+
+	if (if_count > CONFIG_NET_VLAN_COUNT) {
+		NET_WARN("You have configured only %d VLAN interfaces"
+			 " but you have %d network interfaces.",
+			 CONFIG_NET_VLAN_COUNT, if_count);
+	}
+#endif
 }
 
 void net_if_post_init(void)

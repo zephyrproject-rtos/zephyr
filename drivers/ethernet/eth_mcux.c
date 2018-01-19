@@ -599,6 +599,8 @@ static void eth_0_iface_init(struct net_if *iface)
 			     sizeof(context->mac_addr),
 			     NET_LINK_ETHERNET);
 	context->iface = iface;
+
+	ethernet_init(iface);
 }
 
 static enum eth_hw_caps eth_mcux_get_capabilities(struct device *dev)

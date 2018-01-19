@@ -26,6 +26,7 @@
 #include <net/net_pkt.h>
 #include <net/net_if.h>
 #include <net/net_core.h>
+#include <net/ethernet.h>
 #include <console/uart_pipe.h>
 #include <net/ethernet.h>
 
@@ -463,6 +464,8 @@ use_random_mac:
 	}
 	net_if_set_link_addr(iface, ll_addr->addr, ll_addr->len,
 			     NET_LINK_ETHERNET);
+
+	ethernet_init(iface);
 }
 
 static struct slip_context slip_context_data;
@@ -483,6 +486,10 @@ static struct ethernet_api slip_if_api = {
 #define _SLIP_L2_LAYER ETHERNET_L2
 #define _SLIP_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(ETHERNET_L2)
 #define _SLIP_MTU 1500
+
+ETH_NET_DEVICE_INIT(slip, CONFIG_SLIP_DRV_NAME, slip_init, &slip_context_data,
+		    NULL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &slip_if_api,
+		    _SLIP_MTU);
 #else
 
 static struct net_if_api slip_if_api = {
@@ -493,8 +500,8 @@ static struct net_if_api slip_if_api = {
 #define _SLIP_L2_LAYER DUMMY_L2
 #define _SLIP_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(DUMMY_L2)
 #define _SLIP_MTU 576
-#endif
 
 NET_DEVICE_INIT(slip, CONFIG_SLIP_DRV_NAME, slip_init, &slip_context_data,
 		NULL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &slip_if_api,
 		_SLIP_L2_LAYER, _SLIP_L2_CTX_TYPE, _SLIP_MTU);
+#endif
