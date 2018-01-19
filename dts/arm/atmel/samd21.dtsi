@@ -18,13 +18,6 @@
 		};
 	};
 
-	flash0: flash@0 {
-		compatible = "soc-nv-flash";
-		label = "FLASH_0";
-		reg = <0 0x40000>;
-		write-block-size = <64>;
-	};
-
 	sram0: memory@20000000 {
 		device_type = "memory";
 		compatible = "mmio-sram";
@@ -32,6 +25,23 @@
 	};
 
 	soc {
+		nvmctrl: nvmctrl@41004000  {
+			compatible = "atmel,sam0-nvmctrl";
+			label = "FLASH_CTRL";
+			reg = <0x40022000 0x22>;
+			interrupts = <5 0>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				label = "FLASH_0";
+				reg = <0 0x40000>;
+				write-block-size = <64>;
+			};
+		};
+
 		wdog: watchdog@40001000 {
 			compatible = "atmel,sam0-watchdog";
 			reg = <0x40001000 9>;
