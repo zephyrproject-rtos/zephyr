@@ -90,11 +90,12 @@ static void setup_dhcpv4(struct net_if *iface)
 #define setup_dhcpv4(...)
 #endif /* CONFIG_NET_DHCPV4 */
 
-#if defined(CONFIG_NET_IPV4) && !defined(CONFIG_NET_DHCPV4)
-
-#if !defined(CONFIG_NET_APP_MY_IPV4_ADDR)
+#if defined(CONFIG_NET_IPV4) && !defined(CONFIG_NET_DHCPV4) && \
+    !defined(CONFIG_NET_APP_MY_IPV4_ADDR)
 #error "You need to define an IPv4 address or enable DHCPv4!"
 #endif
+
+#if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_APP_MY_IPV4_ADDR)
 
 static void setup_ipv4(struct net_if *iface)
 {
