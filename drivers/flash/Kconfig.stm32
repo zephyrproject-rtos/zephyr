@@ -22,11 +22,4 @@ menuconfig SOC_FLASH_STM32
 	help
 	 Enable STM32F0x, STM32F3x, STM32F4x OR STM32L4x series flash driver.
 
-config SOC_FLASH_STM32_DEV_NAME
-	string "STM32 flash device name"
-	depends on SOC_FLASH_STM32
-	default "FLASH_STM32"
-	help
-	 Specify the device name for the flash driver.
-
 endif
