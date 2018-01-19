@@ -10111,7 +10111,9 @@ u32_t radio_adv_enable(u8_t phy_p, u16_t interval, u8_t chan_map,
 u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 		       u8_t rl_idx,
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
-		       u8_t retry, u8_t scan_window, u8_t scan_delay)
+		       u8_t at_anchor, u32_t ticks_anchor, u8_t retry,
+		       u8_t scan_window, u8_t scan_delay)
+{
 #else /* !CONFIG_BT_HCI_MESH_EXT */
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 u32_t radio_adv_enable(u8_t phy_p, u16_t interval, u8_t chan_map,
@@ -10120,8 +10122,10 @@ u32_t radio_adv_enable(u8_t phy_p, u16_t interval, u8_t chan_map,
 u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 		       u8_t rl_idx)
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
-#endif /* !CONFIG_BT_HCI_MESH_EXT */
 {
+	u32_t ticks_anchor;
+#endif /* !CONFIG_BT_HCI_MESH_EXT */
+
 	u32_t volatile ret_cb = TICKER_STATUS_BUSY;
 	u32_t ticks_slot_offset;
 	struct connection *conn;
@@ -10339,15 +10343,21 @@ u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 		max(_radio.advertiser.hdr.ticks_active_to_start,
 		    _radio.advertiser.hdr.ticks_xtal_to_start);
 
+#if !defined(CONFIG_BT_HCI_MESH_EXT)
+	ticks_anchor = ticker_ticks_now_get();
+#else /* CONFIG_BT_HCI_MESH_EXT */
+	if (!at_anchor) {
+		ticks_anchor = ticker_ticks_now_get();
+	}
+#endif /* !CONFIG_BT_HCI_MESH_EXT */
+
 	/* High Duty Cycle Directed Advertising if interval is 0. */
 	_radio.advertiser.is_hdcd = !interval &&
 				    (pdu_adv->type == PDU_ADV_TYPE_DIRECT_IND);
 	if (_radio.advertiser.is_hdcd) {
-		u32_t ticks_now = ticker_ticks_now_get();
-
 		ret = ticker_start(RADIO_TICKER_INSTANCE_ID_RADIO,
 				   RADIO_TICKER_USER_ID_APP,
-				   RADIO_TICKER_ID_ADV, ticks_now, 0,
+				   RADIO_TICKER_ID_ADV, ticks_anchor, 0,
 				   (ticks_slot_offset +
 				    _radio.advertiser.hdr.ticks_slot),
 				   TICKER_NULL_REMAINDER, TICKER_NULL_LAZY,
@@ -10370,7 +10380,7 @@ u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 		ret =
 			ticker_start(RADIO_TICKER_INSTANCE_ID_RADIO,
 				     RADIO_TICKER_USER_ID_APP,
-				     RADIO_TICKER_ID_ADV_STOP, ticks_now,
+				     RADIO_TICKER_ID_ADV_STOP, ticks_anchor,
 				     HAL_TICKER_US_TO_TICKS(
 					(1280 * 1000) +
 					RADIO_TICKER_XTAL_OFFSET_US),
@@ -10383,7 +10393,7 @@ u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 			ticker_start(RADIO_TICKER_INSTANCE_ID_RADIO,
 				     RADIO_TICKER_USER_ID_APP,
 				     RADIO_TICKER_ID_ADV,
-				     ticker_ticks_now_get(), 0,
+				     ticks_anchor, 0,
 				     HAL_TICKER_US_TO_TICKS((u64_t)interval *
 							    625),
 				     TICKER_NULL_REMAINDER, TICKER_NULL_LAZY,

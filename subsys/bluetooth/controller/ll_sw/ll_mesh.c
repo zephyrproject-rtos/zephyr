@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2018 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,16 +15,17 @@
 #include "ticker/ticker.h"
 
 #include "ll.h"
-
 #include "ll_mesh.h"
 
 u8_t ll_mesh_advertise(u8_t handle, u8_t own_addr_type,
 		       u8_t const *const rand_addr,
 		       u8_t chan_map, u8_t tx_pwr,
+		       u8_t min_tx_delay, u8_t max_tx_delay,
 		       u8_t retry, u8_t interval,
 		       u8_t scan_window, u8_t scan_delay, u8_t scan_filter,
 		       u8_t data_len, u8_t const *const data)
 {
+	u32_t ticks_anchor;
 	u8_t err;
 
 	/* convert to 625 us units for internal use */
@@ -53,9 +54,14 @@ u8_t ll_mesh_advertise(u8_t handle, u8_t own_addr_type,
 
 	/* TODO: scan filter */
 
+	/* TODO: calculate random tx delay */
+	ticks_anchor = ticker_ticks_now_get();
+	ticks_anchor += HAL_TICKER_US_TO_TICKS(min_tx_delay * 10000);
+
 	/* Enable advertising instance */
-	/* TODO: multi-instance support */
-	err = ll_adv_enable(handle, 1, retry, scan_window, scan_delay);
+	err = ll_adv_enable(handle, 1,
+			    1, ticks_anchor, retry,
+			    scan_window, scan_delay);
 
 	return err;
 }
@@ -65,7 +71,7 @@ u8_t ll_mesh_advertise_cancel(u8_t handle)
 	u8_t err;
 
 	/* TODO: multi-instance support */
-	err = ll_adv_enable(handle, 0, 0, 0, 0);
+	err = ll_adv_enable(handle, 0, 0, 0, 0, 0, 0);
 
 	return err;
 }

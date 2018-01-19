@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017 Nordic Semiconductor ASA
+ * Copyright (c) 2016-2018 Nordic Semiconductor ASA
  * Copyright (c) 2016 Vinayak Kariappa Chettimada
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -331,8 +331,9 @@ void ll_scan_data_set(u8_t len, u8_t const *const data)
 }
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
-u32_t ll_adv_enable(u16_t handle, u8_t enable, u8_t retry, u8_t scan_window,
-		    u8_t scan_delay)
+u32_t ll_adv_enable(u16_t handle, u8_t enable,
+		    u8_t at_anchor, u32_t ticks_anchor, u8_t retry,
+		    u8_t scan_window, u8_t scan_delay)
 {
 #else /* !CONFIG_BT_HCI_MESH_EXT */
 u32_t ll_adv_enable(u8_t enable)
@@ -427,7 +428,8 @@ u32_t ll_adv_enable(u8_t enable)
 	status = radio_adv_enable(ll_adv.interval, ll_adv.chan_map,
 				  ll_adv.filter_policy, rl_idx,
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
-				  retry, scan_window, scan_delay);
+				  at_anchor, ticks_anchor, retry,
+				  scan_window, scan_delay);
 #else /* !CONFIG_BT_HCI_MESH_EXT */
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	status = radio_adv_enable(ll_adv.phy_p, ll_adv.interval,

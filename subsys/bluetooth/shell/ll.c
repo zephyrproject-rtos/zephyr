@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2018 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -172,7 +172,7 @@ int cmd_advx(int argc, char *argv[])
 disable:
 	printk("adv enable (%u)...", enable);
 #if defined(CONFIG_BT_HCI_MESH_EXT)
-	err = ll_adv_enable(0, enable, 0, 0, 0);
+	err = ll_adv_enable(0, enable, 0, 0, 0, 0, 0);
 #else /* !CONFIG_BT_HCI_MESH_EXT */
 	err = ll_adv_enable(enable);
 #endif /* !CONFIG_BT_HCI_MESH_EXT */

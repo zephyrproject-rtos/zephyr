@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Nordic Semiconductor ASA
+ * Copyright (c) 2016-2018 Nordic Semiconductor ASA
  * Copyright (c) 2016 Vinayak Kariappa Chettimada
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -974,7 +974,7 @@ static void le_set_adv_enable(struct net_buf *buf, struct net_buf **evt)
 	u32_t status;
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
-	status = ll_adv_enable(0, cmd->enable, 0, 0, 0);
+	status = ll_adv_enable(0, cmd->enable, 0, 0, 0, 0, 0);
 #else /* !CONFIG_BT_HCI_MESH_EXT */
 	status = ll_adv_enable(cmd->enable);
 #endif /* !CONFIG_BT_HCI_MESH_EXT */
@@ -2040,6 +2040,7 @@ static void mesh_advertise(struct net_buf *buf, struct net_buf **evt)
 	status = ll_mesh_advertise(adv_slot,
 				   cmd->own_addr_type, cmd->random_addr.val,
 				   cmd->ch_map, cmd->tx_power,
+				   cmd->min_tx_delay, cmd->max_tx_delay,
 				   cmd->retx_count, cmd->retx_interval,
 				   cmd->scan_duration, cmd->scan_delay,
 				   cmd->scan_filter, cmd->data_len, cmd->data);
@@ -2418,8 +2419,7 @@ static inline void le_mesh_scan_report(struct pdu_adv *adv, struct net_buf *buf,
 
 	/* Filter based on currently active Scan Filter */
 	if (sf_curr < ARRAY_SIZE(scan_filters) &&
-	    !scan_filter_apply(sf_curr, &adv->payload.adv_ind.data[0],
-			       data_len)) {
+	    !scan_filter_apply(sf_curr, &adv->adv_ind.data[0], data_len)) {
 		/* Drop the report */
 		return;
 	}
@@ -2434,14 +2434,13 @@ static inline void le_mesh_scan_report(struct pdu_adv *adv, struct net_buf *buf,
 	mep->num_reports = 1;
 	sr = (void *)(((u8_t *)mep) + sizeof(*mep));
 	sr->addr.type = adv->tx_addr;
-	memcpy(&sr->addr.a.val[0], &adv->payload.adv_ind.addr[0],
-	       sizeof(bt_addr_t));
+	memcpy(&sr->addr.a.val[0], &adv->adv_ind.addr[0], sizeof(bt_addr_t));
 	sr->chan = chan;
 	sr->rssi = rssi;
 	sys_put_le32(instant, (u8_t *)&sr->instant);
 
 	sr->data_len = data_len;
-	memcpy(&sr->data[0], &adv->payload.adv_ind.data[0], data_len);
+	memcpy(&sr->data[0], &adv->adv_ind.data[0], data_len);
 }
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
