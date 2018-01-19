@@ -96,6 +96,8 @@ static void eth_iface_init(struct net_if *iface)
 
 	DBG("Iface %p addr %s\n", iface,
 	    net_sprint_ll_addr(context->mac_addr, sizeof(context->mac_addr)));
+
+	ethernet_init(iface);
 }
 
 static int eth_tx_offloading_disabled(struct net_if *iface, struct net_pkt *pkt)
@@ -250,15 +252,17 @@ static int eth_init(struct device *dev)
 	return 0;
 }
 
-NET_DEVICE_INIT(eth_offloading_disabled_test, "eth_offloading_disabled_test",
-		eth_init, &eth_context_offloading_disabled,
-		NULL, CONFIG_ETH_INIT_PRIORITY, &api_funcs_offloading_disabled,
-		ETHERNET_L2, NET_L2_GET_CTX_TYPE(ETHERNET_L2), 1500);
+ETH_NET_DEVICE_INIT(eth_offloading_disabled_test,
+		    "eth_offloading_disabled_test",
+		    eth_init, &eth_context_offloading_disabled,
+		    NULL, CONFIG_ETH_INIT_PRIORITY,
+		    &api_funcs_offloading_disabled, 1500);
 
-NET_DEVICE_INIT(eth_offloading_enabled_test, "eth_offloading_enabled_test",
-		eth_init, &eth_context_offloading_enabled,
-		NULL, CONFIG_ETH_INIT_PRIORITY, &api_funcs_offloading_enabled,
-		ETHERNET_L2, NET_L2_GET_CTX_TYPE(ETHERNET_L2), 1500);
+ETH_NET_DEVICE_INIT(eth_offloading_enabled_test,
+		    "eth_offloading_enabled_test",
+		    eth_init, &eth_context_offloading_enabled,
+		    NULL, CONFIG_ETH_INIT_PRIORITY,
+		    &api_funcs_offloading_enabled, 1500);
 
 struct user_data {
 	int eth_if_count;

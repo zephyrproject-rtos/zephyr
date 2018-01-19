@@ -358,7 +358,6 @@ struct net_if_dev {
 	 */
 	struct net_offload *offload;
 #endif /* CONFIG_NET_OFFLOAD */
-
 };
 
 /**
@@ -1576,18 +1575,18 @@ struct net_if_api {
 #define NET_IF_GET(dev_name, sfx)					\
 	((struct net_if *)&NET_IF_GET_NAME(dev_name, sfx))
 
-#define NET_IF_INIT(dev_name, sfx, _l2, _mtu)				\
-	static struct net_if_dev (NET_IF_DEV_GET_NAME(dev_name, sfx)) __used \
-	__attribute__((__section__(".net_if_dev.data"))) = {		\
+#define NET_IF_INIT(dev_name, sfx, _l2, _mtu, _num_configs)		\
+	static struct net_if_dev (NET_IF_DEV_GET_NAME(dev_name, sfx))	\
+	__used __attribute__((__section__(".net_if_dev.data"))) = {	\
 		.dev = &(__device_##dev_name),				\
 		.l2 = &(NET_L2_GET_NAME(_l2)),				\
 		.l2_data = &(NET_L2_GET_DATA(dev_name, sfx)),		\
 		.mtu = _mtu,						\
 	};								\
 	static struct net_if						\
-	(NET_IF_GET_NAME(dev_name, sfx))[NET_IF_MAX_CONFIGS] __used	\
+	(NET_IF_GET_NAME(dev_name, sfx))[_num_configs] __used		\
 	__attribute__((__section__(".net_if.data"))) = {		\
-		[0 ... (NET_IF_MAX_CONFIGS - 1)] = {			\
+		[0 ... (_num_configs - 1)] = {				\
 			.if_dev = &(NET_IF_DEV_GET_NAME(dev_name, sfx)), \
 			NET_IF_CONFIG_INIT				\
 		}							\
@@ -1601,7 +1600,7 @@ struct net_if_api {
 	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data,	\
 			    cfg_info, POST_KERNEL, prio, api);	\
 	NET_L2_DATA_INIT(dev_name, 0, l2_ctx_type);		\
-	NET_IF_INIT(dev_name, 0, l2, mtu)
+	NET_IF_INIT(dev_name, 0, l2, mtu, NET_IF_MAX_CONFIGS)
 
 /**
  * If your network device needs more than one instance of a network interface,
@@ -1614,7 +1613,7 @@ struct net_if_api {
 	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data,		\
 			    cfg_info, POST_KERNEL, prio, api);		\
 	NET_L2_DATA_INIT(dev_name, instance, l2_ctx_type);		\
-	NET_IF_INIT(dev_name, instance, l2, mtu)
+	NET_IF_INIT(dev_name, instance, l2, mtu, NET_IF_MAX_CONFIGS)
 
 #ifdef __cplusplus
 }

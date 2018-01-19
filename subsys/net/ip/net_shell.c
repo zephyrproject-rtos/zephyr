@@ -47,6 +47,10 @@
 #include <net/arp.h>
 #endif
 
+#if defined(CONFIG_NET_VLAN)
+#include <net/ethernet.h>
+#endif
+
 #include "net_shell.h"
 #include "net_stats.h"
 
@@ -166,6 +170,9 @@ static void iface_cb(struct net_if *iface, void *user_data)
 #if defined(CONFIG_NET_IPV4)
 	struct net_if_ipv4 *ipv4;
 #endif
+#if defined(CONFIG_NET_VLAN)
+	struct ethernet_context *eth_ctx;
+#endif
 	struct net_if_addr *unicast;
 	struct net_if_mcast_addr *mcast;
 	const char *extra;
@@ -182,10 +189,37 @@ static void iface_cb(struct net_if *iface, void *user_data)
 		return;
 	}
 
-	printk("Link addr : %s\n",
-	       net_sprint_ll_addr(net_if_get_link_addr(iface)->addr,
-				  net_if_get_link_addr(iface)->len));
+#if defined(CONFIG_NET_VLAN)
+	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
+		printk("Link addr     : %s\n",
+		       net_sprint_ll_addr(net_if_get_link_addr(iface)->addr,
+					  net_if_get_link_addr(iface)->len));
+		printk("MTU           : %d\n", net_if_get_mtu(iface));
+
+		eth_ctx = net_if_l2_data(iface);
+
+		if (eth_ctx->vlan_enabled) {
+			for (i = 0; i < CONFIG_NET_VLAN_COUNT; i++) {
+				if (eth_ctx->vlan[i].iface != iface ||
+				    eth_ctx->vlan[i].tag ==
+							NET_VLAN_TAG_UNSPEC) {
+					continue;
+				}
+
+				printk("[%d] VLAN tag  : %d (0x%x)\n", i,
+				       eth_ctx->vlan[i].tag,
+				       eth_ctx->vlan[i].tag);
+			}
+		} else {
+			printk("VLAN not enabled\n");
+		}
+	}
+#else
+	printk("Link addr : %s\n", net_sprint_ll_addr(
+		       net_if_get_link_addr(iface)->addr,
+		       net_if_get_link_addr(iface)->len));
 	printk("MTU       : %d\n", net_if_get_mtu(iface));
+#endif
 
 #if defined(CONFIG_NET_IPV6)
 	count = 0;
