@@ -404,7 +404,30 @@ SECTION_FUNC(TEXT, __swap)
      */
     cpsie i
 #elif defined(CONFIG_ARMV7_M)
+    /*
+     * Check if we're in exception handler or not.
+     * If we're in exception handler, don't do svc directly or
+     * it will cause hardfault due to priority escalation.
+     * In this situation, just unlock interrupts and set pendsv
+     * bit in icsr instead.
+     */
+    mrs r0, IPSR
+    cmp r0, #0
+    bne _set_icsr_pendsv_bit
     svc #0
+    b _swap_end
+
+_set_icsr_pendsv_bit:
+    /* Unlock interrupts */
+    eors.n r0, r0
+    msr BASEPRI, r0
+    /* Set PendSV bit */
+    ldr r1, =_SCS_ICSR
+    ldr r3, =_SCS_ICSR_PENDSV
+    str r3, [r1, #0]
+
+_swap_end:
+
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M */
