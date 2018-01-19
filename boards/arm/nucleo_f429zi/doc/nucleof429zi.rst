@@ -95,6 +95,8 @@ The Zephyr nucleo_f249zi board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
 +-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
 
 
 Other hardware features are not yet supported on this Zephyr port.
@@ -141,6 +143,8 @@ Default Zephyr Peripheral Mapping:
 - UART_3_TX : PD8
 - UART_3_RX : PD9
 - PWM_2_CH1 : PA0
+- I2C1_SCL : PB8
+- I2C1_SDA : PB9
 - USER_PB : PC13
 - LD1 : PB0
 - LD2 : PB7

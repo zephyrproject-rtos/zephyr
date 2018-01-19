@@ -7,4 +7,5 @@
 
 config BOARD_NUCLEO_F429ZI
 	bool "NUCLEO-144 F429ZI  Development Board"
+	select HAS_DTS_I2C_DEVICE
 	depends on SOC_STM32F429XI

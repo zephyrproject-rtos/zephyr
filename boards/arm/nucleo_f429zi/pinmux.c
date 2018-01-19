@@ -34,6 +34,10 @@ static const struct pin_config pinconf[] = {
 	{STM32_PIN_PG13, STM32F4_PINMUX_FUNC_PG13_ETH},
 	{STM32_PIN_PB13, STM32F4_PINMUX_FUNC_PB13_ETH},
 #endif /* CONFIG_ETH_STM32_HAL */
+#ifdef CONFIG_I2C_1
+	{STM32_PIN_PB8, STM32F4_PINMUX_FUNC_PB8_I2C1_SCL},
+	{STM32_PIN_PB9, STM32F4_PINMUX_FUNC_PB9_I2C1_SDA},
+#endif
 };
 
 static int pinmux_stm32_init(struct device *port)
