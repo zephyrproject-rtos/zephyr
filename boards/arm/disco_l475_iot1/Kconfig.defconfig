@@ -35,9 +35,6 @@ config SPI_STM32_INTERRUPT
 config SPI_3
 	default y
 
-config POLL
-	default y
-
 endif # SPI
 
 if PWM
