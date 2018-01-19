@@ -208,6 +208,7 @@ enum net_addr_type {
 	NET_ADDR_AUTOCONF,
 	NET_ADDR_DHCP,
 	NET_ADDR_MANUAL,
+	NET_ADDR_OVERRIDABLE,
 };
 
 #if NET_LOG_ENABLED > 0
@@ -220,6 +221,8 @@ static inline char *net_addr_type2str(enum net_addr_type type)
 		return "DHCP";
 	case NET_ADDR_MANUAL:
 		return "MANUAL";
+	case NET_ADDR_OVERRIDABLE:
+		return "OVERRIDE";
 	case NET_ADDR_ANY:
 	default:
 		break;
