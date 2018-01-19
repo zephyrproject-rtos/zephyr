@@ -151,13 +151,13 @@ static inline struct in_addr *if_get_addr(struct net_if *iface)
 	int i;
 
 	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
-		if (iface->config.ip.ipv4.unicast[i].is_used &&
-		    iface->config.ip.ipv4.unicast[i].address.family ==
+		if (iface->config.ip.ipv4->unicast[i].is_used &&
+		    iface->config.ip.ipv4->unicast[i].address.family ==
 								AF_INET &&
-		    iface->config.ip.ipv4.unicast[i].addr_state ==
+		    iface->config.ip.ipv4->unicast[i].addr_state ==
 							NET_ADDR_PREFERRED) {
 			return
-			     &iface->config.ip.ipv4.unicast[i].address.in_addr;
+			    &iface->config.ip.ipv4->unicast[i].address.in_addr;
 		}
 	}
 
@@ -514,13 +514,13 @@ void run_tests(void)
 	arp_hdr = NET_ARP_HDR(pkt2);
 
 	if (!net_ipv4_addr_cmp(&arp_hdr->dst_ipaddr,
-			       &iface->config.ip.ipv4.gw)) {
+			       &iface->config.ip.ipv4->gw)) {
 		char out[sizeof("xxx.xxx.xxx.xxx")];
 
 		snprintk(out, sizeof(out), "%s",
 			 net_sprint_ipv4_addr(&arp_hdr->dst_ipaddr));
 		printk("ARP IP dst invalid %s, should be %s\n", out,
-			 net_sprint_ipv4_addr(&iface->config.ip.ipv4.gw));
+			 net_sprint_ipv4_addr(&iface->config.ip.ipv4->gw));
 		zassert_true(0, "exiting");
 	}
 
