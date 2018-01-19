@@ -2180,9 +2180,9 @@ static void send_mcast_dao(struct net_rpl_instance *instance)
 	/* Send a DAO for own multicast addresses */
 	for (i = 0; i < NET_IF_MAX_IPV6_MADDR; i++) {
 		addr =
-		    &instance->iface->config.ip.ipv6.mcast[i].address.in6_addr;
+		   &instance->iface->config.ip.ipv6->mcast[i].address.in6_addr;
 
-		if (instance->iface->config.ip.ipv6.mcast[i].is_used &&
+		if (instance->iface->config.ip.ipv6->mcast[i].is_used &&
 		    net_is_ipv6_addr_mcast_global(addr)) {
 
 			net_rpl_dao_send(instance->iface,

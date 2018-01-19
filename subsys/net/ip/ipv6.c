@@ -2567,7 +2567,6 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt)
 	struct net_nbr *nbr = NULL;
 	struct net_icmpv6_ra_hdr hdr, *ra_hdr;
 	struct net_if_router *router;
-	struct net_if_config *config;
 	struct net_buf *frag;
 	u16_t router_lifetime;
 	u32_t reachable_time;
@@ -2633,7 +2632,8 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt)
 		net_if_ipv6_set_base_reachable_time(net_pkt_iface(pkt),
 						    reachable_time);
 
-		net_if_ipv6_set_reachable_time(net_pkt_iface(pkt));
+		net_if_ipv6_set_reachable_time(
+			net_pkt_iface(pkt)->config.ip.ipv6);
 	}
 
 	if (retrans_timer) {
@@ -2761,10 +2761,8 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt)
 		nbr_clear_ns_pending(net_ipv6_nbr_data(nbr));
 	}
 
-	config = net_if_config_get(net_pkt_iface(pkt));
-
 	/* Cancel the RS timer on iface */
-	k_delayed_work_cancel(&config->ip.ipv6.rs_timer);
+	k_delayed_work_cancel(&net_pkt_iface(pkt)->config.ip.ipv6->rs_timer);
 
 	net_pkt_unref(pkt);
 
@@ -2954,11 +2952,11 @@ int net_ipv6_mld_leave(struct net_if *iface, const struct in6_addr *addr)
 
 static void send_mld_report(struct net_if *iface)
 {
-	struct net_if_config *config;
+	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
 	struct net_pkt *pkt;
 	int i, count = 0;
 
-	config = net_if_config_get(iface);
+	NET_ASSERT(ipv6);
 
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
 				     K_FOREVER);
@@ -2966,13 +2964,11 @@ static void send_mld_report(struct net_if *iface)
 	net_pkt_append_u8(pkt, 0); /* This will be the record count */
 
 	for (i = 0; i < NET_IF_MAX_IPV6_MADDR; i++) {
-		if (!config->ip.ipv6.mcast[i].is_used ||
-		    !config->ip.ipv6.mcast[i].is_joined) {
+		if (!ipv6->mcast[i].is_used || !ipv6->mcast[i].is_joined) {
 			continue;
 		}
 
-		pkt = create_mldv2(pkt,
-				   &config->ip.ipv6.mcast[i].address.in6_addr,
+		pkt = create_mldv2(pkt, &ipv6->mcast[i].address.in6_addr,
 				   NET_IPV6_MLDv2_MODE_IS_EXCLUDE, 0);
 		count++;
 	}

@@ -275,17 +275,14 @@ struct net_if_dhcpv4 {
 
 /**
  * @brief Network interface IP address configuration.
- *
- * TODO: Use pointers here so that we could have IPv6 only interface which
- *       would save memory by not having IPv4 enabled.
  */
 struct net_if_ip {
 #if defined(CONFIG_NET_IPV6)
-	struct net_if_ipv6 ipv6;
+	struct net_if_ipv6 *ipv6;
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
-	struct net_if_ipv4 ipv4;
+	struct net_if_ipv4 *ipv4;
 #endif /* CONFIG_NET_IPV4 */
 };
 
@@ -663,6 +660,28 @@ static inline struct net_if *net_if_get_ieee802154(void)
 
 #if defined(CONFIG_NET_IPV6)
 /**
+ * @brief Allocate network interface IPv6 config.
+ *
+ * @details This function will allocate new IPv6 config.
+ *
+ * @param iface Interface to use.
+ * @param ipv6 Pointer to allocated IPv6 struct is returned to caller.
+ *
+ * @return 0 if ok, <0 if error
+ */
+int net_if_config_ipv6_get(struct net_if *iface,
+			   struct net_if_ipv6 **ipv6);
+
+/**
+ * @brief Release network interface IPv6 config.
+ *
+ * @param iface Interface to use.
+ *
+ * @return 0 if ok, <0 if error
+ */
+int net_if_config_ipv6_put(struct net_if *iface);
+
+/**
  * @brief Check if this IPv6 address belongs to one of the interfaces.
  *
  * @param addr IPv6 address
@@ -685,19 +704,24 @@ static inline
 struct net_if_addr *net_if_ipv6_addr_lookup_by_iface(struct net_if *iface,
 						     struct in6_addr *addr)
 {
+	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
 	int i;
 
+	if (!ipv6) {
+		return NULL;
+	}
+
 	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
-		if (!iface->config.ip.ipv6.unicast[i].is_used ||
-		    iface->config.ip.ipv6.unicast[i].address.family
-								!= AF_INET6) {
+		if (!ipv6->unicast[i].is_used ||
+		    ipv6->unicast[i].address.family != AF_INET6) {
 			continue;
 		}
 
-		if (net_is_ipv6_prefix(addr->s6_addr,
-		     iface->config.ip.ipv6.unicast[i].address.in6_addr.s6_addr,
-				       128)) {
-			return &iface->config.ip.ipv6.unicast[i];
+		if (net_is_ipv6_prefix(
+			    addr->s6_addr,
+			    ipv6->unicast[i].address.in6_addr.s6_addr,
+			    128)) {
+			return &ipv6->unicast[i];
 		}
 	}
 
@@ -1019,11 +1043,11 @@ bool net_if_ipv6_router_rm(struct net_if_router *router);
  */
 static inline u8_t net_if_ipv6_get_hop_limit(struct net_if *iface)
 {
-	struct net_if_config *config;
+	if (!iface->config.ip.ipv6) {
+		return 0;
+	}
 
-	config = net_if_config_get(iface);
-
-	return config->ip.ipv6.hop_limit;
+	return iface->config.ip.ipv6->hop_limit;
 }
 
 /**
@@ -1035,11 +1059,11 @@ static inline u8_t net_if_ipv6_get_hop_limit(struct net_if *iface)
 static inline void net_ipv6_set_hop_limit(struct net_if *iface,
 					  u8_t hop_limit)
 {
-	struct net_if_config *config;
+	if (!iface->config.ip.ipv6) {
+		return;
+	}
 
-	config = net_if_config_get(iface);
-
-	config->ip.ipv6.hop_limit = hop_limit;
+	iface->config.ip.ipv6->hop_limit = hop_limit;
 }
 
 /**
@@ -1051,11 +1075,11 @@ static inline void net_ipv6_set_hop_limit(struct net_if *iface,
 static inline void net_if_ipv6_set_base_reachable_time(struct net_if *iface,
 						       u32_t reachable_time)
 {
-	struct net_if_config *config;
+	if (!iface->config.ip.ipv6) {
+		return;
+	}
 
-	config = net_if_config_get(iface);
-
-	config->ip.ipv6.base_reachable_time = reachable_time;
+	iface->config.ip.ipv6->base_reachable_time = reachable_time;
 }
 
 /**
@@ -1067,36 +1091,31 @@ static inline void net_if_ipv6_set_base_reachable_time(struct net_if *iface,
  */
 static inline u32_t net_if_ipv6_get_reachable_time(struct net_if *iface)
 {
-	struct net_if_config *config;
+	if (!iface->config.ip.ipv6) {
+		return 0;
+	}
 
-	config = net_if_config_get(iface);
-
-	return config->ip.ipv6.reachable_time;
+	return iface->config.ip.ipv6->reachable_time;
 }
 
 /**
  * @brief Calculate next reachable time value for IPv6 reachable time
  *
- * @param iface Network interface
+ * @param ipv6 IPv6 address configuration
  *
  * @return Reachable time
  */
-u32_t net_if_ipv6_calc_reachable_time(struct net_if *iface);
+u32_t net_if_ipv6_calc_reachable_time(struct net_if_ipv6 *ipv6);
 
 /**
  * @brief Set IPv6 reachable time for a given interface. This requires
  * that base reachable time is set for the interface.
  *
- * @param iface Network interface
+ * @param ipv6 IPv6 address configuration
  */
-static inline void net_if_ipv6_set_reachable_time(struct net_if *iface)
+static inline void net_if_ipv6_set_reachable_time(struct net_if_ipv6 *ipv6)
 {
-	struct net_if_config *config;
-
-	config = net_if_config_get(iface);
-
-	config->ip.ipv6.reachable_time =
-		net_if_ipv6_calc_reachable_time(iface);
+	ipv6->reachable_time = net_if_ipv6_calc_reachable_time(ipv6);
 }
 
 /**
@@ -1108,11 +1127,11 @@ static inline void net_if_ipv6_set_reachable_time(struct net_if *iface)
 static inline void net_if_ipv6_set_retrans_timer(struct net_if *iface,
 						 u32_t retrans_timer)
 {
-	struct net_if_config *config;
+	if (!iface->config.ip.ipv6) {
+		return;
+	}
 
-	config = net_if_config_get(iface);
-
-	config->ip.ipv6.retrans_timer = retrans_timer;
+	iface->config.ip.ipv6->retrans_timer = retrans_timer;
 }
 
 /**
@@ -1124,11 +1143,11 @@ static inline void net_if_ipv6_set_retrans_timer(struct net_if *iface,
  */
 static inline u32_t net_if_ipv6_get_retrans_timer(struct net_if *iface)
 {
-	struct net_if_config *config;
+	if (!iface->config.ip.ipv6) {
+		return 0;
+	}
 
-	config = net_if_config_get(iface);
-
-	return config->ip.ipv6.retrans_timer;
+	return iface->config.ip.ipv6->retrans_timer;
 }
 
 /**
@@ -1195,6 +1214,28 @@ struct in6_addr *net_if_ipv6_get_global_addr(struct net_if **iface);
 
 #if defined(CONFIG_NET_IPV4)
 /**
+ * @brief Allocate network interface IPv4 config.
+ *
+ * @details This function will allocate new IPv4 config.
+ *
+ * @param iface Interface to use.
+ * @param ipv4 Pointer to allocated IPv4 struct is returned to caller.
+ *
+ * @return 0 if ok, <0 if error
+ */
+int net_if_config_ipv4_get(struct net_if *iface,
+			   struct net_if_ipv4 **ipv4);
+
+/**
+ * @brief Release network interface IPv4 config.
+ *
+ * @param iface Interface to use.
+ *
+ * @return 0 if ok, <0 if error
+ */
+int net_if_config_ipv4_put(struct net_if *iface);
+
+/**
  * @brief Get IPv4 time-to-live value specified for a given interface
  *
  * @param iface Network interface
@@ -1203,11 +1244,11 @@ struct in6_addr *net_if_ipv6_get_global_addr(struct net_if **iface);
  */
 static inline u8_t net_if_ipv4_get_ttl(struct net_if *iface)
 {
-	struct net_if_config *config;
+	if (!iface->config.ip.ipv4) {
+		return 0;
+	}
 
-	config = net_if_config_get(iface);
-
-	return config->ip.ipv4.ttl;
+	return iface->config.ip.ipv4->ttl;
 }
 
 /**
@@ -1327,11 +1368,15 @@ bool net_if_ipv4_addr_mask_cmp(struct net_if *iface,
 static inline void net_if_ipv4_set_netmask(struct net_if *iface,
 					   struct in_addr *netmask)
 {
-	struct net_if_config *config;
+	if (net_if_config_ipv4_get(iface, NULL) < 0) {
+		return;
+	}
 
-	config = net_if_config_get(iface);
+	if (!iface->config.ip.ipv4) {
+		return;
+	}
 
-	net_ipaddr_copy(&config->ip.ipv4.netmask, netmask);
+	net_ipaddr_copy(&iface->config.ip.ipv4->netmask, netmask);
 }
 
 /**
@@ -1343,11 +1388,15 @@ static inline void net_if_ipv4_set_netmask(struct net_if *iface,
 static inline void net_if_ipv4_set_gw(struct net_if *iface,
 				      struct in_addr *gw)
 {
-	struct net_if_config *config;
+	if (net_if_config_ipv4_get(iface, NULL) < 0) {
+		return;
+	}
 
-	config = net_if_config_get(iface);
+	if (!iface->config.ip.ipv4) {
+		return;
+	}
 
-	net_ipaddr_copy(&config->ip.ipv4.gw, gw);
+	net_ipaddr_copy(&iface->config.ip.ipv4->gw, gw);
 }
 
 #endif /* CONFIG_NET_IPV4 */
