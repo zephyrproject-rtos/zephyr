@@ -26,6 +26,7 @@
 #include <net/net_ip.h>
 #include <net/net_if.h>
 #include <net/net_context.h>
+#include <net/vlan.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -149,6 +150,15 @@ struct net_pkt {
 	 */
 	u8_t priority;
 #endif
+
+#if defined(CONFIG_NET_VLAN)
+	/* VLAN TCI (Tag Control Information). This contains the Priority
+	 * Code Point (PCP), Drop Eligible Indicator (DEI) and VLAN
+	 * Identifier (VID, called more commonly VLAN tag). This value is
+	 * kept in host byte order.
+	 */
+	u16_t vlan_tci;
+#endif /* CONFIG_NET_VLAN */
 	/* @endcond */
 
 	/** Reference counter */
@@ -414,12 +424,87 @@ static inline u8_t net_pkt_priority(struct net_pkt *pkt)
 {
 	return 0;
 }
+#endif
 
-static inline void net_pkt_set_priority(struct net_pkt *pkt,
-					u8_t priority)
+#if defined(CONFIG_NET_VLAN)
+static inline u16_t net_pkt_vlan_tag(struct net_pkt *pkt)
+{
+	return net_eth_get_vid(pkt->vlan_tci);
+}
+
+static inline void net_pkt_set_vlan_tag(struct net_pkt *pkt, u16_t tag)
+{
+	pkt->vlan_tci = net_eth_set_vid(pkt->vlan_tci, tag);
+}
+
+static inline u8_t net_pkt_vlan_priority(struct net_pkt *pkt)
+{
+	return net_eth_get_pcp(pkt->vlan_tci);
+}
+
+static inline void net_pkt_set_vlan_priority(struct net_pkt *pkt,
+					     u8_t priority)
+{
+	pkt->vlan_tci = net_eth_set_pcp(pkt->vlan_tci, priority);
+}
+
+static inline bool net_pkt_vlan_dei(struct net_pkt *pkt)
+{
+	return net_eth_get_dei(pkt->vlan_tci);
+}
+
+static inline void net_pkt_set_vlan_dei(struct net_pkt *pkt, bool dei)
+{
+	pkt->vlan_tci = net_eth_set_dei(pkt->vlan_tci, dei);
+}
+
+static inline void net_pkt_set_vlan_tci(struct net_pkt *pkt, u16_t tci)
+{
+	pkt->vlan_tci = tci;
+}
+
+static inline u16_t net_pkt_vlan_tci(struct net_pkt *pkt)
+{
+	return pkt->vlan_tci;
+}
+#else
+static inline u16_t net_pkt_vlan_tag(struct net_pkt *pkt)
+{
+	return NET_VLAN_TAG_UNSPEC;
+}
+
+static inline void net_pkt_set_vlan_tag(struct net_pkt *pkt, u16_t tag)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(tag);
+}
+
+static inline u8_t net_pkt_vlan_priority(struct net_pkt *pkt)
 {
 	ARG_UNUSED(pkt);
 	ARG_UNUSED(priority);
+}
+
+static inline bool net_pkt_vlan_dei(struct net_pkt *pkt)
+{
+	return false;
+}
+
+static inline void net_pkt_set_vlan_dei(struct net_pkt *pkt, bool dei)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(dei);
+}
+
+static inline u16_t net_pkt_vlan_tci(struct net_pkt *pkt)
+{
+	return NET_VLAN_TAG_UNSPEC; /* assumes priority is 0 */
+}
+
+static inline void net_pkt_set_vlan_tci(struct net_pkt *pkt, u16_t tci)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(tci);
 }
 #endif
 

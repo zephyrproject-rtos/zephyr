@@ -703,6 +703,8 @@ static void eth_enc28j60_iface_init_0(struct net_if *iface)
 	net_if_set_link_addr(iface, mac_address_0, sizeof(mac_address_0),
 			     NET_LINK_ETHERNET);
 	context->iface = iface;
+
+	ethernet_init(iface);
 }
 
 static struct net_if_api api_funcs_0 = {

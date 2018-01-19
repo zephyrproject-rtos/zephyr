@@ -599,6 +599,8 @@ static void eth_0_iface_init(struct net_if *iface)
 			     sizeof(context->mac_addr),
 			     NET_LINK_ETHERNET);
 	context->iface = iface;
+
+	ethernet_init(iface);
 }
 
 static struct net_if_api api_funcs_0 = {

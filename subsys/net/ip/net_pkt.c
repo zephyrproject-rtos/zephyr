@@ -322,6 +322,8 @@ struct net_pkt *net_pkt_get_reserve(struct k_mem_slab *slab,
 	net_pkt_set_priority(pkt, CONFIG_NET_TX_DEFAULT_PRIORITY);
 #endif
 
+	net_pkt_set_vlan_tag(pkt, NET_VLAN_TAG_UNSPEC);
+
 #if defined(CONFIG_NET_DEBUG_NET_PKT)
 	net_pkt_alloc_add(pkt, true, caller, line);
 
@@ -2003,6 +2005,7 @@ struct net_pkt *net_pkt_clone(struct net_pkt *pkt, s32_t timeout)
 
 	net_pkt_set_next_hdr(clone, NULL);
 	net_pkt_set_ip_hdr_len(clone, net_pkt_ip_hdr_len(pkt));
+	net_pkt_set_vlan_tag(clone, net_pkt_vlan_tag(pkt));
 
 	net_pkt_set_family(clone, net_pkt_family(pkt));
 
