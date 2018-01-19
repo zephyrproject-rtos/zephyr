@@ -190,9 +190,14 @@ void syslog_net_hook_install(void)
 #endif
 	} else if (server_addr.sa_family == AF_INET) {
 #if defined(CONFIG_NET_IPV4)
-		/* FIXME: take the first IPv4 address of an interface */
+		/* FIXME: instead of taking the first IPv4 address of an
+		 * interface, take the proper one according to routing
+		 */
+		struct net_if_ipv4 *ipv4 =
+			net_if_get_default()->config.ip.ipv4;
+
 		net_ipaddr_copy(&local_addr4.sin_addr,
-		       &net_if_get_default()->ipv4.unicast[0].address.in_addr);
+				&ipv4->unicast[0].address.in_addr);
 
 		net_addr_ntop(AF_INET, &local_addr4.sin_addr, hostname,
 			      MAX_HOSTNAME_LEN);
