@@ -74,6 +74,8 @@ static inline const char *addrtype2str(enum net_addr_type addr_type)
 		return "DHCP";
 	case NET_ADDR_MANUAL:
 		return "manual";
+	case NET_ADDR_OVERRIDABLE:
+		return "overridable";
 	}
 
 	return "<invalid type>";
