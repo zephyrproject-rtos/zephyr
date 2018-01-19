@@ -21,6 +21,9 @@ CONFIG_PINMUX=y
 # enable GPIO
 CONFIG_GPIO=y
 
+# enable I2C
+CONFIG_I2C=y
+
 # clock configuration
 CONFIG_CLOCK_CONTROL=y
 
@@ -32,7 +35,7 @@ CONFIG_CLOCK_STM32_PLL_SRC_HSE=y
 # however, the board does not have an external oscillator, so just use
 # the 8MHz clock signal coming from integrated STLink
 CONFIG_CLOCK_STM32_HSE_BYPASS=y
-# produce 96MHz clock at PLL output
+# produce 180MHz clock at PLL output
 CONFIG_CLOCK_STM32_PLL_M_DIVISOR=8
 CONFIG_CLOCK_STM32_PLL_N_MULTIPLIER=360
 CONFIG_CLOCK_STM32_PLL_P_DIVISOR=2
