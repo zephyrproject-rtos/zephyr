@@ -38,9 +38,6 @@ config SPI_3
 config SPI_3_IRQ_PRI
 	default 10
 
-config POLL
-	default y
-
 endif # SPI
 
 if PWM
