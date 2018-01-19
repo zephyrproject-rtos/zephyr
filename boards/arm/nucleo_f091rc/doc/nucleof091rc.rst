@@ -172,7 +172,7 @@ References
    http://www.st.com/en/evaluation-tools/nucleo-f091rc.html
 
 .. _STM32F091 reference manual:
-   www.st.com/resource/en/reference_manual/dm00031936.pdf
+   http://www.st.com/resource/en/reference_manual/dm00031936.pdf
 
 .. _STM32 Nucleo-64 board User Manual:
    http://www.st.com/resource/en/user_manual/dm00105823.pdf

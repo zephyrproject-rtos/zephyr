@@ -164,7 +164,7 @@ References
    http://www.st.com/content/st_com/en/products/microcontrollers/stm32-32-bit-arm-cortex-mcus/stm32-mainstream-mcus/stm32f0-series/stm32f0x0-value-line/stm32f030r8.html
 
 .. _STM32F030 reference manual:
-   www.st.com/resource/en/reference_manual/dm00091010.pdf
+   http://www.st.com/resource/en/reference_manual/dm00091010.pdf
 
 .. _STM32 Nucleo-64 board User Manual:
    http://www.st.com/resource/en/user_manual/dm00105823.pdf
