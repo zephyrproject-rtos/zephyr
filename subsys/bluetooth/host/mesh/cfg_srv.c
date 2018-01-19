@@ -3062,7 +3062,7 @@ static void hb_publish(struct k_work *work)
 	}
 
 	period_ms = hb_pwr2(cfg->hb_pub.period, 1) * 1000;
-	if (period_ms) {
+	if (period_ms && cfg->hb_pub.count > 1) {
 		k_delayed_work_submit(&cfg->hb_pub.timer, period_ms);
 	}
 
