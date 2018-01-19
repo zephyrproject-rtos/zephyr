@@ -31,7 +31,7 @@ static int cmd_erase(int argc, char *argv[])
 	int result;
 	u32_t size;
 
-	flash_dev = device_get_binding(CONFIG_SOC_FLASH_NRF5_DEV_NAME);
+	flash_dev = device_get_binding(FLASH_DEV_NAME);
 	if (!flash_dev) {
 		printk("Nordic nRF5 flash driver was not found!\n");
 		return -ENODEV;
@@ -71,7 +71,7 @@ static int cmd_flash(int argc, char *argv[])
 	u32_t w_addr;
 	int j = 0;
 
-	flash_dev = device_get_binding(CONFIG_SOC_FLASH_NRF5_DEV_NAME);
+	flash_dev = device_get_binding(FLASH_DEV_NAME);
 	if (!flash_dev) {
 		printk("Nordic nRF5 flash driver was not found!\n");
 		return -ENODEV;
@@ -123,7 +123,7 @@ static int cmd_read(int argc, char *argv[])
 	u32_t addr;
 	int cnt;
 
-	flash_dev = device_get_binding(CONFIG_SOC_FLASH_NRF5_DEV_NAME);
+	flash_dev = device_get_binding(FLASH_DEV_NAME);
 	if (!flash_dev) {
 		printk("Nordic nRF5 flash driver was not found!\n");
 		return -ENODEV;
@@ -163,7 +163,7 @@ static int cmd_test(int argc, char *argv[])
 	u32_t addr;
 	u32_t size;
 
-	flash_dev = device_get_binding(CONFIG_SOC_FLASH_NRF5_DEV_NAME);
+	flash_dev = device_get_binding(FLASH_DEV_NAME);
 	if (!flash_dev) {
 		printk("Nordic nRF5 flash driver was not found!\n");
 		return -ENODEV;

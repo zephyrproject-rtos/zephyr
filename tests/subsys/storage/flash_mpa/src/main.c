@@ -37,7 +37,7 @@ void flash_map_test_case_2(void)
 	zassert_true(rc == 0, "flash_area_open() fail");
 
 	/* First erase the area so it's ready for use. */
-	flash_dev = device_get_binding(CONFIG_SOC_FLASH_NRF5_DEV_NAME);
+	flash_dev = device_get_binding(FLASH_DEV_NAME);
 	rc = flash_erase(flash_dev, fa->fa_off, fa->fa_size);
 	zassert_true(rc == 0, "flash area erase fail");
 
