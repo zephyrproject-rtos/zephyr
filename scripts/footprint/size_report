@@ -43,8 +43,10 @@ parser.add_option("-n", "--nm", type="string", dest="bin_nm",
 def load_symbols_and_paths(bin_nm, elf_file, path_to_strip=None):
     symbols_paths = {}
     nm_out = subprocess.check_output(
-        [bin_nm, elf_file, "-S", "-l", "--size-sort", "--radix=d"])
-    for line in nm_out.decode('utf8').splitlines():
+        [bin_nm, elf_file, "-S", "-l", "--size-sort", "--radix=d"],
+        universal_newlines=True
+    )
+    for line in nm_out.splitlines():
         fields = line.replace('\t', ' ').split(' ')
         # Get rid of trailing empty field
         if len(fields) == 1 and fields[0] == '':
@@ -120,14 +122,17 @@ def generate_target_memory_section(
 
     # First deal with size on flash. These are the symbols flagged as LOAD in
     # objdump output
-    size_out = subprocess.check_output([bin_objdump, "-hw", elf_file_abs])
+    size_out = subprocess.check_output(
+        [bin_objdump, "-hw", elf_file_abs],
+        universal_newlines=True
+    )
     loaded_section_total = 0
     loaded_section_names = []
     loaded_section_names_sizes = {}
     ram_section_total = 0
     ram_section_names = []
     ram_section_names_sizes = {}
-    for line in size_out.decode('utf8').splitlines():
+    for line in size_out.splitlines():
         if "LOAD" in line:
             loaded_section_total = loaded_section_total + \
                 int(line.split()[2], 16)
@@ -182,7 +187,11 @@ def generate_target_memory_section(
 
     # Extract the list of symbols a second time but this time using the objdump tool
     # which provides more info as nm
-    symbols_out = subprocess.check_output([bin_objdump, "-tw", elf_file_abs])
+
+    symbols_out = subprocess.check_output(
+        [bin_objdump, "-tw", elf_file_abs],
+        universal_newlines=True
+    )
     flash_symbols_total = 0
     data_nodes = {}
     data_nodes['root'] = 0
@@ -190,7 +199,7 @@ def generate_target_memory_section(
     ram_symbols_total = 0
     ram_nodes = {}
     ram_nodes['root'] = 0
-    for l in symbols_out.decode('utf8').splitlines():
+    for l in symbols_out.splitlines():
         line = l[0:9] + "......." + l[16:]
         fields = line.replace('\t', ' ').split(' ')
         # Get rid of trailing empty field
