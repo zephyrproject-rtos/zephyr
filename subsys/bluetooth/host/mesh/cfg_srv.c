@@ -3057,19 +3057,19 @@ static void hb_publish(struct k_work *work)
 		return;
 	}
 
-	hb_send(model);
-
 	if (cfg->hb_pub.count == 0) {
 		return;
-	}
-
-	if (cfg->hb_pub.count != 0xffff) {
-		cfg->hb_pub.count--;
 	}
 
 	period_ms = hb_pwr2(cfg->hb_pub.period, 1) * 1000;
 	if (period_ms) {
 		k_delayed_work_submit(&cfg->hb_pub.timer, period_ms);
+	}
+
+	hb_send(model);
+
+	if (cfg->hb_pub.count != 0xffff) {
+		cfg->hb_pub.count--;
 	}
 }
 
