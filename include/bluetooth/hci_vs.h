@@ -1,7 +1,7 @@
 /* hci_vs.h - Bluetooth Host Control Interface Vendor Specific definitions */
 
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2018 Nordic Semiconductor ASA
  * Copyright (c) 2015-2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -217,6 +217,8 @@ struct bt_hci_cp_mesh_advertise {
 	bt_addr_t random_addr;
 	u8_t      ch_map;
 	s8_t      tx_power;
+	u8_t      min_tx_delay;
+	u8_t      max_tx_delay;
 	u8_t      retx_count;
 	u8_t      retx_interval;
 	u8_t      scan_delay;

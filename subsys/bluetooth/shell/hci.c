@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2018 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -45,6 +45,8 @@ int cmd_mesh_adv(int argc, char *argv[])
 		memset(&cp->random_addr, 0, sizeof(bt_addr_t));
 		cp->ch_map = 0x07;
 		cp->tx_power = 0;
+		cp->min_tx_delay = 0;
+		cp->max_tx_delay = 0x32;
 		cp->retx_count = 0x07;
 		cp->retx_interval = 0x00;
 		cp->scan_delay = 0x0a;
