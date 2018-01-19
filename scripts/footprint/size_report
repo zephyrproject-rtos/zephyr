@@ -13,18 +13,7 @@ from optparse import OptionParser
 import subprocess
 import json
 import operator
-
-
-class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-
+import platform
 
 parser = OptionParser()
 parser.add_option("-d", "--depth", dest="depth", type="int",
@@ -318,8 +307,28 @@ def generate_target_memory_section(
 def print_tree(data, total, depth):
     base = os.environ['ZEPHYR_BASE']
     totp = 0
+
+    bcolors_ansi = {
+        "HEADER"    : '\033[95m',
+        "OKBLUE"    : '\033[94m',
+        "OKGREEN"   : '\033[92m',
+        "WARNING"   : '\033[93m',
+        "FAIL"      : '\033[91m',
+        "ENDC"      : '\033[0m',
+        "BOLD"      : '\033[1m',
+        "UNDERLINE" : '\033[4m'
+    }
+    if platform.system() == "Windows":
+        # Set all color codes to empty string on Windows
+        #
+        # TODO: Use an approach like the pip package 'colorama' to
+        # support colors on Windows
+        bcolors = dict.fromkeys(bcolors_ansi, '')
+    else:
+        bcolors = bcolors_ansi
+
     print('{:92s} {:10s} {:8s}'.format(
-        bcolors.FAIL + "Path", "Size", "%" + bcolors.ENDC))
+        bcolors["FAIL"] + "Path", "Size", "%" + bcolors["ENDC"]))
     print("'='*110i")
     for i in sorted(data):
         p = i.split("/")
@@ -333,14 +342,14 @@ def print_tree(data, total, depth):
 
         if len(p) > 1:
             if not os.path.exists(os.path.join(base, i)):
-                s = bcolors.WARNING + p[-1] + bcolors.ENDC
+                s = bcolors["WARNING"] + p[-1] + bcolors["ENDC"]
             else:
-                s = bcolors.OKBLUE + p[-1] + bcolors.ENDC
+                s = bcolors["OKBLUE"] + p[-1] + bcolors["ENDC"]
             print('{:80s} {:20d} {:8.2f}%'.format(
                 "  " * (len(p) - 1) + s, data[i], percent_c))
         else:
             print('{:80s} {:20d} {:8.2f}%'.format(
-                bcolors.OKBLUE + i + bcolors.ENDC, data[i], percent_c))
+                bcolors["OKBLUE"] + i + bcolors["ENDC"], data[i], percent_c))
 
     print('=' * 110)
     print('{:92d}'.format(total))
