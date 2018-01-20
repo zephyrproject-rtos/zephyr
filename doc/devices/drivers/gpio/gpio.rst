@@ -326,6 +326,14 @@ Driver configuration by soc.h
 
 :file:`soc.h` may contain driver relevant information such as HAL header files.
 
+Drivers
+=======
+
+.. toctree::
+   :maxdepth: 1
+
+   gpio_stm32.rst
+
 Design Rationales
 *****************
 

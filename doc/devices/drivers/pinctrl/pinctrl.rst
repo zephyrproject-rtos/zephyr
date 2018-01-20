@@ -1242,6 +1242,14 @@ of the STM32 driver (:file:`drivers/pinctrl/pinctrl_stm32.c`):
     static int pinctrl_stm32_device_init(struct device *dev)
     { ... }
 
+Drivers
+=======
+
+.. toctree::
+   :maxdepth: 1
+
+   pinctrl_stm32.rst
+
 Design Rationales
 *****************
 
