@@ -1008,7 +1008,7 @@ int16_t SX1272ReadRssi( RadioModems_t modem )
     return rssi;
 }
 
-void SX1272Reset( void )
+__weak void SX1272Reset( void )
 {
     // Set RESET pin to 1
     GpioInit( &SX1272.Reset, RADIO_RESET, PIN_OUTPUT, PIN_PUSH_PULL, PIN_NO_PULL, 1 );
@@ -1086,7 +1086,7 @@ uint8_t SX1272Read( uint8_t addr )
     return data;
 }
 
-void SX1272WriteBuffer( uint8_t addr, uint8_t *buffer, uint8_t size )
+__weak void SX1272WriteBuffer( uint8_t addr, uint8_t *buffer, uint8_t size )
 {
     uint8_t i;
 
@@ -1103,7 +1103,7 @@ void SX1272WriteBuffer( uint8_t addr, uint8_t *buffer, uint8_t size )
     GpioWrite( &SX1272.Spi.Nss, 1 );
 }
 
-void SX1272ReadBuffer( uint8_t addr, uint8_t *buffer, uint8_t size )
+__weak void SX1272ReadBuffer( uint8_t addr, uint8_t *buffer, uint8_t size )
 {
     uint8_t i;
 
