@@ -157,7 +157,8 @@ static int gpio_esp32_config(struct device *dev, int access_op,
 		r = pinmux_pin_input_enable(data->pinmux, pin,
 					PINMUX_OUTPUT_ENABLED);
 		assert(r >= 0);
-	} else {
+	}
+	if (flags & GPIO_DIR_IN) {
 		pinmux_pin_input_enable(data->pinmux, pin,
 					PINMUX_INPUT_ENABLED);
 		config_polarity(pin, flags);
