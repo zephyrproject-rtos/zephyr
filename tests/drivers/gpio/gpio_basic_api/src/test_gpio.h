@@ -52,6 +52,14 @@
 #define DEV_NAME CONFIG_GPIO_P0_DEV_NAME
 #define PIN_OUT 12  /* P0.12 */
 #define PIN_IN 13  /* P0.13 */
+#elif CONFIG_PINCTRL && defined(CONFIG_BOARD_NUCLEO_F091RC)
+#define DEV_NAME "GPIOB"
+#define PIN_OUT GPIO_PORT_PIN5
+#define PIN_IN GPIO_PORT_PIN4
+#elif CONFIG_PINCTRL && defined(CONFIG_BOARD_NUCLEO_F030R8)
+#define DEV_NAME "GPIOB"
+#define PIN_OUT GPIO_PORT_PIN5
+#define PIN_IN GPIO_PORT_PIN4
 #else
 #error Unsupported board
 #endif
