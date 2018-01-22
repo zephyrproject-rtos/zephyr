@@ -74,7 +74,8 @@ endif()
 
 # We need to set an optimization level.
 # Default to -Os
-# unless CONFIG_DEBUG is set, then it is -Og
+# unless CONFIG_NO_OPTIMIZATIONS is set, then it is -O0
+# or unless CONFIG_DEBUG is set, then it is -Og
 #
 # also, some toolchain's break with -Os, and some toolchain's break
 # with -Og so allow them to override what flag to use
@@ -83,11 +84,11 @@ endif()
 # come after these options and override them
 set_ifndef(OPTIMIZE_FOR_SIZE_FLAG     "-Os")
 set_ifndef(OPTIMIZE_FOR_DEBUG_FLAG    "-Og")
-set_ifndef(OPTIMIZE_FOR_COVERAGE_FLAG "-O0")
-if(CONFIG_DEBUG)
+set_ifndef(OPTIMIZE_FOR_NO_OPTIMIZATIONS_FLAG "-O0")
+if(CONFIG_NO_OPTIMIZATIONS)
+	set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_NO_OPTIMIZATIONS_FLAG})
+elseif(CONFIG_DEBUG)
   set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_DEBUG_FLAG})
-elseif(CONFIG_COVERAGE)
-  set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_COVERAGE_FLAG})
 else()
   set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_SIZE_FLAG}) # Default
 endif()
