@@ -14,6 +14,7 @@ import subprocess
 import json
 import operator
 import platform
+from pathlib import Path
 
 parser = OptionParser()
 parser.add_option("-d", "--depth", dest="depth", type="int",
@@ -35,34 +36,76 @@ parser.add_option("-n", "--nm", type="string", dest="bin_nm",
 
 (options, args) = parser.parse_args()
 
-# Return a dict containing symbol_name: path/to/file/where/it/originates
-# for all symbols from the .elf file. Optionnaly strips the path according
+# Return a dict containing {
+#   symbol_name: {:,path/to/file}/symbol
+# }
+# for all symbols from the .elf file. Optionaly strips the path according
 # to the passed sub-path
-
-
-def load_symbols_and_paths(bin_nm, elf_file, path_to_strip=None):
-    symbols_paths = {}
+def load_symbols_and_paths(bin_nm, elf_file, path_to_strip=""):
     nm_out = subprocess.check_output(
         [bin_nm, elf_file, "-S", "-l", "--size-sort", "--radix=d"],
         universal_newlines=True
     )
     for line in nm_out.splitlines():
-        fields = line.replace('\t', ' ').split(' ')
-        # Get rid of trailing empty field
-        if len(fields) == 1 and fields[0] == '':
+        if not line:
+            # Get rid of trailing empty field
             continue
-        assert len(fields) >= 4
-        if len(fields) < 5:
-            path = ":/" + fields[3]
+
+        symbol, path = parse_symbol_path_pair(line)
+
+        if path:
+            processed_path = Path(path).relative_to(Path(path_to_strip))
         else:
-            path = fields[4].split(':')[0]
-        if path_to_strip is not None:
-            if path_to_strip in path:
-                path = path.replace(path_to_strip, "") + '/' + fields[3]
-            else:
-                path = ":/" + fields[3]
-        symbols_paths[fields[3]] = path
-    return symbols_paths
+            processed_path = Path(":")
+
+        pathlike_string = processed_path / symbol
+
+        yield symbol, pathlike_string
+
+# Return a pair containing either
+#
+#   (symbol_name, "path/to/file")
+#   or
+#   (symbol_name, "")
+#
+#   depending on if the file is found or not
+# }
+def parse_symbol_path_pair(line):
+    # Line's output from nm might look like this:
+    # '536871152 00000012 b gpio_e	/absolute/path/gpio.c:247'
+    #
+    # We are only trying to extract the symbol and the filename.
+    #
+    # In general lines look something like this:
+    #
+    # 'number number string symbol[\t<absolute_path>:line]
+    #
+    # The file is optional, nm might not find out where a symbol came from.
+    #
+    # NB: <absolute_path> looks different on Windows and Linux
+
+    # Replace tabs with spaces to easily split up the fields (NB:
+    # Whitespace in paths is not supported)
+    line_without_tabs = line.replace('\t', ' ')
+
+    fields = line_without_tabs.split()
+
+    assert len(fields) >= 4
+
+    symbol = fields[3]
+
+    file_is_missing = len(fields) == 4
+
+    if file_is_missing:
+        path = ""
+    else:
+        path_with_line_number = fields[4]
+
+        # Remove the trailing line number, e.g. 'C:\file.c:237'
+        line_number_index = path_with_line_number.rfind(':')
+        path = path_with_line_number[:line_number_index]
+
+    return (symbol, path)
 
 
 def get_section_size(f, section_name):
@@ -148,25 +191,24 @@ def generate_target_memory_section(
     bin_size = os.stat(bin_file_abs).st_size
 
     # Get the path associated to each symbol
-    symbols_paths = load_symbols_and_paths(bin_nm, elf_file_abs, source_dir)
+    symbols_paths = dict(load_symbols_and_paths(bin_nm, elf_file_abs, source_dir))
 
     # A set of helper function for building a simple tree with a path-like
     # hierarchy.
     def _insert_one_elem(tree, path, size):
-        splitted_path = path.split('/')
         cur = None
-        for p in splitted_path:
+        for p in path.parts:
             if cur is None:
                 cur = p
             else:
-                cur = cur + '/' + p
+                cur = cur + os.path.sep + p
             if cur in tree:
                 tree[cur] += size
             else:
                 tree[cur] = size
 
     def _parent_for_node(e):
-        parent = "root" if len(e.split('/')) == 1 else e.rsplit('/', 1)[0]
+        parent = "root" if len(os.path.sep) == 1 else e.rsplit(os.path.sep, 1)[0]
         if e == "root":
             parent = None
         return parent
@@ -340,7 +382,7 @@ def print_tree(data, total, depth):
         bcolors["FAIL"] + "Path", "Size", "%" + bcolors["ENDC"]))
     print("'='*110i")
     for i in sorted(data):
-        p = i.split("/")
+        p = i.split(os.path.sep)
         if depth and len(p) > depth:
             continue
 
