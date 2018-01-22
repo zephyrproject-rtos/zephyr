@@ -1,0 +1,34 @@
+---
+title: flash controller Base Structure
+id: soc-nv-flash-controller
+version: 0.1
+
+description: >
+    This binding gives the base structures for all flash controller devices
+
+properties:
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+
+    reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+    interrupts:
+      type: array
+      category: optional
+      description: required interrupts
+      generation: define
+
+    interrupt-names:
+      type: stringlist
+      category: optional
+      description: names of required interrupts
+      generation: define
+
+...
