@@ -136,6 +136,15 @@ config NATIVE_APPLICATION
 	  Build as a native application that can run on the host and using
 	  resources and libraries provided by the host.
 
+config NO_OPTIMIZATIONS
+	bool "Lower compiler optimziations to -O0"
+	default n
+	help
+	  When selected, compiler optimizations will be set to -O0 independently of
+	  other options.
+	  Note that this flag shall only control the compiler optimization level, and
+	  that no extra debug code shall be conditionally compiled based on it.
+
 config COMPILER_OPT
 	string
 	prompt "Custom compiler options"
