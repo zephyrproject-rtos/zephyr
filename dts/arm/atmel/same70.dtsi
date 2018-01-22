@@ -22,6 +22,8 @@
 	};
 
 	flash0: flash@400000 {
+		compatible = "soc-nv-flash";
+		label = "FLASH_0";
 		reg = <0x00400000 DT_FLASH_SIZE>;
 	};
 
