@@ -131,13 +131,6 @@ config SOC_FLASH_NRF5
 	help
 	  Enables Nordic Semiconductor nRF5X flash driver.
 
-config SOC_FLASH_NRF5_DEV_NAME
-	string "Nordic nRF5X flash device name"
-	depends on SOC_FLASH_NRF5
-	default "NRF5_FLASH"
-	help
-	  Specify the device name for the flash driver.
-
 config SOC_FLASH_NRF5_RADIO_SYNC
 	bool "Nordic nRF5x flash driver synchronized with radio"
 	depends on SOC_FLASH_NRF5 && BT_CTLR

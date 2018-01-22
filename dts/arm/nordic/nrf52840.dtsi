@@ -20,6 +20,8 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
+			label="NRF5_FLASH_DRV_NAME";
+
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
 				reg = <0x00000000 DT_FLASH_SIZE>;
