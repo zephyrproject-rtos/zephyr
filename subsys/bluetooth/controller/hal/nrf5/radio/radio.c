@@ -255,9 +255,12 @@ void radio_disable(void)
 
 void radio_status_reset(void)
 {
+	/* NOTE: Only EVENTS_* registers read (checked) by software needs reset
+	 *       between Radio IRQs. In PPI use, irrespective of stored EVENT_*
+	 *       register value, PPI task will be triggered. Hence, other
+	 *       EVENT_* registers are not reset to save code and CPU time.
+	 */
 	NRF_RADIO->EVENTS_READY = 0;
-	NRF_RADIO->EVENTS_ADDRESS = 0;
-	NRF_RADIO->EVENTS_PAYLOAD = 0;
 	NRF_RADIO->EVENTS_END = 0;
 	NRF_RADIO->EVENTS_DISABLED = 0;
 }
@@ -322,8 +325,6 @@ static void sw_switch(u8_t dir, u8_t phy_curr, u8_t flags_curr, u8_t phy_next,
 	u8_t ppi = HAL_SW_SWITCH_RADIO_ENABLE_PPI(sw_tifs_toggle);
 	u8_t cc = SW_SWITCH_TIMER_EVTS_COMP(sw_tifs_toggle);
 	u32_t delay;
-
-	SW_SWITCH_TIMER->EVENTS_COMPARE[cc] = 0;
 
 	HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_REGISTER_EVT =
 	    HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI_EVT;
@@ -564,7 +565,6 @@ void radio_filter_disable(void)
 void radio_filter_status_reset(void)
 {
 	NRF_RADIO->EVENTS_DEVMATCH = 0;
-	NRF_RADIO->EVENTS_DEVMISS = 0;
 }
 
 u32_t radio_filter_has_match(void)
@@ -634,11 +634,9 @@ u32_t radio_tmr_start(u8_t trx, u32_t ticks_start, u32_t remainder)
 	EVENT_TIMER->BITMODE = 2;	/* 24 - bit */
 
 	EVENT_TIMER->CC[0] = remainder;
-	EVENT_TIMER->EVENTS_COMPARE[0] = 0;
 
 	NRF_RTC0->CC[2] = ticks_start;
 	NRF_RTC0->EVTENSET = RTC_EVTENSET_COMPARE2_Msk;
-	NRF_RTC0->EVENTS_COMPARE[2] = 0;
 
 	HAL_EVENT_TIMER_START_PPI_REGISTER_EVT = HAL_EVENT_TIMER_START_EVT;
 	HAL_EVENT_TIMER_START_PPI_REGISTER_TASK = HAL_EVENT_TIMER_START_TASK;
@@ -715,7 +713,6 @@ static inline void radio_enable_on_timer_tick(u8_t trx)
 void radio_tmr_start_us(u8_t trx, u32_t us)
 {
 	EVENT_TIMER->CC[0] = us;
-	EVENT_TIMER->EVENTS_COMPARE[0] = 0;
 
 	radio_enable_on_timer_tick(trx);
 }
@@ -738,7 +735,6 @@ u32_t radio_tmr_start_now(u8_t trx)
 
 		/* Setup compare event with min. 1 us offset */
 		EVENT_TIMER->CC[0] = start + 1;
-		EVENT_TIMER->EVENTS_COMPARE[0] = 0;
 
 		/* Capture the current time */
 		EVENT_TIMER->TASKS_CAPTURE[1] = 1;
@@ -762,7 +758,6 @@ void radio_tmr_stop(void)
 void radio_tmr_hcto_configure(u32_t hcto)
 {
 	EVENT_TIMER->CC[1] = hcto;
-	EVENT_TIMER->EVENTS_COMPARE[1] = 0;
 
 	HAL_RADIO_RECV_TIMEOUT_CANCEL_PPI_REGISTER_EVT =
 		HAL_RADIO_RECV_TIMEOUT_CANCEL_PPI_EVT;
@@ -902,7 +897,6 @@ void radio_gpio_lna_off(void)
 void radio_gpio_pa_lna_enable(u32_t trx_us)
 {
 	EVENT_TIMER->CC[2] = trx_us;
-	EVENT_TIMER->EVENTS_COMPARE[2] = 0;
 
 	HAL_ENABLE_PALNA_PPI_REGISTER_EVT = HAL_ENABLE_PALNA_PPI_EVT;
 	HAL_ENABLE_PALNA_PPI_REGISTER_TASK = HAL_ENABLE_PALNA_PPI_TASK;
@@ -978,7 +972,6 @@ void *radio_ccm_rx_pkt_set(struct ccm *ccm, u8_t phy, void *pkt)
 	NRF_CCM->OUTPTR = (u32_t)pkt;
 	NRF_CCM->SCRATCHPTR = (u32_t)_ccm_scratch;
 	NRF_CCM->SHORTS = 0;
-	NRF_CCM->EVENTS_ENDKSGEN = 0;
 	NRF_CCM->EVENTS_ENDCRYPT = 0;
 	NRF_CCM->EVENTS_ERROR = 0;
 
@@ -1016,7 +1009,6 @@ void *radio_ccm_tx_pkt_set(struct ccm *ccm, void *pkt)
 	NRF_CCM->OUTPTR = (u32_t)_pkt_scratch;
 	NRF_CCM->SCRATCHPTR = (u32_t)_ccm_scratch;
 	NRF_CCM->SHORTS = CCM_SHORTS_ENDKSGEN_CRYPT_Msk;
-	NRF_CCM->EVENTS_ENDKSGEN = 0;
 	NRF_CCM->EVENTS_ENDCRYPT = 0;
 	NRF_CCM->EVENTS_ERROR = 0;
 
