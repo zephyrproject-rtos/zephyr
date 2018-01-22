@@ -74,6 +74,7 @@
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
+				label = "MCUX_FLASH";
 				reg = <0 0x100000>;
 
 				write-block-size = <8>;
