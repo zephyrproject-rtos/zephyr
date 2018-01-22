@@ -56,6 +56,7 @@ def load_symbols_and_paths(bin_nm, elf_file, path_to_strip=None):
     nm_out = subprocess.check_output(
         [bin_nm, elf_file, "-S", "-l", "--size-sort", "--radix=d"])
     for line in nm_out.decode('utf8').split('\n'):
+        line = line.strip()
         fields = line.replace('\t', ' ').split(' ')
         # Get rid of trailing empty field
         if len(fields) == 1 and fields[0] == '':
@@ -203,6 +204,7 @@ def generate_target_memory_section(
     ram_nodes['root'] = 0
     for l in symbols_out.decode('utf8').split('\n'):
         line = l[0:9] + "......." + l[16:]
+        line = line.strip()
         fields = line.replace('\t', ' ').split(' ')
         # Get rid of trailing empty field
         if len(fields) != 5:
