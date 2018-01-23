@@ -137,10 +137,13 @@ void _thread_monitor_exit(struct k_thread *thread)
 		struct k_thread *prev_thread;
 
 		prev_thread = _kernel.threads;
-		while (thread != prev_thread->next_thread) {
+		while (prev_thread != NULL &&
+		       thread != prev_thread->next_thread) {
 			prev_thread = prev_thread->next_thread;
 		}
-		prev_thread->next_thread = thread->next_thread;
+		if (prev_thread != NULL) {
+			prev_thread->next_thread = thread->next_thread;
+		}
 	}
 
 	irq_unlock(key);
