@@ -254,14 +254,14 @@ struct gap_device_found_ev {
 
 #define GAP_EV_DEVICE_CONNECTED		0x82
 struct gap_device_connected_ev {
-	u8_t address[6];
 	u8_t address_type;
+	u8_t address[6];
 } __packed;
 
 #define GAP_EV_DEVICE_DISCONNECTED	0x83
 struct gap_device_disconnected_ev {
-	u8_t address[6];
 	u8_t address_type;
+	u8_t address[6];
 } __packed;
 
 #define GAP_EV_PASSKEY_DISPLAY		0x84
