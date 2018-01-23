@@ -1,0 +1,39 @@
+---
+title: Nordic Radio
+id: nordic,nrf52840-radio
+version: 0.1
+
+description: >
+    This binding gives a base representation of the Nordic Radio
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "nordic,nrf52840-radio"
+
+    reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+    interrupts:
+      type: array
+      category: optional
+      description: optional interrupts
+      generation: define
+
+    interrupt-names:
+      type: stringlist
+      category: optional
+      description: names of optinal interrupts
+      generation: define
+
+    iee802154_drv_label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+...

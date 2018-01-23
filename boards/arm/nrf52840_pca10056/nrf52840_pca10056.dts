@@ -25,6 +25,10 @@
 	status = "ok";
 };
 
+&radio0 {
+	compatible = "nordic,nrf52840-radio";
+};
+
 &flash0 {
 	/*
 	 * If chosen's zephyr,code-partition

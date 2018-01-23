@@ -52,6 +52,13 @@
 			status = "disabled";
 			label = "UART_1";
 		};
+
+		radio0: radio@40001000 {
+			compatible = "nordic,nrf52840-radio";
+			reg = <0x40001000 0x1000>;
+			interrupts = <1 1>;
+			iee802154_drv_label = "IEEE802154_nrf5";
+		};
 	};
 };
 
