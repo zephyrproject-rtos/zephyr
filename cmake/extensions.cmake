@@ -418,7 +418,7 @@ endmacro()
 
 
 function(zephyr_link_interface interface)
-  target_link_libraries(interface INTERFACE zephyr_interface)
+  target_link_libraries(${interface} INTERFACE zephyr_interface)
 endfunction()
 
 #
