@@ -11,6 +11,27 @@
 #include <arch/arc/v2/mpu/arc_core_mpu.h>
 #include <logging/sys_log.h>
 
+/*
+ * @brief Configure MPU for the thread
+ *
+ * This function configures per thread memory map reprogramming the MPU.
+ *
+ * @param thread thread info data structure.
+ */
+void configure_mpu_thread(struct k_thread *thread)
+{
+	arc_core_mpu_disable();
+#if defined(CONFIG_MPU_STACK_GUARD)
+	configure_mpu_stack_guard(thread);
+#endif
+
+#if defined(CONFIG_USERSPACE)
+	configure_mpu_user_context(thread);
+	configure_mpu_mem_domain(thread);
+#endif
+	arc_core_mpu_enable();
+}
+
 #if defined(CONFIG_MPU_STACK_GUARD)
 /*
  * @brief Configure MPU stack guard
@@ -22,15 +43,44 @@
  */
 void configure_mpu_stack_guard(struct k_thread *thread)
 {
-	arc_core_mpu_disable();
+#if defined(CONFIG_USERSPACE)
+	if (!thread->arch.priv_stack_start) {
+		/* the areas before and after the user stack of thread is
+		 * kernel only. These area can be used as stack guard.
+		 * -----------------------
+		 * |  kernel only access |
+		 * |---------------------|
+		 * |  user stack         |
+		 * |----------------------
+		 * |  privilege stack    |
+		 * -----------------------
+		 */
+		return;
+	}
+#endif
 	arc_core_mpu_configure(THREAD_STACK_GUARD_REGION,
 			       thread->stack_info.start - STACK_GUARD_SIZE,
 			       STACK_GUARD_SIZE);
-	arc_core_mpu_enable();
+
 }
 #endif
 
 #if defined(CONFIG_USERSPACE)
+/*
+ * @brief Configure MPU user context
+ *
+ * This function configures the thread's user context.
+ * The functionality is meant to be used during context switch.
+ *
+ * @param thread thread info data structure.
+ */
+void configure_mpu_user_context(struct k_thread *thread)
+{
+	SYS_LOG_DBG("configure user thread %p's context", thread);
+	arc_core_mpu_configure_user_context(thread);
+}
+
+
 /*
  * @brief Configure MPU memory domain
  *
@@ -42,9 +92,7 @@ void configure_mpu_stack_guard(struct k_thread *thread)
 void configure_mpu_mem_domain(struct k_thread *thread)
 {
 	SYS_LOG_DBG("configure thread %p's domain", thread);
-	arc_core_mpu_disable();
 	arc_core_mpu_configure_mem_domain(thread->mem_domain_info.mem_domain);
-	arc_core_mpu_enable();
 }
 
 int _arch_mem_domain_max_partitions_get(void)

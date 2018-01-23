@@ -257,20 +257,12 @@ _firq_reschedule:
 	 */
 	_load_callee_saved_regs
 
-#ifdef CONFIG_MPU_STACK_GUARD
+#if defined(CONFIG_MPU_STACK_GUARD) || defined(CONFIG_USERSPACE)
 	push_s r2
 	mov r0, r2
-	bl configure_mpu_stack_guard
+	bl configure_mpu_thread
 	pop_s r2
 #endif
-
-#ifdef CONFIG_USERSPACE
-	push_s r2
-	mov r0, r2
-	bl configure_mpu_mem_domain
-	pop_s r2
-#endif
-
 
 	ld_s r3, [r2, _thread_offset_to_relinquish_cause]
 

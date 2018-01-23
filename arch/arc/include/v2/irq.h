@@ -21,6 +21,7 @@ extern "C" {
 
 #define _ARC_V2_AUX_IRQ_CTRL_BLINK (1 << 9)
 #define _ARC_V2_AUX_IRQ_CTRL_LOOP_REGS (1 << 10)
+#define _ARC_V2_AUX_IRQ_CTRL_U (1 << 11)
 #define _ARC_V2_AUX_IRQ_CTRL_LP (1 << 13)
 #define _ARC_V2_AUX_IRQ_CTRL_14_REGS 7
 #define _ARC_V2_AUX_IRQ_CTRL_16_REGS 8
@@ -45,6 +46,9 @@ static ALWAYS_INLINE void _irq_setup(void)
 		_ARC_V2_AUX_IRQ_CTRL_LOOP_REGS | /* save lp_xxx registers */
 #ifdef CONFIG_CODE_DENSITY
 		_ARC_V2_AUX_IRQ_CTRL_LP | /* save code density registers */
+#endif
+#ifdef CONFIG_USERSPACE
+		_ARC_V2_AUX_IRQ_CTRL_U | /* save context into user stack */
 #endif
 		_ARC_V2_AUX_IRQ_CTRL_BLINK     | /* save blink */
 		_ARC_V2_AUX_IRQ_CTRL_14_REGS     /* save r0 -> r13 (caller-saved) */

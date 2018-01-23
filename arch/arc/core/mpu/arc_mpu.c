@@ -11,6 +11,7 @@
 #include <arch/arc/v2/aux_regs.h>
 #include <arch/arc/v2/mpu/arc_mpu.h>
 #include <arch/arc/v2/mpu/arc_core_mpu.h>
+#include <linker/linker-defs.h>
 #include <logging/sys_log.h>
 
 
@@ -66,8 +67,12 @@ static inline u8_t _get_num_regions(void)
 static inline u32_t _get_region_attr_by_type(u32_t type)
 {
 	switch (type) {
+	case THREAD_STACK_USER_REGION:
+		return REGION_RAM_ATTR;
 	case THREAD_STACK_REGION:
-		return 0;
+		return  AUX_MPU_RDP_KW | AUX_MPU_RDP_KR;
+	case THREAD_APP_DATA_REGION:
+		return REGION_RAM_ATTR;
 	case THREAD_STACK_GUARD_REGION:
 	/* no Write and Execute to guard region */
 		return AUX_MPU_RDP_UR | AUX_MPU_RDP_KR;
@@ -161,8 +166,11 @@ static inline u32_t _get_region_index_by_type(u32_t type)
 	 */
 	switch (type) {
 #if CONFIG_ARC_MPU_VER  == 2
+	case THREAD_STACK_USER_REGION:
+		return _get_num_regions() - mpu_config.num_regions
+		 - THREAD_STACK_REGION;
 	case THREAD_STACK_REGION:
-		return _get_num_regions() - mpu_config.num_regions - type;
+	case THREAD_APP_DATA_REGION:
 	case THREAD_STACK_GUARD_REGION:
 		return _get_num_regions() - mpu_config.num_regions - type;
 	case THREAD_DOMAIN_PARTITION_REGION:
@@ -176,8 +184,10 @@ static inline u32_t _get_region_index_by_type(u32_t type)
 		return _get_num_regions() - mpu_config.num_regions - type + 1;
 #endif
 #elif CONFIG_ARC_MPU_VER == 3
+	case THREAD_STACK_USER_REGION:
+		return mpu_config.num_regions + THREAD_STACK_REGION - 1;
 	case THREAD_STACK_REGION:
-		return mpu_config.num_regions + type - 1;
+	case THREAD_APP_DATA_REGION:
 	case THREAD_STACK_GUARD_REGION:
 		return mpu_config.num_regions + type - 1;
 	case THREAD_DOMAIN_PARTITION_REGION:
@@ -417,6 +427,37 @@ void arc_core_mpu_region(u32_t index, u32_t base, u32_t size,
 }
 
 #if defined(CONFIG_USERSPACE)
+void arc_core_mpu_configure_user_context(struct k_thread *thread)
+{
+	u32_t base = (u32_t)thread->stack_obj;
+	u32_t size = thread->stack_info.size;
+
+	/* for kernel threads, no need to configure user context */
+	if (!thread->arch.priv_stack_start) {
+		return;
+	}
+
+	arc_core_mpu_configure(THREAD_STACK_USER_REGION, base, size);
+
+	/* configure app data portion */
+#ifdef CONFIG_APPLICATION_MEMORY
+#if CONFIG_ARC_MPU_VER == 2
+	base = (u32_t)&__app_ram_start;
+	size = (u32_t)&__app_ram_end - (u32_t)&__app_ram_start;
+
+	/* set up app data region if exists, otherwise disable */
+	if (size > 0) {
+		arc_core_mpu_configure(THREAD_APP_DATA_REGION, base, size);
+	}
+#elif CONFIG_ARC_MPU_VER == 3
+	/*
+	 * ARC MPV v3 doesn't support MPU region overlap.
+	 * Application memory should be a static memory, defined in mpu_config
+	 */
+#endif
+#endif
+}
+
 /**
  * @brief configure MPU regions for the memory partitions of the memory domain
  *

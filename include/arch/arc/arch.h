@@ -39,7 +39,7 @@ extern "C" {
 #include <arch/arc/v2/addr_types.h>
 #endif
 
-#if defined(CONFIG_MPU_STACK_GUARD)
+#if defined(CONFIG_MPU_STACK_GUARD) || defined(CONFIG_USERSPACE)
 #if defined(CONFIG_ARC_CORE_MPU)
 #if CONFIG_ARC_MPU_VER == 2
 /*
@@ -62,21 +62,92 @@ extern "C" {
 #define STACK_GUARD_SIZE 0
 #endif
 
+#define STACK_SIZE_ALIGN(x)	max(STACK_ALIGN, x)
+
+
+
+/**
+ * @brief Calculate power of two ceiling for a buffer size input
+ *
+ */
+#define POW2_CEIL(x) ((1 << (31 - __builtin_clz(x))) < x ?  \
+		1 << (31 - __builtin_clz(x) + 1) : \
+		1 << (31 - __builtin_clz(x)))
+
+#if defined(CONFIG_USERSPACE)
+
+/*
+ * if user space is enabled, for user thread, no STACK_GUARD area;
+ * for kernel thread, the privilege stack can be used as STACK_GUARD
+ * area, and the privilege stack size must be greater than STACK_GUARD_SIZE
+ */
+#if defined(CONFIG_MPU_STACK_GUARD) && \
+	CONFIG_PRIVILEGED_STACK_SIZE < STACK_GUARD_SIZE
+#error "CONFIG_PRIVILEGED_STACK_SIZE must be larger than STACK_GUARD_SIZE"
+#endif
+
+
+#if CONFIG_ARC_MPU_VER == 2
+
 #define _ARCH_THREAD_STACK_DEFINE(sym, size) \
-	struct _k_thread_stack_element __noinit __aligned(STACK_ALIGN) \
-		sym[size+STACK_GUARD_SIZE]
+	struct _k_thread_stack_element __kernel_noinit \
+		__aligned(POW2_CEIL(STACK_SIZE_ALIGN(size))) \
+		sym[POW2_CEIL(STACK_SIZE_ALIGN(size)) + \
+		CONFIG_PRIVILEGED_STACK_SIZE]
 
 #define _ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	struct _k_thread_stack_element __noinit __aligned(STACK_ALIGN) \
-		sym[nmemb][size+STACK_GUARD_SIZE]
+	struct _k_thread_stack_element __kernel_noinit \
+		__aligned(POW2_CEIL(STACK_SIZE_ALIGN(size))) \
+		sym[nmemb][POW2_CEIL(STACK_SIZE_ALIGN(size)) + \
+		CONFIG_PRIVILEGED_STACK_SIZE]
+
+#define _ARCH_THREAD_STACK_MEMBER(sym, size) \
+	struct _k_thread_stack_element \
+		__aligned(POW2_CEIL(STACK_SIZE_ALIGN(size))) \
+		sym[POW2_CEIL(size) + CONFIG_PRIVILEGED_STACK_SIZE]
+
+#elif CONFIG_ARC_MPU_VER == 3
+
+#define _ARCH_THREAD_STACK_DEFINE(sym, size) \
+	struct _k_thread_stack_element __kernel_noinit __aligned(STACK_ALIGN) \
+		sym[size + CONFIG_PRIVILEGED_STACK_SIZE]
+
+#define _ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
+	struct _k_thread_stack_element __kernel_noinit __aligned(STACK_ALIGN) \
+		sym[nmemb][size + CONFIG_PRIVILEGED_STACK_SIZE]
 
 #define _ARCH_THREAD_STACK_MEMBER(sym, size) \
 	struct _k_thread_stack_element __aligned(STACK_ALIGN) \
-		sym[size+STACK_GUARD_SIZE]
+		sym[size + CONFIG_PRIVILEGED_STACK_SIZE]
+
+#endif /* CONFIG_ARC_MPU_VER */
+
+#define _ARCH_THREAD_STACK_SIZEOF(sym) \
+		(sizeof(sym) - CONFIG_PRIVILEGED_STACK_SIZE)
+
+#define _ARCH_THREAD_STACK_BUFFER(sym) \
+		((char *)(sym))
+
+#else /* CONFIG_USERSPACE */
+
+#define _ARCH_THREAD_STACK_DEFINE(sym, size) \
+	struct _k_thread_stack_element __kernel_noinit __aligned(STACK_ALIGN) \
+		sym[size + STACK_GUARD_SIZE]
+
+#define _ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
+	struct _k_thread_stack_element __kernel_noinit __aligned(STACK_ALIGN) \
+		sym[nmemb][size + STACK_GUARD_SIZE]
+
+#define _ARCH_THREAD_STACK_MEMBER(sym, size) \
+	struct _k_thread_stack_element __aligned(STACK_ALIGN) \
+		sym[size + STACK_GUARD_SIZE]
 
 #define _ARCH_THREAD_STACK_SIZEOF(sym) (sizeof(sym) - STACK_GUARD_SIZE)
 
 #define _ARCH_THREAD_STACK_BUFFER(sym) ((char *)(sym + STACK_GUARD_SIZE))
+
+#endif /* CONFIG_USERSPACE */
+
 
 #ifdef CONFIG_USERSPACE
 #ifdef CONFIG_ARC_MPU
@@ -158,46 +229,125 @@ static inline u32_t _arch_syscall_invoke6(u32_t arg1, u32_t arg2, u32_t arg3,
 					  u32_t arg4, u32_t arg5, u32_t arg6,
 					  u32_t call_id)
 {
-	return 0;
+	register u32_t ret __asm__("r0") = arg1;
+	register u32_t r1 __asm__("r1") = arg2;
+	register u32_t r2 __asm__("r2") = arg3;
+	register u32_t r3 __asm__("r3") = arg4;
+	register u32_t r4 __asm__("r4") = arg5;
+	register u32_t r5 __asm__("r5") = arg6;
+	register u32_t r6 __asm__("r6") = call_id;
+
+	__asm__ volatile(
+			 "trap_s %[trap_s_id]\n"
+			 : "=r"(ret)
+			 : [trap_s_id] "i" (_TRAP_S_CALL_SYSTEM_CALL),
+			   "r" (ret), "r" (r1), "r" (r2), "r" (r3),
+			   "r" (r4), "r" (r5), "r" (r6));
+
+	return ret;
 }
 
 static inline u32_t _arch_syscall_invoke5(u32_t arg1, u32_t arg2, u32_t arg3,
 					  u32_t arg4, u32_t arg5, u32_t call_id)
 {
-	return 0;
+	register u32_t ret __asm__("r0") = arg1;
+	register u32_t r1 __asm__("r1") = arg2;
+	register u32_t r2 __asm__("r2") = arg3;
+	register u32_t r3 __asm__("r3") = arg4;
+	register u32_t r4 __asm__("r4") = arg5;
+	register u32_t r6 __asm__("r6") = call_id;
+
+	__asm__ volatile(
+			 "trap_s %[trap_s_id]\n"
+			 : "=r"(ret)
+			 : [trap_s_id] "i" (_TRAP_S_CALL_SYSTEM_CALL),
+			   "r" (ret), "r" (r1), "r" (r2), "r" (r3),
+			   "r" (r4), "r" (r6));
+
+	return ret;
 }
 
 static inline u32_t _arch_syscall_invoke4(u32_t arg1, u32_t arg2, u32_t arg3,
 					  u32_t arg4, u32_t call_id)
 {
-	return 0;
+	register u32_t ret __asm__("r0") = arg1;
+	register u32_t r1 __asm__("r1") = arg2;
+	register u32_t r2 __asm__("r2") = arg3;
+	register u32_t r3 __asm__("r3") = arg4;
+	register u32_t r6 __asm__("r6") = call_id;
+
+	__asm__ volatile(
+			 "trap_s %[trap_s_id]\n"
+			 : "=r"(ret)
+			 : [trap_s_id] "i" (_TRAP_S_CALL_SYSTEM_CALL),
+			   "r" (ret), "r" (r1), "r" (r2), "r" (r3),
+			   "r" (r6));
+
+	return ret;
 }
 
 static inline u32_t _arch_syscall_invoke3(u32_t arg1, u32_t arg2, u32_t arg3,
 					  u32_t call_id)
 {
-	return 0;
+	register u32_t ret __asm__("r0") = arg1;
+	register u32_t r1 __asm__("r1") = arg2;
+	register u32_t r2 __asm__("r2") = arg3;
+	register u32_t r6 __asm__("r6") = call_id;
+
+	__asm__ volatile(
+			 "trap_s %[trap_s_id]\n"
+			 : "=r"(ret)
+			 : [trap_s_id] "i" (_TRAP_S_CALL_SYSTEM_CALL),
+			   "r" (ret), "r" (r1), "r" (r2), "r" (r6));
+
+	return ret;
 }
 
 static inline u32_t _arch_syscall_invoke2(u32_t arg1, u32_t arg2, u32_t call_id)
 {
-	return 0;
+	register u32_t ret __asm__("r0") = arg1;
+	register u32_t r1 __asm__("r1") = arg2;
+	register u32_t r6 __asm__("r6") = call_id;
+
+	__asm__ volatile(
+			 "trap_s %[trap_s_id]\n"
+			 : "=r"(ret)
+			 : [trap_s_id] "i" (_TRAP_S_CALL_SYSTEM_CALL),
+			   "r" (ret), "r" (r1), "r" (r6));
+
+	return ret;
 }
 
 static inline u32_t _arch_syscall_invoke1(u32_t arg1, u32_t call_id)
 {
-	return 0;
+	register u32_t ret __asm__("r0") = arg1;
+	register u32_t r6 __asm__("r6") = call_id;
+
+	__asm__ volatile(
+			 "trap_s %[trap_s_id]\n"
+			 : "=r"(ret)
+			 : [trap_s_id] "i" (_TRAP_S_CALL_SYSTEM_CALL),
+			   "r" (ret), "r" (r6));
+
+	return ret;
 }
 
 static inline u32_t _arch_syscall_invoke0(u32_t call_id)
 {
-	return 0;
+	register u32_t ret __asm__("r0");
+	register u32_t r6 __asm__("r6") = call_id;
+
+	__asm__ volatile(
+			 "trap_s %[trap_s_id]\n"
+			 : "=r"(ret)
+			 : [trap_s_id] "i" (_TRAP_S_CALL_SYSTEM_CALL),
+			   "r" (ret), "r" (r6));
+
+	return ret;
 }
 
-static inline int _arch_is_user_context(void)
-{
-	return 0;
-}
+extern int _arch_is_user_context(void);
+
 #endif /* _ASMLANGUAGE */
 #endif /* CONFIG_USERSPACE */
 #ifdef __cplusplus

@@ -37,6 +37,16 @@
 	#endif
 #endif
 
+#ifdef CONFIG_ARC_MPU_ENABLE
+	#if CONFIG_ARC_MPU_VER == 2
+		#define MPU_ADDR_ALIGN . = ALIGN(2048);
+	#elif CONFIG_ARC_MPU_VER == 3
+		#define MPU_ADDR_ALIGN . = ALIGN(32);
+	#endif
+#else
+	#define MPU_ADDR_ALIGN
+#endif
+
 #if defined(CONFIG_XIP)
 	#define _DATA_IN_ROM __data_rom_start
 #else
@@ -108,7 +118,9 @@ SECTIONS {
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 	_image_rodata_end = .;
+	MPU_ADDR_ALIGN
 	_image_rom_end = .;
+	_image_rom_size = _image_rom_end - _image_rom_start;
 
 	GROUP_END(ROMABLE_REGION)
 
@@ -117,6 +129,7 @@ SECTIONS {
 #ifdef CONFIG_APPLICATION_MEMORY
 	SECTION_DATA_PROLOGUE(_APP_DATA_SECTION_NAME, (OPTIONAL),)
 	{
+		MPU_ADDR_ALIGN
 		__app_ram_start = .;
 		__app_data_ram_start = .;
 		_image_ram_start = .;
@@ -142,12 +155,19 @@ SECTIONS {
 	{
 		APP_INPUT_SECTION(.noinit)
 		APP_INPUT_SECTION(".noinit.*")
+/*
+ * for MPU v2,the application memory section must be aligned to the size of
+ * section
+ */
+		MPU_ADDR_ALIGN
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 
 	__app_ram_end = .;
+	__app_ram_size = __app_ram_end - __app_ram_start;
 #endif /* CONFIG_APPLICATION_MEMORY */
 
 	SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),) {
+		MPU_ADDR_ALIGN
 		/*
 		 * For performance, BSS section is assumed to be 4 byte aligned and
 		 * a multiple of 4 bytes
@@ -203,6 +223,8 @@ SECTIONS {
 #include <linker/kobject.ld>
 
 	__data_ram_end = .;
+
+	MPU_ADDR_ALIGN
 
 	/* Define linker symbols */
 	_image_ram_end = .;

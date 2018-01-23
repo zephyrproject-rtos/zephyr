@@ -64,14 +64,41 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 	char *stackEnd = pStackMem + stackSize;
 	struct init_stack_frame *pInitCtx;
-
+#if CONFIG_USERSPACE
+	/* for kernel thread, the privilege stack is merged into thread stack */
+	if (!(options & K_USER)) {
+	/* if MPU_STACK_GUARD is enabled, reserve the the stack area
+	 * |---------------------|----------------|
+	 * |                     |(MPU STACK AREA)|
+	 * |			 |----------------|
+	 * |  user stack         | kernel thread  |
+	 * |---------------------| stack          |
+	 * |  privilege stack    |                |
+	 * ----------------------------------------
+	 */
+#ifdef CONFIG_MPU_STACK_GUARD
+		pStackmem += STACK_GUARD_SIZE;
+		stackSize = stackSize + CONFIG_PRIVILEGED_STACK_SIZE
+			 - STACK_GUARD_SIZE;
+#endif
+		stackEnd += CONFIG_PRIVILEGED_STACK_SIZE;
+		stackSize += CONFIG_PRIVILEGED_STACK_SIZE;
+	}
+#endif
 	_new_thread_init(thread, pStackMem, stackSize, priority, options);
 
 	/* carve the thread entry struct from the "base" of the stack */
 	pInitCtx = (struct init_stack_frame *)(STACK_ROUND_DOWN(stackEnd) -
 				       sizeof(struct init_stack_frame));
-
+#if CONFIG_USERSPACE
+	if (options & K_USER) {
+		pInitCtx->pc = ((u32_t)_arch_user_mode_enter);
+	} else {
+		pInitCtx->pc = ((u32_t)_thread_entry_wrapper);
+	}
+#else
 	pInitCtx->pc = ((u32_t)_thread_entry_wrapper);
+#endif
 	pInitCtx->r0 = (u32_t)pEntry;
 	pInitCtx->r1 = (u32_t)parameter1;
 	pInitCtx->r2 = (u32_t)parameter2;
@@ -84,10 +111,22 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 * value.
 	 */
 #ifdef CONFIG_ARC_STACK_CHECKING
-	pInitCtx->status32 = _ARC_V2_STATUS32_SC | _ARC_V2_STATUS32_E(_ARC_V2_DEF_IRQ_LEVEL);
+	pInitCtx->status32 = _ARC_V2_STATUS32_SC |
+		 _ARC_V2_STATUS32_E(_ARC_V2_DEF_IRQ_LEVEL);
 	thread->arch.stack_base = (u32_t) stackEnd;
 #else
 	pInitCtx->status32 = _ARC_V2_STATUS32_E(_ARC_V2_DEF_IRQ_LEVEL);
+#endif
+
+#if CONFIG_USERSPACE
+	if (options & K_USER) {
+		thread->arch.priv_stack_start = (u32_t) stackEnd;
+		thread->arch.priv_stack_size =
+			(u32_t)CONFIG_PRIVILEGED_STACK_SIZE;
+	} else {
+		thread->arch.priv_stack_start = 0;
+		thread->arch.priv_stack_size = 0;
+	}
 #endif
 
 #ifdef CONFIG_THREAD_MONITOR
@@ -113,3 +152,17 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 	thread_monitor_init(thread);
 }
+
+
+#ifdef CONFIG_USERSPACE
+
+FUNC_NORETURN void _arch_user_mode_enter(k_thread_entry_t user_entry,
+	void *p1, void *p2, void *p3)
+{
+	_arc_userspace_enter(user_entry, p1, p2, p3,
+			     (u32_t)_current->stack_obj,
+			     _current->stack_info.size);
+	CODE_UNREACHABLE;
+}
+
+#endif
