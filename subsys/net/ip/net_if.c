@@ -367,11 +367,29 @@ struct net_if *net_if_lookup_by_dev(struct device *dev)
 
 struct net_if *net_if_get_default(void)
 {
+	struct net_if *iface = NULL;
+
 	if (__net_if_start == __net_if_end) {
 		return NULL;
 	}
 
-	return __net_if_start;
+#if defined(CONFIG_NET_DEFAULT_IF_ETHERNET)
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(ETHERNET));
+#endif
+#if defined(CONFIG_NET_DEFAULT_IF_IEEE802154)
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(IEEE802154));
+#endif
+#if defined(CONFIG_NET_DEFAULT_IF_BLUETOOTH)
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(BLUETOOTH));
+#endif
+#if defined(CONFIG_NET_DEFAULT_IF_DUMMY)
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+#endif
+#if defined(CONFIG_NET_DEFAULT_IF_OFFLOAD)
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(OFFLOAD_IP));
+#endif
+
+	return iface ? iface : __net_if_start;
 }
 
 struct net_if *net_if_get_first_by_type(const struct net_l2 *l2)
