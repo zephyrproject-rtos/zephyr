@@ -488,7 +488,6 @@ config BT_CTLR_DEBUG_PINS
 	help
 	  Turn on debug GPIO toggling for the BLE Controller. This is useful
 	  when debugging with a logic analyzer or profiling certain sections of
-	  the code. When enabled, pins P0.16 to P0.25 are taken over exclusively
-	  by the controller and cannot be used outside of it.
+	  the code.
 
 endif # BT_CTLR
