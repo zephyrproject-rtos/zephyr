@@ -1,0 +1,4 @@
+
+config BOARD_ARTY
+	bool "Arty target"
+	depends on SOC_RISCV32_GOTHAM

@@ -1,0 +1,6 @@
+if BOARD_ARTY
+
+config BOARD
+	default "arty"
+
+endif

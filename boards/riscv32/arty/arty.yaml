@@ -1,0 +1,10 @@
+identifier: arty
+name: Arty
+type: mcu
+arch: riscv32
+toolchain:
+  - zephyr
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
