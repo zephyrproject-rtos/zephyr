@@ -229,6 +229,13 @@ From RIRQ:
  */
 
 SECTION_FUNC(TEXT, _isr_wrapper)
+#if CONFIG_USERSPACE
+/* utilize the fact that Z bit is set if interrupt taken in U mode*/
+	bnz _isr_from_privilege
+/* get the correct stack pointer, don't touch _ARC_V2_USER_SP in the future */
+	aex sp, [_ARC_V2_USER_SP]
+_isr_from_privilege:
+#endif
 #if CONFIG_ARC_FIRQ
 #if CONFIG_RGF_NUM_BANKS == 1
 	st r0,[saved_r0]

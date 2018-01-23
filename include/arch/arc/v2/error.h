@@ -33,6 +33,11 @@ extern void _SysFatalErrorHandler(unsigned int cause, const NANO_ESF *esf);
 #define _NANO_ERR_KERNEL_OOPS (4)       /* Kernel oops (fatal to thread) */
 #define _NANO_ERR_KERNEL_PANIC (5)	/* Kernel panic (fatal to system) */
 
+
+#define _TRAP_S_SCALL_IRQ_OFFLOAD		1
+#define _TRAP_S_CALL_RUNTIME_EXCEPT		2
+#define _TRAP_S_CALL_SYSTEM_CALL		3
+
 #ifdef __cplusplus
 }
 #endif

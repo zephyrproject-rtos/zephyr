@@ -25,6 +25,7 @@ extern "C" {
 #define _ARC_V2_SEC_STAT 0x09
 #define _ARC_V2_STATUS32 0x00a
 #define _ARC_V2_STATUS32_P0 0x00b
+#define _ARC_V2_USER_SP	0x00d
 #define _ARC_V2_AUX_IRQ_CTRL 0x00e
 #define _ARC_V2_IC_IVIC 0x010
 #define _ARC_V2_IC_CTRL 0x011
@@ -102,7 +103,8 @@ extern "C" {
 #define _ARC_V2_STATUS32_AE_BIT 5
 #define _ARC_V2_STATUS32_AE (1 << _ARC_V2_STATUS32_AE_BIT)
 #define _ARC_V2_STATUS32_DE (1 << 6)
-#define _ARC_V2_STATUS32_U (1 << 7)
+#define _ARC_V2_STATUS32_U_BIT 7
+#define _ARC_V2_STATUS32_U (1 << _ARC_V2_STATUS32_U_BIT)
 #define _ARC_V2_STATUS32_V (1 << 8)
 #define _ARC_V2_STATUS32_C (1 << 9)
 #define _ARC_V2_STATUS32_N (1 << 10)

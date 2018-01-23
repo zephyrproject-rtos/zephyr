@@ -110,17 +110,10 @@ SECTION_FUNC(TEXT, __swap)
 
 	_load_callee_saved_regs
 
-#ifdef CONFIG_MPU_STACK_GUARD
+#if defined(CONFIG_MPU_STACK_GUARD) || defined(CONFIG_USERSPACE)
 	push_s r2
 	mov r0, r2
-	bl configure_mpu_stack_guard
-	pop_s r2
-#endif
-
-#ifdef CONFIG_USERSPACE
-	push_s r2
-	mov r0, r2
-	bl configure_mpu_mem_domain
+	bl configure_mpu_thread
 	pop_s r2
 #endif
 
