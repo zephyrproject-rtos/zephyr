@@ -456,8 +456,8 @@ Events:
 	Opcode 0x81 - Device Found event
 
 		Controller Index:	<controller id>
-		Event parameters:	Address (6 octets)
-					Address_Type (1 octet)
+		Event parameters:	Address_Type (1 octet)
+					Address (6 octets)
 					RSSI (1 octet)
 					Flags (1 octet)
 					EIR_Data_Length (2 Octets)
