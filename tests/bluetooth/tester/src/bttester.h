@@ -244,8 +244,8 @@ struct gap_new_settings_ev {
 
 #define GAP_EV_DEVICE_FOUND		0x81
 struct gap_device_found_ev {
-	u8_t  address[6];
 	u8_t  address_type;
+	u8_t  address[6];
 	s8_t   rssi;
 	u8_t  flags;
 	u16_t eir_data_len;
