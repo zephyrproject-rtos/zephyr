@@ -351,9 +351,9 @@ static void sw_switch(u8_t dir, u8_t phy_curr, u8_t flags_curr, u8_t phy_next,
 			/* Switching to TX after RX on LE Coded PHY. */
 
 			u8_t ppi_en =
-			    HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI(sw_tifs_toggle);
+			    HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI;
 			u8_t cc_s2 =
-			    SW_SWITCH_TIMER_S2_EVTS_COMP(sw_tifs_toggle);
+			    SW_SWITCH_TIMER_EVTS_COMP_S2_BASE;
 			u8_t ppi_dis =
 				HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(
 				    sw_tifs_toggle);
@@ -378,6 +378,11 @@ static void sw_switch(u8_t dir, u8_t phy_curr, u8_t flags_curr, u8_t phy_next,
 				HAL_SW_SWITCH_RADIO_ENABLE_PPI_EVT(cc_s2);
 			HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_TASK(ppi_en) =
 				HAL_SW_SWITCH_RADIO_ENABLE_PPI_TASK_TX;
+
+			/* Include PPI for S2 timing in the active group */
+			NRF_PPI->CHG[SW_SWITCH_TIMER_TASK_GROUP(
+				sw_tifs_toggle)] |=
+				    HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_INCLUDE;
 
 			/* Wire the Group task disable
 			 * to the S2 EVENTS_COMPARE.
@@ -404,17 +409,14 @@ static void sw_switch(u8_t dir, u8_t phy_curr, u8_t flags_curr, u8_t phy_next,
 			    HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_ENABLE;
 		} else {
 			/* Switching to TX after RX on LE 1M/2M PHY */
-			u8_t ppi_en =
-			    HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI(sw_tifs_toggle);
 			u8_t ppi_dis =
 			    HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(
 			    sw_tifs_toggle);
 
-			/* Invalidate PPI used when RXing on LE Coded PHY. */
-			HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_EVT(ppi_en)
-				= 0;
-			HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_TASK(ppi_en)
-				= 0;
+			/* Exclude PPI for S2 timing from the active group */
+			NRF_PPI->CHG[SW_SWITCH_TIMER_TASK_GROUP(
+				sw_tifs_toggle)] &=
+				~(HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_INCLUDE);
 
 			/* Wire the Group task disable
 			 * to the default EVENTS_COMPARE.
@@ -440,17 +442,9 @@ static void sw_switch(u8_t dir, u8_t phy_curr, u8_t flags_curr, u8_t phy_next,
 
 #if defined(CONFIG_SOC_NRF52840)
 		if (1) {
-			u8_t ppi_en =
-				HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI(
-					sw_tifs_toggle);
 			u8_t ppi_dis =
 				HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(
 					sw_tifs_toggle);
-
-			HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_EVT(
-				ppi_en) = 0;
-			HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_TASK(
-				ppi_en) = 0;
 
 			HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_REGISTER_EVT(
 				ppi_dis) =
@@ -459,6 +453,11 @@ static void sw_switch(u8_t dir, u8_t phy_curr, u8_t flags_curr, u8_t phy_next,
 				ppi_dis) =
 				HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_TASK(
 					sw_tifs_toggle);
+
+			/* Exclude PPI for S2 timing from the active group */
+			NRF_PPI->CHG[SW_SWITCH_TIMER_TASK_GROUP(
+				sw_tifs_toggle)] &=
+				~(HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_INCLUDE);
 		}
 #endif /* CONFIG_SOC_NRF52840 */
 	}
@@ -660,16 +659,7 @@ u32_t radio_tmr_start(u8_t trx, u32_t ticks_start, u32_t remainder)
 	HAL_SW_SWITCH_TIMER_CLEAR_PPI_REGISTER_TASK =
 		HAL_SW_SWITCH_TIMER_CLEAR_PPI_TASK;
 
-#if defined(CONFIG_SOC_NRF52840)
-	NRF_PPI->CHG[SW_SWITCH_TIMER_TASK_GROUP(0)] =
-		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_0_INCLUDE |
-		HAL_SW_SWITCH_RADIO_ENABLE_PPI_0_INCLUDE |
-		HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_0_INCLUDE;
-	NRF_PPI->CHG[SW_SWITCH_TIMER_TASK_GROUP(1)] =
-		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_1_INCLUDE |
-		HAL_SW_SWITCH_RADIO_ENABLE_PPI_1_INCLUDE |
-		HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_1_INCLUDE;
-#else /* CONFIG_SOC_NRF52840 */
+#if !defined(CONFIG_SOC_NRF52840)
 	HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_REGISTER_EVT(
 		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(0)) =
 		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_EVT(
@@ -685,14 +675,13 @@ u32_t radio_tmr_start(u8_t trx, u32_t ticks_start, u32_t remainder)
 	HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_REGISTER_TASK(
 		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI(1)) =
 		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_TASK(1);
-
+#endif /* !defined(CONFIG_SOC_NRF52840) */
 	NRF_PPI->CHG[SW_SWITCH_TIMER_TASK_GROUP(0)] =
 		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_0_INCLUDE |
 			HAL_SW_SWITCH_RADIO_ENABLE_PPI_0_INCLUDE;
 	NRF_PPI->CHG[SW_SWITCH_TIMER_TASK_GROUP(1)] =
 		HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_1_INCLUDE |
 			HAL_SW_SWITCH_RADIO_ENABLE_PPI_1_INCLUDE;
-#endif /* CONFIG_SOC_NRF52840 */
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
 
 	return remainder;
