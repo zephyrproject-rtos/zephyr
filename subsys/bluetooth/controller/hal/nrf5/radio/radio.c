@@ -646,12 +646,7 @@ u32_t radio_tmr_start(u8_t trx, u32_t ticks_start, u32_t remainder)
 	HAL_EVENT_TIMER_START_PPI_REGISTER_TASK = HAL_EVENT_TIMER_START_TASK;
 	NRF_PPI->CHENSET = HAL_EVENT_TIMER_START_PPI_ENABLE;
 
-	HAL_RADIO_ENABLE_ON_TICK_PPI_REGISTER_EVT =
-		HAL_RADIO_ENABLE_ON_TICK_PPI_EVT;
-	HAL_RADIO_ENABLE_ON_TICK_PPI_REGISTER_TASK =
-		(trx) ? HAL_RADIO_ENABLE_ON_TICK_PPI_TASK_TX :
-			HAL_RADIO_ENABLE_ON_TICK_PPI_TASK_RX;
-	NRF_PPI->CHENSET = HAL_RADIO_ENABLE_ON_TICK_PPI_ENABLE;
+	hal_radio_enable_on_tick_ppi_config_and_enable(trx);
 
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
 	SW_SWITCH_TIMER->TASKS_CLEAR = 1;
@@ -703,30 +698,19 @@ u32_t radio_tmr_start(u8_t trx, u32_t ticks_start, u32_t remainder)
 	return remainder;
 }
 
-static inline void radio_enable_on_timer_tick(u8_t trx)
-{
-	/* Setup PPI for Radio start */
-	HAL_RADIO_ENABLE_ON_TICK_PPI_REGISTER_EVT =
-		HAL_RADIO_ENABLE_ON_TICK_PPI_EVT;
-	HAL_RADIO_ENABLE_ON_TICK_PPI_REGISTER_TASK =
-		(trx) ? HAL_RADIO_ENABLE_ON_TICK_PPI_TASK_TX :
-			HAL_RADIO_ENABLE_ON_TICK_PPI_TASK_RX;
-	NRF_PPI->CHENSET = HAL_RADIO_ENABLE_ON_TICK_PPI_ENABLE;
-}
-
 void radio_tmr_start_us(u8_t trx, u32_t us)
 {
 	EVENT_TIMER->CC[0] = us;
 	EVENT_TIMER->EVENTS_COMPARE[0] = 0;
 
-	radio_enable_on_timer_tick(trx);
+	hal_radio_enable_on_tick_ppi_config_and_enable(trx);
 }
 
 u32_t radio_tmr_start_now(u8_t trx)
 {
 	u32_t now, start;
 
-	radio_enable_on_timer_tick(trx);
+	hal_radio_enable_on_tick_ppi_config_and_enable(trx);
 
 	/* Capture the current time */
 	EVENT_TIMER->TASKS_CAPTURE[1] = 1;

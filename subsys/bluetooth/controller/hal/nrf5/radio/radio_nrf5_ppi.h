@@ -26,6 +26,16 @@
 #define HAL_RADIO_ENABLE_ON_TICK_PPI_TASK_RX \
 	((u32_t)&(NRF_RADIO->TASKS_RXEN))
 
+static inline void hal_radio_enable_on_tick_ppi_config_and_enable(u8_t trx)
+{
+	HAL_RADIO_ENABLE_ON_TICK_PPI_REGISTER_EVT =
+		HAL_RADIO_ENABLE_ON_TICK_PPI_EVT;
+	HAL_RADIO_ENABLE_ON_TICK_PPI_REGISTER_TASK =
+		(trx) ? HAL_RADIO_ENABLE_ON_TICK_PPI_TASK_TX :
+			HAL_RADIO_ENABLE_ON_TICK_PPI_TASK_RX;
+	NRF_PPI->CHENSET = HAL_RADIO_ENABLE_ON_TICK_PPI_ENABLE;
+}
+
 /* Start event timer on RTC tick:
  * wire the RTC0 EVENTS_COMPARE[2] event to EVENT_TIMER  TASKS_START task.
  */
