@@ -1,7 +1,7 @@
 
 if BOARD_NATIVE_POSIX
 
-comment "Simple process (POSIX) Options"
+comment "Native POSIX options"
 
 config NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME
 	bool "Slow down execution to real time"
