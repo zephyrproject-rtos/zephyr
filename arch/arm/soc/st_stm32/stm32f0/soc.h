@@ -43,6 +43,12 @@
 #include <stm32f0xx_ll_system.h>
 #endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 
+#ifdef CONFIG_PINCTRL_STM32
+#include <stm32f0xx_ll_gpio.h>
+#include <stm32f0xx_ll_exti.h>
+#include <stm32f0xx_ll_system.h>
+#endif
+
 #ifdef CONFIG_IWDG_STM32
 #include <stm32f0xx_ll_iwdg.h>
 #endif
