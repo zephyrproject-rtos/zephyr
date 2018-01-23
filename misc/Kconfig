@@ -282,6 +282,7 @@ config IS_MCUBOOT
 	default n
 	depends on XIP
 	depends on IS_BOOTLOADER
+	select FLASH_PAGE_LAYOUT if FLASH_HAS_PAGE_LAYOUT
 	help
 	  This option indicates that Zephyr is being built as the MCUboot
 	  open source bootloader.
