@@ -55,7 +55,8 @@
 #endif
 
 #if defined(CONFIG_XIP)
-	#if defined(CONFIG_IS_BOOTLOADER)
+        /* MCUboot uses the whole RAM */
+	#if defined(CONFIG_IS_BOOTLOADER) && !defined(CONFIG_IS_MCUBOOT)
 		#define RAM_SIZE (CONFIG_BOOTLOADER_SRAM_SIZE * 1K)
 		#define RAM_ADDR (CONFIG_SRAM_BASE_ADDRESS + \
 			(CONFIG_SRAM_SIZE * 1K - RAM_SIZE))

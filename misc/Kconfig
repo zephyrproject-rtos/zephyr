@@ -44,9 +44,12 @@ endif
 config TEXT_SECTION_OFFSET
 	hex "TEXT section offset"
 	default 0
+	default 0x200 if BOOTLOADER_MCUBOOT
 	help
 	  This sets and offset before the text section and allows booting images
 	  with custom headers that are inserted at the beginning of the image.
+	  If the application is to be booted by MCUboot, a default suitable 
+	  value is set in order to place the image's signature.
 
 config HAVE_CUSTOM_LINKER_SCRIPT
 	prompt "Custom linker scripts provided"
@@ -272,6 +275,23 @@ config BOOTLOADER_SRAM_SIZE
 	help
 	  This option specifies the amount of SRAM (measure in kB) reserved for
 	  when Zephyr is to act as a bootloader.
+
+config IS_MCUBOOT
+	bool
+	prompt "Act as an MCUboot bootloader"
+	default n
+	depends on XIP
+	depends on IS_BOOTLOADER
+	help
+	  This option indicates that Zephyr is being built as the MCUboot
+	  open source bootloader.
+
+config BOOTLOADER_MCUBOOT
+	bool
+	prompt "MCUboot boot loader support"
+	default n
+	help
+	  This option signifies that the target uses MCUboot as a bootloader
 
 config BOOTLOADER_KEXEC
 	bool
