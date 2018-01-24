@@ -44,6 +44,7 @@ struct net_eth_addr {
 #define NET_ETH_PTYPE_IP		0x0800
 #define NET_ETH_PTYPE_IPV6		0x86dd
 #define NET_ETH_PTYPE_VLAN		0x8100
+#define NET_ETH_PTYPE_PTP		0x88f7
 
 #define NET_ETH_MINIMAL_FRAME_SIZE	60
 
@@ -188,6 +189,14 @@ struct ethernet_context {
 		struct net_if *iface;
 	} carrier_mgmt;
 
+#if defined(CONFIG_NET_GPTP)
+	/** The gPTP port number for this network device. We need to store the
+	 * port number here so that we do not need to fetch it for every
+	 * incoming gPTP packet.
+	 */
+	int port;
+#endif
+
 #if defined(CONFIG_NET_VLAN)
 	/** Flag that tells whether how many VLAN tags are enabled for this
 	 * context. The same information can be dug from the vlan array but
@@ -252,6 +261,22 @@ static inline bool net_eth_is_addr_multicast(struct net_eth_addr *addr)
 	if (addr->addr[0] == 0x01 &&
 	    addr->addr[1] == 0x00 &&
 	    addr->addr[2] == 0x5e) {
+		return true;
+	}
+#endif
+
+	return false;
+}
+
+static inline bool net_eth_is_addr_lldp_multicast(struct net_eth_addr *addr)
+{
+#if defined(CONFIG_NET_GPTP)
+	if (addr->addr[0] == 0x01 &&
+	    addr->addr[1] == 0x80 &&
+	    addr->addr[2] == 0xc2 &&
+	    addr->addr[3] == 0x00 &&
+	    addr->addr[4] == 0x00 &&
+	    addr->addr[5] == 0x0e) {
 		return true;
 	}
 #endif
@@ -423,6 +448,32 @@ void net_eth_carrier_off(struct net_if *iface);
  * ethernet interface does not support PTP.
  */
 struct device *net_eth_get_ptp_clock(struct net_if *iface);
+
+#if defined(CONFIG_NET_GPTP)
+/**
+ * @brief Return gPTP port number attached to this interface.
+ *
+ * @param iface Network interface
+ *
+ * @return Port number, no such port if < 0
+ */
+int net_eth_get_ptp_port(struct net_if *iface);
+
+/**
+ * @brief Set gPTP port number attached to this interface.
+ *
+ * @param iface Network interface
+ * @param port Port number to set
+ */
+void net_eth_set_ptp_port(struct net_if *iface, int port);
+#else
+static inline int net_eth_get_ptp_port(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+
+	return -ENODEV;
+}
+#endif /* CONFIG_NET_GPTP */
 
 #ifdef __cplusplus
 }
