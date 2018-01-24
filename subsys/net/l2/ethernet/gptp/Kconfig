@@ -84,7 +84,6 @@ config NET_GPTP_USE_DEFAULT_CLOCK_UPDATE
 	default y
 	help
 	  Use a default internal function to update port local clock.
-	  This method may not be accurate.
 
 config NET_GPTP_PATH_TRACE_ELEMENTS
 	int "How many path trace elements to track"
