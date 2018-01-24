@@ -80,6 +80,24 @@ NET_STACK_ARRAY_DEFINE(TX, tx_stack,
 		       CONFIG_NET_TX_STACK_SIZE,
 		       NET_TC_TX_COUNT);
 
+#if defined(CONFIG_NET_PKT_TIMESTAMP)
+#if !defined(CONFIG_NET_PKT_TIMESTAMP_STACK_SIZE)
+#define CONFIG_NET_PKT_TIMESTAMP_STACK_SIZE 1024
+#endif
+
+NET_STACK_DEFINE(TIMESTAMP, tx_ts_stack,
+		 CONFIG_NET_PKT_TIMESTAMP_STACK_SIZE,
+		 CONFIG_NET_PKT_TIMESTAMP_STACK_SIZE);
+K_FIFO_DEFINE(tx_ts_queue);
+
+static struct k_thread tx_thread_ts;
+
+/* We keep track of the timestamp callbacks in this list.
+ */
+static sys_slist_t timestamp_callbacks;
+static int timestamp_enabled;
+#endif /* CONFIG_NET_PKT_TIMESTAMP */
+
 #if defined(CONFIG_NET_DEBUG_IF)
 #if defined(CONFIG_NET_STATISTICS)
 #define debug_check_packet(pkt)						\
@@ -2226,6 +2244,71 @@ static int tc2thread(int tc)
 	return thread_priorities[tc];
 }
 
+#if defined(CONFIG_NET_PKT_TIMESTAMP)
+static void net_tx_ts_thread(void)
+{
+	struct net_pkt *pkt;
+
+	NET_DBG("Starting TX timestamp callback thread");
+
+	while (1) {
+		pkt = k_fifo_get(&tx_ts_queue, K_FOREVER);
+		if (pkt) {
+			net_if_call_timestamp_cb(pkt);
+		}
+
+		k_yield();
+	}
+}
+
+void net_if_register_timestamp_cb(struct net_if_timestamp_cb *timestamp,
+			     struct net_if *iface,
+			     net_if_timestamp_callback_t cb)
+{
+	sys_slist_find_and_remove(&timestamp_callbacks, &timestamp->node);
+	sys_slist_prepend(&timestamp_callbacks, &timestamp->node);
+
+	timestamp->iface = iface;
+	timestamp->cb = cb;
+	timestamp_enabled++;
+}
+
+void net_if_unregister_timestamp_cb(struct net_if_timestamp_cb *timestamp)
+{
+	sys_slist_find_and_remove(&timestamp_callbacks, &timestamp->node);
+
+	timestamp_enabled--;
+	if (timestamp_enabled <= 0) {
+		timestamp_enabled = 0;
+	}
+}
+
+void net_if_call_timestamp_cb(struct net_pkt *pkt)
+{
+	sys_snode_t *sn, *sns;
+
+	SYS_SLIST_FOR_EACH_NODE_SAFE(&timestamp_callbacks, sn, sns) {
+		struct net_if_timestamp_cb *timestamp =
+			CONTAINER_OF(sn, struct net_if_timestamp_cb, node);
+
+		if ((timestamp->iface == NULL) ||
+				(timestamp->iface == net_pkt_iface(pkt))) {
+			timestamp->cb(pkt);
+		}
+	}
+}
+
+void net_if_add_tx_timestamp(struct net_pkt *pkt)
+{
+	/* No need to proceed if there are no one interested in this info */
+	if (timestamp_enabled == 0) {
+		return;
+	}
+
+	k_fifo_put(&tx_ts_queue, pkt);
+}
+#endif /* CONFIG_NET_PKT_TIMESTAMP */
+
 #if defined(CONFIG_NET_SHELL)
 #define TX_STACK(idx) NET_STACK_GET_NAME(TX, tx_stack, 0)[idx].stack
 #else
@@ -2344,6 +2427,13 @@ void net_if_init(void)
 #endif
 	}
 #endif /* CONFIG_NET_IPV6 */
+
+#if defined(CONFIG_NET_PKT_TIMESTAMP)
+	k_thread_create(&tx_thread_ts, tx_ts_stack,
+			K_THREAD_STACK_SIZEOF(tx_ts_stack),
+			(k_thread_entry_t)net_tx_ts_thread,
+			NULL, NULL, NULL, K_PRIO_PREEMPT(1), 0, 0);
+#endif /* CONFIG_NET_PKT_TIMESTAMP */
 
 #if defined(CONFIG_NET_VLAN)
 	/* Make sure that we do not have too many network interfaces
