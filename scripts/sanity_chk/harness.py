@@ -23,12 +23,12 @@ class Console(Harness):
     def handle(self, line):
         if self.type == "one_line":
             pattern = re.compile(self.regex[0])
-            if pattern.match(line):
+            if pattern.search(line):
                 self.state = "passed"
         elif self.type == "multi_line":
             for r in self.regex:
                 pattern = re.compile(r)
-                if pattern.match(line) and not r in self.matches:
+                if pattern.search(line) and not r in self.matches:
                     self.matches[r] = line
 
             if len(self.matches) == len(self.regex):
