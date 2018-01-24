@@ -731,10 +731,12 @@ static int usb_handle_standard_request(struct usb_setup_packet *setup,
 		s32_t *len, u8_t **data_buf)
 {
 	int rc = 0;
+
 	/* try the custom request handler first */
-	if ((usb_dev.custom_req_handler != NULL) &&
-		(!usb_dev.custom_req_handler(setup, len, data_buf)))
+	if (usb_dev.custom_req_handler &&
+	    !usb_dev.custom_req_handler(setup, len, data_buf)) {
 		return 0;
+	}
 
 	switch (REQTYPE_GET_RECIP(setup->bmRequestType)) {
 	case REQTYPE_RECIP_DEVICE:
