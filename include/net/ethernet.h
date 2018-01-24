@@ -71,6 +71,9 @@ enum ethernet_hw_caps {
 
 	/** Changing duplex (half/full) supported */
 	ETHERNET_DUPLEX_SET		= BIT(7),
+
+	/** IEEE 802.1AS (gPTP) clock supported */
+	ETHERNET_PTP			= BIT(8),
 };
 
 enum ethernet_config_type {
@@ -129,6 +132,11 @@ struct ethernet_api {
 	int (*vlan_setup)(struct device *dev, struct net_if *iface,
 			  u16_t tag, bool enable);
 #endif /* CONFIG_NET_VLAN */
+
+#if defined(CONFIG_PTP_CLOCK)
+	/** Return ptp_clock device that is tied to this ethernet device */
+	struct device *(*get_ptp_clock)(struct device *eth_dev);
+#endif /* CONFIG_PTP_CLOCK */
 };
 
 struct net_eth_hdr {
@@ -405,6 +413,16 @@ void net_eth_carrier_on(struct net_if *iface);
  * @param iface Network interface
  */
 void net_eth_carrier_off(struct net_if *iface);
+
+/**
+ * @brief Return PTP clock that is tied to this ethernet network interface.
+ *
+ * @param iface Network interface
+ *
+ * @return Pointer to PTP clock if found, NULL if not found or if this
+ * ethernet interface does not support PTP.
+ */
+struct device *net_eth_get_ptp_clock(struct net_if *iface);
 
 #ifdef __cplusplus
 }
