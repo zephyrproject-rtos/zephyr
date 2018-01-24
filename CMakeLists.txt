@@ -82,15 +82,18 @@ endif()
 #
 # Finally, the user can use Kconfig to add compiler options that will
 # come after these options and override them
-set_ifndef(OPTIMIZE_FOR_SIZE_FLAG     "-Os")
-set_ifndef(OPTIMIZE_FOR_DEBUG_FLAG    "-Og")
 set_ifndef(OPTIMIZE_FOR_NO_OPTIMIZATIONS_FLAG "-O0")
+set_ifndef(OPTIMIZE_FOR_DEBUG_FLAG            "-Og")
+set_ifndef(OPTIMIZE_FOR_SIZE_FLAG             "-Os")
+
 if(CONFIG_NO_OPTIMIZATIONS)
-	set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_NO_OPTIMIZATIONS_FLAG})
-elseif(CONFIG_DEBUG)
+  set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_NO_OPTIMIZATIONS_FLAG})
+elseif(CONFIG_DEBUG_OPTIMIZATIONS)
   set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_DEBUG_FLAG})
-else()
+elseif(CONFIG_SIZE_OPTIMIZATIONS)
   set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_SIZE_FLAG}) # Default
+else()
+  assert(0 "Unreachable code. Expected optimization level to have been chosen. See misc/Kconfig.")
 endif()
 
 zephyr_compile_options(
