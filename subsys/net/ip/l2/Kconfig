@@ -124,6 +124,8 @@ config NET_L2_BT_SHELL
 
 source "subsys/net/ip/l2/ieee802154/Kconfig"
 
+source "subsys/net/ip/l2/gptp/Kconfig"
+
 config NET_ARP
 	bool "Enable ARP"
 	default y

@@ -40,6 +40,7 @@ extern "C" {
 #define NET_ETH_PTYPE_IP		0x0800
 #define NET_ETH_PTYPE_IPV6		0x86dd
 #define NET_ETH_PTYPE_VLAN		0x8100
+#define NET_ETH_PTYPE_PTP		0x88f7
 
 #define NET_ETH_MINIMAL_FRAME_SIZE	60
 
@@ -157,6 +158,22 @@ static inline bool net_eth_is_addr_multicast(struct net_eth_addr *addr)
 	if (addr->addr[0] == 0x01 &&
 	    addr->addr[1] == 0x00 &&
 	    addr->addr[2] == 0x5e) {
+		return true;
+	}
+#endif
+
+	return false;
+}
+
+static inline bool net_eth_is_addr_lldp_multicast(struct net_eth_addr *addr)
+{
+#if defined(CONFIG_NET_GPTP)
+	if (addr->addr[0] == 0x01 &&
+	    addr->addr[1] == 0x80 &&
+	    addr->addr[2] == 0xc2 &&
+	    addr->addr[3] == 0x00 &&
+	    addr->addr[4] == 0x00 &&
+	    addr->addr[5] == 0x0e) {
 		return true;
 	}
 #endif

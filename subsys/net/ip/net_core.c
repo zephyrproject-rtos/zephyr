@@ -29,6 +29,7 @@
 #include <net/net_pkt.h>
 #include <net/net_core.h>
 #include <net/dns_resolve.h>
+#include <net/gptp.h>
 
 #include "net_private.h"
 #include "net_shell.h"
@@ -141,6 +142,9 @@ static void processing_data(struct net_pkt *pkt, bool is_loopback)
 /* Things to setup after we are able to RX and TX */
 static void net_post_init(void)
 {
+#if defined(CONFIG_NET_GPTP)
+	net_gptp_init();
+#endif
 }
 
 /* Convert traffic class to thread priority */

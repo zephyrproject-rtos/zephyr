@@ -14,6 +14,7 @@
 #include <net/net_if.h>
 #include <net/ethernet.h>
 #include <net/arp.h>
+#include <net/gptp.h>
 
 #include "net_private.h"
 #include "ipv6.h"
@@ -263,6 +264,11 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		net_pkt_set_family(pkt, AF_INET6);
 		family = AF_INET6;
 		break;
+#if defined(CONFIG_NET_GPTP)
+	case NET_ETH_PTYPE_PTP:
+		family = AF_UNSPEC;
+		break;
+#endif
 	default:
 		NET_DBG("Unknown hdr type 0x%04x", type);
 		return NET_DROP;
@@ -293,6 +299,8 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 
 	if (!net_eth_is_addr_broadcast((struct net_eth_addr *)lladdr->addr) &&
 	    !net_eth_is_addr_multicast((struct net_eth_addr *)lladdr->addr) &&
+	    !net_eth_is_addr_lldp_multicast(
+		    (struct net_eth_addr *)lladdr->addr) &&
 	    !net_linkaddr_cmp(net_if_get_link_addr(iface), lladdr)) {
 		/* The ethernet frame is not for me as the link addresses
 		 * are different.
@@ -315,6 +323,13 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		return net_arp_input(pkt);
 	}
 #endif
+
+#if defined(CONFIG_NET_GPTP)
+	if (type == NET_ETH_PTYPE_PTP) {
+		return net_gptp_recv(iface, pkt);
+	}
+#endif
+
 	ethernet_update_length(iface, pkt);
 
 	return NET_CONTINUE;

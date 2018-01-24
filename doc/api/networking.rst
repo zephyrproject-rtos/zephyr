@@ -108,6 +108,12 @@ Hostname Configuration Library
 .. doxygengroup:: net_hostname
    :project: Zephyr
 
+generic Precision Time Protocol (gPTP)
+**************************************
+
+.. doxygengroup:: gptp
+   :project: Zephyr
+
 Network technologies
 ********************
 
