@@ -7,7 +7,7 @@
  */
 
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_DEVICE_NETWORK_DEBUG_LEVEL
-#define SYS_LOG_DOMAIN "netusb"
+#define SYS_LOG_DOMAIN "usb/net"
 #include <logging/sys_log.h>
 
 /* Enable verbose debug printing extra hexdumps */
@@ -133,7 +133,7 @@ static void netusb_status_cb(enum usb_dc_status_code status, u8_t *param)
 	default:
 		SYS_LOG_DBG("USB unknown state");
 		break;
-		}
+	}
 }
 
 static int netusb_class_handler(struct usb_setup_packet *setup,
