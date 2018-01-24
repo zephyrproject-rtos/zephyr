@@ -12,14 +12,9 @@
  */
 
 #include <zephyr.h>
+#include <stdlib.h>
 #include <timestamp.h>  /* reading time */
 #include "utils.h"      /* PRINT () and other macros */
-
-/* <stdlib.h> is not supported */
-static int abs(int i)
-{
-	return (i >= 0) ? i : -i;
-}
 
 /* context switch enough time so our measurement is precise */
 #define NB_OF_YIELD     1000
