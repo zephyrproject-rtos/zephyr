@@ -25,6 +25,9 @@
 #ifdef CONFIG_TELNET_CONSOLE
 #include <console/telnet_console.h>
 #endif
+#ifdef CONFIG_NATIVE_POSIX_CONSOLE
+#include <console/native_posix_console.h>
+#endif
 
 #include <shell/shell.h>
 
@@ -422,6 +425,10 @@ static void shell(void *p1, void *p2, void *p3)
 		struct console_input *cmd;
 
 		printk("%s", get_prompt());
+#if defined(CONFIG_NATIVE_POSIX_CONSOLE)
+		/* The native printk driver is line buffered */
+		posix_flush_stdout();
+#endif
 
 		cmd = k_fifo_get(&cmds_queue, K_FOREVER);
 
@@ -594,6 +601,9 @@ void shell_init(const char *str)
 #endif
 #ifdef CONFIG_TELNET_CONSOLE
 	telnet_register_input(&avail_queue, &cmds_queue, completion);
+#endif
+#ifdef CONFIG_NATIVE_POSIX_STDIN_CONSOLE
+	native_stdin_register_input(&avail_queue, &cmds_queue, completion);
 #endif
 }
 

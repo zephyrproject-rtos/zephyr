@@ -3,6 +3,7 @@ config BOARD_NATIVE_POSIX
 	bool "Native POSIX"
 	depends on SOC_POSIX
 	select NATIVE_POSIX_TIMER
+	select NATIVE_POSIX_CONSOLE
 	help
 	  Will produce a console Linux process which can be executed natively.
 	  It provides some minimal needed models:
