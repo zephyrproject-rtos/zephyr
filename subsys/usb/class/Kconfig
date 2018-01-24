@@ -134,4 +134,6 @@ config SYS_LOG_USB_MASS_STORAGE_LEVEL
 
 source "subsys/usb/class/netusb/Kconfig"
 
+source "subsys/usb/class/hid/Kconfig"
+
 endif # CONFIG_USB_DEVICE_STACK

@@ -2,3 +2,4 @@ zephyr_sources_ifdef(CONFIG_USB_CDC_ACM cdc_acm.c)
 zephyr_sources_ifdef(CONFIG_USB_MASS_STORAGE mass_storage.c)
 
 add_subdirectory_ifdef(CONFIG_USB_DEVICE_NETWORK netusb)
+add_subdirectory_ifdef(CONFIG_USB_DEVICE_HID hid)
