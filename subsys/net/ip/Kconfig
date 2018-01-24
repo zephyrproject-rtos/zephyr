@@ -420,6 +420,23 @@ config NET_DEFAULT_IF_DUMMY
 
 endchoice
 
+config NET_PKT_TIMESTAMP
+	bool "Enable network packet timestamp support"
+	default n
+	help
+	  Enable network packet timestamp support. This is needed for
+	  example in gPTP which needs to know how long it takes to send
+	  a network packet.
+
+config NET_PKT_TIMESTAMP_STACK_SIZE
+	int "Timestamp thread stack size"
+	default 1024
+	depends on NET_PKT_TIMESTAMP
+	help
+	  Set the timestamp thread stack size in bytes. The timestamp
+	  thread waits for timestamped TX frames and calls registered
+	  callbacks.
+
 source "subsys/net/ip/Kconfig.stack"
 
 source "subsys/net/ip/l2/Kconfig"
