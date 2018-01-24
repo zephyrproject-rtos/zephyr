@@ -14,7 +14,9 @@
 
 #define STACKSZ 1024
 
-void *thread_top(void *p1, void *p2, void *p3);
+K_THREAD_STACK_ARRAY_DEFINE(stacks, N_THR, STACKSZ);
+
+void *thread_top(void *p1);
 
 PTHREAD_MUTEX_DEFINE(lock);
 
@@ -25,18 +27,6 @@ PTHREAD_COND_DEFINE(cvar1);
 PTHREAD_BARRIER_DEFINE(barrier, N_THR);
 
 K_SEM_DEFINE(main_sem, 0, 2*N_THR);
-
-/* Should be exactly N_THR threads defined with the first argument
- * being a zero-indexed sequential ID
- */
-K_THREAD_DEFINE(thread0, STACKSZ, thread_top, (void *)0, NULL, NULL,
-		K_HIGHEST_THREAD_PRIO, 0, K_NO_WAIT);
-
-K_THREAD_DEFINE(thread1, STACKSZ, thread_top, (void *)1, NULL, NULL,
-		K_HIGHEST_THREAD_PRIO, 0, K_NO_WAIT);
-
-K_THREAD_DEFINE(thread2, STACKSZ, thread_top, (void *)2, NULL, NULL,
-		K_HIGHEST_THREAD_PRIO, 0, K_NO_WAIT);
 
 static int bounce_failed;
 static int bounce_done[N_THR];
@@ -59,14 +49,10 @@ static int barrier_done[N_THR];
  * Test success is signaled to main() using a traditional semaphore.
  */
 
-void *thread_top(void *p1, void *p2, void *p3)
+void *thread_top(void *p1)
 {
-	ARG_UNUSED(p2);
-	ARG_UNUSED(p3);
 	int i, j, id = (int) p1;
-
 	TC_PRINT("Thread %d starting\n", id);
-
 	/* Try a double-lock here to exercise the failing case of
 	 * trylock.  We don't support RECURSIVE locks, so this is
 	 * guaranteed to fail.
@@ -181,7 +167,27 @@ int barrier_test_done(void)
 
 void main(void)
 {
-	int status = TC_FAIL;
+	int ret, status = TC_FAIL;
+	pthread_attr_t attr[N_THR];
+	struct sched_param schedparam;
+	pthread_t newthread[N_THR];
+
+	schedparam.priority = K_HIGHEST_THREAD_PRIO;
+
+	for (int i = 0; i < N_THR; i++) {
+		/* Thread Attribute initialization */
+		ret = pthread_attr_init(&attr[i]);
+		/* Stack Attribute init */
+		pthread_attr_setstack(&attr[i], &stacks[i][0], STACKSZ);
+		/* All threads have same priority */
+		pthread_attr_setschedparam(&attr[i], &schedparam);
+		/* Thread Creation */
+		ret = pthread_create(&newthread[i], &attr[i], thread_top,
+				(void *)i);
+		if (ret == EAGAIN) {
+			TC_START("Number of threads exceeds Maximum Limit\n");
+		}
+	}
 
 	TC_START("POSIX thread IPC APIs\n");
 

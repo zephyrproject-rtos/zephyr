@@ -6,7 +6,7 @@
 
 #ifndef __PTHREAD_H__
 #define __PTHREAD_H__
-
+#include "sched.h"
 #ifdef CONFIG_NEWLIB_LIBC
 #include <time.h>
 #else
@@ -19,11 +19,27 @@ struct timespec {
 };
 #endif
 
-static inline s32_t _ts_to_ms(const struct timespec *to)
-{
-	return (to->tv_sec * 1000) + (to->tv_nsec / 1000000);
-}
+/* Pthread cancellation */
+#define PTHREAD_CANCEL_POS	0
+/* Non Essential Thread */
+#define PTHREAD_CANCELABLE	(0 << PTHREAD_CANCEL_POS)
+/* Essential Thread */
+#define PTHREAD_NON_CANCELABLE	(1 << PTHREAD_CANCEL_POS)
 
+
+/* FIXME: Following typedef should be part of sys/types.h */
+/* Thread Attributes */
+typedef struct pthread_attr_t {
+	int priority;
+	void *stack;
+	size_t stacksize;
+	u32_t options;      /* Thread related Flags */
+	u32_t delayedstart;
+} pthread_attr_t;
+
+typedef void *pthread_t;
+
+/* Mutex */
 typedef struct pthread_mutex {
 	struct k_sem *sem;
 } pthread_mutex_t;
@@ -32,6 +48,7 @@ typedef struct pthread_mutexattr {
 	int unused;
 } pthread_mutexattr_t;
 
+/* Condition Variable */
 typedef struct pthread_cond {
 	_wait_q_t wait_q;
 } pthread_cond_t;
@@ -39,6 +56,37 @@ typedef struct pthread_cond {
 typedef struct pthread_condattr {
 	int unused;
 } pthread_condattr_t;
+
+/* Pthread Barrier */
+typedef struct pthread_barrier {
+	_wait_q_t wait_q;
+	int max;
+	int count;
+} pthread_barrier_t;
+
+typedef struct pthread_barrierattr {
+	int unused;
+} pthread_barrierattr_t;
+
+
+#define K_LOWEST_STACK_SIZE     256
+#define THREAD_INIT_FLAGS       PTHREAD_CANCELABLE
+/*
+ *  Default pthread attributes on attributes initialization.
+ */
+static pthread_attr_t initpthreadattrs = {
+	K_LOWEST_APPLICATION_THREAD_PRIO,/* priority */
+	NULL,                   /* stack */
+	K_LOWEST_STACK_SIZE,
+	THREAD_INIT_FLAGS,   /* Thread Flags */
+	K_NO_WAIT            /* Start on initialization */
+};
+
+
+static inline s32_t _ts_to_ms(const struct timespec *to)
+{
+	return (to->tv_sec * 1000) + (to->tv_nsec / 1000000);
+}
 
 /**
  * @brief Declare a pthread condition variable
@@ -260,15 +308,6 @@ static inline int pthread_mutexattr_destroy(pthread_mutexattr_t *m)
 /* #define PTHREAD_MUTEX_INITIALIZER */
 /* #define PTHREAD_COND_INITIALIZER */
 
-typedef struct pthread_barrier {
-	_wait_q_t wait_q;
-	int max;
-	int count;
-} pthread_barrier_t;
-
-typedef struct pthread_barrierattr {
-	int unused;
-} pthread_barrierattr_t;
 
 /**
  * @brief Declare a pthread barrier
@@ -382,5 +421,121 @@ int pthread_mutexattr_settype(pthread_mutexattr_t *, int);
 int pthread_barrierattr_getpshared(const pthread_barrierattr_t *, int *);
 int pthread_barrierattr_setpshared(pthread_barrierattr_t *, int);
 */
+
+
+/* Base Pthread related APIs */
+
+/**
+ * @brief POSIX pthread attributes initialization
+ *
+ * See IEEE 1003.1
+ */
+static inline int pthread_attr_init(pthread_attr_t *attr)
+{
+	*attr = initpthreadattrs;
+	return 0;
+}
+
+/**
+ * @brief POSIX pthread attributes destroy
+ *
+ * See IEEE 1003.1
+ */
+static inline int pthread_attr_destroy(pthread_attr_t *attr)
+{
+	return 0;
+}
+
+/**
+ * @brief POSIX get pthread scheduling parameter
+ *
+ * See IEEE 1003.1
+ */
+static inline int pthread_attr_getschedparam(const pthread_attr_t *attr,
+		struct sched_param *schedparam)
+{
+	schedparam->priority = attr->priority;
+	return 0;
+}
+
+/**
+ * @brief POSIX get pthread stack inforamtion from thread attribute
+ *
+ * See IEEE 1003.1
+ */
+static inline int pthread_attr_getstack(const pthread_attr_t *attr,
+		void **stackaddr, size_t *stacksize)
+{
+	*stackaddr = attr->stack;
+	*stacksize = attr->stacksize;
+	return 0;
+}
+
+/**
+ * @brief POSIX get stack size from thread attribute
+ *
+ * See IEEE 1003.1
+ */
+static inline int pthread_attr_getstacksize(const pthread_attr_t *attr,
+	size_t *stacksize)
+{
+	*stacksize = attr->stacksize;
+	return 0;
+}
+
+/**
+ * @brief are Both pthreads same
+ *
+ * See IEEE 1003.1
+ */
+static inline int pthread_equal(pthread_t pt1, pthread_t pt2)
+{
+	return (pt1 == pt2);
+}
+
+/**
+ * @brief pthread exits the system.
+ *
+ * See IEEE 1003.1
+ */
+static inline void pthread_exit(void *retval)
+{
+	k_thread_abort(k_current_get());
+}
+
+/**
+ * @brief get scheduling information about a pthread.
+ *
+ * See IEEE 1003.1
+ */
+static inline int pthread_getschedparam(pthread_t pthread, int *policy,
+		struct sched_param *param)
+{
+	k_tid_t *thread = (k_tid_t *)pthread;
+
+	param->priority = k_thread_priority_get(*thread);
+	*policy =  (param->priority < 0) ? SCHED_FIFO : SCHED_RR;
+	return 0;
+}
+
+/**
+ * @brief get pid of current execueting thread.
+ *
+ * See IEEE 1003.1
+ */
+static inline pthread_t pthread_self(void)
+{
+	return k_current_get();
+}
+
+int pthread_attr_setschedparam(pthread_attr_t *attr,
+		const struct sched_param *schedparam);
+int pthread_attr_setstack(pthread_attr_t *attr, void *stackaddr,
+		size_t stacksize);
+int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
+		void *(*threadroutine)(void *), void *arg);
+int pthread_setcancelstate(int state, int *oldstate);
+int pthread_setschedparam(pthread_t pthread, int policy,
+		const struct sched_param *param);
 
 #endif /* __PTHREAD_H__ */
