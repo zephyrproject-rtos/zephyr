@@ -91,7 +91,7 @@ void *thread_top(void *p1, void *p2, void *p3)
 			pthread_cond_wait(&cvar0, &lock);
 		} else {
 			pthread_mutex_unlock(&lock);
-			k_sleep(500);
+			msleep(500);
 			pthread_mutex_lock(&lock);
 		}
 

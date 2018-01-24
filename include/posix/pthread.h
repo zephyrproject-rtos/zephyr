@@ -19,6 +19,8 @@ struct timespec {
 };
 #endif
 
+typedef unsigned long useconds_t;
+
 static inline s32_t _ts_to_ms(const struct timespec *to)
 {
 	return (to->tv_sec * 1000) + (to->tv_nsec / 1000000);
@@ -382,5 +384,10 @@ int pthread_mutexattr_settype(pthread_mutexattr_t *, int);
 int pthread_barrierattr_getpshared(const pthread_barrierattr_t *, int *);
 int pthread_barrierattr_setpshared(pthread_barrierattr_t *, int);
 */
+
+/* Sleep Related APIs */
+unsigned int sleep(unsigned int seconds);
+unsigned int msleep(unsigned int mseconds);
+int usleep(useconds_t useconds);
 
 #endif /* __PTHREAD_H__ */
