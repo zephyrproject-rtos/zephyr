@@ -1,0 +1,104 @@
+#
+# Copyright (c) 2018 Intel Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig NET_GPTP
+	bool "Enable IEEE 802.1AS (gPTP) support [EXPERIMENTAL]"
+	depends on NET_L2_ETHERNET
+	select NET_PKT_TIMESTAMP
+	select PTP_CLOCK
+	default n
+	help
+	  Enable gPTP driver that send and receives gPTP packets
+	  and handles network packet timestamps.
+
+if NET_GPTP
+
+config NET_DEBUG_GPTP
+	bool "Enable Debug Information for gPTP"
+	default n
+	depends on NET_LOG
+	help
+	  Enable logs for the gPTP stack.
+
+config NET_GPTP_NUM_PORTS
+	int "Number of gPTP ports"
+	default 1
+	help
+	  Configures the gPTP stack to work with the given number of ports.
+	  The port concept is the same thing as network interface.
+
+config NET_GPTP_NEIGHBOR_PROP_DELAY_THR
+	int "Set neighbor propagation delay threshold (ns)"
+	default 100000
+	help
+	  Defines the neighbor propagation delay threshold in nanoseconds.
+	  This is the propagation time threshold, above which a port is not
+	  considered capable of participating in the IEEE 802.1AS protocol.
+	  See IEEE 802.1AS chapter 11.2.12.6 for details.
+
+config NET_GPTP_INIT_LOG_PDELAY_REQ_ITV
+	int "Set initial pdelay request interval in Log2 base"
+	default 0
+	help
+	  Defines the interval at which a Path Delay Request will be sent.
+	  The value is the converted in nanoseconds as follow:
+	  nanoseconds = (10^9) * 2^(16 + value)
+
+config NET_GPTP_INIT_LOG_SYNC_ITV
+	int "Set initial sync interval in Log2 base"
+	default -3
+	help
+	  Defines the interval at which a Sync message will be sent.
+	  The value is the converted in nanoseconds as follow:
+	  nanoseconds = (10^9) * 2^(16 + value)
+
+config NET_GPTP_INIT_LOG_ANNOUNCE_ITV
+	int "Set initial announce interval in Log2 base"
+	default 0
+	help
+	  Defines the interval at which an Announce message will be sent.
+	  The value is the converted in nanoseconds as follow:
+	  nanoseconds = (10^9) * 2^(16 + value)
+
+config NET_GPTP_SYNC_RECEIPT_TIMEOUT
+	int "Number of sync intervals to wait"
+	default 6
+	help
+	  Defines the number of sync intervals to wait without receiving
+	  synchronization information before assuming that the master is no
+	  longer transmitting synchronization information.
+
+config NET_GPTP_ANNOUNCE_RECEIPT_TIMEOUT
+	int "Number of announce intervals to wait"
+	default 3
+	help
+	  Defines the number of announce intervals to wait without receiving
+	  an Announce message before assuming that the master is no longer
+	  transmitting Announce messages.
+
+config NET_GPTP_USE_DEFAULT_CLOCK_UPDATE
+	bool "Use a default clock update function"
+	default y
+	help
+	  Use a default internal function to update port local clock.
+	  This method may not be accurate.
+
+config NET_GPTP_PATH_TRACE_ELEMENTS
+	int "How many path trace elements to track"
+	default 8
+	help
+	  This tells the number of time-aware systems that transmits the
+	  Announce message. Each array element takes 8 bytes. If this value
+	  is set to 8, then 8 * 8 = 64 bytes of memory is used.
+
+config NET_GPTP_STATISTICS
+	bool "Collect gPTP statistics"
+	default n
+	help
+	  Enable this if you need to collect gPTP statistics. The statistics
+	  can be seen in net-shell if needed.
+
+endif

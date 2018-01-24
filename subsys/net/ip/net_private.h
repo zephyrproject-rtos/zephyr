@@ -51,6 +51,25 @@ extern void net_tc_rx_init(void);
 extern void net_tc_submit_to_tx_queue(u8_t tc, struct net_pkt *pkt);
 extern void net_tc_submit_to_rx_queue(u8_t tc, struct net_pkt *pkt);
 
+#if defined(CONFIG_NET_GPTP)
+/**
+ * @brief Initialize Precision Time Protocol Layer.
+ */
+void net_gptp_init(void);
+
+/**
+ * @brief Process a ptp message.
+ *
+ * @param buf Buffer with a valid PTP Ethernet type.
+ *
+ * @return Return the policy for network buffer.
+ */
+enum net_verdict net_gptp_recv(struct net_if *iface, struct net_pkt *pkt);
+#else
+#define net_gptp_init()
+#define net_gptp_recv(iface, pkt)
+#endif /* CONFIG_NET_GPTP */
+
 #if defined(CONFIG_NET_IPV6_FRAGMENT)
 int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 				 u16_t pkt_len);
