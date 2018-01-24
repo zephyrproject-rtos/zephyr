@@ -4341,6 +4341,31 @@ extern void k_mem_domain_remove_thread(k_tid_t thread);
  */
 __syscall void k_str_out(char *c, size_t n);
 
+/**
+ * @brief Start a numbered CPU on a MP-capable system
+
+ * This starts and initializes a specific CPU.  The main thread on
+ * startup is running on CPU zero, other processors are numbered
+ * sequentially.  On return from this function, the CPU is known to
+ * have begun operating and will enter the provided function.  Its
+ * interrupts will be initialied but disabled such that irq_unlock()
+ * with the provided key will work to enable them.
+ *
+ * Normally, in SMP mode this function will be called by the kernel
+ * initialization and should not be used as a user API.  But it is
+ * defined here for special-purpose apps which want Zephyr running on
+ * one core and to use others for design-specific processing.
+ *
+ * @param cpu_num Integer number of the CPU
+ * @param stack Stack memory for the CPU
+ * @param sz Stack buffer size, in bytes
+ * @param fn Function to begin running on the CPU.  First argument is
+ *        an irq_unlock() key.
+ * @param arg Untyped argument to be passed to "fn"
+ */
+extern void _arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
+			    void (*fn)(int, void *), void *arg);
+
 #ifdef __cplusplus
 }
 #endif
