@@ -73,4 +73,6 @@ source "drivers/display/Kconfig"
 
 source "drivers/led_strip/Kconfig"
 
+source "drivers/ptp_clock/Kconfig"
+
 endmenu
