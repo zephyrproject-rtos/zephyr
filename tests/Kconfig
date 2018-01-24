@@ -27,7 +27,6 @@ config TEST_EXTRA_STACKSIZE
 config COVERAGE
 	bool "Create coverage data"
 	depends on NATIVE_APPLICATION
-	select NO_OPTIMIZATIONS
 	default n
 	help
 	  This option will build your application with the -coverage option
