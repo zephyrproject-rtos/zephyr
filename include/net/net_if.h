@@ -1600,6 +1600,71 @@ static inline bool net_if_is_up(struct net_if *iface)
  */
 int net_if_down(struct net_if *iface);
 
+#if defined(CONFIG_NET_PKT_TIMESTAMP)
+/**
+ * @typedef net_if_timestamp_callback_t
+ * @brief Define callback that is called after a network packet
+ *        has been timestamped.
+ * @param "struct net_pkt *pkt" A pointer on a struct net_pkt which has
+ *        been timestamped after being sent.
+ */
+typedef void (*net_if_timestamp_callback_t)(struct net_pkt *pkt);
+
+/**
+ * @brief Timestamp callback handler struct.
+ *
+ * Stores the timestamp callback information. Caller must make sure that
+ * the variable pointed by this is valid during the lifetime of
+ * registration. Typically this means that the variable cannot be
+ * allocated from stack.
+ */
+struct net_if_timestamp_cb {
+	/** Node information for the slist. */
+	sys_snode_t node;
+
+	/** Net interface for which the callback is needed.
+	 *  A NULL value means all interfaces.
+	 */
+	struct net_if *iface;
+
+	/** Timestamp callback */
+	net_if_timestamp_callback_t cb;
+};
+
+/**
+ * @brief Register a timestamp callback.
+ *
+ * @param handle Caller specified handler for the callback.
+ * @param iface Net interface for which the callback is. NULL for all
+ *		interfaces.
+ * @param cb Callback to register.
+ */
+void net_if_register_timestamp_cb(struct net_if_timestamp_cb *handle,
+				  struct net_if *iface,
+				  net_if_timestamp_callback_t cb);
+
+/**
+ * @brief Unregister a timestamp callback.
+ *
+ * @param handle Caller specified handler for the callback.
+ */
+void net_if_unregister_timestamp_cb(struct net_if_timestamp_cb *handle);
+
+/**
+ * @brief Call a timestamp callback function.
+ *
+ * @param pkt Network buffer.
+ */
+void net_if_call_timestamp_cb(struct net_pkt *pkt);
+
+/*
+ * @brief Add timestamped TX buffer to be handled
+ *
+ * @param pkt Timestamped buffer
+ */
+void net_if_add_tx_timestamp(struct net_pkt *pkt);
+#endif /* CONFIG_NET_PKT_TIMESTAMP */
+
 struct net_if_api {
 	void (*init)(struct net_if *iface);
 	int (*send)(struct net_if *iface, struct net_pkt *pkt);

@@ -27,6 +27,7 @@
 #include <net/net_if.h>
 #include <net/net_context.h>
 #include <net/ethernet_vlan.h>
+#include <net/ptp_time.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -72,6 +73,11 @@ struct net_pkt {
 
 #if defined(CONFIG_NET_ROUTING)
 	struct net_if *orig_iface; /* Original network interface */
+#endif
+
+#if defined(CONFIG_NET_PKT_TIMESTAMP)
+	/** Timestamp if available. */
+	struct net_ptp_time timestamp;
 #endif
 
 	u8_t *appdata;	/* application data starts here */
@@ -510,6 +516,34 @@ static inline void net_pkt_set_vlan_tci(struct net_pkt *pkt, u16_t tci)
 	ARG_UNUSED(tci);
 }
 #endif
+
+#if defined(CONFIG_NET_PKT_TIMESTAMP)
+static inline struct net_ptp_time *net_pkt_timestamp(struct net_pkt *pkt)
+{
+	return &pkt->timestamp;
+}
+
+static inline void net_pkt_set_timestamp(struct net_pkt *pkt,
+					 struct net_ptp_time *timestamp)
+{
+	pkt->timestamp.second = timestamp->second;
+	pkt->timestamp.nanosecond = timestamp->nanosecond;
+}
+#else
+static inline struct net_ptp_time *net_pkt_timestamp(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return NULL;
+}
+
+static inline void net_pkt_set_timestamp(struct net_pkt *pkt,
+					 struct net_ptp_time *timestamp)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(timestamp);
+}
+#endif /* CONFIG_NET_PKT_TIMESTAMP */
 
 static inline size_t net_pkt_get_len(struct net_pkt *pkt)
 {
