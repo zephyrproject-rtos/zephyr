@@ -514,25 +514,13 @@ if(CONFIG_APPLICATION_MEMORY)
   endforeach()
 endif() # CONFIG_APPLICATION_MEMORY
 
-function(construct_add_custom_command_for_linker_pass linker_pass_number output_variable)
-  if(linker_pass_number EQUAL 1)
-    set(is_first_pass 1)
-  elseif(linker_pass_number GREATER 1)
-    set(is_first_pass 0)
-  else()
-    assert(0 "Unreachable code")
-  endif()
+function(construct_add_custom_command_for_linker_pass linker_output_name output_variable)
+  set(linker_cmd_file_name ${linker_output_name}.cmd)
 
-  if(is_first_pass)
-    set(linker_cmd_file_name linker.cmd)
+  if (${linker_output_name} MATCHES "^linker_pass_final$")
+    set(LINKER_PASS_DEFINE -DLINKER_PASS2)
   else()
-    set(linker_cmd_file_name linker_pass${linker_pass_number}.cmd)
-  endif()
-
-  if(is_first_pass)
     set(LINKER_PASS_DEFINE "")
-  else()
-    set(LINKER_PASS_DEFINE -DLINKER_PASS${linker_pass_number})
   endif()
 
   # Different generators deal with depfiles differently.
@@ -574,7 +562,7 @@ function(construct_add_custom_command_for_linker_pass linker_pass_number output_
 endfunction()
 
 get_filename_component(BASE_NAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
-construct_add_custom_command_for_linker_pass(1 custom_command)
+construct_add_custom_command_for_linker_pass(linker custom_command)
 add_custom_command(
   ${custom_command}
 )
@@ -777,26 +765,26 @@ if(GKOF OR GKSF)
   # The second linker pass uses the same source linker script of the
   # first pass (LINKER_SCRIPT), but this time with a different output
   # file and preprocessed with the define LINKER_PASS2.
-  construct_add_custom_command_for_linker_pass(2 custom_command)
+  construct_add_custom_command_for_linker_pass(linker_pass_final custom_command)
   add_custom_command(
     ${custom_command}
     )
   add_custom_target(
-    linker_pass2_script
+    linker_pass_final_script
     DEPENDS
-    linker_pass2.cmd
+    linker_pass_final.cmd
     offsets_h
     )
   set_property(TARGET
-    linker_pass2_script
+    linker_pass_final_script
     PROPERTY INCLUDE_DIRECTORIES
     ${ZEPHYR_INCLUDE_DIRS}
   )
 
   add_executable(       kernel_elf misc/empty_file.c ${GKSF})
-  target_link_libraries(kernel_elf ${GKOF} ${TOPT} ${PROJECT_BINARY_DIR}/linker_pass2.cmd ${zephyr_lnk})
-  set_property(TARGET   kernel_elf PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_pass2.cmd)
-  add_dependencies(     kernel_elf linker_pass2_script)
+  target_link_libraries(kernel_elf ${GKOF} ${TOPT} ${PROJECT_BINARY_DIR}/linker_pass_final.cmd ${zephyr_lnk})
+  set_property(TARGET   kernel_elf PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_pass_final.cmd)
+  add_dependencies(     kernel_elf linker_pass_final_script)
 else()
   set(logical_target_for_zephyr_elf zephyr_prebuilt)
   # Use the prebuilt elf as the final elf since we don't have a
