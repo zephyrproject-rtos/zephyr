@@ -413,11 +413,9 @@ static int i2c_esp32_read_msg(struct device *dev, u16_t addr,
 	/* Set the R/W bit to R */
 	addr |= BIT(0);
 
-	if (msg.flags & I2C_MSG_RESTART) {
-		*cmd++ = (struct i2c_esp32_cmd) {
-			.opcode = I2C_ESP32_OP_RSTART
-		};
-	}
+	*cmd++ = (struct i2c_esp32_cmd) {
+		.opcode = I2C_ESP32_OP_RSTART
+	};
 
 	cmd = i2c_esp32_write_addr(dev, cmd, &msg, addr);
 
@@ -492,11 +490,9 @@ static int i2c_esp32_write_msg(struct device *dev, u16_t addr,
 	volatile struct i2c_esp32_cmd *cmd =
 		(void *)I2C_COMD0_REG(config->index);
 
-	if (msg.flags & I2C_MSG_RESTART) {
-		*cmd++ = (struct i2c_esp32_cmd) {
-			.opcode = I2C_ESP32_OP_RSTART
-		};
-	}
+	*cmd++ = (struct i2c_esp32_cmd) {
+		.opcode = I2C_ESP32_OP_RSTART
+	};
 
 	cmd = i2c_esp32_write_addr(dev, cmd, &msg, addr);
 
