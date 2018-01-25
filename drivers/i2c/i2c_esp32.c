@@ -390,11 +390,13 @@ i2c_esp32_write_addr(struct device *dev,
 		addr_len++;
 	}
 
-	*cmd++ = (struct i2c_esp32_cmd) {
-		.opcode = I2C_ESP32_OP_WRITE,
-		.ack_en = true,
-		.num_bytes = addr_len,
-	};
+	if ((msg->flags & I2C_MSG_RW_MASK) != I2C_MSG_WRITE) {
+		*cmd++ = (struct i2c_esp32_cmd) {
+			.opcode = I2C_ESP32_OP_WRITE,
+			.ack_en = true,
+			.num_bytes = addr_len,
+		};
+	}
 
 	msg->len += addr_len;
 
