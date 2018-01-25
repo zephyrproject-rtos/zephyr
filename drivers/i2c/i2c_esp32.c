@@ -497,7 +497,6 @@ static int i2c_esp32_write_msg(struct device *dev, u16_t addr,
 	cmd = i2c_esp32_write_addr(dev, cmd, &msg, addr);
 
 	for (; msg.len; cmd = (void *)I2C_COMD0_REG(config->index)) {
-		volatile struct i2c_esp32_cmd *wait_cmd = cmd;
 		u32_t to_send = min(I2C_ESP32_BUFFER_SIZE, msg.len);
 		u32_t i;
 		int ret;
@@ -515,16 +514,16 @@ static int i2c_esp32_write_msg(struct device *dev, u16_t addr,
 		msg.len -= to_send;
 
 		if (!msg.len && (msg.flags & I2C_MSG_STOP)) {
-			*cmd++ = (struct i2c_esp32_cmd) {
+			*cmd = (struct i2c_esp32_cmd) {
 				.opcode = I2C_ESP32_OP_STOP
 			};
 		} else {
-			*cmd++ = (struct i2c_esp32_cmd) {
+			*cmd = (struct i2c_esp32_cmd) {
 				.opcode = I2C_ESP32_OP_END
 			};
 		}
 
-		ret = i2c_esp32_transmit_wait(dev, wait_cmd);
+		ret = i2c_esp32_transmit_wait(dev, cmd);
 		if (ret < 0) {
 			return ret;
 		}
