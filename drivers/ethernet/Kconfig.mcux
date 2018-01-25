@@ -113,4 +113,38 @@ config ETH_MCUX_0_MAC5
 	help
 	  This is the byte 5 of the MAC address.
 endif
+
+config PTP_CLOCK_MCUX
+	bool "MCUX PTP clock driver support"
+	default n
+	default y if PTP_CLOCK
+	depends on PTP_CLOCK && NET_PKT_TIMESTAMP
+	help
+	  Enable MCUX PTP clock support.
+
+if PTP_CLOCK_MCUX
+
+config ETH_MCUX_PTP_RX_BUFFERS
+	int "Size of the RX timestamp ring buffer"
+	default 10
+	help
+	  Set the number of RX buffers provided to the MCUX driver
+	  to store timestamps.
+
+config ETH_MCUX_PTP_TX_BUFFERS
+	int "Size of the TX timestamp ring buffer"
+	default 10
+	help
+	  Set the number of TX buffers provided to the MCUX driver
+	  to store timestamps.
+
+config ETH_MCUX_PTP_CLOCK_SRC_HZ
+	int "Frequency of the clock source for the PTP timer"
+	default 50000000
+	help
+	  Set the frequency in Hz sourced to the PTP timer.
+	  If the value is set properly, the timer will be accurate.
+
+endif # PTP_CLOCK_MCUX
+
 endif
