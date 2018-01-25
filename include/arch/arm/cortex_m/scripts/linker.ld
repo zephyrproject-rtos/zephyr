@@ -95,6 +95,14 @@ SECTIONS
 	KEEP(*(".dbghdr.*"))
 #endif
 	. = CONFIG_TEXT_SECTION_OFFSET;
+
+#if defined(CONFIG_SW_VECTOR_RELAY)
+	KEEP(*(.vector_relay_table))
+	KEEP(*(".vector_relay_table.*"))
+	KEEP(*(.vector_relay_handler))
+	KEEP(*(".vector_relay_handler.*"))
+#endif
+
 	_vector_start = .;
 	KEEP(*(.exc_vector_table))
 	KEEP(*(".exc_vector_table.*"))
@@ -184,6 +192,7 @@ SECTIONS
 
     GROUP_START(RAMABLE_REGION)
 
+
 #if defined(CONFIG_SOC_SERIES_STM32F0X) && !defined(CONFIG_IS_BOOTLOADER)
     /* Must be first in ramable region */
 	SECTION_PROLOGUE(.st_stm32f0x_vt,(NOLOAD),)
@@ -192,6 +201,15 @@ SECTIONS
         . += _vector_end - _vector_start;
         _ram_vector_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
+#endif
+
+#if defined(CONFIG_SW_VECTOR_RELAY)
+	/* Reserved 4 bytes to save vector table base address */
+	SECTION_PROLOGUE(.vt_pointer,(NOLOAD),)
+	{
+		*(.vt_pointer_section)
+		*(".vt_pointer_section.*")
+	}
 #endif
 
 #ifdef CONFIG_APPLICATION_MEMORY
