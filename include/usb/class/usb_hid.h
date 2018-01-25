@@ -47,19 +47,16 @@ struct usb_hid_descriptor {
 
 /* Public headers */
 
+typedef int (*hid_cb_t)(struct usb_setup_packet *setup, s32_t *len,
+			u8_t **data);
+
 struct hid_ops {
-	int (*get_report)(struct usb_setup_packet *setup, s32_t *len,
-			  u8_t **data);
-	int (*get_idle)(struct usb_setup_packet *setup, s32_t *len,
-			u8_t **data);
-	int (*get_protocol)(struct usb_setup_packet *setup, s32_t *len,
-			    u8_t **data);
-	int (*set_report)(struct usb_setup_packet *setup, s32_t *len,
-			  u8_t **data);
-	int (*set_idle)(struct usb_setup_packet *setup, s32_t *len,
-			u8_t **data);
-	int (*set_protocol)(struct usb_setup_packet *setup, s32_t *len,
-			    u8_t **data);
+	hid_cb_t get_report;
+	hid_cb_t get_idle;
+	hid_cb_t get_protocol;
+	hid_cb_t set_report;
+	hid_cb_t set_idle;
+	hid_cb_t set_protocol;
 };
 
 /* Register HID device */
