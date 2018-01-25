@@ -1,0 +1,9 @@
+# Kconfig - CI40 board configuration
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BOARD_CI40
+	bool "CI40 Development Board"
+	depends on SOC_DANUBE
+	select HAS_DTS

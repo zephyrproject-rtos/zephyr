@@ -1,0 +1,7 @@
+identifier: ci40
+name: Creator CI40
+type: mcu
+arch: mips
+toolchain:
+  - zephyr
+  - gccmipsmti

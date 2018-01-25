@@ -1,0 +1,11 @@
+# Kconfig - CI40 board configuration
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_CI40
+
+config BOARD
+	default ci40
+
+endif # BOARD_CI40

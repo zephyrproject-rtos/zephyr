@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) MIPS LLC.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <creator/cxt200.dtsi>
+
+/ {
+	model = "Creator CI40 board";
+	compatible = "mips,interaptiv";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
