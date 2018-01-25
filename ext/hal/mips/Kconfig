@@ -1,0 +1,8 @@
+#
+# Copyright (c) 2017 Imagination Technologies
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config HAS_MIPS_HAL
+	bool

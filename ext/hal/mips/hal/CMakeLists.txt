@@ -1,0 +1,19 @@
+zephyr_sources(
+	abiflags.S
+	cache_ops.S
+	cache.S
+	crt0.S
+	link.c
+	m32cache.S
+	m32tlb_ops.S
+	mips_cm3_l2size.S
+	mips_excpt_boot.S
+	mips_excpt_entry.S
+	mips_excpt_handler.c
+	mips_excpt_register.S
+	mips_fp.S
+	mips_l2size.S
+	mips_msa.S
+	mips_xpa.S
+	mxxtlb_ops.S
+	)
