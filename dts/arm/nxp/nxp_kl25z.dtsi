@@ -25,6 +25,7 @@
 			compatible = "soc-nv-flash";
 			label = "MCUX_FLASH";
 			reg = <0 0x20000>;
+			write-block-size = <4>;
 		};
 
 		i2c0: i2c@40066000 {
