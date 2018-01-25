@@ -561,6 +561,22 @@ config USE_SWITCH
 	architecture provides both, _arch_switch incurs more somewhat
 	overhead and may be slower.
 
+config SMP
+	bool
+	prompt "Enable symmetric multithreading support"
+	default n
+	help
+	When true, Zephyr will be build with SMP support, allowing
+	more than one CPU to schedule Zephyr tasks at a time.
+
+config MP_NUM_CPUS
+	int
+	prompt "Number of CPUs/cores"
+	default 1
+	help
+	Number of multiprocessing-capable cores available to the
+	multicpu API and SMP features.
+
 source "kernel/Kconfig.event_logger"
 
 source "kernel/Kconfig.power_mgmt"
