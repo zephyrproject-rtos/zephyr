@@ -518,10 +518,11 @@ static int i2c_esp32_write_msg(struct device *dev, u16_t addr,
 			*cmd++ = (struct i2c_esp32_cmd) {
 				.opcode = I2C_ESP32_OP_STOP
 			};
+		} else {
+			*cmd++ = (struct i2c_esp32_cmd) {
+				.opcode = I2C_ESP32_OP_END
+			};
 		}
-		*cmd++ = (struct i2c_esp32_cmd) {
-			.opcode = I2C_ESP32_OP_END
-		};
 
 		ret = i2c_esp32_transmit_wait(dev, wait_cmd);
 		if (ret < 0) {
