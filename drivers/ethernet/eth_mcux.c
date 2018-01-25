@@ -2,6 +2,7 @@
  *
  *  Copyright (c) 2016-2017 ARM Ltd
  *  Copyright (c) 2016 Linaro Ltd
+ *  Copyright (c) 2018 Intel Coporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -23,6 +24,11 @@
 #include <net/net_pkt.h>
 #include <net/net_if.h>
 #include <net/ethernet.h>
+
+#if defined(CONFIG_PTP_CLOCK_MCUX)
+#include <ptp_clock.h>
+#include <net/gptp.h>
+#endif
 
 #include "fsl_enet.h"
 #include "fsl_phy.h"
@@ -66,6 +72,11 @@ struct eth_context {
 	 */
 	struct net_if *iface;
 	enet_handle_t enet_handle;
+#if defined(CONFIG_PTP_CLOCK_MCUX)
+	struct device *ptp_clock;
+	enet_ptp_config_t ptp_config;
+	float clk_ratio;
+#endif
 	struct k_sem tx_buf_sem;
 	enum eth_mcux_phy_state phy_state;
 	bool enabled;
@@ -100,6 +111,12 @@ rx_buffer_desc[CONFIG_ETH_MCUX_RX_BUFFERS];
 
 static enet_tx_bd_struct_t __aligned(ENET_BUFF_ALIGNMENT)
 tx_buffer_desc[CONFIG_ETH_MCUX_TX_BUFFERS];
+
+#if defined(CONFIG_PTP_CLOCK_MCUX)
+/* Packets to be timestamped. */
+static struct net_pkt *ts_tx_pkt[CONFIG_ETH_MCUX_TX_BUFFERS];
+static int ts_tx_rd, ts_tx_wr;
+#endif
 
 /* Use ENET_FRAME_MAX_VALNFRAMELEN for VLAN frame size
  * Use ENET_FRAME_MAX_FRAMELEN for ethernet frame size
@@ -342,6 +359,56 @@ static void eth_mcux_delayed_phy_work(struct k_work *item)
 	eth_mcux_phy_event(context);
 }
 
+#if defined(CONFIG_PTP_CLOCK_MCUX)
+static enet_ptp_time_data_t ptp_rx_buffer[CONFIG_ETH_MCUX_PTP_RX_BUFFERS];
+static enet_ptp_time_data_t ptp_tx_buffer[CONFIG_ETH_MCUX_PTP_TX_BUFFERS];
+
+static bool eth_get_ptp_data(struct net_pkt *pkt,
+			     enet_ptp_time_data_t *ptpTsData)
+{
+	struct gptp_hdr *hdr;
+
+	if (ntohs(NET_ETH_HDR(pkt)->type) != NET_ETH_PTYPE_PTP) {
+		return false;
+	}
+
+	if (ptpTsData) {
+
+		/* Cannot use GPTP_HDR as net_pkt fields are not all filled */
+
+		hdr = (struct gptp_hdr *)((u8_t *)net_pkt_ll(pkt)
+					  + sizeof(struct net_eth_hdr));
+
+		ptpTsData->version = hdr->ptp_version;
+		memcpy(ptpTsData->sourcePortId, &hdr->port_id,
+		       kENET_PtpSrcPortIdLen);
+		ptpTsData->messageType = hdr->message_type;
+		ptpTsData->sequenceId = ntohs(hdr->sequence_id);
+
+#ifdef CONFIG_ETH_MCUX_PHY_EXTRA_DEBUG
+		SYS_LOG_DBG("PTP packet: ver %d type %d len %d "
+			    "clk %02x%02x%02x%02x%02x%02x%02x%02x port %d "
+			    "seq %d",
+			    ptpTsData->version,
+			    ptpTsData->messageType,
+			    ntohs(hdr->message_length),
+			    hdr->port_id.clk_id[0],
+			    hdr->port_id.clk_id[1],
+			    hdr->port_id.clk_id[2],
+			    hdr->port_id.clk_id[3],
+			    hdr->port_id.clk_id[4],
+			    hdr->port_id.clk_id[5],
+			    hdr->port_id.clk_id[6],
+			    hdr->port_id.clk_id[7],
+			    ntohs(hdr->port_id.port_number),
+			    ptpTsData->sequenceId);
+#endif
+	}
+
+	return true;
+}
+#endif /* CONFIG_PTP_CLOCK_MCUX */
+
 static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct eth_context *context = net_if_get_device(iface)->driver_data;
@@ -349,6 +416,9 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 	u8_t *dst;
 	status_t status;
 	unsigned int imask;
+#if defined(CONFIG_PTP_CLOCK_MCUX)
+	bool timestamped_frame;
+#endif
 
 	u16_t total_len = net_pkt_ll_reserve(pkt) + net_pkt_get_len(pkt);
 
@@ -377,8 +447,34 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 		frag = frag->frags;
 	}
 
+	/* FIXME: Dirty workaround.
+	 * With current implementation of ENET_StoreTxFrameTime in the MCUX
+	 * library, a frame may not be timestamped when a non-timestamped frame
+	 * is sent.
+	 */
+#ifdef ENET_ENHANCEDBUFFERDESCRIPTOR_MODE
+	context->enet_handle.txBdDirtyTime[0] =
+				context->enet_handle.txBdCurrent[0];
+#endif
+
 	status = ENET_SendFrame(ENET, &context->enet_handle, context->frame_buf,
 				total_len);
+
+#if defined(CONFIG_PTP_CLOCK_MCUX)
+	timestamped_frame = eth_get_ptp_data(pkt, NULL);
+	if (timestamped_frame) {
+		if (!status) {
+			ts_tx_pkt[ts_tx_wr] = net_pkt_ref(pkt);
+		} else {
+			ts_tx_pkt[ts_tx_wr] = NULL;
+		}
+
+		ts_tx_wr++;
+		if (ts_tx_wr >= CONFIG_ETH_MCUX_TX_BUFFERS) {
+			ts_tx_wr = 0;
+		}
+	}
+#endif
 
 	irq_unlock(imask);
 
@@ -388,6 +484,7 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 	}
 
 	net_pkt_unref(pkt);
+
 	return 0;
 }
 
@@ -401,6 +498,10 @@ static void eth_rx(struct device *iface)
 	status_t status;
 	unsigned int imask;
 	u16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
+
+#if defined(CONFIG_PTP_CLOCK_MCUX)
+	enet_ptp_time_data_t ptpTimeData;
+#endif
 
 	status = ENET_GetRxFrameSize(&context->enet_handle,
 				     (uint32_t *)&frame_length);
@@ -515,12 +616,63 @@ static void eth_rx(struct device *iface)
 	}
 #endif
 
+#if defined(CONFIG_PTP_CLOCK_MCUX)
+	if (eth_get_ptp_data(pkt, &ptpTimeData) &&
+	    (ENET_GetRxFrameTime(&context->enet_handle,
+				 &ptpTimeData) == kStatus_Success)) {
+		pkt->timestamp.nanosecond = ptpTimeData.timeStamp.nanosecond;
+		pkt->timestamp.second = ptpTimeData.timeStamp.second;
+	} else {
+		/* Invalid value. */
+		pkt->timestamp.nanosecond = UINT32_MAX;
+		pkt->timestamp.second = UINT64_MAX;
+	}
+#endif /* CONFIG_PTP_CLOCK_MCUX */
+
 	irq_unlock(imask);
 
 	if (net_recv_data(get_iface(context, vlan_tag), pkt) < 0) {
 		net_pkt_unref(pkt);
 	}
 }
+
+#if defined(CONFIG_PTP_CLOCK_MCUX)
+static inline void ts_register_tx_event(struct eth_context *context)
+{
+	struct net_pkt *pkt;
+	enet_ptp_time_data_t timeData;
+
+	pkt = ts_tx_pkt[ts_tx_rd];
+	if (pkt && pkt->ref > 0) {
+		if (eth_get_ptp_data(pkt, &timeData)) {
+			int status;
+
+			status = ENET_GetTxFrameTime(&context->enet_handle,
+						     &timeData);
+			if (status == kStatus_Success) {
+				pkt->timestamp.nanosecond =
+					timeData.timeStamp.nanosecond;
+				pkt->timestamp.second =
+					timeData.timeStamp.second;
+
+				net_if_add_tx_timestamp(pkt);
+			}
+		}
+
+		net_pkt_unref(pkt);
+	} else {
+		if (IS_ENABLED(CONFIG_ETH_MCUX_PHY_EXTRA_DEBUG) && pkt) {
+			SYS_LOG_ERR("pkt %p already freed", pkt);
+		}
+	}
+
+	ts_tx_pkt[ts_tx_rd++] = NULL;
+
+	if (ts_tx_rd >= CONFIG_ETH_MCUX_TX_BUFFERS) {
+		ts_tx_rd = 0;
+	}
+}
+#endif
 
 static void eth_callback(ENET_Type *base, enet_handle_t *handle,
 			 enet_event_t event, void *param)
@@ -533,6 +685,11 @@ static void eth_callback(ENET_Type *base, enet_handle_t *handle,
 		eth_rx(iface);
 		break;
 	case kENET_TxEvent:
+#if defined(CONFIG_PTP_CLOCK_MCUX)
+		/* Register event */
+		ts_register_tx_event(context);
+#endif /* CONFIG_PTP_CLOCK_MCUX */
+
 		/* Free the TX buffer. */
 		k_sem_give(&context->tx_buf_sem);
 		break;
@@ -544,6 +701,8 @@ static void eth_callback(ENET_Type *base, enet_handle_t *handle,
 		break;
 	case kENET_TimeStampEvent:
 		/* Time stamp event.  */
+		/* Reset periodic timer to default value. */
+		ENET->ATPER = NSEC_PER_SEC;
 		break;
 	case kENET_TimeStampAvailEvent:
 		/* Time stamp available event.  */
@@ -591,6 +750,15 @@ static int eth_0_init(struct device *dev)
 		.rxBufferAlign = rx_buffer[0],
 		.txBufferAlign = tx_buffer[0],
 	};
+#if defined(CONFIG_PTP_CLOCK_MCUX)
+	u8_t ptp_multicast[6] = { 0x01, 0x80, 0xC2, 0x00, 0x00, 0x0E };
+#endif
+
+#if defined(CONFIG_PTP_CLOCK_MCUX)
+	ts_tx_rd = 0;
+	ts_tx_wr = 0;
+	memset(ts_tx_pkt, 0, sizeof(ts_tx_pkt));
+#endif
 
 	k_sem_init(&context->tx_buf_sem,
 		   CONFIG_ETH_MCUX_TX_BUFFERS, CONFIG_ETH_MCUX_TX_BUFFERS);
@@ -624,6 +792,22 @@ static int eth_0_init(struct device *dev)
 		  &buffer_config,
 		  context->mac_addr,
 		  sys_clock);
+
+#if defined(CONFIG_PTP_CLOCK_MCUX)
+	ENET_AddMulticastGroup(ENET, ptp_multicast);
+
+	context->ptp_config.ptpTsRxBuffNum = CONFIG_ETH_MCUX_PTP_RX_BUFFERS;
+	context->ptp_config.ptpTsTxBuffNum = CONFIG_ETH_MCUX_PTP_TX_BUFFERS;
+	context->ptp_config.rxPtpTsData = ptp_rx_buffer;
+	context->ptp_config.txPtpTsData = ptp_tx_buffer;
+	context->ptp_config.channel = kENET_PtpTimerChannel1;
+	context->ptp_config.ptp1588ClockSrc_Hz =
+					CONFIG_ETH_MCUX_PTP_CLOCK_SRC_HZ;
+	context->clk_ratio = 1.0;
+
+	ENET_Ptp1588Configure(ENET, &context->enet_handle,
+			      &context->ptp_config);
+#endif
 
 	ENET_SetSMI(ENET, sys_clock, false);
 
@@ -683,15 +867,41 @@ static enum ethernet_hw_caps eth_mcux_get_capabilities(struct device *dev)
 	ARG_UNUSED(dev);
 
 	return ETHERNET_HW_VLAN | ETHERNET_LINK_10BASE_T |
+#if defined(CONFIG_PTP_CLOCK_MCUX)
+		ETHERNET_PTP |
+#endif
 		ETHERNET_LINK_100BASE_T;
 }
+
+#if defined(CONFIG_PTP_CLOCK_MCUX)
+static struct device *eth_mcux_get_ptp_clock(struct device *dev)
+{
+	struct eth_context *context = dev->driver_data;
+
+	return context->ptp_clock;
+}
+#endif
 
 static const struct ethernet_api api_funcs = {
 	.iface_api.init = eth_iface_init,
 	.iface_api.send = eth_tx,
 
 	.get_capabilities = eth_mcux_get_capabilities,
+
+#if defined(CONFIG_PTP_CLOCK_MCUX)
+	.get_ptp_clock = eth_mcux_get_ptp_clock,
+#endif
 };
+
+#if defined(CONFIG_PTP_CLOCK_MCUX)
+static void eth_mcux_ptp_isr(void *p)
+{
+	struct device *dev = p;
+	struct eth_context *context = dev->driver_data;
+
+	ENET_Ptp1588TimerIRQHandler(ENET, &context->enet_handle);
+}
+#endif
 
 static void eth_mcux_rx_isr(void *p)
 {
@@ -754,4 +964,144 @@ static void eth_0_config_func(void)
 	IRQ_CONNECT(IRQ_ETH_ERR_MISC, CONFIG_ETH_MCUX_0_IRQ_PRI,
 		    eth_mcux_error_isr, DEVICE_GET(eth_mcux_0), 0);
 	irq_enable(IRQ_ETH_ERR_MISC);
+
+#if defined(CONFIG_PTP_CLOCK_MCUX)
+	IRQ_CONNECT(IRQ_ETH_IEEE1588_TMR, CONFIG_ETH_MCUX_0_IRQ_PRI,
+		    eth_mcux_ptp_isr, DEVICE_GET(eth_mcux_0), 0);
+	irq_enable(IRQ_ETH_IEEE1588_TMR);
+#endif
 }
+
+#if defined(CONFIG_PTP_CLOCK_MCUX)
+struct ptp_context {
+	struct eth_context *eth_context;
+};
+
+static struct ptp_context ptp_mcux_0_context;
+
+static int ptp_clock_mcux_set(struct device *dev, struct net_ptp_time *tm)
+{
+	struct ptp_context *ptp_context = dev->driver_data;
+	struct eth_context *context = ptp_context->eth_context;
+	enet_ptp_time_t enet_time;
+
+	enet_time.second = tm->second;
+	enet_time.nanosecond = tm->nanosecond;
+
+	ENET_Ptp1588SetTimer(ENET, &context->enet_handle, &enet_time);
+	return 0;
+}
+
+static int ptp_clock_mcux_get(struct device *dev, struct net_ptp_time *tm)
+{
+	struct ptp_context *ptp_context = dev->driver_data;
+	struct eth_context *context = ptp_context->eth_context;
+	enet_ptp_time_t enet_time;
+
+	ENET_Ptp1588GetTimer(ENET, &context->enet_handle, &enet_time);
+
+	tm->second = enet_time.second;
+	tm->nanosecond = enet_time.nanosecond;
+	return 0;
+}
+
+static int ptp_clock_mcux_adjust(struct device *dev, int increment)
+{
+	int key, ret;
+
+	ARG_UNUSED(dev);
+
+	if ((increment <= -NSEC_PER_SEC) || (increment >= NSEC_PER_SEC)) {
+		ret = -EINVAL;
+	} else {
+		key = irq_lock();
+		if (ENET->ATPER != NSEC_PER_SEC) {
+			ret = -EBUSY;
+		} else {
+			/* Seconds counter is handled by software. Change the
+			 * period of one software second to adjust the clock.
+			 */
+			ENET->ATPER = NSEC_PER_SEC - increment;
+			ret = 0;
+		}
+		irq_unlock(key);
+	}
+
+	return ret;
+}
+
+static int ptp_clock_mcux_rate_adjust(struct device *dev, float ratio)
+{
+	const int hw_inc = NSEC_PER_SEC / CONFIG_ETH_MCUX_PTP_CLOCK_SRC_HZ;
+	struct ptp_context *ptp_context = dev->driver_data;
+	struct eth_context *context = ptp_context->eth_context;
+	int corr;
+	s32_t mul;
+	float val;
+
+	/* No change needed. */
+	if (ratio == 1.0) {
+		return 0;
+	}
+
+	ratio *= context->clk_ratio;
+
+	/* Limit possible ratio. */
+	if ((ratio > 1.0 + 1.0/(2 * hw_inc)) ||
+			(ratio < 1.0 - 1.0/(2 * hw_inc))) {
+		return -EINVAL;
+	}
+
+	/* Save new ratio. */
+	context->clk_ratio = ratio;
+
+	if (ratio < 1.0) {
+		corr = hw_inc - 1;
+		val = 1.0 / (hw_inc * (1.0 - ratio));
+	} else if (ratio > 1.0) {
+		corr = hw_inc + 1;
+		val = 1.0 / (hw_inc * (ratio-1.0));
+	} else {
+		val = 0;
+		corr = hw_inc;
+	}
+
+	if (val >= INT32_MAX) {
+		/* Value is too high.
+		 * It is not possible to adjust the rate of the clock.
+		 */
+		mul = 0;
+	} else {
+		mul = val;
+	}
+
+
+	ENET_Ptp1588AdjustTimer(ENET, corr, mul);
+
+	return 0;
+}
+
+static const struct ptp_clock_driver_api api = {
+	.set = ptp_clock_mcux_set,
+	.get = ptp_clock_mcux_get,
+	.adjust = ptp_clock_mcux_adjust,
+	.rate_adjust = ptp_clock_mcux_rate_adjust,
+};
+
+static int ptp_mcux_init(struct device *port)
+{
+	struct device *eth_dev = DEVICE_GET(eth_mcux_0);
+	struct eth_context *context = eth_dev->driver_data;
+	struct ptp_context *ptp_context = port->driver_data;
+
+	context->ptp_clock = port;
+	ptp_context->eth_context = context;
+
+	return 0;
+}
+
+DEVICE_AND_API_INIT(mcux_ptp_clock_0, PTP_CLOCK_NAME, ptp_mcux_init,
+		    &ptp_mcux_0_context, NULL, POST_KERNEL,
+		    CONFIG_APPLICATION_INIT_PRIORITY, &api);
+
+#endif /* CONFIG_PTP_CLOCK_MCUX */
