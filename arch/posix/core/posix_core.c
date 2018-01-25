@@ -48,6 +48,7 @@
 #include "kernel_internal.h"
 #include "kernel_structs.h"
 #include "ksched.h"
+#include "kswap.h"
 
 #define PREFIX     "POSIX arch core: "
 #define ERPREFIX   PREFIX"error on "

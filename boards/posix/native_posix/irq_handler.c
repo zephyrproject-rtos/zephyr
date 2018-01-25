@@ -12,6 +12,7 @@
 #include "irq_offload.h"
 #include "kernel_structs.h"
 #include "kernel_internal.h"
+#include "kswap.h"
 #include "irq_ctrl.h"
 #include "posix_core.h"
 #include "board_soc.h"
