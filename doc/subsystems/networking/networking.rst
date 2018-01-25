@@ -22,3 +22,4 @@ operation of the stacks and how they were implemented.
    usbnet_setup.rst
    vlan.rst
    traffic-class.rst
+   gptp_release_notes.rst
