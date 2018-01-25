@@ -1,0 +1,11 @@
+# Kconfig - QEMU MIPSEL board configuration
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_QEMU_MIPSEL
+
+config BOARD
+	default qemu_mipsel
+
+endif # BOARD_QEMU_MIPSEL

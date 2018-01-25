@@ -1,5 +1,7 @@
 if("${ARCH}" STREQUAL "x86")
   set_ifndef(QEMU_binary_suffix i386)
+elseif("${ARCH}" STREQUAL "mips")
+  set_ifndef(QEMU_binary_suffix mipsel)
 else()
   set_ifndef(QEMU_binary_suffix ${ARCH})
 endif()

@@ -1,0 +1,7 @@
+identifier: qemu_mipsel
+name: QEMU emulation for little endian MIPS32
+type: qemu
+arch: mips
+toolchain:
+  - zephyr
+  - gccmipsmti
