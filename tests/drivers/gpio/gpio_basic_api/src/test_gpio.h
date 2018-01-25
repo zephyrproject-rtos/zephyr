@@ -36,6 +36,12 @@
 #define DEV_NAME CONFIG_GPIO_ESP32_0_NAME
 #define PIN_OUT 4  /* DIO4 */
 #define PIN_IN 2  /* DIO2 */
+#elif defined(CONFIG_BOARD_ARDUINO_ZERO)
+#define DEV_NAME CONFIG_GPIO_SAM0_PORTA_LABEL
+#define PIN_OUT 20  /* PA20 / pin 6 */
+#define PIN_IN 15  /* PA15 / pin 5 */
+#else
+#error Unsupported board
 #endif
 
 #define MAX_INT_CNT 3
