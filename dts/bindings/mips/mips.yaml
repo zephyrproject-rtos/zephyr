@@ -1,0 +1,25 @@
+#
+# Copyright (c) 2017, MIPS LLC.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: MIPS dummy
+id: arc,dummy
+version: 0.1
+
+description: >
+    This is a fake
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "mips,interaptiv"
+
+    reg:
+      type: array
+      description: DCCM memory mapped address space
+      generation: define
+      category: required

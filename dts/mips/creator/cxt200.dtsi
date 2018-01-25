@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2017 MIPS LLC.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include "skeleton.dtsi"
+#include "mem.h"
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "mips,interaptiv";
+			reg = <0>;
+		};
+	};
+
+	flash0: flash@bfc00000 {
+		reg = <0xbfc00000 DT_FLASH_SIZE>;
+	};
+
+	sram0: memory@80200000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x80200000 DT_SRAM_SIZE>;
+	};
+};

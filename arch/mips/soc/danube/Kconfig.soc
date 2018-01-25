@@ -1,0 +1,2 @@
+config SOC_DANUBE
+	bool "Danube SOC implementation"
