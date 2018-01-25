@@ -42,6 +42,9 @@ static void init(struct rand **rng, u8_t *context, u8_t len, u8_t threshold)
 		NRF_RNG->INTENSET = RNG_INTENSET_VALRDY_Msk;
 
 		NRF_RNG->TASKS_START = 1;
+#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
+		NRF_RNG_regw_sideeffects();
+#endif
 	}
 }
 
@@ -133,6 +136,9 @@ static size_t get(struct rand *rng, size_t octets, u8_t *rand)
 
 	if (remaining < rng->threshold) {
 		NRF_RNG->TASKS_START = 1;
+#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
+		NRF_RNG_regw_sideeffects();
+#endif
 	}
 
 	return octets;
@@ -203,6 +209,9 @@ void isr_rand(void *param)
 
 		if (ret != -EBUSY) {
 			NRF_RNG->TASKS_STOP = 1;
+#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
+			NRF_RNG_regw_sideeffects();
+#endif
 		}
 	}
 }

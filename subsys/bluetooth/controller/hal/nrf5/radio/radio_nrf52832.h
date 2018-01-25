@@ -7,6 +7,9 @@
 
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
 #define SW_SWITCH_TIMER NRF_TIMER1
+#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
+#define SW_SWITCH_TIMER_NBR 1
+#endif
 #define SW_SWITCH_TIMER_EVTS_COMP_BASE 0
 #define SW_SWITCH_TIMER_TASK_GROUP_BASE 0
 #endif
@@ -198,6 +201,7 @@
 
 static inline void hal_radio_ram_prio_setup(void)
 {
+#if !defined(CONFIG_BOARD_NRFXX_NWTSIM)
 	struct {
 		u32_t volatile reserved_0[0x5a0 >> 2];
 		u32_t volatile bridge_type;
@@ -234,6 +238,7 @@ static inline void hal_radio_ram_prio_setup(void)
 	NRF_AMLI->RAMPRI.I2S     = 0xFFFFFFFFUL;
 	NRF_AMLI->RAMPRI.PDM     = 0xFFFFFFFFUL;
 	NRF_AMLI->RAMPRI.PWM     = 0xFFFFFFFFUL;
+#endif
 }
 
 static inline u32_t hal_radio_phy_mode_get(u8_t phy, u8_t flags)
