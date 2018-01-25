@@ -18,7 +18,7 @@
 #include <misc/__assert.h>
 #include <init.h>
 #include <syscall_handler.h>
-#include <nano_internal.h>
+#include <kswap.h>
 
 extern struct k_stack _k_stack_list_start[];
 extern struct k_stack _k_stack_list_end[];
