@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Nordic Semiconductor ASA
+ * Copyright (c) 2016-2018 Nordic Semiconductor ASA
  * Copyright (c) 2016 Vinayak Kariappa Chettimada
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -28,6 +28,10 @@
 #include "ll.h"
 #include "hci_internal.h"
 
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+#include "ll_sw/ll_mesh.h"
+#endif /* CONFIG_BT_HCI_MESH_EXT */
+
 #if defined(CONFIG_BT_CTLR_DTM_HCI)
 #include "ll_sw/ll_test.h"
 #endif /* CONFIG_BT_CTLR_DTM_HCI */
@@ -51,6 +55,18 @@ struct dup {
 static struct dup dup_filter[CONFIG_BT_CTLR_DUP_FILTER_LEN];
 static s32_t dup_count;
 static u32_t dup_curr;
+#endif
+
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+struct scan_filter {
+	u8_t count;
+	u8_t lengths[CONFIG_BT_CTLR_MESH_SF_PATTERNS];
+	u8_t patterns[CONFIG_BT_CTLR_MESH_SF_PATTERNS]
+		     [BT_HCI_MESH_PATTERN_LEN_MAX];
+};
+
+static struct scan_filter scan_filters[CONFIG_BT_CTLR_MESH_SCAN_FILTERS];
+static u8_t sf_curr;
 #endif
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
@@ -127,6 +143,20 @@ static void *meta_evt(struct net_buf *buf, u8_t subevt, u8_t melen)
 	return net_buf_add(buf, melen);
 }
 
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+static void *mesh_evt(struct net_buf *buf, u8_t subevt, u8_t melen)
+{
+	struct bt_hci_evt_mesh *me;
+
+	evt_create(buf, BT_HCI_EVT_VENDOR, sizeof(*me) + melen);
+	me = net_buf_add(buf, sizeof(*me));
+	me->prefix = BT_HCI_MESH_EVT_PREFIX;
+	me->subevent = subevt;
+
+	return net_buf_add(buf, melen);
+}
+#endif /* CONFIG_BT_HCI_MESH_EXT */
+
 #if defined(CONFIG_BT_CONN)
 static void disconnect(struct net_buf *buf, struct net_buf **evt)
 {
@@ -198,9 +228,19 @@ static void reset(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_evt_cc_status *ccst;
 
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(scan_filters); i++) {
+		scan_filters[i].count = 0;
+	}
+	sf_curr = 0xFF;
+#endif
+
 #if CONFIG_BT_CTLR_DUP_FILTER_LEN > 0
 	dup_count = -1;
 #endif
+
 	/* reset event masks */
 	event_mask = DEFAULT_EVENT_MASK;
 	event_mask_page_2 = DEFAULT_EVENT_MASK_PAGE_2;
@@ -211,6 +251,7 @@ static void reset(struct net_buf *buf, struct net_buf **evt)
 		ccst = cmd_complete(evt, sizeof(*ccst));
 		ccst->status = 0x00;
 	}
+
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 	hci_hbuf_total = 0;
 	hci_hbuf_sent = 0;
@@ -893,7 +934,11 @@ static void le_set_adv_enable(struct net_buf *buf, struct net_buf **evt)
 	struct bt_hci_evt_cc_status *ccst;
 	u32_t status;
 
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+	status = ll_adv_enable(0, cmd->enable, 0, 0, 0, 0, 0);
+#else /* !CONFIG_BT_HCI_MESH_EXT */
 	status = ll_adv_enable(cmd->enable);
+#endif /* !CONFIG_BT_HCI_MESH_EXT */
 
 	ccst = cmd_complete(evt, sizeof(*ccst));
 	ccst->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;
@@ -1826,8 +1871,160 @@ static void vs_read_key_hierarchy_roots(struct net_buf *buf,
 	memset(rp->er, 0x00, sizeof(rp->er));
 #endif /* CONFIG_SOC_FAMILY_NRF5 */
 }
-
 #endif /* CONFIG_BT_HCI_VS_EXT */
+
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+static void mesh_get_opts(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_rp_mesh_get_opts *rp;
+
+	rp = cmd_complete(evt, sizeof(*rp));
+
+	rp->status = 0x00;
+	rp->opcode = BT_HCI_OC_MESH_GET_OPTS;
+
+	rp->revision = BT_HCI_MESH_REVISION;
+	rp->ch_map = 0x7;
+	/*@todo: nRF51 only */
+	rp->min_tx_power = -30;
+	/*@todo: nRF51 only */
+	rp->max_tx_power = 4;
+	rp->max_scan_filter = CONFIG_BT_CTLR_MESH_SCAN_FILTERS;
+	rp->max_filter_pattern = CONFIG_BT_CTLR_MESH_SF_PATTERNS;
+	rp->max_adv_slot = 1;
+	rp->evt_prefix_len = 0x01;
+	rp->evt_prefix = BT_HCI_MESH_EVT_PREFIX;
+}
+
+static void mesh_set_scan_filter(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_mesh_set_scan_filter *cmd = (void *)buf->data;
+	struct bt_hci_rp_mesh_set_scan_filter *rp;
+	u8_t filter = cmd->scan_filter - 1;
+	struct scan_filter *f;
+	u8_t status = 0x00;
+	u8_t i;
+
+	if (filter > ARRAY_SIZE(scan_filters) ||
+	    cmd->num_patterns > CONFIG_BT_CTLR_MESH_SF_PATTERNS) {
+		status = BT_HCI_ERR_INVALID_PARAM;
+		goto exit;
+	}
+
+	if (filter == sf_curr) {
+		status = BT_HCI_ERR_CMD_DISALLOWED;
+		goto exit;
+	}
+
+	/* duplicate filtering not supported yet */
+	if (cmd->filter_dup) {
+		status = BT_HCI_ERR_INVALID_PARAM;
+		goto exit;
+	}
+
+	f = &scan_filters[filter];
+	for (i = 0; i < cmd->num_patterns; i++) {
+		if (!cmd->patterns[i].pattern_len ||
+		    cmd->patterns[i].pattern_len > BT_HCI_MESH_PATTERN_LEN_MAX) {
+			status = BT_HCI_ERR_INVALID_PARAM;
+			goto exit;
+		}
+		f->lengths[i] = cmd->patterns[i].pattern_len;
+		memcpy(f->patterns[i], cmd->patterns[i].pattern, f->lengths[i]);
+	}
+
+	f->count = cmd->num_patterns;
+
+exit:
+	rp = cmd_complete(evt, sizeof(*rp));
+	rp->status = status;
+	rp->opcode = BT_HCI_OC_MESH_SET_SCAN_FILTER;
+	rp->scan_filter = filter + 1;
+}
+
+static void mesh_advertise(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_mesh_advertise *cmd = (void *)buf->data;
+	struct bt_hci_rp_mesh_advertise *rp;
+	u8_t adv_slot = cmd->adv_slot;
+	u8_t status;
+
+	status = ll_mesh_advertise(adv_slot,
+				   cmd->own_addr_type, cmd->random_addr.val,
+				   cmd->ch_map, cmd->tx_power,
+				   cmd->min_tx_delay, cmd->max_tx_delay,
+				   cmd->retx_count, cmd->retx_interval,
+				   cmd->scan_duration, cmd->scan_delay,
+				   cmd->scan_filter, cmd->data_len, cmd->data);
+	if (!status) {
+		/* Yields 0xFF if no scan filter selected */
+		sf_curr = cmd->scan_filter - 1;
+	}
+
+	rp = cmd_complete(evt, sizeof(*rp));
+	rp->status = status;
+	rp->opcode = BT_HCI_OC_MESH_ADVERTISE;
+	rp->adv_slot = adv_slot;
+}
+
+static void mesh_advertise_cancel(struct net_buf *buf, struct net_buf **evt)
+{
+	struct bt_hci_cp_mesh_advertise_cancel *cmd = (void *)buf->data;
+	struct bt_hci_rp_mesh_advertise_cancel *rp;
+	u8_t adv_slot = cmd->adv_slot;
+	u8_t status;
+
+	status = ll_mesh_advertise_cancel(adv_slot);
+	if (!status) {
+		/* Yields 0xFF if no scan filter selected */
+		sf_curr = 0xFF;
+	}
+
+	rp = cmd_complete(evt, sizeof(*rp));
+	rp->status = status;
+	rp->opcode = BT_HCI_OC_MESH_ADVERTISE_CANCEL;
+	rp->adv_slot = adv_slot;
+}
+
+static int mesh_cmd_handle(struct net_buf *cmd, struct net_buf **evt)
+{
+	struct bt_hci_cp_mesh *cp_mesh;
+	u8_t mesh_op;
+
+	if (cmd->len < sizeof(*cp_mesh)) {
+		BT_ERR("No HCI VSD Command header");
+		return -EINVAL;
+	}
+
+	cp_mesh = (void *)cmd->data;
+	mesh_op = cp_mesh->opcode;
+
+	net_buf_pull(cmd, sizeof(*cp_mesh));
+
+	switch (mesh_op) {
+	case BT_HCI_OC_MESH_GET_OPTS:
+		mesh_get_opts(cmd, evt);
+		break;
+
+	case BT_HCI_OC_MESH_SET_SCAN_FILTER:
+		mesh_set_scan_filter(cmd, evt);
+		break;
+
+	case BT_HCI_OC_MESH_ADVERTISE:
+		mesh_advertise(cmd, evt);
+		break;
+
+	case BT_HCI_OC_MESH_ADVERTISE_CANCEL:
+		mesh_advertise_cancel(cmd, evt);
+		break;
+
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_BT_HCI_MESH_EXT */
 
 static int vendor_cmd_handle(u16_t ocf, struct net_buf *cmd,
 			     struct net_buf **evt)
@@ -1862,6 +2059,12 @@ static int vendor_cmd_handle(u16_t ocf, struct net_buf *cmd,
 		vs_read_key_hierarchy_roots(cmd, evt);
 		break;
 #endif /* CONFIG_BT_HCI_VS_EXT */
+
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+	case BT_OCF(BT_HCI_OP_VS_MESH):
+		mesh_cmd_handle(cmd, evt);
+		break;
+#endif /* CONFIG_BT_HCI_MESH_EXT */
 
 	default:
 		return -EINVAL;
@@ -2043,6 +2246,119 @@ static inline bool dup_found(struct pdu_adv *adv)
 }
 #endif /* CONFIG_BT_CTLR_DUP_FILTER_LEN > 0 */
 
+#if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
+static inline void le_dir_adv_report(struct pdu_adv *adv, struct net_buf *buf,
+				     s8_t rssi, u8_t rl_idx)
+{
+	struct bt_hci_evt_le_direct_adv_report *drp;
+	struct bt_hci_evt_le_direct_adv_info *dir_info;
+
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_DIRECT_ADV_REPORT)) {
+		return;
+	}
+
+	LL_ASSERT(adv->type == PDU_ADV_TYPE_DIRECT_IND);
+
+#if CONFIG_BT_CTLR_DUP_FILTER_LEN > 0
+	if (dup_found(adv)) {
+		return;
+	}
+#endif /* CONFIG_BT_CTLR_DUP_FILTER_LEN > 0 */
+
+	drp = meta_evt(buf, BT_HCI_EVT_LE_DIRECT_ADV_REPORT,
+		       sizeof(*drp) + sizeof(*dir_info));
+
+	drp->num_reports = 1;
+	dir_info = (void *)(((u8_t *)drp) + sizeof(*drp));
+
+	/* Directed Advertising */
+	dir_info->evt_type = BT_LE_ADV_DIRECT_IND;
+
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	if (rl_idx < ll_rl_size_get()) {
+		/* Store identity address */
+		ll_rl_id_addr_get(rl_idx, &dir_info->addr.type,
+				  &dir_info->addr.a.val[0]);
+		/* Mark it as identity address from RPA (0x02, 0x03) */
+		dir_info->addr.type += 2;
+	} else {
+#else
+	if (1) {
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+		dir_info->addr.type = adv->tx_addr;
+		memcpy(&dir_info->addr.a.val[0],
+		       &adv->payload.direct_ind.adv_addr[0],
+		       sizeof(bt_addr_t));
+	}
+
+	dir_info->dir_addr.type = 0x1;
+	memcpy(&dir_info->dir_addr.a.val[0],
+	       &adv->payload.direct_ind.tgt_addr[0], sizeof(bt_addr_t));
+
+	dir_info->rssi = rssi;
+}
+#endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
+
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+
+static inline bool scan_filter_apply(u8_t filter, u8_t *data, u8_t len)
+{
+	struct scan_filter *f = &scan_filters[filter];
+	int i;
+
+	/* No patterns means filter out all advertising packets */
+	for (i = 0; i < f->count; i++) {
+		/* Require at least the length of the pattern */
+		if (len >= f->lengths[i] &&
+		    !memcmp(data, f->patterns[i], f->lengths[i])) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static inline void le_mesh_scan_report(struct pdu_adv *adv, struct net_buf *buf,
+				       s8_t rssi, u8_t *extra)
+{
+	u8_t data_len = (adv->len - BDADDR_SIZE);
+	struct bt_hci_evt_mesh_scanning_report *mep;
+	struct bt_hci_evt_mesh_scan_report *sr;
+	u32_t instant;
+	u8_t chan;
+
+	LL_ASSERT(adv->type == PDU_ADV_TYPE_NONCONN_IND);
+
+	/* Filter based on currently active Scan Filter */
+	if (sf_curr < ARRAY_SIZE(scan_filters) &&
+	    !scan_filter_apply(sf_curr, &adv->payload.adv_ind.data[0],
+			       data_len)) {
+		/* Drop the report */
+		return;
+	}
+
+	chan = *extra;
+	extra++;
+	instant = sys_get_le32(extra);
+
+	mep = mesh_evt(buf, BT_HCI_EVT_MESH_SCANNING_REPORT,
+			    sizeof(*mep) + sizeof(*sr));
+
+	mep->num_reports = 1;
+	sr = (void *)(((u8_t *)mep) + sizeof(*mep));
+	sr->addr.type = adv->tx_addr;
+	memcpy(&sr->addr.a.val[0], &adv->payload.adv_ind.addr[0],
+	       sizeof(bt_addr_t));
+	sr->chan = chan;
+	sr->rssi = rssi;
+	sys_put_le32(instant, (u8_t *)&sr->instant);
+
+	sr->data_len = data_len;
+	memcpy(&sr->data[0], &adv->payload.adv_ind.data[0], data_len);
+}
+#endif /* CONFIG_BT_HCI_MESH_EXT */
+
 static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
 				  struct net_buf *buf)
 {
@@ -2053,6 +2369,7 @@ static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
 	struct bt_hci_evt_le_advertising_info *adv_info;
 	u8_t data_len;
 	u8_t info_len;
+	u8_t *extra;
 	s8_t rssi;
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	u8_t rl_idx;
@@ -2062,34 +2379,49 @@ static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
 #endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
 	s8_t *prssi;
 
+	extra = &b[offsetof(struct radio_pdu_node_rx, pdu_data) +
+		   offsetof(struct pdu_adv, payload) + adv->len];
+
+	/* The Link Layer currently returns RSSI as an absolute value */
+	rssi = -(*extra);
+	extra += 1;
+
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	rl_idx = b[offsetof(struct radio_pdu_node_rx, pdu_data) +
-		   offsetof(struct pdu_adv, payload) + adv->len + 1];
+	rl_idx = *extra;
+	extra += 1;
+
 	/* Update current RPA */
 	if (adv->tx_addr) {
 		ll_rl_crpa_set(0x00, NULL, rl_idx,
 			       &adv->payload.adv_ind.addr[0]);
 	}
-#endif
-
-	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT)) {
-		return;
-	}
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 
 #if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
-	direct = b[offsetof(struct radio_pdu_node_rx, pdu_data) +
-		   offsetof(struct pdu_adv, payload) + adv->len + 2];
-
-	if ((!direct && !(le_event_mask & BT_EVT_MASK_LE_ADVERTISING_REPORT)) ||
-	    (direct && !(le_event_mask & BT_HCI_EVT_LE_DIRECT_ADV_REPORT))) {
-		return;
-	}
+	direct = *extra;
+	extra += 1;
+	if (direct) {
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+		le_dir_adv_report(adv, buf, rssi, rl_idx);
 #else
-	if (!(le_event_mask & BT_EVT_MASK_LE_ADVERTISING_REPORT)) {
+		le_dir_adv_report(adv, buf, rssi, 0xFF);
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 		return;
 	}
 #endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
 
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+	if (((struct radio_pdu_node_rx *)b)->hdr.type ==
+	    NODE_RX_TYPE_MESH_REPORT) {
+		le_mesh_scan_report(adv, buf, rssi, extra);
+		return;
+	}
+#endif /* CONFIG_BT_HCI_MESH_EXT */
+
+	if (!(event_mask & BT_EVT_MASK_LE_META_EVENT) ||
+	    !(le_event_mask & BT_EVT_MASK_LE_ADVERTISING_REPORT)) {
+		return;
+	}
 
 #if CONFIG_BT_CTLR_DUP_FILTER_LEN > 0
 	if (dup_found(adv)) {
@@ -2102,52 +2434,6 @@ static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
 	} else {
 		data_len = 0;
 	}
-
-	/* The Link Layer currently returns RSSI as an absolute value */
-	rssi = -b[offsetof(struct radio_pdu_node_rx, pdu_data) +
-		  offsetof(struct pdu_adv, payload) + adv->len];
-
-#if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
-	if (direct) {
-		struct bt_hci_evt_le_direct_adv_report *drp;
-		struct bt_hci_evt_le_direct_adv_info *dir_info;
-
-		LL_ASSERT(adv->type == PDU_ADV_TYPE_DIRECT_IND);
-		drp = meta_evt(buf, BT_HCI_EVT_LE_DIRECT_ADV_REPORT,
-			       sizeof(*drp) + sizeof(*dir_info));
-
-		drp->num_reports = 1;
-		dir_info = (void *)(((u8_t *)drp) + sizeof(*drp));
-
-		dir_info->evt_type = c_adv_type[PDU_ADV_TYPE_DIRECT_IND];
-
-#if defined(CONFIG_BT_CTLR_PRIVACY)
-		if (rl_idx < ll_rl_size_get()) {
-			/* Store identity address */
-			ll_rl_id_addr_get(rl_idx, &dir_info->addr.type,
-					  &dir_info->addr.a.val[0]);
-			/* Mark it as identity address from RPA (0x02, 0x03) */
-			dir_info->addr.type += 2;
-		} else {
-#else
-		if (1) {
-#endif /* CONFIG_BT_CTLR_PRIVACY */
-			dir_info->addr.type = adv->tx_addr;
-			memcpy(&dir_info->addr.a.val[0],
-			       &adv->payload.direct_ind.adv_addr[0],
-			       sizeof(bt_addr_t));
-		}
-
-		dir_info->dir_addr.type = 0x1;
-		memcpy(&dir_info->dir_addr.a.val[0],
-		       &adv->payload.direct_ind.tgt_addr[0], sizeof(bt_addr_t));
-
-		dir_info->rssi = rssi;
-
-		return;
-	}
-#endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
-
 	info_len = sizeof(struct bt_hci_evt_le_advertising_info) + data_len +
 		   sizeof(*prssi);
 	sep = meta_evt(buf, BT_HCI_EVT_LE_ADVERTISING_REPORT,
@@ -2159,8 +2445,6 @@ static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
 	adv_info->evt_type = c_adv_type[adv->type];
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	rl_idx = b[offsetof(struct radio_pdu_node_rx, pdu_data) +
-		   offsetof(struct pdu_adv, payload) + adv->len + 1];
 	if (rl_idx < ll_rl_size_get()) {
 		/* Store identity address */
 		ll_rl_id_addr_get(rl_idx, &adv_info->addr.type,
@@ -2510,6 +2794,17 @@ static void le_phy_upd_complete(struct pdu_data *pdu_data, u16_t handle,
 #endif /* CONFIG_BT_CTLR_PHY */
 #endif /* CONFIG_BT_CONN */
 
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+static void mesh_adv_cplt(struct pdu_data *pdu_data, u8_t *b,
+			  struct net_buf *buf)
+{
+	struct bt_hci_evt_mesh_adv_complete *mep;
+
+	mep = mesh_evt(buf, BT_HCI_EVT_MESH_ADV_COMPLETE, sizeof(*mep));
+	mep->adv_slot = ((u8_t *)pdu_data)[0];
+}
+#endif /* CONFIG_BT_HCI_MESH_EXT */
+
 static void encode_control(struct radio_pdu_node_rx *node_rx,
 			   struct pdu_data *pdu_data, struct net_buf *buf)
 {
@@ -2601,6 +2896,16 @@ static void encode_control(struct radio_pdu_node_rx *node_rx,
 			pdu_data->payload.profile.max);
 		return;
 #endif /* CONFIG_BT_CTLR_PROFILE_ISR */
+
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+	case NODE_RX_TYPE_MESH_ADV_CPLT:
+		mesh_adv_cplt(pdu_data, b, buf);
+		return;
+
+	case NODE_RX_TYPE_MESH_REPORT:
+		le_advertising_report(pdu_data, b, buf);
+		return;
+#endif /* CONFIG_BT_HCI_MESH_EXT */
 
 	default:
 		LL_ASSERT(0);
@@ -2910,8 +3215,15 @@ s8_t hci_get_class(struct radio_pdu_node_rx *node_rx)
 		case NODE_RX_TYPE_PROFILE:
 #endif
 			return HCI_CLASS_EVT_DISCARDABLE;
+
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+		case NODE_RX_TYPE_MESH_ADV_CPLT:
+		case NODE_RX_TYPE_MESH_REPORT:
+#endif /* CONFIG_BT_HCI_MESH_EXT */
+
 		case NODE_RX_TYPE_CONNECTION:
 			return HCI_CLASS_EVT_REQUIRED;
+
 		case NODE_RX_TYPE_TERMINATE:
 		case NODE_RX_TYPE_CONN_UPDATE:
 
