@@ -23,7 +23,7 @@ config CPU_CORTEX_M
 	select HAS_FLASH_LOAD_OFFSET
 	select HAS_DTS
 	select ARCH_HAS_STACK_PROTECTION if ARM_CORE_MPU
-	select ARCH_HAS_USERSPACE if ARM_CORE_MPU
+	select ARCH_HAS_USERSPACE if ARM_USERSPACE
 	help
 	  This option signifies the use of a CPU of the Cortex-M family.
 
@@ -44,7 +44,7 @@ config ARM_STACK_PROTECTION
 
 config ARM_USERSPACE
 	bool
-	default y if USERSPACE
+	default n
 	help
 	  This option enables APIs to drop a thread's privileges,	supporting
 	  user-level threads that are protected from each other and from
