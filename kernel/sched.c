@@ -11,7 +11,7 @@
 #include <wait_q.h>
 #include <misc/util.h>
 #include <syscall_handler.h>
-#include <nano_internal.h>
+#include <kswap.h>
 
 /* the only struct _kernel instance */
 struct _kernel _kernel = {0};

@@ -20,7 +20,7 @@
 #include <ksched.h>
 #include <misc/slist.h>
 #include <init.h>
-#include <nano_internal.h>
+#include <kswap.h>
 
 extern struct k_queue _k_queue_list_start[];
 extern struct k_queue _k_queue_list_end[];

@@ -10,6 +10,7 @@
 #include <ksched.h>
 #include <kernel_structs.h>
 #include <nano_internal.h>
+#include <kswap.h>
 #include <_soc_inthandlers.h>
 
 void *xtensa_init_stack(int *stack_top,

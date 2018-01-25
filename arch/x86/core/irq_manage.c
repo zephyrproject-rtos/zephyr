@@ -21,6 +21,7 @@
 #include <misc/printk.h>
 #include <irq.h>
 #include <logging/kernel_event_logger.h>
+#include <kswap.h>
 
 extern void _SpuriousIntHandler(void *);
 extern void _SpuriousIntNoErrCodeHandler(void *);
