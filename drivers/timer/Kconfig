@@ -184,6 +184,14 @@ config NATIVE_POSIX_TIMER
 	  This module implements a kernel device driver for the native_posix HW timer
 	  model
 
+config MIPS_CORE_TIMER
+	bool "MIPS Core Timer"
+	default n
+	depends on SOC_FAMILY_MIPS
+	help
+	This module implements a kernel device driver for the MIPS core timer
+	driver. It provides the standard "system clock driver" interfaces.
+
 config XTENSA_TIMER
 	bool "Xtensa timer support"
 	depends on XTENSA
