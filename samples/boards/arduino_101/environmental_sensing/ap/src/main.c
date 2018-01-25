@@ -105,7 +105,7 @@ static void sensor_ipm_callback(void *context, u32_t id, volatile void *data)
 		break;
 	case SENSOR_CHAN_HUMIDITY:
 		/* resolution of 0.01 percent */
-		humidity_value = val->val1 / 10;
+		humidity_value = val->val1 * 100 + val->val2 / 10000;
 		break;
 	case SENSOR_CHAN_PRESS:
 		/* resolution of 0.1 Pa */

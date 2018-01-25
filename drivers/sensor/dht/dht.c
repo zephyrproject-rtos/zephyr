@@ -168,7 +168,7 @@ static int dht_channel_get(struct device *dev,
 #if defined(CONFIG_DHT_CHIP_DHT11)
 	/* use only integral data byte */
 	if (chan == SENSOR_CHAN_HUMIDITY) {
-		val->val1 = drv_data->sample[0] * 1000;
+		val->val1 = drv_data->sample[0];
 		val->val2 = 0;
 	} else { /* chan == SENSOR_CHAN_TEMP */
 		val->val1 = drv_data->sample[2];
@@ -183,8 +183,8 @@ static int dht_channel_get(struct device *dev,
 
 	if (chan == SENSOR_CHAN_HUMIDITY) {
 		raw_val = (drv_data->sample[0] << 8) | drv_data->sample[1];
-		val->val1 = raw_val * 100;
-		val->val2 = 0;
+		val->val1 = raw_val / 10;
+		val->val2 = (raw_val % 10) * 100000;
 	} else { /* chan == SENSOR_CHAN_TEMP */
 		raw_val = (drv_data->sample[2] << 8) | drv_data->sample[3];
 
