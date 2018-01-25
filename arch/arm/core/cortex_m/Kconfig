@@ -190,4 +190,13 @@ config ZERO_LATENCY_IRQS
 	  Note that this is a somewhat dangerous option: ISRs of priority zero
 	  interrupts cannot use any kernel functionality.
 
+config SW_VECTOR_RELAY
+	bool
+	prompt "Enable Cortex-M0 Vector Table soft relay"
+	default n
+	depends on CPU_CORTEX_M0 && !CPU_CORTEX_M0_HAS_VECTOR_TABLE_REMAP
+	help
+	  Add Cortex-M0 Vector Table relay handler and relay vector table, to
+	  relay interrupts based on a vector table pointer.
+
 endmenu
