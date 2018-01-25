@@ -98,7 +98,7 @@ enum sensor_channel {
 	 * object is close.
 	 */
 	SENSOR_CHAN_PROX,
-	/** Humidity, in milli percent. */
+	/** Humidity, in percent. */
 	SENSOR_CHAN_HUMIDITY,
 	/** Illuminance in visible spectrum, in lux. */
 	SENSOR_CHAN_LIGHT,

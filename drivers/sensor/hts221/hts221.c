@@ -43,9 +43,9 @@ static int hts221_channel_get(struct device *dev,
 			   (drv_data->h1_t0_out - drv_data->h0_t0_out) +
 			   drv_data->h0_rh_x2;
 
-		/* convert humidity x2 to mili-percent */
-		val->val1 = conv_val * 500;
-		val->val2 = 0;
+		/* convert humidity x2 to percent */
+		val->val1 = conv_val / 2;
+		val->val2 = (conv_val % 2) * 500000;
 	}
 
 	return 0;
