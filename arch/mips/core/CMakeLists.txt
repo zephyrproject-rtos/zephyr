@@ -1,0 +1,10 @@
+zephyr_sources(
+	thread.c
+	cpu_idle.c
+	fatal.c
+	irq_manage.c
+	irq_offload.c
+	swap.S
+	isr.S
+	prep_c.c
+	)

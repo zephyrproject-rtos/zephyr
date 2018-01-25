@@ -1,0 +1,77 @@
+#
+# Copyright (c) 2017 Imagination Technologies Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+choice
+	prompt "MIPS configuration selection"
+	depends on MIPS
+	source "arch/mips/soc/*/Kconfig.soc"
+endchoice
+
+menu "MIPS Options"
+	depends on MIPS
+
+config ARCH
+	string
+	default "mips"
+
+config SOC_FAMILY_MIPS
+	bool
+	# omit prompt to signify a "hidden" option
+	default n
+
+config ARCH_DEFCONFIG
+	string
+	default "arch/mips/defconfig"
+
+menu "MIPS Processor Options"
+
+config IRQ_OFFLOAD
+	bool "Enable IRQ offload"
+	default n
+	help
+	Enable irq_offload()
+
+config MIPS_SOC_INTERRUPT_INIT
+	bool "Enable SOC-based interrupt initialization"
+	default y
+	help
+	Enable SOC-based interrupt initialization
+	(call soc_interrupt_init, within _IntLibInit when enabled)
+
+config MIPS_HAS_CPU_IDLE
+	bool "Does SOC has CPU IDLE instruction"
+	default n
+	help
+	Does SOC have CPU IDLE instruction
+
+config HAS_MIPS_HAL
+	bool "includes MIPS HAL"
+	default y
+	help
+	includes MIPS HAL
+
+config GEN_SW_ISR_TABLE
+	default y
+
+config GEN_IRQ_VECTOR_TABLE
+	default n
+
+config GEN_ISR_TABLES
+	default y
+
+endmenu
+
+config CPU_MIPS
+	bool
+	# Omit prompt to signify "hidden" option
+	default y
+	select ARCH_HAS_CUSTOM_SWAP_TO_MAIN
+	help
+	This option signifies the use of a CPU of the MIPS family
+
+source "arch/mips/soc/*/Kconfig"
+
+endmenu

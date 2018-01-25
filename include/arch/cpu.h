@@ -21,6 +21,8 @@
 #include <arch/riscv32/arch.h>
 #elif defined(CONFIG_XTENSA)
 #include <arch/xtensa/arch.h>
+#elif defined(CONFIG_MIPS)
+#include <arch/mips/arch.h>
 #elif defined(CONFIG_ARCH_POSIX)
 #include <arch/posix/arch.h>
 #else
