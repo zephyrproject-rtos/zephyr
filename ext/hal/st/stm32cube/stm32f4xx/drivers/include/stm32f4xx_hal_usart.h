@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_usart.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    14-April-2017
   * @brief   Header file of USART HAL module.
   ******************************************************************************
   * @attention
@@ -302,16 +300,16 @@ typedef struct
   */
 
 /** @brief Reset USART handle state
-  * @param  __HANDLE__: specifies the USART Handle.
+  * @param  __HANDLE__ specifies the USART Handle.
   *         This parameter can be USARTx where x: 1, 2, 3 or 6 to select the USART peripheral.
   * @retval None
   */
 #define __HAL_USART_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = HAL_USART_STATE_RESET)
 
 /** @brief  Checks whether the specified Smartcard flag is set or not.
-  * @param  __HANDLE__: specifies the USART Handle.
+  * @param  __HANDLE__ specifies the USART Handle.
   *         This parameter can be USARTx where x: 1, 2, 3 or 6 to select the USART peripheral.
-  * @param  __FLAG__: specifies the flag to check.
+  * @param  __FLAG__ specifies the flag to check.
   *        This parameter can be one of the following values:
   *            @arg USART_FLAG_TXE:  Transmit data register empty flag
   *            @arg USART_FLAG_TC:   Transmission Complete flag
@@ -326,9 +324,9 @@ typedef struct
 #define __HAL_USART_GET_FLAG(__HANDLE__, __FLAG__) (((__HANDLE__)->Instance->SR & (__FLAG__)) == (__FLAG__))
 
 /** @brief  Clears the specified Smartcard pending flags.
-  * @param  __HANDLE__: specifies the USART Handle.
+  * @param  __HANDLE__ specifies the USART Handle.
   *         This parameter can be USARTx where x: 1, 2, 3 or 6 to select the USART peripheral.
-  * @param  __FLAG__: specifies the flag to check.
+  * @param  __FLAG__ specifies the flag to check.
   *          This parameter can be any combination of the following values:
   *            @arg USART_FLAG_TC:   Transmission Complete flag.
   *            @arg USART_FLAG_RXNE: Receive data register not empty flag.
@@ -347,7 +345,7 @@ typedef struct
 #define __HAL_USART_CLEAR_FLAG(__HANDLE__, __FLAG__) ((__HANDLE__)->Instance->SR = ~(__FLAG__))
 
 /** @brief  Clear the USART PE pending flag.
-  * @param  __HANDLE__: specifies the USART Handle.
+  * @param  __HANDLE__ specifies the USART Handle.
   *         This parameter can be USARTx where x: 1, 2, 3 or 6 to select the USART peripheral.
   * @retval None
   */
@@ -360,37 +358,37 @@ typedef struct
   } while(0U)
                                                
 /** @brief  Clear the USART FE pending flag.
-  * @param  __HANDLE__: specifies the USART Handle.
+  * @param  __HANDLE__ specifies the USART Handle.
   *         This parameter can be USARTx where x: 1, 2, 3 or 6 to select the USART peripheral.
   * @retval None
   */
 #define __HAL_USART_CLEAR_FEFLAG(__HANDLE__) __HAL_USART_CLEAR_PEFLAG(__HANDLE__)
 
 /** @brief  Clear the USART NE pending flag.
-  * @param  __HANDLE__: specifies the USART Handle.
+  * @param  __HANDLE__ specifies the USART Handle.
   *         This parameter can be USARTx where x: 1, 2, 3 or 6 to select the USART peripheral.
   * @retval None
   */
 #define __HAL_USART_CLEAR_NEFLAG(__HANDLE__) __HAL_USART_CLEAR_PEFLAG(__HANDLE__)
 
 /** @brief  Clear the UART ORE pending flag.
-  * @param  __HANDLE__: specifies the USART Handle.
+  * @param  __HANDLE__ specifies the USART Handle.
   *         This parameter can be USARTx where x: 1, 2, 3 or 6 to select the USART peripheral.
   * @retval None
   */
 #define __HAL_USART_CLEAR_OREFLAG(__HANDLE__) __HAL_USART_CLEAR_PEFLAG(__HANDLE__)
 
 /** @brief  Clear the USART IDLE pending flag.
-  * @param  __HANDLE__: specifies the USART Handle.
+  * @param  __HANDLE__ specifies the USART Handle.
   *         This parameter can be USARTx where x: 1, 2, 3 or 6 to select the USART peripheral.
   * @retval None
   */
 #define __HAL_USART_CLEAR_IDLEFLAG(__HANDLE__) __HAL_USART_CLEAR_PEFLAG(__HANDLE__)
 
 /** @brief  Enables or disables the specified USART interrupts.
-  * @param  __HANDLE__: specifies the USART Handle.
+  * @param  __HANDLE__ specifies the USART Handle.
   *         This parameter can be USARTx where x: 1, 2, 3 or 6 to select the USART peripheral.
-  * @param  __INTERRUPT__: specifies the USART interrupt source to check.
+  * @param  __INTERRUPT__ specifies the USART interrupt source to check.
   *          This parameter can be one of the following values:
   *            @arg USART_IT_TXE:  Transmit Data Register empty interrupt
   *            @arg USART_IT_TC:   Transmission complete interrupt
@@ -409,9 +407,9 @@ typedef struct
                                                              ((__HANDLE__)->Instance->CR3 &= ~ ((__INTERRUPT__) & USART_IT_MASK)))
     
 /** @brief  Checks whether the specified USART interrupt has occurred or not.
-  * @param  __HANDLE__: specifies the USART Handle.
+  * @param  __HANDLE__ specifies the USART Handle.
   *         This parameter can be USARTx where x: 1, 2, 3 or 6 to select the USART peripheral.
-  * @param  __IT__: specifies the USART interrupt source to check.
+  * @param  __IT__ specifies the USART interrupt source to check.
   *          This parameter can be one of the following values:
   *            @arg USART_IT_TXE: Transmit Data Register empty interrupt
   *            @arg USART_IT_TC:  Transmission complete interrupt
@@ -425,26 +423,26 @@ typedef struct
                                                       (__HANDLE__)->Instance->CR2 : (__HANDLE__)->Instance->CR3)) & (((uint32_t)(__IT__)) & USART_IT_MASK))
 
 /** @brief  Macro to enable the USART's one bit sample method
-  * @param  __HANDLE__: specifies the USART Handle.  
+  * @param  __HANDLE__ specifies the USART Handle.  
   * @retval None
   */     
 #define __HAL_USART_ONE_BIT_SAMPLE_ENABLE(__HANDLE__) ((__HANDLE__)->Instance->CR3|= USART_CR3_ONEBIT)
 
 /** @brief  Macro to disable the USART's one bit sample method
-  * @param  __HANDLE__: specifies the USART Handle.  
+  * @param  __HANDLE__ specifies the USART Handle.  
   * @retval None
   */      
 #define __HAL_USART_ONE_BIT_SAMPLE_DISABLE(__HANDLE__) ((__HANDLE__)->Instance->CR3 &= (uint16_t)~((uint16_t)USART_CR3_ONEBIT))
 
 /** @brief  Enable USART
-  * @param  __HANDLE__: specifies the USART Handle.
+  * @param  __HANDLE__ specifies the USART Handle.
   *         USART Handle selects the USARTx peripheral (USART availability and x value depending on device).
   * @retval None
   */
 #define __HAL_USART_ENABLE(__HANDLE__)               ( (__HANDLE__)->Instance->CR1 |=  USART_CR1_UE)
 
 /** @brief  Disable USART
-  * @param  __HANDLE__: specifies the USART Handle.
+  * @param  __HANDLE__ specifies the USART Handle.
   *         USART Handle selects the USARTx peripheral (USART availability and x value depending on device).
   * @retval None
   */ 

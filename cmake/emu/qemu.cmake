@@ -72,10 +72,6 @@ if(QEMU_NET_STACK)
     server
     )
 
-  list(APPEND QEMU_FLAGS
-    -serial none
-    )
-
   foreach(target ${qemu_targets})
     if((${target} STREQUAL client) OR (${target} STREQUAL server))
       list(APPEND MORE_FLAGS_FOR_${target}
@@ -146,7 +142,7 @@ if(QEMU_NET_STACK)
     # NET_TOOLS has been set to the net-tools repo path
     # net-tools/monitor_15_4 has been built beforehand
 
-    set_ifndef(NET_TOOLS $ENV{ZEPHYR_BASE}/../net-tools) # Default if not set
+    set_ifndef(NET_TOOLS ${ZEPHYR_BASE}/../net-tools) # Default if not set
 
     list(APPEND PRE_QEMU_COMMANDS_FOR_server
       COMMAND ${NET_TOOLS}/monitor_15_4
@@ -163,7 +159,7 @@ if(CONFIG_X86_IAMCU)
   list(APPEND PRE_QEMU_COMMANDS
     COMMAND
     ${PYTHON_EXECUTABLE}
-    $ENV{ZEPHYR_BASE}/scripts/qemu-machine-hack.py
+    ${ZEPHYR_BASE}/scripts/qemu-machine-hack.py
     $<TARGET_FILE:${logical_target_for_zephyr_elf}>
     )
 endif()

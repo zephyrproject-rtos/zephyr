@@ -68,11 +68,11 @@ static s32_t hbuf_count;
 static void prio_recv_thread(void *p1, void *p2, void *p3)
 {
 	while (1) {
-		struct radio_pdu_node_rx *node_rx;
+		void *node_rx;
 		u8_t num_cmplt;
 		u16_t handle;
 
-		while ((num_cmplt = radio_rx_get(&node_rx, &handle))) {
+		while ((num_cmplt = ll_rx_get(&node_rx, &handle))) {
 #if defined(CONFIG_BT_CONN)
 			struct net_buf *buf;
 
@@ -86,7 +86,7 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 
 		if (node_rx) {
 
-			radio_rx_dequeue();
+			ll_rx_dequeue();
 
 			BT_DBG("RX node enqueue");
 			k_fifo_put(&recv_fifo, node_rx);
@@ -139,9 +139,12 @@ static inline struct net_buf *encode_node(struct radio_pdu_node_rx *node_rx,
 		break;
 	}
 
+#if defined(CONFIG_BT_LL_SW)
 	radio_rx_fc_set(node_rx->hdr.handle, 0);
+#endif /* CONFIG_BT_LL_SW */
+
 	node_rx->hdr.onion.next = 0;
-	radio_rx_mem_release(&node_rx);
+	ll_rx_mem_release((void **)&node_rx);
 
 	return buf;
 }

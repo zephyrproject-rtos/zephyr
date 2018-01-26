@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_flash_ramfunc.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    14-April-2017
   * @brief   Header file of FLASH RAMFUNC driver.
   ******************************************************************************
   * @attention

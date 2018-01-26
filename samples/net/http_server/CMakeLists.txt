@@ -19,5 +19,3 @@ foreach(inc_file
     ${ZEPHYR_BINARY_DIR}/include/generated/${inc_file}.inc
     )
 endforeach()
-
-target_link_libraries_ifdef(CONFIG_MBEDTLS app mbedTLS)

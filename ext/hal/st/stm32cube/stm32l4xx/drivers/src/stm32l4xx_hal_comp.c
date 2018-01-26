@@ -665,8 +665,8 @@ HAL_StatusTypeDef HAL_COMP_Lock(COMP_HandleTypeDef *hcomp)
   *             voltage than the input minus
   * @param  hcomp  COMP handle
   * @retval Returns the selected comparator output level: 
-  *         @arg @ref COMP_OUTPUT_LEVEL_LOW
-  *         @arg @ref COMP_OUTPUT_LEVEL_HIGH
+  *         @arg COMP_OUTPUT_LEVEL_LOW
+  *         @arg COMP_OUTPUT_LEVEL_HIGH
   *       
   */
 uint32_t HAL_COMP_GetOutputLevel(COMP_HandleTypeDef *hcomp)

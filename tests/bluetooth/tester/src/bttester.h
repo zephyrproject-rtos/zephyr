@@ -244,8 +244,8 @@ struct gap_new_settings_ev {
 
 #define GAP_EV_DEVICE_FOUND		0x81
 struct gap_device_found_ev {
-	u8_t  address[6];
 	u8_t  address_type;
+	u8_t  address[6];
 	s8_t   rssi;
 	u8_t  flags;
 	u16_t eir_data_len;
@@ -254,14 +254,14 @@ struct gap_device_found_ev {
 
 #define GAP_EV_DEVICE_CONNECTED		0x82
 struct gap_device_connected_ev {
-	u8_t address[6];
 	u8_t address_type;
+	u8_t address[6];
 } __packed;
 
 #define GAP_EV_DEVICE_DISCONNECTED	0x83
 struct gap_device_disconnected_ev {
-	u8_t address[6];
 	u8_t address_type;
+	u8_t address[6];
 } __packed;
 
 #define GAP_EV_PASSKEY_DISPLAY		0x84
@@ -747,6 +747,26 @@ struct mesh_lpn_set_cmd {
 
 #define MESH_LPN_POLL			0x0e
 
+#define MESH_MODEL_SEND			0x0f
+struct mesh_model_send_cmd {
+	u16_t src;
+	u16_t dst;
+	u8_t payload_len;
+	u8_t payload[0];
+} __packed;
+
+#define MESH_LPN_SUBSCRIBE		0x10
+struct mesh_lpn_subscribe_cmd {
+	u16_t address;
+} __packed;
+
+#define MESH_LPN_UNSUBSCRIBE		0x11
+struct mesh_lpn_unsubscribe_cmd {
+	u16_t address;
+} __packed;
+
+#define MESH_RPL_CLEAR			0x12
+
 /* events */
 #define MESH_EV_OUT_NUMBER_ACTION	0x80
 struct mesh_out_number_action_ev {
@@ -789,6 +809,13 @@ struct mesh_net_recv_ev {
 	u8_t payload_len;
 	u8_t payload[0];
 } __packed;
+
+#define MESH_EV_INVALID_BEARER		0x87
+struct mesh_invalid_bearer_ev {
+	u8_t opcode;
+} __packed;
+
+#define MESH_EV_INCOMP_TIMER_EXP	0x88
 
 void tester_init(void);
 void tester_rsp(u8_t service, u8_t opcode, u8_t index, u8_t status);

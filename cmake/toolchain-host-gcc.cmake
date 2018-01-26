@@ -1,5 +1,4 @@
-# Configures CMake for using GCC, this script is re-used by several
-# GCC-based toolchains
+# Configures CMake for using GCC
 
 set(CMAKE_C_COMPILER   gcc     CACHE INTERNAL " " FORCE)
 set(CMAKE_OBJCOPY      objcopy CACHE INTERNAL " " FORCE)
@@ -12,8 +11,6 @@ set(CMAKE_GDB          gdb     CACHE INTERNAL " " FORCE)
 set(CMAKE_C_FLAGS 	-m32   CACHE INTERNAL " " FORCE)
 set(CMAKE_CXX_FLAGS 	-m32   CACHE INTERNAL " " FORCE)
 set(CMAKE_SHARED_LINKER_FLAGS -m32 CACHE INTERNAL " " FORCE)
-
-#assert_exists(CMAKE_READELF)
 
 if(CONFIG_CPLUSPLUS)
   set(cplusplus_compiler g++)

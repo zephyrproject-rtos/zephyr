@@ -90,11 +90,12 @@ static void setup_dhcpv4(struct net_if *iface)
 #define setup_dhcpv4(...)
 #endif /* CONFIG_NET_DHCPV4 */
 
-#if defined(CONFIG_NET_IPV4) && !defined(CONFIG_NET_DHCPV4)
-
-#if !defined(CONFIG_NET_APP_MY_IPV4_ADDR)
+#if defined(CONFIG_NET_IPV4) && !defined(CONFIG_NET_DHCPV4) && \
+    !defined(CONFIG_NET_APP_MY_IPV4_ADDR)
 #error "You need to define an IPv4 address or enable DHCPv4!"
 #endif
+
+#if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_APP_MY_IPV4_ADDR)
 
 static void setup_ipv4(struct net_if *iface)
 {
@@ -113,7 +114,21 @@ static void setup_ipv4(struct net_if *iface)
 		return;
 	}
 
+#if defined(CONFIG_NET_DHCPV4)
+	/* In case DHCP is enabled, make the static address tentative,
+	 * to allow DHCP address to override it. This covers a usecase
+	 * of "there should be a static IP address for DHCP-less setups",
+	 * but DHCP should override it (to use it, NET_IF_MAX_IPV4_ADDR
+	 * should be set to 1). There is another usecase: "there should
+	 * always be static IP address, and optionally, DHCP address".
+	 * For that to work, NET_IF_MAX_IPV4_ADDR should be 2 (or more).
+	 * (In this case, an app will need to bind to the needed addr
+	 * explicitly.)
+	 */
+	net_if_ipv4_addr_add(iface, &addr, NET_ADDR_OVERRIDABLE, 0);
+#else
 	net_if_ipv4_addr_add(iface, &addr, NET_ADDR_MANUAL, 0);
+#endif
 
 #if defined(CONFIG_NET_DEBUG_APP) && CONFIG_SYS_LOG_NET_LEVEL > 1
 	NET_INFO("IPv4 address: %s",

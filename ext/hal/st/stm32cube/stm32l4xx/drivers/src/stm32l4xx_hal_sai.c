@@ -734,17 +734,14 @@ __weak void HAL_SAI_MspDeInit(SAI_HandleTypeDef *hsai)
     (+) Blocking mode functions are :
       (++) HAL_SAI_Transmit()
       (++) HAL_SAI_Receive()
-      (++) HAL_SAI_TransmitReceive()
 
     (+) Non Blocking mode functions with Interrupt are :
       (++) HAL_SAI_Transmit_IT()
       (++) HAL_SAI_Receive_IT()
-      (++) HAL_SAI_TransmitReceive_IT()
 
     (+) Non Blocking mode functions with DMA are :
       (++) HAL_SAI_Transmit_DMA()
       (++) HAL_SAI_Receive_DMA()
-      (++) HAL_SAI_TransmitReceive_DMA()
 
     (+) A set of Transfer Complete Callbacks are provided in non Blocking mode:
       (++) HAL_SAI_TxCpltCallback()

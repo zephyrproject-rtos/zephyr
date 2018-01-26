@@ -41,6 +41,24 @@ mapping:
      "harness":
        type: str
        required: no
+     "harness_config":
+       type: map
+       required: no
+       mapping:
+         "type":
+            type: str
+            required: yes
+         "ordered":
+            type: bool
+            required: no
+         "repeat":
+            type: int
+            required: no
+         "regex":
+            type: seq
+            required: yes
+            sequence:
+              - type: str
      "min_ram":
        type: int
        required: no
@@ -136,6 +154,24 @@ mapping:
              "harness":
                type: str
                required: no
+             "harness_config":
+               type: map
+               required: no
+               mapping:
+                 "type":
+                    type: str
+                    required: yes
+                 "ordered":
+                    type: bool
+                    required: no
+                 "repeat":
+                    type: int
+                    required: no
+                 "regex":
+                    type: seq
+                    required: yes
+                    sequence:
+                      - type: str
              "min_ram":
                type: int
                required: no

@@ -27,22 +27,13 @@ if(uname_output MATCHES "MSYS")
   set(MSYS 1)
 endif()
 
-# CMake version 3.8.2 is the only supported version. Version 3.9 is
-# not supported because it introduced a warning that we do not wish to
+# CMake version 3.8.2 is the minimum supported version. Version 3.9 is
+# supported but it introduced a warning that we do not wish to
 # show to users. Specifically, it displays a warning when an OLD
 # policy is used, but we need policy CMP0000 set to OLD to avoid
 # copy-pasting cmake_minimum_required across application
 # CMakeLists.txt files.
-#
-# An exception to the above is MSYS, MSYS is allowed to use 3.6.0
-# because MSYS does not support 3.8, this will be set back to 3.8 when
-# https://github.com/zephyrproject-rtos/zephyr/issues/4687 is
-# resolved.
-if(MSYS)
-  cmake_minimum_required(VERSION 3.6.0)
-else()
-  cmake_minimum_required(VERSION 3.8.2)
-endif()
+cmake_minimum_required(VERSION 3.8.2)
 
 cmake_policy(SET CMP0000 OLD)
 cmake_policy(SET CMP0002 NEW)
@@ -52,6 +43,12 @@ define_property(GLOBAL PROPERTY ZEPHYR_LIBS
     FULL_DOCS  "Global list of all Zephyr CMake libs that should be linked in.
 zephyr_library() appends libs to this list.")
 set_property(GLOBAL PROPERTY ZEPHYR_LIBS "")
+
+define_property(GLOBAL PROPERTY ZEPHYR_INTERFACE_LIBS
+    BRIEF_DOCS "Global list of all Zephyr interface libs that should be linked in."
+    FULL_DOCS  "Global list of all Zephyr interface libs that should be linked in.
+zephyr_interface_library_named() appends libs to this list.")
+set_property(GLOBAL PROPERTY ZEPHYR_INTERFACE_LIBS "")
 
 define_property(GLOBAL PROPERTY GENERATED_KERNEL_OBJECT_FILES
   BRIEF_DOCS "Object files that are generated after Zephyr has been linked once."
@@ -77,24 +74,19 @@ set(__build_dir ${CMAKE_CURRENT_BINARY_DIR}/zephyr)
 set(PROJECT_BINARY_DIR ${__build_dir})
 set(PROJECT_SOURCE_DIR $ENV{ZEPHYR_BASE})
 
+# Convert path to use the '/' separator
+string(REPLACE "\\" "/" PROJECT_SOURCE_DIR ${PROJECT_SOURCE_DIR})
+
 set(ZEPHYR_BINARY_DIR ${PROJECT_BINARY_DIR})
-set(ZEPHYR_SOURCE_DIR ${PROJECT_SOURCE_DIR})
+set(ZEPHYR_BASE ${PROJECT_SOURCE_DIR})
 
 set(AUTOCONF_H ${__build_dir}/include/generated/autoconf.h)
 # Re-configure (Re-execute all CMakeLists.txt code) when autoconf.h changes
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${AUTOCONF_H})
 
-include($ENV{ZEPHYR_BASE}/cmake/extensions.cmake)
+include(${ZEPHYR_BASE}/cmake/extensions.cmake)
 
 find_package(PythonInterp 3.4)
-
-if(NOT ZEPHYR_GCC_VARIANT)
-  set(ZEPHYR_GCC_VARIANT $ENV{ZEPHYR_GCC_VARIANT})
-endif()
-set(ZEPHYR_GCC_VARIANT ${ZEPHYR_GCC_VARIANT} CACHE STRING "Zephyr GCC variant")
-if(NOT ZEPHYR_GCC_VARIANT)
-  message(FATAL_ERROR "ZEPHYR_GCC_VARIANT not set")
-endif()
 
 if(${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_BINARY_DIR})
   message(FATAL_ERROR "Source directory equals build directory.\
@@ -104,9 +96,21 @@ endif()
 
 add_custom_target(
   pristine
-  COMMAND ${CMAKE_COMMAND} -P $ENV{ZEPHYR_BASE}/cmake/pristine.cmake
+  COMMAND ${CMAKE_COMMAND} -P ${ZEPHYR_BASE}/cmake/pristine.cmake
   # Equivalent to rm -rf build/*
   )
+
+# Must be run before kconfig.cmake
+if(MSYS)
+  execute_process(
+    COMMAND
+    ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/check_host_is_ok.py
+    RESULT_VARIABLE ret
+    )
+  if(NOT "${ret}" STREQUAL "0")
+    message(FATAL_ERROR "command failed with return code: ${ret}")
+  endif()
+endif()
 
 # The BOARD can be set by 3 sources. Through environment variables,
 # through the cmake CLI, and through CMakeLists.txt.
@@ -176,7 +180,7 @@ set(CACHED_BOARD ${BOARD} CACHE STRING "Selected board")
 # Use BOARD to search zephyr/boards/** for a _defconfig file,
 # e.g. zephyr/boards/arm/96b_carbon_nrf51/96b_carbon_nrf51_defconfig. When
 # found, use that path to infer the ARCH we are building for.
-find_path(BOARD_DIR NAMES "${BOARD}_defconfig" PATHS $ENV{ZEPHYR_BASE}/boards/*/* NO_DEFAULT_PATH)
+find_path(BOARD_DIR NAMES "${BOARD}_defconfig" PATHS ${ZEPHYR_BASE}/boards/*/* NO_DEFAULT_PATH)
 
 assert_with_usage(BOARD_DIR "No board named '${BOARD}' found")
 
@@ -210,24 +214,17 @@ Multiple files may be listed, e.g. CONF_FILE=\"prj1.conf prj2.conf\"")
 set(CMAKE_C_COMPILER_FORCED   1)
 set(CMAKE_CXX_COMPILER_FORCED 1)
 
-# Determine if the application is in zephyr/tests, if so it is a test
-# and must be built differently
-string(REGEX MATCH "^$ENV{ZEPHYR_BASE}/tests" match ${APPLICATION_SOURCE_DIR})
-if(match)
-  set(IS_TEST 1)
-endif()
-
-include($ENV{ZEPHYR_BASE}/cmake/version.cmake)
-include($ENV{ZEPHYR_BASE}/cmake/host-tools.cmake)
-include($ENV{ZEPHYR_BASE}/cmake/kconfig.cmake)
-include($ENV{ZEPHYR_BASE}/cmake/toolchain.cmake)
+include(${ZEPHYR_BASE}/cmake/version.cmake)
+include(${ZEPHYR_BASE}/cmake/host-tools.cmake)
+include(${ZEPHYR_BASE}/cmake/kconfig.cmake)
+include(${ZEPHYR_BASE}/cmake/toolchain.cmake)
 
 # DTS should be run directly after kconfig because CONFIG_ variables
 # from kconfig and dts should be available at the same time. But
 # running DTS involves running the preprocessor, so we put it behind
 # toolchain. Meaning toolchain.cmake is the only component where
 # kconfig and dts variables aren't available at the same time.
-include($ENV{ZEPHYR_BASE}/dts/dts.cmake)
+include(${ZEPHYR_BASE}/dts/dts.cmake)
 
 set(KERNEL_NAME ${CONFIG_KERNEL_BIN_NAME})
 
@@ -245,5 +242,26 @@ include(${BOARD_DIR}/board.cmake OPTIONAL)
 
 zephyr_library_named(app)
 
-add_subdirectory($ENV{ZEPHYR_BASE} ${__build_dir})
+add_subdirectory(${ZEPHYR_BASE} ${__build_dir})
 
+# Link 'app' with the Zephyr interface libraries.
+#
+# NB: This must be done in boilerplate.cmake because 'app' can only be
+# modified in the CMakeLists.txt file that created it. And it must be
+# done after 'add_subdirectory(${ZEPHYR_BASE} ${__build_dir})'
+# because interface libraries are defined while processing that
+# subdirectory.
+get_property(ZEPHYR_INTERFACE_LIBS_PROPERTY GLOBAL PROPERTY ZEPHYR_INTERFACE_LIBS)
+foreach(boilerplate_lib ${ZEPHYR_INTERFACE_LIBS_PROPERTY})
+  # Linking 'app' with 'boilerplate_lib' causes 'app' to inherit the INTERFACE
+  # properties of 'boilerplate_lib'. The most common property is 'include
+  # directories', but it is also possible to have defines and compiler
+  # flags in the interface of a library.
+  #
+  string(TOUPPER ${boilerplate_lib} boilerplate_lib_upper_case) # Support lowercase lib names
+  target_link_libraries_ifdef(
+    CONFIG_APP_LINK_WITH_${boilerplate_lib_upper_case}
+    app
+    ${boilerplate_lib}
+    )
+endforeach()

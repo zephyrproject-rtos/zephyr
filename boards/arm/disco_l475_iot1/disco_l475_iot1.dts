@@ -64,6 +64,27 @@
 		reg = <0x6a>;
 		label = "LSM6DSL";
 	};
+
+	vl53l0x@29 {
+		compatible = "st,vl53l0x";
+		reg = <0x29>;
+		label = "VL53L0X";
+	};
+};
+
+&spi1 {
+	status = "ok";
+};
+
+&spi3 {
+	status = "ok";
+
+	spbtle-rf@0 {
+		compatible = "st,spbtle-rf";
+		reg = <0>;
+		spi-max-frequency = <8000000>;
+		label = "SPBTLE-RF";
+	};
 };
 
 &flash0 {

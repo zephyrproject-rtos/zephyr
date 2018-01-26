@@ -1,7 +1,7 @@
 GATT PICS
 #########
 
-PTS version: 7.0.1
+PTS version: 7.2.0
 
 \* - different than PTS defaults
 
@@ -20,8 +20,23 @@ Parameter Name	Selected	Description
 ==============	===========	============================================
 TSPC_GATT_1_1	True		Generic Attribute Profile Client (C.1)
 TSPC_GATT_1_2	True		Generic Attribute Profile Server (C.2)
-TSPC_GATT_1A_1	False (*)	Complete GATT client (C.3)
-TSPC_GATT_1A_2	False (*)	Complete GATT server (C.4)
+==============	===========	============================================
+
+
+GATT role configuration
+***********************
+
+==============	===========	============================================
+Parameter Name	Selected	Description
+==============	===========	============================================
+TSPC_GATT_1a_1	True		GATT Client over LE (C.1)
+TSPC_GATT_1a_2	False		GATT Client over BR/EDR (C.2)
+TSPC_GATT_1a_3	True		GATT Server over LE (C.3)
+TSPC_GATT_1a_4	False		GATT Server over BR/EDR (C.4)
+TSPC_GATT_1a_5	False		Complete GATT Client layer over LE (C.5)
+TSPC_GATT_1a_6	False		Complete GATT Client layer over BR/EDR (C.6)
+TSPC_GATT_1a_7	False		Complete GATT Server layer over LE (C.7)
+TSPC_GATT_1a_8	False		Complete GATT Server layer over BR/EDR (C.8)
 ==============	===========	============================================
 
 
@@ -163,7 +178,7 @@ TSPC_GATT_4_20	True		Server: Read long Characteristic
 TSPC_GATT_4_21	True		Server: Write Characteristic Descriptors (C.4)
 TSPC_GATT_4_22	True		Server: Write Long Characteristic
 				Descriptors (C.4)
-TSPC_GATT_4_23	False (*)	Server: Service Changed Characteristic (C.1)
+TSPC_GATT_4_23	True		Server: Service Changed Characteristic (C.1)
 TSPC_GATT_4_24	False (*)	Server: Configured Broadcast (C.5)
 TSPC_GATT_4_25	False (*)	Server: Execute Write Request with empty queue (C.7)
 ==============	===========	============================================

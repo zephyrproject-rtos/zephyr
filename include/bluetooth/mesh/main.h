@@ -218,6 +218,10 @@ int bt_mesh_prov_disable(bt_mesh_prov_bearer_t bearers);
 #define BT_MESH_FEAT_PROXY                  BIT(1)
 #define BT_MESH_FEAT_FRIEND                 BIT(2)
 #define BT_MESH_FEAT_LOW_POWER              BIT(3)
+#define BT_MESH_FEAT_SUPPORTED              (BT_MESH_FEAT_RELAY |   \
+					     BT_MESH_FEAT_PROXY |   \
+					     BT_MESH_FEAT_FRIEND |  \
+					     BT_MESH_FEAT_LOW_POWER)
 
 /** @brief Initialize Mesh support
  *

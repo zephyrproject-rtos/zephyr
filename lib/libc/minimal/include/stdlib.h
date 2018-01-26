@@ -18,6 +18,8 @@ unsigned long int strtoul(const char *str, char **endptr, int base);
 long int strtol(const char *str, char **endptr, int base);
 int atoi(const char *s);
 
+#define abs(x) ((x) < 0 ? -(x) : (x))
+
 #ifdef __cplusplus
 }
 #endif

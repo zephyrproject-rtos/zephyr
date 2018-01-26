@@ -13,4 +13,11 @@ config BOARD
 config BOARD_DEPRECATED
 	default "1.11"
 
+if UART_CONSOLE
+
+config UART_STM32_PORT_1
+	default y
+
+endif # UART_CONSOLE
+
 endif # BOARD_STM32_MINI_A15

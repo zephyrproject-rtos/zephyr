@@ -39,8 +39,12 @@
  * This file contains useful constants and macros for the USB applications.
  */
 
+#include <version.h>
+
 #ifndef USB_COMMON_H_
 #define USB_COMMON_H_
+
+#define BCD(x) ((((x) / 10) << 4) | ((x) / 10))
 
 /* Descriptor size in bytes */
 #define USB_DEVICE_DESC_SIZE		18
@@ -72,7 +76,8 @@
 /* Set USB version to 2.1 so that the host will request the BOS descriptor */
 #define USB_2_1				0x0210
 
-#define BCDDEVICE_RELNUM		0x0100
+#define BCDDEVICE_RELNUM		(BCD(KERNEL_VERSION_MAJOR) << 8 | \
+					BCD(KERNEL_VERSION_MINOR))
 
 /* 100mA max power, per 2mA units */
 /* USB 1.1 spec indicates 100mA(max) per unit load, up to 5 loads */

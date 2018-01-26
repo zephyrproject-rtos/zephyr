@@ -1,0 +1,8 @@
+
+Directory contains all the official libraries provided by STMicroelectronics.
+
+Available libs:
+  * sensor/vl53l0x:
+      allows to drive the vl53l0x sensor
+      full information can be found here : http://www.st.com/en/embedded-software/stsw-img005.html
+  * ...

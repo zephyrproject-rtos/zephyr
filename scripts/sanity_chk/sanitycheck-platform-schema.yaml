@@ -18,6 +18,9 @@ mapping:
   "type":
     type: str
     enum: [ 'mcu', 'qemu', 'sim', 'unit', 'native']
+  "simulation":
+    type: str
+    enum: [ 'qemu', 'simics', 'xt-sim', 'renode']
   "arch":
     type: str
   "toolchain":

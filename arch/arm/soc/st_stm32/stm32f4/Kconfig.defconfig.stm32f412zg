@@ -15,4 +15,21 @@ config NUM_IRQS
 	int
 	default 97
 
+if GPIO_STM32
+
+config GPIO_STM32_PORTF
+	default y
+
+config GPIO_STM32_PORTG
+	default y
+
+endif # GPIO_STM32
+
+if ENTROPY_GENERATOR
+
+config ENTROPY_STM32_RNG
+	def_bool y
+
+endif # ENTROPY_GENERATOR
+
 endif # SOC_STM32F412ZG

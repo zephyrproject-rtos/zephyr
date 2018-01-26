@@ -1,5 +1,3 @@
-/* object_monitor.c - object monitor */
-
 /*
  * Copyright (c) 2016 Intel Corporation.
  *
@@ -7,19 +5,22 @@
  */
 
 #include <zephyr.h>
+#include <ztest.h>
 #include <tc_util.h>
-#include <util_test_common.h>
 #include <debug/object_tracing.h>
 #include "phil.h"
 
 /**
+ * @brief object monitor
  *
- * @brief Thread that traverses, counts and reports
- * the kernel objects in the philosophers application.
+ * Thread that traverses, counts and reports the kernel objects in the
+ * philosophers application.
  *
  */
 
 #define TOTAL_TEST_NUMBER 2
+#define ZTEST_OBJECT_NUM 1
+#define ZTEST_THREADS_CREATED 1
 
 /* 1 IPM console thread if enabled */
 #if defined(CONFIG_IPM_CONSOLE_RECEIVER) && defined(CONFIG_PRINTK)
@@ -38,10 +39,12 @@
 
 void *force_sys_work_q_in = (void *)&k_sys_work_q;
 
-#define TOTAL_THREADS (N_PHILOSOPHERS + 3 + IPM_THREAD)
+#define TOTAL_THREADS (N_PHILOSOPHERS + 3 + IPM_THREAD + ZTEST_THREADS_CREATED)
+#define TOTAL_OBJECTS (N_PHILOSOPHERS + ZTEST_OBJECT_NUM)
 
 #define OBJ_LIST_NAME k_sem
 #define OBJ_LIST_TYPE struct k_sem
+extern struct k_sem f3;
 
 static inline int test_thread_monitor(void)
 {
@@ -49,7 +52,6 @@ static inline int test_thread_monitor(void)
 	struct k_thread *thread_list = NULL;
 
 	/* wait a bit to allow any initialization-only threads to terminate */
-	k_sleep(100);
 
 	thread_list   = (struct k_thread *)SYS_THREAD_MONITOR_HEAD;
 	while (thread_list != NULL) {
@@ -69,25 +71,21 @@ static inline int test_thread_monitor(void)
 		obj_counter++;
 	}
 	TC_PRINT("THREAD QUANTITY: %d\n", obj_counter);
-
-	if (obj_counter == TOTAL_THREADS) {
-		TC_END_RESULT(TC_PASS);
-		return 1;
-	}
-
-	TC_END_RESULT(TC_FAIL);
-	return 0;
+	return obj_counter;
 }
 
 void object_monitor(void)
 {
 	int obj_counter;
-	int test_counter = 0;
+	int thread_counter = 0;
+
 	void *obj_list   = NULL;
 
-	TC_START("OBJECT TRACING TEST");
-
-	obj_counter = 0;
+	k_sem_take(&f3, 0);
+	/* ztest use one semaphore so use one count less than expected to pass
+	 * test
+	 */
+	obj_counter = -1;
 	obj_list   = SYS_TRACING_HEAD(OBJ_LIST_TYPE, OBJ_LIST_NAME);
 	while (obj_list != NULL) {
 		TC_PRINT("SEMAPHORE REF: %p\n", obj_list);
@@ -97,18 +95,8 @@ void object_monitor(void)
 	}
 	TC_PRINT("SEMAPHORE QUANTITY: %d\n", obj_counter);
 
-	if (obj_counter == N_PHILOSOPHERS) {
-		TC_END_RESULT(TC_PASS);
-		test_counter++;
-	} else {
-		TC_END_RESULT(TC_FAIL);
-	}
+	thread_counter += test_thread_monitor();
 
-	test_counter += test_thread_monitor();
-
-	if (test_counter == TOTAL_TEST_NUMBER) {
-		TC_END_REPORT(TC_PASS);
-	} else {
-		TC_END_REPORT(TC_FAIL);
-	}
+	zassert_true(((thread_counter == TOTAL_THREADS) &&
+		   (obj_counter == TOTAL_OBJECTS)), "test failed\n");
 }

@@ -4,6 +4,16 @@ tests:
   test:
     tags: apps
     harness: console
+    # We do not handle segfaults here
+    arch_exclude: posix riscv32 nios2
+    platform_exclude: qemu_cortex_m3
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - "Fatal fault in thread 0x[0-9a-f]+! Aborting."
+        - "STACK_ALIGN.*"
+        - "Canary Initial Value = 0x[0-9a-f]+ threads 0x[0-9a-f]+"
   test_stack_guard:
     arch_whitelist: arm
     extra_args: CONF_FILE=prj_stack_guard.conf

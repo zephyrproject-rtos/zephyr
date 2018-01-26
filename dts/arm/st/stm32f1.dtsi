@@ -23,6 +23,8 @@
 	};
 
 	flash0: flash@8000000 {
+		compatible = "soc-nv-flash";
+		label = "FLASH_STM32";
 		reg = <0x08000000 DT_FLASH_SIZE>;
 	};
 
@@ -98,6 +100,16 @@
 			interrupt-names = "event", "error";
 			status = "disabled";
 			label= "I2C_2";
+		};
+
+		spi1: spi@40013000 {
+			compatible = "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40013000 0x400>;
+			interrupts = <35 5>;
+			status = "disabled";
+			label = "SPI_1";
 		};
 	};
 };

@@ -27,6 +27,10 @@ include(ExternalProject)
 # been committed to the repository.
 set(mylib_src_dir   ${CMAKE_CURRENT_SOURCE_DIR}/mylib)
 set(mylib_build_dir ${CMAKE_CURRENT_BINARY_DIR}/mylib)
+
+set(MYLIB_LIB_DIR     ${mylib_build_dir}/lib)
+set(MYLIB_INCLUDE_DIR ${mylib_src_dir}/include)
+
 ExternalProject_Add(
   mylib_project                 # Name for custom target
   PREFIX     ${mylib_build_dir} # Root dir for entire project
@@ -39,12 +43,11 @@ ExternalProject_Add(
   CC=${CMAKE_C_COMPILER}
   CFLAGS=${external_project_cflags}
   INSTALL_COMMAND ""      # This particular build system has no install command
+  BUILD_BYPRODUCTS ${MYLIB_LIB_DIR}/libmylib.a
   )
-set(MYLIB_INCLUDE_DIR ${mylib_src_dir}/include)
-set(MYLIB_LIB_DIR     ${mylib_build_dir}/lib)
 
 # Create a wrapper CMake library that our app can link with
-add_library(mylib_lib STATIC IMPORTED)
+add_library(mylib_lib STATIC IMPORTED GLOBAL)
 add_dependencies(
   mylib_lib
   mylib_project

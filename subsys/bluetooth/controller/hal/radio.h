@@ -25,7 +25,7 @@ void radio_pkt_rx_set(void *rx_packet);
 void radio_pkt_tx_set(void *tx_packet);
 u32_t radio_tx_ready_delay_get(u8_t phy, u8_t flags);
 u32_t radio_tx_chain_delay_get(u8_t phy, u8_t flags);
-u32_t radio_rx_ready_delay_get(u8_t phy);
+u32_t radio_rx_ready_delay_get(u8_t phy, u8_t flags);
 u32_t radio_rx_chain_delay_get(u8_t phy, u8_t flags);
 void radio_rx_enable(void);
 void radio_tx_enable(void);

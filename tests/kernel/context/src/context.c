@@ -1,5 +1,3 @@
-/* context.c - test context and thread APIs */
-
 /*
  * Copyright (c) 2012-2015 Wind River Systems, Inc.
  *
@@ -7,7 +5,8 @@
  */
 
 /*
- * DESCRIPTION
+ * @brief test context and thread APIs
+ *
  * This module tests the following CPU and thread related routines:
  * k_thread_create, k_yield(), k_is_in_isr(),
  * k_current_get(), k_cpu_idle(), k_cpu_atomic_idle(),
@@ -20,8 +19,6 @@
 #include <arch/cpu.h>
 #include <irq_offload.h>
 #include <ztest.h>
-
-#include <util_test_common.h>
 
 /*
  * Include board.h from platform to get IRQ number.
@@ -68,8 +65,15 @@
  * The Cortex-M use the SYSTICK exception for the system timer, which is
  * not considered an IRQ by the irq_enable/Disable APIs.
  */
-#elif defined(CONFIG_ARCH_POSIX) && defined(CONFIG_BOARD_NATIVE_POSIX)
+#elif defined(CONFIG_ARCH_POSIX)
+#if  defined(CONFIG_BOARD_NATIVE_POSIX)
 #define TICK_IRQ TIMER_TICK_IRQ
+#else
+/*
+ * Other POSIX arch boards will skip the irq_disable() and irq_enable() test
+ * unless TICK_IRQ is defined here for them
+ */
+#endif /* defined(CONFIG_ARCH_POSIX) */
 #else
 /* generate an error */
 #error Timer type is not defined for this platform
@@ -925,6 +929,9 @@ void testing_context(void)
 	rv = test_kernel_interrupts(irq_disable_wrapper, irq_enable_wrapper,
 				    TICK_IRQ);
 	zassert_equal(rv, TC_PASS, "kernel interrpt failure");
+#else
+	TC_PRINT("Test of irq_disable() and irq_enable() skipped "
+		"(TICK_IRQ not defined in this platform)\n");
 #endif
 
 	TC_PRINT("Testing some kernel context routines\n");

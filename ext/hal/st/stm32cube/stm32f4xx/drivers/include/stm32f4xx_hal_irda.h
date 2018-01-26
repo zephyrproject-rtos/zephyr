@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_irda.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    14-April-2017
   * @brief   Header file of IRDA HAL module.
   ******************************************************************************
   * @attention
@@ -294,7 +292,7 @@ typedef struct
   */
 
 /** @brief Reset IRDA handle gstate & RxState
-  * @param  __HANDLE__: specifies the USART Handle.
+  * @param  __HANDLE__ specifies the USART Handle.
   *         This parameter can be USARTx where x: 1, 2, 3, 4, 5, 6, 7 or 8 to select the USART or 
   *         UART peripheral.
   * @retval None
@@ -305,17 +303,17 @@ typedef struct
                                                      } while(0U)
 
 /** @brief  Flushs the IRDA DR register 
-  * @param  __HANDLE__: specifies the USART Handle.
+  * @param  __HANDLE__ specifies the USART Handle.
   *         This parameter can be USARTx where x: 1, 2, 3, 4, 5, 6, 7 or 8 to select the USART or 
   *         UART peripheral.
   */
 #define __HAL_IRDA_FLUSH_DRREGISTER(__HANDLE__) ((__HANDLE__)->Instance->DR)
 
 /** @brief  Checks whether the specified IRDA flag is set or not.
-  * @param  __HANDLE__: specifies the USART Handle.
+  * @param  __HANDLE__ specifies the USART Handle.
   *         This parameter can be USARTx where x: 1, 2, 3, 4, 5, 6, 7 or 8 to select the USART or 
   *         UART peripheral.
-  * @param  __FLAG__: specifies the flag to check.
+  * @param  __FLAG__ specifies the flag to check.
   *        This parameter can be one of the following values:
   *            @arg IRDA_FLAG_TXE:  Transmit data register empty flag
   *            @arg IRDA_FLAG_TC:   Transmission Complete flag
@@ -330,10 +328,10 @@ typedef struct
 #define __HAL_IRDA_GET_FLAG(__HANDLE__, __FLAG__) (((__HANDLE__)->Instance->SR & (__FLAG__)) == (__FLAG__))
 
 /** @brief  Clears the specified IRDA pending flag.
-  * @param  __HANDLE__: specifies the USART Handle.
+  * @param  __HANDLE__ specifies the USART Handle.
   *         This parameter can be USARTx where x: 1, 2, 3, 4, 5, 6, 7 or 8 to select the USART or 
   *         UART peripheral.
-  * @param  __FLAG__: specifies the flag to check.
+  * @param  __FLAG__ specifies the flag to check.
   *          This parameter can be any combination of the following values:
   *            @arg IRDA_FLAG_TC:   Transmission Complete flag.
   *            @arg IRDA_FLAG_RXNE: Receive data register not empty flag.
@@ -352,7 +350,7 @@ typedef struct
 #define __HAL_IRDA_CLEAR_FLAG(__HANDLE__, __FLAG__) ((__HANDLE__)->Instance->SR = ~(__FLAG__))
 
 /** @brief  Clear the IRDA PE pending flag.
-  * @param  __HANDLE__: specifies the USART Handle.
+  * @param  __HANDLE__ specifies the USART Handle.
   *         This parameter can be USARTx where x: 1, 2, 3, 4, 5, 6, 7 or 8 to select the USART or 
   *         UART peripheral.
   * @retval None
@@ -365,7 +363,7 @@ typedef struct
   } while(0U)
                                               
 /** @brief  Clear the IRDA FE pending flag.
-  * @param  __HANDLE__: specifies the USART Handle.
+  * @param  __HANDLE__ specifies the USART Handle.
   *         This parameter can be USARTx where x: 1, 2, 3, 4, 5, 6, 7 or 8 to select the USART or 
   *         UART peripheral.
   * @retval None
@@ -373,7 +371,7 @@ typedef struct
 #define __HAL_IRDA_CLEAR_FEFLAG(__HANDLE__) __HAL_IRDA_CLEAR_PEFLAG(__HANDLE__)
 
 /** @brief  Clear the IRDA NE pending flag.
-  * @param  __HANDLE__: specifies the USART Handle.
+  * @param  __HANDLE__ specifies the USART Handle.
   *         This parameter can be USARTx where x: 1, 2, 3, 4, 5, 6, 7 or 8 to select the USART or 
   *         UART peripheral.
   * @retval None
@@ -381,7 +379,7 @@ typedef struct
 #define __HAL_IRDA_CLEAR_NEFLAG(__HANDLE__) __HAL_IRDA_CLEAR_PEFLAG(__HANDLE__)
 
 /** @brief  Clear the IRDA ORE pending flag.
-  * @param  __HANDLE__: specifies the USART Handle.
+  * @param  __HANDLE__ specifies the USART Handle.
   *         This parameter can be USARTx where x: 1, 2, 3, 4, 5, 6, 7 or 8 to select the USART or 
   *         UART peripheral.
   * @retval None
@@ -389,7 +387,7 @@ typedef struct
 #define __HAL_IRDA_CLEAR_OREFLAG(__HANDLE__) __HAL_IRDA_CLEAR_PEFLAG(__HANDLE__)
 
 /** @brief  Clear the IRDA IDLE pending flag.
-  * @param  __HANDLE__: specifies the USART Handle.
+  * @param  __HANDLE__ specifies the USART Handle.
   *         This parameter can be USARTx where x: 1, 2, 3, 4, 5, 6, 7 or 8 to select the USART or 
   *         UART peripheral.
   * @retval None
@@ -397,10 +395,10 @@ typedef struct
 #define __HAL_IRDA_CLEAR_IDLEFLAG(__HANDLE__) __HAL_IRDA_CLEAR_PEFLAG(__HANDLE__)
 
 /** @brief  Enables or disables the specified IRDA interrupt.
-  * @param  __HANDLE__: specifies the USART Handle.
+  * @param  __HANDLE__ specifies the USART Handle.
   *         This parameter can be USARTx where x: 1, 2, 3, 4, 5, 6, 7 or 8 to select the USART or 
   *         UART peripheral.
-  * @param  __INTERRUPT__: specifies the IRDA interrupt source to check.
+  * @param  __INTERRUPT__ specifies the IRDA interrupt source to check.
   *          This parameter can be one of the following values:
   *            @arg IRDA_IT_TXE:  Transmit Data Register empty interrupt
   *            @arg IRDA_IT_TC:   Transmission complete interrupt
@@ -418,10 +416,10 @@ typedef struct
                                                            ((__HANDLE__)->Instance->CR3 &= ~ ((__INTERRUPT__) & IRDA_IT_MASK)))
     
 /** @brief  Checks whether the specified IRDA interrupt has occurred or not.
-  * @param  __HANDLE__: specifies the USART Handle.
+  * @param  __HANDLE__ specifies the USART Handle.
   *         This parameter can be USARTx where x: 1, 2, 3, 4, 5, 6, 7 or 8 to select the USART or 
   *         UART peripheral.
-  * @param  __IT__: specifies the IRDA interrupt source to check.
+  * @param  __IT__ specifies the IRDA interrupt source to check.
   *          This parameter can be one of the following values:
   *            @arg IRDA_IT_TXE: Transmit Data Register empty interrupt
   *            @arg IRDA_IT_TC:  Transmission complete interrupt
@@ -435,19 +433,19 @@ typedef struct
                                                       (__HANDLE__)->Instance->CR2 : (__HANDLE__)->Instance->CR3)) & (((uint32_t)(__IT__)) & IRDA_IT_MASK))
 
 /** @brief  Macro to enable the IRDA's one bit sample method
-  * @param  __HANDLE__: specifies the IRDA Handle.  
+  * @param  __HANDLE__ specifies the IRDA Handle.  
   * @retval None
   */     
 #define __HAL_IRDA_ONE_BIT_SAMPLE_ENABLE(__HANDLE__) ((__HANDLE__)->Instance->CR3|= USART_CR3_ONEBIT)
 
 /** @brief  Macro to disable the IRDA's one bit sample method
-  * @param  __HANDLE__: specifies the IRDA Handle.  
+  * @param  __HANDLE__ specifies the IRDA Handle.  
   * @retval None
   */      
 #define __HAL_IRDA_ONE_BIT_SAMPLE_DISABLE(__HANDLE__) ((__HANDLE__)->Instance->CR3 &= (uint16_t)~((uint16_t)USART_CR3_ONEBIT))
 
 /** @brief  Enable UART/USART associated to IRDA Handle
-  * @param  __HANDLE__: specifies the IRDA Handle.
+  * @param  __HANDLE__ specifies the IRDA Handle.
   *         IRDA Handle selects the USARTx or UARTy peripheral 
   *         (USART,UART availability and x,y values depending on device).
   * @retval None
@@ -455,7 +453,7 @@ typedef struct
 #define __HAL_IRDA_ENABLE(__HANDLE__)   ((__HANDLE__)->Instance->CR1 |=  USART_CR1_UE)
 
 /** @brief  Disable UART/USART associated to IRDA Handle
-  * @param  __HANDLE__: specifies the IRDA Handle.
+  * @param  __HANDLE__ specifies the IRDA Handle.
   *         IRDA Handle selects the USARTx or UARTy peripheral 
   *         (USART,UART availability and x,y values depending on device).
   * @retval None

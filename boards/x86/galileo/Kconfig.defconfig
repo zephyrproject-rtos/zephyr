@@ -7,9 +7,6 @@ config BUILD_OUTPUT_STRIPPED
 config BOARD
 	default galileo
 
-config PINMUX
-	def_bool y
-
 config I2C
 	def_bool y
 

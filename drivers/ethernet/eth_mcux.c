@@ -92,7 +92,7 @@ struct eth_context {
 static void eth_0_config_func(void);
 
 static enet_rx_bd_struct_t __aligned(ENET_BUFF_ALIGNMENT)
-rx_buffer_desc[CONFIG_ETH_MCUX_TX_BUFFERS];
+rx_buffer_desc[CONFIG_ETH_MCUX_RX_BUFFERS];
 
 static enet_tx_bd_struct_t __aligned(ENET_BUFF_ALIGNMENT)
 tx_buffer_desc[CONFIG_ETH_MCUX_TX_BUFFERS];

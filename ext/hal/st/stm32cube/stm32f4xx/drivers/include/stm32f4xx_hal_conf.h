@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_conf_template.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    14-April-2017
   * @brief   HAL configuration template file. 
   *          This file should be copied to the application folder and renamed
   *          to stm32f4xx_hal_conf.h.
@@ -456,7 +454,7 @@
 #ifdef  USE_FULL_ASSERT
 /**
   * @brief  The assert_param macro is used for function's parameters check.
-  * @param  expr: If expr is false, it calls assert_failed function
+  * @param  expr If expr is false, it calls assert_failed function
   *         which reports the name of the source file and the source
   *         line number of the call that failed. 
   *         If expr is true, it returns no value.

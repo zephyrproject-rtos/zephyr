@@ -17,6 +17,14 @@
 #include <clock_control.h>
 #include <clock_control/stm32_clock_control.h>
 
+#if !defined(CONFIG_SOC_SERIES_STM32L4X) && !defined(CONFIG_SOC_SERIES_STM32F4X)
+#error RNG only available on STM32F4 and STM32L4 series
+#elif defined(CONFIG_SOC_STM32F401XE)
+#error RNG not available on STM32F401 based SoCs
+#elif defined(CONFIG_SOC_STM32F411XE)
+#error RNG not available on STM32F411 based SoCs
+#else
+
 struct entropy_stm32_rng_dev_cfg {
 	struct stm32_pclken pclken;
 };
@@ -152,6 +160,29 @@ static int entropy_stm32_rng_init(struct device *dev)
 	__ASSERT_NO_MSG(dev_data != NULL);
 	__ASSERT_NO_MSG(dev_cfg != NULL);
 
+#if CONFIG_SOC_SERIES_STM32L4X
+	/* Configure PLLSA11 to enable 48M domain */
+	LL_RCC_PLLSAI1_ConfigDomain_48M(LL_RCC_PLLSOURCE_MSI,
+					LL_RCC_PLLM_DIV_1,
+					24, LL_RCC_PLLSAI1Q_DIV_2);
+
+	/* Enable PLLSA1 */
+	LL_RCC_PLLSAI1_Enable();
+
+	/*  Enable PLLSAI1 output mapped on 48MHz domain clock */
+	LL_RCC_PLLSAI1_EnableDomain_48M();
+
+	/* Wait for PLLSA1 ready flag */
+	while (LL_RCC_PLLSAI1_IsReady() != 1) {
+	}
+
+	/*  Write the peripherals independent clock configuration register :
+	 *  choose PLLSAI1 source as the 48 MHz clock is needed for the RNG
+	 *  Linear Feedback Shift Register
+	 */
+	 LL_RCC_SetRNGClockSource(LL_RCC_RNG_CLKSOURCE_PLLSAI1);
+#endif /* CONFIG_SOC_SERIES_STM32L4X */
+
 	dev_data->clock = device_get_binding(STM32_CLOCK_CONTROL_NAME);
 	__ASSERT_NO_MSG(dev_data->clock != NULL);
 
@@ -181,3 +212,5 @@ DEVICE_AND_API_INIT(entropy_stm32_rng, CONFIG_ENTROPY_NAME,
 		    &entropy_stm32_rng_data, &entropy_stm32_rng_config,
 		    PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &entropy_stm32_rng_api);
+
+#endif

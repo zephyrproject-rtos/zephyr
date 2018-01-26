@@ -183,7 +183,7 @@ config KERNEL_DEBUG
 config BOOT_BANNER
 	bool
 	prompt "Boot banner"
-	default n
+	default y
 	depends on CONSOLE_HAS_DRIVER
 	select PRINTK
 	select EARLY_CONSOLE
@@ -208,6 +208,7 @@ config BOOT_DELAY
 
 config BUILD_TIMESTAMP
 	bool
+	default y
 	prompt "Build Timestamp"
 	help
 	  Build timestamp and add it to the boot banner.

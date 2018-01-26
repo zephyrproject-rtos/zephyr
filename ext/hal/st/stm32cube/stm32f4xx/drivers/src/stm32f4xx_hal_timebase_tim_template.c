@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_timebase_tim_template.c 
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    14-April-2017
   * @brief   HAL time base based on the hardware TIM Template.
   *    
   *          This file overrides the native HAL time base functions (defined as weak)
@@ -67,7 +65,7 @@ void TIM6_DAC_IRQHandler(void);
   *         Tick interrupt priority. 
   * @note   This function is called  automatically at the beginning of program after
   *         reset by HAL_Init() or at any time when clock is configured, by HAL_RCC_ClockConfig(). 
-  * @param  TickPriority: Tick interrupt priority.
+  * @param  TickPriority Tick interrupt priority.
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_InitTick (uint32_t TickPriority)
@@ -155,7 +153,7 @@ void HAL_ResumeTick(void)
   * @note   This function is called  when TIM6 interrupt took place, inside
   * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
   * a global variable "uwTick" used as application time base.
-  * @param  htim : TIM handle
+  * @param  htim  TIM handle
   * @retval None
   */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)

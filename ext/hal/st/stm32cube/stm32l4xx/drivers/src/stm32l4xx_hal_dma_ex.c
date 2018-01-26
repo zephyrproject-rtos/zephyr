@@ -94,8 +94,8 @@
  ===============================================================================
     [..]  This section provides functions allowing to:
 
-    (+) Configure the DMA_MUX Synchronization Block using HAL_DMAEx_ConfigMuxSync function.
-    (+) Configure the DMA_MUX Request Generator Block using HAL_DMAEx_ConfigMuxRequestGenerator function.
+    (+) Configure the DMAMUX Synchronization Block using HAL_DMAEx_ConfigMuxSync function.
+    (+) Configure the DMAMUX Request Generator Block using HAL_DMAEx_ConfigMuxRequestGenerator function.
        Functions HAL_DMAEx_EnableMuxRequestGenerator and HAL_DMAEx_DisableMuxRequestGenerator can then be used
        to respectively enable/disable the request generator.
 

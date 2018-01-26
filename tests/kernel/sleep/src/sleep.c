@@ -23,8 +23,6 @@
 #include <irq_offload.h>
 #include <stdbool.h>
 
-#include <util_test_common.h>
-
 #if defined(CONFIG_ASSERT) && defined(CONFIG_DEBUG)
 #define THREAD_STACK    (384 + CONFIG_TEST_EXTRA_STACKSIZE)
 #else

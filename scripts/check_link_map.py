@@ -59,7 +59,7 @@ for line in fileinput.input():
             last_sec = None
             continue
 
-        if last_sec != None:
+        if last_sec is not None:
             dv = vma - last_vma
             dl = lma - last_lma
             if dv != dl:

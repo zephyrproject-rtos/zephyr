@@ -16,5 +16,27 @@ config NUM_IRQS
 	int
 	default 91
 
+if GPIO_STM32
+
+config GPIO_STM32_PORTD
+	def_bool y
+
+config GPIO_STM32_PORTE
+	default y
+
+config GPIO_STM32_PORTF
+	default y
+
+config GPIO_STM32_PORTG
+	default y
+
+config GPIO_STM32_PORTH
+	default y
+
+config GPIO_STM32_PORTI
+	default y
+
+endif # GPIO_STM32
+
 endif # SOC_STM32L496XG
 

@@ -99,10 +99,13 @@
  * their shell commands are automatically initialized by the kernel.
  */
 
-#define	SHELL_INIT_SECTIONS()		\
-		__shell_cmd_start = .;		\
-		KEEP(*(".shell_*"));		\
-		__shell_cmd_end = .;
+#define	SHELL_INIT_SECTIONS()				\
+		__shell_module_start = .;		\
+		KEEP(*(".shell_module_*"));		\
+		__shell_module_end = .;			\
+		__shell_cmd_start = .;			\
+		KEEP(*(".shell_cmd_*"));		\
+		__shell_cmd_end = .;			\
 
 #ifdef CONFIG_APPLICATION_MEMORY
 
@@ -115,8 +118,8 @@
    archives like KBuild did.*/
 #endif
 
-#define X(i, j)  KERNEL_OBJECT_FILE_##i (j)
-#define Y(i, j) *KERNEL_OBJECT_FILE_##i
+#define X(i, j) KERNEL_OBJECT_FILE_##i (j)
+#define Y(i, j) KERNEL_OBJECT_FILE_##i
 
 #define KERNEL_INPUT_SECTION(sect) \
     UTIL_LISTIFY(NUM_KERNEL_OBJECT_FILES, X, sect)

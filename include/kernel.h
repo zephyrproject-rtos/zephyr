@@ -1138,7 +1138,7 @@ static inline s64_t __ticks_to_ms(s64_t ticks)
 #endif
 
 #else
-	__ASSERT(ticks == 0, "");
+	__ASSERT(ticks == 0, "ticks not zero");
 	return 0;
 #endif
 }
@@ -3659,6 +3659,18 @@ extern int k_mem_pool_alloc(struct k_mem_pool *pool, struct k_mem_block *block,
  * @return N/A
  */
 extern void k_mem_pool_free(struct k_mem_block *block);
+
+/**
+ * @brief Free memory allocated from a memory pool.
+ *
+ * This routine releases a previously allocated memory block back to its
+ * memory pool
+ *
+ * @param id Memory block identifier.
+ *
+ * @return N/A
+ */
+extern void k_mem_pool_free_id(struct k_mem_block_id *id);
 
 /**
  * @} end addtogroup mem_pool_apis

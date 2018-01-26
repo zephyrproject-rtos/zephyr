@@ -177,6 +177,7 @@ import xml.etree.ElementTree as ET
 from xml.sax.saxutils import escape
 from collections import OrderedDict
 from itertools import islice
+from functools import cmp_to_key
 
 import logging
 from sanity_chk import scl
@@ -215,7 +216,6 @@ else:
     COLOR_RED = ""
     COLOR_GREEN = ""
     COLOR_YELLOW = ""
-
 
 class SanityCheckException(Exception):
     pass
@@ -274,12 +274,20 @@ def verbose(what):
     if VERBOSE >= 2:
         info(what)
 
+class HarnessImporter:
+
+    def __init__(self, name):
+        sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/sanity_chk"))
+        module = __import__("harness")
+        if name:
+            my_class = getattr(module, name)
+        else:
+            my_class = getattr(module, "Test")
+
+        self.instance = my_class()
 
 class Handler:
-    RUN_PASSED = "PROJECT EXECUTION SUCCESSFUL"
-    RUN_FAILED = "PROJECT EXECUTION FAILED"
-
-    def __init__(self, name, outdir, log_fn, timeout, unit=False):
+    def __init__(self, instance):
         """Constructor
 
         @param name Arbitrary name of the created thread
@@ -295,7 +303,6 @@ class Handler:
         self.metrics["handler_time"] = 0
         self.metrics["ram_size"] = 0
         self.metrics["rom_size"] = 0
-        self.unit = unit
 
     def set_state(self, state, metrics):
         self.lock.acquire()
@@ -310,7 +317,7 @@ class Handler:
         return ret
 
 class NativeHandler(Handler):
-    def __init__(self, name, sourcedir, outdir, run_log, valgrind_log, timeout):
+    def __init__(self, instance):
         """Constructor
 
         @param name Arbitrary name of the created thread
@@ -320,58 +327,72 @@ class NativeHandler(Handler):
         @param timeout Kill the QEMU process if it doesn't finish up within
             the given number of seconds
         """
-        super().__init__(name, outdir, run_log, timeout, True)
+        super().__init__(instance)
 
-        self.timeout = timeout
-        self.sourcedir = sourcedir
-        self.outdir = outdir
-        self.run_log = run_log
+        self.instance = instance
+        self.timeout = instance.test.timeout
+        self.sourcedir = instance.test.code_location
+        self.outdir = instance.outdir
+        self.run_log = os.path.join(self.outdir, "run.log")
+        self.valgrind_log = os.path.join(self.outdir, "valgrind.log")
         self.valgrind = False
-        self.valgrind_log = valgrind_log
         self.returncode = 0
         self.set_state("running", {})
+
+    def _output_reader(self, proc, harness):
+        log_out_fp = open(self.run_log, "wt")
+        for line in iter(proc.stdout.readline, b''):
+            verbose("NATIVE: {0}".format(line.decode('utf-8').rstrip()))
+            log_out_fp.write(line.decode('utf-8'))
+            log_out_fp.flush()
+            harness.handle(line.decode('utf-8').rstrip())
+            if harness.state:
+                proc.terminate()
+                break
+
+        log_out_fp.close()
 
     def handle(self):
         out_state = "failed"
 
-        with open(self.run_log, "wt") as rl, open(self.valgrind_log, "wt") as vl:
-            try:
-                binary = os.path.join(self.outdir, "zephyr", "zephyr.exe")
-                command = [binary]
-                if shutil.which("valgrind") and self.valgrind:
-                    command = ["valgrind", "--error-exitcode=2",
-                               "--leak-check=full"] + command
-                returncode = subprocess.call(command, timeout=self.timeout,
-                                             stdout=rl, stderr=vl)
-                self.returncode = returncode
-                if returncode != 0:
-                    if self.returncode == 1:
-                        out_state = "failed"
-                    else:
-                        out_state = "failed valgrind"
+        harness_name = self.instance.test.harness.capitalize()
+        harness_import = HarnessImporter(harness_name)
+        harness = harness_import.instance
+        harness.configure(self.instance)
 
-            except subprocess.TimeoutExpired:
+        binary = os.path.join(self.outdir, "zephyr", "zephyr.exe")
+        command = [binary]
+        if shutil.which("valgrind") and self.valgrind:
+            command = ["valgrind", "--error-exitcode=2",
+                       "--leak-check=full"] + command
+
+        with subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as proc:
+            t = threading.Thread(target=self._output_reader, args=(proc, harness, ))
+            t.start()
+            t.join(self.timeout)
+            if t.is_alive():
+                proc.terminate()
                 out_state = "timeout"
-                self.returncode = 1
+                t.join()
 
-        with open(self.run_log, "r") as rl:
-            for line in rl.readlines():
-                line = line.strip()
-                if line == self.RUN_PASSED:
-                    out_state = "passed"
-                    break
-
-                if line == self.RUN_FAILED:
+            proc.wait()
+            self.returncode = proc.returncode
+            if proc.returncode != 0:
+                if self.returncode == 1:
                     out_state = "failed"
-                    break
+                else:
+                    out_state = "failed valgrind"
 
-        returncode = subprocess.call(["GCOV_PREFIX=" + self.outdir, "gcov", self.sourcedir, "-s", self.outdir], shell=True)
+        returncode = subprocess.call(["GCOV_PREFIX=" + self.outdir, "gcov", self.sourcedir, "-b", "-s", self.outdir], shell=True)
 
-        self.set_state(out_state, {})
+        if harness.state:
+            self.set_state(harness.state, {})
+        else:
+            self.set_state(out_state, {})
+
 
 class UnitHandler(Handler):
-    def __init__(self, name, sourcedir, outdir,
-                 run_log, valgrind_log, timeout):
+    def __init__(self, instance):
         """Constructor
 
         @param name Arbitrary name of the created thread
@@ -381,13 +402,13 @@ class UnitHandler(Handler):
         @param timeout Kill the QEMU process if it doesn't finish up within
             the given number of seconds
         """
-        super().__init__(name, outdir, run_log, timeout, True)
+        super().__init__(instance)
 
-        self.timeout = timeout
-        self.sourcedir = sourcedir
-        self.outdir = outdir
-        self.run_log = run_log
-        self.valgrind_log = valgrind_log
+        self.timeout = instance.test.timeout
+        self.sourcedir = instance.test.code_location
+        self.outdir = instance.outdir
+        self.run_log = os.path.join(self.outdir, "run.log")
+        self.valgrind_log = os.path.join(self.outdir, "valgrind.log")
         self.returncode = 0
         self.set_state("running", {})
 
@@ -431,7 +452,7 @@ class QEMUHandler(Handler):
     """
 
     @staticmethod
-    def _thread(handler, timeout, outdir, logfile, fifo_fn, pid_fn, results):
+    def _thread(handler, timeout, outdir, logfile, fifo_fn, pid_fn, results, harness):
         fifo_in = fifo_fn + ".in"
         fifo_out = fifo_fn + ".out"
 
@@ -485,12 +506,9 @@ class QEMUHandler(Handler):
             line = line.strip()
             verbose("QEMU: %s" % line)
 
-            if line == handler.RUN_PASSED:
-                out_state = "passed"
-                break
-
-            if line == handler.RUN_FAILED:
-                out_state = "failed"
+            harness.handle(line)
+            if harness.state:
+                out_state = harness.state
                 break
 
             # TODO: Add support for getting numerical performance data
@@ -518,7 +536,7 @@ class QEMUHandler(Handler):
         os.unlink(fifo_in)
         os.unlink(fifo_out)
 
-    def __init__(self, name, outdir, log_fn, timeout):
+    def __init__(self, instance):
         """Constructor
 
         @param name Arbitrary name of the created thread
@@ -528,22 +546,34 @@ class QEMUHandler(Handler):
         @param timeout Kill the QEMU process if it doesn't finish up within
             the given number of seconds
         """
-        super().__init__(name, outdir, log_fn, timeout)
+
+
+        super().__init__(instance)
+        outdir = instance.outdir
+        timeout = instance.test.timeout
+        name = instance.name
+        run_log = os.path.join(outdir, "run.log")
+        qemu_log = os.path.join(outdir, "qemu.log")
+
         self.results = {}
 
         # We pass this to QEMU which looks for fifos with .in and .out
         # suffixes.
-        self.fifo_fn = os.path.join(outdir, "qemu-fifo")
+        self.fifo_fn = os.path.join(instance.outdir, "qemu-fifo")
 
-        self.pid_fn = os.path.join(outdir, "qemu.pid")
+        self.pid_fn = os.path.join(instance.outdir, "qemu.pid")
         if os.path.exists(self.pid_fn):
             os.unlink(self.pid_fn)
 
-        self.log_fn = log_fn
+        self.log_fn = qemu_log
+
+        harness_import = HarnessImporter(instance.test.harness.capitalize())
+        harness = harness_import.instance
+        harness.configure(instance)
         self.thread = threading.Thread(name=name, target=QEMUHandler._thread,
                                        args=(self, timeout, outdir,
                                              self.log_fn, self.fifo_fn,
-                                             self.pid_fn, self.results))
+                                             self.pid_fn, self.results, harness))
         self.thread.daemon = True
         verbose("Spawning QEMU process for %s" % name)
         self.thread.start()
@@ -753,6 +783,7 @@ class MakeGenerator:
 
     MAKE_RULE_TMPL = """\t@echo sanity_test_{phase} {goal} >&2
 \tcmake  \\
+\t\t-G"{generator}"\\
 \t\t-H{directory}\\
 \t\t-B{outdir}\\
 \t\t-DEXTRA_CFLAGS="-Werror {cflags}"\\
@@ -760,8 +791,8 @@ class MakeGenerator:
 \t\t-DEXTRA_LDFLAGS="{ldflags}"\\
 \t\t{args}\\
 \t\t>{logfile} 2>&1
-\t$(MAKE) -C {outdir}\\
-\t\tVERBOSE={verb} {make_args}\\
+\t{generator_cmd} -C {outdir}\\
+\t\t{verb} {make_args}\\
 \t\t>>{logfile} 2>&1
 """
 
@@ -796,7 +827,6 @@ class MakeGenerator:
         @param      args Arguments given to CMake
         @param make_args Arguments given to the Makefile generated by CMake
         """
-        verb = "1" if VERBOSE else "0"
         args = " ".join(["-D{}".format(a) for a in args])
         ldflags = ""
 
@@ -811,7 +841,18 @@ class MakeGenerator:
         if not "native_posix" in args:
             ldflags="-Wl,--fatal-warnings"
 
+        if options.ninja:
+            generator = "Ninja"
+            generator_cmd = "ninja"
+            verb = "-v" if VERBOSE else ""
+        else:
+            generator = "Unix Makefiles"
+            generator_cmd = "$(MAKE)"
+            verb = "VERBOSE=1" if VERBOSE else "VERBOSE=0"
+
         return MakeGenerator.MAKE_RULE_TMPL.format(
+            generator=generator,
+            generator_cmd=generator_cmd,
             phase=phase,
             goal=name,
             outdir=outdir,
@@ -830,6 +871,11 @@ class MakeGenerator:
     def _add_goal(self, outdir):
         if not os.path.exists(outdir):
             os.makedirs(outdir)
+
+    def add_instance_build_goal(self, instance, args, buildlog, make_args=""):
+
+        self.add_build_goal(instance.name, instance.test.code_location,
+                instance.outdir, args, buildlog, make_args)
 
     def add_build_goal(self, name, directory, outdir,
                        args, buildlog, make_args=""):
@@ -866,7 +912,7 @@ class MakeGenerator:
             None,
             None)
 
-    def add_qemu_goal(self, name, directory, outdir, args, timeout=30):
+    def add_qemu_goal(self, instance, args):
         """Add a goal to build a Zephyr project and then run it under QEMU
 
         The generated make goal invokes Make twice, the first time it will
@@ -886,12 +932,16 @@ class MakeGenerator:
             to run before automatically killing it. Default is 30 seconds.
         """
 
-        self._add_goal(outdir)
+        name = instance.name
+        directory = instance.test.code_location
+        outdir = instance.outdir
+
         build_logfile = os.path.join(outdir, "build.log")
         run_logfile = os.path.join(outdir, "run.log")
         qemu_logfile = os.path.join(outdir, "qemu.log")
+        self._add_goal(outdir)
 
-        qemu_handler = QEMUHandler(name, outdir, qemu_logfile, timeout)
+        qemu_handler = QEMUHandler(instance)
         args.append("QEMU_PIPE=%s" % qemu_handler.get_fifo())
         text = (self._get_rule_header(name) +
                 self._get_sub_make(name, "building", directory,
@@ -903,8 +953,12 @@ class MakeGenerator:
         self.goals[name] = MakeGoal(name, text, qemu_handler, self.logfile, build_logfile,
                                     run_logfile, qemu_logfile)
 
-    def add_unit_goal(self, name, directory, outdir,
-                      args, timeout=30, coverage=False):
+    def add_unit_goal(self, instance, args, timeout=30, coverage=False):
+        outdir = instance.outdir
+        timeout = instance.test.timeout
+        name = instance.name
+        directory = instance.test.code_location
+
         self._add_goal(outdir)
         build_logfile = os.path.join(outdir, "build.log")
         run_logfile = os.path.join(outdir, "run.log")
@@ -917,11 +971,17 @@ class MakeGenerator:
                 self._get_sub_make(name, "building", directory,
                                    outdir, build_logfile, args) +
                 self._get_rule_footer(name))
-        unit_handler = UnitHandler(name, directory, outdir, run_logfile, valgrind_logfile, timeout)
+        unit_handler = UnitHandler(instance)
         self.goals[name] = MakeGoal(name, text, unit_handler, self.logfile, build_logfile,
                                     run_logfile, valgrind_logfile)
 
-    def add_native_goal(self, name, directory, outdir, args, timeout=30, coverage=False):
+    def add_native_goal(self, instance, args, coverage=False):
+
+        outdir = instance.outdir
+        timeout = instance.test.timeout
+        name = instance.name
+        directory = instance.test.code_location
+
         self._add_goal(outdir)
         build_logfile = os.path.join(outdir, "build.log")
         run_logfile = os.path.join(outdir, "run.log")
@@ -932,7 +992,7 @@ class MakeGenerator:
                 self._get_sub_make(name, "building", directory,
                                    outdir, build_logfile, args) +
                 self._get_rule_footer(name))
-        native_handler = NativeHandler(name, directory, outdir, run_logfile, valgrind_logfile, timeout)
+        native_handler = NativeHandler(instance)
         self.goals[name] = MakeGoal(name, text, native_handler, self.logfile, build_logfile,
                                     run_logfile, valgrind_logfile)
 
@@ -952,17 +1012,13 @@ class MakeGenerator:
         args.extend(extra_args)
         if (ti.platform.qemu_support and (not ti.build_only) and
                 (not build_only) and (enable_slow or not ti.test.slow)):
-            self.add_qemu_goal(ti.name, ti.test.code_location, ti.outdir,
-                               args, ti.test.timeout)
+            self.add_qemu_goal(ti, args)
         elif ti.test.type == "unit":
-            self.add_unit_goal(ti.name, ti.test.code_location, ti.outdir,
-                               args, ti.test.timeout, coverage)
+            self.add_unit_goal(ti, args, coverage)
         elif ti.platform.type == "native" and (not ti.build_only) and (not build_only):
-            self.add_native_goal(ti.name, ti.test.code_location, ti.outdir,
-                               args, ti.test.timeout, coverage)
+            self.add_native_goal(ti, args, coverage)
         else:
-            self.add_build_goal(ti.name, ti.test.code_location, ti.outdir,
-                                args, "build.log")
+            self.add_instance_build_goal(ti, args, "build.log")
 
     def execute(self, callback_fn=None, context=None):
         """Execute all the registered build goals
@@ -1017,8 +1073,7 @@ class MakeGenerator:
 
                     if state == "finished":
                         if goal.handler:
-                            if goal.handler.unit:
-                                # We can't run unit tests with Make
+                            if hasattr(goal.handler, "handle"):
                                 goal.handler.handle()
                                 if goal.handler.returncode == 2:
                                     goal.handler_log = goal.handler.valgrind_log
@@ -1052,10 +1107,6 @@ class MakeGenerator:
 
 # XXX Be sure to update __doc__ if you change any of this!!
 
-arch_valid_keys = {"name": {"type": "str", "required": True},
-                   "platforms": {"type": "list", "required": True},
-                   "supported_toolchains": {"type": "list", "required": True}}
-
 platform_valid_keys = {"qemu_support": {"type": "bool", "default": False},
                        "supported_toolchains": {"type": "list", "default": []}}
 
@@ -1079,7 +1130,8 @@ testcase_valid_keys = {"tags": {"type": "set", "required": False},
                        "toolchain_exclude": {"type": "set"},
                        "toolchain_whitelist": {"type": "set"},
                        "filter": {"type": "str"},
-                       "harness": {"type": "str"}
+                       "harness": {"type": "str"},
+                       "harness_config": {"type": "map"}
                        }
 
 
@@ -1132,6 +1184,8 @@ class SanityConfigParser:
             else:
                 return set(vs)
 
+        elif typestr.startswith("map"):
+            return value
         else:
             raise ConfigurationError(
                 self.filename, "unknown type '%s'" % value)
@@ -1239,9 +1293,10 @@ class Platform:
             for item in supp_feature.split(":"):
                 self.supported.add(item)
 
-        self.qemu_support = True if data.get('type', "na") == 'qemu' else False
+        self.qemu_support = True if data.get('simulation', "na") == 'qemu' else False
         self.arch = data['arch']
         self.type = data.get('type', "na")
+        self.simulation = data.get('simulation', "na")
         self.supported_toolchains = data.get("toolchain", [])
         self.defconfig = None
         pass
@@ -1310,6 +1365,7 @@ class TestCase:
         self.tc_filter = tc_dict["filter"]
         self.timeout = tc_dict["timeout"]
         self.harness = tc_dict["harness"]
+        self.harness_config = tc_dict["harness_config"]
         self.build_only = tc_dict["build_only"]
         self.build_on_all = tc_dict["build_on_all"]
         self.slow = tc_dict["slow"]
@@ -1343,9 +1399,7 @@ class TestInstance:
         self.platform = platform
         self.name = os.path.join(platform.name, test.name)
         self.outdir = os.path.join(base_outdir, platform.name, test.path)
-        # TODO: Support harness in sanitycheck, now we do not run on anything
-        # that requires a harness
-        self.build_only = build_only or test.build_only or (test.harness != '')
+        self.build_only = build_only or test.build_only or (test.harness and test.harness != 'console')
 
     def create_overlay(self):
         if len(self.test.extra_configs) > 0:
@@ -1430,17 +1484,19 @@ class TestSuite:
                 try:
                     parsed_data = SanityConfigParser(
                         yaml_path, self.yaml_tc_schema)
-                except RuntimeError as e:
-                    error("E: %s: can't load: %s" % (yaml_path, e))
 
-                workdir = os.path.relpath(dirpath, testcase_root)
+                    workdir = os.path.relpath(dirpath, testcase_root)
 
-                for name in parsed_data.tests.keys():
-                    tc_dict = parsed_data.get_test(name, testcase_valid_keys)
-                    tc = TestCase(testcase_root, workdir, name, tc_dict,
-                                  yaml_path)
+                    for name in parsed_data.tests.keys():
+                        tc_dict = parsed_data.get_test(name, testcase_valid_keys)
+                        tc = TestCase(testcase_root, workdir, name, tc_dict,
+                                      yaml_path)
 
-                    self.testcases[tc.name] = tc
+                        self.testcases[tc.name] = tc
+
+                except Exception as e:
+                    error("E: %s: can't load (skipping): %s" % (yaml_path, e))
+
 
         for board_root in board_root_list:
             board_root = os.path.abspath(board_root)
@@ -1500,19 +1556,20 @@ class TestSuite:
                 instance_list.append(instance)
             self.add_instances(instance_list)
 
-    def apply_filters(self, args, toolchain):
+    def apply_filters(self):
 
+        toolchain = os.environ.get("ZEPHYR_GCC_VARIANT", None)
         instances = []
         discards = {}
-        platform_filter = args.platform
-        last_failed = args.only_failed
-        testcase_filter = args.test
-        arch_filter = args.arch
-        tag_filter = args.tag
-        exclude_tag = args.exclude_tag
-        config_filter = args.config
-        extra_args = args.extra_args
-        all_plats = args.all
+        platform_filter = options.platform
+        last_failed = options.only_failed
+        testcase_filter = options.test
+        arch_filter = options.arch
+        tag_filter = options.tag
+        exclude_tag = options.exclude_tag
+        config_filter = options.config
+        extra_args = options.extra_args
+        all_plats = options.all
 
         verbose("platform filter: " + str(platform_filter))
         verbose("    arch_filter: " + str(arch_filter))
@@ -1617,11 +1674,10 @@ class TestSuite:
                             "/")[-1]] = os.path.join(o, "zephyr", ".config")
                         goal = "_".join([plat.name, "_".join(
                             tc.name.split("/")), "config-sanitycheck"])
-                        mg.add_build_goal(
-                            goal, os.path.join(
-                                ZEPHYR_BASE, tc.code_location),
-                            o, args, "config-sanitycheck.log",
-                            make_args="config-sanitycheck")
+                        mg.add_build_goal(goal,
+                                os.path.join(ZEPHYR_BASE, tc.code_location),
+                                o, args,
+                                "config-sanitycheck.log", make_args="config-sanitycheck")
 
         info("Building testcase defconfigs...")
         results = mg.execute(defconfig_cb)
@@ -1732,7 +1788,11 @@ class TestSuite:
                         discards[instance] = "Excluded tags per platform"
                         continue
 
-                    defconfig = {"ARCH": arch.name, "PLATFORM": plat.name}
+                    defconfig = {
+                            "ASSERT": 1 if options.enable_asserts else 0,
+                            "ARCH": arch.name,
+                            "PLATFORM": plat.name
+                            }
                     defconfig.update(os.environ)
                     for p, tdefconfig in tc.defconfig.items():
                         if p == plat:
@@ -1875,7 +1935,7 @@ class TestSuite:
                                 lower_better))
         return results
 
-    def testcase_xunit_report(self, filename, duration, args):
+    def testcase_xunit_report(self, filename, duration):
         if self.goals is None:
             raise SanityRuntimeError("execute() hasn't been run!")
 
@@ -1894,7 +1954,7 @@ class TestSuite:
 
         run = "Sanitycheck"
         eleTestsuite = None
-        append = args.only_failed
+        append = options.only_failed
 
         if os.path.exists(filename) and append:
             tree = ET.parse(filename)
@@ -1931,17 +1991,15 @@ class TestSuite:
                     'failure',
                     type="failure",
                     message=goal.reason)
-                p = ("%s/%s/%s" % (args.outdir, i.platform.name, i.test.name))
+                p = ("%s/%s/%s" % (options.outdir, i.platform.name, i.test.name))
                 bl = os.path.join(p, "build.log")
                 if goal.reason != 'build_error':
                     bl = os.path.join(p, "qemu.log")
 
                 if os.path.exists(bl):
-                    with open(bl, "r") as f:
-                        log = f.read()
-                        ansi_escape = re.compile(r'\x1b[^m]*m')
-                        output = ansi_escape.sub('', str(log))
-                        failure.text = (escape(output))
+                    with open(bl, "rb") as f:
+                        log = f.read().decode("utf-8")
+                        failure.text = log
 
         result = ET.tostring(eleTestsuites)
         f = open(filename, 'wb')
@@ -2045,6 +2103,11 @@ def parse_arguments():
         "3/5 means run the 3rd fifth of the total. "
         "This option is useful when running a large number of tests on "
         "different hosts to speed up execution time.")
+
+    parser.add_argument(
+        "-N", "--ninja", action="store_true",
+        help="Use the Ninja generator with CMake")
+
     parser.add_argument(
         "-y", "--dry-run", action="store_true",
         help="Create the filtered list of test cases, but don't actually "
@@ -2270,7 +2333,7 @@ def generate_coverage(outdir, ignores):
                 ["lcov", "--remove", coveragefile, i, "--output-file",
                  coveragefile],
                 stdout=coveragelog)
-        subprocess.call(["genhtml", "-output-directory",
+        subprocess.call(["genhtml", "--legend", "-output-directory",
                          os.path.join(outdir, "coverage"),
                          coveragefile, ztestfile], stdout=coveragelog)
 
@@ -2278,51 +2341,58 @@ def generate_coverage(outdir, ignores):
 def main():
     start_time = time.time()
     global VERBOSE, INLINE_LOGS, CPU_COUNTS, log_file
-    args = parse_arguments()
-    toolchain = os.environ.get("ZEPHYR_GCC_VARIANT", None)
+    global options
+    options = parse_arguments()
 
-    if args.size:
-        for fn in args.size:
+    if options.size:
+        for fn in options.size:
             size_report(SizeCalculator(fn, []))
         sys.exit(0)
 
-    VERBOSE += args.verbose
-    INLINE_LOGS = args.inline_logs
-    if args.log_file:
-        log_file = open(args.log_file, "w")
-    if args.jobs:
-        CPU_COUNTS = args.jobs
+    VERBOSE += options.verbose
+    INLINE_LOGS = options.inline_logs
+    if options.log_file:
+        log_file = open(options.log_file, "w")
+    if options.jobs:
+        CPU_COUNTS = options.jobs
 
-    if args.subset:
-        subset, sets = args.subset.split("/")
+    if options.subset:
+        subset, sets = options.subset.split("/")
         if int(subset) > 0 and int(sets) >= int(subset):
             info("Running only a subset: %s/%s" % (subset, sets))
         else:
-            error("You have provided a wrong subset value: %s." % args.subset)
+            error("You have provided a wrong subset value: %s." % options.subset)
             return
 
-    if os.path.exists(args.outdir) and not args.no_clean:
-        info("Cleaning output directory " + args.outdir)
-        shutil.rmtree(args.outdir)
+    if os.path.exists(options.outdir) and not options.no_clean:
+        info("Cleaning output directory " + options.outdir)
+        shutil.rmtree(options.outdir)
 
-    if not args.testcase_root:
-        args.testcase_root = [os.path.join(ZEPHYR_BASE, "tests"),
+    if not options.testcase_root:
+        options.testcase_root = [os.path.join(ZEPHYR_BASE, "tests"),
                               os.path.join(ZEPHYR_BASE, "samples")]
 
-    ts = TestSuite(args.board_root, args.testcase_root,
-                   args.outdir, args.coverage)
+    ts = TestSuite(options.board_root, options.testcase_root,
+                   options.outdir, options.coverage)
 
     discards = []
-    if args.load_tests:
-        ts.load_from_file(args.load_tests)
+    if options.load_tests:
+        ts.load_from_file(options.load_tests)
     else:
-        discards = ts.apply_filters(args, toolchain)
+        discards = ts.apply_filters()
 
-    if args.discard_report:
-        ts.discard_report(args.discard_report)
+    if options.discard_report:
+        ts.discard_report(options.discard_report)
 
-    if VERBOSE > 1:
+    if VERBOSE > 1 and discards:
+        # if we are using command line platform filter, no need to list every
+        # other platform as excluded, we know that already.
+        # Show only the discards that apply to the selected platforms on the
+        # command line
+
         for i, reason in discards.items():
+            if options.platform and i.platform.name not in options.platform:
+                continue
             debug(
                 "{:<25} {:<50} {}SKIPPED{}: {}".format(
                     i.platform.name,
@@ -2331,15 +2401,24 @@ def main():
                     COLOR_NORMAL,
                     reason))
 
-    ts.instances = OrderedDict(
-        sorted(ts.instances.items(), key=lambda t: t[0]))
 
-    if args.save_tests:
-        ts.run_report(args.save_tests)
+    def native_posix_first(a, b):
+        if a[0].startswith('native_posix'):
+            return -1
+        if b[0].startswith('native_posix'):
+            return 1
+        return (a > b) - (a < b)
+
+    ts.instances = OrderedDict(sorted(ts.instances.items(),
+                               key=cmp_to_key(native_posix_first)))
+
+    if options.save_tests:
+        ts.run_report(options.save_tests)
         return
 
-    if args.subset:
-        subset, sets = args.subset.split("/")
+    if options.subset:
+
+        subset, sets = options.subset.split("/")
         total = len(ts.instances)
         per_set = round(total / int(sets))
         start = (int(subset) - 1) * per_set
@@ -2354,33 +2433,33 @@ def main():
     info("%d tests selected, %d tests discarded due to filters" %
          (len(ts.instances), len(discards)))
 
-    if args.dry_run:
+    if options.dry_run:
         return
 
     if VERBOSE or not TERMINAL:
         goals = ts.execute(
             chatty_test_cb,
             ts.instances,
-            args.build_only,
-            args.enable_slow,
-            args.enable_asserts,
-            args.error_on_deprecations,
-            args.extra_args)
+            options.build_only,
+            options.enable_slow,
+            options.enable_asserts,
+            options.error_on_deprecations,
+            options.extra_args)
     else:
         goals = ts.execute(
             terse_test_cb,
             ts.instances,
-            args.build_only,
-            args.enable_slow,
-            args.enable_asserts,
-            args.error_on_deprecations,
-            args.extra_args)
+            options.build_only,
+            options.enable_slow,
+            options.enable_asserts,
+            options.error_on_deprecations,
+            options.extra_args)
         info("")
 
     # figure out which report to use for size comparison
-    if args.compare_report:
-        report_to_use = args.compare_report
-    elif args.last_metrics:
+    if options.compare_report:
+        report_to_use = options.compare_report
+    elif options.last_metrics:
         report_to_use = LAST_SANITY
     else:
         report_to_use = RELEASE_DATA
@@ -2389,24 +2468,24 @@ def main():
     warnings = 0
     if deltas:
         for i, metric, value, delta, lower_better in deltas:
-            if not args.all_deltas and ((delta < 0 and lower_better) or
+            if not options.all_deltas and ((delta < 0 and lower_better) or
                                         (delta > 0 and not lower_better)):
                 continue
 
             percentage = (float(delta) / float(value - delta))
-            if not args.all_deltas and (percentage <
-                                        (args.footprint_threshold / 100.0)):
+            if not options.all_deltas and (percentage <
+                                        (options.footprint_threshold / 100.0)):
                 continue
 
             info("{:<25} {:<60} {}{}{}: {} {:<+4}, is now {:6} {:+.2%}".format(
                  i.platform.name, i.test.name, COLOR_YELLOW,
-                 "INFO" if args.all_deltas else "WARNING", COLOR_NORMAL,
+                 "INFO" if options.all_deltas else "WARNING", COLOR_NORMAL,
                  metric, delta, value, percentage))
             warnings += 1
 
     if warnings:
         info("Deltas based on metrics from last %s" %
-             ("release" if not args.last_metrics else "run"))
+             ("release" if not options.last_metrics else "run"))
 
     failed = 0
     for name, goal in goals.items():
@@ -2418,9 +2497,9 @@ def main():
                   str(goal.metrics["unrecognized"])))
             failed += 1
 
-    if args.coverage:
+    if options.coverage:
         info("Generating coverage files...")
-        generate_coverage(args.outdir, ["tests/*", "samples/*"])
+        generate_coverage(options.outdir, ["tests/*", "samples/*"])
 
     duration = time.time() - start_time
     info("%s%d of %d%s tests passed with %s%d%s warnings in %d seconds" %
@@ -2428,16 +2507,16 @@ def main():
           len(goals), COLOR_NORMAL, COLOR_YELLOW if warnings else COLOR_NORMAL,
           warnings, COLOR_NORMAL, duration))
 
-    if args.testcase_report:
-        ts.testcase_report(args.testcase_report)
-    if not args.no_update:
-        ts.testcase_xunit_report(LAST_SANITY_XUNIT, duration, args)
+    if options.testcase_report:
+        ts.testcase_report(options.testcase_report)
+    if not options.no_update:
+        ts.testcase_xunit_report(LAST_SANITY_XUNIT, duration)
         ts.testcase_report(LAST_SANITY)
-    if args.release:
+    if options.release:
         ts.testcase_report(RELEASE_DATA)
     if log_file:
         log_file.close()
-    if failed or (warnings and args.warnings_as_errors):
+    if failed or (warnings and options.warnings_as_errors):
         sys.exit(1)
 
 

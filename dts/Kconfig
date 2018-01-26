@@ -24,5 +24,21 @@ config HAS_DTS_I2C_DEVICE
 	default n
 	depends on HAS_DTS_I2C
 	help
-	This option specifies that the target platform supports device tree
-	configuration for sensors.
+	  This option specifies that the target platform supports device tree
+	  configuration for sensors.
+
+config HAS_DTS_SPI
+	bool
+	default n
+	depends on HAS_DTS
+	help
+	  This option specifies that the target platform supports device tree
+	  configuration for SPI.
+
+config HAS_DTS_SPI_DEVICE
+	bool
+	default n
+	depends on HAS_DTS_SPI
+	help
+	  This option specifies that the target platform supports device tree
+	  configuration for spi devices, like sensors or RF modules.

@@ -18,6 +18,14 @@ config NET_L2_IEEE802154_MGMT
 	select NET_MGMT_EVENT
 	default n
 
+config NET_L2_IEEE802154_SUB_GHZ
+	bool
+	default n
+	help
+	  Enable support for Sub-GHz devices. This will add a tiny bit more
+	  logic in L2 code for channel management. This option is automatically
+	  selected when relevant device driver is enabled.
+
 config NET_DEBUG_L2_IEEE802154
 	bool "Enable IEEE 802.15.4 stack debug messages"
 	default n

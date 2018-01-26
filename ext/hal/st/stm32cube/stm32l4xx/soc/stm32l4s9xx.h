@@ -17012,9 +17012,6 @@ typedef struct
 #define RNG_CR_CED_Pos      (5U)
 #define RNG_CR_CED_Msk      (0x1U << RNG_CR_CED_Pos)                           /*!< 0x00000020 */
 #define RNG_CR_CED          RNG_CR_CED_Msk
-#define RNG_CR_BYP_Pos      (6U)
-#define RNG_CR_BYP_Msk      (0x1U << RNG_CR_BYP_Pos)                           /*!< 0x00000040 */
-#define RNG_CR_BYP          RNG_CR_BYP_Msk
 
 /********************  Bits definition for RNG_SR register  *******************/
 #define RNG_SR_DRDY_Pos     (0U)
@@ -18368,12 +18365,12 @@ typedef struct
 #define SDMMC_STA_DABORT_Pos            (11U)
 #define SDMMC_STA_DABORT_Msk            (0x1U << SDMMC_STA_DABORT_Pos)         /*!< 0x00000800 */
 #define SDMMC_STA_DABORT                SDMMC_STA_DABORT_Msk                   /*!<Data transfer aborted by CMD12                */
-#define SDMMC_STA_CPSMACT_Pos           (12U)
-#define SDMMC_STA_CPSMACT_Msk           (0x1U << SDMMC_STA_CPSMACT_Pos)        /*!< 0x00001000 */
-#define SDMMC_STA_CPSMACT               SDMMC_STA_CPSMACT_Msk                  /*!<Data path state machine active                */
-#define SDMMC_STA_DPSMACT_Pos           (13U)
-#define SDMMC_STA_DPSMACT_Msk           (0x1U << SDMMC_STA_DPSMACT_Pos)        /*!< 0x00002000 */
-#define SDMMC_STA_DPSMACT               SDMMC_STA_DPSMACT_Msk                  /*!<Command path state machine active             */
+#define SDMMC_STA_DPSMACT_Pos           (12U)
+#define SDMMC_STA_DPSMACT_Msk           (0x1U << SDMMC_STA_CPSMACT_Pos)        /*!< 0x00001000 */
+#define SDMMC_STA_DPSMACT               SDMMC_STA_CPSMACT_Msk                  /*!<Data path state machine active                */
+#define SDMMC_STA_CPSMACT_Pos           (13U)
+#define SDMMC_STA_CPSMACT_Msk           (0x1U << SDMMC_STA_DPSMACT_Pos)        /*!< 0x00002000 */
+#define SDMMC_STA_CPSMACT               SDMMC_STA_DPSMACT_Msk                  /*!<Command path state machine active             */
 #define SDMMC_STA_TXFIFOHE_Pos          (14U)
 #define SDMMC_STA_TXFIFOHE_Msk          (0x1U << SDMMC_STA_TXFIFOHE_Pos)       /*!< 0x00004000 */
 #define SDMMC_STA_TXFIFOHE              SDMMC_STA_TXFIFOHE_Msk                 /*!<Transmit FIFO Half Empty: at least 8 words can be written into the FIFO */
@@ -18531,13 +18528,27 @@ typedef struct
 #define SDMMC_MASK_TXFIFOEIE_Pos        (18U)
 #define SDMMC_MASK_TXFIFOEIE_Msk        (0x1U << SDMMC_MASK_TXFIFOEIE_Pos)     /*!< 0x00040000 */
 #define SDMMC_MASK_TXFIFOEIE            SDMMC_MASK_TXFIFOEIE_Msk               /*!<Tx FIFO Empty interrupt Enable             */
-#define  SDMMC_MASK_BUSYD0ENDIE               ((uint32_t)0x00200000)        /*!<BUSYD0ENDIE interrupt Enable */
-#define  SDMMC_MASK_SDMMCITIE                 ((uint32_t)0x00400000)        /*!<SDMMC Mode Interrupt Received interrupt Enable */
-#define  SDMMC_MASK_ACKFAILIE                 ((uint32_t)0x00800000)        /*!<Acknowledgment Fail Interrupt Enable */
-#define  SDMMC_MASK_ACKTIMEOUTIE              ((uint32_t)0x01000000)        /*!<Acknowledgment timeout Interrupt Enable */
-#define  SDMMC_MASK_VSWENDIE                  ((uint32_t)0x02000000)        /*!<Voltage switch critical timing section completion Interrupt Enable */
-#define  SDMMC_MASK_CKSTOPIE                  ((uint32_t)0x04000000)        /*!<Voltage Switch clock stopped Interrupt Enable */
-#define  SDMMC_MASK_IDMABTCIE                 ((uint32_t)0x10000000)        /*!<IDMA buffer transfer complete Interrupt Enable */
+#define SDMMC_MASK_BUSYD0ENDIE_Pos      (21U)
+#define SDMMC_MASK_BUSYD0ENDIE_Msk      (0x1U << SDMMC_MASK_BUSYD0ENDIE_Pos)   /*!< 0x00200000 */
+#define SDMMC_MASK_BUSYD0ENDIE          SDMMC_MASK_BUSYD0ENDIE_Msk             /*!<BUSYD0END interrupt Enable                 */
+#define SDMMC_MASK_SDIOITIE_Pos         (22U)
+#define SDMMC_MASK_SDIOITIE_Msk         (0x1U << SDMMC_MASK_SDIOITIE_Pos)      /*!< 0x00400000 */
+#define SDMMC_MASK_SDIOITIE             SDMMC_MASK_SDIOITIE_Msk                /*!<SDIO Mode Interrupt Received interrupt Enable */
+#define SDMMC_MASK_ACKFAILIE_Pos        (23U)
+#define SDMMC_MASK_ACKFAILIE_Msk        (0x1U << SDMMC_MASK_ACKFAILIE_Pos)     /*!< 0x00800000 */
+#define SDMMC_MASK_ACKFAILIE            SDMMC_MASK_ACKFAILIE_Msk               /*!<Acknowledgment Fail Interrupt Enable       */
+#define SDMMC_MASK_ACKTIMEOUTIE_Pos     (24U)
+#define SDMMC_MASK_ACKTIMEOUTIE_Msk     (0x1U << SDMMC_MASK_ACKTIMEOUTIE_Pos)  /*!< 0x01000000 */
+#define SDMMC_MASK_ACKTIMEOUTIE         SDMMC_MASK_ACKTIMEOUTIE_Msk            /*!<Acknowledgment timeout Interrupt Enable    */
+#define SDMMC_MASK_VSWENDIE_Pos         (25U)
+#define SDMMC_MASK_VSWENDIE_Msk         (0x1U << SDMMC_MASK_VSWENDIE_Pos)      /*!< 0x02000000 */
+#define SDMMC_MASK_VSWENDIE             SDMMC_MASK_VSWENDIE_Msk                /*!<Voltage switch critical timing section completion Interrupt Enable */
+#define SDMMC_MASK_CKSTOPIE_Pos         (26U)
+#define SDMMC_MASK_CKSTOPIE_Msk         (0x1U << SDMMC_MASK_CKSTOPIE_Pos)      /*!< 0x03000000 */
+#define SDMMC_MASK_CKSTOPIE             SDMMC_MASK_CKSTOPIE_Msk                /*!<Voltage Switch clock stopped Interrupt Enable */
+#define SDMMC_MASK_IDMABTCIE_Pos        (28U)
+#define SDMMC_MASK_IDMABTCIE_Msk        (0x1U << SDMMC_MASK_IDMABTCIE_Pos)     /*!< 0x10000000 */
+#define SDMMC_MASK_IDMABTCIE            SDMMC_MASK_IDMABTCIE_Msk               /*!<IDMA buffer transfer complete Interrupt Enable */
 
 /*****************  Bit definition for SDMMC_FIFOCNT register  *****************/
 #define SDMMC_FIFOCNT_FIFOCOUNT_Pos     (0U)

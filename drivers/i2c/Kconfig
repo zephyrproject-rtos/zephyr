@@ -89,6 +89,14 @@ config I2C_NRF5
 	  This option enables the I2C driver for Nordic Semiconductor nRF5
 	  family processors.
 
+config I2C_CC32XX
+	bool "CC32XX I2C driver"
+	depends on SOC_SERIES_CC32XX
+	select HAS_DTS_I2C
+	default n
+	help
+	  Enable the CC32XX I2C driver.
+
 config I2C_NRF5_GPIO_SCA_PIN
 	int "SCA Pin Number"
 	range 0 31
@@ -108,6 +116,7 @@ config I2C_STM32_V1
 	depends on SOC_FAMILY_STM32
 	depends on SOC_SERIES_STM32F1X || SOC_SERIES_STM32F4X
 	select HAS_DTS_I2C
+	select USE_STM32_LL_I2C
 	default n
 	help
 	  Enable I2C support on the STM32 F1 and F4X family of processors. This
@@ -118,6 +127,8 @@ config I2C_STM32_V2
 	depends on SOC_FAMILY_STM32
 	depends on SOC_SERIES_STM32F0X || SOC_SERIES_STM32F3X || SOC_SERIES_STM32L4X
 	select HAS_DTS_I2C
+	select USE_STM32_LL_I2C
+	select USE_STM32_LL_RCC if SOC_SERIES_STM32F0X || SOC_SERIES_STM32F3X
 	default n
 	help
 	  Enable I2C support on the STM32 F0, F3 and L4X family of processors.

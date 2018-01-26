@@ -66,13 +66,13 @@
 typedef struct
 {
   uint32_t Ratio;                         /*!< Configures the oversampling ratio.
-                                               This parameter can be a value of @ref ADC_Oversampling_Ratio */
+                                               This parameter can be a value of @ref ADC_HAL_EC_OVS_RATIO */
 
   uint32_t RightBitShift;                 /*!< Configures the division coefficient for the Oversampler.
-                                               This parameter can be a value of @ref ADC_Right_Bit_Shift */
+                                               This parameter can be a value of @ref ADC_HAL_EC_OVS_SHIFT */
 
   uint32_t TriggeredMode;                 /*!< Selects the regular triggered oversampling mode.
-                                               This parameter can be a value of @ref ADC_Triggered_Oversampling_Mode */
+                                               This parameter can be a value of @ref ADC_HAL_EC_OVS_DISCONT_MODE */
 
   uint32_t OversamplingStopReset;         /*!< Selects the regular oversampling mode.
                                                The oversampling is either temporary stopped or reset upon an injected
@@ -80,7 +80,7 @@ typedef struct
                                                If oversampling is enabled on both regular and injected groups, this parameter 
                                                is discarded and forced to setting "ADC_REGOVERSAMPLING_RESUMED_MODE" 
                                                (the oversampling buffer is zeroed during injection sequence).   
-                                               This parameter can be a value of @ref ADC_Regular_Oversampling_Mode */                                               
+                                               This parameter can be a value of @ref ADC_HAL_EC_OVS_SCOPE_REG */                                               
 
 }ADC_OversamplingTypeDef;
 
@@ -103,7 +103,7 @@ typedef struct
 typedef struct
 {
   uint32_t ClockPrescaler;        /*!< Select ADC clock source (synchronous clock derived from APB clock or asynchronous clock derived from system clock or PLL (Refer to reference manual for list of clocks available)) and clock prescaler.
-                                       This parameter can be a value of @ref ADC_ClockPrescaler.
+                                       This parameter can be a value of @ref ADC_HAL_EC_COMMON_CLOCK_SOURCE.
                                        Note: The ADC clock configuration is common to all ADC instances.
                                        Note: In case of usage of channels on injected group, ADC frequency should be lower than AHB clock frequency /4 for resolution 12 or 10 bits, 
                                              AHB clock frequency /3 for resolution 8 bits, AHB clock frequency /2 for resolution 6 bits.
@@ -114,11 +114,11 @@ typedef struct
                                        Note: This parameter can be modified only if all ADC instances are disabled. */
 
   uint32_t Resolution;            /*!< Configure the ADC resolution. 
-                                       This parameter can be a value of @ref ADC_Resolution */
+                                       This parameter can be a value of @ref ADC_HAL_EC_RESOLUTION */
 
   uint32_t DataAlign;             /*!< Specify ADC data alignment in conversion data register (right or left).
                                        Refer to reference manual for alignments formats versus resolutions.
-                                       This parameter can be a value of @ref ADC_Data_align */
+                                       This parameter can be a value of @ref ADC_HAL_EC_DATA_ALIGN */
 
   uint32_t ScanConvMode;          /*!< Configure the sequencer of ADC groups regular and injected.
                                        This parameter can be associated to parameter 'DiscontinuousConvMode' to have main sequence subdivided in successive parts.
@@ -179,7 +179,7 @@ typedef struct
 
   uint32_t Overrun;               /*!< Select the behavior in case of overrun: data overwritten or preserved (default).
                                        This parameter applies to ADC group regular only.
-                                       This parameter can be a value of @ref ADC_Overrun.
+                                       This parameter can be a value of @ref ADC_HAL_EC_REG_OVR_DATA_BEHAVIOR.
                                        Note: In case of overrun set to data preserved and usage with programming model with interruption (HAL_Start_IT()): ADC IRQ handler has to clear 
                                        end of conversion flags, this induces the release of the preserved data. If needed, this data can be saved in function 
                                        HAL_ADC_ConvCpltCallback(), placed in user program code (called before end of conversion flags clear).
@@ -197,7 +197,7 @@ typedef struct
 
 #if defined(ADC_CFGR_DFSDMCFG) &&defined(DFSDM1_Channel0)
   uint32_t DFSDMConfig;           /*!< Specify whether ADC conversion data is sent directly to DFSDM.
-                                       This parameter can be a value of @ref ADCEx_DFSDM_Mode_Configuration.
+                                       This parameter can be a value of @ref ADC_HAL_EC_REG_DFSDM_TRANSFER.
                                        Note: This parameter can be modified only if there is no conversion is ongoing (both ADSTART and JADSTART cleared). */
 
 #endif
@@ -217,11 +217,11 @@ typedef struct
 typedef struct
 {
   uint32_t Channel;                /*!< Specify the channel to configure into ADC regular group.
-                                        This parameter can be a value of @ref ADC_channels
+                                        This parameter can be a value of @ref ADC_HAL_EC_CHANNEL
                                         Note: Depending on devices and ADC instances, some channels may not be available on device package pins. Refer to device datasheet for channels availability. */
 
   uint32_t Rank;                   /*!< Specify the rank in the regular group sequencer.
-                                        This parameter can be a value of @ref ADC_regular_rank
+                                        This parameter can be a value of @ref ADC_HAL_EC_REG_SEQ_RANKS
                                         Note: to disable a channel or change order of conversion sequencer, rank containing a previous channel setting can be overwritten by 
                                         the new channel setting (or parameter number of conversions adjusted) */
 
@@ -239,7 +239,7 @@ typedef struct
   uint32_t SingleDiff;             /*!< Select single-ended or differential input.
                                         In differential mode: Differential measurement is carried out between the selected channel 'i' (positive input) and channel 'i+1' (negative input).
                                                               Only channel 'i' has to be configured, channel 'i+1' is configured automatically.
-                                        This parameter must be a value of @ref ADCEx_SingleDifferential
+                                        This parameter must be a value of @ref ADC_HAL_EC_CHANNEL_SINGLE_DIFF_ENDING
                                         Caution: This parameter applies to a channel that can be used in a regular and/or injected group.
                                                  It overwrites the last setting.
                                         Note: Refer to Reference Manual to ensure the selected channel is available in differential mode.
@@ -249,7 +249,7 @@ typedef struct
                                         of another parameter update on the fly) */
 
   uint32_t OffsetNumber;           /*!< Select the offset number
-                                        This parameter can be a value of @ref ADCEx_OffsetNumber
+                                        This parameter can be a value of @ref ADC_HAL_EC_OFFSET_NB
                                         Caution: Only one offset is allowed per channel. This parameter overwrites the last setting. */
 
   uint32_t Offset;                 /*!< Define the offset to be subtracted from the raw converted data.
@@ -272,19 +272,17 @@ typedef struct
   uint32_t WatchdogNumber;    /*!< Select which ADC analog watchdog is monitoring the selected channel.
                                    For Analog Watchdog 1: Only 1 channel can be monitored (or overall group of channels by setting parameter 'WatchdogMode')
                                    For Analog Watchdog 2 and 3: Several channels can be monitored (by successive calls of 'HAL_ADC_AnalogWDGConfig()' for each channel)
-                                   This parameter can be a value of @ref ADC_analog_watchdog_number. */
+                                   This parameter can be a value of @ref ADC_HAL_EC_AWD_NUMBER. */
 
   uint32_t WatchdogMode;      /*!< Configure the ADC analog watchdog mode: single/all/none channels.
                                    For Analog Watchdog 1: Configure the ADC analog watchdog mode: single channel or all channels, ADC groups regular and-or injected.
-                                   
-                                   For Analog Watchdog 2 and 3: There is no configuration for all channels as AWD1. Set value 'ADC_ANALOGWATCHDOG_NONE' to reset 
-                                   channels group programmed with parameter 'Channel', set any other value to program the channel(s) to be monitored.
+                                   For Analog Watchdog 2 and 3: Several channels can be monitored by applying successively the AWD init structure. Channels on ADC group regular and injected are not differentiated: Set value 'ADC_ANALOGWATCHDOG_SINGLE_xxx' to monitor 1 channel, value 'ADC_ANALOGWATCHDOG_ALL_xxx' to monitor all channels, 'ADC_ANALOGWATCHDOG_NONE' to monitor no channel.
                                    This parameter can be a value of @ref ADC_analog_watchdog_mode. */
 
   uint32_t Channel;           /*!< Select which ADC channel to monitor by analog watchdog.
                                    For Analog Watchdog 1: this parameter has an effect only if parameter 'WatchdogMode' is configured on single channel (only 1 channel can be monitored).
                                    For Analog Watchdog 2 and 3: Several channels can be monitored. To use this feature, call successively the function HAL_ADC_AnalogWDGConfig() for each channel to be added (or removed with value 'ADC_ANALOGWATCHDOG_NONE').
-                                   This parameter can be a value of @ref ADC_channels. */
+                                   This parameter can be a value of @ref ADC_HAL_EC_CHANNEL. */
 
   uint32_t ITMode;            /*!< Specify whether the analog watchdog is configured in interrupt or polling mode.
                                    This parameter can be set to ENABLE or DISABLE */
@@ -407,49 +405,49 @@ typedef struct
   * @}
   */
 
-/** @defgroup ADC_ClockPrescaler ADC clock source and clock prescaler
+/** @defgroup ADC_HAL_EC_COMMON_CLOCK_SOURCE  ADC common - Clock source
   * @{
   */
-#define ADC_CLOCK_SYNC_PCLK_DIV1      ((uint32_t)ADC_CCR_CKMODE_0) /*!< ADC synchronous clock derived from AHB clock not divided  */
-#define ADC_CLOCK_SYNC_PCLK_DIV2      ((uint32_t)ADC_CCR_CKMODE_1) /*!< ADC synchronous clock derived from AHB clock divided a prescaler of 2 */
-#define ADC_CLOCK_SYNC_PCLK_DIV4      ((uint32_t)ADC_CCR_CKMODE)   /*!< ADC synchronous clock derived from AHB clock divided a prescaler of 4 */
+#define ADC_CLOCK_SYNC_PCLK_DIV1           (LL_ADC_CLOCK_SYNC_PCLK_DIV1)  /*!< ADC synchronous clock derived from AHB clock without prescaler */
+#define ADC_CLOCK_SYNC_PCLK_DIV2           (LL_ADC_CLOCK_SYNC_PCLK_DIV2)  /*!< ADC synchronous clock derived from AHB clock with prescaler division by 2 */
+#define ADC_CLOCK_SYNC_PCLK_DIV4           (LL_ADC_CLOCK_SYNC_PCLK_DIV4)  /*!< ADC synchronous clock derived from AHB clock with prescaler division by 4 */
 
-#define ADC_CLOCKPRESCALER_PCLK_DIV1   ADC_CLOCK_SYNC_PCLK_DIV1    /*!< Obsolete naming, kept for compatibility with some other devices */
-#define ADC_CLOCKPRESCALER_PCLK_DIV2   ADC_CLOCK_SYNC_PCLK_DIV2    /*!< Obsolete naming, kept for compatibility with some other devices */
-#define ADC_CLOCKPRESCALER_PCLK_DIV4   ADC_CLOCK_SYNC_PCLK_DIV4    /*!< Obsolete naming, kept for compatibility with some other devices */
+#define ADC_CLOCK_ASYNC_DIV1               (LL_ADC_CLOCK_ASYNC_DIV1)      /*!< ADC asynchronous clock without prescaler */
+#define ADC_CLOCK_ASYNC_DIV2               (LL_ADC_CLOCK_ASYNC_DIV2)      /*!< ADC asynchronous clock with prescaler division by 2   */
+#define ADC_CLOCK_ASYNC_DIV4               (LL_ADC_CLOCK_ASYNC_DIV4)      /*!< ADC asynchronous clock with prescaler division by 4   */
+#define ADC_CLOCK_ASYNC_DIV6               (LL_ADC_CLOCK_ASYNC_DIV6)      /*!< ADC asynchronous clock with prescaler division by 6   */
+#define ADC_CLOCK_ASYNC_DIV8               (LL_ADC_CLOCK_ASYNC_DIV8)      /*!< ADC asynchronous clock with prescaler division by 8   */
+#define ADC_CLOCK_ASYNC_DIV10              (LL_ADC_CLOCK_ASYNC_DIV10)     /*!< ADC asynchronous clock with prescaler division by 10  */
+#define ADC_CLOCK_ASYNC_DIV12              (LL_ADC_CLOCK_ASYNC_DIV12)     /*!< ADC asynchronous clock with prescaler division by 12  */
+#define ADC_CLOCK_ASYNC_DIV16              (LL_ADC_CLOCK_ASYNC_DIV16)     /*!< ADC asynchronous clock with prescaler division by 16  */
+#define ADC_CLOCK_ASYNC_DIV32              (LL_ADC_CLOCK_ASYNC_DIV32)     /*!< ADC asynchronous clock with prescaler division by 32  */
+#define ADC_CLOCK_ASYNC_DIV64              (LL_ADC_CLOCK_ASYNC_DIV64)     /*!< ADC asynchronous clock with prescaler division by 64  */
+#define ADC_CLOCK_ASYNC_DIV128             (LL_ADC_CLOCK_ASYNC_DIV128)    /*!< ADC asynchronous clock with prescaler division by 128 */
+#define ADC_CLOCK_ASYNC_DIV256             (LL_ADC_CLOCK_ASYNC_DIV256)    /*!< ADC asynchronous clock with prescaler division by 256 */
 
-#define ADC_CLOCK_ASYNC_DIV1       ((uint32_t)0x00000000)                                        /*!< ADC asynchronous clock not divided    */
-#define ADC_CLOCK_ASYNC_DIV2       ((uint32_t)ADC_CCR_PRESC_0)                                   /*!< ADC asynchronous clock divided by 2   */
-#define ADC_CLOCK_ASYNC_DIV4       ((uint32_t)ADC_CCR_PRESC_1)                                   /*!< ADC asynchronous clock divided by 4   */
-#define ADC_CLOCK_ASYNC_DIV6       ((uint32_t)(ADC_CCR_PRESC_1|ADC_CCR_PRESC_0))                 /*!< ADC asynchronous clock divided by 6   */
-#define ADC_CLOCK_ASYNC_DIV8       ((uint32_t)(ADC_CCR_PRESC_2))                                 /*!< ADC asynchronous clock divided by 8   */
-#define ADC_CLOCK_ASYNC_DIV10      ((uint32_t)(ADC_CCR_PRESC_2|ADC_CCR_PRESC_0))                 /*!< ADC asynchronous clock divided by 10  */
-#define ADC_CLOCK_ASYNC_DIV12      ((uint32_t)(ADC_CCR_PRESC_2|ADC_CCR_PRESC_1))                 /*!< ADC asynchronous clock divided by 12  */
-#define ADC_CLOCK_ASYNC_DIV16      ((uint32_t)(ADC_CCR_PRESC_2|ADC_CCR_PRESC_1|ADC_CCR_PRESC_0)) /*!< ADC asynchronous clock divided by 16  */
-#define ADC_CLOCK_ASYNC_DIV32      ((uint32_t)(ADC_CCR_PRESC_3))                                 /*!< ADC asynchronous clock divided by 32  */
-#define ADC_CLOCK_ASYNC_DIV64      ((uint32_t)(ADC_CCR_PRESC_3|ADC_CCR_PRESC_0))                 /*!< ADC asynchronous clock divided by 64  */
-#define ADC_CLOCK_ASYNC_DIV128     ((uint32_t)(ADC_CCR_PRESC_3|ADC_CCR_PRESC_1))                 /*!< ADC asynchronous clock divided by 128 */
-#define ADC_CLOCK_ASYNC_DIV256     ((uint32_t)(ADC_CCR_PRESC_3|ADC_CCR_PRESC_1|ADC_CCR_PRESC_0)) /*!< ADC asynchronous clock divided by 256 */
+#define ADC_CLOCKPRESCALER_PCLK_DIV1   ADC_CLOCK_SYNC_PCLK_DIV1           /*!< Obsolete naming, kept for compatibility with some other devices */
+#define ADC_CLOCKPRESCALER_PCLK_DIV2   ADC_CLOCK_SYNC_PCLK_DIV2           /*!< Obsolete naming, kept for compatibility with some other devices */
+#define ADC_CLOCKPRESCALER_PCLK_DIV4   ADC_CLOCK_SYNC_PCLK_DIV4           /*!< Obsolete naming, kept for compatibility with some other devices */
 /**
   * @}
   */
 
-/** @defgroup ADC_Resolution ADC Resolution
+/** @defgroup ADC_HAL_EC_RESOLUTION  ADC instance - Resolution
   * @{
   */
-#define ADC_RESOLUTION_12B      ((uint32_t)0x00000000)          /*!< ADC 12-bit resolution */
-#define ADC_RESOLUTION_10B      ((uint32_t)ADC_CFGR_RES_0)      /*!< ADC 10-bit resolution */
-#define ADC_RESOLUTION_8B       ((uint32_t)ADC_CFGR_RES_1)      /*!< ADC 8-bit resolution */
-#define ADC_RESOLUTION_6B       ((uint32_t)ADC_CFGR_RES)        /*!< ADC 6-bit resolution */
+#define ADC_RESOLUTION_12B                 (LL_ADC_RESOLUTION_12B)  /*!< ADC resolution 12 bits */
+#define ADC_RESOLUTION_10B                 (LL_ADC_RESOLUTION_10B)  /*!< ADC resolution 10 bits */
+#define ADC_RESOLUTION_8B                  (LL_ADC_RESOLUTION_8B)   /*!< ADC resolution  8 bits */
+#define ADC_RESOLUTION_6B                  (LL_ADC_RESOLUTION_6B)   /*!< ADC resolution  6 bits */
 /**
   * @}
   */
 
-/** @defgroup ADC_Data_align ADC conversion data alignment
+/** @defgroup ADC_HAL_EC_DATA_ALIGN ADC conversion data alignment
   * @{
   */
-#define ADC_DATAALIGN_RIGHT      ((uint32_t)0x00000000)         /*!< Data right alignment */
-#define ADC_DATAALIGN_LEFT       ((uint32_t)ADC_CFGR_ALIGN)     /*!< Data left alignment  */
+#define ADC_DATAALIGN_RIGHT                (LL_ADC_DATA_ALIGN_RIGHT)/*!< ADC conversion data alignment: right aligned (alignment on data register LSB bit 0)*/
+#define ADC_DATAALIGN_LEFT                 (LL_ADC_DATA_ALIGN_LEFT)       /*!< ADC conversion data alignment: left aligned (aligment on data register MSB bit 15)*/
 /**
   * @}
   */
@@ -457,8 +455,8 @@ typedef struct
 /** @defgroup ADC_Scan_mode ADC sequencer scan mode
   * @{
   */
-#define ADC_SCAN_DISABLE         ((uint32_t)0x00000000)        /*!< Scan mode disabled */
-#define ADC_SCAN_ENABLE          ((uint32_t)0x00000001)        /*!< Scan mode enabled  */
+#define ADC_SCAN_DISABLE         (0x00000000U)        /*!< Scan mode disabled */
+#define ADC_SCAN_ENABLE          (0x00000001U)        /*!< Scan mode enabled  */
 /**
   * @}
   */
@@ -467,23 +465,23 @@ typedef struct
   * @{
   */
 /* ADC group regular trigger sources for all ADC instances */
-#define ADC_EXTERNALTRIG_T1_CC1           ((uint32_t)0x00000000)                                                                      /*!< Event 0 triggers regular group conversion start  */
-#define ADC_EXTERNALTRIG_T1_CC2           ((uint32_t)ADC_CFGR_EXTSEL_0)                                                               /*!< Event 1 triggers regular group conversion start  */
-#define ADC_EXTERNALTRIG_T1_CC3           ((uint32_t)ADC_CFGR_EXTSEL_1)                                                               /*!< Event 2 triggers regular group conversion start  */
-#define ADC_EXTERNALTRIG_T2_CC2           ((uint32_t)(ADC_CFGR_EXTSEL_1 | ADC_CFGR_EXTSEL_0))                                         /*!< Event 3 triggers regular group conversion start  */
-#define ADC_EXTERNALTRIG_T3_TRGO          ((uint32_t)ADC_CFGR_EXTSEL_2)                                                               /*!< Event 4 triggers regular group conversion start  */
-#define ADC_EXTERNALTRIG_T4_CC4           ((uint32_t)(ADC_CFGR_EXTSEL_2 | ADC_CFGR_EXTSEL_0))                                         /*!< Event 5 triggers regular group conversion start  */
-#define ADC_EXTERNALTRIG_EXT_IT11         ((uint32_t)(ADC_CFGR_EXTSEL_2 | ADC_CFGR_EXTSEL_1))                                         /*!< Event 6 triggers regular group conversion start  */
-#define ADC_EXTERNALTRIG_T8_TRGO          ((uint32_t)(ADC_CFGR_EXTSEL_2 | ADC_CFGR_EXTSEL_1 | ADC_CFGR_EXTSEL_0))                     /*!< Event 7 triggers regular group conversion start  */
-#define ADC_EXTERNALTRIG_T8_TRGO2         ((uint32_t) ADC_CFGR_EXTSEL_3)                                                              /*!< Event 8 triggers regular group conversion start  */
-#define ADC_EXTERNALTRIG_T1_TRGO          ((uint32_t)(ADC_CFGR_EXTSEL_3 | ADC_CFGR_EXTSEL_0))                                         /*!< Event 9 triggers regular group conversion start  */
-#define ADC_EXTERNALTRIG_T1_TRGO2         ((uint32_t)(ADC_CFGR_EXTSEL_3 | ADC_CFGR_EXTSEL_1))                                         /*!< Event 10 triggers regular group conversion start */
-#define ADC_EXTERNALTRIG_T2_TRGO          ((uint32_t)(ADC_CFGR_EXTSEL_3 | ADC_CFGR_EXTSEL_1 | ADC_CFGR_EXTSEL_0))                     /*!< Event 11 triggers regular group conversion start */
-#define ADC_EXTERNALTRIG_T4_TRGO          ((uint32_t)(ADC_CFGR_EXTSEL_3 | ADC_CFGR_EXTSEL_2))                                         /*!< Event 12 triggers regular group conversion start */
-#define ADC_EXTERNALTRIG_T6_TRGO          ((uint32_t)(ADC_CFGR_EXTSEL_3 | ADC_CFGR_EXTSEL_2 | ADC_CFGR_EXTSEL_0))                     /*!< Event 13 triggers regular group conversion start */
-#define ADC_EXTERNALTRIG_T15_TRGO         ((uint32_t)(ADC_CFGR_EXTSEL_3 | ADC_CFGR_EXTSEL_2 | ADC_CFGR_EXTSEL_1))                     /*!< Event 14 triggers regular group conversion start */
-#define ADC_EXTERNALTRIG_T3_CC4           ((uint32_t)(ADC_CFGR_EXTSEL_3 | ADC_CFGR_EXTSEL_2 | ADC_CFGR_EXTSEL_1 | ADC_CFGR_EXTSEL_0)) /*!< Event 15 triggers regular group conversion start */
-#define ADC_SOFTWARE_START                ((uint32_t)0x00000001)                                                  /*!< Software triggers regular group conversion start */
+#define ADC_SOFTWARE_START            (LL_ADC_REG_TRIG_SOFTWARE)                 /*!< ADC group regular conversion trigger internal: SW start. */
+#define ADC_EXTERNALTRIG_T1_TRGO      (LL_ADC_REG_TRIG_EXT_TIM1_TRGO)            /*!< ADC group regular conversion trigger from external IP: TIM1 TRGO. Trigger edge set to rising edge (default setting). */
+#define ADC_EXTERNALTRIG_T1_TRGO2     (LL_ADC_REG_TRIG_EXT_TIM1_TRGO2)           /*!< ADC group regular conversion trigger from external IP: TIM1 TRGO2. Trigger edge set to rising edge (default setting). */
+#define ADC_EXTERNALTRIG_T1_CC1       (LL_ADC_REG_TRIG_EXT_TIM1_CH1)             /*!< ADC group regular conversion trigger from external IP: TIM1 channel 1 event (capture compare: input capture or output capture). Trigger edge set to rising edge (default setting). */
+#define ADC_EXTERNALTRIG_T1_CC2       (LL_ADC_REG_TRIG_EXT_TIM1_CH2)             /*!< ADC group regular conversion trigger from external IP: TIM1 channel 2 event (capture compare: input capture or output capture). Trigger edge set to rising edge (default setting). */
+#define ADC_EXTERNALTRIG_T1_CC3       (LL_ADC_REG_TRIG_EXT_TIM1_CH3)             /*!< ADC group regular conversion trigger from external IP: TIM1 channel 3 event (capture compare: input capture or output capture). Trigger edge set to rising edge (default setting). */
+#define ADC_EXTERNALTRIG_T2_TRGO      (LL_ADC_REG_TRIG_EXT_TIM2_TRGO)            /*!< ADC group regular conversion trigger from external IP: TIM2 TRGO. Trigger edge set to rising edge (default setting). */
+#define ADC_EXTERNALTRIG_T2_CC2       (LL_ADC_REG_TRIG_EXT_TIM2_CH2)             /*!< ADC group regular conversion trigger from external IP: TIM2 channel 2 event (capture compare: input capture or output capture). Trigger edge set to rising edge (default setting). */
+#define ADC_EXTERNALTRIG_T3_TRGO      (LL_ADC_REG_TRIG_EXT_TIM3_TRGO)            /*!< ADC group regular conversion trigger from external IP: TIM3 TRGO. Trigger edge set to rising edge (default setting). */
+#define ADC_EXTERNALTRIG_T3_CC4       (LL_ADC_REG_TRIG_EXT_TIM3_CH4)             /*!< ADC group regular conversion trigger from external IP: TIM3 channel 4 event (capture compare: input capture or output capture). Trigger edge set to rising edge (default setting). */
+#define ADC_EXTERNALTRIG_T4_TRGO      (LL_ADC_REG_TRIG_EXT_TIM4_CH4)             /*!< ADC group regular conversion trigger from external IP: TIM4 TRGO. Trigger edge set to rising edge (default setting). */
+#define ADC_EXTERNALTRIG_T4_CC4       (LL_ADC_REG_TRIG_EXT_TIM4_CH4)             /*!< ADC group regular conversion trigger from external IP: TIM4 channel 4 event (capture compare: input capture or output capture). Trigger edge set to rising edge (default setting). */
+#define ADC_EXTERNALTRIG_T6_TRGO      (LL_ADC_REG_TRIG_EXT_TIM6_TRGO)            /*!< ADC group regular conversion trigger from external IP: TIM6 TRGO. Trigger edge set to rising edge (default setting). */
+#define ADC_EXTERNALTRIG_T8_TRGO      (LL_ADC_REG_TRIG_EXT_TIM8_TRGO)            /*!< ADC group regular conversion trigger from external IP: TIM8 TRGO. Trigger edge set to rising edge (default setting). */
+#define ADC_EXTERNALTRIG_T8_TRGO2     (LL_ADC_REG_TRIG_EXT_TIM8_TRGO2)           /*!< ADC group regular conversion trigger from external IP: TIM8 TRGO2. Trigger edge set to rising edge (default setting). */
+#define ADC_EXTERNALTRIG_T15_TRGO     (LL_ADC_REG_TRIG_EXT_TIM15_TRGO)           /*!< ADC group regular conversion trigger from external IP: TIM15 TRGO. Trigger edge set to rising edge (default setting). */
+#define ADC_EXTERNALTRIG_EXT_IT11     (LL_ADC_REG_TRIG_EXT_EXTI_LINE11)          /*!< ADC group regular conversion trigger from external IP: external interrupt line 11. Trigger edge set to rising edge (default setting). */
 /**
   * @}
   */
@@ -491,10 +489,10 @@ typedef struct
 /** @defgroup ADC_regular_external_trigger_edge ADC group regular trigger edge (when external trigger is selected)
   * @{
   */
-#define ADC_EXTERNALTRIGCONVEDGE_NONE           ((uint32_t)0x00000000)        /*!< Regular conversions hardware trigger detection disabled */
-#define ADC_EXTERNALTRIGCONVEDGE_RISING         ((uint32_t)ADC_CFGR_EXTEN_0)  /*!< Regular conversions hardware trigger detection on the rising edge */
-#define ADC_EXTERNALTRIGCONVEDGE_FALLING        ((uint32_t)ADC_CFGR_EXTEN_1)  /*!< Regular conversions hardware trigger detection on the falling edge */
-#define ADC_EXTERNALTRIGCONVEDGE_RISINGFALLING  ((uint32_t)ADC_CFGR_EXTEN)    /*!< Regular conversions hardware trigger detection on both the rising and falling edges */
+#define ADC_EXTERNALTRIGCONVEDGE_NONE           (0x00000000)        /*!< Regular conversions hardware trigger detection disabled */
+#define ADC_EXTERNALTRIGCONVEDGE_RISING         (ADC_CFGR_EXTEN_0)  /*!< Regular conversions hardware trigger detection on the rising edge */
+#define ADC_EXTERNALTRIGCONVEDGE_FALLING        (ADC_CFGR_EXTEN_1)  /*!< Regular conversions hardware trigger detection on the falling edge */
+#define ADC_EXTERNALTRIGCONVEDGE_RISINGFALLING  (ADC_CFGR_EXTEN)    /*!< Regular conversions hardware trigger detection on both the rising and falling edges */
 /**
   * @}
   */
@@ -502,40 +500,40 @@ typedef struct
 /** @defgroup ADC_EOCSelection ADC sequencer end of unitary conversion or sequence conversions
   * @{
   */
-#define ADC_EOC_SINGLE_CONV         ((uint32_t) ADC_ISR_EOC)                 /*!< End of unitary conversion flag  */
-#define ADC_EOC_SEQ_CONV            ((uint32_t) ADC_ISR_EOS)                 /*!< End of sequence conversions flag    */
+#define ADC_EOC_SINGLE_CONV         (ADC_ISR_EOC)                 /*!< End of unitary conversion flag  */
+#define ADC_EOC_SEQ_CONV            (ADC_ISR_EOS)                 /*!< End of sequence conversions flag    */
 /**
   * @}
   */
 
-/** @defgroup ADC_Overrun ADC overrun
+/** @defgroup ADC_HAL_EC_REG_OVR_DATA_BEHAVIOR  ADC group regular - Overrun behavior on conversion data
   * @{
   */
-#define ADC_OVR_DATA_PRESERVED             ((uint32_t)0x00000000)           /*!< Data preserved in case of overrun   */
-#define ADC_OVR_DATA_OVERWRITTEN           ((uint32_t)ADC_CFGR_OVRMOD)      /*!< Data overwritten in case of overrun */
+#define ADC_OVR_DATA_PRESERVED             (LL_ADC_REG_OVR_DATA_PRESERVED)    /*!< ADC group regular behavior in case of overrun: data preserved */
+#define ADC_OVR_DATA_OVERWRITTEN           (LL_ADC_REG_OVR_DATA_OVERWRITTEN)  /*!< ADC group regular behavior in case of overrun: data overwritten */
 /**
   * @}
   */
 
-/** @defgroup ADC_regular_rank ADC group regular sequencer rank
+/** @defgroup ADC_HAL_EC_REG_SEQ_RANKS  ADC group regular - Sequencer ranks
   * @{
   */
-#define ADC_REGULAR_RANK_1    ((uint32_t)0x00000001)       /*!< ADC regular conversion rank 1  */
-#define ADC_REGULAR_RANK_2    ((uint32_t)0x00000002)       /*!< ADC regular conversion rank 2  */
-#define ADC_REGULAR_RANK_3    ((uint32_t)0x00000003)       /*!< ADC regular conversion rank 3  */
-#define ADC_REGULAR_RANK_4    ((uint32_t)0x00000004)       /*!< ADC regular conversion rank 4  */
-#define ADC_REGULAR_RANK_5    ((uint32_t)0x00000005)       /*!< ADC regular conversion rank 5  */
-#define ADC_REGULAR_RANK_6    ((uint32_t)0x00000006)       /*!< ADC regular conversion rank 6  */
-#define ADC_REGULAR_RANK_7    ((uint32_t)0x00000007)       /*!< ADC regular conversion rank 7  */
-#define ADC_REGULAR_RANK_8    ((uint32_t)0x00000008)       /*!< ADC regular conversion rank 8  */
-#define ADC_REGULAR_RANK_9    ((uint32_t)0x00000009)       /*!< ADC regular conversion rank 9  */
-#define ADC_REGULAR_RANK_10   ((uint32_t)0x0000000A)       /*!< ADC regular conversion rank 10 */
-#define ADC_REGULAR_RANK_11   ((uint32_t)0x0000000B)       /*!< ADC regular conversion rank 11 */
-#define ADC_REGULAR_RANK_12   ((uint32_t)0x0000000C)       /*!< ADC regular conversion rank 12 */
-#define ADC_REGULAR_RANK_13   ((uint32_t)0x0000000D)       /*!< ADC regular conversion rank 13 */
-#define ADC_REGULAR_RANK_14   ((uint32_t)0x0000000E)       /*!< ADC regular conversion rank 14 */
-#define ADC_REGULAR_RANK_15   ((uint32_t)0x0000000F)       /*!< ADC regular conversion rank 15 */
-#define ADC_REGULAR_RANK_16   ((uint32_t)0x00000010)       /*!< ADC regular conversion rank 16 */
+#define ADC_REGULAR_RANK_1                 (LL_ADC_REG_RANK_1)  /*!< ADC group regular sequencer rank 1 */
+#define ADC_REGULAR_RANK_2                 (LL_ADC_REG_RANK_2)  /*!< ADC group regular sequencer rank 2 */
+#define ADC_REGULAR_RANK_3                 (LL_ADC_REG_RANK_3)  /*!< ADC group regular sequencer rank 3 */
+#define ADC_REGULAR_RANK_4                 (LL_ADC_REG_RANK_4)  /*!< ADC group regular sequencer rank 4 */
+#define ADC_REGULAR_RANK_5                 (LL_ADC_REG_RANK_5)  /*!< ADC group regular sequencer rank 5 */
+#define ADC_REGULAR_RANK_6                 (LL_ADC_REG_RANK_6)  /*!< ADC group regular sequencer rank 6 */
+#define ADC_REGULAR_RANK_7                 (LL_ADC_REG_RANK_7)  /*!< ADC group regular sequencer rank 7 */
+#define ADC_REGULAR_RANK_8                 (LL_ADC_REG_RANK_8)  /*!< ADC group regular sequencer rank 8 */
+#define ADC_REGULAR_RANK_9                 (LL_ADC_REG_RANK_9)  /*!< ADC group regular sequencer rank 9 */
+#define ADC_REGULAR_RANK_10                (LL_ADC_REG_RANK_10) /*!< ADC group regular sequencer rank 10 */
+#define ADC_REGULAR_RANK_11                (LL_ADC_REG_RANK_11) /*!< ADC group regular sequencer rank 11 */
+#define ADC_REGULAR_RANK_12                (LL_ADC_REG_RANK_12) /*!< ADC group regular sequencer rank 12 */
+#define ADC_REGULAR_RANK_13                (LL_ADC_REG_RANK_13) /*!< ADC group regular sequencer rank 13 */
+#define ADC_REGULAR_RANK_14                (LL_ADC_REG_RANK_14) /*!< ADC group regular sequencer rank 14 */
+#define ADC_REGULAR_RANK_15                (LL_ADC_REG_RANK_15) /*!< ADC group regular sequencer rank 15 */
+#define ADC_REGULAR_RANK_16                (LL_ADC_REG_RANK_16) /*!< ADC group regular sequencer rank 16 */
 /**
   * @}
   */
@@ -543,71 +541,69 @@ typedef struct
 /** @defgroup ADC_HAL_EC_CHANNEL_SAMPLINGTIME  Channel - Sampling time
   * @{
   */
-#define ADC_SAMPLETIME_2CYCLES_5        (0x00000000U)                                  /*!< Sampling time 2.5 ADC clock cycles */
+#define ADC_SAMPLETIME_2CYCLES_5         (LL_ADC_SAMPLINGTIME_2CYCLES_5)    /*!< Sampling time 2.5 ADC clock cycles */
+#define ADC_SAMPLETIME_6CYCLES_5         (LL_ADC_SAMPLINGTIME_6CYCLES_5)    /*!< Sampling time 6.5 ADC clock cycles */
+#define ADC_SAMPLETIME_12CYCLES_5        (LL_ADC_SAMPLINGTIME_12CYCLES_5)   /*!< Sampling time 12.5 ADC clock cycles */
+#define ADC_SAMPLETIME_24CYCLES_5        (LL_ADC_SAMPLINGTIME_24CYCLES_5)   /*!< Sampling time 24.5 ADC clock cycles */
+#define ADC_SAMPLETIME_47CYCLES_5        (LL_ADC_SAMPLINGTIME_47CYCLES_5)   /*!< Sampling time 47.5 ADC clock cycles */
+#define ADC_SAMPLETIME_92CYCLES_5        (LL_ADC_SAMPLINGTIME_92CYCLES_5)   /*!< Sampling time 92.5 ADC clock cycles */
+#define ADC_SAMPLETIME_247CYCLES_5       (LL_ADC_SAMPLINGTIME_247CYCLES_5)  /*!< Sampling time 247.5 ADC clock cycles */
+#define ADC_SAMPLETIME_640CYCLES_5       (LL_ADC_SAMPLINGTIME_640CYCLES_5)  /*!< Sampling time 640.5 ADC clock cycles */
 #if defined(ADC_SMPR1_SMPPLUS)
-#define ADC_SAMPLETIME_3CYCLES_5        (ADC_SMPR1_SMPPLUS)                       /*!< Sampling time 3.5 ADC clock cycles. If selected, this sampling time replaces all sampling time 2.5 ADC clock cycles. These 2 sampling times cannot be used simultaneously. */
+#define ADC_SAMPLETIME_3CYCLES_5           (ADC_SMPR1_SMPPLUS | LL_ADC_SAMPLINGTIME_2CYCLES_5) /*!< Sampling time 3.5 ADC clock cycles. If selected, this sampling time replaces all sampling time 2.5 ADC clock cycles. These 2 sampling times cannot be used simultaneously. */
 #endif
-#define ADC_SAMPLETIME_6CYCLES_5        (ADC_SMPR2_SMP10_0)                       /*!< Sampling time 6.5 ADC clock cycles   */
-#define ADC_SAMPLETIME_12CYCLES_5       (ADC_SMPR2_SMP10_1)                       /*!< Sampling time 12.5 ADC clock cycles  */
-#define ADC_SAMPLETIME_24CYCLES_5       ((ADC_SMPR2_SMP10_1 | ADC_SMPR2_SMP10_0)) /*!< Sampling time 24.5 ADC clock cycles  */
-#define ADC_SAMPLETIME_47CYCLES_5       (ADC_SMPR2_SMP10_2)                       /*!< Sampling time 47.5 ADC clock cycles  */
-#define ADC_SAMPLETIME_92CYCLES_5       ((ADC_SMPR2_SMP10_2 | ADC_SMPR2_SMP10_0)) /*!< Sampling time 92.5 ADC clock cycles  */
-#define ADC_SAMPLETIME_247CYCLES_5      ((ADC_SMPR2_SMP10_2 | ADC_SMPR2_SMP10_1)) /*!< Sampling time 247.5 ADC clock cycles */
-#define ADC_SAMPLETIME_640CYCLES_5      (ADC_SMPR2_SMP10)                         /*!< Sampling time 640.5 ADC clock cycles */
 /**
   * @}
   */
 
-/** @defgroup ADC_channels ADC channels
+/** @defgroup ADC_HAL_EC_CHANNEL  ADC instance - Channel number
   * @{
   */
-#define ADC_CHANNEL_0           ((uint32_t)(0x00000000))                                                            /*!< ADC channel 0  */
-#define ADC_CHANNEL_1           ((uint32_t)(ADC_SQR3_SQ10_0))                                                       /*!< ADC channel 1  */
-#define ADC_CHANNEL_2           ((uint32_t)(ADC_SQR3_SQ10_1))                                                       /*!< ADC channel 2  */
-#define ADC_CHANNEL_3           ((uint32_t)(ADC_SQR3_SQ10_1 | ADC_SQR3_SQ10_0))                                     /*!< ADC channel 3  */
-#define ADC_CHANNEL_4           ((uint32_t)(ADC_SQR3_SQ10_2))                                                       /*!< ADC channel 4  */
-#define ADC_CHANNEL_5           ((uint32_t)(ADC_SQR3_SQ10_2 | ADC_SQR3_SQ10_0))                                     /*!< ADC channel 5  */
-#define ADC_CHANNEL_6           ((uint32_t)(ADC_SQR3_SQ10_2 | ADC_SQR3_SQ10_1))                                     /*!< ADC channel 6  */
-#define ADC_CHANNEL_7           ((uint32_t)(ADC_SQR3_SQ10_2 | ADC_SQR3_SQ10_1 | ADC_SQR3_SQ10_0))                   /*!< ADC channel 7  */
-#define ADC_CHANNEL_8           ((uint32_t)(ADC_SQR3_SQ10_3))                                                       /*!< ADC channel 8  */
-#define ADC_CHANNEL_9           ((uint32_t)(ADC_SQR3_SQ10_3 | ADC_SQR3_SQ10_0))                                     /*!< ADC channel 9  */
-#define ADC_CHANNEL_10          ((uint32_t)(ADC_SQR3_SQ10_3 | ADC_SQR3_SQ10_1))                                     /*!< ADC channel 10 */
-#define ADC_CHANNEL_11          ((uint32_t)(ADC_SQR3_SQ10_3 | ADC_SQR3_SQ10_1 | ADC_SQR3_SQ10_0))                   /*!< ADC channel 11 */
-#define ADC_CHANNEL_12          ((uint32_t)(ADC_SQR3_SQ10_3 | ADC_SQR3_SQ10_2))                                     /*!< ADC channel 12 */
-#define ADC_CHANNEL_13          ((uint32_t)(ADC_SQR3_SQ10_3 | ADC_SQR3_SQ10_2 | ADC_SQR3_SQ10_0))                   /*!< ADC channel 13 */
-#define ADC_CHANNEL_14          ((uint32_t)(ADC_SQR3_SQ10_3 | ADC_SQR3_SQ10_2 | ADC_SQR3_SQ10_1))                   /*!< ADC channel 14 */
-#define ADC_CHANNEL_15          ((uint32_t)(ADC_SQR3_SQ10_3 | ADC_SQR3_SQ10_2 | ADC_SQR3_SQ10_1 | ADC_SQR3_SQ10_0)) /*!< ADC channel 15 */
-#define ADC_CHANNEL_16          ((uint32_t)(ADC_SQR3_SQ10_4))                                                       /*!< ADC channel 16 */
-#define ADC_CHANNEL_17          ((uint32_t)(ADC_SQR3_SQ10_4 | ADC_SQR3_SQ10_0))                                     /*!< ADC channel 17 */
-#define ADC_CHANNEL_18          ((uint32_t)(ADC_SQR3_SQ10_4 | ADC_SQR3_SQ10_1))                                     /*!< ADC channel 18 */
-
 /* Note: VrefInt, TempSensor and Vbat internal channels are not available on  */
 /*        all ADC instances (refer to Reference Manual).                      */
-#define ADC_CHANNEL_TEMPSENSOR  ADC_CHANNEL_17                                                                      /*!< ADC temperature sensor channel */
-#define ADC_CHANNEL_VBAT        ADC_CHANNEL_18                                                                      /*!< ADC Vbat channel               */
-#define ADC_CHANNEL_VREFINT     ADC_CHANNEL_0                                                                       /*!< ADC Vrefint channel            */
-
+#define ADC_CHANNEL_0                      (LL_ADC_CHANNEL_0)               /*!< ADC external channel (channel connected to GPIO pin) ADCx_IN0  */
+#define ADC_CHANNEL_1                      (LL_ADC_CHANNEL_1)               /*!< ADC external channel (channel connected to GPIO pin) ADCx_IN1  */
+#define ADC_CHANNEL_2                      (LL_ADC_CHANNEL_2)               /*!< ADC external channel (channel connected to GPIO pin) ADCx_IN2  */
+#define ADC_CHANNEL_3                      (LL_ADC_CHANNEL_3)               /*!< ADC external channel (channel connected to GPIO pin) ADCx_IN3  */
+#define ADC_CHANNEL_4                      (LL_ADC_CHANNEL_4)               /*!< ADC external channel (channel connected to GPIO pin) ADCx_IN4  */
+#define ADC_CHANNEL_5                      (LL_ADC_CHANNEL_5)               /*!< ADC external channel (channel connected to GPIO pin) ADCx_IN5  */
+#define ADC_CHANNEL_6                      (LL_ADC_CHANNEL_6)               /*!< ADC external channel (channel connected to GPIO pin) ADCx_IN6  */
+#define ADC_CHANNEL_7                      (LL_ADC_CHANNEL_7)               /*!< ADC external channel (channel connected to GPIO pin) ADCx_IN7  */
+#define ADC_CHANNEL_8                      (LL_ADC_CHANNEL_8)               /*!< ADC external channel (channel connected to GPIO pin) ADCx_IN8  */
+#define ADC_CHANNEL_9                      (LL_ADC_CHANNEL_9)               /*!< ADC external channel (channel connected to GPIO pin) ADCx_IN9  */
+#define ADC_CHANNEL_10                     (LL_ADC_CHANNEL_10)              /*!< ADC external channel (channel connected to GPIO pin) ADCx_IN10 */
+#define ADC_CHANNEL_11                     (LL_ADC_CHANNEL_11)              /*!< ADC external channel (channel connected to GPIO pin) ADCx_IN11 */
+#define ADC_CHANNEL_12                     (LL_ADC_CHANNEL_12)              /*!< ADC external channel (channel connected to GPIO pin) ADCx_IN12 */
+#define ADC_CHANNEL_13                     (LL_ADC_CHANNEL_13)              /*!< ADC external channel (channel connected to GPIO pin) ADCx_IN13 */
+#define ADC_CHANNEL_14                     (LL_ADC_CHANNEL_14)              /*!< ADC external channel (channel connected to GPIO pin) ADCx_IN14 */
+#define ADC_CHANNEL_15                     (LL_ADC_CHANNEL_15)              /*!< ADC external channel (channel connected to GPIO pin) ADCx_IN15 */
+#define ADC_CHANNEL_16                     (LL_ADC_CHANNEL_16)              /*!< ADC external channel (channel connected to GPIO pin) ADCx_IN16 */
+#define ADC_CHANNEL_17                     (LL_ADC_CHANNEL_17)              /*!< ADC external channel (channel connected to GPIO pin) ADCx_IN17 */
+#define ADC_CHANNEL_18                     (LL_ADC_CHANNEL_18)              /*!< ADC external channel (channel connected to GPIO pin) ADCx_IN18 */
+#define ADC_CHANNEL_VREFINT                (LL_ADC_CHANNEL_VREFINT)         /*!< ADC internal channel connected to VrefInt: Internal voltage reference. */
+#define ADC_CHANNEL_TEMPSENSOR             (LL_ADC_CHANNEL_TEMPSENSOR)      /*!< ADC internal channel connected to Temperature sensor. */
+#define ADC_CHANNEL_VBAT                   (LL_ADC_CHANNEL_VBAT)            /*!< ADC internal channel connected to Vbat/3: Vbat voltage through a divider ladder of factor 1/3 to have Vbat always below Vdda. */
 #if defined(ADC1) && !defined(ADC2)
-#define ADC_CHANNEL_DAC1CH1             (ADC_CHANNEL_17) /*!< ADC internal channel connected to DAC1 channel 1, channel specific to ADC1. This channel is shared with ADC internal channel connected to temperature sensor, they cannot be used both simultenaeously. */
-#define ADC_CHANNEL_DAC1CH2             (ADC_CHANNEL_18) /*!< ADC internal channel connected to DAC1 channel 2, channel specific to ADC1. This channel is shared with ADC internal channel connected to Vbat, they cannot be used both simultenaeously. */
+#define ADC_CHANNEL_DAC1CH1                (LL_ADC_CHANNEL_DAC1CH1)         /*!< ADC internal channel connected to DAC1 channel 1, channel specific to ADC1. This channel is shared with ADC internal channel connected to temperature sensor, selection is done using function @ref LL_ADC_SetCommonPathInternalCh(). */
+#define ADC_CHANNEL_DAC1CH2                (LL_ADC_CHANNEL_DAC1CH2)         /*!< ADC internal channel connected to DAC1 channel 2, channel specific to ADC1. This channel is shared with ADC internal channel connected to Vbat, selection is done using function @ref LL_ADC_SetCommonPathInternalCh(). */
 #elif defined(ADC2)
-#define ADC_CHANNEL_DAC1CH1_ADC2        (ADC_CHANNEL_17) /*!< ADC internal channel connected to DAC1 channel 1, channel specific to ADC2 */
-#define ADC_CHANNEL_DAC1CH2_ADC2        (ADC_CHANNEL_18) /*!< ADC internal channel connected to DAC1 channel 2, channel specific to ADC2 */
+#define ADC_CHANNEL_DAC1CH1_ADC2           (LL_ADC_CHANNEL_DAC1CH1_ADC2)    /*!< ADC internal channel connected to DAC1 channel 1, channel specific to ADC2 */
+#define ADC_CHANNEL_DAC1CH2_ADC2           (LL_ADC_CHANNEL_DAC1CH2_ADC2)    /*!< ADC internal channel connected to DAC1 channel 2, channel specific to ADC2 */
 #if defined(ADC3)
-#define ADC_CHANNEL_DAC1CH1_ADC3        (ADC_CHANNEL_14) /*!< ADC internal channel connected to DAC1 channel 1, channel specific to ADC3 */
-#define ADC_CHANNEL_DAC1CH2_ADC3        (ADC_CHANNEL_15) /*!< ADC internal channel connected to DAC1 channel 2, channel specific to ADC3 */
+#define ADC_CHANNEL_DAC1CH1_ADC3           (LL_ADC_CHANNEL_DAC1CH1_ADC3)    /*!< ADC internal channel connected to DAC1 channel 1, channel specific to ADC3 */
+#define ADC_CHANNEL_DAC1CH2_ADC3           (LL_ADC_CHANNEL_DAC1CH2_ADC3)    /*!< ADC internal channel connected to DAC1 channel 2, channel specific to ADC3 */
 #endif
 #endif
 /**
   * @}
   */
 
-/** @defgroup ADC_analog_watchdog_number ADC Analog Watchdog Selection
+/** @defgroup ADC_HAL_EC_AWD_NUMBER Analog watchdog - Analog watchdog number
   * @{
   */
-#define ADC_ANALOGWATCHDOG_1                    ((uint32_t)0x00000001)   /*!< Analog watchdog 1 selection */ 
-#define ADC_ANALOGWATCHDOG_2                    ((uint32_t)0x00000002)   /*!< Analog watchdog 2 selection */ 
-#define ADC_ANALOGWATCHDOG_3                    ((uint32_t)0x00000003)   /*!< Analog watchdog 3 selection */ 
+#define ADC_ANALOGWATCHDOG_1               (LL_ADC_AWD1) /*!< ADC analog watchdog number 1 */
+#define ADC_ANALOGWATCHDOG_2               (LL_ADC_AWD2) /*!< ADC analog watchdog number 2 */
+#define ADC_ANALOGWATCHDOG_3               (LL_ADC_AWD3) /*!< ADC analog watchdog number 3 */
 /**
   * @}
   */
@@ -615,85 +611,85 @@ typedef struct
 /** @defgroup ADC_analog_watchdog_mode ADC Analog Watchdog Mode
   * @{
   */
-#define ADC_ANALOGWATCHDOG_NONE                 ((uint32_t) 0x00000000)                                             /*!< No analog watchdog selected                                             */
-#define ADC_ANALOGWATCHDOG_SINGLE_REG           ((uint32_t)(ADC_CFGR_AWD1SGL | ADC_CFGR_AWD1EN))                    /*!< Analog watchdog applied to a regular group single channel               */
-#define ADC_ANALOGWATCHDOG_SINGLE_INJEC         ((uint32_t)(ADC_CFGR_AWD1SGL | ADC_CFGR_JAWD1EN))                   /*!< Analog watchdog applied to an injected group single channel             */
-#define ADC_ANALOGWATCHDOG_SINGLE_REGINJEC      ((uint32_t)(ADC_CFGR_AWD1SGL | ADC_CFGR_AWD1EN | ADC_CFGR_JAWD1EN)) /*!< Analog watchdog applied to a regular and injected groups single channel */
-#define ADC_ANALOGWATCHDOG_ALL_REG              ((uint32_t) ADC_CFGR_AWD1EN)                                        /*!< Analog watchdog applied to regular group all channels                   */
-#define ADC_ANALOGWATCHDOG_ALL_INJEC            ((uint32_t) ADC_CFGR_JAWD1EN)                                       /*!< Analog watchdog applied to injected group all channels                  */
-#define ADC_ANALOGWATCHDOG_ALL_REGINJEC         ((uint32_t)(ADC_CFGR_AWD1EN | ADC_CFGR_JAWD1EN))                    /*!< Analog watchdog applied to regular and injected groups all channels     */
+#define ADC_ANALOGWATCHDOG_NONE                 (0x00000000U)                                           /*!< No analog watchdog selected                                             */
+#define ADC_ANALOGWATCHDOG_SINGLE_REG           (ADC_CFGR_AWD1SGL | ADC_CFGR_AWD1EN)                    /*!< Analog watchdog applied to a regular group single channel               */
+#define ADC_ANALOGWATCHDOG_SINGLE_INJEC         (ADC_CFGR_AWD1SGL | ADC_CFGR_JAWD1EN)                   /*!< Analog watchdog applied to an injected group single channel             */
+#define ADC_ANALOGWATCHDOG_SINGLE_REGINJEC      (ADC_CFGR_AWD1SGL | ADC_CFGR_AWD1EN | ADC_CFGR_JAWD1EN) /*!< Analog watchdog applied to a regular and injected groups single channel */
+#define ADC_ANALOGWATCHDOG_ALL_REG              (ADC_CFGR_AWD1EN)                                       /*!< Analog watchdog applied to regular group all channels                   */
+#define ADC_ANALOGWATCHDOG_ALL_INJEC            (ADC_CFGR_JAWD1EN)                                      /*!< Analog watchdog applied to injected group all channels                  */
+#define ADC_ANALOGWATCHDOG_ALL_REGINJEC         (ADC_CFGR_AWD1EN | ADC_CFGR_JAWD1EN)                    /*!< Analog watchdog applied to regular and injected groups all channels     */
 /**
   * @}
   */
 
-/** @defgroup ADC_Oversampling_Ratio ADC Oversampling Ratio
+/** @defgroup ADC_HAL_EC_OVS_RATIO  Oversampling - Ratio
   * @{
   */
-#define ADC_OVERSAMPLING_RATIO_2      ((uint32_t)0x00000000)                            /*!<  ADC Oversampling ratio 2x   */
-#define ADC_OVERSAMPLING_RATIO_4      ((uint32_t)ADC_CFGR2_OVSR_0)                      /*!<  ADC Oversampling ratio 4x   */
-#define ADC_OVERSAMPLING_RATIO_8      ((uint32_t)ADC_CFGR2_OVSR_1)                      /*!<  ADC Oversampling ratio 8x   */
-#define ADC_OVERSAMPLING_RATIO_16     ((uint32_t)(ADC_CFGR2_OVSR_1 | ADC_CFGR2_OVSR_0)) /*!<  ADC Oversampling ratio 16x  */
-#define ADC_OVERSAMPLING_RATIO_32     ((uint32_t)ADC_CFGR2_OVSR_2)                      /*!<  ADC Oversampling ratio 32x  */
-#define ADC_OVERSAMPLING_RATIO_64     ((uint32_t)(ADC_CFGR2_OVSR_2 | ADC_CFGR2_OVSR_0)) /*!<  ADC Oversampling ratio 64x  */
-#define ADC_OVERSAMPLING_RATIO_128    ((uint32_t)(ADC_CFGR2_OVSR_2 | ADC_CFGR2_OVSR_1)) /*!<  ADC Oversampling ratio 128x */
-#define ADC_OVERSAMPLING_RATIO_256    ((uint32_t)(ADC_CFGR2_OVSR))                      /*!<  ADC Oversampling ratio 256x */
+#define ADC_OVERSAMPLING_RATIO_2           (LL_ADC_OVS_RATIO_2)   /*!< ADC oversampling ratio of 2 (2 ADC conversions are performed, sum of these conversions data is computed to result as the ADC oversampling conversion data (before potential shift) */
+#define ADC_OVERSAMPLING_RATIO_4           (LL_ADC_OVS_RATIO_4)   /*!< ADC oversampling ratio of 4 (4 ADC conversions are performed, sum of these conversions data is computed to result as the ADC oversampling conversion data (before potential shift) */
+#define ADC_OVERSAMPLING_RATIO_8           (LL_ADC_OVS_RATIO_8)   /*!< ADC oversampling ratio of 8 (8 ADC conversions are performed, sum of these conversions data is computed to result as the ADC oversampling conversion data (before potential shift) */
+#define ADC_OVERSAMPLING_RATIO_16          (LL_ADC_OVS_RATIO_16)  /*!< ADC oversampling ratio of 16 (16 ADC conversions are performed, sum of these conversions data is computed to result as the ADC oversampling conversion data (before potential shift) */
+#define ADC_OVERSAMPLING_RATIO_32          (LL_ADC_OVS_RATIO_32)  /*!< ADC oversampling ratio of 32 (32 ADC conversions are performed, sum of these conversions data is computed to result as the ADC oversampling conversion data (before potential shift) */
+#define ADC_OVERSAMPLING_RATIO_64          (LL_ADC_OVS_RATIO_64)  /*!< ADC oversampling ratio of 64 (64 ADC conversions are performed, sum of these conversions data is computed to result as the ADC oversampling conversion data (before potential shift) */
+#define ADC_OVERSAMPLING_RATIO_128         (LL_ADC_OVS_RATIO_128) /*!< ADC oversampling ratio of 128 (128 ADC conversions are performed, sum of these conversions data is computed to result as the ADC oversampling conversion data (before potential shift) */
+#define ADC_OVERSAMPLING_RATIO_256         (LL_ADC_OVS_RATIO_256) /*!< ADC oversampling ratio of 256 (256 ADC conversions are performed, sum of these conversions data is computed to result as the ADC oversampling conversion data (before potential shift) */
 /**
   * @}
   */
 
-/** @defgroup ADC_Right_Bit_Shift ADC Oversampling Right Shift
+/** @defgroup ADC_HAL_EC_OVS_SHIFT  Oversampling - Data shift
   * @{
   */
-#define ADC_RIGHTBITSHIFT_NONE  ((uint32_t)0x00000000)                                               /*!<  ADC No bit shift for oversampling */
-#define ADC_RIGHTBITSHIFT_1     ((uint32_t)ADC_CFGR2_OVSS_0)                                         /*!<  ADC 1 bit shift for oversampling  */
-#define ADC_RIGHTBITSHIFT_2     ((uint32_t)ADC_CFGR2_OVSS_1)                                         /*!<  ADC 2 bits shift for oversampling */
-#define ADC_RIGHTBITSHIFT_3     ((uint32_t)(ADC_CFGR2_OVSS_1 | ADC_CFGR2_OVSS_0))                    /*!<  ADC 3 bits shift for oversampling */
-#define ADC_RIGHTBITSHIFT_4     ((uint32_t)ADC_CFGR2_OVSS_2)                                         /*!<  ADC 4 bits shift for oversampling */
-#define ADC_RIGHTBITSHIFT_5     ((uint32_t)(ADC_CFGR2_OVSS_2 | ADC_CFGR2_OVSS_0))                    /*!<  ADC 5 bits shift for oversampling */
-#define ADC_RIGHTBITSHIFT_6     ((uint32_t)(ADC_CFGR2_OVSS_2 | ADC_CFGR2_OVSS_1))                    /*!<  ADC 6 bits shift for oversampling */
-#define ADC_RIGHTBITSHIFT_7     ((uint32_t)(ADC_CFGR2_OVSS_2 | ADC_CFGR2_OVSS_1 | ADC_CFGR2_OVSS_0)) /*!<  ADC 7 bits shift for oversampling */
-#define ADC_RIGHTBITSHIFT_8     ((uint32_t)ADC_CFGR2_OVSS_3)                                         /*!<  ADC 8 bits shift for oversampling */
+#define ADC_RIGHTBITSHIFT_NONE             (LL_ADC_OVS_SHIFT_NONE)    /*!< ADC oversampling no shift (sum of the ADC conversions data is not divided to result as the ADC oversampling conversion data) */
+#define ADC_RIGHTBITSHIFT_1                (LL_ADC_OVS_SHIFT_RIGHT_1) /*!< ADC oversampling shift of 1 (sum of the ADC conversions data is divided by 2 to result as the ADC oversampling conversion data) */
+#define ADC_RIGHTBITSHIFT_2                (LL_ADC_OVS_SHIFT_RIGHT_2) /*!< ADC oversampling shift of 2 (sum of the ADC conversions data is divided by 4 to result as the ADC oversampling conversion data) */
+#define ADC_RIGHTBITSHIFT_3                (LL_ADC_OVS_SHIFT_RIGHT_3) /*!< ADC oversampling shift of 3 (sum of the ADC conversions data is divided by 8 to result as the ADC oversampling conversion data) */
+#define ADC_RIGHTBITSHIFT_4                (LL_ADC_OVS_SHIFT_RIGHT_4) /*!< ADC oversampling shift of 4 (sum of the ADC conversions data is divided by 16 to result as the ADC oversampling conversion data) */
+#define ADC_RIGHTBITSHIFT_5                (LL_ADC_OVS_SHIFT_RIGHT_5) /*!< ADC oversampling shift of 5 (sum of the ADC conversions data is divided by 32 to result as the ADC oversampling conversion data) */
+#define ADC_RIGHTBITSHIFT_6                (LL_ADC_OVS_SHIFT_RIGHT_6) /*!< ADC oversampling shift of 6 (sum of the ADC conversions data is divided by 64 to result as the ADC oversampling conversion data) */
+#define ADC_RIGHTBITSHIFT_7                (LL_ADC_OVS_SHIFT_RIGHT_7) /*!< ADC oversampling shift of 7 (sum of the ADC conversions data is divided by 128 to result as the ADC oversampling conversion data) */
+#define ADC_RIGHTBITSHIFT_8                (LL_ADC_OVS_SHIFT_RIGHT_8) /*!< ADC oversampling shift of 8 (sum of the ADC conversions data is divided by 256 to result as the ADC oversampling conversion data) */
 /**
   * @}
   */
 
-/** @defgroup ADC_Triggered_Oversampling_Mode   ADC Triggered Regular Oversampling
+/** @defgroup ADC_HAL_EC_OVS_DISCONT_MODE  Oversampling - Discontinuous mode
   * @{
   */
-#define ADC_TRIGGEREDMODE_SINGLE_TRIGGER      ((uint32_t)0x00000000)      /*!<  A single trigger for all channel oversampled conversions */
-#define ADC_TRIGGEREDMODE_MULTI_TRIGGER       ((uint32_t)ADC_CFGR2_TROVS) /*!<  A trigger for each oversampled conversion                */
+#define ADC_TRIGGEREDMODE_SINGLE_TRIGGER   (LL_ADC_OVS_REG_CONT)          /*!< ADC oversampling discontinuous mode: continuous mode (all conversions of oversampling ratio are done from 1 trigger) */
+#define ADC_TRIGGEREDMODE_MULTI_TRIGGER    (LL_ADC_OVS_REG_DISCONT)       /*!< ADC oversampling discontinuous mode: discontinuous mode (each conversion of oversampling ratio needs a trigger) */
 /**
   * @}
   */
 
-/** @defgroup ADC_Regular_Oversampling_Mode   ADC Regular Oversampling Continued or Resumed Mode
+/** @defgroup ADC_HAL_EC_OVS_SCOPE_REG  Oversampling - Oversampling scope for ADC group regular
   * @{
   */
-#define ADC_REGOVERSAMPLING_CONTINUED_MODE    ((uint32_t)0x00000000)      /*!<  Oversampling buffer maintained during injection sequence */
-#define ADC_REGOVERSAMPLING_RESUMED_MODE      ((uint32_t)ADC_CFGR2_ROVSM) /*!<  Oversampling buffer zeroed during injection sequence     */
+#define ADC_REGOVERSAMPLING_CONTINUED_MODE    (LL_ADC_OVS_GRP_REGULAR_CONTINUED) /*!< Oversampling buffer maintained during injection sequence */
+#define ADC_REGOVERSAMPLING_RESUMED_MODE      (LL_ADC_OVS_GRP_REGULAR_RESUMED)   /*!< Oversampling buffer zeroed during injection sequence     */
 /**
   * @}
   */
 
 
-/** @defgroup ADC_Event_type ADC Event Type
+/** @defgroup ADC_Event_type ADC Event type
   * @{
   */
-#define ADC_EOSMP_EVENT          ((uint32_t)ADC_FLAG_EOSMP) /*!< ADC End of Sampling event */
-#define ADC_AWD1_EVENT           ((uint32_t)ADC_FLAG_AWD1)  /*!< ADC Analog watchdog 1 event (main analog watchdog, present on all STM32 series) */
-#define ADC_AWD2_EVENT           ((uint32_t)ADC_FLAG_AWD2)  /*!< ADC Analog watchdog 2 event (additional analog watchdog, not present on all STM32 series) */
-#define ADC_AWD3_EVENT           ((uint32_t)ADC_FLAG_AWD3)  /*!< ADC Analog watchdog 3 event (additional analog watchdog, not present on all STM32 series) */
-#define ADC_OVR_EVENT            ((uint32_t)ADC_FLAG_OVR)   /*!< ADC overrun event */
-#define ADC_JQOVF_EVENT          ((uint32_t)ADC_FLAG_JQOVF) /*!< ADC Injected Context Queue Overflow event */
+#define ADC_EOSMP_EVENT          (ADC_FLAG_EOSMP) /*!< ADC End of Sampling event */
+#define ADC_AWD1_EVENT           (ADC_FLAG_AWD1)  /*!< ADC Analog watchdog 1 event (main analog watchdog, present on all STM32 series) */
+#define ADC_AWD2_EVENT           (ADC_FLAG_AWD2)  /*!< ADC Analog watchdog 2 event (additional analog watchdog, not present on all STM32 series) */
+#define ADC_AWD3_EVENT           (ADC_FLAG_AWD3)  /*!< ADC Analog watchdog 3 event (additional analog watchdog, not present on all STM32 series) */
+#define ADC_OVR_EVENT            (ADC_FLAG_OVR)   /*!< ADC overrun event */
+#define ADC_JQOVF_EVENT          (ADC_FLAG_JQOVF) /*!< ADC Injected Context Queue Overflow event */
 /**
   * @}
   */
 #define ADC_AWD_EVENT            ADC_AWD1_EVENT      /*!< ADC Analog watchdog 1 event: Naming for compatibility with other STM32 devices having only one analog watchdog */
 
-/** @defgroup ADC_interrupts_definition ADC Interrupts Definition
+/** @defgroup ADC_interrupts_definition ADC interrupts definition
   * @{
   */
-#define ADC_IT_RDY           ADC_IER_ADRDY      /*!< ADC Ready (ADRDY) interrupt source */
+#define ADC_IT_RDY           ADC_IER_ADRDY      /*!< ADC Ready interrupt source */
 #define ADC_IT_EOSMP         ADC_IER_EOSMP      /*!< ADC End of sampling interrupt source */
 #define ADC_IT_EOC           ADC_IER_EOC        /*!< ADC End of regular conversion interrupt source */
 #define ADC_IT_EOS           ADC_IER_EOS        /*!< ADC End of regular sequence of conversions interrupt source */
@@ -711,7 +707,7 @@ typedef struct
   * @}
   */
 
-/** @defgroup ADC_flags_definition ADC Flags Definition
+/** @defgroup ADC_flags_definition ADC flags definition
   * @{
   */
 #define ADC_FLAG_RDY           ADC_ISR_ADRDY    /*!< ADC Ready flag */
@@ -759,15 +755,16 @@ typedef struct
   * @param __HANDLE__ ADC handle
   * @retval SET (software start) or RESET (external trigger)
   */
-#define ADC_IS_SOFTWARE_START_REGULAR(__HANDLE__)                        \
-       (((__HANDLE__)->Instance->CFGR & ADC_CFGR_EXTEN) == RESET)
+#define ADC_IS_SOFTWARE_START_REGULAR(__HANDLE__)                              \
+  (((__HANDLE__)->Instance->CFGR & ADC_CFGR_EXTEN) == RESET)
 
 /**
   * @brief Return resolution bits in CFGR register RES[1:0] field.
   * @param __HANDLE__ ADC handle
-  * @retval 2-bit field RES of CFGR register.
+  * @retval Value of bitfield RES in CFGR register.
   */
-#define ADC_GET_RESOLUTION(__HANDLE__) (((__HANDLE__)->Instance->CFGR) & ADC_CFGR_RES)
+#define ADC_GET_RESOLUTION(__HANDLE__)                                         \
+  (LL_ADC_GetResolution((__HANDLE__)->Instance))
 
 /**
   * @brief Clear ADC error code (set it to no error code "HAL_ADC_ERROR_NONE").
@@ -792,8 +789,7 @@ typedef struct
   * @retval SET (conversion is on going) or RESET (no conversion is on going)
   */
 #define ADC_IS_CONVERSION_ONGOING_REGULAR(__HANDLE__)                          \
-  (( (((__HANDLE__)->Instance->CR) & ADC_CR_ADSTART) == RESET                  \
-  ) ? RESET : SET)
+  (LL_ADC_REG_IsConversionOngoing((__HANDLE__)->Instance))
 
 /**
   * @brief Simultaneously clear and set specific bits of the handle State.
@@ -811,17 +807,17 @@ typedef struct
   * @retval SET (__ADC_VALUE__ in line with __RESOLUTION__) or RESET (__ADC_VALUE__ not in line with __RESOLUTION__)
   */
 #define IS_ADC_RANGE(__RESOLUTION__, __ADC_VALUE__)                                         \
-   ((((__RESOLUTION__) == ADC_RESOLUTION_12B) && ((__ADC_VALUE__) <= ((uint32_t)0x0FFF))) || \
-    (((__RESOLUTION__) == ADC_RESOLUTION_10B) && ((__ADC_VALUE__) <= ((uint32_t)0x03FF))) || \
-    (((__RESOLUTION__) == ADC_RESOLUTION_8B)  && ((__ADC_VALUE__) <= ((uint32_t)0x00FF))) || \
-    (((__RESOLUTION__) == ADC_RESOLUTION_6B)  && ((__ADC_VALUE__) <= ((uint32_t)0x003F)))   )
+   ((((__RESOLUTION__) == ADC_RESOLUTION_12B) && ((__ADC_VALUE__) <= (0x0FFF))) || \
+    (((__RESOLUTION__) == ADC_RESOLUTION_10B) && ((__ADC_VALUE__) <= (0x03FF))) || \
+    (((__RESOLUTION__) == ADC_RESOLUTION_8B)  && ((__ADC_VALUE__) <= (0x00FF))) || \
+    (((__RESOLUTION__) == ADC_RESOLUTION_6B)  && ((__ADC_VALUE__) <= (0x003F)))   )
 
 /**
   * @brief Verify the length of the scheduled regular conversions group.
   * @param __LENGTH__ number of programmed conversions.   
   * @retval SET (__LENGTH__ is within the maximum number of possible programmable regular conversions) or RESET (__LENGTH__ is null or too large)
   */
-#define IS_ADC_REGULAR_NB_CONV(__LENGTH__) (((__LENGTH__) >= ((uint32_t)1)) && ((__LENGTH__) <= ((uint32_t)16)))
+#define IS_ADC_REGULAR_NB_CONV(__LENGTH__) (((__LENGTH__) >= (1U)) && ((__LENGTH__) <= (16U)))
 
 
 /**
@@ -829,7 +825,7 @@ typedef struct
   * @param NUMBER number of scheduled regular conversions in discontinuous mode.  
   * @retval SET (NUMBER is within the maximum number of regular conversions in discontinous mode) or RESET (NUMBER is null or too large)
   */
-#define IS_ADC_REGULAR_DISCONT_NUMBER(NUMBER) (((NUMBER) >= ((uint32_t)1)) && ((NUMBER) <= ((uint32_t)8)))
+#define IS_ADC_REGULAR_DISCONT_NUMBER(NUMBER) (((NUMBER) >= (1U)) && ((NUMBER) <= (8U)))
 
 
 /**
@@ -919,7 +915,6 @@ typedef struct
                                                  ((__REGTRIG__) == ADC_EXTERNALTRIG_T6_TRGO)  || \
                                                  ((__REGTRIG__) == ADC_EXTERNALTRIG_T15_TRGO) || \
                                                  ((__REGTRIG__) == ADC_EXTERNALTRIG_T3_CC4)   || \
-                                                                                             \
                                                  ((__REGTRIG__) == ADC_SOFTWARE_START)           )
 
 /**
@@ -1004,12 +999,12 @@ typedef struct
 /* Minimum ADC Clock frequency is 0.14 MHz                                  */
 /* Maximum conversion time is                                               */
 /*              653 / 0.14 MHz = 4.66 ms                                    */
-#define ADC_STOP_CONVERSION_TIMEOUT     ((uint32_t) 5)      /*!< ADC stop time-out value */ 
+#define ADC_STOP_CONVERSION_TIMEOUT     ( 5U)      /*!< ADC stop time-out value */ 
 
 /* Delay for temperature sensor stabilization time.                         */
 /* Maximum delay is 120us (refer device datasheet, parameter tSTART).       */
 /* Unit: us                                                                 */
-#define ADC_TEMPSENSOR_DELAY_US         ((uint32_t) 120)
+#define ADC_TEMPSENSOR_DELAY_US         (LL_ADC_DELAY_TEMPSENSOR_STAB_US)
 
 /**
   * @}
@@ -1039,17 +1034,17 @@ typedef struct
   * @param __HANDLE__ ADC handle
   * @param __INTERRUPT__ ADC Interrupt
   *        This parameter can be one of the following values:
-  *            @arg @ref ADC_IT_RDY,    ADC Ready (ADRDY) interrupt source
-  *            @arg @ref ADC_IT_EOSMP,  ADC End of Sampling interrupt source
-  *            @arg @ref ADC_IT_EOC,    ADC End of Regular Conversion interrupt source
-  *            @arg @ref ADC_IT_EOS,    ADC End of Regular sequence of Conversions interrupt source
-  *            @arg @ref ADC_IT_OVR,    ADC overrun interrupt source
-  *            @arg @ref ADC_IT_JEOC,   ADC End of Injected Conversion interrupt source
-  *            @arg @ref ADC_IT_JEOS,   ADC End of Injected sequence of Conversions interrupt source
-  *            @arg @ref ADC_IT_AWD1,   ADC Analog watchdog 1 interrupt source (main analog watchdog)
-  *            @arg @ref ADC_IT_AWD2,   ADC Analog watchdog 2 interrupt source (additional analog watchdog)
-  *            @arg @ref ADC_IT_AWD3,   ADC Analog watchdog 3 interrupt source (additional analog watchdog)
-  *            @arg @ref ADC_IT_JQOVF,  ADC Injected Context Queue Overflow interrupt source. 
+  *            @arg @ref ADC_IT_RDY    ADC Ready interrupt source
+  *            @arg @ref ADC_IT_EOSMP  ADC End of Sampling interrupt source
+  *            @arg @ref ADC_IT_EOC    ADC End of Regular Conversion interrupt source
+  *            @arg @ref ADC_IT_EOS    ADC End of Regular sequence of Conversions interrupt source
+  *            @arg @ref ADC_IT_OVR    ADC overrun interrupt source
+  *            @arg @ref ADC_IT_JEOC   ADC End of Injected Conversion interrupt source
+  *            @arg @ref ADC_IT_JEOS   ADC End of Injected sequence of Conversions interrupt source
+  *            @arg @ref ADC_IT_AWD1   ADC Analog watchdog 1 interrupt source (main analog watchdog)
+  *            @arg @ref ADC_IT_AWD2   ADC Analog watchdog 2 interrupt source (additional analog watchdog)
+  *            @arg @ref ADC_IT_AWD3   ADC Analog watchdog 3 interrupt source (additional analog watchdog)
+  *            @arg @ref ADC_IT_JQOVF  ADC Injected Context Queue Overflow interrupt source. 
   * @retval None
   */
 #define __HAL_ADC_ENABLE_IT(__HANDLE__, __INTERRUPT__)                         \
@@ -1060,17 +1055,17 @@ typedef struct
   * @param __HANDLE__ ADC handle
   * @param __INTERRUPT__ ADC Interrupt
   *        This parameter can be one of the following values:
-  *            @arg @ref ADC_IT_RDY,    ADC Ready (ADRDY) interrupt source
-  *            @arg @ref ADC_IT_EOSMP,  ADC End of Sampling interrupt source
-  *            @arg @ref ADC_IT_EOC,    ADC End of Regular Conversion interrupt source
-  *            @arg @ref ADC_IT_EOS,    ADC End of Regular sequence of Conversions interrupt source
-  *            @arg @ref ADC_IT_OVR,    ADC overrun interrupt source
-  *            @arg @ref ADC_IT_JEOC,   ADC End of Injected Conversion interrupt source
-  *            @arg @ref ADC_IT_JEOS,   ADC End of Injected sequence of Conversions interrupt source
-  *            @arg @ref ADC_IT_AWD1,   ADC Analog watchdog 1 interrupt source (main analog watchdog)
-  *            @arg @ref ADC_IT_AWD2,   ADC Analog watchdog 2 interrupt source (additional analog watchdog)
-  *            @arg @ref ADC_IT_AWD3,   ADC Analog watchdog 3 interrupt source (additional analog watchdog)
-  *            @arg @ref ADC_IT_JQOVF,  ADC Injected Context Queue Overflow interrupt source. 
+  *            @arg @ref ADC_IT_RDY    ADC Ready interrupt source
+  *            @arg @ref ADC_IT_EOSMP  ADC End of Sampling interrupt source
+  *            @arg @ref ADC_IT_EOC    ADC End of Regular Conversion interrupt source
+  *            @arg @ref ADC_IT_EOS    ADC End of Regular sequence of Conversions interrupt source
+  *            @arg @ref ADC_IT_OVR    ADC overrun interrupt source
+  *            @arg @ref ADC_IT_JEOC   ADC End of Injected Conversion interrupt source
+  *            @arg @ref ADC_IT_JEOS   ADC End of Injected sequence of Conversions interrupt source
+  *            @arg @ref ADC_IT_AWD1   ADC Analog watchdog 1 interrupt source (main analog watchdog)
+  *            @arg @ref ADC_IT_AWD2   ADC Analog watchdog 2 interrupt source (additional analog watchdog)
+  *            @arg @ref ADC_IT_AWD3   ADC Analog watchdog 3 interrupt source (additional analog watchdog)
+  *            @arg @ref ADC_IT_JQOVF  ADC Injected Context Queue Overflow interrupt source. 
   * @retval None
   */
 #define __HAL_ADC_DISABLE_IT(__HANDLE__, __INTERRUPT__)                        \
@@ -1080,17 +1075,17 @@ typedef struct
   * @param __HANDLE__ ADC handle
   * @param __INTERRUPT__ ADC interrupt source to check
   *          This parameter can be one of the following values:
-  *            @arg @ref ADC_IT_RDY,    ADC Ready (ADRDY) interrupt source
-  *            @arg @ref ADC_IT_EOSMP,  ADC End of Sampling interrupt source
-  *            @arg @ref ADC_IT_EOC,    ADC End of Regular Conversion interrupt source
-  *            @arg @ref ADC_IT_EOS,    ADC End of Regular sequence of Conversions interrupt source
-  *            @arg @ref ADC_IT_OVR,    ADC overrun interrupt source
-  *            @arg @ref ADC_IT_JEOC,   ADC End of Injected Conversion interrupt source
-  *            @arg @ref ADC_IT_JEOS,   ADC End of Injected sequence of Conversions interrupt source
-  *            @arg @ref ADC_IT_AWD1,   ADC Analog watchdog 1 interrupt source (main analog watchdog)
-  *            @arg @ref ADC_IT_AWD2,   ADC Analog watchdog 2 interrupt source (additional analog watchdog)
-  *            @arg @ref ADC_IT_AWD3,   ADC Analog watchdog 3 interrupt source (additional analog watchdog)
-  *            @arg @ref ADC_IT_JQOVF,  ADC Injected Context Queue Overflow interrupt source.  
+  *            @arg @ref ADC_IT_RDY    ADC Ready interrupt source
+  *            @arg @ref ADC_IT_EOSMP  ADC End of Sampling interrupt source
+  *            @arg @ref ADC_IT_EOC    ADC End of Regular Conversion interrupt source
+  *            @arg @ref ADC_IT_EOS    ADC End of Regular sequence of Conversions interrupt source
+  *            @arg @ref ADC_IT_OVR    ADC overrun interrupt source
+  *            @arg @ref ADC_IT_JEOC   ADC End of Injected Conversion interrupt source
+  *            @arg @ref ADC_IT_JEOS   ADC End of Injected sequence of Conversions interrupt source
+  *            @arg @ref ADC_IT_AWD1   ADC Analog watchdog 1 interrupt source (main analog watchdog)
+  *            @arg @ref ADC_IT_AWD2   ADC Analog watchdog 2 interrupt source (additional analog watchdog)
+  *            @arg @ref ADC_IT_AWD3   ADC Analog watchdog 3 interrupt source (additional analog watchdog)
+  *            @arg @ref ADC_IT_JQOVF  ADC Injected Context Queue Overflow interrupt source.  
   * @retval State of interruption (SET or RESET)
   */
 #define __HAL_ADC_GET_IT_SOURCE(__HANDLE__, __INTERRUPT__)                     \
@@ -1101,17 +1096,17 @@ typedef struct
   * @param __HANDLE__ ADC handle
   * @param __FLAG__ ADC flag
   *        This parameter can be one of the following values:
-  *            @arg @ref ADC_FLAG_RDY,     ADC Ready (ADRDY) flag                              
-  *            @arg @ref ADC_FLAG_EOSMP,   ADC End of Sampling flag                            
-  *            @arg @ref ADC_FLAG_EOC,     ADC End of Regular Conversion flag                  
-  *            @arg @ref ADC_FLAG_EOS,     ADC End of Regular sequence of Conversions flag     
-  *            @arg @ref ADC_FLAG_OVR,     ADC overrun flag        
-  *            @arg @ref ADC_FLAG_JEOC,    ADC End of Injected Conversion flag                 
-  *            @arg @ref ADC_FLAG_JEOS,    ADC End of Injected sequence of Conversions flag    
-  *            @arg @ref ADC_FLAG_AWD1,    ADC Analog watchdog 1 flag (main analog watchdog)
-  *            @arg @ref ADC_FLAG_AWD2,    ADC Analog watchdog 2 flag (additional analog watchdog)
-  *            @arg @ref ADC_FLAG_AWD3,    ADC Analog watchdog 3 flag (additional analog watchdog)
-  *            @arg @ref ADC_FLAG_JQOVF,   ADC Injected Context Queue Overflow flag.            
+  *            @arg @ref ADC_FLAG_RDY     ADC Ready flag                              
+  *            @arg @ref ADC_FLAG_EOSMP   ADC End of Sampling flag                            
+  *            @arg @ref ADC_FLAG_EOC     ADC End of Regular Conversion flag                  
+  *            @arg @ref ADC_FLAG_EOS     ADC End of Regular sequence of Conversions flag     
+  *            @arg @ref ADC_FLAG_OVR     ADC overrun flag        
+  *            @arg @ref ADC_FLAG_JEOC    ADC End of Injected Conversion flag                 
+  *            @arg @ref ADC_FLAG_JEOS    ADC End of Injected sequence of Conversions flag    
+  *            @arg @ref ADC_FLAG_AWD1    ADC Analog watchdog 1 flag (main analog watchdog)
+  *            @arg @ref ADC_FLAG_AWD2    ADC Analog watchdog 2 flag (additional analog watchdog)
+  *            @arg @ref ADC_FLAG_AWD3    ADC Analog watchdog 3 flag (additional analog watchdog)
+  *            @arg @ref ADC_FLAG_JQOVF   ADC Injected Context Queue Overflow flag.            
   * @retval State of flag (TRUE or FALSE).
   */
 #define __HAL_ADC_GET_FLAG(__HANDLE__, __FLAG__)                               \
@@ -1122,18 +1117,17 @@ typedef struct
   * @param __HANDLE__ ADC handle
   * @param __FLAG__ ADC flag
   *        This parameter can be one of the following values:
-  *            @arg @ref ADC_FLAG_RDY,     ADC Ready (ADRDY) flag                              
-  *            @arg @ref ADC_FLAG_EOSMP,   ADC End of Sampling flag                            
-  *            @arg @ref ADC_FLAG_EOC,     ADC End of Regular Conversion flag                  
-  *            @arg @ref ADC_FLAG_EOS,     ADC End of Regular sequence of Conversions flag     
-  *            @arg @ref ADC_FLAG_OVR,     ADC overrun flag        
-  *            @arg @ref ADC_FLAG_JEOC,    ADC End of Injected Conversion flag                 
-  *            @arg @ref ADC_FLAG_JEOS,    ADC End of Injected sequence of Conversions flag    
-  *            @arg @ref ADC_FLAG_AWD1,    ADC Analog watchdog 1 flag (main analog watchdog)
-  *            @arg @ref ADC_FLAG_AWD2,    ADC Analog watchdog 2 flag (additional analog watchdog)
-  *            @arg @ref ADC_FLAG_AWD3,    ADC Analog watchdog 3 flag (additional analog watchdog)
-  *            @arg @ref ADC_FLAG_JQOVF,   ADC Injected Context Queue Overflow flag.   
-  * @note  Bit cleared bit by writing 1 (writing 0 has no effect on any bit of register ISR).
+  *            @arg @ref ADC_FLAG_RDY     ADC Ready flag                              
+  *            @arg @ref ADC_FLAG_EOSMP   ADC End of Sampling flag                            
+  *            @arg @ref ADC_FLAG_EOC     ADC End of Regular Conversion flag                  
+  *            @arg @ref ADC_FLAG_EOS     ADC End of Regular sequence of Conversions flag     
+  *            @arg @ref ADC_FLAG_OVR     ADC overrun flag        
+  *            @arg @ref ADC_FLAG_JEOC    ADC End of Injected Conversion flag                 
+  *            @arg @ref ADC_FLAG_JEOS    ADC End of Injected sequence of Conversions flag    
+  *            @arg @ref ADC_FLAG_AWD1    ADC Analog watchdog 1 flag (main analog watchdog)
+  *            @arg @ref ADC_FLAG_AWD2    ADC Analog watchdog 2 flag (additional analog watchdog)
+  *            @arg @ref ADC_FLAG_AWD3    ADC Analog watchdog 3 flag (additional analog watchdog)
+  *            @arg @ref ADC_FLAG_JQOVF   ADC Injected Context Queue Overflow flag.   
   * @retval None
   */
 /* Note: bit cleared bit by writing 1 (writing 0 has no effect on any bit of register ISR) */
@@ -1198,7 +1192,7 @@ typedef struct
   * @retval Value between Min_Data=0 and Max_Data=18
   */
 #define __HAL_ADC_CHANNEL_TO_DECIMAL_NB(__CHANNEL__)                           \
-         __LL_ADC_CHANNEL_TO_DECIMAL_NB(__CHANNEL__)
+         __LL_ADC_CHANNEL_TO_DECIMAL_NB((__CHANNEL__))
 
 /**
   * @brief  Helper macro to get ADC channel in literal format ADC_CHANNEL_x
@@ -1250,7 +1244,7 @@ typedef struct
   *                      using helper macro @ref __LL_ADC_CHANNEL_INTERNAL_TO_EXTERNAL().
   */
 #define __HAL_ADC_DECIMAL_NB_TO_CHANNEL(__DECIMAL_NB__)                        \
-         __LL_ADC_DECIMAL_NB_TO_CHANNEL(__DECIMAL_NB__)
+         __LL_ADC_DECIMAL_NB_TO_CHANNEL((__DECIMAL_NB__))
 
 /**
   * @brief  Helper macro to determine whether the selected channel
@@ -1311,7 +1305,7 @@ typedef struct
   *         Value "1" if the channel corresponds to a parameter definition of a ADC internal channel.
   */
 #define __HAL_ADC_IS_CHANNEL_INTERNAL(__CHANNEL__)                             \
-         __LL_ADC_IS_CHANNEL_INTERNAL(__CHANNEL__)
+         __LL_ADC_IS_CHANNEL_INTERNAL((__CHANNEL__))
 
 /**
   * @brief  Helper macro to convert a channel defined from parameter
@@ -1386,7 +1380,7 @@ typedef struct
   *         @arg @ref ADC_CHANNEL_18
   */
 #define __HAL_ADC_CHANNEL_INTERNAL_TO_EXTERNAL(__CHANNEL__)                    \
-         __LL_ADC_CHANNEL_INTERNAL_TO_EXTERNAL(__CHANNEL__)
+         __LL_ADC_CHANNEL_INTERNAL_TO_EXTERNAL((__CHANNEL__))
 
 /**
   * @brief  Helper macro to determine whether the internal channel
@@ -1423,7 +1417,7 @@ typedef struct
   *         Value "1" if the internal channel selected is available on the ADC instance selected.
   */
 #define __HAL_ADC_IS_CHANNEL_INTERNAL_AVAILABLE(__ADC_INSTANCE__, __CHANNEL__)  \
-         __LL_ADC_IS_CHANNEL_INTERNAL_AVAILABLE(__ADC_INSTANCE__, __CHANNEL__)
+         __LL_ADC_IS_CHANNEL_INTERNAL_AVAILABLE((__ADC_INSTANCE__), (__CHANNEL__))
 
 #if defined(ADC_MULTIMODE_SUPPORT)
 /**
@@ -1440,7 +1434,7 @@ typedef struct
   * @retval Value between Min_Data=0x000 and Max_Data=0xFFF
   */
 #define __HAL_ADC_MULTI_CONV_DATA_MASTER_SLAVE(__ADC_MULTI_MASTER_SLAVE__, __ADC_MULTI_CONV_DATA__)  \
-         __LL_ADC_MULTI_CONV_DATA_MASTER_SLAVE(__ADC_MULTI_MASTER_SLAVE__, __ADC_MULTI_CONV_DATA__)
+         __LL_ADC_MULTI_CONV_DATA_MASTER_SLAVE((__ADC_MULTI_MASTER_SLAVE__), (__ADC_MULTI_CONV_DATA__))
 #endif
 
 /**
@@ -1454,7 +1448,7 @@ typedef struct
   * @retval ADC common register instance
   */
 #define __HAL_ADC_COMMON_INSTANCE(__ADCx__)                                    \
-         __LL_ADC_COMMON_INSTANCE(__ADCx__)
+         __LL_ADC_COMMON_INSTANCE((__ADCx__))
 
 /**
   * @brief  Helper macro to check if all ADC instances sharing the same
@@ -1474,7 +1468,7 @@ typedef struct
   *         is enabled.
   */
 #define __HAL_ADC_IS_ENABLED_ALL_COMMON_INSTANCE(__ADCXY_COMMON__)              \
-         __LL_ADC_IS_ENABLED_ALL_COMMON_INSTANCE(__ADCXY_COMMON__)
+         __LL_ADC_IS_ENABLED_ALL_COMMON_INSTANCE((__ADCXY_COMMON__))
 
 /**
   * @brief  Helper macro to define the ADC conversion data full-scale digital
@@ -1490,7 +1484,7 @@ typedef struct
   * @retval ADC conversion data equivalent voltage value (unit: mVolt)
   */
 #define __HAL_ADC_DIGITAL_SCALE(__ADC_RESOLUTION__)                             \
-         __LL_ADC_DIGITAL_SCALE(__ADC_RESOLUTION__)
+         __LL_ADC_DIGITAL_SCALE((__ADC_RESOLUTION__))
 
 /**
   * @brief  Helper macro to convert the ADC conversion data from
@@ -1513,9 +1507,9 @@ typedef struct
 #define __HAL_ADC_CONVERT_DATA_RESOLUTION(__DATA__,\
                                           __ADC_RESOLUTION_CURRENT__,\
                                           __ADC_RESOLUTION_TARGET__)            \
-         __LL_ADC_CONVERT_DATA_RESOLUTION(__DATA__,\
-                                          __ADC_RESOLUTION_CURRENT__,\
-                                          __ADC_RESOLUTION_TARGET__)
+         __LL_ADC_CONVERT_DATA_RESOLUTION((__DATA__),\
+                                          (__ADC_RESOLUTION_CURRENT__),\
+                                          (__ADC_RESOLUTION_TARGET__))
 
 /**
   * @brief  Helper macro to calculate the voltage (unit: mVolt)
@@ -1536,9 +1530,9 @@ typedef struct
 #define __HAL_ADC_CALC_DATA_TO_VOLTAGE(__VREFANALOG_VOLTAGE__,\
                                        __ADC_DATA__,\
                                        __ADC_RESOLUTION__)                     \
-         __LL_ADC_CALC_DATA_TO_VOLTAGE(__VREFANALOG_VOLTAGE__,\
-                                       __ADC_DATA__,\
-                                       __ADC_RESOLUTION__)
+         __LL_ADC_CALC_DATA_TO_VOLTAGE((__VREFANALOG_VOLTAGE__),\
+                                       (__ADC_DATA__),\
+                                       (__ADC_RESOLUTION__))
 
 /**
   * @brief  Helper macro to calculate analog reference voltage (Vref+)
@@ -1567,8 +1561,8 @@ typedef struct
   */
 #define __HAL_ADC_CALC_VREFANALOG_VOLTAGE(__VREFINT_ADC_DATA__,\
                                           __ADC_RESOLUTION__)                  \
-         __LL_ADC_CALC_VREFANALOG_VOLTAGE(__VREFINT_ADC_DATA__,\
-                                          __ADC_RESOLUTION__)
+         __LL_ADC_CALC_VREFANALOG_VOLTAGE((__VREFINT_ADC_DATA__),\
+                                          (__ADC_RESOLUTION__))
 
 /**
   * @brief  Helper macro to calculate the temperature (unit: degree Celsius)
@@ -1618,9 +1612,9 @@ typedef struct
 #define __HAL_ADC_CALC_TEMPERATURE(__VREFANALOG_VOLTAGE__,\
                                    __TEMPSENSOR_ADC_DATA__,\
                                    __ADC_RESOLUTION__)                         \
-         __LL_ADC_CALC_TEMPERATURE(__VREFANALOG_VOLTAGE__,\
-                                   __TEMPSENSOR_ADC_DATA__,\
-                                   __ADC_RESOLUTION__)
+         __LL_ADC_CALC_TEMPERATURE((__VREFANALOG_VOLTAGE__),\
+                                   (__TEMPSENSOR_ADC_DATA__),\
+                                   (__ADC_RESOLUTION__))
 
 /**
   * @brief  Helper macro to calculate the temperature (unit: degree Celsius)
@@ -1672,12 +1666,12 @@ typedef struct
                                               __VREFANALOG_VOLTAGE__,\
                                               __TEMPSENSOR_ADC_DATA__,\
                                               __ADC_RESOLUTION__)              \
-         __LL_ADC_CALC_TEMPERATURE_TYP_PARAMS(__TEMPSENSOR_TYP_AVGSLOPE__,\
-                                              __TEMPSENSOR_TYP_CALX_V__,\
-                                              __TEMPSENSOR_CALX_TEMP__,\
-                                              __VREFANALOG_VOLTAGE__,\
-                                              __TEMPSENSOR_ADC_DATA__,\
-                                              __ADC_RESOLUTION__)
+         __LL_ADC_CALC_TEMPERATURE_TYP_PARAMS((__TEMPSENSOR_TYP_AVGSLOPE__),\
+                                              (__TEMPSENSOR_TYP_CALX_V__),\
+                                              (__TEMPSENSOR_CALX_TEMP__),\
+                                              (__VREFANALOG_VOLTAGE__),\
+                                              (__TEMPSENSOR_ADC_DATA__),\
+                                              (__ADC_RESOLUTION__))
 
 /**
   * @}

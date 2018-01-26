@@ -301,8 +301,8 @@
 
 /* Private macro -------------------------------------------------------------*/
 #define I2C_GET_DMA_REMAIN_DATA(__HANDLE__) ((((__HANDLE__)->State) == HAL_I2C_STATE_BUSY_TX)   ? \
-                                            ((uint32_t)((__HANDLE__)->hdmatx->Instance->CNDTR)) : \
-                                            ((uint32_t)((__HANDLE__)->hdmarx->Instance->CNDTR)))
+                                            ((uint32_t)(((DMA_Channel_TypeDef *)(__HANDLE__)->hdmatx->Instance)->CNDTR)) : \
+                                            ((uint32_t)(((DMA_Channel_TypeDef *)(__HANDLE__)->hdmarx->Instance)->CNDTR)))
 
 /* Private variables ---------------------------------------------------------*/
 /* Private function prototypes -----------------------------------------------*/
@@ -4584,20 +4584,31 @@ static HAL_StatusTypeDef I2C_WaitOnRXNEFlagUntilTimeout(I2C_HandleTypeDef *hi2c,
     /* Check if a STOPF is detected */
     if (__HAL_I2C_GET_FLAG(hi2c, I2C_FLAG_STOPF) == SET)
     {
-      /* Clear STOP Flag */
-      __HAL_I2C_CLEAR_FLAG(hi2c, I2C_FLAG_STOPF);
+      /* Check if an RXNE is pending */
+      /* Store Last receive data if any */
+      if ((__HAL_I2C_GET_FLAG(hi2c, I2C_FLAG_RXNE) == SET) && (hi2c->XferSize > 0U))
+      {
+        /* Return HAL_OK */
+        /* The Reading of data from RXDR will be done in caller function */
+        return HAL_OK;
+      }
+      else
+      {
+        /* Clear STOP Flag */
+        __HAL_I2C_CLEAR_FLAG(hi2c, I2C_FLAG_STOPF);
 
-      /* Clear Configuration Register 2 */
-      I2C_RESET_CR2(hi2c);
+        /* Clear Configuration Register 2 */
+        I2C_RESET_CR2(hi2c);
 
-      hi2c->ErrorCode = HAL_I2C_ERROR_NONE;
-      hi2c->State = HAL_I2C_STATE_READY;
-      hi2c->Mode = HAL_I2C_MODE_NONE;
+        hi2c->ErrorCode = HAL_I2C_ERROR_NONE;
+        hi2c->State = HAL_I2C_STATE_READY;
+        hi2c->Mode = HAL_I2C_MODE_NONE;
 
-      /* Process Unlocked */
-      __HAL_UNLOCK(hi2c);
+        /* Process Unlocked */
+        __HAL_UNLOCK(hi2c);
 
-      return HAL_ERROR;
+        return HAL_ERROR;
+      }
     }
 
     /* Check for the Timeout */
@@ -4691,25 +4702,14 @@ static HAL_StatusTypeDef I2C_IsAcknowledgeFailed(I2C_HandleTypeDef *hi2c, uint32
   */
 static void I2C_TransferConfig(I2C_HandleTypeDef *hi2c,  uint16_t DevAddress, uint8_t Size, uint32_t Mode, uint32_t Request)
 {
-  uint32_t tmpreg = 0U;
-
   /* Check the parameters */
   assert_param(IS_I2C_ALL_INSTANCE(hi2c->Instance));
   assert_param(IS_TRANSFER_MODE(Mode));
   assert_param(IS_TRANSFER_REQUEST(Request));
 
-  /* Get the CR2 register value */
-  tmpreg = hi2c->Instance->CR2;
-
-  /* clear tmpreg specific bits */
-  tmpreg &= (uint32_t)~((uint32_t)(I2C_CR2_SADD | I2C_CR2_NBYTES | I2C_CR2_RELOAD | I2C_CR2_AUTOEND | I2C_CR2_RD_WRN | I2C_CR2_START | I2C_CR2_STOP));
-
-  /* update tmpreg */
-  tmpreg |= (uint32_t)(((uint32_t)DevAddress & I2C_CR2_SADD) | (((uint32_t)Size << 16) & I2C_CR2_NBYTES) | \
-                       (uint32_t)Mode | (uint32_t)Request);
-
   /* update CR2 register */
-  hi2c->Instance->CR2 = tmpreg;
+  MODIFY_REG(hi2c->Instance->CR2, ((I2C_CR2_SADD | I2C_CR2_NBYTES | I2C_CR2_RELOAD | I2C_CR2_AUTOEND | (I2C_CR2_RD_WRN & (uint32_t)(Request >> (31U - I2C_CR2_RD_WRN_Pos))) | I2C_CR2_START | I2C_CR2_STOP)), \
+             (uint32_t)(((uint32_t)DevAddress & I2C_CR2_SADD) | (((uint32_t)Size << I2C_CR2_NBYTES_Pos) & I2C_CR2_NBYTES) | (uint32_t)Mode | (uint32_t)Request));
 }
 
 /**

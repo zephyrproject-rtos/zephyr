@@ -1,15 +1,15 @@
 # Configures CMake for using GCC, this script is re-used by several
 # GCC-based toolchains
 
-set(CMAKE_C_COMPILER   ${CROSS_COMPILE}gcc     CACHE INTERNAL " " FORCE)
-set(CMAKE_OBJCOPY      ${CROSS_COMPILE}objcopy CACHE INTERNAL " " FORCE)
-set(CMAKE_OBJDUMP      ${CROSS_COMPILE}objdump CACHE INTERNAL " " FORCE)
-#set(CMAKE_LINKER      ${CROSS_COMPILE}ld      CACHE INTERNAL " " FORCE) # Not in use yet
-set(CMAKE_AR           ${CROSS_COMPILE}ar      CACHE INTERNAL " " FORCE)
-set(CMAKE_RANLILB      ${CROSS_COMPILE}ranlib  CACHE INTERNAL " " FORCE)
-set(CMAKE_READELF      ${CROSS_COMPILE}readelf CACHE INTERNAL " " FORCE)
-set(CMAKE_GDB          ${CROSS_COMPILE}gdb     CACHE INTERNAL " " FORCE)
-set(CMAKE_NM           ${CROSS_COMPILE}nm      CACHE INTERNAL " " FORCE)
+find_program(CMAKE_C_COMPILER ${CROSS_COMPILE}gcc     PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+find_program(CMAKE_OBJCOPY    ${CROSS_COMPILE}objcopy PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+find_program(CMAKE_OBJDUMP    ${CROSS_COMPILE}objdump PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+#find_program(CMAKE_LINKER     ${CROSS_COMPILE}ld      PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+find_program(CMAKE_AR         ${CROSS_COMPILE}ar      PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+find_program(CMAKE_RANLIB     ${CROSS_COMPILE}ranlib  PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+find_program(CMAKE_READELF    ${CROSS_COMPILE}readelf PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+find_program(CMAKE_GDB        ${CROSS_COMPILE}gdb     PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+find_program(CMAKE_NM         ${CROSS_COMPILE}nm      PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
 
 assert_exists(CMAKE_READELF)
 
@@ -50,7 +50,7 @@ foreach(file_name include include-fixed)
   list(APPEND NOSTDINC ${_OUTPUT})
 endforeach()
 
-include($ENV{ZEPHYR_BASE}/cmake/gcc-m-cpu.cmake)
+include(${ZEPHYR_BASE}/cmake/gcc-m-cpu.cmake)
 
 if("${ARCH}" STREQUAL "arm")
   list(APPEND TOOLCHAIN_C_FLAGS
@@ -58,7 +58,7 @@ if("${ARCH}" STREQUAL "arm")
     -mcpu=${GCC_M_CPU}
     )
 
-  include($ENV{ZEPHYR_BASE}/cmake/fpu-for-gcc-m-cpu.cmake)
+  include(${ZEPHYR_BASE}/cmake/fpu-for-gcc-m-cpu.cmake)
 
   if(CONFIG_FLOAT)
     list(APPEND TOOLCHAIN_C_FLAGS -mfpu=${FPU_FOR_${GCC_M_CPU}})
@@ -76,7 +76,7 @@ endif()
 
 execute_process(
   COMMAND ${CMAKE_C_COMPILER} ${TOOLCHAIN_C_FLAGS} --print-libgcc-file-name
-  OUTPUT_VARIABLE LIBGCC_DIR
+  OUTPUT_VARIABLE LIBGCC_FILE_NAME
   OUTPUT_STRIP_TRAILING_WHITESPACE
   )
 
@@ -86,15 +86,21 @@ execute_process(
   OUTPUT_STRIP_TRAILING_WHITESPACE
   )
 
-get_filename_component(LIBGCC_DIR ${LIBGCC_DIR} DIRECTORY)
+assert_exists(LIBGCC_FILE_NAME)
 
-assert(LIBGCC_DIR "LIBGCC_DIR not found")
+get_filename_component(LIBGCC_DIR ${LIBGCC_FILE_NAME} DIRECTORY)
+
+assert_exists(LIBGCC_DIR)
 
 LIST(APPEND LIB_INCLUDE_DIR "-L\"${LIBGCC_DIR}\"")
 LIST(APPEND TOOLCHAIN_LIBS gcc)
 
-set(LIBC_INCLUDE_DIR ${SYSROOT_DIR}/include)
-set(LIBC_LIBRARY_DIR "\"${SYSROOT_DIR}\"/lib/${NEWLIB_DIR}")
+if(SYSROOT_DIR)
+  # The toolchain has specified a sysroot dir that we can use to set
+  # the libc path's
+  set(LIBC_INCLUDE_DIR ${SYSROOT_DIR}/include)
+  set(LIBC_LIBRARY_DIR "\"${SYSROOT_DIR}\"/lib/${NEWLIB_DIR}")
+endif()
 
 # For CMake to be able to test if a compiler flag is supported by the
 # toolchain we need to give CMake the necessary flags to compile and

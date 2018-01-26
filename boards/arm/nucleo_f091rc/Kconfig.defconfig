@@ -10,4 +10,21 @@ if BOARD_NUCLEO_F091RC
 config BOARD
 	default nucleo_f091rc
 
+if UART_CONSOLE
+
+config UART_STM32_PORT_2
+	default y
+
+endif # UART_CONSOLE
+
+if I2C
+
+config I2C_1
+	default y
+
+config I2C_2
+	default y
+
+endif # I2C
+
 endif # BOARD_NUCLEO_F091RC

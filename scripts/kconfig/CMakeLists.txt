@@ -4,7 +4,6 @@ add_compile_options(
   -Wstrict-prototypes
   -O2
   -fomit-frame-pointer
-  -std=gnu89
   -Wno-format-security
   -DKBUILD_NO_NLS
 )

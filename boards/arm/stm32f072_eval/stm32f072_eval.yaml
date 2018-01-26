@@ -1,0 +1,12 @@
+identifier: stm32f072_eval
+name: STM32F072-EVAL
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb
+ram: 16
+flash: 128
+testing:
+  ignore_tags:
+    - net

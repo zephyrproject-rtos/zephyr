@@ -8,13 +8,25 @@ menu Testing
 
 source "tests/ztest/Kconfig"
 
+config TEST
+	bool "Mark project as a test"
+	default n
+	select COVERAGE if NATIVE_APPLICATION
+	help
+	  Mark a project or an application as a test. This will enable a few
+	  test defaults.
+
 config TEST_EXTRA_STACKSIZE
 	int "Test function thread stack size"
 	default 0
 	default 768 if XTENSA
+	help
+	  Additional stack for tests on some platform where default is not
+	  enough.
 
 config COVERAGE
 	bool "Create coverage data"
+	depends on NATIVE_APPLICATION
 	default n
 	help
 	  This option will build your application with the -coverage option

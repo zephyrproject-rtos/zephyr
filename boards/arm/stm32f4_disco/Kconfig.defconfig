@@ -10,4 +10,18 @@ if BOARD_STM32F4_DISCO
 config BOARD
 	default stm32f4_disco
 
+if UART_CONSOLE
+
+config UART_STM32_PORT_2
+	default y
+
+endif # UART_CONSOLE
+
+if PWM
+
+config PWM_STM32_2
+	default y
+
+endif # PWM
+
 endif # BOARD_STM32F4_DISCO

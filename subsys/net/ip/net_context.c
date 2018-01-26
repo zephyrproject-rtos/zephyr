@@ -49,6 +49,9 @@
 #define ACK_TIMEOUT K_SECONDS(1)
 #endif
 
+/* TODO: It should be 2 * MSL (Maximum segment lifetime) */
+#define TIMEWAIT_TIMEOUT MSEC(250)
+
 #define FIN_TIMEOUT K_SECONDS(1)
 
 /* Declares a wrapper function for a net_conn callback that refs the
@@ -96,7 +99,6 @@ static int send_reset(struct net_context *context, struct sockaddr *remote);
 static struct tcp_backlog_entry {
 	struct net_tcp *tcp;
 	struct sockaddr remote;
-	u32_t recv_max_ack;
 	u32_t send_seq;
 	u32_t send_ack;
 	u16_t send_mss;
@@ -200,7 +202,6 @@ static int tcp_backlog_syn(struct net_pkt *pkt, struct net_context *context,
 		return ret;
 	}
 
-	tcp_backlog[empty_slot].recv_max_ack = context->tcp->recv_max_ack;
 	tcp_backlog[empty_slot].send_seq = context->tcp->send_seq;
 	tcp_backlog[empty_slot].send_ack = context->tcp->send_ack;
 	tcp_backlog[empty_slot].send_mss = send_mss;
@@ -235,7 +236,6 @@ static int tcp_backlog_ack(struct net_pkt *pkt, struct net_context *context)
 
 	memcpy(&context->remote, &tcp_backlog[r].remote,
 		sizeof(struct sockaddr));
-	context->tcp->recv_max_ack = tcp_backlog[r].recv_max_ack;
 	context->tcp->send_seq = tcp_backlog[r].send_seq + 1;
 	context->tcp->send_ack = tcp_backlog[r].send_ack;
 	context->tcp->send_mss = tcp_backlog[r].send_mss;
@@ -301,6 +301,26 @@ static void handle_ack_timeout(struct k_work *work)
 		net_context_unref(tcp->context);
 	}
 }
+
+static void handle_timewait_timeout(struct k_work *work)
+{
+	struct net_tcp *tcp = CONTAINER_OF(work, struct net_tcp,
+					   timewait_timer);
+
+	NET_DBG("Timewait expired in %dms", TIMEWAIT_TIMEOUT);
+
+	if (net_tcp_get_state(tcp) == NET_TCP_TIME_WAIT) {
+		net_tcp_change_state(tcp, NET_TCP_CLOSED);
+
+		if (tcp->context->recv_cb) {
+			tcp->context->recv_cb(tcp->context, NULL, 0,
+					      tcp->recv_user_data);
+		}
+
+		net_context_unref(tcp->context);
+	}
+}
+
 #endif /* CONFIG_NET_TCP */
 
 static int check_used_port(enum net_ip_protocol ip_proto,
@@ -466,6 +486,8 @@ int net_context_get(sa_family_t family,
 					    handle_ack_timeout);
 			k_delayed_work_init(&contexts[i].tcp->fin_timer,
 					    handle_fin_timeout);
+			k_delayed_work_init(&contexts[i].tcp->timewait_timer,
+					    handle_timewait_timeout);
 		}
 #endif /* CONFIG_NET_TCP */
 
@@ -1167,15 +1189,21 @@ NET_CONN_CB(tcp_established)
 
 	/* Handle TCP state transition */
 	if (tcp_flags & NET_TCP_ACK) {
+		if (!net_tcp_ack_received(context,
+				     sys_get_be32(tcp_hdr->ack))) {
+			return NET_DROP;
+		}
+
 		/* TCP state might be changed after maintaining the sent pkt
 		 * list, e.g., an ack of FIN is received.
 		 */
-		net_tcp_ack_received(context,
-				     sys_get_be32(tcp_hdr->ack));
 
 		if (net_tcp_get_state(context->tcp)
 			   == NET_TCP_FIN_WAIT_1) {
+			/* Received FIN on FIN_WAIT1, so cancel the timer */
+			k_delayed_work_cancel(&context->tcp->fin_timer);
 			/* Active close: step to FIN_WAIT_2 */
+			k_delayed_work_cancel(&context->tcp->fin_timer);
 			net_tcp_change_state(context->tcp, NET_TCP_FIN_WAIT_2);
 		} else if (net_tcp_get_state(context->tcp)
 			   == NET_TCP_LAST_ACK) {
@@ -1235,8 +1263,8 @@ NET_CONN_CB(tcp_established)
 
 clean_up:
 	if (net_tcp_get_state(context->tcp) == NET_TCP_TIME_WAIT) {
-		/* After the ack is sent, step to CLOSED */
-		net_tcp_change_state(context->tcp, NET_TCP_CLOSED);
+		k_delayed_work_submit(&context->tcp->timewait_timer,
+				      TIMEWAIT_TIMEOUT);
 	}
 
 	if (net_tcp_get_state(context->tcp) == NET_TCP_CLOSED) {
@@ -1299,7 +1327,6 @@ NET_CONN_CB(tcp_synack_received)
 	if (NET_TCP_FLAGS(tcp_hdr) & NET_TCP_SYN) {
 		context->tcp->send_ack =
 			sys_get_be32(tcp_hdr->seq) + 1;
-		context->tcp->recv_max_ack = context->tcp->send_seq + 1;
 	}
 	/*
 	 * If we receive SYN, we send SYN-ACK and go to SYN_RCVD state.
@@ -1674,7 +1701,6 @@ NET_CONN_CB(tcp_syn_rcvd)
 		context->tcp->send_seq = tcp_init_isn();
 		context->tcp->send_ack =
 			sys_get_be32(tcp_hdr->seq) + 1;
-		context->tcp->recv_max_ack = context->tcp->send_seq + 1;
 
 		/* Get MSS from TCP options here*/
 

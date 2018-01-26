@@ -20,17 +20,20 @@ __syscall\s+                    # __syscall attribute, must be first
 
 typename_regex = re.compile(r'(.*?)([A-Za-z0-9_]+)$')
 
+
 class SyscallParseException(Exception):
     pass
 
 
 def typename_split(item):
     if "[" in item:
-        raise SyscallParseException("Please pass arrays to syscalls as pointers, unable to process '%s'"
-                % item)
+        raise SyscallParseException(
+            "Please pass arrays to syscalls as pointers, unable to process '%s'" %
+            item)
 
     if "(" in item:
-        raise SyscallParseException("Please use typedefs for function pointers")
+        raise SyscallParseException(
+            "Please use typedefs for function pointers")
 
     mo = typename_regex.match(item)
     if not mo:
@@ -100,7 +103,7 @@ def analyze_headers(base_path):
             # toolchain/common.h has the definition of __syscall which we
             # don't want to trip over
             path = os.path.join(root, fn)
-            if not fn.endswith(".h") or path.endswith("toolchain/common.h"):
+            if not fn.endswith(".h") or path.endswith(os.path.join(os.sep, 'toolchain', 'common.h')):
                 continue
 
             with open(path, "r", encoding="utf-8") as fp:
@@ -115,16 +118,20 @@ def analyze_headers(base_path):
 
     return ret
 
+
 def parse_args():
     global args
-    parser = argparse.ArgumentParser(description = __doc__,
-            formatter_class = argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
 
     parser.add_argument("-i", "--include", required=True,
-            help="Base include directory")
-    parser.add_argument("-j", "--json-file", required=True,
-            help="Write system call prototype information as json to file")
+                        help="Base include directory")
+    parser.add_argument(
+        "-j", "--json-file", required=True,
+        help="Write system call prototype information as json to file")
     args = parser.parse_args()
+
 
 def main():
     parse_args()
@@ -151,6 +158,7 @@ def main():
     else:
         with open(path, 'w') as fp:
             fp.write(new)
+
 
 if __name__ == "__main__":
     main()

@@ -3647,11 +3647,11 @@ __STATIC_INLINE uint32_t LL_TIM_IsEnabledAllOutputs(TIM_TypeDef *TIMx)
   * @rmtoll OR2          BKINE         LL_TIM_EnableBreakInputSource\n
   *         OR2          BKCMP1E       LL_TIM_EnableBreakInputSource\n
   *         OR2          BKCMP2E       LL_TIM_EnableBreakInputSource\n
-  *         OR2          BKDFBK0E      LL_TIM_EnableBreakInputSource\n
-  *         OR3          BKINE         LL_TIM_EnableBreakInputSource\n
-  *         OR3          BKCMP1E       LL_TIM_EnableBreakInputSource\n
-  *         OR3          BKCMP2E       LL_TIM_EnableBreakInputSource\n
-  *         OR3          BKDFBK0E      LL_TIM_EnableBreakInputSource
+  *         OR2          BKDF1BK0E     LL_TIM_EnableBreakInputSource\n
+  *         OR3          BK2INE        LL_TIM_EnableBreakInputSource\n
+  *         OR3          BK2CMP1E      LL_TIM_EnableBreakInputSource\n
+  *         OR3          BK2CMP2E      LL_TIM_EnableBreakInputSource\n
+  *         OR3          BK2DF1BK0E    LL_TIM_EnableBreakInputSource
   * @param  TIMx Timer instance
   * @param  BreakInput This parameter can be one of the following values:
   *         @arg @ref LL_TIM_BREAK_INPUT_BKIN
@@ -3676,11 +3676,11 @@ __STATIC_INLINE void LL_TIM_EnableBreakInputSource(TIM_TypeDef *TIMx, uint32_t B
   * @rmtoll OR2          BKINE         LL_TIM_DisableBreakInputSource\n
   *         OR2          BKCMP1E       LL_TIM_DisableBreakInputSource\n
   *         OR2          BKCMP2E       LL_TIM_DisableBreakInputSource\n
-  *         OR2          BKDFBK0E      LL_TIM_DisableBreakInputSource\n
-  *         OR3          BKINE         LL_TIM_DisableBreakInputSource\n
-  *         OR3          BKCMP1E       LL_TIM_DisableBreakInputSource\n
-  *         OR3          BKCMP2E       LL_TIM_DisableBreakInputSource\n
-  *         OR3          BKDFBK0E      LL_TIM_DisableBreakInputSource
+  *         OR2          BKDF1BK0E     LL_TIM_DisableBreakInputSource\n
+  *         OR3          BK2INE        LL_TIM_DisableBreakInputSource\n
+  *         OR3          BK2CMP1E      LL_TIM_DisableBreakInputSource\n
+  *         OR3          BK2CMP2E      LL_TIM_DisableBreakInputSource\n
+  *         OR3          BK2DF1BK0E    LL_TIM_DisableBreakInputSource
   * @param  TIMx Timer instance
   * @param  BreakInput This parameter can be one of the following values:
   *         @arg @ref LL_TIM_BREAK_INPUT_BKIN
@@ -3702,14 +3702,12 @@ __STATIC_INLINE void LL_TIM_DisableBreakInputSource(TIM_TypeDef *TIMx, uint32_t 
   * @brief  Set the polarity of the break signal for the timer break input.
   * @note Macro @ref IS_TIM_BREAKSOURCE_INSTANCE(TIMx) can be used to check whether
   *       or not a timer instance allows for break input selection.
-  * @rmtoll OR2          BKINE         LL_TIM_SetBreakInputSourcePolarity\n
-  *         OR2          BKCMP1E       LL_TIM_SetBreakInputSourcePolarity\n
-  *         OR2          BKCMP2E       LL_TIM_SetBreakInputSourcePolarity\n
-  *         OR2          BKINP         LL_TIM_SetBreakInputSourcePolarity\n
-  *         OR3          BKINE         LL_TIM_SetBreakInputSourcePolarity\n
-  *         OR3          BKCMP1E       LL_TIM_SetBreakInputSourcePolarity\n
-  *         OR3          BKCMP2E       LL_TIM_SetBreakInputSourcePolarity\n
-  *         OR3          BKINP         LL_TIM_SetBreakInputSourcePolarity
+  * @rmtoll OR2          BKINP         LL_TIM_SetBreakInputSourcePolarity\n
+  *         OR2          BKCMP1P       LL_TIM_SetBreakInputSourcePolarity\n
+  *         OR2          BKCMP2P       LL_TIM_SetBreakInputSourcePolarity\n
+  *         OR3          BK2INP        LL_TIM_SetBreakInputSourcePolarity\n
+  *         OR3          BK2CMP1P      LL_TIM_SetBreakInputSourcePolarity\n
+  *         OR3          BK2CMP2P      LL_TIM_SetBreakInputSourcePolarity
   * @param  TIMx Timer instance
   * @param  BreakInput This parameter can be one of the following values:
   *         @arg @ref LL_TIM_BREAK_INPUT_BKIN

@@ -62,6 +62,7 @@ locate the source code of this sample application and type:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/http_server
+   :host-os: unix
    :board: qemu_x86
    :goals: run
    :compact:
@@ -180,6 +181,7 @@ In order to compile and run the code execute:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/http_server
+   :host-os: unix
    :board: qemu_x86
    :conf: prj_tls.conf
    :goals: run

@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2017 BayLibre, SAS
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/stm32f072.dtsi>
+
+/ {
+	model = "STMicroelectronics STM32F072-EVAL board";
+	compatible = "st,stm32f072-eval", "st,stm32f072";
+
+	chosen {
+		zephyr,console = &usart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
+
+&usart2 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart2_pins_d>;
+	pinctrl-names = "default";
+	status = "ok";
+};

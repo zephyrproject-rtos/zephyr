@@ -67,8 +67,13 @@ zephyr_include_directories(
 zephyr_compile_definitions(
   KERNEL
   __ZEPHYR__=1
+)
+
+if(NOT CONFIG_COVERAGE)
+zephyr_compile_definitions(
   _FORTIFY_SOURCE=2
 )
+endif()
 
 # We need to set an optimization level.
 # Default to -Os
@@ -79,10 +84,13 @@ zephyr_compile_definitions(
 #
 # Finally, the user can use Kconfig to add compiler options that will
 # come after these options and override them
-set_ifndef(OPTIMIZE_FOR_SIZE_FLAG  "-Os")
-set_ifndef(OPTIMIZE_FOR_DEBUG_FLAG "-Og")
+set_ifndef(OPTIMIZE_FOR_SIZE_FLAG     "-Os")
+set_ifndef(OPTIMIZE_FOR_DEBUG_FLAG    "-Og")
+set_ifndef(OPTIMIZE_FOR_COVERAGE_FLAG "-O0")
 if(CONFIG_DEBUG)
   set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_DEBUG_FLAG})
+elseif(CONFIG_COVERAGE)
+  set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_COVERAGE_FLAG})
 else()
   set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_SIZE_FLAG}) # Default
 endif()
@@ -244,10 +252,6 @@ zephyr_cc_option(-Werror=implicit-int)
 # TODO: Archiver arguments
 # ar_option(D)
 
-if(IS_TEST)
-  add_subdirectory(cmake/test)
-endif()
-
 set_ifndef(LINKERFLAGPREFIX -Wl)
 
 if(NOT CONFIG_NATIVE_APPLICATION)
@@ -275,7 +279,7 @@ else()
   set(LINKER_SCRIPT ${BOARD_DIR}/linker.ld)
   if(NOT EXISTS ${LINKER_SCRIPT})
     # If not available, try an SoC specific linker file
-    set(LINKER_SCRIPT $ENV{ZEPHYR_BASE}/arch/${ARCH}/soc/${SOC_PATH}/linker.ld)
+    set(LINKER_SCRIPT ${ZEPHYR_BASE}/arch/${ARCH}/soc/${SOC_PATH}/linker.ld)
   endif()
 endif()
 
@@ -285,6 +289,23 @@ endif()
 
 configure_file(version.h.in ${PROJECT_BINARY_DIR}/include/generated/version.h)
 
+# Unfortunately, the order in which CMakeLists.txt code is processed
+# matters so we need to be careful about how we order the processing
+# of subdirectories. One example is "Compiler flags added late in the
+# build are not exported to external build systems #5605"; when we
+# integrate with an external build system we read out all compiler
+# flags when the external project is created. So an external project
+# defined in subsys or ext will not get global flags added by drivers/
+# or tests/ as the subdirectories are ordered now.
+#
+# Another example of when the order matters is the reading and writing
+# of global properties such as ZEPHYR_LIBS or
+# GENERATED_KERNEL_OBJECT_FILES.
+#
+# Arch is placed early because it defines important compiler flags
+# that must be exported to external build systems defined in
+# e.g. subsys/.
+add_subdirectory(arch)
 add_subdirectory(lib)
 add_subdirectory(misc)
 # We use include instead of add_subdirectory to avoid creating a new directory scope.
@@ -294,7 +315,6 @@ include(misc/generated/CMakeLists.txt)
 add_subdirectory(boards)
 add_subdirectory(ext)
 add_subdirectory(subsys)
-add_subdirectory(arch)
 add_subdirectory(drivers)
 add_subdirectory(tests)
 
@@ -344,7 +364,7 @@ add_custom_command(OUTPUT include/generated/syscall_dispatch.c ${syscall_list_h}
 # Generate offsets.c.obj from offsets.c
 # Generate offsets.h     from offsets.c.obj
 
-set(OFFSETS_C_PATH $ENV{ZEPHYR_BASE}/arch/${ARCH}/core/offsets/offsets.c)
+set(OFFSETS_C_PATH ${ZEPHYR_BASE}/arch/${ARCH}/core/offsets/offsets.c)
 set(OFFSETS_O_PATH ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/offsets.dir/arch/${ARCH}/core/offsets/offsets.c.obj)
 set(OFFSETS_H_PATH ${PROJECT_BINARY_DIR}/include/generated/offsets.h)
 
@@ -357,7 +377,7 @@ add_dependencies(     offsets
 
 add_custom_command(
   OUTPUT ${OFFSETS_H_PATH}
-  COMMAND ${PYTHON_EXECUTABLE} $ENV{ZEPHYR_BASE}/scripts/gen_offset_header.py
+  COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/gen_offset_header.py
   -i ${OFFSETS_O_PATH}
   -o ${OFFSETS_H_PATH}
   DEPENDS offsets
@@ -377,43 +397,26 @@ foreach(zephyr_lib ${ZEPHYR_LIBS_PROPERTY})
   # TODO: Could this become an INTERFACE property of zephyr_interface?
   add_dependencies(${zephyr_lib} offsets_h)
 
-  # Verify that all libraries have source files. Libraries without
-  # source files are not supported because they are an indication that
-  # something has been misconfigured.
-  get_target_property(lib_sources ${zephyr_lib} SOURCES)
+  # Verify that all (non-imported) libraries have source
+  # files. Libraries without source files are not supported because
+  # they are an indication that something has been misconfigured.
+  get_target_property(lib_imported ${zephyr_lib} IMPORTED)
+  get_target_property(lib_sources  ${zephyr_lib} SOURCES)
   if(lib_sources STREQUAL lib_sources-NOTFOUND
       AND (NOT (${zephyr_lib} STREQUAL app))
+      AND (NOT lib_imported)
       )
     # app is not checked because it's sources are added to it after
     # this CMakeLists.txt file has been processed
     message(FATAL_ERROR "\
 The Zephyr library '${zephyr_lib}' was created without source files. \
-Empty libraries are not supported. \
+Empty (non-imported) libraries are not supported. \
 Either make sure that the library has the sources it should have, \
 or make sure it is not created when it has no source files.")
   endif()
 endforeach()
 
 get_property(OUTPUT_FORMAT        GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT)
-
-# Run the pre-processor on the linker script
-#
-# Deal with the un-preprocessed linker scripts differently with
-# different generators.
-if(CMAKE_GENERATOR STREQUAL "Unix Makefiles")
-  # Note that the IMPLICIT_DEPENDS option is currently supported only
-  # for Makefile generators and will be ignored by other generators.
-  set(LINKER_SCRIPT_DEP IMPLICIT_DEPENDS C ${LINKER_SCRIPT})
-elseif(CMAKE_GENERATOR STREQUAL "Ninja")
-  # Using DEPFILE with other generators than Ninja is an error.
-  set(LINKER_SCRIPT_DEP DEPFILE ${PROJECT_BINARY_DIR}/linker.cmd.dep)
-else()
-  # TODO: How would the linker script dependencies work for non-linker
-  # script generators.
-  message(STATUS "Warning; this generator is not well supported. The
-  Linker script may not be regenerated when it should.")
-  set(LINKER_SCRIPT_DEP "")
-endif()
 
 get_property(LINKER_SCRIPT_DEFINES GLOBAL PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES)
 
@@ -486,7 +489,17 @@ if(CONFIG_APPLICATION_MEMORY)
       string(SUBSTRING ${fixed_path} 1 -1 fixed_path)
     endif()
 
-    list(APPEND ks "${fixed_path}lib${target_name}.a")
+    set(fixed_path "${fixed_path}lib${target_name}.a")
+
+    if(CMAKE_GENERATOR STREQUAL "Ninja")
+      # Ninja invokes the linker from the root of the build directory
+      # (APPLICATION_BINARY_DIR) instead of from the build/zephyr
+      # directory (PROJECT_BINARY_DIR). So for linker-defs.h to get
+      # the correct path we need to prefix with zephyr/.
+      set(fixed_path "zephyr/${fixed_path}")
+    endif()
+
+    list(APPEND ks ${fixed_path})
   endforeach()
 
   # We are done constructing kernel_object_file_list, now we inject this
@@ -500,31 +513,89 @@ if(CONFIG_APPLICATION_MEMORY)
   endforeach()
 endif() # CONFIG_APPLICATION_MEMORY
 
+function(construct_add_custom_command_for_linker_pass linker_pass_number output_variable)
+  if(linker_pass_number EQUAL 1)
+    set(is_first_pass 1)
+  elseif(linker_pass_number GREATER 1)
+    set(is_first_pass 0)
+  else()
+    assert(0 "Unreachable code")
+  endif()
+
+  if(is_first_pass)
+    set(linker_cmd_file_name linker.cmd)
+  else()
+    set(linker_cmd_file_name linker_pass${linker_pass_number}.cmd)
+  endif()
+
+  if(is_first_pass)
+    set(LINKER_PASS_DEFINE "")
+  else()
+    set(LINKER_PASS_DEFINE -DLINKER_PASS${linker_pass_number})
+  endif()
+
+  # Different generators deal with depfiles differently.
+  if(CMAKE_GENERATOR STREQUAL "Unix Makefiles")
+    # Note that the IMPLICIT_DEPENDS option is currently supported only
+    # for Makefile generators and will be ignored by other generators.
+    set(LINKER_SCRIPT_DEP IMPLICIT_DEPENDS C ${LINKER_SCRIPT})
+  elseif(CMAKE_GENERATOR STREQUAL "Ninja")
+    # Using DEPFILE with other generators than Ninja is an error.
+    set(LINKER_SCRIPT_DEP DEPFILE ${PROJECT_BINARY_DIR}/${linker_cmd_file_name}.dep)
+  else()
+    # TODO: How would the linker script dependencies work for non-linker
+    # script generators.
+    message(STATUS "Warning; this generator is not well supported. The
+  Linker script may not be regenerated when it should.")
+    set(LINKER_SCRIPT_DEP "")
+  endif()
+
+  set(${output_variable}
+    OUTPUT ${linker_cmd_file_name}
+    DEPENDS ${LINKER_SCRIPT}
+    ${LINKER_SCRIPT_DEP}
+    COMMAND ${CMAKE_C_COMPILER}
+    -x assembler-with-cpp
+    ${NOSTDINC_F}
+    -undef
+    -MD -MF ${linker_cmd_file_name}.dep -MT ${BASE_NAME}/${linker_cmd_file_name}
+    ${ZEPHYR_INCLUDES}
+    ${LINKER_SCRIPT_DEFINES}
+    ${LINKER_PASS_DEFINE}
+    -E ${LINKER_SCRIPT}
+    -P # Prevent generation of debug `#line' directives.
+    -o ${linker_cmd_file_name}
+    VERBATIM
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+
+    PARENT_SCOPE
+    )
+endfunction()
+
 get_filename_component(BASE_NAME ${CMAKE_CURRENT_BINARY_DIR} NAME)
+construct_add_custom_command_for_linker_pass(1 custom_command)
 add_custom_command(
-  OUTPUT linker.cmd
-  DEPENDS ${LINKER_SCRIPT}
-  ${LINKER_SCRIPT_DEP}
-  # NB: This COMMAND is copy-pasted to generate linker_pass2.cmd
-  # TODO: Remove duplication
-  COMMAND ${CMAKE_C_COMPILER}
-  -x assembler-with-cpp
-  ${NOSTDINC_F}
-  -undef
-  -MD -MF linker.cmd.dep -MT ${BASE_NAME}/linker.cmd
-  ${ZEPHYR_INCLUDES}
-  ${LINKER_SCRIPT_DEFINES}
-  -E ${LINKER_SCRIPT} -P
-  -o linker.cmd
-  VERBATIM
-  WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+  ${custom_command}
 )
 add_custom_target(
   linker_script
   DEPENDS
   linker.cmd
   offsets_h
-)
+  )
+
+# Give the 'linker_script' target all of the include directories so
+# that cmake can successfully find the linker_script's header
+# dependencies.
+zephyr_get_include_directories_for_lang(C
+  ZEPHYR_INCLUDE_DIRS
+  STRIP_PREFIX # Don't use a -I prefix
+  )
+set_property(TARGET
+  linker_script
+  PROPERTY INCLUDE_DIRECTORIES
+  ${ZEPHYR_INCLUDE_DIRS}
+  )
 
 get_property(E_KERNEL_ENTRY GLOBAL PROPERTY E_KERNEL_ENTRY)
 
@@ -557,10 +628,10 @@ if(CONFIG_GEN_ISR_TABLES)
     $<TARGET_FILE:zephyr_prebuilt>
     isrList.bin
     COMMAND ${PYTHON_EXECUTABLE}
-    $ENV{ZEPHYR_BASE}/arch/common/gen_isr_tables.py
+    ${ZEPHYR_BASE}/arch/common/gen_isr_tables.py
     --output-source isr_tables.c
     --intlist isrList.bin
-    --debug
+    $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--debug>
     --sw-isr-table
     --vector-table
     DEPENDS zephyr_prebuilt
@@ -569,8 +640,8 @@ if(CONFIG_GEN_ISR_TABLES)
 endif()
 
 if(CONFIG_USERSPACE)
-  set(GEN_KOBJ_LIST $ENV{ZEPHYR_BASE}/scripts/gen_kobject_list.py)
-  set(PROCESS_GPERF $ENV{ZEPHYR_BASE}/scripts/process_gperf.py)
+  set(GEN_KOBJ_LIST ${ZEPHYR_BASE}/scripts/gen_kobject_list.py)
+  set(PROCESS_GPERF ${ZEPHYR_BASE}/scripts/process_gperf.py)
 
   set(OBJ_LIST           kobject_hash.gperf)
   set(OUTPUT_SRC_PRE     kobject_hash_preprocessed.c)
@@ -701,24 +772,11 @@ if(GKOF OR GKSF)
   set(logical_target_for_zephyr_elf kernel_elf)
 
   # The second linker pass uses the same source linker script of the
-  # first pass (LINKER_SCRIPT), but this time preprocessed with the
-  # define LINKER_PASS2.
+  # first pass (LINKER_SCRIPT), but this time with a different output
+  # file and preprocessed with the define LINKER_PASS2.
+  construct_add_custom_command_for_linker_pass(2 custom_command)
   add_custom_command(
-    OUTPUT linker_pass2.cmd
-    DEPENDS ${LINKER_SCRIPT}
-    ${LINKER_SCRIPT_DEP}
-    COMMAND ${CMAKE_C_COMPILER}
-    -x assembler-with-cpp
-    ${NOSTDINC_F}
-    -undef
-    -MD -MF linker_pass2.cmd.dep -MT ${BASE_NAME}/linker_pass2.cmd
-    ${ZEPHYR_INCLUDES}
-    ${LINKER_SCRIPT_DEFINES}
-    -DLINKER_PASS2
-    -E ${LINKER_SCRIPT} -P
-    -o linker_pass2.cmd
-    VERBATIM
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    ${custom_command}
     )
   add_custom_target(
     linker_pass2_script
@@ -726,6 +784,11 @@ if(GKOF OR GKSF)
     linker_pass2.cmd
     offsets_h
     )
+  set_property(TARGET
+    linker_pass2_script
+    PROPERTY INCLUDE_DIRECTORIES
+    ${ZEPHYR_INCLUDE_DIRS}
+  )
 
   add_executable(       kernel_elf misc/empty_file.c ${GKSF})
   target_link_libraries(kernel_elf ${GKOF} ${TOPT} ${PROJECT_BINARY_DIR}/linker_pass2.cmd ${zephyr_lnk})
@@ -745,7 +808,7 @@ set(post_build_commands "")
 
 list_append_ifdef(CONFIG_CHECK_LINK_MAP
   post_build_commands
-  COMMAND ${PYTHON_EXECUTABLE} $ENV{ZEPHYR_BASE}/scripts/check_link_map.py ${KERNEL_MAP_NAME}
+  COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/check_link_map.py ${KERNEL_MAP_NAME}
   )
 
 list_append_ifdef(
@@ -816,7 +879,7 @@ if(CONFIG_OUTPUT_PRINT_MEMORY_USAGE)
 endif()
 
 if(EMU_PLATFORM)
-  include($ENV{ZEPHYR_BASE}/cmake/emu/${EMU_PLATFORM}.cmake)
+  include(${ZEPHYR_BASE}/cmake/emu/${EMU_PLATFORM}.cmake)
 else()
   add_custom_target(run
     COMMAND
@@ -847,5 +910,14 @@ if(CONFIG_BOARD_DEPRECATED)
   message(WARNING "
       WARNING:  The board '${BOARD}' is deprecated and will be
       removed in version ${CONFIG_BOARD_DEPRECATED}"
+)
+endif()
+
+if(CONFIG_X86 AND CONFIG_USERSPACE AND NOT CONFIG_X86_NO_MELTDOWN)
+  message(WARNING "
+      WARNING: You have enabled CONFIG_USERSPACE on an x86-based target.
+      If your CPU is vulnerable to the Meltdown CPU bug, security of
+      supervisor-only memory pages is not guaranteed. This version of Zephyr
+      does not contain a fix for this issue."
 )
 endif()

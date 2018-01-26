@@ -232,7 +232,7 @@ static int nrf5_flash_init(struct device *dev)
 	return 0;
 }
 
-DEVICE_INIT(nrf5_flash, CONFIG_SOC_FLASH_NRF5_DEV_NAME, nrf5_flash_init,
+DEVICE_INIT(nrf5_flash, FLASH_DEV_NAME, nrf5_flash_init,
 	     NULL, NULL, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 #if defined(CONFIG_SOC_FLASH_NRF5_RADIO_SYNC)

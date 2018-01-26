@@ -10,76 +10,51 @@ if BOARD_DISCO_L475_IOT1
 config BOARD
 	default disco_l475_iot1
 
-if GPIO
-
-config GPIO_STM32_PORTA
-	def_bool y
-
-config GPIO_STM32_PORTB
-	def_bool y
-
-config GPIO_STM32_PORTC
-	def_bool y
-
-config GPIO_STM32_PORTD
-	def_bool y
-
-config GPIO_STM32_PORTE
-	def_bool y
-
-config GPIO_STM32_PORTF
-	def_bool n
-
-config GPIO_STM32_PORTG
-	def_bool n
-
-config GPIO_STM32_PORTH
-	def_bool n
-
-endif # GPIO
-
-
-if SERIAL
+if UART_CONSOLE
 
 config UART_STM32_PORT_1
-	def_bool y
+	default y
 
-endif # SERIAL
+endif # UART_CONSOLE
 
 if I2C
 
 config I2C_1
-	def_bool y
+	default y
 
 config I2C_2
-	def_bool y
+	default y
 
 endif # I2C
+
+if SPI
+
+config SPI_STM32_INTERRUPT
+	default y
+
+config SPI_3
+	default y
+
+endif # SPI
 
 if PWM
 
 config PWM_STM32_1
-	def_bool n
+	default n
 
 config PWM_STM32_2
-	def_bool y
+	default y
 
 endif # PWM
 
-if LIS3MDL
+if VL53L0X
 
-choice LIS3MDL_TRIGGER_MODE
-	default LIS3MDL_TRIGGER_NONE
-endchoice
+config VL53L0X_XSHUT_GPIO_DEV_NAME
+	default "GPIOC"
 
-endif #LIS3MDL
+config VL53L0X_XSHUT_GPIO_PIN_NUM
+	default 6
 
-if HTS221
-
-choice HTS221_TRIGGER_MODE
-	default HTS221_TRIGGER_NONE
-endchoice
-
-endif #HTS221
+endif #VL53L0X
 
 endif # BOARD_DISCO_L475_IOT1

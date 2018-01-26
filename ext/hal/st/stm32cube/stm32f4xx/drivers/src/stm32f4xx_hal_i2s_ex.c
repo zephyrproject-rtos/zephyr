@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_i2s_ex.c
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    14-April-2017
   * @brief   I2S HAL module driver.
   *          This file provides firmware functions to manage the following
   *          functionalities of I2S extension peripheral:
@@ -136,6 +134,7 @@ typedef enum
 /** @defgroup I2SEx_Private_Functions I2S Extended Private Functions
   * @{
   */
+static void I2SEx_TxRxDMAHalfCplt(DMA_HandleTypeDef *hdma);
 static void I2SEx_TxRxDMACplt(DMA_HandleTypeDef *hdma);
 static void I2SEx_TxRxDMAError(DMA_HandleTypeDef *hdma);
 static void I2SEx_FullDuplexTx_IT(I2S_HandleTypeDef *hi2s, I2S_UseTypeDef i2sUsed);
@@ -199,16 +198,16 @@ static HAL_StatusTypeDef I2SEx_FullDuplexWaitFlagStateUntilTimeout(I2S_HandleTyp
   */
 /**
   * @brief Full-Duplex Transmit/Receive data in blocking mode.
-  * @param  hi2s: pointer to a I2S_HandleTypeDef structure that contains
+  * @param  hi2s pointer to a I2S_HandleTypeDef structure that contains
   *         the configuration information for I2S module
-  * @param pTxData: a 16-bit pointer to the Transmit data buffer.
-  * @param pRxData: a 16-bit pointer to the Receive data buffer.
-  * @param Size: number of data sample to be sent:
+  * @param pTxData a 16-bit pointer to the Transmit data buffer.
+  * @param pRxData a 16-bit pointer to the Receive data buffer.
+  * @param Size number of data sample to be sent:
   * @note When a 16-bit data frame or a 16-bit data frame extended is selected during the I2S
   *       configuration phase, the Size parameter means the number of 16-bit data length
   *       in the transaction and when a 24-bit data frame or a 32-bit data frame is selected
   *       the Size parameter means the number of 16-bit data length.
-  * @param Timeout: Timeout duration
+  * @param Timeout Timeout duration
   * @note The I2S is kept enabled at the end of transaction to avoid the clock de-synchronization
   *       between Master and Slave(example: audio streaming).
   * @retval HAL status
@@ -454,11 +453,11 @@ HAL_StatusTypeDef HAL_I2SEx_TransmitReceive(I2S_HandleTypeDef *hi2s, uint16_t *p
 
 /**
   * @brief Full-Duplex Transmit/Receive data in non-blocking mode using Interrupt
-  * @param  hi2s: pointer to a I2S_HandleTypeDef structure that contains
+  * @param  hi2s pointer to a I2S_HandleTypeDef structure that contains
   *         the configuration information for I2S module
-  * @param pTxData: a 16-bit pointer to the Transmit data buffer.
-  * @param pRxData: a 16-bit pointer to the Receive data buffer.
-  * @param Size: number of data sample to be sent:
+  * @param pTxData a 16-bit pointer to the Transmit data buffer.
+  * @param pRxData a 16-bit pointer to the Receive data buffer.
+  * @param Size number of data sample to be sent:
   * @note When a 16-bit data frame or a 16-bit data frame extended is selected during the I2S
   *       configuration phase, the Size parameter means the number of 16-bit data length
   *       in the transaction and when a 24-bit data frame or a 32-bit data frame is selected
@@ -610,11 +609,11 @@ HAL_StatusTypeDef HAL_I2SEx_TransmitReceive_IT(I2S_HandleTypeDef *hi2s, uint16_t
 
 /**
   * @brief Full-Duplex Transmit/Receive data in non-blocking mode using DMA
-  * @param  hi2s: pointer to a I2S_HandleTypeDef structure that contains
+  * @param  hi2s pointer to a I2S_HandleTypeDef structure that contains
   *         the configuration information for I2S module
-  * @param pTxData: a 16-bit pointer to the Transmit data buffer.
-  * @param pRxData: a 16-bit pointer to the Receive data buffer.
-  * @param Size: number of data sample to be sent:
+  * @param pTxData a 16-bit pointer to the Transmit data buffer.
+  * @param pRxData a 16-bit pointer to the Receive data buffer.
+  * @param Size number of data sample to be sent:
   * @note When a 16-bit data frame or a 16-bit data frame extended is selected during the I2S
   *       configuration phase, the Size parameter means the number of 16-bit data length
   *       in the transaction and when a 24-bit data frame or a 32-bit data frame is selected
@@ -665,11 +664,17 @@ HAL_StatusTypeDef HAL_I2SEx_TransmitReceive_DMA(I2S_HandleTypeDef *hi2s, uint16_
     hi2s->ErrorCode = HAL_I2S_ERROR_NONE;
     hi2s->State     = HAL_I2S_STATE_BUSY_TX_RX;
 
+    /* Set the I2S Rx DMA Half transfer complete callback */
+    hi2s->hdmarx->XferHalfCpltCallback = I2SEx_TxRxDMAHalfCplt;
+
     /* Set the I2S Rx DMA transfer complete callback */
     hi2s->hdmarx->XferCpltCallback  = I2SEx_TxRxDMACplt;
 
     /* Set the I2S Rx DMA error callback */
     hi2s->hdmarx->XferErrorCallback = I2SEx_TxRxDMAError;
+
+    /* Set the I2S Tx DMA Half transfer complete callback */
+    hi2s->hdmatx->XferHalfCpltCallback  = I2SEx_TxRxDMAHalfCplt;
 
     /* Set the I2S Tx DMA transfer complete callback */
     hi2s->hdmatx->XferCpltCallback  = I2SEx_TxRxDMACplt;
@@ -751,7 +756,7 @@ HAL_StatusTypeDef HAL_I2SEx_TransmitReceive_DMA(I2S_HandleTypeDef *hi2s, uint16_
 
 /**
   * @brief  This function handles I2S/I2Sext interrupt requests in full-duplex mode.
-  * @param  hi2s: I2S handle
+  * @param  hi2s I2S handle
   * @retval HAL status
   */
 void HAL_I2SEx_FullDuplex_IRQHandler(I2S_HandleTypeDef *hi2s)
@@ -875,8 +880,23 @@ void HAL_I2SEx_FullDuplex_IRQHandler(I2S_HandleTypeDef *hi2s)
 }
 
 /**
+  * @brief Tx and Rx Transfer half completed callback
+  * @param hi2s I2S handle
+  * @retval None
+  */
+__weak void HAL_I2SEx_TxRxHalfCpltCallback(I2S_HandleTypeDef *hi2s)
+{
+  /* Prevent unused argument(s) compilation warning */
+  UNUSED(hi2s);
+
+  /* NOTE : This function Should not be modified, when the callback is needed,
+            the HAL_I2SEx_TxRxHalfCpltCallback could be implemented in the user file
+   */
+}
+
+/**
   * @brief Tx and Rx Transfer completed callback
-  * @param hi2s: I2S handle
+  * @param hi2s I2S handle
   * @retval None
   */
 __weak void HAL_I2SEx_TxRxCpltCallback(I2S_HandleTypeDef *hi2s)
@@ -885,7 +905,7 @@ __weak void HAL_I2SEx_TxRxCpltCallback(I2S_HandleTypeDef *hi2s)
   UNUSED(hi2s);
 
   /* NOTE : This function Should not be modified, when the callback is needed,
-            the HAL_I2SEx_TxRxCpltCallback could be implenetd in the user file
+            the HAL_I2SEx_TxRxCpltCallback could be implemented in the user file
    */
 }
 
@@ -902,8 +922,21 @@ __weak void HAL_I2SEx_TxRxCpltCallback(I2S_HandleTypeDef *hi2s)
   */
 
 /**
+  * @brief DMA I2S transmit receive process half complete callback
+  * @param  hdma pointer to a DMA_HandleTypeDef structure that contains
+  *               the configuration information for the specified DMA module.
+  * @retval None
+  */
+static void I2SEx_TxRxDMAHalfCplt(DMA_HandleTypeDef *hdma)
+{
+  I2S_HandleTypeDef* hi2s = (I2S_HandleTypeDef*)((DMA_HandleTypeDef*)hdma)->Parent;
+
+   HAL_I2SEx_TxRxHalfCpltCallback(hi2s);
+}
+
+/**
   * @brief DMA I2S transmit receive process complete callback
-  * @param  hdma: pointer to a DMA_HandleTypeDef structure that contains
+  * @param  hdma pointer to a DMA_HandleTypeDef structure that contains
   *               the configuration information for the specified DMA module.
   * @retval None
   */
@@ -964,7 +997,7 @@ static void I2SEx_TxRxDMACplt(DMA_HandleTypeDef *hdma)
 
 /**
   * @brief DMA I2S communication error callback
-  * @param hdma : DMA handle
+  * @param hdma  DMA handle
   * @retval None
   */
 static void I2SEx_TxRxDMAError(DMA_HandleTypeDef *hdma)
@@ -987,8 +1020,8 @@ static void I2SEx_TxRxDMAError(DMA_HandleTypeDef *hdma)
 
 /**
   * @brief Full-Duplex IT handler transmit function
-  * @param hi2s: I2S handle
-  * @param i2sUsed: indicate if I2Sx or I2Sx_ext is concerned
+  * @param hi2s I2S handle
+  * @param i2sUsed indicate if I2Sx or I2Sx_ext is concerned
   * @retval None
   */
 static void I2SEx_FullDuplexTx_IT(I2S_HandleTypeDef *hi2s, I2S_UseTypeDef i2sUsed)
@@ -1033,8 +1066,8 @@ static void I2SEx_FullDuplexTx_IT(I2S_HandleTypeDef *hi2s, I2S_UseTypeDef i2sUse
 
 /**
   * @brief Full-Duplex IT handler receive function
-  * @param hi2s: I2S handle
-  * @param i2sUsed: indicate if I2Sx or I2Sx_ext is concerned
+  * @param hi2s I2S handle
+  * @param i2sUsed indicate if I2Sx or I2Sx_ext is concerned
   * @retval None
   */
 static void I2SEx_FullDuplexRx_IT(I2S_HandleTypeDef *hi2s, I2S_UseTypeDef i2sUsed)
@@ -1079,11 +1112,11 @@ static void I2SEx_FullDuplexRx_IT(I2S_HandleTypeDef *hi2s, I2S_UseTypeDef i2sUse
 
 /**
   * @brief This function handles I2S Communication Timeout.
-  * @param hi2s: I2S handle
-  * @param Flag: Flag checked
-  * @param State: Value of the flag expected
-  * @param Timeout: Duration of the timeout
-  * @param i2sUsed: I2S instance reference
+  * @param hi2s I2S handle
+  * @param Flag Flag checked
+  * @param State Value of the flag expected
+  * @param Timeout Duration of the timeout
+  * @param i2sUsed I2S instance reference
   * @retval HAL status
   */
 static HAL_StatusTypeDef I2SEx_FullDuplexWaitFlagStateUntilTimeout(I2S_HandleTypeDef *hi2s, uint32_t Flag,

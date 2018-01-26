@@ -76,7 +76,9 @@
 #endif
 #endif
 
+#ifndef SAME_PRIO
 #define SAME_PRIO 0
+#endif
 
 /* end - control behaviour of the demo */
 /***************************************/
@@ -264,8 +266,9 @@ static void display_demo_description(void)
 void main(void)
 {
 	display_demo_description();
-
+#if CONFIG_TIMESLICING
 	k_sched_time_slice_set(5000, 0);
+#endif
 
 	init_objects();
 	start_threads();

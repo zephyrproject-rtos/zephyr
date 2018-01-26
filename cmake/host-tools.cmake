@@ -1,4 +1,4 @@
-include($ENV{ZEPHYR_BASE}/cmake/host-tools-zephyr.cmake)
+include(${ZEPHYR_BASE}/cmake/host-tools-zephyr.cmake)
 
 # Search for the must-have program dtc on PATH and in
 # TOOLCHAIN_HOME. Usually DTC will be provided by an SDK, but for
@@ -12,12 +12,11 @@ if(${DTC} STREQUAL DTC-NOTFOUND)
   message(FATAL_ERROR "Unable to find dtc")
 endif()
 
-find_program(
-  KCONFIG_CONF
-  conf
-  )
-if(${KCONFIG_CONF} STREQUAL KCONFIG_CONF-NOTFOUND)
-  message(FATAL_ERROR "Unable to find the Kconfig program 'conf'")
+if (NOT WIN32)
+  find_program(
+    KCONFIG_CONF
+    conf
+    )
 endif()
 
 find_program(

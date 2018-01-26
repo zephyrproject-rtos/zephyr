@@ -70,15 +70,6 @@ config PRINTK_BUFFER_SIZE
 	  not have to make a system call for every character emitted. Specify
 	  the size of this buffer.
 
-config STDOUT_CONSOLE
-	bool
-	prompt "Send stdout to console"
-	depends on CONSOLE_HAS_DRIVER
-	default n
-	help
-	  This option directs standard output (e.g. printf) to the console
-	  device, rather than suppressing it entirely.
-
 config EARLY_CONSOLE
 	bool
 	prompt "Send stdout at the earliest stage possible"

@@ -77,7 +77,50 @@ NET_BUF_POOL_DEFINE(dns_qname_pool, DNS_RESOLVER_BUF_CTR, DNS_MAX_NAME_LEN,
 
 static struct dns_resolve_context dns_default_ctx;
 
-int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[])
+static void dns_postprocess_server(struct dns_resolve_context *ctx, int idx)
+{
+	struct sockaddr *addr = &ctx->servers[idx].dns_server;
+
+	if (addr->sa_family == AF_INET) {
+		if (net_is_ipv4_addr_mcast(&net_sin(addr)->sin_addr)) {
+			ctx->servers[idx].is_mdns = true;
+		} else {
+			ctx->servers[idx].is_mdns = false;
+		}
+
+		if (net_sin(addr)->sin_port == 0) {
+			if (IS_ENABLED(CONFIG_MDNS_RESOLVER) &&
+			    ctx->servers[idx].is_mdns) {
+				/* We only use 5353 as a default port
+				 * if mDNS support is enabled. User can
+				 * override this by defining the port
+				 * in config file.
+				 */
+				net_sin(addr)->sin_port = htons(5353);
+			} else {
+				net_sin(addr)->sin_port = htons(53);
+			}
+		}
+	} else {
+		if (net_is_ipv6_addr_mcast(&net_sin6(addr)->sin6_addr)) {
+			ctx->servers[idx].is_mdns = true;
+		} else {
+			ctx->servers[idx].is_mdns = false;
+		}
+
+		if (net_sin6(addr)->sin6_port == 0) {
+			if (IS_ENABLED(CONFIG_MDNS_RESOLVER) &&
+			    ctx->servers[idx].is_mdns) {
+				net_sin6(addr)->sin6_port = htons(5353);
+			} else {
+				net_sin6(addr)->sin6_port = htons(53);
+			}
+		}
+	}
+}
+
+int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[],
+		     const struct sockaddr *servers_sa[])
 {
 #if defined(CONFIG_NET_IPV6)
 	struct sockaddr_in6 local_addr6 = {
@@ -100,66 +143,39 @@ int dns_resolve_init(struct dns_resolve_context *ctx, const char *servers[])
 		return -ENOENT;
 	}
 
-	if (!servers || !*servers) {
-		return -ENOENT;
-	}
-
 	if (ctx->is_used) {
 		return -ENOTEMPTY;
 	}
 
 	memset(ctx, 0, sizeof(*ctx));
 
-	for (i = 0; i < SERVER_COUNT && servers[i]; i++) {
-		struct sockaddr *addr = &ctx->servers[idx].dns_server;
+	if (servers) {
+		for (i = 0; idx < SERVER_COUNT && servers[i]; i++) {
+			struct sockaddr *addr = &ctx->servers[idx].dns_server;
 
-		memset(addr, 0, sizeof(*addr));
+			memset(addr, 0, sizeof(*addr));
 
-		ret = net_ipaddr_parse(servers[i], strlen(servers[i]), addr);
-		if (!ret) {
-			continue;
+			ret = net_ipaddr_parse(servers[i], strlen(servers[i]),
+					       addr);
+			if (!ret) {
+				continue;
+			}
+
+			dns_postprocess_server(ctx, idx);
+
+			NET_DBG("[%d] %s", i, servers[i]);
+
+			idx++;
 		}
+	}
 
-		if (addr->sa_family == AF_INET) {
-			if (net_is_ipv4_addr_mcast(&net_sin(addr)->sin_addr)) {
-				ctx->servers[idx].is_mdns = true;
-			} else {
-				ctx->servers[idx].is_mdns = false;
-			}
-
-			if (net_sin(addr)->sin_port == 0) {
-				if (IS_ENABLED(CONFIG_MDNS_RESOLVER) &&
-				    ctx->servers[idx].is_mdns) {
-					/* We only use 5353 as a default port
-					 * if mDNS support is enabled. User can
-					 * override this by defining the port
-					 * in config file.
-					 */
-					net_sin(addr)->sin_port = htons(5353);
-				} else {
-					net_sin(addr)->sin_port = htons(53);
-				}
-			}
-		} else {
-			if (net_is_ipv6_addr_mcast(&net_sin6(addr)->sin6_addr)) {
-				ctx->servers[idx].is_mdns = true;
-			} else {
-				ctx->servers[idx].is_mdns = false;
-			}
-
-			if (net_sin6(addr)->sin6_port == 0) {
-				if (IS_ENABLED(CONFIG_MDNS_RESOLVER) &&
-				    ctx->servers[idx].is_mdns) {
-					net_sin6(addr)->sin6_port = htons(5353);
-				} else {
-					net_sin6(addr)->sin6_port = htons(53);
-				}
-			}
+	if (servers_sa) {
+		for (i = 0; idx < SERVER_COUNT && servers_sa[i]; i++) {
+			memcpy(&ctx->servers[idx].dns_server, servers_sa[i],
+			       sizeof(ctx->servers[idx].dns_server));
+			dns_postprocess_server(ctx, idx);
+			idx++;
 		}
-
-		NET_DBG("[%d] %s", i, servers[i]);
-
-		idx++;
 	}
 
 	for (i = 0, count = 0;
@@ -837,6 +853,8 @@ int dns_resolve_close(struct dns_resolve_context *ctx)
 		}
 	}
 
+	ctx->is_used = false;
+
 	return 0;
 }
 
@@ -902,7 +920,7 @@ void dns_init_resolver(void)
 
 	dns_servers[SERVER_COUNT] = NULL;
 
-	ret = dns_resolve_init(dns_resolve_get_default(), dns_servers);
+	ret = dns_resolve_init(dns_resolve_get_default(), dns_servers, NULL);
 	if (ret < 0) {
 		NET_WARN("Cannot initialize DNS resolver (%d)", ret);
 	}

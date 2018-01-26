@@ -1,0 +1,32 @@
+# Kconfig - Atmel SAM0 flash driver config
+#
+# Copyright (c) 2018 Google LLC.
+# SPDX-License-Identifier: Apache-2.0
+
+if FLASH && SOC_FAMILY_SAM0
+
+menuconfig SOC_FLASH_SAM0
+	bool
+	prompt "Atmel SAM0 flash driver"
+	default n
+	select FLASH_HAS_PAGE_LAYOUT
+	help
+	 Enable the Atmel SAM0 series internal flash driver.
+
+config SOC_FLASH_SAM0_DEV_NAME
+	string "Flash device name"
+	depends on SOC_FLASH_SAM0
+	default "FLASH_0"
+	help
+	 Specify the device name for the flash driver.
+
+config SOC_FLASH_SAM0_EMULATE_BYTE_PAGES
+	bool
+	prompt "Emulate byte-sized pages"
+	depends on SOC_FLASH_SAM0
+	default n
+	help
+	 Emulate a device with byte-sized pages by doing a
+	 read/modify/erase/write.  Needed for NFFS.
+
+endif

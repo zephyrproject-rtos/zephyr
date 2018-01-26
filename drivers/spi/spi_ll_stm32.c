@@ -171,7 +171,7 @@ static void spi_stm32_complete(struct spi_stm32_data *data, SPI_TypeDef *spi,
 
 	spi_context_cs_control(&data->ctx, false);
 
-#if defined(CONFIG_SOC_SERIES_STM32L4X) || defined(CONFIG_SOC_SERIES_STM32F3X)
+#if defined(CONFIG_SPI_STM32_HAS_FIFO)
 	/* Flush RX buffer */
 	while (LL_SPI_IsActiveFlag_RXNE(spi)) {
 		(void) LL_SPI_ReceiveData8(spi);
@@ -266,13 +266,13 @@ static int spi_stm32_configure(struct spi_config *config)
 	LL_SPI_Disable(spi);
 	LL_SPI_SetBaudRatePrescaler(spi, scaler[br - 1]);
 
-	if (SPI_MODE_GET(config->operation) ==  SPI_MODE_CPOL) {
+	if (SPI_MODE_GET(config->operation) & SPI_MODE_CPOL) {
 		LL_SPI_SetClockPolarity(spi, LL_SPI_POLARITY_HIGH);
 	} else {
 		LL_SPI_SetClockPolarity(spi, LL_SPI_POLARITY_LOW);
 	}
 
-	if (SPI_MODE_GET(config->operation) == SPI_MODE_CPHA) {
+	if (SPI_MODE_GET(config->operation) & SPI_MODE_CPHA) {
 		LL_SPI_SetClockPhase(spi, LL_SPI_PHASE_2EDGE);
 	} else {
 		LL_SPI_SetClockPhase(spi, LL_SPI_PHASE_1EDGE);
@@ -310,7 +310,7 @@ static int spi_stm32_configure(struct spi_config *config)
 		LL_SPI_SetDataWidth(spi, LL_SPI_DATAWIDTH_16BIT);
 	}
 
-#if defined(CONFIG_SOC_SERIES_STM32L4X) || defined(CONFIG_SOC_SERIES_STM32F3X)
+#if defined(CONFIG_SPI_STM32_HAS_FIFO)
 	LL_SPI_SetRxFIFOThreshold(spi, LL_SPI_RX_FIFO_TH_QUARTER);
 #endif
 	LL_SPI_SetStandard(spi, LL_SPI_PROTOCOL_MOTOROLA);
@@ -371,7 +371,7 @@ static int transceive(struct spi_config *config,
 	spi_context_buffers_setup(&data->ctx, tx_bufs, tx_count,
 				  rx_bufs, rx_count, 1);
 
-#if defined(CONFIG_SOC_SERIES_STM32L4X) || defined(CONFIG_SOC_SERIES_STM32F3X)
+#if defined(CONFIG_SPI_STM32_HAS_FIFO)
 	/* Flush RX buffer */
 	while (LL_SPI_IsActiveFlag_RXNE(spi)) {
 		(void) LL_SPI_ReceiveData8(spi);
@@ -465,10 +465,15 @@ static void spi_stm32_irq_config_func_1(struct device *port);
 #endif
 
 static const struct spi_stm32_config spi_stm32_cfg_1 = {
-	.spi = (SPI_TypeDef *) SPI1_BASE,
+	.spi = (SPI_TypeDef *) CONFIG_SPI_1_BASE_ADDRESS,
 	.pclken = {
+#ifdef CONFIG_SOC_SERIES_STM32F0X
+		.enr = LL_APB1_GRP2_PERIPH_SPI1,
+		.bus = STM32_CLOCK_BUS_APB1_2
+#else
 		.enr = LL_APB2_GRP1_PERIPH_SPI1,
 		.bus = STM32_CLOCK_BUS_APB2
+#endif
 	},
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 	.irq_config = spi_stm32_irq_config_func_1,
@@ -488,9 +493,9 @@ DEVICE_AND_API_INIT(spi_stm32_1, CONFIG_SPI_1_NAME, &spi_stm32_init,
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 static void spi_stm32_irq_config_func_1(struct device *dev)
 {
-	IRQ_CONNECT(SPI1_IRQn, CONFIG_SPI_1_IRQ_PRI,
+	IRQ_CONNECT(CONFIG_SPI_1_IRQ, CONFIG_SPI_1_IRQ_PRI,
 		    spi_stm32_isr, DEVICE_GET(spi_stm32_1), 0);
-	irq_enable(SPI1_IRQn);
+	irq_enable(CONFIG_SPI_1_IRQ);
 }
 #endif
 
@@ -503,7 +508,7 @@ static void spi_stm32_irq_config_func_2(struct device *port);
 #endif
 
 static const struct spi_stm32_config spi_stm32_cfg_2 = {
-	.spi = (SPI_TypeDef *) SPI2_BASE,
+	.spi = (SPI_TypeDef *) CONFIG_SPI_2_BASE_ADDRESS,
 	.pclken = {
 		.enr = LL_APB1_GRP1_PERIPH_SPI2,
 		.bus = STM32_CLOCK_BUS_APB1
@@ -526,9 +531,9 @@ DEVICE_AND_API_INIT(spi_stm32_2, CONFIG_SPI_2_NAME, &spi_stm32_init,
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 static void spi_stm32_irq_config_func_2(struct device *dev)
 {
-	IRQ_CONNECT(SPI2_IRQn, CONFIG_SPI_2_IRQ_PRI,
+	IRQ_CONNECT(CONFIG_SPI_2_IRQ, CONFIG_SPI_2_IRQ_PRI,
 		    spi_stm32_isr, DEVICE_GET(spi_stm32_2), 0);
-	irq_enable(SPI2_IRQn);
+	irq_enable(CONFIG_SPI_2_IRQ);
 }
 #endif
 
@@ -541,7 +546,7 @@ static void spi_stm32_irq_config_func_3(struct device *port);
 #endif
 
 static const  struct spi_stm32_config spi_stm32_cfg_3 = {
-	.spi = (SPI_TypeDef *) SPI3_BASE,
+	.spi = (SPI_TypeDef *) CONFIG_SPI_3_BASE_ADDRESS,
 	.pclken = {
 		.enr = LL_APB1_GRP1_PERIPH_SPI3,
 		.bus = STM32_CLOCK_BUS_APB1
@@ -564,9 +569,9 @@ DEVICE_AND_API_INIT(spi_stm32_3, CONFIG_SPI_3_NAME, &spi_stm32_init,
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 static void spi_stm32_irq_config_func_3(struct device *dev)
 {
-	IRQ_CONNECT(SPI3_IRQn, CONFIG_SPI_3_IRQ_PRI,
+	IRQ_CONNECT(CONFIG_SPI_3_IRQ, CONFIG_SPI_3_IRQ_PRI,
 		    spi_stm32_isr, DEVICE_GET(spi_stm32_3), 0);
-	irq_enable(SPI3_IRQn);
+	irq_enable(CONFIG_SPI_3_IRQ);
 }
 #endif
 

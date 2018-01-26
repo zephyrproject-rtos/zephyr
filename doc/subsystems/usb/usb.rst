@@ -1,3 +1,18 @@
+USB Vendor and Product identifiers
+##################################
+
+The USB Vendor ID for the Zephyr project is 0x2FE3. The default USB Product
+ID for the Zephyr project is 0x100. The USB bcdDevice Device Release Number
+represents the Zephyr kernel major and minor versions as a binary coded
+decimal value. When a vendor integrates the Zephyr USB subsystem into a
+product, the vendor must use the USB Vendor and Product ID assigned to them.
+A vendor integrating the Zephyr USB subsystem in a product must not use the
+Vendor ID of the Zephyr project.
+
+The USB maintainer, if one is assigned, or otherwise the Zephyr Technical
+Steering Committee, may allocate other USB Product IDs based on well-motivated
+and documented requests.
+
 USB device stack
 ################
 

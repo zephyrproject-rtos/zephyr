@@ -895,7 +895,7 @@ struct bt_gatt_read_params {
 	bt_gatt_read_func_t func;
 	size_t handle_count;
 	union {
-		struct __single {
+		struct {
 			u16_t handle;
 			u16_t offset;
 		} single;

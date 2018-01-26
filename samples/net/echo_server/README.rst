@@ -88,6 +88,7 @@ Run echo-server application in QEMU:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/echo_server
+   :host-os: unix
    :board: qemu_x86
    :goals: run
    :compact:

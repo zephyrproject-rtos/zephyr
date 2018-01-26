@@ -12,6 +12,9 @@ config SOC_SERIES
 config X86_IAMCU
 	def_bool y
 
+config X86_NO_MELTDOWN
+	def_bool y
+
 config TOOLCHAIN_VARIANT
 	default "iamcu" if X86_IAMCU
 	default "" if !X86_IAMCU

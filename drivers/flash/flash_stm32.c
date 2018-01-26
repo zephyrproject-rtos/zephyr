@@ -224,12 +224,12 @@ static const struct flash_driver_api flash_stm32_api = {
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_stm32_page_layout,
 #endif
-#if defined(CONFIG_SOC_SERIES_STM32F0X)
+#ifdef FLASH_WRITE_BLOCK_SIZE
 	.write_block_size = FLASH_WRITE_BLOCK_SIZE,
-#elif defined(CONFIG_SOC_SERIES_STM32F4X)
-	.write_block_size = 1,
-#elif defined(CONFIG_SOC_SERIES_STM32L4X)
-	.write_block_size = 8,
+#else
+#error Flash write block size not available
+	/* Flash Write block size is extracted from device tree */
+	/* as flash node property 'write-block-size' */
 #endif
 };
 
@@ -263,4 +263,3 @@ static int stm32_flash_init(struct device *dev)
 DEVICE_AND_API_INIT(stm32_flash, CONFIG_SOC_FLASH_STM32_DEV_NAME,
 		    stm32_flash_init, &flash_data, NULL, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_stm32_api);
-

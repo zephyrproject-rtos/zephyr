@@ -1,6 +1,0 @@
-sample:
-  name: Logger
-tests:
-  test:
-    tags: samples
-    harness: console

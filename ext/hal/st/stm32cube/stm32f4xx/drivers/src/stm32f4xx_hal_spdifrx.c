@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_spdifrx.c
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    14-April-2017
   * @brief   This file provides firmware functions to manage the following
   *          functionalities of the SPDIFRX audio interface:
   *           + Initialization and Configuration
@@ -197,7 +195,7 @@ static HAL_StatusTypeDef  SPDIFRX_WaitOnFlagUntilTimeout(SPDIFRX_HandleTypeDef *
 /**
   * @brief Initializes the SPDIFRX according to the specified parameters
   *        in the SPDIFRX_InitTypeDef and create the associated handle.
-  * @param hspdif: SPDIFRX handle
+  * @param hspdif SPDIFRX handle
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SPDIFRX_Init(SPDIFRX_HandleTypeDef *hspdif)
@@ -268,7 +266,7 @@ HAL_StatusTypeDef HAL_SPDIFRX_Init(SPDIFRX_HandleTypeDef *hspdif)
 
 /**
   * @brief DeInitializes the SPDIFRX peripheral
-  * @param hspdif: SPDIFRX handle
+  * @param hspdif SPDIFRX handle
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SPDIFRX_DeInit(SPDIFRX_HandleTypeDef *hspdif)
@@ -303,7 +301,7 @@ HAL_StatusTypeDef HAL_SPDIFRX_DeInit(SPDIFRX_HandleTypeDef *hspdif)
 
 /**
   * @brief SPDIFRX MSP Init
-  * @param hspdif: SPDIFRX handle
+  * @param hspdif SPDIFRX handle
   * @retval None
   */
 __weak void HAL_SPDIFRX_MspInit(SPDIFRX_HandleTypeDef *hspdif)
@@ -317,7 +315,7 @@ __weak void HAL_SPDIFRX_MspInit(SPDIFRX_HandleTypeDef *hspdif)
 
 /**
   * @brief SPDIFRX MSP DeInit
-  * @param hspdif: SPDIFRX handle
+  * @param hspdif SPDIFRX handle
   * @retval None
   */
 __weak void HAL_SPDIFRX_MspDeInit(SPDIFRX_HandleTypeDef *hspdif)
@@ -332,8 +330,8 @@ __weak void HAL_SPDIFRX_MspDeInit(SPDIFRX_HandleTypeDef *hspdif)
 /**
   * @brief Sets the SPDIFRX  dtat format according to the specified parameters
   *        in the SPDIFRX_InitTypeDef.
-  * @param hspdif: SPDIFRX handle
-  * @param sDataFormat: SPDIFRX data format
+  * @param hspdif SPDIFRX handle
+  * @param sDataFormat SPDIFRX data format
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SPDIFRX_SetDataFormat(SPDIFRX_HandleTypeDef *hspdif, SPDIFRX_SetDataFormatTypeDef  sDataFormat)
@@ -428,11 +426,11 @@ HAL_StatusTypeDef HAL_SPDIFRX_SetDataFormat(SPDIFRX_HandleTypeDef *hspdif, SPDIF
 
 /**
   * @brief  Receives an amount of data (Data Flow) in blocking mode.
-  * @param  hspdif: pointer to SPDIFRX_HandleTypeDef structure that contains
+  * @param  hspdif pointer to SPDIFRX_HandleTypeDef structure that contains
   *                 the configuration information for SPDIFRX module.
-  * @param  pData: Pointer to data buffer
-  * @param  Size: Amount of data to be received
-  * @param  Timeout: Timeout duration
+  * @param  pData Pointer to data buffer
+  * @param  Size Amount of data to be received
+  * @param  Timeout Timeout duration
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SPDIFRX_ReceiveDataFlow(SPDIFRX_HandleTypeDef *hspdif, uint32_t *pData, uint16_t Size, uint32_t Timeout)
@@ -490,11 +488,11 @@ HAL_StatusTypeDef HAL_SPDIFRX_ReceiveDataFlow(SPDIFRX_HandleTypeDef *hspdif, uin
 
 /**
   * @brief  Receives an amount of data (Control Flow) in blocking mode.
-  * @param  hspdif: pointer to a SPDIFRX_HandleTypeDef structure that contains
+  * @param  hspdif pointer to a SPDIFRX_HandleTypeDef structure that contains
   *                 the configuration information for SPDIFRX module.
-  * @param  pData: Pointer to data buffer
-  * @param  Size: Amount of data to be received
-  * @param  Timeout: Timeout duration
+  * @param  pData Pointer to data buffer
+  * @param  Size Amount of data to be received
+  * @param  Timeout Timeout duration
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SPDIFRX_ReceiveControlFlow(SPDIFRX_HandleTypeDef *hspdif, uint32_t *pData, uint16_t Size, uint32_t Timeout)
@@ -551,9 +549,9 @@ HAL_StatusTypeDef HAL_SPDIFRX_ReceiveControlFlow(SPDIFRX_HandleTypeDef *hspdif, 
 }
 /**
   * @brief Receive an amount of data (Data Flow) in non-blocking mode with Interrupt
-  * @param hspdif: SPDIFRX handle
-  * @param pData: a 32-bit pointer to the Receive data buffer.
-  * @param Size: number of data sample to be received .
+  * @param hspdif SPDIFRX handle
+  * @param pData a 32-bit pointer to the Receive data buffer.
+  * @param Size number of data sample to be received .
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SPDIFRX_ReceiveDataFlow_IT(SPDIFRX_HandleTypeDef *hspdif, uint32_t *pData, uint16_t Size)
@@ -634,9 +632,9 @@ HAL_StatusTypeDef HAL_SPDIFRX_ReceiveDataFlow_IT(SPDIFRX_HandleTypeDef *hspdif, 
 
 /**
   * @brief Receive an amount of data (Control Flow) with Interrupt
-  * @param hspdif: SPDIFRX handle
-  * @param pData: a 32-bit pointer to the Receive data buffer.
-  * @param Size: number of data sample (Control Flow) to be received :
+  * @param hspdif SPDIFRX handle
+  * @param pData a 32-bit pointer to the Receive data buffer.
+  * @param Size number of data sample (Control Flow) to be received :
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SPDIFRX_ReceiveControlFlow_IT(SPDIFRX_HandleTypeDef *hspdif, uint32_t *pData, uint16_t Size)
@@ -717,9 +715,9 @@ HAL_StatusTypeDef HAL_SPDIFRX_ReceiveControlFlow_IT(SPDIFRX_HandleTypeDef *hspdi
 
 /**
   * @brief Receive an amount of data (Data Flow) mode with DMA
-  * @param hspdif: SPDIFRX handle
-  * @param pData: a 32-bit pointer to the Receive data buffer.
-  * @param Size: number of data sample to be received :
+  * @param hspdif SPDIFRX handle
+  * @param pData a 32-bit pointer to the Receive data buffer.
+  * @param Size number of data sample to be received :
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SPDIFRX_ReceiveDataFlow_DMA(SPDIFRX_HandleTypeDef *hspdif, uint32_t *pData, uint16_t Size)
@@ -804,9 +802,9 @@ HAL_StatusTypeDef HAL_SPDIFRX_ReceiveDataFlow_DMA(SPDIFRX_HandleTypeDef *hspdif,
 
 /**
   * @brief Receive an amount of data (Control Flow) with DMA
-  * @param hspdif: SPDIFRX handle
-  * @param pData: a 32-bit pointer to the Receive data buffer.
-  * @param Size: number of data (Control Flow) sample to be received :
+  * @param hspdif SPDIFRX handle
+  * @param pData a 32-bit pointer to the Receive data buffer.
+  * @param Size number of data (Control Flow) sample to be received :
   * @retval HAL status
   */
 HAL_StatusTypeDef HAL_SPDIFRX_ReceiveControlFlow_DMA(SPDIFRX_HandleTypeDef *hspdif, uint32_t *pData, uint16_t Size)
@@ -891,7 +889,7 @@ HAL_StatusTypeDef HAL_SPDIFRX_ReceiveControlFlow_DMA(SPDIFRX_HandleTypeDef *hspd
 
 /**
   * @brief stop the audio stream receive from the Media.
-  * @param hspdif: SPDIFRX handle
+  * @param hspdif SPDIFRX handle
   * @retval None
   */
 HAL_StatusTypeDef HAL_SPDIFRX_DMAStop(SPDIFRX_HandleTypeDef *hspdif)
@@ -920,7 +918,7 @@ HAL_StatusTypeDef HAL_SPDIFRX_DMAStop(SPDIFRX_HandleTypeDef *hspdif)
 
 /**
   * @brief  This function handles SPDIFRX interrupt request.
-  * @param  hspdif: SPDIFRX handle
+  * @param  hspdif SPDIFRX handle
   * @retval HAL status
   */
 void HAL_SPDIFRX_IRQHandler(SPDIFRX_HandleTypeDef *hspdif)
@@ -966,7 +964,7 @@ void HAL_SPDIFRX_IRQHandler(SPDIFRX_HandleTypeDef *hspdif)
 
 /**
   * @brief Rx Transfer (Data flow) half completed callbacks
-  * @param hspdif: SPDIFRX handle
+  * @param hspdif SPDIFRX handle
   * @retval None
   */
 __weak void HAL_SPDIFRX_RxHalfCpltCallback(SPDIFRX_HandleTypeDef *hspdif)
@@ -980,7 +978,7 @@ __weak void HAL_SPDIFRX_RxHalfCpltCallback(SPDIFRX_HandleTypeDef *hspdif)
 
 /**
   * @brief Rx Transfer (Data flow) completed callbacks
-  * @param hspdif: SPDIFRX handle
+  * @param hspdif SPDIFRX handle
   * @retval None
   */
 __weak void HAL_SPDIFRX_RxCpltCallback(SPDIFRX_HandleTypeDef *hspdif)
@@ -994,7 +992,7 @@ __weak void HAL_SPDIFRX_RxCpltCallback(SPDIFRX_HandleTypeDef *hspdif)
 
 /**
   * @brief Rx (Control flow) Transfer half completed callbacks
-  * @param hspdif: SPDIFRX handle
+  * @param hspdif SPDIFRX handle
   * @retval None
   */
 __weak void HAL_SPDIFRX_CxHalfCpltCallback(SPDIFRX_HandleTypeDef *hspdif)
@@ -1008,7 +1006,7 @@ __weak void HAL_SPDIFRX_CxHalfCpltCallback(SPDIFRX_HandleTypeDef *hspdif)
 
 /**
   * @brief Rx Transfer (Control flow) completed callbacks
-  * @param hspdif: SPDIFRX handle
+  * @param hspdif SPDIFRX handle
   * @retval None
   */
 __weak void HAL_SPDIFRX_CxCpltCallback(SPDIFRX_HandleTypeDef *hspdif)
@@ -1022,7 +1020,7 @@ __weak void HAL_SPDIFRX_CxCpltCallback(SPDIFRX_HandleTypeDef *hspdif)
 
 /**
   * @brief SPDIFRX error callbacks
-  * @param hspdif: SPDIFRX handle
+  * @param hspdif SPDIFRX handle
   * @retval None
   */
 __weak void HAL_SPDIFRX_ErrorCallback(SPDIFRX_HandleTypeDef *hspdif)
@@ -1055,7 +1053,7 @@ __weak void HAL_SPDIFRX_ErrorCallback(SPDIFRX_HandleTypeDef *hspdif)
 
 /**
   * @brief  Return the SPDIFRX state
-  * @param  hspdif : SPDIFRX handle
+  * @param  hspdif  SPDIFRX handle
   * @retval HAL state
   */
 HAL_SPDIFRX_StateTypeDef HAL_SPDIFRX_GetState(SPDIFRX_HandleTypeDef *hspdif)
@@ -1065,7 +1063,7 @@ HAL_SPDIFRX_StateTypeDef HAL_SPDIFRX_GetState(SPDIFRX_HandleTypeDef *hspdif)
 
 /**
   * @brief  Return the SPDIFRX error code
-  * @param  hspdif : SPDIFRX handle
+  * @param  hspdif  SPDIFRX handle
   * @retval SPDIFRX Error Code
   */
 uint32_t HAL_SPDIFRX_GetError(SPDIFRX_HandleTypeDef *hspdif)
@@ -1079,7 +1077,7 @@ uint32_t HAL_SPDIFRX_GetError(SPDIFRX_HandleTypeDef *hspdif)
 
 /**
   * @brief DMA SPDIFRX receive process (Data flow) complete callback
-  * @param hdma : DMA handle
+  * @param hdma  DMA handle
   * @retval None
   */
 static void SPDIFRX_DMARxCplt(DMA_HandleTypeDef *hdma)
@@ -1096,7 +1094,7 @@ static void SPDIFRX_DMARxCplt(DMA_HandleTypeDef *hdma)
 
 /**
   * @brief DMA SPDIFRX receive process (Data flow) half complete callback
-  * @param hdma : DMA handle
+  * @param hdma  DMA handle
   * @retval None
   */
 static void SPDIFRX_DMARxHalfCplt(DMA_HandleTypeDef *hdma)
@@ -1108,7 +1106,7 @@ static void SPDIFRX_DMARxHalfCplt(DMA_HandleTypeDef *hdma)
 
 /**
   * @brief DMA SPDIFRX receive process (Control flow) complete callback
-  * @param hdma : DMA handle
+  * @param hdma  DMA handle
   * @retval None
   */
 static void SPDIFRX_DMACxCplt(DMA_HandleTypeDef *hdma)
@@ -1125,7 +1123,7 @@ static void SPDIFRX_DMACxCplt(DMA_HandleTypeDef *hdma)
 
 /**
   * @brief DMA SPDIFRX receive process (Control flow) half complete callback
-  * @param hdma : DMA handle
+  * @param hdma  DMA handle
   * @retval None
   */
 static void SPDIFRX_DMACxHalfCplt(DMA_HandleTypeDef *hdma)
@@ -1137,7 +1135,7 @@ static void SPDIFRX_DMACxHalfCplt(DMA_HandleTypeDef *hdma)
 
 /**
   * @brief DMA SPDIFRX communication error callback
-  * @param hdma : DMA handle
+  * @param hdma  DMA handle
   * @retval None
   */
 static void SPDIFRX_DMAError(DMA_HandleTypeDef *hdma)
@@ -1157,7 +1155,7 @@ static void SPDIFRX_DMAError(DMA_HandleTypeDef *hdma)
 
 /**
   * @brief Receive an amount of data (Data Flow) with Interrupt
-  * @param hspdif: SPDIFRX handle
+  * @param hspdif SPDIFRX handle
   * @retval None
   */
 static void SPDIFRX_ReceiveDataFlow_IT(SPDIFRX_HandleTypeDef *hspdif)
@@ -1182,7 +1180,7 @@ static void SPDIFRX_ReceiveDataFlow_IT(SPDIFRX_HandleTypeDef *hspdif)
 
 /**
   * @brief Receive an amount of data (Control Flow) with Interrupt
-  * @param hspdif: SPDIFRX handle
+  * @param hspdif SPDIFRX handle
   * @retval None
   */
 static void SPDIFRX_ReceiveControlFlow_IT(SPDIFRX_HandleTypeDef *hspdif)
@@ -1207,10 +1205,10 @@ static void SPDIFRX_ReceiveControlFlow_IT(SPDIFRX_HandleTypeDef *hspdif)
 
 /**
   * @brief This function handles SPDIFRX Communication Timeout.
-  * @param hspdif: SPDIFRX handle
-  * @param Flag: Flag checked
-  * @param Status: Value of the flag expected
-  * @param Timeout: Duration of the timeout
+  * @param hspdif SPDIFRX handle
+  * @param Flag Flag checked
+  * @param Status Value of the flag expected
+  * @param Timeout Duration of the timeout
   * @retval HAL status
   */
 static HAL_StatusTypeDef SPDIFRX_WaitOnFlagUntilTimeout(SPDIFRX_HandleTypeDef *hspdif, uint32_t Flag, FlagStatus Status, uint32_t Timeout)

@@ -22,13 +22,31 @@ choice
 	  Select the Bluetooth Link Layer to compile.
 
 config BT_LL_SW
-	bool "Use the software-based BLE Link Layer"
+	bool "Software-based BLE Link Layer"
 	help
 	  Use Zephyr software BLE Link Layer implementation.
 
 endchoice
 
 comment "BLE Controller configuration"
+
+config BT_CTLR_RX_PRIO_STACK_SIZE
+	# Hidden option for Controller's Co-Operative high priority Rx thread
+	# stack size.
+	int
+	default 448
+
+config BT_CTLR_RX_PRIO
+	# Hidden option for Controller's Co-Operative high priority Rx thread
+	# priority.
+	int
+	default 6
+
+config BT_CTLR_FILTER
+	# Hidden option to enable controller whitelist feature
+	depends on BT_LL_SW
+	bool
+	default y
 
 config BT_CTLR_HCI_VS_BUILD_INFO
 	string "Zephyr HCI VS Build Info string"
@@ -41,6 +59,7 @@ config BT_CTLR_HCI_VS_BUILD_INFO
 	  character is required at the beginning to separate it from the
 	  already included information.
 
+if BT_LL_SW
 config BT_CTLR_DUP_FILTER_LEN
 	prompt "Number of addresses in the scan duplicate filter"
 	int
@@ -101,16 +120,6 @@ config BT_CTLR_SUBVERSION_NUMBER
 	range 0x0000 0xFFFF
 	help
 	  Set the Subversion Number that will be used in VERSION_IND PDU.
-
-config BT_CTLR_RX_PRIO_STACK_SIZE
-	int
-	default 448
-
-config BT_CTLR_RX_PRIO
-	# Hidden option for Controller's Co-Operative high priority Rx thread
-	# priority.
-	int
-	default 6
 
 comment "BLE Controller features"
 
@@ -462,6 +471,8 @@ config BT_CTLR_PA_LNA_GPIOTE_CHAN
 	help
 	  Select the nRF5 GPIOTE channel to use for PA/LNA GPIO feature.
 
+endif # BT_LL_SW
+
 comment "BLE Controller debug configuration"
 
 config BT_CTLR_ASSERT_HANDLER
@@ -488,7 +499,6 @@ config BT_CTLR_DEBUG_PINS
 	help
 	  Turn on debug GPIO toggling for the BLE Controller. This is useful
 	  when debugging with a logic analyzer or profiling certain sections of
-	  the code. When enabled, pins P0.16 to P0.25 are taken over exclusively
-	  by the controller and cannot be used outside of it.
+	  the code.
 
 endif # BT_CTLR

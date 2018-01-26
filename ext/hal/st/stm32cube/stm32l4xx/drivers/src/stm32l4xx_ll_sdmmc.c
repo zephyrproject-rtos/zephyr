@@ -1221,7 +1221,7 @@ static uint32_t SDMMC_GetCmdError(SDMMC_TypeDef *SDMMCx)
   }while(!__SDMMC_GET_FLAG(SDMMCx, SDMMC_FLAG_CMDSENT));
   
   /* Clear all the static flags */
-  __SDMMC_CLEAR_FLAG(SDMMCx, SDMMC_STATIC_FLAGS);
+  __SDMMC_CLEAR_FLAG(SDMMCx, SDMMC_STATIC_CMD_FLAGS);
   
   return SDMMC_ERROR_NONE;
 }
@@ -1272,7 +1272,7 @@ static uint32_t SDMMC_GetCmdResp1(SDMMC_TypeDef *SDMMCx, uint8_t SD_CMD, uint32_
   }
   
   /* Clear all the static flags */
-  __SDMMC_CLEAR_FLAG(SDMMCx, SDMMC_STATIC_FLAGS);
+  __SDMMC_CLEAR_FLAG(SDMMCx, SDMMC_STATIC_CMD_FLAGS);
   
   /* We have received response, retrieve it for analysis  */
   response_r1 = SDMMC_GetResponse(SDMMCx, SDMMC_RESP1);
@@ -1395,7 +1395,7 @@ static uint32_t SDMMC_GetCmdResp2(SDMMC_TypeDef *SDMMCx)
   {
     /* No error flag set */
     /* Clear all the static flags */
-    __SDMMC_CLEAR_FLAG(SDMMCx, SDMMC_STATIC_FLAGS);
+    __SDMMC_CLEAR_FLAG(SDMMCx, SDMMC_STATIC_CMD_FLAGS);
   }
 
   return SDMMC_ERROR_NONE;
@@ -1428,10 +1428,9 @@ static uint32_t SDMMC_GetCmdResp3(SDMMC_TypeDef *SDMMCx)
     return SDMMC_ERROR_CMD_RSP_TIMEOUT;
   }
   else
- 
   {  
     /* Clear all the static flags */
-    __SDMMC_CLEAR_FLAG(SDMMCx, SDMMC_STATIC_FLAGS);
+    __SDMMC_CLEAR_FLAG(SDMMCx, SDMMC_STATIC_CMD_FLAGS);
   }
   
   return SDMMC_ERROR_NONE;
@@ -1482,7 +1481,7 @@ static uint32_t SDMMC_GetCmdResp6(SDMMC_TypeDef *SDMMCx, uint8_t SD_CMD, uint16_
   }
   
   /* Clear all the static flags */
-  __SDMMC_CLEAR_FLAG(SDMMCx, SDMMC_STATIC_FLAGS);
+  __SDMMC_CLEAR_FLAG(SDMMCx, SDMMC_STATIC_CMD_FLAGS);
   
   /* We have received response, retrieve it.  */
   response_r1 = SDMMC_GetResponse(SDMMCx, SDMMC_RESP1);
@@ -1535,6 +1534,14 @@ static uint32_t SDMMC_GetCmdResp7(SDMMC_TypeDef *SDMMCx)
     return SDMMC_ERROR_CMD_RSP_TIMEOUT;
   }
   
+  else if(__SDMMC_GET_FLAG(SDMMCx, SDMMC_FLAG_CCRCFAIL))
+  {
+    /* Card is SD V2.0 compliant */
+    __SDMMC_CLEAR_FLAG(SDMMCx, SDMMC_FLAG_CCRCFAIL);
+    
+    return SDMMC_ERROR_CMD_CRC_FAIL;
+  }
+
   if(__SDMMC_GET_FLAG(SDMMCx, SDMMC_FLAG_CMDREND))
   {
     /* Card is SD V2.0 compliant */

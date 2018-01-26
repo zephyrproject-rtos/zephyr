@@ -150,6 +150,9 @@ struct lwm2m_engine_obj {
 	u16_t max_instance_count;
 	lwm2m_engine_obj_create_cb_t create_cb;
 	lwm2m_engine_obj_delete_cb_t delete_cb;
+
+	/* runtime field attributes (lwm2m_attr) */
+	sys_slist_t attr_list;
 };
 
 #define INIT_OBJ_RES(res_var, index_var, id_val, multi_var, \
@@ -179,13 +182,35 @@ struct lwm2m_engine_obj {
 	INIT_OBJ_RES(res_var, index_var, id_val, NULL, NULL, 0, \
 		     NULL, NULL, NULL, ex_cb)
 
+
+#define LWM2M_ATTR_PMIN	0
+#define LWM2M_ATTR_PMAX	1
+#define LWM2M_ATTR_GT	2
+#define LWM2M_ATTR_LT	3
+#define LWM2M_ATTR_STEP	4
+#define NR_LWM2M_ATTR	5
+
+/* TODO: support multiple server (sec 5.4.2) */
+struct lwm2m_attr {
+	union {
+		float32_value_t float_val;
+		s32_t int_val;
+	};
+
+	sys_snode_t node;
+	u8_t type;
+	bool used;
+};
+
 struct lwm2m_engine_res_inst {
 	char path[MAX_RESOURCE_LEN]; /* 3/0/0 */
 	u16_t  res_id;
 	u8_t   *multi_count_var;
 	void  *data_ptr;
 	size_t data_len;
-	/* runtime field attributes (WRITE_ATTR) */
+
+	/* runtime field attributes (lwm2m_attr) */
+	sys_slist_t attr_list;
 
 	/* callbacks set by user code on obj instance */
 	lwm2m_engine_get_data_cb_t	read_cb;
@@ -201,6 +226,9 @@ struct lwm2m_engine_obj_inst {
 	u16_t obj_inst_id;
 	struct lwm2m_engine_res_inst *resources;
 	u16_t resource_count;
+
+	/* runtime field attributes (lwm2m_attr) */
+	sys_slist_t attr_list;
 };
 
 struct lwm2m_output_context {

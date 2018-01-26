@@ -12,11 +12,18 @@ source "arch/arm/soc/st_stm32/stm32f1/Kconfig.defconfig.stm32f1*"
 config SOC_SERIES
 	default stm32f1
 
-if WATCHDOG
+if GPIO_STM32
 
-config IWDG_STM32
+config GPIO_STM32_PORTD
+	default y
+
+endif # GPIO_STM32
+
+if I2C && (I2C_1 || I2C_2 || I2C_3)
+
+config  I2C_STM32_V1
 	def_bool y
 
-endif
+endif # I2C
 
 endif # SOC_SERIES_STM32F1X

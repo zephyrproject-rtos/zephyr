@@ -85,12 +85,9 @@ static inline void ieee802154_acknowledge(struct net_if *iface,
 	net_pkt_frag_insert(pkt, frag);
 
 	if (ieee802154_create_ack_frame(iface, pkt, mpdu->mhr.fs->sequence)) {
-		const struct ieee802154_radio_api *radio =
-			iface->dev->driver_api;
-
 		net_buf_add(frag, IEEE802154_ACK_PKT_LENGTH);
 
-		radio->tx(iface->dev, pkt, frag);
+		ieee802154_tx(iface, pkt, frag);
 	}
 
 	net_pkt_unref(pkt);
@@ -291,17 +288,37 @@ static u16_t ieee802154_reserve(struct net_if *iface, void *data)
 	return ieee802154_compute_header_size(iface, (struct in6_addr *)data);
 }
 
+static int ieee802154_enable(struct net_if *iface, bool state)
+{
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
+
+	NET_DBG("iface %p %s", iface, state ? "up" : "down");
+
+	if (ctx->channel == IEEE802154_NO_CHANNEL) {
+		return -ENETDOWN;
+	}
+
+	if (state) {
+		return ieee802154_start(iface);
+	}
+
+	return ieee802154_stop(iface);
+}
+
 NET_L2_INIT(IEEE802154_L2,
-	    ieee802154_recv, ieee802154_send, ieee802154_reserve, NULL);
+	    ieee802154_recv, ieee802154_send,
+	    ieee802154_reserve, ieee802154_enable);
 
 void ieee802154_init(struct net_if *iface)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
-	const struct ieee802154_radio_api *radio = iface->dev->driver_api;
 	const u8_t *mac = iface->link_addr.addr;
+	s16_t tx_power = CONFIG_NET_L2_IEEE802154_RADIO_DFLT_TX_POWER;
 	u8_t long_addr[8];
 
 	NET_DBG("Initializing IEEE 802.15.4 stack on iface %p", iface);
+
+	ctx->channel = IEEE802154_NO_CHANNEL;
 
 	ieee802154_mgmt_init(iface);
 
@@ -315,10 +332,7 @@ void ieee802154_init(struct net_if *iface)
 	memcpy(ctx->ext_addr, long_addr, 8);
 	ieee802154_filter_ieee_addr(iface, ctx->ext_addr);
 
-	if (!radio->set_txpower(iface->dev,
-				CONFIG_NET_L2_IEEE802154_RADIO_DFLT_TX_POWER)) {
-		ctx->tx_power = CONFIG_NET_L2_IEEE802154_RADIO_DFLT_TX_POWER;
+	if (!ieee802154_set_tx_power(iface, tx_power)) {
+		ctx->tx_power = tx_power;
 	}
-
-	radio->start(iface->dev);
 }

@@ -57,31 +57,31 @@ Install tools to build Zephyr binaries:
 
 .. code-block:: console
 
-   $ brew install cmake dfu-util doxygen qemu dtc python3 gperf
-   $ curl -O 'https://bootstrap.pypa.io/get-pip.py'
-   $ ./get-pip.py
-   $ rm get-pip.py
-   $ cd ~/zephyr   # or to the folder where you cloned the zephyr repo
-   $ pip3 install --user -r scripts/requirements.txt
+   brew install cmake ninja dfu-util doxygen qemu dtc python3 gperf
+   curl -O 'https://bootstrap.pypa.io/get-pip.py'
+   ./get-pip.py
+   rm get-pip.py
+   cd ~/zephyr   # or to the folder where you cloned the zephyr repo
+   pip3 install --user -r scripts/requirements.txt
 
 Source :file:`zephyr-env.sh` wherever you have cloned the Zephyr Git repository:
 
 .. code-block:: console
 
-   $ unset ZEPHYR_SDK_INSTALL_DIR
-   $ cd <zephyr git clone location>
-   $ source zephyr-env.sh
+   unset ZEPHYR_SDK_INSTALL_DIR
+   cd <zephyr git clone location>
+   source zephyr-env.sh
 
 Build Kconfig in :file:`$ZEPHYR_BASE/build` and add it to path
 
 .. code-block:: console
 
-   $ cd $ZEPHYR_BASE
-   $ mkdir build && cd build
-   $ cmake $ZEPHYR_BASE/scripts
-   $ make
-   $ echo "export PATH=$PWD/kconfig:\$PATH" >> $HOME/.zephyrrc
-   $ source $ZEPHYR_BASE/zephyr-env.sh
+   cd $ZEPHYR_BASE
+   mkdir build && cd build
+   cmake $ZEPHYR_BASE/scripts
+   make
+   echo "export PATH=$PWD/kconfig:\$PATH" >> $HOME/.zephyrrc
+   source $ZEPHYR_BASE/zephyr-env.sh
 
 .. note::
 
@@ -94,6 +94,7 @@ To build for the ARM-based Nordic nRF52 Development Kit:
 .. zephyr-app-commands::
   :zephyr-app: samples/hello_world
   :board: nrf52_pca10040
+  :host-os: unix
   :goals: build
 
 .. _setting_up_mac_toolchain:
@@ -105,9 +106,9 @@ Install tools needed for building the toolchain (if needed):
 
 .. code-block:: console
 
-   $ brew install gettext help2man mpfr gmp coreutils wget
-   $ brew tap homebrew/dupes
-   $ brew install grep --with-default-names
+   brew install gettext help2man mpfr gmp coreutils wget
+   brew tap homebrew/dupes
+   brew install grep --with-default-names
 
 
 To build the toolchain, you will need the latest version of crosstool-ng (1.23).
@@ -116,7 +117,7 @@ however try and see if you get 1.23 installed:
 
 .. code-block:: console
 
-   $ brew install crosstool-ng
+   brew install crosstool-ng
 
 Alternatively you can install the latest version of :program:`crosstool-ng`
 from source. Download the latest version from the `crosstool-ng site`_. The
@@ -124,12 +125,12 @@ latest version usually supports the latest released compilers.
 
 .. code-block:: console
 
-   $ wget http://crosstool-ng.org/download/crosstool-ng/crosstool-ng-1.23.0.tar.bz2
-   $ tar xvf crosstool-ng-1.23.0.tar.bz2
-   $ cd crosstool-ng-1.23.0/
-   $ ./configure
-   $ make
-   $ make install
+   wget http://crosstool-ng.org/download/crosstool-ng/crosstool-ng-1.23.0.tar.bz2
+   tar xvf crosstool-ng-1.23.0.tar.bz2
+   cd crosstool-ng-1.23.0/
+   ./configure
+   make
+   make install
 
 Creating a Case-sensitive File System
 =====================================
@@ -157,9 +158,9 @@ When mounted, the file system of the image will be available under
 
 .. code-block:: console
 
-   $ cd /Volumes/CrossToolNG
-   $ mkdir build
-   $ cd build
+   cd /Volumes/CrossToolNG
+   mkdir build
+   cd build
 
 Setting the Toolchain Options
 =============================
@@ -178,15 +179,15 @@ Currently the following configurations are provided:
 
 .. code-block:: console
 
-   $ cp ${ZEPHYR_BASE}/scripts/cross_compiler/i586.config .config
+   cp ${ZEPHYR_BASE}/scripts/cross_compiler/i586.config .config
 
 You can create a toolchain configuration or customize an existing configuration
 yourself using the configuration menus:
 
 .. code-block:: console
 
-   $ export CT_PREFIX=/Volumes/CrossToolNG
-   $ ct-ng oldconfig
+   export CT_PREFIX=/Volumes/CrossToolNG
+   ct-ng oldconfig
 
 Verifying the Configuration of the Toolchain
 ============================================
@@ -219,7 +220,7 @@ To build the toolchain, enter:
 
 .. code-block:: console
 
-   $ ct-ng build
+   ct-ng build
 
 The above process takes a while. When finished, the toolchain will be available
 under :file:`/Volumes/CrossToolNG/x-tools`.
@@ -231,8 +232,8 @@ and use the target location where the toolchain was installed, type:
 
 .. code-block:: console
 
-   $ export ZEPHYR_GCC_VARIANT=xtools
-   $ export XTOOLS_TOOLCHAIN_PATH=/Volumes/CrossToolNG/x-tools
+   export ZEPHYR_GCC_VARIANT=xtools
+   export XTOOLS_TOOLCHAIN_PATH=/Volumes/CrossToolNG/x-tools
 
 
 To use the same toolchain in new sessions in the future you can set the
@@ -240,7 +241,7 @@ variables in the file :file:`${HOME}/.zephyrrc`, for example:
 
 .. code-block:: console
 
-   $ cat <<EOF > ~/.zephyrrc
+   cat <<EOF > ~/.zephyrrc
    export XTOOLS_TOOLCHAIN_PATH=/Volumes/CrossToolNG/x-tools
    export ZEPHYR_GCC_VARIANT=xtools
    EOF

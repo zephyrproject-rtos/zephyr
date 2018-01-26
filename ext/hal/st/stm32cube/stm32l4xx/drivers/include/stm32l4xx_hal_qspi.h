@@ -41,10 +41,10 @@
  extern "C" {
 #endif
 
-#if defined(QUADSPI) || defined(QUADSPI1) || defined(QUADSPI2)
-
 /* Includes ------------------------------------------------------------------*/
 #include "stm32l4xx_hal_def.h"
+
+#if defined(QUADSPI) || defined(QUADSPI1) || defined(QUADSPI2)
 
 /** @addtogroup STM32L4xx_HAL_Driver
   * @{
@@ -204,10 +204,10 @@ typedef struct
 /** @defgroup QSPI_ErrorCode QSPI Error Code
   * @{
   */ 
-#define HAL_QSPI_ERROR_NONE            ((uint32_t)0x00000000) /*!< No error                 */
-#define HAL_QSPI_ERROR_TIMEOUT         ((uint32_t)0x00000001) /*!< Timeout error            */
-#define HAL_QSPI_ERROR_TRANSFER        ((uint32_t)0x00000002) /*!< Transfer error           */
-#define HAL_QSPI_ERROR_DMA             ((uint32_t)0x00000004) /*!< DMA transfer error       */
+#define HAL_QSPI_ERROR_NONE            ((uint32_t)0x00000000) /*!< No error           */
+#define HAL_QSPI_ERROR_TIMEOUT         ((uint32_t)0x00000001) /*!< Timeout error      */
+#define HAL_QSPI_ERROR_TRANSFER        ((uint32_t)0x00000002) /*!< Transfer error     */
+#define HAL_QSPI_ERROR_DMA             ((uint32_t)0x00000004) /*!< DMA transfer error */
 #define HAL_QSPI_ERROR_INVALID_PARAM   ((uint32_t)0x00000008) /*!< Invalid parameters error */
 /**
   * @}
@@ -324,7 +324,7 @@ typedef struct
 /** @defgroup QSPI_DataMode QSPI Data Mode
   * @{
   */
-#define QSPI_DATA_NONE                 ((uint32_t)0X00000000)           /*!<No data*/
+#define QSPI_DATA_NONE                 ((uint32_t)0X00000000)          /*!<No data*/
 #define QSPI_DATA_1_LINE               ((uint32_t)QUADSPI_CCR_DMODE_0) /*!<Data on a single line*/
 #define QSPI_DATA_2_LINES              ((uint32_t)QUADSPI_CCR_DMODE_1) /*!<Data on two lines*/
 #define QSPI_DATA_4_LINES              ((uint32_t)QUADSPI_CCR_DMODE)   /*!<Data on four lines*/
@@ -431,19 +431,19 @@ typedef struct
   * @{
   */
 /** @brief Reset QSPI handle state.
-  * @param  __HANDLE__: QSPI handle.
+  * @param  __HANDLE__ : QSPI handle.
   * @retval None
   */
 #define __HAL_QSPI_RESET_HANDLE_STATE(__HANDLE__)           ((__HANDLE__)->State = HAL_QSPI_STATE_RESET)
 
 /** @brief  Enable the QSPI peripheral.
-  * @param  __HANDLE__: specifies the QSPI Handle.
+  * @param  __HANDLE__ : specifies the QSPI Handle.
   * @retval None
   */ 
 #define __HAL_QSPI_ENABLE(__HANDLE__)                       SET_BIT((__HANDLE__)->Instance->CR, QUADSPI_CR_EN)
 
 /** @brief  Disable the QSPI peripheral.
-  * @param  __HANDLE__: specifies the QSPI Handle.
+  * @param  __HANDLE__ : specifies the QSPI Handle.
   * @retval None
   */
 #define __HAL_QSPI_DISABLE(__HANDLE__)                      CLEAR_BIT((__HANDLE__)->Instance->CR, QUADSPI_CR_EN)
@@ -501,7 +501,7 @@ typedef struct
   *            @arg QSPI_FLAG_TE:   QSPI Transfer error flag
   * @retval None
   */
-#define __HAL_QSPI_GET_FLAG(__HANDLE__, __FLAG__)           (READ_BIT((__HANDLE__)->Instance->SR, (__FLAG__)) != 0)
+#define __HAL_QSPI_GET_FLAG(__HANDLE__, __FLAG__)           ((READ_BIT((__HANDLE__)->Instance->SR, (__FLAG__)) != 0) ? SET : RESET)
 
 /** @brief  Clears the specified QSPI's flag status.
   * @param  __HANDLE__: specifies the QSPI Handle.

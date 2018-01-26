@@ -23,34 +23,38 @@ KERNEL_CODE_SEG = 0x08
 # These exception vectors push an error code onto the stack.
 ERR_CODE_VECTORS = [8, 10, 11, 12, 13, 14, 17]
 
+
 def debug(text):
     if not args.verbose:
         return
     sys.stdout.write(os.path.basename(sys.argv[0]) + ": " + text + "\n")
 
+
 def error(text):
     sys.stderr.write(os.path.basename(sys.argv[0]) + ": " + text + "\n")
     sys.exit(1)
 
+
 # See Section 6.11 of the Intel Architecture Software Developer's Manual
 gate_desc_format = "<HHBBH"
 
+
 def create_irq_gate(handler, dpl):
     present = 1
-    gate_type = 0xE # 32-bit interrupt gate
+    gate_type = 0xE  # 32-bit interrupt gate
     type_attr = gate_type | (dpl << 5) | (present << 7)
 
     offset_hi = handler >> 16
     offset_lo = handler & 0xFFFF
 
     data = struct.pack(gate_desc_format, offset_lo, KERNEL_CODE_SEG, 0,
-            type_attr, offset_hi)
+                       type_attr, offset_hi)
     return data
 
 
 def create_task_gate(tss, dpl):
     present = 1
-    gate_type = 0x5 # 32-bit task gate
+    gate_type = 0x5  # 32-bit task gate
     type_attr = gate_type | (dpl << 5) | (present << 7)
 
     data = struct.pack(gate_desc_format, 0, tss, 0, type_attr, 0)
@@ -73,12 +77,15 @@ def create_idt_binary(idt_config, filename):
 
             fp.write(data)
 
+
 map_fmt = "<B"
+
 
 def create_irq_vec_map_binary(irq_vec_map, filename):
     with open(filename, "wb") as fp:
         for i in irq_vec_map:
             fp.write(struct.pack(map_fmt, i))
+
 
 def priority_range(prio):
     # Priority levels are represented as groups of 16 vectors within the IDT
@@ -93,7 +100,7 @@ def update_irq_vec_map(irq_vec_map, irq, vector, max_irq):
 
     if irq >= max_irq:
         error("irq %d specified, but CONFIG_MAX_IRQ_LINES is %d" %
-                (irq, max_irq))
+              (irq, max_irq))
 
     # This table will never have values less than 32 since those are for
     # exceptions; 0 means unconfigured
@@ -117,9 +124,9 @@ def setup_idt(spur_code, spur_nocode, intlist, max_vec, max_irq):
 
         if vec >= max_vec:
             error("Vector %d specified, but size of IDT is only %d vectors" %
-                    (vec, max_vec))
+                  (vec, max_vec))
 
-        if vectors[vec] != None:
+        if vectors[vec] is not None:
             error("Multiple assignments for vector %d" % vec)
 
         vectors[vec] = (handler, tss, dpl)
@@ -133,7 +140,7 @@ def setup_idt(spur_code, spur_nocode, intlist, max_vec, max_irq):
         for vi in priority_range(prio):
             if vi >= max_vec:
                 break
-            if vectors[vi] == None:
+            if vectors[vi] is None:
                 vec = vi
                 break
 
@@ -145,7 +152,7 @@ def setup_idt(spur_code, spur_nocode, intlist, max_vec, max_irq):
 
     # Pass 3: fill in unused vectors with spurious handler at dpl=0
     for i in range(max_vec):
-        if vectors[i] != None:
+        if vectors[i] is not None:
             continue
 
         if i in ERR_CODE_VECTORS:
@@ -156,6 +163,7 @@ def setup_idt(spur_code, spur_nocode, intlist, max_vec, max_irq):
         vectors[i] = (handler, 0, 0)
 
     return vectors, irq_vec_map
+
 
 def get_symbols(obj):
     for section in obj.iter_sections():
@@ -185,6 +193,7 @@ intlist_header_fmt = "<IIi"
 
 intlist_entry_fmt = "<Iiiiii"
 
+
 def get_intlist(elf):
     intdata = elf.get_section_by_name("intList").data()
 
@@ -199,7 +208,7 @@ def get_intlist(elf):
     debug("spurious handler (no code) : %s" % hex(header[1]))
 
     intlist = [i for i in
-            struct.iter_unpack(intlist_entry_fmt, intdata)]
+               struct.iter_unpack(intlist_entry_fmt, intdata)]
 
     debug("Configured interrupt routing")
     debug("handler    irq pri vec dpl")
@@ -218,18 +227,21 @@ def get_intlist(elf):
 
 def parse_args():
     global args
-    parser = argparse.ArgumentParser(description = __doc__,
-            formatter_class = argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
 
     parser.add_argument("-m", "--vector-map", required=True,
-            help="Output file mapping IRQ lines to IDT vectors")
+                        help="Output file mapping IRQ lines to IDT vectors")
     parser.add_argument("-o", "--output-idt", required=True,
-            help="Output file containing IDT binary")
+                        help="Output file containing IDT binary")
     parser.add_argument("-k", "--kernel", required=True,
-            help="Zephyr kernel image")
+                        help="Zephyr kernel image")
     parser.add_argument("-v", "--verbose", action="store_true",
-            help="Print extra debugging information")
+                        help="Print extra debugging information")
     args = parser.parse_args()
+    if "VERBOSE" in os.environ:
+        args.verbose = 1
 
 
 def main():
@@ -250,6 +262,6 @@ def main():
     create_idt_binary(vectors, args.output_idt)
     create_irq_vec_map_binary(irq_vec_map, args.vector_map)
 
+
 if __name__ == "__main__":
     main()
-

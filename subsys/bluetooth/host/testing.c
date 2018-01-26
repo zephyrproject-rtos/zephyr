@@ -7,7 +7,14 @@
 #include <zephyr.h>
 #include <stddef.h>
 
+#include <bluetooth/mesh.h>
 #include <bluetooth/testing.h>
+
+#include "mesh/net.h"
+#include "mesh/lpn.h"
+#include "mesh/transport.h"
+
+#include "testing.h"
 
 static sys_slist_t cb_slist;
 
@@ -32,4 +39,71 @@ void bt_test_mesh_net_recv(u8_t ttl, u8_t ctl, u16_t src, u16_t dst,
 					  payload_len);
 		}
 	}
+}
+
+void bt_test_mesh_model_bound(u16_t addr, struct bt_mesh_model *model,
+			      u16_t key_idx)
+{
+	struct bt_test_cb *cb;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&cb_slist, cb, node) {
+		if (cb->mesh_model_bound) {
+			cb->mesh_model_bound(addr, model, key_idx);
+		}
+	}
+}
+
+void bt_test_mesh_model_unbound(u16_t addr, struct bt_mesh_model *model,
+				u16_t key_idx)
+{
+	struct bt_test_cb *cb;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&cb_slist, cb, node) {
+		if (cb->mesh_model_unbound) {
+			cb->mesh_model_unbound(addr, model, key_idx);
+		}
+	}
+}
+
+void bt_test_mesh_prov_invalid_bearer(u8_t opcode)
+{
+	struct bt_test_cb *cb;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&cb_slist, cb, node) {
+		if (cb->mesh_prov_invalid_bearer) {
+			cb->mesh_prov_invalid_bearer(opcode);
+		}
+	}
+}
+
+void bt_test_mesh_trans_incomp_timer_exp(void)
+{
+	struct bt_test_cb *cb;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&cb_slist, cb, node) {
+		if (cb->mesh_trans_incomp_timer_exp) {
+			cb->mesh_trans_incomp_timer_exp();
+		}
+	}
+}
+
+int bt_test_mesh_lpn_group_add(u16_t group)
+{
+	bt_mesh_lpn_group_add(group);
+
+	return 0;
+}
+
+int bt_test_mesh_lpn_group_remove(u16_t *groups, size_t groups_count)
+{
+	bt_mesh_lpn_group_del(groups, groups_count);
+
+	return 0;
+}
+
+int bt_test_mesh_rpl_clear(void)
+{
+	bt_mesh_rpl_clear();
+
+	return 0;
 }

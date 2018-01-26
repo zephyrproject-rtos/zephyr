@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_nand.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    14-April-2017
   * @brief   Header file of NAND HAL module.
   ******************************************************************************
   * @attention
@@ -166,7 +164,7 @@ typedef struct
  */ 
 
 /** @brief Reset NAND handle state
-  * @param  __HANDLE__: specifies the NAND handle.
+  * @param  __HANDLE__ specifies the NAND handle.
   * @retval None
   */
 #define __HAL_NAND_RESET_HANDLE_STATE(__HANDLE__) ((__HANDLE__)->State = HAL_NAND_STATE_RESET)
@@ -299,8 +297,8 @@ HAL_NAND_StateTypeDef HAL_NAND_GetState(NAND_HandleTypeDef *hnand);
 
 /**
   * @brief  NAND memory address computation.
-  * @param  __ADDRESS__: NAND memory address.
-  * @param  __HANDLE__: NAND handle.
+  * @param  __ADDRESS__ NAND memory address.
+  * @param  __HANDLE__ NAND handle.
   * @retval NAND Raw address value
   */
 #define ARRAY_ADDRESS(__ADDRESS__ , __HANDLE__) ((__ADDRESS__)->Page + \
@@ -308,14 +306,14 @@ HAL_NAND_StateTypeDef HAL_NAND_GetState(NAND_HandleTypeDef *hnand);
 
 /**
   * @brief  NAND memory Column address computation.
-  * @param  __HANDLE__: NAND handle.
+  * @param  __HANDLE__ NAND handle.
   * @retval NAND Raw address value
   */
 #define COLUMN_ADDRESS( __HANDLE__) ((__HANDLE__)->Config.PageSize)
 
 /**
   * @brief  NAND memory address cycling.
-  * @param  __ADDRESS__: NAND memory address.
+  * @param  __ADDRESS__ NAND memory address.
   * @retval NAND address cycling value.
   */
 #define ADDR_1ST_CYCLE(__ADDRESS__)       (uint8_t)(__ADDRESS__)              /* 1st addressing cycle */
@@ -325,7 +323,7 @@ HAL_NAND_StateTypeDef HAL_NAND_GetState(NAND_HandleTypeDef *hnand);
 
 /**
   * @brief  NAND memory Columns cycling.
-  * @param  __ADDRESS__: NAND memory address.
+  * @param  __ADDRESS__ NAND memory address.
   * @retval NAND Column address cycling value.
   */
 #define COLUMN_1ST_CYCLE(__ADDRESS__)       (uint8_t)(__ADDRESS__)              /* 1st Column addressing cycle */

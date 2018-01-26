@@ -34,8 +34,11 @@ class ZephyrAppCommandsDirective(Directive):
       directory. Cannot be given with :app:.
 
     - :generator: which build system to generate. Valid options are
-      currently 'ninja' and 'make'. The default is 'make'. This option
+      currently 'ninja' and 'make'. The default is 'ninja'. This option
       is not case sensitive.
+
+    - :host-os: which host OS the instructions are for. Valid options are
+       'unix', 'win' and 'all'. The default is 'all'.
 
     - :board: if set, the application build will target the given board.
 
@@ -71,6 +74,7 @@ class ZephyrAppCommandsDirective(Directive):
         'app': directives.unchanged,
         'zephyr-app': directives.unchanged,
         'generator': directives.unchanged,
+        'host-os': directives.unchanged,
         'board': directives.unchanged,
         'conf': directives.unchanged,
         'gen-args': directives.unchanged,
@@ -82,6 +86,7 @@ class ZephyrAppCommandsDirective(Directive):
     }
 
     GENERATORS = ['make', 'ninja']
+    HOST_OS = ['unix', 'win', 'all']
 
     def run(self):
         # Re-run on the current document if this directive's source changes.
@@ -91,7 +96,8 @@ class ZephyrAppCommandsDirective(Directive):
         # That would break if building the docs on Windows.
         app = self.options.get('app', None)
         zephyr_app = self.options.get('zephyr-app', None)
-        generator = self.options.get('generator', 'make').lower()
+        generator = self.options.get('generator', 'ninja').lower()
+        host_os = self.options.get('host-os', 'all').lower()
         board = self.options.get('board', None)
         conf = self.options.get('conf', None)
         gen_args = self.options.get('gen-args', None)
@@ -108,6 +114,10 @@ class ZephyrAppCommandsDirective(Directive):
             raise self.error('Unknown generator {}; choose from: {}'.format(
                 generator, self.GENERATORS))
 
+        if host_os not in self.HOST_OS:
+            raise self.error('Unknown host-os {}; choose from: {}'.format(
+                generator, self.HOST_OS))
+
         if compact and skip_config:
             raise self.error('Both compact and maybe-skip-config options were given.')
 
@@ -116,6 +126,9 @@ class ZephyrAppCommandsDirective(Directive):
         num_slashes = build_dir.count('/')
         source_dir = '/'.join(['..' for i in range(num_slashes + 1)])
         mkdir = 'mkdir' if num_slashes == 0 else 'mkdir -p'
+
+        # Create host_os array
+        host_os = [host_os] if host_os != "all" else self.HOST_OS
 
         run_config = {
             'board': board,
@@ -129,22 +142,35 @@ class ZephyrAppCommandsDirective(Directive):
 
         # Build the command content as a list, then convert to string.
         content = []
+        comment = None
+        if len(host_os) > 1:
+            comment = '# On {}'
 
         if zephyr_app:
-            content.append('$ cd $ZEPHYR_BASE/{}'.format(zephyr_app))
-            if not compact:
+            if "unix" in host_os:
+                if comment:
+                    content.append('{}'.format(comment.format('Linux/macOS')))
+                content.append('cd $ZEPHYR_BASE/{}'.format(zephyr_app))
+                content.extend(self._mkdir(mkdir, build_dir, "unix",
+                                           skip_config, compact))
+                if comment:
+                    content.append('')
+            if "win" in host_os:
+                if comment:
+                    content.append('{}'.format(comment.format('Windows')))
+                zephyr_app = zephyr_app.replace('/','\\')
+                content.append('cd %ZEPHYR_BASE%\{}'.format(zephyr_app))
+                content.extend(self._mkdir(mkdir, build_dir, "win",
+                                           skip_config, compact))
+            if not compact or comment:
                 content.append('')
         elif app:
-            content.append('$ cd {}'.format(app))
+            content.append('cd {}'.format(app))
             if not compact:
                 content.append('')
 
-        if skip_config:
-            content.append("# If you already made a build directory ({}) and ran cmake, just 'cd {}' instead.".format(build_dir, build_dir))  # noqa: E501
-        elif not compact:
-            content.append('# Make a build directory, and use cmake to configure a {}-based build system:'.format(generator.capitalize()))  # noqa: E501
-        content.append('$ {} {} && cd {}'.format(mkdir, build_dir, build_dir))
-
+        if not compact:
+            content.append('# Use cmake to configure a {}-based build system:'.format(generator.capitalize()))  # noqa: E501
         if generator == 'make':
             content.extend(self._generate_make(**run_config))
         elif generator == 'ninja':
@@ -157,6 +183,17 @@ class ZephyrAppCommandsDirective(Directive):
         self.add_name(literal)
         literal['language'] = 'console'
         return [literal]
+
+    def _mkdir(self, mkdir, build_dir, host_os, skip_config, compact):
+        content = []
+        if skip_config:
+            content.append("# If you already made a build directory ({}) and ran cmake, just 'cd {}' instead.".format(build_dir, build_dir))  # noqa: E501
+        if host_os == "unix":
+            content.append('{} {} && cd {}'.format(mkdir, build_dir, build_dir))
+        elif host_os == "win":
+            build_dir = build_dir.replace('/','\\')
+            content.append('mkdir {} & cd {}'.format(build_dir, build_dir))
+        return content
 
     def _generate_make(self, **kwargs):
         board = kwargs['board']
@@ -174,17 +211,17 @@ class ZephyrAppCommandsDirective(Directive):
 
         content = []
         content.extend([
-            '$ cmake{}{}{} {}'.format(board_arg, conf_arg, gen_args,
-                                      source_dir)])
+            'cmake{}{}{} {}'.format(board_arg, conf_arg, gen_args,
+                                       source_dir)])
         if not compact:
             content.extend(['',
                             '# Now run make on the generated build system:'])
         if 'build' in goals:
-            content.append('$ make{}'.format(build_args))
+            content.append('make{}'.format(build_args))
         for goal in goals:
             if goal == 'build':
                 continue
-            content.append('$ make {}'.format(goal))
+            content.append('make {}'.format(goal))
         return content
 
     def _generate_ninja(self, **kwargs):
@@ -203,17 +240,17 @@ class ZephyrAppCommandsDirective(Directive):
 
         content = []
         content.extend([
-            '$ cmake -GNinja{}{}{} {}'.format(board_arg, conf_arg, gen_args,
-                                              source_dir)])
+            'cmake -GNinja{}{}{} {}'.format(board_arg, conf_arg, gen_args,
+                                            source_dir)])
         if not compact:
             content.extend(['',
                             '# Now run ninja on the generated build system:'])
         if 'build' in goals:
-            content.append('$ ninja{}'.format(build_args))
+            content.append('ninja{}'.format(build_args))
         for goal in goals:
             if goal == 'build':
                 continue
-            content.append('$ ninja {}'.format(goal))
+            content.append('ninja {}'.format(goal))
         return content
 
 

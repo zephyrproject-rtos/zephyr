@@ -30,6 +30,12 @@ extern "C" {
 struct bt_test_cb {
 	void (*mesh_net_recv)(u8_t ttl, u8_t ctl, u16_t src, u16_t dst,
 			      const void *payload, size_t payload_len);
+	void (*mesh_model_bound)(u16_t addr, struct bt_mesh_model *model,
+				 u16_t key_idx);
+	void (*mesh_model_unbound)(u16_t addr, struct bt_mesh_model *model,
+				   u16_t key_idx);
+	void (*mesh_prov_invalid_bearer)(u8_t opcode);
+	void (*mesh_trans_incomp_timer_exp)(void);
 
 	sys_snode_t node;
 };
@@ -46,19 +52,35 @@ void bt_test_cb_register(struct bt_test_cb *cb);
  */
 void bt_test_cb_unregister(struct bt_test_cb *cb);
 
-/** Indicate reception of Mesh Network PDU
+/** Send Friend Subscription List Add message.
  *
- *  This will call registered mesh_net_recv callbacks.
+ *  Used by Low Power node to send the group address for which messages are to
+ *  be stored by Friend node.
  *
- *  @param ttl Time To Live
- *  @param ctl Network Control
- *  @param src Source address
- *  @param dst Destination address
- *  @param payload Payload after decryption with the NetKey
- *  @param payload_len Payload length
+ *  @param group Group address
+ *
+ *  @return Zero on success or (negative) error code otherwise.
  */
-void bt_test_mesh_net_recv(u8_t ttl, u8_t ctl, u16_t src, u16_t dst,
-			   const void *payload, size_t payload_len);
+int bt_test_mesh_lpn_group_add(u16_t group);
+
+/** Send Friend Subscription List Remove message.
+ *
+ *  Used by Low Power node to remove the group addresses from Friend node
+ *  subscription list. Messages sent to those addresses will not be stored
+ *  by Friend node.
+ *
+ *  @param groups Group addresses
+ *  @param groups_count Group addresses count
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_test_mesh_lpn_group_remove(u16_t *groups, size_t groups_count);
+
+/** Clear replay protection list cache.
+ *
+ *  @return Zero on success or (negative) error code otherwise.
+ */
+int bt_test_mesh_rpl_clear(void);
 
 /**
  * @}

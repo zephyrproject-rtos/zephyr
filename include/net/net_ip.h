@@ -208,6 +208,7 @@ enum net_addr_type {
 	NET_ADDR_AUTOCONF,
 	NET_ADDR_DHCP,
 	NET_ADDR_MANUAL,
+	NET_ADDR_OVERRIDABLE,
 };
 
 #if NET_LOG_ENABLED > 0
@@ -220,6 +221,8 @@ static inline char *net_addr_type2str(enum net_addr_type type)
 		return "DHCP";
 	case NET_ADDR_MANUAL:
 		return "MANUAL";
+	case NET_ADDR_OVERRIDABLE:
+		return "OVERRIDE";
 	case NET_ADDR_ANY:
 	default:
 		break;
@@ -438,7 +441,7 @@ static inline bool net_is_ipv4_addr_loopback(struct in_addr *addr)
  */
 static inline bool net_is_ipv4_addr_unspecified(const struct in_addr *addr)
 {
-	return addr->s_addr == 0;
+	return UNALIGNED_GET(&addr->s_addr) == 0;
 }
 
 /**
@@ -450,7 +453,7 @@ static inline bool net_is_ipv4_addr_unspecified(const struct in_addr *addr)
  */
 static inline bool net_is_ipv4_addr_mcast(const struct in_addr *addr)
 {
-	return (ntohl(addr->s_addr) & 0xE0000000) == 0xE0000000;
+	return (ntohl(UNALIGNED_GET(&addr->s_addr)) & 0xE0000000) == 0xE0000000;
 }
 
 extern struct net_if_addr *net_if_ipv4_addr_lookup(const struct in_addr *addr,

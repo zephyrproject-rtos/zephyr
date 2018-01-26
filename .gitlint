@@ -15,6 +15,9 @@ extra-path=scripts/gitlint
 [title-max-length-no-revert]
 line-length=72
 
+[body-min-line-count]
+min-line-count=1
+
 [body-max-line-count]
 max-line-count=200
 

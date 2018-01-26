@@ -94,11 +94,11 @@ config ARC_FIRQ
 	prompt "FIRQ enable"
 	default y
 	help
-	Fast interrupts are supported (FIRQ). If FIRQ enabled, for interrupts
-	with highest priority, status32 and pc will be saved in aux regs,
-	other regs will be saved according to the number of register bank;
-	If FIRQ is disabled, the handle of interrupts with highest priority
-	will be same with other interrupts.
+	  Fast interrupts are supported (FIRQ). If FIRQ enabled, for interrupts
+	  with highest priority, status32 and pc will be saved in aux regs,
+	  other regs will be saved according to the number of register bank;
+	  If FIRQ is disabled, the handle of interrupts with highest priority
+	  will be same with other interrupts.
 
 config	ARC_STACK_CHECKING
 	bool
@@ -154,7 +154,7 @@ config ARC_HAS_SECURE
 	#  a hidden option
 	default n
 	help
-	This opiton is enabled when ARC core supports secure mode
+	  This option is enabled when ARC core supports secure mode
 
 menu "ARC MPU Options"
 depends on CPU_HAS_MPU

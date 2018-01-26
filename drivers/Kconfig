@@ -11,11 +11,6 @@ menu "Device Drivers"
 
 source "drivers/bluetooth/Kconfig"
 
-config IEEE802154
-       bool
-       default n
-       default y if NETWORKING_WITH_15_4 || NET_L2_IEEE802154
-
 source "drivers/ieee802154/Kconfig"
 
 source "drivers/console/Kconfig"
@@ -38,7 +33,7 @@ source "drivers/pci/Kconfig"
 
 source "drivers/gpio/Kconfig"
 
-source "drivers/shared_irq/Kconfig"
+source "drivers/interrupt_controller/Kconfig.shared_irq"
 
 source "drivers/spi/Kconfig"
 

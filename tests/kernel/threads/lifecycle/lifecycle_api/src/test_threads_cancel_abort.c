@@ -123,3 +123,20 @@ void test_threads_abort_others(void)
 	k_sleep(1000);
 	zassert_true(execute_flag == 1, NULL);
 }
+
+/* Test should not crash if repeated aborts are called on a dead thread. */
+void test_threads_abort_repeat(void)
+{
+	execute_flag = 0;
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+				      thread_entry, NULL, NULL, NULL,
+				      0, K_USER, 0);
+
+	k_thread_abort(tid);
+	k_sleep(100);
+	k_thread_abort(tid);
+	k_sleep(100);
+	k_thread_abort(tid);
+	/* If no fault occured till now. The test case passed. */
+	ztest_test_pass();
+}

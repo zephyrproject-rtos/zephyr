@@ -83,14 +83,14 @@ typedef enum
                         } while(0)
 
 #define UNUSED(x) ((void)(x))
-                         
+
 /** @brief Reset the Handle's State field.
   * @param __HANDLE__: specifies the Peripheral Handle.
-  * @note  This macro can be used for the following purpose: 
+  * @note  This macro can be used for the following purpose:
   *          - When the Handle is declared as local variable; before passing it as parameter
-  *            to HAL_PPP_Init() for the first time, it is mandatory to use this macro 
+  *            to HAL_PPP_Init() for the first time, it is mandatory to use this macro
   *            to set to 0 the Handle's "State" field.
-  *            Otherwise, "State" field may have any random value and the first time the function 
+  *            Otherwise, "State" field may have any random value and the first time the function
   *            HAL_PPP_Init() is called, the low level hardware initialization will be missed
   *            (i.e. HAL_PPP_MspInit() will not be executed).
   *          - When there is a need to reconfigure the low level hardware: instead of calling
@@ -123,7 +123,7 @@ typedef enum
                                     }while (0)
 #endif /* USE_RTOS */
 
-#if  defined ( __GNUC__ )
+#if defined ( __GNUC__ ) && !defined (__CC_ARM) /* GNU Compiler */
   #ifndef __weak
     #define __weak   __attribute__((weak))
   #endif /* __weak */
@@ -134,7 +134,7 @@ typedef enum
 
 
 /* Macro to get variable aligned on 4-bytes, for __ICCARM__ the directive "#pragma data_alignment=4" must be used instead */
-#if defined   (__GNUC__)        /* GNU Compiler */
+#if defined ( __GNUC__ ) && !defined (__CC_ARM) /* GNU Compiler */
   #ifndef __ALIGN_END
     #define __ALIGN_END    __attribute__ ((aligned (4)))
   #endif /* __ALIGN_END */
@@ -186,14 +186,14 @@ typedef enum
 
 #endif
 
-/** 
+/**
   * @brief  __NOINLINE definition
-  */ 
+  */
 #if defined ( __CC_ARM   ) || defined   (  __GNUC__  )
-/* ARM & GNUCompiler 
-   ---------------- 
+/* ARM & GNUCompiler
+   ----------------
 */
-#define __NOINLINE __attribute__ ( (noinline) )  
+#define __NOINLINE __attribute__ ( (noinline) )
 
 #elif defined ( __ICCARM__ )
 /* ICCARM Compiler

@@ -21,7 +21,14 @@ set(REQUIRED_SDK_VER 0.9.2)
 set(TOOLCHAIN_VENDOR zephyr)
 set(TOOLCHAIN_ARCH x86_64)
 
-file(READ ${ZEPHYR_SDK_INSTALL_DIR}/sdk_version SDK_VERSION)
+set(sdk_version_path ${ZEPHYR_SDK_INSTALL_DIR}/sdk_version)
+if(NOT (EXISTS ${sdk_version_path}))
+  message(FATAL_ERROR
+    "The file '${ZEPHYR_SDK_INSTALL_DIR}/sdk_version' was not found. \
+Is ZEPHYR_SDK_INSTALL_DIR=${ZEPHYR_SDK_INSTALL_DIR} misconfigured?")
+endif()
+
+file(READ ${sdk_version_path} SDK_VERSION)
 if(${REQUIRED_SDK_VER} VERSION_GREATER ${SDK_VERSION})
   message(FATAL_ERROR "The SDK version you are using is old, please update your SDK.
 You need at least SDK version ${REQUIRED_SDK_VER}.

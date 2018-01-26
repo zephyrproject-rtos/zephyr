@@ -1507,7 +1507,7 @@ struct net_if_router *net_if_ipv4_router_add(struct net_if *iface,
 bool net_if_ipv4_addr_mask_cmp(struct net_if *iface,
 			       struct in_addr *addr)
 {
-	u32_t subnet = ntohl(addr->s_addr) &
+	u32_t subnet = ntohl(UNALIGNED_GET(&addr->s_addr)) &
 			ntohl(iface->ipv4.netmask.s_addr);
 	int i;
 
@@ -1583,32 +1583,43 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
 
 	ifaddr = ipv4_addr_find(iface, addr);
 	if (ifaddr) {
+		/* TODO: should set addr_type/vlifetime */
 		return ifaddr;
 	}
 
 	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
-		if (iface->ipv4.unicast[i].is_used) {
-			continue;
+		struct net_if_addr *cur = &iface->ipv4.unicast[i];
+		if (addr_type == NET_ADDR_DHCP
+		    && cur->addr_type == NET_ADDR_OVERRIDABLE) {
+			ifaddr = cur;
+			break;
 		}
 
-		iface->ipv4.unicast[i].is_used = true;
-		iface->ipv4.unicast[i].address.family = AF_INET;
-		iface->ipv4.unicast[i].address.in_addr.s4_addr32[0] =
+		if (!iface->ipv4.unicast[i].is_used) {
+			ifaddr = cur;
+			break;
+		}
+	}
+
+	if (ifaddr) {
+		ifaddr->is_used = true;
+		ifaddr->address.family = AF_INET;
+		ifaddr->address.in_addr.s4_addr32[0] =
 						addr->s4_addr32[0];
-		iface->ipv4.unicast[i].addr_type = addr_type;
+		ifaddr->addr_type = addr_type;
 
 		/* Caller has to take care of timers and their expiry */
 		if (vlifetime) {
-			iface->ipv4.unicast[i].is_infinite = false;
+			ifaddr->is_infinite = false;
 		} else {
-			iface->ipv4.unicast[i].is_infinite = true;
+			ifaddr->is_infinite = true;
 		}
 
 		/**
 		 *  TODO: Handle properly PREFERRED/DEPRECATED state when
 		 *  address in use, expired and renewal state.
 		 */
-		iface->ipv4.unicast[i].addr_state = NET_ADDR_PREFERRED;
+		ifaddr->addr_state = NET_ADDR_PREFERRED;
 
 		NET_DBG("[%d] interface %p address %s type %s added", i, iface,
 			net_sprint_ipv4_addr(addr),
@@ -1616,7 +1627,7 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
 
 		net_mgmt_event_notify(NET_EVENT_IPV4_ADDR_ADD, iface);
 
-		return &iface->ipv4.unicast[i];
+		return ifaddr;
 	}
 
 	return NULL;

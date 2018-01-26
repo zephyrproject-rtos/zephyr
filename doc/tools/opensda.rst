@@ -141,7 +141,7 @@ open telnet:
 
   .. code-block:: console
 
-     $ telnet localhost 19021
+     telnet localhost 19021
      Trying 127.0.0.1...
      Connected to localhost.
      Escape character is '^]'.

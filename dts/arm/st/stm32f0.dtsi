@@ -22,13 +22,6 @@
 		};
 	};
 
-	flash0: flash@8000000 {
-		compatible = "soc-nv-flash";
-		reg = <0x08000000 DT_FLASH_SIZE>;
-
-		write-block-size = <2>;
-	};
-
 	sram0: memory@20000000 {
 		device_type = "memory";
 		compatible = "mmio-sram";
@@ -36,6 +29,24 @@
 	};
 
 	soc {
+		flash-controller@40022000 {
+			compatible = "st,stm32f0-flash-controller";
+			label = "FLASH_CTRL";
+			reg = <0x40022000 0x400>;
+			interrupts = <3 0>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@8000000 {
+				compatible = "soc-nv-flash";
+				label = "FLASH_STM32";
+				reg = <0x08000000 DT_FLASH_SIZE>;
+
+				write-block-size = <2>;
+			};
+		};
+
 		rcc: rcc@40021000 {
 			compatible = "st,stm32-rcc";
 			clocks-controller;
@@ -91,6 +102,16 @@
 			interrupt-names = "combined";
 			status = "disabled";
 			label= "I2C_2";
+		};
+
+		spi1: spi@40013000 {
+			compatible = "st,stm32-spi-fifo";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40013000 0x400>;
+			interrupts = <25 5>;
+			status = "disabled";
+			label = "SPI_1";
 		};
 	};
 };

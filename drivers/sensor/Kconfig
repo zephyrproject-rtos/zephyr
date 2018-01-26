@@ -42,6 +42,8 @@ source "drivers/sensor/adxl362/Kconfig"
 
 source "drivers/sensor/ak8975/Kconfig"
 
+source "drivers/sensor/amg88xx/Kconfig"
+
 source "drivers/sensor/apds9960/Kconfig"
 
 source "drivers/sensor/bma280/Kconfig"
@@ -111,5 +113,7 @@ source "drivers/sensor/th02/Kconfig"
 source "drivers/sensor/tmp007/Kconfig"
 
 source "drivers/sensor/tmp112/Kconfig"
+
+source "drivers/sensor/vl53l0x/Kconfig"
 
 endif # SENSOR

@@ -36,7 +36,7 @@ void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
 	/* following SoCs: STM32F302XE, STM32F303xE and STM32F398xx */
 	/* cf Reference manual for more details */
 #if defined(CONFIG_CLOCK_STM32_PLL_SRC_HSI)
-	pllinit->PLLDiv = LL_RCC_PLLSOURCE_HSI_DIV_2;
+	pllinit->PLLDiv = LL_RCC_PLLSOURCE_HSI;
 #else
 	/*
 	 * PLL DIV

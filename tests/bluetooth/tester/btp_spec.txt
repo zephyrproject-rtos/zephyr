@@ -456,8 +456,8 @@ Events:
 	Opcode 0x81 - Device Found event
 
 		Controller Index:	<controller id>
-		Event parameters:	Address (6 octets)
-					Address_Type (1 octet)
+		Event parameters:	Address_Type (1 octet)
+					Address (6 octets)
 					RSSI (1 octet)
 					Flags (1 octet)
 					EIR_Data_Length (2 Octets)
@@ -1507,6 +1507,35 @@ Commands and responses:
 
 		In case of an error, the error response will be returned.
 
+	Opcode 0x0f - Model Send
+		Controller Index:	<controller id>
+		Command parameters:	SRC (2 octets)
+					DST (2 octets)
+					Payload_Len (1 octet)
+					Payload (variable)
+
+		This command is used to send Mesh model message.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x10 - Low Power Node Subscribe
+		Controller Index:	<controller id>
+		Command parameters:	Address (2 octets)
+
+		This command is used to send out a Friend Subscription List
+		Add message message.
+
+		In case of an error, the error response will be returned.
+
+	Opcode 0x11 - Low Power Node Unsubscribe
+		Controller Index:	<controller id>
+		Command parameters:	Address (2 octets)
+
+		This command is used to send out a Friend Subscription List
+		Remove message.
+
+		In case of an error, the error response will be returned.
+
 Events:
 	Opcode 0x80 - Output number action Event
 
@@ -1576,3 +1605,19 @@ Events:
 					Payload (variable)
 
 		This event indicates reception of network packet.
+
+	Opcode 0x87 - Invalid BearerOpcode Event
+
+		Controller Index:	<controller id>
+		Event parameters:	Opcode (1 octet)
+
+		This event indicates reception of provisioning message with
+		invalid RFU BearerOpcode.
+
+	Opcode 0x88 - Transport Incomplete Timer Expired Event
+
+		Controller Index:	<controller id>
+		Event parameters:	<none>
+
+		This event indicates that segmented message incomplete timer
+		expired.

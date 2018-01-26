@@ -90,6 +90,7 @@ void stm32_i2c_event_isr(void *arg)
 			 * was transferred
 			 */
 			LL_I2C_DisableIT_TC(i2c);
+			LL_I2C_DisableIT_RX(i2c);
 
 			/* Issue stop condition if necessary */
 			if (data->current.msg->flags & I2C_MSG_STOP) {

@@ -78,7 +78,128 @@ extern "C" {
 
 #define _ARCH_THREAD_STACK_BUFFER(sym) ((char *)(sym + STACK_GUARD_SIZE))
 
+#ifdef CONFIG_USERSPACE
+#ifdef CONFIG_ARC_MPU
+#ifndef _ASMLANGUAGE
+#include <arch/arc/v2/mpu/arc_mpu.h>
 
+#define K_MEM_PARTITION_P_NA_U_NA	AUX_MPU_RDP_N
+#define K_MEM_PARTITION_P_RW_U_RW	(AUX_MPU_RDP_UW | AUX_MPU_RDP_UR | \
+					 AUX_MPU_RDP_KW | AUX_MPU_RDP_KR)
+#define K_MEM_PARTITION_P_RW_U_RO	(AUX_MPU_RDP_UR | \
+					 AUX_MPU_RDP_KW | AUX_MPU_RDP_KR)
+#define K_MEM_PARTITION_P_RW_U_NA	(AUX_MPU_RDP_KW | AUX_MPU_RDP_KR)
+#define K_MEM_PARTITION_P_RO_U_RO	(AUX_MPU_RDP_UR | AUX_MPU_RDP_KR)
+#define K_MEM_PARTITION_P_RO_U_NA	(AUX_MPU_RDP_KR)
+
+/* Execution-allowed attributes */
+#define K_MEM_PARTITION_P_RWX_U_RWX	(AUX_MPU_RDP_UW | AUX_MPU_RDP_UR | \
+					 AUX_MPU_RDP_KW | AUX_MPU_RDP_KR | \
+					 AUX_MPU_RDP_KE | AUX_MPU_RDP_UE)
+#define K_MEM_PARTITION_P_RWX_U_RX	(AUX_MPU_RDP_UR | \
+					 AUX_MPU_RDP_KW | AUX_MPU_RDP_KR | \
+					 AUX_MPU_RDP_KE | AUX_MPU_RDP_UE)
+#define K_MEM_PARTITION_P_RX_U_RX	(AUX_MPU_RDP_UR | \
+					 AUX_MPU_RDP_KR | \
+					 AUX_MPU_RDP_KE | AUX_MPU_RDP_UE)
+
+#define K_MEM_PARTITION_IS_WRITABLE(attr) \
+	({ \
+		int __is_writable__; \
+		attr &= (AUX_MPU_RDP_UW | AUX_MPU_RDP_KW); \
+		switch (attr) { \
+		case (AUX_MPU_RDP_UW | AUX_MPU_RDP_KW): \
+		case AUX_MPU_RDP_UW: \
+		case AUX_MPU_RDP_KW: \
+			__is_writable__ = 1; \
+			break; \
+		default: \
+			__is_writable__ = 0; \
+			break; \
+		} \
+		__is_writable__; \
+	})
+#define K_MEM_PARTITION_IS_EXECUTABLE(attr) \
+	((attr) & (AUX_MPU_RDP_KE | AUX_MPU_RDP_UE))
+
+#endif /* _ASMLANGUAGE */
+
+#if CONFIG_ARC_MPU_VER == 2
+#define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size) \
+	BUILD_ASSERT_MSG(!(((size) & ((size) - 1))) && (size) >= STACK_ALIGN \
+		 && !((u32_t)(start) & ((size) - 1)), \
+		"the size of the partition must be power of 2" \
+		" and greater than or equal to the mpu adddress alignment." \
+		"start address of the partition must align with size.")
+#elif CONFIG_ARC_MPU_VER == 3
+#define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size) \
+	BUILD_ASSERT_MSG((size) % STACK_ALIGN == 0 && (size) >= STACK_ALIGN \
+		 && (u32_t)(start) % STACK_ALIGN == 0, \
+		"the size of the partition must align with 32" \
+		" and greater than or equal to 32." \
+		"start address of the partition must align with 32.")
+#endif
+#endif /* CONFIG_ARC_MPU*/
+#endif /* CONFIG_USERSPACE */
+
+#ifndef _ASMLANGUAGE
+/* Typedef for the k_mem_partition attribute*/
+typedef u32_t k_mem_partition_attr_t;
+#endif /* _ASMLANGUAGE */
+
+#ifdef CONFIG_USERSPACE
+#ifndef _ASMLANGUAGE
+/* Syscall invocation macros. arc-specific machine constraints used to ensure
+ * args land in the proper registers. Currently, they are all stub functions
+ * just for enabling CONFIG_USERSPACE on arc w/o errors.
+ */
+
+static inline u32_t _arch_syscall_invoke6(u32_t arg1, u32_t arg2, u32_t arg3,
+					  u32_t arg4, u32_t arg5, u32_t arg6,
+					  u32_t call_id)
+{
+	return 0;
+}
+
+static inline u32_t _arch_syscall_invoke5(u32_t arg1, u32_t arg2, u32_t arg3,
+					  u32_t arg4, u32_t arg5, u32_t call_id)
+{
+	return 0;
+}
+
+static inline u32_t _arch_syscall_invoke4(u32_t arg1, u32_t arg2, u32_t arg3,
+					  u32_t arg4, u32_t call_id)
+{
+	return 0;
+}
+
+static inline u32_t _arch_syscall_invoke3(u32_t arg1, u32_t arg2, u32_t arg3,
+					  u32_t call_id)
+{
+	return 0;
+}
+
+static inline u32_t _arch_syscall_invoke2(u32_t arg1, u32_t arg2, u32_t call_id)
+{
+	return 0;
+}
+
+static inline u32_t _arch_syscall_invoke1(u32_t arg1, u32_t call_id)
+{
+	return 0;
+}
+
+static inline u32_t _arch_syscall_invoke0(u32_t call_id)
+{
+	return 0;
+}
+
+static inline int _arch_is_user_context(void)
+{
+	return 0;
+}
+#endif /* _ASMLANGUAGE */
+#endif /* CONFIG_USERSPACE */
 #ifdef __cplusplus
 }
 #endif

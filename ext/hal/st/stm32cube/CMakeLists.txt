@@ -25,12 +25,7 @@ if(CONFIG_SOC_SERIES_STM32F0X)
 	stm32f0xx/drivers/include/Legacy
 	)
 
-  zephyr_sources(stm32f0xx/drivers/src/stm32f0xx_hal.c)
-  zephyr_sources(stm32f0xx/drivers/src/stm32f0xx_hal_rcc.c)
-  zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_STM32_CUBE stm32f0xx/drivers/src/stm32f0xx_ll_utils.c)
-  zephyr_sources_ifdef(CONFIG_I2C_STM32_V2 stm32f0xx/drivers/src/stm32f0xx_ll_i2c.c)
-  zephyr_sources_ifdef(CONFIG_I2C_STM32_V2 stm32f0xx/drivers/src/stm32f0xx_ll_rcc.c)
-  zephyr_sources(stm32f0xx/soc/system_stm32f0xx.c)
+  add_subdirectory(stm32f0xx)
 endif()
 
 if(CONFIG_SOC_SERIES_STM32F1X)
@@ -40,12 +35,7 @@ if(CONFIG_SOC_SERIES_STM32F1X)
 	stm32f1xx/drivers/include/Legacy
 	)
 
-  zephyr_sources(stm32f1xx/drivers/src/stm32f1xx_hal.c)
-  zephyr_sources(stm32f1xx/drivers/src/stm32f1xx_hal_rcc.c)
-  zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_STM32_CUBE stm32f1xx/drivers/src/stm32f1xx_ll_utils.c)
-  zephyr_sources_ifdef(CONFIG_PWM stm32f1xx/drivers/src/stm32f1xx_hal_tim.c)
-  zephyr_sources_ifdef(CONFIG_I2C stm32f1xx/drivers/src/stm32f1xx_ll_i2c.c)
-  zephyr_sources(stm32f1xx/soc/system_stm32f1xx.c)
+  add_subdirectory(stm32f1xx)
 endif()
 
 if(CONFIG_SOC_SERIES_STM32F3X)
@@ -55,16 +45,8 @@ if(CONFIG_SOC_SERIES_STM32F3X)
 	stm32f3xx/drivers/include/Legacy
 	)
 
-  zephyr_sources(stm32f3xx/drivers/src/stm32f3xx_hal.c)
-  zephyr_sources(stm32f3xx/drivers/src/stm32f3xx_hal_rcc.c)
-  zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_STM32_CUBE stm32f3xx/drivers/src/stm32f3xx_ll_utils.c)
-  zephyr_sources_ifdef(CONFIG_SPI_STM32 stm32f3xx/drivers/src/stm32f3xx_ll_spi.c)
-  zephyr_sources_ifdef(CONFIG_I2C stm32f3xx/drivers/src/stm32f3xx_ll_i2c.c)
-  zephyr_sources_ifdef(CONFIG_I2C stm32f3xx/drivers/src/stm32f3xx_ll_rcc.c)
-  zephyr_sources(stm32f3xx/soc/system_stm32f3xx.c)
+  add_subdirectory(stm32f3xx)
 endif()
-
-
 
 if(CONFIG_SOC_SERIES_STM32F4X)
   zephyr_include_directories(
@@ -73,21 +55,7 @@ if(CONFIG_SOC_SERIES_STM32F4X)
 	stm32f4xx/drivers/include/Legacy
 	)
 
-  zephyr_sources(stm32f4xx/drivers/src/stm32f4xx_hal.c)
-  zephyr_sources(stm32f4xx/drivers/src/stm32f4xx_hal_rcc.c)
-  zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_STM32_CUBE stm32f4xx/drivers/src/stm32f4xx_ll_utils.c)
-  zephyr_sources_ifdef(CONFIG_PWM stm32f4xx/drivers/src/stm32f4xx_hal_tim.c)
-  zephyr_sources_ifdef(CONFIG_I2C stm32f4xx/drivers/src/stm32f4xx_ll_i2c.c)
-  zephyr_sources_ifdef(CONFIG_SPI_STM32 stm32f4xx/drivers/src/stm32f4xx_ll_spi.c)
-  zephyr_sources_ifdef(CONFIG_ENTROPY_STM32_RNG stm32f4xx/drivers/src/stm32f4xx_ll_rng.c)
-  zephyr_sources_ifdef(CONFIG_ETH_STM32_HAL stm32f4xx/drivers/src/stm32f4xx_hal_eth.c)
-  zephyr_sources_ifdef(CONFIG_USB_DC_STM32
-    stm32f4xx/drivers/src/stm32f4xx_ll_usb.c
-    stm32f4xx/drivers/src/stm32f4xx_hal_pcd.c
-    stm32f4xx/drivers/src/stm32f4xx_hal_pcd_ex.c
-    )
-
-  zephyr_sources(stm32f4xx/soc/system_stm32f4xx.c)
+  add_subdirectory(stm32f4xx)
 endif()
 
 if(CONFIG_SOC_SERIES_STM32F7X)
@@ -97,8 +65,7 @@ if(CONFIG_SOC_SERIES_STM32F7X)
 	stm32f7xx/drivers/include/Legacy
 	)
 
-  zephyr_sources(stm32f7xx/drivers/src/stm32f7xx_hal.c)
-  zephyr_sources(stm32f7xx/soc/system_stm32f7xx.c)
+  add_subdirectory(stm32f7xx)
 endif()
 
 if(CONFIG_SOC_SERIES_STM32L4X)
@@ -107,12 +74,7 @@ if(CONFIG_SOC_SERIES_STM32L4X)
 	stm32l4xx/drivers/include
 	stm32l4xx/drivers/include/Legacy
 	)
-  zephyr_sources(stm32l4xx/drivers/src/stm32l4xx_hal.c)
-  zephyr_sources(stm32l4xx/drivers/src/stm32l4xx_hal_rcc.c)
-  zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_STM32_CUBE stm32l4xx/drivers/src/stm32l4xx_ll_utils.c)
-  zephyr_sources_ifdef(CONFIG_PWM stm32l4xx/drivers/src/stm32l4xx_hal_tim.c)
-  zephyr_sources_ifdef(CONFIG_I2C stm32l4xx/drivers/src/stm32l4xx_ll_i2c.c)
-  zephyr_sources_ifdef(CONFIG_SPI_STM32 stm32l4xx/drivers/src/stm32l4xx_ll_spi.c)
-  zephyr_sources(stm32l4xx/soc/system_stm32l4xx.c)
+
+  add_subdirectory(stm32l4xx)
 endif()
 

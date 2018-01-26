@@ -41,10 +41,10 @@
  extern "C" {
 #endif
 
-#if defined(OCTOSPI) || defined(OCTOSPI1) || defined(OCTOSPI2)
-
 /* Includes ------------------------------------------------------------------*/
 #include "stm32l4xx_hal_def.h"
+
+#if defined(OCTOSPI) || defined(OCTOSPI1) || defined(OCTOSPI2)
 
 /** @addtogroup STM32L4xx_HAL_Driver
   * @{
@@ -697,7 +697,7 @@ typedef struct
   *            @arg HAL_OSPI_FLAG_TE:   OSPI Transfer error flag
   * @retval None
   */
-#define __HAL_OSPI_GET_FLAG(__HANDLE__, __FLAG__)           (READ_BIT((__HANDLE__)->Instance->SR, (__FLAG__)) != 0)
+#define __HAL_OSPI_GET_FLAG(__HANDLE__, __FLAG__)           ((READ_BIT((__HANDLE__)->Instance->SR, (__FLAG__)) != 0) ? SET : RESET)
 
 /** @brief  Clears the specified OSPI's flag status.
   * @param  __HANDLE__: specifies the OSPI Handle.

@@ -9,13 +9,16 @@ CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
 # Enable MPU
 CONFIG_STM32_ARM_MPU_ENABLE=y
 
-# enable USART2 - passthrough to STLINK v2 connector
-CONFIG_UART_STM32_PORT_2=y
+CONFIG_SERIAL=y
+
+# console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
 
 # enable pinmux
 CONFIG_PINMUX=y
 
-# enable GPIO ports A, B, C, D
+# enable GPIO
 CONFIG_GPIO=y
 
 # clock configuration
@@ -37,5 +40,3 @@ CONFIG_CLOCK_STM32_APB2_PRESCALER=2
 
 #enable pwm
 CONFIG_PWM=y
-CONFIG_PWM_STM32=y
-CONFIG_PWM_STM32_2=y

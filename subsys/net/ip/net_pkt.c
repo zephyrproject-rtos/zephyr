@@ -499,6 +499,7 @@ static struct net_pkt *net_pkt_get(struct k_mem_slab *slab,
 	struct in6_addr *addr6 = NULL;
 	struct net_if *iface;
 	struct net_pkt *pkt;
+	sa_family_t family;
 
 	if (!context) {
 		return NULL;
@@ -520,18 +521,20 @@ static struct net_pkt *net_pkt_get(struct k_mem_slab *slab,
 	pkt = net_pkt_get_reserve(slab, net_if_get_ll_reserve(iface, addr6),
 				  timeout);
 #endif
-	if (pkt && slab != &rx_pkts) {
-		sa_family_t family;
+	if (!pkt) {
+		return NULL;
+	}
+
+	net_pkt_set_context(pkt, context);
+	net_pkt_set_iface(pkt, iface);
+	family = net_context_get_family(context);
+	net_pkt_set_family(pkt, family);
+
+	if (slab != &rx_pkts) {
 		uint16_t iface_len, data_len = 0;
 		enum net_ip_protocol proto;
 
-		net_pkt_set_context(pkt, context);
-		net_pkt_set_iface(pkt, iface);
-
 		iface_len = net_if_get_mtu(iface);
-
-		family = net_context_get_family(context);
-		net_pkt_set_family(pkt, family);
 
 		if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
 			data_len = max(iface_len, NET_IPV6_MTU);
@@ -1200,7 +1203,7 @@ u16_t net_pkt_append(struct net_pkt *pkt, u16_t len, const u8_t *data,
 		    s32_t timeout)
 {
 	struct net_buf *frag;
-	struct net_context *ctx;
+	struct net_context *ctx = NULL;
 	u16_t max_len, appended;
 
 	if (!pkt || !data) {
@@ -1216,7 +1219,10 @@ u16_t net_pkt_append(struct net_pkt *pkt, u16_t len, const u8_t *data,
 		net_pkt_frag_add(pkt, frag);
 	}
 
-	ctx = net_pkt_context(pkt);
+	if (pkt->slab != &rx_pkts) {
+		ctx = net_pkt_context(pkt);
+	}
+
 	if (ctx) {
 		/* Make sure we don't send more data in one packet than
 		 * protocol or MTU allows when there is a context for the

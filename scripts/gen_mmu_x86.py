@@ -217,7 +217,7 @@ class PageMode_4kb:
                     # thus the new PDE start address is a multiple of that
                     # number
                     extra_pde_start_address = (extra_pde *
-                    (self.size_addressed_per_pde))
+                                               (self.size_addressed_per_pde))
 
                     # the start address of and extra pde will always be 0
                     # and the end address is calculated with the new pde's start
@@ -577,10 +577,10 @@ class PageMode_PAE:
         user_mode = perm_for_pte & PAGE_ENTRY_USER_SUPERVISOR
         pwt = PAGE_ENTRY_PWT
         pcd = PAGE_ENTRY_PCD
-        a   = PAGE_ENTRY_ALLOC
-        d   = PAGE_ENTRY_DIRTY
+        a = PAGE_ENTRY_ALLOC
+        d = PAGE_ENTRY_DIRTY
         pat = PAGE_ENTRY_PAT
-        g   = PAGE_ENTRY_GLOBAL
+        g = PAGE_ENTRY_GLOBAL
 
         # This points to the actual memory in the HW
         # totally 20 bits to rep the phy address
@@ -684,15 +684,15 @@ class PageMode_PAE:
                         # each page directory entry has a addr range of
                         # (1024 *4096) thus the new PDE start address is a
                         # multiple of that number
-                        extra_pde_start_address = (extra_pde *
-                        (self.size_addressed_per_pde))
+                        extra_pde_start_address = (
+                            extra_pde * (self.size_addressed_per_pde))
 
                         # the start address of and extra pde will always be 0
                         # and the end address is calculated with the new
                         # pde's start address and the overflow_size
                         extra_pte_valid_addr_end = (
-                        self.get_pte_number(extra_pde_start_address +
-                                            overflow_size - 1))
+                            self.get_pte_number(extra_pde_start_address +
+                                                overflow_size - 1))
 
                         # if the overflow_size couldn't be fit inside this new
                         # pde then need another pde and so we now need to limit
@@ -819,7 +819,6 @@ class PageMode_PAE:
                                      output_offset,
                                      binary_value)
                     output_offset += struct.calcsize(self.write_page_entry_bin)
-
 
     # To populate the binary file the module struct needs a buffer of the
     # excat size This returns the size needed for the given set of page tables.
@@ -1096,8 +1095,9 @@ def check_bits(val, bits):
 def parse_args():
     global args
 
-    parser = argparse.ArgumentParser(description=__doc__,
-                                     formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
 
     parser.add_argument("-e", "--big-endian", action="store_true",
                         help="Target encodes data in big-endian format"
@@ -1107,12 +1107,15 @@ def parse_args():
                         help="Input file from which MMU regions are read.")
     parser.add_argument("-k", "--kernel",
                         help="Zephyr kernel image")
-    parser.add_argument("-o", "--output",
-                        help="Output file into which the page tables are written.")
+    parser.add_argument(
+        "-o", "--output",
+        help="Output file into which the page tables are written.")
     parser.add_argument("-v", "--verbose", action="count", default=0,
                         help="Print debugging information. Multiple "
                              "invocations increase verbosity")
     args = parser.parse_args()
+    if "VERBOSE" in os.environ:
+        args.verbose = 1
 
 
 # the format for writing in the binary file would be decided by the
@@ -1135,11 +1138,15 @@ def format_string(input_str):
     return output_str
 
 # format for 32bit hex value
+
+
 def hex_32(input_value):
     output_value = "{0:#0{1}x}".format(input_value, 10)
     return output_value
 
 # format for 20bit hex value
+
+
 def hex_20(input_value):
     output_value = "{0:#0{1}x}".format(input_value, 7)
     return output_value
@@ -1161,6 +1168,8 @@ def verbose_output(page_mode):
         page_mode.print_all_page_table_info()
 
 # build sym table
+
+
 def get_symbols(obj):
     for section in obj.iter_sections():
         if isinstance(section, SymbolTableSection):

@@ -236,7 +236,6 @@ struct net_tcp *net_tcp_alloc(struct net_context *context)
 	tcp_context[i].context = context;
 
 	tcp_context[i].send_seq = tcp_init_isn();
-	tcp_context[i].recv_max_ack = tcp_context[i].send_seq + 1u;
 	tcp_context[i].recv_wnd = min(NET_TCP_MAX_WIN, NET_TCP_BUF_MAX_LEN);
 	tcp_context[i].send_mss = NET_TCP_DEFAULT_MSS;
 
@@ -263,6 +262,11 @@ static void retry_timer_cancel(struct net_tcp *tcp)
 	k_delayed_work_cancel(&tcp->retry_timer);
 }
 
+static void timewait_timer_cancel(struct net_tcp *tcp)
+{
+	k_delayed_work_cancel(&tcp->timewait_timer);
+}
+
 int net_tcp_release(struct net_tcp *tcp)
 {
 	struct net_pkt *pkt;
@@ -284,6 +288,7 @@ int net_tcp_release(struct net_tcp *tcp)
 
 	ack_timer_cancel(tcp);
 	fin_timer_cancel(tcp);
+	timewait_timer_cancel(tcp);
 
 	net_tcp_change_state(tcp, NET_TCP_CLOSED);
 	tcp->context = NULL;
@@ -521,10 +526,6 @@ int net_tcp_prepare_segment(struct net_tcp *tcp, u8_t flags,
 	}
 
 	tcp->send_seq = seq;
-
-	if (net_tcp_seq_greater(tcp->send_seq, tcp->recv_max_ack)) {
-		tcp->recv_max_ack = tcp->send_seq;
-	}
 
 	return 0;
 }
@@ -895,7 +896,7 @@ int net_tcp_send_data(struct net_context *context)
 	return 0;
 }
 
-void net_tcp_ack_received(struct net_context *ctx, u32_t ack)
+bool net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 {
 	struct net_tcp *tcp = ctx->tcp;
 	sys_slist_t *list = &ctx->tcp->sent_list;
@@ -904,9 +905,14 @@ void net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 	u32_t seq;
 	bool valid_ack = false;
 
-	if (IS_ENABLED(CONFIG_NET_STATISTICS_TCP) &&
-	    sys_slist_is_empty(list)) {
+	if (net_tcp_seq_greater(ack, ctx->tcp->send_seq)) {
+		NET_ERR("ctx %p: ACK for unsent data", ctx);
 		net_stats_update_tcp_seg_ackerr();
+		/* RFC 793 doesn't say that invalid ack sequence is an error
+		 * in the general case, but we implement tighter checking,
+		 * and consider entire packet invalid.
+		 */
+		return false;
 	}
 
 	while (!sys_slist_is_empty(list)) {
@@ -929,7 +935,6 @@ void net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 		seq = sys_get_be32(tcp_hdr->seq) + net_pkt_appdatalen(pkt) - 1;
 
 		if (!net_tcp_seq_greater(ack, seq)) {
-			net_stats_update_tcp_seg_ackerr();
 			break;
 		}
 
@@ -975,6 +980,8 @@ void net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 			net_tcp_send_data(ctx);
 		}
 	}
+
+	return true;
 }
 
 void net_tcp_init(void)

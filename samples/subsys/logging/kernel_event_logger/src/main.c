@@ -4,12 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <kernel_structs.h>
+#include <zephyr.h>
 #include <logging/kernel_event_logger.h>
-#include <kernel_structs.h>
 #include <misc/printk.h>
 #include <misc/util.h>
-#include <zephyr.h>
 
 K_THREAD_STACK_DEFINE(threadA_stack, 1024);
 K_THREAD_STACK_DEFINE(threadB_stack, 1024);

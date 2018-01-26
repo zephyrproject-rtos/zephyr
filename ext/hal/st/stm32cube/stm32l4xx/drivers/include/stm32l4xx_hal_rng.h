@@ -57,20 +57,15 @@
   * @{
   */
 
-#if defined(RNG_CR_CED) || defined(RNG_CR_BYP)
+#if defined(RNG_CR_CED)
 /**
   * @brief  RNG Configuration Structure definition
   */
 typedef struct
 {
-#if defined(RNG_CR_CED)
   uint32_t                    ClockErrorDetection; /*!< Clock error detection */
-#endif /* defined(RNG_CR_CED) */
-#if defined(RNG_CR_BYP)
-  uint32_t                    BypassMode;          /*!< Bypass mode */
-#endif /* defined(RNG_CR_BYP) */
 }RNG_InitTypeDef;
-#endif /* defined(RNG_CR_CED) || defined(RNG_CR_BYP) */
+#endif /* defined(RNG_CR_CED) */
 
 /** 
   * @brief  RNG HAL State Structure definition  
@@ -82,7 +77,7 @@ typedef enum
   HAL_RNG_STATE_BUSY      = 0x02,  /*!< RNG internal process is ongoing     */ 
   HAL_RNG_STATE_TIMEOUT   = 0x03,  /*!< RNG timeout state                   */
   HAL_RNG_STATE_ERROR     = 0x04   /*!< RNG error state                     */
-    
+
 }HAL_RNG_StateTypeDef;
 
 /** 
@@ -91,17 +86,17 @@ typedef enum
 typedef struct
 {
   RNG_TypeDef                 *Instance;  /*!< Register base address        */
-  
-#if defined(RNG_CR_CED) || defined(RNG_CR_BYP)
+
+#if defined(RNG_CR_CED)
   RNG_InitTypeDef             Init;       /*!< RNG configuration parameters */
-#endif /* defined(RNG_CR_CED) || defined(RNG_CR_BYP) */
+#endif /* defined(RNG_CR_CED) */
 
   HAL_LockTypeDef             Lock;       /*!< RNG locking object           */
-  
+
   __IO HAL_RNG_StateTypeDef   State;      /*!< RNG communication state      */
-  
+
   uint32_t               RandomNumber;    /*!< Last Generated RNG Data */
-  
+
 }RNG_HandleTypeDef;
 
 /** 
@@ -143,17 +138,6 @@ typedef struct
   * @}
   */
 #endif /* defined(RNG_CR_CED) */
-
-#if defined(RNG_CR_BYP)
-/** @defgroup RNG_Bypass_Mode RNG Bypass Mode
-  * @{
-  */
-#define RNG_BYP_DISABLE        ((uint32_t)0x00000000) /*!< Bypass mode disabled */
-#define RNG_BYP_ENABLE         RNG_CR_BYP             /*!< Bypass mode enabled */
-/**
-  * @}
-  */
-#endif /* defined(RNG_CR_BYP) */
 
 /**
   * @}
@@ -215,7 +199,7 @@ typedef struct
   * @retval None
   */
 #define __HAL_RNG_ENABLE_IT(__HANDLE__) ((__HANDLE__)->Instance->CR |=  RNG_CR_IE)
-    
+
 /**
   * @brief  Disable the RNG interrupt.
   * @param  __HANDLE__: RNG Handle
@@ -318,17 +302,7 @@ HAL_RNG_StateTypeDef HAL_RNG_GetState(RNG_HandleTypeDef *hrng);
 #define IS_RNG_CED(__MODE__) (((__MODE__) == RNG_CED_ENABLE) || \
                               ((__MODE__) == RNG_CED_DISABLE))
 #endif /* defined(RNG_CR_CED) */
-      
-#if defined(RNG_CR_BYP)
-/**
-  * @brief Verify the RNG Bypass mode.
-  * @param __MODE__: RNG Bypass mode
-  * @retval SET (__MODE__ is valid) or RESET (__MODE__ is invalid)
-  */
-#define IS_RNG_BYPASS(__MODE__) (((__MODE__) == RNG_BYP_ENABLE) || \
-                                 ((__MODE__) == RNG_BYP_DISABLE))
-#endif /* defined(RNG_CR_BYP) */
-                                                                                         
+
 /**
   * @}
   */

@@ -26,6 +26,10 @@
 
 #ifdef CONFIG_ARMV6_M
 
+#if defined(CONFIG_SW_VECTOR_RELAY)
+_GENERIC_SECTION(.vt_pointer_section) void *_vector_table_pointer;
+#endif
+
 #define VECTOR_ADDRESS 0
 void __weak relocate_vector_table(void)
 {
@@ -33,6 +37,8 @@ void __weak relocate_vector_table(void)
     !defined(CONFIG_XIP) && (CONFIG_SRAM_BASE_ADDRESS != 0)
 	size_t vector_size = (size_t)_vector_end - (size_t)_vector_start;
 	memcpy(VECTOR_ADDRESS, _vector_start, vector_size);
+#elif defined(CONFIG_SW_VECTOR_RELAY)
+	_vector_table_pointer = _vector_start;
 #endif
 }
 

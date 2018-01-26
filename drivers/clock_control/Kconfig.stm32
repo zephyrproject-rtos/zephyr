@@ -13,6 +13,7 @@ menuconfig CLOCK_CONTROL_STM32_CUBE
 	prompt "STM32 Reset & Clock Control"
 	depends on CLOCK_CONTROL
 	default n if SOC_SERIES_STM32
+	select USE_STM32_LL_UTILS
 	help
 	  Enable driver for Reset & Clock Control subsystem found
 	  in STM32 family of MCUs
@@ -106,11 +107,15 @@ config CLOCK_STM32_PLL_PREDIV
 
 config CLOCK_STM32_PLL_PREDIV1
 	int "PREDIV1 Prescaler"
-	depends on CLOCK_STM32_PLL_SRC_HSE && (SOC_STM32F091XB || SOC_STM32F091XC)
+	depends on CLOCK_STM32_PLL_SRC_HSE
 	default 1
 	range 1 16
 	help
-	 PREDIV is PLLSCR clock signal prescaler, present on STM32F091xB, STM32F091xC.
+	 PREDIV is PLLSCR clock signal prescaler, present on STM32F0 SoC having
+	 an HSE Oscillator available like the stm32f04xx, stm32f07xx,
+	 stm32f09xx and stm32f030xc parts. If configured on a non supported
+	 part, the HSI oscillator will be used a default PLL source and this
+	 config will be ignored.
 	 Allowed values: 1 - 16.
 
 config CLOCK_STM32_PLL_MULTIPLIER

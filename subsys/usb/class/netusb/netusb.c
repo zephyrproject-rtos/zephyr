@@ -6,17 +6,22 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define SYS_LOG_LEVEL 3
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_DEVICE_NETWORK_DEBUG_LEVEL
 #define SYS_LOG_DOMAIN "netusb"
 #include <logging/sys_log.h>
+
+/* Enable verbose debug printing extra hexdumps */
+#define VERBOSE_DEBUG	0
+
+/* This enables basic hexdumps */
+#define NET_LOG_ENABLED	0
+#include <net_private.h>
 
 #include <init.h>
 
 #include <usb_device.h>
 #include <usb_common.h>
 #include <class/usb_cdc.h>
-
-#include <net_private.h>
 
 #include "../../usb_descriptor.h"
 #include "../../composite.h"
@@ -52,8 +57,8 @@ void netusb_recv(struct net_pkt *pkt)
 {
 	SYS_LOG_DBG("Recv pkt, len %u", net_pkt_get_len(pkt));
 
-	if (net_recv_data(netusb.iface, pkt)) {
-		SYS_LOG_ERR("Queueing packet %p failed", pkt);
+	if (net_recv_data(netusb.iface, pkt) < 0) {
+		SYS_LOG_ERR("Packet %p dropped by NET stack", pkt);
 		net_pkt_unref(pkt);
 	}
 }
@@ -204,6 +209,7 @@ int try_write(u8_t ep, u8_t *data, u16_t len)
 			break;
 		/* TODO: Handle other error codes */
 		default:
+			SYS_LOG_WRN("Error writing to ep 0x%x ret %d", ep, ret);
 			return ret;
 		}
 
@@ -228,19 +234,26 @@ static void netusb_init(struct net_if *iface)
 
 	SYS_LOG_DBG("netusb device initialization");
 
-	SYS_LOG_DBG("iface %p", iface);
-
 	netusb.iface = iface;
-
-	SYS_LOG_DBG("iface %p", iface);
 
 	net_if_set_link_addr(iface, mac, sizeof(mac), NET_LINK_ETHERNET);
 
 	net_if_down(iface);
 
+/*
+ * TODO: Add multi-function configuration
+ */
 #if defined(CONFIG_USB_DEVICE_NETWORK_ECM)
 	netusb.func = &ecm_function;
+#elif defined(CONFIG_USB_DEVICE_NETWORK_RNDIS)
+	netusb.func = &rndis_function;
+#else
+#error Unknown USB Device Networking function
 #endif
+	if (netusb.func->init && netusb.func->init()) {
+		SYS_LOG_ERR("Initialization failed");
+		return;
+	}
 
 	netusb_config.endpoint = netusb.func->ep;
 	netusb_config.num_endpoints = netusb.func->num_ep;
@@ -272,8 +285,8 @@ static void netusb_init(struct net_if *iface)
 }
 
 static struct net_if_api api_funcs = {
-	.init	= netusb_init,
-	.send	= netusb_send,
+	.init = netusb_init,
+	.send = netusb_send,
 };
 
 static int netusb_init_dev(struct device *dev)

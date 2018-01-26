@@ -1,6 +1,6 @@
 
 config BOARD_NATIVE_POSIX
-	bool "Posix simple process"
+	bool "Native POSIX"
 	depends on SOC_POSIX
 	select NATIVE_POSIX_TIMER
 	help

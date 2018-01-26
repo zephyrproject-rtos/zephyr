@@ -2,8 +2,6 @@
   ******************************************************************************
   * @file    stm32f4xx_hal_dcmi_ex.h
   * @author  MCD Application Team
-  * @version V1.7.1
-  * @date    14-April-2017
   * @brief   Header file of DCMI Extension HAL module.
   ******************************************************************************
   * @attention
@@ -180,9 +178,9 @@ typedef struct
 /* Private types -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 /* Private constants ---------------------------------------------------------*/
-#define DCMI_POSITION_ESCR_LSC     (uint32_t)POSITION_VAL(DCMI_ESCR_LSC)     /*!< Required left shift to set line start delimiter */
-#define DCMI_POSITION_ESCR_LEC     (uint32_t)POSITION_VAL(DCMI_ESCR_LEC)     /*!< Required left shift to set line end delimiter   */
-#define DCMI_POSITION_ESCR_FEC     (uint32_t)POSITION_VAL(DCMI_ESCR_FEC)     /*!< Required left shift to set frame end delimiter  */
+#define DCMI_POSITION_ESCR_LSC     (uint32_t)DCMI_ESCR_LSC_Pos     /*!< Required left shift to set line start delimiter */
+#define DCMI_POSITION_ESCR_LEC     (uint32_t)DCMI_ESCR_LEC_Pos     /*!< Required left shift to set line end delimiter   */
+#define DCMI_POSITION_ESCR_FEC     (uint32_t)DCMI_ESCR_FEC_Pos     /*!< Required left shift to set frame end delimiter  */
 
 /* Private macro -------------------------------------------------------------*/
 #if defined(STM32F446xx) || defined(STM32F469xx) || defined(STM32F479xx)

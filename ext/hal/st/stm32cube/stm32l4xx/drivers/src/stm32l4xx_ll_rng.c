@@ -65,11 +65,7 @@
 #define IS_LL_RNG_CED(__MODE__) (((__MODE__) == LL_RNG_CED_ENABLE) || \
                                  ((__MODE__) == LL_RNG_CED_DISABLE))
 #endif /* defined(RNG_CR_CED) */
-      
-#if defined(RNG_CR_BYP)
-#define IS_LL_RNG_BYPASS(__MODE__) (((__MODE__) == LL_RNG_BYP_DISABLE) || \
-                                    ((__MODE__) == LL_RNG_BYP_ENABLE))
-#endif /* defined(RNG_CR_BYP) */
+
 /**
   * @}
   */
@@ -106,7 +102,7 @@ ErrorStatus LL_RNG_DeInit(RNG_TypeDef *RNGx)
   return (SUCCESS);
 }
 
-#if defined(RNG_CR_CED) || defined(RNG_CR_BYP)
+#if defined(RNG_CR_CED)
 /**
   * @brief  Initialize RNG registers according to the specified parameters in RNG_InitStruct.
   * @param  RNGx RNG Instance
@@ -120,26 +116,27 @@ ErrorStatus LL_RNG_Init(RNG_TypeDef *RNGx, LL_RNG_InitTypeDef *RNG_InitStruct)
 {
   /* Check the parameters */
   assert_param(IS_RNG_ALL_INSTANCE(RNGx));
-#if defined(RNG_CR_CED)
   assert_param(IS_LL_RNG_CED(RNG_InitStruct->ClockErrorDetection));
-#endif /* defined(RNG_CR_CED) */
-#if defined(RNG_CR_BYP)
-  assert_param(IS_LL_RNG_BYPASS(RNG_InitStruct->BypassMode));
-#endif /* defined(RNG_CR_BYP) */
 
-#if defined(RNG_CR_CED)
   /* Clock Error Detection configuration */
   MODIFY_REG(RNGx->CR, RNG_CR_CED, RNG_InitStruct->ClockErrorDetection);
-#endif /* defined(RNG_CR_CED) */
-
-#if defined(RNG_CR_BYP) 
-  /* Bypass mode configuration */
-  MODIFY_REG(RNGx->CR, RNG_CR_BYP, RNG_InitStruct->BypassMode);
-#endif /* defined(RNG_CR_BYP) */
 
   return (SUCCESS);
 }
-#endif /* defined(RNG_CR_CED) || defined(RNG_CR_BYP) */
+
+/**
+  * @brief Set each @ref LL_RNG_InitTypeDef field to default value.
+  * @param RNG_InitStruct: pointer to a @ref LL_RNG_InitTypeDef structure
+  *                          whose fields will be set to default values.
+  * @retval None
+  */
+void LL_RNG_StructInit(LL_RNG_InitTypeDef *RNG_InitStruct)
+{
+  /* Set RNG_InitStruct fields to default values */
+  RNG_InitStruct->ClockErrorDetection   = LL_RNG_CED_ENABLE;
+
+}
+#endif /* defined(RNG_CR_CED) */
 
 /**
   * @}

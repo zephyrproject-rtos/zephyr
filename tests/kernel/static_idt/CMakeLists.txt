@@ -1,7 +1,5 @@
 include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
-include($ENV{ZEPHYR_BASE}/cmake/test/CMakeLists.txt NO_POLICY_SCOPE)
 project(NONE)
-
 
 enable_language(C ASM)
 

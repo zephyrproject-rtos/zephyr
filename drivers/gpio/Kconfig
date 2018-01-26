@@ -47,6 +47,8 @@ source "drivers/gpio/Kconfig.mcux"
 
 source "drivers/gpio/Kconfig.mcux_igpio"
 
+source "drivers/gpio/Kconfig.mcux_lpc"
+
 source "drivers/gpio/Kconfig.mmio32"
 
 source "drivers/gpio/Kconfig.atmel_sam3"
@@ -70,5 +72,7 @@ source "drivers/gpio/Kconfig.esp32"
 source "drivers/gpio/Kconfig.gecko"
 
 source "drivers/gpio/Kconfig.altera_nios2"
+
+source "drivers/gpio/Kconfig.sam0"
 
 endif # GPIO

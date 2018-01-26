@@ -366,16 +366,9 @@ u32_t radio_connect_enable(u8_t adv_addr_type, u8_t *adv_addr,
 			   u16_t interval, u16_t latency,
 			   u16_t timeout);
 /* Upstream */
-u8_t radio_rx_get(struct radio_pdu_node_rx **radio_pdu_node_rx,
-		  u16_t *handle);
-void radio_rx_dequeue(void);
-void radio_rx_mem_release(struct radio_pdu_node_rx **radio_pdu_node_rx);
 u8_t radio_rx_fc_set(u16_t handle, u8_t fc);
 u8_t radio_rx_fc_get(u16_t *handle);
-struct radio_pdu_node_tx *radio_tx_mem_acquire(void);
-void radio_tx_mem_release(struct radio_pdu_node_tx *pdu_data_node_tx);
-u32_t radio_tx_mem_enqueue(u16_t handle,
-			   struct radio_pdu_node_tx *pdu_data_node_tx);
+
 /* Callbacks */
 extern void radio_active_callback(u8_t active);
 extern void radio_event_callback(void);

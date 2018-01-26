@@ -1683,7 +1683,7 @@ static HAL_StatusTypeDef SMBUS_Slave_ISR(SMBUS_HandleTypeDef *hsmbus)
         /* or only the last Byte of Transfer */
         /* So reset the RELOAD bit mode */
         hsmbus->XferOptions &= ~SMBUS_RELOAD_MODE;
-        SMBUS_TransferConfig(hsmbus, 0U , 1U , hsmbus->XferOptions, SMBUS_NO_STARTSTOP);
+        SMBUS_TransferConfig(hsmbus, 0U, 1U, hsmbus->XferOptions, SMBUS_NO_STARTSTOP);
       }
       else if (hsmbus->XferCount == 0U)
       {
@@ -2097,25 +2097,14 @@ static HAL_StatusTypeDef SMBUS_WaitOnFlagUntilTimeout(SMBUS_HandleTypeDef *hsmbu
   */
 static void SMBUS_TransferConfig(SMBUS_HandleTypeDef *hsmbus,  uint16_t DevAddress, uint8_t Size, uint32_t Mode, uint32_t Request)
 {
-  uint32_t tmpreg = 0U;
-
   /* Check the parameters */
   assert_param(IS_SMBUS_ALL_INSTANCE(hsmbus->Instance));
   assert_param(IS_SMBUS_TRANSFER_MODE(Mode));
   assert_param(IS_SMBUS_TRANSFER_REQUEST(Request));
 
-  /* Get the CR2 register value */
-  tmpreg = hsmbus->Instance->CR2;
-
-  /* clear tmpreg specific bits */
-  tmpreg &= (uint32_t)~((uint32_t)(I2C_CR2_SADD | I2C_CR2_NBYTES | I2C_CR2_RELOAD | I2C_CR2_AUTOEND | I2C_CR2_RD_WRN | I2C_CR2_START | I2C_CR2_STOP | I2C_CR2_PECBYTE));
-
-  /* update tmpreg */
-  tmpreg |= (uint32_t)(((uint32_t)DevAddress & I2C_CR2_SADD) | (((uint32_t)Size << 16U) & I2C_CR2_NBYTES) | \
-                       (uint32_t)Mode | (uint32_t)Request);
-
   /* update CR2 register */
-  hsmbus->Instance->CR2 = tmpreg;
+  MODIFY_REG(hsmbus->Instance->CR2, ((I2C_CR2_SADD | I2C_CR2_NBYTES | I2C_CR2_RELOAD | I2C_CR2_AUTOEND | (I2C_CR2_RD_WRN & (uint32_t)(Request >> (31U - I2C_CR2_RD_WRN_Pos))) | I2C_CR2_START | I2C_CR2_STOP  | I2C_CR2_PECBYTE)), \
+             (uint32_t)(((uint32_t)DevAddress & I2C_CR2_SADD) | (((uint32_t)Size << I2C_CR2_NBYTES_Pos) & I2C_CR2_NBYTES) | (uint32_t)Mode | (uint32_t)Request));
 }
 
 /**

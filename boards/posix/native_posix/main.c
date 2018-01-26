@@ -6,7 +6,7 @@
 
 /*
  * The basic principle of operation is:
- *   No asynchronous behavior, no undeterminism.
+ *   No asynchronous behavior, no indeterminism.
  *   If you run the same thing 20 times, you get exactly the same result 20
  *   times.
  *   It does not matter if you are running from console, or in a debugger
@@ -15,7 +15,7 @@
  * This is achieved as follows:
  * The HW models run in their own simulated time. We do really not attempt
  * to link ourselves to the actual real time / wall time of the machine as this
- * would make execution undeterministic and debugging or instrumentation not
+ * would make execution indeterministic and debugging or instrumentation not
  * really possible. Although we may slow the run to real time.
  */
 
@@ -23,6 +23,7 @@
 #include "hw_models_top.h"
 #include <stdlib.h>
 #include "misc/util.h"
+#include "cmdline.h"
 
 #define STOP_AFTER_5_SECONDS 0
 
@@ -42,19 +43,22 @@ void main_clean_up(int exit_code)
 	exit(exit_code);
 }
 
+
 /**
  * This is the actual main for the Linux process,
  * the Zephyr application main is renamed something else thru a define.
  *
  * Note that normally one wants to use this POSIX arch to be part of a
- * simulation engine, with some proper HW models and whatnot
+ * simulation engine, with some proper HW models and what not
  *
  * This is just a very simple demo which is able to run some of the sample
  * apps (hello world, synchronization, philosophers) and run the sanity-check
  * regression
  */
-int main(void)
+int main(int argc, char *argv[])
 {
+
+	native_handle_cmd_line(argc, argv);
 
 	hwm_init();
 

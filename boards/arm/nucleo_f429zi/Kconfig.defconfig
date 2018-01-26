@@ -10,16 +10,19 @@ if BOARD_NUCLEO_F429ZI
 config BOARD
 	default nucleo_f429zi
 
-if GPIO
+if UART_CONSOLE
 
-config GPIO_STM32_PORTG
-	def_bool y
+config UART_STM32_PORT_3
+	default y
 
-endif # GPIO
+endif # UART_CONSOLE
 
 if NETWORKING
 
 config NET_L2_ETHERNET
+	def_bool y
+
+config ETH_STM32_HAL
 	def_bool y
 
 endif # NETWORKING
