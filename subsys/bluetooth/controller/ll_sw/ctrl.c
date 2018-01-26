@@ -7721,8 +7721,10 @@ static void event_connection_prepare(u32_t ticks_at_expire,
 	event_counter = conn->event_counter + conn->latency_prepare;
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ) || defined(CONFIG_BT_CTLR_PHY)
-	/* Check if no other procedure with instant is requested */
-	if (conn->llcp_ack == conn->llcp_req) {
+	/* Check if no other procedure with instant is requested and not in
+	 * Encryption setup.
+	 */
+	if ((conn->llcp_ack == conn->llcp_req) && !conn->pause_rx) {
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 		/* check if CPR procedure is requested */
