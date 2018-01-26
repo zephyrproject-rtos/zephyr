@@ -8,8 +8,10 @@
 #define _MQTT_H_
 
 #include <net/mqtt_types.h>
+#if defined(CONFIG_MQTT_LIB_TLS)
 #include <net/net_context.h>
 #include <net/net_app.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -63,8 +65,7 @@ enum mqtt_app {
  * the state of the received and sent messages.</b>
  */
 struct mqtt_ctx {
-	/** Net app context structure */
-	struct net_app_ctx net_app_ctx;
+	int sock;
 	s32_t net_init_timeout;
 	s32_t net_timeout;
 
@@ -180,7 +181,10 @@ struct mqtt_ctx {
 	void (*malformed)(struct mqtt_ctx *ctx, u16_t pkt_type);
 
 	/* Internal use only */
-	int (*rcv)(struct mqtt_ctx *ctx, struct net_pkt *);
+	int (*rcv)(struct mqtt_ctx *ctx, void *buf, size_t len);
+
+	/* Receive buffer for async receive callbacks */
+	void *rcv_buf;
 
 	/** Application type, see: enum mqtt_app */
 	u8_t app_type;
@@ -200,7 +204,7 @@ struct mqtt_ctx {
  *
  * @param ctx MQTT context structure
  * @param app_type See enum mqtt_app
- * @retval 0 always
+ * @retval 0 on success, and <0 if error
  */
 int mqtt_init(struct mqtt_ctx *ctx, enum mqtt_app app_type);
 
@@ -366,12 +370,13 @@ int mqtt_tx_unsubscribe(struct mqtt_ctx *ctx, u16_t pkt_id, u8_t items,
  *
  * @param [in] ctx MQTT context structure
  * @param [in] rx Data buffer
+ * @param [in] len Length of data
  * @param [in] clean_session MQTT clean session parameter
  *
  * @retval 0 on success
  * @retval -EINVAL
  */
-int mqtt_rx_connack(struct mqtt_ctx *ctx, struct net_buf *rx,
+int mqtt_rx_connack(struct mqtt_ctx *ctx, void *rx, size_t len,
 		    int clean_session);
 
 /**
@@ -379,89 +384,97 @@ int mqtt_rx_connack(struct mqtt_ctx *ctx, struct net_buf *rx,
  *
  * @param [in] ctx MQTT context structure
  * @param [in] rx Data buffer
+ * @param [in] len Length of data
  *
  * @retval 0 on success
  * @retval -EINVAL
  */
-int mqtt_rx_puback(struct mqtt_ctx *ctx, struct net_buf *rx);
+int mqtt_rx_puback(struct mqtt_ctx *ctx, void *rx, size_t len);
 
 /**
  * Parses and validates the MQTT PUBCOMP message
  *
  * @param [in] ctx MQTT context structure
  * @param [in] rx Data buffer
+ * @param [in] len Length of data
  *
  * @retval 0 on success
  * @retval -EINVAL
  */
-int mqtt_rx_pubcomp(struct mqtt_ctx *ctx, struct net_buf *rx);
+int mqtt_rx_pubcomp(struct mqtt_ctx *ctx, void *rx, size_t len);
 
 /**
  * Parses and validates the MQTT PUBREC message
  *
  * @param [in] ctx MQTT context structure
  * @param [in] rx Data buffer
+ * @param [in] len Length of data
  *
  * @retval 0 on success
  * @retval -EINVAL
  */
-int mqtt_rx_pubrec(struct mqtt_ctx *ctx, struct net_buf *rx);
+int mqtt_rx_pubrec(struct mqtt_ctx *ctx, void *rx, size_t len);
 
 /**
  * Parses and validates the MQTT PUBREL message
  *
  * @param [in] ctx MQTT context structure
  * @param [in] rx Data buffer
+ * @param [in] len Length of data
  *
  * @retval 0 on success
  * @retval -EINVAL
  */
-int mqtt_rx_pubrel(struct mqtt_ctx *ctx, struct net_buf *rx);
+int mqtt_rx_pubrel(struct mqtt_ctx *ctx, void *rx, size_t len);
 
 /**
  * Parses the MQTT PINGRESP message
  *
  * @param [in] ctx MQTT context structure
  * @param [in] rx Data buffer
+ * @param [in] len Length of data
  *
  * @retval 0 on success
  * @retval -EINVAL
  */
-int mqtt_rx_pingresp(struct mqtt_ctx *ctx, struct net_buf *rx);
+int mqtt_rx_pingresp(struct mqtt_ctx *ctx, void *rx, size_t len);
 
 /**
  * Parses the MQTT SUBACK message
  *
  * @param [in] ctx MQTT context structure
  * @param [in] rx Data buffer
+ * @param [in] len Length of data
  *
  * @retval 0 on success
  * @retval -EINVAL
  */
-int mqtt_rx_suback(struct mqtt_ctx *ctx, struct net_buf *rx);
+int mqtt_rx_suback(struct mqtt_ctx *ctx, void *rx, size_t len);
 
 /**
  * Parses the MQTT UNSUBACK message
  *
  * @param [in] ctx MQTT context structure
  * @param [in] rx Data buffer
+ * @param [in] len Length of data
  *
  * @retval 0 on success
  * @retval -EINVAL
  */
-int mqtt_rx_unsuback(struct mqtt_ctx *ctx, struct net_buf *rx);
+int mqtt_rx_unsuback(struct mqtt_ctx *ctx, void *rx, size_t len);
 
 /**
  * Parses the MQTT PUBLISH message
  *
  * @param [in] ctx MQTT context structure
  * @param [in] rx Data buffer
+ * @param [in] len Length of data
  *
  * @retval 0 on success
  * @retval -EINVAL
  * @retval -ENOMEM
  */
-int mqtt_rx_publish(struct mqtt_ctx *ctx, struct net_buf *rx);
+int mqtt_rx_publish(struct mqtt_ctx *ctx, void *rx, size_t len);
 
 /**
  * @}

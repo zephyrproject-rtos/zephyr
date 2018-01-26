@@ -7,6 +7,7 @@
 #ifndef _MQTT_TYPES_H_
 #define _MQTT_TYPES_H_
 
+#include <stddef.h>
 #include <zephyr/types.h>
 
 #ifdef __cplusplus
