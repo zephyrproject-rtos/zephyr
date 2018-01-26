@@ -69,7 +69,7 @@ void flash_area_close(const struct flash_area *fa)
 	/* nothing to do for now */
 }
 
-static struct device *get_flah_dev_from_id(u8_t id)
+static struct device *get_flash_dev_from_id(u8_t id)
 {
 	for (int i = 0; i < ARRAY_SIZE(flash_drivers_map); i++) {
 		if (flash_drivers_map[i].id == id) {
@@ -159,7 +159,7 @@ flash_page_cb cb, struct layout_data *cb_data)
 	cb_data->ret_len = *cnt;
 	cb_data->status = 0;
 
-	flash_dev = get_flah_dev_from_id(fa->fa_device_id);
+	flash_dev = get_flash_dev_from_id(fa->fa_device_id);
 
 	flash_page_foreach(flash_dev, cb, cb_data);
 
@@ -204,7 +204,7 @@ int flash_area_read(const struct flash_area *fa, off_t off, void *dst,
 		return -1;
 	}
 
-	dev = get_flah_dev_from_id(fa->fa_device_id);
+	dev = get_flash_dev_from_id(fa->fa_device_id);
 
 	return flash_read(dev, fa->fa_off + off, dst, len);
 }
@@ -219,7 +219,7 @@ int flash_area_write(const struct flash_area *fa, off_t off, const void *src,
 		return -1;
 	}
 
-	flash_dev = get_flah_dev_from_id(fa->fa_device_id);
+	flash_dev = get_flash_dev_from_id(fa->fa_device_id);
 
 	rc = flash_write_protection_set(flash_dev, false);
 	if (rc) {
@@ -243,7 +243,7 @@ int flash_area_erase(const struct flash_area *fa, off_t off, size_t len)
 		return -1;
 	}
 
-	flash_dev = get_flah_dev_from_id(fa->fa_device_id);
+	flash_dev = get_flash_dev_from_id(fa->fa_device_id);
 
 	rc = flash_write_protection_set(flash_dev, false);
 	if (rc) {
@@ -262,7 +262,7 @@ u8_t flash_area_align(const struct flash_area *fa)
 {
 	struct device *dev;
 
-	dev = get_flah_dev_from_id(fa->fa_device_id);
+	dev = get_flash_dev_from_id(fa->fa_device_id);
 
 	return flash_get_write_block_size(dev);
 }
