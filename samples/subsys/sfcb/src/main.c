@@ -10,11 +10,11 @@
 #include <flash.h>
 #include <sfcb/sfcb.h>
 
-#if defined(CONFIG_SOC_FAMILY_NRF5)
+/*#if defined(CONFIG_SOC_FAMILY_NRF5)
 #define FLASH_DEV_NAME CONFIG_SOC_FLASH_NRF5_DEV_NAME
 #else
 #define FLASH_DEV_NAME ""
-#endif
+#endif */
 
 #define PSTORAGE_OFFSET 0x3F000
 #define PSTORAGE_MAGIC 0x4d455348 /* hex for "MESH" */
