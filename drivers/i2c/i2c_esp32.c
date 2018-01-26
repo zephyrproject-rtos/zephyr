@@ -396,9 +396,9 @@ i2c_esp32_write_addr(struct device *dev,
 			.ack_en = true,
 			.num_bytes = addr_len,
 		};
+	} else {
+		msg->len += addr_len;
 	}
-
-	msg->len += addr_len;
 
 	return cmd;
 }
