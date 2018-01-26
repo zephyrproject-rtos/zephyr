@@ -11,6 +11,7 @@
 #include <xtensa/tie/xt_timer.h>
 
 #include <xtensa_timer.h>
+#include <kernel_structs.h>
 #include "irq.h"
 
 #ifdef XT_BOARD
@@ -444,6 +445,20 @@ void _zxt_tick_timer_init(void)
 }
 #endif
 
+#ifdef CONFIG_SMP
+/**
+ * @brief Timer initialization for SMP auxiliary CPUs
+ *
+ * Called on MP CPUs other than zero.  Some architectures appear to
+ * generate spurious timer interrupts during initialization, so this
+ * function must be called late in the SMP initialization sequence.
+ */
+void smp_timer_init(void)
+{
+	_zxt_tick_timer_init();
+}
+#endif
+
 /*
  * Compute and initialize at run-time the tick divisor (the number of
  * processor clock cycles in an RTOS tick, used to set the tick timer).
@@ -494,6 +509,17 @@ void _timer_int_handler(void *params)
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT
 	extern void _sys_k_event_logger_interrupt(void);
 	_sys_k_event_logger_interrupt();
+#endif
+
+#ifdef CONFIG_SMP
+	/* The timer infractructure isn't prepared to handle
+	 * asynchronous timeouts on multiple CPUs.  In SMP we use the
+	 * timer interrupt on auxiliary CPUs only for scheduling.
+	 * Don't muck up the timeout math.
+	 */
+	if (_arch_curr_cpu()->id) {
+		return;
+	}
 #endif
 
 #ifdef CONFIG_TICKLESS_KERNEL
