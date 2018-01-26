@@ -44,24 +44,32 @@ const struct flash_area *flash_map;
 extern const int flash_map_entries;
 static struct device *flash_dev[ARRAY_SIZE(flash_drivers_map)];
 
+static struct flash_area const *get_flash_area_from_id(int idx)
+{
+	for (int i = 0; i < flash_map_entries; i++) {
+		if (flash_map[i].fa_id == idx) {
+			return &flash_map[i];
+		}
+	}
+
+	return NULL;
+}
+
 int flash_area_open(u8_t id, const struct flash_area **fap)
 {
 	const struct flash_area *area;
-	int i;
 
 	if (flash_map == NULL) {
 		return -EACCES;
 	}
 
-	for (i = 0; i < flash_map_entries; i++) {
-		area = flash_map + i;
-		if (area->fa_id == id) {
-			*fap = area;
-			return 0;
-		}
+	area = get_flash_area_from_id(id);
+	if (area == NULL) {
+		return -ENOENT;
 	}
 
-	return -ENOENT;
+	*fap = area;
+	return 0;
 }
 
 void flash_area_close(const struct flash_area *fa)
@@ -84,17 +92,6 @@ static inline bool is_in_flash_area_bounds(const struct flash_area *fa,
 					   off_t off, size_t len)
 {
 	return (off <= fa->fa_size && off + len <= fa->fa_size);
-}
-
-struct flash_area const *get_flash_area_from_id(int idx)
-{
-	for (int i = 0; i < flash_map_entries; i++) {
-		if (flash_map[i].fa_id == idx) {
-			return &flash_map[i];
-		}
-	}
-
-	return NULL;
 }
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
