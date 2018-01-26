@@ -28,6 +28,15 @@ extern void _xt_coproc_init(void);
 
 extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
 
+static ALWAYS_INLINE _cpu_t *_arch_curr_cpu(void)
+{
+	void *val;
+
+	__asm__ volatile("rsr.misc0 %0" : "=r"(val));
+
+	return val;
+}
+
 /**
  *
  * @brief Performs architecture-specific initialization
@@ -40,11 +49,13 @@ extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
  */
 static ALWAYS_INLINE void kernel_arch_init(void)
 {
-	_kernel.nested = 0;
+	_cpu_t *cpu0 = &_kernel.cpus[0];
+
+	cpu0->nested = 0;
 
 #if CONFIG_XTENSA_ASM2
-	_kernel.irq_stack = (K_THREAD_STACK_BUFFER(_interrupt_stack) +
-			     CONFIG_ISR_STACK_SIZE);
+	cpu0->irq_stack = (K_THREAD_STACK_BUFFER(_interrupt_stack) +
+			   CONFIG_ISR_STACK_SIZE);
 
 	/* The asm2 scheme keeps the kernel pointer in MISC0 for easy
 	 * access.  That saves 4 bytes of immediate value to store the
@@ -52,9 +63,8 @@ static ALWAYS_INLINE void kernel_arch_init(void)
 	 * this record is a per-CPU thing and having it stored in a SR
 	 * already is a big win.
 	 */
-	void *cpuptr = &_kernel;
+	__asm__ volatile("wsr.MISC0 %0; rsync" : : "r"(cpu0));
 
-	__asm__ volatile("wsr.MISC0 %0; rsync" : : "r"(cpuptr));
 #endif
 
 #if !defined(CONFIG_XTENSA_ASM2) && XCHAL_CP_NUM > 0
@@ -102,7 +112,7 @@ static inline void _IntLibInit(void)
 }
 #endif
 
-#define _is_in_isr() (_kernel.nested != 0)
+#define _is_in_isr() (_arch_curr_cpu()->nested != 0)
 
 #endif /* _ASMLANGUAGE */
 

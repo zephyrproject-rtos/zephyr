@@ -34,7 +34,7 @@ static inline unsigned int _Swap(unsigned int key)
 	struct k_thread *new_thread, *old_thread;
 	int ret;
 
-	old_thread = _kernel.current;
+	old_thread = _current;
 
 	_check_stack_sentinel();
 	_update_time_slice_before_swap();
@@ -43,11 +43,11 @@ static inline unsigned int _Swap(unsigned int key)
 
 	old_thread->swap_retval = -EAGAIN;
 
-	_kernel.current = new_thread;
+	_current = new_thread;
 	_arch_switch(new_thread->switch_handle,
 		     &old_thread->switch_handle);
 
-	ret =_kernel.current->swap_retval;
+	ret = _current->swap_retval;
 
 	irq_unlock(key);
 

@@ -140,16 +140,16 @@ static void dump_stack(int *stack)
 #if CONFIG_XTENSA_ASM2
 static inline void *restore_stack(void *interrupted_stack)
 {
-	if (!_is_preempt(_kernel.current)) {
+	if (!_is_preempt(_current)) {
 		return interrupted_stack;
 	}
 
 	int key = irq_lock();
 
-	_kernel.current->switch_handle = interrupted_stack;
-	_kernel.current = _get_next_ready_thread();
+	_current->switch_handle = interrupted_stack;
+	_current = _get_next_ready_thread();
 
-	void *ret = _kernel.current->switch_handle;
+	void *ret = _current->switch_handle;
 
 	irq_unlock(key);
 
