@@ -2206,7 +2206,12 @@ def parse_arguments():
         help="Execute time-consuming test cases that have been marked "
         "as 'slow' in testcase.yaml. Normally these are only built.")
     parser.add_argument("-R", "--enable-asserts", action="store_true",
-                        help="Build all test cases with assertions enabled.")
+                        default=True,
+                        help="Build all test cases with assertions enabled. "
+                        "Default to assertions being enabled.")
+    parser.add_argument("--disable-asserts", action="store_false",
+                        dest="enable_asserts",
+                        help="Build all test cases with assertions disabled.")
     parser.add_argument("-Q", "--error-on-deprecations", action="store_false",
                         help="Error on deprecation warnings.")
 
