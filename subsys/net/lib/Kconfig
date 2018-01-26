@@ -28,4 +28,6 @@ source "subsys/net/lib/app/Kconfig"
 
 source "subsys/net/lib/sockets/Kconfig"
 
+source "subsys/net/lib/async_socket/Kconfig"
+
 endmenu
