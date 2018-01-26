@@ -79,8 +79,7 @@ struct _ready_q {
 
 typedef struct _ready_q _ready_q_t;
 
-struct _kernel {
-
+struct _cpu {
 	/* nested interrupt count */
 	u32_t nested;
 
@@ -89,6 +88,30 @@ struct _kernel {
 
 	/* currently scheduled thread */
 	struct k_thread *current;
+};
+
+typedef struct _cpu _cpu_t;
+
+struct _kernel {
+	/* For compatibility with pre-SMP code, union the first CPU
+	 * record with the legacy fields so code can continue to use
+	 * the "_kernel.XXX" expressions and assembly offsets.
+	 */
+	union {
+		struct _cpu cpus[CONFIG_MP_NUM_CPUS];
+#ifndef CONFIG_SMP
+		struct {
+			/* nested interrupt count */
+			u32_t nested;
+
+			/* interrupt stack pointer base */
+			char *irq_stack;
+
+			/* currently scheduled thread */
+			struct k_thread *current;
+		};
+#endif
+	};
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 	/* queue of timeouts */
@@ -131,7 +154,12 @@ typedef struct _kernel _kernel_t;
 
 extern struct _kernel _kernel;
 
+#ifdef CONFIG_SMP
+#define _current (_arch_curr_cpu()->current)
+#else
 #define _current _kernel.current
+#endif
+
 #define _ready_q _kernel.ready_q
 #define _timeout_q _kernel.timeout_q
 #define _threads _kernel.threads

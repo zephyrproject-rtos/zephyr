@@ -11,6 +11,7 @@
 #include <xtensa/config/core-isa.h>
 #include <xtensa/corebits.h>
 
+#include <kernel_structs.h>
 #include <string.h>
 #include <toolchain/gcc.h>
 #include <zephyr/types.h>
@@ -59,6 +60,13 @@ void __attribute__((section(".iram1"))) __start(void)
 
 	/* Disable CPU1 while we figure out how to have SMP in Zephyr. */
 	*app_cpu_config_reg &= ~DPORT_APPCPU_CLKGATE_EN;
+
+	/* Initialize the architecture CPU pointer.  Some of the
+	 * initialization code wants a valid _current before
+	 * kernel_arch_init() is invoked.
+	 */
+	__asm__ volatile("wsr.MISC0 %0; rsync" : : "r"(&_kernel.cpus[0]));
+
 
 	/* Start Zephyr */
 	_Cstart();
