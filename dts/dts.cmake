@@ -93,10 +93,13 @@ if(CONFIG_HAS_DTS)
   if(EXISTS ${DTS_SOC_FIXUP_FILE})
     set(DTS_SOC_FIXUP -f ${DTS_SOC_FIXUP_FILE})
   endif()
+  if(EXISTS ${APPLICATION_SOURCE_DIR}/dts.fixup)
+    set(DTS_APP_FIXUP -f ${APPLICATION_SOURCE_DIR}/dts.fixup)
+  endif()
   set(CMD_EXTRACT_DTS_INCLUDES ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/dts/extract_dts_includes.py
     --dts ${BOARD_FAMILY}.dts_compiled
     --yaml ${PROJECT_SOURCE_DIR}/dts/bindings
-    ${DTS_SOC_FIXUP} ${DTS_BOARD_FIXUP}
+    ${DTS_SOC_FIXUP} ${DTS_BOARD_FIXUP} ${DTS_APP_FIXUP}
     )
   execute_process(
     COMMAND ${CMD_EXTRACT_DTS_INCLUDES}
