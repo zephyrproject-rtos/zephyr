@@ -1,0 +1,31 @@
+# Kconfig - Async sockets over BSD Sockets
+
+#
+# Copyright (c) 2018, Texas Instruments Incorporated
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig NET_ASYNC_SOCKET
+	bool "Async socket API over BSD Sockets"
+	default n
+	select NET_SOCKETS
+	select NET_SOCKETS_POSIX_NAMES
+	select NEWLIB_LIBC # Needed to find <sys/fcntl.h>
+	help
+	  Asynchronous adaptation layer over BSD sockets".
+
+if NET_ASYNC_SOCKET
+
+config NET_DEBUG_ASYNC_SOCKET
+	bool "Debug Async Sockets API"
+	default n
+	default y if NET_LOG_GLOBAL
+	help
+	  Enables logging for async sockets code.
+
+config NET_ASYNC_SOCKET_PRIO
+	int "Startup priority for the async socket server"
+	default 90
+
+endif # NET_ASYNC_SOCKET
