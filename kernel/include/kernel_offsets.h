@@ -17,14 +17,20 @@
 
 GEN_ABS_SYM_BEGIN(_OffsetAbsSyms)
 
+#ifndef CONFIG_SMP
 GEN_OFFSET_SYM(_kernel_t, current);
+GEN_OFFSET_SYM(_kernel_t, nested);
+GEN_OFFSET_SYM(_kernel_t, irq_stack);
+#endif
+
+GEN_OFFSET_SYM(_cpu_t, current);
+GEN_OFFSET_SYM(_cpu_t, nested);
+GEN_OFFSET_SYM(_cpu_t, irq_stack);
 
 #if defined(CONFIG_THREAD_MONITOR)
 GEN_OFFSET_SYM(_kernel_t, threads);
 #endif
 
-GEN_OFFSET_SYM(_kernel_t, nested);
-GEN_OFFSET_SYM(_kernel_t, irq_stack);
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 GEN_OFFSET_SYM(_kernel_t, idle);
 #endif
