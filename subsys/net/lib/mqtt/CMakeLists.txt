@@ -1,6 +1,7 @@
 zephyr_library()
 
 zephyr_library_sources(
+  net_utils.c
   mqtt_pkt.c
   mqtt.c
   )
