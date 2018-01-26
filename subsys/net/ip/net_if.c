@@ -410,6 +410,13 @@ static void join_mcast_solicit_node(struct net_if *iface,
 	struct in6_addr addr;
 	int ret;
 
+#if defined(CONFIG_NET_L2_BT)
+	/* No need to join solicited-node, RFC 7668 ch 3.2.2 */
+	if (iface->l2 == &NET_L2_GET_NAME(BLUETOOTH)) {
+		return;
+	}
+#endif
+
 	/* Join to needed multicast groups, RFC 4291 ch 2.8 */
 	net_ipv6_addr_create_solicited_node(my_addr, &addr);
 
