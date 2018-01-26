@@ -1,18 +1,18 @@
 /*
- * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2017 Clage GmbH
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /dts-v1/;
-#include <st/stm32f411.dtsi>
+#include <st/stm32f072.dtsi>
 
 / {
-	model = "STMicroelectronics STM32F411RE-NUCLEO board";
-	compatible = "st,stm32f411re-nucleo", "st,stm32f411";
+	model = "STMicroelectronics STM32F072B-DISCO board";
+	compatible = "st,stm32f072b-disco", "st,stm32f072";
 
 	chosen {
-		zephyr,console = &usart2;
+		zephyr,console = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
@@ -25,22 +25,16 @@
 	status = "ok";
 };
 
-&usart2 {
-	current-speed = <115200>;
-	pinctrl-0 = <&usart2_pins_a>;
-	pinctrl-names = "default";
-	status = "ok";
-};
-
 &i2c1 {
 	status = "ok";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &i2c2 {
+	status = "ok";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
-&i2c3 {
-	clock-frequency = <I2C_BITRATE_FAST>;
+&spi1 {
+	status = "ok";
 };

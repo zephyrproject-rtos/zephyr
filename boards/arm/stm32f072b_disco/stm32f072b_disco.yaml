@@ -1,0 +1,13 @@
+identifier: stm32f072b_disco
+name: STM32F072B-DISCO
+type: mcu
+arch: arm
+ram: 16
+flash: 128
+toolchain:
+  - zephyr
+  - gccarmemb
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
