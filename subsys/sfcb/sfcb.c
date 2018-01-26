@@ -167,7 +167,7 @@ void _sfcb_entry_sector_advance(struct sfcb_fs *fs) {
    the entry sector has been updated to point to the sector just after the
    sector being gc'ed */
 int _sfcb_gc(struct sfcb_fs *fs, off_t addr) {
-  int len;
+  int len,bytes_to_copy;
   off_t rd_addr;
   struct sfcb_entry walker, search;
   struct _fcb_data_hdr head;
@@ -194,24 +194,18 @@ int _sfcb_gc(struct sfcb_fs *fs, off_t addr) {
       DBG_SFCB("Copying entry with id %x to front of circular buffer\n", search.id);
       rd_addr = _sfcb_head_addr_in_flash(fs, &walker);
       len = _sfcb_entry_len_in_flash(fs, walker.len);
-      while (len>sizeof(buf)) {
-        if (sfcb_fs_flash_read(fs, rd_addr, &buf, sizeof(buf))) {
+      while (len>0) {
+        bytes_to_copy=min(SFCB_MOVE_BLOCK_SIZE,len);
+        if (sfcb_fs_flash_read(fs, rd_addr, &buf, bytes_to_copy)) {
           return SFCB_ERR_FLASH;
         }
-        if (sfcb_fs_flash_write(fs, fs->write_location, &buf, sizeof(buf))) {
+        if (sfcb_fs_flash_write(fs, fs->write_location, &buf, bytes_to_copy)) {
           return SFCB_ERR_FLASH;
         }
-        len -= sizeof(buf);
-        rd_addr += sizeof(buf);
-        fs->write_location += sizeof(buf);
+        len -= bytes_to_copy;
+        rd_addr += bytes_to_copy;
+        fs->write_location += bytes_to_copy;
       }
-      if (sfcb_fs_flash_read(fs, rd_addr, &buf, len)) {
-        return SFCB_ERR_FLASH;
-      }
-      if (sfcb_fs_flash_write(fs, fs->write_location, &buf, len)) {
-        return SFCB_ERR_FLASH;
-      }
-      fs->write_location += len;
     }
     _sfcb_addr_advance(fs,&walker.data_addr, _sfcb_entry_len_in_flash(fs,walker.len));
   }
