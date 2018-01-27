@@ -1018,7 +1018,10 @@ static struct seg_rx *seg_rx_find(struct bt_mesh_net_rx *net_rx,
 			continue;
 		}
 
-		if (rx->seq_auth == *seq_auth) {
+		/* Return newer RX context in addition to an exact match, so
+		 * the calling function can properly discard an old SeqAuth.
+		 */
+		if (rx->seq_auth >= *seq_auth) {
 			return rx;
 		}
 
@@ -1133,6 +1136,12 @@ static int trans_seg(struct net_buf_simple *buf, struct bt_mesh_net_rx *net_rx,
 	/* Look for old RX sessions */
 	rx = seg_rx_find(net_rx, seq_auth);
 	if (rx) {
+		/* Discard old SeqAuth packet */
+		if (rx->seq_auth > *seq_auth) {
+			BT_WARN("Ignoring old SeqAuth");
+			return -EINVAL;
+		}
+
 		if (!seg_rx_is_valid(rx, net_rx, hdr, seg_n)) {
 			return -EINVAL;
 		}
