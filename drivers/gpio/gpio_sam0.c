@@ -5,11 +5,9 @@
  */
 
 #include <errno.h>
-#include <kernel.h>
 #include <device.h>
-#include <init.h>
-#include <soc.h>
 #include <gpio.h>
+#include <soc.h>
 
 struct gpio_sam0_config {
 	PortGroup *regs;
@@ -22,11 +20,49 @@ static int gpio_sam0_config(struct device *dev, int access_op, u32_t pin,
 			    int flags)
 {
 	const struct gpio_sam0_config *config = DEV_CFG(dev);
+	PortGroup *regs = config->regs;
 	u32_t mask = 1 << pin;
+	bool is_out = (flags & GPIO_DIR_MASK) == GPIO_DIR_OUT;
+	int pud = flags & GPIO_PUD_MASK;
+	PORT_PINCFG_Type pincfg;
 
 	if (access_op != GPIO_ACCESS_BY_PIN) {
 		return -ENOTSUP;
 	}
+
+	/* Builds the configuration and writes it in one go */
+	pincfg.reg = 0;
+	pincfg.bit.INEN = 1;
+
+	/* Direction */
+	if (is_out) {
+		regs->DIRSET.bit.DIRSET = mask;
+	} else {
+		regs->DIRCLR.bit.DIRCLR = mask;
+	}
+
+	/* Pull up / pull down */
+	if (is_out && pud != GPIO_PUD_NORMAL) {
+		return -ENOTSUP;
+	}
+
+	switch (pud) {
+	case GPIO_PUD_NORMAL:
+		break;
+	case GPIO_PUD_PULL_UP:
+		pincfg.bit.PULLEN = 1;
+		regs->OUTSET.reg = mask;
+		break;
+	case GPIO_PUD_PULL_DOWN:
+		pincfg.bit.PULLEN = 1;
+		regs->OUTCLR.reg = mask;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	/* Write the now-built pin configuration */
+	regs->PINCFG[pin] = pincfg;
 
 	if ((flags & GPIO_INT) != 0) {
 		/* TODO(mlhx): implement. */
@@ -35,17 +71,6 @@ static int gpio_sam0_config(struct device *dev, int access_op, u32_t pin,
 
 	if ((flags & GPIO_POL_MASK) != GPIO_POL_NORMAL) {
 		return -ENOTSUP;
-	}
-
-	if ((flags & GPIO_PUD_MASK) != GPIO_PUD_NORMAL) {
-		/* TODO(mlhx): implement. */
-		return -ENOTSUP;
-	}
-
-	if ((flags & GPIO_DIR_MASK) == GPIO_DIR_OUT) {
-		config->regs->DIRSET.bit.DIRSET = mask;
-	} else {
-		config->regs->DIRCLR.bit.DIRCLR = mask;
 	}
 
 	return 0;
@@ -94,7 +119,7 @@ static const struct gpio_driver_api gpio_sam0_api = {
 	.read = gpio_sam0_read,
 };
 
-int gpio_sam0_init(struct device *dev) { return 0; }
+static int gpio_sam0_init(struct device *dev) { return 0; }
 
 /* Port A */
 #ifdef CONFIG_GPIO_SAM0_PORTA_BASE_ADDRESS
