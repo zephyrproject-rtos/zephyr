@@ -74,34 +74,97 @@ int zsock_getaddrinfo(const char *host, const char *service,
 		      struct zsock_addrinfo **res);
 
 #if defined(CONFIG_NET_SOCKETS_POSIX_NAMES)
-#define socket zsock_socket
-#define close zsock_close
-#define bind zsock_bind
-#define connect zsock_connect
-#define listen zsock_listen
-#define accept zsock_accept
-#define send zsock_send
-#define recv zsock_recv
-#define fcntl zsock_fcntl
-#define sendto zsock_sendto
-#define recvfrom zsock_recvfrom
+static inline int socket(int family, int type, int proto)
+{
+	return zsock_socket(family, type, proto);
+}
 
-#define poll zsock_poll
+static inline int close(int sock)
+{
+	return zsock_close(sock);
+}
+
+static inline int bind(int sock, const struct sockaddr *addr, socklen_t addrlen)
+{
+	return zsock_bind(sock, addr, addrlen);
+}
+
+static inline int connect(int sock, const struct sockaddr *addr,
+			  socklen_t addrlen)
+{
+	return zsock_connect(sock, addr, addrlen);
+}
+
+static inline int listen(int sock, int backlog)
+{
+	return zsock_listen(sock, backlog);
+}
+
+static inline int accept(int sock, struct sockaddr *addr, socklen_t *addrlen)
+{
+	return zsock_accept(sock, addr, addrlen);
+}
+
+static inline ssize_t send(int sock, const void *buf, size_t len, int flags)
+{
+	return zsock_send(sock, buf, len, flags);
+}
+
+static inline ssize_t recv(int sock, void *buf, size_t max_len, int flags)
+{
+	return zsock_recv(sock, buf, max_len, flags);
+}
+
+/* This conflicts with fcntl.h, so code must include fcntl.h before socket.h: */
+#define fcntl zsock_fcntl
+
+static inline ssize_t sendto(int sock, const void *buf, size_t len, int flags,
+			     const struct sockaddr *dest_addr,
+			     socklen_t addrlen)
+{
+	return zsock_sendto(sock, buf, len, flags, dest_addr, addrlen);
+}
+
+static inline ssize_t recvfrom(int sock, void *buf, size_t max_len, int flags,
+			       struct sockaddr *src_addr, socklen_t *addrlen)
+{
+	return zsock_recvfrom(sock, buf, max_len, flags, src_addr, addrlen);
+}
+
+static inline int poll(struct zsock_pollfd *fds, int nfds, int timeout)
+{
+	return zsock_poll(fds, nfds, timeout);
+}
+
 #define pollfd zsock_pollfd
 #define POLLIN ZSOCK_POLLIN
 #define POLLOUT ZSOCK_POLLOUT
 
-#define inet_ntop net_addr_ntop
-#define inet_pton zsock_inet_pton
+static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
+			      size_t size)
+{
+	return net_addr_ntop(family, src, dst, size);
+}
 
-#define getaddrinfo zsock_getaddrinfo
+static inline int inet_pton(sa_family_t family, const char *src, void *dst)
+{
+	return zsock_inet_pton(family, src, dst);
+}
+
+static inline int getaddrinfo(const char *host, const char *service,
+			      const struct zsock_addrinfo *hints,
+			      struct zsock_addrinfo **res)
+{
+	return zsock_getaddrinfo(host, service, hints, res);
+}
+
 #define addrinfo zsock_addrinfo
 #define EAI_BADFLAGS DNS_EAI_BADFLAGS
 #define EAI_NONAME DNS_EAI_NONAME
 #define EAI_AGAIN DNS_EAI_AGAIN
 #define EAI_FAIL DNS_EAI_FAIL
 #define EAI_NODATA DNS_EAI_NODATA
-#endif
+#endif /* defined(CONFIG_NET_SOCKETS_POSIX_NAMES) */
 
 #ifdef __cplusplus
 }
