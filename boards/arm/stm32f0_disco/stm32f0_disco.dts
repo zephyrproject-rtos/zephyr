@@ -1,0 +1,71 @@
+/*
+ * Copyright (c) 2018 Nathan Tsoi <nathan@vertile.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/stm32f051.dtsi>
+
+/ {
+	model = "STMicroelectronics STM32F0DISCOVERY board";
+	compatible = "st,stm32f058r8-discovery", "st,stm32f051";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
+
+&usart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart1_pins_b>;
+	pinctrl-names = "default";
+	status = "ok";
+};
+
+&usart2 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart2_pins_a>;
+	pinctrl-names = "default";
+	status = "ok";
+};
+
+&flash0 {
+	partitions {
+		/*
+		 * If chosen's zephyr,code-partion is unset, the image will be
+		 * linked into the entire flash device.  If it points to an
+		 * individual partition, the code will be linked to, and
+		 * restricted to that partition.
+		 */
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x00002000>;
+			read-only;
+		};
+
+		/*
+		 * The flash starting at offset 0x2000 and ending at
+		 * offset 0x3999 is reserved for use by the application.
+		 */
+
+		slot0_partition: partition@4000 {
+			label = "image-0";
+			reg = <0x00004000 0x00004000>;
+		};
+		slot1_partition: partition@40000 {
+			label = "image-1";
+			reg = <0x00008000 0x00004000>;
+		};
+		scratch_partition: partition@60000 {
+			label = "image-scratch";
+			reg = <0x0000C000 0x00004000>;
+		};
+	};
+};
