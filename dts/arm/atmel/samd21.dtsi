@@ -61,94 +61,52 @@
 			label = "WATCHDOG_0";
 		};
 
-		sercom0: uart@42000800 {
-			compatible = "atmel,sam0-uart";
+		sercom0: sercom@42000800 {
+			compatible = "atmel,sam0-sercom";
 			reg = <0x42000800 0x40>;
 			interrupts = <9 0>;
 			status = "disabled";
 			label = "SERCOM0";
 		};
 
-		sercom1: uart@42000c00 {
-			compatible = "atmel,sam0-uart";
+		sercom1: sercom@42000c00 {
+			compatible = "atmel,sam0-sercom";
 			reg = <0x42000c00 0x40>;
 			interrupts = <10 0>;
 			status = "disabled";
 			label = "SERCOM1";
 		};
 
-		sercom2: uart@42001000 {
-			compatible = "atmel,sam0-uart";
+		sercom2: sercom@42001000 {
+			compatible = "atmel,sam0-sercom";
 			reg = <0x42001000 0x40>;
 			interrupts = <11 0>;
 			status = "disabled";
 			label = "SERCOM2";
 		};
 
-		sercom3: uart@42001400 {
-			compatible = "atmel,sam0-uart";
+		sercom3: sercom@42001400 {
+			compatible = "atmel,sam0-sercom";
 			reg = <0x42001400 0x40>;
 			interrupts = <12 0>;
 			status = "disabled";
 			label = "SERCOM3";
 		};
 
-		sercom4: uart@42001800 {
-			compatible = "atmel,sam0-uart";
+		sercom4: sercom@42001800 {
+			compatible = "atmel,sam0-sercom";
 			reg = <0x42001800 0x40>;
 			interrupts = <13 0>;
 			status = "disabled";
 			label = "SERCOM4";
 		};
 
-		sercom5: uart@42001C00 {
-			compatible = "atmel,sam0-uart";
+		sercom5: sercom@42001C00 {
+			compatible = "atmel,sam0-sercom";
 			reg = <0x42001C00 0x40>;
 			interrupts = <14 0>;
 			status = "disabled";
 			label = "SERCOM5";
-		};
-
-		spi0: spi@42000800 {
-			compatible = "atmel,sam0-spi";
-			reg = <0x42000800 0x40>;
-			status = "disabled";
-			label = "SPI0";
-		};
-
-		spi1: spi@42000c00 {
-			compatible = "atmel,sam0-spi";
-			reg = <0x42000c00 0x40>;
-			status = "disabled";
-			label = "SPI1";
-		};
-
-		spi2: spi@42001000 {
-			compatible = "atmel,sam0-spi";
-			reg = <0x42001000 0x40>;
-			status = "disabled";
-			label = "SPI2";
-		};
-
-		spi3: spi@42001400 {
-			compatible = "atmel,sam0-spi";
-			reg = <0x42001400 0x40>;
-			status = "disabled";
-			label = "SPI3";
-		};
-
-		spi4: spi@42001800 {
-			compatible = "atmel,sam0-spi";
-			reg = <0x42001800 0x40>;
-			status = "disabled";
-			label = "SPI4";
-		};
-
-		spi5: spi@42001C00 {
-			compatible = "atmel,sam0-spi";
-			reg = <0x42001C00 0x40>;
-			status = "disabled";
-			label = "SPI5";
 		};
 
 		porta: gpio@41004400 {
