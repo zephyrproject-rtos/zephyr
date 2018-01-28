@@ -436,7 +436,7 @@ static const struct spi_driver_api spi_sam0_driver_api = {
 
 #define SPI_SAM0_DEFINE_CONFIG(n)                                            \
 	static const struct spi_sam0_config spi_sam0_config_##n = {          \
-		.regs = &SERCOM##n->SPI,                                     \
+		.regs = (SercomSpi *)CONFIG_SPI_SAM0_SERCOM##n##_BASE_ADDRESS, \
 		.pm_apbcmask = PM_APBCMASK_SERCOM##n,                        \
 		.gclk_clkctrl_id = GCLK_CLKCTRL_ID_SERCOM##n##_CORE,         \
 		.pads = CONFIG_SPI_SAM0_SERCOM##n##_PADS                     \
@@ -448,31 +448,32 @@ static const struct spi_driver_api spi_sam0_driver_api = {
 		SPI_CONTEXT_INIT_LOCK(spi_sam0_dev_data_##n, ctx),           \
 		SPI_CONTEXT_INIT_SYNC(spi_sam0_dev_data_##n, ctx),           \
 	};                                                                   \
-	DEVICE_AND_API_INIT(spi_sam0_##n, CONFIG_SPI_##n##_NAME,             \
+	DEVICE_AND_API_INIT(spi_sam0_##n, \
+			    CONFIG_SPI_SAM0_SERCOM##n##_LABEL,               \
 			    &spi_sam0_init, &spi_sam0_dev_data_##n,          \
 			    &spi_sam0_config_##n, POST_KERNEL,               \
 			    CONFIG_SPI_INIT_PRIORITY, &spi_sam0_driver_api)
 
-#if CONFIG_SPI_0
+#if CONFIG_SPI_SAM0_SERCOM0_BASE_ADDRESS
 SPI_SAM0_DEVICE_INIT(0);
 #endif
 
-#if CONFIG_SPI_1
+#if CONFIG_SPI_SAM0_SERCOM1_BASE_ADDRESS
 SPI_SAM0_DEVICE_INIT(1);
 #endif
 
-#if CONFIG_SPI_2
+#if CONFIG_SPI_SAM0_SERCOM2_BASE_ADDRESS
 SPI_SAM0_DEVICE_INIT(2);
 #endif
 
-#if CONFIG_SPI_3
+#if CONFIG_SPI_SAM0_SERCOM3_BASE_ADDRESS
 SPI_SAM0_DEVICE_INIT(3);
 #endif
 
-#if CONFIG_SPI_4
+#if CONFIG_SPI_SAM0_SERCOM4_BASE_ADDRESS
 SPI_SAM0_DEVICE_INIT(4);
 #endif
 
-#if CONFIG_SPI_5
+#if CONFIG_SPI_SAM0_SERCOM5_BASE_ADDRESS
 SPI_SAM0_DEVICE_INIT(5);
 #endif
