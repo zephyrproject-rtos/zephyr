@@ -103,7 +103,7 @@ static void hwm_sleep_until_next_timer(void)
 		posix_print_trace("\nStopped after %.3Lfs\n",
 				((long double)device_time)/1.0e6);
 
-		main_clean_up(0);
+		posix_exit(0);
 	}
 }
 

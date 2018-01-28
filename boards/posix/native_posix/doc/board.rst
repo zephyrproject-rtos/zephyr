@@ -92,14 +92,16 @@ Therefore these limitations apply:
 
      /* We expect the peripheral done and ready to do something else */
 
+
 - This port is not meant to, and could not possibly help debug races between
   HW and SW, or similar timing related issues.
 
 - You may not use hard coded memory addresses because there is no I/O or
   MMU emulation.
 
+
 Working around these limitations
-==================================
+================================
 
 If a busy wait loop exists, it will become evident as the application will be
 stalled in it. To find the loop, you can run the binary in a debugger and
@@ -162,8 +164,8 @@ Application tests using the ``ztest`` framework will exit after all
 tests have completed.
 
 If you want your application to gracefully finish when it reaches some point,
-you may add a conditionally compiled (CONFIG_BOARD_NATIVE_POSIX) call to
-``main_clean_up(exit_code)`` at that point.
+you may add a conditionally compiled (:option:`CONFIG_ARCH_POSIX`) call to
+``posix_exit(int status)`` at that point.
 
 Debugging
 =========
