@@ -337,9 +337,10 @@ static int finalize_segment(struct net_context *context, struct net_pkt *pkt)
 	return 0;
 }
 
-static struct net_pkt *prepare_segment(struct net_tcp *tcp,
-				       struct tcp_segment *segment,
-				       struct net_pkt *pkt)
+static int prepare_segment(struct net_tcp *tcp,
+			   struct tcp_segment *segment,
+			   struct net_pkt *pkt,
+			   struct net_pkt **out_pkt)
 {
 	struct net_buf *header, *tail = NULL;
 	struct net_context *context = tcp->context;
@@ -347,6 +348,7 @@ static struct net_pkt *prepare_segment(struct net_tcp *tcp,
 	u16_t dst_port, src_port;
 	bool pkt_allocated;
 	u8_t optlen = 0;
+	int status;
 
 	NET_ASSERT(context);
 
@@ -362,7 +364,7 @@ static struct net_pkt *prepare_segment(struct net_tcp *tcp,
 	} else {
 		pkt = net_pkt_get_tx(context, ALLOC_TIMEOUT);
 		if (!pkt) {
-			return NULL;
+			return -ENOMEM;
 		}
 
 		pkt_allocated = true;
@@ -400,18 +402,19 @@ static struct net_pkt *prepare_segment(struct net_tcp *tcp,
 			pkt->frags = tail;
 		}
 
-		return NULL;
+		return -EINVAL;
 	}
 
 	header = net_pkt_get_data(context, ALLOC_TIMEOUT);
 	if (!header) {
+		NET_WARN("[%p] Unable to alloc TCP header", tcp);
 		if (pkt_allocated) {
 			net_pkt_unref(pkt);
 		} else {
 			pkt->frags = tail;
 		}
 
-		return NULL;
+		return -ENOMEM;
 	}
 
 	net_pkt_frag_add(pkt, header);
@@ -438,17 +441,20 @@ static struct net_pkt *prepare_segment(struct net_tcp *tcp,
 		net_pkt_frag_add(pkt, tail);
 	}
 
-	if (finalize_segment(context, pkt) < 0) {
+	status = finalize_segment(context, pkt);
+	if (status < 0) {
 		if (pkt_allocated) {
 			net_pkt_unref(pkt);
 		}
 
-		return NULL;
+		return status;
 	}
 
 	net_tcp_trace(pkt, tcp);
 
-	return pkt;
+	*out_pkt = pkt;
+
+	return 0;
 }
 
 u32_t net_tcp_get_recv_wnd(const struct net_tcp *tcp)
@@ -465,6 +471,7 @@ int net_tcp_prepare_segment(struct net_tcp *tcp, u8_t flags,
 	u32_t seq;
 	u16_t wnd;
 	struct tcp_segment segment = { 0 };
+	int status;
 
 	if (!local) {
 		local = &tcp->context->local;
@@ -520,9 +527,9 @@ int net_tcp_prepare_segment(struct net_tcp *tcp, u8_t flags,
 	segment.options = options;
 	segment.optlen = optlen;
 
-	*send_pkt = prepare_segment(tcp, &segment, *send_pkt);
-	if (!*send_pkt) {
-		return -EINVAL;
+	status = prepare_segment(tcp, &segment, *send_pkt, send_pkt);
+	if (status < 0) {
+		return status;
 	}
 
 	tcp->send_seq = seq;
@@ -659,6 +666,7 @@ int net_tcp_prepare_reset(struct net_tcp *tcp,
 			  struct net_pkt **pkt)
 {
 	struct tcp_segment segment = { 0 };
+	int status = 0;
 
 	if ((net_context_get_state(tcp->context) != NET_CONTEXT_UNCONNECTED) &&
 	    (net_tcp_get_state(tcp) != NET_TCP_SYN_SENT) &&
@@ -673,10 +681,10 @@ int net_tcp_prepare_reset(struct net_tcp *tcp,
 		segment.options = NULL;
 		segment.optlen = 0;
 
-		*pkt = prepare_segment(tcp, &segment, NULL);
+		status = prepare_segment(tcp, &segment, NULL, pkt);
 	}
 
-	return 0;
+	return status;
 }
 
 const char *net_tcp_state_str(enum net_tcp_state state)
