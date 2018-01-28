@@ -18,6 +18,7 @@ enum bt_mesh_adv_type {
 	BT_MESH_ADV_PROV,
 	BT_MESH_ADV_DATA,
 	BT_MESH_ADV_BEACON,
+	BT_MESH_ADV_URI,
 };
 
 typedef void (*bt_mesh_adv_func_t)(struct net_buf *buf, u16_t duration,
