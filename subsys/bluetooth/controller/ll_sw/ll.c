@@ -288,11 +288,17 @@ u8_t *ll_addr_get(u8_t addr_type, u8_t *bdaddr)
 	return _ll_context.pub_addr;
 }
 
-void ll_addr_set(u8_t addr_type, u8_t const *const bdaddr)
+u32_t ll_addr_set(u8_t addr_type, u8_t const *const bdaddr)
 {
+	if (radio_adv_is_enabled() || radio_scan_is_enabled()) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
 	if (addr_type) {
 		memcpy(_ll_context.rnd_addr, bdaddr, BDADDR_SIZE);
 	} else {
 		memcpy(_ll_context.pub_addr, bdaddr, BDADDR_SIZE);
 	}
+
+	return 0;
 }

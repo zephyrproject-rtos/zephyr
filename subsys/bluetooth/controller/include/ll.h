@@ -13,7 +13,7 @@ void ll_reset(void);
 void ll_radio_state_abort(void);
 u32_t ll_radio_state_is_idle(void);
 u8_t *ll_addr_get(u8_t addr_type, u8_t *p_bdaddr);
-void ll_addr_set(u8_t addr_type, u8_t const *const p_bdaddr);
+u32_t ll_addr_set(u8_t addr_type, u8_t const *const p_bdaddr);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 u32_t ll_adv_params_set(u8_t handle, u16_t evt_prop, u32_t interval,

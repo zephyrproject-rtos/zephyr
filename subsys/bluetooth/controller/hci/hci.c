@@ -696,11 +696,12 @@ static void le_set_random_address(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_set_random_address *cmd = (void *)buf->data;
 	struct bt_hci_evt_cc_status *ccst;
+	u32_t status;
 
-	ll_addr_set(1, &cmd->bdaddr.val[0]);
+	status = ll_addr_set(1, &cmd->bdaddr.val[0]);
 
 	ccst = cmd_complete(evt, sizeof(*ccst));
-	ccst->status = 0x00;
+	ccst->status = status;
 }
 
 static void le_read_wl_size(struct net_buf *buf, struct net_buf **evt)
