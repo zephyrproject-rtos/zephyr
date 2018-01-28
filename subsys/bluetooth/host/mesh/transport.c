@@ -946,7 +946,7 @@ static int send_ack(struct bt_mesh_subnet *sub, u16_t src, u16_t dst,
 				NULL, NULL, NULL);
 }
 
-static void seg_rx_reset(struct seg_rx *rx)
+static void seg_rx_reset(struct seg_rx *rx, bool full_reset)
 {
 	BT_DBG("rx %p", rx);
 
@@ -959,12 +959,18 @@ static void seg_rx_reset(struct seg_rx *rx)
 						&rx->seq_auth);
 	}
 
-	/* We don't reset rx->net and rx->seq_auth here since we need to
-	 * be able to send an ack if we receive a segment after we've
-	 * already received the full SDU.
-	 */
-
 	rx->in_use = 0;
+
+	/* We don't always reset these values since we need to be able to
+	 * send an ack if we receive a segment after we've already received
+	 * the full SDU.
+	 */
+	if (full_reset) {
+		rx->seq_auth = 0;
+		rx->sub = NULL;
+		rx->src = BT_MESH_ADDR_UNASSIGNED;
+		rx->dst = BT_MESH_ADDR_UNASSIGNED;
+	}
 }
 
 static void seg_ack(struct k_work *work)
@@ -977,7 +983,7 @@ static void seg_ack(struct k_work *work)
 		BT_WARN("Incomplete timer expired");
 		send_ack(rx->sub, rx->dst, rx->src, rx->ttl,
 			 &rx->seq_auth, 0, rx->obo);
-		seg_rx_reset(rx);
+		seg_rx_reset(rx, true);
 
 		if (IS_ENABLED(CONFIG_BT_TESTING)) {
 			bt_test_mesh_trans_incomp_timer_exp();
@@ -1032,7 +1038,7 @@ static struct seg_rx *seg_rx_find(struct bt_mesh_net_rx *net_rx,
 			/* Clear out the old context since the sender
 			 * has apparently started sending a new SDU.
 			 */
-			seg_rx_reset(rx);
+			seg_rx_reset(rx, true);
 
 			/* Return non-match so caller can re-allocate */
 			return NULL;
@@ -1209,7 +1215,7 @@ found_rx:
 			BT_ERR("Too large SDU len");
 			send_ack(net_rx->sub, net_rx->dst, net_rx->ctx.addr,
 				 net_rx->ctx.send_ttl, seq_auth, 0, rx->obo);
-			seg_rx_reset(rx);
+			seg_rx_reset(rx, true);
 			return -EMSGSIZE;
 		}
 	} else {
@@ -1265,7 +1271,7 @@ found_rx:
 		err = sdu_recv(net_rx, *hdr, ASZMIC(hdr), &rx->buf);
 	}
 
-	seg_rx_reset(rx);
+	seg_rx_reset(rx, false);
 
 	return err;
 }
@@ -1363,9 +1369,7 @@ void bt_mesh_rx_reset(void)
 	BT_DBG("");
 
 	for (i = 0; i < ARRAY_SIZE(seg_rx); i++) {
-		seg_rx_reset(&seg_rx[i]);
-		seg_rx[i].src = BT_MESH_ADDR_UNASSIGNED;
-		seg_rx[i].dst = BT_MESH_ADDR_UNASSIGNED;
+		seg_rx_reset(&seg_rx[i], true);
 	}
 }
 
