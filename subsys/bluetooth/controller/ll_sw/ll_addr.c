@@ -8,9 +8,13 @@
 #include <string.h>
 
 #include <zephyr/types.h>
-#include <toolchain.h>
+#include <bluetooth/hci.h>
+#include <misc/slist.h>
+
+#include "util/util.h"
 
 #include "ll_sw/pdu.h"
+#include "ll_sw/ctrl.h"
 
 static u8_t pub_addr[BDADDR_SIZE];
 static u8_t rnd_addr[BDADDR_SIZE];
@@ -36,11 +40,17 @@ u8_t *ll_addr_get(u8_t addr_type, u8_t *bdaddr)
 	return pub_addr;
 }
 
-void ll_addr_set(u8_t addr_type, u8_t const *const bdaddr)
+u32_t ll_addr_set(u8_t addr_type, u8_t const *const bdaddr)
 {
+	if (radio_adv_is_enabled() || radio_scan_is_enabled()) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
 	if (addr_type) {
 		memcpy(rnd_addr, bdaddr, BDADDR_SIZE);
 	} else {
 		memcpy(pub_addr, bdaddr, BDADDR_SIZE);
 	}
+
+	return 0;
 }
