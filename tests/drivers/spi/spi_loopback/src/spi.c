@@ -14,82 +14,19 @@
 
 #include <spi.h>
 
-#define SPI_CS &spi_cs
+#define SPI_DRV_NAME	CONFIG_SPI_LOOPBACK_DRV_NAME
+#define SPI_SLAVE	CONFIG_SPI_LOOPBACK_SLAVE_NUMBER
+#define SLOW_FREQ	CONFIG_SPI_LOOPBACK_SLOW_FREQ
+#define FAST_FREQ	CONFIG_SPI_LOOPBACK_FAST_FREQ
 
-#if defined(CONFIG_SOC_QUARK_SE_C1000)
-
-#define SPI_DRV_NAME CONFIG_SPI_0_NAME
-#define SPI_SLAVE 1
-#define CS_CTRL_GPIO_DRV_NAME CONFIG_GPIO_QMSI_0_NAME
-
+#if defined(CONFIG_SPI_LOOPBACK_CS_GPIO)
+#define CS_CTRL_GPIO_DRV_NAME CONFIG_SPI_LOOPBACK_CS_CTRL_GPIO_DRV_NAME
 struct spi_cs_control spi_cs = {
-	.gpio_pin = 25,
-	.delay = 0
-};
-
-#elif defined(CONFIG_SOC_QUARK_SE_C1000_SS)
-
-#define SPI_DRV_NAME CONFIG_SPI_0_NAME
-#define SPI_SLAVE 0
-#define CS_CTRL_GPIO_DRV_NAME CONFIG_GPIO_DW_0_NAME
-
-struct spi_cs_control spi_cs = {
-	.gpio_pin = 0,
-	.delay = 0
-};
-
-#elif defined(CONFIG_SOC_EM7D) || defined(CONFIG_SOC_EM9D)
-
-#define SPI_DRV_NAME CONFIG_SPI_0_NAME
-#define SPI_SLAVE 0
-
-#undef SPI_CS
-#define SPI_CS NULL
-#define CS_CTRL_GPIO_DRV_NAME ""
-
-#elif defined(CONFIG_BOARD_NUCLEO_L432KC) || 	\
-      defined(CONFIG_BOARD_DISCO_L475_IOT1) || 	\
-      defined(CONFIG_BOARD_NUCLEO_F091RC) || 	\
-      defined(CONFIG_BOARD_NUCLEO_F334R8) || 	\
-      defined(CONFIG_BOARD_NUCLEO_F401RE) || 	\
-      defined(CONFIG_BOARD_NUCLEO_L476RG)
-
-#define SPI_DRV_NAME CONFIG_SPI_1_NAME
-#define SPI_SLAVE 0
-#define MIN_FREQ 500000
-
-#undef SPI_CS
-#define SPI_CS NULL
-#define CS_CTRL_GPIO_DRV_NAME ""
-
-#elif defined(CONFIG_BOARD_96B_CARBON)
-
-#define SPI_DRV_NAME CONFIG_SPI_2_NAME
-#define SPI_SLAVE 0
-#define MIN_FREQ 500000
-
-#define CS_CTRL_GPIO_DRV_NAME "GPIOC"
-
-struct spi_cs_control spi_cs = {
-	.gpio_pin = 3,
+	.gpio_pin = CONFIG_SPI_LOOPBACK_CS_CTRL_GPIO_PIN,
 	.delay = 0,
 };
-
-#elif defined(CONFIG_BOARD_ARDUINO_ZERO)
-
-#define SPI_DRV_NAME CONFIG_SPI_4_NAME
-#define SPI_SLAVE 0
-#define MIN_FREQ 500000
-
-#define CS_CTRL_GPIO_DRV_NAME CONFIG_GPIO_SAM0_PORTA_LABEL
-
-struct spi_cs_control spi_cs = {
-	.gpio_pin = 3,
-	.delay = 0,
-};
-
+#define SPI_CS (&spi_cs)
 #else
-#undef SPI_CS
 #define SPI_CS NULL
 #define CS_CTRL_GPIO_DRV_NAME ""
 #endif
@@ -115,11 +52,7 @@ static void to_display_format(const u8_t *src, size_t size, char *dst)
 }
 
 struct spi_config spi_slow = {
-#if defined(MIN_FREQ)
-	.frequency = MIN_FREQ,
-#else
-	.frequency = 128000,
-#endif
+	.frequency = SLOW_FREQ,
 	.operation = SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
 	SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE,
 	.slave = SPI_SLAVE,
@@ -127,7 +60,7 @@ struct spi_config spi_slow = {
 };
 
 struct spi_config spi_fast = {
-	.frequency = 16000000,
+	.frequency = FAST_FREQ,
 	.operation = SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
 	SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE,
 	.slave = SPI_SLAVE,
