@@ -1,0 +1,8 @@
+identifier: stm32f0_disco
+name: STM32F0DISCOVERY
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb
+ram: 8
