@@ -160,9 +160,6 @@ Note that the Zephyr kernel does not actually exit once the application is
 finished. It simply goes into the idle loop forever.
 Therefore you must stop the application manually (Ctrl+C in Linux).
 
-Application tests using the ``ztest`` framework will exit after all
-tests have completed.
-
 If you want your application to gracefully finish when it reaches some point,
 you may add a conditionally compiled (:option:`CONFIG_ARCH_POSIX`) call to
 ``posix_exit(int status)`` at that point.
