@@ -22,11 +22,15 @@
 
 &sercom0 {
 	status = "ok";
+	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;
 };
 
-&spi4 {
+&sercom4 {
 	status = "ok";
+	compatible = "atmel,sam0-spi";
+	#address-cells = <1>;
+	#size-cells = <0>;
 };
 
 &flash0 {
