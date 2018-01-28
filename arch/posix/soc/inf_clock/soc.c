@@ -124,7 +124,7 @@ void posix_interrupt_raised(void)
 	 * we stop immediately.
 	 */
 	if (soc_terminate) {
-		main_clean_up(0);
+		posix_exit(0);
 	}
 }
 
@@ -225,7 +225,7 @@ void posix_boot_cpu(void)
 	}
 
 	if (soc_terminate) {
-		main_clean_up(0);
+		posix_exit(0);
 	}
 }
 
