@@ -21,17 +21,29 @@
 
 &sercom0 {
 	status = "ok";
+	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;
 };
 
 &sercom2 {
 	status = "ok";
+	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;
 };
 
 /* Drives the on-board DotStar LED */
-&spi1 {
+&sercom1 {
 	status = "ok";
+	compatible = "atmel,sam0-spi";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	led1: apa102@0 {
+		compatible = "apa,apa102";
+		reg = <0>;
+		spi-max-frequency = <24000000>;
+		label = "LED1";
+	};
 };
 
 &flash0 {
