@@ -852,11 +852,18 @@ static int trans_unseg(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx,
 static inline s32_t ack_timeout(struct seg_rx *rx)
 {
 	s32_t to;
+	u8_t ttl;
+
+	if (rx->ttl == BT_MESH_TTL_DEFAULT) {
+		ttl = bt_mesh_default_ttl_get();
+	} else {
+		ttl = rx->ttl;
+	}
 
 	/* The acknowledgment timer shall be set to a minimum of
 	 * 150 + 50 * TTL milliseconds.
 	 */
-	to = K_MSEC(150 + (50 * rx->ttl));
+	to = K_MSEC(150 + (50 * ttl));
 
 	/* 100 ms for every not yet received segment */
 	to += K_MSEC(((rx->seg_n + 1) - popcount(rx->block)) * 100);
