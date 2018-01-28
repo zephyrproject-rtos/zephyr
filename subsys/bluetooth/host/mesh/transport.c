@@ -49,9 +49,6 @@
 
 #define SEQ_AUTH(iv_index, seq)     (((u64_t)iv_index) << 24 | (u64_t)seq)
 
-/* Retransmit timeout after which to retransmit unacked segments */
-#define SEG_RETRANSMIT_TIMEOUT      K_MSEC(400)
-
 /* Number of retransmit attempts (after the initial transmit) per segment */
 #define SEG_RETRANSMIT_ATTEMPTS     4
 
@@ -66,6 +63,7 @@ static struct seg_tx {
 	u8_t                     seg_n:5,       /* Last segment index */
 				 new_key:1;     /* New/old key */
 	u8_t                     nack_count;    /* Number of unacked segs */
+	u8_t                     ttl;
 	const struct bt_mesh_send_cb *cb;
 	void                    *cb_data;
 	struct k_delayed_work    retransmit;    /* Retransmit timer */
@@ -214,8 +212,16 @@ static void seg_send_start(u16_t duration, int err, void *user_data)
 static void seg_sent(int err, void *user_data)
 {
 	struct seg_tx *tx = user_data;
+	s32_t timeout;
 
-	k_delayed_work_submit(&tx->retransmit, SEG_RETRANSMIT_TIMEOUT);
+	/* "This timer shall be set to a minimum of 200 + 50 * TTL
+	 * milliseconds.". We use 400 since 300 is a common send
+	 * duration for standard HCI, and we need to have a timeout
+	 * that's bigger than that.
+	 */
+	timeout = K_MSEC(400) + 50 * tx->ttl;
+
+	k_delayed_work_submit(&tx->retransmit, timeout);
 }
 
 static const struct bt_mesh_send_cb first_sent_cb = {
@@ -317,6 +323,12 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 	tx->new_key = net_tx->sub->kr_flag;
 	tx->cb = cb;
 	tx->cb_data = cb_data;
+
+	if (net_tx->ctx->send_ttl == BT_MESH_TTL_DEFAULT) {
+		tx->ttl = bt_mesh_default_ttl_get();
+	} else {
+		tx->ttl = net_tx->ctx->send_ttl;
+	}
 
 	seq_zero = tx->seq_auth & 0x1fff;
 
