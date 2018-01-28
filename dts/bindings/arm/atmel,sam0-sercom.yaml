@@ -1,0 +1,27 @@
+---
+title: Atmel SERCOM binding
+id: atmel,sam0-sercom
+version: 0.1
+
+description: >
+    Binding for the Atmel SAM0 multi-protocol (UART, SPI, I2C) SERCOM unit.
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "atmel,sam0-sercom"
+
+    reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+    interrupts:
+      type: array
+      category: required
+      description: required interrupts
+      generation: define
+...
