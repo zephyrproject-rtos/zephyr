@@ -2297,8 +2297,20 @@ static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 				nack = 1;
 			}
 		} else {
+			/* Procedure complete */
+			_radio.conn_curr->llcp_length.ack =
+				_radio.conn_curr->llcp_length.req;
+			_radio.conn_curr->procedure_expire = 0;
+
 			/* resume data packet tx */
 			_radio.conn_curr->pause_tx = 0;
+
+			/* No change in effective octets or time */
+			if (eff_tx_octets == _radio.conn_curr->max_tx_octets &&
+			    eff_tx_time == _radio.conn_curr->max_tx_time &&
+			    eff_rx_time == _radio.conn_curr->max_rx_time) {
+				goto send_length_resp;
+			}
 
 			/* accept the effective tx */
 			_radio.conn_curr->max_tx_octets = eff_tx_octets;
@@ -2310,11 +2322,6 @@ static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 			/* accept the effective tx time */
 			_radio.conn_curr->max_tx_time = eff_tx_time;
 #endif /* CONFIG_BT_CTLR_PHY */
-
-			/* Procedure complete */
-			_radio.conn_curr->llcp_length.ack =
-				_radio.conn_curr->llcp_length.req;
-			_radio.conn_curr->procedure_expire = 0;
 
 			/* prepare event params */
 			lr->max_rx_octets = eff_rx_octets;
@@ -2339,6 +2346,7 @@ static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 			  PDU_DATA_LLCTRL_TYPE_LENGTH_RSP);
 	}
 
+send_length_resp:
 	if (node_tx) {
 		if (nack) {
 			mem_release(node_tx, &_radio.pkt_tx_ctrl_free);
