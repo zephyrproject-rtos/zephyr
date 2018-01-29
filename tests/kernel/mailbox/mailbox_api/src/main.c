@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <ztest.h>
+#include <debug/object_tracing.h>
 /**
  * @addtogroup t_mbox
  * @{
@@ -20,11 +22,12 @@
  * @}
  */
 
-#include <ztest.h>
-
 #define TIMEOUT 100
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define MAIL_LEN 64
+
+#define OBJ_LIST_NAME k_mbox
+#define OBJ_LIST_TYPE struct k_mbox
 
 
 /**TESTPOINT: init via K_MBOX_DEFINE*/
@@ -272,4 +275,35 @@ void test_mbox_target_source_thread_block(void)
 {
 	info_type = TARGET_SOURCE_THREAD_BLOCK;
 	tmbox(&mbox);
+}
+
+void test_mbox_tracing(void)
+{
+	int obj_counter = 0;
+	void *obj_list = NULL;
+
+	obj_list   = SYS_TRACING_HEAD(OBJ_LIST_TYPE, OBJ_LIST_NAME);
+	while (obj_list != NULL) {
+		obj_list = SYS_TRACING_NEXT(OBJ_LIST_TYPE, OBJ_LIST_NAME,
+					    obj_list);
+		obj_counter++;
+	}
+	zassert_equal(obj_counter, 2, "Object count is 0 (should be %d", obj_counter);
+
+}
+
+/*test case main entry*/
+void test_main(void)
+{
+	ztest_test_suite(test_mbox_api,
+			 ztest_unit_test(test_mbox_kinit),/*keep init first!*/
+			 ztest_unit_test(test_mbox_kdefine),
+			 ztest_unit_test(test_mbox_put_get_null),
+			 ztest_unit_test(test_mbox_put_get_buffer),
+			 ztest_unit_test(test_mbox_async_put_get_buffer),
+			 ztest_unit_test(test_mbox_async_put_get_block),
+			 ztest_unit_test(test_mbox_target_source_thread_buffer),
+			 ztest_unit_test(test_mbox_tracing),
+			 ztest_unit_test(test_mbox_target_source_thread_block));
+	ztest_run_test_suite(test_mbox_api);
 }
