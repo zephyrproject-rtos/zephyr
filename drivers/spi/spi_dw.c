@@ -319,7 +319,7 @@ static int spi_dw_transceive(const struct spi_config *config,
 	return transceive(config, tx_bufs, rx_bufs, false, NULL);
 }
 
-#ifdef CONFIG_POLL
+#ifdef CONFIG_SPI_ASYNC
 static int spi_dw_transceive_async(const struct spi_config *config,
 				   const struct spi_buf_set *tx_bufs,
 				   const struct spi_buf_set *rx_bufs,
@@ -329,7 +329,7 @@ static int spi_dw_transceive_async(const struct spi_config *config,
 
 	return transceive(config, tx_bufs, rx_bufs, true, async);
 }
-#endif /* CONFIG_POLL */
+#endif /* CONFIG_SPI_ASYNC */
 
 static int spi_dw_release(const struct spi_config *config)
 {
@@ -379,9 +379,9 @@ out:
 
 static const struct spi_driver_api dw_spi_api = {
 	.transceive = spi_dw_transceive,
-#ifdef CONFIG_POLL
+#ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_dw_transceive_async,
-#endif
+#endif /* CONFIG_SPI_ASYNC */
 	.release = spi_dw_release,
 };
 

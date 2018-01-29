@@ -230,9 +230,9 @@ typedef int (*spi_api_release)(const struct spi_config *config);
  */
 struct spi_driver_api {
 	spi_api_io transceive;
-#ifdef CONFIG_POLL
+#ifdef CONFIG_SPI_ASYNC
 	spi_api_io_async transceive_async;
-#endif
+#endif /* CONFIG_SPI_ASYNC */
 	spi_api_release release;
 };
 
@@ -294,7 +294,7 @@ static inline int spi_write(const struct spi_config *config,
 	return spi_transceive(config, tx_bufs, NULL);
 }
 
-#ifdef CONFIG_POLL
+#ifdef CONFIG_SPI_ASYNC
 /**
  * @brief Read/write the specified amount of data from the SPI driver.
  *
@@ -367,7 +367,7 @@ static inline int spi_write_async(const struct spi_config *config,
 
 	return api->transceive_async(config, tx_bufs, NULL, async);
 }
-#endif /* CONFIG_POLL */
+#endif /* CONFIG_SPI_ASYNC */
 
 /**
  * @brief Release the SPI device locked on by the current config

@@ -413,7 +413,7 @@ done:
 	return err;
 }
 
-#ifdef CONFIG_POLL
+#ifdef CONFIG_SPI_ASYNC
 static int spi_sam0_transceive_async(const struct spi_config *config,
 				     const struct spi_buf_set *tx_bufs,
 				     const struct spi_buf_set *rx_bufs,
@@ -421,7 +421,7 @@ static int spi_sam0_transceive_async(const struct spi_config *config,
 {
 	return -ENOTSUP;
 }
-#endif
+#endif /* CONFIG_SPI_ASYNC */
 
 static int spi_sam0_release(const struct spi_config *config)
 {
@@ -460,7 +460,7 @@ static int spi_sam0_init(struct device *dev)
 
 static const struct spi_driver_api spi_sam0_driver_api = {
 	.transceive = spi_sam0_transceive,
-#ifdef CONFIG_POLL
+#ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_sam0_transceive_async,
 #endif
 	.release = spi_sam0_release,
