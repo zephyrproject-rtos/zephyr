@@ -191,7 +191,7 @@ struct spi_buf {
  * @brief Callback API for I/O
  * See spi_transceive() for argument descriptions
  */
-typedef int (*spi_api_io)(struct spi_config *config,
+typedef int (*spi_api_io)(const struct spi_config *config,
 			  const struct spi_buf *tx_bufs,
 			  size_t tx_count,
 			  struct spi_buf *rx_bufs,
@@ -202,7 +202,7 @@ typedef int (*spi_api_io)(struct spi_config *config,
  * @brief Callback API for asynchronous I/O
  * See spi_transceive_async() for argument descriptions
  */
-typedef int (*spi_api_io_async)(struct spi_config *config,
+typedef int (*spi_api_io_async)(const struct spi_config *config,
 				const struct spi_buf *tx_bufs,
 				size_t tx_count,
 				struct spi_buf *rx_bufs,
@@ -214,7 +214,7 @@ typedef int (*spi_api_io_async)(struct spi_config *config,
  * @brief Callback API for unlocking SPI device.
  * See spi_release() for argument descriptions
  */
-typedef int (*spi_api_release)(struct spi_config *config);
+typedef int (*spi_api_release)(const struct spi_config *config);
 
 
 /**
@@ -244,13 +244,13 @@ struct spi_driver_api {
  *
  * @retval 0 If successful, negative errno code otherwise.
  */
-__syscall int spi_transceive(struct spi_config *config,
+__syscall int spi_transceive(const struct spi_config *config,
 			     const struct spi_buf *tx_bufs,
 			     size_t tx_count,
 			     struct spi_buf *rx_bufs,
 			     size_t rx_count);
 
-static inline int _impl_spi_transceive(struct spi_config *config,
+static inline int _impl_spi_transceive(const struct spi_config *config,
 				       const struct spi_buf *tx_bufs,
 				       size_t tx_count,
 				       struct spi_buf *rx_bufs,
@@ -272,7 +272,7 @@ static inline int _impl_spi_transceive(struct spi_config *config,
  *
  * @retval 0 If successful, negative errno code otherwise.
  */
-static inline int spi_read(struct spi_config *config,
+static inline int spi_read(const struct spi_config *config,
 			   struct spi_buf *rx_bufs,
 			   size_t rx_count)
 {
@@ -290,7 +290,7 @@ static inline int spi_read(struct spi_config *config,
  *
  * @retval 0 If successful, negative errno code otherwise.
  */
-static inline int spi_write(struct spi_config *config,
+static inline int spi_write(const struct spi_config *config,
 			    const struct spi_buf *tx_bufs,
 			    size_t tx_count)
 {
@@ -317,7 +317,7 @@ static inline int spi_write(struct spi_config *config,
  *
  * @retval 0 If successful, negative errno code otherwise.
  */
-static inline int spi_transceive_async(struct spi_config *config,
+static inline int spi_transceive_async(const struct spi_config *config,
 				       const struct spi_buf *tx_bufs,
 				       size_t tx_count,
 				       struct spi_buf *rx_bufs,
@@ -345,7 +345,7 @@ static inline int spi_transceive_async(struct spi_config *config,
  *
  * @retval 0 If successful, negative errno code otherwise.
  */
-static inline int spi_read_async(struct spi_config *config,
+static inline int spi_read_async(const struct spi_config *config,
 				 struct spi_buf *rx_bufs,
 				 size_t rx_count,
 				 struct k_poll_signal *async)
@@ -371,7 +371,7 @@ static inline int spi_read_async(struct spi_config *config,
  *
  * @retval 0 If successful, negative errno code otherwise.
  */
-static inline int spi_write_async(struct spi_config *config,
+static inline int spi_write_async(const struct spi_config *config,
 				  const struct spi_buf *tx_bufs,
 				  size_t tx_count,
 				  struct k_poll_signal *async)
@@ -395,9 +395,9 @@ static inline int spi_write_async(struct spi_config *config,
  *
  * @param config Pointer to a valid spi_config structure instance.
  */
-__syscall int spi_release(struct spi_config *config);
+__syscall int spi_release(const struct spi_config *config);
 
-static inline int _impl_spi_release(struct spi_config *config)
+static inline int _impl_spi_release(const struct spi_config *config)
 {
 	const struct spi_driver_api *api = config->dev->driver_api;
 
