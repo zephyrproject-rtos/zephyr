@@ -52,6 +52,15 @@
 #include <net/ethernet.h>
 #endif
 
+#if defined(CONFIG_NET_GPTP)
+#include <net/gptp.h>
+#include "ethernet/gptp/gptp_messages.h"
+#include "ethernet/gptp/gptp_md.h"
+#include "ethernet/gptp/gptp_state.h"
+#include "ethernet/gptp/gptp_data_set.h"
+#include "ethernet/gptp/gptp_private.h"
+#endif
+
 #include "net_shell.h"
 #include "net_stats.h"
 
@@ -1542,6 +1551,546 @@ int net_shell_cmd_dns(int argc, char *argv[])
 	return 0;
 }
 
+#if defined(CONFIG_NET_GPTP)
+static void gptp_port_cb(int port, struct net_if *iface, void *user_data)
+{
+	int *count = user_data;
+
+	if (*count == 0) {
+		printk("Port Interface\n");
+	}
+
+	(*count)++;
+
+	printk("%2d   %p\n", port, iface);
+}
+
+static const char *pdelay_req2str(enum gptp_pdelay_req_states state)
+{
+	switch (state) {
+	case GPTP_PDELAY_REQ_NOT_ENABLED:
+		return "REQ_NOT_ENABLED";
+	case GPTP_PDELAY_REQ_INITIAL_SEND_REQ:
+		return "INITIAL_SEND_REQ";
+	case GPTP_PDELAY_REQ_RESET:
+		return "REQ_RESET";
+	case GPTP_PDELAY_REQ_SEND_REQ:
+		return "SEND_REQ";
+	case GPTP_PDELAY_REQ_WAIT_RESP:
+		return "WAIT_RESP";
+	case GPTP_PDELAY_REQ_WAIT_FOLLOW_UP:
+		return "WAIT_FOLLOW_UP";
+	case GPTP_PDELAY_REQ_WAIT_ITV_TIMER:
+		return "WAIT_ITV_TIMER";
+	}
+
+	return "<unknown>";
+};
+
+static const char *pdelay_resp2str(enum gptp_pdelay_resp_states state)
+{
+	switch (state) {
+	case GPTP_PDELAY_RESP_NOT_ENABLED:
+		return "RESP_NOT_ENABLED";
+	case GPTP_PDELAY_RESP_INITIAL_WAIT_REQ:
+		return "INITIAL_WAIT_REQ";
+	case GPTP_PDELAY_RESP_WAIT_REQ:
+		return "WAIT_REQ";
+	case GPTP_PDELAY_RESP_WAIT_TSTAMP:
+		return "WAIT_TSTAMP";
+	}
+
+	return "<unknown>";
+}
+
+static const char *sync_rcv2str(enum gptp_sync_rcv_states state)
+{
+	switch (state) {
+	case GPTP_SYNC_RCV_DISCARD:
+		return "DISCARD";
+	case GPTP_SYNC_RCV_WAIT_SYNC:
+		return "WAIT_SYNC";
+	case GPTP_SYNC_RCV_WAIT_FOLLOW_UP:
+		return "WAIT_FOLLOW_UP";
+	}
+
+	return "<unknown>";
+}
+
+static const char *sync_send2str(enum gptp_sync_send_states state)
+{
+	switch (state) {
+	case GPTP_SYNC_SEND_INITIALIZING:
+		return "INITIALIZING";
+	case GPTP_SYNC_SEND_SEND_SYNC:
+		return "SEND_SYNC";
+	case GPTP_SYNC_SEND_SEND_FUP:
+		return "SEND_FUP";
+	}
+
+	return "<unknown>";
+}
+
+static const char *pss_rcv2str(enum gptp_pss_rcv_states state)
+{
+	switch (state) {
+	case GPTP_PSS_RCV_DISCARD:
+		return "DISCARD";
+	case GPTP_PSS_RCV_RECEIVED_SYNC:
+		return "RECEIVED_SYNC";
+	}
+
+	return "<unknown>";
+}
+
+static const char *pss_send2str(enum gptp_pss_send_states state)
+{
+	switch (state) {
+	case GPTP_PSS_SEND_TRANSMIT_INIT:
+		return "TRANSMIT_INIT";
+	case GPTP_PSS_SEND_SYNC_RECEIPT_TIMEOUT:
+		return "SYNC_RECEIPT_TIMEOUT";
+	case GPTP_PSS_SEND_SEND_MD_SYNC:
+		return "SEND_MD_SYNC";
+	case GPTP_PSS_SEND_SET_SYNC_RECEIPT_TIMEOUT:
+		return "SET_SYNC_RECEIPT_TIMEOUT";
+	}
+
+	return "<unknown>";
+}
+
+static const char *pa_rcv2str(enum gptp_pa_rcv_states state)
+{
+	switch (state) {
+	case GPTP_PA_RCV_DISCARD:
+		return "DISCARD";
+	case GPTP_PA_RCV_RECEIVE:
+		return "RECEIVE";
+	}
+
+	return "<unknown>";
+};
+
+static const char *pa_info2str(enum gptp_pa_info_states state)
+{
+	switch (state) {
+	case GPTP_PA_INFO_DISABLED:
+		return "DISABLED";
+	case GPTP_PA_INFO_POST_DISABLED:
+		return "POST_DISABLED";
+	case GPTP_PA_INFO_AGED:
+		return "AGED";
+	case GPTP_PA_INFO_UPDATE:
+		return "UPDATE";
+	case GPTP_PA_INFO_CURRENT:
+		return "CURRENT";
+	case GPTP_PA_INFO_RECEIVE:
+		return "RECEIVE";
+	case GPTP_PA_INFO_SUPERIOR_MASTER_PORT:
+		return "SUPERIOR_MASTER_PORT";
+	case GPTP_PA_INFO_REPEATED_MASTER_PORT:
+		return "REPEATED_MASTER_PORT";
+	case GPTP_PA_INFO_INFERIOR_MASTER_OR_OTHER_PORT:
+		return "INFERIOR_MASTER_OR_OTHER_PORT";
+	}
+
+	return "<unknown>";
+};
+
+static const char *pa_transmit2str(enum gptp_pa_transmit_states state)
+{
+	switch (state) {
+	case GPTP_PA_TRANSMIT_INIT:
+		return "INIT";
+	case GPTP_PA_TRANSMIT_PERIODIC:
+		return "PERIODIC";
+	case GPTP_PA_TRANSMIT_IDLE:
+		return "IDLE";
+	case GPTP_PA_TRANSMIT_POST_IDLE:
+		return "POST_IDLE";
+	}
+
+	return "<unknown>";
+};
+
+static const char *site_sync2str(enum gptp_site_sync_sync_states state)
+{
+	switch (state) {
+	case GPTP_SSS_INITIALIZING:
+		return "INITIALIZING";
+	case GPTP_SSS_RECEIVING_SYNC:
+		return "RECEIVING_SYNC";
+	}
+
+	return "<unknown>";
+}
+
+static const char *clk_slave2str(enum gptp_clk_slave_sync_states state)
+{
+	switch (state) {
+	case GPTP_CLK_SLAVE_SYNC_INITIALIZING:
+		return "INITIALIZING";
+	case GPTP_CLK_SLAVE_SYNC_SEND_SYNC_IND:
+		return "SEND_SYNC_IND";
+	}
+
+	return "<unknown>";
+};
+
+static const char *pr_selection2str(enum gptp_pr_selection_states state)
+{
+	switch (state) {
+	case GPTP_PR_SELECTION_INIT_BRIDGE:
+		return "INIT_BRIDGE";
+	case GPTP_PR_SELECTION_ROLE_SELECTION:
+		return "ROLE_SELECTION";
+	}
+
+	return "<unknown>";
+};
+
+static const char *cms_rcv2str(enum gptp_cms_rcv_states state)
+{
+	switch (state) {
+	case GPTP_CMS_RCV_INITIALIZING:
+		return "INITIALIZING";
+	case GPTP_CMS_RCV_WAITING:
+		return "WAITING";
+	case GPTP_CMS_RCV_SOURCE_TIME:
+		return "SOURCE_TIME";
+	}
+
+	return "<unknown>";
+};
+
+static void gptp_print_port_info(int port)
+{
+	struct gptp_port_bmca_data *port_bmca_data;
+	struct gptp_port_param_ds *port_param_ds;
+	struct gptp_port_states *port_state;
+	struct gptp_port_ds *port_ds;
+	struct net_if *iface;
+	int ret, i;
+
+	ret = gptp_get_port_data(gptp_get_domain(),
+				 port,
+				 &port_ds,
+				 &port_param_ds,
+				 &port_state,
+				 &port_bmca_data,
+				 &iface);
+	if (ret < 0) {
+		printk("Cannot get gPTP information for port %d (%d)\n",
+		       port, ret);
+		return;
+	}
+
+	printk("Port id    : %d\n", port_ds->port_id.port_number);
+
+	printk("Clock id   : ");
+	for (i = 0; i < sizeof(port_ds->port_id.clk_id); i++) {
+		printk("%02x", port_ds->port_id.clk_id[i]);
+
+		if (i != (sizeof(port_ds->port_id.clk_id) - 1)) {
+			printk(":");
+		}
+	}
+	printk("\n");
+
+	printk("Version    : %d\n", port_ds->version);
+	printk("AS capable : %s\n", port_ds->as_capable ? "yes" : "no");
+
+	printk("\nConfiguration:\n");
+	printk("Time synchronization and Best Master Selection enabled        "
+	       ": %s\n", port_ds->ptt_port_enabled ? "yes" : "no");
+	printk("The port is measuring the path delay                          "
+	       ": %s\n", port_ds->is_measuring_delay ? "yes" : "no");
+	printk("One way propagation time on %s    : %u\n",
+	       "the link attached to this port",
+	       (u32_t)port_ds->neighbor_prop_delay);
+	printk("Propagation time threshold for %s : %u\n",
+	       "the link attached to this port",
+	       (u32_t)port_ds->neighbor_prop_delay_thresh);
+	printk("Estimate of the ratio of the frequency with the peer          "
+	       ": %u\n", (u32_t)port_ds->neighbor_rate_ratio);
+	printk("Asymmetry on the link relative to the grand master time base  "
+	       ": %lld\n", port_ds->delay_asymmetry);
+	printk("Maximum interval between sync %s                        "
+	       ": %llu\n", "messages", port_ds->sync_receipt_timeout_time_itv);
+	printk("Maximum number of Path Delay Requests without a response      "
+	       ": %d\n", port_ds->allowed_lost_responses);
+	printk("Current Sync %s                        : %d\n",
+	       "sequence id for this port", port_ds->sync_seq_id);
+	printk("Current Path Delay Request %s          : %d\n",
+	       "sequence id for this port", port_ds->pdelay_req_seq_id);
+	printk("Current Announce %s                    : %d\n",
+	       "sequence id for this port", port_ds->announce_seq_id);
+	printk("Current Signaling %s                   : %d\n",
+	       "sequence id for this port", port_ds->signaling_seq_id);
+	printk("Whether neighborRateRatio %s  : %s\n",
+	       "needs to be computed for this port",
+	       port_ds->compute_neighbor_rate_ratio ? "yes" : "no");
+	printk("Whether neighborPropDelay %s  : %s\n",
+	       "needs to be computed for this port",
+	       port_ds->compute_neighbor_prop_delay ? "yes" : "no");
+	printk("Initial Announce Interval %s            : %d\n",
+	       "as a Logarithm to base 2", port_ds->ini_log_announce_itv);
+	printk("Current Announce Interval %s            : %d\n",
+	       "as a Logarithm to base 2", port_ds->cur_log_announce_itv);
+	printk("Initial Sync Interval %s                : %d\n",
+	       "as a Logarithm to base 2", port_ds->ini_log_half_sync_itv);
+	printk("Current Sync Interval %s                : %d\n",
+	       "as a Logarithm to base 2", port_ds->cur_log_half_sync_itv);
+	printk("Initial Path Delay Request Interval %s  : %d\n",
+	       "as a Logarithm to base 2", port_ds->ini_log_pdelay_req_itv);
+	printk("Current Path Delay Request Interval %s  : %d\n",
+	       "as a Logarithm to base 2", port_ds->cur_log_pdelay_req_itv);
+	printk("Time without receiving announce %s %s  : %d ms (%d)\n",
+	       "messages", "before running BMCA",
+	       gptp_uscaled_ns_to_timer_ms(
+		       &port_bmca_data->ann_rcpt_timeout_time_interval),
+	       port_ds->announce_receipt_timeout);
+	printk("Time without receiving sync %s %s      : %llu ms (%d)\n",
+	       "messages", "before running BMCA",
+	       (port_ds->sync_receipt_timeout_time_itv >> 16) /
+	       (NSEC_PER_SEC / MSEC_PER_SEC),
+	       port_ds->sync_receipt_timeout);
+	printk("Sync event %s                 : %u.%llu\n",
+	       "transmission interval for the port",
+	       port_ds->half_sync_itv.high,
+	       port_ds->half_sync_itv.low);
+	printk("Path Delay Request %s         : %u.%llu\n",
+	       "transmission interval for the port",
+	       port_ds->pdelay_req_itv.high,
+	       port_ds->pdelay_req_itv.low);
+
+	printk("\nRuntime status:\n");
+	printk("Path Delay Request state machine variables:\n");
+	printk("\tCurrent state                                    "
+	       ": %s\n", pdelay_req2str(port_state->pdelay_req.state));
+	printk("\tInitial Path Delay Response Peer Timestamp       "
+	       ": %llu\n", port_state->pdelay_req.ini_resp_evt_tstamp);
+	printk("\tInitial Path Delay Response Ingress Timestamp    "
+	       ": %llu\n", port_state->pdelay_req.ini_resp_ingress_tstamp);
+	printk("\tPath Delay Response %s %s            : %u\n",
+	       "messages", "received",
+	       port_state->pdelay_req.rcvd_pdelay_resp);
+	printk("\tPath Delay Follow Up %s %s           : %u\n",
+	       "messages", "received",
+	       port_state->pdelay_req.rcvd_pdelay_follow_up);
+	printk("\tNumber of lost Path Delay Responses              "
+	       ": %u\n", port_state->pdelay_req.lost_responses);
+	printk("\tTimer expired send a new Path Delay Request      "
+	       ": %u\n", port_state->pdelay_req.pdelay_timer_expired);
+	printk("\tNeighborRateRatio has been computed successfully "
+	       ": %u\n", port_state->pdelay_req.neighbor_rate_ratio_valid);
+	printk("\tPath Delay has already been computed after init  "
+	       ": %u\n", port_state->pdelay_req.init_pdelay_compute);
+	printk("\tCount consecutive reqs with multiple responses   "
+	       ": %u\n", port_state->pdelay_req.multiple_resp_count);
+
+	printk("Path Delay Response state machine variables:\n");
+	printk("\tCurrent state                                    "
+	       ": %s\n", pdelay_resp2str(port_state->pdelay_resp.state));
+
+	printk("SyncReceive state machine variables:\n");
+	printk("\tCurrent state                                    "
+	       ": %s\n", sync_rcv2str(port_state->sync_rcv.state));
+	printk("\tA Sync %s %s                 : %s\n",
+	       "Message", "has been received",
+	       port_state->sync_rcv.rcvd_sync ? "yes" : "no");
+	printk("\tA Follow Up %s %s            : %s\n",
+	       "Message", "has been received",
+	       port_state->sync_rcv.rcvd_follow_up ? "yes" : "no");
+	printk("\tA Follow Up %s %s            : %s\n",
+	       "Message", "has been received",
+	       port_state->sync_rcv.follow_up_timeout_expired ? "yes" : "no");
+	printk("\tTime at which a Sync %s without Follow Up\n"
+	       "\t                             will be discarded   "
+	       ": %llu\n", "Message",
+	       port_state->sync_rcv.follow_up_receipt_timeout);
+
+	printk("SyncSend state machine variables:\n");
+	printk("\tCurrent state                                    "
+	       ": %s\n", sync_send2str(port_state->sync_send.state));
+	printk("\tA MDSyncSend structure %s         : %s\n",
+	       "has been received",
+	       port_state->sync_send.rcvd_md_sync ? "yes" : "no");
+	printk("\tThe timestamp for the sync msg %s : %s\n",
+	       "has been received",
+	       port_state->sync_send.md_sync_timestamp_avail ? "yes" : "no");
+
+	printk("PortSyncSyncReceive state machine variables:\n");
+	printk("\tCurrent state                                    "
+	       ": %s\n", pss_rcv2str(port_state->pss_rcv.state));
+	printk("\tGrand Master / Local Clock frequency ratio       "
+	       ": %f\n", port_state->pss_rcv.rate_ratio);
+	printk("\tA MDSyncReceive struct is ready to be processed  "
+	       ": %s\n", port_state->pss_rcv.rcvd_md_sync ? "yes" : "no");
+	printk("\tExpiry of SyncReceiptTimeoutTimer                : %s\n",
+	       port_state->pss_rcv.rcv_sync_receipt_timeout_timer_expired ?
+	       "yes" : "no");
+
+	printk("PortSyncSyncSend state machine variables:\n");
+	printk("\tCurrent state                                    "
+	       ": %s\n", pss_send2str(port_state->pss_send.state));
+	printk("\tFollow Up Correction Field of last recv PSS      "
+	       ": %lld\n",
+	       port_state->pss_send.last_follow_up_correction_field);
+	printk("\tUpstream Tx Time of the last recv PortSyncSync   "
+	       ": %llu\n", port_state->pss_send.last_upstream_tx_time);
+	printk("\tSync Receipt Timeout Time of last recv PSS       "
+	       ": %llu\n",
+	       port_state->pss_send.last_sync_receipt_timeout_time);
+	printk("\tRate Ratio of the last received PortSyncSync     "
+	       ": %f\n",
+	       port_state->pss_send.last_rate_ratio);
+	printk("\tGM Freq Change of the last received PortSyncSync "
+	       ": %f\n", port_state->pss_send.last_gm_freq_change);
+	printk("\tGM Time Base Indicator of last recv PortSyncSync "
+	       ": %d\n", port_state->pss_send.last_gm_time_base_indicator);
+	printk("\tReceived Port Number of last recv PortSyncSync   "
+	       ": %d\n",
+	       port_state->pss_send.last_rcvd_port_num);
+	printk("\tPortSyncSync structure is ready to be processed  "
+	       ": %s\n", port_state->pss_send.rcvd_pss_sync ? "yes" : "no");
+	printk("\tFlag when the %s has expired    : %s\n",
+	       "half_sync_itv_timer",
+	       port_state->pss_send.half_sync_itv_timer_expired ?
+	       "yes" : "no");
+	printk("\tHas %s expired twice            : %s\n",
+	       "half_sync_itv_timer",
+	       port_state->pss_send.sync_itv_timer_expired ? "yes" : "no");
+	printk("\tHas syncReceiptTimeoutTime expired               "
+	       ": %s\n",
+	       port_state->pss_send.send_sync_receipt_timeout_timer_expired ?
+	       "yes" : "no");
+
+	printk("PortAnnounceReceive state machine variables:\n");
+	printk("\tCurrent state                                    "
+	       ": %s\n", pa_rcv2str(port_state->pa_rcv.state));
+	printk("\tAn announce message is ready to be processed     "
+	       ": %s\n",
+	       port_state->pa_rcv.rcvd_announce ? "yes" : "no");
+
+	printk("PortAnnounceInformation state machine variables:\n");
+	printk("\tCurrent state                                    "
+	       ": %s\n", pa_info2str(port_state->pa_info.state));
+	printk("\tExpired announce information                     "
+	       ": %s\n", port_state->pa_info.ann_expired ? "yes" : "no");
+
+	printk("PortAnnounceTransmit state machine variables:\n");
+	printk("\tCurrent state                                    "
+	       ": %s\n", pa_transmit2str(port_state->pa_transmit.state));
+	printk("\tTrigger announce information                     "
+	       ": %s\n", port_state->pa_transmit.ann_trigger ? "yes" : "no");
+
+#if defined(CONFIG_NET_GPTP_STATISTICS)
+	printk("\nStatistics:\n");
+	printk("Sync %s %s                 : %u\n",
+	       "messages", "received", port_param_ds->rx_sync_count);
+	printk("Follow Up %s %s            : %u\n",
+	       "messages", "received", port_param_ds->rx_fup_count);
+	printk("Path Delay Request %s %s   : %u\n",
+	       "messages", "received", port_param_ds->rx_pdelay_req_count);
+	printk("Path Delay Response %s %s  : %u\n",
+	       "messages", "received", port_param_ds->rx_pdelay_resp_count);
+	printk("Path Delay %s threshold %s : %u\n",
+	       "messages", "exceeded",
+	       port_param_ds->neighbor_prop_delay_exceeded);
+	printk("Path Delay Follow Up %s %s : %u\n",
+	       "messages", "received", port_param_ds->rx_pdelay_resp_fup_count);
+	printk("Announce %s %s             : %u\n",
+	       "messages", "received", port_param_ds->rx_announce_count);
+	printk("ptp %s discarded                 : %u\n",
+	       "messages", port_param_ds->rx_ptp_packet_discard_count);
+	printk("Sync %s %s                 : %u\n",
+	       "reception", "timeout",
+	       port_param_ds->sync_receipt_timeout_count);
+	printk("Announce %s %s             : %u\n",
+	       "reception", "timeout",
+	       port_param_ds->announce_receipt_timeout_count);
+	printk("Path Delay Requests without a response "
+	       ": %u\n", port_param_ds->pdelay_allowed_lost_resp_exceed_count);
+	printk("Sync %s %s                     : %u\n",
+	       "messages", "sent", port_param_ds->tx_sync_count);
+	printk("Follow Up %s %s                : %u\n",
+	       "messages", "sent", port_param_ds->tx_fup_count);
+	printk("Path Delay Request %s %s       : %u\n",
+	       "messages", "sent", port_param_ds->tx_pdelay_req_count);
+	printk("Path Delay Response %s %s      : %u\n",
+	       "messages", "sent", port_param_ds->tx_pdelay_resp_count);
+	printk("Path Delay Response %s %s      : %u\n",
+	       "messages", "sent", port_param_ds->tx_pdelay_resp_fup_count);
+	printk("Announce %s %s                 : %u\n",
+	       "messages", "sent", port_param_ds->tx_announce_count);
+#endif /* CONFIG_NET_GPTP_STATISTICS */
+}
+#endif /* CONFIG_NET_GPTP */
+
+int net_shell_cmd_gptp(int argc, char *argv[])
+{
+#if defined(CONFIG_NET_GPTP)
+	/* gPTP status */
+	struct gptp_domain *domain = gptp_get_domain();
+	int count = 0;
+	int arg = 1;
+
+	if (strcmp(argv[0], "gptp")) {
+		arg++;
+	}
+
+	if (argv[arg]) {
+		int port = strtol(argv[arg], NULL, 10);
+
+		gptp_print_port_info(port);
+	} else {
+		gptp_foreach_port(gptp_port_cb, &count);
+
+		printk("\n");
+
+		printk("SiteSyncSync state machine variables:\n");
+		printk("\tCurrent state                  "
+		       ": %s\n", site_sync2str(domain->state.site_ss.state));
+		printk("\tA PortSyncSync struct is ready "
+		       ": %s\n", domain->state.site_ss.rcvd_pss ? "yes" : "no");
+
+		printk("ClockSlaveSync state machine variables:\n");
+		printk("\tCurrent state                  "
+		       ": %s\n",
+		       clk_slave2str(domain->state.clk_slave_sync.state));
+		printk("\tA PortSyncSync struct is ready "
+		       ": %s\n",
+		       domain->state.clk_slave_sync.rcvd_pss ? "yes" : "no");
+		printk("\tThe local clock has expired    "
+		       ": %s\n",
+		       domain->state.clk_slave_sync.rcvd_local_clk_tick ?
+		       "yes" : "no");
+
+		printk("PortRoleSelection state machine variables:\n");
+		printk("\tCurrent state                  "
+		       ": %s\n",
+		       pr_selection2str(domain->state.pr_sel.state));
+
+		printk("ClockMasterSyncReceive state machine variables:\n");
+		printk("\tCurrent state                  "
+		       ": %s\n", cms_rcv2str(
+			       domain->state.clk_master_sync_receive.state));
+		printk("\tA ClockSourceTime              "
+		       ": %s\n",
+		  domain->state.clk_master_sync_receive.rcvd_clock_source_req ?
+		       "yes" : "no");
+		printk("\tThe local clock has expired    "
+		       ": %s\n",
+		  domain->state.clk_master_sync_receive.rcvd_local_clock_tick ?
+		       "yes" : "no");
+	}
+#else
+	printk("gPTP not supported, set CONFIG_NET_GPTP to enable it.\n");
+#endif
+	return 0;
+}
+
 #if defined(CONFIG_NET_DEBUG_HTTP_CONN) && defined(CONFIG_HTTP_SERVER)
 #define MAX_HTTP_OUTPUT_LEN 64
 static char *http_str_output(char *output, int outlen, const char *str, int len)
@@ -2943,6 +3492,9 @@ static struct shell_cmd net_commands[] = {
 		"dns cancel\n\tCancel all pending requests\n"
 		"dns <hostname> [A or AAAA]\n\tQuery IPv4 address (default) or "
 		"IPv6 address for a  host name" },
+	{ "gptp", net_shell_cmd_gptp,
+		"\n\tPrint information about gPTP support\n"
+		"gptp <port>\n\tPrint detailed information about gPTP port" },
 	{ "http", net_shell_cmd_http,
 		"\n\tPrint information about active HTTP connections\n"
 		"http monitor\n\tStart monitoring HTTP connections\n"
