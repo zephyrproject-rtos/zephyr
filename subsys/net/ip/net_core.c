@@ -347,6 +347,10 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 	NET_DBG("fifo %p iface %p pkt %p len %zu", &rx_queue, iface, pkt,
 		net_pkt_get_len(pkt));
 
+	if (IS_ENABLED(CONFIG_NET_ROUTING)) {
+		net_pkt_set_orig_iface(pkt, iface);
+	}
+
 	net_pkt_set_iface(pkt, iface);
 
 	k_fifo_put(&rx_queue, pkt);

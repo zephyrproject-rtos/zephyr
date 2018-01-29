@@ -1,0 +1,57 @@
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <link href="/favicon.ico" rel="icon" type="image/x-icon" />
+    <script language="javascript" type="text/javascript" src="br.js"></script>
+    <title>Zephyr RPL Border Router</title>
+</head>
+
+<body onload="init();">
+  <div id="container" class="container">
+    <div class="box header">
+      <h2>Zephyr RPL Border Router</h2>
+    </div>
+    <div class="box content" id="content">
+      <div class="tab">
+	<button class="tablinks" id="interface_open"
+		onclick="openTab(event,'iface')">Interfaces</button>
+	<button class="tablinks" id="rpl_open"
+		onclick="openTab(event,'rpl')">RPL</button>
+	<button class="tablinks" id="neighbors_open"
+		onclick="openTab(event,'neighbors')">Neighbors</button>
+	<button class="tablinks" id="routes_open"
+		onclick="openTab(event,'routes')">Routes</button>
+      </div>
+      <div id="iface" class="tabcontent"></div>
+      <div id="rpl" class="tabcontent"></div>
+      <div id="neighbors" class="tabcontent"></div>
+      <div id="routes" class="tabcontent"></div>
+    </div>
+    <div class="box sidebar">
+      <table class="nav_table">
+	<tr class="nav_row">
+	  <td class="nav_cell">
+	    <button type="button" id="connect_button"
+		    onclick="onConnectClick()">Connect</button>
+	  </td>
+	</tr>
+	<tr class="nav_row">
+	  <td class="nav_cell">
+	    <a href="javascript:configuration()" onClick="return false;"
+	       title="Configuration" id="config">Configuration</a>
+	  </td>
+	</tr>
+	<tr class="nav_row">
+	  <td class="nav_cell">
+	    <a href="javascript:zconsole()" onClick="return false;"
+	       title="Console" id="zconsole">Console</a>
+	  </td>
+	</tr>
+      </table>
+    </div>
+    <div class="box footer" id="output">
+    </div>
+  </div>
+</body>
+</html>

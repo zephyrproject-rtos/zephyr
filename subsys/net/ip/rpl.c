@@ -1471,6 +1471,11 @@ bool net_rpl_set_prefix(struct net_if *iface,
 		last_len ? "non-NULL" : "NULL");
 	if (last_len == 0) {
 		check_prefix(iface, NULL, &dag->prefix_info);
+
+		net_if_ipv6_prefix_add(iface,
+				       &dag->prefix_info.prefix,
+				       dag->prefix_info.length,
+				       NET_IPV6_ND_INFINITE_LIFETIME);
 	} else {
 		check_prefix(iface, &last_prefix, &dag->prefix_info);
 	}
@@ -4227,6 +4232,11 @@ static inline void net_rpl_init_timers(void)
 struct net_rpl_instance *net_rpl_get_default_instance(void)
 {
 	return rpl_default_instance;
+}
+
+struct net_if *net_rpl_get_interface(void)
+{
+	return rpl_default_iface;
 }
 
 void net_rpl_init(void)
