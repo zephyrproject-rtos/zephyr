@@ -35,14 +35,14 @@ config CPU_ATOM
 	select CMOV
 	select CPU_HAS_FPU
 	select ARCH_HAS_STACK_PROTECTION if X86_MMU
-	select ARCH_HAS_USERSPACE if X86_MMU
+	select ARCH_HAS_USERSPACE if X86_MMU && X86_NO_MELTDOWN
 	help
 	  This option signifies the use of a CPU from the Atom family.
 
 config CPU_MINUTEIA
 	# Hidden
 	select ARCH_HAS_STACK_PROTECTION if X86_MMU
-	select ARCH_HAS_USERSPACE if X86_MMU
+	select ARCH_HAS_USERSPACE if X86_MMU && X86_NO_MELTDOWN
 	bool
 	help
 	  This option signifies the use of a CPU from the Minute IA family.
