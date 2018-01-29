@@ -2847,6 +2847,68 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 
 	case PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP:
 		if (0) {
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+		} else if (_radio.conn_curr->llcp_conn_param.ack !=
+			   _radio.conn_curr->llcp_conn_param.req) {
+			struct connection *conn = _radio.conn_curr;
+			struct radio_le_conn_update_cmplt *cp;
+
+			/* Mark CPR as unsupported */
+			conn->llcp_conn_param.disabled = 1;
+
+			/* TODO: check for unsupported remote feature reason */
+			if (!conn->role) {
+				LL_ASSERT(conn->llcp_req == conn->llcp_ack);
+
+				conn->llcp_conn_param.state =
+					LLCP_CPR_STATE_UPD;
+
+				conn->llcp.conn_upd.win_size = 1;
+				conn->llcp.conn_upd.win_offset_us = 0;
+				conn->llcp.conn_upd.interval =
+					conn->llcp_conn_param.interval;
+				conn->llcp.conn_upd.latency =
+					conn->llcp_conn_param.latency;
+				conn->llcp.conn_upd.timeout =
+					conn->llcp_conn_param.timeout;
+				/* conn->llcp.conn_upd.instant     = 0; */
+				conn->llcp.conn_upd.state = LLCP_CUI_STATE_USE;
+				conn->llcp.conn_upd.is_internal =
+					!conn->llcp_conn_param.cmd;
+				conn->llcp_type = LLCP_CONN_UPD;
+				conn->llcp_ack--;
+
+				break;
+			}
+
+			LL_ASSERT(_radio.conn_upd == conn);
+
+			/* reset mutex */
+			_radio.conn_upd = NULL;
+
+			/* Procedure complete */
+			conn->llcp_conn_param.ack = conn->llcp_conn_param.req;
+
+			/* skip event generation if not cmd initiated */
+			if (!conn->llcp_conn_param.cmd) {
+				break;
+			}
+
+			/* generate conn upd complete event with error code */
+			radio_pdu_node_rx->hdr.type = NODE_RX_TYPE_CONN_UPDATE;
+
+			/* prepare connection update complete structure */
+			pdu_data_rx = (void *)radio_pdu_node_rx->pdu_data;
+			cp = (void *)&pdu_data_rx->payload;
+			cp->status = BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
+			cp->interval = conn->conn_interval;
+			cp->latency = conn->latency;
+			cp->timeout = conn->supervision_reload *
+				      conn->conn_interval * 125 / 1000;
+
+			*rx_enqueue = 1;
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 		} else if (_radio.conn_curr->llcp_length.req !=
 			   _radio.conn_curr->llcp_length.ack) {
@@ -8939,9 +9001,10 @@ static u32_t conn_update_req(struct connection *conn)
 		return 0;
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
-	} else if (conn->common.fex_valid &&
-		   (conn->llcp_features &
-		    BIT(BT_LE_FEAT_BIT_CONN_PARAM_REQ))) {
+	} else if (!conn->llcp_conn_param.disabled &&
+		   (!conn->common.fex_valid ||
+		    (conn->llcp_features &
+		     BIT(BT_LE_FEAT_BIT_CONN_PARAM_REQ)))) {
 		/** Perform slave intiated conn param req */
 		conn->llcp_conn_param.status = 0;
 		conn->llcp_conn_param.interval = conn->conn_interval;
@@ -9863,6 +9926,7 @@ u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 		conn->llcp_conn_param.req = 0;
 		conn->llcp_conn_param.ack = 0;
+		conn->llcp_conn_param.disabled = 0;
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
@@ -10342,6 +10406,7 @@ u32_t radio_connect_enable(u8_t adv_addr_type, u8_t *adv_addr, u16_t interval,
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 	conn->llcp_conn_param.req = 0;
 	conn->llcp_conn_param.ack = 0;
+	conn->llcp_conn_param.disabled = 0;
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
@@ -10401,22 +10466,29 @@ u32_t ll_conn_update(u16_t handle, u8_t cmd, u8_t status, u16_t interval,
 
 	conn = connection_get(handle);
 	if (!conn) {
-		return 1;
+		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
 	if (!cmd) {
-		if (conn->common.fex_valid &&
-		    (conn->llcp_features &
-		     BIT(BT_LE_FEAT_BIT_CONN_PARAM_REQ))) {
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+		if (!conn->llcp_conn_param.disabled &&
+		    (!conn->common.fex_valid ||
+		     (conn->llcp_features &
+		      BIT(BT_LE_FEAT_BIT_CONN_PARAM_REQ)))) {
 			cmd++;
 		} else if (conn->role) {
-			return 1;
+			return BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
 		}
+#else /* !CONFIG_BT_CTLR_CONN_PARAM_REQ */
+		if (conn->role) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+#endif /* !CONFIG_BT_CTLR_CONN_PARAM_REQ */
 	}
 
 	if (!cmd) {
 		if (conn->llcp_req != conn->llcp_ack) {
-			return 1;
+			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 
 		conn->llcp.conn_upd.win_size = 1;
@@ -10439,7 +10511,7 @@ u32_t ll_conn_update(u16_t handle, u8_t cmd, u8_t status, u16_t interval,
 			     conn->llcp_conn_param.ack) ||
 			    (conn->llcp_conn_param.state !=
 			     LLCP_CPR_STATE_APP_WAIT)) {
-				return 1;
+				return BT_HCI_ERR_CMD_DISALLOWED;
 			}
 
 			conn->llcp_conn_param.status = status;
@@ -10448,7 +10520,7 @@ u32_t ll_conn_update(u16_t handle, u8_t cmd, u8_t status, u16_t interval,
 		} else {
 			if (conn->llcp_conn_param.req !=
 			    conn->llcp_conn_param.ack) {
-				return 1;
+				return BT_HCI_ERR_CMD_DISALLOWED;
 			}
 
 			conn->llcp_conn_param.status = 0;
@@ -10462,7 +10534,7 @@ u32_t ll_conn_update(u16_t handle, u8_t cmd, u8_t status, u16_t interval,
 
 #else /* !CONFIG_BT_CTLR_CONN_PARAM_REQ */
 		/* CPR feature not supported */
-		return 1;
+		return BT_HCI_ERR_CMD_DISALLOWED;
 #endif /* !CONFIG_BT_CTLR_CONN_PARAM_REQ */
 	}
 
