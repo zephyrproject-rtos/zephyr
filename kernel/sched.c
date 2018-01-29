@@ -17,7 +17,7 @@
 struct _kernel _kernel = {0};
 
 /* set the bit corresponding to prio in ready q bitmap */
-#ifdef CONFIG_MULTITHREADING
+#if defined(CONFIG_MULTITHREADING) && !defined(CONFIG_SMP)
 static void _set_ready_q_prio_bit(int prio)
 {
 	int bmap_index = _get_ready_q_prio_bmap_index(prio);
@@ -25,10 +25,8 @@ static void _set_ready_q_prio_bit(int prio)
 
 	*bmap |= _get_ready_q_prio_bit(prio);
 }
-#endif
 
 /* clear the bit corresponding to prio in ready q bitmap */
-#ifdef CONFIG_MULTITHREADING
 static void _clear_ready_q_prio_bit(int prio)
 {
 	int bmap_index = _get_ready_q_prio_bmap_index(prio);
@@ -38,7 +36,7 @@ static void _clear_ready_q_prio_bit(int prio)
 }
 #endif
 
-#ifdef CONFIG_MULTITHREADING
+#if !defined(CONFIG_SMP) && defined(CONFIG_MULTITHREADING)
 /*
  * Find the next thread to run when there is no thread in the cache and update
  * the cache.
@@ -76,16 +74,22 @@ void _add_thread_to_ready_q(struct k_thread *thread)
 	int q_index = _get_ready_q_q_index(thread->base.prio);
 	sys_dlist_t *q = &_ready_q.q[q_index];
 
+# ifndef CONFIG_SMP
 	_set_ready_q_prio_bit(thread->base.prio);
+# endif
 	sys_dlist_append(q, &thread->base.k_q_node);
 
+# ifndef CONFIG_SMP
 	struct k_thread **cache = &_ready_q.cache;
 
 	*cache = _is_t1_higher_prio_than_t2(thread, *cache) ? thread : *cache;
+# endif
 #else
 	sys_dlist_append(&_ready_q.q[0], &thread->base.k_q_node);
 	_ready_q.prio_bmap[0] = 1;
+# ifndef CONFIG_SMP
 	_ready_q.cache = thread;
+# endif
 #endif
 }
 
@@ -98,7 +102,7 @@ void _add_thread_to_ready_q(struct k_thread *thread)
 
 void _remove_thread_from_ready_q(struct k_thread *thread)
 {
-#ifdef CONFIG_MULTITHREADING
+#if defined(CONFIG_MULTITHREADING) && !defined(CONFIG_SMP)
 	int q_index = _get_ready_q_q_index(thread->base.prio);
 	sys_dlist_t *q = &_ready_q.q[q_index];
 
@@ -111,8 +115,10 @@ void _remove_thread_from_ready_q(struct k_thread *thread)
 
 	*cache = *cache == thread ? _get_ready_q_head() : *cache;
 #else
+# if !defined(CONFIG_SMP)
 	_ready_q.prio_bmap[0] = 0;
 	_ready_q.cache = NULL;
+# endif
 	sys_dlist_remove(&thread->base.k_q_node);
 #endif
 }
@@ -309,9 +315,11 @@ void _move_thread_to_end_of_prio_q(struct k_thread *thread)
 	sys_dlist_remove(&thread->base.k_q_node);
 	sys_dlist_append(q, &thread->base.k_q_node);
 
+# ifndef CONFIG_SMP
 	struct k_thread **cache = &_ready_q.cache;
 
 	*cache = *cache == thread ? _get_ready_q_head() : *cache;
+# endif
 #endif
 }
 
@@ -488,4 +496,45 @@ int _impl_k_is_preempt_thread(void)
 
 #ifdef CONFIG_USERSPACE
 _SYSCALL_HANDLER0_SIMPLE(k_is_preempt_thread);
+#endif
+
+#ifdef CONFIG_SMP
+int _get_highest_ready_prio(void)
+{
+	int p;
+
+	for (p = 0; p < ARRAY_SIZE(_kernel.ready_q.q); p++) {
+		if (!sys_dlist_is_empty(&_kernel.ready_q.q[p])) {
+			break;
+		}
+	}
+
+	__ASSERT(p < K_NUM_PRIORITIES, "No ready prio");
+
+	return p - _NUM_COOP_PRIO;
+}
+
+struct k_thread *_get_next_ready_thread(void)
+{
+	int p, mycpu = _arch_curr_cpu()->id;
+
+	for (p = 0; p < ARRAY_SIZE(_ready_q.q); p++) {
+		sys_dlist_t *list = &_ready_q.q[p];
+		sys_dnode_t *node;
+
+		for (node = list->tail; node != list; node = node->prev) {
+			struct k_thread *th = (struct k_thread *)node;
+
+			/* Skip threads that are already running elsewhere! */
+			if (th->base.active && th->base.cpu != mycpu) {
+				continue;
+			}
+
+			return th;
+		}
+	}
+
+	__ASSERT(0, "No ready thread found for cpu %d\n", mycpu);
+	return NULL;
+}
 #endif
