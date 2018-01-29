@@ -66,12 +66,13 @@
 #if !defined(_ASMLANGUAGE)
 
 struct _ready_q {
-
+#ifndef CONFIG_SMP
 	/* always contains next thread to run: cannot be NULL */
 	struct k_thread *cache;
 
 	/* bitmap of priorities that contain at least one ready thread */
 	u32_t prio_bmap[K_NUM_PRIO_BITMAPS];
+#endif
 
 	/* ready queues, one per priority */
 	sys_dlist_t q[K_NUM_PRIORITIES];
@@ -88,6 +89,8 @@ struct _cpu {
 
 	/* currently scheduled thread */
 	struct k_thread *current;
+
+	int id;
 };
 
 typedef struct _cpu _cpu_t;

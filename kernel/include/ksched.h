@@ -14,7 +14,10 @@
 #endif /* CONFIG_KERNEL_EVENT_LOGGER */
 
 extern k_tid_t const _main_thread;
+
+#ifndef CONFIG_SMP
 extern k_tid_t const _idle_thread;
+#endif
 
 extern void _add_thread_to_ready_q(struct k_thread *thread);
 extern void _remove_thread_from_ready_q(struct k_thread *thread);
@@ -34,10 +37,14 @@ extern void idle(void *, void *, void *);
 
 /* find which one is the next thread to run */
 /* must be called with interrupts locked */
+#ifdef CONFIG_SMP
+extern struct k_thread *_get_next_ready_thread(void);
+#else
 static ALWAYS_INLINE struct k_thread *_get_next_ready_thread(void)
 {
 	return _ready_q.cache;
 }
+#endif
 
 static inline int _is_idle_thread(void *entry_point)
 {
@@ -46,7 +53,11 @@ static inline int _is_idle_thread(void *entry_point)
 
 static inline int _is_idle_thread_ptr(k_tid_t thread)
 {
+#ifdef CONFIG_SMP
+	return thread->base.is_idle;
+#else
 	return thread == _idle_thread;
+#endif
 }
 
 #ifdef CONFIG_MULTITHREADING
@@ -203,6 +214,9 @@ static inline int _get_ready_q_q_index(int prio)
 
 /* find out the currently highest priority where a thread is ready to run */
 /* interrupts must be locked */
+#ifdef CONFIG_SMP
+int _get_highest_ready_prio(void);
+#else
 static inline int _get_highest_ready_prio(void)
 {
 	int bitmap = 0;
@@ -228,6 +242,7 @@ static inline int _get_highest_ready_prio(void)
 
 	return abs_prio - _NUM_COOP_PRIO;
 }
+#endif
 
 /*
  * Checks if current thread must be context-switched out. The caller must
