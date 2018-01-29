@@ -186,7 +186,7 @@ static void pull_data(struct device *dev)
 
 static int spi_dw_configure(const struct spi_dw_config *info,
 			    struct spi_dw_data *spi,
-			    struct spi_config *config)
+			    const struct spi_config *config)
 {
 	u32_t ctrlr0 = 0;
 
@@ -248,7 +248,7 @@ static int spi_dw_configure(const struct spi_dw_config *info,
 	return 0;
 }
 
-static int transceive(struct spi_config *config,
+static int transceive(const struct spi_config *config,
 		      const struct spi_buf *tx_bufs,
 		      size_t tx_count,
 		      struct spi_buf *rx_bufs,
@@ -313,7 +313,7 @@ out:
 	return ret;
 }
 
-static int spi_dw_transceive(struct spi_config *config,
+static int spi_dw_transceive(const struct spi_config *config,
 			     const struct spi_buf *tx_bufs,
 			     size_t tx_count,
 			     struct spi_buf *rx_bufs,
@@ -327,7 +327,7 @@ static int spi_dw_transceive(struct spi_config *config,
 }
 
 #ifdef CONFIG_POLL
-static int spi_dw_transceive_async(struct spi_config *config,
+static int spi_dw_transceive_async(const struct spi_config *config,
 				   const struct spi_buf *tx_bufs,
 				   size_t tx_count,
 				   struct spi_buf *rx_bufs,
@@ -342,7 +342,7 @@ static int spi_dw_transceive_async(struct spi_config *config,
 }
 #endif /* CONFIG_POLL */
 
-static int spi_dw_release(struct spi_config *config)
+static int spi_dw_release(const struct spi_config *config)
 {
 	const struct spi_dw_config *info = config->dev->config->config_info;
 	struct spi_dw_data *spi = config->dev->driver_data;

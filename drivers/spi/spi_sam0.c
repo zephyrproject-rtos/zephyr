@@ -50,7 +50,7 @@ static void wait_synchronization(SercomSpi *regs)
 #endif
 }
 
-static int spi_sam0_configure(struct spi_config *config)
+static int spi_sam0_configure(const struct spi_config *config)
 {
 	const struct spi_sam0_config *cfg = config->dev->config->config_info;
 	SercomSpi *regs = cfg->regs;
@@ -278,7 +278,7 @@ static void spi_sam0_finish(SercomSpi *regs)
 }
 
 /* Fast path where every overlapping tx and rx buffer is the same length */
-static void spi_sam0_fast_transceive(struct spi_config *config,
+static void spi_sam0_fast_transceive(const struct spi_config *config,
 				     const struct spi_buf *tx_bufs,
 				     size_t tx_count, struct spi_buf *rx_bufs,
 				     size_t rx_count)
@@ -330,7 +330,7 @@ static bool spi_sam0_is_regular(const struct spi_buf *tx_bufs,
 	return true;
 }
 
-static int spi_sam0_transceive(struct spi_config *config,
+static int spi_sam0_transceive(const struct spi_config *config,
 			       const struct spi_buf *tx_bufs, size_t tx_count,
 			       struct spi_buf *rx_bufs, size_t rx_count)
 {
@@ -374,7 +374,7 @@ done:
 	return err;
 }
 
-static int spi_sam0_release(struct spi_config *config)
+static int spi_sam0_release(const struct spi_config *config)
 {
 	struct spi_sam0_data *data = config->dev->driver_data;
 

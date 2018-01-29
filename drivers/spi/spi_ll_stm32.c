@@ -216,7 +216,7 @@ static void spi_stm32_isr(void *arg)
 }
 #endif
 
-static int spi_stm32_configure(struct spi_config *config)
+static int spi_stm32_configure(const struct spi_config *config)
 {
 	const struct spi_stm32_config *cfg = CONFIG_CFG(config);
 	struct spi_stm32_data *data = CONFIG_DATA(config);
@@ -331,7 +331,7 @@ static int spi_stm32_configure(struct spi_config *config)
 	return 0;
 }
 
-static int spi_stm32_release(struct spi_config *config)
+static int spi_stm32_release(const struct spi_config *config)
 {
 	struct spi_stm32_data *data = CONFIG_DATA(config);
 
@@ -340,7 +340,7 @@ static int spi_stm32_release(struct spi_config *config)
 	return 0;
 }
 
-static int transceive(struct spi_config *config,
+static int transceive(const struct spi_config *config,
 		      const struct spi_buf *tx_bufs, u32_t tx_count,
 		      struct spi_buf *rx_bufs, u32_t rx_count,
 		      bool asynchronous, struct k_poll_signal *signal)
@@ -410,7 +410,7 @@ static int transceive(struct spi_config *config,
 	return ret ? -EIO : 0;
 }
 
-static int spi_stm32_transceive(struct spi_config *config,
+static int spi_stm32_transceive(const struct spi_config *config,
 				const struct spi_buf *tx_bufs, u32_t tx_count,
 				struct spi_buf *rx_bufs, u32_t rx_count)
 {
@@ -419,7 +419,7 @@ static int spi_stm32_transceive(struct spi_config *config,
 }
 
 #ifdef CONFIG_POLL
-static int spi_stm32_transceive_async(struct spi_config *config,
+static int spi_stm32_transceive_async(const struct spi_config *config,
 				      const struct spi_buf *tx_bufs,
 				      size_t tx_count,
 				      struct spi_buf *rx_bufs,

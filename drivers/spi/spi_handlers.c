@@ -30,7 +30,7 @@ static void verify_spi_buf_array(struct spi_buf *bufs, size_t len,
 _SYSCALL_HANDLER(spi_transceive, config_p, tx_bufs, tx_count, rx_bufs,
 		 rx_count)
 {
-	struct spi_config *config = (struct spi_config *)config_p;
+	const struct spi_config *config = (const struct spi_config *)config_p;
 
 	_SYSCALL_MEMORY_READ(config, sizeof(*config));
 	_SYSCALL_OBJ(config->dev, K_OBJ_DRIVER_SPI);
@@ -57,7 +57,7 @@ _SYSCALL_HANDLER(spi_transceive, config_p, tx_bufs, tx_count, rx_bufs,
 
 _SYSCALL_HANDLER(spi_release, config_p)
 {
-	struct spi_config *config = (struct spi_config *)config_p;
+	const struct spi_config *config = (const struct spi_config *)config_p;
 
 	_SYSCALL_MEMORY_READ(config, sizeof(*config));
 	_SYSCALL_OBJ(config->dev, K_OBJ_DRIVER_SPI);

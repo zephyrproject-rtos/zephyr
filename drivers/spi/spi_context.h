@@ -20,7 +20,7 @@ extern "C" {
 #endif
 
 struct spi_context {
-	struct spi_config *config;
+	const struct spi_config *config;
 
 	struct k_sem lock;
 	struct k_sem sync;
@@ -48,7 +48,7 @@ struct spi_context {
 	._ctx_name.sync = _K_SEM_INITIALIZER(_data._ctx_name.sync, 0, 1)
 
 static inline bool spi_context_configured(struct spi_context *ctx,
-					  struct spi_config *config)
+					  const struct spi_config *config)
 {
 	return !!(ctx->config == config);
 }
