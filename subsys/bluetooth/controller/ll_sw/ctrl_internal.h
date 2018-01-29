@@ -208,6 +208,7 @@ struct connection {
 			LLCP_CPR_STATE_UPD
 		} state:3 __packed;
 		u8_t  cmd:1;
+		u8_t  disabled:1;
 		u8_t  status;
 		u16_t interval;
 		u16_t latency;
