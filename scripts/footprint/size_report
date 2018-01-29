@@ -35,7 +35,13 @@ def load_symbols_and_paths(bin_nm, elf_file, path_to_strip=""):
         symbol, path = parse_symbol_path_pair(line)
 
         if path:
-            processed_path = Path(path).relative_to(Path(path_to_strip))
+            p_path          = Path(path)
+            p_path_to_strip = Path(path_to_strip)
+            try:
+                processed_path = p_path.relative_to(p_path_to_strip)
+            except ValueError as e:
+                # path is valid, but is not prefixed by path_to_strip
+                processed_path = p_path
         else:
             processed_path = Path(":")
 
