@@ -1374,8 +1374,10 @@ class TestCase:
         self.min_flash = tc_dict["min_flash"]
         self.extra_sections = tc_dict["extra_sections"]
 
-        self.path = os.path.normpath(os.path.join(os.path.abspath(
-            testcase_root).replace(ZEPHYR_BASE + "/", ''), workdir, name))
+        self.path = os.path.normpath(os.path.join(os.path.realpath(
+            testcase_root).replace(os.path.realpath(ZEPHYR_BASE) + "/", ''),
+            workdir, name))
+
         self.name = os.path.join(self.path)
         self.defconfig = {}
         self.yamlfile = yamlfile
