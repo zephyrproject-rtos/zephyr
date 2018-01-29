@@ -709,6 +709,8 @@ if(CONFIG_USERSPACE)
     ${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT_SRC}
     )
 
+  # always compile kobject_hash.c at optimization -Os
+  set_source_files_properties(${OUTPUT_SRC} PROPERTIES COMPILE_FLAGS -Os)
   target_link_libraries(output_lib zephyr_interface)
 
   # Turn off -ffunction-sections, etc.
