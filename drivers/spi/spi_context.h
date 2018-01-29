@@ -26,10 +26,10 @@ struct spi_context {
 	struct k_sem sync;
 	int sync_status;
 
-#ifdef CONFIG_POLL
+#ifdef CONFIG_SPI_ASYNC
 	struct k_poll_signal *signal;
 	bool asynchronous;
-#endif
+#endif /* CONFIG_SPI_ASYNC */
 	const struct spi_buf *current_tx;
 	size_t tx_count;
 	const struct spi_buf *current_rx;
@@ -59,10 +59,10 @@ static inline void spi_context_lock(struct spi_context *ctx,
 {
 	k_sem_take(&ctx->lock, K_FOREVER);
 
-#ifdef CONFIG_POLL
+#ifdef CONFIG_SPI_ASYNC
 	ctx->asynchronous = asynchronous;
 	ctx->signal = signal;
-#endif
+#endif /* CONFIG_SPI_ASYNC */
 }
 
 static inline void spi_context_release(struct spi_context *ctx, int status)
@@ -71,13 +71,13 @@ static inline void spi_context_release(struct spi_context *ctx, int status)
 		return;
 	}
 
-#ifdef CONFIG_POLL
+#ifdef CONFIG_SPI_ASYNC
 	if (!ctx->asynchronous || status) {
 		k_sem_give(&ctx->lock);
 	}
 #else
 	k_sem_give(&ctx->lock);
-#endif
+#endif /* CONFIG_SPI_ASYNC */
 }
 
 static inline void spi_context_unlock_unconditionally(struct spi_context *ctx)
@@ -90,7 +90,7 @@ static inline void spi_context_unlock_unconditionally(struct spi_context *ctx)
 static inline int spi_context_wait_for_completion(struct spi_context *ctx)
 {
 	int status = 0;
-#ifdef CONFIG_POLL
+#ifdef CONFIG_SPI_ASYNC
 	if (!ctx->asynchronous) {
 		k_sem_take(&ctx->sync, K_FOREVER);
 		status = ctx->sync_status;
@@ -98,13 +98,13 @@ static inline int spi_context_wait_for_completion(struct spi_context *ctx)
 #else
 	k_sem_take(&ctx->sync, K_FOREVER);
 	status = ctx->sync_status;
-#endif
+#endif /* CONFIG_SPI_ASYNC */
 	return status;
 }
 
 static inline void spi_context_complete(struct spi_context *ctx, int status)
 {
-#ifdef CONFIG_POLL
+#ifdef CONFIG_SPI_ASYNC
 	if (!ctx->asynchronous) {
 		ctx->sync_status = status;
 		k_sem_give(&ctx->sync);
@@ -120,7 +120,7 @@ static inline void spi_context_complete(struct spi_context *ctx, int status)
 #else
 	ctx->sync_status = status;
 	k_sem_give(&ctx->sync);
-#endif
+#endif /* CONFIG_SPI_ASYNC */
 }
 
 static inline void spi_context_cs_configure(struct spi_context *ctx)

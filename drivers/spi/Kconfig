@@ -24,6 +24,13 @@ config SPI_LEGACY_API
 	  Driver and user API is the legacy SPI API (spi_legacy.h).
 	  If unselected, the new API will be used.
 
+config SPI_ASYNC
+	bool "Enable Asynchronous call support"
+	default n
+	select POLL
+	help
+	  This option enables the asynchronous API calls.
+
 config SPI_INIT_PRIORITY
 	int "Init priority"
 	default 70
