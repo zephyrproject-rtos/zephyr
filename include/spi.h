@@ -116,11 +116,6 @@ extern "C" {
  * properly called.
  */
 #define SPI_LOCK_ON		BIT(14)
-/* Select EEPROM read mode on master controller.
- * If not supported by the controller, the driver will have to emulate
- * the mode and thus should never return -EINVAL on that configuration)
- */
-#define SPI_EEPROM_MODE		BIT(15)
 
 /**
  * @brief SPI Chip Select control structure
@@ -155,12 +150,12 @@ struct spi_cs_control {
  *     lines               [ 11 : 12 ] - MISO lines: Single/Dual/Quad.
  *     cs_hold             [ 13 ]      - Hold on the CS line if possible.
  *     lock_on             [ 14 ]      - Keep resource locked for the caller.
- *     eeprom              [ 15 ]      - EEPROM mode.
+ *     _unused_            [ 15 ]      - Free for future use.
  * @param slave is the slave number from 0 to host controller slave limit.
  * @param cs is a valid pointer on a struct spi_cs_control is CS line is
  *    emulated through a gpio line, or NULL otherwise.
  *
- * @note cs_hold, lock_on and eeprom_rx can be changed between consecutive
+ * @note cs_hold and lock_on can be changed between consecutive
  * transceive call.
  */
 struct spi_config {
