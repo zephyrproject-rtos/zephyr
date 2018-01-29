@@ -320,12 +320,7 @@ class NativeHandler(Handler):
     def __init__(self, instance):
         """Constructor
 
-        @param name Arbitrary name of the created thread
-        @param outdir Working directory containing the test binary
-        @param run_log Absolute path to runtime logs
-        @param valgrind Absolute path to valgrind's log
-        @param timeout Kill the QEMU process if it doesn't finish up within
-            the given number of seconds
+        @param instance Test Instance
         """
         super().__init__(instance)
 
@@ -395,12 +390,7 @@ class UnitHandler(Handler):
     def __init__(self, instance):
         """Constructor
 
-        @param name Arbitrary name of the created thread
-        @param outdir Working directory containing the test binary
-        @param run_log Absolute path to runtime logs
-        @param valgrind Absolute path to valgrind's log
-        @param timeout Kill the QEMU process if it doesn't finish up within
-            the given number of seconds
+        @param instance Test instance
         """
         super().__init__(instance)
 
