@@ -105,6 +105,33 @@ k_tid_t const _idle_thread = (k_tid_t)&_idle_thread_s;
 #endif
 K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
 
+/*
+ * Similar idle thread & interrupt stack definitions for the
+ * auxiliary CPUs.  The declaration macros aren't set up to define an
+ * array, so do it with a simple test for up to 4 processors.  Should
+ * clean this up in the future.
+ */
+#if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 1
+K_THREAD_STACK_DEFINE(_idle_stack1, IDLE_STACK_SIZE);
+static struct k_thread _idle_thread1_s;
+k_tid_t const _idle_thread1 = (k_tid_t)&_idle_thread1_s;
+K_THREAD_STACK_DEFINE(_interrupt_stack1, CONFIG_ISR_STACK_SIZE);
+#endif
+
+#if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 2
+K_THREAD_STACK_DEFINE(_idle_stack2, IDLE_STACK_SIZE);
+static struct k_thread _idle_thread2_s;
+k_tid_t const _idle_thread2 = (k_tid_t)&_idle_thread2_s;
+K_THREAD_STACK_DEFINE(_interrupt_stack2, CONFIG_ISR_STACK_SIZE);
+#endif
+
+#if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 3
+K_THREAD_STACK_DEFINE(_idle_stack3, IDLE_STACK_SIZE);
+static struct k_thread _idle_thread3_s;
+k_tid_t const _idle_thread3 = (k_tid_t)&_idle_thread3_s;
+K_THREAD_STACK_DEFINE(_interrupt_stack3, CONFIG_ISR_STACK_SIZE);
+#endif
+
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 	#define initialize_timeouts() do { \
 		sys_dlist_init(&_timeout_q); \
@@ -228,6 +255,17 @@ void __weak main(void)
 	/* NOP default main() if the application does not provide one. */
 }
 
+#if defined(CONFIG_MULTITHREADING)
+static void init_idle_thread(struct k_thread *thr, k_thread_stack_t *stack)
+{
+	_setup_new_thread(thr, stack,
+			  IDLE_STACK_SIZE, idle, NULL, NULL, NULL,
+			  K_LOWEST_THREAD_PRIO, K_ESSENTIAL);
+	_mark_thread_as_started(thr);
+	_add_thread_to_ready_q(thr);
+}
+#endif
+
 /**
  *
  * @brief Initializes kernel data structures
@@ -302,11 +340,19 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 	_add_thread_to_ready_q(_main_thread);
 
 #ifdef CONFIG_MULTITHREADING
-	_setup_new_thread(_idle_thread, _idle_stack,
-			  IDLE_STACK_SIZE, idle, NULL, NULL, NULL,
-			  K_LOWEST_THREAD_PRIO, K_ESSENTIAL);
-	_mark_thread_as_started(_idle_thread);
-	_add_thread_to_ready_q(_idle_thread);
+	init_idle_thread(_idle_thread, _idle_stack);
+#endif
+
+#if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 1
+	init_idle_thread(_idle_thread1, _idle_stack1);
+#endif
+
+#if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 2
+	init_idle_thread(_idle_thread2, _idle_stack2);
+#endif
+
+#if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 3
+	init_idle_thread(_idle_thread3, _idle_stack3);
 #endif
 
 	initialize_timeouts();
