@@ -1087,13 +1087,10 @@ static void le_conn_update(struct net_buf *buf, struct net_buf **evt)
 	conn_latency = sys_le16_to_cpu(cmd->conn_latency);
 	supervision_timeout = sys_le16_to_cpu(cmd->supervision_timeout);
 
-	/** @todo if peer supports LE Conn Param Req,
-	* use Req cmd (1) instead of Initiate cmd (0).
-	*/
 	status = ll_conn_update(handle, 0, 0, conn_interval_max,
 				conn_latency, supervision_timeout);
 
-	*evt = cmd_status((!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED);
+	*evt = cmd_status(status);
 }
 
 static void le_conn_param_req_reply(struct net_buf *buf, struct net_buf **evt)
@@ -1115,7 +1112,7 @@ static void le_conn_param_req_reply(struct net_buf *buf, struct net_buf **evt)
 				timeout);
 
 	rp = cmd_complete(evt, sizeof(*rp));
-	rp->status = (!status) ?  0x00 : BT_HCI_ERR_CMD_DISALLOWED;
+	rp->status = status;
 	rp->handle = sys_cpu_to_le16(handle);
 }
 
@@ -1131,7 +1128,7 @@ static void le_conn_param_req_neg_reply(struct net_buf *buf,
 	status = ll_conn_update(handle, 2, cmd->reason, 0, 0, 0);
 
 	rp = cmd_complete(evt, sizeof(*rp));
-	rp->status = (!status) ?  0x00 : BT_HCI_ERR_CMD_DISALLOWED;
+	rp->status = status;
 	rp->handle = sys_cpu_to_le16(handle);
 }
 
