@@ -24,6 +24,44 @@
 
 __weak void _debug_fatal_hook(const NANO_ESF *esf) { ARG_UNUSED(esf); }
 
+#if defined(CONFIG_EXCEPTION_STACK_TRACE)
+struct stack_frame {
+	u32_t next;
+	u32_t ret_addr;
+	u32_t args;
+};
+
+#define MAX_STACK_FRAMES 8
+
+static void unwind_stack(u32_t base_ptr)
+{
+	struct stack_frame *frame;
+	int i;
+
+	if (!base_ptr) {
+		printk("NULL base ptr\n");
+		return;
+	}
+
+	for (i = 0; i < MAX_STACK_FRAMES; i++) {
+		if (base_ptr % sizeof(base_ptr) != 0) {
+			printk("unaligned frame ptr\n");
+			return;
+		}
+
+		frame = (struct stack_frame *)base_ptr;
+		if (!frame || !frame->ret_addr) {
+			break;
+		}
+#ifdef CONFIG_X86_IAMCU
+		printk("     0x%08x\n", frame->ret_addr);
+#else
+		printk("     0x%08x (0x%x)\n", frame->ret_addr, frame->args);
+#endif
+		base_ptr = frame->next;
+	}
+}
+#endif /* CONFIG_EXCEPTION_STACK_TRACE */
 
 /**
  *
@@ -90,15 +128,21 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 	}
 
 	printk("Current thread ID = %p\n"
-	       "Faulting segment:address = 0x%04x:0x%08x\n"
 	       "eax: 0x%08x, ebx: 0x%08x, ecx: 0x%08x, edx: 0x%08x\n"
 	       "esi: 0x%08x, edi: 0x%08x, ebp: 0x%08x, esp: 0x%08x\n"
-	       "eflags: 0x%x\n",
+	       "eflags: 0x%08x cs: 0x%04x\n"
+#ifdef CONFIG_EXCEPTION_STACK_TRACE
+	       "call trace:\n"
+#endif
+	       "eip: 0x%08x\n",
 	       k_current_get(),
-	       pEsf->cs & 0xFFFF, pEsf->eip,
 	       pEsf->eax, pEsf->ebx, pEsf->ecx, pEsf->edx,
 	       pEsf->esi, pEsf->edi, pEsf->ebp, pEsf->esp,
-	       pEsf->eflags);
+	       pEsf->eflags, pEsf->cs & 0xFFFF, pEsf->eip);
+#ifdef CONFIG_EXCEPTION_STACK_TRACE
+	unwind_stack(pEsf->ebp);
+#endif
+
 #endif /* CONFIG_PRINTK */
 
 

@@ -163,12 +163,21 @@ config OMIT_FRAME_POINTER
 config DEBUG_INFO
 	bool "Enable system debugging information"
 	default n
-	depends on X86
 	help
-	  This option enables the addition of various information that can be used
-	  by debuggers in debugging the system.
+	  This option enables the addition of various information that can be
+	  used by debuggers in debugging the system, or enable additional
+	  debugging information to be reported at runtime.
 
-	  NOTE: Does not currently work with the x86 IAMCU ABI.
+config EXCEPTION_STACK_TRACE
+	bool "Attempt to print stack traces upon exceptions"
+	default y
+	depends on PRINTK
+	depends on DEBUG_INFO
+	depends on !OMIT_FRAME_POINTER
+	help
+	  If the architecture fatal handling code supports it, attempt to
+	  print a stack trace of function memory addresses when an
+	  exception is reported.
 
 #
 # Miscellaneous debugging options
