@@ -13,6 +13,10 @@
 
 #include <ztest.h>
 #include <irq_offload.h>
+#include <debug/object_tracing.h>
+
+#define OBJ_LIST_NAME k_alert
+#define OBJ_LIST_TYPE struct k_alert
 
 #define TIMEOUT 100
 #define STACK_SIZE 512
@@ -224,6 +228,21 @@ void test_isr_kinit_alert(void)
 	isr_alert();
 }
 
+void test_alert_tracing(void)
+{
+	int obj_counter = 0;
+	void *obj_list = NULL;
+
+	obj_list   = SYS_TRACING_HEAD(OBJ_LIST_TYPE, OBJ_LIST_NAME);
+	while (obj_list != NULL) {
+		obj_list = SYS_TRACING_NEXT(OBJ_LIST_TYPE, OBJ_LIST_NAME,
+					    obj_list);
+		obj_counter++;
+	}
+	zassert_equal(obj_counter, 3, "Object count should be %d\n", obj_counter);
+
+}
+
 /*test case main entry*/
 void test_main(void)
 {
@@ -251,6 +270,7 @@ void test_main(void)
 			 ztest_unit_test(test_isr_alert_consumed),
 			 ztest_unit_test(test_isr_alert_pending),
 			 ztest_user_unit_test(test_thread_kinit_alert),
+			 ztest_user_unit_test(test_alert_tracing),
 			 ztest_unit_test(test_isr_kinit_alert));
 	ztest_run_test_suite(test_alert_api);
 }
