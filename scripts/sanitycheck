@@ -1051,7 +1051,7 @@ class MakeGenerator:
                     # nonzero status.
                     # Need to distinguish this case from a compilation failure.
                     if goal.handler:
-                        goal.fail("qemu_crash")
+                        goal.fail("handler_crash")
                     else:
                         goal.fail("build_error")
                 else:
@@ -1931,7 +1931,7 @@ class TestSuite:
 
         for name, goal in self.goals.items():
             if goal.failed:
-                if goal.reason in ['build_error', 'qemu_crash']:
+                if goal.reason in ['build_error', 'handler_crash']:
                     errors += 1
                 else:
                     fails += 1
