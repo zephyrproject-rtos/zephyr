@@ -17,9 +17,6 @@ enable_language(C CXX ASM)
 check_c_compiler_flag("" toolchain_is_ok)
 assert(toolchain_is_ok "The toolchain is unable to build a dummy C file. See CMakeError.log.")
 
-# Do not generate make install target.
-set(CMAKE_SKIP_INSTALL_RULES ON)
-
 set(CMAKE_EXECUTABLE_SUFFIX .elf)
 
 set(SOC_NAME ${CONFIG_SOC})
