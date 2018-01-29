@@ -392,6 +392,17 @@ struct _thread_base {
 		u16_t preempt;
 	};
 
+#ifdef CONFIG_SMP
+	/* True for the per-CPU idle threads */
+	u8_t is_idle;
+
+	/* Non-zero when actively running on a CPU */
+	u8_t active;
+
+	/* CPU index on which thread was last run */
+	u8_t cpu;
+#endif
+
 	/* data returned by APIs */
 	void *swap_data;
 

@@ -266,6 +266,10 @@ void __weak main(void)
 #if defined(CONFIG_MULTITHREADING)
 static void init_idle_thread(struct k_thread *thr, k_thread_stack_t *stack)
 {
+#ifdef CONFIG_SMP
+	thr->base.is_idle = 1;
+#endif
+
 	_setup_new_thread(thr, stack,
 			  IDLE_STACK_SIZE, idle, NULL, NULL, NULL,
 			  K_LOWEST_THREAD_PRIO, K_ESSENTIAL);
@@ -330,6 +334,7 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 		sys_dlist_init(&_ready_q.q[ii]);
 	}
 
+#ifndef CONFIG_SMP
 	/*
 	 * prime the cache with the main thread since:
 	 *
@@ -340,6 +345,7 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 	 *   to work as intended
 	 */
 	_ready_q.cache = _main_thread;
+#endif
 
 	_setup_new_thread(_main_thread, _main_stack,
 			  MAIN_STACK_SIZE, _main, NULL, NULL, NULL,

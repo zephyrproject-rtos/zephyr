@@ -38,7 +38,9 @@ GEN_OFFSET_SYM(_kernel_t, idle);
 GEN_OFFSET_SYM(_kernel_t, ready_q);
 GEN_OFFSET_SYM(_kernel_t, arch);
 
+#ifndef CONFIG_SMP
 GEN_OFFSET_SYM(_ready_q_t, cache);
+#endif
 
 #ifdef CONFIG_FP_SHARING
 GEN_OFFSET_SYM(_kernel_t, current_fp);

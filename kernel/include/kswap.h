@@ -43,6 +43,13 @@ static inline unsigned int _Swap(unsigned int key)
 
 	old_thread->swap_retval = -EAGAIN;
 
+#ifdef CONFIG_SMP
+	old_thread->base.active = 0;
+	new_thread->base.active = 1;
+
+	new_thread->base.cpu = _arch_curr_cpu()->id;
+#endif
+
 	_current = new_thread;
 	_arch_switch(new_thread->switch_handle,
 		     &old_thread->switch_handle);
