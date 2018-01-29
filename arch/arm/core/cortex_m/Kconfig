@@ -194,6 +194,7 @@ config SW_VECTOR_RELAY
 	bool
 	prompt "Enable Cortex-M0 Vector Table soft relay"
 	default n
+	default y if BOOTLOADER_MCUBOOT
 	depends on CPU_CORTEX_M0 && !CPU_CORTEX_M0_HAS_VECTOR_TABLE_REMAP
 	help
 	  Add Cortex-M0 Vector Table relay handler and relay vector table, to
