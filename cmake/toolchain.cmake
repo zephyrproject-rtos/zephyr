@@ -16,7 +16,7 @@ if(NOT ZEPHYR_GCC_VARIANT)
   endif()
 endif()
 set(ZEPHYR_GCC_VARIANT ${ZEPHYR_GCC_VARIANT} CACHE STRING "Zephyr GCC variant")
-assert(ZEPHYR_GCC_VARIANT "")
+assert(ZEPHYR_GCC_VARIANT "Zephyr GCC variant invalid: please set the ZEPHYR_GCC_VARIANT-variable")
 
 if(CONFIG_ARCH_POSIX OR (ZEPHYR_GCC_VARIANT STREQUAL "host"))
   set(COMPILER host-gcc)
