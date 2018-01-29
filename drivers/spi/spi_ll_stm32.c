@@ -429,7 +429,7 @@ static int spi_stm32_transceive(struct device *dev,
 	return transceive(dev, config, tx_bufs, rx_bufs, false, NULL);
 }
 
-#ifdef CONFIG_POLL
+#ifdef CONFIG_SPI_ASYNC
 static int spi_stm32_transceive_async(struct device *dev,
 				      const struct spi_config *config,
 				      const struct spi_buf_set *tx_bufs,
@@ -438,11 +438,11 @@ static int spi_stm32_transceive_async(struct device *dev,
 {
 	return transceive(dev, config, tx_bufs, rx_bufs, true, async);
 }
-#endif /* CONFIG_POLL */
+#endif /* CONFIG_SPI_ASYNC */
 
 static const struct spi_driver_api api_funcs = {
 	.transceive = spi_stm32_transceive,
-#ifdef CONFIG_POLL
+#ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_stm32_transceive_async,
 #endif
 	.release = spi_stm32_release,
