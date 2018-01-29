@@ -288,6 +288,25 @@ config CPU_CLOCK_FREQ_MHZ
 	  This option specifies the CPU Clock Frequency in MHz in order to
 	  convert Intel RDTSC timestamp to microseconds.
 
+config STATS
+	bool
+	prompt "Statistics support"
+	default n
+	help
+	  Enable per-module event counters for troubleshooting, maintenance,
+	  and usage monitoring.  Statistics can be retrieved with the mcumgr
+	  management subsystem.
+
+config STATS_NAMES
+	bool
+	prompt "Statistic names"
+	depends on STATS
+	default n
+	help
+	  Include a full name string for each statistic in the build.  If this
+	  setting is disabled, statistics are assigned generic names of the
+	  form "s0", "s1", etc.  Enabling this setting simplifies debugging,
+	  but results in a larger code size.
 endmenu
 
 menu "Boot Options"
