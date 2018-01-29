@@ -22,6 +22,7 @@ add_library(kernel
   thread_abort.c
   version.c
   work_q.c
+  smp.c
 )
 
 target_include_directories(kernel PRIVATE ${PROJECT_SOURCE_DIR}/include/posix)
