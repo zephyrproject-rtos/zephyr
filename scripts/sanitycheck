@@ -329,13 +329,13 @@ class NativeHandler(Handler):
         self.sourcedir = instance.test.code_location
         self.outdir = instance.outdir
         self.run_log = os.path.join(self.outdir, "run.log")
-        self.valgrind_log = os.path.join(self.outdir, "valgrind.log")
+        self.handler_log = os.path.join(self.outdir, "handler.log")
         self.valgrind = False
         self.returncode = 0
         self.set_state("running", {})
 
     def _output_reader(self, proc, harness):
-        log_out_fp = open(self.run_log, "wt")
+        log_out_fp = open(self.handler_log, "wt")
         for line in iter(proc.stdout.readline, b''):
             verbose("NATIVE: {0}".format(line.decode('utf-8').rstrip()))
             log_out_fp.write(line.decode('utf-8'))
@@ -373,10 +373,7 @@ class NativeHandler(Handler):
             proc.wait()
             self.returncode = proc.returncode
             if proc.returncode != 0:
-                if self.returncode == 1:
-                    out_state = "failed"
-                else:
-                    out_state = "failed valgrind"
+                out_state = "failed"
 
         returncode = subprocess.call(["GCOV_PREFIX=" + self.outdir, "gcov", self.sourcedir, "-b", "-s", self.outdir], shell=True)
 
@@ -398,14 +395,14 @@ class UnitHandler(Handler):
         self.sourcedir = instance.test.code_location
         self.outdir = instance.outdir
         self.run_log = os.path.join(self.outdir, "run.log")
-        self.valgrind_log = os.path.join(self.outdir, "valgrind.log")
+        self.handler_log = os.path.join(self.outdir, "handler.log")
         self.returncode = 0
         self.set_state("running", {})
 
     def handle(self):
         out_state = "failed"
 
-        with open(self.run_log, "wt") as rl, open(self.valgrind_log, "wt") as vl:
+        with open(self.run_log, "wt") as rl, open(self.handler_log, "wt") as vl:
             try:
                 binary = os.path.join(self.outdir, "testbinary")
                 command = [binary]
@@ -543,7 +540,7 @@ class QEMUHandler(Handler):
         timeout = instance.test.timeout
         name = instance.name
         run_log = os.path.join(outdir, "run.log")
-        qemu_log = os.path.join(outdir, "qemu.log")
+        handler_log = os.path.join(outdir, "handler.log")
 
         self.results = {}
 
@@ -555,7 +552,7 @@ class QEMUHandler(Handler):
         if os.path.exists(self.pid_fn):
             os.unlink(self.pid_fn)
 
-        self.log_fn = qemu_log
+        self.log_fn = handler_log
 
         harness_import = HarnessImporter(instance.test.harness.capitalize())
         harness = harness_import.instance
@@ -928,7 +925,7 @@ class MakeGenerator:
 
         build_logfile = os.path.join(outdir, "build.log")
         run_logfile = os.path.join(outdir, "run.log")
-        qemu_logfile = os.path.join(outdir, "qemu.log")
+        handler_logfile = os.path.join(outdir, "handler.log")
         self._add_goal(outdir)
 
         qemu_handler = QEMUHandler(instance)
@@ -941,7 +938,7 @@ class MakeGenerator:
                                    args, make_args="run") +
                 self._get_rule_footer(name))
         self.goals[name] = MakeGoal(name, text, qemu_handler, self.logfile, build_logfile,
-                                    run_logfile, qemu_logfile)
+                                    run_logfile, handler_logfile)
 
     def add_unit_goal(self, instance, args, timeout=30, coverage=False):
         outdir = instance.outdir
@@ -952,7 +949,7 @@ class MakeGenerator:
         self._add_goal(outdir)
         build_logfile = os.path.join(outdir, "build.log")
         run_logfile = os.path.join(outdir, "run.log")
-        valgrind_logfile = os.path.join(outdir, "valgrind.log")
+        handler_logfile = os.path.join(outdir, "handler.log")
         if coverage:
             args += ["COVERAGE=1"]
 
@@ -963,7 +960,7 @@ class MakeGenerator:
                 self._get_rule_footer(name))
         unit_handler = UnitHandler(instance)
         self.goals[name] = MakeGoal(name, text, unit_handler, self.logfile, build_logfile,
-                                    run_logfile, valgrind_logfile)
+                                    run_logfile, handler_logfile)
 
     def add_native_goal(self, instance, args, coverage=False):
 
@@ -975,7 +972,7 @@ class MakeGenerator:
         self._add_goal(outdir)
         build_logfile = os.path.join(outdir, "build.log")
         run_logfile = os.path.join(outdir, "run.log")
-        valgrind_logfile = os.path.join(outdir, "valgrind.log")
+        handler_logfile = os.path.join(outdir, "handler.log")
 
         # we handle running in the NativeHandler class
         text = (self._get_rule_header(name) +
@@ -984,7 +981,7 @@ class MakeGenerator:
                 self._get_rule_footer(name))
         native_handler = NativeHandler(instance)
         self.goals[name] = MakeGoal(name, text, native_handler, self.logfile, build_logfile,
-                                    run_logfile, valgrind_logfile)
+                                    run_logfile, handler_logfile)
 
     def add_test_instance(self, ti, build_only=False, enable_slow=False, coverage=False,
                           extra_args=[]):
@@ -1065,10 +1062,7 @@ class MakeGenerator:
                         if goal.handler:
                             if hasattr(goal.handler, "handle"):
                                 goal.handler.handle()
-                                if goal.handler.returncode == 2:
-                                    goal.handler_log = goal.handler.valgrind_log
-                                elif goal.handler.returncode:
-                                    goal.handler_log = goal.handler.run_log
+                                goal.handler_log = goal.handler.handler_log
 
                             thread_status, metrics = goal.handler.get_state()
                             goal.metrics.update(metrics)
@@ -1986,7 +1980,7 @@ class TestSuite:
                 p = ("%s/%s/%s" % (options.outdir, i.platform.name, i.test.name))
                 bl = os.path.join(p, "build.log")
                 if goal.reason != 'build_error':
-                    bl = os.path.join(p, "qemu.log")
+                    bl = os.path.join(p, "handler.log")
 
                 if os.path.exists(bl):
                     with open(bl, "rb") as f:
