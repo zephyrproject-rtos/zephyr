@@ -224,6 +224,14 @@ struct pdu_data_llctrl_enc_rsp {
 	u8_t ivs[4];
 } __packed;
 
+struct pdu_data_llctrl_start_enc_req {
+	/* no members */
+} __packed;
+
+struct pdu_data_llctrl_start_enc_rsp {
+	/* no members */
+} __packed;
+
 struct pdu_data_llctrl_unknown_rsp {
 	u8_t type;
 } __packed;
@@ -236,6 +244,14 @@ struct pdu_data_llctrl_feature_rsp {
 	u8_t features[8];
 } __packed;
 
+struct pdu_data_llctrl_pause_enc_req {
+	/* no members */
+} __packed;
+
+struct pdu_data_llctrl_pause_enc_rsp {
+	/* no members */
+} __packed;
+
 struct pdu_data_llctrl_version_ind {
 	u8_t  version_number;
 	u16_t company_id;
@@ -244,6 +260,10 @@ struct pdu_data_llctrl_version_ind {
 
 struct pdu_data_llctrl_reject_ind {
 	u8_t error_code;
+} __packed;
+
+struct pdu_data_llctrl_slave_feature_req {
+	u8_t features[8];
 } __packed;
 
 struct pdu_data_llctrl_conn_param_req {
@@ -281,14 +301,34 @@ struct pdu_data_llctrl_reject_ext_ind {
 	u8_t error_code;
 } __packed;
 
-struct pdu_data_llctrl_length_req_rsp {
+struct pdu_data_llctrl_ping_req {
+	/* no members */
+} __packed;
+
+struct pdu_data_llctrl_ping_rsp {
+	/* no members */
+} __packed;
+
+struct pdu_data_llctrl_length_req {
 	u16_t max_rx_octets;
 	u16_t max_rx_time;
 	u16_t max_tx_octets;
 	u16_t max_tx_time;
 } __packed;
 
-struct pdu_data_llctrl_phy_req_rsp {
+struct pdu_data_llctrl_length_rsp {
+	u16_t max_rx_octets;
+	u16_t max_rx_time;
+	u16_t max_tx_octets;
+	u16_t max_tx_time;
+} __packed;
+
+struct pdu_data_llctrl_phy_req {
+	u8_t tx_phys;
+	u8_t rx_phys;
+} __packed;
+
+struct pdu_data_llctrl_phy_rsp {
 	u8_t tx_phys;
 	u8_t rx_phys;
 } __packed;
@@ -312,19 +352,25 @@ struct pdu_data_llctrl {
 		struct pdu_data_llctrl_terminate_ind terminate_ind;
 		struct pdu_data_llctrl_enc_req enc_req;
 		struct pdu_data_llctrl_enc_rsp enc_rsp;
+		struct pdu_data_llctrl_start_enc_req start_enc_req;
+		struct pdu_data_llctrl_start_enc_rsp start_enc_rsp;
 		struct pdu_data_llctrl_unknown_rsp unknown_rsp;
 		struct pdu_data_llctrl_feature_req feature_req;
 		struct pdu_data_llctrl_feature_rsp feature_rsp;
+		struct pdu_data_llctrl_pause_enc_req pause_enc_req;
+		struct pdu_data_llctrl_pause_enc_rsp pause_enc_rsp;
 		struct pdu_data_llctrl_version_ind version_ind;
 		struct pdu_data_llctrl_reject_ind reject_ind;
-		struct pdu_data_llctrl_feature_req slave_feature_req;
+		struct pdu_data_llctrl_slave_feature_req slave_feature_req;
 		struct pdu_data_llctrl_conn_param_req conn_param_req;
 		struct pdu_data_llctrl_conn_param_rsp conn_param_rsp;
 		struct pdu_data_llctrl_reject_ext_ind reject_ext_ind;
-		struct pdu_data_llctrl_length_req_rsp length_req;
-		struct pdu_data_llctrl_length_req_rsp length_rsp;
-		struct pdu_data_llctrl_phy_req_rsp phy_req;
-		struct pdu_data_llctrl_phy_req_rsp phy_rsp;
+		struct pdu_data_llctrl_ping_req ping_req;
+		struct pdu_data_llctrl_ping_rsp ping_rsp;
+		struct pdu_data_llctrl_length_req length_req;
+		struct pdu_data_llctrl_length_rsp length_rsp;
+		struct pdu_data_llctrl_phy_req phy_req;
+		struct pdu_data_llctrl_phy_rsp phy_rsp;
 		struct pdu_data_llctrl_phy_upd_ind phy_upd_ind;
 		struct pdu_data_llctrl_min_used_chans_ind min_used_chans_ind;
 	} __packed ctrldata;
