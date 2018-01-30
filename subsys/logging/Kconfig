@@ -9,7 +9,7 @@ config SYS_LOG
 	bool
 	prompt "Enable Logging"
 	depends on PRINTK
-	default n
+	default y
 	help
 	  Global switch for logging, when turned off log calls will not be
 	  executed.
@@ -35,7 +35,7 @@ config SYS_LOG_DEFAULT_LEVEL
 	int
 	prompt "Default log level"
 	depends on SYS_LOG
-	default 0
+	default 3
 	range 0 4
 	help
 	  Sets log level for modules which don't specify it explicitly. When

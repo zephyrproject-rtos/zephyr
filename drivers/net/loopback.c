@@ -14,9 +14,6 @@
 #define SYS_LOG_DOMAIN "netlo"
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_NETLO_LEVEL
 #include <logging/sys_log.h>
-
-#include <misc/printk.h>
-
 #include <net/net_pkt.h>
 #include <net/buf.h>
 #include <net/net_ip.h>

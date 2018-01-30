@@ -10,11 +10,12 @@
 
 #include <kernel.h>
 #include <ring_buffer.h>
-#include <misc/printk.h>
 #include <stdio.h>
 #include <ipm.h>
 #include <console/ipm_console.h>
 #include <misc/__assert.h>
+#include <misc/printk.h>
+#include <logging/sys_log.h>
 
 static void ipm_console_thread(void *arg1, void *arg2, void *arg3)
 {
@@ -41,7 +42,7 @@ static void ipm_console_thread(void *arg1, void *arg2, void *arg3)
 				       NULL, &size32);
 		if (ret) {
 			/* Shouldn't ever happen... */
-			printk("ipm console ring buffer error: %d\n", ret);
+			SYS_LOG_ERR("ipm console ring buffer error: %d", ret);
 			size32 = 0;
 			continue;
 		}
@@ -125,13 +126,13 @@ int ipm_console_receiver_init(struct device *d)
 	ipm = device_get_binding(config_info->bind_to);
 
 	if (!ipm) {
-		printk("unable to bind IPM console receiver to '%s'\n",
+		SYS_LOG_ERR("unable to bind IPM console receiver to '%s'",
 		       config_info->bind_to);
 		return -EINVAL;
 	}
 
 	if (ipm_max_id_val_get(ipm) < 0xFF) {
-		printk("IPM driver %s doesn't support 8-bit id values",
+		SYS_LOG_ERR("IPM driver %s doesn't support 8-bit id values",
 		       config_info->bind_to);
 		return -EINVAL;
 	}

@@ -12,7 +12,7 @@
 
 #include <kernel.h>
 #include <drivers/system_timer.h>
-#include <misc/printk.h>
+#include <logging/sys_log.h>
 #include <misc/reboot.h>
 
 extern void sys_arch_reboot(int type);
@@ -25,7 +25,7 @@ void sys_reboot(int type)
 	sys_arch_reboot(type);
 
 	/* should never get here */
-	printk("Failed to reboot: spinning endlessly...\n");
+	SYS_LOG_ERR("Failed to reboot: spinning endlessly...");
 	for (;;) {
 		k_cpu_idle();
 	}

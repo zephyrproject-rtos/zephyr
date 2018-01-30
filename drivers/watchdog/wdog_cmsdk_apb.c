@@ -11,8 +11,8 @@
 #include <errno.h>
 #include <soc.h>
 #include <watchdog.h>
-#include <misc/printk.h>
 #include <misc/reboot.h>
+#include <logging/sys_log.h>
 
 struct wdog_cmsdk_apb {
 	/* offset: 0x000 (r/w) watchdog load register */
@@ -165,7 +165,7 @@ static void wdog_cmsdk_apb_isr(void)
 	 * and if not, exit immediately
 	 */
 	if (!wdog_cmsdk_apb_has_fired()) {
-		printk("NMI received! Rebooting...\n");
+		SYS_LOG_INF("NMI received! Rebooting...");
 		/* In ARM implementation sys_reboot ignores the parameter */
 		sys_reboot(0);
 	} else {

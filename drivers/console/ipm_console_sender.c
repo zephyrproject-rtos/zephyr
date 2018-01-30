@@ -9,7 +9,7 @@
 #include <errno.h>
 
 #include <kernel.h>
-#include <misc/printk.h>
+#include <logging/sys_log.h>
 #include <ipm.h>
 #include <console/ipm_console.h>
 
@@ -41,7 +41,7 @@ int ipm_console_sender_init(struct device *d)
 	ipm_console_device = device_get_binding(config_info->bind_to);
 
 	if (!ipm_console_device) {
-		printk("unable to bind IPM console sender to '%s'\n",
+		SYS_LOG_ERR("unable to bind IPM console sender to '%s'",
 		       config_info->bind_to);
 		return -EINVAL;
 	}

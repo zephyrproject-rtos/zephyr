@@ -57,7 +57,9 @@ __printf_like(2, 3) void bt_log(int prio, const char *fmt, ...);
 #if !defined(SYS_LOG_DOMAIN)
 #define SYS_LOG_DOMAIN "bt"
 #endif
+#if !defined(SYS_LOG_LEVEL)
 #define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
+#endif
 #include <logging/sys_log.h>
 
 #define BT_DBG(fmt, ...) \

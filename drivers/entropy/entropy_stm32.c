@@ -13,7 +13,6 @@
 #include <misc/util.h>
 #include <errno.h>
 #include <soc.h>
-#include <misc/printk.h>
 #include <clock_control.h>
 #include <clock_control/stm32_clock_control.h>
 

@@ -71,11 +71,11 @@
 
 #include <kernel.h>
 #include <arch/cpu.h>
-#include <misc/printk.h>
 #include <toolchain.h>
 #include <linker/sections.h>
 
 #include <board.h>
+#include <logging/sys_log.h>
 
 #include <pci/pci_mgr.h>
 #include <pci/pci.h>
@@ -419,9 +419,7 @@ static void pci_set_command_bits(struct pci_dev_info *dev_info, u32_t bits)
 	pci_ctrl_addr.field.device = dev_info->dev;
 	pci_ctrl_addr.field.reg = 1;
 
-#ifdef CONFIG_PCI_DEBUG
-	printk("pci_set_command_bits 0x%x\n", pci_ctrl_addr.value);
-#endif
+	SYS_LOG_DBG("pci_set_command_bits 0x%x", pci_ctrl_addr.value);
 
 	pci_read(DEFAULT_PCI_CONTROLLER,
 			pci_ctrl_addr,
@@ -458,9 +456,9 @@ void pci_enable_bus_master(struct pci_dev_info *dev_info)
 
 void pci_show(struct pci_dev_info *dev_info)
 {
-	printk("PCI device:\n");
-	printk("%u:%u %X:%X class: 0x%X, %u, %u, %s,"
-		"addrs: 0x%X-0x%X, IRQ %d\n",
+	SYS_LOG_INF("PCI device:");
+	SYS_LOG_INF("%u:%u %X:%X class: 0x%X, %u, %u, %s,"
+		"addrs: 0x%X-0x%X, IRQ %d",
 		dev_info->bus,
 		dev_info->dev,
 		dev_info->vendor_id,
