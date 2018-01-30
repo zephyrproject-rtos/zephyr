@@ -16,27 +16,27 @@
 			 PDU_AC_PAYLOAD_SIZE_MAX)
 #define PDU_EM_SIZE_MAX offsetof(struct pdu_data, payload)
 
-struct pdu_adv_payload_adv_ind {
+struct pdu_adv_adv_ind {
 	u8_t addr[BDADDR_SIZE];
 	u8_t data[31];
 } __packed;
 
-struct pdu_adv_payload_direct_ind {
+struct pdu_adv_direct_ind {
 	u8_t adv_addr[BDADDR_SIZE];
 	u8_t tgt_addr[BDADDR_SIZE];
 } __packed;
 
-struct pdu_adv_payload_scan_rsp {
+struct pdu_adv_scan_rsp {
 	u8_t addr[BDADDR_SIZE];
 	u8_t data[31];
 } __packed;
 
-struct pdu_adv_payload_scan_req {
+struct pdu_adv_scan_req {
 	u8_t scan_addr[BDADDR_SIZE];
 	u8_t adv_addr[BDADDR_SIZE];
 } __packed;
 
-struct pdu_adv_payload_connect_ind {
+struct pdu_adv_connect_ind {
 	u8_t init_addr[BDADDR_SIZE];
 	u8_t adv_addr[BDADDR_SIZE];
 	struct {
@@ -54,7 +54,7 @@ struct pdu_adv_payload_connect_ind {
 } __packed;
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-struct pdu_adv_payload_com_ext_adv {
+struct pdu_adv_com_ext_adv {
 	u8_t ext_hdr_len:6;
 	u8_t adv_mode:2;
 	u8_t ext_hdr_adi_adv_data[254];
@@ -146,14 +146,14 @@ struct pdu_adv {
 	u8_t len:8;
 
 	union {
-		struct pdu_adv_payload_adv_ind adv_ind;
-		struct pdu_adv_payload_direct_ind direct_ind;
-		struct pdu_adv_payload_scan_req scan_req;
-		struct pdu_adv_payload_scan_rsp scan_rsp;
-		struct pdu_adv_payload_connect_ind connect_ind;
+		struct pdu_adv_adv_ind adv_ind;
+		struct pdu_adv_direct_ind direct_ind;
+		struct pdu_adv_scan_req scan_req;
+		struct pdu_adv_scan_rsp scan_rsp;
+		struct pdu_adv_connect_ind connect_ind;
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-		struct pdu_adv_payload_com_ext_adv adv_ext_ind;
+		struct pdu_adv_com_ext_adv adv_ext_ind;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 	} __packed payload;
 } __packed;

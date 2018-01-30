@@ -137,11 +137,11 @@ u32_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 		pdu->rx_addr = direct_addr_type;
 		memcpy(&pdu->payload.direct_ind.tgt_addr[0], direct_addr,
 		       BDADDR_SIZE);
-		pdu->len = sizeof(struct pdu_adv_payload_direct_ind);
+		pdu->len = sizeof(struct pdu_adv_direct_ind);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	} else if (pdu->type == PDU_ADV_TYPE_EXT_IND) {
-		struct pdu_adv_payload_com_ext_adv *p;
+		struct pdu_adv_com_ext_adv *p;
 		struct ext_adv_hdr *h;
 		u8_t *ptr;
 		u8_t len;
@@ -182,14 +182,14 @@ u32_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 
 		/* Calc primary PDU len */
 		len = ptr - (u8_t *)p;
-		if (len > (offsetof(struct pdu_adv_payload_com_ext_adv,
+		if (len > (offsetof(struct pdu_adv_com_ext_adv,
 				    ext_hdr_adi_adv_data) + sizeof(*h))) {
 			p->ext_hdr_len = len -
-				offsetof(struct pdu_adv_payload_com_ext_adv,
+				offsetof(struct pdu_adv_com_ext_adv,
 					 ext_hdr_adi_adv_data);
 			pdu->len = len;
 		} else {
-			pdu->len = offsetof(struct pdu_adv_payload_com_ext_adv,
+			pdu->len = offsetof(struct pdu_adv_com_ext_adv,
 					    ext_hdr_adi_adv_data);
 		}
 
@@ -367,7 +367,7 @@ u32_t ll_adv_enable(u8_t enable)
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	} else if (pdu_adv->type == PDU_ADV_TYPE_EXT_IND) {
-		struct pdu_adv_payload_com_ext_adv *p;
+		struct pdu_adv_com_ext_adv *p;
 		struct ext_adv_hdr *h;
 		u8_t *ptr;
 
