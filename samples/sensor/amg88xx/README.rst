@@ -20,8 +20,8 @@ only in a SMD design. Here are two sources for easily working with this sensor:
 - `AMG88xx Evaluation Kit`_
 - `Adafruit AMG8833 8x8 Thermal Camera Sensor`_
 
-We used the Evalutation Kit mounted on FRDM-K64F board.
-On the Evalutation Kit, all jumpers except the J11 must be removed.
+We used the Evaluation Kit mounted on FRDM-K64F board.
+On the Evaluation Kit, all jumpers except the J11 must be removed.
 
 This sample uses the sensor APIs and the provided driver for the AMG88xx sensor.
 

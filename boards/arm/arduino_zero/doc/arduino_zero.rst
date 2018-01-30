@@ -86,7 +86,7 @@ Programming and Debugging
 *************************
 
 The Arduino Zero comes with a Atmel Embedded Debugger (EDBG).  This
-provices a debug interface to the SAMD21 chip and is supported by
+provides a debug interface to the SAMD21 chip and is supported by
 OpenOCD.
 
 Flashing
