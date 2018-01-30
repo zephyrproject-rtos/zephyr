@@ -896,7 +896,7 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 		[_radio.advertiser.adv_data.first][0];
 
 	if ((pdu_adv->type == PDU_ADV_TYPE_SCAN_REQ) &&
-	    (pdu_adv->len == sizeof(struct pdu_adv_payload_scan_req)) &&
+	    (pdu_adv->len == sizeof(struct pdu_adv_scan_req)) &&
 	    isr_adv_sr_check(_pdu_adv, pdu_adv, devmatch_ok, &rl_idx)) {
 
 #if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
@@ -932,7 +932,7 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 
 		return 0;
 	} else if ((pdu_adv->type == PDU_ADV_TYPE_CONNECT_IND) &&
-		   (pdu_adv->len == sizeof(struct pdu_adv_payload_connect_ind)) &&
+		   (pdu_adv->len == sizeof(struct pdu_adv_connect_ind)) &&
 		   isr_adv_ci_check(_pdu_adv, pdu_adv, devmatch_ok, &rl_idx) &&
 		   ((_radio.fc_ena == 0) || (_radio.fc_req == _radio.fc_ack)) &&
 		   (_radio.advertiser.conn)) {
@@ -1383,7 +1383,7 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 		}
 
 		pdu_adv_tx->rx_addr = pdu_adv_rx->tx_addr;
-		pdu_adv_tx->len = sizeof(struct pdu_adv_payload_connect_ind);
+		pdu_adv_tx->len = sizeof(struct pdu_adv_connect_ind);
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 		lrpa = ctrl_lrpa_get(rl_idx);
 		if (_radio.scanner.rpa_gen && lrpa) {
@@ -1630,7 +1630,7 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 		pdu_adv_tx = (struct pdu_adv *)radio_pkt_scratch_get();
 		pdu_adv_tx->type = PDU_ADV_TYPE_SCAN_REQ;
 		pdu_adv_tx->rx_addr = pdu_adv_rx->tx_addr;
-		pdu_adv_tx->len = sizeof(struct pdu_adv_payload_scan_req);
+		pdu_adv_tx->len = sizeof(struct pdu_adv_scan_req);
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 		lrpa = ctrl_lrpa_get(rl_idx);
 		if (_radio.scanner.rpa_gen && lrpa) {
