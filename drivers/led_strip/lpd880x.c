@@ -29,6 +29,7 @@
 			       SPI_LINES_SINGLE)
 
 struct lpd880x_data {
+	struct device *spi;
 	struct spi_config config;
 };
 
@@ -43,23 +44,33 @@ static int lpd880x_update(struct device *dev, void *data, size_t size)
 	u8_t reset_size = ceiling_fraction(ceiling_fraction(size, 3), 32);
 	u8_t reset_buf[reset_size];
 	u8_t last = 0x00;
-	struct spi_buf bufs[3];
+	const struct spi_buf bufs[3] = {
+		{
+			/* Prepares the strip to shift in new data values. */
+			.buf = reset_buf,
+			.len = reset_size
+		},
+		{
+			/* Displays the serialized pixel data. */
+			.buf = data,
+			.len = size
+		},
+		{
+			/* Ensures the last byte of pixel data is displayed. */
+			.buf = &last,
+			.len = sizeof(last)
+		}
+
+	};
+	const struct spi_buf_set tx = {
+		.buffers = bufs,
+		.count = 3
+	};
 	size_t rc;
 
-	/* Prepares the strip to shift in new data values. */
 	memset(reset_buf, 0x00, reset_size);
-	bufs[0].buf = reset_buf;
-	bufs[0].len = reset_size;
 
-	/* Displays the serialized pixel data. */
-	bufs[1].buf = data;
-	bufs[1].len = size;
-
-	/* Ensures the last byte of pixel data is displayed. */
-	bufs[2].buf = &last;
-	bufs[2].len = sizeof(last);
-
-	rc = spi_write(&drv_data->config, bufs, ARRAY_SIZE(bufs));
+	rc = spi_write(drv_data->spi, &drv_data->config, &tx);
 	if (rc) {
 		SYS_LOG_ERR("can't update strip: %d", rc);
 	}
@@ -112,16 +123,14 @@ static int lpd880x_strip_init(struct device *dev)
 {
 	struct lpd880x_data *data = dev->driver_data;
 	struct spi_config *config = &data->config;
-	struct device *spi;
 
-	spi = device_get_binding(CONFIG_LPD880X_STRIP_SPI_DEV_NAME);
-	if (!spi) {
+	data->spi = device_get_binding(CONFIG_LPD880X_STRIP_SPI_DEV_NAME);
+	if (!data->spi) {
 		SYS_LOG_ERR("SPI device %s not found",
 			    CONFIG_LPD880X_STRIP_SPI_DEV_NAME);
 		return -ENODEV;
 	}
 
-	config->dev = spi;
 	config->frequency = CONFIG_LPD880X_STRIP_SPI_BAUD_RATE;
 	config->operation = LPD880X_SPI_OPERATION;
 	config->slave = 0;	/* MOSI/CLK only; CS is not supported. */

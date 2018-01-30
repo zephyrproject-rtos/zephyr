@@ -24,7 +24,8 @@ struct cc1200_context {
 	/**************************/
 	struct cc1200_gpio_configuration *gpios;
 	struct gpio_callback rx_tx_cb;
-	struct spi_config spi;
+	struct device *spi;
+	struct spi_config spi_cfg;
 	u8_t mac_addr[8];
 	/************RF************/
 	const struct cc1200_rf_registers_set *rf_settings;
@@ -46,45 +47,45 @@ struct cc1200_context {
  ***************************
  */
 
-bool _cc1200_access_reg(struct spi_config *spi, bool read, u8_t addr,
+bool _cc1200_access_reg(struct cc1200_context *ctx, bool read, u8_t addr,
 			void *data, size_t length, bool extended, bool burst);
 
-static inline u8_t _cc1200_read_single_reg(struct spi_config *spi,
+static inline u8_t _cc1200_read_single_reg(struct cc1200_context *ctx,
 					   u8_t addr, bool extended)
 {
 	u8_t val;
 
-	if (_cc1200_access_reg(spi, true, addr, &val, 1, extended, false)) {
+	if (_cc1200_access_reg(ctx, true, addr, &val, 1, extended, false)) {
 		return val;
 	}
 
 	return 0;
 }
 
-static inline bool _cc1200_write_single_reg(struct spi_config *spi,
+static inline bool _cc1200_write_single_reg(struct cc1200_context *ctx,
 					    u8_t addr, u8_t val, bool extended)
 {
-	return _cc1200_access_reg(spi, false, addr, &val, 1, extended, false);
+	return _cc1200_access_reg(ctx, false, addr, &val, 1, extended, false);
 }
 
-static inline bool _cc1200_instruct(struct spi_config *spi, u8_t addr)
+static inline bool _cc1200_instruct(struct cc1200_context *ctx, u8_t addr)
 {
-	return _cc1200_access_reg(spi, false, addr, NULL, 0, false, false);
+	return _cc1200_access_reg(ctx, false, addr, NULL, 0, false, false);
 }
 
 #define DEFINE_REG_READ(__reg_name, __reg_addr, __ext)			\
-	static inline u8_t read_reg_##__reg_name(struct spi_config *spi) \
+	static inline u8_t read_reg_##__reg_name(struct cc1200_context *ctx) \
 	{								\
 		/*SYS_LOG_DBG("");*/					\
-		return _cc1200_read_single_reg(spi, __reg_addr, __ext);	\
+		return _cc1200_read_single_reg(ctx, __reg_addr, __ext);	\
 	}
 
 #define DEFINE_REG_WRITE(__reg_name, __reg_addr, __ext)			\
-	static inline bool write_reg_##__reg_name(struct spi_config *spi, \
+	static inline bool write_reg_##__reg_name(struct cc1200_context *ctx, \
 						  u8_t val)		\
 	{								\
 		/*SYS_LOG_DBG("");*/					\
-		return _cc1200_write_single_reg(spi, __reg_addr,	\
+		return _cc1200_write_single_reg(ctx, __reg_addr,	\
 						val, __ext);		\
 	}
 
@@ -106,10 +107,10 @@ DEFINE_REG_READ(num_rxbytes, CC1200_REG_NUM_RXBYTES, true)
  */
 
 #define DEFINE_STROBE_INSTRUCTION(__ins_name, __ins_addr)		\
-	static inline bool instruct_##__ins_name(struct spi_config *spi) \
+	static inline bool instruct_##__ins_name(struct cc1200_context *ctx) \
 	{								\
 		/*SYS_LOG_DBG("");*/					\
-		return _cc1200_instruct(spi, __ins_addr);		\
+		return _cc1200_instruct(ctx, __ins_addr);		\
 	}
 
 DEFINE_STROBE_INSTRUCTION(sres, CC1200_INS_SRES)
