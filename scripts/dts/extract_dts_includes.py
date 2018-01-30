@@ -197,7 +197,12 @@ def find_parent_irq_node(node_address):
             interrupt_parent = reduced[address]['props'].get(
                 'interrupt-parent')
 
-    return reduced[phandles[interrupt_parent]]
+    if interrupt_parent in phandles:
+        # TODO: Can we omit this if branch, is interrupt_parent ever
+        # in phandles?
+        return reduced[phandles[interrupt_parent]]
+    else:
+        return reduced[interrupt_parent]
 
 def find_parent_prop(node_address, prop):
     parent_address = ''

@@ -4,15 +4,15 @@ include(${ZEPHYR_BASE}/cmake/host-tools-zephyr.cmake)
 # TOOLCHAIN_HOME. Usually DTC will be provided by an SDK, but for
 # SDK-less projects like gccarmemb, it is up to the user to install
 # dtc.
-find_program(
-  DTC
-  dtc
-  )
-if(${DTC} STREQUAL DTC-NOTFOUND)
-  message(FATAL_ERROR "Unable to find dtc")
-endif()
-
 if (NOT WIN32)
+  find_program(
+    DTC
+    dtc
+    )
+  if(${DTC} STREQUAL DTC-NOTFOUND)
+    message(FATAL_ERROR "Unable to find dtc")
+  endif()
+
   find_program(
     KCONFIG_CONF
     conf

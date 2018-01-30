@@ -15,8 +15,31 @@
 # limitations under the License.
 #
 
+import os
 import sys
 import pprint
+import collections
+
+import ast
+import operator as op
+
+class FileWrapper:
+  def __init__(self, file_obj):
+    self.file_obj = file_obj
+    self.buffer = ''
+
+  def readline(self):
+    ret = self.buffer
+
+    if not ret.endswith('\n'):
+      ret += self.file_obj.readline()
+
+    self.buffer = ''
+    return ret
+
+  def unread(self, buffer):
+    self.buffer += buffer
+
 
 def read_until(line, fd, end):
   out = [line]
@@ -44,11 +67,22 @@ def remove_comment(line, fd):
     out.append(line[:idx])
     line = read_until(line[idx:], fd, '*/')[-1]
 
-def clean_line(line, fd):
-  return remove_comment(line, fd).strip()
+def remove_preprocessor_directives(line):
+  if line.startswith('# '):
+    return ''
+  return line
 
-def parse_node_name(line):
-  line = line[:-1]
+def clean_line(line, fd):
+  line = remove_preprocessor_directives(line)
+  line = remove_comment(line, fd)
+  line = line.strip()
+  return line
+
+def parse_node_name(fd, line):
+  line, rest = line.split('{', 1)
+
+  if rest:
+    fd.unread(rest + '\n')
 
   if '@' in line:
     line, addr = line.split('@')
@@ -67,6 +101,10 @@ def parse_node_name(line):
   return label, name.strip(), addr, int(addr,16)
 
 def parse_values_internal(value, start, end, separator):
+  # Remove the prefix 'start', and the suffix 'end' from 'value' and
+  # write the resulting string to the variable 'out'
+  #
+  # out = value[len(start):-len(end)]
   out = []
 
   inside = False
@@ -92,7 +130,71 @@ def parse_values_internal(value, start, end, separator):
 
   return [parse_value(v) for v in out]
 
+def substitue_evaluation_of_expression(value):
+  # Find out where the first expression starts and ends.
+  paren_nesting_level = 1
+  start = value.index("(")
+  i = start + 1
+  while paren_nesting_level > 0:
+    if value[i] == ")":
+      paren_nesting_level -= 1
+    elif value[i] == "(":
+      paren_nesting_level += 1
+
+    i +=1
+
+  end = i
+
+  # Attribution:
+  # https://stackoverflow.com/a/9558001/1134134
+  # supported operators
+  operators = {
+    ast.Add: op.add,
+    ast.Sub: op.sub,
+    ast.Mult: op.mul,
+    ast.Div: op.truediv,
+    ast.Pow: op.pow,
+    ast.BitXor: op.xor,
+    ast.BitOr: op.or_,
+    ast.LShift: op.lshift,
+    ast.USub: op.neg,
+  }
+
+  def eval_expr(expr):
+    """
+    >>> eval_expr('2^6')
+    4
+    >>> eval_expr('2**6')
+    64
+    >>> eval_expr('1 + 2*3**(4^5) / (6 + -7)')
+    -5.0
+    """
+    return eval_(ast.parse(expr, mode='eval').body)
+
+  def eval_(node):
+      if isinstance(node, ast.Num): # <number>
+          return node.n
+      elif isinstance(node, ast.BinOp): # <left> <operator> <right>
+          return operators[type(node.op)](eval_(node.left), eval_(node.right))
+      elif isinstance(node, ast.UnaryOp): # <operator> <operand> e.g., -1
+          return operators[type(node.op)](eval_(node.operand))
+      else:
+          raise TypeError(node)
+
+  expr = value[start:end]
+  evaluated = eval_expr(expr)
+
+  # Substitue the expression with the evaluated expression
+  return value[0:start] + str(evaluated) + value[end:]
+
 def parse_values(value, start, end, separator):
+
+  # If we find a '(' in the value, we immediately evaluate the first
+  # expression and substitue the expression with the evaluated
+  # value. Repeat until expressions are evaluated.
+  while "(" in value:
+    value = substitue_evaluation_of_expression(value)
+
   out = parse_values_internal(value, start, end, separator)
   if isinstance(out, list) and all(isinstance(v, str) and len(v) == 1 and not v.isalpha() for v in out):
     return bytearray(out)
@@ -137,7 +239,7 @@ def parse_property(property, fd):
   if not property.endswith(';'):
     raise SyntaxError("parse_property: missing semicolon: %s" % property)
 
-  return property[:-1].strip(), True
+  return property[:-1].strip(), {'empty': True}
 
 def build_node_name(name, addr):
   if addr is None:
@@ -148,29 +250,30 @@ def build_node_name(name, addr):
   return '%s@%s' % (name, addr.strip())
 
 def parse_node(line, fd):
-  label, name, addr, numeric_addr = parse_node_name(line)
+  label, name, addr, numeric_addr = parse_node_name(fd, line)
 
   node = {
     'label': label,
-    'type': type,
     'addr': numeric_addr,
     'children': {},
     'props': {},
     'name': build_node_name(name, addr)
   }
+
   while True:
     line = fd.readline()
     if not line:
       raise SyntaxError("parse_node: Missing } while parsing node")
 
     line = clean_line(line, fd)
+
     if not line:
       continue
 
-    if line == "};":
+    if line == '};':
       break
 
-    if line.endswith('{'):
+    if '{' in line:
       new_node = parse_node(line, fd)
       node['children'][new_node['name']] = new_node
     else:
@@ -179,9 +282,33 @@ def parse_node(line, fd):
 
   return node
 
-def parse_file(fd, ignore_dts_version=False):
+def open_with_include_path(file_path, mode, include_path):
+  for path in include_path:
+    try:
+      fd = open(os.path.join(path, file_path), mode)
+    except IOError:
+      continue
+
+    return FileWrapper(fd)
+
+  raise IOError("Could not find %s in %s" % (file_path, include_path))
+
+def update_node(node, new_node):
+  for k, v in new_node.items():
+    if isinstance(v, collections.Mapping):
+      node[k] = update_node(node.get(k, {}), v)
+    else:
+      node[k] = v
+  return node
+
+def parse_file(fd, ignore_dts_version=False, include_path=[]):
+  fd = FileWrapper(fd)
+
+  include_path.append(os.getcwd())
+
   nodes = {}
   has_v1_tag = False
+
   while True:
     line = fd.readline()
     if not line:
@@ -193,7 +320,7 @@ def parse_file(fd, ignore_dts_version=False):
 
     if line.startswith('/include/ '):
       tag, filename = line.split()
-      with open(filename.strip()[1:-1], "r") as new_fd:
+      with open_with_include_path(filename.strip()[1:-1], "r", include_path) as new_fd:
         nodes.update(parse_file(new_fd, True))
     elif line == '/dts-v1/;':
       has_v1_tag = True
@@ -203,7 +330,6 @@ def parse_file(fd, ignore_dts_version=False):
       end = int(end[:-1], 16)
       label = "reserved_memory_0x%x_0x%x" % (start, end)
       nodes[label] = {
-        'type': 'memory',
         'reg': [start, end],
         'label': label,
         'addr': start,
@@ -214,7 +340,7 @@ def parse_file(fd, ignore_dts_version=False):
         raise SyntaxError("parse_file: Missing /dts-v1/ tag")
 
       new_node = parse_node(line, fd)
-      nodes[new_node['name']] = new_node
+      nodes[new_node['name']] = update_node(nodes.get(new_node['name'], {}), new_node)
     else:
       raise SyntaxError("parse_file: Couldn't understand the line: %s" % line)
   return nodes
