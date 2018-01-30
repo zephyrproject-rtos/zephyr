@@ -10,7 +10,6 @@
 
 #include <init.h>
 #include <sensor.h>
-#include <spi.h>
 #include <misc/byteorder.h>
 #include <kernel.h>
 #include <misc/__assert.h>
@@ -19,91 +18,70 @@
 
 struct bmi160_device_data bmi160_data;
 
-static int bmi160_transceive(struct device *dev, u8_t *tx_buf,
-			     u8_t tx_buf_len, u8_t *rx_buf,
-			     u8_t rx_buf_len)
+static int bmi160_transceive(struct device *dev, u8_t reg,
+			     bool write, void *data, size_t length)
 {
-	const struct bmi160_device_config *dev_cfg = dev->config->config_info;
 	struct bmi160_device_data *bmi160 = dev->driver_data;
-	struct spi_config spi_cfg;
+	const struct spi_buf buf[2] = {
+		{
+			.buf = &reg,
+			.len = 1
+		},
+		{
+			.buf = data,
+			.len = length
+		}
+	};
+	const struct spi_buf_set tx = {
+		.buffers = buf,
+		.count = data ? 2 : 1
+	};
 
-	spi_cfg.config = SPI_WORD(8);
-	spi_cfg.max_sys_freq = dev_cfg->spi_freq;
+	if (!write) {
+		const struct spi_buf_set rx = {
+			.buffers = buf,
+			.count = 2
+		};
 
-	if (spi_configure(bmi160->spi, &spi_cfg) < 0) {
-		SYS_LOG_DBG("Cannot configure SPI bus.");
-		return -EIO;
+		return spi_transceive(bmi160->spi, &bmi160->spi_cfg, &tx, &rx);
 	}
 
-	if (spi_slave_select(bmi160->spi, dev_cfg->spi_slave) < 0) {
-		SYS_LOG_DBG("Cannot select slave.");
-		return -EIO;
-	}
-
-	return spi_transceive(bmi160->spi, tx_buf, tx_buf_len,
-			      rx_buf, rx_buf_len);
+	return spi_write(bmi160->spi, &bmi160->spi_cfg, &tx);
+}
+int bmi160_read(struct device *dev, u8_t reg_addr, u8_t *data, u8_t len)
+{
+	return bmi160_transceive(dev, reg_addr | BIT(7), false, data, len);
 }
 
-int bmi160_read(struct device *dev, u8_t reg_addr,
-		u8_t *data, u8_t len)
+int bmi160_byte_read(struct device *dev, u8_t reg_addr, u8_t *byte)
 {
-	u8_t tx[3] = {0};
-
-	tx[0] = reg_addr | (1 << 7);
-
-	return bmi160_transceive(dev, tx, len, data, len);
+	return bmi160_transceive(dev, reg_addr | BIT(7), false, byte, 1);
 }
 
-int bmi160_byte_read(struct device *dev, u8_t reg_addr,
-		     u8_t *byte)
+static int bmi160_word_read(struct device *dev, u8_t reg_addr, u16_t *word)
 {
-	u8_t rx_buf[2];
-
-	if (bmi160_read(dev, reg_addr, rx_buf, 2) < 0) {
+	if (bmi160_transceive(dev, reg_addr | BIT(7), false, word, 2) != 0) {
 		return -EIO;
 	}
 
-	*byte = rx_buf[1];
-
-	return 0;
-}
-
-static int bmi160_word_read(struct device *dev, u8_t reg_addr,
-			    u16_t *word)
-{
-	union {
-		u8_t raw[3];
-		struct {
-			u8_t dummy;
-			u16_t word;
-		} __packed;
-	} buf;
-
-	if (bmi160_read(dev, reg_addr, buf.raw, 3) < 0) {
-		return -EIO;
-	}
-
-	*word = sys_le16_to_cpu(buf.word);
+	*word = sys_le16_to_cpu(*word);
 
 	return 0;
 }
 
 int bmi160_byte_write(struct device *dev, u8_t reg_addr, u8_t byte)
 {
-	u8_t tx_buf[2] = {reg_addr & 0x7F, byte};
-
-	return bmi160_transceive(dev, tx_buf, 2, NULL, 0);
+	return bmi160_transceive(dev, reg_addr & 0x7F, true, &byte, 1);
 }
 
 int bmi160_word_write(struct device *dev, u8_t reg_addr, u16_t word)
 {
-	u8_t tx_buf[3] = {
-		reg_addr & 0x7F,
+	u8_t tx_word[2] = {
 		(u8_t)(word & 0xff),
 		(u8_t)(word >> 8)
 	};
 
-	return bmi160_transceive(dev, tx_buf, 3, NULL, 0);
+	return bmi160_transceive(dev, reg_addr & 0x7F, true, tx_word, 2);
 }
 
 int bmi160_reg_field_update(struct device *dev, u8_t reg_addr,
@@ -115,8 +93,8 @@ int bmi160_reg_field_update(struct device *dev, u8_t reg_addr,
 		return -EIO;
 	}
 
-	return  bmi160_byte_write(dev, reg_addr,
-				  (old_val & ~mask) | ((val << pos) & mask));
+	return bmi160_byte_write(dev, reg_addr,
+				 (old_val & ~mask) | ((val << pos) & mask));
 }
 
 static int bmi160_pmu_set(struct device *dev, union bmi160_pmu_status *pmu_sts)
@@ -148,7 +126,7 @@ static int bmi160_pmu_set(struct device *dev, union bmi160_pmu_status *pmu_sts)
 		/* make sure the PMU_STATUS was set, though */
 		do {
 			if (bmi160_byte_read(dev, BMI160_REG_PMU_STATUS,
-					       &sts.raw) < 0) {
+					     &sts.raw) < 0) {
 				return -EIO;
 			}
 
@@ -482,8 +460,8 @@ static int bmi160_gyr_range_set(struct device *dev, u16_t range)
 {
 	struct bmi160_device_data *bmi160 = dev->driver_data;
 	s32_t reg_val = bmi160_range_to_reg_val(range,
-						  bmi160_gyr_range_map,
-						  BMI160_GYR_RANGE_MAP_SIZE);
+						bmi160_gyr_range_map,
+						BMI160_GYR_RANGE_MAP_SIZE);
 
 	if (reg_val < 0) {
 		return reg_val;
@@ -645,32 +623,28 @@ static int bmi160_attr_set(struct device *dev, enum sensor_channel chan,
 static int bmi160_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct bmi160_device_data *bmi160 = dev->driver_data;
-	u8_t tx[BMI160_BUF_SIZE] = {0};
 	size_t i;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
-	bmi160->sample.raw[1] = 0;
+	bmi160->sample.raw[0] = 0;
 
-	while ((bmi160->sample.raw[1] & BMI160_DATA_READY_BIT_MASK) == 0) {
-		tx[0] = BMI160_REG_STATUS | (1 << 7);
-
-		if (bmi160_transceive(dev, tx, 2, bmi160->sample.raw, 2) < 0) {
+	while ((bmi160->sample.raw[0] & BMI160_DATA_READY_BIT_MASK) == 0) {
+		if (bmi160_transceive(dev, BMI160_REG_STATUS | (1 << 7), false,
+				      bmi160->sample.raw, 1) < 0) {
 			return -EIO;
 		}
 	}
 
-	tx[0] = BMI160_SAMPLE_BURST_READ_ADDR | (1 << 7);
-
-	if (bmi160_transceive(dev, tx, BMI160_BUF_SIZE, bmi160->sample.raw,
-			      BMI160_BUF_SIZE) < 0) {
+	if (bmi160_transceive(dev, BMI160_SAMPLE_BURST_READ_ADDR | (1 << 7),
+			      false, bmi160->sample.raw, BMI160_BUF_SIZE) < 0) {
 		return -EIO;
 	}
 
 	/* convert samples to cpu endianness */
 	for (i = 0; i < BMI160_SAMPLE_SIZE; i += 2) {
 		u16_t *sample =
-			(u16_t *) &bmi160->sample.raw[BMI160_DATA_OFS + i];
+			(u16_t *) &bmi160->sample.raw[i];
 
 		*sample = sys_le16_to_cpu(*sample);
 	}
@@ -814,17 +788,20 @@ static const struct sensor_driver_api bmi160_api = {
 
 int bmi160_init(struct device *dev)
 {
-	const struct bmi160_device_config *cfg = dev->config->config_info;
 	struct bmi160_device_data *bmi160 = dev->driver_data;
 	u8_t val = 0;
 	s32_t acc_range, gyr_range;
 
-	bmi160->spi = device_get_binding((char *)cfg->spi_port);
+	bmi160->spi = device_get_binding(CONFIG_BMI160_SPI_PORT_NAME);
 	if (!bmi160->spi) {
 		SYS_LOG_DBG("SPI master controller not found: %d.",
-			    bmi160->spi);
+			    CONFIG_BMI160_SPI_PORT_NAME);
 		return -EINVAL;
 	}
+
+	bmi160->spi_cfg.operation = SPI_WORD_SET(8);
+	bmi160->spi_cfg.frequency = CONFIG_BMI160_SPI_BUS_FREQ;
+	bmi160->spi_cfg.slave = CONFIG_BMI160_SLAVE;
 
 	/* reboot the chip */
 	if (bmi160_byte_write(dev, BMI160_REG_CMD, BMI160_CMD_SOFT_RESET) < 0) {
@@ -920,9 +897,6 @@ int bmi160_init(struct device *dev)
 }
 
 const struct bmi160_device_config bmi160_config = {
-	.spi_port = CONFIG_BMI160_SPI_PORT_NAME,
-	.spi_freq = CONFIG_BMI160_SPI_BUS_FREQ,
-	.spi_slave = CONFIG_BMI160_SLAVE,
 #if defined(CONFIG_BMI160_TRIGGER)
 	.gpio_port = CONFIG_BMI160_GPIO_DEV_NAME,
 	.int_pin = CONFIG_BMI160_GPIO_PIN_NUM,
