@@ -16,8 +16,7 @@
 
 struct spi_flash_data {
 	struct device *spi;
-	u8_t buf[CONFIG_SPI_FLASH_W25QXXDV_MAX_DATA_LEN +
-		    W25QXXDV_LEN_CMD_ADDRESS];
+	struct spi_config spi_cfg;
 	struct k_sem sem;
 };
 
