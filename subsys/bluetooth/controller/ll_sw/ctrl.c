@@ -2015,7 +2015,7 @@ isr_rx_conn_pkt_ctrl_rej_dle(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		      &pdu_data_rx->payload.llctrl.ctrldata.reject_ext_ind;
 	if (rej_ext_ind->reject_opcode == PDU_DATA_LLCTRL_TYPE_LENGTH_REQ) {
 		struct connection *conn = _radio.conn_curr;
-		struct pdu_data_llctrl_length_req_rsp *lr;
+		struct pdu_data_llctrl_length_req *lr;
 
 		/* Procedure complete */
 		conn->llcp_length.ack = conn->llcp_length.req;
@@ -2027,7 +2027,7 @@ isr_rx_conn_pkt_ctrl_rej_dle(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		/* prepare length rsp structure */
 		pdu_data_rx->len = offsetof(struct pdu_data_llctrl,
 					    ctrldata) +
-			sizeof(struct pdu_data_llctrl_length_req_rsp);
+			sizeof(struct pdu_data_llctrl_length_rsp);
 		pdu_data_rx->payload.llctrl.opcode =
 			PDU_DATA_LLCTRL_TYPE_LENGTH_RSP;
 
@@ -2218,10 +2218,9 @@ static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 		 PDU_DATA_LLCTRL_TYPE_LENGTH_RSP) ||
 		(pdu_data_rx->payload.llctrl.opcode ==
 		 PDU_DATA_LLCTRL_TYPE_LENGTH_REQ)))))) {
-		struct pdu_data_llctrl_length_req_rsp *lr;
+		struct pdu_data_llctrl_length_req *lr;
 
-		lr = (struct pdu_data_llctrl_length_req_rsp *)
-			&pdu_data_rx->payload.llctrl.ctrldata.length_req;
+		lr = &pdu_data_rx->payload.llctrl.ctrldata.length_req;
 
 		/* use the minimal of our default_tx_octets and
 		 * peer max_rx_octets
@@ -7330,7 +7329,7 @@ static inline void event_len_prep(struct connection *conn)
 	switch (conn->llcp_length.state) {
 	case LLCP_LENGTH_STATE_REQ:
 	{
-		struct pdu_data_llctrl_length_req_rsp *lr;
+		struct pdu_data_llctrl_length_req *lr;
 		struct radio_pdu_node_tx *node_tx;
 		struct pdu_data *pdu_ctrl_tx;
 		u16_t free_count_rx;
@@ -7362,12 +7361,11 @@ static inline void event_len_prep(struct connection *conn)
 		pdu_ctrl_tx = (struct pdu_data *) node_tx->pdu_data;
 		pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
 		pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, ctrldata) +
-			sizeof(struct pdu_data_llctrl_length_req_rsp);
+			sizeof(struct pdu_data_llctrl_length_req);
 		pdu_ctrl_tx->payload.llctrl.opcode =
 			PDU_DATA_LLCTRL_TYPE_LENGTH_REQ;
 
-		lr = (struct pdu_data_llctrl_length_req_rsp *)
-			&pdu_ctrl_tx->payload.llctrl.ctrldata.length_req;
+		lr = &pdu_ctrl_tx->payload.llctrl.ctrldata.length_req;
 		lr->max_rx_octets = RADIO_LL_LENGTH_OCTETS_RX_MAX;
 		lr->max_tx_octets = conn->default_tx_octets;
 		lr->max_rx_time = RADIO_PKT_TIME(RADIO_LL_LENGTH_OCTETS_RX_MAX,
@@ -7389,7 +7387,7 @@ static inline void event_len_prep(struct connection *conn)
 
 	case LLCP_LENGTH_STATE_RESIZE:
 	{
-		struct pdu_data_llctrl_length_req_rsp *lr;
+		struct pdu_data_llctrl_length_rsp *lr;
 		struct radio_pdu_node_rx *node_rx;
 		struct pdu_data *pdu_ctrl_rx;
 		u16_t packet_rx_data_size;
@@ -7517,12 +7515,12 @@ static inline void event_len_prep(struct connection *conn)
 		pdu_ctrl_rx->ll_id = PDU_DATA_LLID_CTRL;
 		pdu_ctrl_rx->len = offsetof(struct pdu_data_llctrl,
 					    ctrldata) +
-			sizeof(struct pdu_data_llctrl_length_req_rsp);
+			sizeof(struct pdu_data_llctrl_length_rsp);
 		pdu_ctrl_rx->payload.llctrl.opcode =
 			PDU_DATA_LLCTRL_TYPE_LENGTH_RSP;
 
-		lr = (struct pdu_data_llctrl_length_req_rsp *)
-			&pdu_ctrl_rx->payload.llctrl.ctrldata.length_req;
+		lr = (struct pdu_data_llctrl_length_rsp *)
+			&pdu_ctrl_rx->payload.llctrl.ctrldata.length_rsp;
 		lr->max_rx_octets = conn->max_rx_octets;
 		lr->max_tx_octets = conn->max_tx_octets;
 #if !defined(CONFIG_BT_CTLR_PHY)
@@ -9455,7 +9453,7 @@ static void length_resp_send(struct connection *conn,
 	pdu_ctrl_tx = (struct pdu_data *) node_tx->pdu_data;
 	pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
 	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, ctrldata) +
-		sizeof(struct pdu_data_llctrl_length_req_rsp);
+		sizeof(struct pdu_data_llctrl_length_rsp);
 	pdu_ctrl_tx->payload.llctrl.opcode =
 		PDU_DATA_LLCTRL_TYPE_LENGTH_RSP;
 	pdu_ctrl_tx->payload.llctrl.ctrldata.length_rsp.max_rx_octets =
