@@ -341,8 +341,8 @@ static int spi_stm32_release(const struct spi_config *config)
 }
 
 static int transceive(const struct spi_config *config,
-		      const struct spi_buf *tx_bufs, u32_t tx_count,
-		      struct spi_buf *rx_bufs, u32_t rx_count,
+		      const struct spi_buf_array *tx_bufs,
+		      const struct spi_buf_array *rx_bufs,
 		      bool asynchronous, struct k_poll_signal *signal)
 {
 	const struct spi_stm32_config *cfg = CONFIG_CFG(config);
@@ -368,8 +368,7 @@ static int transceive(const struct spi_config *config,
 	}
 
 	/* Set buffers info */
-	spi_context_buffers_setup(&data->ctx, tx_bufs, tx_count,
-				  rx_bufs, rx_count, 1);
+	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
 
 #if defined(CONFIG_SPI_STM32_HAS_FIFO)
 	/* Flush RX buffer */
@@ -411,23 +410,19 @@ static int transceive(const struct spi_config *config,
 }
 
 static int spi_stm32_transceive(const struct spi_config *config,
-				const struct spi_buf *tx_bufs, u32_t tx_count,
-				struct spi_buf *rx_bufs, u32_t rx_count)
+				const struct spi_buf_array *tx_bufs,
+				const struct spi_buf_array *rx_bufs)
 {
-	return transceive(config, tx_bufs, tx_count,
-			  rx_bufs, rx_count, false, NULL);
+	return transceive(config, tx_bufs, rx_bufs, false, NULL);
 }
 
 #ifdef CONFIG_POLL
 static int spi_stm32_transceive_async(const struct spi_config *config,
-				      const struct spi_buf *tx_bufs,
-				      size_t tx_count,
-				      struct spi_buf *rx_bufs,
-				      size_t rx_count,
+				      const struct spi_buf_array *tx_bufs,
+				      const struct spi_buf_array *rx_bufs,
 				      struct k_poll_signal *async)
 {
-	return transceive(config, tx_bufs, tx_count,
-			  rx_bufs, rx_count, true, async);
+	return transceive(config, tx_bufs, rx_bufs, true, async);
 }
 #endif /* CONFIG_POLL */
 
