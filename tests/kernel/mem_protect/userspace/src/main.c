@@ -14,6 +14,8 @@
 #include <stdlib.h>
 
 #define INFO(fmt, ...) printk(fmt, ##__VA_ARGS__)
+#define PIPE_LEN 1
+#define BYTES_TO_READ_WRITE 1
 
 K_SEM_DEFINE(uthread_start_sem, 0, 1);
 K_SEM_DEFINE(uthread_end_sem, 0, 1);
@@ -356,13 +358,43 @@ static void user_mode_enter(void)
 			NULL, NULL, NULL);
 }
 
+/* Define and initialize pipe. */
+K_PIPE_DEFINE(kpipe, PIPE_LEN, BYTES_TO_READ_WRITE);
+static size_t bytes_written_read;
+
+static void write_kobject_user_pipe(void)
+{
+	/*
+	 * Attempt to use system call from k_pipe_get to write over
+	 * a kernel object.
+	 */
+	k_pipe_get(&kpipe, &uthread_start_sem, BYTES_TO_READ_WRITE,
+		&bytes_written_read, 1,	K_NO_WAIT);
+
+	zassert_unreachable("System call memory write validation "
+		"did not fault\n");
+}
+
+static void read_kobject_user_pipe(void)
+{
+	/*
+	 * Attempt to use system call from k_pipe_put to read a
+	 * kernel object.
+	 */
+	k_pipe_put(&kpipe, &uthread_start_sem, BYTES_TO_READ_WRITE,
+		&bytes_written_read, 1, K_NO_WAIT);
+
+	zassert_unreachable("System call memory read validation "
+		"did not fault\n");
+}
+
 void test_main(void)
 {
 	k_thread_access_grant(k_current_get(),
 			      &kthread_thread, &kthread_stack,
 			      &uthread_thread, &uthread_stack,
 			      &uthread_start_sem, &uthread_end_sem,
-			      &test_revoke_sem, NULL);
+			      &test_revoke_sem, &kpipe, NULL);
 	ztest_test_suite(test_userspace,
 			 ztest_user_unit_test(is_usermode),
 			 ztest_user_unit_test(write_control),
@@ -383,7 +415,9 @@ void test_main(void)
 			 ztest_user_unit_test(revoke_noperms_object),
 			 ztest_user_unit_test(access_after_revoke),
 			 ztest_user_unit_test(revoke_other_thread),
-			 ztest_unit_test(user_mode_enter)
+			 ztest_unit_test(user_mode_enter),
+			 ztest_user_unit_test(write_kobject_user_pipe),
+			 ztest_user_unit_test(read_kobject_user_pipe)
 		);
 	ztest_run_test_suite(test_userspace);
 }
