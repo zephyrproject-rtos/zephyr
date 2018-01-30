@@ -156,11 +156,11 @@
 
 struct adxl362_data {
 	struct device *spi;
+	struct spi_config spi_cfg;
 	s32_t acc_x;
 	s32_t acc_y;
 	s32_t acc_z;
 	s32_t temp;
-	u8_t spi_slave;
 	u8_t selected_range;
 };
 
