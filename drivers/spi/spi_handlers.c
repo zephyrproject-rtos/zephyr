@@ -8,7 +8,7 @@
 #include <syscall_handler.h>
 
 #ifndef CONFIG_SPI_LEGACY_API
-static void verify_spi_buf_array(struct spi_buf *bufs, size_t len,
+static void verify_spi_buf_array(const struct spi_buf *bufs, size_t len,
 				 int writable, void *ssf)
 {
 	/* Empty array, nothing to do */
@@ -27,19 +27,31 @@ static void verify_spi_buf_array(struct spi_buf *bufs, size_t len,
 	}
 }
 
-_SYSCALL_HANDLER(spi_transceive, config_p, tx_bufs, tx_count, rx_bufs,
-		 rx_count)
+_SYSCALL_HANDLER(spi_transceive, dev, config_p, tx_bufs, rx_bufs)
 {
 	const struct spi_config *config = (const struct spi_config *)config_p;
 
 	_SYSCALL_MEMORY_READ(config, sizeof(*config));
-	_SYSCALL_OBJ(config->dev, K_OBJ_DRIVER_SPI);
+	_SYSCALL_OBJ(dev, K_OBJ_DRIVER_SPI);
 
 	/* ssf is implicit system call stack frame parameter, used by
 	 * _SYSCALL_* APIs when something goes wrong.
 	 */
-	verify_spi_buf_array((struct spi_buf *)tx_bufs, tx_count, 0, ssf);
-	verify_spi_buf_array((struct spi_buf *)rx_bufs, rx_count, 1, ssf);
+	if (tx_bufs) {
+		const struct spi_buf_set *tx =
+			(const struct spi_buf_set *)tx_bufs;
+
+		_SYSCALL_MEMORY_READ(tx_bufs, sizeof(struct spi_buf_set));
+		verify_spi_buf_array(tx->buffers, tx->count, 0, ssf);
+	}
+
+	if (rx_bufs) {
+		const struct spi_buf_set *rx =
+			(const struct spi_buf_set *)rx_bufs;
+
+		_SYSCALL_MEMORY_READ(rx_bufs, sizeof(struct spi_buf_set));
+		verify_spi_buf_array(rx->buffers, rx->count, 1, ssf);
+	}
 
 	if (config->cs) {
 		struct spi_cs_control *cs = config->cs;
@@ -50,17 +62,17 @@ _SYSCALL_HANDLER(spi_transceive, config_p, tx_bufs, tx_count, rx_bufs,
 		}
 	}
 
-	return _impl_spi_transceive(config, (const struct spi_buf *)tx_bufs,
-				    tx_count, (struct spi_buf *)rx_bufs,
-				    rx_count);
+	return _impl_spi_transceive((struct device *)dev, config,
+				    (const struct spi_buf_set *)tx_bufs,
+				    (const struct spi_buf_set *)rx_bufs);
 }
 
-_SYSCALL_HANDLER(spi_release, config_p)
+_SYSCALL_HANDLER(spi_release, dev, config_p)
 {
 	const struct spi_config *config = (const struct spi_config *)config_p;
 
 	_SYSCALL_MEMORY_READ(config, sizeof(*config));
-	_SYSCALL_OBJ(config->dev, K_OBJ_DRIVER_SPI);
-	return _impl_spi_release(config);
+	_SYSCALL_OBJ(dev, K_OBJ_DRIVER_SPI);
+	return _impl_spi_release((struct device *)dev, config);
 }
 #endif
