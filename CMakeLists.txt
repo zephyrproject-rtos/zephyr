@@ -106,8 +106,6 @@ zephyr_compile_options(
 )
 
 zephyr_compile_options(
-  $<$<COMPILE_LANGUAGE:C>:-std=c99>
-
   $<$<COMPILE_LANGUAGE:CXX>:-std=c++11>
   $<$<COMPILE_LANGUAGE:CXX>:-fcheck-new>
   $<$<COMPILE_LANGUAGE:CXX>:-ffunction-sections>
@@ -225,7 +223,13 @@ if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
     # comparison of unsigned expression < 0 is always false
     -Wno-tautological-compare
     )
+  zephyr_compile_options(
+    $<$<COMPILE_LANGUAGE:C>:-std=c11>
+  )
 else() # GCC assumed
+  zephyr_compile_options(
+    $<$<COMPILE_LANGUAGE:C>:-std=c99>
+  )
   zephyr_cc_option(
     -Wno-unused-but-set-variable
     -fno-reorder-functions
