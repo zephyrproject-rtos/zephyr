@@ -167,7 +167,7 @@ you may add a conditionally compiled (:option:`CONFIG_ARCH_POSIX`) call to
 Debugging
 =========
 
-Since the Zephyr executable is a native application, it can be debuged and
+Since the Zephyr executable is a native application, it can be debugged and
 instrumented as any other native program. The program is compiled with debug
 information, so it can be run directly in, for example, ``gdb`` or instrumented
 with ``valgrind``.
@@ -334,7 +334,7 @@ depending on interrupt priorities, masking, and locking state.
 
 Normally the resulting executable runs fully decoupled from the real host time.
 That is, simulated time will advance as fast as it can. This is desirable when
-running in a debuger or testing in batch, but not if one wants to interact
+running in a debugger or testing in batch, but not if one wants to interact
 with external interfaces which are based on the real host time.
 
 Peripherals
