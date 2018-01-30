@@ -25,7 +25,7 @@ static int lis2dh_trigger_drdy_set(struct device *dev, enum sensor_channel chan,
 	/* cancel potentially pending trigger */
 	atomic_clear_bit(&lis2dh->trig_flags, TRIGGED_INT1);
 
-	status = lis2dh_reg_field_update(lis2dh->bus, LIS2DH_REG_CTRL3,
+	status = lis2dh_reg_field_update(dev, LIS2DH_REG_CTRL3,
 					 LIS2DH_EN_DRDY1_INT1_SHIFT,
 					 LIS2DH_EN_DRDY1_INT1, 0);
 
@@ -49,18 +49,19 @@ static int lis2dh_trigger_drdy_set(struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-static int lis2dh_start_trigger_int1(const struct lis2dh_data *lis2dh)
+static int lis2dh_start_trigger_int1(struct device *dev)
 {
+	struct lis2dh_data *lis2dh = dev->driver_data;
 	int status;
 	u8_t raw[LIS2DH_BUF_SZ];
 	u8_t ctrl1 = 0;
 
 	/* power down temporarly to align interrupt & data output sampling */
-	status = lis2dh_reg_read_byte(lis2dh->bus, LIS2DH_REG_CTRL1, &ctrl1);
+	status = lis2dh_reg_read_byte(dev, LIS2DH_REG_CTRL1, &ctrl1);
 	if (unlikely(status < 0)) {
 		return status;
 	}
-	status = lis2dh_reg_write_byte(lis2dh->bus, LIS2DH_REG_CTRL1,
+	status = lis2dh_reg_write_byte(dev, LIS2DH_REG_CTRL1,
 				       ctrl1 & ~LIS2DH_ODR_MASK);
 	if (unlikely(status < 0)) {
 		return status;
@@ -69,8 +70,7 @@ static int lis2dh_start_trigger_int1(const struct lis2dh_data *lis2dh)
 	SYS_LOG_DBG("ctrl1=0x%x @tick=%u", ctrl1, k_cycle_get_32());
 
 	/* empty output data */
-	status = lis2dh_burst_read(lis2dh->bus, LIS2DH_REG_STATUS, raw,
-				   sizeof(raw));
+	status = lis2dh_burst_read(dev, LIS2DH_REG_STATUS, raw, sizeof(raw));
 	if (unlikely(status < 0)) {
 		return status;
 	}
@@ -78,12 +78,12 @@ static int lis2dh_start_trigger_int1(const struct lis2dh_data *lis2dh)
 	gpio_pin_enable_callback(lis2dh->gpio, CONFIG_LIS2DH_INT1_GPIO_PIN);
 
 	/* re-enable output sampling */
-	status = lis2dh_reg_write_byte(lis2dh->bus, LIS2DH_REG_CTRL1, ctrl1);
+	status = lis2dh_reg_write_byte(dev, LIS2DH_REG_CTRL1, ctrl1);
 	if (unlikely(status < 0)) {
 		return status;
 	}
 
-	return lis2dh_reg_field_update(lis2dh->bus, LIS2DH_REG_CTRL3,
+	return lis2dh_reg_field_update(dev, LIS2DH_REG_CTRL3,
 				       LIS2DH_EN_DRDY1_INT1_SHIFT,
 				       LIS2DH_EN_DRDY1_INT1, 1);
 }
@@ -104,11 +104,10 @@ static int lis2dh_trigger_anym_set(struct device *dev,
 	atomic_clear_bit(&lis2dh->trig_flags, TRIGGED_INT2);
 
 	/* disable all interrupt 2 events */
-	status = lis2dh_reg_write_byte(lis2dh->bus, LIS2DH_REG_INT2_CFG, 0);
+	status = lis2dh_reg_write_byte(dev, LIS2DH_REG_INT2_CFG, 0);
 
 	/* make sure any pending interrupt is cleared */
-	status = lis2dh_reg_read_byte(lis2dh->bus, LIS2DH_REG_INT2_SRC,
-				      &reg_val);
+	status = lis2dh_reg_read_byte(dev, LIS2DH_REG_INT2_SRC, &reg_val);
 
 	lis2dh->handler_anymotion = handler;
 	if ((handler == NULL) || (status < 0)) {
@@ -127,8 +126,9 @@ static int lis2dh_trigger_anym_set(struct device *dev,
 	return 0;
 }
 
-static int lis2dh_start_trigger_int2(const struct lis2dh_data *lis2dh)
+static int lis2dh_start_trigger_int2(struct device *dev)
 {
+	struct lis2dh_data *lis2dh = dev->driver_data;
 	int status;
 
 	status = gpio_pin_enable_callback(lis2dh->gpio,
@@ -137,7 +137,7 @@ static int lis2dh_start_trigger_int2(const struct lis2dh_data *lis2dh)
 		SYS_LOG_ERR("enable callback failed err=%d", status);
 	}
 
-	return lis2dh_reg_write_byte(lis2dh->bus, LIS2DH_REG_INT2_CFG,
+	return lis2dh_reg_write_byte(dev, LIS2DH_REG_INT2_CFG,
 				     LIS2DH_ANYM_CFG);
 }
 
@@ -165,8 +165,7 @@ int lis2dh_acc_slope_config(struct device *dev, enum sensor_attribute attr,
 		u8_t range_g, reg_val;
 		u32_t slope_th_ums2;
 
-		status = lis2dh_reg_read_byte(lis2dh->bus, LIS2DH_REG_CTRL4,
-					      &reg_val);
+		status = lis2dh_reg_read_byte(dev, LIS2DH_REG_CTRL4, &reg_val);
 		if (status < 0) {
 			return status;
 		}
@@ -188,7 +187,7 @@ int lis2dh_acc_slope_config(struct device *dev, enum sensor_attribute attr,
 		SYS_LOG_INF("int2_ths=0x%x range_g=%d ums2=%u", reg_val,
 			    range_g, slope_th_ums2 - 1);
 
-		status = lis2dh_reg_write_byte(lis2dh->bus, LIS2DH_REG_INT2_THS,
+		status = lis2dh_reg_write_byte(dev, LIS2DH_REG_INT2_THS,
 					       reg_val);
 	} else { /* SENSOR_ATTR_SLOPE_DUR */
 		/*
@@ -201,7 +200,7 @@ int lis2dh_acc_slope_config(struct device *dev, enum sensor_attribute attr,
 
 		SYS_LOG_INF("int2_dur=0x%x", val->val1);
 
-		status = lis2dh_reg_write_byte(lis2dh->bus, LIS2DH_REG_INT2_DUR,
+		status = lis2dh_reg_write_byte(dev, LIS2DH_REG_INT2_DUR,
 					       val->val1);
 	}
 
@@ -249,7 +248,7 @@ static void lis2dh_thread_cb(void *arg)
 
 	if (unlikely(atomic_test_and_clear_bit(&lis2dh->trig_flags,
 		     START_TRIG_INT1))) {
-		int status = lis2dh_start_trigger_int1(lis2dh);
+		int status = lis2dh_start_trigger_int1(dev);
 
 		if (unlikely(status < 0)) {
 			SYS_LOG_ERR("lis2dh_start_trigger_int1: %d", status);
@@ -259,7 +258,7 @@ static void lis2dh_thread_cb(void *arg)
 
 	if (unlikely(atomic_test_and_clear_bit(&lis2dh->trig_flags,
 		     START_TRIG_INT2))) {
-		int status = lis2dh_start_trigger_int2(lis2dh);
+		int status = lis2dh_start_trigger_int2(dev);
 
 		if (unlikely(status < 0)) {
 			SYS_LOG_ERR("lis2dh_start_trigger_int2: %d", status);
@@ -290,8 +289,7 @@ static void lis2dh_thread_cb(void *arg)
 		u8_t reg_val;
 
 		/* clear interrupt 2 to de-assert int2 line */
-		lis2dh_reg_read_byte(lis2dh->bus, LIS2DH_REG_INT2_SRC,
-				     &reg_val);
+		lis2dh_reg_read_byte(dev, LIS2DH_REG_INT2_SRC, &reg_val);
 
 		if (likely(lis2dh->handler_anymotion != NULL)) {
 			lis2dh->handler_anymotion(dev, &anym_trigger);
@@ -401,7 +399,7 @@ int lis2dh_init_interrupt(struct device *dev)
 	lis2dh->dev = dev;
 #endif
 	/* disable interrupt 2 in case of warm (re)boot */
-	status = lis2dh_reg_write_byte(lis2dh->bus, LIS2DH_REG_INT2_CFG, 0);
+	status = lis2dh_reg_write_byte(dev, LIS2DH_REG_INT2_CFG, 0);
 	if (status < 0) {
 		SYS_LOG_ERR("Interrupt 2 disable reg write failed (%d)",
 			    status);
@@ -409,15 +407,14 @@ int lis2dh_init_interrupt(struct device *dev)
 	}
 
 	memset(raw, 0, sizeof(raw));
-	status = lis2dh_burst_write(lis2dh->bus, LIS2DH_REG_INT2_THS, raw,
-				    sizeof(raw));
+	status = lis2dh_burst_write(dev, LIS2DH_REG_INT2_THS, raw, sizeof(raw));
 	if (status < 0) {
 		SYS_LOG_ERR("Burst write to INT2 THS failed (%d)", status);
 		return status;
 	}
 
 	/* latch int2 line interrupt */
-	status = lis2dh_reg_write_byte(lis2dh->bus, LIS2DH_REG_CTRL5,
+	status = lis2dh_reg_write_byte(dev, LIS2DH_REG_CTRL5,
 				       LIS2DH_EN_LIR_INT2);
 	if (status < 0) {
 		SYS_LOG_ERR("INT2 latch enable reg write failed (%d)", status);
@@ -429,6 +426,6 @@ int lis2dh_init_interrupt(struct device *dev)
 		    CONFIG_LIS2DH_INT2_GPIO_PIN, LIS2DH_INT2_CFG);
 
 	/* enable interrupt 2 on int2 line */
-	return lis2dh_reg_write_byte(lis2dh->bus, LIS2DH_REG_CTRL6,
+	return lis2dh_reg_write_byte(dev, LIS2DH_REG_CTRL6,
 				     LIS2DH_EN_INT2_INT2);
 }
