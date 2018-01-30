@@ -5,4 +5,3 @@ tests:
     harness: sensor
     tags: sensors
     depends_on: spi gpio
-    filter: CONFIG_SPI_LEGACY_API
