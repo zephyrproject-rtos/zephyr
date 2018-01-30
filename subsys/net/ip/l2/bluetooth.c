@@ -401,7 +401,7 @@ static bool ad_parse(struct net_buf_simple *ad,
 			return false;
 		}
 
-		if (len > ad->len || ad->len < 1) {
+		if (len > ad->len) {
 			NET_ERR("AD malformed\n");
 			return false;
 		}

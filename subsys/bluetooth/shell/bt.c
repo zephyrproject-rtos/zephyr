@@ -147,7 +147,7 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t evtype,
 		}
 
 		/* Check if field length is correct */
-		if (len > buf->len || buf->len < 1) {
+		if (len > buf->len) {
 			break;
 		}
 
