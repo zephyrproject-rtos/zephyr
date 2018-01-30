@@ -40,8 +40,13 @@ extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
  */
 static ALWAYS_INLINE void _InterruptStackSetup(void)
 {
+#ifdef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
+	u32_t msp = (u32_t)(K_THREAD_STACK_BUFFER(_interrupt_stack) +
+			    CONFIG_ISR_STACK_SIZE - MPU_GUARD_ALIGN_AND_SIZE);
+#else
 	u32_t msp = (u32_t)(K_THREAD_STACK_BUFFER(_interrupt_stack) +
 			    CONFIG_ISR_STACK_SIZE);
+#endif
 
 	_MspSet(msp);
 }
