@@ -1578,7 +1578,7 @@ struct net_if_api {
 #define NET_IF_INIT(dev_name, sfx, _l2, _mtu, _num_configs)		\
 	static struct net_if_dev (NET_IF_DEV_GET_NAME(dev_name, sfx))	\
 	__used __attribute__((__section__(".net_if_dev.data"))) = {	\
-		.dev = &(__device_##dev_name),				\
+		.dev = &(DEVICE_NAME_GET(dev_name)),			\
 		.l2 = &(NET_L2_GET_NAME(_l2)),				\
 		.l2_data = &(NET_L2_GET_DATA(dev_name, sfx)),		\
 		.mtu = _mtu,						\
