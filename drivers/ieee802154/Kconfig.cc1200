@@ -141,7 +141,7 @@ config IEEE802154_CC1200_RF_SET_1
 	bool "920MHz - 50Kbps - 2-GFSK - IEEE 802.15.4g compliant - ARIB"
 
 config IEEE802154_CC1200_RF_SET_2
-	bool "434MHz - 50Kbjt - 2-GFSK - IEEE 802.15.4g compliant - ETSI"
+	bool "434MHz - 50Kbps - 2-GFSK - IEEE 802.15.4g compliant - ETSI"
 
 endchoice
 
