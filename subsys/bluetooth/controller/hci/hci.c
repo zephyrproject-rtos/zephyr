@@ -1980,7 +1980,7 @@ struct net_buf *hci_cmd_handle(struct net_buf *cmd)
 
 int hci_acl_handle(struct net_buf *buf, struct net_buf **evt)
 {
-	struct radio_pdu_node_tx *radio_pdu_node_tx;
+	struct radio_pdu_node_tx *node_tx;
 	struct bt_hci_acl_hdr *acl;
 	struct pdu_data *pdu_data;
 	u16_t handle;
@@ -2008,14 +2008,14 @@ int hci_acl_handle(struct net_buf *buf, struct net_buf **evt)
 	flags = bt_acl_flags(handle);
 	handle = bt_acl_handle(handle);
 
-	radio_pdu_node_tx = ll_tx_mem_acquire();
-	if (!radio_pdu_node_tx) {
+	node_tx = ll_tx_mem_acquire();
+	if (!node_tx) {
 		BT_ERR("Tx Buffer Overflow");
 		data_buf_overflow(evt);
 		return -ENOBUFS;
 	}
 
-	pdu_data = (struct pdu_data *)radio_pdu_node_tx->pdu_data;
+	pdu_data = (void *)node_tx->pdu_data;
 	if (flags == BT_ACL_START_NO_FLUSH || flags == BT_ACL_START) {
 		pdu_data->ll_id = PDU_DATA_LLID_DATA_START;
 	} else {
@@ -2024,9 +2024,9 @@ int hci_acl_handle(struct net_buf *buf, struct net_buf **evt)
 	pdu_data->len = len;
 	memcpy(&pdu_data->payload.lldata[0], buf->data, len);
 
-	if (ll_tx_mem_enqueue(handle, radio_pdu_node_tx)) {
+	if (ll_tx_mem_enqueue(handle, node_tx)) {
 		BT_ERR("Invalid Tx Enqueue");
-		ll_tx_mem_release(radio_pdu_node_tx);
+		ll_tx_mem_release(node_tx);
 		return -EINVAL;
 	}
 
