@@ -390,11 +390,11 @@ u32_t radio_init(void *hf_clock, u8_t sca, u8_t connection_count_max,
 	/* initialise rx memory size and count */
 	_radio.packet_data_octets_max = packet_data_octets_max;
 	if ((PDU_AC_SIZE_MAX + PDU_AC_SIZE_EXTRA) <
-	    (offsetof(struct pdu_data, payload) +
+	    (offsetof(struct pdu_data, lldata) +
 			_radio.packet_data_octets_max)) {
 		_radio.packet_rx_data_pool_size =
 		    (MROUND(offsetof(struct radio_pdu_node_rx, pdu_data) +
-			    offsetof(struct pdu_data, payload) +
+			    offsetof(struct pdu_data, lldata) +
 			    _radio.packet_data_octets_max) * rx_count_max);
 	} else {
 		_radio.packet_rx_data_pool_size =
@@ -421,7 +421,7 @@ u32_t radio_init(void *hf_clock, u8_t sca, u8_t connection_count_max,
 	/* initialise tx data memory size and count */
 	_radio.packet_tx_data_size =
 		MROUND(offsetof(struct radio_pdu_node_tx, pdu_data) +
-		       offsetof(struct pdu_data, payload) +
+		       offsetof(struct pdu_data, lldata) +
 		       packet_tx_data_size);
 
 	/* initialise tx data pool memory */
@@ -800,8 +800,7 @@ static inline bool isr_adv_sr_adva_check(struct pdu_adv *adv,
 					 struct pdu_adv *sr)
 {
 	return (adv->tx_addr == sr->rx_addr) &&
-		 !memcmp(adv->payload.adv_ind.addr,
-			 sr->payload.scan_req.adv_addr, BDADDR_SIZE);
+		!memcmp(adv->adv_ind.addr, sr->scan_req.adv_addr, BDADDR_SIZE);
 }
 
 static inline bool isr_adv_sr_check(struct pdu_adv *adv, struct pdu_adv *sr,
@@ -809,8 +808,7 @@ static inline bool isr_adv_sr_check(struct pdu_adv *adv, struct pdu_adv *sr,
 {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	return ((((_radio.advertiser.filter_policy & 0x01) == 0) &&
-		 ctrl_rl_addr_allowed(sr->tx_addr,
-				      sr->payload.scan_req.scan_addr,
+		 ctrl_rl_addr_allowed(sr->tx_addr, sr->scan_req.scan_addr,
 				      rl_idx)) ||
 		(((_radio.advertiser.filter_policy & 0x01) != 0) &&
 		 (devmatch_ok || ctrl_irk_whitelisted(*rl_idx)))) &&
@@ -831,8 +829,8 @@ static inline bool isr_adv_ci_tgta_check(struct pdu_adv *adv, struct pdu_adv *ci
 	}
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 	return (adv->rx_addr == ci->tx_addr) &&
-	       !memcmp(adv->payload.direct_ind.tgt_addr,
-		       ci->payload.connect_ind.init_addr, BDADDR_SIZE);
+	       !memcmp(adv->direct_ind.tgt_addr, ci->connect_ind.init_addr,
+		       BDADDR_SIZE);
 }
 
 static inline bool isr_adv_ci_adva_check(struct pdu_adv *adv,
@@ -840,10 +838,10 @@ static inline bool isr_adv_ci_adva_check(struct pdu_adv *adv,
 {
 	return (adv->tx_addr == ci->rx_addr) &&
 		(((adv->type == PDU_ADV_TYPE_DIRECT_IND) &&
-		 !memcmp(adv->payload.direct_ind.adv_addr,
-			 ci->payload.connect_ind.adv_addr, BDADDR_SIZE)) ||
-		 (!memcmp(adv->payload.adv_ind.addr,
-			 ci->payload.connect_ind.adv_addr, BDADDR_SIZE)));
+		 !memcmp(adv->direct_ind.adv_addr, ci->connect_ind.adv_addr,
+			 BDADDR_SIZE)) ||
+		 (!memcmp(adv->adv_ind.addr, ci->connect_ind.adv_addr,
+			  BDADDR_SIZE)));
 }
 
 static inline bool isr_adv_ci_check(struct pdu_adv *adv, struct pdu_adv *ci,
@@ -853,7 +851,7 @@ static inline bool isr_adv_ci_check(struct pdu_adv *adv, struct pdu_adv *ci,
 	if (adv->type == PDU_ADV_TYPE_DIRECT_IND) {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 		return ctrl_rl_addr_allowed(ci->tx_addr,
-					    ci->payload.connect_ind.init_addr,
+					    ci->connect_ind.init_addr,
 					    rl_idx) &&
 #else
 		return (1) &&
@@ -864,8 +862,7 @@ static inline bool isr_adv_ci_check(struct pdu_adv *adv, struct pdu_adv *ci,
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	return ((((_radio.advertiser.filter_policy & 0x02) == 0) &&
-		 ctrl_rl_addr_allowed(ci->tx_addr,
-				      ci->payload.connect_ind.init_addr,
+		 ctrl_rl_addr_allowed(ci->tx_addr, ci->connect_ind.init_addr,
 				      rl_idx)) ||
 		(((_radio.advertiser.filter_policy & 0x02) != 0) &&
 		 (devmatch_ok || ctrl_irk_whitelisted(*rl_idx)))) &&
@@ -966,27 +963,27 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 		conn->handle = mem_index_get(conn, _radio.conn_pool,
 			CONNECTION_T_SIZE);
 		memcpy(&conn->crc_init[0],
-		       &pdu_adv->payload.connect_ind.lldata.crc_init[0],
+		       &pdu_adv->connect_ind.crc_init[0],
 		       3);
 		memcpy(&conn->access_addr[0],
-		       &pdu_adv->payload.connect_ind.lldata.access_addr[0],
+		       &pdu_adv->connect_ind.access_addr[0],
 		       4);
 		memcpy(&conn->data_chan_map[0],
-		       &pdu_adv->payload.connect_ind.lldata.chan_map[0],
+		       &pdu_adv->connect_ind.chan_map[0],
 		       sizeof(conn->data_chan_map));
 		conn->data_chan_count =
 			util_ones_count_get(&conn->data_chan_map[0],
 					    sizeof(conn->data_chan_map));
-		conn->data_chan_hop = pdu_adv->payload.connect_ind.lldata.hop;
+		conn->data_chan_hop = pdu_adv->connect_ind.hop;
 		conn->conn_interval =
-			pdu_adv->payload.connect_ind.lldata.interval;
+			pdu_adv->connect_ind.interval;
 		conn_interval_us =
-			pdu_adv->payload.connect_ind.lldata.interval * 1250;
-		conn->latency = pdu_adv->payload.connect_ind.lldata.latency;
+			pdu_adv->connect_ind.interval * 1250;
+		conn->latency = pdu_adv->connect_ind.latency;
 		memcpy((void *)&conn->slave.force, &conn->access_addr[0],
 		       sizeof(conn->slave.force));
 		conn->supervision_reload =
-			RADIO_CONN_EVENTS((pdu_adv->payload.connect_ind.lldata.timeout
+			RADIO_CONN_EVENTS((pdu_adv->connect_ind.timeout
 					   * 10 * 1000), conn_interval_us);
 		conn->procedure_reload = RADIO_CONN_EVENTS((40 * 1000 * 1000),
 							   conn_interval_us);
@@ -1010,13 +1007,13 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 
 		/* prepare connection complete structure */
 		pdu_data = (void *)node_rx->pdu_data;
-		radio_le_conn_cmplt = (void *)&pdu_data->payload;
+		radio_le_conn_cmplt = (void *)pdu_data->lldata;
 		radio_le_conn_cmplt->status = 0x00;
 		radio_le_conn_cmplt->role = 0x01;
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 		radio_le_conn_cmplt->own_addr_type = pdu_adv->rx_addr;
 		memcpy(&radio_le_conn_cmplt->own_addr[0],
-		       &pdu_adv->payload.connect_ind.adv_addr[0], BDADDR_SIZE);
+		       &pdu_adv->connect_ind.adv_addr[0], BDADDR_SIZE);
 		if (rl_idx != FILTER_IDX_NONE) {
 			/* TODO: store rl_idx instead if safe */
 			/* Store identity address */
@@ -1028,7 +1025,7 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 
 			/* Store peer RPA */
 			memcpy(&radio_le_conn_cmplt->peer_rpa[0],
-			       &pdu_adv->payload.connect_ind.init_addr[0],
+			       &pdu_adv->connect_ind.init_addr[0],
 			       BDADDR_SIZE);
 		} else {
 			memset(&radio_le_conn_cmplt->peer_rpa[0], 0x0,
@@ -1038,18 +1035,18 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 			radio_le_conn_cmplt->peer_addr_type = pdu_adv->tx_addr;
 			memcpy(&radio_le_conn_cmplt->peer_addr[0],
-			       &pdu_adv->payload.connect_ind.init_addr[0],
+			       &pdu_adv->connect_ind.init_addr[0],
 			       BDADDR_SIZE);
 		}
 
 		radio_le_conn_cmplt->interval =
-			pdu_adv->payload.connect_ind.lldata.interval;
+			pdu_adv->connect_ind.interval;
 		radio_le_conn_cmplt->latency =
-			pdu_adv->payload.connect_ind.lldata.latency;
+			pdu_adv->connect_ind.latency;
 		radio_le_conn_cmplt->timeout =
-			pdu_adv->payload.connect_ind.lldata.timeout;
+			pdu_adv->connect_ind.timeout;
 		radio_le_conn_cmplt->mca =
-			pdu_adv->payload.connect_ind.lldata.sca;
+			pdu_adv->connect_ind.sca;
 
 		/* enqueue connection complete structure into queue */
 		rx_fc_lock(conn->handle);
@@ -1067,7 +1064,7 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 			node_rx->hdr.type = NODE_RX_TYPE_CHAN_SEL_ALGO;
 
 			pdu_data = (void *)node_rx->pdu_data;
-			le_chan_sel_algo = (void *)&pdu_data->payload;
+			le_chan_sel_algo = (void *)pdu_data->lldata;
 
 			if (pdu_adv->chan_sel) {
 				u16_t aa_ls =
@@ -1089,7 +1086,7 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 		}
 
 		/* calculate the window widening */
-		conn->slave.sca = pdu_adv->payload.connect_ind.lldata.sca;
+		conn->slave.sca = pdu_adv->connect_ind.sca;
 		conn->slave.window_widening_periodic_us =
 			(((gc_lookup_ppm[_radio.sca] +
 			   gc_lookup_ppm[conn->slave.sca]) *
@@ -1097,7 +1094,7 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 		conn->slave.window_widening_max_us =
 			(conn_interval_us >> 1) - RADIO_TIFS;
 		conn->slave.window_size_event_us =
-			pdu_adv->payload.connect_ind.lldata.win_size * 1250;
+			pdu_adv->connect_ind.win_size * 1250;
 		conn->slave.window_size_prepare_us = 0;
 
 		rx_ready_delay = radio_rx_ready_delay_get(0, 0);
@@ -1122,7 +1119,7 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 
 		conn_offset_us = radio_tmr_end_get();
 		conn_offset_us +=
-			((u64_t)pdu_adv->payload.connect_ind.lldata.win_offset +
+			((u64_t)pdu_adv->connect_ind.win_offset +
 			 1) * 1250;
 		conn_offset_us -= radio_tx_chain_delay_get(0, 0);
 		conn_offset_us -= rx_ready_delay;
@@ -1242,8 +1239,8 @@ static inline bool isr_scan_rsp_adva_matches(struct pdu_adv *srsp)
 	struct pdu_adv *sreq = (struct pdu_adv *)radio_pkt_scratch_get();
 
 	return ((sreq->rx_addr == srsp->tx_addr) &&
-		(memcmp(&sreq->payload.scan_req.adv_addr[0],
-			&srsp->payload.scan_rsp.addr[0], BDADDR_SIZE) == 0));
+		(memcmp(&sreq->scan_req.adv_addr[0],
+			&srsp->scan_rsp.addr[0], BDADDR_SIZE) == 0));
 }
 
 static inline bool isr_scan_init_adva_check(struct pdu_adv *pdu,
@@ -1257,7 +1254,7 @@ static inline bool isr_scan_init_adva_check(struct pdu_adv *pdu,
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 	return ((_radio.scanner.adv_addr_type == pdu->tx_addr) &&
 		(memcmp(&_radio.scanner.adv_addr[0],
-			&pdu->payload.adv_ind.addr[0], BDADDR_SIZE) == 0));
+			&pdu->adv_ind.addr[0], BDADDR_SIZE) == 0));
 }
 
 static inline bool isr_scan_tgta_rpa_check(struct pdu_adv *pdu,
@@ -1265,7 +1262,7 @@ static inline bool isr_scan_tgta_rpa_check(struct pdu_adv *pdu,
 {
 	if (((_radio.scanner.filter_policy & 0x02) != 0) &&
 	    (pdu->rx_addr != 0) &&
-	    ((pdu->payload.direct_ind.tgt_addr[5] & 0xc0) == 0x40)) {
+	    ((pdu->direct_ind.tgt_addr[5] & 0xc0) == 0x40)) {
 
 		if (dir_report) {
 			*dir_report = true;
@@ -1282,7 +1279,7 @@ static inline bool isr_scan_tgta_check(bool init, struct pdu_adv *pdu,
 {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	if (ctrl_rl_addr_resolve(pdu->rx_addr,
-				 pdu->payload.direct_ind.tgt_addr, rl_idx)) {
+				 pdu->direct_ind.tgt_addr, rl_idx)) {
 		return true;
 	} else if (init && _radio.scanner.rpa_gen && ctrl_lrpa_get(rl_idx)) {
 		/* Initiator generating RPAs, and could not resolve TargetA:
@@ -1294,7 +1291,7 @@ static inline bool isr_scan_tgta_check(bool init, struct pdu_adv *pdu,
 
 	return (((_radio.scanner.init_addr_type == pdu->rx_addr) &&
 		(memcmp(&_radio.scanner.init_addr[0],
-			&pdu->payload.direct_ind.tgt_addr[0],
+			&pdu->direct_ind.tgt_addr[0],
 			BDADDR_SIZE) == 0))) ||
 		  /* allow directed adv packets where TargetA address
 		   * is resolvable private address (scanner only)
@@ -1388,23 +1385,23 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 		lrpa = ctrl_lrpa_get(rl_idx);
 		if (_radio.scanner.rpa_gen && lrpa) {
 			pdu_adv_tx->tx_addr = 1;
-			memcpy(&pdu_adv_tx->payload.connect_ind.init_addr[0],
+			memcpy(&pdu_adv_tx->connect_ind.init_addr[0],
 			       lrpa->val, BDADDR_SIZE);
 		} else {
 #else
 		if (1) {
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 			pdu_adv_tx->tx_addr = _radio.scanner.init_addr_type;
-			memcpy(&pdu_adv_tx->payload.connect_ind.init_addr[0],
+			memcpy(&pdu_adv_tx->connect_ind.init_addr[0],
 			       &_radio.scanner.init_addr[0], BDADDR_SIZE);
 		}
-		memcpy(&pdu_adv_tx->payload.connect_ind.adv_addr[0],
-			 &pdu_adv_rx->payload.adv_ind.addr[0], BDADDR_SIZE);
-		memcpy(&pdu_adv_tx->payload.connect_ind.lldata.
+		memcpy(&pdu_adv_tx->connect_ind.adv_addr[0],
+			 &pdu_adv_rx->adv_ind.addr[0], BDADDR_SIZE);
+		memcpy(&pdu_adv_tx->connect_ind.
 		       access_addr[0], &conn->access_addr[0], 4);
-		memcpy(&pdu_adv_tx->payload.connect_ind.lldata.crc_init[0],
+		memcpy(&pdu_adv_tx->connect_ind.crc_init[0],
 		       &conn->crc_init[0], 3);
-		pdu_adv_tx->payload.connect_ind.lldata.win_size = 1;
+		pdu_adv_tx->connect_ind.win_size = 1;
 
 		conn_interval_us =
 			(u32_t)_radio.scanner.conn_interval * 1250;
@@ -1425,7 +1422,7 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 
 		if (_radio.scanner.win_offset_us == 0) {
 			conn_space_us = conn_offset_us;
-			pdu_adv_tx->payload.connect_ind.lldata.win_offset = 0;
+			pdu_adv_tx->connect_ind.win_offset = 0;
 		} else {
 			conn_space_us = _radio.scanner.win_offset_us +
 					ticks_slot_offset;
@@ -1433,9 +1430,9 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 			       (conn_space_us < conn_offset_us)) {
 				conn_space_us += conn_interval_us;
 			}
-			pdu_adv_tx->payload.connect_ind.lldata.win_offset =
+			pdu_adv_tx->connect_ind.win_offset =
 				(conn_space_us - conn_offset_us) / 1250;
-			pdu_adv_tx->payload.connect_ind.lldata.win_size++;
+			pdu_adv_tx->connect_ind.win_size++;
 		}
 
 		conn_space_us -= radio_tx_ready_delay_get(0, 0);
@@ -1447,18 +1444,18 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 		 */
 		conn_space_us += TICKER_TICKS_TO_US(1);
 
-		pdu_adv_tx->payload.connect_ind.lldata.interval =
+		pdu_adv_tx->connect_ind.interval =
 			_radio.scanner.conn_interval;
-		pdu_adv_tx->payload.connect_ind.lldata.latency =
+		pdu_adv_tx->connect_ind.latency =
 			_radio.scanner.conn_latency;
-		pdu_adv_tx->payload.connect_ind.lldata.timeout =
+		pdu_adv_tx->connect_ind.timeout =
 			_radio.scanner.conn_timeout;
-		memcpy(&pdu_adv_tx->payload.connect_ind.lldata.chan_map[0],
+		memcpy(&pdu_adv_tx->connect_ind.chan_map[0],
 		       &conn->data_chan_map[0],
-		       sizeof(pdu_adv_tx->payload.connect_ind.lldata.chan_map));
-		pdu_adv_tx->payload.connect_ind.lldata.hop =
+		       sizeof(pdu_adv_tx->connect_ind.chan_map));
+		pdu_adv_tx->connect_ind.hop =
 			conn->data_chan_hop;
-		pdu_adv_tx->payload.connect_ind.lldata.sca = _radio.sca;
+		pdu_adv_tx->connect_ind.sca = _radio.sca;
 
 		radio_switch_complete_and_disable();
 
@@ -1491,14 +1488,13 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 
 		/* prepare connection complete structure */
 		pdu_data = (void *)node_rx->pdu_data;
-		radio_le_conn_cmplt =
-		    (struct radio_le_conn_cmplt *)&pdu_data->payload;
+		radio_le_conn_cmplt = (void *)pdu_data->lldata;
 		radio_le_conn_cmplt->status = 0x00;
 		radio_le_conn_cmplt->role = 0x00;
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 		radio_le_conn_cmplt->own_addr_type = pdu_adv_tx->tx_addr;
 		memcpy(&radio_le_conn_cmplt->own_addr[0],
-		       &pdu_adv_tx->payload.connect_ind.init_addr[0],
+		       &pdu_adv_tx->connect_ind.init_addr[0],
 		       BDADDR_SIZE);
 
 		if (irkmatch_ok && rl_idx != FILTER_IDX_NONE) {
@@ -1512,7 +1508,7 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 
 			/* Store peer RPA */
 			memcpy(&radio_le_conn_cmplt->peer_rpa[0],
-			       &pdu_adv_tx->payload.connect_ind.adv_addr[0],
+			       &pdu_adv_tx->connect_ind.adv_addr[0],
 			       BDADDR_SIZE);
 		} else {
 			memset(&radio_le_conn_cmplt->peer_rpa[0], 0x0,
@@ -1523,7 +1519,7 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 			radio_le_conn_cmplt->peer_addr_type =
 				pdu_adv_tx->rx_addr;
 			memcpy(&radio_le_conn_cmplt->peer_addr[0],
-			       &pdu_adv_tx->payload.connect_ind.adv_addr[0],
+			       &pdu_adv_tx->connect_ind.adv_addr[0],
 			       BDADDR_SIZE);
 		}
 
@@ -1531,7 +1527,7 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 		radio_le_conn_cmplt->latency = _radio.scanner. conn_latency;
 		radio_le_conn_cmplt->timeout = _radio.scanner.conn_timeout;
 		radio_le_conn_cmplt->mca =
-			pdu_adv_tx->payload.connect_ind.lldata.sca;
+			pdu_adv_tx->connect_ind.sca;
 
 		/* enqueue connection complete structure into queue */
 		rx_fc_lock(conn->handle);
@@ -1549,7 +1545,7 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 			node_rx->hdr.type = NODE_RX_TYPE_CHAN_SEL_ALGO;
 
 			pdu_data = (void *)node_rx->pdu_data;
-			le_chan_sel_algo = (void *)&pdu_data->payload;
+			le_chan_sel_algo = (void *)pdu_data->lldata;
 
 			if (pdu_adv_rx->chan_sel) {
 				u16_t aa_ls =
@@ -1635,18 +1631,18 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 		lrpa = ctrl_lrpa_get(rl_idx);
 		if (_radio.scanner.rpa_gen && lrpa) {
 			pdu_adv_tx->tx_addr = 1;
-			memcpy(&pdu_adv_tx->payload.scan_req.scan_addr[0],
+			memcpy(&pdu_adv_tx->scan_req.scan_addr[0],
 			       lrpa->val, BDADDR_SIZE);
 		} else {
 #else
 		if (1) {
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 			pdu_adv_tx->tx_addr = _radio.scanner.init_addr_type;
-			memcpy(&pdu_adv_tx->payload.scan_req.scan_addr[0],
+			memcpy(&pdu_adv_tx->scan_req.scan_addr[0],
 			       &_radio.scanner.init_addr[0], BDADDR_SIZE);
 		}
-		memcpy(&pdu_adv_tx->payload.scan_req.adv_addr[0],
-		       &pdu_adv_rx->payload.adv_ind.addr[0], BDADDR_SIZE);
+		memcpy(&pdu_adv_tx->scan_req.adv_addr[0],
+		       &pdu_adv_rx->adv_ind.addr[0], BDADDR_SIZE);
 
 		/* switch scanner state to active */
 		_radio.scanner.state = 1;
@@ -1727,7 +1723,7 @@ static inline u8_t isr_rx_conn_pkt_ack(struct pdu_data *pdu_data_tx,
 {
 	u8_t terminate = 0;
 
-	switch (pdu_data_tx->payload.llctrl.opcode) {
+	switch (pdu_data_tx->llctrl.opcode) {
 	case PDU_DATA_LLCTRL_TYPE_TERMINATE_IND:
 		_radio.state = STATE_CLOSE;
 		radio_disable();
@@ -1736,10 +1732,8 @@ static inline u8_t isr_rx_conn_pkt_ack(struct pdu_data *pdu_data_tx,
 		LL_ASSERT(!radio_is_ready());
 
 		terminate_ind_rx_enqueue(_radio.conn_curr,
-		     (pdu_data_tx->payload.llctrl.ctrldata.terminate_ind.
-		      error_code == 0x13) ?  0x16 :
-		     pdu_data_tx->payload.llctrl.ctrldata.terminate_ind.
-		     error_code);
+		     (pdu_data_tx->llctrl.terminate_ind.error_code == 0x13) ?
+		     0x16 : pdu_data_tx->llctrl.terminate_ind.error_code);
 
 		/* Ack received, hence terminate */
 		terminate = 1;
@@ -1749,11 +1743,9 @@ static inline u8_t isr_rx_conn_pkt_ack(struct pdu_data *pdu_data_tx,
 	case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
 		/* things from master stored for session key calculation */
 		memcpy(&_radio.conn_curr->llcp.encryption.skd[0],
-		       &pdu_data_tx->payload.llctrl.ctrldata.enc_req.skdm[0],
-		       8);
+		       &pdu_data_tx->llctrl.enc_req.skdm[0], 8);
 		memcpy(&_radio.conn_curr->ccm_rx.iv[0],
-		       &pdu_data_tx->payload.llctrl.ctrldata.enc_req.ivm[0],
-		       4);
+		       &pdu_data_tx->llctrl.enc_req.ivm[0], 4);
 
 		/* pause data packet tx */
 		_radio.conn_curr->pause_tx = 1;
@@ -1912,8 +1904,7 @@ isr_rx_conn_pkt_ctrl_rej_conn_upd(struct radio_pdu_node_rx *node_rx,
 	struct connection *conn;
 
 	pdu_data_rx = (void *)node_rx->pdu_data;
-	rej_ext_ind = (struct pdu_data_llctrl_reject_ext_ind *)
-		      &pdu_data_rx->payload.llctrl.ctrldata.reject_ext_ind;
+	rej_ext_ind = (void *)&pdu_data_rx->llctrl.reject_ext_ind;
 	if (rej_ext_ind->reject_opcode != PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ) {
 		return;
 	}
@@ -1974,7 +1965,7 @@ isr_rx_conn_pkt_ctrl_rej_conn_upd(struct radio_pdu_node_rx *node_rx,
 
 	/* prepare connection update complete structure */
 	pdu_data_rx = (void *)node_rx->pdu_data;
-	cp = (void *)&pdu_data_rx->payload;
+	cp = (void *)pdu_data_rx->lldata;
 	cp->status = rej_ext_ind->error_code;
 	cp->interval = conn->conn_interval;
 	cp->latency = conn->latency;
@@ -1994,8 +1985,7 @@ isr_rx_conn_pkt_ctrl_rej_dle(struct radio_pdu_node_rx *node_rx,
 	struct pdu_data *pdu_data_rx;
 
 	pdu_data_rx = (void *)node_rx->pdu_data;
-	rej_ext_ind = (struct pdu_data_llctrl_reject_ext_ind *)
-		      &pdu_data_rx->payload.llctrl.ctrldata.reject_ext_ind;
+	rej_ext_ind = (void *)&pdu_data_rx->llctrl.reject_ext_ind;
 	if (rej_ext_ind->reject_opcode == PDU_DATA_LLCTRL_TYPE_LENGTH_REQ) {
 		struct connection *conn = _radio.conn_curr;
 		struct pdu_data_llctrl_length_req *lr;
@@ -2009,12 +1999,11 @@ isr_rx_conn_pkt_ctrl_rej_dle(struct radio_pdu_node_rx *node_rx,
 
 		/* prepare length rsp structure */
 		pdu_data_rx->len = offsetof(struct pdu_data_llctrl,
-					    ctrldata) +
-			sizeof(struct pdu_data_llctrl_length_rsp);
-		pdu_data_rx->payload.llctrl.opcode =
-			PDU_DATA_LLCTRL_TYPE_LENGTH_RSP;
+					    length_rsp) +
+				   sizeof(struct pdu_data_llctrl_length_rsp);
+		pdu_data_rx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_LENGTH_RSP;
 
-		lr = (void *)&pdu_data_rx->payload.llctrl.ctrldata.length_req;
+		lr = (void *)&pdu_data_rx->llctrl.length_req;
 		lr->max_rx_octets = conn->max_rx_octets;
 		lr->max_tx_octets = conn->max_tx_octets;
 #if !defined(CONFIG_BT_CTLR_PHY)
@@ -2040,8 +2029,7 @@ isr_rx_conn_pkt_ctrl_rej_phy_upd(struct radio_pdu_node_rx *node_rx,
 	struct pdu_data *pdu_data_rx;
 
 	pdu_data_rx = (void *)node_rx->pdu_data;
-	rej_ext_ind = (struct pdu_data_llctrl_reject_ext_ind *)
-		      &pdu_data_rx->payload.llctrl.ctrldata.reject_ext_ind;
+	rej_ext_ind = (void *)&pdu_data_rx->llctrl.reject_ext_ind;
 	if (rej_ext_ind->reject_opcode == PDU_DATA_LLCTRL_TYPE_PHY_REQ) {
 		struct radio_le_phy_upd_cmplt *p;
 
@@ -2071,7 +2059,7 @@ isr_rx_conn_pkt_ctrl_rej_phy_upd(struct radio_pdu_node_rx *node_rx,
 		/* generate phy update complete event with error code */
 		node_rx->hdr.type = NODE_RX_TYPE_PHY_UPDATE;
 
-		p = (void *) &pdu_data_rx->payload;
+		p = (void *)pdu_data_rx->lldata;
 		p->status = rej_ext_ind->error_code;
 		p->tx = _radio.conn_curr->phy_tx;
 		p->rx = _radio.conn_curr->phy_rx;
@@ -2110,8 +2098,7 @@ isr_rx_conn_pkt_ctrl_rej(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 		struct pdu_data *pdu_rx;
 
 		pdu_rx = (void *)node_rx->pdu_data;
-		rej_ext_ind = (void *)
-			&pdu_rx->payload.llctrl.ctrldata.reject_ext_ind;
+		rej_ext_ind = (void *)&pdu_rx->llctrl.reject_ext_ind;
 
 		switch (rej_ext_ind->reject_opcode) {
 		case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
@@ -2123,9 +2110,8 @@ isr_rx_conn_pkt_ctrl_rej(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 			_radio.conn_curr->procedure_expire = 0;
 
 			/* enqueue as if it were a reject ind */
-			pdu_rx->payload.llctrl.opcode =
-				PDU_DATA_LLCTRL_TYPE_REJECT_IND;
-			pdu_rx->payload.llctrl.ctrldata.reject_ind.error_code =
+			pdu_rx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_REJECT_IND;
+			pdu_rx->llctrl.reject_ind.error_code =
 				rej_ext_ind->error_code;
 			*rx_enqueue = 1;
 			break;
@@ -2152,8 +2138,7 @@ static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 	u8_t nack = 0;
 
 	/* Check for free ctrl tx PDU */
-	if (pdu_data_rx->payload.llctrl.opcode ==
-	    PDU_DATA_LLCTRL_TYPE_LENGTH_REQ) {
+	if (pdu_data_rx->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_LENGTH_REQ) {
 		node_tx = mem_acquire(&_radio.pkt_tx_ctrl_free);
 		if (!node_tx) {
 			return 1;
@@ -2173,7 +2158,7 @@ static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 	     */
 	    ((_radio.conn_curr->llcp_length.req ==
 	      _radio.conn_curr->llcp_length.ack) &&
-	     (pdu_data_rx->payload.llctrl.opcode ==
+	     (pdu_data_rx->llctrl.opcode ==
 	      PDU_DATA_LLCTRL_TYPE_LENGTH_REQ)) ||
 	    /* or Local has active... */
 	    ((_radio.conn_curr->llcp_length.req !=
@@ -2185,7 +2170,7 @@ static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 		 LLCP_LENGTH_STATE_REQ) ||
 		(_radio.conn_curr->llcp_length.state ==
 		 LLCP_LENGTH_STATE_ACK_WAIT)) &&
-	       (pdu_data_rx->payload.llctrl.opcode ==
+	       (pdu_data_rx->llctrl.opcode ==
 		PDU_DATA_LLCTRL_TYPE_LENGTH_REQ)) ||
 	      /* with Local waiting for response, and Peer response then
 	       * complete the Local procedure or Peer request then complete the
@@ -2193,13 +2178,13 @@ static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 	       */
 	      ((_radio.conn_curr->llcp_length.state ==
 		LLCP_LENGTH_STATE_RSP_WAIT) &&
-	       ((pdu_data_rx->payload.llctrl.opcode ==
+	       ((pdu_data_rx->llctrl.opcode ==
 		 PDU_DATA_LLCTRL_TYPE_LENGTH_RSP) ||
-		(pdu_data_rx->payload.llctrl.opcode ==
+		(pdu_data_rx->llctrl.opcode ==
 		 PDU_DATA_LLCTRL_TYPE_LENGTH_REQ)))))) {
 		struct pdu_data_llctrl_length_req *lr;
 
-		lr = &pdu_data_rx->payload.llctrl.ctrldata.length_req;
+		lr = &pdu_data_rx->llctrl.length_req;
 
 		/* use the minimal of our default_tx_octets and
 		 * peer max_rx_octets
@@ -2327,7 +2312,7 @@ static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 		}
 	} else {
 		/* Drop response with no Local initiated request. */
-		LL_ASSERT(pdu_data_rx->payload.llctrl.opcode ==
+		LL_ASSERT(pdu_data_rx->llctrl.opcode ==
 			  PDU_DATA_LLCTRL_TYPE_LENGTH_RSP);
 	}
 
@@ -2362,7 +2347,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 	/* Invalid packet */
 	if (_radio.conn_curr->role) {
 		/* Slave */
-		switch (pdu_data_rx->payload.llctrl.opcode) {
+		switch (pdu_data_rx->llctrl.opcode) {
 		case PDU_DATA_LLCTRL_TYPE_ENC_RSP:
 		case PDU_DATA_LLCTRL_TYPE_START_ENC_REQ:
 		case PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ:
@@ -2370,14 +2355,14 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 		case PDU_DATA_LLCTRL_TYPE_PHY_RSP:
 		case PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND:
 			nack = unknown_rsp_send(_radio.conn_curr,
-					pdu_data_rx->payload.llctrl.opcode);
+						pdu_data_rx->llctrl.opcode);
 			return nack;
 		default:
 			break;
 		}
 	} else {
 		/* Master */
-		switch (pdu_data_rx->payload.llctrl.opcode) {
+		switch (pdu_data_rx->llctrl.opcode) {
 		case PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND:
 		case PDU_DATA_LLCTRL_TYPE_CHAN_MAP_IND:
 		case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
@@ -2385,7 +2370,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 		case PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ:
 		case PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND:
 			nack = unknown_rsp_send(_radio.conn_curr,
-					pdu_data_rx->payload.llctrl.opcode);
+						pdu_data_rx->llctrl.opcode);
 			return nack;
 
 		default:
@@ -2393,7 +2378,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 		}
 	}
 
-	switch (pdu_data_rx->payload.llctrl.opcode) {
+	switch (pdu_data_rx->llctrl.opcode) {
 	case PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND:
 		if (conn_update(_radio.conn_curr, pdu_data_rx) == 0) {
 			/* conn param req procedure, if any, is complete */
@@ -2412,7 +2397,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 	case PDU_DATA_LLCTRL_TYPE_TERMINATE_IND:
 		/* Ack and then terminate */
 		_radio.conn_curr->llcp_terminate.reason_peer =
-			pdu_data_rx->payload.llctrl.ctrldata.terminate_ind.error_code;
+			pdu_data_rx->llctrl.terminate_ind.error_code;
 		break;
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
@@ -2430,10 +2415,9 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 
 		/* things from master stored for session key calculation */
 		memcpy(&_radio.conn_curr->llcp.encryption.skd[0],
-		       &pdu_data_rx->payload.llctrl.ctrldata.enc_req.skdm[0],
-		       8);
+		       &pdu_data_rx->llctrl.enc_req.skdm[0], 8);
 		memcpy(&_radio.conn_curr->ccm_rx.iv[0],
-		       &pdu_data_rx->payload.llctrl.ctrldata.enc_req.ivm[0], 4);
+		       &pdu_data_rx->llctrl.enc_req.ivm[0], 4);
 
 		/* pause rx data packets */
 		_radio.conn_curr->pause_rx = 1;
@@ -2451,11 +2435,9 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 	case PDU_DATA_LLCTRL_TYPE_ENC_RSP:
 		/* things sent by slave stored for session key calculation */
 		memcpy(&_radio.conn_curr->llcp.encryption.skd[8],
-		       &pdu_data_rx->payload.llctrl.ctrldata.enc_rsp.skds[0],
-		       8);
+		       &pdu_data_rx->llctrl.enc_rsp.skds[0], 8);
 		memcpy(&_radio.conn_curr->ccm_rx.iv[4],
-		       &pdu_data_rx->payload.llctrl.ctrldata.enc_rsp.ivs[0],
-		       4);
+		       &pdu_data_rx->llctrl.enc_rsp.ivs[0], 4);
 
 		/* pause rx data packets */
 		_radio.conn_curr->pause_rx = 1;
@@ -2526,7 +2508,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 	{
 		struct pdu_data_llctrl_feature_rsp *rsp;
 
-		rsp = &pdu_data_rx->payload.llctrl.ctrldata.feature_rsp;
+		rsp = &pdu_data_rx->llctrl.feature_rsp;
 
 		/* AND the feature set to get Feature USED */
 		_radio.conn_curr->llcp_features &= feat_get(&rsp->features[0]);
@@ -2623,7 +2605,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 					0x2a);
 			} else {
 				struct pdu_data_llctrl_conn_param_req *cpr = (void *)
-					&pdu_data_rx->payload.llctrl.ctrldata.conn_param_req;
+					&pdu_data_rx->llctrl.conn_param_req;
 
 				/* Invalid parameters */
 				if ((cpr->interval_min < 6) ||
@@ -2705,7 +2687,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 			    LLCP_CPR_STATE_RSP_WAIT)) {
 			struct connection *conn = _radio.conn_curr;
 			struct pdu_data_llctrl_conn_param_req *cpr = (void *)
-				&pdu_data_rx->payload.llctrl.ctrldata.conn_param_req;
+				&pdu_data_rx->llctrl.conn_param_req;
 
 			/* Invalid parameters */
 			if ((cpr->interval_min < 6) ||
@@ -2780,7 +2762,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 		     LLCP_CPR_STATE_RSP_WAIT)) {
 			struct connection *conn = _radio.conn_curr;
 			struct pdu_data_llctrl_conn_param_req *cpr = (void *)
-				&pdu_data_rx->payload.llctrl.ctrldata.conn_param_req;
+				&pdu_data_rx->llctrl.conn_param_req;
 
 			/* Invalid parameters */
 			if ((cpr->interval_min < 6) ||
@@ -2891,7 +2873,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 
 			/* prepare connection update complete structure */
 			pdu_data_rx = (void *)node_rx->pdu_data;
-			cp = (void *)&pdu_data_rx->payload;
+			cp = (void *)pdu_data_rx->lldata;
 			cp->status = BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
 			cp->interval = conn->conn_interval;
 			cp->latency = conn->latency;
@@ -2935,8 +2917,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 				/* generate phy update complete event */
 				node_rx->hdr.type = NODE_RX_TYPE_PHY_UPDATE;
 
-				p = (struct radio_le_phy_upd_cmplt *)
-				    &pdu_data_rx->payload;
+				p = (void *)pdu_data_rx->lldata;
 				p->status = 0;
 				p->tx = _radio.conn_curr->phy_tx;
 				p->rx = _radio.conn_curr->phy_rx;
@@ -2949,9 +2930,8 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 		} else {
 			struct pdu_data_llctrl *llctrl;
 
-			llctrl = (struct pdu_data_llctrl *)
-				&pdu_data_rx->payload.llctrl;
-			switch (llctrl->ctrldata.unknown_rsp.type) {
+			llctrl = (void *)&pdu_data_rx->llctrl;
+			switch (llctrl->unknown_rsp.type) {
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
 			case PDU_DATA_LLCTRL_TYPE_PING_REQ:
@@ -3025,9 +3005,9 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 					0x2a);
 			} else {
 				struct pdu_data_llctrl *c =
-					&pdu_data_rx->payload.llctrl;
+					&pdu_data_rx->llctrl;
 				struct pdu_data_llctrl_phy_req *p =
-					&c->ctrldata.phy_req;
+					&c->phy_req;
 
 				_radio.conn_curr->llcp_phy.state =
 					LLCP_PHY_STATE_UPD;
@@ -3059,7 +3039,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 		    (_radio.conn_curr->llcp_phy.state ==
 		     LLCP_PHY_STATE_RSP_WAIT)) {
 			struct pdu_data_llctrl_phy_rsp *p =
-				&pdu_data_rx->payload.llctrl.ctrldata.phy_rsp;
+				&pdu_data_rx->llctrl.phy_rsp;
 
 			_radio.conn_curr->llcp_phy.state = LLCP_PHY_STATE_UPD;
 
@@ -3082,7 +3062,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 	case PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND:
 		if (!_radio.conn_curr->role) {
 			struct pdu_data_llctrl_min_used_chans_ind *p =
-				&pdu_data_rx->payload.llctrl.ctrldata.min_used_chans_ind;
+				&pdu_data_rx->llctrl.min_used_chans_ind;
 			struct connection *conn = _radio.conn_curr;
 
 #if defined(CONFIG_BT_CTLR_PHY)
@@ -3111,7 +3091,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 
 	default:
 		nack = unknown_rsp_send(_radio.conn_curr,
-					pdu_data_rx->payload.llctrl.opcode);
+					pdu_data_rx->llctrl.opcode);
 		break;
 	}
 
@@ -3121,7 +3101,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 static inline bool isr_rx_conn_enc_unexpected(struct connection *conn,
 					      struct pdu_data *pdu_data)
 {
-	u8_t opcode = pdu_data->payload.llctrl.opcode;
+	u8_t opcode = pdu_data->llctrl.opcode;
 
 	return (pdu_data->ll_id != PDU_DATA_LLID_CTRL) ||
 	       (!conn->role &&
@@ -3617,12 +3597,12 @@ isr_rx_conn_terminate_exit:
 			node_rx->hdr.type = NODE_RX_TYPE_PROFILE;
 			pdu_data_rx = (struct pdu_data *)
 				node_rx->pdu_data;
-			pdu_data_rx->payload.profile.lcur = latency;
-			pdu_data_rx->payload.profile.lmin = s_lmin;
-			pdu_data_rx->payload.profile.lmax = s_lmax;
-			pdu_data_rx->payload.profile.cur = elapsed;
-			pdu_data_rx->payload.profile.min = s_min;
-			pdu_data_rx->payload.profile.max = s_max;
+			pdu_data_rx->profile.lcur = latency;
+			pdu_data_rx->profile.lmin = s_lmin;
+			pdu_data_rx->profile.lmax = s_lmax;
+			pdu_data_rx->profile.cur = elapsed;
+			pdu_data_rx->profile.min = s_min;
+			pdu_data_rx->profile.max = s_max;
 			packet_rx_enqueue();
 		}
 	}
@@ -4062,8 +4042,7 @@ static inline void isr_close_conn(void)
 
 			/* prepare connection RSSI structure */
 			pdu_data_rx = (void *)node_rx->pdu_data;
-			pdu_data_rx->payload.rssi =
-				_radio.conn_curr->rssi_reported;
+			pdu_data_rx->rssi = _radio.conn_curr->rssi_reported;
 
 			/* enqueue connection RSSI structure into queue */
 			packet_rx_enqueue();
@@ -5216,17 +5195,17 @@ static void mayfly_sched_win_offset_select(void *params)
 		pdu_ctrl_tx = (struct pdu_data *)
 			((u8_t *)conn->llcp.conn_upd.pdu_win_offset -
 			 offsetof(struct pdu_data,
-				  payload.llctrl.ctrldata.conn_update_ind.win_offset));
+				  llctrl.conn_update_ind.win_offset));
 		pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
 		pdu_ctrl_tx->len =
-			offsetof(struct pdu_data_llctrl, ctrldata) +
+			offsetof(struct pdu_data_llctrl, reject_ext_ind) +
 			sizeof(struct pdu_data_llctrl_reject_ext_ind);
-		pdu_ctrl_tx->payload.llctrl.opcode =
+		pdu_ctrl_tx->llctrl.opcode =
 			PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND;
-		pdu_ctrl_tx->payload.llctrl.ctrldata.reject_ext_ind.
-			reject_opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ;
-		pdu_ctrl_tx->payload.llctrl.ctrldata.reject_ext_ind.
-			error_code = 0x20; /* Unsupported parameter value */
+		pdu_ctrl_tx->llctrl.reject_ext_ind.reject_opcode =
+			PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ;
+		pdu_ctrl_tx->llctrl.reject_ext_ind.error_code =
+			0x20; /* Unsupported parameter value */
 	}
 }
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
@@ -5796,8 +5775,8 @@ static void adv_setup(void)
 		/* Copy the address from the adv packet we will send into the
 		 * scan response.
 		 */
-		memcpy(&scan_pdu->payload.scan_rsp.addr[0],
-		       &pdu->payload.adv_ind.addr[0], BDADDR_SIZE);
+		memcpy(&scan_pdu->scan_rsp.addr[0],
+		       &pdu->adv_ind.addr[0], BDADDR_SIZE);
 	}
 #else
 	ARG_UNUSED(upd);
@@ -5942,8 +5921,7 @@ static void mayfly_adv_stop(void *param)
 
 	/* prepare connection complete structure */
 	pdu_data_rx = (void *)node_rx->pdu_data;
-	radio_le_conn_cmplt =
-		(struct radio_le_conn_cmplt *)&pdu_data_rx->payload;
+	radio_le_conn_cmplt = (void *)pdu_data_rx->lldata;
 	memset(radio_le_conn_cmplt, 0x00, sizeof(struct radio_le_conn_cmplt));
 	radio_le_conn_cmplt->status = 0x3c;
 
@@ -6316,21 +6294,20 @@ static inline void event_conn_upd_init(struct connection *conn,
 
 	/* place the conn update req packet as next in tx queue */
 	pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
-	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, ctrldata) +
+	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, conn_update_ind) +
 		sizeof(struct pdu_data_llctrl_conn_update_ind);
-	pdu_ctrl_tx->payload.llctrl.opcode =
-		PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND;
-	pdu_ctrl_tx->payload.llctrl.ctrldata.conn_update_ind.win_size =
+	pdu_ctrl_tx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND;
+	pdu_ctrl_tx->llctrl.conn_update_ind.win_size =
 		conn->llcp.conn_upd.win_size;
-	pdu_ctrl_tx->payload.llctrl.ctrldata.conn_update_ind.
+	pdu_ctrl_tx->llctrl.conn_update_ind.
 		win_offset = conn->llcp.conn_upd.win_offset_us / 1250;
-	pdu_ctrl_tx->payload.llctrl.ctrldata.conn_update_ind.interval =
+	pdu_ctrl_tx->llctrl.conn_update_ind.interval =
 		conn->llcp.conn_upd.interval;
-	pdu_ctrl_tx->payload.llctrl.ctrldata.conn_update_ind.latency =
+	pdu_ctrl_tx->llctrl.conn_update_ind.latency =
 		conn->llcp.conn_upd.latency;
-	pdu_ctrl_tx->payload.llctrl.ctrldata.conn_update_ind.timeout =
+	pdu_ctrl_tx->llctrl.conn_update_ind.timeout =
 		conn->llcp.conn_upd.timeout;
-	pdu_ctrl_tx->payload.llctrl.ctrldata.conn_update_ind.instant =
+	pdu_ctrl_tx->llctrl.conn_update_ind.instant =
 		conn->llcp.conn_upd.instant;
 
 #if defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
@@ -6355,7 +6332,7 @@ static inline void event_conn_upd_init(struct connection *conn,
 		}
 
 		conn->llcp.conn_upd.pdu_win_offset = (u16_t *)
-			&pdu_ctrl_tx->payload.llctrl.ctrldata.conn_update_ind.win_offset;
+			&pdu_ctrl_tx->llctrl.conn_update_ind.win_offset;
 
 		mayfly_sched_offset->fp = fp_mayfly_select_or_use;
 		mayfly_sched_offset->param = (void *)conn;
@@ -6485,12 +6462,11 @@ static inline u32_t event_conn_upd_prep(struct connection *conn,
 			node_rx->hdr.type = NODE_RX_TYPE_CONN_UPDATE;
 
 			/* prepare connection update complete structure */
-			pdu_data_rx =
-				(void *)node_rx->pdu_data;
-			radio_le_conn_update_cmplt =
-				(struct radio_le_conn_update_cmplt *)
-				&pdu_data_rx->payload;
-			radio_le_conn_update_cmplt->status = 0x00;
+			pdu_data_rx = (void *)node_rx->pdu_data;
+			radio_le_conn_update_cmplt = (void *)
+				pdu_data_rx->lldata;
+			radio_le_conn_update_cmplt->status =
+				0x00;
 			radio_le_conn_update_cmplt->interval =
 				conn->llcp.conn_upd.interval;
 			radio_le_conn_update_cmplt->latency =
@@ -6679,16 +6655,14 @@ static inline void event_ch_map_prep(struct connection *conn,
 			 */
 			pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
 			pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl,
-						    ctrldata) +
+						    chan_map_ind) +
 				sizeof(struct pdu_data_llctrl_chan_map_ind);
-			pdu_ctrl_tx->payload.llctrl.opcode =
+			pdu_ctrl_tx->llctrl.opcode =
 				PDU_DATA_LLCTRL_TYPE_CHAN_MAP_IND;
-			memcpy(&pdu_ctrl_tx->payload.llctrl.
-			       ctrldata.chan_map_ind.chm[0],
+			memcpy(&pdu_ctrl_tx->llctrl.chan_map_ind.chm[0],
 			       &conn->llcp.chan_map.chm[0],
-			       sizeof(pdu_ctrl_tx->payload.
-				      llctrl.ctrldata.chan_map_ind.chm));
-			pdu_ctrl_tx->payload.llctrl.ctrldata.chan_map_ind.instant =
+			       sizeof(pdu_ctrl_tx->llctrl.chan_map_ind.chm));
+			pdu_ctrl_tx->llctrl.chan_map_ind.instant =
 				conn->llcp.chan_map.instant;
 
 			ctrl_tx_enqueue(conn, node_tx);
@@ -6720,10 +6694,9 @@ static inline void event_enc_reject_prep(struct connection *conn,
 	    (conn->llcp_features & BIT(BT_LE_FEAT_BIT_EXT_REJ_IND))) {
 		struct pdu_data_llctrl_reject_ext_ind *p;
 
-		pdu->payload.llctrl.opcode =
-			PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND;
+		pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND;
 
-		p = (void *)&pdu->payload.llctrl.ctrldata.reject_ext_ind;
+		p = (void *)&pdu->llctrl.reject_ext_ind;
 		p->reject_opcode = PDU_DATA_LLCTRL_TYPE_ENC_REQ;
 		p->error_code = conn->llcp.encryption.error_code;
 
@@ -6731,15 +6704,15 @@ static inline void event_enc_reject_prep(struct connection *conn,
 	} else {
 		struct pdu_data_llctrl_reject_ind *p;
 
-		pdu->payload.llctrl.opcode = PDU_DATA_LLCTRL_TYPE_REJECT_IND;
+		pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_REJECT_IND;
 
-		p = (void *)&pdu->payload.llctrl.ctrldata.reject_ind;
+		p = (void *)&pdu->llctrl.reject_ind;
 		p->error_code =	conn->llcp.encryption.error_code;
 
 		pdu->len = sizeof(struct pdu_data_llctrl_reject_ind);
 	}
 
-	pdu->len += offsetof(struct pdu_data_llctrl, ctrldata);
+	pdu->len += offsetof(struct pdu_data_llctrl, reject_ind);
 
 	conn->llcp.encryption.error_code = 0;
 }
@@ -6855,8 +6828,9 @@ static inline void event_enc_prep(struct connection *conn)
 			/* prepare the start enc req */
 			pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
 			pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl,
-						    ctrldata);
-			pdu_ctrl_tx->payload.llctrl.opcode =
+						    start_enc_req) +
+				sizeof(struct pdu_data_llctrl_start_enc_req);
+			pdu_ctrl_tx->llctrl.opcode =
 				PDU_DATA_LLCTRL_TYPE_START_ENC_REQ;
 		}
 
@@ -6894,20 +6868,20 @@ static inline void event_fex_prep(struct connection *conn)
 
 		/* place the feature exchange req packet as next in tx queue */
 		pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
-		pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, ctrldata) +
+		pdu_ctrl_tx->len =
+			offsetof(struct pdu_data_llctrl, feature_req) +
 			sizeof(struct pdu_data_llctrl_feature_req);
-		pdu_ctrl_tx->payload.llctrl.opcode =
+		pdu_ctrl_tx->llctrl.opcode =
 			!conn->role ?
 			PDU_DATA_LLCTRL_TYPE_FEATURE_REQ :
 			PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ;
-		memset(&pdu_ctrl_tx->payload.llctrl.ctrldata.feature_req.features[0],
-		       0x00,
-		       sizeof(pdu_ctrl_tx->payload.llctrl.ctrldata.feature_req.features));
-		pdu_ctrl_tx->payload.llctrl.ctrldata.feature_req.features[0] =
+		memset(&pdu_ctrl_tx->llctrl.feature_req.features[0], 0x00,
+		       sizeof(pdu_ctrl_tx->llctrl.feature_req.features));
+		pdu_ctrl_tx->llctrl.feature_req.features[0] =
 			conn->llcp_features & 0xFF;
-		pdu_ctrl_tx->payload.llctrl.ctrldata.feature_req.features[1] =
+		pdu_ctrl_tx->llctrl.feature_req.features[1] =
 			(conn->llcp_features >> 8) & 0xFF;
-		pdu_ctrl_tx->payload.llctrl.ctrldata.feature_req.features[2] =
+		pdu_ctrl_tx->llctrl.feature_req.features[2] =
 			(conn->llcp_features >> 16) & 0xFF;
 
 		ctrl_tx_enqueue(conn, node_tx);
@@ -6939,16 +6913,16 @@ static inline void event_vex_prep(struct connection *conn)
 
 			/* place the version ind packet as next in tx queue */
 			pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
-			pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl,
-						    ctrldata) +
+			pdu_ctrl_tx->len =
+				offsetof(struct pdu_data_llctrl, version_ind) +
 				sizeof(struct pdu_data_llctrl_version_ind);
-			pdu_ctrl_tx->payload.llctrl.opcode =
+			pdu_ctrl_tx->llctrl.opcode =
 				PDU_DATA_LLCTRL_TYPE_VERSION_IND;
-			pdu_ctrl_tx->payload.llctrl.ctrldata.version_ind.version_number =
+			pdu_ctrl_tx->llctrl.version_ind.version_number =
 				RADIO_BLE_VERSION_NUMBER;
-			pdu_ctrl_tx->payload.llctrl.ctrldata.version_ind.company_id =
+			pdu_ctrl_tx->llctrl.version_ind.company_id =
 				RADIO_BLE_COMPANY_ID;
-			pdu_ctrl_tx->payload.llctrl.ctrldata.version_ind.sub_version_number =
+			pdu_ctrl_tx->llctrl.version_ind.sub_version_number =
 				RADIO_BLE_SUB_VERSION_NUMBER;
 
 			ctrl_tx_enqueue(conn, node_tx);
@@ -6975,15 +6949,16 @@ static inline void event_vex_prep(struct connection *conn)
 		/* prepare version ind structure */
 		pdu_ctrl_rx = (void *)node_rx->pdu_data;
 		pdu_ctrl_rx->ll_id = PDU_DATA_LLID_CTRL;
-		pdu_ctrl_rx->len = offsetof(struct pdu_data_llctrl, ctrldata) +
+		pdu_ctrl_rx->len =
+			offsetof(struct pdu_data_llctrl, version_ind) +
 			sizeof(struct pdu_data_llctrl_version_ind);
-		pdu_ctrl_rx->payload.llctrl.opcode =
+		pdu_ctrl_rx->llctrl.opcode =
 			PDU_DATA_LLCTRL_TYPE_VERSION_IND;
-		pdu_ctrl_rx->payload.llctrl.ctrldata.version_ind.version_number =
+		pdu_ctrl_rx->llctrl.version_ind.version_number =
 			conn->llcp_version.version_number;
-		pdu_ctrl_rx->payload.llctrl.ctrldata.version_ind.company_id =
+		pdu_ctrl_rx->llctrl.version_ind.company_id =
 			conn->llcp_version.company_id;
-		pdu_ctrl_rx->payload.llctrl.ctrldata.version_ind.sub_version_number =
+		pdu_ctrl_rx->llctrl.version_ind.sub_version_number =
 			conn->llcp_version.sub_version_number;
 
 		/* enqueue version ind structure into rx queue */
@@ -7015,11 +6990,10 @@ static inline void event_conn_param_req(struct connection *conn,
 	/* place the conn param req packet as next in tx queue */
 	pdu_ctrl_tx = (void *)node_tx->pdu_data;
 	pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
-	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, ctrldata) +
+	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, conn_param_req) +
 		sizeof(struct pdu_data_llctrl_conn_param_req);
-	pdu_ctrl_tx->payload.llctrl.opcode =
-		PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ;
-	p = (void *)&pdu_ctrl_tx->payload.llctrl.ctrldata.conn_param_req;
+	pdu_ctrl_tx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ;
+	p = (void *)&pdu_ctrl_tx->llctrl.conn_param_req;
 	p->interval_min = conn->llcp_conn_param.interval;
 	p->interval_max = conn->llcp_conn_param.interval;
 	p->latency = conn->llcp_conn_param.latency;
@@ -7096,12 +7070,11 @@ static inline void event_conn_param_rsp(struct connection *conn)
 		/* master/slave response with reject ext ind */
 		pdu = (void *)node_tx->pdu_data;
 		pdu->ll_id = PDU_DATA_LLID_CTRL;
-		pdu->payload.llctrl.opcode =
-			PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND;
-		pdu->len = offsetof(struct pdu_data_llctrl, ctrldata) +
+		pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND;
+		pdu->len = offsetof(struct pdu_data_llctrl, reject_ext_ind) +
 			   sizeof(struct pdu_data_llctrl_reject_ext_ind);
 
-		rej = (void *)&pdu->payload.llctrl.ctrldata.reject_ext_ind;
+		rej = (void *)&pdu->llctrl.reject_ext_ind;
 		rej->reject_opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ;
 		rej->error_code = conn->llcp_conn_param.status;
 
@@ -7158,11 +7131,10 @@ static inline void event_conn_param_rsp(struct connection *conn)
 	/* place the conn param rsp packet as next in tx queue */
 	pdu = (void *)node_tx->pdu_data;
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len = offsetof(struct pdu_data_llctrl, ctrldata) +
+	pdu->len = offsetof(struct pdu_data_llctrl, conn_param_rsp) +
 		sizeof(struct pdu_data_llctrl_conn_param_rsp);
-	pdu->payload.llctrl.opcode =
-		PDU_DATA_LLCTRL_TYPE_CONN_PARAM_RSP;
-	rsp = (void *)&pdu->payload.llctrl.ctrldata.conn_param_rsp;
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_RSP;
+	rsp = (void *)&pdu->llctrl.conn_param_rsp;
 	rsp->interval_min = conn->llcp_conn_param.interval;
 	rsp->interval_max = conn->llcp_conn_param.interval;
 	rsp->latency = conn->llcp_conn_param.latency;
@@ -7214,11 +7186,10 @@ static inline void event_conn_param_app_req(struct connection *conn)
 	/* place the conn param req packet as next in rx queue */
 	pdu = (void *)node_rx->pdu_data;
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
-	pdu->len = offsetof(struct pdu_data_llctrl, ctrldata) +
+	pdu->len = offsetof(struct pdu_data_llctrl, conn_param_req) +
 		sizeof(struct pdu_data_llctrl_conn_param_req);
-	pdu->payload.llctrl.opcode =
-		PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ;
-	p = (void *) &pdu->payload.llctrl.ctrldata.conn_param_req;
+	pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ;
+	p = (void *) &pdu->llctrl.conn_param_req;
 	p->interval_min = conn->llcp_conn_param.interval;
 	p->interval_max = conn->llcp_conn_param.interval;
 	p->latency = conn->llcp_conn_param.latency;
@@ -7279,9 +7250,9 @@ static inline void event_ping_prep(struct connection *conn)
 
 		/* place the ping req packet as next in tx queue */
 		pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
-		pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, ctrldata);
-		pdu_ctrl_tx->payload.llctrl.opcode =
-			PDU_DATA_LLCTRL_TYPE_PING_REQ;
+		pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, ping_req) +
+				   sizeof(struct pdu_data_llctrl_ping_req);
+		pdu_ctrl_tx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PING_REQ;
 
 		ctrl_tx_enqueue(conn, node_tx);
 
@@ -7331,12 +7302,12 @@ static inline void event_len_prep(struct connection *conn)
 		/* place the length req packet as next in tx queue */
 		pdu_ctrl_tx = (void *) node_tx->pdu_data;
 		pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
-		pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, ctrldata) +
+		pdu_ctrl_tx->len =
+			offsetof(struct pdu_data_llctrl, length_req) +
 			sizeof(struct pdu_data_llctrl_length_req);
-		pdu_ctrl_tx->payload.llctrl.opcode =
-			PDU_DATA_LLCTRL_TYPE_LENGTH_REQ;
+		pdu_ctrl_tx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_LENGTH_REQ;
 
-		lr = &pdu_ctrl_tx->payload.llctrl.ctrldata.length_req;
+		lr = &pdu_ctrl_tx->llctrl.length_req;
 		lr->max_rx_octets = RADIO_LL_LENGTH_OCTETS_RX_MAX;
 		lr->max_tx_octets = conn->default_tx_octets;
 		lr->max_rx_time = RADIO_PKT_TIME(RADIO_LL_LENGTH_OCTETS_RX_MAX,
@@ -7412,7 +7383,7 @@ static inline void event_len_prep(struct connection *conn)
 		packet_rx_data_size = MROUND(offsetof(struct radio_pdu_node_rx,
 						      pdu_data) +
 					     offsetof(struct pdu_data,
-						      payload) +
+						      lldata) +
 					     conn->max_rx_octets);
 		/* Resize to lower or higher size if this is the only active
 		 * connection, or resize to only higher sizes as there may be
@@ -7484,14 +7455,12 @@ static inline void event_len_prep(struct connection *conn)
 		/* prepare length rsp structure */
 		pdu_ctrl_rx = (void *) node_rx->pdu_data;
 		pdu_ctrl_rx->ll_id = PDU_DATA_LLID_CTRL;
-		pdu_ctrl_rx->len = offsetof(struct pdu_data_llctrl,
-					    ctrldata) +
+		pdu_ctrl_rx->len =
+			offsetof(struct pdu_data_llctrl, length_rsp) +
 			sizeof(struct pdu_data_llctrl_length_rsp);
-		pdu_ctrl_rx->payload.llctrl.opcode =
-			PDU_DATA_LLCTRL_TYPE_LENGTH_RSP;
+		pdu_ctrl_rx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_LENGTH_RSP;
 
-		lr = (struct pdu_data_llctrl_length_rsp *)
-			&pdu_ctrl_rx->payload.llctrl.ctrldata.length_rsp;
+		lr = &pdu_ctrl_rx->llctrl.length_rsp;
 		lr->max_rx_octets = conn->max_rx_octets;
 		lr->max_tx_octets = conn->max_tx_octets;
 #if !defined(CONFIG_BT_CTLR_PHY)
@@ -7544,12 +7513,12 @@ static inline void event_phy_req_prep(struct connection *conn)
 		/* place the phy req packet as next in tx queue */
 		pdu_ctrl_tx = (void *) node_tx->pdu_data;
 		pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
-		pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, ctrldata) +
-				   sizeof(struct pdu_data_llctrl_phy_req);
-		pdu_ctrl_tx->payload.llctrl.opcode =
-			PDU_DATA_LLCTRL_TYPE_PHY_REQ;
+		pdu_ctrl_tx->len =
+			offsetof(struct pdu_data_llctrl, phy_req) +
+			sizeof(struct pdu_data_llctrl_phy_req);
+		pdu_ctrl_tx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PHY_REQ;
 
-		pr = &pdu_ctrl_tx->payload.llctrl.ctrldata.phy_req;
+		pr = &pdu_ctrl_tx->llctrl.phy_req;
 		pr->tx_phys = conn->llcp_phy.tx;
 		pr->rx_phys = conn->llcp_phy.rx;
 
@@ -7659,7 +7628,7 @@ static inline void event_phy_upd_ind_prep(struct connection *conn,
 						NODE_RX_TYPE_PHY_UPDATE;
 
 					pdu_data = (void *)&node_rx->pdu_data;
-					upd = (void *)&pdu_data->payload;
+					upd = (void *)pdu_data->lldata;
 					upd->status = 0;
 					upd->tx = conn->phy_tx;
 					upd->rx = conn->phy_rx;
@@ -7677,12 +7646,12 @@ static inline void event_phy_upd_ind_prep(struct connection *conn,
 			 * tx queue
 			 */
 			pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
-			pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl,
-						    ctrldata) +
+			pdu_ctrl_tx->len =
+				offsetof(struct pdu_data_llctrl, phy_upd_ind) +
 				sizeof(struct pdu_data_llctrl_phy_upd_ind);
-			pdu_ctrl_tx->payload.llctrl.opcode =
+			pdu_ctrl_tx->llctrl.opcode =
 				PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND;
-			ind = &pdu_ctrl_tx->payload.llctrl.ctrldata.phy_upd_ind;
+			ind = &pdu_ctrl_tx->llctrl.phy_upd_ind;
 			ind->m_to_s_phy = conn->llcp.phy_upd_ind.tx;
 			ind->s_to_m_phy = conn->llcp.phy_upd_ind.rx;
 			ind->instant = conn->llcp.phy_upd_ind.instant;
@@ -7722,7 +7691,7 @@ static inline void event_phy_upd_ind_prep(struct connection *conn,
 		node_rx->hdr.type = NODE_RX_TYPE_PHY_UPDATE;
 
 		pdu_data = (void *)&node_rx->pdu_data;
-		upd = (void *)&pdu_data->payload;
+		upd = (void *)pdu_data->lldata;
 		upd->status = 0;
 		upd->tx = conn->phy_tx;
 		upd->rx = conn->phy_rx;
@@ -7864,13 +7833,13 @@ static void event_connection_prepare(u32_t ticks_at_expire,
 
 			/* place the terminate ind packet in tx queue */
 			pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
-			pdu_ctrl_tx->len =
-				offsetof(struct pdu_data_llctrl, ctrldata) +
+			pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl,
+						    terminate_ind) +
 				sizeof(struct pdu_data_llctrl_terminate_ind);
-			pdu_ctrl_tx->payload.llctrl.opcode =
+			pdu_ctrl_tx->llctrl.opcode =
 				PDU_DATA_LLCTRL_TYPE_TERMINATE_IND;
-			pdu_ctrl_tx->payload.llctrl.ctrldata.terminate_ind.
-				error_code = conn->llcp_terminate.reason_own;
+			pdu_ctrl_tx->llctrl.terminate_ind.error_code =
+				conn->llcp_terminate.reason_own;
 
 			ctrl_tx_enqueue(conn, node_tx);
 
@@ -8898,7 +8867,7 @@ static void terminate_ind_rx_enqueue(struct connection *conn, u8_t reason)
 
 static u32_t conn_update(struct connection *conn, struct pdu_data *pdu_data_rx)
 {
-	if (((pdu_data_rx->payload.llctrl.ctrldata.conn_update_ind.instant -
+	if (((pdu_data_rx->llctrl.conn_update_ind.instant -
 	      conn->event_counter) & 0xFFFF) > 0x7FFF) {
 		return 1;
 	}
@@ -8915,18 +8884,17 @@ static u32_t conn_update(struct connection *conn, struct pdu_data *pdu_data_rx)
 	}
 
 	conn->llcp.conn_upd.win_size =
-		pdu_data_rx->payload.llctrl.ctrldata.conn_update_ind.win_size;
+		pdu_data_rx->llctrl.conn_update_ind.win_size;
 	conn->llcp.conn_upd.win_offset_us =
-		pdu_data_rx->payload.llctrl.ctrldata.conn_update_ind.win_offset *
-		1250;
+		pdu_data_rx->llctrl.conn_update_ind.win_offset * 1250;
 	conn->llcp.conn_upd.interval =
-		pdu_data_rx->payload.llctrl.ctrldata.conn_update_ind.interval;
+		pdu_data_rx->llctrl.conn_update_ind.interval;
 	conn->llcp.conn_upd.latency =
-		pdu_data_rx->payload.llctrl.ctrldata.conn_update_ind.latency;
+		pdu_data_rx->llctrl.conn_update_ind.latency;
 	conn->llcp.conn_upd.timeout =
-		pdu_data_rx->payload.llctrl.ctrldata.conn_update_ind.timeout;
+		pdu_data_rx->llctrl.conn_update_ind.timeout;
 	conn->llcp.conn_upd.instant =
-		pdu_data_rx->payload.llctrl.ctrldata.conn_update_ind.instant;
+		pdu_data_rx->llctrl.conn_update_ind.instant;
 	conn->llcp.conn_upd.state = LLCP_CUI_STATE_INPROG;
 	conn->llcp.conn_upd.is_internal = 0;
 
@@ -9001,7 +8969,7 @@ static u32_t conn_update_req(struct connection *conn)
 static u32_t chan_map_update(struct connection *conn,
 			     struct pdu_data *pdu_data_rx)
 {
-	if (((pdu_data_rx->payload.llctrl.ctrldata.chan_map_ind.instant -
+	if (((pdu_data_rx->llctrl.chan_map_ind.instant -
 	      conn->event_counter) & 0xffff) > 0x7fff) {
 		return 1;
 	}
@@ -9009,10 +8977,10 @@ static u32_t chan_map_update(struct connection *conn,
 	LL_ASSERT(conn->llcp_req == conn->llcp_ack);
 
 	memcpy(&conn->llcp.chan_map.chm[0],
-	       &pdu_data_rx->payload.llctrl.ctrldata.chan_map_ind.chm[0],
+	       &pdu_data_rx->llctrl.chan_map_ind.chm[0],
 	       sizeof(conn->llcp.chan_map.chm));
 	conn->llcp.chan_map.instant =
-		pdu_data_rx->payload.llctrl.ctrldata.chan_map_ind.instant;
+		pdu_data_rx->llctrl.chan_map_ind.instant;
 	conn->llcp.chan_map.initiate = 0;
 
 	conn->llcp_type = LLCP_CHAN_MAP;
@@ -9030,7 +8998,7 @@ static inline u32_t phy_upd_ind(struct radio_pdu_node_rx *node_rx,
 	struct pdu_data *pdu_data_rx;
 
 	pdu_data_rx = (void *)node_rx->pdu_data;
-	ind = &pdu_data_rx->payload.llctrl.ctrldata.phy_upd_ind;
+	ind = &pdu_data_rx->llctrl.phy_upd_ind;
 
 	/* Both tx and rx PHY unchanged */
 	if (!((ind->m_to_s_phy | ind->s_to_m_phy) & 0x07)) {
@@ -9054,7 +9022,7 @@ static inline u32_t phy_upd_ind(struct radio_pdu_node_rx *node_rx,
 		/* generate phy update complete event */
 		node_rx->hdr.type = NODE_RX_TYPE_PHY_UPDATE;
 
-		upd = (void *)&pdu_data_rx->payload;
+		upd = (void *)pdu_data_rx->lldata;
 		upd->status = 0;
 		upd->tx = conn->phy_tx;
 		upd->rx = conn->phy_rx;
@@ -9105,21 +9073,21 @@ static void enc_req_reused_send(struct connection *conn,
 
 	pdu_ctrl_tx = (struct pdu_data *)node_tx->pdu_data;
 	pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
-	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, ctrldata)
-		+ sizeof(struct pdu_data_llctrl_enc_req);
-	pdu_ctrl_tx->payload.llctrl.opcode = PDU_DATA_LLCTRL_TYPE_ENC_REQ;
-	memcpy(&pdu_ctrl_tx->payload.llctrl.ctrldata.enc_req.rand[0],
+	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, enc_req) +
+			   sizeof(struct pdu_data_llctrl_enc_req);
+	pdu_ctrl_tx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_ENC_REQ;
+	memcpy(&pdu_ctrl_tx->llctrl.enc_req.rand[0],
 	       &conn->llcp.encryption.rand[0],
-	       sizeof(pdu_ctrl_tx->payload.llctrl.ctrldata.enc_req.rand));
-	pdu_ctrl_tx->payload.llctrl.ctrldata.enc_req.ediv[0] =
+	       sizeof(pdu_ctrl_tx->llctrl.enc_req.rand));
+	pdu_ctrl_tx->llctrl.enc_req.ediv[0] =
 		conn->llcp.encryption.ediv[0];
-	pdu_ctrl_tx->payload.llctrl.ctrldata.enc_req.ediv[1] =
+	pdu_ctrl_tx->llctrl.enc_req.ediv[1] =
 		conn->llcp.encryption.ediv[1];
 	/* NOTE: if not sufficient random numbers, ignore waiting */
-	rand_isr_get(sizeof(pdu_ctrl_tx->payload.llctrl.ctrldata.enc_req.skdm),
-		     pdu_ctrl_tx->payload.llctrl.ctrldata.enc_req.skdm);
-	rand_isr_get(sizeof(pdu_ctrl_tx->payload.llctrl.ctrldata.enc_req.ivm),
-		     pdu_ctrl_tx->payload.llctrl.ctrldata.enc_req.ivm);
+	rand_isr_get(sizeof(pdu_ctrl_tx->llctrl.enc_req.skdm),
+		     pdu_ctrl_tx->llctrl.enc_req.skdm);
+	rand_isr_get(sizeof(pdu_ctrl_tx->llctrl.enc_req.ivm),
+		     pdu_ctrl_tx->llctrl.enc_req.ivm);
 }
 
 static u8_t enc_rsp_send(struct connection *conn)
@@ -9135,20 +9103,20 @@ static u8_t enc_rsp_send(struct connection *conn)
 
 	pdu_ctrl_tx = (struct pdu_data *)node_tx->pdu_data;
 	pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
-	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, ctrldata)
-		+ sizeof(struct pdu_data_llctrl_enc_rsp);
-	pdu_ctrl_tx->payload.llctrl.opcode = PDU_DATA_LLCTRL_TYPE_ENC_RSP;
+	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, enc_rsp) +
+			   sizeof(struct pdu_data_llctrl_enc_rsp);
+	pdu_ctrl_tx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_ENC_RSP;
 	/* NOTE: if not sufficient random numbers, ignore waiting */
-	rand_isr_get(sizeof(pdu_ctrl_tx->payload.llctrl.ctrldata.enc_rsp.skds),
-		     pdu_ctrl_tx->payload.llctrl.ctrldata.enc_rsp.skds);
-	rand_isr_get(sizeof(pdu_ctrl_tx->payload.llctrl.ctrldata.enc_rsp.ivs),
-		     pdu_ctrl_tx->payload.llctrl.ctrldata.enc_rsp.ivs);
+	rand_isr_get(sizeof(pdu_ctrl_tx->llctrl.enc_rsp.skds),
+		     pdu_ctrl_tx->llctrl.enc_rsp.skds);
+	rand_isr_get(sizeof(pdu_ctrl_tx->llctrl.enc_rsp.ivs),
+		     pdu_ctrl_tx->llctrl.enc_rsp.ivs);
 
 	/* things from slave stored for session key calculation */
 	memcpy(&conn->llcp.encryption.skd[8],
-	       &pdu_ctrl_tx->payload.llctrl.ctrldata.enc_rsp.skds[0], 8);
+	       &pdu_ctrl_tx->llctrl.enc_rsp.skds[0], 8);
 	memcpy(&conn->ccm_rx.iv[4],
-	       &pdu_ctrl_tx->payload.llctrl.ctrldata.enc_rsp.ivs[0], 4);
+	       &pdu_ctrl_tx->llctrl.enc_rsp.ivs[0], 4);
 
 	ctrl_tx_enqueue(conn, node_tx);
 
@@ -9174,9 +9142,8 @@ static u8_t start_enc_rsp_send(struct connection *conn,
 	conn->enc_tx = 1;
 
 	pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
-	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, ctrldata);
-	pdu_ctrl_tx->payload.llctrl.opcode =
-		PDU_DATA_LLCTRL_TYPE_START_ENC_RSP;
+	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, enc_rsp);
+	pdu_ctrl_tx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_START_ENC_RSP;
 
 	if (node_tx) {
 		ctrl_tx_enqueue(conn, node_tx);
@@ -9224,9 +9191,8 @@ static u8_t pause_enc_rsp_send(struct connection *conn, u8_t req)
 	/* Enqueue pause enc rsp */
 	pdu_ctrl_tx = (struct pdu_data *)node_tx->pdu_data;
 	pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
-	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, ctrldata);
-	pdu_ctrl_tx->payload.llctrl.opcode =
-		PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP;
+	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, enc_rsp);
+	pdu_ctrl_tx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP;
 
 	ctrl_tx_enqueue(conn, node_tx);
 
@@ -9247,10 +9213,10 @@ static u8_t unknown_rsp_send(struct connection *conn, u8_t type)
 
 	pdu_ctrl_tx = (struct pdu_data *)node_tx->pdu_data;
 	pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
-	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, ctrldata)
-		+ sizeof(struct pdu_data_llctrl_unknown_rsp);
-	pdu_ctrl_tx->payload.llctrl.opcode = PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP;
-	pdu_ctrl_tx->payload.llctrl.ctrldata.unknown_rsp.type = type;
+	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, unknown_rsp) +
+			   sizeof(struct pdu_data_llctrl_unknown_rsp);
+	pdu_ctrl_tx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP;
+	pdu_ctrl_tx->llctrl.unknown_rsp.type = type;
 
 	ctrl_tx_enqueue(conn, node_tx);
 
@@ -9271,7 +9237,7 @@ static u8_t feature_rsp_send(struct connection *conn,
 	}
 
 	/* AND the feature set to get Feature USED */
-	req = &pdu_data_rx->payload.llctrl.ctrldata.feature_req;
+	req = &pdu_data_rx->llctrl.feature_req;
 	_radio.conn_curr->llcp_features &= feat_get(&req->features[0]);
 
 	/* features exchanged */
@@ -9280,17 +9246,16 @@ static u8_t feature_rsp_send(struct connection *conn,
 	/* Enqueue feature response */
 	pdu_ctrl_tx = (struct pdu_data *)node_tx->pdu_data;
 	pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
-	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, ctrldata) +
+	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, feature_rsp) +
 		sizeof(struct pdu_data_llctrl_feature_rsp);
-	pdu_ctrl_tx->payload.llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_RSP;
-	memset(&pdu_ctrl_tx->payload.llctrl.ctrldata.feature_rsp.features[0],
-		0x00,
-		sizeof(pdu_ctrl_tx->payload.llctrl.ctrldata.feature_rsp.features));
-	pdu_ctrl_tx->payload.llctrl.ctrldata.feature_req.features[0] =
+	pdu_ctrl_tx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_RSP;
+	memset(&pdu_ctrl_tx->llctrl.feature_rsp.features[0], 0x00,
+		sizeof(pdu_ctrl_tx->llctrl.feature_rsp.features));
+	pdu_ctrl_tx->llctrl.feature_req.features[0] =
 		conn->llcp_features & 0xFF;
-	pdu_ctrl_tx->payload.llctrl.ctrldata.feature_req.features[1] =
+	pdu_ctrl_tx->llctrl.feature_req.features[1] =
 		(conn->llcp_features >> 8) & 0xFF;
-	pdu_ctrl_tx->payload.llctrl.ctrldata.feature_req.features[2] =
+	pdu_ctrl_tx->llctrl.feature_req.features[2] =
 		(conn->llcp_features >> 16) & 0xFF;
 
 	ctrl_tx_sec_enqueue(conn, node_tx);
@@ -9315,11 +9280,11 @@ static u8_t version_ind_send(struct connection *conn,
 
 		pdu_ctrl_tx = (struct pdu_data *)node_tx->pdu_data;
 		pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
-		pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, ctrldata) +
+		pdu_ctrl_tx->len =
+			offsetof(struct pdu_data_llctrl, version_ind) +
 			sizeof(struct pdu_data_llctrl_version_ind);
-		pdu_ctrl_tx->payload.llctrl.opcode =
-			PDU_DATA_LLCTRL_TYPE_VERSION_IND;
-		v = &pdu_ctrl_tx->payload.llctrl.ctrldata.version_ind;
+		pdu_ctrl_tx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_VERSION_IND;
+		v = &pdu_ctrl_tx->llctrl.version_ind;
 		v->version_number = RADIO_BLE_VERSION_NUMBER;
 		v->company_id =	RADIO_BLE_COMPANY_ID;
 		v->sub_version_number =	RADIO_BLE_SUB_VERSION_NUMBER;
@@ -9340,7 +9305,7 @@ static u8_t version_ind_send(struct connection *conn,
 		return 0;
 	}
 
-	v = &pdu_data_rx->payload.llctrl.ctrldata.version_ind;
+	v = &pdu_data_rx->llctrl.version_ind;
 	conn->llcp_version.version_number = v->version_number;
 	conn->llcp_version. company_id = v->company_id;
 	conn->llcp_version.sub_version_number = v->sub_version_number;
@@ -9363,8 +9328,9 @@ static u8_t ping_resp_send(struct connection *conn)
 
 	pdu_ctrl_tx = (struct pdu_data *)node_tx->pdu_data;
 	pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
-	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, ctrldata);
-	pdu_ctrl_tx->payload.llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PING_RSP;
+	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, ping_rsp) +
+			   sizeof(struct pdu_data_llctrl_ping_rsp);
+	pdu_ctrl_tx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PING_RSP;
 
 	ctrl_tx_enqueue(conn, node_tx);
 
@@ -9387,14 +9353,11 @@ static u8_t reject_ext_ind_send(struct connection *conn,
 
 	pdu_ctrl_tx = (struct pdu_data *)node_tx->pdu_data;
 	pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
-	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, ctrldata) +
+	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, reject_ext_ind) +
 		sizeof(struct pdu_data_llctrl_reject_ext_ind);
-	pdu_ctrl_tx->payload.llctrl.opcode =
-		PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND;
-	pdu_ctrl_tx->payload.llctrl.ctrldata.reject_ext_ind.reject_opcode =
-		reject_opcode;
-	pdu_ctrl_tx->payload.llctrl.ctrldata.reject_ext_ind.error_code =
-		error_code;
+	pdu_ctrl_tx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND;
+	pdu_ctrl_tx->llctrl.reject_ext_ind.reject_opcode = reject_opcode;
+	pdu_ctrl_tx->llctrl.reject_ext_ind.error_code = error_code;
 
 	ctrl_tx_enqueue(conn, node_tx);
 
@@ -9418,25 +9381,20 @@ static void length_resp_send(struct connection *conn,
 
 	pdu_ctrl_tx = (struct pdu_data *) node_tx->pdu_data;
 	pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
-	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, ctrldata) +
+	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, length_rsp) +
 		sizeof(struct pdu_data_llctrl_length_rsp);
-	pdu_ctrl_tx->payload.llctrl.opcode =
-		PDU_DATA_LLCTRL_TYPE_LENGTH_RSP;
-	pdu_ctrl_tx->payload.llctrl.ctrldata.length_rsp.max_rx_octets =
-		eff_rx_octets;
-	pdu_ctrl_tx->payload.llctrl.ctrldata.length_rsp.max_tx_octets =
-		eff_tx_octets;
+	pdu_ctrl_tx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_LENGTH_RSP;
+	pdu_ctrl_tx->llctrl.length_rsp.max_rx_octets = eff_rx_octets;
+	pdu_ctrl_tx->llctrl.length_rsp.max_tx_octets = eff_tx_octets;
 
 #if !defined(CONFIG_BT_CTLR_PHY)
-	pdu_ctrl_tx->payload.llctrl.ctrldata.length_rsp.max_rx_time =
+	pdu_ctrl_tx->llctrl.length_rsp.max_rx_time =
 		RADIO_PKT_TIME(eff_rx_octets, 0);
-	pdu_ctrl_tx->payload.llctrl.ctrldata.length_rsp.max_tx_time =
+	pdu_ctrl_tx->llctrl.length_rsp.max_tx_time =
 		RADIO_PKT_TIME(eff_tx_octets, 0);
 #else /* CONFIG_BT_CTLR_PHY */
-	pdu_ctrl_tx->payload.llctrl.ctrldata.length_rsp.max_rx_time =
-		eff_rx_time;
-	pdu_ctrl_tx->payload.llctrl.ctrldata.length_rsp.max_tx_time =
-		eff_tx_time;
+	pdu_ctrl_tx->llctrl.length_rsp.max_rx_time = eff_rx_time;
+	pdu_ctrl_tx->llctrl.length_rsp.max_tx_time = eff_tx_time;
 #endif /* CONFIG_BT_CTLR_PHY */
 
 	ctrl_tx_enqueue(conn, node_tx);
@@ -9477,21 +9435,19 @@ static u8_t phy_rsp_send(struct connection *conn, struct pdu_data *pdu_data_rx)
 			conn->procedure_reload;
 	}
 
-	c = &pdu_data_rx->payload.llctrl;
-	p = &c->ctrldata.phy_req;
+	c = &pdu_data_rx->llctrl;
+	p = &c->phy_req;
 
 	conn->llcp_phy.tx &= p->rx_phys;
 	conn->llcp_phy.rx &= p->tx_phys;
 
 	pdu_ctrl_tx = (struct pdu_data *)node_tx->pdu_data;
 	pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
-	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, ctrldata) +
+	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, phy_rsp) +
 			   sizeof(struct pdu_data_llctrl_phy_rsp);
-	pdu_ctrl_tx->payload.llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PHY_RSP;
-	pdu_ctrl_tx->payload.llctrl.ctrldata.phy_rsp.tx_phys =
-		conn->phy_pref_tx;
-	pdu_ctrl_tx->payload.llctrl.ctrldata.phy_rsp.rx_phys =
-		conn->phy_pref_rx;
+	pdu_ctrl_tx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PHY_RSP;
+	pdu_ctrl_tx->llctrl.phy_rsp.tx_phys = conn->phy_pref_tx;
+	pdu_ctrl_tx->llctrl.phy_rsp.rx_phys = conn->phy_pref_rx;
 
 	ctrl_tx_enqueue(conn, node_tx);
 
@@ -10586,13 +10542,13 @@ u32_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
 			struct pdu_data_llctrl_enc_req *enc_req;
 
 			pdu_data_tx->ll_id = PDU_DATA_LLID_CTRL;
-			pdu_data_tx->len = offsetof(struct pdu_data_llctrl,
-						    ctrldata) +
+			pdu_data_tx->len =
+				offsetof(struct pdu_data_llctrl, enc_rsp) +
 				sizeof(struct pdu_data_llctrl_enc_req);
-			pdu_data_tx->payload.llctrl.opcode =
+			pdu_data_tx->llctrl.opcode =
 				PDU_DATA_LLCTRL_TYPE_ENC_REQ;
 			enc_req = (void *)
-				&pdu_data_tx->payload.llctrl.ctrldata.enc_req;
+				&pdu_data_tx->llctrl.enc_req;
 			memcpy(enc_req->rand, rand, sizeof(enc_req->rand));
 			enc_req->ediv[0] = ediv[0];
 			enc_req->ediv[1] = ediv[1];
@@ -10606,10 +10562,10 @@ u32_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
 			conn->llcp.encryption.ediv[1] = ediv[1];
 
 			pdu_data_tx->ll_id = PDU_DATA_LLID_CTRL;
-			pdu_data_tx->len =
-				offsetof(struct pdu_data_llctrl, ctrldata);
-			pdu_data_tx->payload.llctrl.opcode =
-			    PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ;
+			pdu_data_tx->len = offsetof(struct pdu_data_llctrl,
+						    enc_req);
+			pdu_data_tx->llctrl.opcode =
+				PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ;
 		} else {
 			ll_tx_mem_release(node_tx);
 
@@ -11060,7 +11016,7 @@ void ll_rx_dequeue(void)
 		u8_t bm;
 
 		pdu_data_rx = (void *)node_rx->pdu_data;
-		radio_le_conn_cmplt = (void *)&pdu_data_rx->payload;
+		radio_le_conn_cmplt = (void *)pdu_data_rx->lldata;
 		if ((radio_le_conn_cmplt->status == 0x3c) ||
 		    radio_le_conn_cmplt->role) {
 			if (radio_le_conn_cmplt->status == 0x3c) {
@@ -11290,7 +11246,7 @@ u32_t ll_tx_mem_enqueue(u16_t handle, void *node_tx)
 	LL_ASSERT(pdu_data->len <= (_radio.packet_tx_data_size -
 				    offsetof(struct radio_pdu_node_tx,
 					     pdu_data) -
-				    offsetof(struct pdu_data, payload)));
+				    offsetof(struct pdu_data, lldata)));
 
 	_radio.pkt_tx[_radio.packet_tx_last].handle = handle;
 	_radio.pkt_tx[_radio.packet_tx_last].node_tx = node_tx;

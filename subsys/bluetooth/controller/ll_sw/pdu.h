@@ -14,7 +14,7 @@
 #define PDU_AC_PAYLOAD_SIZE_MAX 37
 #define PDU_AC_SIZE_MAX (offsetof(struct pdu_adv, payload) + \
 			 PDU_AC_PAYLOAD_SIZE_MAX)
-#define PDU_EM_SIZE_MAX offsetof(struct pdu_data, payload)
+#define PDU_EM_SIZE_MAX offsetof(struct pdu_data, lldata)
 
 struct pdu_adv_adv_ind {
 	u8_t addr[BDADDR_SIZE];
@@ -50,7 +50,7 @@ struct pdu_adv_connect_ind {
 		u8_t  chan_map[5];
 		u8_t  hop:5;
 		u8_t  sca:3;
-	} __packed lldata;
+	} __packed;
 } __packed;
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
@@ -146,6 +146,7 @@ struct pdu_adv {
 	u8_t len:8;
 
 	union {
+		u8_t   payload[0];
 		struct pdu_adv_adv_ind adv_ind;
 		struct pdu_adv_direct_ind direct_ind;
 		struct pdu_adv_scan_req scan_req;
@@ -155,7 +156,7 @@ struct pdu_adv {
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 		struct pdu_adv_com_ext_adv adv_ext_ind;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
-	} __packed payload;
+	} __packed;
 } __packed;
 
 enum pdu_data_llid {
@@ -373,7 +374,7 @@ struct pdu_data_llctrl {
 		struct pdu_data_llctrl_phy_rsp phy_rsp;
 		struct pdu_data_llctrl_phy_upd_ind phy_upd_ind;
 		struct pdu_data_llctrl_min_used_chans_ind min_used_chans_ind;
-	} __packed ctrldata;
+	} __packed;
 } __packed;
 
 #if defined(CONFIG_BT_CTLR_PROFILE_ISR)
@@ -401,17 +402,17 @@ struct pdu_data {
 #endif /* !CONFIG_BT_CTLR_DATA_LENGTH_CLEAR */
 
 	union {
-		u8_t lldata[1];
 		struct pdu_data_llctrl llctrl;
+		u8_t                   lldata[0];
 
 #if defined(CONFIG_BT_CTLR_CONN_RSSI)
-		u8_t rssi;
+		u8_t                   rssi;
 #endif /* CONFIG_BT_CTLR_CONN_RSSI */
 
 #if defined(CONFIG_BT_CTLR_PROFILE_ISR)
-		struct profile profile;
+		struct profile         profile;
 #endif /* CONFIG_BT_CTLR_PROFILE_ISR */
-	} __packed payload;
+	} __packed;
 } __packed;
 
 #endif /* _PDU_H_ */

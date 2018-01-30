@@ -511,8 +511,8 @@ bool ctrl_rl_enabled(void)
 void ll_rl_pdu_adv_update(u8_t idx, struct pdu_adv *pdu)
 {
 	u8_t *adva = pdu->type == PDU_ADV_TYPE_SCAN_RSP ?
-				  &pdu->payload.scan_rsp.addr[0] :
-				  &pdu->payload.adv_ind.addr[0];
+				  &pdu->scan_rsp.addr[0] :
+				  &pdu->adv_ind.addr[0];
 
 	struct ll_adv_set *ll_adv = ll_adv_set_get();
 
@@ -530,11 +530,11 @@ void ll_rl_pdu_adv_update(u8_t idx, struct pdu_adv *pdu)
 	if (pdu->type == PDU_ADV_TYPE_DIRECT_IND) {
 		if (idx < ARRAY_SIZE(rl) && rl[idx].pirk) {
 			pdu->rx_addr = 1;
-			memcpy(&pdu->payload.direct_ind.tgt_addr[0],
+			memcpy(&pdu->direct_ind.tgt_addr[0],
 			       rl[idx].peer_rpa.val, BDADDR_SIZE);
 		} else {
 			pdu->rx_addr = ll_adv->id_addr_type;
-			memcpy(&pdu->payload.direct_ind.tgt_addr[0],
+			memcpy(&pdu->direct_ind.tgt_addr[0],
 			       ll_adv->id_addr, BDADDR_SIZE);
 		}
 	}
@@ -583,7 +583,7 @@ static void rpa_adv_refresh(void)
 	LL_ASSERT(idx < ARRAY_SIZE(rl));
 	ll_rl_pdu_adv_update(idx, pdu);
 
-	memcpy(&pdu->payload.adv_ind.data[0], &prev->payload.adv_ind.data[0],
+	memcpy(&pdu->adv_ind.data[0], &prev->adv_ind.data[0],
 	       prev->len - BDADDR_SIZE);
 	pdu->len = prev->len;
 
