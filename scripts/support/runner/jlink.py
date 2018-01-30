@@ -61,8 +61,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                                 DEFAULT_JLINK_GDB_PORT))
         parser.add_argument('--commander', default='JLinkExe',
                             help='J-Link Commander, default is JLinkExe')
-        parser.add_argument('--erase', default=True, action='store_false',
-                            help='erase flash before loading, default is true')
+        parser.add_argument('--erase', default=False, action='store_true',
+                            help='if given, mass erase flash before loading')
 
     @classmethod
     def create_from_args(cls, args):
