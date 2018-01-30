@@ -159,7 +159,7 @@ config OPENTHREAD_DIAG
 
 config OPENTHREAD_COMMISSIONER
 	bool
-	prompt "Commisioner functions support"
+	prompt "Commissioner functions support"
 	help
 	  Enable commissioner capability in OpenThread stack
 
