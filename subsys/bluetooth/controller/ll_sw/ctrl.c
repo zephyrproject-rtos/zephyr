@@ -39,9 +39,6 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #include "common/log.h"
 
-#define RADIO_TIFS                      150
-#define RADIO_CONN_EVENTS(x, y)         ((u16_t)(((x) + (y) - 1) / (y)))
-
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 #define RADIO_PKT_TIME(octets, phy) \
 	(((phy) & BIT(2)) ? (80 + 256 + 16 + 24 + ((((2 + (octets) + 4) * 8) + \
@@ -52,21 +49,22 @@
 	(((octets) + 14) * 8 / BIT(((phy) & 0x03) >> 1))
 #endif /* !CONFIG_BT_CTLR_PHY_CODED */
 
-#define RADIO_TICKER_JITTER_US			16
-#define RADIO_TICKER_START_PART_US		300
-#define RADIO_TICKER_XTAL_OFFSET_US		1200
-#define RADIO_TICKER_PREEMPT_PART_US		0
-#define RADIO_TICKER_PREEMPT_PART_MIN_US	0
-#define RADIO_TICKER_PREEMPT_PART_MAX_US	RADIO_TICKER_XTAL_OFFSET_US
-
 #if defined(CONFIG_BT_CTLR_CONN_RSSI)
 #define RADIO_RSSI_SAMPLE_COUNT	10
 #define RADIO_RSSI_THRESHOLD	4
 #endif /* CONFIG_BT_CTLR_CONN_RSSI */
 
-#define RADIO_IRK_COUNT_MAX	8
-
 #define SILENT_CONNECTION	0
+
+#define RADIO_TIFS                      150
+#define RADIO_CONN_EVENTS(x, y)         ((u16_t)(((x) + (y) - 1) / (y)))
+
+#define RADIO_TICKER_JITTER_US           16
+#define RADIO_TICKER_START_PART_US       300
+#define RADIO_TICKER_XTAL_OFFSET_US      1200
+#define RADIO_TICKER_PREEMPT_PART_US     0
+#define RADIO_TICKER_PREEMPT_PART_MIN_US 0
+#define RADIO_TICKER_PREEMPT_PART_MAX_US RADIO_TICKER_XTAL_OFFSET_US
 
 enum role {
 	ROLE_NONE,
@@ -2226,8 +2224,8 @@ static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 		if (eff_rx_octets != _radio.conn_curr->max_rx_octets) {
 			u16_t free_count_rx;
 
-			free_count_rx = packet_rx_acquired_count_get()
-				+ mem_free_count_get(_radio.pkt_rx_data_free);
+			free_count_rx = packet_rx_acquired_count_get() +
+				mem_free_count_get(_radio.pkt_rx_data_free);
 			LL_ASSERT(free_count_rx <= 0xFF);
 
 			if (_radio.packet_rx_data_count == free_count_rx) {
