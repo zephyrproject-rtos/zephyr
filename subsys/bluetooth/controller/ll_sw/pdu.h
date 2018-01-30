@@ -281,7 +281,14 @@ struct pdu_data_llctrl_reject_ext_ind {
 	u8_t error_code;
 } __packed;
 
-struct pdu_data_llctrl_length_req_rsp {
+struct pdu_data_llctrl_length_req {
+	u16_t max_rx_octets;
+	u16_t max_rx_time;
+	u16_t max_tx_octets;
+	u16_t max_tx_time;
+} __packed;
+
+struct pdu_data_llctrl_length_rsp {
 	u16_t max_rx_octets;
 	u16_t max_rx_time;
 	u16_t max_tx_octets;
@@ -321,8 +328,8 @@ struct pdu_data_llctrl {
 		struct pdu_data_llctrl_conn_param_req conn_param_req;
 		struct pdu_data_llctrl_conn_param_rsp conn_param_rsp;
 		struct pdu_data_llctrl_reject_ext_ind reject_ext_ind;
-		struct pdu_data_llctrl_length_req_rsp length_req;
-		struct pdu_data_llctrl_length_req_rsp length_rsp;
+		struct pdu_data_llctrl_length_req length_req;
+		struct pdu_data_llctrl_length_rsp length_rsp;
 		struct pdu_data_llctrl_phy_req_rsp phy_req;
 		struct pdu_data_llctrl_phy_req_rsp phy_rsp;
 		struct pdu_data_llctrl_phy_upd_ind phy_upd_ind;
