@@ -40,11 +40,13 @@ config DISK_FLASH_DEV_NAME
 
 config DISK_FLASH_START
 	hex
+	prompt "Flash device start address in hex"
 	help
 	  This is start address of the flash to be used as storage backend.
 
 config DISK_FLASH_MAX_RW_SIZE
 	int
+	prompt "Flash device max read-write size in decimal"
 	help
 	  This is the maximum number of bytes that the
 	  flash_write API can accept per invocation.
@@ -52,18 +54,21 @@ config DISK_FLASH_MAX_RW_SIZE
 
 config DISK_FLASH_ERASE_ALIGNMENT
 	hex
+	prompt "Flash device erase alignment in hex"
 	help
 	  This is the start address alignment required by
 	  the flash component.
 
 config DISK_ERASE_BLOCK_SIZE
 	hex
+	prompt "Flash device block size in hex"
 	help
 	  This is typically the minimum block size that
 	  is erased at one time in flash storage.
 
 config DISK_VOLUME_SIZE
 	hex
+	prompt "Flash device block size in hex"
 	help
 	  This is the file system volume size in bytes.
 
