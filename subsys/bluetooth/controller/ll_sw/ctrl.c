@@ -287,7 +287,7 @@ static u32_t chan_map_update(struct connection *conn,
 			     struct pdu_data *pdu_data_rx);
 
 #if defined(CONFIG_BT_CTLR_PHY)
-static inline u32_t phy_upd_ind(struct radio_pdu_node_rx *radio_pdu_node_rx,
+static inline u32_t phy_upd_ind(struct radio_pdu_node_rx *node_rx,
 				u8_t *rx_enqueue);
 #endif /* CONFIG_BT_CTLR_PHY */
 
@@ -768,23 +768,23 @@ static inline void isr_radio_state_tx(void)
 #if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
 static u32_t isr_rx_adv_sr_report(struct pdu_adv *pdu_adv_rx, u8_t rssi_ready)
 {
-	struct radio_pdu_node_rx *radio_pdu_node_rx;
+	struct radio_pdu_node_rx *node_rx;
 	struct pdu_adv *pdu_adv;
 	u8_t pdu_len;
 
-	radio_pdu_node_rx = packet_rx_reserve_get(3);
-	if (radio_pdu_node_rx == 0) {
+	node_rx = packet_rx_reserve_get(3);
+	if (node_rx == 0) {
 		return 1;
 	}
 
 	/* Prepare the report (scan req) */
-	radio_pdu_node_rx->hdr.handle = 0xffff;
-	radio_pdu_node_rx->hdr.type = NODE_RX_TYPE_SCAN_REQ;
+	node_rx->hdr.handle = 0xffff;
+	node_rx->hdr.type = NODE_RX_TYPE_SCAN_REQ;
 
 	/* Make a copy of PDU into Rx node (as the received PDU is in the
 	 * scratch buffer), and save the RSSI value.
 	 */
-	pdu_adv = (struct pdu_adv *)radio_pdu_node_rx->pdu_data;
+	pdu_adv = (void *)node_rx->pdu_data;
 	pdu_len = offsetof(struct pdu_adv, payload) + pdu_adv_rx->len;
 	memcpy(pdu_adv, pdu_adv_rx, pdu_len);
 	((u8_t *)pdu_adv)[pdu_len] =
@@ -882,7 +882,7 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 			       u8_t rssi_ready)
 {
 	struct pdu_adv *pdu_adv, *_pdu_adv;
-	struct radio_pdu_node_rx *radio_pdu_node_rx;
+	struct radio_pdu_node_rx *node_rx;
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	/* An IRK match implies address resolution enabled */
 	u8_t rl_idx = irkmatch_ok ? ctrl_rl_irk_idx(irkmatch_id) :
@@ -946,12 +946,12 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 		u32_t ticker_status;
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
-			radio_pdu_node_rx = packet_rx_reserve_get(4);
+			node_rx = packet_rx_reserve_get(4);
 		} else {
-			radio_pdu_node_rx = packet_rx_reserve_get(3);
+			node_rx = packet_rx_reserve_get(3);
 		}
 
-		if (radio_pdu_node_rx == 0) {
+		if (!node_rx) {
 			return 1;
 		}
 
@@ -1005,13 +1005,12 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
 		/* Prepare the rx packet structure */
-		radio_pdu_node_rx->hdr.handle = conn->handle;
-		radio_pdu_node_rx->hdr.type = NODE_RX_TYPE_CONNECTION;
+		node_rx->hdr.handle = conn->handle;
+		node_rx->hdr.type = NODE_RX_TYPE_CONNECTION;
 
 		/* prepare connection complete structure */
-		pdu_data = (struct pdu_data *)radio_pdu_node_rx->pdu_data;
-		radio_le_conn_cmplt =
-			(struct radio_le_conn_cmplt *)&pdu_data->payload;
+		pdu_data = (void *)node_rx->pdu_data;
+		radio_le_conn_cmplt = (void *)&pdu_data->payload;
 		radio_le_conn_cmplt->status = 0x00;
 		radio_le_conn_cmplt->role = 0x01;
 #if defined(CONFIG_BT_CTLR_PRIVACY)
@@ -1061,17 +1060,14 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 			struct radio_le_chan_sel_algo *le_chan_sel_algo;
 
 			/* Generate LE Channel Selection Algorithm event */
-			radio_pdu_node_rx = packet_rx_reserve_get(3);
-			LL_ASSERT(radio_pdu_node_rx);
+			node_rx = packet_rx_reserve_get(3);
+			LL_ASSERT(node_rx);
 
-			radio_pdu_node_rx->hdr.handle = conn->handle;
-			radio_pdu_node_rx->hdr.type =
-				NODE_RX_TYPE_CHAN_SEL_ALGO;
+			node_rx->hdr.handle = conn->handle;
+			node_rx->hdr.type = NODE_RX_TYPE_CHAN_SEL_ALGO;
 
-			pdu_data = (struct pdu_data *)
-				radio_pdu_node_rx->pdu_data;
-			le_chan_sel_algo = (struct radio_le_chan_sel_algo *)
-				&pdu_data->payload;
+			pdu_data = (void *)node_rx->pdu_data;
+			le_chan_sel_algo = (void *)&pdu_data->payload;
 
 			if (pdu_adv->chan_sel) {
 				u16_t aa_ls =
@@ -1174,28 +1170,26 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 
 static u32_t isr_rx_scan_report(u8_t rssi_ready, u8_t rl_idx, bool dir_report)
 {
-	struct radio_pdu_node_rx *radio_pdu_node_rx;
+	struct radio_pdu_node_rx *node_rx;
 	struct pdu_adv *pdu_adv_rx;
 
-	radio_pdu_node_rx = packet_rx_reserve_get(3);
-	if (radio_pdu_node_rx == 0) {
+	node_rx = packet_rx_reserve_get(3);
+	if (node_rx == 0) {
 		return 1;
 	}
 
 	/* Prepare the report (adv or scan resp) */
-	radio_pdu_node_rx->hdr.handle = 0xffff;
+	node_rx->hdr.handle = 0xffff;
 	if (0) {
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	} else if (_radio.scanner.phy) {
 		switch (_radio.scanner.phy) {
 		case BIT(0):
-			radio_pdu_node_rx->hdr.type =
-				NODE_RX_TYPE_EXT_1M_REPORT;
+			node_rx->hdr.type = NODE_RX_TYPE_EXT_1M_REPORT;
 			break;
 
 		case BIT(2):
-			radio_pdu_node_rx->hdr.type =
-				NODE_RX_TYPE_EXT_CODED_REPORT;
+			node_rx->hdr.type = NODE_RX_TYPE_EXT_CODED_REPORT;
 			break;
 
 		default:
@@ -1204,11 +1198,11 @@ static u32_t isr_rx_scan_report(u8_t rssi_ready, u8_t rl_idx, bool dir_report)
 		}
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 	} else {
-		radio_pdu_node_rx->hdr.type = NODE_RX_TYPE_REPORT;
+		node_rx->hdr.type = NODE_RX_TYPE_REPORT;
 	}
 
 	/* save the RSSI value */
-	pdu_adv_rx = (struct pdu_adv *)radio_pdu_node_rx->pdu_data;
+	pdu_adv_rx = (void *)node_rx->pdu_data;
 	((u8_t *)pdu_adv_rx)[offsetof(struct pdu_adv, payload) +
 			     pdu_adv_rx->len] =
 		(rssi_ready) ? (radio_rssi_get() & 0x7f) : 0x7f;
@@ -1337,7 +1331,7 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 	     (TICKER_TICKS_TO_US(_radio.scanner.hdr.ticks_slot) -
 	      RADIO_TICKER_START_PART_US))) {
 		struct radio_le_conn_cmplt *radio_le_conn_cmplt;
-		struct radio_pdu_node_rx *radio_pdu_node_rx;
+		struct radio_pdu_node_rx *node_rx;
 		struct pdu_adv *pdu_adv_tx;
 		struct pdu_data *pdu_data;
 		struct connection *conn;
@@ -1351,12 +1345,12 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
-			radio_pdu_node_rx = packet_rx_reserve_get(4);
+			node_rx = packet_rx_reserve_get(4);
 		} else {
-			radio_pdu_node_rx = packet_rx_reserve_get(3);
+			node_rx = packet_rx_reserve_get(3);
 		}
 
-		if (radio_pdu_node_rx == 0) {
+		if (node_rx == 0) {
 			return 1;
 		}
 
@@ -1492,11 +1486,11 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 					     CONNECTION_T_SIZE);
 
 		/* Prepare the rx packet structure */
-		radio_pdu_node_rx->hdr.handle = conn->handle;
-		radio_pdu_node_rx->hdr.type = NODE_RX_TYPE_CONNECTION;
+		node_rx->hdr.handle = conn->handle;
+		node_rx->hdr.type = NODE_RX_TYPE_CONNECTION;
 
 		/* prepare connection complete structure */
-		pdu_data = (struct pdu_data *)radio_pdu_node_rx->pdu_data;
+		pdu_data = (void *)node_rx->pdu_data;
 		radio_le_conn_cmplt =
 		    (struct radio_le_conn_cmplt *)&pdu_data->payload;
 		radio_le_conn_cmplt->status = 0x00;
@@ -1548,17 +1542,14 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 			struct radio_le_chan_sel_algo *le_chan_sel_algo;
 
 			/* Generate LE Channel Selection Algorithm event */
-			radio_pdu_node_rx = packet_rx_reserve_get(3);
-			LL_ASSERT(radio_pdu_node_rx);
+			node_rx = packet_rx_reserve_get(3);
+			LL_ASSERT(node_rx);
 
-			radio_pdu_node_rx->hdr.handle = conn->handle;
-			radio_pdu_node_rx->hdr.type =
-				NODE_RX_TYPE_CHAN_SEL_ALGO;
+			node_rx->hdr.handle = conn->handle;
+			node_rx->hdr.type = NODE_RX_TYPE_CHAN_SEL_ALGO;
 
-			pdu_data = (struct pdu_data *)
-				radio_pdu_node_rx->pdu_data;
-			le_chan_sel_algo = (struct radio_le_chan_sel_algo *)
-				&pdu_data->payload;
+			pdu_data = (void *)node_rx->pdu_data;
+			le_chan_sel_algo = (void *)&pdu_data->payload;
 
 			if (pdu_adv_rx->chan_sel) {
 				u16_t aa_ls =
@@ -1912,7 +1903,7 @@ static inline u32_t feat_get(u8_t *features)
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 static inline void
-isr_rx_conn_pkt_ctrl_rej_conn_upd(struct radio_pdu_node_rx *radio_pdu_node_rx,
+isr_rx_conn_pkt_ctrl_rej_conn_upd(struct radio_pdu_node_rx *node_rx,
 				  u8_t *rx_enqueue)
 {
 	struct pdu_data_llctrl_reject_ext_ind *rej_ext_ind;
@@ -1920,7 +1911,7 @@ isr_rx_conn_pkt_ctrl_rej_conn_upd(struct radio_pdu_node_rx *radio_pdu_node_rx,
 	struct pdu_data *pdu_data_rx;
 	struct connection *conn;
 
-	pdu_data_rx = (struct pdu_data *)radio_pdu_node_rx->pdu_data;
+	pdu_data_rx = (void *)node_rx->pdu_data;
 	rej_ext_ind = (struct pdu_data_llctrl_reject_ext_ind *)
 		      &pdu_data_rx->payload.llctrl.ctrldata.reject_ext_ind;
 	if (rej_ext_ind->reject_opcode != PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ) {
@@ -1979,10 +1970,10 @@ isr_rx_conn_pkt_ctrl_rej_conn_upd(struct radio_pdu_node_rx *radio_pdu_node_rx,
 	}
 
 	/* generate conn update complete event with error code */
-	radio_pdu_node_rx->hdr.type = NODE_RX_TYPE_CONN_UPDATE;
+	node_rx->hdr.type = NODE_RX_TYPE_CONN_UPDATE;
 
 	/* prepare connection update complete structure */
-	pdu_data_rx = (void *)radio_pdu_node_rx->pdu_data;
+	pdu_data_rx = (void *)node_rx->pdu_data;
 	cp = (void *)&pdu_data_rx->payload;
 	cp->status = rej_ext_ind->error_code;
 	cp->interval = conn->conn_interval;
@@ -1996,13 +1987,13 @@ isr_rx_conn_pkt_ctrl_rej_conn_upd(struct radio_pdu_node_rx *radio_pdu_node_rx,
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 static inline void
-isr_rx_conn_pkt_ctrl_rej_dle(struct radio_pdu_node_rx *radio_pdu_node_rx,
+isr_rx_conn_pkt_ctrl_rej_dle(struct radio_pdu_node_rx *node_rx,
 			     u8_t *rx_enqueue)
 {
 	struct pdu_data_llctrl_reject_ext_ind *rej_ext_ind;
 	struct pdu_data *pdu_data_rx;
 
-	pdu_data_rx = (struct pdu_data *)radio_pdu_node_rx->pdu_data;
+	pdu_data_rx = (void *)node_rx->pdu_data;
 	rej_ext_ind = (struct pdu_data_llctrl_reject_ext_ind *)
 		      &pdu_data_rx->payload.llctrl.ctrldata.reject_ext_ind;
 	if (rej_ext_ind->reject_opcode == PDU_DATA_LLCTRL_TYPE_LENGTH_REQ) {
@@ -2042,13 +2033,13 @@ isr_rx_conn_pkt_ctrl_rej_dle(struct radio_pdu_node_rx *radio_pdu_node_rx,
 
 #if defined(CONFIG_BT_CTLR_PHY)
 static inline void
-isr_rx_conn_pkt_ctrl_rej_phy_upd(struct radio_pdu_node_rx *radio_pdu_node_rx,
+isr_rx_conn_pkt_ctrl_rej_phy_upd(struct radio_pdu_node_rx *node_rx,
 				 u8_t *rx_enqueue)
 {
 	struct pdu_data_llctrl_reject_ext_ind *rej_ext_ind;
 	struct pdu_data *pdu_data_rx;
 
-	pdu_data_rx = (struct pdu_data *)radio_pdu_node_rx->pdu_data;
+	pdu_data_rx = (void *)node_rx->pdu_data;
 	rej_ext_ind = (struct pdu_data_llctrl_reject_ext_ind *)
 		      &pdu_data_rx->payload.llctrl.ctrldata.reject_ext_ind;
 	if (rej_ext_ind->reject_opcode == PDU_DATA_LLCTRL_TYPE_PHY_REQ) {
@@ -2078,7 +2069,7 @@ isr_rx_conn_pkt_ctrl_rej_phy_upd(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		}
 
 		/* generate phy update complete event with error code */
-		radio_pdu_node_rx->hdr.type = NODE_RX_TYPE_PHY_UPDATE;
+		node_rx->hdr.type = NODE_RX_TYPE_PHY_UPDATE;
 
 		p = (void *) &pdu_data_rx->payload;
 		p->status = rej_ext_ind->error_code;
@@ -2092,29 +2083,25 @@ isr_rx_conn_pkt_ctrl_rej_phy_upd(struct radio_pdu_node_rx *radio_pdu_node_rx,
 #endif /* CONFIG_BT_CTLR_PHY */
 
 static inline void
-isr_rx_conn_pkt_ctrl_rej(struct radio_pdu_node_rx *radio_pdu_node_rx,
-			 u8_t *rx_enqueue)
+isr_rx_conn_pkt_ctrl_rej(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 {
 	if (0) {
 #if defined(CONFIG_BT_CTLR_PHY)
 	} else if (_radio.conn_curr->llcp_phy.ack !=
 		   _radio.conn_curr->llcp_phy.req) {
-		isr_rx_conn_pkt_ctrl_rej_phy_upd(radio_pdu_node_rx,
-						 rx_enqueue);
+		isr_rx_conn_pkt_ctrl_rej_phy_upd(node_rx, rx_enqueue);
 #endif /* CONFIG_BT_CTLR_PHY */
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 	} else if (_radio.conn_curr->llcp_conn_param.ack !=
 		   _radio.conn_curr->llcp_conn_param.req) {
-		isr_rx_conn_pkt_ctrl_rej_conn_upd(radio_pdu_node_rx,
-						  rx_enqueue);
+		isr_rx_conn_pkt_ctrl_rej_conn_upd(node_rx, rx_enqueue);
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	} else if (_radio.conn_curr->llcp_length.ack !=
 		   _radio.conn_curr->llcp_length.req) {
-		isr_rx_conn_pkt_ctrl_rej_dle(radio_pdu_node_rx,
-					     rx_enqueue);
+		isr_rx_conn_pkt_ctrl_rej_dle(node_rx, rx_enqueue);
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
@@ -2122,7 +2109,7 @@ isr_rx_conn_pkt_ctrl_rej(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		struct pdu_data_llctrl_reject_ext_ind *rej_ext_ind;
 		struct pdu_data *pdu_rx;
 
-		pdu_rx = (void *)radio_pdu_node_rx->pdu_data;
+		pdu_rx = (void *)node_rx->pdu_data;
 		rej_ext_ind = (void *)
 			&pdu_rx->payload.llctrl.ctrldata.reject_ext_ind;
 
@@ -2365,13 +2352,12 @@ send_length_resp:
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 static inline u8_t
-isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
-		     u8_t *rx_enqueue)
+isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 {
 	struct pdu_data *pdu_data_rx;
 	u8_t nack = 0;
 
-	pdu_data_rx = (struct pdu_data *)radio_pdu_node_rx->pdu_data;
+	pdu_data_rx = (void *)node_rx->pdu_data;
 
 	/* Invalid packet */
 	if (_radio.conn_curr->role) {
@@ -2520,7 +2506,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 			_radio.conn_curr->refresh = 0;
 
 			/* key refresh event */
-			radio_pdu_node_rx->hdr.type = NODE_RX_TYPE_ENC_REFRESH;
+			node_rx->hdr.type = NODE_RX_TYPE_ENC_REFRESH;
 		}
 		*rx_enqueue = 1;
 
@@ -2837,7 +2823,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 	case PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND:
-		isr_rx_conn_pkt_ctrl_rej(radio_pdu_node_rx, rx_enqueue);
+		isr_rx_conn_pkt_ctrl_rej(node_rx, rx_enqueue);
 		break;
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
@@ -2901,10 +2887,10 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 			}
 
 			/* generate conn upd complete event with error code */
-			radio_pdu_node_rx->hdr.type = NODE_RX_TYPE_CONN_UPDATE;
+			node_rx->hdr.type = NODE_RX_TYPE_CONN_UPDATE;
 
 			/* prepare connection update complete structure */
-			pdu_data_rx = (void *)radio_pdu_node_rx->pdu_data;
+			pdu_data_rx = (void *)node_rx->pdu_data;
 			cp = (void *)&pdu_data_rx->payload;
 			cp->status = BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
 			cp->interval = conn->conn_interval;
@@ -2947,8 +2933,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 			/* skip event generation is not cmd initiated */
 			if (_radio.conn_curr->llcp_phy.cmd) {
 				/* generate phy update complete event */
-				radio_pdu_node_rx->hdr.type =
-					NODE_RX_TYPE_PHY_UPDATE;
+				node_rx->hdr.type = NODE_RX_TYPE_PHY_UPDATE;
 
 				p = (struct radio_le_phy_upd_cmplt *)
 				    &pdu_data_rx->payload;
@@ -3087,7 +3072,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND:
-		if (phy_upd_ind(radio_pdu_node_rx, rx_enqueue)) {
+		if (phy_upd_ind(node_rx, rx_enqueue)) {
 			_radio.conn_curr->llcp_terminate.reason_peer = 0x28;
 		}
 		break;
@@ -3170,7 +3155,7 @@ static inline bool isr_rx_conn_enc_unexpected(struct connection *conn,
 }
 
 static inline u32_t
-isr_rx_conn_pkt(struct radio_pdu_node_rx *radio_pdu_node_rx,
+isr_rx_conn_pkt(struct radio_pdu_node_rx *node_rx,
 		struct radio_pdu_node_tx **tx_release, u8_t *rx_enqueue)
 {
 	struct pdu_data *pdu_data_rx;
@@ -3179,7 +3164,7 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *radio_pdu_node_rx,
 	u8_t nack = 0;
 
 	/* Ack for transmitted data */
-	pdu_data_rx = (struct pdu_data *)radio_pdu_node_rx->pdu_data;
+	pdu_data_rx = (void *)node_rx->pdu_data;
 	if (pdu_data_rx->nesn != _radio.conn_curr->sn) {
 
 		/* Increment serial number */
@@ -3301,7 +3286,7 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *radio_pdu_node_rx,
 				break;
 
 			case PDU_DATA_LLID_CTRL:
-				nack = isr_rx_conn_pkt_ctrl(radio_pdu_node_rx,
+				nack = isr_rx_conn_pkt_ctrl(node_rx,
 							    rx_enqueue);
 				break;
 			case PDU_DATA_LLID_RESV:
@@ -3351,7 +3336,7 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *radio_pdu_node_rx,
 static inline void isr_rx_conn(u8_t crc_ok, u8_t trx_done,
 			       u8_t rssi_ready)
 {
-	struct radio_pdu_node_rx *radio_pdu_node_rx;
+	struct radio_pdu_node_rx *node_rx;
 	struct radio_pdu_node_tx *tx_release = NULL;
 	u8_t is_empty_pdu_tx_retry;
 	struct pdu_data *pdu_data_rx;
@@ -3377,14 +3362,13 @@ static inline void isr_rx_conn(u8_t crc_ok, u8_t trx_done,
 	_radio.packet_counter++;
 
 	/* received data packet */
-	radio_pdu_node_rx = _radio.packet_rx[_radio.packet_rx_last];
-	radio_pdu_node_rx->hdr.type = NODE_RX_TYPE_DC_PDU;
+	node_rx = _radio.packet_rx[_radio.packet_rx_last];
+	node_rx->hdr.type = NODE_RX_TYPE_DC_PDU;
 
 	if (crc_ok) {
 		u32_t terminate;
 
-		terminate = isr_rx_conn_pkt(radio_pdu_node_rx, &tx_release,
-					    &rx_enqueue);
+		terminate = isr_rx_conn_pkt(node_rx, &tx_release, &rx_enqueue);
 		if (terminate) {
 			goto isr_rx_conn_exit;
 		}
@@ -3445,7 +3429,7 @@ static inline void isr_rx_conn(u8_t crc_ok, u8_t trx_done,
 	}
 
 	/* Decide on event continuation and hence Radio Shorts to use */
-	pdu_data_rx = (struct pdu_data *)radio_pdu_node_rx->pdu_data;
+	pdu_data_rx = (void *)node_rx->pdu_data;
 	_radio.state = ((_radio.state == STATE_CLOSE) || (crc_close) ||
 			((crc_ok) && (pdu_data_rx->md == 0) &&
 			 (pdu_data_tx->len == 0)) ||
@@ -3547,7 +3531,7 @@ isr_rx_conn_exit:
 		rx_fc_lock(_radio.conn_curr->handle);
 
 		/* set the connection handle and enqueue */
-		radio_pdu_node_rx->hdr.handle = _radio.conn_curr->handle;
+		node_rx->hdr.handle = _radio.conn_curr->handle;
 		packet_rx_enqueue();
 	}
 
@@ -3627,12 +3611,12 @@ isr_rx_conn_terminate_exit:
 	/* generate event if any change */
 	if (chg) {
 		/* NOTE: enqueue only if rx buffer available, else ignore */
-		radio_pdu_node_rx = packet_rx_reserve_get(2);
-		if (radio_pdu_node_rx) {
-			radio_pdu_node_rx->hdr.handle = 0xFFFF;
-			radio_pdu_node_rx->hdr.type = NODE_RX_TYPE_PROFILE;
+		node_rx = packet_rx_reserve_get(2);
+		if (node_rx) {
+			node_rx->hdr.handle = 0xFFFF;
+			node_rx->hdr.type = NODE_RX_TYPE_PROFILE;
 			pdu_data_rx = (struct pdu_data *)
-				radio_pdu_node_rx->pdu_data;
+				node_rx->pdu_data;
 			pdu_data_rx->payload.profile.lcur = latency;
 			pdu_data_rx->payload.profile.lmin = s_lmin;
 			pdu_data_rx->payload.profile.lmax = s_lmax;
@@ -4026,16 +4010,16 @@ static inline void isr_close_conn(void)
 		if (_radio.conn_curr->apto_expire > elapsed_event) {
 			_radio.conn_curr->apto_expire -= elapsed_event;
 		} else {
-			struct radio_pdu_node_rx *radio_pdu_node_rx;
+			struct radio_pdu_node_rx *node_rx;
 
 			_radio.conn_curr->apto_expire = 0;
 
 			/* Prepare the rx packet structure */
-			radio_pdu_node_rx = packet_rx_reserve_get(2);
-			LL_ASSERT(radio_pdu_node_rx);
+			node_rx = packet_rx_reserve_get(2);
+			LL_ASSERT(node_rx);
 
-			radio_pdu_node_rx->hdr.handle = _radio.conn_curr->handle;
-			radio_pdu_node_rx->hdr.type = NODE_RX_TYPE_APTO;
+			node_rx->hdr.handle = _radio.conn_curr->handle;
+			node_rx->hdr.type = NODE_RX_TYPE_APTO;
 
 			/* enqueue apto event into rx queue */
 			packet_rx_enqueue();
@@ -4062,24 +4046,22 @@ static inline void isr_close_conn(void)
 #if defined(CONFIG_BT_CTLR_CONN_RSSI)
 	/* generate RSSI event */
 	if (_radio.conn_curr->rssi_sample_count == 0) {
-		struct radio_pdu_node_rx *radio_pdu_node_rx;
+		struct radio_pdu_node_rx *node_rx;
 		struct pdu_data *pdu_data_rx;
 
-		radio_pdu_node_rx = packet_rx_reserve_get(2);
-		if (radio_pdu_node_rx) {
+		node_rx = packet_rx_reserve_get(2);
+		if (node_rx) {
 			_radio.conn_curr->rssi_reported =
 				_radio.conn_curr->rssi_latest;
 			_radio.conn_curr->rssi_sample_count =
 				RADIO_RSSI_SAMPLE_COUNT;
 
 			/* Prepare the rx packet structure */
-			radio_pdu_node_rx->hdr.handle =
-				_radio.conn_curr->handle;
-			radio_pdu_node_rx->hdr.type = NODE_RX_TYPE_RSSI;
+			node_rx->hdr.handle = _radio.conn_curr->handle;
+			node_rx->hdr.type = NODE_RX_TYPE_RSSI;
 
 			/* prepare connection RSSI structure */
-			pdu_data_rx = (struct pdu_data *)
-				radio_pdu_node_rx->pdu_data;
+			pdu_data_rx = (void *)node_rx->pdu_data;
 			pdu_data_rx->payload.rssi =
 				_radio.conn_curr->rssi_reported;
 
@@ -4137,13 +4119,12 @@ static inline void isr_radio_state_close(void)
 
 #if defined(CONFIG_BT_CTLR_ADV_INDICATION)
 		if (!dont_close) {
-			struct radio_pdu_node_rx *radio_pdu_node_rx;
+			struct radio_pdu_node_rx *node_rx;
 
-			radio_pdu_node_rx = packet_rx_reserve_get(3);
-			if (radio_pdu_node_rx) {
-				radio_pdu_node_rx->hdr.type =
-					NODE_RX_TYPE_ADV_INDICATION;
-				radio_pdu_node_rx->hdr.handle = 0xFFFF;
+			node_rx = packet_rx_reserve_get(3);
+			if (node_rx) {
+				node_rx->hdr.type = NODE_RX_TYPE_ADV_INDICATION;
+				node_rx->hdr.handle = 0xFFFF;
 				/* TODO: add other info by defining a payload
 				 * structure.
 				 */
@@ -5948,19 +5929,19 @@ static void event_adv(u32_t ticks_at_expire, u32_t remainder,
 static void mayfly_adv_stop(void *param)
 {
 	struct radio_le_conn_cmplt *radio_le_conn_cmplt;
-	struct radio_pdu_node_rx *radio_pdu_node_rx;
+	struct radio_pdu_node_rx *node_rx;
 	struct pdu_data *pdu_data_rx;
 
 	/* Prepare the rx packet structure */
-	radio_pdu_node_rx = packet_rx_reserve_get(1);
-	LL_ASSERT(radio_pdu_node_rx);
+	node_rx = packet_rx_reserve_get(1);
+	LL_ASSERT(node_rx);
 
 	/** Connection handle */
-	radio_pdu_node_rx->hdr.handle = 0xffff;
-	radio_pdu_node_rx->hdr.type = NODE_RX_TYPE_CONNECTION;
+	node_rx->hdr.handle = 0xffff;
+	node_rx->hdr.type = NODE_RX_TYPE_CONNECTION;
 
 	/* prepare connection complete structure */
-	pdu_data_rx = (struct pdu_data *)radio_pdu_node_rx->pdu_data;
+	pdu_data_rx = (void *)node_rx->pdu_data;
 	radio_le_conn_cmplt =
 		(struct radio_le_conn_cmplt *)&pdu_data_rx->payload;
 	memset(radio_le_conn_cmplt, 0x00, sizeof(struct radio_le_conn_cmplt));
@@ -6422,7 +6403,7 @@ static inline u32_t event_conn_upd_prep(struct connection *conn,
 			return 1;
 		}
 
-		pdu_ctrl_tx = (struct pdu_data *)node_tx->pdu_data;
+		pdu_ctrl_tx = (void *)node_tx->pdu_data;
 
 #if defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
 		switch (conn->llcp.conn_upd.state) {
@@ -6453,7 +6434,7 @@ static inline u32_t event_conn_upd_prep(struct connection *conn,
 		ctrl_tx_enqueue(conn, node_tx);
 
 	} else if (instant_latency <= 0x7FFF) {
-		struct radio_pdu_node_rx *radio_pdu_node_rx;
+		struct radio_pdu_node_rx *node_rx;
 		struct pdu_data *pdu_data_rx;
 		struct radio_le_conn_update_cmplt *radio_le_conn_update_cmplt;
 		u32_t ticker_status;
@@ -6497,15 +6478,15 @@ static inline u32_t event_conn_upd_prep(struct connection *conn,
 				       conn->conn_interval *
 				       1250) !=
 		     conn->supervision_reload)) {
-			radio_pdu_node_rx = packet_rx_reserve_get(2);
-			LL_ASSERT(radio_pdu_node_rx);
+			node_rx = packet_rx_reserve_get(2);
+			LL_ASSERT(node_rx);
 
-			radio_pdu_node_rx->hdr.handle = conn->handle;
-			radio_pdu_node_rx->hdr.type = NODE_RX_TYPE_CONN_UPDATE;
+			node_rx->hdr.handle = conn->handle;
+			node_rx->hdr.type = NODE_RX_TYPE_CONN_UPDATE;
 
 			/* prepare connection update complete structure */
 			pdu_data_rx =
-				(struct pdu_data *)radio_pdu_node_rx->pdu_data;
+				(void *)node_rx->pdu_data;
 			radio_le_conn_update_cmplt =
 				(struct radio_le_conn_update_cmplt *)
 				&pdu_data_rx->payload;
@@ -6683,8 +6664,8 @@ static inline void event_ch_map_prep(struct connection *conn,
 
 		node_tx = mem_acquire(&_radio.pkt_tx_ctrl_free);
 		if (node_tx) {
-			struct pdu_data *pdu_ctrl_tx =
-				(struct pdu_data *)node_tx->pdu_data;
+			struct pdu_data *pdu_ctrl_tx = (void *)
+						       node_tx->pdu_data;
 
 			/* reset initiate flag */
 			conn->llcp.chan_map.initiate = 0;
@@ -6903,8 +6884,7 @@ static inline void event_fex_prep(struct connection *conn)
 
 	node_tx = mem_acquire(&_radio.pkt_tx_ctrl_free);
 	if (node_tx) {
-		struct pdu_data *pdu_ctrl_tx =
-			(struct pdu_data *)node_tx->pdu_data;
+		struct pdu_data *pdu_ctrl_tx = (void *)node_tx->pdu_data;
 
 		/* procedure request acked */
 		conn->llcp_ack = conn->llcp_req;
@@ -6948,8 +6928,8 @@ static inline void event_vex_prep(struct connection *conn)
 
 		node_tx = mem_acquire(&_radio.pkt_tx_ctrl_free);
 		if (node_tx) {
-			struct pdu_data *pdu_ctrl_tx =
-				(struct pdu_data *)node_tx->pdu_data;
+			struct pdu_data *pdu_ctrl_tx = (void *)
+						       node_tx->pdu_data;
 
 			/* procedure request acked */
 			conn->llcp_ack = conn->llcp_req;
@@ -6979,21 +6959,21 @@ static inline void event_vex_prep(struct connection *conn)
 			conn->procedure_expire = conn->procedure_reload;
 		}
 	} else if (conn->llcp_version.rx != 0) {
-		struct radio_pdu_node_rx *radio_pdu_node_rx;
+		struct radio_pdu_node_rx *node_rx;
 		struct pdu_data *pdu_ctrl_rx;
 
 		/* procedure request acked */
 		conn->llcp_ack = conn->llcp_req;
 
 		/* Prepare the rx packet structure */
-		radio_pdu_node_rx = packet_rx_reserve_get(2);
-		LL_ASSERT(radio_pdu_node_rx);
+		node_rx = packet_rx_reserve_get(2);
+		LL_ASSERT(node_rx);
 
-		radio_pdu_node_rx->hdr.handle = conn->handle;
-		radio_pdu_node_rx->hdr.type = NODE_RX_TYPE_DC_PDU;
+		node_rx->hdr.handle = conn->handle;
+		node_rx->hdr.type = NODE_RX_TYPE_DC_PDU;
 
 		/* prepare version ind structure */
-		pdu_ctrl_rx = (struct pdu_data *)radio_pdu_node_rx->pdu_data;
+		pdu_ctrl_rx = (void *)node_rx->pdu_data;
 		pdu_ctrl_rx->ll_id = PDU_DATA_LLID_CTRL;
 		pdu_ctrl_rx->len = offsetof(struct pdu_data_llctrl, ctrldata) +
 			sizeof(struct pdu_data_llctrl_version_ind);
@@ -7033,7 +7013,7 @@ static inline void event_conn_param_req(struct connection *conn,
 	conn->llcp_conn_param.state = LLCP_CPR_STATE_RSP_WAIT;
 
 	/* place the conn param req packet as next in tx queue */
-	pdu_ctrl_tx = (struct pdu_data *)node_tx->pdu_data;
+	pdu_ctrl_tx = (void *)node_tx->pdu_data;
 	pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
 	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, ctrldata) +
 		sizeof(struct pdu_data_llctrl_conn_param_req);
@@ -7114,7 +7094,7 @@ static inline void event_conn_param_rsp(struct connection *conn)
 		}
 
 		/* master/slave response with reject ext ind */
-		pdu = (struct pdu_data *)node_tx->pdu_data;
+		pdu = (void *)node_tx->pdu_data;
 		pdu->ll_id = PDU_DATA_LLID_CTRL;
 		pdu->payload.llctrl.opcode =
 			PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND;
@@ -7176,7 +7156,7 @@ static inline void event_conn_param_rsp(struct connection *conn)
 	}
 
 	/* place the conn param rsp packet as next in tx queue */
-	pdu = (struct pdu_data *)node_tx->pdu_data;
+	pdu = (void *)node_tx->pdu_data;
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, ctrldata) +
 		sizeof(struct pdu_data_llctrl_conn_param_rsp);
@@ -7232,7 +7212,7 @@ static inline void event_conn_param_app_req(struct connection *conn)
 	node_rx->hdr.type = NODE_RX_TYPE_DC_PDU;
 
 	/* place the conn param req packet as next in rx queue */
-	pdu = (struct pdu_data *)node_rx->pdu_data;
+	pdu = (void *)node_rx->pdu_data;
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 	pdu->len = offsetof(struct pdu_data_llctrl, ctrldata) +
 		sizeof(struct pdu_data_llctrl_conn_param_req);
@@ -7292,8 +7272,7 @@ static inline void event_ping_prep(struct connection *conn)
 
 	node_tx = mem_acquire(&_radio.pkt_tx_ctrl_free);
 	if (node_tx) {
-		struct pdu_data *pdu_ctrl_tx =
-			(struct pdu_data *)node_tx->pdu_data;
+		struct pdu_data *pdu_ctrl_tx = (void *)node_tx->pdu_data;
 
 		/* procedure request acked */
 		conn->llcp_ack = conn->llcp_req;
@@ -7350,7 +7329,7 @@ static inline void event_len_prep(struct connection *conn)
 #endif /* CONFIG_BT_CTLR_PHY */
 
 		/* place the length req packet as next in tx queue */
-		pdu_ctrl_tx = (struct pdu_data *) node_tx->pdu_data;
+		pdu_ctrl_tx = (void *) node_tx->pdu_data;
 		pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
 		pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, ctrldata) +
 			sizeof(struct pdu_data_llctrl_length_req);
@@ -7503,7 +7482,7 @@ static inline void event_len_prep(struct connection *conn)
 		node_rx->hdr.type = NODE_RX_TYPE_DC_PDU;
 
 		/* prepare length rsp structure */
-		pdu_ctrl_rx = (struct pdu_data *) node_rx->pdu_data;
+		pdu_ctrl_rx = (void *) node_rx->pdu_data;
 		pdu_ctrl_rx->ll_id = PDU_DATA_LLID_CTRL;
 		pdu_ctrl_rx->len = offsetof(struct pdu_data_llctrl,
 					    ctrldata) +
@@ -7563,7 +7542,7 @@ static inline void event_phy_req_prep(struct connection *conn)
 		conn->phy_pref_flags = conn->llcp_phy.flags;
 
 		/* place the phy req packet as next in tx queue */
-		pdu_ctrl_tx = (struct pdu_data *) node_tx->pdu_data;
+		pdu_ctrl_tx = (void *) node_tx->pdu_data;
 		pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
 		pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, ctrldata) +
 				   sizeof(struct pdu_data_llctrl_phy_req);
@@ -8515,22 +8494,22 @@ static void packet_rx_allocate(u8_t max)
 
 	while ((max--) && (acquire != _radio.packet_rx_last)) {
 		void *link;
-		struct radio_pdu_node_rx *radio_pdu_node_rx;
+		struct radio_pdu_node_rx *node_rx;
 
 		link = mem_acquire(&_radio.link_rx_free);
 		if (!link) {
 			break;
 		}
 
-		radio_pdu_node_rx = mem_acquire(&_radio.pkt_rx_data_free);
-		if (!radio_pdu_node_rx) {
+		node_rx = mem_acquire(&_radio.pkt_rx_data_free);
+		if (!node_rx) {
 			mem_release(link, &_radio.link_rx_free);
 			break;
 		}
 
-		radio_pdu_node_rx->hdr.onion.link = link;
+		node_rx->hdr.onion.link = link;
 
-		_radio.packet_rx[_radio.packet_rx_acquire] = radio_pdu_node_rx;
+		_radio.packet_rx[_radio.packet_rx_acquire] = node_rx;
 		_radio.packet_rx_acquire = acquire;
 
 		acquire = _radio.packet_rx_acquire + 1;
@@ -8584,21 +8563,20 @@ static void packet_rx_callback(void)
 
 static void packet_rx_enqueue(void)
 {
-	struct radio_pdu_node_rx *radio_pdu_node_rx;
+	struct radio_pdu_node_rx *node_rx;
 	memq_link_t *link;
 	u8_t last;
 
 	LL_ASSERT(_radio.packet_rx_last != _radio.packet_rx_acquire);
 
 	/* Remember the rx node and acquired link mem */
-	radio_pdu_node_rx = _radio.packet_rx[_radio.packet_rx_last];
-	link = radio_pdu_node_rx->hdr.onion.link;
+	node_rx = _radio.packet_rx[_radio.packet_rx_last];
+	link = node_rx->hdr.onion.link;
 
 	/* serialize release queue with rx queue by storing reference to last
 	 * element in release queue
 	 */
-	radio_pdu_node_rx->hdr.onion.packet_release_last =
-	    _radio.packet_release_last;
+	node_rx->hdr.onion.packet_release_last = _radio.packet_release_last;
 
 	/* dequeue from acquired rx queue */
 	last = _radio.packet_rx_last + 1;
@@ -8608,8 +8586,7 @@ static void packet_rx_enqueue(void)
 	_radio.packet_rx_last = last;
 
 	/* Enqueue into event-cum-data queue */
-	link = memq_enqueue(link, radio_pdu_node_rx,
-			    (void *)&_radio.link_rx_tail);
+	link = memq_enqueue(link, node_rx, (void *)&_radio.link_rx_tail);
 	LL_ASSERT(link);
 
 	/* callback to trigger application action */
@@ -8892,29 +8869,27 @@ static void connection_release(struct connection *conn)
 
 static void terminate_ind_rx_enqueue(struct connection *conn, u8_t reason)
 {
-	struct radio_pdu_node_rx *radio_pdu_node_rx;
+	struct radio_pdu_node_rx *node_rx;
 	memq_link_t *link;
 
 	/* Prepare the rx packet structure */
-	radio_pdu_node_rx = (void *)&conn->llcp_terminate.radio_pdu_node_rx;
-	LL_ASSERT(radio_pdu_node_rx->hdr.onion.link);
+	node_rx = (void *)&conn->llcp_terminate.radio_pdu_node_rx;
+	LL_ASSERT(node_rx->hdr.onion.link);
 
-	radio_pdu_node_rx->hdr.handle = conn->handle;
-	radio_pdu_node_rx->hdr.type = NODE_RX_TYPE_TERMINATE;
-	*((u8_t *)radio_pdu_node_rx->pdu_data) = reason;
+	node_rx->hdr.handle = conn->handle;
+	node_rx->hdr.type = NODE_RX_TYPE_TERMINATE;
+	*((u8_t *)node_rx->pdu_data) = reason;
 
 	/* Get the link mem reserved in the connection context */
-	link = radio_pdu_node_rx->hdr.onion.link;
+	link = node_rx->hdr.onion.link;
 
 	/* Serialize release queue with rx queue by storing reference to
 	 * last element in release queue
 	 */
-	radio_pdu_node_rx->hdr.onion.packet_release_last =
-	    _radio.packet_release_last;
+	node_rx->hdr.onion.packet_release_last = _radio.packet_release_last;
 
 	/* Enqueue into event-cum-data queue */
-	link = memq_enqueue(link, radio_pdu_node_rx,
-			    (void *)&_radio.link_rx_tail);
+	link = memq_enqueue(link, node_rx, (void *)&_radio.link_rx_tail);
 	LL_ASSERT(link);
 
 	/* callback to trigger application action */
@@ -9047,14 +9022,14 @@ static u32_t chan_map_update(struct connection *conn,
 }
 
 #if defined(CONFIG_BT_CTLR_PHY)
-static inline u32_t phy_upd_ind(struct radio_pdu_node_rx *radio_pdu_node_rx,
+static inline u32_t phy_upd_ind(struct radio_pdu_node_rx *node_rx,
 				u8_t *rx_enqueue)
 {
 	struct connection *conn = _radio.conn_curr;
 	struct pdu_data_llctrl_phy_upd_ind *ind;
 	struct pdu_data *pdu_data_rx;
 
-	pdu_data_rx = (struct pdu_data *)radio_pdu_node_rx->pdu_data;
+	pdu_data_rx = (void *)node_rx->pdu_data;
 	ind = &pdu_data_rx->payload.llctrl.ctrldata.phy_upd_ind;
 
 	/* Both tx and rx PHY unchanged */
@@ -9077,7 +9052,7 @@ static inline u32_t phy_upd_ind(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		}
 
 		/* generate phy update complete event */
-		radio_pdu_node_rx->hdr.type = NODE_RX_TYPE_PHY_UPDATE;
+		node_rx->hdr.type = NODE_RX_TYPE_PHY_UPDATE;
 
 		upd = (void *)&pdu_data_rx->payload;
 		upd->status = 0;
@@ -10979,14 +10954,12 @@ u8_t ll_rx_get(void **node_rx, u16_t *handle)
 
 	cmplt = 0;
 	if (_radio.link_rx_head != _radio.link_rx_tail) {
-		struct radio_pdu_node_rx *_radio_pdu_node_rx;
+		struct radio_pdu_node_rx *_node_rx;
 
-		_radio_pdu_node_rx = _radio.link_rx_head->mem;
+		_node_rx = _radio.link_rx_head->mem;
 
-		cmplt = tx_cmplt_get(handle,
-				&_radio.packet_release_first,
-				_radio_pdu_node_rx->hdr.onion.
-				packet_release_last);
+		cmplt = tx_cmplt_get(handle, &_radio.packet_release_first,
+				     _node_rx->hdr.onion.packet_release_last);
 		if (!cmplt) {
 			u8_t first, cmplt_prev, cmplt_curr;
 			u16_t h;
@@ -11000,7 +10973,7 @@ u8_t ll_rx_get(void **node_rx, u16_t *handle)
 			} while ((cmplt_prev != 0) ||
 				 (cmplt_prev != cmplt_curr));
 
-			*node_rx = _radio_pdu_node_rx;
+			*node_rx = _node_rx;
 		} else {
 			*node_rx = NULL;
 		}
@@ -11016,16 +10989,16 @@ u8_t ll_rx_get(void **node_rx, u16_t *handle)
 
 void ll_rx_dequeue(void)
 {
-	struct radio_pdu_node_rx *radio_pdu_node_rx = NULL;
+	struct radio_pdu_node_rx *node_rx = NULL;
 	memq_link_t *link;
 
 	link = memq_dequeue(_radio.link_rx_tail, &_radio.link_rx_head,
-			    (void **)&radio_pdu_node_rx);
+			    (void **)&node_rx);
 	LL_ASSERT(link);
 
 	mem_release(link, &_radio.link_rx_free);
 
-	switch (radio_pdu_node_rx->hdr.type) {
+	switch (node_rx->hdr.type) {
 	case NODE_RX_TYPE_DC_PDU:
 	case NODE_RX_TYPE_REPORT:
 
@@ -11080,13 +11053,13 @@ void ll_rx_dequeue(void)
 		break;
 	}
 
-	if (radio_pdu_node_rx->hdr.type == NODE_RX_TYPE_CONNECTION) {
+	if (node_rx->hdr.type == NODE_RX_TYPE_CONNECTION) {
 		struct radio_le_conn_cmplt *radio_le_conn_cmplt;
 		struct connection *conn = NULL;
 		struct pdu_data *pdu_data_rx;
 		u8_t bm;
 
-		pdu_data_rx = (void *)radio_pdu_node_rx->pdu_data;
+		pdu_data_rx = (void *)node_rx->pdu_data;
 		radio_le_conn_cmplt = (void *)&pdu_data_rx->payload;
 		if ((radio_le_conn_cmplt->status == 0x3c) ||
 		    radio_le_conn_cmplt->role) {
@@ -11122,17 +11095,17 @@ void ll_rx_dequeue(void)
 
 void ll_rx_mem_release(void **node_rx)
 {
-	struct radio_pdu_node_rx *_radio_pdu_node_rx;
+	struct radio_pdu_node_rx *_node_rx;
 	struct connection *conn;
 
-	_radio_pdu_node_rx = *node_rx;
-	while (_radio_pdu_node_rx) {
-		struct radio_pdu_node_rx *_radio_pdu_node_rx_free;
+	_node_rx = *node_rx;
+	while (_node_rx) {
+		struct radio_pdu_node_rx *_node_rx_free;
 
-		_radio_pdu_node_rx_free = _radio_pdu_node_rx;
-		_radio_pdu_node_rx = _radio_pdu_node_rx->hdr.onion.next;
+		_node_rx_free = _node_rx;
+		_node_rx = _node_rx->hdr.onion.next;
 
-		switch (_radio_pdu_node_rx_free->hdr.type) {
+		switch (_node_rx_free->hdr.type) {
 		case NODE_RX_TYPE_DC_PDU:
 		case NODE_RX_TYPE_REPORT:
 
@@ -11171,13 +11144,13 @@ void ll_rx_mem_release(void **node_rx)
 		case NODE_RX_TYPE_ADV_INDICATION:
 #endif /* CONFIG_BT_CTLR_ADV_INDICATION */
 
-			mem_release(_radio_pdu_node_rx_free,
+			mem_release(_node_rx_free,
 				    &_radio.pkt_rx_data_free);
 			break;
 
 		case NODE_RX_TYPE_TERMINATE:
 			conn = mem_get(_radio.conn_pool, CONNECTION_T_SIZE,
-				       _radio_pdu_node_rx_free->hdr.handle);
+				       _node_rx_free->hdr.handle);
 
 			mem_release(conn, &_radio.conn_free);
 			break;
@@ -11188,7 +11161,7 @@ void ll_rx_mem_release(void **node_rx)
 		}
 	}
 
-	*node_rx = _radio_pdu_node_rx;
+	*node_rx = _node_rx;
 
 	packet_rx_allocate(0xff);
 }
