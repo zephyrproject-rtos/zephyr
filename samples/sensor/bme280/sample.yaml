@@ -9,5 +9,4 @@ tests:
     harness: sensor
     tags: samples sensor
     depends_on: spi
-    filter: CONFIG_SPI_LEGACY_API
     extra_args: "CONF_FILE=prj_spi.conf"
