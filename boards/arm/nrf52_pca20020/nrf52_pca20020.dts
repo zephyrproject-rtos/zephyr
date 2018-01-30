@@ -1,0 +1,110 @@
+/*
+ * Copyright (c) 2017 Shawn Nock <shawn@monadnock.ca>
+ * Copyright (c) 2017 Linaro Limited
+ * Copyrigtt (c) 2018 Aapo Vienamo
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf52832.dtsi>
+
+/ {
+	model = "Nordic PCA20020 Dev Kit";
+	compatible = "nordic,pca20020-dk", "nordic,nrf52832-qfaa",
+		"nordic,nrf52832";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
+
+&uart0 {
+	status = "ok";
+	compatible = "nordic,nrf-uart";
+	current-speed = <115200>;
+};
+
+&i2c0 {
+	status = "ok";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	sx1509b: sx1509b@3e {
+		compatible = "semtech,sx1509b";
+		reg = <0x3e>;
+		label = "GPIO_P0";
+	};
+
+	lps22hb_press: lps22hb_press@5c {
+		compatible = "st,lps22hb-press";
+		reg = <0x5c>;
+		label = "LPS22HB";
+	};
+
+	hts221: hts221@5f {
+		compatible = "st,hts221";
+		reg = <0x5f>;
+		label = "HTS221";
+	};
+
+	ccs811: ccs811@5a {
+		compatible = "ams,ccs811";
+		reg = <0x5a>;
+		label = "CCS811";
+	};
+};
+
+&i2c1 {
+	status = "ok";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&flash0 {
+	/*
+	 * If chosen's zephyr,code-partition
+	 * is unset, the image will be linked
+	 * into the entire flash device.  If
+	 * it points to an individual
+	 * partition, the code will be linked
+	 * to, and restricted to that
+	 * partition.
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0xc000>;
+		};
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000C000 0x32000>;
+		};
+		slot1_partition: partition@3e000 {
+			label = "image-1";
+			reg = <0x0003E000 0x32000>;
+		};
+		scratch_partition: partition@70000 {
+			label = "image-scratch";
+			reg = <0x00070000 0xa000>;
+		};
+
+		/*
+		 * The flash starting at 0x0007a000 and ending at
+		 * 0x0007ffff (sectors 122-127) is reserved for use
+		 * by the application. If enabled, partition for NFFS
+		 * will be created in this area.
+		 */
+
+#if defined(CONFIG_FILE_SYSTEM_NFFS)
+		nffs_partition: partition@7a000 {
+			label = "nffs";
+			reg = <0x0007a000 0x00006000>;
+		};
+#endif
+	};
+};

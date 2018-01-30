@@ -1,0 +1,26 @@
+# Kconfig - nRF52_PCA20020 board configuration
+#
+# Copyright (c) 2018 Aapo Vienamo
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NRF52_PCA20020
+
+config BOARD_VDD_PWR_CTRL_INIT_PRIORITY
+	int "VDD power rail init priority"
+	default 50
+	depends on GPIO
+	help
+	  Initialization priority for the VDD power rail. Has to be greater
+	  than GPIO_NRF5_INIT_PRIORITY.
+
+config BOARD_CCS_VDD_PWR_CTRL_INIT_PRIORITY
+	int "CCS_VDD power rail init priority"
+	default 85
+	depends on GPIO_SX1509B
+	help
+	  Initialization priority for the CCS_VDD power rail. This powers the
+	  CCS811 gas sensor. The value has to be greater than
+	  BOARD_VDD_PWR_CTRL_INIT_PRIORITY, but smaller than SENSOR_INIT_PRIORITY.
+
+endif # BOARD_NRF52_PCA20020
