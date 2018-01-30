@@ -238,7 +238,7 @@ struct bt_mesh_model_op {
 
 /** @def BT_MESH_PUB_TRANSMIT_COUNT
  *
- *  @brief Decode Pubhlish Retransmit count from a given value.
+ *  @brief Decode Publish Retransmit count from a given value.
  *
  *  @param transmit Encoded Publish Retransmit count & interval value.
  *
