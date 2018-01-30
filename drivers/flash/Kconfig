@@ -41,7 +41,6 @@ config SPI_FLASH_W25QXXDV
 	prompt "SPI NOR Flash Winbond W25QXXDV"
 	select FLASH_HAS_DRIVER_ENABLED
 	depends on SPI && FLASH
-	select SPI_LEGACY_API
 
 config SPI_FLASH_W25QXXDV_SPI_NAME
 	string
@@ -67,7 +66,7 @@ config SPI_FLASH_W25QXXDV_INIT_PRIORITY
 config SPI_FLASH_W25QXXDV_SPI_FREQ_0
 	int "SPI system frequency"
 	depends on SPI_FLASH_W25QXXDV
-	default 4
+	default 8000000
 	help
 	  This option sets the SPI controller's frequency. Beware this value
 	  depends on the SPI controller being used and also on the system
