@@ -16,18 +16,6 @@
 #include <kernel.h>
 #include <soc.h>
 
-void soc_gpio_configure(const struct soc_gpio_pin *pin)
-{
-	PortGroup *group = &PORT->Group[pin->group];
-
-	if ((pin->pin & 1) == 0) {
-		group->PMUX[pin->pin / 2].bit.PMUXE = pin->mux;
-	} else {
-		group->PMUX[pin->pin / 2].bit.PMUXO = pin->mux;
-	}
-	group->PINCFG[pin->pin].bit.PMUXEN = 1;
-}
-
 static void flash_waitstates_init(void)
 {
 	/* One wait state at 48 MHz. */

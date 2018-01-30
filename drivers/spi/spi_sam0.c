@@ -8,12 +8,11 @@
 #include <logging/sys_log.h>
 
 #include "spi_context.h"
-#include <device.h>
 #include <errno.h>
-#include <init.h>
-#include <misc/__assert.h>
-#include <soc.h>
+#include <device.h>
 #include <spi.h>
+#include <soc.h>
+#include <board.h>
 
 #if defined(CONFIG_SPI_LEGACY_API)
 #error "This driver does not support the SPI legacy API."
@@ -22,12 +21,9 @@
 /* Device constant configuration parameters */
 struct spi_sam0_config {
 	SercomSpi *regs;
-	u32_t ctrla;
+	u32_t pads;
 	u32_t pm_apbcmask;
 	u16_t gclk_clkctrl_id;
-	struct soc_gpio_pin pin_miso;
-	struct soc_gpio_pin pin_mosi;
-	struct soc_gpio_pin pin_sck;
 };
 
 /* Device run time data */
@@ -77,13 +73,11 @@ static int spi_sam0_configure(struct spi_config *config)
 		ctrla.bit.CPHA = 1;
 	}
 
-	/* MOSI on PAD2, SCK on PAD3 */
-	ctrla.bit.DOPO = 1;
+	ctrla.reg |= cfg->pads;
 
 	if ((config->operation & SPI_MODE_LOOP) != 0) {
-		/* Put MISO on the same pin as MOSI */
-		ctrla.bit.DIPO = 2;
-	} else {
+		/* Put MISO and MOSI on the same pad */
+		ctrla.bit.DOPO = 0;
 		ctrla.bit.DIPO = 0;
 	}
 
@@ -419,11 +413,6 @@ static int spi_sam0_init(struct device *dev)
 	/* Enable SERCOM clock in PM */
 	PM->APBCMASK.reg |= cfg->pm_apbcmask;
 
-	/* Connect pins to the peripheral */
-	soc_gpio_configure(&cfg->pin_mosi);
-	soc_gpio_configure(&cfg->pin_miso);
-	soc_gpio_configure(&cfg->pin_sck);
-
 	/* Disable all SPI interrupts */
 	regs->INTENCLR.reg = SERCOM_SPI_INTENCLR_MASK;
 	wait_synchronization(regs);
@@ -450,11 +439,7 @@ static const struct spi_driver_api spi_sam0_driver_api = {
 		.regs = &SERCOM##n->SPI,                                     \
 		.pm_apbcmask = PM_APBCMASK_SERCOM##n,                        \
 		.gclk_clkctrl_id = GCLK_CLKCTRL_ID_SERCOM##n##_CORE,         \
-		.ctrla = SERCOM_USART_CTRLA_RXPO(3) |                        \
-			 SERCOM_USART_CTRLA_TXPO(1),                         \
-		.pin_miso = PIN_SPI_SAM0_SERCOM##n##_MISO,                   \
-		.pin_mosi = PIN_SPI_SAM0_SERCOM##n##_MOSI,                   \
-		.pin_sck = PIN_SPI_SAM0_SERCOM##n##_SCK,                     \
+		.pads = CONFIG_SPI_SAM0_SERCOM##n##_PADS                     \
 	}
 
 #define SPI_SAM0_DEVICE_INIT(n)                                              \

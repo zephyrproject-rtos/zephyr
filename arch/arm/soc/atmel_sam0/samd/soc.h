@@ -45,16 +45,6 @@
 #error Library does not support the specified device.
 #endif
 
-#include "soc_pinmap.h"
-
-struct soc_gpio_pin {
-	u8_t group;
-	u8_t pin;
-	u8_t mux;
-};
-
-void soc_gpio_configure(const struct soc_gpio_pin *pin);
-
 #endif /* _ASMLANGUAGE */
 
 /** Processor Clock (HCLK) Frequency */
