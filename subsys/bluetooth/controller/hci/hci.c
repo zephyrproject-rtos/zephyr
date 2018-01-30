@@ -2084,7 +2084,7 @@ static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
 	const u8_t c_adv_type[] = { 0x00, 0x01, 0x03, 0xff, 0x04,
 				    0xff, 0x02 };
 	struct bt_hci_evt_le_advertising_report *sep;
-	struct pdu_adv *adv = (struct pdu_adv *)pdu_data;
+	struct pdu_adv *adv = (void *)pdu_data;
 	struct bt_hci_evt_le_advertising_info *adv_info;
 	u8_t data_len;
 	u8_t info_len;
@@ -2222,7 +2222,7 @@ static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
 static void le_adv_ext_report(struct pdu_data *pdu_data, u8_t *b,
 			      struct net_buf *buf, u8_t phy)
 {
-	struct pdu_adv *adv = (struct pdu_adv *)pdu_data;
+	struct pdu_adv *adv = (void *)pdu_data;
 	s8_t rssi;
 
 	/* The Link Layer currently returns RSSI as an absolute value */
@@ -2295,7 +2295,7 @@ static void le_adv_ext_coded_report(struct pdu_data *pdu_data, u8_t *b,
 static void le_scan_req_received(struct pdu_data *pdu_data, u8_t *b,
 				 struct net_buf *buf)
 {
-	struct pdu_adv *adv = (struct pdu_adv *)pdu_data;
+	struct pdu_adv *adv = (void *)pdu_data;
 	struct bt_hci_evt_le_scan_req_received *sep;
 
 	/* TODO: fill handle when Adv Ext. feature is implemented. */
@@ -2845,7 +2845,7 @@ void hci_acl_encode(struct radio_pdu_node_rx *node_rx, struct net_buf *buf)
 	u16_t handle;
 	u8_t *data;
 
-	pdu_data = (struct pdu_data *)node_rx->pdu_data;
+	pdu_data = (void *)node_rx->pdu_data;
 	handle = node_rx->hdr.handle;
 
 	switch (pdu_data->ll_id) {
@@ -2887,7 +2887,7 @@ void hci_evt_encode(struct radio_pdu_node_rx *node_rx, struct net_buf *buf)
 {
 	struct pdu_data *pdu_data;
 
-	pdu_data = (struct pdu_data *)node_rx->pdu_data;
+	pdu_data = (void *)node_rx->pdu_data;
 
 	if (node_rx->hdr.type != NODE_RX_TYPE_DC_PDU) {
 		encode_control(node_rx, pdu_data, buf);
@@ -2919,7 +2919,7 @@ s8_t hci_get_class(struct radio_pdu_node_rx *node_rx)
 {
 	struct pdu_data *pdu_data;
 
-	pdu_data = (struct pdu_data *)node_rx->pdu_data;
+	pdu_data = (void *)node_rx->pdu_data;
 
 	if (node_rx->hdr.type != NODE_RX_TYPE_DC_PDU) {
 
