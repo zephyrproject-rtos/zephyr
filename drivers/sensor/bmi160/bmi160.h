@@ -9,6 +9,7 @@
 #define _BMI160_H_
 
 #include <gpio.h>
+#include <spi.h>
 #include <misc/util.h>
 
 /* registers */
@@ -383,13 +384,10 @@ struct bmi160_range {
 };
 
 struct bmi160_device_config {
-	const char *spi_port;
 #if defined(CONFIG_BMI160_TRIGGER)
 	const char *gpio_port;
 	u8_t int_pin;
 #endif
-	u32_t spi_freq;
-	u8_t spi_slave;
 };
 
 union bmi160_pmu_status {
@@ -409,9 +407,7 @@ union bmi160_pmu_status {
 #	define BMI160_SAMPLE_SIZE		(3 * sizeof(u16_t))
 #endif
 
-/* total buffer contains one dummy byte, needed by SPI */
-#define BMI160_BUF_SIZE			(BMI160_SAMPLE_SIZE + 1)
-#define BMI160_DATA_OFS			1
+#define BMI160_BUF_SIZE			(BMI160_SAMPLE_SIZE)
 union bmi160_sample {
 	u8_t raw[BMI160_BUF_SIZE];
 	struct {
@@ -431,7 +427,7 @@ struct bmi160_scale {
 };
 
 struct bmi160_device_data {
-	struct device *spi;
+	struct spi_config spi;
 #if defined(CONFIG_BMI160_TRIGGER)
 	struct device *gpio;
 	struct gpio_callback gpio_cb;
