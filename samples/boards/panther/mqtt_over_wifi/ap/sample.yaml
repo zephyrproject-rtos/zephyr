@@ -1,0 +1,8 @@
+sample:
+    description: Panther board demo with MQTT and Wifi
+    name: Panther Board Demo
+tests:
+-   test:
+        build_only: true
+        platform_whitelist: panther
+        tags: samples
