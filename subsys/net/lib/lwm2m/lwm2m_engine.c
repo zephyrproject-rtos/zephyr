@@ -1167,7 +1167,7 @@ static u16_t select_writer(struct lwm2m_output_context *out, u16_t accept)
 	return accept;
 }
 
-static u16_t select_reader(struct lwm2m_input_context *in, u16_t format)
+static int select_reader(struct lwm2m_input_context *in, u16_t format)
 {
 	switch (format) {
 
@@ -1183,12 +1183,8 @@ static u16_t select_reader(struct lwm2m_input_context *in, u16_t format)
 		break;
 
 	default:
-		SYS_LOG_ERR("Unknown content type %u, using LWM2M plain text",
-			    format);
-		in->reader = &plain_text_reader;
-		format = LWM2M_FORMAT_PLAIN_TEXT;
-		break;
-
+		SYS_LOG_WRN("Unknown content type %u", format);
+		return -ENOMSG;
 	}
 
 	return format;
@@ -2964,7 +2960,7 @@ static int do_write_op(struct lwm2m_engine_obj *obj,
 
 	default:
 		SYS_LOG_ERR("Unsupported format: %u", format);
-		return -EINVAL;
+		return -ENOMSG;
 
 	}
 }
@@ -3050,8 +3046,11 @@ static int handle_request(struct coap_packet *request,
 	r = coap_find_options(in.in_cpkt, COAP_OPTION_CONTENT_FORMAT,
 			      options, 1);
 	if (r > 0) {
-		format = select_reader(
-				&in, coap_option_value_to_int(&options[0]));
+		format = coap_option_value_to_int(&options[0]);
+		r = select_reader(&in, format);
+		if (r < 0) {
+			goto error;
+		}
 	}
 
 	/* read Accept */
@@ -3275,6 +3274,8 @@ error:
 		msg->code = COAP_RESPONSE_CODE_REQUEST_TOO_LARGE;
 	} else if (r == -ENOTSUP) {
 		msg->code = COAP_RESPONSE_CODE_NOT_IMPLEMENTED;
+	} else if (r == -ENOMSG) {
+		msg->code = COAP_RESPONSE_CODE_UNSUPPORTED_CONTENT_FORMAT;
 	} else {
 		/* Failed to handle the request */
 		msg->code = COAP_RESPONSE_CODE_INTERNAL_ERROR;
