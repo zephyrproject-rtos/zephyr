@@ -216,6 +216,15 @@ zephyr_compile_options(${CONFIG_COMPILER_OPT})
 # TODO: This Clang check is broken
 if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
   zephyr_cc_option(
+    #FIXME: need to fix all of those
+    -Wno-sometimes-uninitialized
+    -Wno-shift-overflow
+    -Wno-missing-braces
+    -Wno-self-assign
+    -Wno-address-of-packed-member
+    -Wno-unused-function
+    -Wno-initializer-overrides
+    -Wno-section
     -Wno-unknown-warning-option
     -Wno-unused-variable
     -Wno-format-invalid-specifier
