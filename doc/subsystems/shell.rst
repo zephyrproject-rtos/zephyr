@@ -53,6 +53,14 @@ Select module commands
 ``select``
  Clears selected module. Restores prompt as well.
 
+Other commands
+==============
+
+``noprompt``
+ This command will disable the shell prompt. The shell will still be fully
+ functional, but the prompt will not be printed each time the shell expects a
+ new command.
+
 Shell configuration
 *******************
 There are two levels of configuration: Infrastructure level and Module level.
