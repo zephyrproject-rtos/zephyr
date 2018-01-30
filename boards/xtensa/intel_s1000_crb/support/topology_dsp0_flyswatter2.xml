@@ -1,0 +1,21 @@
+<configuration>
+  <controller id='Controller0' module='ft2232' probe='flyswatter2' speed='10MHz' />
+  <driver id='XtensaDriver0' cust-idcode='00140101,LX6' module='xtensa' step-intr='mask,stepover,setps' />
+
+  <driver id='TraxDriver0'   module='trax' />
+  <chain controller='Controller0'>
+    <tap id='TAP2' irwidth='8' />
+    <tap id='TAP0' irwidth='5' />
+  </chain>
+
+  <system module='jtag'>
+    <component id='Component0' tap='TAP0' config='trax' />
+
+  </system>
+  <device id='Xtensa0' component='Component0' driver='XtensaDriver0' />
+
+  <application id='GDBStub0' module='gdbstub' port='20000'>
+   <target device='Xtensa0' />
+  </application>
+
+</configuration>
