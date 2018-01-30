@@ -7,7 +7,6 @@
 menuconfig APA102_STRIP
 	bool "APA102 SPI LED strip driver"
 	depends on SPI
-	depends on !SPI_LEGACY_API
 	select LED_STRIP_RGB_SCRATCH
 	default n
 	help

@@ -7,7 +7,6 @@
 menuconfig LPD880X_STRIP
 	bool "Enable LPD880x SPI LED strip driver"
 	depends on SPI
-	depends on !SPI_LEGACY_API
 	default n
 	help
 		Enable LED strip driver for daisy chains of LPD880x

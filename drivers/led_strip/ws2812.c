@@ -48,6 +48,7 @@
 #define RESET_NFRAMES ((size_t)ceiling_fraction(3 * SPI_FREQ, 4000000) + 1)
 
 struct ws2812_data {
+	struct device *spi;
 	struct spi_config config;
 };
 
@@ -82,17 +83,21 @@ static size_t ws2812_serialize_pixel(u8_t px[32], struct led_rgb *pixel)
 /*
  * Latch current color values on strip and reset its state machines.
  */
-static int ws2812_reset_strip(struct spi_config *config)
+static int ws2812_reset_strip(struct ws2812_data *data)
 {
 	u8_t reset_buf[RESET_NFRAMES];
-	struct spi_buf reset = {
+	const struct spi_buf reset = {
 		.buf = reset_buf,
 		.len = sizeof(reset_buf),
+	};
+	const struct spi_buf_set tx = {
+		.buffers = &reset,
+		.count = 1
 	};
 
 	memset(reset_buf, 0x00, sizeof(reset_buf));
 
-	return spi_write(config, &reset, 1);
+	return spi_write(data->spi, &data->config, &tx);
 }
 
 static int ws2812_strip_update_rgb(struct device *dev, struct led_rgb *pixels,
@@ -104,25 +109,29 @@ static int ws2812_strip_update_rgb(struct device *dev, struct led_rgb *pixels,
 	struct spi_buf buf = {
 		.buf = px_buf,
 	};
+	const struct spi_buf_set tx = {
+		.buffers = &buf,
+		.count = 1
+	};
 	size_t i;
 	int rc;
 
 	for (i = 0; i < num_pixels; i++) {
 		buf.len = ws2812_serialize_pixel(px_buf, &pixels[i]);
-		rc = spi_write(config, &buf, 1);
+		rc = spi_write(drv_data->spi, config, &tx);
 		if (rc) {
 			/*
 			 * Latch anything we've shifted out first, to
 			 * call visual attention to the problematic
 			 * pixel.
 			 */
-			(void)ws2812_reset_strip(config);
+			(void)ws2812_reset_strip(drv_data);
 			SYS_LOG_ERR("can't set pixel %u: %d", i, rc);
 			return rc;
 		}
 	}
 
-	return ws2812_reset_strip(config);
+	return ws2812_reset_strip(drv_data);
 }
 
 static int ws2812_strip_update_channels(struct device *dev, u8_t *channels,
@@ -131,45 +140,47 @@ static int ws2812_strip_update_channels(struct device *dev, u8_t *channels,
 	struct ws2812_data *drv_data = dev->driver_data;
 	struct spi_config *config = &drv_data->config;
 	u8_t px_buf[8]; /* one byte per bit */
-	struct spi_buf buf = {
+	const struct spi_buf buf = {
 		.buf = px_buf,
 		.len = sizeof(px_buf),
+	};
+	const struct spi_buf_set tx = {
+		.buffers = &buf,
+		.count = 1
 	};
 	size_t i;
 	int rc;
 
 	for (i = 0; i < num_channels; i++) {
 		ws2812_serialize_color(px_buf, channels[i]);
-		rc = spi_write(config, &buf, 1);
+		rc = spi_write(drv_data->spi, config, &tx);
 		if (rc) {
 			/*
 			 * Latch anything we've shifted out first, to
 			 * call visual attention to the problematic
 			 * pixel.
 			 */
-			(void)ws2812_reset_strip(config);
+			(void)ws2812_reset_strip(drv_data);
 			SYS_LOG_ERR("can't set channel %u: %d", i, rc);
 			return rc;
 		}
 	}
 
-	return ws2812_reset_strip(config);
+	return ws2812_reset_strip(drv_data);
 }
 
 static int ws2812_strip_init(struct device *dev)
 {
 	struct ws2812_data *data = dev->driver_data;
 	struct spi_config *config = &data->config;
-	struct device *spi;
 
-	spi = device_get_binding(CONFIG_WS2812_STRIP_SPI_DEV_NAME);
-	if (!spi) {
+	data->spi = device_get_binding(CONFIG_WS2812_STRIP_SPI_DEV_NAME);
+	if (!data->spi) {
 		SYS_LOG_ERR("SPI device %s not found",
 			    CONFIG_WS2812_STRIP_SPI_DEV_NAME);
 		return -ENODEV;
 	}
 
-	config->dev = spi;
 	config->frequency = SPI_FREQ;
 	config->operation = SPI_OPER;
 	config->slave = 0;	/* MOSI only. */
