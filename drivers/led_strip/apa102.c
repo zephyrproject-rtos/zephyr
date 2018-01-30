@@ -17,7 +17,7 @@ static int apa102_update(struct device *dev, void *buf, size_t size)
 	struct apa102_data *data = dev->driver_data;
 	static const u8_t zeros[] = {0, 0, 0, 0};
 	static const u8_t ones[] = {0xFF, 0xFF, 0xFF, 0xFF};
-	struct spi_buf tx[] = {
+	const struct spi_buf tx_bufs[] = {
 		{
 			/* Start frame: at least 32 zeros */
 			.buf = (u8_t *)zeros,
@@ -37,8 +37,12 @@ static int apa102_update(struct device *dev, void *buf, size_t size)
 			.len = sizeof(ones),
 		},
 	};
+	const struct spi_buf_set tx = {
+		.buffers = tx_bufs,
+		.count = ARRAY_SIZE(tx)
+	};
 
-	return spi_write(&data->cfg, tx, ARRAY_SIZE(tx));
+	return spi_write(&data->cfg, &tx);
 }
 
 static int apa102_update_rgb(struct device *dev, struct led_rgb *pixels,
