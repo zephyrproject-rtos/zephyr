@@ -2341,6 +2341,66 @@ send_length_resp:
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
+static inline bool pdu_len_cmp(u8_t opcode, u8_t len)
+{
+	const u8_t ctrl_len_lut[] = {
+		(offsetof(struct pdu_data_llctrl, conn_update_ind) +
+		 sizeof(struct pdu_data_llctrl_conn_update_ind)),
+		(offsetof(struct pdu_data_llctrl, chan_map_ind) +
+		 sizeof(struct pdu_data_llctrl_chan_map_ind)),
+		(offsetof(struct pdu_data_llctrl, terminate_ind) +
+		 sizeof(struct pdu_data_llctrl_terminate_ind)),
+		(offsetof(struct pdu_data_llctrl, enc_req) +
+		 sizeof(struct pdu_data_llctrl_enc_req)),
+		(offsetof(struct pdu_data_llctrl, enc_rsp) +
+		 sizeof(struct pdu_data_llctrl_enc_rsp)),
+		(offsetof(struct pdu_data_llctrl, start_enc_req) +
+		 sizeof(struct pdu_data_llctrl_start_enc_req)),
+		(offsetof(struct pdu_data_llctrl, start_enc_rsp) +
+		 sizeof(struct pdu_data_llctrl_start_enc_rsp)),
+		(offsetof(struct pdu_data_llctrl, unknown_rsp) +
+		 sizeof(struct pdu_data_llctrl_unknown_rsp)),
+		(offsetof(struct pdu_data_llctrl, feature_req) +
+		 sizeof(struct pdu_data_llctrl_feature_req)),
+		(offsetof(struct pdu_data_llctrl, feature_rsp) +
+		 sizeof(struct pdu_data_llctrl_feature_rsp)),
+		(offsetof(struct pdu_data_llctrl, pause_enc_req) +
+		 sizeof(struct pdu_data_llctrl_pause_enc_req)),
+		(offsetof(struct pdu_data_llctrl, pause_enc_rsp) +
+		 sizeof(struct pdu_data_llctrl_pause_enc_rsp)),
+		(offsetof(struct pdu_data_llctrl, version_ind) +
+		 sizeof(struct pdu_data_llctrl_version_ind)),
+		(offsetof(struct pdu_data_llctrl, reject_ind) +
+		 sizeof(struct pdu_data_llctrl_reject_ind)),
+		(offsetof(struct pdu_data_llctrl, slave_feature_req) +
+		 sizeof(struct pdu_data_llctrl_slave_feature_req)),
+		(offsetof(struct pdu_data_llctrl, conn_param_req) +
+		 sizeof(struct pdu_data_llctrl_conn_param_req)),
+		(offsetof(struct pdu_data_llctrl, conn_param_rsp) +
+		 sizeof(struct pdu_data_llctrl_conn_param_rsp)),
+		(offsetof(struct pdu_data_llctrl, reject_ext_ind) +
+		 sizeof(struct pdu_data_llctrl_reject_ext_ind)),
+		(offsetof(struct pdu_data_llctrl, ping_req) +
+		 sizeof(struct pdu_data_llctrl_ping_req)),
+		(offsetof(struct pdu_data_llctrl, ping_rsp) +
+		 sizeof(struct pdu_data_llctrl_ping_rsp)),
+		(offsetof(struct pdu_data_llctrl, length_req) +
+		 sizeof(struct pdu_data_llctrl_length_req)),
+		(offsetof(struct pdu_data_llctrl, length_rsp) +
+		 sizeof(struct pdu_data_llctrl_length_rsp)),
+		(offsetof(struct pdu_data_llctrl, phy_req) +
+		 sizeof(struct pdu_data_llctrl_phy_req)),
+		(offsetof(struct pdu_data_llctrl, phy_rsp) +
+		 sizeof(struct pdu_data_llctrl_phy_rsp)),
+		(offsetof(struct pdu_data_llctrl, phy_upd_ind) +
+		 sizeof(struct pdu_data_llctrl_phy_upd_ind)),
+		(offsetof(struct pdu_data_llctrl, min_used_chans_ind) +
+		 sizeof(struct pdu_data_llctrl_min_used_chans_ind)),
+	};
+
+	return ctrl_len_lut[opcode] == len;
+}
+
 static inline u8_t
 isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 {
@@ -2350,6 +2410,9 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 	pdu_data_rx = (void *)node_rx->pdu_data;
 
 	/* Invalid packet */
+	/* TODO: Move into individual switch-case for better conditional
+	 *       compilation and efficiency by reuse of switch-case construct.
+	 */
 	if (_radio.conn_curr->role) {
 		/* Slave */
 		switch (pdu_data_rx->llctrl.opcode) {
@@ -2385,6 +2448,11 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 
 	switch (pdu_data_rx->llctrl.opcode) {
 	case PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND:
+		if (!pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND,
+				 pdu_data_rx->len)) {
+			goto isr_rx_conn_unknown_rsp_send;
+		}
+
 		if (conn_update(_radio.conn_curr, pdu_data_rx) == 0) {
 			/* conn param req procedure, if any, is complete */
 			_radio.conn_curr->procedure_expire = 0;
@@ -2394,12 +2462,22 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_CHAN_MAP_IND:
+		if (!pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_CHAN_MAP_IND,
+				 pdu_data_rx->len)) {
+			goto isr_rx_conn_unknown_rsp_send;
+		}
+
 		if (chan_map_update(_radio.conn_curr, pdu_data_rx)) {
 			_radio.conn_curr->llcp_terminate.reason_peer = 0x28;
 		}
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_TERMINATE_IND:
+		if (!pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_TERMINATE_IND,
+				 pdu_data_rx->len)) {
+			goto isr_rx_conn_unknown_rsp_send;
+		}
+
 		/* Ack and then terminate */
 		_radio.conn_curr->llcp_terminate.reason_peer =
 			pdu_data_rx->llctrl.terminate_ind.error_code;
@@ -2407,6 +2485,10 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	case PDU_DATA_LLCTRL_TYPE_ENC_REQ:
+		if (!pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_ENC_REQ,
+				 pdu_data_rx->len)) {
+			goto isr_rx_conn_unknown_rsp_send;
+		}
 
 #if defined(CONFIG_BT_CTLR_FAST_ENC)
 		/* TODO: BT Spec. text: may finalize the sending of additional
@@ -2438,6 +2520,11 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_ENC_RSP:
+		if (!pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_ENC_RSP,
+				 pdu_data_rx->len)) {
+			goto isr_rx_conn_unknown_rsp_send;
+		}
+
 		/* things sent by slave stored for session key calculation */
 		memcpy(&_radio.conn_curr->llcp.encryption.skd[8],
 		       &pdu_data_rx->llctrl.enc_rsp.skds[0], 8);
@@ -2453,6 +2540,11 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 			   _radio.conn_curr->llcp_ack) ||
 			  (_radio.conn_curr->llcp_type == LLCP_ENCRYPTION));
 
+		if (!pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_START_ENC_REQ,
+				 pdu_data_rx->len)) {
+			goto isr_rx_conn_unknown_rsp_send;
+		}
+
 		/* start enc rsp to be scheduled in master prepare */
 		_radio.conn_curr->llcp.encryption.initiate = 0;
 		_radio.conn_curr->llcp_type = LLCP_ENCRYPTION;
@@ -2460,6 +2552,11 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_START_ENC_RSP:
+		if (!pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_START_ENC_RSP,
+				 pdu_data_rx->len)) {
+			goto isr_rx_conn_unknown_rsp_send;
+		}
+
 		if (_radio.role == ROLE_SLAVE) {
 #if !defined(CONFIG_BT_CTLR_FAST_ENC)
 			LL_ASSERT((_radio.conn_curr->llcp_req ==
@@ -2504,14 +2601,22 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_REQ:
 	case PDU_DATA_LLCTRL_TYPE_SLAVE_FEATURE_REQ:
-	{
+		if (!pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_FEATURE_REQ,
+				 pdu_data_rx->len)) {
+			goto isr_rx_conn_unknown_rsp_send;
+		}
+
 		nack = feature_rsp_send(_radio.conn_curr, pdu_data_rx);
-	}
-	break;
+		break;
 
 	case PDU_DATA_LLCTRL_TYPE_FEATURE_RSP:
 	{
 		struct pdu_data_llctrl_feature_rsp *rsp;
+
+		if (!pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_FEATURE_RSP,
+				 pdu_data_rx->len)) {
+			goto isr_rx_conn_unknown_rsp_send;
+		}
 
 		rsp = &pdu_data_rx->llctrl.feature_rsp;
 
@@ -2531,21 +2636,41 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	case PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ:
+		if (!pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_REQ,
+				 pdu_data_rx->len)) {
+			goto isr_rx_conn_unknown_rsp_send;
+		}
+
 		nack = pause_enc_rsp_send(_radio.conn_curr, 1);
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP:
+		if (!pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_PAUSE_ENC_RSP,
+				 pdu_data_rx->len)) {
+			goto isr_rx_conn_unknown_rsp_send;
+		}
+
 		nack = pause_enc_rsp_send(_radio.conn_curr, 0);
 		break;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 	case PDU_DATA_LLCTRL_TYPE_VERSION_IND:
+		if (!pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_VERSION_IND,
+				 pdu_data_rx->len)) {
+			goto isr_rx_conn_unknown_rsp_send;
+		}
+
 		nack = version_ind_send(_radio.conn_curr, pdu_data_rx,
 					rx_enqueue);
 		break;
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	case PDU_DATA_LLCTRL_TYPE_REJECT_IND:
+		if (!pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_REJECT_IND,
+				 pdu_data_rx->len)) {
+			goto isr_rx_conn_unknown_rsp_send;
+		}
+
 		/* resume data packet rx and tx */
 		_radio.conn_curr->pause_rx = 0;
 		_radio.conn_curr->pause_tx = 0;
@@ -2560,6 +2685,11 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 	case PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ:
+		if (!pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_CONN_PARAM_REQ,
+				 pdu_data_rx->len)) {
+			goto isr_rx_conn_unknown_rsp_send;
+		}
+
 
 		/* check CUI/CPR mutex for other connections having CPR in
 		 * progress.
@@ -2760,6 +2890,11 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_CONN_PARAM_RSP:
+		if (!pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_CONN_PARAM_RSP,
+				 pdu_data_rx->len)) {
+			goto isr_rx_conn_unknown_rsp_send;
+		}
+
 		if (!_radio.conn_curr->role &&
 		    (_radio.conn_curr->llcp_conn_param.req !=
 		     _radio.conn_curr->llcp_conn_param.ack) &&
@@ -2810,21 +2945,41 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 	case PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND:
+		if (!pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND,
+				 pdu_data_rx->len)) {
+			goto isr_rx_conn_unknown_rsp_send;
+		}
+
 		isr_rx_conn_pkt_ctrl_rej(node_rx, rx_enqueue);
 		break;
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	case PDU_DATA_LLCTRL_TYPE_PING_REQ:
+		if (!pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_PING_REQ,
+				 pdu_data_rx->len)) {
+			goto isr_rx_conn_unknown_rsp_send;
+		}
+
 		nack = ping_resp_send(_radio.conn_curr);
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_PING_RSP:
+		if (!pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_PING_RSP,
+				 pdu_data_rx->len)) {
+			goto isr_rx_conn_unknown_rsp_send;
+		}
+
 		/* Procedure complete */
 		_radio.conn_curr->procedure_expire = 0;
 		break;
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
 	case PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP:
+		if (!pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP,
+				 pdu_data_rx->len)) {
+			goto isr_rx_conn_unknown_rsp_send;
+		}
+
 		if (0) {
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 		} else if (_radio.conn_curr->llcp_conn_param.ack !=
@@ -2960,12 +3115,22 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	case PDU_DATA_LLCTRL_TYPE_LENGTH_RSP:
 	case PDU_DATA_LLCTRL_TYPE_LENGTH_REQ:
+		if (!pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_LENGTH_REQ,
+				 pdu_data_rx->len)) {
+			goto isr_rx_conn_unknown_rsp_send;
+		}
+
 		nack = isr_rx_conn_pkt_ctrl_dle(pdu_data_rx, rx_enqueue);
 		break;
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	case PDU_DATA_LLCTRL_TYPE_PHY_REQ:
+		if (!pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_PHY_REQ,
+				 pdu_data_rx->len)) {
+			goto isr_rx_conn_unknown_rsp_send;
+		}
+
 		if (_radio.role == ROLE_MASTER) {
 			if ((_radio.conn_curr->llcp_phy.ack !=
 			     _radio.conn_curr->llcp_phy.req) &&
@@ -3038,6 +3203,11 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_PHY_RSP:
+		if (!pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_PHY_RSP,
+				 pdu_data_rx->len)) {
+			goto isr_rx_conn_unknown_rsp_send;
+		}
+
 		if ((_radio.role == ROLE_MASTER) &&
 		    (_radio.conn_curr->llcp_phy.ack !=
 		     _radio.conn_curr->llcp_phy.req) &&
@@ -3057,6 +3227,11 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND:
+		if (!pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND,
+				 pdu_data_rx->len)) {
+			goto isr_rx_conn_unknown_rsp_send;
+		}
+
 		if (phy_upd_ind(node_rx, rx_enqueue)) {
 			_radio.conn_curr->llcp_terminate.reason_peer = 0x28;
 		}
@@ -3065,6 +3240,11 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 
 #if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
 	case PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND:
+		if (!pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_MIN_USED_CHAN_IND,
+				 pdu_data_rx->len)) {
+			goto isr_rx_conn_unknown_rsp_send;
+		}
+
 		if (!_radio.conn_curr->role) {
 			struct pdu_data_llctrl_min_used_chans_ind *p =
 				&pdu_data_rx->llctrl.min_used_chans_ind;
@@ -3095,6 +3275,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 #endif /* CONFIG_BT_MIN_USED_CHAN */
 
 	default:
+isr_rx_conn_unknown_rsp_send:
 		nack = unknown_rsp_send(_radio.conn_curr,
 					pdu_data_rx->llctrl.opcode);
 		break;
