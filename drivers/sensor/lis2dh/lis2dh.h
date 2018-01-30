@@ -25,7 +25,7 @@
 #define LIS2DH_SPI_ADDR_MASK		BIT_MASK(6)
 
 /* LIS2DH supports only SPI mode 0, word size 8 bits, MSB first */
-#define LIS2DH_SPI_CFG			0x80
+#define LIS2DH_SPI_CFG			SPI_WORD_SET(8)
 
 #define LIS2DH_BUS_DEV_NAME		CONFIG_LIS2DH_SPI_MASTER_DEV_NAME
 
@@ -184,8 +184,12 @@ union lis2dh_sample {
 };
 
 struct lis2dh_data {
+#if defined(CONFIG_LIS2DH_BUS_SPI)
+	struct device *spi;
+	struct spi_config spi_cfg;
+#else
 	struct device *bus;
-
+#endif
 	union lis2dh_sample sample;
 	/* current scaling factor, in micro m/s^2 / lsb */
 	u16_t scale;
@@ -216,49 +220,40 @@ struct lis2dh_data {
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
 #include <logging/sys_log.h>
 
-static inline int lis2dh_burst_read(struct device *bus, u8_t start_addr,
+#if defined(CONFIG_LIS2DH_BUS_SPI)
+int lis2dh_spi_access(struct lis2dh_data *ctx, u8_t cmd,
+		      void *data, size_t length);
+#endif
+
+static inline int lis2dh_burst_read(struct device *dev, u8_t start_addr,
 				    u8_t *buf, u8_t num_bytes)
 {
+	struct lis2dh_data *lis2dh = dev->driver_data;
+
 #if defined(CONFIG_LIS2DH_BUS_SPI)
-	int status;
-	u8_t tx_buf = LIS2DH_SPI_READ_BIT | LIS2DH_SPI_AUTOINC_ADDR |
-		      start_addr;
+	start_addr |= LIS2DH_SPI_READ_BIT | LIS2DH_SPI_AUTOINC_ADDR;
 
-	status = spi_slave_select(bus, LIS2DH_BUS_ADDRESS);
-	status = spi_transceive(bus, &tx_buf, 1, buf, num_bytes);
-
-	SYS_LOG_DBG("tx=0x%x num=0x%x, status=%d", tx_buf,
-		    num_bytes, status);
-
-	return status;
+	return lis2dh_spi_access(lis2dh, start_addr, buf, num_bytes);
 #elif defined(CONFIG_LIS2DH_BUS_I2C)
-	return i2c_burst_read(bus, LIS2DH_BUS_ADDRESS, start_addr, buf,
-			      num_bytes);
+	return i2c_burst_read(lis2dh->bus, LIS2DH_BUS_ADDRESS, start_addr,
+			      buf, num_bytes);
 #else
 	return -ENODEV;
 #endif
 }
 
-static inline int lis2dh_reg_read_byte(struct device *bus, u8_t reg_addr,
+static inline int lis2dh_reg_read_byte(struct device *dev, u8_t reg_addr,
 				       u8_t *value)
 {
+	struct lis2dh_data *lis2dh = dev->driver_data;
+
 #if defined(CONFIG_LIS2DH_BUS_SPI)
-	int status;
-	u8_t tx_buf = LIS2DH_SPI_READ_BIT | reg_addr;
-	u8_t rx_buf[2];
+	reg_addr |= LIS2DH_SPI_READ_BIT;
 
-	status = spi_slave_select(bus, LIS2DH_BUS_ADDRESS);
-	status = spi_transceive(bus, &tx_buf, 1, rx_buf, 2);
-
-	if (status == 0) {
-		*value = rx_buf[1];
-	}
-
-	SYS_LOG_DBG("tx=0x%x rx1=0x%x", tx_buf, rx_buf[1]);
-
-	return status;
+	return lis2dh_spi_access(lis2dh, reg_addr, value, 1);
 #elif defined(CONFIG_LIS2DH_BUS_I2C)
-	return i2c_reg_read_byte(bus, LIS2DH_BUS_ADDRESS, reg_addr, value);
+	return i2c_reg_read_byte(lis2dh->bus, LIS2DH_BUS_ADDRESS,
+				 reg_addr, value);
 #else
 	return -ENODEV;
 #endif
@@ -267,58 +262,64 @@ static inline int lis2dh_reg_read_byte(struct device *bus, u8_t reg_addr,
 static inline int lis2dh_burst_write(struct device *bus, u8_t start_addr,
 				     u8_t *buf, u8_t num_bytes)
 {
+	struct lis2dh_data *lis2dh = dev->driver_data;
+
 #if defined(CONFIG_LIS2DH_BUS_SPI)
-	int status;
-	u8_t dummy;
+	start_addr |= LIS2DH_SPI_AUTOINC_ADDR;
 
-	buf[0] = LIS2DH_SPI_AUTOINC_ADDR | start_addr;
-
-	status = spi_slave_select(bus, LIS2DH_BUS_ADDRESS);
-	status = spi_transceive(bus, buf, num_bytes, &dummy, 0);
-
-	SYS_LOG_DBG("tx=0x%x num=0x%x, status=%d", buf[0],
-		    num_bytes, status);
-
-	return status;
+	return lis2dh_spi_access(lis2dh, start_addr, buf, num_bytes);
 #elif defined(CONFIG_LIS2DH_BUS_I2C)
-	return i2c_burst_write(bus, LIS2DH_BUS_ADDRESS, start_addr, buf,
-			       num_bytes);
+	return i2c_burst_write(lis2dh->bus, LIS2DH_BUS_ADDRESS, start_addr,
+			       buf, num_bytes);
 #else
 	return -ENODEV;
 #endif
 }
 
-static inline int lis2dh_reg_write_byte(struct device *bus, u8_t reg_addr,
+static inline int lis2dh_reg_write_byte(struct device *dev, u8_t reg_addr,
 					u8_t value)
 {
+	struct lis2dh_data *lis2dh = dev->driver_data;
+
 #if defined(CONFIG_LIS2DH_BUS_SPI)
-	u8_t tx_buf[2] = { reg_addr & LIS2DH_SPI_ADDR_MASK, value };
-	u8_t dummy;
+	reg_addr &= LIS2DH_SPI_ADDR_MASK;
 
-	spi_slave_select(bus, LIS2DH_BUS_ADDRESS);
-
-	SYS_LOG_DBG("tx0=0x%x tx1=0x%x", tx_buf[0], tx_buf[1]);
-
-	return spi_transceive(bus, tx_buf, 2, &dummy, 0);
+	return lis2dh_spi_access(lis2dh, reg_addr, &value, 1);
 #elif defined(CONFIG_LIS2DH_BUS_I2C)
 	u8_t tx_buf[2] = {reg_addr, value};
 
-	return i2c_write(bus, tx_buf, sizeof(tx_buf), LIS2DH_BUS_ADDRESS);
+	return i2c_write(lis2dh->bus, tx_buf, sizeof(tx_buf),
+			 LIS2DH_BUS_ADDRESS);
 #else
 	return -ENODEV;
 #endif
 }
 
-static inline int lis2dh_bus_configure(struct device *bus)
+static inline int lis2dh_bus_configure(struct device *dev)
 {
-#if defined(CONFIG_LIS2DH_BUS_SPI)
-	struct spi_config config = {
-				.config = LIS2DH_SPI_CFG,
-				.max_sys_freq = CONFIG_LIS2DH_SPI_FREQUENCY,
-			};
+	struct lis2dh_data *lis2dh = dev->driver_data;
 
-	return spi_configure(bus, &config);
+#if defined(CONFIG_LIS2DH_BUS_SPI)
+	lis2dh->spi = device_get_binding(LIS2DH_BUS_DEV_NAME);
+	if (lis2dh->spi == NULL) {
+		SYS_LOG_ERR("Could not get pointer to %s device",
+			    LIS2DH_BUS_DEV_NAME);
+		return -EINVAL;
+	}
+
+	lis2dh->spi_cfg.operation = LIS2DH_SPI_CFG;
+	lis2dh->spi_cfg.frequency = CONFIG_LIS2DH_SPI_FREQUENCY;
+	lis2dh->spi_cfg.slave = LIS2DH_BUS_ADDRESS;
+
+	return 0;
 #elif defined(CONFIG_LIS2DH_BUS_I2C)
+	lis2dh->bus = device_get_binding(LIS2DH_BUS_DEV_NAME);
+	if (lis2dh->bus == NULL) {
+		SYS_LOG_ERR("Could not get pointer to %s device",
+			    LIS2DH_BUS_DEV_NAME);
+		return -EINVAL;
+	}
+
 	return 0;
 #else
 	return -ENODEV;
@@ -332,7 +333,7 @@ int lis2dh_trigger_set(struct device *dev,
 
 int lis2dh_init_interrupt(struct device *dev);
 
-int lis2dh_reg_field_update(struct device *bus, u8_t reg_addr,
+int lis2dh_reg_field_update(struct device *dev, u8_t reg_addr,
 			    u8_t pos, u8_t mask, u8_t val);
 
 int lis2dh_acc_slope_config(struct device *dev, enum sensor_attribute attr,
