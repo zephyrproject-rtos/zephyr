@@ -3464,24 +3464,43 @@ static void retransmit_request(struct k_work *work)
 		return;
 	}
 
+	/* ref pkt to avoid being freed after net_app_send_pkt() */
+	net_pkt_ref(pending->pkt);
+
+	SYS_LOG_DBG("Resending message: %p", msg);
+	msg->send_attempts++;
+	/*
+	 * Don't use lwm2m_send_message() because it calls
+	 * coap_pending_cycle() / coap_pending_cycle() in a different order
+	 * and under different circumstances.  It also does it's own ref /
+	 * unref of the net_pkt.  Keep it simple and call net_app_send_pkt()
+	 * directly here.
+	 */
+	r = net_app_send_pkt(&msg->ctx->net_app_ctx, msg->cpkt.pkt,
+			     &msg->ctx->net_app_ctx.default_ctx->remote,
+			     NET_SOCKADDR_MAX_SIZE, K_NO_WAIT, NULL);
+	if (r < 0) {
+		SYS_LOG_ERR("Error sending lwm2m message: %d", r);
+		/* don't error here, retry until timeout */
+		net_pkt_unref(pending->pkt);
+	}
+
 	if (!coap_pending_cycle(pending)) {
 		/* pending request has expired */
 		if (msg->message_timeout_cb) {
 			msg->message_timeout_cb(msg);
 		}
 
-		/* final unref to release pkt */
-		net_pkt_unref(pending->pkt);
+		/*
+		 * coap_pending_clear() is called in lwm2m_reset_message()
+		 * which balances the ref we made in coap_pending_cycle()
+		 */
 		lwm2m_reset_message(msg, true);
 		return;
 	}
 
-	r = lwm2m_send_message(msg);
-	if (r < 0) {
-		SYS_LOG_ERR("Error sending lwm2m message: %d", r);
-		/* don't error here, retry until timeout */
-	}
-
+	/* unref to balance ref we made for sendto() */
+	net_pkt_unref(pending->pkt);
 	k_delayed_work_submit(&client_ctx->retransmit_work, pending->timeout);
 }
 
