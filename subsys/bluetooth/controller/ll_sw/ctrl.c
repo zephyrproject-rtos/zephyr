@@ -3049,7 +3049,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 			} else {
 				struct pdu_data_llctrl *c =
 					&pdu_data_rx->payload.llctrl;
-				struct pdu_data_llctrl_phy_req_rsp *p =
+				struct pdu_data_llctrl_phy_req *p =
 					&c->ctrldata.phy_req;
 
 				_radio.conn_curr->llcp_phy.state =
@@ -3081,7 +3081,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *radio_pdu_node_rx,
 		     _radio.conn_curr->llcp_phy.req) &&
 		    (_radio.conn_curr->llcp_phy.state ==
 		     LLCP_PHY_STATE_RSP_WAIT)) {
-			struct pdu_data_llctrl_phy_req_rsp *p =
+			struct pdu_data_llctrl_phy_rsp *p =
 				&pdu_data_rx->payload.llctrl.ctrldata.phy_rsp;
 
 			_radio.conn_curr->llcp_phy.state = LLCP_PHY_STATE_UPD;
@@ -7554,7 +7554,7 @@ static inline void event_phy_req_prep(struct connection *conn)
 	switch (conn->llcp_phy.state) {
 	case LLCP_PHY_STATE_REQ:
 	{
-		struct pdu_data_llctrl_phy_req_rsp *pr;
+		struct pdu_data_llctrl_phy_req *pr;
 		struct radio_pdu_node_tx *node_tx;
 		struct pdu_data *pdu_ctrl_tx;
 
@@ -7574,12 +7574,11 @@ static inline void event_phy_req_prep(struct connection *conn)
 		pdu_ctrl_tx = (struct pdu_data *) node_tx->pdu_data;
 		pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
 		pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, ctrldata) +
-				   sizeof(struct pdu_data_llctrl_phy_req_rsp);
+				   sizeof(struct pdu_data_llctrl_phy_req);
 		pdu_ctrl_tx->payload.llctrl.opcode =
 			PDU_DATA_LLCTRL_TYPE_PHY_REQ;
 
-		pr = (struct pdu_data_llctrl_phy_req_rsp *)
-		     &pdu_ctrl_tx->payload.llctrl.ctrldata.phy_req;
+		pr = &pdu_ctrl_tx->payload.llctrl.ctrldata.phy_req;
 		pr->tx_phys = conn->llcp_phy.tx;
 		pr->rx_phys = conn->llcp_phy.rx;
 
@@ -9480,7 +9479,7 @@ static void length_resp_send(struct connection *conn,
 #if defined(CONFIG_BT_CTLR_PHY)
 static u8_t phy_rsp_send(struct connection *conn, struct pdu_data *pdu_data_rx)
 {
-	struct pdu_data_llctrl_phy_req_rsp *p;
+	struct pdu_data_llctrl_phy_req *p;
 	struct radio_pdu_node_tx *node_tx;
 	struct pdu_data *pdu_ctrl_tx;
 	struct pdu_data_llctrl *c;
@@ -9520,7 +9519,7 @@ static u8_t phy_rsp_send(struct connection *conn, struct pdu_data *pdu_data_rx)
 	pdu_ctrl_tx = (struct pdu_data *)node_tx->pdu_data;
 	pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
 	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, ctrldata) +
-			   sizeof(struct pdu_data_llctrl_phy_req_rsp);
+			   sizeof(struct pdu_data_llctrl_phy_rsp);
 	pdu_ctrl_tx->payload.llctrl.opcode = PDU_DATA_LLCTRL_TYPE_PHY_RSP;
 	pdu_ctrl_tx->payload.llctrl.ctrldata.phy_rsp.tx_phys =
 		conn->phy_pref_tx;

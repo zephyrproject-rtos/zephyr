@@ -295,7 +295,12 @@ struct pdu_data_llctrl_length_rsp {
 	u16_t max_tx_time;
 } __packed;
 
-struct pdu_data_llctrl_phy_req_rsp {
+struct pdu_data_llctrl_phy_req {
+	u8_t tx_phys;
+	u8_t rx_phys;
+} __packed;
+
+struct pdu_data_llctrl_phy_rsp {
 	u8_t tx_phys;
 	u8_t rx_phys;
 } __packed;
@@ -330,8 +335,8 @@ struct pdu_data_llctrl {
 		struct pdu_data_llctrl_reject_ext_ind reject_ext_ind;
 		struct pdu_data_llctrl_length_req length_req;
 		struct pdu_data_llctrl_length_rsp length_rsp;
-		struct pdu_data_llctrl_phy_req_rsp phy_req;
-		struct pdu_data_llctrl_phy_req_rsp phy_rsp;
+		struct pdu_data_llctrl_phy_req phy_req;
+		struct pdu_data_llctrl_phy_rsp phy_rsp;
 		struct pdu_data_llctrl_phy_upd_ind phy_upd_ind;
 		struct pdu_data_llctrl_min_used_chans_ind min_used_chans_ind;
 	} __packed ctrldata;
