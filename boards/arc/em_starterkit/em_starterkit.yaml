@@ -4,5 +4,3 @@ type: mcu
 arch: arc
 toolchain:
   - zephyr
-testing:
-  default: true
