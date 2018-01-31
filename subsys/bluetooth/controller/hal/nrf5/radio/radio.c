@@ -902,15 +902,16 @@ u32_t radio_tmr_end_get(void)
 
 void radio_tmr_sample(void)
 {
-	EVENT_TIMER->TASKS_CAPTURE[3] = 1;
+	EVENT_TIMER->TASKS_CAPTURE[HAL_EVENT_TIMER_SAMPLE_CC_OFFSET] = 1;
 #if defined(CONFIG_BOARD_NRFXX_NWTSIM)
-	NRF_TIMER_regw_sideeffects_TASKS_CAPTURE(EVENT_TIMER_NBR, 3);
+	NRF_TIMER_regw_sideeffects_TASKS_CAPTURE(EVENT_TIMER_NBR,
+		HAL_EVENT_TIMER_SAMPLE_CC_OFFSET);
 #endif
 }
 
 u32_t radio_tmr_sample_get(void)
 {
-	return EVENT_TIMER->CC[3];
+	return EVENT_TIMER->CC[HAL_EVENT_TIMER_SAMPLE_CC_OFFSET];
 }
 
 #if defined(CONFIG_BT_CTLR_GPIO_PA_PIN) || \
