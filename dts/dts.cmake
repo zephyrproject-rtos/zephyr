@@ -16,25 +16,22 @@ message(STATUS "Generating zephyr/include/generated/generated_dts_board.h")
 
 if(CONFIG_HAS_DTS)
 
-  set(DTC_INCLUDE_FLAG_FOR_SOURCE
-    -include ${DTS_SOURCE}
-    )
-
-  if(NOT DTC_OVERLAY_FILE)
-    # overlay file is not set, so try to use overlay dir instead.
-
-    set_ifndef(DTC_OVERLAY_DIR ${APPLICATION_SOURCE_DIR})
-
-    set(DTC_OVERLAY_FILE ${DTC_OVERLAY_DIR}/${BOARD_FAMILY}.overlay)
+  if(DTC_OVERLAY_FILE)
+    # Convert from space-separated files into file list
+    string(REPLACE " " ";" DTC_OVERLAY_FILE_AS_LIST ${DTC_OVERLAY_FILE})
   endif()
 
-  if(EXISTS ${DTC_OVERLAY_FILE})
-    set(DTC_INCLUDE_FLAG_FOR_OVERLAY
-      -include ${DTC_OVERLAY_FILE}
-      )
-  else()
-    unset(DTC_INCLUDE_FLAG_FOR_OVERLAY)
-  endif()
+  set(
+    dts_files
+    ${DTS_SOURCE}
+    ${DTC_OVERLAY_FILE_AS_LIST}
+  )
+
+  unset(DTC_INCLUDE_FLAG_FOR_DTS)
+  foreach(dts_file ${dts_files})
+    list(APPEND DTC_INCLUDE_FLAG_FOR_DTS
+         -include ${dts_file})
+  endforeach()
 
   # TODO: Cut down on CMake configuration time by avoiding
   # regeneration of generated_dts_board.h on every configure. How
@@ -54,8 +51,7 @@ if(CONFIG_HAS_DTS)
     -isystem ${PROJECT_SOURCE_DIR}/dts/${ARCH}
     -isystem ${PROJECT_SOURCE_DIR}/dts
     -include ${AUTOCONF_H}
-    ${DTC_INCLUDE_FLAG_FOR_SOURCE}  # include the DTS source
-    ${DTC_INCLUDE_FLAG_FOR_OVERLAY} # Possibly include an overlay after the source
+    ${DTC_INCLUDE_FLAG_FOR_DTS}  # include the DTS source and overlays
     -I${PROJECT_SOURCE_DIR}/dts/common
     -I${PROJECT_SOURCE_DIR}/drivers
     -undef -D__DTS__
