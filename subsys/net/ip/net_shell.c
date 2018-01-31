@@ -2061,10 +2061,11 @@ static int _ping_ipv4(char *host)
 
 	net_icmpv4_register_handler(&ping4_handler);
 
-	ret = net_icmpv4_send_echo_request(net_if_get_default(),
-					   &ipv4_target,
-					   sys_rand32_get(),
-					   sys_rand32_get());
+	ret = net_icmpv4_send_echo_request(
+		net_if_ipv4_select_src_iface(&ipv4_target),
+		&ipv4_target,
+		sys_rand32_get(),
+		sys_rand32_get());
 	if (ret) {
 		_remove_ipv4_ping_handler();
 	} else {
