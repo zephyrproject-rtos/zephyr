@@ -21,7 +21,7 @@
 #include <linker/linker-defs.h>
 #include <arch/arc/v2/aux_regs.h>
 #include <kernel_structs.h>
-#include <nano_internal.h>
+#include <kernel_internal.h>
 
 
 /* XXX - keep for future use in full-featured cache APIs */

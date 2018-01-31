@@ -13,7 +13,7 @@
 #ifndef _ASMLANGUAGE
 #include <kernel.h>
 #include <misc/printk.h>
-#include <nano_internal.h>
+#include <kernel_internal.h>
 
 extern const _k_syscall_handler_t _k_syscall_table[K_SYSCALL_LIMIT];
 

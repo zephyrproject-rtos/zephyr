@@ -29,7 +29,7 @@ extern "C" {
 #include <zephyr/types.h>
 #include <misc/util.h>
 #include <misc/dlist.h>
-#include <nano_internal.h>
+#include <kernel_internal.h>
 
 struct _kernel_arch {
 	/* nothing for now */

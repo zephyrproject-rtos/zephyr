@@ -44,7 +44,7 @@
 
 #include "posix_core.h"
 #include "posix_soc_if.h"
-#include "nano_internal.h"
+#include "kernel_internal.h"
 #include "kernel_structs.h"
 #include "ksched.h"
 

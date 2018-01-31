@@ -18,7 +18,7 @@
 extern "C" {
 #endif
 
-#include <nano_internal.h>
+#include <kernel_internal.h>
 
 /* stacks */
 #define STACK_ROUND_UP(x) ROUND_UP(x, STACK_ALIGN_SIZE)
