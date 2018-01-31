@@ -41,6 +41,7 @@ config SPI_FLASH_W25QXXDV
 	prompt "SPI NOR Flash Winbond W25QXXDV"
 	select FLASH_HAS_DRIVER_ENABLED
 	depends on SPI && FLASH
+	select SPI_LEGACY_API
 
 config SPI_FLASH_W25QXXDV_SPI_NAME
 	string

@@ -9,6 +9,7 @@
 menuconfig IEEE802154_CC2520
 	bool "TI CC2520 Driver support"
 	depends on NETWORKING
+	select SPI_LEGACY_API
 	default n
 
 if IEEE802154_CC2520
