@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2018 Juan Manuel Torres Palma
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/stm32f051.dtsi>
+
+/ {
+	model = "STMicroelectronics STM32F0-DISCO board";
+	compatible = "st,stm32f0-disco", "st,stm32f051";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
+
+&usart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart1_pins_a>;
+	pinctrl-names = "default";
+	status = "ok";
+};
+
+&i2c1 {
+	status = "ok";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&i2c2 {
+	status = "ok";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&spi1 {
+	status = "ok";
+};

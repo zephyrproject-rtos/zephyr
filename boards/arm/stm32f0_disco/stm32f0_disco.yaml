@@ -1,0 +1,13 @@
+identifier: stm32f0_disco
+name: STM32F0-DISCO
+type: mcu
+arch: arm
+ram: 8
+flash: 64
+toolchain:
+  - zephyr
+  - gccarmemb
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
