@@ -168,6 +168,11 @@ int boot_request_upgrade(int permanent)
 	return rc;
 }
 
+bool boot_is_img_confirmed(void)
+{
+	return boot_image_ok_read(FLASH_BANK0_OFFSET) == BOOT_FLAG_SET;
+}
+
 int boot_write_img_confirmed(void)
 {
 	int rc;
