@@ -458,7 +458,6 @@ void pci_enable_bus_master(struct pci_dev_info *dev_info)
 
 void pci_show(struct pci_dev_info *dev_info)
 {
-	printk("PCI device:\n");
 	printk("%u:%u %X:%X class: 0x%X, %u, %u, %s,"
 		"addrs: 0x%X-0x%X, IRQ %d\n",
 		dev_info->bus,
