@@ -1137,8 +1137,7 @@ int bt_mesh_cfg_mod_pub_get_vnd(u16_t net_idx, u16_t addr, u16_t elem_addr,
 		return -EINVAL;
 	}
 
-	return mod_pub_get(net_idx, addr, elem_addr, mod_id, CID_NVAL,
-			   pub, status);
+	return mod_pub_get(net_idx, addr, elem_addr, mod_id, cid, pub, status);
 }
 
 static int mod_pub_set(u16_t net_idx, u16_t addr, u16_t elem_addr,
@@ -1210,8 +1209,7 @@ int bt_mesh_cfg_mod_pub_set_vnd(u16_t net_idx, u16_t addr, u16_t elem_addr,
 		return -EINVAL;
 	}
 
-	return mod_pub_set(net_idx, addr, elem_addr, mod_id, CID_NVAL,
-			   pub, status);
+	return mod_pub_set(net_idx, addr, elem_addr, mod_id, cid, pub, status);
 }
 
 int bt_mesh_cfg_hb_sub_set(u16_t net_idx, u16_t addr,
