@@ -1740,6 +1740,22 @@ bool net_if_ipv4_addr_mask_cmp(struct net_if *iface,
 	return false;
 }
 
+struct net_if *net_if_ipv4_select_src_iface(struct in_addr *dst)
+{
+	struct net_if *iface;
+
+	for (iface = __net_if_start; iface != __net_if_end; iface++) {
+		bool ret;
+
+		ret = net_if_ipv4_addr_mask_cmp(iface, dst);
+		if (ret) {
+			return iface;
+		}
+	}
+
+	return net_if_get_default();
+}
+
 struct net_if_addr *net_if_ipv4_addr_lookup(const struct in_addr *addr,
 					    struct net_if **ret)
 {

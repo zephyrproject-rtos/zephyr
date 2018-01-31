@@ -1375,6 +1375,17 @@ bool net_if_ipv4_addr_mask_cmp(struct net_if *iface,
 			       struct in_addr *addr);
 
 /**
+ * @brief Get a network interface that should be used when sending
+ * IPv4 network data to destination.
+ *
+ * @param dst IPv4 destination address
+ *
+ * @return Pointer to network interface to use, NULL if no suitable interface
+ * could be found.
+ */
+struct net_if *net_if_ipv4_select_src_iface(struct in_addr *dst);
+
+/**
  * @brief Set IPv4 netmask for an interface.
  *
  * @param iface Interface to use.
