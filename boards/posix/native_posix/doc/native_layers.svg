@@ -50,11 +50,11 @@
 			<text x="25.19" y="245.74" class="st2" v:langID="6153"><v:paragraph v:horizAlign="1"/><v:tabList/><v:newlineChar/>Drivers</text>		</g>
 		<g id="shape4-10" v:mID="4" v:groupContext="shape" transform="translate(3.86407,-96.9449)">
 			<title>Sheet.4</title>
-			<desc>Archicture/SOC dependent layer</desc>
+			<desc>Architecture/SOC dependent layer</desc>
 			<v:textBlock v:margins="rect(4,4,4,4)" v:tabSpace="42.5197"/>
 			<v:textRect cx="48.189" cy="258.52" width="96.38" height="42.5197"/>
 			<rect x="0" y="237.26" width="96.378" height="42.5197" class="st3"/>
-			<text x="9.98" y="255.22" class="st2" v:langID="6153"><v:paragraph v:horizAlign="1"/><v:tabList/>Archicture/SOC <tspan
+			<text x="6.0" y="255.22" class="st2" v:langID="6153"><v:paragraph v:horizAlign="1"/><v:tabList/>Architecture/SOC <tspan
 						x="8.74" dy="1.2em" class="st4">dependent layer</tspan></text>		</g>
 		<g id="shape5-14" v:mID="5" v:groupContext="shape" transform="translate(3.86407,-142.299)">
 			<title>Sheet.5</title>
