@@ -19,32 +19,11 @@ config PWM
 config SPI
 	def_bool y
 
-config ADC
-	def_bool y
-
 config SHARED_IRQ
 	def_bool y
 
 config PCI_ENUMERATION
 	def_bool y
-
-if ADC
-
-config ADC_TI_ADC108S102
-	def_bool y
-
-if ADC_TI_ADC108S102
-
-config ADC_TI_ADC108S102_SPI_PORT_NAME
-	default "SPI_0"
-config ADC_TI_ADC108S102_SPI_CONFIGURATION
-	default 0x81
-config ADC_TI_ADC108S102_SPI_MAX_FREQ
-	default 0x20000000
-
-endif # ADC_TI_AC108S102
-
-endif # ADC
 
 if GPIO && I2C
 
@@ -130,8 +109,5 @@ config SPI_INIT_PRIORITY
 # Pin multiplexer uses PCAL9535A, needs to be initialized after it
 config PINMUX_INIT_PRIORITY
 	default 80 if PINMUX
-
-config ADC_INIT_PRIORITY
-	default 95
 
 endif # BOARD_GALILEO
