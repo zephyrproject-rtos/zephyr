@@ -7,9 +7,7 @@
 #
 
 menuconfig SPI_DW
-	bool
-	prompt "Designware SPI controller driver"
-	depends on SPI
+	bool "Designware SPI controller driver"
 	default n
 	help
 	  Enable support for Designware's SPI controllers.
@@ -24,7 +22,6 @@ config SPI_DW_ARC_AUX_REGS
 	  SPI IP block registers are part of user extended auxiliary
 	  registers and thus their access is different than memory
 	  mapped registers.
-
 
 choice
 depends on SPI_DW
@@ -64,10 +61,8 @@ config SPI_DW_PORT_0_CLOCK_GATE_SUBSYS
 	int "Clock controller's subsystem"
 	depends on SPI_DW_CLOCK_GATE
 
-
 config SPI_DW_PORT_1_CLOCK_GATE_SUBSYS
 	int "Clock controller's subsystem"
 	depends on SPI_DW_CLOCK_GATE
-
 
 endif # SPI_DW

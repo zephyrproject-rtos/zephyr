@@ -20,19 +20,19 @@ extern "C" {
 #endif
 
 struct spi_context {
-	struct spi_config *config;
+	const struct spi_config *config;
 
 	struct k_sem lock;
 	struct k_sem sync;
 	int sync_status;
 
-#ifdef CONFIG_POLL
+#ifdef CONFIG_SPI_ASYNC
 	struct k_poll_signal *signal;
 	bool asynchronous;
-#endif
+#endif /* CONFIG_SPI_ASYNC */
 	const struct spi_buf *current_tx;
 	size_t tx_count;
-	struct spi_buf *current_rx;
+	const struct spi_buf *current_rx;
 	size_t rx_count;
 
 	u8_t *tx_buf;
@@ -48,7 +48,7 @@ struct spi_context {
 	._ctx_name.sync = _K_SEM_INITIALIZER(_data._ctx_name.sync, 0, 1)
 
 static inline bool spi_context_configured(struct spi_context *ctx,
-					  struct spi_config *config)
+					  const struct spi_config *config)
 {
 	return !!(ctx->config == config);
 }
@@ -59,10 +59,10 @@ static inline void spi_context_lock(struct spi_context *ctx,
 {
 	k_sem_take(&ctx->lock, K_FOREVER);
 
-#ifdef CONFIG_POLL
+#ifdef CONFIG_SPI_ASYNC
 	ctx->asynchronous = asynchronous;
 	ctx->signal = signal;
-#endif
+#endif /* CONFIG_SPI_ASYNC */
 }
 
 static inline void spi_context_release(struct spi_context *ctx, int status)
@@ -71,13 +71,13 @@ static inline void spi_context_release(struct spi_context *ctx, int status)
 		return;
 	}
 
-#ifdef CONFIG_POLL
+#ifdef CONFIG_SPI_ASYNC
 	if (!ctx->asynchronous || status) {
 		k_sem_give(&ctx->lock);
 	}
 #else
 	k_sem_give(&ctx->lock);
-#endif
+#endif /* CONFIG_SPI_ASYNC */
 }
 
 static inline void spi_context_unlock_unconditionally(struct spi_context *ctx)
@@ -90,7 +90,7 @@ static inline void spi_context_unlock_unconditionally(struct spi_context *ctx)
 static inline int spi_context_wait_for_completion(struct spi_context *ctx)
 {
 	int status = 0;
-#ifdef CONFIG_POLL
+#ifdef CONFIG_SPI_ASYNC
 	if (!ctx->asynchronous) {
 		k_sem_take(&ctx->sync, K_FOREVER);
 		status = ctx->sync_status;
@@ -98,13 +98,13 @@ static inline int spi_context_wait_for_completion(struct spi_context *ctx)
 #else
 	k_sem_take(&ctx->sync, K_FOREVER);
 	status = ctx->sync_status;
-#endif
+#endif /* CONFIG_SPI_ASYNC */
 	return status;
 }
 
 static inline void spi_context_complete(struct spi_context *ctx, int status)
 {
-#ifdef CONFIG_POLL
+#ifdef CONFIG_SPI_ASYNC
 	if (!ctx->asynchronous) {
 		ctx->sync_status = status;
 		k_sem_give(&ctx->sync);
@@ -120,7 +120,7 @@ static inline void spi_context_complete(struct spi_context *ctx, int status)
 #else
 	ctx->sync_status = status;
 	k_sem_give(&ctx->sync);
-#endif
+#endif /* CONFIG_SPI_ASYNC */
 }
 
 static inline void spi_context_cs_configure(struct spi_context *ctx)
@@ -154,33 +154,34 @@ static inline void spi_context_cs_control(struct spi_context *ctx, bool on)
 	}
 }
 
-static inline void spi_context_buffers_setup(struct spi_context *ctx,
-					     const struct spi_buf *tx_bufs,
-					     size_t tx_count,
-					     struct spi_buf *rx_bufs,
-					     size_t rx_count,
-					     u8_t dfs)
+static inline
+void spi_context_buffers_setup(struct spi_context *ctx,
+			       const struct spi_buf_array *tx_bufs,
+			       const struct spi_buf_array *rx_bufs,
+			       u8_t dfs)
 {
-	SYS_LOG_DBG("tx_bufs %p (%zu) - rx_bufs %p (%zu) - %u",
-		    tx_bufs, tx_count, rx_bufs, rx_count, dfs);
-
-	ctx->current_tx = tx_bufs;
-	ctx->tx_count = tx_count;
-	ctx->current_rx = rx_bufs;
-	ctx->rx_count = rx_count;
+	SYS_LOG_DBG("tx_bufs %p - rx_bufs %p - %u", tx_bufs, rx_bufs, dfs);
 
 	if (tx_bufs) {
-		ctx->tx_buf = tx_bufs->buf;
-		ctx->tx_len = tx_bufs->len / dfs;
+		ctx->current_tx = tx_bufs->bufs;
+		ctx->tx_count = tx_bufs->count;
+		ctx->tx_buf = ctx->current_tx->buf;
+		ctx->tx_len = ctx->current_tx->len / dfs;
 	} else {
+		ctx->current_tx = NULL;
+		ctx->tx_count = 0;
 		ctx->tx_buf = NULL;
 		ctx->tx_len = 0;
 	}
 
 	if (rx_bufs) {
-		ctx->rx_buf = rx_bufs->buf;
-		ctx->rx_len = rx_bufs->len / dfs;
+		ctx->current_rx = rx_bufs->bufs;
+		ctx->rx_count = rx_bufs->count;
+		ctx->rx_buf = ctx->current_rx->buf;
+		ctx->rx_len = ctx->current_rx->len / dfs;
 	} else {
+		ctx->current_rx = NULL;
+		ctx->rx_count = 0;
 		ctx->rx_buf = NULL;
 		ctx->rx_len = 0;
 	}
