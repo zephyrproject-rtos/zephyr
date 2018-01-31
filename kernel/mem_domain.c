@@ -7,7 +7,7 @@
 #include <init.h>
 #include <kernel.h>
 #include <kernel_structs.h>
-#include <nano_internal.h>
+#include <kernel_internal.h>
 #include <misc/__assert.h>
 
 static u8_t max_partitions;
