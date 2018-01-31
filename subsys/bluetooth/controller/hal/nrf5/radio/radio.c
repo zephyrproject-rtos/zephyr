@@ -30,7 +30,6 @@
 #error "Platform not defined."
 #endif
 
-
 static radio_isr_fp sfp_radio_isr;
 
 void isr_radio(void)
@@ -301,10 +300,29 @@ u32_t radio_is_ready(void)
 	return (NRF_RADIO->EVENTS_READY != 0);
 }
 
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+static u32_t last_pdu_end_us;
+
+u32_t radio_is_done(void)
+{
+	if (NRF_RADIO->EVENTS_END != 0) {
+		/* On packet END event increment last packet end time value.
+		 * Note: this depends on the function being called exactly once
+		 * in the ISR function.
+		 */
+		last_pdu_end_us += EVENT_TIMER->CC[2];
+		return 1;
+	} else {
+		return 0;
+	}
+}
+
+#else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 u32_t radio_is_done(void)
 {
 	return (NRF_RADIO->EVENTS_END != 0);
 }
+#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 u32_t radio_has_disabled(void)
 {
@@ -509,6 +527,13 @@ static void sw_switch(u8_t dir, u8_t phy_curr, u8_t flags_curr, u8_t phy_next,
 	NRF_PPI_regw_sideeffects();
 #endif
 
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	/* Since the event timer is cleared on END, we
+	 * always need to capture the PDU END time-stamp.
+	 */
+	radio_tmr_end_capture();
+#endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+
 	sw_tifs_toggle += 1;
 	sw_tifs_toggle &= 1;
 }
@@ -706,6 +731,10 @@ u32_t radio_tmr_start(u8_t trx, u32_t ticks_start, u32_t remainder)
 #endif
 
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	last_pdu_end_us = 0;
+
+#else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 	SW_SWITCH_TIMER->TASKS_CLEAR = 1;
 	SW_SWITCH_TIMER->MODE = 0;
 	SW_SWITCH_TIMER->PRESCALER = 4;
@@ -715,6 +744,7 @@ u32_t radio_tmr_start(u8_t trx, u32_t ticks_start, u32_t remainder)
 	NRF_TIMER_regw_sideeffects_TASKS_CLEAR(SW_SWITCH_TIMER_NBR);
 	NRF_TIMER_regw_sideeffects_TASKS_START(SW_SWITCH_TIMER_NBR);
 #endif
+#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
 	HAL_SW_SWITCH_TIMER_CLEAR_PPI_REGISTER_EVT =
 		HAL_SW_SWITCH_TIMER_CLEAR_PPI_EVT;
@@ -890,6 +920,7 @@ void radio_tmr_end_capture(void)
 	HAL_RADIO_END_TIME_CAPTURE_PPI_REGISTER_TASK =
 		HAL_RADIO_END_TIME_CAPTURE_PPI_TASK;
 	NRF_PPI->CHENSET = HAL_RADIO_END_TIME_CAPTURE_PPI_ENABLE;
+
 #if defined(CONFIG_BOARD_NRFXX_NWTSIM)
 	NRF_PPI_regw_sideeffects();
 #endif
@@ -897,7 +928,11 @@ void radio_tmr_end_capture(void)
 
 u32_t radio_tmr_end_get(void)
 {
+#if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
+	return last_pdu_end_us;
+#else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 	return EVENT_TIMER->CC[2];
+#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 }
 
 u32_t radio_tmr_tifs_base_get(void)

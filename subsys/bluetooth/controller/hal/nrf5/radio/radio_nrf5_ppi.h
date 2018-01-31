@@ -214,20 +214,43 @@ static inline void hal_radio_enable_on_tick_ppi_config_and_enable(u8_t trx)
 #if !defined(CONFIG_BT_CTLR_TIFS_HW)
 /* PPI setup used for SW-based auto-switching during TIFS. */
 
+#if !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 /* Clear SW-switch timer on packet end:
  * wire the RADIO EVENTS_END event to SW_SWITCH_TIMER TASKS_CLEAR task.
+ *
+ * Note: this PPI is not needed if we use a single TIMER instance in radio.c
  */
 #define HAL_SW_SWITCH_TIMER_CLEAR_PPI 7
 #define HAL_SW_SWITCH_TIMER_CLEAR_PPI_ENABLE \
 	((PPI_CHENSET_CH7_Set << PPI_CHENSET_CH7_Pos) & PPI_CHENSET_CH7_Msk)
 #define HAL_SW_SWITCH_TIMER_CLEAR_PPI_DISABLE \
 	((PPI_CHENCLR_CH7_Clear << PPI_CHENCLR_CH7_Pos) & PPI_CHENCLR_CH7_Msk)
+#else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+
+/* Clear event timer (sw-switch timer) on Radio end:
+ * wire the RADIO EVENTS_END event to the
+ * EVENT_TIMER TASKS_CLEAR task.
+ *
+ * Note: in nRF52X PPI 5 is forked for both capturing and clearing timer
+ * on RADIO EVENTS_END.
+ */
+#define HAL_SW_SWITCH_TIMER_CLEAR_PPI 5
+#define HAL_SW_SWITCH_TIMER_CLEAR_PPI_ENABLE \
+	((PPI_CHENSET_CH5_Set << PPI_CHENSET_CH5_Pos) & PPI_CHENSET_CH5_Msk)
+#define HAL_SW_SWITCH_TIMER_CLEAR_PPI_DISABLE \
+	((PPI_CHENCLR_CH5_Clear << PPI_CHENCLR_CH5_Pos) & PPI_CHENCLR_CH5_Msk)
+#endif /*  !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 #define HAL_SW_SWITCH_TIMER_CLEAR_PPI_REGISTER_EVT \
 	NRF_PPI->CH[HAL_SW_SWITCH_TIMER_CLEAR_PPI].EEP
 #define HAL_SW_SWITCH_TIMER_CLEAR_PPI_EVT \
 	((u32_t)&(NRF_RADIO->EVENTS_END))
+#if !defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 #define HAL_SW_SWITCH_TIMER_CLEAR_PPI_REGISTER_TASK \
 	NRF_PPI->CH[HAL_SW_SWITCH_TIMER_CLEAR_PPI].TEP
+#else /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
+#define HAL_SW_SWITCH_TIMER_CLEAR_PPI_REGISTER_TASK \
+	NRF_PPI->FORK[HAL_SW_SWITCH_TIMER_CLEAR_PPI].TEP
+#endif /* !CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 #define HAL_SW_SWITCH_TIMER_CLEAR_PPI_TASK \
 	((u32_t)&(SW_SWITCH_TIMER->TASKS_CLEAR))
 
