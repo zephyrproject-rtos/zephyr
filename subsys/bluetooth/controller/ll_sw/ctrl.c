@@ -614,7 +614,8 @@ static inline void isr_radio_state_tx(void)
 
 	_radio.state = STATE_RX;
 
-	hcto = radio_tmr_end_get() + RADIO_TIFS + 4 + 1; /* 1us, end jitter */
+	hcto = radio_tmr_tifs_base_get()
+		+ RADIO_TIFS + 4 + 1; /* 1us, end jitter */
 
 	radio_tmr_tifs_set(RADIO_TIFS);
 
@@ -654,7 +655,8 @@ static inline void isr_radio_state_tx(void)
 #endif /* CONFIG_BT_CTLR_SCAN_REQ_RSSI */
 
 #if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
-		radio_gpio_pa_lna_enable(radio_tmr_end_get() + RADIO_TIFS - 4 -
+		radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() +
+					 RADIO_TIFS - 4 -
 					 radio_tx_chain_delay_get(0, 0) -
 					 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
 #endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
@@ -684,7 +686,8 @@ static inline void isr_radio_state_tx(void)
 		radio_rssi_measure();
 
 #if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
-		radio_gpio_pa_lna_enable(radio_tmr_end_get() + RADIO_TIFS - 4 -
+		radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() +
+					 RADIO_TIFS - 4 -
 					 radio_tx_chain_delay_get(0, 0) -
 					 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
 #endif /* CONFIG_BT_CTLR_GPIO_LNA_PIN */
@@ -731,13 +734,15 @@ static inline void isr_radio_state_tx(void)
 
 #if defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
 #if defined(CONFIG_BT_CTLR_PHY)
-		radio_gpio_pa_lna_enable(radio_tmr_end_get() + RADIO_TIFS - 4 -
+		radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() +
+					 RADIO_TIFS - 4 -
 					 radio_tx_chain_delay_get(
 						 _radio.conn_curr->phy_tx,
 						 _radio.conn_curr->phy_flags) -
 					 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
 #else /* !CONFIG_BT_CTLR_PHY */
-		radio_gpio_pa_lna_enable(radio_tmr_end_get() + RADIO_TIFS - 4 -
+		radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() +
+					 RADIO_TIFS - 4 -
 					 radio_tx_chain_delay_get(0, 0) -
 					 CONFIG_BT_CTLR_GPIO_LNA_OFFSET);
 #endif /* !CONFIG_BT_CTLR_PHY */
@@ -922,7 +927,8 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 
 #if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
 		radio_gpio_pa_setup();
-		radio_gpio_pa_lna_enable(radio_tmr_end_get() + RADIO_TIFS -
+		radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() +
+					 RADIO_TIFS -
 					 radio_rx_chain_delay_get(0, 0) -
 					 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
 #endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
@@ -1472,7 +1478,8 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 
 #if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
 		radio_gpio_pa_setup();
-		radio_gpio_pa_lna_enable(radio_tmr_end_get() + RADIO_TIFS -
+		radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() +
+					 RADIO_TIFS -
 					 radio_rx_chain_delay_get(0, 0) -
 					 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
 #endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
@@ -1670,7 +1677,8 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 
 #if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
 		radio_gpio_pa_setup();
-		radio_gpio_pa_lna_enable(radio_tmr_end_get() + RADIO_TIFS -
+		radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() +
+					 RADIO_TIFS -
 					 radio_rx_chain_delay_get(0, 0) -
 					 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
 #endif /* CONFIG_BT_CTLR_GPIO_PA_PIN */
@@ -3498,12 +3506,12 @@ static inline void isr_rx_conn(u8_t crc_ok, u8_t trx_done,
 	radio_gpio_pa_setup();
 
 #if defined(CONFIG_BT_CTLR_PHY)
-	radio_gpio_pa_lna_enable(radio_tmr_end_get() + RADIO_TIFS -
+	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + RADIO_TIFS -
 				 radio_rx_chain_delay_get(
 					 _radio.conn_curr->phy_rx, 1) -
 				 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
 #else /* !CONFIG_BT_CTLR_PHY */
-	radio_gpio_pa_lna_enable(radio_tmr_end_get() + RADIO_TIFS -
+	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + RADIO_TIFS -
 				 radio_rx_chain_delay_get(0, 0) -
 				 CONFIG_BT_CTLR_GPIO_PA_OFFSET);
 #endif /* !CONFIG_BT_CTLR_PHY */

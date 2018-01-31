@@ -78,6 +78,7 @@ u32_t radio_tmr_aa_restore(void);
 u32_t radio_tmr_ready_get(void);
 void radio_tmr_end_capture(void);
 u32_t radio_tmr_end_get(void);
+u32_t radio_tmr_tifs_base_get(void);
 void radio_tmr_sample(void);
 u32_t radio_tmr_sample_get(void);
 

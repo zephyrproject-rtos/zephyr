@@ -900,6 +900,11 @@ u32_t radio_tmr_end_get(void)
 	return EVENT_TIMER->CC[2];
 }
 
+u32_t radio_tmr_tifs_base_get(void)
+{
+	return radio_tmr_end_get();
+}
+
 #if defined(CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER)
 static u32_t tmr_sample_val;
 #endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
