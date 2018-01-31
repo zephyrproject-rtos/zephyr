@@ -18,11 +18,11 @@ menuconfig SPI
 if SPI
 
 config SPI_LEGACY_API
-	bool "Use legacy SPI API (default)"
-	default y
+	bool "Use legacy SPI API (soon to be deprecated)"
+	default n
 	help
-	  Driver and user API is the legacy SPI API (spi_legacy.h).
-	  If unselected, the new API will be used.
+	  Driver and user API implements/use the legacy SPI API.
+	  If unselected, the new API will be used (default).
 
 config SPI_INIT_PRIORITY
 	int "Init priority"
