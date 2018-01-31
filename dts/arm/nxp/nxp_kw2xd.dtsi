@@ -70,6 +70,7 @@
 				compatible = "soc-nv-flash";
 				label = "MCUX_FLASH";
 				reg = <0 0x80000>;
+				erase-block-size = <2048>;
 				write-block-size = <4>;
 			};
 		};

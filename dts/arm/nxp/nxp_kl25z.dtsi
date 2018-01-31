@@ -34,6 +34,7 @@
 				compatible = "soc-nv-flash";
 				label = "MCUX_FLASH";
 				reg = <0 0x20000>;
+				erase-block-size = <1024>;
 				write-block-size = <4>;
 			};
 		};
