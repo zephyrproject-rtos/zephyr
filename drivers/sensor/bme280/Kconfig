@@ -9,7 +9,8 @@
 menuconfig BME280
 	bool "BME280/BMP280 sensor"
 	depends on I2C || SPI
-	default n
+	select SPI_LEGACY_API
+	default	n
 	help
 	 Enable driver for BME280 I2C-based or SPI-based temperature and pressure sensor.
 
