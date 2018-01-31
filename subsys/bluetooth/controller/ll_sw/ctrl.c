@@ -7155,7 +7155,16 @@ static inline void event_conn_param_rsp(struct connection *conn)
 		/* Initiate connection update procedure */
 		conn->llcp.conn_upd.win_size = 1;
 		conn->llcp.conn_upd.win_offset_us = 0;
-		conn->llcp.conn_upd.interval = conn->llcp_conn_param.interval;
+		if (conn->llcp_conn_param.preferred_periodicity) {
+			conn->llcp.conn_upd.interval =
+				((conn->llcp_conn_param.interval /
+				  conn->llcp_conn_param.preferred_periodicity) +
+				 1) *
+				conn->llcp_conn_param.preferred_periodicity;
+		} else {
+			conn->llcp.conn_upd.interval =
+				conn->llcp_conn_param.interval;
+		}
 		conn->llcp.conn_upd.latency = conn->llcp_conn_param.latency;
 		conn->llcp.conn_upd.timeout = conn->llcp_conn_param.timeout;
 		/* conn->llcp.conn_upd.instant     = 0; */
