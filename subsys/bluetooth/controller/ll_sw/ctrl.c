@@ -10209,7 +10209,10 @@ u32_t radio_scan_disable(void)
 
 u32_t radio_scan_is_enabled(void)
 {
-	return _radio.scanner.is_enabled;
+	/* NOTE: BIT(0) - passive scanning enabled
+	 *       BIT(1) - active scanning enabled
+	 */
+	return (u32_t)_radio.scanner.is_enabled << _radio.scanner.type;
 }
 
 u32_t radio_scan_filter_pol_get(void)
