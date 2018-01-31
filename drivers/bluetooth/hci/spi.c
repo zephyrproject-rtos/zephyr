@@ -135,6 +135,14 @@ static struct spi_config spi_conf = {
 };
 static struct spi_buf spi_tx_buf;
 static struct spi_buf spi_rx_buf;
+static const struct spi_buf_set spi_tx = {
+	.buffers = &spi_tx_buf,
+	.count = 1
+};
+static const struct spi_buf_set spi_rx = {
+	.buffers = &spi_rx_buf,
+	.count = 1
+};
 
 static inline int bt_spi_dev_configure(void)
 {
@@ -142,18 +150,14 @@ static inline int bt_spi_dev_configure(void)
 	return 0;
 }
 
-static inline int bt_spi_transceive(const void *tx, u32_t tx_len,
+static inline int bt_spi_transceive(void *tx, u32_t tx_len,
 				    void *rx, u32_t rx_len)
 {
-	/*
-	 * It's OK to cast away const here: &spi_tx_buf is treated as
-	 * const by spi_transceive().
-	 */
-	spi_tx_buf.buf = (void *)tx;
+	spi_tx_buf.buf = tx;
 	spi_tx_buf.len = (size_t)tx_len;
 	spi_rx_buf.buf = rx;
 	spi_rx_buf.len = (size_t)rx_len;
-	return spi_transceive(&spi_conf, &spi_tx_buf, 1, &spi_rx_buf, 1);
+	return spi_transceive(&spi_conf, &spi_tx, &spi_rx);
 }
 #endif	/* CONFIG_SPI_LEGACY_API */
 
