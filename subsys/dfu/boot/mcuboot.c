@@ -162,38 +162,6 @@ static int boot_magic_write(u32_t bank_offs)
 	return rc;
 }
 
-static int boot_magic_code_check(const u32_t *magic)
-{
-	int i;
-
-	if (memcmp(magic, boot_img_magic, sizeof(boot_img_magic)) == 0) {
-		return BOOT_MAGIC_GOOD;
-	}
-
-	for (i = 0; i < ARRAY_SIZE(boot_img_magic); i++) {
-		if (magic[i] != 0xffffffff) {
-			return BOOT_MAGIC_BAD;
-		}
-	}
-
-	return BOOT_MAGIC_UNSET;
-}
-
-static int boot_magic_state_read(u32_t bank_offs)
-{
-	u32_t magic[4];
-	u32_t offs;
-	int rc;
-
-	offs = MAGIC_OFFS(bank_offs);
-	rc = flash_read(flash_dev, offs, magic, sizeof(magic));
-	if (rc != 0) {
-		return rc;
-	}
-
-	return boot_magic_code_check(magic);
-}
-
 int boot_request_upgrade(int permanent)
 {
 	int rc;
@@ -209,20 +177,6 @@ int boot_request_upgrade(int permanent)
 int boot_write_img_confirmed(void)
 {
 	int rc;
-
-	switch (boot_magic_state_read(FLASH_BANK0_OFFSET)) {
-	case BOOT_MAGIC_GOOD:
-		/* Confirm needed; proceed. */
-		break;
-
-	case BOOT_MAGIC_UNSET:
-		/* Already confirmed. */
-		return 0;
-
-	case BOOT_MAGIC_BAD:
-		/* Unexpected state. */
-		return -EFAULT;
-	}
 
 	if (boot_image_ok_read(FLASH_BANK0_OFFSET) != BOOT_FLAG_UNSET) {
 		/* Already confirmed. */
