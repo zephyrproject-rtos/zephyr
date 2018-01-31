@@ -210,6 +210,22 @@ the configuration settings specified in an alternate .conf file using this param
 These settings will override the settings in the application’s .config file or its default .conf file.\
 Multiple files may be listed, e.g. CONF_FILE=\"prj1.conf prj2.conf\"")
 
+if(DTC_OVERLAY_FILE)
+  # DTC_OVERLAY_FILE has either been specified on the cmake CLI or is already
+  # in the CMakeCache.txt. This has precedence over the environment
+  # variable DTC_OVERLAY_FILE
+elseif(DEFINED ENV{DTC_OVERLAY_FILE})
+  set(DTC_OVERLAY_FILE $ENV{DTC_OVERLAY_FILE})
+elseif(EXISTS          ${APPLICATION_SOURCE_DIR}/${BOARD}.overlay)
+  set(DTC_OVERLAY_FILE ${APPLICATION_SOURCE_DIR}/${BOARD}.overlay)
+endif()
+
+set(DTC_OVERLAY_FILE ${DTC_OVERLAY_FILE} CACHE STRING "If desired, you can \
+build the application using the DT configuration settings specified in an \
+alternate .overlay file using this parameter. These settings will override the \
+settings in the board's .dts file. Multiple files may be listed, e.g. \
+DTC_OVERLAY_FILE=\"dts1.overlay dts2.overlay\"")
+
 # Prevent CMake from testing the toolchain
 set(CMAKE_C_COMPILER_FORCED   1)
 set(CMAKE_CXX_COMPILER_FORCED 1)
