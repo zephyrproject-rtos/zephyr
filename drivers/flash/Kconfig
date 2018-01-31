@@ -141,6 +141,7 @@ config SOC_FLASH_NRF5_RADIO_SYNC
 config SOC_FLASH_MCUX
 	bool "MCUX flash shim driver"
 	depends on FLASH && HAS_MCUX
+	select FLASH_HAS_PAGE_LAYOUT
 	default n
 	help
 	  Enables the MCUX flash shim driver.
