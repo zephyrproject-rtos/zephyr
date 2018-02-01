@@ -52,6 +52,12 @@
 /* Number of retransmit attempts (after the initial transmit) per segment */
 #define SEG_RETRANSMIT_ATTEMPTS     4
 
+/* "This timer shall be set to a minimum of 200 + 50 * TTL milliseconds.".
+ * We use 400 since 300 is a common send duration for standard HCI, and we
+ * need to have a timeout that's bigger than that.
+ */
+#define SEG_RETRANSMIT_TIMEOUT(tx) (K_MSEC(400) + 50 * (tx)->ttl)
+
 /* How long to wait for available buffers before giving up */
 #define BUF_TIMEOUT                 K_NO_WAIT
 
@@ -202,7 +208,7 @@ static inline void seg_tx_complete(struct seg_tx *tx, int err)
 	seg_tx_reset(tx);
 }
 
-static void seg_send_start(u16_t duration, int err, void *user_data)
+static void seg_first_send_start(u16_t duration, int err, void *user_data)
 {
 	struct seg_tx *tx = user_data;
 
@@ -211,27 +217,35 @@ static void seg_send_start(u16_t duration, int err, void *user_data)
 	}
 }
 
+static void seg_send_start(u16_t duration, int err, void *user_data)
+{
+	struct seg_tx *tx = user_data;
+
+	/* If there's an error in transmitting the 'sent' callback will never
+	 * be called. Make sure that we kick the retransmit timer also in this
+	 * case since otherwise we risk the transmission of becoming stale.
+	 */
+	if (err) {
+		k_delayed_work_submit(&tx->retransmit,
+				      SEG_RETRANSMIT_TIMEOUT(tx));
+	}
+}
+
 static void seg_sent(int err, void *user_data)
 {
 	struct seg_tx *tx = user_data;
-	s32_t timeout;
 
-	/* "This timer shall be set to a minimum of 200 + 50 * TTL
-	 * milliseconds.". We use 400 since 300 is a common send
-	 * duration for standard HCI, and we need to have a timeout
-	 * that's bigger than that.
-	 */
-	timeout = K_MSEC(400) + 50 * tx->ttl;
-
-	k_delayed_work_submit(&tx->retransmit, timeout);
+	k_delayed_work_submit(&tx->retransmit,
+			      SEG_RETRANSMIT_TIMEOUT(tx));
 }
 
 static const struct bt_mesh_send_cb first_sent_cb = {
-	.start = seg_send_start,
+	.start = seg_first_send_start,
 	.end = seg_sent,
 };
 
 static const struct bt_mesh_send_cb seg_sent_cb = {
+	.start = seg_send_start,
 	.end = seg_sent,
 };
 
