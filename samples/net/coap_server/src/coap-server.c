@@ -131,6 +131,26 @@ static int well_known_core_get(struct coap_resource *resource,
 	return r;
 }
 
+static void payload_dump(const char *s, u8_t *data,
+		unsigned int len, unsigned int payloadlen)
+{
+	unsigned int i, loop_count;
+
+	loop_count = len - payloadlen;
+
+	printk("payload message =  %s\n", s);
+	for (i = loop_count; i < len; i++) {
+		printk("%02x ", data[i]);
+	}
+
+	printk("\n");
+
+	for (i = loop_count; i < len; i++) {
+		printk(" %c ", data[i]);
+	}
+	printk("\npayloadlen = %u bytes\n", payloadlen);
+}
+
 static int test_del(struct coap_resource *resource,
 		    struct coap_packet *request)
 {
@@ -189,6 +209,11 @@ static int test_put(struct coap_resource *resource,
 	u16_t id;
 	int r;
 
+	struct net_buf *payloadfrag;
+
+	u16_t offset;
+	u16_t len;
+
 	/* TODO: Check for payload, empty payload is an error case. */
 
 	get_from_ip_addr(request, &from);
@@ -197,9 +222,18 @@ static int test_put(struct coap_resource *resource,
 	id = coap_header_get_id(request);
 	tkl = coap_header_get_token(request, token);
 
+	NET_INFO("\n ****** test put method  *******\n");
+
+	payloadfrag = coap_packet_get_payload(request, &offset, &len);
+
+	if (payloadfrag == NULL && len == 0) {
+		NET_INFO("Packet without payload\n");
+	}
+
 	NET_INFO("*******\n");
 	NET_INFO("type: %u code %u id %u\n", type, code, id);
 	NET_INFO("*******\n");
+	payload_dump("put_payload", payloadfrag->data, payloadfrag->len, len);
 
 	pkt = net_pkt_get_tx(context, K_FOREVER);
 	frag = net_pkt_get_data(context, K_FOREVER);
@@ -242,6 +276,11 @@ static int test_post(struct coap_resource *resource,
 	u16_t id;
 	int r;
 
+	struct net_buf *payloadfrag;
+
+	u16_t offset;
+	u16_t len;
+
 	/* TODO: Check for payload, empty payload is an error case. */
 
 	get_from_ip_addr(request, &from);
@@ -250,9 +289,18 @@ static int test_post(struct coap_resource *resource,
 	id = coap_header_get_id(request);
 	tkl = coap_header_get_token(request, token);
 
+	NET_INFO("\n ****** test post method  *******\n");
+
+	payloadfrag = coap_packet_get_payload(request, &offset, &len);
+
+	if (payloadfrag == NULL && len == 0) {
+		NET_INFO("Packet without payload\n");
+	}
+
 	NET_INFO("*******\n");
 	NET_INFO("type: %u code %u id %u\n", type, code, id);
 	NET_INFO("*******\n");
+	payload_dump("post_payload", payloadfrag->data, payloadfrag->len, len);
 
 	pkt = net_pkt_get_tx(context, K_FOREVER);
 	frag = net_pkt_get_data(context, K_FOREVER);

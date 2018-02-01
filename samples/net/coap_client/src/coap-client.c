@@ -36,20 +36,27 @@ struct coap_pending pendings[NUM_PENDINGS];
 struct coap_reply replies[NUM_REPLIES];
 struct k_delayed_work retransmit_work;
 
-#if defined(CONFIG_NET_MGMT_EVENT)
-static struct net_mgmt_event_callback cb;
-#endif
-
 static const char * const test_path[] = { "test", NULL };
+
+/* define semaphores */
+K_SEM_DEFINE(coap_sem, 0, 1);
 
 static void msg_dump(const char *s, u8_t *data, unsigned len)
 {
-	unsigned i;
+	unsigned int i;
 
-	printk("%s: ", s);
-	for (i = 0; i < len; i++)
+	printk("msg dump %s :\n", s);
+	for (i = 0; i < len; i++) {
 		printk("%02x ", data[i]);
-	printk("(%u bytes)\n", len);
+	}
+
+	printk("\n");
+
+	for (i = 0; i < len; i++) {
+		printk("%c ", data[i]);
+	}
+
+	printk("\nbytes = %u\n", len);
 }
 
 static void strip_headers(struct net_pkt *pkt)
@@ -77,6 +84,7 @@ static int resource_reply_cb(const struct coap_packet *response,
 	struct net_pkt *pkt = response->pkt;
 
 	msg_dump("reply", pkt->frags->data, pkt->frags->len);
+	k_sem_give(&coap_sem);
 
 	return 0;
 }
@@ -162,19 +170,11 @@ static void retransmit_request(struct k_work *work)
 	k_delayed_work_submit(&retransmit_work, pending->timeout);
 }
 
-static void event_iface_up(struct net_mgmt_event_callback *cb,
-			   u32_t mgmt_event, struct net_if *iface)
+static void event_iface_init(void)
 {
+	int r;
 	static struct sockaddr_in6 any_addr = { .sin6_addr = IN6ADDR_ANY_INIT,
 						.sin6_family = AF_INET6 };
-	struct coap_packet request;
-	struct coap_pending *pending;
-	struct coap_reply *reply;
-	const char * const *p;
-	struct net_pkt *pkt;
-	struct net_buf *frag;
-	int r;
-	u8_t observe = 0;
 
 	r = net_context_get(PF_INET6, SOCK_DGRAM, IPPROTO_UDP, &context);
 	if (r) {
@@ -196,6 +196,22 @@ static void event_iface_up(struct net_mgmt_event_callback *cb,
 	}
 
 	k_delayed_work_init(&retransmit_work, retransmit_request);
+}
+
+static void send_coap_request(u8_t method)
+{
+	struct coap_packet request;
+	struct coap_pending *pending;
+	struct coap_reply *reply;
+	const char * const *p;
+	struct net_pkt *pkt;
+	struct net_buf *frag;
+	int r;
+
+	u8_t put_payload[] = "ZEPHYR COAP put method test done";
+	u8_t post_payload[] = "ZEPHYR COAP post method test done";
+
+	u8_t observe = 0;
 
 	pkt = net_pkt_get_tx(context, K_FOREVER);
 	if (!pkt) {
@@ -211,9 +227,21 @@ static void event_iface_up(struct net_mgmt_event_callback *cb,
 
 	net_pkt_frag_add(pkt, frag);
 
-	r = coap_packet_init(&request, pkt, 1, COAP_TYPE_CON,
-			     8, coap_next_token(),
-			     COAP_METHOD_GET, coap_next_id());
+	switch (method) {
+	case COAP_METHOD_GET:
+	case COAP_METHOD_PUT:
+	case COAP_METHOD_POST:
+		r = coap_packet_init(&request, pkt, 1, COAP_TYPE_CON,
+				8, coap_next_token(),
+				method, coap_next_id());
+		break;
+	case COAP_METHOD_DELETE:
+		printk("Delete method is not supported\n");
+		return;
+	default:
+		return;
+	}
+
 	if (r < 0) {
 		return;
 	}
@@ -242,7 +270,6 @@ static void event_iface_up(struct net_mgmt_event_callback *cb,
 	if (!pending) {
 		printk("Unable to find a free pending to track "
 		       "retransmissions.\n");
-		return;
 	}
 
 	r = coap_pending_init(pending, &request,
@@ -258,9 +285,43 @@ static void event_iface_up(struct net_mgmt_event_callback *cb,
 		return;
 	}
 
+	r = coap_packet_append_payload_marker(&request);
+	if (r) {
+		net_pkt_unref(pkt);
+		printk("Unable to append payload marker\n");
+		return;
+	}
+
+	switch (method) {
+	case COAP_METHOD_GET:
+		break;
+
+	case COAP_METHOD_PUT:
+		r = coap_packet_append_payload(&request, (u8_t *)put_payload,
+				strlen(put_payload));
+		if (r < 0) {
+			net_pkt_unref(pkt);
+			printk("Not able to append payload\n");
+			return;
+		}
+		break;
+
+	case COAP_METHOD_POST:
+		r = coap_packet_append_payload(&request, (u8_t *)post_payload,
+				strlen(post_payload));
+		if (r < 0) {
+			net_pkt_unref(pkt);
+			printk("Not able to append payload\n");
+			return;
+		}
+		break;
+
+	default:
+		return;
+	}
+
 	coap_reply_init(reply, &request);
 	reply->reply = resource_reply_cb;
-
 	/* Increase packet ref count to avoid being unref after sendto() */
 	coap_pending_cycle(pending);
 
@@ -279,17 +340,20 @@ static void event_iface_up(struct net_mgmt_event_callback *cb,
 
 void main(void)
 {
-	struct net_if *iface = net_if_get_default();
+	/* test coap get method */
+	event_iface_init();
+	printk("\n ************ COAP Client  test 1 *************\n");
+	send_coap_request(COAP_METHOD_GET);
 
-#if defined(CONFIG_NET_MGMT_EVENT)
-	/* Subscribe to NET_IF_UP if interface is not ready */
-	if (!atomic_test_bit(iface->if_dev->flags, NET_IF_UP)) {
-		net_mgmt_init_event_callback(&cb, event_iface_up,
-					     NET_EVENT_IF_UP);
-		net_mgmt_add_event_callback(&cb);
-		return;
-	}
-#endif
+	/* take semaphore */
+	k_sem_take(&coap_sem, K_FOREVER);
+	/* test coap put method */
+	printk("\n ************ COAP Client  test 2 *************\n");
+	send_coap_request(COAP_METHOD_PUT);
 
-	event_iface_up(NULL, NET_EVENT_IF_UP, iface);
+	/* take semaphore */
+	k_sem_take(&coap_sem, K_FOREVER);
+	/* test coap post method*/
+	printk("\n ************ COAP Client  test 3 *************\n");
+	send_coap_request(COAP_METHOD_POST);
 }
