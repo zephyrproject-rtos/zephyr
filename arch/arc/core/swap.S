@@ -90,6 +90,11 @@ SECTION_FUNC(TEXT, __swap)
 	bclr r3, r3, _ARC_V2_STATUS32_SC_BIT
 	kflag r3
 #endif
+
+#ifdef CONFIG_ARC_HAS_SECURE
+	lr r3, [_ARC_V2_SEC_STAT]
+	push_s r3
+#endif
 	push_s blink
 
 	_save_callee_saved_regs
@@ -137,6 +142,12 @@ _swap_return_from_coop:
 	bbit1 ilink, _ARC_V2_STATUS32_AE_BIT, _return_from_exc
 
 	pop_s blink /* pc into blink */
+#ifdef CONFIG_ARC_HAS_SECURE
+	pop_s r3    /* pop SEC_STAT */
+	/* sflag r3 */
+	/* sflag instruction is not supported in current ARC GNU */
+	.long 0x00ff302f
+#endif
 	pop_s r3    /* status32 into r3 */
 	kflag r3    /* write status32 */
 
@@ -171,6 +182,8 @@ _return_from_exc:
 	/* put the return address to eret */
 	ld ilink, [sp] /* pc into ilink */
 	sr ilink, [_ARC_V2_ERET]
+
+	/* SEC_STAT is bypassed when CONFIG_ARC_HAS_SECURE */
 
 	/* put status32 into estatus */
 	ld ilink, [sp, ___isf_t_status32_OFFSET - ___isf_t_pc_OFFSET]

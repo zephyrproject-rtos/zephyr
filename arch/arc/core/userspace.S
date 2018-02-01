@@ -56,12 +56,19 @@ _clear_user_stack:
 	sr r0, [_ARC_V2_ERSTATUS]
 	sr r1, [_ARC_V2_ERET]
 
+#ifdef CONFIG_ARC_HAS_SECURE
+	lr r0, [_ARC_V2_SEC_STAT]
+	/* the mode returns from exception return is secure mode */
+	bset r0, r0, 31
+	sr r0, [_ARC_V2_ERSEC_STAT]
+	sr r5, [_ARC_V2_SEC_U_SP]
+#else
 	/* when exception returns from kernel to user, sp and _ARC_V2_USER_SP
 	 * will be switched
 	 */
 	sr r5, [_ARC_V2_USER_SP]
+#endif
 	mov sp, r2
-
 	rtie
 
 /**
@@ -94,6 +101,12 @@ SECTION_FUNC(TEXT, _arc_do_syscall)
 	/* through fake exception return, go back to the caller */
 	kflag _ARC_V2_STATUS32_AE
 
+#ifdef CONFIG_ARC_HAS_SECURE
+	lr r6, [_ARC_V2_SEC_STAT]
+	/* the mode returns from exception return is secure mode */
+	bset r6, r6, 31
+	sr r6, [_ARC_V2_ERSEC_STAT]
+#endif
 	/* the status and return addesss are saved in trap_s handler */
 	pop r6
 	sr r6, [_ARC_V2_ERSTATUS]

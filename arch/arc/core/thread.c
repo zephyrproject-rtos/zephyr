@@ -22,6 +22,9 @@
 /*  initial stack frame */
 struct init_stack_frame {
 	u32_t pc;
+#ifdef CONFIG_ARC_HAS_SECURE
+	u32_t sec_stat;
+#endif
 	u32_t status32;
 	u32_t r3;
 	u32_t r2;
@@ -99,6 +102,11 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #else
 	pInitCtx->pc = ((u32_t)_thread_entry_wrapper);
 #endif
+
+#ifdef CONFIG_ARC_HAS_SECURE
+	pInitCtx->sec_stat = _arc_v2_aux_reg_read(_ARC_V2_SEC_STAT);
+#endif
+
 	pInitCtx->r0 = (u32_t)pEntry;
 	pInitCtx->r1 = (u32_t)parameter1;
 	pInitCtx->r2 = (u32_t)parameter2;

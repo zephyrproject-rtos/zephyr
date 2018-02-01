@@ -131,7 +131,12 @@ struct _callee_saved_stack {
 	u32_t fp; /* r27 */
 
 #ifdef CONFIG_USERSPACE
+#ifdef CONFIG_ARC_HAS_SECURE
 	u32_t user_sp;
+	u32_t kernel_sp;
+#else
+	u32_t user_sp;
+#endif
 #endif
 	/* r28 is the stack pointer and saved separately */
 	/* r29 is ILINK and does not need to be saved */
