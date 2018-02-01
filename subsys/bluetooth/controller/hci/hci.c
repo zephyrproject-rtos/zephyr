@@ -1232,16 +1232,45 @@ static void le_set_phy(struct net_buf *buf, struct net_buf **evt)
 	u32_t status;
 	u16_t handle;
 	u16_t phy_opts;
+	u8_t mask_phys;
 
 	handle = sys_le16_to_cpu(cmd->handle);
 	phy_opts = sys_le16_to_cpu(cmd->phy_opts);
 
+	mask_phys = 0x01;
+	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_2M)) {
+		mask_phys |= BIT(1);
+	}
+	if (IS_ENABLED(CONFIG_BT_CTLR_PHY_CODED)) {
+		mask_phys |= BIT(2);
+	}
+
 	if (cmd->all_phys & BT_HCI_LE_PHY_TX_ANY) {
-		cmd->tx_phys = 0x07;
+		cmd->tx_phys = mask_phys;
 	}
 	if (cmd->all_phys & BT_HCI_LE_PHY_RX_ANY) {
-		cmd->rx_phys = 0x07;
+		cmd->rx_phys = mask_phys;
 	}
+
+	if (!(cmd->tx_phys & 0x07) ||
+	    !(cmd->rx_phys & 0x07)) {
+		struct bt_hci_evt_cc_status *ccst;
+
+		ccst = cmd_complete(evt, sizeof(*ccst));
+		ccst->status = BT_HCI_ERR_INVALID_PARAM;
+
+		return;
+	}
+
+	if ((cmd->tx_phys | cmd->rx_phys) & ~mask_phys) {
+		struct bt_hci_evt_cc_status *ccst;
+
+		ccst = cmd_complete(evt, sizeof(*ccst));
+		ccst->status = BT_HCI_ERR_UNSUPP_FEATURE_PARAM_VAL;
+
+		return;
+	}
+
 	if (phy_opts & 0x03) {
 		phy_opts -= 1;
 		phy_opts &= 1;
