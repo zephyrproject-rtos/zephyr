@@ -13,6 +13,10 @@
 #include <string.h>
 #include <stdlib.h>
 
+#if defined(CONFIG_ARC)
+#include <arch/arc/v2/mpu/arc_core_mpu.h>
+#endif
+
 #define INFO(fmt, ...) printk(fmt, ##__VA_ARGS__)
 #define PIPE_LEN 1
 #define BYTES_TO_READ_WRITE 1
@@ -49,7 +53,7 @@ static unsigned int expected_reason;
  * and immediately fires upon completing the exception path; the faulting
  * thread is never run again.
  */
-#ifndef CONFIG_ARM
+#if !defined(CONFIG_ARM) && !defined(CONFIG_ARC)
 FUNC_NORETURN
 #endif
 void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
@@ -63,6 +67,7 @@ void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
 		give_uthread_end_sem = false;
 		k_sem_give(&uthread_end_sem);
 	}
+
 	if (expect_fault && expected_reason == reason) {
 		expect_fault = false;
 		expected_reason = 0;
@@ -111,6 +116,13 @@ static void write_control(void)
 		);
 	zassert_true((msr_value & 1),
 		      "Write to control register was successful\n");
+#elif defined(CONFIG_ARC)
+	unsigned int er_status;
+	/* _ARC_V2_ERSTATUS is privilege aux reg */
+	__asm__ volatile(
+		"lr %0, [0x402]\n"
+		: "=r" (er_status)::
+		);
 #else
 #error "Not implemented for this architecture"
 	zassert_unreachable("Write to control register did not fault\n");
@@ -134,6 +146,8 @@ static void disable_mmu_mpu(void)
 	expected_reason = REASON_HW_EXCEPTION;
 	BARRIER();
 	arm_core_mpu_disable();
+#elif defined(CONFIG_ARC)
+	arc_core_mpu_disable();
 #else
 #error "Not implemented for this architecture"
 #endif
