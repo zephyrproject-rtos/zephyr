@@ -280,7 +280,7 @@ config BT_MESH_LPN_POLL_TIMEOUT
 	  requests are received by the Friend node before the
 	  PollTimeout timer expires, then the friendship is considered
 	  terminated. The value is in units of 100 milliseconds, so e.g.
-	  a value of 300 means 3 seconds.
+	  a value of 300 means 30 seconds.
 
 config BT_MESH_LPN_INIT_POLL_TIMEOUT
 	int "The starting value of the PollTimeout timer"
