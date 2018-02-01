@@ -225,6 +225,15 @@ config CPU_HAS_MPU
 	help
 	  This option is enabled when the CPU has a Memory Protection Unit (MPU).
 
+config MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
+	bool
+	# Omit prompt to signify "hidden" option
+	default n
+	help
+	This option is enabled when the MPU requires a power of two alignment
+	and size for MPU regions.
+
+
 menu "Floating Point Options"
 depends on CPU_HAS_FPU
 
