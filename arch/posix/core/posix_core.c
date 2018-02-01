@@ -283,10 +283,12 @@ static void *posix_thread_starter(void *arg)
 	/*
 	 * The program may have been finished before this thread ever got to run
 	 */
+	/* LCOV_EXCL_START */ /* See Note1 */
 	if (!threads_table) {
 		posix_cleanup_handler(arg);
 		pthread_exit(NULL);
 	}
+	/* LCOV_EXCL_STOP */
 
 	pthread_cleanup_push(posix_cleanup_handler, arg);
 
@@ -542,3 +544,41 @@ void _impl_k_thread_abort(k_tid_t thread)
 }
 #endif
 
+
+/*
+ * Notes about coverage:
+ *
+ * Note1:
+ *
+ * This condition will only be triggered in very unlikely cases
+ * (once every few full regression runs).
+ * It is therefore excluded from the coverage report to avoid confusing
+ * developers.
+ *
+ * Background: This arch creates a pthread as soon as the Zephyr kernel creates
+ * a Zephyr thread. A pthread creation is an asynchronous process handled by the
+ * host kernel.
+ *
+ * This architecture normally keeps only 1 thread executing at a time.
+ * But part of the pre-initialization during creation of a new thread
+ * and some cleanup at the tail of the thread termination are executed
+ * in parallel to other threads.
+ * That is, the execution of those code paths is a bit indeterministic.
+ *
+ * Only when the Zephyr kernel attempts to swap to a new thread does this
+ * architecture need to wait until its pthread is ready and initialized
+ * (has reached posix_wait_until_allowed())
+ *
+ * In some cases (tests) threads are created which are never actually needed
+ * (typically the idle thread). That means the test may finish before this
+ * thread's underlying pthread has reached posix_wait_until_allowed().
+ *
+ * In this unlikely cases the initialization or cleanup of the thread follows
+ * non-typical code paths.
+ * This code paths are there to ensure things work always, no matter
+ * the load of the host. Without them, very rare & mysterious segfault crashes
+ * would occur.
+ * But as they are very atypical and only triggered with some host loads,
+ * they will be covered in the coverage reports only rarely.
+ *
+ */
