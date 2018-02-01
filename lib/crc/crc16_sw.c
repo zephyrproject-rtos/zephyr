@@ -47,3 +47,16 @@ u16_t crc16_ccitt(u16_t seed, const u8_t *src, size_t len)
 
 	return seed;
 }
+
+u16_t crc16_itu_t(u16_t seed, const u8_t *src, size_t len)
+{
+	for (; len > 0; len--) {
+		seed = (seed >> 8) | (seed << 8);
+		seed ^= *src++;
+		seed ^= (seed & 0xff) >> 4;
+		seed ^= seed << 12;
+		seed ^= (seed & 0xff) << 5;
+	}
+
+	return seed;
+}
