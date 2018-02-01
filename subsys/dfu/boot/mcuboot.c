@@ -18,12 +18,6 @@
 
 /*
  * Helpers for image trailer, as defined by mcuboot.
- * Image trailer consists of sequence of fields:
- *   u8_t copy_done
- *   u8_t padding_1[BOOT_MAX_ALIGN - 1]
- *   u8_t image_ok
- *   u8_t padding_2[BOOT_MAX_ALIGN - 1]
- *   u8_t magic[16]
  */
 
 /*
