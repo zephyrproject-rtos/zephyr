@@ -127,7 +127,8 @@ static inline void spi_context_cs_configure(struct spi_context *ctx)
 {
 	if (ctx->config->cs && ctx->config->cs->gpio_dev) {
 		gpio_pin_configure(ctx->config->cs->gpio_dev,
-				   ctx->config->cs->gpio_pin, GPIO_DIR_OUT);
+				   ctx->config->cs->gpio_pin,
+				   GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
 		gpio_pin_write(ctx->config->cs->gpio_dev,
 			       ctx->config->cs->gpio_pin, 1);
 	} else {
