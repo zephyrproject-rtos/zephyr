@@ -126,6 +126,7 @@ SECTIONS
 	*(".text.*")
 	*(.gnu.linkonce.t.*)
 
+#include <linker/priv_stacks-text.ld>
 #include <linker/kobject-text.ld>
 
 	} GROUP_LINK_IN(ROMABLE_REGION)
@@ -162,6 +163,7 @@ SECTIONS
 #include <custom-rodata.ld>
 #endif
 
+#include <linker/priv_stacks-rom.ld>
 #include <linker/kobject-rom.ld>
 
 	/*
@@ -310,6 +312,7 @@ SECTIONS
     __data_rom_start = LOADADDR(_DATA_SECTION_NAME);
 
 #include <linker/common-ram.ld>
+#include <linker/priv_stacks.ld>
 #include <linker/kobject.ld>
 
     __data_ram_end = .;

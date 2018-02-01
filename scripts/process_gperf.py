@@ -86,7 +86,7 @@ def process_line(line, fp):
 
     # Set the lookup function to static inline so it gets rolled into
     # _k_object_find(), nothing else will use it
-    if re.search("struct _k_object [*]$", line):
+    if re.search(args.pattern + " [*]$", line):
         fp.write("static inline " + line)
         return
 
@@ -142,6 +142,8 @@ def parse_args():
                         help="Input C file from gperf")
     parser.add_argument("-o", "--output", required=True,
                         help="Output C file with processing done")
+    parser.add_argument("-p", "--pattern", required=True,
+            help="Search pattern for objects")
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="Print extra debugging information")
     args = parser.parse_args()
