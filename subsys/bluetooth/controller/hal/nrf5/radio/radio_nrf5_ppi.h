@@ -177,7 +177,7 @@ static inline void hal_radio_enable_on_tick_ppi_config_and_enable(u8_t trx)
 	NRF_PPI->CH[HAL_TRIGGER_RATEOVERRIDE_PPI].TEP
 #define HAL_TRIGGER_RATEOVERRIDE_PPI_TASK \
 	((u32_t)&(NRF_CCM->TASKS_RATEOVERRIDE))
-#endif /* defined(CONFIG_SOC_NRF52840) */
+#endif /* CONFIG_SOC_NRF52840 */
 
 #if defined(CONFIG_BT_CTLR_GPIO_PA_PIN) || defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
 #define HAL_ENABLE_PALNA_PPI 14
@@ -241,7 +241,7 @@ static inline void hal_radio_enable_on_tick_ppi_config_and_enable(u8_t trx)
  * SW_SWITCH_TIMER-based auto-switch for TIFS. 'index' must be 0 or 1.
  */
 #define SW_SWITCH_TIMER_EVTS_COMP(index) \
-(SW_SWITCH_TIMER_EVTS_COMP_BASE + index)
+	(SW_SWITCH_TIMER_EVTS_COMP_BASE + index)
 
 /* Wire a SW SWITCH TIMER EVENTS_COMPARE[<cc_offset>] event
  * to a PPI GROUP TASK DISABLE task (PPI group with index <index>).
@@ -315,7 +315,6 @@ static inline void hal_radio_enable_on_tick_ppi_config_and_enable(u8_t trx)
 	((u32_t)&(NRF_RADIO->TASKS_RXEN))
 
 #if defined(CONFIG_SOC_NRF52840)
-
 /* Wire the SW SWITCH TIMER EVENTS_COMPARE[<cc_offset>] event
  * to RADIO TASKS_TXEN/RXEN task.
  * 2 adjacent PPIs (16 & 17) are used for this wiring; <index> must be 0 or 1.
@@ -344,7 +343,6 @@ static inline void hal_radio_enable_on_tick_ppi_config_and_enable(u8_t trx)
 #define HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_TASK(index) \
 	((u32_t)&(SW_SWITCH_TIMER->TASKS_CAPTURE[index]))
 
-#endif /* defined(CONFIG_SOC_NRF52840) */
-
-#endif /* !defined(CONFIG_BT_CTLR_TIFS_HW) */
+#endif /* CONFIG_SOC_NRF52840 */
+#endif /* !CONFIG_BT_CTLR_TIFS_HW */
 #endif /* CONFIG_SOC_SERIES_NRF51X || CONFIG_SOC_SERIES_NRF52X */
