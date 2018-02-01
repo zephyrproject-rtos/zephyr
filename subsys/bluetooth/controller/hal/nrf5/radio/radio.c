@@ -393,8 +393,7 @@ static void sw_switch(u8_t dir, u8_t phy_curr, u8_t flags_curr, u8_t phy_next,
 		    hal_radio_tx_ready_delay_ns_get(phy_next, flags_next) +
 		    hal_radio_rx_chain_delay_ns_get(phy_curr, 1));
 
-		HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_TASK(ppi) =
-		    HAL_SW_SWITCH_RADIO_ENABLE_PPI_TASK_TX;
+		hal_radio_txen_on_sw_switch(ppi);
 
 #if defined(CONFIG_SOC_NRF52840)
 		if (phy_curr & BIT(2)) {
@@ -487,8 +486,7 @@ static void sw_switch(u8_t dir, u8_t phy_curr, u8_t flags_curr, u8_t phy_next,
 			hal_radio_tx_chain_delay_ns_get(phy_curr, flags_curr)) +
 			4; /* 4us as +/- active jitter */
 
-		HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_TASK(ppi) =
-			HAL_SW_SWITCH_RADIO_ENABLE_PPI_TASK_RX;
+		hal_radio_rxen_on_sw_switch(ppi);
 
 #if defined(CONFIG_SOC_NRF52840)
 		if (1) {

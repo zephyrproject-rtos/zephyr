@@ -337,6 +337,19 @@ static inline void hal_radio_enable_on_tick_ppi_config_and_enable(u8_t trx)
 #define HAL_SW_SWITCH_RADIO_ENABLE_PPI_TASK_RX \
 	((u32_t)&(NRF_RADIO->TASKS_RXEN))
 
+
+static inline void hal_radio_txen_on_sw_switch(u8_t ppi)
+{
+	HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_TASK(ppi) =
+		HAL_SW_SWITCH_RADIO_ENABLE_PPI_TASK_TX;
+}
+
+static inline void hal_radio_rxen_on_sw_switch(u8_t ppi)
+{
+	HAL_SW_SWITCH_RADIO_ENABLE_PPI_REGISTER_TASK(ppi) =
+		HAL_SW_SWITCH_RADIO_ENABLE_PPI_TASK_RX;
+}
+
 #if defined(CONFIG_SOC_NRF52840)
 /* Wire the SW SWITCH TIMER EVENTS_COMPARE[<cc_offset>] event
  * to RADIO TASKS_TXEN/RXEN task.
