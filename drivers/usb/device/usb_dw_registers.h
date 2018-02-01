@@ -197,13 +197,6 @@ struct usb_dw_reg {
 #define USB_DW_CORE_RST_TIMEOUT_US 10000
 #define USB_DW_PLL_TIMEOUT_US 100
 
-#if defined(CONFIG_SOC_QUARK_SE_C1000)
-#define USB_DW_BASE QM_USB_0_BASE
-#define USB_DW_IRQ QM_IRQ_USB_0_INT
-#else
-#error "Unsupported board"
-#endif
-
 #define USB_DW_EP_FIFO(ep) (*(u32_t *)(USB_DW_BASE + 0x1000 * (ep + 1)))
 /* USB register block base address */
 #define USB_DW ((struct usb_dw_reg *)USB_DW_BASE)
