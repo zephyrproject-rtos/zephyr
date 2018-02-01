@@ -78,6 +78,16 @@ config USERSPACE
 	  This feature is under heavy development and APIs related to it are
 	  subject to change, even if declared non-private.
 
+config PRIVILEGED_STACK_SIZE
+	int "Size of privileged stack"
+	default 256
+	depends on ARCH_HAS_USERSPACE
+	help
+	This option sets the priviliged stack region size that will be used
+	in addition to the user mode thread stack.  During normal execution,
+	this region will be inaccessible from user mode.  During system calls,
+	this region will be utilized by the system call.
+
 config MAX_THREAD_BYTES
 	int "Bytes to use when tracking object thread permissions"
 	default 2
