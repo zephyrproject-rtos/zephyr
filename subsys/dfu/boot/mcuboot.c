@@ -13,22 +13,51 @@
 #include <init.h>
 
 #include <misc/__assert.h>
+#include <misc/byteorder.h>
 #include <board.h>
 #include <dfu/mcuboot.h>
 
 /*
- * Helpers for image trailer, as defined by mcuboot.
+ * Helpers for image headers and trailers, as defined by mcuboot.
  */
 
 /*
- * Strict defines: Defines in block below must be equal to coresponding
- * mcuboot defines
+ * Strict defines: the definitions in the following block contain
+ * values which are MCUboot implementation requirements.
  */
+
+/* Header: */
+#define BOOT_HEADER_MAGIC_V1 0x96f3b83d
+#define BOOT_HEADER_SIZE_V1 32
+
+/* Trailer: */
 #define BOOT_MAX_ALIGN 8
 #define BOOT_MAGIC_SZ  16
 #define BOOT_FLAG_SET 0x01
 #define BOOT_FLAG_UNSET 0xff
-/* end_of Strict defines */
+
+/*
+ * Raw (on-flash) representation of the v1 image header.
+ */
+struct mcuboot_v1_raw_header {
+	u32_t header_magic;
+	u32_t image_load_address;
+	u16_t header_size;
+	u16_t pad;
+	u32_t image_size;
+	u32_t image_flags;
+	struct {
+		u8_t major;
+		u8_t minor;
+		u16_t revision;
+		u32_t build_num;
+	} version;
+	u32_t pad2;
+} __packed;
+
+/*
+ * End of strict defines
+ */
 
 #define BOOT_MAGIC_GOOD  1
 #define BOOT_MAGIC_BAD   2
@@ -154,6 +183,86 @@ static int boot_magic_write(u32_t bank_offs)
 	rc = boot_flash_write(offs, boot_img_magic, BOOT_MAGIC_SZ);
 
 	return rc;
+}
+
+static int boot_read_v1_header(u32_t bank_offset,
+			       struct mcuboot_v1_raw_header *v1_raw)
+{
+	int rc;
+
+	/*
+	 * Read and sanity-check the raw header.
+	 */
+	rc = flash_read(flash_dev, bank_offset, v1_raw, sizeof(*v1_raw));
+	if (rc) {
+		return rc;
+	}
+
+	v1_raw->header_magic = sys_le32_to_cpu(v1_raw->header_magic);
+	v1_raw->image_load_address =
+		sys_le32_to_cpu(v1_raw->image_load_address);
+	v1_raw->header_size = sys_le16_to_cpu(v1_raw->header_size);
+	v1_raw->image_size = sys_le32_to_cpu(v1_raw->image_size);
+	v1_raw->image_flags = sys_le32_to_cpu(v1_raw->image_flags);
+	v1_raw->version.revision =
+		sys_le16_to_cpu(v1_raw->version.revision);
+	v1_raw->version.build_num =
+		sys_le32_to_cpu(v1_raw->version.build_num);
+
+	/*
+	 * Sanity checks.
+	 *
+	 * Larger values in header_size than BOOT_HEADER_SIZE_V1 are
+	 * possible, e.g. if Zephyr was linked with
+	 * CONFIG_TEXT_SECTION_OFFSET > BOOT_HEADER_SIZE_V1.
+	 */
+	if ((v1_raw->header_magic != BOOT_HEADER_MAGIC_V1) ||
+	    (v1_raw->header_size < BOOT_HEADER_SIZE_V1)) {
+		return -EIO;
+	}
+
+	return 0;
+}
+
+int boot_read_bank_header(u32_t bank_offset,
+			  struct mcuboot_img_header *header,
+			  size_t header_size)
+{
+	int rc;
+	struct mcuboot_v1_raw_header v1_raw;
+	struct mcuboot_img_sem_ver *sem_ver;
+	size_t v1_min_size = (sizeof(u32_t) +
+			      sizeof(struct mcuboot_img_header_v1));
+
+	/*
+	 * Only version 1 image headers are supported.
+	 */
+	if (header_size < v1_min_size) {
+		return -ENOMEM;
+	}
+	rc = boot_read_v1_header(bank_offset, &v1_raw);
+	if (rc) {
+		return rc;
+	}
+
+	/*
+	 * Copy just the fields we care about into the return parameter.
+	 *
+	 * - header_magic:       skip (only used to check format)
+	 * - image_load_address: skip (only matters for PIC code)
+	 * - header_size:        skip (only used to check format)
+	 * - image_size:         include
+	 * - image_flags:        skip (all unsupported or not relevant)
+	 * - version:            include
+	 */
+	header->mcuboot_version = 1;
+	header->h.v1.image_size = v1_raw.image_size;
+	sem_ver = &header->h.v1.sem_ver;
+	sem_ver->major = v1_raw.version.major;
+	sem_ver->minor = v1_raw.version.minor;
+	sem_ver->revision = v1_raw.version.revision;
+	sem_ver->build_num = v1_raw.version.build_num;
+	return 0;
 }
 
 int boot_request_upgrade(int permanent)
