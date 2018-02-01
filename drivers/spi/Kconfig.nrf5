@@ -13,6 +13,7 @@
 menuconfig SPI_NRF5
 	bool "nRF5 SPI drivers"
 	depends on SPI && SOC_FAMILY_NRF5 && GPIO_NRF5_P0
+	select HAS_DTS_SPI
 	default n
 	help
 	  Enable support for nRF5 MCU series SPI drivers. Peripherals
@@ -34,6 +35,8 @@ config SPI0_NRF52_MASTER
 
 endchoice
 
+if !HAS_DTS_SPI
+
 config SPI0_NRF52_SCK_PIN
 	int "SPI0 SCK pin number"
 	range 0 31
@@ -51,6 +54,8 @@ config SPI0_NRF52_MISO_PIN
 	range 0 31
 	help
 	  GPIO pin number for MISO
+
+endif
 
 config SPI0_NRF52_ORC
 	hex "SPI0 Over Read Character"
@@ -75,6 +80,8 @@ config SPI1_NRF52_MASTER
 
 endchoice
 
+if !HAS_DTS_SPI
+
 config SPI1_NRF52_SCK_PIN
 	int "SPI1 SCK pin number"
 	range 0 31
@@ -92,6 +99,7 @@ config SPI1_NRF52_MISO_PIN
 	range 0 31
 	help
 	  Pin number for MISO
+endif
 
 config SPI1_NRF52_ORC
 	hex "SPI1 Over Read Character"
@@ -116,6 +124,8 @@ config SPI2_NRF52_MASTER
 
 endchoice
 
+if !HAS_DTS_SPI
+
 config SPI2_NRF52_SCK_PIN
 	int "SPI2 SCK pin number"
 	range 0 31
@@ -133,6 +143,7 @@ config SPI2_NRF52_MISO_PIN
 	range 0 31
 	help
 	  Pin number for MISO
+endif
 
 config SPI2_NRF52_ORC
 	hex "SPI2 Over Read Character"
@@ -156,6 +167,8 @@ config SPI3_NRF52_MASTER
 	  nRF52 SPI3 Master with EasyDMA
 
 endchoice
+
+if !HAS_DTS_SPI
 
 config SPI3_NRF52_SCK_PIN
 	int "SPI3 SCK pin number"
@@ -182,6 +195,8 @@ config SPI3_NRF52_CS_PIN
 	help
 	  HW Chip Select pin number.
 	  Not used value is 255 (0xff).
+
+endif
 
 config SPI3_NRF52_ORC
 	hex "SPI3 Over Read Character"

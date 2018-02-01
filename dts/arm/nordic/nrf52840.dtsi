@@ -52,6 +52,45 @@
 			status = "disabled";
 			label = "UART_1";
 		};
+
+		spi0: spi@40003000 {
+			compatible = "nrf,nrf52-spi-master";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40003000 0x1000>;
+			interrupts = <3 5>;
+			status = "disabled";
+			label = "SPI_0";
+			clk-pin = <0>;
+			miso-pin = <0>;
+			mosi-pin = <0>;
+		};
+
+		spi1: spi@40004000 {
+			compatible = "nrf,nrf52-spi-master";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40004000 0x1000>;
+			interrupts = <4 5>;
+			status = "disabled";
+			label = "SPI_1";
+			clk-pin = <0>;
+			miso-pin = <0>;
+			mosi-pin = <0>;
+		};
+
+		spi2: spi@40023000 {
+			compatible = "nrf,nrf52-spi-master";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40023000 0x1000>;
+			interrupts = <35 5>;
+			status = "disabled";
+			label = "SPI_2";
+			clk-pin = <0>;
+			miso-pin = <0>;
+			mosi-pin = <0>;
+		};
 	};
 };
 
