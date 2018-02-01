@@ -8,6 +8,9 @@
 #include <uart.h>
 #include <misc/printk.h>
 #include <console.h>
+
+#if defined(CONFIG_UART_CONSOLE_ON_DEV_NAME)
+
 #include <drivers/console/console.h>
 #include <drivers/console/uart_console.h>
 
@@ -117,3 +120,25 @@ void console_init(void)
 	uart_irq_callback_set(uart_dev, uart_isr);
 	uart_irq_rx_enable(uart_dev);
 }
+
+#elif defined(CONFIG_SOC_POSIX)
+
+#include <stdio.h>
+
+int console_putchar(char c)
+{
+	putchar(c);
+}
+
+u8_t console_getchar(void)
+{
+	return getchar();
+}
+
+void console_init(void)
+{
+	setvbuf(stdin, NULL, _IONBF, 0);
+	setvbuf(stdout, NULL, _IONBF, 0);
+}
+
+#endif
