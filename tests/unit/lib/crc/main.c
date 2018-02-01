@@ -75,6 +75,14 @@ void test_crc16_ccitt_for_ppp(void)
 		      0x906e, NULL);
 }
 
+void test_crc16_itu_t(void)
+{
+	u8_t test2[] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+
+	zassert_equal(crc16_itu_t(0, test2, sizeof(test2)),
+		      0x31c3, NULL);
+}
+
 void test_crc8_ccitt(void)
 {
 	u8_t test0[] = { 0 };
@@ -96,6 +104,7 @@ void test_main(void)
 			 ztest_unit_test(test_crc16_ansi),
 			 ztest_unit_test(test_crc16_ccitt),
 			 ztest_unit_test(test_crc16_ccitt_for_ppp),
+			 ztest_unit_test(test_crc16_itu_t),
 			 ztest_unit_test(test_crc8_ccitt));
 	ztest_run_test_suite(test_crc);
 }
