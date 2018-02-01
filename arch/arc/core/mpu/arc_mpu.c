@@ -356,18 +356,21 @@ void arc_core_mpu_configure(u8_t type, u32_t base, u32_t size)
 	 */
 	index = _mpu_probe(base);
 
-	/* ARC MPU version doesn't support region overlap.
+	/* ARC MPU version 3 doesn't support region overlap.
 	 * So it can not be directly used for stack/stack guard protect
 	 * One way to do this is splitting the ram region as follow:
 	 *
 	 *  Take THREAD_STACK_GUARD_REGION as example:
 	 *  RAM region 0: the ram region before THREAD_STACK_GUARD_REGION, rw
 	 *  RAM THREAD_STACK_GUARD_REGION: RO
-	 *  RAM region 1: the region after THREAD_STACK_GUARD_REGIO, same
+	 *  RAM region 1: the region after THREAD_STACK_GUARD_REGION, same
 	 *                as region 0
+	 *  if region_index == index, it means the same thread comes back,
+	 *  no need to split
 	 */
 
-	if (index >= 0) {  /* need to split, only 1 split is allowed */
+	if (index >= 0 && region_index != index) {
+		/* need to split, only 1 split is allowed */
 		/* find the correct region to mpu_config.mpu_regions */
 		if (index == last_region) {
 			/* already split */

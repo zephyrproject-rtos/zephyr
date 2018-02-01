@@ -37,6 +37,8 @@ extern "C" {
 #define _ARC_V2_TMR0_LIMIT 0x023
 #define _ARC_V2_IRQ_VECT_BASE    0x025
 #define _ARC_V2_IRQ_VECT_BASE_S 0x26
+#define _ARC_V2_SEC_U_SP 0x39
+#define _ARC_V2_SEC_K_SP 0x3a
 #define _ARC_V2_AUX_IRQ_ACT 0x043
 #define _ARC_V2_DC_IVDC 0x047
 #define _ARC_V2_DC_CTRL 0x048
@@ -83,6 +85,7 @@ extern "C" {
 #define _ARC_V2_ERSTATUS 0x402
 #define _ARC_V2_ECR 0x403
 #define _ARC_V2_EFA 0x404
+#define _ARC_V2_ERSEC_STAT 0x406
 #define _ARC_V2_ICAUSE 0x40a
 #define _ARC_V2_IRQ_SELECT 0x40b
 #define _ARC_V2_IRQ_ENABLE 0x40c
