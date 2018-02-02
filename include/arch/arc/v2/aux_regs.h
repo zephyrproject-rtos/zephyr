@@ -118,6 +118,8 @@ extern "C" {
 #define _ARC_V2_STATUS32_SC (1 << _ARC_V2_STATUS32_SC_BIT)
 #define _ARC_V2_STATUS32_ES (1 << 15)
 #define _ARC_V2_STATUS32_RB(x) ((x) << 16)
+#define _ARC_V2_STATUS32_US_BIT 20
+#define _ARC_V2_STATUS32_US (1 << _ARC_V2_STATUS32_US_BIT)
 #define _ARC_V2_STATUS32_IE (1 << 31)
 
 /* interrupt related bits */

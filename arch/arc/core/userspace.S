@@ -13,7 +13,6 @@
 
 GTEXT(_arc_userspace_enter)
 GTEXT(_arc_do_syscall)
-GTEXT(_arch_is_user_context)
 
 
 /**
@@ -113,19 +112,3 @@ SECTION_FUNC(TEXT, _arc_do_syscall)
 	pop r6
 	sr r6, [_ARC_V2_ERET]
 	rtie
-
-SECTION_FUNC(TEXT, _arch_is_user_context)
-	lr r0, [_ARC_V2_STATUS32]
-	bbit1 r0, 20, 1f
-	bset r1, r0, 20
-	bclr r1, r1, 31
-	kflag r1
-	lr r1, [_ARC_V2_STATUS32]
-	bbit0 r1, 20, 2f
-	kflag r0
-1:
-	j_s.d [blink]
-	mov r0, 0
-2:
-	j_s.d [blink]
-	mov r0, 1
