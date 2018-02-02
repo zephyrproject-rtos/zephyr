@@ -28,14 +28,14 @@
 #define STOP_AFTER_5_SECONDS 0
 
 
-void main_clean_up(int exit_code)
+void posix_exit(int exit_code)
 {
 	static int max_exit_code;
 
 	max_exit_code = max(exit_code, max_exit_code);
 	/*
 	 * posix_soc_clean_up may not return if this is called from a SW thread,
-	 * but instead it would get main_clean_up() recalled again
+	 * but instead it would get posix_exit() recalled again
 	 * ASAP from the HW thread
 	 */
 	posix_soc_clean_up();

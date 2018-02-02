@@ -1,0 +1,128 @@
+/*
+ * Human Interface Device (HID) USB class core header
+ *
+ * Copyright (c) 2018 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ * @file
+ * @brief USB Human Interface Device (HID) Class public header
+ *
+ * Header follows Device Class Definition for Human Interface Devices (HID)
+ * Version 1.11 document (HID1_11-1.pdf).
+ */
+
+#ifndef __USB_HID_H__
+#define __USB_HID_H__
+
+struct usb_hid_class_subdescriptor {
+	u8_t bDescriptorType;
+	u16_t wDescriptorLength;
+} __packed;
+
+struct usb_hid_descriptor {
+	u8_t bLength;
+	u8_t bDescriptorType;
+	u16_t bcdHID;
+	u8_t bCountryCode;
+	u8_t bNumDescriptors;
+
+	/*
+	 * Specification says at least one Class Descriptor needs to
+	 * be present (Report Descriptor).
+	 */
+	struct usb_hid_class_subdescriptor subdesc[1];
+} __packed;
+
+/* HID Class Specific Requests */
+
+#define HID_GET_REPORT		0x01
+#define HID_GET_IDLE		0x02
+#define HID_GET_PROTOCOL	0x03
+#define HID_SET_REPORT		0x09
+#define HID_SET_IDLE		0x0A
+#define HID_SET_PROTOCOL	0x0B
+
+/* Public headers */
+
+typedef int (*hid_cb_t)(struct usb_setup_packet *setup, s32_t *len,
+			u8_t **data);
+
+struct hid_ops {
+	hid_cb_t get_report;
+	hid_cb_t get_idle;
+	hid_cb_t get_protocol;
+	hid_cb_t set_report;
+	hid_cb_t set_idle;
+	hid_cb_t set_protocol;
+};
+
+/* HID Report Definitions */
+
+/* HID Items types */
+#define ITEM_MAIN	0x0
+#define ITEM_GLOBAL	0x1
+#define ITEM_LOCAL	0x2
+
+/* HID Main Items tags */
+#define ITEM_TAG_INPUT		0x8
+#define ITEM_TAG_OUTPUT		0x9
+#define ITEM_TAG_COLLECTION	0xA
+#define ITEM_TAG_COLLECTION_END	0xC
+
+/* HID Global Items tags */
+#define ITEM_TAG_USAGE_PAGE	0x0
+#define ITEM_TAG_LOGICAL_MIN	0x1
+#define ITEM_TAG_LOGICAL_MAX	0x2
+#define ITEM_TAG_REPORT_SIZE	0x7
+#define ITEM_TAG_REPORT_ID	0x8
+#define ITEM_TAG_REPORT_COUNT	0x9
+
+/* HID Local Items tags */
+#define ITEM_TAG_USAGE		0x0
+
+#define HID_ITEM(bTag, bType, bSize)	(((bTag & 0xF) << 4) | \
+					 ((bType & 0x3) << 2) | (bSize & 0x3))
+
+#define HID_MAIN_ITEM(bTag, bSize)	HID_ITEM(bTag, ITEM_MAIN, bSize)
+#define HID_GLOBAL_ITEM(bTag, bSize)	HID_ITEM(bTag, ITEM_GLOBAL, bSize)
+#define HID_LOCAL_ITEM(bTag, bSize)	HID_ITEM(bTag, ITEM_LOCAL, bSize)
+
+#define HID_MI_COLLECTION		HID_MAIN_ITEM(ITEM_TAG_COLLECTION, 1)
+#define HID_MI_COLLECTION_END		HID_MAIN_ITEM(ITEM_TAG_COLLECTION_END, \
+						      0)
+#define HID_MI_INPUT			HID_MAIN_ITEM(ITEM_TAG_INPUT, 1)
+#define HID_MI_OUTPUT			HID_MAIN_ITEM(ITEM_TAG_OUTPUT, 1)
+
+#define HID_GI_USAGE_PAGE		HID_GLOBAL_ITEM(ITEM_TAG_USAGE_PAGE, 1)
+#define HID_GI_LOGICAL_MIN(size)	HID_GLOBAL_ITEM(ITEM_TAG_LOGICAL_MIN, \
+							size)
+#define HID_GI_LOGICAL_MAX(size)	HID_GLOBAL_ITEM(ITEM_TAG_LOGICAL_MAX, \
+							size)
+#define HID_GI_REPORT_SIZE		HID_GLOBAL_ITEM(ITEM_TAG_REPORT_SIZE, \
+							1)
+#define HID_GI_REPORT_ID		HID_GLOBAL_ITEM(ITEM_TAG_REPORT_ID, \
+							1)
+#define HID_GI_REPORT_COUNT		HID_GLOBAL_ITEM(ITEM_TAG_REPORT_COUNT, \
+							1)
+
+#define HID_LI_USAGE			HID_LOCAL_ITEM(ITEM_TAG_USAGE, 1)
+
+/* Defined in Universal Serial Bus HID Usage Tables version 1.11 */
+#define USAGE_GEN_DESKTOP		0x01
+
+/* Generic Desktop Page usages */
+#define USAGE_GEN_DESKTOP_UNDEFINED	0x00
+
+/* Collection types */
+#define COLLECTION_APPLICATION		0x01
+
+/* Register HID device */
+void usb_hid_register_device(const u8_t *desc, size_t size, struct hid_ops *op);
+
+/* Initialize USB HID */
+int usb_hid_init(void);
+
+#endif /* __USB_HID_H__ */

@@ -16,25 +16,6 @@ import operator
 import platform
 from pathlib import Path
 
-parser = OptionParser()
-parser.add_option("-d", "--depth", dest="depth", type="int",
-                  help="How deep should we go into the tree", metavar="DEPTH")
-parser.add_option("-o", "--outdir", dest="outdir",
-                  help="read files from directory OUT", metavar="OUT")
-parser.add_option("-k", "--kernel-name", dest="binary", default="zephyr",
-                  help="kernel binary name")
-parser.add_option("-r", "--ram",
-                  action="store_true", dest="ram", default=False,
-                  help="print RAM statistics")
-parser.add_option("-F", "--rom",
-                  action="store_true", dest="rom", default=False,
-                  help="print ROM statistics")
-parser.add_option("-s", "--objdump", type="string", dest="bin_objdump",
-                  help="Path to the GNU binary utility objdump")
-parser.add_option("-n", "--nm", type="string", dest="bin_nm",
-                  help="Path to the GNU binary utility nm")
-
-(options, args) = parser.parse_args()
 
 # Return a dict containing {
 #   symbol_name: {:,path/to/file}/symbol
@@ -54,7 +35,13 @@ def load_symbols_and_paths(bin_nm, elf_file, path_to_strip=""):
         symbol, path = parse_symbol_path_pair(line)
 
         if path:
-            processed_path = Path(path).relative_to(Path(path_to_strip))
+            p_path          = Path(path)
+            p_path_to_strip = Path(path_to_strip)
+            try:
+                processed_path = p_path.relative_to(p_path_to_strip)
+            except ValueError as e:
+                # path is valid, but is not prefixed by path_to_strip
+                processed_path = p_path
         else:
             processed_path = Path(":")
 
@@ -407,21 +394,53 @@ def print_tree(data, total, depth):
     return totp
 
 
-binary = os.path.join(options.outdir, options.binary + ".elf")
+def main():
+    parser = OptionParser()
+    parser.add_option("-d", "--depth", dest="depth", type="int",
+                      help="How deep should we go into the tree", metavar="DEPTH")
+    parser.add_option("-o", "--outdir", dest="outdir",
+                      help="read files from directory OUT", metavar="OUT")
+    parser.add_option("-k", "--kernel-name", dest="binary", default="zephyr",
+                      help="kernel binary name")
+    parser.add_option("-r", "--ram",
+                      action="store_true", dest="ram", default=False,
+                      help="print RAM statistics")
+    parser.add_option("-F", "--rom",
+                      action="store_true", dest="rom", default=False,
+                      help="print ROM statistics")
+    parser.add_option("-s", "--objdump", type="string", dest="bin_objdump",
+                      help="Path to the GNU binary utility objdump")
+    parser.add_option("-c", "--objcopy", type="string", dest="bin_objcopy",
+                      help="Path to the GNU binary utility objcopy")
+    parser.add_option("-n", "--nm", type="string", dest="bin_nm",
+                      help="Path to the GNU binary utility nm")
 
-if options.outdir and os.path.exists(binary):
-    fp = get_footprint_from_bin_and_statfile(
-        "%s/%s.bin" % (options.outdir, options.binary),
-        "%s/%s.stat" % (options.outdir, options.binary),
-        0, 0)
-    base = os.environ['ZEPHYR_BASE']
-    ram, data = generate_target_memory_section(
-        options.bin_objdump, options.bin_nm, options.outdir, options.binary,
-        base + '/', None)
-    if options.rom:
-        print_tree(data, fp['total_flash'], options.depth)
-    if options.ram:
-        print_tree(ram, fp['total_ram'], options.depth)
+    (options, args) = parser.parse_args()
 
-else:
-    print("%s does not exist." % (binary))
+    bin_file = os.path.join(options.outdir, options.binary + ".bin")
+    stat_file = os.path.join(options.outdir, options.binary + ".stat")
+    elf_file = os.path.join(options.outdir, options.binary + ".elf")
+
+    if not os.path.exists(bin_file):
+        FNULL = open(os.devnull, 'w')
+        subprocess.call([options.bin_objcopy,"-S", "-Obinary", "-R", ".comment", "-R",
+                       "COMMON", "-R", ".eh_frame", elf_file, bin_file],
+                       stdout=FNULL, stderr=subprocess.STDOUT)
+
+    if options.outdir and os.path.exists(elf_file):
+        fp = get_footprint_from_bin_and_statfile(bin_file, stat_file, 0, 0)
+        base = os.environ['ZEPHYR_BASE']
+        ram, data = generate_target_memory_section(
+            options.bin_objdump, options.bin_nm, options.outdir, options.binary,
+            base + '/', None)
+        if options.rom:
+            print_tree(data, fp['total_flash'], options.depth)
+        if options.ram:
+            print_tree(ram, fp['total_ram'], options.depth)
+
+    else:
+        print("%s does not exist." % (elf_file))
+
+
+if __name__ == "__main__":
+    main()

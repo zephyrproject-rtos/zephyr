@@ -8,3 +8,4 @@ Device and Driver Support
 
    drivers/drivers.rst
    dts/device_tree.rst
+   dts/flash_partitions.rst

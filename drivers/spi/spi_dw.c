@@ -96,7 +96,7 @@ static void push_data(struct device *dev)
 	}
 
 	while (f_tx) {
-		if (spi_context_tx_on(&spi->ctx)) {
+		if (spi_context_tx_buf_on(&spi->ctx)) {
 			switch (spi->dfs) {
 			case 1:
 				data = UNALIGNED_GET((u8_t *)
@@ -155,7 +155,7 @@ static void pull_data(struct device *dev)
 
 		DBG_COUNTER_INC();
 
-		if (spi_context_rx_on(&spi->ctx)) {
+		if (spi_context_rx_buf_on(&spi->ctx)) {
 			switch (spi->dfs) {
 			case 1:
 				UNALIGNED_PUT(data, (u8_t *)spi->ctx.rx_buf);

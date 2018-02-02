@@ -298,7 +298,7 @@ static inline s64_t arithmetic_shift_right(s64_t value, u8_t shift)
  *    { NRF_PWM0 , NRF_PWM1 , }
  *
  * @note Calling UTIL_LISTIFY with undefined arguments has undefined
- * behaviour.
+ * behavior.
  */
 #define UTIL_LISTIFY(LEN, F, F_ARG) UTIL_EVAL(UTIL_REPEAT(LEN, F, F_ARG))
 

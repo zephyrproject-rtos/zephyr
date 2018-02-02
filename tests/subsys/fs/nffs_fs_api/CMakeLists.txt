@@ -1,3 +1,11 @@
+if(BOARD STREQUAL nrf51_pca10028)
+    set(CONF_FILE nrf5x.conf)
+elseif(BOARD STREQUAL nrf52_pca10040)
+    set(CONF_FILE nrf5x.conf)
+elseif(BOARD STREQUAL nrf52840_pca10056)
+    set(CONF_FILE nrf5x.conf)
+endif()
+
 include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
 project(NONE)
 
@@ -8,18 +16,15 @@ if(BOARD STREQUAL qemu_x86)
         -DFLASH_AREA_NFFS_SIZE=1048576
     )
 elseif(BOARD STREQUAL nrf51_pca10028)
-    set(CONF_FILE nrf5x.conf)
     zephyr_compile_definitions(
         -DTEST_FLASH_OFFSET=0x20000
     )
 elseif(BOARD STREQUAL nrf52_pca10040)
-    set(CONF_FILE nrf5x.conf)
     zephyr_compile_definitions(
         -DTEST_FLASH_OFFSET=0x20000
     )
 elseif(BOARD STREQUAL nrf52840_pca10056)
-    set(CONF_FILE nrf5x.conf)
-    zephyrt_compile_definitions(
+    zephyr_compile_definitions(
         -DTEST_FLASH_OFFSET=0x20000
     )
 endif()

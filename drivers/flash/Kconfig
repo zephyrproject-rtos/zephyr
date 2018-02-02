@@ -141,6 +141,7 @@ config SOC_FLASH_NRF5_RADIO_SYNC
 config SOC_FLASH_MCUX
 	bool "MCUX flash shim driver"
 	depends on FLASH && HAS_MCUX
+	select FLASH_HAS_PAGE_LAYOUT
 	default n
 	help
 	  Enables the MCUX flash shim driver.
@@ -148,13 +149,6 @@ config SOC_FLASH_MCUX
 	  the duration of the flash erase/write operations. This will
 	  have an impact on the overall system performance - whether
 	  this is acceptable or not will depend on the use case.
-
-config SOC_FLASH_MCUX_DEV_NAME
-	string "MCUX flash device name"
-	depends on SOC_FLASH_MCUX
-	default "MCUX_FLASH"
-	help
-	  Specify the device name for the flash driver.
 
 source "drivers/flash/Kconfig.stm32"
 

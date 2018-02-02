@@ -1,2 +1,3 @@
+set_ifndef(BOARD_FLASH_RUNNER jlink)
 set_ifndef(BOARD_DEBUG_RUNNER jlink)
-board_finalize_runner_args(jlink) # No default arguments to provide.
+board_finalize_runner_args(jlink "--dt-flash=y")

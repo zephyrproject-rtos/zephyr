@@ -78,7 +78,7 @@ drivers/serial/uart_altera_jtag.c        @ramakrishnapallala
 drivers/serial/uart_riscv_qemu.c         @fractalclone
 drivers/net/slip/*                       @jukkar @tbursztyka
 drivers/spi/*                            @tbursztyka
-drivers/spi/spi_ll_stm32.*               @superna9999 @mbolivar
+drivers/spi/spi_ll_stm32.*               @superna9999
 drivers/timer/altera_avalon_timer.c      @ramakrishnapallala
 drivers/timer/pulpino_timer.c            @fractalclone
 drivers/timer/riscv_machine_timer.c      @fractalclone
@@ -157,6 +157,7 @@ samples/subsys/usb                       @youvedeep @andyross
 scripts/expr_parser.py                   @andrewboie
 scripts/sanity_chk/*                     @andrewboie
 scripts/sanitycheck                      @andrewboie @nashif
+scripts/support/runner/*                 @mbolivar
 subsys/bluetooth/*                       @sjanc @jhedberg @Vudentz
 subsys/bluetooth/controller/*            @carlescufi @cvinayak
 subsys/fs/*                              @nashif

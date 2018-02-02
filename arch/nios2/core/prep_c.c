@@ -20,7 +20,7 @@
 #include <toolchain.h>
 #include <linker/linker-defs.h>
 #include <kernel_structs.h>
-#include <nano_internal.h>
+#include <kernel_internal.h>
 
 /**
  *

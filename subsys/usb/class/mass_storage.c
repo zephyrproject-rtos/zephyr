@@ -778,7 +778,7 @@ static struct usb_ep_cfg_data mass_ep_data[] = {
 	}
 };
 
-/* Configuration of the CDC-ACM Device send to the USB Driver */
+/* Configuration of the Mass Storage Device send to the USB Driver */
 static struct usb_cfg_data mass_storage_config = {
 	.usb_device_description = NULL,
 	.cb_usb_status = mass_storage_status_cb,

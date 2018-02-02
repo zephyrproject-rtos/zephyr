@@ -91,6 +91,11 @@ NET_L2_DECLARE_PUBLIC(BLUETOOTH_L2);
 NET_L2_DECLARE_PUBLIC(OFFLOAD_IP);
 #endif /* CONFIG_NET_OFFLOAD */
 
+#ifdef CONFIG_NET_L2_OPENTHREAD
+#define OPENTHREAD_L2		OPENTHREAD
+NET_L2_DECLARE_PUBLIC(OPENTHREAD_L2);
+#endif /* CONFIG_NET_L2_OPENTHREAD */
+
 extern struct net_l2 __net_l2_end[];
 
 #define NET_L2_INIT(_name, _recv_fn, _send_fn, _reserve_fn, _enable_fn)	\

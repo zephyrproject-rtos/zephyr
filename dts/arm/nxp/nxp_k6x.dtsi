@@ -64,10 +64,12 @@
 			#clocks-cells = <3>;
 		};
 
-		flash-controller@4001f000 {
-			compatible = "nxp,k64f-flash-controller";
-			reg = <0x4001f000 0x27c>;
+		flash-controller@40020000 {
+			compatible = "nxp,kinetis-ftfe";
+			label = "FLASH_CTRL";
+			reg = <0x40020000 0x18>;
 			interrupts = <18 0>, <19 0>;
+			interrupt-names = "command-complete", "read-collision";
 
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -76,7 +78,7 @@
 				compatible = "soc-nv-flash";
 				label = "MCUX_FLASH";
 				reg = <0 0x100000>;
-
+				erase-block-size = <4096>;
 				write-block-size = <8>;
 			};
 		};

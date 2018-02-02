@@ -376,7 +376,7 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
 			return;
 		}
 
-		if (len > ad->len || ad->len < 1) {
+		if (len > ad->len) {
 			printk("AD malformed\n");
 			return;
 		}

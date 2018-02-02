@@ -268,9 +268,6 @@ int disk_access_ioctl(u8_t cmd, void *buff)
 	case DISK_IOCTL_GET_ERASE_BLOCK_SZ: /* in sectors */
 		*(u32_t *)buff = CONFIG_DISK_ERASE_BLOCK_SIZE / SECTOR_SIZE;
 		return 0;
-	case DISK_IOCTL_GET_DISK_SIZE:
-		*(u32_t *)buff = CONFIG_DISK_VOLUME_SIZE;
-		return 0;
 	default:
 		break;
 	}

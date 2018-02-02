@@ -8,6 +8,10 @@
 
 #include "pwm.h"
 
+#define SYS_LOG_DOMAIN "pwm/nrf5_sw"
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_PWM_LEVEL
+#include <logging/sys_log.h>
+
 struct pwm_config {
 	NRF_TIMER_Type *timer;
 	u8_t gpiote_base;
@@ -92,17 +96,19 @@ static int pwm_nrf5_sw_pin_set(struct device *dev, u32_t pwm,
 	ret = pwm_period_check(data, config->map_size, pwm, period_cycles,
 			       pulse_cycles);
 	if (ret) {
+		SYS_LOG_ERR("Incompatible period");
 		return ret;
 	}
 
 	/* map pwm pin to GPIOTE config/channel */
 	channel = pwm_channel_map(data, config->map_size, pwm);
 	if (channel >= config->map_size) {
+		SYS_LOG_ERR("No more channels available");
 		return -ENOMEM;
 	}
 
-	/* stop timer, if already running */
-	timer->TASKS_STOP = 1;
+	SYS_LOG_DBG("PWM %d, period %u, pulse %u", pwm,
+			period_cycles, pulse_cycles);
 
 	/* clear GPIOTE config */
 	NRF_GPIOTE->CONFIG[config->gpiote_base + channel] = 0;
@@ -114,13 +120,13 @@ static int pwm_nrf5_sw_pin_set(struct device *dev, u32_t pwm,
 	/* configure GPIO pin as output */
 	NRF_GPIO->DIRSET = BIT(pwm);
 	if (pulse_cycles == 0) {
-		/* 0% duty cycle, keep pin high (for active low LED) */
-		NRF_GPIO->OUTSET = BIT(pwm);
+		/* 0% duty cycle, keep pin low */
+		NRF_GPIO->OUTCLR = BIT(pwm);
 
 		goto pin_set_pwm_off;
 	} else if (pulse_cycles == period_cycles) {
-		/* 100% duty cycle, keep pin low (for active low LED) */
-		NRF_GPIO->OUTCLR = BIT(pwm);
+		/* 100% duty cycle, keep pin high */
+		NRF_GPIO->OUTSET = BIT(pwm);
 
 		goto pin_set_pwm_off;
 	} else {
@@ -149,8 +155,8 @@ static int pwm_nrf5_sw_pin_set(struct device *dev, u32_t pwm,
 	timer->CC[config->map_size] = period_cycles >> div;
 	timer->TASKS_CLEAR = 1;
 
-	/* configure GPIOTE, toggle with initialise output low */
-	NRF_GPIOTE->CONFIG[config->gpiote_base + channel] = 0x00030003 |
+	/* configure GPIOTE, toggle with initialise output high */
+	NRF_GPIOTE->CONFIG[config->gpiote_base + channel] = 0x00130003 |
 							    (pwm << 8);
 
 	/* setup PPI */
@@ -176,6 +182,20 @@ static int pwm_nrf5_sw_pin_set(struct device *dev, u32_t pwm,
 
 pin_set_pwm_off:
 	data->map[channel].pulse_cycles = 0;
+	bool pwm_active = false;
+
+	/* stop timer if all channels are inactive */
+	for (channel = 0; channel < config->map_size; channel++) {
+		if (data->map[channel].pulse_cycles) {
+			pwm_active = true;
+			break;
+		}
+	}
+
+	if (!pwm_active) {
+		/* No active PWM, stop timer */
+		timer->TASKS_STOP = 1;
+	}
 
 	return 0;
 }

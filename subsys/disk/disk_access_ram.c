@@ -71,9 +71,6 @@ int disk_access_ioctl(u8_t cmd, void *buff)
 	case DISK_IOCTL_GET_ERASE_BLOCK_SZ:
 		*(u32_t *)buff  = 1;
 		break;
-	case DISK_IOCTL_GET_DISK_SIZE:
-		*(u32_t *)buff  = RAMDISK_VOLUME_SIZE;
-		break;
 	default:
 		return -EINVAL;
 	}

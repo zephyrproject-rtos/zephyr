@@ -132,4 +132,6 @@ config NET_DEBUG_ARP
 	help
 	  Enables core ARP code part to output debug messages
 
+source "subsys/net/ip/l2/openthread/Kconfig"
+
 endmenu

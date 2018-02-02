@@ -236,7 +236,7 @@ def extract_interrupts(node_address, yaml, y_key, names, defs, def_label):
             name = []
         else:
             try:
-                name = [names.pop(0).upper()]
+                name = [convert_string_to_label(names.pop(0)).upper()]
             except:
                 name = []
 

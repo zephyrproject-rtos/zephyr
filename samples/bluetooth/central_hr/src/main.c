@@ -178,7 +178,7 @@ static void ad_parse(struct net_buf_simple *ad,
 			return;
 		}
 
-		if (len > ad->len || ad->len < 1) {
+		if (len > ad->len) {
 			printk("AD malformed\n");
 			return;
 		}

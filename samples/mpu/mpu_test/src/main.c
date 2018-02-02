@@ -41,7 +41,7 @@ static int shell_cmd_write_mcux(int argc, char *argv[])
 	ARG_UNUSED(argv);
 
 	struct device *flash_dev;
-	flash_dev = device_get_binding(CONFIG_SOC_FLASH_MCUX_DEV_NAME);
+	flash_dev = device_get_binding(FLASH_DEV_NAME);
 
 	u32_t value[2];
 

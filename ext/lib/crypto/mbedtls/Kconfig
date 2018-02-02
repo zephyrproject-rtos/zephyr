@@ -24,12 +24,23 @@ menuconfig MBEDTLS
 	help
 	  This option enables the mbedTLS cryptography library.
 
+if MBEDTLS
+
+choice
+	prompt "Select implementation"
+	default MBEDTLS_BUILTIN
+
 config MBEDTLS_BUILTIN
 	bool "Enable mbedTLS integrated sources"
-	depends on MBEDTLS
-	default n
 	help
 	  Link with local mbedTLS sources instead of external library.
+
+config MBEDTLS_LIBRARY
+	bool "Enable mbedTLS external library"
+	help
+	This option enables mbedTLS library.
+
+endchoice
 
 config MBEDTLS_CFG_FILE
 	string "mbed TLS configuration file"
@@ -59,13 +70,6 @@ config MBEDTLS_TEST
 	help
 	  Enable self test function for the crypto algorithms
 
-config MBEDTLS_LIBRARY
-	bool "Enable mbedTLS external library"
-	depends on MBEDTLS
-	default n
-	help
-	  This option enables mbedTLS library.
-
 config MBEDTLS_INSTALL_PATH
 	string "mbedTLS install path"
 	depends on MBEDTLS_LIBRARY
@@ -77,7 +81,6 @@ config MBEDTLS_INSTALL_PATH
 config MBEDTLS_ENABLE_HEAP
 	bool "Enable global heap for mbed TLS"
 	default n
-	depends on MBEDTLS
 	help
 	  This option enables the mbedtls to use the heap. This setting must
 	  be global so that various applications and libraries in Zephyr do not
@@ -107,3 +110,5 @@ config APP_LINK_WITH_MBEDTLS
 	  Add MBEDTLS header files to the 'app' include path. It may be
 	  disabled if the include paths for MBEDTLS are causing aliasing
 	  issues for 'app'.
+
+endif

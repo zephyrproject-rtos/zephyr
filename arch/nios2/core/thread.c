@@ -5,7 +5,7 @@
  */
 
 #include <kernel.h>
-#include <nano_internal.h>
+#include <kernel_internal.h>
 #include <kernel_structs.h>
 #include <wait_q.h>
 #include <string.h>

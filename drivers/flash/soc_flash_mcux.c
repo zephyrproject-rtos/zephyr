@@ -86,6 +86,21 @@ static int flash_mcux_write_protection(struct device *dev, bool enable)
 	return -EIO;
 }
 
+#if defined(CONFIG_FLASH_PAGE_LAYOUT)
+static const struct flash_pages_layout dev_layout = {
+	.pages_count = KB(CONFIG_FLASH_SIZE) / FLASH_ERASE_BLOCK_SIZE,
+	.pages_size = FLASH_ERASE_BLOCK_SIZE,
+};
+
+static void flash_mcux_pages_layout(struct device *dev,
+									const struct flash_pages_layout **layout,
+									size_t *layout_size)
+{
+	*layout = &dev_layout;
+	*layout_size = 1;
+}
+#endif /* CONFIG_FLASH_PAGE_LAYOUT */
+
 static struct flash_priv flash_data;
 
 static const struct flash_driver_api flash_mcux_api = {
@@ -94,8 +109,7 @@ static const struct flash_driver_api flash_mcux_api = {
 	.write = flash_mcux_write,
 	.read = flash_mcux_read,
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
-	.page_layout = (flash_api_pages_layout)
-		       flash_page_layout_not_implemented,
+	.page_layout = flash_mcux_pages_layout,
 #endif
 	.write_block_size = FSL_FEATURE_FLASH_PFLASH_BLOCK_WRITE_UNIT_SIZE,
 };
@@ -110,7 +124,7 @@ static int flash_mcux_init(struct device *dev)
 	return (rc == kStatus_Success) ? 0 : -EIO;
 }
 
-DEVICE_AND_API_INIT(flash_mcux, CONFIG_SOC_FLASH_MCUX_DEV_NAME,
+DEVICE_AND_API_INIT(flash_mcux, FLASH_DEV_NAME,
 			flash_mcux_init, &flash_data, NULL, POST_KERNEL,
 			CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_mcux_api);
 

@@ -7,7 +7,9 @@
 
 #include <string.h>
 #include <soc.h>
+#if !defined(CONFIG_ARCH_POSIX)
 #include <arch/arm/cortex_m/cmsis.h>
+#endif
 
 #include "util/mem.h"
 #include "hal/ecb.h"
@@ -29,12 +31,23 @@ static void do_ecb(struct ecb_param *ecb)
 		NRF_ECB->EVENTS_ENDECB = 0;
 		NRF_ECB->EVENTS_ERRORECB = 0;
 		NRF_ECB->TASKS_STARTECB = 1;
+#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
+		NRF_ECB_regw_sideeffects_TASKS_STOPECB();
+		NRF_ECB_regw_sideeffects_TASKS_STARTECB();
+#endif
 		while ((NRF_ECB->EVENTS_ENDECB == 0) &&
 		       (NRF_ECB->EVENTS_ERRORECB == 0) &&
 		       (NRF_ECB->ECBDATAPTR != 0)) {
+#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
+			__WFE();
+#else
 			/*__WFE();*/
+#endif
 		}
 		NRF_ECB->TASKS_STOPECB = 1;
+#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
+		NRF_ECB_regw_sideeffects_TASKS_STOPECB();
+#endif
 	} while ((NRF_ECB->EVENTS_ERRORECB != 0) || (NRF_ECB->ECBDATAPTR == 0));
 
 	NRF_ECB->ECBDATAPTR = 0;
@@ -99,6 +112,10 @@ u32_t ecb_encrypt_nonblocking(struct ecb *ecb)
 
 	/* start the encryption h/w */
 	NRF_ECB->TASKS_STARTECB = 1;
+#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
+	NRF_ECB_regw_sideeffects_INTENSET();
+	NRF_ECB_regw_sideeffects_TASKS_STARTECB();
+#endif
 
 	return 0;
 }
@@ -107,6 +124,9 @@ static void ecb_cleanup(void)
 {
 	/* stop h/w */
 	NRF_ECB->TASKS_STOPECB = 1;
+#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
+	NRF_ECB_regw_sideeffects_TASKS_STOPECB();
+#endif
 
 	/* cleanup interrupt */
 	irq_disable(ECB_IRQn);

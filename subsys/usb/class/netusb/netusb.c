@@ -7,7 +7,7 @@
  */
 
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_DEVICE_NETWORK_DEBUG_LEVEL
-#define SYS_LOG_DOMAIN "netusb"
+#define SYS_LOG_DOMAIN "usb/net"
 #include <logging/sys_log.h>
 
 /* Enable verbose debug printing extra hexdumps */
@@ -133,7 +133,7 @@ static void netusb_status_cb(enum usb_dc_status_code status, u8_t *param)
 	default:
 		SYS_LOG_DBG("USB unknown state");
 		break;
-		}
+	}
 }
 
 static int netusb_class_handler(struct usb_setup_packet *setup,
@@ -151,17 +151,6 @@ static int netusb_class_handler(struct usb_setup_packet *setup,
 	return netusb.func->class_handler(setup, len, data);
 }
 
-static int netusb_custom_handler(struct usb_setup_packet *setup,
-				 s32_t *len, u8_t **data)
-{
-	/**
-	 * FIXME:
-	 * Keep custom handler for now in a case some data is sent
-	 * over this endpoint, at the moment return to higher layer.
-	 */
-	return -ENOTSUP;
-}
-
 #if !defined(CONFIG_USB_COMPOSITE_DEVICE)
 /* TODO: FIXME: correct buffer size */
 static u8_t interface_data[300];
@@ -172,7 +161,6 @@ static struct usb_cfg_data netusb_config = {
 	.cb_usb_status = netusb_status_cb,
 	.interface = {
 		.class_handler = netusb_class_handler,
-		.custom_handler = netusb_custom_handler,
 		.custom_handler = NULL,
 		.vendor_handler = NULL,
 		.payload_data = NULL,

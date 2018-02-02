@@ -1,0 +1,6 @@
+/* SoC level DTS fixup file */
+
+#define FLASH_DEV_BASE_ADDRESS		NXP_KINETIS_FTFA_40020000_BASE_ADDRESS_0
+#define FLASH_DEV_NAME			NXP_KINETIS_FTFA_40020000_LABEL
+
+/* End of SoC Level DTS fixup file */

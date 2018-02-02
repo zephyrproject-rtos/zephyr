@@ -5,3 +5,9 @@ arch: arm
 toolchain:
   - zephyr
   - gccarmemb
+supported:
+  - gpio
+  - ble
+  - i2c
+  - spi
+  - usb_device

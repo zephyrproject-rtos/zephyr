@@ -25,12 +25,19 @@
 #define CONFIG_DATA(cfg)					\
 ((struct spi_stm32_data * const)(cfg)->dev->driver_data)
 
-#ifdef LL_SPI_SR_UDR
+/*
+ * Check for SPI_SR_FRE to determine support for TI mode frame format
+ * error flag, because STM32F1 SoCs do not support it and  STM32CUBE
+ * for F1 family defines an unused LL_SPI_SR_FRE.
+ */
+#if defined(LL_SPI_SR_UDR)
 #define SPI_STM32_ERR_MSK (LL_SPI_SR_UDR | LL_SPI_SR_CRCERR | LL_SPI_SR_MODF | \
 			   LL_SPI_SR_OVR | LL_SPI_SR_FRE)
-#else
+#elif defined(SPI_SR_FRE)
 #define SPI_STM32_ERR_MSK (LL_SPI_SR_CRCERR | LL_SPI_SR_MODF | \
 			   LL_SPI_SR_OVR | LL_SPI_SR_FRE)
+#else
+#define SPI_STM32_ERR_MSK (LL_SPI_SR_CRCERR | LL_SPI_SR_MODF | LL_SPI_SR_OVR)
 #endif
 
 /* Value to shift out when no application data needs transmitting. */
@@ -50,17 +57,16 @@ static int spi_stm32_get_err(SPI_TypeDef *spi)
 
 static inline u16_t spi_stm32_next_tx(struct spi_stm32_data *data)
 {
-	u16_t tx_frame;
+	u16_t tx_frame = SPI_STM32_TX_NOP;
 
-	if (spi_context_tx_on(&data->ctx)) {
+	if (spi_context_tx_buf_on(&data->ctx)) {
 		if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
 			tx_frame = UNALIGNED_GET((u8_t *)(data->ctx.tx_buf));
 		} else {
 			tx_frame = UNALIGNED_GET((u16_t *)(data->ctx.tx_buf));
 		}
-	} else {
-		tx_frame = SPI_STM32_TX_NOP;
 	}
+
 	return tx_frame;
 }
 
@@ -90,16 +96,16 @@ static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 
 	if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
 		rx_frame = LL_SPI_ReceiveData8(spi);
-		if (spi_context_rx_on(&data->ctx)) {
+		if (spi_context_rx_buf_on(&data->ctx)) {
 			UNALIGNED_PUT(rx_frame, (u8_t *)data->ctx.rx_buf);
-			spi_context_update_rx(&data->ctx, 1, 1);
 		}
+		spi_context_update_rx(&data->ctx, 1, 1);
 	} else {
 		rx_frame = LL_SPI_ReceiveData16(spi);
-		if (spi_context_rx_on(&data->ctx)) {
+		if (spi_context_rx_buf_on(&data->ctx)) {
 			UNALIGNED_PUT(rx_frame, (u16_t *)data->ctx.rx_buf);
-			spi_context_update_rx(&data->ctx, 2, 1);
 		}
+		spi_context_update_rx(&data->ctx, 2, 1);
 	}
 }
 
@@ -125,18 +131,18 @@ static void spi_stm32_shift_s(SPI_TypeDef *spi, struct spi_stm32_data *data)
 	if (LL_SPI_IsActiveFlag_RXNE(spi)) {
 		if (SPI_WORD_SIZE_GET(data->ctx.config->operation) == 8) {
 			rx_frame = LL_SPI_ReceiveData8(spi);
-			if (spi_context_rx_on(&data->ctx)) {
+			if (spi_context_rx_buf_on(&data->ctx)) {
 				UNALIGNED_PUT(rx_frame,
 					      (u8_t *)data->ctx.rx_buf);
-				spi_context_update_rx(&data->ctx, 1, 1);
 			}
+			spi_context_update_rx(&data->ctx, 1, 1);
 		} else {
 			rx_frame = LL_SPI_ReceiveData16(spi);
-			if (spi_context_rx_on(&data->ctx)) {
+			if (spi_context_rx_buf_on(&data->ctx)) {
 				UNALIGNED_PUT(rx_frame,
 					      (u16_t *)data->ctx.rx_buf);
-				spi_context_update_rx(&data->ctx, 2, 1);
 			}
+			spi_context_update_rx(&data->ctx, 2, 1);
 		}
 	}
 }
@@ -313,7 +319,10 @@ static int spi_stm32_configure(struct spi_config *config)
 #if defined(CONFIG_SPI_STM32_HAS_FIFO)
 	LL_SPI_SetRxFIFOThreshold(spi, LL_SPI_RX_FIFO_TH_QUARTER);
 #endif
+
+#ifndef CONFIG_SOC_SERIES_STM32F1X
 	LL_SPI_SetStandard(spi, LL_SPI_PROTOCOL_MOTOROLA);
+#endif
 
 	/* At this point, it's mandatory to set this on the context! */
 	data->ctx.config = config;

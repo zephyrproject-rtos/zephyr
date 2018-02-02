@@ -49,9 +49,6 @@
 
 #define SEQ_AUTH(iv_index, seq)     (((u64_t)iv_index) << 24 | (u64_t)seq)
 
-/* Retransmit timeout after which to retransmit unacked segments */
-#define SEG_RETRANSMIT_TIMEOUT      K_MSEC(400)
-
 /* Number of retransmit attempts (after the initial transmit) per segment */
 #define SEG_RETRANSMIT_ATTEMPTS     4
 
@@ -66,6 +63,7 @@ static struct seg_tx {
 	u8_t                     seg_n:5,       /* Last segment index */
 				 new_key:1;     /* New/old key */
 	u8_t                     nack_count;    /* Number of unacked segs */
+	u8_t                     ttl;
 	const struct bt_mesh_send_cb *cb;
 	void                    *cb_data;
 	struct k_delayed_work    retransmit;    /* Retransmit timer */
@@ -214,8 +212,16 @@ static void seg_send_start(u16_t duration, int err, void *user_data)
 static void seg_sent(int err, void *user_data)
 {
 	struct seg_tx *tx = user_data;
+	s32_t timeout;
 
-	k_delayed_work_submit(&tx->retransmit, SEG_RETRANSMIT_TIMEOUT);
+	/* "This timer shall be set to a minimum of 200 + 50 * TTL
+	 * milliseconds.". We use 400 since 300 is a common send
+	 * duration for standard HCI, and we need to have a timeout
+	 * that's bigger than that.
+	 */
+	timeout = K_MSEC(400) + 50 * tx->ttl;
+
+	k_delayed_work_submit(&tx->retransmit, timeout);
 }
 
 static const struct bt_mesh_send_cb first_sent_cb = {
@@ -317,6 +323,12 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 	tx->new_key = net_tx->sub->kr_flag;
 	tx->cb = cb;
 	tx->cb_data = cb_data;
+
+	if (net_tx->ctx->send_ttl == BT_MESH_TTL_DEFAULT) {
+		tx->ttl = bt_mesh_default_ttl_get();
+	} else {
+		tx->ttl = net_tx->ctx->send_ttl;
+	}
 
 	seq_zero = tx->seq_auth & 0x1fff;
 
@@ -852,11 +864,18 @@ static int trans_unseg(struct net_buf_simple *buf, struct bt_mesh_net_rx *rx,
 static inline s32_t ack_timeout(struct seg_rx *rx)
 {
 	s32_t to;
+	u8_t ttl;
+
+	if (rx->ttl == BT_MESH_TTL_DEFAULT) {
+		ttl = bt_mesh_default_ttl_get();
+	} else {
+		ttl = rx->ttl;
+	}
 
 	/* The acknowledgment timer shall be set to a minimum of
 	 * 150 + 50 * TTL milliseconds.
 	 */
-	to = K_MSEC(150 + (50 * rx->ttl));
+	to = K_MSEC(150 + (50 * ttl));
 
 	/* 100 ms for every not yet received segment */
 	to += K_MSEC(((rx->seg_n + 1) - popcount(rx->block)) * 100);
@@ -946,7 +965,7 @@ static int send_ack(struct bt_mesh_subnet *sub, u16_t src, u16_t dst,
 				NULL, NULL, NULL);
 }
 
-static void seg_rx_reset(struct seg_rx *rx)
+static void seg_rx_reset(struct seg_rx *rx, bool full_reset)
 {
 	BT_DBG("rx %p", rx);
 
@@ -959,12 +978,18 @@ static void seg_rx_reset(struct seg_rx *rx)
 						&rx->seq_auth);
 	}
 
-	/* We don't reset rx->net and rx->seq_auth here since we need to
-	 * be able to send an ack if we receive a segment after we've
-	 * already received the full SDU.
-	 */
-
 	rx->in_use = 0;
+
+	/* We don't always reset these values since we need to be able to
+	 * send an ack if we receive a segment after we've already received
+	 * the full SDU.
+	 */
+	if (full_reset) {
+		rx->seq_auth = 0;
+		rx->sub = NULL;
+		rx->src = BT_MESH_ADDR_UNASSIGNED;
+		rx->dst = BT_MESH_ADDR_UNASSIGNED;
+	}
 }
 
 static void seg_ack(struct k_work *work)
@@ -973,11 +998,11 @@ static void seg_ack(struct k_work *work)
 
 	BT_DBG("rx %p", rx);
 
-	if (k_uptime_get_32() - rx->last > (60 * MSEC_PER_SEC)) {
+	if (k_uptime_get_32() - rx->last > K_SECONDS(60)) {
 		BT_WARN("Incomplete timer expired");
 		send_ack(rx->sub, rx->dst, rx->src, rx->ttl,
 			 &rx->seq_auth, 0, rx->obo);
-		seg_rx_reset(rx);
+		seg_rx_reset(rx, true);
 
 		if (IS_ENABLED(CONFIG_BT_TESTING)) {
 			bt_test_mesh_trans_incomp_timer_exp();
@@ -1018,7 +1043,10 @@ static struct seg_rx *seg_rx_find(struct bt_mesh_net_rx *net_rx,
 			continue;
 		}
 
-		if (rx->seq_auth == *seq_auth) {
+		/* Return newer RX context in addition to an exact match, so
+		 * the calling function can properly discard an old SeqAuth.
+		 */
+		if (rx->seq_auth >= *seq_auth) {
 			return rx;
 		}
 
@@ -1029,7 +1057,7 @@ static struct seg_rx *seg_rx_find(struct bt_mesh_net_rx *net_rx,
 			/* Clear out the old context since the sender
 			 * has apparently started sending a new SDU.
 			 */
-			seg_rx_reset(rx);
+			seg_rx_reset(rx, true);
 
 			/* Return non-match so caller can re-allocate */
 			return NULL;
@@ -1133,6 +1161,12 @@ static int trans_seg(struct net_buf_simple *buf, struct bt_mesh_net_rx *net_rx,
 	/* Look for old RX sessions */
 	rx = seg_rx_find(net_rx, seq_auth);
 	if (rx) {
+		/* Discard old SeqAuth packet */
+		if (rx->seq_auth > *seq_auth) {
+			BT_WARN("Ignoring old SeqAuth");
+			return -EINVAL;
+		}
+
 		if (!seg_rx_is_valid(rx, net_rx, hdr, seg_n)) {
 			return -EINVAL;
 		}
@@ -1200,7 +1234,7 @@ found_rx:
 			BT_ERR("Too large SDU len");
 			send_ack(net_rx->sub, net_rx->dst, net_rx->ctx.addr,
 				 net_rx->ctx.send_ttl, seq_auth, 0, rx->obo);
-			seg_rx_reset(rx);
+			seg_rx_reset(rx, true);
 			return -EMSGSIZE;
 		}
 	} else {
@@ -1256,7 +1290,7 @@ found_rx:
 		err = sdu_recv(net_rx, *hdr, ASZMIC(hdr), &rx->buf);
 	}
 
-	seg_rx_reset(rx);
+	seg_rx_reset(rx, false);
 
 	return err;
 }
@@ -1354,9 +1388,7 @@ void bt_mesh_rx_reset(void)
 	BT_DBG("");
 
 	for (i = 0; i < ARRAY_SIZE(seg_rx); i++) {
-		seg_rx_reset(&seg_rx[i]);
-		seg_rx[i].src = BT_MESH_ADDR_UNASSIGNED;
-		seg_rx[i].dst = BT_MESH_ADDR_UNASSIGNED;
+		seg_rx_reset(&seg_rx[i], true);
 	}
 }
 

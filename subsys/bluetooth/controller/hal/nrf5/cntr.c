@@ -24,6 +24,9 @@ void cntr_init(void)
 			     RTC_EVTENSET_COMPARE1_Msk);
 	NRF_RTC->INTENSET = (RTC_INTENSET_COMPARE0_Msk |
 			     RTC_INTENSET_COMPARE1_Msk);
+#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
+	NRF_RTC0_regw_sideeffects();
+#endif
 }
 
 u32_t cntr_start(void)
@@ -33,6 +36,9 @@ u32_t cntr_start(void)
 	}
 
 	NRF_RTC->TASKS_START = 1;
+#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
+	NRF_RTC0_regw_sideeffects();
+#endif
 
 	return 0;
 }
@@ -46,6 +52,9 @@ u32_t cntr_stop(void)
 	}
 
 	NRF_RTC->TASKS_STOP = 1;
+#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
+	NRF_RTC0_regw_sideeffects();
+#endif
 
 	return 0;
 }

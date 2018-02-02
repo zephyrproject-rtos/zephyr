@@ -22,7 +22,7 @@ void posix_print_error_and_exit(const char *format, ...)
 	va_start(variable_args, format);
 	vfprintf(stderr, format, variable_args);
 	va_end(variable_args);
-	main_clean_up(1);
+	posix_exit(1);
 }
 
 void posix_print_warning(const char *format, ...)

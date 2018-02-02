@@ -2,6 +2,7 @@
 
 /*
  * Copyright (c) 2017 PHYTEC Messtechnik GmbH
+ * Copyright (c) 2017, 2018 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +13,7 @@
 #include <usb/usb_common.h>
 #include <usb/class/usb_msc.h>
 #include <usb/class/usb_cdc.h>
+#include <usb/class/usb_hid.h>
 #include "usb_descriptor.h"
 
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_DEVICE_LEVEL
@@ -100,6 +102,13 @@ struct dev_common_descriptor {
 		struct usb_ep_descriptor if0_in_ep;
 		struct usb_ep_descriptor if0_out_ep;
 	} __packed mass_cfg;
+#endif
+#ifdef CONFIG_USB_DEVICE_HID
+	struct usb_hid_config {
+		struct usb_if_descriptor if0;
+		struct usb_hid_descriptor if0_hid;
+		struct usb_ep_descriptor if0_int_ep;
+	} __packed hid_cfg;
 #endif
 	struct usb_string_desription {
 		struct usb_string_descriptor lang_descr;
@@ -544,7 +553,48 @@ static struct dev_common_descriptor common_desc = {
 			.bInterval = 0x00,
 		},
 	},
-#endif
+#endif /* CONFIG_USB_MASS_STORAGE */
+#ifdef CONFIG_USB_DEVICE_HID
+	.hid_cfg = {
+		/* Interface descriptor */
+		.if0 = {
+			.bLength = sizeof(struct usb_if_descriptor),
+			.bDescriptorType = USB_INTERFACE_DESC,
+			.bInterfaceNumber = FIRST_IFACE_HID,
+			.bAlternateSetting = 0,
+			.bNumEndpoints = 1,
+			.bInterfaceClass = HID_CLASS,
+			.bInterfaceSubClass = 0,
+			.bInterfaceProtocol = 0,
+			.iInterface = 0,
+		},
+		.if0_hid = {
+			.bLength = sizeof(struct usb_hid_descriptor),
+			.bDescriptorType = USB_HID_DESC,
+			.bcdHID = sys_cpu_to_le16(USB_1_1),
+			.bCountryCode = 0,
+			.bNumDescriptors = 1,
+			.subdesc[0] = {
+				.bDescriptorType = USB_HID_REPORT_DESC,
+				/*
+				 * descriptor length needs to be set
+				 * after initialization
+				 */
+				.wDescriptorLength = 0,
+			},
+		},
+		.if0_int_ep = {
+			.bLength = sizeof(struct usb_ep_descriptor),
+			.bDescriptorType = USB_ENDPOINT_DESC,
+			.bEndpointAddress = CONFIG_HID_INT_EP_ADDR,
+			.bmAttributes = USB_DC_EP_INTERRUPT,
+			.wMaxPacketSize =
+				sys_cpu_to_le16(
+				CONFIG_HID_INTERRUPT_EP_MPS),
+			.bInterval = 0x09,
+		},
+	},
+#endif /* CONFIG_USB_DEVICE_HID */
 	.string_descr = {
 		.lang_descr = {
 			.bLength = sizeof(struct usb_string_descriptor),
@@ -614,3 +664,11 @@ u8_t *usb_get_device_descriptor(void)
 
 	return (u8_t *) &common_desc;
 }
+
+#ifdef CONFIG_USB_DEVICE_HID
+void usb_set_hid_report_size(u16_t report_desc_size)
+{
+	common_desc.hid_cfg.if0_hid.subdesc[0].wDescriptorLength =
+		sys_cpu_to_le16(report_desc_size);
+}
+#endif

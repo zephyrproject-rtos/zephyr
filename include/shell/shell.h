@@ -87,11 +87,11 @@ struct shell_module {
  * @brief Create a standalone command and set it up for boot time
  * initialization.
  *
- * @details This macro define a shell_cmd object hat is automatically
+ * @details This macro defines a shell_cmd object that is automatically
  * configured by the kernel during system initialization.
  *
- * The command will be available in he default module, so it will be available
- * immediatly when.
+ * The command will be available in the default module, so it will be available
+ * immediately.
  *
  */
 #ifdef CONFIG_CONSOLE_SHELL

@@ -17,9 +17,6 @@ enable_language(C CXX ASM)
 check_c_compiler_flag("" toolchain_is_ok)
 assert(toolchain_is_ok "The toolchain is unable to build a dummy C file. See CMakeError.log.")
 
-# Do not generate make install target.
-set(CMAKE_SKIP_INSTALL_RULES ON)
-
 set(CMAKE_EXECUTABLE_SUFFIX .elf)
 
 set(SOC_NAME ${CONFIG_SOC})
@@ -679,7 +676,7 @@ if(CONFIG_USERSPACE)
     ${GPERF}
     --output-file ${OUTPUT_SRC_PRE}
     ${OBJ_LIST}
-    DEPENDS obj_list
+    DEPENDS obj_list ${OBJ_LIST}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
   add_custom_target(output_src_pre DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT_SRC_PRE})
@@ -696,7 +693,7 @@ if(CONFIG_USERSPACE)
     -i ${OUTPUT_SRC_PRE}
     -o ${OUTPUT_SRC}
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
-    DEPENDS output_src_pre
+    DEPENDS output_src_pre ${OUTPUT_SRC_PRE}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
   add_custom_target(output_src DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/${OUTPUT_SRC})

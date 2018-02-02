@@ -49,10 +49,22 @@
 			#clocks-cells = <3>;
 		};
 
-		flash0: flash@0 {
-			compatible = "soc-nv-flash";
-			label = "MCUX_FLASH";
-			reg = <0 0x80000>;
+		flash-controller@40020000 {
+			compatible = "nxp,kinetis-ftfa";
+			label = "FLASH_CTRL";
+			reg = <0x40020000 0x2c>;
+			interrupts = <5 0>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				label = "MCUX_FLASH";
+				reg = <0 0x80000>;
+				erase-block-size = <2048>;
+				write-block-size = <4>;
+			};
 		};
 
 		i2c0: i2c@40066000 {

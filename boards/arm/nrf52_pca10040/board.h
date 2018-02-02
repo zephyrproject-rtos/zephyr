@@ -12,6 +12,7 @@
 /* Push button switch 0 */
 #define SW0_GPIO_PIN	13
 #define SW0_GPIO_NAME	CONFIG_GPIO_NRF5_P0_DEV_NAME
+#define SW0_GPIO_PIN_PUD GPIO_PUD_PULL_UP
 
 /* Push button switch 1 */
 #define SW1_GPIO_PIN	14
