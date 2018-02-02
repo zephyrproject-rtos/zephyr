@@ -346,7 +346,16 @@ static inline u32_t _arch_syscall_invoke0(u32_t call_id)
 	return ret;
 }
 
-extern int _arch_is_user_context(void);
+static inline int _arch_is_user_context(void)
+{
+	u32_t status;
+
+	__asm__ volatile("lr %0, [%[status32]]\n"
+			 : "=r"(status)
+			 : [status32] "i" (_ARC_V2_STATUS32));
+
+	return !(status & _ARC_V2_STATUS32_US);
+}
 
 #endif /* _ASMLANGUAGE */
 #endif /* CONFIG_USERSPACE */

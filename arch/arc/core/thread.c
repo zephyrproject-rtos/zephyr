@@ -127,6 +127,15 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #endif
 
 #if CONFIG_USERSPACE
+	/*
+	 * enable US bit, US is read as zero in user mode. This will allow use
+	 * mode sleep instructions, and it enables a form of denial-of-service
+	 * attack by putting the processor in sleep mode, but since interrupt
+	 * level/mask can't be set from user space that's not worse than
+	 * executing a loop without yielding.
+	 */
+	pInitCtx->status32 |= _ARC_V2_STATUS32_US;
+
 	if (options & K_USER) {
 		thread->arch.priv_stack_start = (u32_t) stackEnd;
 		thread->arch.priv_stack_size =
