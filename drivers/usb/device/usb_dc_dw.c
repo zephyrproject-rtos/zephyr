@@ -32,8 +32,17 @@
 /* convert from hardware endpoint index and direction to endpoint address */
 #define USB_DW_EP_IDX2ADDR(idx, dir)    ((idx) | ((dir) & USB_EP_DIR_MASK))
 
+#define USB_DW_EP_ADDR2PRV(endpoint) ((struct usb_ep_ctrl_prv *) ( \
+	((USB_DW_EP_ADDR2DIR(endpoint) == USB_EP_DIR_OUT) ? \
+		&usb_dw_ctrl.out_ep_ctrl[USB_DW_EP_ADDR2IDX(endpoint)] : \
+		&usb_dw_ctrl.in_ep_ctrl[USB_DW_EP_ADDR2IDX(endpoint)])))
+
+
 /* Number of SETUP back-to-back packets */
 #define USB_DW_SUP_CNT (1)
+
+/* IN/OUT Transfer callback */
+typedef void (*usb_dc_transfer_callback)(u8_t ep, int status, size_t tsize);
 
 /*
  * USB endpoint private structure.
@@ -42,9 +51,15 @@ struct usb_ep_ctrl_prv {
 	u8_t ep_ena;
 	u8_t fifo_num;
 	u8_t fifo_size;
-	u16_t mps;         /* Max ep pkt size */
-	usb_dc_ep_callback cb;/* Endpoint callback function */
+	u16_t mps;		/* Max ep pkt size */
+	usb_dc_ep_callback cb;	/* Endpoint callback function */
 	u32_t data_len;
+	u8_t *transfer_buf;	/** IN/OUT transfer buffer */
+	u32_t transfer_size;	/** number of bytes processed by the transfer */
+	u32_t transfer_rem;	/** number of bytes to process */
+	int transfer_result;	/** Transfer result */
+	usb_dc_transfer_callback transfer_cb;	/** Transfer callback */
+	struct k_sem transfer_sem;	/** transfer boolean semaphore */
 };
 
 /*
@@ -369,142 +384,201 @@ static int usb_dw_ep_set(u8_t ep,
 	return 0;
 }
 
-static void usb_dw_prep_rx(const u8_t ep, u8_t setup)
+
+static inline void usb_dw_write_fifo(u8_t ep_idx, const u8_t *data, size_t dlen)
 {
-	enum usb_dw_out_ep_idx ep_idx = USB_DW_EP_ADDR2IDX(ep);
-	u32_t ep_mps = usb_dw_ctrl.out_ep_ctrl[ep_idx].mps;
+	unsigned int i;
 
-	/* Set max RX size to EP mps so we get an interrupt
-	 * each time a packet is received
-	 */
-
-	USB_DW->out_ep_reg[ep_idx].doeptsiz =
-	    (USB_DW_SUP_CNT << USB_DW_DOEPTSIZ_SUP_CNT_OFFSET) |
-	    (1 << USB_DW_DEPTSIZ_PKT_CNT_OFFSET) | ep_mps;
-
-    /* Clear NAK and enable ep */
-	if (!setup) {
-		USB_DW->out_ep_reg[ep_idx].doepctl |= USB_DW_DEPCTL_CNAK;
-	}
-	USB_DW->out_ep_reg[ep_idx].doepctl |= USB_DW_DEPCTL_EP_ENA;
-
-	SYS_LOG_DBG("USB OUT EP%d armed", ep_idx);
-}
-
-static int usb_dw_tx(u8_t ep, const u8_t *const data,
-		u32_t data_len)
-{
-	enum usb_dw_in_ep_idx ep_idx = USB_DW_EP_ADDR2IDX(ep);
-	u32_t max_xfer_size, max_pkt_cnt, pkt_cnt, avail_space;
-	u32_t ep_mps = usb_dw_ctrl.in_ep_ctrl[ep_idx].mps;
-	unsigned int key;
-	u32_t i;
-
-	/* Wait for FIFO space available */
-	do {
-		avail_space = usb_dw_tx_fifo_avail(ep_idx);
-		if (avail_space == usb_dw_ctrl.in_ep_ctrl[ep_idx].fifo_size) {
-			break;
-		}
-		/* Make sure we don't hog the CPU */
-		k_yield();
-	} while (1);
-
-	key = irq_lock();
-
-	avail_space *= 4;
-	if (!avail_space) {
-		SYS_LOG_ERR("USB IN EP%d no space available, DTXFSTS %x",
-		    ep_idx, USB_DW->in_ep_reg[ep_idx].dtxfsts);
-		irq_unlock(key);
-		return -EAGAIN;
-	}
-
-	if (data_len > avail_space) {
-		data_len = avail_space;
-	}
-
-	if (data_len != 0) {
-		/* Get max packet size and packet count for ep */
-		if (ep_idx == USB_DW_IN_EP_0) {
-			max_pkt_cnt =
-			    USB_DW_DIEPTSIZ0_PKT_CNT_MASK >>
-			    USB_DW_DEPTSIZ_PKT_CNT_OFFSET;
-			max_xfer_size =
-			    USB_DW_DEPTSIZ0_XFER_SIZE_MASK >>
-			    USB_DW_DEPTSIZ_XFER_SIZE_OFFSET;
-		} else {
-			max_pkt_cnt =
-			    USB_DW_DIEPTSIZn_PKT_CNT_MASK >>
-			    USB_DW_DEPTSIZ_PKT_CNT_OFFSET;
-			max_xfer_size =
-			    USB_DW_DEPTSIZn_XFER_SIZE_MASK >>
-			    USB_DW_DEPTSIZ_XFER_SIZE_OFFSET;
-		}
-
-		/* Check if transfer len is too big */
-		if (data_len > max_xfer_size) {
-			SYS_LOG_WRN("USB IN EP%d len too big (%d->%d)", ep_idx,
-			    data_len, max_xfer_size);
-			data_len = max_xfer_size;
-		}
-
-		/*
-		 * Program the transfer size and packet count as follows:
-		 *
-		 * transfer size = N * ep_maxpacket + short_packet
-		 * pktcnt = N + (short_packet exist ? 1 : 0)
-		 */
-
-		pkt_cnt = (data_len + ep_mps - 1) / ep_mps;
-
-		if (pkt_cnt > max_pkt_cnt) {
-			SYS_LOG_WRN("USB IN EP%d pkt count too big (%d->%d)",
-			    ep_idx, pkt_cnt, pkt_cnt);
-			pkt_cnt = max_pkt_cnt;
-			data_len = pkt_cnt * ep_mps;
-		}
-	} else {
-		/* Zero length packet */
-		pkt_cnt = 1;
-	}
-
-	/* Set number of packets and transfer size */
-	USB_DW->in_ep_reg[ep_idx].dieptsiz =
-	    (pkt_cnt << USB_DW_DEPTSIZ_PKT_CNT_OFFSET) | data_len;
-
-	/* Clear NAK and enable ep */
-	USB_DW->in_ep_reg[ep_idx].diepctl |= (USB_DW_DEPCTL_EP_ENA |
-					      USB_DW_DEPCTL_CNAK);
-
-	/*
-	 * Write data to FIFO, make sure that we are protected against
-	 * other USB register accesses.  According to "DesignWare Cores
-	 * USB 1.1/2.0 Device Subsystem-AHB/VCI Databook": "During FIFO
-	 * access, the application must not access the UDC/Subsystem
-	 * registers or vendor registers (for ULPI mode). After starting
-	 * to access a FIFO, the application must complete the transaction
-	 * before accessing the register."
-	 */
-	for (i = 0; i < data_len; i += 4) {
+	for (i = 0; i < dlen; i += 4) {
 		u32_t val = data[i];
 
-		if (i + 1 < data_len) {
+		if (i + 1 < dlen) {
 			val |= ((u32_t)data[i+1]) << 8;
 		}
-		if (i + 2 < data_len) {
+		if (i + 2 < dlen) {
 			val |= ((u32_t)data[i+2]) << 16;
 		}
-		if (i + 3 < data_len) {
+		if (i + 3 < dlen) {
 			val |= ((u32_t)data[i+3]) << 24;
 		}
 		USB_DW_EP_FIFO(ep_idx) = val;
 	}
+}
+
+static inline void usb_dw_read_fifo(u8_t ep_idx, u8_t *dest, size_t size)
+{
+	unsigned int i;
+
+	/* Data in the FIFOs is always stored per 32-bit words */
+	for (i = 0; i < (size & ~0x3); i += 4) {
+		*(u32_t *)(dest + i) = USB_DW_EP_FIFO(ep_idx);
+	}
+
+	/* Remaining data */
+	if (size & 0x3)  {
+		u32_t word = USB_DW_EP_FIFO(ep_idx);
+		unsigned int j;
+
+		for (j = 0; j < (size & 0x3); j++) {
+			*(dest + i + j) =
+				(sys_cpu_to_le32(word) >> (8 * j)) & 0xFF;
+		}
+	}
+}
+
+static inline void usb_dw_fin(u8_t ep)
+{
+	struct usb_ep_ctrl_prv *ep_ctrl = USB_DW_EP_ADDR2PRV(ep);
+	unsigned int to_write;
+
+	/* Any Ongoing Transfer ? */
+	if (!ep_ctrl->transfer_buf) {
+		return;
+	}
+
+	/* How much data remaining */
+	to_write = min(ep_ctrl->mps, ep_ctrl->transfer_rem);
+
+	/* Write Data to FIFO */
+	usb_dw_write_fifo(USB_DW_EP_ADDR2IDX(ep), ep_ctrl->transfer_buf,
+			  to_write);
+
+	/* Update Transfer Info */
+	ep_ctrl->transfer_buf += to_write;
+	ep_ctrl->transfer_rem -= to_write;
+	ep_ctrl->transfer_size += to_write;
+}
+
+static inline void usb_dw_fout(u8_t ep, size_t bcnt)
+{
+	struct usb_ep_ctrl_prv *ep_ctrl = USB_DW_EP_ADDR2PRV(ep);
+
+	/* Any Ongoing Transfer ? */
+	if (!ep_ctrl->transfer_buf) {
+		return;
+	}
+
+	/* Read available data */
+	usb_dw_read_fifo(USB_DW_EP_ADDR2IDX(ep), ep_ctrl->transfer_buf, bcnt);
+
+	/* Update Transfer Info */
+	ep_ctrl->transfer_buf += bcnt;
+	ep_ctrl->transfer_rem -= bcnt;
+	ep_ctrl->transfer_size += bcnt;
+}
+
+/* for ep_read/ep_write compatibility */
+static void usb_dw_transfer_cb_legacy(u8_t ep, int status, size_t tsize)
+{
+	struct usb_ep_ctrl_prv *ep_ctrl = USB_DW_EP_ADDR2PRV(ep);
+
+	ARG_UNUSED(status);
+	ARG_UNUSED(tsize);
+
+	if (ep_ctrl->cb) {
+		if (USB_DW_EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
+			ep_ctrl->cb(ep, USB_DC_EP_DATA_OUT);
+		} else {
+			ep_ctrl->cb(ep, USB_DC_EP_DATA_IN);
+		}
+	}
+}
+
+static inline void usb_dw_transfer_complete(u8_t ep)
+{
+	struct usb_ep_ctrl_prv *ep_ctrl = USB_DW_EP_ADDR2PRV(ep);
+
+	/* Any Ongoing Transfer ? */
+	if (!ep_ctrl->transfer_buf) {
+		return;
+	}
+
+	ep_ctrl->transfer_buf = NULL;
+	ep_ctrl->transfer_result = 0;
+	k_sem_give(&ep_ctrl->transfer_sem);
+
+	/* Asynchronous transfer callback */
+	if (ep_ctrl->transfer_cb) {
+		ep_ctrl->transfer_cb(ep, 0, ep_ctrl->transfer_size);
+	}
+}
+
+static int usb_dc_ep_transfer(const u8_t ep, u8_t *buf, size_t dlen,
+			      bool is_in, usb_dc_transfer_callback cb)
+{
+	struct usb_ep_ctrl_prv *ep_ctrl = USB_DW_EP_ADDR2PRV(ep);
+	u32_t pkt_cnt = 0;
+	unsigned int key;
+	int ret;
+
+	SYS_LOG_DBG("ep 0x%02x, len=%d, in=%d, sync=%s", ep, dlen, is_in,
+		    cb ? "no" : "yes");
+
+	/* DIV ROUND UP */
+	pkt_cnt = (dlen + ep_ctrl->mps - 1) / ep_ctrl->mps;
+	if (!dlen) {
+		pkt_cnt = 1;
+	}
+
+	/* Transfer Already Ongoing ? */
+	if (k_sem_take(&ep_ctrl->transfer_sem, K_NO_WAIT)) {
+		return -EBUSY;
+	}
+
+	ep_ctrl->transfer_buf = buf;
+	ep_ctrl->transfer_result = -EBUSY;
+	ep_ctrl->transfer_size = 0;
+	ep_ctrl->transfer_rem = dlen;
+	ep_ctrl->transfer_cb = cb;
+
+	key = irq_lock();
+
+	/* Set number of packets and transfer size, Clear NAK and enable ep */
+	if (is_in) {
+		USB_DW->in_ep_reg[USB_DW_EP_ADDR2IDX(ep)].dieptsiz =
+			(pkt_cnt << USB_DW_DEPTSIZ_PKT_CNT_OFFSET) | dlen;
+
+		USB_DW->in_ep_reg[USB_DW_EP_ADDR2IDX(ep)].diepctl |=
+			(USB_DW_DEPCTL_EP_ENA | USB_DW_DEPCTL_CNAK);
+		usb_dw_fin(ep); /* inject first pkt */
+	} else {
+		USB_DW->out_ep_reg[USB_DW_EP_ADDR2IDX(ep)].doeptsiz =
+			(USB_DW_SUP_CNT << USB_DW_DOEPTSIZ_SUP_CNT_OFFSET) |
+			(pkt_cnt << USB_DW_DEPTSIZ_PKT_CNT_OFFSET) | dlen;
+		USB_DW->out_ep_reg[USB_DW_EP_ADDR2IDX(ep)].doepctl |=
+			(USB_DW_DEPCTL_EP_ENA | USB_DW_DEPCTL_CNAK);
+	}
+
 	irq_unlock(key);
 
-	SYS_LOG_DBG("USB IN EP%d write %u bytes", ep_idx, data_len);
+	if (ep_ctrl->transfer_cb) { /* asynchronous transfer */
+		return 0;
+	}
 
-	return data_len;
+	if (!ep_ctrl->transfer_buf && !is_in) {
+		/* There is not destination buffer, Data will be kept in FIFO
+		 * for legacy read_continue support.
+		 */
+		k_sem_give(&ep_ctrl->transfer_sem);
+		return 0;
+	}
+
+	/* Synchronous transfer */
+	if (k_sem_take(&ep_ctrl->transfer_sem, K_FOREVER)) {
+		SYS_LOG_ERR("ep 0x%02x, transfer error", ep);
+		ep_ctrl->transfer_buf = NULL;
+		return -ETIMEDOUT;
+	}
+
+	if (ep_ctrl->transfer_result) { /* error < 0 */
+		ret = ep_ctrl->transfer_result;
+	} else { /* synchronous transfer success, return processed bytes */
+		ret = ep_ctrl->transfer_size;
+	}
+
+	k_sem_give(&ep_ctrl->transfer_sem);
+
+	return ret;
 }
 
 static int usb_dw_init(void)
@@ -523,6 +597,11 @@ static int usb_dw_init(void)
 	/* Set NAK for all OUT EPs */
 	for (ep = 0; ep < USB_DW_OUT_EP_NUM; ep++) {
 		USB_DW->out_ep_reg[ep].doepctl = USB_DW_DEPCTL_SNAK;
+		k_sem_init(&usb_dw_ctrl.out_ep_ctrl[ep].transfer_sem, 1, 1);
+	}
+
+	for (ep = 0; ep < USB_DW_IN_EP_NUM; ep++) {
+		k_sem_init(&usb_dw_ctrl.in_ep_ctrl[ep].transfer_sem, 1, 1);
 	}
 
 	/* Enable global interrupts */
@@ -626,18 +705,18 @@ static void usb_dw_isr_handler(void)
 
 		if (int_status & USB_DW_GINTSTS_RX_FLVL) {
 			/* Packet in RX FIFO */
-			u32_t status, xfer_size;
+			u32_t status, size;
 			u32_t grxstsp = USB_DW->grxstsp;
 
 			ep_idx = grxstsp & USB_DW_GRXSTSR_EP_NUM_MASK;
 			status = (grxstsp & USB_DW_GRXSTSR_PKT_STS_MASK) >>
 			    USB_DW_GRXSTSR_PKT_STS_OFFSET;
-			xfer_size = (grxstsp & USB_DW_GRXSTSR_PKT_CNT_MASK) >>
+			size = (grxstsp & USB_DW_GRXSTSR_PKT_CNT_MASK) >>
 			    USB_DW_GRXSTSR_PKT_CNT_OFFSET;
 
 			SYS_LOG_DBG("USB OUT EP%d: RX_FLVL status %d, size %d",
-				ep_idx, status, xfer_size);
-			usb_dw_ctrl.out_ep_ctrl[ep_idx].data_len = xfer_size;
+				ep_idx, status, size);
+			usb_dw_ctrl.out_ep_ctrl[ep_idx].data_len = size;
 			ep_cb = usb_dw_ctrl.out_ep_ctrl[ep_idx].cb;
 			switch (status) {
 			case USB_DW_GRXSTSR_PKT_STS_SETUP:
@@ -649,11 +728,13 @@ static void usb_dw_isr_handler(void)
 					}
 				break;
 			case USB_DW_GRXSTSR_PKT_STS_OUT_DATA:
-				if (ep_cb) {
+				usb_dw_fout(USB_DW_EP_IDX2ADDR(ep_idx,
+					USB_EP_DIR_OUT), size);
+				if (ep_cb) { /* legacy */
 					ep_cb(USB_DW_EP_IDX2ADDR(ep_idx,
 					    USB_EP_DIR_OUT),
 					    USB_DC_EP_DATA_OUT);
-					}
+				}
 				break;
 			case USB_DW_GRXSTSR_PKT_STS_OUT_DATA_DONE:
 			case USB_DW_GRXSTSR_PKT_STS_SETUP_DONE:
@@ -684,16 +765,19 @@ static void usb_dw_isr_handler(void)
 					ep_cb =
 					    usb_dw_ctrl.in_ep_ctrl[ep_idx].cb;
 
-					if ((ep_int_status &
-					    USB_DW_DIEPINT_XFER_COMPL) &&
-						ep_cb) {
+					if (ep_int_status &
+					    USB_DW_DIEPINT_XFER_COMPL) {
+						usb_dw_transfer_complete(
+						    USB_DW_EP_IDX2ADDR(ep_idx,
+							    USB_EP_DIR_IN));
+					}
 
-						/* Call the registered
-						 * callback
-						 */
-						ep_cb(USB_DW_EP_IDX2ADDR(ep_idx,
-						    USB_EP_DIR_IN),
-						    USB_DC_EP_DATA_IN);
+					if (ep_int_status &
+						USB_DW_DIEPINT_TX_FEMP) {
+						usb_dw_fin(
+							USB_DW_EP_IDX2ADDR(
+								ep_idx,
+								USB_EP_DIR_IN));
 					}
 				}
 			}
@@ -702,9 +786,6 @@ static void usb_dw_isr_handler(void)
 		}
 
 		if (int_status & USB_DW_GINTSTS_OEP_INT) {
-			/* No OUT interrupt expected in FIFO mode,
-			 * just clear interruot
-			 */
 			for (ep_idx = 0; ep_idx < USB_DW_OUT_EP_NUM; ep_idx++) {
 				if (USB_DW->daint &
 				    USB_DW_DAINT_OUT_EP_INT(ep_idx)) {
@@ -720,6 +801,13 @@ static void usb_dw_isr_handler(void)
 					SYS_LOG_DBG("USB OUT EP%d interrupt "
 						    "status: 0x%x\n", ep_idx,
 						    ep_int_status);
+
+					if (ep_int_status &
+						USB_DW_DOEPINT_XFER_COMPL) {
+						usb_dw_transfer_complete(
+						    USB_DW_EP_IDX2ADDR(ep_idx,
+							    USB_EP_DIR_OUT));
+					}
 				}
 			}
 			/* Clear interrupt. */
@@ -933,7 +1021,7 @@ int usb_dc_ep_enable(const u8_t ep)
 
 	if (USB_DW_EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
 		/* Prepare EP for  rx */
-		usb_dw_prep_rx(ep, 0);
+		usb_dc_ep_read_continue(ep);
 	}
 
 	return 0;
@@ -1020,23 +1108,27 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 		return -EINVAL;
 	}
 
-	ret = usb_dw_tx(ep, data, data_len);
-	if (ret < 0) {
-		return ret;
-	}
+	do {
+		/* For now we want to preserve legacy ep_write behavior.
+		 * If ep transfer fails due to ongoing transfer, try again.
+		 */
+		ret = usb_dc_ep_transfer(ep, (u8_t *)data, data_len, true,
+					 usb_dw_transfer_cb_legacy);
+		k_yield();
+	} while (ret == -EBUSY);
 
 	if (ret_bytes) {
-		*ret_bytes = ret;
+		*ret_bytes = data_len;
 	}
 
-	return 0;
+	return ret;
 }
 
 int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 			u32_t *read_bytes)
 {
 	u8_t ep_idx = USB_DW_EP_ADDR2IDX(ep);
-	u32_t i, j, data_len, bytes_to_copy;
+	u32_t data_len, bytes_to_copy;
 
 	if (!usb_dw_ctrl.attached && !usb_dw_ep_is_valid(ep)) {
 		SYS_LOG_ERR("No valid endpoint");
@@ -1084,19 +1176,7 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 	SYS_LOG_DBG("Read EP%d, req %d, read %d bytes",
 	    ep, max_data_len, bytes_to_copy);
 
-	/* Data in the FIFOs is always stored per 32-bit words */
-	for (i = 0; i < (bytes_to_copy & ~0x3); i += 4) {
-		*(u32_t *)(data + i) = USB_DW_EP_FIFO(ep_idx);
-	}
-	if (bytes_to_copy & 0x3) {
-		/* Not multiple of 4 */
-		u32_t last_dw = USB_DW_EP_FIFO(ep_idx);
-
-		for (j = 0; j < (bytes_to_copy & 0x3); j++) {
-			*(data + i + j) =
-				(sys_cpu_to_le32(last_dw) >> (8 * j)) & 0xFF;
-			}
-	}
+	usb_dw_read_fifo(ep_idx, data, bytes_to_copy);
 
 	usb_dw_ctrl.out_ep_ctrl[ep_idx].data_len -= bytes_to_copy;
 
@@ -1111,6 +1191,7 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 int usb_dc_ep_read_continue(u8_t ep)
 {
 	u8_t ep_idx = USB_DW_EP_ADDR2IDX(ep);
+	u32_t ep_mps = usb_dw_ctrl.out_ep_ctrl[ep_idx].mps;
 
 	if (!usb_dw_ctrl.attached && !usb_dw_ep_is_valid(ep)) {
 		SYS_LOG_ERR("No valid endpoint");
@@ -1124,7 +1205,8 @@ int usb_dc_ep_read_continue(u8_t ep)
 	}
 
 	if (!usb_dw_ctrl.out_ep_ctrl[ep_idx].data_len) {
-		usb_dw_prep_rx(ep_idx, 0);
+		/* Start Transfer without destination buffer */
+		usb_dc_ep_transfer(ep, NULL, ep_mps, false, NULL);
 	}
 
 	return 0;
