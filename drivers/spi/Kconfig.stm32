@@ -8,7 +8,7 @@
 
 menuconfig SPI_STM32
 	bool "STM32 MCU SPI controller driver"
-	depends on SPI && SOC_FAMILY_STM32
+	default y if SPI && SOC_FAMILY_STM32
 	select USE_STM32_LL_SPI
 	help
 	  Enable SPI support on the STM32 family of processors.

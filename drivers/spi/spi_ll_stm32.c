@@ -1,19 +1,37 @@
 /*
  * Copyright (c) 2016 BayLibre, SAS
+ * Copyright (c) 2018 Bobby Noelte
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/** @file
+ * @brief STM32 SPI implementation
+ * @defgroup device_driver_spi_stm32 STM32 SPI inplementation
+ *
+ * A common driver for STM32 SPI. SoC specific adaptions are
+ * done by device tree and soc.h.
+ *
+ * @{
+ */
+
+#include <autoconf.h>
+#include <generated_dts_board.h>
+#include <soc.h>
+
+#include <dt-bindings/clock/stm32_clock.h>
 
 #define LOG_LEVEL CONFIG_SPI_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(spi_ll_stm32);
 
 #include <misc/util.h>
-#include <kernel.h>
 #include <soc.h>
+#include <kernel.h>
 #include <errno.h>
+#include <irq.h>
+#include <device.h>
 #include <spi.h>
-#include <toolchain.h>
 
 #include <clock_control/stm32_clock_control.h>
 #include <clock_control.h>
@@ -338,12 +356,12 @@ static int spi_stm32_configure(struct device *dev,
 	spi_context_cs_configure(&data->ctx);
 
 	LOG_DBG("Installed config %p: freq %uHz (div = %u),"
-		    " mode %u/%u/%u, slave %u",
-		    config, clock >> br, 1 << br,
-		    (SPI_MODE_GET(config->operation) & SPI_MODE_CPOL) ? 1 : 0,
-		    (SPI_MODE_GET(config->operation) & SPI_MODE_CPHA) ? 1 : 0,
-		    (SPI_MODE_GET(config->operation) & SPI_MODE_LOOP) ? 1 : 0,
-		    config->slave);
+		" mode %u/%u/%u, slave %u",
+		config, clock >> br, 1 << br,
+		(SPI_MODE_GET(config->operation) & SPI_MODE_CPOL) ? 1 : 0,
+		(SPI_MODE_GET(config->operation) & SPI_MODE_CPHA) ? 1 : 0,
+		(SPI_MODE_GET(config->operation) & SPI_MODE_LOOP) ? 1 : 0,
+		config->slave);
 
 	return 0;
 }
@@ -450,7 +468,7 @@ static int spi_stm32_transceive_async(struct device *dev,
 }
 #endif /* CONFIG_SPI_ASYNC */
 
-static const struct spi_driver_api api_funcs = {
+static const struct spi_driver_api spi_stm32_driver_api = {
 	.transceive = spi_stm32_transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_stm32_transceive_async,
@@ -469,7 +487,7 @@ static int spi_stm32_init(struct device *dev)
 			       (clock_control_subsys_t) &cfg->pclken);
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
-	cfg->irq_config(dev);
+	cfg->config_irq(dev);
 #endif
 
 	spi_context_unlock_unconditionally(&data->ctx);
@@ -477,116 +495,98 @@ static int spi_stm32_init(struct device *dev)
 	return 0;
 }
 
-#ifdef CONFIG_SPI_1
-
-#ifdef CONFIG_SPI_STM32_INTERRUPT
-static void spi_stm32_irq_config_func_1(struct device *port);
+#if 0
+#include "spi_ll_stm32_jinja2.h"
+#else
+#include "spi_ll_stm32_python.h"
 #endif
 
-static const struct spi_stm32_config spi_stm32_cfg_1 = {
-	.spi = (SPI_TypeDef *) DT_SPI_1_BASE_ADDRESS,
-	.pclken = {
-		.enr = DT_SPI_1_CLOCK_BITS,
-		.bus = DT_SPI_1_CLOCK_BUS
-	},
-#ifdef CONFIG_SPI_STM32_INTERRUPT
-	.irq_config = spi_stm32_irq_config_func_1,
-#endif
-};
+#if 0
+/**
+ * For comparison and testing of
+ * - Codegen inline templates and
+ * - Jinja2 inline templates
+ *
+ * !!!!!!!!!!!!!!!!!!!!!! Testing Only !!!!!!!!!!!!!!!!!!!!!!!
+ */
 
-static struct spi_stm32_data spi_stm32_dev_data_1 = {
-	SPI_CONTEXT_INIT_LOCK(spi_stm32_dev_data_1, ctx),
-	SPI_CONTEXT_INIT_SYNC(spi_stm32_dev_data_1, ctx),
-};
+/**
+ * @code{.cogeno.py}
+ * cogeno.import_module('devicedeclare')
+ *
+ * device_configs = ['CONFIG_SPI_{}'.format(x) for x in range(1, 7)]
+ * driver_names = ['SPI_{}'.format(x) for x in range(1, 7)]
+ * device_inits = 'spi_stm32_init'
+ * device_levels = 'POST_KERNEL'
+ * device_prios = 'CONFIG_SPI_INIT_PRIORITY'
+ * device_api = 'spi_stm32_driver_api'
+ * device_info = \
+ * """
+ * #if CONFIG_SPI_STM32_INTERRUPT
+ * DEVICE_DECLARE(${device-name});
+ * static void ${device-config-irq}(struct device *dev)
+ * {
+ *         IRQ_CONNECT(${interrupts/0/irq}, ${interrupts/0/priority}, \\
+ *                     spi_stm32_isr, \\
+ *                     DEVICE_GET(${device-name}), 0);
+ *         irq_enable(${interrupts/0/irq});
+ * }
+ * #endif
+ * static const struct spi_stm32_config ${device-config-info} = {
+ *         .spi = (SPI_TypeDef *)${reg/0/address/0},
+ *         .pclken.bus = ${clocks/0/bus},
+ *         .pclken.enr = ${clocks/0/bits},
+ * #if CONFIG_SPI_STM32_INTERRUPT
+ *         .config_irq = ${device-config-irq},
+ * #endif
+ * };
+ * static struct spi_stm32_data ${device-data} = {
+ *         SPI_CONTEXT_INIT_LOCK(${device-data}, ctx),
+ *         SPI_CONTEXT_INIT_SYNC(${device-data}, ctx),
+ * };
+ * """
+ *
+ * devicedeclare.device_declare_multi( \
+ *     device_configs,
+ *     driver_names,
+ *     device_inits,
+ *     device_levels,
+ *     device_prios,
+ *     device_api,
+ *     device_info)
+ * @endcode{.cogeno.py}
+ */
+/** @code{.cogeno.ins}@endcode */
 
-DEVICE_AND_API_INIT(spi_stm32_1, DT_SPI_1_NAME, &spi_stm32_init,
-		    &spi_stm32_dev_data_1, &spi_stm32_cfg_1,
-		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
-		    &api_funcs);
-
-#ifdef CONFIG_SPI_STM32_INTERRUPT
-static void spi_stm32_irq_config_func_1(struct device *dev)
-{
-	IRQ_CONNECT(DT_SPI_1_IRQ, DT_SPI_1_IRQ_PRI,
-		    spi_stm32_isr, DEVICE_GET(spi_stm32_1), 0);
-	irq_enable(DT_SPI_1_IRQ);
-}
-#endif
-
-#endif /* CONFIG_SPI_1 */
-
-#ifdef CONFIG_SPI_2
-
-#ifdef CONFIG_SPI_STM32_INTERRUPT
-static void spi_stm32_irq_config_func_2(struct device *port);
-#endif
-
-static const struct spi_stm32_config spi_stm32_cfg_2 = {
-	.spi = (SPI_TypeDef *) DT_SPI_2_BASE_ADDRESS,
-	.pclken = {
-		.enr = DT_SPI_2_CLOCK_BITS,
-		.bus = DT_SPI_2_CLOCK_BUS
-	},
-#ifdef CONFIG_SPI_STM32_INTERRUPT
-	.irq_config = spi_stm32_irq_config_func_2,
-#endif
-};
-
-static struct spi_stm32_data spi_stm32_dev_data_2 = {
-	SPI_CONTEXT_INIT_LOCK(spi_stm32_dev_data_2, ctx),
-	SPI_CONTEXT_INIT_SYNC(spi_stm32_dev_data_2, ctx),
-};
-
-DEVICE_AND_API_INIT(spi_stm32_2, DT_SPI_2_NAME, &spi_stm32_init,
-		    &spi_stm32_dev_data_2, &spi_stm32_cfg_2,
-		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
-		    &api_funcs);
-
-#ifdef CONFIG_SPI_STM32_INTERRUPT
-static void spi_stm32_irq_config_func_2(struct device *dev)
-{
-	IRQ_CONNECT(DT_SPI_2_IRQ, DT_SPI_2_IRQ_PRI,
-		    spi_stm32_isr, DEVICE_GET(spi_stm32_2), 0);
-	irq_enable(DT_SPI_2_IRQ);
-}
-#endif
-
-#endif /* CONFIG_SPI_2 */
-
-#ifdef CONFIG_SPI_3
-
-#ifdef CONFIG_SPI_STM32_INTERRUPT
-static void spi_stm32_irq_config_func_3(struct device *port);
-#endif
-
-static const  struct spi_stm32_config spi_stm32_cfg_3 = {
-	.spi = (SPI_TypeDef *) DT_SPI_3_BASE_ADDRESS,
-	.pclken = {
-		.enr = DT_SPI_3_CLOCK_BITS,
-		.bus = DT_SPI_3_CLOCK_BUS
-	},
-#ifdef CONFIG_SPI_STM32_INTERRUPT
-	.irq_config = spi_stm32_irq_config_func_3,
-#endif
-};
-
-static struct spi_stm32_data spi_stm32_dev_data_3 = {
-	SPI_CONTEXT_INIT_LOCK(spi_stm32_dev_data_3, ctx),
-	SPI_CONTEXT_INIT_SYNC(spi_stm32_dev_data_3, ctx),
-};
-
-DEVICE_AND_API_INIT(spi_stm32_3, DT_SPI_3_NAME, &spi_stm32_init,
-		    &spi_stm32_dev_data_3, &spi_stm32_cfg_3,
-		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
-		    &api_funcs);
-
-#ifdef CONFIG_SPI_STM32_INTERRUPT
-static void spi_stm32_irq_config_func_3(struct device *dev)
-{
-	IRQ_CONNECT(DT_SPI_3_IRQ, DT_SPI_3_IRQ_PRI,
-		    spi_stm32_isr, DEVICE_GET(spi_stm32_3), 0);
-	irq_enable(DT_SPI_3_IRQ);
-}
-#endif
-
-#endif /* CONFIG_SPI_3 */
+/*
+ * @code{.jinja2gen}
+ * {% import 'devicedeclare.jinja2' as spi_stm32 %}
+ *
+ * {% set config_struct_body = """
+ *        .spi = (SPI_TypeDef *)0x{{ '%x'|format(data['device'].get_property('reg/0/address/0')) }}U,
+ *        .pclken.bus = {{ data['device'].get_property('clocks/0/bus') }},
+ *        .pclken.enr = {{ data['device'].get_property('clocks/0/bits') }},
+ * #ifdef CONFIG_SPI_STM32_INTERRUPT
+ *        .irq_config = {{ irq_config_function_name }},
+ * #endif """
+ * %}
+ *
+ * {% set data_struct_body = """
+ *     SPI_CONTEXT_INIT_LOCK({{ data_struct_name }}, ctx),
+ *     SPI_CONTEXT_INIT_SYNC({{ data_struct_name }}, ctx), """
+ * %}
+ *
+ * {% set params = {    'irq_flag'           : 'CONFIG_SPI_STM32_INTERRUPT',
+ *                      'irq_func'           : 'spi_stm32_isr',
+ *                      'config_struct'      : 'spi_stm32_config',
+ *                      'data_struct'        : 'spi_stm32_data',
+ *                      'api_struct'         : 'api_funcs',
+ *                      'init_function'      : 'spi_stm32_init',
+ *                      'config_struct_body' : config_struct_body,
+ *                      'data_struct_body'   : data_struct_body } %}
+ *
+ * {{ spi_stm32.device(data, ['st,stm32-spi', 'st,stm32-spi-fifo'], params) }}
+ * @endcode{.jinja2gen}
+ */
+/** @code{.jinja2ins}@endcode */
+#endif /* 0 */

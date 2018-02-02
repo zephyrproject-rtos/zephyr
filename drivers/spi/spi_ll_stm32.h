@@ -15,7 +15,7 @@ struct spi_stm32_config {
 	struct stm32_pclken pclken;
 	SPI_TypeDef *spi;
 #ifdef CONFIG_SPI_STM32_INTERRUPT
-	irq_config_func_t irq_config;
+	irq_config_func_t config_irq;
 #endif
 };
 

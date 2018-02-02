@@ -24,6 +24,12 @@ properties:
       generation: define
       category: required
 
+    clocks:
+      type: array
+      category: required
+      description: required clocks
+      generation: define
+
     interrupts:
       type: array
       category: required

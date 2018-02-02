@@ -41,6 +41,9 @@ properties:
       type: compound
       category: optional
       generation: define, use-prop-name
-
-
+    pinctrl-\d+:
+      type: array
+      category: optional
+      description: pinmux information for SCK, MOSI, MISO
+      generation: define
 ...

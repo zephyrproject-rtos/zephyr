@@ -1,0 +1,26 @@
+{% import 'devicedeclare.jinja2' as spi_stm32 %}
+
+{% set config_struct_body = """
+       .spi = (SPI_TypeDef *)0x{{ '%x'|format(data['device'].get_property('reg/0/address/0')) }}U,
+       .pclken.bus = {{ data['device'].get_property('clocks/0/bus') }},
+       .pclken.enr = {{ data['device'].get_property('clocks/0/bits') }},
+#ifdef CONFIG_SPI_STM32_INTERRUPT
+       .irq_config = {{ irq_config_function_name }},
+#endif """
+%}
+
+{% set data_struct_body = """
+    SPI_CONTEXT_INIT_LOCK({{ data_struct_name }}, ctx),
+    SPI_CONTEXT_INIT_SYNC({{ data_struct_name }}, ctx), """
+%}
+
+{% set params = {    'irq_flag'           : 'CONFIG_SPI_STM32_INTERRUPT',
+		     'irq_func'           : 'spi_stm32_isr',
+                     'config_struct'      : 'spi_stm32_config',
+                     'data_struct'        : 'spi_stm32_data',
+                     'api_struct'         : 'api_funcs',
+                     'init_function'      : 'spi_stm32_init',
+		     'config_struct_body' : config_struct_body,
+		     'data_struct_body'   : data_struct_body } %}
+
+{{ spi_stm32.device(data, ['st,stm32-spi', 'st,stm32-spi-fifo'], params) }}
