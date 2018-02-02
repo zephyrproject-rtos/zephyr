@@ -326,4 +326,14 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
  */
 int usb_dc_ep_read_continue(u8_t ep);
 
+/**
+ * @brief Get endpoint max packet size
+ *
+ * @param[in]  ep           Endpoint address corresponding to the one
+ *                          listed in the device configuration table
+ *
+ * @return enpoint max packet size (mps)
+ */
+int usb_dc_ep_mps(u8_t ep);
+
 #endif /* __USB_DC_H__ */
