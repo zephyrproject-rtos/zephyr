@@ -1,23 +1,58 @@
 /*
  * Copyright (c) 2016 BayLibre, SAS
+ * Copyright (c) 2018 Bobby Noelte
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/** @file
+ * @brief STM32 SPI implementation
+ * @defgroup device_driver_spi_stm32 STM32 SPI inplementation
+ *
+ * A common driver for STM32 SPI. SoC specific adaptions are
+ * done by device tree and soc.h.
+ *
+ * @{
+ */
+
+#include <autoconf.h>
+#include <generated_dts_board.h>
+#include <soc.h>
+
+#include <dt-bindings/clock/stm32_clock.h>
 
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_SPI_LEVEL
 #include <logging/sys_log.h>
 
 #include <misc/util.h>
+#include <soc.h>
 #include <kernel.h>
-#include <board.h>
-#include <errno.h>
+#include <irq.h>
+#include <device.h>
 #include <spi.h>
-#include <toolchain.h>
 
 #include <clock_control/stm32_clock_control.h>
 #include <clock_control.h>
 
-#include "spi_ll_stm32.h"
+#include "spi_context.h"
+
+/**
+ * @brief Configuration info for one SPI device
+ */
+struct spi_stm32_config {
+	struct stm32_pclken pclken;
+	SPI_TypeDef *spi;
+#ifdef CONFIG_SPI_STM32_INTERRUPT
+	void (*config_irq)(struct device *dev);
+#endif
+};
+
+/**
+ * @brief Driver data for one SPI device.
+ */
+struct spi_stm32_data {
+	struct spi_context ctx;
+};
 
 #define DEV_CFG(dev)						\
 (const struct spi_stm32_config * const)(dev->config->config_info)
@@ -449,7 +484,7 @@ static int spi_stm32_transceive_async(struct device *dev,
 }
 #endif /* CONFIG_SPI_ASYNC */
 
-static const struct spi_driver_api api_funcs = {
+static const struct spi_driver_api spi_stm32_driver_api = {
 	.transceive = spi_stm32_transceive,
 #ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_stm32_transceive_async,
@@ -468,7 +503,7 @@ static int spi_stm32_init(struct device *dev)
 			       (clock_control_subsys_t) &cfg->pclken);
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
-	cfg->irq_config(dev);
+	cfg->config_irq(dev);
 #endif
 
 	spi_context_unlock_unconditionally(&data->ctx);
@@ -476,121 +511,52 @@ static int spi_stm32_init(struct device *dev)
 	return 0;
 }
 
-#ifdef CONFIG_SPI_1
+/**
+ * @code{.codegen}
+ * codegen.import_module('devicedeclare')
+ *
+ * device_configs = ['CONFIG_SPI_{}'.format(x) for x in range(1, 7)]
+ * driver_names = ['SPI_{}'.format(x) for x in range(1, 7)]
+ * device_inits = 'spi_stm32_init'
+ * device_levels = 'POST_KERNEL'
+ * device_prios = 'CONFIG_SPI_INIT_PRIORITY'
+ * device_api = 'spi_stm32_driver_api'
+ * device_info = \
+ * """
+ * #if CONFIG_SPI_STM32_INTERRUPT
+ * DEVICE_DECLARE(${device-name});
+ * static void ${device-config-irq}(struct device *dev)
+ * {
+ *         IRQ_CONNECT(${interrupts/0/irq}, ${interrupts/0/priority}, \\
+ *                     spi_stm32_isr, \\
+ *                     DEVICE_GET(${device-name}), 0);
+ *         irq_enable(${interrupts/0/irq});
+ * }
+ * #endif
+ * static const struct spi_stm32_config ${device-config-info} = {
+ *         .spi = (SPI_TypeDef *)${reg/0/address/0},
+ *         .pclken.bus = ${clocks/0/bus},
+ *         .pclken.enr = ${clocks/0/bits},
+ * #if CONFIG_SPI_STM32_INTERRUPT
+ *         .config_irq = ${device-config-irq},
+ * #endif
+ * };
+ * static struct spi_stm32_data ${device-data} = {
+ *         SPI_CONTEXT_INIT_LOCK(${device-data}, ctx),
+ *         SPI_CONTEXT_INIT_SYNC(${device-data}, ctx),
+ * };
+ * """
+ *
+ * devicedeclare.device_declare_multi( \
+ *     device_configs,
+ *     driver_names,
+ *     device_inits,
+ *     device_levels,
+ *     device_prios,
+ *     device_api,
+ *     device_info)
+ * @endcode{.codegen}
+ */
+/** @code{.codeins}@endcode */
 
-#ifdef CONFIG_SPI_STM32_INTERRUPT
-static void spi_stm32_irq_config_func_1(struct device *port);
-#endif
-
-static const struct spi_stm32_config spi_stm32_cfg_1 = {
-	.spi = (SPI_TypeDef *) CONFIG_SPI_1_BASE_ADDRESS,
-	.pclken = {
-#ifdef CONFIG_SOC_SERIES_STM32F0X
-		.enr = LL_APB1_GRP2_PERIPH_SPI1,
-		.bus = STM32_CLOCK_BUS_APB1_2
-#else
-		.enr = LL_APB2_GRP1_PERIPH_SPI1,
-		.bus = STM32_CLOCK_BUS_APB2
-#endif
-	},
-#ifdef CONFIG_SPI_STM32_INTERRUPT
-	.irq_config = spi_stm32_irq_config_func_1,
-#endif
-};
-
-static struct spi_stm32_data spi_stm32_dev_data_1 = {
-	SPI_CONTEXT_INIT_LOCK(spi_stm32_dev_data_1, ctx),
-	SPI_CONTEXT_INIT_SYNC(spi_stm32_dev_data_1, ctx),
-};
-
-DEVICE_AND_API_INIT(spi_stm32_1, CONFIG_SPI_1_NAME, &spi_stm32_init,
-		    &spi_stm32_dev_data_1, &spi_stm32_cfg_1,
-		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
-		    &api_funcs);
-
-#ifdef CONFIG_SPI_STM32_INTERRUPT
-static void spi_stm32_irq_config_func_1(struct device *dev)
-{
-	IRQ_CONNECT(CONFIG_SPI_1_IRQ, CONFIG_SPI_1_IRQ_PRI,
-		    spi_stm32_isr, DEVICE_GET(spi_stm32_1), 0);
-	irq_enable(CONFIG_SPI_1_IRQ);
-}
-#endif
-
-#endif /* CONFIG_SPI_1 */
-
-#ifdef CONFIG_SPI_2
-
-#ifdef CONFIG_SPI_STM32_INTERRUPT
-static void spi_stm32_irq_config_func_2(struct device *port);
-#endif
-
-static const struct spi_stm32_config spi_stm32_cfg_2 = {
-	.spi = (SPI_TypeDef *) CONFIG_SPI_2_BASE_ADDRESS,
-	.pclken = {
-		.enr = LL_APB1_GRP1_PERIPH_SPI2,
-		.bus = STM32_CLOCK_BUS_APB1
-	},
-#ifdef CONFIG_SPI_STM32_INTERRUPT
-	.irq_config = spi_stm32_irq_config_func_2,
-#endif
-};
-
-static struct spi_stm32_data spi_stm32_dev_data_2 = {
-	SPI_CONTEXT_INIT_LOCK(spi_stm32_dev_data_2, ctx),
-	SPI_CONTEXT_INIT_SYNC(spi_stm32_dev_data_2, ctx),
-};
-
-DEVICE_AND_API_INIT(spi_stm32_2, CONFIG_SPI_2_NAME, &spi_stm32_init,
-		    &spi_stm32_dev_data_2, &spi_stm32_cfg_2,
-		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
-		    &api_funcs);
-
-#ifdef CONFIG_SPI_STM32_INTERRUPT
-static void spi_stm32_irq_config_func_2(struct device *dev)
-{
-	IRQ_CONNECT(CONFIG_SPI_2_IRQ, CONFIG_SPI_2_IRQ_PRI,
-		    spi_stm32_isr, DEVICE_GET(spi_stm32_2), 0);
-	irq_enable(CONFIG_SPI_2_IRQ);
-}
-#endif
-
-#endif /* CONFIG_SPI_2 */
-
-#ifdef CONFIG_SPI_3
-
-#ifdef CONFIG_SPI_STM32_INTERRUPT
-static void spi_stm32_irq_config_func_3(struct device *port);
-#endif
-
-static const  struct spi_stm32_config spi_stm32_cfg_3 = {
-	.spi = (SPI_TypeDef *) CONFIG_SPI_3_BASE_ADDRESS,
-	.pclken = {
-		.enr = LL_APB1_GRP1_PERIPH_SPI3,
-		.bus = STM32_CLOCK_BUS_APB1
-	},
-#ifdef CONFIG_SPI_STM32_INTERRUPT
-	.irq_config = spi_stm32_irq_config_func_3,
-#endif
-};
-
-static struct spi_stm32_data spi_stm32_dev_data_3 = {
-	SPI_CONTEXT_INIT_LOCK(spi_stm32_dev_data_3, ctx),
-	SPI_CONTEXT_INIT_SYNC(spi_stm32_dev_data_3, ctx),
-};
-
-DEVICE_AND_API_INIT(spi_stm32_3, CONFIG_SPI_3_NAME, &spi_stm32_init,
-		    &spi_stm32_dev_data_3, &spi_stm32_cfg_3,
-		    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
-		    &api_funcs);
-
-#ifdef CONFIG_SPI_STM32_INTERRUPT
-static void spi_stm32_irq_config_func_3(struct device *dev)
-{
-	IRQ_CONNECT(CONFIG_SPI_3_IRQ, CONFIG_SPI_3_IRQ_PRI,
-		    spi_stm32_isr, DEVICE_GET(spi_stm32_3), 0);
-	irq_enable(CONFIG_SPI_3_IRQ);
-}
-#endif
-
-#endif /* CONFIG_SPI_3 */
+/** @} device_driver_spi_stm32 */
