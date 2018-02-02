@@ -33,12 +33,18 @@ _GENERIC_SECTION(.vt_pointer_section) void *_vector_table_pointer;
 #define VECTOR_ADDRESS 0
 void __weak relocate_vector_table(void)
 {
-#if defined(CONFIG_XIP) && (CONFIG_FLASH_BASE_ADDRESS != 0) || \
+#if defined(CONFIG_SW_VECTOR_RELAY)
+	_vector_table_pointer = _vector_start;
+#elif defined(CONFIG_XIP) && (CONFIG_FLASH_BASE_ADDRESS != 0) || \
     !defined(CONFIG_XIP) && (CONFIG_SRAM_BASE_ADDRESS != 0)
+#if defined(CONFIG_CPU_CORTEX_M0_HAS_VECTOR_TABLE_REMAP)
+	SCB->VTOR = ((u32_t)_vector_start) & SCB_VTOR_TBLOFF_Msk;
+	__DSB();
+	__ISB();
+#else
 	size_t vector_size = (size_t)_vector_end - (size_t)_vector_start;
 	memcpy(VECTOR_ADDRESS, _vector_start, vector_size);
-#elif defined(CONFIG_SW_VECTOR_RELAY)
-	_vector_table_pointer = _vector_start;
+#endif
 #endif
 }
 

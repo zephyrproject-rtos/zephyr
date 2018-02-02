@@ -200,4 +200,9 @@ config SW_VECTOR_RELAY
 	  Add Cortex-M0 Vector Table relay handler and relay vector table, to
 	  relay interrupts based on a vector table pointer.
 
+config PLATFORM_SPECIFIC_INIT
+	bool
+	prompt "Enable platform (SOC) specific startup hook"
+	default n
+
 endmenu
