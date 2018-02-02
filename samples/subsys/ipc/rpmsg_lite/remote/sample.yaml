@@ -1,0 +1,8 @@
+sample:
+    description: TBD
+    name: TBD
+tests:
+    test:
+        build_only: true
+        filter: CONFIG_SOC_MCUX
+        tags: samples ipm
