@@ -570,6 +570,14 @@ int usb_dc_ep_read(const u8_t ep, u8_t *const data, const u32_t max_data_len,
 	return 0;
 }
 
+
+int usb_dc_ep_mps(const u8_t ep)
+{
+	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
+
+	return ep_state->ep_mps;
+}
+
 /* Callbacks from the STM32 Cube HAL code */
 
 void HAL_PCD_ResetCallback(PCD_HandleTypeDef *hpcd)

@@ -1176,3 +1176,8 @@ int usb_dc_set_status_callback(const usb_dc_status_callback cb)
 
 	return 0;
 }
+
+int usb_dc_ep_mps(const u8_t ep)
+{
+	return usb_dw_ctrl.out_ep_ctrl[USB_DW_EP_ADDR2IDX(ep)].mps;
+}
