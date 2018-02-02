@@ -20,8 +20,19 @@
 K_SEM_DEFINE(uthread_start_sem, 0, 1);
 K_SEM_DEFINE(uthread_end_sem, 0, 1);
 K_SEM_DEFINE(test_revoke_sem, 0, 1);
+K_SEM_DEFINE(expect_fault_sem, 0, 1);
 
 static bool give_uthread_end_sem;
+static bool expect_fault;
+
+/*
+ * We need something that can act as a memory barrier
+ * from usermode threads to ensure expect_fault has
+ * been updated.  We'll just make an arbitrary system
+ * call to force one.
+ */
+#define BARRIER() k_sem_give(&expect_fault_sem)
+
 
 /* ARM is a special case, in that k_thread_abort() does indeed return
  * instead of calling _Swap() directly. The PendSV exception is queued
@@ -42,7 +53,13 @@ void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
 		give_uthread_end_sem = false;
 		k_sem_give(&uthread_end_sem);
 	}
-	ztest_test_pass();
+	if (expect_fault) {
+		expect_fault = false;
+		BARRIER();
+		ztest_test_pass();
+	} else {
+		zassert_unreachable("Unexpected fault during test\n");
+	}
 #ifndef CONFIG_ARM
 	CODE_UNREACHABLE;
 #endif
@@ -51,6 +68,8 @@ void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
 static void is_usermode(void)
 {
 	/* Confirm that we are in fact running in user mode. */
+	expect_fault = false;
+	BARRIER();
 	zassert_true(_is_user_context(), "thread left in kernel mode\n");
 }
 
@@ -58,6 +77,8 @@ static void write_control(void)
 {
 	/* Try to write to a control register. */
 #if defined(CONFIG_X86)
+	expect_fault = true;
+	BARRIER();
 	__asm__ volatile (
 		"mov %cr0, %eax;\n\t"
 		"and $0xfffeffff, %eax;\n\t"
@@ -66,6 +87,9 @@ static void write_control(void)
 	zassert_unreachable("Write to control register did not fault\n");
 #elif defined(CONFIG_ARM)
 	unsigned int msr_value;
+
+	expect_fault = false;
+	BARRIER();
 	__asm__ volatile (
 		"mrs %0, CONTROL;\n\t"
 		"bic %0, #1;\n\t"
@@ -85,12 +109,16 @@ static void disable_mmu_mpu(void)
 {
 	/* Try to disable memory protections. */
 #if defined(CONFIG_X86)
+	expect_fault = true;
+	BARRIER();
 	__asm__ volatile (
 		"mov %cr0, %eax;\n\t"
 		"and $0x7ffeffff, %eax;\n\t"
 		"mov %eax, %cr0;\n\t"
 		);
 #elif defined(CONFIG_ARM)
+	expect_fault = true;
+	BARRIER();
 	arm_core_mpu_disable();
 #else
 #error "Not implemented for this architecture"
@@ -101,8 +129,11 @@ static void disable_mmu_mpu(void)
 static void read_kernram(void)
 {
 	/* Try to read from kernel RAM. */
-	void *p = _current->init_data;
+	void *p;
 
+	expect_fault = true;
+	BARRIER();
+	p = _current->init_data;
 	printk("%p\n", p);
 	zassert_unreachable("Read from kernel RAM did not fault\n");
 }
@@ -110,6 +141,8 @@ static void read_kernram(void)
 static void write_kernram(void)
 {
 	/* Try to write to kernel RAM. */
+	expect_fault = true;
+	BARRIER();
 	_current->init_data = NULL;
 	zassert_unreachable("Write to kernel RAM did not fault\n");
 }
@@ -126,6 +159,8 @@ static void write_kernro(void)
 	zassert_true(ptr < _image_rodata_end &&
 		     ptr >= _image_rodata_start,
 		     "_k_neg_eagain is not in rodata\n");
+	expect_fault = true;
+	BARRIER();
 	_k_neg_eagain = -EINVAL;
 	zassert_unreachable("Write to kernel RO did not fault\n");
 }
@@ -133,6 +168,8 @@ static void write_kernro(void)
 static void write_kerntext(void)
 {
 	/* Try to write to kernel text. */
+	expect_fault = true;
+	BARRIER();
 	memcpy(&_is_thread_essential, 0, 4);
 	zassert_unreachable("Write to kernel text did not fault\n");
 }
@@ -142,14 +179,19 @@ __kernel static int kernel_data;
 static void read_kernel_data(void)
 {
 	/* Try to read from embedded kernel data. */
-	int value = kernel_data;
+	int value;
 
+	expect_fault = true;
+	BARRIER();
+	value = kernel_data;
 	printk("%d\n", value);
 	zassert_unreachable("Read from __kernel data did not fault\n");
 }
 
 static void write_kernel_data(void)
 {
+	expect_fault = true;
+	BARRIER();
 	kernel_data = 1;
 	zassert_unreachable("Write to  __kernel data did not fault\n");
 }
@@ -174,6 +216,8 @@ static void read_kernel_stack(void)
 	s[0] = 0;
 	ptr = &s[0];
 	ptr = (int *)((unsigned char *)ptr - size);
+	expect_fault = true;
+	BARRIER();
 	printk("%d\n", *ptr);
 	zassert_unreachable("Read from kernel stack did not fault\n");
 }
@@ -186,6 +230,8 @@ static void write_kernel_stack(void)
 	s[0] = 0;
 	ptr = &s[0];
 	ptr = (int *)((unsigned char *)ptr - size);
+	expect_fault = true;
+	BARRIER();
 	*ptr = 42;
 	zassert_unreachable("Write to kernel stack did not fault\n");
 }
@@ -196,6 +242,8 @@ static struct k_sem sem;
 static void pass_user_object(void)
 {
 	/* Try to pass a user object to a system call. */
+	expect_fault = true;
+	BARRIER();
 	k_sem_init(&sem, 0, 1);
 	zassert_unreachable("Pass a user object to a syscall did not fault\n");
 }
@@ -205,6 +253,8 @@ __kernel static struct k_sem ksem;
 static void pass_noperms_object(void)
 {
 	/* Try to pass a object to a system call w/o permissions. */
+	expect_fault = true;
+	BARRIER();
 	k_sem_init(&ksem, 0, 1);
 	zassert_unreachable("Pass an unauthorized object to a "
 			    "syscall did not fault\n");
@@ -222,6 +272,8 @@ void thread_body(void)
 static void start_kernel_thread(void)
 {
 	/* Try to start a kernel thread from a usermode thread */
+	expect_fault = true;
+	BARRIER();
 	k_thread_create(&kthread_thread, kthread_stack, STACKSIZE,
 			(k_thread_entry_t)thread_body, NULL, NULL, NULL,
 			K_PRIO_PREEMPT(1), K_INHERIT_PERMS,
@@ -257,6 +309,8 @@ static void read_other_stack(void)
 
 	/* Try to directly read the stack of the other thread. */
 	ptr = (unsigned int *)K_THREAD_STACK_BUFFER(uthread_stack);
+	expect_fault = true;
+	BARRIER();
 	printk("%u\n", *ptr);
 
 	/* Shouldn't be reached, but if so, let the other thread exit */
@@ -282,6 +336,8 @@ static void write_other_stack(void)
 
 	/* Try to directly write the stack of the other thread. */
 	ptr = (unsigned int *) K_THREAD_STACK_BUFFER(uthread_stack);
+	expect_fault = true;
+	BARRIER();
 	*ptr = 0;
 
 	/* Shouldn't be reached, but if so, let the other thread exit */
@@ -295,6 +351,8 @@ static void write_other_stack(void)
 static void revoke_noperms_object(void)
 {
 	/* Attempt to revoke access to kobject w/o permissions*/
+	expect_fault = true;
+	BARRIER();
 	k_object_access_revoke(&ksem, k_current_get());
 
 	zassert_unreachable("Revoke access to unauthorized object "
@@ -306,6 +364,8 @@ static void access_after_revoke(void)
 	k_object_access_revoke(&test_revoke_sem, k_current_get());
 
 	/* Try to access an object after revoking access to it */
+	expect_fault = true;
+	BARRIER();
 	k_sem_take(&test_revoke_sem, K_NO_WAIT);
 
 	zassert_unreachable("Using revoked object did not fault\n");
@@ -314,6 +374,8 @@ static void access_after_revoke(void)
 static void revoke_from_parent(k_tid_t parentThread)
 {
 	/* The following should cause a fault */
+	expect_fault = true;
+	BARRIER();
 	k_object_access_revoke(&test_revoke_sem, parentThread);
 
 	zassert_unreachable("Revoking from unauthorized thread did "
@@ -354,6 +416,8 @@ static void umode_enter_func(void)
 
 static void user_mode_enter(void)
 {
+	expect_fault = false;
+	BARRIER();
 	k_thread_user_mode_enter((k_thread_entry_t)umode_enter_func,
 			NULL, NULL, NULL);
 }
@@ -368,6 +432,8 @@ static void write_kobject_user_pipe(void)
 	 * Attempt to use system call from k_pipe_get to write over
 	 * a kernel object.
 	 */
+	expect_fault = true;
+	BARRIER();
 	k_pipe_get(&kpipe, &uthread_start_sem, BYTES_TO_READ_WRITE,
 		&bytes_written_read, 1,	K_NO_WAIT);
 
@@ -381,6 +447,8 @@ static void read_kobject_user_pipe(void)
 	 * Attempt to use system call from k_pipe_put to read a
 	 * kernel object.
 	 */
+	expect_fault = true;
+	BARRIER();
 	k_pipe_put(&kpipe, &uthread_start_sem, BYTES_TO_READ_WRITE,
 		&bytes_written_read, 1, K_NO_WAIT);
 
@@ -394,7 +462,8 @@ void test_main(void)
 			      &kthread_thread, &kthread_stack,
 			      &uthread_thread, &uthread_stack,
 			      &uthread_start_sem, &uthread_end_sem,
-			      &test_revoke_sem, &kpipe, NULL);
+			      &test_revoke_sem, &kpipe, &expect_fault_sem,
+			      NULL);
 	ztest_test_suite(test_userspace,
 			 ztest_user_unit_test(is_usermode),
 			 ztest_user_unit_test(write_control),
