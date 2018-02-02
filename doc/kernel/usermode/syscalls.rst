@@ -22,7 +22,7 @@ This section describes how to declare new system calls and discusses a few
 implementation details relevant to them.
 
 Components
-==========
+**********
 
 All system calls have the following components:
 
@@ -42,7 +42,7 @@ All system calls have the following components:
   validation of all the arguments passed in.
 
 C Prototype
-===========
+***********
 
 The C prototype represents how the API is invoked from either user or
 supervisor mode. For example, to initialize a semaphore:
@@ -86,7 +86,7 @@ bottom of ``include/sensor.h``:
     #include <syscalls/sensor.h>
 
 Invocation Context
-------------------
+==================
 
 Source code that uses system call APIs can be made more efficient if it is
 known that all the code inside a particular C file runs exclusively in
@@ -112,7 +112,7 @@ flags in the build system for the related files.
   code runs in user mode and system calls are unconditionally made.
 
 Implementation Details
-----------------------
+======================
 
 Declaring an API with :c:macro:`__syscall` causes some code to be generated in
 C and header files by ``scripts/gen_syscalls.py``, all of which can be found in
@@ -210,7 +210,7 @@ see the implementation of :c:func:`_syscall_ret64_invoke0` and
 :c:func:`_syscall_ret64_invoke1`.
 
 Implementation Function
-=======================
+***********************
 
 The implementation function is what actually does the work for the API.
 Zephyr normally does little to no error checking of arguments, or does this
@@ -224,7 +224,7 @@ declared in some C file. There is no prototype needed for implementation
 functions, these are automatically generated.
 
 Handler Function
-================
+****************
 
 The handler function runs on the kernel side when a user thread makes
 a system call. When the user thread makes a software interrupt to elevate to
@@ -252,7 +252,7 @@ made simpler by some macros in ``kernel/include/syscall_handlers.h``.
 Handler functions should be declared using these macros.
 
 Argument Validation
--------------------
+===================
 
 Several macros exist to validate arguments:
 
@@ -297,7 +297,7 @@ calling thread. This is done instead of returning some error condition to
 keep the APIs the same when calling from supervisor mode.
 
 Handler Declaration
--------------------
+===================
 
 All handler functions have the same prototype:
 
@@ -349,7 +349,7 @@ initialized), and that the limit parameter is nonzero:
     }
 
 Simple Handler Declarations
-^^^^^^^^^^^^^^^^^^^^^^^^^^^
+---------------------------
 
 Many kernel or driver APIs have very simple handler functions, where they
 either accept no arguments, or take one object which is a kernel object
@@ -373,7 +373,7 @@ as:
     _SYSCALL_HANDLER1_SIMPLE(k_sem_count_get, K_OBJ_SEM, struct k_sem *);
 
 System Calls With 6 Or More Arguments
--------------------------------------
+=====================================
 
 System calls may have more than six arguments, however the number of arguments
 passed in via registers when the privilege elevation is invoked is fixed at six
@@ -425,7 +425,7 @@ before checking. Using the previous example:
 
 
 System Calls With 64-bit Return Value
--------------------------------------
+=====================================
 
 If a system call has a return value larger than 32-bits, the handler will not
 return anything. Instead, a pointer to a sufficient memory region for the
@@ -451,14 +451,14 @@ be validated as writable by the calling thread:
     }
 
 Configuration Options
-=====================
+*********************
 
 Related configuration options:
 
 * :option:`CONFIG_USERSPACE`
 
 APIs
-====
+****
 
 Helper macros for creating system call handlers are provided in
 :file:`kernel/include/syscall_handler.h`:

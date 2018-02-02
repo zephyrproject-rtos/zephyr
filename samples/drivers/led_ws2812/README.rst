@@ -43,7 +43,7 @@ The sample application is located at ``samples/drivers/led_ws2812/``
 in the Zephyr source tree.
 
 Configure For Your LED Strip
-----------------------------
+============================
 
 The first thing you need to do is make sure that the driver is
 configured to match the particular LED chips you're using. For
@@ -65,7 +65,7 @@ values of the following configuration options:
 Refer to their help strings for details.
 
 Configure For Your Board
-------------------------
+========================
 
 Now check if your board is already supported, by looking for a file
 named ``boards/YOUR_BOARD_NAME.conf`` in the application directory.

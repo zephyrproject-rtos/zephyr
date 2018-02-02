@@ -10,7 +10,7 @@ For details on creating threads that run in user mode, please see
 :ref:`lifecycle_v2`.
 
 Threat Model
-============
+************
 
 User mode threads are considered to be untrusted by Zephyr and are therefore
 isolated from other user mode threads and from the kernel. A flawed or
@@ -32,7 +32,7 @@ Example use-cases of Zephyr's user mode features:
   isolated from each other if one crashes or is otherwise compromised.
 
 Design Goals
-------------
+============
 
 For threads running in a non-privileged CPU state (hereafter referred to as
 'user mode') we aim to protect against the following:
@@ -116,7 +116,7 @@ We are specifically not protecting against the following attacks:
   but the integrity of the system cannot be guaranteed.
 
 High-level Policy Details
-=========================
+*************************
 
 Broadly speaking, we accomplish these thread-level memory protection goals
 through the following mechanisms:
@@ -160,7 +160,7 @@ through the following mechanisms:
   varies per architecture.
 
 Constraints
-===========
+***********
 
 All kernel objects, thread stacks, and device driver instances must be defined
 at build time if they are to be used from user mode. Dynamic use-cases for
