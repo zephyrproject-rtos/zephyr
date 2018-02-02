@@ -11,6 +11,43 @@
 #include <arch/cpu.h>
 #include <syscall.h>
 
+.macro clear_scratch_regs
+	mov	r1, 0
+	mov 	r2, 0
+	mov	r3, 0
+	mov	r4, 0
+	mov	r5, 0
+	mov	r6, 0
+	mov	r7, 0
+	mov	r8, 0
+	mov 	r9, 0
+	mov	r10, 0
+	mov	r11, 0
+	mov	r12, 0
+
+	mov 	fp, 0
+	mov 	r29, 0
+	mov 	r30, 0
+	mov	blink, 0
+.endm
+
+.macro clear_callee_regs
+	mov	r25, 0
+	mov	r24, 0
+	mov	r23, 0
+	mov	r22, 0
+	mov	r21, 0
+	mov	r20, 0
+	mov	r19, 0
+	mov	r18, 0
+	mov	r17, 0
+	mov	r16, 0
+
+	mov	r15, 0
+	mov	r14, 0
+	mov	r13, 0
+.endm
+
 GTEXT(_arc_userspace_enter)
 GTEXT(_arc_do_syscall)
 
@@ -68,6 +105,13 @@ _clear_user_stack:
 	sr r5, [_ARC_V2_USER_SP]
 #endif
 	mov sp, r2
+
+	mov r0, 0
+
+	clear_callee_regs
+
+	clear_scratch_regs
+
 	rtie
 
 /**
@@ -93,7 +137,6 @@ SECTION_FUNC(TEXT, _arc_do_syscall)
 
 	jl [blink]
 
-
 	pop_s blink
 
 
@@ -111,4 +154,9 @@ SECTION_FUNC(TEXT, _arc_do_syscall)
 	sr r6, [_ARC_V2_ERSTATUS]
 	pop r6
 	sr r6, [_ARC_V2_ERET]
+
+	clear_callee_regs
+
+	clear_scratch_regs
+
 	rtie
