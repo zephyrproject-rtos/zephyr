@@ -27,7 +27,7 @@ that the kernel object address is valid and that the calling thread
 has sufficient permissions to work with it.
 
 Object Placement
-================
+****************
 
 Kernel objects that are only used by supervisor threads have no restrictions
 and can be located anywhere in the binary, or even declared on stacks. However,
@@ -69,7 +69,7 @@ information will be printed if the script is run with the ``--verbose`` flag,
 or if the build system is invoked with verbose output.
 
 Implementation Details
-----------------------
+======================
 
 The ``gen_kobject_list.py`` script is a post-build step which finds all the
 valid kernel object instances in the binary. It accomplishes this by parsing
@@ -106,7 +106,7 @@ includes:
   the thread's index in kernel object permission bitfields.
 
 Supervisor Thread Access Permission
-===================================
+***********************************
 
 Supervisor threads can access any kernel object. However, permissions for
 supervisor threads are still tracked for two reasons:
@@ -120,7 +120,7 @@ supervisor threads are still tracked for two reasons:
   same permissions as the parent thread, except the parent thread object.
 
 User Thread Access Permission
-=============================
+*****************************
 
 By default, when a user thread is created, it will only have access permissions
 on its own thread object. Other kernel objects by default are not usable.
@@ -161,7 +161,7 @@ not being tracked by the kernel will be no-ops. Doing the same from user mode
 will result in a fatal error for the calling thread.
 
 Initialization State
-====================
+********************
 
 Most operations on kernel objects will fail if the object is considered to be
 in an uninitialized state. The appropriate init function for the object must
@@ -200,14 +200,14 @@ are embedded within some larger struct and initialized statically.
 
 
 Creating New Kernel Object Types
-================================
+********************************
 
 When implementing new kernel features or driver subsystems, it may be necessary
 to define some new kernel object types. There are different steps needed
 for creating core kernel objects and new driver subsystems.
 
 Creating New Core Kernel Objects
---------------------------------
+================================
 
 * In ``scripts/gen_kobject_list.py``, add the name of the struct to the
   :py:data:`kobjects` list.
@@ -222,7 +222,7 @@ Creating New Core Kernel Objects
 Instances of the new struct should now be tracked.
 
 Creating New Driver Subsystem Kernel Objects
---------------------------------------------
+============================================
 
 All driver instances are :c:type:`struct device`. They are differentiated by
 what API struct they are set to.
@@ -240,7 +240,7 @@ what API struct they are set to.
 Driver instances of the new subsystem should now be tracked.
 
 Configuration Options
-=====================
+*********************
 
 Related configuration options:
 
@@ -249,7 +249,7 @@ Related configuration options:
 * :option:`CONFIG_MAX_THREAD_BYTES`
 
 APIs
-====
+****
 
 * :c:func:`k_object_access_grant()`
 * :c:func:`k_object_access_revoke()`
