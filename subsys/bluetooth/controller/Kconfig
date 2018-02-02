@@ -318,12 +318,11 @@ config BT_CTLR_XTAL_THRESHOLD
 	prompt "Crystal shutdown threshold in uS"
 	depends on BT_CTLR_XTAL_ADVANCED
 	int
-	default 5168
+	default 1500
 	help
 	  Configure the optimal delta in micro seconds between two consecutive
-	  radio events below which (active clock) crystal will be retained. This
-	  value is board dependent. The value 5168 is based on crude calculation
-	  for nRF51 current versus startup time of high frequency crystal.
+	  radio events, event done to next preparation, below which (active
+	  clock) crystal will be retained. This value is board dependent.
 
 config BT_CTLR_SCHED_ADVANCED
 	bool "Advanced scheduling"
