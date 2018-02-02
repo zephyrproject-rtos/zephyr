@@ -1,0 +1,21 @@
+#
+# Copyright (c) 2018, Aapo Vienamo
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: Semtech SX1509B I2C GPIO
+id: semtech,sx1509b
+version: 0.1
+
+description: >
+        This is a representation of the SX1509B GPIO node
+
+inherits:
+    !include i2c-device.yaml
+
+properties:
+    compatible:
+      constraint: "semtech,sx1509b"
+
+...
