@@ -15,6 +15,8 @@ menuconfig LSM6DS0
 	  Enable driver for LSM6DS0 I2C-based accelerometer and gyroscope
 	  sensor.
 
+if !HAS_DTS_I2C_DEVICE
+
 config LSM6DS0_DEV_NAME
 	string "LSM6DS0 device name"
 	depends on LSM6DS0
@@ -37,6 +39,8 @@ config LSM6DS0_I2C_MASTER_DEV_NAME
 	help
 	  Specify the device name of the I2C master device to which LSM6DS0 is
 	  connected.
+
+endif
 
 config LSM6DS0_ACCEL_ENABLE_X_AXIS
 	bool "Enable accelerometer X axis"
