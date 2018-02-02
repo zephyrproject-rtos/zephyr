@@ -32,3 +32,5 @@ source "subsys/dfu/Kconfig"
 source "subsys/random/Kconfig"
 
 source "subsys/storage/Kconfig"
+
+source "subsys/settings/Kconfig"
