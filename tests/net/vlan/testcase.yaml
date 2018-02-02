@@ -1,0 +1,4 @@
+tests:
+  test:
+    min_ram: 32
+    tags: net vlan
