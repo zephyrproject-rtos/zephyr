@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr.h>
+#include <kernel_structs.h>
+#include <soc.h>
 
 #define _REG(base, off) (*(volatile u32_t *)((base) + (off)))
 
@@ -65,6 +67,13 @@ static void appcpu_entry2(void)
 	__asm__ volatile("wsr.INTENABLE %0" : : "r"(ie));
 	__asm__ volatile("wsr.VECBASE %0" : : "r"(start_rec->vecbase));
 	__asm__ volatile("rsync");
+
+	/* Set up the CPU pointer.  Really this should be xtensa arch
+	 * code, not in the ESP-32 layer
+	 */
+	_cpu_t *cpu = &_kernel.cpus[1];
+
+	__asm__ volatile("wsr.MISC0 %0" : : "r"(cpu));
 
 	*start_rec->alive = 1;
 	start_rec->fn(ps, start_rec->arg);
