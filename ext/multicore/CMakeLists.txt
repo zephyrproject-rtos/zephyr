@@ -1,0 +1,1 @@
+add_subdirectory_ifdef(MULTICORE_RPMSG_LITE rpmsg_lite)
