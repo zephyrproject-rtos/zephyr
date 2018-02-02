@@ -220,8 +220,8 @@ void *xtensa_excint1_c(int *interrupted_stack)
 		 * the user...
 		 */
 		printk(" ** FATAL EXCEPTION\n");
-		printk(" ** EXCCAUSE %d PS %p PC %p VADDR %p\n",
-		       cause, (void *)bsa[BSA_PS_OFF/4],
+		printk(" ** CPU %d EXCCAUSE %d PS %p PC %p VADDR %p\n",
+		       _arch_curr_cpu()->id, cause, (void *)bsa[BSA_PS_OFF/4],
 		       (void *)bsa[BSA_PC_OFF/4], (void *)vaddr);
 
 		dump_stack(interrupted_stack);
