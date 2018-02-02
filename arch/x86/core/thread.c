@@ -145,6 +145,11 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 }
 
 #ifdef CONFIG_X86_USERSPACE
+
+#ifndef CONFIG_X86_NO_MELTDOWN
+#error "Enabling user mode on platforms known to be vulnerable to Meltdown is forbidden"
+#endif
+
 void _x86_swap_update_page_tables(struct k_thread *incoming,
 				  struct k_thread *outgoing)
 {
