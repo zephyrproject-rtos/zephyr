@@ -24,6 +24,7 @@ set(stm_socs
   stm32f3x
   stm32f4x
   stm32f7x
+  stm32l0x
   stm32l4x
   )
 
