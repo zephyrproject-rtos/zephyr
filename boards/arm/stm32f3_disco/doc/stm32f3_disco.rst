@@ -90,6 +90,8 @@ features:
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on Zephyr porting.
 
@@ -116,6 +118,14 @@ Default Zephyr Peripheral Mapping:
 - I2C1_SDA : PB7
 - I2C2_SCL : PA9
 - I2C2_SDA : PA10
+- SPI1_NSS : PA4
+- SPI1_SCK : PA5
+- SPI1_MISO : PA6
+- SPI1_MOSI : PA7
+- SPI2_NSS : PB12
+- SPI2_SCK : PB13
+- SPI2_MISO : PB14
+- SPI2_MOSI : PB15
 - USER_PB : PA0
 - LD3 : PE9
 - LD4 : PE8
