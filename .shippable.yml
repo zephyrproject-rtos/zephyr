@@ -77,11 +77,14 @@ build:
       - source zephyr-env.sh
       - >
          if [ "$MATRIX_BUILD" = "1" ]; then
-            gcovr -r ${ZEPHYR_BASE} -x > shippable/codecoverage/coverage.xml;
-            mv sanity-out/native_posix/ coverage_native_posix/;
+            gcovr -r ${ZEPHYR_BASE} -x > nope;
+            lcov --capture --directory sanity-out/native_posix/ --output-file lcov.pre.info -q --rc lcov_branch_coverage=1;
+            lcov -q --remove lcov.pre.info *generated* -o lcov.info -rc lcov_branch_coverage=1;
+            rm lcov.pre.info;
             rm -rf sanity-out out-2nd-pass;
             bash <(curl -s https://codecov.io/bash) -f '!*.lst' -X coveragepy -X fixes;
-            rm -rf coverage_native_posix/;
+            rm lcov.info;
+            mv nope shippable/codecoverage/coverage.xml
          else
             rm -rf sanity-out out-2nd-pass;
          fi;
@@ -100,11 +103,14 @@ build:
       - source zephyr-env.sh
       - >
          if [ "$MATRIX_BUILD" = "1" ]; then
-            gcovr -r ${ZEPHYR_BASE} -x > shippable/codecoverage/coverage.xml;
-            mv sanity-out/native_posix/ coverage_native_posix/;
+            gcovr -r ${ZEPHYR_BASE} -x > nope;
+            lcov --capture --directory sanity-out/native_posix/ --output-file lcov.pre.info -q --rc lcov_branch_coverage=1;
+            lcov -q --remove lcov.pre.info *generated* -o lcov.info -rc lcov_branch_coverage=1;
+            rm lcov.pre.info;
             rm -rf sanity-out out-2nd-pass;
             bash <(curl -s https://codecov.io/bash) -f '!*.lst' -X coveragepy -X fixes;
-            rm -rf coverage_native_posix/;
+            rm lcov.info;
+            mv nope shippable/codecoverage/coverage.xml
          else
             rm -rf sanity-out out-2nd-pass;
          fi;
