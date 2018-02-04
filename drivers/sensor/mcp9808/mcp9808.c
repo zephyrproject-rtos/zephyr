@@ -92,12 +92,11 @@ int mcp9808_init(struct device *dev)
 
 	mcp9808_setup_interrupt(dev);
 
-	dev->driver_api = &mcp9808_api_funcs;
-
 	return 0;
 }
 
 struct mcp9808_data mcp9808_data;
 
-DEVICE_INIT(mcp9808, CONFIG_MCP9808_DEV_NAME, mcp9808_init, &mcp9808_data,
-	    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY);
+DEVICE_AND_API_INIT(mcp9808, CONFIG_MCP9808_DEV_NAME, mcp9808_init,
+		    &mcp9808_data, NULL, POST_KERNEL,
+		    CONFIG_SENSOR_INIT_PRIORITY, &mcp9808_api_funcs);
