@@ -153,12 +153,11 @@ int ak8975_init(struct device *dev)
 		return -EIO;
 	}
 
-	dev->driver_api = &ak8975_driver_api;
-
 	return 0;
 }
 
 struct ak8975_data ak8975_data;
 
-DEVICE_INIT(ak8975, CONFIG_AK8975_NAME, ak8975_init, &ak8975_data,
-	    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY);
+DEVICE_AND_API_INIT(ak8975, CONFIG_AK8975_NAME, ak8975_init, &ak8975_data,
+		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
+		    &ak8975_driver_api);
