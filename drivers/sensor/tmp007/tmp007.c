@@ -128,12 +128,11 @@ int tmp007_init(struct device *dev)
 	}
 #endif
 
-	dev->driver_api = &tmp007_driver_api;
-
 	return 0;
 }
 
 struct tmp007_data tmp007_driver;
 
-DEVICE_INIT(tmp007, CONFIG_TMP007_NAME, tmp007_init, &tmp007_driver,
-	    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY);
+DEVICE_AND_API_INIT(tmp007, CONFIG_TMP007_NAME, tmp007_init, &tmp007_driver,
+		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
+		    &tmp007_driver_api);
