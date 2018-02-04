@@ -225,12 +225,10 @@ static int dht_init(struct device *dev)
 
 	gpio_pin_write(drv_data->gpio, CONFIG_DHT_GPIO_PIN_NUM, 1);
 
-	dev->driver_api = &dht_api;
-
 	return 0;
 }
 
 struct dht_data dht_data;
 
-DEVICE_INIT(dht_dev, CONFIG_DHT_NAME, &dht_init, &dht_data,
-	    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY);
+DEVICE_AND_API_INIT(dht_dev, CONFIG_DHT_NAME, &dht_init, &dht_data,
+		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &dht_api);
