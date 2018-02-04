@@ -152,12 +152,11 @@ int bma280_init(struct device *dev)
 	}
 #endif
 
-	dev->driver_api = &bma280_driver_api;
-
 	return 0;
 }
 
 struct bma280_data bma280_driver;
 
-DEVICE_INIT(bma280, CONFIG_BMA280_NAME, bma280_init, &bma280_driver,
-	    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY);
+DEVICE_AND_API_INIT(bma280, CONFIG_BMA280_NAME, bma280_init, &bma280_driver,
+		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
+		    &bma280_driver_api);
