@@ -107,4 +107,6 @@ source "drivers/serial/Kconfig.msp432p4xx"
 
 source "drivers/serial/Kconfig.sam0"
 
+source "drivers/serial/Kconfig.gotham"
+
 endif

@@ -1,0 +1,14 @@
+# Kconfig.gotham - Gotham SoC UART configuration option
+#
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig UART_GOTHAM
+        bool "GOTHAM SoC serial driver"
+        depends on SOC_RISCV32_GOTHAM
+        default n
+        select SERIAL_HAS_DRIVER
+        help
+          This option enables the Gotham SoC serial driver.
+
