@@ -157,12 +157,11 @@ int hts221_init(struct device *dev)
 	}
 #endif
 
-	dev->driver_api = &hts221_driver_api;
-
 	return 0;
 }
 
 struct hts221_data hts221_driver;
 
-DEVICE_INIT(hts221, CONFIG_HTS221_NAME, hts221_init, &hts221_driver,
-	    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY);
+DEVICE_AND_API_INIT(hts221, CONFIG_HTS221_NAME, hts221_init, &hts221_driver,
+		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
+		    &hts221_driver_api);
