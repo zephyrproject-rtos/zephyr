@@ -175,12 +175,11 @@ static int pms7003_init(struct device *dev)
 		return -EINVAL;
 	}
 
-	dev->driver_api = &pms7003_api;
-
 	return 0;
 }
 
 static struct pms7003_data pms7003_data;
 
-DEVICE_INIT(gts_dev, CONFIG_PMS7003_DRIVER_NAME, &pms7003_init, &pms7003_data,
-	    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY);
+DEVICE_AND_API_INIT(gts_dev, CONFIG_PMS7003_DRIVER_NAME, &pms7003_init,
+		    &pms7003_data, NULL, POST_KERNEL,
+		    CONFIG_SENSOR_INIT_PRIORITY, &pms7003_api);
