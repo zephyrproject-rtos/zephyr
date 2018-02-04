@@ -488,8 +488,6 @@ static int lsm6ds0_init(struct device *dev)
 		return -EIO;
 	}
 
-	dev->driver_api = &lsm6ds0_api_funcs;
-
 	return 0;
 }
 
@@ -500,6 +498,6 @@ static const struct lsm6ds0_config lsm6ds0_config = {
 
 static struct lsm6ds0_data lsm6ds0_data;
 
-DEVICE_INIT(lsm6ds0, CONFIG_LSM6DS0_DEV_NAME, lsm6ds0_init,
-	    &lsm6ds0_data, &lsm6ds0_config, POST_KERNEL,
-	    CONFIG_SENSOR_INIT_PRIORITY);
+DEVICE_AND_API_INIT(lsm6ds0, CONFIG_LSM6DS0_DEV_NAME, lsm6ds0_init,
+		    &lsm6ds0_data, &lsm6ds0_config, POST_KERNEL,
+		    CONFIG_SENSOR_INIT_PRIORITY, &lsm6ds0_api_funcs);
