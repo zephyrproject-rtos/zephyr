@@ -132,12 +132,11 @@ static int th02_init(struct device *dev)
 		return -EINVAL;
 	}
 
-	dev->driver_api = &th02_driver_api;
-
 	return 0;
 }
 
 static struct th02_data th02_driver;
 
-DEVICE_INIT(th02, CONFIG_TH02_NAME, th02_init, &th02_driver,
-	    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY);
+DEVICE_AND_API_INIT(th02, CONFIG_TH02_NAME, th02_init, &th02_driver,
+		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
+		    &th02_driver_api);
