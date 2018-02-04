@@ -236,6 +236,7 @@ void posix_boot_cpu(void)
  */
 void posix_soc_clean_up(void)
 {
+	/* LCOV_EXCL_START */ /* See Note1 */
 	/*
 	 * If we are being called from a HW thread we can cleanup
 	 *
@@ -273,5 +274,15 @@ void posix_soc_clean_up(void)
 			 */
 		}
 	}
+	/* LCOV_EXCL_STOP */
 }
 
+/*
+ * Notes about coverage:
+ *
+ * Note1: When the application is closed due to a SIGTERM, the path in this
+ * function will depend on when that signal was received. Typically during a
+ * regression run, both paths will be covered. But in some cases they won't.
+ * Therefore and to avoid confusing developers with spurious coverage changes
+ * we exclude this function from the coverage check
+ */
