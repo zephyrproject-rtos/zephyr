@@ -143,12 +143,11 @@ static int hdc1008_init(struct device *dev)
 		return -EIO;
 	}
 
-	dev->driver_api = &hdc1008_driver_api;
-
 	return 0;
 }
 
 static struct hdc1008_data hdc1008_data;
 
-DEVICE_INIT(hdc1008, CONFIG_HDC1008_NAME, hdc1008_init, &hdc1008_data,
-	    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY);
+DEVICE_AND_API_INIT(hdc1008, CONFIG_HDC1008_NAME, hdc1008_init, &hdc1008_data,
+		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
+		    &hdc1008_driver_api);
