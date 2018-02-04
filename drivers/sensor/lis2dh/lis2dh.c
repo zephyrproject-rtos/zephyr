@@ -328,8 +328,6 @@ int lis2dh_init(struct device *dev)
 	}
 #endif
 
-	dev->driver_api = &lis2dh_driver_api;
-
 	SYS_LOG_INF("bus=%s fs=%d, odr=0x%x lp_en=0x%x scale=%d",
 		    LIS2DH_BUS_DEV_NAME, 1 << (LIS2DH_FS_IDX + 1),
 		    LIS2DH_ODR_IDX, (u8_t)LIS2DH_LP_EN_BIT, lis2dh->scale);
@@ -342,5 +340,6 @@ int lis2dh_init(struct device *dev)
 
 static struct lis2dh_data lis2dh_driver;
 
-DEVICE_INIT(lis2dh, CONFIG_LIS2DH_NAME, lis2dh_init, &lis2dh_driver,
-	    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY);
+DEVICE_AND_API_INIT(lis2dh, CONFIG_LIS2DH_NAME, lis2dh_init, &lis2dh_driver,
+		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
+		    &lis2dh_driver_api);
