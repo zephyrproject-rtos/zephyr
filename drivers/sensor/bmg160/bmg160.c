@@ -321,8 +321,6 @@ int bmg160_init(struct device *dev)
 	bmg160_trigger_init(dev);
 #endif
 
-	dev->driver_api = &bmg160_api;
-
 	return 0;
 }
 
@@ -336,5 +334,6 @@ const struct bmg160_device_config bmg160_config = {
 #endif
 };
 
-DEVICE_INIT(bmg160, CONFIG_BMG160_DRV_NAME, bmg160_init, &bmg160_data,
-	    &bmg160_config, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY);
+DEVICE_AND_API_INIT(bmg160, CONFIG_BMG160_DRV_NAME, bmg160_init, &bmg160_data,
+		    &bmg160_config, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
+		    &bmg160_api);
