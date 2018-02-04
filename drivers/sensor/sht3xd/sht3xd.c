@@ -182,12 +182,11 @@ static int sht3xd_init(struct device *dev)
 	}
 #endif
 
-	dev->driver_api = &sht3xd_driver_api;
-
 	return 0;
 }
 
 struct sht3xd_data sht3xd_driver;
 
-DEVICE_INIT(sht3xd, CONFIG_SHT3XD_NAME, sht3xd_init, &sht3xd_driver,
-	    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY);
+DEVICE_AND_API_INIT(sht3xd, CONFIG_SHT3XD_NAME, sht3xd_init, &sht3xd_driver,
+		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
+		    &sht3xd_driver_api);
