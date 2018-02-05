@@ -9894,7 +9894,7 @@ u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 	u32_t ticks_slot_offset;
 	struct connection *conn;
 	struct pdu_adv *pdu_adv;
-	u16_t ticks_slot;
+	u32_t slot_us;
 	u8_t chan_cnt;
 	u32_t ret;
 
@@ -10048,16 +10048,16 @@ u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 
 	if (pdu_adv->type == PDU_ADV_TYPE_DIRECT_IND) {
 		/* Max. chain is DIRECT_IND * channels + CONNECT_IND */
-		ticks_slot = ((RADIO_TICKER_START_PART_US + 176 + 152 + 40) *
-			      chan_cnt) - 40 + 352;
+		slot_us = ((RADIO_TICKER_START_PART_US + 176 + 152 + 40) *
+			   chan_cnt) - 40 + 352;
 	} else if (pdu_adv->type == PDU_ADV_TYPE_NONCONN_IND) {
-		ticks_slot = (RADIO_TICKER_START_PART_US + 376) * chan_cnt;
+		slot_us = (RADIO_TICKER_START_PART_US + 376) * chan_cnt;
 	} else {
 		/* Max. chain is ADV/SCAN_IND + SCAN_REQ + SCAN_RESP */
-		ticks_slot = (RADIO_TICKER_START_PART_US + 376 + 152 + 176 +
-			      152 + 376) * chan_cnt;
+		slot_us = (RADIO_TICKER_START_PART_US + 376 + 152 + 176 +
+			   152 + 376) * chan_cnt;
 	}
-	_radio.advertiser.hdr.ticks_slot = TICKER_US_TO_TICKS(ticks_slot);
+	_radio.advertiser.hdr.ticks_slot = TICKER_US_TO_TICKS(slot_us);
 
 	ticks_slot_offset =
 		(_radio.advertiser.hdr.ticks_active_to_start <
