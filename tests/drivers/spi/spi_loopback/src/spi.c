@@ -67,19 +67,19 @@ struct spi_config spi_fast = {
 	.cs = SPI_CS,
 };
 
-static int cs_ctrl_gpio_config(struct spi_cs_control *cs)
+#if defined(CONFIG_SPI_LOOPBACK_CS_GPIO)
+static int cs_ctrl_gpio_config(void)
 {
-	if (cs) {
-		cs->gpio_dev = device_get_binding(CS_CTRL_GPIO_DRV_NAME);
-		if (!cs->gpio_dev) {
-			SYS_LOG_ERR("Cannot find %s!\n",
-				    CS_CTRL_GPIO_DRV_NAME);
-			return -1;
-		}
+	spi_cs.gpio_dev = device_get_binding(CS_CTRL_GPIO_DRV_NAME);
+	if (!spi_cs.gpio_dev) {
+		SYS_LOG_ERR("Cannot find %s!\n",
+			    CS_CTRL_GPIO_DRV_NAME);
+		return -1;
 	}
 
 	return 0;
 }
+#endif /* CONFIG_SPI_LOOPBACK_CS_GPIO */
 
 static int spi_complete_loop(struct spi_config *spi_conf)
 {
@@ -404,10 +404,11 @@ void main(void)
 
 	SYS_LOG_INF("SPI test on buffers TX/RX %p/%p", buffer_tx, buffer_rx);
 
-	if (cs_ctrl_gpio_config(spi_slow.cs) ||
-	    cs_ctrl_gpio_config(spi_fast.cs)) {
+#if defined(CONFIG_SPI_LOOPBACK_CS_GPIO)
+	if (cs_ctrl_gpio_config()) {
 		return;
 	}
+#endif /* CONFIG_SPI_LOOPBACK_CS_GPIO */
 
 	spi_slow.dev = device_get_binding(SPI_DRV_NAME);
 	if (!spi_slow.dev) {
