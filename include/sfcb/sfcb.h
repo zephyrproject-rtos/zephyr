@@ -5,6 +5,17 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#ifndef __SFCB_H_
+#define __SFCB_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include <inttypes.h>
+#include <limits.h>
+#include <kernel.h>
+#include "flash_map.h"
 
 #define SFCB_MOVE_BLOCK_SIZE 8
 
@@ -37,25 +48,25 @@ struct sfcb_entry {
  * sfcb instance. Should be initialized with sfcb_fs_init() before use.
  **/
 struct sfcb_fs {
-    /* Constant values, set once at sfcb_fs_init(). */
 
-    u32_t magic;               /* partition magic, repeated at start of each sector */
-    off_t offset;              /* partition offset in bytes */
-    off_t write_location;      /* next write location for entry header */
-    u16_t sector_id;           /* sector id, a counter for each sector that is created */
-    u16_t sector_size;         /* partition is divided into sectors,
-                                  sector size should be multiple of pagesize */
-    u8_t sector_count;         /* how many sectors in a partition */
-    u8_t entry_sector;         /* oldest sector in use */
-    u8_t write_block_size;     /* write block size for alignment */
-    bool gc;                   /* enable garbage collection: if gc is true data from the oldest sector
-                                  will be copied to the newest sector. This requires one sector to
-                                  always be empty, and thus at least a sector_count of 2 */
+    u32_t magic;                  /* partition magic, repeated at start of each sector */
+    off_t write_location;         /* next write location for entry header */
+    u16_t sector_id;              /* sector id, a counter for each sector that is created */
+    u16_t sector_size;            /* partition is divided into sectors,
+                                     sector size should be multiple of pagesize */
+    u8_t sector_count;            /* how many sectors in a partition */
+
+    u8_t entry_sector;            /* oldest sector in use */
+    u8_t write_block_size;        /* write block size for alignment */
+    bool gc;                      /* enable garbage collection: if gc is true data from the oldest sector
+                                     will be copied to the newest sector. This requires one sector to
+                                     always be empty, and thus at least a sector_count of 2 */
 
     /* mutex definition */
     struct k_mutex fcb_lock;
-    /* Active entry */
-    struct device *flash_device;
+
+    struct flash_area fap;        /* flash area as part of flash_map */
+
 };
 
 int sfcb_fs_init(struct sfcb_fs *fs, u32_t magic);
@@ -70,3 +81,9 @@ int sfcb_fs_rotate(struct sfcb_fs *fs);
 int sfcb_fs_clear(struct sfcb_fs *fs);
 int sfcb_fs_flash_read(struct sfcb_fs *fs, off_t offset, void *data, size_t len);
 int sfcb_fs_flash_write(struct sfcb_fs *fs, off_t offset, const void *data, size_t len);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* __SFCB_H_ */

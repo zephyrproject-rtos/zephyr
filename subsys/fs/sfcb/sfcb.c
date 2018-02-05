@@ -65,10 +65,6 @@ off_t _sfcb_slt_addr_in_flash(struct sfcb_fs *fs, const struct sfcb_entry *entry
 }
 
 int _sfcb_bd_check(struct sfcb_fs *fs, off_t offset, size_t len) {
-  if ((offset < fs->offset) || (offset + len > fs->offset + fs->sector_size * fs->sector_count)) {
-    /* operation outside fcb */
-    return -1;
-  }
   if ((offset & ~(fs->sector_size-1)) != ((offset + len - 1) & ~(fs->sector_size-1))) {
     /* operation over sector boundary */
     return -1;
@@ -78,14 +74,14 @@ int _sfcb_bd_check(struct sfcb_fs *fs, off_t offset, size_t len) {
 
 void _sfcb_addr_advance(struct sfcb_fs *fs, off_t *addr, u16_t step) {
   *addr += step;
-  if (*addr >= fs->offset + fs->sector_count * fs->sector_size) {
-    *addr -= fs->sector_count * fs->sector_size;
+  if (*addr >= fs->fap.fa_size) {
+    *addr -= fs->fap.fa_size;
   }
 }
 
 /* Getting the sector header for address given in offset */
 int _sfcb_sector_hdr_get(struct sfcb_fs *fs, off_t offset, struct _fcb_sector_hdr *sector_hdr) {
-  return flash_read(fs->flash_device, (offset & ~(fs->sector_size-1)), sector_hdr, _sfcb_len_in_flash(fs, sizeof( *sector_hdr)));
+  return flash_area_read(&fs->fap, (offset & ~(fs->sector_size-1)) , sector_hdr, _sfcb_len_in_flash(fs, sizeof( *sector_hdr)));
 }
 
 /* Initializing sector by writing magic and status to sector header, set fs->write_address just after header
@@ -123,8 +119,8 @@ int _sfcb_fs_sector_is_used(struct sfcb_fs *fs, off_t offset) {
   u8_t buf;
   rc = 0;
   offset &= ~(fs->sector_size-1);
-  for (addr=offset;addr<offset + fs->sector_size;addr += sizeof(buf)) {
-    rc = flash_read(fs->flash_device, addr, &buf, sizeof(buf));
+  for (addr=0;addr<fs->sector_size;addr += sizeof(buf)) {
+    rc = flash_area_read(&fs->fap, addr , &buf, sizeof(buf));
     if (rc) {
       return SFCB_ERR_FLASH;
     }
@@ -139,20 +135,13 @@ int _sfcb_fs_sector_is_used(struct sfcb_fs *fs, off_t offset) {
 int _sfcb_fs_flash_erase(struct sfcb_fs *fs, off_t offset, size_t len) {
   int rc;
 
-  rc=flash_write_protection_set(fs->flash_device,0);
-  if (rc) {
-    /* flash protection set error */
-    return SFCB_ERR_FLASH;
-  }
-
-  rc=flash_erase(fs->flash_device, offset, len);
+  rc=flash_area_erase(&fs->fap, offset , len);
   if (rc) {
      /* flash write error */
      return SFCB_ERR_FLASH;
   }
 
   DBG_SFCB("Erasing flash at %x, len %x\n", offset,len);
-  (void) flash_write_protection_set(fs->flash_device,1);
   return SFCB_OK;
 }
 
@@ -212,7 +201,7 @@ int _sfcb_gc(struct sfcb_fs *fs, off_t addr) {
 }
 
 void sfcb_fs_set_start_entry(struct sfcb_fs *fs, struct sfcb_entry *entry) {
-  entry->data_addr = fs->offset + fs->entry_sector * fs->sector_size;
+  entry->data_addr = fs->entry_sector * fs->sector_size;
   _sfcb_addr_advance(fs,&entry->data_addr, _sfcb_len_in_flash(fs,sizeof(struct _fcb_sector_hdr))
                                          + _sfcb_len_in_flash(fs,sizeof(struct _fcb_data_hdr)));
 }
@@ -301,12 +290,9 @@ int sfcb_fs_init(struct sfcb_fs *fs, u32_t magic) {
   struct sfcb_entry entry;
   off_t addr;
 
-  if (!fs->flash_device) {
-		return SFCB_ERR_FLASH;
-	}
   fs->magic = magic;
   fs->sector_id = 0;
-  fs->write_block_size = flash_get_write_block_size(fs->flash_device);
+  fs->write_block_size = flash_area_align(&fs->fap);
 
   /* check the sector size, should be power of 2 */
   if (!((fs->sector_size != 0) && !(fs->sector_size & (fs->sector_size - 1)))) {
@@ -317,7 +303,7 @@ int sfcb_fs_init(struct sfcb_fs *fs, u32_t magic) {
     return SFCB_ERR_CFG;
   }
   for (i=0; i<fs->sector_count;i++) {
-    rc=_sfcb_sector_hdr_get(fs, fs->offset + i * fs->sector_size, &sector_hdr);
+    rc=_sfcb_sector_hdr_get(fs, i * fs->sector_size, &sector_hdr);
     if (rc) {
       return rc;
     }
@@ -341,7 +327,7 @@ int sfcb_fs_init(struct sfcb_fs *fs, u32_t magic) {
   }
   if (entry_sector < 0) { /* No valid sectors found */
     DBG_SFCB("No valid sectors found, initializing sectors\n");
-    for (addr=fs->offset;addr<fs->offset + (fs->sector_count * fs->sector_size);addr+=fs->sector_size) {
+    for (addr=0;addr<fs->fap.fa_size;addr+=fs->sector_size) {
       /* first check if used, only erase if it is */
       if (_sfcb_fs_sector_is_used(fs, addr)) {
         if (_sfcb_fs_flash_erase(fs, addr, fs->sector_size)) {
@@ -349,7 +335,7 @@ int sfcb_fs_init(struct sfcb_fs *fs, u32_t magic) {
         }
       }
     }
-    if (_sfcb_sector_init(fs, fs->offset)) {
+    if (_sfcb_sector_init(fs, 0)) {
       return SFCB_ERR_FLASH;
     }
     entry_sector = 0;
@@ -371,7 +357,7 @@ int sfcb_fs_init(struct sfcb_fs *fs, u32_t magic) {
     /* In gc mode one sector should always be empty, unless power was cut during garbage collection
        start gc again on the last sector */
     DBG_SFCB("Restarting garbage collection\n");
-    addr = fs->offset + fs->entry_sector * fs->sector_size;
+    addr = fs->entry_sector * fs->sector_size;
     _sfcb_entry_sector_advance(fs);
     rc = _sfcb_gc(fs, addr);
     if (rc) {
@@ -381,6 +367,8 @@ int sfcb_fs_init(struct sfcb_fs *fs, u32_t magic) {
       return SFCB_ERR_FLASH;
     }
   }
+
+  DBG_SFCB("Finished init:\n...write-align: %d, entry sector: %d, entry sector ID: %d, write-addr: %x\n",fs->write_block_size, fs->entry_sector, fs->sector_id, fs->write_location);
 
   k_mutex_init(&fs->fcb_lock);
 
@@ -425,7 +413,8 @@ int sfcb_fs_append_close(struct sfcb_fs *fs, const struct sfcb_entry *entry) {
   struct _fcb_data_slt data_slt;
 
   k_mutex_lock(&fs->fcb_lock, K_FOREVER);
-  data_slt.crc16 = crc16_ccitt((const u8_t *)entry->data_addr,entry->len);
+  // crc16_ccitt is directly calculated on flash data, set the correct offset !!!
+  data_slt.crc16 = crc16_ccitt((const u8_t *)(entry->data_addr + fs->fap.fa_off),entry->len);
   data_slt._pad = 0xFFFF;
   rc = sfcb_fs_flash_write(fs, _sfcb_slt_addr_in_flash(fs,entry), &data_slt, _sfcb_len_in_flash(fs,sizeof(struct _fcb_data_slt)));
   k_mutex_unlock(&fs->fcb_lock);
@@ -437,10 +426,9 @@ int sfcb_fs_check_crc(struct sfcb_fs *fs, struct sfcb_entry *entry) {
   int rc;
   struct _fcb_data_slt data_slt;
   u16_t crc16;
-
-  crc16 = crc16_ccitt((const u8_t *)entry->data_addr,entry->len);
+  // crc16_ccitt is directly calculated on flash data, set the correct offset !!!
+  crc16 = crc16_ccitt((const u8_t *)(entry->data_addr + fs->fap.fa_off),entry->len);
   rc = sfcb_fs_flash_read(fs, _sfcb_slt_addr_in_flash(fs,entry), &data_slt, _sfcb_len_in_flash(fs,sizeof(struct _fcb_data_slt)));
-
   if (rc || (crc16 != data_slt.crc16)) {
     return SFCB_ERR_CRC;
   }
@@ -477,7 +465,7 @@ int sfcb_fs_rotate(struct sfcb_fs *fs) {
   if (!fs->gc) {
     /* when gc is not enabled we need to erase the sector before writing,
        except when the entry sector has not been reached */
-    if ((addr & ~(fs->sector_size-1)) == fs->offset + fs->entry_sector * fs->sector_size) {
+    if ((addr & ~(fs->sector_size-1)) == fs->entry_sector * fs->sector_size) {
       _sfcb_entry_sector_advance(fs);
       if (_sfcb_fs_flash_erase(fs, addr, fs->sector_size)) {
         rc = SFCB_ERR_FLASH;
@@ -496,7 +484,7 @@ int sfcb_fs_rotate(struct sfcb_fs *fs) {
     addr = (fs->write_location & ~(fs->sector_size-1));
     _sfcb_addr_advance(fs,&addr, fs->sector_size);
     /* Do we need to advance the entry_sector, if so we need to copy */
-    if ((addr & ~(fs->sector_size-1)) == fs->offset + fs->entry_sector * fs->sector_size) {
+    if ((addr & ~(fs->sector_size-1)) == fs->entry_sector * fs->sector_size) {
       DBG_SFCB("Starting garbage collection...\n");
       _sfcb_entry_sector_advance(fs);
       rc = _sfcb_gc(fs, addr);
@@ -525,7 +513,7 @@ int sfcb_fs_clear(struct sfcb_fs *fs) {
   off_t addr;
 
   k_mutex_lock(&fs->fcb_lock, K_FOREVER);
-  for (addr=fs->offset;addr<fs->offset + (fs->sector_count * fs->sector_size);addr+=fs->sector_size) {
+  for (addr=0;addr<fs->fap.fa_size;addr+=fs->sector_size) {
     rc=_sfcb_fs_flash_erase(fs, addr, fs->sector_size);
     if (rc) {
       goto out;
@@ -544,7 +532,7 @@ int sfcb_fs_flash_read(struct sfcb_fs *fs, off_t offset, void *data, size_t len)
     return SFCB_ERR_ARGS;
   }
 
-  if (flash_read(fs->flash_device, offset, data, len)) {
+  if (flash_area_read(&fs->fap, offset, data, len)) {
     /* flash read error */
     return SFCB_ERR_FLASH;
   }
@@ -557,15 +545,9 @@ int sfcb_fs_flash_write(struct sfcb_fs *fs, off_t offset, const void *data, size
     return SFCB_ERR_ARGS;
   }
 
-  if (flash_write_protection_set(fs->flash_device,0)) {
-    /* flash protection set error */
-    return SFCB_ERR_FLASH;
-  }
-  if (flash_write(fs->flash_device, offset, data, len)) {
+  if (flash_area_write(&fs->fap, offset, data, len)) {
     /* flash write error */
     return SFCB_ERR_FLASH;
   }
-  (void) flash_write_protection_set(fs->flash_device,1);
-  /* don't mind about this error */
   return SFCB_OK;
 }

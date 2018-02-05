@@ -10,5 +10,6 @@ config SFCB
 	bool
 	prompt "Simple Flash Circular Buffer"
 	default n
+	depends on FLASH_MAP
 	help
 	  Enable support of Simple Flash Circular Buffer.

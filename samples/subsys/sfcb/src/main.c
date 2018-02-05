@@ -7,7 +7,8 @@
 #include <zephyr.h>
 #include <board.h>
 #include <device.h>
-#include <flash.h>
+//#include <flash.h>
+//#include "flash_map.h"
 #include <sfcb/sfcb.h>
 
 /*#if defined(CONFIG_SOC_FAMILY_NRF5)
@@ -22,10 +23,13 @@
 #define SECTOR_COUNT 4
 
 static struct sfcb_fs fs = {
-  .offset = PSTORAGE_OFFSET,
+  .magic = PSTORAGE_MAGIC,
+  .gc = true,
   .sector_size = SECTOR_SIZE,
   .sector_count = SECTOR_COUNT,
-  .gc = true,
+  .fap.fa_device_id = SOC_FLASH_0_ID,
+  .fap.fa_off = PSTORAGE_OFFSET,
+  .fap.fa_size = SECTOR_SIZE*SECTOR_COUNT,
 };
 
 /* 1000 msec = 1 sec */
@@ -37,7 +41,6 @@ void main(void)
   struct sfcb_entry new_entry;
 	u8_t buf[4];
 
-  fs.flash_device = device_get_binding(FLASH_DEV_NAME);
   rc=sfcb_fs_init(&fs, PSTORAGE_MAGIC);
   if (rc) {
     printk("Flash Init failed\n");
@@ -53,7 +56,8 @@ void main(void)
 		rc=sfcb_fs_append(&fs, &new_entry);
 	}
 	if (rc == 0) {
-	  rc = sfcb_fs_flash_write(&fs, new_entry.data_addr, "MESH", new_entry.len);
+    printk("storage addr: %x\n",new_entry.data_addr);
+	  rc = sfcb_fs_flash_write(&fs, new_entry.data_addr, "FFFF", new_entry.len);
 	  rc = sfcb_fs_append_close(&fs,&new_entry);
 	}
 
@@ -85,9 +89,11 @@ void main(void)
     if (rc == SFCB_OK) {
       printk("Found first entry %d, at location: %x ",new_entry.id,new_entry.data_addr);
       if (sfcb_fs_check_crc(&fs, &new_entry)) {
-        printk("CRC error\n");
+        printk("CRC error - Data:");
       }
-      printk("CRC OK - Data:");
+      else {
+        printk("CRC OK - Data:");
+      }
 			rc = sfcb_fs_flash_read(&fs, new_entry.data_addr, &buf, new_entry.len);
 			for (int j=0;j<new_entry.len;j++) {
 				printk("%c", buf[j]);
@@ -102,9 +108,11 @@ void main(void)
     if (rc == SFCB_OK) {
       printk("Found last entry %d, at location: %x ",new_entry.id,new_entry.data_addr);
       if (sfcb_fs_check_crc(&fs, &new_entry)) {
-        printk("CRC error\n");
+        printk("CRC error - Data:");
       }
-			printk("CRC OK - Data:");
+      else {
+			  printk("CRC OK - Data:");
+      }
 			rc = sfcb_fs_flash_read(&fs, new_entry.data_addr, &buf, new_entry.len);
 			for (int j=0;j<new_entry.len;j++) {
 				printk("%c", buf[j]);
