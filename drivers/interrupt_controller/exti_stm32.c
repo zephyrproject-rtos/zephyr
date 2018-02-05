@@ -35,6 +35,8 @@
 #define EXTI_LINES 29
 #elif CONFIG_SOC_SERIES_STM32F4X
 #define EXTI_LINES 23
+#elif defined(CONFIG_SOC_SERIES_STM32L0X)
+#define EXTI_LINES 30
 #elif defined(CONFIG_SOC_SERIES_STM32L4X)
 #define EXTI_LINES 40
 #endif
@@ -154,6 +156,23 @@ void stm32_exti_enable(int line)
 			break;
 		}
 	}
+#elif defined(CONFIG_SOC_SERIES_STM32L0X)
+	if (line >= 4 && line <= 15) {
+		irqnum = STM32L0_IRQ_EXTI4_15;
+	}	else if (line >= 2  && line <= 3) {
+		irqnum = STM32L0_IRQ_EXTI2_3;
+	}	else if (line >= 0  && line <= 1) {
+		irqnum = STM32L0_IRQ_EXTI0_1;
+	} else {
+		/* > 15 are not mapped on an IRQ */
+		/*
+		 * On STM32L0X, this function also support enabling EXTI
+		 * lines that are not connected to an IRQ. This might be used
+		 * by other drivers or boards, to allow the device wakeup on
+		 * some non-GPIO signals.
+		 */
+		return;
+	}
 #elif defined(CONFIG_SOC_SERIES_STM32L4X)
 	if (line >= 5 && line <= 9) {
 		irqnum = STM32L4_IRQ_EXTI9_5;
@@ -254,7 +273,7 @@ static void __stm32_exti_isr(int min, int max, void *arg)
 	}
 }
 
-#ifdef CONFIG_SOC_SERIES_STM32F0X
+#if defined(CONFIG_SOC_SERIES_STM32F0X) || defined(CONFIG_SOC_SERIES_STM32L0X)
 static inline void __stm32_exti_isr_0_1(void *arg)
 {
 	__stm32_exti_isr(0, 2, arg);
@@ -501,6 +520,19 @@ static void __stm32_exti_connect_irqs(struct device *dev)
 	IRQ_CONNECT(STM32F4_IRQ_EXTI22,
 		CONFIG_EXTI_STM32_EXTI22_IRQ_PRI,
 		__stm32_exti_isr_22, DEVICE_GET(exti_stm32),
+		0);
+#elif defined(CONFIG_SOC_SERIES_STM32L0X)
+	IRQ_CONNECT(STM32L0_IRQ_EXTI0_1,
+		CONFIG_EXTI_STM32_EXTI1_0_IRQ_PRI,
+		__stm32_exti_isr_0_1, DEVICE_GET(exti_stm32),
+		0);
+	IRQ_CONNECT(STM32L0_IRQ_EXTI2_3,
+		CONFIG_EXTI_STM32_EXTI3_2_IRQ_PRI,
+		__stm32_exti_isr_2_3, DEVICE_GET(exti_stm32),
+		0);
+	IRQ_CONNECT(STM32L0_IRQ_EXTI4_15,
+		CONFIG_EXTI_STM32_EXTI15_4_IRQ_PRI,
+		__stm32_exti_isr_4_15, DEVICE_GET(exti_stm32),
 		0);
 #elif defined(CONFIG_SOC_SERIES_STM32L4X)
 	IRQ_CONNECT(STM32L4_IRQ_EXTI0,
