@@ -12,6 +12,7 @@
 #define STM32_CLOCK_BUS_APB1    2
 #define STM32_CLOCK_BUS_APB2    3
 #define STM32_CLOCK_BUS_APB1_2  4
+#define STM32_CLOCK_BUS_IOP     5
 
 
 #endif /* __STM32_CLOCK_H */
