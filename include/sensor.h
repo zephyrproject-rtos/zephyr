@@ -119,7 +119,7 @@ enum sensor_channel {
 	SENSOR_CHAN_PM_2_5,
 	/** 10 micro-meters Particulate Matter, in ug/m^3 */
 	SENSOR_CHAN_PM_10,
-	/** Distance. From sensor to target, in millimeters */
+	/** Distance. From sensor to target, in meters */
 	SENSOR_CHAN_DISTANCE,
 	/** All channels. */
 	SENSOR_CHAN_ALL,
