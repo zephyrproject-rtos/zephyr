@@ -64,7 +64,7 @@
 
 /** \brief Timer node type size.
 */
-#define TICKER_NODE_T_SIZE	36
+#define TICKER_NODE_T_SIZE	40
 
 /** \brief Timer user type size.
 */
@@ -72,7 +72,7 @@
 
 /** \brief Timer user operation type size.
 */
-#define TICKER_USER_OP_T_SIZE	44
+#define TICKER_USER_OP_T_SIZE	48
 
 /** \brief Timer timeout function type.
 */
@@ -100,7 +100,7 @@ bool ticker_is_initialized(u8_t instance_index);
 void ticker_trigger(u8_t instance_index);
 u32_t ticker_start(u8_t instance_index, u8_t user_id, u8_t ticker_id,
 		   u32_t ticks_anchor, u32_t ticks_first, u32_t ticks_periodic,
-		   u32_t remainder_periodic, u16_t lazy, u16_t ticks_slot,
+		   u32_t remainder_periodic, u16_t lazy, u32_t ticks_slot,
 		   ticker_timeout_func fp_timeout_func, void *context,
 		   ticker_op_func fp_op_func, void *op_context);
 u32_t ticker_update(u8_t instance_index, u8_t user_id, u8_t ticker_id,
