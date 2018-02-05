@@ -1434,7 +1434,7 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 			pdu_adv_tx->payload.connect_ind.lldata.win_offset = 0;
 		} else {
 			conn_space_us = _radio.scanner.win_offset_us +
-					ticks_slot_offset;
+					TICKER_TICKS_TO_US(ticks_slot_offset);
 			while ((conn_space_us & ((u32_t)1 << 31)) ||
 			       (conn_space_us < conn_offset_us)) {
 				conn_space_us += conn_interval_us;
