@@ -222,9 +222,11 @@ int ll_init(struct k_sem *sem_rx)
 	_ticker_users[MAYFLY_CALL_ID_2][0] = 0;
 	_ticker_users[MAYFLY_CALL_ID_PROGRAM][0] = TICKER_USER_APP_OPS;
 
-	ticker_init(RADIO_TICKER_INSTANCE_ID_RADIO, TICKER_NODES,
-		    &_ticker_nodes[0], MAYFLY_CALLER_COUNT, &_ticker_users[0],
-		    TICKER_USER_OPS, &_ticker_user_ops[0]);
+	err = ticker_init(RADIO_TICKER_INSTANCE_ID_RADIO,
+			  TICKER_NODES, &_ticker_nodes[0],
+			  MAYFLY_CALLER_COUNT, &_ticker_users[0],
+			  TICKER_USER_OPS, &_ticker_user_ops[0]);
+	LL_ASSERT(!err);
 
 	clk_m16 = device_get_binding(CONFIG_CLOCK_CONTROL_NRF5_M16SRC_DRV_NAME);
 	if (!clk_m16) {

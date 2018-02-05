@@ -39,8 +39,8 @@ struct ticker_node {
 	ticker_timeout_func timeout_func;
 	void  *context;
 
-	u16_t ticks_to_expire_minus;
-	u16_t ticks_slot;
+	u32_t ticks_to_expire_minus;
+	u32_t ticks_slot;
 	u16_t lazy_periodic;
 	u16_t lazy_current;
 	u32_t remainder_periodic;
@@ -62,7 +62,7 @@ struct ticker_user_op_start {
 	u32_t ticks_periodic;
 	u32_t remainder_periodic;
 	u16_t lazy;
-	u16_t ticks_slot;
+	u32_t ticks_slot;
 	ticker_timeout_func fp_timeout_func;
 	void  *context;
 };
@@ -112,9 +112,9 @@ struct ticker_instance {
 	u8_t  ticks_elapsed_last;
 	u32_t ticks_elapsed[DOUBLE_BUFFER_SIZE];
 	u32_t ticks_current;
-	u8_t  ticker_id_head;
+	u32_t ticks_slot_previous;
 	u8_t  ticker_id_slot_previous;
-	u16_t ticks_slot_previous;
+	u8_t  ticker_id_head;
 	u8_t  job_guard;
 	u8_t  worker_trigger;
 	u8_t  (*fp_caller_id_get)(u8_t user_id);
@@ -416,7 +416,7 @@ static void ticks_to_expire_prep(struct ticker_node *ticker,
 				 u32_t ticks_current, u32_t ticks_at_start)
 {
 	u32_t ticks_to_expire = ticker->ticks_to_expire;
-	u16_t ticks_to_expire_minus = ticker->ticks_to_expire_minus;
+	u32_t ticks_to_expire_minus = ticker->ticks_to_expire_minus;
 
 	/* Calculate ticks to expire for this new node */
 	if (((ticks_at_start - ticks_current) & BIT(23)) == 0) {
@@ -1522,7 +1522,7 @@ void ticker_trigger(u8_t instance_index)
 
 u32_t ticker_start(u8_t instance_index, u8_t user_id, u8_t ticker_id,
 		   u32_t ticks_anchor, u32_t ticks_first, u32_t ticks_periodic,
-		   u32_t remainder_periodic, u16_t lazy, u16_t ticks_slot,
+		   u32_t remainder_periodic, u16_t lazy, u32_t ticks_slot,
 		   ticker_timeout_func ticker_timeout_func, void *context,
 		   ticker_op_func fp_op_func, void *op_context)
 {
