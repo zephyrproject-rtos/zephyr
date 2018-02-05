@@ -164,7 +164,7 @@ struct spi_config {
 	u16_t		operation;
 	u16_t		slave;
 
-	struct spi_cs_control *cs;
+	const struct spi_cs_control *cs;
 };
 
 /**

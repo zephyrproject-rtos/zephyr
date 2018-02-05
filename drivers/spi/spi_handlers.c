@@ -54,7 +54,7 @@ _SYSCALL_HANDLER(spi_transceive, dev, config_p, tx_bufs, rx_bufs)
 	}
 
 	if (config->cs) {
-		struct spi_cs_control *cs = config->cs;
+		const struct spi_cs_control *cs = config->cs;
 
 		_SYSCALL_MEMORY_READ(cs, sizeof(*cs));
 		if (cs->gpio_dev) {
