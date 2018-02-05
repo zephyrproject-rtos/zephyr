@@ -96,12 +96,13 @@ extern "C" {
 /**
  * @brief SPI MISO lines
  *
- * Some controllers support dual or quad MISO lines connected to slaves.
+ * Some controllers support dual, quad or octal MISO lines connected to slaves.
  * Default is single, which is the case most of the time.
  */
-#define SPI_LINES_SINGLE	(0)
-#define SPI_LINES_DUAL		BIT(11)
-#define SPI_LINES_QUAD		BIT(12)
+#define SPI_LINES_SINGLE	(0 << 11)
+#define SPI_LINES_DUAL		(1 << 11)
+#define SPI_LINES_QUAD		(2 << 11)
+#define SPI_LINES_OCTAL		(3 << 11)
 
 #define SPI_LINES_MASK		(0x3 << 11)
 
@@ -147,7 +148,7 @@ struct spi_cs_control {
  *     mode                [ 1 : 3 ]   - Polarity, phase and loop mode.
  *     transfer            [ 4 ]       - LSB or MSB first.
  *     word_size           [ 5 : 10 ]  - Size of a data frame in bits.
- *     lines               [ 11 : 12 ] - MISO lines: Single/Dual/Quad.
+ *     lines               [ 11 : 12 ] - MISO lines: Single/Dual/Quad/Octal.
  *     cs_hold             [ 13 ]      - Hold on the CS line if possible.
  *     lock_on             [ 14 ]      - Keep resource locked for the caller.
  *     _unused_            [ 15 ]      - Free for future use.
