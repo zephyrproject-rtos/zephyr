@@ -1373,7 +1373,7 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 		conn->hdr.ticks_preempt_to_start =
 			TICKER_US_TO_TICKS(RADIO_TICKER_PREEMPT_PART_MIN_US);
 		conn->hdr.ticks_slot = _radio.scanner.ticks_conn_slot;
-		ticks_slot_offset = (conn->hdr. ticks_active_to_start <
+		ticks_slot_offset = (conn->hdr.ticks_active_to_start <
 				     conn->hdr.ticks_xtal_to_start) ?
 				    conn->hdr.ticks_xtal_to_start :
 				    conn->hdr.ticks_active_to_start;
@@ -1534,7 +1534,7 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 		}
 
 		radio_le_conn_cmplt->interval = _radio.scanner.conn_interval;
-		radio_le_conn_cmplt->latency = _radio.scanner. conn_latency;
+		radio_le_conn_cmplt->latency = _radio.scanner.conn_latency;
 		radio_le_conn_cmplt->timeout = _radio.scanner.conn_timeout;
 		radio_le_conn_cmplt->mca =
 			pdu_adv_tx->payload.connect_ind.lldata.sca;
@@ -9370,7 +9370,7 @@ static u8_t version_ind_send(struct connection *conn,
 
 	v = &pdu_data_rx->payload.llctrl.ctrldata.version_ind;
 	conn->llcp_version.version_number = v->version_number;
-	conn->llcp_version. company_id = v->company_id;
+	conn->llcp_version.company_id = v->company_id;
 	conn->llcp_version.sub_version_number = v->sub_version_number;
 	conn->llcp_version.rx = 1;
 
