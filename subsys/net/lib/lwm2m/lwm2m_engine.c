@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
- * Copyright (c) 2017 Open Source Foundries Limited.
+ * Copyright (c) 2018 Open Source Foundries Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -1900,6 +1900,11 @@ static int lwm2m_read_handler(struct lwm2m_engine_obj_inst *obj_inst,
 	}
 
 	if (res->multi_count_var != NULL) {
+		/* if multi_count_var is 0 (none assigned) return NOT_FOUND */
+		if (*res->multi_count_var == 0) {
+			return -ENOENT;
+		}
+
 		engine_put_begin_ri(out, path);
 		loop_max = *res->multi_count_var;
 		res_inst_id_tmp = path->res_inst_id;
