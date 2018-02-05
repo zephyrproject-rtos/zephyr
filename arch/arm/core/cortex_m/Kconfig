@@ -42,6 +42,13 @@ config CPU_CORTEX_M_HAS_BASEPRI
 	help
 	  This option signifies the CPU has the BASEPRI register.
 
+config CPU_CORTEX_M_HAS_VTOR
+	bool
+	# Omit prompt to signify "hidden" option
+	default n
+	help
+	  This option signifies the CPU has the VTOR register.
+
 config CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS
 	bool
 	# Omit prompt to signify "hidden" option
@@ -74,6 +81,7 @@ config ARMV7_M
 	select ATOMIC_OPERATIONS_BUILTIN
 	select ISA_THUMB2
 	select CPU_CORTEX_M_HAS_BASEPRI
+	select CPU_CORTEX_M_HAS_VTOR
 	select CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS
 	help
 	  This option signifies the use of an ARMv7-M processor implementation.
