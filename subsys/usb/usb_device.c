@@ -93,9 +93,37 @@
 #define MAX_NUM_REQ_HANDLERS        (4)
 #define MAX_STD_REQ_MSG_SIZE        8
 
+#define MAX_NUM_TRANSFERS           4 /** Max number of parallel transfers */
+
 /* Default USB control EP, always 0 and 0x80 */
 #define USB_CONTROL_OUT_EP0         0
 #define USB_CONTROL_IN_EP0          0x80
+
+
+struct usb_transfer_data {
+	/** endpoint associated to the transfer */
+	u8_t ep;
+	/** Transfer status */
+	int status;
+	/** Transfer read/write buffer */
+	u8_t *buffer;
+	/** Transfer buffer size */
+	size_t bsize;
+	/** Transferred size */
+	size_t tsize;
+	/** Transfer callback */
+	usb_transfer_callback cb;
+	/** Transfer caller private data */
+	void *priv;
+	/** Transfer synchronization semaphore */
+	struct k_sem sem;
+	/** Transfer read/write work */
+	struct k_work work;
+	/** Transfer flags */
+	unsigned int flags;
+};
+
+static void usb_transfer_work(struct k_work *item);
 
 static struct usb_dev_priv {
 	/** Setup packet */
@@ -122,6 +150,8 @@ static struct usb_dev_priv {
 	bool enabled;
 	/** Currently selected configuration */
 	u8_t configuration;
+	/** Transfer list */
+	struct usb_transfer_data transfer[MAX_NUM_TRANSFERS];
 } usb_dev;
 
 /*
@@ -937,6 +967,12 @@ int usb_enable(struct usb_cfg_data *config)
 			return ret;
 	}
 
+	/* init transfer slots */
+	for (i = 0; i < MAX_NUM_TRANSFERS; i++) {
+		k_work_init(&usb_dev.transfer[i].work, usb_transfer_work);
+		k_sem_init(&usb_dev.transfer[i].sem, 1, 1);
+	}
+
 	/* enable control EP */
 	ret = usb_dc_ep_enable(USB_CONTROL_OUT_EP0);
 	if (ret < 0)
@@ -1003,4 +1039,248 @@ int usb_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 int usb_ep_read_continue(u8_t ep)
 {
 	return usb_dc_ep_read_continue(ep);
+}
+
+/* Transfer management */
+static struct usb_transfer_data *usb_ep_get_transfer(u8_t ep)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(usb_dev.transfer); i++) {
+		if (usb_dev.transfer[i].ep == ep) {
+			return &usb_dev.transfer[i];
+		}
+	}
+
+	return NULL;
+}
+
+static void usb_transfer_work(struct k_work *item)
+{
+	struct usb_transfer_data *trans;
+	int ret = 0, bytes;
+	u8_t ep;
+
+	trans = CONTAINER_OF(item, struct usb_transfer_data, work);
+	ep = trans->ep;
+
+	if (trans->status != -EBUSY) {
+		/* transfer cancelled or already completed */
+		goto done;
+	}
+
+	if (trans->flags & USB_TRANS_WRITE) {
+		if (!trans->bsize) {
+			if (!(trans->flags & USB_TRANS_NO_ZLP)) {
+				usb_dc_ep_write(ep, NULL, 0, NULL);
+			}
+			trans->status = 0;
+			goto done;
+		}
+
+		ret = usb_dc_ep_write(ep, trans->buffer, trans->bsize, &bytes);
+		if (ret) {
+			/* transfer error */
+			trans->status = -EINVAL;
+			goto done;
+		}
+
+		trans->buffer += bytes;
+		trans->bsize -= bytes;
+		trans->tsize += bytes;
+	} else {
+		ret = usb_dc_ep_read_wait(ep, trans->buffer, trans->bsize,
+					  &bytes);
+		if (ret) {
+			/* transfer error */
+			trans->status = -EINVAL;
+			goto done;
+		}
+
+		trans->buffer += bytes;
+		trans->bsize -= bytes;
+		trans->tsize += bytes;
+
+		/* ZLP, short-pkt or buffer full */
+		if (!bytes || (bytes % usb_dc_ep_mps(ep)) || !trans->bsize) {
+			/* transfer complete */
+			trans->status = 0;
+			goto done;
+		}
+
+		/* we expect mote data, clear NAK */
+		usb_dc_ep_read_continue(ep);
+	}
+
+done:
+	if (trans->status != -EBUSY && trans->cb) { /* Transfer complete */
+		usb_transfer_callback cb = trans->cb;
+		int tsize = trans->tsize;
+		void *priv = trans->priv;
+
+		if (k_is_in_isr()) {
+			/* reschedule completion in thread context */
+			k_work_submit(&trans->work);
+			return;
+		}
+
+		SYS_LOG_DBG("transfer done, ep=%02x, status=%d, size=%u\n",
+			    trans->ep, trans->status, trans->tsize);
+
+		trans->cb = NULL;
+		k_sem_give(&trans->sem);
+
+		/* Transfer completion callback */
+		cb(ep, tsize, priv);
+	}
+}
+
+void usb_transfer_ep_callback(u8_t ep, enum usb_dc_ep_cb_status_code status)
+{
+	struct usb_transfer_data *trans = usb_ep_get_transfer(ep);
+
+	if (status != USB_DC_EP_DATA_IN && status != USB_DC_EP_DATA_OUT) {
+		return;
+	}
+
+	if (!trans) {
+		if (status == USB_DC_EP_DATA_IN) {
+			u32_t bytes;
+			/* In the unlikely case we receive data while no
+			 * transfer is ongoing, we have to consume the data
+			 * anyway. This is to prevent stucking reception on
+			 * other endpoints (e.g dw driver has only one rx-fifo,
+			 * so drain it).
+			 */
+			do {
+				u8_t data;
+
+				usb_dc_ep_read_wait(ep, &data, 1, &bytes);
+			} while (bytes);
+
+			SYS_LOG_ERR("RX data lost, no transfer");
+		}
+		return;
+	}
+
+	if (!k_is_in_isr() || (status == USB_DC_EP_DATA_OUT)) {
+		/* If we are not in IRQ context, no need to defer work */
+		/* Read (out) needs to be done from ep_callback */
+		usb_transfer_work(&trans->work);
+	} else {
+		k_work_submit(&trans->work);
+	}
+}
+
+int usb_transfer(u8_t ep, u8_t *data, size_t dlen, unsigned int flags,
+		 usb_transfer_callback cb, void *cb_data)
+{
+	struct usb_transfer_data *trans = NULL;
+	int i, key, ret = 0;
+
+	SYS_LOG_DBG("transfer start, ep=%02x, data=%p, dlen=%d\n",
+		    ep, data, dlen);
+
+	key = irq_lock();
+
+	for (i = 0; i < MAX_NUM_TRANSFERS; i++) {
+		if (!k_sem_take(&usb_dev.transfer[i].sem, K_NO_WAIT)) {
+			trans = &usb_dev.transfer[i];
+			break;
+		}
+	}
+
+	if (!trans) {
+		SYS_LOG_ERR("no transfer slot available\n");
+		ret = -ENOMEM;
+		goto done;
+	}
+
+	if (trans->status == -EBUSY) {
+		/* A transfer is already ongoing and not completed */
+		k_sem_give(&trans->sem);
+		ret = -EBUSY;
+		goto done;
+	}
+
+	/* Configure new transfer */
+	trans->ep = ep;
+	trans->buffer = data;
+	trans->bsize = dlen;
+	trans->tsize = 0;
+	trans->cb = cb;
+	trans->flags = flags;
+	trans->priv = cb_data;
+	trans->status = -EBUSY;
+
+	if (usb_dc_ep_mps(ep) && (dlen % usb_dc_ep_mps(ep))) {
+		/* no need to send ZLP since last packet will be a short one */
+		trans->flags |= USB_TRANS_NO_ZLP;
+	}
+
+	if (flags & USB_TRANS_WRITE) {
+		/* start writing first chunk */
+		k_work_submit(&trans->work);
+	} else {
+		/* ready to read, clear NAK */
+		usb_dc_ep_read_continue(ep);
+	}
+
+done:
+	irq_unlock(key);
+	return ret;
+}
+
+void usb_cancel_transfer(u8_t ep)
+{
+	struct usb_transfer_data *trans;
+	int key;
+
+	key = irq_lock();
+
+	trans = usb_ep_get_transfer(ep);
+	if (!trans) {
+		goto done;
+	}
+
+	if (trans->status != -EBUSY) {
+		goto done;
+	}
+
+	trans->status = -ECANCELED;
+	k_work_submit(&trans->work);
+
+done:
+	irq_unlock(key);
+}
+
+struct usb_transfer_sync_priv {
+	int tsize;
+	struct k_sem sem;
+};
+
+static void usb_transfer_sync_cb(u8_t ep, int size, void *priv)
+{
+	struct usb_transfer_sync_priv *pdata = priv;
+
+	pdata->tsize = size;
+	k_sem_give(&pdata->sem);
+}
+
+int usb_transfer_sync(u8_t ep, u8_t *data, size_t dlen, unsigned int flags)
+{
+	struct usb_transfer_sync_priv pdata;
+	int ret;
+
+	k_sem_init(&pdata.sem, 0, 1);
+
+	ret = usb_transfer(ep, data, dlen, flags, usb_transfer_sync_cb, &pdata);
+	if (ret) {
+		return ret;
+	}
+
+	/* Semaphore will be released by the transfer completion callback */
+	k_sem_take(&pdata.sem, K_FOREVER);
+
+	return pdata.tsize;
 }

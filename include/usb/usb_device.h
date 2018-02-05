@@ -298,4 +298,69 @@ int usb_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
  */
 int usb_ep_read_continue(u8_t ep);
 
+/**
+ * Callback function signature for transfer completion.
+ */
+typedef void (*usb_transfer_callback)(u8_t ep, int tsize, void *priv);
+
+/* USB transfer flags */
+#define USB_TRANS_READ       BIT(0)   /** Read transfer flag */
+#define USB_TRANS_WRITE      BIT(1)   /** Write transfer flag */
+#define USB_TRANS_NO_ZLP     BIT(2)   /** No zero-length packet flag */
+
+/**
+ * @brief Transfer management endpoint callback
+ *
+ * If a USB class driver wants to use high-level transfer functions, driver
+ * needs to register this callback as usb endpoint callback.
+ */
+void usb_transfer_ep_callback(u8_t ep, enum usb_dc_ep_cb_status_code);
+
+/**
+ * @brief Start a transfer
+ *
+ * Start a usb transfer to/from the data buffer. This function is asynchronous
+ * and can be executed in IRQ context. The provided callback will be called
+ * on transfer completion (or error) in thread context.
+ *
+ * @param[in]  ep           Endpoint address corresponding to the one
+ *                          listed in the device configuration table
+ * @param[in]  data         Pointer to data buffer to write-to/read-from
+ * @param[in]  dlen         Size of data buffer
+ * @param[in]  flags        Transfer flags (USB_TRANS_READ, USB_TRANS_WRITE...)
+ * @param[in]  cb           Function called on transfer completion/failure
+ * @param[in]  priv         Data passed back to the transfer completion callback
+ *
+ * @return 0 on success, negative errno code on fail.
+ */
+int usb_transfer(u8_t ep, u8_t *data, size_t dlen, unsigned int flags,
+		 usb_transfer_callback cb, void *priv);
+
+/**
+ * @brief Start a transfer and block-wait for completion
+ *
+ * Synchronous version of usb_transfer, wait for transfer completion before
+ * returning.
+ *
+ * @param[in]  ep           Endpoint address corresponding to the one
+ *                          listed in the device configuration table
+ * @param[in]  data         Pointer to data buffer to write-to/read-from
+ * @param[in]  dlen         Size of data buffer
+ * @param[in]  flags        Transfer flags
+
+ *
+ * @return number of bytes transferred on success, negative errno code on fail.
+ */
+int usb_transfer_sync(u8_t ep, u8_t *data, size_t dlen, unsigned int flags);
+
+/**
+ * @brief Cancel any ongoing transfer on the specified endpoint
+ *
+ * @param[in]  ep           Endpoint address corresponding to the one
+ *                          listed in the device configuration table
+ *
+ * @return 0 on success, negative errno code on fail.
+ */
+void usb_cancel_transfer(u8_t ep);
+
 #endif /* USB_DEVICE_H_ */
