@@ -293,14 +293,14 @@ static int i2c_nrf5_init(struct device *dev)
 				    | GPIO_DS_DISCONNECT_HIGH);
 	__ASSERT_NO_MSG(status == 0);
 
-	status = gpio_pin_configure(data->gpio, CONFIG_I2C_NRF5_GPIO_SCA_PIN,
+	status = gpio_pin_configure(data->gpio, CONFIG_I2C_NRF5_GPIO_SDA_PIN,
 				    GPIO_DIR_IN
 				    | GPIO_PUD_PULL_UP
 				    | GPIO_DS_DISCONNECT_HIGH);
 	__ASSERT_NO_MSG(status == 0);
 
 	twi->PSELSCL = CONFIG_I2C_NRF5_GPIO_SCL_PIN;
-	twi->PSELSDA = CONFIG_I2C_NRF5_GPIO_SCA_PIN;
+	twi->PSELSDA = CONFIG_I2C_NRF5_GPIO_SDA_PIN;
 	twi->ERRORSRC = twi->ERRORSRC;
 	twi->EVENTS_TXDSENT = 0;
 	twi->EVENTS_RXDREADY = 0;
