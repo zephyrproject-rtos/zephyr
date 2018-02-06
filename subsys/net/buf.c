@@ -55,22 +55,11 @@ static int pool_id(struct net_buf_pool *pool)
 	return pool - _net_buf_pool_list;
 }
 
-/* Helpers to access the storage array, since we don't have access to its
- * type at this point anymore.
- */
-#define BUF_SIZE(pool) (sizeof(struct net_buf) + \
-			ROUND_UP(pool->buf_size, 4) + \
-			ROUND_UP(pool->user_data_size, 4))
-#define UNINIT_BUF(pool, n) (struct net_buf *)(((u8_t *)(pool->__bufs)) + \
-					       ((n) * BUF_SIZE(pool)))
-
 int net_buf_id(struct net_buf *buf)
 {
 	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
-	u8_t *pool_start = (u8_t *)pool->__bufs;
-	u8_t *buf_ptr = (u8_t *)buf;
 
-	return (buf_ptr - pool_start) / BUF_SIZE(pool);
+	return buf - pool->__bufs;
 }
 
 static inline struct net_buf *pool_get_uninit(struct net_buf_pool *pool,
@@ -78,10 +67,9 @@ static inline struct net_buf *pool_get_uninit(struct net_buf_pool *pool,
 {
 	struct net_buf *buf;
 
-	buf = UNINIT_BUF(pool, pool->buf_count - uninit_count);
+	buf = &pool->__bufs[pool->buf_count - uninit_count];
 
 	buf->pool_id = pool_id(pool);
-	buf->size = pool->buf_size;
 
 	return buf;
 }
@@ -91,23 +79,67 @@ void net_buf_reset(struct net_buf *buf)
 	NET_BUF_ASSERT(buf->flags == 0);
 	NET_BUF_ASSERT(buf->frags == NULL);
 
-	buf->len   = 0;
-	buf->data  = buf->__buf;
+	net_buf_simple_reset(&buf->b);
+}
+
+static u8_t *fixed_data_alloc(struct net_buf *buf, size_t *size, s32_t timeout)
+{
+	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
+	const struct net_buf_pool_fixed *fixed = pool->alloc->alloc_data;
+
+	*size = min(fixed->data_size, *size);
+
+	return fixed->data_pool + fixed->data_size * net_buf_id(buf);
+}
+
+static void fixed_data_unref(struct net_buf *buf, u8_t *data)
+{
+	/* Nothing needed for fixed-size data pools */
+}
+
+const struct net_buf_data_cb net_buf_fixed_cb = {
+	.alloc = fixed_data_alloc,
+	.unref = fixed_data_unref,
+};
+
+static u8_t *data_alloc(struct net_buf *buf, size_t *size, s32_t timeout)
+{
+	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
+
+	return pool->alloc->cb->alloc(buf, size, timeout);
+}
+
+static u8_t *data_ref(struct net_buf *buf, u8_t *data)
+{
+	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
+
+	return pool->alloc->cb->ref(buf, data);
+}
+
+static void data_unref(struct net_buf *buf, u8_t *data)
+{
+	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
+
+	pool->alloc->cb->unref(buf, data);
 }
 
 #if defined(CONFIG_NET_BUF_LOG)
-struct net_buf *net_buf_alloc_debug(struct net_buf_pool *pool, s32_t timeout,
-				    const char *func, int line)
+struct net_buf *net_buf_alloc_len_debug(struct net_buf_pool *pool, size_t size,
+					s32_t timeout, const char *func,
+					int line)
 #else
-struct net_buf *net_buf_alloc(struct net_buf_pool *pool, s32_t timeout)
+struct net_buf *net_buf_alloc_len(struct net_buf_pool *pool, size_t size,
+				  s32_t timeout)
 #endif
 {
+	u32_t alloc_start = k_uptime_get_32();
 	struct net_buf *buf;
 	unsigned int key;
 
 	NET_BUF_ASSERT(pool);
 
-	NET_BUF_DBG("%s():%d: pool %p timeout %d", func, line, pool, timeout);
+	NET_BUF_DBG("%s():%d: pool %p size %zu timeout %d", func, line, pool,
+		    size, timeout);
 
 	/* We need to lock interrupts temporarily to prevent race conditions
 	 * when accessing pool->uninit_count.
@@ -178,9 +210,28 @@ struct net_buf *net_buf_alloc(struct net_buf_pool *pool, s32_t timeout)
 success:
 	NET_BUF_DBG("allocated buf %p", buf);
 
+	if (size) {
+		if (timeout != K_NO_WAIT && timeout != K_FOREVER) {
+			u32_t diff = k_uptime_get_32() - alloc_start;
+
+			timeout -= min(timeout, diff);
+		}
+
+		buf->__buf = data_alloc(buf, &size, timeout);
+		if (!buf->__buf) {
+			NET_BUF_ERR("%s():%d: Failed to allocate data",
+				    func, line);
+			net_buf_destroy(buf);
+			return NULL;
+		}
+	} else {
+		buf->__buf = NULL;
+	}
+
 	buf->ref   = 1;
 	buf->flags = 0;
 	buf->frags = NULL;
+	buf->size  = size;
 	net_buf_reset(buf);
 
 #if defined(CONFIG_NET_BUF_POOL_USAGE)
@@ -190,6 +241,25 @@ success:
 
 	return buf;
 }
+
+#if defined(CONFIG_NET_BUF_LOG)
+struct net_buf *net_buf_alloc_fixed_debug(struct net_buf_pool *pool,
+					  s32_t timeout, const char *func,
+					  int line)
+{
+	const struct net_buf_pool_fixed *fixed = pool->alloc->alloc_data;
+
+	return net_buf_alloc_len_debug(pool, fixed->data_size, timeout, func,
+				       line);
+}
+#else
+struct net_buf *net_buf_alloc_fixed(struct net_buf_pool *pool, s32_t timeout)
+{
+	const struct net_buf_pool_fixed *fixed = pool->alloc->alloc_data;
+
+	return net_buf_alloc_len(pool, fixed->data_size, timeout);
+}
+#endif
 
 #if defined(CONFIG_NET_BUF_LOG)
 struct net_buf *net_buf_get_debug(struct k_fifo *fifo, s32_t timeout,
@@ -224,7 +294,7 @@ struct net_buf *net_buf_get(struct k_fifo *fifo, s32_t timeout)
 	return buf;
 }
 
-void net_buf_reserve(struct net_buf *buf, size_t reserve)
+void net_buf_simple_reserve(struct net_buf_simple *buf, size_t reserve)
 {
 	NET_BUF_ASSERT(buf);
 	NET_BUF_ASSERT(buf->len == 0);
@@ -323,6 +393,12 @@ void net_buf_unref(struct net_buf *buf)
 			return;
 		}
 
+		if (buf->__buf) {
+			data_unref(buf, buf->__buf);
+			buf->__buf = NULL;
+		}
+
+		buf->data = NULL;
 		buf->frags = NULL;
 
 		pool = net_buf_pool_get(buf->pool_id);
@@ -354,6 +430,7 @@ struct net_buf *net_buf_ref(struct net_buf *buf)
 
 struct net_buf *net_buf_clone(struct net_buf *buf, s32_t timeout)
 {
+	u32_t alloc_start = k_uptime_get_32();
 	struct net_buf_pool *pool;
 	struct net_buf *clone;
 
@@ -361,15 +438,38 @@ struct net_buf *net_buf_clone(struct net_buf *buf, s32_t timeout)
 
 	pool = net_buf_pool_get(buf->pool_id);
 
-	clone = net_buf_alloc(pool, timeout);
+	clone = net_buf_alloc_len(pool, 0, timeout);
 	if (!clone) {
 		return NULL;
 	}
 
-	net_buf_reserve(clone, net_buf_headroom(buf));
+	/* If the pool supports data referencing use that. Otherwise
+	 * we need to allocate new data and make a copy.
+	 */
+	if (pool->alloc->cb->ref) {
+		clone->__buf = data_ref(buf, buf->__buf);
+		clone->data = buf->data;
+		clone->len = buf->len;
+		clone->size = buf->size;
+	} else {
+		size_t size = buf->size;
 
-	/* TODO: Add reference to the original buffer instead of copying it. */
-	memcpy(net_buf_add(clone, buf->len), buf->data, buf->len);
+		if (timeout != K_NO_WAIT && timeout != K_FOREVER) {
+			u32_t diff = k_uptime_get_32() - alloc_start;
+
+			timeout -= min(timeout, diff);
+		}
+
+		clone->__buf = data_alloc(clone, &size, timeout);
+		if (!clone->__buf || size < buf->size) {
+			net_buf_destroy(clone);
+			return NULL;
+		}
+
+		clone->size = size;
+		clone->data = clone->__buf + net_buf_headroom(buf);
+		net_buf_add_mem(clone, buf->data, buf->len);
+	}
 
 	return clone;
 }

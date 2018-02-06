@@ -998,13 +998,10 @@ static inline struct net_buf *l2cap_alloc_seg(struct net_buf *buf)
 	struct net_buf *seg;
 
 	/* Try to use original pool if possible */
-	if (pool->user_data_size >= BT_BUF_USER_DATA_MIN &&
-	    pool->buf_size >= BT_L2CAP_BUF_SIZE(L2CAP_MAX_LE_MPS)) {
-		seg = net_buf_alloc(pool, K_NO_WAIT);
-		if (seg) {
-			net_buf_reserve(seg, BT_L2CAP_CHAN_SEND_RESERVE);
-			return seg;
-		}
+	seg = net_buf_alloc(pool, K_NO_WAIT);
+	if (seg) {
+		net_buf_reserve(seg, BT_L2CAP_CHAN_SEND_RESERVE);
+		return seg;
 	}
 
 	/* Fallback to using global connection tx pool */
@@ -1015,20 +1012,12 @@ static struct net_buf *l2cap_chan_create_seg(struct bt_l2cap_le_chan *ch,
 					     struct net_buf *buf,
 					     size_t sdu_hdr_len)
 {
-	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
 	struct net_buf *seg;
 	u16_t headroom;
 	u16_t len;
 
 	/* Segment if data (+ data headroom) is bigger than MPS */
 	if (buf->len + sdu_hdr_len > ch->tx.mps) {
-		goto segment;
-	}
-
-	/* Segment if there is no space in the user_data */
-	if (pool->user_data_size < BT_BUF_USER_DATA_MIN) {
-		BT_WARN("Too small buffer user_data_size %u",
-			pool->user_data_size);
 		goto segment;
 	}
 

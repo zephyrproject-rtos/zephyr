@@ -272,12 +272,9 @@ void net_pkt_print_frags(struct net_pkt *pkt)
 		frag_size = frag->size;
 		ll_overhead = net_buf_headroom(frag);
 
-		NET_INFO("[%d] frag %p len %d size %d reserve %d "
-			 "pool %p [sz %d ud_sz %d]",
+		NET_INFO("[%d] frag %p len %d size %d reserve %d pool %p",
 			 count, frag, frag->len, frag_size, ll_overhead,
-			 net_buf_pool_get(frag->pool_id),
-			 net_buf_pool_get(frag->pool_id)->buf_size,
-			 net_buf_pool_get(frag->pool_id)->user_data_size);
+			 net_buf_pool_get(frag->pool_id));
 
 		count++;
 

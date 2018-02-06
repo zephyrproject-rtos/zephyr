@@ -1055,16 +1055,7 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, u8_t flags)
 int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 		    bt_conn_tx_cb_t cb)
 {
-	struct net_buf_pool *pool;
-
 	BT_DBG("conn handle %u buf len %u cb %p", conn->handle, buf->len, cb);
-
-	pool = net_buf_pool_get(buf->pool_id);
-	if (pool->user_data_size < BT_BUF_USER_DATA_MIN) {
-		BT_ERR("Too small user data size");
-		net_buf_unref(buf);
-		return -EINVAL;
-	}
 
 	if (conn->state != BT_CONN_CONNECTED) {
 		BT_ERR("not connected!");
