@@ -20,15 +20,16 @@ _ASM_FILE_PROLOGUE
 GTEXT(_Fault)
 
 GTEXT(__hard_fault)
-#if defined(CONFIG_ARMV6_M)
-#elif defined(CONFIG_ARMV7_M)
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+/* HardFault is used for all fault conditions on ARMv6-M. */
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 GTEXT(__mpu_fault)
 GTEXT(__bus_fault)
 GTEXT(__usage_fault)
 GTEXT(__debug_monitor)
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M */
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 GTEXT(__reserved)
 
 /**
@@ -55,18 +56,19 @@ GTEXT(__reserved)
  */
 
 SECTION_SUBSEC_FUNC(TEXT,__fault,__hard_fault)
-#if defined(CONFIG_ARMV6_M)
-#elif defined(CONFIG_ARMV7_M)
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+/* HardFault is used for all fault conditions on ARMv6-M. */
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 SECTION_SUBSEC_FUNC(TEXT,__fault,__mpu_fault)
 SECTION_SUBSEC_FUNC(TEXT,__fault,__bus_fault)
 SECTION_SUBSEC_FUNC(TEXT,__fault,__usage_fault)
 SECTION_SUBSEC_FUNC(TEXT,__fault,__debug_monitor)
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M */
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 SECTION_SUBSEC_FUNC(TEXT,__fault,__reserved)
 
-#if defined(CONFIG_ARMV6_M)
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	/* force unlock interrupts */
 	cpsie i
 
@@ -83,7 +85,7 @@ _stack_frame_msp:
 	mrs r0, MSP
 _stack_frame_endif:
 
-#elif defined(CONFIG_ARMV7_M)
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	/* force unlock interrupts */
 	eors.n r0, r0
 	msr BASEPRI, r0
@@ -102,7 +104,7 @@ _stack_frame_endif:
 				 * frame is on the PSP */
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M */
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 
 	push {lr}
 	bl _Fault

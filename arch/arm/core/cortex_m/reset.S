@@ -58,14 +58,14 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__reset)
 SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 
     /* lock interrupts: will get unlocked when switch to main task */
-#if defined(CONFIG_ARMV6_M)
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
     cpsid i
-#elif defined(CONFIG_ARMV7_M)
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     movs.n r0, #_EXC_IRQ_DEFAULT_PRIO
     msr BASEPRI, r0
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M */
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 
 #ifdef CONFIG_WDOG_INIT
     /* board-specific watchdog initialization is necessary */

@@ -1,0 +1,32 @@
+---
+title: ARMv8-M NVIC Interrupt Controller
+version: 0.1
+
+description: >
+    This binding describes the ARMv8-M Nested Vectored Interrupt Controller.
+
+properties:
+    compatible:
+      category: required
+      type: string
+      description: compatible strings
+      constraint: "arm,v8m-nvic"
+
+    reg:
+      category: required
+      type: int
+      description: mmio register space
+      generation: define
+
+    arm,num-irq-priority-bits:
+      category: required
+      type: int
+      description: number of bits of IRQ priorities
+      generation: define
+
+cell_string: IRQ
+
+"#cells":
+  - irq
+  - priority
+...
