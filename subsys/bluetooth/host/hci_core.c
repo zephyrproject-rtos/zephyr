@@ -4290,18 +4290,9 @@ int bt_send(struct net_buf *buf)
 
 int bt_recv(struct net_buf *buf)
 {
-	struct net_buf_pool *pool;
-
 	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
 
 	BT_DBG("buf %p len %u", buf, buf->len);
-
-	pool = net_buf_pool_get(buf->pool_id);
-	if (pool->user_data_size < BT_BUF_USER_DATA_MIN) {
-		BT_ERR("Too small user data size");
-		net_buf_unref(buf);
-		return -EINVAL;
-	}
 
 	switch (bt_buf_get_type(buf)) {
 #if defined(CONFIG_BT_CONN)
