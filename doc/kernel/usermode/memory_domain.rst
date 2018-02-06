@@ -54,7 +54,7 @@ The following code defines and initializes an empty memory domain.
 
     struct k_mem_domain app0_domain;
 
-    k_mem_domain_init(&app0_domain, "app0_domain", 0, NULL);
+    k_mem_domain_init(&app0_domain, 0, NULL);
 
 Add Memory Partitions into a Memory Domain
 ==========================================
@@ -115,7 +115,7 @@ The following code shows how to add threads into a memory domain.
 
 .. code-block:: c
 
-    k_mem_domain_add_thread(&app0_domain, &app_thread_id);
+    k_mem_domain_add_thread(&app0_domain, app_thread_id);
 
 Remove a Memory Partition from a Memory Domain
 ==============================================
@@ -138,7 +138,7 @@ The following code shows how to remove a thread from the memory domain.
 
 .. code-block:: c
 
-    k_mem_domain_remove_thread(&app0_domain, &app_thread_id);
+    k_mem_domain_remove_thread(app_thread_id);
 
 Destroy a Memory Domain
 =======================
