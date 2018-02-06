@@ -451,7 +451,7 @@ static inline void net_buf_simple_restore(struct net_buf_simple *buf,
 /** @brief Network buffer representation.
   *
   * This struct is used to represent network buffers. Such buffers are
-  * normally defined through the NET_BUF_POOL_DEFINE() API and allocated
+  * normally defined through the NET_BUF_POOL_*_DEFINE() APIs and allocated
   * using the net_buf_alloc() API.
   */
 struct net_buf {
@@ -567,6 +567,40 @@ struct net_buf_pool {
 	}
 #endif /* CONFIG_NET_BUF_POOL_USAGE */
 
+extern const struct net_buf_data_alloc net_buf_heap_alloc;
+
+/** @def NET_BUF_POOL_HEAP_DEFINE
+ *  @brief Define a new pool for buffers using the heap for the data.
+ *
+ *  Defines a net_buf_pool struct and the necessary memory storage (array of
+ *  structs) for the needed amount of buffers. After this, the buffers can be
+ *  accessed from the pool through net_buf_alloc. The pool is defined as a
+ *  static variable, so if it needs to be exported outside the current module
+ *  this needs to happen with the help of a separate pointer rather than an
+ *  extern declaration.
+ *
+ *  The data payload of the buffers will be allocated from the heap using
+ *  k_malloc, so CONFIG_HEAP_MEM_POOL_SIZE must be set to a positive value.
+ *  This kind of pool does not support blocking on the data allocation, so
+ *  the timeout passed to net_buf_alloc will be always treated as K_NO_WAIT
+ *  when trying to allocate the data. This means that allocation failures,
+ *  i.e. NULL returns, must always be handled cleanly.
+ *
+ *  If provided with a custom destroy callback, this callback is
+ *  responsible for eventually calling net_buf_destroy() to complete the
+ *  process of returning the buffer to the pool.
+ *
+ *  @param _name      Name of the pool variable.
+ *  @param _count     Number of buffers in the pool.
+ *  @param _destroy   Optional destroy callback when buffer is freed.
+ */
+#define NET_BUF_POOL_HEAP_DEFINE(_name, _count, _destroy)                     \
+	static struct net_buf net_buf_##_name[_count] __noinit;               \
+	struct net_buf_pool _name __net_buf_align                             \
+			__in_section(_net_buf_pool, static, _name) =          \
+		NET_BUF_POOL_INITIALIZER(_name, &net_buf_heap_alloc,          \
+					 net_buf_##_name, _count, _destroy)
+
 struct net_buf_pool_fixed {
 	size_t data_size;
 	u8_t *data_pool;
@@ -615,6 +649,42 @@ extern const struct net_buf_data_cb net_buf_fixed_cb;
 			__in_section(_net_buf_pool, static, _name) =          \
 		NET_BUF_POOL_INITIALIZER(_name, &net_buf_fixed_alloc_##_name, \
 					 net_buf_##_name, _count, _destroy)
+
+extern const struct net_buf_data_cb net_buf_var_cb;
+
+/** @def NET_BUF_POOL_VAR_DEFINE
+ *  @brief Define a new pool for buffers with variable size payloads
+ *
+ *  Defines a net_buf_pool struct and the necessary memory storage (array of
+ *  structs) for the needed amount of buffers. After this, the buffers can be
+ *  accessed from the pool through net_buf_alloc. The pool is defined as a
+ *  static variable, so if it needs to be exported outside the current module
+ *  this needs to happen with the help of a separate pointer rather than an
+ *  extern declaration.
+ *
+ *  The data payload of the buffers will be based on a memory pool from which
+ *  variable size payloads may be allocated.
+ *
+ *  If provided with a custom destroy callback, this callback is
+ *  responsible for eventually calling net_buf_destroy() to complete the
+ *  process of returning the buffer to the pool.
+ *
+ *  @param _name      Name of the pool variable.
+ *  @param _count     Number of buffers in the pool.
+ *  @param _data_size Total amount of memory available for data payloads.
+ *  @param _destroy   Optional destroy callback when buffer is freed.
+ */
+#define NET_BUF_POOL_VAR_DEFINE(_name, _count, _data_size, _destroy)          \
+	static struct net_buf _net_buf_##_name[_count] __noinit;              \
+	K_MEM_POOL_DEFINE(net_buf_mem_pool_##_name, 16, _data_size, 1, 4);    \
+	static const struct net_buf_data_alloc net_buf_data_alloc_##_name = { \
+		.cb = &net_buf_var_cb,                                        \
+		.alloc_data = &net_buf_mem_pool_##_name,                      \
+	};                                                                    \
+	struct net_buf_pool _name __net_buf_align                             \
+			__in_section(_net_buf_pool, static, _name) =          \
+		NET_BUF_POOL_INITIALIZER(_name, &net_buf_data_alloc_##_name,  \
+					 _net_buf_##_name, _count, _destroy)
 
 /** @def NET_BUF_POOL_DEFINE
  *  @brief Define a new pool for buffers
@@ -672,7 +742,10 @@ int net_buf_id(struct net_buf *buf);
  *  @param timeout Affects the action taken should the pool be empty.
  *         If K_NO_WAIT, then return immediately. If K_FOREVER, then
  *         wait as long as necessary. Otherwise, wait up to the specified
- *         number of milliseconds before timing out.
+ *         number of milliseconds before timing out. Note that some types
+ *         of data allocators do not support blocking (such as the HEAP
+ *         type). In this case it's still possible for net_buf_alloc() to
+ *         fail (return NULL) even if it was given K_FOREVER.
  *
  *  @return New buffer or NULL if out of buffers.
  */
@@ -742,7 +815,7 @@ struct net_buf *net_buf_get(struct k_fifo *fifo, s32_t timeout);
  *  @brief Destroy buffer from custom destroy callback
  *
  *  This helper is only intended to be used from custom destroy callbacks.
- *  If no custom destroy callback is given to NET_BUF_POOL_DEFINE() then
+ *  If no custom destroy callback is given to NET_BUF_POOL_*_DEFINE() then
  *  there is no need to use this API.
  *
  *  @param buf Buffer to destroy.
