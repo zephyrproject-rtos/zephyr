@@ -28,10 +28,23 @@ extern "C" {
  * within that area.
  */
 struct fcb_entry {
-	struct flash_sector *fe_sector;	/* ptr to sector within fcb->f_sectors */
+	struct flash_sector *fe_sector;	/* ptr to sector */
+					/* within fcb->f_sectors */
 	u32_t fe_elem_off;		/* start of entry */
 	u32_t fe_data_off;		/* start of data */
 	u16_t fe_data_len;		/* size of data area */
+};
+
+/*
+ * Helper macro for calculate the data offset related to
+ * the fcb flash_area start offset.
+ */
+#define FCB_ENTRY_FA_DATA_OFF(entry) (entry.fe_sector->fs_off +\
+				      entry.fe_data_off)
+
+struct fcb_entry_ctx {
+	struct fcb_entry loc;
+	const struct flash_area *fap;
 };
 
 struct fcb {
@@ -41,7 +54,8 @@ struct fcb {
 	u8_t f_sector_cnt;	/* Number of elements in sector array */
 	u8_t f_scratch_cnt;	/* How many sectors should be kept empty */
 	int f_area_id;
-	struct flash_sector *f_sectors; /* Array of sectors, must be contiguous */
+	struct flash_sector *f_sectors; /* Array of sectors, */
+					/* must be contiguous */
 
 	/* Flash circular buffer internal state */
 	struct k_mutex f_mtx;	/* Locking for accessing the FCB data */
@@ -49,6 +63,9 @@ struct fcb {
 	struct fcb_entry f_active;
 	u16_t f_active_id;
 	u8_t f_align;		/* writes to flash have to aligned to this */
+
+	const struct flash_area *fap; /* Flash area used by the fcb instance */
+				     /* This can be transfer to FCB user    */
 };
 
 /*
@@ -82,7 +99,7 @@ int fcb_append_finish(struct fcb *fcb, struct fcb_entry *append_loc);
  * Entry data can be read using flash_area_read(), using
  * loc->fe_area, loc->fe_data_off, and loc->fe_data_len as arguments.
  */
-typedef int (*fcb_walk_cb)(struct fcb_entry *loc, void *arg);
+typedef int (*fcb_walk_cb)(struct fcb_entry_ctx *loc_ctx, void *arg);
 int fcb_walk(struct fcb *fcb, struct flash_sector *sector, fcb_walk_cb cb,
 	     void *cb_arg);
 int fcb_getnext(struct fcb *fcb, struct fcb_entry *loc);
@@ -119,9 +136,9 @@ int fcb_offset_last_n(struct fcb *fcb, u8_t entries,
 int fcb_clear(struct fcb *fcb);
 
 int fcb_flash_read(const struct fcb *fcb, const struct flash_sector *sector,
-                   off_t off, void *dst, size_t len);
+		   off_t off, void *dst, size_t len);
 int fcb_flash_write(const struct fcb *fcb, const struct flash_sector *sector,
-                    off_t off, const void *src, size_t len);
+		    off_t off, const void *src, size_t len);
 
 #ifdef __cplusplus
 }
