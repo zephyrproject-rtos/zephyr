@@ -30,6 +30,9 @@ typedef struct pthread_attr_t {
 
 typedef void *pthread_t;
 
+/* Semaphore */
+typedef struct k_sem sem_t;
+
 /* Mutex */
 typedef struct pthread_mutex {
 	struct k_sem *sem;
