@@ -14,24 +14,28 @@
  */
 int
 fcb_walk(struct fcb *fcb, struct flash_sector *sector, fcb_walk_cb cb,
-         void *cb_arg)
+	 void *cb_arg)
 {
-	struct fcb_entry loc;
+	struct fcb_entry_ctx entry_ctx;
 	int rc;
 
-	loc.fe_sector = sector;
-	loc.fe_elem_off = 0;
+	entry_ctx.loc.fe_sector = sector;
+	entry_ctx.loc.fe_elem_off = 0;
 
 	rc = k_mutex_lock(&fcb->f_mtx, K_FOREVER);
 	if (rc) {
 		return FCB_ERR_ARGS;
 	}
-	while ((rc = fcb_getnext_nolock(fcb, &loc)) != FCB_ERR_NOVAR) {
+	while ((rc = fcb_getnext_nolock(fcb, &entry_ctx.loc)) !=
+	       FCB_ERR_NOVAR) {
 		k_mutex_unlock(&fcb->f_mtx);
-		if (sector && loc.fe_sector != sector) {
+		if (sector && entry_ctx.loc.fe_sector != sector) {
 			return 0;
 		}
-		rc = cb(&loc, cb_arg);
+
+		entry_ctx.fap = fcb->fap;
+
+		rc = cb(&entry_ctx, cb_arg);
 		if (rc) {
 			return rc;
 		}

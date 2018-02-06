@@ -43,9 +43,8 @@ fcb_get_align(const struct fcb *fcb)
 	return align;
 }
 
-int
-fcb_flash_read(const struct fcb *fcb, const struct flash_sector *sector,
-               off_t off, void *dst, size_t len)
+int fcb_flash_read(const struct fcb *fcb, const struct flash_sector *sector,
+		   off_t off, void *dst, size_t len)
 {
 	const struct flash_area *fa;
 	int rc;
@@ -69,9 +68,8 @@ fcb_flash_read(const struct fcb *fcb, const struct flash_sector *sector,
 	return 0;
 }
 
-int
-fcb_flash_write(const struct fcb *fcb, const struct flash_sector *sector,
-                off_t off, const void *src, size_t len)
+int fcb_flash_write(const struct fcb *fcb, const struct flash_sector *sector,
+		    off_t off, const void *src, size_t len)
 {
 	const struct flash_area *fa;
 	int rc;
@@ -128,6 +126,11 @@ fcb_init(struct fcb *fcb)
 	struct fcb_disk_area fda;
 
 	if (!fcb->f_sectors || fcb->f_sector_cnt - fcb->f_scratch_cnt < 1) {
+		return FCB_ERR_ARGS;
+	}
+
+	fcb->fap = fcb_open_flash(fcb);
+	if (fcb->fap == NULL) {
 		return FCB_ERR_ARGS;
 	}
 
@@ -264,7 +267,7 @@ fcb_sector_hdr_init(struct fcb *fcb, struct flash_sector *sector, u16_t id)
 	fda._pad = 0xff;
 	fda.fd_id = id;
 
-	rc = fcb_flash_write(fcb, sector, 0, &fda, sizeof fda);
+	rc = fcb_flash_write(fcb, sector, 0, &fda, sizeof(fda));
 	if (rc != 0) {
 		return FCB_ERR_FLASH;
 	}
