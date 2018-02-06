@@ -59,14 +59,14 @@ _arch_switch_to_main_thread(struct k_thread *main_thread,
 		"msr PSP, %0 \t\n"
 
 		/* unlock interrupts */
-#ifdef CONFIG_ARMV6_M
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 		"cpsie i \t\n"
-#elif defined(CONFIG_ARMV7_M)
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 		"movs %%r1, #0 \n\t"
 		"msr BASEPRI, %%r1 \n\t"
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M */
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 
 		/* branch to _thread_entry(_main, 0, 0, 0) */
 		"mov %%r0, %1 \n\t"

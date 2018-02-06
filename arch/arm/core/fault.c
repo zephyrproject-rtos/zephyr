@@ -59,8 +59,8 @@ void _FaultDump(const NANO_ESF *esf, int fault)
 	       k_current_get(),
 	       esf->pc);
 
-#if defined(CONFIG_ARMV6_M)
-#elif defined(CONFIG_ARMV7_M)
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	int escalation = 0;
 
 	if (3 == fault) { /* hard fault */
@@ -92,7 +92,7 @@ void _FaultDump(const NANO_ESF *esf, int fault)
 	SCB->CFSR |= SCB_CFSR_USGFAULTSR_Msk;
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M */
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 }
 #endif
 
@@ -112,8 +112,9 @@ static void _FaultThreadShow(const NANO_ESF *esf)
 	       k_current_get(), esf->pc);
 }
 
-#if defined(CONFIG_ARMV6_M)
-#elif defined(CONFIG_ARMV7_M)
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+/* HardFault is used for all fault conditions on ARMv6-M. */
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 
 /**
  *
@@ -240,7 +241,7 @@ static void _DebugMonitor(const NANO_ESF *esf)
 
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M */
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 
 /**
  *
@@ -254,9 +255,9 @@ static void _HardFault(const NANO_ESF *esf)
 {
 	PR_EXC("***** HARD FAULT *****\n");
 
-#if defined(CONFIG_ARMV6_M)
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	_FaultThreadShow(esf);
-#elif defined(CONFIG_ARMV7_M)
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	if (SCB->HFSR & SCB_HFSR_VECTTBL_Msk) {
 		PR_EXC("  Bus fault on vector table read\n");
 	} else if (SCB->HFSR & SCB_HFSR_FORCED_Msk) {
@@ -271,7 +272,7 @@ static void _HardFault(const NANO_ESF *esf)
 	}
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M */
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 }
 
 /**
@@ -316,8 +317,9 @@ static void _FaultDump(const NANO_ESF *esf, int fault)
 	case 3:
 		_HardFault(esf);
 		break;
-#if defined(CONFIG_ARMV6_M)
-#elif defined(CONFIG_ARMV7_M)
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+	/* HardFault is used for all fault conditions on ARMv6-M. */
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	case 4:
 		_MpuFault(esf, 0);
 		break;
@@ -332,7 +334,7 @@ static void _FaultDump(const NANO_ESF *esf, int fault)
 		break;
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M */
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 	default:
 		_ReservedException(esf, fault);
 		break;
@@ -375,10 +377,10 @@ void _Fault(const NANO_ESF *esf)
  */
 void _FaultInit(void)
 {
-#if defined(CONFIG_ARMV6_M)
-#elif defined(CONFIG_ARMV7_M)
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	SCB->CCR |= SCB_CCR_DIV_0_TRP_Msk;
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M */
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 }

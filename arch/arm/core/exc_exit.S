@@ -90,12 +90,12 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, _ExcExit)
 #ifdef CONFIG_TIMESLICING
     push {lr}
     bl _update_time_slice_before_swap
-#if defined(CONFIG_ARMV6_M)
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
     pop {r0}
     mov lr, r0
 #else
     pop {lr}
-#endif /* CONFIG_ARMV6_M */
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 #endif /* CONFIG_TIMESLICING */
 
     /* context switch required, pend the PendSV exception */
@@ -111,12 +111,12 @@ _EXIT_EXC:
 #ifdef CONFIG_STACK_SENTINEL
     push {lr}
     bl _check_stack_sentinel
-#if defined(CONFIG_ARMV6_M)
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
     pop {r0}
     mov lr, r0
 #else
     pop {lr}
-#endif /* CONFIG_ARMV6_M */
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 #endif /* CONFIG_STACK_SENTINEL */
 
     bx lr

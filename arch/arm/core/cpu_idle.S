@@ -120,15 +120,15 @@ SECTION_FUNC(TEXT, k_cpu_idle)
 	mov lr, r0
 #endif
 
-#if defined(CONFIG_ARMV6_M)
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	cpsie i
-#elif defined(CONFIG_ARMV7_M)
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	/* clear BASEPRI so wfi is awakened by incoming interrupts */
 	eors.n r0, r0
 	msr BASEPRI, r0
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M */
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 
 	wfi
 
@@ -177,7 +177,7 @@ SECTION_FUNC(TEXT, k_cpu_atomic_idle)
 
 	/* r0: interrupt mask from caller */
 
-#if defined(CONFIG_ARMV6_M)
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	/* No BASEPRI, call wfe directly (SEVONPEND set in _CpuIdleInit()) */
 	wfe
 
@@ -186,7 +186,7 @@ SECTION_FUNC(TEXT, k_cpu_atomic_idle)
 	cpsie i
 _irq_disabled:
 
-#elif defined(CONFIG_ARMV7_M)
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	/* r1: zero, for setting BASEPRI (needs a register) */
 	eors.n r1, r1
 
@@ -199,5 +199,5 @@ _irq_disabled:
 	cpsie i
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M  */
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 	bx lr

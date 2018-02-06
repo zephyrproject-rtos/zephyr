@@ -146,12 +146,12 @@ void _irq_spurious(void *unused)
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 void _arch_isr_direct_pm(void)
 {
-#if defined(CONFIG_ARMV6_M)
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	int key;
 
 	/* irq_lock() does what we wan for this CPU */
 	key = irq_lock();
-#elif defined(CONFIG_ARMV7_M)
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	/* Lock all interrupts. irq_lock() will on this CPU only disable those
 	 * lower than BASEPRI, which is not what we want. See comments in
 	 * arch/arm/core/isr_wrapper.S
@@ -159,7 +159,7 @@ void _arch_isr_direct_pm(void)
 	__asm__ volatile("cpsid i" : : : "memory");
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M */
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 
 	if (_kernel.idle) {
 		s32_t idle_val = _kernel.idle;
@@ -168,13 +168,13 @@ void _arch_isr_direct_pm(void)
 		_sys_power_save_idle_exit(idle_val);
 	}
 
-#if defined(CONFIG_ARMV6_M)
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	irq_unlock(key);
-#elif defined(CONFIG_ARMV7_M)
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	__asm__ volatile("cpsie i" : : : "memory");
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M */
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 
 }
 #endif
