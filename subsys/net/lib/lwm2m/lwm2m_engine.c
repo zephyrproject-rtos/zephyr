@@ -1365,6 +1365,14 @@ static int lwm2m_engine_set(char *pathstr, void *value, u16_t len)
 		changed = true;
 	}
 
+	if (res->validate_cb) {
+		ret = res->validate_cb(obj_inst->obj_inst_id, value,
+				       len, false, 0);
+		if (ret < 0) {
+			return -EINVAL;
+		}
+	}
+
 	switch (obj_field->data_type) {
 
 	case LWM2M_RES_TYPE_OPAQUE:
@@ -2043,6 +2051,16 @@ static int lwm2m_write_handler_opaque(struct lwm2m_engine_obj_inst *obj_inst,
 			return -EINVAL;
 		}
 
+		if (res->validate_cb) {
+			ret = res->validate_cb(obj_inst->obj_inst_id,
+					       data_ptr, len,
+					       last_pkt_block && last_block,
+					       total_size);
+			if (ret < 0) {
+				return -EEXIST;
+			}
+		}
+
 		if (res->post_write_cb) {
 			ret = res->post_write_cb(obj_inst->obj_inst_id,
 						 data_ptr, len,
@@ -2203,10 +2221,19 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 		}
 	}
 
-	if (res->post_write_cb &&
-	    obj_field->data_type != LWM2M_RES_TYPE_OPAQUE) {
-		ret = res->post_write_cb(obj_inst->obj_inst_id, data_ptr, len,
-					 last_block, total_size);
+	if (obj_field->data_type != LWM2M_RES_TYPE_OPAQUE) {
+		if (res->validate_cb) {
+			ret = res->validate_cb(obj_inst->obj_inst_id, data_ptr,
+					       len, last_block, 0);
+			if (ret < 0) {
+				return -EEXIST;
+			}
+		}
+
+		if (res->post_write_cb) {
+			ret = res->post_write_cb(obj_inst->obj_inst_id,
+					data_ptr, len, last_block, total_size);
+		}
 	}
 
 	NOTIFY_OBSERVER_PATH(path);

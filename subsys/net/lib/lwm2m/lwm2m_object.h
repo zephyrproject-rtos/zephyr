@@ -156,7 +156,8 @@ struct lwm2m_engine_obj {
 };
 
 #define INIT_OBJ_RES(res_var, index_var, id_val, multi_var, \
-		     data_val, data_val_len, r_cb, pre_w_cb, post_w_cb, ex_cb) \
+		     data_val, data_val_len, r_cb, pre_w_cb, post_w_cb, \
+		     ex_cb, v_cb) \
 	res_var[index_var].res_id = id_val; \
 	res_var[index_var].multi_count_var = multi_var; \
 	res_var[index_var].data_ptr = data_val; \
@@ -164,12 +165,13 @@ struct lwm2m_engine_obj {
 	res_var[index_var].read_cb = r_cb; \
 	res_var[index_var].pre_write_cb = pre_w_cb; \
 	res_var[index_var].post_write_cb = post_w_cb; \
+	res_var[index_var].validate_cb = v_cb; \
 	res_var[index_var++].execute_cb = ex_cb
 
 #define INIT_OBJ_RES_MULTI_DATA(res_var, index_var, id_val, multi_var, \
 				data_val, data_val_len) \
 	INIT_OBJ_RES(res_var, index_var, id_val, multi_var, data_val, \
-		     data_val_len, NULL, NULL, NULL, NULL)
+		     data_val_len, NULL, NULL, NULL, NULL, NULL)
 
 #define INIT_OBJ_RES_DATA(res_var, index_var, id_val, data_val, data_val_len) \
 	INIT_OBJ_RES_MULTI_DATA(res_var, index_var, id_val, NULL, \
@@ -180,7 +182,7 @@ struct lwm2m_engine_obj {
 
 #define INIT_OBJ_RES_EXECUTE(res_var, index_var, id_val, ex_cb) \
 	INIT_OBJ_RES(res_var, index_var, id_val, NULL, NULL, 0, \
-		     NULL, NULL, NULL, ex_cb)
+		     NULL, NULL, NULL, ex_cb, NULL)
 
 
 #define LWM2M_ATTR_PMIN	0
@@ -217,6 +219,7 @@ struct lwm2m_engine_res_inst {
 	lwm2m_engine_get_data_cb_t	pre_write_cb;
 	lwm2m_engine_set_data_cb_t	post_write_cb;
 	lwm2m_engine_exec_cb_t		execute_cb;
+	lwm2m_engine_set_data_cb_t	validate_cb;
 };
 
 struct lwm2m_engine_obj_inst {

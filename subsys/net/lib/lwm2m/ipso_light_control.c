@@ -152,7 +152,7 @@ static struct lwm2m_engine_obj_inst *light_control_create(u16_t obj_inst_id)
 		&dimmer_value[avail], sizeof(*dimmer_value));
 	INIT_OBJ_RES(res[avail], i, LIGHT_ON_TIME_ID, 0, &on_time_value[avail],
 		sizeof(*on_time_value), on_time_read_cb,
-		NULL, on_time_post_write_cb, NULL);
+		NULL, on_time_post_write_cb, NULL, NULL);
 	INIT_OBJ_RES_DATA(res[avail], i, LIGHT_CUMULATIVE_ACTIVE_POWER_ID,
 		&cumulative_active_value[avail],
 		sizeof(*cumulative_active_value));

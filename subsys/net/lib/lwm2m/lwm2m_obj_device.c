@@ -311,7 +311,7 @@ static struct lwm2m_engine_obj_inst *device_create(u16_t obj_inst_id)
 			     reset_error_list_cb);
 	INIT_OBJ_RES(res, i, DEVICE_CURRENT_TIME_ID, 0, NULL, 0,
 		     current_time_read_cb, current_time_pre_write_cb,
-		     current_time_post_write_cb, NULL);
+		     current_time_post_write_cb, NULL, NULL);
 	INIT_OBJ_RES_DATA(res, i, DEVICE_SUPPORTED_BINDING_MODES_ID,
 			  binding_mode, DEVICE_STRING_SHORT);
 	INIT_OBJ_RES_DATA(res, i, DEVICE_TYPE_ID,

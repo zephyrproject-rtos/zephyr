@@ -298,10 +298,10 @@ static struct lwm2m_engine_obj_inst *firmware_create(u16_t obj_inst_id)
 
 	/* initialize instance resource data */
 	INIT_OBJ_RES(res, i, FIRMWARE_PACKAGE_ID, 0, NULL, 0,
-		     NULL, NULL, package_write_cb, NULL);
+		     NULL, NULL, package_write_cb, NULL, NULL);
 	INIT_OBJ_RES(res, i, FIRMWARE_PACKAGE_URI_ID, 0,
 		     package_uri, PACKAGE_URI_LEN,
-		     NULL, NULL, package_uri_write_cb, NULL);
+		     NULL, NULL, package_uri_write_cb, NULL, NULL);
 	INIT_OBJ_RES_EXECUTE(res, i, FIRMWARE_UPDATE_ID,
 			     firmware_update_cb);
 	INIT_OBJ_RES_DATA(res, i, FIRMWARE_STATE_ID,
