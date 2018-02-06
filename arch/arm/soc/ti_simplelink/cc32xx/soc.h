@@ -21,11 +21,9 @@ enum {
 	Reset_IRQn                    = -15,
 	NonMaskableInt_IRQn           = -14,
 	HardFault_IRQn                = -13,
-#if defined(CONFIG_ARMV7_M)
 	MemoryManagement_IRQn         = -12,
 	BusFault_IRQn                 = -11,
 	UsageFault_IRQn               = -10,
-#endif /* CONFIG_ARMV7_M */
 	SVCall_IRQn                   =  -5,
 	DebugMonitor_IRQn             =  -4,
 	PendSV_IRQn                   =  -2,
