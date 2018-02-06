@@ -1,4 +1,5 @@
 tests:
   test:
-    arch_whitelist: x86 arm
+    arch_whitelist: x86 arm posix
     tags: benchmark
+    filter: CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC >= 1000000
