@@ -53,7 +53,6 @@ struct fcb {
 	u8_t f_version;		/* Current version number of the data */
 	u8_t f_sector_cnt;	/* Number of elements in sector array */
 	u8_t f_scratch_cnt;	/* How many sectors should be kept empty */
-	int f_area_id;
 	struct flash_sector *f_sectors; /* Array of sectors, */
 					/* must be contiguous */
 
@@ -80,7 +79,7 @@ struct fcb {
 #define FCB_ERR_CRC	-6
 #define FCB_ERR_MAGIC   -7
 
-int fcb_init(struct fcb *fcb);
+int fcb_init(int f_area_id, struct fcb *fcb);
 
 /*
  * fcb_append() appends an entry to circular buffer. When writing the

@@ -12,54 +12,34 @@
 #include "fcb_priv.h"
 #include "string.h"
 
-const struct flash_area *
-fcb_open_flash(const struct fcb *fcb)
-{
-	const struct flash_area *fa;
-	int rc;
-
-	rc = flash_area_open(fcb->f_area_id, &fa);
-	if (rc != 0) {
-		return NULL;
-	}
-
-	return fa;
-}
-
 u8_t
 fcb_get_align(const struct fcb *fcb)
 {
-	const struct flash_area *fa;
 	u8_t align;
 
-	fa = fcb_open_flash(fcb);
-	if (fa == NULL) {
+	if (fcb->fap == NULL) {
 		return 0;
 	}
 
-	align = flash_area_align(fa);
+	align = flash_area_align(fcb->fap);
 
-	flash_area_close(fa);
 	return align;
 }
 
 int fcb_flash_read(const struct fcb *fcb, const struct flash_sector *sector,
 		   off_t off, void *dst, size_t len)
 {
-	const struct flash_area *fa;
 	int rc;
 
 	if (off + len > sector->fs_size) {
 		return FCB_ERR_ARGS;
 	}
 
-	fa = fcb_open_flash(fcb);
-	if (fa == NULL) {
+	if (fcb->fap == NULL) {
 		return FCB_ERR_FLASH;
 	}
 
-	rc = flash_area_read(fa, sector->fs_off + off, dst, len);
-	flash_area_close(fa);
+	rc = flash_area_read(fcb->fap, sector->fs_off + off, dst, len);
 
 	if (rc != 0) {
 		return FCB_ERR_FLASH;
@@ -71,20 +51,17 @@ int fcb_flash_read(const struct fcb *fcb, const struct flash_sector *sector,
 int fcb_flash_write(const struct fcb *fcb, const struct flash_sector *sector,
 		    off_t off, const void *src, size_t len)
 {
-	const struct flash_area *fa;
 	int rc;
 
 	if (off + len > sector->fs_size) {
 		return FCB_ERR_ARGS;
 	}
 
-	fa = fcb_open_flash(fcb);
-	if (fa == NULL) {
+	if (fcb->fap == NULL) {
 		return FCB_ERR_FLASH;
 	}
 
-	rc = flash_area_write(fa, sector->fs_off + off, src, len);
-	flash_area_close(fa);
+	rc = flash_area_write(fcb->fap, sector->fs_off + off, src, len);
 
 	if (rc != 0) {
 		return FCB_ERR_FLASH;
@@ -96,16 +73,13 @@ int fcb_flash_write(const struct fcb *fcb, const struct flash_sector *sector,
 int
 fcb_erase_sector(const struct fcb *fcb, const struct flash_sector *sector)
 {
-	const struct flash_area *fa;
 	int rc;
 
-	fa = fcb_open_flash(fcb);
-	if (fa == NULL) {
+	if (fcb->fap == NULL) {
 		return FCB_ERR_FLASH;
 	}
 
-	rc = flash_area_erase(fa, sector->fs_off, sector->fs_size);
-	flash_area_close(fa);
+	rc = flash_area_erase(fcb->fap, sector->fs_off, sector->fs_size);
 
 	if (rc != 0) {
 		return FCB_ERR_FLASH;
@@ -115,7 +89,7 @@ fcb_erase_sector(const struct fcb *fcb, const struct flash_sector *sector)
 }
 
 int
-fcb_init(struct fcb *fcb)
+fcb_init(int f_area_id, struct fcb *fcb)
 {
 	struct flash_sector *sector;
 	int rc;
@@ -129,8 +103,8 @@ fcb_init(struct fcb *fcb)
 		return FCB_ERR_ARGS;
 	}
 
-	fcb->fap = fcb_open_flash(fcb);
-	if (fcb->fap == NULL) {
+	rc = flash_area_open(f_area_id, &fcb->fap);
+	if (rc != 0) {
 		return FCB_ERR_ARGS;
 	}
 
