@@ -32,7 +32,7 @@ static struct {
 u32_t ll_scan_params_set(u8_t type, u16_t interval, u16_t window,
 			 u8_t own_addr_type, u8_t filter_policy)
 {
-	if (radio_scan_is_enabled()) {
+	if (ll_scan_is_enabled()) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
@@ -64,7 +64,7 @@ u32_t ll_scan_enable(u8_t enable)
 
 	if (!enable) {
 		return radio_scan_disable();
-	} else if (radio_scan_is_enabled()) {
+	} else if (ll_scan_is_enabled()) {
 		/* Duplicate filtering is processed in the HCI layer */
 		return 0;
 	}

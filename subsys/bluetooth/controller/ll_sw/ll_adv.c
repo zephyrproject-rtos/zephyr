@@ -57,7 +57,7 @@ u32_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 	struct radio_adv_data *radio_adv_data;
 	struct pdu_adv *pdu;
 
-	if (radio_adv_is_enabled()) {
+	if (ll_adv_is_enabled()) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
@@ -341,7 +341,7 @@ u32_t ll_adv_enable(u8_t enable)
 
 	if (!enable) {
 		return radio_adv_disable();
-	} else if (radio_adv_is_enabled()) {
+	} else if (ll_adv_is_enabled()) {
 		return 0;
 	}
 

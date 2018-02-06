@@ -42,8 +42,8 @@ u8_t *ll_addr_get(u8_t addr_type, u8_t *bdaddr)
 
 u32_t ll_addr_set(u8_t addr_type, u8_t const *const bdaddr)
 {
-	if (radio_adv_is_enabled() ||
-	    (radio_scan_is_enabled() & (BIT(1) | BIT(2)))) {
+	if (ll_adv_is_enabled() ||
+	    (ll_scan_is_enabled() & (BIT(1) | BIT(2)))) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 

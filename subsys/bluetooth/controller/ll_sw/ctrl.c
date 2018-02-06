@@ -10213,7 +10213,7 @@ u32_t radio_adv_disable(void)
 	return status ? BT_HCI_ERR_CMD_DISALLOWED : 0;
 }
 
-u32_t radio_adv_is_enabled(void)
+u32_t ll_adv_is_enabled(void)
 {
 	return _radio.advertiser.is_enabled;
 }
@@ -10372,7 +10372,7 @@ u32_t radio_scan_disable(void)
 	return status ? BT_HCI_ERR_CMD_DISALLOWED : 0;
 }
 
-u32_t radio_scan_is_enabled(void)
+u32_t ll_scan_is_enabled(void)
 {
 	/* NOTE: BIT(0) - passive scanning enabled
 	 *       BIT(1) - active scanning enabled
