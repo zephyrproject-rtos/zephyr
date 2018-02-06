@@ -25,6 +25,13 @@ config ALTERA_AVALON_QSPI
 
 endif #SOC_FLASH_NIOS2_QSPI
 
+if I2C_NIOS2
+
+config ALTERA_AVALON_I2C
+	def_bool y
+
+endif # I2C_NIOS2
+
 if UART_NS16550
 
 config UART_NS16550_PCI
