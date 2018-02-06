@@ -513,6 +513,14 @@ config MAX_PTHREAD_COUNT
 	help
 	  Mention maximum number of threads in POSIX compliant application.
 
+config SEM_VALUE_MAX
+	int
+	prompt "Maximum semaphore limit"
+	default 32767
+	range 1 32767
+	help
+	  Maximum semaphore count in POSIX compliant Application.
+
 config MAX_TIMER_COUNT
 	int
 	prompt "Maximum timer count in POSIX application"

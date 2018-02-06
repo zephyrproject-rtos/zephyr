@@ -157,7 +157,6 @@ static inline int pthread_condattr_destroy(pthread_condattr_t *att)
 		.sem = &name##_psem,		\
 	}
 
-
 /**
  * @brief POSIX threading compatibility API
  *

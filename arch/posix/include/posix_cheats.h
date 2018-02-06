@@ -42,6 +42,7 @@
 #define pthread_rwlock_obj     zap_pthread_rwlock_obj
 #define pthread_rwlockattr_t   zap_pthread_rwlockattr_t
 /* Condition variables */
+
 #define pthread_cond_init(...)        zap_pthread_cond_init(__VA_ARGS__)
 #define pthread_cond_destroy(...)     zap_pthread_cond_destroy(__VA_ARGS__)
 #define pthread_cond_signal(...)      zap_pthread_cond_signal(__VA_ARGS__)
@@ -50,6 +51,16 @@
 #define pthread_cond_timedwait(...)   zap_pthread_cond_timedwait(__VA_ARGS__)
 #define pthread_condattr_init(...)    zap_pthread_condattr_init(__VA_ARGS__)
 #define pthread_condattr_destroy(...) zap_pthread_condattr_destroy(__VA_ARGS__)
+
+/* Semaphore */
+#define sem_destroy(...)	      zap_sem_destroy(__VA_ARGS__)
+#define sem_getvalue(...)	      zap_sem_getvalue(__VA_ARGS__)
+#define sem_init(...)		      zap_sem_init(__VA_ARGS__)
+#define sem_post(...)		      zap_sem_post(__VA_ARGS__)
+#define sem_timedwait(...)	      zap_sem_timedwait(__VA_ARGS__)
+#define sem_trywait(...)	      zap_sem_trywait(__VA_ARGS__)
+#define sem_wait(...)		      zap_sem_wait(__VA_ARGS__)
+
 /* Mutex */
 #define pthread_mutex_init(...)       zap_pthread_mutex_init(__VA_ARGS__)
 #define pthread_mutex_destroy(...)    zap_pthread_mutex_destroy(__VA_ARGS__)
