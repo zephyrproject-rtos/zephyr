@@ -118,6 +118,15 @@ extern "C" {
  */
 #define SPI_LOCK_ON		BIT(14)
 
+/* Active high logic on CS - Usually, and by default, CS logic is active
+ * low. However, some devices may require the reverse logic: active high.
+ * This bit will request the controller to use that logic. Note that not
+ * all controllers are able to handle that natively. In this case deferring
+ * the CS control to a gpio line through struct spi_cs_control would be
+ * the solution.
+ */
+#define SPI_CS_ACTIVE_HIGH	BIT(15)
+
 /**
  * @brief SPI Chip Select control structure
  *
@@ -151,7 +160,7 @@ struct spi_cs_control {
  *     lines               [ 11 : 12 ] - MISO lines: Single/Dual/Quad/Octal.
  *     cs_hold             [ 13 ]      - Hold on the CS line if possible.
  *     lock_on             [ 14 ]      - Keep resource locked for the caller.
- *     _unused_            [ 15 ]      - Free for future use.
+ *     cs_active_high      [ 15 ]      - Active high CS logic.
  * @param slave is the slave number from 0 to host controller slave limit.
  * @param cs is a valid pointer on a struct spi_cs_control is CS line is
  *    emulated through a gpio line, or NULL otherwise.
