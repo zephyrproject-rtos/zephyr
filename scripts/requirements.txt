@@ -7,7 +7,6 @@ junit2html
 PyYAML==3.12
 ply==3.10
 hub==2.0
-pyocd
 gitlint
 pyelftools==0.24
 pykwalify
