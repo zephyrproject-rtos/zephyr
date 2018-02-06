@@ -167,6 +167,10 @@ u64_t hwm_get_time(void)
 	return device_time;
 }
 
+u64_t posix_get_hw_cycle(void)
+{
+	return hwm_get_time();
+}
 
 /**
  * Function to initialize the HW models
