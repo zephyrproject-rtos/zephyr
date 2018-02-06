@@ -7,5 +7,9 @@ tests:
     timeout: 300
   test_posix:
     arch_whitelist: posix
-    min_ram: 32
     tags: benchmark
+  test_debug:
+    arch_whitelist: posix
+    tags: benchmark
+    extra_configs:
+      - CONFIG_KERNEL_DEBUG=y
