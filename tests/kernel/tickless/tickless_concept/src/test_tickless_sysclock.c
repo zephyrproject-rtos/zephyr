@@ -25,14 +25,14 @@ static struct k_thread tdata[NUM_THREAD];
 #ifndef CONFIG_TICKLESS_IDLE
 #define CONFIG_TICKLESS_IDLE_THRESH 20
 #endif
-/*sleep duration tickless*/
-#define SLEEP_TICKLESS (CONFIG_TICKLESS_IDLE_THRESH)
-/*sleep duration with tick*/
-#define SLEEP_TICKFUL (CONFIG_TICKLESS_IDLE_THRESH-1)
-/*slice size is set as half of the sleep duration*/
-#define SLICE_SIZE (CONFIG_TICKLESS_IDLE_THRESH >> 1)
 /*millisecond per tick*/
 #define MSEC_PER_TICK (sys_clock_us_per_tick / USEC_PER_MSEC)
+/*sleep duration tickless*/
+#define SLEEP_TICKLESS (CONFIG_TICKLESS_IDLE_THRESH * MSEC_PER_TICK)
+/*sleep duration with tick*/
+#define SLEEP_TICKFUL ((CONFIG_TICKLESS_IDLE_THRESH-1) * MSEC_PER_TICK)
+/*slice size is set as half of the sleep duration*/
+#define SLICE_SIZE ((CONFIG_TICKLESS_IDLE_THRESH >> 1) * MSEC_PER_TICK)
 /*align to millisecond boundary*/
 #if defined(CONFIG_ARCH_POSIX)
 #define ALIGN_MS_BOUNDARY() \
