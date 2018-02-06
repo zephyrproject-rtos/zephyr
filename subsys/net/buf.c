@@ -82,6 +82,62 @@ void net_buf_reset(struct net_buf *buf)
 	net_buf_simple_reset(&buf->b);
 }
 
+static u8_t *generic_data_ref(struct net_buf *buf, u8_t *data)
+{
+	u8_t *ref_count;
+
+	ref_count = data - 1;
+	(*ref_count)++;
+
+	return data;
+}
+
+static u8_t *mem_pool_data_alloc(struct net_buf *buf, size_t *size,
+				 s32_t timeout)
+{
+	struct net_buf_pool *buf_pool = net_buf_pool_get(buf->pool_id);
+	struct k_mem_pool *pool = buf_pool->alloc->alloc_data;
+	struct k_mem_block block;
+	u8_t *ref_count;
+
+	/* Reserve extra space for k_mem_block_id and ref-count (u8_t) */
+	if (k_mem_pool_alloc(pool, &block,
+			     sizeof(struct k_mem_block_id) + 1 + *size,
+			     timeout)) {
+		return NULL;
+	}
+
+	/* save the block descriptor info at the start of the actual block */
+	memcpy(block.data, &block.id, sizeof(block.id));
+
+	ref_count = (u8_t *)block.data + sizeof(block.id);
+	*ref_count = 1;
+
+	/* Return pointer to the byte following the ref count */
+	return ref_count + 1;
+}
+
+static void mem_pool_data_unref(struct net_buf *buf, u8_t *data)
+{
+	struct k_mem_block_id id;
+	u8_t *ref_count;
+
+	ref_count = data - 1;
+	if (--(*ref_count)) {
+		return;
+	}
+
+	/* Need to copy to local variable due to alignment */
+	memcpy(&id, ref_count - sizeof(id), sizeof(id));
+	k_mem_pool_free_id(&id);
+}
+
+const struct net_buf_data_cb net_buf_var_cb = {
+	.alloc = mem_pool_data_alloc,
+	.ref   = generic_data_ref,
+	.unref = mem_pool_data_unref,
+};
+
 static u8_t *fixed_data_alloc(struct net_buf *buf, size_t *size, s32_t timeout)
 {
 	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
@@ -101,6 +157,46 @@ const struct net_buf_data_cb net_buf_fixed_cb = {
 	.alloc = fixed_data_alloc,
 	.unref = fixed_data_unref,
 };
+
+#if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
+
+static u8_t *heap_data_alloc(struct net_buf *buf, size_t *size, s32_t timeout)
+{
+	u8_t *ref_count;
+
+	ref_count = k_malloc(1 + *size);
+	if (!ref_count) {
+		return NULL;
+	}
+
+	*ref_count = 1;
+
+	return ref_count + 1;
+}
+
+static void heap_data_unref(struct net_buf *buf, u8_t *data)
+{
+	u8_t *ref_count;
+
+	ref_count = data - 1;
+	if (--(*ref_count)) {
+		return;
+	}
+
+	k_free(ref_count);
+}
+
+static const struct net_buf_data_cb net_buf_heap_cb = {
+	.alloc = heap_data_alloc,
+	.ref   = generic_data_ref,
+	.unref = heap_data_unref,
+};
+
+const struct net_buf_data_alloc net_buf_heap_alloc = {
+	.cb = &net_buf_heap_cb,
+};
+
+#endif /* CONFIG_HEAP_MEM_POOL_SIZE > 0 */
 
 static u8_t *data_alloc(struct net_buf *buf, size_t *size, s32_t timeout)
 {
