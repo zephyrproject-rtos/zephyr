@@ -66,3 +66,17 @@ void alt_handle_irq(void* base, alt_u32 id)
 void alt_tick (void)
 {
 }
+
+#include "priv/alt_dev_llist.h"
+int alt_dev_llist_insert (alt_dev_llist* dev, alt_llist* list)
+{
+	return 0;
+}
+
+#include "priv/alt_busy_sleep.h"
+#include <kernel.h>
+unsigned int alt_busy_sleep (unsigned int us)
+{
+	k_busy_wait(us);
+	return 0;
+}
