@@ -109,10 +109,9 @@ void fcb_tc_pretest(int sectors)
 	memset(fcb, 0, sizeof(*fcb));
 	fcb->f_sector_cnt = sectors;
 	fcb->f_sectors = test_fcb_sector; /* XXX */
-	fcb->f_area_id = TEST_FCB_FLASH_AREA_ID;
 
 	rc = 0;
-	rc = fcb_init(fcb);
+	rc = fcb_init(TEST_FCB_FLASH_AREA_ID, fcb);
 	if (rc != 0) {
 		printf("%s rc == %xm, %d\n", __func__, rc, rc);
 		zassert_true(rc == 0, "fbc initialization failure");
