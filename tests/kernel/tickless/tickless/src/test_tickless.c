@@ -14,6 +14,9 @@
 #include <misc/printk.h>
 #include <arch/cpu.h>
 #include <tc_util.h>
+#if defined(CONFIG_ARCH_POSIX)
+#include "posix_board_if.h"
+#endif
 
 #define STACKSIZE 4096
 #define PRIORITY 6
@@ -39,13 +42,17 @@ extern s32_t _sys_idle_threshold_ticks;
  * timestamp routines.
  */
 
-#if defined(CONFIG_X86) || defined(CONFIG_ARC)
+#if defined(CONFIG_X86) || defined(CONFIG_ARC) || defined(CONFIG_ARCH_POSIX)
 typedef u64_t _timer_res_t;
 #define _TIMER_ZERO  0ULL
 
 /* timestamp routines */
 #define _TIMESTAMP_OPEN()
+#if defined(CONFIG_ARCH_POSIX)
+#define _TIMESTAMP_READ()	(posix_get_hw_cycle())
+#else
 #define _TIMESTAMP_READ()	(_tsc_read())
+#endif
 #define _TIMESTAMP_CLOSE()
 
 #elif defined(CONFIG_ARM)
@@ -124,6 +131,8 @@ void ticklessTestThread(void)
 #if defined(CONFIG_X86) || defined(CONFIG_ARC)
 	printk("Calibrated time stamp period = 0x%x%x\n",
 		   (u32_t)(cal_tsc >> 32), (u32_t)(cal_tsc & 0xFFFFFFFFLL));
+#elif defined(CONFIG_ARCH_POSIX)
+	printk("Calibrated time stamp period = %llu\n", cal_tsc);
 #elif defined(CONFIG_ARM)
 	printk("Calibrated time stamp period = 0x%x\n", cal_tsc);
 #endif
@@ -169,6 +178,9 @@ void ticklessTestThread(void)
 		   (u32_t)(diff_tsc >> 32), (u32_t)(diff_tsc & 0xFFFFFFFFULL));
 	printk("Cal   time stamp: 0x%x%x\n",
 		   (u32_t)(cal_tsc >> 32), (u32_t)(cal_tsc & 0xFFFFFFFFLL));
+#elif defined(CONFIG_ARCH_POSIX)
+	printk("diff  time stamp: %llu\n", diff_tsc);
+	printk("Cal   time stamp: %llu\n", cal_tsc);
 #elif defined(CONFIG_ARM) || defined(CONFIG_SOC_QUARK_SE_C1000_SS)
 	printk("diff  time stamp: 0x%x\n", diff_tsc);
 	printk("Cal   time stamp: 0x%x\n", cal_tsc);
@@ -191,10 +203,6 @@ void ticklessTestThread(void)
 
 	/* release the timer, if necessary */
 	_TIMESTAMP_CLOSE();
-
-	while (1) {
-		;
-	}
 
 }
 
