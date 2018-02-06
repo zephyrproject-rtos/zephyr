@@ -394,7 +394,7 @@ void ll_filters_adv_update(u8_t adv_fp)
 		filter_wl_update();
 	}
 
-	if (rl_enable && !radio_scan_is_enabled()) {
+	if (rl_enable && !ll_scan_is_enabled()) {
 		/* rl not in use, update resolving list LUT */
 		filter_rl_update();
 	}
@@ -408,7 +408,7 @@ void ll_filters_scan_update(u8_t scan_fp)
 		filter_wl_update();
 	}
 
-	if (rl_enable && !radio_adv_is_enabled()) {
+	if (rl_enable && !ll_adv_is_enabled()) {
 		/* rl not in use, update resolving list LUT */
 		filter_rl_update();
 	}
@@ -610,7 +610,7 @@ static int rl_access_check(bool check_ar)
 		}
 	}
 
-	return (radio_adv_is_enabled() || radio_scan_is_enabled()) ? 0 : 1;
+	return (ll_adv_is_enabled() || ll_scan_is_enabled()) ? 0 : 1;
 }
 
 void ll_rl_rpa_update(bool timeout)
@@ -659,7 +659,7 @@ void ll_rl_rpa_update(bool timeout)
 
 	if (timeout) {
 #if defined(CONFIG_BT_BROADCASTER)
-		if (radio_adv_is_enabled()) {
+		if (ll_adv_is_enabled()) {
 			rpa_adv_refresh();
 		}
 #endif
