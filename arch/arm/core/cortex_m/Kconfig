@@ -135,6 +135,20 @@ config CPU_CORTEX_M4
 	help
 	  This option signifies the use of a Cortex-M4 CPU
 
+config CPU_CORTEX_M23
+	bool
+	# Omit prompt to signify "hidden" option
+	select ARMV6_M_ARMV8_M_BASELINE
+	help
+	  This option signifies the use of a Cortex-M23 CPU
+
+config CPU_CORTEX_M33
+	bool
+	# Omit prompt to signify "hidden" option
+	select ARMV7_M_ARMV8_M_MAINLINE
+	help
+	  This option signifies the use of a Cortex-M33 CPU
+
 config CPU_CORTEX_M7
 	bool
 	# Omit prompt to signify "hidden" option
@@ -197,7 +211,7 @@ config XIP
 	default y
 endmenu
 
-menu "ARM Cortex-M0/M0+/M3/M4/M7 options"
+menu "ARM Cortex-M0/M0+/M3/M4/M7/M23/M33 options"
     depends on ARMV6_M_ARMV8_M_BASELINE || ARMV7_M_ARMV8_M_MAINLINE
 
 config GEN_ISR_TABLES
