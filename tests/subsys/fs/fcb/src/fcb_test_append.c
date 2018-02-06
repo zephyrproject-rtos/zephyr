@@ -25,8 +25,8 @@ void fcb_test_append(void)
 		}
 		rc = fcb_append(fcb, i, &loc);
 		zassert_true(rc == 0, "fcb_append call failure");
-		rc = flash_area_write(loc.fe_area, loc.fe_data_off, test_data,
-				      i);
+		rc = flash_area_write(fcb->fap, FCB_ENTRY_FA_DATA_OFF(loc),
+				      test_data, i);
 		zassert_true(rc == 0, "flash_area_write call failure");
 		rc = fcb_append_finish(fcb, &loc);
 		zassert_true(rc == 0, "fcb_append_finish call failure");

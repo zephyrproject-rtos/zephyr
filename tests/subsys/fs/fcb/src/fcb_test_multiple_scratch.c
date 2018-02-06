@@ -33,11 +33,11 @@ void fcb_test_multi_scratch(void)
 		if (rc == FCB_ERR_NOSPACE) {
 			break;
 		}
-		idx = loc.fe_area - &test_fcb_area[0];
+		idx = loc.fe_sector - &test_fcb_sector[0];
 		elem_cnts[idx]++;
 
-		rc = flash_area_write(loc.fe_area, loc.fe_data_off, test_data,
-		  sizeof(test_data));
+		rc = flash_area_write(fcb->fap, FCB_ENTRY_FA_DATA_OFF(loc),
+				      test_data, sizeof(test_data));
 		zassert_true(rc == 0, "flash_area_write call failure");
 
 		rc = fcb_append_finish(fcb, &loc);
@@ -61,11 +61,11 @@ void fcb_test_multi_scratch(void)
 		if (rc == FCB_ERR_NOSPACE) {
 			break;
 		}
-		idx = loc.fe_area - &test_fcb_area[0];
+		idx = loc.fe_sector - &test_fcb_sector[0];
 		elem_cnts[idx]++;
 
-		rc = flash_area_write(loc.fe_area, loc.fe_data_off, test_data,
-		  sizeof(test_data));
+		rc = flash_area_write(fcb->fap, FCB_ENTRY_FA_DATA_OFF(loc),
+				      test_data, sizeof(test_data));
 		zassert_true(rc == 0, "flash_area_write call failure");
 
 		rc = fcb_append_finish(fcb, &loc);
