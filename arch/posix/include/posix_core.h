@@ -42,6 +42,7 @@ void posix_init_multithreading(void);
 void posix_core_clean_up(void);
 
 void posix_new_thread_pre_start(void); /* defined in thread.c */
+void posix_irq_check_idle_exit(void);
 
 #ifdef __cplusplus
 }

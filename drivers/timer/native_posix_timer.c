@@ -15,8 +15,12 @@
 #include "irq.h"
 #include "device.h"
 #include "drivers/system_timer.h"
+#include "sys_clock.h"
 #include "timer_model.h"
 #include "soc.h"
+
+static u64_t tick_period; /* System tick period in number of hw cycles */
+static s32_t silent_ticks;
 
 /**
  * Return the current HW cycle counter
@@ -27,14 +31,26 @@ u32_t _timer_cycle_get_32(void)
 	return hwm_get_time();
 }
 
+extern u64_t posix_get_hw_cycle(void);
+
 #ifdef CONFIG_TICKLESS_IDLE
-void _timer_idle_enter(int32_t sys_ticks)
+
+/*
+ * Do not raise another ticker interrupt until the sys_ticks'th one
+ * e.g. if sys_ticks is 10, do not raise the next 9 ones
+ */
+void _timer_idle_enter(s32_t sys_ticks)
 {
-	hwtimer_set_silent_ticks(sys_ticks);
+	silent_ticks = sys_ticks - 1;
+	hwtimer_set_silent_ticks(silent_ticks);
 }
 
+/*
+ * Exit from idle mode
+ */
 void _timer_idle_exit(void)
 {
+	silent_ticks -= hwtimer_get_pending_silent_ticks();
 	hwtimer_set_silent_ticks(0);
 }
 #endif
@@ -42,12 +58,22 @@ void _timer_idle_exit(void)
 static void sp_timer_isr(void *arg)
 {
 	ARG_UNUSED(arg);
+	_sys_idle_elapsed_ticks = silent_ticks + 1;
+	silent_ticks = 0;
 	_sys_clock_tick_announce();
 }
 
+/*
+ * Initialize the hwtimer and setup its interrupt
+ */
 int _sys_clock_driver_init(struct device *device)
 {
 	ARG_UNUSED(device);
+
+	tick_period = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC /
+		      CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+
+	hwtimer_enable(tick_period);
 
 	IRQ_CONNECT(TIMER_TICK_IRQ, 1, sp_timer_isr, 0, 0);
 	irq_enable(TIMER_TICK_IRQ);
