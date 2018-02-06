@@ -102,3 +102,17 @@ void _arch_switch_to_main_thread(struct k_thread *main_thread,
 }
 #endif
 
+#ifdef CONFIG_SYS_POWER_MANAGEMENT
+/**
+ * If the kernel is in idle mode, take it out
+ */
+void posix_irq_check_idle_exit(void)
+{
+	if (_kernel.idle) {
+		s32_t idle_val = _kernel.idle;
+
+		_kernel.idle = 0;
+		_sys_power_save_idle_exit(idle_val);
+	}
+}
+#endif

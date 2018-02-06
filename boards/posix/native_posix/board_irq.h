@@ -50,12 +50,17 @@ void _irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags);
 	irq_p; \
 })
 
-
 /**
- * The return of "name(void)" is the indicaton of the interrupt
+ * POSIX Architecture (board) specific ISR_DIRECT_DECLARE(),
+ * See include/irq.h for more information.
+ *
+ * The return of "name##_body(void)" is the indication of the interrupt
  * (maybe) having caused a kernel decision to context switch
  *
  * Note that this convention is changed relative to the ARM and x86 archs
+ *
+ * All pre/post irq work of the interrupt is handled in the board
+ * posix_irq_handler() both for direct and normal interrupts together
  */
 #define _ARCH_ISR_DIRECT_DECLARE(name) \
 	static inline int name##_body(void); \
@@ -67,7 +72,15 @@ void _irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags);
 	} \
 	static inline int name##_body(void)
 
-#define _ARCH_ISR_DIRECT_PM()
+#define _ARCH_ISR_DIRECT_HEADER()   do { } while (0)
+#define _ARCH_ISR_DIRECT_FOOTER(a)  do { } while (0)
+
+#ifdef CONFIG_SYS_POWER_MANAGEMENT
+extern void posix_irq_check_idle_exit(void);
+#define _ARCH_ISR_DIRECT_PM() posix_irq_check_idle_exit()
+#else
+#define _ARCH_ISR_DIRECT_PM() do { } while (0)
+#endif
 
 #ifdef __cplusplus
 }

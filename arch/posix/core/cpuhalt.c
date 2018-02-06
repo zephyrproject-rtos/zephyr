@@ -19,6 +19,7 @@
 
 #include "posix_core.h"
 #include "posix_soc_if.h"
+#include "logging/kernel_event_logger.h"
 
 /**
  *
@@ -34,6 +35,7 @@
  */
 void k_cpu_idle(void)
 {
+	_sys_k_event_logger_enter_sleep();
 	posix_irq_full_unlock();
 	posix_halt_cpu();
 }
@@ -60,5 +62,6 @@ void k_cpu_idle(void)
 
 void k_cpu_atomic_idle(unsigned int imask)
 {
+	_sys_k_event_logger_enter_sleep();
 	posix_atomic_halt_cpu(imask);
 }
