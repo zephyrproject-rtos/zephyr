@@ -57,13 +57,26 @@ static struct lwm2m_engine_obj_field fields[] = {
 	OBJ_FIELD_EXECUTE(SERVER_DISABLE_ID),
 	OBJ_FIELD_DATA(SERVER_DISABLE_TIMEOUT_ID, RW, U32),
 	OBJ_FIELD_DATA(SERVER_STORE_NOTIFY_ID, RW, U8),
-	/* Mark Transport Binding RO as we only support UDP atm */
-	OBJ_FIELD_DATA(SERVER_TRANSPORT_BINDING_ID, R, STRING),
+	OBJ_FIELD_DATA(SERVER_TRANSPORT_BINDING_ID, RW, STRING),
 	OBJ_FIELD_EXECUTE(SERVER_REG_UPDATE_TRIGGER_ID),
 };
 
 static struct lwm2m_engine_obj_inst inst[MAX_INSTANCE_COUNT];
 static struct lwm2m_engine_res_inst res[MAX_INSTANCE_COUNT][SERVER_MAX_ID];
+
+#define BINDING_MODE_U		0
+#define BINDING_MODE_UQ		1
+#define BINDING_MODE_S		2
+#define BINDING_MODE_SQ		3
+#define BINDING_MODE_US		4
+#define BINDING_MODE_UQS	5
+#define MAX_BINDING_MODE	6
+
+static const char *binding_modes[MAX_BINDING_MODE] = {
+	"U", "UQ", "S", "SQ", "US", "UQS"
+};
+
+static char binding_mode_validation_buf[TRANSPORT_BINDING_LEN];
 
 static int disable_cb(u16_t obj_inst_id)
 {
@@ -88,6 +101,61 @@ static int update_trigger_cb(u16_t obj_inst_id)
 #else
 	return -EPERM;
 #endif
+}
+
+/* Setup an alternate buffer for validating transport binding mode at
+ * binding_validate() function
+ */
+void *binding_pre_write(u16_t obj_inst_id, size_t *data_len)
+{
+	*data_len = TRANSPORT_BINDING_LEN;
+	return binding_mode_validation_buf;
+}
+
+static int binding_validate(u16_t obj_inst_id, u8_t *data, u16_t data_len,
+			    bool last_block, size_t total_size)
+{
+	u16_t mode;
+
+	for (mode = BINDING_MODE_U; mode < MAX_BINDING_MODE; mode++) {
+		if (strlen(binding_modes[mode]) == data_len &&
+		    !strcmp(binding_modes[mode], data)) {
+			break;
+		}
+	}
+
+	/* only UDP mode is supported for now */
+	if (mode != BINDING_MODE_U) {
+		SYS_LOG_ERR("Unsupported binding mode: %s",
+			    mode == MAX_BINDING_MODE ?
+			    "unknown" : binding_modes[mode]);
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
+/* After transport binding mode is validated by binding_validate(),
+ * we have to write back the incoming data from alternate buffer setup by
+ * binding_pre_write() function
+ */
+static int binding_post_write(u16_t obj_inst_id, u8_t *data, u16_t data_len,
+			      bool last_block, size_t total_size)
+{
+	int i;
+
+	if (data == NULL || data_len > TRANSPORT_BINDING_LEN) {
+		return -EINVAL;
+	}
+
+	for (i = 0; i < MAX_INSTANCE_COUNT; i++) {
+		if (inst[i].obj && inst[i].obj_inst_id == obj_inst_id) {
+			strcpy(transport_binding[i], data);
+			return 0;
+		}
+	}
+
+	return -ENOENT;
 }
 
 static struct lwm2m_engine_obj_inst *server_create(u16_t obj_inst_id)
@@ -123,7 +191,7 @@ static struct lwm2m_engine_obj_inst *server_create(u16_t obj_inst_id)
 	default_min_period[index] = 0;
 	default_max_period[index] = 0;
 	disabled_timeout[index] = 86400;
-	strcpy(transport_binding[index], "U");
+	strcpy(transport_binding[index], binding_modes[BINDING_MODE_U]);
 
 	/* initialize instance resource data */
 	INIT_OBJ_RES_DATA(res[index], i, SERVER_SHORT_SERVER_ID,
@@ -143,9 +211,10 @@ static struct lwm2m_engine_obj_inst *server_create(u16_t obj_inst_id)
 	INIT_OBJ_RES_DATA(res[index], i, SERVER_STORE_NOTIFY_ID,
 			  &server_flag_store_notify[index],
 			  sizeof(*server_flag_store_notify));
-	/* Mark Transport Binding RO as we only support UDP atm */
-	INIT_OBJ_RES_DATA(res[index], i, SERVER_TRANSPORT_BINDING_ID,
-			  transport_binding[index], TRANSPORT_BINDING_LEN);
+	INIT_OBJ_RES(res[index], i, SERVER_TRANSPORT_BINDING_ID, 0,
+		     transport_binding[index], TRANSPORT_BINDING_LEN,
+		     NULL, binding_pre_write, binding_post_write, NULL,
+		     binding_validate);
 	INIT_OBJ_RES_EXECUTE(res[index], i, SERVER_REG_UPDATE_TRIGGER_ID,
 			  update_trigger_cb);
 
