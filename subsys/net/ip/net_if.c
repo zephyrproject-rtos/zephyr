@@ -40,8 +40,8 @@
 extern struct net_if __net_if_start[];
 extern struct net_if __net_if_end[];
 
-extern struct k_poll_event __net_if_event_start[];
-extern struct k_poll_event __net_if_event_stop[];
+extern struct net_if_dev __net_if_dev_start[];
+extern struct net_if_dev __net_if_dev_end[];
 
 static struct net_if_router routers[CONFIG_NET_MAX_ROUTERS];
 
@@ -69,19 +69,17 @@ static sys_slist_t link_callbacks;
 static sys_slist_t mcast_monitor_callbacks;
 #endif
 
-NET_STACK_DEFINE(TX, tx_stack, CONFIG_NET_TX_STACK_SIZE,
-		 CONFIG_NET_TX_STACK_SIZE);
-static struct k_thread tx_thread_data;
-
 #if defined(CONFIG_NET_DEBUG_IF)
-#define debug_check_packet(pkt)						    \
-	{								    \
-		size_t len = net_pkt_get_len(pkt);			    \
-									    \
-		NET_DBG("Processing (pkt %p, data len %zu) network packet", \
-			pkt, len);					    \
-									    \
-		NET_ASSERT(pkt->frags && len);				    \
+#define debug_check_packet(pkt)						\
+	{								\
+		size_t len = net_pkt_get_len(pkt);			\
+									\
+		NET_DBG("Processing (pkt %p, data len %zu, "		\
+			"prio %d) network packet",			\
+			pkt, len,					\
+			net_pkt_priority(pkt));				\
+									\
+		NET_ASSERT(pkt->frags && len);				\
 	} while (0)
 #else
 #define debug_check_packet(...)
@@ -112,19 +110,17 @@ static inline void net_context_send_cb(struct net_context *context,
 	}
 }
 
-static bool net_if_tx(struct net_if *iface)
+static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 {
 	const struct net_if_api *api = net_if_get_device(iface)->driver_api;
 	struct net_linkaddr *dst;
 	struct net_context *context;
-	struct net_pkt *pkt;
 	void *context_token;
 	int status;
 #if defined(CONFIG_NET_STATISTICS)
 	size_t pkt_len;
 #endif
 
-	pkt = k_fifo_get(net_if_get_queue_tx(iface), K_NO_WAIT);
 	if (!pkt) {
 		return false;
 	}
@@ -176,97 +172,27 @@ static bool net_if_tx(struct net_if *iface)
 	return true;
 }
 
-static void net_if_flush_tx(struct net_if *iface)
+static void process_tx_packet(struct k_work *work)
 {
-	if (k_fifo_is_empty(net_if_get_queue_tx(iface))) {
-		return;
-	}
+	struct net_pkt *pkt;
 
-	/* Without this, the k_fifo_get() can return a pkt which
-	 * has pkt->frags set to NULL. This is not allowed as we
-	 * cannot send a packet that has no data in it.
-	 * The k_yield() fixes the issue and packets are flushed
-	 * correctly.
-	 */
-	k_yield();
+	pkt = CONTAINER_OF(work, struct net_pkt, work);
 
-	while (1) {
-		if (!net_if_tx(iface)) {
-			break;
-		}
-	}
+	net_if_tx(net_pkt_iface(pkt), pkt);
 }
 
-static void iface_tx_cb(struct net_if *iface, void *user_data)
+void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt)
 {
-	struct net_if_dev *if_dev = user_data;
+	u8_t prio = net_pkt_priority(pkt);
+	u8_t tc = net_tx_priority2tc(prio);
 
-	if (iface->if_dev == if_dev) {
-		net_if_tx(iface);
-	}
-}
+	k_work_init(net_pkt_work(pkt), process_tx_packet);
 
-static void net_if_process_events(struct k_poll_event *event, int ev_count)
-{
-	for (; ev_count; event++, ev_count--) {
-		switch (event->state) {
-		case K_POLL_STATE_SIGNALED:
-			break;
-		case K_POLL_STATE_FIFO_DATA_AVAILABLE:
-		{
-			struct net_if_dev *if_dev;
+#if NET_TC_TX_COUNT > 1
+	NET_DBG("TC %d with prio %d pkt %p", tc, prio, pkt);
+#endif
 
-			if_dev = CONTAINER_OF(event->fifo, struct net_if_dev,
-					      tx_queue);
-
-			net_if_foreach(iface_tx_cb, if_dev);
-
-			break;
-		}
-		case K_POLL_STATE_NOT_READY:
-			break;
-		default:
-			break;
-		}
-	}
-}
-
-static int net_if_prepare_events(void)
-{
-	struct net_if *iface;
-	int ev_count = 0;
-
-	for (iface = __net_if_start; iface != __net_if_end; iface++) {
-		k_poll_event_init(&__net_if_event_start[ev_count],
-				  K_POLL_TYPE_FIFO_DATA_AVAILABLE,
-				  K_POLL_MODE_NOTIFY_ONLY,
-				  net_if_get_queue_tx(iface));
-		ev_count++;
-	}
-
-	return ev_count;
-}
-
-static void net_if_tx_thread(struct k_sem *startup_sync)
-{
-	NET_DBG("Starting TX thread (stack %d bytes)",
-		CONFIG_NET_TX_STACK_SIZE);
-
-	/* This will allow RX thread to start to receive data. */
-	k_sem_give(startup_sync);
-
-	while (1) {
-		int ev_count, ret;
-
-		ev_count = net_if_prepare_events();
-
-		ret = k_poll(__net_if_event_start, ev_count, K_FOREVER);
-		NET_ASSERT(ret == 0);
-
-		net_if_process_events(__net_if_event_start, ev_count);
-
-		k_yield();
-	}
+	net_tc_submit_to_tx_queue(tc, pkt);
 }
 
 static inline void init_iface(struct net_if *iface)
@@ -276,8 +202,6 @@ static inline void init_iface(struct net_if *iface)
 	NET_ASSERT(api && api->init && api->send);
 
 	NET_DBG("On iface %p", iface);
-
-	k_fifo_init(net_if_get_queue_tx(iface));
 
 	api->init(iface);
 }
@@ -2175,8 +2099,6 @@ void net_if_carrier_down(struct net_if *iface)
 
 	atomic_clear_bit(iface->if_dev->flags, NET_IF_UP);
 
-	net_if_flush_tx(iface);
-
 	net_mgmt_event_notify(NET_EVENT_IF_DOWN, iface);
 }
 
@@ -2187,8 +2109,6 @@ int net_if_down(struct net_if *iface)
 	NET_DBG("iface %p", iface);
 
 	leave_mcast_all(iface);
-
-	net_if_flush_tx(iface);
 
 	/* If the L2 does not support enable just clear the flag */
 	if (!net_if_l2(iface)->enable) {
@@ -2209,12 +2129,14 @@ done:
 	return 0;
 }
 
-void net_if_init(struct k_sem *startup_sync)
+void net_if_init(void)
 {
 	struct net_if *iface;
 	int i, if_count;
 
 	NET_DBG("");
+
+	net_tc_tx_init();
 
 	for (iface = __net_if_start, if_count = 0; iface != __net_if_end;
 	     iface++, if_count++) {
@@ -2261,12 +2183,6 @@ void net_if_init(struct k_sem *startup_sync)
 #endif
 	}
 #endif /* CONFIG_NET_IPV6 */
-
-	k_thread_create(&tx_thread_data, tx_stack,
-			K_THREAD_STACK_SIZEOF(tx_stack),
-			(k_thread_entry_t)net_if_tx_thread,
-			startup_sync, NULL, NULL, K_PRIO_COOP(7),
-			K_ESSENTIAL, K_NO_WAIT);
 }
 
 void net_if_post_init(void)

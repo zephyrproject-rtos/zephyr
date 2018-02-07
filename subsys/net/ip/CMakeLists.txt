@@ -9,6 +9,7 @@ zephyr_library_sources(
   net_core.c
   net_if.c
   net_pkt.c
+  net_tc.c
   utils.c
   )
 

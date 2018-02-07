@@ -188,6 +188,18 @@ extern const struct in6_addr in6addr_loopback;
 #define NET_IPV6_NEXTHDR_FRAG        44
 #define NET_IPV6_NEXTHDR_NONE        59
 
+/** Network packet priority settings described in IEEE 802.1Q Annex I.1 */
+enum net_priority {
+	NET_PRIORITY_BK = 0, /* Background (lowest)                */
+	NET_PRIORITY_BE = 1, /* Best effort (default)              */
+	NET_PRIORITY_EE = 2, /* Excellent effort                   */
+	NET_PRIORITY_CA = 3, /* Critical applications (highest)    */
+	NET_PRIORITY_VI = 4, /* Video, < 100 ms latency and jitter */
+	NET_PRIORITY_VO = 5, /* Voice, < 10 ms latency and jitter  */
+	NET_PRIORITY_IC = 6, /* Internetwork control               */
+	NET_PRIORITY_NC = 7  /* Network control                    */
+};
+
 /** IPv6/IPv4 network connection tuple */
 struct net_tuple {
 	/** IPv6/IPv4 remote address */
@@ -945,6 +957,26 @@ static inline bool net_tcp_seq_greater(u32_t seq1, u32_t seq2)
  * @return 0 if ok, <0 if error
  */
 int net_bytes_from_str(u8_t *buf, int buf_len, const char *src);
+
+/**
+ * @brief Convert Tx network packet priority to traffic class so we can place
+ * the packet into correct Tx queue.
+ *
+ * @param prio Network priority
+ *
+ * @return Tx traffic class that handles that priority network traffic.
+ */
+int net_tx_priority2tc(enum net_priority prio);
+
+/**
+ * @brief Convert Rx network packet priority to traffic class so we can place
+ * the packet into correct Rx queue.
+ *
+ * @param prio Network priority
+ *
+ * @return Rx traffic class that handles that priority network traffic.
+ */
+int net_rx_priority2tc(enum net_priority prio);
 
 #ifdef __cplusplus
 }
