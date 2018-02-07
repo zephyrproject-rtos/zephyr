@@ -49,7 +49,8 @@ Serial Port
 
 This board uses a single serial communication channel
 with a NS16550 serial driver that operates in polling mode.
-For an interrupt-driven driver, enable the UART_INTERRUPT_DRIVEN kernel configuration option.
+For an interrupt-driven driver, enable the
+:option:`CONFIG_UART_INTERRUPT_DRIVEN` kernel configuration option.
 
 PCI
 ----
@@ -85,7 +86,7 @@ Creating a GRUB2 Boot Loader Image from a Linux Host
 Follow the same steps documented for the :ref:`Galileo board <grub2>`.
 
 
-Booting Zephyr on the Minnowboard
+Booting Zephyr on the MinnowBoard
 =================================
 
 The MinnowBoard by default will be running a 64bit firmware. To boot Zephyr, you
