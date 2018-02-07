@@ -2,7 +2,8 @@
  * \file check_config.h
  *
  * \brief Consistency checks for configuration options
- *
+ */
+/*
  *  Copyright (C) 2006-2016, ARM Limited, All Rights Reserved
  *  SPDX-License-Identifier: Apache-2.0
  *
