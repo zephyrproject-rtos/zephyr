@@ -262,6 +262,13 @@ config NET_CONTEXT_CHECK
 	  If you know that the options passed to net_context...() functions
 	  are ok, then you can disable the checks to save some memory.
 
+config NET_CONTEXT_PRIORITY
+	bool "Add priority support to net_context"
+	default n
+	help
+	  It is possible to prioritize network traffic. This requires
+	  also traffic class support to work as expected.
+
 config NET_TEST
 	bool "Network Testing"
 	default n
