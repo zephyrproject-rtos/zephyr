@@ -53,14 +53,33 @@ small-footprint OSes:
    to be defined at compile-time, which reduces code size and
    increases performance for resource-limited systems.
 
-**Minimal error checking**
+**Minimal and Configurable error checking**
    Provides minimal runtime error checking
    to reduce code size and increase performance. An optional error-checking
    infrastructure is provided to assist in debugging during application
    development.
 
+**Memory Protection**
+   Implements configurable architecture-specific stack-overflow protection,
+   kernel object and device driver permission tracking, and thread isolation
+   with thread-level memory protection on x86, ARC, and ARM architectures,
+   userspace, and memory domains.
+
+**Native Networking Stack supporting multiple protocols**
+   Networking support is fully featured and optimized, including LwM2M
+   and BSD sockets compatible support.  Bluetooth Low Energy 5.0 support
+   includes BLE Mesh and a Bluetooth qualification-ready BLE controller.
+   OpenThread support (on Nordic chipsets) is also provided - a mesh
+   network designed to securely and reliably connect hundreds of products
+   around the home.
+
+**Native Linux, macOS, and Windows Development**
+   A command-line CMake build environment runs on popular developer OS
+   systems. A native POSIX port, lets you build and run Zephyr as a native
+   application on Linux and other OSes, aiding development and testing.
+
 **Extensive suite of services**
-   Offers a number of familiar services for development:
+   Zephyr offers a number of familiar services for development:
 
    * *Multi-threading Services* for cooperative, priority-based,
      non-preemptive, and preemptive threads with optional round robin
@@ -71,9 +90,6 @@ small-footprint OSes:
    * *Memory Allocation Services* for dynamic allocation and freeing of
      fixed-size or variable-size memory blocks.
 
-   * *Memory Protection* wtih architecture-specific stack-overflow protection,
-     kernel object and device driver permission tracking, and thread isolation.
-
    * *Inter-thread Synchronization Services* for binary semaphores,
      counting semaphores, and mutex semaphores.
 
@@ -83,22 +99,10 @@ small-footprint OSes:
    * *Power Management Services* such as tickless idle and an advanced idling
      infrastructure.
 
-   * *Native Networking Stack* fully featured and optimized, including
-     LwM2M and BSD sockets compatible support. OpenThread support is also
-     provided - a mesh network designed to securely and reliably
-     connect hundreds of products around the home.
-
-   * *Bluetooth Low Energy* 5.0 support including a Bluetooth
-     qualification-ready BLE controller, and BLE Mesh.
-
-   * *File system* with Newtron Flash Filesystem (NFFS) and FAT
-     support, and file system enhancements for logging and
+   * *File system* with Newtron Flash Filesystem (NFFS) and FATFS
+     support, FCB (Flash Circular Buffer) for memory constrained
+     applications, and file system enhancements for logging and
      configuration.
-
-   * *Native Linux, macOS, and Windows Development* with command-line
-     Cmake build environment. A native POSIX port, letting you build and
-     run Zephyr as a native application on Linux and other OSes aids
-     development and testing.
 
    * *ZTest infrastructure* and a coverage test suite for continuous
      integration testing and verification as features are added and updated.
