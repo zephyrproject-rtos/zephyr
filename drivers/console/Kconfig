@@ -229,7 +229,7 @@ config NATIVE_STDIN_PRIO
 	depends on NATIVE_POSIX_STDIN_CONSOLE
 	default 4
 	help
-	  Prioriry of the native stdin polling thread
+	  Priority of the native stdin polling thread
 
 config NATIVE_POSIX_STDOUT_CONSOLE
 	bool
