@@ -1,0 +1,9 @@
+sample:
+    description: Sample app that sends messages between the two cores on
+        the lpcxpresso54114 using the RPMsg-Lite library.
+    name: RPMsg-Lite Sample
+tests:
+    test:
+        build_only: true
+        platform_whitelist: lpcxpresso54114_m4
+        tags: samples ipm
