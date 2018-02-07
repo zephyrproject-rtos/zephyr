@@ -2868,7 +2868,8 @@ failed:
 }
 
 static void hb_sub_send_status(struct bt_mesh_model *model,
-			       struct bt_mesh_msg_ctx *ctx, u8_t status)
+			       struct bt_mesh_msg_ctx *ctx, u8_t status,
+			       u32_t opcode)
 {
 	/* Needed size: opcode (2 bytes) + msg + MIC */
 	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 9 + 4);
@@ -2892,8 +2893,17 @@ static void hb_sub_send_status(struct bt_mesh_model *model,
 	net_buf_simple_add_le16(msg, cfg->hb_sub.src);
 	net_buf_simple_add_le16(msg, cfg->hb_sub.dst);
 
-	if (cfg->hb_sub.src == BT_MESH_ADDR_UNASSIGNED ||
-	    cfg->hb_sub.dst == BT_MESH_ADDR_UNASSIGNED) {
+	/* Mesh Profile Specification v1.0, 4.4.1.2.16
+	 * (Config Heartbeat Subscription Get) When the Heartbeat Subscription
+	 * Source state or the Heartbeat Subscription Destination state is set
+	 * to the unassigned address, the value of the Source and Destination
+	 * fields of the Config Heartbeat Subscription Status message shall be
+	 * set to the unassigned address and the values of the CountLog,
+	 * PeriodLog, MinHops, and MaxHops fields shall be set to 0x00.
+	 */
+	if (opcode == OP_HEARTBEAT_SUB_GET &&
+	    (cfg->hb_sub.src == BT_MESH_ADDR_UNASSIGNED ||
+	     cfg->hb_sub.dst == BT_MESH_ADDR_UNASSIGNED)) {
 		memset(net_buf_simple_add(msg, 4), 0, 4);
 	} else {
 		net_buf_simple_add_u8(msg, hb_log(period));
@@ -2913,7 +2923,7 @@ static void heartbeat_sub_get(struct bt_mesh_model *model,
 {
 	BT_DBG("src 0x%04x", ctx->addr);
 
-	hb_sub_send_status(model, ctx, STATUS_SUCCESS);
+	hb_sub_send_status(model, ctx, STATUS_SUCCESS, OP_HEARTBEAT_SUB_GET);
 }
 
 static void heartbeat_sub_set(struct bt_mesh_model *model,
@@ -2952,17 +2962,22 @@ static void heartbeat_sub_set(struct bt_mesh_model *model,
 		return;
 	}
 
+	/* Mesh Profile Specification v1.0, 4.4.1.2.16
+	 * If the Source or the Destination field is set to the unassigned
+	 * address, or the PeriodLog field is set to 0x00, then the processing
+	 * of received Heartbeat messages shall be disabled, the Heartbeat
+	 * Subscription Source state shall be set to the unassigned address,
+	 * the Heartbeat Subscription Destination state shall be set to the
+	 * unassigned address, the Heartbeat Subscription MinHops state shall
+	 * be unchanged, the Heartbeat Subscription MaxHops state shall be
+	 * unchanged, and the Heartbeat Subscription Count state shall be
+	 * unchanged.
+	 */
 	if (sub_src == BT_MESH_ADDR_UNASSIGNED ||
 	    sub_dst == BT_MESH_ADDR_UNASSIGNED ||
 	    sub_period == 0x00) {
-		/* Setting the same addresses with zero period should retain
-		 * the addresses according to MESH/NODE/CFG/HBS/BV-02-C.
-		 */
-		if (cfg->hb_sub.src != sub_src || cfg->hb_sub.dst != sub_dst) {
-			cfg->hb_sub.src = BT_MESH_ADDR_UNASSIGNED;
-			cfg->hb_sub.dst = BT_MESH_ADDR_UNASSIGNED;
-		}
-
+		cfg->hb_sub.src = BT_MESH_ADDR_UNASSIGNED;
+		cfg->hb_sub.dst = BT_MESH_ADDR_UNASSIGNED;
 		period_ms = 0;
 	} else {
 		cfg->hb_sub.src = sub_src;
@@ -2984,7 +2999,7 @@ static void heartbeat_sub_set(struct bt_mesh_model *model,
 		cfg->hb_sub.expiry = 0;
 	}
 
-	hb_sub_send_status(model, ctx, STATUS_SUCCESS);
+	hb_sub_send_status(model, ctx, STATUS_SUCCESS, OP_HEARTBEAT_SUB_SET);
 }
 
 const struct bt_mesh_model_op bt_mesh_cfg_srv_op[] = {
