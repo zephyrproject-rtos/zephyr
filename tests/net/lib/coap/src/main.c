@@ -1109,11 +1109,11 @@ static int test_block_size(void)
 		goto done;
 	}
 
-	/* Suppose that pkt was sent */
-	net_pkt_unref(pkt);
-
 	/* Let's try the second packet */
 	coap_next_block(&req, &req_ctx);
+
+	/* Suppose that pkt was sent */
+	net_pkt_unref(pkt);
 
 	pkt = net_pkt_get_reserve(&coap_pkt_slab, 0, K_NO_WAIT);
 	if (!pkt) {
