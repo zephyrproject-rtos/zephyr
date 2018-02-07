@@ -560,6 +560,22 @@ static inline void net_shell_print_statistics(void)
 	printk("Bytes received %u\n", GET_STAT(bytes.received));
 	printk("Bytes sent     %u\n", GET_STAT(bytes.sent));
 	printk("Processing err %d\n", GET_STAT(processing_error));
+
+#if CONFIG_NET_TC_COUNT > 1
+	{
+		int i;
+
+		printk("Traffic class statistics:\n");
+		printk("TC  Priority\tSent pkts\tbytes\n");
+
+		for (i = 0; i < CONFIG_NET_TC_COUNT; i++) {
+			printk("[%d] %d\t\t%d\t\t%d\n", i,
+			       GET_STAT(tc.sent[i].priority),
+			       GET_STAT(tc.sent[i].pkts),
+			       GET_STAT(tc.sent[i].bytes));
+		}
+	}
+#endif /* CONFIG_NET_TC_COUNT > 1 */
 }
 #endif /* CONFIG_NET_STATISTICS */
 

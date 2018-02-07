@@ -390,6 +390,27 @@ static inline void net_stats_update_ipv6_mld_drop(void)
 #define net_stats_update_ipv6_mld_drop()
 #endif /* CONFIG_NET_STATISTICS_MLD */
 
+#if CONFIG_NET_TC_COUNT > 1
+static inline void net_stats_update_tc_sent_pkt(u8_t tc)
+{
+	net_stats.tc.sent[tc].pkts++;
+}
+
+static inline void net_stats_update_tc_sent_bytes(u8_t tc, size_t bytes)
+{
+	net_stats.tc.sent[tc].bytes += bytes;
+}
+
+static inline void net_stats_update_tc_sent_priority(u8_t tc, u8_t priority)
+{
+	net_stats.tc.sent[tc].priority = priority;
+}
+#else
+#define net_stats_update_tc_sent_pkt(tc)
+#define net_stats_update_tc_sent_bytes(tc, bytes)
+#define net_stats_update_tc_sent_priority(tc, priority)
+#endif /* CONFIG_NET_TC_COUNT > 1 */
+
 #if defined(CONFIG_NET_STATISTICS_PERIODIC_OUTPUT)
 /* A simple periodic statistic printer, used only in net core */
 void net_print_statistics(void);
