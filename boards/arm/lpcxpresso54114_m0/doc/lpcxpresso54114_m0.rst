@@ -32,7 +32,7 @@ Debugging
 =========
 
 You can debug an application in the usual way. Here is an example for the
-:ref:`ipm_mcux` application.
+:ref:`ipm-mcux-sample` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/ipc/ipm_mcux
@@ -52,7 +52,7 @@ serial port:
 
 .. code-block:: console
 
-   ***** BOOTING ZEPHYR OS v1.10.99 - BUILD: Feb  7 2018 20:32:27 *****
+   ***** Booting Zephyr OS v1.11.0-764-g4e3007a *****
    Hello World from MASTER! arm
    Received: 1
    ...
