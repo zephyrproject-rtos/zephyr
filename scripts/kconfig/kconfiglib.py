@@ -705,16 +705,17 @@ class Kconfig(object):
                                                _name_and_loc_str(sym)))
                             continue
 
-                        # We represent tristate values as 0, 1, 2
-                        val = STR_TO_TRI[val[0]]
+                        val = val[0]
 
-                        if sym.choice and val:
+                        if sym.choice and val != "n":
                             # During .config loading, we infer the mode of the
                             # choice from the kind of values that are assigned
                             # to the choice symbols
 
                             prev_mode = sym.choice.user_value
-                            if prev_mode is not None and prev_mode != val:
+                            if prev_mode is not None and \
+                               TRI_TO_STR[prev_mode] != val:
+
                                 self._warn("both m and y assigned to symbols "
                                            "within the same choice",
                                            filename, linenr)
@@ -748,24 +749,22 @@ class Kconfig(object):
                     if sym.orig_type not in (BOOL, TRISTATE):
                         continue
 
-                    val = 0
+                    val = "n"
 
                 # Done parsing the assignment. Set the value.
 
                 if sym._was_set:
-                    # Use strings for tristate values in the warning
+                    # Use strings for bool/tristate user values in the warning
                     if sym.orig_type in (BOOL, TRISTATE):
-                        display_val = TRI_TO_STR[val]
                         display_user_val = TRI_TO_STR[sym.user_value]
                     else:
-                        display_val = val
                         display_user_val = sym.user_value
 
                     warn_msg = '{} set more than once. Old value: "{}", new value: "{}".'.format(
-                        _name_and_loc_str(sym), display_user_val, display_val
+                        _name_and_loc_str(sym), display_user_val, val
                     )
 
-                    if display_user_val == display_val:
+                    if display_user_val == val:
                         self._warn_redun_assign(warn_msg, filename, linenr)
                     else:
                         self._warn(             warn_msg, filename, linenr)
@@ -2727,13 +2726,14 @@ class Symbol(object):
 
         value:
           The user value to give to the symbol. For bool and tristate symbols,
-          pass 0, 1, 2 for n, m, and y, respectively. For other symbol types,
-          pass a string.
+          n/m/y can be specified either as 0/1/2 (the usual format for tristate
+          values in Kconfiglib) or as one of the strings "n"/"m"/"y". For other
+          symbol types, pass a string.
 
           Values that are invalid for the type (such as "foo" or 1 (m) for a
-          BOOL) are ignored and won't be stored in Symbol.user_value.
-          Kconfiglib will print a warning by default for invalid assignments,
-          and set_value() will return False.
+          BOOL or "0x123" for an INT) are ignored and won't be stored in
+          Symbol.user_value. Kconfiglib will print a warning by default for
+          invalid assignments, and set_value() will return False.
 
         Returns True if the value is valid for the type of the symbol, and
         False otherwise. This only looks at the form of the value. For BOOL and
@@ -2749,27 +2749,23 @@ class Symbol(object):
             return True
 
         # Check if the value is valid for our type
-        if not ((self.orig_type == BOOL     and value in (0, 2)       ) or
-                (self.orig_type == TRISTATE and value in (0, 1, 2)    ) or
-                (self.orig_type == STRING   and isinstance(value, str)) or
+        if not ((self.orig_type == BOOL     and value in (0, 2, "n", "y")        ) or
+                (self.orig_type == TRISTATE and value in (0, 1, 2, "n", "m", "y")) or
+                (self.orig_type == STRING   and isinstance(value, str)           ) or
                 (self.orig_type == INT      and isinstance(value, str)
-                                            and _is_base_n(value, 10) ) or
+                                            and _is_base_n(value, 10)            ) or
                 (self.orig_type == HEX      and isinstance(value, str)
                                             and _is_base_n(value, 16)
                                             and int(value, 16) >= 0)):
 
             # Display tristate values as n, m, y in the warning
-            warning = "the value {} is invalid for {}, which has type {}. " \
-                      "Assignment ignored." \
-                      .format(TRI_TO_STR[value] if value in (0, 1, 2) else
-                                 "'{}'".format(value),
-                              _name_and_loc_str(self),
-                              TYPE_TO_STR[self.orig_type])
-
-            if self.orig_type in (BOOL, TRISTATE) and value in ("n", "m", "y"):
-                warning += " Pass 0, 1, 2 for n, m, y, respectively."
-
-            self.kconfig._warn(warning)
+            self.kconfig._warn(
+                "the value {} is invalid for {}, which has type {} -- "
+                "assignment ignored"
+                .format(TRI_TO_STR[value] if value in (0, 1, 2) else
+                            "'{}'".format(value),
+                        _name_and_loc_str(self),
+                        TYPE_TO_STR[self.orig_type]))
 
             return False
 
@@ -2778,6 +2774,9 @@ class Symbol(object):
                                "{}, which gets its value from the environment"
                                .format(_name_and_loc_str(self)))
             return False
+
+        if self.orig_type in (BOOL, TRISTATE) and value in ("n", "m", "y"):
+            value = STR_TO_TRI[value]
 
         if self.choice and value == 2:
             # Remember this as a choice selection only. Makes switching back
@@ -3321,8 +3320,9 @@ class Choice(object):
         """
         Sets the user value (mode) of the choice. Like for Symbol.set_value(),
         the visibility might truncate the value. Choices without the 'optional'
-        attribute (is_optional) can never be in n mode, but 0 is still accepted
-        since it's not a malformed value (though it will have no effect).
+        attribute (is_optional) can never be in n mode, but 0/"n" is still
+        accepted since it's not a malformed value (though it will have no
+        effect).
 
         Returns True if the value is valid for the type of the choice, and
         False otherwise. This only looks at the form of the value. Check the
@@ -3335,12 +3335,22 @@ class Choice(object):
             self._was_set = True
             return True
 
-        if not ((self.orig_type == BOOL     and value in (0, 2)    ) or
-                (self.orig_type == TRISTATE and value in (0, 1, 2))):
-            self.kconfig._warn("the value '{}' is invalid for the choice, "
-                               "which has type {}. Assignment ignored"
-                               .format(value, TYPE_TO_STR[self.orig_type]))
+        if not ((self.orig_type == BOOL     and value in (0, 2, "n", "y")        ) or
+                (self.orig_type == TRISTATE and value in (0, 1, 2, "n", "m", "y"))):
+
+            # Display tristate values as n, m, y in the warning
+            self.kconfig._warn(
+                "the value {} is invalid for {}, which has type {} -- "
+                "assignment ignored"
+                .format(TRI_TO_STR[value] if value in (0, 1, 2) else
+                            "'{}'".format(value),
+                        _name_and_loc_str(self),
+                        TYPE_TO_STR[self.orig_type]))
+
             return False
+
+        if value in ("n", "m", "y"):
+            value = STR_TO_TRI[value]
 
         self.user_value = value
         self._was_set = True
