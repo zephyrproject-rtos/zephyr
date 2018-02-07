@@ -14,6 +14,7 @@
 
 	aliases{
 		usart-0 = &usart0;
+		mailbox-0 = &mailbox0;
 		led0 = &red_led;
 		led1 = &green_led;
 		led2 = &blue_led;
@@ -45,4 +46,8 @@
 &usart0 {
 	status = "ok";
 	current-speed = <115200>;
+};
+
+&mailbox0 {
+	status = "ok";
 };
