@@ -228,6 +228,27 @@ struct net_stats_ipv6_mld {
 	net_stats_t drop;
 };
 
+#if !defined(NET_TC_COUNT)
+#define NET_TC_COUNT 1
+#endif
+
+struct net_stats_tc {
+	/** Traffic class sent statistics */
+	struct {
+		net_stats_t pkts;
+		net_stats_t bytes;
+		u8_t priority;
+	} sent[NET_TC_TX_COUNT];
+
+	/** Traffic class receive statistics */
+	struct {
+		net_stats_t pkts;
+		net_stats_t bytes;
+		u8_t priority;
+	} recv[NET_TC_RX_COUNT];
+};
+
+
 struct net_stats {
 	net_stats_t processing_error;
 
@@ -269,6 +290,10 @@ struct net_stats {
 
 #if defined(CONFIG_NET_IPV6_MLD)
 	struct net_stats_ipv6_mld ipv6_mld;
+#endif
+
+#if NET_TC_COUNT > 1
+	struct net_stats_tc tc;
 #endif
 };
 

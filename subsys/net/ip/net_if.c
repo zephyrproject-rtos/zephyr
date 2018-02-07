@@ -200,6 +200,14 @@ void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt)
 
 	k_work_init(net_pkt_work(pkt), process_tx_packet);
 
+#if defined(CONFIG_NET_STATISTICS)
+	pkt->total_pkt_len = net_pkt_get_len(pkt);
+
+	net_stats_update_tc_sent_pkt(tc);
+	net_stats_update_tc_sent_bytes(tc, pkt->total_pkt_len);
+	net_stats_update_tc_sent_priority(tc, prio);
+#endif
+
 #if NET_TC_TX_COUNT > 1
 	NET_DBG("TC %d with prio %d pkt %p", tc, prio, pkt);
 #endif
@@ -2208,6 +2216,20 @@ static int tc2thread(int tc)
 #define TX_STACK(idx) NET_STACK_GET_NAME(TX, tx_stack, 0)[idx]
 #endif
 
+#if defined(CONFIG_NET_STATISTICS)
+/* Fixup the traffic class statistics so that "net stats" shell command will
+ * print output correctly.
+ */
+static void tc_stats_priority_setup(void)
+{
+	int i;
+
+	for (i = 0; i < 8; i++) {
+		net_stats_update_tc_sent_priority(net_tx_priority2tc(i), i);
+	}
+}
+#endif
+
 /* Create workqueue for each traffic class we are using. All the network
  * traffic goes through these classes. There needs to be at least one traffic
  * class in the system.
@@ -2217,6 +2239,10 @@ static void init_traffic_classes(void)
 	int i;
 
 	BUILD_ASSERT(NET_TC_TX_COUNT > 0);
+
+#if defined(CONFIG_NET_STATISTICS)
+	tc_stats_priority_setup();
+#endif
 
 	for (i = 0; i < NET_TC_TX_COUNT; i++) {
 		u8_t thread_priority;
