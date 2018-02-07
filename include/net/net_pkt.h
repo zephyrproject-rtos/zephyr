@@ -80,6 +80,13 @@ struct net_pkt {
 	struct net_linkaddr lladdr_src;
 	struct net_linkaddr lladdr_dst;
 
+#if defined(CONFIG_NET_STATISTICS)
+	/* If statistics is enabled, then speed up length calculation by
+	 * doing it only once. This value is updated in net_if_queue_tx()
+	 * when packet is about to be sent.
+	 */
+	u16_t total_pkt_len;
+#endif
 	u16_t data_len;         /* amount of payload data that can be added */
 
 	u16_t appdatalen;
