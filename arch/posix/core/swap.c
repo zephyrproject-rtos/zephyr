@@ -99,7 +99,7 @@ void _arch_switch_to_main_thread(struct k_thread *main_thread,
 	_kernel.current = _kernel.ready_q.cache;
 
 	posix_main_thread_start(ready_thread_ptr->thread_idx);
-}
+} /* LCOV_EXCL_LINE */
 #endif
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
