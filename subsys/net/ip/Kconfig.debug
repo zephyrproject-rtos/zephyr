@@ -74,6 +74,12 @@ config NET_DEBUG_IF
 	help
 	  Enables network interface code part to output debug messages
 
+config NET_DEBUG_TC
+	bool "Debug network traffic class code"
+	default n
+	help
+	  Enables network traffic class code part to output debug messages
+
 config NET_DEBUG_UTILS
 	bool "Debug utility functions in IP stack"
 	default n
