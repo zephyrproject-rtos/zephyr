@@ -1,0 +1,12 @@
+identifier: dragino_lsn50
+name: DRAGINO_LSN50
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb
+ram: 20
+flash: 192
+testing:
+  ignore_tags:
+    - net
