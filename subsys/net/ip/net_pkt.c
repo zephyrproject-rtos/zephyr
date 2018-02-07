@@ -318,6 +318,10 @@ struct net_pkt *net_pkt_get_reserve(struct k_mem_slab *slab,
 	pkt->ref = 1;
 	pkt->slab = slab;
 
+#if defined(CONFIG_NET_TX_DEFAULT_PRIORITY) && (CONFIG_NET_TC_COUNT > 1)
+	net_pkt_set_priority(pkt, CONFIG_NET_TX_DEFAULT_PRIORITY);
+#endif
+
 #if defined(CONFIG_NET_DEBUG_NET_PKT)
 	net_pkt_alloc_add(pkt, true, caller, line);
 
@@ -526,6 +530,17 @@ static struct net_pkt *net_pkt_get(struct k_mem_slab *slab,
 	net_pkt_set_iface(pkt, iface);
 	family = net_context_get_family(context);
 	net_pkt_set_family(pkt, family);
+
+#if defined(CONFIG_NET_CONTEXT_PRIORITY) && (CONFIG_NET_TC_COUNT > 1)
+	{
+		u8_t prio;
+
+		if (net_context_get_option(context, NET_OPT_PRIORITY, &prio,
+					   NULL) == 0) {
+			net_pkt_set_priority(pkt, prio);
+		}
+	}
+#endif /* CONFIG_NET_CONTEXT_PRIORITY */
 
 	if (slab != &rx_pkts) {
 		uint16_t iface_len, data_len = 0;
