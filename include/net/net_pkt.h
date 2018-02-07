@@ -47,6 +47,9 @@ struct net_pkt {
 	/** FIFO uses first 4 bytes itself, reserve space */
 	int _reserved;
 
+	/** Internal variable that is used when packet is sent */
+	struct k_work work;
+
 	/** Slab pointer from where it belongs to */
 	struct k_mem_slab *slab;
 
@@ -132,6 +135,13 @@ struct net_pkt {
 	u8_t ieee802154_rssi; /* Received Signal Strength Indication */
 	u8_t ieee802154_lqi;  /* Link Quality Indicator */
 #endif
+
+#if NET_TC_COUNT > 1
+	/** Network packet priority, can be left out in which case packet
+	 * is not prioritised.
+	 */
+	u8_t priority;
+#endif
 	/* @endcond */
 
 	/** Reference counter */
@@ -140,6 +150,10 @@ struct net_pkt {
 
 /** @cond ignore */
 
+static inline struct k_work *net_pkt_work(struct net_pkt *pkt)
+{
+	return &pkt->work;
+}
 
 /* The interface real ll address */
 static inline struct net_linkaddr *net_pkt_ll_if(struct net_pkt *pkt)
@@ -376,6 +390,31 @@ static inline void net_pkt_set_ipv6_fragment_id(struct net_pkt *pkt,
 #define net_pkt_ipv6_ext_len(...) 0
 #define net_pkt_set_ipv6_ext_len(...)
 #endif /* CONFIG_NET_IPV6 */
+
+#if NET_TC_COUNT > 1
+static inline u8_t net_pkt_priority(struct net_pkt *pkt)
+{
+	return pkt->priority;
+}
+
+static inline void net_pkt_set_priority(struct net_pkt *pkt,
+					u8_t priority)
+{
+	pkt->priority = priority;
+}
+#else
+static inline u8_t net_pkt_priority(struct net_pkt *pkt)
+{
+	return 0;
+}
+
+static inline void net_pkt_set_priority(struct net_pkt *pkt,
+					u8_t priority)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(priority);
+}
+#endif
 
 static inline size_t net_pkt_get_len(struct net_pkt *pkt)
 {

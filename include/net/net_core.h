@@ -166,6 +166,8 @@ struct net_stack_info {
 
 #else /* CONFIG_NET_SHELL */
 
+#define NET_STACK_GET_NAME(pretty, name, sfx) (name)
+
 #define NET_STACK_INFO(...)
 #define NET_STACK_INFO_ADDR(...)
 
@@ -212,6 +214,16 @@ static inline void net_analyze_stack(const char *name,
 #define net_analyze_stack_get_values(...)
 #endif
 /* @endcond */
+
+/* Some helper defines for traffic class support */
+#define NET_TC_TX_COUNT CONFIG_NET_TC_TX_COUNT
+#define NET_TC_RX_COUNT CONFIG_NET_TC_RX_COUNT
+
+#if NET_TC_TX_COUNT > NET_TC_RX_COUNT
+#define NET_TC_COUNT NET_TC_TX_COUNT
+#else
+#define NET_TC_COUNT NET_TC_RX_COUNT
+#endif
 
 /**
  * @}

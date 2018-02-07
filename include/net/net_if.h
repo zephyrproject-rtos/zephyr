@@ -299,6 +299,26 @@ struct net_if_config {
 };
 
 /**
+ * @brief Network traffic class.
+ *
+ * Traffic classes are used when sending or receiving data that is classified
+ * with different priorities. So some traffic can be marked as high priority
+ * and it will be sent or received first. There is always at least one work
+ * queue in the system for Rx and Tx. Each network packet that is transmitted
+ * or received goes through a work queue thread that will transmit it.
+ */
+struct net_traffic_class {
+	/** Work queue for handling this Tx or Rx packet */
+	struct k_work_q work_q;
+
+	/** Stack for this work queue */
+	k_thread_stack_t *stack;
+
+	/** Traffic class value */
+	int tc;
+};
+
+/**
  * @brief Network Interface Device structure
  *
  * Used to handle a network interface on top of a device driver instance.
@@ -326,9 +346,6 @@ struct net_if_dev {
 
 	/** The hardware link address */
 	struct net_linkaddr link_addr;
-
-	/** Queue for outgoing packets from apps */
-	struct k_fifo tx_queue;
 
 	/** The hardware MTU */
 	u16_t mtu;
@@ -441,20 +458,7 @@ static inline struct device *net_if_get_device(struct net_if *iface)
  * @param iface Pointer to a network interface structure
  * @param pkt Pointer to a net packet to queue
  */
-static inline void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt)
-{
-	k_fifo_put(&iface->if_dev->tx_queue, pkt);
-}
-
-/**
- * @brief Get TX queue of an network interface
- *
- * @param iface Pointer to a network interface structure
- */
-static inline struct k_fifo *net_if_get_queue_tx(struct net_if *iface)
-{
-	return &iface->if_dev->tx_queue;
-}
+void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt);
 
 #if defined(CONFIG_NET_OFFLOAD)
 /**
@@ -1569,8 +1573,6 @@ struct net_if_api {
 
 #define NET_IF_GET_NAME(dev_name, sfx) (__net_if_##dev_name##_##sfx)
 #define NET_IF_DEV_GET_NAME(dev_name, sfx) (__net_if_dev_##dev_name##_##sfx)
-#define NET_IF_EVENT_GET_NAME(dev_name, sfx)	\
-	(__net_if_event_##dev_name##_##sfx)
 
 #define NET_IF_GET(dev_name, sfx)					\
 	((struct net_if *)&NET_IF_GET_NAME(dev_name, sfx))
@@ -1590,11 +1592,7 @@ struct net_if_api {
 			.if_dev = &(NET_IF_DEV_GET_NAME(dev_name, sfx)), \
 			NET_IF_CONFIG_INIT				\
 		}							\
-	};								\
-	static struct k_poll_event					\
-	(NET_IF_EVENT_GET_NAME(dev_name, sfx)) __used			\
-		__attribute__((__section__(".net_if_event.data"))) = {}
-
+	}
 
 /* Network device initialization macros */
 

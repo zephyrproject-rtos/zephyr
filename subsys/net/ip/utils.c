@@ -24,6 +24,8 @@
 #include <net/net_pkt.h>
 #include <net/net_core.h>
 
+#include "net_private.h"
+
 const char *net_proto2str(enum net_ip_protocol proto)
 {
 	switch (proto) {
@@ -753,4 +755,112 @@ int net_bytes_from_str(u8_t *buf, int buf_len, const char *src)
 	}
 
 	return 0;
+}
+
+int net_tx_priority2tc(enum net_priority prio)
+{
+	/* FIXME: Initial implementation just maps the priority to certain
+	 * traffic class to certain queue. This needs to be made more generic.
+	 *
+	 * Use the example priority -> traffic class mapper found in
+	 * IEEE 802.1Q chapter 8.6.6 table 8.4 and chapter 34.5 table 34-1
+	 *
+	 *  Priority         Acronym   Traffic types
+	 *  0 (lowest)       BK        Background
+	 *  1 (default)      BE        Best effort
+	 *  2                EE        Excellent effort
+	 *  3 (highest)      CA        Critical applications
+	 *  4                VI        Video, < 100 ms latency and jitter
+	 *  5                VO        Voice, < 10 ms latency and jitter
+	 *  6                IC        Internetwork control
+	 *  7                NC        Network control
+	 */
+	/* Priority is the index to this array */
+	static const int tc[] = {
+#if NET_TC_TX_COUNT == 1
+		0, 0, 0, 0, 0, 0, 0, 0
+#endif
+#if NET_TC_TX_COUNT == 2
+		0, 0, 1, 1, 0, 0, 0, 0
+#endif
+#if NET_TC_TX_COUNT == 3
+		0, 0, 1, 2, 0, 0, 0, 0
+#endif
+#if NET_TC_TX_COUNT == 4
+		0, 0, 2, 3, 1, 1, 1, 1
+#endif
+#if NET_TC_TX_COUNT == 5
+		0, 0, 3, 4, 1, 1, 2, 2
+#endif
+#if NET_TC_TX_COUNT == 6
+		0, 0, 4, 5, 1, 1, 2, 3
+#endif
+#if NET_TC_TX_COUNT == 7
+		0, 0, 5, 6, 1, 2, 3, 4
+#endif
+#if NET_TC_TX_COUNT == 8
+		0, 1, 6, 7, 2, 3, 4, 5
+#endif
+	};
+
+	if (prio >= sizeof(tc)) {
+		/* Use default value suggested in 802.1Q */
+		prio = NET_PRIORITY_BE;
+	}
+
+	return tc[prio];
+}
+
+int net_rx_priority2tc(enum net_priority prio)
+{
+	/* FIXME: Initial implementation just maps the priority to certain
+	 * traffic class to certain queue. This needs to be made more generic.
+	 *
+	 * Use the example priority -> traffic class mapper found in
+	 * IEEE 802.1Q chapter 8.6.6 table 8.4 and chapter 34.5 table 34-1
+	 *
+	 *  Priority         Acronym   Traffic types
+	 *  0 (lowest)       BK        Background
+	 *  1 (default)      BE        Best effort
+	 *  2                EE        Excellent effort
+	 *  3 (highest)      CA        Critical applications
+	 *  4                VI        Video, < 100 ms latency and jitter
+	 *  5                VO        Voice, < 10 ms latency and jitter
+	 *  6                IC        Internetwork control
+	 *  7                NC        Network control
+	 */
+	/* Priority is the index to this array */
+	static const int tc[] = {
+#if NET_TC_RX_COUNT == 1
+		0, 0, 0, 0, 0, 0, 0, 0
+#endif
+#if NET_TC_RX_COUNT == 2
+		0, 0, 1, 1, 0, 0, 0, 0
+#endif
+#if NET_TC_RX_COUNT == 3
+		0, 0, 1, 2, 0, 0, 0, 0
+#endif
+#if NET_TC_RX_COUNT == 4
+		0, 0, 2, 3, 1, 1, 1, 1
+#endif
+#if NET_TC_RX_COUNT == 5
+		0, 0, 3, 4, 1, 1, 2, 2
+#endif
+#if NET_TC_RX_COUNT == 6
+		0, 0, 4, 5, 1, 1, 2, 3
+#endif
+#if NET_TC_RX_COUNT == 7
+		0, 0, 5, 6, 1, 2, 3, 4
+#endif
+#if NET_TC_RX_COUNT == 8
+		0, 1, 6, 7, 2, 3, 4, 5
+#endif
+	};
+
+	if (prio >= sizeof(tc)) {
+		/* Use default value suggested in 802.1Q */
+		prio = NET_PRIORITY_BE;
+	}
+
+	return tc[prio];
 }
