@@ -210,6 +210,14 @@ struct net_context {
 	 */
 	struct sockaddr remote;
 
+	/** Option values */
+	struct {
+#if defined(CONFIG_NET_CONTEXT_PRIORITY)
+		/** Priority of the network data sent via this net_context */
+		u8_t priority;
+#endif
+	} options;
+
 	/** Connection handle */
 	struct net_conn_handle *conn_handler;
 
@@ -768,6 +776,38 @@ int net_context_recv(struct net_context *context,
  */
 int net_context_update_recv_wnd(struct net_context *context,
 				s32_t delta);
+
+enum net_context_option {
+	NET_OPT_PRIORITY = 1,
+};
+
+/**
+ * @brief Set an connection option for this context.
+ *
+ * @param context The network context to use.
+ * @param option Option to set
+ * @param value Option value
+ * @param len Option length
+ *
+ * @return 0 if ok, <0 if error
+ */
+int net_context_set_option(struct net_context *context,
+			   enum net_context_option option,
+			   const void *value, size_t len);
+
+/**
+ * @brief Get connection option value for this context.
+ *
+ * @param context The network context to use.
+ * @param option Option to set
+ * @param value Option value
+ * @param len Option length (returned to caller)
+ *
+ * @return 0 if ok, <0 if error
+ */
+int net_context_get_option(struct net_context *context,
+			   enum net_context_option option,
+			   void *value, size_t *len);
 
 /**
  * @typedef net_context_cb_t
