@@ -35,6 +35,7 @@
 #include "cbor.h"
 #include "cborinternal_p.h"
 #include "compilersupport_p.h"
+#include "cbor_buf_writer.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -195,6 +196,7 @@
  * Structure used to encode to CBOR.
  */
 
+#ifndef CBOR_NO_DFLT_WRITER
 /**
  * Initializes a CborEncoder structure \a encoder by pointing it to buffer \a
  * buffer of size \a size. The \a flags field is currently unused and must be
@@ -202,17 +204,32 @@
  */
 void cbor_encoder_init(CborEncoder *encoder, uint8_t *buffer, size_t size, int flags)
 {
-    encoder->data.ptr = buffer;
-    encoder->end = buffer + size;
+    cbor_buf_writer_init(&encoder->wr, buffer, size);
+
+    cbor_encoder_cust_writer_init(encoder, &encoder->wr.enc, flags);
+}
+#endif
+
+/**
+ * Initializes a CborEncoder structure \a encoder by pointing it to buffer \a
+ * buffer of size \a size. The \a flags field is currently unused and must be
+ * zero.
+ */
+void cbor_encoder_cust_writer_init(CborEncoder *encoder, struct cbor_encoder_writer *w, int flags)
+{
+    encoder->writer = w;
     encoder->remaining = 2;
     encoder->flags = flags;
 }
 
+
+#ifndef CBOR_NO_FLOATING_POINT
 static inline void put16(void *where, uint16_t v)
 {
     v = cbor_htons(v);
     memcpy(where, &v, sizeof(v));
 }
+#endif
 
 /* Note: Since this is currently only used in situations where OOM is the only
  * valid error, we KNOW this to be true.  Thus, this function now returns just 'true',
@@ -225,11 +242,13 @@ static inline bool isOomError(CborError err)
     return true;
 }
 
+#ifndef CBOR_NO_FLOATING_POINT
 static inline void put32(void *where, uint32_t v)
 {
     v = cbor_htonl(v);
     memcpy(where, &v, sizeof(v));
 }
+#endif
 
 static inline void put64(void *where, uint64_t v)
 {
@@ -237,38 +256,9 @@ static inline void put64(void *where, uint64_t v)
     memcpy(where, &v, sizeof(v));
 }
 
-static inline bool would_overflow(CborEncoder *encoder, size_t len)
-{
-    ptrdiff_t remaining = (ptrdiff_t)encoder->end;
-    remaining -= remaining ? (ptrdiff_t)encoder->data.ptr : encoder->data.bytes_needed;
-    remaining -= (ptrdiff_t)len;
-    return unlikely(remaining < 0);
-}
-
-static inline void advance_ptr(CborEncoder *encoder, size_t n)
-{
-    if (encoder->end)
-        encoder->data.ptr += n;
-    else
-        encoder->data.bytes_needed += n;
-}
-
 static inline CborError append_to_buffer(CborEncoder *encoder, const void *data, size_t len)
 {
-    if (would_overflow(encoder, len)) {
-        if (encoder->end != NULL) {
-            len -= encoder->end - encoder->data.ptr;
-            encoder->end = NULL;
-            encoder->data.bytes_needed = 0;
-        }
-
-        advance_ptr(encoder, len);
-        return CborErrorOutOfMemory;
-    }
-
-    memcpy(encoder->data.ptr, data, len);
-    encoder->data.ptr += len;
-    return CborNoError;
+    return (CborError)encoder->writer->write(encoder->writer, (const char *)data, len);
 }
 
 static inline CborError append_byte_to_buffer(CborEncoder *encoder, uint8_t byte)
@@ -373,6 +363,7 @@ CborError cbor_encode_simple_value(CborEncoder *encoder, uint8_t value)
     return encode_number(encoder, value, SimpleTypesType << MajorTypeShift);
 }
 
+#ifndef CBOR_NO_FLOATING_POINT
 /**
  * Appends the floating-point value of type \a fpType and pointed to by \a
  * value to the CBOR stream provided by \a encoder. The value of \a fpType must
@@ -400,6 +391,7 @@ CborError cbor_encode_floating_point(CborEncoder *encoder, CborType fpType, cons
     saturated_decrement(encoder);
     return append_to_buffer(encoder, buf, size + 1);
 }
+#endif
 
 /**
  * Appends the CBOR tag \a tag to the CBOR stream provided by \a encoder.
@@ -460,8 +452,10 @@ __attribute__((noinline))
 static CborError create_container(CborEncoder *encoder, CborEncoder *container, size_t length, uint8_t shiftedMajorType)
 {
     CborError err;
-    container->data.ptr = encoder->data.ptr;
-    container->end = encoder->end;
+    container->writer = encoder->writer;
+#ifndef CBOR_NO_DFLT_WRITER
+    container->wr.end = encoder->wr.end;
+#endif
     saturated_decrement(encoder);
     container->remaining = length + 1;      /* overflow ok on CborIndefiniteLength */
 
@@ -538,19 +532,20 @@ CborError cbor_encoder_create_map(CborEncoder *encoder, CborEncoder *mapEncoder,
  */
 CborError cbor_encoder_close_container(CborEncoder *encoder, const CborEncoder *containerEncoder)
 {
-    if (encoder->end)
-        encoder->data.ptr = containerEncoder->data.ptr;
-    else
-        encoder->data.bytes_needed = containerEncoder->data.bytes_needed;
-    encoder->end = containerEncoder->end;
+    encoder->writer = containerEncoder->writer;
+
     if (containerEncoder->flags & CborIteratorFlag_UnknownLength)
         return append_byte_to_buffer(encoder, BreakByte);
 
     if (containerEncoder->remaining != 1)
         return containerEncoder->remaining == 0 ? CborErrorTooManyItems : CborErrorTooFewItems;
 
-    if (!encoder->end)
-        return CborErrorOutOfMemory;    /* keep the state */
+#ifndef CBOR_NO_DFLT_WRITER
+    if (!encoder->wr.end) {
+        return CborErrorOutOfMemory;
+    }
+#endif
+
     return CborNoError;
 }
 

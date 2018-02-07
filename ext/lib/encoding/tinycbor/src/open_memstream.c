@@ -26,6 +26,8 @@
 #define _DEFAULT_SOURCE 1
 #define _GNU_SOURCE 1
 
+#ifndef CBOR_WITHOUT_OPEN_MEMSTREAM
+
 #include <sys/types.h>
 #include <errno.h>
 #include <stdio.h>
@@ -112,3 +114,4 @@ FILE *open_memstream(char **bufptr, size_t *lenptr)
 #endif
 }
 
+#endif
