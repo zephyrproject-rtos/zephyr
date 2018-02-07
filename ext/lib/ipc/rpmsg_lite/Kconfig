@@ -1,0 +1,17 @@
+# Kconfig - Shell configuration options
+
+#
+# Copyright 2018 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config IPC_RPMSG_LITE
+	bool
+	prompt "Enable Remote Processor Messaging Lite library"
+	default n
+	help
+	Remote Processor Messaging Lite library implementation.
+
+
+

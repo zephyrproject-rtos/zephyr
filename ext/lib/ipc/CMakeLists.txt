@@ -1,0 +1,1 @@
+add_subdirectory_ifdef(IPC_RPMSG_LITE rpmsg_lite)

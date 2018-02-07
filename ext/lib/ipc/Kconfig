@@ -1,0 +1,13 @@
+# Kconfig - Shell configuration options
+
+#
+# Copyright 2018 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menu "Inter-Process Communication"
+
+source "ext/lib/ipc/rpmsg_lite/Kconfig"
+
+endmenu
