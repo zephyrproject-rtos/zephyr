@@ -2179,11 +2179,23 @@ int net_shell_cmd_stacks(int argc, char *argv[])
 					     info->size, &pcnt, &unused);
 
 #if defined(CONFIG_INIT_STACKS)
-		printk("%s [%s] stack size %zu/%zu bytes unused %u usage"
-		       " %zu/%zu (%u %%)\n",
-		       info->pretty_name, info->name, info->orig_size,
-		       info->size, unused,
-		       info->size - unused, info->size, pcnt);
+		/* If the index is <0, then this stack is not part of stack
+		 * array so do not print the index value in this case.
+		 */
+		if (info->idx >= 0) {
+			printk("%s-%d [%s-%d] stack size %zu/%zu bytes "
+			       "unused %u usage %zu/%zu (%u %%)\n",
+			       info->pretty_name, info->prio, info->name,
+			       info->idx, info->orig_size,
+			       info->size, unused,
+			       info->size - unused, info->size, pcnt);
+		} else {
+			printk("%s [%s] stack size %zu/%zu bytes unused %u "
+			       "usage %zu/%zu (%u %%)\n",
+			       info->pretty_name, info->name, info->orig_size,
+			       info->size, unused,
+			       info->size - unused, info->size, pcnt);
+		}
 #else
 		printk("%s [%s] stack size %zu usage not available\n",
 		       info->pretty_name, info->name, info->orig_size);
