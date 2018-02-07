@@ -27,6 +27,10 @@
 
 #include "cbor.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #ifndef _BSD_SOURCE
 #  define _BSD_SOURCE
 #endif
@@ -53,7 +57,7 @@
 #if __STDC_VERSION__ >= 201112L || __cplusplus >= 201103L || __cpp_static_assert >= 200410
 #  define cbor_static_assert(x)         static_assert(x, #x)
 #elif !defined(__cplusplus) && defined(__GNUC__) && (__GNUC__ * 100 + __GNUC_MINOR__ >= 406) && (__STDC_VERSION__ > 199901L)
-#  define cbor_static_assert(x)         _Static_assert(x, #x)
+#  define cbor_static_assert(x)         static_assert(x, #x)
 #else
 #  define cbor_static_assert(x)         ((void)sizeof(char[2*!!(x) - 1]))
 #endif
@@ -250,6 +254,10 @@ static inline double decode_half(unsigned short half)
     return half & 0x8000 ? -val : val;
 #endif
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* COMPILERSUPPORT_H */
 

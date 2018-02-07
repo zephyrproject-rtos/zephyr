@@ -497,7 +497,7 @@ static CborError value_to_json(FILE *out, CborValue *it, int flags, CborType typ
         CborValue recursed;
         err = cbor_value_enter_container(it, &recursed);
         if (err) {
-            it->ptr = recursed.ptr;
+            it->offset = recursed.offset;
             return err;       /* parse error */
         }
         if (fputc(type == CborArrayType ? '[' : '{', out) < 0)
@@ -507,7 +507,7 @@ static CborError value_to_json(FILE *out, CborValue *it, int flags, CborType typ
                   array_to_json(out, &recursed, flags, status) :
                   map_to_json(out, &recursed, flags, status);
         if (err) {
-            it->ptr = recursed.ptr;
+            it->offset = recursed.offset;
             return err;       /* parse error */
         }
 
@@ -592,7 +592,7 @@ static CborError value_to_json(FILE *out, CborValue *it, int flags, CborType typ
             return CborErrorIO;
         break;
     }
-
+#ifndef CBOR_NO_FLOATING_POINT
     case CborDoubleType: {
         double val;
         if (false) {
@@ -632,8 +632,10 @@ static CborError value_to_json(FILE *out, CborValue *it, int flags, CborType typ
         }
         break;
     }
+#endif
 
     case CborInvalidType:
+    default:
         return CborErrorUnknownType;
     }
 
@@ -641,6 +643,7 @@ static CborError value_to_json(FILE *out, CborValue *it, int flags, CborType typ
 }
 
 /**
+
  * \enum CborToJsonFlags
  * The CborToJsonFlags enum contains flags that control the conversion of CBOR to JSON.
  *

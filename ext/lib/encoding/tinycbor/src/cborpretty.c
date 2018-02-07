@@ -29,8 +29,8 @@
 #endif
 
 #include "cbor.h"
-#include "cborinternal_p.h"
 #include "compilersupport_p.h"
+#include "cborinternal_p.h"
 #include "utf8_p.h"
 
 #include <float.h>
@@ -224,7 +224,7 @@ print_utf16:
     return err;
 }
 
-static const char *resolve_indicator(const uint8_t *ptr, const uint8_t *end, int flags)
+static const char *resolve_indicator(const CborValue *it, int flags)
 {
     static const char indicators[8][3] = {
         "_0", "_1", "_2", "_3",
@@ -236,11 +236,15 @@ static const char *resolve_indicator(const uint8_t *ptr, const uint8_t *end, int
     uint8_t expected_information;
     uint64_t value;
     CborError err;
+    int offset;
+    uint8_t val;
 
-    if (ptr == end)
+    if (it->offset == it->parser->end)
         return NULL;    /* CborErrorUnexpectedEOF */
 
-    additional_information = (*ptr & SmallValueMask);
+    val = it->parser->d->get8(it->parser->d, it->offset);
+
+    additional_information = (val & SmallValueMask);
     if (additional_information < Value8Bit)
         return no_indicator;
 
@@ -251,7 +255,9 @@ static const char *resolve_indicator(const uint8_t *ptr, const uint8_t *end, int
     if ((flags & CborPrettyIndicateOverlongNumbers) == 0)
         return no_indicator;
 
-    err = _cbor_value_extract_number(&ptr, end, &value);
+    offset = it->offset;
+
+    err = _cbor_value_extract_number(it->parser, &offset, &value);
     if (err)
         return NULL;    /* CborErrorUnexpectedEOF */
 
@@ -271,7 +277,7 @@ static const char *resolve_indicator(const uint8_t *ptr, const uint8_t *end, int
 
 static const char *get_indicator(const CborValue *it, int flags)
 {
-    return resolve_indicator(it->ptr, it->parser->end, flags);
+    return resolve_indicator(it, flags);
 }
 
 static CborError value_to_pretty(CborStreamFunction stream, void *out, CborValue *it, int flags, int recursionsLeft);
@@ -322,12 +328,12 @@ static CborError value_to_pretty(CborStreamFunction stream, void *out, CborValue
 
         err = cbor_value_enter_container(it, &recursed);
         if (err) {
-            it->ptr = recursed.ptr;
+            it->offset = recursed.offset;
             return err;       /* parse error */
         }
         err = container_to_pretty(stream, out, &recursed, type, flags, recursionsLeft - 1);
         if (err) {
-            it->ptr = recursed.ptr;
+            it->offset = recursed.offset;
             return err;       /* parse error */
         }
         err = cbor_value_leave_container(it, &recursed);
@@ -386,7 +392,7 @@ static CborError value_to_pretty(CborStreamFunction stream, void *out, CborValue
         while (!err) {
             if (showingFragments || indicator == NULL) {
                 /* any iteration, except the second for a non-chunked string */
-                indicator = resolve_indicator(it->ptr, it->parser->end, flags);
+                indicator = resolve_indicator(it, flags);
             }
 
             err = _cbor_value_get_string_chunk(it, &ptr, &n, it);
@@ -451,7 +457,7 @@ static CborError value_to_pretty(CborStreamFunction stream, void *out, CborValue
         err = stream(out, val ? "true" : "false");
         break;
     }
-
+#ifndef CBOR_NO_FLOATING_POINT
     case CborDoubleType: {
         const char *suffix;
         double val;
@@ -490,12 +496,11 @@ static CborError value_to_pretty(CborStreamFunction stream, void *out, CborValue
         }
         break;
     }
-
+#endif
     case CborInvalidType:
         err = stream(out, "invalid");
         if (err)
             return err;
-        return CborErrorUnknownType;
     }
 
     if (!err)

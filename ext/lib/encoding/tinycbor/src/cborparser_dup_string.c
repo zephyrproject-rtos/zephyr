@@ -33,8 +33,8 @@
 #endif
 
 #include "cbor.h"
-#include "compilersupport_p.h"
 #include <stdlib.h>
+#include "compilersupport_p.h"
 
 /**
  * \fn CborError cbor_value_dup_text_string(const CborValue *value, char **buffer, size_t *buflen, CborValue *next)

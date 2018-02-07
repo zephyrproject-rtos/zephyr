@@ -22,8 +22,12 @@
 **
 ****************************************************************************/
 
+#ifndef _BSD_SOURCE
 #define _BSD_SOURCE 1
+#endif
+#ifndef _DEFAULT_SOURCE
 #define _DEFAULT_SOURCE 1
+#endif
 #ifndef __STDC_LIMIT_MACROS
 #  define __STDC_LIMIT_MACROS 1
 #endif
@@ -290,19 +294,20 @@ static inline CborError validate_simple_type(uint8_t simple_type, int flags)
 static inline CborError validate_number(const CborValue *it, CborType type, int flags)
 {
     CborError err = CborNoError;
-    const uint8_t *ptr = it->ptr;
     uint64_t value;
+    int offset;
 
     if ((flags & CborValidateShortestIntegrals) == 0)
         return err;
     if (type >= CborHalfFloatType && type <= CborDoubleType)
         return err;     /* checked elsewhere */
 
-    err = _cbor_value_extract_number(&ptr, it->parser->end, &value);
+    offset = it->offset;
+    err = _cbor_value_extract_number(it->parser, &offset, &value);
     if (err)
         return err;
 
-    size_t bytesUsed = (size_t)(ptr - it->ptr - 1);
+    size_t bytesUsed = (size_t)(offset - it->offset - 1);
     size_t bytesNeeded = 0;
     if (value >= Value8Bit)
         ++bytesNeeded;
@@ -435,14 +440,14 @@ static inline CborError validate_floating_point(CborValue *it, CborType type, in
 static CborError validate_container(CborValue *it, int containerType, int flags, int recursionLeft)
 {
     CborError err;
-    const uint8_t *previous = NULL;
-    const uint8_t *previous_end = NULL;
+    int previous = -1;
+    int previous_end = -1;
 
     if (!recursionLeft)
         return CborErrorNestingTooDeep;
 
     while (!cbor_value_at_end(it)) {
-        const uint8_t *current = cbor_value_get_next_byte(it);
+        int current = it->offset;
 
         if (containerType == CborMapType) {
             if (flags & CborValidateMapKeysAreString) {
@@ -468,34 +473,42 @@ static CborError validate_container(CborValue *it, int containerType, int flags,
             continue;
 
         if (flags & CborValidateMapIsSorted) {
-            if (previous) {
+            if (previous != -1) {
                 uint64_t len1, len2;
-                const uint8_t *ptr;
+                int offset;
 
                 /* extract the two lengths */
-                ptr = previous;
-                _cbor_value_extract_number(&ptr, it->parser->end, &len1);
-                ptr = current;
-                _cbor_value_extract_number(&ptr, it->parser->end, &len2);
+                offset = previous;
+                _cbor_value_extract_number(it->parser, &offset, &len1);
+                offset = current;
+                _cbor_value_extract_number(it->parser, &offset, &len2);
 
                 if (len1 > len2)
                     return CborErrorMapNotSorted;
                 if (len1 == len2) {
-                    size_t bytelen1 = (size_t)(previous_end - previous);
-                    size_t bytelen2 = (size_t)(it->ptr - current);
-                    int r = memcmp(previous, current, bytelen1 <= bytelen2 ? bytelen1 : bytelen2);
+                    int bytelen1 = (previous_end - previous);
+                    int bytelen2 = (it->offset - current);
+                    int i;
 
-                    if (r == 0 && bytelen1 != bytelen2)
-                        r = bytelen1 < bytelen2 ? -1 : +1;
-                    if (r > 0)
-                        return CborErrorMapNotSorted;
-                    if (r == 0 && (flags & CborValidateMapKeysAreUnique) == CborValidateMapKeysAreUnique)
-                        return CborErrorMapKeysNotUnique;
+                    for (i = 0; i < (bytelen1 <= bytelen2 ? bytelen1 : bytelen2); i++) {
+                        int r = it->parser->d->get8(it->parser->d, previous + i) -
+                            it->parser->d->get8(it->parser->d, current + i);
+
+                        if (r < 0) {
+                            break;
+                        }
+                        if (r == 0 && bytelen1 != bytelen2)
+                            r = bytelen1 < bytelen2 ? -1 : +1;
+                        if (r > 0)
+                            return CborErrorMapNotSorted;
+                        if (r == 0 && (flags & CborValidateMapKeysAreUnique) == CborValidateMapKeysAreUnique)
+                            return CborErrorMapKeysNotUnique;
+                    }
                 }
             }
 
             previous = current;
-            previous_end = it->ptr;
+            previous_end = it->offset;
         }
 
         /* map: that was the key, so get the value */
@@ -529,7 +542,7 @@ static CborError validate_value(CborValue *it, int flags, int recursionLeft)
         if (!err)
             err = validate_container(&recursed, type, flags, recursionLeft - 1);
         if (err) {
-            it->ptr = recursed.ptr;
+            it->offset = recursed.offset;
             return err;
         }
         err = cbor_value_leave_container(it, &recursed);
@@ -651,7 +664,7 @@ CborError cbor_value_validate(const CborValue *it, int flags)
     CborError err = validate_value(&value, flags, CBOR_PARSER_MAX_RECURSIONS);
     if (err)
         return err;
-    if (flags & CborValidateCompleteData && it->ptr != it->parser->end)
+    if (flags & CborValidateCompleteData && it->offset != it->parser->end)
         return CborErrorGarbageAtEnd;
     return CborNoError;
 }

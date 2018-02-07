@@ -34,7 +34,10 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "cbor_buf_writer.h"
+#include "cbor_buf_reader.h"
 #include "tinycbor-version.h"
+#include "config.h"
 
 #define TINYCBOR_VERSION            ((TINYCBOR_VERSION_MAJOR << 16) | (TINYCBOR_VERSION_MINOR << 8) | TINYCBOR_VERSION_PATCH)
 
@@ -204,19 +207,23 @@ CBOR_API const char *cbor_error_string(CborError error);
 /* Encoder API */
 struct CborEncoder
 {
-    union {
-        uint8_t *ptr;
-        ptrdiff_t bytes_needed;
-    } data;
-    const uint8_t *end;
+    cbor_encoder_writer *writer;
+    void *writer_arg;
+#ifndef CBOR_NO_DFLT_WRITER
+    struct cbor_buf_writer wr;
+#endif
     size_t remaining;
     int flags;
 };
+
 typedef struct CborEncoder CborEncoder;
 
 static const size_t CborIndefiniteLength = SIZE_MAX;
 
+#ifndef CBOR_NO_DFLT_WRITER
 CBOR_API void cbor_encoder_init(CborEncoder *encoder, uint8_t *buffer, size_t size, int flags);
+#endif
+CBOR_API void cbor_encoder_cust_writer_init(CborEncoder *encoder, struct cbor_encoder_writer *w, int flags);
 CBOR_API CborError cbor_encode_uint(CborEncoder *encoder, uint64_t value);
 CBOR_API CborError cbor_encode_int(CborEncoder *encoder, int64_t value);
 CBOR_API CborError cbor_encode_negative_int(CborEncoder *encoder, uint64_t absolute_value);
@@ -227,7 +234,8 @@ CBOR_INLINE_API CborError cbor_encode_text_stringz(CborEncoder *encoder, const c
 { return cbor_encode_text_string(encoder, string, strlen(string)); }
 CBOR_API CborError cbor_encode_byte_string(CborEncoder *encoder, const uint8_t *string, size_t length);
 CBOR_API CborError cbor_encode_floating_point(CborEncoder *encoder, CborType fpType, const void *value);
-
+CBOR_INLINE_API int cbor_encode_bytes_written(CborEncoder *encoder)
+{   return encoder->writer->bytes_written; }
 CBOR_INLINE_API CborError cbor_encode_boolean(CborEncoder *encoder, bool value)
 { return cbor_encode_simple_value(encoder, (int)value - 1 + (CborBooleanType & 0x1f)); }
 CBOR_INLINE_API CborError cbor_encode_null(CborEncoder *encoder)
@@ -247,21 +255,6 @@ CBOR_API CborError cbor_encoder_create_map(CborEncoder *encoder, CborEncoder *ma
 CBOR_API CborError cbor_encoder_close_container(CborEncoder *encoder, const CborEncoder *containerEncoder);
 CBOR_API CborError cbor_encoder_close_container_checked(CborEncoder *encoder, const CborEncoder *containerEncoder);
 
-CBOR_INLINE_API uint8_t *_cbor_encoder_get_buffer_pointer(const CborEncoder *encoder)
-{
-    return encoder->data.ptr;
-}
-
-CBOR_INLINE_API size_t cbor_encoder_get_buffer_size(const CborEncoder *encoder, const uint8_t *buffer)
-{
-    return (size_t)(encoder->data.ptr - buffer);
-}
-
-CBOR_INLINE_API size_t cbor_encoder_get_extra_bytes_needed(const CborEncoder *encoder)
-{
-    return encoder->end ? 0 : (size_t)encoder->data.bytes_needed;
-}
-
 /* Parser API */
 
 enum CborParserIteratorFlags
@@ -275,7 +268,11 @@ enum CborParserIteratorFlags
 
 struct CborParser
 {
-    const uint8_t *end;
+#ifndef CBOR_NO_DFLT_READER
+    struct cbor_buf_reader br;
+#endif
+    struct cbor_decoder_reader *d;
+    int end;
     int flags;
 };
 typedef struct CborParser CborParser;
@@ -283,22 +280,24 @@ typedef struct CborParser CborParser;
 struct CborValue
 {
     const CborParser *parser;
-    const uint8_t *ptr;
+    int offset;
     uint32_t remaining;
+    uint32_t remainingclen;
     uint16_t extra;
     uint8_t type;
     uint8_t flags;
 };
 typedef struct CborValue CborValue;
 
+#ifndef CBOR_NO_DFLT_READER
 CBOR_API CborError cbor_parser_init(const uint8_t *buffer, size_t size, int flags, CborParser *parser, CborValue *it);
+#endif
+CBOR_API CborError cbor_parser_cust_reader_init(struct cbor_decoder_reader *r, int flags, CborParser *parser, CborValue *it);
 
 CBOR_API CborError cbor_value_validate_basic(const CborValue *it);
 
 CBOR_INLINE_API bool cbor_value_at_end(const CborValue *it)
 { return it->remaining == 0; }
-CBOR_INLINE_API const uint8_t *cbor_value_get_next_byte(const CborValue *it)
-{ return it->ptr; }
 CBOR_API CborError cbor_value_advance_fixed(CborValue *it);
 CBOR_API CborError cbor_value_advance(CborValue *it);
 CBOR_INLINE_API bool cbor_value_is_container(const CborValue *it)
