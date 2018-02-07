@@ -209,59 +209,6 @@ static const int _INIT_LEVEL_APPLICATION = 1;
 
 struct device;
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-/**
- * @brief Device Power Management APIs
- * @defgroup device_power_management_api Device Power Management APIs
- * @ingroup power_management_api
- * @{
- */
-
-/**
- * @}
- */
-
-/** @def DEVICE_PM_ACTIVE_STATE
- *
- * @brief device is in ACTIVE power state
- *
- * @details Normal operation of the device. All device context is retained.
- */
-#define DEVICE_PM_ACTIVE_STATE		1
-
-/** @def DEVICE_PM_LOW_POWER_STATE
- *
- * @brief device is in LOW power state
- *
- * @details Device context is preserved by the HW and need not be
- * restored by the driver.
- */
-#define DEVICE_PM_LOW_POWER_STATE	2
-
-/** @def DEVICE_PM_SUSPEND_STATE
- *
- * @brief device is in SUSPEND power state
- *
- * @details Most device context is lost by the hardware.
- * Device drivers must save and restore or reinitialize any context
- * lost by the hardware
- */
-#define DEVICE_PM_SUSPEND_STATE		3
-
-/** @def DEVICE_PM_OFF_STATE
- *
- * @brief device is in OFF power state
- *
- * @details - Power has been fully removed from the device.
- * The device context is lost when this state is entered, so the OS
- * software will reinitialize the device when powering it back on
- */
-#define DEVICE_PM_OFF_STATE		4
-
-/* Constants defining support device power commands */
-#define DEVICE_PM_SET_POWER_STATE	1
-#define DEVICE_PM_GET_POWER_STATE	2
-#endif
 
 /**
  * @brief Static device information (In ROM) Per driver instance
@@ -315,6 +262,51 @@ struct device *device_get_binding(const char *name);
  * @ingroup power_management_api
  * @{
  */
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+
+/** @def DEVICE_PM_ACTIVE_STATE
+ *
+ * @brief device is in ACTIVE power state
+ *
+ * @details Normal operation of the device. All device context is retained.
+ */
+#define DEVICE_PM_ACTIVE_STATE		1
+
+/** @def DEVICE_PM_LOW_POWER_STATE
+ *
+ * @brief device is in LOW power state
+ *
+ * @details Device context is preserved by the HW and need not be
+ * restored by the driver.
+ */
+#define DEVICE_PM_LOW_POWER_STATE	2
+
+/** @def DEVICE_PM_SUSPEND_STATE
+ *
+ * @brief device is in SUSPEND power state
+ *
+ * @details Most device context is lost by the hardware.
+ * Device drivers must save and restore or reinitialize any context
+ * lost by the hardware
+ */
+#define DEVICE_PM_SUSPEND_STATE		3
+
+/** @def DEVICE_PM_OFF_STATE
+ *
+ * @brief device is in OFF power state
+ *
+ * @details - Power has been fully removed from the device.
+ * The device context is lost when this state is entered, so the OS
+ * software will reinitialize the device when powering it back on
+ */
+#define DEVICE_PM_OFF_STATE		4
+
+/* Constants defining support device power commands */
+#define DEVICE_PM_SET_POWER_STATE	1
+#define DEVICE_PM_GET_POWER_STATE	2
+
+#endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
 
 /**
  * @brief Indicate that the device is in the middle of a transaction
