@@ -171,7 +171,7 @@ tests:
       - CONFIG_NET_TC_RX_COUNT=5
       - CONFIG_NET_TC_TX_COUNT=7
   test_tc_tx_8_rx_7:
-    min_ram: 64
+    min_ram: 80
     tags: net traffic_class
     extra_configs:
       - CONFIG_NET_TC_RX_COUNT=7

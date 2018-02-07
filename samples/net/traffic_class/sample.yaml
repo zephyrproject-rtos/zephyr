@@ -1,0 +1,10 @@
+common:
+  harness: net
+  tags: net vlan traffic_class
+sample:
+  description: Test traffic class functionality
+  name: Traffic class sample app
+tests:
+  test:
+    depends_on: netif
+    min_ram: 170
