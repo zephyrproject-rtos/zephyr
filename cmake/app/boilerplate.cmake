@@ -240,7 +240,7 @@ include(${ZEPHYR_BASE}/cmake/toolchain.cmake)
 # running DTS involves running the preprocessor, so we put it behind
 # toolchain. Meaning toolchain.cmake is the only component where
 # kconfig and dts variables aren't available at the same time.
-include(${ZEPHYR_BASE}/dts/dts.cmake)
+include(${ZEPHYR_BASE}/cmake/dts.cmake)
 
 set(KERNEL_NAME ${CONFIG_KERNEL_BIN_NAME})
 
