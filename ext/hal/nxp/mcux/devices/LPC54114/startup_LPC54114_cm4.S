@@ -51,7 +51,7 @@
 #include <arch/cpu.h>
 #include <offsets_short.h>
 
-#if defined(CONFIG_PLATFORM_SPECIFIC_INIT) && defined(CONFIG_SOC_LPC54114)
+#if defined(CONFIG_PLATFORM_SPECIFIC_INIT) && defined(CONFIG_SOC_LPC54114_M4)
 
     .syntax unified
     .arch armv7-m

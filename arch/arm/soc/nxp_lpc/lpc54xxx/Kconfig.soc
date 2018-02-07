@@ -9,9 +9,15 @@ choice
 prompt "LPC LPC54XXX MCU Selection"
 depends on SOC_SERIES_LPC54XXX
 
-config SOC_LPC54114
-	bool "SOC_LPC54114"
-	select HAS_MCUX
+config SOC_LPC54114_M4
+	bool "SOC_LPC54114_M4"
+	select CPU_CORTEX_M4
+	select PLATFORM_SPECIFIC_INIT
+
+config SOC_LPC54114_M0
+	bool "SOC_LPC54114_M0"
+	select CPU_CORTEX_M0PLUS
+	select CPU_CORTEX_M_HAS_VTOR
 
 endchoice
 
@@ -28,5 +34,12 @@ config SOC_PART_NUMBER_LPC54XXX
 	  This string holds the full part number of the SoC. It is a hidden
 	  option that you should not set directly. The part number selection
 	  choice defines the default value for this string.
+
+config SLAVE_CORE_MCUX
+	bool "Enable LPC54114 Cortex-M0 slave core"
+	default n
+	depends on HAS_MCUX
+	help
+	  Driver for slave core startup
 
 endif # SOC_SERIES_LPC54XXX
