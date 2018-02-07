@@ -200,12 +200,14 @@ config ZERO_LATENCY_IRQS
 
 config SW_VECTOR_RELAY
 	bool
-	prompt "Enable Cortex-M0 Vector Table soft relay"
+	prompt "Enable ARMv6-M Vector Table soft relay"
 	default n
 	default y if BOOTLOADER_MCUBOOT
-	depends on CPU_CORTEX_M0 && !CPU_CORTEX_M0_HAS_VECTOR_TABLE_REMAP
+	depends on ARMV6_M && !(CPU_CORTEX_M0_HAS_VECTOR_TABLE_REMAP || CPU_CORTEX_M_HAS_VTOR)
 	help
-	  Add Cortex-M0 Vector Table relay handler and relay vector table, to
-	  relay interrupts based on a vector table pointer.
-
+	  Add ARMv6-M Vector Table relay handler and relay vector table, to
+	  relay interrupts based on a vector table pointer. This is only
+	  required for Cortex-M0 with no hardware vector table relocation
+	  mechanisms or for Cortex-M0+ with no VTOR and no other hardware
+	  relocation table mechanisms.
 endmenu
