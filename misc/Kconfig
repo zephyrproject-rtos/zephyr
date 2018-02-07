@@ -317,8 +317,16 @@ config BOOTLOADER_MCUBOOT
 	help
 	  This option signifies that the target uses MCUboot as a bootloader,
 	  or in other words that the image is to be chain-loaded by MCUboot.
-	  This sets several required options in order for the image generated
-	  to be bootable using the MCUboot open source bootloader.
+	  This sets several required build system and Device Tree options in
+	  order for the image generated to be bootable using the MCUboot open
+	  source bootloader. Currently this includes:
+
+	    * Setting TEXT_LOAD_OFFSET to a default value that allows space for
+	      the MCUboot image header
+	    * Activating SW_VECTOR_RELAY on Cortex-M0 targets with no built-in
+	      vector relocation mechanisms
+	    * Including dts/common/mcuboot.overlay when building the Device
+	      Tree in order to place and link the image at the slot0 offset
 
 config BOOTLOADER_KEXEC
 	bool

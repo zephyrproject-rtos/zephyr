@@ -907,6 +907,8 @@ following available sources, in order:
    :makevar:`DTC_OVERLAY_FILE` variable, either as set explicitly by the user
    or using one of the default values detailed below.
 
+#. Common overlays conditionally included by :file:`dts/common/common.dts`.
+
 #. The board's default DT configuration for the current :makevar:`BOARD`
    setting (i.e. the :file:`boards/ARCHITECTURE/BOARD/BOARD.dts`
    file in the Zephyr base directory).
@@ -927,6 +929,12 @@ checking the following until one is found, in order:
 
 If :makevar:`DTC_OVERLAY_FILE` specifies multiple files, they will be merged in
 order.
+
+The build system will automatically prepend :file:`dts/common/common.dts` to
+:makevar:`DTC_OVERLAY_FILE`, which conditionally includes certain overlays that
+are considered common to all applications. This includes the required overlay
+for MCUboot chain-loading (located in :file:`dts/comon/mcuboot.overlay`)
+whenever the :option:`CONFIG_BOOTLOADER_MCUBOOT` is set using Kconfig.
 
 Application-Specific Code
 *************************

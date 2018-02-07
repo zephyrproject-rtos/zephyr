@@ -11,6 +11,7 @@
 set(GENERATED_DTS_BOARD_H    ${PROJECT_BINARY_DIR}/include/generated/generated_dts_board.h)
 set(GENERATED_DTS_BOARD_CONF ${PROJECT_BINARY_DIR}/include/generated/generated_dts_board.conf)
 set_ifndef(DTS_SOURCE ${PROJECT_SOURCE_DIR}/boards/${ARCH}/${BOARD_FAMILY}/${BOARD_FAMILY}.dts)
+set_ifndef(DTS_COMMON_OVERLAYS ${PROJECT_SOURCE_DIR}/dts/common/common.dts)
 
 message(STATUS "Generating zephyr/include/generated/generated_dts_board.h")
 
@@ -20,6 +21,9 @@ if(CONFIG_HAS_DTS)
     # Convert from space-separated files into file list
     string(REPLACE " " ";" DTC_OVERLAY_FILE_AS_LIST ${DTC_OVERLAY_FILE})
   endif()
+
+  # Prepend common overlays
+  set(DTC_OVERLAY_FILE_AS_LIST ${DTS_COMMON_OVERLAYS} ${DTC_OVERLAY_FILE_AS_LIST})
 
   set(
     dts_files
