@@ -81,17 +81,25 @@ NET_STACK_ARRAY_DEFINE(TX, tx_stack,
 		       NET_TC_TX_COUNT);
 
 #if defined(CONFIG_NET_DEBUG_IF)
+#if defined(CONFIG_NET_STATISTICS)
 #define debug_check_packet(pkt)						\
-	{								\
-		size_t len = net_pkt_get_len(pkt);			\
-									\
-		NET_DBG("Processing (pkt %p, data len %zu, "		\
+	do {								\
+		NET_DBG("Processing (pkt %p, data len %d, "		\
 			"prio %d) network packet",			\
-			pkt, len,					\
+			pkt, pkt->total_pkt_len,			\
 			net_pkt_priority(pkt));				\
 									\
-		NET_ASSERT(pkt->frags && len);				\
+		NET_ASSERT(pkt->frags && pkt->total_pkt_len);		\
 	} while (0)
+#else /* CONFIG_NET_STATISTICS */
+#define debug_check_packet(pkt)						\
+	do {								\
+		NET_DBG("Processing (pkt %p, prio %d) network packet",	\
+			pkt, net_pkt_priority(pkt));			\
+									\
+		NET_ASSERT(pkt->frags);					\
+	} while (0)
+#endif /* CONFIG_NET_STATISTICS */
 #else
 #define debug_check_packet(...)
 #endif /* CONFIG_NET_DEBUG_IF */
@@ -128,9 +136,6 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 	struct net_context *context;
 	void *context_token;
 	int status;
-#if defined(CONFIG_NET_STATISTICS)
-	size_t pkt_len;
-#endif
 
 	if (!pkt) {
 		return false;
@@ -143,10 +148,6 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 	context_token = net_pkt_token(pkt);
 
 	if (atomic_test_bit(iface->if_dev->flags, NET_IF_UP)) {
-#if defined(CONFIG_NET_STATISTICS)
-		pkt_len = net_pkt_get_len(pkt);
-#endif
-
 		if (IS_ENABLED(CONFIG_NET_TCP)) {
 			net_pkt_set_sent(pkt, true);
 			net_pkt_set_queued(pkt, false);
@@ -166,7 +167,7 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 
 		net_pkt_unref(pkt);
 	} else {
-		net_stats_update_bytes_sent(pkt_len);
+		net_stats_update_bytes_sent(pkt->total_pkt_len);
 	}
 
 	if (context) {
