@@ -67,6 +67,14 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 		};
+
+		mailbox0:mailbox@4008B000 {
+			compatible = "nxp,lpc-mailbox";
+			reg = <0x4008B000 0xEC>;
+			interrupts = <31 0>;
+			label = "MAILBOX_0";
+			status = "disabled";
+		};
 	};
 };
 
