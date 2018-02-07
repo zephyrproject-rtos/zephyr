@@ -413,6 +413,16 @@ static enum net_verdict set_vlan_tag(struct ethernet_context *ctx,
 
 	return NET_DROP;
 }
+
+static void set_vlan_priority(struct ethernet_context *ctx,
+			      struct net_pkt *pkt)
+{
+	/* FIXME: Currently just convert packet priority to VLAN
+	 * priority. This needs to be fixed as VLAN priority is not necessarily
+	 * the same as packet priority.
+	 */
+	net_pkt_set_vlan_priority(pkt, net_pkt_priority(pkt));
+}
 #endif /* CONFIG_NET_VLAN */
 
 struct net_eth_hdr *net_eth_fill_header(struct ethernet_context *ctx,
@@ -588,6 +598,8 @@ setup_hdr:
 		if (set_vlan_tag(ctx, iface, pkt) == NET_DROP) {
 			return NET_DROP;
 		}
+
+		set_vlan_priority(ctx, pkt);
 	}
 #endif /* CONFIG_NET_VLAN */
 
