@@ -581,7 +581,7 @@ class SizeCalculator:
                    "_k_msgq_area", "_k_mbox_area", "_k_pipe_area",
                    "net_if", "net_if_event", "net_stack", "net_l2_data",
                    "_k_queue_area", "_net_buf_pool_area", "app_datas",
-                   "kobject_data", "mmu_tables"]
+                   "kobject_data", "mmu_tables", "app_pad", "priv_stacks"]
     # These get copied into RAM only on non-XIP
     ro_sections = ["text", "ctors", "init_array", "reset", "object_access",
                    "rodata", "devconfig", "net_l2", "vector"]
