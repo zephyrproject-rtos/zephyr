@@ -2462,6 +2462,81 @@ int net_context_update_recv_wnd(struct net_context *context,
 	return -EPROTOTYPE;
 #endif
 }
+
+static int set_context_priority(struct net_context *context,
+				const void *value, size_t len)
+{
+#if defined(CONFIG_NET_CONTEXT_PRIORITY)
+	if (len > sizeof(u8_t)) {
+		return -EINVAL;
+	}
+
+	context->options.priority = *((u8_t *)value);
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
+static int get_context_priority(struct net_context *context,
+				void *value, size_t *len)
+{
+#if defined(CONFIG_NET_CONTEXT_PRIORITY)
+	*((u8_t *)value) = context->options.priority;
+
+	if (len) {
+		*len = sizeof(u8_t);
+	}
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
+int net_context_set_option(struct net_context *context,
+			   enum net_context_option option,
+			   const void *value, size_t len)
+{
+	int ret = 0;
+
+	NET_ASSERT(context);
+
+	if (!PART_OF_ARRAY(contexts, context)) {
+		return -EINVAL;
+	}
+
+	switch (option) {
+	case NET_OPT_PRIORITY:
+		ret = set_context_priority(context, value, len);
+		break;
+	}
+
+	return ret;
+}
+
+int net_context_get_option(struct net_context *context,
+			    enum net_context_option option,
+			    void *value, size_t *len)
+{
+	int ret = 0;
+
+	NET_ASSERT(context);
+
+	if (!PART_OF_ARRAY(contexts, context)) {
+		return -EINVAL;
+	}
+
+	switch (option) {
+	case NET_OPT_PRIORITY:
+		ret = get_context_priority(context, value, len);
+		break;
+	}
+
+	return ret;
+}
+
 void net_context_foreach(net_context_cb_t cb, void *user_data)
 {
 	int i;
