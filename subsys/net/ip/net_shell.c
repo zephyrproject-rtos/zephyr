@@ -446,6 +446,32 @@ static void iface_per_mcast_route_cb(struct net_if *iface, void *user_data)
 
 #if defined(CONFIG_NET_STATISTICS)
 
+#if NET_TC_COUNT > 1
+static const char *priority2str(enum net_priority priority)
+{
+	switch (priority) {
+	case NET_PRIORITY_BK:
+		return "BK"; /* Background */
+	case NET_PRIORITY_BE:
+		return "BE"; /* Best effort */
+	case NET_PRIORITY_EE:
+		return "EE"; /* Excellent effort */
+	case NET_PRIORITY_CA:
+		return "CA"; /* Critical applications */
+	case NET_PRIORITY_VI:
+		return "VI"; /* Video, < 100 ms latency and jitter */
+	case NET_PRIORITY_VO:
+		return "VO"; /* Voice, < 10 ms latency and jitter  */
+	case NET_PRIORITY_IC:
+		return "IC"; /* Internetwork control */
+	case NET_PRIORITY_NC:
+		return "NC"; /* Network control */
+	}
+
+	return "??";
+}
+#endif
+
 static inline void net_shell_print_statistics(void)
 {
 #if defined(CONFIG_NET_IPV6)
@@ -560,6 +586,38 @@ static inline void net_shell_print_statistics(void)
 	printk("Bytes received %u\n", GET_STAT(bytes.received));
 	printk("Bytes sent     %u\n", GET_STAT(bytes.sent));
 	printk("Processing err %d\n", GET_STAT(processing_error));
+
+#if NET_TC_COUNT > 1
+	{
+		int i;
+
+#if NET_TC_TX_COUNT > 1
+		printk("TX traffic class statistics:\n");
+		printk("TC  Priority\tSent pkts\tbytes\n");
+
+		for (i = 0; i < NET_TC_TX_COUNT; i++) {
+			printk("[%d] %s (%d)\t%d\t\t%d\n", i,
+			       priority2str(GET_STAT(tc.sent[i].priority)),
+			       GET_STAT(tc.sent[i].priority),
+			       GET_STAT(tc.sent[i].pkts),
+			       GET_STAT(tc.sent[i].bytes));
+		}
+#endif
+
+#if NET_TC_RX_COUNT > 1
+		printk("RX traffic class statistics:\n");
+		printk("TC  Priority\tRecv pkts\tbytes\n");
+
+		for (i = 0; i < NET_TC_RX_COUNT; i++) {
+			printk("[%d] %s (%d)\t%d\t\t%d\n", i,
+			       priority2str(GET_STAT(tc.recv[i].priority)),
+			       GET_STAT(tc.recv[i].priority),
+			       GET_STAT(tc.recv[i].pkts),
+			       GET_STAT(tc.recv[i].bytes));
+		}
+	}
+#endif
+#endif /* NET_TC_COUNT > 1 */
 }
 #endif /* CONFIG_NET_STATISTICS */
 

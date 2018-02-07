@@ -390,6 +390,45 @@ static inline void net_stats_update_ipv6_mld_drop(void)
 #define net_stats_update_ipv6_mld_drop()
 #endif /* CONFIG_NET_STATISTICS_MLD */
 
+#if (NET_TC_COUNT > 1) && defined(CONFIG_NET_STATISTICS)
+static inline void net_stats_update_tc_sent_pkt(u8_t tc)
+{
+	net_stats.tc.sent[tc].pkts++;
+}
+
+static inline void net_stats_update_tc_sent_bytes(u8_t tc, size_t bytes)
+{
+	net_stats.tc.sent[tc].bytes += bytes;
+}
+
+static inline void net_stats_update_tc_sent_priority(u8_t tc, u8_t priority)
+{
+	net_stats.tc.sent[tc].priority = priority;
+}
+
+static inline void net_stats_update_tc_recv_pkt(u8_t tc)
+{
+	net_stats.tc.recv[tc].pkts++;
+}
+
+static inline void net_stats_update_tc_recv_bytes(u8_t tc, size_t bytes)
+{
+	net_stats.tc.recv[tc].bytes += bytes;
+}
+
+static inline void net_stats_update_tc_recv_priority(u8_t tc, u8_t priority)
+{
+	net_stats.tc.recv[tc].priority = priority;
+}
+#else
+#define net_stats_update_tc_sent_pkt(tc)
+#define net_stats_update_tc_sent_bytes(tc, bytes)
+#define net_stats_update_tc_sent_priority(tc, priority)
+#define net_stats_update_tc_recv_pkt(tc)
+#define net_stats_update_tc_recv_bytes(tc, bytes)
+#define net_stats_update_tc_recv_priority(tc, priority)
+#endif /* NET_TC_COUNT > 1 */
+
 #if defined(CONFIG_NET_STATISTICS_PERIODIC_OUTPUT)
 /* A simple periodic statistic printer, used only in net core */
 void net_print_statistics(void);
