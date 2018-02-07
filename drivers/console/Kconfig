@@ -208,7 +208,7 @@ config NATIVE_POSIX_CONSOLE
 	  Use native stdin and stdout to print messages and get input
 
 config NATIVE_POSIX_STDIN_CONSOLE
-	bool "Use native stdin for console"
+	bool
 	prompt "Read from native stdin for console"
 	depends on NATIVE_POSIX_CONSOLE
 	default y
@@ -232,7 +232,7 @@ config NATIVE_STDIN_PRIO
 	  Prioriry of the native stdin polling thread
 
 config NATIVE_POSIX_STDOUT_CONSOLE
-	bool "Use native stdout for console"
+	bool
 	prompt "Print to native stdout"
 	depends on NATIVE_POSIX_CONSOLE
 	default y
