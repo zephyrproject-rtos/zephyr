@@ -36,10 +36,12 @@ static inline void vector_to_irq(int irq_nbr, int *may_swap)
 	/* _int_latency_start(); */
 	_sys_k_event_logger_interrupt();
 
-	if (irq_vector_table[irq_nbr].func == NULL) {
+	if (irq_vector_table[irq_nbr].func == NULL) { /* LCOV_EXCL_BR_LINE */
+		/* LCOV_EXCL_START */
 		posix_print_error_and_exit("Received irq %i without a "
 					"registered handler\n",
 					irq_nbr);
+		/* LCOV_EXCL_STOP */
 	} else {
 		if (irq_vector_table[irq_nbr].flags & ISR_FLAG_DIRECT) {
 			*may_swap |= ((direct_irq_f_ptr)
@@ -129,10 +131,12 @@ void posix_irq_handler_im_from_sw(void)
 	 * handler
 	 */
 	if (hw_irq_ctrl_get_highest_prio_irq() != -1) {
-		if (!posix_is_cpu_running()) {
-			posix_print_error_and_exit("programming error: "
-					"nrf_irq_cont_handler_irq_im_from_sw() "
-					"called from a HW model thread\n");
+		if (!posix_is_cpu_running()) { /* LCOV_EXCL_BR_LINE */
+			/* LCOV_EXCL_START */
+			posix_print_error_and_exit("programming error: %s "
+					"called from a HW model thread\n",
+					__func__);
+			/* LCOV_EXCL_STOP */
 		}
 		posix_irq_handler();
 	}
@@ -221,11 +225,6 @@ void _arch_irq_disable(unsigned int irq)
 int _arch_irq_is_enabled(unsigned int irq)
 {
 	return hw_irq_ctrl_is_irq_enabled(irq);
-}
-
-void _arch_isr_direct_header(void)
-{
-	/* Nothing to be done */
 }
 
 int posix_get_current_irq(void)
