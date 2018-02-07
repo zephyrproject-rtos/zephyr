@@ -284,7 +284,12 @@ int net_send_data(struct net_pkt *pkt)
 static void net_rx(struct net_if *iface, struct net_pkt *pkt)
 {
 #if defined(CONFIG_NET_STATISTICS) || defined(CONFIG_NET_DEBUG_CORE)
-	size_t pkt_len = net_pkt_get_len(pkt);
+	size_t pkt_len;
+#if defined(CONFIG_NET_STATISTICS)
+	pkt_len = pkt->total_pkt_len;
+#else
+	pkt_len = net_pkt_get_len(pkt);
+#endif
 #endif
 
 	NET_DBG("Received pkt %p len %zu", pkt, pkt_len);
@@ -312,6 +317,14 @@ static void net_queue_rx(struct net_if *iface, struct net_pkt *pkt)
 	u8_t tc = net_rx_priority2tc(prio);
 
 	k_work_init(net_pkt_work(pkt), process_rx_packet);
+
+#if defined(CONFIG_NET_STATISTICS)
+	pkt->total_pkt_len = net_pkt_get_len(pkt);
+
+	net_stats_update_tc_recv_pkt(tc);
+	net_stats_update_tc_recv_bytes(tc, pkt->total_pkt_len);
+	net_stats_update_tc_recv_priority(tc, prio);
+#endif
 
 #if NET_TC_RX_COUNT > 1
 	NET_DBG("TC %d with prio %d pkt %p", tc, prio, pkt);

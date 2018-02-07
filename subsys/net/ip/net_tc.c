@@ -266,6 +266,29 @@ static int rx_tc2thread(int tc)
 #define RX_STACK(idx) NET_STACK_GET_NAME(RX, rx_stack, 0)[idx]
 #endif
 
+#if defined(CONFIG_NET_STATISTICS)
+/* Fixup the traffic class statistics so that "net stats" shell command will
+ * print output correctly.
+ */
+static void tc_tx_stats_priority_setup(void)
+{
+	int i;
+
+	for (i = 0; i < 8; i++) {
+		net_stats_update_tc_sent_priority(net_tx_priority2tc(i), i);
+	}
+}
+
+static void tc_rx_stats_priority_setup(void)
+{
+	int i;
+
+	for (i = 0; i < 8; i++) {
+		net_stats_update_tc_recv_priority(net_rx_priority2tc(i), i);
+	}
+}
+#endif
+
 /* Create workqueue for each traffic class we are using. All the network
  * traffic goes through these classes. There needs to be at least one traffic
  * class in the system.
@@ -275,6 +298,10 @@ void net_tc_tx_init(void)
 	int i;
 
 	BUILD_ASSERT(NET_TC_TX_COUNT > 0);
+
+#if defined(CONFIG_NET_STATISTICS)
+	tc_tx_stats_priority_setup();
+#endif
 
 	for (i = 0; i < NET_TC_TX_COUNT; i++) {
 		u8_t thread_priority;
@@ -311,6 +338,10 @@ void net_tc_rx_init(void)
 	int i;
 
 	BUILD_ASSERT(NET_TC_RX_COUNT > 0);
+
+#if defined(CONFIG_NET_STATISTICS)
+	tc_rx_stats_priority_setup();
+#endif
 
 	for (i = 0; i < NET_TC_RX_COUNT; i++) {
 		u8_t thread_priority;
