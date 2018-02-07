@@ -97,7 +97,7 @@ void mbedtls_sha1_clone( mbedtls_sha1_context *dst,
 /*
  * SHA-1 context setup
  */
-void mbedtls_sha1_starts( mbedtls_sha1_context *ctx )
+int mbedtls_sha1_starts_ret( mbedtls_sha1_context *ctx )
 {
     ctx->total[0] = 0;
     ctx->total[1] = 0;
@@ -107,10 +107,13 @@ void mbedtls_sha1_starts( mbedtls_sha1_context *ctx )
     ctx->state[2] = 0x98BADCFE;
     ctx->state[3] = 0x10325476;
     ctx->state[4] = 0xC3D2E1F0;
+
+    return( 0 );
 }
 
 #if !defined(MBEDTLS_SHA1_PROCESS_ALT)
-void mbedtls_sha1_process( mbedtls_sha1_context *ctx, const unsigned char data[64] )
+int mbedtls_internal_sha1_process( mbedtls_sha1_context *ctx,
+                                   const unsigned char data[64] )
 {
     uint32_t temp, W[16], A, B, C, D, E;
 
@@ -264,19 +267,24 @@ void mbedtls_sha1_process( mbedtls_sha1_context *ctx, const unsigned char data[6
     ctx->state[2] += C;
     ctx->state[3] += D;
     ctx->state[4] += E;
+
+    return( 0 );
 }
 #endif /* !MBEDTLS_SHA1_PROCESS_ALT */
 
 /*
  * SHA-1 process buffer
  */
-void mbedtls_sha1_update( mbedtls_sha1_context *ctx, const unsigned char *input, size_t ilen )
+int mbedtls_sha1_update_ret( mbedtls_sha1_context *ctx,
+                             const unsigned char *input,
+                             size_t ilen )
 {
+    int ret;
     size_t fill;
     uint32_t left;
 
     if( ilen == 0 )
-        return;
+        return( 0 );
 
     left = ctx->total[0] & 0x3F;
     fill = 64 - left;
@@ -290,7 +298,10 @@ void mbedtls_sha1_update( mbedtls_sha1_context *ctx, const unsigned char *input,
     if( left && ilen >= fill )
     {
         memcpy( (void *) (ctx->buffer + left), input, fill );
-        mbedtls_sha1_process( ctx, ctx->buffer );
+
+        if( ( ret = mbedtls_internal_sha1_process( ctx, ctx->buffer ) ) != 0 )
+            return( ret );
+
         input += fill;
         ilen  -= fill;
         left = 0;
@@ -298,13 +309,17 @@ void mbedtls_sha1_update( mbedtls_sha1_context *ctx, const unsigned char *input,
 
     while( ilen >= 64 )
     {
-        mbedtls_sha1_process( ctx, input );
+        if( ( ret = mbedtls_internal_sha1_process( ctx, input ) ) != 0 )
+            return( ret );
+
         input += 64;
         ilen  -= 64;
     }
 
     if( ilen > 0 )
         memcpy( (void *) (ctx->buffer + left), input, ilen );
+
+    return( 0 );
 }
 
 static const unsigned char sha1_padding[64] =
@@ -318,8 +333,10 @@ static const unsigned char sha1_padding[64] =
 /*
  * SHA-1 final digest
  */
-void mbedtls_sha1_finish( mbedtls_sha1_context *ctx, unsigned char output[20] )
+int mbedtls_sha1_finish_ret( mbedtls_sha1_context *ctx,
+                             unsigned char output[20] )
 {
+    int ret;
     uint32_t last, padn;
     uint32_t high, low;
     unsigned char msglen[8];
@@ -334,14 +351,18 @@ void mbedtls_sha1_finish( mbedtls_sha1_context *ctx, unsigned char output[20] )
     last = ctx->total[0] & 0x3F;
     padn = ( last < 56 ) ? ( 56 - last ) : ( 120 - last );
 
-    mbedtls_sha1_update( ctx, sha1_padding, padn );
-    mbedtls_sha1_update( ctx, msglen, 8 );
+    if( ( ret = mbedtls_sha1_update_ret( ctx, sha1_padding, padn ) ) != 0 )
+        return( ret );
+    if( ( ret = mbedtls_sha1_update_ret( ctx, msglen, 8 ) ) != 0 )
+        return( ret );
 
     PUT_UINT32_BE( ctx->state[0], output,  0 );
     PUT_UINT32_BE( ctx->state[1], output,  4 );
     PUT_UINT32_BE( ctx->state[2], output,  8 );
     PUT_UINT32_BE( ctx->state[3], output, 12 );
     PUT_UINT32_BE( ctx->state[4], output, 16 );
+
+    return( 0 );
 }
 
 #endif /* !MBEDTLS_SHA1_ALT */
@@ -349,15 +370,28 @@ void mbedtls_sha1_finish( mbedtls_sha1_context *ctx, unsigned char output[20] )
 /*
  * output = SHA-1( input buffer )
  */
-void mbedtls_sha1( const unsigned char *input, size_t ilen, unsigned char output[20] )
+int mbedtls_sha1_ret( const unsigned char *input,
+                      size_t ilen,
+                      unsigned char output[20] )
 {
+    int ret;
     mbedtls_sha1_context ctx;
 
     mbedtls_sha1_init( &ctx );
-    mbedtls_sha1_starts( &ctx );
-    mbedtls_sha1_update( &ctx, input, ilen );
-    mbedtls_sha1_finish( &ctx, output );
+
+    if( ( ret = mbedtls_sha1_starts_ret( &ctx ) ) != 0 )
+        goto exit;
+
+    if( ( ret = mbedtls_sha1_update_ret( &ctx, input, ilen ) ) != 0 )
+        goto exit;
+
+    if( ( ret = mbedtls_sha1_finish_ret( &ctx, output ) ) != 0 )
+        goto exit;
+
+exit:
     mbedtls_sha1_free( &ctx );
+
+    return( ret );
 }
 
 #if defined(MBEDTLS_SELF_TEST)
@@ -371,7 +405,7 @@ static const unsigned char sha1_test_buf[3][57] =
     { "" }
 };
 
-static const int sha1_test_buflen[3] =
+static const size_t sha1_test_buflen[3] =
 {
     3, 56, 1000
 };
@@ -406,28 +440,35 @@ int mbedtls_sha1_self_test( int verbose )
         if( verbose != 0 )
             mbedtls_printf( "  SHA-1 test #%d: ", i + 1 );
 
-        mbedtls_sha1_starts( &ctx );
+        if( ( ret = mbedtls_sha1_starts_ret( &ctx ) ) != 0 )
+            goto fail;
 
         if( i == 2 )
         {
             memset( buf, 'a', buflen = 1000 );
 
             for( j = 0; j < 1000; j++ )
-                mbedtls_sha1_update( &ctx, buf, buflen );
+            {
+                ret = mbedtls_sha1_update_ret( &ctx, buf, buflen );
+                if( ret != 0 )
+                    goto fail;
+            }
         }
         else
-            mbedtls_sha1_update( &ctx, sha1_test_buf[i],
-                               sha1_test_buflen[i] );
+        {
+            ret = mbedtls_sha1_update_ret( &ctx, sha1_test_buf[i],
+                                           sha1_test_buflen[i] );
+            if( ret != 0 )
+                goto fail;
+        }
 
-        mbedtls_sha1_finish( &ctx, sha1sum );
+        if( ( ret = mbedtls_sha1_finish_ret( &ctx, sha1sum ) ) != 0 )
+            goto fail;
 
         if( memcmp( sha1sum, sha1_test_sum[i], 20 ) != 0 )
         {
-            if( verbose != 0 )
-                mbedtls_printf( "failed\n" );
-
             ret = 1;
-            goto exit;
+            goto fail;
         }
 
         if( verbose != 0 )
@@ -436,6 +477,12 @@ int mbedtls_sha1_self_test( int verbose )
 
     if( verbose != 0 )
         mbedtls_printf( "\n" );
+
+    goto exit;
+
+fail:
+    if( verbose != 0 )
+        mbedtls_printf( "failed\n" );
 
 exit:
     mbedtls_sha1_free( &ctx );
