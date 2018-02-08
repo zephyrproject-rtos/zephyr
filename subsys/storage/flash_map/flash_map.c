@@ -32,7 +32,7 @@ struct driver_map_entry {
 };
 
 static const struct driver_map_entry  flash_drivers_map[] = {
-#ifdef FLASH_DRIVER_NAME /* SoC embedded flash driver */
+#ifdef FLASH_DEV_NAME /* SoC embedded flash driver */
 	{SOC_FLASH_0_ID, FLASH_DEV_NAME},
 #endif
 #ifdef CONFIG_SPI_FLASH_W25QXXDV
