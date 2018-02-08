@@ -272,6 +272,26 @@ static void i2c_nrf5_isr(void *arg)
 	}
 }
 
+static int i2c_nrf5_recovery(struct device *dev)
+{
+	struct i2c_nrf5_data *data = dev->driver_data;
+	const struct i2c_nrf5_config *config = dev->config->config_info;
+	int status, i = 0;
+
+	status = gpio_pin_configure(data->gpio, config->scl_pin, GPIO_DIR_OUT);
+
+	__ASSERT_NO_MSG(status == 0);
+
+	for (; i < 10; i++) {
+		gpio_pin_write(data->gpio, config->scl_pin, 1);
+		k_busy_wait(5);
+		gpio_pin_write(data->gpio, config->scl_pin, 0);
+		k_busy_wait(5);
+	}
+
+	return 0;
+}
+
 static int i2c_nrf5_init(struct device *dev)
 {
 	const struct i2c_nrf5_config *config = dev->config->config_info;
@@ -288,6 +308,9 @@ static int i2c_nrf5_init(struct device *dev)
 	config->irq_config_func(dev);
 
 	twi->ENABLE = TWI_ENABLE_ENABLE_Disabled;
+
+	status = i2c_nrf5_recovery(dev);
+	__ASSERT_NO_MSG(status == 0);
 
 	status = gpio_pin_configure(data->gpio, config->scl_pin,
 				    GPIO_DIR_IN
