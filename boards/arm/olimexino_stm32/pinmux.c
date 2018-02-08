@@ -12,7 +12,7 @@
 
 #include <pinmux/stm32/pinmux_stm32.h>
 
-/* pin assignments for NUCLEO-F103RB board */
+/* pin assignments for OLIMEXINO-STM32 board */
 static const struct pin_config pinconf[] = {
 #ifdef CONFIG_UART_STM32_PORT_1
 	{STM32_PIN_PA9,  STM32F1_PINMUX_FUNC_PA9_USART1_TX},
