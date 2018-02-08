@@ -78,7 +78,7 @@ build:
       - >
          if [ "$MATRIX_BUILD" = "1" ]; then
             gcovr -r ${ZEPHYR_BASE} -x > shippable/codecoverage/coverage.xml;
-            lcov --capture --directory sanity-out/native_posix/ --output-file lcov.pre.info -q --rc lcov_branch_coverage=1;
+            lcov --capture --directory sanity-out/native_posix/ --directory sanity-out/unit_testing/ --output-file lcov.pre.info -q --rc lcov_branch_coverage=1;
             lcov -q --remove lcov.pre.info *generated* -o lcov.info --rc lcov_branch_coverage=1;
             rm lcov.pre.info;
             rm -rf sanity-out out-2nd-pass;
@@ -103,7 +103,7 @@ build:
       - >
          if [ "$MATRIX_BUILD" = "1" ]; then
             gcovr -r ${ZEPHYR_BASE} -x > shippable/codecoverage/coverage.xml;
-            lcov --capture --directory sanity-out/native_posix/ --output-file lcov.pre.info -q --rc lcov_branch_coverage=1;
+            lcov --capture --directory sanity-out/native_posix/ --directory sanity-out/unit_testing/ --output-file lcov.pre.info -q --rc lcov_branch_coverage=1;
             lcov -q --remove lcov.pre.info *generated* -o lcov.info --rc lcov_branch_coverage=1;
             rm lcov.pre.info;
             rm -rf sanity-out out-2nd-pass;

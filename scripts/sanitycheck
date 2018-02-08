@@ -950,8 +950,8 @@ class MakeGenerator:
         build_logfile = os.path.join(outdir, "build.log")
         run_logfile = os.path.join(outdir, "run.log")
         handler_logfile = os.path.join(outdir, "handler.log")
-        if coverage:
-            args += ["COVERAGE=1"]
+
+        args += ["COVERAGE=1", "EXTRA_LDFLAGS=--coverage"]
 
         # we handle running in the UnitHandler class
         text = (self._get_rule_header(name) +
@@ -2393,15 +2393,15 @@ def main():
                     reason))
 
 
-    def native_posix_first(a, b):
-        if a[0].startswith('native_posix'):
+    def native_posix_and_unit_first(a, b):
+        if a[0].startswith('native_posix') or a[0].startswith('unit_testing'):
             return -1
-        if b[0].startswith('native_posix'):
+        if b[0].startswith('native_posix') or b[0].startswith('unit_testing'):
             return 1
         return (a > b) - (a < b)
 
     ts.instances = OrderedDict(sorted(ts.instances.items(),
-                               key=cmp_to_key(native_posix_first)))
+                               key=cmp_to_key(native_posix_and_unit_first)))
 
     if options.save_tests:
         ts.run_report(options.save_tests)
