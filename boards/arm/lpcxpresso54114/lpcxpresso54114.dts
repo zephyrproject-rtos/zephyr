@@ -14,10 +14,11 @@
 
 	aliases{
 		usart_0 = &usart0;
+		mailbox_0 = &mailbox0;
 	};
 
 	chosen {
-		zephyr,sram = &sram1;
+		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,console = &usart0;
 	};
@@ -27,4 +28,8 @@
 &usart0 {
 	status = "ok";
 	current-speed = <115200>;
+};
+
+&mailbox0 {
+	status = "ok";
 };

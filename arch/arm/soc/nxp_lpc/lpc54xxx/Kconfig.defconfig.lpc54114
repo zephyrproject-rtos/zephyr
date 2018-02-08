@@ -32,4 +32,12 @@ config USART_MCUX_LPC
 
 endif # SERIAL
 
+config SLAVE_CORE_MCUX
+	bool "Enable LPC54114 Cortex-M0 slave core"
+	default n
+	depends on HAS_MCUX
+	help
+	Driver for slave core startup
+
+
 endif # SOC_LPC54114

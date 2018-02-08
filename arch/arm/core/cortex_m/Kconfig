@@ -245,4 +245,10 @@ config SW_VECTOR_RELAY
 	  required for Cortex-M0 with no hardware vector table relocation
 	  mechanisms or for Cortex-M0+ with no VTOR and no other hardware
 	  relocation table mechanisms.
+
+config PLATFORM_SPECIFIC_INIT
+	bool
+	prompt "Enable platform (SOC) specific startup hook"
+	default n
+
 endmenu

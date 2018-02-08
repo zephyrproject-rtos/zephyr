@@ -23,6 +23,9 @@ _ASM_FILE_PROLOGUE
 GTEXT(__reset)
 GTEXT(memset)
 GDATA(_interrupt_stack)
+#if defined(CONFIG_PLATFORM_SPECIFIC_INIT)
+GTEXT(_PlatformInit)
+#endif
 
 /**
  *
@@ -56,6 +59,10 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__reset)
  * search for a __start symbol instead, so create that alias here.
  */
 SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
+
+#if defined(CONFIG_PLATFORM_SPECIFIC_INIT)
+    bl _PlatformInit
+#endif
 
     /* lock interrupts: will get unlocked when switch to main task */
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)

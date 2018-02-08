@@ -11,7 +11,12 @@ depends on SOC_SERIES_LPC54XXX
 
 config SOC_LPC54114
 	bool "SOC_LPC54114"
-	select HAS_MCUX
+	select CPU_CORTEX_M4
+	select PLATFORM_SPECIFIC_INIT
+
+config SOC_LPC54114_M0
+	bool "SOC_LPC54114_M0"
+	select CPU_CORTEX_M0PLUS
 
 endchoice
 

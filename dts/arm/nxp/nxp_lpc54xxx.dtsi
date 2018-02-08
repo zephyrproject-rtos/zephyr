@@ -21,15 +21,6 @@
 		reg = <0x20000000 0x10000>;
 	};
 
-	sram1:memory@20010000 {
-		compatible = "mmio-sram";
-		reg = <0x20010000 0x10000>;
-	};
-
-	sram2:memory@20020000 {
-		compatible = "mmio-sram";
-		reg = <0x20020000 0x8000>;
-	};
 
 	sramx:memory@40000000{
 		compatible = "mmio-sram";
@@ -39,7 +30,10 @@
 	soc {
 
 		flash0:flash@0 {
-			reg = <0 0x40000>;
+			/* reduced from 0x40000 to 0x30000
+			 * to leave room for secondary core
+			 */
+			reg = <0 0x30000>;
 		};
 
 		usart0:usart@40086000 {
@@ -49,9 +43,18 @@
 			label = "USART_0";
 			status = "disabled";
 		};
+
+		mailbox0:mailbox@4008B000 {
+			compatible = "nxp,lpc-mailbox";
+			reg = <0x4008B000 0xEC>;
+			interrupts = <31 0>;
+			label = "MAILBOX_0";
+			status = "disabled";
+		};
 	};
 };
 
 &nvic {
 	arm,num-irq-priority-bits = <3>;
 };
+
