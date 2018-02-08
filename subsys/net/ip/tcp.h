@@ -302,12 +302,15 @@ int net_tcp_prepare_ack(struct net_tcp *tcp, const struct sockaddr *remote,
  * @brief Prepare a TCP RST message that can be send to peer.
  *
  * @param tcp TCP context
+ * @param local Source address
  * @param remote Peer address
  * @param pkt Network buffer
  *
  * @return 0 if ok, < 0 if error
  */
-int net_tcp_prepare_reset(struct net_tcp *tcp, const struct sockaddr *remote,
+int net_tcp_prepare_reset(struct net_tcp *tcp,
+			  const struct sockaddr *local,
+			  const struct sockaddr *remote,
 			  struct net_pkt **pkt);
 
 typedef void (*net_tcp_cb_t)(struct net_tcp *tcp, void *user_data);
