@@ -292,7 +292,7 @@ static int bind_local(struct net_app_ctx *ctx)
 #if defined(CONFIG_NET_IPV4)
 	if (ctx->ipv4.remote.sa_family == AF_INET && ctx->ipv4.ctx) {
 		ctx->ipv4.local.sa_family = AF_INET;
-		_net_app_set_local_addr(&ctx->ipv4.local, NULL,
+		_net_app_set_local_addr(ctx, &ctx->ipv4.local, NULL,
 					net_sin(&ctx->ipv4.local)->sin_port);
 
 		ret = _net_app_set_net_ctx(ctx, ctx->ipv4.ctx,
@@ -309,7 +309,7 @@ static int bind_local(struct net_app_ctx *ctx)
 #if defined(CONFIG_NET_IPV6)
 	if (ctx->ipv6.remote.sa_family == AF_INET6 && ctx->ipv6.ctx) {
 		ctx->ipv6.local.sa_family = AF_INET6;
-		_net_app_set_local_addr(&ctx->ipv6.local, NULL,
+		_net_app_set_local_addr(ctx, &ctx->ipv6.local, NULL,
 				       net_sin6(&ctx->ipv6.local)->sin6_port);
 
 		ret = _net_app_set_net_ctx(ctx, ctx->ipv6.ctx,
