@@ -199,6 +199,9 @@ static int tcp_backlog_syn(struct net_pkt *pkt, struct net_context *context,
 	ret = net_pkt_get_src_addr(pkt, &tcp_backlog[empty_slot].remote,
 				   sizeof(tcp_backlog[empty_slot].remote));
 	if (ret < 0) {
+		/* Release the assigned empty slot */
+		tcp_backlog[empty_slot].tcp = NULL;
+
 		return ret;
 	}
 
