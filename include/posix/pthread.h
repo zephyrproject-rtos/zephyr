@@ -193,7 +193,7 @@ static inline int pthread_mutex_timedlock(pthread_mutex_t *m,
 {
 	int ret = k_sem_take(m->sem, _ts_to_ms(to));
 
-	return ret == -EAGAIN ? -ETIMEDOUT : ret;
+	return ret == 0 ? ret : ETIMEDOUT;
 }
 
 /**
