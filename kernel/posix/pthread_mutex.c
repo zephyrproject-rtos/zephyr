@@ -11,7 +11,7 @@
 
 int pthread_mutex_trylock(pthread_mutex_t *m)
 {
-	int key = irq_lock(), ret = -EBUSY;
+	int key = irq_lock(), ret = EBUSY;
 
 	if (m->sem->count) {
 		m->sem->count = 0;

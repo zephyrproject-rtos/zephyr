@@ -34,7 +34,7 @@ static int cond_wait(pthread_cond_t *cv, pthread_mutex_t *mut, int timeout)
 	 */
 	pthread_mutex_lock(mut);
 
-	return ret == -EAGAIN ? -ETIMEDOUT : ret;
+	return ret == -EAGAIN ? ETIMEDOUT : ret;
 }
 
 /* This implements a "fair" scheduling policy: at the end of a POSIX
