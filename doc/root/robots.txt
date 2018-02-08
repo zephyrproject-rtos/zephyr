@@ -1,0 +1,8 @@
+User-agent: *
+Disallow: /1.2.0/
+Disallow: /1.3.0/
+Disallow: /1.4.0/
+Disallow: /1.5.0/
+Disallow: /1.6.0/
+Disallow: /1.7.0/
+Disallow: /1.8.0/
