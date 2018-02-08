@@ -48,7 +48,7 @@ endif # GPIO_MCUX
 if UART_MCUX_LPUART
 
 config UART_MCUX_LPUART_0
-	def_bool y if UART_CONSOLE
+	def_bool y if UART_CONSOLE || BT_DEBUG_MONITOR
 
 endif # UART_MCUX
 

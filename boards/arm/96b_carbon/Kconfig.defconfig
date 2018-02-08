@@ -10,12 +10,12 @@ if BOARD_96B_CARBON
 config BOARD
 	default 96b_carbon
 
-if UART_CONSOLE
+if UART_CONSOLE || BT_DEBUG_MONITOR
 
 config UART_STM32_PORT_1
 	default y
 
-endif # UART_CONSOLE
+endif # UART_CONSOLE || BT_DEBUG_MONITOR
 
 if I2C
 

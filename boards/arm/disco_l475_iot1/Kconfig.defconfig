@@ -10,12 +10,12 @@ if BOARD_DISCO_L475_IOT1
 config BOARD
 	default disco_l475_iot1
 
-if UART_CONSOLE
+if UART_CONSOLE || BT_DEBUG_MONITOR
 
 config UART_STM32_PORT_1
 	default y
 
-endif # UART_CONSOLE
+endif # UART_CONSOLE || BT_DEBUG_MONITOR
 
 if I2C
 

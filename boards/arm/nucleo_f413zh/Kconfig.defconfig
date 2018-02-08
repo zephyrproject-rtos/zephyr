@@ -11,11 +11,11 @@ config BOARD
 	default nucleo_f413zh
 
 
-if UART_CONSOLE
+if UART_CONSOLE || BT_DEBUG_MONITOR
 
 config UART_STM32_PORT_3
 	default y
 
-endif # UART_CONSOLE
+endif # UART_CONSOLE || BT_DEBUG_MONITOR
 
 endif # BOARD_NUCLEO_F413ZH

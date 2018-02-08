@@ -10,11 +10,11 @@ if BOARD_STM32_MIN_DEV
 config BOARD
 	default stm32_min_dev
 
-if UART_CONSOLE
+if UART_CONSOLE || BT_DEBUG_MONITOR
 
 config UART_STM32_PORT_1
 	default y
 
-endif # UART_CONSOLE
+endif # UART_CONSOLE || BT_DEBUG_MONITOR
 
 endif # BOARD_STM32_MIN_DEV
