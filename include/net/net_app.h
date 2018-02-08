@@ -856,6 +856,19 @@ struct net_pkt *net_app_get_net_pkt(struct net_app_ctx *ctx,
 				    s32_t timeout);
 
 /**
+ * @brief Create network packet based on dst address.
+ *
+ * @param ctx Network application context.
+ * @param dst Destination address to select net_context
+ * @param timeout How long to wait the send before giving up.
+ *
+ * @return valid net_pkt if ok, NULL if error.
+ */
+struct net_pkt *net_app_get_net_pkt_with_dst(struct net_app_ctx *ctx,
+					     const struct sockaddr *dst,
+					     s32_t timeout);
+
+/**
  * @brief Create network buffer that will hold network data.
  *
  * @details The returned net_buf is automatically appended to the
