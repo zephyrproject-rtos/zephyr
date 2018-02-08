@@ -8,6 +8,8 @@
  * USB definitions
  */
 
+#define NETUSB_MTU 1500
+
 struct netusb_function {
 	int num_ep;
 	struct usb_ep_cfg_data *ep;

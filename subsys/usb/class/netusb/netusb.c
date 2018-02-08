@@ -285,4 +285,4 @@ static int netusb_init_dev(struct device *dev)
 
 NET_DEVICE_INIT(eth_netusb, "eth_netusb", netusb_init_dev, NULL, NULL,
 		CONFIG_ETH_INIT_PRIORITY, &api_funcs, ETHERNET_L2,
-		NET_L2_GET_CTX_TYPE(ETHERNET_L2), 1500);
+		NET_L2_GET_CTX_TYPE(ETHERNET_L2), NETUSB_MTU);
