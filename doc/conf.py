@@ -124,6 +124,11 @@ exclude_patterns = ['_build']
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
 
+# Additional lexer for Pygments (syntax highlighting)
+from lexer.DtsLexer import DtsLexer
+from sphinx.highlighting import lexers
+lexers['DTS'] = DtsLexer()
+
 # A list of ignored prefixes for module index sorting.
 #modindex_common_prefix = []
 
