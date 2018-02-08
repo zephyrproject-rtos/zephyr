@@ -28,7 +28,7 @@
 /* Some configurations require that the stack/registers be adjusted before
  * _thread_entry. See discussion in swap.S for _x86_thread_entry_wrapper()
  */
-#if defined(CONFIG_DEBUG_INFO) || defined(CONFIG_X86_IAMCU)
+#if defined(CONFIG_X86_IAMCU)
 #define WRAPPER_REQUIRED
 #endif
 

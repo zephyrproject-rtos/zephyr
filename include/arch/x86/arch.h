@@ -350,12 +350,6 @@ struct _x86_syscall_stack_frame {
  */
 
 typedef struct nanoIsf {
-#ifdef CONFIG_DEBUG_INFO
-	unsigned int esp;
-	unsigned int ebp;
-	unsigned int ebx;
-	unsigned int esi;
-#endif /* CONFIG_DEBUG_INFO */
 	unsigned int edi;
 	unsigned int ecx;
 	unsigned int edx;
