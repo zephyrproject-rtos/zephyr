@@ -32,6 +32,7 @@ config UART_NRF5_FLOW_CONTROL
 
 config UART_NRF5_GPIO_TX_PIN
 	int "TX Pin Number"
+	range 0 47 if SOC_NRF52840_QIAA
 	range 0 31
 	depends on UART_NRF5
 	depends on GPIO_NRF5
@@ -40,6 +41,7 @@ config UART_NRF5_GPIO_TX_PIN
 
 config UART_NRF5_GPIO_RX_PIN
 	int "RX Pin Number"
+	range 0 47 if SOC_NRF52840_QIAA
 	range 0 31
 	depends on UART_NRF5
 	depends on GPIO_NRF5
@@ -48,6 +50,7 @@ config UART_NRF5_GPIO_RX_PIN
 
 config UART_NRF5_GPIO_RTS_PIN
 	int "RTS Pin Number"
+	range 0 47 if SOC_NRF52840_QIAA
 	range 0 31
 	depends on UART_NRF5
 	depends on GPIO_NRF5
@@ -57,6 +60,7 @@ config UART_NRF5_GPIO_RTS_PIN
 
 config UART_NRF5_GPIO_CTS_PIN
 	int "CTS Pin Number"
+	range 0 47 if SOC_NRF52840_QIAA
 	range 0 31
 	depends on UART_NRF5
 	depends on GPIO_NRF5
