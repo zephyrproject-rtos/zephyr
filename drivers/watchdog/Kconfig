@@ -30,4 +30,6 @@ source "drivers/watchdog/Kconfig.esp32"
 
 source "drivers/watchdog/Kconfig.sam0"
 
+source "driver/watchdog/Kconfig.nrf52"
+
 endif
