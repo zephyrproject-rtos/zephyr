@@ -47,7 +47,7 @@
 
 /** This option enables floating point support **/
 #ifdef CONFIG_CBOR_NO_FLOATING_POINT
-#define CBOR_NO_FLOATINGPOINT CONFIG_CBOR_NO_FLOATING_POINT
+#define CBOR_NO_FLOATING_POINT CONFIG_CBOR_NO_FLOATING_POINT
 #endif
 
 /** This option enables half float type support **/
