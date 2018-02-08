@@ -139,19 +139,6 @@ SECTION_FUNC(TEXT, _interrupt_enter)
 	 */
 	pushl	%edi
 
-#ifdef CONFIG_DEBUG_INFO
-	/*
-	 * Push the cooperative registers on the existing stack as they are
-	 * required by debug tools.
-	 */
-
-	pushl	%esi
-	pushl	%ebx
-	pushl	%ebp
-
-	leal	40(%esp), %ecx   /* Calculate ESP before interrupt occurred */
-	pushl	%ecx             /* Save calculated ESP */
-#endif
 
 #if defined(CONFIG_INT_LATENCY_BENCHMARK) || \
 		defined(CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT) || \
@@ -194,11 +181,7 @@ SECTION_FUNC(TEXT, _interrupt_enter)
 
 	/* use interrupt stack if not nested */
 	cmpl	$1, _kernel_offset_to_nested(%ecx)
-#ifdef CONFIG_DEBUG_INFO
-	jne	nested_save_isf
-#else
 	jne	alreadyOnIntStack
-#endif
 
 	/*
 	 * switch to base of the interrupt stack: save esp in edi, then load
@@ -213,30 +196,11 @@ SECTION_FUNC(TEXT, _interrupt_enter)
 
 	pushl	%edi			/* Save stack pointer */
 
-#ifdef CONFIG_DEBUG_INFO
-	/*
-	 * The saved stack pointer happens to match the address of the
-	 * interrupt stack frame.  To simplify the exit case, push a dummy ISF
-	 * for the "old" ISF and save it to the _kernel.isf.
-	 */
-	pushl	%edi
-	movl	%edi, _kernel_offset_to_isf(%ecx)
-#endif
-
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 	cmpl	$0, _kernel_offset_to_idle(%ecx)
 	jne	handle_idle
 	/* fast path is !idle, in the pipeline */
 #endif /* CONFIG_SYS_POWER_MANAGEMENT */
-
-#ifdef CONFIG_DEBUG_INFO
-	jmp alreadyOnIntStack
-
-nested_save_isf:
-	movl	_kernel_offset_to_isf(%ecx), %edi	/* Get old ISF */
-	movl	%esp, _kernel_offset_to_isf(%ecx)	/* Save new ISF */
-	pushl	%edi                            /* Save old ISF */
-#endif
 
 	/* fall through to nested case */
 
@@ -290,9 +254,6 @@ alreadyOnIntStack:
 
 	/* determine whether exiting from a nested interrupt */
 	movl	$_kernel, %ecx
-#ifdef CONFIG_DEBUG_INFO
-	popl	_kernel_offset_to_isf(%ecx)    /* Restore old ISF */
-#endif
 	decl	_kernel_offset_to_nested(%ecx)	/* dec interrupt nest count */
 	jne	nestedInterrupt                 /* 'iret' if nested case */
 
@@ -332,13 +293,6 @@ alreadyOnIntStack:
 	 */
 
 	popl	%esp	/* switch back to outgoing thread's stack */
-
-#ifdef CONFIG_DEBUG_INFO
-	popl	%ebp        /* Discard saved ESP */
-	popl	%ebp
-	popl	%ebx
-	popl	%esi
-#endif
 
 #if defined(CONFIG_TIMESLICING)
 	call	_update_time_slice_before_swap
@@ -417,12 +371,6 @@ nestedInterrupt:
 	call	_int_latency_stop
 #endif
 
-#ifdef CONFIG_DEBUG_INFO
-	popl	%ebp        /* Discard saved ESP */
-	popl	%ebp
-	popl	%ebx
-	popl	%esi
-#endif
 	popl	%edi
 	popl	%ecx		/* pop volatile registers in reverse order */
 	popl	%edx
