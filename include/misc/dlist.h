@@ -12,9 +12,12 @@
  * This API is not thread safe, and thus if a list is used across threads,
  * calls to functions must be protected with synchronization primitives.
  *
- * The lists are expected to be initialized such that both the head and tail
- * pointers point to the list itself.  Initializing the lists in such a fashion
- * simplifies the adding and removing of nodes to/from the list.
+ * The sys_dlist_t handle object acts as an extra node that connects
+ * both the head and the tail of the list, making the list a cycle and
+ * allowing removals to work in a uniform way even at the start or end
+ * of a list.  For initialization convenience, both the "head == tail"
+ * state and the "head == tail == NULL" state are accepted as
+ * indicating an empty list.
  */
 
 #ifndef _misc_dlist__h_
@@ -187,11 +190,10 @@ typedef struct _dnode sys_dnode_t;
 
 static inline void sys_dlist_init(sys_dlist_t *list)
 {
-	list->head = (sys_dnode_t *)list;
-	list->tail = (sys_dnode_t *)list;
+	list->head = list->tail = NULL;
 }
 
-#define SYS_DLIST_STATIC_INIT(ptr_to_list) {{(ptr_to_list)}, {(ptr_to_list)}}
+#define SYS_DLIST_STATIC_INIT(unused) __DEPRECATED_MACRO {{NULL, NULL}}
 
 /**
  * @brief check if a node is the list's head
@@ -231,7 +233,7 @@ static inline int sys_dlist_is_tail(sys_dlist_t *list, sys_dnode_t *node)
 
 static inline int sys_dlist_is_empty(sys_dlist_t *list)
 {
-	return list->head == list;
+	return (!list->head) || (list->head == list);
 }
 
 /**
@@ -336,11 +338,18 @@ static inline sys_dnode_t *sys_dlist_peek_tail(sys_dlist_t *list)
 
 static inline void sys_dlist_append(sys_dlist_t *list, sys_dnode_t *node)
 {
-	node->next = list;
-	node->prev = list->tail;
+	if (list->head) {
+		node->next = list;
+		node->prev = list->tail;
 
-	list->tail->next = node;
-	list->tail = node;
+		list->tail->next = node;
+		list->tail = node;
+	} else {
+		list->head = node;
+		list->tail = node;
+		node->next = list;
+		node->prev = list;
+	}
 }
 
 /**
@@ -356,11 +365,18 @@ static inline void sys_dlist_append(sys_dlist_t *list, sys_dnode_t *node)
 
 static inline void sys_dlist_prepend(sys_dlist_t *list, sys_dnode_t *node)
 {
-	node->next = list->head;
-	node->prev = list;
+	if (list->head) {
+		node->next = list->head;
+		node->prev = list;
 
-	list->head->prev = node;
-	list->head = node;
+		list->head->prev = node;
+		list->head = node;
+	} else {
+		node->next = list;
+		node->prev = list;
+		list->tail = node;
+		list->head = node;
+	}
 }
 
 /**
