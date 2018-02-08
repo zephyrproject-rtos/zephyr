@@ -59,6 +59,7 @@ boards/x86/quark_se_c1000_devboard/*     @nashif
 boards/xtensa/*                          @andrewboie
 # All cmake related files
 cmake/*                                  @nashif @SebastianBoe
+CMakeLists.txt                           @nashif @SebastianBoe
 doc/*                                    @dbkinder
 doc/subsystems/bluetooth/*               @sjanc @jhedberg @Vudentz
 drivers/*/*qmsi*                         @nashif
