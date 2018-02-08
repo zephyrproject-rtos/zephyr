@@ -445,6 +445,15 @@ static inline void net_buf_simple_restore(struct net_buf_simple *buf,
   * should be used instead.
   */
 #define NET_BUF_FRAGS        BIT(0)
+/** Flag indicating that the buffer's associated data pointer, points to
+ * externally allocated memory. Therefore once ref goes down to zero, the
+ * pointed data will not need to be deallocated. This never needs to be
+ * explicitely set or unet by the net_buf API user. Such net_buf is
+ * exclusively instanciated via net_buf_alloc_with_data() function.
+ * Reference count mechanism however will behave the same way, and ref
+ * count going to 0 will free the net_buf but no the data pointer in it.
+ */
+#define NET_BUF_EXTERNAL_DATA  BIT(1)
 
 /** @brief Network buffer representation.
   *
@@ -785,6 +794,39 @@ struct net_buf *net_buf_alloc_len_debug(struct net_buf_pool *pool, size_t size,
 #else
 struct net_buf *net_buf_alloc_len(struct net_buf_pool *pool, size_t size,
 				  s32_t timeout);
+#endif
+
+/**
+ *  @brief Allocate a new buffer from a pool but with external data pointer.
+ *
+ *  Allocate a new buffer from a pool, where the data pointer comes from the
+ *  user and not from the pool.
+ *
+ *  @param pool Which pool to allocate the buffer from.
+ *  @param data External data pointer
+ *  @param size Amount of data the pointed data buffer if able to fit.
+ *  @param timeout Affects the action taken should the pool be empty.
+ *         If K_NO_WAIT, then return immediately. If K_FOREVER, then
+ *         wait as long as necessary. Otherwise, wait up to the specified
+ *         number of milliseconds before timing out. Note that some types
+ *         of data allocators do not support blocking (such as the HEAP
+ *         type). In this case it's still possible for net_buf_alloc() to
+ *         fail (return NULL) even if it was given K_FOREVER.
+ *
+ *  @return New buffer or NULL if out of buffers.
+ */
+#if defined(CONFIG_NET_BUF_LOG)
+struct net_buf *net_buf_alloc_with_data_debug(struct net_buf_pool *pool,
+					      void *data, size_t size,
+					      s32_t timeout, const char *func,
+					      int line);
+#define net_buf_alloc_with_data(_pool, _data_, _size, _timeout)		\
+	net_buf_alloc_with_data_debug(_pool, _data_, _size, _timeout,	\
+				      __func__, __LINE__)
+#else
+struct net_buf *net_buf_alloc_with_data(struct net_buf_pool *pool,
+					void *data, size_t size,
+					s32_t timeout);
 #endif
 
 /**
