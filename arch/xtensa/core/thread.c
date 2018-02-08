@@ -12,7 +12,7 @@
 #include <kernel_structs.h>
 #include <wait_q.h>
 #include <xtensa_config.h>
-#include <nano_internal.h>
+#include <kernel_internal.h>
 
 extern void _xt_user_exit(void);
 

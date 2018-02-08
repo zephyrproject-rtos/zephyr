@@ -24,7 +24,7 @@
 #include <wait_q.h>
 #include <atomic.h>
 #include <syscall_handler.h>
-#include <nano_internal.h>
+#include <kernel_internal.h>
 #include <kswap.h>
 
 extern struct _static_thread_data _static_thread_data_list_start[];

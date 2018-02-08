@@ -16,7 +16,7 @@
 
 #include <kernel.h>
 #include <kernel_structs.h>
-#include <nano_internal.h>
+#include <kernel_internal.h>
 #include <wait_q.h>
 #include <ksched.h>
 #include <kswap.h>
