@@ -963,6 +963,28 @@ struct net_pkt *net_app_get_net_pkt(struct net_app_ctx *ctx,
 	return net_pkt_get_tx(net_ctx, timeout);
 }
 
+struct net_pkt *net_app_get_net_pkt_with_dst(struct net_app_ctx *ctx,
+					     const struct sockaddr *dst,
+					     s32_t timeout)
+{
+	struct net_context *net_ctx;
+
+	if (!ctx || !dst) {
+		return NULL;
+	}
+
+	if (!ctx->is_init) {
+		return NULL;
+	}
+
+	net_ctx = _net_app_select_net_ctx(ctx, dst);
+	if (!net_ctx) {
+		return NULL;
+	}
+
+	return net_pkt_get_tx(net_ctx, timeout);
+}
+
 struct net_buf *net_app_get_net_buf(struct net_app_ctx *ctx,
 				    struct net_pkt *pkt,
 				    s32_t timeout)
