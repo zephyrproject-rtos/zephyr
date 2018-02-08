@@ -13,7 +13,6 @@
 #include <kernel.h>
 #include <kernel_structs.h>
 #include <kernel_internal.h>
-#include <nano_internal.h>
 #include <kswap.h>
 #include <string.h>
 #include <toolchain.h>

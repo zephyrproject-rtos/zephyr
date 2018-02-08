@@ -8,7 +8,7 @@
 #include <kernel_structs.h>
 #include <spinlock.h>
 #include <kswap.h>
-#include <nano_internal.h>
+#include <kernel_internal.h>
 
 static struct k_spinlock global_spinlock;
 
