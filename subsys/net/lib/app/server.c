@@ -137,7 +137,7 @@ int net_app_listen(struct net_app_ctx *ctx)
 		ctx->ipv4.local.sa_family = AF_INET;
 		dual = true;
 
-		_net_app_set_local_addr(&ctx->ipv4.local, NULL,
+		_net_app_set_local_addr(ctx, &ctx->ipv4.local, NULL,
 					net_sin(&ctx->ipv4.local)->sin_port);
 	}
 
@@ -167,7 +167,7 @@ int net_app_listen(struct net_app_ctx *ctx)
 	if (ctx->ipv6.local.sa_family == AF_UNSPEC || dual) {
 		ctx->ipv6.local.sa_family = AF_INET6;
 
-		_net_app_set_local_addr(&ctx->ipv6.local, NULL,
+		_net_app_set_local_addr(ctx, &ctx->ipv6.local, NULL,
 				       net_sin6(&ctx->ipv6.local)->sin6_port);
 	}
 
