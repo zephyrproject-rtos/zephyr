@@ -110,29 +110,12 @@ SECTION_FUNC(TEXT, _exception_enter)
 
 	/* ESP is pointing to the ESF at this point */
 
-#if defined(CONFIG_FP_SHARING) ||  defined(CONFIG_GDB_INFO)
+#if defined(CONFIG_FP_SHARING)
 
 	movl	_kernel + _kernel_offset_to_current, %edx
 
 	/* inc exception nest count */
 	incl	_thread_offset_to_excNestCount(%edx)
-
-#ifdef CONFIG_GDB_INFO
-
-    /*
-     * Save the pointer to the stack frame (NANO_ESF *) in
-     * the current execution context if this is the outermost exception.
-     * The ESF pointer is used by debug tools to locate the volatile
-     * registers and the stack of the preempted thread.
-     */
-
-	testb	$_EXC_ACTIVE, _thread_offset_to_thread_state(%edx)
-	jne	alreadyInException
-	movl	%esp, _thread_offset_to_esf(%edx)
-
-alreadyInException:
-
-#endif /* CONFIG_GDB_INFO */
 
 	/*
 	 * Set the _EXC_ACTIVE state bit of the current thread.
@@ -144,7 +127,7 @@ alreadyInException:
 
 	orb	$_EXC_ACTIVE, _thread_offset_to_thread_state(%edx)
 
-#endif /* CONFIG_FP_SHARING || CONFIG_GDB_INFO */
+#endif /* CONFIG_FP_SHARING
 
 	/*
 	 * restore interrupt enable state, then call the handler
@@ -174,7 +157,7 @@ allDone:
 	addl	$0x4, %esp
 #endif
 
-#if defined(CONFIG_FP_SHARING) || defined(CONFIG_GDB_INFO)
+#if defined(CONFIG_FP_SHARING)
 
 	movl	_kernel + _kernel_offset_to_current, %ecx
 
@@ -204,7 +187,7 @@ allDone:
 	andb	$~_EXC_ACTIVE, _thread_offset_to_thread_state(%ecx)
 
 nestedException:
-#endif /* CONFIG_FP_SHARING || CONFIG_GDB_INFO */
+#endif /* CONFIG_FP_SHARING */
 
 	/*
 	 * Pop the non-volatile registers from the stack.
