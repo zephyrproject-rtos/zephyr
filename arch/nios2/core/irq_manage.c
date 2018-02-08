@@ -19,6 +19,7 @@
 #include <sw_isr_table.h>
 #include <logging/kernel_event_logger.h>
 #include <ksched.h>
+#include <kswap.h>
 
 void _irq_spurious(void *unused)
 {
