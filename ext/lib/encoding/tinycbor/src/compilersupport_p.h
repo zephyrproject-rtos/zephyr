@@ -41,7 +41,9 @@ extern "C" {
 #  include <assert.h>
 #endif
 #include <float.h>
+#ifndef CBOR_NO_FLOATING_TYPE
 #include <math.h>
+#endif
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -203,6 +205,7 @@ static inline bool add_check_overflow(size_t v1, size_t v2, size_t *r)
 #endif
 }
 
+#ifndef CBOR_NO_HALF_FLOAT_TYPE
 static inline unsigned short encode_half(double val)
 {
 #ifdef __F16C__
@@ -254,6 +257,8 @@ static inline double decode_half(unsigned short half)
     return half & 0x8000 ? -val : val;
 #endif
 }
+
+#endif
 
 #ifdef __cplusplus
 }

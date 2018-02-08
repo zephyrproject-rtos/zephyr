@@ -39,9 +39,9 @@
 
 #include <string.h>
 
+#include <float.h>
 #ifndef CBOR_NO_FLOATING_POINT
-#  include <float.h>
-#  include <math.h>
+#include <math.h>
 #endif
 
 
