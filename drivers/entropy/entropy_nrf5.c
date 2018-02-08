@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2018 Intellinium
  * Copyright (c) 2017 Nordic Semiconductor ASA
  * Copyright (c) 2017 Exati Tecnologia Ltda.
  *
@@ -6,6 +7,8 @@
  */
 
 #include <entropy.h>
+
+#if !defined(CONFIG_BT)
 #include <atomic.h>
 #include <nrf_rng.h>
 
@@ -100,3 +103,30 @@ DEVICE_AND_API_INIT(entropy_nrf5, CONFIG_ENTROPY_NAME,
 		    entropy_nrf5_init, &entropy_nrf5_data, NULL,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &entropy_nrf5_api_funcs);
+#else
+#include <bluetooth/crypto.h>
+
+static int entropy_nrf5_get_entropy(struct device *device, u8_t *buf, u16_t len)
+{
+	/* ATTENTION: calling this function implies that a bt init function has
+	 * been called, like bt_enable(). If not, bt_rand will crash with a
+	 * segmentation fault, as it will be internally using a uninitialized
+	 * pointer.
+	 */
+	return bt_rand(buf, len);
+}
+
+static int entropy_nrf5_init(struct device *device)
+{
+	return 0;
+}
+
+static const struct entropy_driver_api entropy_nrf5_api_funcs = {
+	.get_entropy = entropy_nrf5_get_entropy
+};
+
+DEVICE_AND_API_INIT(entropy_nrf5, CONFIG_ENTROPY_NAME,
+		    entropy_nrf5_init, NULL, NULL,
+		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    &entropy_nrf5_api_funcs);
+#endif /* CONFIG_BT */
