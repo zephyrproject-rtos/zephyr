@@ -34,4 +34,11 @@ config SPI_1
 
 endif # SPI
 
+if PWM
+
+config PWM_STM32_1
+	default y
+
+endif # PWM
+
 endif # BOARD_OLIMEXINO_STM32
