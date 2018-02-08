@@ -216,6 +216,10 @@ static void data_unref(struct net_buf *buf, u8_t *data)
 {
 	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
 
+	if (buf->flags & NET_BUF_EXTERNAL_DATA) {
+		return;
+	}
+
 	pool->alloc->cb->unref(buf, data);
 }
 
@@ -356,6 +360,37 @@ struct net_buf *net_buf_alloc_fixed(struct net_buf_pool *pool, s32_t timeout)
 	return net_buf_alloc_len(pool, fixed->data_size, timeout);
 }
 #endif
+
+#if defined(CONFIG_NET_BUF_LOG)
+struct net_buf *net_buf_alloc_with_data_debug(struct net_buf_pool *pool,
+					      void *data, size_t size,
+					      s32_t timeout, const char *func,
+					      int line)
+#else
+struct net_buf *net_buf_alloc_with_data(struct net_buf_pool *pool,
+					void *data, size_t size,
+					s32_t timeout)
+#endif
+{
+	struct net_buf *buf;
+
+#if defined(CONFIG_NET_BUF_LOG)
+	buf = net_buf_alloc_len_debug(pool, 0, timeout, func, line);
+#else
+	buf = net_buf_alloc_len(pool, 0, timeout);
+#endif
+	if (!buf) {
+		return NULL;
+	}
+
+	buf->__buf = data;
+	buf->data  = data;
+	buf->size  = size;
+	buf->len   = size;
+	buf->flags = NET_BUF_EXTERNAL_DATA;
+
+	return buf;
+}
 
 #if defined(CONFIG_NET_BUF_LOG)
 struct net_buf *net_buf_get_debug(struct k_fifo *fifo, s32_t timeout,
@@ -542,7 +577,7 @@ struct net_buf *net_buf_clone(struct net_buf *buf, s32_t timeout)
 	/* If the pool supports data referencing use that. Otherwise
 	 * we need to allocate new data and make a copy.
 	 */
-	if (pool->alloc->cb->ref) {
+	if (pool->alloc->cb->ref && !(buf->flags & NET_BUF_EXTERNAL_DATA)) {
 		clone->__buf = data_ref(buf, buf->__buf);
 		clone->data = buf->data;
 		clone->len = buf->len;
