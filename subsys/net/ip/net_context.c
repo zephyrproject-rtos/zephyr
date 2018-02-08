@@ -1203,7 +1203,6 @@ NET_CONN_CB(tcp_established)
 			/* Received FIN on FIN_WAIT1, so cancel the timer */
 			k_delayed_work_cancel(&context->tcp->fin_timer);
 			/* Active close: step to FIN_WAIT_2 */
-			k_delayed_work_cancel(&context->tcp->fin_timer);
 			net_tcp_change_state(context->tcp, NET_TCP_FIN_WAIT_2);
 		} else if (net_tcp_get_state(context->tcp)
 			   == NET_TCP_LAST_ACK) {
