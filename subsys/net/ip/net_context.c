@@ -94,7 +94,8 @@ static enum net_verdict packet_received(struct net_conn *conn,
 static void set_appdata_values(struct net_pkt *pkt, enum net_ip_protocol proto);
 
 #if defined(CONFIG_NET_TCP)
-static int send_reset(struct net_context *context, struct sockaddr *remote);
+static int send_reset(struct net_context *context, struct sockaddr *local,
+		      struct sockaddr *remote);
 
 static struct tcp_backlog_entry {
 	struct net_tcp *tcp;
@@ -112,7 +113,12 @@ static void backlog_ack_timeout(struct k_work *work)
 
 	NET_DBG("Did not receive ACK in %dms", ACK_TIMEOUT);
 
-	send_reset(backlog->tcp->context, &backlog->remote);
+	/* TODO: If net_context is bound to unspecified IPv6 address
+	 * and some port number, local address is not available.
+	 * RST packet might be invalid. Cache local address
+	 * and use it in RST message preparation.
+	 */
+	send_reset(backlog->tcp->context, NULL, &backlog->remote);
 
 	memset(backlog, 0, sizeof(struct tcp_backlog_entry));
 }
@@ -1083,12 +1089,13 @@ static int send_ack(struct net_context *context,
 }
 
 static int send_reset(struct net_context *context,
+		      struct sockaddr *local,
 		      struct sockaddr *remote)
 {
 	struct net_pkt *pkt = NULL;
 	int ret;
 
-	ret = net_tcp_prepare_reset(context->tcp, remote, &pkt);
+	ret = net_tcp_prepare_reset(context->tcp, local, remote, &pkt);
 	if (ret || !pkt) {
 		return ret;
 	}
@@ -1364,7 +1371,7 @@ NET_CONN_CB(tcp_synack_received)
 				       &context->conn_handler);
 		if (ret < 0) {
 			NET_DBG("Cannot register TCP handler (%d)", ret);
-			send_reset(context, &remote_addr);
+			send_reset(context, &local_addr, &remote_addr);
 			return NET_DROP;
 		}
 
@@ -1847,7 +1854,7 @@ conndrop:
 	net_stats_update_tcp_seg_conndrop();
 
 reset:
-	send_reset(tcp->context, &remote_addr);
+	send_reset(tcp->context, &local_addr, &remote_addr);
 
 	return NET_DROP;
 }
