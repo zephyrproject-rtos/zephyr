@@ -65,8 +65,7 @@ Install the required packages in a Fedora host system with:
    sudo dnf install git cmake ninja-build gperf ccache\
 	 doxygen dfu-util dtc python3-pip \
 	 python3-ply python3-yaml dfu-util dtc python3-pykwalify \
-         glibc-devel.i686 libstdc++-devel.i686 autoconf automake libtool \
-         gcc-c++.i686
+         glibc-devel.i686 libstdc++-devel.i686 autoconf automake libtool
 
 Install additional packages required for development with Zephyr::
 
