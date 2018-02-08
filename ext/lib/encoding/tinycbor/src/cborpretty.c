@@ -33,9 +33,11 @@
 #include "cborinternal_p.h"
 #include "utf8_p.h"
 
-#include <float.h>
 #include <inttypes.h>
+#include <float.h>
+#ifndef CBOR_NO_FLOATING_POINT
 #include <math.h>
+#endif
 #include <string.h>
 
 /**
@@ -468,12 +470,14 @@ static CborError value_to_pretty(CborStreamFunction stream, void *out, CborValue
             cbor_value_get_float(it, &f);
             val = f;
             suffix = flags & CborPrettyNumericEncodingIndicators ? "_2" : "f";
+#ifndef CBOR_NO_HALF_FLOAT_TYPE
         } else if (false) {
             uint16_t f16;
     case CborHalfFloatType:
             cbor_value_get_half_float(it, &f16);
             val = decode_half(f16);
             suffix = flags & CborPrettyNumericEncodingIndicators ? "_1" : "f16";
+#endif
         } else {
             cbor_value_get_double(it, &val);
             suffix = "";

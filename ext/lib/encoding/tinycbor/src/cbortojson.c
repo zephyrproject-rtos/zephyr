@@ -36,7 +36,9 @@
 
 #include <float.h>
 #include <inttypes.h>
+#ifndef CBOR_NO_FLOATING_POINT
 #include <math.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -601,12 +603,14 @@ static CborError value_to_json(FILE *out, CborValue *it, int flags, CborType typ
             status->flags = TypeWasNotNative;
             cbor_value_get_float(it, &f);
             val = f;
+#ifndef CBOR_NO_HALF_FLOAT_TYPE
         } else if (false) {
             uint16_t f16;
     case CborHalfFloatType:
             status->flags = TypeWasNotNative;
             cbor_value_get_half_float(it, &f16);
             val = decode_half(f16);
+#endif
         } else {
             cbor_value_get_double(it, &val);
         }
