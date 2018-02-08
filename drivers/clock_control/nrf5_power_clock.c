@@ -115,7 +115,7 @@ static int _m16src_stop(struct device *dev, clock_control_subsys_t sub_system)
 
 	if (--m16src_ref) {
 		irq_unlock(imask);
-		return 0;
+		return -EBUSY;
 	}
 
 	if (m16src_grd) {
