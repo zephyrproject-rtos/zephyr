@@ -961,32 +961,14 @@ bool net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 		valid_ack = true;
 	}
 
-	/* No need to re-send stuff we are closing down */
+	/* Restart the timer on a valid inbound ACK.  This isn't quite the
+	 * same behavior as per-packet retry timers, but is close in practice
+	 * (it starts retries one timer period after the connection
+	 * "got stuck") and avoids the need to track per-packet timers or
+	 * sent times.
+	 */
 	if (valid_ack && net_tcp_get_state(tcp) == NET_TCP_ESTABLISHED) {
-		/* Restart the timer on a valid inbound ACK.  This
-		 * isn't quite the same behavior as per-packet retry
-		 * timers, but is close in practice (it starts retries
-		 * one timer period after the connection "got stuck")
-		 * and avoids the need to track per-packet timers or
-		 * sent times.
-		 */
 		restart_timer(ctx->tcp);
-
-		/* And, if we had been retrying, mark all packets
-		 * untransmitted and then resend them.  The stalled
-		 * pipe is uncorked again.
-		 */
-		if (ctx->tcp->flags & NET_TCP_RETRYING) {
-			SYS_SLIST_FOR_EACH_CONTAINER(&ctx->tcp->sent_list, pkt,
-						     sent_list) {
-				if (net_pkt_sent(pkt)) {
-					do_ref_if_needed(ctx->tcp, pkt);
-					net_pkt_set_sent(pkt, false);
-				}
-			}
-
-			net_tcp_send_data(ctx);
-		}
 	}
 
 	return true;
