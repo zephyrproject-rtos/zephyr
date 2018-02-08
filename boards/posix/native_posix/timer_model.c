@@ -59,6 +59,9 @@ void hwtimer_cleanup(void)
 
 }
 
+/**
+ * Enable the HW timer tick interrupts with a period <period> in micoseconds
+ */
 void hwtimer_enable(u64_t period)
 {
 	tick_p = period;
@@ -137,15 +140,10 @@ void hwtimer_wake_in_time(u64_t time)
 /**
  * The kernel wants to skip the next sys_ticks tick interrupts
  * If sys_ticks == 0, the next interrupt will be raised.
- * A negative number will silence the tick interrupts effectively forever
  */
 void hwtimer_set_silent_ticks(s64_t sys_ticks)
 {
-	if (sys_ticks < 0) {
-		silent_ticks = INT64_MAX;
-	} else {
-		silent_ticks = sys_ticks;
-	}
+	silent_ticks = sys_ticks;
 }
 
 s64_t hwtimer_get_pending_silent_ticks(void)

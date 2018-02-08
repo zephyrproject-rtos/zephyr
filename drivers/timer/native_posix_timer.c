@@ -18,9 +18,10 @@
 #include "sys_clock.h"
 #include "timer_model.h"
 #include "soc.h"
+#include "posix_soc_if.h"
 
 static u64_t tick_period; /* System tick period in number of hw cycles */
-static s32_t silent_ticks;
+static s64_t silent_ticks;
 
 /**
  * Return the current HW cycle counter
@@ -31,30 +32,62 @@ u32_t _timer_cycle_get_32(void)
 	return hwm_get_time();
 }
 
-extern u64_t posix_get_hw_cycle(void);
-
 #ifdef CONFIG_TICKLESS_IDLE
 
 /*
  * Do not raise another ticker interrupt until the sys_ticks'th one
  * e.g. if sys_ticks is 10, do not raise the next 9 ones
+ *
+ * if sys_ticks is K_FOREVER (or another negative number),
+ * we will effectively silence the tick interrupts forever
  */
 void _timer_idle_enter(s32_t sys_ticks)
 {
-	silent_ticks = sys_ticks - 1;
+	if (silent_ticks > 0) { /* LCOV_EXCL_BR_LINE */
+		/* LCOV_EXCL_START */
+		posix_print_warning("native timer: Re-entering idle mode with "
+				    "%i ticks pending\n",
+				    silent_ticks);
+		_timer_idle_exit();
+		/* LCOV_EXCL_STOP */
+	}
+	if (sys_ticks < 0) {
+		silent_ticks = INT64_MAX;
+	} else if (sys_ticks > 0) {
+		silent_ticks = sys_ticks - 1;
+	} else {
+		silent_ticks = 0;
+	}
 	hwtimer_set_silent_ticks(silent_ticks);
 }
 
 /*
  * Exit from idle mode
+ *
+ * If we have been silent for a number of ticks, announce immediately to the
+ * kernel how many silent ticks have passed.
+ * If this is called due to the 1st non silent timer interrupt, sp_timer_isr()
+ * will be called right away, which will announce that last (non silent) one.
+ *
+ * Note that we do not assume this function is called before the interrupt is
+ * raised (the interrupt can handle it announcing all ticks)
  */
 void _timer_idle_exit(void)
 {
 	silent_ticks -= hwtimer_get_pending_silent_ticks();
+	if (silent_ticks > 0) {
+		_sys_idle_elapsed_ticks = silent_ticks;
+		_sys_clock_tick_announce();
+	}
+	silent_ticks = 0;
 	hwtimer_set_silent_ticks(0);
 }
 #endif
 
+/**
+ * Interrupt handler for the timer interrupt
+ * Announce to the kernel that a tick has passed
+ */
 static void sp_timer_isr(void *arg)
 {
 	ARG_UNUSED(arg);
@@ -64,14 +97,13 @@ static void sp_timer_isr(void *arg)
 }
 
 /*
- * Initialize the hwtimer and setup its interrupt
+ * Enable the hw timer, setting its tick period, and setup its interrupt
  */
 int _sys_clock_driver_init(struct device *device)
 {
 	ARG_UNUSED(device);
 
-	tick_period = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC /
-		      CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+	tick_period = sys_clock_us_per_tick;
 
 	hwtimer_enable(tick_period);
 
