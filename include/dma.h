@@ -190,6 +190,9 @@ static inline int dma_config(struct device *dev, u32_t channel,
  * @brief Enables DMA channel and starts the transfer, the channel must be
  *        configured beforehand.
  *
+ * Implementations must check the validity of the channel ID passed in and
+ * return -EINVAL if it is invalid.
+ *
  * @param dev     Pointer to the device structure for the driver instance.
  * @param channel Numeric identification of the channel where the transfer will
  *                be processed
@@ -197,7 +200,9 @@ static inline int dma_config(struct device *dev, u32_t channel,
  * @retval 0 if successful.
  * @retval Negative errno code if failure.
  */
-static inline int dma_start(struct device *dev, u32_t channel)
+__syscall int dma_start(struct device *dev, u32_t channel);
+
+static inline int _impl_dma_start(struct device *dev, u32_t channel)
 {
 	const struct dma_driver_api *api = dev->driver_api;
 
@@ -207,6 +212,9 @@ static inline int dma_start(struct device *dev, u32_t channel)
 /**
  * @brief Stops the DMA transfer and disables the channel.
  *
+ * Implementations must check the validity of the channel ID passed in and
+ * return -EINVAL if it is invalid.
+ *
  * @param dev     Pointer to the device structure for the driver instance.
  * @param channel Numeric identification of the channel where the transfer was
  *                being processed
@@ -214,7 +222,9 @@ static inline int dma_start(struct device *dev, u32_t channel)
  * @retval 0 if successful.
  * @retval Negative errno code if failure.
  */
-static inline int dma_stop(struct device *dev, u32_t channel)
+__syscall int dma_stop(struct device *dev, u32_t channel);
+
+static inline int _impl_dma_stop(struct device *dev, u32_t channel)
 {
 	const struct dma_driver_api *api = dev->driver_api;
 
