@@ -67,6 +67,11 @@
 #endif
 #endif
 
+#ifdef CONFIG_FORCE_NO_ASSERT
+#undef __ASSERT_ON
+#define __ASSERT_ON 0
+#endif
+
 #ifdef __ASSERT_ON
 #if (__ASSERT_ON < 0) || (__ASSERT_ON > 2)
 #error "Invalid __ASSERT() level: must be between 0 and 2"

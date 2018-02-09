@@ -104,6 +104,16 @@ config ASSERT_LEVEL
 	  Level 1: on + warning in every file that includes __assert.h
 	  Level 2: on + no warning
 
+config FORCE_NO_ASSERT
+	bool
+	prompt "Force-disable no assertions"
+	default n
+	help
+	  This boolean option disables Zephyr assertion testing even
+	  in circumstances (sanitycheck) where it is enabled via
+	  CFLAGS and not Kconfig.  Added solely to be able to work
+	  around compiler bugs for specific tests.
+
 config OBJECT_TRACING
 	bool
 	prompt "Kernel object tracing"
