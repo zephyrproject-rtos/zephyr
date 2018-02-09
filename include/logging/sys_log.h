@@ -37,8 +37,6 @@ extern "C" {
  */
 #if defined(CONFIG_SYS_LOG) && (SYS_LOG_LEVEL > SYS_LOG_LEVEL_OFF)
 
-#define IS_SYS_LOG_ACTIVE 1
-
 extern void (*syslog_hook)(const char *fmt, ...);
 void syslog_hook_install(void (*hook)(const char *, ...));
 
@@ -123,15 +121,6 @@ void syslog_hook_install(void (*hook)(const char *, ...));
 #endif
 
 #else
-/**
- * @def IS_SYS_LOG_ACTIVE
- *
- * @brief Specifies whether SYS_LOG is in use or not.
- *
- * @details This macro expands to 1 if SYS_LOG was activated for current .c
- * file, 0 otherwise.
- */
-#define IS_SYS_LOG_ACTIVE 0
 /**
  * @def SYS_LOG_ERR
  *
