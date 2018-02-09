@@ -46,12 +46,12 @@ SECTION_FUNC(TEXT, __pendsv)
     /* Register the context switch */
     push {lr}
     bl _sys_k_event_logger_context_switch
-#if defined(CONFIG_ARMV6_M)
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
     pop {r0}
     mov lr, r0
 #else
     pop {lr}
-#endif /* CONFIG_ARMV6_M */
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 #endif /* CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH  */
 
     /* load _kernel into r1 and current k_thread into r2 */
@@ -65,7 +65,7 @@ SECTION_FUNC(TEXT, __pendsv)
     /* save callee-saved + psp in thread */
     mrs ip, PSP
 
-#if defined(CONFIG_ARMV6_M)
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
     /* Store current r4-r7 */
     stmea r0!, {r4-r7}
     /* copy r8-r12 into r3-r7 */
@@ -76,7 +76,7 @@ SECTION_FUNC(TEXT, __pendsv)
     mov r7, ip
     /* store r8-12 */
     stmea r0!, {r3-r7}
-#elif defined(CONFIG_ARMV7_M)
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     stmia r0, {v1-v8, ip}
 #ifdef CONFIG_FP_SHARING
     add r0, r2, #_thread_offset_to_preempt_float
@@ -84,7 +84,7 @@ SECTION_FUNC(TEXT, __pendsv)
 #endif /* CONFIG_FP_SHARING */
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M */
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 
     /*
      * Prepare to clear PendSV with interrupts unlocked, but
@@ -97,14 +97,14 @@ SECTION_FUNC(TEXT, __pendsv)
     ldr v3, =_SCS_ICSR_UNPENDSV
 
     /* protect the kernel state while we play with the thread lists */
-#if defined(CONFIG_ARMV6_M)
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
     cpsid i
-#elif defined(CONFIG_ARMV7_M)
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     movs.n r0, #_EXC_IRQ_DEFAULT_PRIO
     msr BASEPRI, r0
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M */
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 
     /* _kernel is still in r1 */
 
@@ -130,7 +130,7 @@ SECTION_FUNC(TEXT, __pendsv)
     movs.n r3, #0
     str r3, [r2, #_thread_offset_to_basepri]
 
-#if defined(CONFIG_ARMV6_M)
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
     /* BASEPRI not available, previous interrupt disable state
      * maps to PRIMASK.
      *
@@ -158,7 +158,7 @@ _thread_irq_disabled:
     /* restore r4-r7, go back 9*4 bytes to the start of the stored block */
     subs r0, #36
     ldmia r0!, {r4-r7}
-#elif defined(CONFIG_ARMV7_M)
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     /* restore BASEPRI for the incoming thread */
     msr BASEPRI, r0
 
@@ -188,7 +188,7 @@ _thread_irq_disabled:
     ldmia r0, {v1-v8, ip}
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M */
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 
     msr PSP, ip
 
@@ -197,19 +197,19 @@ _thread_irq_disabled:
     push {lr}
     bl read_timer_end_of_swap
 
-#if defined(CONFIG_ARMV6_M)
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
     pop {r3}
     mov lr,r3
 #else
     pop {lr}
-#endif /* CONFIG_ARMV6_M */
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
     ldm sp!,{r0-r3} /* Load back regs ro to r4 */
 #endif /* CONFIG_EXECUTION_BENCHMARKING */
 
     /* exc return */
     bx lr
 
-#if defined(CONFIG_ARMV6_M)
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 SECTION_FUNC(TEXT, __svc)
     /* Use EXC_RETURN state to find out if stack frame is on the
      * MSP or PSP
@@ -256,7 +256,7 @@ _oops:
     blx _do_kernel_oops
     pop {pc}
 
-#elif defined(CONFIG_ARMV7_M)
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 /**
  *
  * @brief Service call handler
@@ -326,7 +326,7 @@ _oops:
 
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M */
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 
 /**
  *
@@ -370,12 +370,12 @@ SECTION_FUNC(TEXT, __swap)
 #ifdef CONFIG_EXECUTION_BENCHMARKING
     push {lr}
     bl read_timer_start_of_swap
-#if defined(CONFIG_ARMV6_M)
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
     pop {r3}
     mov lr,r3
 #else
     pop {lr}
-#endif /* CONFIG_ARMV6_M */
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 #endif /* CONFIG_EXECUTION_BENCHMARKING */
     ldr r1, =_kernel
     ldr r2, [r1, #_kernel_offset_to_current]
@@ -389,7 +389,7 @@ SECTION_FUNC(TEXT, __swap)
     ldr r1, [r1]
     str r1, [r2, #_thread_offset_to_swap_return_value]
 
-#if defined(CONFIG_ARMV6_M)
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
     /* No priority-based interrupt masking on M0/M0+,
      * pending PendSV is used instead of svc
      */
@@ -403,11 +403,11 @@ SECTION_FUNC(TEXT, __swap)
      * of a higher priority pending.
      */
     cpsie i
-#elif defined(CONFIG_ARMV7_M)
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     svc #0
 #else
 #error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M */
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 
     /* coming back from exception, r2 still holds the pointer to _current */
     ldr r0, [r2, #_thread_offset_to_swap_return_value]

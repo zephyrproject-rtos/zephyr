@@ -8,12 +8,11 @@
 #include <logging/sys_log.h>
 
 #include "spi_context.h"
-#include <device.h>
 #include <errno.h>
-#include <init.h>
-#include <misc/__assert.h>
-#include <soc.h>
+#include <device.h>
 #include <spi.h>
+#include <soc.h>
+#include <board.h>
 
 #if defined(CONFIG_SPI_LEGACY_API)
 #error "This driver does not support the SPI legacy API."
@@ -22,12 +21,9 @@
 /* Device constant configuration parameters */
 struct spi_sam0_config {
 	SercomSpi *regs;
-	u32_t ctrla;
+	u32_t pads;
 	u32_t pm_apbcmask;
 	u16_t gclk_clkctrl_id;
-	struct soc_gpio_pin pin_miso;
-	struct soc_gpio_pin pin_mosi;
-	struct soc_gpio_pin pin_sck;
 };
 
 /* Device run time data */
@@ -77,13 +73,11 @@ static int spi_sam0_configure(struct spi_config *config)
 		ctrla.bit.CPHA = 1;
 	}
 
-	/* MOSI on PAD2, SCK on PAD3 */
-	ctrla.bit.DOPO = 1;
+	ctrla.reg |= cfg->pads;
 
 	if ((config->operation & SPI_MODE_LOOP) != 0) {
-		/* Put MISO on the same pin as MOSI */
-		ctrla.bit.DIPO = 2;
-	} else {
+		/* Put MISO and MOSI on the same pad */
+		ctrla.bit.DOPO = 0;
 		ctrla.bit.DIPO = 0;
 	}
 
@@ -128,7 +122,7 @@ static void spi_sam0_shift_master(SercomSpi *regs, struct spi_sam0_data *data)
 	u8_t tx;
 	u8_t rx;
 
-	if (spi_context_tx_on(&data->ctx)) {
+	if (spi_context_tx_buf_on(&data->ctx)) {
 		tx = *(u8_t *)(data->ctx.tx_buf);
 	} else {
 		tx = 0;
@@ -145,10 +139,10 @@ static void spi_sam0_shift_master(SercomSpi *regs, struct spi_sam0_data *data)
 
 	rx = regs->DATA.reg;
 
-	if (spi_context_rx_on(&data->ctx)) {
+	if (spi_context_rx_buf_on(&data->ctx)) {
 		*data->ctx.rx_buf = rx;
-		spi_context_update_rx(&data->ctx, 1, 1);
 	}
+	spi_context_update_rx(&data->ctx, 1, 1);
 }
 
 /* Fast path that transmits a buf */
@@ -173,103 +167,109 @@ static void spi_sam0_fast_tx(SercomSpi *regs, const struct spi_buf *tx_buf)
 /* Fast path that reads into a buf */
 static void spi_sam0_fast_rx(SercomSpi *regs, struct spi_buf *rx_buf)
 {
-	u8_t *p = rx_buf->buf;
-	size_t len = rx_buf->len;
-
-	while (regs->INTFLAG.bit.RXC) {
-		(void)regs->DATA.reg;
-	}
+	u8_t *rx = rx_buf->buf;
+	int len = rx_buf->len;
 
 	if (len <= 0) {
 		return;
 	}
 
-	/*
-	 * The code below interleaves the transmit of the next byte
-	 * with the receive of the next.  The code is equivalent to:
-	 *
-	 * Transmit byte 0
-	 * Loop:
-	 * - Transmit byte n+1
-	 * - Receive byte n
-	 */
+	/* See the comment in spi_sam0_fast_txrx re: interleaving. */
 
-	/* Load the first outgoing byte */
+	/* Ensure transmit is idle */
 	while (!regs->INTFLAG.bit.DRE) {
 	}
 
+	/* Flush the receive buffer */
+	while (regs->INTFLAG.bit.RXC) {
+		(void)regs->DATA.reg;
+	}
+
+	/* Write the first byte */
 	regs->DATA.reg = 0;
+	len--;
 
 	while (len) {
-		if (len != 0) {
-			while (!regs->INTFLAG.bit.DRE) {
-			}
-
-			regs->DATA.reg = 0;
-		}
-
-		/*
-		 * Decrement len while waiting for the transfer to
-		 * complete.
-		 */
+		/* Load byte N+1 into the transmit register */
+		regs->DATA.reg = 0;
 		len--;
 
+		/* Read byte N+0 from the receive register */
 		while (!regs->INTFLAG.bit.RXC) {
 		}
 
-		*p++ = regs->DATA.reg;
+		*rx++ = regs->DATA.reg;
 	}
 
-	/* Note that all transmits are complete and the RX buf is empty */
+	/* Read the final incoming byte */
+	while (!regs->INTFLAG.bit.RXC) {
+	}
+
+	*rx = regs->DATA.reg;
 }
 
 /* Fast path that writes and reads bufs of the same length */
 static void spi_sam0_fast_txrx(SercomSpi *regs, const struct spi_buf *tx_buf,
 			       struct spi_buf *rx_buf)
 {
-	const u8_t *psrc = tx_buf->buf;
-	u8_t *p = rx_buf->buf;
+	const u8_t *tx = tx_buf->buf;
+	const u8_t *txend = tx_buf->buf + tx_buf->len;
+	u8_t *rx = rx_buf->buf;
 	size_t len = rx_buf->len;
-
-	while (regs->INTFLAG.bit.RXC) {
-		(void)regs->DATA.reg;
-	}
 
 	if (len <= 0) {
 		return;
 	}
 
-	/* See the comment in spi_sam0_fast_rx re: interleaving. */
+	/*
+	 * The code below interleaves the transmit writes with the
+	 * receive reads to keep the bus fully utilised.  The code is
+	 * equivalent to:
+	 *
+	 * Transmit byte 0
+	 * Loop:
+	 * - Transmit byte n+1
+	 * - Receive byte n
+	 * Receive the final byte
+	 */
 
-	/* Load the first outgoing byte */
+	/* Ensure transmit is idle */
 	while (!regs->INTFLAG.bit.DRE) {
 	}
 
-	regs->DATA.reg = *psrc++;
+	/* Flush the receive buffer */
+	while (regs->INTFLAG.bit.RXC) {
+		(void)regs->DATA.reg;
+	}
 
-	while (len) {
-		if (len != 0) {
-			while (!regs->INTFLAG.bit.DRE) {
-			}
+	/* Write the first byte */
+	regs->DATA.reg = *tx++;
 
-			regs->DATA.reg = *psrc++;
-		}
+	while (tx != txend) {
+		/* Load byte N+1 into the transmit register.  TX is
+		 * single buffered and we have at most one byte in
+		 * flight so skip the DRE check.
+		 */
+		regs->DATA.reg = *tx++;
 
-		len--;
-
+		/* Read byte N+0 from the receive register */
 		while (!regs->INTFLAG.bit.RXC) {
 		}
 
-		*p++ = regs->DATA.reg;
+		*rx++ = regs->DATA.reg;
 	}
 
-	/* Note that all transmits are complete and the RX buf is empty */
+	/* Read the final incoming byte */
+	while (!regs->INTFLAG.bit.RXC) {
+	}
+
+	*rx = regs->DATA.reg;
 }
 
 /* Finish any ongoing writes and drop any remaining read data */
 static void spi_sam0_finish(SercomSpi *regs)
 {
-	while (!regs->INTFLAG.bit.TXC) {
+	while (!regs->INTFLAG.bit.DRE) {
 	}
 
 	while (regs->INTFLAG.bit.RXC) {
@@ -287,7 +287,13 @@ static void spi_sam0_fast_transceive(struct spi_config *config,
 	SercomSpi *regs = cfg->regs;
 
 	while (tx_count != 0 && rx_count != 0) {
-		spi_sam0_fast_txrx(regs, tx_bufs, rx_bufs);
+		if (tx_bufs->buf == NULL) {
+			spi_sam0_fast_rx(regs, rx_bufs);
+		} else if (rx_bufs->buf == NULL) {
+			spi_sam0_fast_tx(regs, tx_bufs);
+		} else {
+			spi_sam0_fast_txrx(regs, tx_bufs, rx_bufs);
+		}
 		tx_bufs++;
 		tx_count--;
 		rx_bufs++;
@@ -350,10 +356,10 @@ static int spi_sam0_transceive(struct spi_config *config,
 	spi_context_cs_configure(&data->ctx);
 	spi_context_cs_control(&data->ctx, true);
 
-	/* This driver special case for the common send only, receive
+	/* This driver special cases the common send only, receive
 	 * only, and transmit then receive operations.	This special
 	 * casing is 4x faster than the spi_context() routines
-	 * and also allows the transmit and receive to be interleaved.
+	 * and allows the transmit and receive to be interleaved.
 	 */
 	if (spi_sam0_is_regular(tx_bufs, tx_count, rx_bufs, rx_count)) {
 		spi_sam0_fast_transceive(config, tx_bufs, tx_count, rx_bufs,
@@ -373,6 +379,17 @@ done:
 	spi_context_release(&data->ctx, err);
 	return err;
 }
+
+#ifdef CONFIG_POLL
+static int spi_sam0_transceive_async(struct spi_config *config,
+				     const struct spi_buf *tx_bufs,
+				     size_t tx_count, struct spi_buf *rx_bufs,
+				     size_t rx_count,
+				     struct k_poll_signal *async)
+{
+	return -ENOTSUP;
+}
+#endif
 
 static int spi_sam0_release(struct spi_config *config)
 {
@@ -396,11 +413,6 @@ static int spi_sam0_init(struct device *dev)
 	/* Enable SERCOM clock in PM */
 	PM->APBCMASK.reg |= cfg->pm_apbcmask;
 
-	/* Connect pins to the peripheral */
-	soc_gpio_configure(&cfg->pin_mosi);
-	soc_gpio_configure(&cfg->pin_miso);
-	soc_gpio_configure(&cfg->pin_sck);
-
 	/* Disable all SPI interrupts */
 	regs->INTENCLR.reg = SERCOM_SPI_INTENCLR_MASK;
 	wait_synchronization(regs);
@@ -416,6 +428,9 @@ static int spi_sam0_init(struct device *dev)
 
 static const struct spi_driver_api spi_sam0_driver_api = {
 	.transceive = spi_sam0_transceive,
+#ifdef CONFIG_POLL
+	.transceive_async = spi_sam0_transceive_async,
+#endif
 	.release = spi_sam0_release,
 };
 
@@ -424,11 +439,7 @@ static const struct spi_driver_api spi_sam0_driver_api = {
 		.regs = &SERCOM##n->SPI,                                     \
 		.pm_apbcmask = PM_APBCMASK_SERCOM##n,                        \
 		.gclk_clkctrl_id = GCLK_CLKCTRL_ID_SERCOM##n##_CORE,         \
-		.ctrla = SERCOM_USART_CTRLA_RXPO(3) |                        \
-			 SERCOM_USART_CTRLA_TXPO(1),                         \
-		.pin_miso = PIN_SPI_SAM0_SERCOM##n##_MISO,                   \
-		.pin_mosi = PIN_SPI_SAM0_SERCOM##n##_MOSI,                   \
-		.pin_sck = PIN_SPI_SAM0_SERCOM##n##_SCK,                     \
+		.pads = CONFIG_SPI_SAM0_SERCOM##n##_PADS                     \
 	}
 
 #define SPI_SAM0_DEVICE_INIT(n)                                              \

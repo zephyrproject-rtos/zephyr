@@ -17,6 +17,7 @@
 #include "irq_ctrl.h"
 #include "posix_board_if.h"
 #include "posix_soc_if.h"
+#include "posix_arch_internal.h"
 
 
 static u64_t device_time; /* The actual time as known by the device */
@@ -66,37 +67,29 @@ void hwm_signal_end_handler(int sig)
 void hwm_set_sig_handler(void)
 {
 	struct sigaction act;
-	int e;
 
 	act.sa_handler = hwm_signal_end_handler;
-	e = sigemptyset(&act.sa_mask);
-	if (e) {
-		posix_print_error_and_exit("Error on sigemptyset()\n");
-	}
+	_SAFE_CALL(sigemptyset(&act.sa_mask));
 
 	act.sa_flags = SA_RESETHAND;
 
-	e = sigaction(SIGTERM, &act, NULL);
-	if (e) {
-		posix_print_error_and_exit("Error on sigaction()\n");
-	}
-	e = sigaction(SIGINT, &act, NULL);
-	if (e) {
-		posix_print_error_and_exit("Error on sigaction()\n");
-	}
+	_SAFE_CALL(sigaction(SIGTERM, &act, NULL));
+	_SAFE_CALL(sigaction(SIGINT, &act, NULL));
 }
 
 
 static void hwm_sleep_until_next_timer(void)
 {
-	if (next_timer_time >= device_time) {
+	if (next_timer_time >= device_time) { /* LCOV_EXCL_BR_LINE */
 		device_time = next_timer_time;
 	} else {
+		/* LCOV_EXCL_START */
 		posix_print_warning("next_timer_time corrupted (%"PRIu64"<= %"
 				PRIu64", timer idx=%i)\n",
 				next_timer_time,
 				device_time,
 				next_timer_index);
+		/* LCOV_EXCL_STOP */
 	}
 
 	if (signaled_end || (device_time >= end_of_time)) {
@@ -134,7 +127,7 @@ void hwm_main_loop(void)
 	while (1) {
 		hwm_sleep_until_next_timer();
 
-		switch (next_timer_index) {
+		switch (next_timer_index) { /* LCOV_EXCL_BR_LINE */
 		case HWTIMER:
 			hwtimer_timer_reached();
 			break;
@@ -142,9 +135,11 @@ void hwm_main_loop(void)
 			hw_irq_ctrl_timer_triggered();
 			break;
 		default:
+			/* LCOV_EXCL_START */
 			posix_print_error_and_exit(
 					"next_timer_index corrupted\n");
 			break;
+			/* LCOV_EXCL_STOP */
 		}
 
 		hwm_find_next_timer();
@@ -167,6 +162,10 @@ u64_t hwm_get_time(void)
 	return device_time;
 }
 
+u64_t posix_get_hw_cycle(void)
+{
+	return hwm_get_time();
+}
 
 /**
  * Function to initialize the HW models

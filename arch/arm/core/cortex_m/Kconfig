@@ -42,6 +42,13 @@ config CPU_CORTEX_M_HAS_BASEPRI
 	help
 	  This option signifies the CPU has the BASEPRI register.
 
+config CPU_CORTEX_M_HAS_VTOR
+	bool
+	# Omit prompt to signify "hidden" option
+	default n
+	help
+	  This option signifies the CPU has the VTOR register.
+
 config CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS
 	bool
 	# Omit prompt to signify "hidden" option
@@ -58,58 +65,94 @@ config CPU_CORTEX_M0_HAS_VECTOR_TABLE_REMAP
 	  This option signifies the Cortex-M0 has some mechanisms that can map
 	  the vector table to SRAM
 
-config ARMV6_M
+config ARMV6_M_ARMV8_M_BASELINE
 	bool
 	# Omit prompt to signify "hidden" option
 	default n
 	select ATOMIC_OPERATIONS_C
 	select ISA_THUMB2
 	help
-	  This option signifies the use of an ARMv6-M processor implementation.
+	  This option signifies the use of an ARMv6-M processor
+	  implementation, or the use of an ARMv8-M processor
+	  supporting the Baseline implementation.
 
-config ARMV7_M
+	  Notes:
+	  - A Processing Element (PE) without the Main Extension
+	  is also referred to as a Baseline Implementation. A
+	  Baseline implementation has a subset of the instructions,
+	  registers, and features, of a Mainline implementation.
+	  - ARMv6-M compatibility is provided by all ARMv8-M
+	  implementations.
+
+config ARMV7_M_ARMV8_M_MAINLINE
 	bool
 	# Omit prompt to signify "hidden" option
 	default n
 	select ATOMIC_OPERATIONS_BUILTIN
 	select ISA_THUMB2
 	select CPU_CORTEX_M_HAS_BASEPRI
+	select CPU_CORTEX_M_HAS_VTOR
 	select CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS
 	help
-	  This option signifies the use of an ARMv7-M processor implementation.
+	  This option signifies the use of an ARMv7-M processor
+	  implementation, or the use of an ARMv8-M processor
+	  implementation supporting the Main Extension.
+
+	  Notes:
+	  - A Processing Element (PE) with the Main Extension is also
+	  referred to as a Mainline Implementation.
+	  - ARMv7-M compatibility requires the Main Extension.
+
+	  From https://developer.arm.com/products/architecture/m-profile:
+	  The Main Extension provides backwards compatibility
+	  with ARMv7-M.
 
 config CPU_CORTEX_M0
 	bool
 	# Omit prompt to signify "hidden" option
-	select ARMV6_M
+	select ARMV6_M_ARMV8_M_BASELINE
 	help
 	  This option signifies the use of a Cortex-M0 CPU
 
 config CPU_CORTEX_M0PLUS
 	bool
 	# Omit prompt to signify "hidden" option
-	select ARMV6_M
+	select ARMV6_M_ARMV8_M_BASELINE
 	help
 	  This option signifies the use of a Cortex-M0+ CPU
 
 config CPU_CORTEX_M3
 	bool
 	# Omit prompt to signify "hidden" option
-	select ARMV7_M
+	select ARMV7_M_ARMV8_M_MAINLINE
 	help
 	  This option signifies the use of a Cortex-M3 CPU
 
 config CPU_CORTEX_M4
 	bool
 	# Omit prompt to signify "hidden" option
-	select ARMV7_M
+	select ARMV7_M_ARMV8_M_MAINLINE
 	help
 	  This option signifies the use of a Cortex-M4 CPU
+
+config CPU_CORTEX_M23
+	bool
+	# Omit prompt to signify "hidden" option
+	select ARMV6_M_ARMV8_M_BASELINE
+	help
+	  This option signifies the use of a Cortex-M23 CPU
+
+config CPU_CORTEX_M33
+	bool
+	# Omit prompt to signify "hidden" option
+	select ARMV7_M_ARMV8_M_MAINLINE
+	help
+	  This option signifies the use of a Cortex-M33 CPU
 
 config CPU_CORTEX_M7
 	bool
 	# Omit prompt to signify "hidden" option
-	select ARMV7_M
+	select ARMV7_M_ARMV8_M_MAINLINE
 	default n
 	help
 	  This option signifies the use of a Cortex-M7 CPU
@@ -168,8 +211,8 @@ config XIP
 	default y
 endmenu
 
-menu "ARM Cortex-M0/M0+/M3/M4/M7 options"
-	depends on ARMV6_M || ARMV7_M
+menu "ARM Cortex-M0/M0+/M3/M4/M7/M23/M33 options"
+    depends on ARMV6_M_ARMV8_M_BASELINE || ARMV7_M_ARMV8_M_MAINLINE
 
 config GEN_ISR_TABLES
 	default y
@@ -192,12 +235,14 @@ config ZERO_LATENCY_IRQS
 
 config SW_VECTOR_RELAY
 	bool
-	prompt "Enable Cortex-M0 Vector Table soft relay"
+	prompt "Enable ARMv6-M Vector Table soft relay"
 	default n
 	default y if BOOTLOADER_MCUBOOT
-	depends on CPU_CORTEX_M0 && !CPU_CORTEX_M0_HAS_VECTOR_TABLE_REMAP
+	depends on ARMV6_M && !(CPU_CORTEX_M0_HAS_VECTOR_TABLE_REMAP || CPU_CORTEX_M_HAS_VTOR)
 	help
-	  Add Cortex-M0 Vector Table relay handler and relay vector table, to
-	  relay interrupts based on a vector table pointer.
-
+	  Add ARMv6-M Vector Table relay handler and relay vector table, to
+	  relay interrupts based on a vector table pointer. This is only
+	  required for Cortex-M0 with no hardware vector table relocation
+	  mechanisms or for Cortex-M0+ with no VTOR and no other hardware
+	  relocation table mechanisms.
 endmenu

@@ -195,7 +195,7 @@ config	NET_RPL_MIN_HOP_RANK_INC
 config	NET_RPL_INIT_LINK_METRIC
 	int "Initial link metric"
 	depends on NET_RPL
-	default 2
+	default 1
 	help
 	Initial metric attributed to a link when the ETX is unknown.
 

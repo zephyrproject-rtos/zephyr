@@ -43,6 +43,7 @@
 #include <string.h>
 
 #include "posix_core.h"
+#include "posix_arch_internal.h"
 #include "posix_soc_if.h"
 #include "kernel_internal.h"
 #include "kernel_structs.h"
@@ -57,7 +58,6 @@
 #else
 #define PC_DEBUG(...)
 #endif
-
 
 #define PC_ALLOC_CHUNK_SIZE 64
 #define PC_REUSE_ABORTED_ENTRIES 0
@@ -165,9 +165,7 @@ static void posix_let_run(int next_allowed_th)
 	 * Note that as we hold the mutex, they are going to be blocked until
 	 * we reach our own posix_wait_until_allowed() while loop
 	 */
-	if (pthread_cond_broadcast(&cond_threads)) {
-		posix_print_error_and_exit(ERPREFIX"pthread_cond_signal()\n");
-	}
+	_SAFE_CALL(pthread_cond_broadcast(&cond_threads));
 }
 
 
@@ -176,9 +174,7 @@ static void posix_preexit_cleanup(void)
 	/*
 	 * Release the mutex so the next allowed thread can run
 	 */
-	if (pthread_mutex_unlock(&mtx_threads)) {
-		posix_print_error_and_exit(ERPREFIX"pthread_mutex_unlock()\n");
-	}
+	_SAFE_CALL(pthread_mutex_unlock(&mtx_threads));
 
 	/* We detach ourselves so nobody needs to join to us */
 	pthread_detach(pthread_self());
@@ -249,9 +245,7 @@ static void posix_cleanup_handler(void *arg)
 #endif
 
 
-	if (pthread_mutex_unlock(&mtx_threads)) {
-		posix_print_error_and_exit(ERPREFIX"pthread_mutex_unlock()\n");
-	}
+	_SAFE_CALL(pthread_mutex_unlock(&mtx_threads));
 
 	/* We detach ourselves so nobody needs to join to us */
 	pthread_detach(pthread_self());
@@ -276,17 +270,17 @@ static void *posix_thread_starter(void *arg)
 	 * We block until all other running threads reach the while loop
 	 * in posix_wait_until_allowed() and they release the mutex
 	 */
-	if (pthread_mutex_lock(&mtx_threads)) {
-		posix_print_error_and_exit(ERPREFIX"pthread_mutex_lock()\n");
-	}
+	_SAFE_CALL(pthread_mutex_lock(&mtx_threads));
 
 	/*
 	 * The program may have been finished before this thread ever got to run
 	 */
+	/* LCOV_EXCL_START */ /* See Note1 */
 	if (!threads_table) {
 		posix_cleanup_handler(arg);
 		pthread_exit(NULL);
 	}
+	/* LCOV_EXCL_STOP */
 
 	pthread_cleanup_push(posix_cleanup_handler, arg);
 
@@ -309,6 +303,7 @@ static void *posix_thread_starter(void *arg)
 	 * We only reach this point if the thread actually returns which should
 	 * not happen. But we handle it gracefully just in case
 	 */
+	/* LCOV_EXCL_START */
 	posix_print_trace(PREFIX"Thread [%i] %i [%lu] ended!?!\n",
 			threads_table[ptr->thread_idx].thead_cnt,
 			ptr->thread_idx,
@@ -321,6 +316,7 @@ static void *posix_thread_starter(void *arg)
 	pthread_cleanup_pop(1);
 
 	return NULL;
+	/* LCOV_EXCL_STOP */
 }
 
 /**
@@ -345,8 +341,8 @@ static int ttable_get_empty_slot(void)
 	threads_table = realloc(threads_table,
 				(threads_table_size + PC_ALLOC_CHUNK_SIZE)
 				* sizeof(struct threads_table_el));
-	if (threads_table == NULL) {
-		posix_print_error_and_exit(NO_MEM_ERR);
+	if (threads_table == NULL) { /* LCOV_EXCL_BR_LINE */
+		posix_print_error_and_exit(NO_MEM_ERR); /* LCOV_EXCL_LINE */
 	}
 
 	/* Clear new piece of table */
@@ -376,13 +372,10 @@ void posix_new_thread(posix_thread_status_t *ptr)
 	threads_table[t_slot].thead_cnt = thread_create_count++;
 	ptr->thread_idx = t_slot;
 
-	if (pthread_create(&threads_table[t_slot].thread,
-			   NULL,
-			   posix_thread_starter,
-			   (void *)ptr)) {
-
-		posix_print_error_and_exit(ERPREFIX"pthread_create()\n");
-	}
+	_SAFE_CALL(pthread_create(&threads_table[t_slot].thread,
+				  NULL,
+				  posix_thread_starter,
+				  (void *)ptr));
 
 	PC_DEBUG("created thread [%i] %i [%lu]\n",
 		threads_table[t_slot].thead_cnt,
@@ -403,16 +396,14 @@ void posix_init_multithreading(void)
 
 	threads_table = calloc(PC_ALLOC_CHUNK_SIZE,
 				sizeof(struct threads_table_el));
-	if (threads_table == NULL) {
-		posix_print_error_and_exit(NO_MEM_ERR);
+	if (threads_table == NULL) { /* LCOV_EXCL_BR_LINE */
+		posix_print_error_and_exit(NO_MEM_ERR); /* LCOV_EXCL_LINE */
 	}
 
 	threads_table_size = PC_ALLOC_CHUNK_SIZE;
 
 
-	if (pthread_mutex_lock(&mtx_threads)) {
-		posix_print_error_and_exit(ERPREFIX"pthread_mutex_lock()\n");
-	}
+	_SAFE_CALL(pthread_mutex_lock(&mtx_threads));
 }
 
 /**
@@ -432,8 +423,8 @@ void posix_init_multithreading(void)
 void posix_core_clean_up(void)
 {
 
-	if (!threads_table) {
-		return;
+	if (!threads_table) { /* LCOV_EXCL_BR_LINE */
+		return; /* LCOV_EXCL_LINE */
 	}
 
 	terminate = true;
@@ -443,11 +434,13 @@ void posix_core_clean_up(void)
 			continue;
 		}
 
+		/* LCOV_EXCL_START */
 		if (pthread_cancel(threads_table[i].thread)) {
 			posix_print_warning(
 				PREFIX"cleanup: could not stop thread %i\n",
 				i);
 		}
+		/* LCOV_EXCL_STOP */
 	}
 
 	free(threads_table);
@@ -457,9 +450,9 @@ void posix_core_clean_up(void)
 
 void posix_abort_thread(int thread_idx)
 {
-	if (threads_table[thread_idx].state != USED) {
+	if (threads_table[thread_idx].state != USED) { /* LCOV_EXCL_BR_LINE */
 		/* The thread may have been already aborted before */
-		return;
+		return; /* LCOV_EXCL_LINE */
 	}
 
 	PC_DEBUG("Aborting not scheduled thread [%i] %i\n",
@@ -501,10 +494,10 @@ void _impl_k_thread_abort(k_tid_t thread)
 	_thread_monitor_exit(thread);
 
 	if (_current == thread) {
-		if (tstatus->aborted == 0) {
+		if (tstatus->aborted == 0) { /* LCOV_EXCL_BR_LINE */
 			tstatus->aborted = 1;
 		} else {
-			posix_print_warning(
+			posix_print_warning(/* LCOV_EXCL_LINE */
 				PREFIX"The kernel is trying to abort and swap "
 				"out of an already aborted thread %i. This "
 				"should NOT have happened\n",
@@ -518,7 +511,7 @@ void _impl_k_thread_abort(k_tid_t thread)
 			__func__);
 
 		_Swap(key);
-		CODE_UNREACHABLE;
+		CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 	}
 
 	if (tstatus->aborted == 0) {
@@ -542,3 +535,46 @@ void _impl_k_thread_abort(k_tid_t thread)
 }
 #endif
 
+
+/*
+ * Notes about coverage:
+ *
+ * Note1:
+ *
+ * This condition will only be triggered in very unlikely cases
+ * (once every few full regression runs).
+ * It is therefore excluded from the coverage report to avoid confusing
+ * developers.
+ *
+ * Background: This arch creates a pthread as soon as the Zephyr kernel creates
+ * a Zephyr thread. A pthread creation is an asynchronous process handled by the
+ * host kernel.
+ *
+ * This architecture normally keeps only 1 thread executing at a time.
+ * But part of the pre-initialization during creation of a new thread
+ * and some cleanup at the tail of the thread termination are executed
+ * in parallel to other threads.
+ * That is, the execution of those code paths is a bit indeterministic.
+ *
+ * Only when the Zephyr kernel attempts to swap to a new thread does this
+ * architecture need to wait until its pthread is ready and initialized
+ * (has reached posix_wait_until_allowed())
+ *
+ * In some cases (tests) threads are created which are never actually needed
+ * (typically the idle thread). That means the test may finish before this
+ * thread's underlying pthread has reached posix_wait_until_allowed().
+ *
+ * In this unlikely cases the initialization or cleanup of the thread follows
+ * non-typical code paths.
+ * This code paths are there to ensure things work always, no matter
+ * the load of the host. Without them, very rare & mysterious segfault crashes
+ * would occur.
+ * But as they are very atypical and only triggered with some host loads,
+ * they will be covered in the coverage reports only rarely.
+ *
+ * Note2:
+ *
+ * Some other code will never or only very rarely trigger and is therefore
+ * excluded with LCOV_EXCL_LINE
+ *
+ */

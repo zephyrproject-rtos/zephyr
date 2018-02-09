@@ -75,6 +75,19 @@ struct spi_cs_control spi_cs = {
 	.delay = 0,
 };
 
+#elif defined(CONFIG_BOARD_ARDUINO_ZERO)
+
+#define SPI_DRV_NAME CONFIG_SPI_4_NAME
+#define SPI_SLAVE 0
+#define MIN_FREQ 500000
+
+#define CS_CTRL_GPIO_DRV_NAME CONFIG_GPIO_SAM0_PORTA_LABEL
+
+struct spi_cs_control spi_cs = {
+	.gpio_pin = 3,
+	.delay = 0,
+};
+
 #else
 #undef SPI_CS
 #define SPI_CS NULL

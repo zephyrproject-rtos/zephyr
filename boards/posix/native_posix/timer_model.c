@@ -25,8 +25,8 @@ u64_t hw_timer_timer;
 u64_t hw_timer_tick_timer;
 u64_t hw_timer_awake_timer;
 
-static u64_t tick_p = 10000; /* period of the ticker */
-static unsigned int silent_ticks;
+static u64_t tick_p; /* Period of the ticker */
+static s64_t silent_ticks;
 
 #if (CONFIG_NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME)
 #include <time.h>
@@ -35,16 +35,17 @@ static u64_t Boot_time;
 static struct timespec tv;
 #endif
 
+extern u64_t posix_get_hw_cycle(void);
+
 static void hwtimer_update_timer(void)
 {
 	hw_timer_timer = min(hw_timer_tick_timer, hw_timer_awake_timer);
 }
 
-
 void hwtimer_init(void)
 {
 	silent_ticks = 0;
-	hw_timer_tick_timer = tick_p;
+	hw_timer_tick_timer = NEVER;
 	hw_timer_awake_timer = NEVER;
 	hwtimer_update_timer();
 #if (CONFIG_NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME)
@@ -53,10 +54,20 @@ void hwtimer_init(void)
 #endif
 }
 
-
 void hwtimer_cleanup(void)
 {
 
+}
+
+/**
+ * Enable the HW timer tick interrupts with a period <period> in micoseconds
+ */
+void hwtimer_enable(u64_t period)
+{
+	tick_p = period;
+	hw_timer_tick_timer = hwm_get_time() + tick_p;
+	hwtimer_update_timer();
+	hwm_find_next_timer();
 }
 
 static void hwtimer_tick_timer_reached(void)
@@ -90,7 +101,6 @@ static void hwtimer_tick_timer_reached(void)
 	}
 }
 
-
 static void hwtimer_awake_timer_reached(void)
 {
 	hw_timer_awake_timer = NEVER;
@@ -111,7 +121,6 @@ void hwtimer_timer_reached(void)
 	}
 }
 
-
 /**
  * The timer HW will awake the CPU (without an interrupt) at least when <time>
  * comes (it may awake it earlier)
@@ -128,10 +137,16 @@ void hwtimer_wake_in_time(u64_t time)
 	}
 }
 
-
-void hwtimer_set_silent_ticks(int sys_ticks)
+/**
+ * The kernel wants to skip the next sys_ticks tick interrupts
+ * If sys_ticks == 0, the next interrupt will be raised.
+ */
+void hwtimer_set_silent_ticks(s64_t sys_ticks)
 {
 	silent_ticks = sys_ticks;
 }
 
-
+s64_t hwtimer_get_pending_silent_ticks(void)
+{
+	return silent_ticks;
+}

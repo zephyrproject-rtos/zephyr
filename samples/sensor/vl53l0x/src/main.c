@@ -7,12 +7,13 @@
 #include <zephyr.h>
 #include <device.h>
 #include <sensor.h>
+#include <stdio.h>
 #include <misc/printk.h>
 
 void main(void)
 {
 	struct device *dev = device_get_binding(CONFIG_VL53L0X_NAME);
-	struct sensor_value prox_value;
+	struct sensor_value value;
 	int ret;
 
 	if (dev == NULL) {
@@ -27,13 +28,13 @@ void main(void)
 			return;
 		}
 
-		ret = sensor_channel_get(dev, SENSOR_CHAN_PROX, &prox_value);
-		printk("prox is %d\n", prox_value.val1);
+		ret = sensor_channel_get(dev, SENSOR_CHAN_PROX, &value);
+		printk("prox is %d\n", value.val1);
 
 		ret = sensor_channel_get(dev,
 					 SENSOR_CHAN_DISTANCE,
-					 &prox_value);
-		printk("distance is %d\n", prox_value.val1);
+					 &value);
+		printf("distance is %.3fm\n", sensor_value_to_double(&value));
 
 		k_sleep(1000);
 	}

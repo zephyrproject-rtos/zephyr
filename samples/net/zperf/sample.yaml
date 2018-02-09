@@ -6,20 +6,15 @@ tests:
     harness: net
     platform_whitelist: qemu_x86
     tags: samples net
-  test_netusb:
+  test_netusb_ecm:
     harness: net
     extra_args: CONF_FILE="prj_netusb.conf"
-    extra_configs:
-      - CONFIG_USB_DEVICE_VID=0xDEAD
-      - CONFIG_USB_DEVICE_PID=0xBEEF
     platform_whitelist: quark_se_c1000_devboard 96b_carbon
     tags: samples usb net
   test_netusb_rndis:
-    build_only: true
+    harness: net
     extra_args: CONF_FILE="prj_netusb.conf"
     extra_configs:
-      - CONFIG_USB_DEVICE_VID=0xDEAD
-      - CONFIG_USB_DEVICE_PID=0xBEEF
       - CONFIG_USB_DEVICE_NETWORK_ECM=n
       - CONFIG_USB_DEVICE_NETWORK_RNDIS=y
       - CONFIG_NET_PKT_RX_COUNT=32

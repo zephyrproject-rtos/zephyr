@@ -2,7 +2,8 @@
  * \file oid.h
  *
  * \brief Object Identifier (OID) database
- *
+ */
+/*
  *  Copyright (C) 2006-2015, ARM Limited, All Rights Reserved
  *  SPDX-License-Identifier: Apache-2.0
  *

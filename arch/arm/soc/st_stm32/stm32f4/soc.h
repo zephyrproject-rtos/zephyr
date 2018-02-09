@@ -56,11 +56,6 @@
 #include <stm32f4xx_ll_iwdg.h>
 #endif
 
-/* For IMG_MANAGER */
-#if defined(CONFIG_SOC_FLASH_STM32)
-#define FLASH_DRIVER_NAME	FLASH_DEV_NAME
-#endif
-
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32F4_SOC_H_ */

@@ -139,24 +139,37 @@ int http_prepare_and_send(struct http_ctx *ctx,
 
 		ret = net_pkt_append(ctx->pending, payload_len, payload,
 				     ctx->timeout);
+		if (!ret || ret > payload_len) {
+			ret = -EINVAL;
+			goto error;
+		}
 
 		added = ret;
 
-		if (added < payload_len) {
-			/* Not all data could be added, send what we have now
-			 * and allocate new stuff to be sent.
-			 */
-			ret = http_send_flush(ctx, user_send_data);
-			if (ret < 0) {
-				return ret;
-			}
-
-			payload_len -= added;
+		payload_len -= added;
+		if (payload_len) {
 			payload += added;
 		}
-	} while (added < payload_len);
+
+		/* Not all data could be added, send what we have now
+		 * and allocate new stuff to be sent.
+		 */
+		ret = http_send_flush(ctx, user_send_data);
+		if (ret < 0) {
+			goto error;
+		}
+
+	} while (payload_len);
 
 	return 0;
+
+error:
+	if (ctx->pending) {
+		net_pkt_unref(ctx->pending);
+		ctx->pending = NULL;
+	}
+
+	return ret;
 }
 
 int http_send_flush(struct http_ctx *ctx, void *user_send_data)

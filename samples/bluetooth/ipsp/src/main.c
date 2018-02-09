@@ -22,8 +22,8 @@
 #include <net/udp.h>
 
 /* admin-local, dynamically allocated multicast address */
-#define MCAST_IP6ADDR { { { 0xff, 0x84, 0, 0, 0, 0, 0, 0, \
-			    0, 0, 0, 0, 0, 0, 0, 0x2 } } }
+#define MCAST_IP6ADDR { { { 0xff, 0x02, 0, 0, 0, 0, 0, 0, \
+			    0, 0, 0, 0, 0, 0, 0, 0x1 } } }
 
 struct in6_addr in6addr_mcast = MCAST_IP6ADDR;
 

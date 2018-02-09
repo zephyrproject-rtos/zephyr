@@ -24,7 +24,22 @@
 #include <arch/arm/cortex_m/cmsis.h>
 #include <string.h>
 
-#ifdef CONFIG_ARMV6_M
+#ifdef CONFIG_CPU_CORTEX_M_HAS_VTOR
+
+#ifdef CONFIG_XIP
+#define VECTOR_ADDRESS ((uintptr_t)&_image_rom_start + \
+			CONFIG_TEXT_SECTION_OFFSET)
+#else
+#define VECTOR_ADDRESS CONFIG_SRAM_BASE_ADDRESS
+#endif
+static inline void relocate_vector_table(void)
+{
+	SCB->VTOR = VECTOR_ADDRESS & SCB_VTOR_TBLOFF_Msk;
+	__DSB();
+	__ISB();
+}
+
+#else
 
 #if defined(CONFIG_SW_VECTOR_RELAY)
 _GENERIC_SECTION(.vt_pointer_section) void *_vector_table_pointer;
@@ -42,22 +57,7 @@ void __weak relocate_vector_table(void)
 #endif
 }
 
-#elif defined(CONFIG_ARMV7_M)
-#ifdef CONFIG_XIP
-#define VECTOR_ADDRESS ((uintptr_t)&_image_rom_start + \
-			CONFIG_TEXT_SECTION_OFFSET)
-#else
-#define VECTOR_ADDRESS CONFIG_SRAM_BASE_ADDRESS
-#endif
-static inline void relocate_vector_table(void)
-{
-	SCB->VTOR = VECTOR_ADDRESS & SCB_VTOR_TBLOFF_Msk;
-	__DSB();
-	__ISB();
-}
-#else
-#error Unknown ARM architecture
-#endif /* CONFIG_ARMv6_M */
+#endif /* CONFIG_CPU_CORTEX_M_HAS_VTOR */
 
 #ifdef CONFIG_FLOAT
 static inline void enable_floating_point(void)

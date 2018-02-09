@@ -35,17 +35,17 @@ void fcb_test_append_fill(void)
 		if (rc == FCB_ERR_NOSPACE) {
 			break;
 		}
-		if (loc.fe_area == &test_fcb_area[0]) {
+		if (loc.fe_sector == &test_fcb_sector[0]) {
 			elem_cnts[0]++;
-		} else if (loc.fe_area == &test_fcb_area[1]) {
+		} else if (loc.fe_sector == &test_fcb_sector[1]) {
 			elem_cnts[1]++;
 		} else {
 			zassert_true(0,
 				     "unexpected flash area of appended loc");
 		}
 
-		rc = flash_area_write(loc.fe_area, loc.fe_data_off, test_data,
-		  sizeof(test_data));
+		rc = flash_area_write(fcb->fap, FCB_ENTRY_FA_DATA_OFF(loc),
+				      test_data, sizeof(test_data));
 		zassert_true(rc == 0, "flash_area_write call failure");
 
 		rc = fcb_append_finish(fcb, &loc);
@@ -65,10 +65,10 @@ void fcb_test_append_fill(void)
 		     "fcb_walk: elements count read different than expected");
 
 	memset(&aa_separate_cnts, 0, sizeof(aa_separate_cnts));
-	rc = fcb_walk(fcb, &test_fcb_area[0], fcb_test_cnt_elems_cb,
+	rc = fcb_walk(fcb, &test_fcb_sector[0], fcb_test_cnt_elems_cb,
 	  &aa_separate);
 	zassert_true(rc == 0, "fcb_walk call failure");
-	rc = fcb_walk(fcb, &test_fcb_area[1], fcb_test_cnt_elems_cb,
+	rc = fcb_walk(fcb, &test_fcb_sector[1], fcb_test_cnt_elems_cb,
 	  &aa_separate);
 	zassert_true(rc == 0, "fcb_walk call failure");
 	zassert_true(aa_separate.elem_cnts[0] == elem_cnts[0],

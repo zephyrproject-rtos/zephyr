@@ -1,0 +1,34 @@
+---
+title: Atmel SAM0 PINMUX
+id: atmel,sam0-pinmux
+version: 0.1
+
+description: >
+    This binding gives a base representation of the Atmel SAM0 PINMUX
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "atmel,sam0-pinmux"
+
+    reg:
+      type: int
+      description: mmio register space
+      generation: define
+      category: required
+
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+
+cell_string: PINMUX
+
+"#cells":
+  - pin
+  - function
+
+...

@@ -65,6 +65,8 @@
 #endif /* MBEDTLS_SELF_TEST */
 #endif /* MBEDTLS_PLATFORM_C */
 
+#if !defined(MBEDTLS_CMAC_ALT) || defined(MBEDTLS_SELF_TEST)
+
 /* Implementation that should never be optimized out by the compiler */
 static void mbedtls_zeroize( void *v, size_t n ) {
     volatile unsigned char *p = (unsigned char*)v; while( n-- ) *p++ = 0;
@@ -164,7 +166,9 @@ exit:
 
     return( ret );
 }
+#endif /* !defined(MBEDTLS_CMAC_ALT) || defined(MBEDTLS_SELF_TEST) */
 
+#if !defined(MBEDTLS_CMAC_ALT)
 static void cmac_xor_block( unsigned char *output, const unsigned char *input1,
                             const unsigned char *input2,
                             const size_t block_size )
@@ -467,6 +471,8 @@ exit:
     return( ret );
 }
 #endif /* MBEDTLS_AES_C */
+
+#endif /* !MBEDTLS_CMAC_ALT */
 
 #if defined(MBEDTLS_SELF_TEST)
 /*

@@ -9,9 +9,13 @@
 #define HAL_RADIO_NS2US_ROUND(ns) ((ns + 500)/1000)
 
 #define EVENT_TIMER NRF_TIMER0
+
 #if defined(CONFIG_BOARD_NRFXX_NWTSIM)
 #define EVENT_TIMER_NBR 0
-#endif
+#endif /* CONFIG_BOARD_NRFXX_NWTSIM */
+
+/* EVENTS_TIMER capture register used for sampling TIMER time-stamps. */
+#define HAL_EVENT_TIMER_SAMPLE_CC_OFFSET 3
 
 #if defined(CONFIG_SOC_SERIES_NRF51X)
 #include "radio_nrf51.h"

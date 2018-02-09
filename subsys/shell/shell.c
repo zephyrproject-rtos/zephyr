@@ -25,6 +25,9 @@
 #ifdef CONFIG_TELNET_CONSOLE
 #include <console/telnet_console.h>
 #endif
+#ifdef CONFIG_NATIVE_POSIX_CONSOLE
+#include <console/native_posix_console.h>
+#endif
 
 #include <shell/shell.h>
 
@@ -48,6 +51,7 @@ extern struct shell_cmd __shell_cmd_end[];
 static const char *prompt;
 static char default_module_prompt[PROMPT_MAX_LEN];
 static struct shell_module *default_module;
+static bool no_promt;
 
 #define STACKSIZE CONFIG_CONSOLE_SHELL_STACKSIZE
 static K_THREAD_STACK_DEFINE(stack, STACKSIZE);
@@ -335,6 +339,16 @@ static int cmd_exit(int argc, char *argv[])
 	return 0;
 }
 
+static int cmd_noprompt(int argc, char *argv[])
+{
+	no_promt = true;
+	return 0;
+}
+
+#define SHELL_CMD_NOPROMPT "noprompt"
+SHELL_REGISTER_COMMAND(SHELL_CMD_NOPROMPT, cmd_noprompt,
+		       "Disable shell prompt");
+
 static const struct shell_cmd *get_internal(const char *command)
 {
 	static const struct shell_cmd internal_commands[] = {
@@ -346,7 +360,6 @@ static const struct shell_cmd *get_internal(const char *command)
 
 	return get_cmd(internal_commands, command);
 }
-
 
 int shell_exec(char *line)
 {
@@ -421,7 +434,13 @@ static void shell(void *p1, void *p2, void *p3)
 	while (1) {
 		struct console_input *cmd;
 
-		printk("%s", get_prompt());
+		if (!no_promt) {
+			printk("%s", get_prompt());
+#if defined(CONFIG_NATIVE_POSIX_CONSOLE)
+			/* The native printk driver is line buffered */
+			posix_flush_stdout();
+#endif
+		}
 
 		cmd = k_fifo_get(&cmds_queue, K_FOREVER);
 
@@ -594,6 +613,9 @@ void shell_init(const char *str)
 #endif
 #ifdef CONFIG_TELNET_CONSOLE
 	telnet_register_input(&avail_queue, &cmds_queue, completion);
+#endif
+#ifdef CONFIG_NATIVE_POSIX_STDIN_CONSOLE
+	native_stdin_register_input(&avail_queue, &cmds_queue, completion);
 #endif
 }
 

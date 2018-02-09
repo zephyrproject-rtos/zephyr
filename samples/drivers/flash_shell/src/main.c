@@ -17,11 +17,11 @@
 #define THIS_MODULE_NAME "flash"
 
 /*
- * When soc.h provides a FLASH_DRIVER_NAME, we use it here. Otherwise,
+ * When FLASH_DEV_NAME is available, we use it here. Otherwise,
  * the device can be set at runtime with the set_device command.
  */
-#ifndef FLASH_DRIVER_NAME
-#define FLASH_DRIVER_NAME ""
+#ifndef FLASH_DEV_NAME
+#define FLASH_DEV_NAME ""
 #endif
 
 /* Command usage info. */
@@ -578,9 +578,9 @@ static struct shell_cmd commands[] = {
 
 void main(void)
 {
-	flash_device = device_get_binding(FLASH_DRIVER_NAME);
+	flash_device = device_get_binding(FLASH_DEV_NAME);
 	if (flash_device) {
-		printk("Found flash device %s.\n", FLASH_DRIVER_NAME);
+		printk("Found flash device %s.\n", FLASH_DEV_NAME);
 		printk("Flash I/O commands can be run.\n");
 	} else {
 		printk("**No flash device found!**\n");

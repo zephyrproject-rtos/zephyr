@@ -36,7 +36,7 @@ config ADXL362_SPI_DEV_SLAVE
 choice
 	prompt "Accelerometer range setting"
 	depends on ADXL362
-	default BMI160_ACCEL_RANGE_RUNTIME
+	default ADXL362_ACCEL_RANGE_RUNTIME
 
 config ADXL362_ACCEL_RANGE_RUNTIME
 	bool "Set at runtime."

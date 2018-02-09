@@ -32,6 +32,7 @@
 #include "posix_soc.h"
 #include "posix_board_if.h"
 #include "posix_core.h"
+#include "posix_arch_internal.h"
 #include "kernel_internal.h"
 
 #define POSIX_ARCH_SOC_DEBUG_PRINTS 0
@@ -74,19 +75,14 @@ int posix_is_cpu_running(void)
  */
 static void posix_change_cpu_state_and_wait(bool halted)
 {
-	if (pthread_mutex_lock(&mtx_cpu)) {
-		posix_print_error_and_exit(ERPREFIX"pthread_mutex_lock()\n");
-	}
+	_SAFE_CALL(pthread_mutex_lock(&mtx_cpu));
 
 	PS_DEBUG("Going to halted = %d\n", halted);
 
 	cpu_halted = halted;
 
 	/* We let the other side know the CPU has changed state */
-	if (pthread_cond_broadcast(&cond_cpu)) {
-		posix_print_error_and_exit(
-				ERPREFIX"pthread_cond_broadcast()\n");
-	}
+	_SAFE_CALL(pthread_cond_broadcast(&cond_cpu));
 
 	/* We wait until the CPU state has been changed. Either:
 	 * we just awoke it, and therefore wait until the CPU has run until
@@ -103,9 +99,7 @@ static void posix_change_cpu_state_and_wait(bool halted)
 
 	PS_DEBUG("Awaken after halted = %d\n", halted);
 
-	if (pthread_mutex_unlock(&mtx_cpu)) {
-		posix_print_error_and_exit(ERPREFIX"pthread_mutex_unlock()\n");
-	}
+	_SAFE_CALL(pthread_mutex_unlock(&mtx_cpu));
 }
 
 /**
@@ -174,12 +168,8 @@ void posix_atomic_halt_cpu(unsigned int imask)
 static void *zephyr_wrapper(void *a)
 {
 	/* Ensure posix_boot_cpu has reached the cond loop */
-	if (pthread_mutex_lock(&mtx_cpu)) {
-		posix_print_error_and_exit(ERPREFIX"pthread_mutex_lock()\n");
-	}
-	if (pthread_mutex_unlock(&mtx_cpu)) {
-		posix_print_error_and_exit(ERPREFIX"pthread_mutex_unlock()\n");
-	}
+	_SAFE_CALL(pthread_mutex_lock(&mtx_cpu));
+	_SAFE_CALL(pthread_mutex_unlock(&mtx_cpu));
 
 #if (POSIX_ARCH_SOC_DEBUG_PRINTS)
 		pthread_t zephyr_thread = pthread_self();
@@ -203,26 +193,20 @@ static void *zephyr_wrapper(void *a)
  */
 void posix_boot_cpu(void)
 {
-	if (pthread_mutex_lock(&mtx_cpu)) {
-		posix_print_error_and_exit(ERPREFIX"pthread_mutex_lock()\n");
-	}
+	_SAFE_CALL(pthread_mutex_lock(&mtx_cpu));
 
 	cpu_halted = false;
 
 	pthread_t zephyr_thread;
 
 	/* Create a thread for Zephyr init: */
-	if (pthread_create(&zephyr_thread, NULL, zephyr_wrapper, NULL)) {
-		posix_print_error_and_exit(ERPREFIX"pthread_create\n");
-	}
+	_SAFE_CALL(pthread_create(&zephyr_thread, NULL, zephyr_wrapper, NULL));
 
 	/* And we wait until Zephyr has run til completion (has gone to idle) */
 	while (cpu_halted == false) {
 		pthread_cond_wait(&cond_cpu, &mtx_cpu);
 	}
-	if (pthread_mutex_unlock(&mtx_cpu)) {
-		posix_print_error_and_exit(ERPREFIX"pthread_mutex_unlock()\n");
-	}
+	_SAFE_CALL(pthread_mutex_unlock(&mtx_cpu));
 
 	if (soc_terminate) {
 		posix_exit(0);
@@ -236,6 +220,7 @@ void posix_boot_cpu(void)
  */
 void posix_soc_clean_up(void)
 {
+	/* LCOV_EXCL_START */ /* See Note1 */
 	/*
 	 * If we are being called from a HW thread we can cleanup
 	 *
@@ -250,21 +235,13 @@ void posix_soc_clean_up(void)
 
 		soc_terminate = true;
 
-		if (pthread_mutex_lock(&mtx_cpu)) {
-			posix_print_error_and_exit(
-					ERPREFIX"pthread_mutex_lock()\n");
-		}
+		_SAFE_CALL(pthread_mutex_lock(&mtx_cpu));
 
 		cpu_halted = true;
 
-		if (pthread_cond_broadcast(&cond_cpu)) {
-			posix_print_error_and_exit(
-					ERPREFIX"pthread_cond_broadcast()\n");
-		}
-		if (pthread_mutex_unlock(&mtx_cpu)) {
-			posix_print_error_and_exit(
-					ERPREFIX"pthread_mutex_unlock()\n");
-		}
+		_SAFE_CALL(pthread_cond_broadcast(&cond_cpu));
+		_SAFE_CALL(pthread_mutex_unlock(&mtx_cpu));
+
 		while (1) {
 			sleep(1);
 			/* This SW thread will wait until being cancelled from
@@ -273,5 +250,16 @@ void posix_soc_clean_up(void)
 			 */
 		}
 	}
+	/* LCOV_EXCL_STOP */
 }
 
+/*
+ * Notes about coverage:
+ *
+ * Note1: When the application is closed due to a SIGTERM, the path in this
+ * function will depend on when that signal was received. Typically during a
+ * regression run, both paths will be covered. But in some cases they won't.
+ * Therefore and to avoid confusing developers with spurious coverage changes
+ * we exclude this function from the coverage check
+ *
+ */

@@ -27,10 +27,10 @@ K_MEM_POOL_DEFINE(mpool, BYTES_TO_WRITE, PIPE_LEN, 1, BYTES_TO_WRITE);
 static unsigned char __aligned(4) data[] = "abcd1234$%^&PIPE";
 /**TESTPOINT: init via K_PIPE_DEFINE*/
 K_PIPE_DEFINE(kpipe, PIPE_LEN, 4);
-static struct k_pipe pipe;
+__kernel struct k_pipe pipe;
 
-static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
-struct k_thread tdata;
+K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
+__kernel struct k_thread tdata;
 K_SEM_DEFINE(end_sema, 0, 1);
 
 static void tpipe_put(struct k_pipe *ppipe)
@@ -103,7 +103,8 @@ static void tpipe_thread_thread(struct k_pipe *ppipe)
 	/**TESTPOINT: thread-thread data passing via pipe*/
 	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
 				      tThread_entry, ppipe, NULL, NULL,
-				      K_PRIO_PREEMPT(0), 0, 0);
+				      K_PRIO_PREEMPT(0),
+				      K_INHERIT_PERMS | K_USER, 0);
 	tpipe_put(ppipe);
 	k_sem_take(&end_sema, K_FOREVER);
 
@@ -118,6 +119,7 @@ static void tpipe_thread_thread(struct k_pipe *ppipe)
 void test_pipe_thread2thread(void)
 {
 	/**TESTPOINT: test k_pipe_init pipe*/
+
 	k_pipe_init(&pipe, data, PIPE_LEN);
 	tpipe_thread_thread(&pipe);
 

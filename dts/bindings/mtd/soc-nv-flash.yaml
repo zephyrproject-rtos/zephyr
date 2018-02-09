@@ -13,6 +13,12 @@ properties:
       description: compatible strings
       constraint: "soc-nv-flash"
 
+    label:
+      type: string
+      category: optional
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+
     erase-block-size:
      type: int
      description: address alignment required by flash erase operations

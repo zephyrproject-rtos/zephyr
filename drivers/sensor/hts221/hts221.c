@@ -43,9 +43,9 @@ static int hts221_channel_get(struct device *dev,
 			   (drv_data->h1_t0_out - drv_data->h0_t0_out) +
 			   drv_data->h0_rh_x2;
 
-		/* convert humidity x2 to mili-percent */
-		val->val1 = conv_val * 500;
-		val->val2 = 0;
+		/* convert humidity x2 to percent */
+		val->val1 = conv_val / 2;
+		val->val2 = (conv_val % 2) * 500000;
 	}
 
 	return 0;
@@ -157,12 +157,11 @@ int hts221_init(struct device *dev)
 	}
 #endif
 
-	dev->driver_api = &hts221_driver_api;
-
 	return 0;
 }
 
 struct hts221_data hts221_driver;
 
-DEVICE_INIT(hts221, CONFIG_HTS221_NAME, hts221_init, &hts221_driver,
-	    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY);
+DEVICE_AND_API_INIT(hts221, CONFIG_HTS221_NAME, hts221_init, &hts221_driver,
+		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
+		    &hts221_driver_api);

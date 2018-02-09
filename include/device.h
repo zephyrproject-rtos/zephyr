@@ -96,24 +96,24 @@ static const int _INIT_LEVEL_APPLICATION = 1;
  */
 
 #ifndef CONFIG_DEVICE_POWER_MANAGEMENT
-#define DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info, \
-			    level, prio, api) \
-	\
-	static struct device_config _CONCAT(__config_, dev_name) __used \
-	__attribute__((__section__(".devconfig.init"))) = { \
-		.name = drv_name, .init = (init_fn), \
-		.config_info = (cfg_info) \
-	}; \
-	static struct device _CONCAT(__device_, dev_name) __used \
+#define DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info,  \
+			    level, prio, api)				  \
+									  \
+	static struct device_config _CONCAT(__config_, dev_name) __used	  \
+	__attribute__((__section__(".devconfig.init"))) = {		  \
+		.name = drv_name, .init = (init_fn),			  \
+		.config_info = (cfg_info)				  \
+	};								  \
+	static struct device _CONCAT(__device_, dev_name) __used	  \
 	__attribute__((__section__(".init_" #level STRINGIFY(prio)))) = { \
-		 .config = &_CONCAT(__config_, dev_name), \
-		 .driver_api = api, \
-		 .driver_data = data \
+		.config = &_CONCAT(__config_, dev_name),		  \
+		.driver_api = api,					  \
+		.driver_data = data					  \
 	}
 
 
-#define DEVICE_DEFINE(dev_name, drv_name, init_fn, pm_control_fn, \
-		      data, cfg_info, level, prio, api) \
+#define DEVICE_DEFINE(dev_name, drv_name, init_fn, pm_control_fn,	 \
+		      data, cfg_info, level, prio, api)			 \
 	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info, \
 			    level, prio, api)
 #else
@@ -128,20 +128,20 @@ static const int _INIT_LEVEL_APPLICATION = 1;
  * @param pm_control_fn Pointer to device_pm_control function.
  * Can be empty function (device_pm_control_nop) if not implemented.
  */
-#define DEVICE_DEFINE(dev_name, drv_name, init_fn, pm_control_fn, \
-		      data, cfg_info, level, prio, api) \
-	\
-	static struct device_config _CONCAT(__config_, dev_name) __used \
-	__attribute__((__section__(".devconfig.init"))) = { \
-		.name = drv_name, .init = (init_fn), \
-		.device_pm_control = (pm_control_fn), \
-		.config_info = (cfg_info) \
-	}; \
-	static struct device _CONCAT(__device_, dev_name) __used \
+#define DEVICE_DEFINE(dev_name, drv_name, init_fn, pm_control_fn,	  \
+		      data, cfg_info, level, prio, api)			  \
+									  \
+	static struct device_config _CONCAT(__config_, dev_name) __used	  \
+	__attribute__((__section__(".devconfig.init"))) = {		  \
+		.name = drv_name, .init = (init_fn),			  \
+		.device_pm_control = (pm_control_fn),			  \
+		.config_info = (cfg_info)				  \
+	};								  \
+	static struct device _CONCAT(__device_, dev_name) __used	  \
 	__attribute__((__section__(".init_" #level STRINGIFY(prio)))) = { \
-		 .config = &_CONCAT(__config_, dev_name), \
-		 .driver_api = api, \
-		 .driver_data = data \
+		.config = &_CONCAT(__config_, dev_name),		  \
+		.driver_api = api,					  \
+		.driver_data = data					  \
 	}
 /*
  * Use the default device_pm_control for devices that do not call the
@@ -149,14 +149,14 @@ static const int _INIT_LEVEL_APPLICATION = 1;
  * need not check device_pm_control != NULL.
  */
 #define DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info, \
-			    level, prio, api) \
-	DEVICE_DEFINE(dev_name, drv_name, init_fn, \
-		      device_pm_control_nop, data, cfg_info, level, \
+			    level, prio, api)				 \
+	DEVICE_DEFINE(dev_name, drv_name, init_fn,			 \
+		      device_pm_control_nop, data, cfg_info, level,	 \
 		      prio, api)
 #endif
 
 #define DEVICE_INIT(dev_name, drv_name, init_fn, data, cfg_info, level, prio) \
-	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info, \
+	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info,      \
 			    level, prio, NULL)
 
 /**
@@ -190,78 +190,25 @@ static const int _INIT_LEVEL_APPLICATION = 1;
  */
 #define DEVICE_GET(name) (&DEVICE_NAME_GET(name))
 
- /** @def DEVICE_DECLARE
-  *
-  * @brief Declare a static device object
-  *
-  * This macro can be used at the top-level to declare a device, such
-  * that DEVICE_GET() may be used before the full declaration in
-  * DEVICE_INIT().
-  *
-  * This is often useful when configuring interrupts statically in a
-  * device's init or per-instance config function, as the init function
-  * itself is required by DEVICE_INIT() and use of DEVICE_GET()
-  * inside it creates a circular dependency.
-  *
-  * @param name Device name
-  */
+/** @def DEVICE_DECLARE
+ *
+ * @brief Declare a static device object
+ *
+ * This macro can be used at the top-level to declare a device, such
+ * that DEVICE_GET() may be used before the full declaration in
+ * DEVICE_INIT().
+ *
+ * This is often useful when configuring interrupts statically in a
+ * device's init or per-instance config function, as the init function
+ * itself is required by DEVICE_INIT() and use of DEVICE_GET()
+ * inside it creates a circular dependency.
+ *
+ * @param name Device name
+ */
 #define DEVICE_DECLARE(name) static struct device DEVICE_NAME_GET(name)
 
 struct device;
 
-#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
-/**
- * @brief Device Power Management APIs
- * @defgroup device_power_management_api Device Power Management APIs
- * @ingroup power_management_api
- * @{
- */
-
-/**
- * @}
- */
-
-/** @def DEVICE_PM_ACTIVE_STATE
- *
- * @brief device is in ACTIVE power state
- *
- * @details Normal operation of the device. All device context is retained.
- */
-#define DEVICE_PM_ACTIVE_STATE		1
-
-/** @def DEVICE_PM_LOW_POWER_STATE
- *
- * @brief device is in LOW power state
- *
- * @details Device context is preserved by the HW and need not be
- * restored by the driver.
- */
-#define DEVICE_PM_LOW_POWER_STATE	2
-
-/** @def DEVICE_PM_SUSPEND_STATE
- *
- * @brief device is in SUSPEND power state
- *
- * @details Most device context is lost by the hardware.
- * Device drivers must save and restore or reinitialize any context
- * lost by the hardware
- */
-#define DEVICE_PM_SUSPEND_STATE		3
-
-/** @def DEVICE_PM_OFF_STATE
- *
- * @brief device is in OFF power state
- *
- * @details - Power has been fully removed from the device.
- * The device context is lost when this state is entered, so the OS
- * software will reinitialize the device when powering it back on
- */
-#define DEVICE_PM_OFF_STATE		4
-
-/* Constants defining support device power commands */
-#define DEVICE_PM_SET_POWER_STATE	1
-#define DEVICE_PM_GET_POWER_STATE	2
-#endif
 
 /**
  * @brief Static device information (In ROM) Per driver instance
@@ -271,11 +218,11 @@ struct device;
  * @param config_info address of driver instance config information
  */
 struct device_config {
-	char	*name;
+	char    *name;
 	int (*init)(struct device *device);
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	int (*device_pm_control)(struct device *device, u32_t command,
-			      void *context);
+				 void *context);
 #endif
 	const void *config_info;
 };
@@ -316,6 +263,51 @@ struct device *device_get_binding(const char *name);
  * @{
  */
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+
+/** @def DEVICE_PM_ACTIVE_STATE
+ *
+ * @brief device is in ACTIVE power state
+ *
+ * @details Normal operation of the device. All device context is retained.
+ */
+#define DEVICE_PM_ACTIVE_STATE          1
+
+/** @def DEVICE_PM_LOW_POWER_STATE
+ *
+ * @brief device is in LOW power state
+ *
+ * @details Device context is preserved by the HW and need not be
+ * restored by the driver.
+ */
+#define DEVICE_PM_LOW_POWER_STATE       2
+
+/** @def DEVICE_PM_SUSPEND_STATE
+ *
+ * @brief device is in SUSPEND power state
+ *
+ * @details Most device context is lost by the hardware.
+ * Device drivers must save and restore or reinitialize any context
+ * lost by the hardware
+ */
+#define DEVICE_PM_SUSPEND_STATE         3
+
+/** @def DEVICE_PM_OFF_STATE
+ *
+ * @brief device is in OFF power state
+ *
+ * @details - Power has been fully removed from the device.
+ * The device context is lost when this state is entered, so the OS
+ * software will reinitialize the device when powering it back on
+ */
+#define DEVICE_PM_OFF_STATE             4
+
+/* Constants defining support device power commands */
+#define DEVICE_PM_SET_POWER_STATE       1
+#define DEVICE_PM_GET_POWER_STATE       2
+
+#endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
+
 /**
  * @brief Indicate that the device is in the middle of a transaction
  *
@@ -353,7 +345,7 @@ void device_busy_clear(struct device *busy_dev);
  * @retval 0 Always returns 0
  */
 int device_pm_control_nop(struct device *unused_device,
-		       u32_t unused_ctrl_command, void *unused_context);
+			  u32_t unused_ctrl_command, void *unused_context);
 /**
  * @brief Call the set power state function of a device
  *
@@ -370,7 +362,8 @@ static inline int device_set_power_state(struct device *device,
 					 u32_t device_power_state)
 {
 	return device->config->device_pm_control(device,
-			DEVICE_PM_SET_POWER_STATE, &device_power_state);
+						 DEVICE_PM_SET_POWER_STATE,
+						 &device_power_state);
 }
 
 /**
@@ -390,7 +383,8 @@ static inline int device_get_power_state(struct device *device,
 					 u32_t *device_power_state)
 {
 	return device->config->device_pm_control(device,
-				DEVICE_PM_GET_POWER_STATE, device_power_state);
+						 DEVICE_PM_GET_POWER_STATE,
+						 device_power_state);
 }
 
 /**

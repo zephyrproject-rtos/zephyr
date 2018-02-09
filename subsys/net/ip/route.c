@@ -307,6 +307,9 @@ struct net_route_entry *net_route_add(struct net_if *iface,
 	struct net_nbr *nbr, *nbr_nexthop, *tmp;
 	struct net_route_nexthop *nexthop_route;
 	struct net_route_entry *route;
+#if defined(CONFIG_NET_MGMT_EVENT_INFO)
+       struct net_event_ipv6_route info;
+#endif
 
 	NET_ASSERT(addr);
 	NET_ASSERT(iface);
@@ -411,7 +414,17 @@ struct net_route_entry *net_route_add(struct net_if *iface,
 
 	net_route_info("Added", route, addr);
 
+#if defined(CONFIG_NET_MGMT_EVENT_INFO)
+	net_ipaddr_copy(&info.addr, addr);
+	net_ipaddr_copy(&info.nexthop, nexthop);
+	info.prefix_len = prefix_len;
+
+	net_mgmt_event_notify_with_info(NET_EVENT_IPV6_ROUTE_ADD,
+					iface, (void *) &info,
+					sizeof(struct net_event_ipv6_route));
+#else
 	net_mgmt_event_notify(NET_EVENT_IPV6_ROUTE_ADD, iface);
+#endif
 
 	return route;
 }
@@ -420,10 +433,26 @@ int net_route_del(struct net_route_entry *route)
 {
 	struct net_nbr *nbr;
 	struct net_route_nexthop *nexthop_route;
+#if defined(CONFIG_NET_MGMT_EVENT_INFO)
+       struct net_event_ipv6_route info;
+#endif
 
 	if (!route) {
 		return -EINVAL;
 	}
+
+#if defined(CONFIG_NET_MGMT_EVENT_INFO)
+	net_ipaddr_copy(&info.addr, &route->addr);
+	info.prefix_len = route->prefix_len;
+	net_ipaddr_copy(&info.nexthop,
+			net_route_get_nexthop(route));
+
+	net_mgmt_event_notify_with_info(NET_EVENT_IPV6_ROUTE_DEL,
+					route->iface, (void *) &info,
+					sizeof(struct net_event_ipv6_route));
+#else
+	net_mgmt_event_notify(NET_EVENT_IPV6_ROUTE_DEL, route->iface);
+#endif
 
 	sys_slist_find_and_remove(&routes, &route->node);
 
@@ -433,8 +462,6 @@ int net_route_del(struct net_route_entry *route)
 	}
 
 	net_route_info("Deleted", route, &route->addr);
-
-	net_mgmt_event_notify(NET_EVENT_IPV6_ROUTE_DEL, nbr->iface);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&route->nexthop, nexthop_route, node) {
 		if (!nexthop_route->nbr) {
@@ -737,9 +764,9 @@ int net_route_packet(struct net_pkt *pkt, struct in6_addr *nexthop)
 	struct net_linkaddr_storage *lladdr;
 	struct net_nbr *nbr;
 
-	nbr = net_ipv6_nbr_lookup(net_pkt_iface(pkt), nexthop);
+	nbr = net_ipv6_nbr_lookup(NULL, nexthop);
 	if (!nbr) {
-		NET_DBG("Cannot find %s neighbor.",
+		NET_DBG("Cannot find %s neighbor",
 			net_sprint_ipv6_addr(nexthop));
 		return -ENOENT;
 	}
@@ -776,6 +803,8 @@ int net_route_packet(struct net_pkt *pkt, struct in6_addr *nexthop)
 	net_pkt_ll_dst(pkt)->addr = lladdr->addr;
 	net_pkt_ll_dst(pkt)->type = lladdr->type;
 	net_pkt_ll_dst(pkt)->len = lladdr->len;
+
+	net_pkt_set_iface(pkt, nbr->iface);
 
 	return net_send_data(pkt);
 }

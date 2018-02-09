@@ -57,7 +57,7 @@ u32_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 	struct radio_adv_data *radio_adv_data;
 	struct pdu_adv *pdu;
 
-	if (radio_adv_is_enabled()) {
+	if (ll_adv_is_enabled()) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
@@ -135,18 +135,17 @@ u32_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 	pdu->rx_addr = 0;
 	if (pdu->type == PDU_ADV_TYPE_DIRECT_IND) {
 		pdu->rx_addr = direct_addr_type;
-		memcpy(&pdu->payload.direct_ind.tgt_addr[0], direct_addr,
-		       BDADDR_SIZE);
-		pdu->len = sizeof(struct pdu_adv_payload_direct_ind);
+		memcpy(&pdu->direct_ind.tgt_addr[0], direct_addr, BDADDR_SIZE);
+		pdu->len = sizeof(struct pdu_adv_direct_ind);
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	} else if (pdu->type == PDU_ADV_TYPE_EXT_IND) {
-		struct pdu_adv_payload_com_ext_adv *p;
+		struct pdu_adv_com_ext_adv *p;
 		struct ext_adv_hdr *h;
 		u8_t *ptr;
 		u8_t len;
 
-		p = (void *)&pdu->payload.adv_ext_ind;
+		p = (void *)&pdu->adv_ext_ind;
 		h = (void *)p->ext_hdr_adi_adv_data;
 		ptr = (u8_t *)h + sizeof(*h);
 
@@ -182,14 +181,14 @@ u32_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 
 		/* Calc primary PDU len */
 		len = ptr - (u8_t *)p;
-		if (len > (offsetof(struct pdu_adv_payload_com_ext_adv,
+		if (len > (offsetof(struct pdu_adv_com_ext_adv,
 				    ext_hdr_adi_adv_data) + sizeof(*h))) {
 			p->ext_hdr_len = len -
-				offsetof(struct pdu_adv_payload_com_ext_adv,
+				offsetof(struct pdu_adv_com_ext_adv,
 					 ext_hdr_adi_adv_data);
 			pdu->len = len;
 		} else {
-			pdu->len = offsetof(struct pdu_adv_payload_com_ext_adv,
+			pdu->len = offsetof(struct pdu_adv_com_ext_adv,
 					    ext_hdr_adi_adv_data);
 		}
 
@@ -288,9 +287,8 @@ void ll_adv_data_set(u8_t len, u8_t const *const data)
 
 	pdu->tx_addr = prev->tx_addr;
 	pdu->rx_addr = prev->rx_addr;
-	memcpy(&pdu->payload.adv_ind.addr[0],
-	       &prev->payload.adv_ind.addr[0], BDADDR_SIZE);
-	memcpy(&pdu->payload.adv_ind.data[0], data, len);
+	memcpy(&pdu->adv_ind.addr[0], &prev->adv_ind.addr[0], BDADDR_SIZE);
+	memcpy(&pdu->adv_ind.data[0], data, len);
 	pdu->len = BDADDR_SIZE + len;
 
 	/* commit the update so controller picks it. */
@@ -325,9 +323,8 @@ void ll_scan_data_set(u8_t len, u8_t const *const data)
 	pdu->tx_addr = prev->tx_addr;
 	pdu->rx_addr = 0;
 	pdu->len = BDADDR_SIZE + len;
-	memcpy(&pdu->payload.scan_rsp.addr[0],
-	       &prev->payload.scan_rsp.addr[0], BDADDR_SIZE);
-	memcpy(&pdu->payload.scan_rsp.data[0], data, len);
+	memcpy(&pdu->scan_rsp.addr[0], &prev->scan_rsp.addr[0], BDADDR_SIZE);
+	memcpy(&pdu->scan_rsp.data[0], data, len);
 
 	/* commit the update so controller picks it. */
 	radio_scan_data->last = last;
@@ -344,7 +341,7 @@ u32_t ll_adv_enable(u8_t enable)
 
 	if (!enable) {
 		return radio_adv_disable();
-	} else if (radio_adv_is_enabled()) {
+	} else if (ll_adv_is_enabled()) {
 		return 0;
 	}
 
@@ -367,11 +364,11 @@ u32_t ll_adv_enable(u8_t enable)
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	} else if (pdu_adv->type == PDU_ADV_TYPE_EXT_IND) {
-		struct pdu_adv_payload_com_ext_adv *p;
+		struct pdu_adv_com_ext_adv *p;
 		struct ext_adv_hdr *h;
 		u8_t *ptr;
 
-		p = (void *)&pdu_adv->payload.adv_ext_ind;
+		p = (void *)&pdu_adv->adv_ext_ind;
 		h = (void *)p->ext_hdr_adi_adv_data;
 		ptr = (u8_t *)h + sizeof(*h);
 
@@ -406,10 +403,12 @@ u32_t ll_adv_enable(u8_t enable)
 		}
 #endif /* !CONFIG_BT_CTLR_PRIVACY */
 		if (!priv) {
-			memcpy(&pdu_adv->payload.adv_ind.addr[0],
-			       ll_addr_get(pdu_adv->tx_addr, NULL), BDADDR_SIZE);
-			memcpy(&pdu_scan->payload.scan_rsp.addr[0],
-			       ll_addr_get(pdu_adv->tx_addr, NULL), BDADDR_SIZE);
+			memcpy(&pdu_adv->adv_ind.addr[0],
+			       ll_addr_get(pdu_adv->tx_addr, NULL),
+			       BDADDR_SIZE);
+			memcpy(&pdu_scan->scan_rsp.addr[0],
+			       ll_addr_get(pdu_adv->tx_addr, NULL),
+			       BDADDR_SIZE);
 		}
 	}
 #if defined(CONFIG_BT_CTLR_ADV_EXT)

@@ -1,9 +1,9 @@
 ---
-title: ARM Cortex M0+ NVIC Interrupt Controller
+title: ARMv6-M NVIC Interrupt Controller
 version: 0.1
 
 description: >
-    This binding describes the ARM Cortex M0+ NVIC IRQ controller
+    This binding describes the ARMv6-M Nested Vectored Interrupt Controller.
 
 properties:
     compatible:

@@ -5,7 +5,7 @@
 #
 ---
 title: STMicroelectronics MEMS sensors LSM6DSL
-id: st,lps22hb-press
+id: st,lsm6dsl
 version: 0.1
 
 description: >

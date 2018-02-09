@@ -1,0 +1,23 @@
+# Tag number; Tag ID; Applicable types (comma-separated); Semantics
+0;DateTimeString;TextString;Standard date/time string
+1;UnixTime_t;Integer;Epoch-based date/time
+2;PositiveBignum;ByteString;Positive bignum
+3;NegativeBignum;ByteString;Negative bignum
+4;Decimal;Array;Decimal fraction
+5;Bigfloat;Array;Bigfloat
+16;COSE_Encrypt0;Array;COSE Single Recipient Encrypted Data Object (RFC 8152)
+17;COSE_Mac0;Array;COSE Mac w/o Recipients Object (RFC 8152)
+18;COSE_Sign1;Array;COSE Single Signer Data Object (RFC 8162)
+21;ExpectedBase64url;ByteString,Array,Map;Expected conversion to base64url encoding
+22;ExpectedBase64;ByteString,Array,Map;Expected conversion to base64 encoding
+23;ExpectedBase16;ByteString,Array,Map;Expected conversion to base16 encoding
+24;EncodedCbor;ByteString;Encoded CBOR data item
+32;Url;TextString;URI
+33;Base64url;TextString;base64url
+34;Base64;TextString;base64
+35;RegularExpression;TextString;Regular expression
+36;MimeMessage;TextString;MIME message
+96;COSE_Encrypt;Array;COSE Encrypted Data Object (RFC 8152)
+97;COSE_Mac;Array;COSE MACed Data Object (RFC 8152)
+98;COSE_Sign;Array;COSE Signed Data Object (RFC 8152)
+55799;Signature;;Self-describe CBOR

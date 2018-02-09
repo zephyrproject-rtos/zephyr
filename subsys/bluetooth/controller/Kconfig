@@ -318,12 +318,11 @@ config BT_CTLR_XTAL_THRESHOLD
 	prompt "Crystal shutdown threshold in uS"
 	depends on BT_CTLR_XTAL_ADVANCED
 	int
-	default 5168
+	default 1500
 	help
 	  Configure the optimal delta in micro seconds between two consecutive
-	  radio events below which (active clock) crystal will be retained. This
-	  value is board dependent. The value 5168 is based on crude calculation
-	  for nRF51 current versus startup time of high frequency crystal.
+	  radio events, event done to next preparation, below which (active
+	  clock) crystal will be retained. This value is board dependent.
 
 config BT_CTLR_SCHED_ADVANCED
 	bool "Advanced scheduling"
@@ -357,6 +356,19 @@ config BT_CTLR_TIFS_HW
 	default y
 	help
 	  Enable use of hardware accelerated tIFS Trx switching.
+
+config BT_CTLR_SW_SWITCH_SINGLE_TIMER
+	bool "Single TIMER tIFS Trx SW switching"
+	depends on (!BT_CTLR_TIFS_HW) && SOC_SERIES_NRF52X
+	help
+	  Implement the tIFS Trx SW switch with the same TIMER
+	  instance, as the one used for BLE event timing. Requires
+	  SW switching be enabled. Using a single TIMER:
+	  (+) frees up one TIMER instance
+	  (+) removes jitter for HCTO implementation
+	  (-) introduces drifting to the absolute time inside BLE
+	  events, that increases linearly with the number of
+	  packets exchanged in the event.
 
 if BT_CONN
 

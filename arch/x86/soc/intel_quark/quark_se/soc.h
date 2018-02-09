@@ -80,6 +80,13 @@
 
 #endif /* CONFIG_SPI_DW */
 
+#ifdef CONFIG_USB_DW
+
+#define	USB_DW_BASE			QM_USB_0_BASE
+#define	USB_DW_IRQ			QM_IRQ_USB_0_INT
+
+#endif
+
 #endif /*  _ASMLANGUAGE */
 
 #ifdef CONFIG_ARC_INIT

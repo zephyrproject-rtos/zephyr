@@ -98,7 +98,7 @@ enum sensor_channel {
 	 * object is close.
 	 */
 	SENSOR_CHAN_PROX,
-	/** Humidity, in milli percent. */
+	/** Humidity, in percent. */
 	SENSOR_CHAN_HUMIDITY,
 	/** Illuminance in visible spectrum, in lux. */
 	SENSOR_CHAN_LIGHT,
@@ -119,8 +119,19 @@ enum sensor_channel {
 	SENSOR_CHAN_PM_2_5,
 	/** 10 micro-meters Particulate Matter, in ug/m^3 */
 	SENSOR_CHAN_PM_10,
-	/** Distance. From sensor to target, in millimeters */
+	/** Distance. From sensor to target, in meters */
 	SENSOR_CHAN_DISTANCE,
+
+	/** CO2 level, in parts per million (ppm) **/
+	SENSOR_CHAN_CO2,
+	/** VOC level, in parts per billion (ppb) **/
+	SENSOR_CHAN_VOC,
+
+	/** Voltage, in volts **/
+	SENSOR_CHAN_VOLTAGE,
+	/** Current, in amps **/
+	SENSOR_CHAN_CURRENT,
+
 	/** All channels. */
 	SENSOR_CHAN_ALL,
 };

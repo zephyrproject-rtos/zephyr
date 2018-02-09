@@ -73,12 +73,19 @@ if(CONFIG_ALTERA_AVALON_SPI)
   add_subdirectory(drivers/altera_avalon_spi/HAL/src)
 endif()
 
-if(CONFIG_ALTERA_AVALON_QSPI)
+if(CONFIG_ALTERA_AVALON_EPCS)
   zephyr_include_directories(
     drivers/altera_epcq_controller/inc
     drivers/altera_epcq_controller/HAL/inc
     )
   add_subdirectory(drivers/altera_epcq_controller/HAL/src)
+endif()
+
+if(CONFIG_ALTERA_AVALON_QSPI)
+  zephyr_include_directories(
+    drivers/altera_generic_qspi_controller2/inc
+    drivers/altera_generic_qspi_controller2/HAL/inc
+    )
 endif()
 
 if(CONFIG_ALTERA_AVALON_PIO)

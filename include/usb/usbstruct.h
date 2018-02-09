@@ -66,14 +66,6 @@
 #define REQ_SET_INTERFACE           0x0B
 #define REQ_SYNCH_FRAME             0x0C
 
-/* class requests HID */
-#define HID_GET_REPORT              0x01
-#define HID_GET_IDLE                0x02
-#define HID_GET_PROTOCOL            0x03
-#define HID_SET_REPORT              0x09
-#define HID_SET_IDLE                0x0A
-#define HID_SET_PROTOCOL            0x0B
-
 /* feature selectors */
 #define FEA_ENDPOINT_HALT           0x00
 #define FEA_REMOTE_WAKEUP           0x01
@@ -100,10 +92,6 @@ struct usb_desc_header {
 
 #define CS_INTERFACE                0x24
 #define CS_ENDPOINT                 0x25
-
-#define DESC_HID_HID                0x21
-#define DESC_HID_REPORT             0x22
-#define DESC_HID_PHYSICAL           0x23
 
 #define GET_DESC_TYPE(x)            (((x)>>8)&0xFF)
 #define GET_DESC_INDEX(x)           ((x)&0xFF)

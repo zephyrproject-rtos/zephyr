@@ -12,7 +12,11 @@ menuconfig TMP112
 	depends on I2C
 	default n
 	help
-	  Enable driver for TMP112 infrared thermopile sensors.
+	  Enable the driver for Texas Instruments TMP112 High-Accuracy Digital
+	  Temperature Sensors.
+
+	  The TMP102 is compatible with the TMP112 but is less accurate and has
+	  been successfully tested with this driver.
 
 config TMP112_NAME
 	string

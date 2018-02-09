@@ -171,6 +171,15 @@ config LWM2M_RW_JSON_SUPPORT
 	help
 	  Include support for writing JSON data
 
+config LWM2M_DEVICE_PWRSRC_MAX
+	int "Maximum # of device power source records"
+	default 5
+	range 1 20
+	help
+	  This value sets the maximum number of power source data that a device
+	  can store.  These are displayed via the "Device" object /3/0/6,
+	  /3/0/7 and /3/0/8 resources.
+
 config LWM2M_DEVICE_ERROR_CODE_MAX
 	int "Maximum # of device obj error codes to store"
 	default 10

@@ -1953,7 +1953,6 @@ int mbedtls_ecp_gen_keypair_base( mbedtls_ecp_group *grp,
     {
         /* SEC1 3.2.1: Generate d such that 1 <= n < N */
         int count = 0;
-        unsigned char rnd[MBEDTLS_ECP_MAX_BYTES];
 
         /*
          * Match the procedure given in RFC 6979 (deterministic ECDSA):
@@ -1964,8 +1963,7 @@ int mbedtls_ecp_gen_keypair_base( mbedtls_ecp_group *grp,
          */
         do
         {
-            MBEDTLS_MPI_CHK( f_rng( p_rng, rnd, n_size ) );
-            MBEDTLS_MPI_CHK( mbedtls_mpi_read_binary( d, rnd, n_size ) );
+            MBEDTLS_MPI_CHK( mbedtls_mpi_fill_random( d, n_size, f_rng, p_rng ) );
             MBEDTLS_MPI_CHK( mbedtls_mpi_shift_r( d, 8 * n_size - grp->nbits ) );
 
             /*

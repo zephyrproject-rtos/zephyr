@@ -59,12 +59,15 @@ boards/x86/quark_se_c1000_devboard/*     @nashif
 boards/xtensa/*                          @andrewboie
 # All cmake related files
 cmake/*                                  @nashif @SebastianBoe
+/CMakeLists.txt                          @nashif @SebastianBoe
 doc/*                                    @dbkinder
 doc/subsystems/bluetooth/*               @sjanc @jhedberg @Vudentz
 drivers/*/*qmsi*                         @nashif
 drivers/*/*stm32*                        @erwango
+drivers/adc/*                            @anangl
 drivers/bluetooth/*                      @sjanc @jhedberg @Vudentz
 drivers/clock_control/*stm32f4*          @rsalveti @idlethread
+drivers/counter/*                        @anangl
 drivers/ethernet/*                       @jukkar @tbursztyka
 drivers/flash/*                          @nashif
 drivers/flash/*stm32*                    @superna9999
@@ -94,6 +97,7 @@ ext/hal/qmsi/*                           @nashif
 ext/hal/st/stm32cube/*                   @erwango
 ext/lib/crypto/mbedtls/*                 @nashif
 ext/lib/crypto/tinycrypt/*               @lpereira
+include/adc.h                            @anangl
 include/arch/arc/*                       @cjordan44 @ruuddw
 include/arch/arc/arch.h                  @andrewboie
 include/arch/arc/v2/irq.h                @andrewboie
@@ -108,6 +112,7 @@ include/arch/xtensa/*                    @andrewboie
 include/atomic.h                         @andrewboie @andyross
 include/bluetooth/*                      @sjanc @jhedberg @Vudentz
 include/cache.h                          @andrewboie @andyross
+include/counter.h                        @anangl
 include/device.h                         @youvedeep @nashif
 include/drivers/bluetooth/*              @sjanc @jhedberg @Vudentz
 include/drivers/ioapic.h                 @andrewboie

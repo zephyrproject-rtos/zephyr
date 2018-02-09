@@ -46,8 +46,7 @@
 #ifndef __USB_MSC_H__
 #define __USB_MSC_H__
 
-/** MSC Class, Subclass and Protocol Codes */
-#define MASS_STORAGE_CLASS		0x08
+/** MSC Subclass and Protocol Codes */
 #define SCSI_TRANSPARENT_SUBCLASS	0x06
 #define BULK_ONLY_TRANSPORT_PROTOCOL	0x50
 

@@ -24,13 +24,10 @@
 #include <logging/sys_log.h>
 
 /* All the values used in this driver are coming from ST datasheet and examples.
- * It can be found here :
- *   https://my.st.com/content/my_st_com/en/products/embedded-software/
- *   proximity-sensors-software/stsw-img005.license%3d1505825745199.
- *   product%3dSTSW-IMG005.html
- *   (search for STSW-IMG005 on www.st.com)
- * There are also examples of use in the L4 cube FW
- *   (http://www.st.com/en/embedded-software/stm32cubel4.html)
+ * It can be found here:
+ *   http://www.st.com/en/embedded-software/stsw-img005.html
+ * There are also examples of use in the L4 cube FW:
+ *   http://www.st.com/en/embedded-software/stm32cubel4.html
  */
 #define VL53L0X_REG_WHO_AM_I   0xC0
 #define VL53L0X_CHIP_ID        0xEEAA
@@ -82,10 +79,11 @@ static int vl53l0x_channel_get(struct device *dev,
 		} else {
 			val->val1 = 0;
 		}
+		val->val2 = 0;
 	} else {
-		val->val1 = drv_data->RangingMeasurementData.RangeMilliMeter;
+		val->val1 = drv_data->RangingMeasurementData.RangeMilliMeter / 1000;
+		val->val2 = (drv_data->RangingMeasurementData.RangeMilliMeter % 1000) * 1000;
 	}
-	val->val2 = 0;
 
 	return 0;
 }
@@ -273,13 +271,13 @@ static int vl53l0x_init(struct device *dev)
 		return -ENOTSUP;
 	}
 
-	dev->driver_api = &vl53l0x_api_funcs;
 	return 0;
 }
 
 
 static struct vl53l0x_data vl53l0x_driver;
 
-DEVICE_INIT(vl53l0x, CONFIG_VL53L0X_NAME, vl53l0x_init, &vl53l0x_driver,
-	    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY);
+DEVICE_AND_API_INIT(vl53l0x, CONFIG_VL53L0X_NAME, vl53l0x_init, &vl53l0x_driver,
+		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
+		    &vl53l0x_api_funcs);
 

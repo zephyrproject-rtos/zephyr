@@ -212,8 +212,6 @@ static int bme280_channel_get(struct device *dev,
 		 */
 		val->val1 = (data->comp_humidity >> 10);
 		val->val2 = (((data->comp_humidity & 0x3ff) * 1000 * 1000) >> 10);
-		val->val1 = val->val1 * 1000 + (val->val2 * 1000) / 1000000;
-		val->val2 = (val->val2 * 1000) % 1000000;
 		break;
 	default:
 		return -EINVAL;

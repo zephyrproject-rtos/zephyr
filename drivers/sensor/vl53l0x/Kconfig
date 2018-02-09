@@ -26,7 +26,7 @@ config VL53L0X_NAME
 	  Device name with which the VL53L0X sensor is identified.
 
 config VL53L0X_I2C_ADDR
-	int
+	hex
 	prompt "Vl53l0x I2C address"
 	default 0x29
 	depends on VL53L0X

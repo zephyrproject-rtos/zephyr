@@ -70,5 +70,6 @@ foreach(target flash debug debugserver)
     ${cmd}
     COMMENT
     ${comment}
+    USES_TERMINAL
     )
 endforeach()

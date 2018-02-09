@@ -200,12 +200,44 @@ config XTENSA_SIM_CONSOLE
 
 config NATIVE_POSIX_CONSOLE
 	bool
-	prompt "Print to console"
-	depends on BOARD_NATIVE_POSIX
+	prompt "Use native stdin/stdout for console"
+	depends on ARCH_POSIX
 	select CONSOLE_HAS_DRIVER
 	default y
 	help
-	  Use native console to print messages.
+	  Use native stdin and stdout to print messages and get input
+
+config NATIVE_POSIX_STDIN_CONSOLE
+	bool
+	prompt "Read from native stdin for console"
+	depends on NATIVE_POSIX_CONSOLE
+	default y
+	help
+	  Use native console to get input.
+
+config NATIVE_STDIN_POLL_PERIOD
+	int
+	prompt "Polling period for stdin"
+	depends on NATIVE_POSIX_STDIN_CONSOLE
+	default 20
+	help
+	  In ms, polling period for stdin
+
+config NATIVE_STDIN_PRIO
+	int
+	prompt "Priority of the stdin polling thread"
+	depends on NATIVE_POSIX_STDIN_CONSOLE
+	default 4
+	help
+	  Priority of the native stdin polling thread
+
+config NATIVE_POSIX_STDOUT_CONSOLE
+	bool
+	prompt "Print to native stdout"
+	depends on NATIVE_POSIX_CONSOLE
+	default y
+	help
+	  Use native console (stout) to print messages.
 
 config XTENSA_CONSOLE_INIT_PRIORITY
 	int

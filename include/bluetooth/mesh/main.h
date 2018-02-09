@@ -39,10 +39,36 @@ typedef enum {
 	BT_MESH_PROV_GATT  = BIT(1),
 } bt_mesh_prov_bearer_t;
 
+typedef enum {
+	BT_MESH_PROV_OOB_OTHER     = BIT(0),
+	BT_MESH_PROV_OOB_URI       = BIT(1),
+	BT_MESH_PROV_OOB_2D_CODE   = BIT(2),
+	BT_MESH_PROV_OOB_BAR_CODE  = BIT(3),
+	BT_MESH_PROV_OOB_NFC       = BIT(4),
+	BT_MESH_PROV_OOB_NUMBER    = BIT(5),
+	BT_MESH_PROV_OOB_STRING    = BIT(6),
+	/* 7 - 10 are reserved */
+	BT_MESH_PROV_OOB_ON_BOX    = BIT(11),
+	BT_MESH_PROV_OOB_IN_BOX    = BIT(12),
+	BT_MESH_PROV_OOB_ON_PAPER  = BIT(13),
+	BT_MESH_PROV_OOB_IN_MANUAL = BIT(14),
+	BT_MESH_PROV_OOB_ON_DEV    = BIT(15),
+} bt_mesh_prov_oob_info_t;
+
 /** Provisioning properties & capabilities. */
 struct bt_mesh_prov {
 	/** The UUID that's used when advertising as unprovisioned */
 	const u8_t *uuid;
+
+	/** Optional URI. This will be advertised separately from the
+	 *  unprovisioned beacon, however the unprovisioned beacon will
+	 *  contain a hash of it so the two can be associated by the
+	 *  provisioner.
+	 */
+	const char *uri;
+
+	/** Out of Band information field. */
+	bt_mesh_prov_oob_info_t oob_info;
 
 	/** Static OOB value */
 	const u8_t *static_val;

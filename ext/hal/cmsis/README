@@ -9,7 +9,7 @@ the vendor's peripheral drivers.
 http://www.arm.com/products/processors/cortex-m/cortex-microcontroller-software-interface-standard.php
 
 The sources in this directory are imported from
-https://github.com/ARM-software/CMSIS.git
+https://github.com/ARM-software/CMSIS_5.git
 
 The current version supported in Zephyr is 
-https://github.com/ARM-software/CMSIS/releases/tag/v4.5.0
+https://github.com/ARM-software/CMSIS_5/releases/tag/5.2.0

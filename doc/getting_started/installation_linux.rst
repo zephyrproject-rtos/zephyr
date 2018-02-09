@@ -54,21 +54,28 @@ Install the required packages in a Ubuntu host system with:
 
    sudo apt-get install --no-install-recommends git cmake ninja-build gperf \
      ccache doxygen dfu-util device-tree-compiler \
-     python3-ply python3-pip python3-setuptools xz-utils file make gcc-multilib
+     python3-ply python3-pip python3-setuptools xz-utils file make gcc-multilib \
+     autoconf automake libtool
 
 Install the required packages in a Fedora host system with:
 
 .. code-block:: console
 
-   sudo dnf group install "Development Tools"
+   sudo dnf group install "Development Tools" "C Development Tools and Libraries"
    sudo dnf install git cmake ninja-build gperf ccache\
 	 doxygen dfu-util dtc python3-pip \
-	 python3-ply python3-yaml dfu-util dtc python3-pykwalify
+	 python3-ply python3-yaml dfu-util dtc python3-pykwalify \
+         glibc-devel.i686 libstdc++-devel.i686 autoconf automake libtool
 
 Install additional packages required for development with Zephyr::
 
    cd ~/zephyr  # or to your directory where zephyr is cloned
    pip3 install --user -r scripts/requirements.txt
+
+If you require pyocd, an open source python2 library for programming and
+debugging ARM Cortex-M microcontrollers, use this command::
+
+   pip2 install --user -r scripts/py2-requirements.txt
 
 CMake version 3.8.2 or higher is required. Check what version you have using
 ``cmake --version``, and if its an older version, check the backports or

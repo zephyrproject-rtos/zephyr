@@ -64,6 +64,11 @@ Install tools to build Zephyr binaries:
    cd ~/zephyr   # or to the folder where you cloned the zephyr repo
    pip3 install --user -r scripts/requirements.txt
 
+If you require pyocd, an open source python2 library for programming and
+debugging ARM Cortex-M microcontrollers, use this command::
+
+   pip2 install --user -r scripts/py2-requirements.txt
+
 Source :file:`zephyr-env.sh` wherever you have cloned the Zephyr Git repository:
 
 .. code-block:: console

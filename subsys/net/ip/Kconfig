@@ -67,6 +67,14 @@ config NET_ROUTE
 	default n
 	default y if NET_IPV6_NBR_CACHE
 
+config NET_ROUTING
+	bool "IP routing between interfaces"
+	default n
+	depends on NET_ROUTE
+	help
+	Allow IPv6 routing between different network interfaces and
+	technologies.
+
 config	NET_MAX_ROUTES
 	int "Max number of routing entries stored."
 	default NET_IPV6_MAX_NEIGHBORS
@@ -340,6 +348,39 @@ config NET_BUF_USER_DATA_SIZE
 	  each network data fragment.
 	  Example: For Bluetooth, the user_data shall be at least 4 bytes as
 	  that is used for identifying the type of data they are carrying.
+
+choice
+	prompt "Default Network Interface"
+	default NET_DEFAULT_IF_FIRST
+	help
+	  If system has multiple interfaces enabled, then user shall be able
+	  to choose default interface. Otherwise first interface will be the
+	  default interface.
+
+config NET_DEFAULT_IF_FIRST
+	bool "First available interface"
+
+config NET_DEFAULT_IF_ETHERNET
+	bool "Ethernet"
+	depends on NET_L2_ETHERNET
+
+config NET_DEFAULT_IF_BLUETOOTH
+	bool "Bluetooth"
+	depends on NET_L2_BT
+
+config NET_DEFAULT_IF_IEEE802154
+	bool "IEEE 802.15.4"
+	depends on NET_L2_IEEE802154
+
+config NET_DEFAULT_IF_OFFLOAD
+	bool "Offloaded interface"
+	depends on NET_L2_OFFLOAD
+
+config NET_DEFAULT_IF_DUMMY
+	bool "Dummy testing interface"
+	depends on NET_L2_DUMMY
+
+endchoice
 
 source "subsys/net/ip/Kconfig.stack"
 

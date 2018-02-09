@@ -22,38 +22,40 @@
 
 static unsigned char __aligned(4) data[] = "abcd1234";
 
+__kernel struct k_pipe put_get_pipe;
+
 /*test cases*/
 void test_pipe_put_fail(void *p1, void *p2, void *p3)
 {
-	struct k_pipe pipe;
+
 	size_t wt_byte = 0;
 
-	k_pipe_init(&pipe, data, PIPE_LEN);
-	zassert_false(k_pipe_put(&pipe, data, PIPE_LEN, &wt_byte,
+	k_pipe_init(&put_get_pipe, data, PIPE_LEN);
+	zassert_false(k_pipe_put(&put_get_pipe, data, PIPE_LEN, &wt_byte,
 				 1, K_FOREVER), NULL);
 	/**TESTPOINT: pipe put returns -EIO*/
-	zassert_equal(k_pipe_put(&pipe, data, PIPE_LEN, &wt_byte,
+	zassert_equal(k_pipe_put(&put_get_pipe, data, PIPE_LEN, &wt_byte,
 				 1, K_NO_WAIT), -EIO, NULL);
 	zassert_false(wt_byte, NULL);
 	/**TESTPOINT: pipe put returns -EAGAIN*/
-	zassert_equal(k_pipe_put(&pipe, data, PIPE_LEN, &wt_byte,
+	zassert_equal(k_pipe_put(&put_get_pipe, data, PIPE_LEN, &wt_byte,
 				 1, TIMEOUT), -EAGAIN, NULL);
 	zassert_true(wt_byte < 1, NULL);
 }
 
 void test_pipe_get_fail(void *p1, void *p2, void *p3)
 {
-	struct k_pipe pipe;
+
 	unsigned char rx_data[PIPE_LEN];
 	size_t rd_byte = 0;
 
-	k_pipe_init(&pipe, data, PIPE_LEN);
+	k_pipe_init(&put_get_pipe, data, PIPE_LEN);
 	/**TESTPOINT: pipe put returns -EIO*/
-	zassert_equal(k_pipe_get(&pipe, rx_data, PIPE_LEN, &rd_byte, 1,
+	zassert_equal(k_pipe_get(&put_get_pipe, rx_data, PIPE_LEN, &rd_byte, 1,
 				 K_NO_WAIT), -EIO, NULL);
 	zassert_false(rd_byte, NULL);
 	/**TESTPOINT: pipe put returns -EAGAIN*/
-	zassert_equal(k_pipe_get(&pipe, rx_data, PIPE_LEN, &rd_byte, 1,
+	zassert_equal(k_pipe_get(&put_get_pipe, rx_data, PIPE_LEN, &rd_byte, 1,
 				 TIMEOUT), -EAGAIN, NULL);
 	zassert_true(rd_byte < 1, NULL);
 }

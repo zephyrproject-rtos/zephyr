@@ -34,6 +34,8 @@ struct i2c_nrf5_config {
 	volatile NRF_TWI_Type *base;
 	void (*irq_config_func)(struct device *dev);
 	u32_t default_cfg;
+	u32_t sda_pin;
+	u32_t scl_pin;
 };
 
 
@@ -287,20 +289,20 @@ static int i2c_nrf5_init(struct device *dev)
 
 	twi->ENABLE = TWI_ENABLE_ENABLE_Disabled;
 
-	status = gpio_pin_configure(data->gpio, CONFIG_I2C_NRF5_GPIO_SCL_PIN,
+	status = gpio_pin_configure(data->gpio, config->scl_pin,
 				    GPIO_DIR_IN
 				    | GPIO_PUD_PULL_UP
 				    | GPIO_DS_DISCONNECT_HIGH);
 	__ASSERT_NO_MSG(status == 0);
 
-	status = gpio_pin_configure(data->gpio, CONFIG_I2C_NRF5_GPIO_SCA_PIN,
+	status = gpio_pin_configure(data->gpio, config->sda_pin,
 				    GPIO_DIR_IN
 				    | GPIO_PUD_PULL_UP
 				    | GPIO_DS_DISCONNECT_HIGH);
 	__ASSERT_NO_MSG(status == 0);
 
-	twi->PSELSCL = CONFIG_I2C_NRF5_GPIO_SCL_PIN;
-	twi->PSELSDA = CONFIG_I2C_NRF5_GPIO_SCA_PIN;
+	twi->PSELSCL = config->scl_pin;
+	twi->PSELSDA = config->sda_pin;
 	twi->ERRORSRC = twi->ERRORSRC;
 	twi->EVENTS_TXDSENT = 0;
 	twi->EVENTS_RXDREADY = 0;
@@ -333,6 +335,8 @@ static const struct i2c_nrf5_config i2c_nrf5_config_0 = {
 	.base = NRF_TWI0,
 	.irq_config_func = i2c_nrf5_config_func_0,
 	.default_cfg = CONFIG_I2C_0_DEFAULT_CFG,
+	.sda_pin = CONFIG_I2C_NRF5_0_GPIO_SDA_PIN,
+	.scl_pin = CONFIG_I2C_NRF5_0_GPIO_SCL_PIN,
 };
 
 static struct i2c_nrf5_data i2c_nrf5_data_0;
@@ -358,6 +362,8 @@ static const struct i2c_nrf5_config i2c_nrf5_config_1 = {
 	.base = NRF_TWI1,
 	.irq_config_func = i2c_nrf5_config_func_1,
 	.default_cfg = CONFIG_I2C_1_DEFAULT_CFG,
+	.sda_pin = CONFIG_I2C_NRF5_1_GPIO_SDA_PIN,
+	.scl_pin = CONFIG_I2C_NRF5_1_GPIO_SCL_PIN,
 };
 
 static struct i2c_nrf5_data i2c_nrf5_data_1;

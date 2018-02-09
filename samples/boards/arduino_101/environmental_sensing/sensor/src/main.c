@@ -113,8 +113,7 @@ void main(void)
 
 		/* display himidity on LCD */
 		glcd_cursor_pos_set(glcd, 17 - strlen(row), 0);
-		sprintf(row, "RH:%d%c", val[1].val1/1000,
-			37 /* percent symbol */);
+		sprintf(row, "RH:%d%%", val[1].val1);
 		glcd_print(glcd, row, strlen(row));
 
 		/* display pressure on LCD */

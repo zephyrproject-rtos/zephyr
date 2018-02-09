@@ -41,10 +41,10 @@ endif # I2C
 
 if I2C_NRF5
 
-config I2C_NRF5_GPIO_SCL_PIN
+config I2C_NRF5_0_GPIO_SCL_PIN
 	default 0
 
-config I2C_NRF5_GPIO_SCA_PIN
+config I2C_NRF5_0_GPIO_SDA_PIN
 	default 30
 
 config I2C_0_DEFAULT_CFG

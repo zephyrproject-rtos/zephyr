@@ -8,8 +8,22 @@ import argparse
 import struct
 import sys
 import os
+from elftools.elf.elffile import ELFFile
+from elftools.elf.sections import SymbolTableSection
 
 ISR_FLAG_DIRECT = (1 << 0)
+
+# The below few hardware independent magic numbers represent various
+# levels of interrupts in a multi-level interrupt system.
+# 0x000000FF - represents the 1st level (i.e. the interrupts
+#              that directly go to the processor).
+# 0x0000FF00 - represents the 2nd level (i.e. the interrupts funnel
+#              into 1 line which then goes into the 1st level)
+# 0x00FF0000 - represents the 3rd level (i.e. the interrupts funnel
+#              into 1 line which then goes into the 2nd level)
+FIRST_LVL_INTERRUPTS = 0x000000FF
+SECND_LVL_INTERRUPTS = 0x0000FF00
+THIRD_LVL_INTERRUPTS = 0x00FF0000
 
 def debug(text):
     if args.debug:
@@ -104,6 +118,8 @@ def parse_args():
             help="Print additional debugging information")
     parser.add_argument("-o", "--output-source", required=True,
             help="Output source file")
+    parser.add_argument("-k", "--kernel", required=True,
+            help="Zephyr kernel image")
     parser.add_argument("-s", "--sw-isr-table", action="store_true",
             help="Generate SW ISR table")
     parser.add_argument("-V", "--vector-table", action="store_true",
@@ -143,13 +159,59 @@ def write_source_file(fp, vt, swt, intlist):
         fp.write("\t{(void *)0x%x, (void *)0x%x},\n" % (param, func))
     fp.write("};\n")
 
+def get_symbols(obj):
+    for section in obj.iter_sections():
+        if isinstance(section, SymbolTableSection):
+            return {sym.name: sym.entry.st_value
+                    for sym in section.iter_symbols()}
+
+    error("Could not find symbol table")
+
+def getindex(irq, irq_aggregator_pos):
+    for indx, val in enumerate(irq_aggregator_pos):
+        if irq == irq_aggregator_pos[indx]:
+            return indx
+    error("The index %d has no match. Recheck interrupt configuration" % indx)
+
 def main():
     parse_args()
+
+    with open(args.kernel, "rb") as fp:
+        kernel = ELFFile(fp)
+        syms = get_symbols(kernel)
+
+    if "CONFIG_MULTI_LEVEL_INTERRUPTS" in syms:
+        if "CONFIG_2ND_LEVEL_INTERRUPTS" in syms:
+            if "CONFIG_NUM_2ND_LEVEL_AGGREGATORS" in syms:
+                num_aggregators = syms["CONFIG_NUM_2ND_LEVEL_AGGREGATORS"]
+                list_2nd_lvl_offsets = []
+                for i in range(num_aggregators):
+                    offset_str = 'CONFIG_2ND_LVL_INTR_' + str(i).zfill(2) + '_OFFSET'
+                    if offset_str in syms:
+                        list_2nd_lvl_offsets.append(syms[offset_str])
+
+            debug(str(list_2nd_lvl_offsets))
+
+            if syms["CONFIG_3RD_LEVEL_INTERRUPTS"]:
+                if "CONFIG_NUM_3RD_LEVEL_AGGREGATORS" in syms:
+                    num_aggregators = syms["CONFIG_NUM_3RD_LEVEL_AGGREGATORS"]
+                    list_3rd_lvl_offsets = []
+                    for i in range(num_aggregators):
+                        offset_str = 'CONFIG_3RD_LVL_INTR_' + str(i).zfill(2) + '_OFFSET'
+                        if offset_str in syms:
+                            list_3rd_lvl_offsets.append(syms[offset_str])
+
+                debug(str(list_3rd_lvl_offsets))
 
     intlist = read_intlist(args.intlist)
     nvec = intlist["num_vectors"]
     offset = intlist["offset"]
     prefix = endian_prefix()
+    numisrs = intlist["num_isrs"]
+
+    debug('offset is ' + str(offset))
+    debug('num_vectors is ' + str(nvec))
+    debug('num_isrs is ' + str(numisrs))
 
     # Set default entries in both tables
     if args.sw_isr_table:
@@ -181,7 +243,40 @@ def main():
                 error("Regular Interrupt %d declared with parameter 0x%x "
                         "but no SW ISR_TABLE in use"
                         % (irq, param))
-            swt[irq - offset] = (param, func)
+
+            if not "CONFIG_MULTI_LEVEL_INTERRUPTS" in syms:
+                swt[irq - offset] = (param, func)
+            else:
+                # Figure out third level interrupt position
+                debug('IRQ = ' + hex(irq))
+                irq3 = (irq & THIRD_LVL_INTERRUPTS) >> 16
+                if irq3:
+                    irq_parent = (irq & SECND_LVL_INTERRUPTS) >> 8
+                    list_index = getindex(irq_parent, list_3rd_lvl_offsets)
+                    irq3_baseoffset = syms["CONFIG_3RD_LVL_ISR_TBL_OFFSET"]
+                    irq3_pos = irq3_baseoffset + 32*list_index + irq3 - 1
+                    debug('IRQ_Indx = ' + str(irq3))
+                    debug('IRQ_Pos  = ' + str(irq3_pos))
+                    swt[irq3_pos - offset] = (param, func)
+
+                # Figure out second level interrupt position
+                if not irq3:
+                    irq2 = (irq & SECND_LVL_INTERRUPTS) >> 8
+                    if irq2:
+                        irq_parent = (irq & FIRST_LVL_INTERRUPTS)
+                        list_index = getindex(irq_parent, list_2nd_lvl_offsets)
+                        irq2_baseoffset = syms["CONFIG_2ND_LVL_ISR_TBL_OFFSET"]
+                        irq2_pos = irq2_baseoffset + 32*list_index + irq2 - 1
+                        debug('IRQ_Indx = ' + str(irq2))
+                        debug('IRQ_Pos  = ' + str(irq2_pos))
+                        swt[irq2_pos - offset] = (param, func)
+
+                # Figure out first level interrupt position
+                if not irq3 and not irq2:
+                    irq1 = (irq & FIRST_LVL_INTERRUPTS)
+                    debug('IRQ_Indx = ' + str(irq1))
+                    debug('IRQ_Pos  = ' + str(irq1))
+                    swt[irq1 - offset] = (param, func)
 
     with open(args.output_source, "w") as fp:
         write_source_file(fp, vt, swt, intlist)

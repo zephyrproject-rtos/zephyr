@@ -84,7 +84,11 @@
 #define TC_END_RESULT(result)                           \
 	_TC_END_RESULT((result), __func__)
 
-#define TC_END_POST
+#if defined(CONFIG_ARCH_POSIX)
+#define TC_END_POST(result) posix_exit(result)
+#else
+#define TC_END_POST(result)
+#endif /* CONFIG_ARCH_POSIX */
 
 #define TC_END_REPORT(result)                               \
 	do {                                                    \
@@ -93,7 +97,7 @@
 		TC_END(result,                                      \
 		       "PROJECT EXECUTION %s\n",               \
 		       (result) == TC_PASS ? "SUCCESSFUL" : "FAILED");	\
-		TC_END_POST;                                            \
+		TC_END_POST(result);                                    \
 	} while (0)
 
 #define TC_CMD_DEFINE(name)				\

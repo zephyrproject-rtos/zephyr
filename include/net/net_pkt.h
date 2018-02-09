@@ -66,6 +66,10 @@ struct net_pkt {
 
 	/** @cond ignore */
 
+#if defined(CONFIG_NET_ROUTING)
+	struct net_if *orig_iface; /* Original network interface */
+#endif
+
 	u8_t *appdata;	/* application data starts here */
 	u8_t *next_hdr;	/* where is the next header */
 
@@ -179,6 +183,23 @@ static inline void net_pkt_set_iface(struct net_pkt *pkt, struct net_if *iface)
 	 */
 	pkt->lladdr_src.type = iface->link_addr.type;
 	pkt->lladdr_dst.type = iface->link_addr.type;
+}
+
+static inline struct net_if *net_pkt_orig_iface(struct net_pkt *pkt)
+{
+#if defined(CONFIG_NET_ROUTING)
+	return pkt->orig_iface;
+#else
+	return pkt->iface;
+#endif
+}
+
+static inline void net_pkt_set_orig_iface(struct net_pkt *pkt,
+					  struct net_if *iface)
+{
+#if defined(CONFIG_NET_ROUTING)
+	pkt->orig_iface = iface;
+#endif
 }
 
 static inline u8_t net_pkt_family(struct net_pkt *pkt)

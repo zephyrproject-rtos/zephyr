@@ -123,16 +123,19 @@ static int pinmux_input(struct device *dev, u32_t pin, u8_t func)
 	volatile u32_t *reg;
 	int r;
 
+	/* Since PINMUX_INPUT_ENABLED == 1 and PINMUX_OUTPUT_ENABLED == 0,
+	 * we can not set a gpio port as input and output at the same time,
+	 * So we always set the gpio as input. Thus, the gpio can be used on
+	 * I2C drivers for example.
+	 */
+	r = set_reg(pin, 0, FUN_IE);
 	if (func == PINMUX_INPUT_ENABLED) {
-		r = set_reg(pin, 0, FUN_IE);
 		reg = (u32_t *)(DR_REG_GPIO_BASE + line[0]);
 	} else if (func == PINMUX_OUTPUT_ENABLED) {
 		if (pin >= 34 && pin <= 39) {
 			/* These pins are input only */
 			return -EINVAL;
 		}
-
-		r = set_reg(pin, FUN_IE, 0);
 		reg = (u32_t *)(DR_REG_GPIO_BASE + line[1]);
 	} else {
 		return -EINVAL;

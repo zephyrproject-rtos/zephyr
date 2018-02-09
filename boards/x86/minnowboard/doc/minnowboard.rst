@@ -49,7 +49,21 @@ Serial Port
 
 This board uses a single serial communication channel
 with a NS16550 serial driver that operates in polling mode.
-For an interrupt-driven driver, enable the UART_INTERRUPT_DRIVEN kernel configuration option.
+For an interrupt-driven driver, enable the
+:option:`CONFIG_UART_INTERRUPT_DRIVEN` kernel configuration option.
+
+PCI
+----
+
+PCI drivers assume that IO regions and IRQs for devices are preconfigured
+identically by the firmware on all supported devices.  This configuration is
+specified in the Kconfig file for the Intel Atom SoC.  The PCI library supports
+dynamically enumerating PCI devices, but that support is disabled by default.
+
+.. note::
+   The PCI library does not support 64-bit devices.
+   Memory address and size storage only require 32-bit integers.
+
 
 Known Problems or Limitations
 -----------------------------
@@ -66,4 +80,20 @@ The following platform features are unsupported:
 
 
 
+Creating a GRUB2 Boot Loader Image from a Linux Host
+====================================================
+
+Follow the same steps documented for the :ref:`Galileo board <grub2>`.
+
+
+Booting Zephyr on the MinnowBoard
+=================================
+
+The MinnowBoard by default will be running a 64bit firmware. To boot Zephyr, you
+will need to replace the 64bit firmware with the 32bit variant. Please follow
+the instructions for flashing and updating the firmware documented at the
+`MinnowBoard firmware`_ website.
+
+
 .. _MinnowBoard: https://minnowboard.org/
+.. _MinnowBoard firmware: https://minnowboard.org/tutorials/updating-the-firmware

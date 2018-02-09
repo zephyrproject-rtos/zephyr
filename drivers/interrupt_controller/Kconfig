@@ -128,4 +128,6 @@ config PLIC_FE310
 
 source "drivers/interrupt_controller/Kconfig.stm32"
 
+source "drivers/interrupt_controller/Kconfig.multilevel"
+
 endmenu

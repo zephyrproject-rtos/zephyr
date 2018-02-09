@@ -367,11 +367,29 @@ struct net_if *net_if_lookup_by_dev(struct device *dev)
 
 struct net_if *net_if_get_default(void)
 {
+	struct net_if *iface = NULL;
+
 	if (__net_if_start == __net_if_end) {
 		return NULL;
 	}
 
-	return __net_if_start;
+#if defined(CONFIG_NET_DEFAULT_IF_ETHERNET)
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(ETHERNET));
+#endif
+#if defined(CONFIG_NET_DEFAULT_IF_IEEE802154)
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(IEEE802154));
+#endif
+#if defined(CONFIG_NET_DEFAULT_IF_BLUETOOTH)
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(BLUETOOTH));
+#endif
+#if defined(CONFIG_NET_DEFAULT_IF_DUMMY)
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+#endif
+#if defined(CONFIG_NET_DEFAULT_IF_OFFLOAD)
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(OFFLOAD_IP));
+#endif
+
+	return iface ? iface : __net_if_start;
 }
 
 struct net_if *net_if_get_first_by_type(const struct net_l2 *l2)
@@ -677,6 +695,27 @@ static inline void net_if_addr_init(struct net_if_addr *ifaddr,
 	}
 }
 
+static inline struct in6_addr *check_global_addr(struct net_if *iface)
+{
+	int i;
+
+	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
+		if (!iface->ipv6.unicast[i].is_used ||
+		    (iface->ipv6.unicast[i].addr_state != NET_ADDR_TENTATIVE &&
+		     iface->ipv6.unicast[i].addr_state != NET_ADDR_PREFERRED) ||
+		    iface->ipv6.unicast[i].address.family != AF_INET6) {
+			continue;
+		}
+
+		if (!net_is_ipv6_ll_addr(
+			    &iface->ipv6.unicast[i].address.in6_addr)) {
+			return &iface->ipv6.unicast[i].address.in6_addr;
+		}
+	}
+
+	return NULL;
+}
+
 struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 					 struct in6_addr *addr,
 					 enum net_addr_type addr_type,
@@ -691,6 +730,9 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 	}
 
 	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
+#if defined(CONFIG_NET_RPL)
+		struct in6_addr *global;
+#endif
 		if (iface->ipv6.unicast[i].is_used) {
 			continue;
 		}
@@ -711,9 +753,18 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 		 * net_ipv6_mcast_join() checks if we have already joined.
 		 */
 		join_mcast_allnodes(iface);
-		join_mcast_solicit_node(iface, &iface->ipv6.unicast[i].address.in6_addr);
+		join_mcast_solicit_node(iface,
+				&iface->ipv6.unicast[i].address.in6_addr);
 
+#if defined(CONFIG_NET_RPL)
+		/* Do not send DAD for global addresses */
+		global = check_global_addr(iface);
+		if (!net_ipv6_addr_cmp(global, addr)) {
+			net_if_ipv6_start_dad(iface, &iface->ipv6.unicast[i]);
+		}
+#else
 		net_if_ipv6_start_dad(iface, &iface->ipv6.unicast[i]);
+#endif
 
 		net_mgmt_event_notify(NET_EVENT_IPV6_ADDR_ADD, iface);
 
@@ -1260,27 +1311,6 @@ struct in6_addr *net_if_ipv6_get_ll_addr(enum net_addr_state state,
 			}
 
 			return addr;
-		}
-	}
-
-	return NULL;
-}
-
-static inline struct in6_addr *check_global_addr(struct net_if *iface)
-{
-	int i;
-
-	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
-		if (!iface->ipv6.unicast[i].is_used ||
-		    (iface->ipv6.unicast[i].addr_state != NET_ADDR_TENTATIVE &&
-		     iface->ipv6.unicast[i].addr_state != NET_ADDR_PREFERRED) ||
-		    iface->ipv6.unicast[i].address.family != AF_INET6) {
-			continue;
-		}
-
-		if (!net_is_ipv6_ll_addr(
-			    &iface->ipv6.unicast[i].address.in6_addr)) {
-			return &iface->ipv6.unicast[i].address.in6_addr;
 		}
 	}
 

@@ -562,27 +562,45 @@ struct net_context *select_client_ctx(struct net_app_ctx *ctx,
 
 #if defined(CONFIG_NET_APP_SERVER)
 #if defined(CONFIG_NET_TCP)
+
+static struct net_context *get_server_ctx_without_dst(struct net_app_ctx *ctx)
+{
+	int i;
+
+	for (i = 0; i < CONFIG_NET_APP_SERVER_NUM_CONN; i++) {
+		struct net_context *tmp = ctx->server.net_ctxs[i];
+
+		if (!tmp || !net_context_is_used(tmp)) {
+			continue;
+		}
+
+		if (tmp->net_app != ctx) {
+			continue;
+		}
+
+		NET_DBG("Selecting net_ctx %p iface %p for NULL dst",
+			tmp, net_context_get_iface(tmp));
+
+		return tmp;
+	}
+
+	return NULL;
+}
+
 static struct net_context *get_server_ctx(struct net_app_ctx *ctx,
 					  const struct sockaddr *dst)
 {
 	int i;
+
+	if (!dst) {
+		return get_server_ctx_without_dst(ctx);
+	}
 
 	for (i = 0; i < CONFIG_NET_APP_SERVER_NUM_CONN; i++) {
 		struct net_context *tmp = ctx->server.net_ctxs[i];
 		u16_t port, rport;
 
 		if (!tmp || !net_context_is_used(tmp)) {
-			continue;
-		}
-
-		if (!dst) {
-			if (tmp->net_app == ctx) {
-				NET_DBG("Selecting net_ctx %p iface %p for "
-					"NULL dst",
-					tmp, net_context_get_iface(tmp));
-				return tmp;
-			}
-
 			continue;
 		}
 
@@ -603,16 +621,6 @@ static struct net_context *get_server_ctx(struct net_app_ctx *ctx,
 				NET_DBG("Selecting net_ctx %p iface %p for "
 					"AF_INET6 port %d", tmp,
 					net_context_get_iface(tmp),
-					ntohs(rport));
-				return tmp;
-			}
-
-			if (tmp->net_app == ctx) {
-				NET_DBG("Selecting net_ctx %p iface %p"
-					" for %s port %d", tmp,
-					net_context_get_iface(tmp),
-					dst->sa_family == AF_UNSPEC ?
-					"AF_UNSPEC" : "AF_INET6",
 					ntohs(rport));
 				return tmp;
 			}
@@ -637,20 +645,10 @@ static struct net_context *get_server_ctx(struct net_app_ctx *ctx,
 					ntohs(port));
 				return tmp;
 			}
-
-			if (tmp->net_app == ctx) {
-				NET_DBG("Selecting net_ctx %p iface %p"
-					" for %s port %d", tmp,
-					net_context_get_iface(tmp),
-					dst->sa_family == AF_UNSPEC ?
-					"AF_UNSPEC" : "AF_INET",
-					ntohs(port));
-				return tmp;
-			}
 		}
 	}
 
-	return NULL;
+	return get_server_ctx_without_dst(ctx);
 }
 #endif /* CONFIG_NET_TCP */
 
@@ -958,6 +956,28 @@ struct net_pkt *net_app_get_net_pkt(struct net_app_ctx *ctx,
 	dst.sa_family = family;
 
 	net_ctx = _net_app_select_net_ctx(ctx, &dst);
+	if (!net_ctx) {
+		return NULL;
+	}
+
+	return net_pkt_get_tx(net_ctx, timeout);
+}
+
+struct net_pkt *net_app_get_net_pkt_with_dst(struct net_app_ctx *ctx,
+					     const struct sockaddr *dst,
+					     s32_t timeout)
+{
+	struct net_context *net_ctx;
+
+	if (!ctx || !dst) {
+		return NULL;
+	}
+
+	if (!ctx->is_init) {
+		return NULL;
+	}
+
+	net_ctx = _net_app_select_net_ctx(ctx, dst);
 	if (!net_ctx) {
 		return NULL;
 	}

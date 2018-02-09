@@ -17,43 +17,43 @@ struct fcb test_fcb;
  * area. This test suite is the non bootable application so 1. image slot is
  * suitable for it.
  */
-struct flash_area test_fcb_area[] = {
+struct flash_sector test_fcb_sector[] = {
 	[0] = {
-		.fa_device_id = 0,
-		.fa_off = FLASH_AREA_IMAGE_1_OFFSET,
-		.fa_size = 0x4000, /* 16K */
+		.fs_off = 0,
+		.fs_size = 0x4000, /* 16K */
 	},
 	[1] = {
-		.fa_device_id = 0,
-		.fa_off = FLASH_AREA_IMAGE_1_OFFSET + 0x4000,
-		.fa_size = 0x4000
+		.fs_off = 0x4000,
+		.fs_size = 0x4000
 	},
 	[2] = {
-		.fa_device_id = 0,
-		.fa_off = FLASH_AREA_IMAGE_1_OFFSET + 0x8000,
-		.fa_size = 0x4000
+		.fs_off = 0x8000,
+		.fs_size = 0x4000
 	},
 	[3] = {
-		.fa_device_id = 0,
-		.fa_off = FLASH_AREA_IMAGE_1_OFFSET + 0xc000,
-		.fa_size = 0x4000
+		.fs_off = 0xc000,
+		.fs_size = 0x4000
 	}
 };
+
 
 void fcb_test_wipe(void)
 {
 	int i;
 	int rc;
-	struct flash_area *fap;
+	const struct flash_area *fap;
 
-	for (i = 0; i < ARRAY_SIZE(test_fcb_area); i++) {
-		fap = &test_fcb_area[i];
-		rc = flash_area_erase(fap, 0, fap->fa_size);
+	rc = flash_area_open(2, &fap);
+	zassert_true(rc == 0, "flash area open call failure");
+
+	for (i = 0; i < ARRAY_SIZE(test_fcb_sector); i++) {
+		rc = flash_area_erase(fap, test_fcb_sector[i].fs_off,
+				      test_fcb_sector[i].fs_size);
 		zassert_true(rc == 0, "erase call failure");
 	}
 }
 
-int fcb_test_empty_walk_cb(struct fcb_entry *loc, void *arg)
+int fcb_test_empty_walk_cb(struct fcb_entry_ctx *entry_ctx, void *arg)
 {
 	zassert_unreachable("fcb_test_empty_walk_cb");
 	return 0;
@@ -64,7 +64,7 @@ u8_t fcb_test_append_data(int msg_len, int off)
 	return (msg_len ^ off);
 }
 
-int fcb_test_data_walk_cb(struct fcb_entry *loc, void *arg)
+int fcb_test_data_walk_cb(struct fcb_entry_ctx *entry_ctx, void *arg)
 {
 	u16_t len;
 	u8_t test_data[128];
@@ -72,11 +72,13 @@ int fcb_test_data_walk_cb(struct fcb_entry *loc, void *arg)
 	int i;
 	int *var_cnt = (int *)arg;
 
-	len = loc->fe_data_len;
+	len = entry_ctx->loc.fe_data_len;
 
 	zassert_true(len == *var_cnt, "");
 
-	rc = flash_area_read(loc->fe_area, loc->fe_data_off, test_data, len);
+	rc = flash_area_read(entry_ctx->fap,
+			     FCB_ENTRY_FA_DATA_OFF(entry_ctx->loc),
+			     test_data, len);
 	zassert_true(rc == 0, "read call failure");
 
 	for (i = 0; i < len; i++) {
@@ -87,12 +89,12 @@ int fcb_test_data_walk_cb(struct fcb_entry *loc, void *arg)
 	return 0;
 }
 
-int fcb_test_cnt_elems_cb(struct fcb_entry *loc, void *arg)
+int fcb_test_cnt_elems_cb(struct fcb_entry_ctx *entry_ctx, void *arg)
 {
 	struct append_arg *aa = (struct append_arg *)arg;
 	int idx;
 
-	idx = loc->fe_area - &test_fcb_area[0];
+	idx = entry_ctx->loc.fe_sector - &test_fcb_sector[0];
 	aa->elem_cnts[idx]++;
 	return 0;
 }
@@ -106,12 +108,12 @@ void fcb_tc_pretest(int sectors)
 	fcb = &test_fcb;
 	memset(fcb, 0, sizeof(*fcb));
 	fcb->f_sector_cnt = sectors;
-	fcb->f_sectors = test_fcb_area; /* XXX */
+	fcb->f_sectors = test_fcb_sector; /* XXX */
 
 	rc = 0;
-	rc = fcb_init(fcb);
+	rc = fcb_init(TEST_FCB_FLASH_AREA_ID, fcb);
 	if (rc != 0) {
-		printf("%s rc == %x, %d\n", __func__, rc, rc);
+		printf("%s rc == %xm, %d\n", __func__, rc, rc);
 		zassert_true(rc == 0, "fbc initialization failure");
 	}
 }

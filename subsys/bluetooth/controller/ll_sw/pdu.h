@@ -14,29 +14,29 @@
 #define PDU_AC_PAYLOAD_SIZE_MAX 37
 #define PDU_AC_SIZE_MAX (offsetof(struct pdu_adv, payload) + \
 			 PDU_AC_PAYLOAD_SIZE_MAX)
-#define PDU_EM_SIZE_MAX offsetof(struct pdu_data, payload)
+#define PDU_EM_SIZE_MAX offsetof(struct pdu_data, lldata)
 
-struct pdu_adv_payload_adv_ind {
+struct pdu_adv_adv_ind {
 	u8_t addr[BDADDR_SIZE];
 	u8_t data[31];
 } __packed;
 
-struct pdu_adv_payload_direct_ind {
+struct pdu_adv_direct_ind {
 	u8_t adv_addr[BDADDR_SIZE];
 	u8_t tgt_addr[BDADDR_SIZE];
 } __packed;
 
-struct pdu_adv_payload_scan_rsp {
+struct pdu_adv_scan_rsp {
 	u8_t addr[BDADDR_SIZE];
 	u8_t data[31];
 } __packed;
 
-struct pdu_adv_payload_scan_req {
+struct pdu_adv_scan_req {
 	u8_t scan_addr[BDADDR_SIZE];
 	u8_t adv_addr[BDADDR_SIZE];
 } __packed;
 
-struct pdu_adv_payload_connect_ind {
+struct pdu_adv_connect_ind {
 	u8_t init_addr[BDADDR_SIZE];
 	u8_t adv_addr[BDADDR_SIZE];
 	struct {
@@ -50,11 +50,11 @@ struct pdu_adv_payload_connect_ind {
 		u8_t  chan_map[5];
 		u8_t  hop:5;
 		u8_t  sca:3;
-	} __packed lldata;
+	} __packed;
 } __packed;
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-struct pdu_adv_payload_com_ext_adv {
+struct pdu_adv_com_ext_adv {
 	u8_t ext_hdr_len:6;
 	u8_t adv_mode:2;
 	u8_t ext_hdr_adi_adv_data[254];
@@ -146,16 +146,17 @@ struct pdu_adv {
 	u8_t len:8;
 
 	union {
-		struct pdu_adv_payload_adv_ind adv_ind;
-		struct pdu_adv_payload_direct_ind direct_ind;
-		struct pdu_adv_payload_scan_req scan_req;
-		struct pdu_adv_payload_scan_rsp scan_rsp;
-		struct pdu_adv_payload_connect_ind connect_ind;
+		u8_t   payload[0];
+		struct pdu_adv_adv_ind adv_ind;
+		struct pdu_adv_direct_ind direct_ind;
+		struct pdu_adv_scan_req scan_req;
+		struct pdu_adv_scan_rsp scan_rsp;
+		struct pdu_adv_connect_ind connect_ind;
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-		struct pdu_adv_payload_com_ext_adv adv_ext_ind;
+		struct pdu_adv_com_ext_adv adv_ext_ind;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
-	} __packed payload;
+	} __packed;
 } __packed;
 
 enum pdu_data_llid {
@@ -224,6 +225,14 @@ struct pdu_data_llctrl_enc_rsp {
 	u8_t ivs[4];
 } __packed;
 
+struct pdu_data_llctrl_start_enc_req {
+	/* no members */
+} __packed;
+
+struct pdu_data_llctrl_start_enc_rsp {
+	/* no members */
+} __packed;
+
 struct pdu_data_llctrl_unknown_rsp {
 	u8_t type;
 } __packed;
@@ -236,6 +245,14 @@ struct pdu_data_llctrl_feature_rsp {
 	u8_t features[8];
 } __packed;
 
+struct pdu_data_llctrl_pause_enc_req {
+	/* no members */
+} __packed;
+
+struct pdu_data_llctrl_pause_enc_rsp {
+	/* no members */
+} __packed;
+
 struct pdu_data_llctrl_version_ind {
 	u8_t  version_number;
 	u16_t company_id;
@@ -244,6 +261,10 @@ struct pdu_data_llctrl_version_ind {
 
 struct pdu_data_llctrl_reject_ind {
 	u8_t error_code;
+} __packed;
+
+struct pdu_data_llctrl_slave_feature_req {
+	u8_t features[8];
 } __packed;
 
 struct pdu_data_llctrl_conn_param_req {
@@ -281,14 +302,34 @@ struct pdu_data_llctrl_reject_ext_ind {
 	u8_t error_code;
 } __packed;
 
-struct pdu_data_llctrl_length_req_rsp {
+struct pdu_data_llctrl_ping_req {
+	/* no members */
+} __packed;
+
+struct pdu_data_llctrl_ping_rsp {
+	/* no members */
+} __packed;
+
+struct pdu_data_llctrl_length_req {
 	u16_t max_rx_octets;
 	u16_t max_rx_time;
 	u16_t max_tx_octets;
 	u16_t max_tx_time;
 } __packed;
 
-struct pdu_data_llctrl_phy_req_rsp {
+struct pdu_data_llctrl_length_rsp {
+	u16_t max_rx_octets;
+	u16_t max_rx_time;
+	u16_t max_tx_octets;
+	u16_t max_tx_time;
+} __packed;
+
+struct pdu_data_llctrl_phy_req {
+	u8_t tx_phys;
+	u8_t rx_phys;
+} __packed;
+
+struct pdu_data_llctrl_phy_rsp {
 	u8_t tx_phys;
 	u8_t rx_phys;
 } __packed;
@@ -312,22 +353,28 @@ struct pdu_data_llctrl {
 		struct pdu_data_llctrl_terminate_ind terminate_ind;
 		struct pdu_data_llctrl_enc_req enc_req;
 		struct pdu_data_llctrl_enc_rsp enc_rsp;
+		struct pdu_data_llctrl_start_enc_req start_enc_req;
+		struct pdu_data_llctrl_start_enc_rsp start_enc_rsp;
 		struct pdu_data_llctrl_unknown_rsp unknown_rsp;
 		struct pdu_data_llctrl_feature_req feature_req;
 		struct pdu_data_llctrl_feature_rsp feature_rsp;
+		struct pdu_data_llctrl_pause_enc_req pause_enc_req;
+		struct pdu_data_llctrl_pause_enc_rsp pause_enc_rsp;
 		struct pdu_data_llctrl_version_ind version_ind;
 		struct pdu_data_llctrl_reject_ind reject_ind;
-		struct pdu_data_llctrl_feature_req slave_feature_req;
+		struct pdu_data_llctrl_slave_feature_req slave_feature_req;
 		struct pdu_data_llctrl_conn_param_req conn_param_req;
 		struct pdu_data_llctrl_conn_param_rsp conn_param_rsp;
 		struct pdu_data_llctrl_reject_ext_ind reject_ext_ind;
-		struct pdu_data_llctrl_length_req_rsp length_req;
-		struct pdu_data_llctrl_length_req_rsp length_rsp;
-		struct pdu_data_llctrl_phy_req_rsp phy_req;
-		struct pdu_data_llctrl_phy_req_rsp phy_rsp;
+		struct pdu_data_llctrl_ping_req ping_req;
+		struct pdu_data_llctrl_ping_rsp ping_rsp;
+		struct pdu_data_llctrl_length_req length_req;
+		struct pdu_data_llctrl_length_rsp length_rsp;
+		struct pdu_data_llctrl_phy_req phy_req;
+		struct pdu_data_llctrl_phy_rsp phy_rsp;
 		struct pdu_data_llctrl_phy_upd_ind phy_upd_ind;
 		struct pdu_data_llctrl_min_used_chans_ind min_used_chans_ind;
-	} __packed ctrldata;
+	} __packed;
 } __packed;
 
 #if defined(CONFIG_BT_CTLR_PROFILE_ISR)
@@ -355,17 +402,17 @@ struct pdu_data {
 #endif /* !CONFIG_BT_CTLR_DATA_LENGTH_CLEAR */
 
 	union {
-		u8_t lldata[1];
 		struct pdu_data_llctrl llctrl;
+		u8_t                   lldata[0];
 
 #if defined(CONFIG_BT_CTLR_CONN_RSSI)
-		u8_t rssi;
+		u8_t                   rssi;
 #endif /* CONFIG_BT_CTLR_CONN_RSSI */
 
 #if defined(CONFIG_BT_CTLR_PROFILE_ISR)
-		struct profile profile;
+		struct profile         profile;
 #endif /* CONFIG_BT_CTLR_PROFILE_ISR */
-	} __packed payload;
+	} __packed;
 } __packed;
 
 #endif /* _PDU_H_ */

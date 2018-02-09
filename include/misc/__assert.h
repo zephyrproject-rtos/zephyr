@@ -82,8 +82,9 @@
 			       __FILE__,                           \
 			       __LINE__);                          \
 			printk(fmt, ##__VA_ARGS__);                \
-			for (;;)                                   \
-				; /* spin thread */                \
+			for (;;) {                                 \
+				/* spin thread */                  \
+			}				           \
 		}                                                  \
 	} while ((0))
 

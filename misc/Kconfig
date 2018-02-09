@@ -136,6 +136,36 @@ config NATIVE_APPLICATION
 	  Build as a native application that can run on the host and using
 	  resources and libraries provided by the host.
 
+choice
+	prompt "Optimization level"
+	default NO_OPTIMIZATIONS    if COVERAGE
+	default DEBUG_OPTIMIZATIONS if DEBUG
+	default SIZE_OPTIMIZATIONS
+	help
+	  Note that these flags shall only control the compiler
+	  optimization level, and that no extra debug code shall be
+	  conditionally compiled based on them.
+
+config SIZE_OPTIMIZATIONS
+	bool "Optimize for size"
+	help
+	  Compiler optimizations will be set to -Os independently of other
+	  options.
+
+config DEBUG_OPTIMIZATIONS
+	bool "Optimize debugging experience"
+	help
+	  Compiler optimizations will be set to -Og independently of other
+	  options.
+
+config NO_OPTIMIZATIONS
+	bool "Optimize nothing"
+	help
+	  Compiler optimizations will be set to -O0 independently of other
+	  options.
+
+endchoice
+
 config COMPILER_OPT
 	string
 	prompt "Custom compiler options"
@@ -287,8 +317,16 @@ config BOOTLOADER_MCUBOOT
 	help
 	  This option signifies that the target uses MCUboot as a bootloader,
 	  or in other words that the image is to be chain-loaded by MCUboot.
-	  This sets several required options in order for the image generated
-	  to be bootable using the MCUboot open source bootloader.
+	  This sets several required build system and Device Tree options in
+	  order for the image generated to be bootable using the MCUboot open
+	  source bootloader. Currently this includes:
+
+	    * Setting TEXT_LOAD_OFFSET to a default value that allows space for
+	      the MCUboot image header
+	    * Activating SW_VECTOR_RELAY on Cortex-M0 targets with no built-in
+	      vector relocation mechanisms
+	    * Including dts/common/mcuboot.overlay when building the Device
+	      Tree in order to place and link the image at the slot0 offset
 
 config BOOTLOADER_KEXEC
 	bool

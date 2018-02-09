@@ -10,16 +10,15 @@
 #include <misc/__assert.h>
 #include <soc.h>
 #include <uart.h>
+#include <board.h>
 
 /* Device constant configuration parameters */
 struct uart_sam0_dev_cfg {
 	SercomUsart *regs;
 	u32_t baudrate;
-	u32_t ctrla;
+	u32_t pads;
 	u32_t pm_apbcmask;
 	u16_t gclk_clkctrl_id;
-	struct soc_gpio_pin pin_rx;
-	struct soc_gpio_pin pin_tx;
 #if CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_config_func)(struct device *dev);
 #endif
@@ -76,17 +75,13 @@ static int uart_sam0_init(struct device *dev)
 	/* Enable SERCOM clock in PM */
 	PM->APBCMASK.reg |= cfg->pm_apbcmask;
 
-	/* Connect pins to the peripheral */
-	soc_gpio_configure(&cfg->pin_rx);
-	soc_gpio_configure(&cfg->pin_tx);
-
 	/* Disable all USART interrupts */
 	usart->INTENCLR.reg = SERCOM_USART_INTENCLR_MASK;
 	wait_synchronization(usart);
 
 	/* 8 bits of data, no parity, 1 stop bit in normal mode */
 	usart->CTRLA.reg =
-	    cfg->ctrla |
+	    cfg->pads |
 	    /* Internal clock */
 	    SERCOM_USART_CTRLA_MODE_USART_INT_CLK
 	    /* 16x oversampling with arithmetic baud rate generation */
@@ -285,9 +280,7 @@ static const struct uart_sam0_dev_cfg uart_sam0_config_##n = {		       \
 	.baudrate = CONFIG_UART_SAM0_SERCOM##n##_CURRENT_SPEED,		       \
 	.pm_apbcmask = PM_APBCMASK_SERCOM##n,				       \
 	.gclk_clkctrl_id = GCLK_CLKCTRL_ID_SERCOM##n##_CORE,		       \
-	.ctrla = SERCOM_USART_CTRLA_RXPO(3) | SERCOM_USART_CTRLA_TXPO(1),      \
-	.pin_rx = PIN_UART_SAM0_SERCOM##n##_RX,				       \
-	.pin_tx = PIN_UART_SAM0_SERCOM##n##_TX,				       \
+	.pads = CONFIG_UART_SAM0_SERCOM##n##_PADS,			       \
 	UART_SAM0_IRQ_HANDLER_FUNC(n)					       \
 }
 

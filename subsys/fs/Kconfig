@@ -18,7 +18,7 @@ choice
 	prompt "Supported file systems"
 	default NO_FILE_SYSTEM
 
-config NO_FS
+config NO_FILE_SYSTEM
 	bool "No File System"
 	help
 	  No file system chosen.

@@ -43,20 +43,53 @@ u16_t crc16(const u8_t *src, size_t len, u16_t polynomial,
 	    u16_t initial_value, bool pad);
 
 /**
- * @brief Compute CCITT variant of CRC 16
+ * @brief Compute the CRC-16/CCITT checksum of a buffer.
  *
- * CCITT variant of CRC 16 is using 0x1021 as its polynomial with the initial
- * value set to 0xffff.
+ * See ITU-T Recommendation V.41 (November 1988).  Uses 0x1021 as the
+ * polynomial, reflects the input, and reflects the output.
  *
+ * To calculate the CRC across non-contigious blocks use the return
+ * value from block N-1 as the seed for block N.
+ *
+ * For CRC-16/CCITT, use 0 as the initial seed.  Other checksums in
+ * the same family can be calculated by changing the seed and/or
+ * XORing the final value.  Examples include:
+ *
+ * - X-25 (used in PPP): seed=0xffff, xor=0xffff, residual=0xf0b8
+ *
+ * @note API changed in Zephyr 1.11.
+ *
+ * @param seed Value to seed the CRC with
  * @param src Input bytes for the computation
  * @param len Length of the input in bytes
  *
  * @return The computed CRC16 value
  */
-static inline u16_t crc16_ccitt(const u8_t *src, size_t len)
-{
-	return crc16(src, len, 0x1021, 0xffff, true);
-}
+u16_t crc16_ccitt(u16_t seed, const u8_t *src, size_t len);
+
+/**
+ * @brief Compute the CRC-16/XMODEM checksum of a buffer.
+ *
+ * The MSB first version of ITU-T Recommendation V.41 (November 1988).
+ * Uses 0x1021 as the polynomial with no reflection.
+ *
+ * To calculate the CRC across non-contigious blocks use the return
+ * value from block N-1 as the seed for block N.
+ *
+ * For CRC-16/XMODEM, use 0 as the initial seed.  Other checksums in
+ * the same family can be calculated by changing the seed and/or
+ * XORing the final value.  Examples include:
+ *
+ * - CCIITT-FALSE: seed=0xffff
+ * - GSM: seed=0, xorout=0xffff, residue=0x1d0f
+ *
+ * @param seed Value to seed the CRC with
+ * @param src Input bytes for the computation
+ * @param len Length of the input in bytes
+ *
+ * @return The computed CRC16 value
+ */
+u16_t crc16_itu_t(u16_t seed, const u8_t *src, size_t len);
 
 /**
  * @brief Compute ANSI variant of CRC 16

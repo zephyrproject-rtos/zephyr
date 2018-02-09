@@ -291,6 +291,9 @@ static int uart_stm32_init(struct device *dev)
 
 	LL_USART_SetBaudRate(UartInstance,
 			     clock_rate,
+#ifdef USART_PRESC_PRESCALER
+			     LL_USART_PRESCALER_DIV1,
+#endif
 #ifdef USART_CR1_OVER8
 			     LL_USART_OVERSAMPLING_16,
 #endif

@@ -187,6 +187,14 @@ The following is a more precise list of required files:
     underlying DTS derived configuration #defines.  Fixup files are temporary
     artifacts until additional DTS changes are made to make them unnecessary.
 
+* Overlay Files (optional)
+
+  * Overlay files contain tweaks or changes to the SoC and Board support files
+    described above. They can be used to modify Device Tree configurations
+    without having to change the SoC and Board files. See
+    :ref:`application_dt` for more information on overlay files and the Zephyr
+    build system.
+
 Adding support for device tree in drivers
 *****************************************
 

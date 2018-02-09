@@ -23,7 +23,7 @@
 #define I2C_ESP32_BUFFER_SIZE 32
 
 #define I2C_ESP32_TIMEOUT_MS 100
-#define I2C_ESP32_SPIN_THRESHOLD 10
+#define I2C_ESP32_SPIN_THRESHOLD 600
 #define I2C_ESP32_YIELD_THRESHOLD (I2C_ESP32_SPIN_THRESHOLD / 2)
 #define I2C_ESP32_TIMEOUT \
 	((I2C_ESP32_YIELD_THRESHOLD) + (I2C_ESP32_SPIN_THRESHOLD))
@@ -390,13 +390,15 @@ i2c_esp32_write_addr(struct device *dev,
 		addr_len++;
 	}
 
-	*cmd++ = (struct i2c_esp32_cmd) {
-		.opcode = I2C_ESP32_OP_WRITE,
-		.ack_en = true,
-		.num_bytes = addr_len,
-	};
-
-	msg->len += addr_len;
+	if ((msg->flags & I2C_MSG_RW_MASK) != I2C_MSG_WRITE) {
+		*cmd++ = (struct i2c_esp32_cmd) {
+			.opcode = I2C_ESP32_OP_WRITE,
+			.ack_en = true,
+			.num_bytes = addr_len,
+		};
+	} else {
+		msg->len += addr_len;
+	}
 
 	return cmd;
 }
@@ -413,17 +415,15 @@ static int i2c_esp32_read_msg(struct device *dev, u16_t addr,
 	/* Set the R/W bit to R */
 	addr |= BIT(0);
 
-	if (msg.flags & I2C_MSG_RESTART) {
-		*cmd++ = (struct i2c_esp32_cmd) {
-			.opcode = I2C_ESP32_OP_RSTART
-		};
-	}
+	*cmd++ = (struct i2c_esp32_cmd) {
+		.opcode = I2C_ESP32_OP_RSTART
+	};
 
 	cmd = i2c_esp32_write_addr(dev, cmd, &msg, addr);
 
 	for (; msg.len; cmd = (void *)I2C_COMD0_REG(config->index)) {
 		volatile struct i2c_esp32_cmd *wait_cmd = NULL;
-		u32_t to_read = max(I2C_ESP32_BUFFER_SIZE, msg.len - 1);
+		u32_t to_read = min(I2C_ESP32_BUFFER_SIZE, msg.len - 1);
 
 		/* Might be the last byte, in which case, `to_read` will
 		 * be 0 here.  See comment below.
@@ -492,16 +492,13 @@ static int i2c_esp32_write_msg(struct device *dev, u16_t addr,
 	volatile struct i2c_esp32_cmd *cmd =
 		(void *)I2C_COMD0_REG(config->index);
 
-	if (msg.flags & I2C_MSG_RESTART) {
-		*cmd++ = (struct i2c_esp32_cmd) {
-			.opcode = I2C_ESP32_OP_RSTART
-		};
-	}
+	*cmd++ = (struct i2c_esp32_cmd) {
+		.opcode = I2C_ESP32_OP_RSTART
+	};
 
 	cmd = i2c_esp32_write_addr(dev, cmd, &msg, addr);
 
 	for (; msg.len; cmd = (void *)I2C_COMD0_REG(config->index)) {
-		volatile struct i2c_esp32_cmd *wait_cmd = cmd;
 		u32_t to_send = min(I2C_ESP32_BUFFER_SIZE, msg.len);
 		u32_t i;
 		int ret;
@@ -519,15 +516,16 @@ static int i2c_esp32_write_msg(struct device *dev, u16_t addr,
 		msg.len -= to_send;
 
 		if (!msg.len && (msg.flags & I2C_MSG_STOP)) {
-			*cmd++ = (struct i2c_esp32_cmd) {
+			*cmd = (struct i2c_esp32_cmd) {
 				.opcode = I2C_ESP32_OP_STOP
 			};
+		} else {
+			*cmd = (struct i2c_esp32_cmd) {
+				.opcode = I2C_ESP32_OP_END
+			};
 		}
-		*cmd++ = (struct i2c_esp32_cmd) {
-			.opcode = I2C_ESP32_OP_END
-		};
 
-		ret = i2c_esp32_transmit_wait(dev, wait_cmd);
+		ret = i2c_esp32_transmit_wait(dev, cmd);
 		if (ret < 0) {
 			return ret;
 		}

@@ -186,7 +186,6 @@ struct net_pkt *net_arp_prepare(struct net_pkt *pkt)
 	if (net_pkt_ll_reserve(pkt) != sizeof(struct net_eth_hdr)) {
 		/* Add the ethernet header if it is missing. */
 		struct net_buf *header;
-		struct net_linkaddr *ll;
 
 		net_pkt_set_ll_reserve(pkt, sizeof(struct net_eth_hdr));
 
