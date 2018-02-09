@@ -8,9 +8,11 @@
 #include <i2c.h>
 #include <soc.h>
 #include <misc/util.h>
-#include <logging/sys_log.h>
 #include <altera_common.h>
 #include "altera_avalon_i2c.h"
+
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_I2C_LEVEL
+#include <logging/sys_log.h>
 
 #define NIOS2_I2C_TIMEOUT_USEC		1000
 
