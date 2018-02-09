@@ -34,12 +34,25 @@ volatile int rv;
 
 static volatile int crash_reason;
 
-/* ARM is a special case, in that k_thread_abort() does indeed return
- * instead of calling _Swap() directly. The PendSV exception is queued
- * and immediately fires upon completing the exception path; the faulting
- * thread is never run again.
+/* On some architectures, k_thread_abort(_current) will return instead
+ * of _Swap'ing away.
+ *
+ * On ARM the PendSV exception is queued and immediately fires upon
+ * completing the exception path; the faulting thread is never run
+ * again.
+ *
+ * On Xtensa/asm2 the handler is running in interrupt context and on
+ * the interrupt stack and needs to return through the interrupt exit
+ * code.
+ *
+ * In both cases the thread is guaranteed never to run again once we
+ * return from the _SysFatalErrorHandler().
  */
-#ifndef CONFIG_ARM
+#if !(defined(CONFIG_ARM) || defined(CONFIG_XTENSA_ASM2))
+#define ERR_IS_NORETURN 1
+#endif
+
+#ifdef ERR_IS_NORETURN
 FUNC_NORETURN
 #endif
 void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
@@ -48,7 +61,7 @@ void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
 	crash_reason = reason;
 
 	k_thread_abort(_current);
-#ifndef CONFIG_ARM
+#ifdef ERR_IS_NORETURN
 	CODE_UNREACHABLE;
 #endif
 }
