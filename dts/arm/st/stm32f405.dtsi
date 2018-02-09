@@ -5,7 +5,7 @@
  */
 
 #include <st/stm32f405-pinctrl.dtsi>
-#include <st/stm32f411.dtsi>
+#include <st/stm32f401.dtsi>
 
 / {
 	ccm0: memory@10000000 {
