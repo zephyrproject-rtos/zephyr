@@ -37,6 +37,25 @@ NET_BUF_POOL_DEFINE(acl_tx_pool, CONFIG_BT_L2CAP_TX_BUF_COUNT,
 		    BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_TX_MTU),
 		    BT_BUF_USER_DATA_MIN, NULL);
 
+#if CONFIG_BT_L2CAP_TX_FRAG_COUNT > 0
+
+#if defined(BT_CTLR_TX_BUFFER_SIZE)
+#define FRAG_SIZE BT_L2CAP_BUF_SIZE(BT_CTLR_TX_BUFFER_SIZE - 4)
+#else
+#define FRAG_SIZE BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_TX_MTU)
+#endif
+
+/* Dedicated pool for fragment buffers in case queued up TX buffers don't
+ * fit the controllers buffer size. We can't use the acl_tx_pool for the
+ * fragmentation, since it's possible that pool is empty and all buffers
+ * are queued up in the TX queue. In such a situation, trying to allocate
+ * another buffer from the acl_tx_pool would result in a deadlock.
+ */
+NET_BUF_POOL_FIXED_DEFINE(frag_pool, CONFIG_BT_L2CAP_TX_FRAG_COUNT, FRAG_SIZE,
+			  NULL);
+
+#endif /* CONFIG_BT_L2CAP_TX_FRAG_COUNT > 0 */
+
 /* How long until we cancel HCI_LE_Create_Connection */
 #define CONN_TIMEOUT	K_SECONDS(3)
 
@@ -1198,7 +1217,11 @@ static struct net_buf *create_frag(struct bt_conn *conn, struct net_buf *buf)
 	struct net_buf *frag;
 	u16_t frag_len;
 
+#if CONFIG_BT_L2CAP_TX_FRAG_COUNT > 0
+	frag = bt_conn_create_pdu(&frag_pool, 0);
+#else
 	frag = bt_conn_create_pdu(NULL, 0);
+#endif
 
 	if (conn->state != BT_CONN_CONNECTED) {
 		net_buf_unref(frag);
