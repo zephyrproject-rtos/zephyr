@@ -26,4 +26,8 @@ extern void esp32_rom_uart_attach(void);
 extern STATUS esp32_rom_uart_tx_one_char(u8_t chr);
 extern STATUS esp32_rom_uart_rx_one_char(u8_t *chr);
 
+extern void esp32_rom_Cache_Flush(int cpu);
+extern void esp32_rom_Cache_Read_Enable(int cpu);
+extern void esp32_rom_ets_set_appcpu_boot_addr(void *addr);
+
 #endif /* __SOC_H__ */

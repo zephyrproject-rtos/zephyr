@@ -30,6 +30,9 @@ PROVIDE ( esp32_rom_uart_attach = 0x40008fd0 );
 PROVIDE ( esp32_rom_intr_matrix_set = 0x4000681c );
 PROVIDE ( esp32_rom_gpio_matrix_in = 0x40009edc );
 PROVIDE ( esp32_rom_gpio_matrix_out = 0x40009f0c );
+PROVIDE ( esp32_rom_Cache_Flush = 0x40009a14 );
+PROVIDE ( esp32_rom_Cache_Read_Enable = 0x40009a84 );
+PROVIDE ( esp32_rom_ets_set_appcpu_boot_addr = 0x4000689c );
 
 MEMORY
 {

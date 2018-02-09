@@ -28,14 +28,6 @@
 #define DPORT_APPCPU_RUNSTALL    BIT(0)
 #define DPORT_APPCPU_RESETTING   BIT(0)
 
-/* These calls are ROM-resident and have fixed addresses. No, I don't
- * know how they plan on updating these portably either.
- */
-typedef void (*esp32rom_call_t)(int);
-static const esp32rom_call_t esp32rom_Cache_Flush = (void *)0x40009a14;
-static const esp32rom_call_t esp32rom_Cache_Read_Enable = (void *)0x40009a84;
-static const esp32rom_call_t esp32rom_ets_set_appcpu_boot_addr = (void *)0x4000689c;
-
 struct cpustart_rec {
 	int cpu;
 	void (*fn)(int, void *);
@@ -151,8 +143,8 @@ static void appcpu_start(void)
 	 * definition, so we can skip that complexity and just call
 	 * the ROM directly.
 	 */
-	esp32rom_Cache_Flush(1);
-	esp32rom_Cache_Read_Enable(1);
+	esp32_rom_Cache_Flush(1);
+	esp32_rom_Cache_Read_Enable(1);
 
 	RTC_CNTL_SW_CPU_STALL &= ~RTC_CNTL_SW_STALL_APPCPU_C1;
 	RTC_CNTL_OPTIONS0     &= ~RTC_CNTL_SW_STALL_APPCPU_C0;
@@ -166,7 +158,7 @@ static void appcpu_start(void)
 	/* Seems weird that you set the boot address AFTER starting
 	 * the CPU, but this is how they do it...
 	 */
-	esp32rom_ets_set_appcpu_boot_addr((uint32_t)appcpu_entry1);
+	esp32_rom_ets_set_appcpu_boot_addr((void *)appcpu_entry1);
 }
 
 void _arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
