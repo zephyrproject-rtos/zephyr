@@ -140,7 +140,8 @@ static void dump_stack(int *stack)
 #if CONFIG_XTENSA_ASM2
 static inline void *restore_stack(void *interrupted_stack)
 {
-	if (!_is_preempt(_current)) {
+	if (!_is_preempt(_current) &&
+	    !(_current->base.thread_state & _THREAD_DEAD)) {
 		return interrupted_stack;
 	}
 
