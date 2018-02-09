@@ -1055,7 +1055,11 @@ class Kconfig(object):
 
         if globbing:
             # Try globbing
-            return glob.glob(filename)
+            files =  glob.glob(filename)
+
+            # Glob results have an arbitrary order, so sort them to
+            # have consistent results across platforms.
+            return sorted(files)
 
         raise IOError(
             "Could not find '{}'. Perhaps the $srctree "
