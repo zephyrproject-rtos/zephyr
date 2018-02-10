@@ -85,6 +85,11 @@ Press Button 2 on PDK board to create & write data in file "0.txt"
 
 Pree Button 1 to read data on "0.txt"
 
+Useful Link
+***********
+
+http://docs.zephyrproject.org/api/file_system.html
+
 
 
 
