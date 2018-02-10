@@ -35,7 +35,7 @@
 
 NET_BUF_POOL_DEFINE(acl_tx_pool, CONFIG_BT_L2CAP_TX_BUF_COUNT,
 		    BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_TX_MTU),
-		    CONFIG_BT_L2CAP_TX_USER_DATA_SIZE, NULL);
+		    BT_BUF_USER_DATA_MIN, NULL);
 
 /* How long until we cancel HCI_LE_Create_Connection */
 #define CONN_TIMEOUT	K_SECONDS(3)
