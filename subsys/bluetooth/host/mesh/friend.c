@@ -49,8 +49,8 @@ struct friend_pdu_info {
 	u32_t  iv_index;
 };
 
-NET_BUF_POOL_DEFINE(friend_buf_pool, FRIEND_BUF_COUNT,
-		    BT_MESH_ADV_DATA_SIZE, BT_MESH_ADV_USER_DATA_SIZE, NULL);
+NET_BUF_POOL_FIXED_DEFINE(friend_buf_pool, FRIEND_BUF_COUNT,
+			  BT_MESH_ADV_DATA_SIZE, NULL);
 
 static struct friend_adv {
 	struct bt_mesh_adv adv;
@@ -400,37 +400,37 @@ static struct net_buf *encode_friend_ctl(struct bt_mesh_friend *frnd,
 static struct net_buf *encode_update(struct bt_mesh_friend *frnd, u8_t md)
 {
 	struct bt_mesh_ctl_friend_update *upd;
-	struct net_buf_simple *sdu = NET_BUF_SIMPLE(1 + sizeof(*upd));
+	NET_BUF_SIMPLE_DEFINE(sdu, 1 + sizeof(*upd));
 	struct bt_mesh_subnet *sub = bt_mesh_subnet_get(frnd->net_idx);
 
 	__ASSERT_NO_MSG(sub != NULL);
 
 	BT_DBG("lpn 0x%04x md 0x%02x", frnd->lpn, md);
 
-	net_buf_simple_init(sdu, 1);
+	net_buf_simple_reserve(&sdu, 1);
 
-	upd = net_buf_simple_add(sdu, sizeof(*upd));
+	upd = net_buf_simple_add(&sdu, sizeof(*upd));
 	upd->flags = bt_mesh_net_flags(sub);
 	upd->iv_index = sys_cpu_to_be32(bt_mesh.iv_index);
 	upd->md = md;
 
-	return encode_friend_ctl(frnd, TRANS_CTL_OP_FRIEND_UPDATE, sdu);
+	return encode_friend_ctl(frnd, TRANS_CTL_OP_FRIEND_UPDATE, &sdu);
 }
 
 static void enqueue_sub_cfm(struct bt_mesh_friend *frnd, u8_t xact)
 {
 	struct bt_mesh_ctl_friend_sub_confirm *cfm;
-	struct net_buf_simple *sdu = NET_BUF_SIMPLE(1 + sizeof(*cfm));
+	NET_BUF_SIMPLE_DEFINE(sdu, 1 + sizeof(*cfm));
 	struct net_buf *buf;
 
 	BT_DBG("lpn 0x%04x xact 0x%02x", frnd->lpn, xact);
 
-	net_buf_simple_init(sdu, 1);
+	net_buf_simple_reserve(&sdu, 1);
 
-	cfm = net_buf_simple_add(sdu, sizeof(*cfm));
+	cfm = net_buf_simple_add(&sdu, sizeof(*cfm));
 	cfm->xact = xact;
 
-	buf = encode_friend_ctl(frnd, TRANS_CTL_OP_FRIEND_SUB_CFM, sdu);
+	buf = encode_friend_ctl(frnd, TRANS_CTL_OP_FRIEND_SUB_CFM, &sdu);
 	if (!buf) {
 		BT_ERR("Unable to encode Subscription List Confirmation");
 		return;
@@ -721,14 +721,14 @@ int bt_mesh_friend_clear_cfm(struct bt_mesh_net_rx *rx,
 static void enqueue_offer(struct bt_mesh_friend *frnd, s8_t rssi)
 {
 	struct bt_mesh_ctl_friend_offer *off;
-	struct net_buf_simple *sdu = NET_BUF_SIMPLE(1 + sizeof(*off));
+	NET_BUF_SIMPLE_DEFINE(sdu, 1 + sizeof(*off));
 	struct net_buf *buf;
 
 	BT_DBG("");
 
-	net_buf_simple_init(sdu, 1);
+	net_buf_simple_reserve(&sdu, 1);
 
-	off = net_buf_simple_add(sdu, sizeof(*off));
+	off = net_buf_simple_add(&sdu, sizeof(*off));
 
 	off->recv_win = CONFIG_BT_MESH_FRIEND_RECV_WIN,
 	off->queue_size = CONFIG_BT_MESH_FRIEND_QUEUE_SIZE,
@@ -736,7 +736,7 @@ static void enqueue_offer(struct bt_mesh_friend *frnd, s8_t rssi)
 	off->rssi = rssi,
 	off->frnd_counter = sys_cpu_to_be16(frnd->counter);
 
-	buf = encode_friend_ctl(frnd, TRANS_CTL_OP_FRIEND_OFFER, sdu);
+	buf = encode_friend_ctl(frnd, TRANS_CTL_OP_FRIEND_OFFER, &sdu);
 	if (!buf) {
 		BT_ERR("Unable to encode Friend Offer");
 		return;

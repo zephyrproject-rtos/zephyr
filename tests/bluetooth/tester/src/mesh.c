@@ -192,9 +192,7 @@ static struct bt_mesh_health_srv health_srv = {
 	.cb = &health_srv_cb,
 };
 
-static struct bt_mesh_model_pub health_pub = {
-	.msg = BT_MESH_HEALTH_FAULT_MSG(CUR_FAULTS_MAX),
-};
+BT_MESH_HEALTH_PUB_DEFINE(health_pub, CUR_FAULTS_MAX);
 
 static struct bt_mesh_cfg_cli cfg_cli = {
 };
@@ -577,7 +575,7 @@ static void lpn_poll(u8_t *data, u16_t len)
 static void net_send(u8_t *data, u16_t len)
 {
 	struct mesh_net_send_cmd *cmd = (void *) data;
-	struct net_buf_simple *msg = NET_BUF_SIMPLE(UINT8_MAX);
+	NET_BUF_SIMPLE_DEFINE(msg, UINT8_MAX);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net.net_idx,
 		.app_idx = BT_MESH_KEY_DEV,
@@ -589,11 +587,9 @@ static void net_send(u8_t *data, u16_t len)
 	SYS_LOG_DBG("ttl 0x%02x dst 0x%04x payload_len %d", ctx.send_ttl,
 		    ctx.addr, cmd->payload_len);
 
-	net_buf_simple_init(msg, 0);
+	net_buf_simple_add_mem(&msg, cmd->payload, cmd->payload_len);
 
-	net_buf_simple_add_mem(msg, cmd->payload, cmd->payload_len);
-
-	err = bt_mesh_model_send(&vnd_models[0], &ctx, msg, NULL, NULL);
+	err = bt_mesh_model_send(&vnd_models[0], &ctx, &msg, NULL, NULL);
 	if (err) {
 		SYS_LOG_ERR("Failed to send (err %d)", err);
 	}
@@ -605,30 +601,27 @@ static void net_send(u8_t *data, u16_t len)
 static void health_generate_faults(u8_t *data, u16_t len)
 {
 	struct mesh_health_generate_faults_rp *rp;
-	struct net_buf_simple *buf = NET_BUF_SIMPLE(sizeof(*rp) +
-						    sizeof(cur_faults) +
-						    sizeof(reg_faults));
+	NET_BUF_SIMPLE_DEFINE(buf, sizeof(*rp) + sizeof(cur_faults) +
+			      sizeof(reg_faults));
 	u8_t some_faults[] = { 0x01, 0x02, 0x03, 0xff, 0x06 };
 	u8_t cur_faults_count, reg_faults_count;
 
-	net_buf_simple_init(buf, 0);
-
-	rp = net_buf_simple_add(buf, sizeof(*rp));
+	rp = net_buf_simple_add(&buf, sizeof(*rp));
 
 	cur_faults_count = min(sizeof(cur_faults), sizeof(some_faults));
 	memcpy(cur_faults, some_faults, cur_faults_count);
-	net_buf_simple_add_mem(buf, cur_faults, cur_faults_count);
+	net_buf_simple_add_mem(&buf, cur_faults, cur_faults_count);
 	rp->cur_faults_count = cur_faults_count;
 
 	reg_faults_count = min(sizeof(reg_faults), sizeof(some_faults));
 	memcpy(reg_faults, some_faults, reg_faults_count);
-	net_buf_simple_add_mem(buf, reg_faults, reg_faults_count);
+	net_buf_simple_add_mem(&buf, reg_faults, reg_faults_count);
 	rp->reg_faults_count = reg_faults_count;
 
 	bt_mesh_fault_update(&elements[0]);
 
 	tester_send(BTP_SERVICE_ID_MESH, MESH_HEALTH_GENERATE_FAULTS,
-		    CONTROLLER_INDEX, buf->data, buf->len);
+		    CONTROLLER_INDEX, buf.data, buf.len);
 }
 
 static void health_clear_faults(u8_t *data, u16_t len)
@@ -647,7 +640,7 @@ static void health_clear_faults(u8_t *data, u16_t len)
 static void model_send(u8_t *data, u16_t len)
 {
 	struct mesh_model_send_cmd *cmd = (void *) data;
-	struct net_buf_simple *msg = NET_BUF_SIMPLE(UINT8_MAX);
+	NET_BUF_SIMPLE_DEFINE(msg, UINT8_MAX);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net.net_idx,
 		.app_idx = BT_MESH_KEY_DEV,
@@ -678,11 +671,9 @@ static void model_send(u8_t *data, u16_t len)
 	SYS_LOG_DBG("src 0x%04x dst 0x%04x model %p payload_len %d", src,
 		    ctx.addr, model, cmd->payload_len);
 
-	net_buf_simple_init(msg, 0);
+	net_buf_simple_add_mem(&msg, cmd->payload, cmd->payload_len);
 
-	net_buf_simple_add_mem(msg, cmd->payload, cmd->payload_len);
-
-	err = bt_mesh_model_send(model, &ctx, msg, NULL, NULL);
+	err = bt_mesh_model_send(model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		SYS_LOG_ERR("Failed to send (err %d)", err);
 	}
@@ -812,30 +803,28 @@ void tester_handle_mesh(u8_t opcode, u8_t index, u8_t *data, u16_t len)
 void net_recv_ev(u8_t ttl, u8_t ctl, u16_t src, u16_t dst, const void *payload,
 		 size_t payload_len)
 {
-	struct net_buf_simple *buf = NET_BUF_SIMPLE(UINT8_MAX);
+	NET_BUF_SIMPLE_DEFINE(buf, UINT8_MAX);
 	struct mesh_net_recv_ev *ev;
 
 	SYS_LOG_DBG("ttl 0x%02x ctl 0x%02x src 0x%04x dst 0x%04x "
 		    "payload_len %d", ttl, ctl, src, dst, payload_len);
 
-	net_buf_simple_init(buf, 0);
-
-	if (payload_len > net_buf_simple_tailroom(buf)) {
+	if (payload_len > net_buf_simple_tailroom(&buf)) {
 		SYS_LOG_ERR("Payload size exceeds buffer size");
 
 		return;
 	}
 
-	ev = net_buf_simple_add(buf, sizeof(*ev));
+	ev = net_buf_simple_add(&buf, sizeof(*ev));
 	ev->ttl = ttl;
 	ev->ctl = ctl;
 	ev->src = sys_cpu_to_le16(src);
 	ev->dst = sys_cpu_to_le16(dst);
 	ev->payload_len = payload_len;
-	net_buf_simple_add_mem(buf, payload, payload_len);
+	net_buf_simple_add_mem(&buf, payload, payload_len);
 
 	tester_send(BTP_SERVICE_ID_MESH, MESH_EV_NET_RECV, CONTROLLER_INDEX,
-		    buf->data, buf->len);
+		    buf.data, buf.len);
 }
 
 static void model_bound_cb(u16_t addr, struct bt_mesh_model *model,

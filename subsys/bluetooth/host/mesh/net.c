@@ -986,7 +986,7 @@ static int net_decrypt(struct bt_mesh_subnet *sub, const u8_t *enc,
 
 	rx->old_iv = (IVI(data) != (bt_mesh.iv_index & 0x01));
 
-	net_buf_simple_init(buf, 0);
+	net_buf_simple_reset(buf);
 	memcpy(net_buf_simple_add(buf, data_len), data, data_len);
 
 	if (bt_mesh_net_obfuscate(buf->data, BT_MESH_NET_IVI_RX(rx), priv)) {
@@ -1293,7 +1293,7 @@ int bt_mesh_net_decode(struct net_buf_simple *data, enum bt_mesh_net_if net_if,
 void bt_mesh_net_recv(struct net_buf_simple *data, s8_t rssi,
 		      enum bt_mesh_net_if net_if)
 {
-	struct net_buf_simple *buf = NET_BUF_SIMPLE(29);
+	NET_BUF_SIMPLE_DEFINE(buf, 29);
 	struct bt_mesh_net_rx rx = { .rssi = rssi };
 	struct net_buf_simple_state state;
 
@@ -1303,12 +1303,12 @@ void bt_mesh_net_recv(struct net_buf_simple *data, s8_t rssi,
 		return;
 	}
 
-	if (bt_mesh_net_decode(data, net_if, &rx, buf)) {
+	if (bt_mesh_net_decode(data, net_if, &rx, &buf)) {
 		return;
 	}
 
 	/* Save the state so the buffer can later be relayed */
-	net_buf_simple_save(buf, &state);
+	net_buf_simple_save(&buf, &state);
 
 	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) &&
 	    net_if == BT_MESH_NET_IF_PROXY) {
@@ -1318,15 +1318,15 @@ void bt_mesh_net_recv(struct net_buf_simple *data, s8_t rssi,
 	rx.local_match = (bt_mesh_fixed_group_match(rx.dst) ||
 			  bt_mesh_elem_find(rx.dst));
 
-	bt_mesh_trans_recv(buf, &rx);
+	bt_mesh_trans_recv(&buf, &rx);
 
 	/* Relay if this was a group/virtual address, or if the destination
 	 * was neither a local element nor an LPN we're Friends for.
 	 */
 	if (!BT_MESH_ADDR_IS_UNICAST(rx.dst) ||
 	    (!rx.local_match && !rx.friend_match)) {
-		net_buf_simple_restore(buf, &state);
-		bt_mesh_net_relay(buf, &rx);
+		net_buf_simple_restore(&buf, &state);
+		bt_mesh_net_relay(&buf, &rx);
 	}
 }
 
