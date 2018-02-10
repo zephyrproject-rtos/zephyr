@@ -2203,8 +2203,8 @@ def parse_arguments():
 
     parser.add_argument(
         "-x", "--extra-args", action="append", default=[],
-        help="""Extra CMake cache entries to define when building test cases. May
-        be called multiple times. The key-value entries will be
+        help="""Extra CMake cache entries to define when building test cases.
+        May be called multiple times. The key-value entries will be
         prefixed with -D before being passed to CMake.
 
         E.g
@@ -2217,7 +2217,8 @@ def parse_arguments():
     )
 
     parser.add_argument("-C", "--coverage", action="store_true",
-                        help="Scan for unit test coverage with gcov + lcov.")
+                        help="Generate coverage report for unit tests, and"
+                        " tests and samples run in native_posix.")
 
     return parser.parse_args()
 
