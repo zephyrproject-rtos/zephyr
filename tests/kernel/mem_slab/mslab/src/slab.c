@@ -31,7 +31,7 @@
 /* Number of memory blocks. The minimum number of blocks needed to run the
  * test is 2
  */
-#define NUMBLOCKS   2
+#define NUMBLOCKS   4
 
 void test_slab_get_all_blocks(void **p);
 void test_slab_free_all_blocks(void **p);
@@ -102,6 +102,7 @@ void helper_thread(void)
 
 
 	k_sem_give(&SEM_HELPERDONE);
+
 }  /* helper thread */
 
 
