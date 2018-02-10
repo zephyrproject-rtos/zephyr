@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef TOOLCHAIN_COMMON_H
+#define TOOLCHAIN_COMMON_H
 /**
  * @file
  * @brief Common toolchain abstraction
@@ -131,3 +133,5 @@
 /* build assertion with message -- common implementation swallows message. */
 #define BUILD_ASSERT_MSG(EXPR, MSG) BUILD_ASSERT(EXPR)
 #endif
+
+#endif /* TOOLCHAIN_COMMON_H */
