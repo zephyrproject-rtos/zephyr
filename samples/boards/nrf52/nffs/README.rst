@@ -72,10 +72,14 @@ make clean
 
 make all
 
+##### After executing above commands we will find "zephyr.hex" in current directory
+
+##### which we have to flash using nrfjprog utility.
+
 Working
 ********
 
-After flashing this demo eg. on nrf52840_pdk board & open serial terminal to see printk messages 
+After flashing this "zephyr.hex" on nrf52840_pdk board, open serial terminal to see printk messages 
 
 Press Button 2 on PDK board to create & write data in file "0.txt"
 
