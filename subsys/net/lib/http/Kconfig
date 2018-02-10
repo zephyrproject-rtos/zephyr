@@ -11,6 +11,12 @@ config HTTP
 
 if HTTP
 
+config HTTP_APP
+	bool "Use new HTTP API built on top of net-app API"
+	default y
+
+if HTTP_APP
+
 config HTTP_SERVER
 	bool "HTTP server support"
 	default n
@@ -53,6 +59,60 @@ config HTTP_SERVER_CONNECTIONS
 	  HTTP server can serve. Note that only 1 HTTPS connection can be
 	  served at a time, so set CONFIG_NET_APP_SERVER_NUM_CONN and
 	  CONFIG_NET_TCP_BACKLOG_SIZE to 1 in that case.
+
+endif # HTTP_APP
+
+if !HTTP_APP
+
+config HTTP_SERVER
+	bool "HTTP server support"
+	default n
+	select HTTP_PARSER
+	select HTTP_PARSER_URL
+	help
+	  Enables HTTP server routines.
+
+config HTTP_CLIENT
+	bool "HTTP client support"
+	default n
+	select HTTP_PARSER
+	select HTTP_PARSER_URL
+	help
+	  Enables HTTP client routines.
+
+config HTTP_HEADER_FIELD_ITEMS
+	int "HTTP header field max number of items"
+	depends on HTTP_SERVER
+	default 8
+	help
+	  Number of HTTP header field items that an HTTP server
+	  application will handle
+
+config HTTPS
+	bool "HTTPS support"
+	default n
+	select MBEDTLS
+	help
+	  Enables HTTPS support.
+
+config HTTPS_STACK_SIZE
+	int "HTTPS thread stack size"
+	default 8192
+	depends on HTTPS
+	help
+	  HTTPS thread stack size. The mbedtls routines will use this stack
+	  thus it is by default very large.
+
+config HTTP_SERVER_CONNECTIONS
+	int "Max number of concurrent HTTP server connections"
+	default NET_MAX_CONTEXTS
+	depends on HTTP_SERVER
+	help
+	  This value determines how many simultaneous HTTP connections the
+	  HTTP server can serve. Note that only 1 HTTPS connection can be
+	  served at a time.
+
+endif # !HTTP_APP
 
 config HTTP_SERVER_NUM_URLS
 	int "Max number of URLs that the HTTP server will handle"
