@@ -41,6 +41,8 @@ zephyr_include_directories(
 
 Description:
 
+After successfully compiling & flashing this demo on nRF52840_PDK board,
+
 Press Button 2 on nRF52840_PDK board, so that file with "0.txt" name get created.
 
 Press Button 1 to read data on newly created file.
