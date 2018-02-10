@@ -571,7 +571,8 @@ class QEMUHandler(Handler):
 
 class SizeCalculator:
 
-    alloc_sections = ["bss", "noinit", "app_bss", "app_noinit"]
+    alloc_sections = ["bss", "noinit", "app_bss", "app_noinit", "ccm_bss",
+                      "ccm_noinit"]
     rw_sections = ["datas", "initlevel", "_k_task_list", "_k_event_list",
                    "_k_memory_pool", "exceptions", "initshell",
                    "_static_thread_area", "_k_timer_area", "_k_work_area",
@@ -581,7 +582,8 @@ class SizeCalculator:
                    "_k_msgq_area", "_k_mbox_area", "_k_pipe_area",
                    "net_if", "net_if_event", "net_stack", "net_l2_data",
                    "_k_queue_area", "_net_buf_pool_area", "app_datas",
-                   "kobject_data", "mmu_tables", "app_pad", "priv_stacks"]
+                   "kobject_data", "mmu_tables", "app_pad", "priv_stacks",
+                   "ccm_data"]
     # These get copied into RAM only on non-XIP
     ro_sections = ["text", "ctors", "init_array", "reset", "object_access",
                    "rodata", "devconfig", "net_l2", "vector"]
