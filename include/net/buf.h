@@ -124,16 +124,14 @@ struct net_buf_simple {
  *
  *  @param buf Buffer to initialize.
  *  @param reserve_head Headroom to reserve.
- *
- *  @warning This API should *only* be used when the net_buf_simple object
- *           has been created using the NET_BUF_SIMPLE() macro. For any other
- *           kinf of creation there is no need to call this API (in fact,
- *           it will result in undefined behavior).
  */
 static inline void net_buf_simple_init(struct net_buf_simple *buf,
 				       size_t reserve_head)
 {
-	buf->__buf = (u8_t *)buf + sizeof(*buf);
+	if (!buf->__buf) {
+		buf->__buf = (u8_t *)buf + sizeof(*buf);
+	}
+
 	buf->data = buf->__buf + reserve_head;
 	buf->len = 0;
 }
