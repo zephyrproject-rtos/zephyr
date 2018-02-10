@@ -59,6 +59,7 @@ zephyr_include_directories(
   ${PROJECT_BINARY_DIR}/include/generated
   ${USERINCLUDE}
   ${STDINCLUDE}
+  ext/fs/nffs/include
 )
 
 zephyr_compile_definitions(
