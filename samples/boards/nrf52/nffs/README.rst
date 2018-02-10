@@ -1,11 +1,30 @@
-To successfully run this demo example,
 
-we have to include ext/fs/nffs/include directory
+NFFS: READ WRITE FILE_STATUS
+###########################
 
-into the list of include directories by editing $(zephyr_base)/CMakeLists.txt
+Overview
+********
+
+This is a simple application demonstrating how to read, write persistence data on 
+
+flash of nrf52 SoC using NFFS file system.
 
 
-##################### For Example ##########################
+Requirements
+************
+
+This sample has been tested on the Nordic nRF52840-PDK board, but would
+
+likely also run on the nrf52_pca10040 board.
+
+Building and Running
+********************
+
+To build this example, we have to add "ext/fs/nffs/include" into list of
+
+include directories which can be possible by editing $(zephyr_base)/CMakeLists.txt
+
+After modification that list look like this ...
 
 zephyr_include_directories(
 
@@ -31,18 +50,37 @@ zephyr_include_directories(
 
   ${STDINCLUDE}
 
-  ext/fs/nffs/include    ######## <<-----------------------
+  ext/fs/nffs/include
 
 )
 
+##### After that
 
-##########################################################.
+cd $(zephyr_base)/samples/boards/nrf52/nffs
+
+mkdir build
+
+cd build
+
+cmake -DBOARD=nrf52840_pca10056 ..
+
+make
+
+cd zephyr
+
+make clean
+
+make all
+
+Working
+********
+
+After flashing this demo eg. on nrf52840_pdk board & open serial terminal to see printk messages 
+
+Press Button 2 on PDK board to create & write data in file "0.txt"
+
+Pree Button 1 to read data on "0.txt"
 
 
-Description:
 
-After successfully compiling & flashing this demo on nRF52840_PDK board,
 
-Press Button 2 on nRF52840_PDK board, so that file with "0.txt" name get created.
-
-Press Button 1 to read data on newly created file.
