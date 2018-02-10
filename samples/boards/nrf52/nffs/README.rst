@@ -1,25 +1,39 @@
-.. _ble_peripheral:
+To successfully run this demo example,
 
-Bluetooth: Peripheral
-#####################
+we have to include ext/fs/nffs/include directory
 
-Overview
-********
-
-Application demonstrating the BLE Peripheral role. It has several well-known and
-vendor-specific GATT services that it exposes.
+into the list of include directories by editing $(zephyr_base)/CMakeLists.txt
 
 
-Requirements
-************
+##################### For Example ##########################
 
-* BlueZ running on the host, or
-* A board with BLE support
+zephyr_include_directories(
 
-Building and Running
-********************
+  kernel/include
 
-This sample can be found under :file:`samples/bluetooth/peripheral` in the
-Zephyr tree.
+  arch/${ARCH}/include
 
-See :ref:`bluetooth setup section <bluetooth_setup>` for details.
+  arch/${ARCH}/soc/${SOC_PATH}
+
+  arch/${ARCH}/soc/${SOC_PATH}/include
+
+  arch/${ARCH}/soc/${SOC_FAMILY}/include
+
+  ${BOARD_DIR}
+
+  include
+
+  include/drivers
+
+  ${PROJECT_BINARY_DIR}/include/generated
+
+  ${USERINCLUDE}
+
+  ${STDINCLUDE}
+
+  ext/fs/nffs/include    ######## <<-----------------------
+
+)
+
+
+##########################################################.
