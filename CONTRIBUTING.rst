@@ -250,6 +250,26 @@ various samples with advanced features that can't run in QEMU.
 We highly recommend you run these tests locally to avoid any CI
 failures.
 
+uncrustify
+==========
+
+The `uncrustify tool <https://sourceforge.net/projects/uncrustify>`_ can
+be helpful to quickly reformat your source code to our `project coding
+standards <Coding Style>`_ together with a configuration file we've provided:
+
+.. code-block:: bash
+
+   uncrustify --replace --no-backup -l C -c
+     $ZEPHYR_BASE/scripts/uncrustify.cfg   my_source_file.c
+
+On Linux systems, you can install uncrustify with
+
+.. code-block:: bash
+
+   sudo apt install uncrustify
+
+For Windows installation instructions see the `sourceforge listing for
+uncrustify <https://sourceforge.net/projects/uncrustify>`_.
 
 Coding Style
 ************
@@ -450,9 +470,11 @@ Commit Message Body
 ===================
 
 When editing the commit message, please briefly explain what your change
-does and why it's needed. A change summary of ``"Fixes stuff"`` will be rejected. An
-empty change summary is only acceptable for trivial changes fully described by
-the commit title (e.g., ``doc: fix misspellings in CONTRIBUTING doc``)
+does and why it's needed. A change summary of ``"Fixes stuff"`` will be rejected.
+
+.. warning::
+   An empty change summary body is not permitted. Even for trivial changes, please
+   include a summary body in the commmit message.
 
 The description body of the commit message must include:
 
