@@ -15,11 +15,11 @@ likely also run on the nrf52_pca10040 board.
 Building and Running
 ********************
 
-This sample can be found under $(zephyr_base)/samples/boards/nrf52/nffs in the
+This sample can be found under ``$(zephyr_base)/samples/boards/nrf52/nffs`` in the
 Zephyr tree.
 
 I've already included $(zephyr_base)/ext/fs/nffs directory 
-in project by editing :file:` $(zephyr_base)samples/boards/nrf52/nffs/CMakeLists.txt `
+in project by editing file $(zephyr_base)samples/boards/nrf52/nffs/CMakeLists.txt
 which is important to build this project.
 
 The following commands build the application.
@@ -45,4 +45,4 @@ written by the application:
 - Press Button 2 on the PDK board to create and write data in file ``0.txt``
 - Press Button 1 to read data from ``0.txt``
 
-For more information about the Zephyr file system, see the :ref:`file_system` documentation. 
+For more information about the Zephyr file system, see the file system documentation. 
