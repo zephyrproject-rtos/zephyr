@@ -28,7 +28,6 @@ mapping:
     seq:
       -
         type: str
-        enum: [ 'gccarmemb', 'issm', 'xcc', 'zephyr', 'espressif', 'host']
   "ram":
     type: int
   "flash":
