@@ -25,9 +25,6 @@
 #include "misc/util.h"
 #include "cmdline.h"
 
-#define STOP_AFTER_5_SECONDS 0
-
-
 void posix_exit(int exit_code)
 {
 	static int max_exit_code;
@@ -42,7 +39,6 @@ void posix_exit(int exit_code)
 	hwm_cleanup();
 	exit(exit_code);
 }
-
 
 /**
  * This is the actual main for the Linux process,
@@ -61,10 +57,6 @@ int main(int argc, char *argv[])
 	native_handle_cmd_line(argc, argv);
 
 	hwm_init();
-
-#if (STOP_AFTER_5_SECONDS)
-	hwm_set_end_of_time(5e6);
-#endif
 
 	posix_boot_cpu();
 
