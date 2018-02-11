@@ -66,6 +66,8 @@ config NET_BUF_SIMPLE_LOG
 	help
 	  Enable extra debug logs and checks for the generic network buffers.
 
+endif # NET_BUF_LOG
+
 config NET_BUF_POOL_USAGE
 	bool "Network buffer pool usage tracking"
 	default n
@@ -75,7 +77,6 @@ config NET_BUF_POOL_USAGE
 	  * total size of the pool is calculated
 	  * pool name is stored and can be shown in debugging prints
 
-endif # NET_BUF_LOG
 endif # NET_BUF
 
 config  NETWORKING
