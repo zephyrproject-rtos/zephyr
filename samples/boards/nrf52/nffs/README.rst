@@ -15,10 +15,11 @@ likely also run on the nrf52_pca10040 board.
 Building and Running
 ********************
 
-This sample can be found under :file:`samples/boards/nrf52/nffs` in the
+This sample can be found under $(zephyr_base)/samples/boards/nrf52/nffs in the
 Zephyr tree.
 
-I've already included $(zephyr_base)/ext/fs/nffs in :file:'samples/boards/nrf52/nffs/CMakeLists.txt'
+I've already included $(zephyr_base)/ext/fs/nffs directory 
+in project by editing :file:'$(zephyr_base)samples/boards/nrf52/nffs/CMakeLists.txt'
 which is important to build this project.
 
 The following commands build the application.
@@ -34,14 +35,14 @@ The following commands build the application.
    make clean
    make all
 
-After the build completes, the resulting binary ``zephyr.hex`` will be
+After the build completes, the resulting binary "zephyr.hex" will be
 in the current directory.  Use this file to flash the board using the
-``nrfjprog`` utility.
+"nrfjprog" utility.
 
 After flashing to the nrf52840_pdk board, open a serial terminal to see console messages
 written by the application:
 
-- Press Button 2 on the PDK board to create and write data in file ``0.txt``
-- Press Button 1 to read data from ``0.txt``
+- Press Button 2 on the PDK board to create and write data in file "0.txt"
+- Press Button 1 to read data from "0.txt"
 
-For more information about the Zephyr file system, see the :ref:`file_system` documentation. 
+For more information about the Zephyr file system, see the :ref:'file_system' documentation. 
