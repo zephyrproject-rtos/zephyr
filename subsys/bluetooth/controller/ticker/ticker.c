@@ -834,6 +834,20 @@ static inline u32_t ticker_job_insert(struct ticker_instance *instance,
 			ticker->ticks_to_expire += ticker->ticks_periodic +
 						   ticker_remainder_inc(ticker);
 			ticker->lazy_current++;
+
+			/* Remove any accumulated drift (possibly added due to
+			 * ticker job execution latencies).
+			 */
+			if (ticker->ticks_to_expire >
+			    ticker->ticks_to_expire_minus) {
+				ticker->ticks_to_expire -=
+					ticker->ticks_to_expire_minus;
+				ticker->ticks_to_expire_minus = 0;
+			} else {
+				ticker->ticks_to_expire_minus -=
+					ticker->ticks_to_expire;
+				ticker->ticks_to_expire = 0;
+			}
 		} else {
 			return TICKER_STATUS_FAILURE;
 		}
