@@ -7,5 +7,6 @@ zephyr_library_sources(
 	irq_ctrl.c
 	main.c
 	tracing.c
+	cmdline_common.c
 	cmdline.c
 	)
