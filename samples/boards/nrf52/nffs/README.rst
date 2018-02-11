@@ -1,95 +1,44 @@
+.. _nrf52_NFFS_sample:
 
-NFFS: READ WRITE FILE_STATUS
-###########################
-
-Overview
-********
+nrf52 NFFS Read/Write Sample
+############################
 
 This is a simple application demonstrating how to read, write persistence data on 
-
-flash of nrf52 SoC using NFFS file system.
-
+flash of nRF52 SoC using NFFS file system.
 
 Requirements
 ************
 
 This sample has been tested on the Nordic nRF52840-PDK board, but would
-
 likely also run on the nrf52_pca10040 board.
 
 Building and Running
 ********************
 
-To build this example, we have to add "ext/fs/nffs/include" into list of
+This sample can be found under :file:`samples/boards/nrf52/nffs` in the
+Zephyr tree.
 
-include directories which can be possible by editing $(zephyr_base)/CMakeLists.txt
+The following commands build the application.
 
-After modification that list look like this ...
+.. code-block:: bash
 
-zephyr_include_directories(
+   cd $(ZEPHYR_BASE)/samples/boards/nrf52/nffs
+   mkdir build
+   cd build
+   cmake -DBOARD=nrf52840_pca10056 ..
+   make
+   cd zephyr
+   make clean
+   make all
 
-  kernel/include
+After the build completes, the resulting binary ``zephyr.hex`` will be
+in the current directory.  Use this file to flash the board using the
+``nrfjprog`` utility.
 
-  arch/${ARCH}/include
+After flashing to the nrf52840_pdk board, open a serial terminal to see console messages
+written by the application:
 
-  arch/${ARCH}/soc/${SOC_PATH}
+- Press Button 2 on the PDK board to create and write data in file ``0.txt``
+- Press Button 1 to read data from ``0.txt``
 
-  arch/${ARCH}/soc/${SOC_PATH}/include
-
-  arch/${ARCH}/soc/${SOC_FAMILY}/include
-
-  ${BOARD_DIR}
-
-  include
-
-  include/drivers
-
-  ${PROJECT_BINARY_DIR}/include/generated
-
-  ${USERINCLUDE}
-
-  ${STDINCLUDE}
-
-  ext/fs/nffs/include
-
-)
-
-##### After that
-
-cd $(zephyr_base)/samples/boards/nrf52/nffs
-
-mkdir build
-
-cd build
-
-cmake -DBOARD=nrf52840_pca10056 ..
-
-make
-
-cd zephyr
-
-make clean
-
-make all
-
-##### After executing above commands we will find "zephyr.hex" in current directory
-
-##### which we have to flash using nrfjprog utility.
-
-Working
-********
-
-After flashing this "zephyr.hex" on nrf52840_pdk board, open serial terminal to see printk messages 
-
-Press Button 2 on PDK board to create & write data in file "0.txt"
-
-Pree Button 1 to read data on "0.txt"
-
-Useful Link
-***********
-
-http://docs.zephyrproject.org/api/file_system.html
-
-
-
-
+For more information about the Zephyr file system, see the :ref:`file_system` documentation. 
