@@ -30,9 +30,9 @@ endif()
 
 # Configure the toolchain based on what SDK/toolchain is in use.
 if(NOT (COMPILER STREQUAL "host-gcc"))
-  include(${ZEPHYR_BASE}/cmake/toolchain-${ZEPHYR_TOOLCHAIN_VARIANT}.cmake)
+  include(${ZEPHYR_BASE}/cmake/toolchain/${ZEPHYR_TOOLCHAIN_VARIANT}.cmake)
 endif()
 
 # Configure the toolchain based on what toolchain technology is used
 # (gcc, host-gcc etc.)
-include(${ZEPHYR_BASE}/cmake/toolchain-${COMPILER}.cmake OPTIONAL)
+include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}.cmake OPTIONAL)
