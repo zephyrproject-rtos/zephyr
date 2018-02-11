@@ -21,6 +21,8 @@
 
 #endif
 
+#define PORT 4242
+
 int main(void)
 {
 	int serv;
@@ -31,10 +33,12 @@ int main(void)
 
 	bind_addr.sin_family = AF_INET;
 	bind_addr.sin_addr.s_addr = htonl(INADDR_ANY);
-	bind_addr.sin_port = htons(4242);
+	bind_addr.sin_port = htons(PORT);
 	bind(serv, (struct sockaddr *)&bind_addr, sizeof(bind_addr));
 
 	listen(serv, 5);
+
+	printf("Single-threaded TCP echo server waits for a connection on port %d...\n", PORT);
 
 	while (1) {
 		struct sockaddr_in client_addr;
