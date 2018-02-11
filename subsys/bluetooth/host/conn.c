@@ -254,7 +254,6 @@ struct bt_conn *bt_conn_create_br(const bt_addr_t *peer,
 	conn = bt_conn_lookup_addr_br(peer);
 	if (conn) {
 		switch (conn->state) {
-			return conn;
 		case BT_CONN_CONNECT:
 		case BT_CONN_CONNECTED:
 			return conn;
@@ -306,7 +305,6 @@ struct bt_conn *bt_conn_create_sco(const bt_addr_t *peer)
 	sco_conn = bt_conn_lookup_addr_sco(peer);
 	if (sco_conn) {
 		switch (sco_conn->state) {
-			return sco_conn;
 		case BT_CONN_CONNECT:
 		case BT_CONN_CONNECTED:
 			return sco_conn;
