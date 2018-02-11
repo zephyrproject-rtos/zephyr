@@ -1,0 +1,8 @@
+sample:
+  description: sys_log network backend
+  name: sys_log_net
+tests:
+  test:
+    harness: net
+    depends_on: netif
+    tags: net
