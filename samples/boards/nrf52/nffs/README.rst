@@ -19,7 +19,7 @@ This sample can be found under $(zephyr_base)/samples/boards/nrf52/nffs in the
 Zephyr tree.
 
 I've already included $(zephyr_base)/ext/fs/nffs directory 
-in project by editing :file:'$(zephyr_base)samples/boards/nrf52/nffs/CMakeLists.txt'
+in project by editing :file:' $(zephyr_base)samples/boards/nrf52/nffs/CMakeLists.txt '
 which is important to build this project.
 
 The following commands build the application.
@@ -42,7 +42,7 @@ in the current directory.  Use this file to flash the board using the
 After flashing to the nrf52840_pdk board, open a serial terminal to see console messages
 written by the application:
 
-- Press Button 2 on the PDK board to create and write data in file "0.txt"
-- Press Button 1 to read data from "0.txt"
+- Press Button 2 on the PDK board to create and write data in file ''0.txt''
+- Press Button 1 to read data from ''0.txt''
 
-For more information about the Zephyr file system, see the :ref:'file_system' documentation. 
+For more information about the Zephyr file system, see the :ref:' file_system ' documentation. 
