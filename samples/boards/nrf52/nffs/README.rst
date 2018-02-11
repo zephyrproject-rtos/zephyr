@@ -18,6 +18,9 @@ Building and Running
 This sample can be found under :file:`samples/boards/nrf52/nffs` in the
 Zephyr tree.
 
+I've already included $(zephyr_base)/ext/fs/nffs in :file:'samples/boards/nrf52/nffs/CMakeLists.txt'
+which is important to build this project.
+
 The following commands build the application.
 
 .. code-block:: bash
