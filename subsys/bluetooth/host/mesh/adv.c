@@ -1,6 +1,7 @@
 /*  Bluetooth Mesh */
 
 /*
+ * Copyright (c) 2018 Nordic Semiconductor ASA
  * Copyright (c) 2017 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -28,18 +29,20 @@
 #include "prov.h"
 #include "proxy.h"
 
-/* Window and Interval are equal for continuous scanning */
-#define MESH_SCAN_INTERVAL 0x10
-#define MESH_SCAN_WINDOW   0x10
-
 /* Convert from ms to 0.625ms units */
-#define ADV_INT(_ms) ((_ms) * 8 / 5)
+#define ADV_SCAN_UNIT(_ms) ((_ms) * 8 / 5)
+
+/* Window and Interval are equal for continuous scanning */
+#define MESH_SCAN_INTERVAL_MS 10
+#define MESH_SCAN_WINDOW_MS   10
+#define MESH_SCAN_INTERVAL    ADV_SCAN_UNIT(MESH_SCAN_INTERVAL_MS)
+#define MESH_SCAN_WINDOW      ADV_SCAN_UNIT(MESH_SCAN_WINDOW_MS)
 
 /* Pre-5.0 controllers enforce a minimum interval of 100ms
  * whereas 5.0+ controllers can go down to 20ms.
  */
-#define ADV_INT_DEFAULT  K_MSEC(100)
-#define ADV_INT_FAST     K_MSEC(20)
+#define ADV_INT_DEFAULT_MS 100
+#define ADV_INT_FAST_MS    20
 
 /* TinyCrypt PRNG consumes a lot of stack space, so we need to have
  * an increased call stack whenever it's used.
@@ -91,7 +94,7 @@ static inline void adv_send_end(int err, const struct bt_mesh_send_cb *cb,
 static inline void adv_send(struct net_buf *buf)
 {
 	const s32_t adv_int_min = ((bt_dev.hci_version >= BT_HCI_VERSION_5_0) ?
-				   ADV_INT_FAST : ADV_INT_DEFAULT);
+				   ADV_INT_FAST_MS : ADV_INT_DEFAULT_MS);
 	const struct bt_mesh_send_cb *cb = BT_MESH_ADV(buf)->cb;
 	void *cb_data = BT_MESH_ADV(buf)->cb_data;
 	struct bt_le_adv_param param;
@@ -100,7 +103,8 @@ static inline void adv_send(struct net_buf *buf)
 	int err;
 
 	adv_int = max(adv_int_min, BT_MESH_ADV(buf)->adv_int);
-	duration = (BT_MESH_ADV(buf)->count + 1) * (adv_int + 10);
+	duration = MESH_SCAN_WINDOW_MS +
+		   ((BT_MESH_ADV(buf)->count + 1) * (adv_int + 10));
 
 	BT_DBG("type %u len %u: %s", BT_MESH_ADV(buf)->type,
 	       buf->len, bt_hex(buf->data, buf->len));
@@ -112,7 +116,7 @@ static inline void adv_send(struct net_buf *buf)
 	ad.data = buf->data;
 
 	param.options = 0;
-	param.interval_min = ADV_INT(adv_int);
+	param.interval_min = ADV_SCAN_UNIT(adv_int);
 	param.interval_max = param.interval_min;
 	param.own_addr = NULL;
 
@@ -126,7 +130,7 @@ static inline void adv_send(struct net_buf *buf)
 
 	BT_DBG("Advertising started. Sleeping %u ms", duration);
 
-	k_sleep(duration);
+	k_sleep(K_MSEC(duration));
 
 	err = bt_le_adv_stop();
 	adv_send_end(err, cb, cb_data);
