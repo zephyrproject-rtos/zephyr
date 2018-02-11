@@ -2,10 +2,10 @@
 # toolchain with a single environment variable.
 #
 # It is a legacy mechanism that will in Zephyr translate to
-# specififying ZEPHYR_GCC_VARIANT to 'cross-compile' with the location
+# specififying ZEPHYR_TOOLCHAIN_VARIANT to 'cross-compile' with the location
 # 'CROSS_COMPILE'.
 #
-# New users should set the env var 'ZEPHYR_GCC_VARIANT' to
+# New users should set the env var 'ZEPHYR_TOOLCHAIN_VARIANT' to
 # 'cross-compile' and the 'CROSS_COMPILE' env var to the toolchain
 # prefix. This interface is consisent with the other non-"Zephyr SDK"
 # toolchains.

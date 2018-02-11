@@ -191,7 +191,7 @@ arch:
   Architecture of the board
 toolchain:
   The list of supported toolchains that can build this board. This should match
-  one of the values used for 'ZEPHYR_GCC_VARIANT' when building on the command line
+  one of the values used for 'ZEPHYR_TOOLCHAIN_VARIANT' when building on the command line
 ram:
   Available RAM on the board (specified in KB). This is used to match testcase
   requirements.  If not specified we default to 128KB.
