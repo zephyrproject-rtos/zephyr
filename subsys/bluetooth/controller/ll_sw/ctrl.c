@@ -277,9 +277,10 @@ static void connection_release(struct connection *conn);
 static void terminate_ind_rx_enqueue(struct connection *conn, u8_t reason);
 static u32_t conn_update(struct connection *conn, struct pdu_data *pdu_data_rx);
 
-#if defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
+#if defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
+    defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
 static u32_t conn_update_req(struct connection *conn);
-#endif /* CONFIG_BT_CTLR_SCHED_ADVANCED */
+#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED && CONFIG_BT_CTLR_SCHED_ADVANCED */
 
 static u32_t chan_map_update(struct connection *conn,
 			     struct pdu_data *pdu_data_rx);
@@ -9050,7 +9051,8 @@ static u32_t conn_update(struct connection *conn, struct pdu_data *pdu_data_rx)
 	return 0;
 }
 
-#if defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
+#if defined (CONFIG_BT_CTLR_XTAL_ADVANCED) && \
+    defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
 static u32_t conn_update_req(struct connection *conn)
 {
 	if (conn->llcp_req != conn->llcp_ack) {
@@ -9103,7 +9105,7 @@ static u32_t conn_update_req(struct connection *conn)
 
 	return 2;
 }
-#endif /* CONFIG_BT_CTLR_SCHED_ADVANCED */
+#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED && CONFIG_BT_CTLR_SCHED_ADVANCED */
 
 static u32_t chan_map_update(struct connection *conn,
 			     struct pdu_data *pdu_data_rx)
