@@ -234,7 +234,7 @@ else() # GCC assumed
     -Wno-unused-but-set-variable
     -fno-reorder-functions
     )
-  if(NOT ${ZEPHYR_GCC_VARIANT} STREQUAL "xcc")
+  if(NOT ${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "xcc")
     zephyr_cc_option(-fno-defer-pop)
   endif()
 endif()

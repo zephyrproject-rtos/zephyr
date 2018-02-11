@@ -17,4 +17,4 @@ an application.
 To setup the build system with the correct toolchain use::
 
         export RISCV32_TOOLCHAIN_PATH=~/path/to/pulpino/toolchain
-        export ZEPHYR_GCC_VARIANT=riscv32
+        export ZEPHYR_TOOLCHAIN_VARIANT=riscv32

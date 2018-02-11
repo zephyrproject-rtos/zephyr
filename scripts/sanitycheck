@@ -1544,7 +1544,7 @@ class TestSuite:
 
     def apply_filters(self):
 
-        toolchain = os.environ.get("ZEPHYR_GCC_VARIANT", None)
+        toolchain = os.environ.get("ZEPHYR_TOOLCHAIN_VARIANT", None)
         instances = []
         discards = {}
         platform_filter = options.platform

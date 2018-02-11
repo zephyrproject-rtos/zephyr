@@ -123,7 +123,7 @@ packages from their respective websites.
 
    .. code-block:: console
 
-      set ZEPHYR_GCC_VARIANT=issm
+      set ZEPHYR_TOOLCHAIN_VARIANT=issm
       set ISSM_INSTALLATION_PATH=c:\issm0-toolchain-windows-2017-01-25
 
    Use the path where you extracted the ISSM toolchain.
@@ -132,7 +132,7 @@ packages from their respective websites.
 
    .. code-block:: console
 
-      set ZEPHYR_GCC_VARIANT=gccarmemb
+      set ZEPHYR_TOOLCHAIN_VARIANT=gccarmemb
       set GCCARMEMB_TOOLCHAIN_PATH=c:\gccarmemb
 
    And for either, set the `ZEPHYR_BASE` environment variable to the root
@@ -268,7 +268,7 @@ environment for Windows. Follow the steps below to set it up:
 
    .. code-block:: console
 
-      export ZEPHYR_GCC_VARIANT=issm
+      export ZEPHYR_TOOLCHAIN_VARIANT=issm
       export ISSM_INSTALLATION_PATH=/c/issm0-toolchain-windows-2017-01-25
 
    Use the path where you extracted the ISSM toolchain.
@@ -277,7 +277,7 @@ environment for Windows. Follow the steps below to set it up:
 
    .. code-block:: console
 
-      export ZEPHYR_GCC_VARIANT=gccarmemb
+      export ZEPHYR_TOOLCHAIN_VARIANT=gccarmemb
       export GCCARMEMB_TOOLCHAIN_PATH=/c/gccarmemb
 
    And for either, run the provided script to set up zephyr project specific
