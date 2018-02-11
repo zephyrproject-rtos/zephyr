@@ -371,6 +371,9 @@ The following peripherals are currently provided with this board:
   Normally the Zephyr application and HW models run in very little time
   on the host CPU, so this is a good enough approach.
 
+**Entropy device**:
+  An entropy device based on the host :c:func:`random` API.
+
 **Interrupt controller**:
   A simple yet generic interrupt controller is provided. It can nest interrupts
   and provides interrupt priorities. Interrupts can be individually masked or
