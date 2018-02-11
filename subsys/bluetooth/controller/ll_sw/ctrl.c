@@ -3908,6 +3908,23 @@ static inline u32_t isr_close_adv(void)
 				  (_radio.ticker_id_stop ==
 				   RADIO_TICKER_ID_ADV));
 		}
+
+#if defined(CONFIG_BT_CTLR_ADV_INDICATION)
+		if (1) {
+			struct radio_pdu_node_rx *node_rx;
+
+			node_rx = packet_rx_reserve_get(3);
+			if (node_rx) {
+				node_rx->hdr.type = NODE_RX_TYPE_ADV_INDICATION;
+				node_rx->hdr.handle = 0xFFFF;
+				/* TODO: add other info by defining a payload
+				 * structure.
+				 */
+
+				packet_rx_enqueue();
+			}
+		}
+#endif /* CONFIG_BT_CTLR_ADV_INDICATION */
 	}
 
 	return dont_close;
@@ -4262,24 +4279,6 @@ static inline void isr_radio_state_close(void)
 	switch (_radio.role) {
 	case ROLE_ADV:
 		dont_close = isr_close_adv();
-
-#if defined(CONFIG_BT_CTLR_ADV_INDICATION)
-		if (!dont_close) {
-			struct radio_pdu_node_rx *node_rx;
-
-			node_rx = packet_rx_reserve_get(3);
-			if (node_rx) {
-				node_rx->hdr.type = NODE_RX_TYPE_ADV_INDICATION;
-				node_rx->hdr.handle = 0xFFFF;
-				/* TODO: add other info by defining a payload
-				 * structure.
-				 */
-
-				packet_rx_enqueue();
-			}
-		}
-#endif /* CONFIG_BT_CTLR_ADV_INDICATION */
-
 		break;
 
 	case ROLE_SCAN:
