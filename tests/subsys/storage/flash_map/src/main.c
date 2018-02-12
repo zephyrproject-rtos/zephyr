@@ -25,7 +25,7 @@ struct flash_sector fs_sectors[256];
 void flash_map_test_case_2(void)
 {
 	const struct flash_area *fa;
-	int sec_cnt;
+	u32_t sec_cnt;
 	int i;
 	int rc;
 	off_t off;

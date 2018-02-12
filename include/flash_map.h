@@ -74,7 +74,7 @@ u8_t flash_area_align(const struct flash_area *fa);
 /*
  * Given flash area ID, return info about sectors within the area.
  */
-int flash_area_get_sectors(int fa_id, uint32_t *count,
+int flash_area_get_sectors(int fa_id, u32_t *count,
 			   struct flash_sector *sectors);
 
 #ifdef __cplusplus
