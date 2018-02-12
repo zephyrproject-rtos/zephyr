@@ -127,7 +127,7 @@ SECTION_FUNC(TEXT, _exception_enter)
 
 	orb	$_EXC_ACTIVE, _thread_offset_to_thread_state(%edx)
 
-#endif /* CONFIG_FP_SHARING
+#endif /* CONFIG_FP_SHARING */
 
 	/*
 	 * restore interrupt enable state, then call the handler
