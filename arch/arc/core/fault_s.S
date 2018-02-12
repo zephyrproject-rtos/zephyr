@@ -79,7 +79,7 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_maligned)
 	lr r0,[_ARC_V2_ERET]
 	st_s r0, [sp, ___isf_t_pc_OFFSET] /* eret into pc */
 
-
+#ifndef CONFIG_USERSPACE
 	ld r1, [exc_nest_count]
 	add r0, r1, 1
 	st r0, [exc_nest_count]
@@ -92,16 +92,18 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_maligned)
 	ld sp, [r1, _kernel_offset_to_irq_stack]
 exc_nest_handle:
 	push_s r0
+#endif
 
 	jl _Fault
 
+#ifndef CONFIG_USERSPACE
 	pop sp
 
 	mov	r1, exc_nest_count
 	ld	r0, [r1]
 	sub	r0, r0, 1
 	st 	r0, [r1]
-
+#endif
 	/* if _Fault returns, restore the registers */
 	_pop_irq_stack_frame
 
