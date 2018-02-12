@@ -39,6 +39,6 @@ in the current directory.  Use this file to flash the board using the
 After flashing to the nrf52840_pdk board, open a serial terminal to see console messages
 written by the application:
 
-- Press Button 1 to read data from ``0.txt``.
+- Press Button 1 to read data from ``0.txt``. 
 
 For more information about the Zephyr file system, see the file system documentation. 
