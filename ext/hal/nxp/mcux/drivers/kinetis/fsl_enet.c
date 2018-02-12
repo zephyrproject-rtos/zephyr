@@ -2154,7 +2154,7 @@ static bool ENET_Ptp1588ParseFrame(const uint8_t *data, enet_ptp_time_data_t *pt
     switch (ENET_HTONS(ptpType))
     { /* Ethernet layer 2. */
         case ENET_ETHERNETL2:
-            if (*(uint8_t *)(buffer + ENET_PTP1588_ETHL2_MSGTYPE_OFFSET) <= kENET_PtpEventMsgType)
+            if ((*(uint8_t *)(buffer + ENET_PTP1588_ETHL2_MSGTYPE_OFFSET) & 0xf) <= kENET_PtpEventMsgType)
             {
                 isPtpMsg = true;
                 if (!isFastEnabled)
