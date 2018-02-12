@@ -1,0 +1,7 @@
+sample:
+  name: NFFS file system test for nrf52
+tests:
+  test:
+    platform_whitelist: nrf52840_pca10056
+
+tags: nrf52 NFFS file system
