@@ -180,7 +180,11 @@ set(CACHED_BOARD ${BOARD} CACHE STRING "Selected board")
 # Use BOARD to search zephyr/boards/** for a _defconfig file,
 # e.g. zephyr/boards/arm/96b_carbon_nrf51/96b_carbon_nrf51_defconfig. When
 # found, use that path to infer the ARCH we are building for.
-find_path(BOARD_DIR NAMES "${BOARD}_defconfig" PATHS ${ZEPHYR_BASE}/boards/*/* NO_DEFAULT_PATH)
+if(NOT BOARD_ROOT)
+  set(BOARD_ROOT ${ZEPHYR_BASE})
+endif()
+
+find_path(BOARD_DIR NAMES "${BOARD}_defconfig" PATHS ${BOARD_ROOT}/boards/*/* NO_DEFAULT_PATH)
 
 assert_with_usage(BOARD_DIR "No board named '${BOARD}' found")
 
