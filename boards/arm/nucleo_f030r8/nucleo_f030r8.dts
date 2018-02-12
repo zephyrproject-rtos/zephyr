@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <st/stm32f030.dtsi>
+#include <st/stm32f030X8.dtsi>
 
 / {
 	model = "STMicroelectronics STM32F030R8-NUCLEO board";
@@ -40,4 +40,12 @@
 &i2c2 {
 	status = "ok";
 	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&spi1 {
+      status = "ok";
+};
+
+&spi2 {
+      status = "ok";
 };
