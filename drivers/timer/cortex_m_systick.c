@@ -681,6 +681,8 @@ void _timer_idle_exit(void)
 		}
 	}
 
+	clock_accumulated_count += default_load_value * _sys_idle_elapsed_ticks;
+
 	idle_mode = IDLE_NOT_TICKLESS;
 	sysTickStart();
 #endif
@@ -753,7 +755,26 @@ return (u32_t) get_elapsed_count();
 
 	do {
 		cac = clock_accumulated_count;
+#ifdef CONFIG_TICKLESS_IDLE
+		/* When we leave a tickless period the reload value of the timer
+		 * can be set to a remaining value to wait until end of tick.
+		 * (see _timer_idle_exit). The remaining value is always smaller
+		 * than default_load_value. In this case the time elapsed until
+		 * the timer restart was not yet added to
+		 * clock_accumulated_count. To retrieve a correct cycle count
+		 * we must therefore consider the number of cycle since current
+		 * tick period start and not only the cycle number since
+		 * the timer restart.
+		 */
+		if (SysTick->LOAD < default_load_value)	{
+			count = default_load_value;
+		} else {
+			count = SysTick->LOAD;
+		}
+		count -= SysTick->VAL;
+#else
 		count = SysTick->LOAD - SysTick->VAL;
+#endif
 	} while (cac != clock_accumulated_count);
 
 	return cac + count;
