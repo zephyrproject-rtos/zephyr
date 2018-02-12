@@ -556,8 +556,8 @@ int bt_sdp_discover_cancel(struct bt_conn *conn,
 
 /** @brief Protocols to be asked about specific parameters */
 enum bt_sdp_proto {
-	BT_SDP_PROTO_RFCOMM = BT_UUID_RFCOMM_VAL,
-	BT_SDP_PROTO_L2CAP  = BT_UUID_L2CAP_VAL,
+	BT_SDP_PROTO_RFCOMM = 0x0003,
+	BT_SDP_PROTO_L2CAP  = 0x0100,
 };
 
 /** @brief Give to user parameter value related to given stacked protocol UUID.

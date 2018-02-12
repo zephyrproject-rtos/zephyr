@@ -638,7 +638,7 @@ static u8_t att_find_type_req(struct bt_att *att, struct net_buf *buf)
 	 * and the Attribute Value set to the 16-bit Bluetooth UUID or 128-bit
 	 * UUID for the specific primary service.
 	 */
-	if (type != BT_UUID_GATT_PRIMARY_VAL) {
+	if (bt_uuid_cmp(BT_UUID_DECLARE_16(type), BT_UUID_GATT_PRIMARY)) {
 		send_err_rsp(conn, BT_ATT_OP_FIND_TYPE_REQ, start_handle,
 			     BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
 		return 0;
