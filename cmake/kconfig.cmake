@@ -6,7 +6,6 @@ file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/include/generated)
 
 set_ifndef(KCONFIG_ROOT ${PROJECT_SOURCE_DIR}/Kconfig)
 
-#set(BOARD_DEFCONFIG ${PROJECT_SOURCE_DIR}/boards/${ARCH}/${BOARD}/${BOARD}_defconfig)
 set(BOARD_DEFCONFIG ${BOARD_DIR}/${BOARD}_defconfig)
 set(DOTCONFIG       ${PROJECT_BINARY_DIR}/.config)
 

@@ -369,6 +369,81 @@ again.
 
 .. _application_debugging:
 
+
+Custom Board Definition
+***********************
+
+In cases where the board or platform you are developing for is not yet supported
+by Zephyr, you can add the board definition to your application and build for
+this board without having to add it to the Zephyr tree.
+
+The structure needed to support out-of-tree board development
+is similar to how boards are maintained in the Zephyr tree.  By using
+this structure, it will be much easier to upstream your board work into
+the Zephyr tree after your initial development is done.
+
+Add the custom board to your application using the following structure:
+
+.. code-block:: console
+
+   boards/
+   CMakeLists.txt
+   prj.conf
+   README.rst
+   src/
+
+where the ``boards`` directory hosts the board you are building for:
+
+.. code-block:: console
+
+   .
+   ├── boards
+   │   └── x86
+   │       └── my_custom_board
+   │           ├── doc
+   │           │   └── img
+   │           └── support
+   └── src
+
+
+Use the proper architecture folder name (e.g., ``x86``, ``arm``, etc.)
+under ``boards`` for ``my_custom_board``.  (See  :ref:`boards` for a
+list of board architectures.)
+
+Documentation (under ``doc/``) and support files (under ``support/``) are optional, but
+will be needed when submitting to Zephyr.
+
+The contents of ``my_custom_board`` should follow the same guidelines for any
+Zephyr board, and provide the following files::
+
+    my_custom_board_defconfig
+    my_custom_board.dts
+    my_custom_board.yaml
+    board.cmake
+    board.h
+    CMakeLists.txt
+    doc/
+    dts.fixup
+    Kconfig.board
+    Kconfig.defconfig
+    pinmux.c
+    support/
+
+
+Once the board structure is in place, you can build your application
+targeting this board by specifying the location of your custom board
+information with the ``-DBOARD_ROOT`` parameter to the CMake
+build system::
+
+   cmake -DBOARD=<board name> -DBOARD_ROOT=<path to boards> ..
+
+
+This will use your custom board configuration and will generate the
+Zephyr binary into your application directory.
+
+You can also define the ``BOARD_ROOT`` variable in the application
+:file:`CMakeLists.txt` file.
+
 Application Debugging
 *********************
 
