@@ -3,8 +3,8 @@
 nrf52 NFFS Read/Write Sample
 ############################
 
-This is a simple application demonstrating how to read, write persistence data on 
-flash of nRF52 SoC using NFFS file system.
+This is a simple application demonstrating how to read & write persistence data on 
+flash of the nRF52 SoC, using NFFS file system.
 
 Requirements
 ************
@@ -15,12 +15,11 @@ likely also run on the nrf52_pca10040 board.
 Building and Running
 ********************
 
-This sample can be found under ``$(zephyr_base)/samples/boards/nrf52/nffs`` in the
+This sample can be found under ``$(ZEPHYR_BASE)/samples/boards/nrf52/nffs`` in the
 Zephyr tree.
 
-I've already included ``$(zephyr_base)/ext/fs/nffs`` directory 
-in project by editing file ``$(zephyr_base)/samples/boards/nrf52/nffs/CMakeLists.txt``
-which is important to build this project.
+This example adds the ``$(ZEPHYR_BASE)/ext/fs/nffs`` include directory to the project
+by providing its own ``CMakeLists.txt`` within the sample directory.
 
 The following commands build the application.
 
