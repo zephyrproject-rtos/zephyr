@@ -422,6 +422,12 @@ static int usb_dw_tx(u8_t ep, const u8_t *const data,
 		return -EAGAIN;
 	}
 
+	/* For now tx-fifo sizes are not configured (cf usb_dw_set_fifo). Here
+	 * we force available fifo size to be a multiple of ep mps in order to
+	 * prevent splitting data incorrectly.
+	 */
+	avail_space -= avail_space % ep_mps;
+
 	if (data_len > avail_space) {
 		data_len = avail_space;
 	}
