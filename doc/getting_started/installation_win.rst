@@ -135,12 +135,16 @@ packages from their respective websites.
       set ZEPHYR_GCC_VARIANT=gccarmemb
       set GCCARMEMB_TOOLCHAIN_PATH=c:\gccarmemb
 
-   And for either, set the `ZEPHYR_BASE` environment variable to the root
-   of the Zephyr repository you cloned:
+   To use the same toolchain in new sessions in the future you can set the
+   variables in a ``.cmd`` file and run that every time you open a new
+   Command Prompt.
+
+   And for either, run the :file:`zephyr-env.cmd` file in order to set the
+   :makevar:`ZEPHYR_BASE` environment variable:
 
    .. code-block:: console
 
-      set ZEPHYR_BASE=%userprofile%\zephyr
+      zephyr-env.cmd
 
 #. Finally, you can try building the :ref:`hello_world` sample to check things
    out.
