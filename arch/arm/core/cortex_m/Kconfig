@@ -106,16 +106,31 @@ config ISA_THUMB2
 config CPU_CORTEX_M_HAS_BASEPRI
 	bool
 	# Omit prompt to signify "hidden" option
+	depends on ARMV7_M_ARMV8_M_MAINLINE
 	default n
 	help
 	  This option signifies the CPU has the BASEPRI register.
 
+	  The BASEPRI register defines the minimum priority for
+	  exception processing. When BASEPRI is set to a nonzero
+	  value, it prevents the activation of all exceptions with
+	  the same or lower priority level as the BASEPRI value.
+	  Always present in CPUs that implement the ARMv7-M or
+	  ARM8-M Mainline architectures.
+
 config CPU_CORTEX_M_HAS_VTOR
 	bool
 	# Omit prompt to signify "hidden" option
+	depends on !CPU_CORTEX_M0
 	default n
 	help
 	  This option signifies the CPU has the VTOR register.
+	  The VTOR indicates the offset of the vector table base
+	  address from memory address 0x00000000. Always present
+	  in CPUs implementing the ARMv7-M or ARMv8-M architetures.
+	  Optional in CPUs implementing ARMv6-M, ARMv8-M Baseline
+	  architetures (except for Cortex-M0, where it is never
+	  implemented).
 
 config CPU_CORTEX_M_HAS_SPLIM
 	bool
