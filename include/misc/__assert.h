@@ -74,6 +74,17 @@
 
 #if __ASSERT_ON
 #include <misc/printk.h>
+
+#if defined(CONFIG_ARCH_POSIX)
+extern void posix_exit(int exit_code);
+#define __ASSERT_POST posix_exit(1)
+#else
+#define __ASSERT_POST             \
+	for (;;) {                \
+		/* spin thread */ \
+	}
+#endif
+
 #define __ASSERT(test, fmt, ...)                                   \
 	do {                                                       \
 		if (!(test)) {                                     \
@@ -82,9 +93,7 @@
 			       __FILE__,                           \
 			       __LINE__);                          \
 			printk(fmt, ##__VA_ARGS__);                \
-			for (;;) {                                 \
-				/* spin thread */                  \
-			}				           \
+			__ASSERT_POST;                             \
 		}                                                  \
 	} while ((0))
 
