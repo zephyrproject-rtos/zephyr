@@ -554,6 +554,10 @@ static bool usb_set_interface(u8_t iface, u8_t alt_setting)
 		SYS_LOG_DBG("p %p\n", p);
 	}
 
+	if (usb_dev.status_callback) {
+		usb_dev.status_callback(USB_DC_INTERFACE, &iface);
+	}
+
 	return true;
 }
 
@@ -1223,7 +1227,7 @@ int usb_transfer(u8_t ep, u8_t *data, size_t dlen, unsigned int flags,
 		k_work_submit(&trans->work);
 	} else {
 		/* ready to read, clear NAK */
-		usb_dc_ep_read_continue(ep);
+		ret = usb_dc_ep_read_continue(ep);
 	}
 
 done:

@@ -39,6 +39,7 @@ enum usb_dc_status_code {
 	USB_DC_DISCONNECTED, /* USB connection lost */
 	USB_DC_SUSPEND,      /* USB connection suspended by the HOST */
 	USB_DC_RESUME,       /* USB connection resumed by the HOST */
+	USB_DC_INTERFACE,    /* USB interface selected */
 	USB_DC_UNKNOWN       /* Initial USB connection status */
 };
 
