@@ -34,7 +34,7 @@
 
 static struct bt_uuid_128 pong_svc_uuid = BT_UUID_INIT_128(PONG_SVC_UUID);
 static struct bt_uuid_128 pong_chr_uuid = BT_UUID_INIT_128(PONG_CHR_UUID);
-static struct bt_uuid_16 gatt_ccc_uuid = BT_UUID_INIT_16(BT_UUID_GATT_CCC_VAL);
+static struct bt_uuid *gatt_ccc_uuid = BT_UUID_GATT_CCC;
 
 static struct bt_gatt_discover_params discov_param;
 static struct bt_gatt_subscribe_params subscribe_param;
@@ -195,7 +195,7 @@ static u8_t discover_func(struct bt_conn *conn,
 		}
 	} else if (param->uuid == &pong_chr_uuid.uuid) {
 		printk("Pong characteristic discovered\n");
-		discov_param.uuid = &gatt_ccc_uuid.uuid;
+		discov_param.uuid = gatt_ccc_uuid;
 		discov_param.start_handle = attr->handle + 2;
 		discov_param.type = BT_GATT_DISCOVER_DESCRIPTOR;
 		subscribe_param.value_handle = attr->handle + 1;

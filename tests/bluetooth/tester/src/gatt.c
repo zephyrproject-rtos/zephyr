@@ -405,7 +405,7 @@ static int alloc_characteristic(struct add_characteristic *ch)
 	if (!attr_value) {
 		server_buf_pull(sizeof(*chrc_data));
 		/* Characteristic attribute uuid has constant length */
-		server_buf_pull(sizeof(BT_UUID_GATT_CHRC_VAL));
+		server_buf_pull(sizeof(uint16_t));
 		return -EINVAL;
 	}
 
