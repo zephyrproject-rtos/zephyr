@@ -50,7 +50,31 @@
 
 GTEXT(_arc_userspace_enter)
 GTEXT(_arc_do_syscall)
+GTEXT(_user_thread_entry_wrapper)
 
+
+
+/*
+ * @brief Wrapper for _thread_entry in the case of user thread
+ *
+ * @return N/A
+ */
+SECTION_FUNC(TEXT, _user_thread_entry_wrapper)
+	/* sp the  user stack pointer,  r0-r4 are in stack */
+	mov r5, sp
+	/* start of privilege stack */
+	add blink, r5, CONFIG_PRIVILEGED_STACK_SIZE+16
+
+	/* r4<- start  of user stack region */
+	mov r0, _kernel
+	ld_s r1, [r0, _kernel_offset_to_current]
+	ld r4, [r1, ___thread_stack_info_t_start_OFFSET]
+
+/*
+ * when CONFIG_INIT_STACK is enable, stack will be initialized
+ * in _new_thread_init.
+ */
+	j _arc_go_to_user_space
 
 /**
  *
@@ -68,8 +92,15 @@ SECTION_FUNC(TEXT, _arc_userspace_enter)
 	/* the end of user stack in r5 */
 	add r5, r4, r5
 	/* start of privilege stack */
-	add r2, r5, CONFIG_PRIVILEGED_STACK_SIZE
-	sub r5, r5, 16 /* skip r0, r1, r2, r3 */
+	add blink, r5, CONFIG_PRIVILEGED_STACK_SIZE
+	mov sp, r5
+
+	push_s r0
+	push_s r1
+	push_s r2
+	push_s r3
+
+	mov r5, sp /* skip r0, r1, r2, r3 */
 
 #ifdef CONFIG_INIT_STACKS
 	mov r0, 0xaaaaaaaa
@@ -81,6 +112,7 @@ _clear_user_stack:
 	cmp r4, r5
 	jlt _clear_user_stack
 
+_arc_go_to_user_space:
 	lr r0, [_ARC_V2_STATUS32]
 	bset r0, r0, _ARC_V2_STATUS32_U_BIT
 
@@ -104,7 +136,7 @@ _clear_user_stack:
 	 */
 	sr r5, [_ARC_V2_USER_SP]
 #endif
-	mov sp, r2
+	mov sp, blink
 
 	mov r0, 0
 
@@ -128,17 +160,13 @@ SECTION_FUNC(TEXT, _arc_do_syscall)
 	/* r0-r5: arg1-arg6, r6 is call id */
 	/* the call id is already checked in trap_s handler */
 	push_s blink
-	push_s r0
 
-	mov r0, _k_syscall_table
-	ld.as blink, [r0, r6]
+	mov blink, _k_syscall_table
+	ld.as r6, [blink, r6]
 
-	pop_s r0
-
-	jl [blink]
+	jl [r6]
 
 	pop_s blink
-
 
 	/* through fake exception return, go back to the caller */
 	kflag _ARC_V2_STATUS32_AE
@@ -155,8 +183,7 @@ SECTION_FUNC(TEXT, _arc_do_syscall)
 	pop r6
 	sr r6, [_ARC_V2_ERET]
 
-	clear_callee_regs
-
+	/* no nned to clear callee regs */
 	clear_scratch_regs
 
 	rtie

@@ -385,10 +385,18 @@ void arc_core_mpu_configure(u8_t type, u32_t base, u32_t size)
 			base - mpu_config.mpu_regions[index].base,
 			mpu_config.mpu_regions[index].attr);
 
-		_region_init(last_region, base + size,
-			(mpu_config.mpu_regions[index].base +
-			mpu_config.mpu_regions[index].size - base - size),
-			mpu_config.mpu_regions[index].attr);
+#if defined(CONFIG_MPU_STACK_GUARD)
+		if (type != THREAD_STACK_USER_REGION)
+			/*
+			 * USER REGION is continuous with MPU_STACK_GUARD.
+			 * In current implementation, THREAD_STACK_GUARD_REGION is
+			 * configured before THREAD_STACK_USER_REGION
+			 */
+#endif
+			_region_init(last_region, base + size,
+				(mpu_config.mpu_regions[index].base +
+				mpu_config.mpu_regions[index].size - base - size),
+				mpu_config.mpu_regions[index].attr);
 	}
 
 	_region_init(region_index, base, size, region_attr);
@@ -445,8 +453,13 @@ void arc_core_mpu_configure_user_context(struct k_thread *thread)
 	/* configure app data portion */
 #ifdef CONFIG_APPLICATION_MEMORY
 #if CONFIG_ARC_MPU_VER == 2
+	/*
+	 * _app_ram_size is guaranteed to be power of two, and
+	 * _app_ram_start is guaranteed to be aligned _app_ram_size
+	 * in linker template
+	 */
 	base = (u32_t)&__app_ram_start;
-	size = (u32_t)&__app_ram_end - (u32_t)&__app_ram_start;
+	size = (u32_t)&__app_ram_size;
 
 	/* set up app data region if exists, otherwise disable */
 	if (size > 0) {
