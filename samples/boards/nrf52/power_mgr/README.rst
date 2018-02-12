@@ -1,7 +1,7 @@
 .. _nrf52-power-mgr-sample:
 
-Power management demo
-#####################
+nRF52 Power management demo
+###########################
 
 Overview
 ********
