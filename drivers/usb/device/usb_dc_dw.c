@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <misc/byteorder.h>
 #include <usb/usb_dc.h>
+#include <usb/usb_device.h>
 #include "usb_dw_registers.h"
 #include "clk.h"
 
@@ -937,8 +938,9 @@ int usb_dc_ep_enable(const u8_t ep)
 		usb_dw_ctrl.in_ep_ctrl[ep_idx].ep_ena = 1;
 	}
 
-	if (USB_DW_EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
-		/* Prepare EP for  rx */
+	if (USB_DW_EP_ADDR2DIR(ep) == USB_EP_DIR_OUT &&
+		usb_dw_ctrl.out_ep_ctrl[ep_idx].cb != usb_transfer_ep_callback) {
+		/* Start reading now, except for transfer managed eps */
 		usb_dw_prep_rx(ep, 0);
 	}
 
