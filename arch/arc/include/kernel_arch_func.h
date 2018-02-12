@@ -72,6 +72,7 @@ static ALWAYS_INLINE int _INTERRUPT_CAUSE(void)
 
 
 extern void _thread_entry_wrapper(void);
+extern void _user_thread_entry_wrapper(void);
 
 static inline void _IntLibInit(void)
 {

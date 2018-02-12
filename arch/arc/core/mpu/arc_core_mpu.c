@@ -44,18 +44,22 @@ void configure_mpu_thread(struct k_thread *thread)
 void configure_mpu_stack_guard(struct k_thread *thread)
 {
 #if defined(CONFIG_USERSPACE)
-	if (!thread->arch.priv_stack_start) {
+	if (thread->thread_base.user_options & K_USER) {
 		/* the areas before and after the user stack of thread is
 		 * kernel only. These area can be used as stack guard.
 		 * -----------------------
-		 * |  kernel only access |
+		 * |  kernel only area   |
 		 * |---------------------|
 		 * |  user stack         |
-		 * |----------------------
+		 * |---------------------|
+		 * |privilege stack guard|
+		 * |---------------------|
 		 * |  privilege stack    |
 		 * -----------------------
 		 */
-		return;
+		arc_core_mpu_configure(THREAD_STACK_GUARD_REGION,
+			thread->arch.priv_stack_start - STACK_GUARD_SIZE,
+			STACK_GUARD_SIZE);
 	}
 #endif
 	arc_core_mpu_configure(THREAD_STACK_GUARD_REGION,
