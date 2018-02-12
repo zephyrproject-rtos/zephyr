@@ -20,7 +20,8 @@ struct getaddrinfo_state {
 	const struct zsock_addrinfo *hints;
 	struct k_sem sem;
 	int status;
-	int idx;
+	u16_t idx;
+	u16_t port;
 };
 
 static struct zsock_addrinfo ai_arr[2];
@@ -30,7 +31,7 @@ static void dns_resolve_cb(enum dns_resolve_status status,
 			   struct dns_addrinfo *info, void *user_data)
 {
 	struct getaddrinfo_state *state = user_data;
-	struct zsock_addrinfo *ai = ai_arr + state->idx;
+	struct zsock_addrinfo *ai;
 	int socktype = SOCK_STREAM;
 	int proto;
 
@@ -45,7 +46,14 @@ static void dns_resolve_cb(enum dns_resolve_status status,
 		return;
 	}
 
+	if (state->idx >= ARRAY_SIZE(ai_arr)) {
+		NET_DBG("getaddrinfo entries overflow");
+		return;
+	}
+
+	ai = ai_arr + state->idx;
 	memcpy(&ai->_ai_addr, &info->ai_addr, info->ai_addrlen);
+	net_sin(&ai->_ai_addr)->sin_port = state->port;
 	ai->ai_addr = &ai->_ai_addr;
 	ai->ai_addrlen = info->ai_addrlen;
 	memcpy(&ai->_ai_canonname, &info->ai_canonname,
@@ -90,6 +98,7 @@ int zsock_getaddrinfo(const char *host, const char *service,
 
 	ai_state.hints = hints;
 	ai_state.idx = 0;
+	ai_state.port = htons(port);
 	k_sem_init(&ai_state.sem, 0, UINT_MAX);
 
 	/* Link entries in advance */
