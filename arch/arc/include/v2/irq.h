@@ -47,9 +47,6 @@ static ALWAYS_INLINE void _irq_setup(void)
 #ifdef CONFIG_CODE_DENSITY
 		_ARC_V2_AUX_IRQ_CTRL_LP | /* save code density registers */
 #endif
-#ifdef CONFIG_USERSPACE
-		_ARC_V2_AUX_IRQ_CTRL_U | /* save context into user stack */
-#endif
 		_ARC_V2_AUX_IRQ_CTRL_BLINK     | /* save blink */
 		_ARC_V2_AUX_IRQ_CTRL_14_REGS     /* save r0 -> r13 (caller-saved) */
 	);
