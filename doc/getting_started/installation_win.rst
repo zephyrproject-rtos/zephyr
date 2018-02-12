@@ -59,18 +59,17 @@ packages from their respective websites.
 
       choco feature enable -n allowGlobalConfirmation
 
-#. Install CMake and DTC:
+#. Install CMake:
 
    .. code-block:: console
 
       choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
-      choco install dtc-msys2 --version 1.4.4
 
 #. Install the rest of the tools:
 
    .. code-block:: console
 
-      choco install git python ninja gperf
+      choco install git python ninja dtc-msys2 gperf
 
 #. Close the Command Prompt window.
 
@@ -211,6 +210,16 @@ environment for Windows. Follow the steps below to set it up:
 
       pacman -Syu
       pacman -S git cmake make gcc dtc diffutils ncurses-devel python3 gperf
+
+#. Compile :program:`Ninja` from source (Ninja is not available as
+   an MSYS2 package) and install it:
+
+   .. code-block:: console
+
+      git clone git://github.com/ninja-build/ninja.git && cd ninja
+      git checkout release
+      ./configure.py --bootstrap
+      cp ninja.exe /usr/bin/
 
 #. From within the MSYS2 MSYS Shell, clone a copy of the Zephyr source
    into your home directory using Git.  (Some Zephyr tools require
