@@ -152,8 +152,6 @@ static int test(int idx)
 void main(void)
 {
 
-	NRF_P0->PIN_CNF[12]=0x0000000C;
-
 	static struct gpio_callback button_cb[1];
 	
 	k_work_init(&button_work, press);
@@ -169,15 +167,11 @@ void main(void)
 		printk("warning: flash device %s not found\n",	CONFIG_FS_NFFS_FLASH_DEV_NAME);
 	}
 
-	while(lock==0)
+	if(lock==0)
 	{
-
-        	if(CHECKB(NRF_P0->IN,12)==0)
-		{
-			test(0);
-		}
-
-		k_sleep(100);
+        	
+		test(0);
+		
 	}	
 }
 

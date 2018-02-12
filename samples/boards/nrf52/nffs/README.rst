@@ -32,8 +32,6 @@ The following commands build the application.
    cmake -DBOARD=nrf52840_pca10056 ..
    make
    cd zephyr
-   make clean
-   make all
 
 After the build completes, the resulting binary ``zephyr.hex`` will be
 in the current directory.  Use this file to flash the board using the
@@ -42,7 +40,6 @@ in the current directory.  Use this file to flash the board using the
 After flashing to the nrf52840_pdk board, open a serial terminal to see console messages
 written by the application:
 
-- Press Button 2 on the PDK board to create and write data in file ``0.txt``.
 - Press Button 1 to read data from ``0.txt``.
 
 For more information about the Zephyr file system, see the file system documentation. 

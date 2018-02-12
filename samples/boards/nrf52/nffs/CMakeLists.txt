@@ -7,6 +7,5 @@ target_sources(app PRIVATE
 
 
 zephyr_library_include_directories(
-	$ENV{ZEPHYR_BASE}/samples/bluetooth
 	$ENV{ZEPHYR_BASE}/ext/fs/nffs/include
 )
