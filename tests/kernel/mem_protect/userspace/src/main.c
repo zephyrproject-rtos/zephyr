@@ -26,8 +26,8 @@ K_SEM_DEFINE(uthread_end_sem, 0, 1);
 K_SEM_DEFINE(test_revoke_sem, 0, 1);
 K_SEM_DEFINE(expect_fault_sem, 0, 1);
 
-static bool give_uthread_end_sem;
-static bool expect_fault;
+static volatile bool give_uthread_end_sem;
+static volatile bool expect_fault;
 
 #if defined(CONFIG_X86)
 #define REASON_HW_EXCEPTION _NANO_ERR_CPU_EXCEPTION
@@ -35,10 +35,13 @@ static bool expect_fault;
 #elif defined(CONFIG_ARM)
 #define REASON_HW_EXCEPTION _NANO_ERR_HW_EXCEPTION
 #define REASON_KERNEL_OOPS  _NANO_ERR_HW_EXCEPTION
+#elif defined(CONFIG_ARC)
+#define REASON_HW_EXCEPTION _NANO_ERR_HW_EXCEPTION
+#define REASON_KERNEL_OOPS  _NANO_ERR_KERNEL_OOPS
 #else
 #error "Not implemented for this architecture"
 #endif
-static unsigned int expected_reason;
+static volatile unsigned int expected_reason;
 
 /*
  * We need something that can act as a memory barrier
@@ -53,7 +56,7 @@ static unsigned int expected_reason;
  * and immediately fires upon completing the exception path; the faulting
  * thread is never run again.
  */
-#if !defined(CONFIG_ARM) && !defined(CONFIG_ARC)
+#ifndef CONFIG_ARM
 FUNC_NORETURN
 #endif
 void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
@@ -118,6 +121,10 @@ static void write_control(void)
 		      "Write to control register was successful\n");
 #elif defined(CONFIG_ARC)
 	unsigned int er_status;
+
+	expect_fault = true;
+	expected_reason = REASON_HW_EXCEPTION;
+	BARRIER();
 	/* _ARC_V2_ERSTATUS is privilege aux reg */
 	__asm__ volatile(
 		"lr %0, [0x402]\n"
@@ -147,6 +154,9 @@ static void disable_mmu_mpu(void)
 	BARRIER();
 	arm_core_mpu_disable();
 #elif defined(CONFIG_ARC)
+	expect_fault = true;
+	expected_reason = REASON_HW_EXCEPTION;
+	BARRIER();
 	arc_core_mpu_disable();
 #else
 #error "Not implemented for this architecture"
@@ -240,12 +250,14 @@ volatile int *priv_stack_ptr;
  * or local without triggering a warning on -Warray-bounds.
  */
 size_t size = MMU_PAGE_SIZE;
+#elif defined(CONFIG_ARC)
+int32_t size = (0 - CONFIG_PRIVILEGED_STACK_SIZE - STACK_GUARD_SIZE);
 #endif
 
 static void read_priv_stack(void)
 {
 	/* Try to read from privileged stack. */
-#if defined(CONFIG_X86)
+#if defined(CONFIG_X86) || defined(CONFIG_ARC)
 	int s[1];
 
 	s[0] = 0;
@@ -266,7 +278,7 @@ static void read_priv_stack(void)
 static void write_priv_stack(void)
 {
 	/* Try to write to privileged stack. */
-#if defined(CONFIG_X86)
+#if defined(CONFIG_X86) || defined(CONFIG_ARC)
 	int s[1];
 
 	s[0] = 0;
@@ -349,7 +361,6 @@ static void read_other_stack(void)
 {
 	/* Try to read from another thread's stack. */
 	unsigned int *ptr;
-
 	k_thread_create(&uthread_thread, uthread_stack, STACKSIZE,
 			(k_thread_entry_t)uthread_body, NULL, NULL, NULL,
 			-1, K_USER | K_INHERIT_PERMS,
