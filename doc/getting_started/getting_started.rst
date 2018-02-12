@@ -111,7 +111,7 @@ To build an example application follow these steps:
       # On Linux/macOS
       source zephyr-env.sh
       # On Windows
-      set ZEPHYR_BASE=%cd%
+      zephyr-env.cmd
 
 #. Build the :ref:`hello_world` example for the `arduino_101` board, enter:
 
@@ -190,7 +190,7 @@ must be installed.
       set ZEPHYR_GCC_VARIANT=
       set ZEPHYR_SDK_INSTALL_DIR=
       cd <zephyr git clone location>
-      set ZEPHYR_BASE=%cd%
+      zephyr-env.cmd
 
 
 #. On UNIX platforms, Build Kconfig in :file:`$ZEPHYR_BASE/build` and add
