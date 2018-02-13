@@ -153,7 +153,8 @@ on http://github.com and have Git tools available on your development system.
    tools yourself, you will need to rely on the Continuous Integration (CI)
    service ``shippable``, which runs automatically on GitHub when you submit
    your Pull Request (PR).  You can see any failure results in the Shippable
-   details link near the end of the PR conversation list.
+   details link near the end of the PR conversation list. See
+   `Continuous Integration`_ for more information
 
 Repository layout
 *****************
@@ -206,8 +207,46 @@ business days.
 You can find all `open pull requests`_ on GitHub and open `Zephyr Project
 Issues`_ in Github issues.
 
-Development Tools and Git Setup
-*******************************
+ .. _Continuous Integration:
+
+Continuous Integration (CI)
+***************************
+
+The Zephyr Project operates a Continuous Integration (CI) system that runs on
+every Pull Request (PR) in order to verify several aspects of the PR:
+
+* Git commit formatting
+* Coding Style
+* Sanity Check builds for multiple architectures and boards
+* Documentation build to verify any doc changes
+
+CI is run on the ``shippable`` cloud service and it uses the same tools
+described in the `Contribution Tools`_ section.
+The CI results must be green indicating "All checks have passed" before
+the Pull Request can be merged.  CI is run when the PR is created, and
+again every time the PR is modified with a commit.  You can also force
+the CI system to recheck a PR by adding a comment to the PR saying
+simply ``retest`` in the message (helpful if the CI system fails unexpectedly).
+
+The current status of the CI run can always be found at the bottom of the
+GitHub PR page, below the review status. Depending on the success or failure
+of the run you will see:
+
+* "All checks have passed"
+* "All checks have failed"
+
+In case of failure you can click on the "Details" link presented below the
+failure message in order to navigate to ``shippable`` and inspect the results.
+Once you click on the link you will be taken to the ``shippable`` summary
+results page where a table with all the different builds will be shown. To see
+what build or test failed click on the row that contains the failed (i.e.
+non-green) build and then click on the "Tests" tab to see the console output
+messages indicating the failure.
+
+ .. _Contribution Tools:
+
+Contribution Tools and Git Setup
+********************************
 
 Signed-off-by
 =============
@@ -459,6 +498,11 @@ workflow here:
    By force pushing your update, your original pull request will be updated
    with your changes so you won't need to resubmit the pull request.
 
+#. If the CI run fails, you will need to make changes to your code in order
+   to fix the issues and ammend your commits by rebasing as described above.
+   Additional information about the CI system can be found in
+   `Continuous Integration`_.
+
 Commit Guidelines
 *****************
 
@@ -511,7 +555,8 @@ Other Commit Expectations
 * Commits must build cleanly when applied on top of each other, thus avoiding
   breaking bisectability.
 
-* Commits must pass the *scripts/checkpatch.pl* requirements.
+* Commits must pass all CI checks (see `Continuous Integration`_ for more
+  information)
 
 * Each commit must address a single identifiable issue and must be
   logically self-contained. Unrelated changes should be submitted as
