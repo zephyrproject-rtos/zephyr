@@ -23,7 +23,7 @@ K_THREAD_STACK_ARRAY_DEFINE(app_stack, 3, STACKSIZE);
 
 struct k_thread app_thread_id[3];
 
-struct k_mem_domain app_domain[2];
+__kernel struct k_mem_domain app_domain[2];
 
 /* the start address of the MPU region needs to align with its size */
 #ifdef CONFIG_ARM
