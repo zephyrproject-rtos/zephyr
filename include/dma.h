@@ -297,4 +297,6 @@ static inline u32_t dma_burst_index(u32_t burst)
 }
 #endif
 
+#include <syscalls/dma.h>
+
 #endif /* _DMA_H_ */
