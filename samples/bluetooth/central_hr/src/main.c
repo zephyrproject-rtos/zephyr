@@ -110,7 +110,7 @@ static void connected(struct bt_conn *conn, u8_t conn_err)
 
 	if (conn == default_conn) {
 		memcpy(&uuid, BT_UUID_HRS, sizeof(uuid));
-		discover_params.uuid = BT_UUID_HRS;
+		discover_params.uuid = &uuid.uuid;
 		discover_params.func = discover_func;
 		discover_params.start_handle = 0x0001;
 		discover_params.end_handle = 0xffff;
