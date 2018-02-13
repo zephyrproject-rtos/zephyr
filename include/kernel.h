@@ -4238,11 +4238,11 @@ static inline char *K_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
 #ifdef _ARCH_MEM_PARTITION_ALIGN_CHECK
 #define K_MEM_PARTITION_DEFINE(name, start, size, attr) \
 	_ARCH_MEM_PARTITION_ALIGN_CHECK(start, size); \
-	struct k_mem_partition name = \
+	__kernel struct k_mem_partition name =\
 		MEM_PARTITION_ENTRY((u32_t)start, size, attr)
 #else
 #define K_MEM_PARTITION_DEFINE(name, start, size, attr) \
-	struct k_mem_partition name = \
+	__kernel struct k_mem_partition name =\
 		MEM_PARTITION_ENTRY((u32_t)start, size, attr)
 #endif /* _ARCH_MEM_PARTITION_ALIGN_CHECK */
 
@@ -4258,7 +4258,9 @@ struct k_mem_partition {
 #endif	/* CONFIG_USERSPACE */
 };
 
-/* memory domian */
+/* memory domian
+ * Note: Always declare this structure with __kernel prefix
+ */
 struct k_mem_domain {
 #ifdef CONFIG_USERSPACE
 	/* partitions in the domain */
