@@ -190,6 +190,11 @@ GNU/Linux and macOS (OS X)
   * RTT Channel name or index: 0
   * Output file: filename or ``/dev/stdout`` to display on the terminal directly
 
+Python viewer
+=============
+
+A Python RTT viewer tool can be found in the `pyrtt-viewer`_ GitHub repository.
+
 Segger Ozone
 ************
 
@@ -219,6 +224,7 @@ References
 
 .. _Segger SAM3U Wiki: https://wiki.segger.com/index.php?title=J-Link-OB_SAM3U
 .. _Real-Time Tracing (RTT): https://www.segger.com/jlink-rtt.html
+.. _pyrtt-viewer: https://github.com/thomasstenersen/pyrtt-viewer
 .. _Segger Ozone: https://www.segger.com/ozone.html
 .. _Segger Ozone Download: https://www.segger.com/downloads/jlink#Ozone
 
