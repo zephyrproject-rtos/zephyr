@@ -19,7 +19,7 @@ config WDT_ESP32_DISABLE_AT_BOOT
 	help
 	  Select this option to disable the WDT during boot.
 
-config WDT_ESP32_DEVICE_NAME
+config WDT_0_NAME
 	string "Device name for Watchdog (WDT)"
 	depends on WDT_ESP32
 	default "WATCHDOG_0"
