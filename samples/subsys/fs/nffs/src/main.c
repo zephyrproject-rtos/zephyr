@@ -93,7 +93,7 @@ static int test(int idx)
 
 	
 	err = fs_open(&fp, name);
-	if (err != 0) {
+	if (err < 0) {
 		printk("%s: error %d while opening for read\n", name, err);
 		return err;
 	}
@@ -111,7 +111,7 @@ static int test(int idx)
 
 	/* Close the file */
 	err = fs_close(&fp);
-	if (err != 0) {
+	if (err < 0) {
 		printk("%s: error %d while closing after read\n", name, err);
 		return err;
 	}
