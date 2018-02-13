@@ -211,6 +211,11 @@ struct http_parser {
 	void *data; /* A pointer to get hook to the "connection" or "socket"
 		     * object
 		     */
+
+	/* Remote socket address of http connection, where parser can initiate
+	 * replies if necessary.
+	 */
+	const struct sockaddr *addr;
 };
 
 

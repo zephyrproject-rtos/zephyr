@@ -119,9 +119,21 @@ int http_send_msg_raw(struct http_ctx *ctx, struct net_pkt *pkt,
 	return ret;
 }
 
+static inline struct net_pkt *get_net_pkt(struct http_ctx *ctx,
+					  const struct sockaddr *dst)
+{
+	if (!dst) {
+		return net_app_get_net_pkt(&ctx->app_ctx, AF_UNSPEC,
+					   ctx->timeout);
+	}
+
+	return net_app_get_net_pkt_with_dst(&ctx->app_ctx, dst, ctx->timeout);
+}
+
 int http_prepare_and_send(struct http_ctx *ctx,
 			  const char *payload,
 			  size_t payload_len,
+			  const struct sockaddr *dst,
 			  void *user_send_data)
 {
 	size_t added;
@@ -129,9 +141,7 @@ int http_prepare_and_send(struct http_ctx *ctx,
 
 	do {
 		if (!ctx->pending) {
-			ctx->pending = net_app_get_net_pkt(&ctx->app_ctx,
-							   AF_UNSPEC,
-							   ctx->timeout);
+			ctx->pending = get_net_pkt(ctx, dst);
 			if (!ctx->pending) {
 				return -ENOMEM;
 			}
@@ -189,7 +199,7 @@ int http_send_flush(struct http_ctx *ctx, void *user_send_data)
 }
 
 int http_send_chunk(struct http_ctx *ctx, const char *buf, size_t len,
-		    void *user_send_data)
+		    const struct sockaddr *dst, void *user_send_data)
 {
 	char chunk_header[16];
 	int ret;
@@ -202,19 +212,19 @@ int http_send_chunk(struct http_ctx *ctx, const char *buf, size_t len,
 		 (unsigned int)len);
 
 	ret = http_prepare_and_send(ctx, chunk_header, strlen(chunk_header),
-				    user_send_data);
+				    dst, user_send_data);
 	if (ret < 0) {
 		return ret;
 	}
 
 	if (len) {
-		ret = http_prepare_and_send(ctx, buf, len, user_send_data);
+		ret = http_prepare_and_send(ctx, buf, len, dst, user_send_data);
 		if (ret < 0) {
 			return ret;
 		}
 	}
 
-	ret = http_prepare_and_send(ctx, HTTP_CRLF, sizeof(HTTP_CRLF),
+	ret = http_prepare_and_send(ctx, HTTP_CRLF, sizeof(HTTP_CRLF), dst,
 				    user_send_data);
 	if (ret < 0) {
 		return ret;
@@ -225,26 +235,28 @@ int http_send_chunk(struct http_ctx *ctx, const char *buf, size_t len,
 
 static int _http_add_header(struct http_ctx *ctx, s32_t timeout,
 			    const char *name, const char *value,
+			    const struct sockaddr *dst,
 			    void *user_send_data)
 {
 	int ret;
 
-	ret = http_prepare_and_send(ctx, name, strlen(name), user_send_data);
+	ret = http_prepare_and_send(ctx, name, strlen(name), dst,
+				    user_send_data);
 	if (value && ret >= 0) {
-		ret = http_prepare_and_send(ctx, ": ", strlen(": "),
+		ret = http_prepare_and_send(ctx, ": ", strlen(": "), dst,
 					    user_send_data);
 		if (ret < 0) {
 			goto out;
 		}
 
-		ret = http_prepare_and_send(ctx, value, strlen(value),
+		ret = http_prepare_and_send(ctx, value, strlen(value), dst,
 					    user_send_data);
 		if (ret < 0) {
 			goto out;
 		}
 
 		ret = http_prepare_and_send(ctx, HTTP_CRLF, strlen(HTTP_CRLF),
-					    user_send_data);
+					    dst, user_send_data);
 		if (ret < 0) {
 			goto out;
 		}
@@ -255,13 +267,18 @@ out:
 }
 
 int http_add_header(struct http_ctx *ctx, const char *field,
+		    const struct sockaddr *dst,
 		    void *user_send_data)
 {
-	return _http_add_header(ctx, ctx->timeout, field, NULL, user_send_data);
+	return _http_add_header(ctx, ctx->timeout, field, NULL, dst,
+				user_send_data);
 }
 
 int http_add_header_field(struct http_ctx *ctx, const char *name,
-			  const char *value, void *user_send_data)
+			  const char *value,
+			  const struct sockaddr *dst,
+			  void *user_send_data)
 {
-	return _http_add_header(ctx, ctx->timeout, name, value, user_send_data);
+	return _http_add_header(ctx, ctx->timeout, name, value, dst,
+				user_send_data);
 }
