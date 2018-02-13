@@ -408,15 +408,6 @@ int _impl_k_thread_cancel(k_tid_t tid)
 _SYSCALL_HANDLER1_SIMPLE(k_thread_cancel, K_OBJ_THREAD, struct k_thread *);
 #endif
 
-void _k_thread_single_start(struct k_thread *thread)
-{
-	_mark_thread_as_started(thread);
-
-	if (_is_thread_ready(thread)) {
-		_add_thread_to_ready_q(thread);
-	}
-}
-
 void _k_thread_single_suspend(struct k_thread *thread)
 {
 	if (_is_thread_ready(thread)) {
