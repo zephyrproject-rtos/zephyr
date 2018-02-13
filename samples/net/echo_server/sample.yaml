@@ -25,9 +25,6 @@ tests:
   test_usbnet:
     harness: net
     extra_args: CONF_FILE="prj_netusb.conf"
-    extra_configs:
-      - CONFIG_USB_DEVICE_VID=0xDEAD
-      - CONFIG_USB_DEVICE_PID=0xBEEF
     platform_whitelist: quark_se_c1000_devboard 96b_carbon
     tags: net usb
   test_usbnet_composite:
@@ -35,8 +32,6 @@ tests:
     extra_args: CONF_FILE="prj_netusb.conf"
     extra_configs:
       - CONFIG_USB_COMPOSITE_DEVICE=y
-      - CONFIG_USB_DEVICE_VID=0xDEAD
-      - CONFIG_USB_DEVICE_PID=0xBEEF
     platform_whitelist: quark_se_c1000_devboard 96b_carbon
     tags: net usb
   test_openthread:

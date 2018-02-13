@@ -5,8 +5,5 @@ tests:
   test_x86:
     harness: net
     depends_on: usb_device
-    extra_configs:
-      - CONFIG_USB_DEVICE_VID=0xDEAD
-      - CONFIG_USB_DEVICE_PID=0xBEEF
     platform_whitelist: quark_se_c1000_devboard
     tags: usb
