@@ -2306,12 +2306,11 @@ extern void k_delayed_work_init(struct k_delayed_work *work,
  * the workqueue and becomes pending.
  *
  * Submitting a previously submitted delayed work item that is still
- * counting down cancels the existing submission and restarts the countdown
- * using the new delay. If the work item is currently pending on the
- * workqueue's queue because the countdown has completed it is too late to
- * resubmit the item, and resubmission fails without impacting the work item.
- * If the work item has already been processed, or is currently being processed,
- * its work is considered complete and the work item can be resubmitted.
+ * counting down cancels the existing submission and restarts the
+ * countdown using the new delay.  Note that this behavior is
+ * inherently subject to race conditions with the pre-existing
+ * timeouts and work queue, so care must be taken to synchronize such
+ * resubmissions externally.
  *
  * @warning
  * A delayed work item must not be modified until it has been processed
