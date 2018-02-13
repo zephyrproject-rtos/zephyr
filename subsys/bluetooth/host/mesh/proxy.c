@@ -538,7 +538,7 @@ static void proxy_connected(struct bt_conn *conn, u8_t err)
 	client->conn = bt_conn_ref(conn);
 	client->filter_type = NONE;
 	memset(client->filter, 0, sizeof(client->filter));
-	net_buf_simple_reset(&client->buf);
+	net_buf_simple_init(&client->buf, 0);
 }
 
 static void proxy_disconnected(struct bt_conn *conn, u8_t reason)
