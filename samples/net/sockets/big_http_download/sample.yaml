@@ -1,0 +1,8 @@
+sample:
+  description: BSD Sockets big HTTP download example
+  name: big_http_download
+tests:
+  test:
+    harness: net
+    min_ram: 32
+    tags: net
