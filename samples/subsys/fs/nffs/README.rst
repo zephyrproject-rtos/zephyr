@@ -32,6 +32,9 @@ The following commands build the application.
    cmake -DBOARD=nrf52840_pca10056 ..
    make
    cd zephyr
+   nrfjprog --eraseall -f nrf52
+   nrfjprog --program zephyr.hex -f nrf52
+   nrfjprog -f nrf52 --reset
 
 After the build completes, the resulting binary ``zephyr.hex`` will be
 in the current directory.  Use this file to flash the board using the
