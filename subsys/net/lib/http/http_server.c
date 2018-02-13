@@ -168,7 +168,8 @@ static void http_data_sent(struct net_app_ctx *app_ctx,
 }
 
 int http_send_error(struct http_ctx *ctx, int code,
-		    u8_t *html_payload, size_t html_len)
+		    u8_t *html_payload, size_t html_len,
+		    const struct sockaddr *dst)
 {
 	const char *msg;
 	int ret;
@@ -187,13 +188,14 @@ int http_send_error(struct http_ctx *ctx, int code,
 		break;
 	}
 
-	ret = http_add_header(ctx, msg, NULL);
+	ret = http_add_header(ctx, msg, dst, NULL);
 	if (ret < 0) {
 		goto quit;
 	}
 
 	if (html_payload) {
-		ret = http_prepare_and_send(ctx, html_payload, html_len, NULL);
+		ret = http_prepare_and_send(ctx, html_payload, html_len, dst,
+					    NULL);
 		if (ret < 0) {
 			goto quit;
 		}
@@ -297,7 +299,8 @@ static struct net_context *get_server_ctx(struct net_app_ctx *ctx,
 
 static inline void new_client(struct http_ctx *ctx,
 			      enum http_connection_type type,
-			      struct net_app_ctx *app_ctx)
+			      struct net_app_ctx *app_ctx,
+			      const struct sockaddr *dst)
 {
 #if defined(CONFIG_NET_DEBUG_HTTP) && (CONFIG_SYS_LOG_NET_LEVEL > 2)
 #if defined(CONFIG_NET_IPV6)
@@ -311,7 +314,7 @@ static inline void new_client(struct http_ctx *ctx,
 	struct net_context *net_ctx;
 	const char *type_str = "HTTP";
 
-	net_ctx = get_server_ctx(app_ctx, ctx->addr);
+	net_ctx = get_server_ctx(app_ctx, dst);
 	if (net_ctx) {
 		NET_INFO("[%p] %s connection from %s (%p)", ctx, type_str,
 			 sprint_ipaddr(buf, sizeof(buf), &net_ctx->remote),
@@ -323,12 +326,13 @@ static inline void new_client(struct http_ctx *ctx,
 }
 
 static void url_connected(struct http_ctx *ctx,
-			  enum http_connection_type type)
+			  enum http_connection_type type,
+			  const struct sockaddr *dst)
 {
-	new_client(ctx, type, &ctx->app_ctx);
+	new_client(ctx, type, &ctx->app_ctx, dst);
 
 	if (ctx->cb.connect) {
-		ctx->cb.connect(ctx, type, ctx->user_data);
+		ctx->cb.connect(ctx, type, dst, ctx->user_data);
 	}
 }
 
@@ -471,7 +475,8 @@ struct http_root_url *http_url_find(struct http_ctx *ctx,
 	return NULL;
 }
 
-static int http_process_recv(struct http_ctx *ctx)
+static int http_process_recv(struct http_ctx *ctx,
+			     const struct sockaddr *dst)
 {
 	struct http_root_url *root_url;
 	int ret;
@@ -493,7 +498,8 @@ static int http_process_recv(struct http_ctx *ctx)
 
 		if (ctx->http.urls->default_cb) {
 			ret = ctx->http.urls->default_cb(ctx,
-							 HTTP_CONNECTION);
+							 HTTP_CONNECTION,
+							 dst);
 			if (ret != HTTP_VERDICT_ACCEPT) {
 				ret = -ECONNREFUSED;
 				goto out;
@@ -502,7 +508,7 @@ static int http_process_recv(struct http_ctx *ctx)
 	}
 
 	http_change_state(ctx, HTTP_STATE_OPEN);
-	url_connected(ctx, HTTP_CONNECTION);
+	url_connected(ctx, HTTP_CONNECTION, dst);
 
 	ret = 0;
 
@@ -538,6 +544,7 @@ static void http_received(struct net_app_ctx *app_ctx,
 	struct http_ctx *ctx = user_data;
 	size_t start = ctx->http.data_len;
 	u16_t len = 0;
+	const struct sockaddr *dst = NULL;
 	struct net_buf *frag;
 	int parsed_len;
 	size_t recv_len;
@@ -566,6 +573,11 @@ static void http_received(struct net_app_ctx *app_ctx,
 
 	NET_DBG("[%p] Received %zd bytes http data", ctx, recv_len);
 
+	if (net_pkt_context(pkt)) {
+		ctx->http.parser.addr = &net_pkt_context(pkt)->remote;
+		dst = &net_pkt_context(pkt)->remote;
+	}
+
 	if (ctx->state == HTTP_STATE_OPEN) {
 		/* We have active websocket session and there is no longer
 		 * any HTTP traffic in the connection. Give the data to
@@ -591,7 +603,7 @@ static void http_received(struct net_app_ctx *app_ctx,
 			 * overflows. Set the data_len to mark how many bytes
 			 * should be needed in the response_buf.
 			 */
-			if (http_process_recv(ctx) < 0) {
+			if (http_process_recv(ctx, dst) < 0) {
 				ctx->http.data_len = recv_len;
 				goto out;
 			}
@@ -635,13 +647,13 @@ fail:
 	}
 
 	if (ctx->http.parser.http_errno != HPE_OK) {
-		http_send_error(ctx, 400, NULL, 0);
+		http_send_error(ctx, 400, NULL, 0, dst);
 	} else {
 		if (ctx->state == HTTP_STATE_HEADER_RECEIVED) {
 			goto http_ready;
 		}
 
-		http_process_recv(ctx);
+		http_process_recv(ctx, dst);
 	}
 
 quit:
@@ -654,14 +666,14 @@ quit:
 
 http_only:
 	if (ctx->cb.recv) {
-		ctx->cb.recv(ctx, pkt, 0, 0, ctx->user_data);
+		ctx->cb.recv(ctx, pkt, 0, 0, dst, ctx->user_data);
 	}
 
 	return;
 
 http_ready:
 	http_change_state(ctx, HTTP_STATE_OPEN);
-	url_connected(ctx, HTTP_CONNECT);
+	url_connected(ctx, HTTP_CONNECT, dst);
 	net_pkt_unref(pkt);
 }
 

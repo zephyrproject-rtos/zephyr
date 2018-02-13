@@ -424,6 +424,7 @@ static void http_received(struct http_ctx *ctx,
 			  struct net_pkt *pkt,
 			  int status,
 			  u32_t flags,
+			  const struct sockaddr *dst,
 			  void *user_data)
 {
 	if (!status) {

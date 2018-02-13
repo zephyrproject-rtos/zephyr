@@ -114,12 +114,14 @@ enum http_verdict {
  *
  * @param ctx The context to use.
  * @param type Connection type (websocket or HTTP)
+ * @param dst Remote socket address
  *
  * @return HTTP_VERDICT_DROP if connection is to be dropped,
  * HTTP_VERDICT_ACCEPT if the application wants to accept the unknown URL.
  */
 typedef enum http_verdict (*http_url_cb_t)(struct http_ctx *ctx,
-					   enum http_connection_type type);
+					   enum http_connection_type type,
+					   const struct sockaddr *dst);
 
 /* Collection of URLs that this server will handle */
 struct http_server_urls {
@@ -149,12 +151,14 @@ struct http_server_urls {
  * pkt parameter is set to NULL.
  * @param flags Flags related to http. For example contains information
  * if the data is text or binary etc.
+ * @param dst Remote socket address from where HTTP packet is received.
  * @param user_data The user data given in init call.
  */
 typedef void (*http_recv_cb_t)(struct http_ctx *ctx,
 			       struct net_pkt *pkt,
 			       int status,
 			       u32_t flags,
+			       const struct sockaddr *dst,
 			       void *user_data);
 
 /**
@@ -166,10 +170,12 @@ typedef void (*http_recv_cb_t)(struct http_ctx *ctx,
  *
  * @param ctx The context to use.
  * @param type Connection type (websocket or HTTP)
+ * @param dst Remote socket address where the connection is established.
  * @param user_data The user data given in init call.
  */
 typedef void (*http_connect_cb_t)(struct http_ctx *ctx,
 				  enum http_connection_type type,
+				  const struct sockaddr *dst,
 				  void *user_data);
 
 /**
@@ -444,12 +450,6 @@ struct http_ctx {
 
 	/** Network buffer allocation timeout */
 	s32_t timeout;
-
-	/** Websocket endpoint address */
-	struct sockaddr *addr;
-
-	/** Websocket endpoint port */
-	u16_t port;
 
 	/** Is this context setup or not */
 	u8_t is_init : 1;
@@ -906,13 +906,16 @@ int http_send_msg_raw(struct http_ctx *ctx, struct net_pkt *pkt,
  * @param ctx Http context.
  * @param payload Application data to send
  * @param payload_len Length of application data
+ * @param dst Remote socket address
  * @param user_send_data User specific data to this connection. This is passed
  * as a parameter to sent cb after the packet has been sent.
  *
  * @return 0 if ok, <0 if error.
  */
 int http_prepare_and_send(struct http_ctx *ctx, const char *payload,
-			  size_t payload_len, void *user_send_data);
+			  size_t payload_len,
+			  const struct sockaddr *dst,
+			  void *user_send_data);
 
 /**
  * @brief Send HTTP data chunk to peer.
@@ -920,13 +923,16 @@ int http_prepare_and_send(struct http_ctx *ctx, const char *payload,
  * @param ctx Http context.
  * @param payload Application data to send
  * @param payload_len Length of application data
+ * @param dst Remote socket address
  * @param user_send_data User specific data to this connection. This is passed
  * as a parameter to sent cb after the packet has been sent.
  *
  * @return 0 if ok, <0 if error.
  */
 int http_send_chunk(struct http_ctx *ctx, const char *payload,
-		    size_t payload_len, void *user_send_data);
+		    size_t payload_len,
+		    const struct sockaddr *dst,
+		    void *user_send_data);
 
 /**
  * @brief Send any pending data immediately.
@@ -946,11 +952,13 @@ int http_send_flush(struct http_ctx *ctx, void *user_send_data);
  * @param code HTTP error code
  * @param html_payload Extra payload, can be null
  * @param html_len Payload length
+ * @param dst Remote socket address
  *
  * @return 0 if ok, <0 if error.
  */
-int http_send_error(struct http_ctx *ctx, int code, u8_t *html_payload,
-		    size_t html_len);
+int http_send_error(struct http_ctx *ctx, int code,
+		    u8_t *html_payload, size_t html_len,
+		    const struct sockaddr *dst);
 
 /**
  * @brief Add HTTP header field to the message.
@@ -961,6 +969,7 @@ int http_send_error(struct http_ctx *ctx, int code, u8_t *html_payload,
  *
  * @param ctx Http context.
  * @param http_header_field All or part of HTTP header to be added.
+ * @param dst Remote socket address.
  * @param user_send_data User data value that is used in send callback.
  * Note that this value is only used if this function call causes a HTTP
  * message to be sent.
@@ -968,6 +977,7 @@ int http_send_error(struct http_ctx *ctx, int code, u8_t *html_payload,
  * @return <0 if error, other value tells how many bytes were added
  */
 int http_add_header(struct http_ctx *ctx, const char *http_header_field,
+		    const struct sockaddr *dst,
 		    void *user_send_data);
 
 /**
@@ -980,6 +990,7 @@ int http_add_header(struct http_ctx *ctx, const char *http_header_field,
  * @param ctx Http context.
  * @param name Name of the header field
  * @param value Value of the header field
+ * @param dst Remote socket address
  * @param user_send_data User data value that is used in send callback.
  * Note that this value is only used if this function call causes a HTTP
  * message to be sent.
@@ -987,7 +998,9 @@ int http_add_header(struct http_ctx *ctx, const char *http_header_field,
  * @return <0 if error, other value tells how many bytes were added
  */
 int http_add_header_field(struct http_ctx *ctx, const char *name,
-			  const char *value, void *user_send_data);
+			  const char *value,
+			  const struct sockaddr *dst,
+			  void *user_send_data);
 
 /**
  * @brief Find a handler function for a given URL.
