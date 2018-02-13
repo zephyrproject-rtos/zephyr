@@ -3,6 +3,9 @@ zephyr_sources(
 	cpu_idle.c
 	fatal.c
 	window_vectors.S
+	)
+
+zephyr_sources_ifdef(CONFIG_XTENSA_ASM2
 	xtensa-asm2-util.S
 	xtensa-asm2.c
 	)
