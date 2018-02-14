@@ -82,15 +82,15 @@ static struct bt_mesh_proxy_client {
 	struct k_work send_beacons;
 #endif
 	struct net_buf_simple    buf;
-	u8_t                     buf_data[CLIENT_BUF_SIZE];
 } clients[CONFIG_BT_MAX_CONN] = {
 	[0 ... (CONFIG_BT_MAX_CONN - 1)] = {
 #if defined(CONFIG_BT_MESH_GATT_PROXY)
 		.send_beacons = _K_WORK_INITIALIZER(proxy_send_beacons),
 #endif
-		.buf.size = CLIENT_BUF_SIZE,
 	},
 };
+
+static u8_t __noinit client_buf_data[CLIENT_BUF_SIZE * CONFIG_BT_MAX_CONN];
 
 /* Track which service is enabled */
 static enum {
@@ -538,7 +538,7 @@ static void proxy_connected(struct bt_conn *conn, u8_t err)
 	client->conn = bt_conn_ref(conn);
 	client->filter_type = NONE;
 	memset(client->filter, 0, sizeof(client->filter));
-	net_buf_simple_init(&client->buf, 0);
+	net_buf_simple_reset(&client->buf);
 }
 
 static void proxy_disconnected(struct bt_conn *conn, u8_t reason)
@@ -571,7 +571,7 @@ struct net_buf_simple *bt_mesh_proxy_get_buf(void)
 {
 	struct net_buf_simple *buf = &clients[0].buf;
 
-	net_buf_simple_init(buf, 0);
+	net_buf_simple_reset(buf);
 
 	return buf;
 }
@@ -1213,6 +1213,7 @@ static struct bt_conn_cb conn_callbacks = {
 
 int bt_mesh_proxy_init(void)
 {
+	int i;
 #if defined(CONFIG_BT_MESH_PB_GATT)
 	const struct bt_mesh_prov *prov = bt_mesh_prov_get();
 	size_t name_len = strlen(CONFIG_BT_DEVICE_NAME);
@@ -1251,6 +1252,14 @@ int bt_mesh_proxy_init(void)
 		prov_sd_len++;
 	}
 #endif /* CONFIG_BT_MESH_PB_GATT */
+
+	/* Initialize the client receive buffers */
+	for (i = 0; i < ARRAY_SIZE(clients); i++) {
+		struct bt_mesh_proxy_client *client = &clients[i];
+
+		client->buf.size = CLIENT_BUF_SIZE;
+		client->buf.__buf = client_buf_data + (i * CLIENT_BUF_SIZE);
+	}
 
 	bt_conn_cb_register(&conn_callbacks);
 
