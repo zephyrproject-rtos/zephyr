@@ -29,7 +29,8 @@ void k_mem_domain_init(struct k_mem_domain *domain, u32_t num_parts,
 {
 	unsigned int key;
 
-	__ASSERT(domain && (!num_parts || parts), "");
+	__ASSERT(domain != NULL, "");
+	__ASSERT(num_parts == 0 || parts != NULL, "");
 	__ASSERT(num_parts <= max_partitions, "");
 
 	key = irq_lock();
@@ -59,7 +60,7 @@ void k_mem_domain_destroy(struct k_mem_domain *domain)
 	unsigned int key;
 	sys_dnode_t *node, *next_node;
 
-	__ASSERT(domain, "");
+	__ASSERT(domain != NULL, "");
 
 	key = irq_lock();
 
@@ -118,7 +119,8 @@ void k_mem_domain_remove_partition(struct k_mem_domain *domain,
 	int p_idx;
 	unsigned int key;
 
-	__ASSERT(domain && part, "");
+	__ASSERT(domain != NULL, "");
+	__ASSERT(part != NULL, "");
 
 	key = irq_lock();
 
@@ -151,7 +153,10 @@ void k_mem_domain_add_thread(struct k_mem_domain *domain, k_tid_t thread)
 {
 	unsigned int key;
 
-	__ASSERT(domain && thread && !thread->mem_domain_info.mem_domain, "");
+	__ASSERT(domain != NULL, "");
+	__ASSERT(thread != NULL, "");
+	__ASSERT(thread->mem_domain_info.mem_domain == NULL,
+		 "mem domain unset");
 
 	key = irq_lock();
 
@@ -170,7 +175,8 @@ void k_mem_domain_remove_thread(k_tid_t thread)
 {
 	unsigned int key;
 
-	__ASSERT(thread && thread->mem_domain_info.mem_domain, "");
+	__ASSERT(thread != NULL, "");
+	__ASSERT(thread->mem_domain_info.mem_domain != NULL, "mem domain set");
 
 	key = irq_lock();
 	if (_current == thread) {
