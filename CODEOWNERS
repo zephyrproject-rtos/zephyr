@@ -75,6 +75,7 @@ drivers/gpio/*stm32*                     @rsalveti @idlethread
 drivers/gpio/gpio_pulpino.c              @fractalclone
 drivers/ieee802154/*                     @jukkar @tbursztyka
 drivers/interrupt_controller/*           @andrewboie
+drivers/led_strip/*                      @mbolivar
 drivers/pinmux/stm32/*                   @rsalveti @idlethread
 drivers/sensor/*                         @bogdan-davidoaia
 drivers/serial/uart_altera_jtag.c        @ramakrishnapallala
@@ -125,6 +126,7 @@ include/irq.h                            @andrewboie @andyross
 include/irq_offload.h                    @andrewboie @andyross
 include/kernel.h                         @andrewboie @andyross
 include/kernel_version.h                 @andrewboie @andyross
+include/led_strip.h                      @mbolivar
 include/linker/linker-defs.h             @andrewboie @andyross
 include/linker/linker-tool-gcc.h         @andrewboie @andyross
 include/linker/linker-tool.h             @andrewboie @andyross
