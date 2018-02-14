@@ -8,6 +8,7 @@
 *.swo
 *~
 build
+build-*
 cscope.*
 .dir
 outdir
@@ -37,3 +38,4 @@ tags
 .cproject
 .xxproject
 .envrc
+.vscode
