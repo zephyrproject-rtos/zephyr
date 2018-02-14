@@ -9,6 +9,11 @@
 #include <soc.h>
 
 #include "hal/cntr.h"
+
+#if defined(CONFIG_SOC_FAMILY_NRF5)
+#include "hal/nrf5/ticker.h"
+#endif /* CONFIG_SOC_FAMILY_NRF5 */
+
 #include "ticker.h"
 
 #include "common/log.h"
@@ -417,7 +422,7 @@ static void ticks_to_expire_prep(struct ticker_node *ticker,
 	u32_t ticks_to_expire_minus = ticker->ticks_to_expire_minus;
 
 	/* Calculate ticks to expire for this new node */
-	if (((ticks_at_start - ticks_current) & BIT(23)) == 0) {
+	if (!((ticks_at_start - ticks_current) & BIT(HAL_TICKER_MSBIT))) {
 		ticks_to_expire += ticker_ticks_diff_get(ticks_at_start,
 							 ticks_current);
 	} else {
