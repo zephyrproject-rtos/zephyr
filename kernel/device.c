@@ -60,6 +60,17 @@ struct device *device_get_binding(const char *name)
 {
 	struct device *info;
 
+	/* Split the search into two loops: in the common scenario, where
+	 * device names are stored in ROM (and are referenced by the user
+	 * with CONFIG_* macros), only cheap pointer comparisons will be
+	 * performed.  Reserve string comparisons for a fallback.
+	 */
+	for (info = __device_init_start; info != __device_init_end; info++) {
+		if (info->driver_api != NULL && info->config->name == name) {
+			return info;
+		}
+	}
+
 	for (info = __device_init_start; info != __device_init_end; info++) {
 		if (!info->driver_api) {
 			continue;
