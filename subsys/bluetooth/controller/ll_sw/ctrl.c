@@ -4609,6 +4609,8 @@ static void mayfly_xtal_stop(void *params)
 }
 
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
+#define XON_BITMASK BIT(31) /* XTAL has been retained from previous prepare */
+
 static void mayfly_xtal_retain(u8_t caller_id, u8_t retain)
 {
 	static u8_t s_xtal_retained;
@@ -4673,7 +4675,7 @@ static void prepare_reduced(u32_t status, void *op_context)
 	if (status == 0) {
 		struct shdr *hdr = (void *)op_context;
 
-		hdr->ticks_xtal_to_start |= ((u32_t)1 << 31);
+		hdr->ticks_xtal_to_start |= XON_BITMASK;
 	}
 }
 
@@ -4686,22 +4688,22 @@ static void prepare_normal(u32_t status, void *op_context)
 	if (status == 0) {
 		struct shdr *hdr = (void *)op_context;
 
-		hdr->ticks_xtal_to_start &= ~((u32_t)1 << 31);
+		hdr->ticks_xtal_to_start &= ~XON_BITMASK;
 	}
 }
 
 static void prepare_normal_set(struct shdr *hdr, u8_t ticker_user_id,
 			       u8_t ticker_id)
 {
-	if (hdr->ticks_xtal_to_start & ((u32_t)1 << 31)) {
+	if (hdr->ticks_xtal_to_start & XON_BITMASK) {
 		u32_t ticker_status;
 		u32_t ticks_prepare_to_start =
 			(hdr->ticks_active_to_start >
 			 hdr->ticks_preempt_to_start) ? hdr->
 			ticks_active_to_start : hdr->ticks_preempt_to_start;
-		u32_t ticks_drift_minus =
-			(hdr->ticks_xtal_to_start & (~((u32_t)1 << 31))) -
-			ticks_prepare_to_start;
+		u32_t ticks_drift_minus = (hdr->ticks_xtal_to_start &
+					   ~XON_BITMASK) -
+					  ticks_prepare_to_start;
 
 		ticker_status =
 			ticker_update(RADIO_TICKER_INSTANCE_ID_RADIO,
@@ -4822,9 +4824,10 @@ static void mayfly_xtal_stop_calc(void *params)
 					  hdr->ticks_preempt_to_start) ?
 					  hdr->ticks_active_to_start :
 					  hdr->ticks_preempt_to_start;
-		if (hdr->ticks_xtal_to_start & BIT(31)) {
+		if (hdr->ticks_xtal_to_start & XON_BITMASK) {
 			ticks_to_expire -= (hdr->ticks_xtal_to_start &
-					    ~BIT(31)) - ticks_prepare_to_start;
+					    ~XON_BITMASK) -
+					   ticks_prepare_to_start;
 		} else {
 			/* Postpone the primary because we dont have
 			 * to start xtal.
@@ -4868,10 +4871,10 @@ static void mayfly_xtal_stop_calc(void *params)
 				conn_curr->hdr.ticks_preempt_to_start) ?
 				conn_curr->hdr.ticks_active_to_start :
 				conn_curr->hdr.ticks_preempt_to_start;
-			if (conn_curr->hdr.ticks_xtal_to_start & BIT(31)) {
+			if (conn_curr->hdr.ticks_xtal_to_start & XON_BITMASK) {
 				ticks_to_expire +=
 					(conn_curr->hdr.ticks_xtal_to_start &
-					 ~BIT(31)) - ticks_prepare_to_start;
+					 ~XON_BITMASK) - ticks_prepare_to_start;
 			}
 		}
 
@@ -4983,13 +4986,16 @@ static void sched_after_mstr_free_slot_get(u8_t user_id,
 			ticker_id_prev = ticker_id;
 			ticks_to_expire_prev = ticks_to_expire;
 
-			if (conn->hdr.ticks_xtal_to_start & BIT(31)) {
+#if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
+			if (conn->hdr.ticks_xtal_to_start & XON_BITMASK) {
 				ticks_prepare_to_start =
 					(conn->hdr.ticks_active_to_start >
 					 conn->hdr.ticks_preempt_to_start) ?
 					conn->hdr.ticks_active_to_start :
 					conn->hdr.ticks_preempt_to_start;
-			} else {
+			} else
+#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
+			{
 				ticks_prepare_to_start =
 					(conn->hdr.ticks_active_to_start >
 					 conn->hdr.ticks_xtal_to_start) ?
@@ -5080,17 +5086,19 @@ static void sched_free_win_offset_calc(struct connection *conn_curr,
 	u8_t offset_index;
 	u16_t _win_offset;
 
-	if (conn_curr->hdr.ticks_xtal_to_start & ((u32_t)1 << 31)) {
+#if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
+	if (conn_curr->hdr.ticks_xtal_to_start & XON_BITMASK) {
 		u32_t ticks_prepare_to_start =
 				(conn_curr->hdr.ticks_active_to_start >
 				conn_curr->hdr.ticks_preempt_to_start) ?
 				conn_curr->hdr.ticks_active_to_start :
 				conn_curr->hdr.ticks_preempt_to_start;
 
-		ticks_prepare_reduced = ((conn_curr->hdr.ticks_xtal_to_start &
-					  (~((u32_t)1 << 31))) -
-					 ticks_prepare_to_start);
+		ticks_prepare_reduced = (conn_curr->hdr.ticks_xtal_to_start &
+					 ~XON_BITMASK) -
+					ticks_prepare_to_start;
 	}
+#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 
 	ticker_id = ticker_id_prev = ticker_id_other = 0xFF;
 	ticks_to_expire = ticks_to_expire_prev = ticks_anchor =
@@ -5158,8 +5166,8 @@ static void sched_free_win_offset_calc(struct connection *conn_curr,
 			u32_t ticks_to_expire_normal =
 				ticks_to_expire + ticks_prepare_reduced;
 
-			if (conn->hdr.ticks_xtal_to_start &
-			    ((u32_t)1 << 31)) {
+#if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
+			if (conn->hdr.ticks_xtal_to_start & XON_BITMASK) {
 				u32_t ticks_prepare_to_start =
 					(conn->hdr.ticks_active_to_start >
 					 conn->hdr.ticks_preempt_to_start) ?
@@ -5167,10 +5175,11 @@ static void sched_free_win_offset_calc(struct connection *conn_curr,
 					conn->hdr.ticks_preempt_to_start;
 
 				ticks_to_expire_normal -=
-					((conn->hdr.ticks_xtal_to_start &
-					  (~((u32_t)1 << 31))) -
-					 ticks_prepare_to_start);
+					(conn->hdr.ticks_xtal_to_start &
+					 ~XON_BITMASK) -
+					ticks_prepare_to_start;
 			}
+#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 
 			if (*ticks_to_offset_next < ticks_to_expire_normal) {
 				if (ticks_to_expire_prev < *ticks_to_offset_next) {
@@ -5418,15 +5427,17 @@ static void event_common_prepare(u32_t ticks_at_expire,
 	u32_t _ticks_active_to_start = *ticks_active_to_start;
 	u32_t ticks_to_start;
 
+#if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
 	/* in case this event is short prepare, xtal to start duration will be
 	 * active to start duration.
 	 */
-	if (_ticks_xtal_to_start & ((u32_t)1 << 31)) {
+	if (_ticks_xtal_to_start & XON_BITMASK) {
 		_ticks_xtal_to_start =
 			(_ticks_active_to_start > ticks_preempt_to_start) ?
 			_ticks_active_to_start :
 			ticks_preempt_to_start;
 	}
+#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 
 	/* decide whether its XTAL start or active event that is the current
 	 * execution context and accordingly setup the ticker for the other
@@ -5518,17 +5529,20 @@ static void event_common_prepare(u32_t ticks_at_expire,
 
 	/** Handle change in _ticks_active_to_start */
 	if (_radio.ticks_active_to_start != _ticks_active_to_start) {
-		u32_t ticks_to_start_new =
-			((_radio.ticks_active_to_start <
-			  (*ticks_xtal_to_start & ~(((u32_t)1 << 31)))) ?
-			 (*ticks_xtal_to_start & ~(((u32_t)1 << 31))) :
-			 _radio.ticks_active_to_start);
+		u32_t ticks_to_start_new;
 
 		*ticks_active_to_start = _radio.ticks_active_to_start;
 
-		if ((*ticks_xtal_to_start) & ((u32_t)1 << 31)) {
-			*ticks_xtal_to_start &= ~(((u32_t)1 << 31));
+#if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
+		if (*ticks_xtal_to_start & XON_BITMASK) {
+			*ticks_xtal_to_start &= ~XON_BITMASK;
 		}
+#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
+
+		ticks_to_start_new = (_radio.ticks_active_to_start <
+				      *ticks_xtal_to_start) ?
+				     *ticks_xtal_to_start :
+				     _radio.ticks_active_to_start;
 
 		/* drift the primary as required due to active line change */
 		ticker_status =
@@ -6129,12 +6143,19 @@ static inline void ticker_stop_adv_stop_active(void)
 		}
 
 		if (ret_cb_m0 == TICKER_STATUS_SUCCESS) {
+			u32_t ticks_xtal_to_start =
+				_radio.advertiser.hdr.ticks_xtal_to_start;
+
+#if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
+			/* If in reduced prepare, use the absolute value */
+			ticks_xtal_to_start &= ~XON_BITMASK;
+#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
+
 			/* Step 2.1.1: Check and deassert Radio Active or XTAL
 			 * start
 			 */
 			if (_radio.advertiser.hdr.ticks_active_to_start >
-			    (_radio.advertiser.hdr.ticks_xtal_to_start &
-			     ~BIT(31))) {
+			    ticks_xtal_to_start) {
 				/* radio active asserted, handle deasserting
 				 * here
 				 */
@@ -6278,7 +6299,8 @@ static void event_scan_prepare(u32_t ticks_at_expire, u32_t remainder,
 		u32_t ticks_at_expire_normal = ticks_at_expire;
 		u32_t retval;
 
-		if (_radio.scanner.hdr.ticks_xtal_to_start & ((u32_t)1 << 31)) {
+#if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
+		if (_radio.scanner.hdr.ticks_xtal_to_start & XON_BITMASK) {
 			u32_t ticks_prepare_to_start =
 				(_radio.scanner.hdr.ticks_active_to_start >
 				 _radio.scanner.hdr.ticks_preempt_to_start) ?
@@ -6286,10 +6308,10 @@ static void event_scan_prepare(u32_t ticks_at_expire, u32_t remainder,
 				_radio.scanner.hdr.ticks_preempt_to_start;
 
 			ticks_at_expire_normal -=
-				((_radio.scanner.hdr.ticks_xtal_to_start &
-				  (~((u32_t)1 << 31))) -
-				 ticks_prepare_to_start);
+				(_radio.scanner.hdr.ticks_xtal_to_start &
+				 ~XON_BITMASK) - ticks_prepare_to_start;
 		}
+#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 
 		s_mfy_sched_after_mstr_free_offset_get.param =
 			(void *)ticks_at_expire_normal;
@@ -6467,7 +6489,9 @@ static inline void event_conn_upd_init(struct connection *conn,
 		 * next available slot after existing masters.
 		 */
 		conn->llcp.conn_upd.ticks_anchor = ticks_at_expire;
-		if (conn->hdr.ticks_xtal_to_start & ((u32_t)1 << 31)) {
+
+#if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
+		if (conn->hdr.ticks_xtal_to_start & XON_BITMASK) {
 			u32_t ticks_prepare_to_start =
 				(conn->hdr.ticks_active_to_start >
 				 conn->hdr.ticks_preempt_to_start) ?
@@ -6475,10 +6499,10 @@ static inline void event_conn_upd_init(struct connection *conn,
 				conn->hdr.ticks_preempt_to_start;
 
 			conn->llcp.conn_upd.ticks_anchor -=
-				((conn->hdr.ticks_xtal_to_start &
-				  (~((u32_t)1 << 31))) -
-				 ticks_prepare_to_start);
+				(conn->hdr.ticks_xtal_to_start &
+				 ~XON_BITMASK) - ticks_prepare_to_start;
 		}
+#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 
 		conn->llcp.conn_upd.pdu_win_offset = (u16_t *)
 			&pdu_ctrl_tx->llctrl.conn_update_ind.win_offset;
@@ -6629,18 +6653,20 @@ static inline u32_t event_conn_upd_prep(struct connection *conn,
 			packet_rx_enqueue();
 		}
 
+#if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
 		/* restore to normal prepare */
-		if (conn->hdr.ticks_xtal_to_start & ((u32_t)1 << 31)) {
+		if (conn->hdr.ticks_xtal_to_start & XON_BITMASK) {
 			u32_t ticks_prepare_to_start =
 				(conn->hdr.ticks_active_to_start >
 				 conn->hdr.ticks_preempt_to_start) ?
 				conn->hdr.ticks_active_to_start :
 				conn->hdr.ticks_preempt_to_start;
 
-			conn->hdr.ticks_xtal_to_start &= ~((u32_t)1 << 31);
+			conn->hdr.ticks_xtal_to_start &= ~XON_BITMASK;
 			ticks_at_expire -= (conn->hdr.ticks_xtal_to_start -
 					    ticks_prepare_to_start);
 		}
+#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 
 		/* compensate for instant_latency due to laziness */
 		conn_interval_old = instant_latency * conn->conn_interval;
@@ -7171,7 +7197,9 @@ static inline void event_conn_param_req(struct connection *conn,
 		u32_t retval;
 
 		conn->llcp_conn_param.ticks_ref = ticks_at_expire;
-		if (conn->hdr.ticks_xtal_to_start & ((u32_t)1 << 31)) {
+
+#if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
+		if (conn->hdr.ticks_xtal_to_start & XON_BITMASK) {
 			u32_t ticks_prepare_to_start =
 				(conn->hdr.ticks_active_to_start >
 				 conn->hdr.ticks_preempt_to_start) ?
@@ -7179,10 +7207,10 @@ static inline void event_conn_param_req(struct connection *conn,
 				conn->hdr.ticks_preempt_to_start;
 
 			conn->llcp_conn_param.ticks_ref -=
-				((conn->hdr.ticks_xtal_to_start &
-				  (~((u32_t)1 << 31))) -
-				 ticks_prepare_to_start);
+				(conn->hdr.ticks_xtal_to_start &
+				 ~XON_BITMASK) - ticks_prepare_to_start;
 		}
+#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 
 		conn->llcp_conn_param.pdu_win_offset0 = (u16_t *)&p->offset0;
 
@@ -9689,8 +9717,10 @@ static inline void role_active_disable(u8_t ticker_id_stop,
 		}
 
 		if (ret_cb_m0 == TICKER_STATUS_SUCCESS) {
+#if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
 			/* If in reduced prepare, use the absolute value */
-			ticks_xtal_to_start &= ~BIT(31);
+			ticks_xtal_to_start &= ~XON_BITMASK;
+#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 
 			/* Step 2.1.1: Check and deassert Radio Active or XTAL
 			 * start
