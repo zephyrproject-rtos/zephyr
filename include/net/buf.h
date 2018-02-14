@@ -56,13 +56,13 @@ extern "C" {
  *  @param _name Name of the net_buf_simple object.
  *  @param _size Maximum data storage for the buffer.
  */
-#define NET_BUF_SIMPLE_DEFINE_STATIC(_name, _size)  \
-	static u8_t net_buf_data_##_name[_size];    \
-	static struct net_buf_simple _name = {      \
-		.data   = net_buf_data_##_name,     \
-		.len    = 0,                        \
-		.size   = _size,                    \
-		.__buf  = net_buf_data_##_name,     \
+#define NET_BUF_SIMPLE_DEFINE_STATIC(_name, _size)        \
+	static __noinit u8_t net_buf_data_##_name[_size]; \
+	static struct net_buf_simple _name = {            \
+		.data   = net_buf_data_##_name,           \
+		.len    = 0,                              \
+		.size   = _size,                          \
+		.__buf  = net_buf_data_##_name,           \
 	}
 
 /** @brief Simple network buffer representation.
@@ -643,7 +643,7 @@ extern const struct net_buf_data_cb net_buf_fixed_cb;
  */
 #define NET_BUF_POOL_FIXED_DEFINE(_name, _count, _data_size, _destroy)        \
 	static struct net_buf net_buf_##_name[_count] __noinit;               \
-	static u8_t net_buf_data_##_name[_count][_data_size];                 \
+	static u8_t __noinit net_buf_data_##_name[_count][_data_size];        \
 	static const struct net_buf_pool_fixed net_buf_fixed_##_name = {      \
 		.data_size = _data_size,                                      \
 		.data_pool = (u8_t *)net_buf_data_##_name,                    \
