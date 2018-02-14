@@ -1014,9 +1014,7 @@ static void seg_ack(struct k_work *work)
 
 	if (k_uptime_get_32() - rx->last > K_SECONDS(60)) {
 		BT_WARN("Incomplete timer expired");
-		send_ack(rx->sub, rx->dst, rx->src, rx->ttl,
-			 &rx->seq_auth, 0, rx->obo);
-		seg_rx_reset(rx, true);
+		seg_rx_reset(rx, false);
 
 		if (IS_ENABLED(CONFIG_BT_TESTING)) {
 			bt_test_mesh_trans_incomp_timer_exp();
