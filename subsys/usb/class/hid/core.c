@@ -16,6 +16,10 @@
 #include <usb_descriptor.h>
 #include <class/usb_hid.h>
 
+#ifdef CONFIG_USB_COMPOSITE_DEVICE
+#include <composite.h>
+#endif
+
 static struct hid_device_info {
 	const u8_t *report_desc;
 	size_t report_size;
@@ -159,6 +163,11 @@ int usb_hid_init(void)
 
 	SYS_LOG_DBG("Iinitializing HID Device");
 
+	/*
+	 * Modify Report Descriptor Size
+	 */
+	usb_set_hid_report_size(hid_device.report_size);
+
 #ifdef CONFIG_USB_COMPOSITE_DEVICE
 	ret = composite_add_function(&hid_config, FIRST_IFACE_HID);
 	if (ret < 0) {
@@ -168,11 +177,6 @@ int usb_hid_init(void)
 #else
 	hid_config.interface.payload_data = interface_data;
 	hid_config.usb_device_description = usb_get_device_descriptor();
-
-	/*
-	 * Modify Report Descriptor Size
-	 */
-	usb_set_hid_report_size(hid_device.report_size);
 
 	/* Initialize the USB driver with the right configuration */
 	ret = usb_set_config(&hid_config);
