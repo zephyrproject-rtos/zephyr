@@ -28,6 +28,26 @@ void test_dummy_device(void)
 
 }
 
+static void test_dynamic_name(void)
+{
+	struct device *mux;
+	char name[sizeof(DUMMY_PORT_2)];
+
+	snprintk(name, sizeof(name), "%s", DUMMY_PORT_2);
+	mux = device_get_binding(name);
+	zassert_true(mux != NULL, NULL);
+}
+
+static void test_bogus_dynamic_name(void)
+{
+	struct device *mux;
+	char name[64];
+
+	snprintk(name, sizeof(name), "ANOTHER_BOGUS_NAME");
+	mux = device_get_binding(name);
+	zassert_true(mux == NULL, NULL);
+}
+
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 static void build_suspend_device_list(void)
 {
@@ -74,6 +94,8 @@ void test_main(void)
 			 ztest_unit_test(test_dummy_device_pm),
 			 ztest_unit_test(build_suspend_device_list),
 #endif
-			 ztest_unit_test(test_dummy_device));
+			 ztest_unit_test(test_dummy_device),
+			 ztest_unit_test(test_bogus_dynamic_name),
+			 ztest_unit_test(test_dynamic_name));
 	ztest_run_test_suite(test_device);
 }
