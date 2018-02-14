@@ -270,11 +270,6 @@ int lwm2m_device_add_err(u8_t error_code)
 	return -ENOMEM;
 }
 
-static void device_periodic_service(void)
-{
-	NOTIFY_OBSERVER(LWM2M_OBJECT_DEVICE_ID, 0, DEVICE_CURRENT_TIME_ID);
-}
-
 static struct lwm2m_engine_obj_inst *device_create(u16_t obj_inst_id)
 {
 	int i = 0;
@@ -363,9 +358,6 @@ static int lwm2m_device_init(struct device *dev)
 		SYS_LOG_DBG("Create LWM2M instance 0 error: %d", ret);
 	}
 
-	/* call device_periodic_service() every 10 seconds */
-	ret = lwm2m_engine_add_service(device_periodic_service,
-				       DEVICE_SERVICE_INTERVAL);
 	return ret;
 }
 
