@@ -7,15 +7,16 @@
 /**
  * @file irq_relay.S
  *
- * @brief IRQ relay vector table and relay handler for Cortex-M0 SoC
+ * @brief IRQ relay vector table and relay handler for Cortex-M0 or
+ *        Armv8-M baseline SoCs
  *
- * In Cortex-M0, the vector table address can not be changed. Once the
- * vector table is occupied by bootloader, there will be no IRQ support
- * in chainloaded image.
+ * In certain ARMv6-M and Armv8-M baseline cores the vector table address can
+ * not be changed. Once the * vector table is occupied by bootloader, there
+ * will be no IRQ support in the chainloaded image.
  *
  * This program will link into bootloader, once an interrupt is coming,
- * bootloader can forward the interrupt to the chainloaded image. This
- * will support DFU on Cortex-M0 plantform.
+ * the bootloader can forward the interrupt to the chainloaded image. This
+ * will support DFU on those cores.
  *
  * Note: Currently support mcuboot only.
  * */
