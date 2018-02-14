@@ -9,6 +9,7 @@
 #include <logging/sys_log.h>
 
 #include <zephyr.h>
+#include <init.h>
 
 #include <usb/usb_device.h>
 #include <usb/class/usb_hid.h>
@@ -95,9 +96,10 @@ void main(void)
 
 	SYS_LOG_DBG("Starting application");
 
+#ifndef CONFIG_USB_COMPOSITE_DEVICE
 	usb_hid_register_device(hid_report_desc, sizeof(hid_report_desc), &ops);
-
 	usb_hid_init();
+#endif
 
 	while (true) {
 		int ret, wrote;
@@ -111,3 +113,14 @@ void main(void)
 		SYS_LOG_DBG("Wrote %d bytes with ret %d", wrote, ret);
 	}
 }
+
+#ifdef CONFIG_USB_COMPOSITE_DEVICE
+static int composite_pre_init(struct device *dev)
+{
+	usb_hid_register_device(hid_report_desc, sizeof(hid_report_desc), &ops);
+
+	return usb_hid_init();
+}
+
+SYS_INIT(composite_pre_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+#endif
