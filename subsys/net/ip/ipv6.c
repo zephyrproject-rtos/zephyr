@@ -3792,7 +3792,10 @@ static inline enum net_verdict process_icmpv6_pkt(struct net_pkt *pkt,
 	struct net_icmp_hdr hdr, *icmp_hdr;
 
 	icmp_hdr = net_icmpv6_get_hdr(pkt, &hdr);
-	NET_ASSERT(icmp_hdr);
+	if (!icmp_hdr) {
+		NET_DBG("NULL ICMPv6 header - dropping");
+		return NET_DROP;
+	}
 
 	NET_DBG("ICMPv6 %s received type %d code %d",
 		net_icmpv6_type2str(icmp_hdr->type), icmp_hdr->type,
