@@ -28,6 +28,9 @@
 #define HAL_TICKER_TICKS_TO_US(x) \
 	((u32_t)(((u64_t) (x) * 30517578125UL) / 1000000000UL))
 
+/* Macro defines the h/w supported most significant bit */
+#define HAL_TICKER_MSBIT 23
+
 /* Exported integration interfaces */
 u8_t hal_ticker_instance0_caller_id_get(u8_t user_id);
 void hal_ticker_instance0_sched(u8_t caller_id, u8_t callee_id, u8_t chain,
