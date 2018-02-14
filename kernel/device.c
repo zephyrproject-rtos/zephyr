@@ -65,10 +65,6 @@ struct device *device_get_binding(const char *name)
 			continue;
 		}
 
-		if (name == info->config->name) {
-			return info;
-		}
-
 		if (!strcmp(name, info->config->name)) {
 			return info;
 		}
