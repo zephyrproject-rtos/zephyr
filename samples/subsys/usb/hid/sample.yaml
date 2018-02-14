@@ -4,3 +4,8 @@ tests:
   test_hid:
     depends_on: usb_device
     tags: usb
+  test_hid_composite:
+    depends_on: usb_device
+    extra_configs:
+      - CONFIG_USB_COMPOSITE_DEVICE=y
+    tags: usb
