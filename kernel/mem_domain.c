@@ -85,8 +85,9 @@ void k_mem_domain_add_partition(struct k_mem_domain *domain,
 	int p_idx;
 	unsigned int key;
 
-	__ASSERT(domain && part, "");
-	__ASSERT(part->start + part->size > part->start, "");
+	__ASSERT(domain != NULL, "");
+	__ASSERT(part != NULL, "");
+	__ASSERT((part->start + part->size) > part->start, "");
 
 	ensure_w_xor_x(part->attr);
 
