@@ -30,11 +30,15 @@ extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
 
 static ALWAYS_INLINE _cpu_t *_arch_curr_cpu(void)
 {
+#ifdef CONFIG_XTENSA_ASM2
 	void *val;
 
 	__asm__ volatile("rsr.misc0 %0" : "=r"(val));
 
 	return val;
+#else
+	return &_kernel.cpus[0];
+#endif
 }
 
 /**
