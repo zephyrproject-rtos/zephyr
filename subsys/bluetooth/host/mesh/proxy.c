@@ -571,7 +571,7 @@ struct net_buf_simple *bt_mesh_proxy_get_buf(void)
 {
 	struct net_buf_simple *buf = &clients[0].buf;
 
-	net_buf_simple_reset(buf);
+	net_buf_simple_init(buf, 0);
 
 	return buf;
 }
