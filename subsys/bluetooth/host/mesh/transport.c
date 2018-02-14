@@ -96,8 +96,8 @@ static struct seg_rx {
 	},
 };
 
-static u8_t seg_rx_buf_data[(CONFIG_BT_MESH_RX_SEG_MSG_COUNT *
-			     CONFIG_BT_MESH_RX_SDU_MAX)];
+static u8_t __noinit seg_rx_buf_data[(CONFIG_BT_MESH_RX_SEG_MSG_COUNT *
+				      CONFIG_BT_MESH_RX_SDU_MAX)];
 
 static u16_t hb_sub_dst = BT_MESH_ADDR_UNASSIGNED;
 
