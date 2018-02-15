@@ -4742,31 +4742,54 @@ static u32_t preempt_calc(struct shdr *hdr, u8_t ticker_id,
 }
 #endif
 
-/** @brief This function decides to start (additional call) xtal ahead of next
- * ticker, if next ticker is close to current ticker expire.
+static inline struct shdr *hdr_conn_get(u8_t ticker_id,
+					struct connection **conn)
+{
+	if (ticker_id >= RADIO_TICKER_ID_FIRST_CONNECTION) {
+		*conn = mem_get(_radio.conn_pool, CONNECTION_T_SIZE,
+				(ticker_id -
+				 RADIO_TICKER_ID_FIRST_CONNECTION));
+		return &(*conn)->hdr;
+	} else if (ticker_id == RADIO_TICKER_ID_ADV) {
+		return &_radio.advertiser.hdr;
+	} else if (ticker_id == RADIO_TICKER_ID_SCAN) {
+		return &_radio.scanner.hdr;
+	}
+
+	return NULL;
+}
+
+/* This function decides to start (additional call) xtal ahead of next ticker,
+ * if next ticker is close to current ticker expire.
  *
- * @note This function also detects if two tickers of same interval are drifting
+ * NOTE: This function also detects if two tickers of same interval are drifting
  * close and issues a conn param req or does a conn update.
  *
- * @todo Detect drift for overlapping tickers.
+ * TODO: Detect drift for already overlapping tickers.
  */
 static void mayfly_xtal_stop_calc(void *params)
 {
+	u8_t ticker_id_curr = ((u32_t)params & 0xff);
 	u32_t volatile ret_cb = TICKER_STATUS_BUSY;
-	struct connection *conn = NULL;
-	struct shdr *hdr = NULL;
+	struct connection *conn_curr = NULL;
+	struct connection *conn_next = NULL;
+	u32_t ticks_prepare_to_start_next;
+	struct shdr *hdr_curr = NULL;
+	struct shdr *hdr_next = NULL;
 	u32_t ticks_to_expire;
+	u32_t ticks_slot_abs;
 	u32_t ticks_current;
-	u8_t ticker_id;
+	u8_t ticker_id_next;
 	u32_t ret;
 
-	ticker_id = 0xff;
+	ticker_id_next = 0xff;
 	ticks_to_expire = 0;
 	do {
 		ret = ticker_next_slot_get(RADIO_TICKER_INSTANCE_ID_RADIO,
-					   RADIO_TICKER_USER_ID_JOB, &ticker_id,
-					   &ticks_current, &ticks_to_expire,
-					   ticker_if_done, (void *)&ret_cb);
+					   RADIO_TICKER_USER_ID_JOB,
+					   &ticker_id_next, &ticks_current,
+					   &ticks_to_expire, ticker_if_done,
+					   (void *)&ret_cb);
 
 		if (ret == TICKER_STATUS_BUSY) {
 			while (ret_cb == TICKER_STATUS_BUSY) {
@@ -4776,115 +4799,97 @@ static void mayfly_xtal_stop_calc(void *params)
 		}
 
 		LL_ASSERT(ret_cb == TICKER_STATUS_SUCCESS);
-	} while (ticker_id != TICKER_NULL &&
-		 ticker_id >= (RADIO_TICKER_ID_FIRST_CONNECTION +
-			       _radio.connection_count));
+	} while (ticker_id_next != TICKER_NULL &&
+		 ticker_id_next >= (RADIO_TICKER_ID_FIRST_CONNECTION +
+				    _radio.connection_count));
 
-	if ((ticker_id == TICKER_NULL) ||
-	    (ticker_id < RADIO_TICKER_ID_ADV) ||
-	    (ticker_id >= (RADIO_TICKER_ID_FIRST_CONNECTION +
-			   _radio.connection_count))) {
+	if ((ticker_id_next == TICKER_NULL) ||
+	    (ticker_id_next < RADIO_TICKER_ID_ADV) ||
+	    (ticker_id_next >= (RADIO_TICKER_ID_FIRST_CONNECTION +
+				_radio.connection_count))) {
 		mayfly_xtal_retain(RADIO_TICKER_USER_ID_JOB, 0);
 
 		return;
-	} else {
-		/* Select the role's scheduling header */
-		if (ticker_id >= RADIO_TICKER_ID_FIRST_CONNECTION) {
-			conn = mem_get(_radio.conn_pool, CONNECTION_T_SIZE,
-				       (ticker_id -
-					RADIO_TICKER_ID_FIRST_CONNECTION));
-			hdr = &conn->hdr;
-		} else if (ticker_id == RADIO_TICKER_ID_ADV) {
-			hdr = &_radio.advertiser.hdr;
-		} else if (ticker_id == RADIO_TICKER_ID_SCAN) {
-			hdr = &_radio.scanner.hdr;
-		} else {
-			LL_ASSERT(0);
-		}
 	}
 
-	if ((ticks_to_expire - hdr->ticks_slot) >
+	/* Select the current role's scheduling header */
+	hdr_curr = hdr_conn_get(ticker_id_curr, &conn_curr);
+	LL_ASSERT(hdr_curr);
+
+	/* Compensate for current ticker in reduced prepare */
+	if (hdr_curr->ticks_xtal_to_start & XON_BITMASK) {
+		ticks_slot_abs = (hdr_curr->ticks_active_to_start >
+				  hdr_curr->ticks_preempt_to_start) ?
+				 hdr_curr->ticks_active_to_start :
+				 hdr_curr->ticks_preempt_to_start;
+	} else {
+		ticks_slot_abs = (hdr_curr->ticks_active_to_start >
+				  hdr_curr->ticks_xtal_to_start) ?
+				 hdr_curr->ticks_active_to_start :
+				 hdr_curr->ticks_xtal_to_start;
+	}
+	ticks_slot_abs += hdr_curr->ticks_slot;
+
+	/* Select the next role's scheduling header */
+	hdr_next = hdr_conn_get(ticker_id_next, &conn_next);
+	LL_ASSERT(hdr_next);
+
+	ticks_prepare_to_start_next = (hdr_next->ticks_active_to_start >
+				       hdr_next->ticks_preempt_to_start) ?
+				      hdr_next->ticks_active_to_start :
+				      hdr_next->ticks_preempt_to_start;
+
+	/* Compensate for next ticker in reduced prepare */
+	if (hdr_next->ticks_xtal_to_start & XON_BITMASK) {
+		ticks_to_expire -=
+			(hdr_next->ticks_xtal_to_start &
+			 ~XON_BITMASK) - ticks_prepare_to_start_next;
+	}
+
+	/* If beyond the xtal threshold reset to normal the next prepare,
+	 * else retain xtal and reduce the next prepare.
+	 */
+	if ((ticks_to_expire - ticks_slot_abs) >
 	    HAL_TICKER_US_TO_TICKS(CONFIG_BT_CTLR_XTAL_THRESHOLD)) {
 		mayfly_xtal_retain(RADIO_TICKER_USER_ID_JOB, 0);
-		/* Use normal prepare */
-		prepare_normal_set(hdr, RADIO_TICKER_USER_ID_JOB, ticker_id);
+		prepare_normal_set(hdr_next, RADIO_TICKER_USER_ID_JOB,
+				   ticker_id_next);
 	} else {
-#if defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
-		u8_t ticker_id_current = ((u32_t)params & 0xff);
-		struct connection *conn_curr = NULL;
-#endif /* CONFIG_BT_CTLR_SCHED_ADVANCED */
-		u32_t ticks_prepare_to_start;
-
 		mayfly_xtal_retain(RADIO_TICKER_USER_ID_JOB, 1);
 
-		/* compensate for reduced next ticker's prepare or
-		 * reduce next ticker's prepare.
+		/* Reduce the next prepare if not already and, active to start
+		 * and preempt to start both are less than xtal to start
 		 */
-		ticks_prepare_to_start = (hdr->ticks_active_to_start >
-					  hdr->ticks_preempt_to_start) ?
-					  hdr->ticks_active_to_start :
-					  hdr->ticks_preempt_to_start;
-		if (hdr->ticks_xtal_to_start & XON_BITMASK) {
-			ticks_to_expire -= (hdr->ticks_xtal_to_start &
-					    ~XON_BITMASK) -
-					   ticks_prepare_to_start;
-		} else {
-			/* Postpone the primary because we dont have
-			 * to start xtal.
-			 */
-			if (hdr->ticks_xtal_to_start > ticks_prepare_to_start) {
-				u32_t ticks_drift_plus =
-					hdr->ticks_xtal_to_start -
-					ticks_prepare_to_start;
-				u32_t ticker_status;
+		if (!(hdr_next->ticks_xtal_to_start & XON_BITMASK) &&
+		    (hdr_next->ticks_xtal_to_start >
+		     ticks_prepare_to_start_next)) {
+			u32_t ticks_drift_plus = hdr_next->ticks_xtal_to_start -
+						 ticks_prepare_to_start_next;
+			u32_t ticker_status;
 
-				ticker_status = ticker_update(
-					RADIO_TICKER_INSTANCE_ID_RADIO,
-					RADIO_TICKER_USER_ID_JOB,
-					ticker_id,
-					ticks_drift_plus, 0,
-					0, ticks_drift_plus,
-					0, 0,
-					prepare_reduced,
-					hdr);
-				LL_ASSERT((TICKER_STATUS_SUCCESS ==
-					   ticker_status) ||
-					  (TICKER_STATUS_BUSY ==
-					   ticker_status));
-			}
+			ticker_status =
+				ticker_update(RADIO_TICKER_INSTANCE_ID_RADIO,
+					      RADIO_TICKER_USER_ID_JOB,
+					      ticker_id_next,
+					      ticks_drift_plus, 0,
+					      0, ticks_drift_plus,
+					      0, 0,
+					      prepare_reduced, hdr_next);
+			LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
+				  (ticker_status == TICKER_STATUS_BUSY));
 		}
 
 #if defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
-		if (!conn) {
+		if (!conn_curr || !conn_next) {
 			return;
 		}
 
-		if (ticker_id_current >= RADIO_TICKER_ID_FIRST_CONNECTION) {
-			/* compensate the current ticker for reduced
-			 * prepare.
-			 */
-			conn_curr = mem_get(_radio.conn_pool, CONNECTION_T_SIZE,
-					    (ticker_id_current -
-					     RADIO_TICKER_ID_FIRST_CONNECTION));
-			ticks_prepare_to_start =
-				(conn_curr->hdr.ticks_active_to_start >
-				conn_curr->hdr.ticks_preempt_to_start) ?
-				conn_curr->hdr.ticks_active_to_start :
-				conn_curr->hdr.ticks_preempt_to_start;
-			if (conn_curr->hdr.ticks_xtal_to_start & XON_BITMASK) {
-				ticks_to_expire +=
-					(conn_curr->hdr.ticks_xtal_to_start &
-					 ~XON_BITMASK) - ticks_prepare_to_start;
-			}
-		}
-
 		/* auto conn param req or conn update procedure to
-		 * avoid connection collisions.
+		 * avoid connection collisions due to drifting roles.
 		 */
-		if (conn_curr &&
-		    (conn_curr->conn_interval == conn->conn_interval)) {
+		if (conn_curr->conn_interval == conn_next->conn_interval) {
 			u32_t ticks_conn_interval = HAL_TICKER_US_TO_TICKS(
-				conn->conn_interval * 1250);
+				conn_curr->conn_interval * 1250);
 
 			/* remove laziness, if any, from
 			 * ticks_to_expire.
@@ -4896,7 +4901,7 @@ static void mayfly_xtal_stop_calc(void *params)
 			/* if next ticker close to this ticker, send
 			 * conn param req.
 			 */
-			if (conn_curr->role && !conn->role &&
+			if (conn_curr->role && !conn_next->role &&
 			    (ticks_to_expire <
 			     (HAL_TICKER_US_TO_TICKS(
 				RADIO_TICKER_XTAL_OFFSET_US + 625) +
@@ -4905,16 +4910,16 @@ static void mayfly_xtal_stop_calc(void *params)
 
 				status = conn_update_req(conn_curr);
 				if (status == 2) {
-					conn_update_req(conn);
+					conn_update_req(conn_next);
 				}
-			} else if (!conn_curr->role && conn->role &&
+			} else if (!conn_curr->role && conn_next->role &&
 				   (ticks_to_expire <
 				    (HAL_TICKER_US_TO_TICKS(
 					RADIO_TICKER_XTAL_OFFSET_US + 625) +
 				     conn_curr->hdr.ticks_slot))) {
 				u32_t status;
 
-				status = conn_update_req(conn);
+				status = conn_update_req(conn_next);
 				if (status == 2) {
 					conn_update_req(conn_curr);
 				}
