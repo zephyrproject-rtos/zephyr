@@ -599,7 +599,7 @@ static struct dev_common_descriptor common_desc = {
 		.lang_descr = {
 			.bLength = sizeof(struct usb_string_descriptor),
 			.bDescriptorType = USB_STRING_DESC,
-			.bString = sys_cpu_to_le16(0x0409),
+			.bString = sys_cpu_to_le16(CONFIG_USB_DEVICE_LANG_ID),
 		},
 		/* Manufacturer String Descriptor */
 		.unicode_mfr = {
