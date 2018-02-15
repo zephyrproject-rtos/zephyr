@@ -82,12 +82,14 @@
 
 /* Some helper defines for common regions */
 #if defined(CONFIG_MPU_ALLOW_FLASH_WRITE)
-#define REGION_RAM_ATTR	  (MPU_REGION_SU_RWX)
+#define REGION_RAM_ATTR	  ((MPU_REGION_SU_RWX) | \
+			   ((UM_READ | UM_WRITE | UM_EXEC) << BM3_UM_SHIFT))
 
 #define REGION_FLASH_ATTR (MPU_REGION_SU_RWX)
 
 #else
-#define REGION_RAM_ATTR	  (MPU_REGION_SU_RW)
+#define REGION_RAM_ATTR	  ((MPU_REGION_SU_RW) | \
+			   ((UM_READ | UM_WRITE) << BM3_UM_SHIFT))
 
 #define REGION_FLASH_ATTR (MPU_REGION_READ | \
 			   MPU_REGION_EXEC | \
