@@ -524,7 +524,7 @@ endif() # CONFIG_APPLICATION_MEMORY
 # Declare MPU userspace dependencies before the linker scripts to make
 # sure the order of dependencies are met
 if(CONFIG_CPU_HAS_MPU AND CONFIG_USERSPACE)
-  if(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
+  if(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT AND CONFIG_APPLICATION_MEMORY)
     set(ALIGN_SIZING_DEP app_sizing_prebuilt linker_app_sizing_script)
   endif()
   set(PRIV_STACK_DEP priv_stacks_prebuilt)
@@ -887,7 +887,7 @@ configure_file(
 
 if(CONFIG_CPU_HAS_MPU AND CONFIG_USERSPACE)
 
-  if(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
+  if(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT AND CONFIG_APPLICATION_MEMORY)
 
     construct_add_custom_command_for_linker_pass(linker_app_sizing custom_command)
     add_custom_command(
