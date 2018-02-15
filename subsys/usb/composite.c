@@ -54,9 +54,14 @@ static int composite_class_handler(struct usb_setup_packet *pSetup,
 static int composite_custom_handler(struct usb_setup_packet *pSetup,
 		s32_t *len, u8_t **data)
 {
-	if (pSetup->wIndex >= NUMOF_IFACES) {
-		SYS_LOG_DBG("unknown request 0x%x, value 0x%x",
-			pSetup->bRequest, pSetup->wValue);
+	/*
+	 * wIndex can be Zero, Interface endpoint number or Language ID.
+	 * At the moment only one language is specified in Kconfig
+	 */
+	if (pSetup->wIndex >= NUMOF_IFACES &&
+	    pSetup->wIndex != CONFIG_USB_DEVICE_LANG_ID) {
+		SYS_LOG_DBG("unknown request 0x%x, value 0x%x iface %d",
+			pSetup->bRequest, pSetup->wValue, pSetup->wIndex);
 		return -ENOTSUP;
 	}
 

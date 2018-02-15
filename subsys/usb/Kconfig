@@ -50,6 +50,13 @@ config USB_DEVICE_PID
 	help
 	  USB device product ID. MUST be configured by vendor.
 
+config USB_DEVICE_LANG_ID
+	hex
+	prompt "USB Language ID"
+	default 0x0409
+	help
+	  USB device strings language identifier.
+
 config USB_DEVICE_MANUFACTURER
 	string
 	default "ZEPHYR"
