@@ -5759,20 +5759,13 @@ static u32_t access_addr_get(void)
 	u8_t transitions;
 	u8_t bit_idx;
 	u8_t retry;
-	u8_t len;
 
 	retry = 3;
 again:
 	LL_ASSERT(retry);
 	retry--;
 
-	len = sizeof(u32_t);
-	while (len) {
-		len = rand_get(len, (u8_t *)&access_addr);
-		if (len) {
-			cpu_sleep();
-		}
-	}
+	bt_rand(&access_addr, sizeof(u32_t));
 
 	bit_idx = 31;
 	transitions = 0;
