@@ -10,4 +10,4 @@ config SOC_SERIES_QUARK_X1000
 	select SYS_POWER_DEEP_SLEEP_SUPPORTED
 	select SOC_FAMILY_QUARK
 	help
-	Intel Quark X1000 SoC.
+	  Intel Quark X1000 SoC.

@@ -10,7 +10,7 @@ menuconfig NET_STATISTICS
 	bool "Network statistics"
 	default n
 	help
-	Manage statistics accounting. This takes memory so say 'n' if unsure.
+	  Manage statistics accounting. This takes memory so say 'n' if unsure.
 
 if NET_STATISTICS
 
@@ -19,72 +19,72 @@ config NET_STATISTICS_USER_API
 	select NET_MGMT
 	default n
 	help
-	Enable this if you need to grab relevant statistics in your code,
-	via calling net_mgmt() with relevant NET_REQUEST_STATS_GET_* command.
+	  Enable this if you need to grab relevant statistics in your code,
+	  via calling net_mgmt() with relevant NET_REQUEST_STATS_GET_* command.
 
 config NET_STATISTICS_PERIODIC_OUTPUT
 	bool "Simple periodic output"
 	depends on NET_LOG
 	default n
 	help
-	Print out all the statistics periodically through logging.
-	This is meant for testing mostly.
+	  Print out all the statistics periodically through logging.
+	  This is meant for testing mostly.
 
 config NET_STATISTICS_IPV4
 	bool "IPv4 statistics"
 	depends on NET_IPV4
 	default y
 	help
-	Keep track of IPv4 related statistics
+	  Keep track of IPv4 related statistics
 
 config NET_STATISTICS_IPV6
 	bool "IPv6 statistics"
 	depends on NET_IPV6
 	default y
 	help
-	Keep track of IPv6 related statistics
+	  Keep track of IPv6 related statistics
 
 config NET_STATISTICS_IPV6_ND
 	bool "IPv6 statistics"
 	depends on NET_IPV6_ND
 	default y
 	help
-	Keep track of IPv6 Neighbor Discovery related statistics
+	  Keep track of IPv6 Neighbor Discovery related statistics
 
 config NET_STATISTICS_ICMP
 	bool "ICMP statistics"
 	depends on NET_IPV6 || NET_IPV4
 	default y
 	help
-	Keep track of ICMPv4/6 related statistics, depending whether IPv4
-	and/or IPv6 is/are enabled.
+	  Keep track of ICMPv4/6 related statistics, depending whether IPv4
+	  and/or IPv6 is/are enabled.
 
 config NET_STATISTICS_UDP
 	bool "UDP statistics"
 	depends on NET_UDP
 	default y
 	help
-	Keep track of UDP related statistics
+	  Keep track of UDP related statistics
 
 config NET_STATISTICS_TCP
 	bool "TCP statistics"
 	depends on NET_TCP
 	default y
 	help
-	Keep track of TCP related statistics
+	  Keep track of TCP related statistics
 
 config NET_STATISTICS_RPL
 	bool "RPL statistics"
 	depends on NET_RPL
 	default y
 	help
-	Keep track of RPL related statistics
+	  Keep track of RPL related statistics
 
 config NET_STATISTICS_MLD
 	bool "Multicast Listener Discovery (MLD) statistics"
 	depends on NET_IPV6_MLD
 	default y
 	help
-	Keep track of MLD related statistics
+	  Keep track of MLD related statistics
 
 endif # NET_STATISTICS

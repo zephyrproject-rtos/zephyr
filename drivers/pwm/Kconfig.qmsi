@@ -35,4 +35,4 @@ config PWM_QMSI_API_REENTRANCY
 	depends on PWM_QMSI
 	default n
 	help
-	Enable support for PWM shim driver API reentrancy.
+	  Enable support for PWM shim driver API reentrancy.

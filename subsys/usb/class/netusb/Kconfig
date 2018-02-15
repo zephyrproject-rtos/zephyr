@@ -86,33 +86,33 @@ config RNDIS_INT_EP_ADDR
 	default 0x83
 	range 0x81 0x8F
 	help
-	RNDIS interrupt endpoint address
+	  RNDIS interrupt endpoint address
 
 config RNDIS_IN_EP_ADDR
 	hex "RNDIS BULK IN Endpoint address"
 	default 0x82
 	range 0x81 0x8F
 	help
-	RNDIS bulk IN endpoint address
+	  RNDIS bulk IN endpoint address
 
 config RNDIS_OUT_EP_ADDR
 	hex "RNDIS BULK OUT Endpoint address"
 	default 0x01
 	range 0x01 0x0F
 	help
-	RNDIS bulk OUT endpoint address
+	  RNDIS bulk OUT endpoint address
 
 config RNDIS_INTERRUPT_EP_MPS
 	int
 	default 16
 	help
-	RNDIS interrupt endpoint size
+	  RNDIS interrupt endpoint size
 
 config RNDIS_BULK_EP_MPS
 	int
 	default 64
 	help
-	RNDIS bulk endpoint size
+	  RNDIS bulk endpoint size
 
 endif # USB_DEVICE_NETWORK_RNDIS
 
@@ -123,19 +123,19 @@ config SYS_LOG_USB_DEVICE_NETWORK_DEBUG_LEVEL
 	prompt "USB Device Network debug log level"
 	default 1
 	help
-	Sets log level for USB Device Network class
+	  Sets log level for USB Device Network class
 
-	Levels are:
+	  Levels are:
 
-	- 0 OFF, do not write
+	  - 0 OFF, do not write
 
-	- 1 ERROR, only write SYS_LOG_ERR
+	  - 1 ERROR, only write SYS_LOG_ERR
 
-	- 2 WARNING, write SYS_LOG_WRN in addition to previous level
+	  - 2 WARNING, write SYS_LOG_WRN in addition to previous level
 
-	- 3 INFO, write SYS_LOG_INF in addition to previous levels
+	  - 3 INFO, write SYS_LOG_INF in addition to previous levels
 
-	- 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
+	  - 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
 
 endif # USB_DEVICE_NETWORK
 

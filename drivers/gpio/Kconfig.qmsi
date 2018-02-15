@@ -38,7 +38,7 @@ config GPIO_QMSI_API_REENTRANCY
 	depends on GPIO_QMSI
 	default n
 	help
-	Enable support for QMSI GPIO driver API reentrancy.
+	  Enable support for QMSI GPIO driver API reentrancy.
 
 if GPIO_QMSI
 

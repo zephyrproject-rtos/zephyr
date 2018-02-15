@@ -11,4 +11,4 @@ menuconfig DMA_QMSI
 	default n
 	depends on QMSI
 	help
-	QMSI DMA driver.
+	  QMSI DMA driver.

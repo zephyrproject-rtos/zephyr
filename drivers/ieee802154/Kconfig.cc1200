@@ -13,75 +13,75 @@ config IEEE802154_CC1200_DRV_NAME
 	string "TI CC1200 Driver's name"
 	default "cc1200"
 	help
-	This option sets the driver name
+	  This option sets the driver name
 
 config IEEE802154_CC1200_SPI_DRV_NAME
 	string "SPI driver's name to use to access CC1200"
 	default ""
 	help
-	This option is mandatory to set which SPI controller to use in order
-	to actually control the CC1200 chip.
+	  This option is mandatory to set which SPI controller to use in order
+	  to actually control the CC1200 chip.
 
 config IEEE802154_CC1200_SPI_FREQ
 	int "SPI system frequency"
 	default 0
 	help
-	This option sets the SPI controller's frequency. Beware this value
-	depends on the SPI controller being used and also on the system
-	clock.
+	  This option sets the SPI controller's frequency. Beware this value
+	  depends on the SPI controller being used and also on the system
+	  clock.
 
 config IEEE802154_CC1200_SPI_SLAVE
 	int "SPI slave linked to CC1200"
 	default 0
 	help
-	This option sets the SPI slave number SPI controller has to switch
-	to when dealing with CC1200 chip.
+	  This option sets the SPI slave number SPI controller has to switch
+	  to when dealing with CC1200 chip.
 
 config IEEE802154_CC1200_GPIO_SPI_CS
 	bool "Manage SPI CS through a GPIO pin"
 	default n
 	help
-	This option is useful if one needs to manage SPI CS through a GPIO
-	pin to by-pass the SPI controller's CS logic.
+	  This option is useful if one needs to manage SPI CS through a GPIO
+	  pin to by-pass the SPI controller's CS logic.
 
 config IEEE802154_CC1200_GPIO_SPI_CS_DRV_NAME
 	string "GPIO driver's name to use to drive SPI CS through"
 	default ""
 	depends on IEEE802154_CC1200_GPIO_SPI_CS
 	help
-	This option is mandatory to set which GPIO controller to use in order
-	to actually emulate the SPI CS.
+	  This option is mandatory to set which GPIO controller to use in order
+	  to actually emulate the SPI CS.
 
 config IEEE802154_CC1200_GPIO_SPI_CS_PIN
 	int "GPIO PIN to use to drive SPI CS through"
 	default 0
 	depends on IEEE802154_CC1200_GPIO_SPI_CS
 	help
-	This option is mandatory to set which GPIO pin to use in order
-	to actually emulate the SPI CS.
+	  This option is mandatory to set which GPIO pin to use in order
+	  to actually emulate the SPI CS.
 
 config IEEE802154_CC1200_RX_STACK_SIZE
 	int "Driver's internal RX thread stack size"
 	default 800
 	help
-	This option sets the driver's stack size for its internal RX thread.
-	The default value should be sufficient, but in case it proves to be
-	a too little one, this option makes it easy to play with the size.
+	  This option sets the driver's stack size for its internal RX thread.
+	  The default value should be sufficient, but in case it proves to be
+	  a too little one, this option makes it easy to play with the size.
 
 config IEEE802154_CC1200_INIT_PRIO
 	int "CC1200 initialization priority"
 	default 80
 	help
-	Set the initialization priority number. Do not mess with it unless
-	you know what you are doing. Beware cc1200 requires gpio and spi to
-	be ready first (and sometime gpio should be the very first as spi
-	might need it too). And of course it has to start before the net stack.
+	  Set the initialization priority number. Do not mess with it unless
+	  you know what you are doing. Beware cc1200 requires gpio and spi to
+	  be ready first (and sometime gpio should be the very first as spi
+	  might need it too). And of course it has to start before the net stack.
 
 config IEEE802154_CC1200_RANDOM_MAC
 	bool "Random MAC address"
 	default y
 	help
-	Generate a random MAC address dynamically.
+	  Generate a random MAC address dynamically.
 
 if ! IEEE802154_CC1200_RANDOM_MAC
 
@@ -90,28 +90,28 @@ config IEEE802154_CC1200_MAC4
 	default 0
 	range 0 ff
 	help
-	This is the byte 4 of the MAC address.
+	  This is the byte 4 of the MAC address.
 
 config IEEE802154_CC1200_MAC5
 	hex "MAC Address Byte 5"
 	default 0
 	range 0 ff
 	help
-	This is the byte 5 of the MAC address.
+	  This is the byte 5 of the MAC address.
 
 config IEEE802154_CC1200_MAC6
 	hex "MAC Address Byte 6"
 	default 0
 	range 0 ff
 	help
-	This is the byte 6 of the MAC address.
+	  This is the byte 6 of the MAC address.
 
 config IEEE802154_CC1200_MAC7
 	hex "MAC Address Byte 7"
 	default 0
 	range 0 ff
 	help
-	This is the byte 7 of the MAC address.
+	  This is the byte 7 of the MAC address.
 
 endif # IEEE802154_CC1200_RANDOM_MAC
 
@@ -119,9 +119,9 @@ config IEEE802154_CC1200_XOSC
 	int "Value of the Crystal oscillator in kHz"
 	default 40000
 	help
-	This sets the XOSC value, it must be between 38400 and 40000.
-	This value should follow what has been set in the RF settings via
-	SmartRF tool. Do not touch this unless you know what you are doing.
+	  This sets the XOSC value, it must be between 38400 and 40000.
+	  This value should follow what has been set in the RF settings via
+	  SmartRF tool. Do not touch this unless you know what you are doing.
 
 config IEEE802154_CC1200_RF_PRESET
 	bool "Use TI CC1200 RF pre-sets"
@@ -132,7 +132,7 @@ choice
 	default IEEE802154_CC1200_RF_SET_0
 	depends on IEEE802154_CC1200_RF_PRESET
 	help
-	Set the RF preset you want to use.
+	  Set the RF preset you want to use.
 
 config IEEE802154_CC1200_RF_SET_0
 	bool "868MHz - 50Kbps - 2-GFSK - IEEE 802.15.4g compliant - ETSI"
@@ -149,15 +149,15 @@ config IEEE802154_CC1200_CCA_THRESHOLD
 	int "Value in dbm of the CCA threshold"
 	default -91
 	help
-	Set the CCA threshold. See datasheet's AGC_CS_THR register for
-	more information. Do not touch this unless you know what you are doing.
+	  Set the CCA threshold. See datasheet's AGC_CS_THR register for
+	  more information. Do not touch this unless you know what you are doing.
 
 config IEEE802154_CC1200_RSSI_OFFSET
 	int "Value in dbm of the RSSI offset"
 	default -81
 	help
-	Set the gain adjustment. See datasheet's AGC_GAIN_ADJUST register for
-	more information. Do not touch this unless you know what you are doing.
+	  Set the gain adjustment. See datasheet's AGC_GAIN_ADJUST register for
+	  more information. Do not touch this unless you know what you are doing.
 
 # Do no touch below settings unless you know what you are doing
 config IEEE802154_CC1200_SETTLING_CFG
