@@ -36,7 +36,6 @@ typedef struct pthread_mutex {
 } pthread_mutex_t;
 
 typedef struct pthread_mutexattr {
-	int unused;
 } pthread_mutexattr_t;
 
 /* Condition variables */
@@ -45,7 +44,6 @@ typedef struct pthread_cond {
 } pthread_cond_t;
 
 typedef struct pthread_condattr {
-	int unused;
 } pthread_condattr_t;
 
 /* Barrier */
@@ -56,7 +54,6 @@ typedef struct pthread_barrier {
 } pthread_barrier_t;
 
 typedef struct pthread_barrierattr {
-	int unused;
 } pthread_barrierattr_t;
 
 /* time related attributes */
