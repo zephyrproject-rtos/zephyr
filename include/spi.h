@@ -209,8 +209,9 @@ typedef int (*spi_slave_cb)(const struct spi_config *config,
  * @param cs is a valid pointer on a struct spi_cs_control is CS line is
  *    emulated through a gpio line, or NULL otherwise.
  *
- * @note cs_hold and lock_on can be changed between consecutive
- * transceive call.
+ * @note Only cs_hold and lock_on can be changed between consecutive
+ * transceive call. Rest of the attributes are not meant to be tweaked.
+ * (I.e.: one struct spi_config is necessary per-device on the bus)
  */
 struct spi_config {
 	struct device	*dev;
@@ -327,6 +328,8 @@ static inline int _impl_spi_transceive(const struct spi_config *config,
  * @param rx_bufs Buffer array where data to be read will be written to.
  *
  * @retval 0 If successful, negative errno code otherwise.
+ *
+ * @note This function is an helper function calling spi_transceive.
  */
 static inline int spi_read(const struct spi_config *config,
 			   const struct spi_buf_set *rx_bufs)
@@ -343,6 +346,8 @@ static inline int spi_read(const struct spi_config *config,
  * @param tx_bufs Buffer array where data to be sent originates from.
  *
  * @retval 0 If successful, negative errno code otherwise.
+ *
+ * @note This function is an helper function calling spi_transceive.
  */
 static inline int spi_write(const struct spi_config *config,
 			    const struct spi_buf_set *tx_bufs)
@@ -391,14 +396,14 @@ static inline int spi_transceive_async(const struct spi_config *config,
  *        successfully or not).
  *
  * @retval 0 If successful, negative errno code otherwise.
+ *
+ * @note This function is an helper function calling spi_transceive_async.
  */
 static inline int spi_read_async(const struct spi_config *config,
 				 const struct spi_buf_set *rx_bufs,
 				 struct k_poll_signal *async)
 {
-	const struct spi_driver_api *api = config->dev->driver_api;
-
-	return api->transceive_async(config, NULL, rx_bufs, async);
+	return spi_transceive_async(config, NULL, rx_bufs, async);
 }
 
 /**
@@ -414,14 +419,14 @@ static inline int spi_read_async(const struct spi_config *config,
  *        successfully or not).
  *
  * @retval 0 If successful, negative errno code otherwise.
+ *
+ * @note This function is an helper function calling spi_transceive_async.
  */
 static inline int spi_write_async(const struct spi_config *config,
 				  const struct spi_buf_set *tx_bufs,
 				  struct k_poll_signal *async)
 {
-	const struct spi_driver_api *api = config->dev->driver_api;
-
-	return api->transceive_async(config, tx_bufs, NULL, async);
+	return spi_transceive_async(config, tx_bufs, NULL, async);
 }
 #endif /* CONFIG_SPI_ASYNC */
 
