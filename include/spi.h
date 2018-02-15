@@ -165,8 +165,8 @@ struct spi_cs_control {
  * @param cs is a valid pointer on a struct spi_cs_control is CS line is
  *    emulated through a gpio line, or NULL otherwise.
  *
- * @note cs_hold and lock_on can be changed between consecutive
- * transceive call.
+ * @note Only cs_hold and lock_on can be changed between consecutive
+ * transceive call. Rest of the attributes are not meant to be tweaked.
  */
 struct spi_config {
 	u32_t		frequency;
@@ -281,6 +281,8 @@ static inline int _impl_spi_transceive(struct device *dev,
  * @param rx_bufs Buffer array where data to be read will be written to.
  *
  * @retval 0 If successful, negative errno code otherwise.
+ *
+ * @note This function is an helper function calling spi_transceive.
  */
 static inline int spi_read(struct device *dev,
 			   const struct spi_config *config,
@@ -299,6 +301,8 @@ static inline int spi_read(struct device *dev,
  * @param tx_bufs Buffer array where data to be sent originates from.
  *
  * @retval 0 If successful, negative errno code otherwise.
+ *
+ * @note This function is an helper function calling spi_transceive.
  */
 static inline int spi_write(struct device *dev,
 			    const struct spi_config *config,
@@ -351,6 +355,8 @@ static inline int spi_transceive_async(struct device *dev,
  *        successfully or not).
  *
  * @retval 0 If successful, negative errno code otherwise.
+ *
+ * @note This function is an helper function calling spi_transceive_async.
  */
 static inline int spi_read_async(struct device *dev,
 				 const struct spi_config *config,
@@ -374,6 +380,8 @@ static inline int spi_read_async(struct device *dev,
  *        successfully or not).
  *
  * @retval 0 If successful, negative errno code otherwise.
+ *
+ * @note This function is an helper function calling spi_transceive_async.
  */
 static inline int spi_write_async(struct device *dev,
 				  const struct spi_config *config,
