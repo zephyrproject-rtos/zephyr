@@ -4,5 +4,5 @@ menuconfig UART_ESP32
 	select SERIAL_HAS_DRIVER
 	depends on SOC_ESP32
 	help
-	Enable the ESP32 UART using ROM routines.
+	  Enable the ESP32 UART using ROM routines.
 

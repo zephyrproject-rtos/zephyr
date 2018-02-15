@@ -10,4 +10,4 @@ config SOC_SERIES_RISCV32_FE310
 	depends on RISCV32
 	select SOC_FAMILY_RISCV_PRIVILEGE
 	help
-	Enable support for SiFive Freedom E310 SOC
+	  Enable support for SiFive Freedom E310 SOC

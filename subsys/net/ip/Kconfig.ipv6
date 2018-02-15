@@ -10,8 +10,8 @@ menuconfig NET_IPV6
 	bool "IPv6"
 	default y
 	help
-	Enable IPv6 support. This should be selected by default as there
-	is limited set of network bearers provided that support IPv4.
+	  Enable IPv6 support. This should be selected by default as there
+	  is limited set of network bearers provided that support IPv4.
 
 if NET_IPV6
 
@@ -31,24 +31,24 @@ config NET_INITIAL_HOP_LIMIT
 	int "Initial hop limit for a connection"
 	default 64
 	help
-	The value should be > 0
+	  The value should be > 0
 
 config NET_IPV6_MAX_NEIGHBORS
 	int "How many IPv6 neighbors are supported"
 	default 8
 	range 1 254
 	help
-	The value depends on your network needs.
+	  The value depends on your network needs.
 
 config NET_IPV6_FRAGMENT
 	bool "Support IPv6 fragmentation"
 	default n
 	help
-	IPv6 fragmentation is disabled by default. This saves memory and
-	should not cause issues normally as we support anyway the minimum
-	length IPv6 packets (1280 bytes). If you enable fragmentation
-	support, please increase amount of RX data buffers so that larger
-	than 1280 byte packets can be received.
+	  IPv6 fragmentation is disabled by default. This saves memory and
+	  should not cause issues normally as we support anyway the minimum
+	  length IPv6 packets (1280 bytes). If you enable fragmentation
+	  support, please increase amount of RX data buffers so that larger
+	  than 1280 byte packets can be received.
 
 config NET_IPV6_FRAGMENT_MAX_COUNT
 	int "How many packets to reassemble at a time"
@@ -56,10 +56,10 @@ config NET_IPV6_FRAGMENT_MAX_COUNT
 	default 1
 	depends on NET_IPV6_FRAGMENT
 	help
-	How many fragmented IPv6 packets can be waiting reassembly
-	simultaneously. Each fragment count might use up to 1280 bytes
-	of memory so you need to plan this and increase the network buffer
-	count.
+	  How many fragmented IPv6 packets can be waiting reassembly
+	  simultaneously. Each fragment count might use up to 1280 bytes
+	  of memory so you need to plan this and increase the network buffer
+	  count.
 
 config NET_IPV6_FRAGMENT_TIMEOUT
 	int "How long to wait the fragments to receive"
@@ -67,65 +67,65 @@ config NET_IPV6_FRAGMENT_TIMEOUT
 	default 5
 	depends on NET_IPV6_FRAGMENT
 	help
-	How long to wait for IPv6 fragment to arrive before the reassembly
-	will timeout. RFC 2460 chapter 4.5 tells to wait for 60 seconds but
-	this might be too long in memory constrained devices. This value
-	is in seconds.
+	  How long to wait for IPv6 fragment to arrive before the reassembly
+	  will timeout. RFC 2460 chapter 4.5 tells to wait for 60 seconds but
+	  this might be too long in memory constrained devices. This value
+	  is in seconds.
 
 config NET_IPV6_MLD
 	bool "Multicast Listener Discovery support"
 	default y
 	help
-	The value depends on your network needs. MLD should normally
-	be active. Currently we support only MLDv2. See RFC 3810 for
-	details.
+	  The value depends on your network needs. MLD should normally
+	  be active. Currently we support only MLDv2. See RFC 3810 for
+	  details.
 
 config NET_IPV6_NBR_CACHE
 	bool "Neighbor cache"
 	default y
 	help
-	The value depends on your network needs. Neighbor cache should
-	normally be active.
+	  The value depends on your network needs. Neighbor cache should
+	  normally be active.
 
 config NET_IPV6_ND
 	bool "Activate neighbor discovery"
 	depends on NET_IPV6_NBR_CACHE
 	default y
 	help
-	The value depends on your network needs. ND should normally
-	be active.
+	  The value depends on your network needs. ND should normally
+	  be active.
 
 config NET_IPV6_DAD
 	bool "Activate duplicate address detection"
 	depends on NET_IPV6_NBR_CACHE
 	default y
 	help
-	The value depends on your network needs. DAD should normally
-	be active.
+	  The value depends on your network needs. DAD should normally
+	  be active.
 
 config NET_IPV6_RA_RDNSS
 	bool "Support RA RDNSS option"
 	depends on NET_IPV6_ND
 	default y
 	help
-	Support Router Advertisement Recursive DNS Server option.
-	See RFC 6106 for details. The value depends on your network needs.
+	  Support Router Advertisement Recursive DNS Server option.
+	  See RFC 6106 for details. The value depends on your network needs.
 
 config NET_6LO
 	bool "Enable 6lowpan IPv6 Compression library"
 	default n
 	default y if NET_L2_IEEE802154
 	help
-	6lowpan compression and fragmentation. It is enabled by default
-	if 802.15.4 is present, since using IPv6 on it requires it.
+	  6lowpan compression and fragmentation. It is enabled by default
+	  if 802.15.4 is present, since using IPv6 on it requires it.
 
 config NET_6LO_CONTEXT
 	bool "Enable 6lowpan context based compression"
 	default n
 	depends on NET_6LO
 	help
-	Enables 6lowpan context based compression based on information
-	received in RA(Router Advertisement) message.
+	  Enables 6lowpan context based compression based on information
+	  received in RA(Router Advertisement) message.
 
 config NET_MAX_6LO_CONTEXTS
 	int "Number of supported 6CO (6lowpan contexts options)"
@@ -133,8 +133,8 @@ config NET_MAX_6LO_CONTEXTS
 	default 1
 	range 1 16
 	help
-	6lowpan context options table size. The value depends on your
-	network and memory consumption. More 6CO options uses more memory.
+	  6lowpan context options table size. The value depends on your
+	  network and memory consumption. More 6CO options uses more memory.
 
 config NET_DEBUG_6LO
 	bool "Enable 6lowpan debug"
@@ -146,19 +146,19 @@ config NET_DEBUG_IPV6
 	bool "Debug core IPv6"
 	default n
 	help
-	Enables core IPv6 code part to output debug messages
+	  Enables core IPv6 code part to output debug messages
 
 config NET_DEBUG_ICMPV6
 	bool "Debug ICMPv6"
 	default n
 	help
-	Enables ICMPv6 code part to output debug messages
+	  Enables ICMPv6 code part to output debug messages
 
 config NET_DEBUG_IPV6_NBR_CACHE
 	bool "Debug IPv6 neighbor cache"
 	default n
 	help
-	Enables Neighbor Cache code to output debug messages
+	  Enables Neighbor Cache code to output debug messages
 
 endif # NET_LOG
 

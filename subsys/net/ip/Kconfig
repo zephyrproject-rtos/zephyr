@@ -72,8 +72,8 @@ config NET_ROUTING
 	default n
 	depends on NET_ROUTE
 	help
-	Allow IPv6 routing between different network interfaces and
-	technologies.
+	  Allow IPv6 routing between different network interfaces and
+	  technologies.
 
 config	NET_MAX_ROUTES
 	int "Max number of routing entries stored."

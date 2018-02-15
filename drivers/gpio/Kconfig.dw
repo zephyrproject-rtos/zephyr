@@ -231,6 +231,6 @@ config GPIO_DW_3_IRQ_PRI
 	int "Controller interrupt priority"
 	depends on GPIO_DW_3 && GPIO_DW_3_IRQ_DIRECT
 	help
-	IRQ priority
+	  IRQ priority
 
 endif # GPIO_DW

@@ -10,7 +10,7 @@ menuconfig GPIO_STM32
 	depends on GPIO && SOC_FAMILY_STM32
 	default n
 	help
-	Enable GPIO driver for STM32 line of MCUs
+	  Enable GPIO driver for STM32 line of MCUs
 
 if GPIO_STM32
 

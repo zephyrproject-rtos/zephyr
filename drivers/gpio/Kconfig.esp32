@@ -11,7 +11,7 @@ menuconfig GPIO_ESP32
 	depends on GPIO && SOC_ESP32
 	default n
 	help
-	Enables the ESP32 GPIO driver
+	  Enables the ESP32 GPIO driver
 
 if GPIO_ESP32
 
@@ -23,7 +23,7 @@ config GPIO_ESP32_0
 	bool "ESP32 GPIO (pins 0-31)"
 	default y
 	help
-	Include support for GPIO pins 0-31 on the ESP32.
+	  Include support for GPIO pins 0-31 on the ESP32.
 
 config GPIO_ESP32_0_NAME
 	string "Driver name"
@@ -34,7 +34,7 @@ config GPIO_ESP32_1
 	bool "ESP32 GPIO (pins 32-39)"
 	default y
 	help
-	Include support for GPIO pins 32-39 on the ESP32.
+	  Include support for GPIO pins 32-39 on the ESP32.
 
 config GPIO_ESP32_1_NAME
 	string "Driver name"

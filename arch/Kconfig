@@ -83,10 +83,10 @@ config PRIVILEGED_STACK_SIZE
 	default 256
 	depends on ARCH_HAS_USERSPACE
 	help
-	This option sets the privileged stack region size that will be used
-	in addition to the user mode thread stack.  During normal execution,
-	this region will be inaccessible from user mode.  During system calls,
-	this region will be utilized by the system call.
+	  This option sets the privileged stack region size that will be used
+	  in addition to the user mode thread stack.  During normal execution,
+	  this region will be inaccessible from user mode.  During system calls,
+	  this region will be utilized by the system call.
 
 config MAX_THREAD_BYTES
 	int "Bytes to use when tracking object thread permissions"
@@ -240,8 +240,8 @@ config MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 	# Omit prompt to signify "hidden" option
 	default n
 	help
-	This option is enabled when the MPU requires a power of two alignment
-	and size for MPU regions.
+	  This option is enabled when the MPU requires a power of two alignment
+	  and size for MPU regions.
 
 
 menu "Floating Point Options"

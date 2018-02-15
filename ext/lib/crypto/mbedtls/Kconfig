@@ -38,7 +38,7 @@ config MBEDTLS_BUILTIN
 config MBEDTLS_LIBRARY
 	bool "Enable mbedTLS external library"
 	help
-	This option enables mbedTLS library.
+	  This option enables mbedTLS library.
 
 endchoice
 
