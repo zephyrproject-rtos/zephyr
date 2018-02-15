@@ -45,9 +45,12 @@ endchoice
 config MBEDTLS_CFG_FILE
 	string "mbed TLS configuration file"
 	depends on MBEDTLS_BUILTIN
-	default "config-threadnet.h"
+	default "config-mini-tls1_2.h"
 	help
-	  Enable custom mbed TLS configuration
+	  Use a specific mbed TLS configuration file. The default is suitable to
+	  communicate with majority of HTTPS servers on the Internet, but has
+	  relatively many features enabled. To optimize resources for special
+	  TLS usage, an alternative config may be selected.
 
 config MBEDTLS_DEBUG
 	bool "mbed TLS debug activation"
