@@ -1367,7 +1367,10 @@ static enum net_verdict handle_ns_input(struct net_pkt *pkt)
 	size_t left_len;
 
 	ns_hdr = net_icmpv6_get_ns_hdr(pkt, &nshdr);
-	NET_ASSERT(ns_hdr);
+	if (!ns_hdr) {
+		NET_ERR("NULL NS header - dropping");
+		goto drop;
+	}
 
 	dbg_addr_recv_tgt("Neighbor Solicitation",
 			  &NET_IPV6_HDR(pkt)->src,
