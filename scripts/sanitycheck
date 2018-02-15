@@ -1546,7 +1546,12 @@ class TestSuite:
 
     def apply_filters(self):
 
-        toolchain = os.environ.get("ZEPHYR_TOOLCHAIN_VARIANT", None)
+        toolchain = os.environ.get("ZEPHYR_TOOLCHAIN_VARIANT", None) or \
+                    os.environ.get("ZEPHYR_GCC_VARIANT", None)
+        if not toolchain:
+            raise SanityRuntimeError("E: Variable ZEPHYR_TOOLCHAIN_VARIANT is not defined")
+
+
         instances = []
         discards = {}
         platform_filter = options.platform
