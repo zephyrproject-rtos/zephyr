@@ -171,20 +171,21 @@ void _net_app_received(struct net_context *net_ctx,
 
 #if defined(CONFIG_NET_APP_SERVER)
 	if (ctx->app_type == NET_APP_SERVER) {
-		if (!pkt) {
-#if defined(CONFIG_NET_TCP)
-			int i;
-#endif
+		bool close = true;
 
-			if (ctx->cb.close) {
-				ctx->cb.close(ctx, status, ctx->user_data);
+		if (pkt) {
+			if (ctx->cb.recv) {
+				ctx->cb.recv(ctx, pkt, status, ctx->user_data);
 			}
 
+			return;
+		}
+
 #if defined(CONFIG_NET_TCP)
-			for (i = 0;
-			     ctx->proto == IPPROTO_TCP &&
-				     i < CONFIG_NET_APP_SERVER_NUM_CONN;
-			     i++) {
+		if (ctx->proto == IPPROTO_TCP) {
+			int i;
+
+			for (i = 0; i < CONFIG_NET_APP_SERVER_NUM_CONN; i++) {
 				if (ctx->server.net_ctxs[i] == net_ctx &&
 				    ctx == net_ctx->net_app) {
 					net_context_put(net_ctx);
@@ -193,13 +194,21 @@ void _net_app_received(struct net_context *net_ctx,
 					break;
 				}
 			}
-#endif
 
-			return;
+			/* Go through the loop and check if there are any
+			 * active net_contexts. If there is any active net
+			 * context do not call the close callback.
+			 */
+			for (i = 0; i < CONFIG_NET_APP_SERVER_NUM_CONN; i++) {
+				if (!ctx->server.net_ctxs[i]) {
+					close = false;
+					break;
+				}
+			}
 		}
-
-		if (ctx->cb.recv) {
-			ctx->cb.recv(ctx, pkt, status, ctx->user_data);
+#endif
+		if (close && ctx->cb.close) {
+			ctx->cb.close(ctx, status, ctx->user_data);
 		}
 	}
 #endif
