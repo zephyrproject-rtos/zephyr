@@ -49,6 +49,8 @@ features:
 +-----------+------------+--------------------------------------+
 | SPI       | on-chip    | Serial Peripheral Interface ports    |
 +-----------+------------+--------------------------------------+
+| USB       | on-chip    | USB device                           |
++-----------+------------+--------------------------------------+
 
 Other hardware features are not currently supported by Zephyr.
 
@@ -81,6 +83,14 @@ SPI Port
 
 The SAMD21 MCU has 6 SERCOM based SPIs.  On the Arduino Zero, SPI4 is
 available on the 6 pin connector at the edge of the board.
+
+USB Device Port
+===============
+
+The SAMD21 MCU has a USB device port that can be used to communicate
+with a host PC.  See the :ref:`usb-samples` sample applications for
+more, such as the :ref:`usb_cdc-acm` sample which sets up a virtual
+serial port that echos characters back to the host PC.
 
 Programming and Debugging
 *************************
