@@ -12,6 +12,7 @@
 #ifndef __WIFI_MGMT_H__
 #define __WIFI_MGMT_H__
 
+#include <net/wifi.h>
 #include <net/net_mgmt.h>
 
 /* Management part definitions */
@@ -23,10 +24,11 @@
 			 NET_MGMT_LAYER_CODE(_NET_WIFI_CODE))
 #define _NET_WIFI_EVENT	(_NET_WIFI_BASE | NET_MGMT_EVENT_BIT)
 
+/* There are masks: */
 enum net_request_wifi_cmd {
-	NET_REQUEST_WIFI_CMD_SCAN = 1,
-	NET_REQUEST_WIFI_CMD_CONNECT,
-	NET_REQUEST_WIFI_CMD_DISCONNECT,
+	NET_REQUEST_WIFI_CMD_SCAN = 0x1,
+	NET_REQUEST_WIFI_CMD_CONNECT = 0x2,
+	NET_REQUEST_WIFI_CMD_DISCONNECT = 0x4,
 };
 
 #define NET_REQUEST_WIFI_SCAN					\
@@ -60,24 +62,24 @@ enum net_event_wifi_cmd {
 	(_NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_DISCONNECT_RESULT)
 
 
-#define WIFI_CHANNEL_MAX 14
-#define WIFI_CHANNEL_ANY (SHORT_MAX)
-
 enum wifi_security_type {
-	WIFI_SECURITY_TYPE_NONE = 0
+	WIFI_SECURITY_TYPE_NONE = 0,
 	WIFI_SECURITY_TYPE_PSK,
 };
+
+#define WIFI_END_SCAN_RESULTS (-1)
 
 /* Each result is provided to the net_mgmt_event_callback
  * via its info attribute (see net_mgmt.h)
  */
 struct wifi_scan_result {
+	s8_t idx; /* Table index 0 - 128, (-1) signifies end of results */
 	u8_t ssid[WIFI_SSID_MAX_LEN];
 	u8_t ssid_length;
 
 	u8_t channel;
 	enum wifi_security_type security;
-	u8_t rssi;
+	s8_t rssi;  /* -dBm: higher value indicates more signal strength */
 };
 
 struct wifi_connect_req_params {
@@ -117,7 +119,7 @@ struct net_wifi_mgmt_offload {
 	 */
 	int (*scan)(struct net_if *iface, scan_result_cb_t cb);
 	int (*connect)(struct net_if *iface,
-		       struct wifi_connect_req_params params);
+		       struct wifi_connect_req_params *params);
 	int (*disconnect)(struct net_if *iface);
 };
 

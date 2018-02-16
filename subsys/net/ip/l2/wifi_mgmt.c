@@ -26,24 +26,28 @@ static int wifi_connect(u32_t mgmt_request, struct net_if *iface,
 	    (params->ssid_length > WIFI_SSID_MAX_LEN) ||
 	    ((params->security == WIFI_SECURITY_TYPE_PSK) &&
 	     (params->psk_length == 0)) ||
-	    ((params->channel != WIFI_MGMT_CHANNEL_ANY) &&
-	     (params->channel > WIFI_MGMT_CHANNEL_MAX)) ||
+	    ((params->channel != WIFI_CHANNEL_ANY) &&
+	     (params->channel > WIFI_CHANNEL_MAX)) ||
 	    !params->ssid || !params->psk) {
 		return -EINVAL;
 	}
 
+#if defined(CONFIG_NET_OFFLOAD)
 	if (net_if_is_ip_offloaded(iface)) {
 		struct net_wifi_mgmt_offload *off_api =
 			(struct net_wifi_mgmt_offload *) iface->dev->driver_api;
 
-		return off_api->connect(iface->dev, params);
+		return off_api->connect(iface, params);
 	}
+#endif
 
 	return -ENETDOWN;
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_CONNECT, wifi_connect);
 
+/* Guard needed here until non-offload scan supported */
+#if defined(CONFIG_NET_OFFLOAD)
 static void _scan_result_cb(struct net_if *iface,
 			    struct wifi_scan_result *entry)
 {
@@ -54,32 +58,37 @@ static void _scan_result_cb(struct net_if *iface,
 	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_SCAN_RESULT, iface,
 					entry, sizeof(struct wifi_scan_result));
 }
+#endif
 
 static int wifi_scan(u32_t mgmt_request, struct net_if *iface,
 		     void *data, size_t len)
 {
+
+#if defined(CONFIG_NET_OFFLOAD)
 	if (net_if_is_ip_offloaded(iface)) {
 		struct net_wifi_mgmt_offload *off_api =
 			(struct net_wifi_mgmt_offload *) iface->dev->driver_api;
 
-		return off_api->scan(iface->dev);
+		return off_api->scan(iface, _scan_result_cb);
 	}
+#endif
 
 	return -ENETDOWN;
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_SCAN, wifi_scan);
 
-
 static int wifi_disconnect(u32_t mgmt_request, struct net_if *iface,
 			   void *data, size_t len)
 {
+#if defined(CONFIG_NET_OFFLOAD)
 	if (net_if_is_ip_offloaded(iface)) {
 		struct net_wifi_mgmt_offload *off_api =
 			(struct net_wifi_mgmt_offload *) iface->dev->driver_api;
 
-		return off_api->disconnect(iface->dev);
+		return off_api->disconnect(iface);
 	}
+#endif
 
 	return -ENETDOWN;
 }
@@ -104,6 +113,6 @@ void wifi_mgmt_raise_disconnect_result_event(struct net_if *iface, int status)
 	};
 
 	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_DISCONNECT_RESULT,
-					iface, &dcnx_status,
+					iface, &cnx_status,
 					sizeof(struct wifi_status));
 }
