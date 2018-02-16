@@ -1,4 +1,4 @@
 tests:
-  test:
+  kernel.runtime_nmi:
     arch_whitelist: arm
     tags: core bat_commit

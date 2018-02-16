@@ -1,4 +1,4 @@
 tests:
-  test:
+  kernel.object_tracing:
     min_ram: 32
     tags: core
