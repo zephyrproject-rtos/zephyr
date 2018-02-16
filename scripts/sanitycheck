@@ -394,6 +394,8 @@ class DeviceHandler(Handler):
         if ser.isOpen():
             ser.close()
 
+        self.instance.results = harness.tests
+
         if harness.state:
             self.set_state(harness.state, {})
         else:
@@ -460,6 +462,8 @@ class NativeHandler(Handler):
 
         returncode = subprocess.call(["GCOV_PREFIX=" + self.outdir, "gcov", self.sourcedir, "-b", "-s", self.outdir], shell=True)
 
+
+        self.instance.results = harness.tests
         if harness.state:
             self.set_state(harness.state, {})
         else:
@@ -619,6 +623,7 @@ class QEMUHandler(Handler):
 
 
         super().__init__(instance)
+        self.instance = instance
         outdir = instance.outdir
         timeout = instance.test.timeout
         name = instance.name
@@ -644,6 +649,8 @@ class QEMUHandler(Handler):
                                        args=(self, timeout, outdir,
                                              self.log_fn, self.fifo_fn,
                                              self.pid_fn, self.results, harness))
+
+        self.instance.results = harness.tests
         self.thread.daemon = True
         verbose("Spawning QEMU process for %s" % name)
         self.thread.start()
@@ -1600,6 +1607,7 @@ class TestInstance:
         self.name = os.path.join(platform.name, test.name)
         self.outdir = os.path.join(base_outdir, platform.name, test.path)
         self.build_only = build_only or test.build_only or (test.harness and test.harness != 'console')
+        self.results = {}
 
     def create_overlay(self):
         if len(self.test.extra_configs) > 0:
@@ -2147,6 +2155,79 @@ class TestSuite:
                                 lower_better))
         return results
 
+
+
+    def encode_for_xml(self, unicode_data, encoding='ascii'):
+        unicode_data = unicode_data.replace('\x00', '')
+        return unicode_data
+
+    def testcase_target_report(self, report_file):
+
+        run = "Sanitycheck"
+        eleTestsuite = None
+        append = options.only_failed
+
+        errors = 0
+        passes = 0
+        fails = 0
+        duration = 0
+        skips = 0
+
+        for identifier, ti in self.instances.items():
+            for k in ti.results.keys():
+                if ti.results[k] == 'PASS':
+                    passes += 1
+                elif ti.results[k] == 'BLOCK':
+                    errors += 1
+                else:
+                    fails += 1
+
+
+        eleTestsuites = ET.Element('testsuites')
+        eleTestsuite = ET.SubElement(eleTestsuites, 'testsuite',
+                                     name=run, time="%d" % duration,
+                                     tests="%d" % (errors + passes + fails),
+                                     failures="%d" % fails,
+                                     errors="%d" % errors, skip="%d" %skips)
+
+        handler_time = "0"
+        # print out test results
+        for identifier, ti in self.instances.items():
+            for k in ti.results.keys():
+                tname = os.path.basename(ti.test.name)  + "." + k
+
+                eleTestcase = ET.SubElement(
+                        eleTestsuite, 'testcase', classname="%s:%s" %(ti.platform.name, os.path.basename(ti.test.name)),
+                        name="%s" % (tname), time=handler_time)
+                if ti.results[k] in ['FAIL', 'BLOCK']:
+                    el = None
+
+                    if ti.results[k] == 'FAIL':
+                        el = ET.SubElement(
+                            eleTestcase,
+                            'failure',
+                            type="failure",
+                            message="failed")
+                    elif ti.results[k] == 'BLOCK':
+                        el = ET.SubElement(
+                            eleTestcase,
+                            'error',
+                            type="failure",
+                            message="failed")
+                    p = os.path.join(options.outdir, ti.platform.name, ti.test.name)
+                    bl = os.path.join(p, "handler.log")
+
+                    if os.path.exists(bl):
+                        with open(bl, "rb") as f:
+                            log = f.read().decode("utf-8")
+                            el.text = self.encode_for_xml(log)
+
+        result = ET.tostring(eleTestsuites)
+        f = open(report_file, 'wb')
+        f.write(result)
+        f.close()
+
+
     def testcase_xunit_report(self, filename, duration):
         if self.goals is None:
             raise SanityRuntimeError("execute() hasn't been run!")
@@ -2331,6 +2412,11 @@ def parse_arguments():
 
     parser.add_argument("--list-tests", action="store_true",
             help="list all tests.")
+
+    parser.add_argument("--detailed-report",
+            action="store",
+            metavar="FILENAME",
+            help="Generate a junit report with detailed testcase results.")
 
     parser.add_argument(
         "-r", "--release", action="store_true",
@@ -2736,6 +2822,9 @@ def main():
             options.error_on_deprecations,
             options.extra_args)
         info("")
+
+    if options.detailed_report:
+        ts.testcase_target_report(options.detailed_report)
 
     # figure out which report to use for size comparison
     if options.compare_report:
