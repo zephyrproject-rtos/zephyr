@@ -290,6 +290,14 @@ config SPI_5_OP_MODES
 
 if SPI_LEGACY_API
 
+source "drivers/spi/Kconfig.mcux_dspi"
+
+source "drivers/spi/Kconfig.nrf5_legacy"
+
+endif # SPI_LEGACY_API
+
+if !SPI_LEGACY_API
+
 config SPI_INTEL
 	bool "Intel SPI controller driver"
 	depends on CPU_MINUTEIA
@@ -298,14 +306,6 @@ config SPI_INTEL
 	  Enable support for Intel's SPI controllers. Such controller
 	  was formerly found on XScale chips. It can be found nowadays
 	  on CEXXXX Intel media controller and Quark CPU (2 of them).
-
-source "drivers/spi/Kconfig.mcux_dspi"
-
-source "drivers/spi/Kconfig.nrf5_legacy"
-
-endif # SPI_LEGACY_API
-
-if !SPI_LEGACY_API
 
 source "drivers/spi/Kconfig.stm32"
 
