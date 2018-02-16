@@ -1,7 +1,7 @@
 tests:
-  test:
+  kernel.tickless:
     arch_exclude: nios2 riscv32
     filter: CONFIG_X86 or (CONFIG_ARM and (CONFIG_SOC_MK64F12
       or CONFIG_SOC_SERIES_SAM3X)) or (CONFIG_ARC and
       CONFIG_SOC_QUARK_SE_C1000_SS) or CONFIG_ARCH_POSIX
-    tags: core
+    tags: tickless kernel

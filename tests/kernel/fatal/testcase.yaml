@@ -1,9 +1,9 @@
 tests:
-  stack-protection:
+  kernel.fatal.stack_protection:
     extra_args: CONF_FILE=prj.conf
     filter: ARCH_HAS_STACK_PROTECTION
     tags: core ignore_faults
-  stack-sentinel:
+  kernel.fatal.stack_sentinel:
     arch_exclude: arc
     extra_args: CONF_FILE=sentinel.conf
     tags: core ignore_faults

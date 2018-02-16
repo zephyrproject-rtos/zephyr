@@ -1,4 +1,4 @@
 tests:
-  test:
+  kernel.bitfield:
     arch_exclude: arm
-    tags: core bat_commit
+    tags: core

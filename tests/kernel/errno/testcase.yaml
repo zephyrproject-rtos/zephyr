@@ -3,8 +3,8 @@ common:
   min_ram: 32
   tags: core
 tests:
-  test:
+  kernel.errno:
     tags: core
-  test_newlib:
+  kernel.errno.newlib:
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y
