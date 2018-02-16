@@ -1,5 +1,4 @@
 if(CONFIG_SPI_LEGACY_API)
-  zephyr_sources_ifdef(CONFIG_SPI_DW 		spi_dw_legacy.c)
   zephyr_sources_ifdef(CONFIG_SPIM_NRF52	spim_nrf52_legacy.c)
   zephyr_sources_ifdef(CONFIG_SPIS_NRF5		spis_nrf5_legacy.c)
   zephyr_sources_ifdef(CONFIG_SPI_INTEL		spi_intel.c)
