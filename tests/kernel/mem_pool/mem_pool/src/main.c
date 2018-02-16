@@ -81,29 +81,6 @@ static struct TEST_CASE getwt_set[] = {
 	{ &block_list[4], &POOL_ID, 256, TENTH_SECOND, -EAGAIN }
 };
 
-/**
- *
- * @brief Compare the two blocks
- *
- * @return 0 if the same, non-zero if not the same
- */
-
-int block_compare(struct k_mem_block *b1, struct k_mem_block *b2)
-{
-	char *p1 = (char *) b1;
-	char *p2 = (char *) b2;
-	int i;
-	int diff = 0;
-
-	for (i = 0; i < sizeof(struct k_mem_block); i++) {
-		diff = p2[i] - p1[i];
-		if (diff != 0) {
-			break;
-		}
-	}
-
-	return diff;
-}
 
 /**
  *
@@ -112,7 +89,7 @@ int block_compare(struct k_mem_block *b1, struct k_mem_block *b2)
  * @return k_mem_pool_alloc() return value
  */
 
-int pool_block_get_func(struct k_mem_block *block, struct k_mem_pool *pool,
+static int pool_block_get_func(struct k_mem_block *block, struct k_mem_pool *pool,
 			int size, s32_t unused)
 {
 	ARG_UNUSED(unused);
@@ -120,20 +97,6 @@ int pool_block_get_func(struct k_mem_block *block, struct k_mem_pool *pool,
 	return k_mem_pool_alloc(pool, block, size, K_NO_WAIT);
 }
 
-/**
- *
- * @brief Wrapper for k_mem_pool_alloc(K_FOREVER)
- *
- * @return k_mem_pool_alloc() return value
- */
-
-int pool_block_get_w_func(struct k_mem_block *block, struct k_mem_pool *pool,
-			  int size, s32_t unused)
-{
-	ARG_UNUSED(unused);
-
-	return k_mem_pool_alloc(pool, block, size, K_FOREVER);
-}
 
 /**
  *
@@ -142,7 +105,7 @@ int pool_block_get_w_func(struct k_mem_block *block, struct k_mem_pool *pool,
  * @return k_mem_pool_alloc(timeout) return value
  */
 
-int pool_block_get_wt_func(struct k_mem_block *block, struct k_mem_pool *pool,
+static int pool_block_get_wt_func(struct k_mem_block *block, struct k_mem_pool *pool,
 			   int size, s32_t timeout)
 {
 	return k_mem_pool_alloc(pool, block, size, timeout);
@@ -155,7 +118,7 @@ int pool_block_get_wt_func(struct k_mem_block *block, struct k_mem_pool *pool,
  * @return N/A
  */
 
-void free_blocks(struct TEST_CASE *tests, int n_tests)
+static void free_blocks(struct TEST_CASE *tests, int n_tests)
 {
 	int i;
 
@@ -170,11 +133,10 @@ void free_blocks(struct TEST_CASE *tests, int n_tests)
  *
  * @brief Perform the work of getting blocks
  *
- * @return TC_PASS on success, TC_FAIL on failure
  */
 
-int pool_block_get_work(char *string, pool_block_get_func_t func,
-			struct TEST_CASE *tests, int n_tests)
+static void pool_block_get_work(char *string, pool_block_get_func_t func,
+			 struct TEST_CASE *tests, int n_tests)
 {
 	int i;
 	int rv;
@@ -182,15 +144,11 @@ int pool_block_get_work(char *string, pool_block_get_func_t func,
 	for (i = 0; i < n_tests; i++) {
 		rv = func(tests[i].block, tests[i].pool_id, tests[i].size,
 			  tests[i].timeout);
-		if (rv != tests[i].rcode) {
-			TC_ERROR("%s() expected %d, got %d\n"
-				 "size: %d, timeout: %d\n", string, tests[i].rcode, rv,
-				 tests[i].size, tests[i].timeout);
-			return TC_FAIL;
-		}
+		zassert_equal(rv, tests[i].rcode, "%s() expected %d, got %d\n"
+			      "size: %d, timeout: %d\n", string, tests[i].rcode, rv,
+			      tests[i].size, tests[i].timeout);
 	}
 
-	return TC_PASS;
 }
 
 /**
@@ -199,38 +157,28 @@ int pool_block_get_work(char *string, pool_block_get_func_t func,
  *
  * The pool is 4 k_b in size.
  *
- * @return TC_PASS on success, TC_FAIL on failure
  */
 
-int pool_block_get_test(void)
+static void test_pool_block_get(void)
 {
-	int rv;         /* return value from k_mem_pool_alloc() */
 	int j;          /* loop counter */
 
 	for (j = 0; j < 8; j++) {
-		rv = pool_block_get_work("k_mem_pool_alloc", pool_block_get_func,
-					 get_set, ARRAY_SIZE(get_set));
-		if (rv != TC_PASS) {
-			return TC_FAIL;
-		}
+		pool_block_get_work("k_mem_pool_alloc", pool_block_get_func,
+				    get_set, ARRAY_SIZE(get_set));
 
 		free_blocks(get_set, ARRAY_SIZE(get_set));
 
-		rv = pool_block_get_work("k_mem_pool_alloc", pool_block_get_func,
-					 get_set2, ARRAY_SIZE(get_set2));
-		if (rv != TC_PASS) {
-			return TC_FAIL;
-		}
+		pool_block_get_work("k_mem_pool_alloc", pool_block_get_func,
+				    get_set2, ARRAY_SIZE(get_set2));
 
 		free_blocks(get_set2, ARRAY_SIZE(get_set2));
 	}
-
-	return TC_PASS;
 }
 
 /**
  *
- * @brief Helper task to pool_block_get_timeout_test()
+ * @brief Helper task to test_pool_block_get_timeout()
  *
  * @return N/A
  */
@@ -247,98 +195,72 @@ void helper_task(void)
  *
  * @brief Test k_mem_pool_alloc(timeout)
  *
- * @return TC_PASS on success, TC_FAIL on failure
  */
 
-int pool_block_get_timeout_test(void)
+static void test_pool_block_get_timeout(void)
 {
 	struct k_mem_block block;
 	int rv;         /* return value from k_mem_pool_alloc() */
 	int j;          /* loop counter */
 
 	for (j = 0; j < 8; j++) {
-		rv = pool_block_get_work("k_mem_pool_alloc", pool_block_get_wt_func,
-					 getwt_set, ARRAY_SIZE(getwt_set));
-		if (rv != TC_PASS) {
-			return TC_FAIL;
-		}
+		pool_block_get_work("k_mem_pool_alloc", pool_block_get_wt_func,
+				    getwt_set, ARRAY_SIZE(getwt_set));
 
 		free_blocks(getwt_set, ARRAY_SIZE(getwt_set));
 	}
 
 	rv = k_mem_pool_alloc(&POOL_ID, &helper_block, 3148, 5);
-	if (rv != 0) {
-		TC_ERROR("Failed to get size 3148 byte block from POOL_ID\n");
-		return TC_FAIL;
-	}
+	zassert_true(rv == 0,
+		     "Failed to get size 3148 byte block from POOL_ID\n");
 
 	rv = k_mem_pool_alloc(&POOL_ID, &block, 3148, K_NO_WAIT);
-	if (rv != -ENOMEM) {
-		TC_ERROR("Unexpectedly got size 3148 "
-			 "byte block from POOL_ID\n");
-		return TC_FAIL;
-	}
+	zassert_true(rv == -ENOMEM, "Unexpectedly got size 3148 "
+		     "byte block from POOL_ID\n");
 
 	k_sem_give(&HELPER_SEM);    /* Activate helper_task */
 	rv = k_mem_pool_alloc(&POOL_ID, &block, 3148, 20);
-	if (rv != 0) {
-		TC_ERROR("Failed to get size 3148 byte block from POOL_ID\n");
-		return TC_FAIL;
-	}
+	zassert_true(rv == 0, "Failed to get size 3148 byte block from POOL_ID\n");
 
 	rv = k_sem_take(&REGRESS_SEM, K_NO_WAIT);
-	if (rv != 0) {
-		TC_ERROR("Failed to get size 3148 "
-			 "byte block within 20 ticks\n");
-		return TC_FAIL;
-	}
+	zassert_true(rv == 0, "Failed to get size 3148 "
+		     "byte block within 20 ticks\n");
 
 	k_mem_pool_free(&block);
 
-	return TC_PASS;
 }
 
 /**
  *
- * pool_block_get_wait_test -
+ * test_pool_block_get_wait
  *
- * @return TC_PASS on success, TC_FAIL on failure
  */
 
-int pool_block_get_wait_test(void)
+static void test_pool_block_get_wait(void)
 {
 	int rv;
 
 	rv = k_mem_pool_alloc(&POOL_ID, &block_list[0], 3000, K_FOREVER);
-	if (rv != 0) {
-		TC_ERROR("k_mem_pool_alloc(3000) expected %d, got %d\n", 0, rv);
-		return TC_FAIL;
-	}
+	zassert_equal(rv, 0, "k_mem_pool_alloc(3000) expected %d, got %d\n", 0, rv);
 
 	k_sem_give(&ALTERNATE_SEM);    /* Wake alternate_task */
 	evidence = 0;
 	rv = k_mem_pool_alloc(&POOL_ID, &block_list[1], 128, K_FOREVER);
-	if (rv != 0) {
-		TC_ERROR("k_mem_pool_alloc(128) expected %d, got %d\n", 0, rv);
-		return TC_FAIL;
-	}
+	zassert_true(rv == 0, "k_mem_pool_alloc(128) expected %d, got %d\n", 0, rv);
 
 	switch (evidence) {
 	case 0:
-		TC_ERROR("k_mem_pool_alloc(128) did not block!\n");
-		return TC_FAIL;
+		zassert_true(evidence == 0, "k_mem_pool_alloc(128) did not block!\n");
 	case 1:
 		break;
 	case 2:
 	default:
-		TC_ERROR("Rescheduling did not occur "
-			 "after k_mem_pool_free()\n");
-		return TC_FAIL;
+		zassert_true(1, "Rescheduling did not occur "
+			     "after k_mem_pool_free()\n");
 	}
 
 	k_mem_pool_free(&block_list[1]);
 
-	return TC_PASS;
 }
 
 /**
@@ -370,61 +292,40 @@ void alternate_task(void)
  * amount of usable space, due to the hidden block descriptor info the
  * kernel adds at the start of any block allocated from this memory pool.)
  *
- * @return TC_PASS on success, TC_FAIL on failure
  */
 
-int pool_malloc_test(void)
+static void test_pool_malloc(void)
 {
 	char *block[4];
 	int j;     /* loop counter */
 
-	TC_PRINT("Testing k_malloc() and k_free() ...\n");
-
 	/* allocate a large block (which consumes the entire pool buffer) */
 	block[0] = k_malloc(150);
-	if (block[0] == NULL) {
-		TC_ERROR("150 byte allocation failed\n");
-		return TC_FAIL;
-	}
+	zassert_not_null(block[0], "150 byte allocation failed\n");
 
 	/* ensure a small block can no longer be allocated */
 	block[1] = k_malloc(16);
-	if (block[1] != NULL) {
-		TC_ERROR("16 byte allocation did not fail\n");
-		return TC_FAIL;
-	}
+	zassert_is_null(block[1], "16 byte allocation did not fail\n");
 
 	/* return the large block */
 	k_free(block[0]);
 
 	/* allocate a small block (triggers block splitting)*/
 	block[0] = k_malloc(16);
-	if (block[0] == NULL) {
-		TC_ERROR("16 byte allocation 0 failed\n");
-		return TC_FAIL;
-	}
+	zassert_not_null(block[0], "16 byte allocation 0 failed\n");
 
 	/* ensure a large block can no longer be allocated */
 	block[1] = k_malloc(80);
-	if (block[1] != NULL) {
-		TC_ERROR("80 byte allocation did not fail\n");
-		return TC_FAIL;
-	}
+	zassert_is_null(block[1], "80 byte allocation did not fail\n");
 
 	/* ensure all remaining small blocks can be allocated */
 	for (j = 1; j < 4; j++) {
 		block[j] = k_malloc(16);
-		if (block[j] == NULL) {
-			TC_ERROR("16 byte allocation %d failed\n", j);
-			return TC_FAIL;
-		}
+		zassert_not_null(block[j], "16 byte allocation %d failed\n", j);
 	}
 
 	/* ensure a small block can no longer be allocated */
-	if (k_malloc(8) != NULL) {
-		TC_ERROR("8 byte allocation did not fail\n");
-		return TC_FAIL;
-	}
+	zassert_is_null(k_malloc(8), "8 byte allocation did not fail\n");
 
 	/* return the small blocks to pool in a "random" order */
 	k_free(block[2]);
@@ -434,19 +335,18 @@ int pool_malloc_test(void)
 
 	/* allocate large block (triggers autodefragmentation) */
 	block[0] = k_malloc(100);
-	if (block[0] == NULL) {
-		TC_ERROR("100 byte allocation failed\n");
-		return TC_FAIL;
-	}
+	zassert_not_null(block[0], "100 byte allocation failed\n");
 
 	/* ensure a small block can no longer be allocated */
-	if (k_malloc(32) != NULL) {
-		TC_ERROR("32 byte allocation did not fail\n");
-		return TC_FAIL;
-	}
+	zassert_is_null(k_malloc(32), "32 byte allocation did not fail\n");
 
-	return TC_PASS;
 }
+
+K_THREAD_DEFINE(t_alternate, STACKSIZE, alternate_task, NULL, NULL, NULL,
+		6, 0, K_NO_WAIT);
+
+K_THREAD_DEFINE(t_helper, STACKSIZE, helper_task, NULL, NULL, NULL,
+		7, 0, K_NO_WAIT);
 
 /**
  *
@@ -457,38 +357,14 @@ int pool_malloc_test(void)
  * @return N/A
  */
 
-void test_mem_pool(void)
-{
-	int tc_rc;     /* test case return code */
-
-	TC_START("Test Memory Pool and Heap APIs");
-
-	TC_PRINT("Testing k_mem_pool_alloc(K_NO_WAIT) ...\n");
-	tc_rc = pool_block_get_test();
-	zassert_equal(tc_rc, TC_PASS, "pool block failure");
-
-	TC_PRINT("Testing k_mem_pool_alloc(timeout) ...\n");
-	tc_rc = pool_block_get_timeout_test();
-	zassert_equal(tc_rc, TC_PASS, "pool block timeout failure");
-
-	TC_PRINT("Testing k_mem_pool_alloc(K_FOREVER) ...\n");
-	tc_rc = pool_block_get_wait_test();
-	zassert_equal(tc_rc, TC_PASS, "pool block wait failure");
-
-	tc_rc = pool_malloc_test();
-	zassert_equal(tc_rc, TC_PASS, "pool malloc failure");
-}
-
-
-K_THREAD_DEFINE(t_alternate, STACKSIZE, alternate_task, NULL, NULL, NULL,
-		6, 0, K_NO_WAIT);
-
-K_THREAD_DEFINE(t_helper, STACKSIZE, helper_task, NULL, NULL, NULL,
-		7, 0, K_NO_WAIT);
-
 /*test case main entry*/
 void test_main(void)
 {
-	ztest_test_suite(test_mempool, ztest_unit_test(test_mem_pool));
+	ztest_test_suite(test_mempool,
+			 ztest_unit_test(test_pool_block_get),
+			 ztest_unit_test(test_pool_block_get_timeout),
+			 ztest_unit_test(test_pool_block_get_wait),
+			 ztest_unit_test(test_pool_malloc)
+			 );
 	ztest_run_test_suite(test_mempool);
 }
