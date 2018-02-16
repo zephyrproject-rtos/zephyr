@@ -3,9 +3,18 @@ sample:
 tests:
   test_hid:
     depends_on: usb_device
+    platform_whitelist: quark_se_c1000_devboard
     tags: usb
   test_hid_composite:
     depends_on: usb_device
     extra_configs:
       - CONFIG_USB_COMPOSITE_DEVICE=y
+    platform_whitelist: quark_se_c1000_devboard
+    tags: usb
+  test_hid_msc_composite:
+    depends_on: usb_device
+    extra_configs:
+      - CONFIG_USB_COMPOSITE_DEVICE=y
+      - CONFIG_USB_MASS_STORAGE=y
+    platform_whitelist: quark_se_c1000_devboard
     tags: usb
