@@ -1,3 +1,3 @@
 tests:
-  test:
-    tags: core
+  kernel.common:
+    tags: kernel
