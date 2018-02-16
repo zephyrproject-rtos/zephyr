@@ -470,86 +470,87 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	rp->commands[5] |= BIT(6) | BIT(7);
 	/* Read TX Power Level. */
 	rp->commands[10] |= BIT(2);
+
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 	/* Set FC, Host Buffer Size and Host Num Completed */
 	rp->commands[10] |= BIT(5) | BIT(6) | BIT(7);
-#endif
+#endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
+
 	/* Read Local Version Info, Read Local Supported Features. */
 	rp->commands[14] |= BIT(3) | BIT(5);
 	/* Read BD ADDR. */
 	rp->commands[15] |= BIT(1);
+
 #if defined(CONFIG_BT_CTLR_CONN_RSSI)
 	/* Read RSSI. */
 	rp->commands[15] |= BIT(5);
 #endif /* CONFIG_BT_CTLR_CONN_RSSI */
+
 	/* Set Event Mask Page 2 */
 	rp->commands[22] |= BIT(2);
 	/* LE Set Event Mask, LE Read Buffer Size, LE Read Local Supp Feats,
 	 * Set Random Addr
 	 */
 	rp->commands[25] |= BIT(0) | BIT(1) | BIT(2) | BIT(4);
+
+#if defined(CONFIG_BT_CTLR_FILTER)
 	/* LE Read WL Size, LE Clear WL */
 	rp->commands[26] |= BIT(6) | BIT(7);
 	/* LE Add Dev to WL, LE Remove Dev from WL */
 	rp->commands[27] |= BIT(0) | BIT(1);
+#endif /* CONFIG_BT_CTLR_FILTER */
+
 	/* LE Encrypt, LE Rand */
 	rp->commands[27] |= BIT(6) | BIT(7);
 	/* LE Read Supported States */
 	rp->commands[28] |= BIT(3);
+
 #if defined(CONFIG_BT_BROADCASTER)
 	/* LE Set Adv Params, LE Read Adv Channel TX Power, LE Set Adv Data */
 	rp->commands[25] |= BIT(5) | BIT(6) | BIT(7);
 	/* LE Set Scan Response Data, LE Set Adv Enable */
 	rp->commands[26] |= BIT(0) | BIT(1);
-#endif
+#endif /* CONFIG_BT_BROADCASTER */
+
 #if defined(CONFIG_BT_OBSERVER)
 	/* LE Set Scan Params, LE Set Scan Enable */
 	rp->commands[26] |= BIT(2) | BIT(3);
-#endif
+#endif /* CONFIG_BT_OBSERVER */
+
+#if defined(CONFIG_BT_CONN)
 #if defined(CONFIG_BT_CENTRAL)
 	/* LE Create Connection, LE Create Connection Cancel */
 	rp->commands[26] |= BIT(4) | BIT(5);
 	/* Set Host Channel Classification */
 	rp->commands[27] |= BIT(3);
+
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	/* LE Start Encryption */
 	rp->commands[28] |= BIT(0);
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 #endif /* CONFIG_BT_CENTRAL */
+
 #if defined(CONFIG_BT_PERIPHERAL)
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	/* LE LTK Request Reply, LE LTK Request Negative Reply */
 	rp->commands[28] |= BIT(1) | BIT(2);
 #endif /* CONFIG_BT_CTLR_LE_ENC */
-#endif
-#if defined(CONFIG_BT_CTLR_DTM_HCI)
-	/* LE RX Test, LE TX Test, LE Test End */
-	rp->commands[28] |= BIT(4) | BIT(5) | BIT(6);
-	/* LE Enhanced RX Test. */
-	rp->commands[35] |= BIT(7);
-	/* LE Enhanced TX Test. */
-	rp->commands[36] |= BIT(0);
-#endif /* CONFIG_BT_CTLR_DTM_HCI */
-#if defined(CONFIG_BT_CONN)
+#endif /* CONFIG_BT_PERIPHERAL */
+
 	/* Disconnect. */
 	rp->commands[0] |= BIT(5);
 	/* LE Connection Update, LE Read Channel Map, LE Read Remote Features */
 	rp->commands[27] |= BIT(2) | BIT(4) | BIT(5);
+
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 	/* LE Remote Conn Param Req and Neg Reply */
 	rp->commands[33] |= BIT(4) | BIT(5);
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+
 #if defined(CONFIG_BT_CTLR_LE_PING)
 	/* Read and Write authenticated payload timeout */
 	rp->commands[32] |= BIT(4) | BIT(5);
-#endif
-#endif /* CONFIG_BT_CONN */
-#if defined(CONFIG_BT_CTLR_PRIVACY)
-	/* LE resolving list commands, LE Read Peer RPA */
-	rp->commands[34] |= BIT(3) | BIT(4) | BIT(5) | BIT(6) | BIT(7);
-	/* LE Read Local RPA, LE Set AR Enable, Set RPA Timeout */
-	rp->commands[35] |= BIT(0) | BIT(1) | BIT(2);
-	/* LE Set Privacy Mode */
-	rp->commands[39] |= BIT(2);
-#endif /* CONFIG_BT_CTLR_PRIVACY */
+#endif /* CONFIG_BT_CTLR_LE_PING */
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	/* LE Set Data Length, and LE Read Suggested Data Length. */
@@ -560,10 +561,39 @@ static void read_supported_commands(struct net_buf *buf, struct net_buf **evt)
 	rp->commands[35] |= BIT(3);
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
+#if defined(CONFIG_BT_CTLR_PHY)
+	/* LE Read PHY Command. */
+	rp->commands[35] |= BIT(4);
+	/* LE Set Default PHY Command. */
+	rp->commands[35] |= BIT(5);
+	/* LE Set PHY Command. */
+	rp->commands[35] |= BIT(6);
+#endif /* CONFIG_BT_CTLR_PHY */
+#endif /* CONFIG_BT_CONN */
+
+#if defined(CONFIG_BT_CTLR_DTM_HCI)
+	/* LE RX Test, LE TX Test, LE Test End */
+	rp->commands[28] |= BIT(4) | BIT(5) | BIT(6);
+	/* LE Enhanced RX Test. */
+	rp->commands[35] |= BIT(7);
+	/* LE Enhanced TX Test. */
+	rp->commands[36] |= BIT(0);
+#endif /* CONFIG_BT_CTLR_DTM_HCI */
+
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	/* LE resolving list commands, LE Read Peer RPA */
+	rp->commands[34] |= BIT(3) | BIT(4) | BIT(5) | BIT(6) | BIT(7);
+	/* LE Read Local RPA, LE Set AR Enable, Set RPA Timeout */
+	rp->commands[35] |= BIT(0) | BIT(1) | BIT(2);
+	/* LE Set Privacy Mode */
+	rp->commands[39] |= BIT(2);
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+
 #if defined(CONFIG_BT_HCI_RAW) && defined(CONFIG_BT_TINYCRYPT_ECC)
 	/* LE Read Local P256 Public Key and LE Generate DH Key*/
 	rp->commands[34] |= BIT(1) | BIT(2);
-#endif
+#endif /* CONFIG_BT_HCI_RAW && CONFIG_BT_TINYCRYPT_ECC */
+
 	/* LE Read TX Power. */
 	rp->commands[38] |= BIT(7);
 }
