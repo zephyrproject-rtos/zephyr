@@ -2,5 +2,6 @@ tests:
   test:
     tags: core bat_commit
   test_poll:
-    extra_args: CONF_FILE="prj_poll.conf"
     tags: core bat_commit
+    extra_configs:
+      - CONFIG_POLL=y

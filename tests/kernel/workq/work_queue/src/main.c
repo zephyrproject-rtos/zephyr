@@ -56,6 +56,16 @@ static void test_items_init(void)
 	}
 }
 
+static void reset_results(void)
+{
+	int i;
+
+	for (i = 0; i < NUM_TEST_ITEMS; i++)
+		results[i] = 0;
+
+	num_results = 0;
+}
+
 static void coop_work_main(int arg1, int arg2)
 {
 	int i;
@@ -88,32 +98,25 @@ static void test_items_submit(void)
 	}
 }
 
-static int check_results(int num_tests)
+static void check_results(int num_tests)
 {
 	int i;
 
-	if (num_results != num_tests) {
-		TC_ERROR("*** work items finished: %d (expected: %d)\n",
-			 num_results, num_tests);
-		return TC_FAIL;
-	}
+	zassert_equal(num_results, num_tests,
+		      "*** work items finished: %d (expected: %d)\n",
+		      num_results, num_tests);
 
 	for (i = 0; i < num_tests; i++) {
-		if (results[i] != i + 1) {
-			TC_ERROR("*** got result %d in position %d"
-				 " (expected %d)\n",
-				 results[i], i, i + 1);
-			return TC_FAIL;
-		}
+		zassert_equal(results[i], i + 1,
+			      "*** got result %d in position %d"
+			      " (expected %d)\n",
+			      results[i], i, i + 1);
 	}
 
-	return TC_PASS;
 }
 
-static int test_sequence(void)
+static void test_sequence(void)
 {
-	TC_PRINT("Starting sequence test\n");
-
 	TC_PRINT(" - Initializing test items\n");
 	test_items_init();
 
@@ -123,20 +126,11 @@ static int test_sequence(void)
 	TC_PRINT(" - Waiting for work to finish\n");
 	k_sleep((NUM_TEST_ITEMS + 1) * WORK_ITEM_WAIT);
 
-	TC_PRINT(" - Checking results\n");
-	return check_results(NUM_TEST_ITEMS);
+	check_results(NUM_TEST_ITEMS);
+	reset_results();
 }
 
 
-static void reset_results(void)
-{
-	int i;
-
-	for (i = 0; i < NUM_TEST_ITEMS; i++)
-		results[i] = 0;
-
-	num_results = 0;
-}
 
 static void resubmit_work_handler(struct k_work *work)
 {
@@ -153,7 +147,7 @@ static void resubmit_work_handler(struct k_work *work)
 	}
 }
 
-static int test_resubmit(void)
+static void test_resubmit(void)
 {
 	TC_PRINT("Starting resubmit test\n");
 
@@ -167,7 +161,8 @@ static int test_resubmit(void)
 	k_sleep((NUM_TEST_ITEMS + 1) * WORK_ITEM_WAIT);
 
 	TC_PRINT(" - Checking results\n");
-	return check_results(NUM_TEST_ITEMS);
+	check_results(NUM_TEST_ITEMS);
+	reset_results();
 }
 
 static void delayed_work_handler(struct k_work *work)
@@ -207,7 +202,7 @@ static void coop_delayed_work_main(int arg1, int arg2)
 	}
 }
 
-static int test_delayed_submit(void)
+static void test_delayed_submit(void)
 {
 	int i;
 
@@ -218,13 +213,10 @@ static int test_delayed_submit(void)
 	for (i = 0; i < NUM_TEST_ITEMS; i += 2) {
 		TC_PRINT(" - Submitting delayed work %d from"
 			 " preempt thread\n", i + 1);
-		if (k_delayed_work_submit(&tests[i].work,
-					  (i + 1) * WORK_ITEM_WAIT)) {
-			return TC_FAIL;
-		}
+		zassert_true(k_delayed_work_submit(&tests[i].work,
+						   (i + 1) * WORK_ITEM_WAIT) == 0, NULL);
 	}
 
-	return TC_PASS;
 }
 
 static void coop_delayed_work_cancel_main(int arg1, int arg2)
@@ -245,7 +237,7 @@ static void coop_delayed_work_cancel_main(int arg1, int arg2)
 #endif
 }
 
-static int test_delayed_cancel(void)
+static void test_delayed_cancel(void)
 {
 	TC_PRINT("Starting delayed cancel test\n");
 
@@ -262,7 +254,7 @@ static int test_delayed_cancel(void)
 	k_sleep(2 * WORK_ITEM_WAIT);
 
 	TC_PRINT(" - Checking results\n");
-	return check_results(0);
+	check_results(0);
 }
 
 static void delayed_resubmit_work_handler(struct k_work *work)
@@ -278,7 +270,7 @@ static void delayed_resubmit_work_handler(struct k_work *work)
 	}
 }
 
-static int test_delayed_resubmit(void)
+static void test_delayed_resubmit(void)
 {
 	TC_PRINT("Starting delayed resubmit test\n");
 
@@ -292,15 +284,13 @@ static int test_delayed_resubmit(void)
 	k_sleep((NUM_TEST_ITEMS + 1) * WORK_ITEM_WAIT);
 
 	TC_PRINT(" - Checking results\n");
-	return check_results(NUM_TEST_ITEMS);
+	check_results(NUM_TEST_ITEMS);
+	reset_results();
 }
 
-static void coop_delayed_work_resubmit(int arg1, int arg2)
+static void coop_delayed_work_resubmit(void)
 {
 	int i;
-
-	ARG_UNUSED(arg1);
-	ARG_UNUSED(arg2);
 
 	for (i = 0; i < NUM_TEST_ITEMS; i++) {
 		TC_PRINT(" - Resubmitting delayed work with 1 ms\n");
@@ -318,7 +308,7 @@ static void coop_delayed_work_resubmit(int arg1, int arg2)
 	}
 }
 
-static int test_delayed_resubmit_thread(void)
+static void test_delayed_resubmit_thread(void)
 {
 	TC_PRINT("Starting delayed resubmit from coop thread test\n");
 
@@ -330,13 +320,14 @@ static int test_delayed_resubmit_thread(void)
 			NULL, NULL, NULL, K_PRIO_COOP(10), 0, 0);
 
 	TC_PRINT(" - Waiting for work to finish\n");
-	k_sleep(NUM_TEST_ITEMS + 1);
+	k_sleep(WORK_ITEM_WAIT);
 
 	TC_PRINT(" - Checking results\n");
-	return check_results(1);
+	check_results(1);
+	reset_results();
 }
 
-static int test_delayed(void)
+static void test_delayed(void)
 {
 	TC_PRINT("Starting delayed test\n");
 
@@ -344,54 +335,27 @@ static int test_delayed(void)
 	test_delayed_init();
 
 	TC_PRINT(" - Submitting delayed test items\n");
-	if (test_delayed_submit() != TC_PASS) {
-		return TC_FAIL;
-	}
+	test_delayed_submit();
 
 	TC_PRINT(" - Waiting for delayed work to finish\n");
 	k_sleep((NUM_TEST_ITEMS + 2) * WORK_ITEM_WAIT);
 
 	TC_PRINT(" - Checking results\n");
-	return check_results(NUM_TEST_ITEMS);
-}
-
-void testing_workq(void)
-{
-	/*
-	 * Main thread(test_main) priority is 0 but ztest thread runs at
-	 * priority -1. To run the test smoothly make both main and ztest
-	 * threads run at same priority level.
-	 */
-	k_thread_priority_set(k_current_get(), 0);
-
-	zassert_equal(test_sequence(), TC_PASS, "test sequence failed");
-
+	check_results(NUM_TEST_ITEMS);
 	reset_results();
-
-	zassert_equal(test_resubmit(), TC_PASS, "test resubmit failed");
-
-	reset_results();
-
-	zassert_equal(test_delayed(), TC_PASS, "test delayed failed");
-
-	reset_results();
-
-	zassert_equal(test_delayed_resubmit(), TC_PASS, "delayed resubmit"
-		      " failed");
-
-	reset_results();
-
-	zassert_equal(test_delayed_resubmit_thread(), TC_PASS,
-		      "delayed resubmit thread failed");
-	reset_results();
-
-	zassert_equal(test_delayed_cancel(), TC_PASS,
-		      "delayed cancel failed");
 }
 
 /*test case main entry*/
 void test_main(void)
 {
-	ztest_test_suite(test_workq, ztest_unit_test(testing_workq));
+	k_thread_priority_set(k_current_get(), 0);
+	ztest_test_suite(test_workq,
+			 ztest_unit_test(test_sequence),
+			 ztest_unit_test(test_resubmit),
+			 ztest_unit_test(test_delayed),
+			 ztest_unit_test(test_delayed_resubmit),
+			 ztest_unit_test(test_delayed_resubmit_thread),
+			 ztest_unit_test(test_delayed_cancel)
+			 );
 	ztest_run_test_suite(test_workq);
 }
