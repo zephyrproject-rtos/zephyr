@@ -418,8 +418,11 @@ static int erase_op(void *context)
 		i++;
 
 		if (e_ctx->enable_time_limit) {
-			ticks_diff = ticker_ticks_now_get() - ticks_begin;
-			if (ticks_diff + ticks_diff/i > FLASH_SLOT) {
+			ticks_diff =
+				ticker_ticks_diff_get(ticker_ticks_now_get(),
+						      ticks_begin);
+			if (ticks_diff + ticks_diff/i >
+			    HAL_TICKER_US_TO_TICKS(FLASH_SLOT)) {
 				break;
 			}
 		}
@@ -479,8 +482,11 @@ static int write_op(void *context)
 
 #if defined(CONFIG_SOC_FLASH_NRF5_RADIO_SYNC)
 		if (w_ctx->enable_time_limit) {
-			ticks_diff = ticker_ticks_now_get() - ticks_begin;
-			if (2 * ticks_diff > FLASH_SLOT) {
+			ticks_diff =
+				ticker_ticks_diff_get(ticker_ticks_now_get(),
+						      ticks_begin);
+			if (2 * ticks_diff >
+			    HAL_TICKER_US_TO_TICKS(FLASH_SLOT)) {
 				nvmc_wait_ready();
 				return FLASH_OP_ONGOING;
 			}
@@ -500,9 +506,11 @@ static int write_op(void *context)
 		i++;
 
 		if (w_ctx->enable_time_limit) {
-			ticks_diff = ticker_ticks_now_get() - ticks_begin;
-
-			if (ticks_diff + ticks_diff/i > FLASH_SLOT) {
+			ticks_diff =
+				ticker_ticks_diff_get(ticker_ticks_now_get(),
+						      ticks_begin);
+			if (ticks_diff + ticks_diff/i >
+			    HAL_TICKER_US_TO_TICKS(FLASH_SLOT)) {
 				nvmc_wait_ready();
 				return FLASH_OP_ONGOING;
 			}
