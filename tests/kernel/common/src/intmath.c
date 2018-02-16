@@ -6,7 +6,7 @@
 
 #include <ztest.h>
 
-void intmath_test(void)
+void test_intmath(void)
 {
 	/*
 	 * Declaring volatile so the compiler doesn't try to optimize any

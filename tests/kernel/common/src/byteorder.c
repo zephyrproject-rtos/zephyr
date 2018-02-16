@@ -9,7 +9,7 @@
 
 #include <misc/byteorder.h>
 
-void byteorder_test_memcpy_swap(void)
+void test_byteorder_memcpy_swap(void)
 {
 	u8_t buf_orig[8] = { 0x00, 0x01, 0x02, 0x03,
 			     0x04, 0x05, 0x06, 0x07 };
@@ -26,7 +26,7 @@ void byteorder_test_memcpy_swap(void)
 		     "Swap memcpy failed");
 }
 
-void byteorder_test_mem_swap(void)
+void test_byteorder_mem_swap(void)
 {
 	u8_t buf_orig_1[8] = { 0x00, 0x01, 0x02, 0x03,
 			       0x04, 0x05, 0x06, 0x07 };
