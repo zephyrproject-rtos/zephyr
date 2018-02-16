@@ -36,7 +36,7 @@ static int check_param_nonset_region(union x86_mmu_pae_pte *value,
 	return status;
 }
 
-static int  starting_addr_range(u32_t start_addr_range)
+static void starting_addr_range(u32_t start_addr_range)
 {
 
 	u32_t addr_range, status = true;
@@ -44,20 +44,15 @@ static int  starting_addr_range(u32_t start_addr_range)
 
 	for (addr_range = start_addr_range; addr_range <=
 	     (start_addr_range + STARTING_ADDR_RANGE_LMT);
-	       addr_range += 0x1000) {
+	     addr_range += 0x1000) {
 		value = X86_MMU_GET_PTE(addr_range);
 		status &= check_param(value, REGION_PERM);
-		if (status == 0) {
-			printk("error at %d permissions %d\n",
-				addr_range, REGION_PERM);
-			TC_PRINT("%s failed\n", __func__);
-			return TC_FAIL;
-		}
+		zassert_false((status == 0), "error at %d permissions %d\n",
+			      addr_range, REGION_PERM);
 	}
-	return TC_PASS;
 }
 
-static int before_start_addr_range(u32_t start_addr_range)
+static void before_start_addr_range(u32_t start_addr_range)
 {
 	u32_t addr_range, status = true;
 	union x86_mmu_pae_pte *value;
@@ -66,44 +61,32 @@ static int before_start_addr_range(u32_t start_addr_range)
 	     addr_range < (start_addr_range); addr_range += 0x1000) {
 
 		value = X86_MMU_GET_PTE(addr_range);
-		status &= check_param_nonset_region(value,
-						    REGION_PERM);
-		if (status == 0) {
-			TC_PRINT("%s failed\n", __func__);
-			printk("error at %d permissions %d\n",
-				addr_range, REGION_PERM);
-			return TC_FAIL;
+		status &= check_param_nonset_region(value, REGION_PERM);
 
-		}
+		zassert_false((status == 0), "error at %d permissions %d\n",
+			      addr_range, REGION_PERM);
 	}
-	return TC_PASS;
 }
 
-static int ending_start_addr_range(u32_t start_addr_range)
+static void ending_start_addr_range(u32_t start_addr_range)
 {
 	u32_t addr_range, status = true;
 	union x86_mmu_pae_pte *value;
 
 	for (addr_range = start_addr_range + ADDR_SIZE; addr_range <
 	     (start_addr_range + ADDR_SIZE + 0x10000);
-	       addr_range += 0x1000) {
+	     addr_range += 0x1000) {
 		value = X86_MMU_GET_PTE(addr_range);
 		status &= check_param_nonset_region(value, REGION_PERM);
-		if (status == 0) {
-			TC_PRINT("%s failed\n", __func__);
-			printk("error at %d permissions %d\n",
-				addr_range, REGION_PERM);
-			return TC_FAIL;
-
-		}
+		zassert_false((status == 0), "error at %d permissions %d\n",
+			      addr_range, REGION_PERM);
 	}
-	return TC_PASS;
 }
 
-int boot_page_table(void)
+void test_boot_page_table(void)
 {
 	u32_t start_addr_range;
-	int iterator = 0, check = 0;
+	int iterator = 0;
 
 	for (iterator = 0; iterator < MEMORY_REG_NUM; iterator++) {
 		switch (iterator) {
@@ -126,21 +109,10 @@ int boot_page_table(void)
 		default:
 			break;
 		}
-		check = starting_addr_range(start_addr_range);
-		if (check == TC_FAIL)
-			return TC_FAIL;
-		check = before_start_addr_range(start_addr_range);
-		if (check == TC_FAIL)
-			return TC_FAIL;
-		check = ending_start_addr_range(start_addr_range);
-		if (check == TC_FAIL)
-			return TC_FAIL;
+		starting_addr_range(start_addr_range);
+		before_start_addr_range(start_addr_range);
+		ending_start_addr_range(start_addr_range);
 
 	}
-	return TC_PASS;
 }
 
-void test_boot_page_table(void)
-{
-	zassert_true(boot_page_table() == TC_PASS, NULL);
-}
