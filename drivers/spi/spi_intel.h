@@ -6,13 +6,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef __SPI_INTEL_PRIV_H__
-#define __SPI_INTEL_PRIV_H__
+#ifndef __SPI_INTEL_H__
+#define __SPI_INTEL_H__
+
+#include "spi_intel_regs.h"
+#include "spi_context.h"
 
 #ifdef CONFIG_PCI
 #include <pci/pci.h>
 #include <pci/pci_mgr.h>
 #endif /* CONFIG_PCI */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -22,98 +26,77 @@ typedef void (*spi_intel_config_t)(void);
 struct spi_intel_config {
 	u32_t irq;
 	spi_intel_config_t config_func;
-#ifdef CONFIG_SPI_CS_GPIO
-	char *cs_gpio_name;
-	u32_t cs_gpio_pin;
-#endif /* CONFIG_SPI_CS_GPIO */
 };
 
 struct spi_intel_data {
+	struct spi_context ctx;
 	u32_t regs;
 #ifdef CONFIG_PCI
 	struct pci_dev_info pci_dev;
 #endif /* CONFIG_PCI */
-	struct k_sem device_sync_sem;
-	u8_t error;
-	u8_t padding[3];
-#ifdef CONFIG_SPI_CS_GPIO
-	struct device *cs_gpio_port;
-#endif /* CONFIG_SPI_CS_GPIO */
 	u32_t sscr0;
 	u32_t sscr1;
-	const u8_t *tx_buf;
-	u8_t *rx_buf;
-	u32_t t_buf_len;
-	u32_t r_buf_len;
-	u32_t transmitted;
-	u32_t received;
-	u32_t trans_len;
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	u32_t device_power_state;
 #endif
+	u8_t dfs;
 };
 
-/* Registers */
-#define INTEL_SPI_REG_SSCR0		(0x00)
-#define INTEL_SPI_REG_SSCR1		(0x04)
-#define INTEL_SPI_REG_SSSR		(0x08)
-#define INTEL_SPI_REG_SSDR		(0x10)
-#define INTEL_SPI_REG_DDS_RATE		(0x28)
+#define DEFINE_MM_REG_READ(__reg, __off, __sz)				\
+	static inline u32_t read_##__reg(u32_t addr)			\
+	{								\
+		return sys_read##__sz(addr + __off);			\
+	}
+#define DEFINE_MM_REG_WRITE(__reg, __off, __sz)				\
+	static inline void write_##__reg(u32_t data, u32_t addr)	\
+	{								\
+		sys_write##__sz(data, addr + __off);			\
+	}
 
-#define INTEL_SPI_CLK_DIV_MASK		(0x000000ff)
-#define INTEL_SPI_DDS_RATE_MASK		(0xffffff00)
+DEFINE_MM_REG_WRITE(sscr0, INTEL_SPI_REG_SSCR0, 32)
+DEFINE_MM_REG_WRITE(sscr1, INTEL_SPI_REG_SSCR1, 32)
+DEFINE_MM_REG_READ(sssr, INTEL_SPI_REG_SSSR, 32)
+DEFINE_MM_REG_READ(ssdr, INTEL_SPI_REG_SSDR, 32)
+DEFINE_MM_REG_WRITE(ssdr, INTEL_SPI_REG_SSDR, 32)
+DEFINE_MM_REG_WRITE(dds_rate, INTEL_SPI_REG_DDS_RATE, 32)
 
-/* SSCR0 settings */
-#define INTEL_SPI_SSCR0_DSS(__bpw)	((__bpw) - 1)
-#define INTEL_SPI_SSCR0_SSE		(0x1 << 7)
-#define INTEL_SPI_SSCR0_SSE_BIT		(7)
-#define INTEL_SPI_SSCR0_SCR(__msf) \
-	((__msf & INTEL_SPI_CLK_DIV_MASK) << 8)
+#define DEFINE_SET_BIT_OP(__reg_bit, __reg_off, __bit)			\
+	static inline void set_bit_##__reg_bit(u32_t addr)		\
+	{								\
+		sys_set_bit(addr + __reg_off, __bit);			\
+	}
 
-/* SSCR1 settings */
-#define INTEL_SPI_SSCR1_TIE_BIT		(1)
+#define DEFINE_CLEAR_BIT_OP(__reg_bit, __reg_off, __bit)		\
+	static inline void clear_bit_##__reg_bit(u32_t addr)		\
+	{								\
+		sys_clear_bit(addr + __reg_off, __bit);			\
+	}
 
-#define INTEL_SPI_SSCR1_RIE		(0x1)
-#define INTEL_SPI_SSCR1_TIE		(0x1 << 1)
-#define INTEL_SPI_SSCR1_LBM		(0x1 << 2)
-#define INTEL_SPI_SSCR1_SPO		(0x1 << 3)
-#define INTEL_SPI_SSCR1_SPH		(0x1 << 4)
-#define INTEL_SPI_SSCR1_TFT_MASK	(0x1f << 6)
-#define INTEL_SPI_SSCR1_TFT(__tft) \
-	(((__tft) - 1) << 6)
-#define INTEL_SPI_SSCR1_RFT_MASK	(0x1f << 11)
-#define INTEL_SPI_SSCR1_RFT(__rft) \
-	(((__rft) - 1) << 11)
-#define INTEL_SPI_SSCR1_EFWR		(0x1 << 16)
-#define INTEL_SPI_SSCR1_STRF		(0x1 << 17)
+#define DEFINE_TEST_BIT_OP(__reg_bit, __reg_off, __bit)			\
+	static inline int test_bit_##__reg_bit(u32_t addr)		\
+	{								\
+		return sys_test_bit(addr + __reg_off, __bit);		\
+	}
 
-#define INTEL_SPI_SSCR1_TFT_DFLT	(8)
-#define INTEL_SPI_SSCR1_RFT_DFLT	(1)
+DEFINE_SET_BIT_OP(sscr0_sse, INTEL_SPI_REG_SSCR0, INTEL_SPI_SSCR0_SSE_BIT)
+DEFINE_CLEAR_BIT_OP(sscr0_sse, INTEL_SPI_REG_SSCR0, INTEL_SPI_SSCR0_SSE_BIT)
+DEFINE_TEST_BIT_OP(sscr0_sse, INTEL_SPI_REG_SSCR0, INTEL_SPI_SSCR0_SSE_BIT)
+DEFINE_TEST_BIT_OP(sssr_bsy, INTEL_SPI_REG_SSSR, INTEL_SPI_SSSR_BSY_BIT)
+DEFINE_CLEAR_BIT_OP(sscr1_tie, INTEL_SPI_REG_SSCR1, INTEL_SPI_SSCR1_TIE_BIT)
+DEFINE_TEST_BIT_OP(sscr1_tie, INTEL_SPI_REG_SSCR1, INTEL_SPI_SSCR1_TIE_BIT)
+DEFINE_CLEAR_BIT_OP(sssr_ror, INTEL_SPI_REG_SSSR, INTEL_SPI_SSSR_ROR_BIT)
 
-/* SSSR settings */
-#define INTEL_SPI_SSSR_TNF		(0x4)
-#define INTEL_SPI_SSSR_RNE		(0x8)
-#define INTEL_SPI_SSSR_TFS		(0x20)
-#define INTEL_SPI_SSSR_RFS		(0x40)
-#define INTEL_SPI_SSSR_ROR		(0x80)
-#define INTEL_SPI_SSSR_TFL_MASK		(0x1f << 8)
-#define INTEL_SPI_SSSR_TFL_EMPTY	(0x00)
-#define INTEL_SPI_SSSR_RFL_MASK		(0x1f << 13)
-#define INTEL_SPI_SSSR_RFL_EMPTY	(0x1f)
+/* 0x38 represents the bits 8, 16 and 32. Knowing that 24 is bits 8 and 16
+ * These are the bits were when you divide by 8, you keep the result as it is.
+ * For all the other ones, 4 to 7, 9 to 15, etc... you need a +1,
+ * since on such division it takes only the result above 0
+ */
+#define SPI_WS_TO_DFS(__bpw) (((__bpw) & ~0x38) ?		\
+			      (((__bpw) / 8) + 1) :		\
+			      ((__bpw) / 8))
 
-#define INTEL_SPI_SSSR_TFL(__status) \
-	((__status & INTEL_SPI_SSSR_TFL_MASK) >> 8)
-#define INTEL_SPI_SSSR_RFL(__status) \
-	((__status & INTEL_SPI_SSSR_RFL_MASK) >> 13)
-
-#define INTEL_SPI_SSSR_BSY_BIT		(4)
-#define INTEL_SPI_SSSR_ROR_BIT		(7)
-
-/* DSS_RATE settings */
-#define INTEL_SPI_DSS_RATE(__msf) \
-	((__msf & (INTEL_SPI_DDS_RATE_MASK)) >> 8)
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __SPI_INTEL_PRIV_H__ */
+#endif /* __SPI_INTEL_H__ */
