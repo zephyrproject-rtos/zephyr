@@ -53,13 +53,6 @@
 			reg = <0x00070000 0xa000>;
 		};
 
-		/*
-		 * The flash starting at 0x0007a000 and ending at
-		 * 0x0007ffff (sectors 122-127) is reserved for use
-		 * by the application. If enabled, partition for NFFS
-		 * will be created in this area.
-		 */
-
 #if defined(CONFIG_FILE_SYSTEM_NFFS)
 		nffs_partition: partition@7a000 {
 			label = "nffs";

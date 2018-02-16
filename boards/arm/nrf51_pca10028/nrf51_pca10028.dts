@@ -51,13 +51,6 @@
 			reg = <0x0003c000 0x2000>;
 		};
 
-		/*
-		 * The flash starting at 0x0003e000 and ending at
-		 * 0x0003ffff is reserved for use by the application.
-		 * If enabled, partition for NFFS will be created in
-		 * this area.
-		 */
-
 #if defined(CONFIG_FILE_SYSTEM_NFFS)
 		nffs_partition: partition@3e000 {
 			label = "nffs";
