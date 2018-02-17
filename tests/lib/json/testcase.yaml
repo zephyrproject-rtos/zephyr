@@ -1,4 +1,4 @@
 tests:
-  test:
+  libraries.encoding:
     filter: not CONFIG_NEWLIB_LIBC
     tags: json
