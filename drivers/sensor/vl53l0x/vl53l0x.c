@@ -46,7 +46,7 @@ struct vl53l0x_data {
 static int vl53l0x_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct vl53l0x_data *drv_data = dev->driver_data;
-	u8_t ret;
+	VL53L0X_Error ret;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL
 			|| chan == SENSOR_CHAN_DISTANCE
@@ -196,7 +196,7 @@ exit:
 static int vl53l0x_init(struct device *dev)
 {
 	struct vl53l0x_data *drv_data = dev->driver_data;
-	u8_t ret;
+	VL53L0X_Error ret;
 	u16_t vl53l0x_id = 0;
 	VL53L0X_DeviceInfo_t vl53l0x_dev_info;
 	struct device *gpio;
