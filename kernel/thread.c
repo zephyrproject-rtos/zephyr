@@ -405,7 +405,7 @@ _SYSCALL_HANDLER(k_thread_create,
 	/* Check validity of prio argument; must be the same or worse priority
 	 * than the caller
 	 */
-	_SYSCALL_VERIFY(_VALID_PRIO(prio, NULL));
+	_SYSCALL_VERIFY(_is_valid_prio(prio, NULL));
 	_SYSCALL_VERIFY(_is_prio_lower_or_equal(prio, _current->base.prio));
 
 	_setup_new_thread((struct k_thread *)new_thread, stack, stack_size,
