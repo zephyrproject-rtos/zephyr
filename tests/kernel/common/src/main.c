@@ -21,6 +21,7 @@ extern void test_rand32(void);
 extern void test_timeout_order(void);
 extern void test_clock_cycle(void);
 extern void test_clock_uptime(void);
+extern void test_multilib(void);
 
 
 static void test_version(void)
@@ -55,7 +56,8 @@ void test_main(void)
 			 ztest_unit_test(test_timeout_order),
 			 ztest_unit_test(test_clock_uptime),
 			 ztest_unit_test(test_clock_cycle),
-			 ztest_unit_test(test_version)
+			 ztest_unit_test(test_version),
+			 ztest_unit_test(test_multilib)
 			 );
 
 	ztest_run_test_suite(common_test);

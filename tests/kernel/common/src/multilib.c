@@ -15,8 +15,6 @@ void test_multilib(void)
 	volatile long long b = 3;
 	volatile long long c = a / b;
 
-	TC_START("test_multilib");
-
 	/**TESTPOINT: Check if the correct multilib is selected*/
 	zassert_equal(c, 33, "smoke-test failed: wrong multilib selected");
 }
