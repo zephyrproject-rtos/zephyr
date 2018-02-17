@@ -17,4 +17,5 @@ target_sources(app PRIVATE
 	src/rand32.c
 	src/slist.c
 	src/timeout_order.c
+	src/multilib.c
   )
