@@ -100,37 +100,33 @@ extern void *_EXCEPTION_STUB_NAME(exc_divide_error_handler, IV_DIVIDE_ERROR);
  * @return TC_PASS on success, TC_FAIL on failure
  */
 
-int idt_stub_test(void)
+void test_idt_stub(void)
 {
 	struct segment_descriptor *p_idt_entry;
 	u32_t offset;
 
+	TC_PRINT("Testing to see if IDT has address of test stubs()\n");
 	/* Check for the interrupt stub */
 	p_idt_entry = (struct segment_descriptor *)
 		      (_idt_base_address + (TEST_SOFT_INT << 3));
 	offset = (u32_t)(&int_stub);
-	if (DTE_OFFSET(p_idt_entry) != offset) {
-		TC_ERROR("Failed to find offset of int_stub (0x%x)"
-			 " at vector %d\n", offset, TEST_SOFT_INT);
-		return TC_FAIL;
-	}
+	zassert_equal(DTE_OFFSET(p_idt_entry), offset,
+		      "Failed to find offset of int_stub (0x%x)"
+		      " at vector %d\n", offset, TEST_SOFT_INT);
 
 	/* Check for the exception stub */
 	p_idt_entry = (struct segment_descriptor *)
 		      (_idt_base_address + (IV_DIVIDE_ERROR << 3));
 	offset = (u32_t)(&_EXCEPTION_STUB_NAME(exc_divide_error_handler, 0));
-	if (DTE_OFFSET(p_idt_entry) != offset) {
-		TC_ERROR("Failed to find offset of exc stub (0x%x)"
-			 " at vector %d\n", offset, IV_DIVIDE_ERROR);
-		return TC_FAIL;
-	}
+	zassert_equal(DTE_OFFSET(p_idt_entry), offset,
+		      "Failed to find offset of exc stub (0x%x)"
+		      " at vector %d\n", offset, IV_DIVIDE_ERROR);
 
 	/*
 	 * If the other fields are wrong, the system will crash when the
 	 * exception and software interrupt are triggered so we don't check
 	 * them.
 	 */
-	return TC_PASS;
 }
 
 /**
@@ -158,14 +154,10 @@ void idt_spur_task(void *arg1, void *arg2, void *arg3)
  * @return N/A
  */
 
-void testing_static_idt(void)
+void test_static_idt(void)
 {
-	int rv;                 /* return value from tests */
 	volatile int error;     /* used to create a divide by zero error */
 
-	TC_PRINT("Testing to see if IDT has address of test stubs()\n");
-	rv = idt_stub_test();
-	zassert_equal(rv, TC_PASS, "idt stub test");
 
 	TC_PRINT("Testing to see interrupt handler executes properly\n");
 	_trigger_isr_handler();
@@ -208,6 +200,9 @@ void testing_static_idt(void)
 
 void test_main(void)
 {
-	ztest_test_suite(test_static_idt, ztest_unit_test(testing_static_idt));
+	ztest_test_suite(test_static_idt,
+			 ztest_unit_test(test_idt_stub),
+			 ztest_unit_test(test_static_idt)
+			 );
 	ztest_run_test_suite(test_static_idt);
 }
