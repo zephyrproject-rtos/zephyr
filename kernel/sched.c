@@ -302,7 +302,7 @@ _SYSCALL_HANDLER(k_thread_priority_set, thread_p, prio)
 	struct k_thread *thread = (struct k_thread *)thread_p;
 
 	_SYSCALL_OBJ(thread, K_OBJ_THREAD);
-	_SYSCALL_VERIFY_MSG(_VALID_PRIO(prio, NULL),
+	_SYSCALL_VERIFY_MSG(_is_valid_prio(prio, NULL),
 			    "invalid thread priority %d", (int)prio);
 	_SYSCALL_VERIFY_MSG((s8_t)prio >= thread->base.prio,
 			    "thread priority may only be downgraded (%d < %d)",

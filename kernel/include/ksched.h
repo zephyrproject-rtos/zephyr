@@ -60,26 +60,6 @@ static inline int _is_idle_thread_ptr(k_tid_t thread)
 #endif
 }
 
-#ifdef CONFIG_MULTITHREADING
-#define _VALID_PRIO(prio, entry_point) \
-	(((prio) == K_IDLE_PRIO && _is_idle_thread(entry_point)) || \
-		 (_is_prio_higher_or_equal((prio), \
-			K_LOWEST_APPLICATION_THREAD_PRIO) && \
-		  _is_prio_lower_or_equal((prio), \
-			K_HIGHEST_APPLICATION_THREAD_PRIO)))
-
-#define _ASSERT_VALID_PRIO(prio, entry_point) do { \
-	__ASSERT(_VALID_PRIO((prio), (entry_point)), \
-		 "invalid priority (%d); allowed range: %d to %d", \
-		 (prio), \
-		 K_LOWEST_APPLICATION_THREAD_PRIO, \
-		 K_HIGHEST_APPLICATION_THREAD_PRIO); \
-	} while ((0))
-#else
-#define _VALID_PRIO(prio, entry_point) ((prio) == -1)
-#define _ASSERT_VALID_PRIO(prio, entry_point) __ASSERT((prio) == -1, "")
-#endif
-
 /*
  * The _is_prio_higher family: I created this because higher priorities are
  * lower numerically and I always found somewhat confusing seeing, e.g.:
@@ -143,6 +123,44 @@ static inline int _is_higher_prio_than_current(struct k_thread *thread)
 {
 	return _is_t1_higher_prio_than_t2(thread, _current);
 }
+
+#ifdef CONFIG_MULTITHREADING
+static inline int _is_valid_prio(int prio, void *entry_point)
+{
+	if (prio == K_IDLE_PRIO && _is_idle_thread(entry_point)) {
+		return 1;
+	}
+
+	if (!_is_prio_higher_or_equal(prio,
+				      K_LOWEST_APPLICATION_THREAD_PRIO)) {
+		return 0;
+	}
+
+	if (!_is_prio_lower_or_equal(prio,
+				     K_HIGHEST_APPLICATION_THREAD_PRIO)) {
+		return 0;
+	}
+
+	return 1;
+}
+
+#define _ASSERT_VALID_PRIO(prio, entry_point) do { \
+	__ASSERT(_is_valid_prio((prio), (entry_point)) == 1, \
+		 "invalid priority (%d); allowed range: %d to %d", \
+		 (prio), \
+		 K_LOWEST_APPLICATION_THREAD_PRIO, \
+		 K_HIGHEST_APPLICATION_THREAD_PRIO); \
+	} while ((0))
+#else
+static inline int _is_valid_prio(int prio, void *entry_point)
+{
+	ARG_UNUSED(entry_point);
+
+	return prio == -1;
+}
+#define _ASSERT_VALID_PRIO(prio, entry_point) \
+	__ASSERT(_is_valid_prio((prio)) == 1, "")
+#endif
 
 /* is thread currenlty cooperative ? */
 static inline int _is_coop(struct k_thread *thread)
