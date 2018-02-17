@@ -396,6 +396,7 @@ int _net_app_config_local_ctx(struct net_app_ctx *ctx,
 
 		if (!ret) {
 			select_default_ctx(ctx);
+			return ret;
 		}
 #endif
 
