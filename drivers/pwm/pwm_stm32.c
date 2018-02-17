@@ -34,9 +34,12 @@ static u32_t __get_tim_clk(u32_t bus_clk,
 
 	if (pclken->bus == STM32_CLOCK_BUS_APB1) {
 		apb_psc = CONFIG_CLOCK_STM32_APB1_PRESCALER;
-	} else {
+	}
+#ifndef CONFIG_SOC_SERIES_STM32F0X
+	else {
 		apb_psc = CONFIG_CLOCK_STM32_APB2_PRESCALER;
 	}
+#endif
 
 	/*
 	 * If the APB prescaler equals 1, the timer clock frequencies
