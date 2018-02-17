@@ -109,7 +109,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x40013000 0x400>;
-			interrupts = <25 5>;
+			interrupts = <25 3>;
 			status = "disabled";
 			label = "SPI_1";
 		};
