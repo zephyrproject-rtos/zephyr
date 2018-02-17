@@ -14,7 +14,7 @@
 #define BIT_VAL(bit)    (1 << (bit & 0x7))
 #define BITFIELD_SIZE   512
 
-void testing_bitfield(void)
+void test_bitfield(void)
 {
 	u32_t b1 = 0;
 	unsigned char b2[BITFIELD_SIZE >> 3] = { 0 };
@@ -107,11 +107,4 @@ void testing_bitfield(void)
 			      "sys_bitfield_test_and_clear_bit set bit %d\n",
 			      bit);
 	}
-}
-
-/*test case main entry*/
-void test_main(void)
-{
-	ztest_test_suite(test_bitfield, ztest_unit_test(testing_bitfield));
-	ztest_run_test_suite(test_bitfield);
 }
