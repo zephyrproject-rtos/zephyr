@@ -1,3 +1,3 @@
 tests:
-  test:
+  crypto.cmac_mode:
     tags: crypto aes cmac

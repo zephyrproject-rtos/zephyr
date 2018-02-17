@@ -1,3 +1,3 @@
 tests:
-  test:
+  crypto.cbc_mode:
     tags: crypto aes cbc
