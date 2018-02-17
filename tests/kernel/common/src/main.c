@@ -42,6 +42,9 @@ void test_main(void)
 			 ztest_unit_test(test_byteorder_memcpy_swap),
 			 ztest_unit_test(test_byteorder_mem_swap),
 			 ztest_unit_test(test_atomic),
+#ifndef CONFIG_ARM
+			 ztest_unit_test(test_bitfield),
+#endif
 #ifdef CONFIG_PRINTK
 			 ztest_unit_test(test_printk),
 #endif
