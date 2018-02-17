@@ -1,3 +1,3 @@
 zephyr_sources(
-  sfcb.c
+  nvs.c
   )

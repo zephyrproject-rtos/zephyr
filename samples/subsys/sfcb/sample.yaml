@@ -1,7 +1,0 @@
-sample:
-  name: Blinky Sample
-tests:
-  test:
-    platform_whitelist: arduino_101
-    tags: samples
-    depends_on: gpio

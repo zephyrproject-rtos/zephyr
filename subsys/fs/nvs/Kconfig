@@ -1,0 +1,25 @@
+# Kconfig - Non Volatile Storage NVS
+
+#
+# Copyright (c) 2017 Laczen
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config NVS
+	bool
+	prompt "Non Volatile Storage"
+	default n
+	help
+	  Enable support of Non Volatile Storage.
+
+if NVS
+
+config NVS_DEBUG
+	bool "Enable debug logs"
+	default n
+	help
+		Use this option to enable debug logs for the non volatile
+		storage library.
+
+endif # NVS

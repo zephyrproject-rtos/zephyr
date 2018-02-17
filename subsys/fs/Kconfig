@@ -91,6 +91,6 @@ endmenu
 endif # FILE_SYSTEM
 
 source "subsys/fs/fcb/Kconfig"
-source "subsys/fs/sfcb/Kconfig"
+source "subsys/fs/nvs/Kconfig"
 
 endmenu
