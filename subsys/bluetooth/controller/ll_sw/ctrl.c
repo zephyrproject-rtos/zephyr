@@ -44,16 +44,6 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #include "common/log.h"
 
-#if defined(CONFIG_BT_CTLR_PHY_CODED)
-#define RADIO_PKT_TIME(octets, phy) \
-	(((phy) & BIT(2)) ? (80 + 256 + 16 + 24 + ((((2 + (octets) + 4) * 8) + \
-						    24 + 3) * 8)) : \
-			    (((octets) + 14) * 8 / BIT(((phy) & 0x03) >> 1)))
-#else /* !CONFIG_BT_CTLR_PHY_CODED */
-#define RADIO_PKT_TIME(octets, phy) \
-	(((octets) + 14) * 8 / BIT(((phy) & 0x03) >> 1))
-#endif /* !CONFIG_BT_CTLR_PHY_CODED */
-
 #if defined(CONFIG_BT_CTLR_CONN_RSSI)
 #define RADIO_RSSI_SAMPLE_COUNT	10
 #define RADIO_RSSI_THRESHOLD	4
@@ -61,9 +51,26 @@
 
 #define SILENT_CONNECTION	0
 
-#define RADIO_TIFS                      150
-#define RADIO_CONN_EVENTS(x, y)         ((u16_t)(((x) + (y) - 1) / (y)))
+/* Macro to convert time in us to connection interval units */
+#define RADIO_CONN_EVENTS(x, y) ((u16_t)(((x) + (y) - 1) / (y)))
 
+/* Macro to return packet time */
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+#define RADIO_PKT_TIME(octets, phy) \
+	(((phy) & BIT(2)) ? \
+	 (80 + 256 + 16 + 24 + ((((2 + (octets) + 4) * 8) + 24 + 3) * 8)) : \
+	 (((octets) + 14) * 8 / BIT(((phy) & 0x03) >> 1)))
+#else /* !CONFIG_BT_CTLR_PHY_CODED */
+#define RADIO_PKT_TIME(octets, phy) \
+	(((octets) + 14) * 8 / BIT(((phy) & 0x03) >> 1))
+#endif /* !CONFIG_BT_CTLR_PHY_CODED */
+
+/* Inter Frame Space */
+#define RADIO_TIFS    150 /* BT Spec. defined */
+/* Inter Event Space */
+#define RADIO_TIES_US 625 /* Implementation defined */
+
+/* Implementation defines */
 #define RADIO_TICKER_JITTER_US           16
 #define RADIO_TICKER_START_PART_US       300
 #define RADIO_TICKER_XTAL_OFFSET_US      1200
@@ -4848,8 +4855,9 @@ static void mayfly_xtal_stop_calc(void *params)
 	/* If beyond the xtal threshold reset to normal the next prepare,
 	 * else retain xtal and reduce the next prepare.
 	 */
-	if ((ticks_to_expire - ticks_slot_abs) >
-	    HAL_TICKER_US_TO_TICKS(CONFIG_BT_CTLR_XTAL_THRESHOLD)) {
+	if (ticks_to_expire >
+	    (ticks_slot_abs +
+	     HAL_TICKER_US_TO_TICKS(CONFIG_BT_CTLR_XTAL_THRESHOLD))) {
 		mayfly_xtal_retain(RADIO_TICKER_USER_ID_JOB, 0);
 		prepare_normal_set(hdr_next, RADIO_TICKER_USER_ID_JOB,
 				   ticker_id_next);
@@ -4902,9 +4910,8 @@ static void mayfly_xtal_stop_calc(void *params)
 			 */
 			if (conn_curr->role && !conn_next->role &&
 			    (ticks_to_expire <
-			     (HAL_TICKER_US_TO_TICKS(
-				RADIO_TICKER_XTAL_OFFSET_US + 625) +
-			      conn_curr->hdr.ticks_slot))) {
+			     (ticks_slot_abs +
+			      HAL_TICKER_US_TO_TICKS(RADIO_TIES_US)))) {
 				u32_t status;
 
 				status = conn_update_req(conn_curr);
@@ -4913,9 +4920,8 @@ static void mayfly_xtal_stop_calc(void *params)
 				}
 			} else if (!conn_curr->role && conn_next->role &&
 				   (ticks_to_expire <
-				    (HAL_TICKER_US_TO_TICKS(
-					RADIO_TICKER_XTAL_OFFSET_US + 625) +
-				     conn_curr->hdr.ticks_slot))) {
+				    (ticks_slot_abs +
+				     HAL_TICKER_US_TO_TICKS(RADIO_TIES_US)))) {
 				u32_t status;
 
 				status = conn_update_req(conn_next);
@@ -5134,7 +5140,7 @@ static void sched_free_win_offset_calc(struct connection *conn_curr,
 	}
 
 	ticks_slot_abs += conn_curr->hdr.ticks_slot +
-			  HAL_TICKER_US_TO_TICKS(625 + 1250);
+			  HAL_TICKER_US_TO_TICKS(RADIO_TIES_US + 1250);
 
 	ticker_id = ticker_id_prev = ticker_id_other = 0xFF;
 	ticks_to_expire = ticks_to_expire_prev = ticks_anchor =
@@ -5231,7 +5237,7 @@ static void sched_free_win_offset_calc(struct connection *conn_curr,
 
 			ticks_slot_abs_curr +=
 				conn->hdr.ticks_slot +
-				HAL_TICKER_US_TO_TICKS(625 + 1250);
+				HAL_TICKER_US_TO_TICKS(RADIO_TIES_US + 1250);
 
 			if (*ticks_to_offset_next < ticks_to_expire_normal) {
 				if (ticks_to_expire_prev < *ticks_to_offset_next) {
