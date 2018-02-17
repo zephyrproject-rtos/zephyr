@@ -1,4 +1,4 @@
 tests:
-  test:
+  crypto.hmac_prng:
     min_ram: 48
     tags: crypto sha256 hmac prng

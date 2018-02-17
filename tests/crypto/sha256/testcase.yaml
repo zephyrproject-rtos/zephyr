@@ -1,10 +1,5 @@
 tests:
-  test:
-    arch_whitelist: arm arc x86 posix
+  crypto.sha256:
     min_ram: 48
-    tags: crypto sha256
-    timeout: 600
-  test_nios2:
-    arch_whitelist: nios2
     tags: crypto sha256
     timeout: 600

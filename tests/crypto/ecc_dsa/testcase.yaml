@@ -1,5 +1,5 @@
 tests:
-  test:
+  crypto.ecc_dsa:
     min_ram: 16
     tags: crypto ecc dsa
     timeout: 180
