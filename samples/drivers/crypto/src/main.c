@@ -285,7 +285,7 @@ void ctr_mode(void)
 		SYS_LOG_ERR("CTR mode DECRYPT - Mismatch between plaintext "
 			    "and decypted cipher text");
 		print_buffer_comparison(plaintext,
-					encrypt.out_buf, sizeof(plaintext));
+					decrypt.out_buf, sizeof(plaintext));
 		goto out;
 	}
 
