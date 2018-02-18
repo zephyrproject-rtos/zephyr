@@ -1,0 +1,32 @@
+# Kconfig - EFM32HG MCU line
+#
+# Copyright (c) 2018 Marcio Montenegro
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+choice
+prompt "EFM32 Happy Gecko MCU Selection"
+depends on SOC_SERIES_EFM32HG
+
+config SOC_EFM32HG
+	bool "SOC_EFM32HG"
+	select HAS_SILABS_GECKO
+	select HAS_CMU
+
+endchoice
+
+if SOC_SERIES_EFM32HG
+
+config SOC_PART_NUMBER_EFM32HG322F64
+	bool
+
+config SOC_PART_NUMBER_EXX32_EFM32HG
+	string
+	default "EFM32HG322F64" if SOC_PART_NUMBER_EFM32HG322F64
+	help
+	  This string holds the full part number of the SoC. It is a hidden option
+	  that you should not set directly. The part number selection choice defines
+	  the default value for this string.
+
+endif # SOC_SERIES_EFM32HG
