@@ -9,4 +9,11 @@ target_sources(app PRIVATE
   src/cts.c
 )
 
+target_sources_ifdef(
+  CONFIG_SOC_SERIES_NRF51X
+  app
+  PRIVATE
+  ../gatt/bat.c
+  )
+
 zephyr_library_include_directories($ENV{ZEPHYR_BASE}/samples/bluetooth)
