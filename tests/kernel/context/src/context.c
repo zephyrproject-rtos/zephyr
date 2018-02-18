@@ -191,10 +191,8 @@ static int kernel_init_objects(void)
  * expected to be the tick clock timer which should wake the CPU.  Thus after
  * each call to k_cpu_idle(), the tick count should be one higher.
  *
- * @return TC_PASS on success
- * @return TC_FAIL on failure
  */
-static int test_kernel_cpu_idle(int atomic)
+static void test_kernel_cpu_idle(int atomic)
 {
 	int tms, tms2;;         /* current time in millisecond */
 	int i;                  /* loop variable */
@@ -219,14 +217,10 @@ static int test_kernel_cpu_idle(int atomic)
 		/* calculating milliseconds per tick*/
 		tms += sys_clock_us_per_tick / USEC_PER_MSEC;
 		tms2 = k_uptime_get_32();
-		if (tms2 < tms) {
-			TC_ERROR("Bad ms per tick value computed,"
+		zassert_false(tms2 < tms, "Bad ms per tick value computed,"
 				 "got %d which is less than %d\n",
 				 tms2, tms);
-			return TC_FAIL;
-		}
 	}
-	return TC_PASS;
 }
 #endif
 
@@ -284,10 +278,8 @@ void irq_enable_wrapper(int irq)
  * This routine tests the routines for disabling and enabling interrupts.
  * These include irq_lock() and irq_unlock(), irq_disable() and irq_enable().
  *
- * @return TC_PASS on success
- * @return TC_FAIL on failure
  */
-static int test_kernel_interrupts(disable_int_func disable_int,
+static void test_kernel_interrupts(disable_int_func disable_int,
 				  enable_int_func enable_int, int irq)
 {
 	unsigned long long count = 0;
@@ -339,10 +331,8 @@ static int test_kernel_interrupts(disable_int_func disable_int,
 
 	enable_int(imask);
 
-	if (tick2 != tick) {
-		TC_ERROR("tick advanced with interrupts locked\n");
-		return TC_FAIL;
-	}
+	zassert_equal(tick2, tick,
+			"tick advanced with interrupts locked\n");
 
 	/* Now repeat with interrupts unlocked. */
 	for (i = 0; i < count; i++) {
@@ -353,12 +343,8 @@ static int test_kernel_interrupts(disable_int_func disable_int,
 	}
 
 	tick2 = _tick_get_32();
-	if (tick == tick2) {
-		TC_ERROR("tick didn't advance as expected\n");
-		return TC_FAIL;
-	}
-
-	return TC_PASS;
+	zassert_not_equal(tick, tick2,
+			"tick didn't advance as expected\n");
 }
 
 /**
@@ -370,10 +356,8 @@ static int test_kernel_interrupts(disable_int_func disable_int,
  * interrupted a preemptible thread). Checking those routines with cooperative
  * threads are done elsewhere.
  *
- * @return TC_PASS on success
- * @return TC_FAIL on failure
  */
-static int test_kernel_ctx_task(void)
+static void test_kernel_ctx_task(void)
 {
 	k_tid_t self_thread_id;
 
@@ -385,42 +369,27 @@ static int test_kernel_ctx_task(void)
 	/* isr_info is modified by the isr_handler routine */
 	isr_handler_trigger();
 
-	if (isr_info.error) {
-		TC_ERROR("ISR detected an error\n");
-		return TC_FAIL;
-	}
+	zassert_false(isr_info.error, "ISR detected an error\n");
 
-	if (isr_info.data != (void *)self_thread_id) {
-		TC_ERROR("ISR context ID mismatch\n");
-		return TC_FAIL;
-	}
+	zassert_equal(isr_info.data, (void *)self_thread_id,
+		"ISR context ID mismatch\n");
 
 	TC_PRINT("Testing k_is_in_isr() from an ISR\n");
 	isr_info.command = EXEC_CTX_TYPE_CMD;
 	isr_info.error = 0;
 	isr_handler_trigger();
 
-	if (isr_info.error) {
-		TC_ERROR("ISR detected an error\n");
-		return TC_FAIL;
-	}
+	zassert_false(isr_info.error, "ISR detected an error\n");
 
-	if (isr_info.value != K_ISR) {
-		TC_ERROR("isr_info.value was not K_ISR\n");
-		return TC_FAIL;
-	}
+	zassert_equal(isr_info.value, K_ISR,
+		"isr_info.value was not K_ISR\n");
 
 	TC_PRINT("Testing k_is_in_isr() from a preemptible thread\n");
-	if (k_is_in_isr()) {
-		TC_ERROR("Should not be in ISR context\n");
-		return TC_FAIL;
-	}
-	if (_current->base.prio < 0) {
-		TC_ERROR("Current thread should have preemptible priority\n");
-		return TC_FAIL;
-	}
+	zassert_false(k_is_in_isr(), "Should not be in ISR context\n");
 
-	return TC_PASS;
+	zassert_false(_current->base.prio < 0,
+			"Current thread should have preemptible priority\n");
+
 }
 
 /**
@@ -740,7 +709,7 @@ static void delayed_thread(void *num, void *arg2, void *arg3)
 	k_fifo_put(&timeout_order_fifo, timeout);
 }
 
-static int test_timeout(void)
+static void test_timeout(void)
 {
 	struct timeout_order *data;
 	s32_t timeout;
@@ -758,10 +727,7 @@ static int test_timeout(void)
 
 	rv = k_sem_take(&reply_timeout, timeout * 2);
 
-	if (rv) {
-		TC_ERROR(" *** task timed out waiting for " "k_busy_wait()\n");
-		return TC_FAIL;
-	}
+	zassert_false(rv, " *** task timed out waiting for " "k_busy_wait()\n");
 
 	/* test k_sleep() */
 
@@ -774,11 +740,8 @@ static int test_timeout(void)
 			NULL, K_PRIO_COOP(THREAD_PRIORITY), 0, 0);
 
 	rv = k_sem_take(&reply_timeout, timeout * 2);
-	if (rv) {
-		TC_ERROR(" *** task timed out waiting for thread on "
+	zassert_equal(rv, 0, " *** task timed out waiting for thread on "
 			 "k_sleep().\n");
-		return TC_FAIL;
-	}
 
 	/* test k_thread_create() without cancellation */
 	TC_PRINT("Testing k_thread_create() without cancellation\n");
@@ -793,18 +756,12 @@ static int test_timeout(void)
 	}
 	for (i = 0; i < NUM_TIMEOUT_THREADS; i++) {
 		data = k_fifo_get(&timeout_order_fifo, 750);
-		if (!data) {
-			TC_ERROR
-				(" *** timeout while waiting for"
+		zassert_not_null(data, " *** timeout while waiting for"
 				 " delayed thread\n");
-			return TC_FAIL;
-		}
 
-		if (data->timeout_order != i) {
-			TC_ERROR(" *** wrong delayed thread ran (got %d, "
+		zassert_equal(data->timeout_order, i,
+				" *** wrong delayed thread ran (got %d, "
 				 "expected %d)\n", data->timeout_order, i);
-			return TC_FAIL;
-		}
 
 		TC_PRINT(" got thread (q order: %d, t/o: %d) as expected\n",
 			 data->q_order, data->timeout);
@@ -813,10 +770,7 @@ static int test_timeout(void)
 	/* ensure no more thread fire */
 	data = k_fifo_get(&timeout_order_fifo, 750);
 
-	if (data) {
-		TC_ERROR(" *** got something unexpected in the fifo\n");
-		return TC_FAIL;
-	}
+	zassert_false(data, " *** got something unexpected in the fifo\n");
 
 	/* test k_thread_create() with cancellation */
 	TC_PRINT("Testing k_thread_create() with cancellations\n");
@@ -861,38 +815,26 @@ static int test_timeout(void)
 
 		data = k_fifo_get(&timeout_order_fifo, 2750);
 
-		if (!data) {
-			TC_ERROR
-				(" *** timeout while waiting for"
+		zassert_not_null(data, " *** timeout while waiting for"
 				 " delayed thread\n");
-			return TC_FAIL;
-		}
 
-		if (data->timeout_order != i) {
-			TC_ERROR(" *** wrong delayed thread ran (got %d, "
+		zassert_equal(data->timeout_order, i,
+				" *** wrong delayed thread ran (got %d, "
 				 "expected %d)\n", data->timeout_order, i);
-			return TC_FAIL;
-		}
 
 		TC_PRINT(" got (q order: %d, t/o: %d, t/o order %d) "
 			 "as expected\n", data->q_order, data->timeout,
 			 data->timeout_order);
 	}
 
-	if (num_cancellations != next_cancellation) {
-		TC_ERROR(" *** wrong number of cancellations (expected %d, "
+	zassert_equal(num_cancellations, next_cancellation,
+		" *** wrong number of cancellations (expected %d, "
 			 "got %d\n", num_cancellations, next_cancellation);
-		return TC_FAIL;
-	}
 
 	/* ensure no more thread fire */
 	data = k_fifo_get(&timeout_order_fifo, 750);
-	if (data) {
-		TC_ERROR(" *** got something unexpected in the fifo\n");
-		return TC_FAIL;
-	}
+	zassert_false(data, " *** got something unexpected in the fifo\n");
 
-	return TC_PASS;
 }
 
 /**
@@ -920,23 +862,21 @@ void test_context(void)
 	zassert_equal(rv, TC_PASS, "failure kernel objects\n");
 
 	TC_PRINT("Testing interrupt locking and unlocking\n");
-	rv = test_kernel_interrupts(irq_lock_wrapper, irq_unlock_wrapper, -1);
-	zassert_equal(rv, TC_PASS, "failure kernel interrupts");
+	TC_START("test_kernel_interrupts");
+	test_kernel_interrupts(irq_lock_wrapper, irq_unlock_wrapper, -1);
 #ifdef TICK_IRQ
 	/* Disable interrupts coming from the timer. */
 
 	TC_PRINT("Testing irq_disable() and irq_enable()\n");
-	rv = test_kernel_interrupts(irq_disable_wrapper, irq_enable_wrapper,
+	test_kernel_interrupts(irq_disable_wrapper, irq_enable_wrapper,
 				    TICK_IRQ);
-	zassert_equal(rv, TC_PASS, "kernel interrpt failure");
 #else
 	TC_PRINT("Test of irq_disable() and irq_enable() skipped "
 		"(TICK_IRQ not defined in this platform)\n");
 #endif
 
 	TC_PRINT("Testing some kernel context routines\n");
-	rv = test_kernel_ctx_task();
-	zassert_equal(rv, TC_PASS, "failure kernel ctx task");
+	test_kernel_ctx_task();
 
 	TC_PRINT("Spawning a thread from a task\n");
 	thread_evidence = 0;
@@ -968,17 +908,14 @@ void test_context(void)
 
 	k_sem_give(&sem_thread);
 
-	rv = test_timeout();
-	zassert_equal(rv, TC_PASS, "test timeout\n");
+	test_timeout();
 
 #ifdef HAS_POWERSAVE_INSTRUCTION
 	TC_PRINT("Testing k_cpu_idle()\n");
-	rv = test_kernel_cpu_idle(0);
-	zassert_equal(rv, TC_PASS, "failure test kernel cpu idel");
+	test_kernel_cpu_idle(0);
 #ifndef CONFIG_ARM
 	TC_PRINT("Testing k_cpu_atomic_idle()\n");
-	rv = test_kernel_cpu_idle(1);
-	zassert_equal(rv, TC_PASS, " failure kernel cpu idle");
+	test_kernel_cpu_idle(1);
 #endif
 #endif
 }
