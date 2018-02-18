@@ -241,7 +241,7 @@ extern void thread_12(void);
  * @return  N/A
  */
 
-void user_main(void)
+void test_mutex(void)
 {
 	/*
 	 * Main thread(test_main) priority was 10 but ztest thread runs at
@@ -384,6 +384,6 @@ void test_main(void)
 			      &mutex_1, &mutex_2, &mutex_3, &mutex_4,
 			      &thread_12_thread_data, &thread_12_stack_area,
 			      NULL);
-	ztest_test_suite(test_mutex, ztest_user_unit_test(user_main));
-	ztest_run_test_suite(test_mutex);
+	ztest_test_suite(test_mutex_complex, ztest_user_unit_test(test_mutex));
+	ztest_run_test_suite(test_mutex_complex);
 }
