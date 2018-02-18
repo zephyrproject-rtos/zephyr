@@ -902,7 +902,7 @@ static int test_timeout(void)
  *
  * @return N/A
  */
-void testing_context(void)
+void test_context(void)
 {
 	int rv;                 /* return value from tests */
 
@@ -986,6 +986,6 @@ void testing_context(void)
 /*test case main entry*/
 void test_main(void)
 {
-	ztest_test_suite(test_context, ztest_unit_test(testing_context));
-	ztest_run_test_suite(test_context);
+	ztest_test_suite(testing_context, ztest_unit_test(test_context));
+	ztest_run_test_suite(testing_context);
 }
