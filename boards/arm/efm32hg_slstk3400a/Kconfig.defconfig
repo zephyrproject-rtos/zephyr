@@ -1,0 +1,51 @@
+# Kconfig - EFM32HG SLSTK3400A board
+#
+# Copyright (c) 2018, Marcio Montenegro
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_EFM32HG_SLSTK3400A
+
+config BOARD
+	default "efm32hg_slstk3400a"
+
+config CMU_HFXO_FREQ
+	default 24000000
+
+config CMU_LFXO_FREQ
+	default 32768
+
+if GPIO_GECKO
+
+config GPIO_GECKO_PORTA
+	def_bool y
+
+config GPIO_GECKO_PORTB
+	def_bool n
+
+config GPIO_GECKO_PORTC
+	def_bool y
+
+config GPIO_GECKO_PORTD
+	def_bool n
+
+config GPIO_GECKO_PORTE
+	def_bool n
+
+config GPIO_GECKO_PORTF
+	def_bool y
+
+endif # GPIO_GECKO
+
+if UART_GECKO
+
+config USART_GECKO_1
+	def_bool y
+
+config USART_GECKO_1_GPIO_LOC
+	default 4
+
+endif # UART_GECKO
+
+endif # BOARD_EFM32HG_SLSTK3400A
