@@ -30,7 +30,7 @@ struct gpio_nios2_config {
 static int gpio_nios2_config_oput_port(struct device *dev, int access_op,
 				       u32_t pin, int flags)
 {
-	if ((flags & GPIO_DIR_IN) || (flags & GPIO_INT)) {
+	if (((flags & GPIO_DIR_MASK) == GPIO_DIR_IN) || (flags & GPIO_INT)) {
 		return -ENOTSUP;
 	}
 
