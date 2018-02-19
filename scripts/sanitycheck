@@ -173,6 +173,7 @@ import threading
 import time
 import csv
 import glob
+import serial
 import concurrent
 import concurrent.futures
 import xml.etree.ElementTree as ET
@@ -317,6 +318,86 @@ class Handler:
         ret = (self.state, self.metrics)
         self.lock.release()
         return ret
+
+
+class DeviceHandler(Handler):
+
+    def __init__(self, instance):
+        """Constructor
+
+        @param instance Test Instance
+        """
+        super().__init__(instance)
+
+        self.instance = instance
+        self.timeout = instance.test.timeout
+        self.sourcedir = instance.test.code_location
+        self.outdir = instance.outdir
+        self.run_log = os.path.join(self.outdir, "run.log")
+        self.handler_log = os.path.join(self.outdir, "handler.log")
+        self.returncode = 0
+        self.set_state("running", {})
+
+    def monitor_serial(self, ser, harness):
+        log_out_fp = open(self.handler_log, "wt")
+
+        while ser.isOpen():
+            serial_line = ser.readline().decode('utf-8', 'ignore')
+            if serial_line:
+                verbose("DEVICE: {0}".format(serial_line.rstrip()))
+            log_out_fp.write(serial_line)
+            log_out_fp.flush()
+            harness.handle(serial_line.rstrip())
+            if harness.state:
+                ser.close()
+                break
+
+        log_out_fp.close()
+
+    def handle(self):
+        out_state = "failed"
+
+        device = options.device_serial
+        ser = serial.Serial(
+                device,
+                baudrate=115200,
+                parity=serial.PARITY_NONE,
+                stopbits=serial.STOPBITS_ONE,
+                bytesize=serial.EIGHTBITS,
+                timeout=self.timeout
+                )
+
+        ser.flush()
+
+        harness_name = self.instance.test.harness.capitalize()
+        harness_import = HarnessImporter(harness_name)
+        harness = harness_import.instance
+        harness.configure(self.instance)
+
+        t = threading.Thread(target=self.monitor_serial, args=(ser, harness))
+        t.start()
+
+        if options.ninja:
+            generator_cmd = "ninja"
+        else:
+            generator_cmd = "make"
+
+        command = [generator_cmd, "-C", self.outdir, "flash"]
+
+        subprocess.check_output(command, stderr=subprocess.PIPE)
+
+        t.join(self.timeout)
+        if t.is_alive():
+            out_state = "timeout"
+            ser.close()
+
+        if ser.isOpen():
+            ser.close()
+
+        if harness.state:
+            self.set_state(harness.state, {})
+        else:
+            self.set_state(out_state, {})
 
 class NativeHandler(Handler):
     def __init__(self, instance):
@@ -1002,6 +1083,27 @@ class MakeGenerator:
         self.goals[name] = MakeGoal(name, text, native_handler, self.logfile, build_logfile,
                                     run_logfile, handler_logfile)
 
+    def add_device_goal(self, instance, args):
+
+        outdir = instance.outdir
+        timeout = instance.test.timeout
+        name = instance.name
+        directory = instance.test.code_location
+
+        self._add_goal(outdir)
+        build_logfile = os.path.join(outdir, "build.log")
+        run_logfile = os.path.join(outdir, "run.log")
+        handler_logfile = os.path.join(outdir, "handler.log")
+
+        # we handle running in the NativeHandler class
+        text = (self._get_rule_header(name) +
+                self._get_sub_make(name, "building", directory,
+                                   outdir, build_logfile, args) +
+                self._get_rule_footer(name))
+        handler = DeviceHandler(instance)
+        self.goals[name] = MakeGoal(name, text, handler, self.logfile, build_logfile,
+                                    run_logfile, handler_logfile)
+
     def add_test_instance(self, ti, build_only=False, enable_slow=False, coverage=False,
                           extra_args=[]):
         """Add a goal to build/test a TestInstance object
@@ -1030,6 +1132,8 @@ class MakeGenerator:
 
         elif ti.platform.type == "native" and do_run:
             self.add_native_goal(ti, args, coverage)
+        elif options.device_testing and (not ti.build_only) and (not build_only):
+            self.add_device_goal(ti, args)
         else:
             self.add_instance_build_goal(ti, args, "build.log")
 
@@ -2281,6 +2385,14 @@ def parse_arguments():
         "-j", "--jobs", type=int,
         help="Number of cores to use when building, defaults to "
         "number of CPUs * 2")
+
+    parser.add_argument(
+        "--device-testing", action="store_true",
+        help="Test on device directly. You need to specify the serial"
+			 "using --device-serial option")
+    parser.add_argument(
+        "--device-serial",
+		help="Serial device the board can be accessed through")
     parser.add_argument(
             "--show-footprint", action="store_true",
             help="Show footprint statistics and deltas since last release."
@@ -2489,6 +2601,11 @@ def main():
         for fn in options.size:
             size_report(SizeCalculator(fn, []))
         sys.exit(0)
+
+
+    if options.device_testing:
+        if options.device_serial is None or len(options.platform) != 1:
+            sys.exit(1)
 
     VERBOSE += options.verbose
     INLINE_LOGS = options.inline_logs
