@@ -1876,6 +1876,17 @@ done:
 	return 0;
 }
 
+void net_if_carrier_down(struct net_if *iface)
+{
+	NET_DBG("iface %p", iface);
+
+	atomic_clear_bit(iface->flags, NET_IF_UP);
+
+	net_if_flush_tx(iface);
+
+	net_mgmt_event_notify(NET_EVENT_IF_DOWN, iface);
+}
+
 int net_if_down(struct net_if *iface)
 {
 	int status;
