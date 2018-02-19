@@ -32,6 +32,7 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/l2cap.h>
 
+#include "net_private.h"
 #include "ipv6.h"
 
 #define L2CAP_IPSP_PSM 0x0023
@@ -163,7 +164,7 @@ static void ipsp_disconnected(struct bt_l2cap_chan *chan)
 	NET_DBG("Channel %p disconnected", chan);
 
 	/* Set iface down */
-	net_if_down(ctxt->iface);
+	net_if_carrier_down(ctxt->iface);
 
 #if defined(CONFIG_NET_L2_BT_MGMT)
 	if (chan->conn != default_conn) {
