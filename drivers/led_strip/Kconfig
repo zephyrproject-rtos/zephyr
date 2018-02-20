@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2017 Linaro Limited
+# Copyright (c) 2018 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -45,6 +46,8 @@ config LED_STRIP_RGB_SCRATCH
 source "drivers/led_strip/Kconfig.lpd880x"
 
 source "drivers/led_strip/Kconfig.ws2812"
+
+source "drivers/led_strip/Kconfig.ws2812b_sw"
 
 source "drivers/led_strip/Kconfig.apa102"
 
