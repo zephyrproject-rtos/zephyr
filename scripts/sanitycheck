@@ -2161,6 +2161,10 @@ def parse_arguments():
         help="Number of cores to use when building, defaults to "
         "number of CPUs * 2")
     parser.add_argument(
+            "--show-footprint", action="store_true",
+            help="Show footprint statistics and deltas since last release."
+            )
+    parser.add_argument(
         "-H", "--footprint-threshold", type=float, default=5,
         help="When checking test case footprint sizes, warn the user if "
         "the new app size is greater then the specified percentage "
@@ -2480,7 +2484,7 @@ def main():
 
     deltas = ts.compare_metrics(report_to_use)
     warnings = 0
-    if deltas:
+    if deltas and options.show_footprint:
         for i, metric, value, delta, lower_better in deltas:
             if not options.all_deltas and ((delta < 0 and lower_better) or
                                         (delta > 0 and not lower_better)):
