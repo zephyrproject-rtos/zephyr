@@ -1432,6 +1432,12 @@ static enum net_verdict handle_ns_input(struct net_pkt *pkt)
 				goto drop;
 			}
 
+			if (nd_opt_hdr->len > 2) {
+				NET_ERR("Too long source link-layer address "
+					"in NS option");
+				goto drop;
+			}
+
 			handle_ns_neighbor(pkt, nd_opt_hdr->len,
 					   net_pkt_ip_hdr_len(pkt) +
 					   net_pkt_ipv6_ext_len(pkt) +
