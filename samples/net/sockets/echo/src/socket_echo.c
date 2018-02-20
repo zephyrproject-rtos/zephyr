@@ -5,6 +5,7 @@
  */
 
 #include <stdio.h>
+#include <errno.h>
 
 #ifndef __ZEPHYR__
 
@@ -51,15 +52,30 @@ int main(void)
 		printf("Connection #%d from %s\n", counter++, addr_str);
 
 		while (1) {
-			char buf[128];
+			char buf[128], *p;
 			int len = recv(client, buf, sizeof(buf), 0);
+			int out_len;
 
-			if (len == 0) {
+			if (len <= 0) {
+				if (len < 0) {
+					printf("error: recv: %d\n", errno);
+				}
 				break;
 			}
-			send(client, buf, len, 0);
+
+			p = buf;
+			do {
+				out_len = send(client, p, len, 0);
+				if (out_len < 0) {
+					printf("error: send: %d\n", errno);
+					goto error;
+				}
+				p += out_len;
+				len -= out_len;
+			} while (len);
 		}
 
+error:
 		close(client);
 		printf("Connection from %s closed\n", addr_str);
 	}
