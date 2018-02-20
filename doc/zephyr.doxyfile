@@ -830,7 +830,9 @@ EXCLUDE_PATTERNS       =
 # Note that the wildcards are matched against the file with absolute path, so to
 # exclude all test directories use the pattern */test/*
 
-EXCLUDE_SYMBOLS        =
+# Hide internal names (starting with an underscore, and doxygen-generated names
+# for nested unnamed unions that don't generate meaningful sphinx output anyway.
+EXCLUDE_SYMBOLS        = _*, *.__unnamed__
 
 # The EXAMPLE_PATH tag can be used to specify one or more files or directories
 # that contain example code fragments that are included (see the \include
