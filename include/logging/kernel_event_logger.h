@@ -20,10 +20,10 @@ extern "C" {
 
 /* predefined event types */
 
-#define KERNEL_EVENT_LOGGER_CONTEXT_SWITCH_EVENT_ID             0x0001
-#define KERNEL_EVENT_LOGGER_INTERRUPT_EVENT_ID                  0x0002
-#define KERNEL_EVENT_LOGGER_SLEEP_EVENT_ID                      0x0003
-#define KERNEL_EVENT_LOGGER_THREAD_EVENT_ID                     0x0004
+#define KERNEL_EVENT_LOGGER_CONTEXT_SWITCH_EVENT_ID             BIT(0)
+#define KERNEL_EVENT_LOGGER_INTERRUPT_EVENT_ID                  BIT(1)
+#define KERNEL_EVENT_LOGGER_SLEEP_EVENT_ID                      BIT(2)
+#define KERNEL_EVENT_LOGGER_THREAD_EVENT_ID                     BIT(3)
 
 #ifndef _ASMLANGUAGE
 
@@ -174,7 +174,7 @@ static inline int sys_k_event_logger_get_mask(void)
 static inline int sys_k_must_log_event(int event_type)
 {
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_DYNAMIC
-	return !!(_sys_k_event_logger_mask & (1 << (event_type - 1)));
+	return !!(_sys_k_event_logger_mask & event_type);
 #else
 	ARG_UNUSED(event_type);
 
