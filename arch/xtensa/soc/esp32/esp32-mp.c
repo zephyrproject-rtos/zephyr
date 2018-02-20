@@ -3,9 +3,12 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/* Include esp-idf headers first to avoid redefining BIT() macro */
+#include <soc.h>
+
 #include <zephyr.h>
 #include <kernel_structs.h>
-#include <soc.h>
 
 #define _REG(base, off) (*(volatile u32_t *)((base) + (off)))
 
