@@ -1248,7 +1248,7 @@ u16_t net_pkt_append(struct net_pkt *pkt, u16_t len, const u8_t *data,
 }
 
 /* Helper routine to retrieve single byte from fragment and move
- * offset. If required byte is last byte in framgent then return
+ * offset. If required byte is last byte in fragment then return
  * next fragment and set offset = 0.
  */
 static inline struct net_buf *net_frag_read_byte(struct net_buf *frag,
