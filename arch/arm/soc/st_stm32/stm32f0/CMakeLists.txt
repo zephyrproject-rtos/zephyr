@@ -1,3 +1,5 @@
 zephyr_include_directories(${ZEPHYR_BASE}/drivers)
 zephyr_sources(soc.c)
-zephyr_sources_ifdef(CONFIG_GPIO soc_gpio.c)
+if(!CONFIG_PINCTRL)
+zephyr_sources_ifdef(CONFIG_GPIO_STM32 soc_gpio.c)
+endif()

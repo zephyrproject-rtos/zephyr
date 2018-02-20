@@ -1,5 +1,8 @@
 zephyr_library()
 
+if(CONFIG_PINCTRL)
+zephyr_library_sources_codegen_ifdef(CONFIG_GPIO_STM32      gpio_pinctrl_stm32.c)
+else()
 zephyr_library_sources_ifdef(CONFIG_GPIO_ALTERA_NIOS2 gpio_altera_nios2.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_ATMEL_SAM3 gpio_atmel_sam3.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_CC2650     gpio_cc2650.c)
@@ -24,5 +27,6 @@ zephyr_library_sources_ifdef(CONFIG_GPIO_STM32      gpio_stm32.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_SAM0       gpio_sam0.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_SAM        gpio_sam.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_SX1509B    gpio_sx1509b.c)
+endif()
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE   gpio_handlers.c)

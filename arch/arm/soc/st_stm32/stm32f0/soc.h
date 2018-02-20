@@ -49,6 +49,13 @@
 #include <stm32f0xx_ll_system.h>
 #endif
 
+#ifdef CONFIG_GPIO_STM32
+#include <stm32f0xx_ll_bus.h>
+#include <stm32f0xx_ll_exti.h>
+#include <stm32f0xx_ll_gpio.h>
+#include <stm32f0xx_ll_system.h>
+#endif
+
 #ifdef CONFIG_IWDG_STM32
 #include <stm32f0xx_ll_iwdg.h>
 #endif
