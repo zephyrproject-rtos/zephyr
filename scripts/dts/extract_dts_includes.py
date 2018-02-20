@@ -272,7 +272,7 @@ def extract_reg_prop(node_address, names, defs, def_label, div, post_label):
     address_cells = reduced['/']['props'].get('#address-cells')
     size_cells = reduced['/']['props'].get('#size-cells')
     address = ''
-    for comp in node_address.split('/')[1:]:
+    for comp in node_address.split('/')[1:-1]:
         address += '/' + comp
         address_cells = reduced[address]['props'].get(
             '#address-cells', address_cells)
