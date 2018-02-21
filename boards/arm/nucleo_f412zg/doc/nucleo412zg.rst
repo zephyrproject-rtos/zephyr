@@ -79,6 +79,10 @@ The Zephyr nucleo_412zg board configuration supports the following hardware feat
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
+| USB       | on-chip    | usb                                 |
++-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
 +-----------+------------+-------------------------------------+
 
@@ -129,6 +133,10 @@ Default Zephyr Peripheral Mapping:
 - LD1 : PB0
 - LD2 : PB7
 - LD3 : PB14
+- I2C1 SCL : PB8
+- I2C1 SDA : PB9
+- USB DM : PA11
+- USB DP : PA12
 
 System Clock
 ------------
