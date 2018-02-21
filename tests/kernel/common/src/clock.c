@@ -114,3 +114,13 @@ void test_clock_cycle(void)
 			     (NSEC_PER_SEC / MSEC_PER_SEC), NULL);
 	}
 }
+
+void verify_bootdelay(void)
+{
+	u32_t current_cycles = k_cycle_get_32();
+
+	/* compare this with the boot delay specified */
+	zassert_true(SYS_CLOCK_HW_CYCLES_TO_NS64(current_cycles) >
+		     (CONFIG_BOOT_DELAY * NSEC_PER_USEC * USEC_PER_MSEC),
+		     "boot delay not executed");
+}

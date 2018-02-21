@@ -2,3 +2,6 @@ tests:
   kernel.common:
     tags: kernel
     min_ram: 16
+  kernel.common.bootdelay:
+    extra_configs:
+      - CONFIG_BOOT_DELAY=1000
