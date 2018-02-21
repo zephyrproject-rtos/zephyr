@@ -2196,7 +2196,7 @@ int _net_app_tls_init(struct net_app_ctx *ctx, int client_or_server)
 	mbedtls_ctr_drbg_init(&ctx->tls.mbedtls.ctr_drbg);
 
 #if defined(MBEDTLS_DEBUG_C) && defined(CONFIG_NET_DEBUG_APP)
-	mbedtls_debug_set_threshold(DEBUG_THRESHOLD);
+	mbedtls_debug_set_threshold(CONFIG_MBEDTLS_DEBUG_LEVEL);
 	mbedtls_ssl_conf_dbg(&ctx->tls.mbedtls.conf, my_debug, NULL);
 #endif
 
