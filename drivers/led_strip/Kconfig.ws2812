@@ -49,19 +49,17 @@ config WS2812_STRIP_SPI_DEV_NAME
 
 config WS2812_STRIP_SPI_BAUD_RATE
 	int "Baud rate to use to drive LED strip"
-	default 5250000
+	default 5250000 if SOC_SERIES_STM32F4X
 	help
 		SPI clock rate, in Hz, to use while driving the strip.
 		The baud rate must be chosen carefully together with the
 		WS2812_STRIP_SPI_ONE_FRAME and WS2812_STRIP_SPI_ZERO_FRAME
 		values so that the transmitted frames meet the chipset
-		pulse widths for one and zero bits. If unsure, keep the default,
-		but enable SPI debug logging for your device and make sure the
-		configuration is matched exactly at runtime.
+		pulse widths for one and zero bits.
 
 config WS2812_STRIP_ONE_FRAME
 	hex "SPI frame to shift out to signal a one bit"
-	default 0x7c
+	default 0x7c if SOC_SERIES_STM32F4X
 	help
 		When shifted out at the configured clock frequency,
 		this must generate a pulse whose width fits within the chipset
@@ -72,7 +70,7 @@ config WS2812_STRIP_ONE_FRAME
 
 config WS2812_STRIP_ZERO_FRAME
 	hex "SPI frame to shift out to signal a zero bit"
-	default 0x60
+	default 0x60 if SOC_SERIES_STM32F4X
 	help
 		When shifted out at the configured clock frequency,
 		this must generate a pulse whose width fits within the chipset
