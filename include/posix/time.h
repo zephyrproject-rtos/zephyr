@@ -14,19 +14,38 @@ extern "C" {
 #include_next <time.h>
 #else
 struct timespec {
-	s32_t tv_sec;
-	s32_t tv_nsec;
+	signed int  tv_sec;
+	signed int  tv_nsec;
+};
+
+struct itimerspec {
+	struct timespec it_interval;  /* Timer interval */
+	struct timespec it_value;     /* Timer expiration */
 };
 #endif /* CONFIG_NEWLIB_LIBC */
+
 #include <kernel.h>
 #include <errno.h>
 #include "sys/types.h"
+#include "signal.h"
 
+#ifndef CLOCK_REALTIME
+#define CLOCK_REALTIME 0
+#endif
+
+#ifndef CLOCK_MONOTONIC
 #define CLOCK_MONOTONIC 1
+#endif
+
+#define NSEC_PER_MSEC (NSEC_PER_USEC * USEC_PER_MSEC)
+
+#ifndef TIMER_ABSTIME
+#define TIMER_ABSTIME 4
+#endif
 
 static inline s32_t _ts_to_ms(const struct timespec *to)
 {
-	return (to->tv_sec * 1000) + (to->tv_nsec / 1000000);
+	return (to->tv_sec * MSEC_PER_SEC) + (to->tv_nsec / NSEC_PER_MSEC);
 }
 
 /**
@@ -41,6 +60,12 @@ static inline int clock_settime(clockid_t clock_id, const struct timespec *ts)
 }
 
 int clock_gettime(clockid_t clock_id, struct timespec *ts);
+/* Timer APIs */
+int timer_create(clockid_t clockId, struct sigevent *evp, timer_t *timerid);
+int timer_delete(timer_t timerid);
+int timer_gettime(timer_t timerid, struct itimerspec *its);
+int timer_settime(timer_t timerid, int flags, const struct itimerspec *value,
+		  struct itimerspec *ovalue);
 
 #ifdef __cplusplus
 }

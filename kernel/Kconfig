@@ -512,6 +512,14 @@ config MAX_PTHREAD_COUNT
 	range 0 255
 	help
 	  Mention maximum number of threads in POSIX compliant application.
+
+config MAX_TIMER_COUNT
+	int
+	prompt "Maximum timer count in POSIX application"
+	default 5
+	range 0 255
+	help
+	  Mention maximum number of timers in POSIX compliant application.
 endif
 endmenu
 
