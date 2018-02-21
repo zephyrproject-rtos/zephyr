@@ -38,7 +38,7 @@ void test_main(void)
 {
 	k_thread_access_grant(k_current_get(), &tdata, tstack, NULL);
 
-	ztest_test_suite(test_threads_lifecycle,
+	ztest_test_suite(threads_lifecycle,
 			 ztest_user_unit_test(test_threads_spawn_params),
 			 ztest_unit_test(test_threads_spawn_priority),
 			 ztest_user_unit_test(test_threads_spawn_delay),
@@ -59,5 +59,5 @@ void test_main(void)
 			 ztest_unit_test(test_abort_handler),
 			 ztest_unit_test(test_essential_thread_operation)
 			 );
-	ztest_run_test_suite(test_threads_lifecycle);
+	ztest_run_test_suite(threads_lifecycle);
 }

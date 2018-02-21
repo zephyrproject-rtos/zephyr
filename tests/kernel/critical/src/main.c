@@ -22,8 +22,8 @@ extern void test_critical(void);
 /*test case main entry*/
 void test_main(void)
 {
-	ztest_test_suite(kernel_critical_test,
-		ztest_unit_test(test_critical));
-
-	ztest_run_test_suite(kernel_critical_test);
+	ztest_test_suite(kernel_critical,
+			 ztest_unit_test(test_critical)
+			 );
+	ztest_run_test_suite(kernel_critical);
 }

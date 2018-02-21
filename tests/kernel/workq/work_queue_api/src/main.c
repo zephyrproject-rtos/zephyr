@@ -23,7 +23,7 @@ extern void test_work_resubmit_to_queue(void);
 /*test case main entry*/
 void test_main(void)
 {
-	ztest_test_suite(test_workq_api,
+	ztest_test_suite(workqueue_api,
 			 ztest_unit_test(test_workq_start_before_submit),/*keep first!*/
 			 ztest_unit_test(test_work_submit_to_multipleq),
 			 ztest_unit_test(test_work_resubmit_to_queue),
@@ -39,5 +39,5 @@ void test_main(void)
 			 ztest_unit_test(test_delayed_work_cancel_from_queue_isr),
 			 ztest_unit_test(test_delayed_work_cancel_thread),
 			 ztest_unit_test(test_delayed_work_cancel_isr));
-	ztest_run_test_suite(test_workq_api);
+	ztest_run_test_suite(workqueue_api);
 }

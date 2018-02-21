@@ -45,7 +45,7 @@ void test_tracing(void)
 
 void test_main(void)
 {
-	ztest_test_suite(test_obj_tracing,
+	ztest_test_suite(obj_tracing,
 			ztest_unit_test(test_tracing));
-	ztest_run_test_suite(test_obj_tracing);
+	ztest_run_test_suite(obj_tracing);
 }

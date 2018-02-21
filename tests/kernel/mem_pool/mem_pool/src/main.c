@@ -360,11 +360,11 @@ K_THREAD_DEFINE(t_helper, STACKSIZE, helper_task, NULL, NULL, NULL,
 /*test case main entry*/
 void test_main(void)
 {
-	ztest_test_suite(test_mempool,
+	ztest_test_suite(mempool,
 			 ztest_unit_test(test_pool_block_get),
 			 ztest_unit_test(test_pool_block_get_timeout),
 			 ztest_unit_test(test_pool_block_get_wait),
 			 ztest_unit_test(test_pool_malloc)
 			 );
-	ztest_run_test_suite(test_mempool);
+	ztest_run_test_suite(mempool);
 }

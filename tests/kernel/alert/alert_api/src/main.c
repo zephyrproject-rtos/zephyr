@@ -398,7 +398,7 @@ void test_main(void)
 				      signal_task, NULL, NULL, NULL,
 				      K_PRIO_PREEMPT(0), 0, 0);
 
-	ztest_test_suite(test_alert_api,
+	ztest_test_suite(alert_api,
 			 ztest_unit_test(test_thread_alert_timeout),
 			 ztest_unit_test(test_thread_alert_wait),
 			 ztest_unit_test(test_thread_alert_handler),
@@ -412,5 +412,5 @@ void test_main(void)
 			 ztest_unit_test(test_isr_alert_pending),
 			 ztest_user_unit_test(test_thread_kinit_alert),
 			 ztest_unit_test(test_isr_kinit_alert));
-	ztest_run_test_suite(test_alert_api);
+	ztest_run_test_suite(alert_api);
 }

@@ -42,7 +42,7 @@ void test_mp_start(void)
 
 void test_main(void)
 {
-	ztest_test_suite(test_mp,
+	ztest_test_suite(multiprocessing,
 			 ztest_unit_test(test_mp_start));
-	ztest_run_test_suite(test_mp);
+	ztest_run_test_suite(multiprocessing);
 }

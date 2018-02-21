@@ -31,12 +31,12 @@ void test_main(void)
 			      &kpipe, &pipe, &end_sema, &tdata, &tstack,
 			      &put_get_pipe, NULL);
 
-	ztest_test_suite(test_pipe_api,
+	ztest_test_suite(pipe_api,
 			 ztest_user_unit_test(test_pipe_thread2thread),
 			 ztest_user_unit_test(test_pipe_put_fail),
 			 ztest_user_unit_test(test_pipe_get_fail),
 			 ztest_unit_test(test_pipe_block_put),
 			 ztest_unit_test(test_pipe_block_put_sema),
 			 ztest_unit_test(test_pipe_get_put));
-	ztest_run_test_suite(test_pipe_api);
+	ztest_run_test_suite(pipe_api);
 }

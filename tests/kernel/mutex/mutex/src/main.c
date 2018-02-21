@@ -384,6 +384,6 @@ void test_main(void)
 			      &mutex_1, &mutex_2, &mutex_3, &mutex_4,
 			      &thread_12_thread_data, &thread_12_stack_area,
 			      NULL);
-	ztest_test_suite(test_mutex_complex, ztest_user_unit_test(test_mutex));
-	ztest_run_test_suite(test_mutex_complex);
+	ztest_test_suite(mutex_complex, ztest_user_unit_test(test_mutex));
+	ztest_run_test_suite(mutex_complex);
 }

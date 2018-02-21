@@ -121,10 +121,10 @@ void test_main(void)
 	k_thread_access_grant(k_current_get(), &ksema, &tdata, &sema, &tstack,
 			      NULL);
 
-	ztest_test_suite(test_sema_api,
+	ztest_test_suite(sema_api,
 			 ztest_user_unit_test(test_sema_thread2thread),
 			 ztest_unit_test(test_sema_thread2isr),
 			 ztest_user_unit_test(test_sema_reset),
 			 ztest_user_unit_test(test_sema_count_get));
-	ztest_run_test_suite(test_sema_api);
+	ztest_run_test_suite(sema_api);
 }

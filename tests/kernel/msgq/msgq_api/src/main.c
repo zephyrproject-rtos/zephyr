@@ -32,7 +32,7 @@ void test_main(void)
 	k_thread_access_grant(k_current_get(), &kmsgq, &msgq, &end_sema,
 			      &tdata, &tstack, NULL);
 
-	ztest_test_suite(test_msgq_api,
+	ztest_test_suite(msgq_api,
 			 ztest_user_unit_test(test_msgq_thread),
 			 ztest_user_unit_test(test_msgq_thread_overflow),
 			 ztest_unit_test(test_msgq_isr),
@@ -40,5 +40,5 @@ void test_main(void)
 			 ztest_user_unit_test(test_msgq_get_fail),
 			 ztest_user_unit_test(test_msgq_attrs_get),
 			 ztest_user_unit_test(test_msgq_purge_when_put));
-	ztest_run_test_suite(test_msgq_api);
+	ztest_run_test_suite(msgq_api);
 }

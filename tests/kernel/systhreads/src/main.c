@@ -19,8 +19,8 @@
 void test_main(void)
 {
 	test_systhreads_setup();
-	ztest_test_suite(test_systhreads,
+	ztest_test_suite(systhreads,
 		ztest_unit_test(test_systhreads_main),
 		ztest_unit_test(test_systhreads_idle));
-	ztest_run_test_suite(test_systhreads);
+	ztest_run_test_suite(systhreads);
 }

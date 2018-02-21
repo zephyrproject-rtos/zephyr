@@ -70,6 +70,6 @@ void test_timer(void)
 
 void test_main(void)
 {
-	ztest_test_suite(test_timer_fn, ztest_unit_test(test_timer));
-	ztest_run_test_suite(test_timer_fn);
+	ztest_test_suite(timer_fn, ztest_unit_test(test_timer));
+	ztest_run_test_suite(timer_fn);
 }

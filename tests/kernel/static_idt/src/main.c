@@ -200,9 +200,9 @@ void test_static_idt(void)
 
 void test_main(void)
 {
-	ztest_test_suite(test_static_idt,
+	ztest_test_suite(static_idt,
 			 ztest_unit_test(test_idt_stub),
 			 ztest_unit_test(test_static_idt)
 			 );
-	ztest_run_test_suite(test_static_idt);
+	ztest_run_test_suite(static_idt);
 }
