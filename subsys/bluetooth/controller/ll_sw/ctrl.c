@@ -19,10 +19,10 @@
 
 #if defined(CONFIG_SOC_FAMILY_NRF5)
 #include "hal/nrf5/ticker.h"
+#include <drivers/entropy/nrf5_entropy.h>
 #endif /* CONFIG_SOC_FAMILY_NRF5 */
 
 #include "hal/cpu.h"
-#include "hal/rand.h"
 #include "hal/ecb.h"
 #include "hal/ccm.h"
 #include "hal/radio.h"
@@ -155,6 +155,7 @@ struct scanner {
 
 static struct {
 	struct device *hf_clock;
+	struct device *entropy;
 
 	u32_t ticks_anchor;
 	u32_t remainder_anchor;
@@ -351,7 +352,8 @@ static void rx_fc_lock(u16_t handle);
 /*****************************************************************************
  *RADIO
  ****************************************************************************/
-u32_t radio_init(void *hf_clock, u8_t sca, u8_t connection_count_max,
+u32_t radio_init(void *hf_clock, u8_t sca, void *entropy,
+		 u8_t connection_count_max,
 		 u8_t rx_count_max, u8_t tx_count_max,
 		 u16_t packet_data_octets_max,
 		 u16_t packet_tx_data_size, u8_t *mem_radio,
@@ -365,6 +367,9 @@ u32_t radio_init(void *hf_clock, u8_t sca, u8_t connection_count_max,
 
 	/* initialise SCA */
 	_radio.sca = sca;
+
+	/* intialise entropy device to use in ISRs */
+	_radio.entropy = entropy;
 
 	/* initialised radio mem end variable */
 	mem_radio_end = mem_radio + mem_size;
@@ -3892,7 +3897,8 @@ static inline u32_t isr_close_adv(void)
 			u32_t ticker_status;
 			u8_t random_delay;
 
-			rand_isr_get(sizeof(random_delay), &random_delay);
+			entropy_get_entropy_isr(_radio.entropy, &random_delay,
+						sizeof(random_delay));
 			random_delay %= 10;
 			random_delay += 1;
 
@@ -9301,10 +9307,10 @@ static void enc_req_reused_send(struct connection *conn,
 	pdu_ctrl_tx->llctrl.enc_req.ediv[1] =
 		conn->llcp.encryption.ediv[1];
 	/* NOTE: if not sufficient random numbers, ignore waiting */
-	rand_isr_get(sizeof(pdu_ctrl_tx->llctrl.enc_req.skdm),
-		     pdu_ctrl_tx->llctrl.enc_req.skdm);
-	rand_isr_get(sizeof(pdu_ctrl_tx->llctrl.enc_req.ivm),
-		     pdu_ctrl_tx->llctrl.enc_req.ivm);
+	entropy_get_entropy_isr(_radio.entropy, pdu_ctrl_tx->llctrl.enc_req.skdm,
+				sizeof(pdu_ctrl_tx->llctrl.enc_req.skdm));
+	entropy_get_entropy_isr(_radio.entropy, pdu_ctrl_tx->llctrl.enc_req.ivm,
+				sizeof(pdu_ctrl_tx->llctrl.enc_req.ivm));
 }
 
 static u8_t enc_rsp_send(struct connection *conn)
@@ -9324,10 +9330,10 @@ static u8_t enc_rsp_send(struct connection *conn)
 			   sizeof(struct pdu_data_llctrl_enc_rsp);
 	pdu_ctrl_tx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_ENC_RSP;
 	/* NOTE: if not sufficient random numbers, ignore waiting */
-	rand_isr_get(sizeof(pdu_ctrl_tx->llctrl.enc_rsp.skds),
-		     pdu_ctrl_tx->llctrl.enc_rsp.skds);
-	rand_isr_get(sizeof(pdu_ctrl_tx->llctrl.enc_rsp.ivs),
-		     pdu_ctrl_tx->llctrl.enc_rsp.ivs);
+	entropy_get_entropy_isr(_radio.entropy, pdu_ctrl_tx->llctrl.enc_rsp.skds,
+				sizeof(pdu_ctrl_tx->llctrl.enc_rsp.skds));
+	entropy_get_entropy_isr(_radio.entropy, pdu_ctrl_tx->llctrl.enc_rsp.ivs,
+				sizeof(pdu_ctrl_tx->llctrl.enc_rsp.ivs));
 
 	/* things from slave stored for session key calculation */
 	memcpy(&conn->llcp.encryption.skd[8],

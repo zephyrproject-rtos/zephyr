@@ -9,20 +9,21 @@
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
 #include "common/log.h"
 
-#include "hal/cpu.h"
-#include "hal/rand.h"
 #include "hal/ecb.h"
-
-K_MUTEX_DEFINE(mutex_rand);
 
 int bt_rand(void *buf, size_t len)
 {
 	while (len) {
-		k_mutex_lock(&mutex_rand, K_FOREVER);
-		len = rand_get(len, buf);
-		k_mutex_unlock(&mutex_rand);
-		if (len) {
-			cpu_sleep();
+		u32_t v = sys_rand32_get();
+
+		if (len >= sizeof(v)) {
+			memcpy(buf, &v, sizeof(v));
+
+			buf += sizeof(v);
+			len -= sizeof(v);
+		} else {
+			memcpy(buf, &v, len);
+			break;
 		}
 	}
 

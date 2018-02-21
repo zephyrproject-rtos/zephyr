@@ -21,7 +21,6 @@
 
 #include "hal/cpu.h"
 #include "hal/cntr.h"
-#include "hal/rand.h"
 #include "hal/ccm.h"
 #include "hal/radio.h"
 #include "hal/debug.h"
@@ -44,12 +43,6 @@
 #include "ll_filter.h"
 
 /* Global singletons */
-
-/* memory for storing Random number */
-#define RAND_THREAD_THRESHOLD 4  /* atleast access address */
-#define RAND_ISR_THRESHOLD    12 /* atleast encryption div. and iv */
-static u8_t MALIGN(4) rand_context[4 + RAND_THREAD_THRESHOLD + 1];
-static u8_t MALIGN(4) rand_isr_context[4 + RAND_ISR_THRESHOLD + 1];
 
 #if defined(CONFIG_SOC_FLASH_NRF5_RADIO_SYNC)
 #define FLASH_TICKER_NODES        1 /* No. of tickers reserved for flashing */
@@ -121,11 +114,6 @@ static void rtc0_nrf5_isr(void *arg)
 	mayfly_run(MAYFLY_CALL_ID_0);
 }
 
-static void rng_nrf5_isr(void *arg)
-{
-	isr_rand(arg);
-}
-
 static void swi4_nrf5_isr(void *arg)
 {
 	mayfly_run(MAYFLY_CALL_ID_1);
@@ -135,14 +123,10 @@ int ll_init(struct k_sem *sem_rx)
 {
 	struct device *clk_k32;
 	struct device *clk_m16;
+	struct device *entropy;
 	u32_t err;
 
 	sem_recv = sem_rx;
-
-	/* TODO: bind and use RNG driver */
-	rand_init(rand_context, sizeof(rand_context), RAND_THREAD_THRESHOLD);
-	rand_isr_init(rand_isr_context, sizeof(rand_isr_context),
-		      RAND_ISR_THRESHOLD);
 
 	clk_k32 = device_get_binding(CONFIG_CLOCK_CONTROL_NRF5_K32SRC_DRV_NAME);
 	if (!clk_k32) {
@@ -150,6 +134,11 @@ int ll_init(struct k_sem *sem_rx)
 	}
 
 	clock_control_on(clk_k32, (void *)CLOCK_CONTROL_NRF5_K32SRC);
+
+	entropy = device_get_binding(CONFIG_ENTROPY_NAME);
+	if (!entropy) {
+		return -ENODEV;
+	}
 
 	/* TODO: bind and use counter driver */
 	cntr_init();
@@ -175,7 +164,7 @@ int ll_init(struct k_sem *sem_rx)
 		return -ENODEV;
 	}
 
-	err = radio_init(clk_m16, CLOCK_CONTROL_NRF5_K32SRC_ACCURACY,
+	err = radio_init(clk_m16, CLOCK_CONTROL_NRF5_K32SRC_ACCURACY, entropy,
 			 RADIO_CONNECTION_CONTEXT_MAX,
 			 RADIO_PACKET_COUNT_RX_MAX,
 			 RADIO_PACKET_COUNT_TX_MAX,
@@ -195,12 +184,10 @@ int ll_init(struct k_sem *sem_rx)
 		    rtc0_nrf5_isr, NULL, 0);
 	IRQ_CONNECT(NRF5_IRQ_SWI4_IRQn, CONFIG_BT_CTLR_JOB_PRIO, swi4_nrf5_isr,
 		    NULL, 0);
-	IRQ_CONNECT(NRF5_IRQ_RNG_IRQn, 1, rng_nrf5_isr, NULL, 0);
 
 	irq_enable(NRF5_IRQ_RADIO_IRQn);
 	irq_enable(NRF5_IRQ_RTC0_IRQn);
 	irq_enable(NRF5_IRQ_SWI4_IRQn);
-	irq_enable(NRF5_IRQ_RNG_IRQn);
 
 	return 0;
 }
