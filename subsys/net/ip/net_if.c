@@ -1835,7 +1835,9 @@ void net_if_foreach(net_if_cb_t cb, void *user_data)
 
 int net_if_up(struct net_if *iface)
 {
+#if !defined(CONFIG_NET_OFFLOAD)
 	int status;
+#endif
 
 	NET_DBG("iface %p", iface);
 
@@ -1843,6 +1845,7 @@ int net_if_up(struct net_if *iface)
 		return 0;
 	}
 
+#if !defined(CONFIG_NET_OFFLOAD)
 	/* If the L2 does not support enable just set the flag */
 	if (!iface->l2->enable) {
 		goto done;
@@ -1855,6 +1858,7 @@ int net_if_up(struct net_if *iface)
 	}
 
 done:
+#endif
 	atomic_set_bit(iface->flags, NET_IF_UP);
 
 #if defined(CONFIG_NET_IPV6_DAD)
@@ -1889,7 +1893,9 @@ void net_if_carrier_down(struct net_if *iface)
 
 int net_if_down(struct net_if *iface)
 {
+#if !defined(CONFIG_NET_OFFLOAD)
 	int status;
+#endif
 
 	NET_DBG("iface %p", iface);
 
@@ -1897,6 +1903,7 @@ int net_if_down(struct net_if *iface)
 
 	net_if_flush_tx(iface);
 
+#if !defined(CONFIG_NET_OFFLOAD)
 	/* If the L2 does not support enable just clear the flag */
 	if (!iface->l2->enable) {
 		goto done;
@@ -1909,6 +1916,7 @@ int net_if_down(struct net_if *iface)
 	}
 
 done:
+#endif
 	atomic_clear_bit(iface->flags, NET_IF_UP);
 
 	net_mgmt_event_notify(NET_EVENT_IF_DOWN, iface);
