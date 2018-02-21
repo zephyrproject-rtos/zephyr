@@ -34,7 +34,11 @@ struct entropy_nrf5_dev_data {
 #define DEV_DATA(dev) \
 	((struct entropy_nrf5_dev_data *)(dev)->driver_data)
 
-static u8_t get(struct rand *rng, u8_t octets, u8_t *rand)
+#pragma GCC push_options
+#if defined(CONFIG_BT_CTLR_FAST_ENC)
+#pragma GCC optimize ("Ofast")
+#endif
+static inline u8_t get(struct rand *rng, u8_t octets, u8_t *rand)
 {
 	u8_t first, last, avail, remaining, *d, *s;
 
@@ -113,6 +117,7 @@ static u8_t get(struct rand *rng, u8_t octets, u8_t *rand)
 
 	return octets;
 }
+#pragma GCC pop_options
 
 static int isr(struct rand *rng, bool store)
 {

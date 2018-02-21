@@ -332,7 +332,8 @@ struct radio_pdu_node_rx {
  * Controller Interface Functions
  ****************************************************************************/
 /* Downstream */
-u32_t radio_init(void *hf_clock, u8_t sca, u8_t connection_count_max,
+u32_t radio_init(void *hf_clock, u8_t sca, void *entropy,
+		 u8_t connection_count_max,
 		 u8_t rx_count_max, u8_t tx_count_max,
 		 u16_t packet_data_octets_max,
 		 u16_t packet_tx_data_size, u8_t *mem_radio,
