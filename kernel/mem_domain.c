@@ -12,7 +12,7 @@
 
 static u8_t max_partitions;
 
-static void ensure_w_xor_x(u32_t attrs)
+static void ensure_w_xor_x(k_mem_partition_attr_t attrs)
 {
 #if defined(CONFIG_EXECUTE_XOR_WRITE) && __ASSERT_ON
 	bool writable = K_MEM_PARTITION_IS_WRITABLE(attrs);
