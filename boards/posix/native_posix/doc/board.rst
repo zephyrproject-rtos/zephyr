@@ -379,6 +379,14 @@ The following peripherals are currently provided with this board:
   and provides interrupt priorities. Interrupts can be individually masked or
   unmasked. SW interrupts are also supported.
 
+**Ethernet driver**:
+  A simple TAP based ethernet driver is provided. The driver will create
+  a **zeth** network interface to the host system. One can communicate with
+  Zephyr via this network interface. Multiple TAP based network interfaces can
+  be created if needed. The IP address configuration can be specified for each
+  network interface instance.
+  See :option:`CONFIG_ETH_NATIVE_POSIX_SETUP_SCRIPT` option for more details.
+
 Shell support
 *************
 
