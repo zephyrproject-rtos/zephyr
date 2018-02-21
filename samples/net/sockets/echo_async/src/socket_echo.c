@@ -44,6 +44,12 @@ static void nonblock(int fd)
 	fcntl(fd, F_SETFL, fl | O_NONBLOCK);
 }
 
+static void block(int fd)
+{
+	int fl = fcntl(fd, F_GETFL, 0);
+	fcntl(fd, F_SETFL, fl & ~O_NONBLOCK);
+}
+
 int pollfds_add(int fd)
 {
 	int i;
@@ -159,13 +165,36 @@ int main(void)
 			} else {
 				char buf[128];
 				int len = recv(fd, buf, sizeof(buf), 0);
-				if (len == 0) {
+				if (len <= 0) {
+					if (len < 0) {
+						printf("error: recv: %d\n", errno);
+					}
+error:
 					pollfds_del(fd);
 					close(fd);
 					printf("Connection fd=%d closed\n", fd);
 				} else {
-					/* We assume this won't be short write, d'oh */
-					send(fd, buf, len, 0);
+					int out_len;
+					const char *p;
+					/* We implement semi-async server,
+					 * where reads are async, but writes
+					 * *can* be sync (blocking). Note that
+					 * in majority of cases they expected
+					 * to not block, but to be robust, we
+					 * handle all possibilities.
+					 */
+					block(fd);
+					for (p = buf; len; len -= out_len) {
+						out_len = send(fd, p, len, 0);
+						if (out_len < 0) {
+							printf("error: "
+							       "send: %d\n",
+							       errno);
+							goto error;
+						}
+						p += out_len;
+					}
+					nonblock(fd);
 				}
 			}
 		}
