@@ -4,5 +4,5 @@ sample:
   platforms: all
 tests:
   test:
-    platform_whitelist: 96b_carbon
+    platform_whitelist: 96b_carbon bbc_microbit
     tags: samples
