@@ -21,6 +21,9 @@ CONFIG_PINMUX=y
 # enable GPIO
 CONFIG_GPIO=y
 
+# enable I2C
+CONFIG_I2C=y
+
 # clock configuration
 CONFIG_CLOCK_CONTROL=y
 
