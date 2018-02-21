@@ -12,6 +12,7 @@ arch/arc/core/*                          @andrewboie
 arch/arm/*                               @MaureenHelm @galak
 arch/arm/core/*                          @andrewboie
 arch/arm/soc/arm/mps2/*                  @fvincenzo
+arch/arm/soc/atmel_sam/sam4s             @fallrisk
 arch/arm/soc/st_stm32/*                  @erwango
 arch/arm/soc/st_stm32/stm32f4/*          @rsalveti @idlethread
 arch/arm/soc/ti_simplelink/cc32xx        @GAnthony
@@ -45,6 +46,7 @@ boards/arm/msp_exp432p401r_launchxl/*    @Mani-Sadhasivam
 boards/arm/nrf51_blenano/*               @rsalveti
 boards/arm/nrf52_pca10040/*              @carlescufi
 boards/arm/nucleo_f401re/*               @rsalveti @idlethread
+boards/arm/sam4s_xplained                @fallrisk
 boards/arm/v2m_beetle/*                  @fvincenzo
 boards/arm/olimexino_stm32/*             @ydamigos
 boards/arm/stm32f3_disco/*               @ydamigos
