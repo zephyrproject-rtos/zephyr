@@ -22,9 +22,9 @@ extern void test_irq_offload(void);
 /**test case main entry*/
 void test_main(void)
 {
-	ztest_test_suite(test_irq_offload_fn,
+	ztest_test_suite(irq_offload_fn,
 			ztest_unit_test(test_irq_offload));
-	ztest_run_test_suite(test_irq_offload_fn);
+	ztest_run_test_suite(irq_offload_fn);
 
 }
 

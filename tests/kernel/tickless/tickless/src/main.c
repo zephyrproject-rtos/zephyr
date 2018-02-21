@@ -218,7 +218,7 @@ void test_tickless(void)
 
 void test_main(void)
 {
-	ztest_test_suite(test_tick_less,
+	ztest_test_suite(tickless,
 			ztest_unit_test(test_tickless));
-	ztest_run_test_suite(test_tick_less);
+	ztest_run_test_suite(tickless);
 }

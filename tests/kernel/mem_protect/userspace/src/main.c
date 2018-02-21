@@ -541,7 +541,7 @@ void test_main(void)
 			      &uthread_start_sem, &uthread_end_sem,
 			      &test_revoke_sem, &kpipe, &expect_fault_sem,
 			      NULL);
-	ztest_test_suite(test_userspace,
+	ztest_test_suite(userspace,
 			 ztest_user_unit_test(is_usermode),
 			 ztest_user_unit_test(write_control),
 			 ztest_user_unit_test(disable_mmu_mpu),
@@ -565,5 +565,5 @@ void test_main(void)
 			 ztest_user_unit_test(write_kobject_user_pipe),
 			 ztest_user_unit_test(read_kobject_user_pipe)
 		);
-	ztest_run_test_suite(test_userspace);
+	ztest_run_test_suite(userspace);
 }

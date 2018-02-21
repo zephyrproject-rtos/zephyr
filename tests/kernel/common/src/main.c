@@ -38,7 +38,7 @@ static void test_version(void)
 
 void test_main(void)
 {
-	ztest_test_suite(common_test,
+	ztest_test_suite(common,
 			 ztest_unit_test(test_byteorder_memcpy_swap),
 			 ztest_unit_test(test_byteorder_mem_swap),
 			 ztest_unit_test(test_atomic),
@@ -58,5 +58,5 @@ void test_main(void)
 			 ztest_unit_test(test_multilib)
 			 );
 
-	ztest_run_test_suite(common_test);
+	ztest_run_test_suite(common);
 }

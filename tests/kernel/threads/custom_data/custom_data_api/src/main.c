@@ -70,8 +70,8 @@ void test_main(void)
 {
 	k_thread_access_grant(k_current_get(), &tdata, tstack, NULL);
 
-	ztest_test_suite(test_customdata_api,
+	ztest_test_suite(customdata_api,
 		ztest_unit_test(test_customdata_get_set_coop),
 		ztest_user_unit_test(test_customdata_get_set_preempt));
-	ztest_run_test_suite(test_customdata_api);
+	ztest_run_test_suite(customdata_api);
 }

@@ -349,7 +349,7 @@ static void test_delayed(void)
 void test_main(void)
 {
 	k_thread_priority_set(k_current_get(), 0);
-	ztest_test_suite(test_workq,
+	ztest_test_suite(workqueue,
 			 ztest_unit_test(test_sequence),
 			 ztest_unit_test(test_resubmit),
 			 ztest_unit_test(test_delayed),
@@ -357,5 +357,5 @@ void test_main(void)
 			 ztest_unit_test(test_delayed_resubmit_thread),
 			 ztest_unit_test(test_delayed_cancel)
 			 );
-	ztest_run_test_suite(test_workq);
+	ztest_run_test_suite(workqueue);
 }

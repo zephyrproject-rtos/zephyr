@@ -175,7 +175,7 @@ static void exec_heap(void)
 
 void test_main(void)
 {
-	ztest_test_suite(test_protection,
+	ztest_test_suite(protection,
 #ifdef NO_EXECUTE_SUPPORT
 			 ztest_unit_test(exec_data),
 			 ztest_unit_test(exec_stack),
@@ -186,5 +186,5 @@ void test_main(void)
 			 ztest_unit_test(write_ro),
 			 ztest_unit_test(write_text)
 		);
-	ztest_run_test_suite(test_protection);
+	ztest_run_test_suite(protection);
 }

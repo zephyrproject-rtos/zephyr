@@ -18,7 +18,7 @@
 /*test case main entry*/
 void test_main(void)
 {
-	ztest_test_suite(test_timer_api,
+	ztest_test_suite(timer_api,
 			 ztest_unit_test(test_timer_duration_period),
 			 ztest_unit_test(test_timer_period_0),
 			 ztest_unit_test(test_timer_expirefn_null),
@@ -28,5 +28,5 @@ void test_main(void)
 			 ztest_unit_test(test_timer_status_sync),
 			 ztest_unit_test(test_timer_k_define),
 			 ztest_unit_test(test_timer_user_data));
-	ztest_run_test_suite(test_timer_api);
+	ztest_run_test_suite(timer_api);
 }

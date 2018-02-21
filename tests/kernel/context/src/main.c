@@ -923,6 +923,6 @@ void test_context(void)
 /*test case main entry*/
 void test_main(void)
 {
-	ztest_test_suite(testing_context, ztest_unit_test(test_context));
-	ztest_run_test_suite(testing_context);
+	ztest_test_suite(context, ztest_unit_test(test_context));
+	ztest_run_test_suite(context);
 }

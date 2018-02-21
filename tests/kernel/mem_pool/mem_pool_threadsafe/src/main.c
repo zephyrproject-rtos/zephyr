@@ -11,7 +11,7 @@ extern void test_mpool_threadsafe(void);
 /*test case main entry*/
 void test_main(void)
 {
-	ztest_test_suite(test_mpool_threadsafe,
+	ztest_test_suite(mpool_threadsafe,
 			 ztest_unit_test(test_mpool_threadsafe));
-	ztest_run_test_suite(test_mpool_threadsafe);
+	ztest_run_test_suite(mpool_threadsafe);
 }

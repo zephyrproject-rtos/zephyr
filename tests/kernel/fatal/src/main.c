@@ -255,7 +255,7 @@ void test_fatal(void)
 /*test case main entry*/
 void test_main(void)
 {
-	ztest_test_suite(testing_fatal,
+	ztest_test_suite(fatal,
 			ztest_unit_test(test_fatal));
-	ztest_run_test_suite(testing_fatal);
+	ztest_run_test_suite(fatal);
 }

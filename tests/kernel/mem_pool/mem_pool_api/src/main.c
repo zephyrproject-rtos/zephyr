@@ -15,12 +15,12 @@ extern void test_mpool_alloc_timeout(void);
 /*test case main entry*/
 void test_main(void)
 {
-	ztest_test_suite(test_mpool_api,
+	ztest_test_suite(mpool_api,
 			 ztest_unit_test(test_mpool_alloc_free_thread),
 			 ztest_unit_test(test_mpool_alloc_free_isr),
 			 ztest_unit_test(test_mpool_kdefine_extern),
 			 ztest_unit_test(test_mpool_alloc_size),
 			 ztest_unit_test(test_mpool_alloc_timeout)
 			 );
-	ztest_run_test_suite(test_mpool_api);
+	ztest_run_test_suite(mpool_api);
 }

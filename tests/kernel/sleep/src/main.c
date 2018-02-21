@@ -240,7 +240,7 @@ void test_sleep(void)
 /*test case main entry*/
 void test_main(void)
 {
-	ztest_test_suite(testing_sleep,
+	ztest_test_suite(sleep,
 			ztest_unit_test(test_sleep));
-	ztest_run_test_suite(testing_sleep);
+	ztest_run_test_suite(sleep);
 }

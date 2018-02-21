@@ -18,7 +18,7 @@
 /*test case main entry*/
 void test_main(void)
 {
-	ztest_test_suite(test_threads_scheduling,
+	ztest_test_suite(threads_scheduling,
 			 ztest_unit_test(test_priority_cooperative),
 			 ztest_unit_test(test_priority_preemptible),
 			 ztest_unit_test(test_yield_cooperative),
@@ -33,5 +33,5 @@ void test_main(void)
 			 ztest_unit_test(test_slice_scheduling),
 			 ztest_unit_test(test_priority_scheduling)
 			 );
-	ztest_run_test_suite(test_threads_scheduling);
+	ztest_run_test_suite(threads_scheduling);
 }

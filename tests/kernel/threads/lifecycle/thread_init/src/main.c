@@ -204,10 +204,10 @@ void test_main(void)
 	k_thread_access_grant(k_current_get(), &thread_preempt, &stack_preempt,
 			      &start_sema, &end_sema, NULL);
 
-	ztest_test_suite(test_thread_init,
+	ztest_test_suite(thread_init,
 			 ztest_user_unit_test(test_kdefine_preempt_thread),
 			 ztest_user_unit_test(test_kdefine_coop_thread),
 			 ztest_user_unit_test(test_kinit_preempt_thread),
 			 ztest_unit_test(test_kinit_coop_thread));
-	ztest_run_test_suite(test_thread_init);
+	ztest_run_test_suite(thread_init);
 }

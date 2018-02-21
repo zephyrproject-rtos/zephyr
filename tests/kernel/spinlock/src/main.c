@@ -100,8 +100,8 @@ void test_spinlock_bounce(void)
 
 void test_main(void)
 {
-	ztest_test_suite(test_spinlock,
+	ztest_test_suite(spinlock,
 			 ztest_unit_test(test_spinlock_basic),
 			 ztest_unit_test(test_spinlock_bounce));
-	ztest_run_test_suite(test_spinlock);
+	ztest_run_test_suite(spinlock);
 }

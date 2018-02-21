@@ -89,7 +89,7 @@ void test_dummy_device_pm(void)
 
 void test_main(void)
 {
-	ztest_test_suite(test_device,
+	ztest_test_suite(device,
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 			 ztest_unit_test(test_dummy_device_pm),
 			 ztest_unit_test(build_suspend_device_list),
@@ -97,5 +97,5 @@ void test_main(void)
 			 ztest_unit_test(test_dummy_device),
 			 ztest_unit_test(test_bogus_dynamic_name),
 			 ztest_unit_test(test_dynamic_name));
-	ztest_run_test_suite(test_device);
+	ztest_run_test_suite(device);
 }

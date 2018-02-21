@@ -20,7 +20,7 @@ extern void test_thread_context(void);
 /*test case main entry*/
 void test_main(void)
 {
-	ztest_test_suite(test_context_errno,
+	ztest_test_suite(context_errno,
 			ztest_unit_test(test_thread_context));
-	ztest_run_test_suite(test_context_errno);
+	ztest_run_test_suite(context_errno);
 }

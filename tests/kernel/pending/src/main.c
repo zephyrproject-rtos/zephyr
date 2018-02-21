@@ -419,9 +419,9 @@ void test_pending(void)
 
 void test_main(void)
 {
-	ztest_test_suite(test_pend,
+	ztest_test_suite(pend,
 			ztest_unit_test(test_pending));
-	ztest_run_test_suite(test_pend);
+	ztest_run_test_suite(pend);
 }
 
 K_THREAD_DEFINE(TASK_LOW, PREEM_STACKSIZE, task_low, NULL, NULL, NULL,
