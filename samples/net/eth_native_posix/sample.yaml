@@ -1,0 +1,9 @@
+common:
+  harness: net
+  tags: net
+sample:
+  description: Can be used to test native posix connectivity via ethernet.
+  name: Native posix ethernet demo application
+tests:
+  test_eth_native_posix:
+    platform_whitelist: native_posix
