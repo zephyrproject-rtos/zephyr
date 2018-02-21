@@ -60,6 +60,7 @@ typedef struct pthread_barrierattr {
 #ifndef CONFIG_NEWLIB_LIBC
 typedef u32_t clockid_t;
 #endif /*CONFIG_NEWLIB_LIBC */
+typedef unsigned long timer_t;
 typedef unsigned long useconds_t;
 
 #endif /* CONFIG_PTHREAD_IPC */
