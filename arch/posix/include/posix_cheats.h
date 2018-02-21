@@ -23,6 +23,8 @@
  * some prefix, and we ensure this header is included
  */
 
+#ifdef CONFIG_PTHREAD_IPC
+
 #define timespec zap_timespec
 #define pthread_mutex_t zap_pthread_mutex_t
 #define pthread_mutexattr_t    zap_pthread_mutexattr_t
@@ -114,6 +116,8 @@
 #define timer_gettime(...)	zap_timer_gettime(__VA_ARGS__)
 #define timer_settime(...)	zap_timer_settime(__VA_ARGS__)
 
+#endif /* CONFIG_PTHREAD_IPC */
+
 #endif /* CONFIG_ARCH_POSIX */
 
-#endif
+#endif /* _POSIX_CHEATS_H */
