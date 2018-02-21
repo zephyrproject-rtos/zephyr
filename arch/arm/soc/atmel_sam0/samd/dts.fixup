@@ -1,6 +1,0 @@
-/* SoC level DTS fixup file */
-
-#define FLASH_DEV_BASE_ADDRESS		ATMEL_SAM0_NVMCTRL_41004000_BASE_ADDRESS_0
-#define FLASH_DEV_NAME			ATMEL_SAM0_NVMCTRL_41004000_LABEL
-
-/* End of SoC Level DTS fixup file */
