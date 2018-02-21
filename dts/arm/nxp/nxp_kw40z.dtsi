@@ -190,6 +190,8 @@
 			cs = <&gpiob 18 0>, <&gpiob 17 0>;
 			pinctrl-0 = <&spi0_default>;
 			pinctrl-names = "default";
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 
 		spi1: spi@4002d000 {
@@ -198,6 +200,8 @@
 			interrupts = <29 0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 13>;
 			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 
 		pwm0: pwm@40038000 {
