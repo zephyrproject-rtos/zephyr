@@ -2075,6 +2075,12 @@ int net_if_up(struct net_if *iface)
 		return 0;
 	}
 
+#if defined(CONFIG_NET_OFFLOAD)
+	if (net_if_is_ip_offloaded(iface)) {
+		goto done;
+	}
+#endif
+
 	/* If the L2 does not support enable just set the flag */
 	if (!net_if_l2(iface)->enable) {
 		goto done;
@@ -2124,6 +2130,12 @@ int net_if_down(struct net_if *iface)
 	NET_DBG("iface %p", iface);
 
 	leave_mcast_all(iface);
+
+#if defined(CONFIG_NET_OFFLOAD)
+	if (net_if_is_ip_offloaded(iface)) {
+		goto done;
+	}
+#endif
 
 	/* If the L2 does not support enable just clear the flag */
 	if (!net_if_l2(iface)->enable) {
