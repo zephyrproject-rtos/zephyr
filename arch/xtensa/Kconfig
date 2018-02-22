@@ -95,7 +95,7 @@ config XTENSA_OMIT_HIGH_INTERRUPTS
 
 config XTENSA_ASM2
 	bool
-	prompt "New-sytle Xtensa context switch & interrupt layer"
+	prompt "New-style Xtensa context switch & interrupt layer"
 	default n
 	select USE_SWITCH
 	help
@@ -103,7 +103,7 @@ config XTENSA_ASM2
 	interrupt handling.  Advantages are a much lower interrupt
 	overhead and smaller code size, and this scheme is required
 	for SMP.  Assumes/requires hardware that implements the
-	register window xtension, however.
+	register window extension, however.
 
 config TOOLCHAIN_VARIANT
 	string
