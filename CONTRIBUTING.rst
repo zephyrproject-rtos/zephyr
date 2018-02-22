@@ -24,7 +24,7 @@ software continues to be available under the terms that the author desired.
 Zephyr uses the `Apache 2.0 license`_ (as found in the LICENSE file in
 the project's `GitHub repo`_) to strike a balance between open
 contribution and allowing you to use the software however you would like
-to.  The Apache 2.0 license is a permisive open source license that
+to.  The Apache 2.0 license is a permissive open source license that
 allows you to freely use, modify, distribute and sell your own products
 that include Apache 2.0 licensed software.  (For more information about
 this, check out articles such as `Why choose Apache 2.0 licensing`_ and
@@ -499,7 +499,7 @@ workflow here:
    with your changes so you won't need to resubmit the pull request.
 
 #. If the CI run fails, you will need to make changes to your code in order
-   to fix the issues and ammend your commits by rebasing as described above.
+   to fix the issues and amend your commits by rebasing as described above.
    Additional information about the CI system can be found in
    `Continuous Integration`_.
 
