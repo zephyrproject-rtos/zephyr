@@ -306,8 +306,8 @@ uncrustify
 ==========
 
 The `uncrustify tool <https://sourceforge.net/projects/uncrustify>`_ can
-be helpful to quickly reformat your source code to our `project coding
-standards <Coding Style>`_ together with a configuration file we've provided:
+be helpful to quickly reformat your source code to our `Coding Style`_
+standards together with a configuration file we've provided:
 
 .. code-block:: bash
 
