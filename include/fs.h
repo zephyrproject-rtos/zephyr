@@ -8,21 +8,24 @@
 #define _FS_H_
 
 #include <sys/types.h>
+#include <misc/dlist.h>
 #include <fs/fs_interface.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-/* Create a fs_file_t type similar to FILE for familiarity */
-typedef struct _fs_file_object fs_file_t;
-
-/* Create a fs_dir_t type similar to DIR for familiarity */
-typedef struct _fs_dir_object fs_dir_t;
+struct fs_file_system_t;
 
 enum fs_dir_entry_type {
-	FS_DIR_ENTRY_FILE,
+	FS_DIR_ENTRY_FILE = 0,
 	FS_DIR_ENTRY_DIR
+};
+
+enum fs_type {
+	FS_FATFS = 0,
+	FS_NFFS,
+	FS_TYPE_END,
 };
 
 /**
@@ -39,13 +42,27 @@ enum fs_dir_entry_type {
  * @{
  */
 
-/** @var fs_file_t
- * @brief File object representing an open file
+/**
+ * @brief File system mount info structure
+ *
+ * @param node Entry for the fs_mount_list list
+ * @param type File system type
+ * @param mnt_point Mount point directory name (ex: "/fatfs")
+ * @param fs_data Pointer to file system specific data
+ * @param storage_dev Pointer to backend storage device
+ * @param mountp_len Length of Mount point string
+ * @param fs Pointer to File system interface of the mount point
  */
-
-/** @var fs_dir_t
- * @brief Directory object representing an open directory
- */
+struct fs_mount_t {
+	sys_dnode_t node;
+	enum fs_type type;
+	const char *mnt_point;
+	void *fs_data;
+	struct device *storage_dev;
+	/* fields filled by file system core */
+	size_t mountp_len;
+	const struct fs_file_system_t *fs;
+};
 
 /**
  * @brief Structure to receive file or directory information
@@ -84,6 +101,56 @@ struct fs_statvfs {
 };
 
 /**
+ * @brief File System interface structure
+ *
+ * @param open Opens an existing file or create a new one
+ * @param read Reads items of data of size bytes long
+ * @param write Writes items of data of size bytes long
+ * @param lseek Moves the file position to a new location in the file
+ * @param tell Retrieves the current position in the file
+ * @param truncate Truncates the file to the new length
+ * @param sync Flush the cache of an open file
+ * @param close Flushes the associated stream and closes the file
+ * @param opendir Opens an existing directory specified by the path
+ * @param readdir Reads directory entries of a open directory
+ * @param closedir Closes an open directory
+ * @param mount Mount a file system
+ * @param unmount Unmount a file system
+ * @param unlink Deletes the specified file or directory
+ * @param rename Renames a file or directory
+ * @param mkdir Creates a new directory using specified path
+ * @param stat Checks the status of a file or directory specified by the path
+ * @param statvfs Returns the total and available space in the filesystem volume
+ */
+struct fs_file_system_t {
+	/* File operations */
+	int (*open)(struct fs_file_t *filp, const char *fs_path);
+	ssize_t (*read)(struct fs_file_t *filp, void *dest, size_t nbytes);
+	ssize_t (*write)(struct fs_file_t *filp,
+					const void *src, size_t nbytes);
+	int (*lseek)(struct fs_file_t *filp, off_t off, int whence);
+	off_t (*tell)(struct fs_file_t *filp);
+	int (*truncate)(struct fs_file_t *filp, off_t length);
+	int (*sync)(struct fs_file_t *filp);
+	int (*close)(struct fs_file_t *filp);
+	/* Directory operations */
+	int (*opendir)(struct fs_dir_t *dirp, const char *fs_path);
+	int (*readdir)(struct fs_dir_t *dirp, struct fs_dirent *entry);
+	int (*closedir)(struct fs_dir_t *dirp);
+	/* File system level operations */
+	int (*mount)(struct fs_mount_t *mountp);
+	int (*unmount)(struct fs_mount_t *mountp);
+	int (*unlink)(struct fs_mount_t *mountp, const char *name);
+	int (*rename)(struct fs_mount_t *mountp, const char *from,
+					const char *to);
+	int (*mkdir)(struct fs_mount_t *mountp, const char *name);
+	int (*stat)(struct fs_mount_t *mountp, const char *path,
+					struct fs_dirent *entry);
+	int (*statvfs)(struct fs_mount_t *mountp, const char *path,
+					struct fs_statvfs *stat);
+};
+
+/**
  * @}
  */
 
@@ -116,7 +183,7 @@ struct fs_statvfs {
  * @retval 0 Success
  * @retval -ERRNO errno code if error
  */
-int fs_open(fs_file_t *zfp, const char *file_name);
+int fs_open(struct fs_file_t *zfp, const char *file_name);
 
 /**
  * @brief File close
@@ -129,7 +196,7 @@ int fs_open(fs_file_t *zfp, const char *file_name);
  * @retval 0 Success
  * @retval -ERRNO errno code if error
  */
-int fs_close(fs_file_t *zfp);
+int fs_close(struct fs_file_t *zfp);
 
 /**
  * @brief File unlink
@@ -142,6 +209,26 @@ int fs_close(fs_file_t *zfp);
  * @retval -ERRNO errno code if error
  */
 int fs_unlink(const char *path);
+
+/**
+ * @brief File o directory rename
+ *
+ * Performs a rename and / or move of the specified source path to the
+ * specified destination.  The source path can refer to either a file or a
+ * directory.  All intermediate directories in the destination path must
+ * already exist.  If the source path refers to a file, the destination path
+ * must contain a full filename path, rather than just the new parent
+ * directory.  If an object already exists at the specified destination path,
+ * this function causes it to be unlinked prior to the rename (i.e., the
+ * estination gets clobbered).
+ *
+ * @param from The source path.
+ * @param to The destination path.
+ *
+ * @retval 0 Success;
+ * @retval -ERRNO errno code if error
+ */
+int fs_rename(const char *from, const char *to);
 
 /**
  * @brief File read
@@ -157,7 +244,7 @@ int fs_unlink(const char *path);
  * requested if there are not enough bytes available in file. Will return
  * -ERRNO code on error.
  */
-ssize_t fs_read(fs_file_t *zfp, void *ptr, size_t size);
+ssize_t fs_read(struct fs_file_t *zfp, void *ptr, size_t size);
 
 /**
  * @brief File write
@@ -178,7 +265,7 @@ ssize_t fs_read(fs_file_t *zfp, void *ptr, size_t size);
  * In that case, it returns less number of bytes written than requested, but
  * not a negative -ERRNO value as in regular error case.
  */
-ssize_t fs_write(fs_file_t *zfp, const void *ptr, size_t size);
+ssize_t fs_write(struct fs_file_t *zfp, const void *ptr, size_t size);
 
 /**
  * @brief File seek
@@ -196,7 +283,7 @@ ssize_t fs_write(fs_file_t *zfp, const void *ptr, size_t size);
  * @retval 0 Success
  * @retval -ERRNO errno code if error.
  */
-int fs_seek(fs_file_t *zfp, off_t offset, int whence);
+int fs_seek(struct fs_file_t *zfp, off_t offset, int whence);
 
 /**
  * @brief Get current file position.
@@ -208,7 +295,7 @@ int fs_seek(fs_file_t *zfp, off_t offset, int whence);
  * @retval position Current position in file
  * Current revision does not validate the file object.
  */
-off_t fs_tell(fs_file_t *zfp);
+off_t fs_tell(struct fs_file_t *zfp);
 
 /**
  * @brief Change the size of an open file
@@ -228,7 +315,7 @@ off_t fs_tell(fs_file_t *zfp);
  * @retval 0 Success
  * @retval -ERRNO errno code if error
  */
-int fs_truncate(fs_file_t *zfp, off_t length);
+int fs_truncate(struct fs_file_t *zfp, off_t length);
 
 /**
  * @brief Flushes any cached write of an open file
@@ -244,7 +331,7 @@ int fs_truncate(fs_file_t *zfp, off_t length);
  * @retval 0 Success
  * @retval -ERRNO errno code if error
  */
-int fs_sync(fs_file_t *zfp);
+int fs_sync(struct fs_file_t *zfp);
 
 /**
  * @brief Directory create
@@ -269,7 +356,7 @@ int fs_mkdir(const char *path);
  * @retval 0 Success
  * @retval -ERRNO errno code if error
  */
-int fs_opendir(fs_dir_t *zdp, const char *path);
+int fs_opendir(struct fs_dir_t *zdp, const char *path);
 
 /**
  * @brief Directory read entry
@@ -284,7 +371,7 @@ int fs_opendir(fs_dir_t *zdp, const char *path);
  * @return In end-of-dir condition, this will return 0 and set
  * entry->name[0] = 0
  */
-int fs_readdir(fs_dir_t *zdp, struct fs_dirent *entry);
+int fs_readdir(struct fs_dir_t *zdp, struct fs_dirent *entry);
 
 /**
  * @brief Directory close
@@ -296,7 +383,36 @@ int fs_readdir(fs_dir_t *zdp, struct fs_dirent *entry);
  * @retval 0 Success
  * @retval -ERRNO errno code if error
  */
-int fs_closedir(fs_dir_t *zdp);
+int fs_closedir(struct fs_dir_t *zdp);
+
+/**
+ * @brief Mount filesystem
+ *
+ * Perform steps needed for mounting a file system like
+ * calling the file system specific mount function and adding
+ * the mount point to mounted file system list.
+ *
+ * @param mp Pointer to the fs_mount_t structure
+ *
+ * @retval 0 Success
+ * @retval -ERRNO errno code if error
+ */
+int fs_mount(struct fs_mount_t *mp);
+
+/**
+ * @brief Unmount filesystem
+ *
+ * Perform steps needed for unmounting a file system like
+ * calling the file system specific unmount function and removing
+ * the mount point from mounted file system list.
+ *
+ *
+ * @param mp Pointer to the fs_mount_t structure
+ *
+ * @retval 0 Success
+ * @retval -ERRNO errno code if error
+ */
+int fs_unmount(struct fs_mount_t *mp);
 
 /**
  * @brief File or directory status
@@ -317,16 +433,44 @@ int fs_stat(const char *path, struct fs_dirent *entry);
  *
  * Returns the total and available space in the file system volume.
  *
+ * @param path Path to the mounted directory
  * @param stat Pointer to zfs_statvfs structure to receive the fs statistics
  *
  * @retval 0 Success
  * @retval -ERRNO errno code if error
  */
-int fs_statvfs(struct fs_statvfs *stat);
+int fs_statvfs(const char *path, struct fs_statvfs *stat);
+
+/**
+ * @brief Register a file system
+ *
+ * Register file system with virtual file system.
+ *
+ * @param type Type of file system (ex: FS_FATFS)
+ * @param fs Pointer to File system
+ *
+ * @retval 0 Success
+ * @retval -ERRNO errno code if error
+ */
+int fs_register(enum fs_type type, struct fs_file_system_t *fs);
+
+/**
+ * @brief Unregister a file system
+ *
+ * Unregister file system from virtual file system.
+ *
+ * @param type Type of file system (ex: FS_FATFS)
+ * @param fs Pointer to File system
+ *
+ * @retval 0 Success
+ * @retval -ERRNO errno code if error
+ */
+int fs_unregister(enum fs_type type, struct fs_file_system_t *fs);
 
 /**
  * @}
  */
+
 
 #ifdef __cplusplus
 }

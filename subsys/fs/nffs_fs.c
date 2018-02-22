@@ -14,8 +14,9 @@
 #include <crc16.h>
 #include <misc/__assert.h>
 #include <misc/printk.h>
-#include <nffs/nffs.h>
 #include <nffs/os.h>
+
+#define NFFS_MAX_FILE_NAME 256
 
 /*
  * NFFS code keeps fs state in RAM but access to these structures is not
@@ -24,8 +25,11 @@
  */
 static struct k_mutex nffs_lock;
 
+/*
+ * TODO: Get rid of global flash_dev which limits
+ * system to have multiple instances of NFFS.
+ */
 static struct device *flash_dev;
-static struct nffs_flash_desc flash_desc;
 
 K_MEM_SLAB_DEFINE(nffs_file_pool,		sizeof(struct nffs_file),
 		  CONFIG_FS_NFFS_NUM_FILES,		4);
@@ -218,20 +222,20 @@ static int inode_to_dirent(struct nffs_inode_entry *inode,
 	return rc;
 }
 
-int fs_open(fs_file_t *zfp, const char *file_name)
+static int nffs_open(struct fs_file_t *zfp, const char *file_name)
 {
 	int rc;
 
 	k_mutex_lock(&nffs_lock, K_FOREVER);
 
-	zfp->fp = NULL;
+	zfp->nffs_fp = NULL;
 
 	if (!nffs_misc_ready()) {
 		k_mutex_unlock(&nffs_lock);
 		return -ENODEV;
 	}
 
-	rc = nffs_file_open(&zfp->fp, file_name,
+	rc = nffs_file_open(&zfp->nffs_fp, file_name,
 			    FS_ACCESS_READ | FS_ACCESS_WRITE);
 
 	k_mutex_unlock(&nffs_lock);
@@ -239,15 +243,15 @@ int fs_open(fs_file_t *zfp, const char *file_name)
 	return translate_error(rc);
 }
 
-int fs_close(fs_file_t *zfp)
+static int nffs_close(struct fs_file_t *zfp)
 {
 	int rc;
 
 	k_mutex_lock(&nffs_lock, K_FOREVER);
 
-	rc = nffs_file_close(zfp->fp);
+	rc = nffs_file_close(zfp->nffs_fp);
 	if (!rc) {
-		zfp->fp = NULL;
+		zfp->nffs_fp = NULL;
 	}
 
 	k_mutex_unlock(&nffs_lock);
@@ -255,7 +259,7 @@ int fs_close(fs_file_t *zfp)
 	return translate_error(rc);
 }
 
-int fs_unlink(const char *path)
+static int nffs_unlink(struct fs_mount_t *mountp, const char *path)
 {
 	int rc;
 
@@ -268,14 +272,14 @@ int fs_unlink(const char *path)
 	return translate_error(rc);
 }
 
-ssize_t fs_read(fs_file_t *zfp, void *ptr, size_t size)
+static ssize_t nffs_read(struct fs_file_t *zfp, void *ptr, size_t size)
 {
 	uint32_t br;
 	int rc;
 
 	k_mutex_lock(&nffs_lock, K_FOREVER);
 
-	rc = nffs_file_read(zfp->fp, size, ptr, &br);
+	rc = nffs_file_read(zfp->nffs_fp, size, ptr, &br);
 
 	k_mutex_unlock(&nffs_lock);
 
@@ -286,13 +290,13 @@ ssize_t fs_read(fs_file_t *zfp, void *ptr, size_t size)
 	return br;
 }
 
-ssize_t fs_write(fs_file_t *zfp, const void *ptr, size_t size)
+static ssize_t nffs_write(struct fs_file_t *zfp, const void *ptr, size_t size)
 {
 	int rc;
 
 	k_mutex_lock(&nffs_lock, K_FOREVER);
 
-	rc = nffs_write_to_file(zfp->fp, ptr, size);
+	rc = nffs_write_to_file(zfp->nffs_fp, ptr, size);
 
 	k_mutex_unlock(&nffs_lock);
 
@@ -304,7 +308,7 @@ ssize_t fs_write(fs_file_t *zfp, const void *ptr, size_t size)
 	return size;
 }
 
-int fs_seek(fs_file_t *zfp, off_t offset, int whence)
+static int nffs_seek(struct fs_file_t *zfp, off_t offset, int whence)
 {
 	uint32_t len;
 	u32_t pos;
@@ -317,10 +321,10 @@ int fs_seek(fs_file_t *zfp, off_t offset, int whence)
 		pos = offset;
 		break;
 	case FS_SEEK_CUR:
-		pos = zfp->fp->nf_offset + offset;
+		pos = zfp->nffs_fp->nf_offset + offset;
 		break;
 	case FS_SEEK_END:
-		rc = nffs_inode_data_len(zfp->fp->nf_inode_entry, &len);
+		rc = nffs_inode_data_len(zfp->nffs_fp->nf_inode_entry, &len);
 		if (rc) {
 			k_mutex_unlock(&nffs_lock);
 			return -EINVAL;
@@ -332,32 +336,32 @@ int fs_seek(fs_file_t *zfp, off_t offset, int whence)
 		return -EINVAL;
 	}
 
-	rc = nffs_file_seek(zfp->fp, pos);
+	rc = nffs_file_seek(zfp->nffs_fp, pos);
 
 	k_mutex_unlock(&nffs_lock);
 
 	return translate_error(rc);
 }
 
-off_t fs_tell(fs_file_t *zfp)
+static off_t nffs_tell(struct fs_file_t *zfp)
 {
 	u32_t offset;
 
 	k_mutex_lock(&nffs_lock, K_FOREVER);
 
-	if (!zfp->fp) {
+	if (!zfp->nffs_fp) {
 		return -EIO;
 		k_mutex_unlock(&nffs_lock);
 	}
 
-	offset = zfp->fp->nf_offset;
+	offset = zfp->nffs_fp->nf_offset;
 
 	k_mutex_unlock(&nffs_lock);
 
 	return offset;
 }
 
-int fs_truncate(fs_file_t *zfp, off_t length)
+static int nffs_truncate(struct fs_file_t *zfp, off_t length)
 {
 	/*
 	 * FIXME:
@@ -369,7 +373,7 @@ int fs_truncate(fs_file_t *zfp, off_t length)
 	return -ENOTSUP;
 }
 
-int fs_sync(fs_file_t *zfp)
+static int nffs_sync(struct fs_file_t *zfp)
 {
 	/*
 	 * Files are written to flash immediately so we do not need to support
@@ -379,7 +383,7 @@ int fs_sync(fs_file_t *zfp)
 	return 0;
 }
 
-int fs_mkdir(const char *path)
+static int nffs_mkdir(struct fs_mount_t *mountp, const char *path)
 {
 	int rc;
 
@@ -397,34 +401,34 @@ int fs_mkdir(const char *path)
 	return translate_error(rc);
 }
 
-int fs_opendir(fs_dir_t *zdp, const char *path)
+static int nffs_opendir(struct fs_dir_t *zdp, const char *path)
 {
 	int rc;
 
 	k_mutex_lock(&nffs_lock, K_FOREVER);
 
-	zdp->dp = NULL;
+	zdp->nffs_dp = NULL;
 
 	if (!nffs_misc_ready()) {
 		k_mutex_unlock(&nffs_lock);
 		return -ENODEV;
 	}
 
-	rc = nffs_dir_open(path, &zdp->dp);
+	rc = nffs_dir_open(path, &zdp->nffs_dp);
 
 	k_mutex_unlock(&nffs_lock);
 
 	return translate_error(rc);
 }
 
-int fs_readdir(fs_dir_t *zdp, struct fs_dirent *entry)
+static int nffs_readdir(struct fs_dir_t *zdp, struct fs_dirent *entry)
 {
 	struct nffs_dirent *dirent;
 	int rc;
 
 	k_mutex_lock(&nffs_lock, K_FOREVER);
 
-	rc = nffs_dir_read(zdp->dp, &dirent);
+	rc = nffs_dir_read(zdp->nffs_dp, &dirent);
 	switch (rc) {
 	case 0:
 		rc = inode_to_dirent(dirent->nde_inode_entry, entry);
@@ -442,15 +446,15 @@ int fs_readdir(fs_dir_t *zdp, struct fs_dirent *entry)
 	return translate_error(rc);
 }
 
-int fs_closedir(fs_dir_t *zdp)
+static int nffs_closedir(struct fs_dir_t *zdp)
 {
 	int rc;
 
 	k_mutex_lock(&nffs_lock, K_FOREVER);
 
-	rc = nffs_dir_close(zdp->dp);
+	rc = nffs_dir_close(zdp->nffs_dp);
 	if (!rc) {
-		zdp->dp = NULL;
+		zdp->nffs_dp = NULL;
 	}
 
 	k_mutex_unlock(&nffs_lock);
@@ -458,7 +462,8 @@ int fs_closedir(fs_dir_t *zdp)
 	return translate_error(rc);
 }
 
-int fs_stat(const char *path, struct fs_dirent *entry)
+static int nffs_stat(struct fs_mount_t *mountp,
+		     const char *path, struct fs_dirent *entry)
 {
 	struct nffs_path_parser parser;
 	struct nffs_inode_entry *parent;
@@ -479,7 +484,8 @@ int fs_stat(const char *path, struct fs_dirent *entry)
 	return translate_error(rc);
 }
 
-int fs_statvfs(struct fs_statvfs *stat)
+static int nffs_statvfs(struct fs_mount_t *mountp,
+			const char *path, struct fs_statvfs *stat)
 {
 	/*
 	 * FIXME:
@@ -489,25 +495,22 @@ int fs_statvfs(struct fs_statvfs *stat)
 	return -ENOTSUP;
 }
 
-static int fs_init(struct device *dev)
+static int nffs_mount(struct fs_mount_t *mountp)
 {
 	struct nffs_area_desc descs[CONFIG_NFFS_FILESYSTEM_MAX_AREAS + 1];
+	struct nffs_flash_desc *flash_desc =
+				(struct nffs_flash_desc *)mountp->fs_data;
 	int cnt;
 	int rc;
 
-	ARG_UNUSED(dev);
+	/* Set flash device */
+	flash_dev = mountp->storage_dev;
 
-	k_mutex_init(&nffs_lock);
-
-	flash_dev = device_get_binding(CONFIG_FS_NFFS_FLASH_DEV_NAME);
-	if (!flash_dev) {
-		return -ENODEV;
-	}
-
-	flash_desc.id = 0;
-	flash_desc.sector_count = flash_get_page_count(flash_dev);
-	flash_desc.area_offset = FLASH_AREA_NFFS_OFFSET;
-	flash_desc.area_size = FLASH_AREA_NFFS_SIZE;
+	/* Set flash descriptor fields */
+	flash_desc->id = 0;
+	flash_desc->sector_count = flash_get_page_count(flash_dev);
+	flash_desc->area_offset = FLASH_AREA_NFFS_OFFSET;
+	flash_desc->area_size = FLASH_AREA_NFFS_SIZE;
 
 	rc = nffs_misc_reset();
 	if (rc) {
@@ -515,7 +518,7 @@ static int fs_init(struct device *dev)
 	}
 
 	cnt = CONFIG_NFFS_FILESYSTEM_MAX_AREAS;
-	rc = nffs_misc_desc_from_flash_area(&flash_desc, &cnt, descs);
+	rc = nffs_misc_desc_from_flash_area(flash_desc, &cnt, descs);
 	if (rc) {
 		return -EIO;
 	}
@@ -537,4 +540,33 @@ static int fs_init(struct device *dev)
 	return 0;
 }
 
-SYS_INIT(fs_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+/* File system interface */
+static struct fs_file_system_t nffs_fs = {
+	.open = nffs_open,
+	.close = nffs_close,
+	.read = nffs_read,
+	.write = nffs_write,
+	.lseek = nffs_seek,
+	.tell = nffs_tell,
+	.truncate = nffs_truncate,
+	.sync = nffs_sync,
+	.opendir = nffs_opendir,
+	.readdir = nffs_readdir,
+	.closedir = nffs_closedir,
+	.mount = nffs_mount,
+	.unlink = nffs_unlink,
+	.mkdir = nffs_mkdir,
+	.stat = nffs_stat,
+	.statvfs = nffs_statvfs,
+};
+
+static int nffs_init(struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	k_mutex_init(&nffs_lock);
+
+	return fs_register(FS_NFFS, &nffs_fs);
+}
+
+SYS_INIT(nffs_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
