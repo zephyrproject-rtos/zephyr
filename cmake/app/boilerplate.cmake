@@ -239,6 +239,17 @@ include(${ZEPHYR_BASE}/cmake/host-tools.cmake)
 include(${ZEPHYR_BASE}/cmake/kconfig.cmake)
 include(${ZEPHYR_BASE}/cmake/toolchain.cmake)
 
+set(SOC_NAME ${CONFIG_SOC})
+set(SOC_SERIES ${CONFIG_SOC_SERIES})
+set(SOC_FAMILY ${CONFIG_SOC_FAMILY})
+
+if("${SOC_SERIES}" STREQUAL "")
+  set(SOC_PATH ${SOC_NAME})
+else()
+  set(SOC_PATH ${SOC_FAMILY}/${SOC_SERIES})
+endif()
+
+
 # DTS should be run directly after kconfig because CONFIG_ variables
 # from kconfig and dts should be available at the same time. But
 # running DTS involves running the preprocessor, so we put it behind
