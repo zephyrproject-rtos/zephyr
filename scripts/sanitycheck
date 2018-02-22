@@ -307,6 +307,15 @@ class Handler:
         self.metrics["ram_size"] = 0
         self.metrics["rom_size"] = 0
 
+        self.name = instance.name
+        self.instance = instance
+        self.timeout = instance.test.timeout
+        self.sourcedir = instance.test.code_location
+        self.outdir = instance.outdir
+        self.handler_log = os.path.join(self.outdir, "handler.log")
+        self.returncode = 0
+        self.set_state("running", {})
+
     def set_state(self, state, metrics):
         self.lock.acquire()
         self.state = state
@@ -329,25 +338,18 @@ class DeviceHandler(Handler):
         """
         super().__init__(instance)
 
-        self.instance = instance
-        self.timeout = instance.test.timeout
-        self.sourcedir = instance.test.code_location
-        self.outdir = instance.outdir
-        self.run_log = os.path.join(self.outdir, "run.log")
-        self.handler_log = os.path.join(self.outdir, "handler.log")
-        self.returncode = 0
-        self.set_state("running", {})
-
     def monitor_serial(self, ser, harness):
         log_out_fp = open(self.handler_log, "wt")
 
         while ser.isOpen():
-            serial_line = ser.readline().decode('utf-8', 'ignore')
+            serial_line = ser.readline()
             if serial_line:
-                verbose("DEVICE: {0}".format(serial_line.rstrip()))
-            log_out_fp.write(serial_line)
-            log_out_fp.flush()
-            harness.handle(serial_line.rstrip())
+                sl = serial_line.decode('utf-8', 'ignore')
+                verbose("DEVICE: {0}".format(sl.rstrip()))
+
+                log_out_fp.write(sl)
+                log_out_fp.flush()
+                harness.handle(sl.rstrip())
             if harness.state:
                 ser.close()
                 break
@@ -356,6 +358,13 @@ class DeviceHandler(Handler):
 
     def handle(self):
         out_state = "failed"
+
+        if options.ninja:
+            generator_cmd = "ninja"
+        else:
+            generator_cmd = "make"
+
+        command = [generator_cmd, "-C", self.outdir, "flash"]
 
         device = options.device_serial
         ser = serial.Serial(
@@ -377,13 +386,6 @@ class DeviceHandler(Handler):
         t = threading.Thread(target=self.monitor_serial, args=(ser, harness))
         t.start()
 
-        if options.ninja:
-            generator_cmd = "ninja"
-        else:
-            generator_cmd = "make"
-
-        command = [generator_cmd, "-C", self.outdir, "flash"]
-
         subprocess.check_output(command, stderr=subprocess.PIPE)
 
         t.join(self.timeout)
@@ -394,7 +396,13 @@ class DeviceHandler(Handler):
         if ser.isOpen():
             ser.close()
 
-        self.instance.results = harness.tests
+        if out_state == "timeout":
+            for c in self.instance.test.cases:
+                if c not in harness.tests:
+                    harness.tests[c] = "BLOCK"
+            self.instance.results = harness.tests
+        else:
+            self.instance.results = harness.tests
 
         if harness.state:
             self.set_state(harness.state, {})
@@ -409,15 +417,7 @@ class NativeHandler(Handler):
         """
         super().__init__(instance)
 
-        self.instance = instance
-        self.timeout = instance.test.timeout
-        self.sourcedir = instance.test.code_location
-        self.outdir = instance.outdir
-        self.run_log = os.path.join(self.outdir, "run.log")
-        self.handler_log = os.path.join(self.outdir, "handler.log")
         self.valgrind = False
-        self.returncode = 0
-        self.set_state("running", {})
 
     def _output_reader(self, proc, harness):
         log_out_fp = open(self.handler_log, "wt")
@@ -478,18 +478,11 @@ class UnitHandler(Handler):
         """
         super().__init__(instance)
 
-        self.timeout = instance.test.timeout
-        self.sourcedir = instance.test.code_location
-        self.outdir = instance.outdir
-        self.run_log = os.path.join(self.outdir, "run.log")
-        self.handler_log = os.path.join(self.outdir, "handler.log")
-        self.returncode = 0
-        self.set_state("running", {})
 
     def handle(self):
         out_state = "failed"
 
-        with open(self.run_log, "wt") as rl, open(self.handler_log, "wt") as vl:
+        with open(self.handler_log, "wt") as hl:
             try:
                 binary = os.path.join(self.outdir, "testbinary")
                 command = [binary]
@@ -497,7 +490,7 @@ class UnitHandler(Handler):
                     command = ["valgrind", "--error-exitcode=2",
                                "--leak-check=full"] + command
                 returncode = subprocess.call(command, timeout=self.timeout,
-                                             stdout=rl, stderr=vl)
+                                             stdout=hl, stderr=hl)
                 self.returncode = returncode
                 if returncode != 0:
                     if self.returncode == 1:
@@ -613,22 +606,10 @@ class QEMUHandler(Handler):
     def __init__(self, instance):
         """Constructor
 
-        @param name Arbitrary name of the created thread
-        @param outdir Working directory, should be where qemu.pid gets created
-            by the build system
-        @param log_fn Absolute path to write out QEMU's log data
-        @param timeout Kill the QEMU process if it doesn't finish up within
-            the given number of seconds
+        @param instance Test instance
         """
 
-
         super().__init__(instance)
-        self.instance = instance
-        outdir = instance.outdir
-        timeout = instance.test.timeout
-        name = instance.name
-        run_log = os.path.join(outdir, "run.log")
-        handler_log = os.path.join(outdir, "handler.log")
 
         self.results = {}
 
@@ -640,19 +621,19 @@ class QEMUHandler(Handler):
         if os.path.exists(self.pid_fn):
             os.unlink(self.pid_fn)
 
-        self.log_fn = handler_log
+        self.log_fn = self.handler_log
 
         harness_import = HarnessImporter(instance.test.harness.capitalize())
         harness = harness_import.instance
-        harness.configure(instance)
-        self.thread = threading.Thread(name=name, target=QEMUHandler._thread,
-                                       args=(self, timeout, outdir,
+        harness.configure(self.instance)
+        self.thread = threading.Thread(name=self.name, target=QEMUHandler._thread,
+                                       args=(self, self.timeout, self.outdir,
                                              self.log_fn, self.fifo_fn,
                                              self.pid_fn, self.results, harness))
 
         self.instance.results = harness.tests
         self.thread.daemon = True
-        verbose("Spawning QEMU process for %s" % name)
+        verbose("Spawning QEMU process for %s" % self.name)
         self.thread.start()
 
     def get_fifo(self):
