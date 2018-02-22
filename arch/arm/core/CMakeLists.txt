@@ -1,7 +1,8 @@
 zephyr_sources(
   exc_exit.S
   irq_init.c
-  swap.S
+  swap.c
+  swap_helper.S
   fault.c
   irq_manage.c
   thread.c
