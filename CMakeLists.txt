@@ -19,16 +19,6 @@ assert(toolchain_is_ok "The toolchain is unable to build a dummy C file. See CMa
 
 set(CMAKE_EXECUTABLE_SUFFIX .elf)
 
-set(SOC_NAME ${CONFIG_SOC})
-set(SOC_SERIES ${CONFIG_SOC_SERIES})
-set(SOC_FAMILY ${CONFIG_SOC_FAMILY})
-
-if("${SOC_SERIES}" STREQUAL "")
-  set(SOC_PATH ${SOC_NAME})
-else()
-  set(SOC_PATH ${SOC_FAMILY}/${SOC_SERIES})
-endif()
-
 if(NOT PROPERTY_LINKER_SCRIPT_DEFINES)
   set_property(GLOBAL PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES -D__GCC_LINKER_CMD__)
 endif()
