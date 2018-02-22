@@ -513,8 +513,8 @@ void uart_console_isr(struct device *unused)
 			continue;
 		}
 
+		/* Handle special control characters */
 		if (!isprint(byte)) {
-			/* Handle special control characters */
 			switch (byte) {
 			case DEL:
 				if (cur > 0) {
@@ -541,6 +541,8 @@ void uart_console_isr(struct device *unused)
 			default:
 				break;
 			}
+
+			continue;
 		}
 
 		/* Ignore characters if there's no more buffer space */
