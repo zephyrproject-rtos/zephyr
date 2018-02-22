@@ -209,6 +209,20 @@ static int usb_dc_stm32_clock_enable(void)
 #endif /* USB */
 	};
 
+	/*
+	 * Some SoCs in STM32F0/L0/L4 series disable USB clock by default.
+	 * We force USB clock source to PLL clock for this SoCs.
+	 * Example reference manual RM0360 for STM32F030x4/x6/x8/xC and
+	 * STM32F070x6/xB.
+	 */
+#ifdef LL_RCC_USB_CLKSOURCE_NONE
+	if (LL_RCC_PLL_IsReady()) {
+		LL_RCC_SetUSBClockSource(LL_RCC_USB_CLKSOURCE_PLL);
+	} else {
+		SYS_LOG_ERR("Unable to set USB clock source to PLL.");
+	}
+#endif /* LL_RCC_USB_CLKSOURCE_NONE */
+
 	clock_control_on(clk, (clock_control_subsys_t *)&pclken);
 
 	return 0;
@@ -289,6 +303,14 @@ int usb_dc_attach(void)
 	int ret;
 
 	SYS_LOG_DBG("");
+
+	/*
+	 * For STM32F0 series SoCs on QFN28 and TSSOP20 packages enable PIN
+	 * pair PA11/12 mapped instead of PA9/10 (e.g. stm32f070x6)
+	 */
+#if defined(CONFIG_SOC_SERIES_STM32F0X) && defined(SYSCFG_CFGR1_PA11_PA12_RMP)
+	LL_SYSCFG_EnablePinRemap();
+#endif
 
 	ret = usb_dc_stm32_clock_enable();
 	if (ret) {
