@@ -12,7 +12,6 @@
 #define __SENSOR_LSM6DSL_H__
 
 #include <zephyr/types.h>
-#include <i2c.h>
 #include <misc/util.h>
 
 
@@ -689,12 +688,24 @@
 #endif
 
 struct lsm6dsl_config {
-	char *i2c_master_dev_name;
-	u16_t i2c_slave_addr;
+	char *comm_master_dev_name;
+};
+
+struct lsm6dsl_data;
+
+struct lsm6dsl_transfer_function {
+	int (*read_data)(struct lsm6dsl_data *data, u8_t reg_addr,
+			 u8_t *value, u8_t len);
+	int (*write_data)(struct lsm6dsl_data *data, u8_t reg_addr,
+			  u8_t *value, u8_t len);
+	int (*read_reg)(struct lsm6dsl_data *data, u8_t reg_addr,
+			u8_t *value);
+	int (*update_reg)(struct lsm6dsl_data *data, u8_t reg_addr,
+			  u8_t mask, u8_t value);
 };
 
 struct lsm6dsl_data {
-	struct device *i2c_master;
+	struct device *comm_master;
 	int accel_sample_x;
 	int accel_sample_y;
 	int accel_sample_z;
@@ -704,7 +715,11 @@ struct lsm6dsl_data {
 #if defined(CONFIG_LSM6DSL_ENABLE_TEMP)
 	int temp_sample;
 #endif
+	const struct lsm6dsl_transfer_function *hw_tf;
 };
+
+int lsm6dsl_spi_init(struct device *dev);
+int lsm6dsl_i2c_init(struct device *dev);
 
 #define SYS_LOG_DOMAIN "LSM6DSL"
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
