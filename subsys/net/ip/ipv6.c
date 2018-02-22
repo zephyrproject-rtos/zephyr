@@ -1927,7 +1927,10 @@ static enum net_verdict handle_na_input(struct net_pkt *pkt)
 	size_t left_len;
 
 	na_hdr = net_icmpv6_get_na_hdr(pkt, &nahdr);
-	NET_ASSERT(na_hdr);
+	if (!na_hdr) {
+		NET_ERR("NULL NA header - dropping");
+		goto drop;
+	}
 
 	dbg_addr_recv_tgt("Neighbor Advertisement",
 			  &NET_IPV6_HDR(pkt)->src,
