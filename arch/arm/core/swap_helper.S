@@ -19,7 +19,6 @@
 
 _ASM_FILE_PROLOGUE
 
-GTEXT(__swap)
 GTEXT(__svc)
 GTEXT(__pendsv)
 GTEXT(_do_kernel_oops)
@@ -396,94 +395,3 @@ valid_syscall_id:
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 
-/**
- *
- * @brief Initiate a cooperative context switch
- *
- * The __swap() routine is invoked by various kernel services to effect
- * a cooperative context context switch.  Prior to invoking __swap(), the caller
- * disables interrupts via irq_lock() and the return 'key' is passed as a
- * parameter to __swap().  The 'key' actually represents the BASEPRI register
- * prior to disabling interrupts via the BASEPRI mechanism.
- *
- * __swap() itself does not do much.
- *
- * It simply stores the intlock key (the BASEPRI value) parameter into
- * current->basepri, and then triggers a service call exception (svc) to setup
- * the PendSV exception, which does the heavy lifting of context switching.
-
- * This is the only place we have to save BASEPRI since the other paths to
- * __pendsv all come from handling an interrupt, which means we know the
- * interrupts were not locked: in that case the BASEPRI value is 0.
- *
- * Given that __swap() is called to effect a cooperative context switch,
- * only the caller-saved integer registers need to be saved in the thread of the
- * outgoing thread. This is all performed by the hardware, which stores it in
- * its exception stack frame, created when handling the svc exception.
- *
- * On Cortex-M0/M0+ the intlock key is represented by the PRIMASK register,
- * as BASEPRI is not available.
- *
- * @return may contain a return value setup by a call to
- * _set_thread_return_value()
- *
- * C function prototype:
- *
- * unsigned int __swap (unsigned int basepri);
- *
- */
-
-SECTION_FUNC(TEXT, __swap)
-
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-    push {lr}
-    bl read_timer_start_of_swap
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-    pop {r3}
-    mov lr,r3
-#else
-    pop {lr}
-#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
-#endif /* CONFIG_EXECUTION_BENCHMARKING */
-    ldr r1, =_kernel
-    ldr r2, [r1, #_kernel_offset_to_current]
-    str r0, [r2, #_thread_offset_to_basepri]
-
-#ifdef CONFIG_USERSPACE
-    mrs r0, CONTROL
-    movs r3, #1
-    ands r0, r3
-    str r0, [r2, #_thread_offset_to_mode]
-#endif
-
-    /*
-     * Set __swap()'s default return code to -EAGAIN. This eliminates the need
-     * for the timeout code to set it itself.
-     */
-    ldr r1, =_k_neg_eagain
-    ldr r1, [r1]
-    str r1, [r2, #_thread_offset_to_swap_return_value]
-
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-    /* No priority-based interrupt masking on M0/M0+,
-     * pending PendSV is used instead of svc
-     */
-    ldr r1, =_SCS_ICSR
-    ldr r3, =_SCS_ICSR_PENDSV
-    str r3, [r1, #0]
-
-    /* Unlock interrupts to allow PendSV, since it's running at prio 0xff
-     *
-     * PendSV handler will be called if there are no other interrupts
-     * of a higher priority pending.
-     */
-    cpsie i
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-    svc #0
-#else
-#error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
-
-    /* coming back from exception, r2 still holds the pointer to _current */
-    ldr r0, [r2, #_thread_offset_to_swap_return_value]
-    bx lr
