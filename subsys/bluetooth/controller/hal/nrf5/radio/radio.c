@@ -97,6 +97,8 @@ void radio_reset(void)
 #if defined(CONFIG_BOARD_NRFXX_NWTSIM)
 	NRF_RADIO_regw_sideeffects_POWER();
 #endif
+
+	hal_radio_reset();
 }
 
 void radio_phy_set(u8_t phy, u8_t flags)
