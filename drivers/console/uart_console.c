@@ -532,7 +532,7 @@ void uart_console_isr(struct device *unused)
 				end = 0;
 				k_fifo_put(lines_queue, cmd);
 				cmd = NULL;
-				break;
+				continue;
 			case '\t':
 				if (completion_cb && !end) {
 					cur += completion_cb(cmd->line, cur);
