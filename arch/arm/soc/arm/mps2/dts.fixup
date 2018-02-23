@@ -1,3 +1,5 @@
+/* SoC level DTS fixup file */
+
 #define CONFIG_NUM_IRQ_PRIO_BITS	ARM_V7M_NVIC_E000E100_ARM_NUM_IRQ_PRIORITY_BITS
 
 /* CMSDK APB Timers */
@@ -62,3 +64,5 @@
 
 #define CMSDK_AHB_GPIO3				ARM_CMSDK_GPIO_40013000_BASE_ADDRESS_0
 #define IRQ_PORT3_ALL				ARM_CMSDK_GPIO_40013000_IRQ_0
+
+/* End of SoC Level DTS fixup file */
