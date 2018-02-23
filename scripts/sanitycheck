@@ -866,7 +866,7 @@ class MakeGenerator:
     re_make = re.compile(
         "sanity_test_([A-Za-z0-9]+) (.+)|$|make[:] \*\*\* \[(.+:.+: )?(.+)\] Error.+$")
 
-    def __init__(self, base_outdir, asserts=False, deprecations=False):
+    def __init__(self, base_outdir):
         """MakeGenerator constructor
 
         @param base_outdir Intended to be the base out directory. A make.log
@@ -880,8 +880,8 @@ class MakeGenerator:
             os.makedirs(base_outdir)
         self.logfile = os.path.join(base_outdir, "make.log")
         self.makefile = os.path.join(base_outdir, "Makefile")
-        self.asserts = asserts
-        self.deprecations = deprecations
+        self.asserts = options.enable_asserts
+        self.deprecations = options.error_on_deprecations
 
     def _get_rule_header(self, name):
         return MakeGenerator.GOAL_HEADER_TMPL.format(goal=name)
@@ -1028,7 +1028,7 @@ class MakeGenerator:
         self.goals[name] = MakeGoal(name, text, qemu_handler, self.logfile, build_logfile,
                                     run_logfile, handler_logfile)
 
-    def add_unit_goal(self, instance, args, timeout=30, coverage=False):
+    def add_unit_goal(self, instance, args, timeout=30):
         outdir = instance.outdir
         timeout = instance.test.timeout
         name = instance.name
@@ -1050,7 +1050,7 @@ class MakeGenerator:
         self.goals[name] = MakeGoal(name, text, unit_handler, self.logfile, build_logfile,
                                     run_logfile, handler_logfile)
 
-    def add_native_goal(self, instance, args, coverage=False):
+    def add_native_goal(self, instance, args):
 
         outdir = instance.outdir
         timeout = instance.test.timeout
@@ -1092,8 +1092,7 @@ class MakeGenerator:
         self.goals[name] = MakeGoal(name, text, handler, self.logfile, build_logfile,
                                     run_logfile, handler_logfile)
 
-    def add_test_instance(self, ti, build_only=False, enable_slow=False, coverage=False,
-                          extra_args=[]):
+    def add_test_instance(self, ti, extra_args=[]):
         """Add a goal to build/test a TestInstance object
 
         @param ti TestInstance object to build. The status dictionary returned
@@ -1107,21 +1106,22 @@ class MakeGenerator:
         args.append("BOARD={}".format(ti.platform.name))
         args.extend(extra_args)
 
-        do_run_slow = enable_slow or not ti.test.slow
-        do_build_only = ti.build_only or build_only
+        do_run_slow = options.enable_slow or not ti.test.slow
+        do_build_only = ti.build_only or options.build_only
         do_run = (not do_build_only) and do_run_slow
-
 
         if ti.platform.qemu_support and do_run:
             self.add_qemu_goal(ti, args)
 
         elif ti.test.type == "unit":
-            self.add_unit_goal(ti, args, coverage)
+            self.add_unit_goal(ti, args)
 
         elif ti.platform.type == "native" and do_run:
-            self.add_native_goal(ti, args, coverage)
-        elif options.device_testing and (not ti.build_only) and (not build_only):
+            self.add_native_goal(ti, args)
+
+        elif options.device_testing and (not ti.build_only) and (not options.build_only):
             self.add_device_goal(ti, args)
+
         else:
             self.add_instance_build_goal(ti, args, "build.log")
 
@@ -1581,13 +1581,12 @@ class TestInstance:
         out directory used is <outdir>/<platform>/<test case name>
     """
 
-    def __init__(self, test, platform, base_outdir, build_only=False,
-                 slow=False, coverage=False):
+    def __init__(self, test, platform, base_outdir):
         self.test = test
         self.platform = platform
         self.name = os.path.join(platform.name, test.name)
         self.outdir = os.path.join(base_outdir, platform.name, test.path)
-        self.build_only = build_only or test.build_only or (test.harness and test.harness != 'console')
+        self.build_only = options.build_only or test.build_only or (test.harness and test.harness != 'console')
         self.results = {}
 
     def create_overlay(self):
@@ -1642,7 +1641,7 @@ class TestSuite:
         os.path.join(os.environ['ZEPHYR_BASE'],
                      "scripts", "sanity_chk", "sanitycheck-tc-schema.yaml"))
 
-    def __init__(self, board_root_list, testcase_roots, outdir, coverage):
+    def __init__(self, board_root_list, testcase_roots, outdir):
         # Keep track of which test cases we've filtered out and why
         self.arches = {}
         self.testcases = {}
@@ -1651,7 +1650,6 @@ class TestSuite:
         self.instances = {}
         self.goals = None
         self.discards = None
-        self.coverage = coverage
         self.load_errors = 0
 
         for testcase_root in testcase_roots:
@@ -2042,8 +2040,7 @@ class TestSuite:
         for ti in ti_list:
             self.instances[ti.name] = ti
 
-    def execute(self, cb, cb_context, build_only, enable_slow,
-                enable_asserts, enable_deprecations, extra_args):
+    def execute(self, cb, cb_context):
 
         def calc_one_elf_size(name, goal):
             if not goal.failed:
@@ -2053,11 +2050,9 @@ class TestSuite:
                 goal.metrics["rom_size"] = sc.get_rom_size()
                 goal.metrics["unrecognized"] = sc.unrecognized_sections()
 
-        mg = MakeGenerator(self.outdir, asserts=enable_asserts,
-                           deprecations=enable_deprecations)
+        mg = MakeGenerator(self.outdir)
         for i in self.instances.values():
-            mg.add_test_instance(i, build_only, enable_slow,
-                                 self.coverage, extra_args)
+            mg.add_test_instance(i, options.extra_args)
         self.goals = mg.execute(cb, cb_context)
 
         # Parallelize size calculation
@@ -2697,8 +2692,7 @@ def main():
         options.testcase_root = [os.path.join(ZEPHYR_BASE, "tests"),
                               os.path.join(ZEPHYR_BASE, "samples")]
 
-    ts = TestSuite(options.board_root, options.testcase_root,
-                   options.outdir, options.coverage)
+    ts = TestSuite(options.board_root, options.testcase_root, options.outdir)
 
     if ts.load_errors:
         sys.exit(1)
@@ -2787,21 +2781,11 @@ def main():
     if VERBOSE or not TERMINAL:
         goals = ts.execute(
             chatty_test_cb,
-            ts.instances,
-            options.build_only,
-            options.enable_slow,
-            options.enable_asserts,
-            options.error_on_deprecations,
-            options.extra_args)
+            ts.instances)
     else:
         goals = ts.execute(
             terse_test_cb,
-            ts.instances,
-            options.build_only,
-            options.enable_slow,
-            options.enable_asserts,
-            options.error_on_deprecations,
-            options.extra_args)
+            ts.instances)
         info("")
 
     if options.detailed_report:
