@@ -26,3 +26,5 @@ zephyr_library_sources_ifdef(CONFIG_I2C_STM32_V2
 	)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE		i2c_handlers.c)
+
+add_subdirectory_ifdef(CONFIG_I2C_SLAVE			slave)
