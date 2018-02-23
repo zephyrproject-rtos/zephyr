@@ -90,6 +90,7 @@ static void supported_commands(u8_t *data, u16_t len)
 	tester_set_bit(buf->data, MESH_LPN_UNSUBSCRIBE);
 	tester_set_bit(buf->data, MESH_RPL_CLEAR);
 #endif /* CONFIG_BT_TESTING */
+	tester_set_bit(buf->data, MESH_PROXY_IDENTITY);
 
 	tester_send(BTP_SERVICE_ID_MESH, MESH_READ_SUPPORTED_COMMANDS,
 		    CONTROLLER_INDEX, buf->data, buf->len);
@@ -734,6 +735,21 @@ static void rpl_clear(u8_t *data, u16_t len)
 }
 #endif /* CONFIG_BT_TESTING */
 
+static void proxy_identity_enable(u8_t *data, u16_t len)
+{
+	int err;
+
+	SYS_LOG_DBG("");
+
+	err = bt_mesh_proxy_identity_enable();
+	if (err) {
+		SYS_LOG_ERR("Failed to enable proxy identity (err %d)", err);
+	}
+
+	tester_rsp(BTP_SERVICE_ID_MESH, MESH_PROXY_IDENTITY, CONTROLLER_INDEX,
+		   err ? BTP_STATUS_FAILED : BTP_STATUS_SUCCESS);
+}
+
 void tester_handle_mesh(u8_t opcode, u8_t index, u8_t *data, u16_t len)
 {
 	switch (opcode) {
@@ -793,6 +809,9 @@ void tester_handle_mesh(u8_t opcode, u8_t index, u8_t *data, u16_t len)
 		rpl_clear(data, len);
 		break;
 #endif /* CONFIG_BT_TESTING */
+	case MESH_PROXY_IDENTITY:
+		proxy_identity_enable(data, len);
+		break;
 	default:
 		tester_rsp(BTP_SERVICE_ID_MESH, opcode, index,
 			   BTP_STATUS_UNKNOWN_CMD);

@@ -1544,6 +1544,15 @@ Commands and responses:
 
 		In case of an error, the error response will be returned.
 
+	Opcode 0x13 - Enable advertising with Node Identity
+		Controller Index:	<controller id>
+		Command parameters:	<none>
+
+		This command is used to start advertising on each subnet using
+		Node Identity for the next 60 seconds.
+
+		In case of an error, the error response will be returned.
+
 Events:
 	Opcode 0x80 - Output number action Event
 
