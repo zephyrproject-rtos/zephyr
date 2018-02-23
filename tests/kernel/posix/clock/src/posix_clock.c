@@ -4,18 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <tc_util.h>
+#include <ztest.h>
 #include <pthread.h>
 
 #define SLEEP_SECONDS 1
 
-void main(void)
+void test_posix_clock(void)
 {
-	u32_t status;
 	s64_t nsecs_elapsed, secs_elapsed;
 	struct timespec ts, te;
 
-	TC_START("POSIX clock APIs\n");
+	printk("POSIX clock APIs\n");
 	clock_gettime(CLOCK_MONOTONIC, &ts);
 	/* 2 Sec Delay */
 	sleep(SLEEP_SECONDS);
@@ -30,8 +29,16 @@ void main(void)
 		secs_elapsed = (te.tv_sec - ts.tv_sec - 1);
 	}
 
-	status = secs_elapsed == (2 * SLEEP_SECONDS)  ? TC_PASS : TC_FAIL;
+	/*TESTPOINT: Check if POSIX clock API test passes*/
+	zassert_equal(secs_elapsed, (2 * SLEEP_SECONDS),
+			"POSIX clock API test failed\n");
 
-	TC_PRINT("POSIX clock APIs test done\n");
-	TC_END_REPORT(status);
+	printk("POSIX clock APIs test done\n");
+}
+
+void test_main(void)
+{
+	ztest_test_suite(test_posix_clock_api,
+			ztest_unit_test(test_posix_clock));
+	ztest_run_test_suite(test_posix_clock_api);
 }
