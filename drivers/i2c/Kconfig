@@ -213,6 +213,7 @@ config I2C_NIOS2
 source "drivers/i2c/Kconfig.dw"
 
 source "drivers/i2c/Kconfig.esp32"
+source "drivers/i2c/slave/Kconfig"
 
 source "drivers/i2c/Kconfig.gpio"
 
