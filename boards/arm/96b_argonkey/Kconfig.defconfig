@@ -1,0 +1,40 @@
+# Kconfig - 96Boards Argonkey Board Configuration
+#
+# Copyright (c) 2018 STMicroelectronics
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_96B_ARGONKEY
+
+config BOARD
+	default 96b_argonkey
+
+if UART_CONSOLE
+
+config UART_STM32_PORT_1
+	default y
+
+endif # UART_CONSOLE
+
+if I2C
+
+config I2C_1
+	default y
+
+config I2C_2
+	default y
+
+config I2C_3
+	default y
+
+endif # I2C
+
+if SPI
+
+config SPI_2
+	default y
+
+endif # SPI
+
+endif # BOARD_96B_ARGONKEY
