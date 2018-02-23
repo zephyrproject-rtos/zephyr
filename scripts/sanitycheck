@@ -1015,12 +1015,19 @@ class MakeGenerator:
 
         args.append("BOARD={}".format(ti.platform.name))
         args.extend(extra_args)
-        if (ti.platform.qemu_support and (not ti.build_only) and
-                (not build_only) and (enable_slow or not ti.test.slow)):
+
+        do_run_slow = enable_slow or not ti.test.slow
+        do_build_only = ti.build_only or build_only
+        do_run = (not do_build_only) and do_run_slow
+
+
+        if ti.platform.qemu_support and do_run:
             self.add_qemu_goal(ti, args)
+
         elif ti.test.type == "unit":
             self.add_unit_goal(ti, args, coverage)
-        elif ti.platform.type == "native" and (not ti.build_only) and (not build_only):
+
+        elif ti.platform.type == "native" and do_run:
             self.add_native_goal(ti, args, coverage)
         else:
             self.add_instance_build_goal(ti, args, "build.log")
