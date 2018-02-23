@@ -766,6 +766,7 @@ struct mesh_lpn_unsubscribe_cmd {
 } __packed;
 
 #define MESH_RPL_CLEAR			0x12
+#define MESH_PROXY_IDENTITY		0x13
 
 /* events */
 #define MESH_EV_OUT_NUMBER_ACTION	0x80
