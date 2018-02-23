@@ -1,0 +1,9 @@
+# Kconfig - 96Boards Argonkey Board Configuration
+#
+# Copyright (c) 2018 STMicroelectronics
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+config BOARD_96B_ARGONKEY
+	bool "96Boards Argonkey"
+	depends on SOC_STM32F412CG
