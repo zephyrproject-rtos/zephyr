@@ -1536,6 +1536,14 @@ Commands and responses:
 
 		In case of an error, the error response will be returned.
 
+	Opcode 0x12 - Clear Replay Protection List Cache
+		Controller Index:	<controller id>
+		Command parameters:	<none>
+
+		This command is used to clear Replay Protection List Cache.
+
+		In case of an error, the error response will be returned.
+
 Events:
 	Opcode 0x80 - Output number action Event
 
