@@ -35,6 +35,32 @@ Drivers and Sensors
 Networking
 **********
 
+* Generic OpenThread support added
+* OpenThread support to nrf5 IEEE 802.15.4 driver added
+* NXP MCUX ethernet driver IPv6 multicast join/leave enhancements
+* Ethernet stm32 fixes
+* IEEE 802.15.4 Sub-GHz TI CC1200 chip support added
+* IEEE 802.15.4 test driver (upipe) hw filtering support added
+* IEEE 802.15.4 radio API enhancements
+* Net loopback driver fixes
+* Net management API event enhancements
+* IPv6 neighbor addition and removal can be monitored
+* Static IPv4 and DHCPv4 configuration enhancements
+* Bluetooth IPSP disconnect fix
+* Network buffer enhancements
+* ICMPv4 and ICMPv6 error checking fixes
+* Network interface address handling enhancements
+* Add routing support between network interfaces
+* LWM2M fixes and enhancements
+* Old legacy HTTP API removed
+* Old legacy ZoAP API removed
+* CoAP fixes
+* TCP fixes
+* HTTP fixes
+* RPL fixes
+* Net-app API fixes
+* Net-shell fixes
+* BSD socket API fixes
 
 Bluetooth
 *********
