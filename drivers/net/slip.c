@@ -411,33 +411,6 @@ static u8_t *recv_cb(u8_t *buf, size_t *off)
 	return buf;
 }
 
-static inline int _slip_mac_addr_from_str(struct slip_context *slip,
-					  const char *src)
-{
-	unsigned int len, i;
-	char *endptr;
-
-	len = strlen(src);
-	for (i = 0; i < len; i++) {
-		if (!(src[i] >= '0' && src[i] <= '9') &&
-		    !(src[i] >= 'A' && src[i] <= 'F') &&
-		    !(src[i] >= 'a' && src[i] <= 'f') &&
-		    src[i] != ':') {
-			return -EINVAL;
-		}
-	}
-
-	memset(slip->mac_addr, 0, sizeof(slip->mac_addr));
-
-	for (i = 0; i < sizeof(slip->mac_addr); i++) {
-		slip->mac_addr[i] = strtol(src, &endptr, 16);
-		src = ++endptr;
-	}
-
-	return 0;
-}
-
-
 static int slip_init(struct device *dev)
 {
 	struct slip_context *slip = dev->driver_data;
@@ -474,7 +447,8 @@ static void slip_iface_init(struct net_if *iface)
 	slip->iface = iface;
 
 	if (CONFIG_SLIP_MAC_ADDR[0] != 0) {
-		if (_slip_mac_addr_from_str(slip, CONFIG_SLIP_MAC_ADDR) < 0) {
+		if (net_bytes_from_str(slip->mac_addr, sizeof(slip->mac_addr),
+				       CONFIG_SLIP_MAC_ADDR) < 0) {
 			goto use_random_mac;
 		}
 	} else {
