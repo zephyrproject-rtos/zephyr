@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <tc_util.h>
+#include <ztest.h>
 #include <kernel.h>
 #include <pthread.h>
 
@@ -56,7 +56,7 @@ void *thread_top(void *p1)
 	struct sched_param schedparam;
 
 	pthread_getschedparam(pthread_self(), &policy, &schedparam);
-	TC_PRINT("Thread %d starting with scheduling policy %d & priority %d\n",
+	printk("Thread %d starting with scheduling policy %d & priority %d\n",
 		 id, policy, schedparam.priority);
 	/* Try a double-lock here to exercise the failing case of
 	 * trylock.  We don't support RECURSIVE locks, so this is
@@ -65,7 +65,7 @@ void *thread_top(void *p1)
 	pthread_mutex_lock(&lock);
 
 	if (!pthread_mutex_trylock(&lock)) {
-		TC_ERROR("pthread_mutex_trylock inexplicably succeeded\n");
+		printk("pthread_mutex_trylock inexplicably succeeded\n");
 		bounce_failed = 1;
 	}
 
@@ -94,7 +94,7 @@ void *thread_top(void *p1)
 		curr_bounce_thread = id;
 		for (j = 0; j < 1000; j++) {
 			if (curr_bounce_thread != id) {
-				TC_ERROR("Racing bounce threads\n");
+				printk("Racing bounce threads\n");
 				bounce_failed = 1;
 				k_sem_give(&main_sem);
 				pthread_mutex_unlock(&lock);
@@ -124,7 +124,7 @@ void *thread_top(void *p1)
 	 */
 	for (i = 0; i < N_THR; i++) {
 		if (barrier_done[i]) {
-			TC_ERROR("Barrier exited early\n");
+			printk("Barrier exited early\n");
 			barrier_failed = 1;
 			k_sem_give(&main_sem);
 		}
@@ -171,54 +171,52 @@ int barrier_test_done(void)
 	return 1;
 }
 
-void main(void)
+void test_pthread(void)
 {
-	int i, ret, min_prio, max_prio, status = TC_FAIL;
+	int i, ret, min_prio, max_prio;
 	pthread_attr_t attr[N_THR];
 	struct sched_param schedparam;
 	pthread_t newthread[N_THR];
 	int schedpolicy = SCHED_FIFO;
 	void *retval;
 
-	TC_START("POSIX thread IPC APIs\n");
+	printk("POSIX thread IPC APIs\n");
 	schedparam.priority = CONFIG_NUM_COOP_PRIORITIES - 1;
 	min_prio = sched_get_priority_min(schedpolicy);
 	max_prio = sched_get_priority_max(schedpolicy);
 
-	if (min_prio < 0 || max_prio < 0 || schedparam.priority < min_prio ||
-	    schedparam.priority > max_prio) {
-		TC_ERROR("Scheduling priority outside valid priority range\n");
-		goto done;
-	}
+	ret = (min_prio < 0 || max_prio < 0 ||
+			schedparam.priority < min_prio ||
+			schedparam.priority > max_prio);
+
+	/*TESTPOINT: Check if scheduling priority is valid*/
+	zassert_false(ret,
+			"Scheduling priority outside valid priority range\n");
 
 	for (i = 0; i < N_THR; i++) {
 		ret = pthread_attr_init(&attr[i]);
-		if (ret != 0) {
-			TC_ERROR("Thread attribute initialization failed\n");
-			goto done;
-		}
+
+		/*TESTPOINT: Check if thread attr init is done*/
+		zassert_false(ret, "Thread attribute initialization failed\n");
+
 		pthread_attr_setstack(&attr[i], &stacks[i][0], STACKSZ);
 		pthread_attr_setschedpolicy(&attr[i], schedpolicy);
 		pthread_attr_setschedparam(&attr[i], &schedparam);
 		ret = pthread_create(&newthread[i], &attr[i], thread_top,
 				     (void *)i);
 
-		if (ret != 0) {
-			TC_ERROR("Number of threads exceeds maximum limit\n");
-			goto done;
-		}
-
+		/*TESTPOINT: Check if thread is created successfully*/
+		zassert_false(ret, "Number of threads exceed max limit\n");
 	}
 
 	while (!bounce_test_done()) {
 		k_sem_take(&main_sem, K_FOREVER);
 	}
 
-	if (bounce_failed) {
-		goto done;
-	}
+	/*TESTPOINT: Check if bounce test passes*/
+	zassert_false(bounce_failed, "Bounce test failed\n");
 
-	TC_PRINT("Bounce test OK\n");
+	printk("Bounce test OK\n");
 
 	/* Wake up the worker threads */
 	pthread_mutex_lock(&lock);
@@ -229,17 +227,19 @@ void main(void)
 		k_sem_take(&main_sem, K_FOREVER);
 	}
 
-	if (barrier_failed) {
-		goto done;
-	}
+	/*TESTPOINT: Check if barrier test passes*/
+	zassert_false(barrier_failed, "Barrier test failed\n");
 
 	for (i = 0; i < N_THR; i++) {
 		pthread_join(newthread[i], &retval);
 	}
 
-	TC_PRINT("Barrier test OK\n");
-	status = TC_PASS;
+	printk("Barrier test OK\n");
+}
 
- done:
-	TC_END_REPORT(status);
+void test_main(void)
+{
+	ztest_test_suite(test_pthreads,
+			ztest_unit_test(test_pthread));
+	ztest_run_test_suite(test_pthreads);
 }
