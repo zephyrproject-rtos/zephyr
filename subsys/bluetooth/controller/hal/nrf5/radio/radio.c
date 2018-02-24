@@ -9,13 +9,6 @@
 #include <arch/arm/cortex_m/cmsis.h>
 #endif
 
-#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
-#define SIM_SIDE_EFFECTS_MISSING \
-	posix_print_warning("%s() not yet with sideeffects\n", __func__)
-#else
-#define SIM_SIDE_EFFECTS_MISSING
-#endif
-
 #include "util/mem.h"
 #include "hal/ccm.h"
 #include "hal/radio.h"
@@ -647,10 +640,11 @@ u32_t radio_filter_match_get(void)
 
 void radio_bc_configure(u32_t n)
 {
-	SIM_SIDE_EFFECTS_MISSING;
-
 	NRF_RADIO->BCC = n;
 	NRF_RADIO->SHORTS |= RADIO_SHORTS_ADDRESS_BCSTART_Msk;
+#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
+	NRF_RADIO_regw_sideeffects_BCC();
+#endif
 }
 
 void radio_bc_status_reset(void)
@@ -1086,7 +1080,6 @@ static u8_t MALIGN(4) _ccm_scratch[(RADIO_PDU_LEN_MAX - 4) + 16];
 
 void *radio_ccm_rx_pkt_set(struct ccm *ccm, u8_t phy, void *pkt)
 {
-	SIM_SIDE_EFFECTS_MISSING;
 
 	u32_t mode;
 
@@ -1167,8 +1160,6 @@ void *radio_ccm_rx_pkt_set(struct ccm *ccm, u8_t phy, void *pkt)
 
 void *radio_ccm_tx_pkt_set(struct ccm *ccm, void *pkt)
 {
-	SIM_SIDE_EFFECTS_MISSING;
-
 	u32_t mode;
 
 	NRF_CCM->ENABLE = CCM_ENABLE_ENABLE_Disabled;
@@ -1205,15 +1196,19 @@ void *radio_ccm_tx_pkt_set(struct ccm *ccm, void *pkt)
 
 u32_t radio_ccm_is_done(void)
 {
-	SIM_SIDE_EFFECTS_MISSING;
-
 	NRF_CCM->INTENSET = CCM_INTENSET_ENDCRYPT_Msk;
+#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
+	NRF_CCM_regw_sideeffects_INTENSET();
+#endif
 	while (NRF_CCM->EVENTS_ENDCRYPT == 0) {
 		__WFE();
 		__SEV();
 		__WFE();
 	}
 	NRF_CCM->INTENCLR = CCM_INTENCLR_ENDCRYPT_Msk;
+#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
+	NRF_CCM_regw_sideeffects_INTENCLR();
+#endif
 	NVIC_ClearPendingIRQ(CCM_AAR_IRQn);
 
 	return (NRF_CCM->EVENTS_ERROR == 0);
