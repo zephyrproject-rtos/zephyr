@@ -1,8 +1,7 @@
 sample:
-  description: TBD
-  name: TBD
+  name: mbedTLS client
 tests:
   test:
     harness: net
-    platform_whitelist: galileo
-    tags: net
+    tags: net crypto mbedtls
+    depends_on: netif
