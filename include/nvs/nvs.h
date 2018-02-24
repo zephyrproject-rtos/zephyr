@@ -1,7 +1,7 @@
 /*  NVS: non volatile storage using a Flash Circular Buffer for storage */
 
 /*
- * Copyright (c) 2017 Laczen
+ * Copyright (c) 2018 Laczen
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -59,9 +59,6 @@ struct nvs_fs {
 
     u8_t entry_sector;            /* oldest sector in use */
     u8_t write_block_size;        /* write block size for alignment */
-    bool gc;                      /* enable garbage collection: if gc is true data from the oldest sector
-                                     will be copied to the newest sector. This requires one sector to
-                                     always be empty, and thus at least a sector_count of 2 */
 
     /* mutex definition */
     struct k_mutex fcb_lock;
@@ -71,6 +68,7 @@ struct nvs_fs {
 };
 
 int nvs_init(struct nvs_fs *fs, const char *dev_name, u32_t magic);
+int nvs_clear(struct nvs_fs *fs);
 int nvs_write(struct nvs_fs *fs, struct nvs_entry *entry, const void *data);
 int nvs_read(struct nvs_fs *fs, struct nvs_entry *entry, void *data);
 int nvs_read_hist(struct nvs_fs *fs, struct nvs_entry *entry, void *data, u8_t mode);
@@ -84,7 +82,6 @@ int nvs_get_first_entry(struct nvs_fs *fs, struct nvs_entry *entry);
 int nvs_get_last_entry(struct nvs_fs *fs, struct nvs_entry *entry);
 int nvs_check_crc(struct nvs_fs *fs, struct nvs_entry *entry);
 int nvs_rotate(struct nvs_fs *fs);
-int nvs_clear(struct nvs_fs *fs);
 int nvs_flash_read(struct nvs_fs *fs, off_t offset, void *data, size_t len);
 int nvs_flash_write(struct nvs_fs *fs, off_t offset, const void *data, size_t len);
 

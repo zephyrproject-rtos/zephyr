@@ -1,7 +1,7 @@
 /*  Simple Flash Circular Buffer for storage */
 
 /*
- * Copyright (c) 2017 Laczen
+ * Copyright (c) 2018 Laczen
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -166,7 +166,7 @@ void _nvs_entry_sector_advance(struct nvs_fs *fs) {
 int _nvs_gc(struct nvs_fs *fs, off_t addr) {
   int len,bytes_to_copy;
   off_t rd_addr;
-  struct nvs_entry walker, search;
+  struct nvs_entry walker, walker_last, last_entry, search;
   struct _nvs_data_hdr head;
   u8_t buf[NVS_MOVE_BLOCK_SIZE];
 
@@ -187,10 +187,22 @@ int _nvs_gc(struct nvs_fs *fs, off_t addr) {
     walker.id = head.id;
     search.id = walker.id;
     if (nvs_get_first_entry(fs, &search) != NVS_OK) {
-      /* entry is not found, copy needed */
+      /* entry is not found, copy needed - but we need to find the last entry first*/
+      walker_last = walker;
+      while (head.id != NVS_ID_SECTOR_END) {
+        if (nvs_flash_read(fs, _nvs_head_addr_in_flash(fs, &walker_last), &head, _nvs_len_in_flash(fs,sizeof(struct _nvs_data_hdr)))) {
+          return NVS_ERR_FLASH;
+        }
+        if (head.id == walker.id) {
+          last_entry=walker_last;
+        }
+        walker_last.len=head.len;
+        walker_last.id=head.id;
+        _nvs_addr_advance(fs,&walker_last.data_addr, _nvs_entry_len_in_flash(fs,walker_last.len));
+      }
       DBG_NVS("Copying entry with id %x to front of circular buffer\n", search.id);
-      rd_addr = _nvs_head_addr_in_flash(fs, &walker);
-      len = _nvs_entry_len_in_flash(fs, walker.len);
+      rd_addr = _nvs_head_addr_in_flash(fs, &last_entry);
+      len = _nvs_entry_len_in_flash(fs, last_entry.len);
       while (len>0) {
         bytes_to_copy=min(NVS_MOVE_BLOCK_SIZE,len);
         if (nvs_flash_read(fs, rd_addr, &buf, bytes_to_copy)) {
@@ -274,6 +286,9 @@ int nvs_get_last_entry(struct nvs_fs *fs, struct nvs_entry *entry) {
 int nvs_walk_entry(struct nvs_fs *fs, struct nvs_entry *entry) {
   struct _nvs_data_hdr head;
 
+  if (entry->id != NVS_ID_EMPTY) {
+    _nvs_addr_advance(fs, &entry->data_addr, _nvs_entry_len_in_flash(fs,entry->len));
+  }
   while (1) {
     if (nvs_flash_read(fs,_nvs_head_addr_in_flash(fs, entry), &head, _nvs_len_in_flash(fs,sizeof(struct _nvs_data_hdr)))) {
       return NVS_ERR_FLASH;
@@ -312,8 +327,8 @@ int nvs_init(struct nvs_fs *fs, const char *dev_name, u32_t magic) {
   if (!((fs->sector_size != 0) && !(fs->sector_size & (fs->sector_size - 1)))) {
     return NVS_ERR_CFG;
   }
-  /* check the number of sectors */
-  if (((fs->gc) && (fs->sector_count < 2)) || ((!fs->gc) && (fs->sector_count < 1)))  {
+  /* check the number of sectors, it should be at least 2 */
+  if (fs->sector_count < 2)  {
     return NVS_ERR_CFG;
   }
   for (i=0; i<fs->sector_count;i++) {
@@ -367,8 +382,8 @@ int nvs_init(struct nvs_fs *fs, const char *dev_name, u32_t magic) {
 
   fs->write_location = _nvs_head_addr_in_flash(fs, &entry);
 
-  if ((fs->gc)&&(active_sector_cnt==fs->sector_count)) {
-    /* In gc mode one sector should always be empty, unless power was cut during garbage collection
+  if (active_sector_cnt==fs->sector_count) {
+    /* one sector should always be empty, unless power was cut during garbage collection
        start gc again on the last sector */
     DBG_NVS("Restarting garbage collection\n");
     addr = fs->entry_sector * fs->sector_size;
@@ -478,45 +493,32 @@ int nvs_rotate(struct nvs_fs *fs) {
   addr = (fs->write_location & ~(fs->sector_size-1));
   _nvs_addr_advance(fs,&addr,fs->sector_size);
 
-  if (!fs->gc) {
-    /* when gc is not enabled we need to erase the sector before writing,
-       except when the entry sector has not been reached */
-    if ((addr & ~(fs->sector_size-1)) == fs->entry_sector * fs->sector_size) {
-      _nvs_entry_sector_advance(fs);
-      if (_nvs_flash_erase(fs, addr, fs->sector_size)) {
-        rc = NVS_ERR_FLASH;
-        goto out;
-      }
-    }
-  }
-
   /* initialize the new sector */
   rc = _nvs_sector_init(fs, addr);
   if (rc) {
      goto out;
   }
 
-  if (fs->gc) {
-    addr = (fs->write_location & ~(fs->sector_size-1));
-    _nvs_addr_advance(fs,&addr, fs->sector_size);
-    /* Do we need to advance the entry_sector, if so we need to copy */
-    if ((addr & ~(fs->sector_size-1)) == fs->entry_sector * fs->sector_size) {
-      DBG_NVS("Starting garbage collection...\n");
-      _nvs_entry_sector_advance(fs);
-      rc = _nvs_gc(fs, addr);
-      if (rc) {
-        DBG_NVS("Quiting garbage collection with gc error\n");
-        goto out;
-      }
-      if (_nvs_flash_erase(fs, addr, fs->sector_size)) {
-        rc = NVS_ERR_FLASH;
-        DBG_NVS("Quiting garbage collection with flash erase error\n");
-        goto out;
-      }
-      DBG_NVS("Done garbage collection without error\n");
+  /* garbage collection */
+  addr = (fs->write_location & ~(fs->sector_size-1));
+  _nvs_addr_advance(fs,&addr, fs->sector_size);
+  /* Do we need to advance the entry_sector, if so we need to copy and do garbage collection*/
+  if ((addr & ~(fs->sector_size-1)) == fs->entry_sector * fs->sector_size) {
+    DBG_NVS("Starting garbage collection...\n");
+    _nvs_entry_sector_advance(fs);
+    rc = _nvs_gc(fs, addr);
+    if (rc) {
+      DBG_NVS("Quiting garbage collection with gc error\n");
+      goto out;
     }
-
+    if (_nvs_flash_erase(fs, addr, fs->sector_size)) {
+      rc = NVS_ERR_FLASH;
+      DBG_NVS("Quiting garbage collection with flash erase error\n");
+      goto out;
+    }
+    DBG_NVS("Done garbage collection without error\n");
   }
+
   rc = NVS_OK;
 
   out:
@@ -627,7 +629,6 @@ int nvs_read_hist(struct nvs_fs *fs, struct nvs_entry *entry, void *data, u8_t m
       rc=nvs_get_first_entry(fs, entry);
       break;
     case 1: /* Read next entry */
-      _nvs_addr_advance(fs, &entry->data_addr, _nvs_entry_len_in_flash(fs,entry->len));
       rc=nvs_walk_entry(fs, entry);
       break;
     case 2: /* Read last entry */
