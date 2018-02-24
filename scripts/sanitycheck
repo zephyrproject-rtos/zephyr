@@ -1227,6 +1227,7 @@ class SanityConfigParser:
         d = {}
         for k, v in self.common.items():
             d[k] = v
+
         for k, v in self.tests[name].items():
             if k not in valid_keys:
                 raise ConfigurationError(
@@ -1239,6 +1240,7 @@ class SanityConfigParser:
                     d[k] += " " + v
             else:
                 d[k] = v
+
         for k, kinfo in valid_keys.items():
             if k not in d:
                 if "required" in kinfo:
@@ -1391,7 +1393,7 @@ class TestCase:
         self.defconfig = {}
         self.yamlfile = yamlfile
 
-    def __repr__(self):
+    def __str__(self):
         return self.name
 
 
@@ -2133,6 +2135,9 @@ def parse_arguments():
         "run them. Useful if you're just interested in "
         "--discard-report")
 
+    parser.add_argument("--list-tags", action="store_true",
+            help="list all tags in selected tests")
+
     parser.add_argument(
         "-r", "--release", action="store_true",
         help="Update the benchmark database with the results of this test "
@@ -2418,6 +2423,16 @@ def main():
 
     ts = TestSuite(options.board_root, options.testcase_root,
                    options.outdir, options.coverage)
+
+    if options.list_tags:
+        tags = set()
+        for n,tc in ts.testcases.items():
+            tags = tags.union(tc.tags)
+
+        for t in tags:
+            print("- {}".format(t))
+
+        return
 
     discards = []
     if options.load_tests:
