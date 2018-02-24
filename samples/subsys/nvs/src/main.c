@@ -118,7 +118,7 @@ void main(void)
 				if (rc) {
 					printk("write error\n");
 				}
-				if (reboot_counter == (MAX_REBOOT - 1)) {
+				if (reboot_counter == MAX_REBOOT) {
 					printk("Doing last reboot...\n");
 				}
 				sys_reboot(0);
