@@ -73,7 +73,7 @@ mapping:
        required: no
      "tags":
        type: str
-       required: yes
+       required: no
      "timeout":
        type: int
        required: no
