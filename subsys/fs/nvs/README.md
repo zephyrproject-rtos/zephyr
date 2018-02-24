@@ -18,16 +18,18 @@ NVS allows storage of binary blobs, strings, integers, longs, ... and any combin
 
 For NVS the file system is declared as:
 
+```c
 static struct nvs_fs fs = {
   .sector_size = SECTOR_SIZE,
   .sector_count = SECTOR_COUNT,
   .offset = STORAGE_OFFSET,
 };
-
+```
 where
-
   SECTOR_SIZE is a multiple of the flash erase page size and a power of 2,
+
   SECTOR_COUNT is at least 2,
+  
   STORAGE_OFFSET is the offset of the storage area in flash.
 
 # High level API
@@ -54,7 +56,9 @@ To avoid frequent erases of flash sectors the maximum size of the entries that c
 # Usage of high level API:
 
 1. Initialize the filesystem with nvs_init
+
 2. To add an element to nvs: call nvs_write() to write an entry to flash
+
 3. To read newest entry in nvs: call nvs_read() to read the latest entry from flash
 
 # Low Level API
@@ -63,32 +67,48 @@ The low level API gives an interface that is somewhat similar to FCB. The low le
 
 nvs_append()
   - reserve space to store an element - writes header to flash and returns write location
+
 nvs_flash_write()
   - write contents to flash
+
 nvs_append_close()
   - calculate crc16 and write to flash
+
 nvs_get_first_entry()
   - get the first (oldest) entry in flash of specific id: returns read location and length
+
 nvs_get_last_entry()
   - get the last (newest) entry in flash of specific id: returns read location and length
+
 nvs_walk_entry()
   - get the next entry in flash of specific id: returns read location and length (entry needs to be initialised with data location)
+
 nvs_check_crc()
   - check the crc16 of an entry in flash, the calculation is done one the flash data and compared to the footer
+
 nvs_rotate()
   - erase oldest used sector, copy old data before making the sector current
+
 nvs_flash_read()
   - read an entry from flash
 
 # Usage of low level API:
 
 1. Initialize the filesystem with nvs_init
+
 2. To add an element to nvs:
+
    a. call nvs_append() to get location; if this fails due to lack of space,
    call nvs_rotate()
+
    b. use nvs_flash_write() to write contents
+
    c. call nvs_append_close() when done
+
 3. To read newest entry in nvs:
+
    a. call nvs_get_last_entry to get read location
+
    b. optional: call nvs_check_crc() to check the crc16
+
    c. call nvs_flash_read() to read the data
