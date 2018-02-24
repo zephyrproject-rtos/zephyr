@@ -1,4 +1,5 @@
 tests:
   test:
     tags: drivers aio
+    harness: aio
     depends_on: aio
