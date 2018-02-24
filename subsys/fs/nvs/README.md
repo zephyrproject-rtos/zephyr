@@ -26,11 +26,11 @@ static struct nvs_fs fs = {
 };
 ```
 where
+```c
   SECTOR_SIZE is a multiple of the flash erase page size and a power of 2,
-
   SECTOR_COUNT is at least 2,
-  
   STORAGE_OFFSET is the offset of the storage area in flash.
+```
 
 # High level API
 
