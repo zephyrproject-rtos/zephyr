@@ -104,8 +104,11 @@ build:
          if [ "$MATRIX_BUILD" = "1" ]; then
             gcovr -r ${ZEPHYR_BASE} -x > shippable/codecoverage/coverage.xml;
             lcov --capture --directory sanity-out/native_posix/ --directory sanity-out/unit_testing/ --output-file lcov.pre.info -q --rc lcov_branch_coverage=1;
-            lcov -q --remove lcov.pre.info *generated* -o lcov.info --rc lcov_branch_coverage=1;
-            rm lcov.pre.info;
+            lcov -q --remove lcov.pre.info *generated* -o lcov.pre2.info --rc lcov_branch_coverage=1;
+            lcov --remove lcov.pre2.info tests/* -o lcov.pre3.info --rc lcov_branch_coverage=1;
+            lcov --remove lcov.pre3.info samples/* -o lcov.pre4.info --rc lcov_branch_coverage=1;
+            lcov --remove lcov.pre4.info ext/* -o lcov.info --rc lcov_branch_coverage=1;
+            rm -f lcov.pre*
             rm -rf sanity-out out-2nd-pass;
             bash <(curl -s https://codecov.io/bash) -f "lcov.info" -X coveragepy -X fixes;
             rm lcov.info;
