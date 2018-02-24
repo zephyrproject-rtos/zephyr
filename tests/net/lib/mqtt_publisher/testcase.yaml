@@ -1,10 +1,10 @@
+common:
+  tags: net mqtt
+  harness: net
+  depends_on: netif
 tests:
   test:
     min_ram: 16
-    tags: net mqtt
-    harness: net
-  test_tls:
-    extra_args: CONF_FILE="prj_tls.conf"
+  net.mqtt.tls:
     platform_whitelist: frdm_k64f qemu_x86
-    tags: net mqtt
-    harness: net
+    extra_args: CONF_FILE="prj_tls.conf"

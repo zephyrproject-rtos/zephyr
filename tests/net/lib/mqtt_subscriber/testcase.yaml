@@ -3,3 +3,4 @@ tests:
     min_ram: 16
     tags: net mqtt
     harness: net
+    depends_on: netif
