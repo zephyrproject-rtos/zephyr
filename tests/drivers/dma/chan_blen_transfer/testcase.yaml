@@ -8,3 +8,4 @@ tests:
     extra_args: CONF_FILE=prj_shell.conf
     min_ram: 16
     tags: drivers dma
+    harness: keyboard

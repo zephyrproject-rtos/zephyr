@@ -2,3 +2,18 @@ tests:
   test:
     depends_on: dma
     tags: drivers dma
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "DMA memory to memory transfer started on DMA_\\d"
+        - "Preparing DMA Controller"
+        - "Starting the transfer and waiting for 1 second"
+        - "Each RX buffer should contain the full TX buffer string."
+        - "TX data: The quick brown fox jumps over the lazy dog"
+        - "RX data Loop 0: The quick brown fox jumps over the lazy dog"
+        - "RX data Loop 1: The quick brown fox jumps over the lazy dog"
+        - "RX data Loop 2: The quick brown fox jumps over the lazy dog"
+        - "RX data Loop 3: The quick brown fox jumps over the lazy dog"
+        - "RX data Loop 4: The quick brown fox jumps over the lazy dog"
+        - "Finished: DMA"
