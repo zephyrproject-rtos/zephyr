@@ -66,21 +66,18 @@ static int ccs811_channel_get(struct device *dev,
 
 	switch (chan) {
 	case SENSOR_CHAN_CO2:
-		uval = drv_data->co2 * 1000000;
-		val->val1 = uval / 1000000;
-		val->val2 = uval % 1000000;
+		val->val1 = drv_data->co2;
+		val->val2 = 0;
 
 		break;
 	case SENSOR_CHAN_VOC:
-		uval = drv_data->voc * 1000000;
-		val->val1 = uval / 1000000;
-		val->val2 = uval % 1000000;
+		val->val1 = drv_data->voc;
+		val->val2 = 0;
 
 		break;
 	case SENSOR_CHAN_VOLTAGE:
 		/*
-		 * Voltage readings are contained in least
-		 * significant 10 bits in volts
+		 * Raw ADC readings are contained in least significant 10 bits
 		 */
 		uval = (drv_data->resistance & CCS811_VOLTAGE_MASK)
 					* CCS811_VOLTAGE_SCALE;
