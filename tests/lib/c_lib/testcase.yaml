@@ -1,0 +1,3 @@
+tests:
+  libraries.libc:
+    tags: clib

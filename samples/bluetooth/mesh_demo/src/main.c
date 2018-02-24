@@ -89,9 +89,7 @@ static struct bt_mesh_health_srv health_srv = {
 	.cb = &health_srv_cb,
 };
 
-static struct bt_mesh_model_pub health_pub = {
-	.msg  = BT_MESH_HEALTH_FAULT_MSG(0),
-};
+BT_MESH_HEALTH_PUB_DEFINE(health_pub, 0);
 
 static struct bt_mesh_model root_models[] = {
 	BT_MESH_MODEL_CFG_SRV(&cfg_srv),
@@ -222,7 +220,7 @@ static u16_t target = GROUP_ADDR;
 
 void board_button_1_pressed(void)
 {
-	struct net_buf_simple *msg = NET_BUF_SIMPLE(3 + 4);
+	NET_BUF_SIMPLE_DEFINE(msg, 3 + 4);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net_idx,
 		.app_idx = app_idx,
@@ -231,9 +229,9 @@ void board_button_1_pressed(void)
 	};
 
 	/* Bind to Health model */
-	bt_mesh_model_msg_init(msg, OP_VENDOR_BUTTON);
+	bt_mesh_model_msg_init(&msg, OP_VENDOR_BUTTON);
 
-	if (bt_mesh_model_send(&vnd_models[0], &ctx, msg, NULL, NULL)) {
+	if (bt_mesh_model_send(&vnd_models[0], &ctx, &msg, NULL, NULL)) {
 		printk("Unable to send Vendor Button message\n");
 	}
 

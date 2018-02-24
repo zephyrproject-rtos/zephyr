@@ -13,40 +13,40 @@ menuconfig ETH_ENC28J60
 	depends on SPI
 	default n
 	help
-	ENC28J60C Stand-Alone Ethernet Controller
-	with SPI Interface
+	  ENC28J60C Stand-Alone Ethernet Controller
+	  with SPI Interface
 
 config ETH_ENC28J60_RX_THREAD_STACK_SIZE
 	int "Stack size for internal incoming packet handler"
 	depends on ETH_ENC28J60
 	default 800
 	help
-	Size of the stack used for internal thread which is ran for
-	incoming packet processing.
+	  Size of the stack used for internal thread which is ran for
+	  incoming packet processing.
 
 config ETH_ENC28J60_RX_THREAD_PRIO
 	int "Priority for internal incoming packet handler"
 	depends on ETH_ENC28J60
 	default 2
 	help
-	Priority level for internal thread which is ran for incoming
-	packet processing.
+	  Priority level for internal thread which is ran for incoming
+	  packet processing.
 
 config ETH_EN28J60_TIMEOUT
 	int "IP buffer timeout"
 	depends on ETH_ENC28J60
 	default 100
 	help
-	Given timeout in milliseconds. Maximum amount of time
-	that the driver will wait from the IP stack to get
-	a memory buffer before the Ethernet frame is dropped.
+	  Given timeout in milliseconds. Maximum amount of time
+	  that the driver will wait from the IP stack to get
+	  a memory buffer before the Ethernet frame is dropped.
 
 config ETH_ENC28J60_0
 	bool "ENC28J60C Ethernet port 0"
 	depends on ETH_ENC28J60
 	default n
 	help
-	Include port 0 driver
+	  Include port 0 driver
 
 if ETH_ENC28J60 && ETH_ENC28J60_0
 config ETH_ENC28J60_0_NAME
@@ -57,61 +57,61 @@ config ETH_EN28J60_0_FULL_DUPLEX
 	bool "ENC28J60 full duplex"
 	default y
 	help
-	Enable Full Duplex. Device is configured half duplex
-	when disabled.
+	  Enable Full Duplex. Device is configured half duplex
+	  when disabled.
 
 config ETH_ENC28J60_0_GPIO_PORT_NAME
 	string "GPIO controller port name"
 	default "GPIO_0"
 	help
-	GPIO port name through which ENC28J60C interruption is received.
+	  GPIO port name through which ENC28J60C interruption is received.
 
 config ETH_ENC28J60_0_GPIO_PIN
 	int "ENC28J60C INT GPIO PIN"
 	default 19
 	help
-	GPIO pin number used to connect INT
+	  GPIO pin number used to connect INT
 
 config ETH_ENC28J60_0_SPI_PORT_NAME
 	string "SPI master controller port name"
 	default "SPI_0"
 	help
-	Master SPI port name through which ENC28J60C chip is accessed.
+	  Master SPI port name through which ENC28J60C chip is accessed.
 
 config ETH_ENC28J60_0_SLAVE
 	hex "ETH_ENC28J60 SPI slave select pin"
 	default 1
 	help
-	ENC28J60C chip select pin.
+	  ENC28J60C chip select pin.
 
 config ETH_ENC28J60_0_SPI_BUS_FREQ
 	int "ENC28J60C SPI bus speed in Hz"
 	default 128
 	help
-	This is the maximum supported SPI bus frequency.
+	  This is the maximum supported SPI bus frequency.
 
 config ETH_ENC28J60_0_MAC3
 	hex "MAC Address Byte 3"
 	default 0
 	help
-	MACADDR<0:23> are Microchip's OUI.
-	This is the byte 3 of the MAC address.
-	MACADDR<31:24>
+	  MACADDR<0:23> are Microchip's OUI.
+	  This is the byte 3 of the MAC address.
+	  MACADDR<31:24>
 
 config ETH_ENC28J60_0_MAC4
 	hex "MAC Address Byte 4"
 	default 0
 	help
-	MACADDR<0:23> are Microchip's OUI.
-	This is the byte 4 of the MAC address.
-	MACADDR<40:32>
+	  MACADDR<0:23> are Microchip's OUI.
+	  This is the byte 4 of the MAC address.
+	  MACADDR<40:32>
 
 config ETH_ENC28J60_0_MAC5
 	hex "MAC Address Byte 5"
 	default 0
 	help
-	MACADDR<0:23> are Microchip's OUI.
-	This is the byte 5 of the MAC address.
-	MACADDR<48:41>
+	  MACADDR<0:23> are Microchip's OUI.
+	  This is the byte 5 of the MAC address.
+	  MACADDR<48:41>
 
 endif #ETH_ENC28J60 && ETH_ENC28J60_0

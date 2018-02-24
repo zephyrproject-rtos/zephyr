@@ -104,6 +104,16 @@ config ASSERT_LEVEL
 	  Level 1: on + warning in every file that includes __assert.h
 	  Level 2: on + no warning
 
+config FORCE_NO_ASSERT
+	bool
+	prompt "Force-disable no assertions"
+	default n
+	help
+	  This boolean option disables Zephyr assertion testing even
+	  in circumstances (sanitycheck) where it is enabled via
+	  CFLAGS and not Kconfig.  Added solely to be able to work
+	  around compiler bugs for specific tests.
+
 config OBJECT_TRACING
 	bool
 	prompt "Kernel object tracing"
@@ -163,15 +173,6 @@ config DEBUG_INFO
 #
 # Miscellaneous debugging options
 #
-
-config GDB_INFO
-	bool
-	prompt "Thread-aware debugging with GDB"
-	default n
-	help
-	  This option enables the kernel to collect additional information
-	  during interrupts, exceptions, and context switches. This information
-	  is required for thread-aware debugging with GDB.
 
 config OPENOCD_SUPPORT
 	bool

@@ -53,12 +53,25 @@
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_USB_DRIVER_LEVEL
 #include <logging/sys_log.h>
 
+/* Total in ep number = bidirectional ep number + in ep number */
+#define NUM_IN_EP (CONFIG_USB_NUM_BIDIR_ENDPOINTS + \
+		   CONFIG_USB_NUM_IN_ENDPOINTS)
 
-/* We need one RX FIFO and n TX FIFOs */
-#define FIFO_NUM (1 + CONFIG_USB_DC_STM32_EP_NUM)
+/* Total out ep number = bidirectional ep number + out ep number */
+#define NUM_OUT_EP (CONFIG_USB_NUM_BIDIR_ENDPOINTS + \
+		    CONFIG_USB_NUM_OUT_ENDPOINTS)
+/*
+ * Total bidirectional ep number = bidirectional ep number + (out ep number +
+ * in ep number) / 2.  Because out ep number = in ep number,
+ * total bidirectional ep number = total out ep number or total in ep number
+ */
+#define NUM_BIDIR_EP NUM_OUT_EP
+
+/* We need one RX FIFO and n TX-IN FIFOs */
+#define FIFO_NUM (1 + NUM_IN_EP)
 
 /* 4-byte words FIFO */
-#define FIFO_WORDS (CONFIG_USB_DC_STM32_RAM_SIZE / 4)
+#define FIFO_WORDS (CONFIG_USB_RAM_SIZE / 4)
 
 /* Allocate FIFO memory evenly between the FIFOs */
 #define FIFO_EP_WORDS (FIFO_WORDS / FIFO_NUM)
@@ -97,9 +110,9 @@ struct usb_dc_stm32_ep_state {
 struct usb_dc_stm32_state {
 	PCD_HandleTypeDef pcd;	/* Storage for the HAL_PCD api */
 	usb_dc_status_callback status_cb; /* Status callback */
-	struct usb_dc_stm32_ep_state out_ep_state[CONFIG_USB_DC_STM32_EP_NUM];
-	struct usb_dc_stm32_ep_state in_ep_state[CONFIG_USB_DC_STM32_EP_NUM];
-	u8_t ep_buf[CONFIG_USB_DC_STM32_EP_NUM][USB_OTG_FS_MAX_PACKET_SIZE];
+	struct usb_dc_stm32_ep_state out_ep_state[NUM_OUT_EP];
+	struct usb_dc_stm32_ep_state in_ep_state[NUM_IN_EP];
+	u8_t ep_buf[NUM_OUT_EP][USB_OTG_FS_MAX_PACKET_SIZE];
 };
 
 static struct usb_dc_stm32_state usb_dc_stm32_state;
@@ -110,7 +123,7 @@ static struct usb_dc_stm32_ep_state *usb_dc_stm32_get_ep_state(u8_t ep)
 {
 	struct usb_dc_stm32_ep_state *ep_state_base;
 
-	if (EP_IDX(ep) >= CONFIG_USB_DC_STM32_EP_NUM) {
+	if (EP_IDX(ep) >= NUM_BIDIR_EP) {
 		return NULL;
 	}
 
@@ -148,7 +161,7 @@ static int usb_dc_stm32_init(void)
 
 	/* We only support OTG FS for now */
 	usb_dc_stm32_state.pcd.Instance = USB_OTG_FS;
-	usb_dc_stm32_state.pcd.Init.dev_endpoints = CONFIG_USB_DC_STM32_EP_NUM;
+	usb_dc_stm32_state.pcd.Init.dev_endpoints = NUM_BIDIR_EP;
 	usb_dc_stm32_state.pcd.Init.speed = USB_OTG_SPEED_FULL;
 	usb_dc_stm32_state.pcd.Init.phy_itface = PCD_PHY_EMBEDDED;
 	usb_dc_stm32_state.pcd.Init.ep0_mps = USB_OTG_MAX_EP0_SIZE;
@@ -176,18 +189,21 @@ static int usb_dc_stm32_init(void)
 
 	/* TODO: make this dynamic (depending usage) */
 	HAL_PCDEx_SetRxFiFo(&usb_dc_stm32_state.pcd, FIFO_EP_WORDS);
-	for (i = 0; i < CONFIG_USB_DC_STM32_EP_NUM; i++) {
+	for (i = 0; i < NUM_IN_EP; i++) {
 		HAL_PCDEx_SetTxFiFo(&usb_dc_stm32_state.pcd, i,
 				    FIFO_EP_WORDS);
 		k_sem_init(&usb_dc_stm32_state.in_ep_state[i].transfer_sem, 1,
 			   1);
+	}
+
+	for (i = 0; i < NUM_OUT_EP; i++) {
 		k_sem_init(&usb_dc_stm32_state.out_ep_state[i].transfer_sem, 1,
 			   1);
 	}
 
-	IRQ_CONNECT(STM32F4_IRQ_OTG_FS, CONFIG_USB_DC_STM32_IRQ_PRI,
+	IRQ_CONNECT(CONFIG_USB_IRQ, CONFIG_USB_IRQ_PRI,
 		    usb_dc_stm32_isr, 0, 0);
-	irq_enable(STM32F4_IRQ_OTG_FS);
+	irq_enable(CONFIG_USB_IRQ);
 
 	return 0;
 }
@@ -279,7 +295,7 @@ static int usb_dc_ep_transfer(const u8_t ep, u8_t *buf, size_t dlen, bool is_in,
 	ep_state->transfer_cb = cb;
 
 	if (!k_is_in_isr()) {
-		irq_disable(STM32F4_IRQ_OTG_FS);
+		irq_disable(CONFIG_USB_IRQ);
 	}
 
 	/* Configure and start transfer */
@@ -298,7 +314,7 @@ static int usb_dc_ep_transfer(const u8_t ep, u8_t *buf, size_t dlen, bool is_in,
 	}
 
 	if (!k_is_in_isr()) {
-		irq_enable(STM32F4_IRQ_OTG_FS);
+		irq_enable(CONFIG_USB_IRQ);
 	}
 
 	if (ep_state->transfer_cb || ret) { /* asynchronous transfer or error */

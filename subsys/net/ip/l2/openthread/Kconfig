@@ -24,7 +24,7 @@ config OPENTHREAD_PLAT
 	depends on NET_L2_OPENTHREAD
 	default n
 	help
-	This option enables OpenThread platform
+	  This option enables OpenThread platform
 
 if OPENTHREAD_PLAT
 

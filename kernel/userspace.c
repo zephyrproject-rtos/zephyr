@@ -53,6 +53,8 @@ const char *otype_to_str(enum k_objects otype)
 		return "counter driver";
 	case K_OBJ_DRIVER_CRYPTO:
 		return "crypto driver";
+	case K_OBJ_DRIVER_DMA:
+		return "dma driver";
 	case K_OBJ_DRIVER_FLASH:
 		return "flash driver";
 	case K_OBJ_DRIVER_GPIO:

@@ -5,3 +5,27 @@
  */
 
 #include <st/stm32f401.dtsi>
+
+/ {
+	soc {
+		spi4: spi@40013400 {
+			compatible = "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40013400 0x400>;
+			interrupts = <84 5>;
+			status = "disabled";
+			label = "SPI_4";
+		};
+
+		spi5: spi@40015000 {
+			compatible = "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40015000 0x400>;
+			interrupts = <85 5>;
+			status = "disabled";
+			label = "SPI_5";
+		};
+	};
+};

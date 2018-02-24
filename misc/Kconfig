@@ -288,6 +288,25 @@ config CPU_CLOCK_FREQ_MHZ
 	  This option specifies the CPU Clock Frequency in MHz in order to
 	  convert Intel RDTSC timestamp to microseconds.
 
+config STATS
+	bool
+	prompt "Statistics support"
+	default n
+	help
+	  Enable per-module event counters for troubleshooting, maintenance,
+	  and usage monitoring.  Statistics can be retrieved with the mcumgr
+	  management subsystem.
+
+config STATS_NAMES
+	bool
+	prompt "Statistic names"
+	depends on STATS
+	default n
+	help
+	  Include a full name string for each statistic in the build.  If this
+	  setting is disabled, statistics are assigned generic names of the
+	  form "s0", "s1", etc.  Enabling this setting simplifies debugging,
+	  but results in a larger code size.
 endmenu
 
 menu "Boot Options"
@@ -323,8 +342,8 @@ config BOOTLOADER_MCUBOOT
 
 	    * Setting TEXT_LOAD_OFFSET to a default value that allows space for
 	      the MCUboot image header
-	    * Activating SW_VECTOR_RELAY on Cortex-M0 targets with no built-in
-	      vector relocation mechanisms
+	    * Activating SW_VECTOR_RELAY on Cortex-M0 (or Armv8-M baseline)
+	      targets with no built-in vector relocation mechanisms
 	    * Including dts/common/mcuboot.overlay when building the Device
 	      Tree in order to place and link the image at the slot0 offset
 

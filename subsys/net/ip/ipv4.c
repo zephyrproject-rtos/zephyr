@@ -142,6 +142,10 @@ static inline enum net_verdict process_icmpv4_pkt(struct net_pkt *pkt,
 	struct net_icmp_hdr hdr, *icmp_hdr;
 
 	icmp_hdr = net_icmpv4_get_hdr(pkt, &hdr);
+	if (!icmp_hdr) {
+		NET_DBG("NULL ICMPv4 header - dropping");
+		return NET_DROP;
+	}
 
 	NET_DBG("ICMPv4 packet received type %d code %d",
 		icmp_hdr->type, icmp_hdr->code);

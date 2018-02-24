@@ -33,7 +33,7 @@
 #define SSTRLEN(s) (sizeof(s) - 1)
 #define CHECK(r) { if (r == -1) { printf("Error: " #r "\n"); } }
 
-#define REQUEST "GET " HTTP_PATH " HTTP/1.0\r\n\r\n"
+#define REQUEST "GET " HTTP_PATH " HTTP/1.0\r\nHost: " HTTP_HOST "\r\n\r\n"
 
 static char response[1024];
 

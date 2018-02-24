@@ -34,6 +34,8 @@
 
 #define HTTP_STATUS_400_BR	"HTTP/1.1 400 Bad Request\r\n" \
 				"\r\n"
+#define HTTP_STATUS_500_BR	"HTTP/1.1 500 Internal Server Error\r\n" \
+				"\r\n"
 
 #if defined(CONFIG_NET_DEBUG_HTTP_CONN)
 /** List of http connections */
@@ -179,6 +181,9 @@ int http_send_error(struct http_ctx *ctx, int code,
 	switch (code) {
 	case 400:
 		msg = HTTP_STATUS_400_BR;
+		break;
+	default:
+		msg = HTTP_STATUS_500_BR;
 		break;
 	}
 

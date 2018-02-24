@@ -16,11 +16,6 @@
 
 #include <kernel.h>
 
-#define K_NUM_PRIORITIES \
-	(CONFIG_NUM_COOP_PRIORITIES + CONFIG_NUM_PREEMPT_PRIORITIES + 1)
-
-#define K_NUM_PRIO_BITMAPS ((K_NUM_PRIORITIES + 31) >> 5)
-
 #ifndef _ASMLANGUAGE
 
 #ifdef __cplusplus
@@ -54,31 +49,6 @@ extern void _setup_new_thread(struct k_thread *new_thread,
 			      k_thread_entry_t entry,
 			      void *p1, void *p2, void *p3,
 			      int prio, u32_t options);
-
-/* context switching and scheduling-related routines */
-
-extern unsigned int __swap(unsigned int key);
-
-#ifdef CONFIG_TIMESLICING
-extern void _update_time_slice_before_swap(void);
-#endif
-
-#ifdef CONFIG_STACK_SENTINEL
-extern void _check_stack_sentinel(void);
-#endif
-
-static inline unsigned int _Swap(unsigned int key)
-{
-
-#ifdef CONFIG_STACK_SENTINEL
-	_check_stack_sentinel();
-#endif
-#ifdef CONFIG_TIMESLICING
-	_update_time_slice_before_swap();
-#endif
-
-	return __swap(key);
-}
 
 #ifdef CONFIG_USERSPACE
 /**
@@ -203,6 +173,10 @@ extern void _thread_monitor_exit(struct k_thread *thread);
 	do {/* nothing */    \
 	} while (0)
 #endif /* CONFIG_THREAD_MONITOR */
+
+extern void smp_init(void);
+
+extern void smp_timer_init(void);
 
 #ifdef __cplusplus
 }

@@ -68,7 +68,7 @@ struct kat_table {
 /*
  * NIST test key schedule.
  */
-void test_1(void)
+void test_key_chain(void)
 {
 	u32_t result = TC_PASS;
 	const u8_t nist_key[NUM_OF_NIST_KEYS] = {
@@ -108,7 +108,7 @@ void test_1(void)
 /*
  * NIST test vectors for encryption.
  */
-void test_2(void)
+void test_vectors(void)
 {
 	int result = TC_PASS;
 	const u8_t nist_key[NUM_OF_NIST_KEYS] = {
@@ -167,7 +167,7 @@ u32_t var_text_test(u32_t r, const u8_t *in, const u8_t *out,
 /*
  * All NIST tests with fixed key and variable text.
  */
-void test_3(void)
+void test_fixed_key_variable_text(void)
 {
 	u32_t result = TC_PASS;
 	const u8_t key[NUM_OF_NIST_KEYS] = {
@@ -1113,7 +1113,7 @@ u32_t var_key_test(u32_t r, const u8_t *in, const u8_t *out)
 /*
  * All NIST tests with variable key and fixed text.
  */
-void test_4(void)
+void test_variable_key_fixed_text(void)
 {
 	u32_t result = TC_PASS;
 	const struct kat_table kat_tbl[NUM_OF_FIXED_KEYS] = {

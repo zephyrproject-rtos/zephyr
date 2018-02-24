@@ -76,16 +76,11 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
         ]
         if self.family == 'NRF52':
             commands.extend([
-                # Set reset pin
-                ['nrfjprog', '--memwr', '0x10001200', '--val', '0x00000015',
-                 '-f', self.family, '--snr', board_snr],
-                ['nrfjprog', '--memwr', '0x10001204', '--val', '0x00000015',
-                 '-f', self.family, '--snr', board_snr],
-                ['nrfjprog', '--reset', '-f', self.family, '--snr', board_snr],
+                # Enable pin reset
+                ['nrfjprog', '--pinresetenable', '-f', self.family,
+                 '--snr', board_snr],
             ])
-        commands.append(['nrfjprog',
-                         '--pinreset',
-                         '-f', self.family,
+        commands.append(['nrfjprog', '--pinreset', '-f', self.family,
                          '--snr', board_snr])
 
         for cmd in commands:

@@ -571,7 +571,8 @@ class QEMUHandler(Handler):
 
 class SizeCalculator:
 
-    alloc_sections = ["bss", "noinit", "app_bss", "app_noinit"]
+    alloc_sections = ["bss", "noinit", "app_bss", "app_noinit", "ccm_bss",
+                      "ccm_noinit"]
     rw_sections = ["datas", "initlevel", "_k_task_list", "_k_event_list",
                    "_k_memory_pool", "exceptions", "initshell",
                    "_static_thread_area", "_k_timer_area", "_k_work_area",
@@ -581,7 +582,8 @@ class SizeCalculator:
                    "_k_msgq_area", "_k_mbox_area", "_k_pipe_area",
                    "net_if", "net_if_event", "net_stack", "net_l2_data",
                    "_k_queue_area", "_net_buf_pool_area", "app_datas",
-                   "kobject_data", "mmu_tables", "app_pad", "priv_stacks"]
+                   "kobject_data", "mmu_tables", "app_pad", "priv_stacks",
+                   "ccm_data"]
     # These get copied into RAM only on non-XIP
     ro_sections = ["text", "ctors", "init_array", "reset", "object_access",
                    "rodata", "devconfig", "net_l2", "vector"]
@@ -828,14 +830,14 @@ class MakeGenerator:
         if not "native_posix" in args:
             ldflags="-Wl,--fatal-warnings"
 
-        if options.ninja:
-            generator = "Ninja"
-            generator_cmd = "ninja"
-            verb = "-v" if VERBOSE else ""
-        else:
+        if options.make:
             generator = "Unix Makefiles"
             generator_cmd = "$(MAKE)"
             verb = "VERBOSE=1" if VERBOSE else "VERBOSE=0"
+        else:
+            generator = "Ninja"
+            generator_cmd = "ninja"
+            verb = "-v" if VERBOSE else ""
 
         return MakeGenerator.MAKE_RULE_TMPL.format(
             generator=generator,
@@ -1544,7 +1546,12 @@ class TestSuite:
 
     def apply_filters(self):
 
-        toolchain = os.environ.get("ZEPHYR_GCC_VARIANT", None)
+        toolchain = os.environ.get("ZEPHYR_TOOLCHAIN_VARIANT", None) or \
+                    os.environ.get("ZEPHYR_GCC_VARIANT", None)
+        if not toolchain:
+            raise SanityRuntimeError("E: Variable ZEPHYR_TOOLCHAIN_VARIANT is not defined")
+
+
         instances = []
         discards = {}
         platform_filter = options.platform
@@ -2092,7 +2099,12 @@ def parse_arguments():
 
     parser.add_argument(
         "-N", "--ninja", action="store_true",
-        help="Use the Ninja generator with CMake")
+        help="Use the Ninja generator with CMake. "
+        "This option is deprecated as Ninja is now the default.")
+
+    parser.add_argument(
+        "-M", "--make", action="store_true",
+        help="Use the 'Unix Makefiles' generator with CMake")
 
     parser.add_argument(
         "-y", "--dry-run", action="store_true",
@@ -2203,8 +2215,8 @@ def parse_arguments():
 
     parser.add_argument(
         "-x", "--extra-args", action="append", default=[],
-        help="""Extra CMake cache entries to define when building test cases. May
-        be called multiple times. The key-value entries will be
+        help="""Extra CMake cache entries to define when building test cases.
+        May be called multiple times. The key-value entries will be
         prefixed with -D before being passed to CMake.
 
         E.g
@@ -2217,7 +2229,8 @@ def parse_arguments():
     )
 
     parser.add_argument("-C", "--coverage", action="store_true",
-                        help="Scan for unit test coverage with gcov + lcov.")
+                        help="Generate coverage report for unit tests, and"
+                        " tests and samples run in native_posix.")
 
     return parser.parse_args()
 
@@ -2311,22 +2324,37 @@ def generate_coverage(outdir, ignores):
         coveragefile = os.path.join(outdir, "coverage.info")
         ztestfile = os.path.join(outdir, "ztest.info")
         subprocess.call(["lcov", "--capture", "--directory", outdir,
+                         "--rc", "lcov_branch_coverage=1",
                          "--output-file", coveragefile], stdout=coveragelog)
         # We want to remove tests/* and tests/ztest/test/* but save tests/ztest
         subprocess.call(["lcov", "--extract", coveragefile,
                          os.path.join(ZEPHYR_BASE, "tests", "ztest", "*"),
-                         "--output-file", ztestfile], stdout=coveragelog)
-        subprocess.call(["lcov", "--remove", ztestfile,
-                         os.path.join(ZEPHYR_BASE, "tests/ztest/test/*"),
-                         "--output-file", ztestfile], stdout=coveragelog)
+                         "--output-file", ztestfile,
+                         "--rc", "lcov_branch_coverage=1"], stdout=coveragelog)
+
+        if os.path.getsize(ztestfile) > 0:
+            subprocess.call(["lcov", "--remove", ztestfile,
+                             os.path.join(ZEPHYR_BASE, "tests/ztest/test/*"),
+                             "--output-file", ztestfile,
+                             "--rc", "lcov_branch_coverage=1"],
+                             stdout=coveragelog)
+            files = [coveragefile, ztestfile];
+        else:
+            files = [coveragefile];
+
         for i in ignores:
             subprocess.call(
                 ["lcov", "--remove", coveragefile, i, "--output-file",
-                 coveragefile],
+                 coveragefile, "--rc", "lcov_branch_coverage=1"],
                 stdout=coveragelog)
-        subprocess.call(["genhtml", "--legend", "-output-directory",
-                         os.path.join(outdir, "coverage"),
-                         coveragefile, ztestfile], stdout=coveragelog)
+
+        ret = subprocess.call(["genhtml", "--legend", "--branch-coverage",
+                               "-output-directory",
+                               os.path.join(outdir, "coverage")] + files,
+                               stdout=coveragelog)
+        if ret==0:
+            info("HTML report generated: %s"%
+                 os.path.join(outdir, "coverage","index.html"));
 
 
 def main():

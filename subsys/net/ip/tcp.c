@@ -661,12 +661,37 @@ int net_tcp_prepare_ack(struct net_tcp *tcp, const struct sockaddr *remote,
 	return -EINVAL;
 }
 
+static inline void copy_sockaddr_to_sockaddr_ptr(struct net_tcp *tcp,
+						 const struct sockaddr *local,
+						 struct sockaddr_ptr *addr)
+{
+	memset(addr, 0, sizeof(struct sockaddr_ptr));
+
+#if defined(CONFIG_NET_IPV4)
+	if (local->sa_family == AF_INET) {
+		net_sin_ptr(addr)->sin_family = AF_INET;
+		net_sin_ptr(addr)->sin_port = net_sin(local)->sin_port;
+		net_sin_ptr(addr)->sin_addr = &net_sin(local)->sin_addr;
+	}
+#endif
+
+#if defined(CONFIG_NET_IPV6)
+	if (local->sa_family == AF_INET6) {
+		net_sin6_ptr(addr)->sin6_family = AF_INET6;
+		net_sin6_ptr(addr)->sin6_port = net_sin6(local)->sin6_port;
+		net_sin6_ptr(addr)->sin6_addr = &net_sin6(local)->sin6_addr;
+	}
+#endif
+}
+
 int net_tcp_prepare_reset(struct net_tcp *tcp,
+			  const struct sockaddr *local,
 			  const struct sockaddr *remote,
 			  struct net_pkt **pkt)
 {
 	struct tcp_segment segment = { 0 };
 	int status = 0;
+	struct sockaddr_ptr src_addr_ptr;
 
 	if ((net_context_get_state(tcp->context) != NET_CONTEXT_UNCONNECTED) &&
 	    (net_tcp_get_state(tcp) != NET_TCP_SYN_SENT) &&
@@ -675,7 +700,15 @@ int net_tcp_prepare_reset(struct net_tcp *tcp,
 		segment.ack = tcp->send_ack;
 		segment.flags = NET_TCP_RST | NET_TCP_ACK;
 		segment.seq = tcp->send_seq;
-		segment.src_addr = &tcp->context->local;
+
+		if (!local) {
+			segment.src_addr = &tcp->context->local;
+		} else {
+			copy_sockaddr_to_sockaddr_ptr(tcp, local,
+						      &src_addr_ptr);
+			segment.src_addr = &src_addr_ptr;
+		}
+
 		segment.dst_addr = remote;
 		segment.wnd = 0;
 		segment.options = NULL;
@@ -961,32 +994,14 @@ bool net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 		valid_ack = true;
 	}
 
-	/* No need to re-send stuff we are closing down */
+	/* Restart the timer on a valid inbound ACK.  This isn't quite the
+	 * same behavior as per-packet retry timers, but is close in practice
+	 * (it starts retries one timer period after the connection
+	 * "got stuck") and avoids the need to track per-packet timers or
+	 * sent times.
+	 */
 	if (valid_ack && net_tcp_get_state(tcp) == NET_TCP_ESTABLISHED) {
-		/* Restart the timer on a valid inbound ACK.  This
-		 * isn't quite the same behavior as per-packet retry
-		 * timers, but is close in practice (it starts retries
-		 * one timer period after the connection "got stuck")
-		 * and avoids the need to track per-packet timers or
-		 * sent times.
-		 */
 		restart_timer(ctx->tcp);
-
-		/* And, if we had been retrying, mark all packets
-		 * untransmitted and then resend them.  The stalled
-		 * pipe is uncorked again.
-		 */
-		if (ctx->tcp->flags & NET_TCP_RETRYING) {
-			SYS_SLIST_FOR_EACH_CONTAINER(&ctx->tcp->sent_list, pkt,
-						     sent_list) {
-				if (net_pkt_sent(pkt)) {
-					do_ref_if_needed(ctx->tcp, pkt);
-					net_pkt_set_sent(pkt, false);
-				}
-			}
-
-			net_tcp_send_data(ctx);
-		}
 	}
 
 	return true;

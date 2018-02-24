@@ -133,7 +133,7 @@ static bool should_bail(const struct flash_pages_info *info,
  * flash_area_get_sectors(). A lot of this can be inlined once
  * flash_area_to_sectors() is removed.
  */
-static int flash_area_layout(int idx, int *cnt, void *ret,
+static int flash_area_layout(int idx, u32_t *cnt, void *ret,
 flash_page_cb cb, struct layout_data *cb_data)
 {
 	struct device *flash_dev;
@@ -184,7 +184,7 @@ static bool get_sectors_cb(const struct flash_pages_info *info, void *datav)
 	return true;
 }
 
-int flash_area_get_sectors(int idx, uint32_t *cnt, struct flash_sector *ret)
+int flash_area_get_sectors(int idx, u32_t *cnt, struct flash_sector *ret)
 {
 	struct layout_data data;
 

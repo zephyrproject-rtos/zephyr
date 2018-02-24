@@ -52,6 +52,12 @@
 /* Number of retransmit attempts (after the initial transmit) per segment */
 #define SEG_RETRANSMIT_ATTEMPTS     4
 
+/* "This timer shall be set to a minimum of 200 + 50 * TTL milliseconds.".
+ * We use 400 since 300 is a common send duration for standard HCI, and we
+ * need to have a timeout that's bigger than that.
+ */
+#define SEG_RETRANSMIT_TIMEOUT(tx) (K_MSEC(400) + 50 * (tx)->ttl)
+
 /* How long to wait for available buffers before giving up */
 #define BUF_TIMEOUT                 K_NO_WAIT
 
@@ -84,12 +90,14 @@ static struct seg_rx {
 	u32_t                    last;
 	struct k_delayed_work    ack;
 	struct net_buf_simple    buf;
-	u8_t                     buf_data[CONFIG_BT_MESH_RX_SDU_MAX];
 } seg_rx[CONFIG_BT_MESH_RX_SEG_MSG_COUNT] = {
 	[0 ... (CONFIG_BT_MESH_RX_SEG_MSG_COUNT - 1)] = {
 		.buf.size = CONFIG_BT_MESH_RX_SDU_MAX,
 	},
 };
+
+static u8_t __noinit seg_rx_buf_data[(CONFIG_BT_MESH_RX_SEG_MSG_COUNT *
+				      CONFIG_BT_MESH_RX_SDU_MAX)];
 
 static u16_t hb_sub_dst = BT_MESH_ADDR_UNASSIGNED;
 
@@ -200,7 +208,7 @@ static inline void seg_tx_complete(struct seg_tx *tx, int err)
 	seg_tx_reset(tx);
 }
 
-static void seg_send_start(u16_t duration, int err, void *user_data)
+static void seg_first_send_start(u16_t duration, int err, void *user_data)
 {
 	struct seg_tx *tx = user_data;
 
@@ -209,27 +217,35 @@ static void seg_send_start(u16_t duration, int err, void *user_data)
 	}
 }
 
+static void seg_send_start(u16_t duration, int err, void *user_data)
+{
+	struct seg_tx *tx = user_data;
+
+	/* If there's an error in transmitting the 'sent' callback will never
+	 * be called. Make sure that we kick the retransmit timer also in this
+	 * case since otherwise we risk the transmission of becoming stale.
+	 */
+	if (err) {
+		k_delayed_work_submit(&tx->retransmit,
+				      SEG_RETRANSMIT_TIMEOUT(tx));
+	}
+}
+
 static void seg_sent(int err, void *user_data)
 {
 	struct seg_tx *tx = user_data;
-	s32_t timeout;
 
-	/* "This timer shall be set to a minimum of 200 + 50 * TTL
-	 * milliseconds.". We use 400 since 300 is a common send
-	 * duration for standard HCI, and we need to have a timeout
-	 * that's bigger than that.
-	 */
-	timeout = K_MSEC(400) + 50 * tx->ttl;
-
-	k_delayed_work_submit(&tx->retransmit, timeout);
+	k_delayed_work_submit(&tx->retransmit,
+			      SEG_RETRANSMIT_TIMEOUT(tx));
 }
 
 static const struct bt_mesh_send_cb first_sent_cb = {
-	.start = seg_send_start,
+	.start = seg_first_send_start,
 	.end = seg_sent,
 };
 
 static const struct bt_mesh_send_cb seg_sent_cb = {
+	.start = seg_send_start,
 	.end = seg_sent,
 };
 
@@ -549,8 +565,7 @@ static bool is_replay(struct bt_mesh_net_rx *rx)
 static int sdu_recv(struct bt_mesh_net_rx *rx, u8_t hdr, u8_t aszmic,
 		    struct net_buf_simple *buf)
 {
-	struct net_buf_simple *sdu =
-		NET_BUF_SIMPLE(CONFIG_BT_MESH_RX_SDU_MAX - 4);
+	NET_BUF_SIMPLE_DEFINE(sdu, CONFIG_BT_MESH_RX_SDU_MAX - 4);
 	u8_t *ad;
 	u16_t i;
 	int err;
@@ -578,9 +593,8 @@ static int sdu_recv(struct bt_mesh_net_rx *rx, u8_t hdr, u8_t aszmic,
 	buf->len -= APP_MIC_LEN(aszmic);
 
 	if (!AKF(&hdr)) {
-		net_buf_simple_init(sdu, 0);
 		err = bt_mesh_app_decrypt(bt_mesh.dev_key, true, aszmic, buf,
-					  sdu, ad, rx->ctx.addr, rx->dst,
+					  &sdu, ad, rx->ctx.addr, rx->dst,
 					  rx->seq, BT_MESH_NET_IVI_RX(rx));
 		if (err) {
 			BT_ERR("Unable to decrypt with DevKey");
@@ -588,7 +602,7 @@ static int sdu_recv(struct bt_mesh_net_rx *rx, u8_t hdr, u8_t aszmic,
 		}
 
 		rx->ctx.app_idx = BT_MESH_KEY_DEV;
-		bt_mesh_model_recv(rx, sdu);
+		bt_mesh_model_recv(rx, &sdu);
 		return 0;
 	}
 
@@ -612,9 +626,9 @@ static int sdu_recv(struct bt_mesh_net_rx *rx, u8_t hdr, u8_t aszmic,
 			continue;
 		}
 
-		net_buf_simple_init(sdu, 0);
+		net_buf_simple_reset(&sdu);
 		err = bt_mesh_app_decrypt(keys->val, false, aszmic, buf,
-					  sdu, ad, rx->ctx.addr, rx->dst,
+					  &sdu, ad, rx->ctx.addr, rx->dst,
 					  rx->seq, BT_MESH_NET_IVI_RX(rx));
 		if (err) {
 			BT_WARN("Unable to decrypt with AppKey %u", i);
@@ -624,7 +638,7 @@ static int sdu_recv(struct bt_mesh_net_rx *rx, u8_t hdr, u8_t aszmic,
 
 		rx->ctx.app_idx = key->app_idx;
 
-		bt_mesh_model_recv(rx, sdu);
+		bt_mesh_model_recv(rx, &sdu);
 		return 0;
 	}
 
@@ -1000,9 +1014,7 @@ static void seg_ack(struct k_work *work)
 
 	if (k_uptime_get_32() - rx->last > K_SECONDS(60)) {
 		BT_WARN("Incomplete timer expired");
-		send_ack(rx->sub, rx->dst, rx->src, rx->ttl,
-			 &rx->seq_auth, 0, rx->obo);
-		seg_rx_reset(rx, true);
+		seg_rx_reset(rx, false);
 
 		if (IS_ENABLED(CONFIG_BT_TESTING)) {
 			bt_test_mesh_trans_incomp_timer_exp();
@@ -1102,7 +1114,7 @@ static struct seg_rx *seg_rx_alloc(struct bt_mesh_net_rx *net_rx,
 		}
 
 		rx->in_use = 1;
-		net_buf_simple_init(&rx->buf, 0);
+		net_buf_simple_reset(&rx->buf);
 		rx->sub = net_rx->sub;
 		rx->ctl = net_rx->ctl;
 		rx->seq_auth = *seq_auth;
@@ -1253,7 +1265,7 @@ found_rx:
 	}
 
 	/* Location in buffer can be calculated based on seg_o & rx->ctl */
-	memcpy(rx->buf_data + (seg_o * seg_len(rx->ctl)), buf->data, buf->len);
+	memcpy(rx->buf.data + (seg_o * seg_len(rx->ctl)), buf->data, buf->len);
 
 	BT_DBG("Received %u/%u", seg_o, seg_n);
 
@@ -1413,6 +1425,9 @@ void bt_mesh_trans_init(void)
 
 	for (i = 0; i < ARRAY_SIZE(seg_rx); i++) {
 		k_delayed_work_init(&seg_rx[i].ack, seg_ack);
+		seg_rx[i].buf.__buf = (seg_rx_buf_data +
+				       (i * CONFIG_BT_MESH_RX_SDU_MAX));
+		seg_rx[i].buf.data = seg_rx[i].buf.__buf;
 	}
 }
 

@@ -3,6 +3,6 @@ menuconfig UART_ALTERA_JTAG
 	default n
 	select SERIAL_HAS_DRIVER
 	help
-	Enable the Altera JTAG UART driver, built in to many Nios II CPU
-	designs.
+	  Enable the Altera JTAG UART driver, built in to many Nios II CPU
+	  designs.
 

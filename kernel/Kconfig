@@ -500,9 +500,27 @@ config PTHREAD_IPC
 	prompt "POSIX pthread IPC API"
 	default n
 	help
-        This enables a mostly-standards-compliant implementation of
-        the pthread mutex, condition variable and barrier IPC
-        mechanisms.
+	  This enables a mostly-standards-compliant implementation of
+	  the pthread mutex, condition variable and barrier IPC
+	  mechanisms.
+
+if PTHREAD_IPC
+config MAX_PTHREAD_COUNT
+	int
+	prompt "Maximum pthread count in POSIX application"
+	default 5
+	range 0 255
+	help
+	  Mention maximum number of threads in POSIX compliant application.
+
+config MAX_TIMER_COUNT
+	int
+	prompt "Maximum timer count in POSIX application"
+	default 5
+	range 0 255
+	help
+	  Mention maximum number of timers in POSIX compliant application.
+endif
 endmenu
 
 menu "Security Options"
@@ -548,6 +566,34 @@ config MAX_DOMAIN_PARTITIONS
 	depends on USERSPACE
 	help
 	  Configure the maximum number of partitions per memory domain.
+
+config USE_SWITCH
+	bool
+	prompt "Use new-style _arch_switch instead of __swap"
+	default n
+	help
+	The _arch_switch() API is a lower level context switching
+	primitive than the original __swap mechanism.  It is required
+	for an SMP-aware scheduler, or if the architecture does not
+	provide __swap.  In uniprocess situations where the
+	architecture provides both, _arch_switch incurs more somewhat
+	overhead and may be slower.
+
+config SMP
+	bool
+	prompt "Enable symmetric multithreading support"
+	default n
+	help
+	When true, Zephyr will be build with SMP support, allowing
+	more than one CPU to schedule Zephyr tasks at a time.
+
+config MP_NUM_CPUS
+	int
+	prompt "Number of CPUs/cores"
+	default 1
+	help
+	Number of multiprocessing-capable cores available to the
+	multicpu API and SMP features.
 
 source "kernel/Kconfig.event_logger"
 

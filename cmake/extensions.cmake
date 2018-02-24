@@ -952,7 +952,7 @@ function(print arg)
 endfunction()
 
 # Usage:
-#   assert(ZEPHYR_GCC_VARIANT "ZEPHYR_GCC_VARIANT not set.")
+#   assert(ZEPHYR_TOOLCHAIN_VARIANT "ZEPHYR_TOOLCHAIN_VARIANT not set.")
 #
 # will cause a FATAL_ERROR and print an error message if the first
 # expression is false

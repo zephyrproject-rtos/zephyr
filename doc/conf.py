@@ -29,7 +29,7 @@ sys.path.insert(0, os.path.join(os.path.abspath('.'), 'extensions'))
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'sphinx.ext.autodoc', 'breathe', 'sphinx.ext.todo',
+    'breathe', 'sphinx.ext.todo',
     'sphinx.ext.extlinks',
     'zephyr.application',
 ]

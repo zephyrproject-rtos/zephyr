@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2018 Nordic Semiconductor ASA
  * Copyright (c) 2016 Linaro Limited
  * Copyright (c) 2016 Intel Corporation
  *
@@ -18,6 +18,7 @@
 #if defined(CONFIG_SOC_FLASH_NRF5_RADIO_SYNC)
 #include <misc/__assert.h>
 #include <bluetooth/hci.h>
+#include "controller/hal/nrf5/ticker.h"
 #include "controller/ticker/ticker.h"
 #include "controller/include/ll.h"
 
@@ -289,7 +290,7 @@ static void time_slot_callback_helper(u32_t ticks_at_expire, u32_t remainder,
 			   0, /* user_id */
 			   0, /* ticker_id */
 			   ticks_at_expire, /* current tick */
-			   TICKER_US_TO_TICKS(FLASH_RADIO_ABORT_DELAY_US),
+			   HAL_TICKER_US_TO_TICKS(FLASH_RADIO_ABORT_DELAY_US),
 			   0, /* periodic (on-shot) */
 			   0, /* per. remaind. (on-shot) */
 			   0, /* lazy, voluntary skips */
@@ -330,10 +331,10 @@ static int work_in_time_slice(struct flash_op_desc *p_flash_op_desc)
 			   ticker_id, /* flash ticker id */
 			   ticker_ticks_now_get(), /* current tick */
 			   0, /* first int. immediately */
-			   TICKER_US_TO_TICKS(FLASH_INTERVAL), /* periodic */
-			   TICKER_REMAINDER(FLASH_INTERVAL), /* per. remaind.*/
+			   HAL_TICKER_US_TO_TICKS(FLASH_INTERVAL), /* period */
+			   HAL_TICKER_REMAINDER(FLASH_INTERVAL), /* per. rem.*/
 			   0, /* lazy, voluntary skips */
-			   TICKER_US_TO_TICKS(FLASH_SLOT),
+			   HAL_TICKER_US_TO_TICKS(FLASH_SLOT),
 			   time_slot_callback_helper,
 			   p_flash_op_desc,
 			   NULL, /* no op callback */
@@ -417,8 +418,11 @@ static int erase_op(void *context)
 		i++;
 
 		if (e_ctx->enable_time_limit) {
-			ticks_diff = ticker_ticks_now_get() - ticks_begin;
-			if (ticks_diff + ticks_diff/i > FLASH_SLOT) {
+			ticks_diff =
+				ticker_ticks_diff_get(ticker_ticks_now_get(),
+						      ticks_begin);
+			if (ticks_diff + ticks_diff/i >
+			    HAL_TICKER_US_TO_TICKS(FLASH_SLOT)) {
 				break;
 			}
 		}
@@ -478,8 +482,11 @@ static int write_op(void *context)
 
 #if defined(CONFIG_SOC_FLASH_NRF5_RADIO_SYNC)
 		if (w_ctx->enable_time_limit) {
-			ticks_diff = ticker_ticks_now_get() - ticks_begin;
-			if (2 * ticks_diff > FLASH_SLOT) {
+			ticks_diff =
+				ticker_ticks_diff_get(ticker_ticks_now_get(),
+						      ticks_begin);
+			if (2 * ticks_diff >
+			    HAL_TICKER_US_TO_TICKS(FLASH_SLOT)) {
 				nvmc_wait_ready();
 				return FLASH_OP_ONGOING;
 			}
@@ -499,9 +506,11 @@ static int write_op(void *context)
 		i++;
 
 		if (w_ctx->enable_time_limit) {
-			ticks_diff = ticker_ticks_now_get() - ticks_begin;
-
-			if (ticks_diff + ticks_diff/i > FLASH_SLOT) {
+			ticks_diff =
+				ticker_ticks_diff_get(ticker_ticks_now_get(),
+						      ticks_begin);
+			if (ticks_diff + ticks_diff/i >
+			    HAL_TICKER_US_TO_TICKS(FLASH_SLOT)) {
 				nvmc_wait_ready();
 				return FLASH_OP_ONGOING;
 			}

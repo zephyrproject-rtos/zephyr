@@ -85,7 +85,7 @@ static struct bt_sdp_attribute spp_attrs[] = {
 			BT_SDP_DATA_ELEM_LIST(
 			{
 				BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
-				BT_SDP_ARRAY_16(BT_UUID_L2CAP_VAL)
+				BT_SDP_ARRAY_16(BT_SDP_PROTO_L2CAP)
 			},
 			)
 		},
@@ -94,7 +94,7 @@ static struct bt_sdp_attribute spp_attrs[] = {
 			BT_SDP_DATA_ELEM_LIST(
 			{
 				BT_SDP_TYPE_SIZE(BT_SDP_UUID16),
-				BT_SDP_ARRAY_16(BT_UUID_RFCOMM_VAL)
+				BT_SDP_ARRAY_16(BT_SDP_PROTO_RFCOMM)
 			},
 			{
 				BT_SDP_TYPE_SIZE(BT_SDP_UINT8),

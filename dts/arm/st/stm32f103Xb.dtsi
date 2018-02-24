@@ -8,3 +8,20 @@
  */
 
 #include <st/stm32f1.dtsi>
+
+/ {
+	soc {
+		/* spi2 is present on all STM32F103xB SoCs except
+		 * STM32F103TB. Delete node in stm32f103tb.dtsi.
+		 */
+		spi2: spi@40003800 {
+			compatible = "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40003800 0x400>;
+			interrupts = <36 5>;
+			status = "disabled";
+			label = "SPI_2";
+		};
+	};
+};

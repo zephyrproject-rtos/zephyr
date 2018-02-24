@@ -9,6 +9,7 @@
 #include <init.h>
 #include <wait_q.h>
 #include <syscall_handler.h>
+#include <kswap.h>
 
 extern struct k_timer _k_timer_list_start[];
 extern struct k_timer _k_timer_list_end[];

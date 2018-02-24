@@ -10,4 +10,4 @@ config SOC_SERIES_RISCV32_QEMU
 	depends on RISCV32
 	select SOC_FAMILY_RISCV_PRIVILEGE
 	help
-	Enable support for riscv32 QEMU SOC implementation
+	  Enable support for riscv32 QEMU SOC implementation

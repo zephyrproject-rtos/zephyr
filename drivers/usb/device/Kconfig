@@ -29,38 +29,15 @@ config USB_DW_IRQ_PRI
 config USB_DC_STM32
 	bool
 	prompt "USB device controller driver for STM32 devices"
-	depends on HAS_STM32CUBE
 	depends on SOC_SERIES_STM32F4X
 	select USB_DEVICE_DRIVER
 	select USE_STM32_LL_USB
 	select USE_STM32_HAL_PCD
 	select USE_STM32_HAL_PCD_EX
+	select HAS_DTS_USB
 	default n
 	help
 	  STM32 family USB device controller Driver.
-
-config USB_DC_STM32_IRQ_PRI
-	int "USB STM32 Driver Interrupt priority"
-	depends on USB_DC_STM32
-	default 3
-	help
-	  USB interrupt priority.
-
-config USB_DC_STM32_EP_NUM
-	int
-	depends on USB_DC_STM32
-	default 4
-	help
-	  Number of supported endpoints (including ep0).
-
-config USB_DC_STM32_RAM_SIZE
-	int
-	depends on USB_DC_STM32
-	default 512
-	help
-	  Total size in bytes for RX/TX buffering (FIFO, PMA...)
-	  In case of USB-OTG-FS controller, datasheet defines a shared FIFO size.
-	  For USB device controller, datasheet defines USB packet SRAM size.
 
 config SYS_LOG_USB_DRIVER_LEVEL
 	int

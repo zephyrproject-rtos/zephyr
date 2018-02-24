@@ -44,8 +44,8 @@ const NANO_ESF _default_esf = {
  *
  * @return This function does not return.
  */
-FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
-					  const NANO_ESF *pEsf)
+XTENSA_ERR_NORET void _NanoFatalErrorHandler(unsigned int reason,
+					     const NANO_ESF *pEsf)
 {
 	switch (reason) {
 	case _NANO_ERR_HW_EXCEPTION:
@@ -179,14 +179,14 @@ static void dump_exc_state(void)
 }
 
 
-FUNC_NORETURN void FatalErrorHandler(void)
+XTENSA_ERR_NORET void FatalErrorHandler(void)
 {
 	printk("*** Unhandled exception ****\n");
 	dump_exc_state();
 	_NanoFatalErrorHandler(_NANO_ERR_HW_EXCEPTION, &_default_esf);
 }
 
-FUNC_NORETURN void ReservedInterruptHandler(unsigned int intNo)
+XTENSA_ERR_NORET void ReservedInterruptHandler(unsigned int intNo)
 {
 	printk("*** Reserved Interrupt ***\n");
 	dump_exc_state();
@@ -232,8 +232,8 @@ void exit(int return_code)
  *
  * @return N/A
  */
-FUNC_NORETURN __weak void _SysFatalErrorHandler(unsigned int reason,
-					 const NANO_ESF *pEsf)
+XTENSA_ERR_NORET __weak void _SysFatalErrorHandler(unsigned int reason,
+						   const NANO_ESF *pEsf)
 {
 	ARG_UNUSED(pEsf);
 

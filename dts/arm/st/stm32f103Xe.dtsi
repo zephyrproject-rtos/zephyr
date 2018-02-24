@@ -8,3 +8,16 @@
  */
 
 #include <st/stm32f103Xb.dtsi>
+
+/ {
+	soc {
+		spi3: spi@40003C00 {
+			compatible = "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40003C00 0x400>;
+			interrupts = <51 5>;
+			status = "disabled";
+		};
+	};
+};

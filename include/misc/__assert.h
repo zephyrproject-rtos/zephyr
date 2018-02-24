@@ -67,6 +67,11 @@
 #endif
 #endif
 
+#ifdef CONFIG_FORCE_NO_ASSERT
+#undef __ASSERT_ON
+#define __ASSERT_ON 0
+#endif
+
 #ifdef __ASSERT_ON
 #if (__ASSERT_ON < 0) || (__ASSERT_ON > 2)
 #error "Invalid __ASSERT() level: must be between 0 and 2"
@@ -74,6 +79,17 @@
 
 #if __ASSERT_ON
 #include <misc/printk.h>
+
+#if defined(CONFIG_ARCH_POSIX)
+extern void posix_exit(int exit_code);
+#define __ASSERT_POST posix_exit(1)
+#else
+#define __ASSERT_POST             \
+	for (;;) {                \
+		/* spin thread */ \
+	}
+#endif
+
 #define __ASSERT(test, fmt, ...)                                   \
 	do {                                                       \
 		if (!(test)) {                                     \
@@ -82,9 +98,7 @@
 			       __FILE__,                           \
 			       __LINE__);                          \
 			printk(fmt, ##__VA_ARGS__);                \
-			for (;;) {                                 \
-				/* spin thread */                  \
-			}				           \
+			__ASSERT_POST;                             \
 		}                                                  \
 	} while ((0))
 

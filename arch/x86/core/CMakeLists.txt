@@ -5,8 +5,6 @@ endif()
 
 zephyr_compile_options($<$<COMPILE_LANGUAGE:ASM>:-Wa,--divide>)
 
-add_subdirectory_ifdef(CONFIG_DEBUG_INFO debug)
-
 zephyr_sources(
   cache.c
   cache_s.S

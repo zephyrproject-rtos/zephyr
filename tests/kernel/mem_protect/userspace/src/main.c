@@ -13,6 +13,10 @@
 #include <string.h>
 #include <stdlib.h>
 
+#if defined(CONFIG_ARC)
+#include <arch/arc/v2/mpu/arc_core_mpu.h>
+#endif
+
 #define INFO(fmt, ...) printk(fmt, ##__VA_ARGS__)
 #define PIPE_LEN 1
 #define BYTES_TO_READ_WRITE 1
@@ -22,8 +26,8 @@ K_SEM_DEFINE(uthread_end_sem, 0, 1);
 K_SEM_DEFINE(test_revoke_sem, 0, 1);
 K_SEM_DEFINE(expect_fault_sem, 0, 1);
 
-static bool give_uthread_end_sem;
-static bool expect_fault;
+static volatile bool give_uthread_end_sem;
+static volatile bool expect_fault;
 
 #if defined(CONFIG_X86)
 #define REASON_HW_EXCEPTION _NANO_ERR_CPU_EXCEPTION
@@ -31,10 +35,13 @@ static bool expect_fault;
 #elif defined(CONFIG_ARM)
 #define REASON_HW_EXCEPTION _NANO_ERR_HW_EXCEPTION
 #define REASON_KERNEL_OOPS  _NANO_ERR_HW_EXCEPTION
+#elif defined(CONFIG_ARC)
+#define REASON_HW_EXCEPTION _NANO_ERR_HW_EXCEPTION
+#define REASON_KERNEL_OOPS  _NANO_ERR_KERNEL_OOPS
 #else
 #error "Not implemented for this architecture"
 #endif
-static unsigned int expected_reason;
+static volatile unsigned int expected_reason;
 
 /*
  * We need something that can act as a memory barrier
@@ -63,6 +70,7 @@ void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
 		give_uthread_end_sem = false;
 		k_sem_give(&uthread_end_sem);
 	}
+
 	if (expect_fault && expected_reason == reason) {
 		expect_fault = false;
 		expected_reason = 0;
@@ -111,6 +119,17 @@ static void write_control(void)
 		);
 	zassert_true((msr_value & 1),
 		      "Write to control register was successful\n");
+#elif defined(CONFIG_ARC)
+	unsigned int er_status;
+
+	expect_fault = true;
+	expected_reason = REASON_HW_EXCEPTION;
+	BARRIER();
+	/* _ARC_V2_ERSTATUS is privilege aux reg */
+	__asm__ volatile(
+		"lr %0, [0x402]\n"
+		: "=r" (er_status)::
+		);
 #else
 #error "Not implemented for this architecture"
 	zassert_unreachable("Write to control register did not fault\n");
@@ -134,6 +153,11 @@ static void disable_mmu_mpu(void)
 	expected_reason = REASON_HW_EXCEPTION;
 	BARRIER();
 	arm_core_mpu_disable();
+#elif defined(CONFIG_ARC)
+	expect_fault = true;
+	expected_reason = REASON_HW_EXCEPTION;
+	BARRIER();
+	arc_core_mpu_disable();
 #else
 #error "Not implemented for this architecture"
 #endif
@@ -219,43 +243,57 @@ static void write_kernel_data(void)
 /*
  * volatile to avoid compiler mischief.
  */
-volatile int *ptr = NULL;
+volatile int *priv_stack_ptr;
 #if defined(CONFIG_X86)
-volatile size_t size = MMU_PAGE_SIZE;
-#elif defined(CONFIG_ARM) && defined(CONFIG_PRIVILEGED_STACK_SIZE)
-volatile size_t size = CONFIG_ZTEST_STACKSIZE - CONFIG_PRIVILEGED_STACK_SIZE;
-#else
-volatile size_t size = 512;
+/*
+ * We can't inline this in the code or make it static
+ * or local without triggering a warning on -Warray-bounds.
+ */
+size_t size = MMU_PAGE_SIZE;
+#elif defined(CONFIG_ARC)
+int32_t size = (0 - CONFIG_PRIVILEGED_STACK_SIZE - STACK_GUARD_SIZE);
 #endif
 
-static void read_kernel_stack(void)
+static void read_priv_stack(void)
 {
-	/* Try to read from kernel stack. */
+	/* Try to read from privileged stack. */
+#if defined(CONFIG_X86) || defined(CONFIG_ARC)
 	int s[1];
 
 	s[0] = 0;
-	ptr = &s[0];
-	ptr = (int *)((unsigned char *)ptr - size);
+	priv_stack_ptr = &s[0];
+	priv_stack_ptr = (int *)((unsigned char *)priv_stack_ptr - size);
+#elif defined(CONFIG_ARM)
+	/* priv_stack_ptr set by test_main() */
+#else
+#error "Not implemented for this architecture"
+#endif
 	expect_fault = true;
 	expected_reason = REASON_HW_EXCEPTION;
 	BARRIER();
-	printk("%d\n", *ptr);
-	zassert_unreachable("Read from kernel stack did not fault\n");
+	printk("%d\n", *priv_stack_ptr);
+	zassert_unreachable("Read from privileged stack did not fault\n");
 }
 
-static void write_kernel_stack(void)
+static void write_priv_stack(void)
 {
-	/* Try to write to kernel stack. */
+	/* Try to write to privileged stack. */
+#if defined(CONFIG_X86) || defined(CONFIG_ARC)
 	int s[1];
 
 	s[0] = 0;
-	ptr = &s[0];
-	ptr = (int *)((unsigned char *)ptr - size);
+	priv_stack_ptr = &s[0];
+	priv_stack_ptr = (int *)((unsigned char *)priv_stack_ptr - size);
+#elif defined(CONFIG_ARM)
+	/* priv_stack_ptr set by test_main() */
+#else
+#error "Not implemented for this architecture"
+#endif
 	expect_fault = true;
 	expected_reason = REASON_HW_EXCEPTION;
 	BARRIER();
-	*ptr = 42;
-	zassert_unreachable("Write to kernel stack did not fault\n");
+	*priv_stack_ptr = 42;
+	zassert_unreachable("Write to privileged stack did not fault\n");
 }
 
 
@@ -323,7 +361,6 @@ static void read_other_stack(void)
 {
 	/* Try to read from another thread's stack. */
 	unsigned int *ptr;
-
 	k_thread_create(&uthread_thread, uthread_stack, STACKSIZE,
 			(k_thread_entry_t)uthread_body, NULL, NULL, NULL,
 			-1, K_USER | K_INHERIT_PERMS,
@@ -488,8 +525,16 @@ static void read_kobject_user_pipe(void)
 		"did not fault\n");
 }
 
+#if defined(CONFIG_ARM)
+extern u8_t *_k_priv_stack_find(void *obj);
+extern k_thread_stack_t ztest_thread_stack[];
+#endif
+
 void test_main(void)
 {
+#if defined(CONFIG_ARM)
+	priv_stack_ptr = (int *)_k_priv_stack_find(ztest_thread_stack);
+#endif
 	k_thread_access_grant(k_current_get(),
 			      &kthread_thread, &kthread_stack,
 			      &uthread_thread, &uthread_stack,
@@ -506,8 +551,8 @@ void test_main(void)
 			 ztest_user_unit_test(write_kerntext),
 			 ztest_user_unit_test(read_kernel_data),
 			 ztest_user_unit_test(write_kernel_data),
-			 ztest_user_unit_test(read_kernel_stack),
-			 ztest_user_unit_test(write_kernel_stack),
+			 ztest_user_unit_test(read_priv_stack),
+			 ztest_user_unit_test(write_priv_stack),
 			 ztest_user_unit_test(pass_user_object),
 			 ztest_user_unit_test(pass_noperms_object),
 			 ztest_user_unit_test(start_kernel_thread),

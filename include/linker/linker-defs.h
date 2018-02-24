@@ -235,6 +235,19 @@ extern char _vector_end[];
 /* end address of image, used by newlib for the heap */
 extern char _end[];
 
+#ifdef CONFIG_CCM_BASE_ADDRESS
+extern char __ccm_data_rom_start[];
+extern char __ccm_start[];
+extern char __ccm_data_start[];
+extern char __ccm_data_end[];
+extern char __ccm_bss_start[];
+extern char __ccm_bss_end[];
+extern char __ccm_noinit_start[];
+extern char __ccm_noinit_end[];
+extern char __ccm_end[];
+#endif /* CONFIG_CCM_BASE_ADDRESS */
+
+
 #endif /* ! _ASMLANGUAGE */
 
 #endif /* _LINKERDEFS_H */

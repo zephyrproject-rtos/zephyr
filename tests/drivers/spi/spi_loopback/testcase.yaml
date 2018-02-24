@@ -1,0 +1,6 @@
+tests:
+  test_spi_loopback:
+    depends_on: spi
+    tags: drivers spi
+    harness: loopback
+    platform_exclude: quark_se_c1000_ss_devboard arduino_101_sss

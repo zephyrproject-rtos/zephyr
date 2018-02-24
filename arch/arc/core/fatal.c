@@ -84,3 +84,10 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 	for (;;)
 		;
 }
+
+
+FUNC_NORETURN void _arch_syscall_oops(void *ssf_ptr)
+{
+	_SysFatalErrorHandler(_NANO_ERR_KERNEL_OOPS, ssf_ptr);
+	CODE_UNREACHABLE;
+}

@@ -104,17 +104,6 @@ extern "C" {
 #endif
 
 /**
- * @brief Define alignment of a stack buffer
- *
- * This is used for two different things:
- * 1) Used in checks for stack size to be a multiple of the stack buffer
- *    alignment
- * 2) Used to determine the alignment of a stack buffer
- *
- */
-#define STACK_ALIGN	max(STACK_ALIGN_SIZE, MPU_GUARD_ALIGN_AND_SIZE)
-
-/**
  * @brief Declare a toplevel thread stack memory region
  *
  * This declares a region of memory suitable for use as a thread's stack.
@@ -134,9 +123,40 @@ extern "C" {
  * @param sym Thread stack symbol name
  * @param size Size of the stack memory region
  */
+
+/**
+ * @brief Define alignment of a stack buffer
+ *
+ * This is used for two different things:
+ * 1) Used in checks for stack size to be a multiple of the stack buffer
+ *    alignment
+ * 2) Used to determine the alignment of a stack buffer
+ *
+ */
+#if defined(CONFIG_USERSPACE)
+#define STACK_ALIGN    32
+#else
+#define STACK_ALIGN    max(STACK_ALIGN_SIZE, MPU_GUARD_ALIGN_AND_SIZE)
+#endif
+
+/**
+ * @brief Calculate power of two ceiling for a buffer size input
+ *
+ */
+#define POW2_CEIL(x) ((1 << (31 - __builtin_clz(x))) < x ?  \
+		1 << (31 - __builtin_clz(x) + 1) : \
+		1 << (31 - __builtin_clz(x)))
+
+#if defined(CONFIG_USERSPACE) && \
+	defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
+#define _ARCH_THREAD_STACK_DEFINE(sym, size) \
+	struct _k_thread_stack_element __kernel_noinit \
+		__aligned(POW2_CEIL(size)) sym[POW2_CEIL(size)]
+#else
 #define _ARCH_THREAD_STACK_DEFINE(sym, size) \
 	struct _k_thread_stack_element __kernel_noinit __aligned(STACK_ALIGN) \
 		sym[size+MPU_GUARD_ALIGN_AND_SIZE]
+#endif
 
 /**
  * @brief Declare a toplevel array of thread stack memory regions
@@ -151,9 +171,18 @@ extern "C" {
  * @param nmemb Number of stacks to declare
  * @param size Size of the stack memory region
  */
+#if defined(CONFIG_USERSPACE) && \
+	defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
 #define _ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	struct _k_thread_stack_element __kernel_noinit __aligned(STACK_ALIGN) \
+	struct _k_thread_stack_element __kernel_noinit \
+		__aligned(POW2_CEIL(size)) \
+		sym[nmemb][POW2_CEIL(size)]
+#else
+#define _ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
+	struct _k_thread_stack_element __kernel_noinit \
+		__aligned(STACK_ALIGN) \
 		sym[nmemb][size+MPU_GUARD_ALIGN_AND_SIZE]
+#endif
 
 /**
  * @brief Declare an embedded stack memory region
@@ -167,9 +196,16 @@ extern "C" {
  * @param sym Thread stack symbol name
  * @param size Size of the stack memory region
  */
+#if defined(CONFIG_USERSPACE) && \
+	defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
+#define _ARCH_THREAD_STACK_MEMBER(sym, size) \
+	struct _k_thread_stack_element __aligned(POW2_CEIL(size)) \
+		sym[POW2_CEIL(size)]
+#else
 #define _ARCH_THREAD_STACK_MEMBER(sym, size) \
 	struct _k_thread_stack_element __aligned(STACK_ALIGN) \
 		sym[size+MPU_GUARD_ALIGN_AND_SIZE]
+#endif
 
 /**
  * @brief Return the size in bytes of a stack memory region
@@ -178,8 +214,14 @@ extern "C" {
  * since the underlying implementation may actually create something larger
  * (for instance a guard area).
  *
- * The value returned here is guaranteed to match the 'size' parameter
+ * The value returned here is NOT guaranteed to match the 'size' parameter
  * passed to K_THREAD_STACK_DEFINE and related macros.
+ *
+ * In the case of CONFIG_USERSPACE=y and
+ * CONFIG_MPU_REQUIRES_POWER_OF_2_ALIGNMENT, the size will be larger than the
+ * requested size.
+ *
+ * In all other configurations, the size will be correct.
  *
  * @param sym Stack memory symbol
  * @return Size of the stack
@@ -304,59 +346,172 @@ extern "C" {
 typedef u32_t k_mem_partition_attr_t;
 #endif /* _ASMLANGUAGE */
 
-#ifdef CONFIG_ARM_USERSPACE
+#ifdef CONFIG_USERSPACE
 #ifndef _ASMLANGUAGE
-/* Syscall invocation macros. arm-specific machine constraints used to ensure
- * args land in the proper registers. Currently, they are all stub functions
- * just for enabling CONFIG_USERSPACE on arm w/o errors.
- */
 
+/* Syscall invocation macros. arm-specific machine constraints used to ensure
+ * args land in the proper registers.
+ */
 static inline u32_t _arch_syscall_invoke6(u32_t arg1, u32_t arg2, u32_t arg3,
 					  u32_t arg4, u32_t arg5, u32_t arg6,
 					  u32_t call_id)
 {
-	return 0;
+	register u32_t ret __asm__("r0") = arg1;
+	register u32_t r1 __asm__("r1") = arg2;
+	register u32_t r2 __asm__("r2") = arg3;
+	register u32_t r3 __asm__("r3") = arg4;
+
+	__asm__ volatile("sub sp, #16\n"
+			 "str %[a5], [sp, #0]\n"
+			 "str %[a6], [sp, #4]\n"
+			 "str %[cid], [sp, #8]\n"
+			 "svc %[svid]\n"
+			 "add sp, #16\n"
+			 : "=r"(ret)
+			 : [cid] "r" (call_id),
+			   [svid] "i" (_SVC_CALL_SYSTEM_CALL),
+			   "r" (ret), "r" (r1), "r" (r2), "r" (r3),
+			   [a5] "r" (arg5), [a6] "r" (arg6)
+			 : "ip", "memory");
+
+	return ret;
 }
 
 static inline u32_t _arch_syscall_invoke5(u32_t arg1, u32_t arg2, u32_t arg3,
 					  u32_t arg4, u32_t arg5, u32_t call_id)
 {
-	return 0;
+	register u32_t ret __asm__("r0") = arg1;
+	register u32_t r1 __asm__("r1") = arg2;
+	register u32_t r2 __asm__("r2") = arg3;
+	register u32_t r3 __asm__("r3") = arg4;
+
+	__asm__ volatile("sub sp, #16\n"
+			 "str %[a5], [sp, #0]\n"
+			 "str %[cid], [sp, #8]\n"
+			 "svc %[svid]\n"
+			 "add sp, #16\n"
+			 : "=r"(ret)
+			 : [cid] "r" (call_id),
+			   [svid] "i" (_SVC_CALL_SYSTEM_CALL),
+			   "r" (ret), "r" (r1), "r" (r2), "r" (r3),
+			   [a5] "r" (arg5)
+			 : "ip", "memory");
+
+	return ret;
 }
 
 static inline u32_t _arch_syscall_invoke4(u32_t arg1, u32_t arg2, u32_t arg3,
 					  u32_t arg4, u32_t call_id)
 {
-	return 0;
+	register u32_t ret __asm__("r0") = arg1;
+	register u32_t r1 __asm__("r1") = arg2;
+	register u32_t r2 __asm__("r2") = arg3;
+	register u32_t r3 __asm__("r3") = arg4;
+
+	__asm__ volatile("sub sp, #16\n"
+			 "str %[cid], [sp,#8]\n"
+			 "svc %[svid]\n"
+			 "add sp, #16\n"
+			 : "=r"(ret)
+			 : [cid] "r" (call_id),
+			   [svid] "i" (_SVC_CALL_SYSTEM_CALL),
+			   "r" (ret), "r" (r1), "r" (r2), "r" (r3)
+			 : "ip", "memory");
+
+	return ret;
 }
 
 static inline u32_t _arch_syscall_invoke3(u32_t arg1, u32_t arg2, u32_t arg3,
 					  u32_t call_id)
 {
-	return 0;
+	register u32_t ret __asm__("r0") = arg1;
+	register u32_t r1 __asm__("r1") = arg2;
+	register u32_t r2 __asm__("r2") = arg3;
+
+	__asm__ volatile("sub sp, #16\n"
+			 "str %[cid], [sp,#8]\n"
+			 "svc %[svid]\n"
+			 "add sp, #16\n"
+			 : "=r"(ret)
+			 : [cid] "r" (call_id),
+			   [svid] "i" (_SVC_CALL_SYSTEM_CALL),
+			   "r" (ret), "r" (r1), "r" (r2)
+			 : "r3", "ip", "memory");
+
+	return ret;
 }
 
 static inline u32_t _arch_syscall_invoke2(u32_t arg1, u32_t arg2, u32_t call_id)
 {
-	return 0;
+	register u32_t ret __asm__("r0") = arg1;
+	register u32_t r1 __asm__("r1") = arg2;
+
+	__asm__ volatile(
+			 "sub sp, #16\n"
+			 "str %[cid], [sp,#8]\n"
+			 "svc %[svid]\n"
+			 "add sp, #16\n"
+			 : "=r"(ret)
+			 : [cid] "r" (call_id),
+			   [svid] "i" (_SVC_CALL_SYSTEM_CALL),
+			   "r" (ret), "r" (r1)
+			 : "r2", "r3", "ip", "memory");
+
+	return ret;
 }
 
 static inline u32_t _arch_syscall_invoke1(u32_t arg1, u32_t call_id)
 {
-	return 0;
+	register u32_t ret __asm__("r0") = arg1;
+
+	__asm__ volatile(
+			 "sub sp, #16\n"
+			 "str %[cid], [sp,#8]\n"
+			 "svc %[svid]\n"
+			 "add sp, #16\n"
+			 : "=r"(ret)
+			 : [cid] "r" (call_id),
+			   [svid] "i" (_SVC_CALL_SYSTEM_CALL),
+			   "r" (ret)
+			 : "r1", "r2", "r3", "ip", "memory");
+	return ret;
 }
 
 static inline u32_t _arch_syscall_invoke0(u32_t call_id)
 {
-	return 0;
+	register u32_t ret __asm__("r0");
+
+	__asm__ volatile(
+			 "sub sp, #16\n"
+			 "str %[cid], [sp,#8]\n"
+			 "svc %[svid]\n"
+			 "add sp, #16\n"
+			 : "=r"(ret)
+			 : [cid] "r" (call_id),
+			   [svid] "i" (_SVC_CALL_SYSTEM_CALL),
+			   "r" (ret)
+			 : "r1", "r2", "r3", "ip", "memory");
+
+	return ret;
 }
 
 static inline int _arch_is_user_context(void)
 {
-	return 0;
+	u32_t value;
+
+	/* check for handler mode */
+	__asm__ volatile("mrs %0, IPSR\n\t" : "=r"(value));
+	if (value) {
+		return 0;
+	}
+
+	/* if not handler mode, return mode information */
+	__asm__ volatile("mrs %0, CONTROL\n\t" : "=r"(value));
+	return value & 0x1;
 }
+
 #endif /* _ASMLANGUAGE */
-#endif /* CONFIG_ARM_USERSPACE */
+#endif /* CONFIG_USERSPACE */
 
 #ifdef __cplusplus
 }

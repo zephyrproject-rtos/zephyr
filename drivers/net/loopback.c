@@ -81,9 +81,9 @@ static int loopback_send(struct net_if *iface, struct net_pkt *pkt)
 		goto out;
 	}
 
-out:
 	net_pkt_unref(pkt);
 
+out:
 	/* Let the receiving thread run now */
 	k_yield();
 

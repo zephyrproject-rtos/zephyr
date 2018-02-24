@@ -116,9 +116,7 @@ static struct bt_mesh_health_srv health_srv = {
 	.cb = &health_srv_cb,
 };
 
-static struct bt_mesh_model_pub health_pub = {
-	.msg = BT_MESH_HEALTH_FAULT_MSG(MAX_FAULT),
-};
+BT_MESH_HEALTH_PUB_DEFINE(health_pub, MAX_FAULT);
 
 static struct bt_mesh_model root_models[] = {
 	BT_MESH_MODEL_CFG_SRV(&cfg_srv),
@@ -131,14 +129,9 @@ static int vnd_publish(struct bt_mesh_model *mod)
 	return 0;
 }
 
-static struct bt_mesh_model_pub vnd_pub = {
-	.update = vnd_publish,
-	.msg = NET_BUF_SIMPLE(4),
-};
+BT_MESH_MODEL_PUB_DEFINE(vnd_pub, vnd_publish, 4);
 
-static struct bt_mesh_model_pub vnd_pub2 = {
-	.msg = NET_BUF_SIMPLE(4),
-};
+BT_MESH_MODEL_PUB_DEFINE(vnd_pub2, NULL, 4);
 
 static const struct bt_mesh_model_op vnd_ops[] = {
 	BT_MESH_MODEL_OP_END,
@@ -215,9 +208,7 @@ static void bt_ready(int err)
 	}
 
 	/* Initialize publication messages with dummy data */
-	net_buf_simple_init(vnd_pub.msg, 0);
 	net_buf_simple_add_le32(vnd_pub.msg, UINT32_MAX);
-	net_buf_simple_init(vnd_pub2.msg, 0);
 	net_buf_simple_add_le32(vnd_pub2.msg, UINT32_MAX);
 
 	bt_mesh_prov_enable(BT_MESH_PROV_ADV | BT_MESH_PROV_GATT);

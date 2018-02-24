@@ -72,8 +72,8 @@ config NET_ROUTING
 	default n
 	depends on NET_ROUTE
 	help
-	Allow IPv6 routing between different network interfaces and
-	technologies.
+	  Allow IPv6 routing between different network interfaces and
+	  technologies.
 
 config	NET_MAX_ROUTES
 	int "Max number of routing entries stored."
@@ -338,16 +338,6 @@ config NET_BUF_DATA_SIZE
 	  which leaves in worst case 81 bytes for user data (MTU).
 	  In order to be able to receive at least full IPv6 packet which
 	  has a size of 1280 bytes, the one should allocate 16 fragments here.
-
-config NET_BUF_USER_DATA_SIZE
-	int "Size of user_data reserved"
-	default 0
-	default 4 if NET_L2_BT
-	help
-	  This is for drivers to set how much user_data shall be included in
-	  each network data fragment.
-	  Example: For Bluetooth, the user_data shall be at least 4 bytes as
-	  that is used for identifying the type of data they are carrying.
 
 choice
 	prompt "Default Network Interface"

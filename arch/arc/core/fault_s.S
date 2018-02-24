@@ -47,7 +47,7 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_tlb_miss_d)
 SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_prot_v)
 SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_privilege_v)
 SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_swi)
-#ifndef CONFIG_IRQ_OFFLOAD
+#if !defined(CONFIG_IRQ_OFFLOAD) && !defined(CONFIG_USERSPACE)
 SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_trap)
 #endif
 SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_extension)
@@ -79,7 +79,7 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_maligned)
 	lr r0,[_ARC_V2_ERET]
 	st_s r0, [sp, ___isf_t_pc_OFFSET] /* eret into pc */
 
-
+#ifndef CONFIG_USERSPACE
 	ld r1, [exc_nest_count]
 	add r0, r1, 1
 	st r0, [exc_nest_count]
@@ -92,16 +92,18 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_maligned)
 	ld sp, [r1, _kernel_offset_to_irq_stack]
 exc_nest_handle:
 	push_s r0
+#endif
 
 	jl _Fault
 
+#ifndef CONFIG_USERSPACE
 	pop sp
 
 	mov	r1, exc_nest_count
 	ld	r0, [r1]
 	sub	r0, r0, 1
 	st 	r0, [r1]
-
+#endif
 	/* if _Fault returns, restore the registers */
 	_pop_irq_stack_frame
 
@@ -109,8 +111,38 @@ exc_nest_handle:
 
 #ifdef CONFIG_IRQ_OFFLOAD
 GTEXT(_irq_do_offload);
+#endif
 
+#if defined(CONFIG_IRQ_OFFLOAD) || defined(CONFIG_USERSPACE)
 SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_trap)
+#ifdef CONFIG_USERSPACE
+	/* get the id of trap_s */
+	lr ilink, [_ARC_V2_ECR]
+	and ilink, ilink, 0x3f
+	cmp ilink, 0x3
+	bne _do_other_trap
+/* do sys_call */
+	mov ilink, _SYSCALL_LIMIT
+	cmp r6, ilink
+	blt valid_syscall_id
+
+	mov r0, r6
+	mov r6, _SYSCALL_BAD
+
+valid_syscall_id:
+	lr ilink, [_ARC_V2_ERET]
+	push ilink
+	lr ilink, [_ARC_V2_ERSTATUS]
+	push ilink
+
+	bclr ilink, ilink, _ARC_V2_STATUS32_U_BIT
+	sr ilink, [_ARC_V2_ERSTATUS]
+
+	mov ilink, _arc_do_syscall
+	sr ilink, [_ARC_V2_ERET]
+
+	rtie
+
 	/*
 	 * Before invoking exception handler, the kernel switches to an exception
 	 * stack to save the faulting thread's registers.
@@ -118,6 +150,8 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_trap)
 	 * a diagnostic message and halt.
 	 */
 
+_do_other_trap:
+#endif /* CONFIG_USERSPACE */
 #ifdef CONFIG_ARC_STACK_CHECKING
 	push_s r2
 	/* disable stack checking */
@@ -148,7 +182,9 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_trap)
 trap_nest_handle:
 	push_s r0
 
+#ifdef CONFIG_IRQ_OFFLOAD
 	jl _irq_do_offload
+#endif
 
 	pop sp
 
@@ -200,5 +236,4 @@ _trap_check_for_swap:
 
 	/* Assumption: r2 has current thread */
 	b _rirq_common_interrupt_swap
-
-#endif /* CONFIG_IRQ_OFFLOAD */
+#endif /* CONFIG_IRQ_OFFLOAD || CONFIG_USERSPACE */

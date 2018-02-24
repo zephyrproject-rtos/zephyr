@@ -59,18 +59,17 @@ packages from their respective websites.
 
       choco feature enable -n allowGlobalConfirmation
 
-#. Install CMake and DTC:
+#. Install CMake:
 
    .. code-block:: console
 
       choco install cmake --installargs 'ADD_CMAKE_TO_PATH=System'
-      choco install dtc-msys2 --version 1.4.4
 
 #. Install the rest of the tools:
 
    .. code-block:: console
 
-      choco install git python ninja gperf
+      choco install git python ninja dtc-msys2 gperf
 
 #. Close the Command Prompt window.
 
@@ -123,7 +122,7 @@ packages from their respective websites.
 
    .. code-block:: console
 
-      set ZEPHYR_GCC_VARIANT=issm
+      set ZEPHYR_TOOLCHAIN_VARIANT=issm
       set ISSM_INSTALLATION_PATH=c:\issm0-toolchain-windows-2017-01-25
 
    Use the path where you extracted the ISSM toolchain.
@@ -132,15 +131,19 @@ packages from their respective websites.
 
    .. code-block:: console
 
-      set ZEPHYR_GCC_VARIANT=gccarmemb
+      set ZEPHYR_TOOLCHAIN_VARIANT=gccarmemb
       set GCCARMEMB_TOOLCHAIN_PATH=c:\gccarmemb
 
-   And for either, set the `ZEPHYR_BASE` environment variable to the root
-   of the Zephyr repository you cloned:
+   To use the same toolchain in new sessions in the future you can set the
+   variables in a ``.cmd`` file and run that every time you open a new
+   Command Prompt.
+
+   And for either, run the :file:`zephyr-env.cmd` file in order to set the
+   :makevar:`ZEPHYR_BASE` environment variable:
 
    .. code-block:: console
 
-      set ZEPHYR_BASE=%userprofile%\zephyr
+      zephyr-env.cmd
 
 #. Finally, you can try building the :ref:`hello_world` sample to check things
    out.
@@ -212,6 +215,16 @@ environment for Windows. Follow the steps below to set it up:
       pacman -Syu
       pacman -S git cmake make gcc dtc diffutils ncurses-devel python3 gperf
 
+#. Compile :program:`Ninja` from source (Ninja is not available as
+   an MSYS2 package) and install it:
+
+   .. code-block:: console
+
+      git clone git://github.com/ninja-build/ninja.git && cd ninja
+      git checkout release
+      ./configure.py --bootstrap
+      cp ninja.exe /usr/bin/
+
 #. From within the MSYS2 MSYS Shell, clone a copy of the Zephyr source
    into your home directory using Git.  (Some Zephyr tools require
    Unix-style line endings, so we'll configure Git for this repo to
@@ -268,7 +281,7 @@ environment for Windows. Follow the steps below to set it up:
 
    .. code-block:: console
 
-      export ZEPHYR_GCC_VARIANT=issm
+      export ZEPHYR_TOOLCHAIN_VARIANT=issm
       export ISSM_INSTALLATION_PATH=/c/issm0-toolchain-windows-2017-01-25
 
    Use the path where you extracted the ISSM toolchain.
@@ -277,7 +290,7 @@ environment for Windows. Follow the steps below to set it up:
 
    .. code-block:: console
 
-      export ZEPHYR_GCC_VARIANT=gccarmemb
+      export ZEPHYR_TOOLCHAIN_VARIANT=gccarmemb
       export GCCARMEMB_TOOLCHAIN_PATH=/c/gccarmemb
 
    And for either, run the provided script to set up zephyr project specific

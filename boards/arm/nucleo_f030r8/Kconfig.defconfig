@@ -40,4 +40,14 @@ config I2C_2
 
 endif
 
+if SPI
+
+config SPI_1
+	default y
+
+config SPI_2
+	default y
+
+endif
+
 endif # BOARD_NUCLEO_F030R8

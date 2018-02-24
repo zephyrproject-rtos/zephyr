@@ -41,6 +41,18 @@ extern "C" {
 	st r25, [sp, ___callee_saved_stack_t_r25_OFFSET]
 	st r26, [sp, ___callee_saved_stack_t_r26_OFFSET]
 	st fp,  [sp, ___callee_saved_stack_t_fp_OFFSET]
+
+#ifdef CONFIG_USERSPACE
+#ifdef CONFIG_ARC_HAS_SECURE
+	lr r13, [_ARC_V2_SEC_U_SP]
+	st r13, [sp, ___callee_saved_stack_t_user_sp_OFFSET]
+	lr r13, [_ARC_V2_SEC_K_SP]
+	st r13, [sp, ___callee_saved_stack_t_kernel_sp_OFFSET]
+#else
+	lr r13, [_ARC_V2_USER_SP]
+	st r13, [sp, ___callee_saved_stack_t_user_sp_OFFSET]
+#endif
+#endif
 	st r30, [sp, ___callee_saved_stack_t_r30_OFFSET]
 
 #ifdef CONFIG_FP_SHARING
@@ -93,6 +105,18 @@ extern "C" {
 	sr r13, [_ARC_V2_FPU_DPFP2H]
 #endif
 
+#endif
+
+#ifdef CONFIG_USERSPACE
+#ifdef CONFIG_ARC_HAS_SECURE
+	ld r13, [sp, ___callee_saved_stack_t_user_sp_OFFSET]
+	sr r13, [_ARC_V2_SEC_U_SP]
+	ld r13, [sp, ___callee_saved_stack_t_kernel_sp_OFFSET]
+	sr r13, [_ARC_V2_SEC_K_SP]
+#else
+	ld_s r13, [sp, ___callee_saved_stack_t_user_sp_OFFSET]
+	sr r13, [_ARC_V2_USER_SP]
+#endif
 #endif
 
 	ld_s r13, [sp, ___callee_saved_stack_t_r13_OFFSET]

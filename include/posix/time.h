@@ -1,0 +1,74 @@
+/*
+ * Copyright (c) 2018 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#ifndef __POSIX_TIME_H__
+#define __POSIX_TIME_H__
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifdef CONFIG_NEWLIB_LIBC
+#include_next <time.h>
+#else
+struct timespec {
+	signed int  tv_sec;
+	signed int  tv_nsec;
+};
+
+struct itimerspec {
+	struct timespec it_interval;  /* Timer interval */
+	struct timespec it_value;     /* Timer expiration */
+};
+#endif /* CONFIG_NEWLIB_LIBC */
+
+#include <kernel.h>
+#include <errno.h>
+#include "sys/types.h"
+#include "signal.h"
+
+#ifndef CLOCK_REALTIME
+#define CLOCK_REALTIME 0
+#endif
+
+#ifndef CLOCK_MONOTONIC
+#define CLOCK_MONOTONIC 1
+#endif
+
+#define NSEC_PER_MSEC (NSEC_PER_USEC * USEC_PER_MSEC)
+
+#ifndef TIMER_ABSTIME
+#define TIMER_ABSTIME 4
+#endif
+
+static inline s32_t _ts_to_ms(const struct timespec *to)
+{
+	return (to->tv_sec * MSEC_PER_SEC) + (to->tv_nsec / NSEC_PER_MSEC);
+}
+
+/**
+ * @brief Set clock time.
+ *
+ * See IEEE 1003.1
+ */
+static inline int clock_settime(clockid_t clock_id, const struct timespec *ts)
+{
+	errno = ENOSYS;
+	return -1;
+}
+
+int clock_gettime(clockid_t clock_id, struct timespec *ts);
+/* Timer APIs */
+int timer_create(clockid_t clockId, struct sigevent *evp, timer_t *timerid);
+int timer_delete(timer_t timerid);
+int timer_gettime(timer_t timerid, struct itimerspec *its);
+int timer_settime(timer_t timerid, int flags, const struct itimerspec *value,
+		  struct itimerspec *ovalue);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* __POSIX_TIME_H__ */

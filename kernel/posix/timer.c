@@ -1,0 +1,204 @@
+/*
+ * Copyright (c) 2018 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <kernel.h>
+#include <time.h>
+#include <errno.h>
+#include <string.h>
+#include <misc/printk.h>
+
+#define ACTIVE 1
+#define NOT_ACTIVE 0
+
+static void zephyr_timer_wrapper(struct k_timer *timer);
+
+struct timer_obj {
+	struct k_timer ztimer;
+	void (*sigev_notify_function)(sigval val);
+	sigval val;
+	struct timespec interval;	/* Reload value */
+	u32_t reload;			/* Reload value in ms */
+	u32_t status;
+};
+
+K_MEM_SLAB_DEFINE(posix_timer_slab, sizeof(struct timer_obj),
+		  CONFIG_MAX_TIMER_COUNT, 4);
+
+static void zephyr_timer_wrapper(struct k_timer *ztimer)
+{
+	struct timer_obj *timer;
+
+	timer = (struct timer_obj *)ztimer;
+
+	if (timer->reload == 0) {
+		timer->status = NOT_ACTIVE;
+	}
+
+	(timer->sigev_notify_function)(timer->val);
+}
+
+/**
+ * @brief Create a per-process timer.
+ *
+ * This API does not accept SIGEV_THREAD as valid signal event notification
+ * type.
+ *
+ * See IEEE 1003.1
+ */
+int timer_create(clockid_t clockid, struct sigevent *evp, timer_t *timerid)
+{
+	struct timer_obj *timer;
+
+	if (clockid != CLOCK_MONOTONIC || evp == NULL ||
+	    (evp->sigev_notify != SIGEV_NONE &&
+	     evp->sigev_notify != SIGEV_SIGNAL)) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	if (k_mem_slab_alloc(&posix_timer_slab, (void **)&timer, 100) == 0) {
+		memset(timer, 0, sizeof(struct timer_obj));
+	} else {
+		errno = ENOMEM;
+		return -1;
+	}
+
+	timer->sigev_notify_function = evp->sigev_notify_function;
+	timer->val = evp->sigev_value;
+	timer->interval.tv_sec = 0;
+	timer->interval.tv_nsec = 0;
+	timer->reload = 0;
+	timer->status = NOT_ACTIVE;
+
+	if (evp->sigev_notify == SIGEV_NONE) {
+		k_timer_init(&timer->ztimer, NULL, NULL);
+	} else {
+		k_timer_init(&timer->ztimer, zephyr_timer_wrapper, NULL);
+	}
+
+	*timerid = (timer_t)timer;
+
+	return 0;
+}
+
+/**
+ * @brief Get amount of time left for expiration on a per-process timer.
+ *
+ * See IEEE 1003.1
+ */
+int timer_gettime(timer_t timerid, struct itimerspec *its)
+{
+	struct timer_obj *timer = (struct timer_obj *)timerid;
+	s32_t remaining, leftover;
+	s64_t   nsecs, secs;
+
+	if (timer == NULL) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	if (timer->status == ACTIVE) {
+		remaining = k_timer_remaining_get(&timer->ztimer);
+		secs =  remaining / sys_clock_ticks_per_sec;
+		leftover = remaining - (secs * sys_clock_ticks_per_sec);
+		nsecs = leftover * NSEC_PER_SEC / sys_clock_ticks_per_sec;
+		its->it_value.tv_sec = (s32_t) secs;
+		its->it_value.tv_nsec = (s32_t) nsecs;
+	} else {
+		/* Timer is disarmed */
+		its->it_value.tv_sec = 0;
+		its->it_value.tv_nsec = 0;
+	}
+
+	/* The interval last set by timer_settime() */
+	its->it_interval = timer->interval;
+	return 0;
+}
+
+/**
+ * @brief Sets expiration time of per-process timer.
+ *
+ * See IEEE 1003.1
+ */
+int timer_settime(timer_t timerid, int flags, const struct itimerspec *value,
+		  struct itimerspec *ovalue)
+{
+	struct timer_obj *timer = (struct timer_obj *) timerid;
+	u32_t duration, current;
+
+	if (timer == NULL ||
+	    value->it_interval.tv_nsec < 0 ||
+	    value->it_interval.tv_nsec >= NSEC_PER_SEC ||
+	    value->it_value.tv_nsec < 0 ||
+	    value->it_value.tv_nsec >= NSEC_PER_SEC) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	/*  Save time to expire and old reload value. */
+	if (ovalue) {
+		timer_gettime(timerid, ovalue);
+	}
+
+	/* Stop the timer if the value is 0 */
+	if ((value->it_value.tv_sec == 0) && (value->it_value.tv_nsec == 0)) {
+		if (timer->status == ACTIVE) {
+			k_timer_stop(&timer->ztimer);
+		}
+
+		timer->status = NOT_ACTIVE;
+		return 0;
+	}
+
+	/* Calculate timer period */
+	timer->reload = _ts_to_ms(&value->it_interval);
+	timer->interval.tv_sec = value->it_interval.tv_sec;
+	timer->interval.tv_nsec = value->it_interval.tv_nsec;
+
+	/* Calcaulte timer duration */
+	duration = _ts_to_ms(&(value->it_value));
+	if (flags & TIMER_ABSTIME) {
+		current = k_timer_remaining_get(&timer->ztimer);
+
+		if (current >= duration) {
+			duration = 0;
+		} else {
+			duration -= current;
+		}
+	}
+
+	if (timer->status == ACTIVE) {
+		k_timer_stop(&timer->ztimer);
+	}
+
+	timer->status = ACTIVE;
+	k_timer_start(&timer->ztimer, duration, timer->reload);
+	return 0;
+}
+
+/**
+ * @brief Delete a per-process timer.
+ *
+ * See IEEE 1003.1
+ */
+int timer_delete(timer_t timerid)
+{
+	struct timer_obj *timer = (struct timer_obj *) timerid;
+
+	if (timer == NULL) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	if (timer->status == ACTIVE) {
+		timer->status = NOT_ACTIVE;
+		k_timer_stop(&timer->ztimer);
+	}
+
+	k_mem_slab_free(&posix_timer_slab, (void *) &timer);
+
+	return 0;
+}
+

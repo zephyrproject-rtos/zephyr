@@ -24,7 +24,6 @@ config ARC_CORE_MPU
 config MPU_STACK_GUARD
 	bool "Thread Stack Guards"
 	depends on ARC_CORE_MPU && !ARC_STACK_CHECKING
-	select THREAD_STACK_INFO
 	default n
 	help
 	  Enable thread stack guards via MPU. ARC supports built-in stack protection.
@@ -34,6 +33,8 @@ config ARC_MPU
 	bool "ARC MPU Support"
 	depends on CPU_HAS_MPU
 	select ARC_CORE_MPU
+	select THREAD_STACK_INFO
+	select MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT if ARC_MPU_VER = 2
 	default n
 	help
 	  Target has ARC MPU (currently only works for EMSK 2.2/2.3 ARCEM7D)

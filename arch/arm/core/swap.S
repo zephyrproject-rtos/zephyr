@@ -23,6 +23,7 @@ GTEXT(__swap)
 GTEXT(__svc)
 GTEXT(__pendsv)
 GTEXT(_do_kernel_oops)
+GTEXT(_arm_do_syscall)
 GDATA(_k_neg_eagain)
 
 GDATA(_kernel)
@@ -176,12 +177,24 @@ _thread_irq_disabled:
 #endif /* CONFIG_MPU_STACK_GUARD */
 
 #ifdef CONFIG_USERSPACE
+    /* restore mode */
+    ldr r0, [r2, #_thread_offset_to_mode]
+    mrs r3, CONTROL
+    bic r3, #1
+    orr r3, r0
+    msr CONTROL, r3
+
     /* r2 contains k_thread */
     add r0, r2, #0
     push {r2, lr}
     blx configure_mpu_mem_domain
     pop {r2, lr}
-#endif /* CONFIG_USERSPACE */
+
+    add r0, r2, #0
+    push {r2, lr}
+    blx configure_mpu_user_context
+    pop {r2, lr}
+#endif
 
     /* load callee-saved + psp from thread */
     add r0, r2, #_thread_offset_to_callee_saved
@@ -268,7 +281,6 @@ _oops:
  */
 
 SECTION_FUNC(TEXT, __svc)
-
     tst lr, #0x4    /* did we come from thread mode ? */
     ite eq  /* if zero (equal), came from handler mode */
         mrseq r0, MSP   /* handler mode, stack frame is on MSP */
@@ -283,10 +295,26 @@ SECTION_FUNC(TEXT, __svc)
     * 0: context switch
     * 1: irq_offload (if configured)
     * 2: kernel panic or oops (software generated fatal exception)
+    * 3: System call
     * Planned implementation of system calls for memory protection will
     * expand this case.
     */
     ands r1, #0xff
+#if CONFIG_USERSPACE
+    mrs r2, CONTROL
+
+    cmp r1, #3
+    beq _do_syscall
+
+    /*
+     * check that we are privileged before invoking other SVCs
+     * oops if we are unprivileged
+     */
+    tst r2, #0x1
+    bne _oops
+
+    cmp r1, #0
+#endif
     beq _context_switch
 
     cmp r1, #2
@@ -323,6 +351,46 @@ _oops:
     push {lr}
     blx _do_kernel_oops
     pop {pc}
+
+#if CONFIG_USERSPACE
+    /*
+     * System call will setup a jump to the _do_arm_syscall function
+     * when the SVC returns via the bx lr.
+     *
+     * There is some trickery involved here because we have to preserve
+     * the original LR value so that we can return back to the caller of
+     * the SVC.
+     *
+     * On SVC exeption, the stack looks like the following:
+     * r0 - r1 - r2 - r3 - r12 - LR - PC - PSR
+     * r5 - r6 - call id - saved LR
+     *
+     */
+_do_syscall:
+    ldr r1, [r0, #24]   /* grab address of PC from stack frame */
+    str r1, [r0, #44]   /* store address to use for LR after syscall */
+    ldr r1, =_arm_do_syscall
+    str r1, [r0, #24]   /* overwrite the LR to point to _arm_do_syscall */
+
+    /* validate syscall limit, only set priv mode if valid */
+    ldr ip, =_SYSCALL_LIMIT
+    ldr r1, [r0, #40]
+    cmp r1, ip
+    blt valid_syscall_id
+
+    /* bad syscall id.  Set arg0 to bad id and set call_id to SYSCALL_BAD */
+    str r1, [r0, #0]
+    ldr r1, =_SYSCALL_BAD
+    str r1, [r0, #40]
+
+valid_syscall_id:
+    /* set mode to privileged, r2 still contains value from CONTROL */
+    bic r2, #1
+    msr CONTROL, r2
+
+    /* return from SVC to the modified LR - _arm_do_syscall */
+    bx lr
+#endif
 
 #else
 #error Unknown ARM architecture
@@ -380,6 +448,13 @@ SECTION_FUNC(TEXT, __swap)
     ldr r1, =_kernel
     ldr r2, [r1, #_kernel_offset_to_current]
     str r0, [r2, #_thread_offset_to_basepri]
+
+#ifdef CONFIG_USERSPACE
+    mrs r0, CONTROL
+    movs r3, #1
+    ands r0, r3
+    str r0, [r2, #_thread_offset_to_mode]
+#endif
 
     /*
      * Set __swap()'s default return code to -EAGAIN. This eliminates the need

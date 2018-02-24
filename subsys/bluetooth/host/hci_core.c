@@ -93,9 +93,6 @@ static size_t discovery_results_count;
 #endif /* CONFIG_BT_BREDR */
 
 struct cmd_data {
-	/** BT_BUF_CMD */
-	u8_t  type;
-
 	/** HCI status of the command completion */
 	u8_t  status;
 
@@ -117,7 +114,9 @@ struct acl_data {
 	u16_t handle;
 };
 
-#define cmd(buf) ((struct cmd_data *)net_buf_user_data(buf))
+static struct cmd_data cmd_data[CONFIG_BT_HCI_CMD_COUNT];
+
+#define cmd(buf) (&cmd_data[net_buf_id(buf)])
 #define acl(buf) ((struct acl_data *)net_buf_user_data(buf))
 
 /* HCI command buffers. Derive the needed size from BT_BUF_RX_SIZE since
@@ -125,7 +124,7 @@ struct acl_data {
  */
 #define CMD_BUF_SIZE BT_BUF_RX_SIZE
 NET_BUF_POOL_DEFINE(hci_cmd_pool, CONFIG_BT_HCI_CMD_COUNT,
-		    CMD_BUF_SIZE, sizeof(struct cmd_data), NULL);
+		    CMD_BUF_SIZE, BT_BUF_USER_DATA_MIN, NULL);
 
 NET_BUF_POOL_DEFINE(hci_rx_pool, CONFIG_BT_RX_BUF_COUNT,
 		    BT_BUF_RX_SIZE, BT_BUF_USER_DATA_MIN, NULL);
@@ -199,7 +198,8 @@ struct net_buf *bt_hci_cmd_create(u16_t opcode, u8_t param_len)
 
 	net_buf_reserve(buf, CONFIG_BT_HCI_RESERVE);
 
-	cmd(buf)->type = BT_BUF_CMD;
+	bt_buf_set_type(buf, BT_BUF_CMD);
+
 	cmd(buf)->opcode = opcode;
 	cmd(buf)->sync = NULL;
 
@@ -4290,18 +4290,9 @@ int bt_send(struct net_buf *buf)
 
 int bt_recv(struct net_buf *buf)
 {
-	struct net_buf_pool *pool;
-
 	bt_monitor_send(bt_monitor_opcode(buf), buf->data, buf->len);
 
 	BT_DBG("buf %p len %u", buf, buf->len);
-
-	pool = net_buf_pool_get(buf->pool_id);
-	if (pool->user_data_size < BT_BUF_USER_DATA_MIN) {
-		BT_ERR("Too small user data size");
-		net_buf_unref(buf);
-		return -EINVAL;
-	}
 
 	switch (bt_buf_get_type(buf)) {
 #if defined(CONFIG_BT_CONN)

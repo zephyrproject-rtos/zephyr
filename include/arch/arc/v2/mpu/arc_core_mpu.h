@@ -28,9 +28,11 @@ extern "C" {
  * be managed inside the MPU driver and not escalated.
  */
 /* Thread Region Intent Type */
+#define THREAD_STACK_USER_REGION 0x0
 #define THREAD_STACK_REGION 0x1
-#define THREAD_STACK_GUARD_REGION 0x2
-#define THREAD_DOMAIN_PARTITION_REGION 0x3
+#define THREAD_APP_DATA_REGION 0x2
+#define THREAD_STACK_GUARD_REGION 0x3
+#define THREAD_DOMAIN_PARTITION_REGION 0x4
 
 #if defined(CONFIG_ARC_CORE_MPU)
 /* ARC Core MPU Driver API */
@@ -95,7 +97,7 @@ void configure_mpu_stack_guard(struct k_thread *thread);
 #endif
 
 #if defined(CONFIG_USERSPACE)
-
+void arc_core_mpu_configure_user_context(struct k_thread *thread);
 void arc_core_mpu_configure_mem_domain(struct k_mem_domain *mem_domain);
 void arc_core_mpu_mem_partition_remove(u32_t part_index);
 void arc_core_mpu_configure_mem_partition(u32_t part_index,
@@ -112,8 +114,11 @@ int arc_core_mpu_buffer_validate(void *addr, size_t size, int write);
  * @param thread thread info data structure.
  */
 void configure_mpu_mem_domain(struct k_thread *thread);
+
+void configure_mpu_user_context(struct k_thread *thread);
 #endif
 
+void configure_mpu_thread(struct k_thread *thread);
 
 #ifdef __cplusplus
 }

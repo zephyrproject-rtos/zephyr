@@ -272,12 +272,9 @@ void net_pkt_print_frags(struct net_pkt *pkt)
 		frag_size = frag->size;
 		ll_overhead = net_buf_headroom(frag);
 
-		NET_INFO("[%d] frag %p len %d size %d reserve %d "
-			 "pool %p [sz %d ud_sz %d]",
+		NET_INFO("[%d] frag %p len %d size %d reserve %d pool %p",
 			 count, frag, frag->len, frag_size, ll_overhead,
-			 net_buf_pool_get(frag->pool_id),
-			 net_buf_pool_get(frag->pool_id)->buf_size,
-			 net_buf_pool_get(frag->pool_id)->user_data_size);
+			 net_buf_pool_get(frag->pool_id));
 
 		count++;
 
@@ -1251,7 +1248,7 @@ u16_t net_pkt_append(struct net_pkt *pkt, u16_t len, const u8_t *data,
 }
 
 /* Helper routine to retrieve single byte from fragment and move
- * offset. If required byte is last byte in framgent then return
+ * offset. If required byte is last byte in fragment then return
  * next fragment and set offset = 0.
  */
 static inline struct net_buf *net_frag_read_byte(struct net_buf *frag,

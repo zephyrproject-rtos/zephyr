@@ -181,7 +181,7 @@ static void helper_thread(int arg1, int arg2)
 	irq_offload(irq_offload_isr, (void *)test_thread_id);
 }
 
-void testing_sleep(void)
+void test_sleep(void)
 {
 	int       status = TC_FAIL;
 	u32_t  start_tick;
@@ -240,6 +240,7 @@ void testing_sleep(void)
 /*test case main entry*/
 void test_main(void)
 {
-	ztest_test_suite(test_sleep, ztest_unit_test(testing_sleep));
-	ztest_run_test_suite(test_sleep);
+	ztest_test_suite(testing_sleep,
+			ztest_unit_test(test_sleep));
+	ztest_run_test_suite(testing_sleep);
 }

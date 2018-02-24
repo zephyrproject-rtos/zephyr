@@ -393,8 +393,7 @@ time_read_not_needed:
 #endif
 	ret
 
-#if defined(CONFIG_GDB_INFO) || defined(CONFIG_DEBUG_INFO) \
-	|| defined(CONFIG_X86_IAMCU)
+#if defined(CONFIG_X86_IAMCU)
 /**
  *
  * @brief Adjust stack/parameters before invoking thread entry function
@@ -465,8 +464,6 @@ SECTION_FUNC(TEXT, _x86_thread_entry_wrapper)
 	pop	%edx
 	pop	%ecx
 	push	$0	 /* Null return address */
-#elif defined(CONFIG_GDB_INFO) || defined(CONFIG_DEBUG_INFO)
-	movl	$0, (%esp) /* zero initialEFLAGS location */
 #endif
 	jmp	*%edi
 #endif

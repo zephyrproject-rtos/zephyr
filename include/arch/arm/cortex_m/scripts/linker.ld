@@ -74,6 +74,9 @@ MEMORY
 #ifdef CONFIG_TI_CCFG_PRESENT
     FLASH_CCFG            (rwx): ORIGIN = CCFG_ADDR, LENGTH = CCFG_SIZE
 #endif
+#ifdef CONFIG_CCM_BASE_ADDRESS
+    CCM                   (rw) : ORIGIN = CONFIG_CCM_BASE_ADDRESS, LENGTH = CONFIG_CCM_SIZE * 1K
+#endif
     SRAM                  (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
 
     /* Used by and documented in include/linker/intlist.ld */
@@ -327,6 +330,45 @@ SECTIONS
     __kernel_ram_size = __kernel_ram_end - __kernel_ram_start;
 
     GROUP_END(RAMABLE_REGION)
+
+#ifdef CONFIG_CCM_BASE_ADDRESS
+
+    GROUP_START(CCM)
+
+	SECTION_PROLOGUE(_CCM_BSS_SECTION_NAME, (NOLOAD OPTIONAL),SUBALIGN(4))
+	{
+		__ccm_start = .;
+		__ccm_bss_start = .;
+		*(.ccm_bss)
+		*(".ccm_bss.*")
+	} GROUP_LINK_IN(CCM)
+
+	__ccm_bss_end = .;
+
+	SECTION_PROLOGUE(_CCM_NOINIT_SECTION_NAME, (NOLOAD OPTIONAL),SUBALIGN(4))
+	{
+		__ccm_noinit_start = .;
+		*(.ccm_noinit)
+		*(".ccm_noinit.*")
+	} GROUP_LINK_IN(CCM)
+
+	__ccm_noinit_end = .;
+
+	SECTION_PROLOGUE(_CCM_DATA_SECTION_NAME, (OPTIONAL),SUBALIGN(4))
+	{
+		__ccm_data_start = .;
+		*(.ccm_data)
+		*(".ccm_data.*")
+	} GROUP_LINK_IN(CCM AT> ROMABLE_REGION)
+
+	__ccm_data_end = .;
+	__ccm_end = .;
+
+	__ccm_data_rom_start = LOADADDR(_CCM_DATA_SECTION_NAME);
+
+    GROUP_END(CCM)
+
+#endif /* CONFIG_CCM_BASE_ADDRESS */
 
 #ifdef CONFIG_CUSTOM_SECTIONS_LD
 /* Located in project source directory */

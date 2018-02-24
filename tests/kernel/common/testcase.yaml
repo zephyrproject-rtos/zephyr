@@ -1,3 +1,4 @@
 tests:
-  test:
-    tags: core
+  kernel.common:
+    tags: kernel
+    min_ram: 16

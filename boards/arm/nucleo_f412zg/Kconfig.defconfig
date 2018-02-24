@@ -17,4 +17,11 @@ config UART_STM32_PORT_3
 
 endif # UART_CONSOLE
 
+if I2C
+
+config I2C_1
+	def_bool y
+
+endif # I2C
+
 endif # BOARD_NUCLEO_F412ZG

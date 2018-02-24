@@ -20,6 +20,7 @@
 #include <misc/dlist.h>
 #include <init.h>
 #include <syscall_handler.h>
+#include <kswap.h>
 
 extern struct k_msgq _k_msgq_list_start[];
 extern struct k_msgq _k_msgq_list_end[];

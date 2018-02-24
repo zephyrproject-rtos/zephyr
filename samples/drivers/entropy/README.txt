@@ -9,7 +9,7 @@ Sample for the entropy gathering driver
 Building and Running Project:
 
 This project writes an infinite series of random numbers to the
-console, 10 per second.
+console, 9 per second.
 
 It can be built and executed on frdm_k64f as follows:
 

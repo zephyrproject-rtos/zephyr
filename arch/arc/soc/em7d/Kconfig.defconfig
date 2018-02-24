@@ -66,4 +66,21 @@ config DCCM_SIZE
 config CACHE_FLUSHING
 	def_bool y
 
+if (ARC_MPU_VER = 2)
+
+config MAIN_STACK_SIZE
+	default 2048
+
+config IDLE_STACK_SIZE
+	default 2048
+
+if ZTEST
+
+config ZTEST_STACKSIZE
+	default 2048
+
+endif # ZTEST
+
+endif # ARC_MPU_VER
+
 endif #SOC_EM7D

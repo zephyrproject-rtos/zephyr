@@ -19,9 +19,17 @@
 #ifdef CONFIG_INIT_STACKS
 #include <string.h>
 #endif /* CONFIG_INIT_STACKS */
+
+#ifdef CONFIG_USERSPACE
+#include <arch/arc/v2/mpu/arc_core_mpu.h>
+#endif
+
 /*  initial stack frame */
 struct init_stack_frame {
 	u32_t pc;
+#ifdef CONFIG_ARC_HAS_SECURE
+	u32_t sec_stat;
+#endif
 	u32_t status32;
 	u32_t r3;
 	u32_t r2;
@@ -62,16 +70,54 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	char *pStackMem = K_THREAD_STACK_BUFFER(stack);
 	_ASSERT_VALID_PRIO(priority, pEntry);
 
-	char *stackEnd = pStackMem + stackSize;
+	char *stackEnd;
 	struct init_stack_frame *pInitCtx;
 
+#if CONFIG_USERSPACE
+#if CONFIG_ARC_MPU_VER == 2
+	stackSize = POW2_CEIL(STACK_SIZE_ALIGN(stackSize));
+#elif CONFIG_ARC_MPU_VER == 3
+	stackSize = ROUND_UP(stackSize, STACK_ALIGN);
+#endif
+#endif
+	stackEnd = pStackMem + stackSize;
+
+#if CONFIG_USERSPACE
+	/* for kernel thread, the privilege stack is merged into thread stack */
+	if (!(options & K_USER)) {
+	/* if MPU_STACK_GUARD is enabled, reserve the the stack area
+	 * |---------------------|    |----------------|
+	 * |  user stack         |    | stack guard    |
+	 * |---------------------| to |----------------|
+	 * |  stack guard        |    | kernel thread  |
+	 * |---------------------|    | stack          |
+	 * |  privilege stack    |    |                |
+	 * ---------------------------------------------
+	 */
+		pStackMem += STACK_GUARD_SIZE;
+		stackSize = stackSize + CONFIG_PRIVILEGED_STACK_SIZE;
+		stackEnd += CONFIG_PRIVILEGED_STACK_SIZE + STACK_GUARD_SIZE;
+	}
+#endif
 	_new_thread_init(thread, pStackMem, stackSize, priority, options);
 
 	/* carve the thread entry struct from the "base" of the stack */
 	pInitCtx = (struct init_stack_frame *)(STACK_ROUND_DOWN(stackEnd) -
 				       sizeof(struct init_stack_frame));
-
+#if CONFIG_USERSPACE
+	if (options & K_USER) {
+		pInitCtx->pc = ((u32_t)_user_thread_entry_wrapper);
+	} else {
+		pInitCtx->pc = ((u32_t)_thread_entry_wrapper);
+	}
+#else
 	pInitCtx->pc = ((u32_t)_thread_entry_wrapper);
+#endif
+
+#ifdef CONFIG_ARC_HAS_SECURE
+	pInitCtx->sec_stat = _arc_v2_aux_reg_read(_ARC_V2_SEC_STAT);
+#endif
+
 	pInitCtx->r0 = (u32_t)pEntry;
 	pInitCtx->r1 = (u32_t)parameter1;
 	pInitCtx->r2 = (u32_t)parameter2;
@@ -84,10 +130,32 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 * value.
 	 */
 #ifdef CONFIG_ARC_STACK_CHECKING
-	pInitCtx->status32 = _ARC_V2_STATUS32_SC | _ARC_V2_STATUS32_E(_ARC_V2_DEF_IRQ_LEVEL);
+	pInitCtx->status32 = _ARC_V2_STATUS32_SC |
+		 _ARC_V2_STATUS32_E(_ARC_V2_DEF_IRQ_LEVEL);
 	thread->arch.stack_base = (u32_t) stackEnd;
 #else
 	pInitCtx->status32 = _ARC_V2_STATUS32_E(_ARC_V2_DEF_IRQ_LEVEL);
+#endif
+
+#if CONFIG_USERSPACE
+	/*
+	 * enable US bit, US is read as zero in user mode. This will allow use
+	 * mode sleep instructions, and it enables a form of denial-of-service
+	 * attack by putting the processor in sleep mode, but since interrupt
+	 * level/mask can't be set from user space that's not worse than
+	 * executing a loop without yielding.
+	 */
+	pInitCtx->status32 |= _ARC_V2_STATUS32_US;
+
+	if (options & K_USER) {
+		thread->arch.priv_stack_start =
+			(u32_t) (stackEnd + STACK_GUARD_SIZE);
+		thread->arch.priv_stack_size =
+			(u32_t)CONFIG_PRIVILEGED_STACK_SIZE;
+	} else {
+		thread->arch.priv_stack_start = 0;
+		thread->arch.priv_stack_size = 0;
+	}
 #endif
 
 #ifdef CONFIG_THREAD_MONITOR
@@ -113,3 +181,42 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 	thread_monitor_init(thread);
 }
+
+
+#ifdef CONFIG_USERSPACE
+
+FUNC_NORETURN void _arch_user_mode_enter(k_thread_entry_t user_entry,
+	void *p1, void *p2, void *p3)
+{
+	_current->base.user_options |= K_USER;
+
+	/*
+	 * ajust the thread stack layout
+	 * |----------------|    |---------------------|
+	 * | stack guard    |    |  user stack         |
+	 * |----------------| to |---------------------|
+	 * | kernel thread  |    |  stack guard        |
+	 * | stack          |    |---------------------|
+	 * |                |    |  privilege stack    |
+	 * ---------------------------------------------
+	 */
+	_current->stack_info.start = (u32_t)_current->stack_obj;
+	_current->stack_info.size -= CONFIG_PRIVILEGED_STACK_SIZE;
+
+	_current->arch.priv_stack_start =
+			(u32_t) (_current->stack_info.start +
+				 _current->stack_info.size + STACK_GUARD_SIZE);
+	_current->arch.priv_stack_size =
+			(u32_t)CONFIG_PRIVILEGED_STACK_SIZE;
+
+	/* possible optimizaiton: no need to load mem domain anymore */
+	/* need to lock cpu here ? */
+	configure_mpu_thread(_current);
+
+	_arc_userspace_enter(user_entry, p1, p2, p3,
+			     (u32_t)_current->stack_obj,
+			     _current->stack_info.size);
+	CODE_UNREACHABLE;
+}
+
+#endif

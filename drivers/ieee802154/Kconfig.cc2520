@@ -17,46 +17,46 @@ config IEEE802154_CC2520_DRV_NAME
 	string "TI CC2520 Driver's name"
 	default "cc2520"
 	help
-	This option sets the driver name
+	  This option sets the driver name
 
 config IEEE802154_CC2520_SPI_DRV_NAME
 	string "SPI driver's name to use to access CC2520"
 	default ""
 	help
-	This option is mandatory to set which SPI controller to use in order
-	to actually control the CC2520 chip.
+	  This option is mandatory to set which SPI controller to use in order
+	  to actually control the CC2520 chip.
 
 config IEEE802154_CC2520_SPI_FREQ
 	int "SPI system frequency"
 	default 0
 	help
-	This option sets the SPI controller's frequency. Beware this value
-	depends on the SPI controller being used and also on the system
-	clock.
+	  This option sets the SPI controller's frequency. Beware this value
+	  depends on the SPI controller being used and also on the system
+	  clock.
 
 config IEEE802154_CC2520_SPI_SLAVE
 	int "SPI slave linked to CC2520"
 	default 0
 	help
-	This option sets the SPI slave number SPI controller has to switch
-	to when dealing with CC2520 chip.
+	  This option sets the SPI slave number SPI controller has to switch
+	  to when dealing with CC2520 chip.
 
 config IEEE802154_CC2520_RX_STACK_SIZE
 	int "Driver's internal RX thread stack size"
 	default 800
 	help
-	This option sets the driver's stack size for its internal RX thread.
-	The default value should be sufficient, but in case it proves to be
-	a too little one, this option makes it easy to play with the size.
+	  This option sets the driver's stack size for its internal RX thread.
+	  The default value should be sufficient, but in case it proves to be
+	  a too little one, this option makes it easy to play with the size.
 
 config IEEE802154_CC2520_INIT_PRIO
 	int "CC2520 initialization priority"
 	default 80
 	help
-	Set the initialization priority number. Do not mess with it unless
-	you know what you are doing. Beware cc2520 requires gpio and spi to
-	be ready first (and sometime gpio should be the very first as spi
-	might need it too). And of course it has to start before the net stack.
+	  Set the initialization priority number. Do not mess with it unless
+	  you know what you are doing. Beware cc2520 requires gpio and spi to
+	  be ready first (and sometime gpio should be the very first as spi
+	  might need it too). And of course it has to start before the net stack.
 
 config IEEE802154_CC2520_RANDOM_MAC
 	bool "Random MAC address"
@@ -101,24 +101,24 @@ config IEEE802154_CC2520_CRYPTO
 	default n
 	depends on NET_L2_IEEE802154_SECURITY
 	help
-	This option will expose the hardware AES encryption from CC2520.
-	Such feature should not be used for anything but 802.15.4 security.
-	The crypto device exposed will only support synchronous CCM operation.
+	  This option will expose the hardware AES encryption from CC2520.
+	  Such feature should not be used for anything but 802.15.4 security.
+	  The crypto device exposed will only support synchronous CCM operation.
 
 config IEEE802154_CC2520_CRYPTO_DRV_NAME
 	string "TI CC2520 Crypto Driver's name"
 	default "cc2520_crypto"
 	depends on IEEE802154_CC2520_CRYPTO
 	help
-	This option sets the driver name for the crypto part found on CC2520.
+	  This option sets the driver name for the crypto part found on CC2520.
 
 config IEEE802154_CC2520_CRYPTO_INIT_PRIO
 	int "TI CC2520 crypto device initialization priority"
 	default 81
 	depends on IEEE802154_CC2520_CRYPTO
 	help
-	Set the initialization priority number. Do not mess with it unless
-	you know what you are doing. It should be initialized after CC2520
-	as it shares the same runtime context.
+	  Set the initialization priority number. Do not mess with it unless
+	  you know what you are doing. It should be initialized after CC2520
+	  as it shares the same runtime context.
 
 endif # IEEE802154_CC2520

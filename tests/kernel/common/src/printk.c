@@ -58,7 +58,7 @@ static int ram_console_out(int character)
 	return _old_char_out(character);
 }
 
-void printk_test(void)
+void test_printk(void)
 {
 	int count;
 

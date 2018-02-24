@@ -1,0 +1,15 @@
+/* This file is a temporary workaround for mapping of the generated information
+ * to the current driver definitions.  This will be removed when the drivers
+ * are modified to handle the generated information, or the mapping of
+ * generated data matches the driver definitions.
+ */
+
+/* SoC level DTS fixup file */
+
+#define CONFIG_NUM_IRQ_PRIO_BITS               ARM_V7M_NVIC_E000E100_ARM_NUM_IRQ_PRIORITY_BITS
+
+#define CONFIG_UART_MSP432P4XX_NAME            TI_MSP432P4XX_UART_40001000_LABEL
+#define CONFIG_UART_MSP432P4XX_BASE_ADDRESS    TI_MSP432P4XX_UART_40001000_BASE_ADDRESS
+#define CONFIG_UART_MSP432P4XX_BAUD_RATE       TI_MSP432P4XX_UART_40001000_CURRENT_SPEED
+
+/* End of SoC Level DTS fixup file */

@@ -12,6 +12,7 @@
 #include <arch/arm/cortex_m/mpu/arm_mpu.h>
 #include <arch/arm/cortex_m/mpu/arm_core_mpu.h>
 #include <logging/sys_log.h>
+#include <linker/linker-defs.h>
 
 #define ARM_MPU_DEV ((volatile struct arm_mpu *) ARM_MPU_BASE)
 
@@ -32,17 +33,51 @@ static inline u32_t _get_region_attr(u32_t xn, u32_t ap, u32_t tex,
 }
 
 /**
+ * This internal function converts the region size to
+ * the SIZE field value of MPU_RASR.
+ */
+static inline u32_t _size_to_mpu_rasr_size(u32_t size)
+{
+	/* The minimal supported region size is 32 bytes */
+	if (size <= 32) {
+		return REGION_32B;
+	}
+
+	/*
+	 * A size value greater than 2^31 could not be handled by
+	 * round_up_to_next_power_of_two() properly. We handle
+	 * it separately here.
+	 */
+	if (size > (1 << 31)) {
+		return REGION_4G;
+	}
+
+	size = 1 << (32 - __builtin_clz(size - 1));
+	return (32 - __builtin_clz(size) - 2) << 1;
+}
+
+
+/**
  * This internal function is utilized by the MPU driver to parse the intent
  * type (i.e. THREAD_STACK_REGION) and return the correct parameter set.
  */
 static inline u32_t _get_region_attr_by_type(u32_t type, u32_t size)
 {
+	int region_size = _size_to_mpu_rasr_size(size);
+
 	switch (type) {
+	case THREAD_STACK_USER_REGION:
+		return _get_region_attr(1, P_RW_U_RW, 0, 1, 0,
+					1, 0, region_size);
 	case THREAD_STACK_REGION:
-		return 0;
+		return _get_region_attr(1, P_RW_U_RW, 0, 1, 0,
+					1, 0, region_size);
 	case THREAD_STACK_GUARD_REGION:
-		return _get_region_attr(1, P_RO_U_RO, 0, 1, 0,
-					1, 0, REGION_32B);
+		return _get_region_attr(1, P_RO_U_NA, 0, 1, 0,
+					1, 0, region_size);
+	case THREAD_APP_DATA_REGION:
+		return _get_region_attr(1, P_RW_U_RW, 0, 1, 0,
+					1, 0, region_size);
 	default:
 		/* Size 0 region */
 		return 0;
@@ -67,6 +102,7 @@ static void _region_init(u32_t index, u32_t region_addr,
 	ARM_MPU_DEV->rbar = (region_addr & REGION_BASE_ADDR_MASK)
 				| REGION_VALID | index;
 	ARM_MPU_DEV->rasr = region_attr | REGION_ENABLE;
+	SYS_LOG_DBG("[%d] 0x%08x 0x%08x", index, region_addr, region_attr);
 }
 
 /**
@@ -82,62 +118,28 @@ static inline u32_t _get_region_index_by_type(u32_t type)
 	 * index.
 	 */
 	switch (type) {
+	case THREAD_STACK_USER_REGION:
+		return mpu_config.num_regions + THREAD_STACK_REGION - 1;
 	case THREAD_STACK_REGION:
-		return mpu_config.num_regions + type - 1;
 	case THREAD_STACK_GUARD_REGION:
+	case THREAD_APP_DATA_REGION:
 		return mpu_config.num_regions + type - 1;
 	case THREAD_DOMAIN_PARTITION_REGION:
-#if defined(CONFIG_MPU_STACK_GUARD)
+#if defined(CONFIG_USERSPACE)
 		return mpu_config.num_regions + type - 1;
+#elif defined(CONFIG_MPU_STACK_GUARD)
+		return mpu_config.num_regions + type - 2;
 #else
 		/*
 		 * Start domain partition region from stack guard region
 		 * since stack guard is not enabled.
 		 */
-		return mpu_config.num_regions + type - 2;
+		return mpu_config.num_regions + type - 3;
 #endif
 	default:
 		__ASSERT(0, "Unsupported type");
 		return 0;
 	}
-}
-
-static inline u32_t round_up_to_next_power_of_two(u32_t v)
-{
-	v--;
-	v |= v >> 1;
-	v |= v >> 2;
-	v |= v >> 4;
-	v |= v >> 8;
-	v |= v >> 16;
-	v++;
-
-	return v;
-}
-
-/**
- * This internal function converts the region size to
- * the SIZE field value of MPU_RASR.
- */
-static inline u32_t _size_to_mpu_rasr_size(u32_t size)
-{
-	/* The minimal supported region size is 32 bytes */
-	if (size <= 32) {
-		return REGION_32B;
-	}
-
-	/*
-	 * A size value greater than 2^31 could not be handled by
-	 * round_up_to_next_power_of_two() properly. We handle
-	 * it separately here.
-	 */
-	if (size > (1 << 31)) {
-		return REGION_4G;
-	}
-
-	size = round_up_to_next_power_of_two(size);
-
-	return (find_msb_set(size) - 2) << 1;
 }
 
 /**
@@ -181,6 +183,11 @@ static inline int _is_user_accessible_region(u32_t r_index, int write)
 
 	ARM_MPU_DEV->rnr = r_index;
 	r_ap = ARM_MPU_DEV->rasr & ACCESS_PERMS_MASK;
+
+	/* always return true if this is the thread stack region */
+	if (_get_region_index_by_type(THREAD_STACK_REGION) == r_index) {
+		return 1;
+	}
 
 	if (write) {
 		return r_ap == P_RW_U_RW;
@@ -240,6 +247,33 @@ void arm_core_mpu_configure(u8_t type, u32_t base, u32_t size)
 }
 
 #if defined(CONFIG_USERSPACE)
+void arm_core_mpu_configure_user_context(struct k_thread *thread)
+{
+	u32_t base = (u32_t)thread->stack_obj;
+	u32_t size = thread->stack_info.size;
+	u32_t index = _get_region_index_by_type(THREAD_STACK_USER_REGION);
+	u32_t region_attr = _get_region_attr_by_type(THREAD_STACK_USER_REGION,
+						     size);
+
+	if (!thread->arch.priv_stack_start) {
+		ARM_MPU_DEV->rnr = index;
+		ARM_MPU_DEV->rbar = 0;
+		ARM_MPU_DEV->rasr = 0;
+		return;
+	}
+	/* configure stack */
+	_region_init(index, base, region_attr);
+
+#if defined(CONFIG_APPLICATION_MEMORY)
+	/* configure app data portion */
+	index = _get_region_index_by_type(THREAD_APP_DATA_REGION);
+	size = (u32_t)&__app_ram_end - (u32_t)&__app_ram_start;
+	region_attr = _get_region_attr_by_type(THREAD_APP_DATA_REGION, size);
+	if (size > 0)
+		_region_init(index, (u32_t)&__app_ram_start, region_attr);
+#endif
+}
+
 /**
  * @brief configure MPU regions for the memory partitions of the memory domain
  *

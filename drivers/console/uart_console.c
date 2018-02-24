@@ -32,6 +32,9 @@
 #include <linker/sections.h>
 #include <atomic.h>
 #include <misc/printk.h>
+#ifdef CONFIG_UART_CONSOLE_MCUMGR
+#include "mgmt/serial.h"
+#endif
 
 static struct device *uart_console_dev;
 
@@ -43,8 +46,7 @@ void uart_console_in_debug_hook_install(uart_console_in_debug_hook_t hook)
 	debug_hook_in = hook;
 }
 
-static UART_CONSOLE_OUT_DEBUG_HOOK_SIG(debug_hook_out_nop)
-{
+static UART_CONSOLE_OUT_DEBUG_HOOK_SIG(debug_hook_out_nop) {
 	ARG_UNUSED(c);
 	return !UART_CONSOLE_DEBUG_HOOK_HANDLED;
 }
@@ -101,7 +103,7 @@ static int console_out(int c)
 		return c;
 	}
 
-#endif /* CONFIG_UART_CONSOLE_DEBUG_SERVER_HOOKS */
+#endif  /* CONFIG_UART_CONSOLE_DEBUG_SERVER_HOOKS */
 
 	if ('\n' == c) {
 		uart_poll_out(uart_console_dev, '\r');
@@ -116,16 +118,16 @@ static int console_out(int c)
 #if defined(CONFIG_STDOUT_CONSOLE)
 extern void __stdout_hook_install(int (*hook)(int));
 #else
-#define __stdout_hook_install(x)		\
-	do {/* nothing */			\
+#define __stdout_hook_install(x) \
+	do {    /* nothing */	 \
 	} while ((0))
 #endif
 
 #if defined(CONFIG_PRINTK)
 extern void __printk_hook_install(int (*fn)(int));
 #else
-#define __printk_hook_install(x)		\
-	do {/* nothing */			\
+#define __printk_hook_install(x) \
+	do {    /* nothing */	 \
 	} while ((0))
 #endif
 
@@ -239,7 +241,13 @@ enum {
 	ESC_ANSI,
 	ESC_ANSI_FIRST,
 	ESC_ANSI_VAL,
-	ESC_ANSI_VAL_2
+	ESC_ANSI_VAL_2,
+#ifdef CONFIG_UART_CONSOLE_MCUMGR
+	ESC_MCUMGR_PKT_1,
+	ESC_MCUMGR_PKT_2,
+	ESC_MCUMGR_FRAG_1,
+	ESC_MCUMGR_FRAG_2,
+#endif
 };
 
 static atomic_t esc_state;
@@ -335,6 +343,113 @@ ansi_cmd:
 	atomic_clear_bit(&esc_state, ESC_ANSI);
 }
 
+#ifdef CONFIG_UART_CONSOLE_MCUMGR
+
+static void clear_mcumgr(void)
+{
+	atomic_clear_bit(&esc_state, ESC_MCUMGR_PKT_1);
+	atomic_clear_bit(&esc_state, ESC_MCUMGR_PKT_2);
+	atomic_clear_bit(&esc_state, ESC_MCUMGR_FRAG_1);
+	atomic_clear_bit(&esc_state, ESC_MCUMGR_FRAG_2);
+}
+
+/**
+ * These states indicate whether an mcumgr frame is being received.
+ */
+#define CONSOLE_MCUMGR_STATE_NONE       1
+#define CONSOLE_MCUMGR_STATE_HEADER     2
+#define CONSOLE_MCUMGR_STATE_PAYLOAD    3
+
+static int read_mcumgr_byte(uint8_t byte)
+{
+	bool frag_1;
+	bool frag_2;
+	bool pkt_1;
+	bool pkt_2;
+
+	pkt_1 = atomic_test_bit(&esc_state, ESC_MCUMGR_PKT_1);
+	pkt_2 = atomic_test_bit(&esc_state, ESC_MCUMGR_PKT_2);
+	frag_1 = atomic_test_bit(&esc_state, ESC_MCUMGR_FRAG_1);
+	frag_2 = atomic_test_bit(&esc_state, ESC_MCUMGR_FRAG_2);
+
+	if (pkt_2 || frag_2) {
+		/* Already fully framed. */
+		return CONSOLE_MCUMGR_STATE_PAYLOAD;
+	}
+
+	if (pkt_1) {
+		if (byte == MCUMGR_SERIAL_HDR_PKT_2) {
+			/* Final framing byte received. */
+			atomic_set_bit(&esc_state, ESC_MCUMGR_PKT_2);
+			return CONSOLE_MCUMGR_STATE_PAYLOAD;
+		}
+	} else if (frag_1) {
+		if (byte == MCUMGR_SERIAL_HDR_FRAG_2) {
+			/* Final framing byte received. */
+			atomic_set_bit(&esc_state, ESC_MCUMGR_FRAG_2);
+			return CONSOLE_MCUMGR_STATE_PAYLOAD;
+		}
+	} else {
+		if (byte == MCUMGR_SERIAL_HDR_PKT_1) {
+			/* First framing byte received. */
+			atomic_set_bit(&esc_state, ESC_MCUMGR_PKT_1);
+			return CONSOLE_MCUMGR_STATE_HEADER;
+		} else if (byte == MCUMGR_SERIAL_HDR_FRAG_1) {
+			/* First framing byte received. */
+			atomic_set_bit(&esc_state, ESC_MCUMGR_FRAG_1);
+			return CONSOLE_MCUMGR_STATE_HEADER;
+		}
+	}
+
+	/* Non-mcumgr byte received. */
+	return CONSOLE_MCUMGR_STATE_NONE;
+}
+
+/**
+ * @brief Attempts to process a received byte as part of an mcumgr frame.
+ *
+ * @param cmd The console command currently being received.
+ * @param byte The byte just received.
+ *
+ * @return true if the command being received is an mcumgr frame; false if it
+ * is a plain console command.
+ */
+static bool handle_mcumgr(struct console_input *cmd, uint8_t byte)
+{
+	int mcumgr_state;
+
+	mcumgr_state = read_mcumgr_byte(byte);
+	if (mcumgr_state == CONSOLE_MCUMGR_STATE_NONE) {
+		/* Not an mcumgr command; let the normal console handling
+		 * process the byte.
+		 */
+		cmd->is_mcumgr = 0;
+		return false;
+	}
+
+	/* The received byte is part of an mcumgr command.  Process the byte
+	 * and return true to indicate that normal console handling should
+	 * ignore it.
+	 */
+	if (cur + end < sizeof(cmd->line) - 1) {
+		cmd->line[cur++] = byte;
+	}
+	if (mcumgr_state == CONSOLE_MCUMGR_STATE_PAYLOAD && byte == '\n') {
+		cmd->line[cur + end] = '\0';
+		cmd->is_mcumgr = 1;
+		k_fifo_put(lines_queue, cmd);
+
+		clear_mcumgr();
+		cmd = NULL;
+		cur = 0;
+		end = 0;
+	}
+
+	return true;
+}
+
+#endif /* CONFIG_UART_CONSOLE_MCUMGR */
+
 void uart_console_isr(struct device *unused)
 {
 	ARG_UNUSED(unused);
@@ -372,6 +487,15 @@ void uart_console_isr(struct device *unused)
 				return;
 			}
 		}
+
+#ifdef CONFIG_UART_CONSOLE_MCUMGR
+		/* Divert this byte from normal console handling if it is part
+		 * of an mcumgr frame.
+		 */
+		if (handle_mcumgr(cmd, byte)) {
+			continue;
+		}
+#endif          /* CONFIG_UART_CONSOLE_MCUMGR */
 
 		/* Handle ANSI escape mode */
 		if (atomic_test_bit(&esc_state, ESC_ANSI)) {
@@ -456,11 +580,11 @@ void uart_register_input(struct k_fifo *avail, struct k_fifo *lines,
 }
 
 #else
-#define console_input_init(x)			\
-	do {/* nothing */			\
+#define console_input_init(x) \
+	do {    /* nothing */ \
 	} while ((0))
-#define uart_register_input(x)			\
-	do {/* nothing */			\
+#define uart_register_input(x) \
+	do {    /* nothing */  \
 	} while ((0))
 #endif
 
@@ -510,10 +634,10 @@ static int uart_console_init(struct device *arg)
 /* UART console initializes after the UART device itself */
 SYS_INIT(uart_console_init,
 #if defined(CONFIG_USB_UART_CONSOLE)
-			APPLICATION,
+	 APPLICATION,
 #elif defined(CONFIG_EARLY_CONSOLE)
-			PRE_KERNEL_1,
+	 PRE_KERNEL_1,
 #else
-			POST_KERNEL,
+	 POST_KERNEL,
 #endif
-			CONFIG_UART_CONSOLE_INIT_PRIORITY);
+	 CONFIG_UART_CONSOLE_INIT_PRIORITY);

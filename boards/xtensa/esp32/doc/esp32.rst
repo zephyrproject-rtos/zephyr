@@ -64,13 +64,13 @@ Set up build environment
 
 With both the toolchain and SDK installed, the Zephyr build system must be
 instructed to use this particular variant by setting the
-``ZEPHYR_GCC_VARIANT`` shell variable.  Two other environment variables
+``ZEPHYR_TOOLCHAIN_VARIANT`` shell variable.  Two other environment variables
 should also be set, pointing to, respectively, the path where ESP-IDF can be
 located, and where the toolchain has been installed:
 
 .. code-block:: console
 
-   export ZEPHYR_GCC_VARIANT="espressif"
+   export ZEPHYR_TOOLCHAIN_VARIANT="espressif"
    export ESP_IDF_PATH="/path/to/esp-idf"
    export ESPRESSIF_TOOLCHAIN_PATH="/path/to/xtensa-esp32-elf/"
 

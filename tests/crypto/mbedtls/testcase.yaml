@@ -1,5 +1,5 @@
 tests:
-  test:
+  crypto.mbedtls:
     filter: not CONFIG_DEBUG
     min_flash: 33
     min_ram: 32

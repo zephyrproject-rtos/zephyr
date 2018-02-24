@@ -7,38 +7,50 @@
 #ifndef __PTHREAD_H__
 #define __PTHREAD_H__
 
-#ifdef CONFIG_NEWLIB_LIBC
+#include <kernel.h>
 #include <time.h>
-#else
-/* This should probably live somewhere else but Zephyr doesn't
- * currently have a stdc layer to provide it
- */
-struct timespec {
-	s32_t tv_sec;
-	s32_t tv_nsec;
+#include "sys/types.h"
+#include "posix_sched.h"
+#include "unistd.h"
+
+enum pthread_state {
+	/* The thread is running and joinable. */
+	PTHREAD_JOINABLE = 0,
+	/* The thread is running and detached. */
+	PTHREAD_DETACHED,
+	/* A joinable thread exited and its return code is available. */
+	PTHREAD_EXITED,
+	/* The thread structure is unallocated and available for reuse. */
+	PTHREAD_TERMINATED
 };
-#endif
 
-static inline s32_t _ts_to_ms(const struct timespec *to)
-{
-	return (to->tv_sec * 1000) + (to->tv_nsec / 1000000);
-}
+struct posix_thread {
+	struct k_thread thread;
 
-typedef struct pthread_mutex {
-	struct k_sem *sem;
-} pthread_mutex_t;
+	/* Exit status */
+	void *retval;
 
-typedef struct pthread_mutexattr {
-	int unused;
-} pthread_mutexattr_t;
+	/* Pthread cancellation */
+	int cancel_state;
+	int cancel_pending;
+	struct k_sem cancel_lock_sem;
+	pthread_mutex_t cancel_lock;
 
-typedef struct pthread_cond {
-	_wait_q_t wait_q;
-} pthread_cond_t;
+	/* Pthread State */
+	enum pthread_state state;
+	pthread_mutex_t state_lock;
+	struct k_sem state_lock_sem;
+	pthread_cond_t state_cond;
+};
 
-typedef struct pthread_condattr {
-	int unused;
-} pthread_condattr_t;
+/* Pthread detach/joinable */
+#define PTHREAD_CREATE_JOINABLE     0
+#define PTHREAD_CREATE_DETACHED     1
+
+/* Pthread cancellation */
+#define _PTHREAD_CANCEL_POS	0
+#define PTHREAD_CANCEL_ENABLE	(0 << _PTHREAD_CANCEL_POS)
+#define PTHREAD_CANCEL_DISABLE	(1 << _PTHREAD_CANCEL_POS)
 
 /**
  * @brief Declare a pthread condition variable
@@ -193,7 +205,7 @@ static inline int pthread_mutex_timedlock(pthread_mutex_t *m,
 {
 	int ret = k_sem_take(m->sem, _ts_to_ms(to));
 
-	return ret == -EAGAIN ? -ETIMEDOUT : ret;
+	return ret == 0 ? ret : ETIMEDOUT;
 }
 
 /**
@@ -259,16 +271,6 @@ static inline int pthread_mutexattr_destroy(pthread_mutexattr_t *m)
  */
 /* #define PTHREAD_MUTEX_INITIALIZER */
 /* #define PTHREAD_COND_INITIALIZER */
-
-typedef struct pthread_barrier {
-	_wait_q_t wait_q;
-	int max;
-	int count;
-} pthread_barrier_t;
-
-typedef struct pthread_barrierattr {
-	int unused;
-} pthread_barrierattr_t;
 
 /**
  * @brief Declare a pthread barrier
@@ -382,5 +384,58 @@ int pthread_mutexattr_settype(pthread_mutexattr_t *, int);
 int pthread_barrierattr_getpshared(const pthread_barrierattr_t *, int *);
 int pthread_barrierattr_setpshared(pthread_barrierattr_t *, int);
 */
+
+/* Base Pthread related APIs */
+
+/**
+ * @brief Obtain ID of the calling thread.
+ *
+ * The results of calling this API from threads not created with
+ * pthread_create() are undefined.
+ *
+ * See IEEE 1003.1
+ */
+static inline pthread_t pthread_self(void)
+{
+	return (pthread_t)k_current_get();
+}
+
+
+/**
+ * @brief Compare thread IDs.
+ *
+ * See IEEE 1003.1
+ */
+static inline int pthread_equal(pthread_t pt1, pthread_t pt2)
+{
+	return (pt1 == pt2);
+}
+
+int pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *stacksize);
+int pthread_attr_setschedpolicy(pthread_attr_t *attr, int policy);
+int pthread_attr_getschedpolicy(const pthread_attr_t *attr, int *policy);
+int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate);
+int pthread_attr_getdetachstate(const pthread_attr_t *attr, int *detachstate);
+int pthread_attr_init(pthread_attr_t *attr);
+int pthread_attr_destroy(pthread_attr_t *attr);
+int pthread_attr_getschedparam(const pthread_attr_t *attr,
+			       struct sched_param *schedparam);
+int pthread_getschedparam(pthread_t pthread, int *policy,
+			  struct sched_param *param);
+int pthread_attr_getstack(const pthread_attr_t *attr,
+			  void **stackaddr, size_t *stacksize);
+int pthread_attr_setstack(pthread_attr_t *attr, void *stackaddr,
+			  size_t stacksize);
+void pthread_exit(void *retval);
+int pthread_join(pthread_t thread, void **status);
+int pthread_cancel(pthread_t pthread);
+int pthread_detach(pthread_t thread);
+int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
+		   void *(*threadroutine)(void *), void *arg);
+int pthread_setcancelstate(int state, int *oldstate);
+int pthread_attr_setschedparam(pthread_attr_t *attr,
+			       const struct sched_param *schedparam);
+int pthread_setschedparam(pthread_t pthread, int policy,
+			  const struct sched_param *param);
 
 #endif /* __PTHREAD_H__ */

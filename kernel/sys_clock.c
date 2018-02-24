@@ -317,6 +317,13 @@ static void handle_time_slicing(s32_t ticks)
  */
 void _nano_sys_clock_tick_announce(s32_t ticks)
 {
+#ifdef CONFIG_SMP
+	/* sys_clock timekeeping happens only on the main CPU */
+	if (_arch_curr_cpu()->id) {
+		return;
+	}
+#endif
+
 #ifndef CONFIG_TICKLESS_KERNEL
 	unsigned int  key;
 

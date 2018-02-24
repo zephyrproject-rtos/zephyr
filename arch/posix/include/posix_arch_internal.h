@@ -7,6 +7,8 @@
 #ifndef _POSIX_INTERNAL_H
 #define _POSIX_INTERNAL_H
 
+#include "toolchain.h"
+
 #define _SAFE_CALL(a) _safe_call(a, #a)
 
 #ifdef __cplusplus
@@ -16,7 +18,7 @@ extern "C" {
 static inline void _safe_call(int test, const char *test_str)
 {
 	/* LCOV_EXCL_START */ /* See Note1 */
-	if (test) {
+	if (unlikely(test)) {
 		posix_print_error_and_exit("POSIX arch: Error on: %s\n",
 					   test_str);
 	}

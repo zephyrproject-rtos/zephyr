@@ -126,8 +126,6 @@ static struct bt_mesh_health_srv health_srv = {
  * The publication messages are initialized to the
  * the size of the opcode + content
  *
- * The messages are in static storage because NET_BUF_SIMPLE()
- * only allocates on the stack if called within a function.
  * For publication, the message must be in static or global as
  * it is re-transmitted several times. This occurs
  * after the function that called bt_mesh_model_publish() has
@@ -139,34 +137,16 @@ static struct bt_mesh_health_srv health_srv = {
  *
  */
 
-static struct bt_mesh_model_pub health_pub = {
-	.msg  = BT_MESH_HEALTH_FAULT_MSG(0),
-};
+BT_MESH_HEALTH_PUB_DEFINE(health_pub, 0);
 
-static struct bt_mesh_model_pub gen_onoff_pub_srv = {
-	.msg = NET_BUF_SIMPLE(2 + 2),
-};
-static struct bt_mesh_model_pub gen_onoff_pub_cli = {
-	.msg = NET_BUF_SIMPLE(2 + 2),
-};
-static struct bt_mesh_model_pub gen_onoff_pub_srv_s_0 = {
-	.msg = NET_BUF_SIMPLE(2 + 2),
-};
-static struct bt_mesh_model_pub gen_onoff_pub_cli_s_0 = {
-	.msg = NET_BUF_SIMPLE(2 + 2),
-};
-static struct bt_mesh_model_pub gen_onoff_pub_srv_s_1 = {
-	.msg = NET_BUF_SIMPLE(2 + 2),
-};
-static struct bt_mesh_model_pub gen_onoff_pub_cli_s_1 = {
-	.msg = NET_BUF_SIMPLE(2 + 2),
-};
-static struct bt_mesh_model_pub gen_onoff_pub_srv_s_2 = {
-	.msg = NET_BUF_SIMPLE(2 + 2),
-};
-static struct bt_mesh_model_pub gen_onoff_pub_cli_s_2 = {
-	.msg = NET_BUF_SIMPLE(2 + 2),
-};
+BT_MESH_MODEL_PUB_DEFINE(gen_onoff_pub_srv, NULL, 2 + 2);
+BT_MESH_MODEL_PUB_DEFINE(gen_onoff_pub_cli, NULL, 2 + 2);
+BT_MESH_MODEL_PUB_DEFINE(gen_onoff_pub_srv_s_0, NULL, 2 + 2);
+BT_MESH_MODEL_PUB_DEFINE(gen_onoff_pub_cli_s_0, NULL, 2 + 2);
+BT_MESH_MODEL_PUB_DEFINE(gen_onoff_pub_srv_s_1, NULL, 2 + 2);
+BT_MESH_MODEL_PUB_DEFINE(gen_onoff_pub_cli_s_1, NULL, 2 + 2);
+BT_MESH_MODEL_PUB_DEFINE(gen_onoff_pub_srv_s_2, NULL, 2 + 2);
+BT_MESH_MODEL_PUB_DEFINE(gen_onoff_pub_cli_s_2, NULL, 2 + 2);
 
 /*
  * Models in an element must have unique op codes.
@@ -337,15 +317,15 @@ static void gen_onoff_get(struct bt_mesh_model *model,
 			  struct bt_mesh_msg_ctx *ctx,
 			  struct net_buf_simple *buf)
 {
-	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 1 + 4);
+	NET_BUF_SIMPLE_DEFINE(msg, 2 + 1 + 4);
 	struct onoff_state *onoff_state = model->user_data;
 
 	SYS_LOG_INF("addr 0x%04x onoff 0x%02x",
 		    model->elem->addr, onoff_state->current);
-	bt_mesh_model_msg_init(msg, BT_MESH_MODEL_OP_GEN_ONOFF_STATUS);
-	net_buf_simple_add_u8(msg, onoff_state->current);
+	bt_mesh_model_msg_init(&msg, BT_MESH_MODEL_OP_GEN_ONOFF_STATUS);
+	net_buf_simple_add_u8(&msg, onoff_state->current);
 
-	if (bt_mesh_model_send(model, ctx, msg, NULL, NULL)) {
+	if (bt_mesh_model_send(model, ctx, &msg, NULL, NULL)) {
 		SYS_LOG_ERR("Unable to send On Off Status response");
 	}
 }
@@ -536,7 +516,7 @@ static void button_pressed_worker(struct k_work *work)
 	 */
 
 	if (primary_addr == BT_MESH_ADDR_UNASSIGNED) {
-		struct net_buf_simple *msg = NET_BUF_SIMPLE(1);
+		NET_BUF_SIMPLE_DEFINE(msg, 1);
 		struct bt_mesh_msg_ctx ctx = {
 			.addr = sw_idx + primary_addr,
 		};
@@ -545,9 +525,8 @@ static void button_pressed_worker(struct k_work *work)
 		 * for the led server
 		 */
 
-		net_buf_simple_init(msg, 0);
-		net_buf_simple_add_u8(msg, sw->onoff_state);
-		gen_onoff_set_unack(mod_srv, &ctx, msg);
+		net_buf_simple_add_u8(&msg, sw->onoff_state);
+		gen_onoff_set_unack(mod_srv, &ctx, &msg);
 		return;
 	}
 

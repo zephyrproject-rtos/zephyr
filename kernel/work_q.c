@@ -137,6 +137,7 @@ int k_delayed_work_cancel(struct k_delayed_work *work)
 	/* Detach from workqueue */
 	work->work_q = NULL;
 
+	atomic_clear_bit(work->work.flags, K_WORK_STATE_PENDING);
 	irq_unlock(key);
 
 	return 0;

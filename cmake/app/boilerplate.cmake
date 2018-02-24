@@ -180,7 +180,11 @@ set(CACHED_BOARD ${BOARD} CACHE STRING "Selected board")
 # Use BOARD to search zephyr/boards/** for a _defconfig file,
 # e.g. zephyr/boards/arm/96b_carbon_nrf51/96b_carbon_nrf51_defconfig. When
 # found, use that path to infer the ARCH we are building for.
-find_path(BOARD_DIR NAMES "${BOARD}_defconfig" PATHS ${ZEPHYR_BASE}/boards/*/* NO_DEFAULT_PATH)
+if(NOT BOARD_ROOT)
+  set(BOARD_ROOT ${ZEPHYR_BASE})
+endif()
+
+find_path(BOARD_DIR NAMES "${BOARD}_defconfig" PATHS ${BOARD_ROOT}/boards/*/* NO_DEFAULT_PATH)
 
 assert_with_usage(BOARD_DIR "No board named '${BOARD}' found")
 
@@ -234,6 +238,17 @@ include(${ZEPHYR_BASE}/cmake/version.cmake)
 include(${ZEPHYR_BASE}/cmake/host-tools.cmake)
 include(${ZEPHYR_BASE}/cmake/kconfig.cmake)
 include(${ZEPHYR_BASE}/cmake/toolchain.cmake)
+
+set(SOC_NAME ${CONFIG_SOC})
+set(SOC_SERIES ${CONFIG_SOC_SERIES})
+set(SOC_FAMILY ${CONFIG_SOC_FAMILY})
+
+if("${SOC_SERIES}" STREQUAL "")
+  set(SOC_PATH ${SOC_NAME})
+else()
+  set(SOC_PATH ${SOC_FAMILY}/${SOC_SERIES})
+endif()
+
 
 # DTS should be run directly after kconfig because CONFIG_ variables
 # from kconfig and dts should be available at the same time. But

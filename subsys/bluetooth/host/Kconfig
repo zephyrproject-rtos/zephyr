@@ -168,6 +168,18 @@ config BT_L2CAP_TX_BUF_COUNT
 	help
 	  Number of buffers available for outgoing L2CAP packets.
 
+config BT_L2CAP_TX_FRAG_COUNT
+	int "Number of L2CAP TX fragment buffers"
+	default 2
+	range 0 255
+	help
+	  Number of buffers available for fragments of TX buffers. Warning:
+	  setting this to 0 means that the application must ensure that
+	  queued TX buffers never need to be fragmented, i.e. that the
+	  controller's buffer size is large enough. If this is not ensured,
+	  and there are no dedicated fragment buffers, a deadlock may occur.
+	  In most cases the default value of 2 is a safe bet.
+
 config BT_L2CAP_TX_MTU
 	int "Maximum supported L2CAP MTU for L2CAP TX buffers"
 	default 23
@@ -186,13 +198,6 @@ config BT_CONN_TX_MAX
 	help
 	  Maximum number of pending TX buffers that have not yet
 	  been acknowledged by the controller.
-
-config BT_L2CAP_TX_USER_DATA_SIZE
-	int "Maximum supported user data size for L2CAP TX buffers"
-	default 4
-	range 4 65535
-	help
-	  Maximum supported user data size for L2CAP TX buffers.
 
 config BT_ATT_ENFORCE_FLOW
 	bool "Enforce strict flow control semantics for incoming PDUs"

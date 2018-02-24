@@ -32,15 +32,7 @@
 
 #include <kernel_offsets.h>
 
-#ifdef CONFIG_DEBUG_INFO
-GEN_OFFSET_SYM(_kernel_arch_t, isf);
-#endif
-
-#ifdef CONFIG_GDB_INFO
-GEN_OFFSET_SYM(_thread_arch_t, esf);
-#endif
-
-#if (defined(CONFIG_FP_SHARING) || defined(CONFIG_GDB_INFO))
+#if defined(CONFIG_FP_SHARING)
 GEN_OFFSET_SYM(_thread_arch_t, excNestCount);
 #endif
 

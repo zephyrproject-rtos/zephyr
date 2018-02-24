@@ -13,6 +13,23 @@
 
 #include <zephyr/types.h>
 
+/** Attempt to boot the contents of slot 0. */
+#define BOOT_SWAP_TYPE_NONE     1
+
+/** Swap to slot 1.  Absent a confirm command, revert back on next boot. */
+#define BOOT_SWAP_TYPE_TEST     2
+
+/** Swap to slot 1, and permanently switch to booting its contents. */
+#define BOOT_SWAP_TYPE_PERM     3
+
+/** Swap back to alternate slot.  A confirm changes this state to NONE. */
+#define BOOT_SWAP_TYPE_REVERT   4
+
+/** Swap failed because image to be run is not valid */
+#define BOOT_SWAP_TYPE_FAIL     5
+
+#define BOOT_IMG_VER_STRLEN_MAX 25  /* 255.255.65535.4294967295\0 */
+
 /**
  * @brief MCUboot image header representation for image version
  *
@@ -123,6 +140,14 @@ bool boot_is_img_confirmed(void);
 int boot_write_img_confirmed(void);
 
 /**
+ * @brief Determines the action, if any, that mcuboot will take on the next
+ * reboot.
+ * @return a BOOT_SWAP_TYPE_[...] constant on success, negative errno code on
+ * fail.
+ */
+int boot_swap_type(void);
+
+/**
  * @brief Marks the image in slot 1 as pending. On the next reboot, the system
  * will perform a boot of the slot 1 image.
  *
@@ -142,4 +167,4 @@ int boot_request_upgrade(int permanent);
  */
 int boot_erase_img_bank(u32_t bank_offset);
 
-#endif	/* __MCUBOOT_H__ */
+#endif  /* __MCUBOOT_H__ */

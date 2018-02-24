@@ -32,6 +32,8 @@
 #define NUM_FDS 5
 #endif
 
+#define PORT 4242
+
 /* Number of simultaneous client connections will be NUM_FDS be minus 2 */
 struct pollfd pollfds[NUM_FDS];
 int pollnum;
@@ -81,14 +83,14 @@ int main(void)
 	int serv4, serv6;
 	struct sockaddr_in bind_addr4 = {
 		.sin_family = AF_INET,
-		.sin_port = htons(4242),
+		.sin_port = htons(PORT),
 		.sin_addr = {
 			.s_addr = htonl(INADDR_ANY),
 		},
 	};
 	struct sockaddr_in6 bind_addr6 = {
 		.sin6_family = AF_INET6,
-		.sin6_port = htons(4242),
+		.sin6_port = htons(PORT),
 		.sin6_addr = IN6ADDR_ANY_INIT,
 	};
 
@@ -119,7 +121,7 @@ int main(void)
 	pollfds_add(serv4);
 	pollfds_add(serv6);
 
-	printf("Listening on port 4242...\n");
+	printf("Asynchronous TCP echo server waits for connections on port %d...\n", PORT);
 
 	while (1) {
 		struct sockaddr_storage client_addr;

@@ -33,6 +33,7 @@ extern void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *esf);
 
 #define _SVC_CALL_IRQ_OFFLOAD		1
 #define _SVC_CALL_RUNTIME_EXCEPT	2
+#define _SVC_CALL_SYSTEM_CALL		3
 
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 /* ARMv6 will hard-fault if SVC is called with interrupts locked. Just

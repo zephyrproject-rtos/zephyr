@@ -27,6 +27,8 @@
 #include <version.h>
 #include <string.h>
 #include <misc/dlist.h>
+#include <kernel_internal.h>
+#include <kswap.h>
 
 /* kernel build timestamp items */
 
@@ -103,6 +105,33 @@ k_tid_t const _idle_thread = (k_tid_t)&_idle_thread_s;
 #endif
 K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
 
+/*
+ * Similar idle thread & interrupt stack definitions for the
+ * auxiliary CPUs.  The declaration macros aren't set up to define an
+ * array, so do it with a simple test for up to 4 processors.  Should
+ * clean this up in the future.
+ */
+#if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 1
+K_THREAD_STACK_DEFINE(_idle_stack1, IDLE_STACK_SIZE);
+static struct k_thread _idle_thread1_s;
+k_tid_t const _idle_thread1 = (k_tid_t)&_idle_thread1_s;
+K_THREAD_STACK_DEFINE(_interrupt_stack1, CONFIG_ISR_STACK_SIZE);
+#endif
+
+#if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 2
+K_THREAD_STACK_DEFINE(_idle_stack2, IDLE_STACK_SIZE);
+static struct k_thread _idle_thread2_s;
+k_tid_t const _idle_thread2 = (k_tid_t)&_idle_thread2_s;
+K_THREAD_STACK_DEFINE(_interrupt_stack2, CONFIG_ISR_STACK_SIZE);
+#endif
+
+#if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 3
+K_THREAD_STACK_DEFINE(_idle_stack3, IDLE_STACK_SIZE);
+static struct k_thread _idle_thread3_s;
+k_tid_t const _idle_thread3 = (k_tid_t)&_idle_thread3_s;
+K_THREAD_STACK_DEFINE(_interrupt_stack3, CONFIG_ISR_STACK_SIZE);
+#endif
+
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 	#define initialize_timeouts() do { \
 		sys_dlist_init(&_timeout_q); \
@@ -142,6 +171,10 @@ void _bss_zero(void)
 {
 	memset(&__bss_start, 0,
 		 ((u32_t) &__bss_end - (u32_t) &__bss_start));
+#ifdef CONFIG_CCM_BASE_ADDRESS
+	memset(&__ccm_bss_start, 0,
+		((u32_t) &__ccm_bss_end - (u32_t) &__ccm_bss_start));
+#endif
 #ifdef CONFIG_APPLICATION_MEMORY
 	memset(&__app_bss_start, 0,
 		 ((u32_t) &__app_bss_end - (u32_t) &__app_bss_start));
@@ -162,6 +195,10 @@ void _data_copy(void)
 {
 	memcpy(&__data_ram_start, &__data_rom_start,
 		 ((u32_t) &__data_ram_end - (u32_t) &__data_ram_start));
+#ifdef CONFIG_CCM_BASE_ADDRESS
+	memcpy(&__ccm_data_start, &__ccm_data_rom_start,
+		 ((u32_t) &__ccm_data_end - (u32_t) &__ccm_data_start));
+#endif
 #ifdef CONFIG_APPLICATION_MEMORY
 	memcpy(&__app_data_ram_start, &__app_data_rom_start,
 		 ((u32_t) &__app_data_ram_end - (u32_t) &__app_data_ram_start));
@@ -226,6 +263,21 @@ void __weak main(void)
 	/* NOP default main() if the application does not provide one. */
 }
 
+#if defined(CONFIG_MULTITHREADING)
+static void init_idle_thread(struct k_thread *thr, k_thread_stack_t *stack)
+{
+#ifdef CONFIG_SMP
+	thr->base.is_idle = 1;
+#endif
+
+	_setup_new_thread(thr, stack,
+			  IDLE_STACK_SIZE, idle, NULL, NULL, NULL,
+			  K_LOWEST_THREAD_PRIO, K_ESSENTIAL);
+	_mark_thread_as_started(thr);
+	_add_thread_to_ready_q(thr);
+}
+#endif
+
 /**
  *
  * @brief Initializes kernel data structures
@@ -282,6 +334,7 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 		sys_dlist_init(&_ready_q.q[ii]);
 	}
 
+#ifndef CONFIG_SMP
 	/*
 	 * prime the cache with the main thread since:
 	 *
@@ -292,6 +345,7 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 	 *   to work as intended
 	 */
 	_ready_q.cache = _main_thread;
+#endif
 
 	_setup_new_thread(_main_thread, _main_stack,
 			  MAIN_STACK_SIZE, _main, NULL, NULL, NULL,
@@ -300,11 +354,28 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 	_add_thread_to_ready_q(_main_thread);
 
 #ifdef CONFIG_MULTITHREADING
-	_setup_new_thread(_idle_thread, _idle_stack,
-			  IDLE_STACK_SIZE, idle, NULL, NULL, NULL,
-			  K_LOWEST_THREAD_PRIO, K_ESSENTIAL);
-	_mark_thread_as_started(_idle_thread);
-	_add_thread_to_ready_q(_idle_thread);
+	init_idle_thread(_idle_thread, _idle_stack);
+#endif
+
+#if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 1
+	init_idle_thread(_idle_thread1, _idle_stack1);
+	_kernel.cpus[1].id = 1;
+	_kernel.cpus[1].irq_stack = K_THREAD_STACK_BUFFER(_interrupt_stack1)
+		+ CONFIG_ISR_STACK_SIZE;
+#endif
+
+#if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 2
+	init_idle_thread(_idle_thread2, _idle_stack2);
+	_kernel.cpus[2].id = 2;
+	_kernel.cpus[2].irq_stack = K_THREAD_STACK_BUFFER(_interrupt_stack2)
+		+ CONFIG_ISR_STACK_SIZE;
+#endif
+
+#if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 3
+	init_idle_thread(_idle_thread3, _idle_stack3);
+	_kernel.cpus[3].id = 3;
+	_kernel.cpus[3].irq_stack = K_THREAD_STACK_BUFFER(_interrupt_stack3)
+		+ CONFIG_ISR_STACK_SIZE;
 #endif
 
 	initialize_timeouts();
@@ -371,6 +442,10 @@ FUNC_NORETURN void _Cstart(void)
 	/* initialize stack canaries */
 #ifdef CONFIG_STACK_CANARIES
 	__stack_chk_guard = (void *)sys_rand32_get();
+#endif
+
+#ifdef CONFIG_SMP
+	smp_init();
 #endif
 
 	/* display boot banner */
