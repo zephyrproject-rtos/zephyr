@@ -1,10 +1,11 @@
+common:
+  tags: http net
+  depends_on: netif
 tests:
   test:
     filter: not CONFIG_BT
     min_ram: 12
     platform_exclude: hexiwear_kw40z
-    tags: http net
   test_with_bt:
     filter: CONFIG_BT
     min_ram: 16
-    tags: http net

@@ -2,3 +2,4 @@ tests:
   test:
     min_ram: 16
     tags: mqtt net
+    depends_on: netif
