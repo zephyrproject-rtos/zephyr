@@ -205,9 +205,11 @@
 
 static inline void hal_radio_reset(void)
 {
+#if !defined(CONFIG_BOARD_NRFXX_NWTSIM)
 	/* Anomalies 102, 106 and 107 */
 	*(volatile u32_t *)0x40001774 = ((*(volatile u32_t *)0x40001774) &
 					 0xfffffffe) | 0x01000000;
+#endif /* !CONFIG_BOARD_NRFXX_NWTSIM */
 }
 
 static inline void hal_radio_ram_prio_setup(void)
