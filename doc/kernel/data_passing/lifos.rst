@@ -1,6 +1,6 @@
 .. _lifos_v2:
 
-Lifos
+LIFOs
 #####
 
 A :dfn:`lifo` is a kernel object that implements a traditional
@@ -24,7 +24,7 @@ A lifo has the following key properties:
 
 A lifo must be initialized before it can be used. This sets its queue to empty.
 
-Lifo data items must be aligned on a 4-byte boundary, as the kernel reserves
+LIFO data items must be aligned on a 4-byte boundary, as the kernel reserves
 the first 32 bits of an item for use as a pointer to the next data item in
 the queue. Consequently, a data item that holds N bytes of application data
 requires N+4 bytes of memory.
@@ -47,7 +47,7 @@ that has waited longest.
 Implementation
 **************
 
-Defining a Lifo
+Defining a LIFO
 ===============
 
 A lifo is defined using a variable of type :c:type:`struct k_lifo`.
@@ -70,7 +70,7 @@ The following code has the same effect as the code segment above.
 
     K_LIFO_DEFINE(my_lifo);
 
-Writing to a Lifo
+Writing to a LIFO
 =================
 
 A data item is added to a lifo by calling :cpp:func:`k_lifo_put()`.
@@ -100,7 +100,7 @@ to send data to one or more consumer threads.
         }
     }
 
-Reading from a Lifo
+Reading from a LIFO
 ===================
 
 A data item is removed from a lifo by calling :cpp:func:`k_lifo_get()`.

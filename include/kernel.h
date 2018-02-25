@@ -1777,17 +1777,17 @@ struct k_fifo {
  */
 
 /**
- * @defgroup fifo_apis Fifo APIs
+ * @defgroup fifo_apis FIFO APIs
  * @ingroup kernel_apis
  * @{
  */
 
 /**
- * @brief Initialize a fifo.
+ * @brief Initialize a FIFO queue.
  *
- * This routine initializes a fifo object, prior to its first use.
+ * This routine initializes a FIFO queue, prior to its first use.
  *
- * @param fifo Address of the fifo.
+ * @param fifo Address of the FIFO queue.
  *
  * @return N/A
  */
@@ -1795,7 +1795,7 @@ struct k_fifo {
 	k_queue_init((struct k_queue *) fifo)
 
 /**
- * @brief Cancel waiting on a fifo.
+ * @brief Cancel waiting on a FIFO queue.
  *
  * This routine causes first thread pending on @a fifo, if any, to
  * return from k_fifo_get() call with NULL value (as if timeout
@@ -1803,7 +1803,7 @@ struct k_fifo {
  *
  * @note Can be called by ISRs.
  *
- * @param fifo Address of the fifo.
+ * @param fifo Address of the FIFO queue.
  *
  * @return N/A
  */
@@ -1811,15 +1811,15 @@ struct k_fifo {
 	k_queue_cancel_wait((struct k_queue *) fifo)
 
 /**
- * @brief Add an element to a fifo.
+ * @brief Add an element to a FIFO queue.
  *
- * This routine adds a data item to @a fifo. A fifo data item must be
+ * This routine adds a data item to @a fifo. A FIFO data item must be
  * aligned on a 4-byte boundary, and the first 32 bits of the item are
  * reserved for the kernel's use.
  *
  * @note Can be called by ISRs.
  *
- * @param fifo Address of the fifo.
+ * @param fifo Address of the FIFO.
  * @param data Address of the data item.
  *
  * @return N/A
@@ -1828,7 +1828,7 @@ struct k_fifo {
 	k_queue_append((struct k_queue *) fifo, data)
 
 /**
- * @brief Atomically add a list of elements to a fifo.
+ * @brief Atomically add a list of elements to a FIFO.
  *
  * This routine adds a list of data items to @a fifo in one operation.
  * The data items must be in a singly-linked list, with the first 32 bits
@@ -1837,7 +1837,7 @@ struct k_fifo {
  *
  * @note Can be called by ISRs.
  *
- * @param fifo Address of the fifo.
+ * @param fifo Address of the FIFO queue.
  * @param head Pointer to first node in singly-linked list.
  * @param tail Pointer to last node in singly-linked list.
  *
@@ -1847,7 +1847,7 @@ struct k_fifo {
 	k_queue_append_list((struct k_queue *) fifo, head, tail)
 
 /**
- * @brief Atomically add a list of elements to a fifo.
+ * @brief Atomically add a list of elements to a FIFO queue.
  *
  * This routine adds a list of data items to @a fifo in one operation.
  * The data items must be in a singly-linked list implemented using a
@@ -1856,7 +1856,7 @@ struct k_fifo {
  *
  * @note Can be called by ISRs.
  *
- * @param fifo Address of the fifo.
+ * @param fifo Address of the FIFO queue.
  * @param list Pointer to sys_slist_t object.
  *
  * @return N/A
@@ -1865,14 +1865,14 @@ struct k_fifo {
 	k_queue_merge_slist((struct k_queue *) fifo, list)
 
 /**
- * @brief Get an element from a fifo.
+ * @brief Get an element from a FIFO queue.
  *
  * This routine removes a data item from @a fifo in a "first in, first out"
  * manner. The first 32 bits of the data item are reserved for the kernel's use.
  *
  * @note Can be called by ISRs, but @a timeout must be set to K_NO_WAIT.
  *
- * @param fifo Address of the fifo.
+ * @param fifo Address of the FIFO queue.
  * @param timeout Waiting period to obtain a data item (in milliseconds),
  *                or one of the special values K_NO_WAIT and K_FOREVER.
  *
@@ -1883,59 +1883,59 @@ struct k_fifo {
 	k_queue_get((struct k_queue *) fifo, timeout)
 
 /**
- * @brief Query a fifo to see if it has data available.
+ * @brief Query a FIFO queue to see if it has data available.
  *
  * Note that the data might be already gone by the time this function returns
- * if other threads is also trying to read from the fifo.
+ * if other threads is also trying to read from the FIFO.
  *
  * @note Can be called by ISRs.
  *
- * @param fifo Address of the fifo.
+ * @param fifo Address of the FIFO queue.
  *
- * @return Non-zero if the fifo is empty.
+ * @return Non-zero if the FIFO queue is empty.
  * @return 0 if data is available.
  */
 #define k_fifo_is_empty(fifo) \
 	k_queue_is_empty((struct k_queue *) fifo)
 
 /**
- * @brief Peek element at the head of fifo.
+ * @brief Peek element at the head of a FIFO queue.
  *
- * Return element from the head of fifo without removing it. A usecase
- * for this is if elements of the fifo are themselves containers. Then
+ * Return element from the head of FIFO queue without removing it. A usecase
+ * for this is if elements of the FIF object are themselves containers. Then
  * on each iteration of processing, a head container will be peeked,
  * and some data processed out of it, and only if the container is empty,
- * it will be completely remove from the fifo.
+ * it will be completely remove from the FIFO queue.
  *
- * @param fifo Address of the fifo.
+ * @param fifo Address of the FIFO queue.
  *
- * @return Head element, or NULL if the fifo is empty.
+ * @return Head element, or NULL if the FIFO queue is empty.
  */
 #define k_fifo_peek_head(fifo) \
 	k_queue_peek_head((struct k_queue *) fifo)
 
 /**
- * @brief Peek element at the tail of fifo.
+ * @brief Peek element at the tail of FIFO queue.
  *
- * Return element from the tail of fifo (without removing it). A usecase
- * for this is if elements of the fifo are themselves containers. Then
- * it may be useful to add more data to the last container in fifo.
+ * Return element from the tail of FIFO queue (without removing it). A usecase
+ * for this is if elements of the FIFO queue are themselves containers. Then
+ * it may be useful to add more data to the last container in a FIFO queue.
  *
- * @param fifo Address of the fifo.
+ * @param fifo Address of the FIFO queue.
  *
- * @return Tail element, or NULL if fifo is empty.
+ * @return Tail element, or NULL if a FIFO queue is empty.
  */
 #define k_fifo_peek_tail(fifo) \
 	k_queue_peek_tail((struct k_queue *) fifo)
 
 /**
- * @brief Statically define and initialize a fifo.
+ * @brief Statically define and initialize a FIFO queue.
  *
- * The fifo can be accessed outside the module where it is defined using:
+ * The FIFO queue can be accessed outside the module where it is defined using:
  *
  * @code extern struct k_fifo <name>; @endcode
  *
- * @param name Name of the fifo.
+ * @param name Name of the FIFO queue.
  */
 #define K_FIFO_DEFINE(name) \
 	struct k_fifo name \
@@ -1964,17 +1964,17 @@ struct k_lifo {
  */
 
 /**
- * @defgroup lifo_apis Lifo APIs
+ * @defgroup lifo_apis LIFO APIs
  * @ingroup kernel_apis
  * @{
  */
 
 /**
- * @brief Initialize a lifo.
+ * @brief Initialize a LIFO queue.
  *
- * This routine initializes a lifo object, prior to its first use.
+ * This routine initializes a LIFO queue object, prior to its first use.
  *
- * @param lifo Address of the lifo.
+ * @param lifo Address of the LIFO queue.
  *
  * @return N/A
  */
@@ -1982,15 +1982,15 @@ struct k_lifo {
 	k_queue_init((struct k_queue *) lifo)
 
 /**
- * @brief Add an element to a lifo.
+ * @brief Add an element to a LIFO queue.
  *
- * This routine adds a data item to @a lifo. A lifo data item must be
+ * This routine adds a data item to @a lifo. A LIFO queue data item must be
  * aligned on a 4-byte boundary, and the first 32 bits of the item are
  * reserved for the kernel's use.
  *
  * @note Can be called by ISRs.
  *
- * @param lifo Address of the lifo.
+ * @param lifo Address of the LIFO queue.
  * @param data Address of the data item.
  *
  * @return N/A
@@ -1999,14 +1999,14 @@ struct k_lifo {
 	k_queue_prepend((struct k_queue *) lifo, data)
 
 /**
- * @brief Get an element from a lifo.
+ * @brief Get an element from a LIFO queue.
  *
  * This routine removes a data item from @a lifo in a "last in, first out"
  * manner. The first 32 bits of the data item are reserved for the kernel's use.
  *
  * @note Can be called by ISRs, but @a timeout must be set to K_NO_WAIT.
  *
- * @param lifo Address of the lifo.
+ * @param lifo Address of the LIFO queue.
  * @param timeout Waiting period to obtain a data item (in milliseconds),
  *                or one of the special values K_NO_WAIT and K_FOREVER.
  *
@@ -2017,9 +2017,9 @@ struct k_lifo {
 	k_queue_get((struct k_queue *) lifo, timeout)
 
 /**
- * @brief Statically define and initialize a lifo.
+ * @brief Statically define and initialize a LIFO queue.
  *
- * The lifo can be accessed outside the module where it is defined using:
+ * The LIFO queue can be accessed outside the module where it is defined using:
  *
  * @code extern struct k_lifo <name>; @endcode
  *

@@ -1,6 +1,6 @@
 .. _fifos_v2:
 
-Fifos
+FIFOs
 #####
 
 A :dfn:`fifo` is a kernel object that implements a traditional
@@ -24,7 +24,7 @@ A fifo has the following key properties:
 
 A fifo must be initialized before it can be used. This sets its queue to empty.
 
-Fifo data items must be aligned on a 4-byte boundary, as the kernel reserves
+FIFO data items must be aligned on a 4-byte boundary, as the kernel reserves
 the first 32 bits of an item for use as a pointer to the next data item in
 the queue. Consequently, a data item that holds N bytes of application data
 requires N+4 bytes of memory.
@@ -56,7 +56,7 @@ without waiting.
 Implementation
 **************
 
-Defining a Fifo
+Defining a FIFO
 ===============
 
 A fifo is defined using a variable of type :c:type:`struct k_fifo`.
@@ -79,7 +79,7 @@ The following code has the same effect as the code segment above.
 
     K_FIFO_DEFINE(my_fifo);
 
-Writing to a Fifo
+Writing to a FIFO
 =================
 
 A data item is added to a fifo by calling :cpp:func:`k_fifo_put()`.
@@ -112,7 +112,7 @@ to send data to one or more consumer threads.
 Additionally, a singly-linked list of data items can be added to a fifo
 by calling :cpp:func:`k_fifo_put_list()` or :cpp:func:`k_fifo_put_slist()`.
 
-Reading from a Fifo
+Reading from a FIFO
 ===================
 
 A data item is removed from a fifo by calling :cpp:func:`k_fifo_get()`.
