@@ -530,9 +530,7 @@ enum execution_context_types {
  */
 extern void k_call_stacks_analyze(void);
 
-/**
- * @} end defgroup profiling_apis
- */
+/** @} */
 
 /**
  * @defgroup thread_apis Thread APIs
@@ -925,9 +923,7 @@ __syscall void k_thread_resume(k_tid_t thread);
  */
 extern void k_sched_time_slice_set(s32_t slice, int prio);
 
-/**
- * @} end defgroup thread_apis
- */
+/** @} */
 
 /**
  * @addtogroup isr_apis
@@ -966,7 +962,7 @@ extern int k_is_in_isr(void);
 __syscall int k_is_preempt_thread(void);
 
 /**
- * @} end addtogroup isr_apis
+ * @}
  */
 
 /**
@@ -1030,7 +1026,7 @@ __syscall void k_thread_custom_data_set(void *value);
 __syscall void *k_thread_custom_data_get(void);
 
 /**
- * @} end addtogroup thread_apis
+ * @}
  */
 
 #include <sys_clock.h>
@@ -1109,7 +1105,7 @@ __syscall void *k_thread_custom_data_get(void);
 #define K_FOREVER (-1)
 
 /**
- * @} end addtogroup clock_apis
+ * @}
  */
 
 /**
@@ -1405,9 +1401,7 @@ static inline void *_impl_k_timer_user_data_get(struct k_timer *timer)
 	return timer->user_data;
 }
 
-/**
- * @} end defgroup timer_apis
- */
+/** @} */
 
 /**
  * @addtogroup clock_apis
@@ -1519,7 +1513,7 @@ extern u32_t k_uptime_delta_32(s64_t *reftime);
 #define k_cycle_get_32()	_arch_k_cycle_get_32()
 
 /**
- * @} end addtogroup clock_apis
+ * @}
  */
 
 /**
@@ -1761,9 +1755,7 @@ static inline void *k_queue_peek_tail(struct k_queue *queue)
 		__in_section(_k_queue, static, name) = \
 		_K_QUEUE_INITIALIZER(name)
 
-/**
- * @} end defgroup queue_apis
- */
+/** @} */
 
 /**
  * @cond INTERNAL_HIDDEN
@@ -1950,9 +1942,7 @@ struct k_fifo {
 		__in_section(_k_queue, static, name) = \
 		_K_FIFO_INITIALIZER(name)
 
-/**
- * @} end defgroup fifo_apis
- */
+/** @} */
 
 /**
  * @cond INTERNAL_HIDDEN
@@ -2040,9 +2030,7 @@ struct k_lifo {
 		__in_section(_k_queue, static, name) = \
 		_K_LIFO_INITIALIZER(name)
 
-/**
- * @} end defgroup lifo_apis
- */
+/** @} */
 
 /**
  * @cond INTERNAL_HIDDEN
@@ -2141,9 +2129,7 @@ __syscall int k_stack_pop(struct k_stack *stack, u32_t *data, s32_t timeout);
 		_K_STACK_INITIALIZER(name, _k_stack_buf_##name, \
 				    stack_num_entries)
 
-/**
- * @} end defgroup stack_apis
- */
+/** @} */
 
 struct k_work;
 
@@ -2451,9 +2437,7 @@ static inline s32_t k_delayed_work_remaining_get(struct k_delayed_work *work)
 	return _timeout_remaining_get(&work->timeout);
 }
 
-/**
- * @} end defgroup workqueue_apis
- */
+/** @} */
 
 /**
  * @cond INTERNAL_HIDDEN
@@ -2553,7 +2537,7 @@ __syscall int k_mutex_lock(struct k_mutex *mutex, s32_t timeout);
 __syscall void k_mutex_unlock(struct k_mutex *mutex);
 
 /**
- * @} end defgroup mutex_apis
+ * @}
  */
 
 /**
@@ -2689,9 +2673,7 @@ static inline unsigned int _impl_k_sem_count_get(struct k_sem *sem)
 		__in_section(_k_sem, static, name) = \
 		_K_SEM_INITIALIZER(name, initial_count, count_limit)
 
-/**
- * @} end defgroup semaphore_apis
- */
+/** @} */
 
 /**
  * @defgroup alert_apis Alert APIs
@@ -2713,9 +2695,7 @@ static inline unsigned int _impl_k_sem_count_get(struct k_sem *sem)
  */
 typedef int (*k_alert_handler_t)(struct k_alert *alert);
 
-/**
- * @} end defgroup alert_apis
- */
+/** @} */
 
 /**
  * @cond INTERNAL_HIDDEN
@@ -2826,7 +2806,7 @@ __syscall int k_alert_recv(struct k_alert *alert, s32_t timeout);
 __syscall void k_alert_send(struct k_alert *alert);
 
 /**
- * @} end addtogroup alert_apis
+ * @}
  */
 
 /**
@@ -3002,9 +2982,7 @@ static inline u32_t _impl_k_msgq_num_used_get(struct k_msgq *q)
 	return q->used_msgs;
 }
 
-/**
- * @} end defgroup msgq_apis
- */
+/** @} */
 
 /**
  * @defgroup mem_pool_apis Memory Pool APIs
@@ -3028,9 +3006,7 @@ struct k_mem_block {
 	struct k_mem_block_id id;
 };
 
-/**
- * @} end defgroup mem_pool_apis
- */
+/** @} */
 
 /**
  * @defgroup mailbox_apis Mailbox APIs
@@ -3224,9 +3200,7 @@ extern int k_mbox_data_block_get(struct k_mbox_msg *rx_msg,
 				 struct k_mem_pool *pool,
 				 struct k_mem_block *block, s32_t timeout);
 
-/**
- * @} end defgroup mailbox_apis
- */
+/** @} */
 
 /**
  * @cond INTERNAL_HIDDEN
@@ -3369,9 +3343,7 @@ __syscall int k_pipe_get(struct k_pipe *pipe, void *data,
 extern void k_pipe_block_put(struct k_pipe *pipe, struct k_mem_block *block,
 			     size_t size, struct k_sem *sem);
 
-/**
- * @} end defgroup pipe_apis
- */
+/** @} */
 
 /**
  * @cond INTERNAL_HIDDEN
@@ -3523,9 +3495,7 @@ static inline u32_t k_mem_slab_num_free_get(struct k_mem_slab *slab)
 	return slab->num_blocks - slab->num_used;
 }
 
-/**
- * @} end defgroup mem_slab_apis
- */
+/** @} */
 
 /**
  * @cond INTERNAL_HIDDEN
@@ -3696,7 +3666,7 @@ extern void k_mem_pool_free(struct k_mem_block *block);
 extern void k_mem_pool_free_id(struct k_mem_block_id *id);
 
 /**
- * @} end addtogroup mem_pool_apis
+ * @}
  */
 
 /**
@@ -3744,9 +3714,7 @@ extern void k_free(void *ptr);
  */
 extern void *k_calloc(size_t nmemb, size_t size);
 
-/**
- * @} end defgroup heap_apis
- */
+/** @} */
 
 /* polling API - PRIVATE */
 
@@ -4008,9 +3976,7 @@ extern int k_poll_signal(struct k_poll_signal *signal, int result);
 /* private internal function */
 extern int _handle_obj_poll_events(sys_dlist_t *events, u32_t state);
 
-/**
- * @} end defgroup poll_apis
- */
+/** @} */
 
 /**
  * @brief Make the CPU idle.
@@ -4342,9 +4308,7 @@ extern void k_mem_domain_add_thread(struct k_mem_domain *domain,
 
 extern void k_mem_domain_remove_thread(k_tid_t thread);
 
-/**
- * @} end defgroup mem_domain_apis
- */
+/** @} */
 
 /**
  * @brief Emit a character buffer to the console device
