@@ -211,7 +211,7 @@ static int slip_send(struct net_if *iface, struct net_pkt *pkt)
 #if SYS_LOG_LEVEL >= SYS_LOG_LEVEL_DEBUG
 		SYS_LOG_DBG("sent data %d bytes",
 			    frag->len + net_pkt_ll_reserve(pkt));
-		if (frag->len + ll_reserve) {
+		if (frag->len + net_pkt_ll_reserve(pkt)) {
 			char msg[8 + 1];
 
 			snprintf(msg, sizeof(msg), "<slip %2d", frag_count++);
