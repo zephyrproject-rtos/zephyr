@@ -74,6 +74,9 @@ struct mqtt_connect_msg {
 	u16_t password_len;
 };
 
+/**
+ * @brief MQTT Publish Message
+ */
 struct mqtt_publish_msg {
 	u8_t dup;
 	enum mqtt_qos qos;

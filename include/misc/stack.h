@@ -79,7 +79,14 @@ static inline void stack_analyze(const char *name, const char *stack,
 {
 }
 #endif
-
+/**
+ * @brief Analyze stacks
+ *
+ * Use this macro to get information about stack usage
+ *
+ * @param name Name of the stack
+ * @param sym The symbol of the stack
+ */
 #define STACK_ANALYZE(name, sym) \
 	stack_analyze(name, K_THREAD_STACK_BUFFER(sym), \
 		      K_THREAD_STACK_SIZEOF(sym))
