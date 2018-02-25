@@ -532,6 +532,9 @@ static inline int gpio_port_disable_callback(struct device *port)
  */
 __syscall int gpio_get_pending_int(struct device *dev);
 
+/**
+ * @internal
+ */
 static inline int _impl_gpio_get_pending_int(struct device *dev)
 {
 	struct gpio_driver_api *api;
