@@ -62,7 +62,8 @@ void native_handle_cmd_line(int argc, char *argv[])
 		{false, false, false,
 		  "seed", "r_seed", 'u',
 		(void *)&args.seed, cmd_seed_found,
-		"Seed for the entropy device"},
+		"A 32-bit integer seed value for the entropy device, such as "
+		"97229 (decimal), 0x17BCD (hex), or 0275715 (octal)"},
 #endif
 
 		{true, false, false,
