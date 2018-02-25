@@ -20,6 +20,7 @@ struct netusb_function {
 };
 
 void netusb_recv(struct net_pkt *pkt);
+void netusb_bulk_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status);
 int try_write(u8_t ep, u8_t *data, u16_t len);
 
 #if defined(CONFIG_USB_DEVICE_NETWORK_ECM)

@@ -31,6 +31,7 @@ static struct __netusb {
 	struct net_if *iface;
 	bool configured;
 	struct netusb_function *func;
+	struct k_sem bulk_in_sem;
 } netusb;
 
 static int netusb_send(struct net_if *iface, struct net_pkt *pkt)
@@ -167,6 +168,13 @@ static struct usb_cfg_data netusb_config = {
 	},
 };
 
+void netusb_bulk_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
+{
+	if (ep_status == USB_DC_EP_DATA_IN) {
+		k_sem_give(&netusb.bulk_in_sem);
+	}
+}
+
 int try_write(u8_t ep, u8_t *data, u16_t len)
 {
 	u8_t tries = 10;
@@ -188,6 +196,8 @@ int try_write(u8_t ep, u8_t *data, u16_t len)
 			 */
 			if (tries--) {
 				SYS_LOG_WRN("Error: EAGAIN. Another try");
+				/* Wait for the transfer to complete */
+				k_sem_take(&netusb.bulk_in_sem, K_MSEC(100));
 				continue;
 			}
 
@@ -222,6 +232,7 @@ static void netusb_init(struct net_if *iface)
 
 	SYS_LOG_DBG("netusb device initialization");
 
+	k_sem_init(&netusb.bulk_in_sem, 0, 1);
 	netusb.iface = iface;
 
 	net_if_set_link_addr(iface, mac, sizeof(mac), NET_LINK_ETHERNET);
