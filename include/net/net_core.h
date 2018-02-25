@@ -78,6 +78,9 @@ struct net_if;
 #include <logging/sys_log.h>
 #include <string.h>
 
+/**
+ * @brief Net Verdict
+ */
 enum net_verdict {
 	NET_OK,		/** Packet has been taken care of */
 	NET_CONTINUE,	/** Packet has not been touched,

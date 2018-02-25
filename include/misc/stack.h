@@ -79,7 +79,9 @@ static inline void stack_analyze(const char *name, const char *stack,
 {
 }
 #endif
-
+/**
+ * @brief Analyse stacks
+ */
 #define STACK_ANALYZE(name, sym) \
 	stack_analyze(name, K_THREAD_STACK_BUFFER(sym), \
 		      K_THREAD_STACK_SIZEOF(sym))

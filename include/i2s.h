@@ -176,6 +176,9 @@ typedef u8_t i2s_opt_t;
 #define I2S_OPT_LOOPBACK                    (1 << 7)
 
 
+/**
+ * @brief I2C Direction
+ */
 enum i2s_dir {
 	/** Receive data */
 	I2S_DIR_RX,

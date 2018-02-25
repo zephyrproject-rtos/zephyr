@@ -55,10 +55,16 @@ extern "C" {
  * @brief Run an initialization function at boot at specified priority,
  * and define device PM control function.
  *
- * @copydetails SYS_INIT
- * @param pm_control_fn Pointer to device_pm_control function.
- * Can be empty function (device_pm_control_nop) if not implemented.
+ * @details This macro lets you run a function at system boot.
+ *
  * @param drv_name Name of this system device
+ * @param init_fn Pointer to the boot function to run
+ * @param pm_control_fn Pointer to device_pm_control function.
+ *                      Can be empty function (device_pm_control_nop) if not
+ *                      implemented.
+ * @param level The initialization level, See DEVICE_INIT for details.
+ * @param prio Priority within the selected initialization level. See
+ * 	       DEVICE_INIT for details.
  */
 #define SYS_DEVICE_DEFINE(drv_name, init_fn, pm_control_fn, level, prio) \
 	DEVICE_DEFINE(_SYS_NAME(init_fn), drv_name, init_fn, pm_control_fn, \
