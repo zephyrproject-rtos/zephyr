@@ -221,11 +221,17 @@ void _k_object_init(void *obj);
 
 #define K_THREAD_ACCESS_GRANT(thread, ...)
 
+/**
+ * @internal
+ */
 static inline void _k_object_init(void *obj)
 {
 	ARG_UNUSED(obj);
 }
 
+/**
+ * @internal
+ */
 static inline void _impl_k_object_access_grant(void *object,
 					       struct k_thread *thread)
 {
@@ -233,6 +239,9 @@ static inline void _impl_k_object_access_grant(void *object,
 	ARG_UNUSED(thread);
 }
 
+/**
+ * @internal
+ */
 static inline void _impl_k_object_access_revoke(void *object,
 						struct k_thread *thread)
 {
@@ -1381,6 +1390,9 @@ static inline s32_t _impl_k_timer_remaining_get(struct k_timer *timer)
  */
 __syscall void k_timer_user_data_set(struct k_timer *timer, void *user_data);
 
+/**
+ * @internal
+ */
 static inline void _impl_k_timer_user_data_set(struct k_timer *timer,
 					       void *user_data)
 {
@@ -2636,6 +2648,9 @@ __syscall void k_sem_give(struct k_sem *sem);
  */
 __syscall void k_sem_reset(struct k_sem *sem);
 
+/**
+ * @internal
+ */
 static inline void _impl_k_sem_reset(struct k_sem *sem)
 {
 	sem->count = 0;
@@ -2652,6 +2667,9 @@ static inline void _impl_k_sem_reset(struct k_sem *sem)
  */
 __syscall unsigned int k_sem_count_get(struct k_sem *sem);
 
+/**
+ * @internal
+ */
 static inline unsigned int _impl_k_sem_count_get(struct k_sem *sem)
 {
 	return sem->count;
@@ -2713,6 +2731,9 @@ struct k_alert {
 	_OBJECT_TRACING_NEXT_PTR(k_alert);
 };
 
+/**
+ * @internal
+ */
 extern void _alert_deliver(struct k_work *work);
 
 #define _K_ALERT_INITIALIZER(obj, alert_handler, max_num_pending_alerts) \
@@ -3973,7 +3994,9 @@ extern void k_poll_signal_init(struct k_poll_signal *signal);
 
 extern int k_poll_signal(struct k_poll_signal *signal, int result);
 
-/* private internal function */
+/**
+ * @internal
+ */
 extern int _handle_obj_poll_events(sys_dlist_t *events, u32_t state);
 
 /** @} */
@@ -4004,6 +4027,10 @@ extern void k_cpu_idle(void);
  */
 extern void k_cpu_atomic_idle(unsigned int key);
 
+
+/**
+ * @internal
+ */
 extern void _sys_power_save_idle_exit(s32_t ticks);
 
 #ifdef _ARCH_EXCEPT
@@ -4054,12 +4081,24 @@ extern void _sys_power_save_idle_exit(s32_t ticks);
  */
 
 #ifdef CONFIG_MULTITHREADING
+/**
+ * @internal
+ */
 extern void _init_static_threads(void);
 #else
+/**
+ * @internal
+ */
 #define _init_static_threads() do { } while ((0))
 #endif
 
+/**
+ * @internal
+ */
 extern int _is_thread_essential(void);
+/**
+ * @internal
+ */
 extern void _timer_expiration_handler(struct _timeout *t);
 
 /* arch/cpu.h may declare an architecture or platform-specific macro
