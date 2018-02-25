@@ -1,9 +1,12 @@
 /*
- * NVS Sample for zephyr using high level API, this sample stores a string (address), a binary blob (key) and a long integer
- * (reboot counter) in flash the samples reboots every 5s to show the data that was stored in flash. It stops after 82 reboots
- * (when reboot counter is 80 the write of reboot counter triggers a sector change which copies the data of address, key
- * and reboot counter before erasing the flash). As a result of the rotation the history data of reboot counter is reduced in
- * size but the address and key data is kept.
+ * NVS Sample for zephyr using high level API, this sample stores a string
+ * (address), a binary blob (key) and a long integer (reboot counter) in flash
+ * the samples reboots every 5s to show the data that was stored in flash. It
+ * stops after 82 reboots (when reboot counter is 80 the write of reboot counter
+ * triggers a sector change which copies the data of address, key and reboot
+ * counter before erasing the flash). As a result of the rotation the history
+ * data of reboot counter is reduced in size but the address and key data is
+ * kept.
  *
  * Copyright (c) 2018 Laczen
  *
@@ -30,6 +33,8 @@ static struct nvs_fs fs = {
 
 /* 1000 msec = 1 sec */
 #define SLEEP_TIME      1000
+/* maximum reboot counts, make high enough to trigger sector change (buffer */
+/* rotation). */
 #define MAX_REBOOT 82
 
 void main(void)
@@ -45,7 +50,8 @@ void main(void)
 		printk("Flash Init failed\n");
 	}
 
-	/* entry with id=1 is used to store address, lets see if we can read it from flash */
+	/* entry with id=1 is used to store an address, lets see if we can read it */
+	/* from flash */
 	entry.id = 1;
 	rc = nvs_read(&fs, &entry, &buf);
 	if (rc == NVS_OK) { /* entry was found, show it */
@@ -75,7 +81,8 @@ void main(void)
 			printk("write error\n");
 		}
 	}
-	/* entry with id=3 is used to store the reboot counter, lets see if we can read it from flash */
+	/* entry with id=3 is used to store the reboot counter, lets see if we can */
+	/* read it from flash */
 	entry.id = 3;
 	rc = nvs_read(&fs, &entry, &reboot_counter);
 	if (rc == NVS_OK) { /* entry was found, show it */
@@ -92,17 +99,21 @@ void main(void)
 	cnt = 5;
 	while (1) {
 		k_sleep(SLEEP_TIME);
-		if (reboot_counter < MAX_REBOOT) {      /* limit the amount of reboots to 85, this should just trigger buffer rotation */
-			if (cnt == 5) {                 /* print some history information about the reboot counter */
+		if (reboot_counter < MAX_REBOOT) {
+			if (cnt == 5) {
+				/* print some history information about the reboot counter */
 				/* Check the counter history in flash */
 				entry.id = 3;
-				rc = nvs_read_hist(&fs, &entry, &reboot_counter, 0);    /* Get the first entry */
-				if (rc == NVS_OK) {                                     /* entry was found, show it */
+				/* Get the first entry */
+				rc = nvs_read_hist(&fs, &entry, &reboot_counter, 0);
+				if (rc == NVS_OK) {
+					/* entry was found, show it */
 					printk("Reboot counter history: %d", reboot_counter);
 				} else   {
 					printk("Error, Reboot counter not found\n");
 				}
-				while (nvs_read_hist(&fs, &entry, &reboot_counter, 1) == NVS_OK) { /* Get the other entries */
+				while (nvs_read_hist(&fs, &entry, &reboot_counter, 1) == NVS_OK) {
+					/* Get the other entries */
 					printk("...%d", reboot_counter);
 				}
 				printk("\nRebooting in ");

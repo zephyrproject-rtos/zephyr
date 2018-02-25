@@ -293,7 +293,6 @@ int nvs_get_last_entry(struct nvs_fs *fs, struct nvs_entry *entry)
 			latest.data_addr = entry->data_addr;
 		}
 		_nvs_addr_advance(fs, &entry->data_addr, _nvs_entry_len_in_flash(fs, head.len));
-
 	}
 }
 

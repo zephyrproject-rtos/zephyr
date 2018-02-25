@@ -1,6 +1,5 @@
-/*  NVS: non volatile storage using a Flash Circular Buffer for storage */
-
-/*
+/*  NVS: non volatile storage using a Flash Circular Buffer for storage
+ *
  * Copyright (c) 2018 Laczen
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -13,7 +12,6 @@ extern "C" {
 #endif
 
 #include <sys/types.h>
-
 
 #define NVS_MOVE_BLOCK_SIZE 8
 
@@ -54,16 +52,13 @@ struct nvs_fs {
     u16_t sector_size;            /* filesystem is divided into sectors,
                                      sector size should be multiple of pagesize and a power of 2 */
     u16_t max_len;                /* maximum size of stored item, this is set to sector_size/4 */
-
     u8_t sector_count;            /* how many sectors in the filesystem */
 
     u8_t entry_sector;            /* oldest sector in use */
     u8_t write_block_size;        /* write block size for alignment */
 
-    /* mutex definition */
-    struct k_mutex fcb_lock;
-
-    struct device *flash_device;     /* flash device */
+    struct k_mutex fcb_lock;      /* mutex definition */
+    struct device *flash_device;  /* flash device */
 
 };
 
