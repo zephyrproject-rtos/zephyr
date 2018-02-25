@@ -240,8 +240,7 @@ int _nvs_gc(struct nvs_fs *fs, off_t addr)
 				}
 				walker_last.len = head.len;
 				walker_last.id = head.id;
-				_nvs_addr_advance(fs,
-					&walker_last.data_addr,
+				_nvs_addr_advance(fs, &walker_last.data_addr,
 					_nvs_entry_len_in_flash(fs,
 						walker_last.len));
 			}

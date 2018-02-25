@@ -18,12 +18,12 @@ extern "C" {
 /*
  * Error codes.
  */
-#define NVS_OK		       0
-#define NVS_ERR_ARGS	  -1
-#define NVS_ERR_FLASH	  -2
+#define NVS_OK		 0
+#define NVS_ERR_ARGS	-1
+#define NVS_ERR_FLASH	-2
 #define NVS_ERR_NOVAR   -3
 #define NVS_ERR_NOSPACE	-4
-#define NVS_ERR_FULL	  -5
+#define NVS_ERR_FULL	-5
 #define NVS_ERR_MAGIC   -7
 #define NVS_ERR_CRC     -8
 #define NVS_ERR_CFG     -9

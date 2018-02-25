@@ -47,6 +47,7 @@ where
 
 A Sample of how NVS can be used is supplied in ```samples/subsys/nvs```.
 
+
 # High level API
 
 In the high level API the following routines are available:

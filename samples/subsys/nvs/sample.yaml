@@ -1,5 +1,6 @@
 sample:
   name: NVS Sample
+
 tests:
   test:
     platform_whitelist: nrf51_pca10028
