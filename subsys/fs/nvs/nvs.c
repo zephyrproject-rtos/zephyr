@@ -49,15 +49,15 @@ static inline int _nvs_len_in_flash(struct nvs_fs *fs, u16_t len)
 u16_t _nvs_entry_len_in_flash(struct nvs_fs *fs, u16_t len)
 {
 	return _nvs_len_in_flash(fs, len) +
-		_nvs_len_in_flash(fs, sizeof(struct _nvs_data_hdr)) +
-		_nvs_len_in_flash(fs, sizeof(struct _nvs_data_slt));
+	       _nvs_len_in_flash(fs, sizeof(struct _nvs_data_hdr)) +
+	       _nvs_len_in_flash(fs, sizeof(struct _nvs_data_slt));
 }
 
 
 off_t _nvs_head_addr_in_flash(struct nvs_fs *fs, const struct nvs_entry *entry)
 {
 	return entry->data_addr -
-		_nvs_len_in_flash(fs, sizeof(struct _nvs_data_hdr));
+	       _nvs_len_in_flash(fs, sizeof(struct _nvs_data_hdr));
 }
 
 off_t _nvs_slt_addr_in_flash(struct nvs_fs *fs, const struct nvs_entry *entry)
@@ -68,12 +68,12 @@ off_t _nvs_slt_addr_in_flash(struct nvs_fs *fs, const struct nvs_entry *entry)
 int _nvs_bd_check(struct nvs_fs *fs, off_t offset, size_t len)
 {
 	if ((offset > fs->sector_size * fs->sector_count) ||
-	(offset + len > fs->sector_size * fs->sector_count)) {
+	    (offset + len > fs->sector_size * fs->sector_count)) {
 		/* operation outside fcb */
 		return -1;
 	}
 	if ((offset & ~(fs->sector_size - 1)) !=
-	((offset + len - 1) & ~(fs->sector_size - 1))) {
+	    ((offset + len - 1) & ~(fs->sector_size - 1))) {
 		/* operation over sector boundary */
 		return -1;
 	}
@@ -93,9 +93,9 @@ int _nvs_sector_hdr_get(struct nvs_fs *fs, off_t offset,
 	struct _nvs_sector_hdr *sector_hdr)
 {
 	return flash_read(fs->flash_device,
-		fs->offset + (offset & ~(fs->sector_size - 1)),
-		sector_hdr,
-		_nvs_len_in_flash(fs, sizeof(*sector_hdr)));
+			fs->offset + (offset & ~(fs->sector_size - 1)),
+			sector_hdr,
+			_nvs_len_in_flash(fs, sizeof(*sector_hdr)));
 }
 
 /* Initializing sector by writing magic and status to sector header,
@@ -120,7 +120,9 @@ int _nvs_sector_init(struct nvs_fs *fs, off_t offset)
 	sector_hdr.fd_magic = fs->magic;
 	sector_hdr.fd_id = fs->sector_id;
 	sector_hdr._pad = 0;
-	rc = nvs_flash_write(fs, offset, &sector_hdr,
+	rc = nvs_flash_write(fs,
+		offset,
+		&sector_hdr,
 		_nvs_len_in_flash(fs, sizeof(struct _nvs_sector_hdr)));
 	if (rc) {
 		return NVS_ERR_FLASH;
@@ -197,7 +199,8 @@ int _nvs_gc(struct nvs_fs *fs, off_t addr)
 	u8_t buf[NVS_MOVE_BLOCK_SIZE];
 
 	walker.data_addr = addr;
-	_nvs_addr_advance(fs, &walker.data_addr,
+	_nvs_addr_advance(fs,
+		&walker.data_addr,
 		_nvs_len_in_flash(fs, sizeof(struct _nvs_sector_hdr)) +
 		_nvs_len_in_flash(fs, sizeof(struct _nvs_data_hdr)));
 	while (1) {
