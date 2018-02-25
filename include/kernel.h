@@ -1777,7 +1777,7 @@ struct k_fifo {
  */
 
 /**
- * @defgroup fifo_apis Fifo APIs
+ * @defgroup fifo_apis FIFO APIs
  * @ingroup kernel_apis
  * @{
  */
@@ -1964,7 +1964,7 @@ struct k_lifo {
  */
 
 /**
- * @defgroup lifo_apis Lifo APIs
+ * @defgroup lifo_apis LIFO APIs
  * @ingroup kernel_apis
  * @{
  */

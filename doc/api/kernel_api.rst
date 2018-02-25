@@ -119,7 +119,7 @@ somewhat akin to Unix-style signals.
 .. doxygengroup:: alert_apis
    :project: Zephyr
 
-Fifos
+FIFOs
 *****
 
 Fifos provide traditional first in, first out (FIFO) queuing of data items
@@ -129,7 +129,7 @@ of any size.
 .. doxygengroup:: fifo_apis
    :project: Zephyr
 
-Lifos
+LIFOs
 *****
 
 Lifos provide traditional last in, first out (LIFO) queuing of data items
