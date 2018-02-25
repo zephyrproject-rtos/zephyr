@@ -26,30 +26,37 @@ static size_t recv_buf_len;
 static uart_pipe_recv_cb app_cb;
 static size_t recv_off;
 
-static void uart_pipe_isr(struct device *unused)
+static void uart_pipe_rx(struct device *dev)
 {
-	ARG_UNUSED(unused);
+	/* As per the API, the interrupt may be an edge so keep
+	 * reading from the FIFO until it's empty.
+	 */
+	for (;;) {
+		int avail = recv_buf_len - recv_off;
+		int got;
 
-	while (uart_irq_update(uart_pipe_dev)
-	       && uart_irq_is_pending(uart_pipe_dev)) {
-		int rx;
-
-		if (!uart_irq_rx_ready(uart_pipe_dev)) {
-			continue;
-		}
-
-		rx = uart_fifo_read(uart_pipe_dev, recv_buf + recv_off,
-				    recv_buf_len - recv_off);
-		if (!rx) {
-			continue;
+		got = uart_fifo_read(uart_pipe_dev, recv_buf + recv_off, avail);
+		if (got <= 0) {
+			break;
 		}
 
 		/*
 		 * Call application callback with received data. Application
 		 * may provide new buffer or alter data offset.
 		 */
-		recv_off += rx;
+		recv_off += got;
 		recv_buf = app_cb(recv_buf, &recv_off);
+	}
+}
+
+static void uart_pipe_isr(struct device *dev)
+{
+	uart_irq_update(dev);
+
+	if (uart_irq_is_pending(dev)) {
+		if (uart_irq_rx_ready(dev)) {
+			uart_pipe_rx(dev);
+		}
 	}
 }
 
