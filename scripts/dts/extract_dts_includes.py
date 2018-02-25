@@ -901,11 +901,13 @@ def main():
         load_defs['CONFIG_FLASH_LOAD_SIZE'] = \
             lookup_defs(part_defs, chosen['zephyr,code-partition'],
                         'PARTITION_SIZE')
+        node_address = chosen['zephyr,flash']
     else:
         load_defs['CONFIG_FLASH_LOAD_OFFSET'] = 0
         load_defs['CONFIG_FLASH_LOAD_SIZE'] = 0
+        node_address = 'dummy-flash'
 
-    insert_defs(chosen['zephyr,flash'], defs, load_defs, {})
+    insert_defs(node_address, defs, load_defs, {})
 
     # generate include file
     if args.keyvalue:
