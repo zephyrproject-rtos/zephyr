@@ -60,8 +60,6 @@
 #define DEV_DATA(dev)						\
 	((struct cdc_acm_dev_data_t * const)(dev)->driver_data)
 
-static struct uart_driver_api cdc_acm_driver_api;
-
 /* 115200bps, no parity, 1 stop bit, 8bit char */
 #define CDC_ACM_DEFAUL_BAUDRATE {sys_cpu_to_le32(115200), 0, 0, 8}
 
@@ -384,7 +382,6 @@ static int cdc_acm_init(struct device *dev)
 		return ret;
 	}
 #endif
-	dev->driver_api = &cdc_acm_driver_api;
 	k_sem_init(&poll_wait_sem, 0, UINT_MAX);
 
 	return 0;
@@ -403,7 +400,8 @@ static int cdc_acm_fifo_fill(struct device *dev,
 			     const u8_t *tx_data, int len)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
-	u32_t bytes_written = 0;
+	u32_t wrote = 0;
+	int err;
 
 	if (dev_data->usb_status != USB_DC_CONFIGURED) {
 		return 0;
@@ -422,9 +420,11 @@ static int cdc_acm_fifo_fill(struct device *dev,
 	len = len > sizeof(u32_t) ? sizeof(u32_t) : len;
 #endif
 
-	usb_write(CONFIG_CDC_ACM_IN_EP_ADDR, tx_data, len, &bytes_written);
-
-	return bytes_written;
+	err = usb_write(CONFIG_CDC_ACM_IN_EP_ADDR, tx_data, len, &wrote);
+	if (err != 0) {
+		return err;
+	}
+	return wrote;
 }
 
 /**
@@ -571,11 +571,13 @@ static int cdc_acm_irq_is_pending(struct device *dev)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
-	if (dev_data->tx_ready || dev_data->rx_ready) {
+	if (dev_data->tx_ready && dev_data->tx_irq_ena) {
 		return 1;
+	} else if (dev_data->rx_ready && dev_data->rx_irq_ena) {
+		return 1;
+	} else {
+		return 0;
 	}
-
-	return 0;
 }
 
 /**
@@ -760,7 +762,7 @@ static unsigned char cdc_acm_poll_out(struct device *dev,
 	return c;
 }
 
-static struct uart_driver_api cdc_acm_driver_api = {
+static const struct uart_driver_api cdc_acm_driver_api = {
 	.poll_in = cdc_acm_poll_in,
 	.poll_out = cdc_acm_poll_out,
 	.fifo_fill = cdc_acm_fifo_fill,
@@ -785,6 +787,7 @@ static struct cdc_acm_dev_data_t cdc_acm_dev_data = {
 	.line_coding = CDC_ACM_DEFAUL_BAUDRATE,
 };
 
-DEVICE_INIT(cdc_acm, CONFIG_CDC_ACM_PORT_NAME, &cdc_acm_init,
-	    &cdc_acm_dev_data, NULL,
-	    APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_AND_API_INIT(cdc_acm, CONFIG_CDC_ACM_PORT_NAME, &cdc_acm_init,
+		    &cdc_acm_dev_data, NULL,
+		    APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    &cdc_acm_driver_api);
