@@ -168,7 +168,13 @@ static void _MpuFault(const NANO_ESF *esf, int fromHardFault)
 		}
 	} else if (SCB->CFSR & SCB_CFSR_IACCVIOL_Msk) {
 		PR_EXC("  Instruction Access Violation\n");
+#if !defined(CONFIG_ARMV7_M_ARMV8_M_FP)
 	}
+#else
+	} else if (SCB->CFSR & SCB_CFSR_MLSPERR_Msk) {
+		PR_EXC("  Floating-point lazy state preservation error\n");
+	}
+#endif /* !defined(CONFIG_ARMV7_M_ARMV8_M_FP) */
 }
 
 /**
@@ -216,7 +222,13 @@ static void _BusFault(const NANO_ESF *esf, int fromHardFault)
 		PR_EXC("  Imprecise data bus error\n");
 	} else if (SCB->CFSR & SCB_CFSR_IBUSERR_Msk) {
 		PR_EXC("  Instruction bus error\n");
+#if !defined(CONFIG_ARMV7_M_ARMV8_M_FP)
 	}
+#else
+	} else if (SCB->CFSR & SCB_CFSR_LSPERR_Msk) {
+		PR_EXC("  Floating-point lazy state preservation error\n");
+	}
+#endif /* !defined(CONFIG_ARMV7_M_ARMV8_M_FP) */
 }
 
 /**
