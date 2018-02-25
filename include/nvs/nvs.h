@@ -1,4 +1,4 @@
-/*  NVS: non volatile storage using a Flash Circular Buffer for storage
+/*  NVS: non volatile storage in flash
  *
  * Copyright (c) 2018 Laczen
  *
@@ -35,39 +35,41 @@ extern "C" {
 #define NVS_ID_SECTOR_END 0xFFFE
 
 struct nvs_entry {
-    off_t data_addr; /* address in flash to write data */
-    u16_t len;       /* entry length in bytes */
-    u16_t id;        /* entry id, is 0xFFFFF when empty, set to 0xFFFE for the last entry in a sector */
+	off_t data_addr; /* address in flash to write data */
+	u16_t len;       /* entry length in bytes */
+	u16_t id;        /* entry id, is 0xFFFFF when empty, set to 0xFFFE
+			  * for the last entry in a sector
+			  */
 };
 
 /**
  * nvs_fs instance. Should be initialized with nvs_init() before use.
  **/
 struct nvs_fs {
+	u32_t magic; /* filesystem magic, repeated at start of each sector */
+	off_t write_location; /* next write location for entry header */
+	off_t offset; /* filesystem offset in flash */
+	u16_t sector_id; /* sector id, a counter for each created sector */
+	u16_t sector_size; /* filesystem is divided into sectors,
+			    * sector size should be multiple of pagesize
+			    * and a power of 2
+			    */
+	u16_t max_len; /* maximum size of stored item, set to sector_size/4 */
+	u8_t sector_count; /* how many sectors in the filesystem */
 
-    u32_t magic;                  /* filesystem magic, repeated at start of each sector */
-    off_t write_location;         /* next write location for entry header */
-    off_t offset;                 /* filesystem offset in flash */
-    u16_t sector_id;              /* sector id, a counter for each sector that is created */
-    u16_t sector_size;            /* filesystem is divided into sectors,
-                                     sector size should be multiple of pagesize and a power of 2 */
-    u16_t max_len;                /* maximum size of stored item, this is set to sector_size/4 */
-    u8_t sector_count;            /* how many sectors in the filesystem */
+	u8_t entry_sector; /* oldest sector in use */
+	u8_t write_block_size; /* write block size for alignment */
 
-    u8_t entry_sector;            /* oldest sector in use */
-    u8_t write_block_size;        /* write block size for alignment */
-
-    struct k_mutex fcb_lock;      /* mutex definition */
-    struct device *flash_device;  /* flash device */
-
+	struct k_mutex fcb_lock;
+	struct device *flash_device;
 };
 
 int nvs_init(struct nvs_fs *fs, const char *dev_name, u32_t magic);
 int nvs_clear(struct nvs_fs *fs);
 int nvs_write(struct nvs_fs *fs, struct nvs_entry *entry, const void *data);
 int nvs_read(struct nvs_fs *fs, struct nvs_entry *entry, void *data);
-int nvs_read_hist(struct nvs_fs *fs, struct nvs_entry *entry, void *data, u8_t mode);
-
+int nvs_read_hist(struct nvs_fs *fs, struct nvs_entry *entry, void *data,
+	u8_t mode);
 
 int nvs_append(struct nvs_fs *fs, struct nvs_entry *entry);
 int nvs_append_close(struct nvs_fs *fs, const struct nvs_entry *entry);
@@ -78,7 +80,8 @@ int nvs_get_last_entry(struct nvs_fs *fs, struct nvs_entry *entry);
 int nvs_check_crc(struct nvs_fs *fs, struct nvs_entry *entry);
 int nvs_rotate(struct nvs_fs *fs);
 int nvs_flash_read(struct nvs_fs *fs, off_t offset, void *data, size_t len);
-int nvs_flash_write(struct nvs_fs *fs, off_t offset, const void *data, size_t len);
+int nvs_flash_write(struct nvs_fs *fs, off_t offset, const void *data,
+	size_t len);
 
 #ifdef __cplusplus
 }

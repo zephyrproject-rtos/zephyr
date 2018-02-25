@@ -50,8 +50,9 @@ void main(void)
 		printk("Flash Init failed\n");
 	}
 
-	/* entry with id=1 is used to store an address, lets see if we can read it */
-	/* from flash */
+	/* entry with id=1 is used to store an address, lets see if we can
+	 * read it from flash
+	 */
 	entry.id = 1;
 	rc = nvs_read(&fs, &entry, &buf);
 	if (rc == NVS_OK) { /* entry was found, show it */
@@ -64,7 +65,9 @@ void main(void)
 			printk("write error\n");
 		}
 	}
-	/* entry with id=2 is used a key, lets see if we can read it from flash */
+	/* entry with id=2 is used to store a key, lets see if we can
+	 * read it from flash
+	 */
 	entry.id = 2;
 	rc = nvs_read(&fs, &entry, &key);
 	if (rc == NVS_OK) { /* entry was found, show it */
@@ -81,14 +84,17 @@ void main(void)
 			printk("write error\n");
 		}
 	}
-	/* entry with id=3 is used to store the reboot counter, lets see if we can */
-	/* read it from flash */
+	/* entry with id=3 is used to store the reboot counter, lets see
+	 * if we can read it from flash
+	 */
 	entry.id = 3;
 	rc = nvs_read(&fs, &entry, &reboot_counter);
 	if (rc == NVS_OK) { /* entry was found, show it */
-		printk("Entry: %d, Reboot counter: %d\n", entry.id, reboot_counter);
+		printk("Entry: %d, Reboot counter: %d\n",
+			entry.id, reboot_counter);
 	} else   {/* entry was not found, add it */
-		printk("No Reboot counter found, adding it as entry %d\n", entry.id);
+		printk("No Reboot counter found, adding it as entry %d\n",
+			entry.id);
 		entry.len = sizeof(reboot_counter);
 		rc = nvs_write(&fs, &entry, &reboot_counter);
 		if (rc) {
@@ -101,18 +107,26 @@ void main(void)
 		k_sleep(SLEEP_TIME);
 		if (reboot_counter < MAX_REBOOT) {
 			if (cnt == 5) {
-				/* print some history information about the reboot counter */
-				/* Check the counter history in flash */
+				/* print some history information about
+				 * the reboot counter
+				 * Check the counter history in flash
+				 */
 				entry.id = 3;
 				/* Get the first entry */
-				rc = nvs_read_hist(&fs, &entry, &reboot_counter, 0);
+				rc = nvs_read_hist(&fs,
+					&entry,
+					&reboot_counter,
+					0);
 				if (rc == NVS_OK) {
 					/* entry was found, show it */
-					printk("Reboot counter history: %d", reboot_counter);
+					printk("Reboot counter history: %d",
+						reboot_counter);
 				} else   {
-					printk("Error, Reboot counter not found\n");
+					printk("Error, no Reboot counter\n");
 				}
-				while (nvs_read_hist(&fs, &entry, &reboot_counter, 1) == NVS_OK) {
+				while (nvs_read_hist(&fs,
+					&entry,
+					&reboot_counter, 1) == NVS_OK) {
 					/* Get the other entries */
 					printk("...%d", reboot_counter);
 				}
