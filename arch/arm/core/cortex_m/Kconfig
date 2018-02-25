@@ -107,6 +107,15 @@ config ARMV7_M_ARMV8_M_MAINLINE
 	  The Main Extension provides backwards compatibility
 	  with ARMv7-M.
 
+config ARMV7_M_ARMV8_M_FP
+	bool
+	# Omit prompt to signify "hidden" option
+	depends on ARMV7_M_ARMV8_M_MAINLINE && !CPU_CORTEX_M3
+	help
+	  This option signifies the use of an ARMv7-M processor
+	  implementation, or the use of an ARMv8-M processor
+	  implementation supporting the Floating-Point Extension.
+
 config CPU_CORTEX_M0
 	bool
 	# Omit prompt to signify "hidden" option
@@ -132,6 +141,7 @@ config CPU_CORTEX_M4
 	bool
 	# Omit prompt to signify "hidden" option
 	select ARMV7_M_ARMV8_M_MAINLINE
+	select ARMV7_M_ARMV8_M_FP if CPU_HAS_FPU
 	help
 	  This option signifies the use of a Cortex-M4 CPU
 
@@ -146,6 +156,7 @@ config CPU_CORTEX_M33
 	bool
 	# Omit prompt to signify "hidden" option
 	select ARMV7_M_ARMV8_M_MAINLINE
+	select ARMV7_M_ARMV8_M_FP if CPU_HAS_FPU
 	help
 	  This option signifies the use of a Cortex-M33 CPU
 
@@ -153,6 +164,7 @@ config CPU_CORTEX_M7
 	bool
 	# Omit prompt to signify "hidden" option
 	select ARMV7_M_ARMV8_M_MAINLINE
+	select ARMV7_M_ARMV8_M_FP if CPU_HAS_FPU
 	default n
 	help
 	  This option signifies the use of a Cortex-M7 CPU
