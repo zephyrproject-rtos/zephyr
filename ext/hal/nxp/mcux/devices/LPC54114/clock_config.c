@@ -52,7 +52,7 @@ processor_version: 1.1.0
 board: LPCXpresso54114
  * BE CAREFUL MODIFYING THIS COMMENT - IT IS YAML SETTINGS FOR THE CLOCKS TOOL **/
 
-#include "fsl_lpc_power.h"
+#include "fsl_power.h"
 #include "fsl_clock.h"
 #include "clock_config.h"
 

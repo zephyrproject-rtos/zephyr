@@ -19,7 +19,7 @@
 #include <soc.h>
 #include <fsl_common.h>
 #include "gpio_utils.h"
-#include <fsl_lpc_gpio.h>
+#include <fsl_gpio.h>
 #include <fsl_device_registers.h>
 
 #define PORT0_IDX	0u

@@ -9,7 +9,7 @@
 #include <gpio.h>
 #include <soc.h>
 #include <fsl_common.h>
-#include <fsl_igpio.h>
+#include <fsl_gpio.h>
 
 #include "gpio_utils.h"
 

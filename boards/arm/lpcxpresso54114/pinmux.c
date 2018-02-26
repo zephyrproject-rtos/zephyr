@@ -6,7 +6,7 @@
 #include <init.h>
 #include <pinmux.h>
 #include <fsl_common.h>
-#include <fsl_lpc_iocon.h>
+#include <fsl_iocon.h>
 
 #define IOCON_PIO_DIGITAL_EN	0x80u
 #define IOCON_PIO_FUNC0		0x00u
