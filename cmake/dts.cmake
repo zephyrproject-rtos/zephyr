@@ -10,7 +10,7 @@
 # See ~/zephyr/doc/dts
 set(GENERATED_DTS_BOARD_H    ${PROJECT_BINARY_DIR}/include/generated/generated_dts_board.h)
 set(GENERATED_DTS_BOARD_CONF ${PROJECT_BINARY_DIR}/include/generated/generated_dts_board.conf)
-set_ifndef(DTS_SOURCE ${BOARD_ROOT}/boards/${ARCH}/${BOARD_FAMILY}/${BOARD_FAMILY}.dts)
+set_ifndef(DTS_SOURCE ${BOARD_ROOT}/boards/${ARCH}/${BOARD_FAMILY}/${BOARD}.dts)
 set_ifndef(DTS_COMMON_OVERLAYS ${PROJECT_SOURCE_DIR}/dts/common/common.dts)
 
 message(STATUS "Generating zephyr/include/generated/generated_dts_board.h")
@@ -61,7 +61,7 @@ if(CONFIG_HAS_DTS)
     -undef -D__DTS__
     -P
     -E ${ZEPHYR_BASE}/misc/empty_file.c
-    -o ${BOARD_FAMILY}.dts.pre.tmp
+    -o ${BOARD}.dts.pre.tmp
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     RESULT_VARIABLE ret
     )
@@ -73,9 +73,9 @@ if(CONFIG_HAS_DTS)
   execute_process(
     COMMAND ${DTC}
     -O dts
-    -o ${BOARD_FAMILY}.dts_compiled
+    -o ${BOARD}.dts_compiled
     -b 0
-    ${BOARD_FAMILY}.dts.pre.tmp
+    ${BOARD}.dts.pre.tmp
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     RESULT_VARIABLE ret
     )
@@ -97,7 +97,7 @@ if(CONFIG_HAS_DTS)
     set(DTS_APP_FIXUP -f ${APPLICATION_SOURCE_DIR}/dts.fixup)
   endif()
   set(CMD_EXTRACT_DTS_INCLUDES ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/dts/extract_dts_includes.py
-    --dts ${BOARD_FAMILY}.dts_compiled
+    --dts ${BOARD}.dts_compiled
     --yaml ${PROJECT_SOURCE_DIR}/dts/bindings
     ${DTS_SOC_FIXUP} ${DTS_BOARD_FIXUP} ${DTS_APP_FIXUP}
     )
