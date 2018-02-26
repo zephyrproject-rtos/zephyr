@@ -54,4 +54,13 @@
 
 &spi1 {
 	status = "ok";
+
+	cs-gpios = <&gpio0 11 0>;
+
+	cc2520@0 {
+		 compatible = "ti,cc2520";
+		 reg = <0x0>;
+		 spi-max-frequency = <8000000>;
+		 label = "CC2520";
+	};
 };
