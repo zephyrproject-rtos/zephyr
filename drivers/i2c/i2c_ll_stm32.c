@@ -58,23 +58,29 @@ static int i2c_stm32_transfer(struct device *dev, struct i2c_msg *msg,
 	I2C_TypeDef *i2c = cfg->i2c;
 	int ret = 0;
 
-	LL_I2C_Enable(i2c);
-
+	/* Check for validity of all messages, to prevent having to abort
+	 * in the middle of a transfer
+	 */
 	current = msg;
+
 	/*
 	 * Set I2C_MSG_RESTART flag on first message in order to send start
 	 * condition
 	 */
 	current->flags |= I2C_MSG_RESTART;
-	while (num_msgs > 0) {
-		u8_t *next_msg_flags = NULL;
 
-		if (num_msgs > 1) {
+	for (u8_t i = 1; i <= num_msgs; i++) {
+		/* Maximum length of a single message is 255 Bytes */
+		if (current->len > 255) {
+			ret = -EINVAL;
+			break;
+		}
+
+		if (i < num_msgs) {
 			next = current + 1;
-			next_msg_flags = &(next->flags);
 
 			/*
-			 * Stop or restart condition between messages
+			 * Restart condition between messages
 			 * of different directions is required
 			 */
 			if (OPERATION(current) != OPERATION(next)) {
@@ -83,17 +89,35 @@ static int i2c_stm32_transfer(struct device *dev, struct i2c_msg *msg,
 					break;
 				}
 			}
+
+			/* Stop condition is only allowed on last message */
+			if (current->flags & I2C_MSG_STOP) {
+				ret = -EINVAL;
+				break;
+			}
+		} else {
+			/* Stop condition is required for the last message */
+			current->flags |= I2C_MSG_STOP;
 		}
 
-		if (current->len > 255) {
-			ret = -EINVAL;
-			break;
-		}
+		current++;
+	}
 
-		/* Stop condition is required for the last message */
-		if ((num_msgs == 1) && !(current->flags & I2C_MSG_STOP)) {
-			ret = -EINVAL;
-			break;
+	if (ret) {
+		return ret;
+	}
+
+	/* Send out messages */
+	LL_I2C_Enable(i2c);
+
+	current = msg;
+
+	while (num_msgs > 0) {
+		u8_t *next_msg_flags = NULL;
+
+		if (num_msgs > 1) {
+			next = current + 1;
+			next_msg_flags = &(next->flags);
 		}
 
 		if ((current->flags & I2C_MSG_RW_MASK) == I2C_MSG_WRITE) {
