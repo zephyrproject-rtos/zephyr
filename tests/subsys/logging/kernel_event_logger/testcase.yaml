@@ -1,0 +1,3 @@
+tests:
+  test:
+    platform_whitelist: qemu_x86
