@@ -1,0 +1,13 @@
+#
+# Copyright (c) 2017, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: colibri_imx7d
+name: TORADEX Colibri IMX7D
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb
