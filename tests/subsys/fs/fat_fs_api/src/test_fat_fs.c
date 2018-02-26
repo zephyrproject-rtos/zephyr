@@ -18,7 +18,7 @@ static int test_statvfs(void)
 	int res;
 
 	/* Verify fs_statvfs() */
-	res = fs_statvfs(&stat);
+	res = fs_statvfs(FATFS_MNTP, &stat);
 	if (res) {
 		TC_PRINT("Error getting volume stats [%d]\n", res);
 		return res;
