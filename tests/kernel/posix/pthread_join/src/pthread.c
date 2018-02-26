@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <tc_util.h>
+#include <ztest.h>
 #include <pthread.h>
 
 #define N_THR 3
@@ -23,12 +23,12 @@ void *thread_top(void *p1)
 
 	pthread = (pthread_t) pthread_self();
 	pthread_getschedparam(pthread, &policy, &param);
-	TC_PRINT("Thread %d scheduling policy = %d & priority %d started\n",
+	printk("Thread %d scheduling policy = %d & priority %d started\n",
 	       (s32_t) p1, policy, param.priority);
 	seconds = (s32_t)p1;
 	sleep(seconds * ONE_SECOND);
 	exit_count++;
-	TC_PRINT("Exiting thread %d\n", (s32_t)p1);
+	printk("Exiting thread %d\n", (s32_t)p1);
 	pthread_exit(p1);
 	return NULL;
 }
@@ -43,9 +43,9 @@ static bool is_sched_prio_valid(int prio, int policy)
 	return true;
 }
 
-void main(void)
+void test_pthread_join(void)
 {
-	s32_t i, ret, status = TC_FAIL;
+	s32_t i, ret;
 	pthread_attr_t attr[N_THR];
 	struct sched_param schedparam;
 	pthread_t newthread[N_THR];
@@ -53,7 +53,7 @@ void main(void)
 	void *retval;
 	size_t stack_size;
 
-	TC_START("POSIX pthread join API");
+	printk("POSIX pthread join API\n");
 	/* Creating threads with lowest application priority */
 	for (i = 0; i < N_THR; i++) {
 		pthread_attr_init(&attr[i]);
@@ -76,14 +76,14 @@ void main(void)
 		pthread_attr_getschedparam(&attr[i], &schedparam);
 		if (schedparam.priority != THREAD_PRIORITY) {
 			schedparam.priority = THREAD_PRIORITY;
-			if (is_sched_prio_valid(schedparam.priority,
-						schedpolicy)) {
-				pthread_attr_setschedparam(&attr[i],
-							   &schedparam);
-			} else {
-				TC_ERROR("Scheduling priority invalid\n");
-				goto done;
-			}
+
+			ret = is_sched_prio_valid(schedparam.priority,
+					schedpolicy);
+
+			/*TESTPOINT: Check if priority is valid*/
+			zassert_true(ret, "Scheduling priority invalid\n");
+
+			pthread_attr_setschedparam(&attr[i], &schedparam);
 		}
 
 		/* Setting stack */
@@ -96,22 +96,26 @@ void main(void)
 
 		ret = pthread_create(&newthread[i], &attr[i], thread_top,
 				     (void *)i);
-		if (ret != 0) {
-			TC_ERROR("Number of threads exceeds Maximum Limit\n");
-			goto done;
-		}
+
+		/*TESTPOINT: Check if thread created successfully*/
+		zassert_false(ret, "Number of threads exceed max limit\n");
 
 		pthread_attr_destroy(&attr[i]);
 	}
 
 	for (i = 0; i < N_THR; i++) {
-		TC_PRINT("Waiting for pthread %d to Join\n", i);
+		printk("Waiting for pthread %d to join\n", i);
 		pthread_join(newthread[i], &retval);
-		TC_PRINT("Pthread %d joined to %s\n", i, __func__);
+		printk("Pthread %d joined to %s\n", i, __func__);
 	}
 
 	/* Test PASS if all threads have exited before main exit */
-	status = exit_count == N_THR ? TC_PASS : TC_FAIL;
-done:
-	TC_END_REPORT(status);
+	zassert_equal(exit_count, N_THR, "pthread join test failed\n");
+}
+
+void test_main(void)
+{
+	ztest_test_suite(test_pthreads_join,
+			ztest_unit_test(test_pthread_join));
+	ztest_run_test_suite(test_pthreads_join);
 }
