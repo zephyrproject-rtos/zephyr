@@ -96,11 +96,13 @@ set(commoncflags "-DOPENTHREAD_CONFIG_LOG_LEVEL=${CONFIG_OPENTHREAD_LOG_LEVEL}")
 set(commoncflags "${commoncflags} -DOPENTHREAD_PROJECT_CORE_CONFIG_FILE=\\\"openthread-core-zephyr-config.h\\\"")
 set(commoncflags "${commoncflags} -I${CMAKE_CURRENT_LIST_DIR}/platform")
 
+get_property(RULE_LAUNCH_COMPILE GLOBAL PROPERTY RULE_LAUNCH_COMPILE)
+
 set(configure_flags
   "INSTALL=${INSTALL} -p"
   "CPP=${CMAKE_C_COMPILER} -E"                 # TODO: Find CPP in toolchain-gcc.cmake and use that instead?
-  "CC=${CMAKE_C_COMPILER}"
-  "CXX=${CMAKE_CXX_COMPILER}"
+  "CC=${RULE_LAUNCH_COMPILE} ${CMAKE_C_COMPILER}"
+  "CXX=${RULE_LAUNCH_COMPILE} ${CMAKE_CXX_COMPILER}"
   OBJC=""                      # TODO: Omit this?
   "OBJCXX=${OBJCXX}"           # TODO: Omit this?
   "AR=${CMAKE_AR}"
