@@ -136,5 +136,31 @@
 
 			status = "disabled";
 		};
+
+		spi0: spi@b0001000 {
+			compatible = "snps,designware-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0xb0001000 0x400>;
+			label = "SPI_0";
+			interrupts = <2 IRQ_TYPE_LEVEL_HIGH 2>;
+			interrupt-parent = <&intc>;
+			interrupt-masq = <0xb0800454>;
+
+			status = "disabled";
+		};
+
+		spi1: spi@b0001400 {
+			compatible = "snps,designware-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0xb0001400 0x400>;
+			label = "SPI_1";
+			interrupts = <3 IRQ_TYPE_LEVEL_HIGH 2>;
+			interrupt-parent = <&intc>;
+			interrupt-masq = <0xb0800458>;
+
+			status = "disabled";
+		};
 	};
 };
