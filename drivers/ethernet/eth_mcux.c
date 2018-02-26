@@ -363,21 +363,46 @@ static void eth_mcux_delayed_phy_work(struct k_work *item)
 static enet_ptp_time_data_t ptp_rx_buffer[CONFIG_ETH_MCUX_PTP_RX_BUFFERS];
 static enet_ptp_time_data_t ptp_tx_buffer[CONFIG_ETH_MCUX_PTP_TX_BUFFERS];
 
-static bool eth_get_ptp_data(struct net_pkt *pkt,
+static bool eth_get_ptp_data(struct net_if *iface, struct net_pkt *pkt,
 			     enet_ptp_time_data_t *ptpTsData)
 {
 	struct gptp_hdr *hdr;
 
-	if (ntohs(NET_ETH_HDR(pkt)->type) != NET_ETH_PTYPE_PTP) {
-		return false;
+#if defined(CONFIG_NET_VLAN)
+	struct net_eth_vlan_hdr *hdr_vlan;
+	struct ethernet_context *eth_ctx;
+	bool vlan_enabled = false;
+
+	eth_ctx = net_if_l2_data(iface);
+	if (net_eth_is_vlan_enabled(eth_ctx, iface)) {
+		hdr_vlan = (struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
+		vlan_enabled = true;
+
+		if (ntohs(hdr_vlan->type) != NET_ETH_PTYPE_PTP) {
+			return false;
+		}
+	} else
+#endif
+	{
+		if (ntohs(NET_ETH_HDR(pkt)->type) != NET_ETH_PTYPE_PTP) {
+			return false;
+		}
 	}
 
 	if (ptpTsData) {
 
 		/* Cannot use GPTP_HDR as net_pkt fields are not all filled */
 
-		hdr = (struct gptp_hdr *)((u8_t *)net_pkt_ll(pkt)
-					  + sizeof(struct net_eth_hdr));
+#if defined(CONFIG_NET_VLAN)
+		if (vlan_enabled) {
+			hdr = (struct gptp_hdr *)((u8_t *)net_pkt_ll(pkt)
+				+ sizeof(struct net_eth_vlan_hdr));
+		} else
+#endif
+		{
+			hdr = (struct gptp_hdr *)((u8_t *)net_pkt_ll(pkt)
+						  + sizeof(struct net_eth_hdr));
+		}
 
 		ptpTsData->version = hdr->ptp_version;
 		memcpy(ptpTsData->sourcePortId, &hdr->port_id,
@@ -461,7 +486,7 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 				total_len);
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
-	timestamped_frame = eth_get_ptp_data(pkt, NULL);
+	timestamped_frame = eth_get_ptp_data(iface, pkt, NULL);
 	if (timestamped_frame) {
 		if (!status) {
 			ts_tx_pkt[ts_tx_wr] = net_pkt_ref(pkt);
@@ -617,7 +642,8 @@ static void eth_rx(struct device *iface)
 #endif
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
-	if (eth_get_ptp_data(pkt, &ptpTimeData) &&
+	if (eth_get_ptp_data(get_iface(context, vlan_tag), pkt,
+			     &ptpTimeData) &&
 	    (ENET_GetRxFrameTime(&context->enet_handle,
 				 &ptpTimeData) == kStatus_Success)) {
 		pkt->timestamp.nanosecond = ptpTimeData.timeStamp.nanosecond;
@@ -644,7 +670,7 @@ static inline void ts_register_tx_event(struct eth_context *context)
 
 	pkt = ts_tx_pkt[ts_tx_rd];
 	if (pkt && pkt->ref > 0) {
-		if (eth_get_ptp_data(pkt, &timeData)) {
+		if (eth_get_ptp_data(net_pkt_iface(pkt), pkt, &timeData)) {
 			int status;
 
 			status = ENET_GetTxFrameTime(&context->enet_handle,
