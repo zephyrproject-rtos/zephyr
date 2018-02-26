@@ -6,8 +6,7 @@
 
 #include <time.h>
 #include <pthread.h>
-#include <errno.h>
-#include <tc_util.h>
+#include <ztest.h>
 
 #define SECS_TO_SLEEP 2
 #define DURATION_SECS 1
@@ -19,13 +18,13 @@ static int exp_count;
 
 void handler(union sigval val)
 {
-	TC_PRINT("Handler Signal value :%d for %d times\n", val.sival_int,
+	printk("Handler Signal value :%d for %d times\n", val.sival_int,
 		 ++exp_count);
 }
 
-void main(void)
+void test_timer(void)
 {
-	int ret, status = TC_FAIL;
+	int ret;
 	struct sigevent sig;
 	timer_t timerid;
 	struct itimerspec value, ovalue;
@@ -36,31 +35,27 @@ void main(void)
 	sig.sigev_notify_function = handler;
 	sig.sigev_value.sival_int = 20;
 	sig.sigev_notify_attributes = NULL;
-	TC_START("POSIX timer test\n");
+
+	printk("POSIX timer test\n");
 	ret = timer_create(CLOCK_MONOTONIC, &sig, &timerid);
 
-	if (ret == 0) {
-		value.it_value.tv_sec = DURATION_SECS;
-		value.it_value.tv_nsec = DURATION_NSECS;
-		value.it_interval.tv_sec = PERIOD_SECS;
-		value.it_interval.tv_nsec = PERIOD_NSECS;
-		ret = timer_settime(timerid, 0, &value, &ovalue);
-		clock_gettime(CLOCK_MONOTONIC, &ts);
+	/*TESTPOINT: Check if timer is created successfully*/
+	zassert_false(ret, "POSIX timer create failed\n");
 
-		if (ret == 0) {
-			sleep(SECS_TO_SLEEP);
-		} else {
-			TC_PRINT("posix timer failed to start, error %d\n",
-				 errno);
-			goto test_end;
-		}
+	value.it_value.tv_sec = DURATION_SECS;
+	value.it_value.tv_nsec = DURATION_NSECS;
+	value.it_interval.tv_sec = PERIOD_SECS;
+	value.it_interval.tv_nsec = PERIOD_NSECS;
+	ret = timer_settime(timerid, 0, &value, &ovalue);
+	clock_gettime(CLOCK_MONOTONIC, &ts);
 
-		clock_gettime(CLOCK_MONOTONIC, &te);
-		timer_delete(timerid);
-	} else {
-		TC_ERROR("POSIX timer create failed with %d\n", errno);
-		goto test_end;
-	}
+	/*TESTPOINT: Check if timer has started successfully*/
+	zassert_false(ret, "POSIX timer failed to start\n");
+
+	sleep(SECS_TO_SLEEP);
+
+	clock_gettime(CLOCK_MONOTONIC, &te);
+	timer_delete(timerid);
 
 	if (te.tv_nsec >= ts.tv_nsec) {
 		secs_elapsed = te.tv_sec - ts.tv_sec;
@@ -75,8 +70,14 @@ void main(void)
 				    (value.it_interval.tv_sec * NSEC_PER_SEC +
 				     value.it_interval.tv_nsec)) / NSEC_PER_SEC;
 
-	status = (total_secs_timer == secs_elapsed) ? TC_PASS : TC_FAIL;
+	/*TESTPOINT: Check if POSIX timer test passed*/
+	zassert_equal(total_secs_timer, secs_elapsed,
+			"POSIX timer test has failed\n");
+}
 
-test_end:
-	TC_END_REPORT(status);
+void test_main(void)
+{
+	ztest_test_suite(test_posix_timer,
+			ztest_unit_test(test_timer));
+	ztest_run_test_suite(test_posix_timer);
 }
