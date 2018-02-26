@@ -12,3 +12,5 @@ if(CONFIG_FILE_SYSTEM)
 endif()
 
 add_subdirectory_ifdef(CONFIG_FCB  ./fcb)
+
+add_subdirectory_ifdef(CONFIG_NVS  ./nvs)
