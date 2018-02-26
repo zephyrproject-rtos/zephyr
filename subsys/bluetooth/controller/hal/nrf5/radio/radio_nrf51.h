@@ -23,6 +23,10 @@
 #define HAL_RADIO_NRF51_RX_CHAIN_DELAY_US 3 /* ceil(3.0) */
 #define HAL_RADIO_NRF51_RX_CHAIN_DELAY_NS 3000 /* 3.0 */
 
+static inline void hal_radio_reset(void)
+{
+}
+
 static inline void hal_radio_ram_prio_setup(void)
 {
 }

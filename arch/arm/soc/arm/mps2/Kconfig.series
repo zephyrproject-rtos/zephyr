@@ -12,4 +12,4 @@ config SOC_SERIES_MPS2
 	select CPU_HAS_SYSTICK
 	select GPIO_MMIO32 if GPIO
 	help
-	Enable support for ARM MPS2 MCU Series
+	  Enable support for ARM MPS2 MCU Series

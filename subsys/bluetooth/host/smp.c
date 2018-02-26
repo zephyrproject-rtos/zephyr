@@ -4338,6 +4338,7 @@ void bt_smp_update_keys(struct bt_conn *conn)
 	if (!conn->le.keys) {
 		BT_ERR("Unable to get keys for %s",
 		       bt_addr_le_str(&conn->le.dst));
+		smp_error(smp, BT_SMP_ERR_UNSPECIFIED);
 		return;
 	}
 

@@ -120,11 +120,17 @@ extern void _irq_priority_set(u32_t irq, u32_t prio, u32_t flags);
 /* Spurious interrupt handler. Throws an error if called */
 extern void _irq_spurious(void *unused);
 
-FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
-					 const NANO_ESF *esf);
+#ifdef CONFIG_XTENSA_ASM2
+#define XTENSA_ERR_NORET /**/
+#else
+#define XTENSA_ERR_NORET FUNC_NORETURN
+#endif
 
-FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
-					  const NANO_ESF *pEsf);
+XTENSA_ERR_NORET void _SysFatalErrorHandler(unsigned int reason,
+					    const NANO_ESF *esf);
+
+XTENSA_ERR_NORET void _NanoFatalErrorHandler(unsigned int reason,
+					     const NANO_ESF *pEsf);
 
 extern u32_t _timer_cycle_get_32(void);
 #define _arch_k_cycle_get_32()	_timer_cycle_get_32()

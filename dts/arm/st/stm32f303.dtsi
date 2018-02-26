@@ -7,7 +7,24 @@
 #include <st/stm32f3.dtsi>
 
 / {
+	ccm0: memory@10000000 {
+		compatible = "st,stm32-ccm";
+		reg = <0x10000000 DT_CCM_SIZE>;
+	};
+
 	soc {
+		i2c2: i2c@40005800 {
+			compatible = "st,stm32-i2c-v2";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40005800 0x400>;
+			interrupts = <33 0>, <34 0>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+			label= "I2C_2";
+		};
+
 		spi2: spi@40003800 {
 			compatible = "st,stm32-spi-fifo";
 			#address-cells = <1>;

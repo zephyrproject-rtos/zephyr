@@ -79,6 +79,17 @@ config UART_CONSOLE_DEBUG_SERVER_HOOKS
 	  they are some sort of control characters, or let the regular console
 	  code handle them if they are of no special significance to it.
 
+config UART_CONSOLE_MCUMGR
+	bool
+	prompt "Enable UART console mcumgr passthrough"
+	default n
+	depends on UART_CONSOLE
+	help
+	  Enables the UART console to receive mcumgr frames for image upgrade
+	  and device management.  When enabled, the UART console does not
+	  process mcumgr frames, but it hands them up to a higher level module
+	  (e.g., the shell).  If unset, incoming mcumgr frames are dropped.
+
 config USB_UART_CONSOLE
 	bool
 	prompt "Use USB port for console outputs"
@@ -188,6 +199,51 @@ config UART_PIPE_ON_DEV_NAME
 	  This option specifies the name of UART device to be used
 	  for pipe UART.
 endif
+
+config UART_MCUMGR
+	bool
+	prompt "Enable mcumgr UART driver"
+	select UART_INTERRUPT_DRIVEN
+	default n
+	help
+	  Enable the mcumgr UART driver. This driver allows the application to
+	  communicate over UART using the mcumgr protocol for image upgrade and
+	  device management. The driver doesn't inspect received data (as
+	  contrary to console UART driver) and all aspects of received protocol
+	  data are handled by an application provided callback.
+
+if UART_MCUMGR
+if !HAS_DTS
+config UART_MCUMGR_ON_DEV_NAME
+	string "Device Name of UART Device for mcumgr UART"
+	default "UART_0"
+	depends on UART_MCUMGR
+	help
+	  This option specifies the name of UART device to be used
+	  for mcumgr UART.
+endif # !HAS_DTS
+
+config UART_MCUMGR_RX_BUF_SIZE
+	int
+	prompt "Size of receive buffer for mcumgr fragments received over UART, in bytes"
+	default 128
+	help
+	  Specifies the size of the mcumgr UART receive buffer, in bytes. This
+	  value must be large enough to accommodate any line sent by an mcumgr
+	  client.
+
+config UART_MCUMGR_RX_BUF_COUNT
+	int
+	prompt "Number of receive buffers for mcumgr fragments received over UART"
+	default 2
+	help
+	  Specifies the number of the mcumgr UART receive buffers.  Receive
+	  buffers hold received mcumgr fragments prior to reassembly.  This
+	  setting's value must satisfy the following relation:
+	  UART_MCUMGR_RX_BUF_COUNT * UART_MCUMGR_RX_BUF_SIZE >=
+	  MCUMGR_SMP_UART_MTU
+
+endif # UART_MCUMGR
 
 config XTENSA_SIM_CONSOLE
 	bool

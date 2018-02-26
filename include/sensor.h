@@ -31,12 +31,19 @@ extern "C" {
  * @brief Representation of a sensor readout value.
  *
  * The value is represented as having an integer and a fractional part,
- * and can be obtained using the formula val1 + val2 * 10^(-6).
+ * and can be obtained using the formula val1 + val2 * 10^(-6). Negative
+ * values also adhere to the above formula, but may need special attention.
+ * Here are some examples of the value representation:
+ *
+ *      0.5: val1 =  0, val2 =  500000
+ *     -0.5: val1 =  0, val2 = -500000
+ *     -1.0: val1 = -1, val2 =  0
+ *     -1.5: val1 = -1, val2 = -500000
  */
 struct sensor_value {
 	/** Integer part of the value. */
 	s32_t val1;
-	/** Fractional part of the value. */
+	/** Fractional part of the value (in one-millionth parts). */
 	s32_t val2;
 };
 

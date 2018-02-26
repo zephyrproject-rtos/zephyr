@@ -1139,6 +1139,7 @@ static int gatt_find_type(struct bt_conn *conn,
 {
 	struct net_buf *buf;
 	struct bt_att_find_type_req *req;
+	struct bt_uuid *uuid;
 
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_FIND_TYPE_REQ, sizeof(*req));
 	if (!buf) {
@@ -1150,10 +1151,12 @@ static int gatt_find_type(struct bt_conn *conn,
 	req->end_handle = sys_cpu_to_le16(params->end_handle);
 
 	if (params->type == BT_GATT_DISCOVER_PRIMARY) {
-		req->type = sys_cpu_to_le16(BT_UUID_GATT_PRIMARY_VAL);
+		uuid = BT_UUID_GATT_PRIMARY;
 	} else {
-		req->type = sys_cpu_to_le16(BT_UUID_GATT_SECONDARY_VAL);
+		uuid = BT_UUID_GATT_SECONDARY;
 	}
+
+	req->type = sys_cpu_to_le16(BT_UUID_16(uuid)->val);
 
 	BT_DBG("uuid %s start_handle 0x%04x end_handle 0x%04x",
 	       bt_uuid_str(params->uuid), params->start_handle,
@@ -1450,9 +1453,9 @@ static int gatt_read_type(struct bt_conn *conn,
 	req->end_handle = sys_cpu_to_le16(params->end_handle);
 
 	if (params->type == BT_GATT_DISCOVER_INCLUDE) {
-		net_buf_add_le16(buf, BT_UUID_GATT_INCLUDE_VAL);
+		net_buf_add_le16(buf, BT_UUID_16(BT_UUID_GATT_INCLUDE)->val);
 	} else {
-		net_buf_add_le16(buf, BT_UUID_GATT_CHRC_VAL);
+		net_buf_add_le16(buf, BT_UUID_16(BT_UUID_GATT_CHRC)->val);
 	}
 
 	BT_DBG("start_handle 0x%04x end_handle 0x%04x", params->start_handle,

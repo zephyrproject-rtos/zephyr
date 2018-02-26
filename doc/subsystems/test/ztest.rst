@@ -70,27 +70,6 @@ and are used to decide whether a test failed or passed by verifying whether an
 interaction with an object occurred, and if required, to assert the order of
 that interaction.
 
-The :file:`samples/testing/unit` folder contains an example for testing
-the net-buf api of Zephyr.
-
-CMakeLists.txt
-
-.. literalinclude:: ../../../samples/testing/unit/CMakeLists.txt
-   :language: CMake
-   :linenos:
-
-sample.yaml
-
-.. literalinclude:: ../../../samples/testing/unit/sample.yaml
-   :language: yaml
-   :linenos:
-
-main.c
-
-.. literalinclude:: ../../../samples/testing/unit/main.c
-   :language: c
-   :linenos:
-
 API reference
 *************
 

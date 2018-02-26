@@ -38,9 +38,7 @@ static struct bt_mesh_cfg_srv cfg_srv = {
 static struct bt_mesh_health_srv health_srv = {
 };
 
-static struct bt_mesh_model_pub health_pub = {
-	.msg  = BT_MESH_HEALTH_FAULT_MSG(0),
-};
+BT_MESH_HEALTH_PUB_DEFINE(health_pub, 0);
 
 static struct bt_mesh_model_pub gen_level_pub;
 static struct bt_mesh_model_pub gen_onoff_pub;

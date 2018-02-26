@@ -30,3 +30,7 @@
 	pinctrl-names = "default";
 	status = "ok";
 };
+
+&spi1 {
+	status = "ok";
+};

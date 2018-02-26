@@ -197,10 +197,10 @@
 #define HAL_RADIO_NRF52840_TX_CHAIN_DELAY_1M_NS  600 /* 0.6 */
 #define HAL_RADIO_NRF52840_TX_CHAIN_DELAY_2M_US  1 /* ceil(0.6) */
 #define HAL_RADIO_NRF52840_TX_CHAIN_DELAY_2M_NS  600 /* 0.6 */
-#define HAL_RADIO_NRF52840_TX_CHAIN_DELAY_S2_US  6 /* ceil(6.0) */
-#define HAL_RADIO_NRF52840_TX_CHAIN_DELAY_S2_NS  6000 /* 6.0 */
-#define HAL_RADIO_NRF52840_TX_CHAIN_DELAY_S8_US  6 /* ceil(6.0) */
-#define HAL_RADIO_NRF52840_TX_CHAIN_DELAY_S8_NS  6000 /* 6.0 */
+#define HAL_RADIO_NRF52840_TX_CHAIN_DELAY_S2_US  1 /* ceil(0.6) */
+#define HAL_RADIO_NRF52840_TX_CHAIN_DELAY_S2_NS  600 /* 0.6 */
+#define HAL_RADIO_NRF52840_TX_CHAIN_DELAY_S8_US  1 /* ceil(0.6) */
+#define HAL_RADIO_NRF52840_TX_CHAIN_DELAY_S8_NS  600 /* 0.6 */
 
 #define HAL_RADIO_NRF52840_RX_CHAIN_DELAY_1M_US  10 /* ceil(9.4) */
 #define HAL_RADIO_NRF52840_RX_CHAIN_DELAY_1M_NS  9400 /* 9.4 */
@@ -355,6 +355,13 @@
 
 #define SW_SWITCH_TIMER_TASK_GROUP_BASE 0
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
+
+static inline void hal_radio_reset(void)
+{
+	/* Anomalies 102, 106 and 107 */
+	*(volatile u32_t *)0x40001774 = ((*(volatile u32_t *)0x40001774) &
+					 0xfffffffe) | 0x01000000;
+}
 
 static inline void hal_radio_ram_prio_setup(void)
 {

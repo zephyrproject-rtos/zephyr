@@ -162,7 +162,7 @@ static inline bool verify_tail_head(sys_slist_t *list,
 	return true;
 }
 
-void slist_test(void)
+void test_slist(void)
 {
 	sys_slist_init(&test_list);
 

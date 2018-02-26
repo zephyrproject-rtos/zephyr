@@ -29,6 +29,7 @@ subsystems = [
     "aio_cmp_driver_api",
     "counter_driver_api",
     "crypto_driver_api",
+    "dma_driver_api",
     "flash_driver_api",
     "gpio_driver_api",
     "i2c_driver_api",

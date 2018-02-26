@@ -17,29 +17,29 @@ config IEEE802154_MCR20A_DRV_NAME
 	string "NXP MCR20A Driver's name"
 	default "mcr20a"
 	help
-	This option sets the driver name
+	  This option sets the driver name
 
 config IEEE802154_MCR20A_SPI_DRV_NAME
 	string "SPI driver's name to use to access MCR20A"
 	default SPI_0_NAME
 	help
-	This option is mandatory to set which SPI controller to use in order
-	to actually control the MCR20A chip.
+	  This option is mandatory to set which SPI controller to use in order
+	  to actually control the MCR20A chip.
 
 config IEEE802154_MCR20A_SPI_FREQ
 	int "SPI system frequency"
 	default 4000000
 	help
-	This option sets the SPI controller's frequency. Beware this value
-	depends on the SPI controller being used and also on the system
-	clock.
+	  This option sets the SPI controller's frequency. Beware this value
+	  depends on the SPI controller being used and also on the system
+	  clock.
 
 config IEEE802154_MCR20A_SPI_SLAVE
 	int "SPI slave linked to MCR20A"
 	default 0
 	help
-	This option sets the SPI slave number SPI controller has to switch
-	to when dealing with MCR20A chip.
+	  This option sets the SPI slave number SPI controller has to switch
+	  to when dealing with MCR20A chip.
 
 config MCR20A_GPIO_IRQ_B_NAME
 	string "GPIO device used for IRQ_B output of MCR20A"
@@ -61,16 +61,16 @@ config MCR20A_IS_PART_OF_KW2XD_SIP
 	bool "MCR20A device is part of KW2xD SiP"
 	default n
 	help
-	If this option is set, the driver does not perform a hardware
-	reset and the CLK_OUT frequency is not set, instead these settings
-	are performed during the initialization of the SoC.
+	  If this option is set, the driver does not perform a hardware
+	  reset and the CLK_OUT frequency is not set, instead these settings
+	  are performed during the initialization of the SoC.
 
 choice
 	prompt "CLK_OUT frequency"
 	default MCR20A_CLK_OUT_4MHZ if MCR20A_IS_PART_OF_KW2XD_SIP
 	default MCR20A_CLK_OUT_DISABLED
 	help
-	Configuration of the MCR20A clock output pin.
+	  Configuration of the MCR20A clock output pin.
 
 config MCR20A_CLK_OUT_DISABLED
 	bool "Disabled"
@@ -105,18 +105,18 @@ config IEEE802154_MCR20A_RX_STACK_SIZE
 	int "Driver's internal RX thread stack size"
 	default 800
 	help
-	This option sets the driver's stack size for its internal RX thread.
-	The default value should be sufficient, but in case it proves to be
-	a too little one, this option makes it easy to play with the size.
+	  This option sets the driver's stack size for its internal RX thread.
+	  The default value should be sufficient, but in case it proves to be
+	  a too little one, this option makes it easy to play with the size.
 
 config IEEE802154_MCR20A_INIT_PRIO
 	int "MCR20A initialization priority"
 	default 80
 	help
-	Set the initialization priority number. Do not mess with it unless
-	you know what you are doing. Beware mcr20a requires gpio and spi to
-	be ready first (and sometime gpio should be the very first as spi
-	might need it too). And of course it has to start before the net stack.
+	  Set the initialization priority number. Do not mess with it unless
+	  you know what you are doing. Beware mcr20a requires gpio and spi to
+	  be ready first (and sometime gpio should be the very first as spi
+	  might need it too). And of course it has to start before the net stack.
 
 
 endif

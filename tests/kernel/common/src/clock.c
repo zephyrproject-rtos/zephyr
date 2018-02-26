@@ -11,7 +11,7 @@
 	do {				       \
 		u32_t t = k_uptime_get_32();   \
 		while (t == k_uptime_get_32()) \
-			posix_halt_cpu();\
+			posix_halt_cpu();      \
 	} while (0)
 #else
 #define ALIGN_MS_BOUNDARY		       \
@@ -22,7 +22,7 @@
 	} while (0)
 #endif
 
-static void tclock_uptime(void)
+void test_clock_uptime(void)
 {
 	u64_t t64, t32;
 	s64_t d64 = 0;
@@ -76,7 +76,7 @@ static void tclock_uptime(void)
 	zassert_true(k_uptime_delta_32(&d64) > 0, NULL);
 }
 
-static void tclock_cycle(void)
+void test_clock_cycle(void)
 {
 	u32_t c32, c0, c1, t32;
 
@@ -114,10 +114,3 @@ static void tclock_cycle(void)
 			     (NSEC_PER_SEC / MSEC_PER_SEC), NULL);
 	}
 }
-
-void clock_test(void)
-{
-	tclock_uptime();
-	tclock_cycle();
-}
-

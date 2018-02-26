@@ -18,28 +18,28 @@ config IEEE802154_NRF5_DRV_NAME
 	string "nRF52 IEEE 802.15.4 Driver's name"
 	default "IEEE802154_nrf5"
 	help
-	This option sets the driver name
+	  This option sets the driver name
 
 config IEEE802154_NRF5_RX_STACK_SIZE
 	int "Driver's internal RX thread stack size"
 	default 800
 	help
-	This option sets the driver's stack size for its internal RX thread.
-	The default value should be sufficient, but in case it proves to be
-	a too little one, this option makes it easy to play with the size.
+	  This option sets the driver's stack size for its internal RX thread.
+	  The default value should be sufficient, but in case it proves to be
+	  a too little one, this option makes it easy to play with the size.
 
 config IEEE802154_NRF5_INIT_PRIO
 	int "nRF52 IEEE 802.15.4 initialization priority"
 	default 80
 	help
-	Set the initialization priority number. Do not mess with it unless
-	you know what you are doing.
+	  Set the initialization priority number. Do not mess with it unless
+	  you know what you are doing.
 
 choice IEEE802154_NRF5_CCA_MODE
 	prompt "nRF52 IEEE 802.15.4 CCA mode"
 	default IEEE802154_NRF5_CCA_MODE_ED
 	help
-	CCA mode
+	  CCA mode
 
 config IEEE802154_NRF5_CCA_MODE_ED
 	bool "Energy Above Threshold"
@@ -59,8 +59,8 @@ config IEEE802154_NRF5_CCA_ED_THRESHOLD
 	int "nRF52 IEEE 802.15.4 CCA Energy Detection threshold"
 	default 45
 	help
-	If energy detected in a given channel is above the value then the channel
-	is deemed busy. The unit is defined as per 802.15.4-2006 spec.
+	  If energy detected in a given channel is above the value then the channel
+	  is deemed busy. The unit is defined as per 802.15.4-2006 spec.
 
 config IEEE802154_NRF5_CCA_CORR_THRESHOLD
 	int "nRF52 IEEE 802.15.4 CCA Correlator threshold"
@@ -70,7 +70,7 @@ config IEEE802154_NRF5_CCA_CORR_LIMIT
 	int "nRF52 IEEE 802.15.4 CCA Correlator limit"
 	default 2
 	help
-	Limit for occurrences above correlator threshold. When not equal to zero the
-	correlator based signal detect is enabled.
+	  Limit for occurrences above correlator threshold. When not equal to zero the
+	  correlator based signal detect is enabled.
 
 endif

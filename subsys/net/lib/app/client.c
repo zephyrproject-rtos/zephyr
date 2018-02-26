@@ -373,17 +373,6 @@ int net_app_init_client(struct net_app_ctx *ctx,
 					   strlen(base_peer_addr),
 					   &remote_addr);
 
-#if defined(CONFIG_NET_IPV6)
-		if (remote_addr.sa_family == AF_INET6) {
-			net_sin6(&remote_addr)->sin6_port = htons(peer_port);
-		}
-#endif
-#if defined(CONFIG_NET_IPV4)
-		if (remote_addr.sa_family == AF_INET) {
-			net_sin(&remote_addr)->sin_port = htons(peer_port);
-		}
-#endif
-
 		/* The remote_addr will be used by set_remote_addr() to
 		 * set the actual peer address.
 		 */
@@ -458,6 +447,22 @@ int net_app_init_client(struct net_app_ctx *ctx,
 	    ctx->default_ctx->remote.sa_family == AF_UNSPEC) {
 		NET_ERR("Unknown protocol family.");
 		return -EPFNOSUPPORT;
+	}
+
+	/* Set the port now that we know the sa_family */
+	if (!peer_addr) {
+#if defined(CONFIG_NET_IPV6)
+		if (ctx->default_ctx->remote.sa_family == AF_INET6) {
+			net_sin6(&ctx->default_ctx->remote)->sin6_port =
+				htons(peer_port);
+		}
+#endif
+#if defined(CONFIG_NET_IPV4)
+		if (ctx->default_ctx->remote.sa_family == AF_INET) {
+			net_sin(&ctx->default_ctx->remote)->sin_port =
+				htons(peer_port);
+		}
+#endif
 	}
 
 	ret = bind_local(ctx);

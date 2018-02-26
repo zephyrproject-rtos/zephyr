@@ -150,6 +150,7 @@ enum k_objects {
 	K_OBJ_DRIVER_AIO_CMP,
 	K_OBJ_DRIVER_COUNTER,
 	K_OBJ_DRIVER_CRYPTO,
+	K_OBJ_DRIVER_DMA,
 	K_OBJ_DRIVER_FLASH,
 	K_OBJ_DRIVER_GPIO,
 	K_OBJ_DRIVER_I2C,
@@ -391,6 +392,17 @@ struct _thread_base {
 		u16_t preempt;
 	};
 
+#ifdef CONFIG_SMP
+	/* True for the per-CPU idle threads */
+	u8_t is_idle;
+
+	/* Non-zero when actively running on a CPU */
+	u8_t active;
+
+	/* CPU index on which thread was last run */
+	u8_t cpu;
+#endif
+
 	/* data returned by APIs */
 	void *swap_data;
 
@@ -467,6 +479,18 @@ struct k_thread {
 	/* Base address of thread stack */
 	k_thread_stack_t *stack_obj;
 #endif /* CONFIG_USERSPACE */
+
+#if defined(CONFIG_USE_SWITCH)
+	/* When using __switch() a few previously arch-specific items
+	 * become part of the core OS
+	 */
+
+	/* _Swap() return value */
+	int swap_retval;
+
+	/* Context handle returned via _arch_switch() */
+	void *switch_handle;
+#endif
 
 	/* arch-specifics: must always be at the end */
 	struct _thread_arch arch;
@@ -2305,12 +2329,11 @@ extern void k_delayed_work_init(struct k_delayed_work *work,
  * the workqueue and becomes pending.
  *
  * Submitting a previously submitted delayed work item that is still
- * counting down cancels the existing submission and restarts the countdown
- * using the new delay. If the work item is currently pending on the
- * workqueue's queue because the countdown has completed it is too late to
- * resubmit the item, and resubmission fails without impacting the work item.
- * If the work item has already been processed, or is currently being processed,
- * its work is considered complete and the work item can be resubmitted.
+ * counting down cancels the existing submission and restarts the
+ * countdown using the new delay.  Note that this behavior is
+ * inherently subject to race conditions with the pre-existing
+ * timeouts and work queue, so care must be taken to synchronize such
+ * resubmissions externally.
  *
  * @warning
  * A delayed work item must not be modified until it has been processed
@@ -4328,6 +4351,31 @@ extern void k_mem_domain_remove_thread(k_tid_t thread);
  * @param n The length of the string
  */
 __syscall void k_str_out(char *c, size_t n);
+
+/**
+ * @brief Start a numbered CPU on a MP-capable system
+
+ * This starts and initializes a specific CPU.  The main thread on
+ * startup is running on CPU zero, other processors are numbered
+ * sequentially.  On return from this function, the CPU is known to
+ * have begun operating and will enter the provided function.  Its
+ * interrupts will be initialied but disabled such that irq_unlock()
+ * with the provided key will work to enable them.
+ *
+ * Normally, in SMP mode this function will be called by the kernel
+ * initialization and should not be used as a user API.  But it is
+ * defined here for special-purpose apps which want Zephyr running on
+ * one core and to use others for design-specific processing.
+ *
+ * @param cpu_num Integer number of the CPU
+ * @param stack Stack memory for the CPU
+ * @param sz Stack buffer size, in bytes
+ * @param fn Function to begin running on the CPU.  First argument is
+ *        an irq_unlock() key.
+ * @param arg Untyped argument to be passed to "fn"
+ */
+extern void _arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
+			    void (*fn)(int, void *), void *arg);
 
 #ifdef __cplusplus
 }

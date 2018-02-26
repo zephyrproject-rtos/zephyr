@@ -240,6 +240,8 @@
 			interrupts = <26 0>;
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 12>;
 			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 
 		spi1: spi@4002d000 {
@@ -251,6 +253,8 @@
 			cs = <&gpiob 10 0>;
 			pinctrl-0 = <&spi1_default>;
 			pinctrl-names = "default";
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 
 		wdog: watchdog@40052000 {

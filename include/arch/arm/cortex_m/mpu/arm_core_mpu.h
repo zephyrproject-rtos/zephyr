@@ -42,6 +42,17 @@ void configure_mpu_stack_guard(struct k_thread *thread);
  * @param thread thread info data structure.
  */
 void configure_mpu_mem_domain(struct k_thread *thread);
+
+/*
+ * @brief Configure MPU user context
+ *
+ * This function configures the stack and application data regions
+ * for user mode threads
+ *
+ * @param thread thread info data structure.
+ */
+void configure_mpu_user_context(struct k_thread *thread);
+
 #endif
 
 #ifdef __cplusplus

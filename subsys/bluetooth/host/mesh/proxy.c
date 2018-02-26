@@ -82,15 +82,15 @@ static struct bt_mesh_proxy_client {
 	struct k_work send_beacons;
 #endif
 	struct net_buf_simple    buf;
-	u8_t                     buf_data[CLIENT_BUF_SIZE];
 } clients[CONFIG_BT_MAX_CONN] = {
 	[0 ... (CONFIG_BT_MAX_CONN - 1)] = {
 #if defined(CONFIG_BT_MESH_GATT_PROXY)
 		.send_beacons = _K_WORK_INITIALIZER(proxy_send_beacons),
 #endif
-		.buf.size = CLIENT_BUF_SIZE,
 	},
 };
+
+static u8_t __noinit client_buf_data[CLIENT_BUF_SIZE * CONFIG_BT_MAX_CONN];
 
 /* Track which service is enabled */
 static enum {
@@ -206,7 +206,8 @@ static void send_filter_status(struct bt_mesh_proxy_client *client,
 	/* Configuration messages always have dst unassigned */
 	tx.ctx->addr = BT_MESH_ADDR_UNASSIGNED;
 
-	net_buf_simple_init(buf, 10);
+	net_buf_simple_reset(buf);
+	net_buf_simple_reserve(buf, 10);
 
 	net_buf_simple_add_u8(buf, CFG_FILTER_STATUS);
 
@@ -240,51 +241,51 @@ static void send_filter_status(struct bt_mesh_proxy_client *client,
 
 static void proxy_cfg(struct bt_mesh_proxy_client *client)
 {
-	struct net_buf_simple *buf = NET_BUF_SIMPLE(29);
+	NET_BUF_SIMPLE_DEFINE(buf, 29);
 	struct bt_mesh_net_rx rx;
 	u8_t opcode;
 	int err;
 
 	err = bt_mesh_net_decode(&client->buf, BT_MESH_NET_IF_PROXY_CFG,
-				 &rx, buf);
+				 &rx, &buf);
 	if (err) {
 		BT_ERR("Failed to decode Proxy Configuration (err %d)", err);
 		return;
 	}
 
 	/* Remove network headers */
-	net_buf_simple_pull(buf, BT_MESH_NET_HDR_LEN);
+	net_buf_simple_pull(&buf, BT_MESH_NET_HDR_LEN);
 
-	BT_DBG("%u bytes: %s", buf->len, bt_hex(buf->data, buf->len));
+	BT_DBG("%u bytes: %s", buf.len, bt_hex(buf.data, buf.len));
 
-	if (buf->len < 1) {
+	if (buf.len < 1) {
 		BT_WARN("Too short proxy configuration PDU");
 		return;
 	}
 
-	opcode = net_buf_simple_pull_u8(buf);
+	opcode = net_buf_simple_pull_u8(&buf);
 	switch (opcode) {
 	case CFG_FILTER_SET:
-		filter_set(client, buf);
-		send_filter_status(client, &rx, buf);
+		filter_set(client, &buf);
+		send_filter_status(client, &rx, &buf);
 		break;
 	case CFG_FILTER_ADD:
-		while (buf->len >= 2) {
+		while (buf.len >= 2) {
 			u16_t addr;
 
-			addr = net_buf_simple_pull_be16(buf);
+			addr = net_buf_simple_pull_be16(&buf);
 			filter_add(client, addr);
 		}
-		send_filter_status(client, &rx, buf);
+		send_filter_status(client, &rx, &buf);
 		break;
 	case CFG_FILTER_REMOVE:
-		while (buf->len >= 2) {
+		while (buf.len >= 2) {
 			u16_t addr;
 
-			addr = net_buf_simple_pull_be16(buf);
+			addr = net_buf_simple_pull_be16(&buf);
 			filter_remove(client, addr);
 		}
-		send_filter_status(client, &rx, buf);
+		send_filter_status(client, &rx, &buf);
 		break;
 	default:
 		BT_WARN("Unhandled configuration OpCode 0x%02x", opcode);
@@ -294,12 +295,12 @@ static void proxy_cfg(struct bt_mesh_proxy_client *client)
 
 static int beacon_send(struct bt_conn *conn, struct bt_mesh_subnet *sub)
 {
-	struct net_buf_simple *buf = NET_BUF_SIMPLE(23);
+	NET_BUF_SIMPLE_DEFINE(buf, 23);
 
-	net_buf_simple_init(buf, 1);
-	bt_mesh_beacon_create(sub, buf);
+	net_buf_simple_reserve(&buf, 1);
+	bt_mesh_beacon_create(sub, &buf);
 
-	return proxy_segment_and_send(conn, BT_MESH_PROXY_BEACON, buf);
+	return proxy_segment_and_send(conn, BT_MESH_PROXY_BEACON, &buf);
 }
 
 static void proxy_send_beacons(struct k_work *work)
@@ -417,7 +418,7 @@ static void proxy_complete_pdu(struct bt_mesh_proxy_client *client)
 		break;
 	}
 
-	net_buf_simple_init(&client->buf, 0);
+	net_buf_simple_reset(&client->buf);
 }
 
 #define ATTR_IS_PROV(attr) (attr->user_data != NULL)
@@ -537,7 +538,7 @@ static void proxy_connected(struct bt_conn *conn, u8_t err)
 	client->conn = bt_conn_ref(conn);
 	client->filter_type = NONE;
 	memset(client->filter, 0, sizeof(client->filter));
-	net_buf_simple_init(&client->buf, 0);
+	net_buf_simple_reset(&client->buf);
 }
 
 static void proxy_disconnected(struct bt_conn *conn, u8_t reason)
@@ -570,7 +571,7 @@ struct net_buf_simple *bt_mesh_proxy_get_buf(void)
 {
 	struct net_buf_simple *buf = &clients[0].buf;
 
-	net_buf_simple_init(buf, 0);
+	net_buf_simple_reset(buf);
 
 	return buf;
 }
@@ -847,7 +848,7 @@ bool bt_mesh_proxy_relay(struct net_buf_simple *buf, u16_t dst)
 
 	for (i = 0; i < ARRAY_SIZE(clients); i++) {
 		struct bt_mesh_proxy_client *client = &clients[i];
-		struct net_buf_simple *msg = NET_BUF_SIMPLE(32);
+		NET_BUF_SIMPLE_DEFINE(msg, 32);
 
 		if (!client->conn) {
 			continue;
@@ -860,10 +861,10 @@ bool bt_mesh_proxy_relay(struct net_buf_simple *buf, u16_t dst)
 		/* Proxy PDU sending modifies the original buffer,
 		 * so we need to make a copy.
 		 */
-		net_buf_simple_init(msg, 1);
-		net_buf_simple_add_mem(msg, buf->data, buf->len);
+		net_buf_simple_reserve(&msg, 1);
+		net_buf_simple_add_mem(&msg, buf->data, buf->len);
 
-		bt_mesh_proxy_send(client->conn, BT_MESH_PROXY_NET_PDU, msg);
+		bt_mesh_proxy_send(client->conn, BT_MESH_PROXY_NET_PDU, &msg);
 		relayed = true;
 	}
 
@@ -1212,6 +1213,7 @@ static struct bt_conn_cb conn_callbacks = {
 
 int bt_mesh_proxy_init(void)
 {
+	int i;
 #if defined(CONFIG_BT_MESH_PB_GATT)
 	const struct bt_mesh_prov *prov = bt_mesh_prov_get();
 	size_t name_len = strlen(CONFIG_BT_DEVICE_NAME);
@@ -1250,6 +1252,14 @@ int bt_mesh_proxy_init(void)
 		prov_sd_len++;
 	}
 #endif /* CONFIG_BT_MESH_PB_GATT */
+
+	/* Initialize the client receive buffers */
+	for (i = 0; i < ARRAY_SIZE(clients); i++) {
+		struct bt_mesh_proxy_client *client = &clients[i];
+
+		client->buf.size = CLIENT_BUF_SIZE;
+		client->buf.__buf = client_buf_data + (i * CLIENT_BUF_SIZE);
+	}
 
 	bt_conn_cb_register(&conn_callbacks);
 

@@ -369,6 +369,81 @@ again.
 
 .. _application_debugging:
 
+
+Custom Board Definition
+***********************
+
+In cases where the board or platform you are developing for is not yet supported
+by Zephyr, you can add the board definition to your application and build for
+this board without having to add it to the Zephyr tree.
+
+The structure needed to support out-of-tree board development
+is similar to how boards are maintained in the Zephyr tree.  By using
+this structure, it will be much easier to upstream your board work into
+the Zephyr tree after your initial development is done.
+
+Add the custom board to your application using the following structure:
+
+.. code-block:: console
+
+   boards/
+   CMakeLists.txt
+   prj.conf
+   README.rst
+   src/
+
+where the ``boards`` directory hosts the board you are building for:
+
+.. code-block:: console
+
+   .
+   ├── boards
+   │   └── x86
+   │       └── my_custom_board
+   │           ├── doc
+   │           │   └── img
+   │           └── support
+   └── src
+
+
+Use the proper architecture folder name (e.g., ``x86``, ``arm``, etc.)
+under ``boards`` for ``my_custom_board``.  (See  :ref:`boards` for a
+list of board architectures.)
+
+Documentation (under ``doc/``) and support files (under ``support/``) are optional, but
+will be needed when submitting to Zephyr.
+
+The contents of ``my_custom_board`` should follow the same guidelines for any
+Zephyr board, and provide the following files::
+
+    my_custom_board_defconfig
+    my_custom_board.dts
+    my_custom_board.yaml
+    board.cmake
+    board.h
+    CMakeLists.txt
+    doc/
+    dts.fixup
+    Kconfig.board
+    Kconfig.defconfig
+    pinmux.c
+    support/
+
+
+Once the board structure is in place, you can build your application
+targeting this board by specifying the location of your custom board
+information with the ``-DBOARD_ROOT`` parameter to the CMake
+build system::
+
+   cmake -DBOARD=<board name> -DBOARD_ROOT=<path to boards> ..
+
+
+This will use your custom board configuration and will generate the
+Zephyr binary into your application directory.
+
+You can also define the ``BOARD_ROOT`` variable in the application
+:file:`CMakeLists.txt` file.
+
 Application Debugging
 *********************
 
@@ -891,50 +966,61 @@ preferred, since it correctly handles dependencies between options.
 Device Tree Overlays
 ====================
 
-Zephyr uses Device Tree to describe the hardware it runs on. Sometimes it is
-necessary to modify the definitions in the :file:`.dts` files provided in the
-board folder in order to customize settings for a particular application.
-For more information on Device Tree see :ref:`device-tree`.
+As described in :ref:`device-tree`, Zephyr uses Device Tree to
+describe the hardware it runs on. This section describes how you can
+modify an application build's device tree using overlay files.
 
-The Zephyr build system takes a Device Tree configuration
-option's value from the first source in which it is specified, taken from the
-following available sources, in order:
+Overlay files, which customarily have the :file:`.overlay` extension,
+contain device tree fragments which add to or modify the device tree
+used while building a Zephyr application. To add an overlay file or
+files to the build, set the CMake variable :makevar:`DTC_OVERLAY_FILE`
+to a whitespace-separated list of your overlay files.
 
-#. An application's current DT configuration (i.e. the file
-   :file:`zephyr/<board>.dts.pre.tmp` in the build directory).
+The Zephyr build system begins creation of a device tree by running
+the C preprocessor on a file which includes the following:
 
-#. The application's DT configuration file(s) given by the
-   :makevar:`DTC_OVERLAY_FILE` variable, either as set explicitly by the user
-   or using one of the default values detailed below.
+#. Configuration options from :ref:`Kconfig <configuration>`.
 
-#. Common overlays conditionally included by :file:`dts/common/common.dts`.
+#. The board's device tree source file, which by default is the Zephyr
+   file :file:`boards/<ARCHITECTURE>/<BOARD>/<BOARD>.dts`. (This location
+   can be overridden by setting the :makevar:`DTS_SOURCE` CMake
+   variable.)
 
-#. The board's default DT configuration for the current :makevar:`BOARD`
-   setting (i.e. the :file:`boards/ARCHITECTURE/BOARD/BOARD.dts`
-   file in the Zephyr base directory).
+#. Any "common" overlays provided by the build system. Currently, this
+   is just the file :file:`dts/common/common.dts`. (The common
+   overlays can be overridden by setting the
+   :makevar:`DTS_COMMON_OVERLAYS` CMake variable.)
 
-#. The kernel's default DT configuration settings (i.e. the default value given
-   to the option in one of Zephyr's :file:`dtsi` files).
+   The file :file:`common.dts` conditionally includes device tree
+   fragments based on Kconfig settings. For example, it includes a
+   fragment for MCUboot chain-loading, located at
+   :file:`dts/common/mcuboot.overlay`, if
+   :option:`CONFIG_BOOTLOADER_MCUBOOT` is set.
 
-The Zephyr build system determines a value for :makevar:`DTC_OVERLAY_FILE` by
-checking the following until one is found, in order:
+#. Any file or files given by the :makevar:`DTC_OVERLAY_FILE` CMake
+   variable.
+
+The Zephyr build system determines :makevar:`DTC_OVERLAY_FILE` as
+follows:
 
 - Any value given to :makevar:`DTC_OVERLAY_FILE` in your application
   :file:`CMakeLists.txt` (**before including the boilerplate.cmake file**),
   passed to the the CMake command line, or present in the CMake variable cache,
-  takes precedence
+  takes precedence.
 
-- If the file :file:`<board>.overlay` exists in your application directory,
+- The environment variable :envvar:`DTC_OVERLAY_FILE` is checked
+  next. This mechanism is now deprecated; users should set this
+  variable using CMake instead of the environment.
+
+- If the file :file:`BOARD.overlay` exists in your application directory,
   where ``BOARD`` is the BOARD value set earlier, it will be used.
 
-If :makevar:`DTC_OVERLAY_FILE` specifies multiple files, they will be merged in
-order.
+If :makevar:`DTC_OVERLAY_FILE` specifies multiple files, they are
+included in order by the C preprocessor.
 
-The build system will automatically prepend :file:`dts/common/common.dts` to
-:makevar:`DTC_OVERLAY_FILE`, which conditionally includes certain overlays that
-are considered common to all applications. This includes the required overlay
-for MCUboot chain-loading (located in :file:`dts/comon/mcuboot.overlay`)
-whenever the :option:`CONFIG_BOOTLOADER_MCUBOOT` is set using Kconfig.
+After running the preprocessor, the final device tree used in the
+build is created by running the device tree compiler, ``dtc``, on the
+preprocessor output.
 
 Application-Specific Code
 *************************

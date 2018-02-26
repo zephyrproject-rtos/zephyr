@@ -147,9 +147,7 @@ static struct bt_mesh_health_srv health_srv = {
 	.cb = &health_srv_cb,
 };
 
-static struct bt_mesh_model_pub health_pub = {
-	.msg = BT_MESH_HEALTH_FAULT_MSG(CUR_FAULTS_MAX),
-};
+BT_MESH_HEALTH_PUB_DEFINE(health_pub, CUR_FAULTS_MAX);
 
 static struct bt_mesh_cfg_cli cfg_cli = {
 };
@@ -559,7 +557,7 @@ static int cmd_ident(int argc, char *argv[])
 
 static int cmd_get_comp(int argc, char *argv[])
 {
-	struct net_buf_simple *comp = NET_BUF_SIMPLE(32);
+	NET_BUF_SIMPLE_DEFINE(comp, 32);
 	u8_t status, page = 0x00;
 	int err;
 
@@ -567,9 +565,8 @@ static int cmd_get_comp(int argc, char *argv[])
 		page = strtol(argv[1], NULL, 0);
 	}
 
-	net_buf_simple_init(comp, 0);
 	err = bt_mesh_cfg_comp_data_get(net.net_idx, net.dst, page,
-					&status, comp);
+					&status, &comp);
 	if (err) {
 		printk("Getting composition failed (err %d)\n", err);
 		return 0;
@@ -581,24 +578,24 @@ static int cmd_get_comp(int argc, char *argv[])
 	}
 
 	printk("Got Composition Data for 0x%04x:\n", net.dst);
-	printk("\tCID      0x%04x\n", net_buf_simple_pull_le16(comp));
-	printk("\tPID      0x%04x\n", net_buf_simple_pull_le16(comp));
-	printk("\tVID      0x%04x\n", net_buf_simple_pull_le16(comp));
-	printk("\tCRPL     0x%04x\n", net_buf_simple_pull_le16(comp));
-	printk("\tFeatures 0x%04x\n", net_buf_simple_pull_le16(comp));
+	printk("\tCID      0x%04x\n", net_buf_simple_pull_le16(&comp));
+	printk("\tPID      0x%04x\n", net_buf_simple_pull_le16(&comp));
+	printk("\tVID      0x%04x\n", net_buf_simple_pull_le16(&comp));
+	printk("\tCRPL     0x%04x\n", net_buf_simple_pull_le16(&comp));
+	printk("\tFeatures 0x%04x\n", net_buf_simple_pull_le16(&comp));
 
-	while (comp->len > 4) {
+	while (comp.len > 4) {
 		u8_t sig, vnd;
 		u16_t loc;
 		int i;
 
-		loc = net_buf_simple_pull_le16(comp);
-		sig = net_buf_simple_pull_u8(comp);
-		vnd = net_buf_simple_pull_u8(comp);
+		loc = net_buf_simple_pull_le16(&comp);
+		sig = net_buf_simple_pull_u8(&comp);
+		vnd = net_buf_simple_pull_u8(&comp);
 
 		printk("\n\tElement @ 0x%04x:\n", loc);
 
-		if (comp->len < ((sig * 2) + (vnd * 4))) {
+		if (comp.len < ((sig * 2) + (vnd * 4))) {
 			printk("\t\t...truncated data!\n");
 			break;
 		}
@@ -610,7 +607,7 @@ static int cmd_get_comp(int argc, char *argv[])
 		}
 
 		for (i = 0; i < sig; i++) {
-			u16_t mod_id = net_buf_simple_pull_le16(comp);
+			u16_t mod_id = net_buf_simple_pull_le16(&comp);
 
 			printk("\t\t\t0x%04x\n", mod_id);
 		}
@@ -622,8 +619,8 @@ static int cmd_get_comp(int argc, char *argv[])
 		}
 
 		for (i = 0; i < vnd; i++) {
-			u16_t cid = net_buf_simple_pull_le16(comp);
-			u16_t mod_id = net_buf_simple_pull_le16(comp);
+			u16_t cid = net_buf_simple_pull_le16(&comp);
+			u16_t mod_id = net_buf_simple_pull_le16(&comp);
 
 			printk("\t\t\tCompany 0x%04x: 0x%04x\n", cid, mod_id);
 		}
@@ -677,7 +674,7 @@ static int cmd_appidx(int argc, char *argv[])
 
 static int cmd_net_send(int argc, char *argv[])
 {
-	struct net_buf_simple *msg = NET_BUF_SIMPLE(32);
+	NET_BUF_SIMPLE_DEFINE(msg, 32);
 	struct bt_mesh_msg_ctx ctx = {
 		.send_ttl = BT_MESH_TTL_DEFAULT,
 		.net_idx = net.net_idx,
@@ -704,11 +701,10 @@ static int cmd_net_send(int argc, char *argv[])
 		return 0;
 	}
 
-	net_buf_simple_init(msg, 0);
-	len = hex2bin(argv[1], msg->data, net_buf_simple_tailroom(msg) - 4);
-	net_buf_simple_add(msg, len);
+	len = hex2bin(argv[1], msg.data, net_buf_simple_tailroom(&msg) - 4);
+	net_buf_simple_add(&msg, len);
 
-	err = bt_mesh_trans_send(&tx, msg, NULL, NULL);
+	err = bt_mesh_trans_send(&tx, &msg, NULL, NULL);
 	if (err) {
 		printk("Failed to send (err %d)\n", err);
 	}

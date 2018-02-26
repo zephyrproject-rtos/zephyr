@@ -12,8 +12,8 @@
  * Returns the Page table address for the particular address.
  * Page Table address(returned value) is always 4KBytes aligned.
  */
-#define X86_MMU_GET_PT_ADDR(addr) \
-	((struct x86_mmu_page_table *)\
+#define X86_MMU_GET_PT_ADDR(addr)      \
+	((struct x86_mmu_page_table *) \
 	 (X86_MMU_GET_PDE(addr)->page_table << MMU_PAGE_SHIFT))
 
 #endif
@@ -23,8 +23,8 @@
  * use the union to extract page entry related information.
  */
 
-#define X86_MMU_GET_PTE(addr)\
-	((union x86_mmu_pae_pte *)\
+#define X86_MMU_GET_PTE(addr)	   \
+	((union x86_mmu_pae_pte *) \
 	 (&X86_MMU_GET_PT_ADDR(addr)->entry[MMU_PAGE_NUM(addr)]))
 #endif
 

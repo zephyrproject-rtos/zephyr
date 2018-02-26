@@ -18,6 +18,7 @@
 extern void net_pkt_init(void);
 extern void net_if_init(struct k_sem *startup_sync);
 extern void net_if_post_init(void);
+extern void net_if_carrier_down(struct net_if *iface);
 extern void net_context_init(void);
 enum net_verdict net_ipv4_process_pkt(struct net_pkt *pkt);
 enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt);

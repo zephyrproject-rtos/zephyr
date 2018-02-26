@@ -15,6 +15,11 @@
 #include <string.h>
 #endif
 
+#define K_NUM_PRIORITIES \
+	(CONFIG_NUM_COOP_PRIORITIES + CONFIG_NUM_PREEMPT_PRIORITIES + 1)
+
+#define K_NUM_PRIO_BITMAPS ((K_NUM_PRIORITIES + 31) >> 5)
+
 /*
  * Bitmask definitions for the struct k_thread.thread_state field.
  *
@@ -61,12 +66,13 @@
 #if !defined(_ASMLANGUAGE)
 
 struct _ready_q {
-
+#ifndef CONFIG_SMP
 	/* always contains next thread to run: cannot be NULL */
 	struct k_thread *cache;
 
 	/* bitmap of priorities that contain at least one ready thread */
 	u32_t prio_bmap[K_NUM_PRIO_BITMAPS];
+#endif
 
 	/* ready queues, one per priority */
 	sys_dlist_t q[K_NUM_PRIORITIES];
@@ -74,8 +80,7 @@ struct _ready_q {
 
 typedef struct _ready_q _ready_q_t;
 
-struct _kernel {
-
+struct _cpu {
 	/* nested interrupt count */
 	u32_t nested;
 
@@ -84,6 +89,32 @@ struct _kernel {
 
 	/* currently scheduled thread */
 	struct k_thread *current;
+
+	int id;
+};
+
+typedef struct _cpu _cpu_t;
+
+struct _kernel {
+	/* For compatibility with pre-SMP code, union the first CPU
+	 * record with the legacy fields so code can continue to use
+	 * the "_kernel.XXX" expressions and assembly offsets.
+	 */
+	union {
+		struct _cpu cpus[CONFIG_MP_NUM_CPUS];
+#ifndef CONFIG_SMP
+		struct {
+			/* nested interrupt count */
+			u32_t nested;
+
+			/* interrupt stack pointer base */
+			char *irq_stack;
+
+			/* currently scheduled thread */
+			struct k_thread *current;
+		};
+#endif
+	};
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 	/* queue of timeouts */
@@ -126,12 +157,28 @@ typedef struct _kernel _kernel_t;
 
 extern struct _kernel _kernel;
 
+#ifdef CONFIG_SMP
+#define _current (_arch_curr_cpu()->current)
+#else
 #define _current _kernel.current
+#endif
+
 #define _ready_q _kernel.ready_q
 #define _timeout_q _kernel.timeout_q
 #define _threads _kernel.threads
 
 #include <kernel_arch_func.h>
+
+#if CONFIG_USE_SWITCH
+/* This is a arch function traditionally, but when the switch-based
+ * _Swap() is in use it's a simple inline provided by the kernel.
+ */
+static ALWAYS_INLINE void
+_set_thread_return_value(struct k_thread *thread, unsigned int value)
+{
+	thread->swap_retval = value;
+}
+#endif
 
 static ALWAYS_INLINE void
 _set_thread_return_value_with_data(struct k_thread *thread,

@@ -92,11 +92,14 @@ To build an example application follow these steps:
 
 
       # On Linux/macOS
-      export ZEPHYR_GCC_VARIANT=zephyr
+      export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
       export ZEPHYR_SDK_INSTALL_DIR=<sdk installation directory>
       # On Windows
-      set ZEPHYR_GCC_VARIANT=zephyr
+      set ZEPHYR_TOOLCHAIN_VARIANT=zephyr
       set ZEPHYR_SDK_INSTALL_DIR=<sdk installation directory>
+
+   .. note:: In previous releases of Zephyr, the ``ZEPHYR_TOOLCHAIN_VARIANT``
+             variable was called ``ZEPHYR_GCC_VARIANT``.
 
 #. Navigate to the main project directory:
 
@@ -111,7 +114,7 @@ To build an example application follow these steps:
       # On Linux/macOS
       source zephyr-env.sh
       # On Windows
-      set ZEPHYR_BASE=%cd%
+      zephyr-env.cmd
 
 #. Build the :ref:`hello_world` example for the `arduino_101` board, enter:
 
@@ -182,15 +185,15 @@ must be installed.
    .. code-block:: console
 
       # On Linux/macOS
-      unset ZEPHYR_GCC_VARIANT
+      unset ZEPHYR_TOOLCHAIN_VARIANT
       unset ZEPHYR_SDK_INSTALL_DIR
       cd <zephyr git clone location>
       source zephyr-env.sh
       # On Windows
-      set ZEPHYR_GCC_VARIANT=
+      set ZEPHYR_TOOLCHAIN_VARIANT=
       set ZEPHYR_SDK_INSTALL_DIR=
       cd <zephyr git clone location>
-      set ZEPHYR_BASE=%cd%
+      zephyr-env.cmd
 
 
 #. On UNIX platforms, Build Kconfig in :file:`$ZEPHYR_BASE/build` and add
@@ -234,10 +237,10 @@ without the Zephyr SDK`_ for details.
 
       # On Linux/macOS
       export GCCARMEMB_TOOLCHAIN_PATH="~/gcc-arm-none-eabi-5_3-2016q1/"
-      export ZEPHYR_GCC_VARIANT=gccarmemb
+      export ZEPHYR_TOOLCHAIN_VARIANT=gccarmemb
       # On Windows
       set GCCARMEMB_TOOLCHAIN_PATH="%userprofile%\gcc-arm-none-eabi-5_3-2016q1\"
-      set ZEPHYR_GCC_VARIANT=gccarmemb
+      set ZEPHYR_TOOLCHAIN_VARIANT=gccarmemb
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world

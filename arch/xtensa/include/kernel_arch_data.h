@@ -48,15 +48,16 @@ extern "C" {
 typedef struct __esf __esf_t;
 
 struct _kernel_arch {
-#if defined(CONFIG_DEBUG_INFO)
-	NANO_ISF *isf;    /* ptr to interrupt stack frame */
-#endif
 };
 
 typedef struct _kernel_arch _kernel_arch_t;
 
 #endif /*! _ASMLANGUAGE && ! __ASSEMBLER__ */
 
+#ifdef CONFIG_USE_SWITCH
+void xtensa_switch(void *switch_to, void **switched_from);
+#define _arch_switch xtensa_switch
+#endif
 
 /* stacks */
 #define STACK_ROUND_UP(x) ROUND_UP(x, STACK_ALIGN_SIZE)

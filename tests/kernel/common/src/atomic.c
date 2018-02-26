@@ -7,7 +7,7 @@
 #include <ztest.h>
 #include <atomic.h>
 
-void atomic_test(void)
+void test_atomic(void)
 {
 	int i;
 

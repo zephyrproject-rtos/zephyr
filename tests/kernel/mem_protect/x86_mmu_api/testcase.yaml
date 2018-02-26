@@ -1,4 +1,4 @@
 tests:
-  test:
+  kernel.memory_protection.mmu:
     platform_whitelist: qemu_x86 arduino_101
     tags: kernel

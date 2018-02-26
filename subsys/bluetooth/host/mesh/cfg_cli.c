@@ -508,7 +508,7 @@ static int cli_wait(void *param, u32_t op)
 int bt_mesh_cfg_comp_data_get(u16_t net_idx, u16_t addr, u8_t page,
 			      u8_t *status, struct net_buf_simple *comp)
 {
-	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 1 + 4);
+	NET_BUF_SIMPLE_DEFINE(msg, 2 + 1 + 4);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net_idx,
 		.app_idx = BT_MESH_KEY_DEV,
@@ -526,10 +526,10 @@ int bt_mesh_cfg_comp_data_get(u16_t net_idx, u16_t addr, u8_t page,
 		return err;
 	}
 
-	bt_mesh_model_msg_init(msg, OP_DEV_COMP_DATA_GET);
-	net_buf_simple_add_u8(msg, page);
+	bt_mesh_model_msg_init(&msg, OP_DEV_COMP_DATA_GET);
+	net_buf_simple_add_u8(&msg, page);
 
-	err = bt_mesh_model_send(cli->model, &ctx, msg, NULL, NULL);
+	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		BT_ERR("model_send() failed (err %d)", err);
 		return err;
@@ -541,7 +541,7 @@ int bt_mesh_cfg_comp_data_get(u16_t net_idx, u16_t addr, u8_t page,
 static int get_state_u8(u16_t net_idx, u16_t addr, u32_t op, u32_t rsp,
 			u8_t *val)
 {
-	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 0 + 4);
+	NET_BUF_SIMPLE_DEFINE(msg, 2 + 0 + 4);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net_idx,
 		.app_idx = BT_MESH_KEY_DEV,
@@ -555,9 +555,9 @@ static int get_state_u8(u16_t net_idx, u16_t addr, u32_t op, u32_t rsp,
 		return err;
 	}
 
-	bt_mesh_model_msg_init(msg, op);
+	bt_mesh_model_msg_init(&msg, op);
 
-	err = bt_mesh_model_send(cli->model, &ctx, msg, NULL, NULL);
+	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		BT_ERR("model_send() failed (err %d)", err);
 		return err;
@@ -569,7 +569,7 @@ static int get_state_u8(u16_t net_idx, u16_t addr, u32_t op, u32_t rsp,
 static int set_state_u8(u16_t net_idx, u16_t addr, u32_t op, u32_t rsp,
 			u8_t new_val, u8_t *val)
 {
-	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 1 + 4);
+	NET_BUF_SIMPLE_DEFINE(msg, 2 + 1 + 4);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net_idx,
 		.app_idx = BT_MESH_KEY_DEV,
@@ -583,10 +583,10 @@ static int set_state_u8(u16_t net_idx, u16_t addr, u32_t op, u32_t rsp,
 		return err;
 	}
 
-	bt_mesh_model_msg_init(msg, op);
-	net_buf_simple_add_u8(msg, new_val);
+	bt_mesh_model_msg_init(&msg, op);
+	net_buf_simple_add_u8(&msg, new_val);
 
-	err = bt_mesh_model_send(cli->model, &ctx, msg, NULL, NULL);
+	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		BT_ERR("model_send() failed (err %d)", err);
 		return err;
@@ -647,7 +647,7 @@ int bt_mesh_cfg_gatt_proxy_set(u16_t net_idx, u16_t addr, u8_t val,
 int bt_mesh_cfg_relay_get(u16_t net_idx, u16_t addr, u8_t *status,
 			  u8_t *transmit)
 {
-	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 0 + 4);
+	NET_BUF_SIMPLE_DEFINE(msg, 2 + 0 + 4);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net_idx,
 		.app_idx = BT_MESH_KEY_DEV,
@@ -665,9 +665,9 @@ int bt_mesh_cfg_relay_get(u16_t net_idx, u16_t addr, u8_t *status,
 		return err;
 	}
 
-	bt_mesh_model_msg_init(msg, OP_RELAY_GET);
+	bt_mesh_model_msg_init(&msg, OP_RELAY_GET);
 
-	err = bt_mesh_model_send(cli->model, &ctx, msg, NULL, NULL);
+	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		BT_ERR("model_send() failed (err %d)", err);
 		return err;
@@ -679,7 +679,7 @@ int bt_mesh_cfg_relay_get(u16_t net_idx, u16_t addr, u8_t *status,
 int bt_mesh_cfg_relay_set(u16_t net_idx, u16_t addr, u8_t new_relay,
 			  u8_t new_transmit, u8_t *status, u8_t *transmit)
 {
-	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 2 + 4);
+	NET_BUF_SIMPLE_DEFINE(msg, 2 + 2 + 4);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net_idx,
 		.app_idx = BT_MESH_KEY_DEV,
@@ -697,11 +697,11 @@ int bt_mesh_cfg_relay_set(u16_t net_idx, u16_t addr, u8_t new_relay,
 		return err;
 	}
 
-	bt_mesh_model_msg_init(msg, OP_RELAY_SET);
-	net_buf_simple_add_u8(msg, new_relay);
-	net_buf_simple_add_u8(msg, new_transmit);
+	bt_mesh_model_msg_init(&msg, OP_RELAY_SET);
+	net_buf_simple_add_u8(&msg, new_relay);
+	net_buf_simple_add_u8(&msg, new_transmit);
 
-	err = bt_mesh_model_send(cli->model, &ctx, msg, NULL, NULL);
+	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		BT_ERR("model_send() failed (err %d)", err);
 		return err;
@@ -713,7 +713,7 @@ int bt_mesh_cfg_relay_set(u16_t net_idx, u16_t addr, u8_t new_relay,
 int bt_mesh_cfg_net_key_add(u16_t net_idx, u16_t addr, u16_t key_net_idx,
 			    const u8_t net_key[16], u8_t *status)
 {
-	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 18 + 4);
+	NET_BUF_SIMPLE_DEFINE(msg, 2 + 18 + 4);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net_idx,
 		.app_idx = BT_MESH_KEY_DEV,
@@ -731,11 +731,11 @@ int bt_mesh_cfg_net_key_add(u16_t net_idx, u16_t addr, u16_t key_net_idx,
 		return err;
 	}
 
-	bt_mesh_model_msg_init(msg, OP_NET_KEY_ADD);
-	net_buf_simple_add_le16(msg, key_net_idx);
-	net_buf_simple_add_mem(msg, net_key, 16);
+	bt_mesh_model_msg_init(&msg, OP_NET_KEY_ADD);
+	net_buf_simple_add_le16(&msg, key_net_idx);
+	net_buf_simple_add_mem(&msg, net_key, 16);
 
-	err = bt_mesh_model_send(cli->model, &ctx, msg, NULL, NULL);
+	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		BT_ERR("model_send() failed (err %d)", err);
 		return err;
@@ -752,7 +752,7 @@ int bt_mesh_cfg_app_key_add(u16_t net_idx, u16_t addr, u16_t key_net_idx,
 			    u16_t key_app_idx, const u8_t app_key[16],
 			    u8_t *status)
 {
-	struct net_buf_simple *msg = NET_BUF_SIMPLE(1 + 19 + 4);
+	NET_BUF_SIMPLE_DEFINE(msg, 1 + 19 + 4);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net_idx,
 		.app_idx = BT_MESH_KEY_DEV,
@@ -771,11 +771,11 @@ int bt_mesh_cfg_app_key_add(u16_t net_idx, u16_t addr, u16_t key_net_idx,
 		return err;
 	}
 
-	bt_mesh_model_msg_init(msg, OP_APP_KEY_ADD);
-	key_idx_pack(msg, key_net_idx, key_app_idx);
-	net_buf_simple_add_mem(msg, app_key, 16);
+	bt_mesh_model_msg_init(&msg, OP_APP_KEY_ADD);
+	key_idx_pack(&msg, key_net_idx, key_app_idx);
+	net_buf_simple_add_mem(&msg, app_key, 16);
 
-	err = bt_mesh_model_send(cli->model, &ctx, msg, NULL, NULL);
+	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		BT_ERR("model_send() failed (err %d)", err);
 		return err;
@@ -792,7 +792,7 @@ static int mod_app_bind(u16_t net_idx, u16_t addr, u16_t elem_addr,
 			u16_t mod_app_idx, u16_t mod_id, u16_t cid,
 			u8_t *status)
 {
-	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 8 + 4);
+	NET_BUF_SIMPLE_DEFINE(msg, 2 + 8 + 4);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net_idx,
 		.app_idx = BT_MESH_KEY_DEV,
@@ -813,17 +813,17 @@ static int mod_app_bind(u16_t net_idx, u16_t addr, u16_t elem_addr,
 		return err;
 	}
 
-	bt_mesh_model_msg_init(msg, OP_MOD_APP_BIND);
-	net_buf_simple_add_le16(msg, elem_addr);
-	net_buf_simple_add_le16(msg, mod_app_idx);
+	bt_mesh_model_msg_init(&msg, OP_MOD_APP_BIND);
+	net_buf_simple_add_le16(&msg, elem_addr);
+	net_buf_simple_add_le16(&msg, mod_app_idx);
 
 	if (cid != CID_NVAL) {
-		net_buf_simple_add_le16(msg, cid);
+		net_buf_simple_add_le16(&msg, cid);
 	}
 
-	net_buf_simple_add_le16(msg, mod_id);
+	net_buf_simple_add_le16(&msg, mod_id);
 
-	err = bt_mesh_model_send(cli->model, &ctx, msg, NULL, NULL);
+	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		BT_ERR("model_send() failed (err %d)", err);
 		return err;
@@ -858,7 +858,7 @@ int bt_mesh_cfg_mod_app_bind_vnd(u16_t net_idx, u16_t addr, u16_t elem_addr,
 static int mod_sub(u32_t op, u16_t net_idx, u16_t addr, u16_t elem_addr,
 		   u16_t sub_addr, u16_t mod_id, u16_t cid, u8_t *status)
 {
-	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 8 + 4);
+	NET_BUF_SIMPLE_DEFINE(msg, 2 + 8 + 4);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net_idx,
 		.app_idx = BT_MESH_KEY_DEV,
@@ -879,17 +879,17 @@ static int mod_sub(u32_t op, u16_t net_idx, u16_t addr, u16_t elem_addr,
 		return err;
 	}
 
-	bt_mesh_model_msg_init(msg, op);
-	net_buf_simple_add_le16(msg, elem_addr);
-	net_buf_simple_add_le16(msg, sub_addr);
+	bt_mesh_model_msg_init(&msg, op);
+	net_buf_simple_add_le16(&msg, elem_addr);
+	net_buf_simple_add_le16(&msg, sub_addr);
 
 	if (cid != CID_NVAL) {
-		net_buf_simple_add_le16(msg, cid);
+		net_buf_simple_add_le16(&msg, cid);
 	}
 
-	net_buf_simple_add_le16(msg, mod_id);
+	net_buf_simple_add_le16(&msg, mod_id);
 
-	err = bt_mesh_model_send(cli->model, &ctx, msg, NULL, NULL);
+	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		BT_ERR("model_send() failed (err %d)", err);
 		return err;
@@ -963,7 +963,7 @@ static int mod_sub_va(u32_t op, u16_t net_idx, u16_t addr, u16_t elem_addr,
 		      const u8_t label[16], u16_t mod_id, u16_t cid,
 		      u16_t *virt_addr, u8_t *status)
 {
-	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 22 + 4);
+	NET_BUF_SIMPLE_DEFINE(msg, 2 + 22 + 4);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net_idx,
 		.app_idx = BT_MESH_KEY_DEV,
@@ -988,17 +988,17 @@ static int mod_sub_va(u32_t op, u16_t net_idx, u16_t addr, u16_t elem_addr,
 	       net_idx, addr, elem_addr, label);
 	BT_DBG("mod_id 0x%04x cid 0x%04x", mod_id, cid);
 
-	bt_mesh_model_msg_init(msg, op);
-	net_buf_simple_add_le16(msg, elem_addr);
-	net_buf_simple_add_mem(msg, label, 16);
+	bt_mesh_model_msg_init(&msg, op);
+	net_buf_simple_add_le16(&msg, elem_addr);
+	net_buf_simple_add_mem(&msg, label, 16);
 
 	if (cid != CID_NVAL) {
-		net_buf_simple_add_le16(msg, cid);
+		net_buf_simple_add_le16(&msg, cid);
 	}
 
-	net_buf_simple_add_le16(msg, mod_id);
+	net_buf_simple_add_le16(&msg, mod_id);
 
-	err = bt_mesh_model_send(cli->model, &ctx, msg, NULL, NULL);
+	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		BT_ERR("model_send() failed (err %d)", err);
 		return err;
@@ -1077,7 +1077,7 @@ static int mod_pub_get(u16_t net_idx, u16_t addr, u16_t elem_addr,
 		       u16_t mod_id, u16_t cid,
 		       struct bt_mesh_cfg_mod_pub *pub, u8_t *status)
 {
-	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 6 + 4);
+	NET_BUF_SIMPLE_DEFINE(msg, 2 + 6 + 4);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net_idx,
 		.app_idx = BT_MESH_KEY_DEV,
@@ -1098,17 +1098,17 @@ static int mod_pub_get(u16_t net_idx, u16_t addr, u16_t elem_addr,
 		return err;
 	}
 
-	bt_mesh_model_msg_init(msg, OP_MOD_PUB_GET);
+	bt_mesh_model_msg_init(&msg, OP_MOD_PUB_GET);
 
-	net_buf_simple_add_le16(msg, elem_addr);
+	net_buf_simple_add_le16(&msg, elem_addr);
 
 	if (cid != CID_NVAL) {
-		net_buf_simple_add_le16(msg, cid);
+		net_buf_simple_add_le16(&msg, cid);
 	}
 
-	net_buf_simple_add_le16(msg, mod_id);
+	net_buf_simple_add_le16(&msg, mod_id);
 
-	err = bt_mesh_model_send(cli->model, &ctx, msg, NULL, NULL);
+	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		BT_ERR("model_send() failed (err %d)", err);
 		return err;
@@ -1144,7 +1144,7 @@ static int mod_pub_set(u16_t net_idx, u16_t addr, u16_t elem_addr,
 		       u16_t mod_id, u16_t cid,
 		       struct bt_mesh_cfg_mod_pub *pub, u8_t *status)
 {
-	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 13 + 4);
+	NET_BUF_SIMPLE_DEFINE(msg, 2 + 13 + 4);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net_idx,
 		.app_idx = BT_MESH_KEY_DEV,
@@ -1165,22 +1165,22 @@ static int mod_pub_set(u16_t net_idx, u16_t addr, u16_t elem_addr,
 		return err;
 	}
 
-	bt_mesh_model_msg_init(msg, OP_MOD_PUB_SET);
+	bt_mesh_model_msg_init(&msg, OP_MOD_PUB_SET);
 
-	net_buf_simple_add_le16(msg, elem_addr);
-	net_buf_simple_add_le16(msg, pub->addr);
-	net_buf_simple_add_le16(msg, (pub->app_idx & (pub->cred_flag << 12)));
-	net_buf_simple_add_u8(msg, pub->ttl);
-	net_buf_simple_add_u8(msg, pub->period);
-	net_buf_simple_add_u8(msg, pub->transmit);
+	net_buf_simple_add_le16(&msg, elem_addr);
+	net_buf_simple_add_le16(&msg, pub->addr);
+	net_buf_simple_add_le16(&msg, (pub->app_idx & (pub->cred_flag << 12)));
+	net_buf_simple_add_u8(&msg, pub->ttl);
+	net_buf_simple_add_u8(&msg, pub->period);
+	net_buf_simple_add_u8(&msg, pub->transmit);
 
 	if (cid != CID_NVAL) {
-		net_buf_simple_add_le16(msg, cid);
+		net_buf_simple_add_le16(&msg, cid);
 	}
 
-	net_buf_simple_add_le16(msg, mod_id);
+	net_buf_simple_add_le16(&msg, mod_id);
 
-	err = bt_mesh_model_send(cli->model, &ctx, msg, NULL, NULL);
+	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		BT_ERR("model_send() failed (err %d)", err);
 		return err;
@@ -1215,7 +1215,7 @@ int bt_mesh_cfg_mod_pub_set_vnd(u16_t net_idx, u16_t addr, u16_t elem_addr,
 int bt_mesh_cfg_hb_sub_set(u16_t net_idx, u16_t addr,
 			   struct bt_mesh_cfg_hb_sub *sub, u8_t *status)
 {
-	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 5 + 4);
+	NET_BUF_SIMPLE_DEFINE(msg, 2 + 5 + 4);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net_idx,
 		.app_idx = BT_MESH_KEY_DEV,
@@ -1233,12 +1233,12 @@ int bt_mesh_cfg_hb_sub_set(u16_t net_idx, u16_t addr,
 		return err;
 	}
 
-	bt_mesh_model_msg_init(msg, OP_HEARTBEAT_SUB_SET);
-	net_buf_simple_add_le16(msg, sub->src);
-	net_buf_simple_add_le16(msg, sub->dst);
-	net_buf_simple_add_u8(msg, sub->period);
+	bt_mesh_model_msg_init(&msg, OP_HEARTBEAT_SUB_SET);
+	net_buf_simple_add_le16(&msg, sub->src);
+	net_buf_simple_add_le16(&msg, sub->dst);
+	net_buf_simple_add_u8(&msg, sub->period);
 
-	err = bt_mesh_model_send(cli->model, &ctx, msg, NULL, NULL);
+	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		BT_ERR("model_send() failed (err %d)", err);
 		return err;
@@ -1254,7 +1254,7 @@ int bt_mesh_cfg_hb_sub_set(u16_t net_idx, u16_t addr,
 int bt_mesh_cfg_hb_sub_get(u16_t net_idx, u16_t addr,
 			   struct bt_mesh_cfg_hb_sub *sub, u8_t *status)
 {
-	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 0 + 4);
+	NET_BUF_SIMPLE_DEFINE(msg, 2 + 0 + 4);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net_idx,
 		.app_idx = BT_MESH_KEY_DEV,
@@ -1272,9 +1272,9 @@ int bt_mesh_cfg_hb_sub_get(u16_t net_idx, u16_t addr,
 		return err;
 	}
 
-	bt_mesh_model_msg_init(msg, OP_HEARTBEAT_SUB_GET);
+	bt_mesh_model_msg_init(&msg, OP_HEARTBEAT_SUB_GET);
 
-	err = bt_mesh_model_send(cli->model, &ctx, msg, NULL, NULL);
+	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		BT_ERR("model_send() failed (err %d)", err);
 		return err;
@@ -1290,7 +1290,7 @@ int bt_mesh_cfg_hb_sub_get(u16_t net_idx, u16_t addr,
 int bt_mesh_cfg_hb_pub_set(u16_t net_idx, u16_t addr,
 			   const struct bt_mesh_cfg_hb_pub *pub, u8_t *status)
 {
-	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 9 + 4);
+	NET_BUF_SIMPLE_DEFINE(msg, 2 + 9 + 4);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net_idx,
 		.app_idx = BT_MESH_KEY_DEV,
@@ -1307,15 +1307,15 @@ int bt_mesh_cfg_hb_pub_set(u16_t net_idx, u16_t addr,
 		return err;
 	}
 
-	bt_mesh_model_msg_init(msg, OP_HEARTBEAT_PUB_SET);
-	net_buf_simple_add_le16(msg, pub->dst);
-	net_buf_simple_add_u8(msg, pub->count);
-	net_buf_simple_add_u8(msg, pub->period);
-	net_buf_simple_add_u8(msg, pub->ttl);
-	net_buf_simple_add_le16(msg, pub->feat);
-	net_buf_simple_add_le16(msg, pub->net_idx);
+	bt_mesh_model_msg_init(&msg, OP_HEARTBEAT_PUB_SET);
+	net_buf_simple_add_le16(&msg, pub->dst);
+	net_buf_simple_add_u8(&msg, pub->count);
+	net_buf_simple_add_u8(&msg, pub->period);
+	net_buf_simple_add_u8(&msg, pub->ttl);
+	net_buf_simple_add_le16(&msg, pub->feat);
+	net_buf_simple_add_le16(&msg, pub->net_idx);
 
-	err = bt_mesh_model_send(cli->model, &ctx, msg, NULL, NULL);
+	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		BT_ERR("model_send() failed (err %d)", err);
 		return err;
@@ -1331,7 +1331,7 @@ int bt_mesh_cfg_hb_pub_set(u16_t net_idx, u16_t addr,
 int bt_mesh_cfg_hb_pub_get(u16_t net_idx, u16_t addr,
 			   struct bt_mesh_cfg_hb_pub *pub, u8_t *status)
 {
-	struct net_buf_simple *msg = NET_BUF_SIMPLE(2 + 0 + 4);
+	NET_BUF_SIMPLE_DEFINE(msg, 2 + 0 + 4);
 	struct bt_mesh_msg_ctx ctx = {
 		.net_idx = net_idx,
 		.app_idx = BT_MESH_KEY_DEV,
@@ -1349,9 +1349,9 @@ int bt_mesh_cfg_hb_pub_get(u16_t net_idx, u16_t addr,
 		return err;
 	}
 
-	bt_mesh_model_msg_init(msg, OP_HEARTBEAT_PUB_GET);
+	bt_mesh_model_msg_init(&msg, OP_HEARTBEAT_PUB_GET);
 
-	err = bt_mesh_model_send(cli->model, &ctx, msg, NULL, NULL);
+	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		BT_ERR("model_send() failed (err %d)", err);
 		return err;

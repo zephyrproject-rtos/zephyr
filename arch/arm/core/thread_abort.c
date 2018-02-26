@@ -21,6 +21,7 @@
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <ksched.h>
+#include <kswap.h>
 #include <wait_q.h>
 #include <misc/__assert.h>
 

@@ -11,9 +11,9 @@ menuconfig NET_LOG
 	default n
 	select SYS_LOG
 	help
-	Enable logging in various parts of the network stack.
-	Specific debugging options to other sub-menus will be unlocked
-	as well (IPv6, IPv4, ...).
+	  Enable logging in various parts of the network stack.
+	  Specific debugging options to other sub-menus will be unlocked
+	  as well (IPv6, IPv4, ...).
 
 if NET_LOG
 
@@ -56,72 +56,72 @@ config NET_LOG_GLOBAL
 	select NET_DEBUG_MGMT_EVENT if NET_MGMT
 	select NET_DEBUG_MGMT_EVENT_STACK if NET_MGMT_EVENT
 	help
-	By default, logging will apply only on enabled CONFIG_NET_DEBUG_*
-	options, on which CONFIG_SYS_LOG_NET_LEVEL would be applied.
-	However, if you want all the network stack logging enabled at once,
-	use this option. Beware logging takes a lot of ROM/RAM and kills
-	execution timing so it can affect your use case.
+	  By default, logging will apply only on enabled CONFIG_NET_DEBUG_*
+	  options, on which CONFIG_SYS_LOG_NET_LEVEL would be applied.
+	  However, if you want all the network stack logging enabled at once,
+	  use this option. Beware logging takes a lot of ROM/RAM and kills
+	  execution timing so it can affect your use case.
 
 config NET_DEBUG_CORE
 	bool "Debug core IP stack"
 	default n
 	help
-	Enables core network stack code part to output debug messages
+	  Enables core network stack code part to output debug messages
 
 config NET_DEBUG_IF
 	bool "Debug network interface code"
 	default n
 	help
-	Enables network interface code part to output debug messages
+	  Enables network interface code part to output debug messages
 
 config NET_DEBUG_UTILS
 	bool "Debug utility functions in IP stack"
 	default n
 	help
-	Enables utility functions to output debug messages
+	  Enables utility functions to output debug messages
 
 config NET_DEBUG_CONTEXT
 	bool "Debug network context allocation"
 	default n
 	help
-	Enables printing of network context allocations and frees.
+	  Enables printing of network context allocations and frees.
 
 config NET_DEBUG_NET_PKT
 	bool "Debug network packet and buffer allocation"
 	default n
 	select NET_BUF_POOL_USAGE
 	help
-	Enables collection of network packet and buffer allocations and frees.
+	  Enables collection of network packet and buffer allocations and frees.
 
 config NET_DEBUG_NET_PKT_ALL
 	bool "Debug network packet and buffer individual allocation"
 	default n
 	depends on NET_DEBUG_NET_PKT
 	help
-	Enables printing of network packet and buffer allocations and frees for
-	each allocation. This can produce lot of output so it is disabled by
-	default.
+	  Enables printing of network packet and buffer allocations and frees for
+	  each allocation. This can produce lot of output so it is disabled by
+	  default.
 
 config NET_DEBUG_NET_PKT_EXTERNALS
 	int "How many external network packet allocations"
 	default 0
 	depends on NET_DEBUG_NET_PKT
 	help
-	How many external net_pkt objects are there in user specific pools.
-	This value is used when allocating space for tracking the
-	memory allocations.
+	  How many external net_pkt objects are there in user specific pools.
+	  This value is used when allocating space for tracking the
+	  memory allocations.
 
 config NET_DEBUG_CONN
 	bool "Debug connection handling"
 	default n
 	help
-	Enables connection debug messages
+	  Enables connection debug messages
 
 config NET_DEBUG_ROUTE
 	bool "Debug route management"
 	depends on NET_ROUTE
 	default n
 	help
-	Enables routing engine debug messages
+	  Enables routing engine debug messages
 
 endif # NET_LOG

@@ -1,0 +1,45 @@
+#
+# Copyright (c) 2017, I-SENSE group of ICCS
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: STM32 OTGFS
+id: st,stm32-otgfs
+version: 0.1
+
+description: >
+    This binding gives a base representation of the STM32 OTGFS controller
+
+inherits:
+    !include usb-ep.yaml
+
+properties:
+    compatible:
+      constraint: "st,stm32-otgfs"
+
+    reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+    interrupts:
+      type: array
+      category: required
+      description: required interrupts
+      generation: define
+
+    interrupt-names:
+      type: stringlist
+      category: optional
+      description: readable string describing the interrupts
+      generation: define
+
+    ram-size:
+      type: int
+      category: required
+      description: Size of USB dedicated RAM. STM32 SOC's reference
+                   manual defines a shared FIFO size.
+      generation: define
+...

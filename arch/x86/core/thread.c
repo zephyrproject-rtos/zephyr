@@ -28,8 +28,7 @@
 /* Some configurations require that the stack/registers be adjusted before
  * _thread_entry. See discussion in swap.S for _x86_thread_entry_wrapper()
  */
-#if defined(CONFIG_GDB_INFO) || defined(CONFIG_DEBUG_INFO) || \
-	defined(CONFIG_X86_IAMCU)
+#if defined(CONFIG_X86_IAMCU)
 #define WRAPPER_REQUIRED
 #endif
 
@@ -135,9 +134,9 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 */
 	thread->callee_saved.esp = (unsigned long)initial_frame;
 
-#if (defined(CONFIG_FP_SHARING) || defined(CONFIG_GDB_INFO))
+#if defined(CONFIG_FP_SHARING)
 	thread->arch.excNestCount = 0;
-#endif /* CONFIG_FP_SHARING || CONFIG_GDB_INFO */
+#endif /* CONFIG_FP_SHARING */
 #ifdef CONFIG_THREAD_MONITOR
 	thread->entry = (struct __thread_entry *)&initial_frame->entry;
 	thread_monitor_init(thread);

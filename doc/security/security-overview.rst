@@ -119,8 +119,10 @@ The three major security measures currently implemented are:
    the near future.
 
 -  **Execution Protection** including thread separation, stack and
-   memory protection is currently not available in the upstream
-   Zephyr RTOS but is planned for future releases.
+   memory protection is currently available in the upstream
+   Zephyr RTOS starting with version 1.9.0 (stack protection).  Memory
+   protection and thread separation was added in version 1.10.0 for X86.
+   ARM and ARC support is targeted for version 1.11.0.
 
 These topics are discussed in more detail in the following subsections.
 
@@ -149,7 +151,7 @@ Zephyr kernel and all applications are compiled into a single static
 binary. System calls are implemented as function calls without requiring
 context switches. Static linking eliminates the potential for
 dynamically loading malicious code. Memory protection and task
-separation techniques are in scope for future releases.
+separation techniques are in scope starting with version 1.10.0.
 
 Quality Assurance
 =================

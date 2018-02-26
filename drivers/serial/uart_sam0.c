@@ -37,8 +37,17 @@ struct uart_sam0_dev_data {
 
 static void wait_synchronization(SercomUsart *const usart)
 {
+#if defined(SERCOM_USART_SYNCBUSY_MASK)
+	/* SYNCBUSY is a register */
 	while ((usart->SYNCBUSY.reg & SERCOM_USART_SYNCBUSY_MASK) != 0) {
 	}
+#elif defined(SERCOM_USART_STATUS_SYNCBUSY)
+	/* SYNCBUSY is a bit */
+	while ((usart->STATUS.reg & SERCOM_USART_STATUS_SYNCBUSY) != 0) {
+	}
+#else
+#error Unsupported device
+#endif
 }
 
 static int uart_sam0_set_baudrate(SercomUsart *const usart, u32_t baudrate,
@@ -84,8 +93,11 @@ static int uart_sam0_init(struct device *dev)
 	    cfg->pads |
 	    /* Internal clock */
 	    SERCOM_USART_CTRLA_MODE_USART_INT_CLK
+#if defined(SERCOM_USART_CTRLA_SAMPR)
 	    /* 16x oversampling with arithmetic baud rate generation */
-	    | SERCOM_USART_CTRLA_SAMPR(0) | SERCOM_USART_CTRLA_FORM(0) |
+	    | SERCOM_USART_CTRLA_SAMPR(0)
+#endif
+	    | SERCOM_USART_CTRLA_FORM(0) |
 	    SERCOM_USART_CTRLA_CPOL | SERCOM_USART_CTRLA_DORD;
 	wait_synchronization(usart);
 

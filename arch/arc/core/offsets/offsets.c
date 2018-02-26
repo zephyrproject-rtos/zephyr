@@ -79,6 +79,14 @@ GEN_OFFSET_SYM(_callee_saved_stack_t, r24);
 GEN_OFFSET_SYM(_callee_saved_stack_t, r25);
 GEN_OFFSET_SYM(_callee_saved_stack_t, r26);
 GEN_OFFSET_SYM(_callee_saved_stack_t, fp);
+#ifdef CONFIG_USERSPACE
+#ifdef CONFIG_ARC_HAS_SECURE
+GEN_OFFSET_SYM(_callee_saved_stack_t, kernel_sp);
+GEN_OFFSET_SYM(_callee_saved_stack_t, user_sp);
+#else
+GEN_OFFSET_SYM(_callee_saved_stack_t, user_sp);
+#endif
+#endif
 GEN_OFFSET_SYM(_callee_saved_stack_t, r30);
 #ifdef CONFIG_FP_SHARING
 GEN_OFFSET_SYM(_callee_saved_stack_t, r58);

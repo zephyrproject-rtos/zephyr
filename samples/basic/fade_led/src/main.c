@@ -32,6 +32,9 @@
 #elif defined(CONFIG_BOARD_HEXIWEAR_K64)
 #define PWM_DRIVER	GREEN_PWM_NAME
 #define PWM_CHANNEL	GREEN_PWM_CHANNEL
+#elif defined(CONFIG_SOC_ESP32)
+#define PWM_DRIVER CONFIG_PWM_LED_ESP32_DEV_NAME_0
+#define PWM_CHANNEL	21
 #else
 #error "Choose supported PWM driver"
 #endif

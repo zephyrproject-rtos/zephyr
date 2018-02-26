@@ -19,16 +19,6 @@ assert(toolchain_is_ok "The toolchain is unable to build a dummy C file. See CMa
 
 set(CMAKE_EXECUTABLE_SUFFIX .elf)
 
-set(SOC_NAME ${CONFIG_SOC})
-set(SOC_SERIES ${CONFIG_SOC_SERIES})
-set(SOC_FAMILY ${CONFIG_SOC_FAMILY})
-
-if("${SOC_SERIES}" STREQUAL "")
-  set(SOC_PATH ${SOC_NAME})
-else()
-  set(SOC_PATH ${SOC_FAMILY}/${SOC_SERIES})
-endif()
-
 if(NOT PROPERTY_LINKER_SCRIPT_DEFINES)
   set_property(GLOBAL PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES -D__GCC_LINKER_CMD__)
 endif()
@@ -234,7 +224,7 @@ else() # GCC assumed
     -Wno-unused-but-set-variable
     -fno-reorder-functions
     )
-  if(NOT ${ZEPHYR_GCC_VARIANT} STREQUAL "xcc")
+  if(NOT ${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "xcc")
     zephyr_cc_option(-fno-defer-pop)
   endif()
 endif()
@@ -524,10 +514,12 @@ endif() # CONFIG_APPLICATION_MEMORY
 # Declare MPU userspace dependencies before the linker scripts to make
 # sure the order of dependencies are met
 if(CONFIG_CPU_HAS_MPU AND CONFIG_USERSPACE)
-  if(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
+  if(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT AND CONFIG_APPLICATION_MEMORY)
     set(ALIGN_SIZING_DEP app_sizing_prebuilt linker_app_sizing_script)
   endif()
+  if(CONFIG_ARM)
   set(PRIV_STACK_DEP priv_stacks_prebuilt)
+  endif()
 endif()
 
 function(construct_add_custom_command_for_linker_pass linker_output_name output_variable)
@@ -887,7 +879,7 @@ configure_file(
 
 if(CONFIG_CPU_HAS_MPU AND CONFIG_USERSPACE)
 
-  if(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
+  if(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT AND CONFIG_APPLICATION_MEMORY)
 
     construct_add_custom_command_for_linker_pass(linker_app_sizing custom_command)
     add_custom_command(
@@ -928,6 +920,7 @@ if(CONFIG_CPU_HAS_MPU AND CONFIG_USERSPACE)
    )
   endif()
 
+if(CONFIG_ARM)
   construct_add_custom_command_for_linker_pass(linker_priv_stacks custom_command)
   add_custom_command(
     ${custom_command}
@@ -952,6 +945,7 @@ if(CONFIG_CPU_HAS_MPU AND CONFIG_USERSPACE)
   target_link_libraries(priv_stacks_prebuilt ${TOPT} ${PROJECT_BINARY_DIR}/linker_priv_stacks.cmd ${zephyr_lnk})
   set_property(TARGET   priv_stacks_prebuilt PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_priv_stacks.cmd)
   add_dependencies(     priv_stacks_prebuilt ${ALIGN_SIZING_DEP} linker_priv_stacks_script offsets)
+endif()
 
 endif()
 

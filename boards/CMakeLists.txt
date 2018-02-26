@@ -2,5 +2,9 @@
 # error if it is missing
 
 if(EXISTS ${BOARD_DIR}/CMakeLists.txt)
-  add_subdirectory(${BOARD_DIR})
+  if(BOARD_ROOT)
+    add_subdirectory(${BOARD_DIR} boards/${ARCH}/${BOARD})
+  else()
+    add_subdirectory(${BOARD_DIR})
+  endif()
 endif()

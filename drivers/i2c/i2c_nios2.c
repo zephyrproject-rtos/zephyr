@@ -106,7 +106,7 @@ static int i2c_nios2_transfer(struct device *dev, struct i2c_msg *msgs,
 		 * start successfully e.g., if the bus was busy
 		 */
 		if (status != ALT_AVALON_I2C_SUCCESS) {
-			SYS_LOG_ERR("i2c transfer error %d\n", status);
+			SYS_LOG_ERR("i2c transfer error %lu\n", status);
 			rc = -EIO;
 			goto i2c_transfer_err;
 		}
@@ -123,7 +123,7 @@ static int i2c_nios2_transfer(struct device *dev, struct i2c_msg *msgs,
 		}
 
 		if (timeout <= 0) {
-			SYS_LOG_ERR("i2c busy or timeout error %d\n", status);
+			SYS_LOG_ERR("i2c busy or timeout error %lu\n", status);
 			rc = -EIO;
 			goto i2c_transfer_err;
 		}

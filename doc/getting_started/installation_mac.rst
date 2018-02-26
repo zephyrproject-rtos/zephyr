@@ -237,7 +237,7 @@ and use the target location where the toolchain was installed, type:
 
 .. code-block:: console
 
-   export ZEPHYR_GCC_VARIANT=xtools
+   export ZEPHYR_TOOLCHAIN_VARIANT=xtools
    export XTOOLS_TOOLCHAIN_PATH=/Volumes/CrossToolNG/x-tools
 
 
@@ -248,7 +248,7 @@ variables in the file :file:`${HOME}/.zephyrrc`, for example:
 
    cat <<EOF > ~/.zephyrrc
    export XTOOLS_TOOLCHAIN_PATH=/Volumes/CrossToolNG/x-tools
-   export ZEPHYR_GCC_VARIANT=xtools
+   export ZEPHYR_TOOLCHAIN_VARIANT=xtools
    EOF
 
 .. _Homebrew site: http://brew.sh/

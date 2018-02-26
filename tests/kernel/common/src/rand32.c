@@ -24,7 +24,7 @@
  * @return N/A
  */
 
-void rand32_test(void)
+void test_rand32(void)
 {
 	u32_t rnd_values[N_VALUES];
 	int i;

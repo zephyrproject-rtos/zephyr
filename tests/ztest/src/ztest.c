@@ -152,8 +152,8 @@ out:
     #error "CONFIG_ZTEST_STACKSIZE must be a multiple of the stack alignment"
 #endif
 
-static K_THREAD_STACK_DEFINE(thread_stack, CONFIG_ZTEST_STACKSIZE +
-			     CONFIG_TEST_EXTRA_STACKSIZE);
+K_THREAD_STACK_DEFINE(ztest_thread_stack, CONFIG_ZTEST_STACKSIZE +
+		      CONFIG_TEST_EXTRA_STACKSIZE);
 
 static int test_result;
 __kernel static struct k_sem test_end_signal;
@@ -197,8 +197,8 @@ static int run_test(struct unit_test *test)
 	int ret = TC_PASS;
 
 	TC_START(test->name);
-	k_thread_create(&ztest_thread, thread_stack,
-			K_THREAD_STACK_SIZEOF(thread_stack),
+	k_thread_create(&ztest_thread, ztest_thread_stack,
+			K_THREAD_STACK_SIZEOF(ztest_thread_stack),
 			(k_thread_entry_t) test_cb, (struct unit_test *)test,
 			NULL, NULL, -1, test->thread_options | K_INHERIT_PERMS,
 			0);

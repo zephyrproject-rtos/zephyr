@@ -272,7 +272,7 @@ def extract_reg_prop(node_address, names, defs, def_label, div, post_label):
     address_cells = reduced['/']['props'].get('#address-cells')
     size_cells = reduced['/']['props'].get('#size-cells')
     address = ''
-    for comp in node_address.split('/')[1:]:
+    for comp in node_address.split('/')[1:-1]:
         address += '/' + comp
         address_cells = reduced[address]['props'].get(
             '#address-cells', address_cells)
@@ -869,11 +869,16 @@ def main():
         extract_reg_prop(chosen['zephyr,sram'], None,
                          defs, "CONFIG_SRAM", 1024, None)
 
+    if 'zephyr,ccm' in chosen:
+        extract_reg_prop(chosen['zephyr,ccm'], None,
+                         defs, "CONFIG_CCM", 1024, None)
+
     name_dict = {
             "CONFIG_UART_CONSOLE_ON_DEV_NAME": "zephyr,console",
             "CONFIG_BT_UART_ON_DEV_NAME": "zephyr,bt-uart",
             "CONFIG_UART_PIPE_ON_DEV_NAME": "zephyr,uart-pipe",
-            "CONFIG_BT_MONITOR_ON_DEV_NAME": "zephyr,bt-mon-uart"
+            "CONFIG_BT_MONITOR_ON_DEV_NAME": "zephyr,bt-mon-uart",
+            "CONFIG_UART_MCUMGR_ON_DEV_NAME": "zephyr,uart-mcumgr",
             }
 
     for k, v in name_dict.items():

@@ -534,22 +534,27 @@ struct coap_pending *coap_pending_next_to_expire(
 	return found;
 }
 
-#define LAST_TIMEOUT (2345 * 4)
+/* TODO: random generated initial ACK timeout
+ * ACK_TIMEOUT < INIT_ACK_TIMEOUT < ACK_TIMEOUT * ACK_RANDOM_FACTOR
+ * where ACK_TIMEOUT = 2 and ACK_RANDOM_FACTOR = 1.5 by default
+ * Ref: https://tools.ietf.org/html/rfc7252#section-4.8
+ */
+#define INIT_ACK_TIMEOUT	2345
 
 static s32_t next_timeout(s32_t previous)
 {
 	switch (previous) {
-	case 0:
-		return 2345;
-	case 2345:
-		return 2345 * 2;
-	case (2345 * 2):
-		return LAST_TIMEOUT;
-	case LAST_TIMEOUT:
-		return LAST_TIMEOUT;
+	case INIT_ACK_TIMEOUT:
+	case (INIT_ACK_TIMEOUT * 2):
+	case (INIT_ACK_TIMEOUT * 4):
+		return previous << 1;
+	case (INIT_ACK_TIMEOUT * 8):
+		/* equal value is returned to end retransmit */
+		return previous;
 	}
 
-	return 2345;
+	/* initial or unrecognized */
+	return INIT_ACK_TIMEOUT;
 }
 
 bool coap_pending_cycle(struct coap_pending *pending)

@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef TOOLCHAIN_GCC_H
+#define TOOLCHAIN_GCC_H
 /**
  * @file
  * @brief GCC toolchain abstraction
@@ -331,3 +333,5 @@ A##a:
 #define compiler_barrier() do { \
 	__asm__ __volatile__ ("" ::: "memory"); \
 } while ((0))
+
+#endif /* TOOLCHAIN_GCC_H */

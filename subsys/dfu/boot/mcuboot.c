@@ -5,6 +5,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <assert.h>
 #include <stddef.h>
 #include <errno.h>
 #include <string.h>
@@ -82,12 +83,86 @@ struct mcuboot_v1_raw_header {
 				  BOOT_MAX_ALIGN)
 #define MAGIC_OFFS(bank_offs) (bank_offs + FLASH_BANK_SIZE - BOOT_MAGIC_SZ)
 
-const u32_t boot_img_magic[4] = {
+static const u32_t boot_img_magic[4] = {
 	0xf395c277,
 	0x7fefd260,
 	0x0f505235,
 	0x8079b62c,
 };
+
+struct boot_swap_table {
+	/** For each field, a value of 0 means "any". */
+	u8_t magic_slot0;
+	u8_t magic_slot1;
+	u8_t image_ok_slot0;
+	u8_t image_ok_slot1;
+	u8_t copy_done_slot0;
+
+	u8_t swap_type;
+};
+
+/** Represents the management state of a single image slot. */
+struct boot_swap_state {
+	u8_t magic;  /* One of the BOOT_MAGIC_[...] values. */
+	u8_t copy_done;
+	u8_t image_ok;
+};
+
+/**
+ * This set of tables maps image trailer contents to swap operation type.
+ * When searching for a match, these tables must be iterated sequentially.
+ */
+static const struct boot_swap_table boot_swap_tables[] = {
+	{
+		/*          | slot-0     | slot-1     |
+		 *----------+------------+------------|
+		 *    magic | Any        | Good       |
+		 * image-ok | Any        | Unset      |
+		 * ---------+------------+------------+
+		 * swap: test                         |
+		 * -----------------------------------'
+		 */
+		.magic_slot0 =      0,
+		.magic_slot1 =      BOOT_MAGIC_GOOD,
+		.image_ok_slot0 =   0,
+		.image_ok_slot1 =   0xff,
+		.copy_done_slot0 =  0,
+		.swap_type =        BOOT_SWAP_TYPE_TEST,
+	},
+	{
+		/*          | slot-0     | slot-1     |
+		 *----------+------------+------------|
+		 *    magic | Any        | Good       |
+		 * image-ok | Any        | 0x01       |
+		 * ---------+------------+------------+
+		 * swap: permanent                    |
+		 * -----------------------------------'
+		 */
+		.magic_slot0 =      0,
+		.magic_slot1 =      BOOT_MAGIC_GOOD,
+		.image_ok_slot0 =   0,
+		.image_ok_slot1 =   0x01,
+		.copy_done_slot0 =  0,
+		.swap_type =        BOOT_SWAP_TYPE_PERM,
+	},
+	{
+		/*          | slot-0     | slot-1     |
+		 *----------+------------+------------|
+		 *    magic | Good       | Unset      |
+		 * image-ok | Unset      | Any        |
+		 * ---------+------------+------------+
+		 * swap: revert (test image running)  |
+		 * -----------------------------------'
+		 */
+		.magic_slot0 =      BOOT_MAGIC_GOOD,
+		.magic_slot1 =      BOOT_MAGIC_UNSET,
+		.image_ok_slot0 =   0xff,
+		.image_ok_slot1 =   0,
+		.copy_done_slot0 =  0x01,
+		.swap_type =        BOOT_SWAP_TYPE_REVERT,
+	},
+};
+#define BOOT_SWAP_TABLES_COUNT (ARRAY_SIZE(boot_swap_tables))
 
 static struct device *flash_dev;
 
@@ -104,7 +179,6 @@ static int boot_flag_offs(int flag, u32_t bank_offs, u32_t *offs)
 		return -ENOTSUP;
 	}
 }
-
 
 static int boot_flash_write(off_t offs, const void *data, size_t len)
 {
@@ -171,6 +245,11 @@ static int boot_image_ok_read(u32_t bank_offs)
 static int boot_image_ok_write(u32_t bank_offs)
 {
 	return boot_flag_write(BOOT_FLAG_IMAGE_OK, bank_offs);
+}
+
+static int boot_copy_done_read(u32_t bank_offs)
+{
+	return boot_flag_read(BOOT_FLAG_COPY_DONE, bank_offs);
 }
 
 static int boot_magic_write(u32_t bank_offs)
@@ -263,6 +342,107 @@ int boot_read_bank_header(u32_t bank_offset,
 	sem_ver->revision = v1_raw.version.revision;
 	sem_ver->build_num = v1_raw.version.build_num;
 	return 0;
+}
+
+static int boot_magic_code_check(const u32_t *magic)
+{
+	int i;
+
+	if (memcmp(magic, boot_img_magic, sizeof(boot_img_magic)) == 0) {
+		return BOOT_MAGIC_GOOD;
+	}
+
+	for (i = 0; i < ARRAY_SIZE(boot_img_magic); i++) {
+		if (magic[i] != 0xffffffff) {
+			return BOOT_MAGIC_BAD;
+		}
+	}
+
+	return BOOT_MAGIC_UNSET;
+}
+
+static int boot_magic_state_read(u32_t bank_offs)
+{
+	u32_t magic[4];
+	u32_t offs;
+	int rc;
+
+	offs = MAGIC_OFFS(bank_offs);
+	rc = flash_read(flash_dev, offs, magic, sizeof(magic));
+	if (rc != 0) {
+		return rc;
+	}
+
+	return boot_magic_code_check(magic);
+}
+
+static int boot_read_swap_state(u32_t bank_offs, struct boot_swap_state *state)
+{
+	int rc;
+
+	rc = boot_magic_state_read(bank_offs);
+	if (rc < 0) {
+		return rc;
+	}
+	state->magic = rc;
+
+	if (bank_offs != FLASH_AREA_IMAGE_SCRATCH_OFFSET) {
+		rc = boot_copy_done_read(bank_offs);
+		if (rc < 0) {
+			return rc;
+		}
+		state->copy_done = rc;
+	}
+
+	rc = boot_image_ok_read(bank_offs);
+	if (rc < 0) {
+		return rc;
+	}
+	state->image_ok = rc;
+
+	return 0;
+}
+
+int boot_swap_type(void)
+{
+	const struct boot_swap_table *table;
+	struct boot_swap_state state_slot0;
+	struct boot_swap_state state_slot1;
+	int rc;
+	int i;
+
+	rc = boot_read_swap_state(FLASH_BANK0_OFFSET, &state_slot0);
+	if (rc != 0) {
+		return rc;
+	}
+
+	rc = boot_read_swap_state(FLASH_BANK1_OFFSET, &state_slot1);
+	if (rc != 0) {
+		return rc;
+	}
+
+	for (i = 0; i < BOOT_SWAP_TABLES_COUNT; i++) {
+		table = boot_swap_tables + i;
+
+		if ((table->magic_slot0     == 0    ||
+		     table->magic_slot0     == state_slot0.magic)           &&
+		    (table->magic_slot1     == 0    ||
+		     table->magic_slot1     == state_slot1.magic)           &&
+		    (table->image_ok_slot0  == 0    ||
+		     table->image_ok_slot0  == state_slot0.image_ok)        &&
+		    (table->image_ok_slot1  == 0    ||
+		     table->image_ok_slot1  == state_slot1.image_ok)        &&
+		    (table->copy_done_slot0 == 0    ||
+		     table->copy_done_slot0 == state_slot0.copy_done)) {
+
+			assert(table->swap_type == BOOT_SWAP_TYPE_TEST ||
+			       table->swap_type == BOOT_SWAP_TYPE_PERM ||
+			       table->swap_type == BOOT_SWAP_TYPE_REVERT);
+			return table->swap_type;
+		}
+	}
+
+	return BOOT_SWAP_TYPE_NONE;
 }
 
 int boot_request_upgrade(int permanent)

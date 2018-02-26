@@ -36,6 +36,11 @@
 #include "rpl.h"
 #include "net_stats.h"
 
+/* Timeout value to be used when allocating net buffer during various
+ * neighbor discovery procedures.
+ */
+#define ND_NET_BUF_TIMEOUT MSEC(100)
+
 /* IPv6 wildcard and loopback address defined by RFC2553 */
 const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;
 const struct in6_addr in6addr_loopback = IN6ADDR_LOOPBACK_INIT;
@@ -461,6 +466,7 @@ struct net_nbr *net_ipv6_nbr_add(struct net_if *iface,
 				 enum net_ipv6_nbr_state state)
 {
 	struct net_nbr *nbr;
+	int ret;
 #if defined(CONFIG_NET_MGMT_EVENT_INFO)
 	struct net_event_ipv6_nbr info;
 #endif
@@ -500,7 +506,10 @@ struct net_nbr *net_ipv6_nbr_add(struct net_if *iface,
 		/* Send NS so that we can verify that the neighbor is
 		 * reachable.
 		 */
-		net_ipv6_send_ns(iface, NULL, NULL, NULL, addr, false);
+		ret = net_ipv6_send_ns(iface, NULL, NULL, NULL, addr, false);
+		if (ret < 0) {
+			NET_DBG("Cannot send NS (%d)", ret);
+		}
 	}
 
 	NET_DBG("[%d] nbr %p state %d router %d IPv6 %s ll %s iface %p",
@@ -961,6 +970,7 @@ struct net_pkt *net_ipv6_prepare_for_send(struct net_pkt *pkt)
 	struct in6_addr *nexthop = NULL;
 	struct net_if *iface = NULL;
 	struct net_nbr *nbr;
+	int ret;
 
 	NET_ASSERT(pkt && pkt->frags);
 
@@ -972,8 +982,6 @@ struct net_pkt *net_ipv6_prepare_for_send(struct net_pkt *pkt)
 		size_t pkt_len = net_pkt_get_len(pkt);
 
 		if (pkt_len > NET_IPV6_MTU) {
-			int ret;
-
 			ret = net_ipv6_send_fragmented_pkt(net_pkt_iface(pkt),
 							   pkt, pkt_len);
 			if (ret < 0) {
@@ -1125,20 +1133,21 @@ try_send:
 
 #if defined(CONFIG_NET_IPV6_ND)
 	/* We need to send NS and wait for NA before sending the packet. */
-	if (net_ipv6_send_ns(net_pkt_iface(pkt),
-			     pkt,
-			     &NET_IPV6_HDR(pkt)->src,
-			     NULL,
-			     nexthop,
-			     false) < 0) {
+	ret = net_ipv6_send_ns(net_pkt_iface(pkt), pkt,
+			       &NET_IPV6_HDR(pkt)->src, NULL,
+			       nexthop, false);
+	if (ret < 0) {
 		/* In case of an error, the NS send function will unref
 		 * the pkt.
 		 */
+		NET_DBG("Cannot send NS (%d)", ret);
 		return NULL;
 	}
 
 	NET_DBG("pkt %p (frag %p) will be sent later", pkt, pkt->frags);
 #else
+	ARG_UNUSED(ret);
+
 	NET_DBG("pkt %p (frag %p) cannot be sent, dropping it.", pkt,
 		pkt->frags);
 
@@ -1270,13 +1279,16 @@ int net_ipv6_send_na(struct net_if *iface, const struct in6_addr *src,
 	u8_t llao_len;
 
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, dst),
-				     K_FOREVER);
+				     ND_NET_BUF_TIMEOUT);
+	if (!pkt) {
+		return -ENOMEM;
+	}
 
-	NET_ASSERT_INFO(pkt, "Out of TX packets");
-
-	frag = net_pkt_get_frag(pkt, K_FOREVER);
-
-	NET_ASSERT_INFO(frag, "Out of DATA buffers");
+	frag = net_pkt_get_frag(pkt, ND_NET_BUF_TIMEOUT);
+	if (!frag) {
+		net_pkt_unref(pkt);
+		return -ENOMEM;
+	}
 
 	net_pkt_frag_add(pkt, frag);
 
@@ -1367,7 +1379,10 @@ static enum net_verdict handle_ns_input(struct net_pkt *pkt)
 	size_t left_len;
 
 	ns_hdr = net_icmpv6_get_ns_hdr(pkt, &nshdr);
-	NET_ASSERT(ns_hdr);
+	if (!ns_hdr) {
+		NET_ERR("NULL NS header - dropping");
+		goto drop;
+	}
 
 	dbg_addr_recv_tgt("Neighbor Solicitation",
 			  &NET_IPV6_HDR(pkt)->src,
@@ -1414,6 +1429,12 @@ static enum net_verdict handle_ns_input(struct net_pkt *pkt)
 		case NET_ICMPV6_ND_OPT_SLLAO:
 			if (net_is_ipv6_addr_unspecified(
 				    &NET_IPV6_HDR(pkt)->src)) {
+				goto drop;
+			}
+
+			if (nd_opt_hdr->len > 2) {
+				NET_ERR("Too long source link-layer address "
+					"in NS option");
 				goto drop;
 			}
 
@@ -1587,6 +1608,7 @@ send_na:
 			       tgt,
 			       flags);
 	if (!ret) {
+		NET_DBG("Cannot send NA (%d)", ret);
 		net_pkt_unref(pkt);
 		return NET_OK;
 	}
@@ -1608,6 +1630,7 @@ static void nd_reachable_timeout(struct k_work *work)
 						      reachable);
 
 	struct net_nbr *nbr = get_nbr_from_data(data);
+	int ret;
 
 	if (!data || !nbr) {
 		NET_DBG("ND reachable timeout but no nbr data "
@@ -1638,8 +1661,11 @@ static void nd_reachable_timeout(struct k_work *work)
 			NET_DBG("nbr %p incomplete count %u", nbr,
 				data->ns_count);
 
-			net_ipv6_send_ns(nbr->iface, NULL, NULL, NULL,
-					 &data->addr, false);
+			ret = net_ipv6_send_ns(nbr->iface, NULL, NULL, NULL,
+					       &data->addr, false);
+			if (ret < 0) {
+				NET_DBG("Cannot send NS (%d)", ret);
+			}
 		}
 		break;
 
@@ -1685,8 +1711,11 @@ static void nd_reachable_timeout(struct k_work *work)
 			NET_DBG("nbr %p probe count %u", nbr,
 				data->ns_count);
 
-			net_ipv6_send_ns(nbr->iface, NULL, NULL, NULL,
-					 &data->addr, false);
+			ret = net_ipv6_send_ns(nbr->iface, NULL, NULL, NULL,
+					       &data->addr, false);
+			if (ret < 0) {
+				NET_DBG("Cannot send NS (%d)", ret);
+			}
 
 			k_delayed_work_submit(
 				&net_ipv6_nbr_data(nbr)->reachable,
@@ -1898,7 +1927,10 @@ static enum net_verdict handle_na_input(struct net_pkt *pkt)
 	size_t left_len;
 
 	na_hdr = net_icmpv6_get_na_hdr(pkt, &nahdr);
-	NET_ASSERT(na_hdr);
+	if (!na_hdr) {
+		NET_ERR("NULL NA header - dropping");
+		goto drop;
+	}
 
 	dbg_addr_recv_tgt("Neighbor Advertisement",
 			  &NET_IPV6_HDR(pkt)->src,
@@ -2008,13 +2040,16 @@ int net_ipv6_send_ns(struct net_if *iface,
 	u8_t llao_len;
 
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, dst),
-				     K_FOREVER);
+				     ND_NET_BUF_TIMEOUT);
+	if (!pkt) {
+		return -ENOMEM;
+	}
 
-	NET_ASSERT_INFO(pkt, "Out of TX packets");
-
-	frag = net_pkt_get_frag(pkt, K_FOREVER);
-
-	NET_ASSERT_INFO(frag, "Out of DATA buffers");
+	frag = net_pkt_get_frag(pkt, ND_NET_BUF_TIMEOUT);
+	if (!frag) {
+		net_pkt_unref(pkt);
+		return -ENOMEM;
+	}
 
 	net_pkt_frag_add(pkt, frag);
 
@@ -2143,9 +2178,16 @@ int net_ipv6_send_rs(struct net_if *iface)
 	u8_t llao_len = 0;
 
 	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
-				     K_FOREVER);
+				     ND_NET_BUF_TIMEOUT);
+	if (!pkt) {
+		return -ENOMEM;
+	}
 
-	frag = net_pkt_get_frag(pkt, K_FOREVER);
+	frag = net_pkt_get_frag(pkt, ND_NET_BUF_TIMEOUT);
+	if (!frag) {
+		net_pkt_unref(pkt);
+		return -ENOMEM;
+	}
 
 	net_pkt_frag_add(pkt, frag);
 
@@ -3792,7 +3834,10 @@ static inline enum net_verdict process_icmpv6_pkt(struct net_pkt *pkt,
 	struct net_icmp_hdr hdr, *icmp_hdr;
 
 	icmp_hdr = net_icmpv6_get_hdr(pkt, &hdr);
-	NET_ASSERT(icmp_hdr);
+	if (!icmp_hdr) {
+		NET_DBG("NULL ICMPv6 header - dropping");
+		return NET_DROP;
+	}
 
 	NET_DBG("ICMPv6 %s received type %d code %d",
 		net_icmpv6_type2str(icmp_hdr->type), icmp_hdr->type,

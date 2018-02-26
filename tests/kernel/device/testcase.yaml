@@ -1,0 +1,12 @@
+common:
+  tags: device
+  platform_whitelist: native_posix qemu_x86
+tests:
+  kernel.device:
+    tags: device
+  kernel.device.pm:
+    tags: device
+    extra_configs:
+      - CONFIG_DEVICE_POWER_MANAGEMENT=y
+      - CONFIG_SYS_POWER_MANAGEMENT=y
+

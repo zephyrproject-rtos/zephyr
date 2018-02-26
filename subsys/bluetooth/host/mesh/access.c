@@ -148,7 +148,7 @@ static const struct bt_mesh_send_cb pub_sent_cb = {
 
 static int publish_retransmit(struct bt_mesh_model *mod)
 {
-	struct net_buf_simple *sdu = NET_BUF_SIMPLE(BT_MESH_TX_SDU_MAX);
+	NET_BUF_SIMPLE_DEFINE(sdu, BT_MESH_TX_SDU_MAX);
 	struct bt_mesh_model_pub *pub = mod->pub;
 	struct bt_mesh_app_key *key;
 	struct bt_mesh_msg_ctx ctx = {
@@ -172,12 +172,11 @@ static int publish_retransmit(struct bt_mesh_model *mod)
 	ctx.net_idx = key->net_idx;
 	ctx.app_idx = key->app_idx;
 
-	net_buf_simple_init(sdu, 0);
-	net_buf_simple_add_mem(sdu, pub->msg->data, pub->msg->len);
+	net_buf_simple_add_mem(&sdu, pub->msg->data, pub->msg->len);
 
 	pub->count--;
 
-	return bt_mesh_trans_send(&tx, sdu, &pub_sent_cb, mod);
+	return bt_mesh_trans_send(&tx, &sdu, &pub_sent_cb, mod);
 }
 
 static void mod_publish(struct k_work *work)
@@ -607,7 +606,7 @@ int bt_mesh_model_send(struct bt_mesh_model *model,
 
 int bt_mesh_model_publish(struct bt_mesh_model *model)
 {
-	struct net_buf_simple *sdu = NET_BUF_SIMPLE(BT_MESH_TX_SDU_MAX);
+	NET_BUF_SIMPLE_DEFINE(sdu, BT_MESH_TX_SDU_MAX);
 	struct bt_mesh_model_pub *pub = model->pub;
 	struct bt_mesh_app_key *key;
 	struct bt_mesh_msg_ctx ctx = {
@@ -644,8 +643,7 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
 		k_delayed_work_cancel(&pub->timer);
 	}
 
-	net_buf_simple_init(sdu, 0);
-	net_buf_simple_add_mem(sdu, pub->msg->data, pub->msg->len);
+	net_buf_simple_add_mem(&sdu, pub->msg->data, pub->msg->len);
 
 	ctx.addr = pub->addr;
 	ctx.send_ttl = pub->ttl;
@@ -660,7 +658,7 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
 	BT_DBG("Publish Retransmit Count %u Interval %ums", pub->count,
 	       BT_MESH_PUB_TRANSMIT_INT(pub->retransmit));
 
-	err = model_send(model, &tx, true, sdu, &pub_sent_cb, model);
+	err = model_send(model, &tx, true, &sdu, &pub_sent_cb, model);
 	if (err) {
 		pub->count = 0;
 		return err;

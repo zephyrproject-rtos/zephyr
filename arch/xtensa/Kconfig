@@ -76,6 +76,35 @@ config IRQ_OFFLOAD_INTNUM
 	 Please note that in order for IRQ offload to work correctly the selected
 	 interrupt shall have its priority shall not exceed XCHAL_EXCM_LEVEL.
 
+config XTENSA_OMIT_HIGH_INTERRUPTS
+	bool
+	prompt "Skip generation of vectors for high priority interrupts"
+	default n
+	help
+	Setting this to y causes the interrupt vectors for "high
+	priority" Xtensa interrupts (those not masked by the EXCM bit
+	in PS) to be left ungenerated, so they can be handled by
+	application code instead.  Note that high priority interrupts
+	cannot safely be handled by C code anyway (they will interrupt
+	register window exceptions, which cannot be made reentrant, so
+	the code under the handler must not emit them), though some
+	devices might still want to use built-in handling for things
+	like watchdogs which do not need to return into interrupted
+	code.  Default is "n" for legacy compatibility. Consider
+	changing to "y" in the future.
+
+config XTENSA_ASM2
+	bool
+	prompt "New-style Xtensa context switch & interrupt layer"
+	default n
+	select USE_SWITCH
+	help
+	This selects a new implementation of context switching and
+	interrupt handling.  Advantages are a much lower interrupt
+	overhead and smaller code size, and this scheme is required
+	for SMP.  Assumes/requires hardware that implements the
+	register window extension, however.
+
 config TOOLCHAIN_VARIANT
 	string
 	default RG-2016.4-linux

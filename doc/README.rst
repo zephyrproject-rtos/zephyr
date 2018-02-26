@@ -1,19 +1,19 @@
 .. _zephyr_doc:
 
-Zephyr documentation
-####################
+Zephyr documentation Generation
+###############################
 
 These instructions will walk you through generating the Zephyr Project's
 documentation on your local system using the same documentation sources
 as we use to create the online documentation found at
-https://zephyrproject.org/doc
+http://docs.zephyrproject.org
 
 Documentation overview
 **********************
 
 Zephyr Project content is written using the reStructuredText markup
 language (.rst file extension) with Sphinx extensions, and processed
-using sphinx to create a formatted stand-alone website. Developers can
+using Sphinx to create a formatted stand-alone website. Developers can
 view this content either in its raw form as .rst markup files, or you
 can generate the HTML content and view it with a web browser directly on
 your workstation. This same .rst content is also fed into the Zephyr
@@ -26,13 +26,13 @@ their respective websites.
 The project's documentation contains the following items:
 
 * ReStructuredText source files used to generate documentation found at the
-  https://zephyrproject.org/doc website. Most of the reStructuredText sources
+  http://docs.zephyrproject.org website. Most of the reStructuredText sources
   are found in the ``/doc`` directory, but others are stored within the
   code source tree near their specific component (such as ``/samples`` and
   ``/boards``)
 
 * Doxygen-generated material used to create all API-specific documents
-  also found at https://zephyrproject.org/doc
+  also found at http://docs.zephyrproject.org
 
 * Script-generated material for kernel configuration options based on Kconfig
   files found in the source code tree
@@ -47,34 +47,23 @@ Installing the documentation processors
 
 Our documentation processing has been tested to run with:
 
-* Doxygen version 1.8.11
-* Sphinx version 1.5.5
-* Breathe version 4.6.0
-* docutils version 0.13.1
+* Doxygen version 1.8.13
+* Sphinx version 1.7.0
+* Breathe version 4.7.3
+* docutils version 0.14
+* sphinx_rtd_theme version 0.2.4
 
-Begin by cloning a copy of the git repository for the zephyr project and
+Begin by cloning a copy of the git repository for the Zephyr project and
 setting up your development environment as described in :ref:`getting_started`
-or specifically for Ubuntu in :ref:`installation_linux`.  (Be sure to
-export the environment variables ``ZEPHYR_GCC_VARIANT`` and
-``ZEPHYR_SDK_INSTALL_DIR`` as documented there.)
+or specifically for Ubuntu in :ref:`installation_linux`.
 
-Other than ``doxygen``, the documentation tools should be installed using ``pip``.
-If you don't already have pip installed, these commands will install it:
-
-.. code-block:: bash
-
-   $ curl -O 'https://bootstrap.pypa.io/get-pip.py'
-   $ ./get-pip.py
-   $ rm get-pip.py
+Other than ``doxygen``, the documentation tools should be installed
+using ``pip3`` (as documented in the development environment set up
+instructions).
 
 The documentation generation tools are included in the set of tools
 expected for the Zephyr build environment and so are included in
-``requirements.txt``:
-
-.. code-block:: bash
-
-   $ sudo -E apt-get install doxygen
-   $ pip install -r scripts/requirements.txt
+``requirements.txt``
 
 Documentation presentation theme
 ********************************
@@ -100,23 +89,21 @@ commands to generate the html content locally:
 
    $ cd ~/zephyr
    $ source zephyr-env.sh
-   $ cd doc
    $ make htmldocs
 
 Depending on your development system, it will take about 15 minutes to
-collect and generate the HTML content.  When done, the HTML output will
-be in ``~/zephyr/doc/_build/html/index.html``
+collect and generate the HTML content.  When done, you can view the HTML
+output with your browser started at ``~/zephyr/doc/_build/html/index.html``
 
 Filtering expected warnings
 ***************************
 
 Alas, there are some known issues with the doxygen/Sphinx/Breathe
 processing that generates warnings for some constructs, in particular
-around unnamed structures in nested unions or structs. Also, adding
-qualifiers to a function declaration, like __deprecated, can generate a
-warning.  While these issues are being considered for fixing in
+around unnamed structures in nested unions or structs.
+While these issues are being considered for fixing in
 Sphinx/Breathe, we've added a post-processing filter on the output of
-the documentation build process to remove "expected" messages from the
+the documentation build process to check for "expected" messages from the
 generation process output.
 
 The output from the Sphinx build is processed by the python script

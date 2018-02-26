@@ -241,19 +241,14 @@ typedef struct s_preempFloatReg {
 
 struct _thread_arch {
 
-#ifdef CONFIG_GDB_INFO
-	 /* pointer to ESF saved by outermost exception wrapper */
-	void *esf;
-#endif
-
-#if (defined(CONFIG_FP_SHARING) || defined(CONFIG_GDB_INFO))
+#if defined(CONFIG_FP_SHARING)
 	/*
 	 * Nested exception count to maintain setting of EXC_ACTIVE flag across
 	 * outermost exception.  EXC_ACTIVE is used by _Swap() lazy FP
 	 * save/restore and by debug tools.
 	 */
 	unsigned excNestCount; /* nested exception count */
-#endif /* CONFIG_FP_SHARING || CONFIG_GDB_INFO */
+#endif /* CONFIG_FP_SHARING */
 
 	/*
 	 * The location of all floating point related structures/fields MUST be

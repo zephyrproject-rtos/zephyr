@@ -16,8 +16,10 @@
 
 #include <kernel.h>
 #include <kernel_structs.h>
+#include <kernel_internal.h>
 #include <wait_q.h>
 #include <ksched.h>
+#include <kswap.h>
 #include <misc/slist.h>
 #include <misc/dlist.h>
 #include <misc/__assert.h>
