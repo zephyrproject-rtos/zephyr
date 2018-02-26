@@ -21,7 +21,7 @@
 #include <arch/cpu.h>
 #include <cortex_m/exc.h>
 #include <clock_config.h>
-#include <fsl_lpc_power.h>
+#include <fsl_power.h>
 #include <fsl_clock.h>
 #include <fsl_common.h>
 #include <fsl_device_registers.h>
