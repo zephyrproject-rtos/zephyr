@@ -1,0 +1,126 @@
+/*
+ * Copyright (c) 2018 Zelin <zelin@makerdiary.com>
+ * Copyright (c) 2018 makerdiary.com.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf52832_qfaa.dtsi>
+
+/ {
+	model = "nRF52832-MDK Micro Dev Kit";
+	compatible = "nrf52832-mdk", "nordic,nrf52832-qfaa",
+		     "nordic,nrf52832";
+
+	chosen {
+		zephyr,console = &uart0;
+#ifdef CONFIG_MCUMGR_SMP_UART
+		zephyr,uart-mcumgr = &uart0;
+#endif
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0_green: led_0 {
+			gpios = <&gpio0 22 GPIO_INT_ACTIVE_LOW>;
+			label = "Green LED 0";
+		};
+		led1_red: led_1 {
+			gpios = <&gpio0 23 GPIO_INT_ACTIVE_LOW>;
+			label = "Red LED 1";
+		};
+		led2_blue: led_2 {
+			gpios = <&gpio0 24 GPIO_INT_ACTIVE_LOW>;
+			label = "Blue LED 1";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			gpios = <&gpio0 18 GPIO_PUD_PULL_UP>;
+			label = "Push button switch 0";
+		};
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		sw0 = &button0;
+		led0 = &led0_green;
+		led1 = &led1_red;
+		led2 = &led2_blue;
+		led0-green = &led0_green;
+		led1-red   = &led1_red;
+		led2-blue  = &led2_blue;
+	};
+
+};
+
+&gpiote {
+	status ="ok";
+};
+
+&gpio0 {
+	status ="ok";
+};
+
+&uart0 {
+	status = "ok";
+	compatible = "nordic,nrf-uart";
+	current-speed = <115200>;
+	tx-pin = <20>;
+	rx-pin = <19>;
+	rts-pin = <5>;
+	cts-pin = <7>;
+};
+
+&i2c0 {
+	status = "ok";
+	sda-pin = <26>;
+	scl-pin = <27>;
+};
+
+&i2c1 {
+	status = "ok";
+	sda-pin = <30>;
+	scl-pin = <31>;
+};
+
+&flash0 {
+	/*
+	 * For more information, see:
+	 * http://docs.zephyrproject.org/devices/dts/flash_partitions.html
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0xc000>;
+		};
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000C000 0x32000>;
+		};
+		slot1_partition: partition@3e000 {
+			label = "image-1";
+			reg = <0x0003E000 0x32000>;
+		};
+		scratch_partition: partition@70000 {
+			label = "image-scratch";
+			reg = <0x00070000 0xa000>;
+		};
+
+#if defined(CONFIG_FS_FLASH_STORAGE_PARTITION)
+		storage_partition: partition@7a000 {
+			label = "storage";
+			reg = <0x0007a000 0x00006000>;
+		};
+#endif
+	};
+};
