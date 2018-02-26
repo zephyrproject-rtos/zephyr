@@ -40,7 +40,7 @@ static int test_mkdir(void)
 		return res;
 	}
 
-	res = fs_open(&filep, TEST_DIR "/" TEST_FILE);
+	res = fs_open(&filep, TEST_DIR_FILE);
 	if (res) {
 		TC_PRINT("Failed opening file [%d]\n", res);
 		return res;
@@ -65,7 +65,7 @@ static int test_mkdir(void)
 static int test_lsdir(const char *path)
 {
 	int res;
-	fs_dir_t dirp;
+	struct fs_dir_t dirp;
 	struct fs_dirent entry;
 
 	TC_PRINT("\nlsdir tests:\n");
@@ -104,7 +104,7 @@ static int test_lsdir(const char *path)
 static int test_rmdir(void)
 {
 	int res;
-	fs_dir_t dirp;
+	struct fs_dir_t dirp;
 	static struct fs_dirent entry;
 	char file_path[80];
 
@@ -159,8 +159,8 @@ static int test_rmdir(void)
 void test_fat_dir(void)
 {
 	zassert_true(test_mkdir() == TC_PASS, NULL);
-	zassert_true(test_lsdir("/") == TC_PASS, NULL);
+	zassert_true(test_lsdir(FATFS_MNTP) == TC_PASS, NULL);
 	zassert_true(test_lsdir(TEST_DIR) == TC_PASS, NULL);
 	zassert_true(test_rmdir() == TC_PASS, NULL);
-	zassert_true(test_lsdir("/") == TC_PASS, NULL);
+	zassert_true(test_lsdir(FATFS_MNTP) == TC_PASS, NULL);
 }
