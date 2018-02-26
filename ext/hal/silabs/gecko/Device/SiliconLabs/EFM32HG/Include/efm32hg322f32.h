@@ -229,8 +229,6 @@ typedef enum IRQn
 
 /** @} End of group EFM32HG322F32_Part */
 
-#define ARM_MATH_CM0PLUS
-#include "arm_math.h"       /* To get __CLZ definitions etc. */
 #include "core_cm0plus.h"   /* Cortex-M0+ processor and core peripherals */
 #include "system_efm32hg.h" /* System Header */
 
