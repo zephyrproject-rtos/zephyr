@@ -1090,8 +1090,6 @@ add_subdirectory(cmake/flash)
 add_subdirectory(cmake/usage)
 add_subdirectory(cmake/reports)
 
-include(cmake/ccache.cmake)
-
 if(CONFIG_ASSERT)
   message(WARNING "
       ------------------------------------------------------------
