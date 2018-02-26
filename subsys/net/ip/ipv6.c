@@ -41,6 +41,11 @@
  */
 #define ND_NET_BUF_TIMEOUT MSEC(100)
 
+/* Maximum reachable time value specified in RFC 4861 section
+ * 6.2.1. Router Configuration Variables, AdvReachableTime
+ */
+#define MAX_REACHABLE_TIME 3600000
+
 /* IPv6 wildcard and loopback address defined by RFC2553 */
 const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;
 const struct in6_addr in6addr_loopback = IN6ADDR_LOOPBACK_INIT;
@@ -2587,7 +2592,7 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt)
 	ra_hdr = net_icmpv6_get_ra_hdr(pkt, &hdr);
 	NET_ASSERT(ra_hdr);
 
-	if (reachable_time &&
+	if (reachable_time && reachable_time <= MAX_REACHABLE_TIME &&
 	    (net_if_ipv6_get_reachable_time(net_pkt_iface(pkt)) !=
 	     ra_hdr->reachable_time)) {
 		net_if_ipv6_set_base_reachable_time(net_pkt_iface(pkt),
