@@ -40,7 +40,8 @@ void test_rename(void)
 	zassert_equal(rc, FS_ENOENT, "cannot rename file");
 
 	/*** Rename file. */
-	nffs_test_util_create_file("/myfile.txt", contents, sizeof(contents));
+	nffs_test_util_create_file(NFFS_MNTP"/myfile.txt",
+					contents, sizeof(contents));
 
 	rc = nffs_path_rename("/myfile.txt", "badname");
 	zassert_equal(rc, FS_EINVAL, "cannot rename file");
@@ -48,22 +49,22 @@ void test_rename(void)
 	rc = nffs_path_rename("/myfile.txt", "/myfile2.txt");
 	zassert_equal(rc, 0, "cannot rename file");
 
-	rc = fs_stat("/myfile.txt", &file);
+	rc = fs_stat(NFFS_MNTP"/myfile.txt", &file);
 	zassert_not_equal(rc, 0, "cannot open file");
 
-	nffs_test_util_assert_contents("/myfile2.txt", contents,
+	nffs_test_util_assert_contents(NFFS_MNTP"/myfile2.txt", contents,
 							sizeof(contents));
 
-	rc = fs_mkdir("/mydir");
+	rc = fs_mkdir(NFFS_MNTP"/mydir");
 	zassert_equal(rc, 0, "cannot create directory");
 
-	rc = fs_mkdir("/mydir/leafdir");
+	rc = fs_mkdir(NFFS_MNTP"/mydir/leafdir");
 	zassert_equal(rc, 0, "cannot create sub-directory");
 
 	rc = nffs_path_rename("/myfile2.txt", "/mydir/myfile2.txt");
 	zassert_equal(rc, 0, "cannot rename file in sub-directory");
 
-	nffs_test_util_assert_contents("/mydir/myfile2.txt", contents,
+	nffs_test_util_assert_contents(NFFS_MNTP"/mydir/myfile2.txt", contents,
 							sizeof(contents));
 
 	/*** Rename directory. */
@@ -77,7 +78,7 @@ void test_rename(void)
 	rc = nffs_path_rename("/mydir", "/mydir2");
 	zassert_equal(rc, 0, "cannot rename directory");
 
-	nffs_test_util_assert_contents("/mydir2/myfile2.txt", contents,
+	nffs_test_util_assert_contents(NFFS_MNTP"/mydir2/myfile2.txt", contents,
 							sizeof(contents));
 
 	struct nffs_test_file_desc *expected_system =

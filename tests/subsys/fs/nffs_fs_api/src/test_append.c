@@ -29,7 +29,7 @@
 
 void test_append(void)
 {
-	fs_file_t file;
+	struct fs_file_t file;
 	struct nffs_file *nffs_file;
 	struct fs_dirent info;
 	char c;
@@ -45,9 +45,9 @@ void test_append(void)
 	rc = nffs_format_full(area_descs_append);
 	zassert_equal(rc, 0, "cannot format to nffs");
 
-	rc = fs_open(&file, "/myfile.txt");
+	rc = fs_open(&file, NFFS_MNTP"/myfile.txt");
 	zassert_equal(rc, 0, "cannot open file");
-	nffs_file = file.fp;
+	nffs_file = file.nffs_fp;
 	nffs_test_util_assert_file_len(nffs_file, 0);
 	zassert_equal(fs_tell(&file), 0, "invalid file length");
 
@@ -57,8 +57,8 @@ void test_append(void)
 	rc = fs_close(&file);
 	zassert_equal(rc, 0, "cannot close file");
 
-	nffs_test_util_assert_contents("/myfile.txt", "abcdefgh", 8);
-	rc = fs_open(&file, "/myfile.txt");
+	nffs_test_util_assert_contents(NFFS_MNTP"/myfile.txt", "abcdefgh", 8);
+	rc = fs_open(&file, NFFS_MNTP"/myfile.txt");
 	zassert_equal(rc, 0, "cannot open file");
 	rc = fs_seek(&file, 0, FS_SEEK_END);
 	zassert_equal(rc, 0, "cannot seek file");
@@ -85,17 +85,17 @@ void test_append(void)
 	rc = fs_close(&file);
 	zassert_equal(rc, 0, "cannot close file");
 
-	nffs_test_util_assert_contents("/myfile.txt",
+	nffs_test_util_assert_contents(NFFS_MNTP"/myfile.txt",
 						"abcdefghijklmnopqrstuvwx", 24);
 
-	rc = fs_mkdir("/mydir");
+	rc = fs_mkdir(NFFS_MNTP"/mydir");
 	zassert_equal(rc, 0, "cannot create directory");
-	rc = fs_open(&file, "/mydir/gaga.txt");
+	rc = fs_open(&file, NFFS_MNTP"/mydir/gaga.txt");
 	zassert_equal(rc, 0, "cannot open file");
 
 	/*** Repeated appends to a large file. */
 	for (i = 0; i < 1000; i++) {
-		fs_stat("/mydir/gaga.txt", &info);
+		fs_stat(NFFS_MNTP"/mydir/gaga.txt", &info);
 		zassert_equal(info.size, i, "file lengths not matching");
 
 		c = '0' + i % 10;
@@ -105,7 +105,7 @@ void test_append(void)
 	rc = fs_close(&file);
 	zassert_equal(rc, 0, "cannot close file");
 
-	nffs_test_util_assert_contents("/mydir/gaga.txt",
+	nffs_test_util_assert_contents(NFFS_MNTP"/mydir/gaga.txt",
 	"01234567890123456789012345678901234567890123456789" /* 1 */
 	"01234567890123456789012345678901234567890123456789" /* 2 */
 	"01234567890123456789012345678901234567890123456789" /* 3 */

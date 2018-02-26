@@ -68,9 +68,9 @@ void test_gc(void)
 	rc = nffs_format_full(area_descs_two);
 	zassert_equal(rc, 0, "cannot format nffs");
 
-	nffs_test_util_create_file_blocks("/myfile.txt", blocks, 8);
+	nffs_test_util_create_file_blocks(NFFS_MNTP"/myfile.txt", blocks, 8);
 
 	nffs_gc(NULL);
 
-	nffs_test_util_assert_block_count("/myfile.txt", 1);
+	nffs_test_util_assert_block_count(NFFS_MNTP"/myfile.txt", 1);
 }

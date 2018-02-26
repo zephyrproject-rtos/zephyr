@@ -29,7 +29,7 @@
 
 void test_cache_large_file(void)
 {
-	fs_file_t file;
+	struct fs_file_t file;
 	u8_t b;
 	int rc;
 
@@ -37,21 +37,21 @@ void test_cache_large_file(void)
 	rc = nffs_format_full(nffs_current_area_descs);
 	zassert_equal(rc, 0, "canot format nffs");
 
-	nffs_test_util_create_file("/myfile.txt", nffs_test_buf,
+	nffs_test_util_create_file(NFFS_MNTP"/myfile.txt", nffs_test_buf,
 						NFFS_BLOCK_MAX_DATA_SZ_MAX * 5);
 	nffs_cache_clear();
 
 	/* Opening a file should not cause any blocks to get cached. */
-	rc = fs_open(&file, "/myfile.txt");
+	rc = fs_open(&file, NFFS_MNTP"/myfile.txt");
 	zassert_equal(rc, 0, "cannot open file");
-	nffs_test_util_assert_cache_range("/myfile.txt", 0, 0);
+	nffs_test_util_assert_cache_range(NFFS_MNTP"/myfile.txt", 0, 0);
 
 	/* Cache first block. */
 	rc = fs_seek(&file, nffs_block_max_data_sz * 0, FS_SEEK_SET);
 	zassert_equal(rc, 0, "cannot set pos in file");
 	rc = fs_read(&file, &b, 1);
 	zassert_equal(rc, 1, "cannot read file");
-	nffs_test_util_assert_cache_range("/myfile.txt",
+	nffs_test_util_assert_cache_range(NFFS_MNTP"/myfile.txt",
 						nffs_block_max_data_sz * 0,
 						nffs_block_max_data_sz * 1);
 
@@ -60,7 +60,7 @@ void test_cache_large_file(void)
 	zassert_equal(rc, 0, "cannot set pos in file");
 	rc = fs_read(&file, &b, 1);
 	zassert_equal(rc, 1, "cannot read file");
-	nffs_test_util_assert_cache_range("/myfile.txt",
+	nffs_test_util_assert_cache_range(NFFS_MNTP"/myfile.txt",
 						nffs_block_max_data_sz * 0,
 						nffs_block_max_data_sz * 2);
 
@@ -70,7 +70,7 @@ void test_cache_large_file(void)
 	zassert_equal(rc, 0, "cannot set pos in file");
 	rc = fs_read(&file, &b, 1);
 	zassert_equal(rc, 1, "cannot read file");
-	nffs_test_util_assert_cache_range("/myfile.txt",
+	nffs_test_util_assert_cache_range(NFFS_MNTP"/myfile.txt",
 						nffs_block_max_data_sz * 3,
 						nffs_block_max_data_sz * 4);
 
@@ -79,7 +79,7 @@ void test_cache_large_file(void)
 	zassert_equal(rc, 0, "cannot set pos in file");
 	rc = fs_read(&file, &b, 1);
 	zassert_equal(rc, 1, "cannot read file");
-	nffs_test_util_assert_cache_range("/myfile.txt",
+	nffs_test_util_assert_cache_range(NFFS_MNTP"/myfile.txt",
 						nffs_block_max_data_sz * 1,
 						nffs_block_max_data_sz * 4);
 
@@ -88,7 +88,7 @@ void test_cache_large_file(void)
 	zassert_equal(rc, 0, "cannot set pos in file");
 	rc = fs_read(&file, &b, 1);
 	zassert_equal(rc, 1, "cannot read file");
-	nffs_test_util_assert_cache_range("/myfile.txt",
+	nffs_test_util_assert_cache_range(NFFS_MNTP"/myfile.txt",
 						nffs_block_max_data_sz * 1,
 						nffs_block_max_data_sz * 5);
 

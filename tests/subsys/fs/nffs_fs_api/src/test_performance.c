@@ -38,7 +38,7 @@ static const struct nffs_area_desc area_descs[] = {
 void test_performance(void)
 {
 	char filename[16];
-	fs_file_t file;
+	struct fs_file_t file;
 	s64_t reftime;
 	u32_t delta;
 	int i;
@@ -54,7 +54,7 @@ void test_performance(void)
 	k_uptime_delta(&reftime);
 
 	for (i = 0; i < TEST_NUM_FILES; i++) {
-		snprintf(filename, sizeof(filename), "/file_%d", i);
+		snprintf(filename, sizeof(filename), NFFS_MNTP"/file_%d", i);
 		rc = fs_open(&file, filename);
 		zassert_equal(rc, 0, "cannot open file");
 		rc = fs_close(&file);
@@ -71,7 +71,7 @@ void test_performance(void)
 	k_uptime_delta(&reftime);
 
 	for (i = 0; i < TEST_NUM_FILES; i++) {
-		snprintf(filename, sizeof(filename), "/file_%d", i);
+		snprintf(filename, sizeof(filename), NFFS_MNTP"/file_%d", i);
 		rc = fs_unlink(filename);
 		zassert_equal(rc, 0, "cannot unlink file");
 	}
@@ -89,7 +89,7 @@ void test_performance(void)
 	nffs_cache_clear();
 	k_uptime_delta(&reftime);
 
-	rc = fs_open(&file, "/file");
+	rc = fs_open(&file, NFFS_MNTP"/file");
 	zassert_equal(rc, 0, "cannot open file");
 	memset(nffs_test_buf, 0, RW_CHUNK_LENGTH);
 	for (i = 0; i < RW_DATA_LENGTH; ) {
@@ -109,7 +109,7 @@ void test_performance(void)
 	nffs_cache_clear();
 	k_uptime_delta(&reftime);
 
-	rc = fs_open(&file, "/file");
+	rc = fs_open(&file, NFFS_MNTP"/file");
 	zassert_equal(rc, 0, "cannot open file");
 	for (i = 0; i < RW_DATA_LENGTH; ) {
 		rc = fs_read(&file, nffs_test_buf, RW_CHUNK_LENGTH);
@@ -132,7 +132,7 @@ void test_performance(void)
 	nffs_cache_clear();
 	k_uptime_delta(&reftime);
 
-	rc = fs_open(&file, "/file");
+	rc = fs_open(&file, NFFS_MNTP"/file");
 	zassert_equal(rc, 0, "cannot open file");
 	memset(nffs_test_buf, 0, NFFS_BLOCK_MAX_DATA_SZ_MAX);
 	for (i = 0; i < RW_DATA_LENGTH; ) {
@@ -153,7 +153,7 @@ void test_performance(void)
 	nffs_cache_clear();
 	k_uptime_delta(&reftime);
 
-	rc = fs_open(&file, "/file");
+	rc = fs_open(&file, NFFS_MNTP"/file");
 	zassert_equal(rc, 0, "cannot open file");
 	for (i = 0; i < RW_DATA_LENGTH; ) {
 		rc = fs_read(&file, nffs_test_buf, NFFS_BLOCK_MAX_DATA_SZ_MAX);

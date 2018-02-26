@@ -38,13 +38,14 @@ void test_long_filename(void)
 	rc = nffs_format_full(nffs_current_area_descs);
 	zassert_equal(rc, 0, "cannot format nffs");
 
-	nffs_test_util_create_file("/12345678901234567890.txt", "contents", 8);
+	nffs_test_util_create_file(NFFS_MNTP"/12345678901234567890.txt",
+								"contents", 8);
 
-	rc = fs_mkdir("/longdir12345678901234567890");
+	rc = fs_mkdir(NFFS_MNTP"/longdir12345678901234567890");
 	zassert_equal(rc, 0, "cannot create directory");
 
 	rc = nffs_path_rename("/12345678901234567890.txt",
-			      "/longdir12345678901234567890/12345678901234567890.txt");
+		"/longdir12345678901234567890/12345678901234567890.txt");
 	zassert_equal(rc, 0, "cannot rename file");
 
 	struct nffs_test_file_desc *expected_system =

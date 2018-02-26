@@ -1,5 +1,6 @@
 tests:
   test_basic:
+    extra_args: TEST=basic
     platform_whitelist: qemu_x86
     tags: nffs fs
   test_cache:
@@ -11,5 +12,9 @@ tests:
     tags: nffs fs
   test_large:
     extra_args: TEST=large
+    platform_whitelist: qemu_x86
+    tags: nffs fs
+  test_performance:
+    extra_args: TEST=performance
     platform_whitelist: qemu_x86
     tags: nffs fs

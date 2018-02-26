@@ -8,6 +8,7 @@
 #include <ztest.h>
 #include <fs.h>
 
+void test_fs_mount(void);
 void test_mkdir(void);
 void test_gc_on_oom(void);
 void test_incomplete_block(void);

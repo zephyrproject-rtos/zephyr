@@ -85,7 +85,7 @@ void nffs_test_util_assert_cache_is_sane(const char *filename)
 	struct nffs_cache_inode *cache_inode;
 	struct nffs_cache_block *cache_block;
 	struct nffs_file *file;
-	fs_file_t fs_file;
+	struct fs_file_t fs_file;
 	u32_t cache_start;
 	u32_t cache_end;
 	u32_t block_end;
@@ -94,7 +94,7 @@ void nffs_test_util_assert_cache_is_sane(const char *filename)
 	rc = fs_open(&fs_file, filename);
 	zassert_equal(rc, 0, NULL);
 
-	file = fs_file.fp;
+	file = fs_file.nffs_fp;
 	rc = nffs_cache_inode_ensure(&cache_inode, file->nf_inode_entry);
 	zassert_equal(rc, 0, NULL);
 
@@ -136,7 +136,7 @@ void
 nffs_test_util_assert_contents(const char *filename, const char *contents,
 			       int contents_len)
 {
-	fs_file_t file;
+	struct fs_file_t file;
 	u32_t bytes_read;
 	void *buf;
 	int rc;
@@ -162,14 +162,14 @@ int nffs_test_util_block_count(const char *filename)
 	struct nffs_hash_entry *entry;
 	struct nffs_block block;
 	struct nffs_file *file;
-	fs_file_t fs_file;
+	struct fs_file_t fs_file;
 	int count;
 	int rc;
 
 	rc = fs_open(&fs_file, filename);
 	zassert_equal(rc, 0, NULL);
 
-	file = fs_file.fp;
+	file = fs_file.nffs_fp;
 	count = 0;
 	entry = file->nf_inode_entry->nie_last_block_entry;
 	while (entry != NULL) {
@@ -200,7 +200,7 @@ void nffs_test_util_assert_cache_range(const char *filename,
 {
 	struct nffs_cache_inode *cache_inode;
 	struct nffs_file *file;
-	fs_file_t fs_file;
+	struct fs_file_t fs_file;
 	u32_t cache_start;
 	u32_t cache_end;
 	int rc;
@@ -208,7 +208,7 @@ void nffs_test_util_assert_cache_range(const char *filename,
 	rc = fs_open(&fs_file, filename);
 	zassert_equal(rc, 0, NULL);
 
-	file = fs_file.fp;
+	file = fs_file.nffs_fp;
 	rc = nffs_cache_inode_ensure(&cache_inode, file->nf_inode_entry);
 	zassert_equal(rc, 0, NULL);
 
@@ -226,7 +226,7 @@ void nffs_test_util_create_file_blocks(const char *filename,
 				       const struct nffs_test_block_desc *blocks,
 				       int num_blocks)
 {
-	fs_file_t file;
+	struct fs_file_t file;
 	u32_t total_len;
 	u32_t offset;
 	char *buf;
@@ -286,7 +286,7 @@ void nffs_test_util_create_file(const char *filename, const char *contents,
 void nffs_test_util_append_file(const char *filename, const char *contents,
 				int contents_len)
 {
-	fs_file_t file;
+	struct fs_file_t file;
 	int rc;
 
 	rc = fs_open(&file, filename);
@@ -345,7 +345,8 @@ void nffs_test_util_create_subtree(const char *parent_path,
 	}
 
 	if (elem->is_dir) {
-		if (parent_path != NULL) {
+		if ((parent_path != NULL) &&
+				(strlen(parent_path) > strlen(NFFS_MNTP))) {
 			rc = fs_mkdir(path);
 			zassert_equal(rc, 0, NULL);
 		}
@@ -366,7 +367,7 @@ void nffs_test_util_create_subtree(const char *parent_path,
 
 void nffs_test_util_create_tree(const struct nffs_test_file_desc *root_dir)
 {
-	nffs_test_util_create_subtree(NULL, root_dir);
+	nffs_test_util_create_subtree(NFFS_MNTP, root_dir);
 }
 
 #define NFFS_TEST_TOUCHED_ARR_SZ     (16 * 64)
@@ -383,7 +384,7 @@ void nffs_test_assert_file(const struct nffs_test_file_desc *file,
 	const struct nffs_test_file_desc *child_file;
 	struct nffs_inode inode;
 	struct nffs_inode_entry *child_inode_entry;
-	char *child_path;
+	char *child_path, *abs_path;
 	int child_filename_len;
 	int path_len;
 	int rc;
@@ -434,8 +435,11 @@ void nffs_test_assert_file(const struct nffs_test_file_desc *file,
 			k_free(child_path);
 		}
 	} else {
-		nffs_test_util_assert_contents(path, file->contents,
+		abs_path = k_malloc(strlen(NFFS_MNTP) + path_len + 2);
+		sprintf(abs_path, "%s%s", NFFS_MNTP, path);
+		nffs_test_util_assert_contents(abs_path, file->contents,
 				file->contents_len);
+		k_free(abs_path);
 	}
 }
 

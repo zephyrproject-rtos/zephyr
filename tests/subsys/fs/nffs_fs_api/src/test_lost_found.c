@@ -47,13 +47,13 @@ void test_lost_found(void)
 	rc = nffs_format_full(nffs_current_area_descs);
 	zassert_equal(rc, 0, "cannot format nffs");
 
-	rc = fs_mkdir("/mydir");
+	rc = fs_mkdir(NFFS_MNTP"/mydir");
 	zassert_equal(rc, 0, "cannot create directory");
-	rc = fs_mkdir("/mydir/dir1");
+	rc = fs_mkdir(NFFS_MNTP"/mydir/dir1");
 	zassert_equal(rc, 0, "cannot create directory");
 
-	nffs_test_util_create_file("/mydir/file1", "aaaa", 4);
-	nffs_test_util_create_file("/mydir/dir1/file2", "bbbb", 4);
+	nffs_test_util_create_file(NFFS_MNTP"/mydir/file1", "aaaa", 4);
+	nffs_test_util_create_file(NFFS_MNTP"/mydir/dir1/file2", "bbbb", 4);
 
 	/* Corrupt the mydir inode. */
 	rc = nffs_path_find_inode_entry("/mydir", &inode_entry);

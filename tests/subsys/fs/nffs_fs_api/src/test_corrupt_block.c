@@ -33,7 +33,7 @@ static u8_t data1[] = {0x43};
 
 void test_corrupt_block(void)
 {
-	fs_file_t fs_file;
+	struct fs_file_t fs_file;
 	struct nffs_file *file;
 	struct nffs_block block;
 	u32_t flash_offset;
@@ -47,21 +47,21 @@ void test_corrupt_block(void)
 	rc = nffs_format_full(nffs_current_area_descs);
 	zassert_equal(rc, 0, NULL);
 
-	rc = fs_mkdir("/mydir");
+	rc = fs_mkdir(NFFS_MNTP"/mydir");
 	zassert_equal(rc, 0, "cannot create directory");
 
-	nffs_test_util_create_file("/mydir/a", "aaaa", 4);
-	nffs_test_util_create_file("/mydir/b", "bbbb", 4);
-	nffs_test_util_create_file("/mydir/c", "cccc", 4);
+	nffs_test_util_create_file(NFFS_MNTP"/mydir/a", "aaaa", 4);
+	nffs_test_util_create_file(NFFS_MNTP"/mydir/b", "bbbb", 4);
+	nffs_test_util_create_file(NFFS_MNTP"/mydir/c", "cccc", 4);
 
 	/* Add a second block to the 'b' file. */
-	nffs_test_util_append_file("/mydir/b", "1234", 4);
+	nffs_test_util_append_file(NFFS_MNTP"/mydir/b", "1234", 4);
 
 	/* Corrupt the 'b' file; overwrite the second block's magic number. */
-	rc = fs_open(&fs_file, "/mydir/b");
+	rc = fs_open(&fs_file, NFFS_MNTP"/mydir/b");
 	zassert_equal(rc, 0, "cannot open file");
 
-	file = fs_file.fp;
+	file = fs_file.nffs_fp;
 	rc = nffs_block_from_hash_entry(&block,
 				file->nf_inode_entry->nie_last_block_entry);
 	zassert_equal(rc, 0, "block from hash entry error");
@@ -82,7 +82,7 @@ void test_corrupt_block(void)
 	 * Write a fourth file. This file should get restored even though the
 	 * previous object has an invalid magic number.
 	 */
-	nffs_test_util_create_file("/mydir/d", "dddd", 4);
+	nffs_test_util_create_file(NFFS_MNTP"/mydir/d", "dddd", 4);
 
 	rc = nffs_misc_reset();
 	zassert_equal(rc, 0, "cannot reset nffs");

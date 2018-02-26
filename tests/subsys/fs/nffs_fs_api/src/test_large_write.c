@@ -48,14 +48,14 @@ void test_large_write(void)
 		nffs_test_buf[i] = i;
 	}
 
-	nffs_test_util_create_file("/myfile.txt", nffs_test_buf,
+	nffs_test_util_create_file(NFFS_MNTP"/myfile.txt", nffs_test_buf,
 							TEST_CONTENT_LEN);
 
 	/*
 	 * Ensure large write was split across the appropriate number of data
 	 * blocks.
 	 */
-	zassert_equal(nffs_test_util_block_count("/myfile.txt"),
+	zassert_equal(nffs_test_util_block_count(NFFS_MNTP"/myfile.txt"),
 				TEST_CONTENT_LEN / NFFS_BLOCK_MAX_DATA_SZ_MAX,
 				"blocks were not split");
 
@@ -64,7 +64,7 @@ void test_large_write(void)
 	 * divided according to max data block size.
 	 */
 	nffs_gc(NULL);
-	zassert_equal(nffs_test_util_block_count("/myfile.txt"),
+	zassert_equal(nffs_test_util_block_count(NFFS_MNTP"/myfile.txt"),
 				TEST_CONTENT_LEN / NFFS_BLOCK_MAX_DATA_SZ_MAX,
 				"not properly divided");
 

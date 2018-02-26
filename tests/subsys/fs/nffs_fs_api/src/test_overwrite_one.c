@@ -29,7 +29,7 @@
 
 void test_overwrite_one(void)
 {
-	fs_file_t file;
+	struct fs_file_t file;
 	struct nffs_file *nffs_file;
 	int rc;
 
@@ -37,11 +37,11 @@ void test_overwrite_one(void)
 	rc = nffs_format_full(nffs_current_area_descs);
 	zassert_equal(rc, 0, "cannot format nffs");
 
-	nffs_test_util_append_file("/myfile.txt", "abcdefgh", 8);
+	nffs_test_util_append_file(NFFS_MNTP"/myfile.txt", "abcdefgh", 8);
 
 	/*** Overwrite within one block (middle). */
-	rc = fs_open(&file, "/myfile.txt");
-	nffs_file = file.fp;
+	rc = fs_open(&file, NFFS_MNTP"/myfile.txt");
+	nffs_file = file.nffs_fp;
 	zassert_equal(rc, 0, "cannot open file");
 	nffs_test_util_assert_file_len(nffs_file, 8);
 	zassert_equal(fs_tell(&file), 0, "invalid pos in file");
@@ -57,11 +57,11 @@ void test_overwrite_one(void)
 	rc = fs_close(&file);
 	zassert_equal(rc, 0, "cannot close file");
 
-	nffs_test_util_assert_contents("/myfile.txt", "abc12fgh", 8);
-	nffs_test_util_assert_block_count("/myfile.txt", 1);
+	nffs_test_util_assert_contents(NFFS_MNTP"/myfile.txt", "abc12fgh", 8);
+	nffs_test_util_assert_block_count(NFFS_MNTP"/myfile.txt", 1);
 
 	/*** Overwrite within one block (start). */
-	rc = fs_open(&file, "/myfile.txt");
+	rc = fs_open(&file, NFFS_MNTP"/myfile.txt");
 	zassert_equal(rc, 0, "cannot open file");
 	nffs_test_util_assert_file_len(nffs_file, 8);
 	zassert_equal(fs_tell(&file), 0, "invalid pos in file");
@@ -72,11 +72,11 @@ void test_overwrite_one(void)
 	rc = fs_close(&file);
 	zassert_equal(rc, 0, "cannot close file");
 
-	nffs_test_util_assert_contents("/myfile.txt", "xyc12fgh", 8);
-	nffs_test_util_assert_block_count("/myfile.txt", 1);
+	nffs_test_util_assert_contents(NFFS_MNTP"/myfile.txt", "xyc12fgh", 8);
+	nffs_test_util_assert_block_count(NFFS_MNTP"/myfile.txt", 1);
 
 	/*** Overwrite within one block (end). */
-	rc = fs_open(&file, "/myfile.txt");
+	rc = fs_open(&file, NFFS_MNTP"/myfile.txt");
 	zassert_equal(rc, 0, "cannot open file");
 	nffs_test_util_assert_file_len(nffs_file, 8);
 	zassert_equal(fs_tell(&file), 0, "invalid pos in file");
@@ -92,11 +92,11 @@ void test_overwrite_one(void)
 	rc = fs_close(&file);
 	zassert_equal(rc, 0, "cannot close file");
 
-	nffs_test_util_assert_contents("/myfile.txt", "xyc12f<>", 8);
-	nffs_test_util_assert_block_count("/myfile.txt", 1);
+	nffs_test_util_assert_contents(NFFS_MNTP"/myfile.txt", "xyc12f<>", 8);
+	nffs_test_util_assert_block_count(NFFS_MNTP"/myfile.txt", 1);
 
 	/*** Overwrite one block middle, extend. */
-	rc = fs_open(&file, "/myfile.txt");
+	rc = fs_open(&file, NFFS_MNTP"/myfile.txt");
 	zassert_equal(rc, 0, "cannot open file");
 	nffs_test_util_assert_file_len(nffs_file, 8);
 	zassert_equal(fs_tell(&file), 0, "invalid pos in file");
@@ -112,11 +112,12 @@ void test_overwrite_one(void)
 	rc = fs_close(&file);
 	zassert_equal(rc, 0, "cannot close file");
 
-	nffs_test_util_assert_contents("/myfile.txt", "xyc1abcdefgh", 12);
-	nffs_test_util_assert_block_count("/myfile.txt", 1);
+	nffs_test_util_assert_contents(NFFS_MNTP"/myfile.txt",
+						"xyc1abcdefgh", 12);
+	nffs_test_util_assert_block_count(NFFS_MNTP"/myfile.txt", 1);
 
 	/*** Overwrite one block start, extend. */
-	rc = fs_open(&file, "/myfile.txt");
+	rc = fs_open(&file, NFFS_MNTP"/myfile.txt");
 	zassert_equal(rc, 0, "cannot open file");
 	nffs_test_util_assert_file_len(nffs_file, 12);
 	zassert_equal(fs_tell(&file), 0, "invalid pos in file");
@@ -127,8 +128,9 @@ void test_overwrite_one(void)
 	rc = fs_close(&file);
 	zassert_equal(rc, 0, "cannot close file");
 
-	nffs_test_util_assert_contents("/myfile.txt", "abcdefghijklmnop", 16);
-	nffs_test_util_assert_block_count("/myfile.txt", 1);
+	nffs_test_util_assert_contents(NFFS_MNTP"/myfile.txt",
+						"abcdefghijklmnop", 16);
+	nffs_test_util_assert_block_count(NFFS_MNTP"/myfile.txt", 1);
 
 	struct nffs_test_file_desc *expected_system =
 		(struct nffs_test_file_desc[]) { {
