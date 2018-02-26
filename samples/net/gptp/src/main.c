@@ -21,7 +21,7 @@
 
 static struct gptp_phase_dis_cb phase_dis;
 
-#if defined(CONFIG_NET_VLAN)
+#if defined(CONFIG_NET_GPTP_VLAN)
 /* User data for the interface callback */
 struct ud {
 	struct net_if *first;
@@ -124,7 +124,7 @@ static int init_vlan(void)
 
 	return 0;
 }
-#endif /* CONFIG_NET_VLAN */
+#endif /* CONFIG_NET_GPTP_VLAN */
 
 static void gptp_phase_dis_cb(u8_t *gm_identity,
 			      u16_t *time_base,
@@ -147,7 +147,7 @@ static void gptp_phase_dis_cb(u8_t *gm_identity,
 
 static int init_app(void)
 {
-#if defined(CONFIG_NET_VLAN)
+#if defined(CONFIG_NET_GPTP_VLAN)
 	if (init_vlan() < 0) {
 		NET_ERR("Cannot setup VLAN");
 	}
