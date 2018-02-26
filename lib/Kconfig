@@ -6,4 +6,22 @@
 
 source "lib/libc/Kconfig"
 
-source "lib/json/Kconfig"
+menu "Additional libraries"
+
+config JSON_LIBRARY
+	bool
+	default N
+	prompt "Build JSON library"
+	help
+	  Build a minimal JSON parsing/encoding library. Used by sample
+	  applications such as the NATS client.
+
+config RING_BUFFER
+	bool
+	prompt "Enable ring buffers"
+	default n
+	help
+	  Enable usage of ring buffers. This is similar to kernel FIFOs but ring
+	  buffers manage their own buffer memory and can store arbitrary data.
+	  For optimal performance, use buffer sizes that are a power of 2.
+endmenu
