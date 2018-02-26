@@ -18,63 +18,24 @@ zephyr_compile_definitions(
   -DUSE_FULL_LL_DRIVER
   )
 
-if(CONFIG_SOC_SERIES_STM32F0X)
-  zephyr_include_directories(
-	stm32f0xx/soc
-	stm32f0xx/drivers/include
-	stm32f0xx/drivers/include/Legacy
-	)
+set(stm_socs
+  stm32f0x
+  stm32f1x
+  stm32f3x
+  stm32f4x
+  stm32f7x
+  stm32l4x
+  )
 
-  add_subdirectory(stm32f0xx)
-endif()
+foreach(stm_soc ${stm_socs})
+  string(TOUPPER ${stm_soc} soc_to_upper)
+  if(CONFIG_SOC_SERIES_${soc_to_upper})
+    zephyr_include_directories(
+	  ${stm_soc}x/soc
+	  ${stm_soc}x/drivers/include
+	  ${stm_soc}x/drivers/include/Legacy
+	  )
 
-if(CONFIG_SOC_SERIES_STM32F1X)
-  zephyr_include_directories(
-	stm32f1xx/soc
-	stm32f1xx/drivers/include
-	stm32f1xx/drivers/include/Legacy
-	)
-
-  add_subdirectory(stm32f1xx)
-endif()
-
-if(CONFIG_SOC_SERIES_STM32F3X)
-  zephyr_include_directories(
-	stm32f3xx/soc
-	stm32f3xx/drivers/include
-	stm32f3xx/drivers/include/Legacy
-	)
-
-  add_subdirectory(stm32f3xx)
-endif()
-
-if(CONFIG_SOC_SERIES_STM32F4X)
-  zephyr_include_directories(
-	stm32f4xx/soc
-	stm32f4xx/drivers/include
-	stm32f4xx/drivers/include/Legacy
-	)
-
-  add_subdirectory(stm32f4xx)
-endif()
-
-if(CONFIG_SOC_SERIES_STM32F7X)
-  zephyr_include_directories(
-	stm32f7xx/soc
-	stm32f7xx/drivers/include
-	stm32f7xx/drivers/include/Legacy
-	)
-
-  add_subdirectory(stm32f7xx)
-endif()
-
-if(CONFIG_SOC_SERIES_STM32L4X)
-  zephyr_include_directories(
-	stm32l4xx/soc
-	stm32l4xx/drivers/include
-	stm32l4xx/drivers/include/Legacy
-	)
-
-  add_subdirectory(stm32l4xx)
-endif()
-
+    add_subdirectory(${stm_soc}x)
+  endif()
+endforeach()
