@@ -45,7 +45,7 @@ void test_corrupt_scratch(void)
 	rc = nffs_format_full(area_descs_two);
 	zassert_equal(rc, 0, "cannot format file");
 
-	nffs_test_util_create_file("/myfile.txt", "contents", 8);
+	nffs_test_util_create_file(NFFS_MNTP"/myfile.txt", "contents", 8);
 
 	/* Copy the current contents of the non-scratch area to the scratch area.
 	 * This will make the scratch area look like it only partially
@@ -57,7 +57,7 @@ void test_corrupt_scratch(void)
 					area_descs_two + nffs_scratch_area_idx);
 
 	/* Add some more data to the non-scratch area. */
-	rc = fs_mkdir("/mydir");
+	rc = fs_mkdir(NFFS_MNTP"/mydir");
 	zassert_equal(rc, 0, "cannot create directory");
 
 	/*

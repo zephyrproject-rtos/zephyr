@@ -32,8 +32,8 @@
 
 void test_open(void)
 {
-	fs_file_t file;
-	fs_dir_t dir;
+	struct fs_file_t file;
+	struct fs_dir_t dir;
 	int rc;
 
 	rc = nffs_format_full(nffs_current_area_descs);
@@ -53,28 +53,28 @@ void test_open(void)
 	rc = fs_opendir(&dir, "/dir");
 	zassert_equal(rc, -ENOENT, "failed to detect nonexistent directory");
 
-	rc = fs_mkdir("/dir");
+	rc = fs_mkdir(NFFS_MNTP"/dir");
 	zassert_equal(rc, 0, "failed to open directory");
 
 	/*** Fail to open a directory. */
-	rc = fs_open(&file, "/dir");
+	rc = fs_open(&file, NFFS_MNTP"/dir");
 	zassert_equal(rc, -EINVAL, "failed to open a directory");
 
 	/*** Successfully open an existing file for reading. */
-	nffs_test_util_create_file("/dir/file.txt", "1234567890", 10);
-	rc = fs_open(&file, "/dir/file.txt");
+	nffs_test_util_create_file(NFFS_MNTP"/dir/file.txt", "1234567890", 10);
+	rc = fs_open(&file, NFFS_MNTP"/dir/file.txt");
 	zassert_equal(rc, 0, "failed to open a file");
 	rc = fs_close(&file);
 	zassert_equal(rc, 0, "cannot close file");
 
 	/*** Successfully open an nonexistent file for writing. */
-	rc = fs_open(&file, "/dir/file2.txt");
+	rc = fs_open(&file, NFFS_MNTP"/dir/file2.txt");
 	zassert_equal(rc, 0, "cannot open nonexistent file for writing");
 	rc = fs_close(&file);
 	zassert_equal(rc, 0, "cannot close file");
 
 	/*** Ensure the file can be reopened. */
-	rc = fs_open(&file, "/dir/file.txt");
+	rc = fs_open(&file, NFFS_MNTP"/dir/file.txt");
 	zassert_equal(rc, 0, "cannot reopen file");
 	rc = fs_close(&file);
 	zassert_equal(rc, 0, "cannot close reopened file");

@@ -42,13 +42,13 @@ void test_large_system(void)
 
 	nffs_test_assert_system(nffs_test_system_01, nffs_current_area_descs);
 
-	rc = fs_unlink("/lvl1dir-0000");
+	rc = fs_unlink(NFFS_MNTP"/lvl1dir-0000");
 	zassert_equal(rc, 0, "cannot delete file");
 
-	rc = fs_unlink("/lvl1dir-0004");
+	rc = fs_unlink(NFFS_MNTP"/lvl1dir-0004");
 	zassert_equal(rc, 0, "cannot delete file");
 
-	rc = fs_mkdir("/lvl1dir-0000");
+	rc = fs_mkdir(NFFS_MNTP"/lvl1dir-0000");
 	zassert_equal(rc, 0, "cannot create directory");
 
 	nffs_test_assert_system(nffs_test_system_01_rm_1014_mk10, nffs_current_area_descs);

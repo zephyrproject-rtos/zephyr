@@ -37,19 +37,20 @@ void test_many_children(void)
 	rc = nffs_format_full(nffs_current_area_descs);
 	zassert_equal(rc, 0, "cannot format nffs");
 
-	nffs_test_util_create_file("/zasdf", NULL, 0);
-	nffs_test_util_create_file("/FfD", NULL, 0);
-	nffs_test_util_create_file("/4Zvv", NULL, 0);
-	nffs_test_util_create_file("/*(*2fs", NULL, 0);
-	nffs_test_util_create_file("/pzzd", NULL, 0);
-	nffs_test_util_create_file("/zasdf0", NULL, 0);
-	nffs_test_util_create_file("/23132.bin", NULL, 0);
-	nffs_test_util_create_file("/asldkfjaldskfadsfsdf.txt", NULL, 0);
-	nffs_test_util_create_file("/sdgaf", NULL, 0);
-	nffs_test_util_create_file("/939302**", NULL, 0);
-	rc = fs_mkdir("/dir");
-	nffs_test_util_create_file("/dir/itw82", NULL, 0);
-	nffs_test_util_create_file("/dir/124", NULL, 0);
+	nffs_test_util_create_file(NFFS_MNTP"/zasdf", NULL, 0);
+	nffs_test_util_create_file(NFFS_MNTP"/FfD", NULL, 0);
+	nffs_test_util_create_file(NFFS_MNTP"/4Zvv", NULL, 0);
+	nffs_test_util_create_file(NFFS_MNTP"/*(*2fs", NULL, 0);
+	nffs_test_util_create_file(NFFS_MNTP"/pzzd", NULL, 0);
+	nffs_test_util_create_file(NFFS_MNTP"/zasdf0", NULL, 0);
+	nffs_test_util_create_file(NFFS_MNTP"/23132.bin", NULL, 0);
+	nffs_test_util_create_file(NFFS_MNTP"/asldkfjaldskfadsfsdf.txt",
+								NULL, 0);
+	nffs_test_util_create_file(NFFS_MNTP"/sdgaf", NULL, 0);
+	nffs_test_util_create_file(NFFS_MNTP"/939302**", NULL, 0);
+	rc = fs_mkdir(NFFS_MNTP"/dir");
+	nffs_test_util_create_file(NFFS_MNTP"/dir/itw82", NULL, 0);
+	nffs_test_util_create_file(NFFS_MNTP"/dir/124", NULL, 0);
 
 	struct nffs_test_file_desc *expected_system =
 		(struct nffs_test_file_desc[]) { {

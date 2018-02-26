@@ -47,19 +47,20 @@ void test_large_unlink(void)
 	zassert_equal(rc, 0, "cannot format nffs");
 
 	for (i = 0; i < 5; i++) {
-		snprintf(filename, sizeof(filename), "/dir0_%d", i);
+		snprintf(filename, sizeof(filename), NFFS_MNTP"/dir0_%d", i);
 		rc = fs_mkdir(filename);
 		zassert_equal(rc, 0, "cannot create directory");
 
 		for (j = 0; j < 5; j++) {
-			snprintf(filename, sizeof(filename), "/dir0_%d/dir1_%d", i, j);
+			snprintf(filename, sizeof(filename),
+					NFFS_MNTP"/dir0_%d/dir1_%d", i, j);
 			rc = fs_mkdir(filename);
 			zassert_equal(rc, 0, "cannot create directory");
 
 			for (k = 0; k < 5; k++) {
 				snprintf(filename, sizeof(filename),
-						"/dir0_%d/dir1_%d/file2_%d", i,
-						j, k);
+					NFFS_MNTP"/dir0_%d/dir1_%d/file2_%d",
+					i, j, k);
 				nffs_test_util_create_file(filename,
 							   nffs_test_buf,
 							   TEST_CONTENT_LEN);
@@ -68,14 +69,14 @@ void test_large_unlink(void)
 
 		for (j = 0; j < 15; j++) {
 			snprintf(filename, sizeof(filename),
-					"/dir0_%d/file1_%d", i, j);
+					NFFS_MNTP"/dir0_%d/file1_%d", i, j);
 			nffs_test_util_create_file(filename, nffs_test_buf,
 						   TEST_CONTENT_LEN);
 		}
 	}
 
 	for (i = 0; i < 5; i++) {
-		snprintf(filename, sizeof(filename), "/dir0_%d", i);
+		snprintf(filename, sizeof(filename), NFFS_MNTP"/dir0_%d", i);
 		rc = fs_unlink(filename);
 		zassert_equal(rc, 0, "cannot unlink file");
 	}

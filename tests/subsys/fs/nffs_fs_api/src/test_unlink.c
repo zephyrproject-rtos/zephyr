@@ -33,7 +33,7 @@ extern struct k_mem_slab nffs_inode_entry_pool;
 void test_unlink(void)
 {
 	struct fs_dirent file_stats;
-	fs_file_t file0, file1;
+	struct fs_file_t file0, file1;
 	u8_t buf[64];
 	struct nffs_file *nffs_file;
 	u32_t bytes_read;
@@ -47,18 +47,18 @@ void test_unlink(void)
 	initial_num_blocks = k_mem_slab_num_free_get(&nffs_block_entry_pool);
 	initial_num_inodes = k_mem_slab_num_free_get(&nffs_inode_entry_pool);
 
-	nffs_test_util_create_file("/file0.txt", "0", 1);
+	nffs_test_util_create_file(NFFS_MNTP"/file0.txt", "0", 1);
 
-	rc = fs_open(&file0, "/file0.txt");
+	rc = fs_open(&file0, NFFS_MNTP"/file0.txt");
 	zassert_equal(rc, 0, "cannot open file");
-	nffs_file = file0.fp;
+	nffs_file = file0.nffs_fp;
 	zassert_equal(nffs_file->nf_inode_entry->nie_refcnt, 2, "inode error");
 
-	rc = fs_unlink("/file0.txt");
+	rc = fs_unlink(NFFS_MNTP"/file0.txt");
 	zassert_equal(rc, 0, "");
 	zassert_equal(nffs_file->nf_inode_entry->nie_refcnt, 1, "inode error");
 
-	rc = fs_stat("/file0.txt", &file_stats);
+	rc = fs_stat(NFFS_MNTP"/file0.txt", &file_stats);
 	zassert_not_equal(rc, 0, "no such file");
 
 	rc = fs_write(&file0, "00", 2);
@@ -74,7 +74,7 @@ void test_unlink(void)
 	zassert_equal(rc, 0, "cannot close file");
 
 
-	rc = fs_stat("/file0.txt", &file_stats);
+	rc = fs_stat(NFFS_MNTP"/file0.txt", &file_stats);
 	zassert_not_equal(rc, 0, "no such file");
 
 	/* Ensure the file was fully removed from RAM. */
@@ -84,20 +84,20 @@ void test_unlink(void)
 				initial_num_blocks, "file not remove entirely");
 
 	/*** Nested unlink. */
-	rc = fs_mkdir("/mydir");
+	rc = fs_mkdir(NFFS_MNTP"/mydir");
 	zassert_equal(rc, 0, "cannot make directory");
-	nffs_test_util_create_file("/mydir/file1.txt", "1", 2);
+	nffs_test_util_create_file(NFFS_MNTP"/mydir/file1.txt", "1", 2);
 
-	rc = fs_open(&file1, "/mydir/file1.txt");
+	rc = fs_open(&file1, NFFS_MNTP"/mydir/file1.txt");
 	zassert_equal(rc, 0, "cannot open file");
-	nffs_file = file1.fp;
+	nffs_file = file1.nffs_fp;
 	zassert_equal(nffs_file->nf_inode_entry->nie_refcnt, 2, "inode error");
 
-	rc = fs_unlink("/mydir");
+	rc = fs_unlink(NFFS_MNTP"/mydir");
 	zassert_equal(rc, 0, "cannot delete directory");
 	zassert_equal(nffs_file->nf_inode_entry->nie_refcnt, 1, "inode error");
 
-	rc = fs_stat("/mydir/file1.txt", &file_stats);
+	rc = fs_stat(NFFS_MNTP"/mydir/file1.txt", &file_stats);
 	zassert_not_equal(rc, 0, "unlink failed");
 
 	rc = fs_write(&file1, "11", 2);
@@ -112,7 +112,7 @@ void test_unlink(void)
 	rc = fs_close(&file1);
 	zassert_equal(rc, 0, "cannot close file");
 
-	rc = fs_stat("/mydir/file1.txt", &file_stats);
+	rc = fs_stat(NFFS_MNTP"/mydir/file1.txt", &file_stats);
 	zassert_not_equal(rc, 0, "unlink failed");
 
 	struct nffs_test_file_desc *expected_system =

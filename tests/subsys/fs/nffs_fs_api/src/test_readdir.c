@@ -30,7 +30,7 @@
 
 void test_readdir(void)
 {
-	fs_dir_t dir;
+	struct fs_dir_t dir;
 	struct fs_dirent dirent;
 	int rc;
 
@@ -38,24 +38,24 @@ void test_readdir(void)
 	rc = nffs_format_full(nffs_current_area_descs);
 	zassert_equal(rc, 0, "cannot format nffs");
 
-	rc = fs_mkdir("/mydir");
+	rc = fs_mkdir(NFFS_MNTP"/mydir");
 	zassert_equal(rc, 0, "cannot create directory");
 
-	nffs_test_util_create_file("/mydir/b", "bbbb", 4);
-	nffs_test_util_create_file("/mydir/a", "aaaa", 4);
-	rc = fs_mkdir("/mydir/c");
+	nffs_test_util_create_file(NFFS_MNTP"/mydir/b", "bbbb", 4);
+	nffs_test_util_create_file(NFFS_MNTP"/mydir/a", "aaaa", 4);
+	rc = fs_mkdir(NFFS_MNTP"/mydir/c");
 	zassert_equal(rc, 0, "cannot create directory");
 
 	/* Nonexistent directory. */
-	rc = fs_opendir(&dir, "/asdf");
+	rc = fs_opendir(&dir, NFFS_MNTP"/asdf");
 	zassert_not_equal(rc, 0, "cannot open nonexistent directory");
 
 	/* Fail to opendir a file. */
-	rc = fs_opendir(&dir, "/mydir/a");
+	rc = fs_opendir(&dir, NFFS_MNTP"/mydir/a");
 	zassert_not_equal(rc, 0, "cannot open directory");
 
 	/* Real directory (with trailing slash). */
-	rc = fs_opendir(&dir, "/mydir/");
+	rc = fs_opendir(&dir, NFFS_MNTP"/mydir/");
 	zassert_equal(rc, 0, "cannot open dir (trailing slash)");
 
 	rc = fs_readdir(&dir, &dirent);
@@ -83,7 +83,7 @@ void test_readdir(void)
 	zassert_equal(rc, 0, "cannot close directory");
 
 	/* Root directory. */
-	rc = fs_opendir(&dir, "/");
+	rc = fs_opendir(&dir, NFFS_MNTP"/");
 	zassert_equal(rc, 0, "cannot open root directory");
 	rc = fs_readdir(&dir, &dirent);
 	zassert_equal(rc, 0, "cannot read root directory");
@@ -101,7 +101,7 @@ void test_readdir(void)
 	zassert_equal(rc, 0, "cannot close directory");
 
 	/* Delete entries while iterating. */
-	rc = fs_opendir(&dir, "/mydir");
+	rc = fs_opendir(&dir, NFFS_MNTP"/mydir");
 	zassert_equal(rc, 0, "cannot open directory");
 
 	rc = fs_readdir(&dir, &dirent);
@@ -111,16 +111,16 @@ void test_readdir(void)
 	zassert_equal(dirent.type == FS_DIR_ENTRY_DIR, 0,
 						"invalid directory name");
 
-	rc = fs_unlink("/mydir/b");
+	rc = fs_unlink(NFFS_MNTP"/mydir/b");
 	zassert_equal(rc, 0, "cannot delete mydir");
 
 	rc = fs_readdir(&dir, &dirent);
 	zassert_equal(rc, 0, "cannot read directory");
 
-	rc = fs_unlink("/mydir/c");
+	rc = fs_unlink(NFFS_MNTP"/mydir/c");
 	zassert_equal(rc, 0, "cannot delete lower directory");
 
-	rc = fs_unlink("/mydir");
+	rc = fs_unlink(NFFS_MNTP"/mydir");
 	zassert_equal(rc, 0, "cannot delete mydir directory");
 
 	nffs_test_util_assert_ent_name(&dirent, "c");
@@ -134,6 +134,6 @@ void test_readdir(void)
 	zassert_equal(rc, 0, "cannot close directory");
 
 	/* Ensure directory is gone. */
-	rc = fs_opendir(&dir, "/mydir");
+	rc = fs_opendir(&dir, NFFS_MNTP"/mydir");
 	zassert_not_equal(rc, 0, "directory is still present");
 }

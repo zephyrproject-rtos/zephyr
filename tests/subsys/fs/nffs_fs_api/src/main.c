@@ -58,6 +58,8 @@ void test_main(void)
 {
 #ifdef TEST_basic
 	ztest_test_suite(nffs_fs_basic_test,
+		ztest_unit_test_setup_teardown(test_fs_mount,
+					       test_setup, test_teardown),
 		ztest_unit_test_setup_teardown(test_unlink,
 					       test_setup, test_teardown),
 		ztest_unit_test_setup_teardown(test_mkdir,
@@ -107,6 +109,8 @@ void test_main(void)
 
 #ifdef TEST_large
 	ztest_test_suite(nffs_fs_large_test,
+		ztest_unit_test_setup_teardown(test_fs_mount,
+					       test_setup, test_teardown),
 		ztest_unit_test_setup_teardown(test_large_unlink,
 					       test_setup, test_teardown),
 		ztest_unit_test_setup_teardown(test_large_system,
@@ -116,6 +120,8 @@ void test_main(void)
 
 #ifdef TEST_cache
 	ztest_test_suite(nffs_fs_cache_test,
+		ztest_unit_test_setup_teardown(test_fs_mount,
+					       test_setup, test_teardown),
 		ztest_unit_test_setup_teardown(test_cache_large_file,
 					       test_setup, test_teardown));
 	ztest_run_test_suite(nffs_fs_cache_test);
@@ -123,6 +129,8 @@ void test_main(void)
 
 #ifdef TEST_performance
 	ztest_test_suite(nffs_fs_performace_test,
+		ztest_unit_test_setup_teardown(test_fs_mount,
+					       test_setup, test_teardown),
 		ztest_unit_test_setup_teardown(test_performance,
 					       test_setup, test_teardown));
 	ztest_run_test_suite(nffs_fs_performace_test);

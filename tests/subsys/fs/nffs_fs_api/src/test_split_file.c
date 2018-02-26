@@ -50,13 +50,14 @@ void test_split_file(void)
 	}
 
 	for (i = 0; i < 256; i++) {
-		nffs_test_util_create_file("/myfile.txt", nffs_test_buf,
-							TEST_CONTENT_LEN);
-		rc = fs_unlink("/myfile.txt");
+		nffs_test_util_create_file(NFFS_MNTP"/myfile.txt",
+					nffs_test_buf, TEST_CONTENT_LEN);
+		rc = fs_unlink(NFFS_MNTP"/myfile.txt");
 		zassert_equal(rc, 0, "cannot unlink file");
 	}
 
-	nffs_test_util_create_file("/myfile.txt", nffs_test_buf, TEST_CONTENT_LEN);
+	nffs_test_util_create_file(NFFS_MNTP"/myfile.txt",
+					nffs_test_buf, TEST_CONTENT_LEN);
 
 	struct nffs_test_file_desc *expected_system =
 		(struct nffs_test_file_desc[]) { {

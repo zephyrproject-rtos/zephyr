@@ -71,7 +71,7 @@ void test_gc_on_oom(void)
 		.data_len = 1,
 	} };
 
-	nffs_test_util_create_file_blocks("/myfile.txt", blocks, 4);
+	nffs_test_util_create_file_blocks(NFFS_MNTP"/myfile.txt", blocks, 4);
 
 	zassert_equal(k_mem_slab_num_free_get(&nffs_block_entry_pool), 0,
 							"file blocks problem");
@@ -81,7 +81,7 @@ void test_gc_on_oom(void)
 	 * fifth write consumes an additional block, resulting in 2 out of 4
 	 * blocks in use.
 	 */
-	nffs_test_util_append_file("/myfile.txt", "5", 1);
+	nffs_test_util_append_file(NFFS_MNTP"/myfile.txt", "5", 1);
 
 	zassert_equal(k_mem_slab_num_free_get(&nffs_block_entry_pool), 2,
 							"file blocks problem");

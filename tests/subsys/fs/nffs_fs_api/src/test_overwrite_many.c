@@ -42,7 +42,7 @@ void test_overwrite_many(void)
 		.data_len = 8,
 	} };
 
-	fs_file_t file;
+	struct fs_file_t file;
 	struct nffs_file *nffs_file;
 	int rc;
 
@@ -51,10 +51,10 @@ void test_overwrite_many(void)
 	zassert_equal(rc, 0, "cannot format nffs");
 
 	/*** Overwrite middle of first block. */
-	nffs_test_util_create_file_blocks("/myfile.txt", blocks, 3);
+	nffs_test_util_create_file_blocks(NFFS_MNTP"/myfile.txt", blocks, 3);
 
-	rc = fs_open(&file, "/myfile.txt");
-	nffs_file = file.fp;
+	rc = fs_open(&file, NFFS_MNTP"/myfile.txt");
+	nffs_file = file.nffs_fp;
 	zassert_equal(rc, 0, "cannot open file");
 	nffs_test_util_assert_file_len(nffs_file, 24);
 	zassert_equal(fs_tell(&file), 0, "invalid file length");
@@ -70,13 +70,14 @@ void test_overwrite_many(void)
 
 	rc = fs_close(&file);
 	zassert_equal(rc, 0, "cannot close file");
-	nffs_test_util_assert_contents("/myfile.txt", "abc12fghijklmnopqrstuvwx", 24);
-	nffs_test_util_assert_block_count("/myfile.txt", 3);
+	nffs_test_util_assert_contents(NFFS_MNTP"/myfile.txt",
+					"abc12fghijklmnopqrstuvwx", 24);
+	nffs_test_util_assert_block_count(NFFS_MNTP"/myfile.txt", 3);
 
 	/*** Overwrite end of first block, start of second. */
-	nffs_test_util_create_file_blocks("/myfile.txt", blocks, 3);
+	nffs_test_util_create_file_blocks(NFFS_MNTP"/myfile.txt", blocks, 3);
 
-	rc = fs_open(&file, "/myfile.txt");
+	rc = fs_open(&file, NFFS_MNTP"/myfile.txt");
 	zassert_equal(rc, 0, "cannot open file");
 	nffs_test_util_assert_file_len(nffs_file, 24);
 	zassert_equal(fs_tell(&file), 0, "invalid file length");
@@ -92,8 +93,9 @@ void test_overwrite_many(void)
 
 	rc = fs_close(&file);
 	zassert_equal(rc, 0, "cannot close file");
-	nffs_test_util_assert_contents("/myfile.txt", "abcdef1234klmnopqrstuvwx", 24);
-	nffs_test_util_assert_block_count("/myfile.txt", 3);
+	nffs_test_util_assert_contents(NFFS_MNTP"/myfile.txt",
+					"abcdef1234klmnopqrstuvwx", 24);
+	nffs_test_util_assert_block_count(NFFS_MNTP"/myfile.txt", 3);
 	struct nffs_test_file_desc *expected_system =
 		(struct nffs_test_file_desc[]) { {
 			.filename = "",

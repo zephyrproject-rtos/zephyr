@@ -30,6 +30,8 @@
 extern "C" {
 #endif
 
+#define NFFS_MNTP	"/nffs"
+
 extern struct nffs_area_desc *nffs_default_area_descs;
 
 struct nffs_test_block_desc {

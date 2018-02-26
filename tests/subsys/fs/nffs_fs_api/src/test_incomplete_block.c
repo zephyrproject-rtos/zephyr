@@ -41,7 +41,7 @@ void test_incomplete_block(void)
 	static u8_t corrupt_data[] = { 0xff, 0xff };
 	struct nffs_file *file;
 	struct nffs_block block;
-	fs_file_t fs_file;
+	struct fs_file_t fs_file;
 	u32_t flash_offset;
 	u32_t area_offset;
 	u8_t area_idx;
@@ -51,23 +51,23 @@ void test_incomplete_block(void)
 	rc = nffs_format_full(nffs_current_area_descs);
 	zassert_equal(rc, 0, "cannot format nffs");
 
-	rc = fs_mkdir("/mydir");
+	rc = fs_mkdir(NFFS_MNTP"/mydir");
 	zassert_equal(rc, 0, "cannot create directory");
 
-	nffs_test_util_create_file("/mydir/a", "aaaa", 4);
-	nffs_test_util_create_file("/mydir/b", "bbbb", 4);
-	nffs_test_util_create_file("/mydir/c", "cccc", 4);
+	nffs_test_util_create_file(NFFS_MNTP"/mydir/a", "aaaa", 4);
+	nffs_test_util_create_file(NFFS_MNTP"/mydir/b", "bbbb", 4);
+	nffs_test_util_create_file(NFFS_MNTP"/mydir/c", "cccc", 4);
 
 	/* Add a second block to the 'b' file. */
-	nffs_test_util_append_file("/mydir/b", "1234", 4);
+	nffs_test_util_append_file(NFFS_MNTP"/mydir/b", "1234", 4);
 
 	/*
 	 * Corrupt the 'b' file; make it look like the second block only got
 	 * half written.
 	 */
-	rc = fs_open(&fs_file, "/mydir/b");
+	rc = fs_open(&fs_file, NFFS_MNTP"/mydir/b");
 	zassert_equal(rc, 0, "cannot open file");
-	file = fs_file.fp;
+	file = fs_file.nffs_fp;
 
 	rc = nffs_block_from_hash_entry(&block,
 				file->nf_inode_entry->nie_last_block_entry);

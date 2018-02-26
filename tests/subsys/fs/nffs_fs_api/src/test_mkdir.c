@@ -31,31 +31,31 @@
 
 void test_mkdir(void)
 {
-	fs_file_t file;
+	struct fs_file_t file;
 	int rc;
 
 	rc = nffs_format_full(nffs_current_area_descs);
 	zassert_equal(rc, 0, "cannot format nffs");
 
-	rc = fs_mkdir("/a/b/c/d");
+	rc = fs_mkdir(NFFS_MNTP"/a/b/c/d");
 	zassert_equal(rc, -ENOENT, "cannot create directory");
 
 	rc = fs_mkdir("asdf");
 	zassert_equal(rc, -EINVAL, "cannot create directory");
 
-	rc = fs_mkdir("/a");
+	rc = fs_mkdir(NFFS_MNTP"/a");
 	zassert_equal(rc, 0, "cannot create directory");
 
-	rc = fs_mkdir("/a/b");
+	rc = fs_mkdir(NFFS_MNTP"/a/b");
 	zassert_equal(rc, 0, "cannot create directory");
 
-	rc = fs_mkdir("/a/b/c");
+	rc = fs_mkdir(NFFS_MNTP"/a/b/c");
 	zassert_equal(rc, 0, "cannot create directory");
 
-	rc = fs_mkdir("/a/b/c/d");
+	rc = fs_mkdir(NFFS_MNTP"/a/b/c/d");
 	zassert_equal(rc, 0, "cannot create directory");
 
-	rc = fs_open(&file, "/a/b/c/d/myfile.txt");
+	rc = fs_open(&file, NFFS_MNTP"/a/b/c/d/myfile.txt");
 	zassert_equal(rc, 0, "cannot open file");
 
 	rc = fs_close(&file);
