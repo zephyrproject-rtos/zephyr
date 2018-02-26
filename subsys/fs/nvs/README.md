@@ -2,7 +2,12 @@
 
 # Overview
 
-Storage of elements in flash in a FIFO manner. Elements are stored as identifier (id) - data pairs in a flash circular buffer. The flash area is divided into sectors. Elements are appended to a sector until storage space in the sector is exhausted. Then a new sector in the flash area is prepared for use (erased). Before erasing the sector it is checked that identifier - data pairs exist in the sectors in use, if not the id-data pair is copied.
+Storage of elements in flash in a FIFO manner. Elements are stored as
+identifier (id) - data pairs in a flash circular buffer. The flash area is
+divided into sectors. Elements are appended to a sector until storage space in
+the sector is exhausted. Then a new sector in the flash area is prepared for
+use (erased). Before erasing the sector it is checked that identifier - data
+pairs exist in the sectors in use, if not the id-data pair is copied.
 
 The identifier is a 16 bit number of which 2 cannot be used:
 
@@ -10,11 +15,16 @@ The identifier is a 16 bit number of which 2 cannot be used:
   0xFFFE as it is used to close a sector
 
 
-NVS ensures that for each id there is at least one id-data pair stored in flash at all time.
+NVS ensures that for each id there is at least one id-data pair stored in flash
+at all time.
 
-NVS does flash wear levelling as each new write is done at the next available flash location.
+NVS does flash wear levelling as each new write is done at the next available
+flash location.
 
-NVS allows storage of binary blobs, strings, integers, longs, ... and any combination of these. As each element is stored with a header (containing the id and length) and a footer (containing the crc16) it is less suited to store only integers.
+NVS allows storage of binary blobs, strings, integers, longs, ... and any
+combination of these. As each element is stored with a header (containing the
+id and length) and a footer (containing the crc16) it is less suited to store
+only integers.
 
 For NVS the file system is declared as:
 
@@ -28,9 +38,15 @@ static struct nvs_fs fs = {
 where
 ```c
   SECTOR_SIZE is a multiple of the flash erase page size and a power of 2,
-  SECTOR_COUNT is at least 2,
+  SECTOR_COUNT is at least 2, one sector is always kept empty to allow copying
+  of existing data.
   STORAGE_OFFSET is the offset of the storage area in flash.
 ```
+
+# Sample
+
+A Sample of how NVS can be used is supplied in ```samples/subsys/nvs```.
+
 
 # High level API
 
@@ -59,7 +75,7 @@ To avoid frequent erases of flash sectors the maximum size of the entries that c
 
 2. To add an element to nvs: call nvs_write() to write an entry to flash
 
-3. To read newest entry in nvs: call nvs_read() to read the latest entry from flash
+3. To read latest (most recent) entry in nvs: call nvs_read() to read the entry from flash
 
 # Low Level API
 
