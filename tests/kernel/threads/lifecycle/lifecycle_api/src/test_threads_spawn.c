@@ -94,3 +94,27 @@ void test_threads_spawn_forever(void)
 	zassert_true(tp2 == 100, NULL);
 	k_thread_abort(tid);
 }
+
+/* Test to validate behavior of multiple calls to k_thread_start() */
+void test_thread_start(void)
+{
+	tp2 = 5;
+
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+			thread_entry_delay, NULL, NULL, NULL,
+			K_HIGHEST_THREAD_PRIO,
+			K_USER, K_FOREVER);
+
+	k_thread_start(tid);
+	k_yield();
+	zassert_true(tp2 == 100, NULL);
+
+	/* checkpoint: k_thread_start() should not start the
+	 * terminated thread
+	 */
+
+	tp2 = 50;
+	k_thread_start(tid);
+	k_yield();
+	zassert_false(tp2 == 100, NULL);
+}
