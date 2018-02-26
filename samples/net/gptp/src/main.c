@@ -21,6 +21,10 @@
 
 static struct gptp_phase_dis_cb phase_dis;
 
+/* Enable following if you want to run gPTP over VLAN with this application */
+#define GPTP_OVER_VLAN 0
+#define GPTP_VLAN_TAG 42
+
 #if defined(CONFIG_NET_VLAN)
 /* User data for the interface callback */
 struct ud {
@@ -101,6 +105,14 @@ static int init_vlan(void)
 	memset(&ud, 0, sizeof(ud));
 
 	net_if_foreach(iface_cb, &ud);
+
+#if GPTP_OVER_VLAN
+	ret = net_eth_vlan_enable(ud.first, GPTP_VLAN_TAG);
+	if (ret < 0) {
+		NET_ERR("Cannot enable VLAN for tag %d (%d)", GPTP_VLAN_TAG,
+			ret);
+	}
+#endif
 
 	/* This sample has two VLANs. For the second one we need to manually
 	 * create IP address for this test. But first the VLAN needs to be
