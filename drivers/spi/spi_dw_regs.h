@@ -57,41 +57,6 @@ DEFINE_MM_REG_READ(ssi_comp_version, DW_SPI_REG_SSI_COMP_VERSION, 32)
 DEFINE_TEST_BIT_OP(icr, DW_SPI_REG_ICR, DW_SPI_SR_ICR_BIT)
 #define clear_interrupts(addr) test_bit_icr(addr)
 
-#ifdef CONFIG_SPI_DW_CLOCK_GATE
-static inline void _clock_config(struct device *dev)
-{
-	struct device *clk;
-	char *drv = CONFIG_SPI_DW_CLOCK_GATE_DRV_NAME;
-
-	clk = device_get_binding(drv);
-	if (clk) {
-		struct spi_dw_data *spi = dev->driver_data;
-
-		spi->clock = clk;
-	}
-}
-
-static inline void _clock_on(struct device *dev)
-{
-	const struct spi_dw_config *info = dev->config->config_info;
-	struct spi_dw_data *spi = dev->driver_data;
-
-	clock_control_on(spi->clock, info->clock_data);
-}
-
-static inline void _clock_off(struct device *dev)
-{
-	const struct spi_dw_config *info = dev->config->config_info;
-	struct spi_dw_data *spi = dev->driver_data;
-
-	clock_control_off(spi->clock, info->clock_data);
-}
-#else
-#define _clock_config(...)
-#define _clock_on(...)
-#define _clock_off(...)
-#endif /* CONFIG_SPI_DW_CLOCK_GATE */
-
 #ifdef __cplusplus
 }
 #endif
