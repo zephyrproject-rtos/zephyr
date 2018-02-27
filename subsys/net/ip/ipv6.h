@@ -110,15 +110,6 @@ static inline struct net_ipv6_nbr_data *net_ipv6_nbr_data(struct net_nbr *nbr)
 	return (struct net_ipv6_nbr_data *)nbr->data;
 }
 
-/**
- * @brief Return IPv6 neighbor according to ll index.
- *
- * @param idx Neighbor index in link layer table.
- *
- * @return Return IPv6 neighbor information.
- */
-struct net_ipv6_nbr_data *net_ipv6_get_nbr_by_index(u8_t idx);
-
 #if defined(CONFIG_NET_IPV6_DAD)
 int net_ipv6_start_dad(struct net_if *iface, struct net_if_addr *ifaddr);
 #endif
