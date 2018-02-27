@@ -1203,7 +1203,7 @@ u16_t net_pkt_append(struct net_pkt *pkt, u16_t len, const u8_t *data,
 	struct net_context *ctx = NULL;
 	u16_t max_len, appended;
 
-	if (!pkt || !data) {
+	if (!pkt || !data || !len) {
 		return 0;
 	}
 
