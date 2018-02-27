@@ -249,6 +249,7 @@ else()
   set(SOC_PATH ${SOC_FAMILY}/${SOC_SERIES})
 endif()
 
+include(${BOARD_DIR}/board.cmake OPTIONAL)
 
 # DTS should be run directly after kconfig because CONFIG_ variables
 # from kconfig and dts should be available at the same time. But
@@ -268,8 +269,6 @@ set(KERNEL_S19_NAME   ${KERNEL_NAME}.s19)
 set(KERNEL_EXE_NAME   ${KERNEL_NAME}.exe)
 set(KERNEL_STAT_NAME  ${KERNEL_NAME}.stat)
 set(KERNEL_STRIP_NAME ${KERNEL_NAME}.strip)
-
-include(${BOARD_DIR}/board.cmake OPTIONAL)
 
 zephyr_library_named(app)
 
