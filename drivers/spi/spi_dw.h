@@ -20,18 +20,19 @@ typedef void (*spi_dw_config_t)(void);
 /* Private structures */
 struct spi_dw_config {
 	u32_t regs;
-#ifdef CONFIG_SPI_DW_CLOCK_GATE
+#ifdef CONFIG_CLOCK_CONTROL
+	const char *clock_name;
 	void *clock_data;
-#endif /* CONFIG_SPI_DW_CLOCK_GATE */
+#endif /* CONFIG_CLOCK_CONTROL */
 	spi_dw_config_t config_func;
 };
 
 #include "spi_context.h"
 
 struct spi_dw_data {
-#ifdef CONFIG_SPI_DW_CLOCK_GATE
+#ifdef CONFIG_CLOCK_CONTROL
 	struct device *clock;
-#endif /* CONFIG_SPI_DW_CLOCK_GATE */
+#endif /* CONFIG_CLOCK_CONTROL */
 	struct spi_context ctx;
 	u8_t dfs;	/* dfs in bytes: 1,2 or 4 */
 	u8_t fifo_diff;	/* cannot be bigger than FIFO depth */
@@ -223,6 +224,52 @@ DEFINE_SET_BIT_OP(ssienr, DW_SPI_REG_SSIENR, DW_SPI_SSIENR_SSIEN_BIT)
 DEFINE_CLEAR_BIT_OP(ssienr, DW_SPI_REG_SSIENR, DW_SPI_SSIENR_SSIEN_BIT)
 DEFINE_TEST_BIT_OP(ssienr, DW_SPI_REG_SSIENR, DW_SPI_SSIENR_SSIEN_BIT)
 DEFINE_TEST_BIT_OP(sr_busy, DW_SPI_REG_SR, DW_SPI_SR_BUSY_BIT)
+
+#ifdef CONFIG_CLOCK_CONTROL
+static inline int _clock_config(struct device *dev)
+{
+	const struct spi_dw_config *info = dev->config->config_info;
+	struct spi_dw_data *spi = dev->driver_data;
+
+	if (!info->clock_name || strlen(info->clock_name) == 0) {
+		spi->clock = NULL;
+		return 0;
+	}
+
+	spi->clock = device_get_binding(info->clock_name);
+	if (!spi->clock) {
+		return -ENODEV;
+	}
+
+	return 0;
+}
+
+static inline void _clock_on(struct device *dev)
+{
+	struct spi_dw_data *spi = dev->driver_data;
+
+	if (spi->clock) {
+		const struct spi_dw_config *info = dev->config->config_info;
+
+		clock_control_on(spi->clock, info->clock_data);
+	}
+}
+
+static inline void _clock_off(struct device *dev)
+{
+	struct spi_dw_data *spi = dev->driver_data;
+
+	if (spi->clock) {
+		const struct spi_dw_config *info = dev->config->config_info;
+
+		clock_control_off(spi->clock, info->clock_data);
+	}
+}
+#else
+#define _clock_config(...)
+#define _clock_on(...)
+#define _clock_off(...)
+#endif /* CONFIG_CLOCK_CONTROL */
 
 #ifdef __cplusplus
 }
