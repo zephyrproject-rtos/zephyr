@@ -110,7 +110,10 @@ static inline bool net_is_solicited(struct net_pkt *pkt)
 	struct net_icmpv6_na_hdr hdr, *na_hdr;
 
 	na_hdr = net_icmpv6_get_na_hdr(pkt, &hdr);
-	NET_ASSERT(na_hdr);
+	if (!na_hdr) {
+		NET_ERR("could not get na_hdr");
+		return false;
+	}
 
 	return na_hdr->flags & NET_ICMPV6_NA_FLAG_SOLICITED;
 }
@@ -120,7 +123,10 @@ static inline bool net_is_router(struct net_pkt *pkt)
 	struct net_icmpv6_na_hdr hdr, *na_hdr;
 
 	na_hdr = net_icmpv6_get_na_hdr(pkt, &hdr);
-	NET_ASSERT(na_hdr);
+	if (!na_hdr) {
+		NET_ERR("could not get na_hdr");
+		return false;
+	}
 
 	return na_hdr->flags & NET_ICMPV6_NA_FLAG_ROUTER;
 }
@@ -130,7 +136,10 @@ static inline bool net_is_override(struct net_pkt *pkt)
 	struct net_icmpv6_na_hdr hdr, *na_hdr;
 
 	na_hdr = net_icmpv6_get_na_hdr(pkt, &hdr);
-	NET_ASSERT(na_hdr);
+	if (!na_hdr) {
+		NET_ERR("could not get na_hdr");
+		return false;
+	}
 
 	return na_hdr->flags & NET_ICMPV6_NA_FLAG_OVERRIDE;
 }
@@ -1308,7 +1317,10 @@ int net_ipv6_send_na(struct net_if *iface, const struct in6_addr *src,
 	net_buf_add(frag, sizeof(struct net_icmpv6_na_hdr) + llao_len);
 
 	na_hdr = net_icmpv6_get_na_hdr(pkt, &hdr);
-	NET_ASSERT_INFO(na_hdr, "Too short fragment for NA");
+	if (!na_hdr) {
+		NET_ERR("fragment too short for NA");
+		goto drop;
+	}
 
 	net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src, src);
 	net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst, dst);
