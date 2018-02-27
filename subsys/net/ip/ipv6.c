@@ -2074,7 +2074,13 @@ int net_ipv6_send_ns(struct net_if *iface,
 	net_buf_add(frag, sizeof(struct net_icmpv6_ns_hdr));
 
 	ns_hdr = net_icmpv6_get_ns_hdr(pkt, &hdr);
-	NET_ASSERT(ns_hdr);
+	if (!ns_hdr) {
+		NET_ERR("could not get ns_hdr");
+
+		net_pkt_unref(pkt);
+
+		return -EINVAL;
+	}
 
 	if (!dst) {
 		net_ipv6_addr_create_solicited_node(tgt,
