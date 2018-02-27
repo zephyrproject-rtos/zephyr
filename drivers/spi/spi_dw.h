@@ -195,6 +195,10 @@ struct spi_dw_data {
 #include "spi_dw_quark_se_ss_regs.h"
 #else
 #include "spi_dw_regs.h"
+
+#define _extra_clock_on(...)
+#define _extra_clock_off(...)
+
 #endif
 
 /* Interrupt mask
@@ -226,6 +230,9 @@ DEFINE_TEST_BIT_OP(ssienr, DW_SPI_REG_SSIENR, DW_SPI_SSIENR_SSIEN_BIT)
 DEFINE_TEST_BIT_OP(sr_busy, DW_SPI_REG_SR, DW_SPI_SR_BUSY_BIT)
 
 #ifdef CONFIG_CLOCK_CONTROL
+
+#include <string.h>
+
 static inline int _clock_config(struct device *dev)
 {
 	const struct spi_dw_config *info = dev->config->config_info;
@@ -253,6 +260,8 @@ static inline void _clock_on(struct device *dev)
 
 		clock_control_on(spi->clock, info->clock_data);
 	}
+
+	_extra_clock_on(dev);
 }
 
 static inline void _clock_off(struct device *dev)
@@ -264,6 +273,8 @@ static inline void _clock_off(struct device *dev)
 
 		clock_control_off(spi->clock, info->clock_data);
 	}
+
+	_extra_clock_off(dev);
 }
 #else
 #define _clock_config(...)
