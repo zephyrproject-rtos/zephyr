@@ -254,15 +254,6 @@ static struct net_nbr *nbr_lookup(struct net_nbr_table *table,
 	return NULL;
 }
 
-struct net_ipv6_nbr_data *net_ipv6_get_nbr_by_index(u8_t idx)
-{
-	struct net_nbr *nbr = get_nbr(idx);
-
-	NET_ASSERT_INFO(nbr, "Invalid ll index %d", idx);
-
-	return net_ipv6_nbr_data(nbr);
-}
-
 static inline void nbr_clear_ns_pending(struct net_ipv6_nbr_data *data)
 {
 	k_delayed_work_cancel(&data->send_ns);
