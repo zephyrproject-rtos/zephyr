@@ -324,12 +324,13 @@ static void update_protocol_header_lengths(struct net_pkt *pkt, u16_t size)
 		struct net_udp_hdr hdr, *udp_hdr;
 
 		udp_hdr = net_udp_get_hdr(pkt, &hdr);
+		if (udp_hdr) {
+			udp_hdr->len = htons(size - NET_IPV6H_LEN);
 
-		NET_ASSERT(udp_hdr);
-
-		udp_hdr->len = htons(size - NET_IPV6H_LEN);
-
-		net_udp_set_hdr(pkt, udp_hdr);
+			net_udp_set_hdr(pkt, udp_hdr);
+		} else {
+			NET_ERR("could not get UDP header");
+		}
 	}
 }
 
