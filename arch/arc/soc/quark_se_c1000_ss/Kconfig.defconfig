@@ -218,15 +218,37 @@ endif # UART_QMSI
 
 if SPI
 
-config SPI_QMSI
-	def_bool n
+config SPI_DW
+	def_bool y
 
-if SPI_QMSI
+if SPI_DW
+
+config SPI_DW_FIFO_DEPTH
+	default 7
+
+config CLOCK_CONTROL
+	def_bool y
+
+config CLOCK_CONTROL_QUARK_SE
+	def_bool y
+
+config CLOCK_CONTROL_QUARK_SE_SENSOR
+	def_bool y
+
 config SPI_0
 	def_bool y
 
-config SPI_0_NAME
-	default "SPI_2"
+config SPI_DW_PORT_0_INTERRUPT_SINGLE_LINE
+	def_bool n
+
+config SPI_DW_PORT_0_CLOCK_GATE
+	def_bool y
+
+config SPI_DW_PORT_0_CLOCK_GATE_DRV_NAME
+	default CLOCK_CONTROL_QUARK_SE_SENSOR_DRV_NAME
+
+config SPI_DW_PORT_0_CLOCK_GATE_SUBSYS
+	default 3
 
 config SPI_0_IRQ_PRI
 	default 1
@@ -234,38 +256,22 @@ config SPI_0_IRQ_PRI
 config SPI_1
 	def_bool y
 
-config SPI_1_NAME
-	default "SPI_3"
+config SPI_DW_PORT_1_INTERRUPT_SINGLE_LINE
+	def_bool n
+
+config SPI_DW_PORT_1_CLOCK_GATE
+	def_bool y
+
+config SPI_DW_PORT_1_CLOCK_GATE_DRV_NAME
+	default CLOCK_CONTROL_QUARK_SE_SENSOR_DRV_NAME
+
+config SPI_DW_PORT_1_CLOCK_GATE_SUBSYS
+	default 4
 
 config SPI_1_IRQ_PRI
 	default 1
 
-endif
-
-config SPI_QMSI_SS
-	def_bool y
-
-if SPI_QMSI_SS
-config SPI_SS_0
-	def_bool y
-
-config SPI_SS_0_NAME
-	default "SPI_0"
-
-config SPI_SS_0_IRQ_PRI
-	default 1
-
-config SPI_SS_1
-	def_bool y
-
-config SPI_SS_1_NAME
-	default "SPI_1"
-
-config SPI_SS_1_IRQ_PRI
-	default 1
-
-endif
-
+endif # SPI_DW
 endif # SPI
 
 if AIO_COMPARATOR
