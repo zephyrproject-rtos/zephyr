@@ -759,7 +759,10 @@ static inline bool compress_IPHC_header(struct net_pkt *pkt,
 		struct net_udp_hdr hdr, *udp;
 
 		udp = net_udp_get_hdr(pkt, &hdr);
-		NET_ASSERT(udp);
+		if (!udp) {
+			NET_ERR("could not get UDP header");
+			return false;
+		}
 
 		IPHC[offset] = NET_6LO_NHC_UDP_BARE;
 		offset = compress_nh_udp(udp, frag, offset);
