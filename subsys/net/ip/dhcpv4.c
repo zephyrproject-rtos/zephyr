@@ -249,7 +249,7 @@ static inline bool add_sname(struct net_pkt *pkt)
 }
 
 /* Setup IPv4 + UDP header */
-static void setup_header(struct net_pkt *pkt, const struct in_addr *server_addr)
+static bool setup_header(struct net_pkt *pkt, const struct in_addr *server_addr)
 {
 	struct net_ipv4_hdr *ipv4;
 	struct net_udp_hdr hdr, *udp;
@@ -258,7 +258,10 @@ static void setup_header(struct net_pkt *pkt, const struct in_addr *server_addr)
 	ipv4 = NET_IPV4_HDR(pkt);
 
 	udp = net_udp_get_hdr(pkt, &hdr);
-	NET_ASSERT(udp && udp != &hdr);
+	if (!udp || udp == &hdr) {
+		NET_ERR("Could not get UDP header");
+		return false;
+	}
 
 	len = net_pkt_get_len(pkt);
 
@@ -283,6 +286,8 @@ static void setup_header(struct net_pkt *pkt, const struct in_addr *server_addr)
 	udp->chksum = ~net_calc_chksum_udp(pkt);
 
 	net_udp_set_hdr(pkt, udp);
+
+	return true;
 }
 
 /* Prepare initial DHCPv4 message and add options as per message type */
@@ -412,7 +417,9 @@ static void send_request(struct net_if *iface)
 		goto fail;
 	}
 
-	setup_header(pkt, server_addr);
+	if (!setup_header(pkt, server_addr)) {
+		goto fail;
+	}
 
 	if (net_send_data(pkt) < 0) {
 		goto fail;
@@ -470,7 +477,9 @@ static void send_discover(struct net_if *iface)
 		goto fail;
 	}
 
-	setup_header(pkt, net_ipv4_broadcast_address());
+	if (!setup_header(pkt, net_ipv4_broadcast_address())) {
+		goto fail;
+	}
 
 	if (net_send_data(pkt) < 0) {
 		goto fail;
