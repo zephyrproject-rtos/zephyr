@@ -324,8 +324,12 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 		}
 
 		frag = pkt->frags;
-		__ASSERT(frag != NULL,
-			 "net_pkt has empty fragments on start!");
+		if (!frag) {
+			NET_ERR("net_pkt has empty fragments on start!");
+			errno = EAGAIN;
+			return -1;
+		}
+
 		frag_len = frag->len;
 		recv_len = frag_len;
 		if (recv_len > max_len) {
