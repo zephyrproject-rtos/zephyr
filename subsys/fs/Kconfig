@@ -28,15 +28,6 @@ config SYS_LOG_FS_LEVEL
 
 if FILE_SYSTEM
 
-choice
-	prompt "Supported file systems"
-	default NO_FILE_SYSTEM
-
-config NO_FILE_SYSTEM
-	bool "No File System"
-	help
-	  No file system chosen.
-
 config FAT_FILESYSTEM_ELM
 	bool "ELM FAT File System"
 	select DISK_ACCESS
@@ -50,8 +41,6 @@ config FILE_SYSTEM_NFFS
 	  Enables NFFS file system support.
 	  Note: NFFS requires 1-byte unaligned access to flash thus it
 	  will not work on devices that support only aligned flash access.
-
-endchoice
 
 config FILE_SYSTEM_SHELL
 	bool "Enable file system shell"
