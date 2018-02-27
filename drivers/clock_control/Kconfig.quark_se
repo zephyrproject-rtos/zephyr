@@ -6,8 +6,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if SOC_QUARK_SE_C1000
-
 menuconfig CLOCK_CONTROL_QUARK_SE
 	bool
 	prompt "Quark SE Clock controller support"
@@ -15,10 +13,11 @@ menuconfig CLOCK_CONTROL_QUARK_SE
 	help
 	 Enable support for the Quark SE clock driver.
 
+if CLOCK_CONTROL_QUARK_SE
+
 config CLOCK_CONTROL_QUARK_SE_PERIPHERAL
 	bool
 	prompt "Quark SE peripheral clock support"
-	depends on CLOCK_CONTROL_QUARK_SE
 	default n
 	help
 	 Enable support for Quark SE peripheral clock which controls the
@@ -33,7 +32,6 @@ config CLOCK_CONTROL_QUARK_SE_PERIPHERAL_DRV_NAME
 config CLOCK_CONTROL_QUARK_SE_EXTERNAL
 	bool
 	prompt "Quark SE external clock support"
-	depends on CLOCK_CONTROL_QUARK_SE
 	default n
 	help
 	 Enable support for Quark SE external sub-system clock.
@@ -47,7 +45,6 @@ config CLOCK_CONTROL_QUARK_SE_EXTERNAL_DRV_NAME
 config CLOCK_CONTROL_QUARK_SE_SENSOR
 	bool
 	prompt "Quark SE sensor clock support"
-	depends on CLOCK_CONTROL_QUARK_SE
 	default n
 	help
 	 Enable support for Quark SE sensor sub-system clock.
@@ -58,4 +55,4 @@ config CLOCK_CONTROL_QUARK_SE_SENSOR_DRV_NAME
 	depends on CLOCK_CONTROL_QUARK_SE_SENSOR
 	default "clk_sensor"
 
-endif # SOC_QUARK_SE_C1000
+endif # CLOCK_CONTROL_QUARK_SE
