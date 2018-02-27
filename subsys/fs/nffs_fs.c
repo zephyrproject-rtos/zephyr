@@ -495,6 +495,25 @@ static int nffs_statvfs(struct fs_mount_t *mountp,
 	return -ENOTSUP;
 }
 
+static int nffs_rename(struct fs_mount_t *mountp, const char *from,
+		       const char *to)
+{
+	int rc;
+
+	k_mutex_lock(&nffs_lock, K_FOREVER);
+
+	if (!nffs_misc_ready()) {
+		k_mutex_unlock(&nffs_lock);
+		return -ENODEV;
+	}
+
+	rc = nffs_path_rename(from, to);
+
+	k_mutex_unlock(&nffs_lock);
+
+	return translate_error(rc);
+}
+
 static int nffs_mount(struct fs_mount_t *mountp)
 {
 	struct nffs_area_desc descs[CONFIG_NFFS_FILESYSTEM_MAX_AREAS + 1];
@@ -555,6 +574,7 @@ static struct fs_file_system_t nffs_fs = {
 	.closedir = nffs_closedir,
 	.mount = nffs_mount,
 	.unlink = nffs_unlink,
+	.rename = nffs_rename,
 	.mkdir = nffs_mkdir,
 	.stat = nffs_stat,
 	.statvfs = nffs_statvfs,
