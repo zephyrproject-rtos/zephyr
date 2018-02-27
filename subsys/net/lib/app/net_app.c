@@ -2121,7 +2121,18 @@ reset:
 				u16_t pos;
 
 				frag = net_frag_get_pos(pkt, hdr_len, &pos);
-				NET_ASSERT(frag);
+				if (!frag) {
+					/* FIXME: if pos is 0 here, hdr_len
+					 * bytes were successfully skipped.
+					 * Is closing the connection here the
+					 * right thing?
+					 */
+					NET_ERR("could not skip %zu bytes",
+						hdr_len);
+					net_pkt_unref(pkt);
+					ret = -EINVAL;
+					goto close;
+				}
 
 				net_pkt_set_appdata(pkt, frag->data + pos);
 			} else {
