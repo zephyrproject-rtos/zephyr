@@ -2597,7 +2597,10 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt)
 	}
 
 	ra_hdr = net_icmpv6_get_ra_hdr(pkt, &hdr);
-	NET_ASSERT(ra_hdr);
+	if (!ra_hdr) {
+		NET_ERR("could not get ra_hdr");
+		goto drop;
+	}
 
 	if (reachable_time &&
 	    (net_if_ipv6_get_reachable_time(net_pkt_iface(pkt)) !=
