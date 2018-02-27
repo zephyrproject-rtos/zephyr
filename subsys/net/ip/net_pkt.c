@@ -503,8 +503,10 @@ static struct net_pkt *net_pkt_get(struct k_mem_slab *slab,
 	}
 
 	iface = net_context_get_iface(context);
-
-	NET_ASSERT(iface);
+	if (!iface) {
+		NET_ERR("Context has no interface");
+		return NULL;
+	}
 
 	if (net_context_get_family(context) == AF_INET6) {
 		addr6 = &((struct sockaddr_in6 *) &context->remote)->sin6_addr;
@@ -589,8 +591,10 @@ static struct net_buf *_pkt_get_data(struct net_buf_pool *pool,
 	}
 
 	iface = net_context_get_iface(context);
-
-	NET_ASSERT(iface);
+	if (!iface) {
+		NET_ERR("Context has no interface");
+		return NULL;
+	}
 
 	if (net_context_get_family(context) == AF_INET6) {
 		addr6 = &((struct sockaddr_in6 *) &context->remote)->sin6_addr;
