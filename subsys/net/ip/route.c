@@ -595,12 +595,14 @@ struct in6_addr *net_route_get_nexthop(struct net_route_entry *route)
 		}
 
 		ipv6_nbr_data = net_ipv6_nbr_data(nexthop_route->nbr);
-		NET_ASSERT(ipv6_nbr_data);
+		if (ipv6_nbr_data) {
+			addr = &ipv6_nbr_data->addr;
+			NET_ASSERT(addr);
 
-		addr = &ipv6_nbr_data->addr;
-		NET_ASSERT(addr);
-
-		return addr;
+			return addr;
+		} else {
+			NET_ERR("could not get neighbor data from next hop");
+		}
 	}
 
 	return NULL;
