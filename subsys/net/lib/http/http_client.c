@@ -423,6 +423,13 @@ static int on_headers_complete(struct http_parser *parser)
 		return 1;
 	}
 
+	if ((ctx->http.req.method == HTTP_PUT ||
+	     ctx->http.req.method == HTTP_POST)
+	    && ctx->http.rsp.content_length == 0) {
+		NET_DBG("No body expected");
+		return 1;
+	}
+
 	NET_DBG("Headers complete");
 
 	return 0;
