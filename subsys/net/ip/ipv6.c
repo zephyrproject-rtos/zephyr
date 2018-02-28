@@ -1238,8 +1238,9 @@ static void setup_headers(struct net_pkt *pkt, u8_t nd6_len,
 	net_pkt_icmp_data(pkt)->code = 0;
 }
 
-static inline void handle_ns_neighbor(struct net_pkt *pkt, u8_t ll_len,
-				      u16_t sllao_offset)
+static inline struct net_nbr *handle_ns_neighbor(struct net_pkt *pkt,
+						 u8_t ll_len,
+						 u16_t sllao_offset)
 {
 	struct net_linkaddr_storage lladdr;
 	struct net_linkaddr nbr_lladdr;
@@ -1251,7 +1252,7 @@ static inline void handle_ns_neighbor(struct net_pkt *pkt, u8_t ll_len,
 	frag = net_frag_read(pkt->frags, sllao_offset,
 			     &pos, lladdr.len, lladdr.addr);
 	if (!frag && pos == 0xffff) {
-		return;
+		return NULL;
 	}
 
 	nbr_lladdr.len = lladdr.len;
@@ -1266,7 +1267,7 @@ static inline void handle_ns_neighbor(struct net_pkt *pkt, u8_t ll_len,
 		nbr_lladdr.len = net_pkt_ll_src(pkt)->len;
 	}
 
-	nbr_add(pkt, &nbr_lladdr, false, NET_IPV6_NBR_STATE_INCOMPLETE);
+	return nbr_add(pkt, &nbr_lladdr, false, NET_IPV6_NBR_STATE_INCOMPLETE);
 }
 
 int net_ipv6_send_na(struct net_if *iface, const struct in6_addr *src,
@@ -1438,12 +1439,14 @@ static enum net_verdict handle_ns_input(struct net_pkt *pkt)
 				goto drop;
 			}
 
-			handle_ns_neighbor(pkt, nd_opt_hdr->len,
-					   net_pkt_ip_hdr_len(pkt) +
-					   net_pkt_ipv6_ext_len(pkt) +
-					   sizeof(struct net_icmp_hdr) +
-					   net_pkt_ipv6_ext_opt_len(pkt) +
-					   1 + 1);
+			if (!handle_ns_neighbor(pkt, nd_opt_hdr->len,
+						net_pkt_ip_hdr_len(pkt) +
+						net_pkt_ipv6_ext_len(pkt) +
+						sizeof(struct net_icmp_hdr) +
+						net_pkt_ipv6_ext_opt_len(pkt) +
+						1 + 1)) {
+				goto drop;
+			}
 			break;
 
 		default:
