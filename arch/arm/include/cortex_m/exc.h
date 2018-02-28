@@ -102,10 +102,24 @@ static ALWAYS_INLINE void _ExcSetup(void)
 	NVIC_SetPriority(MemoryManagement_IRQn, _EXC_FAULT_PRIO);
 	NVIC_SetPriority(BusFault_IRQn, _EXC_FAULT_PRIO);
 	NVIC_SetPriority(UsageFault_IRQn, _EXC_FAULT_PRIO);
+#if defined(CONFIG_ARM_SECURE_FIRMWARE)
+	NVIC_SetPriority(SecureFault_IRQn, _EXC_FAULT_PRIO);
+#endif /* CONFIG_ARM_SECURE_FIRMWARE */
 
 	/* Enable Usage, Mem, & Bus Faults */
 	SCB->SHCSR |= SCB_SHCSR_USGFAULTENA_Msk | SCB_SHCSR_MEMFAULTENA_Msk |
 		      SCB_SHCSR_BUSFAULTENA_Msk;
+#if defined(CONFIG_ARM_SECURE_FIRMWARE)
+	/* Enable Secure Fault */
+	SCB->SHCSR |= SCB_SHCSR_SECUREFAULTENA_Msk;
+	/* Clear BFAR before setting BusFaults to target Non-Secure state. */
+	SCB->BFAR = 0;
+	/* Set NMI, Hard, and Bus Faults as Non-Secure.
+	 * NMI and Bus Faults targeting the Secure state will
+	 * escalate to a SecureFault or SecureHardFault.
+	 */
+	SCB->AIRCR |= SCB_AIRCR_BFHFNMINS_Msk;
+#endif /* CONFIG_ARM_SECURE_FIRMWARE */
 #endif
 }
 

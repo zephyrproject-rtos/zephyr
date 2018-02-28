@@ -44,6 +44,9 @@ GTEXT(__svc)
 GTEXT(__mpu_fault)
 GTEXT(__bus_fault)
 GTEXT(__usage_fault)
+#if defined(CONFIG_ARM_SECURE_FIRMWARE)
+GTEXT(__secure_fault)
+#endif /* CONFIG_ARM_SECURE_FIRMWARE */
 GTEXT(__svc)
 GTEXT(__debug_monitor)
 #else
