@@ -48,6 +48,16 @@ config USB_DC_SAM0
 	help
 	  SAM0 family USB device controller Driver.
 
+config USB_NRF52840
+	bool
+	prompt "Nordic Semiconductor nRF52840 USB Device Controller Driver"
+	depends on SOC_NRF52840
+	select USB_DEVICE_DRIVER
+	select HAS_DTS_USB
+	default n
+	help
+	  nRF52840 USB Device Controller Driver
+
 config SYS_LOG_USB_DRIVER_LEVEL
 	int
 	prompt "USB driver log level"
