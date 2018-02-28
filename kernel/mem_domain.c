@@ -68,8 +68,8 @@ static inline bool sane_partition_domain(const struct k_mem_domain *domain,
 #define sane_partition_domain(...) (true)
 #endif
 
-void k_mem_domain_init(struct k_mem_domain *domain, u32_t num_parts,
-		struct k_mem_partition *parts[])
+void k_mem_domain_init(struct k_mem_domain *domain, u8_t num_parts,
+		       struct k_mem_partition *parts[])
 {
 	unsigned int key;
 
