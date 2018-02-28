@@ -1,0 +1,1 @@
+zephyr_sources_ifdef(CONFIG_LSM303DLHC_ACCEL lsm303dlhc_accel.c)
