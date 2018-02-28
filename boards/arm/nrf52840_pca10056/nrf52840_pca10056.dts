@@ -60,3 +60,8 @@
 #endif
 	};
 };
+
+&usbd {
+	compatible = "nordic,nrf-usbd";
+	status = "ok";
+};
