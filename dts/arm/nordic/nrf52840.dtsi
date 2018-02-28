@@ -75,6 +75,20 @@
 			status = "disabled";
 			label = "I2C_1";
 		};
+
+		usbd: usbd@0x40027000 {
+			compatible = "nordic,nrf-usbd";
+			reg = <0x40027000 0x1000>;
+			interrupts = <39 1>;
+			interrupt-names = "usbd";
+			num-bidir-endpoints = <1>;
+			num-in-endpoints = <7>;
+			num-out-endpoints = <7>;
+			num-isoin-endpoints = <1>;
+			num-isoout-endpoints = <1>;
+			status = "disabled";
+			label = "USBD";
+		};
 	};
 };
 
