@@ -97,8 +97,8 @@
 #define I2C_DW_PCI_DEVICE_ID			0x0934
 #define I2C_DW_PCI_CLASS			0x0C
 
-#define I2C_DW_0_BASE_ADDR			0x90007000
-#define I2C_DW_0_IRQ				18
+#define CONFIG_I2C_0_BASE_ADDRESS		0x90007000
+#define CONFIG_I2C_0_IRQ			18
 
 #define I2C_DW_0_PCI_BUS			0
 #define I2C_DW_0_PCI_DEV			21
@@ -106,7 +106,7 @@
 #define I2C_DW_0_PCI_BAR			0
 
 #if defined(CONFIG_IOAPIC)
-#define I2C_DW_IRQ_FLAGS			(IOAPIC_LEVEL | IOAPIC_LOW)
+#define CONFIG_I2C_0_IRQ_FLAGS			(IOAPIC_LEVEL | IOAPIC_LOW)
 #endif
 
 /*

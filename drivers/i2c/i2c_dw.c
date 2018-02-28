@@ -700,7 +700,7 @@ static void i2c_config_0(struct device *port);
 
 static const struct i2c_dw_rom_config i2c_config_dw_0 = {
 #ifdef CONFIG_I2C_DW_0_IRQ_DIRECT
-	.irq_num = I2C_DW_0_IRQ,
+	.irq_num = CONFIG_I2C_0_IRQ,
 #endif
 	.config_func = i2c_config_0,
 
@@ -710,7 +710,7 @@ static const struct i2c_dw_rom_config i2c_config_dw_0 = {
 };
 
 static struct i2c_dw_dev_config i2c_0_runtime = {
-	.base_address = I2C_DW_0_BASE_ADDR,
+	.base_address = CONFIG_I2C_0_BASE_ADDR,
 	.app_config = CONFIG_I2C_0_DEFAULT_CFG,
 #if CONFIG_PCI
 	.pci_dev.class_type = I2C_DW_PCI_CLASS,
@@ -731,9 +731,9 @@ DEVICE_AND_API_INIT(i2c_0, CONFIG_I2C_0_NAME, &i2c_dw_initialize,
 static void i2c_config_0(struct device *port)
 {
 #if defined(CONFIG_I2C_DW_0_IRQ_DIRECT)
-	IRQ_CONNECT(I2C_DW_0_IRQ, CONFIG_I2C_0_IRQ_PRI,
-		    i2c_dw_isr, DEVICE_GET(i2c_0), I2C_DW_IRQ_FLAGS);
-	irq_enable(I2C_DW_0_IRQ);
+	IRQ_CONNECT(CONFIG_I2C_0_IRQ, CONFIG_I2C_0_IRQ_PRI,
+		    i2c_dw_isr, DEVICE_GET(i2c_0), CONFIG_I2C_0_IRQ_FLAGS);
+	irq_enable(CONFIG_I2C_0_IRQ);
 #elif defined(CONFIG_I2C_DW_0_IRQ_SHARED)
 	const struct i2c_dw_rom_config * const config =
 		port->config->config_info;
@@ -754,12 +754,12 @@ static void i2c_config_0(struct device *port)
 static void i2c_config_1(struct device *port);
 
 static const struct i2c_dw_rom_config i2c_config_dw_1 = {
-	.irq_num = I2C_DW_1_IRQ,
+	.irq_num = CONFIG_I2C_1_IRQ,
 	.config_func = i2c_config_1,
 };
 
 static struct i2c_dw_dev_config i2c_1_runtime = {
-	.base_address = I2C_DW_1_BASE_ADDR,
+	.base_address = CONFIG_I2C_1_BASE_ADDR,
 	.app_config = CONFIG_I2C_1_DEFAULT_CFG,
 
 #if CONFIG_PCI
@@ -780,9 +780,9 @@ DEVICE_AND_API_INIT(i2c_1, CONFIG_I2C_1_NAME, &i2c_dw_initialize,
 
 static void i2c_config_1(struct device *port)
 {
-	IRQ_CONNECT(I2C_DW_1_IRQ, CONFIG_I2C_1_IRQ_PRI,
-		    i2c_dw_isr, DEVICE_GET(i2c_1), I2C_DW_IRQ_FLAGS);
-	irq_enable(I2C_DW_1_IRQ);
+	IRQ_CONNECT(CONFIG_I2C_1_IRQ, CONFIG_I2C_1_IRQ_PRI,
+		    i2c_dw_isr, DEVICE_GET(i2c_1), CONFIG_I2C_1_IRQ_FLAGS);
+	irq_enable(CONFIG_I2C_1_IRQ);
 }
 
 #endif /* CONFIG_I2C_1 */
