@@ -58,8 +58,8 @@ config I2C_SS_0_NAME
 	depends on I2C_SS_0 && !HAS_DTS_I2C
 	default "I2C_SS_0"
 
-config I2C_SS_0_DEFAULT_CFG
-	hex "I2C default configuration"
+config I2C_SS_0_BITRATE
+	hex "I2C SS 0 default bitrate"
 	depends on I2C_SS_0 && !HAS_DTS_I2C
 	default 0x0
 	help
@@ -78,8 +78,8 @@ config I2C_SS_1_NAME
 	depends on I2C_SS_1 && !HAS_DTS_I2C
 	default "I2C_SS_1"
 
-config I2C_SS_1_DEFAULT_CFG
-	hex "I2C SS default configuration"
+config I2C_SS_1_BITRATE
+	hex "I2C SS 1 default bitrate"
 	depends on I2C_SS_1 && !HAS_DTS_I2C
 	default 0x0
 	help

@@ -189,14 +189,8 @@ if I2C_QMSI_SS
 config I2C_SS_0
 	def_bool y
 
-config I2C_SS_0_DEFAULT_CFG
-	default 0x12
-
 config I2C_SS_1
 	def_bool y
-
-config I2C_SS_1_DEFAULT_CFG
-	default 0x12
 
 config I2C_SS_SDA_SETUP
 	default 2
