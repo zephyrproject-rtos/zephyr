@@ -1,4 +1,18 @@
-# This makefile builds socket_echo sample for POSIX system, like Linux
+# This makefile builds the sample for a POSIX system, like Linux
+# It required mbedTLS to be installed on the system, e.g.
+# libmbedtls-dev package on Debian/Ubuntu Linux.
+# To test connection:
+# openssl s_client -connect localhost:4242
+
+INC = -I$(ZEPHYR_BASE)/include
+LIBPATH = $(ZEPHYR_BASE)/subsys/net/lib/zstream
+LIBSRC = $(LIBPATH)/zstream_sock.c \
+    $(LIBPATH)/zstream_tls.c \
+    $(LIBPATH)/../tls_conf/tls_conf.c \
+
+LDLIBS = -lmbedtls -lmbedx509 -lmbedcrypto
+
+CFLAGS = -DCONFIG_MBEDTLS -DCONFIG_MBEDTLS_DEBUG_LEVEL=0
 
 socket_echo: src/socket_echo.c
-	$(CC) $^ -o $@
+	$(CC) $(INC) $(CFLAGS) $^ $(LIBSRC) $(LDLIBS) -o $@
