@@ -59,5 +59,17 @@
 
 			status = "disabled";
 		};
+
+		i2c0: i2c@90007000 {
+			compatible = "snps,designware-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x90007000 0x400>;
+			interrupts = <18 IRQ_TYPE_LEVEL_LOW>;
+			interrupt-parent = <&intc>;
+			label = "I2C_0";
+
+			status = "disabled";
+		};
 	};
 };
