@@ -65,3 +65,11 @@
 &spi2 {
       status = "ok";
 };
+
+&timers1 {
+	status = "ok";
+
+	pwm {
+		status = "ok";
+	};
+};

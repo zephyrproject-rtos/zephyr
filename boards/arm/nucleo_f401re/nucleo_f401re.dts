@@ -103,3 +103,11 @@
 
 
 };
+
+&timers2 {
+	status = "ok";
+
+	pwm {
+		status = "ok";
+	};
+};
