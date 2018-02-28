@@ -20,6 +20,21 @@
 			};
 		};
 
+		timers2: timers@40000000 {
+			compatible = "st,stm32-timers";
+			reg = <0x40000000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000001>;
+			status = "disabled";
+			label = "TIMERS_2";
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				st,prescaler = <0>;
+				label = "PWM_2";
+			};
+		};
+
 		spi2: spi@40003800 {
 			compatible = "st,stm32-spi-fifo";
 			#address-cells = <1>;
