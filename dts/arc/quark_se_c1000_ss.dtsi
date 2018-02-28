@@ -84,6 +84,7 @@
 
 		i2c2: i2c@0xb0002800 {
 			compatible = "intel,qmsi-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0xb0002800 0x400>;
@@ -94,6 +95,7 @@
 
 		i2c3: i2c@0xb0002c00 {
 			compatible = "intel,qmsi-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0xb0002c00 0x400>;
