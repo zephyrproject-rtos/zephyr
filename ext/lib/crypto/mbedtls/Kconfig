@@ -52,6 +52,21 @@ config MBEDTLS_CFG_FILE
 	  relatively many features enabled. To optimize resources for special
 	  TLS usage, an alternative config may be selected.
 
+config MBEDTLS_SSL_MAX_CONTENT_LEN
+	int "Max payload size for TLS protocol message"
+	default 1500
+	depends on MBEDTLS_BUILTIN
+	help
+	  The TLS standards mandate max payload size of 16384 bytes. So, for
+	  maximum operability and for general-purpose usage, that value must
+	  be used. For specific usages, that value can be largely decreased.
+	  E.g. for DTLS, payload size is limited by UDP datagram size, and
+	  even for HTTPS REST API, the payload can be limited to max size of
+	  (REST request, REST response, server certificate(s)).
+	  mbedTLS uses this value separate for input and output buffers, so
+	  twice this value will be allocated (on mbedTLS own heap, so the
+	  value of MBEDTLS_HEAP_SIZE should accommodate that).
+
 config MBEDTLS_DEBUG
 	bool "mbed TLS debug activation"
 	depends on MBEDTLS_BUILTIN
@@ -116,9 +131,10 @@ config MBEDTLS_HEAP_SIZE
 	  MBEDTLS_MEMORY_BUFFER_ALLOC_C option for details. That option is not
 	  enabled by default.
 	  Default value for the heap size is not set as it depends on the
-	  application. For server application 15000 bytes should be enough.
-	  For some dedicated and specific usage of mbedtls API, the 1000 bytes
-	  might be ok.
+	  application. For streaming communication with arbitrary (HTTPS)
+	  servers on the Internet, 32KB + overheads (up to another 20KB) may
+	  be needed. For some dedicated and specific usage of mbedtls API, the
+	  1000 bytes might be ok.
 
 config APP_LINK_WITH_MBEDTLS
 	bool "Link 'app' with MBEDTLS"
