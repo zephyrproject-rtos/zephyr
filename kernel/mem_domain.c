@@ -12,17 +12,61 @@
 
 static u8_t max_partitions;
 
-static void ensure_w_xor_x(k_mem_partition_attr_t attrs)
-{
 #if defined(CONFIG_EXECUTE_XOR_WRITE) && __ASSERT_ON
-	bool writable = K_MEM_PARTITION_IS_WRITABLE(attrs);
-	bool executable = K_MEM_PARTITION_IS_EXECUTABLE(attrs);
+static bool sane_partition(const struct k_mem_partition *part,
+			   const struct k_mem_partition *parts,
+			   u32_t num_parts)
+{
+	bool exec, write;
+	u32_t end;
+	u32_t i;
 
-	__ASSERT(writable != executable, "writable page not executable");
-#else
-	ARG_UNUSED(attrs);
-#endif
+	end = part->start + part->size;
+	exec = K_MEM_PARTITION_IS_EXECUTABLE(part->attrs);
+	write = K_MEM_PARTITION_IS_WRITABLE(part->attrs);
+
+	if (exec && write) {
+		__ASSERT(0, "partition is writable and executable <start %x>",
+			 part->start);
+		return false;
+	}
+
+	for (i = 0; i < num_parts; i++) {
+		bool cur_write, cur_exec;
+		u32_t cur_end;
+
+		cur_end = parts[i].start + parts[i].size;
+
+		if (end < parts[i].start || cur_end < part->start) {
+			continue;
+		}
+
+		cur_write = K_MEM_PARTITION_IS_WRITABLE(parts[i].attrs);
+		cur_exec = K_MEM_PARTITION_IS_EXECUTABLE(parts[i].attrs);
+
+		if ((cur_write && exec) || (cur_exec && write)) {
+			__ASSERT(0, "overlapping partitions are "
+				 "writable and executable "
+				 "<%x...%x>, <%x...%x>",
+				 part->start, end,
+				 parts[i].start, cur_end);
+			return false;
+		}
+	}
+
+	return true;
 }
+
+static inline bool sane_partition_domain(const struct k_mem_domain *domain,
+					 const struct k_mem_partition *part)
+{
+	return sane_partition(part, domain->partitions,
+			      domain->num_partitions);
+}
+#else
+#define sane_partition(...) (true)
+#define sane_partition_domain(...) (true)
+#endif
 
 void k_mem_domain_init(struct k_mem_domain *domain, u32_t num_parts,
 		struct k_mem_partition *parts[])
@@ -43,11 +87,19 @@ void k_mem_domain_init(struct k_mem_domain *domain, u32_t num_parts,
 
 		for (i = 0; i < num_parts; i++) {
 			__ASSERT(parts[i], "");
-
-			ensure_w_xor_x(parts[i]->attr);
+			__ASSERT((parts[i]->start + parts[i]->size) >
+				 parts[i]->start, "");
 
 			domain->partitions[i] = *parts[i];
 		}
+
+#if defined(CONFIG_EXECUTE_XOR_WRITE)
+		for (i = 0; i < num_parts; i++) {
+			__ASSERT(sane_partition_domain(domain,
+						       domain->partitions[i]),
+				 "");
+		}
+#endif
 	}
 
 	sys_dlist_init(&domain->mem_domain_q);
@@ -81,7 +133,7 @@ void k_mem_domain_destroy(struct k_mem_domain *domain)
 }
 
 void k_mem_domain_add_partition(struct k_mem_domain *domain,
-			       struct k_mem_partition *part)
+				struct k_mem_partition *part)
 {
 	int p_idx;
 	unsigned int key;
@@ -90,7 +142,9 @@ void k_mem_domain_add_partition(struct k_mem_domain *domain,
 	__ASSERT(part != NULL, "");
 	__ASSERT((part->start + part->size) > part->start, "");
 
-	ensure_w_xor_x(part->attr);
+#if defined(CONFIG_EXECUTE_XOR_WRITE)
+	__ASSERT(sane_partition_domain(domain, part), "");
+#endif
 
 	key = irq_lock();
 
