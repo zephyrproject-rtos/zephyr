@@ -767,7 +767,7 @@ static inline int http_client_send_get_req(struct http_ctx *http_ctx,
 		.method = HTTP_GET,
 		.url = url,
 		.host = host,
-		.protocol = " " HTTP_PROTOCOL HTTP_CRLF,
+		.protocol = " " HTTP_PROTOCOL,
 		.header_fields = extra_header_fields,
 	};
 
