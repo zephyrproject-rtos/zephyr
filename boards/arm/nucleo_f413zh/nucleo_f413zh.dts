@@ -59,3 +59,11 @@
 &usbotg_fs {
 	status = "ok";
 };
+
+&timers2 {
+	status = "ok";
+
+	pwm {
+		status = "ok";
+	};
+};

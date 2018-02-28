@@ -79,3 +79,11 @@
 	status = "ok";
 	disconnect-gpios = <&gpioc 12 0>;
 };
+
+&timers1 {
+	status = "ok";
+
+	pwm {
+		status = "ok";
+	};
+};
