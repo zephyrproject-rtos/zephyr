@@ -102,8 +102,6 @@ config I2C_0
 
 config I2C_0_IRQ_PRI
 	default 0
-config I2C_0_DEFAULT_CFG
-	default 0x12
 endif # I2C_QMSI
 
 config I2C_SDA_SETUP
