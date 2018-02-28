@@ -411,6 +411,26 @@ static inline int pthread_equal(pthread_t pt1, pthread_t pt2)
 	return (pt1 == pt2);
 }
 
+/**
+ * @brief Destroy the read-write lock attributes object.
+ *
+ * See IEEE 1003.1
+ */
+static inline int pthread_rwlockattr_destroy(pthread_rwlockattr_t *attr)
+{
+	return 0;
+}
+
+/**
+ * @brief initialize the read-write lock attributes object.
+ *
+ * See IEEE 1003.1
+ */
+static inline int pthread_rwlockattr_init(pthread_rwlockattr_t *attr)
+{
+	return 0;
+}
+
 int pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *stacksize);
 int pthread_attr_setschedpolicy(pthread_attr_t *attr, int policy);
 int pthread_attr_getschedpolicy(const pthread_attr_t *attr, int *policy);
@@ -437,5 +457,17 @@ int pthread_attr_setschedparam(pthread_attr_t *attr,
 			       const struct sched_param *schedparam);
 int pthread_setschedparam(pthread_t pthread, int policy,
 			  const struct sched_param *param);
+int pthread_rwlock_destroy(pthread_rwlock_t *rwlock);
+int pthread_rwlock_init(pthread_rwlock_t *rwlock,
+			const pthread_rwlockattr_t *attr);
+int pthread_rwlock_rdlock(pthread_rwlock_t *rwlock);
+int pthread_rwlock_timedrdlock(pthread_rwlock_t *rwlock,
+			       const struct timespec *abstime);
+int pthread_rwlock_timedwrlock(pthread_rwlock_t *rwlock,
+			       const struct timespec *abstime);
+int pthread_rwlock_tryrdlock(pthread_rwlock_t *rwlock);
+int pthread_rwlock_trywrlock(pthread_rwlock_t *rwlock);
+int pthread_rwlock_unlock(pthread_rwlock_t *rwlock);
+int pthread_rwlock_wrlock(pthread_rwlock_t *rwlock);
 
 #endif /* __PTHREAD_H__ */
