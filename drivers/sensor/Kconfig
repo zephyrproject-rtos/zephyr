@@ -89,6 +89,8 @@ source "drivers/sensor/lps22hb/Kconfig"
 
 source "drivers/sensor/lps25hb/Kconfig"
 
+source "drivers/sensor/lsm303dlhc_accel/Kconfig"
+
 source "drivers/sensor/lsm6ds0/Kconfig"
 
 source "drivers/sensor/lsm6dsl/Kconfig"
