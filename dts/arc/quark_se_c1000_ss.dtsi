@@ -1,5 +1,7 @@
 #include "skeleton.dtsi"
 
+#include <dt-bindings/i2c/i2c.h>
+
 #define __SIZE_K(x) (x * 1024)
 
 / {
@@ -64,6 +66,7 @@
 
 		i2c0: i2c@0x80012000 {
 			compatible = "intel,qmsi-ss-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x80012000 0x100>;
@@ -74,6 +77,7 @@
 
 		i2c1: i2c@0x80012100 {
 			compatible = "intel,qmsi-ss-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x80012100 0x100>;

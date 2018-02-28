@@ -13,6 +13,8 @@
 #include "qm_ss_isr.h"
 #include "ss_clk.h"
 
+#include "i2c-priv.h"
+
 /* Convenient macros to get the controller instance and the driver data. */
 #define GET_CONTROLLER_INSTANCE(dev) \
 	(((const struct i2c_qmsi_ss_config_info *) \
@@ -22,7 +24,7 @@
 
 struct i2c_qmsi_ss_config_info {
 	qm_ss_i2c_t instance; /* Controller instance. */
-	u32_t default_cfg;
+	u32_t bitrate;
 	void (*irq_cfg)(void);
 };
 
@@ -113,7 +115,7 @@ static void i2c_qmsi_ss_config_irq_0(void);
 
 static const struct i2c_qmsi_ss_config_info config_info_0 = {
 	.instance = QM_SS_I2C_0,
-	.default_cfg = CONFIG_I2C_SS_0_DEFAULT_CFG,
+	.bitrate = CONFIG_I2C_SS_0_BITRATE,
 	.irq_cfg = i2c_qmsi_ss_config_irq_0,
 };
 
@@ -170,7 +172,7 @@ static void i2c_qmsi_ss_config_irq_1(void);
 
 static const struct i2c_qmsi_ss_config_info config_info_1 = {
 	.instance = QM_SS_I2C_1,
-	.default_cfg = CONFIG_I2C_SS_1_DEFAULT_CFG,
+	.bitrate = CONFIG_I2C_SS_1_BITRATE,
 	.irq_cfg = i2c_qmsi_ss_config_irq_1,
 };
 
@@ -345,6 +347,7 @@ static int i2c_qmsi_ss_init(struct device *dev)
 	struct i2c_qmsi_ss_driver_data *driver_data = GET_DRIVER_DATA(dev);
 	const struct i2c_qmsi_ss_config_info *config = dev->config->config_info;
 	qm_ss_i2c_t instance = GET_CONTROLLER_INSTANCE(dev);
+	u32_t bitrate_cfg;
 	int err;
 
 	config->irq_cfg();
@@ -352,7 +355,9 @@ static int i2c_qmsi_ss_init(struct device *dev)
 
 	k_sem_init(&driver_data->sem, 1, UINT_MAX);
 
-	err = i2c_qmsi_ss_configure(dev, config->default_cfg);
+	bitrate_cfg = _i2c_map_dt_bitrate(config->bitrate);
+
+	err = i2c_qmsi_ss_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
 
 	if (err < 0) {
 		return err;
