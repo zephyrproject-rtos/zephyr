@@ -12,6 +12,10 @@
 #include <clock_control.h>
 #include <misc/__assert.h>
 #include <arch/arm/cortex_m/cmsis.h>
+#if defined(CONFIG_USB) && defined(CONFIG_SOC_NRF52840)
+#include <nrf_power.h>
+#include <drivers/clock_control/nrf5_clock_control.h>
+#endif
 
 static u8_t m16src_ref;
 static u8_t m16src_grd;
@@ -236,9 +240,21 @@ lf_already_started:
 	}
 }
 
+#if defined(CONFIG_USB) && defined(CONFIG_SOC_NRF52840)
+static inline void power_event_cb(nrf_power_event_t event)
+{
+	extern void nrf5_usbd_power_event_callback(nrf_power_event_t event);
+
+	nrf5_usbd_power_event_callback(event);
+}
+#endif
+
 static void _power_clock_isr(void *arg)
 {
 	u8_t pof, hf_intenset, hf_stat, hf, lf, done, ctto;
+#if defined(CONFIG_USB) && defined(CONFIG_SOC_NRF52840)
+	bool usb_detected, usb_pwr_rdy, usb_removed;
+#endif
 	struct device *dev = arg;
 
 	pof = (NRF_POWER->EVENTS_POFWARN != 0);
@@ -253,7 +269,16 @@ static void _power_clock_isr(void *arg)
 	done = (NRF_CLOCK->EVENTS_DONE != 0);
 	ctto = (NRF_CLOCK->EVENTS_CTTO != 0);
 
+#if defined(CONFIG_USB) && defined(CONFIG_SOC_NRF52840)
+	usb_detected = nrf_power_event_check(NRF_POWER_EVENT_USBDETECTED);
+	usb_pwr_rdy = nrf_power_event_check(NRF_POWER_EVENT_USBPWRRDY);
+	usb_removed = nrf_power_event_check(NRF_POWER_EVENT_USBREMOVED);
+
+	__ASSERT_NO_MSG(pof || hf || hf_intenset || lf || done || ctto ||
+			usb_detected || usb_pwr_rdy || usb_removed);
+#else
 	__ASSERT_NO_MSG(pof || hf || hf_intenset || lf || done || ctto);
+#endif
 
 	if (pof) {
 		NRF_POWER->EVENTS_POFWARN = 0;
@@ -310,6 +335,23 @@ static void _power_clock_isr(void *arg)
 			__ASSERT_NO_MSG(err == -EINPROGRESS);
 		}
 	}
+
+#if defined(CONFIG_USB) && defined(CONFIG_SOC_NRF52840)
+	if (usb_detected) {
+		nrf_power_event_clear(NRF_POWER_EVENT_USBDETECTED);
+		power_event_cb(NRF_POWER_EVENT_USBDETECTED);
+	}
+
+	if (usb_pwr_rdy) {
+		nrf_power_event_clear(NRF_POWER_EVENT_USBPWRRDY);
+		power_event_cb(NRF_POWER_EVENT_USBPWRRDY);
+	}
+
+	if (usb_removed) {
+		nrf_power_event_clear(NRF_POWER_EVENT_USBREMOVED);
+		power_event_cb(NRF_POWER_EVENT_USBREMOVED);
+	}
+#endif
 }
 
 static int _clock_control_init(struct device *dev)
@@ -352,3 +394,72 @@ DEVICE_AND_API_INIT(clock_nrf5_k32src,
 		    _clock_control_init, NULL, NULL, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &_k32src_clock_control_api);
+
+#if defined(CONFIG_USB) && defined(CONFIG_SOC_NRF52840)
+static void power_int_enable(bool enable)
+{
+	u32_t mask;
+
+	mask = NRF_POWER_INT_USBDETECTED_MASK |
+	       NRF_POWER_INT_USBREMOVED_MASK |
+	       NRF_POWER_INT_USBPWRRDY_MASK;
+
+	if (enable) {
+		nrf_power_int_enable(mask);
+	} else {
+		nrf_power_int_disable(mask);
+	}
+}
+
+static bool usbregstatus_vbusdet_get(void)
+{
+	return nrf_power_usbregstatus_vbusdet_get();
+}
+
+static bool usbregstatus_outrdy_get(void)
+{
+	return nrf_power_usbregstatus_outrdy_get();
+}
+
+static const struct usbd_power_nrf5_api usbd_power_api = {
+	.usb_power_int_enable = power_int_enable,
+	.vbusdet_get = usbregstatus_vbusdet_get,
+	.outrdy_get = usbregstatus_outrdy_get,
+};
+
+static int usbd_power_init(struct device *dev)
+{
+	irq_enable(POWER_CLOCK_IRQn);
+
+	return 0;
+}
+
+void nrf5_power_usb_power_int_enable(struct device *dev, bool enable)
+{
+	const struct usbd_power_nrf5_api *api = dev->driver_api;
+
+	api->usb_power_int_enable(enable);
+}
+
+bool nrf5_power_clock_usb_vbusdet(struct device *dev)
+{
+	const struct usbd_power_nrf5_api *api = dev->driver_api;
+
+	return api->vbusdet_get();
+}
+
+bool nrf5_power_clock_usb_outrdy(struct device *dev)
+{
+	const struct usbd_power_nrf5_api *api = dev->driver_api;
+
+	return api->outrdy_get();
+}
+
+DEVICE_AND_API_INIT(usbd_power_nrf5,
+		    CONFIG_USBD_NRF5_NAME,
+		    usbd_power_init,
+		    NULL, NULL,
+		    PRE_KERNEL_2,
+		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    &usbd_power_api);
+#endif

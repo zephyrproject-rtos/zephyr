@@ -7,6 +7,10 @@
 #ifndef _NRF5_CLOCK_CONTROL_H_
 #define _NRF5_CLOCK_CONTROL_H_
 
+#if defined(CONFIG_USB) && defined(CONFIG_SOC_NRF52840)
+#include <device.h>
+#endif
+
 /* TODO: move all these to clock_control.h ? */
 
 /* Define 32KHz clock source */
@@ -41,6 +45,18 @@
 #endif
 #ifdef CONFIG_CLOCK_CONTROL_NRF5_K32SRC_20PPM
 #define CLOCK_CONTROL_NRF5_K32SRC_ACCURACY 7
+#endif
+
+#if defined(CONFIG_USB) && defined(CONFIG_SOC_NRF52840)
+struct usbd_power_nrf5_api {
+	void (*usb_power_int_enable)(bool enable);
+	bool (*vbusdet_get)(void);
+	bool (*outrdy_get)(void);
+};
+
+void nrf5_power_usb_power_int_enable(struct device *dev, bool enable);
+bool nrf5_power_clock_usb_vbusdet(struct device *dev);
+bool nrf5_power_clock_usb_outrdy(struct device *dev);
 #endif
 
 #endif /* _NRF5_CLOCK_CONTROL_H_ */
