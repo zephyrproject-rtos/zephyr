@@ -14,13 +14,19 @@
 #define PTHREAD_INIT_FLAGS	PTHREAD_CANCEL_ENABLE
 #define PTHREAD_CANCELED	((void *) -1)
 
+#define LOWEST_POSIX_THREAD_PRIORITY 1
+
 static const pthread_attr_t init_pthread_attrs = {
-	.priority = K_LOWEST_APPLICATION_THREAD_PRIO,
+	.priority = LOWEST_POSIX_THREAD_PRIORITY,
 	.stack = NULL,
 	.stacksize = 0,
 	.flags = PTHREAD_INIT_FLAGS,
 	.delayedstart = K_NO_WAIT,
+#if defined(CONFIG_PREEMPT_ENABLED)
 	.schedpolicy = SCHED_RR,
+#else
+	.schedpolicy = SCHED_FIFO,
+#endif
 	.detachstate = PTHREAD_CREATE_JOINABLE,
 	.initialized = true,
 };
