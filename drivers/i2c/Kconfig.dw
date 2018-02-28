@@ -1,0 +1,52 @@
+#
+# Copyright (c) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig I2C_DW
+	bool "Design Ware I2C support"
+	default n
+	help
+	  Enable Design Ware I2C support on the selected board
+
+if I2C_DW
+
+config I2C_DW_CLOCK_SPEED
+	int "Set the clock speed for I2C"
+	default 32
+
+config I2C_DW_SHARED_IRQ
+	bool
+	default n
+
+choice
+	prompt "I2C_0 Interrupts via"
+	default I2C_DW_0_IRQ_DIRECT
+	depends on I2C_0
+
+config I2C_DW_0_IRQ_DIRECT
+	bool "Direct Hardware Interrupt"
+	help
+	  When interrupts fire, the driver's ISR function is being called
+	  directly.
+
+config I2C_DW_0_IRQ_SHARED
+	bool "Shared IRQ"
+	depends on SHARED_IRQ
+	select I2C_DW_SHARED_IRQ
+	help
+	  When interrupts fire, the shared IRQ driver is notified.
+	  Then the shared IRQ driver dispatches the interrupt to other drivers.
+
+endchoice
+
+config I2C_DW_0_IRQ_SHARED_NAME
+	string "Device name for Shared IRQ"
+	depends on I2C_0 && I2C_DW_0_IRQ_SHARED
+	help
+	  Specify the device name for the shared IRQ driver. It is used
+	  to register this driver with the shared IRQ driver, so interrupts
+	  can be dispatched correctly.
+
+endif # I2C_DW

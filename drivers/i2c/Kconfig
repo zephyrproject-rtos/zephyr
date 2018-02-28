@@ -10,151 +10,21 @@
 # I2C options
 #
 menuconfig I2C
-	bool
-	prompt "I2C Drivers"
+	bool "I2C Drivers"
 	default n
 	help
 	  Enable I2C Driver Configuration
 
 if I2C
 
-config I2C_DW
-	bool "Design Ware I2C support"
-	default n
-	help
-	  Enable Design Ware I2C support on the selected board
-
-config I2C_QMSI_SS
-	bool "QMSI I2C driver for the Sensor Subsystem"
-	depends on QMSI
-	default n
-	help
-	  This option enable the Sensor QMSI I2C driver.
-
-	  This driver is simply a shim driver based on the I2C driver
-	  provided by the QMSI BSP.
-
-config I2C_QMSI
-	bool "QMSI I2C driver"
-	depends on QMSI
-	default n
-	help
-	  This option enable the QMSI I2C driver.
-
-	  This driver is simply a shim driver based on the I2C driver
-	  provided by the QMSI BSP.
-
-config I2C_ATMEL_SAM3
-	bool "[deprecated] Atmel SAM3X I2C Driver"
-	depends on SOC_SERIES_SAM3X
-	default n
-	help
-	  This driver is deprecated and will be removed. Use
-	  "Atmel SAM (TWI) I2C driver" instead.
-
-	  Enable I2C support on the Atmel SAM3 family processor.
-	  Says y to enable additional options to enable support
-	  for individual controllers.
-
-config I2C_SAM_TWIHS
-	bool "Atmel SAM (TWIHS) I2C driver"
-	depends on SOC_FAMILY_SAM
-	select HAS_DTS_I2C
-	default n
-	help
-	  Enable Atmel SAM MCU Family (TWIHS) I2C bus driver.
-
-config I2C_SAM_TWI
-	bool "Atmel SAM (TWI) I2C driver"
-	depends on SOC_FAMILY_SAM
-	select HAS_DTS_I2C
-	default n
-	help
-	  Enable Atmel SAM MCU Family (TWI) I2C bus driver.
-
-config I2C_MCUX
-	bool "MCUX I2C driver"
-	depends on HAS_MCUX
-	select HAS_DTS_I2C
-	default n
-	help
-	  Enable the mcux I2C driver.
-
-config I2C_CC32XX
-	bool "CC32XX I2C driver"
-	depends on SOC_SERIES_CC32XX
-	select HAS_DTS_I2C
-	default n
-	help
-	  Enable the CC32XX I2C driver.
-
-config I2C_STM32_V1
-	bool "STM32 V1 Driver (F1/F4X)"
-	depends on SOC_FAMILY_STM32
-	depends on SOC_SERIES_STM32F1X || SOC_SERIES_STM32F4X
-	select HAS_DTS_I2C
-	select USE_STM32_LL_I2C
-	default n
-	help
-	  Enable I2C support on the STM32 F1 and F4X family of processors. This
-	  driver also supports the F2 and L1 series.
-
-config I2C_STM32_V2
-	bool "STM32 V2 Driver (F0/F3/L0/L4X)"
-	depends on SOC_FAMILY_STM32
-	depends on SOC_SERIES_STM32F0X || SOC_SERIES_STM32F3X || SOC_SERIES_STM32L0X || SOC_SERIES_STM32L4X
-	select HAS_DTS_I2C
-	select USE_STM32_LL_I2C
-	select USE_STM32_LL_RCC if SOC_SERIES_STM32F0X || SOC_SERIES_STM32F3X
-	default n
-	help
-	  Enable I2C support on the STM32 F0, F3, L0 and L4X family of processors.
-	  This driver also supports the F7 series.
-
-config I2C_STM32_INTERRUPT
-	bool "STM32 MCU I2C Interrupt Support"
-	depends on I2C_STM32_V1 || I2C_STM32_V2
-	default n
-	help
-	  Enable Interrupt support for the I2C Driver
-
-config I2C_STM32_COMBINED_INTERRUPT
-	bool
-	depends on I2C_STM32_INTERRUPT
-	default y if SOC_SERIES_STM32F0X || SOC_SERIES_STM32L0X
-
-config I2C_BITBANG
-	bool
-	default n
-	help
-	  Enable library used for software driven (bit banging) I2C support
-
-config I2C_NIOS2
-	bool "Nios-II I2C driver"
-	depends on HAS_ALTERA_HAL
-	default n
-	help
-	  Enable the Nios-II I2C driver.
-
-source "drivers/i2c/Kconfig.sbcon"
-
-source "drivers/i2c/Kconfig.gpio"
-
 config I2C_INIT_PRIORITY
-	int
+	int "Init priority"
 	default 60
-	prompt "Init priority"
 	help
 	  I2C device driver initialization priority.
 
-config I2C_DW_CLOCK_SPEED
-	int "Set the clock speed for I2C"
-	default 32
-	depends on I2C_DW
-
 config SYS_LOG_I2C_LEVEL
-	int
-	prompt "I2C log level"
+	int "I2C log level"
 	depends on SYS_LOG
 	default 0
 	help
@@ -165,40 +35,6 @@ config SYS_LOG_I2C_LEVEL
 	  - 2 WARNING, write SYS_LOG_WRN in addition to previous level
 	  - 3 INFO, write SYS_LOG_INF in addition to previous levels
 	  - 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
-
-config I2C_DW_SHARED_IRQ
-	bool
-	default n
-	depends on I2C_DW
-
-choice
-	prompt "I2C_0 Interrupts via"
-	default I2C_DW_0_IRQ_DIRECT
-	depends on I2C_0 && I2C_DW
-
-config I2C_DW_0_IRQ_DIRECT
-	bool "Direct Hardware Interrupt"
-	help
-	  When interrupts fire, the driver's ISR function is being called
-	  directly.
-
-config I2C_DW_0_IRQ_SHARED
-	bool "Shared IRQ"
-	depends on SHARED_IRQ
-	select I2C_DW_SHARED_IRQ
-	help
-	  When interrupts fire, the shared IRQ driver is notified.
-	  Then the shared IRQ driver dispatches the interrupt to other drivers.
-
-endchoice
-
-config I2C_DW_0_IRQ_SHARED_NAME
-	string "Device name for Shared IRQ"
-	depends on I2C_0 && I2C_DW_0_IRQ_SHARED
-	help
-	  Specify the device name for the shared IRQ driver. It is used
-	  to register this driver with the shared IRQ driver, so interrupts
-	  can be dispatched correctly.
 
 config I2C_0
 	bool "Enable I2C Port 0"
@@ -304,85 +140,75 @@ config I2C_3_IRQ_PRI
 	help
 	  IRQ priority.
 
-config I2C_SS_0
-	bool "Enable I2C_SS_0"
-	depends on I2C_QMSI_SS
+config I2C_ATMEL_SAM3
+	bool "[deprecated] Atmel SAM3X I2C Driver"
+	depends on SOC_SERIES_SAM3X
 	default n
-
-config I2C_SS_0_NAME
-	string "Select a name for finding the device"
-	depends on I2C_SS_0
-	default "I2C_SS_0"
-
-config I2C_SS_0_DEFAULT_CFG
-	hex "I2C default configuration"
-	depends on I2C_SS_0
-	default 0x0
 	help
-	  Allows the I2C port to be brought up with a default configuration.
-	  This is useful to set if other drivers depend upon using the I2C bus
-	  before the application has a chance to custom configure the port.
-	  Setting this value does not prohibit the application from customizing
-	  the values later.  Refer to the I2C datasheet for proper values.
+	  This driver is deprecated and will be removed. Use
+	  "Atmel SAM (TWI) I2C driver" instead.
 
-config I2C_SS_1
-	bool "Enable I2C SS Port 1"
-	depends on I2C_QMSI_SS
+	  Enable I2C support on the Atmel SAM3 family processor.
+	  Says y to enable additional options to enable support
+	  for individual controllers.
+
+config I2C_SAM_TWIHS
+	bool "Atmel SAM (TWIHS) I2C driver"
+	depends on SOC_FAMILY_SAM
+	select HAS_DTS_I2C
 	default n
-
-config I2C_SS_1_NAME
-	string "Select a name for finding the device"
-	default "I2C_SS_1"
-	depends on I2C_SS_1
-
-config I2C_SS_1_DEFAULT_CFG
-	hex "I2C SS default configuration"
-	depends on I2C_SS_1
-	default 0x0
 	help
-	  Allows the I2C port to be brought up with a default configuration.
-	  This is useful to set if other drivers depend upon using the I2C bus
-	  before the application has a chance to custom configure the port.
-	  Setting this value does not prohibit the application from customizing
-	  the values later.  Refer to the I2C datasheet for proper values.
+	  Enable Atmel SAM MCU Family (TWIHS) I2C bus driver.
 
-config I2C_SS_SDA_HOLD
-	int
-	depends on I2C_QMSI_SS
+config I2C_SAM_TWI
+	bool "Atmel SAM (TWI) I2C driver"
+	depends on SOC_FAMILY_SAM
+	select HAS_DTS_I2C
+	default n
 	help
-	  The hold time on the data signal after a negative edge of i2c clock.
-	  The unit is i2c module base clock.
+	  Enable Atmel SAM MCU Family (TWI) I2C bus driver.
 
-config I2C_SS_SDA_SETUP
-	int
-	depends on I2C_QMSI_SS
+config I2C_MCUX
+	bool "MCUX I2C driver"
+	depends on HAS_MCUX
+	select HAS_DTS_I2C
+	default n
 	help
-	  The delay time of clock rising edge relative to i2c data signal
-	  change. The unit is i2c module base clock.
+	  Enable the mcux I2C driver.
 
-config I2C_SDA_SETUP
-	int
-	depends on I2C_QMSI
+config I2C_CC32XX
+	bool "CC32XX I2C driver"
+	depends on SOC_SERIES_CC32XX
+	select HAS_DTS_I2C
+	default n
 	help
-	  The delay time of clock rising edge relative to i2c data signal
-	  change. The unit is i2c module base clock.
+	  Enable the CC32XX I2C driver.
 
-config I2C_SDA_TX_HOLD
-	int
-	depends on I2C_QMSI
+config I2C_BITBANG
+	bool
+	default n
 	help
-	  The hold time on the data signal after a negative edge of i2c clock
-	  while i2c acts as transmitter. The unit is i2c module base clock.
+	  Enable library used for software driven (bit banging) I2C support
 
-config I2C_SDA_RX_HOLD
-	int
-	depends on I2C_QMSI
+config I2C_NIOS2
+	bool "Nios-II I2C driver"
+	depends on HAS_ALTERA_HAL
+	default n
 	help
-	  The hold time on the data signal after a negative edge of i2c clock
-	  while i2c acts as receiver. The unit is i2c module base clock.
+	  Enable the Nios-II I2C driver.
+
+source "drivers/i2c/Kconfig.dw"
 
 source "drivers/i2c/Kconfig.esp32"
 
+source "drivers/i2c/Kconfig.gpio"
+
 source "drivers/i2c/Kconfig.nrf5"
+
+source "drivers/i2c/Kconfig.qmsi"
+
+source "drivers/i2c/Kconfig.sbcon"
+
+source "drivers/i2c/Kconfig.stm32"
 
 endif # I2C
