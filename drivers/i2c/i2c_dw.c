@@ -699,9 +699,6 @@ static int i2c_dw_initialize(struct device *port)
 static void i2c_config_0(struct device *port);
 
 static const struct i2c_dw_rom_config i2c_config_dw_0 = {
-#ifdef CONFIG_I2C_DW_0_IRQ_DIRECT
-	.irq_num = CONFIG_I2C_0_IRQ,
-#endif
 	.config_func = i2c_config_0,
 
 #ifdef CONFIG_GPIO_DW_0_IRQ_SHARED
@@ -754,7 +751,6 @@ static void i2c_config_0(struct device *port)
 static void i2c_config_1(struct device *port);
 
 static const struct i2c_dw_rom_config i2c_config_dw_1 = {
-	.irq_num = CONFIG_I2C_1_IRQ,
 	.config_func = i2c_config_1,
 };
 

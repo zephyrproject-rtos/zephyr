@@ -85,8 +85,6 @@ typedef void (*i2c_isr_cb_t)(struct device *port);
 
 
 struct i2c_dw_rom_config {
-	u32_t	irq_num;
-	u32_t        interrupt_mask;
 	i2c_isr_cb_t	config_func;
 
 #ifdef CONFIG_I2C_DW_SHARED_IRQ
