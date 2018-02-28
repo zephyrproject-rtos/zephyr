@@ -53,7 +53,11 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
     .word __mpu_fault
     .word __bus_fault
     .word __usage_fault
+#if defined(CONFIG_ARM_SECURE_FIRMWARE)
+    .word __secure_fault
+#else
     .word __reserved
+#endif /* CONFIG_ARM_SECURE_FIRMWARE */
     .word __reserved
     .word __reserved
     .word __reserved

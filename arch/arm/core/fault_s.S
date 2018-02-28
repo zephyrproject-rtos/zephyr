@@ -26,6 +26,9 @@ GTEXT(__hard_fault)
 GTEXT(__mpu_fault)
 GTEXT(__bus_fault)
 GTEXT(__usage_fault)
+#if defined(CONFIG_ARM_SECURE_FIRMWARE)
+GTEXT(__secure_fault)
+#endif /* CONFIG_ARM_SECURE_FIRMWARE*/
 GTEXT(__debug_monitor)
 #else
 #error Unknown ARM architecture
@@ -51,6 +54,7 @@ GTEXT(__reserved)
  *   __mpu_fault
  *   __bus_fault
  *   __usage_fault
+ *   __secure_fault
  *   __debug_monitor
  *   __reserved
  */
@@ -62,6 +66,9 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,__hard_fault)
 SECTION_SUBSEC_FUNC(TEXT,__fault,__mpu_fault)
 SECTION_SUBSEC_FUNC(TEXT,__fault,__bus_fault)
 SECTION_SUBSEC_FUNC(TEXT,__fault,__usage_fault)
+#if defined(CONFIG_ARM_SECURE_FIRMWARE)
+SECTION_SUBSEC_FUNC(TEXT,__fault,__secure_fault)
+#endif /* CONFIG_ARM_SECURE_FIRMWARE */
 SECTION_SUBSEC_FUNC(TEXT,__fault,__debug_monitor)
 #else
 #error Unknown ARM architecture

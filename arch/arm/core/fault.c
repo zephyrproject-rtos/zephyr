@@ -74,6 +74,9 @@ void _FaultDump(const NANO_ESF *esf, int fault)
 
 	PR_EXC("MMFSR: 0x%x, BFSR: 0x%x, UFSR: 0x%x\n",
 	       SCB_MMFSR, SCB_BFSR, SCB_MMFSR);
+#if defined(CONFIG_ARM_SECURE_FIRMWARE)
+	PR_EXC("SFSR: 0x%x\n", SAU->SFSR);
+#endif /* CONFIG_ARM_SECURE_FIRMWARE */
 
 	/* In a fault handler, to determine the true faulting address:
 	 * 1. Read and save the MMFAR or BFAR value.
@@ -85,6 +88,9 @@ void _FaultDump(const NANO_ESF *esf, int fault)
 	 */
 	STORE_xFAR(mmfar, SCB->MMFAR);
 	STORE_xFAR(bfar, SCB->BFAR);
+#if defined(CONFIG_ARM_SECURE_FIRMWARE)
+	STORE_xFAR(sfar, SAU->SFAR);
+#endif /* CONFIG_ARM_SECURE_FIRMWARE */
 
 	if (SCB->CFSR & CFSR_MMARVALID_Msk) {
 		PR_EXC("MMFAR: 0x%x\n", mmfar);
@@ -100,6 +106,18 @@ void _FaultDump(const NANO_ESF *esf, int fault)
 			SCB->CFSR &= ~CFSR_BFARVALID_Msk;
 		}
 	}
+#if defined(CONFIG_ARM_SECURE_FIRMWARE)
+	if (SAU->SFSR & SAU_SFSR_SFARVALID_Msk) {
+		PR_EXC("SFAR: 0x%x\n", sfar);
+		if (escalation) {
+			/* clear SFSR_SFAR[VALID] to reset */
+			SAU->SFSR &= ~SAU_SFSR_SFARVALID_Msk;
+		}
+	}
+
+	/* clear SFSR sticky bits */
+	SAU->SFSR |= 0xFF;
+#endif /* CONFIG_ARM_SECURE_FIRMWARE */
 
 	/* clear USFR sticky bits */
 	SCB->CFSR |= SCB_CFSR_USGFAULTSR_Msk;
@@ -274,6 +292,61 @@ static void _UsageFault(const NANO_ESF *esf)
 	SCB->CFSR |= SCB_CFSR_USGFAULTSR_Msk;
 }
 
+#if defined(CONFIG_ARM_SECURE_FIRMWARE)
+/**
+ *
+ * @brief Dump secure fault information
+ *
+ * See _FaultDump() for example.
+ *
+ * @return N/A
+ */
+static void _SecureFault(const NANO_ESF *esf)
+{
+	PR_EXC("***** SECURE FAULT *****\n");
+
+	_FaultThreadShow(esf);
+
+	STORE_xFAR(sfar, SAU->SFAR);
+	if (SAU->SFSR & SAU_SFSR_SFARVALID_Msk) {
+		PR_EXC("  Address: 0x%x\n", sfar);
+	}
+
+	/* bits are sticky: they stack and must be reset */
+	if (SAU->SFSR & SAU_SFSR_INVEP_Msk) {
+		PR_EXC("  Invalid entry point\n");
+	} else if (SAU->SFSR & SAU_SFSR_INVIS_Msk) {
+		PR_EXC("  Invalid integrity signature\n");
+	} else if (SAU->SFSR & SAU_SFSR_INVER_Msk) {
+		PR_EXC("  Invalid exception return\n");
+	} else if (SAU->SFSR & SAU_SFSR_AUVIOL_Msk) {
+		PR_EXC("  Attribution unit violation\n");
+	} else if (SAU->SFSR & SAU_SFSR_INVTRAN_Msk) {
+		PR_EXC("  Invalid transition\n");
+	} else if (SAU->SFSR & SAU_SFSR_LSPERR_Msk) {
+		PR_EXC("  Lazy state preservation\n");
+	} else if (SAU->SFSR & SAU_SFSR_LSERR_Msk) {
+		PR_EXC("  Lazy state error\n");
+	}
+
+	/* SecureFault is never banked between security states. Therefore,
+	 * we may wish to, additionally, inspect the state of the Non-Secure
+	 * execution (program counter), to gain more information regarding
+	 * the root cause of the fault.
+	 */
+	NANO_ESF *esf_ns;
+	if (SCB_NS->ICSR & SCB_ICSR_RETTOBASE_Msk) {
+		esf_ns = (NANO_ESF *)__TZ_get_PSP_NS();
+	} else {
+		esf_ns = (NANO_ESF *)__TZ_get_MSP_NS();
+	}
+	PR_EXC("  NS instruction address:  0x%x\n", esf_ns->pc);
+
+	/* clear SFSR sticky bits */
+	SAU->SFSR |= 0xFF;
+}
+#endif /* defined(CONFIG_ARM_SECURE_FIRMWARE) */
+
 /**
  *
  * @brief Dump debug monitor exception information
@@ -318,6 +391,10 @@ static void _HardFault(const NANO_ESF *esf)
 			_BusFault(esf, 1);
 		} else if (SCB_UFSR) {
 			_UsageFault(esf);
+#if defined(CONFIG_ARM_SECURE_FIRMWARE)
+		} else if (SAU->SFSR) {
+			_SecureFault(esf);
+#endif /* CONFIG_ARM_SECURE_FIRMWARE */
 		}
 	}
 #else
@@ -379,6 +456,11 @@ static void _FaultDump(const NANO_ESF *esf, int fault)
 	case 6:
 		_UsageFault(esf);
 		break;
+#if defined(CONFIG_ARM_SECURE_FIRMWARE)
+	case 7:
+		_SecureFault(esf);
+		break;
+#endif /* CONFIG_ARM_SECURE_FIRMWARE */
 	case 12:
 		_DebugMonitor(esf);
 		break;
