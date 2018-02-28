@@ -55,12 +55,12 @@ config I2C_SS_0
 
 config I2C_SS_0_NAME
 	string "Select a name for finding the device"
-	depends on I2C_SS_0
+	depends on I2C_SS_0 && !HAS_DTS_I2C
 	default "I2C_SS_0"
 
 config I2C_SS_0_DEFAULT_CFG
 	hex "I2C default configuration"
-	depends on I2C_SS_0
+	depends on I2C_SS_0 && !HAS_DTS_I2C
 	default 0x0
 	help
 	  Allows the I2C port to be brought up with a default configuration.
@@ -75,12 +75,12 @@ config I2C_SS_1
 
 config I2C_SS_1_NAME
 	string "Select a name for finding the device"
+	depends on I2C_SS_1 && !HAS_DTS_I2C
 	default "I2C_SS_1"
-	depends on I2C_SS_1
 
 config I2C_SS_1_DEFAULT_CFG
 	hex "I2C SS default configuration"
-	depends on I2C_SS_1
+	depends on I2C_SS_1 && !HAS_DTS_I2C
 	default 0x0
 	help
 	  Allows the I2C port to be brought up with a default configuration.
