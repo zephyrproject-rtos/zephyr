@@ -160,3 +160,15 @@ void dcache_writeback_region(void *addr, size_t size)
 {
 	xthal_dcache_region_writeback(addr, size);
 }
+
+void dcache_invalidate_region(void *addr, size_t size)
+{
+	xthal_dcache_region_invalidate(addr, size);
+}
+
+void setup_ownership_i2s(void)
+{
+	u32_t value = I2S_OWNSEL(0) | I2S_OWNSEL(1) |
+			 I2S_OWNSEL(2) | I2S_OWNSEL(3);
+	*(volatile u32_t *)SUE_DSPIOPO_REG |= value;
+}

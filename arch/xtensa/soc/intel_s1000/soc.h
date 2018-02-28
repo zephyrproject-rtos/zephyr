@@ -100,11 +100,30 @@
 #define DMA_HANDSHAKE_SSP3_TX			8
 #define DMA_HANDSHAKE_SSP3_RX			9
 
+/* I2S */
+#define I2S0_CAVS_IRQ				0x00000010
+#define I2S1_CAVS_IRQ				0x00000110
+#define I2S2_CAVS_IRQ				0x00000210
+#define I2S3_CAVS_IRQ				0x00000310
+
+#define SSP_SIZE				0x0000200
+#define SSP_BASE(x)				(0x00077000 + (x) * SSP_SIZE)
+
+#define SOC_INTEL_S1000_MCK_XTAL_FREQ_HZ	38400000
+
+/* address of I2S ownership register. We need to properly configure
+ * this register in order to access the I2S registers.
+ */
+#define SUE_DSP_RES_ALLOC_REG_BASE		0x00071A60
+#define SUE_DSPIOPO_REG			(SUE_DSP_RES_ALLOC_REG_BASE + 0x08)
+#define I2S_OWNSEL(x)				(0x1 << (8 + (x)))
+
 extern void _soc_irq_enable(u32_t irq);
 extern void _soc_irq_disable(u32_t irq);
 extern void setup_ownership_dma0(void);
 extern void setup_ownership_dma1(void);
 extern void setup_ownership_dma2(void);
 extern void dcache_writeback_region(void *addr, size_t size);
+extern void setup_ownership_i2s(void);
 
 #endif /* __INC_SOC_H */

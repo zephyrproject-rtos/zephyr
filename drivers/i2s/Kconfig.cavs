@@ -1,0 +1,59 @@
+# Kconfig - Intel S1000 I2S configuration options
+#
+# Copyright (c) 2017 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig I2S_CAVS
+	bool "Intel I2S (SSP) Bus Driver"
+	depends on BOARD_INTEL_S1000_CRB
+	select DMA
+	default n
+	help
+	  Enable Inter Sound (I2S) bus driver for Intel_S1000 based on
+	  Synchronous Serial Port (SSP) module.
+
+if I2S_CAVS
+
+config I2S_CAVS_TX_BLOCK_COUNT
+	int "TX queue length"
+	default 4
+	help
+	  The maximum number of blocks that can be accommodated in the Tx queue.
+
+config I2S_CAVS_0_NAME
+	string "I2S 0 device name"
+	default "I2S_0"
+
+config I2S_CAVS_0_IRQ_PRI
+	int "Interrupt priority"
+	default 0
+
+config I2S_CAVS_DMA_NAME
+	string "DMA device name"
+	default "DMA_0"
+	help
+	  Name of the DMA device this device driver can use.
+
+config I2S_CAVS_0_DMA_TX_CHANNEL
+	int "DMA TX channel"
+	default 2
+	help
+	  DMA channel number to use for TX transfers.
+
+config I2S_CAVS_1_NAME
+	string "I2S 1 device name"
+	default "I2S_1"
+
+config I2S_CAVS_1_IRQ_PRI
+	int "Interrupt priority"
+	default 0
+
+config I2S_CAVS_1_DMA_TX_CHANNEL
+	int "DMA TX channel"
+	default 4
+	help
+	  DMA channel number to use for TX transfers.
+
+endif # I2S_CAVS
