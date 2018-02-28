@@ -70,12 +70,11 @@ config I2C_0
 
 if I2C_0
 
-config I2C_0_NAME
-	default "I2C_0"
 config I2C_0_DEFAULT_CFG
 	default 0x12
 config I2C_0_IRQ_PRI
 	default 2
+
 config I2C_DW_0_IRQ_SHARED_NAME
 	default SHARED_IRQ_0_NAME if SHARED_IRQ
 
