@@ -4,7 +4,13 @@
 
 INC = -I$(ZEPHYR_BASE)/include
 LIBPATH = $(ZEPHYR_BASE)/subsys/net/lib/zstream
-LIBSRC = $(LIBPATH)/zstream_sock.c
+LIBSRC = $(LIBPATH)/zstream_sock.c \
+    $(LIBPATH)/zstream_tls.c \
+    $(LIBPATH)/../tls_conf/tls_conf.c \
+
+LDLIBS = -lmbedtls -lmbedx509 -lmbedcrypto
+
+CFLAGS = -DCONFIG_MBEDTLS -DCONFIG_MBEDTLS_DEBUG_LEVEL=0
 
 big_http_download: src/big_http_download.c
-	$(CC) $(INC) $(CFLAGS) $^ $(LIBSRC) -lmbedcrypto -o $@
+	$(CC) $(INC) $(CFLAGS) $^ $(LIBSRC) $(LDLIBS) -o $@

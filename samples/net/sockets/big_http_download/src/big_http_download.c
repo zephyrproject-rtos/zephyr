@@ -27,22 +27,28 @@
 
 #endif
 
+#include <net/tls_conf.h>
 #include <net/zstream.h>
+#include <net/zstream_tls.h>
 
 /* This URL is parsed in-place, so buffer must be non-const. */
 static char download_url[] =
-    "http://archive.ubuntu.com/ubuntu/dists/xenial/main/installer-amd64/current/images/hd-media/vmlinuz";
+    /*"http://archive.ubuntu.com/ubuntu/dists/xenial/main/installer-amd64/current/images/hd-media/vmlinuz";*/
+    "https://ftp.gnu.org/gnu/tar/tar-1.13.tar";
 /* Quick testing. */
 /*    "http://google.com/foo";*/
 
+/* To generate: */
 /* print("".join(["\\x%02x" % x for x in list(binascii.unhexlify("hash"))])) */
-static uint8_t download_hash[32] = "\x33\x7c\x37\xd7\xec\x00\x34\x84\x14\x22\x4b\xaa\x6b\xdb\x2d\x43\xf2\xa3\x4e\xf5\x67\x6b\xaf\xcd\xca\xd9\x16\xf1\x48\xb5\xb3\x17";
+static uint8_t download_hash[32] =
+    /*"\x33\x7c\x37\xd7\xec\x00\x34\x84\x14\x22\x4b\xaa\x6b\xdb\x2d\x43\xf2\xa3\x4e\xf5\x67\x6b\xaf\xcd\xca\xd9\x16\xf1\x48\xb5\xb3\x17";*/
+    "\xbe\x12\xfe\x40\xe1\xb2\x02\xd7\x0c\x45\x5d\x78\x4f\xbe\xc8\xcd\xb3\x38\xfe\x01\x1a\xb9\xe8\x62\x95\x81\x35\x68\x90\x6f\x60\x73";
 
 #define SSTRLEN(s) (sizeof(s) - 1)
 #define CHECK(r) { if (r == -1) { printf("Error: " #r "\n"); exit(1); } }
 
 const char *host;
-const char *port = "80";
+const char *port;
 const char *uri_path = "";
 static char response[1024];
 static char response_hash[32];
@@ -115,10 +121,11 @@ void print_hex(const unsigned char *p, int len)
 	}
 }
 
-void download(struct addrinfo *ai)
+void download(struct addrinfo *ai, mbedtls_ssl_config *tls_conf)
 {
 	int sock;
 	struct zstream_sock stream_sock;
+	struct zstream_tls stream_tls;
 	struct zstream *stream;
 
 	cur_bytes = 0;
@@ -131,12 +138,18 @@ void download(struct addrinfo *ai)
 	zstream_sock_init(&stream_sock, sock);
 	stream = (struct zstream *)&stream_sock;
 
+	if (tls_conf) {
+		zstream_tls_init(&stream_tls, stream, tls_conf, host);
+		stream = (struct zstream *)&stream_tls;
+	}
+
 	sendall(stream, "GET /", SSTRLEN("GET /"));
 	sendall(stream, uri_path, strlen(uri_path));
 	sendall(stream, " HTTP/1.0\r\n", SSTRLEN(" HTTP/1.0\r\n"));
 	sendall(stream, "Host: ", SSTRLEN("Host: "));
 	sendall(stream, host, strlen(host));
 	sendall(stream, "\r\n\r\n", SSTRLEN("\r\n\r\n"));
+	zstream_flush(stream);
 
 	if (skip_headers(stream) <= 0) {
 		printf("EOF or error in response headers\n");
@@ -191,14 +204,26 @@ int main(void)
 	char *p;
 	unsigned int total_bytes = 0;
 	int resolve_attempts = 10;
+	mbedtls_ssl_config *tls_conf = NULL;
 
 	setbuf(stdout, NULL);
 
-	if (strncmp(download_url, "http://", SSTRLEN("http://")) != 0) {
-		fatal("Only http: URLs are supported");
+	if (strncmp(download_url, "http://", SSTRLEN("http://")) == 0) {
+		port = "80";
+		p = download_url + SSTRLEN("http://");
+	} else if (strncmp(download_url, "https://",
+		   SSTRLEN("https://")) == 0) {
+		if (ztls_get_tls_client_conf(&tls_conf) < 0) {
+			printf("Unable to initialize TLS\n");
+			return 1;
+		}
+		mbedtls_ssl_conf_authmode(tls_conf, MBEDTLS_SSL_VERIFY_NONE);
+		printf("Warning: site certificate is not validated\n");
+		port = "443";
+		p = download_url + SSTRLEN("https://");
+	} else {
+		fatal("Only http: and https: URLs are supported");
 	}
-
-	p = download_url + SSTRLEN("http://");
 
 	/* Parse host part */
 	host = p;
@@ -222,8 +247,8 @@ int main(void)
 		uri_path = p;
 	}
 
-	printf("Preparing HTTP GET request for http://%s:%s/%s\n",
-	       host, port, uri_path);
+	printf("Preparing HTTP GET request for http%s://%s:%s/%s\n",
+	       (tls_conf ? "s" : ""), host, port, uri_path);
 
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
@@ -256,7 +281,7 @@ int main(void)
 	}
 
 	while (1) {
-		download(res);
+		download(res, tls_conf);
 
 		total_bytes += cur_bytes;
 		printf("Total downloaded so far: %uMB\n", total_bytes / (1024 * 1024));
