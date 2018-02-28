@@ -149,16 +149,14 @@ int http_prepare_and_send(struct http_ctx *ctx,
 		payload_len -= added;
 		if (payload_len) {
 			payload += added;
+			/* Not all data could be added, send what we have now
+			 * and allocate new stuff to be sent.
+			 */
+			ret = http_send_flush(ctx, user_send_data);
+			if (ret < 0) {
+				goto error;
+			}
 		}
-
-		/* Not all data could be added, send what we have now
-		 * and allocate new stuff to be sent.
-		 */
-		ret = http_send_flush(ctx, user_send_data);
-		if (ret < 0) {
-			goto error;
-		}
-
 	} while (payload_len);
 
 	return 0;
