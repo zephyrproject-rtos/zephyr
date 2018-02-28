@@ -4260,14 +4260,14 @@ struct k_mem_partition {
 
 /* memory domian */
 struct k_mem_domain {
-	/* number of partitions in the domain */
-	u32_t num_partitions;
 #ifdef CONFIG_USERSPACE
 	/* partitions in the domain */
 	struct k_mem_partition partitions[CONFIG_MAX_DOMAIN_PARTITIONS];
 #endif	/* CONFIG_USERSPACE */
 	/* domain q */
 	sys_dlist_t mem_domain_q;
+	/* number of partitions in the domain */
+	u8_t num_partitions;
 };
 
 
@@ -4282,7 +4282,7 @@ struct k_mem_domain {
  *              if num_parts is zero.
  */
 
-extern void k_mem_domain_init(struct k_mem_domain *domain, u32_t num_parts,
+extern void k_mem_domain_init(struct k_mem_domain *domain, u8_t num_parts,
 			      struct k_mem_partition *parts[]);
 /**
  * @brief Destroy a memory domain.
