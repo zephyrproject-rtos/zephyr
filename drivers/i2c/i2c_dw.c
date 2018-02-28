@@ -33,6 +33,8 @@
 #include "i2c_dw.h"
 #include "i2c_dw_registers.h"
 
+#include "i2c-priv.h"
+
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_I2C_LEVEL
 #include <logging/sys_log.h>
 
@@ -644,25 +646,24 @@ static inline int i2c_dw_pci_setup(struct device *dev)
 #define i2c_dw_pci_setup(_unused_) (1)
 #endif /* CONFIG_PCI */
 
-static int i2c_dw_initialize(struct device *port)
+static int i2c_dw_initialize(struct device *dev)
 {
-	const struct i2c_dw_rom_config * const rom = port->config->config_info;
-	struct i2c_dw_dev_config * const dev = port->driver_data;
-
+	const struct i2c_dw_rom_config * const rom = dev->config->config_info;
+	struct i2c_dw_dev_config * const dw = dev->driver_data;
 	volatile struct i2c_dw_registers *regs;
 
-	if (!i2c_dw_pci_setup(port)) {
-		port->driver_api = NULL;
+	if (!i2c_dw_pci_setup(dev)) {
+		dev->driver_api = NULL;
 		return -EIO;
 	}
 
-	k_sem_init(&dev->device_sync_sem, 0, UINT_MAX);
+	k_sem_init(&dw->device_sync_sem, 0, UINT_MAX);
 
-	regs = (struct i2c_dw_registers *) dev->base_address;
+	regs = (struct i2c_dw_registers *) dw->base_address;
 
 	/* verify that we have a valid DesignWare register first */
 	if (regs->ic_comp_type != I2C_DW_MAGIC_KEY) {
-		port->driver_api = NULL;
+		dev->driver_api = NULL;
 		SYS_LOG_DBG("I2C: DesignWare magic key not found, check base "
 			    "address. Stopping initialization");
 		return -EIO;
@@ -675,21 +676,22 @@ static int i2c_dw_initialize(struct device *port)
 	 */
 	if (regs->ic_con.bits.speed == I2C_DW_SPEED_HIGH) {
 		SYS_LOG_DBG("I2C: high speed supported");
-		dev->support_hs_mode = true;
+		dw->support_hs_mode = true;
 	} else {
 		SYS_LOG_DBG("I2C: high speed NOT supported");
-		dev->support_hs_mode = false;
+		dw->support_hs_mode = false;
 	}
 
-	rom->config_func(port);
+	rom->config_func(dev);
 
-	if (i2c_dw_runtime_configure(port, dev->app_config) != 0) {
-		SYS_LOG_DBG("I2C: Cannot set default configuration 0x%x",
-		    dev->app_config);
+	dw->app_config = I2C_MODE_MASTER | _i2c_map_dt_bitrate(rom->bitrate);
+
+	if (i2c_dw_runtime_configure(dev, dw->app_config) != 0) {
+		SYS_LOG_DBG("I2C: Cannot set default configuration");
 		return -EIO;
 	}
 
-	dev->state = I2C_DW_STATE_READY;
+	dw->state = I2C_DW_STATE_READY;
 
 	return 0;
 }
@@ -704,11 +706,11 @@ static const struct i2c_dw_rom_config i2c_config_dw_0 = {
 #ifdef CONFIG_GPIO_DW_0_IRQ_SHARED
 	.shared_irq_dev_name = CONFIG_I2C_DW_0_IRQ_SHARED_NAME,
 #endif
+	.bitrate = CONFIG_I2C_0_BITRATE,
 };
 
 static struct i2c_dw_dev_config i2c_0_runtime = {
 	.base_address = CONFIG_I2C_0_BASE_ADDR,
-	.app_config = CONFIG_I2C_0_DEFAULT_CFG,
 #if CONFIG_PCI
 	.pci_dev.class_type = I2C_DW_PCI_CLASS,
 	.pci_dev.bus = I2C_DW_0_PCI_BUS,
@@ -752,12 +754,11 @@ static void i2c_config_1(struct device *port);
 
 static const struct i2c_dw_rom_config i2c_config_dw_1 = {
 	.config_func = i2c_config_1,
+	.bitrate = CONFIG_I2C_1_BITRATE,
 };
 
 static struct i2c_dw_dev_config i2c_1_runtime = {
 	.base_address = CONFIG_I2C_1_BASE_ADDR,
-	.app_config = CONFIG_I2C_1_DEFAULT_CFG,
-
 #if CONFIG_PCI
 	.pci_dev.class_type = I2C_DW_PCI_CLASS,
 	.pci_dev.bus = I2C_DW_1_PCI_BUS,
