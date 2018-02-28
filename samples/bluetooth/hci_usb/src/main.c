@@ -661,17 +661,31 @@ DEVICE_INIT(btusb, "btusb", &btusb_init,
 
 static int try_write(u8_t ep, struct net_buf *buf)
 {
-	while (1) {
-		int ret = usb_write(ep, buf->data, buf->len, NULL);
+	int ret = 0;
+	u8_t *data = buf->data;
+	u32_t len = (u32_t)buf->len;
+
+	while (len) {
+		u32_t wrote;
+
+		ret = usb_write(ep, data, len, &wrote);
 
 		switch (ret) {
+		case 0:
+			data += wrote;
+			len -= wrote;
+			break;
 		case -EAGAIN:
+			k_yield();
 			break;
 		/* TODO: Handle other error codes */
 		default:
+			SYS_LOG_ERR("Error writing to ep 0x%x ret %d", ep, ret);
 			return ret;
 		}
 	}
+
+	return ret;
 }
 
 void main(void)
