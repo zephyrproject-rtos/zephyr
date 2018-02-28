@@ -72,13 +72,7 @@
 #define MBEDTLS_SSL_ALL_ALERT_MESSAGES
 #endif
 
-#if defined(CONFIG_MQTT_LIB_TLS)
-#define MBEDTLS_SSL_MAX_CONTENT_LEN  2500
-#elif defined(CONFIG_HTTPS)
-#define MBEDTLS_SSL_MAX_CONTENT_LEN  2500
-#else
-#define MBEDTLS_SSL_MAX_CONTENT_LEN  1500
-#endif
+#define MBEDTLS_SSL_MAX_CONTENT_LEN  CONFIG_MBEDTLS_SSL_MAX_CONTENT_LEN
 
 #include "mbedtls/check_config.h"
 
