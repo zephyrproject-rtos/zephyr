@@ -114,7 +114,7 @@ config LSM6DS0_GYRO_FULLSCALE
 config LSM6DS0_GYRO_SAMPLING_RATE
 	int
 	prompt "Output data rate"
-	depends on LIS3MDL
+	depends on LSM6DS0
 	default 15
 	help
 	  Specify the default gyroscope output data rate expressed in samples
