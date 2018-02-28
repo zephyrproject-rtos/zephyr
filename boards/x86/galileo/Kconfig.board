@@ -3,6 +3,7 @@ config BOARD_GALILEO
 	bool "Galileo Gen2"
 	depends on SOC_SERIES_QUARK_X1000
 	select HAS_DTS
+	select HAS_DTS_I2C
 	help
 	  The Intel Galileo Gen 2 development board is a microcontroller board
 	  based on the Intel Quark SoC X1000 application processor, a 32-bit
