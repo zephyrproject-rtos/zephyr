@@ -27,6 +27,8 @@
 
 #endif
 
+#include <net/zstream.h>
+
 /* This URL is parsed in-place, so buffer must be non-const. */
 static char download_url[] =
     "http://archive.ubuntu.com/ubuntu/dists/xenial/main/installer-amd64/current/images/hd-media/vmlinuz";
@@ -63,10 +65,10 @@ void fatal(const char *msg)
 	exit(1);
 }
 
-ssize_t sendall(int sock, const void *buf, size_t len)
+ssize_t sendall(struct zstream *stream, const void *buf, size_t len)
 {
 	while (len) {
-		ssize_t out_len = send(sock, buf, len, 0);
+		ssize_t out_len = zstream_write(stream, buf, len);
 		if (out_len < 0) {
 			return out_len;
 		}
@@ -77,7 +79,7 @@ ssize_t sendall(int sock, const void *buf, size_t len)
 	return 0;
 }
 
-int skip_headers(int sock)
+int skip_headers(struct zstream *stream)
 {
 	int state = 0;
 
@@ -85,7 +87,7 @@ int skip_headers(int sock)
 		char c;
 		int st;
 
-		st = recv(sock, &c, 1, 0);
+		st = zstream_read(stream, &c, 1);
 		if (st <= 0) {
 			return st;
 		}
@@ -116,6 +118,8 @@ void print_hex(const unsigned char *p, int len)
 void download(struct addrinfo *ai)
 {
 	int sock;
+	struct zstream_sock stream_sock;
+	struct zstream *stream;
 
 	cur_bytes = 0;
 
@@ -123,14 +127,18 @@ void download(struct addrinfo *ai)
 	CHECK(sock);
 	printf("sock = %d\n", sock);
 	CHECK(connect(sock, ai->ai_addr, ai->ai_addrlen));
-	sendall(sock, "GET /", SSTRLEN("GET /"));
-	sendall(sock, uri_path, strlen(uri_path));
-	sendall(sock, " HTTP/1.0\r\n", SSTRLEN(" HTTP/1.0\r\n"));
-	sendall(sock, "Host: ", SSTRLEN("Host: "));
-	sendall(sock, host, strlen(host));
-	sendall(sock, "\r\n\r\n", SSTRLEN("\r\n\r\n"));
 
-	if (skip_headers(sock) <= 0) {
+	zstream_sock_init(&stream_sock, sock);
+	stream = (struct zstream *)&stream_sock;
+
+	sendall(stream, "GET /", SSTRLEN("GET /"));
+	sendall(stream, uri_path, strlen(uri_path));
+	sendall(stream, " HTTP/1.0\r\n", SSTRLEN(" HTTP/1.0\r\n"));
+	sendall(stream, "Host: ", SSTRLEN("Host: "));
+	sendall(stream, host, strlen(host));
+	sendall(stream, "\r\n\r\n", SSTRLEN("\r\n\r\n"));
+
+	if (skip_headers(stream) <= 0) {
 		printf("EOF or error in response headers\n");
 		goto error;
 	}
@@ -138,7 +146,7 @@ void download(struct addrinfo *ai)
 	mbedtls_md_starts(&hash_ctx);
 
 	while (1) {
-		int len = recv(sock, response, sizeof(response) - 1, 0);
+		int len = zstream_read(stream, response, sizeof(response) - 1);
 
 		if (len < 0) {
 			printf("Error reading response\n");
@@ -172,7 +180,7 @@ void download(struct addrinfo *ai)
 	}
 
 error:
-	(void)close(sock);
+	(void)zstream_close(sock);
 }
 
 int main(void)

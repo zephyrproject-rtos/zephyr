@@ -2,5 +2,9 @@
 # It required mbedTLS to be installed on the system, e.g.
 # libmbedtls-dev package on Debian/Ubuntu Linux.
 
+INC = -I$(ZEPHYR_BASE)/include
+LIBPATH = $(ZEPHYR_BASE)/subsys/net/lib/zstream
+LIBSRC = $(LIBPATH)/zstream_sock.c
+
 big_http_download: src/big_http_download.c
-	$(CC) $^ -lmbedcrypto -o $@
+	$(CC) $(INC) $(CFLAGS) $^ $(LIBSRC) -lmbedcrypto -o $@
