@@ -1,4 +1,10 @@
 # This makefile builds the sample for a POSIX system, like Linux
 
+INC = -I$(ZEPHYR_BASE)/include
+
+LIBPATH = $(ZEPHYR_BASE)/subsys/net/lib/zstream
+
+LIBSRC = $(LIBPATH)/zstream_sock.c
+
 http_get: src/http_get.c
-	$(CC) $^ -o $@
+	$(CC) $(INC) $(CFLAGS) $^ $(LIBSRC) -o $@

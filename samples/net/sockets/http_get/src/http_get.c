@@ -23,6 +23,8 @@
 
 #endif
 
+#include <net/zstream.h>
+
 /* HTTP server to connect to */
 #define HTTP_HOST "google.com"
 /* Port to connect to, as string */
@@ -52,6 +54,8 @@ int main(void)
 	static struct addrinfo hints;
 	struct addrinfo *res;
 	int st, sock;
+	struct zstream_sock stream_sock;
+	zstream stream;
 
 	printf("Preparing HTTP GET request for http://" HTTP_HOST
 	       ":" HTTP_PORT HTTP_PATH "\n");
@@ -78,12 +82,17 @@ int main(void)
 	CHECK(sock);
 	printf("sock = %d\n", sock);
 	CHECK(connect(sock, res->ai_addr, res->ai_addrlen));
-	CHECK(send(sock, REQUEST, SSTRLEN(REQUEST), 0));
+
+	zstream_sock_init(&stream_sock, sock);
+	stream = (zstream)&stream_sock;
+
+	CHECK(zstream_write(stream, REQUEST, SSTRLEN(REQUEST)));
+	CHECK(zstream_flush(stream));
 
 	printf("Response:\n\n");
 
 	while (1) {
-		int len = recv(sock, response, sizeof(response) - 1, 0);
+		int len = zstream_read(stream, response, sizeof(response) - 1);
 
 		if (len < 0) {
 			printf("Error reading response\n");
@@ -98,7 +107,7 @@ int main(void)
 		printf("%s\n", response);
 	}
 
-	(void)close(sock);
+	(void)zstream_close(sock);
 
 	return 0;
 }
