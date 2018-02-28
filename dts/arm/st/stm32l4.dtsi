@@ -179,6 +179,96 @@
 			status = "disabled";
 			label = "SPI_2";
 		};
+
+		timers1: timers@40012c00 {
+			compatible = "st,stm32-timers";
+			reg = <0x40012c00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000800>;
+			status = "disabled";
+			label = "TIMERS_1";
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				st,prescaler = <10000>;
+				label = "PWM_1";
+			};
+		};
+
+		timers2: timers@40000000 {
+			compatible = "st,stm32-timers";
+			reg = <0x40000000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000001>;
+			status = "disabled";
+			label = "TIMERS_2";
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				st,prescaler = <0>;
+				label = "PWM_2";
+			};
+		};
+
+		timers6: timers@40001000 {
+			compatible = "st,stm32-timers";
+			reg = <0x40001000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000010>;
+			status = "disabled";
+			label = "TIMERS_6";
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				st,prescaler = <10000>;
+				label = "PWM_6";
+			};
+		};
+
+		timers7: timers@40001400 {
+			compatible = "st,stm32-timers";
+			reg = <0x40001400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00000020>;
+			status = "disabled";
+			label = "TIMERS_7";
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				st,prescaler = <10000>;
+				label = "PWM_7";
+			};
+		};
+
+		timers15: timers@40014000 {
+			compatible = "st,stm32-timers";
+			reg = <0x40014000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00010000>;
+			status = "disabled";
+			label = "TIMERS_15";
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				st,prescaler = <10000>;
+				label = "PWM_15";
+			};
+		};
+
+		timers16: timers@40014400 {
+			compatible = "st,stm32-timers";
+			reg = <0x40014400 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00020000>;
+			status = "disabled";
+			label = "TIMERS_16";
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				st,prescaler = <10000>;
+				label = "PWM_16";
+			};
+		};
 	};
 };
 
