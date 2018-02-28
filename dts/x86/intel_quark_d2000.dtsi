@@ -77,5 +77,15 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 		};
+
+		i2c0: i2c@b0002800 {
+			compatible = "intel,qmsi-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0xb0002800 0x400>;
+			label = "I2C_0";
+
+			status = "disabled";
+		};
 	};
 };
