@@ -84,8 +84,9 @@ if I2C_0
 
 config I2C_0_NAME
 	default "I2C_0"
-config I2C_0_DEFAULT_CFG
-	default 0x3
+config I2C_0_BITRATE
+	int
+	default 100000
 config I2C_0_IRQ_PRI
 	default 1
 
@@ -98,8 +99,9 @@ if I2C_1
 
 config I2C_1_NAME
 	default "I2C_1"
-config I2C_1_DEFAULT_CFG
-	default 0x3
+config I2C_1_BITRATE
+	int
+	default 100000
 config I2C_1_IRQ_PRI
 	default 1
 

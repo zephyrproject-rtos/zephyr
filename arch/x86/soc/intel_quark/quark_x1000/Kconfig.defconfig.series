@@ -70,8 +70,6 @@ config I2C_0
 
 if I2C_0
 
-config I2C_0_DEFAULT_CFG
-	default 0x12
 config I2C_0_IRQ_PRI
 	default 2
 
