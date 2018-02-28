@@ -1,0 +1,132 @@
+/*
+ * Copyright (c) 2018 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <pthread.h>
+#include "ztest.h"
+
+#define N_THR 3
+#define STACKSZ 1024
+
+K_THREAD_STACK_ARRAY_DEFINE(stacks, N_THR, STACKSZ);
+pthread_rwlock_t rwlock;
+
+static void *thread_top(void *p1)
+{
+	pthread_t pthread;
+	u32_t policy, ret = 0;
+	struct sched_param param;
+
+	pthread = (pthread_t) pthread_self();
+	pthread_getschedparam(pthread, &policy, &param);
+	printk("Thread %d scheduling policy = %d & priority %d started\n",
+	       (s32_t) p1, policy, param.priority);
+
+	ret = pthread_rwlock_tryrdlock(&rwlock);
+	if (ret) {
+		printk("Not able to get RD lock on trying, try again\n");
+		zassert_false(pthread_rwlock_rdlock(&rwlock),
+			      "Failed to acquire write lock");
+	}
+
+	printk("Thread %d got RD lock\n", (s32_t) p1);
+	usleep(USEC_PER_MSEC);
+	printk("Thread %d releasing RD lock\n", (s32_t) p1);
+	zassert_false(pthread_rwlock_unlock(&rwlock), "Failed to unlock");
+
+	printk("Thread %d acquiring WR lock\n", (s32_t) p1);
+	zassert_false(pthread_rwlock_wrlock(&rwlock),
+		      "Failed to acquire WR lock");
+	printk("Thread %d acquired WR lock\n", (s32_t) p1);
+	usleep(USEC_PER_MSEC);
+	printk("Thread %d releasing WR lock\n", (s32_t) p1);
+	zassert_false(pthread_rwlock_unlock(&rwlock), "Failed to unlock");
+
+	pthread_exit(NULL);
+	return NULL;
+}
+
+static void test_rw_lock(void)
+{
+	s32_t i, ret;
+	pthread_attr_t attr[N_THR];
+	struct sched_param schedparam;
+	pthread_t newthread[N_THR];
+	struct timespec time;
+	void *status;
+
+	time.tv_sec = 1;
+	time.tv_nsec = 0;
+
+	zassert_false(pthread_rwlock_init(&rwlock, NULL),
+		      "Failed to create rwlock");
+
+	printk("\nmain acquire WR lock and 3 threads acquire RD lock\n");
+	ret = pthread_rwlock_trywrlock(&rwlock);
+
+	if (ret != 0) {
+		printk("Parent thread acquiring WR lock\n");
+		zassert_false(pthread_rwlock_timedwrlock(&rwlock, &time),
+			      "Failed to acquire write lock");
+	}
+
+	/* Creating N premptive threads in increasing order of priority */
+	for (i = 0; i < N_THR; i++) {
+		pthread_attr_destroy(&attr[i]);
+		pthread_attr_init(&attr[i]);
+
+		/* Setting scheduling priority */
+		schedparam.priority = i + 1;
+		pthread_attr_setschedparam(&attr[i], &schedparam);
+
+		/* Setting stack */
+		pthread_attr_setstack(&attr[i], &stacks[i][0], STACKSZ);
+
+		ret = pthread_create(&newthread[i], &attr[i], thread_top,
+				     (void *)i);
+		zassert_false(ret, "Low memory to thread new thread\n");
+
+	}
+
+	/* Delay to give change to child threads to run */
+	usleep(USEC_PER_MSEC);
+	printk("Parent thread releasing WR lock\n");
+	zassert_false(pthread_rwlock_unlock(&rwlock), "Failed to unlock");
+
+	/* Let child threads acquire RD Lock */
+	usleep(USEC_PER_MSEC);
+	printk("Parent thread acquiring WR lock again\n");
+
+	zassert_false(pthread_rwlock_wrlock(&rwlock),
+		      "Failed to acquire write lock");
+	printk("Parent thread acquired WR lock again\n");
+	usleep(USEC_PER_MSEC);
+	printk("Parent thread releasing WR lock again\n");
+	zassert_false(pthread_rwlock_unlock(&rwlock), "Failed to unlock");
+
+	printk("\n3 threads acquire WR lock\n");
+	printk("Main thread acquiring RD lock\n");
+
+	zassert_false(pthread_rwlock_rdlock(&rwlock), "Failed to lock");
+	printk("Main thread acquired RD lock\n");
+	usleep(USEC_PER_MSEC);
+	printk("Main thread releasing RD lock\n");
+	zassert_false(pthread_rwlock_unlock(&rwlock), "Failed to unlock");
+
+	for (i = 0; i < N_THR; i++) {
+		zassert_false(pthread_join(newthread[i], &status),
+			      "Failed to join\n");
+	}
+
+	zassert_false(pthread_rwlock_destroy(&rwlock),
+		      "Failed to destroy rwlock");
+}
+
+void test_main(void)
+{
+	ztest_test_suite(test_posix_rwlock_api,
+			 ztest_unit_test(test_rw_lock));
+	ztest_run_test_suite(test_posix_rwlock_api);
+}

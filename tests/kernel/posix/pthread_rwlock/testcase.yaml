@@ -1,0 +1,3 @@
+tests:
+  kernel.posix.pthread_rwlock:
+    tags: core
