@@ -3,3 +3,4 @@ config BOARD_QUARK_SE_C1000_DEVBOARD
 	bool "Quark SE C1000 Devboard"
 	depends on SOC_SERIES_QUARK_SE
 	select HAS_DTS
+	select HAS_DTS_I2C
