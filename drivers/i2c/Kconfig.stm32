@@ -1,0 +1,48 @@
+#
+# Copyright (c) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig I2C_STM32
+	bool "STM32 I2C driver"
+	depends on SOC_FAMILY_STM32
+	help
+	  Enable I2C support on the STM32 SoCs
+
+if I2C_STM32
+
+config I2C_STM32_V1
+	bool "STM32 V1 Driver (F1/F4X)"
+	depends on SOC_SERIES_STM32F1X || SOC_SERIES_STM32F4X
+	select HAS_DTS_I2C
+	select USE_STM32_LL_I2C
+	default n
+	help
+	  Enable I2C support on the STM32 F1 and F4X family of processors. This
+	  driver also supports the F2 and L1 series.
+
+config I2C_STM32_V2
+	bool "STM32 V2 Driver (F0/F3/L0/L4X)"
+	depends on SOC_SERIES_STM32F0X || SOC_SERIES_STM32F3X || SOC_SERIES_STM32L0X || SOC_SERIES_STM32L4X
+	select HAS_DTS_I2C
+	select USE_STM32_LL_I2C
+	select USE_STM32_LL_RCC if SOC_SERIES_STM32F0X || SOC_SERIES_STM32F3X
+	default n
+	help
+	  Enable I2C support on the STM32 F0, F3 and L4X family of processors.
+	  This driver also supports the F7 and L0 series.
+
+config I2C_STM32_INTERRUPT
+	bool "STM32 MCU I2C Interrupt Support"
+	depends on I2C_STM32_V1 || I2C_STM32_V2
+	default n
+	help
+	  Enable Interrupt support for the I2C Driver
+
+config I2C_STM32_COMBINED_INTERRUPT
+	bool
+	depends on I2C_STM32_INTERRUPT
+	default y if SOC_SERIES_STM32F0X || SOC_SERIES_STM32L0X
+
+endif # I2C_STM32
