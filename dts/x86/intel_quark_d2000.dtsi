@@ -1,5 +1,6 @@
 #include "skeleton.dtsi"
 #include <dt-bindings/interrupt-controller/intel-mvic.h>
+#include <dt-bindings/i2c/i2c.h>
 
 #define __SIZE_K(x) (x * 1024)
 
@@ -80,6 +81,7 @@
 
 		i2c0: i2c@b0002800 {
 			compatible = "intel,qmsi-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0xb0002800 0x400>;
