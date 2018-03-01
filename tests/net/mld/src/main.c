@@ -138,6 +138,11 @@ NET_DEVICE_INIT(net_test_mld, "net_test_mld",
 static void group_joined(struct net_mgmt_event_callback *cb,
 			 u32_t nm_event, struct net_if *iface)
 {
+	if (nm_event != NET_EVENT_IPV6_MCAST_JOIN) {
+		/* Spurious callback. */
+		return;
+	}
+
 	is_group_joined = true;
 
 	k_sem_give(&wait_data);
@@ -146,6 +151,11 @@ static void group_joined(struct net_mgmt_event_callback *cb,
 static void group_left(struct net_mgmt_event_callback *cb,
 			 u32_t nm_event, struct net_if *iface)
 {
+	if (nm_event != NET_EVENT_IPV6_MCAST_LEAVE) {
+		/* Spurious callback. */
+		return;
+	}
+
 	is_group_left = true;
 
 	k_sem_give(&wait_data);
