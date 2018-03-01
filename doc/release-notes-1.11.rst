@@ -25,6 +25,11 @@ Kernel
 Architectures
 *************
 
+* User space and system call related changes:
+  * Added ARC user space implementation
+  * Added ARM user space implementation
+  * Fixed a few MPU related issues with stack guards
+
 Boards
 ******
 
@@ -79,8 +84,12 @@ HALs
 Documentation
 *************
 
+* Added MPU specific stack and userspace documentation
+
 Tests and Samples
 *****************
+
+* Added additional tests and test improvements for user space testing
 
 Issue Related Items
 *******************
