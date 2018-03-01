@@ -33,6 +33,7 @@ struct mgmt_event_wait {
 };
 
 static K_SEM_DEFINE(network_event, 0, UINT_MAX);
+static K_SEM_DEFINE(net_mgmt_lock, 1, 1);
 
 NET_STACK_DEFINE(MGMT, mgmt_stack, CONFIG_NET_MGMT_EVENT_STACK_SIZE,
 		 CONFIG_NET_MGMT_EVENT_STACK_SIZE);
@@ -46,6 +47,8 @@ static u16_t out_event;
 static inline void mgmt_push_event(u32_t mgmt_event, struct net_if *iface,
 				   void *info, size_t length)
 {
+	k_sem_take(&net_mgmt_lock, K_FOREVER);
+
 #ifdef CONFIG_NET_MGMT_EVENT_INFO
 	/* Let's put the info length to 0 by default as it will be the most
 	 * common case. Also, it makes code a bit cleaner below as there is
@@ -60,6 +63,7 @@ static inline void mgmt_push_event(u32_t mgmt_event, struct net_if *iface,
 		} else {
 			NET_ERR("Event info length %u > max size %u",
 				length, NET_EVENT_INFO_MAX_SIZE);
+			k_sem_give(&net_mgmt_lock);
 			return;
 		}
 	}
@@ -89,6 +93,8 @@ static inline void mgmt_push_event(u32_t mgmt_event, struct net_if *iface,
 			out_event = o_idx;
 		}
 	}
+
+	k_sem_give(&net_mgmt_lock);
 }
 
 static inline struct mgmt_event_entry *mgmt_pop_event(void)
@@ -96,6 +102,7 @@ static inline struct mgmt_event_entry *mgmt_pop_event(void)
 	u16_t o_idx;
 
 	if (!events[out_event].event) {
+		k_sem_give(&net_mgmt_lock);
 		return NULL;
 	}
 
@@ -158,7 +165,6 @@ static inline void mgmt_run_callbacks(struct mgmt_event_entry *mgmt_event)
 			continue;
 		}
 
-
 #ifdef CONFIG_NET_MGMT_EVENT_INFO
 		if (mgmt_event->info_length) {
 			cb->info = (void *)mgmt_event->info;
@@ -207,6 +213,7 @@ static void mgmt_thread(void)
 
 	while (1) {
 		k_sem_take(&network_event, K_FOREVER);
+		k_sem_take(&net_mgmt_lock, K_FOREVER);
 
 		NET_DBG("Handling events, forwarding it relevantly");
 
@@ -220,6 +227,7 @@ static void mgmt_thread(void)
 				k_sem_count_get(&network_event));
 
 			k_sem_init(&network_event, 0, UINT_MAX);
+			k_sem_give(&net_mgmt_lock);
 
 			continue;
 		}
@@ -227,6 +235,8 @@ static void mgmt_thread(void)
 		mgmt_run_callbacks(mgmt_event);
 
 		mgmt_clean_event(mgmt_event);
+
+		k_sem_give(&net_mgmt_lock);
 
 		k_yield();
 	}
@@ -284,18 +294,26 @@ void net_mgmt_add_event_callback(struct net_mgmt_event_callback *cb)
 {
 	NET_DBG("Adding event callback %p", cb);
 
+	k_sem_take(&net_mgmt_lock, K_FOREVER);
+
 	sys_slist_prepend(&event_callbacks, &cb->node);
 
 	mgmt_add_event_mask(cb->event_mask);
+
+	k_sem_give(&net_mgmt_lock);
 }
 
 void net_mgmt_del_event_callback(struct net_mgmt_event_callback *cb)
 {
 	NET_DBG("Deleting event callback %p", cb);
 
+	k_sem_take(&net_mgmt_lock, K_FOREVER);
+
 	sys_slist_find_and_remove(&event_callbacks, &cb->node);
 
 	mgmt_rebuild_global_event_mask();
+
+	k_sem_give(&net_mgmt_lock);
 }
 
 void net_mgmt_event_notify_with_info(u32_t mgmt_event, struct net_if *iface,
