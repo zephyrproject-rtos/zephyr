@@ -1,0 +1,54 @@
+# Kconfig - Non-volatile Storage NVS
+
+#
+# Copyright (c) 2018 Laczen
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config NVS
+	bool
+	prompt "Non-volatile Storage"
+	default n
+	select FS_FLASH_STORAGE_PARTITION
+	help
+	  Enable support of Non-volatile Storage.
+
+if NVS
+
+config NVS_PROTECT_FLASH
+	bool
+	prompt "Non-volatile Storage extra flash protection"
+	default n
+	help
+	  Enable extra protection against unnecessary writes to flash. This
+	  enables a extra read check, if data is not changed no write is
+	  performed. If this check is already performed (e.g. no writes unless
+	  data is changed) you can disable this operation.
+
+
+config NVS_LOG
+	bool "Non-volatile Storage logging"
+	select SYS_LOG
+	default n
+	help
+	  Enable logs and checks for Non-volatile Storage.
+
+if NVS_LOG
+	config NVS_LOG_LEVEL
+		int
+		prompt "Non-volatile Storage Logging level"
+		depends on SYS_LOG
+		default 1
+		range 0 4
+		help
+		  Sets log level for Non-volatile Storage.
+		  Levels are:
+		  0 OFF, do not write
+		  1 ERROR, only write SYS_LOG_ERR
+		  2 WARNING, write SYS_LOG_WRN in addition to previous level
+		  3 INFO, write SYS_LOG_INF in addition to previous levels
+		  4 DEBUG, write SYS_LOG_DBG in addition to previous levels
+
+endif # NVS_LOG
+endif # NVS
