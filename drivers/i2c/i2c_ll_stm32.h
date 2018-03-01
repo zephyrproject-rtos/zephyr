@@ -34,12 +34,18 @@ struct i2c_stm32_data {
 		unsigned int flags;
 #endif
 		unsigned int is_write;
+		unsigned int is_arlo;
 		unsigned int is_nack;
 		unsigned int is_err;
 		struct i2c_msg *msg;
 		unsigned int len;
 		u8_t *buf;
 	} current;
+#ifdef CONFIG_I2C_SLAVE
+	bool master_active;
+	struct i2c_slave_config *slave_cfg;
+	bool slave_attached;
+#endif
 };
 
 s32_t stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg, u8_t *flg,
@@ -47,11 +53,19 @@ s32_t stm32_i2c_msg_write(struct device *dev, struct i2c_msg *msg, u8_t *flg,
 s32_t stm32_i2c_msg_read(struct device *dev, struct i2c_msg *msg, u8_t *flg,
 			 u16_t sadr);
 s32_t stm32_i2c_configure_timing(struct device *dev, u32_t clk);
+int i2c_stm32_runtime_configure(struct device *dev, u32_t config);
 
 void stm32_i2c_event_isr(void *arg);
 void stm32_i2c_error_isr(void *arg);
 #ifdef CONFIG_I2C_STM32_COMBINED_INTERRUPT
 void stm32_i2c_combined_isr(void *arg);
+#endif
+
+#ifdef CONFIG_I2C_SLAVE
+int i2c_stm32_slave_register(struct device *dev,
+			     struct i2c_slave_config *config);
+int i2c_stm32_slave_unregister(struct device *dev,
+			       struct i2c_slave_config *config);
 #endif
 
 #define DEV_DATA(dev) ((struct i2c_stm32_data * const)(dev)->driver_data)

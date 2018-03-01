@@ -27,9 +27,13 @@ config I2C_STM32_V2
 	select HAS_DTS_I2C
 	select USE_STM32_LL_I2C
 	select USE_STM32_LL_RCC if SOC_SERIES_STM32F0X || SOC_SERIES_STM32F3X
+	select I2C_STM32_INTERRUPT if I2C_SLAVE
+	default n
 	help
 	  Enable I2C support on the STM32 F0, F3 and L4X family of processors.
 	  This driver also supports the F7 and L0 series.
+	  If I2C_SLAVE is enabled it selects I2C_STM32_INTERRUPT, since slave mode
+	  is only supported by this driver with interrupts enabled.
 
 config I2C_STM32_INTERRUPT
 	bool "STM32 MCU I2C Interrupt Support"
