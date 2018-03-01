@@ -135,9 +135,6 @@ void _sem_give_non_preemptible(struct k_sem *sem)
 		return;
 	}
 
-	_abort_thread_timeout(thread);
-
-	_ready_thread(thread);
 	_set_thread_return_value(thread, 0);
 }
 
