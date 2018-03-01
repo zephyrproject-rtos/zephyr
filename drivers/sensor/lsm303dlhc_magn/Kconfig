@@ -14,6 +14,8 @@ menuconfig LSM303DLHC_MAGN
 	help
 	  Enable driver for LSM303DLHC I2C-based triaxial magnetometer sensor.
 
+if !HAS_DTS_I2C_DEVICE
+
 config LSM303DLHC_MAGN_NAME
 	string
 	prompt "Driver name"
@@ -38,6 +40,8 @@ config LSM303DLHC_MAGN_I2C_ADDR
 	default 0x1E
 	help
 	  I2C address of LSM303DLHC magnetometer sensor.
+
+endif
 
 config LSM303DLHC_MAGN_RANGE
 	int "Magnetometer measurement range"

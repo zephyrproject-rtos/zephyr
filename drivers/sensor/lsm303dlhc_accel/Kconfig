@@ -14,6 +14,8 @@ menuconfig LSM303DLHC_ACCEL
 	help
 	  Enable driver for LSM303DLHC I2C-based triaxial accelerometer sensor.
 
+if !HAS_DTS_I2C_DEVICE
+
 config LSM303DLHC_ACCEL_NAME
 	string
 	prompt "Driver name"
@@ -38,6 +40,8 @@ config LSM303DLHC_ACCEL_I2C_ADDR
 	default 0x19
 	help
 	  I2C address of LSM303DLHC acceleration sensor.
+
+endif
 
 config LSM303DLHC_ACCEL_RANGE
 	int "Acceleration measurement range"
