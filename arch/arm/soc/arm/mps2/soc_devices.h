@@ -21,9 +21,6 @@
 
 #include "soc_registers.h"
 
-/* System Control Register (SYSCON) */
-#define __MPS2_SYSCON ((volatile struct mps2_syscon *)SYSCON_BASE_ADDR)
-
 /* FPGA system control block (FPGAIO) */
 #define __MPS2_FPGAIO ((volatile struct mps2_fpgaio *)FPGAIO_BASE_ADDR)
 
