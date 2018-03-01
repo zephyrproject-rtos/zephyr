@@ -45,7 +45,8 @@ more events that are relevant.
 Two functions are available, :cpp:func:`net_mgmt_add_event_callback()` for
 registering the callback function, and
 :cpp:func:`net_mgmt_del_event_callback()`
-for unregistering. A helper function, :cpp:func:`net_mgmt_init_event_cb()`, can
+for unregistering. A helper function,
+:cpp:func:`net_mgmt_init_event_callback()`, can
 be used to ease the initialization of the callback structure.
 
 When an event is raised that matches a registered event mask, the
