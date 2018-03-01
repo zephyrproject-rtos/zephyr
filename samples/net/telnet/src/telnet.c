@@ -29,6 +29,11 @@ static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
 	char hr_addr[NET_IPV4_ADDR_LEN];
 	int i = 0;
 
+	if (mgmt_event != NET_EVENT_IPV4_ADDR_ADD) {
+		/* Spurious callback. */
+		return;
+	}
+
 	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
 		struct net_if_addr *if_addr =
 			&iface->config.ip.ipv4->unicast[i];
