@@ -176,6 +176,11 @@ static void event_iface_up(struct net_mgmt_event_callback *cb,
 	int r;
 	u8_t observe = 0;
 
+	if (mgmt_event != NET_EVENT_IF_UP) {
+		/* Spurious callback. */
+		return;
+	}
+
 	r = net_context_get(PF_INET6, SOCK_DGRAM, IPPROTO_UDP, &context);
 	if (r) {
 		printk("Could not get an UDP context\n");
