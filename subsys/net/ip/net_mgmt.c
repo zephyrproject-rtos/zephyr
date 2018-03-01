@@ -147,9 +147,9 @@ static inline void mgmt_run_callbacks(struct mgmt_event_entry *mgmt_event)
 		NET_MGMT_GET_COMMAND(mgmt_event->event));
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&event_callbacks, cb, tmp, node) {
-		if (!(NET_MGMT_GET_LAYER(mgmt_event->event) &
+		if (!(NET_MGMT_GET_LAYER(mgmt_event->event) ==
 		      NET_MGMT_GET_LAYER(cb->event_mask)) ||
-		    !(NET_MGMT_GET_LAYER_CODE(mgmt_event->event) &
+		    !(NET_MGMT_GET_LAYER_CODE(mgmt_event->event) ==
 		      NET_MGMT_GET_LAYER_CODE(cb->event_mask)) ||
 		    (NET_MGMT_GET_COMMAND(mgmt_event->event) &&
 		     NET_MGMT_GET_COMMAND(cb->event_mask) &&
