@@ -69,6 +69,7 @@ Serial Port
 The ATSAM4S16C MCU has 2 UARTs and 2 USARTs. One of the UARTs (UART0) is
 connected to the Segger J-Link OB chip (the AT91SAM3U4 is programmed to be
 Segger J-Link OB). Segger J-Link OB brings the UART out as a virtual COM port.
+The section flashing uses the UART from the Segger USB debug connection.
 
 Programming and Debugging
 *************************
