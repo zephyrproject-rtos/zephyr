@@ -1,0 +1,1 @@
+zephyr_sources_ifdef(CONFIG_LSM303DLHC_MAGN lsm303dlhc_magn.c)

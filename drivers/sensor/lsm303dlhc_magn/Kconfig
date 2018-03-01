@@ -1,0 +1,69 @@
+# Kconfig - LSM303DLHC Three Axis Magnetometer configuration options
+
+#
+# Copyright (c) 2018 Philémon Jaermann
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig LSM303DLHC_MAGN
+	bool
+	prompt "LSM303DLHC Three Axis Magnetometer"
+	depends on I2C
+	default n
+	help
+	  Enable driver for LSM303DLHC I2C-based triaxial magnetometer sensor.
+
+config LSM303DLHC_MAGN_NAME
+	string
+	prompt "Driver name"
+	default "LSM303DLHC-magneto"
+	depends on LSM303DLHC_MAGN
+	help
+	  Device name with which the LSM303DLHC magneto sensor is identified.
+
+config LSM303DLHC_MAGN_I2C_MASTER_DEV
+	string
+	prompt "I2C master where LSM303DLHC is connected"
+	depends on LSM303DLHC_MAGN
+	default "I2C_0"
+	help
+	  Specify the device name of the I2C master device to which
+	  LSM303DLHC is connected.
+
+config LSM303DLHC_MAGN_I2C_ADDR
+	hex
+	prompt "LSM303DLHC magnetometer I2C address"
+	depends on LSM303DLHC_MAGN
+	default 0x1E
+	help
+	  I2C address of LSM303DLHC magnetometer sensor.
+
+config LSM303DLHC_MAGN_RANGE
+	int "Magnetometer measurement range"
+	depends on LSM303DLHC_MAGN
+	range 1 7
+	default 1
+	help
+	  1: +/-1.3 gauss
+	  2: +/-1.9 gauss
+	  3: +/-2.5 gauss
+	  4: +/-4 gauss
+	  5: +/-4.7 gauss
+	  6: +/-5.6 gauss
+	  7: +/-8.1 gauss
+
+config LSM303DLHC_MAGN_ODR
+	int "Data rate frequency"
+	depends on LSM303DLHC_MAGN
+	range 0 7
+	default 0
+	help
+	  0: 0.75Hz
+	  1: 1.5 Hz
+	  2: 3Hz
+	  3: 7.5Hz
+	  4: 15Hz
+	  5: 30Hz
+	  6: 75Hz
+	  7: 220Hz
