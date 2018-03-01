@@ -7,6 +7,7 @@
 #ifndef _MQTT_H_
 #define _MQTT_H_
 
+#include <net/zstream.h>
 #include <net/mqtt_types.h>
 #if defined(CONFIG_MQTT_LIB_TLS)
 #include <net/net_context.h>
@@ -66,6 +67,8 @@ enum mqtt_app {
  */
 struct mqtt_ctx {
 	int sock;
+	zstream stream;
+	struct zstream_sock stream_sock;
 	s32_t net_init_timeout;
 	s32_t net_timeout;
 

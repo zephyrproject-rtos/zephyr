@@ -8,6 +8,7 @@
 #include "mqtt_pkt.h"
 
 #include <net/net_ip.h>
+#include <net/zstream.h>
 #include <net/async_socket.h>
 /*
  * Issue #5817 workaround:
@@ -81,7 +82,7 @@ int mqtt_tx_connect(struct mqtt_ctx *ctx, struct mqtt_connect_msg *msg)
 	if (rc != 0) {
 		rc = -EINVAL;
 	} else {
-		rc = async_send(ctx->sock, data, len, NULL, NULL, 0);
+		rc = async_send(ctx->stream, data, len, NULL, NULL, 0);
 		SET_ERRNO_AND_RC(rc);
 	}
 
@@ -102,7 +103,7 @@ int mqtt_tx_disconnect(struct mqtt_ctx *ctx)
 		return -EINVAL;
 	}
 
-	rc = async_send(ctx->sock, msg, len, NULL, NULL, 0);
+	rc = async_send(ctx->stream, msg, len, NULL, NULL, 0);
 	if (rc < 0) {
 		rc = -errno;
 	} else {
@@ -157,7 +158,7 @@ int mqtt_tx_pub_msgs(struct mqtt_ctx *ctx, u16_t id,
 	if (rc != 0) {
 		rc = -EINVAL;
 	} else {
-		rc = async_send(ctx->sock, msg, len, NULL, NULL, 0);
+		rc = async_send(ctx->stream, msg, len, NULL, NULL, 0);
 		SET_ERRNO_AND_RC(rc);
 	}
 
@@ -199,7 +200,7 @@ int mqtt_tx_publish(struct mqtt_ctx *ctx, struct mqtt_publish_msg *msg)
 	if (rc != 0) {
 		rc = -EINVAL;
 	} else {
-		rc = async_send(ctx->sock, data, len, NULL, NULL, 0);
+		rc = async_send(ctx->stream, data, len, NULL, NULL, 0);
 		SET_ERRNO_AND_RC(rc);
 	}
 
@@ -219,7 +220,7 @@ int mqtt_tx_pingreq(struct mqtt_ctx *ctx)
 		return -EINVAL;
 	}
 
-	rc = async_send(ctx->sock, msg, len, NULL, NULL, 0);
+	rc = async_send(ctx->stream, msg, len, NULL, NULL, 0);
 	SET_ERRNO_AND_RC(rc);
 
 	return rc;
@@ -242,7 +243,7 @@ int mqtt_tx_subscribe(struct mqtt_ctx *ctx, u16_t pkt_id, u8_t items,
 	if (rc != 0) {
 		rc = -EINVAL;
 	} else {
-		rc = async_send(ctx->sock, data, len, NULL, NULL, 0);
+		rc = async_send(ctx->stream, data, len, NULL, NULL, 0);
 		SET_ERRNO_AND_RC(rc);
 	}
 
@@ -268,7 +269,7 @@ int mqtt_tx_unsubscribe(struct mqtt_ctx *ctx, u16_t pkt_id, u8_t items,
 	if (rc != 0) {
 		rc = -EINVAL;
 	} else {
-		rc = async_send(ctx->sock, data, len, NULL, NULL, 0);
+		rc = async_send(ctx->stream, data, len, NULL, NULL, 0);
 		SET_ERRNO_AND_RC(rc);
 	}
 
@@ -657,11 +658,14 @@ int mqtt_connect(struct mqtt_ctx *ctx)
 		goto error_connect;
 	}
 
+	zstream_sock_init(&ctx->stream_sock, ctx->sock);
+	ctx->stream = (zstream)&ctx->stream_sock;
+
 	/*
 	 * Setup receive callback, which will call mqtt_parser() on a received
 	 * socket buffer:
 	 */
-	rc = async_recv(ctx->sock, ctx->rcv_buf, MSG_SIZE,
+	rc = async_recv(ctx->sock, ctx->stream, ctx->rcv_buf, MSG_SIZE,
 			async_recv_cb, (void *)ctx);
 	if (rc < 0) {
 		goto error_connect;
@@ -737,7 +741,7 @@ int mqtt_close(struct mqtt_ctx *ctx)
 	}
 
 	if (ctx->sock != INVALID_SOCK) {
-		async_close(ctx->sock);
+		async_close(ctx->sock, ctx->stream);
 		ctx->sock = INVALID_SOCK;
 	}
 
