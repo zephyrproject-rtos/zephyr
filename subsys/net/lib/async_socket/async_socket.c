@@ -31,8 +31,11 @@
 
 /*Socket to callback map, for use by async_recv() and async_sock_server() */
 struct rcv_callbacks {
-	/* Our socket id */
+	/* Underlying socket id for poll() operation */
 	int sock;
+
+	/* Stream for I/O operations */
+	struct zstream *stream;
 
 	/* Buffer for receive and its maximum length */
 	void *buf;
@@ -106,7 +109,7 @@ static void rcv_callbacks_init(void)
 	}
 }
 
-static int rcv_callback_register(int sock,
+static int rcv_callback_register(int sock, struct zstream *stream,
 				 void *buf, size_t max_len,
 				 async_recv_cb_t cb, void *cb_data)
 {
@@ -128,6 +131,7 @@ static int rcv_callback_register(int sock,
 
 	if (rcv_cb) {
 		rcv_cb->sock = sock;
+		rcv_cb->stream = stream;
 		rcv_cb->buf = buf;
 		rcv_cb->max_len = max_len;
 		rcv_cb->cb = cb;
@@ -267,19 +271,18 @@ void async_sock_server(void *unused1, void *unused2, void *unused3)
 					NET_ASSERT(cb_entry != NULL);
 
 					/* Retrieve the socket data: */
-					size = recv(cb_entry->sock,
+					size = zstream_read(cb_entry->stream,
 						    cb_entry->buf,
-						    cb_entry->max_len,
-						    0);
+						    cb_entry->max_len);
 					if (size < 0) {
 						NET_ERR("Socket errno: %d",
 							-errno);
 					} else if (size == 0) {
 						/* Peer shutdown: */
-						async_close(cb_entry->sock);
+						async_close(cb_entry->sock, cb_entry->stream);
 					} else if (cb_entry->cb) {
 						/* Fire the callback: */
-						cb_entry->cb(cb_entry->sock,
+						cb_entry->cb(-1, /* should be ignored */
 							     cb_entry->buf,
 							     size,
 							     cb_entry->cb_data);
@@ -306,36 +309,42 @@ int async_connect(int sock, const struct sockaddr *addr, socklen_t addrlen,
 	return(status);
 }
 
-ssize_t async_send(int sock, const void *buf, size_t len,
+ssize_t async_send(struct zstream *sock, const void *buf, size_t len,
 		   async_send_cb_t cb, void *cb_data, int flags)
 {
 	ssize_t bytes_sent;
 
-	bytes_sent = send(sock, buf, len, flags);
+	bytes_sent = zstream_writeall(sock, buf, len, NULL);
+	if (bytes_sent > 0) {
+		int res = zstream_flush(sock);
+		if (res < 0) {
+			bytes_sent = res;
+		}
+	}
 
 	if (cb) {
-		cb(sock, bytes_sent, cb_data);
+		cb(-1, bytes_sent, cb_data);
 	}
 	return bytes_sent;
 }
 
-ssize_t async_recv(int sock, void *buf, size_t max_len,
+ssize_t async_recv(int sock, struct zstream *stream, void *buf, size_t max_len,
 		   async_recv_cb_t cb, void *cb_data)
 {
 	int status;
 
 	/* Store buf, max_len, cb, and cb_data args for this sock id */
-	status = rcv_callback_register(sock, buf, max_len, cb, cb_data);
+	status = rcv_callback_register(sock, stream, buf, max_len, cb, cb_data);
 
 	return status;
 }
 
-int async_close(int sock)
+int async_close(int sock, struct zstream *stream)
 {
 	/* Deregister any outstanding receive callbacks: */
 	rcv_callback_deregister(sock);
 
-	return close(sock);
+	return zstream_close(stream);
 }
 
 

@@ -19,6 +19,7 @@
 #define __NET_ASYNC_SOCKET_H
 
 #include <net/socket.h>
+#include <net/zstream.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,23 +45,23 @@ typedef void (*async_recv_cb_t)(int sock,
  */
 
 /* For now, same semantics as socket() call: */
-inline int async_socket(int family, int type, int proto)
+static inline int async_socket(int family, int type, int proto)
 {
 	return socket(family, type, proto);
 }
 
-int async_close(int sock);
+int async_close(int sock, struct zstream *stream);
 
 int async_bind(int sock, const struct sockaddr *addr, socklen_t addrlen);
 
 int async_connect(int sock, const struct sockaddr *addr, socklen_t addrlen,
 		  async_connect_cb_t cb, void *cb_data);
 
-ssize_t async_send(int sock, const void *buf, size_t len,
+ssize_t async_send(struct zstream *sock, const void *buf, size_t len,
 		   async_send_cb_t cb, void *cb_data, int flags);
 
 /* buf must be unique per sock */
-ssize_t async_recv(int sock, void *buf, size_t max_len,
+ssize_t async_recv(int sock, struct zstream *stream, void *buf, size_t max_len,
 		   async_recv_cb_t cb, void *cb_data);
 
 #ifdef __cplusplus
