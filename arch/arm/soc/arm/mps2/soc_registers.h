@@ -15,20 +15,6 @@
 #include <misc/util.h>
 #include <zephyr/types.h>
 
-/* System Control Register (SYSCON) */
-struct mps2_syscon {
-	/* Offset: 0x000 (r/w) remap control register */
-	volatile u32_t remap;
-	/* Offset: 0x004 (r/w) pmu control register */
-	volatile u32_t pmuctrl;
-	/* Offset: 0x008 (r/w) reset option register */
-	volatile u32_t resetop;
-	/* Offset: 0x00c (r/w) emi control register */
-	volatile u32_t emictrl;
-	/* Offset: 0x010 (r/w) reset information register */
-	volatile u32_t rstinfo;
-};
-
 /* Registers in the FPGA system control block */
 struct mps2_fpgaio {
 	/* Offset: 0x000 LED connections */
