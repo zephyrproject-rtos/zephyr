@@ -98,9 +98,10 @@ enum state {
 struct advertiser {
 	struct shdr hdr;
 
-	u8_t is_enabled:1;
 	u8_t chan_map_current:3;
-	u8_t rfu:4;
+	u8_t rfu:3;
+	u8_t is_hdcd:1;
+	u8_t is_enabled:1;
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	u8_t phy_p:3;
@@ -3884,14 +3885,10 @@ static inline u32_t isr_close_adv(void)
 		/* capture end of Tx-ed PDU, used to calculate HCTO. */
 		radio_tmr_end_capture();
 	} else {
-		struct pdu_adv *pdu_adv;
-
 		radio_filter_disable();
 
-		pdu_adv = (void *)&_radio.advertiser.adv_data.data
-					[_radio.advertiser.adv_data.first][0];
 		if ((_radio.state == STATE_CLOSE) &&
-		    (pdu_adv->type != PDU_ADV_TYPE_DIRECT_IND)) {
+		    (!_radio.advertiser.is_hdcd)) {
 			u32_t ticker_status;
 			u8_t random_delay;
 
@@ -10149,8 +10146,9 @@ u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 		_radio.advertiser.hdr.ticks_active_to_start;
 
 	/* High Duty Cycle Directed Advertising if interval is 0. */
-	if ((pdu_adv->type == PDU_ADV_TYPE_DIRECT_IND) &&
-	    !interval) {
+	_radio.advertiser.is_hdcd = !interval &&
+				    (pdu_adv->type == PDU_ADV_TYPE_DIRECT_IND);
+	if (_radio.advertiser.is_hdcd) {
 		u32_t ticks_now = ticker_ticks_now_get();
 
 		ret = ticker_start(RADIO_TICKER_INSTANCE_ID_RADIO,
