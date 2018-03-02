@@ -51,13 +51,8 @@ config GPIO_QMSI
 config GPIO_QMSI_0
 	def_bool y
 
-config GPIO_QMSI_0_IRQ_PRI
-	default 2
-
 config GPIO_QMSI_1
 	def_bool y
-config GPIO_QMSI_1_IRQ_PRI
-	default 2
 endif # GPIO
 
 if I2C
