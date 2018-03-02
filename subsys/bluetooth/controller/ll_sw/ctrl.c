@@ -5793,9 +5793,18 @@ static void chan_set(u32_t chan)
  * - It shall have no more than 24 transitions.
  * - It shall have a minimum of two transitions in the most significant six
  *   bits.
+ *
+ * LE Coded PHY requirements:
+ * - It shall have at least three ones in the least significant 8 bits.
+ * - It shall have no more than eleven transitions in the least significant 16
+ *   bits.
  */
 static u32_t access_addr_get(void)
 {
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+	u8_t transitions_lsb16;
+	u8_t ones_count_lsb8;
+#endif /* CONFIG_BT_CTLR_PHY_CODED */
 	u8_t consecutive_cnt;
 	u8_t consecutive_bit;
 	u32_t adv_aa_check;
@@ -5814,8 +5823,17 @@ again:
 	bit_idx = 31;
 	transitions = 0;
 	consecutive_cnt = 1;
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+	ones_count_lsb8 = 0;
+	transitions_lsb16 = 0;
+#endif /* CONFIG_BT_CTLR_PHY_CODED */
 	consecutive_bit = (access_addr >> bit_idx) & 0x01;
 	while (bit_idx--) {
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+		u8_t transitions_lsb16_prev = transitions_lsb16;
+#endif /* CONFIG_BT_CTLR_PHY_CODED */
+		u8_t consecutive_cnt_prev = consecutive_cnt;
+		u8_t transitions_prev = transitions;
 		u8_t bit;
 
 		bit = (access_addr >> bit_idx) & 0x01;
@@ -5825,29 +5843,81 @@ again:
 			consecutive_cnt = 1;
 			consecutive_bit = bit;
 			transitions++;
+
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+			if (bit_idx < 15) {
+				transitions_lsb16++;
+			}
+#endif /* CONFIG_BT_CTLR_PHY_CODED */
 		}
+
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+		if ((bit_idx < 8) && bit) {
+			ones_count_lsb8++;
+		}
+#endif /* CONFIG_BT_CTLR_PHY_CODED */
 
 		/* It shall have no more than six consecutive zeros or ones. */
 		/* It shall have a minimum of two transitions in the most
 		 * significant six bits.
 		 */
 		if ((consecutive_cnt > 6) ||
-		    ((bit_idx < 28) && (transitions < 1)) ||
-		    ((bit_idx < 27) && (transitions < 2))) {
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+		    (!bit && (((bit_idx < 6) && (ones_count_lsb8 < 1)) ||
+			      ((bit_idx < 5) && (ones_count_lsb8 < 2)) ||
+			      ((bit_idx < 4) && (ones_count_lsb8 < 3)))) ||
+#endif /* CONFIG_BT_CTLR_PHY_CODED */
+		    ((consecutive_cnt < 6) &&
+		     (((bit_idx < 29) && (transitions < 1)) ||
+		      ((bit_idx < 28) && (transitions < 2))))) {
 			if (consecutive_bit) {
 				consecutive_bit = 0;
 				access_addr &= ~BIT(bit_idx);
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+				if (bit_idx < 8) {
+					ones_count_lsb8--;
+				}
+#endif /* CONFIG_BT_CTLR_PHY_CODED */
 			} else {
 				consecutive_bit = 1;
 				access_addr |= BIT(bit_idx);
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+				if (bit_idx < 8) {
+					ones_count_lsb8++;
+				}
+#endif /* CONFIG_BT_CTLR_PHY_CODED */
 			}
 
-			consecutive_cnt = 1;
-			transitions++;
+			if (transitions != transitions_prev) {
+				consecutive_cnt = consecutive_cnt_prev;
+				transitions = transitions_prev;
+			} else {
+				consecutive_cnt = 1;
+				transitions++;
+			}
+
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+			if (bit_idx < 15) {
+				if (transitions_lsb16 !=
+				    transitions_lsb16_prev) {
+					transitions_lsb16 =
+						transitions_lsb16_prev;
+				} else {
+					transitions_lsb16++;
+				}
+			}
+#endif /* CONFIG_BT_CTLR_PHY_CODED */
 		}
 
-		/* It shall have no more than 24 transitions */
-		if (transitions > 24) {
+		/* It shall have no more than 24 transitions
+		 * It shall have no more than eleven transitions in the least
+		 * significant 16 bits.
+		 */
+		if ((transitions > 24) ||
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+		    (transitions_lsb16 > 11) ||
+#endif /* CONFIG_BT_CTLR_PHY_CODED */
+		    0) {
 			if (consecutive_bit) {
 				access_addr &= ~(BIT(bit_idx + 1) - 1);
 			} else {
