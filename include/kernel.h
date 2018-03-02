@@ -918,7 +918,7 @@ struct _static_thread_data {
 
 #define _THREAD_INITIALIZER(thread, stack, stack_size,           \
 			    entry, p1, p2, p3,                   \
-			    prio, options, delay, abort, groups) \
+			    prio, options, delay, abort) 	 \
 	{                                                        \
 	.init_thread = (thread),				 \
 	.init_stack = (stack),					 \
@@ -977,7 +977,7 @@ struct _static_thread_data {
 		_THREAD_INITIALIZER(&_k_thread_obj_##name,		 \
 				    _k_thread_stack_##name, stack_size,  \
 				entry, p1, p2, p3, prio, options, delay, \
-				NULL, 0);				 \
+				NULL);				 	 \
 	const k_tid_t name = (k_tid_t)&_k_thread_obj_##name
 
 /**
