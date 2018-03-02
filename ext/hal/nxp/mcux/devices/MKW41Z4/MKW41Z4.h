@@ -4586,7 +4586,7 @@ typedef struct {
   __IO uint32_t POSITION;                          /**< MTB Position Register, offset: 0x0 */
   __IO uint32_t MASTER;                            /**< MTB Master Register, offset: 0x4 */
   __IO uint32_t FLOW;                              /**< MTB Flow Register, offset: 0x8 */
-  __I  uint32_t BASE;                              /**< MTB Base Register, offset: 0xC */
+  __I  uint32_t _BASE;                              /**< MTB Base Register, offset: 0xC */
        uint8_t RESERVED_0[3824];
   __I  uint32_t MODECTRL;                          /**< Integration Mode Control Register, offset: 0xF00 */
        uint8_t RESERVED_1[156];
