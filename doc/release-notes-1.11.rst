@@ -11,8 +11,15 @@ Major enhancements with this release include:
 
 * Thread-level memory protection on x86, ARC and ARM, userspace and memory
   domains
-* Windows build compatibility.
-* Integration with OpenThread, currently only on Nordic chipsets.
+* Symmetric Multi Processing (SMP) support on the Xtensa architecture.
+* Initial Armv8-M architecture support.
+* Native development environment on Microsoft Windows.
+* Native build target on POSIX platforms.
+* POSIX PSE52 partial support.
+* Thread support via integration with OpenThread.
+* Over the Air Firmware Updates over BLE using MCUmgr.
+* Lightweight flash storage layer for constrained devices.
+
 * Additional SoC, platform and driver support for many of the already supported
   platforms.
 
@@ -21,18 +28,33 @@ The following sections provide detailed lists of changes by component.
 Kernel
 ******
 
+* Initial Symmetric Multi Processing (SMP) support added:
+  * SMP-aware scheduler
+  * SMP timer and idling support
+  * Available on the Xtensa architecture
+* POSIX PSE52 support:
+  * Timer, clock, scheduler and pthread APIs
 
 Architectures
 *************
 
 * User space and system call related changes:
-
   * Added ARC user space implementation
   * Added ARM user space implementation
   * Fixed a few MPU related issues with stack guards
+* Armv8-M iniital architecture support, including the following cores:
+  * Arm Cortex-M23
+  * Arm Cortex-M33
+* New "posix" architecture for native GNU/Linux and macOS build targets:
+  * Targets native executables that can be run on the operating system
 
 Boards
 ******
+
+* New native_posix board for the posix architecture:
+  * Includes a template for hardware models
+  * Adds support for console and logging
+  * Interrupts and timers are simulated in several different configurations
 
 Drivers and Sensors
 *******************
@@ -75,9 +97,22 @@ Bluetooth
 Build and Infrastructure
 ************************
 
+* Native development enviroment on Microsoft Windows:
+  * Uses CMake and Kconfiglib to avoid requiring an emulation layer
+  * Package management support with Chocolatey for simple setup
+  * Build time now comparable to Linux and macOS using Ninja
 
 Libraries / Subsystems
 ***********************
+
+* New management subystem based on the cross-RTOS MCUmgr:
+  * Secure Firmware Updates over BLE and serial
+  * Support for file system access and statistics
+  * mcumgr cross-platform command-line tool
+
+* FCB (File Circular Buffer) lightweight storage layer:
+  * Wear-levelling support for NOR flashes
+  * Suitable for memory constrained devices
 
 HALs
 ****
