@@ -108,10 +108,15 @@ config BT_CTLR_TX_BUFFER_SIZE
 config BT_CTLR_COMPANY_ID
 	prompt "Company Id"
 	hex
-	default 0xFFFF
+	default 0x05F1
 	range 0x0000 0xFFFF
 	help
-	  Set the Company Id that will be used in VERSION_IND PDU.
+	  Set the Bluetooth Company Identifier that will be used in
+	  the VERSION_IND PDU. The Linux Foundation's Company Identifier
+	  (0x05F1) is the default value for this option although silicon vendors
+	  and hardware manufacturers can set their own. The full list of
+	  Bluetooth Company Identifiers can be found here:
+	  https://www.bluetooth.com/specifications/assigned-numbers/company-identifiers
 
 config BT_CTLR_SUBVERSION_NUMBER
 	prompt "Subversion Number"
