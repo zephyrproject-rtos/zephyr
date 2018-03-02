@@ -80,10 +80,9 @@ if GPIO
 
 config GPIO_QMSI
 	def_bool y
+
 config GPIO_QMSI_0
 	def_bool y
-config GPIO_QMSI_0_IRQ_PRI
-	default 0
 
 endif # GPIO
 

@@ -90,6 +90,7 @@
 			reg = <0xb0000c00 0x400>;
 			interrupts = <8 IRQ_TYPE_LEVEL_HIGH 2>;
 			interrupt-parent = <&intc>;
+			label = "GPIO_0";
 
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -100,6 +101,7 @@
 			reg = <0xb0800b00 0x400>;
 			interrupts = <31 IRQ_TYPE_LEVEL_HIGH 2>;
 			interrupt-parent = <&intc>;
+			label = "GPIO_1";
 
 			gpio-controller;
 			#gpio-cells = <2>;
