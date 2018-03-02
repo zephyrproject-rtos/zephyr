@@ -24,11 +24,12 @@
 #include <net/net_stats.h>
 #include <net/net_context.h>
 #include <net/net_mgmt.h>
+#include <net/tcp.h>
 #include "net_private.h"
 #include "connection.h"
 #include "icmpv6.h"
 #include "udp_internal.h"
-#include "tcp.h"
+#include "tcp_internal.h"
 #include "ipv6.h"
 #include "nbr.h"
 #include "6lo.h"

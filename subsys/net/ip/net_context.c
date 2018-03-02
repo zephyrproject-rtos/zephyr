@@ -24,6 +24,7 @@
 #include <net/net_ip.h>
 #include <net/net_context.h>
 #include <net/net_offload.h>
+#include <net/tcp.h>
 
 #include "connection.h"
 #include "net_private.h"
@@ -31,7 +32,7 @@
 #include "ipv6.h"
 #include "ipv4.h"
 #include "udp_internal.h"
-#include "tcp.h"
+#include "tcp_internal.h"
 #include "net_stats.h"
 
 #ifndef EPFNOSUPPORT

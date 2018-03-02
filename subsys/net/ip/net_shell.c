@@ -24,7 +24,8 @@
 #include "connection.h"
 
 #if defined(CONFIG_NET_TCP)
-#include "tcp.h"
+#include <net/tcp.h>
+#include "tcp_internal.h"
 #endif
 
 #if defined(CONFIG_NET_IPV6)

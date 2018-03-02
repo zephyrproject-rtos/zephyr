@@ -19,12 +19,13 @@
 #include <net/net_core.h>
 #include <net/net_pkt.h>
 #include <net/udp.h>
+#include <net/tcp.h>
 
 #include "net_private.h"
 #include "icmpv6.h"
 #include "icmpv4.h"
 #include "udp_internal.h"
-#include "tcp.h"
+#include "tcp_internal.h"
 #include "connection.h"
 #include "net_stats.h"
 
