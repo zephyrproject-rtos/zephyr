@@ -108,13 +108,16 @@ static void zsock_accepted_cb(struct net_context *new_ctx,
 			      int status, void *user_data) {
 	struct net_context *parent = user_data;
 
-	/* This just installs a callback, so cannot fail. */
-	(void)net_context_recv(new_ctx, zsock_received_cb, K_NO_WAIT, NULL);
-	k_fifo_init(&new_ctx->recv_q);
-
 	NET_DBG("parent=%p, ctx=%p, st=%d", parent, new_ctx, status);
 
-	k_fifo_put(&parent->accept_q, new_ctx);
+	if (status == 0) {
+		/* This just installs a callback, so cannot fail. */
+		(void)net_context_recv(new_ctx, zsock_received_cb, K_NO_WAIT,
+				       NULL);
+		k_fifo_init(&new_ctx->recv_q);
+
+		k_fifo_put(&parent->accept_q, new_ctx);
+	}
 }
 
 static void zsock_received_cb(struct net_context *ctx, struct net_pkt *pkt,
