@@ -13,8 +13,6 @@
 
 #include "board.h"
 
-#define CID_INTEL 0x0002
-
 #define MAX_FAULT 24
 
 static bool has_reg_fault = true;
@@ -51,7 +49,7 @@ static int fault_get_cur(struct bt_mesh_model *model, u8_t *test_id,
 	printk("fault_get_cur() has_reg_fault %u\n", has_reg_fault);
 
 	*test_id = 0x00;
-	*company_id = CID_INTEL;
+	*company_id = BT_COMP_ID_LF;
 	memcpy(faults, reg_faults, sizeof(reg_faults));
 	*fault_count = sizeof(reg_faults);
 
@@ -61,7 +59,7 @@ static int fault_get_cur(struct bt_mesh_model *model, u8_t *test_id,
 static int fault_get_reg(struct bt_mesh_model *model, u16_t company_id,
 			 u8_t *test_id, u8_t *faults, u8_t *fault_count)
 {
-	if (company_id != CID_INTEL) {
+	if (company_id != BT_COMP_ID_LF) {
 		return -EINVAL;
 	}
 
@@ -83,7 +81,7 @@ static int fault_get_reg(struct bt_mesh_model *model, u16_t company_id,
 
 static int fault_clear(struct bt_mesh_model *model, uint16_t company_id)
 {
-	if (company_id != CID_INTEL) {
+	if (company_id != BT_COMP_ID_LF) {
 		return -EINVAL;
 	}
 
@@ -95,7 +93,7 @@ static int fault_clear(struct bt_mesh_model *model, uint16_t company_id)
 static int fault_test(struct bt_mesh_model *model, uint8_t test_id,
 		      uint16_t company_id)
 {
-	if (company_id != CID_INTEL) {
+	if (company_id != BT_COMP_ID_LF) {
 		return -EINVAL;
 	}
 
@@ -138,8 +136,8 @@ static const struct bt_mesh_model_op vnd_ops[] = {
 };
 
 static struct bt_mesh_model vnd_models[] = {
-	BT_MESH_MODEL_VND(CID_INTEL, 0x1234, vnd_ops, &vnd_pub, NULL),
-	BT_MESH_MODEL_VND(CID_INTEL, 0x4321, vnd_ops, &vnd_pub2, NULL),
+	BT_MESH_MODEL_VND(BT_COMP_ID_LF, 0x1234, vnd_ops, &vnd_pub, NULL),
+	BT_MESH_MODEL_VND(BT_COMP_ID_LF, 0x4321, vnd_ops, &vnd_pub2, NULL),
 };
 
 static struct bt_mesh_elem elements[] = {
@@ -147,7 +145,7 @@ static struct bt_mesh_elem elements[] = {
 };
 
 static const struct bt_mesh_comp comp = {
-	.cid = CID_INTEL,
+	.cid = BT_COMP_ID_LF,
 	.elem = elements,
 	.elem_count = ARRAY_SIZE(elements),
 };

@@ -25,7 +25,6 @@
 #include "foundation.h"
 
 #define CID_NVAL   0xffff
-#define CID_LOCAL  0x0002
 
 /* Default net, app & dev key values, unless otherwise specified */
 static const u8_t default_key[16] = {
@@ -87,7 +86,7 @@ static int fault_get_cur(struct bt_mesh_model *model, u8_t *test_id,
 	printk("Sending current faults\n");
 
 	*test_id = 0x00;
-	*company_id = CID_LOCAL;
+	*company_id = BT_COMP_ID_LF;
 
 	get_faults(cur_faults, sizeof(cur_faults), faults, fault_count);
 
@@ -97,7 +96,7 @@ static int fault_get_cur(struct bt_mesh_model *model, u8_t *test_id,
 static int fault_get_reg(struct bt_mesh_model *model, u16_t cid,
 			 u8_t *test_id, u8_t *faults, u8_t *fault_count)
 {
-	if (cid != CID_LOCAL) {
+	if (cid != BT_COMP_ID_LF) {
 		printk("Faults requested for unknown Company ID 0x%04x\n", cid);
 		return -EINVAL;
 	}
@@ -113,7 +112,7 @@ static int fault_get_reg(struct bt_mesh_model *model, u16_t cid,
 
 static int fault_clear(struct bt_mesh_model *model, uint16_t cid)
 {
-	if (cid != CID_LOCAL) {
+	if (cid != BT_COMP_ID_LF) {
 		return -EINVAL;
 	}
 
@@ -125,7 +124,7 @@ static int fault_clear(struct bt_mesh_model *model, uint16_t cid)
 static int fault_test(struct bt_mesh_model *model, uint8_t test_id,
 		      uint16_t cid)
 {
-	if (cid != CID_LOCAL) {
+	if (cid != BT_COMP_ID_LF) {
 		return -EINVAL;
 	}
 
@@ -196,7 +195,7 @@ static struct bt_mesh_elem elements[] = {
 };
 
 static const struct bt_mesh_comp comp = {
-	.cid = CID_LOCAL,
+	.cid = BT_COMP_ID_LF,
 	.elem = elements,
 	.elem_count = ARRAY_SIZE(elements),
 };

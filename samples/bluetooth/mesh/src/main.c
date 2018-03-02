@@ -13,8 +13,6 @@
 
 #include "board.h"
 
-#define CID_INTEL 0x0002
-
 static struct bt_mesh_cfg_srv cfg_srv = {
 	.relay = BT_MESH_RELAY_DISABLED,
 	.beacon = BT_MESH_BEACON_ENABLED,
@@ -135,7 +133,7 @@ static struct bt_mesh_elem elements[] = {
 };
 
 static const struct bt_mesh_comp comp = {
-	.cid = CID_INTEL,
+	.cid = BT_COMP_ID_LF,
 	.elem = elements,
 	.elem_count = ARRAY_SIZE(elements),
 };
