@@ -75,9 +75,9 @@
 			status = "disabled";
 		};
 
-		gpio: gpio@b000c000 {
+		gpio: gpio@b0000c00 {
 			compatible = "intel,qmsi-gpio";
-			reg = <0xb00c00 0x400>;
+			reg = <0xb0000c00 0x400>;
 			interrupts = <15 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
 
