@@ -70,6 +70,9 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x80012000 0x100>;
+			interrupts = <21 1>, <20 1>, <19 1>, <18 1>;
+			interrupt-names = "error", "stop", "tx", "rx";
+			interrupt-parent = <&core_intc>;
 			label = "I2C_0";
 
 			status = "disabled";
@@ -81,6 +84,9 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x80012100 0x100>;
+			interrupts = <25 1>, <24 1>, <23 1>, <22 1>;
+			interrupt-names = "error", "stop", "tx", "rx";
+			interrupt-parent = <&core_intc>;
 			label = "I2C_1";
 
 			status = "disabled";
@@ -92,6 +98,8 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0xb0002800 0x400>;
+			interrupts = <36 1>;
+			interrupt-parent = <&core_intc>;
 			label = "I2C_2";
 
 			status = "disabled";
@@ -103,6 +111,8 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0xb0002c00 0x400>;
+			interrupts = <37 1>;
+			interrupt-parent = <&core_intc>;
 			label = "I2C_3";
 
 			status = "disabled";
