@@ -633,6 +633,7 @@ int mqtt_connect(struct mqtt_ctx *ctx)
 	int rc = 0;
 	struct sockaddr addr;
 	struct sockaddr peer_addr;
+	mbedtls_ssl_config *tls_conf;
 
 	if (!ctx) {
 		return -EFAULT;
@@ -658,8 +659,25 @@ int mqtt_connect(struct mqtt_ctx *ctx)
 		goto error_connect;
 	}
 
+	rc = async_connect(ctx->sock, &peer_addr, sizeof(peer_addr),
+			   async_connected_cb, (void *)ctx);
+	if (rc < 0) {
+		goto error_connect;
+	}
+
 	zstream_sock_init(&ctx->stream_sock, ctx->sock);
-	ctx->stream = (zstream)&ctx->stream_sock;
+	ctx->stream = (struct zstream *)&ctx->stream_sock;
+
+	rc = ztls_get_tls_client_conf(&tls_conf);
+	if (rc < 0) {
+		goto error_connect;
+	}
+	mbedtls_ssl_conf_authmode(tls_conf, MBEDTLS_SSL_VERIFY_NONE);
+	rc = zstream_tls_init(&ctx->stream_tls, ctx->stream, tls_conf, NULL);
+	if (rc < 0) {
+		goto error_connect;
+	}
+	ctx->stream = (struct zstream *)&ctx->stream_tls;
 
 	/*
 	 * Setup receive callback, which will call mqtt_parser() on a received
@@ -687,12 +705,6 @@ int mqtt_connect(struct mqtt_ctx *ctx)
 		goto error_connect;
 	}
 #endif
-
-	rc = async_connect(ctx->sock, &peer_addr, sizeof(peer_addr),
-			   async_connected_cb, (void *)ctx);
-	if (rc < 0) {
-		goto error_connect;
-	}
 
 #if defined(CONFIG_MQTT_LIB_TLS)
 	/* TLS handshake is not finished until app_connected is called */
