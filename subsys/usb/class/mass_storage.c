@@ -142,7 +142,8 @@ static bool write(u8_t *buf, u16_t size)
 	 */
 	stage = SEND_CSW;
 
-	if (!usb_write(CONFIG_MASS_STORAGE_IN_EP_ADDR, buf, size, NULL)) {
+	if (usb_write(CONFIG_MASS_STORAGE_IN_EP_ADDR, buf, size, NULL)) {
+		SYS_LOG_ERR("USB write failed");
 		return false;
 	}
 
