@@ -26,6 +26,7 @@ Architectures
 *************
 
 * User space and system call related changes:
+
   * Added ARC user space implementation
   * Added ARM user space implementation
   * Fixed a few MPU related issues with stack guards
@@ -85,6 +86,11 @@ Documentation
 *************
 
 * Added MPU specific stack and userspace documentation
+* Improved docs for Native (POSIX) support
+* Docs for new samples and supported board
+* General documentation clarifications and improvements
+* Addressed Sphinx-generated intra-page link issues
+* Updated doc generation tools (Doxygen, Sphinx, Breathe, Docutils)
 
 Tests and Samples
 *****************
