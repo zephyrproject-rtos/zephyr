@@ -28,4 +28,5 @@ properties:
 "#cells":
   - irq
   - sense
+  - priority
 ...
