@@ -25,7 +25,7 @@
 			compatible = "intel,ioapic";
 			reg = <0xfec00000 0x100000>;
 			interrupt-controller;
-			#interrupt-cells = <2>;
+			#interrupt-cells = <3>;
 		};
 	};
 
@@ -51,7 +51,7 @@
 			compatible = "ns16550";
 			reg = <0xf0008000 0x400>;
 			label = "UART_0";
-			interrupts = <4 IRQ_TYPE_EDGE_RISING>;
+			interrupts = <4 IRQ_TYPE_EDGE_RISING 0>;
 			interrupt-parent = <&intc>;
 
 			status = "disabled";
@@ -61,7 +61,7 @@
 			compatible = "ns16550";
 			reg = <0xf0009000 0x400>;
 			label = "UART_1";
-			interrupts = <3 IRQ_TYPE_EDGE_RISING>;
+			interrupts = <3 IRQ_TYPE_EDGE_RISING 3>;
 			interrupt-parent = <&intc>;
 
 			status = "disabled";
@@ -73,7 +73,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x90007000 0x400>;
-			interrupts = <18 IRQ_TYPE_LEVEL_LOW>;
+			interrupts = <18 IRQ_TYPE_LEVEL_LOW 2>;
 			interrupt-parent = <&intc>;
 			label = "I2C_0";
 
