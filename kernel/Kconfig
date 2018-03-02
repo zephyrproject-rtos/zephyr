@@ -564,6 +564,26 @@ config EXECUTE_XOR_WRITE
 
 	  If unsure, say Y.
 
+config STACK_POINTER_RANDOM
+	int
+	prompt "Initial stack pointer randomization bounds"
+	depends on !STACK_GROWS_UP
+	default 0
+	help
+	  This option performs a limited form of Address Space Layout
+	  Randomization by offsetting some random value to a thread's
+	  initial stack pointer upon creation. This hinders some types of
+	  security attacks by making the location of any given stack frame
+	  non-deterministic.
+
+	  This feature can waste up to the specified size in bytes the stack
+	  region, which is carved out of the total size of the stack region.
+	  A reasonable minimum value would be around 100 bytes if this can
+	  be spared.
+
+	  This is currently only implemented for systems whose stack pointers
+	  grow towards lower memory addresses.
+
 endmenu
 
 config MAX_DOMAIN_PARTITIONS
