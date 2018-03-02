@@ -89,7 +89,7 @@ static int flash_mcux_write(struct device *dev, off_t offset,
 	addr = offset + priv->config.PFlashBlockBase;
 
 	key = irq_lock();
-	rc = FLASH_Program(&priv->config, addr, (u32_t *) data, len);
+	rc = FLASH_Program(&priv->config, addr, (uint32_t *) data, len);
 	irq_unlock(key);
 
 	k_sem_give(&priv->write_lock);
