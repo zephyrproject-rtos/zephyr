@@ -33,7 +33,7 @@ static inline void sock_set_flag(struct net_context *ctx, u32_t mask,
 				 u32_t flag)
 {
 	u32_t val = POINTER_TO_INT(ctx->user_data);
-	val = (val & mask) | flag;
+	val = (val & ~mask) | flag;
 	(ctx)->user_data = INT_TO_POINTER(val);
 }
 
