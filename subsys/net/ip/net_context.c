@@ -658,6 +658,7 @@ int net_context_put(struct net_context *context)
 	if (net_if_is_ip_offloaded(net_context_get_iface(context))) {
 		k_sem_take(&contexts_lock, K_FOREVER);
 		context->flags &= ~NET_CONTEXT_IN_USE;
+		k_sem_give(&contexts_lock);
 		return net_offload_put(
 			net_context_get_iface(context), context);
 	}
