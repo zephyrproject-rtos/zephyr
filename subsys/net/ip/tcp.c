@@ -26,6 +26,7 @@
 #include <net/net_pkt.h>
 #include <net/net_ip.h>
 #include <net/net_context.h>
+#include <net/tcp.h>
 #include <misc/byteorder.h>
 
 #include "connection.h"
@@ -33,7 +34,7 @@
 
 #include "ipv6.h"
 #include "ipv4.h"
-#include "tcp.h"
+#include "tcp_internal.h"
 #include "net_stats.h"
 
 #define ALLOC_TIMEOUT 500

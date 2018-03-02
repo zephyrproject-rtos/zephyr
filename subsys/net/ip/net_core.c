@@ -29,6 +29,7 @@
 #include <net/net_pkt.h>
 #include <net/net_core.h>
 #include <net/dns_resolve.h>
+#include <net/tcp.h>
 
 #include "net_private.h"
 #include "net_shell.h"
@@ -47,7 +48,7 @@
 
 #include "connection.h"
 #include "udp_internal.h"
-#include "tcp.h"
+#include "tcp_internal.h"
 
 #include "net_stats.h"
 
