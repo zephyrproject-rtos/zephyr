@@ -171,7 +171,7 @@ if tags.has('release'):
     docs_title = 'Docs / %s' %(version)
 else:
     is_release = False
-    docs_title = 'Docs'
+    docs_title = 'Docs / Latest'
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
