@@ -50,8 +50,6 @@
 
 #include <board.h>
 
-#define CID_INTEL 0x0002
-
 /*
  * The include must follow the define for it to take effect.
  * If it isn't, the domain defaults to "general"
@@ -281,7 +279,7 @@ static struct bt_mesh_elem elements[] = {
 };
 
 static const struct bt_mesh_comp comp = {
-	.cid = CID_INTEL,
+	.cid = BT_COMP_ID_LF,
 	.elem = elements,
 	.elem_count = ARRAY_SIZE(elements),
 };

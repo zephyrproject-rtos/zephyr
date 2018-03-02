@@ -18,6 +18,9 @@
 extern "C" {
 #endif
 
+/* Company Identifiers (see Bluetooth Assigned Numbers) */
+#define BT_COMP_ID_LF           0x05f1
+
 #define BT_ADDR_LE_PUBLIC       0x00
 #define BT_ADDR_LE_RANDOM       0x01
 #define BT_ADDR_LE_PUBLIC_ID    0x02
