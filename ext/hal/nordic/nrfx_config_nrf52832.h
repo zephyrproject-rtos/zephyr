@@ -1605,28 +1605,28 @@
 
 // <e> NRFX_SPIM_ENABLED - nrfx_spim - SPIM peripheral driver
 //==========================================================
-#ifndef NRFX_SPIM_ENABLED
-#define NRFX_SPIM_ENABLED 0
+#ifdef CONFIG_NRFX_SPIM
+#define NRFX_SPIM_ENABLED 1
 #endif
 // <q> NRFX_SPIM0_ENABLED  - Enable SPIM0 instance
 
 
-#ifndef NRFX_SPIM0_ENABLED
-#define NRFX_SPIM0_ENABLED 0
+#ifdef CONFIG_SPI_0_NRF_SPIM
+#define NRFX_SPIM0_ENABLED 1
 #endif
 
 // <q> NRFX_SPIM1_ENABLED  - Enable SPIM1 instance
 
 
-#ifndef NRFX_SPIM1_ENABLED
-#define NRFX_SPIM1_ENABLED 0
+#ifdef CONFIG_SPI_1_NRF_SPIM
+#define NRFX_SPIM1_ENABLED 1
 #endif
 
 // <q> NRFX_SPIM2_ENABLED  - Enable SPIM2 instance
 
 
-#ifndef NRFX_SPIM2_ENABLED
-#define NRFX_SPIM2_ENABLED 0
+#ifdef CONFIG_SPI_2_NRF_SPIM
+#define NRFX_SPIM2_ENABLED 1
 #endif
 
 // <o> NRFX_SPIM_MISO_PULL_CFG  - MISO pin pull configuration.
@@ -1723,28 +1723,28 @@
 
 // <e> NRFX_SPIS_ENABLED - nrfx_spis - SPIS peripheral driver
 //==========================================================
-#ifndef NRFX_SPIS_ENABLED
-#define NRFX_SPIS_ENABLED 0
+#ifdef CONFIG_NRFX_SPIS
+#define NRFX_SPIS_ENABLED 1
 #endif
 // <q> NRFX_SPIS0_ENABLED  - Enable SPIS0 instance
 
 
-#ifndef NRFX_SPIS0_ENABLED
-#define NRFX_SPIS0_ENABLED 0
+#ifdef CONFIG_SPI_0_NRF_SPIS
+#define NRFX_SPIS0_ENABLED 1
 #endif
 
 // <q> NRFX_SPIS1_ENABLED  - Enable SPIS1 instance
 
 
-#ifndef NRFX_SPIS1_ENABLED
-#define NRFX_SPIS1_ENABLED 0
+#ifdef CONFIG_SPI_1_NRF_SPIS
+#define NRFX_SPIS1_ENABLED 1
 #endif
 
 // <q> NRFX_SPIS2_ENABLED  - Enable SPIS2 instance
 
 
-#ifndef NRFX_SPIS2_ENABLED
-#define NRFX_SPIS2_ENABLED 0
+#ifdef CONFIG_SPI_2_NRF_SPIS
+#define NRFX_SPIS2_ENABLED 1
 #endif
 
 // <o> NRFX_SPIS_DEFAULT_CONFIG_IRQ_PRIORITY  - Interrupt priority
@@ -1845,28 +1845,28 @@
 
 // <e> NRFX_SPI_ENABLED - nrfx_spi - SPI peripheral driver
 //==========================================================
-#ifndef NRFX_SPI_ENABLED
-#define NRFX_SPI_ENABLED 0
+#ifdef CONFIG_NRFX_SPI
+#define NRFX_SPI_ENABLED 1
 #endif
 // <q> NRFX_SPI0_ENABLED  - Enable SPI0 instance
 
 
-#ifndef NRFX_SPI0_ENABLED
-#define NRFX_SPI0_ENABLED 0
+#ifdef CONFIG_SPI_0_NRF_SPI
+#define NRFX_SPI0_ENABLED 1
 #endif
 
 // <q> NRFX_SPI1_ENABLED  - Enable SPI1 instance
 
 
-#ifndef NRFX_SPI1_ENABLED
-#define NRFX_SPI1_ENABLED 0
+#ifdef CONFIG_SPI_1_NRF_SPI
+#define NRFX_SPI1_ENABLED 1
 #endif
 
 // <q> NRFX_SPI2_ENABLED  - Enable SPI2 instance
 
 
-#ifndef NRFX_SPI2_ENABLED
-#define NRFX_SPI2_ENABLED 0
+#ifdef CONFIG_SPI_2_NRF_SPI
+#define NRFX_SPI2_ENABLED 1
 #endif
 
 // <o> NRFX_SPI_MISO_PULL_CFG  - MISO pin pull configuration.

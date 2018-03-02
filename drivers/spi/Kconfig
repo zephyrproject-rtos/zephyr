@@ -313,6 +313,8 @@ source "drivers/spi/Kconfig.mcux_dspi"
 
 source "drivers/spi/Kconfig.sam0"
 
+source "drivers/spi/Kconfig.nrfx"
+
 endif # !SPI_LEGACY_API
 
 endif # SPI
