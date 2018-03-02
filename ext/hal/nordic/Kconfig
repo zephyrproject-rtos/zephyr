@@ -9,3 +9,12 @@ config HAS_NORDIC_DRIVERS
 
 config HAS_NRFX
 	bool
+
+config NRFX_SPI
+	bool
+
+config NRFX_SPIM
+	bool
+
+config NRFX_SPIS
+	bool
