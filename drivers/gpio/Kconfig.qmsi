@@ -50,12 +50,12 @@ config GPIO_QMSI_0
 
 config GPIO_QMSI_0_NAME
 	string "Driver name"
-	depends on GPIO_QMSI_0
+	depends on GPIO_QMSI_0 && !HAS_DTS
 	default "GPIO_0"
 
 config GPIO_QMSI_0_IRQ_PRI
 	int "Controller interrupt priority"
-	depends on GPIO_QMSI_0
+	depends on GPIO_QMSI_0 && !HAS_DTS
 	help
 	  IRQ priority
 
@@ -67,12 +67,12 @@ config GPIO_QMSI_1
 
 config GPIO_QMSI_1_NAME
 	string "Driver name"
-	depends on GPIO_QMSI_1
+	depends on GPIO_QMSI_1 && !HAS_DTS
 	default "GPIO_1"
 
 config GPIO_QMSI_1_IRQ_PRI
 	int "Controller interrupt priority"
-	depends on GPIO_QMSI_1
+	depends on GPIO_QMSI_1 && !HAS_DTS
 	help
 	  IRQ priority
 
