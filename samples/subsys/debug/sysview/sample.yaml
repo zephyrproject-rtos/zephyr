@@ -2,5 +2,5 @@ sample:
   name: Systemview Demo
 tests:
   test:
-    platform_whitelist: frdm_k64f
-    tags: apps debug
+    filter: CONFIG_HAS_SEGGER_RTT
+    tags: debug tracing
