@@ -1,4 +1,5 @@
 #include <arm/armv7-m.dtsi>
+#include <dt-bindings/i2c/i2c.h>
 #include <nordic/mem.h>
 
 / {
@@ -51,6 +52,28 @@
 			interrupts = <40 1>;
 			status = "disabled";
 			label = "UART_1";
+		};
+
+		i2c0: i2c@40003000 {
+			compatible = "nordic,nrf5-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40003000 0x1000>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <3 1>;
+			status = "disabled";
+			label = "I2C_0";
+		};
+
+		i2c1: i2c@40004000 {
+			compatible = "nordic,nrf5-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40004000 0x1000>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <4 1>;
+			status = "disabled";
+			label = "I2C_1";
 		};
 	};
 };
