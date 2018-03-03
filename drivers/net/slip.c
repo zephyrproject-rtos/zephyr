@@ -239,8 +239,28 @@ static struct net_pkt *slip_poll_handler(struct slip_context *slip)
 	return NULL;
 }
 
+static inline struct net_if *get_iface(struct slip_context *context,
+				       u16_t vlan_tag)
+{
+#if defined(CONFIG_NET_VLAN)
+	struct net_if *iface;
+
+	iface = net_eth_get_vlan_iface(context->iface, vlan_tag);
+	if (!iface) {
+		return context->iface;
+	}
+
+	return iface;
+#else
+	ARG_UNUSED(vlan_tag);
+
+	return context->iface;
+#endif
+}
+
 static void process_msg(struct slip_context *slip)
 {
+	u16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
 	struct net_pkt *pkt;
 
 	pkt = slip_poll_handler(slip);
@@ -248,7 +268,21 @@ static void process_msg(struct slip_context *slip)
 		return;
 	}
 
-	if (net_recv_data(slip->iface, pkt) < 0) {
+#if defined(CONFIG_NET_VLAN)
+	{
+		struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
+
+		if (ntohs(hdr->type) == NET_ETH_PTYPE_VLAN) {
+			struct net_eth_vlan_hdr *hdr_vlan =
+				(struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
+
+			net_pkt_set_vlan_tci(pkt, ntohs(hdr_vlan->vlan.tci));
+			vlan_tag = net_pkt_vlan_tag(pkt);
+		}
+	}
+#endif
+
+	if (net_recv_data(get_iface(slip, vlan_tag), pkt) < 0) {
 		net_pkt_unref(pkt);
 	}
 
@@ -441,8 +475,15 @@ static inline struct net_linkaddr *slip_get_mac(struct slip_context *slip)
 static void slip_iface_init(struct net_if *iface)
 {
 	struct slip_context *slip = net_if_get_device(iface)->driver_data;
-	struct net_linkaddr *ll_addr = slip_get_mac(slip);
+	struct net_linkaddr *ll_addr;
 
+	ethernet_init(iface);
+
+	if (slip->init_done) {
+		return;
+	}
+
+	ll_addr = slip_get_mac(slip);
 	slip->init_done = true;
 	slip->iface = iface;
 
@@ -467,15 +508,32 @@ use_random_mac:
 
 static struct slip_context slip_context_data;
 
+#if defined(CONFIG_NET_VLAN)
+static enum eth_hw_caps eth_capabilities(struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return ETH_HW_VLAN;
+}
+#endif
+
 #if defined(CONFIG_SLIP_TAP) && defined(CONFIG_NET_L2_ETHERNET)
 static const struct ethernet_api slip_if_api = {
 	.iface_api.init = slip_iface_init,
 	.iface_api.send = slip_send,
+
+#if defined(CONFIG_NET_VLAN)
+	.get_capabilities = eth_capabilities,
+#endif
 };
 
 #define _SLIP_L2_LAYER ETHERNET_L2
 #define _SLIP_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(ETHERNET_L2)
 #define _SLIP_MTU 1500
+
+ETH_NET_DEVICE_INIT(slip, CONFIG_SLIP_DRV_NAME, slip_init, &slip_context_data,
+		    NULL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &slip_if_api,
+		    _SLIP_MTU);
 #else
 
 static const struct net_if_api slip_if_api = {
@@ -486,8 +544,8 @@ static const struct net_if_api slip_if_api = {
 #define _SLIP_L2_LAYER DUMMY_L2
 #define _SLIP_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(DUMMY_L2)
 #define _SLIP_MTU 576
-#endif
 
 NET_DEVICE_INIT(slip, CONFIG_SLIP_DRV_NAME, slip_init, &slip_context_data,
 		NULL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &slip_if_api,
 		_SLIP_L2_LAYER, _SLIP_L2_CTX_TYPE, _SLIP_MTU);
+#endif
