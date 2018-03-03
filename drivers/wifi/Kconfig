@@ -44,5 +44,6 @@ config WIFI_OFFLOAD
 	  Enable support for Full-MAC WiFi devices.
 
 source "drivers/wifi/winc1500/Kconfig.winc1500"
+source "drivers/wifi/Kconfig.simplelink"
 
 endif # WIFI

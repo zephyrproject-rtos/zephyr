@@ -11,7 +11,7 @@ config SIMPLELINK_HOST_DRIVER
 	default n
 	depends on HAS_CC3220SDK
 	depends on MULTITHREADING
-	depends on NEWLIB_LIBC
+	select NEWLIB_LIBC
 	select ERRNO
 	help
 	  Build the SimpleLink host driver
