@@ -339,6 +339,11 @@ config THREAD_MONITOR
 	  This option instructs the kernel to maintain a list of all threads
 	  (excluding those that have not yet started or have already
 	  terminated).
+
+config THREAD_NAME
+	bool "Thread name [EXPERIMENTAL]"
+	help
+	  This option allows to set a name for a thread.
 endmenu
 
 menu "Work Queue Options"

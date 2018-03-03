@@ -236,6 +236,10 @@ static ALWAYS_INLINE void _new_thread_init(struct k_thread *thread,
 	thread->custom_data = NULL;
 #endif
 
+#ifdef CONFIG_THREAD_NAME
+	thread->name = NULL;
+#endif
+
 #if defined(CONFIG_USERSPACE)
 	thread->mem_domain_info.mem_domain = NULL;
 #endif /* CONFIG_USERSPACE */

@@ -34,6 +34,8 @@
 #include <tracing.h>
 #include <stdbool.h>
 
+#define IDLE_THREAD_NAME	"idle"
+
 /* boot banner items */
 #if defined(CONFIG_BOOT_DELAY) && CONFIG_BOOT_DELAY > 0
 #define BOOT_DELAY_BANNER " (delayed boot "	\
@@ -251,7 +253,7 @@ static void init_idle_thread(struct k_thread *thr, k_thread_stack_t *stack)
 
 	_setup_new_thread(thr, stack,
 			  IDLE_STACK_SIZE, idle, NULL, NULL, NULL,
-			  K_LOWEST_THREAD_PRIO, K_ESSENTIAL);
+			  K_LOWEST_THREAD_PRIO, K_ESSENTIAL, IDLE_THREAD_NAME);
 	_mark_thread_as_started(thr);
 }
 #endif
@@ -314,8 +316,7 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 	_setup_new_thread(_main_thread, _main_stack,
 			  MAIN_STACK_SIZE, bg_thread_main,
 			  NULL, NULL, NULL,
-			  CONFIG_MAIN_THREAD_PRIORITY, K_ESSENTIAL);
-
+			  CONFIG_MAIN_THREAD_PRIORITY, K_ESSENTIAL, "main");
 	sys_trace_thread_create(_main_thread);
 
 	_mark_thread_as_started(_main_thread);

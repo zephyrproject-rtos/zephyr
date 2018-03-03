@@ -1256,11 +1256,12 @@ int shell_init(const struct shell *shell, const void *transport_config,
 		}
 	}
 
-	(void)k_thread_create(shell->thread,
+	k_tid_t tid = k_thread_create(shell->thread,
 			      shell->stack, CONFIG_SHELL_STACK_SIZE,
 			      shell_thread, (void *)shell, NULL, NULL,
 			      CONFIG_SHELL_THREAD_PRIO, 0, K_NO_WAIT);
 
+	k_thread_name_set(tid, "shell");
 	return 0;
 }
 
