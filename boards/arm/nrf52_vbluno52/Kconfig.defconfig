@@ -40,9 +40,6 @@ config I2C_NRF5
 config I2C_0
 	default y
 
-config I2C_0_IRQ_PRI
-	default 1
-
 endif # I2C
 
 if I2C_NRF5
@@ -52,10 +49,6 @@ config I2C_NRF5_0_GPIO_SCL_PIN
 
 config I2C_NRF5_0_GPIO_SDA_PIN
 	default 26
-
-config I2C_0_DEFAULT_CFG
-	# Standard speed, master
-	default 0x12
 
 endif # I2C_NRF5
 
