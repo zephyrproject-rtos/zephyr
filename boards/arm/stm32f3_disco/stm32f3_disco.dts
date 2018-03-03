@@ -84,6 +84,18 @@
 &i2c1 {
 	status = "ok";
 	clock-frequency = <I2C_BITRATE_FAST>;
+
+	lsm303dlhc-magn@1e {
+		compatible = "st,lsm303dlhc-magn";
+		reg = <0x1e>;
+		label = "LSM303DLHC-MAGN";
+	};
+
+	lsm303dlhc-accel@19 {
+		compatible = "st,lsm303dlhc-accel";
+		reg = <0x19>;
+		label = "LSM303DLHC-ACCEL";
+	};
 };
 
 &i2c2 {
