@@ -12,6 +12,9 @@
 #include <wait_q.h>
 #include <power.h>
 
+
+#define IDLE_THREAD_NAME	"idle"
+
 #if defined(CONFIG_TICKLESS_IDLE)
 /*
  * Idle time must be this value or higher for timer to go into tickless idle
@@ -157,6 +160,8 @@ void idle(void *unused1, void *unused2, void *unused3)
 	ARG_UNUSED(unused1);
 	ARG_UNUSED(unused2);
 	ARG_UNUSED(unused3);
+
+	k_thread_name_set(IDLE_THREAD_NAME);
 
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
 	/* record timestamp when idling begins */

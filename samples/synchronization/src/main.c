@@ -62,6 +62,8 @@ void threadB(void *dummy1, void *dummy2, void *dummy3)
 	ARG_UNUSED(dummy2);
 	ARG_UNUSED(dummy3);
 
+	k_thread_name_set("thread_b");
+
 	/* invoke routine to ping-pong hello messages with threadA */
 	helloLoop(__func__, &threadB_sem, &threadA_sem);
 }
@@ -86,5 +88,5 @@ void threadA(void *dummy1, void *dummy2, void *dummy3)
 	helloLoop(__func__, &threadA_sem, &threadB_sem);
 }
 
-K_THREAD_DEFINE(threadA_id, STACKSIZE, threadA, NULL, NULL, NULL,
+K_THREAD_DEFINE(thread_a, STACKSIZE, threadA, NULL, NULL, NULL,
 		PRIORITY, 0, K_NO_WAIT);

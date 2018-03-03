@@ -550,6 +550,9 @@ struct k_thread {
 
 	/** next item in list of all threads */
 	struct k_thread *next_thread;
+
+	/* Thread name */
+	const char *name;
 #endif
 
 #ifdef CONFIG_THREAD_CUSTOM_DATA
@@ -941,11 +944,12 @@ struct _static_thread_data {
 	u32_t init_options;
 	s32_t init_delay;
 	void (*init_abort)(void);
+	const char *init_name;
 };
 
 #define _THREAD_INITIALIZER(thread, stack, stack_size,           \
 			    entry, p1, p2, p3,                   \
-			    prio, options, delay, abort) 	 \
+			    prio, options, delay, abort, tname)  \
 	{                                                        \
 	.init_thread = (thread),				 \
 	.init_stack = (stack),					 \
@@ -958,6 +962,7 @@ struct _static_thread_data {
 	.init_options = (options),                               \
 	.init_delay = (delay),                                   \
 	.init_abort = (abort),                                   \
+	.init_name = STRINGIFY(tname),                           \
 	}
 
 /**
@@ -1004,7 +1009,7 @@ struct _static_thread_data {
 		_THREAD_INITIALIZER(&_k_thread_obj_##name,		 \
 				    _k_thread_stack_##name, stack_size,  \
 				entry, p1, p2, p3, prio, options, delay, \
-				NULL);				 	 \
+				NULL, name);				 	 \
 	const k_tid_t name = (k_tid_t)&_k_thread_obj_##name
 
 /**
@@ -1251,9 +1256,17 @@ __syscall void k_thread_custom_data_set(void *value);
 __syscall void *k_thread_custom_data_get(void);
 
 /**
+ * @brief Set current thread name
+ *
+ * Set the name of the thread to be used when THREAD_MONITOR is enabled for
+ * tracing and debugging.
+ *
+ */
+__syscall void k_thread_name_set(const char *value);
+
+/**
  * @}
  */
-
 #include <sys_clock.h>
 
 /**

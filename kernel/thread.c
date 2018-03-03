@@ -125,6 +125,26 @@ int saved_always_on = k_enable_sys_clock_always_on();
 }
 #endif
 
+#ifdef CONFIG_THREAD_MONITOR
+void _impl_k_thread_name_set(const char *value)
+{
+	_current->name = value;
+}
+
+#ifdef CONFIG_USERSPACE
+_SYSCALL_HANDLER(k_thread_name_set, data)
+{
+	_impl_k_thread_name_set((void *)data);
+	return 0;
+}
+#endif
+#else
+void _impl_k_thread_name_set(const char *value)
+{
+	ARG_UNUSED(value);
+}
+#endif /* CONFIG_THREAD_MONITOR */
+
 #ifdef CONFIG_THREAD_CUSTOM_DATA
 void _impl_k_thread_custom_data_set(void *value)
 {
@@ -292,7 +312,7 @@ void _setup_new_thread(struct k_thread *new_thread,
 		       k_thread_stack_t *stack, size_t stack_size,
 		       k_thread_entry_t entry,
 		       void *p1, void *p2, void *p3,
-		       int prio, u32_t options)
+		       int prio, u32_t options, const char *name)
 {
 	stack_size = adjust_stack_size(stack_size);
 
@@ -309,6 +329,8 @@ void _setup_new_thread(struct k_thread *new_thread,
 	new_thread->next_thread = _kernel.threads;
 	_kernel.threads = new_thread;
 	irq_unlock(key);
+
+	new_thread->name = name;
 #endif
 #ifdef CONFIG_USERSPACE
 	_k_object_init(new_thread);
@@ -351,7 +373,7 @@ k_tid_t _impl_k_thread_create(struct k_thread *new_thread,
 {
 	__ASSERT(!_is_in_isr(), "Threads may not be created in ISRs");
 	_setup_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3,
-			  prio, options);
+			  prio, options, NULL);
 
 	if (delay != K_FOREVER) {
 		schedule_new_thread(new_thread, delay);
@@ -433,7 +455,7 @@ Z_SYSCALL_HANDLER(k_thread_create,
 	_setup_new_thread((struct k_thread *)new_thread, stack, stack_size,
 			  (k_thread_entry_t)entry, (void *)p1,
 			  (void *)margs->arg6, (void *)margs->arg7, prio,
-			  options);
+			  options, NULL);
 
 	if (delay != K_FOREVER) {
 		schedule_new_thread(new_thread, delay);
@@ -581,7 +603,8 @@ void _init_static_threads(void)
 			thread_data->init_p2,
 			thread_data->init_p3,
 			thread_data->init_prio,
-			thread_data->init_options);
+			thread_data->init_options,
+			thread_data->init_name);
 
 		thread_data->init_thread->init_data = thread_data;
 	}

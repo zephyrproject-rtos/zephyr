@@ -15,12 +15,16 @@
 #include <wait_q.h>
 #include <errno.h>
 
+#define WORKQUEUE_THREAD_NAME	"workqueue"
+
 static void work_q_main(void *work_q_ptr, void *p2, void *p3)
 {
 	struct k_work_q *work_q = work_q_ptr;
 
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
+
+	k_thread_name_set(WORKQUEUE_THREAD_NAME);
 
 	while (1) {
 		struct k_work *work;
