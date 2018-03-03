@@ -1,0 +1,84 @@
+# Kconfig - Private config options for network testing app
+
+#
+# Copyright (c) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+mainmenu "Networking test application"
+
+config ZEPHYR_BASE
+	string
+	option env="ZEPHYR_BASE"
+
+source "$ZEPHYR_BASE/Kconfig.zephyr"
+
+config NET_DEBUG_TEST_APP
+	bool "Enable debugging for this test application"
+	default n
+	depends on NET_LOG
+	help
+	  Enable debugging output from this test application.
+	  The used log level is the CONFIG_SYS_LOG_NET_LEVEL option.
+
+config SAMPLE_VLAN_TAG_1
+	int "Virtual lan tag used in this app"
+	default 100
+	range 0 4094
+	depends on NET_VLAN
+	help
+	  Set virtual lan tag (id) that is used in this application.
+
+config SAMPLE_VLAN_TAG_2
+	int "Second VLAN tag used in this app"
+	default 200
+	range 0 4094
+	depends on NET_VLAN
+	help
+	  Set virtual lan tag (id) that is used in this application.
+
+config SAMPLE_IPV6_ADDR_1
+	string "My IPv6 address for a network interface"
+	help
+	  The value depends on your network setup.
+
+config SAMPLE_IPV4_ADDR_1
+	string "My IPv4 address for a network interface"
+	help
+	  The value depends on your network setup.
+
+config SAMPLE_IPV4_GW_1
+	string "My IPv4 gateway for a network interface"
+	help
+	  The value depends on your network setup.
+
+config SAMPLE_IPV4_NETMASK_1
+	string "My IPv4 netmask for a network interface"
+	default "255.255.255.0"
+	help
+	  Static netmask to use if not overridden by DHCP. Use empty value to
+	  skip setting static value.
+
+config SAMPLE_IPV6_ADDR_2
+	string "My IPv6 address for another network interface"
+	help
+	  The value depends on your network setup.
+
+config SAMPLE_IPV4_ADDR_2
+	string "My IPv4 address for another network interface"
+	help
+	  The value depends on your network setup.
+
+config SAMPLE_IPV4_GW_2
+	string "My IPv4 gateway for another network interface"
+	help
+	  The value depends on your network setup.
+
+config SAMPLE_IPV4_NETMASK_2
+	string "My IPv4 netmask for another network interface"
+	default "255.255.255.0"
+	help
+	  Static netmask to use if not overridden by DHCP. Use empty value to
+	  skip setting static value.
+
