@@ -240,8 +240,27 @@ static struct net_pkt *slip_poll_handler(struct slip_context *slip)
 	return NULL;
 }
 
+static struct net_if *get_iface(struct slip_context *context,
+				u16_t vlan_tag)
+{
+#if defined(CONFIG_NET_VLAN)
+	struct ethernet_context *ctx = net_if_l2_data(context->iface);
+	struct net_if *iface;
+
+	iface = net_eth_get_vlan_iface(ctx, vlan_tag);
+	if (iface) {
+		return iface;
+	}
+#else
+	ARG_UNUSED(vlan_tag);
+#endif
+
+	return context->iface;
+}
+
 static void process_msg(struct slip_context *slip)
 {
+	u16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
 	struct net_pkt *pkt;
 
 	pkt = slip_poll_handler(slip);
@@ -249,7 +268,21 @@ static void process_msg(struct slip_context *slip)
 		return;
 	}
 
-	if (net_recv_data(slip->iface, pkt) < 0) {
+#if defined(CONFIG_NET_VLAN)
+	{
+		struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
+
+		if (ntohs(hdr->type) == NET_ETH_PTYPE_VLAN) {
+			struct net_eth_vlan_hdr *hdr_vlan =
+				(struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
+
+			net_pkt_set_vlan_tci(pkt, ntohs(hdr_vlan->vlan.tci));
+			vlan_tag = net_pkt_vlan_tag(pkt);
+		}
+	}
+#endif
+
+	if (net_recv_data(get_iface(slip, vlan_tag), pkt) < 0) {
 		net_pkt_unref(pkt);
 	}
 
@@ -442,8 +475,15 @@ static inline struct net_linkaddr *slip_get_mac(struct slip_context *slip)
 static void slip_iface_init(struct net_if *iface)
 {
 	struct slip_context *slip = net_if_get_device(iface)->driver_data;
-	struct net_linkaddr *ll_addr = slip_get_mac(slip);
+	struct net_linkaddr *ll_addr;
 
+	ethernet_init(iface);
+
+	if (slip->init_done) {
+		return;
+	}
+
+	ll_addr = slip_get_mac(slip);
 	slip->init_done = true;
 	slip->iface = iface;
 
@@ -464,8 +504,6 @@ use_random_mac:
 	}
 	net_if_set_link_addr(iface, ll_addr->addr, ll_addr->len,
 			     NET_LINK_ETHERNET);
-
-	ethernet_init(iface);
 }
 
 static struct slip_context slip_context_data;
@@ -490,6 +528,7 @@ static struct ethernet_api slip_if_api = {
 ETH_NET_DEVICE_INIT(slip, CONFIG_SLIP_DRV_NAME, slip_init, &slip_context_data,
 		    NULL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &slip_if_api,
 		    _SLIP_MTU);
+
 #else
 
 static struct net_if_api slip_if_api = {
