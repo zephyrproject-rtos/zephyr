@@ -1,10 +1,13 @@
 /*
+ * The Clear BSD License
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright (c) 2016, NXP
  * All rights reserved.
  *
+ *
  * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * are permitted (subject to the limitations in the disclaimer below) provided
+ * that the following conditions are met:
  *
  * o Redistributions of source code must retain the above copyright notice, this list
  *   of conditions and the following disclaimer.
@@ -17,6 +20,7 @@
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -121,6 +125,50 @@ void RESET_PeripheralReset(reset_ip_name_t peripheral)
 {
     RESET_SetPeripheralReset(peripheral);
     RESET_ClearPeripheralReset(peripheral);
+}
+
+void RESET_SetSlaveCoreReset(void)
+{
+    uint32_t cpuctrl = (SYSCON->CPUCTRL & ~0x7F80U) | 0xC0C48000U;
+
+    /* CM4 is the master. */
+    if (cpuctrl & SYSCON_CPUCTRL_MASTERCPU_MASK)
+    {
+        SYSCON->CPUCTRL = cpuctrl | SYSCON_CPUCTRL_CM0RSTEN_MASK;
+    }
+    /* CM0 is the master. */
+    else
+    {
+        SYSCON->CPUCTRL = cpuctrl | SYSCON_CPUCTRL_CM4RSTEN_MASK;
+    }
+}
+
+void RESET_ClearSlaveCoreReset(void)
+{
+    uint32_t cpuctrl = (SYSCON->CPUCTRL & ~0x7F80U) | 0xC0C48000U;
+
+    /* CM4 is the master. */
+    if (cpuctrl & SYSCON_CPUCTRL_MASTERCPU_MASK)
+    {
+        SYSCON->CPUCTRL = cpuctrl & ~SYSCON_CPUCTRL_CM0RSTEN_MASK;
+    }
+    /* CM0 is the master. */
+    else
+    {
+        SYSCON->CPUCTRL = cpuctrl & ~SYSCON_CPUCTRL_CM4RSTEN_MASK;
+    }
+}
+
+void RESET_SlaveCoreReset(uint32_t bootAddr, uint32_t bootStackPointer)
+{
+    volatile uint32_t i = 10U;
+
+    SYSCON->CPSTACK = bootStackPointer;
+    SYSCON->CPBOOT = bootAddr;
+
+    RESET_SetSlaveCoreReset();
+    while(i--){}
+    RESET_ClearSlaveCoreReset();
 }
 
 #endif /* FSL_FEATURE_SOC_SYSCON_COUNT || FSL_FEATURE_SOC_ASYNC_SYSCON_COUNT */

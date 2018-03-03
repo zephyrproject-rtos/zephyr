@@ -1,9 +1,12 @@
 /*
+ * The Clear BSD License
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * are permitted (subject to the limitations in the disclaimer below) provided
+ * that the following conditions are met:
  *
  * o Redistributions of source code must retain the above copyright notice, this list
  *   of conditions and the following disclaimer.
@@ -16,6 +19,7 @@
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -159,8 +163,9 @@ static void FLEXCAN_Reset(CAN_Type *base);
  * @param base FlexCAN peripheral base address.
  * @param sourceClock_Hz Source Clock in Hz.
  * @param baudRate_Bps Baud Rate in Bps.
+ * @param timingConfig FlexCAN timingConfig.
  */
-static void FLEXCAN_SetBaudRate(CAN_Type *base, uint32_t sourceClock_Hz, uint32_t baudRate_Bps);
+static void FLEXCAN_SetBaudRate(CAN_Type *base, uint32_t sourceClock_Hz, uint32_t baudRate_Bps, flexcan_timing_config_t timingConfig);
 
 #if (defined(FSL_FEATURE_FLEXCAN_HAS_FLEXIBLE_DATA_RATE) && FSL_FEATURE_FLEXCAN_HAS_FLEXIBLE_DATA_RATE)
 /*!
@@ -171,8 +176,9 @@ static void FLEXCAN_SetBaudRate(CAN_Type *base, uint32_t sourceClock_Hz, uint32_
  * @param base FlexCAN peripheral base address.
  * @param sourceClock_Hz Source Clock in Hz.
  * @param baudRateFD_Bps FD frame Baud Rate in Bps.
+ * @param timingConfig FlexCAN timingConfig.
  */
-static void FLEXCAN_SetFDBaudRate(CAN_Type *base, uint32_t sourceClock_Hz, uint32_t baudRateFD_Bps);
+static void FLEXCAN_SetFDBaudRate(CAN_Type *base, uint32_t sourceClock_Hz, uint32_t baudRateFD_Bps, flexcan_timing_config_t timingConfig);
 #endif
 
 /*******************************************************************************
@@ -405,14 +411,17 @@ static void FLEXCAN_Reset(CAN_Type *base)
     }
 }
 
-static void FLEXCAN_SetBaudRate(CAN_Type *base, uint32_t sourceClock_Hz, uint32_t baudRate_Bps)
+static void FLEXCAN_SetBaudRate(CAN_Type *base, uint32_t sourceClock_Hz, uint32_t baudRate_Bps, flexcan_timing_config_t timingConfig)
 {
-    flexcan_timing_config_t timingConfig;
-    uint32_t priDiv = baudRate_Bps * FLEXCAN_TIME_QUANTA_NUM;
+    /* FlexCAN timing setting formula:
+     * quantum = 1 + (PSEG1 + 1) + (PSEG2 + 1) + (PROPSEG + 1);
+     */
+    uint32_t quantum = 1 + (timingConfig.phaseSeg1 + 1) + (timingConfig.phaseSeg2 + 1) + (timingConfig.propSeg + 1);
+    uint32_t priDiv = baudRate_Bps * quantum;
 
     /* Assertion: Desired baud rate is too high. */
     assert(baudRate_Bps <= 1000000U);
-    /* Assertion: Source clock should greater than baud rate * FLEXCAN_TIME_QUANTA_NUM. */
+    /* Assertion: Source clock should greater than baud rate * quantum. */
     assert(priDiv <= sourceClock_Hz);
 
     if (0 == priDiv)
@@ -428,24 +437,20 @@ static void FLEXCAN_SetBaudRate(CAN_Type *base, uint32_t sourceClock_Hz, uint32_
         priDiv = 0xFF;
     }
 
-    /* FlexCAN timing setting formula:
-     * FLEXCAN_TIME_QUANTA_NUM = 1 + (PSEG1 + 1) + (PSEG2 + 1) + (PROPSEG + 1);
-     */
     timingConfig.preDivider = priDiv;
-    timingConfig.phaseSeg1 = 3;
-    timingConfig.phaseSeg2 = 2;
-    timingConfig.propSeg = 1;
-    timingConfig.rJumpwidth = 1;
 
     /* Update actual timing characteristic. */
     FLEXCAN_SetTimingConfig(base, &timingConfig);
 }
 
 #if (defined(FSL_FEATURE_FLEXCAN_HAS_FLEXIBLE_DATA_RATE) && FSL_FEATURE_FLEXCAN_HAS_FLEXIBLE_DATA_RATE)
-static void FLEXCAN_SetFDBaudRate(CAN_Type *base, uint32_t sourceClock_Hz, uint32_t baudRateFD_Bps)
+static void FLEXCAN_SetFDBaudRate(CAN_Type *base, uint32_t sourceClock_Hz, uint32_t baudRateFD_Bps, flexcan_timing_config_t timingConfig)
 {
-    flexcan_timing_config_t timingConfig;
-    uint32_t priDiv = baudRateFD_Bps * FLEXCAN_TIME_QUANTA_NUM;
+    /* FlexCAN timing setting formula:
+     * quantum = 1 + (PSEG1 + 1) + (PSEG2 + 1) + (PROPSEG + 1);
+     */
+    uint32_t quantum = 1 + (timingConfig.phaseSeg1 + 1) + (timingConfig.phaseSeg2 + 1) + (timingConfig.propSeg + 1);
+    uint32_t priDiv = baudRateFD_Bps * quantum;
 
     /* Assertion: Desired baud rate is too high. */
     assert(baudRateFD_Bps <= 1000000U);
@@ -465,14 +470,7 @@ static void FLEXCAN_SetFDBaudRate(CAN_Type *base, uint32_t sourceClock_Hz, uint3
         priDiv = 0xFF;
     }
 
-    /* FlexCAN timing setting formula:
-     * FLEXCAN_TIME_QUANTA_NUM = 1 + (PSEG1 + 1) + (PSEG2 + 1) + (PROPSEG + 1);
-     */
     timingConfig.preDivider = priDiv;
-    timingConfig.phaseSeg1 = 3;
-    timingConfig.phaseSeg2 = 2;
-    timingConfig.propSeg = 1;
-    timingConfig.rJumpwidth = 1;
 
     /* Update actual timing characteristic. */
     FLEXCAN_SetFDTimingConfig(base, &timingConfig);
@@ -541,9 +539,9 @@ void FLEXCAN_Init(CAN_Type *base, const flexcan_config_t *config, uint32_t sourc
     base->MCR = mcrTemp;
 
     /* Baud Rate Configuration.*/
-    FLEXCAN_SetBaudRate(base, sourceClock_Hz, config->baudRate);
+    FLEXCAN_SetBaudRate(base, sourceClock_Hz, config->baudRate, config->timingConfig);
 #if (defined(FSL_FEATURE_FLEXCAN_HAS_FLEXIBLE_DATA_RATE) && FSL_FEATURE_FLEXCAN_HAS_FLEXIBLE_DATA_RATE)
-    FLEXCAN_SetFDBaudRate(base, sourceClock_Hz, config->baudRateFD);
+    FLEXCAN_SetFDBaudRate(base, sourceClock_Hz, config->baudRateFD, config->timingConfig);
 #endif
 }
 
@@ -589,6 +587,11 @@ void FLEXCAN_GetDefaultConfig(flexcan_config_t *config)
 #if (defined(FSL_FEATURE_FLEXCAN_HAS_DOZE_MODE_SUPPORT) && FSL_FEATURE_FLEXCAN_HAS_DOZE_MODE_SUPPORT)
     config->enableDoze = false;
 #endif
+    /* Default protocol timing configuration, time quantum is 10. */
+    config->timingConfig.phaseSeg1 = 3;
+    config->timingConfig.phaseSeg2 = 2;
+    config->timingConfig.propSeg = 1;
+    config->timingConfig.rJumpwidth = 1;
 }
 
 #if (defined(FSL_FEATURE_FLEXCAN_HAS_FLEXIBLE_DATA_RATE) && FSL_FEATURE_FLEXCAN_HAS_FLEXIBLE_DATA_RATE)
@@ -1331,7 +1334,6 @@ status_t FLEXCAN_ReadFDRxMb(CAN_Type *base, uint8_t mbIdx, flexcan_fd_frame_t *r
     uint32_t can_id = 0;
     uint32_t dataSize;
     dataSize = (base->FDCTRL & CAN_FDCTRL_MBDSR0_MASK) >> CAN_FDCTRL_MBDSR0_SHIFT;
-    cs_temp = base->MB[mbIdx].CS;
 
     /* Read CS field of Rx Message Buffer to lock Message Buffer. */
     switch (dataSize)
@@ -1528,20 +1530,12 @@ status_t FLEXCAN_TransferFDSendBlocking(CAN_Type *base, uint8_t mbIdx, flexcan_f
     if (kStatus_Success == FLEXCAN_WriteFDTxMb(base, mbIdx, txFrame))
     {
         /* Wait until CAN Message send out. */
-#if (defined(FSL_FEATURE_FLEXCAN_HAS_EXTENDED_FLAG_REGISTER)) && (FSL_FEATURE_FLEXCAN_HAS_EXTENDED_FLAG_REGISTER > 0)
-        while (!FLEXCAN_GetMbStatusFlags(base, (uint64_t)1 << mbIdx))
-#else
         while (!FLEXCAN_GetMbStatusFlags(base, 1 << mbIdx))
-#endif
         {
         }
 
         /* Clean Tx Message Buffer Flag. */
-#if (defined(FSL_FEATURE_FLEXCAN_HAS_EXTENDED_FLAG_REGISTER)) && (FSL_FEATURE_FLEXCAN_HAS_EXTENDED_FLAG_REGISTER > 0)
-        FLEXCAN_ClearMbStatusFlags(base, (uint64_t)1 << mbIdx);
-#else
         FLEXCAN_ClearMbStatusFlags(base, 1 << mbIdx);
-#endif
 
         return kStatus_Success;
     }
@@ -1554,20 +1548,12 @@ status_t FLEXCAN_TransferFDSendBlocking(CAN_Type *base, uint8_t mbIdx, flexcan_f
 status_t FLEXCAN_TransferFDReceiveBlocking(CAN_Type *base, uint8_t mbIdx, flexcan_fd_frame_t *rxFrame)
 {
     /* Wait until Rx Message Buffer non-empty. */
-#if (defined(FSL_FEATURE_FLEXCAN_HAS_EXTENDED_FLAG_REGISTER)) && (FSL_FEATURE_FLEXCAN_HAS_EXTENDED_FLAG_REGISTER > 0)
-    while (!FLEXCAN_GetMbStatusFlags(base, (uint64_t)1 << mbIdx))
-#else
     while (!FLEXCAN_GetMbStatusFlags(base, 1 << mbIdx))
-#endif
     {
     }
 
     /* Clean Rx Message Buffer Flag. */
-#if (defined(FSL_FEATURE_FLEXCAN_HAS_EXTENDED_FLAG_REGISTER)) && (FSL_FEATURE_FLEXCAN_HAS_EXTENDED_FLAG_REGISTER > 0)
-    FLEXCAN_ClearMbStatusFlags(base, (uint64_t)1 << mbIdx);
-#else
     FLEXCAN_ClearMbStatusFlags(base, 1 << mbIdx);
-#endif
 
     /* Read Received CAN Message. */
     return FLEXCAN_ReadFDRxMb(base, mbIdx, rxFrame);
@@ -1748,11 +1734,7 @@ status_t FLEXCAN_TransferFDSendNonBlocking(CAN_Type *base, flexcan_handle_t *han
         if (kStatus_Success == FLEXCAN_WriteFDTxMb(base, xfer->mbIdx, xfer->framefd))
         {
             /* Enable Message Buffer Interrupt. */
-#if (defined(FSL_FEATURE_FLEXCAN_HAS_EXTENDED_FLAG_REGISTER)) && (FSL_FEATURE_FLEXCAN_HAS_EXTENDED_FLAG_REGISTER > 0)
-            FLEXCAN_EnableMbInterrupts(base, (uint64_t)1 << xfer->mbIdx);
-#else
             FLEXCAN_EnableMbInterrupts(base, 1 << xfer->mbIdx);
-#endif
 
             return kStatus_Success;
         }
@@ -1785,11 +1767,7 @@ status_t FLEXCAN_TransferFDReceiveNonBlocking(CAN_Type *base, flexcan_handle_t *
         handle->mbFDFrameBuf[xfer->mbIdx] = xfer->framefd;
 
         /* Enable Message Buffer Interrupt. */
-#if (defined(FSL_FEATURE_FLEXCAN_HAS_EXTENDED_FLAG_REGISTER)) && (FSL_FEATURE_FLEXCAN_HAS_EXTENDED_FLAG_REGISTER > 0)
-        FLEXCAN_EnableMbInterrupts(base, (uint64_t)1 << xfer->mbIdx);
-#else
         FLEXCAN_EnableMbInterrupts(base, 1 << xfer->mbIdx);
-#endif
 
         return kStatus_Success;
     }
@@ -1881,11 +1859,7 @@ void FLEXCAN_TransferFDAbortReceive(CAN_Type *base, flexcan_handle_t *handle, ui
     assert(!FLEXCAN_IsMbOccupied(base, mbIdx));
 
     /* Disable Message Buffer Interrupt. */
-#if (defined(FSL_FEATURE_FLEXCAN_HAS_EXTENDED_FLAG_REGISTER)) && (FSL_FEATURE_FLEXCAN_HAS_EXTENDED_FLAG_REGISTER > 0)
-    FLEXCAN_DisableMbInterrupts(base, (uint64_t)1 << mbIdx);
-#else
     FLEXCAN_DisableMbInterrupts(base, 1 << mbIdx);
-#endif
 
     /* Un-register handle. */
     handle->mbFDFrameBuf[mbIdx] = 0x0;

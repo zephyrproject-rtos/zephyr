@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2015-2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
@@ -85,7 +86,50 @@
 /*@}*/
 
 /*!
- * @name Flash cache ands speculation control defines
+ * @name Dual core/flash configuration
+ * @{
+ */
+/*! @brief Redefines some flash features. */
+#if defined(FSL_FEATURE_FLASH_CURRENT_CORE_ID)
+#if (FSL_FEATURE_FLASH_CURRENT_CORE_ID == 0u)
+#define MAIN_FLASH_FEATURE_PFLASH_START_ADDRESS FSL_FEATURE_FLASH_PFLASH_START_ADDRESS
+#define MAIN_FLASH_FEATURE_PFLASH_BLOCK_COUNT FSL_FEATURE_FLASH_PFLASH_BLOCK_COUNT
+#define MAIN_FLASH_FEATURE_PFLASH_BLOCK_SIZE FSL_FEATURE_FLASH_PFLASH_BLOCK_SIZE
+#define MAIN_FLASH_FEATURE_PFLASH_BLOCK_SECTOR_SIZE FSL_FEATURE_FLASH_PFLASH_BLOCK_SECTOR_SIZE
+#define MAIN_FLASH_FEATURE_PFLASH_BLOCK_WRITE_UNIT_SIZE FSL_FEATURE_FLASH_PFLASH_BLOCK_WRITE_UNIT_SIZE
+#define MAIN_FLASH_FEATURE_PFLASH_PROTECTION_REGION_COUNT FSL_FEATURE_FLASH_PFLASH_PROTECTION_REGION_COUNT
+#define SECONDARY_FLASH_FEATURE_PFLASH_START_ADDRESS FSL_FEATURE_FLASH_PFLASH_1_START_ADDRESS
+#define SECONDARY_FLASH_FEATURE_PFLASH_BLOCK_COUNT FSL_FEATURE_FLASH_PFLASH_1_BLOCK_COUNT
+#define SECONDARY_FLASH_FEATURE_PFLASH_BLOCK_SIZE FSL_FEATURE_FLASH_PFLASH_1_BLOCK_SIZE
+#define SECONDARY_FLASH_FEATURE_PFLASH_BLOCK_SECTOR_SIZE FSL_FEATURE_FLASH_PFLASH_1_BLOCK_SECTOR_SIZE
+#define SECONDARY_FLASH_FEATURE_PFLASH_BLOCK_WRITE_UNIT_SIZE FSL_FEATURE_FLASH_PFLASH_1_BLOCK_WRITE_UNIT_SIZE
+#define SECONDARY_FLASH_FEATURE_PFLASH_PROTECTION_REGION_COUNT FSL_FEATURE_FLASH_PFLASH_1_PROTECTION_REGION_COUNT
+#elif (FSL_FEATURE_FLASH_CURRENT_CORE_ID == 1u)
+#define MAIN_FLASH_FEATURE_PFLASH_START_ADDRESS FSL_FEATURE_FLASH_PFLASH_1_START_ADDRESS
+#define MAIN_FLASH_FEATURE_PFLASH_BLOCK_COUNT FSL_FEATURE_FLASH_PFLASH_1_BLOCK_COUNT
+#define MAIN_FLASH_FEATURE_PFLASH_BLOCK_SIZE FSL_FEATURE_FLASH_PFLASH_1_BLOCK_SIZE
+#define MAIN_FLASH_FEATURE_PFLASH_BLOCK_SECTOR_SIZE FSL_FEATURE_FLASH_PFLASH_1_BLOCK_SECTOR_SIZE
+#define MAIN_FLASH_FEATURE_PFLASH_BLOCK_WRITE_UNIT_SIZE FSL_FEATURE_FLASH_PFLASH_1_BLOCK_WRITE_UNIT_SIZE
+#define MAIN_FLASH_FEATURE_PFLASH_PROTECTION_REGION_COUNT FSL_FEATURE_FLASH_PFLASH_1_PROTECTION_REGION_COUNT
+#define SECONDARY_FLASH_FEATURE_PFLASH_START_ADDRESS FSL_FEATURE_FLASH_PFLASH_START_ADDRESS
+#define SECONDARY_FLASH_FEATURE_PFLASH_BLOCK_COUNT FSL_FEATURE_FLASH_PFLASH_BLOCK_COUNT
+#define SECONDARY_FLASH_FEATURE_PFLASH_BLOCK_SIZE FSL_FEATURE_FLASH_PFLASH_BLOCK_SIZE
+#define SECONDARY_FLASH_FEATURE_PFLASH_BLOCK_SECTOR_SIZE FSL_FEATURE_FLASH_PFLASH_BLOCK_SECTOR_SIZE
+#define SECONDARY_FLASH_FEATURE_PFLASH_BLOCK_WRITE_UNIT_SIZE FSL_FEATURE_FLASH_PFLASH_BLOCK_WRITE_UNIT_SIZE
+#define SECONDARY_FLASH_FEATURE_PFLASH_PROTECTION_REGION_COUNT FSL_FEATURE_FLASH_PFLASH_PROTECTION_REGION_COUNT
+#endif
+#else
+#define MAIN_FLASH_FEATURE_PFLASH_START_ADDRESS FSL_FEATURE_FLASH_PFLASH_START_ADDRESS
+#define MAIN_FLASH_FEATURE_PFLASH_BLOCK_COUNT FSL_FEATURE_FLASH_PFLASH_BLOCK_COUNT
+#define MAIN_FLASH_FEATURE_PFLASH_BLOCK_SIZE FSL_FEATURE_FLASH_PFLASH_BLOCK_SIZE
+#define MAIN_FLASH_FEATURE_PFLASH_BLOCK_SECTOR_SIZE FSL_FEATURE_FLASH_PFLASH_BLOCK_SECTOR_SIZE
+#define MAIN_FLASH_FEATURE_PFLASH_BLOCK_WRITE_UNIT_SIZE FSL_FEATURE_FLASH_PFLASH_BLOCK_WRITE_UNIT_SIZE
+#define MAIN_FLASH_FEATURE_PFLASH_PROTECTION_REGION_COUNT FSL_FEATURE_FLASH_PFLASH_PROTECTION_REGION_COUNT
+#endif
+/*@}*/
+
+/*!
+ * @name Flash cache and speculation control defines
  * @{
  */
 #if defined(MCM_PLACR_CFCC_MASK) || defined(MCM_CPCR2_CCBC_MASK)
@@ -103,7 +147,8 @@
 #else
 #define FLASH_PREFETCH_SPECULATION_IS_CONTROLLED_BY_MCM (0)
 #endif
-#if defined(MSCM_OCMDR_OCM1_MASK) || defined(MSCM_OCMDR_OCMC1_MASK)
+#if defined(MSCM_OCMDR_OCMC1_MASK) || defined(MSCM_OCMDR_OCM1_MASK) || defined(MSCM_OCMDR0_OCM1_MASK) || \
+    defined(MSCM_OCMDR1_OCM1_MASK)
 #define FLASH_PREFETCH_SPECULATION_IS_CONTROLLED_BY_MSCM (1)
 #else
 #define FLASH_PREFETCH_SPECULATION_IS_CONTROLLED_BY_MSCM (0)
@@ -113,6 +158,13 @@
 #define FLASH_PREFETCH_SPECULATION_IS_CONTROLLED_BY_FMC (1)
 #else
 #define FLASH_PREFETCH_SPECULATION_IS_CONTROLLED_BY_FMC (0)
+#endif
+
+#if FLASH_PREFETCH_SPECULATION_IS_CONTROLLED_BY_MSCM || FLASH_PREFETCH_SPECULATION_IS_CONTROLLED_BY_FMC || \
+    FLASH_CACHE_IS_CONTROLLED_BY_MCM || FLASH_CACHE_IS_CONTROLLED_BY_FMC
+#define FLASH_IS_CACHE_INVALIDATION_AVAILABLE (1)
+#else
+#define FLASH_IS_CACHE_INVALIDATION_AVAILABLE (0)
 #endif
 /*@}*/
 
@@ -325,25 +377,65 @@ enum _flash_config_area_range
 #if defined(MCM_PLACR_CFCC_MASK)
 #define MCM_CACHE_CLEAR_MASK MCM_PLACR_CFCC_MASK
 #define MCM_CACHE_CLEAR_SHIFT MCM_PLACR_CFCC_SHIFT
-#if defined(MCM)
-#define MCM0_CACHE_REG MCM->PLACR
-#elif defined(MCM0)
+#if defined(MCM0)
 #define MCM0_CACHE_REG MCM0->PLACR
+#elif defined(MCM) && (!defined(MCM1))
+#define MCM0_CACHE_REG MCM->PLACR
 #endif
 #if defined(MCM1)
 #define MCM1_CACHE_REG MCM1->PLACR
+#elif defined(MCM) && (!defined(MCM0))
+#define MCM1_CACHE_REG MCM->PLACR
 #endif
 #elif defined(MCM_CPCR2_CCBC_MASK)
 #define MCM_CACHE_CLEAR_MASK MCM_CPCR2_CCBC_MASK
 #define MCM_CACHE_CLEAR_SHIFT MCM_CPCR2_CCBC_SHIFT
-#if defined(MCM)
-#define MCM0_CACHE_REG MCM->CPCR2
-#elif defined(MCM0)
+#if defined(MCM0)
 #define MCM0_CACHE_REG MCM0->CPCR2
+#elif defined(MCM) && (!defined(MCM1))
+#define MCM0_CACHE_REG MCM->CPCR2
 #endif
 #if defined(MCM1)
 #define MCM1_CACHE_REG MCM1->CPCR2
+#elif defined(MCM) && (!defined(MCM0))
+#define MCM1_CACHE_REG MCM->CPCR2
 #endif
+#endif
+
+/*!
+ * @brief Enumeration for ARM core part number.
+ */
+enum _arm_core_part_number
+{
+    kARM_CorePartNumber_CM0 = 0xc20U,
+    kARM_CorePartNumber_CM0P = 0xc60U,
+    kARM_CorePartNumber_CM1 = 0xc21U,
+    kARM_CorePartNumber_CM3 = 0xc23U,
+    kARM_CorePartNumber_CM4 = 0xc24U,
+    kARM_CorePartNumber_CM7 = 0xc27U,
+    kARM_CorePartNumber_CM23 = 0xd20U,
+    kARM_CorePartNumber_CM33 = 0xd21U,
+
+    kARM_CorePartNumber_Invalid = 0xFFFFU,
+};
+
+#if defined(BL_TARGET_ROM) && defined(MCM0_CACHE_REG) && defined(MCM1_CACHE_REG) && \
+    defined(FSL_FEATURE_FLASH_CURRENT_CORE_ID)
+FTFx_REG32_ACCESS_TYPE const s_mcmModuleAccessTypeArray[] = {
+    (FTFx_REG32_ACCESS_TYPE)&MCM0_CACHE_REG,
+    (FTFx_REG32_ACCESS_TYPE)&MCM1_CACHE_REG
+};
+
+static const uint16_t s_armCorePartNumberArray[] = {
+    kARM_CorePartNumber_CM0P,
+    kARM_CorePartNumber_CM1,
+    kARM_CorePartNumber_Invalid,
+    kARM_CorePartNumber_CM3,
+    kARM_CorePartNumber_CM4,
+    kARM_CorePartNumber_Invalid,
+    kARM_CorePartNumber_Invalid,
+    kARM_CorePartNumber_CM7
+};
 #endif
 
 /*!
@@ -353,10 +445,22 @@ enum _flash_config_area_range
 #define MSCM_SPECULATION_DISABLE_MASK MSCM_OCMDR_OCM1_MASK
 #define MSCM_SPECULATION_DISABLE_SHIFT MSCM_OCMDR_OCM1_SHIFT
 #define MSCM_SPECULATION_DISABLE(x) MSCM_OCMDR_OCM1(x)
+#elif defined(MSCM_OCMDR0_OCM1_MASK) || defined(MSCM_OCMDR1_OCM1_MASK)
+#define MSCM_SPECULATION_DISABLE_MASK MSCM_OCMDR0_OCM1_MASK
+#define MSCM_SPECULATION_DISABLE_SHIFT MSCM_OCMDR0_OCM1_SHIFT
+#define MSCM_SPECULATION_DISABLE(x) MSCM_OCMDR0_OCM1(x)
 #elif defined(MSCM_OCMDR_OCMC1_MASK)
 #define MSCM_SPECULATION_DISABLE_MASK MSCM_OCMDR_OCMC1_MASK
 #define MSCM_SPECULATION_DISABLE_SHIFT MSCM_OCMDR_OCMC1_SHIFT
 #define MSCM_SPECULATION_DISABLE(x) MSCM_OCMDR_OCMC1(x)
+#endif
+
+#if defined(MSCM_OCMDR_OCM1_MASK) || defined(MSCM_OCMDR_OCMC1_MASK)
+#define MSCM_OCMDR0_REG MSCM->OCMDR[0]
+#define MSCM_OCMDR1_REG MSCM->OCMDR[1]
+#elif defined(MSCM_OCMDR0_OCM1_MASK) || defined(MSCM_OCMDR1_OCM1_MASK)
+#define MSCM_OCMDR0_REG MSCM->OCMDR0
+#define MSCM_OCMDR1_REG MSCM->OCMDR1
 #endif
 
 /*!
@@ -368,18 +472,6 @@ enum _flash_config_area_range
 #define MSCM_OCMDR_OCMC1_DFDS_SHIFT (4U)
 #define MSCM_OCMDR_OCMC1_DFCS_SHIFT (5U)
 
-/*!
- * @brief Flash size encoding rule.
- */
-#define FLASH_MEMORY_SIZE_ENCODING_RULE_K1_2 (0x00U)
-#define FLASH_MEMORY_SIZE_ENCODING_RULE_K3 (0x01U)
-
-#if defined(K32W042S1M2_M0P_SERIES) || defined(K32W042S1M2_M4_SERIES)
-#define FLASH_MEMORY_SIZE_ENCODING_RULE (FLASH_MEMORY_SIZE_ENCODING_RULE_K3)
-#else
-#define FLASH_MEMORY_SIZE_ENCODING_RULE (FLASH_MEMORY_SIZE_ENCODING_RULE_K1_2)
-#endif
-
 /*******************************************************************************
  * Prototypes
  ******************************************************************************/
@@ -387,8 +479,10 @@ enum _flash_config_area_range
 #if FLASH_DRIVER_IS_FLASH_RESIDENT
 /*! @brief Copy flash_run_command() to RAM*/
 static void copy_flash_run_command(uint32_t *flashRunCommand);
+#if FLASH_IS_CACHE_INVALIDATION_AVAILABLE
 /*! @brief Copy flash_cache_clear_command() to RAM*/
 static void copy_flash_common_bit_operation(uint32_t *flashCommonBitOperation);
+#endif
 /*! @brief Check whether flash execute-in-ram functions are ready*/
 static status_t flash_check_execute_in_ram_function_info(flash_config_t *config);
 #endif /* FLASH_DRIVER_IS_FLASH_RESIDENT */
@@ -452,7 +546,7 @@ static status_t flash_get_access_info(flash_config_t *config, flash_access_confi
 
 #if FLASH_CACHE_IS_CONTROLLED_BY_MCM
 /*! @brief Performs the cache clear to the flash by MCM.*/
-void mcm_flash_cache_clear(flash_config_t *config);
+void mcm_flash_cache_clear(void);
 #endif /* FLASH_CACHE_IS_CONTROLLED_BY_MCM */
 
 #if FLASH_CACHE_IS_CONTROLLED_BY_FMC
@@ -462,7 +556,7 @@ void fmc_flash_cache_clear(void);
 
 #if FLASH_PREFETCH_SPECULATION_IS_CONTROLLED_BY_MSCM
 /*! @brief Sets the prefetch speculation buffer to the flash by MSCM.*/
-void mscm_flash_prefetch_speculation_enable(bool enable);
+void mscm_flash_prefetch_speculation_enable(uint32_t flashIndex, bool enable);
 #endif /* FLASH_PREFETCH_SPECULATION_IS_CONTROLLED_BY_MSCM */
 
 #if FLASH_PREFETCH_SPECULATION_IS_CONTROLLED_BY_FMC
@@ -490,11 +584,6 @@ volatile uint8_t *const kFPROTSH = (volatile uint8_t *)&FTFx_FPROTSH_REG;
 #if FLASH_DRIVER_IS_FLASH_RESIDENT
 /*! @brief A function pointer used to point to relocated flash_run_command() */
 static void (*callFlashRunCommand)(FTFx_REG8_ACCESS_TYPE ftfx_fstat);
-/*! @brief A function pointer used to point to relocated flash_common_bit_operation() */
-static void (*callFlashCommonBitOperation)(FTFx_REG32_ACCESS_TYPE base,
-                                           uint32_t bitMask,
-                                           uint32_t bitShift,
-                                           uint32_t bitValue);
 
 /*!
  * @brief Position independent code of flash_run_command()
@@ -515,7 +604,7 @@ static void (*callFlashCommonBitOperation)(FTFx_REG32_ACCESS_TYPE base,
  * @endcode
  * Note2: The binary code is generated by IAR 7.70.1
  */
-const static uint16_t s_flashRunCommandFunctionCode[] = {
+static const uint16_t s_flashRunCommandFunctionCode[] = {
     0x2180, /* MOVS  R1, #128 ; 0x80 */
     0x7001, /* STRB  R1, [R0] */
     /* @4: */
@@ -524,6 +613,13 @@ const static uint16_t s_flashRunCommandFunctionCode[] = {
     0xd0fc, /* BEQ.N @4 */
     0x4770  /* BX    LR */
 };
+
+#if FLASH_IS_CACHE_INVALIDATION_AVAILABLE
+/*! @brief A function pointer used to point to relocated flash_common_bit_operation() */
+static void (*callFlashCommonBitOperation)(FTFx_REG32_ACCESS_TYPE base,
+                                           uint32_t bitMask,
+                                           uint32_t bitShift,
+                                           uint32_t bitValue);
 
 /*!
  * @brief Position independent code of flash_common_bit_operation()
@@ -545,7 +641,7 @@ const static uint16_t s_flashRunCommandFunctionCode[] = {
  * @endcode
  * Note2: The binary code is generated by IAR 7.70.1
  */
-const static uint16_t s_flashCommonBitOperationFunctionCode[] = {
+static const uint16_t s_flashCommonBitOperationFunctionCode[] = {
     0xb510, /* PUSH  {R4, LR} */
     0x2900, /* CMP   R1, #0 */
     0xd005, /* BEQ.N @12 */
@@ -560,13 +656,16 @@ const static uint16_t s_flashCommonBitOperationFunctionCode[] = {
     0xf3bf, 0x8f4f, /* DSB */
     0xbd10          /* POP   {R4, PC} */
 };
+#endif /* FLASH_IS_CACHE_INVALIDATION_AVAILABLE */
 #endif /* FLASH_DRIVER_IS_FLASH_RESIDENT */
 
 #if (FLASH_DRIVER_IS_FLASH_RESIDENT && !FLASH_DRIVER_IS_EXPORTED)
 /*! @brief A static buffer used to hold flash_run_command() */
 static uint32_t s_flashRunCommand[kFLASH_ExecuteInRamFunctionMaxSizeInWords];
+#if FLASH_IS_CACHE_INVALIDATION_AVAILABLE
 /*! @brief A static buffer used to hold flash_common_bit_operation() */
 static uint32_t s_flashCommonBitOperation[kFLASH_ExecuteInRamFunctionMaxSizeInWords];
+#endif
 /*! @brief Flash execute-in-ram function information */
 static flash_execute_in_ram_function_config_t s_flashExecuteInRamFunctionInfo;
 #endif
@@ -589,26 +688,7 @@ static flash_execute_in_ram_function_config_t s_flashExecuteInRamFunctionInfo;
  *      flashDensity = ((uint32_t)kPFlashDensities[pfsize]) << 10;
  *  @endcode
  */
-#if (FLASH_MEMORY_SIZE_ENCODING_RULE == FLASH_MEMORY_SIZE_ENCODING_RULE_K1_2)
-const uint16_t kPFlashDensities[] = {
-    8,    /* 0x0 - 8192, 8KB */
-    16,   /* 0x1 - 16384, 16KB */
-    24,   /* 0x2 - 24576, 24KB */
-    32,   /* 0x3 - 32768, 32KB */
-    48,   /* 0x4 - 49152, 48KB */
-    64,   /* 0x5 - 65536, 64KB */
-    96,   /* 0x6 - 98304, 96KB */
-    128,  /* 0x7 - 131072, 128KB */
-    192,  /* 0x8 - 196608, 192KB */
-    256,  /* 0x9 - 262144, 256KB */
-    384,  /* 0xa - 393216, 384KB */
-    512,  /* 0xb - 524288, 512KB */
-    768,  /* 0xc - 786432, 768KB */
-    1024, /* 0xd - 1048576, 1MB */
-    1536, /* 0xe - 1572864, 1.5MB */
-    /* 2048,  0xf - 2097152, 2MB */
-};
-#elif(FLASH_MEMORY_SIZE_ENCODING_RULE == FLASH_MEMORY_SIZE_ENCODING_RULE_K3)
+#if defined(FSL_FEATURE_FLASH_SIZE_ENCODING_RULE_VERSION) && (FSL_FEATURE_FLASH_SIZE_ENCODING_RULE_VERSION == 1)
 const uint16_t kPFlashDensities[] = {
     0,    /* 0x0 - undefined */
     0,    /* 0x1 - undefined */
@@ -626,6 +706,25 @@ const uint16_t kPFlashDensities[] = {
     0,    /* 0xd - undefined */
     0,    /* 0xe - undefined */
     0,    /* 0xf - undefined */
+};
+#else
+const uint16_t kPFlashDensities[] = {
+    8,    /* 0x0 - 8192, 8KB */
+    16,   /* 0x1 - 16384, 16KB */
+    24,   /* 0x2 - 24576, 24KB */
+    32,   /* 0x3 - 32768, 32KB */
+    48,   /* 0x4 - 49152, 48KB */
+    64,   /* 0x5 - 65536, 64KB */
+    96,   /* 0x6 - 98304, 96KB */
+    128,  /* 0x7 - 131072, 128KB */
+    192,  /* 0x8 - 196608, 192KB */
+    256,  /* 0x9 - 262144, 256KB */
+    384,  /* 0xa - 393216, 384KB */
+    512,  /* 0xb - 524288, 512KB */
+    768,  /* 0xc - 786432, 768KB */
+    1024, /* 0xd - 1048576, 1MB */
+    1536, /* 0xe - 1572864, 1.5MB */
+    /* 2048,  0xf - 2097152, 2MB */
 };
 #endif
 
@@ -649,7 +748,7 @@ status_t FLASH_Init(flash_config_t *config)
         uint8_t pfsize = (SIM->FCFG1 & SIM_FCFG1_CORE1_PFSIZE_MASK) >> SIM_FCFG1_CORE1_PFSIZE_SHIFT;
         if (pfsize == 0xf)
         {
-            flashDensity = FSL_FEATURE_FLASH_PFLASH_1_BLOCK_COUNT * FSL_FEATURE_FLASH_PFLASH_1_BLOCK_SIZE;
+            flashDensity = SECONDARY_FLASH_FEATURE_PFLASH_BLOCK_COUNT * SECONDARY_FLASH_FEATURE_PFLASH_BLOCK_SIZE;
         }
         else
         {
@@ -659,11 +758,11 @@ status_t FLASH_Init(flash_config_t *config)
 #else
         /* Unused code to solve MISRA-C issue*/
         config->PFlashBlockBase = kPFlashDensities[0];
-        config->PFlashTotalSize = FSL_FEATURE_FLASH_PFLASH_1_BLOCK_COUNT * FSL_FEATURE_FLASH_PFLASH_1_BLOCK_SIZE;
+        config->PFlashTotalSize = SECONDARY_FLASH_FEATURE_PFLASH_BLOCK_COUNT * SECONDARY_FLASH_FEATURE_PFLASH_BLOCK_SIZE;
 #endif
-        config->PFlashBlockBase = FSL_FEATURE_FLASH_PFLASH_1_START_ADDRESS;
-        config->PFlashBlockCount = FSL_FEATURE_FLASH_PFLASH_1_BLOCK_COUNT;
-        config->PFlashSectorSize = FSL_FEATURE_FLASH_PFLASH_1_BLOCK_SECTOR_SIZE;
+        config->PFlashBlockBase = SECONDARY_FLASH_FEATURE_PFLASH_START_ADDRESS;
+        config->PFlashBlockCount = SECONDARY_FLASH_FEATURE_PFLASH_BLOCK_COUNT;
+        config->PFlashSectorSize = SECONDARY_FLASH_FEATURE_PFLASH_BLOCK_SECTOR_SIZE;
     }
     else
 #endif /* FLASH_SSD_IS_SECONDARY_FLASH_ENABLED */
@@ -682,7 +781,7 @@ status_t FLASH_Init(flash_config_t *config)
          * We just use the pre-defined flash size in feature file here to support pre-production parts */
         if (pfsize == 0xf)
         {
-            flashDensity = FSL_FEATURE_FLASH_PFLASH_BLOCK_COUNT * FSL_FEATURE_FLASH_PFLASH_BLOCK_SIZE;
+            flashDensity = MAIN_FLASH_FEATURE_PFLASH_BLOCK_COUNT * MAIN_FLASH_FEATURE_PFLASH_BLOCK_SIZE;
         }
         else
         {
@@ -690,10 +789,10 @@ status_t FLASH_Init(flash_config_t *config)
         }
 
         /* fill out a few of the structure members */
-        config->PFlashBlockBase = FSL_FEATURE_FLASH_PFLASH_START_ADDRESS;
+        config->PFlashBlockBase = MAIN_FLASH_FEATURE_PFLASH_START_ADDRESS;
         config->PFlashTotalSize = flashDensity;
-        config->PFlashBlockCount = FSL_FEATURE_FLASH_PFLASH_BLOCK_COUNT;
-        config->PFlashSectorSize = FSL_FEATURE_FLASH_PFLASH_BLOCK_SECTOR_SIZE;
+        config->PFlashBlockCount = MAIN_FLASH_FEATURE_PFLASH_BLOCK_COUNT;
+        config->PFlashSectorSize = MAIN_FLASH_FEATURE_PFLASH_BLOCK_SECTOR_SIZE;
     }
 
     {
@@ -716,15 +815,15 @@ status_t FLASH_Init(flash_config_t *config)
 #endif /* FSL_FEATURE_FLASH_HAS_ACCESS_CONTROL */
     }
 
-    config->PFlashCallback = NULL;
-
 /* copy required flash commands to RAM */
 #if (FLASH_DRIVER_IS_FLASH_RESIDENT && !FLASH_DRIVER_IS_EXPORTED)
     if (kStatus_FLASH_Success != flash_check_execute_in_ram_function_info(config))
     {
         s_flashExecuteInRamFunctionInfo.activeFunctionCount = 0;
         s_flashExecuteInRamFunctionInfo.flashRunCommand = s_flashRunCommand;
+#if FLASH_IS_CACHE_INVALIDATION_AVAILABLE
         s_flashExecuteInRamFunctionInfo.flashCommonBitOperation = s_flashCommonBitOperation;
+#endif
         config->flashExecuteInRamFunctionInfo = &s_flashExecuteInRamFunctionInfo.activeFunctionCount;
         FLASH_PrepareExecuteInRamFunctions(config);
     }
@@ -748,24 +847,12 @@ status_t FLASH_Init(flash_config_t *config)
     return kStatus_FLASH_Success;
 }
 
-status_t FLASH_SetCallback(flash_config_t *config, flash_callback_t callback)
-{
-    if (config == NULL)
-    {
-        return kStatus_FLASH_InvalidArgument;
-    }
-
-    config->PFlashCallback = callback;
-
-    return kStatus_FLASH_Success;
-}
-
 #if FLASH_DRIVER_IS_FLASH_RESIDENT
 status_t FLASH_PrepareExecuteInRamFunctions(flash_config_t *config)
 {
     flash_execute_in_ram_function_config_t *flashExecuteInRamFunctionInfo;
 
-    if (config == NULL)
+    if ((config == NULL) || (config->flashExecuteInRamFunctionInfo == NULL))
     {
         return kStatus_FLASH_InvalidArgument;
     }
@@ -773,7 +860,9 @@ status_t FLASH_PrepareExecuteInRamFunctions(flash_config_t *config)
     flashExecuteInRamFunctionInfo = (flash_execute_in_ram_function_config_t *)config->flashExecuteInRamFunctionInfo;
 
     copy_flash_run_command(flashExecuteInRamFunctionInfo->flashRunCommand);
+#if FLASH_IS_CACHE_INVALIDATION_AVAILABLE
     copy_flash_common_bit_operation(flashExecuteInRamFunctionInfo->flashCommonBitOperation);
+#endif
     flashExecuteInRamFunctionInfo->activeFunctionCount = kFLASH_ExecuteInRamFunctionTotalNum;
 
     return kStatus_FLASH_Success;
@@ -867,12 +956,6 @@ status_t FLASH_Erase(flash_config_t *config, uint32_t start, uint32_t lengthInBy
 
         /* calling flash command sequence function to execute the command */
         returnCode = flash_command_sequence(config);
-
-        /* calling flash callback function if it is available */
-        if (config->PFlashCallback)
-        {
-            config->PFlashCallback();
-        }
 
         /* checking the success of command execution */
         if (kStatus_FLASH_Success != returnCode)
@@ -1003,12 +1086,6 @@ status_t FLASH_Program(flash_config_t *config, uint32_t start, uint32_t *src, ui
 
         /* calling flash command sequence function to execute the command */
         returnCode = flash_command_sequence(config);
-
-        /* calling flash callback function if it is available */
-        if (config->PFlashCallback)
-        {
-            config->PFlashCallback();
-        }
 
         /* checking for the success of command execution */
         if (kStatus_FLASH_Success != returnCode)
@@ -1159,12 +1236,6 @@ status_t FLASH_ProgramSection(flash_config_t *config, uint32_t start, uint32_t *
 
             /* Peform command sequence */
             returnCode = flash_command_sequence(config);
-
-            /* calling flash callback function if it is available */
-            if (config->PFlashCallback)
-            {
-                config->PFlashCallback();
-            }
 
             if (returnCode != kStatus_FLASH_Success)
             {
@@ -1606,10 +1677,10 @@ status_t FLASH_IsProtected(flash_config_t *config,
                                     * protection regions */
     uint32_t protectStatusCounter; /* increments each time a flash region was detected as protected */
 
-    uint8_t flashRegionProtectStatus[FSL_FEATURE_FLASH_PFLASH_PROTECTION_REGION_COUNT]; /* array of the protection
+    uint8_t flashRegionProtectStatus[MAIN_FLASH_FEATURE_PFLASH_PROTECTION_REGION_COUNT]; /* array of the protection
                                                                       * status for each
                                                                       * protection region */
-    uint32_t flashRegionAddress[FSL_FEATURE_FLASH_PFLASH_PROTECTION_REGION_COUNT +
+    uint32_t flashRegionAddress[MAIN_FLASH_FEATURE_PFLASH_PROTECTION_REGION_COUNT +
                                 1];                /* array of the start addresses for each flash
                                  * protection region. Note this is REGION_COUNT+1
                                  * due to requiring the next start address after
@@ -1623,7 +1694,7 @@ status_t FLASH_IsProtected(flash_config_t *config,
     }
 
     /* Check the supplied address range. */
-    returnCode = flash_check_range(config, start, lengthInBytes, FSL_FEATURE_FLASH_PFLASH_BLOCK_WRITE_UNIT_SIZE);
+    returnCode = flash_check_range(config, start, lengthInBytes, MAIN_FLASH_FEATURE_PFLASH_BLOCK_WRITE_UNIT_SIZE);
     if (returnCode)
     {
         return returnCode;
@@ -1690,8 +1761,8 @@ status_t FLASH_IsProtected(flash_config_t *config,
             {
                 flashRegionProtectStatus[regionCounter] = (FTFx_FPROTL2_REG >> (regionCounter - 8)) & (0x01u);
             }
-#if defined(FSL_FEATURE_FLASH_PFLASH_PROTECTION_REGION_COUNT) && (FSL_FEATURE_FLASH_PFLASH_PROTECTION_REGION_COUNT > 16)
-#if (FSL_FEATURE_FLASH_PFLASH_PROTECTION_REGION_COUNT == 20)
+#if defined(MAIN_FLASH_FEATURE_PFLASH_PROTECTION_REGION_COUNT) && (MAIN_FLASH_FEATURE_PFLASH_PROTECTION_REGION_COUNT > 16)
+#if (MAIN_FLASH_FEATURE_PFLASH_PROTECTION_REGION_COUNT == 20)
             else if ((regionCounter >= 16) && (regionCounter < 20))
             {
                 flashRegionProtectStatus[regionCounter] = (FTFx_FPROTL1_REG >> (regionCounter - 16)) & (0x01u);
@@ -1701,16 +1772,16 @@ status_t FLASH_IsProtected(flash_config_t *config,
             {
                 flashRegionProtectStatus[regionCounter] = (FTFx_FPROTL1_REG >> (regionCounter - 16)) & (0x01u);
             }
-#endif /* (FSL_FEATURE_FLASH_PFLASH_PROTECTION_REGION_COUNT == 20) */
+#endif /* (MAIN_FLASH_FEATURE_PFLASH_PROTECTION_REGION_COUNT == 20) */
 #endif
-#if defined(FSL_FEATURE_FLASH_PFLASH_PROTECTION_REGION_COUNT) && (FSL_FEATURE_FLASH_PFLASH_PROTECTION_REGION_COUNT > 24)
+#if defined(MAIN_FLASH_FEATURE_PFLASH_PROTECTION_REGION_COUNT) && (MAIN_FLASH_FEATURE_PFLASH_PROTECTION_REGION_COUNT > 24)
             else if ((regionCounter >= 24) && (regionCounter < 32))
             {
                 flashRegionProtectStatus[regionCounter] = (FTFx_FPROTL0_REG >> (regionCounter - 24)) & (0x01u);
             }
 #endif
-#if defined(FSL_FEATURE_FLASH_PFLASH_PROTECTION_REGION_COUNT) && \
-    (FSL_FEATURE_FLASH_PFLASH_PROTECTION_REGION_COUNT == 64)
+#if defined(MAIN_FLASH_FEATURE_PFLASH_PROTECTION_REGION_COUNT) && \
+    (MAIN_FLASH_FEATURE_PFLASH_PROTECTION_REGION_COUNT == 64)
             else if (regionCounter < 40)
             {
                 flashRegionProtectStatus[regionCounter] = (FTFx_FPROTH3_REG >> (regionCounter - 32)) & (0x01u);
@@ -1802,7 +1873,7 @@ status_t FLASH_IsExecuteOnly(flash_config_t *config,
     }
 
     /* Check the supplied address range. */
-    returnCode = flash_check_range(config, start, lengthInBytes, FSL_FEATURE_FLASH_PFLASH_BLOCK_WRITE_UNIT_SIZE);
+    returnCode = flash_check_range(config, start, lengthInBytes, MAIN_FLASH_FEATURE_PFLASH_BLOCK_WRITE_UNIT_SIZE);
     if (returnCode)
     {
         return returnCode;
@@ -1833,6 +1904,7 @@ status_t FLASH_IsExecuteOnly(flash_config_t *config,
         while (start < endAddress)
         {
             uint32_t xacc;
+            bool isInvalidSegmentIndex = false;
 
             segmentIndex = (start - flashAccessInfo.SegmentBase) / flashAccessInfo.SegmentSize;
 
@@ -1852,7 +1924,7 @@ status_t FLASH_IsExecuteOnly(flash_config_t *config,
                 }
                 else
                 {
-                    break;
+                    isInvalidSegmentIndex = true;
                 }
             }
             else
@@ -1871,8 +1943,13 @@ status_t FLASH_IsExecuteOnly(flash_config_t *config,
                 }
                 else
                 {
-                    break;
+                    isInvalidSegmentIndex = true;
                 }
+            }
+
+            if (isInvalidSegmentIndex)
+            {
+                break;
             }
 
             /* Determine if this address range is in a execute-only protection flash segment. */
@@ -1922,7 +1999,7 @@ status_t FLASH_GetProperty(flash_config_t *config, flash_property_tag_t whichPro
             break;
 
         case kFLASH_PropertyPflashBlockSize:
-            *value = config->PFlashTotalSize / FSL_FEATURE_FLASH_PFLASH_BLOCK_COUNT;
+            *value = config->PFlashTotalSize / (uint32_t)config->PFlashBlockCount;
             break;
 
         case kFLASH_PropertyPflashBlockCount:
@@ -2006,15 +2083,6 @@ status_t FLASH_SetProperty(flash_config_t *config, flash_property_tag_t whichPro
             config->FlashMemoryIndex = (uint8_t)value;
             break;
 #endif /* FLASH_SSD_IS_SECONDARY_FLASH_ENABLED */
-
-        case kFLASH_PropertyFlashCacheControllerIndex:
-            if ((value != (uint32_t)kFLASH_CacheControllerIndexForCore0) &&
-                (value != (uint32_t)kFLASH_CacheControllerIndexForCore1))
-            {
-                return kStatus_FLASH_InvalidPropertyValue;
-            }
-            config->FlashCacheControllerIndex = (uint8_t)value;
-            break;
 
         case kFLASH_PropertyPflashSectorSize:
         case kFLASH_PropertyPflashTotalSize:
@@ -2478,7 +2546,7 @@ status_t FLASH_PflashSetPrefetchSpeculation(flash_prefetch_speculation_status_t 
     {
         FTFx_REG32_ACCESS_TYPE regBase;
         uint32_t flashSpeculationMask, dataPrefetchMask;
-        regBase = (FTFx_REG32_ACCESS_TYPE)&MSCM->OCMDR[0];
+        regBase = (FTFx_REG32_ACCESS_TYPE)&MSCM_OCMDR0_REG;
         flashSpeculationMask = MSCM_OCMDR_OCMC1_DFCS_MASK;
         dataPrefetchMask = MSCM_OCMDR_OCMC1_DFDS_MASK;
 
@@ -2571,7 +2639,7 @@ status_t FLASH_PflashGetPrefetchSpeculation(flash_prefetch_speculation_status_t 
     {
         uint32_t value;
         uint32_t flashSpeculationMask, dataPrefetchMask;
-        value = MSCM->OCMDR[0];
+        value = MSCM_OCMDR0_REG;
         flashSpeculationMask = MSCM_OCMDR_OCMC1_DFCS_MASK;
         dataPrefetchMask = MSCM_OCMDR_OCMC1_DFDS_MASK;
 
@@ -2676,7 +2744,7 @@ static status_t flash_command_sequence(flash_config_t *config)
     }
 }
 
-#if FLASH_DRIVER_IS_FLASH_RESIDENT
+#if FLASH_DRIVER_IS_FLASH_RESIDENT && FLASH_IS_CACHE_INVALIDATION_AVAILABLE
 /*!
  * @brief Copy PIC of flash_common_bit_operation() to RAM
  *
@@ -2691,22 +2759,36 @@ static void copy_flash_common_bit_operation(uint32_t *flashCommonBitOperation)
            sizeof(s_flashCommonBitOperationFunctionCode));
     callFlashCommonBitOperation = (void (*)(FTFx_REG32_ACCESS_TYPE base, uint32_t bitMask, uint32_t bitShift,
                                             uint32_t bitValue))((uint32_t)flashCommonBitOperation + 1);
-    /* Workround for some devices which doesn't need this function */
-    callFlashCommonBitOperation((FTFx_REG32_ACCESS_TYPE)0, 0, 0, 0);
 }
-#endif /* FLASH_DRIVER_IS_FLASH_RESIDENT */
+#endif /* FLASH_DRIVER_IS_FLASH_RESIDENT && FLASH_IS_CACHE_INVALIDATION_AVAILABLE */
 
 #if FLASH_CACHE_IS_CONTROLLED_BY_MCM
 /*! @brief Performs the cache clear to the flash by MCM.*/
-void mcm_flash_cache_clear(flash_config_t *config)
+void mcm_flash_cache_clear(void)
 {
-    FTFx_REG32_ACCESS_TYPE regBase = (FTFx_REG32_ACCESS_TYPE)&MCM0_CACHE_REG;
+    FTFx_REG32_ACCESS_TYPE regBase;
 
-#if defined(MCM0) && defined(MCM1)
-    if (config->FlashCacheControllerIndex == (uint8_t)kFLASH_CacheControllerIndexForCore1)
+#if defined(BL_TARGET_ROM) && defined(MCM0_CACHE_REG) && defined(MCM1_CACHE_REG) && \
+    defined(FSL_FEATURE_FLASH_CURRENT_CORE_ID)
     {
-        regBase = (FTFx_REG32_ACCESS_TYPE)&MCM1_CACHE_REG;
+        uint16_t armPartNumber = (uint16_t)((SCB->CPUID & SCB_CPUID_PARTNO_Msk) >> SCB_CPUID_PARTNO_Pos);
+        uint32_t cortexVersion = __CORTEX_M;
+        uint32_t coreId = FSL_FEATURE_FLASH_CURRENT_CORE_ID;
+#if (__CORTEX_M <= 7)
+        /* Note: Below code only apply to dual core device (such K3S) */
+        if (s_armCorePartNumberArray[cortexVersion] != armPartNumber)
+        {
+            coreId ^= 0x1;
+        }
+        regBase = s_mcmModuleAccessTypeArray[coreId];
+#else
+        #error "Inapplicable ARM Cortext Version!"
+#endif
     }
+#elif defined(MCM0_CACHE_REG)
+    regBase = (FTFx_REG32_ACCESS_TYPE)&MCM0_CACHE_REG;
+#elif defined(MCM1_CACHE_REG)
+    regBase = (FTFx_REG32_ACCESS_TYPE)&MCM1_CACHE_REG;
 #endif
 
 #if FLASH_DRIVER_IS_FLASH_RESIDENT
@@ -2751,7 +2833,7 @@ void fmc_flash_cache_clear(void)
 
 #if FLASH_PREFETCH_SPECULATION_IS_CONTROLLED_BY_MSCM
 /*! @brief Performs the prefetch speculation buffer clear to the flash by MSCM.*/
-void mscm_flash_prefetch_speculation_enable(bool enable)
+void mscm_flash_prefetch_speculation_enable(uint32_t flashIndex, bool enable)
 {
     uint8_t setValue;
     if (enable)
@@ -2767,27 +2849,40 @@ void mscm_flash_prefetch_speculation_enable(bool enable)
 /* For device with FlexNVM support, the OCMDR[1] is used to prefetch Dflash.
  * For device with secondary flash support, the OCMDR[1] is used to prefetch secondary Pflash. */
 #if FLASH_DRIVER_IS_FLASH_RESIDENT
-    callFlashCommonBitOperation((FTFx_REG32_ACCESS_TYPE)&MSCM->OCMDR[0], MSCM_SPECULATION_DISABLE_MASK,
-                                MSCM_SPECULATION_DISABLE_SHIFT, setValue);
-#if FLASH_SSD_IS_FLEXNVM_ENABLED || BL_HAS_SECONDARY_INTERNAL_FLASH
-    callFlashCommonBitOperation((FTFx_REG32_ACCESS_TYPE)&MSCM->OCMDR[1], MSCM_SPECULATION_DISABLE_MASK,
-                                MSCM_SPECULATION_DISABLE_SHIFT, setValue);
+    switch (flashIndex)
+    {
+#if FLASH_SSD_IS_FLEXNVM_ENABLED || FLASH_SSD_IS_SECONDARY_FLASH_ENABLED
+        case kFLASH_MemoryIndexSecondaryFlash:
+            callFlashCommonBitOperation((FTFx_REG32_ACCESS_TYPE)&MSCM_OCMDR1_REG, MSCM_SPECULATION_DISABLE_MASK,
+                                        MSCM_SPECULATION_DISABLE_SHIFT, setValue);
+            break;
 #endif
+        case kFLASH_MemoryIndexPrimaryFlash:
+        default:
+            callFlashCommonBitOperation((FTFx_REG32_ACCESS_TYPE)&MSCM_OCMDR0_REG, MSCM_SPECULATION_DISABLE_MASK,
+                                        MSCM_SPECULATION_DISABLE_SHIFT, setValue);
+            break;
+    }
 #else /* !FLASH_DRIVER_IS_FLASH_RESIDENT */
-    MSCM->OCMDR[0] |= MSCM_SPECULATION_DISABLE(setValue);
-
-    /* Memory barriers for good measure.
-     * All Cache, Branch predictor and TLB maintenance operations before this instruction complete */
-    __ISB();
-    __DSB();
-#if FLASH_SSD_IS_FLEXNVM_ENABLED || BL_HAS_SECONDARY_INTERNAL_FLASH
-    MSCM->OCMDR[1] |= MSCM_SPECULATION_DISABLE(setValue);
-
-    /* Each cahce clear instaruction should be followed by below code*/
-    __ISB();
-    __DSB();
+    switch (flashIndex)
+    {
+#if FLASH_SSD_IS_FLEXNVM_ENABLED || FLASH_SSD_IS_SECONDARY_FLASH_ENABLED
+        case kFLASH_MemoryIndexSecondaryFlash:
+            MSCM_OCMDR1_REG = (MSCM_OCMDR1_REG & (~MSCM_SPECULATION_DISABLE_MASK)) | MSCM_SPECULATION_DISABLE(setValue);
+            /* Each cahce clear instaruction should be followed by below code*/
+            __ISB();
+            __DSB();
+            break;
 #endif
-
+        case kFLASH_MemoryIndexPrimaryFlash:
+        default:
+            MSCM_OCMDR0_REG = (MSCM_OCMDR0_REG & (~MSCM_SPECULATION_DISABLE_MASK)) | MSCM_SPECULATION_DISABLE(setValue);
+            /* Memory barriers for good measure.
+             * All Cache, Branch predictor and TLB maintenance operations before this instruction complete */
+            __ISB();
+            __DSB();
+            break;
+    }
 #endif /* FLASH_DRIVER_IS_FLASH_RESIDENT */
 }
 #endif /* FLASH_PREFETCH_SPECULATION_IS_CONTROLLED_BY_MSCM */
@@ -2860,13 +2955,13 @@ static void flash_cache_clear_process(flash_config_t *config, flash_cache_clear_
     if (process == kFLASH_CacheClearProcessPost)
     {
 #if FLASH_CACHE_IS_CONTROLLED_BY_MCM
-        mcm_flash_cache_clear(config);
+        mcm_flash_cache_clear();
 #endif
 #if FLASH_CACHE_IS_CONTROLLED_BY_FMC
         fmc_flash_cache_clear();
 #endif
 #if FLASH_PREFETCH_SPECULATION_IS_CONTROLLED_BY_MSCM
-        mscm_flash_prefetch_speculation_enable(true);
+        mscm_flash_prefetch_speculation_enable(config->FlashMemoryIndex, true);
 #endif
 #if FLASH_PREFETCH_SPECULATION_IS_CONTROLLED_BY_FMC
         fmc_flash_prefetch_speculation_clear();
@@ -2875,7 +2970,7 @@ static void flash_cache_clear_process(flash_config_t *config, flash_cache_clear_
     if (process == kFLASH_CacheClearProcessPre)
     {
 #if FLASH_PREFETCH_SPECULATION_IS_CONTROLLED_BY_MSCM
-        mscm_flash_prefetch_speculation_enable(false);
+        mscm_flash_prefetch_speculation_enable(config->FlashMemoryIndex, false);
 #endif
     }
 }
@@ -2940,7 +3035,7 @@ static status_t flash_get_matched_operation_info(flash_config_t *config,
                                                  uint32_t address,
                                                  flash_operation_config_t *info)
 {
-    if (config == NULL)
+    if ((config == NULL) || (info == NULL))
     {
         return kStatus_FLASH_InvalidArgument;
     }
@@ -2977,12 +3072,12 @@ static status_t flash_get_matched_operation_info(flash_config_t *config,
              * (=0) and secondary flash memory (=1).*/
             info->convertedAddress += 0x800000U;
 #endif
-            info->blockWriteUnitSize = FSL_FEATURE_FLASH_PFLASH_1_BLOCK_WRITE_UNIT_SIZE;
+            info->blockWriteUnitSize = SECONDARY_FLASH_FEATURE_PFLASH_BLOCK_WRITE_UNIT_SIZE;
         }
         else
 #endif /* FLASH_SSD_IS_SECONDARY_FLASH_ENABLED */
         {
-            info->blockWriteUnitSize = FSL_FEATURE_FLASH_PFLASH_BLOCK_WRITE_UNIT_SIZE;
+            info->blockWriteUnitSize = MAIN_FLASH_FEATURE_PFLASH_BLOCK_WRITE_UNIT_SIZE;
         }
 
         info->sectorCmdAddressAligment = FSL_FEATURE_FLASH_PFLASH_SECTOR_CMD_ADDRESS_ALIGMENT;
@@ -3362,7 +3457,7 @@ static status_t flash_get_protection_info(flash_config_t *config, flash_protecti
 {
     uint32_t pflashTotalSize;
 
-    if (config == NULL)
+    if ((config == NULL) || (info == NULL))
     {
         return kStatus_FLASH_InvalidArgument;
     }
@@ -3372,9 +3467,9 @@ static status_t flash_get_protection_info(flash_config_t *config, flash_protecti
 
 /* Note: KW40 has a secondary flash, but it doesn't have independent protection register*/
 #if FLASH_SSD_IS_SECONDARY_FLASH_ENABLED && (!FLASH_SSD_SECONDARY_FLASH_HAS_ITS_OWN_PROTECTION_REGISTER)
-    pflashTotalSize = FSL_FEATURE_FLASH_PFLASH_BLOCK_COUNT * FSL_FEATURE_FLASH_PFLASH_BLOCK_SIZE +
+    pflashTotalSize = MAIN_FLASH_FEATURE_PFLASH_BLOCK_COUNT * MAIN_FLASH_FEATURE_PFLASH_BLOCK_SIZE +
                       FSL_FEATURE_FLASH_PFLASH_1_BLOCK_COUNT * FSL_FEATURE_FLASH_PFLASH_1_BLOCK_SIZE;
-    info->regionBase = FSL_FEATURE_FLASH_PFLASH_START_ADDRESS;
+    info->regionBase = MAIN_FLASH_FEATURE_PFLASH_START_ADDRESS;
 #else
     pflashTotalSize = config->PFlashTotalSize;
     info->regionBase = config->PFlashBlockBase;
@@ -3383,12 +3478,12 @@ static status_t flash_get_protection_info(flash_config_t *config, flash_protecti
 #if FLASH_SSD_IS_SECONDARY_FLASH_ENABLED && FLASH_SSD_SECONDARY_FLASH_HAS_ITS_OWN_PROTECTION_REGISTER
     if (config->FlashMemoryIndex == (uint8_t)kFLASH_MemoryIndexSecondaryFlash)
     {
-        info->regionCount = FSL_FEATURE_FLASH_PFLASH_1_PROTECTION_REGION_COUNT;
+        info->regionCount = SECONDARY_FLASH_FEATURE_PFLASH_PROTECTION_REGION_COUNT;
     }
     else
 #endif
     {
-        info->regionCount = FSL_FEATURE_FLASH_PFLASH_PROTECTION_REGION_COUNT;
+        info->regionCount = MAIN_FLASH_FEATURE_PFLASH_PROTECTION_REGION_COUNT;
     }
 
     /* Calculate the size of the flash protection region
@@ -3410,7 +3505,7 @@ static status_t flash_get_protection_info(flash_config_t *config, flash_protecti
 /*! @brief Gets the flash Execute-Only access information (Segment size, Segment count).*/
 static status_t flash_get_access_info(flash_config_t *config, flash_access_config_t *info)
 {
-    if (config == NULL)
+    if ((config == NULL) || (info == NULL))
     {
         return kStatus_FLASH_InvalidArgument;
     }
@@ -3420,7 +3515,7 @@ static status_t flash_get_access_info(flash_config_t *config, flash_access_confi
 
 /* Note: KW40 has a secondary flash, but it doesn't have independent access register*/
 #if FLASH_SSD_IS_SECONDARY_FLASH_ENABLED && (!FLASH_SSD_SECONDARY_FLASH_HAS_ITS_OWN_ACCESS_REGISTER)
-    info->SegmentBase = FSL_FEATURE_FLASH_PFLASH_START_ADDRESS;
+    info->SegmentBase = MAIN_FLASH_FEATURE_PFLASH_START_ADDRESS;
 #else
     info->SegmentBase = config->PFlashBlockBase;
 #endif

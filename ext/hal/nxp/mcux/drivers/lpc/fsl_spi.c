@@ -1,9 +1,12 @@
 /*
+ * The Clear BSD License
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * are permitted (subject to the limitations in the disclaimer below) provided
+ * that the following conditions are met:
  *
  * o Redistributions of source code must retain the above copyright notice, this list
  *   of conditions and the following disclaimer.
@@ -16,6 +19,7 @@
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -41,6 +45,7 @@
  * range <0,15>. Range <8,15> represents 2B transfer */
 #define SPI_COUNT_TO_BYTES(dataWidth, count) ((count) << ((dataWidth) >> 3U))
 #define SPI_BYTES_TO_COUNT(dataWidth, bytes) ((bytes) >> ((dataWidth) >> 3U))
+#define SPI_SSELPOL_MASK ((SPI_CFG_SPOL0_MASK) | (SPI_CFG_SPOL1_MASK) | (SPI_CFG_SPOL2_MASK) | (SPI_CFG_SPOL3_MASK))
 
 /*******************************************************************************
  * Variables
@@ -54,6 +59,8 @@ static const uint32_t s_spiBaseAddrs[FSL_FEATURE_SOC_SPI_COUNT] = SPI_BASE_ADDRS
 /*! @brief IRQ name array */
 static const IRQn_Type s_spiIRQ[] = SPI_IRQS;
 
+/* @brief Dummy data for each instance. This data is used when user's tx buffer is NULL*/
+volatile uint8_t s_dummyData[FSL_FEATURE_SOC_SPI_COUNT] = {0};
 /*******************************************************************************
  * Code
  ******************************************************************************/
@@ -73,6 +80,12 @@ uint32_t SPI_GetInstance(SPI_Type *base)
 
     assert(false);
     return 0;
+}
+
+void SPI_SetDummyData(SPI_Type *base, uint8_t dummyData)
+{
+    uint32_t instance = SPI_GetInstance(base);
+    s_dummyData[instance] = dummyData;
 }
 
 void *SPI_GetConfig(SPI_Type *base)
@@ -100,6 +113,11 @@ void SPI_MasterGetDefaultConfig(spi_master_config_t *config)
     config->sselNum = kSPI_Ssel0;
     config->txWatermark = kSPI_TxFifo0;
     config->rxWatermark = kSPI_RxFifo1;
+    config->sselPol = kSPI_SpolActiveAllLow;
+    config->delayConfig.preDelay = 0U;
+    config->delayConfig.postDelay = 0U;
+    config->delayConfig.frameDelay = 0U;
+    config->delayConfig.transferDelay = 0U;
 }
 
 status_t SPI_MasterInit(SPI_Type *base, const spi_master_config_t *config, uint32_t srcClock_Hz)
@@ -134,7 +152,8 @@ status_t SPI_MasterInit(SPI_Type *base, const spi_master_config_t *config, uint3
 
     /* configure SPI mode */
     tmp = base->CFG;
-    tmp &= ~(SPI_CFG_MASTER_MASK | SPI_CFG_LSBF_MASK | SPI_CFG_CPHA_MASK | SPI_CFG_CPOL_MASK | SPI_CFG_LOOP_MASK | SPI_CFG_ENABLE_MASK);
+    tmp &= ~(SPI_CFG_MASTER_MASK | SPI_CFG_LSBF_MASK | SPI_CFG_CPHA_MASK | SPI_CFG_CPOL_MASK | SPI_CFG_LOOP_MASK |
+             SPI_CFG_ENABLE_MASK | SPI_SSELPOL_MASK);
     /* phase */
     tmp |= SPI_CFG_CPHA(config->phase);
     /* polarity */
@@ -145,6 +164,8 @@ status_t SPI_MasterInit(SPI_Type *base, const spi_master_config_t *config, uint3
     tmp |= SPI_CFG_MASTER(1);
     /* loopback */
     tmp |= SPI_CFG_LOOP(config->enableLoopback);
+    /* configure active level for all CS */
+    tmp |= ((uint32_t)config->sselPol & (SPI_SSELPOL_MASK));
     base->CFG = tmp;
 
     /* store configuration */
@@ -161,6 +182,11 @@ status_t SPI_MasterInit(SPI_Type *base, const spi_master_config_t *config, uint3
     /* set FIFOTRIG */
     base->FIFOTRIG = tmp;
 
+    /* Set the delay configuration. */
+    SPI_SetTransferDelay(base, &config->delayConfig);
+    /* Set the dummy data. */
+    SPI_SetDummyData(base, (uint8_t)SPI_DUMMYDATA);
+
     SPI_Enable(base, config->enableMaster);
     return kStatus_Success;
 }
@@ -176,6 +202,7 @@ void SPI_SlaveGetDefaultConfig(spi_slave_config_t *config)
     config->dataWidth = kSPI_Data8Bits;
     config->txWatermark = kSPI_TxFifo0;
     config->rxWatermark = kSPI_RxFifo1;
+    config->sselPol = kSPI_SpolActiveAllLow;
 }
 
 status_t SPI_SlaveInit(SPI_Type *base, const spi_slave_config_t *config)
@@ -201,13 +228,16 @@ status_t SPI_SlaveInit(SPI_Type *base, const spi_slave_config_t *config)
 
     /* configure SPI mode */
     tmp = base->CFG;
-    tmp &= ~(SPI_CFG_MASTER_MASK | SPI_CFG_LSBF_MASK | SPI_CFG_CPHA_MASK | SPI_CFG_CPOL_MASK | SPI_CFG_ENABLE_MASK);
+    tmp &= ~(SPI_CFG_MASTER_MASK | SPI_CFG_LSBF_MASK | SPI_CFG_CPHA_MASK | SPI_CFG_CPOL_MASK | SPI_CFG_ENABLE_MASK |
+             SPI_SSELPOL_MASK);
     /* phase */
     tmp |= SPI_CFG_CPHA(config->phase);
     /* polarity */
     tmp |= SPI_CFG_CPOL(config->polarity);
     /* direction */
     tmp |= SPI_CFG_LSBF(config->direction);
+    /* configure active level for all CS */
+    tmp |= ((uint32_t)config->sselPol & (SPI_SSELPOL_MASK));
     base->CFG = tmp;
 
     /* store configuration */
@@ -222,6 +252,8 @@ status_t SPI_SlaveInit(SPI_Type *base, const spi_slave_config_t *config)
     tmp |= SPI_FIFOTRIG_TXLVLENA_MASK | SPI_FIFOTRIG_RXLVLENA_MASK;
     /* set FIFOTRIG */
     base->FIFOTRIG = tmp;
+
+    SPI_SetDummyData(base, (uint8_t)SPI_DUMMYDATA);
 
     SPI_Enable(base, config->enableSlave);
     return kStatus_Success;
@@ -402,10 +434,10 @@ status_t SPI_MasterTransferBlocking(SPI_Type *base, spi_transfer_t *xfer)
     tx_ctrl |= (SPI_DEASSERT_ALL & (~SPI_DEASSERTNUM_SSEL(g_configs[instance].sselNum)));
     /* set width of data - range asserted at entry */
     tx_ctrl |= SPI_FIFOWR_LEN(dataWidth);
+    /* delay for frames */
+    tx_ctrl |= (xfer->configFlags & (uint32_t)kSPI_FrameDelay) ? (uint32_t)kSPI_FrameDelay : 0;
     /* end of transfer */
     last_ctrl |= (xfer->configFlags & (uint32_t)kSPI_FrameAssert) ? (uint32_t)kSPI_FrameAssert : 0;
-    /* delay end of transfer */
-    last_ctrl |= (xfer->configFlags & (uint32_t)kSPI_FrameDelay) ? (uint32_t)kSPI_FrameDelay : 0;
     /* last index of loop */
     while (txRemainingBytes || rxRemainingBytes || toReceiveCount)
     {
@@ -450,7 +482,7 @@ status_t SPI_MasterTransferBlocking(SPI_Type *base, spi_transfer_t *xfer)
             }
             else
             {
-                tmp32 = SPI_DUMMYDATA;
+                tmp32 = ((uint32_t)s_dummyData[instance] << 8U | (s_dummyData[instance]));
                 /* last transfer */
                 if (rxRemainingBytes == SPI_COUNT_TO_BYTES(dataWidth, toReceiveCount + 1))
                 {
@@ -513,6 +545,118 @@ status_t SPI_MasterTransferNonBlocking(SPI_Type *base, spi_master_handle_t *hand
     return kStatus_Success;
 }
 
+status_t SPI_MasterHalfDuplexTransferBlocking(SPI_Type *base, spi_half_duplex_transfer_t *xfer)
+{
+    assert(xfer);
+
+    spi_transfer_t tempXfer = {0};
+    status_t status;
+
+    if (xfer->isTransmitFirst)
+    {
+        tempXfer.txData = xfer->txData;
+        tempXfer.rxData = NULL;
+        tempXfer.dataSize = xfer->txDataSize;
+    }
+    else
+    {
+        tempXfer.txData = NULL;
+        tempXfer.rxData = xfer->rxData;
+        tempXfer.dataSize = xfer->rxDataSize;
+    }
+    /* If the pcs pin keep assert between transmit and receive. */
+    if (xfer->isPcsAssertInTransfer)
+    {
+        tempXfer.configFlags = (xfer->configFlags) & (uint32_t)(~kSPI_FrameAssert);
+    }
+    else
+    {
+        tempXfer.configFlags = (xfer->configFlags) | kSPI_FrameAssert;
+    }
+
+    status = SPI_MasterTransferBlocking(base, &tempXfer);
+
+    if (status != kStatus_Success)
+    {
+        return status;
+    }
+
+    if (xfer->isTransmitFirst)
+    {
+        tempXfer.txData = NULL;
+        tempXfer.rxData = xfer->rxData;
+        tempXfer.dataSize = xfer->rxDataSize;
+    }
+    else
+    {
+        tempXfer.txData = xfer->txData;
+        tempXfer.rxData = NULL;
+        tempXfer.dataSize = xfer->txDataSize;
+    }
+    tempXfer.configFlags = xfer->configFlags;
+
+    /* SPI transfer blocking. */
+    status = SPI_MasterTransferBlocking(base, &tempXfer);
+
+    return status;
+}
+
+status_t SPI_MasterHalfDuplexTransferNonBlocking(SPI_Type *base,
+                                                 spi_master_handle_t *handle,
+                                                 spi_half_duplex_transfer_t *xfer)
+{
+    assert(xfer);
+    assert(handle);
+    spi_transfer_t tempXfer = {0};
+    status_t status;
+
+    if (xfer->isTransmitFirst)
+    {
+        tempXfer.txData = xfer->txData;
+        tempXfer.rxData = NULL;
+        tempXfer.dataSize = xfer->txDataSize;
+    }
+    else
+    {
+        tempXfer.txData = NULL;
+        tempXfer.rxData = xfer->rxData;
+        tempXfer.dataSize = xfer->rxDataSize;
+    }
+    /* If the PCS pin keep assert between transmit and receive. */
+    if (xfer->isPcsAssertInTransfer)
+    {
+        tempXfer.configFlags = (xfer->configFlags) & (uint32_t)(~kSPI_FrameAssert);
+    }
+    else
+    {
+        tempXfer.configFlags = (xfer->configFlags) | kSPI_FrameAssert;
+    }
+
+    status = SPI_MasterTransferBlocking(base, &tempXfer);
+    if (status != kStatus_Success)
+    {
+        return status;
+    }
+
+    if (xfer->isTransmitFirst)
+    {
+        tempXfer.txData = NULL;
+        tempXfer.rxData = xfer->rxData;
+        tempXfer.dataSize = xfer->rxDataSize;
+    }
+    else
+    {
+        tempXfer.txData = xfer->txData;
+        tempXfer.rxData = NULL;
+        tempXfer.dataSize = xfer->txDataSize;
+    }
+    tempXfer.configFlags = xfer->configFlags;
+
+    status = SPI_MasterTransferNonBlocking(base, handle, &tempXfer);
+
+    return status;
+}
+
 status_t SPI_MasterTransferGetCount(SPI_Type *base, spi_master_handle_t *handle, size_t *count)
 {
     assert(NULL != handle);
@@ -552,6 +696,8 @@ static void SPI_TransferHandleIRQInternal(SPI_Type *base, spi_master_handle_t *h
     uint32_t tx_ctrl = 0, last_ctrl = 0, tmp32;
     bool loopContinue;
     uint32_t fifoDepth;
+    /* Get flexcomm instance by 'base' param */
+    uint32_t instance = SPI_GetInstance(base);
 
     /* check params */
     assert((NULL != base) && (NULL != handle) && ((NULL != handle->txData) || (NULL != handle->rxData)));
@@ -561,10 +707,10 @@ static void SPI_TransferHandleIRQInternal(SPI_Type *base, spi_master_handle_t *h
     tx_ctrl |= (SPI_DEASSERT_ALL & SPI_ASSERTNUM_SSEL(handle->sselNum));
     /* set width of data */
     tx_ctrl |= SPI_FIFOWR_LEN(handle->dataWidth);
+    /* delay for frames */
+    tx_ctrl |= (handle->configFlags & (uint32_t)kSPI_FrameDelay) ? (uint32_t)kSPI_FrameDelay : 0;
     /* end of transfer */
     last_ctrl |= (handle->configFlags & (uint32_t)kSPI_FrameAssert) ? (uint32_t)kSPI_FrameAssert : 0;
-    /* delay end of transfer */
-    last_ctrl |= (handle->configFlags & (uint32_t)kSPI_FrameDelay) ? (uint32_t)kSPI_FrameDelay : 0;
     do
     {
         loopContinue = false;
@@ -619,7 +765,7 @@ static void SPI_TransferHandleIRQInternal(SPI_Type *base, spi_master_handle_t *h
             }
             else
             {
-                tmp32 = SPI_DUMMYDATA;
+                tmp32 = ((uint32_t)s_dummyData[instance] << 8U | (s_dummyData[instance]));
                 /* last transfer */
                 if (handle->rxRemainingBytes == SPI_COUNT_TO_BYTES(handle->dataWidth, handle->toReceiveCount + 1))
                 {

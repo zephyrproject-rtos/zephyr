@@ -1,9 +1,12 @@
 /*
+ * The Clear BSD License
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * are permitted (subject to the limitations in the disclaimer below) provided
+ * that the following conditions are met:
  *
  * o Redistributions of source code must retain the above copyright notice, this list
  *   of conditions and the following disclaimer.
@@ -16,6 +19,7 @@
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -395,6 +399,16 @@ typedef struct _flexcan_fd_frame
 } flexcan_fd_frame_t;
 #endif
 
+/*! @brief FlexCAN protocol timing characteristic configuration structure. */
+typedef struct _flexcan_timing_config
+{
+    uint16_t preDivider; /*!< Clock Pre-scaler Division Factor. */
+    uint8_t rJumpwidth;  /*!< Re-sync Jump Width. */
+    uint8_t phaseSeg1;   /*!< Phase Segment 1. */
+    uint8_t phaseSeg2;   /*!< Phase Segment 2. */
+    uint8_t propSeg;     /*!< Propagation Segment. */
+} flexcan_timing_config_t;
+
 /*! @brief FlexCAN module configuration structure. */
 typedef struct _flexcan_config
 {
@@ -412,17 +426,8 @@ typedef struct _flexcan_config
 #if (defined(FSL_FEATURE_FLEXCAN_HAS_DOZE_MODE_SUPPORT) && FSL_FEATURE_FLEXCAN_HAS_DOZE_MODE_SUPPORT)
     bool enableDoze; /*!< Enable or Disable Doze Mode. */
 #endif
+    flexcan_timing_config_t timingConfig;       /* Protocol timing . */
 } flexcan_config_t;
-
-/*! @brief FlexCAN protocol timing characteristic configuration structure. */
-typedef struct _flexcan_timing_config
-{
-    uint16_t preDivider; /*!< Clock Pre-scaler Division Factor. */
-    uint8_t rJumpwidth;  /*!< Re-sync Jump Width. */
-    uint8_t phaseSeg1;   /*!< Phase Segment 1. */
-    uint8_t phaseSeg2;   /*!< Phase Segment 2. */
-    uint8_t propSeg;     /*!< Propagation Segment. */
-} flexcan_timing_config_t;
 
 /*!
  * @brief FlexCAN Receive Message Buffer configuration structure
@@ -525,6 +530,7 @@ extern "C" {
  *   flexcanConfig.enableSelfWakeup  = false;
  *   flexcanConfig.enableIndividMask = false;
  *   flexcanConfig.enableDoze        = false;
+ *   flexcanConfig.timingConfig      = timingConfig;
  *   FLEXCAN_Init(CAN0, &flexcanConfig, 8000000UL);
  *   @endcode
  *
@@ -556,6 +562,7 @@ void FLEXCAN_Deinit(CAN_Type *base);
  *   flexcanConfig->enableSelfWakeup  = false;
  *   flexcanConfig->enableIndividMask = false;
  *   flexcanConfig->enableDoze        = false;
+ *   flexcanConfig.timingConfig       = timingConfig;
  *
  * @param config Pointer to the FlexCAN configuration structure.
  */

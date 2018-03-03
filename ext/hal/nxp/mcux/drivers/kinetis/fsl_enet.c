@@ -1,9 +1,12 @@
 /*
+ * The Clear BSD License
  * Copyright (c) 2015 - 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * are permitted (subject to the limitations in the disclaimer below) provided
+ * that the following conditions are met:
  *
  * o Redistributions of source code must retain the above copyright notice, this list
  *   of conditions and the following disclaimer.
@@ -16,6 +19,7 @@
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -99,7 +103,7 @@
 /*! @brief NanoSecond in one second. */
 #define ENET_NANOSECOND_ONE_SECOND 1000000000U
 /*! @brief Define a common clock cycle delays used for time stamp capture. */
-#define ENET_1588TIME_DELAY_COUNT 38U
+#define ENET_1588TIME_DELAY_COUNT 10U
 
 /*! @brief Defines the macro for converting constants from host byte order to network byte order. */
 #define ENET_HTONS(n) __REV16(n)
@@ -363,6 +367,17 @@ void ENET_Init(ENET_Type *base,
     assert(macAddr);
     assert(config->ringNum <= FSL_FEATURE_ENET_QUEUE);
 
+    uint8_t count;
+    const enet_buffer_config_t *buffCfg = bufferConfig;
+
+    /* Check the input parameter. */
+    for (count = 0; count < config->ringNum; count++)
+    {
+        assert(buffCfg);
+        assert(buffCfg->rxBuffSizeAlign * buffCfg->rxBdNumber > config->rxMaxFrameLen);
+        buffCfg++;
+    }
+
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     uint32_t instance = ENET_GetInstance(base);
 
@@ -424,8 +439,6 @@ static void ENET_SetHandler(ENET_Type *base,
     handle->ringNum = (config->ringNum > FSL_FEATURE_ENET_QUEUE) ? FSL_FEATURE_ENET_QUEUE : config->ringNum;
     for (count = 0; count < handle->ringNum; count++)
     {
-        assert(buffCfg->rxBuffSizeAlign * buffCfg->rxBdNumber > config->rxMaxFrameLen);
-
         handle->rxBdBase[count] = buffCfg->rxBdStartAddrAlign;
         handle->rxBdCurrent[count] = buffCfg->rxBdStartAddrAlign;
         handle->rxBuffSizeAlign[count] = buffCfg->rxBuffSizeAlign;

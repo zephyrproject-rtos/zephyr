@@ -1,9 +1,12 @@
 /*
+ * The Clear BSD License
  * Copyright (c) 2015-2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * are permitted (subject to the limitations in the disclaimer below) provided
+ * that the following conditions are met:
  *
  * o Redistributions of source code must retain the above copyright notice, this list
  *   of conditions and the following disclaimer.
@@ -16,6 +19,7 @@
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -59,14 +63,6 @@ typedef void (*uart_isr_t)(UART_Type *base, uart_handle_t *handle);
  * @return UART instance.
  */
 uint32_t UART_GetInstance(UART_Type *base);
-
-/*!
- * @brief Get the length of received data in RX ring buffer.
- *
- * @param handle UART handle pointer.
- * @return Length of received data in RX ring buffer.
- */
-static size_t UART_TransferGetRxRingBufferLength(uart_handle_t *handle);
 
 /*!
  * @brief Check whether the RX ring buffer is full.
@@ -171,7 +167,7 @@ uint32_t UART_GetInstance(UART_Type *base)
     return instance;
 }
 
-static size_t UART_TransferGetRxRingBufferLength(uart_handle_t *handle)
+size_t UART_TransferGetRxRingBufferLength(uart_handle_t *handle)
 {
     assert(handle);
 
@@ -277,8 +273,10 @@ status_t UART_Init(UART_Type *base, const uart_config_t *config, uint32_t srcClo
     base->C4 = (base->C4 & ~UART_C4_BRFA_MASK) | (brfa & UART_C4_BRFA_MASK);
 #endif
 
-    /* Set bit count and parity mode. */
-    temp = base->C1 & ~(UART_C1_PE_MASK | UART_C1_PT_MASK | UART_C1_M_MASK);
+    /* Set bit count/parity mode/idle type. */
+    temp = base->C1 & ~(UART_C1_PE_MASK | UART_C1_PT_MASK | UART_C1_M_MASK | UART_C1_ILT_MASK);
+
+    temp |= UART_C1_ILT(config->idleType);
 
     if (kUART_ParityDisabled != config->parityMode)
     {
@@ -293,7 +291,15 @@ status_t UART_Init(UART_Type *base, const uart_config_t *config, uint32_t srcClo
 #endif
 
 #if defined(FSL_FEATURE_UART_HAS_FIFO) && FSL_FEATURE_UART_HAS_FIFO
-    /* Set tx/rx FIFO watermark */
+    /* Set tx/rx FIFO watermark
+       Note:
+       Take care of the RX FIFO, RX interrupt request only assert when received bytes
+       equal or more than RX water mark, there is potential issue if RX water
+       mark larger than 1.
+       For example, if RX FIFO water mark is 2, upper layer needs 5 bytes and
+       5 bytes are received. the last byte will be saved in FIFO but not trigger
+       RX interrupt because the water mark is 2.
+     */
     base->TWFIFO = config->txFifoWatermark;
     base->RWFIFO = config->rxFifoWatermark;
 
@@ -302,6 +308,18 @@ status_t UART_Init(UART_Type *base, const uart_config_t *config, uint32_t srcClo
 
     /* Flush FIFO */
     base->CFIFO |= (UART_CFIFO_TXFLUSH_MASK | UART_CFIFO_RXFLUSH_MASK);
+#endif
+#if defined(FSL_FEATURE_UART_HAS_MODEM_SUPPORT) && FSL_FEATURE_UART_HAS_MODEM_SUPPORT
+    if (config->enableRxRTS)
+    {
+        /* Enable receiver RTS(request-to-send) function. */
+        base->MODEM |= UART_MODEM_RXRTSE_MASK;
+    }
+    if (config->enableTxCTS)
+    {
+        /* Enable transmiter CTS(clear-to-send) function. */
+        base->MODEM |= UART_MODEM_TXCTSE_MASK;
+    }
 #endif
 
     /* Enable TX/RX base on configure structure. */
@@ -357,6 +375,11 @@ void UART_GetDefaultConfig(uart_config_t *config)
     config->txFifoWatermark = 0;
     config->rxFifoWatermark = 1;
 #endif
+#if defined(FSL_FEATURE_UART_HAS_MODEM_SUPPORT) && FSL_FEATURE_UART_HAS_MODEM_SUPPORT
+    config->enableRxRTS = false;
+    config->enableTxCTS = false;
+#endif
+    config->idleType = kUART_IdleTypeStartBit;
     config->enableTx = false;
     config->enableRx = false;
 }
@@ -643,18 +666,6 @@ void UART_TransferCreateHandle(UART_Type *base,
     handle->callback = callback;
     handle->userData = userData;
 
-#if defined(FSL_FEATURE_UART_HAS_FIFO) && FSL_FEATURE_UART_HAS_FIFO
-    /* Note:
-       Take care of the RX FIFO, RX interrupt request only assert when received bytes
-       equal or more than RX water mark, there is potential issue if RX water
-       mark larger than 1.
-       For example, if RX FIFO water mark is 2, upper layer needs 5 bytes and
-       5 bytes are received. the last byte will be saved in FIFO but not trigger
-       RX interrupt because the water mark is 2.
-     */
-    base->RWFIFO = 1U;
-#endif
-
     /* Get instance from peripheral base address. */
     instance = UART_GetInstance(base);
 
@@ -863,9 +874,9 @@ status_t UART_TransferReceiveNonBlocking(UART_Type *base,
             handle->rxDataSizeAll = bytesToReceive;
             handle->rxState = kUART_RxBusy;
 
-            /* Enable RX/Rx overrun/framing error interrupt. */
+            /* Enable RX/Rx overrun/framing error/idle line interrupt. */
             UART_EnableInterrupts(base, kUART_RxDataRegFullInterruptEnable | kUART_RxOverrunInterruptEnable |
-                                            kUART_FramingErrorInterruptEnable);
+                                            kUART_FramingErrorInterruptEnable | kUART_IdleLineInterruptEnable);
             /* Enable parity error interrupt when parity mode is enable*/
             if (UART_C1_PE_MASK & base->C1)
             {
@@ -894,7 +905,7 @@ void UART_TransferAbortReceive(UART_Type *base, uart_handle_t *handle)
     {
         /* Disable RX interrupt. */
         UART_DisableInterrupts(base, kUART_RxDataRegFullInterruptEnable | kUART_RxOverrunInterruptEnable |
-                                         kUART_FramingErrorInterruptEnable);
+                                         kUART_FramingErrorInterruptEnable | kUART_IdleLineInterruptEnable);
         /* Disable parity error interrupt when parity mode is enable*/
         if (UART_C1_PE_MASK & base->C1)
         {
@@ -996,6 +1007,65 @@ void UART_TransferHandleIRQ(UART_Type *base, uart_handle_t *handle)
         }
     }
 
+    /* If IDLE line was detected. */
+    if ((UART_S1_IDLE_MASK & base->S1) && (UART_C2_ILIE_MASK & base->C2))
+    {
+#if defined(FSL_FEATURE_UART_HAS_FIFO) && FSL_FEATURE_UART_HAS_FIFO
+        /* If still some data in the FIFO, read out these data to user data buffer. */
+        count = base->RCFIFO;
+        /* If handle->rxDataSize is not 0, first save data to handle->rxData. */
+        while ((count) && (handle->rxDataSize))
+        {
+            tempCount = MIN(handle->rxDataSize, count);
+
+            /* Using non block API to read the data from the registers. */
+            UART_ReadNonBlocking(base, handle->rxData, tempCount);
+            handle->rxData += tempCount;
+            handle->rxDataSize -= tempCount;
+            count -= tempCount;
+
+            /* If all the data required for upper layer is ready, trigger callback. */
+            if (!handle->rxDataSize)
+            {
+                handle->rxState = kUART_RxIdle;
+
+                /* Disable RX interrupt/overrun interrupt/fram error/idle line detected interrupt */
+                UART_DisableInterrupts(base, kUART_RxDataRegFullInterruptEnable | kUART_RxOverrunInterruptEnable |
+                                                 kUART_FramingErrorInterruptEnable);
+
+                /* Disable parity error interrupt when parity mode is enable*/
+                if (UART_C1_PE_MASK & base->C1)
+                {
+                    UART_DisableInterrupts(base, kUART_ParityErrorInterruptEnable);
+                }
+
+                if (handle->callback)
+                {
+                    handle->callback(base, handle, kStatus_UART_RxIdle, handle->userData);
+                }
+            }
+        }
+#endif
+        /* To clear IDLE, read UART status S1 with IDLE set and then read D.*/
+        while (UART_S1_IDLE_MASK & base->S1)
+        {
+            (void)base->D;
+        }
+#if defined(FSL_FEATURE_UART_HAS_FIFO) && FSL_FEATURE_UART_HAS_FIFO
+        /* Flush FIFO date, otherwise FIFO pointer will be in unknown state. */
+        base->CFIFO |= UART_CFIFO_RXFLUSH_MASK;
+#endif
+        /* If rxDataSize is 0, disable idle line interrupt.*/
+        if (!(handle->rxDataSize))
+        {
+            UART_DisableInterrupts(base, kUART_IdleLineInterruptEnable);
+        }
+        /* If callback is not NULL and rxDataSize is not 0. */
+        if ((handle->callback) && (handle->rxDataSize))
+        {
+            handle->callback(base, handle, kStatus_UART_IdleLineDetected, handle->userData);
+        }
+    }
     /* Receive data register full */
     if ((UART_S1_RDRF_MASK & base->S1) && (UART_C2_RIE_MASK & base->C2))
     {
@@ -1078,7 +1148,7 @@ void UART_TransferHandleIRQ(UART_Type *base, uart_handle_t *handle)
 
         else if (!handle->rxDataSize)
         {
-            /* Disable RX interrupt/overrun interrupt/fram error interrupt */
+            /* Disable RX interrupt/overrun interrupt/fram error/idle line detected interrupt */
             UART_DisableInterrupts(base, kUART_RxDataRegFullInterruptEnable | kUART_RxOverrunInterruptEnable |
                                              kUART_FramingErrorInterruptEnable);
 
@@ -1098,7 +1168,7 @@ void UART_TransferHandleIRQ(UART_Type *base, uart_handle_t *handle)
         (!handle->rxRingBuffer))
     {
         UART_DisableInterrupts(base, kUART_RxDataRegFullInterruptEnable | kUART_RxOverrunInterruptEnable |
-                                         kUART_FramingErrorInterruptEnable);
+                                         kUART_FramingErrorInterruptEnable | kUART_IdleLineInterruptEnable);
 
         /* Disable parity error interrupt when parity mode is enable*/
         if (UART_C1_PE_MASK & base->C1)
@@ -1160,11 +1230,21 @@ void UART_TransferHandleErrorIRQ(UART_Type *base, uart_handle_t *handle)
 void UART0_DriverIRQHandler(void)
 {
     s_uartIsr(UART0, s_uartHandle[0]);
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void UART0_RX_TX_DriverIRQHandler(void)
 {
     UART0_DriverIRQHandler();
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 #endif
 #endif
@@ -1173,11 +1253,21 @@ void UART0_RX_TX_DriverIRQHandler(void)
 void UART1_DriverIRQHandler(void)
 {
     s_uartIsr(UART1, s_uartHandle[1]);
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void UART1_RX_TX_DriverIRQHandler(void)
 {
     UART1_DriverIRQHandler();
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 #endif
 
@@ -1185,11 +1275,21 @@ void UART1_RX_TX_DriverIRQHandler(void)
 void UART2_DriverIRQHandler(void)
 {
     s_uartIsr(UART2, s_uartHandle[2]);
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void UART2_RX_TX_DriverIRQHandler(void)
 {
     UART2_DriverIRQHandler();
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 #endif
 
@@ -1197,11 +1297,21 @@ void UART2_RX_TX_DriverIRQHandler(void)
 void UART3_DriverIRQHandler(void)
 {
     s_uartIsr(UART3, s_uartHandle[3]);
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void UART3_RX_TX_DriverIRQHandler(void)
 {
     UART3_DriverIRQHandler();
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 #endif
 
@@ -1209,11 +1319,21 @@ void UART3_RX_TX_DriverIRQHandler(void)
 void UART4_DriverIRQHandler(void)
 {
     s_uartIsr(UART4, s_uartHandle[4]);
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void UART4_RX_TX_DriverIRQHandler(void)
 {
     UART4_DriverIRQHandler();
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 #endif
 
@@ -1221,10 +1341,20 @@ void UART4_RX_TX_DriverIRQHandler(void)
 void UART5_DriverIRQHandler(void)
 {
     s_uartIsr(UART5, s_uartHandle[5]);
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 
 void UART5_RX_TX_DriverIRQHandler(void)
 {
     UART5_DriverIRQHandler();
+    /* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+      exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 #endif

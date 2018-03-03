@@ -1,9 +1,12 @@
 /*
+ * The Clear BSD License
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * are permitted (subject to the limitations in the disclaimer below) provided
+ * that the following conditions are met:
  *
  * o Redistributions of source code must retain the above copyright notice, this list
  *   of conditions and the following disclaimer.
@@ -16,6 +19,7 @@
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -28,8 +32,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef FSL_GPIO_H_
-#define FSL_GPIO_H_
+#ifndef _LPC_GPIO_H_
+#define _LPC_GPIO_H_
 
 #include "fsl_common.h"
 
@@ -46,8 +50,8 @@
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief LPC GPIO driver version 2.0.0. */
-#define FSL_GPIO_DRIVER_VERSION (MAKE_VERSION(2, 0, 0))
+/*! @brief LPC GPIO driver version 2.1.1. */
+#define FSL_GPIO_DRIVER_VERSION (MAKE_VERSION(2, 1, 1))
 /*@}*/
 
 /*! @brief LPC GPIO direction definition */
@@ -79,6 +83,25 @@ extern "C" {
 
 /*! @name GPIO Configuration */
 /*@{*/
+
+/*!
+ * @brief Initializes the GPIO peripheral.
+ *
+ * This function ungates the GPIO clock.
+ *
+ * @param base   GPIO peripheral base pointer.
+ * @param port   GPIO port number.
+ */
+void GPIO_PortInit(GPIO_Type *base, uint32_t port);
+
+/*!
+ * @brief Initializes the GPIO peripheral.
+ * @deprecated Do not use this function.  It has been superceded by @ref GPIO_PortInit.
+ */
+static inline void GPIO_Init(GPIO_Type *base, uint32_t port)
+{
+    GPIO_PortInit(base, port);
+}
 
 /*!
  * @brief Initializes a GPIO pin used by the board.
@@ -124,6 +147,15 @@ void GPIO_PinInit(GPIO_Type *base, uint32_t port, uint32_t pin, const gpio_pin_c
  *        - 0: corresponding pin output low-logic level.
  *        - 1: corresponding pin output high-logic level.
  */
+static inline void GPIO_PinWrite(GPIO_Type *base, uint32_t port, uint32_t pin, uint8_t output)
+{
+    base->B[port][pin] = output;
+}
+
+/*!
+ * @brief Sets the output level of the one GPIO pin to the logic 1 or 0.
+ * @deprecated Do not use this function.  It has been superceded by @ref GPIO_PinWrite.
+ */
 static inline void GPIO_WritePinOutput(GPIO_Type *base, uint32_t port, uint32_t pin, uint8_t output)
 {
     base->B[port][pin] = output;
@@ -142,9 +174,18 @@ static inline void GPIO_WritePinOutput(GPIO_Type *base, uint32_t port, uint32_t 
  *        - 0: corresponding pin input low-logic level.
  *        - 1: corresponding pin input high-logic level.
  */
-static inline uint32_t GPIO_ReadPinInput(GPIO_Type *base, uint32_t port, uint32_t pin)
+static inline uint32_t GPIO_PinRead(GPIO_Type *base, uint32_t port, uint32_t pin)
 {
     return (uint32_t)base->B[port][pin];
+}
+
+/*!
+ * @brief Reads the current input value of the GPIO PIN.
+ * @deprecated Do not use this function.  It has been superceded by @ref GPIO_PinRead.
+ */
+static inline uint32_t GPIO_ReadPinInput(GPIO_Type *base, uint32_t port, uint32_t pin)
+{
+    return GPIO_PinRead(base, port, pin);
 }
 /*@}*/
 
@@ -155,9 +196,18 @@ static inline uint32_t GPIO_ReadPinInput(GPIO_Type *base, uint32_t port, uint32_
  * @param port GPIO port number
  * @param mask GPIO pin number macro
  */
-static inline void GPIO_SetPinsOutput(GPIO_Type *base, uint32_t port, uint32_t mask)
+static inline void GPIO_PortSet(GPIO_Type *base, uint32_t port, uint32_t mask)
 {
     base->SET[port] = mask;
+}
+
+/*!
+ * @brief Sets the output level of the multiple GPIO pins to the logic 1.
+ * @deprecated Do not use this function.  It has been superceded by @ref GPIO_PortSet.
+ */
+static inline void GPIO_SetPinsOutput(GPIO_Type *base, uint32_t port, uint32_t mask)
+{
+    GPIO_PortSet(base, port, mask);
 }
 
 /*!
@@ -167,9 +217,18 @@ static inline void GPIO_SetPinsOutput(GPIO_Type *base, uint32_t port, uint32_t m
  * @param port GPIO port number
  * @param mask GPIO pin number macro
  */
-static inline void GPIO_ClearPinsOutput(GPIO_Type *base, uint32_t port, uint32_t mask)
+static inline void GPIO_PortClear(GPIO_Type *base, uint32_t port, uint32_t mask)
 {
     base->CLR[port] = mask;
+}
+
+/*!
+ * @brief Sets the output level of the multiple GPIO pins to the logic 0.
+ * @deprecated Do not use this function.  It has been superceded by @ref GPIO_PortClear.
+ */
+static inline void GPIO_ClearPinsOutput(GPIO_Type *base, uint32_t port, uint32_t mask)
+{
+    GPIO_PortClear(base, port, mask);
 }
 
 /*!
@@ -179,9 +238,18 @@ static inline void GPIO_ClearPinsOutput(GPIO_Type *base, uint32_t port, uint32_t
  * @param port GPIO port number
  * @param mask GPIO pin number macro
  */
-static inline void GPIO_TogglePinsOutput(GPIO_Type *base, uint32_t port, uint32_t mask)
+static inline void GPIO_PortToggle(GPIO_Type *base, uint32_t port, uint32_t mask)
 {
     base->NOT[port] = mask;
+}
+
+/*!
+ * @brief Reverses current output logic of the multiple GPIO pins.
+ * @deprecated Do not use this function.  It has been superceded by @ref GPIO_PortToggle.
+ */
+static inline void GPIO_TogglePinsOutput(GPIO_Type *base, uint32_t port, uint32_t mask)
+{
+    GPIO_PortToggle(base, port, mask);
 }
 /*@}*/
 
@@ -191,9 +259,18 @@ static inline void GPIO_TogglePinsOutput(GPIO_Type *base, uint32_t port, uint32_
  * @param base GPIO peripheral base pointer(Typically GPIO)
  * @param port GPIO port number
  */
-static inline uint32_t GPIO_ReadPinsInput(GPIO_Type *base, uint32_t port)
+static inline uint32_t GPIO_PortRead(GPIO_Type *base, uint32_t port)
 {
     return (uint32_t)base->PIN[port];
+}
+
+/*!
+ * @brief Reads the current input value of the whole GPIO port.
+ * @deprecated Do not use this function.  It has been superceded by @ref GPIO_PortRead
+ */
+static inline uint32_t GPIO_ReadPinsInput(GPIO_Type *base, uint32_t port)
+{
+    return GPIO_PortRead(base, port);
 }
 
 /*@}*/
@@ -207,9 +284,18 @@ static inline uint32_t GPIO_ReadPinsInput(GPIO_Type *base, uint32_t port)
  * @param port GPIO port number
  * @param mask GPIO pin number macro
  */
-static inline void GPIO_SetPortMask(GPIO_Type *base, uint32_t port, uint32_t mask)
+static inline void GPIO_PortMaskedSet(GPIO_Type *base, uint32_t port, uint32_t mask)
 {
     base->MASK[port] = mask;
+}
+
+/*!
+ * @brief Sets port mask, 0 - enable pin, 1 - disable pin.
+ * @deprecated Do not use this function.  It has been superceded by @ref GPIO_PortMaskedSet.
+ */
+static inline void GPIO_SetPortMask(GPIO_Type *base, uint32_t port, uint32_t mask)
+{
+    GPIO_PortMaskedSet(base, port, mask);
 }
 
 /*!
@@ -219,9 +305,18 @@ static inline void GPIO_SetPortMask(GPIO_Type *base, uint32_t port, uint32_t mas
  * @param port   GPIO port number
  * @param output  GPIO port output value.
  */
-static inline void GPIO_WriteMPort(GPIO_Type *base, uint32_t port, uint32_t output)
+static inline void GPIO_PortMaskedWrite(GPIO_Type *base, uint32_t port, uint32_t output)
 {
     base->MPIN[port] = output;
+}
+
+/*!
+ * @brief Sets the output level of the masked GPIO port. Only pins enabled by GPIO_SetPortMask() will be affected.
+ * @deprecated Do not use this function.  It has been superceded by @ref GPIO_PortMaskedWrite.
+ */
+static inline void GPIO_WriteMPort(GPIO_Type *base, uint32_t port, uint32_t output)
+{
+    GPIO_PortMaskedWrite(base, port, output);
 }
 
 /*!
@@ -232,9 +327,19 @@ static inline void GPIO_WriteMPort(GPIO_Type *base, uint32_t port, uint32_t outp
  * @param port   GPIO port number
  * @retval       masked GPIO port value
  */
-static inline uint32_t GPIO_ReadMPort(GPIO_Type *base, uint32_t port)
+static inline uint32_t GPIO_PortMaskedRead(GPIO_Type *base, uint32_t port)
 {
     return (uint32_t)base->MPIN[port];
+}
+
+/*!
+ * @brief Reads the current input value of the masked GPIO port. Only pins enabled by GPIO_SetPortMask() will be
+ * affected.
+ * @deprecated Do not use this function.  It has been superceded by @ref GPIO_PortMaskedRead.
+ */
+static inline uint32_t GPIO_ReadMPort(GPIO_Type *base, uint32_t port)
+{
+    return GPIO_PortMaskedRead(base, port);
 }
 
 /*@}*/

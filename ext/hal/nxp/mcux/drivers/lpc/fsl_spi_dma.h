@@ -1,9 +1,12 @@
 /*
+ * The Clear BSD License
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * are permitted (subject to the limitations in the disclaimer below) provided
+ * that the following conditions are met:
  *
  * o Redistributions of source code must retain the above copyright notice, this list
  *   of conditions and the following disclaimer.
@@ -16,6 +19,7 @@
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -110,6 +114,21 @@ status_t SPI_MasterTransferCreateHandleDMA(SPI_Type *base,
  * @retval kStatus_SPI_Busy SPI is not idle, is running another transfer.
  */
 status_t SPI_MasterTransferDMA(SPI_Type *base, spi_dma_handle_t *handle, spi_transfer_t *xfer);
+
+/*!
+ * @brief Transfers a block of data using a DMA method.
+ *
+ * This function using polling way to do the first half transimission and using DMA way to
+ * do the srcond half transimission, the transfer mechanism is half-duplex.
+ * When do the second half transimission, code will return right away. When all data is transferred,
+ * the callback function is called.
+ *
+ * @param base SPI base pointer
+ * @param handle A pointer to the spi_master_dma_handle_t structure which stores the transfer state.
+ * @param transfer A pointer to the spi_half_duplex_transfer_t structure.
+ * @return status of status_t.
+ */
+status_t SPI_MasterHalfDuplexTransferDMA(SPI_Type *base, spi_dma_handle_t *handle, spi_half_duplex_transfer_t *xfer);
 
 /*!
  * @brief Initialize the SPI slave DMA handle.

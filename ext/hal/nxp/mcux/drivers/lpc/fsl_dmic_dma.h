@@ -1,9 +1,12 @@
 /*
+ * The Clear BSD License
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * are permitted (subject to the limitations in the disclaimer below) provided
+ * that the following conditions are met:
  *
  * o Redistributions of source code must retain the above copyright notice, this list
  *   of conditions and the following disclaimer.
@@ -16,6 +19,7 @@
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -51,6 +55,13 @@ typedef struct _dmic_transfer
     size_t dataSize; /*!< The byte count to be transfer. */
 } dmic_transfer_t;
 
+/*! @brief DMIC transfer structure. */
+typedef enum dmic_bitwidth
+{
+    kDMICBitWidth16Bits = 2U, /*!< 16 bits mode.*/
+    kDMICBitWidth32Bits = 4U, /*!< 32 bits mode. */
+} dmic_bitwidth_t;
+
 /* Forward declaration of the handle typedef. */
 typedef struct _dmic_dma_handle dmic_dma_handle_t;
 
@@ -68,6 +79,7 @@ struct _dmic_dma_handle
     DMIC_Type *base;                       /*!< DMIC peripheral base address. */
     dma_handle_t *rxDmaHandle;             /*!< The DMA RX channel used. */
     dmic_dma_transfer_callback_t callback; /*!< Callback function. */
+    uint8_t dataWidth;                     /*!< Data bit width */
     void *userData;                        /*!< DMIC callback function parameter.*/
     size_t transferSize;                   /*!< Size of the data to receive. */
     volatile uint8_t state;                /*!< Internal state of DMIC DMA transfer */
@@ -101,15 +113,32 @@ status_t DMIC_TransferCreateHandleDMA(DMIC_Type *base,
                                       dma_handle_t *rxDmaHandle);
 
 /*!
+ * @brief Configure the transfer data width.
+ *
+ * This function is optional to users, the default data width is set to 16 bits if not call this fuction.
+ * DMIC only support 16 bits and 32 bits setting. As DMA cannot support 24 bits directly, please set to 32 bits
+ * while need a 24 bits data. In 32 bit mode, the MSB 8 bits always 0, as the register can only have 24 bits valid bits.
+ *
+ * @param base DMIC peripheral base address.
+ * @param handle Pointer to usart_dma_handle_t structure.
+ * @param width DMIC width. See #dmic_bitwidth_t.
+ * @retval kStatus_Success
+ */
+static inline void DMIC_TransferSetBitWidthDMA(DMIC_Type *base, dmic_dma_handle_t *handle, dmic_bitwidth_t width)
+{
+    handle->dataWidth = width;
+}
+
+/*!
  * @brief Receives data using DMA.
  *
  * This function receives data using DMA. This is a non-blocking function, which returns
  * right away. When all data is received, the receive callback function is called.
  *
- * @param base USART peripheral base address.
+ * @param base DMIC peripheral base address.
  * @param handle Pointer to usart_dma_handle_t structure.
  * @param xfer DMIC DMA transfer structure. See #dmic_transfer_t.
- * @param dmic_channel DMIC channel 
+ * @param dmic_channel DMIC channel
  * @retval kStatus_Success
  */
 status_t DMIC_TransferReceiveDMA(DMIC_Type *base,

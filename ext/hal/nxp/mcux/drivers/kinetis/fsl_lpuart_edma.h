@@ -31,6 +31,7 @@
 #define _FSL_LPUART_EDMA_H_
 
 #include "fsl_lpuart.h"
+#include "fsl_dmamux.h"
 #include "fsl_edma.h"
 
 /*!

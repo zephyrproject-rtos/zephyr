@@ -18,24 +18,24 @@
 **
 **     Reference manual:    K64P144M120SF5RM, Rev.2, January 2014
 **     Version:             rev. 2.9, 2016-03-21
-**     Build:               b170112
+**     Build:               b170811
 **
 **     Abstract:
 **         CMSIS Peripheral Access Layer for MK64F12
 **
-**     Copyright (c) 1997 - 2016 Freescale Semiconductor, Inc.
-**     Copyright 2016 - 2017 NXP
+**     Copyright 1997-2016 Freescale Semiconductor, Inc.
+**     Copyright 2016-2017 NXP
 **     Redistribution and use in source and binary forms, with or without modification,
 **     are permitted provided that the following conditions are met:
 **
-**     o Redistributions of source code must retain the above copyright notice, this list
+**     1. Redistributions of source code must retain the above copyright notice, this list
 **       of conditions and the following disclaimer.
 **
-**     o Redistributions in binary form must reproduce the above copyright notice, this
+**     2. Redistributions in binary form must reproduce the above copyright notice, this
 **       list of conditions and the following disclaimer in the documentation and/or
 **       other materials provided with the distribution.
 **
-**     o Neither the name of the copyright holder nor the names of its
+**     3. Neither the name of the copyright holder nor the names of its
 **       contributors may be used to endorse or promote products derived from this
 **       software without specific prior written permission.
 **
