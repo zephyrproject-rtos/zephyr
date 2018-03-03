@@ -87,6 +87,30 @@
 			status = "disabled";
 			label = "USART_1";
 		};
+
+		porta: gpio@400E0E00 {
+			compatible = "atmel,sam-gpio";
+			reg = <0x400E0E00 0x190>;
+			interrupts = <11 1>;
+			peripheral-id = <11>;
+			label = "PORTA";
+		};
+
+		portb: gpio@400E1000 {
+			compatible = "atmel,sam-gpio";
+			reg = <0x400E1000 0x190>;
+			interrupts = <12 1>;
+			peripheral-id = <12>;
+			label = "PORTB";
+		};
+
+		portc: gpio@400E1200 {
+			compatible = "atmel,sam-gpio";
+			reg = <0x400E1200 0x190>;
+			interrupts = <13 1>;
+			peripheral-id = <13>;
+			label = "PORTC";
+		};
 	};
 };
 
