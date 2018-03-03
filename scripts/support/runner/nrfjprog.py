@@ -12,10 +12,11 @@ from .core import ZephyrBinaryRunner, RunnerCaps
 class NrfJprogBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for nrfjprog.'''
 
-    def __init__(self, hex_, family, debug=False):
+    def __init__(self, hex_, family, softreset, debug=False):
         super(NrfJprogBinaryRunner, self).__init__(debug=debug)
         self.hex_ = hex_
         self.family = family
+        self.softreset = softreset
 
     @classmethod
     def name(cls):
@@ -30,11 +31,14 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--nrf-family', required=True,
                             choices=['NRF51', 'NRF52'],
                             help='family of nRF MCU')
+        parser.add_argument('--softreset', required=False,
+                            action='store_true',
+                            help='use reset instead of pinreset')
 
     @classmethod
     def create_from_args(cls, args):
         return NrfJprogBinaryRunner(args.kernel_hex, args.nrf_family,
-                                    debug=args.verbose)
+                                    args.softreset, debug=args.verbose)
 
     def get_board_snr_from_user(self):
         snrs = self.check_output(['nrfjprog', '--ids'])
@@ -74,14 +78,19 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
             ['nrfjprog', '--program', self.hex_, '-f', self.family, '--snr',
              board_snr],
         ]
-        if self.family == 'NRF52':
+        if self.family == 'NRF52' and self.softreset == False:
             commands.extend([
                 # Enable pin reset
                 ['nrfjprog', '--pinresetenable', '-f', self.family,
                  '--snr', board_snr],
             ])
-        commands.append(['nrfjprog', '--pinreset', '-f', self.family,
-                         '--snr', board_snr])
+
+        if self.softreset:
+            commands.append(['nrfjprog', '--reset', '-f', self.family,
+                             '--snr', board_snr])
+        else:
+            commands.append(['nrfjprog', '--pinreset', '-f', self.family,
+                             '--snr', board_snr])
 
         for cmd in commands:
             self.check_call(cmd)
