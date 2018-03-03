@@ -444,7 +444,7 @@ struct net_eth_hdr *net_eth_fill_header(struct ethernet_context *ctx,
 		hdr_vlan = (struct net_eth_vlan_hdr *)(frag->data -
 						       net_pkt_ll_reserve(pkt));
 
-		if (dst) {
+		if (dst && ((u8_t *)&hdr_vlan->dst != dst)) {
 			memcpy(&hdr_vlan->dst, dst,
 			       sizeof(struct net_eth_addr));
 		}
@@ -469,7 +469,7 @@ struct net_eth_hdr *net_eth_fill_header(struct ethernet_context *ctx,
 
 	hdr = (struct net_eth_hdr *)(frag->data - net_pkt_ll_reserve(pkt));
 
-	if (dst) {
+	if (dst && ((u8_t *)&hdr->dst != dst)) {
 		memcpy(&hdr->dst, dst, sizeof(struct net_eth_addr));
 	}
 
