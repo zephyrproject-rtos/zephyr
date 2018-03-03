@@ -54,6 +54,8 @@ features:
 +-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | watchdog                            |
 +-----------+------------+-------------------------------------+
+| GPIO      | on-chip    | gpio                                |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by Zephyr.
 
