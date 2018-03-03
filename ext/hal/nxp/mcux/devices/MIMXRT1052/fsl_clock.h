@@ -1,8 +1,11 @@
 /*
+ * The Clear BSD License
  * Copyright 2017 NXP
+ * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * are permitted (subject to the limitations in the disclaimer below) provided
+ * that the following conditions are met:
  *
  * o Redistributions of source code must retain the above copyright notice, this list
  *   of conditions and the following disclaimer.
@@ -15,6 +18,7 @@
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -43,6 +47,13 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
+
+ /*! @name Driver version */
+/*@{*/
+/*! @brief CLOCK driver version 2.1.1. */
+#define FSL_CLOCK_DRIVER_VERSION (MAKE_VERSION(2, 1, 1))
+
+/*@}*/
 #define CCM_TUPLE(reg, shift, mask, busyShift) ((((uint32_t)(&((CCM_Type *)0U)->reg)) & 0xFFU) | ((shift) << 8U) | ((((mask) >> (shift)) & 0x1FFFU) << 13U) | ((busyShift) << 26U))
 #define CCM_TUPLE_REG(base, tuple)     (*((volatile uint32_t *)(((uint32_t)(base)) + ((tuple) & 0xFFU))))
 #define CCM_TUPLE_SHIFT(tuple)         (((tuple) >> 8U) & 0x1FU)
@@ -50,6 +61,14 @@
 #define CCM_TUPLE_BUSY_SHIFT(tuple)    (((tuple) >> 26U) & 0x3FU)
 
 #define CCM_NO_BUSY_WAIT (0x20U)
+
+/*!
+ * @brief CCM ANALOG tuple macros to map corresponding registers and bit fields.
+ */
+#define CCM_ANALOG_TUPLE(reg, shift)               ((((uint32_t)(&((CCM_ANALOG_Type *)0U) -> reg) & 0xFFFU) << 16U) | (shift))
+#define CCM_ANALOG_TUPLE_SHIFT(tuple)              (((uint32_t)tuple) & 0x1FU)
+#define CCM_ANALOG_TUPLE_REG_OFF(base, tuple, off) (*((volatile uint32_t *)((uint32_t)base + (((uint32_t)tuple >> 16U) & 0xFFFU) + off)))
+#define CCM_ANALOG_TUPLE_REG(base, tuple)          CCM_ANALOG_TUPLE_REG_OFF(base, tuple, 0U)
 
 /*! @brief Configure whether driver controls clock
  *
@@ -65,12 +84,10 @@
 #define FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL 0
 #endif
 
-/*! @name Driver version */
-/*@{*/
-/*! @brief CLOCK driver version 2.1.0. */
-#define FSL_CLOCK_DRIVER_VERSION (MAKE_VERSION(2, 1, 0))
-/*@}*/
-
+/*!
+ * @brief clock1PN frequency.
+ */
+#define CLKPN_FREQ  0U
 
 /*! @brief External XTAL (24M OSC/SYSOSC) clock frequency.
  *
@@ -98,13 +115,7 @@ extern uint32_t g_rtcXtalFreq;
  /*! @brief Clock ip name array for ADC. */
 #define ADC_CLOCKS                                                   \
     {                                                                \
-        kCLOCK_IpInvalid, kCLOCK_Adc1                                \
-    }
-
-/*! @brief Clock ip name array for ADC_5HC. */
-#define ADC_5HC_CLOCKS                                               \
-    {                                                                \
-        kCLOCK_Adc_5hc                                               \
+        kCLOCK_IpInvalid, kCLOCK_Adc1, kCLOCK_Adc2                   \
     }
 
 /*! @brief Clock ip name array for AOI. */
@@ -434,7 +445,7 @@ typedef enum _clock_ip_name
     kCLOCK_Lpspi2               = (1U << 8U) | CCM_CCGR1_CG1_SHIFT,        /*!< CCGR1, CG1   */
     kCLOCK_Lpspi3               = (1U << 8U) | CCM_CCGR1_CG2_SHIFT,        /*!< CCGR1, CG2   */
     kCLOCK_Lpspi4               = (1U << 8U) | CCM_CCGR1_CG3_SHIFT,        /*!< CCGR1, CG3   */
-    kCLOCK_Adc_5hc              = (1U << 8U) | CCM_CCGR1_CG4_SHIFT,        /*!< CCGR1, CG4   */
+    kCLOCK_Adc2                 = (1U << 8U) | CCM_CCGR1_CG4_SHIFT,        /*!< CCGR1, CG4   */
     kCLOCK_Enet                 = (1U << 8U) | CCM_CCGR1_CG5_SHIFT,        /*!< CCGR1, CG5   */
     kCLOCK_Pit                  = (1U << 8U) | CCM_CCGR1_CG6_SHIFT,        /*!< CCGR1, CG6   */
     kCLOCK_Aoi2                 = (1U << 8U) | CCM_CCGR1_CG7_SHIFT,        /*!< CCGR1, CG7   */
@@ -658,6 +669,12 @@ typedef enum _clock_div
     kCLOCK_CsiDiv         = CCM_TUPLE(CSCDR3, CCM_CSCDR3_CSI_PODF_SHIFT, CCM_CSCDR3_CSI_PODF_MASK, CCM_NO_BUSY_WAIT),                     /*!< csi div name */
 } clock_div_t;
 
+/*!@brief PLL bypass clock source */
+enum _clock_pll_bypass_clk_src
+{
+    kCLOCK_PllBypassClkSrc24M = 0U,     /*!< Pll Bypass clock source 24M */
+    kCLOCK_PllBypassClkSrcClkPN = 1U,   /*!< Pll Bypass clock source CLK1_P and CLK1_N */
+};
 
 /*! @brief PLL configuration for ARM */
 typedef struct _clock_arm_pll_config
@@ -723,15 +740,15 @@ typedef struct _clock_enet_pll_config
 /*! @brief PLL name */
 typedef enum _clock_pll
 {
-    kCLOCK_PllArm    = 0U,   /*!< PLL ARM */
-    kCLOCK_PllSys    = 1U,   /*!< PLL SYS */
-    kCLOCK_PllUsb1   = 2U,   /*!< PLL USB1 */
-    kCLOCK_PllAudio  = 3U,   /*!< PLL Audio */
-    kCLOCK_PllVideo  = 4U,   /*!< PLL Video */
-    kCLOCK_PllEnet0  = 5U,   /*!< PLL Enet0 */
-    kCLOCK_PllEnet1  = 6U,   /*!< PLL Enet1 */
-    kCLOCK_PllEnet2  = 7U,   /*!< PLL Enet2 */
-    kCLOCK_PllUsb2   = 8U,   /*!< PLL USB2 */
+    kCLOCK_PllArm    = CCM_ANALOG_TUPLE(PLL_ARM,   CCM_ANALOG_PLL_ARM_ENABLE_SHIFT),                /*!< PLL ARM */
+    kCLOCK_PllSys    = CCM_ANALOG_TUPLE(PLL_SYS,   CCM_ANALOG_PLL_SYS_ENABLE_SHIFT),                /*!< PLL SYS */
+    kCLOCK_PllUsb1   = CCM_ANALOG_TUPLE(PLL_USB1,  CCM_ANALOG_PLL_USB1_ENABLE_SHIFT),               /*!< PLL USB1 */
+    kCLOCK_PllAudio  = CCM_ANALOG_TUPLE(PLL_AUDIO, CCM_ANALOG_PLL_AUDIO_ENABLE_SHIFT),              /*!< PLL Audio */
+    kCLOCK_PllVideo  = CCM_ANALOG_TUPLE(PLL_VIDEO, CCM_ANALOG_PLL_VIDEO_ENABLE_SHIFT),              /*!< PLL Video */
+    kCLOCK_PllEnet0  = CCM_ANALOG_TUPLE(PLL_ENET,  CCM_ANALOG_PLL_ENET_ENET1_125M_EN_SHIFT),        /*!< PLL Enet0 */
+    kCLOCK_PllEnet1  = CCM_ANALOG_TUPLE(PLL_ENET,  CCM_ANALOG_PLL_ENET_ENET2_125M_EN_SHIFT),        /*!< PLL Enet1 */
+    kCLOCK_PllEnet2  = CCM_ANALOG_TUPLE(PLL_ENET,  CCM_ANALOG_PLL_ENET_ENET_25M_REF_EN_SHIFT),      /*!< PLL Enet2 */
+    kCLOCK_PllUsb2   = CCM_ANALOG_TUPLE(PLL_USB2,  CCM_ANALOG_PLL_USB2_ENABLE_SHIFT),               /*!< PLL USB2 */
 } clock_pll_t;
 
 /*! @brief PLL PFD name */
@@ -835,10 +852,7 @@ static inline void CLOCK_SetDiv(clock_div_t divider, uint32_t value)
  */
 static inline uint32_t CLOCK_GetDiv(clock_div_t divider)
 {
-    uint32_t value;
-    
-    value = (CCM_TUPLE_REG(CCM, divider) & CCM_TUPLE_MASK(divider)) >> CCM_TUPLE_SHIFT(divider);
-    return value;
+    return ((CCM_TUPLE_REG(CCM, divider) & CCM_TUPLE_MASK(divider)) >> CCM_TUPLE_SHIFT(divider));
 }
 
 /*!
@@ -888,7 +902,97 @@ static inline void CLOCK_SetMode(clock_mode_t mode)
 {
     CCM->CLPCR = (CCM->CLPCR & ~CCM_CLPCR_LPM_MASK) | CCM_CLPCR_LPM((uint32_t)mode);
 }
-  
+
+/*!
+ * @brief PLL bypass setting
+ *
+ * @param base CCM_ANALOG base pointer.
+ * @param pll PLL control name (see @ref ccm_analog_pll_control_t enumeration)
+ * @param bypass Bypass the PLL.
+ *               - true: Bypass the PLL.
+ *               - false:Not bypass the PLL.
+ */
+static inline void CLOCK_SetPllBypass(CCM_ANALOG_Type * base, clock_pll_t pll, bool bypass)
+{
+    if (bypass)
+    {
+        CCM_ANALOG_TUPLE_REG_OFF(base, pll, 4U) |= 1U << CCM_ANALOG_PLL_ARM_BYPASS_SHIFT;
+    }
+    else
+    {
+        CCM_ANALOG_TUPLE_REG_OFF(base, pll, 8U) |= 1U << CCM_ANALOG_PLL_ARM_BYPASS_SHIFT;
+    }
+}
+
+/*!
+ * @brief Check if PLL is bypassed
+ *
+ * @param base CCM_ANALOG base pointer.
+ * @param pll PLL control name (see @ref ccm_analog_pll_control_t enumeration)
+ * @return PLL bypass status.
+ *         - true: The PLL is bypassed.
+ *         - false: The PLL is not bypassed.
+ */
+static inline bool CLOCK_IsPllBypassed(CCM_ANALOG_Type * base, clock_pll_t pll)
+{
+    return (bool)(CCM_ANALOG_TUPLE_REG(base, pll) & (1U << CCM_ANALOG_PLL_ARM_BYPASS_SHIFT));
+}
+
+/*!
+ * @brief Check if PLL is enabled
+ *
+ * @param base CCM_ANALOG base pointer.
+ * @param pll PLL control name (see @ref ccm_analog_pll_control_t enumeration)
+ * @return PLL bypass status.
+ *         - true: The PLL is enabled.
+ *         - false: The PLL is not enabled.
+ */
+static inline bool CLOCK_IsPllEnabled(CCM_ANALOG_Type * base, clock_pll_t pll)
+{
+    return (bool)(CCM_ANALOG_TUPLE_REG(base, pll) & (1U << CCM_ANALOG_TUPLE_SHIFT(pll)));
+}
+
+/*!
+ * @brief PLL bypass clock source setting.
+ * Note: change the bypass clock source also change the pll reference clock source.
+ *
+ * @param base CCM_ANALOG base pointer.
+ * @param pll PLL control name (see @ref ccm_analog_pll_control_t enumeration)
+ * @param src Bypass clock source, reference _clock_pll_bypass_clk_src.
+ */
+static inline void CLOCK_SetPllBypassRefClkSrc(CCM_ANALOG_Type * base, clock_pll_t pll, uint32_t src)
+{
+    CCM_ANALOG_TUPLE_REG(base, pll) |= (CCM_ANALOG_TUPLE_REG(base, pll) & (~CCM_ANALOG_PLL_ARM_BYPASS_CLK_SRC_MASK)) | src;
+}
+
+/*!
+ * @brief Gets the OSC clock frequency.
+ *
+ * This function will return the external XTAL OSC frequency if it is selected as the source of OSC,
+ * otherwise internal 24MHz RC OSC frequency will be returned.
+ *
+ * @param osc   OSC type to get frequency.
+ *
+ * @return  Clock frequency; If the clock is invalid, returns 0.
+ */
+static inline uint32_t CLOCK_GetOscFreq(void)
+{
+    return (XTALOSC24M->LOWPWR_CTRL & XTALOSC24M_LOWPWR_CTRL_OSC_SEL_MASK) ? 24000000UL : g_xtalFreq;
+}
+
+/*!
+ * @brief Get PLL bypass clock value, it is PLL reference clock actually.
+ * If CLOCK1_P,CLOCK1_N is choose as the pll bypass clock source, please implement the CLKPN_FREQ define, otherwise 0 will be returned.
+ * @param base CCM_ANALOG base pointer.
+ * @param pll PLL control name (see @ref ccm_analog_pll_control_t enumeration)
+ * @retval bypass reference clock frequency value.
+ */
+static inline uint32_t CLOCK_GetPllBypassRefClk(CCM_ANALOG_Type * base, clock_pll_t pll)
+{
+    return (((CCM_ANALOG_TUPLE_REG(base, pll) & CCM_ANALOG_PLL_ARM_BYPASS_CLK_SRC_MASK) >> CCM_ANALOG_PLL_ARM_BYPASS_CLK_SRC_SHIFT) == kCLOCK_PllBypassClkSrc24M) ?
+    CLOCK_GetOscFreq() : CLKPN_FREQ;
+}
+
 /*!
  * @brief Gets the clock frequency for a specific clock name.
  *
@@ -949,21 +1053,6 @@ void CLOCK_DeinitExternalClk(void);
  * @param osc   OSC source to switch to.
  */
 void CLOCK_SwitchOsc(clock_osc_t osc);
-
-/*!
- * @brief Gets the OSC clock frequency.
- *
- * This function will return the external XTAL OSC frequency if it is selected as the source of OSC,
- * otherwise internal 24MHz RC OSC frequency will be returned.
- *
- * @param osc   OSC type to get frequency.
- *
- * @return  Clock frequency; If the clock is invalid, returns 0.
- */
-static inline uint32_t CLOCK_GetOscFreq(void)
-{
-    return (XTALOSC24M->LOWPWR_CTRL & XTALOSC24M_LOWPWR_CTRL_OSC_SEL_MASK) ? 24000000UL : g_xtalFreq;
-}
 
 /*!
  * @brief Gets the RTC clock frequency.

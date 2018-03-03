@@ -1,9 +1,12 @@
 /*
+ * The Clear BSD License
  * Copyright (c) 2015 - 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
- *
+ * All rights reserved.
+ * 
  * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * are permitted (subject to the limitations in the disclaimer below) provided
+ *  that the following conditions are met:
  *
  * o Redistributions of source code must retain the above copyright notice, this list
  *   of conditions and the following disclaimer.
@@ -16,6 +19,7 @@
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -99,8 +103,9 @@
 /*! @brief NanoSecond in one second. */
 #define ENET_NANOSECOND_ONE_SECOND 1000000000U
 /*! @brief Define a common clock cycle delays used for time stamp capture. */
-#define ENET_1588TIME_DELAY_COUNT 38U
-
+#ifndef ENET_1588TIME_DELAY_COUNT
+#define ENET_1588TIME_DELAY_COUNT 20U
+#endif
 /*! @brief Defines the macro for converting constants from host byte order to network byte order. */
 #define ENET_HTONS(n) __REV16(n)
 #define ENET_HTONL(n) __REV(n)
@@ -2289,9 +2294,10 @@ void ENET_Ptp1588GetTimer(ENET_Type *base, enet_handle_t *handle, enet_ptp_time_
     ptpTime->second = handle->msTimerSecond;
     /* Get the nanosecond from the master timer. */
     base->ATCR |= ENET_ATCR_CAPTURE_MASK;
-    /* Add at least six clock cycle delay to get accurate time.
-       It's the requirement when the 1588 clock source is slower
-       than the register clock.
+    /* To ensure that the correct time value is read from the ATVR register, 
+       a minimum amount of time must elapse from issuing this command to reading 
+       the ATVR register. This minimum time is defined by the greater of either 
+       six register clock cycles or six 1588/timestamp clock cycles.
     */
     while (count--)
     {

@@ -1,9 +1,12 @@
 /*
+ * The Clear BSD License
  * Copyright 2017 NXP
  * All rights reserved.
  *
+ * 
  * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
+ * are permitted (subject to the limitations in the disclaimer below) provided
+ *  that the following conditions are met:
  *
  * o Redistributions of source code must retain the above copyright notice, this list
  *   of conditions and the following disclaimer.
@@ -16,6 +19,7 @@
  *   contributors may be used to endorse or promote products derived from this
  *   software without specific prior written permission.
  *
+ * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS LICENSE.
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -161,7 +165,7 @@ static status_t dcp_get_channel_status(DCP_Type *base, dcp_channel_t channel)
 
 static void dcp_clear_status(DCP_Type *base)
 {
-    volatile uint32_t *dcpStatClrPtr = &base->STAT + 2u;
+    volatile uint32_t *dcpStatClrPtr = &(&base->STAT)[2];
     *dcpStatClrPtr = 0xFFu;
 }
 
@@ -171,22 +175,22 @@ static void dcp_clear_channel_status(DCP_Type *base, uint32_t mask)
 
     if (mask & kDCP_Channel0)
     {
-        chStatClrPtr = &base->CH0STAT + 2u;
+        chStatClrPtr = &(&base->CH0STAT)[2];
         *chStatClrPtr = 0xFFu;
     }
     if (mask & kDCP_Channel1)
     {
-        chStatClrPtr = &base->CH1STAT + 2u;
+        chStatClrPtr = &(&base->CH1STAT)[2];
         *chStatClrPtr = 0xFFu;
     }
     if (mask & kDCP_Channel2)
     {
-        chStatClrPtr = &base->CH2STAT + 2u;
+        chStatClrPtr = &(&base->CH2STAT)[2];
         *chStatClrPtr = 0xFFu;
     }
     if (mask & kDCP_Channel3)
     {
-        chStatClrPtr = &base->CH3STAT + 2u;
+        chStatClrPtr = &(&base->CH3STAT)[2];
         *chStatClrPtr = 0xFFu;
     }
 }

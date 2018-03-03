@@ -11,37 +11,44 @@
 **
 **     Reference manual:    IMXRT1050RM Rev.C, 08/2017
 **     Version:             rev. 0.1, 2017-01-10
-**     Build:               b171011
+**     Build:               b171220
 **
 **     Abstract:
 **         CMSIS Peripheral Access Layer for MIMXRT1052
 **
+**     The Clear BSD License
 **     Copyright 1997-2016 Freescale Semiconductor, Inc.
 **     Copyright 2016-2017 NXP
-**     Redistribution and use in source and binary forms, with or without modification,
-**     are permitted provided that the following conditions are met:
+**     All rights reserved.
 **
-**     1. Redistributions of source code must retain the above copyright notice, this list
-**       of conditions and the following disclaimer.
+**     Redistribution and use in source and binary forms, with or without
+**     modification, are permitted (subject to the limitations in the
+**     disclaimer below) provided that the following conditions are met:
 **
-**     2. Redistributions in binary form must reproduce the above copyright notice, this
-**       list of conditions and the following disclaimer in the documentation and/or
-**       other materials provided with the distribution.
+**     * Redistributions of source code must retain the above copyright
+**       notice, this list of conditions and the following disclaimer.
 **
-**     3. Neither the name of the copyright holder nor the names of its
-**       contributors may be used to endorse or promote products derived from this
-**       software without specific prior written permission.
+**     * Redistributions in binary form must reproduce the above copyright
+**       notice, this list of conditions and the following disclaimer in the
+**       documentation and/or other materials provided with the distribution.
 **
-**     THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-**     ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-**     WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-**     DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
-**     ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-**     (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-**     LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-**     ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-**     (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-**     SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+**     * Neither the name of the copyright holder nor the names of its
+**       contributors may be used to endorse or promote products derived from
+**       this software without specific prior written permission.
+**
+**     NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE
+**     GRANTED BY THIS LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT
+**     HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
+**     WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+**     MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+**     DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+**     LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+**     CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+**     SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+**     BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+**     WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+**     OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+**     IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 **
 **     http:                 www.nxp.com
 **     mail:                 support@nxp.com
@@ -1276,8 +1283,12 @@ typedef enum _xbar_output_signal
 */
 
 #if defined(__ARMCC_VERSION)
-  #pragma push
-  #pragma anon_unions
+  #if (__ARMCC_VERSION >= 6010050)
+    #pragma clang diagnostic push
+  #else
+    #pragma push
+    #pragma anon_unions
+  #endif
 #elif defined(__CWCC__)
   #pragma push
   #pragma cpp_extensions on
@@ -1480,16 +1491,8 @@ typedef struct {
   __IO uint32_t DONE2_ERR_IRQ;                     /**< ETC DONE_2 and DONE_ERR IRQ State Register, offset: 0x8 */
   __IO uint32_t DMA_CTRL;                          /**< ETC DMA control Register, offset: 0xC */
   struct {                                         /* offset: 0x10, array step: 0x28 */
-    __IO uint32_t TRIGn_CTRL;                        /**<
-                ETC_TRIG0 Control Register
-              ..
-                ETC_TRIG7 Control Register
-              , array offset: 0x10, array step: 0x28 */
-    __IO uint32_t TRIGn_COUNTER;                     /**<
-                ETC_TRIG0 Counter Register
-              ..
-                ETC_TRIG7 Counter Register
-              , array offset: 0x14, array step: 0x28 */
+    __IO uint32_t TRIGn_CTRL;                        /**< ETC_TRIG0 Control Register..ETC_TRIG7 Control Register, array offset: 0x10, array step: 0x28 */
+    __IO uint32_t TRIGn_COUNTER;                     /**< ETC_TRIG0 Counter Register..ETC_TRIG7 Counter Register, array offset: 0x14, array step: 0x28 */
     __IO uint32_t TRIGn_CHAIN_1_0;                   /**< ETC_TRIG Chain 0/1 Register, array offset: 0x18, array step: 0x28 */
     __IO uint32_t TRIGn_CHAIN_3_2;                   /**< ETC_TRIG Chain 2/3 Register, array offset: 0x1C, array step: 0x28 */
     __IO uint32_t TRIGn_CHAIN_5_4;                   /**< ETC_TRIG Chain 4/5 Register, array offset: 0x20, array step: 0x28 */
@@ -1529,6 +1532,9 @@ typedef struct {
 #define ADC_ETC_CTRL_PRE_DIVIDER_MASK            (0xFF0000U)
 #define ADC_ETC_CTRL_PRE_DIVIDER_SHIFT           (16U)
 #define ADC_ETC_CTRL_PRE_DIVIDER(x)              (((uint32_t)(((uint32_t)(x)) << ADC_ETC_CTRL_PRE_DIVIDER_SHIFT)) & ADC_ETC_CTRL_PRE_DIVIDER_MASK)
+#define ADC_ETC_CTRL_DMA_MODE_SEL_MASK           (0x20000000U)
+#define ADC_ETC_CTRL_DMA_MODE_SEL_SHIFT          (29U)
+#define ADC_ETC_CTRL_DMA_MODE_SEL(x)             (((uint32_t)(((uint32_t)(x)) << ADC_ETC_CTRL_DMA_MODE_SEL_SHIFT)) & ADC_ETC_CTRL_DMA_MODE_SEL_MASK)
 #define ADC_ETC_CTRL_TSC_BYPASS_MASK             (0x40000000U)
 #define ADC_ETC_CTRL_TSC_BYPASS_SHIFT            (30U)
 #define ADC_ETC_CTRL_TSC_BYPASS(x)               (((uint32_t)(((uint32_t)(x)) << ADC_ETC_CTRL_TSC_BYPASS_SHIFT)) & ADC_ETC_CTRL_TSC_BYPASS_MASK)
@@ -1686,11 +1692,7 @@ typedef struct {
 #define ADC_ETC_DMA_CTRL_TRIG7_REQ_SHIFT         (23U)
 #define ADC_ETC_DMA_CTRL_TRIG7_REQ(x)            (((uint32_t)(((uint32_t)(x)) << ADC_ETC_DMA_CTRL_TRIG7_REQ_SHIFT)) & ADC_ETC_DMA_CTRL_TRIG7_REQ_MASK)
 
-/*! @name TRIGn_CTRL -
-            ETC_TRIG0 Control Register
-          ..
-            ETC_TRIG7 Control Register
-           */
+/*! @name TRIGn_CTRL - ETC_TRIG0 Control Register..ETC_TRIG7 Control Register */
 #define ADC_ETC_TRIGn_CTRL_SW_TRIG_MASK          (0x1U)
 #define ADC_ETC_TRIGn_CTRL_SW_TRIG_SHIFT         (0U)
 #define ADC_ETC_TRIGn_CTRL_SW_TRIG(x)            (((uint32_t)(((uint32_t)(x)) << ADC_ETC_TRIGn_CTRL_SW_TRIG_SHIFT)) & ADC_ETC_TRIGn_CTRL_SW_TRIG_MASK)
@@ -1710,11 +1712,7 @@ typedef struct {
 /* The count of ADC_ETC_TRIGn_CTRL */
 #define ADC_ETC_TRIGn_CTRL_COUNT                 (8U)
 
-/*! @name TRIGn_COUNTER -
-            ETC_TRIG0 Counter Register
-          ..
-            ETC_TRIG7 Counter Register
-           */
+/*! @name TRIGn_COUNTER - ETC_TRIG0 Counter Register..ETC_TRIG7 Counter Register */
 #define ADC_ETC_TRIGn_COUNTER_INIT_DELAY_MASK    (0xFFFFU)
 #define ADC_ETC_TRIGn_COUNTER_INIT_DELAY_SHIFT   (0U)
 #define ADC_ETC_TRIGn_COUNTER_INIT_DELAY(x)      (((uint32_t)(((uint32_t)(x)) << ADC_ETC_TRIGn_COUNTER_INIT_DELAY_SHIFT)) & ADC_ETC_TRIGn_COUNTER_INIT_DELAY_MASK)
@@ -3074,7 +3072,7 @@ typedef struct {
 #define CCM_CSCDR1_USDHC2_PODF_MASK              (0x70000U)
 #define CCM_CSCDR1_USDHC2_PODF_SHIFT             (16U)
 #define CCM_CSCDR1_USDHC2_PODF(x)                (((uint32_t)(((uint32_t)(x)) << CCM_CSCDR1_USDHC2_PODF_SHIFT)) & CCM_CSCDR1_USDHC2_PODF_MASK)
-#define CCM_CSCDR1_TRACE_PODF_MASK               (0xE000000U)
+#define CCM_CSCDR1_TRACE_PODF_MASK               (0x6000000U)
 #define CCM_CSCDR1_TRACE_PODF_SHIFT              (25U)
 #define CCM_CSCDR1_TRACE_PODF(x)                 (((uint32_t)(((uint32_t)(x)) << CCM_CSCDR1_TRACE_PODF_SHIFT)) & CCM_CSCDR1_TRACE_PODF_MASK)
 
@@ -4871,9 +4869,6 @@ typedef struct {
 #define CCM_ANALOG_MISC0_XTAL_24M_PWD_MASK       (0x40000000U)
 #define CCM_ANALOG_MISC0_XTAL_24M_PWD_SHIFT      (30U)
 #define CCM_ANALOG_MISC0_XTAL_24M_PWD(x)         (((uint32_t)(((uint32_t)(x)) << CCM_ANALOG_MISC0_XTAL_24M_PWD_SHIFT)) & CCM_ANALOG_MISC0_XTAL_24M_PWD_MASK)
-#define CCM_ANALOG_MISC0_VID_PLL_PREDIV_MASK     (0x80000000U)
-#define CCM_ANALOG_MISC0_VID_PLL_PREDIV_SHIFT    (31U)
-#define CCM_ANALOG_MISC0_VID_PLL_PREDIV(x)       (((uint32_t)(((uint32_t)(x)) << CCM_ANALOG_MISC0_VID_PLL_PREDIV_SHIFT)) & CCM_ANALOG_MISC0_VID_PLL_PREDIV_MASK)
 
 /*! @name MISC0_SET - Miscellaneous Register 0 */
 #define CCM_ANALOG_MISC0_SET_REFTOP_PWD_MASK     (0x1U)
@@ -4915,9 +4910,6 @@ typedef struct {
 #define CCM_ANALOG_MISC0_SET_XTAL_24M_PWD_MASK   (0x40000000U)
 #define CCM_ANALOG_MISC0_SET_XTAL_24M_PWD_SHIFT  (30U)
 #define CCM_ANALOG_MISC0_SET_XTAL_24M_PWD(x)     (((uint32_t)(((uint32_t)(x)) << CCM_ANALOG_MISC0_SET_XTAL_24M_PWD_SHIFT)) & CCM_ANALOG_MISC0_SET_XTAL_24M_PWD_MASK)
-#define CCM_ANALOG_MISC0_SET_VID_PLL_PREDIV_MASK (0x80000000U)
-#define CCM_ANALOG_MISC0_SET_VID_PLL_PREDIV_SHIFT (31U)
-#define CCM_ANALOG_MISC0_SET_VID_PLL_PREDIV(x)   (((uint32_t)(((uint32_t)(x)) << CCM_ANALOG_MISC0_SET_VID_PLL_PREDIV_SHIFT)) & CCM_ANALOG_MISC0_SET_VID_PLL_PREDIV_MASK)
 
 /*! @name MISC0_CLR - Miscellaneous Register 0 */
 #define CCM_ANALOG_MISC0_CLR_REFTOP_PWD_MASK     (0x1U)
@@ -4959,9 +4951,6 @@ typedef struct {
 #define CCM_ANALOG_MISC0_CLR_XTAL_24M_PWD_MASK   (0x40000000U)
 #define CCM_ANALOG_MISC0_CLR_XTAL_24M_PWD_SHIFT  (30U)
 #define CCM_ANALOG_MISC0_CLR_XTAL_24M_PWD(x)     (((uint32_t)(((uint32_t)(x)) << CCM_ANALOG_MISC0_CLR_XTAL_24M_PWD_SHIFT)) & CCM_ANALOG_MISC0_CLR_XTAL_24M_PWD_MASK)
-#define CCM_ANALOG_MISC0_CLR_VID_PLL_PREDIV_MASK (0x80000000U)
-#define CCM_ANALOG_MISC0_CLR_VID_PLL_PREDIV_SHIFT (31U)
-#define CCM_ANALOG_MISC0_CLR_VID_PLL_PREDIV(x)   (((uint32_t)(((uint32_t)(x)) << CCM_ANALOG_MISC0_CLR_VID_PLL_PREDIV_SHIFT)) & CCM_ANALOG_MISC0_CLR_VID_PLL_PREDIV_MASK)
 
 /*! @name MISC0_TOG - Miscellaneous Register 0 */
 #define CCM_ANALOG_MISC0_TOG_REFTOP_PWD_MASK     (0x1U)
@@ -5003,9 +4992,6 @@ typedef struct {
 #define CCM_ANALOG_MISC0_TOG_XTAL_24M_PWD_MASK   (0x40000000U)
 #define CCM_ANALOG_MISC0_TOG_XTAL_24M_PWD_SHIFT  (30U)
 #define CCM_ANALOG_MISC0_TOG_XTAL_24M_PWD(x)     (((uint32_t)(((uint32_t)(x)) << CCM_ANALOG_MISC0_TOG_XTAL_24M_PWD_SHIFT)) & CCM_ANALOG_MISC0_TOG_XTAL_24M_PWD_MASK)
-#define CCM_ANALOG_MISC0_TOG_VID_PLL_PREDIV_MASK (0x80000000U)
-#define CCM_ANALOG_MISC0_TOG_VID_PLL_PREDIV_SHIFT (31U)
-#define CCM_ANALOG_MISC0_TOG_VID_PLL_PREDIV(x)   (((uint32_t)(((uint32_t)(x)) << CCM_ANALOG_MISC0_TOG_VID_PLL_PREDIV_SHIFT)) & CCM_ANALOG_MISC0_TOG_VID_PLL_PREDIV_MASK)
 
 /*! @name MISC1 - Miscellaneous Register 1 */
 #define CCM_ANALOG_MISC1_LVDS1_CLK_SEL_MASK      (0x1FU)
@@ -5857,9 +5843,6 @@ typedef struct {
 #define CSI_CSICR18_AHB_HPROT_MASK               (0xF000U)
 #define CSI_CSICR18_AHB_HPROT_SHIFT              (12U)
 #define CSI_CSICR18_AHB_HPROT(x)                 (((uint32_t)(((uint32_t)(x)) << CSI_CSICR18_AHB_HPROT_SHIFT)) & CSI_CSICR18_AHB_HPROT_MASK)
-#define CSI_CSICR18_CSI_LCDIF_BUFFER_LINES_MASK  (0x30000U)
-#define CSI_CSICR18_CSI_LCDIF_BUFFER_LINES_SHIFT (16U)
-#define CSI_CSICR18_CSI_LCDIF_BUFFER_LINES(x)    (((uint32_t)(((uint32_t)(x)) << CSI_CSICR18_CSI_LCDIF_BUFFER_LINES_SHIFT)) & CSI_CSICR18_CSI_LCDIF_BUFFER_LINES_MASK)
 #define CSI_CSICR18_MASK_OPTION_MASK             (0xC0000U)
 #define CSI_CSICR18_MASK_OPTION_SHIFT            (18U)
 #define CSI_CSICR18_MASK_OPTION(x)               (((uint32_t)(((uint32_t)(x)) << CSI_CSICR18_MASK_OPTION_SHIFT)) & CSI_CSICR18_MASK_OPTION_MASK)
@@ -8479,11 +8462,7 @@ typedef struct {
 
 /** DMAMUX - Register Layout Typedef */
 typedef struct {
-  __IO uint32_t CHCFG[32];                         /**<
-                Channel 0 Configuration Register
-              ..
-                Channel 31 Configuration Register
-              , array offset: 0x0, array step: 0x4 */
+  __IO uint32_t CHCFG[32];                         /**< Channel 0 Configuration Register..Channel 31 Configuration Register, array offset: 0x0, array step: 0x4 */
 } DMAMUX_Type;
 
 /* ----------------------------------------------------------------------------
@@ -8495,11 +8474,7 @@ typedef struct {
  * @{
  */
 
-/*! @name CHCFG -
-              Channel 0 Configuration Register
-            ..
-              Channel 31 Configuration Register
-             */
+/*! @name CHCFG - Channel 0 Configuration Register..Channel 31 Configuration Register */
 #define DMAMUX_CHCFG_SOURCE_MASK                 (0x7FU)
 #define DMAMUX_CHCFG_SOURCE_SHIFT                (0U)
 #define DMAMUX_CHCFG_SOURCE(x)                   (((uint32_t)(((uint32_t)(x)) << DMAMUX_CHCFG_SOURCE_SHIFT)) & DMAMUX_CHCFG_SOURCE_MASK)
@@ -12447,21 +12422,6 @@ typedef struct {
 #define IOMUXC_GPR_GPR10_LOCK_NIDEN_MASK         (0x10000U)
 #define IOMUXC_GPR_GPR10_LOCK_NIDEN_SHIFT        (16U)
 #define IOMUXC_GPR_GPR10_LOCK_NIDEN(x)           (((uint32_t)(((uint32_t)(x)) << IOMUXC_GPR_GPR10_LOCK_NIDEN_SHIFT)) & IOMUXC_GPR_GPR10_LOCK_NIDEN_MASK)
-#define IOMUXC_GPR_GPR10_LOCK_DBG_EN_MASK        (0x20000U)
-#define IOMUXC_GPR_GPR10_LOCK_DBG_EN_SHIFT       (17U)
-#define IOMUXC_GPR_GPR10_LOCK_DBG_EN(x)          (((uint32_t)(((uint32_t)(x)) << IOMUXC_GPR_GPR10_LOCK_DBG_EN_SHIFT)) & IOMUXC_GPR_GPR10_LOCK_DBG_EN_MASK)
-#define IOMUXC_GPR_GPR10_LOCK_SEC_ERR_RESP_MASK  (0x40000U)
-#define IOMUXC_GPR_GPR10_LOCK_SEC_ERR_RESP_SHIFT (18U)
-#define IOMUXC_GPR_GPR10_LOCK_SEC_ERR_RESP(x)    (((uint32_t)(((uint32_t)(x)) << IOMUXC_GPR_GPR10_LOCK_SEC_ERR_RESP_SHIFT)) & IOMUXC_GPR_GPR10_LOCK_SEC_ERR_RESP_MASK)
-#define IOMUXC_GPR_GPR10_LOCK_DCPKEY_OCOTP_OR_KEYMUX_MASK (0x100000U)
-#define IOMUXC_GPR_GPR10_LOCK_DCPKEY_OCOTP_OR_KEYMUX_SHIFT (20U)
-#define IOMUXC_GPR_GPR10_LOCK_DCPKEY_OCOTP_OR_KEYMUX(x) (((uint32_t)(((uint32_t)(x)) << IOMUXC_GPR_GPR10_LOCK_DCPKEY_OCOTP_OR_KEYMUX_SHIFT)) & IOMUXC_GPR_GPR10_LOCK_DCPKEY_OCOTP_OR_KEYMUX_MASK)
-#define IOMUXC_GPR_GPR10_LOCK_OCRAM_TZ_EN_MASK   (0x1000000U)
-#define IOMUXC_GPR_GPR10_LOCK_OCRAM_TZ_EN_SHIFT  (24U)
-#define IOMUXC_GPR_GPR10_LOCK_OCRAM_TZ_EN(x)     (((uint32_t)(((uint32_t)(x)) << IOMUXC_GPR_GPR10_LOCK_OCRAM_TZ_EN_SHIFT)) & IOMUXC_GPR_GPR10_LOCK_OCRAM_TZ_EN_MASK)
-#define IOMUXC_GPR_GPR10_LOCK_OCRAM_TZ_ADDR_MASK (0xFE000000U)
-#define IOMUXC_GPR_GPR10_LOCK_OCRAM_TZ_ADDR_SHIFT (25U)
-#define IOMUXC_GPR_GPR10_LOCK_OCRAM_TZ_ADDR(x)   (((uint32_t)(((uint32_t)(x)) << IOMUXC_GPR_GPR10_LOCK_OCRAM_TZ_ADDR_SHIFT)) & IOMUXC_GPR_GPR10_LOCK_OCRAM_TZ_ADDR_MASK)
 
 /*! @name GPR11 - GPR11 General Purpose Register */
 #define IOMUXC_GPR_GPR11_M7_APC_AC_R0_CTRL_MASK  (0x3U)
@@ -12479,21 +12439,6 @@ typedef struct {
 #define IOMUXC_GPR_GPR11_BEE_DE_RX_EN_MASK       (0xF00U)
 #define IOMUXC_GPR_GPR11_BEE_DE_RX_EN_SHIFT      (8U)
 #define IOMUXC_GPR_GPR11_BEE_DE_RX_EN(x)         (((uint32_t)(((uint32_t)(x)) << IOMUXC_GPR_GPR11_BEE_DE_RX_EN_SHIFT)) & IOMUXC_GPR_GPR11_BEE_DE_RX_EN_MASK)
-#define IOMUXC_GPR_GPR11_LOCK_M7_APC_AC_R0_CTRL_MASK (0x30000U)
-#define IOMUXC_GPR_GPR11_LOCK_M7_APC_AC_R0_CTRL_SHIFT (16U)
-#define IOMUXC_GPR_GPR11_LOCK_M7_APC_AC_R0_CTRL(x) (((uint32_t)(((uint32_t)(x)) << IOMUXC_GPR_GPR11_LOCK_M7_APC_AC_R0_CTRL_SHIFT)) & IOMUXC_GPR_GPR11_LOCK_M7_APC_AC_R0_CTRL_MASK)
-#define IOMUXC_GPR_GPR11_LOCK_M7_APC_AC_R1_CTRL_MASK (0xC0000U)
-#define IOMUXC_GPR_GPR11_LOCK_M7_APC_AC_R1_CTRL_SHIFT (18U)
-#define IOMUXC_GPR_GPR11_LOCK_M7_APC_AC_R1_CTRL(x) (((uint32_t)(((uint32_t)(x)) << IOMUXC_GPR_GPR11_LOCK_M7_APC_AC_R1_CTRL_SHIFT)) & IOMUXC_GPR_GPR11_LOCK_M7_APC_AC_R1_CTRL_MASK)
-#define IOMUXC_GPR_GPR11_LOCK_M7_APC_AC_R2_CTRL_MASK (0x300000U)
-#define IOMUXC_GPR_GPR11_LOCK_M7_APC_AC_R2_CTRL_SHIFT (20U)
-#define IOMUXC_GPR_GPR11_LOCK_M7_APC_AC_R2_CTRL(x) (((uint32_t)(((uint32_t)(x)) << IOMUXC_GPR_GPR11_LOCK_M7_APC_AC_R2_CTRL_SHIFT)) & IOMUXC_GPR_GPR11_LOCK_M7_APC_AC_R2_CTRL_MASK)
-#define IOMUXC_GPR_GPR11_LOCK_M7_APC_AC_R3_CTRL_MASK (0xC00000U)
-#define IOMUXC_GPR_GPR11_LOCK_M7_APC_AC_R3_CTRL_SHIFT (22U)
-#define IOMUXC_GPR_GPR11_LOCK_M7_APC_AC_R3_CTRL(x) (((uint32_t)(((uint32_t)(x)) << IOMUXC_GPR_GPR11_LOCK_M7_APC_AC_R3_CTRL_SHIFT)) & IOMUXC_GPR_GPR11_LOCK_M7_APC_AC_R3_CTRL_MASK)
-#define IOMUXC_GPR_GPR11_LOCK_BEE_DE_RX_EN_MASK  (0xF000000U)
-#define IOMUXC_GPR_GPR11_LOCK_BEE_DE_RX_EN_SHIFT (24U)
-#define IOMUXC_GPR_GPR11_LOCK_BEE_DE_RX_EN(x)    (((uint32_t)(((uint32_t)(x)) << IOMUXC_GPR_GPR11_LOCK_BEE_DE_RX_EN_SHIFT)) & IOMUXC_GPR_GPR11_LOCK_BEE_DE_RX_EN_MASK)
 
 /*! @name GPR12 - GPR12 General Purpose Register */
 #define IOMUXC_GPR_GPR12_FLEXIO1_IPG_STOP_MODE_MASK (0x1U)
@@ -12942,9 +12887,9 @@ typedef struct {
 #define IOMUXC_SNVS_GPR_GPR3_POR_PULL_TYPE_MASK  (0xCU)
 #define IOMUXC_SNVS_GPR_GPR3_POR_PULL_TYPE_SHIFT (2U)
 #define IOMUXC_SNVS_GPR_GPR3_POR_PULL_TYPE(x)    (((uint32_t)(((uint32_t)(x)) << IOMUXC_SNVS_GPR_GPR3_POR_PULL_TYPE_SHIFT)) & IOMUXC_SNVS_GPR_GPR3_POR_PULL_TYPE_MASK)
-#define IOMUXC_SNVS_GPR_GPR3_DCDC_LOW_BAT_MASK   (0x10000U)
-#define IOMUXC_SNVS_GPR_GPR3_DCDC_LOW_BAT_SHIFT  (16U)
-#define IOMUXC_SNVS_GPR_GPR3_DCDC_LOW_BAT(x)     (((uint32_t)(((uint32_t)(x)) << IOMUXC_SNVS_GPR_GPR3_DCDC_LOW_BAT_SHIFT)) & IOMUXC_SNVS_GPR_GPR3_DCDC_LOW_BAT_MASK)
+#define IOMUXC_SNVS_GPR_GPR3_DCDC_IN_LOW_VOL_MASK (0x10000U)
+#define IOMUXC_SNVS_GPR_GPR3_DCDC_IN_LOW_VOL_SHIFT (16U)
+#define IOMUXC_SNVS_GPR_GPR3_DCDC_IN_LOW_VOL(x)  (((uint32_t)(((uint32_t)(x)) << IOMUXC_SNVS_GPR_GPR3_DCDC_IN_LOW_VOL_SHIFT)) & IOMUXC_SNVS_GPR_GPR3_DCDC_IN_LOW_VOL_MASK)
 #define IOMUXC_SNVS_GPR_GPR3_DCDC_OVER_CUR_MASK  (0x20000U)
 #define IOMUXC_SNVS_GPR_GPR3_DCDC_OVER_CUR_SHIFT (17U)
 #define IOMUXC_SNVS_GPR_GPR3_DCDC_OVER_CUR(x)    (((uint32_t)(((uint32_t)(x)) << IOMUXC_SNVS_GPR_GPR3_DCDC_OVER_CUR_SHIFT)) & IOMUXC_SNVS_GPR_GPR3_DCDC_OVER_CUR_MASK)
@@ -13080,35 +13025,35 @@ typedef struct {
 
 /** LCDIF - Register Layout Typedef */
 typedef struct {
-  __IO uint32_t CTRL;                              /**< eLCDIF General Control Register, offset: 0x0 */
-  __IO uint32_t CTRL_SET;                          /**< eLCDIF General Control Register, offset: 0x4 */
-  __IO uint32_t CTRL_CLR;                          /**< eLCDIF General Control Register, offset: 0x8 */
-  __IO uint32_t CTRL_TOG;                          /**< eLCDIF General Control Register, offset: 0xC */
-  __IO uint32_t CTRL1;                             /**< eLCDIF General Control1 Register, offset: 0x10 */
-  __IO uint32_t CTRL1_SET;                         /**< eLCDIF General Control1 Register, offset: 0x14 */
-  __IO uint32_t CTRL1_CLR;                         /**< eLCDIF General Control1 Register, offset: 0x18 */
-  __IO uint32_t CTRL1_TOG;                         /**< eLCDIF General Control1 Register, offset: 0x1C */
-  __IO uint32_t CTRL2;                             /**< eLCDIF General Control2 Register, offset: 0x20 */
-  __IO uint32_t CTRL2_SET;                         /**< eLCDIF General Control2 Register, offset: 0x24 */
-  __IO uint32_t CTRL2_CLR;                         /**< eLCDIF General Control2 Register, offset: 0x28 */
-  __IO uint32_t CTRL2_TOG;                         /**< eLCDIF General Control2 Register, offset: 0x2C */
-  __IO uint32_t TRANSFER_COUNT;                    /**< eLCDIF Horizontal and Vertical Valid Data Count Register, offset: 0x30 */
+  __IO uint32_t CTRL;                              /**< LCDIF General Control Register, offset: 0x0 */
+  __IO uint32_t CTRL_SET;                          /**< LCDIF General Control Register, offset: 0x4 */
+  __IO uint32_t CTRL_CLR;                          /**< LCDIF General Control Register, offset: 0x8 */
+  __IO uint32_t CTRL_TOG;                          /**< LCDIF General Control Register, offset: 0xC */
+  __IO uint32_t CTRL1;                             /**< LCDIF General Control1 Register, offset: 0x10 */
+  __IO uint32_t CTRL1_SET;                         /**< LCDIF General Control1 Register, offset: 0x14 */
+  __IO uint32_t CTRL1_CLR;                         /**< LCDIF General Control1 Register, offset: 0x18 */
+  __IO uint32_t CTRL1_TOG;                         /**< LCDIF General Control1 Register, offset: 0x1C */
+  __IO uint32_t CTRL2;                             /**< LCDIF General Control2 Register, offset: 0x20 */
+  __IO uint32_t CTRL2_SET;                         /**< LCDIF General Control2 Register, offset: 0x24 */
+  __IO uint32_t CTRL2_CLR;                         /**< LCDIF General Control2 Register, offset: 0x28 */
+  __IO uint32_t CTRL2_TOG;                         /**< LCDIF General Control2 Register, offset: 0x2C */
+  __IO uint32_t TRANSFER_COUNT;                    /**< LCDIF Horizontal and Vertical Valid Data Count Register, offset: 0x30 */
        uint8_t RESERVED_0[12];
   __IO uint32_t CUR_BUF;                           /**< LCD Interface Current Buffer Address Register, offset: 0x40 */
        uint8_t RESERVED_1[12];
   __IO uint32_t NEXT_BUF;                          /**< LCD Interface Next Buffer Address Register, offset: 0x50 */
        uint8_t RESERVED_2[28];
-  __IO uint32_t VDCTRL0;                           /**< eLCDIF VSYNC Mode and Dotclk Mode Control Register0, offset: 0x70 */
-  __IO uint32_t VDCTRL0_SET;                       /**< eLCDIF VSYNC Mode and Dotclk Mode Control Register0, offset: 0x74 */
-  __IO uint32_t VDCTRL0_CLR;                       /**< eLCDIF VSYNC Mode and Dotclk Mode Control Register0, offset: 0x78 */
-  __IO uint32_t VDCTRL0_TOG;                       /**< eLCDIF VSYNC Mode and Dotclk Mode Control Register0, offset: 0x7C */
-  __IO uint32_t VDCTRL1;                           /**< eLCDIF VSYNC Mode and Dotclk Mode Control Register1, offset: 0x80 */
+  __IO uint32_t VDCTRL0;                           /**< LCDIF VSYNC Mode and Dotclk Mode Control Register0, offset: 0x70 */
+  __IO uint32_t VDCTRL0_SET;                       /**< LCDIF VSYNC Mode and Dotclk Mode Control Register0, offset: 0x74 */
+  __IO uint32_t VDCTRL0_CLR;                       /**< LCDIF VSYNC Mode and Dotclk Mode Control Register0, offset: 0x78 */
+  __IO uint32_t VDCTRL0_TOG;                       /**< LCDIF VSYNC Mode and Dotclk Mode Control Register0, offset: 0x7C */
+  __IO uint32_t VDCTRL1;                           /**< LCDIF VSYNC Mode and Dotclk Mode Control Register1, offset: 0x80 */
        uint8_t RESERVED_3[12];
   __IO uint32_t VDCTRL2;                           /**< LCDIF VSYNC Mode and Dotclk Mode Control Register2, offset: 0x90 */
        uint8_t RESERVED_4[12];
-  __IO uint32_t VDCTRL3;                           /**< eLCDIF VSYNC Mode and Dotclk Mode Control Register3, offset: 0xA0 */
+  __IO uint32_t VDCTRL3;                           /**< LCDIF VSYNC Mode and Dotclk Mode Control Register3, offset: 0xA0 */
        uint8_t RESERVED_5[12];
-  __IO uint32_t VDCTRL4;                           /**< eLCDIF VSYNC Mode and Dotclk Mode Control Register4, offset: 0xB0 */
+  __IO uint32_t VDCTRL4;                           /**< LCDIF VSYNC Mode and Dotclk Mode Control Register4, offset: 0xB0 */
        uint8_t RESERVED_6[220];
   __IO uint32_t BM_ERROR_STAT;                     /**< Bus Master Error Status Register, offset: 0x190 */
        uint8_t RESERVED_7[12];
@@ -13116,7 +13061,7 @@ typedef struct {
        uint8_t RESERVED_8[12];
   __I  uint32_t STAT;                              /**< LCD Interface Status Register, offset: 0x1B0 */
        uint8_t RESERVED_9[76];
-  __IO uint32_t THRES;                             /**< eLCDIF Threshold Register, offset: 0x200 */
+  __IO uint32_t THRES;                             /**< LCDIF Threshold Register, offset: 0x200 */
        uint8_t RESERVED_10[380];
   __IO uint32_t PIGEONCTRL0;                       /**< LCDIF Pigeon Mode Control0 Register, offset: 0x380 */
   __IO uint32_t PIGEONCTRL0_SET;                   /**< LCDIF Pigeon Mode Control0 Register, offset: 0x384 */
@@ -13159,7 +13104,7 @@ typedef struct {
  * @{
  */
 
-/*! @name CTRL - eLCDIF General Control Register */
+/*! @name CTRL - LCDIF General Control Register */
 #define LCDIF_CTRL_RUN_MASK                      (0x1U)
 #define LCDIF_CTRL_RUN_SHIFT                     (0U)
 #define LCDIF_CTRL_RUN(x)                        (((uint32_t)(((uint32_t)(x)) << LCDIF_CTRL_RUN_SHIFT)) & LCDIF_CTRL_RUN_MASK)
@@ -13212,7 +13157,7 @@ typedef struct {
 #define LCDIF_CTRL_SFTRST_SHIFT                  (31U)
 #define LCDIF_CTRL_SFTRST(x)                     (((uint32_t)(((uint32_t)(x)) << LCDIF_CTRL_SFTRST_SHIFT)) & LCDIF_CTRL_SFTRST_MASK)
 
-/*! @name CTRL_SET - eLCDIF General Control Register */
+/*! @name CTRL_SET - LCDIF General Control Register */
 #define LCDIF_CTRL_SET_RUN_MASK                  (0x1U)
 #define LCDIF_CTRL_SET_RUN_SHIFT                 (0U)
 #define LCDIF_CTRL_SET_RUN(x)                    (((uint32_t)(((uint32_t)(x)) << LCDIF_CTRL_SET_RUN_SHIFT)) & LCDIF_CTRL_SET_RUN_MASK)
@@ -13265,7 +13210,7 @@ typedef struct {
 #define LCDIF_CTRL_SET_SFTRST_SHIFT              (31U)
 #define LCDIF_CTRL_SET_SFTRST(x)                 (((uint32_t)(((uint32_t)(x)) << LCDIF_CTRL_SET_SFTRST_SHIFT)) & LCDIF_CTRL_SET_SFTRST_MASK)
 
-/*! @name CTRL_CLR - eLCDIF General Control Register */
+/*! @name CTRL_CLR - LCDIF General Control Register */
 #define LCDIF_CTRL_CLR_RUN_MASK                  (0x1U)
 #define LCDIF_CTRL_CLR_RUN_SHIFT                 (0U)
 #define LCDIF_CTRL_CLR_RUN(x)                    (((uint32_t)(((uint32_t)(x)) << LCDIF_CTRL_CLR_RUN_SHIFT)) & LCDIF_CTRL_CLR_RUN_MASK)
@@ -13318,7 +13263,7 @@ typedef struct {
 #define LCDIF_CTRL_CLR_SFTRST_SHIFT              (31U)
 #define LCDIF_CTRL_CLR_SFTRST(x)                 (((uint32_t)(((uint32_t)(x)) << LCDIF_CTRL_CLR_SFTRST_SHIFT)) & LCDIF_CTRL_CLR_SFTRST_MASK)
 
-/*! @name CTRL_TOG - eLCDIF General Control Register */
+/*! @name CTRL_TOG - LCDIF General Control Register */
 #define LCDIF_CTRL_TOG_RUN_MASK                  (0x1U)
 #define LCDIF_CTRL_TOG_RUN_SHIFT                 (0U)
 #define LCDIF_CTRL_TOG_RUN(x)                    (((uint32_t)(((uint32_t)(x)) << LCDIF_CTRL_TOG_RUN_SHIFT)) & LCDIF_CTRL_TOG_RUN_MASK)
@@ -13371,7 +13316,7 @@ typedef struct {
 #define LCDIF_CTRL_TOG_SFTRST_SHIFT              (31U)
 #define LCDIF_CTRL_TOG_SFTRST(x)                 (((uint32_t)(((uint32_t)(x)) << LCDIF_CTRL_TOG_SFTRST_SHIFT)) & LCDIF_CTRL_TOG_SFTRST_MASK)
 
-/*! @name CTRL1 - eLCDIF General Control1 Register */
+/*! @name CTRL1 - LCDIF General Control1 Register */
 #define LCDIF_CTRL1_RSRVD0_MASK                  (0xF8U)
 #define LCDIF_CTRL1_RSRVD0_SHIFT                 (3U)
 #define LCDIF_CTRL1_RSRVD0(x)                    (((uint32_t)(((uint32_t)(x)) << LCDIF_CTRL1_RSRVD0_SHIFT)) & LCDIF_CTRL1_RSRVD0_MASK)
@@ -13430,7 +13375,7 @@ typedef struct {
 #define LCDIF_CTRL1_IMAGE_DATA_SELECT_SHIFT      (31U)
 #define LCDIF_CTRL1_IMAGE_DATA_SELECT(x)         (((uint32_t)(((uint32_t)(x)) << LCDIF_CTRL1_IMAGE_DATA_SELECT_SHIFT)) & LCDIF_CTRL1_IMAGE_DATA_SELECT_MASK)
 
-/*! @name CTRL1_SET - eLCDIF General Control1 Register */
+/*! @name CTRL1_SET - LCDIF General Control1 Register */
 #define LCDIF_CTRL1_SET_RSRVD0_MASK              (0xF8U)
 #define LCDIF_CTRL1_SET_RSRVD0_SHIFT             (3U)
 #define LCDIF_CTRL1_SET_RSRVD0(x)                (((uint32_t)(((uint32_t)(x)) << LCDIF_CTRL1_SET_RSRVD0_SHIFT)) & LCDIF_CTRL1_SET_RSRVD0_MASK)
@@ -13489,7 +13434,7 @@ typedef struct {
 #define LCDIF_CTRL1_SET_IMAGE_DATA_SELECT_SHIFT  (31U)
 #define LCDIF_CTRL1_SET_IMAGE_DATA_SELECT(x)     (((uint32_t)(((uint32_t)(x)) << LCDIF_CTRL1_SET_IMAGE_DATA_SELECT_SHIFT)) & LCDIF_CTRL1_SET_IMAGE_DATA_SELECT_MASK)
 
-/*! @name CTRL1_CLR - eLCDIF General Control1 Register */
+/*! @name CTRL1_CLR - LCDIF General Control1 Register */
 #define LCDIF_CTRL1_CLR_RSRVD0_MASK              (0xF8U)
 #define LCDIF_CTRL1_CLR_RSRVD0_SHIFT             (3U)
 #define LCDIF_CTRL1_CLR_RSRVD0(x)                (((uint32_t)(((uint32_t)(x)) << LCDIF_CTRL1_CLR_RSRVD0_SHIFT)) & LCDIF_CTRL1_CLR_RSRVD0_MASK)
@@ -13548,7 +13493,7 @@ typedef struct {
 #define LCDIF_CTRL1_CLR_IMAGE_DATA_SELECT_SHIFT  (31U)
 #define LCDIF_CTRL1_CLR_IMAGE_DATA_SELECT(x)     (((uint32_t)(((uint32_t)(x)) << LCDIF_CTRL1_CLR_IMAGE_DATA_SELECT_SHIFT)) & LCDIF_CTRL1_CLR_IMAGE_DATA_SELECT_MASK)
 
-/*! @name CTRL1_TOG - eLCDIF General Control1 Register */
+/*! @name CTRL1_TOG - LCDIF General Control1 Register */
 #define LCDIF_CTRL1_TOG_RSRVD0_MASK              (0xF8U)
 #define LCDIF_CTRL1_TOG_RSRVD0_SHIFT             (3U)
 #define LCDIF_CTRL1_TOG_RSRVD0(x)                (((uint32_t)(((uint32_t)(x)) << LCDIF_CTRL1_TOG_RSRVD0_SHIFT)) & LCDIF_CTRL1_TOG_RSRVD0_MASK)
@@ -13607,7 +13552,7 @@ typedef struct {
 #define LCDIF_CTRL1_TOG_IMAGE_DATA_SELECT_SHIFT  (31U)
 #define LCDIF_CTRL1_TOG_IMAGE_DATA_SELECT(x)     (((uint32_t)(((uint32_t)(x)) << LCDIF_CTRL1_TOG_IMAGE_DATA_SELECT_SHIFT)) & LCDIF_CTRL1_TOG_IMAGE_DATA_SELECT_MASK)
 
-/*! @name CTRL2 - eLCDIF General Control2 Register */
+/*! @name CTRL2 - LCDIF General Control2 Register */
 #define LCDIF_CTRL2_RSRVD0_MASK                  (0xFFFU)
 #define LCDIF_CTRL2_RSRVD0_SHIFT                 (0U)
 #define LCDIF_CTRL2_RSRVD0(x)                    (((uint32_t)(((uint32_t)(x)) << LCDIF_CTRL2_RSRVD0_SHIFT)) & LCDIF_CTRL2_RSRVD0_MASK)
@@ -13633,7 +13578,7 @@ typedef struct {
 #define LCDIF_CTRL2_RSRVD5_SHIFT                 (24U)
 #define LCDIF_CTRL2_RSRVD5(x)                    (((uint32_t)(((uint32_t)(x)) << LCDIF_CTRL2_RSRVD5_SHIFT)) & LCDIF_CTRL2_RSRVD5_MASK)
 
-/*! @name CTRL2_SET - eLCDIF General Control2 Register */
+/*! @name CTRL2_SET - LCDIF General Control2 Register */
 #define LCDIF_CTRL2_SET_RSRVD0_MASK              (0xFFFU)
 #define LCDIF_CTRL2_SET_RSRVD0_SHIFT             (0U)
 #define LCDIF_CTRL2_SET_RSRVD0(x)                (((uint32_t)(((uint32_t)(x)) << LCDIF_CTRL2_SET_RSRVD0_SHIFT)) & LCDIF_CTRL2_SET_RSRVD0_MASK)
@@ -13659,7 +13604,7 @@ typedef struct {
 #define LCDIF_CTRL2_SET_RSRVD5_SHIFT             (24U)
 #define LCDIF_CTRL2_SET_RSRVD5(x)                (((uint32_t)(((uint32_t)(x)) << LCDIF_CTRL2_SET_RSRVD5_SHIFT)) & LCDIF_CTRL2_SET_RSRVD5_MASK)
 
-/*! @name CTRL2_CLR - eLCDIF General Control2 Register */
+/*! @name CTRL2_CLR - LCDIF General Control2 Register */
 #define LCDIF_CTRL2_CLR_RSRVD0_MASK              (0xFFFU)
 #define LCDIF_CTRL2_CLR_RSRVD0_SHIFT             (0U)
 #define LCDIF_CTRL2_CLR_RSRVD0(x)                (((uint32_t)(((uint32_t)(x)) << LCDIF_CTRL2_CLR_RSRVD0_SHIFT)) & LCDIF_CTRL2_CLR_RSRVD0_MASK)
@@ -13685,7 +13630,7 @@ typedef struct {
 #define LCDIF_CTRL2_CLR_RSRVD5_SHIFT             (24U)
 #define LCDIF_CTRL2_CLR_RSRVD5(x)                (((uint32_t)(((uint32_t)(x)) << LCDIF_CTRL2_CLR_RSRVD5_SHIFT)) & LCDIF_CTRL2_CLR_RSRVD5_MASK)
 
-/*! @name CTRL2_TOG - eLCDIF General Control2 Register */
+/*! @name CTRL2_TOG - LCDIF General Control2 Register */
 #define LCDIF_CTRL2_TOG_RSRVD0_MASK              (0xFFFU)
 #define LCDIF_CTRL2_TOG_RSRVD0_SHIFT             (0U)
 #define LCDIF_CTRL2_TOG_RSRVD0(x)                (((uint32_t)(((uint32_t)(x)) << LCDIF_CTRL2_TOG_RSRVD0_SHIFT)) & LCDIF_CTRL2_TOG_RSRVD0_MASK)
@@ -13711,7 +13656,7 @@ typedef struct {
 #define LCDIF_CTRL2_TOG_RSRVD5_SHIFT             (24U)
 #define LCDIF_CTRL2_TOG_RSRVD5(x)                (((uint32_t)(((uint32_t)(x)) << LCDIF_CTRL2_TOG_RSRVD5_SHIFT)) & LCDIF_CTRL2_TOG_RSRVD5_MASK)
 
-/*! @name TRANSFER_COUNT - eLCDIF Horizontal and Vertical Valid Data Count Register */
+/*! @name TRANSFER_COUNT - LCDIF Horizontal and Vertical Valid Data Count Register */
 #define LCDIF_TRANSFER_COUNT_H_COUNT_MASK        (0xFFFFU)
 #define LCDIF_TRANSFER_COUNT_H_COUNT_SHIFT       (0U)
 #define LCDIF_TRANSFER_COUNT_H_COUNT(x)          (((uint32_t)(((uint32_t)(x)) << LCDIF_TRANSFER_COUNT_H_COUNT_SHIFT)) & LCDIF_TRANSFER_COUNT_H_COUNT_MASK)
@@ -13729,7 +13674,7 @@ typedef struct {
 #define LCDIF_NEXT_BUF_ADDR_SHIFT                (0U)
 #define LCDIF_NEXT_BUF_ADDR(x)                   (((uint32_t)(((uint32_t)(x)) << LCDIF_NEXT_BUF_ADDR_SHIFT)) & LCDIF_NEXT_BUF_ADDR_MASK)
 
-/*! @name VDCTRL0 - eLCDIF VSYNC Mode and Dotclk Mode Control Register0 */
+/*! @name VDCTRL0 - LCDIF VSYNC Mode and Dotclk Mode Control Register0 */
 #define LCDIF_VDCTRL0_VSYNC_PULSE_WIDTH_MASK     (0x3FFFFU)
 #define LCDIF_VDCTRL0_VSYNC_PULSE_WIDTH_SHIFT    (0U)
 #define LCDIF_VDCTRL0_VSYNC_PULSE_WIDTH(x)       (((uint32_t)(((uint32_t)(x)) << LCDIF_VDCTRL0_VSYNC_PULSE_WIDTH_SHIFT)) & LCDIF_VDCTRL0_VSYNC_PULSE_WIDTH_MASK)
@@ -13767,7 +13712,7 @@ typedef struct {
 #define LCDIF_VDCTRL0_RSRVD2_SHIFT               (29U)
 #define LCDIF_VDCTRL0_RSRVD2(x)                  (((uint32_t)(((uint32_t)(x)) << LCDIF_VDCTRL0_RSRVD2_SHIFT)) & LCDIF_VDCTRL0_RSRVD2_MASK)
 
-/*! @name VDCTRL0_SET - eLCDIF VSYNC Mode and Dotclk Mode Control Register0 */
+/*! @name VDCTRL0_SET - LCDIF VSYNC Mode and Dotclk Mode Control Register0 */
 #define LCDIF_VDCTRL0_SET_VSYNC_PULSE_WIDTH_MASK (0x3FFFFU)
 #define LCDIF_VDCTRL0_SET_VSYNC_PULSE_WIDTH_SHIFT (0U)
 #define LCDIF_VDCTRL0_SET_VSYNC_PULSE_WIDTH(x)   (((uint32_t)(((uint32_t)(x)) << LCDIF_VDCTRL0_SET_VSYNC_PULSE_WIDTH_SHIFT)) & LCDIF_VDCTRL0_SET_VSYNC_PULSE_WIDTH_MASK)
@@ -13805,7 +13750,7 @@ typedef struct {
 #define LCDIF_VDCTRL0_SET_RSRVD2_SHIFT           (29U)
 #define LCDIF_VDCTRL0_SET_RSRVD2(x)              (((uint32_t)(((uint32_t)(x)) << LCDIF_VDCTRL0_SET_RSRVD2_SHIFT)) & LCDIF_VDCTRL0_SET_RSRVD2_MASK)
 
-/*! @name VDCTRL0_CLR - eLCDIF VSYNC Mode and Dotclk Mode Control Register0 */
+/*! @name VDCTRL0_CLR - LCDIF VSYNC Mode and Dotclk Mode Control Register0 */
 #define LCDIF_VDCTRL0_CLR_VSYNC_PULSE_WIDTH_MASK (0x3FFFFU)
 #define LCDIF_VDCTRL0_CLR_VSYNC_PULSE_WIDTH_SHIFT (0U)
 #define LCDIF_VDCTRL0_CLR_VSYNC_PULSE_WIDTH(x)   (((uint32_t)(((uint32_t)(x)) << LCDIF_VDCTRL0_CLR_VSYNC_PULSE_WIDTH_SHIFT)) & LCDIF_VDCTRL0_CLR_VSYNC_PULSE_WIDTH_MASK)
@@ -13843,7 +13788,7 @@ typedef struct {
 #define LCDIF_VDCTRL0_CLR_RSRVD2_SHIFT           (29U)
 #define LCDIF_VDCTRL0_CLR_RSRVD2(x)              (((uint32_t)(((uint32_t)(x)) << LCDIF_VDCTRL0_CLR_RSRVD2_SHIFT)) & LCDIF_VDCTRL0_CLR_RSRVD2_MASK)
 
-/*! @name VDCTRL0_TOG - eLCDIF VSYNC Mode and Dotclk Mode Control Register0 */
+/*! @name VDCTRL0_TOG - LCDIF VSYNC Mode and Dotclk Mode Control Register0 */
 #define LCDIF_VDCTRL0_TOG_VSYNC_PULSE_WIDTH_MASK (0x3FFFFU)
 #define LCDIF_VDCTRL0_TOG_VSYNC_PULSE_WIDTH_SHIFT (0U)
 #define LCDIF_VDCTRL0_TOG_VSYNC_PULSE_WIDTH(x)   (((uint32_t)(((uint32_t)(x)) << LCDIF_VDCTRL0_TOG_VSYNC_PULSE_WIDTH_SHIFT)) & LCDIF_VDCTRL0_TOG_VSYNC_PULSE_WIDTH_MASK)
@@ -13881,7 +13826,7 @@ typedef struct {
 #define LCDIF_VDCTRL0_TOG_RSRVD2_SHIFT           (29U)
 #define LCDIF_VDCTRL0_TOG_RSRVD2(x)              (((uint32_t)(((uint32_t)(x)) << LCDIF_VDCTRL0_TOG_RSRVD2_SHIFT)) & LCDIF_VDCTRL0_TOG_RSRVD2_MASK)
 
-/*! @name VDCTRL1 - eLCDIF VSYNC Mode and Dotclk Mode Control Register1 */
+/*! @name VDCTRL1 - LCDIF VSYNC Mode and Dotclk Mode Control Register1 */
 #define LCDIF_VDCTRL1_VSYNC_PERIOD_MASK          (0xFFFFFFFFU)
 #define LCDIF_VDCTRL1_VSYNC_PERIOD_SHIFT         (0U)
 #define LCDIF_VDCTRL1_VSYNC_PERIOD(x)            (((uint32_t)(((uint32_t)(x)) << LCDIF_VDCTRL1_VSYNC_PERIOD_SHIFT)) & LCDIF_VDCTRL1_VSYNC_PERIOD_MASK)
@@ -13894,7 +13839,7 @@ typedef struct {
 #define LCDIF_VDCTRL2_HSYNC_PULSE_WIDTH_SHIFT    (18U)
 #define LCDIF_VDCTRL2_HSYNC_PULSE_WIDTH(x)       (((uint32_t)(((uint32_t)(x)) << LCDIF_VDCTRL2_HSYNC_PULSE_WIDTH_SHIFT)) & LCDIF_VDCTRL2_HSYNC_PULSE_WIDTH_MASK)
 
-/*! @name VDCTRL3 - eLCDIF VSYNC Mode and Dotclk Mode Control Register3 */
+/*! @name VDCTRL3 - LCDIF VSYNC Mode and Dotclk Mode Control Register3 */
 #define LCDIF_VDCTRL3_VERTICAL_WAIT_CNT_MASK     (0xFFFFU)
 #define LCDIF_VDCTRL3_VERTICAL_WAIT_CNT_SHIFT    (0U)
 #define LCDIF_VDCTRL3_VERTICAL_WAIT_CNT(x)       (((uint32_t)(((uint32_t)(x)) << LCDIF_VDCTRL3_VERTICAL_WAIT_CNT_SHIFT)) & LCDIF_VDCTRL3_VERTICAL_WAIT_CNT_MASK)
@@ -13911,7 +13856,7 @@ typedef struct {
 #define LCDIF_VDCTRL3_RSRVD0_SHIFT               (30U)
 #define LCDIF_VDCTRL3_RSRVD0(x)                  (((uint32_t)(((uint32_t)(x)) << LCDIF_VDCTRL3_RSRVD0_SHIFT)) & LCDIF_VDCTRL3_RSRVD0_MASK)
 
-/*! @name VDCTRL4 - eLCDIF VSYNC Mode and Dotclk Mode Control Register4 */
+/*! @name VDCTRL4 - LCDIF VSYNC Mode and Dotclk Mode Control Register4 */
 #define LCDIF_VDCTRL4_DOTCLK_H_VALID_DATA_CNT_MASK (0x3FFFFU)
 #define LCDIF_VDCTRL4_DOTCLK_H_VALID_DATA_CNT_SHIFT (0U)
 #define LCDIF_VDCTRL4_DOTCLK_H_VALID_DATA_CNT(x) (((uint32_t)(((uint32_t)(x)) << LCDIF_VDCTRL4_DOTCLK_H_VALID_DATA_CNT_SHIFT)) & LCDIF_VDCTRL4_DOTCLK_H_VALID_DATA_CNT_MASK)
@@ -13961,7 +13906,7 @@ typedef struct {
 #define LCDIF_STAT_PRESENT_SHIFT                 (31U)
 #define LCDIF_STAT_PRESENT(x)                    (((uint32_t)(((uint32_t)(x)) << LCDIF_STAT_PRESENT_SHIFT)) & LCDIF_STAT_PRESENT_MASK)
 
-/*! @name THRES - eLCDIF Threshold Register */
+/*! @name THRES - LCDIF Threshold Register */
 #define LCDIF_THRES_PANIC_MASK                   (0x1FFU)
 #define LCDIF_THRES_PANIC_SHIFT                  (0U)
 #define LCDIF_THRES_PANIC(x)                     (((uint32_t)(((uint32_t)(x)) << LCDIF_THRES_PANIC_SHIFT)) & LCDIF_THRES_PANIC_MASK)
@@ -19691,6 +19636,12 @@ typedef struct {
 #define SEMC_DBICR1_CEITV_MASK                   (0xF000000U)
 #define SEMC_DBICR1_CEITV_SHIFT                  (24U)
 #define SEMC_DBICR1_CEITV(x)                     (((uint32_t)(((uint32_t)(x)) << SEMC_DBICR1_CEITV_SHIFT)) & SEMC_DBICR1_CEITV_MASK)
+#define SEMC_DBICR1_REL2_MASK                    (0x30000000U)
+#define SEMC_DBICR1_REL2_SHIFT                   (28U)
+#define SEMC_DBICR1_REL2(x)                      (((uint32_t)(((uint32_t)(x)) << SEMC_DBICR1_REL2_SHIFT)) & SEMC_DBICR1_REL2_MASK)
+#define SEMC_DBICR1_REH2_MASK                    (0xC0000000U)
+#define SEMC_DBICR1_REH2_SHIFT                   (30U)
+#define SEMC_DBICR1_REH2(x)                      (((uint32_t)(((uint32_t)(x)) << SEMC_DBICR1_REH2_SHIFT)) & SEMC_DBICR1_REH2_MASK)
 
 /*! @name IPCR0 - IP Command control register 0 */
 #define SEMC_IPCR0_SA_MASK                       (0xFFFFFFFFU)
@@ -19817,8 +19768,8 @@ typedef struct {
        uint8_t RESERVED_1[4];
   __IO uint32_t LPGPR_ALIAS[4];                    /**< SNVS_LP General Purpose Registers 0 .. 3, array offset: 0x90, array step: 0x4 */
        uint8_t RESERVED_2[96];
-  __IO uint32_t LPGPR[4];                          /**< SNVS_LP General Purpose Registers 0 .. 3, array offset: 0x100, array step: 0x4 */
-       uint8_t RESERVED_3[2792];
+  __IO uint32_t LPGPR[8];                          /**< SNVS_LP General Purpose Registers 0 .. 7, array offset: 0x100, array step: 0x4 */
+       uint8_t RESERVED_3[2776];
   __I  uint32_t HPVIDR1;                           /**< SNVS_HP Version ID Register 1, offset: 0xBF8 */
   __I  uint32_t HPVIDR2;                           /**< SNVS_HP Version ID Register 2, offset: 0xBFC */
 } SNVS_Type;
@@ -19924,6 +19875,9 @@ typedef struct {
 #define SNVS_HPCR_HPTA_EN_MASK                   (0x2U)
 #define SNVS_HPCR_HPTA_EN_SHIFT                  (1U)
 #define SNVS_HPCR_HPTA_EN(x)                     (((uint32_t)(((uint32_t)(x)) << SNVS_HPCR_HPTA_EN_SHIFT)) & SNVS_HPCR_HPTA_EN_MASK)
+#define SNVS_HPCR_DIS_PI_MASK                    (0x4U)
+#define SNVS_HPCR_DIS_PI_SHIFT                   (2U)
+#define SNVS_HPCR_DIS_PI(x)                      (((uint32_t)(((uint32_t)(x)) << SNVS_HPCR_DIS_PI_SHIFT)) & SNVS_HPCR_DIS_PI_MASK)
 #define SNVS_HPCR_PI_EN_MASK                     (0x8U)
 #define SNVS_HPCR_PI_EN_SHIFT                    (3U)
 #define SNVS_HPCR_PI_EN(x)                       (((uint32_t)(((uint32_t)(x)) << SNVS_HPCR_PI_EN_SHIFT)) & SNVS_HPCR_PI_EN_MASK)
@@ -20011,12 +19965,9 @@ typedef struct {
 #define SNVS_HPSR_SSM_STATE_MASK                 (0xF00U)
 #define SNVS_HPSR_SSM_STATE_SHIFT                (8U)
 #define SNVS_HPSR_SSM_STATE(x)                   (((uint32_t)(((uint32_t)(x)) << SNVS_HPSR_SSM_STATE_SHIFT)) & SNVS_HPSR_SSM_STATE_MASK)
-#define SNVS_HPSR_SYS_SECURITY_CFG_MASK          (0x7000U)
-#define SNVS_HPSR_SYS_SECURITY_CFG_SHIFT         (12U)
-#define SNVS_HPSR_SYS_SECURITY_CFG(x)            (((uint32_t)(((uint32_t)(x)) << SNVS_HPSR_SYS_SECURITY_CFG_SHIFT)) & SNVS_HPSR_SYS_SECURITY_CFG_MASK)
-#define SNVS_HPSR_SYS_SECURE_BOOT_MASK           (0x8000U)
-#define SNVS_HPSR_SYS_SECURE_BOOT_SHIFT          (15U)
-#define SNVS_HPSR_SYS_SECURE_BOOT(x)             (((uint32_t)(((uint32_t)(x)) << SNVS_HPSR_SYS_SECURE_BOOT_SHIFT)) & SNVS_HPSR_SYS_SECURE_BOOT_MASK)
+#define SNVS_HPSR_SECURITY_CONFIG_MASK           (0xF000U)
+#define SNVS_HPSR_SECURITY_CONFIG_SHIFT          (12U)
+#define SNVS_HPSR_SECURITY_CONFIG(x)             (((uint32_t)(((uint32_t)(x)) << SNVS_HPSR_SECURITY_CONFIG_SHIFT)) & SNVS_HPSR_SECURITY_CONFIG_MASK)
 #define SNVS_HPSR_OTPMK_SYNDROME_MASK            (0x1FF0000U)
 #define SNVS_HPSR_OTPMK_SYNDROME_SHIFT           (16U)
 #define SNVS_HPSR_OTPMK_SYNDROME(x)              (((uint32_t)(((uint32_t)(x)) << SNVS_HPSR_OTPMK_SYNDROME_SHIFT)) & SNVS_HPSR_OTPMK_SYNDROME_MASK)
@@ -20323,13 +20274,13 @@ typedef struct {
 /* The count of SNVS_LPGPR_ALIAS */
 #define SNVS_LPGPR_ALIAS_COUNT                   (4U)
 
-/*! @name LPGPR - SNVS_LP General Purpose Registers 0 .. 3 */
+/*! @name LPGPR - SNVS_LP General Purpose Registers 0 .. 7 */
 #define SNVS_LPGPR_GPR_MASK                      (0xFFFFFFFFU)
 #define SNVS_LPGPR_GPR_SHIFT                     (0U)
 #define SNVS_LPGPR_GPR(x)                        (((uint32_t)(((uint32_t)(x)) << SNVS_LPGPR_GPR_SHIFT)) & SNVS_LPGPR_GPR_MASK)
 
 /* The count of SNVS_LPGPR */
-#define SNVS_LPGPR_COUNT                         (4U)
+#define SNVS_LPGPR_COUNT                         (8U)
 
 /*! @name HPVIDR1 - SNVS_HP Version ID Register 1 */
 #define SNVS_HPVIDR1_MINOR_REV_MASK              (0xFFU)
@@ -21893,9 +21844,9 @@ typedef struct {
 
 /** TSC - Register Layout Typedef */
 typedef struct {
-  __IO uint32_t BASIC_SETTING;                     /**< PS Input Buffer Address, offset: 0x0 */
+  __IO uint32_t BASIC_SETTING;                     /**< , offset: 0x0 */
        uint8_t RESERVED_0[12];
-  __IO uint32_t PS_INPUT_BUFFER_ADDR;              /**< PS Input Buffer Address, offset: 0x10 */
+  __IO uint32_t PRE_CHARGE_TIME;                   /**< , offset: 0x10 */
        uint8_t RESERVED_1[12];
   __IO uint32_t FLOW_CONTROL;                      /**< Flow Control, offset: 0x20 */
        uint8_t RESERVED_2[12];
@@ -21921,7 +21872,7 @@ typedef struct {
  * @{
  */
 
-/*! @name BASIC_SETTING - PS Input Buffer Address */
+/*! @name BASIC_SETTING -  */
 #define TSC_BASIC_SETTING_AUTO_MEASURE_MASK      (0x1U)
 #define TSC_BASIC_SETTING_AUTO_MEASURE_SHIFT     (0U)
 #define TSC_BASIC_SETTING_AUTO_MEASURE(x)        (((uint32_t)(((uint32_t)(x)) << TSC_BASIC_SETTING_AUTO_MEASURE_SHIFT)) & TSC_BASIC_SETTING_AUTO_MEASURE_MASK)
@@ -21932,10 +21883,10 @@ typedef struct {
 #define TSC_BASIC_SETTING_MEASURE_DELAY_TIME_SHIFT (8U)
 #define TSC_BASIC_SETTING_MEASURE_DELAY_TIME(x)  (((uint32_t)(((uint32_t)(x)) << TSC_BASIC_SETTING_MEASURE_DELAY_TIME_SHIFT)) & TSC_BASIC_SETTING_MEASURE_DELAY_TIME_MASK)
 
-/*! @name PS_INPUT_BUFFER_ADDR - PS Input Buffer Address */
-#define TSC_PS_INPUT_BUFFER_ADDR_PRE_CHARGE_TIME_MASK (0xFFFFFFFFU)
-#define TSC_PS_INPUT_BUFFER_ADDR_PRE_CHARGE_TIME_SHIFT (0U)
-#define TSC_PS_INPUT_BUFFER_ADDR_PRE_CHARGE_TIME(x) (((uint32_t)(((uint32_t)(x)) << TSC_PS_INPUT_BUFFER_ADDR_PRE_CHARGE_TIME_SHIFT)) & TSC_PS_INPUT_BUFFER_ADDR_PRE_CHARGE_TIME_MASK)
+/*! @name PRE_CHARGE_TIME -  */
+#define TSC_PRE_CHARGE_TIME_PRE_CHARGE_TIME_MASK (0xFFFFFFFFU)
+#define TSC_PRE_CHARGE_TIME_PRE_CHARGE_TIME_SHIFT (0U)
+#define TSC_PRE_CHARGE_TIME_PRE_CHARGE_TIME(x)   (((uint32_t)(((uint32_t)(x)) << TSC_PRE_CHARGE_TIME_PRE_CHARGE_TIME_SHIFT)) & TSC_PRE_CHARGE_TIME_PRE_CHARGE_TIME_MASK)
 
 /*! @name FLOW_CONTROL - Flow Control */
 #define TSC_FLOW_CONTROL_SW_RST_MASK             (0x1U)
@@ -25644,9 +25595,12 @@ typedef struct {
 #define USDHC_VEND_SPEC2_ACMD23_ARGU2_EN_MASK    (0x1000U)
 #define USDHC_VEND_SPEC2_ACMD23_ARGU2_EN_SHIFT   (12U)
 #define USDHC_VEND_SPEC2_ACMD23_ARGU2_EN(x)      (((uint32_t)(((uint32_t)(x)) << USDHC_VEND_SPEC2_ACMD23_ARGU2_EN_SHIFT)) & USDHC_VEND_SPEC2_ACMD23_ARGU2_EN_MASK)
-#define USDHC_VEND_SPEC2_AHB_RST_MASK            (0x4000U)
-#define USDHC_VEND_SPEC2_AHB_RST_SHIFT           (14U)
-#define USDHC_VEND_SPEC2_AHB_RST(x)              (((uint32_t)(((uint32_t)(x)) << USDHC_VEND_SPEC2_AHB_RST_SHIFT)) & USDHC_VEND_SPEC2_AHB_RST_MASK)
+#define USDHC_VEND_SPEC2_PART_DLL_DEBUG_MASK     (0x2000U)
+#define USDHC_VEND_SPEC2_PART_DLL_DEBUG_SHIFT    (13U)
+#define USDHC_VEND_SPEC2_PART_DLL_DEBUG(x)       (((uint32_t)(((uint32_t)(x)) << USDHC_VEND_SPEC2_PART_DLL_DEBUG_SHIFT)) & USDHC_VEND_SPEC2_PART_DLL_DEBUG_MASK)
+#define USDHC_VEND_SPEC2_BUS_RST_MASK            (0x4000U)
+#define USDHC_VEND_SPEC2_BUS_RST_SHIFT           (14U)
+#define USDHC_VEND_SPEC2_BUS_RST(x)              (((uint32_t)(((uint32_t)(x)) << USDHC_VEND_SPEC2_BUS_RST_SHIFT)) & USDHC_VEND_SPEC2_BUS_RST_MASK)
 
 /*! @name TUNING_CTRL - Tuning Control Register */
 #define USDHC_TUNING_CTRL_TUNING_START_TAP_MASK  (0xFFU)
@@ -27232,7 +27186,11 @@ typedef struct {
 */
 
 #if defined(__ARMCC_VERSION)
-  #pragma pop
+  #if (__ARMCC_VERSION >= 6010050)
+    #pragma clang diagnostic pop
+  #else
+    #pragma pop
+  #endif
 #elif defined(__CWCC__)
   #pragma pop
 #elif defined(__GNUC__)

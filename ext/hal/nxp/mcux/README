@@ -16,8 +16,8 @@ Status:
    SoC		Version (Release Date)		Tag
    ----------------------------------------------------------------------------
    LPC54114	KSDK 2.3.0 (2017-11-16)		REL_SDK_REL7_2.3.0_RFP_RC4_5_PRE
-   MIMXRT1051	KSDK 2.3.0
-   MIMXRT1052	KSDK 2.3.0
+   MIMXRT1051	KSDK 2.3.0 (2018-01-11)		REL_SDK_RT1050_2.3.0_RFP_LIC_BSD_RC2
+   MIMXRT1052	KSDK 2.3.0 (2018-01-11)		REL_SDK_RT1050_2.3.0_RFP_LIC_BSD_RC2
    MK64F12	KSDK 2.3.0 (2017-11-16)		REL_SDK_REL7_2.3.0_RFP_RC4_5_PRE
    MKL25Z4	KSDK 2.2.0 (2017-06-29)		REL6.GA.RC4.6_ISSDK1.6GAFIX.GEN
    MKW21Z4	KSDK 2.2.0 (2018-01-19)		release_conn_ksdk_2.2_kw41z_1.0.4_stage_final
