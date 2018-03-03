@@ -1,0 +1,3 @@
+tests:
+  kernel.earlysleep:
+    tags: core
