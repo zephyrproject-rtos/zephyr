@@ -1,0 +1,10 @@
+common:
+  harness: net
+  tags: net net_automatic_testing vlan traffic_class
+sample:
+  description: Test network functionality via automatic scripts
+  name: Network automatic testing app
+tests:
+  test:
+    min_ram: 32
+    depends_on: netif
