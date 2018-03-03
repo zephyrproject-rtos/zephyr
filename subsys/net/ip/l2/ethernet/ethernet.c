@@ -156,7 +156,7 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		family = AF_INET6;
 		break;
 	default:
-		NET_DBG("Unknown hdr type 0x%04x", type);
+		NET_DBG("Unknown hdr type 0x%04x iface %p", type, iface);
 		return NET_DROP;
 	}
 
