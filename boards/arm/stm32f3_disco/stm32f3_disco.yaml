@@ -12,3 +12,4 @@ supported:
   - rtc
   - spi
   - usb_device
+  - lsm303dlhc
