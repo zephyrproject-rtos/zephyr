@@ -16,6 +16,8 @@
 #include <errno.h>
 #include <stdbool.h>
 
+#define WORKQUEUE_THREAD_NAME	"workqueue"
+
 static void work_q_main(void *work_q_ptr, void *p2, void *p3)
 {
 	struct k_work_q *work_q = work_q_ptr;
@@ -53,6 +55,8 @@ void k_work_q_start(struct k_work_q *work_q, k_thread_stack_t *stack,
 	k_queue_init(&work_q->queue);
 	(void)k_thread_create(&work_q->thread, stack, stack_size, work_q_main,
 			work_q, 0, 0, prio, 0, 0);
+
+	k_thread_name_set(&work_q->thread, WORKQUEUE_THREAD_NAME);
 	_k_object_init(work_q);
 }
 

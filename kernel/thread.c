@@ -130,22 +130,11 @@ void _impl_k_thread_custom_data_set(void *value)
 	_current->custom_data = value;
 }
 
-#ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(k_thread_custom_data_set, data)
-{
-	_impl_k_thread_custom_data_set((void *)data);
-	return 0;
-}
-#endif
-
 void *_impl_k_thread_custom_data_get(void)
 {
 	return _current->custom_data;
 }
 
-#ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER0_SIMPLE(k_thread_custom_data_get);
-#endif /* CONFIG_USERSPACE */
 #endif /* CONFIG_THREAD_CUSTOM_DATA */
 
 #if defined(CONFIG_THREAD_MONITOR)
@@ -173,7 +162,63 @@ void _thread_monitor_exit(struct k_thread *thread)
 
 	irq_unlock(key);
 }
-#endif /* CONFIG_THREAD_MONITOR */
+#endif
+
+#ifdef CONFIG_THREAD_NAME
+void _impl_k_thread_name_set(struct k_thread *thread, const char *value)
+{
+	if (thread == NULL) {
+		_current->name = value;
+	} else {
+		thread->name = value;
+	}
+}
+
+const char *_impl_k_thread_name_get(struct k_thread *thread)
+{
+	return (const char *)thread->name;
+}
+
+#else
+void _impl_k_thread_name_set(k_tid_t thread_id, const char *value)
+{
+	ARG_UNUSED(thread_id);
+	ARG_UNUSED(value);
+}
+
+const char *_impl_k_thread_name_get(k_tid_t thread_id)
+{
+	ARG_UNUSED(thread_id);
+	return NULL;
+}
+#endif /* CONFIG_THREAD_NAME */
+
+#ifdef CONFIG_USERSPACE
+
+#if defined(CONFIG_THREAD_NAME)
+Z_SYSCALL_HANDLER(k_thread_name_set, thread, data)
+{
+	char *name_copy = NULL;
+
+	name_copy = z_user_string_alloc_copy((char *)data, 64);
+	_impl_k_thread_name_set((struct k_thread *)thread, name_copy);
+	return 0;
+}
+
+Z_SYSCALL_HANDLER1_SIMPLE(k_thread_name_get, K_OBJ_THREAD, k_tid_t);
+#endif
+
+#ifdef CONFIG_THREAD_CUSTOM_DATA
+Z_SYSCALL_HANDLER(k_thread_custom_data_set, data)
+{
+	_impl_k_thread_custom_data_set((void *)data);
+	return 0;
+}
+
+Z_SYSCALL_HANDLER0_SIMPLE(k_thread_custom_data_get);
+#endif /* CONFIG_THREAD_CUSTOM_DATA */
+
+#endif
 
 #ifdef CONFIG_STACK_SENTINEL
 /* Check that the stack sentinel is still present
@@ -291,7 +336,7 @@ void _setup_new_thread(struct k_thread *new_thread,
 		       k_thread_stack_t *stack, size_t stack_size,
 		       k_thread_entry_t entry,
 		       void *p1, void *p2, void *p3,
-		       int prio, u32_t options)
+		       int prio, u32_t options, const char *name)
 {
 	stack_size = adjust_stack_size(stack_size);
 
@@ -328,6 +373,9 @@ void _setup_new_thread(struct k_thread *new_thread,
 	new_thread->next_thread = _kernel.threads;
 	_kernel.threads = new_thread;
 	irq_unlock(key);
+#endif
+#ifdef CONFIG_THREAD_NAME
+	new_thread->name = name;
 #endif
 #ifdef CONFIG_USERSPACE
 	_k_object_init(new_thread);
@@ -372,7 +420,7 @@ k_tid_t _impl_k_thread_create(struct k_thread *new_thread,
 	__ASSERT(!_is_in_isr(), "Threads may not be created in ISRs");
 
 	_setup_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3,
-			  prio, options);
+			  prio, options, NULL);
 
 	if (delay != K_FOREVER) {
 		schedule_new_thread(new_thread, delay);
@@ -455,7 +503,7 @@ Z_SYSCALL_HANDLER(k_thread_create,
 	_setup_new_thread((struct k_thread *)new_thread, stack, stack_size,
 			  (k_thread_entry_t)entry, (void *)p1,
 			  (void *)margs->arg6, (void *)margs->arg7, prio,
-			  options);
+			  options, NULL);
 
 	if (delay != K_FOREVER) {
 		schedule_new_thread(new_thread, delay);
@@ -607,7 +655,8 @@ void _init_static_threads(void)
 			thread_data->init_p2,
 			thread_data->init_p3,
 			thread_data->init_prio,
-			thread_data->init_options);
+			thread_data->init_options,
+			thread_data->init_name);
 
 		thread_data->init_thread->init_data = thread_data;
 	}
