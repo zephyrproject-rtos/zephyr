@@ -32,7 +32,6 @@ config NET_VLAN
 config NET_VLAN_COUNT
 	int "Max VLAN tags supported in the system"
 	default 1
-	range 1 1 if SLIP
 	range 1 255
 	depends on NET_VLAN
 	help
