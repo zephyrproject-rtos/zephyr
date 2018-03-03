@@ -31,16 +31,20 @@
 #include "eth_native_posix_priv.h"
 
 #if defined(CONFIG_NET_L2_ETHERNET)
-#define _ETH_L2_LAYER ETHERNET_L2
-#define _ETH_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(ETHERNET_L2)
 #define _ETH_MTU 1500
 #endif
 
 #define NET_BUF_TIMEOUT MSEC(10)
 
+#if defined(CONFIG_NET_VLAN)
+#define ETH_HDR_LEN sizeof(struct net_eth_vlan_hdr)
+#else
+#define ETH_HDR_LEN sizeof(struct net_eth_hdr)
+#endif
+
 struct eth_context {
-	u8_t recv[_ETH_MTU + sizeof(struct net_eth_hdr)];
-	u8_t send[_ETH_MTU + sizeof(struct net_eth_hdr)];
+	u8_t recv[_ETH_MTU + ETH_HDR_LEN];
+	u8_t send[_ETH_MTU + ETH_HDR_LEN];
 	u8_t mac_addr[6];
 	struct net_linkaddr ll_addr;
 	struct net_if *iface;
@@ -105,8 +109,28 @@ static struct net_linkaddr *eth_get_mac(struct eth_context *ctx)
 	return &ctx->ll_addr;
 }
 
+static inline struct net_if *get_iface(struct eth_context *ctx,
+				       u16_t vlan_tag)
+{
+#if defined(CONFIG_NET_VLAN)
+	struct net_if *iface;
+
+	iface = net_eth_get_vlan_iface(ctx->iface, vlan_tag);
+	if (!iface) {
+		return ctx->iface;
+	}
+
+	return iface;
+#else
+	ARG_UNUSED(vlan_tag);
+
+	return ctx->iface;
+#endif
+}
+
 static int read_data(struct eth_context *ctx, int fd)
 {
+	u16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 	int ret;
@@ -138,9 +162,23 @@ static int read_data(struct eth_context *ctx, int fd)
 		count += frag->len;
 	} while (ret > 0);
 
+#if defined(CONFIG_NET_VLAN)
+	{
+		struct net_eth_hdr *hdr = NET_ETH_HDR(pkt);
+
+		if (ntohs(hdr->type) == NET_ETH_PTYPE_VLAN) {
+			struct net_eth_vlan_hdr *hdr_vlan =
+				(struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
+
+			net_pkt_set_vlan_tci(pkt, ntohs(hdr_vlan->vlan.tci));
+			vlan_tag = net_pkt_vlan_tag(pkt);
+		}
+	}
+#endif
+
 	SYS_LOG_DBG("Recv pkt %p len %d", pkt, net_pkt_get_len(pkt));
 
-	if (net_recv_data(ctx->iface, pkt) < 0) {
+	if (net_recv_data(get_iface(ctx, vlan_tag), pkt) < 0) {
 		net_pkt_unref(pkt);
 	}
 
@@ -179,12 +217,15 @@ static void eth_iface_init(struct net_if *iface)
 	struct eth_context *ctx = net_if_get_device(iface)->driver_data;
 	struct net_linkaddr *ll_addr = eth_get_mac(ctx);
 
+	ctx->iface = iface;
+
+	ethernet_init(iface);
+
 	if (ctx->init_done) {
 		return;
 	}
 
 	ctx->init_done = true;
-	ctx->iface = iface;
 
 #if defined(CONFIG_ETH_NATIVE_POSIX_RANDOM_MAC)
 	/* 00-00-5E-00-53-xx Documentation RFC 7042 */
@@ -228,12 +269,25 @@ static void eth_iface_init(struct net_if *iface)
 	}
 }
 
+#if defined(CONFIG_NET_VLAN)
+static enum eth_hw_caps eth_capabilities(struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return ETH_HW_VLAN;
+}
+#endif
+
 static const struct ethernet_api eth_if_api = {
 	.iface_api.init = eth_iface_init,
 	.iface_api.send = eth_send,
+
+#if defined(CONFIG_NET_VLAN)
+	.get_capabilities = eth_capabilities,
+#endif
 };
 
-NET_DEVICE_INIT(eth_native_posix, CONFIG_ETH_NATIVE_POSIX_DRV_NAME,
-		eth_init, &eth_context_data, NULL,
-		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &eth_if_api,
-		_ETH_L2_LAYER, _ETH_L2_CTX_TYPE, _ETH_MTU);
+ETH_NET_DEVICE_INIT(eth_native_posix, CONFIG_ETH_NATIVE_POSIX_DRV_NAME,
+		    eth_init, &eth_context_data, NULL,
+		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &eth_if_api,
+		    _ETH_MTU);
