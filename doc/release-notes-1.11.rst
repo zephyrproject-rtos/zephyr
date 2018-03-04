@@ -93,6 +93,11 @@ Networking
 Bluetooth
 *********
 
+* Multiple fixes to the controller
+* Fixed potential connection transmission deadlock issue with the help
+  of a dedicated fragment pool
+* Multiple fixes to Mesh support
+* Added test automation for Mesh (for tests/bluetooth/tester)
 
 Build and Infrastructure
 ************************
