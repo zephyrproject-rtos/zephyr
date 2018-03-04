@@ -113,9 +113,9 @@ SECTION_FUNC(TEXT, _NanoIdleValClear)
  */
 
 SECTION_FUNC(TEXT, k_cpu_idle)
-#ifdef CONFIG_KERNEL_EVENT_LOGGER_SLEEP
+#ifdef CONFIG_TRACING
 	push {lr}
-	bl    _sys_k_event_logger_enter_sleep
+	bl    sys_trace_idle
 	pop {r0}
 	mov lr, r0
 #endif
@@ -157,9 +157,9 @@ SECTION_FUNC(TEXT, k_cpu_idle)
  */
 
 SECTION_FUNC(TEXT, k_cpu_atomic_idle)
-#ifdef CONFIG_KERNEL_EVENT_LOGGER_SLEEP
+#ifdef CONFIG_TRACING
 	push {lr}
-	bl    _sys_k_event_logger_enter_sleep
+	bl    sys_trace_idle
 	pop {r1}
 	mov lr, r1
 #endif

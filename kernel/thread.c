@@ -27,6 +27,7 @@
 #include <kernel_internal.h>
 #include <kswap.h>
 #include <init.h>
+#include <tracing.h>
 
 extern struct _static_thread_data _static_thread_data_list_start[];
 extern struct _static_thread_data _static_thread_data_list_end[];
@@ -362,6 +363,7 @@ void _setup_new_thread(struct k_thread *new_thread,
 	new_thread->base.prio_deadline = 0;
 #endif
 	new_thread->resource_pool = _current->resource_pool;
+	sys_trace_thread_create(new_thread);
 }
 
 #ifdef CONFIG_MULTITHREADING
@@ -372,12 +374,14 @@ k_tid_t _impl_k_thread_create(struct k_thread *new_thread,
 			      int prio, u32_t options, s32_t delay)
 {
 	__ASSERT(!_is_in_isr(), "Threads may not be created in ISRs");
+
 	_setup_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3,
 			  prio, options, NULL);
 
 	if (delay != K_FOREVER) {
 		schedule_new_thread(new_thread, delay);
 	}
+
 	return new_thread;
 }
 
@@ -482,6 +486,7 @@ int _impl_k_thread_cancel(k_tid_t tid)
 	_thread_monitor_exit(thread);
 
 	irq_unlock(key);
+	sys_trace_thread_cancel(tid);
 
 	return 0;
 }
@@ -504,6 +509,8 @@ void _impl_k_thread_suspend(struct k_thread *thread)
 	unsigned int  key = irq_lock();
 
 	_k_thread_single_suspend(thread);
+
+	sys_trace_thread_suspend(thread);
 
 	if (thread == _current) {
 		_Swap(key);
@@ -528,6 +535,7 @@ void _impl_k_thread_resume(struct k_thread *thread)
 
 	_k_thread_single_resume(thread);
 
+	sys_trace_thread_resume(thread);
 	_reschedule(key);
 }
 
@@ -553,6 +561,8 @@ void _k_thread_single_abort(struct k_thread *thread)
 	}
 
 	thread->base.thread_state |= _THREAD_DEAD;
+
+	sys_trace_thread_abort(thread);
 #ifdef CONFIG_KERNEL_EVENT_LOGGER_THREAD
 	_sys_k_event_logger_thread_exit(thread);
 #endif

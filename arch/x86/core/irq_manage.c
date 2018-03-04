@@ -63,6 +63,7 @@ void _arch_irq_direct_pm(void)
 void _arch_isr_direct_header(void)
 {
 	_int_latency_start();
+	sys_trace_isr_enter();
 	_sys_k_event_logger_interrupt();
 	_sys_k_event_logger_exit_sleep();
 
@@ -76,6 +77,7 @@ void _arch_isr_direct_footer(int swap)
 {
 	_irq_controller_eoi();
 	_int_latency_stop();
+	sys_trace_isr_exit();
 	--_kernel.nested;
 
 	/* Call swap if all the following is true:

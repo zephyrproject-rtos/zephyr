@@ -4891,6 +4891,7 @@ __syscall void k_str_out(char *c, size_t n);
 extern void _arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 			    void (*fn)(int, void *), void *arg);
 
+
 #ifdef __cplusplus
 }
 #endif
@@ -4950,6 +4951,7 @@ inline void *operator new[](size_t size, void *ptr)
 
 #endif /* defined(CONFIG_CPLUSPLUS) && defined(__cplusplus) */
 
+#include <tracing.h>
 #include <syscalls/kernel.h>
 
 #endif /* !_ASMLANGUAGE */

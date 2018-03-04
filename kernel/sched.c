@@ -653,6 +653,7 @@ void _sched_init(void)
 
 int _impl_k_thread_priority_get(k_tid_t thread)
 {
+	sys_trace_thread_priority_get(thread);
 	return thread->base.prio;
 }
 
@@ -673,6 +674,7 @@ void _impl_k_thread_priority_set(k_tid_t tid, int prio)
 	struct k_thread *thread = (struct k_thread *)tid;
 
 	_thread_priority_set(thread, prio);
+	sys_trace_thread_priority_set(tid);
 }
 
 #ifdef CONFIG_USERSPACE
