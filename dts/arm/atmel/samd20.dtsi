@@ -1,0 +1,7 @@
+/*
+ * Copyright (c) 2018 Sean Nyekjaer
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <atmel/samd.dtsi>
