@@ -27,20 +27,6 @@
  */
 #define UART_NS16550_ACCESS_IOPORT
 
-#define UART_NS16550_PORT_0_BASE_ADDR		0x03F8
-#define UART_NS16550_PORT_0_IRQ			4
-#define UART_NS16550_PORT_0_CLK_FREQ		1843200
-
-#define UART_NS16550_PORT_1_BASE_ADDR		0x02F8
-#define UART_NS16550_PORT_1_IRQ			3
-#define UART_NS16550_PORT_1_CLK_FREQ		1843200
-
-#ifdef CONFIG_IOAPIC
-#include <drivers/ioapic.h>
-#define UART_IRQ_FLAGS				(IOAPIC_EDGE | IOAPIC_HIGH)
-#endif /* CONFIG_IOAPIC */
-
-
 #define INT_VEC_IRQ0 0x20 /* Vector number for IRQ0 */
 /* PCI definitions */
 #define PCI_BUS_NUMBERS 1

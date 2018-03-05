@@ -54,6 +54,12 @@
 #define INT_ENABLE_ARC				~(0x00000001 << 8)
 #define INT_ENABLE_ARC_BIT_POS			(8)
 
+/*
+ * UARTs: UART0 & UART1 & UART2
+ */
+#define CONFIG_UART_NS16550_PORT_0_IRQ_FLAGS	0 /* Default */
+#define CONFIG_UART_NS16550_PORT_1_IRQ_FLAGS	0 /* Default */
+#define CONFIG_UART_NS16550_PORT_2_IRQ_FLAGS	0 /* Default */
 
 #ifndef CONFIG_HAS_DTS
 /* I2C */
@@ -103,20 +109,6 @@
  *  CS5   SPI-Flash (onboard)
  */
 
-/*
- * UARTs: UART0 & UART1 & UART2
- */
-#define UART_NS16550_PORT_0_BASE_ADDR		0xF0008000
-#define UART_NS16550_PORT_0_CLK_FREQ		SYSCLK_DEFAULT_IOSC_HZ
-
-#define UART_NS16550_PORT_1_BASE_ADDR		0xF0009000
-#define UART_NS16550_PORT_1_CLK_FREQ		SYSCLK_DEFAULT_IOSC_HZ
-
-#define UART_NS16550_PORT_2_BASE_ADDR		0xF000A000
-#define UART_NS16550_PORT_2_CLK_FREQ		SYSCLK_DEFAULT_IOSC_HZ
-
-#define UART_IRQ_FLAGS				0 /* Default */
-
 /**
  * Peripheral Interrupt Connection Configurations
  */
@@ -126,18 +118,12 @@
 #define CONFIG_I2C_1_IRQ			26
 #define SPI_DW_PORT_0_IRQ			27
 #define SPI_DW_PORT_1_IRQ			28
-#define UART_NS16550_PORT_0_IRQ			29
-#define UART_NS16550_PORT_1_IRQ			30
-#define UART_NS16550_PORT_2_IRQ			31
 #else /* CONFIG_BOARD_EM_STARTERKIT_R23 */
 #define GPIO_DW_0_IRQ				22
 #define CONFIG_I2C_0_IRQ			23
 #define CONFIG_I2C_1_IRQ			24
 #define SPI_DW_PORT_0_IRQ			25
 #define SPI_DW_PORT_1_IRQ			26
-#define UART_NS16550_PORT_0_IRQ			27
-#define UART_NS16550_PORT_1_IRQ			28
-#define UART_NS16550_PORT_2_IRQ			29
 #endif /* !CONFIG_BOARD_EM_STARTERKIT_R23 */
 
 #define GPIO_DW_1_IRQ				0	/* can't interrupt */
