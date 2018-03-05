@@ -22,8 +22,8 @@ static bool sane_partition(const struct k_mem_partition *part,
 	u32_t i;
 
 	end = part->start + part->size;
-	exec = K_MEM_PARTITION_IS_EXECUTABLE(part->attrs);
-	write = K_MEM_PARTITION_IS_WRITABLE(part->attrs);
+	exec = K_MEM_PARTITION_IS_EXECUTABLE(part->attr);
+	write = K_MEM_PARTITION_IS_WRITABLE(part->attr);
 
 	if (exec && write) {
 		__ASSERT(0, "partition is writable and executable <start %x>",
@@ -41,8 +41,8 @@ static bool sane_partition(const struct k_mem_partition *part,
 			continue;
 		}
 
-		cur_write = K_MEM_PARTITION_IS_WRITABLE(parts[i].attrs);
-		cur_exec = K_MEM_PARTITION_IS_EXECUTABLE(parts[i].attrs);
+		cur_write = K_MEM_PARTITION_IS_WRITABLE(parts[i].attr);
+		cur_exec = K_MEM_PARTITION_IS_EXECUTABLE(parts[i].attr);
 
 		if ((cur_write && exec) || (cur_exec && write)) {
 			__ASSERT(0, "overlapping partitions are "
@@ -96,7 +96,7 @@ void k_mem_domain_init(struct k_mem_domain *domain, u8_t num_parts,
 #if defined(CONFIG_EXECUTE_XOR_WRITE)
 		for (i = 0; i < num_parts; i++) {
 			__ASSERT(sane_partition_domain(domain,
-						       domain->partitions[i]),
+						       &domain->partitions[i]),
 				 "");
 		}
 #endif
