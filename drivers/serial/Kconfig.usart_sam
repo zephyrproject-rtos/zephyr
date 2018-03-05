@@ -8,6 +8,7 @@ menuconfig USART_SAM
 	bool "Atmel SAM MCU family USART driver"
 	depends on SOC_FAMILY_SAM
 	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
 	default n
 	help
 	  This option enables the USARTx driver for Atmel SAM MCUs.
