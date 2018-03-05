@@ -194,22 +194,8 @@ endif # BT_H4
 
 if UART_QMSI
 
-if UART_QMSI_0
-
-config UART_QMSI_0_IRQ_PRI
-	default 3
-
-endif # UART_QMSI_0
-
 config UART_QMSI_1
 	def_bool y
-
-if UART_QMSI_1
-
-config UART_QMSI_1_IRQ_PRI
-	default 3
-
-endif # UART_QMSI_1
 
 endif # UART_QMSI
 
