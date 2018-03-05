@@ -1,0 +1,10 @@
+# Kconfig - STM32F446RE Nucleo board configuration
+#
+# Copyright (c) 2018 Philémon Jaermann
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BOARD_NUCLEO_F446RE
+	bool "Nucleo F446RE Development Board"
+	depends on SOC_STM32F446XE
