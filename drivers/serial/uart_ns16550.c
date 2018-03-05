@@ -767,7 +767,7 @@ static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_0 = {
 	.pci_dev.bar = UART_NS16550_PORT_0_PCI_BAR,
 #endif /* CONFIG_UART_NS16550_PORT_0_PCI */
 
-	.port = UART_NS16550_PORT_0_BASE_ADDR,
+	.port = CONFIG_UART_NS16550_PORT_0_BASE_ADDR,
 	.baud_rate = CONFIG_UART_NS16550_PORT_0_BAUD_RATE,
 	.options = CONFIG_UART_NS16550_PORT_0_OPTIONS,
 
@@ -786,11 +786,11 @@ static void irq_config_func_0(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	IRQ_CONNECT(UART_NS16550_PORT_0_IRQ,
+	IRQ_CONNECT(CONFIG_UART_NS16550_PORT_0_IRQ,
 		    CONFIG_UART_NS16550_PORT_0_IRQ_PRI,
 		    uart_ns16550_isr, DEVICE_GET(uart_ns16550_0),
-		    UART_IRQ_FLAGS);
-	irq_enable(UART_NS16550_PORT_0_IRQ);
+		    CONFIG_UART_NS16550_PORT_0_IRQ_FLAGS);
+	irq_enable(CONFIG_UART_NS16550_PORT_0_IRQ);
 }
 #endif
 
@@ -821,7 +821,7 @@ static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_1 = {
 	.pci_dev.bar = UART_NS16550_PORT_1_PCI_BAR,
 #endif /* CONFIG_UART_NS16550_PORT_1_PCI */
 
-	.port = UART_NS16550_PORT_1_BASE_ADDR,
+	.port = CONFIG_UART_NS16550_PORT_1_BASE_ADDR,
 	.baud_rate = CONFIG_UART_NS16550_PORT_1_BAUD_RATE,
 	.options = CONFIG_UART_NS16550_PORT_1_OPTIONS,
 
@@ -840,11 +840,11 @@ static void irq_config_func_1(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	IRQ_CONNECT(UART_NS16550_PORT_1_IRQ,
+	IRQ_CONNECT(CONFIG_UART_NS16550_PORT_1_IRQ,
 		    CONFIG_UART_NS16550_PORT_1_IRQ_PRI,
 		    uart_ns16550_isr, DEVICE_GET(uart_ns16550_1),
-		    UART_IRQ_FLAGS);
-	irq_enable(UART_NS16550_PORT_1_IRQ);
+		    CONFIG_UART_NS16550_PORT_1_IRQ_FLAGS);
+	irq_enable(CONFIG_UART_NS16550_PORT_1_IRQ);
 }
 #endif
 
