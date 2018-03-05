@@ -71,7 +71,6 @@
 			interrupts = <6 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
 
-
 			status = "disabled";
 		};
 

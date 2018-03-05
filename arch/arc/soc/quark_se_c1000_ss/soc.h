@@ -171,6 +171,9 @@
 #define UART_NS16550_PORT_1_CLK_FREQ			SYSCLK_DEFAULT_IOSC_HZ
 #define UART_NS16550_PORT_1_INT_MASK			0x464
 
+#define CONFIG_UART_QMSI_0_IRQ_FLAGS                     0
+#define CONFIG_UART_QMSI_1_IRQ_FLAGS                     0
+
 /*
  * SPI
  */

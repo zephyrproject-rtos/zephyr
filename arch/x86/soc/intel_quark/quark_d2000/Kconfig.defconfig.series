@@ -46,10 +46,12 @@ if UART_QMSI
 config UART_QMSI_0
 	def_bool y
 config UART_QMSI_0_IRQ_PRI
+	int
 	default 0
 config UART_QMSI_1
 	def_bool y
 config UART_QMSI_1_IRQ_PRI
+	int
 	default 0
 endif # UART_QMSI
 
