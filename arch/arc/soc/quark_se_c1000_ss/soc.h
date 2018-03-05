@@ -188,6 +188,13 @@
 
 #define SPI_DW_IRQ_FLAGS				0
 
+/*
+ * RTC
+ */
+
+#define CONFIG_RTC_0_IRQ_FLAGS			(IOAPIC_EDGE | IOAPIC_HIGH)
+
+
 static inline void _quark_se_ss_ready(void)
 {
 	shared_data->flags |= ARC_READY;
