@@ -1,0 +1,38 @@
+# Kconfig - ST STM32F412CG MCU configuration options
+#
+# Copyright (c) 2018, I-SENSE group of ICCS
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_STM32F412CG
+
+config SOC
+	string
+	default stm32f412cx
+
+config NUM_IRQS
+	int
+	default 97
+
+if GPIO_STM32
+
+config GPIO_STM32_PORTD
+	default n
+
+config GPIO_STM32_PORTE
+	default n
+
+config GPIO_STM32_PORTH
+	default n
+
+endif # GPIO_STM32
+
+if ENTROPY_GENERATOR
+
+config ENTROPY_STM32_RNG
+	def_bool y
+
+endif # ENTROPY_GENERATOR
+
+endif # SOC_STM32F412CG
