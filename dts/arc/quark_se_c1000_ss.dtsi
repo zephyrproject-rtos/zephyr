@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2017 Intel Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include "skeleton.dtsi"
 
 #include <dt-bindings/i2c/i2c.h>
@@ -71,6 +77,50 @@
 			label = "UART_1";
 
 			status = "disabled";
+		};
+
+		gpio0: gpio@80017800 {
+			compatible = "intel,qmsi-ss-gpio";
+			reg = <0x80017800 0x100>;
+			interrupts = <20 2>;
+			interrupt-parent = <&core_intc>;
+			label = "GPIO_0";
+
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpio1: gpio@80017900 {
+			compatible = "intel,qmsi-ss-gpio";
+			reg = <0x80017900 0x100>;
+			interrupts = <21 2>;
+			interrupt-parent = <&core_intc>;
+			label = "GPIO_1";
+
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpio2: gpio@b0000c00 {
+			compatible = "intel,qmsi-gpio";
+			reg = <0xb0000c00 0x400>;
+			interrupts = <44 2>;
+			interrupt-parent = <&core_intc>;
+			label = "GPIO_2";
+
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpio3: gpio@b0800b00 {
+			compatible = "intel,qmsi-gpio";
+			reg = <0xb0800b00 0x400>;
+			interrupts = <67 2>;
+			interrupt-parent = <&core_intc>;
+			label = "GPIO_3";
+
+			gpio-controller;
+			#gpio-cells = <2>;
 		};
 
 		i2c0: i2c@80012000 {
