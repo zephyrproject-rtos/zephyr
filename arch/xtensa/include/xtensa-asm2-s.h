@@ -297,12 +297,17 @@ _do_call_\@:
 	 * to restore to in A6 (the call4'd function's A2).  If this
 	 * is not the same handle as we started with, we need to do a
 	 * register spill before restoring, for obvious reasons.
-	 * Remember to mask interrupts (which have been unmasked
-	 * during the handler execution) while we muck with the
-	 * windows.  The restore will unmask them as needed.
+	 * Remember to restore the A1 stack pointer as it existed at
+	 * interrupt time so the caller of the interrupted function
+	 * spills to the right place.  Also mask interrupts (which
+	 * have been unmasked during the handler execution) while we
+	 * muck with the windows.  The restore will unmask them
+	 * correctly.
 	 */
 	beq a6, a1, _restore_\@
 	rsil a0, XCHAL_NMILEVEL
+	l32i a1, a1, 0
+	addi a1, a1, BASE_SAVE_AREA_SIZE
 	SPILL_ALL_WINDOWS
 	mov a1, a6
 
