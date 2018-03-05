@@ -48,9 +48,9 @@
 		ranges;
 
 
-		uart0: uart@f0008000 {
+		uart0: uart@000003f8 {
 			compatible = "ns16550";
-			reg = <0xf0008000 0x400>;
+			reg = <0x000003f8 0x100>;
 			label = "UART_0";
 			interrupts = <4 IRQ_TYPE_EDGE_RISING 3>;
 			interrupt-parent = <&intc>;
@@ -58,9 +58,9 @@
 			status = "disabled";
 		};
 
-		uart1: uart@f0009000 {
+		uart1: uart@000002f8 {
 			compatible = "ns16550";
-			reg = <0xf0009000 0x400>;
+			reg = <0x000002f8 0x100>;
 			label = "UART_1";
 			interrupts = <3 IRQ_TYPE_EDGE_RISING 3>;
 			interrupt-parent = <&intc>;
