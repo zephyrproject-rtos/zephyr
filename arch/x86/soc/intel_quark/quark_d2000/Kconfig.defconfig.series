@@ -66,6 +66,7 @@ config RTC_QMSI
 	def_bool y
 
 config RTC_0_IRQ_PRI
+	int
 	default 0
 
 endif # RTC
