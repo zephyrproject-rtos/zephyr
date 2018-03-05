@@ -52,6 +52,7 @@
 			compatible = "ns16550";
 			reg = <0x000003f8 0x100>;
 			label = "UART_0";
+			clock-frequency = <1843200>;
 			interrupts = <4 IRQ_TYPE_EDGE_RISING 3>;
 			interrupt-parent = <&intc>;
 
@@ -62,6 +63,7 @@
 			compatible = "ns16550";
 			reg = <0x000002f8 0x100>;
 			label = "UART_1";
+			clock-frequency = <1843200>;
 			interrupts = <3 IRQ_TYPE_EDGE_RISING 3>;
 			interrupt-parent = <&intc>;
 

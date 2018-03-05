@@ -42,26 +42,3 @@ DEVICE_INIT(ipm_console, "ipm_console", ipm_console_sender_init,
 
 #endif /* CONFIG_IPM_CONSOLE_SENDER */
 #endif /* CONFIG_IPM_QUARK_SE */
-
-#ifdef CONFIG_UART_NS16550
-
-static int uart_ns16550_init(struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-#ifdef CONFIG_UART_NS16550_PORT_0
-	sys_clear_bit((SCSS_REGISTER_BASE + UART_NS16550_PORT_0_INT_MASK),
-		      INT_ENABLE_ARC_BIT_POS);
-#endif /* CONFIG_UART_NS16550_PORT_0 */
-
-#ifdef CONFIG_UART_NS16550_PORT_1
-	sys_clear_bit((SCSS_REGISTER_BASE + UART_NS16550_PORT_1_INT_MASK),
-		      INT_ENABLE_ARC_BIT_POS);
-#endif /* CONFIG_UART_NS16550_PORT_1 */
-
-	return 0;
-}
-
-SYS_INIT(uart_ns16550_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-
-#endif /* CONFIG_UART_NS16550 */

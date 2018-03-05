@@ -63,6 +63,7 @@ menuconfig UART_NS16550_PORT_0
 	help
 	  This tells the driver to configure the UART port at boot, depending on
 	  the additional configure options below.
+
 if !HAS_DTS
 config UART_NS16550_PORT_0_NAME
 	string "Port 0 Device Name"
@@ -71,7 +72,6 @@ config UART_NS16550_PORT_0_NAME
 	help
 	  This is the device name for UART, and is included in the device
 	  struct.
-endif
 
 if !HAS_DTS && !ARC
 config UART_NS16550_PORT_0_IRQ_PRI
@@ -82,7 +82,6 @@ config UART_NS16550_PORT_0_IRQ_PRI
 	  The interrupt priority for UART port.
 endif
 
-if !HAS_DTS
 config UART_NS16550_PORT_0_BAUD_RATE
 	int "Port 0 Baud Rate"
 	default 0
@@ -132,7 +131,6 @@ config UART_NS16550_PORT_1_NAME
 	help
 	  This is the device name for UART, and is included in the device
 	  struct.
-endif
 
 if !HAS_DTS && !ARC
 config UART_NS16550_PORT_1_IRQ_PRI
@@ -143,7 +141,6 @@ config UART_NS16550_PORT_1_IRQ_PRI
 	  The interrupt priority for UART port.
 endif
 
-if !HAS_DTS
 config UART_NS16550_PORT_1_BAUD_RATE
 	int "Port 1 Baud Rate"
 	default 0
