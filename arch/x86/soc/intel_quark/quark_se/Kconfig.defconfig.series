@@ -181,8 +181,6 @@ endif # WATCHDOG
 if RTC
 config RTC_QMSI
 	def_bool y
-config RTC_0_IRQ_PRI
-	default 2
 endif # RTC
 
 if BT_H4

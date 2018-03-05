@@ -51,7 +51,7 @@
 			clock-frequency = <32768>;
 			interrupts = <2 IRQ_TYPE_EDGE_RISING>;
 			interrupt-parent = <&intc>;
-
+			label = "RTC_0";
 		};
 
 		uart0: uart@b0002000 {

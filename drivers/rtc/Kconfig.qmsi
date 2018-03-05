@@ -7,11 +7,6 @@ config RTC_QMSI
 
 if RTC_QMSI
 
-config RTC_0_IRQ_PRI
-	int "RTC Driver Interrupt priority"
-	help
-	  RTC interrupt priority.
-
 config RTC_QMSI_API_REENTRANCY
 	bool
 	prompt "RTC shim driver API reentrancy"

@@ -20,7 +20,7 @@ if RTC
 config RTC_0_NAME
 	string "Driver instance name"
 	default "RTC_0"
-	depends on RTC
+	depends on RTC && !HAS_DTS
 	help
 	  RTC driver instance name
 
