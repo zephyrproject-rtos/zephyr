@@ -17,24 +17,18 @@
 /* Runtime context structure
  ***************************
  */
-struct mcr20a_spi {
-	struct device *dev;
-	u32_t slave;
-	struct k_sem spi_sem;
-	/**
-	 * cmd_buf will use at most 9 bytes:
-	 * dummy bytes + 8 ieee address bytes
-	 */
-	u8_t cmd_buf[12];
-};
-
 struct mcr20a_context {
 	struct net_if *iface;
 	/**************************/
 	struct device *irq_gpio;
 	struct device *reset_gpio;
 	struct gpio_callback irqb_cb;
-	struct mcr20a_spi spi;
+	struct device *spi;
+	struct spi_config spi_cfg;
+	struct k_sem spi_sem;
+#if defined(CONFIG_IEEE802154_MCR20A_GPIO_SPI_CS)
+	struct spi_cs_control cs_ctrl;
+#endif
 	u8_t mac_addr[8];
 	struct k_mutex phy_mutex;
 	struct k_sem isr_sem;
@@ -49,25 +43,25 @@ struct mcr20a_context {
 
 #include "ieee802154_mcr20a_regs.h"
 
-u8_t _mcr20a_read_reg(struct mcr20a_spi *spi, bool dreg, u8_t addr);
-bool _mcr20a_write_reg(struct mcr20a_spi *spi, bool dreg, u8_t addr,
+u8_t _mcr20a_read_reg(struct mcr20a_context *dev, bool dreg, u8_t addr);
+bool _mcr20a_write_reg(struct mcr20a_context *dev, bool dreg, u8_t addr,
 		       u8_t value);
-bool _mcr20a_write_burst(struct mcr20a_spi *spi, bool dreg, u16_t addr,
+bool _mcr20a_write_burst(struct mcr20a_context *dev, bool dreg, u16_t addr,
 			 u8_t *data_buf, u8_t len);
-bool _mcr20a_read_burst(struct mcr20a_spi *spi, bool dreg, u16_t addr,
+bool _mcr20a_read_burst(struct mcr20a_context *dev, bool dreg, u16_t addr,
 			u8_t *data_buf, u8_t len);
 
-#define DEFINE_REG_READ(__reg_name, __reg_addr, __dreg)			    \
-	static inline u8_t read_reg_##__reg_name(struct mcr20a_spi *spi) \
-	{								    \
-		return _mcr20a_read_reg(spi, __dreg, __reg_addr);	    \
+#define DEFINE_REG_READ(__reg_name, __reg_addr, __dreg)			\
+	static inline u8_t read_reg_##__reg_name(struct mcr20a_context *dev) \
+	{								\
+		return _mcr20a_read_reg(dev, __dreg, __reg_addr);	\
 	}
 
-#define DEFINE_REG_WRITE(__reg_name, __reg_addr, __dreg)		  \
-	static inline bool write_reg_##__reg_name(struct mcr20a_spi *spi, \
-						  u8_t value)	  \
-	{								  \
-		return _mcr20a_write_reg(spi, __dreg, __reg_addr, value); \
+#define DEFINE_REG_WRITE(__reg_name, __reg_addr, __dreg)		\
+	static inline bool write_reg_##__reg_name(struct mcr20a_context *dev, \
+						  u8_t value)		\
+	{								\
+		return _mcr20a_write_reg(dev, __dreg, __reg_addr, value); \
 	}
 
 #define DEFINE_DREG_READ(__reg_name, __reg_addr)	\
@@ -156,18 +150,18 @@ DEFINE_BITS_SET(pa_pwr_val, MCR20A_PA_PWR, _VAL)
 DEFINE_BITS_SET(tmr_prescale, MCR20A_TMR_PRESCALE, _VAL)
 DEFINE_BITS_SET(clk_out_div, MCR20A_CLK_OUT, _DIV)
 
-#define DEFINE_BURST_WRITE(__reg_addr, __addr, __sz, __dreg)		    \
-	static inline bool write_burst_##__reg_addr(struct mcr20a_spi *spi, \
-						    u8_t *buf)	    \
-	{								    \
-		return _mcr20a_write_burst(spi, __dreg, __addr, buf, __sz); \
+#define DEFINE_BURST_WRITE(__reg_addr, __addr, __sz, __dreg)		\
+	static inline bool write_burst_##__reg_addr(			\
+		struct mcr20a_context *dev, u8_t *buf)			\
+	{								\
+		return _mcr20a_write_burst(dev, __dreg, __addr, buf, __sz); \
 	}
 
 #define DEFINE_BURST_READ(__reg_addr, __addr, __sz, __dreg)		    \
-	static inline bool read_burst_##__reg_addr(struct mcr20a_spi *spi,  \
-						    u8_t *buf)	    \
+	static inline bool read_burst_##__reg_addr(struct mcr20a_context *dev, \
+						   u8_t *buf)		\
 	{								    \
-		return _mcr20a_read_burst(spi, __dreg, __addr, buf, __sz);  \
+		return _mcr20a_read_burst(dev, __dreg, __addr, buf, __sz);  \
 	}
 
 DEFINE_BURST_WRITE(t1cmp, MCR20A_T1CMP_LSB, 3, true)

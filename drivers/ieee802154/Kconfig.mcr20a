@@ -9,7 +9,6 @@
 menuconfig  IEEE802154_MCR20A
 	bool "NXP MCR20A Driver support"
 	depends on NETWORKING && SPI
-	select SPI_LEGACY_API
 	default n
 
 if IEEE802154_MCR20A
@@ -41,6 +40,29 @@ config IEEE802154_MCR20A_SPI_SLAVE
 	help
 	  This option sets the SPI slave number SPI controller has to switch
 	  to when dealing with MCR20A chip.
+
+config IEEE802154_MCR20A_GPIO_SPI_CS
+	bool "Manage SPI CS through a GPIO pin"
+	default n
+	help
+	This option is useful if one needs to manage SPI CS through a GPIO
+	pin to by-pass the SPI controller's CS logic.
+
+config IEEE802154_MCR20A_GPIO_SPI_CS_DRV_NAME
+	string "GPIO driver's name to use to drive SPI CS through"
+	default ""
+	depends on IEEE802154_MCR20A_GPIO_SPI_CS
+	help
+	This option is mandatory to set which GPIO controller to use in order
+	to actually emulate the SPI CS.
+
+config IEEE802154_MCR20A_GPIO_SPI_CS_PIN
+	int "GPIO PIN to use to drive SPI CS through"
+	default 0
+	depends on IEEE802154_MCR20A_GPIO_SPI_CS
+	help
+	This option is mandatory to set which GPIO pin to use in order
+	to actually emulate the SPI CS.
 
 config MCR20A_GPIO_IRQ_B_NAME
 	string "GPIO device used for IRQ_B output of MCR20A"
