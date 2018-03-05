@@ -61,28 +61,8 @@ if GPIO_QMSI
 config GPIO_QMSI_0
 	def_bool y
 
-if GPIO_QMSI_0
-
-config GPIO_QMSI_0_NAME
-	default "GPIO_2"
-
-config GPIO_QMSI_0_IRQ_PRI
-	default 1
-
-endif # GPIO_QMSI_0
-
 config GPIO_QMSI_1
 	def_bool y
-
-if GPIO_QMSI_1
-
-config GPIO_QMSI_1_NAME
-	default "GPIO_3"
-
-config GPIO_QMSI_1_IRQ_PRI
-	default 1
-
-endif # GPIO_QMSI_1
 
 endif # GPIO_QMSI
 
@@ -94,28 +74,8 @@ if GPIO_QMSI_SS
 config GPIO_QMSI_SS_0
 	def_bool y
 
-if GPIO_QMSI_SS_0
-
-config GPIO_QMSI_SS_0_NAME
-	default "GPIO_0"
-
-config GPIO_QMSI_SS_0_IRQ_PRI
-	default 1
-
-endif # GPIO_QMSI_SS_0
-
 config GPIO_QMSI_SS_1
 	def_bool y
-
-if GPIO_QMSI_SS_1
-
-config GPIO_QMSI_SS_1_NAME
-	default "GPIO_1"
-
-config GPIO_QMSI_SS_1_IRQ_PRI
-	default 1
-
-endif # GPIO_QMSI_SS_1
 
 endif # GPIO_QMSI_SS
 
