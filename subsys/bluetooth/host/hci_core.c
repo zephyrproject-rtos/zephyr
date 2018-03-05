@@ -2301,6 +2301,12 @@ static int le_set_privacy_mode(const bt_addr_le_t *addr, u8_t mode)
 	struct net_buf *buf;
 	int err;
 
+	/* Check if set privacy mode command is supported */
+	if (!BT_CMD_TEST(bt_dev.supported_commands, 39, 2)) {
+		BT_WARN("Set privacy mode command is not supported");
+		return 0;
+	}
+
 	BT_DBG("addr %s mode 0x%02x", bt_addr_le_str(addr), mode);
 
 	bt_addr_le_copy(&cp.id_addr, addr);
