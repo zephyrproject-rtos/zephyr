@@ -1,3 +1,3 @@
 tests:
-  test:
+  kernel.posix.pthread:
     tags: core
