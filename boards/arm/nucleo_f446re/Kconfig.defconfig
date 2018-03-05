@@ -1,0 +1,27 @@
+# Kconfig - STM32F446RE Nucleo board configuration
+#
+# Copyright (c) 2018 Philémon Jaermann
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_NUCLEO_F446RE
+
+config BOARD
+	default nucleo_f446re
+
+if UART_CONSOLE
+
+config UART_STM32_PORT_2
+	default y
+
+endif # UART_CONSOLE
+
+if I2C
+
+config I2C_1
+	default y
+
+endif # I2C
+
+endif # BOARD_NUCLEO_F446RE
