@@ -15,57 +15,16 @@ config UART_QMSI_0
 	bool "Enable UART 0 controller"
 	default n
 
-if !HAS_DTS
-config UART_QMSI_0_NAME
-	depends on UART_QMSI_0
-	string "UART_0 device name"
-	default "UART_0"
-	help
-	  This option holds the UART_0 device name. If unsure, use the
-	  default name.
-
-config UART_QMSI_0_BAUDRATE
-	depends on UART_QMSI_0
-	int "UART_0 baud rate"
-	default 115200
-	help
-	  This option sets the baud rate from the UART_0 device.
-endif
-
 config UART_QMSI_0_HW_FC
 	depends on UART_QMSI_0
 	bool "HW flow control for UART_0 controller"
 
-config UART_QMSI_0_IRQ_PRI
-	depends on UART_QMSI_0
-	int "IRQ priority from UART_0 controller"
 
 config UART_QMSI_1
 	depends on UART_QMSI
 	bool "Enable UART 1 controller"
 	default n
 
-if !HAS_DTS
-config UART_QMSI_1_NAME
-	depends on UART_QMSI_1
-	string "UART_1 device name"
-	default "UART_1"
-	help
-	  This option holds the UART_1 device name. If unsure, use the
-	  default name.
-
-config UART_QMSI_1_BAUDRATE
-	depends on UART_QMSI_1
-	int "UART_1 baud rate"
-	default 115200
-	help
-	  This option sets the baud rate from the UART_1 device.
-endif
-
 config UART_QMSI_1_HW_FC
 	depends on UART_QMSI_1
 	bool "HW flow control for UART_1 controller"
-
-config UART_QMSI_1_IRQ_PRI
-	depends on UART_QMSI_1
-	int "IRQ priority from UART_1 controller"
