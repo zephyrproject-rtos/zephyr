@@ -42,6 +42,14 @@
 			};
 		};
 
+		dma: dma@41004800 {
+			compatible = "atmel,sam0-dma";
+			status = "disabled";
+			reg = <0x41004800 0x50>;
+			interrupts = <6 0>;
+			label = "DMA_0";
+		};
+
 		pinmux_a: pinmux@41004400 {
 			compatible = "atmel,sam0-pinmux";
 			reg = <0x41004400 0x80>;

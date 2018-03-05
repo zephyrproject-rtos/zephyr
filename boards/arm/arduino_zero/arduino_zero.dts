@@ -55,6 +55,10 @@
 	};
 };
 
+&dma {
+	status = "ok";
+};
+
 &usb0 {
 	status = "ok";
 };
