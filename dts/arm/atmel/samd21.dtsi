@@ -16,6 +16,13 @@
 			num-bidir-endpoints = <8>;
 			label = "USB0";
 		};
+
+		dma: dmac@41004800 {
+			compatible = "atmel,sam0-dmac";
+			reg = <0x41004800 0x50>;
+			interrupts = <6 0>;
+			label = "DMA_0";
+		};
 	};
 };
 

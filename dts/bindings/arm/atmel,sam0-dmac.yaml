@@ -1,0 +1,27 @@
+---
+title: Atmel DMAC binding
+version: 0.1
+
+description: >
+    Binding for the Atmel SAM0 DMA controller.
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "atmel,sam0-dmac"
+      generation: define
+
+    reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+    interrupts:
+      type: array
+      category: required
+      description: required interrupts
+      generation: define
+...
