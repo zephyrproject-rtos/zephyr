@@ -114,13 +114,20 @@ static ALWAYS_INLINE void _ExcSetup(void)
 	SCB->SHCSR |= SCB_SHCSR_SECUREFAULTENA_Msk;
 	/* Clear BFAR before setting BusFaults to target Non-Secure state. */
 	SCB->BFAR = 0;
+#endif /* CONFIG_ARM_SECURE_FIRMWARE */
+#endif /* CONFIG_CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS */
+
+#if defined(CONFIG_ARM_SECURE_FIRMWARE)
 	/* Set NMI, Hard, and Bus Faults as Non-Secure.
 	 * NMI and Bus Faults targeting the Secure state will
 	 * escalate to a SecureFault or SecureHardFault.
 	 */
 	SCB->AIRCR |= SCB_AIRCR_BFHFNMINS_Msk;
+	/* Note: Fault conditions that would generate a SecureFault
+	 * in a PE with the Main Extension instead generate a
+	 * SecureHardFault in a PE without the Main Extension.
+	 */
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
-#endif
 }
 
 /**
