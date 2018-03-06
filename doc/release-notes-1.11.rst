@@ -74,6 +74,14 @@ Drivers and Sensors
 
 * New LED PWM driver for ESP32 SoC
 * Fixed ESP32 I2C driver
+* Added i2c master, qspi flash, and gpio drivers for nios-II
+* Added pinmux, gpio, serial drivers for lpc54114
+* Added pinmux, gpio, serial, spi, and watchdog drivers for sam0
+* Added apa102 and ws2821b led_strip drivers
+* Added native entropy driver
+* Moved some sensors to dts
+* Added amg88xx, ccs811, and vl53l0x sensor drivers
+* Redefined SENSOR_CHAN_HUMIDITY in percent
 
 Networking
 **********
