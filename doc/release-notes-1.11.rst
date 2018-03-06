@@ -122,6 +122,15 @@ Libraries / Subsystems
 HALs
 ****
 
+* Updated ARM CMSIS from version 4 to 5.2.0
+* Updated stm32cube stm32l4xx from version 1.9.0 to 1.10.0
+* Updated stm32cube stm32f4xx from version 1.16.0 to 1.18.0
+* Added Atmel SAMD21 HAL
+* Added mcux 2.2.1 for lpc54114
+* Added HAL for vl53l0x sensor from STM
+* Imported and moved to nrfx 0.8.0 on Nordic SoCs
+* Added QSPI Controller HAL driver
+
 Documentation
 *************
 
