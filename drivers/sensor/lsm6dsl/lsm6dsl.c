@@ -327,6 +327,9 @@ static int lsm6dsl_channel_get(struct device *dev,
 }
 
 static const struct sensor_driver_api lsm6dsl_api_funcs = {
+#if CONFIG_LSM6DSL_TRIGGER
+	.trigger_set = lsm6dsl_trigger_set,
+#endif
 	.sample_fetch = lsm6dsl_sample_fetch,
 	.channel_get = lsm6dsl_channel_get,
 };
@@ -422,6 +425,13 @@ static int lsm6dsl_init(struct device *dev)
 	lsm6dsl_spi_init(dev);
 #else
 	lsm6dsl_i2c_init(dev);
+#endif
+
+#ifdef CONFIG_LSM6DSL_TRIGGER
+	if (lsm6dsl_init_interrupt(dev) < 0) {
+		SYS_LOG_ERR("Failed to initialize interrupt.");
+		return -EIO;
+	}
 #endif
 
 	if (lsm6dsl_init_chip(dev) < 0) {

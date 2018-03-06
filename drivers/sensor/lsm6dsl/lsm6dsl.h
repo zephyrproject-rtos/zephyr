@@ -11,7 +11,9 @@
 #ifndef __SENSOR_LSM6DSL_H__
 #define __SENSOR_LSM6DSL_H__
 
+#include <sensor.h>
 #include <zephyr/types.h>
+#include <gpio.h>
 #include <misc/util.h>
 
 
@@ -716,10 +718,36 @@ struct lsm6dsl_data {
 	int temp_sample;
 #endif
 	const struct lsm6dsl_transfer_function *hw_tf;
+
+#ifdef CONFIG_LSM6DSL_TRIGGER
+	struct device *gpio;
+	struct gpio_callback gpio_cb;
+
+	struct sensor_trigger data_ready_trigger;
+	sensor_trigger_handler_t data_ready_handler;
+
+#if defined(CONFIG_LSM6DSL_TRIGGER_OWN_THREAD)
+	K_THREAD_STACK_MEMBER(thread_stack, CONFIG_LSM6DSL_THREAD_STACK_SIZE);
+	struct k_thread thread;
+	struct k_sem gpio_sem;
+#elif defined(CONFIG_LSM6DSL_TRIGGER_GLOBAL_THREAD)
+	struct k_work work;
+	struct device *dev;
+#endif
+
+#endif /* CONFIG_LSM6DSL_TRIGGER */
 };
 
 int lsm6dsl_spi_init(struct device *dev);
 int lsm6dsl_i2c_init(struct device *dev);
+
+#ifdef CONFIG_LSM6DSL_TRIGGER
+int lsm6dsl_trigger_set(struct device *dev,
+			const struct sensor_trigger *trig,
+			sensor_trigger_handler_t handler);
+
+int lsm6dsl_init_interrupt(struct device *dev);
+#endif
 
 #define SYS_LOG_DOMAIN "LSM6DSL"
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_SENSOR_LEVEL
