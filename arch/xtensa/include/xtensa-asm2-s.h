@@ -226,6 +226,7 @@ _xstack_returned_\@:
 	 */
 	s32i a2, a1, BSA_SCRATCH_OFF
 
+	ODD_REG_SAVE
 	call0 xtensa_save_high_regs
 
 	l32i a2, a1, 0
