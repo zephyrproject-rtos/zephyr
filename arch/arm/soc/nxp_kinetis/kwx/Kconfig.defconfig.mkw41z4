@@ -62,6 +62,9 @@ if ENTROPY_GENERATOR
 config ENTROPY_MCUX_TRNG
 	def_bool y
 
+config XOROSHIRO_RANDOM_GENERATOR
+	def_bool y
+
 endif # ENTROPY_GENERATOR
 
 if FLASH
