@@ -7,6 +7,7 @@
 #include <ztest.h>
 #include <kernel.h>
 #include <pthread.h>
+#include <semaphore.h>
 
 #define N_THR 3
 
@@ -26,7 +27,7 @@ PTHREAD_COND_DEFINE(cvar1);
 
 PTHREAD_BARRIER_DEFINE(barrier, N_THR);
 
-K_SEM_DEFINE(main_sem, 0, 2*N_THR);
+sem_t main_sem;
 
 static int bounce_failed;
 static int bounce_done[N_THR];
@@ -96,7 +97,7 @@ void *thread_top(void *p1)
 			if (curr_bounce_thread != id) {
 				printk("Racing bounce threads\n");
 				bounce_failed = 1;
-				k_sem_give(&main_sem);
+				sem_post(&main_sem);
 				pthread_mutex_unlock(&lock);
 				return NULL;
 			}
@@ -115,7 +116,7 @@ void *thread_top(void *p1)
 	 */
 	pthread_mutex_lock(&lock);
 	bounce_done[id] = 1;
-	k_sem_give(&main_sem);
+	sem_post(&main_sem);
 	pthread_cond_wait(&cvar1, &lock);
 	pthread_mutex_unlock(&lock);
 
@@ -126,12 +127,12 @@ void *thread_top(void *p1)
 		if (barrier_done[i]) {
 			printk("Barrier exited early\n");
 			barrier_failed = 1;
-			k_sem_give(&main_sem);
+			sem_post(&main_sem);
 		}
 	}
 	pthread_barrier_wait(&barrier);
 	barrier_done[id] = 1;
-	k_sem_give(&main_sem);
+	sem_post(&main_sem);
 	pthread_exit(p1);
 
 	return NULL;
@@ -180,6 +181,7 @@ void test_pthread(void)
 	int schedpolicy = SCHED_FIFO;
 	void *retval;
 
+	sem_init(&main_sem, 0, 1);
 	printk("POSIX thread IPC APIs\n");
 	schedparam.priority = CONFIG_NUM_COOP_PRIORITIES - 1;
 	min_prio = sched_get_priority_min(schedpolicy);
@@ -210,7 +212,7 @@ void test_pthread(void)
 	}
 
 	while (!bounce_test_done()) {
-		k_sem_take(&main_sem, K_FOREVER);
+		sem_wait(&main_sem);
 	}
 
 	/*TESTPOINT: Check if bounce test passes*/
@@ -224,7 +226,7 @@ void test_pthread(void)
 	pthread_mutex_unlock(&lock);
 
 	while (!barrier_test_done()) {
-		k_sem_take(&main_sem, K_FOREVER);
+		sem_wait(&main_sem);
 	}
 
 	/*TESTPOINT: Check if barrier test passes*/
