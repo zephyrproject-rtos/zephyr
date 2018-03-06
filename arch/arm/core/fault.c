@@ -143,11 +143,11 @@ static void _MpuFault(const NANO_ESF *esf, int fromHardFault)
 
 	_FaultThreadShow(esf);
 
-	if (SCB->CFSR & CFSR_MSTKERR_Msk) {
+	if (SCB->CFSR & SCB_CFSR_MSTKERR_Msk) {
 		PR_EXC("  Stacking error\n");
-	} else if (SCB->CFSR & CFSR_MUNSTKERR_Msk) {
+	} else if (SCB->CFSR & SCB_CFSR_MUNSTKERR_Msk) {
 		PR_EXC("  Unstacking error\n");
-	} else if (SCB->CFSR & CFSR_DACCVIOL_Msk) {
+	} else if (SCB->CFSR & SCB_CFSR_DACCVIOL_Msk) {
 		PR_EXC("  Data Access Violation\n");
 		/* In a fault handler, to determine the true faulting address:
 		 * 1. Read and save the MMFAR value.
@@ -159,14 +159,14 @@ static void _MpuFault(const NANO_ESF *esf, int fromHardFault)
 		 */
 		STORE_xFAR(mmfar, SCB->MMFAR);
 
-		if (SCB->CFSR & CFSR_MMARVALID_Msk) {
+		if (SCB->CFSR & SCB_CFSR_MMARVALID_Msk) {
 			PR_EXC("  Address: 0x%x\n", mmfar);
 			if (fromHardFault) {
-				/* clear MMAR[VALID] to reset */
-				SCB->CFSR &= ~CFSR_MMARVALID_Msk;
+				/* clear SCB_MMAR[VALID] to reset */
+				SCB->CFSR &= ~SCB_CFSR_MMARVALID_Msk;
 			}
 		}
-	} else if (SCB->CFSR & CFSR_IACCVIOL_Msk) {
+	} else if (SCB->CFSR & SCB_CFSR_IACCVIOL_Msk) {
 		PR_EXC("  Instruction Access Violation\n");
 	}
 }
@@ -185,11 +185,11 @@ static void _BusFault(const NANO_ESF *esf, int fromHardFault)
 
 	_FaultThreadShow(esf);
 
-	if (SCB->CFSR & CFSR_STKERR_Msk) {
+	if (SCB->CFSR & SCB_CFSR_STKERR_Msk) {
 		PR_EXC("  Stacking error\n");
-	} else if (SCB->CFSR & CFSR_UNSTKERR_Msk) {
+	} else if (SCB->CFSR & SCB_CFSR_UNSTKERR_Msk) {
 		PR_EXC("  Unstacking error\n");
-	} else if (SCB->CFSR & CFSR_PRECISERR_Msk) {
+	} else if (SCB->CFSR & SCB_CFSR_PRECISERR_Msk) {
 		PR_EXC("  Precise data bus error\n");
 		/* In a fault handler, to determine the true faulting address:
 		 * 1. Read and save the BFAR value.
@@ -201,20 +201,20 @@ static void _BusFault(const NANO_ESF *esf, int fromHardFault)
 		 */
 		STORE_xFAR(bfar, SCB->BFAR);
 
-		if (SCB->CFSR & CFSR_BFARVALID_Msk) {
+		if (SCB->CFSR & SCB_CFSR_BFARVALID_Msk) {
 			PR_EXC("  Address: 0x%x\n", bfar);
 			if (fromHardFault) {
-				/* clear CFSR_BFAR[VALID] to reset */
-				SCB->CFSR &= ~CFSR_BFARVALID_Msk;
+				/* clear SCB_CFSR_BFAR[VALID] to reset */
+				SCB->CFSR &= ~SCB_CFSR_BFARVALID_Msk;
 			}
 		}
 		/* it's possible to have both a precise and imprecise fault */
-		if (SCB->CFSR & CFSR_IMPRECISERR_Msk) {
+		if (SCB->CFSR & SCB_CFSR_IMPRECISERR_Msk) {
 			PR_EXC("  Imprecise data bus error\n");
 		}
-	} else if (SCB->CFSR & CFSR_IMPRECISERR_Msk) {
+	} else if (SCB->CFSR & SCB_CFSR_IMPRECISERR_Msk) {
 		PR_EXC("  Imprecise data bus error\n");
-	} else if (SCB->CFSR & CFSR_IBUSERR_Msk) {
+	} else if (SCB->CFSR & SCB_CFSR_IBUSERR_Msk) {
 		PR_EXC("  Instruction bus error\n");
 	}
 }
@@ -234,22 +234,22 @@ static void _UsageFault(const NANO_ESF *esf)
 	_FaultThreadShow(esf);
 
 	/* bits are sticky: they stack and must be reset */
-	if (SCB->CFSR & CFSR_DIVBYZERO_Msk) {
+	if (SCB->CFSR & SCB_CFSR_DIVBYZERO_Msk) {
 		PR_EXC("  Division by zero\n");
 	}
-	if (SCB->CFSR & CFSR_UNALIGNED_Msk) {
+	if (SCB->CFSR & SCB_CFSR_UNALIGNED_Msk) {
 		PR_EXC("  Unaligned memory access\n");
 	}
-	if (SCB->CFSR & CFSR_NOCP_Msk) {
+	if (SCB->CFSR & SCB_CFSR_NOCP_Msk) {
 		PR_EXC("  No coprocessor instructions\n");
 	}
-	if (SCB->CFSR & CFSR_INVPC_Msk) {
+	if (SCB->CFSR & SCB_CFSR_INVPC_Msk) {
 		PR_EXC("  Illegal load of EXC_RETURN into PC\n");
 	}
-	if (SCB->CFSR & CFSR_INVSTATE_Msk) {
+	if (SCB->CFSR & SCB_CFSR_INVSTATE_Msk) {
 		PR_EXC("  Illegal use of the EPSR\n");
 	}
-	if (SCB->CFSR & CFSR_UNDEFINSTR_Msk) {
+	if (SCB->CFSR & SCB_CFSR_UNDEFINSTR_Msk) {
 		PR_EXC("  Attempt to execute undefined instruction\n");
 	}
 
