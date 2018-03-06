@@ -55,6 +55,19 @@ Boards
   * Includes a template for hardware models
   * Adds support for console and logging
   * Interrupts and timers are simulated in several different configurations
+* Added support for the following ARM boards:
+
+  * adafruit_trinket_m0
+  * arduino_zero
+  * lpcxpresso54114
+  * nrf52_sparkfun
+  * nucleo_f429zi
+  * stm32f072_eval
+  * stm32f072b_disco
+* Removed Panther board support which included boards/x86/panther and
+  boards/arc/panther_ss
+* Refactored dts.fixup so common SoC related fixes are in arch/<*>/soc
+  and board dts.fixup only used for board specific items.
 
 Drivers and Sensors
 *******************
