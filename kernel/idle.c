@@ -63,7 +63,7 @@ static void set_kernel_idle_time_in_ticks(s32_t ticks)
 #define set_kernel_idle_time_in_ticks(x) do { } while (0)
 #endif
 
-static void _sys_power_save_idle(s32_t ticks)
+static void sys_power_save_idle(s32_t ticks)
 {
 #ifdef CONFIG_TICKLESS_KERNEL
 	if (ticks != K_FOREVER) {
@@ -180,7 +180,7 @@ void idle(void *unused1, void *unused2, void *unused3)
 
 	for (;;) {
 		(void)irq_lock();
-		_sys_power_save_idle(_get_next_timeout_expiry());
+		sys_power_save_idle(_get_next_timeout_expiry());
 
 		IDLE_YIELD_IF_COOP();
 	}

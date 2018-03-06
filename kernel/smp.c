@@ -56,7 +56,7 @@ extern k_thread_stack_t _interrupt_stack2[];
 extern k_thread_stack_t _interrupt_stack3[];
 
 #ifdef CONFIG_SMP
-static void _smp_init_top(int key, void *arg)
+static void smp_init_top(int key, void *arg)
 {
 	atomic_t *start_flag = arg;
 
@@ -90,17 +90,17 @@ void smp_init(void)
 
 #if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 1
 	_arch_start_cpu(1, _interrupt_stack1, CONFIG_ISR_STACK_SIZE,
-			_smp_init_top, &start_flag);
+			smp_init_top, &start_flag);
 #endif
 
 #if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 2
 	_arch_start_cpu(2, _interrupt_stack2, CONFIG_ISR_STACK_SIZE,
-			_smp_init_top, &start_flag);
+			smp_init_top, &start_flag);
 #endif
 
 #if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 3
 	_arch_start_cpu(3, _interrupt_stack3, CONFIG_ISR_STACK_SIZE,
-			_smp_init_top, &start_flag);
+			smp_init_top, &start_flag);
 #endif
 
 	atomic_set(&start_flag, 1);
