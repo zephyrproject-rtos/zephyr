@@ -19,7 +19,7 @@ menuconfig ENTROPY_MCUX_TRNG
 	depends on ENTROPY_GENERATOR && HAS_MCUX_TRNG
 	default n
 	select ENTROPY_HAS_DRIVER
-	select ENTROPY_DEVICE_RANDOM_GENERATOR
+	select XOROSHIRO_RANDOM_GENERATOR
 	help
 	  This option enables the true random number generator (TRNG)
 	  driver based on the MCUX TRNG driver.
