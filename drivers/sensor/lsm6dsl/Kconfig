@@ -107,6 +107,67 @@ config LSM6DSL_SPI_GPIO_CS_PIN
 	  This option is mandatory to set which GPIO pin to use in order
 	  to actually emulate the SPI CS.
 
+choice
+	prompt "Trigger mode"
+	depends on LSM6DSL
+	default LSM6DSL_TRIGGER_NONE
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config LSM6DSL_TRIGGER_NONE
+	bool
+	prompt "No trigger"
+
+config LSM6DSL_TRIGGER_GLOBAL_THREAD
+	bool
+	prompt "Use global thread"
+	depends on GPIO
+	select LSM6DSL_TRIGGER
+
+config LSM6DSL_TRIGGER_OWN_THREAD
+	bool
+	prompt "Use own thread"
+	depends on GPIO
+	select LSM6DSL_TRIGGER
+
+endchoice
+
+config LSM6DSL_TRIGGER
+	bool
+	depends on LSM6DSL
+
+config LSM6DSL_GPIO_DEV_NAME
+	string
+	prompt "GPIO device"
+	depends on LSM6DSL && LSM6DSL_TRIGGER
+	help
+	  The device name of the GPIO device to which the LSM6DSL interrupt pin
+	  is connected.
+
+config LSM6DSL_GPIO_PIN_NUM
+	int
+	prompt "Interrupt GPIO pin number"
+	depends on LSM6DSL && LSM6DSL_TRIGGER
+	help
+	  The number of the GPIO on which the interrupt signal from the LSM6DSL
+	  chip will be received.
+
+config LSM6DSL_THREAD_PRIORITY
+	int
+	prompt "Thread priority"
+	depends on LSM6DSL && LSM6DSL_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config LSM6DSL_THREAD_STACK_SIZE
+	int
+	prompt "Thread stack size"
+	depends on LSM6DSL && LSM6DSL_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
 config LSM6DSL_ENABLE_TEMP
 	bool "Enable temperature"
 	depends on LSM6DSL
