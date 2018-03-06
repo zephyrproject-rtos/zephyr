@@ -1,3 +1,3 @@
 tests:
-  kernel.posix.pthread_join:
+  posix.pthread_join:
     tags: core
