@@ -46,7 +46,7 @@ int sem_getvalue(sem_t *semaphore, int *value)
  */
 int sem_init(sem_t *semaphore, int pshared, unsigned int value)
 {
-	if (value == 0 || value > CONFIG_SEM_VALUE_MAX) {
+	if (value > CONFIG_SEM_VALUE_MAX) {
 		errno = EINVAL;
 		return -1;
 	}
