@@ -40,51 +40,6 @@ extern "C" {
 #define SCB_BFSR  (*((__IOM u8_t *) &SCB->CFSR + 1))
 #define SCB_MMFSR (*((__IOM u8_t *) &SCB->CFSR))
 
-/* CFSR[UFSR] */
-#define CFSR_DIVBYZERO_Pos		(25U)
-#define CFSR_DIVBYZERO_Msk		(0x1U << CFSR_DIVBYZERO_Pos)
-#define CFSR_UNALIGNED_Pos		(24U)
-#define CFSR_UNALIGNED_Msk		(0x1U << CFSR_UNALIGNED_Pos)
-#define CFSR_NOCP_Pos			(19U)
-#define CFSR_NOCP_Msk			(0x1U << CFSR_NOCP_Pos)
-#define CFSR_INVPC_Pos			(18U)
-#define CFSR_INVPC_Msk			(0x1U << CFSR_INVPC_Pos)
-#define CFSR_INVSTATE_Pos		(17U)
-#define CFSR_INVSTATE_Msk		(0x1U << CFSR_INVSTATE_Pos)
-#define CFSR_UNDEFINSTR_Pos		(16U)
-#define CFSR_UNDEFINSTR_Msk		(0x1U << CFSR_UNDEFINSTR_Pos)
-
-/* CFSR[BFSR] */
-#define CFSR_BFARVALID_Pos		(15U)
-#define CFSR_BFARVALID_Msk		(0x1U << CFSR_BFARVALID_Pos)
-#define CFSR_LSPERR_Pos			(13U)
-#define CFSR_LSPERR_Msk			(0x1U << CFSR_LSPERR_Pos)
-#define CFSR_STKERR_Pos			(12U)
-#define CFSR_STKERR_Msk			(0x1U << CFSR_STKERR_Pos)
-#define CFSR_UNSTKERR_Pos		(11U)
-#define CFSR_UNSTKERR_Msk		(0x1U << CFSR_UNSTKERR_Pos)
-#define CFSR_IMPRECISERR_Pos		(10U)
-#define CFSR_IMPRECISERR_Msk		(0x1U << CFSR_IMPRECISERR_Pos)
-#define CFSR_PRECISERR_Pos		(9U)
-#define CFSR_PRECISERR_Msk		(0x1U << CFSR_PRECISERR_Pos)
-#define CFSR_IBUSERR_Pos		(8U)
-#define CFSR_IBUSERR_Msk		(0x1U << CFSR_IBUSERR_Pos)
-
-/* CFSR[MMFSR] */
-#define CFSR_MMARVALID_Pos		(7U)
-#define CFSR_MMARVALID_Msk		(0x1U << CFSR_MMARVALID_Pos)
-#define CFSR_MLSPERR_Pos		(5U)
-#define CFSR_MLSPERR_Msk		(0x1U << CFSR_MLSPERR_Pos)
-#define CFSR_MSTKERR_Pos		(4U)
-#define CFSR_MSTKERR_Msk		(0x1U << CFSR_MSTKERR_Pos)
-#define CFSR_MUNSTKERR_Pos		(3U)
-#define CFSR_MUNSTKERR_Msk		(0x1U << CFSR_MUNSTKERR_Pos)
-#define CFSR_DACCVIOL_Pos		(1U)
-#define CFSR_DACCVIOL_Msk		(0x1U << CFSR_DACCVIOL_Pos)
-#define CFSR_IACCVIOL_Pos		(0U)
-#define CFSR_IACCVIOL_Msk		(0x1U << CFSR_IACCVIOL_Pos)
-
-
 /* Fill in CMSIS required values for non-CMSIS compliant SoCs.
  * Use __NVIC_PRIO_BITS as it is required and simple to check, but
  * ultimately all SoCs will define their own CMSIS types and constants.
