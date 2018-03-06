@@ -59,6 +59,8 @@ Boards
 Drivers and Sensors
 *******************
 
+* New LED PWM driver for ESP32 SoC
+* Fixed ESP32 I2C driver
 
 Networking
 **********
