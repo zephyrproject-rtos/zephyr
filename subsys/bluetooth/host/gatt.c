@@ -2064,7 +2064,7 @@ static void add_subscriptions(struct bt_conn *conn)
 		 * it properly.
 		 */
 		gatt_write_ccc(conn, params->ccc_handle, params->value,
-			       NULL, params);
+			       gatt_write_ccc_rsp, params);
 	}
 }
 
