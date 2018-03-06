@@ -1,3 +1,3 @@
 tests:
-  kernel.posix.timer:
+  posix.timer:
     tags: core
