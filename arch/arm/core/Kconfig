@@ -37,7 +37,7 @@ config CPU_HAS_SYSTICK
 config ARM_STACK_PROTECTION
 	bool
 	default y if HW_STACK_PROTECTION
-	select MPU_STACK_GUARD if ARM_CORE_MPU
+	select MPU_STACK_GUARD
 	help
 	  This option enables MPU stack guard to cause a system fatal error
 	  if the bounds of the current process stack are overflowed.
