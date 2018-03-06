@@ -91,6 +91,8 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0xb0002800 0x400>;
+			interrupts = <4 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
 			label = "I2C_0";
 
 			status = "disabled";
