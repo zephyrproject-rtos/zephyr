@@ -88,6 +88,13 @@ config PRIVILEGED_STACK_SIZE
 	  this region will be inaccessible from user mode.  During system calls,
 	  this region will be utilized by the system call.
 
+config STACK_GROWS_UP
+	bool "Stack grows towards higher memory addresses"
+	default n
+	help
+	  Select this option if the architecture has upward growing thread
+	  stacks. This is not common.
+
 config MAX_THREAD_BYTES
 	int "Bytes to use when tracking object thread permissions"
 	default 2
