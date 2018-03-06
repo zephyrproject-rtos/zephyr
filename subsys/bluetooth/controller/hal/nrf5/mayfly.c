@@ -17,6 +17,11 @@
 #if defined(CONFIG_BT_LL_SW)
 #define MAYFLY_CALL_ID_WORKER MAYFLY_CALL_ID_0
 #define MAYFLY_CALL_ID_JOB    MAYFLY_CALL_ID_1
+#elif defined(CONFIG_BT_LL_SW_SPLIT)
+#include "ll_sw/lll.h"
+#define MAYFLY_CALL_ID_LLL    TICKER_USER_ID_LLL
+#define MAYFLY_CALL_ID_WORKER TICKER_USER_ID_ULL_HIGH
+#define MAYFLY_CALL_ID_JOB    TICKER_USER_ID_ULL_LOW
 #else
 #error Unknown LL variant.
 #endif
@@ -39,6 +44,11 @@ u32_t mayfly_is_enabled(u8_t caller_id, u8_t callee_id)
 	(void)caller_id;
 
 	switch (callee_id) {
+#if defined(CONFIG_BT_LL_SW_SPLIT)
+	case MAYFLY_CALL_ID_LLL:
+		return irq_is_enabled(RADIO_IRQn);
+#endif /* CONFIG_BT_LL_SW_SPLIT */
+
 	case MAYFLY_CALL_ID_WORKER:
 		return irq_is_enabled(RTC0_IRQn);
 
@@ -72,6 +82,12 @@ void mayfly_pend(u8_t caller_id, u8_t callee_id)
 	(void)caller_id;
 
 	switch (callee_id) {
+#if defined(CONFIG_BT_LL_SW_SPLIT)
+	case MAYFLY_CALL_ID_LLL:
+		NVIC_SetPendingIRQ(RADIO_IRQn);
+		break;
+#endif /* CONFIG_BT_LL_SW_SPLIT */
+
 	case MAYFLY_CALL_ID_WORKER:
 		NVIC_SetPendingIRQ(RTC0_IRQn);
 		break;

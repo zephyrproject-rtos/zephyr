@@ -42,7 +42,12 @@ u8_t *ll_addr_get(u8_t addr_type, u8_t *bdaddr)
 
 u32_t ll_addr_set(u8_t addr_type, u8_t const *const bdaddr)
 {
-	if (ll_adv_is_enabled() ||
+	if (IS_ENABLED(CONFIG_BT_BROADCASTER) &&
+	    ll_adv_is_enabled()) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_OBSERVER) &&
 	    (ll_scan_is_enabled() & (BIT(1) | BIT(2)))) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
@@ -53,5 +58,16 @@ u32_t ll_addr_set(u8_t addr_type, u8_t const *const bdaddr)
 		memcpy(pub_addr, bdaddr, BDADDR_SIZE);
 	}
 
+	return 0;
+}
+
+/* TODO: Delete below weak functions when porting to ULL/LLL. */
+u32_t __weak ll_adv_is_enabled(void)
+{
+	return 0;
+}
+
+u32_t __weak ll_scan_is_enabled(void)
+{
 	return 0;
 }

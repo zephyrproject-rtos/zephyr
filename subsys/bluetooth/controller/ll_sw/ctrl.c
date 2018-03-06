@@ -4501,7 +4501,7 @@ static inline void isr_radio_state_close(void)
 	DEBUG_RADIO_CLOSE(0);
 }
 
-static void isr(void)
+static void isr(void *param)
 {
 	u8_t trx_done;
 	u8_t crc_ok;
@@ -6043,7 +6043,7 @@ static void adv_scan_conn_configure(void)
 {
 	radio_reset();
 	radio_tx_power_set(0);
-	radio_isr_set(isr);
+	radio_isr_set(isr, NULL);
 }
 
 static void adv_scan_configure(u8_t phy, u8_t flags)

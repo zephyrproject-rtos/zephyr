@@ -8,10 +8,10 @@
 #ifndef _RADIO_H_
 #define _RADIO_H_
 
-typedef void (*radio_isr_fp) (void);
+typedef void (*radio_isr_cb_t) (void *param);
 
 void isr_radio(void);
-void radio_isr_set(radio_isr_fp fp_radio_isr);
+void radio_isr_set(radio_isr_cb_t cb, void *param);
 
 void radio_setup(void);
 void radio_reset(void);
