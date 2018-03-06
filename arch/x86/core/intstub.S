@@ -56,13 +56,7 @@
  * "application" interrupt service routine).
  *
  * Only the volatile integer registers are saved since ISRs are assumed not to
- * utilize floating point (or SSE) instructions.  If an ISR requires the usage
- * of floating point (or SSE) instructions, it must first invoke nanoCpuFpSave()
- * (or nanoCpuSseSave()) at the beginning of the ISR.  A subsequent
- * nanoCpuFpRestore() (or nanoCpuSseRestore()) is needed just prior to returning
- * from the ISR.  Note that the nanoCpuFpSave(), nanoCpuSseSave(),
- * nanoCpuFpRestore(), and nanoCpuSseRestore() APIs have not been
- * implemented yet.
+ * utilize floating point (or SSE) instructions.
  *
  * WARNINGS
  *
