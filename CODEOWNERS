@@ -12,6 +12,7 @@ arch/arc/core/*                          @andrewboie
 arch/arm/*                               @MaureenHelm @galak
 arch/arm/soc/arm/mps2/*                  @fvincenzo
 arch/arm/soc/atmel_sam/sam4s             @fallrisk
+arch/arm/soc/nxp*/                       @MaureenHelm
 arch/arm/soc/st_stm32/*                  @erwango
 arch/arm/soc/st_stm32/stm32f4/*          @rsalveti @idlethread
 arch/arm/soc/ti_simplelink/cc32xx        @GAnthony
@@ -38,9 +39,10 @@ boards/arm/96b_neonkey/*                 @Mani-Sadhasivam
 boards/arm/arduino_101_ble/*             @jhedberg
 boards/arm/cc3220sf_launchxl/*           @GAnthony
 boards/arm/disco_l475_iot1/*             @erwango
-boards/arm/frdm_k64f/*                   @MaureenHelm
-boards/arm/frdm_kw41z/*                  @MaureenHelm
-boards/arm/hexiwear_k64/*                @MaureenHelm
+boards/arm/frdm*/*                       @MaureenHelm
+boards/arm/hexiwear*/*                   @MaureenHelm
+boards/arm/lpcxpresso*/*                 @MaureenHelm
+boards/arm/mimxrt*/*                     @MaureenHelm
 boards/arm/mps2_an385/*                  @fvincenzo
 boards/arm/msp_exp432p401r_launchxl/*    @Mani-Sadhasivam
 boards/arm/nrf51_blenano/*               @rsalveti
@@ -65,6 +67,7 @@ cmake/*                                  @nashif @SebastianBoe
 /CMakeLists.txt                          @nashif @SebastianBoe
 doc/*                                    @dbkinder
 doc/subsystems/bluetooth/*               @sjanc @jhedberg @Vudentz
+drivers/*/*mcux*                         @MaureenHelm
 drivers/*/*qmsi*                         @nashif
 drivers/*/*stm32*                        @erwango
 drivers/*/*native_posix*                 @aescolar-ot
