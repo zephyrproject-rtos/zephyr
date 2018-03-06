@@ -44,6 +44,15 @@
 		compatible = "simple-bus";
 		ranges;
 
+		rtc: rtc@b0000400 {
+			compatible = "intel,qmsi-rtc";
+			reg = <0xb0000400 0x400>;
+			clock-frequency = <32768>;
+			interrupts = <47 2>;
+			interrupt-parent = <&core_intc>;
+			label = "RTC_0";
+		};
+
 		uart0: uart@b0002000 {
 			compatible = "intel,qmsi-uart";
 			reg = <0xb0002000 0x400>;
