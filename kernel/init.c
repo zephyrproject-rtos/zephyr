@@ -208,14 +208,14 @@ void _data_copy(void)
 
 /**
  *
- * @brief Mainline for kernel's background task
+ * @brief Mainline for kernel's background thread
  *
  * This routine completes kernel initialization by invoking the remaining
  * init functions, then invokes application's main() routine.
  *
  * @return N/A
  */
-static void _main(void *unused1, void *unused2, void *unused3)
+static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 {
 	ARG_UNUSED(unused1);
 	ARG_UNUSED(unused2);
@@ -348,7 +348,8 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 #endif
 
 	_setup_new_thread(_main_thread, _main_stack,
-			  MAIN_STACK_SIZE, _main, NULL, NULL, NULL,
+			  MAIN_STACK_SIZE, bg_thread_main,
+			  NULL, NULL, NULL,
 			  CONFIG_MAIN_THREAD_PRIORITY, K_ESSENTIAL);
 	_mark_thread_as_started(_main_thread);
 	_add_thread_to_ready_q(_main_thread);
@@ -389,7 +390,7 @@ static void switch_to_main_thread(void)
 {
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	_arch_switch_to_main_thread(_main_thread, _main_stack, MAIN_STACK_SIZE,
-				    _main);
+				    bg_thread_main);
 #else
 	/*
 	 * Context switch to main task (entry function is _main()): the
