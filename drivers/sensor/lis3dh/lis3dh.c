@@ -61,7 +61,8 @@ int lis3dh_sample_fetch(struct device *dev, enum sensor_channel chan)
 	 * a burst read can be used to read all the samples
 	 */
 	if (i2c_burst_read(drv_data->i2c, LIS3DH_I2C_ADDRESS,
-			   LIS3DH_REG_ACCEL_X_LSB, buf, 6) < 0) {
+			   (LIS3DH_REG_ACCEL_X_LSB | LIS3DH_AUTOINCREMENT_ADDR),
+			   buf, 6) < 0) {
 		SYS_LOG_DBG("Could not read accel axis data");
 		return -EIO;
 	}
