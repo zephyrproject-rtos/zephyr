@@ -1,0 +1,216 @@
+
+# Kconfig - nrf5 series MDK SPI support
+#
+# Copyright (c) 2017, dXplore
+# Copyright (c) 2017, Intel Corp.
+# Copyright (c) 2016-2017, Linaro Limited.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# TODO add nrf51 master and nrf5 slaves
+
+menuconfig SPI_NRF5
+	bool "nRF5 SPI drivers"
+	depends on SPI && SOC_FAMILY_NRF5 && GPIO_NRF5_P0
+	select HAS_DTS_SPI
+	default n
+	help
+	  Enable support for nRF5 MCU series SPI drivers. Peripherals
+	  with the same instance id can not be used together, e.g., SPIM0 and I2C_0
+	  (TWIM0) and SPIS0. You may need to disable I2C_0 or I2C_1.
+
+if SPI_NRF5
+
+if SPI_0 && !I2C_0
+
+choice
+	prompt "SPI0 Driver type"
+
+config SPI0_NRF52_MASTER
+	bool "Master"
+	depends on SOC_SERIES_NRF52X
+	help
+	  nRF52 SPI0 Master with EasyDMA
+
+endchoice
+
+if !HAS_DTS_SPI
+
+config SPI0_NRF52_SCK_PIN
+	int "SPI0 SCK pin number"
+	range 0 31
+	help
+	  GPIO pin number for SCK
+
+config SPI0_NRF52_MOSI_PIN
+	int "SPI0 MOSI pin number"
+	range 0 31
+	help
+	  GPIO pin number to use for MOSI
+
+config SPI0_NRF52_MISO_PIN
+	int "SPI0 MISO pin number"
+	range 0 31
+	help
+	  GPIO pin number for MISO
+
+endif
+
+config SPI0_NRF52_ORC
+	hex "SPI0 Over Read Character"
+	default 0x00
+	range 0x00 0xff
+	help
+	  This option configures what value to send when the TX char count is
+	  less than the RX count.
+
+endif # SPI_0 && !I2C_0
+
+if SPI_1 && !I2C_1
+
+choice
+	prompt "SPI1 Driver type"
+
+config SPI1_NRF52_MASTER
+	bool "Master"
+	depends on SOC_SERIES_NRF52X
+	help
+	  nRF52 SPI1 Master with EasyDMA
+
+endchoice
+
+if !HAS_DTS_SPI
+
+config SPI1_NRF52_SCK_PIN
+	int "SPI1 SCK pin number"
+	range 0 31
+	help
+	  Pin number for SCK
+
+config SPI1_NRF52_MOSI_PIN
+	int "SPI1 MOSI pin number"
+	range 0 31
+	help
+	  Pin number to use for MOSI
+
+config SPI1_NRF52_MISO_PIN
+	int "SPI1 MISO pin number"
+	range 0 31
+	help
+	  Pin number for MISO
+endif
+
+config SPI1_NRF52_ORC
+	hex "SPI1 Over Read Character"
+	default 0x00
+	range 0x00 0xff
+	help
+	  This option configures the value to send when the TX char count is
+	  less than the RX count.
+
+endif # SPI_1 && !I2C_1
+
+if SPI_2
+
+choice
+	prompt "SPI2 Driver type"
+
+config SPI2_NRF52_MASTER
+	bool "Master"
+	depends on SOC_SERIES_NRF52X
+	help
+	  nRF52 SPI2 Master with EasyDMA
+
+endchoice
+
+if !HAS_DTS_SPI
+
+config SPI2_NRF52_SCK_PIN
+	int "SPI2 SCK pin number"
+	range 0 31
+	help
+	  Pin number for SCK
+
+config SPI2_NRF52_MOSI_PIN
+	int "SPI2 MOSI pin number"
+	range 0 31
+	help
+	  Pin number to use for MOSI
+
+config SPI2_NRF52_MISO_PIN
+	int "SPI2 MISO pin number"
+	range 0 31
+	help
+	  Pin number for MISO
+endif
+
+config SPI2_NRF52_ORC
+	hex "SPI2 Over Read Character"
+	default 0x00
+	range 0x00 0xff
+	help
+	  This option configures the value to send when the TX char count is
+	  less than the RX count.
+
+endif # SPI_2
+
+if SPI_3
+
+choice
+	prompt "SPI3 Driver type"
+
+config SPI3_NRF52_MASTER
+	bool "Master"
+	depends on SOC_NRF52840
+	help
+	  nRF52 SPI3 Master with EasyDMA
+
+endchoice
+
+if !HAS_DTS_SPI
+
+config SPI3_NRF52_SCK_PIN
+	int "SPI3 SCK pin number"
+	range 0 31
+	help
+	  Pin number for SCK
+
+config SPI3_NRF52_MOSI_PIN
+	int "SPI3 MOSI pin number"
+	range 0 31
+	help
+	  Pin number to use for MOSI
+
+config SPI3_NRF52_MISO_PIN
+	int "SPI3 MISO pin number"
+	range 0 31
+	help
+	  Pin number for MISO
+
+config SPI3_NRF52_CS_PIN
+	int "SPI3 CS pin number"
+	range 0 255
+	default 255
+	help
+	  HW Chip Select pin number.
+	  Not used value is 255 (0xff).
+
+endif
+
+config SPI3_NRF52_ORC
+	hex "SPI3 Over Read Character"
+	default 0x00
+	range 0x00 0xff
+	help
+	  This option configures the value to send when the TX char count is
+	  less than the RX count.
+
+endif # SPI_3
+
+# hidden compile options
+config SPI_NRF52_MASTER
+	bool
+	default y if (SPI0_NRF52_MASTER || SPI1_NRF52_MASTER || SPI2_NRF52_MASTER || SPI3_NRF52_MASTER)
+
+endif # SPI_NRF5
