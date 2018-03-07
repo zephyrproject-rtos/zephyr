@@ -84,6 +84,8 @@ set(AUTOCONF_H ${__build_dir}/include/generated/autoconf.h)
 # Re-configure (Re-execute all CMakeLists.txt code) when autoconf.h changes
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${AUTOCONF_H})
 
+list(APPEND CMAKE_MODULE_PATH ${ZEPHYR_BASE}/cmake/modules)
+
 include(${ZEPHYR_BASE}/cmake/extensions.cmake)
 
 find_package(PythonInterp 3.4)
