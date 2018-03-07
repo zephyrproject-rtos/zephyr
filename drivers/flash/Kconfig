@@ -15,6 +15,13 @@ config FLASH_HAS_DRIVER_ENABLED
 	help
 	  This option is enabled when any flash driver is enabled.
 
+config FLASH_HAS_PAGE_LAYOUT
+	bool
+	default n
+	help
+	  This option is enabled when the SoC flash driver supports
+	  retrieving the layout of flash memory pages.
+
 menuconfig FLASH
 	bool
 	prompt "Flash hardware support"

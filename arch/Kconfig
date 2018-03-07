@@ -269,13 +269,6 @@ config FP_SHARING
 
 endmenu
 
-config FLASH_HAS_PAGE_LAYOUT
-	bool
-	default n
-	help
-	  This option is enabled when the SoC flash driver supports
-	  retrieving the layout of flash memory pages.
-
 #
 # End hidden PM feature configs
 #
