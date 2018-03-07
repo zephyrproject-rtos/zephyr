@@ -10,6 +10,7 @@ menuconfig SOC_FLASH_SAM0
 	prompt "Atmel SAM0 flash driver"
 	default n
 	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
 	help
 	 Enable the Atmel SAM0 series internal flash driver.
 

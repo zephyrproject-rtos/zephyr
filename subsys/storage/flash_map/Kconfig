@@ -13,7 +13,7 @@ menuconfig FLASH_MAP
 	bool
 	prompt "Flash map abstraction module"
 	default n
-	depends on FLASH
+	depends on FLASH_HAS_DRIVER_ENABLED
 	help
 	  Enable support of flash map abstraction.
 
