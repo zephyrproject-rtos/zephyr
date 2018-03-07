@@ -48,33 +48,11 @@ config GPIO_QMSI_0
 	help
 	  Include support for the GPIO port 0 using QMSI.
 
-config GPIO_QMSI_0_NAME
-	string "Driver name"
-	depends on GPIO_QMSI_0 && !HAS_DTS
-	default "GPIO_0"
-
-config GPIO_QMSI_0_IRQ_PRI
-	int "Controller interrupt priority"
-	depends on GPIO_QMSI_0 && !HAS_DTS
-	help
-	  IRQ priority
-
 config GPIO_QMSI_1
 	bool "QMSI GPIO block 1"
 	default n
 	help
 	  Include support for the GPIO port 1 using QMSI.
-
-config GPIO_QMSI_1_NAME
-	string "Driver name"
-	depends on GPIO_QMSI_1 && !HAS_DTS
-	default "GPIO_1"
-
-config GPIO_QMSI_1_IRQ_PRI
-	int "Controller interrupt priority"
-	depends on GPIO_QMSI_1 && !HAS_DTS
-	help
-	  IRQ priority
 
 endif # GPIO_QMSI
 
@@ -86,33 +64,11 @@ config GPIO_QMSI_SS_0
 	help
 	  Include support for the GPIO SS port 0 using QMSI.
 
-config GPIO_QMSI_SS_0_NAME
-	string "Driver name"
-	depends on GPIO_QMSI_SS_0 && !HAS_DTS
-	default "GPIO_SS_0"
-
-config GPIO_QMSI_SS_0_IRQ_PRI
-	int "Controller interrupt priority"
-	depends on GPIO_QMSI_SS_0 && !HAS_DTS
-	help
-	  IRQ priority
-
 config GPIO_QMSI_SS_1
 	bool "QMSI GPIO SS block 1"
 	default n
 	help
 	  Include support for the GPIO SS port 1 using QMSI.
-
-config GPIO_QMSI_SS_1_NAME
-	string "Driver name"
-	depends on GPIO_QMSI_SS_1 && !HAS_DTS
-	default "GPIO_SS_1"
-
-config GPIO_QMSI_SS_1_IRQ_PRI
-	int "Controller interrupt priority"
-	depends on GPIO_QMSI_SS_1 && !HAS_DTS
-	help
-	  IRQ priority
 
 endif # GPIO_QMSI_SS
 
