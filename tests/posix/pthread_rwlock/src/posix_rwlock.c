@@ -37,13 +37,16 @@ static void *thread_top(void *p1)
 	zassert_false(pthread_rwlock_unlock(&rwlock), "Failed to unlock");
 
 	printk("Thread %d acquiring WR lock\n", (s32_t) p1);
-	zassert_false(pthread_rwlock_wrlock(&rwlock),
-		      "Failed to acquire WR lock");
+	ret = pthread_rwlock_trywrlock(&rwlock);
+	if (ret != 0) {
+		zassert_false(pthread_rwlock_wrlock(&rwlock),
+			      "Failed to acquire WR lock");
+	}
+
 	printk("Thread %d acquired WR lock\n", (s32_t) p1);
 	usleep(USEC_PER_MSEC);
 	printk("Thread %d releasing WR lock\n", (s32_t) p1);
 	zassert_false(pthread_rwlock_unlock(&rwlock), "Failed to unlock");
-
 	pthread_exit(NULL);
 	return NULL;
 }
@@ -64,14 +67,16 @@ static void test_rw_lock(void)
 	zassert_equal(pthread_rwlock_rdlock(&rwlock), EINVAL, NULL);
 	zassert_equal(pthread_rwlock_wrlock(&rwlock), EINVAL, NULL);
 	zassert_equal(pthread_rwlock_trywrlock(&rwlock), EINVAL, NULL);
+	zassert_equal(pthread_rwlock_tryrdlock(&rwlock), EINVAL, NULL);
+	zassert_equal(pthread_rwlock_timedwrlock(&rwlock, &time), EINVAL, NULL);
+	zassert_equal(pthread_rwlock_timedrdlock(&rwlock, &time), EINVAL, NULL);
 	zassert_equal(pthread_rwlock_unlock(&rwlock), EINVAL, NULL);
-
 
 	zassert_false(pthread_rwlock_init(&rwlock, NULL),
 		      "Failed to create rwlock");
 
 	printk("\nmain acquire WR lock and 3 threads acquire RD lock\n");
-	ret = pthread_rwlock_trywrlock(&rwlock);
+	ret = pthread_rwlock_timedwrlock(&rwlock, &time);
 
 	if (ret != 0) {
 		printk("Parent thread acquiring WR lock\n");
@@ -106,8 +111,15 @@ static void test_rw_lock(void)
 	usleep(USEC_PER_MSEC);
 	printk("Parent thread acquiring WR lock again\n");
 
-	zassert_false(pthread_rwlock_wrlock(&rwlock),
-		      "Failed to acquire write lock");
+	time.tv_sec = 2;
+	time.tv_nsec = 0;
+	ret = pthread_rwlock_timedwrlock(&rwlock, &time);
+
+	if (ret) {
+		zassert_false(pthread_rwlock_wrlock(&rwlock),
+			      "Failed to acquire write lock");
+	}
+
 	printk("Parent thread acquired WR lock again\n");
 	usleep(USEC_PER_MSEC);
 	printk("Parent thread releasing WR lock again\n");
@@ -116,7 +128,12 @@ static void test_rw_lock(void)
 	printk("\n3 threads acquire WR lock\n");
 	printk("Main thread acquiring RD lock\n");
 
-	zassert_false(pthread_rwlock_rdlock(&rwlock), "Failed to lock");
+	ret = pthread_rwlock_timedrdlock(&rwlock, &time);
+
+	if (ret != 0) {
+		zassert_false(pthread_rwlock_rdlock(&rwlock), "Failed to lock");
+	}
+
 	printk("Main thread acquired RD lock\n");
 	usleep(USEC_PER_MSEC);
 	printk("Main thread releasing RD lock\n");
