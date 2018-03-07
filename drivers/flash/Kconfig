@@ -9,6 +9,12 @@
 #
 # Flash driver
 #
+config FLASH_HAS_DRIVER_ENABLED
+	bool
+	default n
+	help
+	  This option is enabled when any flash driver is enabled.
+
 menuconfig FLASH
 	bool
 	prompt "Flash hardware support"
@@ -26,6 +32,7 @@ config FLASH_PAGE_LAYOUT
 config SPI_FLASH_W25QXXDV
 	bool
 	prompt "SPI NOR Flash Winbond W25QXXDV"
+	select FLASH_HAS_DRIVER_ENABLED
 	depends on SPI && FLASH
 
 config SPI_FLASH_W25QXXDV_SPI_NAME
@@ -84,6 +91,7 @@ config SOC_FLASH_QMSI
 	bool
 	prompt "QMSI flash driver"
 	depends on QMSI && FLASH
+	select FLASH_HAS_DRIVER_ENABLED
 	default n
 	help
 	  Enable QMSI Quark flash driver.
@@ -128,6 +136,7 @@ config SOC_FLASH_NRF5
 	depends on FLASH && SOC_FAMILY_NRF5
 	default n
 	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
 	help
 	  Enables Nordic Semiconductor nRF5X flash driver.
 
@@ -142,6 +151,7 @@ config SOC_FLASH_MCUX
 	bool "MCUX flash shim driver"
 	depends on FLASH && HAS_MCUX
 	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
 	default n
 	help
 	  Enables the MCUX flash shim driver.
@@ -154,6 +164,7 @@ config SOC_FLASH_NIOS2_QSPI
 	bool "Nios-II QSPI flash driver"
 	depends on FLASH && HAS_ALTERA_HAL
 	default n
+	select FLASH_HAS_DRIVER_ENABLED
 	help
 	  Enables the Nios-II QSPI flash driver.
 
