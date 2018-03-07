@@ -290,8 +290,6 @@ config SPI_5_OP_MODES
 
 if SPI_LEGACY_API
 
-source "drivers/spi/Kconfig.mcux_dspi"
-
 source "drivers/spi/Kconfig.nrf5_legacy"
 
 endif # SPI_LEGACY_API
@@ -309,12 +307,12 @@ config SPI_INTEL
 
 source "drivers/spi/Kconfig.stm32"
 
-endif # !SPI_LEGACY_API
-
 source "drivers/spi/Kconfig.dw"
 
 source "drivers/spi/Kconfig.mcux_dspi"
 
 source "drivers/spi/Kconfig.sam0"
+
+endif # !SPI_LEGACY_API
 
 endif # SPI
