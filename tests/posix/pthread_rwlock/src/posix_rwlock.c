@@ -74,15 +74,9 @@ static void test_rw_lock(void)
 
 	zassert_false(pthread_rwlock_init(&rwlock, NULL),
 		      "Failed to create rwlock");
-
 	printk("\nmain acquire WR lock and 3 threads acquire RD lock\n");
-	ret = pthread_rwlock_timedwrlock(&rwlock, &time);
-
-	if (ret != 0) {
-		printk("Parent thread acquiring WR lock\n");
-		zassert_false(pthread_rwlock_timedwrlock(&rwlock, &time),
-			      "Failed to acquire write lock");
-	}
+	zassert_false(pthread_rwlock_timedwrlock(&rwlock, &time),
+		      "Failed to acquire write lock");
 
 	/* Creating N premptive threads in increasing order of priority */
 	for (i = 0; i < N_THR; i++) {
