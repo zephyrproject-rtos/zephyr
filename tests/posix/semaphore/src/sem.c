@@ -54,10 +54,12 @@ static void test_sema(void)
 	pthread_create(&newthread, &attr, foo_func, NULL);
 
 	printk("after releasing sem\n");
-	zassert_false(sem_wait(&sema), "sem_wait failed\n");
+	zassert_false(sem_trywait(&sema), "sem_wait failed\n");
 	printk("After taking semaphore second time\n");
 
 	zassert_false(sem_post(&sema), "sem_post failed\n");
+
+	zassert_false(sem_destroy(&sema), "sema is not destroyed\n");
 }
 
 void test_main(void)
