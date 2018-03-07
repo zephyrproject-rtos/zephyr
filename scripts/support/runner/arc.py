@@ -23,7 +23,6 @@ class EmStarterKitBinaryRunner(ZephyrBinaryRunner):
     # client to it to load the program, and running 'continue' within the
     # client to execute the application.
     #
-    # TODO: exit immediately when flashing is done, leaving Zephyr running.
 
     def __init__(self, board_dir, elf, gdb,
                  openocd='openocd', search=None,
@@ -91,7 +90,8 @@ class EmStarterKitBinaryRunner(ZephyrBinaryRunner):
 
         continue_arg = []
         if command == 'flash':
-            continue_arg = ['-ex', 'c']
+            continue_arg = ['-ex', 'set confirm off', '-ex', 'monitor resume',
+                            '-ex', 'quit']
 
         gdb_cmd = (self.gdb_cmd +
                    ['-ex', 'target remote :{}'.format(self.gdb_port),
