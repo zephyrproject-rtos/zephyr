@@ -87,40 +87,33 @@ if(CONFIG_HAS_DTS)
   # generated_dts_board.h
   set_ifndef(DTS_BOARD_FIXUP_FILE ${BOARD_ROOT}/boards/${ARCH}/${BOARD_FAMILY}/dts.fixup)
   if(EXISTS ${DTS_BOARD_FIXUP_FILE})
-    set(DTS_BOARD_FIXUP -f ${DTS_BOARD_FIXUP_FILE})
+    set(DTS_BOARD_FIXUP ${DTS_BOARD_FIXUP_FILE})
   endif()
   set_ifndef(DTS_SOC_FIXUP_FILE ${PROJECT_SOURCE_DIR}/arch/${ARCH}/soc/${SOC_PATH}/dts.fixup)
   if(EXISTS ${DTS_SOC_FIXUP_FILE})
-    set(DTS_SOC_FIXUP -f ${DTS_SOC_FIXUP_FILE})
+    set(DTS_SOC_FIXUP ${DTS_SOC_FIXUP_FILE})
   endif()
   if(EXISTS ${APPLICATION_SOURCE_DIR}/dts.fixup)
-    set(DTS_APP_FIXUP -f ${APPLICATION_SOURCE_DIR}/dts.fixup)
+    set(DTS_APP_FIXUP ${APPLICATION_SOURCE_DIR}/dts.fixup)
   endif()
+
+  set(DTS_FIXUPS ${DTS_SOC_FIXUP} ${DTS_BOARD_FIXUP} ${DTS_APP_FIXUP})
+  if(NOT "${DTS_FIXUPS}" STREQUAL "")
+    set(DTS_FIXUPS --fixup ${DTS_FIXUPS})
+  endif()
+
   set(CMD_EXTRACT_DTS_INCLUDES ${PYTHON_EXECUTABLE} ${PROJECT_SOURCE_DIR}/scripts/dts/extract_dts_includes.py
     --dts ${BOARD}.dts_compiled
     --yaml ${PROJECT_SOURCE_DIR}/dts/bindings
-    ${DTS_SOC_FIXUP} ${DTS_BOARD_FIXUP} ${DTS_APP_FIXUP}
+    ${DTS_FIXUPS}
+    --keyvalue ${GENERATED_DTS_BOARD_CONF}
+    --include ${GENERATED_DTS_BOARD_H}
     )
-  execute_process(
-    COMMAND ${CMD_EXTRACT_DTS_INCLUDES}
-    OUTPUT_VARIABLE STDOUT
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-    RESULT_VARIABLE ret
-    )
-  if(NOT "${ret}" STREQUAL "0")
-    message(FATAL_ERROR "command failed with return code: ${ret}")
-  endif()
 
-  # extract_dts_includes.py writes the header file contents to stdout,
-  # which we capture in the variable STDOUT and then finaly write into
-  # the header file.
-  file(WRITE ${GENERATED_DTS_BOARD_H} "${STDOUT}" )
-
-  # Run extract_dts_includes.py to create a .conf file that can be
+  # Run extract_dts_includes.py to create a .conf and a header file that can be
   # included into the CMake namespace
   execute_process(
-    COMMAND ${CMD_EXTRACT_DTS_INCLUDES} --keyvalue
-    OUTPUT_VARIABLE STDOUT
+    COMMAND ${CMD_EXTRACT_DTS_INCLUDES}
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     RESULT_VARIABLE ret
     )
@@ -128,7 +121,6 @@ if(CONFIG_HAS_DTS)
     message(FATAL_ERROR "command failed with return code: ${ret}")
   endif()
 
-  file(WRITE ${GENERATED_DTS_BOARD_CONF} "${STDOUT}" )
   import_kconfig(${GENERATED_DTS_BOARD_CONF})
 
 else()

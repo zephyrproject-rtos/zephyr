@@ -662,7 +662,7 @@ def yaml_collapse(yaml_list):
     return collapsed
 
 
-def print_key_value(k, v, tabstop):
+def get_key_value(k, v, tabstop):
     label = "#define " + k
 
     # calculate the name's tabs
@@ -671,51 +671,54 @@ def print_key_value(k, v, tabstop):
     else:
         tabs = (len(label) >> 3) + 1
 
-    sys.stdout.write(label)
+    line = label
     for i in range(0, tabstop - tabs + 1):
-        sys.stdout.write('\t')
-    sys.stdout.write(str(v))
-    sys.stdout.write("\n")
+        line += '\t'
+    line += str(v)
+    line += '\n'
 
-    return
+    return line
 
 
-def generate_keyvalue_file(defs, args):
-
+def output_keyvalue_lines(fd, defs):
     node_keys = sorted(defs.keys())
     for node in node_keys:
-        sys.stdout.write('# ' + node.split('/')[-1])
-        sys.stdout.write("\n")
+        fd.write('# ' + node.split('/')[-1])
+        fd.write("\n")
 
         prop_keys = sorted(defs[node].keys())
         for prop in prop_keys:
             if prop == 'aliases':
                 for entry in sorted(defs[node][prop]):
                     a = defs[node][prop].get(entry)
-                    sys.stdout.write("%s=%s\n" % (entry, defs[node].get(a)))
+                    fd.write("%s=%s\n" % (entry, defs[node].get(a)))
             else:
-                sys.stdout.write("%s=%s\n" % (prop, defs[node].get(prop)))
+                fd.write("%s=%s\n" % (prop, defs[node].get(prop)))
 
-        sys.stdout.write("\n")
+        fd.write("\n")
+
+def generate_keyvalue_file(defs, kv_file):
+    with open(kv_file, "w") as fd:
+        output_keyvalue_lines(fd, defs)
 
 
-def generate_include_file(defs, args):
+def output_include_lines(fd, defs, fixups):
     compatible = reduced['/']['props']['compatible'][0]
 
-    sys.stdout.write("/**************************************************\n")
-    sys.stdout.write(" * Generated include file for " + compatible)
-    sys.stdout.write("\n")
-    sys.stdout.write(" *               DO NOT MODIFY\n")
-    sys.stdout.write(" */\n")
-    sys.stdout.write("\n")
-    sys.stdout.write("#ifndef _DEVICE_TREE_BOARD_H" + "\n")
-    sys.stdout.write("#define _DEVICE_TREE_BOARD_H" + "\n")
-    sys.stdout.write("\n")
+    fd.write("/**************************************************\n")
+    fd.write(" * Generated include file for " + compatible)
+    fd.write("\n")
+    fd.write(" *               DO NOT MODIFY\n")
+    fd.write(" */\n")
+    fd.write("\n")
+    fd.write("#ifndef _DEVICE_TREE_BOARD_H" + "\n")
+    fd.write("#define _DEVICE_TREE_BOARD_H" + "\n")
+    fd.write("\n")
 
     node_keys = sorted(defs.keys())
     for node in node_keys:
-        sys.stdout.write('/* ' + node.split('/')[-1] + ' */')
-        sys.stdout.write("\n")
+        fd.write('/* ' + node.split('/')[-1] + ' */')
+        fd.write("\n")
 
         max_dict_key = lambda d: max(len(k) for k in d.keys())
         maxlength = 0
@@ -736,30 +739,34 @@ def generate_include_file(defs, args):
             if prop == 'aliases':
                 for entry in sorted(defs[node][prop]):
                     a = defs[node][prop].get(entry)
-                    print_key_value(entry, a, maxtabstop)
+                    fd.write(get_key_value(entry, a, maxtabstop))
             else:
-                print_key_value(prop, defs[node].get(prop), maxtabstop)
+                fd.write(get_key_value(prop, defs[node].get(prop), maxtabstop))
 
-        sys.stdout.write("\n")
+        fd.write("\n")
 
-    if args.fixup:
-        for fixup in args.fixup:
+    if fixups:
+        for fixup in fixups:
             if os.path.exists(fixup):
-                sys.stdout.write("\n")
-                sys.stdout.write(
+                fd.write("\n")
+                fd.write(
                     "/* Following definitions fixup the generated include */\n")
                 try:
-                    with open(fixup, "r") as fd:
-                        for line in fd.readlines():
-                            sys.stdout.write(line)
-                        sys.stdout.write("\n")
+                    with open(fixup, "r") as fixup_fd:
+                        for line in fixup_fd.readlines():
+                            fd.write(line)
+                        fd.write("\n")
                 except:
                     raise Exception(
                         "Input file " + os.path.abspath(fixup) +
                         " does not exist.")
 
-    sys.stdout.write("#endif\n")
+    fd.write("#endif\n")
 
+
+def generate_include_file(defs, inc_file, fixups):
+    with open(inc_file, "w") as fd:
+        output_include_lines(fd, defs, fixups)
 
 def lookup_defs(defs, node, key):
     if node not in defs:
@@ -772,32 +779,30 @@ def lookup_defs(defs, node, key):
 
 
 def parse_arguments():
-
     rdh = argparse.RawDescriptionHelpFormatter
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=rdh)
 
-    parser.add_argument("-d", "--dts", help="DTS file")
-    parser.add_argument("-y", "--yaml", help="YAML file")
-    parser.add_argument("-f", "--fixup", action="append",
-                        help="Fixup file, we allow multiple")
-    parser.add_argument("-k", "--keyvalue", action="store_true",
+    parser.add_argument("-d", "--dts", nargs=1, required=True, help="DTS file")
+    parser.add_argument("-y", "--yaml", nargs=1, required=True,
+                        help="YAML file")
+    parser.add_argument("-f", "--fixup", nargs='+',
+                        help="Fixup file(s), we allow multiple")
+    parser.add_argument("-i", "--include", nargs=1, required=True,
                         help="Generate include file for the build system")
-
+    parser.add_argument("-k", "--keyvalue", nargs=1, required=True,
+                        help="Generate config file for the build system")
     return parser.parse_args()
 
 
 def main():
     args = parse_arguments()
-    if not args.dts or not args.yaml:
-        print('Usage: %s -d filename.dts -y path_to_yaml' % sys.argv[0])
-        return 1
 
     try:
-        with open(args.dts, "r") as fd:
+        with open(args.dts[0], "r") as fd:
             d = parse_file(fd)
     except:
         raise Exception(
-            "Input file " + os.path.abspath(args.dts) + " does not exist.")
+            "Input file " + os.path.abspath(args.dts[0]) + " does not exist.")
 
     # compress list to nodes w/ paths, add interrupt parent
     compress_nodes(d['/'], '/')
@@ -819,7 +824,7 @@ def main():
 
     # scan YAML files and find the ones we are interested in
     yaml_files = []
-    for root, dirnames, filenames in os.walk(args.yaml):
+    for root, dirnames, filenames in os.walk(args.yaml[0]):
         for filename in fnmatch.filter(filenames, '*.yaml'):
             yaml_files.append(os.path.join(root, filename))
 
@@ -912,11 +917,10 @@ def main():
     if 'zephyr,flash' in chosen:
         insert_defs(chosen['zephyr,flash'], defs, load_defs, {})
 
-    # generate include file
-    if args.keyvalue:
-        generate_keyvalue_file(defs, args)
-    else:
-        generate_include_file(defs, args)
+    # generate config and include file
+    generate_keyvalue_file(defs, args.keyvalue[0])
+
+    generate_include_file(defs, args.include[0], args.fixup)
 
 
 if __name__ == '__main__':
