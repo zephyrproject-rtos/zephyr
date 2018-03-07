@@ -47,6 +47,19 @@ void test_timer(void)
 	value.it_interval.tv_sec = PERIOD_SECS;
 	value.it_interval.tv_nsec = PERIOD_NSECS;
 	ret = timer_settime(timerid, 0, &value, &ovalue);
+	usleep(100 * USEC_PER_MSEC);
+	ret = timer_gettime(timerid, &value);
+	zassert_false(ret, "Failed to get time to expire.\n");
+
+	if (ret == 0) {
+		printk("Timer fires every %d secs and  %d nsecs\n",
+		       (int) value.it_interval.tv_sec,
+		       (int) value.it_interval.tv_nsec);
+		printk("Time remaining to fire %d secs and  %d nsecs\n",
+		       (int) value.it_value.tv_sec,
+		       (int) value.it_value.tv_nsec);
+	}
+
 	clock_gettime(CLOCK_MONOTONIC, &ts);
 
 	/*TESTPOINT: Check if timer has started successfully*/
