@@ -18,12 +18,24 @@ import collections
 from devicetree import parse_file
 
 # globals
-compatibles = {}
 phandles = {}
 aliases = {}
 chosen = {}
 reduced = {}
 
+regs_config = {
+    'zephyr,flash' : 'CONFIG_FLASH',
+    'zephyr,sram'  : 'CONFIG_SRAM',
+    'zephyr,ccm'   : 'CONFIG_CCM'
+}
+
+name_config = {
+    'zephyr,console'     : 'CONFIG_UART_CONSOLE_ON_DEV_NAME',
+    'zephyr,bt-uart'     : 'CONFIG_BT_UART_ON_DEV_NAME',
+    'zephyr,uart-pipe'   : 'CONFIG_UART_PIPE_ON_DEV_NAME',
+    'zephyr,bt-mon-uart' : 'CONFIG_BT_MONITOR_ON_DEV_NAME',
+    'zephyr,uart-mcumgr' : 'CONFIG_UART_MCUMGR_ON_DEV_NAME'
+}
 
 def convert_string_to_label(s):
     # Transmute ,- to _
@@ -174,7 +186,8 @@ def find_node_by_path(nodes, path):
     return d
 
 
-def compress_nodes(nodes, path):
+def get_reduced(nodes, path):
+    # compress nodes list to nodes w/ paths, add interrupt parent
     if 'props' in nodes:
         status = nodes['props'].get('status')
 
@@ -188,7 +201,7 @@ def compress_nodes(nodes, path):
             path += '/'
         if nodes['children']:
             for k, v in nodes['children'].items():
-                compress_nodes(v, path + k)
+                get_reduced(v, path + k)
 
     return
 
@@ -617,6 +630,7 @@ def extract_node_include_info(reduced, root_node_address, sub_node_address,
 
     return
 
+
 def dict_merge(dct, merge_dct):
     # from https://gist.github.com/angstwad/bf22d1822c38a92ec0a9
 
@@ -769,51 +783,16 @@ def generate_include_file(defs, inc_file, fixups):
     with open(inc_file, "w") as fd:
         output_include_lines(fd, defs, fixups)
 
-def lookup_defs(defs, node, key):
-    if node not in defs:
-        return None
 
-    if key in defs[node]['aliases']:
-        key = defs[node]['aliases'][key]
+def load_and_parse_dts(dts_file):
+    with open(dts_file, "r") as fd:
+        dts = parse_file(fd)
 
-    return defs[node].get(key, None)
+    return dts
 
 
-def parse_arguments():
-    rdh = argparse.RawDescriptionHelpFormatter
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=rdh)
-
-    parser.add_argument("-d", "--dts", nargs=1, required=True, help="DTS file")
-    parser.add_argument("-y", "--yaml", nargs=1, required=True,
-                        help="YAML file")
-    parser.add_argument("-f", "--fixup", nargs='+',
-                        help="Fixup file(s), we allow multiple")
-    parser.add_argument("-i", "--include", nargs=1, required=True,
-                        help="Generate include file for the build system")
-    parser.add_argument("-k", "--keyvalue", nargs=1, required=True,
-                        help="Generate config file for the build system")
-    return parser.parse_args()
-
-
-def main():
-    args = parse_arguments()
-
-    try:
-        with open(args.dts[0], "r") as fd:
-            d = parse_file(fd)
-    except:
-        raise Exception(
-            "Input file " + os.path.abspath(args.dts[0]) + " does not exist.")
-
-    # compress list to nodes w/ paths, add interrupt parent
-    compress_nodes(d['/'], '/')
-
-    # build up useful lists
-    compatibles = get_all_compatibles(d['/'], '/', {})
-    get_phandles(d['/'], '/', {})
-    get_aliases(d['/'])
-    get_chosen(d['/'])
-
+def load_yaml_descriptions(dts, yaml_dir):
+    compatibles = get_all_compatibles(dts['/'], '/', {})
     # find unique set of compatibles across all active nodes
     s = set()
     for k, v in compatibles.items():
@@ -825,7 +804,7 @@ def main():
 
     # scan YAML files and find the ones we are interested in
     yaml_files = []
-    for root, dirnames, filenames in os.walk(args.yaml[0]):
+    for root, dirnames, filenames in os.walk(yaml_dir):
         for filename in fnmatch.filter(filenames, '*.yaml'):
             yaml_files.append(os.path.join(root, filename))
 
@@ -848,8 +827,23 @@ def main():
     # collapse the yaml inherited information
     yaml_list = yaml_collapse(yaml_list)
 
+    return yaml_list
+
+
+def lookup_defs(defs, node, key):
+    if node not in defs:
+        return None
+
+    if key in defs[node]['aliases']:
+        key = defs[node]['aliases'][key]
+
+    return defs[node].get(key, None)
+
+
+def generate_node_definitions(yaml_list):
     defs = {}
     structs = {}
+
     for k, v in reduced.items():
         node_compat = get_compat(v)
         if node_compat is not None and node_compat in yaml_list:
@@ -859,65 +853,89 @@ def main():
     if defs == {}:
         raise Exception("No information parsed from dts file.")
 
-    if 'zephyr,flash' in chosen:
-        node_addr = chosen['zephyr,flash']
-        extract_reg_prop(chosen['zephyr,flash'], None,
-                         defs, "CONFIG_FLASH", 1024, None)
+    for k, v in regs_config.items():
+        if k in chosen:
+            extract_reg_prop(chosen[k], None, defs, v, 1024, None)
 
+    for k, v in name_config.items():
+        if k in chosen:
+            extract_string_prop(chosen[k], None, "label", v, defs)
+
+    # This should go away via future DTDirective class
+    if 'zephyr,flash' in chosen:
+        load_defs = {}
+        node_addr = chosen['zephyr,flash']
         flash_keys = ["label", "write-block-size", "erase-block-size"]
+
         for key in flash_keys:
             if key in reduced[node_addr]['props']:
                 prop = reduced[node_addr]['props'][key]
                 extract_single(node_addr, None, prop, key, None, defs, "FLASH")
-    else:
-        # We will add address/size of 0 for systems with no flash controller
-        # This is what they already do in the Kconfig options anyway
-        defs['dummy-flash'] = {'CONFIG_FLASH_BASE_ADDRESS': 0,
-                               'CONFIG_FLASH_SIZE': 0}
 
-    if 'zephyr,sram' in chosen:
-        extract_reg_prop(chosen['zephyr,sram'], None,
-                         defs, "CONFIG_SRAM", 1024, None)
-
-    if 'zephyr,ccm' in chosen:
-        extract_reg_prop(chosen['zephyr,ccm'], None,
-                         defs, "CONFIG_CCM", 1024, None)
-
-    name_dict = {
-            "CONFIG_UART_CONSOLE_ON_DEV_NAME": "zephyr,console",
-            "CONFIG_BT_UART_ON_DEV_NAME": "zephyr,bt-uart",
-            "CONFIG_UART_PIPE_ON_DEV_NAME": "zephyr,uart-pipe",
-            "CONFIG_BT_MONITOR_ON_DEV_NAME": "zephyr,bt-mon-uart",
-            "CONFIG_UART_MCUMGR_ON_DEV_NAME": "zephyr,uart-mcumgr",
+        # only compute the load offset if a code partition exists and
+        # it is not the same as the flash base address
+        if 'zephyr,code-partition' in chosen and \
+           reduced[chosen['zephyr,flash']] is not \
+           reduced[chosen['zephyr,code-partition']]:
+            part_defs = {}
+            extract_reg_prop(chosen['zephyr,code-partition'], None,
+                             part_defs, "PARTITION", 1, 'offset')
+            part_base = lookup_defs(part_defs,
+                                    chosen['zephyr,code-partition'],
+                                    'PARTITION_OFFSET')
+            load_defs['CONFIG_FLASH_LOAD_OFFSET'] = part_base
+            load_defs['CONFIG_FLASH_LOAD_SIZE'] = \
+                lookup_defs(part_defs,
+                            chosen['zephyr,code-partition'],
+                            'PARTITION_SIZE')
+        else:
+            # We will add addr/size of 0 for systems with no flash controller
+            # This is what they already do in the Kconfig options anyway
+            defs['dummy-flash'] = {
+                'CONFIG_FLASH_BASE_ADDRESS': 0,
+                'CONFIG_FLASH_SIZE': 0
             }
 
-    for k, v in name_dict.items():
-        if v in chosen:
-            extract_string_prop(chosen[v], None, "label", k, defs)
-
-    # only compute the load offset if a code partition exists and it is not the
-    # same as the flash base address
-    load_defs = {}
-    if 'zephyr,code-partition' in chosen and \
-       'zephyr,flash' in chosen and \
-       reduced[chosen['zephyr,flash']] is not \
-            reduced[chosen['zephyr,code-partition']]:
-        part_defs = {}
-        extract_reg_prop(chosen['zephyr,code-partition'], None, part_defs,
-                         "PARTITION", 1, 'offset')
-        part_base = lookup_defs(part_defs, chosen['zephyr,code-partition'],
-                                'PARTITION_OFFSET')
-        load_defs['CONFIG_FLASH_LOAD_OFFSET'] = part_base
-        load_defs['CONFIG_FLASH_LOAD_SIZE'] = \
-            lookup_defs(part_defs, chosen['zephyr,code-partition'],
-                        'PARTITION_SIZE')
-    else:
-        load_defs['CONFIG_FLASH_LOAD_OFFSET'] = 0
-        load_defs['CONFIG_FLASH_LOAD_SIZE'] = 0
+            load_defs['CONFIG_FLASH_LOAD_OFFSET'] = 0
+            load_defs['CONFIG_FLASH_LOAD_SIZE'] = 0
 
     insert_defs(chosen['zephyr,flash'], defs, load_defs, {})
 
-    # generate config and include file
+    return defs
+
+
+def parse_arguments():
+    rdh = argparse.RawDescriptionHelpFormatter
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=rdh)
+
+    parser.add_argument("-d", "--dts", nargs=1, required=True, help="DTS file")
+    parser.add_argument("-y", "--yaml", nargs=1, required=True,
+                        help="YAML file")
+    parser.add_argument("-f", "--fixup", nargs='+',
+                        help="Fixup file(s), we allow multiple")
+    parser.add_argument("-i", "--include", nargs=1, required=True,
+                        help="Generate include file for the build system")
+    parser.add_argument("-k", "--keyvalue", nargs=1, required=True,
+                        help="Generate config file for the build system")
+    return parser.parse_args()
+
+
+def main():
+    args = parse_arguments()
+
+    dts = load_and_parse_dts(args.dts[0])
+
+    # build up useful lists
+    get_reduced(dts['/'], '/')
+    get_phandles(dts['/'], '/', {})
+    get_aliases(dts['/'])
+    get_chosen(dts['/'])
+
+    yaml_list = load_yaml_descriptions(dts, args.yaml[0])
+
+    defs = generate_node_definitions(yaml_list)
+
+     # generate config and include file
     generate_keyvalue_file(defs, args.keyvalue[0])
 
     generate_include_file(defs, args.include[0], args.fixup)
