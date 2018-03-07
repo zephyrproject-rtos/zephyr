@@ -25,6 +25,7 @@
 #include <misc/dlist.h>
 #include <misc/slist.h>
 #include <misc/util.h>
+#include <misc/mempool_base.h>
 #include <kernel_version.h>
 #include <random/rand32.h>
 #include <kernel_arch_thread.h>
@@ -3544,85 +3545,10 @@ static inline u32_t k_mem_slab_num_free_get(struct k_mem_slab *slab)
  * @cond INTERNAL_HIDDEN
  */
 
-struct k_mem_pool_lvl {
-	union {
-		u32_t *bits_p;
-		u32_t bits;
-	};
-	sys_dlist_t free_list;
-};
-
 struct k_mem_pool {
-	void *buf;
-	size_t max_sz;
-	u16_t n_max;
-	u8_t n_levels;
-	u8_t max_inline_level;
-	struct k_mem_pool_lvl *levels;
+	struct sys_mem_pool_base base;
 	_wait_q_t wait_q;
 };
-
-#define _ALIGN4(n) ((((n)+3)/4)*4)
-
-#define _MPOOL_HAVE_LVL(max, min, l) (((max) >> (2*(l))) >= (min) ? 1 : 0)
-
-#define __MPOOL_LVLS(maxsz, minsz)		\
-	(_MPOOL_HAVE_LVL((maxsz), (minsz), 0) +	\
-	_MPOOL_HAVE_LVL((maxsz), (minsz), 1) +	\
-	_MPOOL_HAVE_LVL((maxsz), (minsz), 2) +	\
-	_MPOOL_HAVE_LVL((maxsz), (minsz), 3) +	\
-	_MPOOL_HAVE_LVL((maxsz), (minsz), 4) +	\
-	_MPOOL_HAVE_LVL((maxsz), (minsz), 5) +	\
-	_MPOOL_HAVE_LVL((maxsz), (minsz), 6) +	\
-	_MPOOL_HAVE_LVL((maxsz), (minsz), 7) +	\
-	_MPOOL_HAVE_LVL((maxsz), (minsz), 8) +	\
-	_MPOOL_HAVE_LVL((maxsz), (minsz), 9) +	\
-	_MPOOL_HAVE_LVL((maxsz), (minsz), 10) +	\
-	_MPOOL_HAVE_LVL((maxsz), (minsz), 11) +	\
-	_MPOOL_HAVE_LVL((maxsz), (minsz), 12) +	\
-	_MPOOL_HAVE_LVL((maxsz), (minsz), 13) +	\
-	_MPOOL_HAVE_LVL((maxsz), (minsz), 14) +	\
-	_MPOOL_HAVE_LVL((maxsz), (minsz), 15))
-
-#define _MPOOL_MINBLK sizeof(sys_dnode_t)
-
-#define _MPOOL_LVLS(max, min)		\
-	__MPOOL_LVLS((max), (min) >= _MPOOL_MINBLK ? (min) : _MPOOL_MINBLK)
-
-/* Rounds the needed bits up to integer multiples of u32_t */
-#define _MPOOL_LBIT_WORDS_UNCLAMPED(n_max, l) \
-	((((n_max) << (2*(l))) + 31) / 32)
-
-/* One word gets stored free unioned with the pointer, otherwise the
- * calculated unclamped value
- */
-#define _MPOOL_LBIT_WORDS(n_max, l)			\
-	(_MPOOL_LBIT_WORDS_UNCLAMPED(n_max, l) < 2 ? 0	\
-	 : _MPOOL_LBIT_WORDS_UNCLAMPED(n_max, l))
-
-/* How many bytes for the bitfields of a single level? */
-#define _MPOOL_LBIT_BYTES(maxsz, minsz, l, n_max)	\
-	(_MPOOL_LVLS((maxsz), (minsz)) >= (l) ?		\
-	 4 * _MPOOL_LBIT_WORDS((n_max), l) : 0)
-
-/* Size of the bitmap array that follows the buffer in allocated memory */
-#define _MPOOL_BITS_SIZE(maxsz, minsz, n_max) \
-	(_MPOOL_LBIT_BYTES(maxsz, minsz, 0, n_max) +	\
-	_MPOOL_LBIT_BYTES(maxsz, minsz, 1, n_max) +	\
-	_MPOOL_LBIT_BYTES(maxsz, minsz, 2, n_max) +	\
-	_MPOOL_LBIT_BYTES(maxsz, minsz, 3, n_max) +	\
-	_MPOOL_LBIT_BYTES(maxsz, minsz, 4, n_max) +	\
-	_MPOOL_LBIT_BYTES(maxsz, minsz, 5, n_max) +	\
-	_MPOOL_LBIT_BYTES(maxsz, minsz, 6, n_max) +	\
-	_MPOOL_LBIT_BYTES(maxsz, minsz, 7, n_max) +	\
-	_MPOOL_LBIT_BYTES(maxsz, minsz, 8, n_max) +	\
-	_MPOOL_LBIT_BYTES(maxsz, minsz, 9, n_max) +	\
-	_MPOOL_LBIT_BYTES(maxsz, minsz, 10, n_max) +	\
-	_MPOOL_LBIT_BYTES(maxsz, minsz, 11, n_max) +	\
-	_MPOOL_LBIT_BYTES(maxsz, minsz, 12, n_max) +	\
-	_MPOOL_LBIT_BYTES(maxsz, minsz, 13, n_max) +	\
-	_MPOOL_LBIT_BYTES(maxsz, minsz, 14, n_max) +	\
-	_MPOOL_LBIT_BYTES(maxsz, minsz, 15, n_max))
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -3655,13 +3581,16 @@ struct k_mem_pool {
 #define K_MEM_POOL_DEFINE(name, minsz, maxsz, nmax, align)		\
 	char __aligned(align) _mpool_buf_##name[_ALIGN4(maxsz * nmax)	\
 				  + _MPOOL_BITS_SIZE(maxsz, minsz, nmax)]; \
-	struct k_mem_pool_lvl _mpool_lvls_##name[_MPOOL_LVLS(maxsz, minsz)]; \
+	struct sys_mem_pool_lvl _mpool_lvls_##name[_MPOOL_LVLS(maxsz, minsz)]; \
 	struct k_mem_pool name __in_section(_k_mem_pool, static, name) = { \
-		.buf = _mpool_buf_##name,				\
-		.max_sz = maxsz,					\
-		.n_max = nmax,						\
-		.n_levels = _MPOOL_LVLS(maxsz, minsz),			\
-		.levels = _mpool_lvls_##name,				\
+		.base = {						\
+			.buf = _mpool_buf_##name,			\
+			.max_sz = maxsz,				\
+			.n_max = nmax,					\
+			.n_levels = _MPOOL_LVLS(maxsz, minsz),		\
+			.levels = _mpool_lvls_##name,			\
+			.flags = SYS_MEM_POOL_KERNEL			\
+		} \
 	}
 
 /**
