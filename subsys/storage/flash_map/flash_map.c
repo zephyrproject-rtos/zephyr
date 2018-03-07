@@ -79,7 +79,7 @@ void flash_area_close(const struct flash_area *fa)
 
 static struct device *get_flash_dev_from_id(u8_t id)
 {
-	for (int i = 0; i < ARRAY_SIZE(flash_drivers_map); i++) {
+	for (unsigned int i = 0; i < ARRAY_SIZE(flash_drivers_map); i++) {
 		if (flash_drivers_map[i].id == id) {
 			return flash_dev[i];
 		}
@@ -266,7 +266,7 @@ u8_t flash_area_align(const struct flash_area *fa)
 
 static int flash_map_init(struct device *dev)
 {
-	int i;
+	unsigned int i;
 
 	for (i = 0; i < ARRAY_SIZE(flash_dev); i++) {
 		flash_dev[i] = device_get_binding(flash_drivers_map[i].name);
