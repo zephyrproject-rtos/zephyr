@@ -101,9 +101,9 @@ int timer_gettime(timer_t timerid, struct itimerspec *its)
 
 	if (timer->status == ACTIVE) {
 		remaining = k_timer_remaining_get(&timer->ztimer);
-		secs =  remaining / sys_clock_ticks_per_sec;
-		leftover = remaining - (secs * sys_clock_ticks_per_sec);
-		nsecs = leftover * NSEC_PER_SEC / sys_clock_ticks_per_sec;
+		secs =  remaining / MSEC_PER_SEC;
+		leftover = remaining - (secs * MSEC_PER_SEC);
+		nsecs = leftover * NSEC_PER_MSEC;
 		its->it_value.tv_sec = (s32_t) secs;
 		its->it_value.tv_nsec = (s32_t) nsecs;
 	} else {
