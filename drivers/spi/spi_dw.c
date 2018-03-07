@@ -186,7 +186,7 @@ static void pull_data(struct device *dev)
 
 static int spi_dw_configure(const struct spi_dw_config *info,
 			    struct spi_dw_data *spi,
-			    struct spi_config *config)
+			    const struct spi_config *config)
 {
 	u32_t ctrlr0 = 0;
 
@@ -248,19 +248,37 @@ static int spi_dw_configure(const struct spi_dw_config *info,
 	return 0;
 }
 
-static int transceive(struct spi_config *config,
-		      const struct spi_buf *tx_bufs,
-		      size_t tx_count,
-		      struct spi_buf *rx_bufs,
-		      size_t rx_count,
+static uint32_t spi_dw_compute_ndf(const struct spi_buf *rx_bufs,
+				   size_t rx_count, u8_t dfs)
+{
+	u32_t len = 0;
+
+	for (; rx_count; rx_bufs++, rx_count--) {
+		if (len > (UINT16_MAX - rx_bufs->len)) {
+			goto error;
+		}
+
+		len += rx_bufs->len;
+	}
+
+	if (len) {
+		return (len / dfs) - 1;
+	}
+error:
+	return UINT32_MAX;
+}
+
+static int transceive(const struct spi_config *config,
+		      const struct spi_buf_set *tx_bufs,
+		      const struct spi_buf_set *rx_bufs,
 		      bool asynchronous,
 		      struct k_poll_signal *signal)
 {
 	const struct spi_dw_config *info = config->dev->config->config_info;
 	struct spi_dw_data *spi = config->dev->driver_data;
-	u32_t rx_thsld = DW_SPI_RXFTLR_DFLT;
-	u32_t imask = DW_SPI_IMR_UNMASK;
-	int ret = 0;
+	u32_t tmod = DW_SPI_CTRLR0_TMOD_TX_RX;
+	u32_t reg_data;
+	int ret;
 
 	/* Check status */
 	if (test_bit_ssienr(info->regs) || test_bit_sr_busy(info->regs)) {
@@ -276,9 +294,32 @@ static int transceive(struct spi_config *config,
 		goto out;
 	}
 
+	if (!rx_bufs || !rx_bufs->buffers) {
+		tmod = DW_SPI_CTRLR0_TMOD_RX;
+	} else if (!tx_bufs || !tx_bufs->buffers) {
+		tmod = DW_SPI_CTRLR0_TMOD_TX;
+	}
+
+	/* ToDo: add a way to determine EEPROM mode */
+
+	if (tmod >= DW_SPI_CTRLR0_TMOD_RX) {
+		reg_data = spi_dw_compute_ndf(rx_bufs->buffers,
+					      rx_bufs->count, spi->dfs);
+		if (reg_data == UINT32_MAX) {
+			ret = -EINVAL;
+			goto out;
+		}
+
+		write_ctrlr1(reg_data, info->regs);
+	} else {
+		write_ctrlr1(0, info->regs);
+	}
+
+	/* Updating TMOD in CTRLR0 register */
+	write_ctrlr0(read_ctrlr0(info->regs) | tmod, info->regs);
+
 	/* Set buffers info */
-	spi_context_buffers_setup(&spi->ctx, tx_bufs, tx_count,
-				  rx_bufs, rx_count, spi->dfs);
+	spi_context_buffers_setup(&spi->ctx, tx_bufs, rx_bufs, spi->dfs);
 
 	spi->fifo_diff = 0;
 
@@ -286,20 +327,18 @@ static int transceive(struct spi_config *config,
 	write_txftlr(DW_SPI_TXFTLR_DFLT, info->regs);
 
 	/* Does Rx thresholds needs to be lower? */
+	reg_data = DW_SPI_RXFTLR_DFLT;
 	if (spi->ctx.rx_len && spi->ctx.rx_len < DW_SPI_FIFO_DEPTH) {
-		rx_thsld = spi->ctx.rx_len - 1;
+		reg_data = spi->ctx.rx_len - 1;
 	}
 
 	/* Rx Threshold */
-	write_rxftlr(rx_thsld, info->regs);
-
-	if (!rx_bufs) {
-		/* if there is no rx buffer, keep all rx interrupts masked */
-		imask &= DW_SPI_IMR_MASK_RX;
-	}
+	write_rxftlr(reg_data, info->regs);
 
 	/* Enable interrupts */
-	write_imr(imask, info->regs);
+	reg_data = !rx_bufs ?
+		DW_SPI_IMR_UNMASK & DW_SPI_IMR_MASK_RX : DW_SPI_IMR_UNMASK;
+	write_imr(reg_data, info->regs);
 
 	spi_context_cs_control(&spi->ctx, true);
 
@@ -313,36 +352,28 @@ out:
 	return ret;
 }
 
-static int spi_dw_transceive(struct spi_config *config,
-			     const struct spi_buf *tx_bufs,
-			     size_t tx_count,
-			     struct spi_buf *rx_bufs,
-			     size_t rx_count)
+static int spi_dw_transceive(const struct spi_config *config,
+			     const struct spi_buf_set *tx_bufs,
+			     const struct spi_buf_set *rx_bufs)
 {
-	SYS_LOG_DBG("%p, %p (%zu), %p (%zu)",
-		    config->dev, tx_bufs, tx_count, rx_bufs, rx_count);
+	SYS_LOG_DBG("%p, %p, %p", config->dev, tx_bufs, rx_bufs);
 
-	return transceive(config, tx_bufs, tx_count,
-			  rx_bufs, rx_count, false, NULL);
+	return transceive(config, tx_bufs, rx_bufs, false, NULL);
 }
 
-#ifdef CONFIG_POLL
-static int spi_dw_transceive_async(struct spi_config *config,
-				   const struct spi_buf *tx_bufs,
-				   size_t tx_count,
-				   struct spi_buf *rx_bufs,
-				   size_t rx_count,
+#ifdef CONFIG_SPI_ASYNC
+static int spi_dw_transceive_async(const struct spi_config *config,
+				   const struct spi_buf_set *tx_bufs,
+				   const struct spi_buf_set *rx_bufs,
 				   struct k_poll_signal *async)
 {
-	SYS_LOG_DBG("%p, %p (%zu), %p (%zu), %p",
-		    config->dev, tx_bufs, tx_count, rx_bufs, rx_count, async);
+	SYS_LOG_DBG("%p, %p, %p, %p", config->dev, tx_bufs, rx_bufs, async);
 
-	return transceive(config, tx_bufs, tx_count,
-			  rx_bufs, rx_count, true, async);
+	return transceive(config, tx_bufs, rx_bufs, true, async);
 }
-#endif /* CONFIG_POLL */
+#endif /* CONFIG_SPI_ASYNC */
 
-static int spi_dw_release(struct spi_config *config)
+static int spi_dw_release(const struct spi_config *config)
 {
 	const struct spi_dw_config *info = config->dev->config->config_info;
 	struct spi_dw_data *spi = config->dev->driver_data;
@@ -390,9 +421,9 @@ out:
 
 static const struct spi_driver_api dw_spi_api = {
 	.transceive = spi_dw_transceive,
-#ifdef CONFIG_POLL
+#ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_dw_transceive_async,
-#endif
+#endif /* CONFIG_SPI_ASYNC */
 	.release = spi_dw_release,
 };
 

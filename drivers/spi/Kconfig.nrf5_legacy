@@ -10,7 +10,7 @@
 
 menuconfig SPI_NRF5
 	bool "nRF5 SPI drivers"
-	depends on SPI && SOC_FAMILY_NRF5 && GPIO_NRF5_P0
+	depends on SOC_FAMILY_NRF5 && GPIO_NRF5_P0
 	default n
 	help
 	  Enable support for nRF5 MCU series SPI drivers. Peripherals

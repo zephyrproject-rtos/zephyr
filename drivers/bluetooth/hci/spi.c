@@ -46,7 +46,7 @@
 #define GPIO_IRQ_PIN		CONFIG_BT_SPI_IRQ_PIN
 #define GPIO_RESET_PIN		CONFIG_BT_SPI_RESET_PIN
 #if defined(CONFIG_BT_SPI_BLUENRG)
-#define GPIO_CS_PIN		CONFIG_BT_SPI_CHIP_SELECT_PIN
+#define GPIO_CS_PIN             CONFIG_BT_SPI_CHIP_SELECT_PIN
 #endif /* CONFIG_BT_SPI_BLUENRG */
 
 /* Max SPI buffer length for transceive operations.
@@ -61,9 +61,6 @@
 static u8_t rxmsg[SPI_MAX_MSG_LEN];
 static u8_t txmsg[SPI_MAX_MSG_LEN];
 
-#if defined(CONFIG_BT_SPI_BLUENRG)
-static struct device		*cs_dev;
-#endif /* CONFIG_BT_SPI_BLUENRG */
 static struct device		*irq_dev;
 static struct device		*rst_dev;
 
@@ -100,32 +97,10 @@ static inline
 void spi_dump_message(const u8_t *pre, u8_t *buf, u8_t size) {}
 #endif
 
-/*
- * SPI driver shim.
- *
- * This can be removed and this driver further improved when the
- * legacy SPI API is gone. (For example, the chip select handling done
- * under CONFIG_BT_SPI_BLUENRG could be done with a struct
- * spi_cs_control instead).
- */
-static struct device	*spi_dev;
-#if defined(CONFIG_SPI_LEGACY_API)
-static struct spi_config spi_conf =	    {
-	.config       = SPI_WORD(8),
-	.max_sys_freq = CONFIG_BT_SPI_MAX_CLK_FREQ,
-};
+#if defined(CONFIG_BT_SPI_BLUENRG)
+static struct device *cs_dev;
+#endif /* CONFIG_BT_SPI_BLUENRG */
 
-static inline int bt_spi_dev_configure(void)
-{
-	return spi_configure(spi_dev, &spi_conf);
-}
-
-static inline int bt_spi_transceive(const void *tx, u32_t tx_len,
-				    void *rx, u32_t rx_len)
-{
-	return spi_transceive(spi_dev, tx, tx_len, rx, rx_len);
-}
-#else  /* !defined(CONFIG_SPI_LEGACY_API) */
 static struct spi_config spi_conf = {
 	.frequency = CONFIG_BT_SPI_MAX_CLK_FREQ,
 	.operation = (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8) |
@@ -135,27 +110,24 @@ static struct spi_config spi_conf = {
 };
 static struct spi_buf spi_tx_buf;
 static struct spi_buf spi_rx_buf;
+static const struct spi_buf_set spi_tx = {
+	.buffers = &spi_tx_buf,
+	.count = 1
+};
+static const struct spi_buf_set spi_rx = {
+	.buffers = &spi_rx_buf,
+	.count = 1
+};
 
-static inline int bt_spi_dev_configure(void)
-{
-	spi_conf.dev = spi_dev;
-	return 0;
-}
-
-static inline int bt_spi_transceive(const void *tx, u32_t tx_len,
+static inline int bt_spi_transceive(void *tx, u32_t tx_len,
 				    void *rx, u32_t rx_len)
 {
-	/*
-	 * It's OK to cast away const here: &spi_tx_buf is treated as
-	 * const by spi_transceive().
-	 */
-	spi_tx_buf.buf = (void *)tx;
+	spi_tx_buf.buf = tx;
 	spi_tx_buf.len = (size_t)tx_len;
 	spi_rx_buf.buf = rx;
 	spi_rx_buf.len = (size_t)rx_len;
-	return spi_transceive(&spi_conf, &spi_tx_buf, 1, &spi_rx_buf, 1);
+	return spi_transceive(&spi_conf, &spi_tx, &spi_rx);
 }
-#endif	/* CONFIG_SPI_LEGACY_API */
 
 static inline u16_t bt_spi_get_cmd(u8_t *txmsg)
 {
@@ -168,8 +140,10 @@ static inline u16_t bt_spi_get_evt(u8_t *rxmsg)
 }
 
 static void bt_spi_isr(struct device *unused1, struct gpio_callback *unused2,
-			unsigned int unused3)
+		       unsigned int unused3)
 {
+	BT_DBG("");
+
 	k_sem_give(&sem_request);
 }
 
@@ -183,13 +157,55 @@ static void bt_spi_handle_vendor_evt(u8_t *rxmsg)
 	}
 }
 
+#if defined(CONFIG_BT_SPI_BLUENRG)
+/* BlueNRG has a particuliar way to wake up from sleep and be ready.
+ * All is done through its CS line:
+ * If it is in sleep mode, the first transaction will not return ready
+ * status. At this point, it's necessary to release the CS and retry
+ * within 2ms the same transaction. And again when it's required to
+ * know the amount of byte to read.
+ * (See section 5.2 of BlueNRG-MS datasheet)
+ */
+static int bt_spi_configure_cs(void)
+{
+	cs_dev = device_get_binding(CONFIG_BT_SPI_CHIP_SELECT_DEV_NAME);
+	if (!cs_dev) {
+		BT_ERR("Failed to initialize GPIO driver: %s",
+		       CONFIG_BT_SPI_CHIP_SELECT_DEV_NAME);
+		return -EIO;
+	}
+
+	gpio_pin_configure(cs_dev, GPIO_CS_PIN,
+			   GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
+	gpio_pin_write(cs_dev, GPIO_CS_PIN, 1);
+
+	return 0;
+}
+
+static void bt_spi_kick_cs(void)
+{
+	gpio_pin_write(cs_dev, GPIO_CS_PIN, 1);
+	gpio_pin_write(cs_dev, GPIO_CS_PIN, 0);
+}
+
+static void bt_spi_release_cs(void)
+{
+	gpio_pin_write(cs_dev, GPIO_CS_PIN, 1);
+}
+#else
+#define bt_spi_configure_cs(...) 0
+#define bt_spi_kick_cs(...)
+#define bt_spi_release_cs(...)
+#endif
+
 static void bt_spi_rx_thread(void)
 {
 	struct net_buf *buf;
 	u8_t header_master[5] = { SPI_READ, 0x00, 0x00, 0x00, 0x00 };
 	u8_t header_slave[5];
 	struct bt_hci_acl_hdr acl_hdr;
-	u8_t size;
+	u8_t size = 0;
+	int ret;
 
 	memset(&txmsg, 0xFF, SPI_MAX_MSG_LEN);
 
@@ -199,25 +215,32 @@ static void bt_spi_rx_thread(void)
 		gpio_pin_disable_callback(irq_dev, GPIO_IRQ_PIN);
 		k_sem_take(&sem_busy, K_FOREVER);
 
-		do {
-#if defined(CONFIG_BT_SPI_BLUENRG)
-			gpio_pin_write(cs_dev, GPIO_CS_PIN, 1);
-			gpio_pin_write(cs_dev, GPIO_CS_PIN, 0);
-#endif /* CONFIG_BT_SPI_BLUENRG */
-			bt_spi_transceive(header_master, 5, header_slave, 5);
-		} while (header_slave[STATUS_HEADER_TOREAD] == 0 ||
-			 header_slave[STATUS_HEADER_TOREAD] == 0xFF);
+		BT_DBG("");
 
-		size = header_slave[STATUS_HEADER_TOREAD];
 		do {
-			bt_spi_transceive(&txmsg, size, &rxmsg, size);
-		} while (rxmsg[0] == 0);
+			bt_spi_kick_cs();
+			ret = bt_spi_transceive(header_master, 5,
+						header_slave, 5);
+		} while ((header_slave[STATUS_HEADER_TOREAD] == 0 ||
+			  header_slave[STATUS_HEADER_TOREAD] == 0xFF) && !ret);
 
+		if (!ret) {
+			size = header_slave[STATUS_HEADER_TOREAD];
+
+			do {
+				ret = bt_spi_transceive(&txmsg, size,
+							&rxmsg, size);
+			} while (rxmsg[0] == 0 && ret == 0);
+		}
+
+		bt_spi_release_cs();
 		gpio_pin_enable_callback(irq_dev, GPIO_IRQ_PIN);
-#if defined(CONFIG_BT_SPI_BLUENRG)
-		gpio_pin_write(cs_dev, GPIO_CS_PIN, 1);
-#endif /* CONFIG_BT_SPI_BLUENRG */
 		k_sem_give(&sem_busy);
+
+		if (ret) {
+			BT_ERR("Error %d", ret);
+			continue;
+		}
 
 		spi_dump_message("RX:ed", rxmsg, size);
 
@@ -265,6 +288,9 @@ static int bt_spi_send(struct net_buf *buf)
 {
 	u8_t header[5] = { SPI_WRITE, 0x00,  0x00,  0x00,  0x00 };
 	u32_t pending;
+	int ret;
+
+	BT_DBG("");
 
 	/* Buffer needs an additional byte for type */
 	if (buf->len >= SPI_MAX_MSG_LEN) {
@@ -298,30 +324,34 @@ static int bt_spi_send(struct net_buf *buf)
 
 	/* Poll sanity values until device has woken-up */
 	do {
-#if defined(CONFIG_BT_SPI_BLUENRG)
-		gpio_pin_write(cs_dev, GPIO_CS_PIN, 1);
-		gpio_pin_write(cs_dev, GPIO_CS_PIN, 0);
-#endif /* CONFIG_BT_SPI_BLUENRG */
-		bt_spi_transceive(header, 5, rxmsg, 5);
+		bt_spi_kick_cs();
+		ret = bt_spi_transceive(header, 5, rxmsg, 5);
 
 		/*
 		 * RX Header (rxmsg) must contain a sanity check Byte and size
 		 * information.  If it does not contain BOTH then it is
 		 * sleeping or still in the initialisation stage (waking-up).
 		 */
-	} while (rxmsg[STATUS_HEADER_READY] != READY_NOW ||
-		 (rxmsg[1] | rxmsg[2] | rxmsg[3] | rxmsg[4]) == 0);
+	} while ((rxmsg[STATUS_HEADER_READY] != READY_NOW ||
+		  (rxmsg[1] | rxmsg[2] | rxmsg[3] | rxmsg[4]) == 0) && !ret);
 
-	/* Transmit the message */
-	do {
-		bt_spi_transceive(buf->data, buf->len, rxmsg, buf->len);
-	} while (rxmsg[0] == 0);
 
-#if defined(CONFIG_BT_SPI_BLUENRG)
-	/* Deselect chip */
-	gpio_pin_write(cs_dev, GPIO_CS_PIN, 1);
-#endif /* CONFIG_BT_SPI_BLUENRG */
 	k_sem_give(&sem_busy);
+
+	if (!ret) {
+		/* Transmit the message */
+		do {
+			ret = bt_spi_transceive(buf->data, buf->len,
+						rxmsg, buf->len);
+		} while (rxmsg[0] == 0 && !ret);
+	}
+
+	bt_spi_release_cs();
+
+	if (ret) {
+		BT_ERR("Error %d", ret);
+		goto out;
+	}
 
 	spi_dump_message("TX:ed", buf->data, buf->len);
 
@@ -337,10 +367,10 @@ static int bt_spi_send(struct net_buf *buf)
 		k_sem_take(&sem_initialised, K_FOREVER);
 	}
 #endif /* CONFIG_BT_SPI_BLUENRG */
-
+out:
 	net_buf_unref(buf);
 
-	return 0;
+	return ret;
 }
 
 static int bt_spi_open(void)
@@ -349,15 +379,6 @@ static int bt_spi_open(void)
 	gpio_pin_configure(rst_dev, GPIO_RESET_PIN,
 			   GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
 	gpio_pin_write(rst_dev, GPIO_RESET_PIN, 0);
-
-	bt_spi_dev_configure();
-
-#if defined(CONFIG_BT_SPI_BLUENRG)
-	/* Configure the CS (Chip Select) pin */
-	gpio_pin_configure(cs_dev, GPIO_CS_PIN,
-			   GPIO_DIR_OUT | GPIO_PUD_PULL_UP);
-	gpio_pin_write(cs_dev, GPIO_CS_PIN, 1);
-#endif /* CONFIG_BT_SPI_BLUENRG */
 
 	/* Configure IRQ pin and the IRQ call-back/handler */
 	gpio_pin_configure(irq_dev, GPIO_IRQ_PIN,
@@ -401,21 +422,16 @@ static int _bt_spi_init(struct device *unused)
 {
 	ARG_UNUSED(unused);
 
-	spi_dev = device_get_binding(CONFIG_BT_SPI_DEV_NAME);
-	if (!spi_dev) {
+	spi_conf.dev = device_get_binding(CONFIG_BT_SPI_DEV_NAME);
+	if (!spi_conf.dev) {
 		BT_ERR("Failed to initialize SPI driver: %s",
 		       CONFIG_BT_SPI_DEV_NAME);
 		return -EIO;
 	}
 
-#if defined(CONFIG_BT_SPI_BLUENRG)
-	cs_dev = device_get_binding(CONFIG_BT_SPI_CHIP_SELECT_DEV_NAME);
-	if (!cs_dev) {
-		BT_ERR("Failed to initialize GPIO driver: %s",
-		       CONFIG_BT_SPI_CHIP_SELECT_DEV_NAME);
+	if (bt_spi_configure_cs()) {
 		return -EIO;
 	}
-#endif /* CONFIG_BT_SPI_BLUENRG */
 
 	irq_dev = device_get_binding(CONFIG_BT_SPI_IRQ_DEV_NAME);
 	if (!irq_dev) {
@@ -432,6 +448,9 @@ static int _bt_spi_init(struct device *unused)
 	}
 
 	bt_hci_driver_register(&drv);
+
+
+	BT_DBG("BT SPI initialized");
 
 	return 0;
 }

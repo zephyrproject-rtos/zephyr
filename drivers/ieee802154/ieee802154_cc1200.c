@@ -82,7 +82,7 @@ bool _cc1200_access_reg(struct spi_config *spi, bool read, u8_t addr,
 			void *data, size_t length, bool extended, bool burst)
 {
 	u8_t cmd_buf[2];
-	struct spi_buf buf[2] = {
+	const struct spi_buf buf[2] = {
 		{
 			.buf = cmd_buf,
 			.len = extended ? 2 : 1,
@@ -93,6 +93,7 @@ bool _cc1200_access_reg(struct spi_config *spi, bool read, u8_t addr,
 
 		}
 	};
+	struct spi_buf_set tx = { .buffers = buf };
 
 	/*
 	SYS_LOG_DBG("%s: addr 0x%02x - Data %p Length %u - %s, %s",
@@ -115,13 +116,22 @@ bool _cc1200_access_reg(struct spi_config *spi, bool read, u8_t addr,
 	}
 
 	if (read) {
+		const struct spi_buf_set rx = {
+			.buffers = buf,
+			.count = 2
+		};
+
 		cmd_buf[0] |= CC1200_ACCESS_RD;
 
-		return (spi_transceive(spi, buf, 1, buf, 2) == 0);
+		tx.count = 1;
+
+		return (spi_transceive(spi, &tx, &rx) == 0);
 	}
 
 	/* CC1200_ACCESS_WR is 0 so no need to play with it */
-	return (spi_write(spi, buf, data ? 2 : 1) == 0);
+	tx.count =  data ? 2 : 1;
+
+	return (spi_write(spi, &tx) == 0);
 }
 
 static inline u8_t *get_mac(struct device *dev)

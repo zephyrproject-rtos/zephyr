@@ -14,19 +14,32 @@
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_SPI_LEVEL
 #include <logging/sys_log.h>
 
+#ifndef CONFIG_SPI_LEGACY_API
+#include "spi_context.h"
+#endif
+
 struct spi_mcux_config {
 	SPI_Type *base;
 	clock_name_t clock_source;
 	void (*irq_config_func)(struct device *dev);
+#ifdef CONFIG_SPI_LEGACY_API
 	struct spi_config default_cfg;
+#endif
 };
 
 struct spi_mcux_data {
 	dspi_master_handle_t handle;
+#ifdef CONFIG_SPI_LEGACY_API
 	struct k_sem sync;
 	status_t callback_status;
 	u32_t slave;
+#else
+	struct spi_context ctx;
+	size_t transfer_len;
+#endif
 };
+
+#ifdef CONFIG_SPI_LEGACY_API
 
 static void spi_mcux_master_transfer_callback(SPI_Type *base,
 		dspi_master_handle_t *handle, status_t status, void *userData)
@@ -237,6 +250,232 @@ static const struct spi_driver_api spi_mcux_driver_api = {
 	.transceive = spi_mcux_transceive,
 };
 
+#else
+
+static void spi_mcux_transfer_next_packet(struct device *dev)
+{
+	const struct spi_mcux_config *config = dev->config->config_info;
+	struct spi_mcux_data *data = dev->driver_data;
+	SPI_Type *base = config->base;
+	struct spi_context *ctx = &data->ctx;
+	dspi_transfer_t transfer;
+	status_t status;
+
+	if ((ctx->tx_len == 0) && (ctx->rx_len == 0)) {
+		/* nothing left to rx or tx, we're done! */
+		spi_context_cs_control(&data->ctx, false);
+		spi_context_complete(&data->ctx, 0);
+		return;
+	}
+
+	transfer.configFlags = kDSPI_MasterCtar0 | kDSPI_MasterPcsContinuous |
+			       (ctx->config->slave << DSPI_MASTER_PCS_SHIFT);
+
+	if (ctx->tx_len == 0) {
+		/* rx only, nothing to tx */
+		transfer.txData = NULL;
+		transfer.rxData = ctx->rx_buf;
+		transfer.dataSize = ctx->rx_len;
+	} else if (ctx->rx_len == 0) {
+		/* tx only, nothing to rx */
+		transfer.txData = (u8_t *) ctx->tx_buf;
+		transfer.rxData = NULL;
+		transfer.dataSize = ctx->tx_len;
+	} else if (ctx->tx_len == ctx->rx_len) {
+		/* rx and tx are the same length */
+		transfer.txData = (u8_t *) ctx->tx_buf;
+		transfer.rxData = ctx->rx_buf;
+		transfer.dataSize = ctx->tx_len;
+	} else if (ctx->tx_len > ctx->rx_len) {
+		/* Break up the tx into multiple transfers so we don't have to
+		 * rx into a longer intermediate buffer. Leave chip select
+		 * active between transfers.
+		 */
+		transfer.txData = (u8_t *) ctx->tx_buf;
+		transfer.rxData = ctx->rx_buf;
+		transfer.dataSize = ctx->rx_len;
+		transfer.configFlags |= kDSPI_MasterActiveAfterTransfer;
+	} else {
+		/* Break up the rx into multiple transfers so we don't have to
+		 * tx from a longer intermediate buffer. Leave chip select
+		 * active between transfers.
+		 */
+		transfer.txData = (u8_t *) ctx->tx_buf;
+		transfer.rxData = ctx->rx_buf;
+		transfer.dataSize = ctx->tx_len;
+		transfer.configFlags |= kDSPI_MasterActiveAfterTransfer;
+	}
+
+	data->transfer_len = transfer.dataSize;
+
+	status = DSPI_MasterTransferNonBlocking(base, &data->handle, &transfer);
+	if (status != kStatus_Success) {
+		SYS_LOG_ERR("Transfer could not start");
+	}
+}
+
+static void spi_mcux_isr(void *arg)
+{
+	struct device *dev = (struct device *)arg;
+	const struct spi_mcux_config *config = dev->config->config_info;
+	struct spi_mcux_data *data = dev->driver_data;
+	SPI_Type *base = config->base;
+
+	DSPI_MasterTransferHandleIRQ(base, &data->handle);
+}
+
+static void spi_mcux_master_transfer_callback(SPI_Type *base,
+		dspi_master_handle_t *handle, status_t status, void *userData)
+{
+	struct device *dev = userData;
+	struct spi_mcux_data *data = dev->driver_data;
+
+	spi_context_update_tx(&data->ctx, 1, data->transfer_len);
+	spi_context_update_rx(&data->ctx, 1, data->transfer_len);
+
+	spi_mcux_transfer_next_packet(dev);
+}
+
+static int spi_mcux_configure(const struct spi_config *spi_cfg)
+{
+	struct device *dev = spi_cfg->dev;
+	const struct spi_mcux_config *config = dev->config->config_info;
+	struct spi_mcux_data *data = dev->driver_data;
+	SPI_Type *base = config->base;
+	dspi_master_config_t master_config;
+	u32_t clock_freq;
+	u32_t word_size;
+
+	DSPI_MasterGetDefaultConfig(&master_config);
+
+	if (spi_cfg->slave > FSL_FEATURE_DSPI_CHIP_SELECT_COUNT) {
+		SYS_LOG_ERR("Slave %d is greater than %d",
+			    spi_cfg->slave, FSL_FEATURE_DSPI_CHIP_SELECT_COUNT);
+		return -EINVAL;
+	}
+
+	word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
+	if (word_size > FSL_FEATURE_DSPI_MAX_DATA_WIDTH) {
+		SYS_LOG_ERR("Word size %d is greater than %d",
+			    word_size, FSL_FEATURE_DSPI_MAX_DATA_WIDTH);
+		return -EINVAL;
+	}
+
+	master_config.ctarConfig.bitsPerFrame = word_size;
+
+	master_config.ctarConfig.cpol =
+		(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL)
+		? kDSPI_ClockPolarityActiveLow
+		: kDSPI_ClockPolarityActiveHigh;
+
+	master_config.ctarConfig.cpha =
+		(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPHA)
+		? kDSPI_ClockPhaseSecondEdge
+		: kDSPI_ClockPhaseFirstEdge;
+
+	master_config.ctarConfig.direction =
+		(SPI_MODE_GET(spi_cfg->operation) & SPI_TRANSFER_LSB)
+		? kDSPI_LsbFirst
+		: kDSPI_MsbFirst;
+
+	master_config.ctarConfig.baudRate = spi_cfg->frequency;
+
+	clock_freq = CLOCK_GetFreq(config->clock_source);
+	if (!clock_freq) {
+		SYS_LOG_ERR("Got frequency of 0");
+		return -EINVAL;
+	}
+
+	DSPI_MasterInit(base, &master_config, clock_freq);
+
+	DSPI_MasterTransferCreateHandle(base, &data->handle,
+					spi_mcux_master_transfer_callback, dev);
+
+	data->ctx.config = spi_cfg;
+	spi_context_cs_configure(&data->ctx);
+
+	return 0;
+}
+
+static int transceive(const struct spi_config *spi_cfg,
+		      const struct spi_buf_set *tx_bufs,
+		      const struct spi_buf_set *rx_bufs,
+		      bool asynchronous,
+		      struct k_poll_signal *signal)
+{
+	struct device *dev = spi_cfg->dev;
+	struct spi_mcux_data *data = dev->driver_data;
+	int ret;
+
+	spi_context_lock(&data->ctx, asynchronous, signal);
+
+	ret = spi_mcux_configure(spi_cfg);
+	if (ret) {
+		goto out;
+	}
+
+	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
+
+	spi_context_cs_control(&data->ctx, true);
+
+	spi_mcux_transfer_next_packet(spi_cfg->dev);
+
+	ret = spi_context_wait_for_completion(&data->ctx);
+out:
+	spi_context_release(&data->ctx, ret);
+
+	return ret;
+}
+
+static int spi_mcux_transceive(const struct spi_config *spi_cfg,
+			       const struct spi_buf_set *tx_bufs,
+			       const struct spi_buf_set *rx_bufs)
+{
+	return transceive(spi_cfg, tx_bufs, rx_bufs, false, NULL);
+}
+
+#ifdef CONFIG_SPI_ASYNC
+static int spi_mcux_transceive_async(const struct spi_config *spi_cfg,
+				     const struct spi_buf_set *tx_bufs,
+				     const struct spi_buf_set *rx_bufs,
+				     struct k_poll_signal *async)
+{
+	return transceive(spi_cfg, tx_bufs, rx_bufs, true, async);
+}
+#endif /* CONFIG_SPI_ASYNC */
+
+static int spi_mcux_release(const struct spi_config *spi_cfg)
+{
+	struct device *dev = spi_cfg->dev;
+	struct spi_mcux_data *data = dev->driver_data;
+
+	spi_context_unlock_unconditionally(&data->ctx);
+
+	return 0;
+}
+
+static int spi_mcux_init(struct device *dev)
+{
+	const struct spi_mcux_config *config = dev->config->config_info;
+	struct spi_mcux_data *data = dev->driver_data;
+
+	config->irq_config_func(dev);
+
+	spi_context_unlock_unconditionally(&data->ctx);
+
+	return 0;
+}
+
+static const struct spi_driver_api spi_mcux_driver_api = {
+	.transceive = spi_mcux_transceive,
+#ifdef CONFIG_SPI_ASYNC
+	.transceive_async = spi_mcux_transceive_async,
+#endif
+	.release = spi_mcux_release,
+};
+
+#endif /* CONFIG_SPI_LEGACY_API */
+
 #ifdef CONFIG_SPI_0
 static void spi_mcux_config_func_0(struct device *dev);
 
@@ -244,13 +483,20 @@ static const struct spi_mcux_config spi_mcux_config_0 = {
 	.base = DSPI0,
 	.clock_source = DSPI0_CLK_SRC,
 	.irq_config_func = spi_mcux_config_func_0,
+#ifdef CONFIG_SPI_LEGACY_API
 	.default_cfg = {
 		.config = CONFIG_SPI_0_DEFAULT_CFG,
 		.max_sys_freq = CONFIG_SPI_0_DEFAULT_BAUD_RATE,
 	}
+#endif
 };
 
-static struct spi_mcux_data spi_mcux_data_0;
+static struct spi_mcux_data spi_mcux_data_0 = {
+#ifndef CONFIG_SPI_LEGACY_API
+	SPI_CONTEXT_INIT_LOCK(spi_mcux_data_0, ctx),
+	SPI_CONTEXT_INIT_SYNC(spi_mcux_data_0, ctx),
+#endif
+};
 
 DEVICE_AND_API_INIT(spi_mcux_0, CONFIG_SPI_0_NAME, &spi_mcux_init,
 		    &spi_mcux_data_0, &spi_mcux_config_0,
@@ -273,13 +519,20 @@ static const struct spi_mcux_config spi_mcux_config_1 = {
 	.base = DSPI1,
 	.clock_source = DSPI1_CLK_SRC,
 	.irq_config_func = spi_mcux_config_func_1,
+#ifdef CONFIG_SPI_LEGACY_API
 	.default_cfg = {
 		.config = CONFIG_SPI_1_DEFAULT_CFG,
 		.max_sys_freq = CONFIG_SPI_1_DEFAULT_BAUD_RATE,
 	}
+#endif
 };
 
-static struct spi_mcux_data spi_mcux_data_1;
+static struct spi_mcux_data spi_mcux_data_1 = {
+#ifndef CONFIG_SPI_LEGACY_API
+	SPI_CONTEXT_INIT_LOCK(spi_mcux_data_1, ctx),
+	SPI_CONTEXT_INIT_SYNC(spi_mcux_data_1, ctx),
+#endif
+};
 
 DEVICE_AND_API_INIT(spi_mcux_1, CONFIG_SPI_1_NAME, &spi_mcux_init,
 		    &spi_mcux_data_1, &spi_mcux_config_1,
@@ -302,13 +555,20 @@ static const struct spi_mcux_config spi_mcux_config_2 = {
 	.base = DSPI2,
 	.clock_source = DSPI2_CLK_SRC,
 	.irq_config_func = spi_mcux_config_func_2,
+#ifdef CONFIG_SPI_LEGACY_API
 	.default_cfg = {
 		.config = CONFIG_SPI_2_DEFAULT_CFG,
 		.max_sys_freq = CONFIG_SPI_2_DEFAULT_BAUD_RATE,
 	}
+#endif
 };
 
-static struct spi_mcux_data spi_mcux_data_2;
+static struct spi_mcux_data spi_mcux_data_2 = {
+#ifndef CONFIG_SPI_LEGACY_API
+	SPI_CONTEXT_INIT_LOCK(spi_mcux_data_2, ctx),
+	SPI_CONTEXT_INIT_SYNC(spi_mcux_data_2, ctx),
+#endif
+};
 
 DEVICE_AND_API_INIT(spi_mcux_2, CONFIG_SPI_2_NAME, &spi_mcux_init,
 		    &spi_mcux_data_2, &spi_mcux_config_2,

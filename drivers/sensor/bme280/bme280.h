@@ -107,8 +107,7 @@ struct bme280_data {
 	struct device *i2c_master;
 	u16_t i2c_slave_addr;
 #elif defined CONFIG_BME280_DEV_TYPE_SPI
-	struct device *spi;
-	int spi_slave;
+	struct spi_config spi;
 #else
 #error "BME280 device type not specified"
 #endif

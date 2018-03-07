@@ -66,6 +66,13 @@ static inline void write_ctrlr0(u32_t data, u32_t addr)
 								data, addr);
 }
 
+DEFINE_MM_REG_READ(ctrlr1_b, DW_SPI_REG_CTRLR0, 32)
+DEFINE_MM_REG_WRITE(ctrlr1_b, DW_SPI_REG_CTRLR0, 32)
+static inline void write_ctrlr1(u32_t data, u32_s addr)
+{
+	write_ctrlr1_b((read_ctrlr1_b(addr) & (data << 16)), addr);
+}
+
 DEFINE_MM_REG_READ(ssienr_b, DW_SPI_REG_SSIENR, 8)
 DEFINE_MM_REG_WRITE(ssienr_b, DW_SPI_REG_SSIENR, 8)
 static inline void write_ser(u32_t data, u32_t addr)

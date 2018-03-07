@@ -96,12 +96,13 @@ extern "C" {
 /**
  * @brief SPI MISO lines
  *
- * Some controllers support dual or quad MISO lines connected to slaves.
+ * Some controllers support dual, quad or octal MISO lines connected to slaves.
  * Default is single, which is the case most of the time.
  */
-#define SPI_LINES_SINGLE	(0)
-#define SPI_LINES_DUAL		BIT(11)
-#define SPI_LINES_QUAD		BIT(12)
+#define SPI_LINES_SINGLE	(0 << 11)
+#define SPI_LINES_DUAL		(1 << 11)
+#define SPI_LINES_QUAD		(2 << 11)
+#define SPI_LINES_OCTAL		(3 << 11)
 
 #define SPI_LINES_MASK		(0x3 << 11)
 
@@ -116,11 +117,15 @@ extern "C" {
  * properly called.
  */
 #define SPI_LOCK_ON		BIT(14)
-/* Select EEPROM read mode on master controller.
- * If not supported by the controller, the driver will have to emulate
- * the mode and thus should never return -EINVAL on that configuration)
+
+/* Active high logic on CS - Usually, and by default, CS logic is active
+ * low. However, some devices may require the reverse logic: active high.
+ * This bit will request the controller to use that logic. Note that not
+ * all controllers are able to handle that natively. In this case deferring
+ * the CS control to a gpio line through struct spi_cs_control would be
+ * the solution.
  */
-#define SPI_EEPROM_MODE		BIT(15)
+#define SPI_CS_ACTIVE_HIGH	BIT(15)
 
 /**
  * @brief SPI Chip Select control structure
@@ -142,6 +147,50 @@ struct spi_cs_control {
 };
 
 /**
+ * @brief Slave events
+ */
+enum spi_slave_event {
+	/** When slave chip is deselected
+	 * Note: That depends on the controller providing access to the CS
+	 * events, or if the slave is deferring its CS logic to a GPIO line.
+	 * Most of the time, these events will not show up.
+	 */
+	SPI_SLAVE_EVENT_DESELECTED	= 0,
+
+	/** When slave chip is selected
+	 * (See SPI_SLAVE_EVENT_DESELECTED note)
+	 */
+	SPI_SLAVE_EVENT_SELECTED,
+
+	/** When slave need to reply to master input
+	 * This happens when the buffers are fully filled-in. Slave can then
+	 * check what it received so far and update the buffers accordingly.
+	 * Note that if the update sets NULL pointers for both tx/rx pointers
+	 * this will mean the slave will not want any input events anymore.
+	 * (I.e.: all incoming bytes from the master will be ignored. Use this
+	 * carefully, moreover on a setup where it is impossible to get
+	 * deselected/selected events: all data coming from master will then
+	 * be ignored indefinitely).
+	 */
+	SPI_SLAVE_EVENT_INPUT,
+
+	/** When an error occured, stopping the slave */
+	SPI_SLAVE_EVENT_ERROR,
+};
+
+struct spi_config;
+
+/**
+ * @typedef spi_slave_cb
+ * @brief Callback API for SPI slave events
+ *
+ * @param config Pointer to the current slave spi_config structure instance.
+ * @param event
+ */
+typedef int (*spi_slave_cb)(const struct spi_config *config,
+			    enum spi_slave_event event);
+
+/**
  * @brief SPI controller configuration structure
  *
  * @param dev is a valid pointer to an actual SPI device
@@ -152,25 +201,33 @@ struct spi_cs_control {
  *     mode                [ 1 : 3 ]   - Polarity, phase and loop mode.
  *     transfer            [ 4 ]       - LSB or MSB first.
  *     word_size           [ 5 : 10 ]  - Size of a data frame in bits.
- *     lines               [ 11 : 12 ] - MISO lines: Single/Dual/Quad.
+ *     lines               [ 11 : 12 ] - MISO lines: Single/Dual/Quad/Octal.
  *     cs_hold             [ 13 ]      - Hold on the CS line if possible.
  *     lock_on             [ 14 ]      - Keep resource locked for the caller.
- *     eeprom              [ 15 ]      - EEPROM mode.
+ *     cs_active_high      [ 15 ]      - Active high CS logic.
  * @param slave is the slave number from 0 to host controller slave limit.
  * @param cs is a valid pointer on a struct spi_cs_control is CS line is
  *    emulated through a gpio line, or NULL otherwise.
  *
- * @note cs_hold, lock_on and eeprom_rx can be changed between consecutive
- * transceive call.
+ * @note Only cs_hold and lock_on can be changed between consecutive
+ * transceive call. Rest of the attributes are not meant to be tweaked.
+ * (I.e.: one struct spi_config is necessary per-device on the bus)
  */
 struct spi_config {
 	struct device	*dev;
 
+#ifdef CONFIG_SPI_SLAVE
+	union {
+		u32_t		frequency;
+		spi_slave_cb	slave_cb;
+	};
+#else
 	u32_t		frequency;
+#endif /* CONFIG_SPI_SLAVE */
 	u16_t		operation;
 	u16_t		slave;
 
-	struct spi_cs_control *cs;
+	const struct spi_cs_control *cs;
 };
 
 /**
@@ -187,26 +244,33 @@ struct spi_buf {
 };
 
 /**
+ * @brief SPI buffer array structure
+ *
+ * @param buffers is a valid pointer on an array of spi_buf, or NULL.
+ * @param count is the length of the array pointed by buffers.
+ */
+struct spi_buf_set {
+	const struct spi_buf *buffers;
+	size_t count;
+};
+
+/**
  * @typedef spi_api_io
  * @brief Callback API for I/O
  * See spi_transceive() for argument descriptions
  */
-typedef int (*spi_api_io)(struct spi_config *config,
-			  const struct spi_buf *tx_bufs,
-			  size_t tx_count,
-			  struct spi_buf *rx_bufs,
-			  size_t rx_count);
+typedef int (*spi_api_io)(const struct spi_config *config,
+			  const struct spi_buf_set *tx_bufs,
+			  const struct spi_buf_set *rx_bufs);
 
 /**
  * @typedef spi_api_io
  * @brief Callback API for asynchronous I/O
  * See spi_transceive_async() for argument descriptions
  */
-typedef int (*spi_api_io_async)(struct spi_config *config,
-				const struct spi_buf *tx_bufs,
-				size_t tx_count,
-				struct spi_buf *rx_bufs,
-				size_t rx_count,
+typedef int (*spi_api_io_async)(const struct spi_config *config,
+				const struct spi_buf_set *tx_bufs,
+				const struct spi_buf_set *rx_bufs,
 				struct k_poll_signal *async);
 
 /**
@@ -214,7 +278,7 @@ typedef int (*spi_api_io_async)(struct spi_config *config,
  * @brief Callback API for unlocking SPI device.
  * See spi_release() for argument descriptions
  */
-typedef int (*spi_api_release)(struct spi_config *config);
+typedef int (*spi_api_release)(const struct spi_config *config);
 
 
 /**
@@ -223,9 +287,9 @@ typedef int (*spi_api_release)(struct spi_config *config);
  */
 struct spi_driver_api {
 	spi_api_io transceive;
-#ifdef CONFIG_POLL
+#ifdef CONFIG_SPI_ASYNC
 	spi_api_io_async transceive_async;
-#endif
+#endif /* CONFIG_SPI_ASYNC */
 	spi_api_release release;
 };
 
@@ -237,28 +301,22 @@ struct spi_driver_api {
  * @param config Pointer to a valid spi_config structure instance.
  * @param tx_bufs Buffer array where data to be sent originates from,
  *        or NULL if none.
- * @param tx_count Number of element in the tx_bufs array.
  * @param rx_bufs Buffer array where data to be read will be written to,
  *        or NULL if none.
- * @param rx_count Number of element in the rx_bufs array.
  *
  * @retval 0 If successful, negative errno code otherwise.
  */
-__syscall int spi_transceive(struct spi_config *config,
-			     const struct spi_buf *tx_bufs,
-			     size_t tx_count,
-			     struct spi_buf *rx_bufs,
-			     size_t rx_count);
+__syscall int spi_transceive(const struct spi_config *config,
+			     const struct spi_buf_set *tx_bufs,
+			     const struct spi_buf_set *rx_bufs);
 
-static inline int _impl_spi_transceive(struct spi_config *config,
-				       const struct spi_buf *tx_bufs,
-				       size_t tx_count,
-				       struct spi_buf *rx_bufs,
-				       size_t rx_count)
+static inline int _impl_spi_transceive(const struct spi_config *config,
+				       const struct spi_buf_set *tx_bufs,
+				       const struct spi_buf_set *rx_bufs)
 {
 	const struct spi_driver_api *api = config->dev->driver_api;
 
-	return api->transceive(config, tx_bufs, tx_count, rx_bufs, rx_count);
+	return api->transceive(config, tx_bufs, rx_bufs);
 }
 
 /**
@@ -268,15 +326,15 @@ static inline int _impl_spi_transceive(struct spi_config *config,
  *
  * @param config Pointer to a valid spi_config structure instance.
  * @param rx_bufs Buffer array where data to be read will be written to.
- * @param rx_count Number of element in the rx_bufs array.
  *
  * @retval 0 If successful, negative errno code otherwise.
+ *
+ * @note This function is an helper function calling spi_transceive.
  */
-static inline int spi_read(struct spi_config *config,
-			   struct spi_buf *rx_bufs,
-			   size_t rx_count)
+static inline int spi_read(const struct spi_config *config,
+			   const struct spi_buf_set *rx_bufs)
 {
-	return spi_transceive(config, NULL, 0, rx_bufs, rx_count);
+	return spi_transceive(config, NULL, rx_bufs);
 }
 
 /**
@@ -286,18 +344,18 @@ static inline int spi_read(struct spi_config *config,
  *
  * @param config Pointer to a valid spi_config structure instance.
  * @param tx_bufs Buffer array where data to be sent originates from.
- * @param tx_count Number of element in the tx_bufs array.
  *
  * @retval 0 If successful, negative errno code otherwise.
+ *
+ * @note This function is an helper function calling spi_transceive.
  */
-static inline int spi_write(struct spi_config *config,
-			    const struct spi_buf *tx_bufs,
-			    size_t tx_count)
+static inline int spi_write(const struct spi_config *config,
+			    const struct spi_buf_set *tx_bufs)
 {
-	return spi_transceive(config, tx_bufs, tx_count, NULL, 0);
+	return spi_transceive(config, tx_bufs, NULL);
 }
 
-#ifdef CONFIG_POLL
+#ifdef CONFIG_SPI_ASYNC
 /**
  * @brief Read/write the specified amount of data from the SPI driver.
  *
@@ -306,10 +364,8 @@ static inline int spi_write(struct spi_config *config,
  * @param config Pointer to a valid spi_config structure instance.
  * @param tx_bufs Buffer array where data to be sent originates from,
  *        or NULL if none.
- * @param tx_count Number of element in the tx_bufs array.
  * @param rx_bufs Buffer array where data to be read will be written to,
  *        or NULL if none.
- * @param rx_count Number of element in the rx_bufs array.
  * @param async A pointer to a valid and ready to be signaled
  *        struct k_poll_signal. (Note: if NULL this function will not
  *        notify the end of the transaction, and whether it went
@@ -317,17 +373,14 @@ static inline int spi_write(struct spi_config *config,
  *
  * @retval 0 If successful, negative errno code otherwise.
  */
-static inline int spi_transceive_async(struct spi_config *config,
-				       const struct spi_buf *tx_bufs,
-				       size_t tx_count,
-				       struct spi_buf *rx_bufs,
-				       size_t rx_count,
+static inline int spi_transceive_async(const struct spi_config *config,
+				       const struct spi_buf_set *tx_bufs,
+				       const struct spi_buf_set *rx_bufs,
 				       struct k_poll_signal *async)
 {
 	const struct spi_driver_api *api = config->dev->driver_api;
 
-	return api->transceive_async(config, tx_bufs, tx_count,
-				     rx_bufs, rx_count, async);
+	return api->transceive_async(config, tx_bufs, rx_bufs, async);
 }
 
 /**
@@ -337,23 +390,20 @@ static inline int spi_transceive_async(struct spi_config *config,
  *
  * @param config Pointer to a valid spi_config structure instance.
  * @param rx_bufs Buffer array where data to be read will be written to.
- * @param rx_count Number of element in the rx_bufs array.
  * @param async A pointer to a valid and ready to be signaled
  *        struct k_poll_signal. (Note: if NULL this function will not
  *        notify the end of the transaction, and whether it went
  *        successfully or not).
  *
  * @retval 0 If successful, negative errno code otherwise.
+ *
+ * @note This function is an helper function calling spi_transceive_async.
  */
-static inline int spi_read_async(struct spi_config *config,
-				 struct spi_buf *rx_bufs,
-				 size_t rx_count,
+static inline int spi_read_async(const struct spi_config *config,
+				 const struct spi_buf_set *rx_bufs,
 				 struct k_poll_signal *async)
 {
-	const struct spi_driver_api *api = config->dev->driver_api;
-
-	return api->transceive_async(config, NULL, 0,
-				     rx_bufs, rx_count, async);
+	return spi_transceive_async(config, NULL, rx_bufs, async);
 }
 
 /**
@@ -363,25 +413,22 @@ static inline int spi_read_async(struct spi_config *config,
  *
  * @param config Pointer to a valid spi_config structure instance.
  * @param tx_bufs Buffer array where data to be sent originates from.
- * @param tx_count Number of element in the tx_bufs array.
  * @param async A pointer to a valid and ready to be signaled
  *        struct k_poll_signal. (Note: if NULL this function will not
  *        notify the end of the transaction, and whether it went
  *        successfully or not).
  *
  * @retval 0 If successful, negative errno code otherwise.
+ *
+ * @note This function is an helper function calling spi_transceive_async.
  */
-static inline int spi_write_async(struct spi_config *config,
-				  const struct spi_buf *tx_bufs,
-				  size_t tx_count,
+static inline int spi_write_async(const struct spi_config *config,
+				  const struct spi_buf_set *tx_bufs,
 				  struct k_poll_signal *async)
 {
-	const struct spi_driver_api *api = config->dev->driver_api;
-
-	return api->transceive_async(config, tx_bufs, tx_count,
-				     NULL, 0, async);
+	return spi_transceive_async(config, tx_bufs, NULL, async);
 }
-#endif /* CONFIG_POLL */
+#endif /* CONFIG_SPI_ASYNC */
 
 /**
  * @brief Release the SPI device locked on by the current config
@@ -395,14 +442,86 @@ static inline int spi_write_async(struct spi_config *config,
  *
  * @param config Pointer to a valid spi_config structure instance.
  */
-__syscall int spi_release(struct spi_config *config);
+__syscall int spi_release(const struct spi_config *config);
 
-static inline int _impl_spi_release(struct spi_config *config)
+static inline int _impl_spi_release(const struct spi_config *config)
 {
 	const struct spi_driver_api *api = config->dev->driver_api;
 
 	return api->release(config);
 }
+
+#ifdef CONFIG_SPI_SLAVE
+/* SPI Slave part: */
+
+/**
+ * @brief Start a controller to act as an SPI slave, if supported
+ *
+ * Note: This function is synchronous.  If successful, given configuration
+ *       will be exclusive to the related controller until spi_slave_stop()
+ *       is called: controller cannot be switched from slave to master and
+ *       back to slave as long as a slave transaction is meant to happen.
+ *       That is valid only for controllers supporting both modes at runtime.
+ *
+ * @param config Pointer to a valid spi_config structure instance.
+ * @param tx_bufs Buffer array where data to be sent originates from,
+ *        or NULL if none.
+ * @param rx_bufs Buffer array where data to be read will be written to,
+ *        or NULL if none.
+ *
+ * @retval 0 If successful, negative errno code otherwise.
+ *
+ * @note This function is an helper function calling spi_transceive.
+ */
+static inline int spi_slave_transceive(const struct spi_config *config,
+				       const struct spi_buf_set *tx_bufs,
+				       const struct spi_buf_set *rx_bufs)
+{
+	return spi_transceive(config, tx_bufs, rx_bufs);
+}
+
+/**
+ * @brief Update buffers on slave events.
+ *
+ * Note: use this function on SPI_SLAVE_EVENT_INPUT
+ *
+ * @param config Pointer to a valid spi_config structure instance, must be
+ *        the same that was used to read the master input.
+ * @param tx_bufs Buffer array where data to be sent originates from.
+ * @param rx_bufs Buffer array where data to be received from the master
+ *        should be stored in.
+ *
+ * @retval 0 If successful, negative errno code otherwise.
+ *
+ * @note This function is an helper function calling spi_transceive.
+ */
+static inline int spi_slave_update_buffers(const struct spi_config *config,
+					   const struct spi_buf_set *tx_bufs,
+					   const struct spi_buf_set *rx_bufs)
+{
+	return spi_transceive(config, tx_bufs, rx_bufs);
+}
+
+/**
+ * @brief Stop a controller to run under SPI slave mode
+ *
+ * Note: If this is the only mode supported by the controller, it will just
+ *       put the controller to sleep and it will not respond anymore to any
+ *       data sent to it by a master. In case both modes are supported at
+ *       runtime by the controller, it will be the same but additionaly
+ *       master based transaction will be available again.
+ *
+ * @param config Pointer to a valid spi_config structure instance.
+ *
+ * @retval 0 If successful, negative errno code otherwise.
+ *
+ * @note This function is an helper function calling spi_release.
+ */
+static inline int spi_slave_stop(const struct spi_config *config)
+{
+	return spi_release(config);
+}
+#endif /* CONFIG_SPI_SLAVE */
 
 #ifdef __cplusplus
 }

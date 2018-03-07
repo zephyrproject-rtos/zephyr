@@ -29,27 +29,38 @@ static int bm280_reg_read(struct bme280_data *data,
 	return i2c_burst_read(data->i2c_master, data->i2c_slave_addr,
 			      start, buf, size);
 #elif defined CONFIG_BME280_DEV_TYPE_SPI
-	u8_t tx_buf[2];
-	u8_t rx_buf[2];
+	u8_t addr;
+	const struct spi_buf tx_buf = {
+		.buf = &addr,
+		.len = 1
+	};
+	const struct spi_buf_set tx = {
+		.buffers = tx_buf,
+		.count = 1
+	};
+	struct spi_buf rx_buf[2];
+	const struct spi_buf_set rx = {
+		.buffers = rx_buf,
+		.count = 2
+	};
 	int i;
-	int ret;
+
+	rx_buf[0].buf = NULL;
+	rx_buf[0].len = 1;
+
+	rx_buf[1].len = 1;
 
 	for (i = 0; i < size; i++) {
+		int ret;
 
-		ret = spi_slave_select(data->spi, data->spi_slave);
-		if (ret) {
-			SYS_LOG_DBG("spi_slave_select FAIL %d\n", ret);
-			return ret;
-		}
+		addr = (start + i) | 0x80;
+		rx_buf[1].buf = &buf[i];
 
-		tx_buf[0] = (start + i) | 0x80;
-		ret = spi_transceive(data->spi, tx_buf, 2, rx_buf, 2);
+		ret = spi_transceive(&data->spi, tx, rx);
 		if (ret) {
 			SYS_LOG_DBG("spi_transceive FAIL %d\n", ret);
 			return ret;
 		}
-
-		buf[i] = rx_buf[1];
 	}
 #endif
 	return 0;
@@ -61,25 +72,22 @@ static int bm280_reg_write(struct bme280_data *data, u8_t reg, u8_t val)
 	return i2c_reg_write_byte(data->i2c_master, data->i2c_slave_addr,
 				  reg, val);
 #elif defined CONFIG_BME280_DEV_TYPE_SPI
-	u8_t tx_buf[2];
-	u8_t rx_buf[2];
+	u8_t cmd[2] = { reg & 0x7F, val };
+	const struct spi_buf tx_buf = {
+		.buf = cmd,
+		.len = 2
+	};
+	const struct spi_buf_set tx = {
+		.bufs = tx_buf,
+		.count = 1
+	};
 	int ret;
 
-	ret = spi_slave_select(data->spi, data->spi_slave);
+	ret = spi_write(&data->spi, &tx);
 	if (ret) {
-		SYS_LOG_DBG("spi_slave_select FAIL %d\n", ret);
+		SYS_LOG_DBG("spi_write FAIL %d\n", ret);
 		return ret;
 	}
-
-	reg &= 0x7F;
-	tx_buf[0] = reg;
-	tx_buf[1] = val;
-	ret = spi_transceive(data->spi, tx_buf, 2, rx_buf, 2);
-	if (ret) {
-		SYS_LOG_DBG("spi_transceive FAIL %d\n", ret);
-		return ret;
-	}
-
 #endif
 	return 0;
 }
@@ -326,23 +334,17 @@ static inline int bme280_spi_init(struct bme280_data *data)
 	struct spi_config spi_config;
 	int ret;
 
-	data->spi = device_get_binding(CONFIG_BME280_SPI_DEV_NAME);
-	if (!data->spi) {
+	data->spi.dev = device_get_binding(CONFIG_BME280_SPI_DEV_NAME);
+	if (!data->spi.dev) {
 		SYS_LOG_DBG("spi device not found: %s",
 			    CONFIG_BME280_SPI_DEV_NAME);
 		return -EINVAL;
 	}
 
-	spi_config.config = SPI_WORD(8) | SPI_TRANSFER_MSB |
-			    SPI_MODE_CPOL | SPI_MODE_CPHA;
-	spi_config.max_sys_freq = 4;
-
-	ret = spi_configure(data->spi, &spi_config);
-	if (ret) {
-		SYS_LOG_DBG("SPI configuration error %s %d\n",
-			    CONFIG_BME280_SPI_DEV_NAME, ret);
-		return ret;
-	}
+	data->spi.operation = SPI_WORD_SET(8) | SPI_TRANSFER_MSB |
+		SPI_MODE_CPOL | SPI_MODE_CPHA;
+	data->spi.frequency = 8000000;
+	data->spi.slave = CONFIG_BME280_SPI_DEV_SLAVE;
 
 	return 0;
 }
@@ -367,8 +369,6 @@ int bme280_init(struct device *dev)
 			    CONFIG_BME280_SPI_DEV_NAME);
 		return -EINVAL;
 	}
-
-	data->spi_slave = CONFIG_BME280_SPI_DEV_SLAVE;
 #endif
 
 	if (bme280_chip_init(dev) < 0) {

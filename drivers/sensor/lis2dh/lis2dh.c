@@ -10,6 +10,38 @@
 #include <misc/byteorder.h>
 #include <misc/__assert.h>
 
+#if defined(CONFIG_LIS2DH_BUS_SPI)
+int lis2dh_spi_access(struct spi_config *spi, u8_t cmd,
+		      void *data, size_t length)
+{
+	const struct spi_buf buf[2] = {
+		{
+			.buf = &cmd,
+			.len = 1
+		},
+		{
+			.buf = data,
+			.len = length
+		}
+	};
+	const struct spi_buf_set tx = {
+		.buffers = buf,
+		.count = 2
+	};
+
+	if (cmd & LIS2DH_SPI_READ_BIT) {
+		const struct spi_buf_set rx = {
+			.buffers = buf,
+			.count = 2
+		};
+
+		return spi_transceive(spi, &tx, &rx);
+	}
+
+	return spi_write(spi, &tx);
+}
+#endif
+
 #if defined(CONFIG_LIS2DH_TRIGGER) || defined(CONFIG_LIS2DH_ACCEL_RANGE_RUNTIME)
 int lis2dh_reg_field_update(struct device *bus, u8_t reg_addr,
 			    u8_t pos, u8_t mask, u8_t val)
@@ -282,17 +314,8 @@ int lis2dh_init(struct device *dev)
 	int status;
 	u8_t raw[LIS2DH_DATA_OFS + 6];
 
-	lis2dh->bus = device_get_binding(LIS2DH_BUS_DEV_NAME);
-	if (lis2dh->bus == NULL) {
-		SYS_LOG_ERR("Could not get pointer to %s device",
-			    LIS2DH_BUS_DEV_NAME);
-		return -EINVAL;
-	}
-
-	/* configure bus, e.g. spi clock and format */
-	status = lis2dh_bus_configure(lis2dh->bus);
+	status = lis2dh_bus_configure(dev);
 	if (status < 0) {
-		SYS_LOG_ERR("Failed to configure bus (spi, i2c)");
 		return status;
 	}
 

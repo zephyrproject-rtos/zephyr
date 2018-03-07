@@ -7,9 +7,8 @@
 #
 
 menuconfig SPI_MCUX_DSPI
-	bool
-	prompt "MCUX SPI driver"
-	depends on SPI && HAS_MCUX
+	bool "MCUX SPI driver"
+	depends on HAS_MCUX
 	default n
 	help
 	  Enable support for mcux spi driver.
