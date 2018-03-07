@@ -416,12 +416,11 @@ static void btusb_int_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 static void btusb_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
 	struct net_buf *buf;
-	u32_t len, read = 0;
-	u8_t tmp[4];
+	u32_t len;
 
 	SYS_LOG_DBG("ep %x status %d", ep, ep_status);
 
-	/* Read number of butes to read */
+	/* Read number of bytes to read */
 	usb_read(ep, NULL, 0, &len);
 
 	if (!len || len > BT_BUF_ACL_SIZE) {
@@ -435,22 +434,7 @@ static void btusb_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 		return;
 	}
 
-	/**
-	 * Quark SE USB controller is always storing data
-	 * in the FIFOs per 32-bit words.
-	 */
-	while (len > buf->len) {
-		usb_read(ep, tmp, 4, NULL);
-		read += 4;
-
-		if (len > read) {
-			net_buf_add_mem(buf, tmp, 4);
-		} else {
-			u8_t remains = 4 - (read - len);
-
-			net_buf_add_mem(buf, tmp, remains);
-		}
-	}
+	usb_read(ep, net_buf_add(buf, len), len, NULL);
 
 	hexdump(">", buf->data, buf->len);
 
