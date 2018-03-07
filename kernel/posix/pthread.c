@@ -250,7 +250,7 @@ int pthread_cancel(pthread_t pthread)
 int pthread_setschedparam(pthread_t pthread, int policy,
 			  const struct sched_param *param)
 {
-	k_tid_t *thread = (k_tid_t *)pthread;
+	k_tid_t thread = (k_tid_t)pthread;
 	int new_prio;
 
 	if (thread == NULL) {
@@ -267,7 +267,7 @@ int pthread_setschedparam(pthread_t pthread, int policy,
 		return EINVAL;
 	}
 
-	k_thread_priority_set(*thread, new_prio);
+	k_thread_priority_set(thread, new_prio);
 	return 0;
 }
 
