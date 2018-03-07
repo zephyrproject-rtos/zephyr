@@ -180,44 +180,27 @@ _rirq_common_interrupt_swap:
 .balign 4
 _rirq_return_from_coop:
 
-	/* status32 and pc (blink) are already on the stack in the right order */
+	/*
+	 * status32, sec_stat (when CONFIG_ARC_HAS_SECURE is enabled) and pc
+	 * (blink) are already on the stack in the right order
+	 */
+	ld_s r0, [sp, ___isf_t_status32_OFFSET - ___isf_t_pc_OFFSET]
 
 	/* update status32.ie (explanation in firq_exit:_firq_return_from_coop) */
-	ld_s r0, [sp, 4]
+
 	ld_s r3, [r2, _thread_offset_to_intlock_key]
 	st  0, [r2, _thread_offset_to_intlock_key]
 	cmp r3, 0
 	or.ne r0, r0, _ARC_V2_STATUS32_IE
-	st_s r0, [sp, 4]
+
+	st_s r0, [sp, ___isf_t_status32_OFFSET - ___isf_t_pc_OFFSET]
 
 	/* carve fake stack */
+	sub sp, sp, ___isf_t_pc_OFFSET
 
-#ifdef  CONFIG_ARC_HAS_SECURE
-/* a) status32/pc are already on the stack
- * 	pc
- * 	status
- * b) make a space for sec_stat
- * c) adjust the right place for sec_stat and pc
- *	pc
- *	sec_stat
- *	status
- * d) a real value will be pushed in r0
- */
-	ld_s r0, [sp]
-	push_s r0
-	lr r0, [_ARC_V2_SEC_STAT]
-	st_s r0, [sp, 4]
-	sub sp, sp, (___isf_t_SIZEOF - 16)
-#else
-	/*
-	 * a) status32/pc are already on the stack
-	 * b) a real value will be pushed in r0
-	 */
-	sub sp, sp, (___isf_t_SIZEOF - 12)
-#endif
-	/* push return value on stack */
+	/* update return value on stack */
 	ld_s r0, [r2, _thread_offset_to_return_value]
-	push_s r0
+	st_s r0, [sp, ___isf_t_r0_OFFSET]
 
 	/*
 	 * r13 is part of both the callee and caller-saved register sets because

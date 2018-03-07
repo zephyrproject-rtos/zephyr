@@ -163,10 +163,21 @@ _swap_return_from_firq:
 	bbit1 r3, _ARC_V2_STATUS32_AE_BIT, _return_from_exc_irq
 
 	/* pretend interrupt happened to use rtie instruction */
-	lr r3, [_ARC_V2_AUX_IRQ_ACT]
-	brne r3,0,_swap_already_in_irq
 
-	or r3,r3,(1<<(CONFIG_NUM_IRQ_PRIO_LEVELS-1)) /* use lowest */
+#ifdef CONFIG_ARC_HAS_SECURE
+	lr r3, [_ARC_V2_SEC_STAT]
+	/* set SEC_STAT.IRM = SECURE for interrupt return */
+	bset r3, r3, 3
+	/* sflag r3 */
+	/* sflag instruction is not supported in current ARC GNU */
+	.long 0x00ff302f
+#endif
+
+	lr r3, [_ARC_V2_AUX_IRQ_ACT]
+	brne r3, 0, _swap_already_in_irq
+
+	/* use lowest interrupt priority */
+	or r3, r3, (1<<(CONFIG_NUM_IRQ_PRIO_LEVELS-1))
 	sr r3, [_ARC_V2_AUX_IRQ_ACT]
 
 _swap_already_in_irq:
