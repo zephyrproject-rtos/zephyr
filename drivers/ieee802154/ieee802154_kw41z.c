@@ -24,6 +24,11 @@
 
 #include "fsl_xcvr.h"
 
+#if defined(CONFIG_NET_L2_OPENTHREAD)
+#include <net/openthread.h>
+#endif
+
+
 /*
  * For non-invasive tracing of IRQ events. Sometimes the print logs
  * will shift the timings around so this trace buffer can be used to
@@ -83,6 +88,8 @@ int kw41_dbg_idx;
 #define KW41Z_PSDU_LENGTH		125
 #define KW41Z_OUTPUT_POWER_MAX		2
 #define KW41Z_OUTPUT_POWER_MIN		(-19)
+
+#define IEEE802154_ACK_LENGTH		5
 
 #define BM_ZLL_IRQSTS_TMRxMSK (ZLL_IRQSTS_TMR1MSK_MASK | \
 				ZLL_IRQSTS_TMR2MSK_MASK | \
@@ -467,7 +474,14 @@ static inline void kw41z_rx(struct kw41z_context *kw41z, u8_t len)
 
 	SYS_LOG_DBG("ENTRY: len: %d", len);
 
+#if defined(CONFIG_NET_L2_OPENTHREAD)
+	/*
+	 * OpenThread stack expects a receive frame to include the FCS
+	 */
+	pkt_len = len;
+#else
 	pkt_len = len - KW41Z_FCS_LENGTH;
+#endif
 
 	pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
 	if (!pkt) {
@@ -681,15 +695,15 @@ static void kw41z_isr(int unused)
 			SYS_LOG_DBG("WMRK irq: seq_state: 0x%08x, rx_len: %d",
 				seq_state, rx_len);
 			/*
-			 * Assume the RX includes an auto-ACK so set the timer to
-			 * include the RX frame size, crc, IFS, and ACK length and
-			 * convert to symbols.
+			 * Assume the RX includes an auto-ACK so set the
+			 * timer to include the RX frame size, crc, IFS,
+			 * and ACK length and convert to symbols.
 			 *
 			 * IFS is 12 symbols
 			 *
-			 * ACK frame is 11 bytes: 4 preamble, 1 start of frame, 1 frame
-			 * length, 2 frame control, 1 sequence, 2 FCS. Times two to
-			 * convert to symbols.
+			 * ACK frame is 11 bytes: 4 preamble, 1 start of
+			 * frame, 1 frame length, 2 frame control,
+			 * 1 sequence, 2 FCS. Times two to convert to symbols.
 			 */
 			rx_len = rx_len * 2 + 12 + 22 + 2;
 			kw41z_tmr3_set_timeout(rx_len);
@@ -1001,6 +1015,20 @@ static struct ieee802154_radio_api kw41z_radio_api = {
 	.tx			= kw41z_tx,
 };
 
+#if defined(CONFIG_NET_L2_IEEE802154)
+
+#define L2 IEEE802154_L2
+#define L2_CTX_TYPE NET_L2_GET_CTX_TYPE(IEEE802154_L2)
+#define MTU KW41Z_PSDU_LENGTH
+
+#elif defined(CONFIG_NET_L2_OPENTHREAD)
+
+#define L2 OPENTHREAD_L2
+#define L2_CTX_TYPE NET_L2_GET_CTX_TYPE(OPENTHREAD_L2)
+#define MTU 1280
+
+#endif
+
 NET_DEVICE_INIT(
 	kw41z,                              /* Device Name */
 	CONFIG_IEEE802154_KW41Z_DRV_NAME,   /* Driver Name */
@@ -1009,6 +1037,6 @@ NET_DEVICE_INIT(
 	NULL,                               /* Configuration info */
 	CONFIG_IEEE802154_KW41Z_INIT_PRIO,  /* Initial priority */
 	&kw41z_radio_api,                   /* API interface functions */
-	IEEE802154_L2,                      /* L2 */
-	NET_L2_GET_CTX_TYPE(IEEE802154_L2), /* L2 context type */
-	KW41Z_PSDU_LENGTH);                 /* MTU size */
+	L2,                                 /* L2 */
+	L2_CTX_TYPE,                        /* L2 context type */
+	MTU);                               /* MTU size */
