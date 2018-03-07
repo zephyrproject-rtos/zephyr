@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+#
+# Copyright (c) 2017, Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
 
 # vim: ai:ts=4:sw=4
 
