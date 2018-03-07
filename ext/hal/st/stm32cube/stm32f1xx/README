@@ -1,19 +1,50 @@
-The current version supported in Zephyr for STM32F1 Cube is V1.6.0
+STM32CubeF1
+###########
 
+Origin:
+   ST Microelectronics
+   http://www.st.com/en/embedded-software/stm32cubef1.html
 
+Status:
+   version 1.6.0
+
+Purpose:
+   ST Microelectronics official MCU package for STM32F1 series.
+
+Description:
+   This package is an extract of official STM32CubeF1 package written by ST Microelectronics.
+   It is composed of STM32Cube hardware abstraction layer (HAL) and low layer (LL) plus a set
+   of CMSIS headers files, one for each SoC in STM32F1 series.
+
+Dependencies:
+    None.
+
+URL:
+   http://www.st.com/en/embedded-software/stm32cubef1.html
+
+commit:
+   version 1.6.0
+
+Maintained-by:
+   External
+
+License:
+   BSD-3-Clause
+
+License Link:
+   http://www.st.com/resource/en/license_agreement/dm00218346.pdf
 
 Patch List:
-===========
 
-*Disable i2c HAL
-   Due to conflict with zephyr i2c.h (I2C_SPEED_STANDARD and I2C_SPEED_FAST
-   redefinition), deactivate STM32Cube I2C HAL. This raises no issue since
-   LL API is currently used for stm32 I2C driver.
-Impacted files:
-   drivers/include/stm32f1xx_hal_conf.h
-ST Bug tracker ID: NA. Not a stm32cube issue
+   *Disable i2c HAL
+     Due to conflict with zephyr i2c.h (I2C_SPEED_STANDARD and I2C_SPEED_FAST
+     redefinition), deactivate STM32Cube I2C HAL. This raises no issue since
+     LL API is currently used for stm32 I2C driver.
+     Impacted files:
+      drivers/include/stm32f1xx_hal_conf.h
+     ST Bug tracker ID: NA. Not a stm32cube issue
 
-*Update LSI_VALUE to 40 KHz
-Impacted files:
-  drivers/include/stm32f1xx_ll_rcc.h
-ST Bug tracker ID: 37419
+    *Update LSI_VALUE to 40 KHz
+     Impacted files:
+      drivers/include/stm32f1xx_ll_rcc.h
+     ST Bug tracker ID: 37419
