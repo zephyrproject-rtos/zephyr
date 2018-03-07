@@ -30,11 +30,17 @@ static void test_sema(void)
 	pthread_attr_t attr;
 	struct sched_param schedparam;
 	int schedpolicy = SCHED_FIFO;
-	int val;
+	int val, ret;
 
 	schedparam.priority = 1;
+	ret = pthread_attr_init(&attr);
+	if (ret != 0) {
+		zassert_false(pthread_attr_destroy(&attr),
+			      "Unable to destroy pthread object attrib\n");
+		zassert_false(pthread_attr_init(&attr),
+			      "Unable to create pthread object attrib\n");
+	}
 
-	pthread_attr_init(&attr);
 	pthread_attr_setstack(&attr, &stack, STACK_SIZE);
 	pthread_attr_setschedpolicy(&attr, schedpolicy);
 	pthread_attr_setschedparam(&attr, &schedparam);

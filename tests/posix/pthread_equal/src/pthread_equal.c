@@ -22,12 +22,19 @@ void *thread_top(void *p1)
 
 void test_pthread_equal(void)
 {
-	int ret = 1;
+	int ret = -1;
 	pthread_attr_t attr;
 	struct sched_param schedparam;
 	pthread_t newthread;
 
-	pthread_attr_init(&attr);
+	ret = pthread_attr_init(&attr);
+	if (ret != 0) {
+		zassert_false(pthread_attr_destroy(&attr),
+			      "Unable to destroy pthread object attrib\n");
+		zassert_false(pthread_attr_init(&attr),
+			      "Unable to create pthread object attrib\n");
+	}
+
 	schedparam.priority = 2;
 	pthread_attr_setschedparam(&attr, &schedparam);
 	pthread_attr_setstack(&attr, &stacks[0][0], STACKSZ);
