@@ -90,7 +90,7 @@ include(${ZEPHYR_BASE}/cmake/extensions.cmake)
 
 find_package(PythonInterp 3.4)
 
-include(${ZEPHYR_BASE}/cmake/ccache.cmake)
+include(zephyr_ccache)
 
 if(${CMAKE_CURRENT_SOURCE_DIR} STREQUAL ${CMAKE_CURRENT_BINARY_DIR})
   message(FATAL_ERROR "Source directory equals build directory.\
