@@ -38,4 +38,8 @@ tests:
     platform_whitelist: arduino_101
     extra_configs:
       - CONFIG_CLOCK_CONTROL=y
+  test_build_gpio:
+    build_only: true
+    extra_args: CONF_FILE=gpio.conf
+    min_ram: 32
 
