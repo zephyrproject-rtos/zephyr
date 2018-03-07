@@ -1,4 +1,3 @@
 tests:
-  posix.semaphore:
+  posix.timer:
     tags: core
-

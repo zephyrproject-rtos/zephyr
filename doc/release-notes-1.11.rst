@@ -55,10 +55,33 @@ Boards
   * Includes a template for hardware models
   * Adds support for console and logging
   * Interrupts and timers are simulated in several different configurations
+* Added support for the following ARM boards:
+
+  * adafruit_trinket_m0
+  * arduino_zero
+  * lpcxpresso54114
+  * nrf52_sparkfun
+  * nucleo_f429zi
+  * stm32f072_eval
+  * stm32f072b_disco
+* Removed Panther board support which included boards/x86/panther and
+  boards/arc/panther_ss
+* Refactored dts.fixup so common SoC related fixes are in arch/<*>/soc
+  and board dts.fixup only used for board specific items.
 
 Drivers and Sensors
 *******************
 
+* New LED PWM driver for ESP32 SoC
+* Fixed ESP32 I2C driver
+* Added i2c master, qspi flash, and gpio drivers for nios-II
+* Added pinmux, gpio, serial drivers for lpc54114
+* Added pinmux, gpio, serial, spi, and watchdog drivers for sam0
+* Added apa102 and ws2821b led_strip drivers
+* Added native entropy driver
+* Moved some sensors to dts
+* Added amg88xx, ccs811, and vl53l0x sensor drivers
+* Redefined SENSOR_CHAN_HUMIDITY in percent
 
 Networking
 **********
@@ -93,6 +116,11 @@ Networking
 Bluetooth
 *********
 
+* Multiple fixes to the controller
+* Fixed potential connection transmission deadlock issue with the help
+  of a dedicated fragment pool
+* Multiple fixes to Mesh support
+* Added test automation for Mesh (for tests/bluetooth/tester)
 
 Build and Infrastructure
 ************************
@@ -116,6 +144,15 @@ Libraries / Subsystems
 
 HALs
 ****
+
+* Updated ARM CMSIS from version 4 to 5.2.0
+* Updated stm32cube stm32l4xx from version 1.9.0 to 1.10.0
+* Updated stm32cube stm32f4xx from version 1.16.0 to 1.18.0
+* Added Atmel SAMD21 HAL
+* Added mcux 2.2.1 for lpc54114
+* Added HAL for vl53l0x sensor from STM
+* Imported and moved to nrfx 0.8.0 on Nordic SoCs
+* Added QSPI Controller HAL driver
 
 Documentation
 *************

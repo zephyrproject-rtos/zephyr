@@ -1,0 +1,4 @@
+tests:
+  kernel.bootdelay:
+    extra_configs:
+      - CONFIG_BOOT_DELAY=1000

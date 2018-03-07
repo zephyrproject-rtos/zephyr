@@ -4,9 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
 #include <pthread.h>
 #include <semaphore.h>
 #include <ztest.h>
+#include <misc/printk.h>
 
 #define STACK_SIZE 1024
 
@@ -28,6 +30,7 @@ static void test_sema(void)
 	pthread_attr_t attr;
 	struct sched_param schedparam;
 	int schedpolicy = SCHED_FIFO;
+	int val;
 
 	schedparam.priority = 1;
 
@@ -36,7 +39,17 @@ static void test_sema(void)
 	pthread_attr_setschedpolicy(&attr, schedpolicy);
 	pthread_attr_setschedparam(&attr, &schedparam);
 
+	zassert_equal(sem_init(&sema, 1, 1), -1, "pshared is not 0\n");
+	zassert_equal(errno, ENOSYS, NULL);
+
+	zassert_equal(sem_init(&sema, 0, (CONFIG_SEM_VALUE_MAX + 1)), -1,
+		      "value larger than %d\n", CONFIG_SEM_VALUE_MAX);
+	zassert_equal(errno, EINVAL, NULL);
+
 	zassert_false(sem_init(&sema, 0, 1), "sem_init failed\n");
+
+	zassert_equal(sem_getvalue(&sema, &val), 0, NULL);
+	zassert_equal(val, 1, NULL);
 
 	pthread_create(&newthread, &attr, foo_func, NULL);
 

@@ -207,6 +207,10 @@ static int lsm6ds0_sample_fetch_temp(struct device *dev)
 static int lsm6ds0_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL ||
+			chan == SENSOR_CHAN_ACCEL_XYZ ||
+#if defined(CONFIG_LSM6DS0_ENABLE_TEMP)
+			chan == SENSOR_CHAN_TEMP ||
+#endif
 			chan == SENSOR_CHAN_GYRO_XYZ);
 
 	switch (chan) {

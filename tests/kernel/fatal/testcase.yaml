@@ -1,7 +1,7 @@
 tests:
   kernel.fatal.stack_protection:
     extra_args: CONF_FILE=prj.conf
-    filter: ARCH_HAS_STACK_PROTECTION
+    filter: CONFIG_ARCH_HAS_STACK_PROTECTION
     tags: core ignore_faults
   kernel.fatal.stack_sentinel:
     arch_exclude: arc

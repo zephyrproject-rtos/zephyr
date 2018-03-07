@@ -1,0 +1,3 @@
+tests:
+  posix.pthread_equal:
+    tags: core

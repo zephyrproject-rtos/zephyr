@@ -209,8 +209,14 @@ static int flash_nios2_qspi_write_block(struct device *dev, int block_offset,
 			}
 		}
 
+		/* Check memcpy lentgh is with in NIOS2_WRITE_BLOCK_SIZE */
+		if (padding + bytes_to_copy > NIOS2_WRITE_BLOCK_SIZE) {
+			rc = -EINVAL;
+			goto qspi_write_block_err;
+		}
+
 		/* prepare the word to be written */
-		memcpy(&word_to_write + padding,
+		memcpy((u8_t *)&word_to_write + padding,
 				data + buffer_offset, bytes_to_copy);
 
 		/* enable write */

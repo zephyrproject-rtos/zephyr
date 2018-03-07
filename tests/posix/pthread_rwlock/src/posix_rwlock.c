@@ -60,6 +60,13 @@ static void test_rw_lock(void)
 	time.tv_sec = 1;
 	time.tv_nsec = 0;
 
+	zassert_equal(pthread_rwlock_destroy(&rwlock), EINVAL, NULL);
+	zassert_equal(pthread_rwlock_rdlock(&rwlock), EINVAL, NULL);
+	zassert_equal(pthread_rwlock_wrlock(&rwlock), EINVAL, NULL);
+	zassert_equal(pthread_rwlock_trywrlock(&rwlock), EINVAL, NULL);
+	zassert_equal(pthread_rwlock_unlock(&rwlock), EINVAL, NULL);
+
+
 	zassert_false(pthread_rwlock_init(&rwlock, NULL),
 		      "Failed to create rwlock");
 
