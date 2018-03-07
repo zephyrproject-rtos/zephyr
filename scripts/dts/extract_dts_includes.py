@@ -73,8 +73,6 @@ def get_aliases(root):
             for k, v in root['children']['aliases']['props'].items():
                 aliases[v] = k
 
-    return
-
 
 def get_compat(node):
 
@@ -96,8 +94,6 @@ def get_chosen(root):
             for k, v in root['children']['chosen']['props'].items():
                 chosen[k] = v
 
-    return
-
 
 def get_phandles(root, name, handles):
 
@@ -118,8 +114,6 @@ def get_phandles(root, name, handles):
         if root['children']:
             for k, v in root['children'].items():
                 get_phandles(v, name + k, handles)
-
-    return
 
 
 class Loader(yaml.Loader):
@@ -174,8 +168,6 @@ def insert_defs(node_address, defs, new_defs, new_aliases):
         new_defs['aliases'] = new_aliases
         defs[node_address] = new_defs
 
-    return
-
 
 def find_node_by_path(nodes, path):
     d = nodes
@@ -201,8 +193,6 @@ def get_reduced(nodes, path):
         if nodes['children']:
             for k, v in nodes['children'].items():
                 get_reduced(v, path + k)
-
-    return
 
 
 def find_parent_irq_node(node_address):
@@ -277,8 +267,6 @@ def extract_interrupts(node_address, yaml, y_key, names, defs, def_label):
         index += 1
         insert_defs(node_address, defs, prop_def, prop_alias)
 
-    return
-
 
 def extract_reg_prop(node_address, names, defs, def_label, div, post_label):
 
@@ -343,8 +331,6 @@ def extract_reg_prop(node_address, names, defs, def_label, div, post_label):
         # increment index for definition creation
         index += 1
 
-    return
-
 
 def extract_cells(node_address, yaml, y_key, names, index, prefix, defs,
                   def_label):
@@ -396,8 +382,6 @@ def extract_cells(node_address, yaml, y_key, names, index, prefix, defs,
     if len(props):
         extract_cells(node_address, yaml, y_key, names,
                       index + 1, prefix, defs, def_label)
-
-    return
 
 
 def extract_pinctrl(node_address, yaml, pinconf, names, index, defs,
@@ -473,8 +457,6 @@ def extract_single(node_address, yaml, prop, key, prefix, defs, def_label):
     else:
         defs[node_address] = prop_def
 
-    return
-
 
 def extract_string_prop(node_address, yaml, key, label, defs):
 
@@ -490,8 +472,6 @@ def extract_string_prop(node_address, yaml, key, label, defs):
         defs[node_address].update(prop_def)
     else:
         defs[node_address] = prop_def
-
-    return
 
 
 def get_node_label(node_compat, node_address):
@@ -568,8 +548,6 @@ def extract_property(node_compat, yaml, node_address, y_key, y_val, names,
                        reduced[node_address]['props'][y_key], y_key,
                        prefix, defs, def_label)
 
-    return
-
 
 def extract_node_include_info(reduced, root_node_address, sub_node_address,
                               yaml, defs, structs, y_sub):
@@ -626,8 +604,6 @@ def extract_node_include_info(reduced, root_node_address, sub_node_address,
                         extract_property(
                             node_compat, yaml, sub_node_address, c, v, names,
                             prefix, defs, label_override)
-
-    return
 
 
 def dict_merge(dct, merge_dct):
@@ -888,15 +864,15 @@ def generate_node_definitions(yaml_list):
                             chosen['zephyr,code-partition'],
                             'PARTITION_SIZE')
         else:
-            # We will add addr/size of 0 for systems with no flash controller
-            # This is what they already do in the Kconfig options anyway
-            defs['dummy-flash'] = {
-                'CONFIG_FLASH_BASE_ADDRESS': 0,
-                'CONFIG_FLASH_SIZE': 0
-            }
-
             load_defs['CONFIG_FLASH_LOAD_OFFSET'] = 0
             load_defs['CONFIG_FLASH_LOAD_SIZE'] = 0
+    else:
+        # We will add addr/size of 0 for systems with no flash controller
+        # This is what they already do in the Kconfig options anyway
+        defs['dummy-flash'] = {
+            'CONFIG_FLASH_BASE_ADDRESS': 0,
+            'CONFIG_FLASH_SIZE': 0
+        }
 
     if 'zephyr,flash' in chosen:
         insert_defs(chosen['zephyr,flash'], defs, load_defs, {})
