@@ -234,7 +234,7 @@ static inline int _is_in_region(u32_t r_index, u32_t start, u32_t size)
 
 	r_addr_start = _arc_v2_aux_reg_read(_ARC_V2_MPU_RDB0 + 2 * r_index)
 			& (~AUX_MPU_RDB_VALID_MASK);
-	r_size_lshift = _arc_v2_aux_reg_read(_ARC_V2_MPU_RDB0 + 2 * r_index)
+	r_size_lshift = _arc_v2_aux_reg_read(_ARC_V2_MPU_RDP0 + 2 * r_index)
 			& AUX_MPU_RDP_ATTR_MASK;
 	r_size_lshift = (r_size_lshift & 0x3) | ((r_size_lshift >> 7) & 0x1C);
 	r_addr_end = r_addr_start  + (1 << (r_size_lshift + 1));
