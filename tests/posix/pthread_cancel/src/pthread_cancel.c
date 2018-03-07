@@ -21,12 +21,23 @@ void *thread_top(void *p1)
 	pthread_t self;
 	int oldstate;
 	int val = (u32_t) p1;
+	struct sched_param param;
+
+	param.priority = N_THR - (s32_t) p1;
+
+	self = pthread_self();
+	/* Change priority of thread */
+	zassert_false(pthread_setschedparam(self, SCHED_RR, &param),
+		      "Unable to set thread priority");
 
 	if (val % 2) {
 		pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, &oldstate);
 	}
 
-	self = pthread_self();
+	if (val >= 2) {
+		pthread_detach(self);
+	}
+
 	printk("Cancelling thread %d\n", (s32_t) p1);
 	pthread_cancel(self);
 	printk("Thread %d could not be cancelled\n", (s32_t) p1);
@@ -48,29 +59,29 @@ void test_pthread_cancel(void)
 	printk("POSIX thread cancel APIs\n");
 	/* Creating 4 threads with lowest application priority */
 	for (i = 0; i < N_THR; i++) {
-		pthread_attr_init(&attr[i]);
+		ret = pthread_attr_init(&attr[i]);
+		if (ret != 0) {
+			zassert_false(pthread_attr_destroy(&attr[i]),
+				      "Unable to destroy pthread object attrib\n");
+			zassert_false(pthread_attr_init(&attr[i]),
+				      "Unable to create pthread object attrib\n");
+		}
 
-		if (i == 0) {
+		if (i == 1) {
 			pthread_attr_setdetachstate(&attr[i],
 						    PTHREAD_CREATE_JOINABLE);
-		} else if (i == 1) {
-			pthread_attr_setdetachstate(&attr[i],
-						    PTHREAD_CREATE_JOINABLE);
-		} else if (i == 2) {
-			pthread_attr_setdetachstate(&attr[i],
-						    PTHREAD_CREATE_DETACHED);
-		} else if (i == 3) {
+		}  else if (i == 2) {
 			pthread_attr_setdetachstate(&attr[i],
 						    PTHREAD_CREATE_DETACHED);
 		}
+
 		schedparam.priority = 2;
 		pthread_attr_setschedparam(&attr[i], &schedparam);
 		pthread_attr_setstack(&attr[i], &stacks[i][0], STACKSZ);
 		ret = pthread_create(&newthread[i], &attr[i], thread_top,
 				     (void *)i);
 
-		/*TESTPOINT: Check if thread is created successfully*/
-		zassert_false(ret, "Number of threads exceeds max limit\n");
+		zassert_false(ret, "Not enough space to create new thread\n");
 	}
 
 	for (i = 0; i < N_THR; i++) {
@@ -79,12 +90,10 @@ void test_pthread_cancel(void)
 		printk("Pthread %d joined to %s\n", i, __func__);
 	}
 
-	printk("Pthread join test over\n");
+	printk("Pthread join test over %d\n", exit_count);
 
 	/* Test PASS if all threads have exited before main exit */
 	zassert_equal(exit_count, 1, "pthread_cancel test failed\n");
-
-	sleep(ONE_SECOND);
 }
 
 void test_main(void)
