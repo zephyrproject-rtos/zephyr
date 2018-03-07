@@ -197,9 +197,12 @@ void test_pthread(void)
 
 	for (i = 0; i < N_THR; i++) {
 		ret = pthread_attr_init(&attr[i]);
-
-		/*TESTPOINT: Check if thread attr init is done*/
-		zassert_false(ret, "Thread attribute initialization failed\n");
+		if (ret != 0) {
+			zassert_false(pthread_attr_destroy(&attr[i]),
+				      "Unable to destroy pthread object attrib\n");
+			zassert_false(pthread_attr_init(&attr[i]),
+				      "Unable to create pthread object attrib\n");
+		}
 
 		pthread_attr_setstack(&attr[i], &stacks[i][0], STACKSZ);
 		pthread_attr_setschedpolicy(&attr[i], schedpolicy);

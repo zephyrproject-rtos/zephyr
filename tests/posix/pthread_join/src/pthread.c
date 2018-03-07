@@ -56,7 +56,13 @@ void test_pthread_join(void)
 	printk("POSIX pthread join API\n");
 	/* Creating threads with lowest application priority */
 	for (i = 0; i < N_THR; i++) {
-		pthread_attr_init(&attr[i]);
+		ret = pthread_attr_init(&attr[i]);
+		if (ret != 0) {
+			zassert_false(pthread_attr_destroy(&attr[i]),
+				      "Unable to destroy pthread object attrib\n");
+			zassert_false(pthread_attr_init(&attr[i]),
+				      "Unable to create pthread object attrib\n");
+		}
 
 		/* Setting pthread as JOINABLE */
 		pthread_attr_getdetachstate(&attr[i], &detachstate);
