@@ -36,7 +36,7 @@ extern "C" {
 #define CPACR_CP11_RESERVED     (2UL << CPACR_CP11_Pos)
 #define CPACR_CP11_FULL_ACCESS  (3UL << CPACR_CP11_Pos)
 
-#define SCB_UFSR  (*((__IOM u16_t *) &SCB->CFSR + 2))
+#define SCB_UFSR  (*((__IOM u16_t *) &SCB->CFSR + 1))
 #define SCB_BFSR  (*((__IOM u8_t *) &SCB->CFSR + 1))
 #define SCB_MMFSR (*((__IOM u8_t *) &SCB->CFSR))
 
