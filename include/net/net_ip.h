@@ -981,6 +981,20 @@ int net_tx_priority2tc(enum net_priority prio);
  */
 int net_rx_priority2tc(enum net_priority prio);
 
+/**
+ * @brief Convert network packet VLAN priority to network packet priority so we
+ * can place the packet into correct queue.
+ *
+ * @param vlan_prio VLAN priority
+ *
+ * @return Network priority
+ */
+static inline enum net_priority net_vlan2priority(u8_t priority)
+{
+	/* Currently this is 1:1 mapping */
+	return priority;
+}
+
 #ifdef __cplusplus
 }
 #endif
