@@ -125,7 +125,7 @@ to indicate that a key press has occurred.
 
     extern int my_alert_handler(struct k_alert *alert);
 
-    K_ALERT_DEFINE(my_alert, my_alert_handler);
+    K_ALERT_DEFINE(my_alert, my_alert_handler, 10);
 
     void keypress_interrupt_handler(void *arg)
     {
