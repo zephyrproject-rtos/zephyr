@@ -1,0 +1,3 @@
+tests:
+  kernel.stack.usage:
+    tags: kernel userspace
