@@ -541,4 +541,10 @@ static inline int _is_thread_user(void)
 #endif
 }
 #endif /* CONFIG_USERSPACE */
+
+/**
+ * Returns the switch_handle of the next thread to run following an interrupt.
+ */
+void *_get_next_switch_handle(void *interrupted);
+
 #endif /* _ksched__h_ */

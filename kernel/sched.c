@@ -538,3 +538,26 @@ struct k_thread *_get_next_ready_thread(void)
 	return NULL;
 }
 #endif
+
+#ifdef CONFIG_USE_SWITCH
+void *_get_next_switch_handle(void *interrupted)
+{
+	if (!_is_preempt(_current) &&
+	    !(_current->base.thread_state & _THREAD_DEAD)) {
+		return interrupted;
+	}
+
+	int key = irq_lock();
+
+	_current->switch_handle = interrupted;
+	_current = _get_next_ready_thread();
+
+	void *ret = _current->switch_handle;
+
+	irq_unlock(key);
+
+	_check_stack_sentinel();
+
+	return ret;
+}
+#endif
