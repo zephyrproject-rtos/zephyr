@@ -137,29 +137,6 @@ static void dump_stack(int *stack)
 	printk(" ** SAR %p\n", (void *)bsa[BSA_SAR_OFF/4]);
 }
 
-#if CONFIG_XTENSA_ASM2
-static inline void *restore_stack(void *interrupted_stack)
-{
-	if (!_is_preempt(_current) &&
-	    !(_current->base.thread_state & _THREAD_DEAD)) {
-		return interrupted_stack;
-	}
-
-	int key = irq_lock();
-
-	_current->switch_handle = interrupted_stack;
-	_current = _get_next_ready_thread();
-
-	void *ret = _current->switch_handle;
-
-	irq_unlock(key);
-
-	_check_stack_sentinel();
-
-	return ret;
-}
-#endif
-
 /* The wrapper code lives here instead of in the python script that
  * generates _xtensa_handle_one_int*().  Seems cleaner, still kind of
  * ugly.
@@ -174,7 +151,7 @@ void *xtensa_int##l##_c(void *interrupted_stack)	\
 		irqs ^= m;					\
 		__asm__ volatile("wsr.intclear %0" : : "r"(m)); \
 	}							\
-	return restore_stack(interrupted_stack);		\
+	return _get_next_switch_handle(interrupted_stack);		\
 }
 
 DEF_INT_C_HANDLER(2)
@@ -235,6 +212,6 @@ void *xtensa_excint1_c(int *interrupted_stack)
 		_NanoFatalErrorHandler(_NANO_ERR_HW_EXCEPTION, &_default_esf);
 	}
 
-	return restore_stack(interrupted_stack);
+	return _get_next_switch_handle(interrupted_stack);
 }
 
