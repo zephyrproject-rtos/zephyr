@@ -500,6 +500,16 @@ static void eth_rx(struct device *iface)
 
 			net_pkt_set_vlan_tci(pkt, ntohs(hdr_vlan->vlan.tci));
 			vlan_tag = net_pkt_vlan_tag(pkt);
+
+#if CONFIG_NET_TC_RX_COUNT > 1
+			{
+				enum net_priority prio;
+
+				prio = net_vlan2priority(
+						net_pkt_vlan_priority(pkt));
+				net_pkt_set_priority(pkt, prio);
+			}
+#endif
 		}
 	}
 #endif
