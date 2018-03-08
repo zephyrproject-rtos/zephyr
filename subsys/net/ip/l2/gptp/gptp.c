@@ -146,6 +146,8 @@ static void gptp_handle_msg(struct net_pkt *pkt)
 	pdelay_req_state = &GPTP_PORT_STATE(port)->pdelay_req;
 	sync_rcv_state = &GPTP_PORT_STATE(port)->sync_rcv;
 
+	net_if_update_rx_timestamp_stats(pkt);
+
 	switch (hdr->message_type) {
 	case GPTP_SYNC_MESSAGE:
 		if (GPTP_CHECK_LEN(pkt, GPTP_SYNC_LEN)) {

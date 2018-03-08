@@ -1632,6 +1632,25 @@ void net_if_call_timestamp_cb(struct net_pkt *pkt);
  * @param pkt Timestamped buffer
  */
 void net_if_add_tx_timestamp(struct net_pkt *pkt);
+
+#if defined(CONFIG_NET_STATISTICS)
+/*
+ * @brief Update Rx packet handling statistics
+ *
+ * @param pkt Received network packet
+ */
+void net_if_update_rx_timestamp_stats(struct net_pkt *pkt);
+
+/*
+ * @brief Update Tx packet handling statistics
+ *
+ * @param pkt Sent network packet
+ */
+void net_if_update_tx_timestamp_stats(struct net_pkt *pkt);
+#else
+#define net_if_update_rx_timestamp_stats(pkt)
+#define net_if_update_tx_timestamp_stats(pkt)
+#endif /* CONFIG_NET_STATISTICS */
 #endif /* CONFIG_NET_PKT_TIMESTAMP */
 
 struct net_if_api {

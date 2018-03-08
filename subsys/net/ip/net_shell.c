@@ -630,7 +630,7 @@ static inline void net_shell_print_statistics(void)
 
 #if NET_TC_TX_COUNT > 1
 		printk("TX traffic class statistics:\n");
-		printk("TC  Priority\tSent pkts\tbytes\n");
+		printk("TC     Priority\tSent pkts\tbytes\n");
 
 		for (i = 0; i < NET_TC_TX_COUNT; i++) {
 			printk("[%d] %s (%d)\t%d\t\t%d\n", i,
@@ -643,7 +643,7 @@ static inline void net_shell_print_statistics(void)
 
 #if NET_TC_RX_COUNT > 1
 		printk("RX traffic class statistics:\n");
-		printk("TC  Priority\tRecv pkts\tbytes\n");
+		printk("TC     Priority\tRecv pkts\tbytes\n");
 
 		for (i = 0; i < NET_TC_RX_COUNT; i++) {
 			printk("[%d] %s (%d)\t%d\t\t%d\n", i,
@@ -652,9 +652,53 @@ static inline void net_shell_print_statistics(void)
 			       GET_STAT(tc.recv[i].pkts),
 			       GET_STAT(tc.recv[i].bytes));
 		}
-	}
 #endif
+	}
 #endif /* NET_TC_COUNT > 1 */
+
+#if (NET_TC_COUNT > 1) && defined(CONFIG_NET_PKT_TIMESTAMP)
+	{
+		int i;
+
+#if NET_TC_TX_COUNT > 1
+		printk("TX timestamp statistics:\n");
+		printk("TC     Low\tAvg\tHigh (in nanoseconds)\n");
+
+		for (i = 0; i < NET_TC_TX_COUNT; i++) {
+			if (GET_STAT(ts.tx[i].time.low) == 0 &&
+			    GET_STAT(ts.tx[i].time.average) == 0 &&
+			    GET_STAT(ts.tx[i].time.high) == 0) {
+				continue;
+			}
+
+			printk("[%d] %s %u\t%u\t%u\n", i,
+			       priority2str(GET_STAT(tc.sent[i].priority)),
+			       GET_STAT(ts.tx[i].time.low),
+			       GET_STAT(ts.tx[i].time.average),
+			       GET_STAT(ts.tx[i].time.high));
+		}
+#endif
+
+#if NET_TC_RX_COUNT > 1
+		printk("RX timestamp statistics:\n");
+		printk("TC     Low\tAvg\tHigh (in nanoseconds)\n");
+
+		for (i = 0; i < NET_TC_RX_COUNT; i++) {
+			if (GET_STAT(ts.rx[i].time.low) == 0 &&
+			    GET_STAT(ts.rx[i].time.average) == 0 &&
+			    GET_STAT(ts.rx[i].time.high) == 0) {
+				continue;
+			}
+
+			printk("[%d] %s %u\t%u\t%u\n", i,
+			       priority2str(GET_STAT(tc.recv[i].priority)),
+			       GET_STAT(ts.rx[i].time.low),
+			       GET_STAT(ts.rx[i].time.average),
+			       GET_STAT(ts.rx[i].time.high));
+		}
+#endif
+	}
+#endif /* (NET_TC_COUNT > 1) && CONFIG_NET_PKT_TIMESTAMP */
 }
 #endif /* CONFIG_NET_STATISTICS */
 

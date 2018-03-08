@@ -13,6 +13,7 @@
 #include <kernel.h>
 #include <linker/sections.h>
 #include <string.h>
+#include <stdlib.h>
 #include <net/net_core.h>
 #include <net/net_pkt.h>
 #include <net/net_if.h>
@@ -229,6 +230,8 @@ void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt)
 #if NET_TC_TX_COUNT > 1
 	NET_DBG("TC %d with prio %d pkt %p", tc, prio, pkt);
 #endif
+
+	net_pkt_set_traffic_class(pkt, tc);
 
 	k_work_submit_to_queue(&classes[tc].work_q, net_pkt_work(pkt));
 }
@@ -2245,6 +2248,29 @@ static int tc2thread(int tc)
 }
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
+#if defined(CONFIG_NET_STATISTICS)
+void net_if_update_rx_timestamp_stats(struct net_pkt *pkt)
+{
+	u32_t now = k_cycle_get_32();
+	s32_t diff = (s32_t)(now - pkt->cycles_update);
+
+	diff = abs(diff);
+
+	net_stats_update_pkt_rx_timestamp(net_pkt_traffic_class(pkt),
+					  SYS_CLOCK_HW_CYCLES_TO_NS64(diff));
+}
+
+void net_if_update_tx_timestamp_stats(struct net_pkt *pkt)
+{
+	s32_t diff = (s32_t)(pkt->cycles_update - pkt->cycles_create);
+
+	diff = abs(diff);
+
+	net_stats_update_pkt_tx_timestamp(net_pkt_traffic_class(pkt),
+					  SYS_CLOCK_HW_CYCLES_TO_NS64(diff));
+}
+#endif /* CONFIG_NET_STATISTICS */
+
 static void net_tx_ts_thread(void)
 {
 	struct net_pkt *pkt;
@@ -2254,6 +2280,8 @@ static void net_tx_ts_thread(void)
 	while (1) {
 		pkt = k_fifo_get(&tx_ts_queue, K_FOREVER);
 		if (pkt) {
+			net_if_update_tx_timestamp_stats(pkt);
+
 			net_if_call_timestamp_cb(pkt);
 		}
 

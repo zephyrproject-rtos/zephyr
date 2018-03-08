@@ -646,12 +646,20 @@ static void eth_rx(struct device *iface)
 			     &ptpTimeData) &&
 	    (ENET_GetRxFrameTime(&context->enet_handle,
 				 &ptpTimeData) == kStatus_Success)) {
-		pkt->timestamp.nanosecond = ptpTimeData.timeStamp.nanosecond;
-		pkt->timestamp.second = ptpTimeData.timeStamp.second;
+		struct net_ptp_time timestamp = {
+			.second = ptpTimeData.timeStamp.second,
+			.nanosecond = ptpTimeData.timeStamp.nanosecond,
+		};
+
+		net_pkt_set_timestamp(pkt, &timestamp);
 	} else {
 		/* Invalid value. */
-		pkt->timestamp.nanosecond = UINT32_MAX;
-		pkt->timestamp.second = UINT64_MAX;
+		struct net_ptp_time timestamp = {
+			.second = UINT64_MAX,
+			.nanosecond = UINT32_MAX,
+		};
+
+		net_pkt_set_timestamp(pkt, &timestamp);
 	}
 #endif /* CONFIG_NET_PKT_TIMESTAMP */
 
@@ -676,10 +684,12 @@ static inline void ts_register_tx_event(struct eth_context *context)
 			status = ENET_GetTxFrameTime(&context->enet_handle,
 						     &timeData);
 			if (status == kStatus_Success) {
-				pkt->timestamp.nanosecond =
-					timeData.timeStamp.nanosecond;
-				pkt->timestamp.second =
-					timeData.timeStamp.second;
+				struct net_ptp_time timestamp = {
+				   .second = timeData.timeStamp.second,
+				   .nanosecond = timeData.timeStamp.nanosecond,
+				};
+
+				net_pkt_set_timestamp(pkt, &timestamp);
 
 				net_if_add_tx_timestamp(pkt);
 			}

@@ -78,6 +78,14 @@ struct net_pkt {
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
 	/** Timestamp if available. */
 	struct net_ptp_time timestamp;
+#if defined(CONFIG_NET_STATISTICS)
+	/** This is used for collecting statistics. This is updated by
+	 * the driver so it is not fully accurate. This is done using hw cycles
+	 * as we do not have an API that would return time in nanoseconds.
+	 */
+	u32_t cycles_create;
+	u32_t cycles_update;
+#endif
 #endif
 
 	u8_t *appdata;	/* application data starts here */
@@ -155,6 +163,9 @@ struct net_pkt {
 	 * is not prioritised.
 	 */
 	u8_t priority;
+
+	/** Traffic class value. */
+	u8_t traffic_class;
 #endif
 
 #if defined(CONFIG_NET_VLAN)
@@ -425,10 +436,32 @@ static inline void net_pkt_set_priority(struct net_pkt *pkt,
 {
 	pkt->priority = priority;
 }
+
+static inline u8_t net_pkt_traffic_class(struct net_pkt *pkt)
+{
+	return pkt->traffic_class;
+}
+
+static inline void net_pkt_set_traffic_class(struct net_pkt *pkt, u8_t tc)
+{
+	pkt->traffic_class = tc;
+}
 #else
 static inline u8_t net_pkt_priority(struct net_pkt *pkt)
 {
 	return 0;
+}
+
+static inline u8_t net_pkt_traffic_class(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+	return 0;
+}
+
+static inline void net_pkt_set_traffic_class(struct net_pkt *pkt, u8_t tc)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(tc);
 }
 #endif
 
@@ -525,6 +558,10 @@ static inline void net_pkt_set_timestamp(struct net_pkt *pkt,
 {
 	pkt->timestamp.second = timestamp->second;
 	pkt->timestamp.nanosecond = timestamp->nanosecond;
+
+#if defined(CONFIG_NET_STATISTICS)
+	pkt->cycles_update = k_cycle_get_32();
+#endif
 }
 #else
 static inline struct net_ptp_time *net_pkt_timestamp(struct net_pkt *pkt)

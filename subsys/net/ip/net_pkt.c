@@ -324,6 +324,10 @@ struct net_pkt *net_pkt_get_reserve(struct k_mem_slab *slab,
 
 	net_pkt_set_vlan_tag(pkt, NET_VLAN_TAG_UNSPEC);
 
+#if defined(CONFIG_NET_PKT_TIMESTAMP) && defined(CONFIG_NET_STATISTICS)
+	pkt->cycles_create = k_cycle_get_32();
+#endif
+
 #if defined(CONFIG_NET_DEBUG_NET_PKT)
 	net_pkt_alloc_add(pkt, true, caller, line);
 
