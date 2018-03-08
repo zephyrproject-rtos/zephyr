@@ -389,6 +389,8 @@ static bool eth_get_ptp_data(struct net_if *iface, struct net_pkt *pkt,
 		}
 	}
 
+	net_pkt_set_priority(pkt, NET_PRIORITY_CA);
+
 	if (ptpTsData) {
 
 		/* Cannot use GPTP_HDR as net_pkt fields are not all filled */
