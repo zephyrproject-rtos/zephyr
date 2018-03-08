@@ -1,0 +1,3 @@
+tests:
+  posix.posix_checks:
+    tags: core
