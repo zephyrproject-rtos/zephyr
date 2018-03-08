@@ -147,6 +147,7 @@ static inline void _rx_demux_tx_ack(u16_t handle, memq_link_t *link,
 static inline void _rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx);
 static inline void _rx_demux_event_done(memq_link_t *link,
 					struct node_rx_hdr *rx);
+void _disabled_cb(void *param);
 
 ISR_DIRECT_DECLARE(radio_nrf5_isr)
 {
@@ -351,7 +352,8 @@ int ull_disable(void *lll)
 	}
 
 	k_sem_init(&sem, 0, 1);
-	hdr->sem = &sem;
+	hdr->disabled_param = &sem;
+	hdr->disabled_cb = _disabled_cb;
 
 	_mfy.param = lll;
 	ret = mayfly_enqueue(TICKER_USER_ID_THREAD, TICKER_USER_ID_LLL, 0,
@@ -593,7 +595,12 @@ static inline void _rx_demux_event_done(memq_link_t *link,
 	ull_hdr->ref--;
 
 	/* If disable initiated, signal the semaphore */
-	if (!ull_hdr->ref && ull_hdr->sem) {
-		k_sem_give(ull_hdr->sem);
+	if (!ull_hdr->ref && ull_hdr->disabled_cb) {
+		ull_hdr->disabled_cb(ull_hdr->disabled_param);
 	}
+}
+
+void _disabled_cb(void *param)
+{
+	k_sem_give(param);
 }

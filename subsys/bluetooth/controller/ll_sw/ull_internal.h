@@ -2,7 +2,8 @@
 
 struct ull_hdr {
 	u8_t ref;
-	struct k_sem *sem;
+	void (*disabled_cb)(void *param);
+	void *disabled_param;
 };
 
 struct node_rx_event_done {
@@ -19,7 +20,7 @@ static inline void ull_hdr_init(void *param)
 {
 	struct ull_hdr *hdr = param;
 
-	hdr->sem = NULL;
+	hdr->disabled_cb = hdr->disabled_param = NULL;
 }
 
 void ull_ticker_status_give(u32_t status, void *param);
