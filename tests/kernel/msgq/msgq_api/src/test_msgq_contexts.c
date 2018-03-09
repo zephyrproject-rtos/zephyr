@@ -29,7 +29,7 @@ static void put_msgq(struct k_msgq *pmsgq)
 
 	for (int i = 0; i < MSGQ_LEN; i++) {
 		ret = k_msgq_put(pmsgq, (void *)&data[i], K_NO_WAIT);
-		zassert_false(ret, NULL);
+		zassert_equal(ret, 0, NULL);
 		/**TESTPOINT: msgq free get*/
 		zassert_equal(k_msgq_num_free_get(pmsgq),
 				MSGQ_LEN - 1 - i, NULL);
@@ -45,7 +45,7 @@ static void get_msgq(struct k_msgq *pmsgq)
 
 	for (int i = 0; i < MSGQ_LEN; i++) {
 		ret = k_msgq_get(pmsgq, &rx_data, K_FOREVER);
-		zassert_false(ret, NULL);
+		zassert_equal(ret, 0, NULL);
 		zassert_equal(rx_data, data[i], NULL);
 		/**TESTPOINT: msgq free get*/
 		zassert_equal(k_msgq_num_free_get(pmsgq), i + 1, NULL);
@@ -88,6 +88,48 @@ static void msgq_thread(struct k_msgq *pmsgq)
 	purge_msgq(pmsgq);
 }
 
+static void thread_entry_overflow(void *p1, void *p2, void *p3)
+{
+	int ret;
+
+	u32_t rx_buf[MSGQ_LEN];
+
+	ret = k_msgq_get(p1, &rx_buf[0], K_FOREVER);
+
+	zassert_equal(ret, 0, NULL);
+
+	ret = k_msgq_get(p1, &rx_buf[1], K_FOREVER);
+
+	zassert_equal(ret, 0, NULL);
+
+	k_sem_give(&end_sema);
+}
+
+static void msgq_thread_overflow(struct k_msgq *pmsgq)
+{
+	int ret;
+
+	ret = k_msgq_put(pmsgq, (void *)&data[0], K_FOREVER);
+
+	zassert_equal(ret, 0, NULL);
+
+	/**TESTPOINT: thread-thread data passing via message queue*/
+	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
+				      thread_entry_overflow, pmsgq, NULL, NULL,
+				      K_PRIO_PREEMPT(0),
+				      K_USER | K_INHERIT_PERMS, 0);
+
+	ret = k_msgq_put(pmsgq, (void *)&data[1], K_FOREVER);
+
+	zassert_equal(ret, 0, NULL);
+
+	k_sem_take(&end_sema, K_FOREVER);
+	k_thread_abort(tid);
+
+	/**TESTPOINT: msgq purge*/
+	k_msgq_purge(pmsgq);
+}
+
 static void msgq_isr(struct k_msgq *pmsgq)
 {
 	/**TESTPOINT: thread-isr data passing via message queue*/
@@ -107,6 +149,16 @@ void test_msgq_thread(void)
 
 	msgq_thread(&msgq);
 	msgq_thread(&kmsgq);
+}
+
+void test_msgq_thread_overflow(void)
+{
+	/**TESTPOINT: init via k_msgq_init*/
+	k_msgq_init(&msgq, tbuffer, MSG_SIZE, 1);
+	k_sem_init(&end_sema, 0, 1);
+
+	msgq_thread_overflow(&msgq);
+	msgq_thread_overflow(&kmsgq);
 }
 
 void test_msgq_isr(void)
