@@ -151,6 +151,10 @@ Serial Port
 Nucleo F412ZG board has 4 UARTs. The Zephyr console output is assigned to UART3.
 Default settings are 115200 8N1.
 
+Network interface
+-----------------
+
+Ethernet over USB is configured as the default network interface
 
 Programming and Debugging
 *************************
