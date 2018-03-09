@@ -1,5 +1,6 @@
 # Kconfig.nrf5 - nRF5 entropy generator driver configuration
 #
+# Copyright (c) 2018 Intellinium
 # Copyright (c) 2017 Nordic Semiconductor ASA
 # Copyright (c) 2017 Exati Tecnologia Ltda.
 #
@@ -7,9 +8,7 @@
 
 menuconfig ENTROPY_NRF5_RNG
 	bool "nRF5 RNG driver"
-	# FIXME: nRF5 RNG driver can't co-exist with Bluetooth's HAL
-	# implementation yet
-	depends on ENTROPY_GENERATOR && !BT
+	depends on ENTROPY_GENERATOR
 	select ENTROPY_HAS_DRIVER
 	help
 	  This option enables the RNG peripheral, which is a random number
