@@ -2,6 +2,7 @@
 
 #include <arm/armv7-m.dtsi>
 #include "arm/mps2/soc_irq.h"
+#include <dt-bindings/i2c/i2c.h>
 
 / {
 	compatible = "arm,mps2";
@@ -115,6 +116,42 @@
 			compatible = "arm,cmsdk-gpio";
 			reg = <0x40013000 0x1000>;
 			interrupts = <IRQ_GPIO_3_COMBINED 3>;
+		};
+
+		i2c_touch: i2c@40022000 {
+			compatible = "arm,versatile-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40022000 0x1000>;
+			label = "I2C_TOUCH";
+		};
+
+		i2c_audio_conf: i2c@40023000 {
+			compatible = "arm,versatile-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40023000 0x1000>;
+			label = "I2C_AUDIO_CONF";
+		};
+
+		i2c_shield0: i2c@40029000 {
+			compatible = "arm,versatile-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40029000 0x1000>;
+			label = "I2C_SHIELD0";
+		};
+
+		i2c_shield1: i2c@4002a000 {
+			compatible = "arm,versatile-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x4002a000 0x1000>;
+			label = "I2C_SHIELD1";
 		};
 	};
 };
