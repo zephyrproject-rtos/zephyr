@@ -55,19 +55,20 @@ u32_t rgb[] = {
 /* Number of LEDS linked together */
 #define NUM_LEDS	1
 
-void send_rgb(struct device *gpio_dev, u32_t rgb)
+void send_rgb(struct device *gpio_dev, u32_t rgb_val)
 {
 	int i;
 
 	for (i = 0; i < 32; i++) {
 		/* MSB goes in first */
-		gpio_pin_write(gpio_dev, GPIO_DATA_PIN, !!(rgb & 0x80000000));
+		gpio_pin_write(gpio_dev, GPIO_DATA_PIN,
+			       !!(rgb_val & 0x80000000));
 
 		/* Latch data into LED */
 		gpio_pin_write(gpio_dev, GPIO_CLK_PIN, 1);
 		gpio_pin_write(gpio_dev, GPIO_CLK_PIN, 0);
 
-		rgb <<= 1;
+		rgb_val <<= 1;
 	}
 }
 

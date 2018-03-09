@@ -52,7 +52,7 @@ static int mb85rs64v_read_id(struct device *dev)
 }
 
 static int write_bytes(struct device *dev, u16_t addr,
-		       u8_t *data, u32_t num_bytes)
+		       u8_t *wdata, u32_t num_bytes)
 {
 	int err;
 
@@ -72,7 +72,7 @@ static int write_bytes(struct device *dev, u16_t addr,
 	spi_buffer[2] = addr & 0xFF;
 
 	for (u32_t i = 0; i < num_bytes; i++) {
-		spi_buffer[i + 3] = data[i];
+		spi_buffer[i + 3] = wdata[i];
 	}
 
 	err = spi_write(dev, spi_buffer, num_bytes + 3);
@@ -85,7 +85,7 @@ static int write_bytes(struct device *dev, u16_t addr,
 }
 
 static int read_bytes(struct device *dev, u16_t addr,
-		      u8_t *data, u32_t num_bytes)
+		      u8_t *rdata, u32_t num_bytes)
 {
 	int err;
 
@@ -102,7 +102,7 @@ static int read_bytes(struct device *dev, u16_t addr,
 	}
 
 	for (u32_t i = 0; i < num_bytes; i++) {
-		data[i] = spi_buffer[i + 3];
+		rdata[i] = spi_buffer[i + 3];
 	}
 
 	return 0;

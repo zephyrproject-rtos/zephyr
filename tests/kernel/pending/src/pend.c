@@ -81,14 +81,14 @@ static int __noinit task_low_state;
 
 static int __noinit counter;
 
-static inline void *my_fifo_get(struct k_fifo *fifo, s32_t timeout)
+static inline void *my_fifo_get(struct k_fifo *my_fifo, s32_t timeout)
 {
-	return k_fifo_get(fifo, timeout);
+	return k_fifo_get(my_fifo, timeout);
 }
 
-static inline void *my_lifo_get(struct k_lifo *lifo, s32_t timeout)
+static inline void *my_lifo_get(struct k_lifo *my_lifo, s32_t timeout)
 {
-	return k_lifo_get(lifo, timeout);
+	return k_lifo_get(my_lifo, timeout);
 }
 
 static int increment_counter(void)
