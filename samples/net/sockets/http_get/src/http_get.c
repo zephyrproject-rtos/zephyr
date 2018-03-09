@@ -55,7 +55,7 @@ int main(void)
 	struct addrinfo *res;
 	int st, sock;
 	struct zstream_sock stream_sock;
-	zstream stream;
+	struct zstream *stream;
 
 	printf("Preparing HTTP GET request for http://" HTTP_HOST
 	       ":" HTTP_PORT HTTP_PATH "\n");
@@ -84,7 +84,7 @@ int main(void)
 	CHECK(connect(sock, res->ai_addr, res->ai_addrlen));
 
 	zstream_sock_init(&stream_sock, sock);
-	stream = (zstream)&stream_sock;
+	stream = (struct zstream *)&stream_sock;
 
 	CHECK(zstream_write(stream, REQUEST, SSTRLEN(REQUEST)));
 	CHECK(zstream_flush(stream));
