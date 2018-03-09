@@ -148,26 +148,21 @@ void k_queue_append_list(struct k_queue *queue, void *head, void *tail)
 {
 	__ASSERT(head && tail, "invalid head or tail");
 
+	int need_sched = 0;
 	unsigned int key = irq_lock();
 #if !defined(CONFIG_POLL)
-	struct k_thread *first_thread, *thread;
+	struct k_thread *thread;
 
-	first_thread = _peek_first_pending_thread(&queue->wait_q);
 	while (head && ((thread = _unpend_first_thread(&queue->wait_q)))) {
 		prepare_thread_to_run(thread, head);
 		head = *(void **)head;
+		need_sched = 1;
 	}
 
 	if (head) {
 		sys_slist_append_list(&queue->data_q, head, tail);
 	}
 
-	if (first_thread) {
-		if (!_is_in_isr() && _must_switch_threads()) {
-			(void)_Swap(key);
-			return;
-		}
-	}
 #else
 	sys_slist_append_list(&queue->data_q, head, tail);
 	if (handle_poll_events(queue, K_POLL_STATE_DATA_AVAILABLE)) {
@@ -176,7 +171,12 @@ void k_queue_append_list(struct k_queue *queue, void *head, void *tail)
 	}
 #endif /* !CONFIG_POLL */
 
-	irq_unlock(key);
+	if (need_sched) {
+		_reschedule_threads(key);
+		return;
+	} else {
+		irq_unlock(key);
+	}
 }
 
 void k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list)
