@@ -7,7 +7,6 @@
 #ifndef _SOC_DEVICES_H_
 #define _SOC_DEVICES_H_
 
-#include <soc_memory_map.h>
 #include <soc_irq.h>
 
 #ifndef _ASMLANGUAGE
@@ -15,6 +14,7 @@
 #include "soc_registers.h"
 
 /* FPGA system control block (FPGAIO) */
+#define FPGAIO_BASE_ADDR	 (0x40028000)
 #define __MPS2_FPGAIO ((volatile struct mps2_fpgaio *)FPGAIO_BASE_ADDR)
 
 /* Names of GPIO drivers used to provide access to some FPGAIO registers */
