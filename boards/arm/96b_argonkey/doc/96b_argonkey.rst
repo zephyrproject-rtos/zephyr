@@ -160,14 +160,78 @@ Flashing
 bootloader and another using the SWD debug port (which requires additional
 hardware).
 
+Flashing using the ROM bootloader requires a special activation pattern,
+which can be triggered by using the BOOT0 pin. The ROM bootloader supports
+flashing via USB (DFU), UART, I2C and SPI, but this document describes the
+UART case only. You can read more about how to enable and use the ROM
+bootloader by checking the application note `AN2606`_ .
+
 Using ROM bootloader:
 ---------------------
 
+Hereafter the documents describes basic steps to perform ArgonKey firmware
+flashing on a Linux PC using UART as communication channel.
+
+1. Connect ArgonKey UART to your Linux PC using, for example, a USB-TTL serial
+   cable. The flashing procedure has been tested using a `TTL-232RG`_ cable with
+   FTDI chip. The UART pins on ArgonKey can be found on the P3 low speed
+   expansion connector on the back of the board.
+
+   - GND (black)  to ArgonKey GND (P3.1)
+   - TXD (orange) to ArgonKey UART0_TXD (P3.5)
+   - RXD (yellow) to ArgonKey UART0_RXD (P3.7)
+
+   When the USB cable is inserted to the Linux PC the following device will be
+   created: /dev/ttyUSBx (x is usually '0').
+
+2. Force STM32F412CG to enter in Bootloader mode
+
+   - Connect BOOT0 to 1V8 (link P2.1 to P3.30)
+   - Press and release the RST button
+
+3. Use stm32flash utility to flash the ArgonKey:
+
+.. code-block:: console
+
+    $ stm32flash  -w zephyr.bin -v -g 0x08000000 /dev/ttyUSB0
+
+See References section for more info on `stm32flash`_.
+
 Using SWD debugger:
 -------------------
+
+Select a commercial JTAG/SWD h/w tool and connect it to ArgonKey P4 connector.
+
+The ArgonKey has been tested using the `ST-LINK/V2`_ tool. Once that the tool
+is connected to the PC through USB, it presents itself as a USB composite
+device with mass storage capability. The device can be then mounted in linux
+and the f/w can be actually copied there and will be automatically flashed by
+the ST-LINK onto the ArgonKey.
+
+Example:
+
+.. code-block:: console
+
+   $ mount /dev/sdb /mnt
+   $ cp zephyr.bin /mnt
+   $ umount /mnt
 
 Debugging
 =========
 
 References
 **********
+
+.. target-notes::
+
+.. _AN2606:
+   https://www.st.com/resource/en/application_note/cd00167594.pdf
+
+.. _stm32flash:
+   https://sourceforge.net/p/stm32flash/wiki/Home/
+
+.. _ST-LINK/V2:
+   http://www.st.com/en/development-tools/st-link-v2.html
+
+.. _TTL-232RG:
+   http://www.ftdichip.com/Support/Documents/DataSheets/Cables/DS_TTL-232RG_CABLES.pdf
