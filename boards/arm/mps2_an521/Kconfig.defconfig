@@ -1,0 +1,127 @@
+#
+# Copyright (c) 2018 Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_MPS2_AN521
+
+config BOARD
+	default mps2_an521
+
+if GPIO
+
+config GPIO_CMSDK_AHB
+	def_bool y
+
+config GPIO_CMSDK_AHB_PORT0
+	def_bool y
+
+config GPIO_CMSDK_AHB_PORT1
+	def_bool y
+
+config GPIO_CMSDK_AHB_PORT2
+	def_bool y
+
+config GPIO_CMSDK_AHB_PORT3
+	def_bool y
+
+endif # GPIO
+
+if PINMUX
+
+config PINMUX_MPS2
+	def_bool y
+
+endif # PINMUX
+
+if SERIAL
+
+config UART_CMSDK_APB
+	def_bool y
+
+config UART_INTERRUPT_DRIVEN
+	def_bool y
+
+config UART_CMSDK_APB_PORT0
+	def_bool y
+
+config UART_CMSDK_APB_PORT1
+	def_bool y
+
+config UART_CMSDK_APB_PORT2
+	def_bool y
+
+config UART_CMSDK_APB_PORT3
+	def_bool y
+
+config UART_CMSDK_APB_PORT4
+	def_bool y
+
+endif # SERIAL
+
+if WATCHDOG
+
+config WDOG_CMSDK_APB
+	def_bool y
+
+endif # WATCHDOG
+
+if COUNTER
+
+if COUNTER_TMR_CMSDK_APB
+
+config COUNTER_TMR_CMSDK_APB_0
+	def_bool y
+
+config COUNTER_TMR_CMSDK_APB_1
+	def_bool y
+
+endif # COUNTER_TMR_CMSDK_APB
+
+if TIMER_TMR_CMSDK_APB
+
+config TIMER_TMR_CMSDK_APB_0
+	def_bool y
+
+config TIMER_TMR_CMSDK_APB_1
+	def_bool y
+
+endif # TIMER_TMR_CMSDK_APB
+
+if COUNTER_DTMR_CMSDK_APB
+
+config COUNTER_DTMR_CMSDK_APB_0
+	def_bool y
+
+endif # COUNTER_DTMR_CMSDK_APB
+
+if TIMER_DTMR_CMSDK_APB
+
+config TIMER_DTMR_CMSDK_APB_0
+	def_bool y
+
+endif # TIMER_DTMR_CMSDK_APB
+
+endif # COUNTER
+
+if I2C
+
+config I2C_SBCON
+	def_bool y
+
+config I2C_SBCON_0
+	def_bool y
+
+config I2C_SBCON_1
+	def_bool y
+
+config I2C_SBCON_2
+	def_bool y
+
+config I2C_SBCON_3
+	def_bool y
+
+endif # I2C
+
+endif
