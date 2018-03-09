@@ -46,6 +46,12 @@
  */
 #define MAX_REACHABLE_TIME 3600000
 
+/* IPv6 minimum link MTU specified in RFC 8200 section 5
+ * Packet Size Issues
+ */
+#define MIN_IPV6_MTU NET_IPV6_MTU
+#define MAX_IPV6_MTU 0xffff
+
 /* IPv6 wildcard and loopback address defined by RFC2553 */
 const struct in6_addr in6addr_any = IN6ADDR_ANY_INIT;
 const struct in6_addr in6addr_loopback = IN6ADDR_LOOPBACK_INIT;
@@ -2645,12 +2651,14 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt)
 				goto drop;
 			}
 
-			net_if_set_mtu(net_pkt_iface(pkt), mtu);
-
-			if (mtu > 0xffff) {
-				/* TODO: discard packet? */
-				NET_ERR("MTU %u, max is %u", mtu, 0xffff);
+			if (mtu < MIN_IPV6_MTU || mtu > MAX_IPV6_MTU) {
+				NET_ERR("Unsupported MTU %u, min is %u, "
+					"max is %u",
+					mtu, MIN_IPV6_MTU, MAX_IPV6_MTU);
+				goto drop;
 			}
+
+			net_if_set_mtu(net_pkt_iface(pkt), mtu);
 
 			break;
 		case NET_ICMPV6_ND_OPT_PREFIX_INFO:
