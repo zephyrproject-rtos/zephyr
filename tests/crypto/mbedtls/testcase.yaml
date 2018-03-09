@@ -3,6 +3,5 @@ tests:
     filter: not CONFIG_DEBUG
     min_flash: 33
     min_ram: 32
-    platform_exclude: esp32
     tags: crypto mbedtls
     timeout: 200
