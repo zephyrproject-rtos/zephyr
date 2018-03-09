@@ -418,21 +418,6 @@ static inline void _mark_thread_as_started(struct k_thread *thread)
  */
 static inline void _ready_thread(struct k_thread *thread)
 {
-	__ASSERT(_is_prio_higher(thread->base.prio, K_LOWEST_THREAD_PRIO) ||
-		 ((thread->base.prio == K_LOWEST_THREAD_PRIO) &&
-		  (thread == _idle_thread)),
-		 "thread %p prio too low (is %d, cannot be lower than %d)",
-		 thread, thread->base.prio,
-		 thread == _idle_thread ? K_LOWEST_THREAD_PRIO :
-					  K_LOWEST_APPLICATION_THREAD_PRIO);
-
-	__ASSERT(!_is_prio_higher(thread->base.prio, K_HIGHEST_THREAD_PRIO),
-		 "thread %p prio too high (id %d, cannot be higher than %d)",
-		 thread, thread->base.prio, K_HIGHEST_THREAD_PRIO);
-
-	/* needed to handle the start-with-delay case */
-	_mark_thread_as_started(thread);
-
 	if (_is_thread_ready(thread)) {
 		_add_thread_to_ready_q(thread);
 	}
