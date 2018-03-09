@@ -646,18 +646,15 @@ DEVICE_INIT(btusb, "btusb", &btusb_init,
 static int try_write(u8_t ep, struct net_buf *buf)
 {
 	int ret = 0;
-	u8_t *data = buf->data;
-	u32_t len = (u32_t)buf->len;
 
-	while (len) {
+	while (buf->len) {
 		u32_t wrote;
 
-		ret = usb_write(ep, data, len, &wrote);
+		ret = usb_write(ep, buf->data, buf->len, &wrote);
 
 		switch (ret) {
 		case 0:
-			data += wrote;
-			len -= wrote;
+			net_buf_pull(buf, wrote);
 			break;
 		case -EAGAIN:
 			k_yield();
