@@ -184,7 +184,7 @@ void dtls_client(void)
 	int ret;
 	struct udp_context ctx;
 	struct dtls_timing_context timer;
-	struct coap_packet request, zpkt;
+	struct coap_packet request, cpkt;
 	struct coap_reply *reply;
 	struct net_pkt *pkt;
 	struct net_buf *frag;
@@ -385,13 +385,13 @@ retry:
 	len = ret;
 	frag->len = len;
 
-	ret = coap_packet_parse(&zpkt, pkt, NULL, 0);
+	ret = coap_packet_parse(&cpkt, pkt, NULL, 0);
 	if (ret) {
 		mbedtls_printf("Could not parse packet\n");
 		goto exit;
 	}
 
-	reply = coap_response_received(&zpkt, NULL, replies, NUM_REPLIES);
+	reply = coap_response_received(&cpkt, NULL, replies, NUM_REPLIES);
 	if (!reply) {
 		mbedtls_printf("No handler for response (%d)\n", ret);
 	}
