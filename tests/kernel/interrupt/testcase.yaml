@@ -1,0 +1,4 @@
+tests:
+  arch.interrupt:
+    arch_exclude: nios2
+    tags: interrupt
