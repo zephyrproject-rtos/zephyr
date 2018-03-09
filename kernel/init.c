@@ -274,7 +274,7 @@ static void init_idle_thread(struct k_thread *thr, k_thread_stack_t *stack)
 			  IDLE_STACK_SIZE, idle, NULL, NULL, NULL,
 			  K_LOWEST_THREAD_PRIO, K_ESSENTIAL);
 	_mark_thread_as_started(thr);
-	_add_thread_to_ready_q(thr);
+	_ready_thread(thr);
 }
 #endif
 
@@ -352,7 +352,7 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 			  NULL, NULL, NULL,
 			  CONFIG_MAIN_THREAD_PRIORITY, K_ESSENTIAL);
 	_mark_thread_as_started(_main_thread);
-	_add_thread_to_ready_q(_main_thread);
+	_ready_thread(_main_thread);
 
 #ifdef CONFIG_MULTITHREADING
 	init_idle_thread(_idle_thread, _idle_stack);

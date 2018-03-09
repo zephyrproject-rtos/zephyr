@@ -227,16 +227,8 @@ void _impl_k_thread_start(struct k_thread *thread)
 	}
 
 	_mark_thread_as_started(thread);
-
-	if (_is_thread_ready(thread)) {
-		_add_thread_to_ready_q(thread);
-		if (_must_switch_threads()) {
-			_Swap(key);
-			return;
-		}
-	}
-
-	irq_unlock(key);
+	_ready_thread(thread);
+	_reschedule_threads(key);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -462,10 +454,7 @@ _SYSCALL_HANDLER1_SIMPLE_VOID(k_thread_suspend, K_OBJ_THREAD, k_tid_t);
 void _k_thread_single_resume(struct k_thread *thread)
 {
 	_mark_thread_as_not_suspended(thread);
-
-	if (_is_thread_ready(thread)) {
-		_add_thread_to_ready_q(thread);
-	}
+	_ready_thread(thread);
 }
 
 void _impl_k_thread_resume(struct k_thread *thread)

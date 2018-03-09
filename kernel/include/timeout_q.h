@@ -90,6 +90,7 @@ static inline void _handle_one_expired_timeout(struct _timeout *timeout)
 	K_DEBUG("timeout %p\n", timeout);
 	if (thread) {
 		_unpend_thread_timing_out(thread, timeout);
+		_mark_thread_as_started(thread);
 		_ready_thread(thread);
 		irq_unlock(key);
 	} else {

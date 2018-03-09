@@ -299,7 +299,7 @@ static int signal_poll_event(struct k_poll_event *event, u32_t state,
 		goto ready_event;
 	}
 
-	_add_thread_to_ready_q(thread);
+	_ready_thread(thread);
 	*must_reschedule = !_is_in_isr() && _must_switch_threads();
 
 ready_event:

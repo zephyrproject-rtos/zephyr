@@ -70,6 +70,18 @@ static struct k_thread *get_ready_q_head(void)
 
 void _add_thread_to_ready_q(struct k_thread *thread)
 {
+	__ASSERT(_is_prio_higher(thread->base.prio, K_LOWEST_THREAD_PRIO) ||
+		 ((thread->base.prio == K_LOWEST_THREAD_PRIO) &&
+		  (thread == _idle_thread)),
+		 "thread %p prio too low (is %d, cannot be lower than %d)",
+		 thread, thread->base.prio,
+		 thread == _idle_thread ? K_LOWEST_THREAD_PRIO :
+					  K_LOWEST_APPLICATION_THREAD_PRIO);
+
+	__ASSERT(!_is_prio_higher(thread->base.prio, K_HIGHEST_THREAD_PRIO),
+		 "thread %p prio too high (id %d, cannot be higher than %d)",
+		 thread, thread->base.prio, K_HIGHEST_THREAD_PRIO);
+
 #ifdef CONFIG_MULTITHREADING
 	int q_index = _get_ready_q_q_index(thread->base.prio);
 	sys_dlist_t *q = &_ready_q.q[q_index];
