@@ -189,10 +189,16 @@ s32_t _ms_to_ticks(s32_t ms)
 }
 #endif
 
-/* pend the specified thread: it must *not* be in the ready queue */
-/* must be called with interrupts locked */
+/* Pend the specified thread: it must *not* be in the ready queue.  It
+ * must be either _current or a DUMMY thread (i.e. this is NOT an API
+ * for pending another thread that might be running!).  It must be
+ * called with interrupts locked
+ */
 void _pend_thread(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
 {
+	__ASSERT(thread == _current || _is_thread_dummy(thread),
+		 "Can only pend _current or DUMMY");
+
 #ifdef CONFIG_MULTITHREADING
 	sys_dlist_t *wait_q_list = (sys_dlist_t *)wait_q;
 	struct k_thread *pending;
