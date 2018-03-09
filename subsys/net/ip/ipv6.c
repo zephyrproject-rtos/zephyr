@@ -590,6 +590,11 @@ struct in6_addr *net_ipv6_nbr_lookup_by_index(struct net_if *iface,
 
 	return NULL;
 }
+#else
+const char *net_ipv6_nbr_state2str(enum net_ipv6_nbr_state state)
+{
+	return "<unknown state>";
+}
 #endif /* CONFIG_NET_IPV6_NBR_CACHE */
 
 int net_ipv6_find_last_ext_hdr(struct net_pkt *pkt, u16_t *next_hdr_idx,
