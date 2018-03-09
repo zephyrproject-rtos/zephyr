@@ -34,6 +34,7 @@
 static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 static struct k_work_q workq;
 static struct k_work work[NUM_OF_WORK];
+static struct k_delayed_work new_work;
 static struct k_delayed_work delayed_work[NUM_OF_WORK], delayed_work_sleepy;
 static struct k_sem sync_sema;
 
@@ -44,6 +45,11 @@ static void work_sleepy(struct k_work *w)
 }
 
 static void work_handler(struct k_work *w)
+{
+	k_sem_give(&sync_sema);
+}
+
+static void new_work_handler(struct k_work *w)
 {
 	k_sem_give(&sync_sema);
 }
@@ -66,6 +72,44 @@ static void twork_submit(void *data)
 		}
 	}
 }
+
+static void twork_submit_multipleq(void *data)
+{
+	struct k_work_q *work_q = (struct k_work_q *)data;
+
+	/**TESTPOINT: init via k_work_init*/
+	k_delayed_work_init(&new_work, new_work_handler);
+
+	k_delayed_work_submit_to_queue(work_q, &new_work, TIMEOUT);
+
+	zassert_equal(k_delayed_work_submit(&new_work, TIMEOUT),
+		     -EADDRINUSE, NULL);
+
+	k_sem_give(&sync_sema);
+}
+
+static void twork_resubmit(void *data)
+{
+	struct k_work_q *work_q = (struct k_work_q *)data;
+
+	/**TESTPOINT: init via k_work_init*/
+	k_delayed_work_init(&new_work, new_work_handler);
+
+	k_delayed_work_submit_to_queue(work_q, &new_work, 0);
+
+	/* This is done to test a neagtive case when k_delayed_work_cancel()
+	 * fails in k_delayed_work_submit_to_queue API. Removing work from it
+	 * queue make sure that k_delayed_work_cancel() fails when the Work is
+	 * resubmitted.
+	 */
+	k_queue_remove(&(new_work.work_q->queue), &(new_work.work));
+
+	zassert_equal(k_delayed_work_submit_to_queue(work_q, &new_work, 0),
+		      -EINVAL, NULL);
+
+	k_sem_give(&sync_sema);
+}
+
 
 static void tdelayed_work_submit(void *data)
 {
@@ -172,6 +216,22 @@ void test_work_submit_to_queue_thread(void)
 	for (int i = 0; i < NUM_OF_WORK; i++) {
 		k_sem_take(&sync_sema, K_FOREVER);
 	}
+}
+
+void test_work_submit_to_multipleq(void)
+{
+	k_sem_reset(&sync_sema);
+	twork_submit_multipleq(&workq);
+	for (int i = 0; i < NUM_OF_WORK; i++) {
+		k_sem_take(&sync_sema, K_FOREVER);
+	}
+}
+
+void test_work_resubmit_to_queue(void)
+{
+	k_sem_reset(&sync_sema);
+	twork_resubmit(&workq);
+	k_sem_take(&sync_sema, K_FOREVER);
 }
 
 void test_work_submit_to_queue_isr(void)

@@ -18,12 +18,15 @@ extern void test_delayed_work_cancel_from_queue_thread(void);
 extern void test_delayed_work_cancel_from_queue_isr(void);
 extern void test_delayed_work_cancel_thread(void);
 extern void test_delayed_work_cancel_isr(void);
-
+extern void test_work_submit_to_multipleq(void);
+extern void test_work_resubmit_to_queue(void);
 /*test case main entry*/
 void test_main(void)
 {
 	ztest_test_suite(test_workq_api,
 			 ztest_unit_test(test_workq_start_before_submit),/*keep first!*/
+			 ztest_unit_test(test_work_submit_to_multipleq),
+			 ztest_unit_test(test_work_resubmit_to_queue),
 			 ztest_unit_test(test_work_submit_to_queue_thread),
 			 ztest_unit_test(test_work_submit_to_queue_isr),
 			 ztest_unit_test(test_work_submit_thread),
