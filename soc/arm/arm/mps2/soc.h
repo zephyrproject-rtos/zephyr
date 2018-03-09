@@ -8,6 +8,13 @@
 #define _SOC_H_
 
 #define __MPU_PRESENT 1
+
+#if defined(CONFIG_SOC_MPS2_AN521)
+#define __SAUREGION_PRESENT       1U        /* SAU regions present */
+#define __FPU_PRESENT             CONFIG_CPU_HAS_FPU
+#define __DSP_PRESENT             1U        /* DSP extension present */
+#endif
+
 #include <soc_devices.h>
 
 #endif /* _SOC_H_ */
