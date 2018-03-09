@@ -7,8 +7,6 @@
 #ifndef _SOC_DEVICES_H_
 #define _SOC_DEVICES_H_
 
-#include <soc_irq.h>
-
 #ifndef _ASMLANGUAGE
 
 #include "soc_registers.h"
