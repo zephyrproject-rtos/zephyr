@@ -17,6 +17,7 @@ struct timer_data {
 void test_timer_duration_period(void);
 void test_timer_period_0(void);
 void test_timer_expirefn_null(void);
+void test_timer_periodicity(void);
 void test_timer_status_get(void);
 void test_timer_status_get_anytime(void);
 void test_timer_status_sync(void);
