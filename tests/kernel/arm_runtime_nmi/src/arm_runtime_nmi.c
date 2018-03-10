@@ -15,6 +15,11 @@
 #include <ztest.h>
 #include <tc_util.h>
 
+/* on v8m arch the nmi pend bit is renamed to pend nmi map it to old name */
+#ifndef SCB_ICSR_NMIPENDSET_Msk
+#define SCB_ICSR_NMIPENDSET_Msk SCB_ICSR_PENDNMISET_Msk
+#endif
+
 extern void _NmiHandlerSet(void (*pHandler)(void));
 
 static void nmi_test_isr(void)
