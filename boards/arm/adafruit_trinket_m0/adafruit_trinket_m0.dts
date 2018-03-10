@@ -77,3 +77,7 @@
 #endif
 	};
 };
+
+&usb0 {
+	status = "ok";
+};
