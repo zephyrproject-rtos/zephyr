@@ -69,9 +69,7 @@ endchoice
 
 endmenu
 
-if CPU_CORTEX_M
 source "arch/arm/core/cortex_m/Kconfig"
-endif
 
 if CPU_HAS_MPU
 source "arch/arm/core/cortex_m/mpu/Kconfig"

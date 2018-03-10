@@ -7,7 +7,6 @@
 
 config SOC_SERIES_MSP432P4XX
 	bool "TI SimpleLink Family MSP432P4XX"
-	select CPU_CORTEX_M
 	select CPU_CORTEX_M4
 	select SOC_FAMILY_TISIMPLELINK
 	select CPU_HAS_FPU

@@ -18,13 +18,21 @@
 	};
 };
 
-&sercom5 {
-	status = "ok";
-	current-speed = <115200>;
-};
 &sercom0 {
 	status = "ok";
+	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;
+};
+
+&sercom5 {
+	status = "ok";
+	compatible = "atmel,sam0-uart";
+	current-speed = <115200>;
+};
+
+&sercom4 {
+	status = "ok";
+	compatible = "atmel,sam0-spi";
 };
 
 &flash0 {

@@ -1,0 +1,66 @@
+/*
+ * Copyright (c) 2018 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <atmel/samd21.dtsi>
+
+/ {
+	model = "Adafruit Feather M0 Basic Proto";
+	compatible = "adafruit,feather-m0-basic-proto", "atmel,samd21g18a",
+			"atmel,samd21";
+
+	chosen {
+		zephyr,console = &sercom0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &code_partition;
+	};
+};
+
+&sercom0 {
+	status = "ok";
+	compatible = "atmel,sam0-uart";
+	current-speed = <115200>;
+};
+
+&sercom4 {
+	status = "ok";
+	compatible = "atmel,sam0-spi";
+	#address-cells = <1>;
+	#size-cells = <0>;
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "sam-ba";
+			reg = <0x00000000 0x2000>;
+			read-only;
+		};
+
+		code_partition: partition@2000 {
+			label = "code";
+			reg = <0x2000 0x3A000>;
+			read-only;
+		};
+
+		/*
+		 * The final 16 KiB is reserved for the application
+		 * and is used by NFFS if enabled.
+		 */
+
+#if defined(CONFIG_FILE_SYSTEM_NFFS)
+		nffs_partition: partition@3c000 {
+			label = "nffs";
+			reg = <0x0003c000 0x00004000>;
+		};
+#endif
+	};
+};

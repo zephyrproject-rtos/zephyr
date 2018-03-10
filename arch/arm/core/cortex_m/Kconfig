@@ -6,6 +6,71 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+# NOTE: We have the specific core implementations first and outside of the
+# if CPU_CORTEX_M block so that SoCs can select which core they are using
+# without having to select all the options related to that core.  Everything
+# else is captured inside the if CPU_CORTEX_M block so they are not exposed
+# if one select a differnet ARM Cortex Family (Cortex-A or Cortex-R)
+
+config CPU_CORTEX_M0
+	bool
+	select CPU_CORTEX_M
+	# Omit prompt to signify "hidden" option
+	select ARMV6_M_ARMV8_M_BASELINE
+	help
+	  This option signifies the use of a Cortex-M0 CPU
+
+config CPU_CORTEX_M0PLUS
+	bool
+	select CPU_CORTEX_M
+	# Omit prompt to signify "hidden" option
+	select ARMV6_M_ARMV8_M_BASELINE
+	help
+	  This option signifies the use of a Cortex-M0+ CPU
+
+config CPU_CORTEX_M3
+	bool
+	select CPU_CORTEX_M
+	# Omit prompt to signify "hidden" option
+	select ARMV7_M_ARMV8_M_MAINLINE
+	help
+	  This option signifies the use of a Cortex-M3 CPU
+
+config CPU_CORTEX_M4
+	bool
+	select CPU_CORTEX_M
+	# Omit prompt to signify "hidden" option
+	select ARMV7_M_ARMV8_M_MAINLINE
+	help
+	  This option signifies the use of a Cortex-M4 CPU
+
+config CPU_CORTEX_M23
+	bool
+	select CPU_CORTEX_M
+	# Omit prompt to signify "hidden" option
+	select ARMV6_M_ARMV8_M_BASELINE
+	help
+	  This option signifies the use of a Cortex-M23 CPU
+
+config CPU_CORTEX_M33
+	bool
+	select CPU_CORTEX_M
+	# Omit prompt to signify "hidden" option
+	select ARMV7_M_ARMV8_M_MAINLINE
+	help
+	  This option signifies the use of a Cortex-M33 CPU
+
+config CPU_CORTEX_M7
+	bool
+	select CPU_CORTEX_M
+	# Omit prompt to signify "hidden" option
+	select ARMV7_M_ARMV8_M_MAINLINE
+	default n
+	help
+	  This option signifies the use of a Cortex-M7 CPU
+
+if CPU_CORTEX_M
+
 config ISA_THUMB2
 	bool
 	# Omit prompt to signify "hidden" option
@@ -107,55 +172,14 @@ config ARMV7_M_ARMV8_M_MAINLINE
 	  The Main Extension provides backwards compatibility
 	  with ARMv7-M.
 
-config CPU_CORTEX_M0
+config ARMV7_M_ARMV8_M_FP
 	bool
 	# Omit prompt to signify "hidden" option
-	select ARMV6_M_ARMV8_M_BASELINE
+	depends on ARMV7_M_ARMV8_M_MAINLINE && !CPU_CORTEX_M3
 	help
-	  This option signifies the use of a Cortex-M0 CPU
-
-config CPU_CORTEX_M0PLUS
-	bool
-	# Omit prompt to signify "hidden" option
-	select ARMV6_M_ARMV8_M_BASELINE
-	help
-	  This option signifies the use of a Cortex-M0+ CPU
-
-config CPU_CORTEX_M3
-	bool
-	# Omit prompt to signify "hidden" option
-	select ARMV7_M_ARMV8_M_MAINLINE
-	help
-	  This option signifies the use of a Cortex-M3 CPU
-
-config CPU_CORTEX_M4
-	bool
-	# Omit prompt to signify "hidden" option
-	select ARMV7_M_ARMV8_M_MAINLINE
-	help
-	  This option signifies the use of a Cortex-M4 CPU
-
-config CPU_CORTEX_M23
-	bool
-	# Omit prompt to signify "hidden" option
-	select ARMV6_M_ARMV8_M_BASELINE
-	help
-	  This option signifies the use of a Cortex-M23 CPU
-
-config CPU_CORTEX_M33
-	bool
-	# Omit prompt to signify "hidden" option
-	select ARMV7_M_ARMV8_M_MAINLINE
-	help
-	  This option signifies the use of a Cortex-M33 CPU
-
-config CPU_CORTEX_M7
-	bool
-	# Omit prompt to signify "hidden" option
-	select ARMV7_M_ARMV8_M_MAINLINE
-	default n
-	help
-	  This option signifies the use of a Cortex-M7 CPU
+	  This option signifies the use of an ARMv7-M processor
+	  implementation, or the use of an ARMv8-M processor
+	  implementation supporting the Floating-Point Extension.
 
 menu "ARM Cortex-M options"
 	depends on CPU_CORTEX_M
@@ -247,3 +271,5 @@ config SW_VECTOR_RELAY
 	  (or an Armv8-M baseline core) with no VTOR and no other hardware
 	  relocation table mechanisms.
 endmenu
+
+endif # CPU_CORTEX_M

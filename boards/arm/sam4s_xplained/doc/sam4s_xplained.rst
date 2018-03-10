@@ -45,6 +45,8 @@ features:
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
+| GPIO      | on-chip    | gpio                                |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by Zephyr.
 
@@ -69,6 +71,7 @@ Serial Port
 The ATSAM4S16C MCU has 2 UARTs and 2 USARTs. One of the UARTs (UART0) is
 connected to the Segger J-Link OB chip (the AT91SAM3U4 is programmed to be
 Segger J-Link OB). Segger J-Link OB brings the UART out as a virtual COM port.
+The section flashing uses the UART from the Segger USB debug connection.
 
 Programming and Debugging
 *************************
@@ -80,15 +83,10 @@ the SAM4S16C.
 Flashing
 ========
 
-#. Build the Zephyr kernel and the :ref:`hello_world` sample application:
-
-   .. zephyr-app-commands::
-      :zephyr-app: samples/hello_world
-      :board: sam4s_xplained
-      :goals: build
-
-#. Connect the SAM4S Xplained board to your host computer using the USB debug
-   port.
+#. Download JLink from the Segger `JLink Downloads Page`_. Go to the section
+   "J-Link Software and Documentation Pack" and install the "J-Link Software and
+   Documentation pack for Linux". The application JLinkExe needs to be accessible
+   from your path.
 
 #. Run your favorite terminal program to listen for output. Under Linux the
    terminal should be :code:`/dev/ttyACM0`. For example:
@@ -105,52 +103,28 @@ Flashing
    - Parity: None
    - Stop bits: 1
 
-#. Download JLink from the Segger `JLink Downloads Page`_. Go to the section
-   "J-Link Software and Documentation Pack" and install the "J-Link Software and
-   Documentation pack for Linux".
+#. Connect the SAM4S Xplained board to your host computer using the
+   USB debug port. Then build and flash the :ref:`hello_world`
+   application.
 
-#. To flash an image open JLink and enter the following:
-
-   .. code-block:: console
-
-      JLink> device at91sam4s16c
-      // Hit enter to accept JTAG as the default and the other default JTAG settings
-      JLink> connect
-      .
-      .
-      .
-      Device "ATSAM4S16C" selected.
-
-
-      TotalIRLen = 4, IRPrint = 0x01
-      AP-IDR: 0x24770011, Type: AHB-AP
-      Found Cortex-M4 r0p1, Little endian.
-      FPUnit: 6 code (BP) slots and 2 literal slots
-      CoreSight components:
-      ROMTbl 0 @ E00FF000
-      ROMTbl 0 [0]: FFF0F000, CID: B105E00D, PID: 000BB000 SCS
-      ROMTbl 0 [1]: FFF02000, CID: B105E00D, PID: 003BB002 DWT
-      ROMTbl 0 [2]: FFF03000, CID: B105E00D, PID: 002BB003 FPB
-      ROMTbl 0 [3]: FFF01000, CID: B105E00D, PID: 003BB001 ITM
-      ROMTbl 0 [4]: FFF41000, CID: B105900D, PID: 000BB9A1 TPIU
-      Found 1 JTAG device, Total IRLen = 4:
-      #0 Id: 0x4BA00477, IRLen: 04, IRPrint: 0x1, CoreSight JTAG-DP (ARM)
-      Cortex-M4 identified.
-
-      JLink> loadbin <zephyr.bin>, 0x400000
-      Downloading file [/home/justin/Zephyr/zephyr/samples/hello_world/outdir/zephyr.bin]...
-      Comparing flash   [100%] Done.
-      Erasing flash     [100%] Done.
-      Programming flash [100%] Done.
-      Verifying flash   [100%] Done.
-      J-Link: Flash download: Flash programming performed for 2 ranges (21504 bytes)
-      J-Link: Flash download: Total time needed: 0.549s (Prepare: 0.200s, Compare: 0.150s, Erase: 0.020s, Program: 0.094s, Verify: 0.001s, Restore: 0.081s)
-      O.K.
-      JLink> r
-      JLink> go
+   .. zephyr-app-commands::
+      :zephyr-app: samples/hello_world
+      :board: sam4s_xplained
+      :goals: build flash
 
    You should see "Hello World! arm" in your terminal.
 
+Debugging
+=========
+
+You can debug an application in the usual way.  Here is an example for the
+:ref:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: sam4s_xplained
+   :maybe-skip-config:
+   :goals: debug
 
 References
 **********

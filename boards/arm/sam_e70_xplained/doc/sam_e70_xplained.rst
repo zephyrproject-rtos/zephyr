@@ -54,6 +54,8 @@ features:
 +-----------+------------+-------------------------------------+
 | WATCHDOG  | on-chip    | watchdog                            |
 +-----------+------------+-------------------------------------+
+| GPIO      | on-chip    | gpio                                |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by Zephyr.
 
@@ -127,7 +129,7 @@ Flashing
       :board: sam_e70_xplained
       :goals: build flash
 
-   You should see "Hello World!" in your terminal.
+   You should see "Hello World! arm" in your terminal.
 
 You can flash the image using an external debug adapter such as J-Link
 or ULINK, connected to the 20-pin JTAG header. Supply the name of the

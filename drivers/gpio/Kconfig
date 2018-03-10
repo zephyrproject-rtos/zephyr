@@ -75,4 +75,6 @@ source "drivers/gpio/Kconfig.altera_nios2"
 
 source "drivers/gpio/Kconfig.sam0"
 
+source "drivers/gpio/Kconfig.sam"
+
 endif # GPIO
