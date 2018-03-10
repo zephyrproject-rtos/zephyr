@@ -326,8 +326,11 @@ On Linux systems, you can install uncrustify with
 For Windows installation instructions see the `sourceforge listing for
 uncrustify <https://sourceforge.net/projects/uncrustify>`_.
 
+Best coding practises
+*********************
+
 Coding Style
-************
+============
 
 Use these coding guidelines to ensure that your development complies with the
 project's style and naming conventions.
@@ -362,6 +365,25 @@ it to contain:
     #!/bin/sh
     set -e exec
     exec git diff --cached | ${ZEPHYR_BASE}/scripts/checkpatch.pl -
+
+Keep the code simple
+====================
+
+Keep the code as simple as possible.
+
+Code-generation preprocessing tools provide a convenient way to
+simplify some repetitive or parameterized coding tasks.  While Zephyr
+development allows use of such tools, we recommend keeping this
+use to a minimum and when it provides an appropriate and simple
+coding solution that follows these rules:
+
+* Use code generation - by preprocessor, :ref:`codegen`, or other - only for
+  problems that cannot be solved in the source language.
+* Limit code generation to declarative data. Avoid generating control logic
+  whenever possible.
+* Use the preprocessor for code generation as the primary tool.
+* Use :ref:`codegen` only if the preprocessor can not provide a simple solution.
+* Use CMake only if :ref:`codegen` can not be used.
 
 .. _Contribution workflow:
 
