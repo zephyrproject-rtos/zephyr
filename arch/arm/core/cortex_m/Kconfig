@@ -41,6 +41,7 @@ config CPU_CORTEX_M4
 	select CPU_CORTEX_M
 	# Omit prompt to signify "hidden" option
 	select ARMV7_M_ARMV8_M_MAINLINE
+	select ARMV7_M_ARMV8_M_FP if CPU_HAS_FPU
 	help
 	  This option signifies the use of a Cortex-M4 CPU
 
@@ -57,6 +58,7 @@ config CPU_CORTEX_M33
 	select CPU_CORTEX_M
 	# Omit prompt to signify "hidden" option
 	select ARMV8_M_MAINLINE
+	select ARMV7_M_ARMV8_M_FP if CPU_HAS_FPU
 	help
 	  This option signifies the use of a Cortex-M33 CPU
 
@@ -65,6 +67,7 @@ config CPU_CORTEX_M7
 	select CPU_CORTEX_M
 	# Omit prompt to signify "hidden" option
 	select ARMV7_M_ARMV8_M_MAINLINE
+	select ARMV7_M_ARMV8_M_FP if CPU_HAS_FPU
 	default n
 	help
 	  This option signifies the use of a Cortex-M7 CPU
