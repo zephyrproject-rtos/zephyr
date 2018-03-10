@@ -252,6 +252,11 @@ static void _UsageFault(const NANO_ESF *esf)
 	if (SCB->CFSR & SCB_CFSR_UNALIGNED_Msk) {
 		PR_EXC("  Unaligned memory access\n");
 	}
+#if defined(CONFIG_ARMV8_M_MAINLINE)
+	if (SCB->CFSR & SCB_CFSR_STKOF_Msk) {
+		PR_EXC("  Stack overflow\n");
+	}
+#endif /* CONFIG_ARMV8_M_MAINLINE */
 	if (SCB->CFSR & SCB_CFSR_NOCP_Msk) {
 		PR_EXC("  No coprocessor instructions\n");
 	}
