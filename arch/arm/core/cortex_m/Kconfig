@@ -56,7 +56,7 @@ config CPU_CORTEX_M33
 	bool
 	select CPU_CORTEX_M
 	# Omit prompt to signify "hidden" option
-	select ARMV7_M_ARMV8_M_MAINLINE
+	select ARMV8_M_MAINLINE
 	help
 	  This option signifies the use of a Cortex-M33 CPU
 
@@ -172,6 +172,17 @@ config ARMV7_M_ARMV8_M_MAINLINE
 	  From https://developer.arm.com/products/architecture/m-profile:
 	  The Main Extension provides backwards compatibility
 	  with ARMv7-M.
+
+config ARMV8_M_MAINLINE
+	bool
+	# Omit prompt to signify "hidden" option
+	select ARMV7_M_ARMV8_M_MAINLINE
+	help
+	  This option signifies the use of an ARMv8-M processor
+	  implementation, supporting the Main Extension.
+
+	  ARMv8-M Main Extension includes additional features
+	  not present in the ARMv7-M architecture.
 
 config ARMV7_M_ARMV8_M_FP
 	bool
