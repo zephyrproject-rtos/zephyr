@@ -117,6 +117,7 @@ config CPU_CORTEX_M_HAS_VTOR
 config CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS
 	bool
 	# Omit prompt to signify "hidden" option
+	depends on ARMV7_M_ARMV8_M_MAINLINE
 	default n
 	help
 	  This option signifies the CPU faults other than the hard fault, and
