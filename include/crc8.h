@@ -9,6 +9,7 @@
 #define __CRC8_H_
 
 #include <zephyr/types.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -30,7 +31,7 @@ extern "C" {
  *
  * @return The computed CRC8 value
  */
-u8_t crc8_ccitt(u8_t initial_value, void *buf, int len);
+u8_t crc8_ccitt(u8_t initial_value, const void *buf, size_t len);
 
 #ifdef __cplusplus
 }
