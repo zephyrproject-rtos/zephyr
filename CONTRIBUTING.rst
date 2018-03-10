@@ -566,6 +566,34 @@ Other Commit Expectations
   proposals, progress snapshots of your work, or to get early feedback on
   features or changes that will affect multiple areas in the code base.
 
+* When major new functionality is added, tests for the new functionality MUST be
+  added to the automated test suite. All new APIs MUST be documented and tested
+  and tests MUST cover at least 80% of the added functionality using the code
+  coverage tool and reporting provided by the project.
+
+Submitting Proposals
+====================
+
+You can request a new feature or submit a proposal by submitting an issue to
+our GitHub Repository.
+If you would like to implement a new feature, please submit an issue with a
+proposal (RFC) for your work first, to be sure that we can use it. Please
+consider what kind of change it is:
+
+* For a Major Feature, first open an issue and outline your proposal so that it
+  can be discussed. This will also allow us to better coordinate our efforts,
+  prevent duplication of work, and help you to craft the change so that it is
+  successfully accepted into the project. Providing the following information
+  will increase the chances of your issue being dealt with quickly:
+
+  * Overview of the Proposal
+  * Motivation for or Use Case
+  * Design Details
+  * Alternatives
+  * Test Strategy
+
+* Small Features can be crafted and directly submitted as a Pull Request.
+
 Identifying Contribution Origin
 ===============================
 
