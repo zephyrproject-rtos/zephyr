@@ -1,4 +1,4 @@
-# Kconfig - ST Microelectronics STM32L072XB MCU
+# Kconfig - ST Microelectronics STM32L072XZ MCU
 #
 # Copyright (c) 2018 Endre Karlson <endre.karlson@gmail.com>
 #
@@ -24,7 +24,7 @@ config GPIO_STM32_PORTE
 	default y
 
 config GPIO_STM32_PORTH
-default y
+	default y
 
 endif # GPIO_STM32
 
