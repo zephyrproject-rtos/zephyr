@@ -141,3 +141,29 @@ FUNC_NORETURN void _arch_user_mode_enter(k_thread_entry_t user_entry,
 }
 
 #endif
+
+#if defined(CONFIG_BUILTIN_STACK_GUARD)
+/*
+ * @brief Configure ARM built-in stack guard
+ *
+ * This function configures per thread stack guards by reprogramming
+ * the built-in Process Stack Pointer Limit Register (PSPLIM).
+ *
+ * @param thread thread info data structure.
+ */
+void configure_builtin_stack_guard(struct k_thread *thread)
+{
+#if defined(CONFIG_USERSPACE)
+	u32_t guard_start = thread->arch.priv_stack_start ?
+			    (u32_t)thread->arch.priv_stack_start :
+			    (u32_t)thread->stack_obj;
+#else
+	u32_t guard_start = thread->stack_info.start;
+#endif
+#if defined(CONFIG_CPU_CORTEX_M_HAS_SPLIM)
+	__set_PSPLIM(guard_start);
+#else
+#error "Built-in PSP limit checks not supported by HW"
+#endif
+}
+#endif /* CONFIG_BUIILTIN_STACK_GUARD */
