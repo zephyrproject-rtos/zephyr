@@ -1,0 +1,9 @@
+identifier: nucleo_l073rz
+name: NUCLEO-L073RZ
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb
+ram: 20
+flash: 192

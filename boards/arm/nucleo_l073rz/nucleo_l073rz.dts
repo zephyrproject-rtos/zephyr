@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2018 Ilya Tagunov <tagunil@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/stm32l073.dtsi>
+
+/ {
+	model = "STMicroelectronics STM32L073RZ-NUCLEO board";
+	compatible = "st,stm32l073rz-nucleo", "st,stm32l073";
+
+	chosen {
+		zephyr,console = &usart2;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
+
+&usart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart1_pins_a>;
+	pinctrl-names = "default";
+};
+
+&usart2 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart2_pins_a>;
+	pinctrl-names = "default";
+	status = "ok";
+};

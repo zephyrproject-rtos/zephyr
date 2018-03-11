@@ -1,0 +1,20 @@
+# Kconfig - STM32 Nucleo-64 development board with STM32L073RZ MCU
+#
+# Copyright (c) 2018 Ilya Tagunov <tagunil@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_NUCLEO_L073RZ
+
+config BOARD
+	default nucleo_l073rz
+
+if UART_CONSOLE
+
+config UART_STM32_PORT_2
+	default y
+
+endif # UART_CONSOLE
+
+endif # BOARD_NUCLEO_L073RZ
