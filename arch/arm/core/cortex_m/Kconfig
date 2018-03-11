@@ -117,6 +117,22 @@ config CPU_CORTEX_M_HAS_VTOR
 	help
 	  This option signifies the CPU has the VTOR register.
 
+config CPU_CORTEX_M_HAS_SPLIM
+	bool
+	# Omit prompt to signify "hidden" option
+	depends on ARMV8_M_MAINLINE
+	default n
+	help
+	  This option signifies the CPU has the MSPLIM, PSPLIM registers.
+
+	  The stack pointer limit registers, MSPLIM, PSPLIM, limit the
+	  extend to which the Main and Process Stack Pointers, respectively,
+	  can descend. MSPLIM, PSPLIM are always present in ARMv8-M
+	  MCUs that implement the ARMv8-M Main Extension (Mainline).
+
+	  In an ARMv8-M implementation with the Security Extension, the
+	  MSPLIM, PSPLIM registers have additional Secure instances.
+
 config CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS
 	bool
 	# Omit prompt to signify "hidden" option
@@ -181,6 +197,7 @@ config ARMV8_M_MAINLINE
 	bool
 	# Omit prompt to signify "hidden" option
 	select ARMV7_M_ARMV8_M_MAINLINE
+	select CPU_CORTEX_M_HAS_SPLIM
 	help
 	  This option signifies the use of an ARMv8-M processor
 	  implementation, supporting the Main Extension.

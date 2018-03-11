@@ -34,13 +34,28 @@ config CPU_HAS_SYSTICK
 	help
 	  This option is enabled when the CPU has systick timer implemented.
 
+config BUILTIN_STACK_GUARD
+	bool "Thread Stack Guards based on built-in ARM stack limit checking"
+	depends on CPU_CORTEX_M_HAS_SPLIM
+	default n
+	help
+	  Enable Thread/Interrupt Stack Guards via built-in Stack Pointer
+	  limit checking. The functionality must be supported by HW.
+
 config ARM_STACK_PROTECTION
 	bool
 	default y if HW_STACK_PROTECTION
-	select MPU_STACK_GUARD
+	select BUILTIN_STACK_GUARD if CPU_CORTEX_M_HAS_SPLIM
+	select MPU_STACK_GUARD if (!BUILTIN_STACK_GUARD && ARM_CORE_MPU)
 	help
-	  This option enables MPU stack guard to cause a system fatal error
+	  This option enables either:
+	  - The built-in Stack Pointer limit checking, or
+	  - the MPU-based stack guard
+	  to cause a system fatal error
 	  if the bounds of the current process stack are overflowed.
+	  The two stack guard options are mutually exclusive. The
+	  selection of the built-in Stack Pointer limit checking is
+	  prioritized over the MPU-based stack guard.
 
 config ARM_SECURE_FIRMWARE
 	bool
