@@ -12,4 +12,7 @@ depends on SOC_SERIES_STM32L0X
 config SOC_STM32L072XZ
 	bool "STM32L072XZ"
 
+config SOC_STM32L073XZ
+	bool "STM32L073XZ"
+
 endchoice
