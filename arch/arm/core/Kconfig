@@ -37,6 +37,7 @@ config CPU_HAS_SYSTICK
 config BUILTIN_STACK_GUARD
 	bool "Thread Stack Guards based on built-in ARM stack limit checking"
 	depends on CPU_CORTEX_M_HAS_SPLIM
+	select THREAD_STACK_INFO
 	default n
 	help
 	  Enable Thread/Interrupt Stack Guards via built-in Stack Pointer
