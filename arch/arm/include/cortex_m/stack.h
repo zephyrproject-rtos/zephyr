@@ -48,6 +48,13 @@ static ALWAYS_INLINE void _InterruptStackSetup(void)
 #endif
 
 	__set_MSP(msp);
+#if defined(CONFIG_BUILTIN_STACK_GUARD)
+#if defined(CONFIG_CPU_CORTEX_M_HAS_SPLIM)
+	__set_MSPLIM((u32_t)_interrupt_stack);
+#else
+#error "Built-in MSP limit checks not supported by HW"
+#endif
+#endif /* CONFIG_BUILTIN_STACK_GUARD */
 }
 
 #endif /* _ASMLANGUAGE */
