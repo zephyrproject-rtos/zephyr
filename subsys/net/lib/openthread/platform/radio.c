@@ -63,7 +63,7 @@ void platformRadioInit(void)
 {
 	dataInit();
 
-	radio_dev = device_get_binding(CONFIG_OT_PLAT_RADIO_DEVICE_NAME);
+	radio_dev = device_get_binding(CONFIG_NET_APP_IEEE802154_DEV_NAME);
 	__ASSERT_NO_MSG(radio_dev != NULL);
 
 	radio_api = (struct ieee802154_radio_api *)radio_dev->driver_api;
@@ -91,8 +91,15 @@ void platformRadioProcess(otInstance *aInstance)
 		radio_api->set_channel(radio_dev, sTransmitFrame.mChannel);
 		radio_api->set_txpower(radio_dev, sTransmitFrame.mPower);
 
-		if (radio_api->tx(radio_dev, tx_pkt, tx_payload)) {
-			result = OT_ERROR_CHANNEL_ACCESS_FAILURE;
+		if (sTransmitFrame.mIsCcaEnabled) {
+			if (radio_api->cca(radio_dev) ||
+			    radio_api->tx(radio_dev, tx_pkt, tx_payload)) {
+				result = OT_ERROR_CHANNEL_ACCESS_FAILURE;
+			}
+		} else {
+			if (radio_api->tx(radio_dev, tx_pkt, tx_payload)) {
+				result = OT_ERROR_CHANNEL_ACCESS_FAILURE;
+			}
 		}
 
 		sState = OT_RADIO_STATE_RECEIVE;
