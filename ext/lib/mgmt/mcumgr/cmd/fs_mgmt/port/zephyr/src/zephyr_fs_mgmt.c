@@ -45,7 +45,7 @@ int
 fs_mgmt_impl_read(const char *path, size_t offset, size_t len,
                   void *out_data, size_t *out_len)
 {
-    fs_file_t file;
+    struct fs_file_t file;
     ssize_t bytes_read;
     int rc;
 
@@ -109,7 +109,7 @@ int
 fs_mgmt_impl_write(const char *path, size_t offset, const void *data,
                    size_t len)
 {
-    fs_file_t file;
+    struct fs_file_t file;
     int rc;
  
     /* Truncate the file before writing the first chunk.  This is done to

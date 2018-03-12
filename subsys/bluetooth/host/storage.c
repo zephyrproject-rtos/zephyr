@@ -40,7 +40,7 @@ enum storage_access {
 };
 
 static int storage_open(const bt_addr_le_t *addr, u16_t key,
-			enum storage_access access, fs_file_t *file)
+			enum storage_access access, struct fs_file_t *file)
 {
 	char path[STORAGE_PATH_MAX];
 
@@ -82,7 +82,7 @@ static int storage_open(const bt_addr_le_t *addr, u16_t key,
 static ssize_t storage_read(const bt_addr_le_t *addr, u16_t key, void *data,
 			    size_t length)
 {
-	fs_file_t file;
+	struct fs_file_t file;
 	ssize_t ret;
 
 	ret = storage_open(addr, key, STORAGE_READ, &file);
@@ -99,7 +99,7 @@ static ssize_t storage_read(const bt_addr_le_t *addr, u16_t key, void *data,
 static ssize_t storage_write(const bt_addr_le_t *addr, u16_t key,
 			     const void *data, size_t length)
 {
-	fs_file_t file;
+	struct fs_file_t file;
 	ssize_t ret;
 
 	ret = storage_open(addr, key, STORAGE_WRITE, &file);
@@ -116,7 +116,7 @@ static ssize_t storage_write(const bt_addr_le_t *addr, u16_t key,
 static int unlink_recursive(char path[STORAGE_PATH_MAX])
 {
 	size_t path_len;
-	fs_dir_t dir;
+	struct fs_dir_t dir;
 	int err;
 
 	err = fs_opendir(&dir, path);
