@@ -1,0 +1,4 @@
+tests:
+  kernel.lifo.usage:
+    min_ram: 32
+    tags: kernel userspace
