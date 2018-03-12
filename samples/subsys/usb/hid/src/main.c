@@ -80,7 +80,7 @@ int get_report_cb(struct usb_setup_packet *setup, s32_t *len,
 	return 0;
 }
 
-static struct hid_ops ops = {
+static const struct hid_ops ops = {
 	.get_report = get_report_cb,
 	.get_idle = debug_cb,
 	.get_protocol = debug_cb,

@@ -120,7 +120,8 @@ struct hid_ops {
 #define COLLECTION_APPLICATION		0x01
 
 /* Register HID device */
-void usb_hid_register_device(const u8_t *desc, size_t size, struct hid_ops *op);
+void usb_hid_register_device(const u8_t *desc, size_t size,
+			     const struct hid_ops *op);
 
 /* Initialize USB HID */
 int usb_hid_init(void);

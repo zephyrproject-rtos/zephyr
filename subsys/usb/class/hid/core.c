@@ -20,7 +20,7 @@ static struct hid_device_info {
 	const u8_t *report_desc;
 	size_t report_size;
 
-	struct hid_ops *ops;
+	const struct hid_ops *ops;
 } hid_device;
 
 static void hid_status_cb(enum usb_dc_status_code status, u8_t *param)
@@ -192,7 +192,8 @@ int usb_hid_init(void)
 	return 0;
 }
 
-void usb_hid_register_device(const u8_t *desc, size_t size, struct hid_ops *ops)
+void usb_hid_register_device(const u8_t *desc, size_t size,
+			     const struct hid_ops *ops)
 {
 	hid_device.report_desc = desc;
 	hid_device.report_size = size;
