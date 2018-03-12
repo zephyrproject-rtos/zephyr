@@ -51,7 +51,7 @@ if(CONFIG_BT_BROADCASTER)
     )
   zephyr_library_sources_ifdef(
     CONFIG_BT_CTLR_ADV_EXT
-    ll_sw/ll_adv_aux.c
+    ll_sw/ull_adv_aux.c
     )
 endif()
 

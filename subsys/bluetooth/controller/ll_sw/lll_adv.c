@@ -925,7 +925,7 @@ static inline u32_t isr_rx_sr_report(struct pdu_adv *pdu_adv_rx,
 	ull_pdu_rx_alloc();
 
 	/* Prepare the report (scan req) */
-	node_rx->hdr.type = ULL_RX_TYPE_SCAN_REQ;
+	node_rx->hdr.type = NODE_RX_TYPE_SCAN_REQ;
 	node_rx->hdr.handle = 0xffff;
 
 	/* Make a copy of PDU into Rx node (as the received PDU is in the

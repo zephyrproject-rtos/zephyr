@@ -216,7 +216,7 @@ static int _emulate_tx_rx(void *param)
 		_free = ull_pdu_rx_alloc();
 		LL_ASSERT(free == _free);
 
-		hdr->type = _NODE_RX_TYPE_DC_PDU_LLL;
+		hdr->type = NODE_RX_TYPE_DC_PDU;
 
 		ull_rx_put(hdr->link, hdr);
 

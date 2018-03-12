@@ -13,7 +13,6 @@
 #include "util/memq.h"
 
 #include "pdu.h"
-#include "ctrl.h"
 
 #include "lll.h"
 #include "lll_adv.h"

@@ -32,17 +32,18 @@
 #include "common/log.h"
 
 #include "util/util.h"
+#include "util/memq.h"
 #include "hal/ccm.h"
 #include "hal/radio.h"
 #include "ll_sw/pdu.h"
-#include "ll_sw/ctrl.h"
+#include "ll_sw/ull_types.h"
 #include "ll.h"
 #include "hci_internal.h"
 
 #include "hal/debug.h"
 
-#define NODE_RX(_node) CONTAINER_OF(_node, struct radio_pdu_node_rx, \
-				    hdr.onion.node)
+#define NODE_RX(_node) CONTAINER_OF(_node, struct node_rx_pdu, \
+				    hdr.node)
 
 static K_SEM_DEFINE(sem_prio_recv, 0, UINT_MAX);
 static K_FIFO_DEFINE(recv_fifo);
@@ -108,7 +109,7 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-static inline struct net_buf *encode_node(struct radio_pdu_node_rx *node_rx,
+static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 					  s8_t class)
 {
 	struct net_buf *buf = NULL;
@@ -143,13 +144,13 @@ static inline struct net_buf *encode_node(struct radio_pdu_node_rx *node_rx,
 	radio_rx_fc_set(node_rx->hdr.handle, 0);
 #endif /* CONFIG_BT_LL_SW */
 
-	node_rx->hdr.onion.next = 0;
+	node_rx->hdr.next = NULL;
 	ll_rx_mem_release((void **)&node_rx);
 
 	return buf;
 }
 
-static inline struct net_buf *process_node(struct radio_pdu_node_rx *node_rx)
+static inline struct net_buf *process_node(struct node_rx_pdu *node_rx)
 {
 	s8_t class = hci_get_class(node_rx);
 	struct net_buf *buf = NULL;
@@ -170,7 +171,7 @@ static inline struct net_buf *process_node(struct radio_pdu_node_rx *node_rx)
 		case HCI_CLASS_ACL_DATA:
 			if (pend || !hbuf_count) {
 				sys_slist_append(&hbuf_pend,
-						 &node_rx->hdr.onion.node);
+						 &node_rx->hdr.node);
 				BT_DBG("FC: Queuing item: %d", class);
 				return NULL;
 			}
@@ -189,10 +190,10 @@ static inline struct net_buf *process_node(struct radio_pdu_node_rx *node_rx)
 }
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
-static inline struct net_buf *process_hbuf(struct radio_pdu_node_rx *n)
+static inline struct net_buf *process_hbuf(struct node_rx_pdu *n)
 {
 	/* shadow total count in case of preemption */
-	struct radio_pdu_node_rx *node_rx = NULL;
+	struct node_rx_pdu *node_rx = NULL;
 	s32_t hbuf_total = hci_hbuf_total;
 	struct net_buf *buf = NULL;
 	sys_snode_t *node = NULL;
@@ -293,7 +294,7 @@ static void recv_thread(void *p1, void *p2, void *p3)
 #endif
 
 	while (1) {
-		struct radio_pdu_node_rx *node_rx = NULL;
+		struct node_rx_pdu *node_rx = NULL;
 		struct net_buf *buf = NULL;
 
 		BT_DBG("blocking");

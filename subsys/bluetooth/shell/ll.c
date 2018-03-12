@@ -87,7 +87,7 @@ int cmd_test_end(int argc, char *argv[])
 #endif /* CONFIG_BT_CTLR_DTM */
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-#include "../controller/ll_sw/ll_adv_aux.h"
+#include "../controller/ll_sw/ull_adv_aux.h"
 
 #define OWN_ADDR_TYPE 1
 #define PEER_ADDR_TYPE 0

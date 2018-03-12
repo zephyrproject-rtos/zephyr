@@ -136,6 +136,7 @@ static struct {
 } mem_link_rx;
 
 static MEMQ_DECLARE(ull_rx);
+static MEMQ_DECLARE(ll_rx);
 
 static inline int _init_reset(void);
 static inline void _rx_alloc(u8_t max);
@@ -304,22 +305,156 @@ void ll_reset(void)
 
 u8_t ll_rx_get(void **node_rx, u16_t *handle)
 {
-	/* TODO: peek and give the rx node from ll rx memq */
-	*node_rx = NULL;
+	memq_link_t *link;
+	u8_t cmplt = 0;
+	void *rx;
 
-	return 0;
+	link = memq_peek(memq_ll_rx.head, memq_ll_rx.tail, &rx);
+	if (link) {
+		/* TODO: tx complete get a handle */
+		if (!cmplt) {
+			/* TODO: release tx complete for handles */
+			*node_rx = rx;
+		} else {
+			*node_rx = NULL;
+		}
+	} else {
+		/* TODO: tx complete get a handle */
+		*node_rx = NULL;
+	}
+
+	return cmplt;
 }
 
 void ll_rx_dequeue(void)
 {
-	/* TODO: dequeue ll rx memq */
-	LL_ASSERT(0);
+	struct node_rx_hdr *node_rx = NULL;
+	memq_link_t *link;
+
+	link = memq_dequeue(memq_ll_rx.tail, &memq_ll_rx.head,
+			    (void **)&node_rx);
+	LL_ASSERT(link);
+
+	mem_release(link, &mem_link_rx.free);
+
+	/* handle object specific clean up */
+	switch (node_rx->type) {
+#if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY) || \
+    defined(CONFIG_BT_CTLR_ADV_INDICATION)
+#if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
+	case NODE_RX_TYPE_SCAN_REQ:
+#endif /* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY */
+
+#if defined(CONFIG_BT_CTLR_ADV_INDICATION)
+	case NODE_RX_TYPE_ADV_INDICATION:
+#endif /* CONFIG_BT_CTLR_ADV_INDICATION */
+		LL_ASSERT(mem_link_rx.quota_data < TODO_PDU_RX_COUNT_MAX);
+
+		mem_link_rx.quota_data++;
+		break;
+#endif /* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY ||
+	  CONFIG_BT_CTLR_ADV_INDICATION */
+
+	default:
+		LL_ASSERT(0);
+		break;
+	}
 }
 
 void ll_rx_mem_release(void **node_rx)
 {
-	/* TODO: release to PDU rx free pool and enqueue into mfifo rx free */
-	LL_ASSERT(0);
+	struct node_rx_hdr *_node_rx;
+
+	_node_rx = *node_rx;
+	while (_node_rx) {
+		struct node_rx_hdr *_node_rx_free;
+
+		_node_rx_free = _node_rx;
+		_node_rx = _node_rx->next;
+
+		switch (_node_rx_free->type) {
+		case NODE_RX_TYPE_DC_PDU:
+		case NODE_RX_TYPE_REPORT:
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+		case NODE_RX_TYPE_EXT_1M_REPORT:
+		case NODE_RX_TYPE_EXT_CODED_REPORT:
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+
+#if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
+		case NODE_RX_TYPE_SCAN_REQ:
+#endif /* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY */
+
+		case NODE_RX_TYPE_CONNECTION:
+		case NODE_RX_TYPE_CONN_UPDATE:
+		case NODE_RX_TYPE_ENC_REFRESH:
+
+#if defined(CONFIG_BT_CTLR_LE_PING)
+		case NODE_RX_TYPE_APTO:
+#endif /* CONFIG_BT_CTLR_LE_PING */
+
+		case NODE_RX_TYPE_CHAN_SEL_ALGO:
+
+#if defined(CONFIG_BT_CTLR_PHY)
+		case NODE_RX_TYPE_PHY_UPDATE:
+#endif /* CONFIG_BT_CTLR_PHY */
+
+#if defined(CONFIG_BT_CTLR_CONN_RSSI)
+		case NODE_RX_TYPE_RSSI:
+#endif /* CONFIG_BT_CTLR_CONN_RSSI */
+
+#if defined(CONFIG_BT_CTLR_PROFILE_ISR)
+		case NODE_RX_TYPE_PROFILE:
+#endif /* CONFIG_BT_CTLR_PROFILE_ISR */
+
+#if defined(CONFIG_BT_CTLR_ADV_INDICATION)
+		case NODE_RX_TYPE_ADV_INDICATION:
+#endif /* CONFIG_BT_CTLR_ADV_INDICATION */
+
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+		case NODE_RX_TYPE_MESH_ADV_CPLT:
+		case NODE_RX_TYPE_MESH_REPORT:
+#endif /* CONFIG_BT_HCI_MESH_EXT */
+
+			mem_release(_node_rx_free, &mem_pdu_rx.free);
+			break;
+
+		case NODE_RX_TYPE_TERMINATE:
+			/* FIXME: */
+			/*
+			struct connection *conn;
+
+			conn = mem_get(_radio.conn_pool, CONNECTION_T_SIZE,
+				       _node_rx_free->hdr.handle);
+
+			mem_release(conn, &_radio.conn_free);
+			break;
+			*/
+
+		case NODE_RX_TYPE_NONE:
+		case NODE_RX_TYPE_EVENT_DONE:
+		default:
+			LL_ASSERT(0);
+			break;
+		}
+	}
+
+	*node_rx = _node_rx;
+
+	_rx_alloc(UINT8_MAX);
+}
+
+void ll_rx_put(memq_link_t *link, void *rx)
+{
+	/* TODO: link the tx complete */
+
+	/* Enqueue the Rx object */
+	memq_enqueue(link, rx, &memq_ll_rx.tail);
+}
+
+void ll_rx_sched(void)
+{
+	k_sem_give(sem_recv);
 }
 
 void ull_ticker_status_give(u32_t status, void *param)
@@ -410,7 +545,7 @@ void ull_event_done(void *param)
 	link = event.link_done_free;
 	event.link_done_free = NULL;
 
-	event.done.hdr.type = _NODE_RX_TYPE_EVENT_DONE;
+	event.done.hdr.type = NODE_RX_TYPE_EVENT_DONE;
 	event.done.param = param;
 
 	ull_rx_put(link, &event.done);
@@ -441,6 +576,7 @@ static inline int _init_reset(void)
 
 	/* Initialize rx memq */
 	MEMQ_INIT(ull_rx, link);
+	MEMQ_INIT(ll_rx, link);
 
 	/* Initialize the link required for event done rx type */
 	event.link_done_free = &event.link_done;
@@ -545,30 +681,35 @@ static inline void _rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 
 	/* Demux Rx objects */
 	switch(rx->type) {
-		case _NODE_RX_TYPE_EVENT_DONE:
+		case NODE_RX_TYPE_EVENT_DONE:
 		{
 			_rx_demux_event_done(link, rx);
 		}
 		break;
 
-		case _NODE_RX_TYPE_DC_PDU_LLL:
+		case NODE_RX_TYPE_DC_PDU:
 		{
 			/* TODO: process and pass through to
 			 *       thread */
 		}
 		break;
 
-		case ULL_RX_TYPE_SCAN_REQ:
-		{
-			/* TODO: */
-		}
-		break;
+#if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY) || \
+    defined(CONFIG_BT_CTLR_ADV_INDICATION)
+#if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
+		case NODE_RX_TYPE_SCAN_REQ:
+#endif /* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY */
 
-		case ULL_RX_TYPE_ADV_IND:
+#if defined(CONFIG_BT_CTLR_ADV_INDICATION)
+		case NODE_RX_TYPE_ADV_INDICATION:
+#endif /* CONFIG_BT_CTLR_ADV_INDICATION */
 		{
-			/* TODO: */
+			ll_rx_put(link, rx);
+			ll_rx_sched();
 		}
 		break;
+#endif /* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY ||
+	  CONFIG_BT_CTLR_ADV_INDICATION */
 
 		default:
 		{
