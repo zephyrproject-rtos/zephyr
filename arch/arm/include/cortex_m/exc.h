@@ -15,7 +15,6 @@
 #define _ARM_CORTEXM_ISR__H_
 
 #include <arch/cpu.h>
-#include <asm_inline.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -47,7 +46,7 @@ extern volatile irq_offload_routine_t offload_routine;
  */
 static ALWAYS_INLINE int _IsInIsr(void)
 {
-	u32_t vector = _IpsrGet();
+	u32_t vector = __get_IPSR();
 
 	/* IRQs + PendSV (14) + SYSTICK (15) are interrupts. */
 	return (vector > 13)

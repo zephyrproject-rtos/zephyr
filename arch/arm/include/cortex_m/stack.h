@@ -14,9 +14,6 @@
 #ifndef _ARM_CORTEXM_STACK__H_
 #define _ARM_CORTEXM_STACK__H_
 
-#include <kernel_structs.h>
-#include <asm_inline.h>
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -26,6 +23,8 @@ extern "C" {
 /* nothing */
 
 #else
+
+#include "arch/arm/cortex_m/cmsis.h"
 
 extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
 
@@ -48,7 +47,7 @@ static ALWAYS_INLINE void _InterruptStackSetup(void)
 			    CONFIG_ISR_STACK_SIZE);
 #endif
 
-	_MspSet(msp);
+	__set_MSP(msp);
 }
 
 #endif /* _ASMLANGUAGE */
