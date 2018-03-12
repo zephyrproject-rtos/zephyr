@@ -54,8 +54,8 @@ Install the required packages in a Ubuntu host system with:
 
    sudo apt-get install --no-install-recommends git cmake ninja-build gperf \
      ccache doxygen dfu-util device-tree-compiler \
-     python3-ply python3-pip python3-setuptools xz-utils file make gcc-multilib \
-     autoconf automake libtool
+     python3-ply python3-pip python3-setuptools python3-wheel xz-utils file \
+     make gcc-multilib autoconf automake libtool
 
 Install the required packages in a Fedora host system with:
 
