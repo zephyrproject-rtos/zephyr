@@ -1077,7 +1077,7 @@ class Kconfig(object):
         """
         filename = self._resolve(filename, False)[0]
         try:
-            return open(filename, _UNIVERSAL_NEWLINES_MODE)
+            return open(filename, _UNIVERSAL_NEWLINES_MODE, encoding="utf-8")
         except IOError as e:
             raise IOError(
                 "Could not open '{}' ({}: {})."
