@@ -14,7 +14,8 @@ menuconfig NET_L2_OPENTHREAD
 	prompt "OpenThread L2"
 	depends on FLASH
 	depends on FLASH_PAGE_LAYOUT
-	depends on ENTROPY_GENERATOR
+	depends on CPLUSPLUS
+	depends on REBOOT
 	select OPENTHREAD_PLAT
 
 if NET_L2_OPENTHREAD
@@ -174,11 +175,6 @@ config OPENTHREAD_JAM_DETECTION
 	prompt "Jam detection support"
 	help
 	  Enable jam detection in OpenThread stack
-
-config OT_PLAT_RADIO_DEVICE_NAME
-	string
-	prompt "IEEE802.15.4 radio device name"
-	default "IEEE802154_nrf5"
 
 config OT_PLAT_FLASH_PAGES_COUNT
 	int
