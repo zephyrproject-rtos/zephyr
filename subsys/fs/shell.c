@@ -85,7 +85,7 @@ static int cmd_read(int argc, char *argv[])
 {
 	char path[MAX_PATH_LEN];
 	struct fs_dirent dirent;
-	fs_file_t file;
+	struct fs_file_t file;
 	int count;
 	off_t offset;
 	int err;
@@ -177,7 +177,7 @@ static int cmd_write(int argc, char *argv[])
 	u8_t buf[BUF_CNT];
 	u8_t buf_len;
 	int arg_offset;
-	fs_file_t file;
+	struct fs_file_t file;
 	off_t offset = -1;
 	int err;
 
@@ -242,7 +242,7 @@ static int cmd_write(int argc, char *argv[])
 static int cmd_ls(int argc, char *argv[])
 {
 	char path[MAX_PATH_LEN];
-	fs_dir_t dir;
+	struct fs_dir_t dir;
 	int err;
 
 	if (argc < 2) {
@@ -334,7 +334,7 @@ static int cmd_cd(int argc, char *argv[])
 static int cmd_trunc(int argc, char *argv[])
 {
 	char path[MAX_PATH_LEN];
-	fs_file_t file;
+	struct fs_file_t file;
 	int length;
 	int err;
 
