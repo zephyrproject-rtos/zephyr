@@ -16,6 +16,7 @@
 extern "C" {
 #endif
 
+#include "arch/arm/cortex_m/cmsis.h"
 /**
  * @brief Get the identification of the current interrupt.
  *
@@ -26,7 +27,7 @@ extern "C" {
  */
 int _sys_current_irq_key_get(void)
 {
-	return _IpsrGet();
+	return __get_IPSR();
 }
 
 #ifdef __cplusplus
