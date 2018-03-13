@@ -7,3 +7,5 @@ toolchain:
   - issm
 supported:
   - usb_device
+ram: 52
+flash: 192

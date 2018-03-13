@@ -14,3 +14,5 @@ supported:
   - dma
   - gpio
   - pwm
+ram: 52
+flash: 144

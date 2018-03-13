@@ -15,3 +15,5 @@ supported:
   - aio
   - watchdog
   - dma
+ram: 52
+flash: 144
