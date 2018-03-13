@@ -524,4 +524,22 @@ void _FaultInit(void)
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
+#if defined(CONFIG_BUILTIN_STACK_GUARD)
+	/* If Stack guarding via SP limit checking is enabled, disable
+	 * SP limit checking inside HardFault and NMI. This is done
+	 * in order to allow for the desired fault logging to execute
+	 * properly in all cases.
+	 *
+	 * Note that this could allow a Secure Firmware Main Stack
+	 * to descend into non-secure region during HardFault and
+	 * NMI exception entry. To prevent from this, non-secure
+	 * memory regions must be located higher than secure memory
+	 * regions.
+	 *
+	 * For Non-Secure Firmware this could allow the Non-Secure Main
+	 * Stack to attempt to descend into secure region, in which case a
+	 * Secure Hard Fault will occur and we can track the fault from there.
+	 */
+	SCB->CCR |= SCB_CCR_STKOFHFNMIGN_Msk;
+#endif /* CONFIG_BUILTIN_STACK_GUARD */
 }
