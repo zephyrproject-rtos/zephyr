@@ -21,10 +21,10 @@ The STM32 Nucleo board comes with the STM32 comprehensive software HAL library t
 with various packaged software examples.
 
 .. image:: img/nucleo_f103rb_board.jpg
-     :width: 500px
-     :height: 367px
-     :align: center
-     :alt: Nucleo F103RB
+   :width: 500px
+   :height: 367px
+   :align: center
+   :alt: Nucleo F103RB
 
 More information about the board can be found at the `Nucleo F103RB website`_.
 
@@ -34,29 +34,41 @@ Nucleo F103RB provides the following hardware components:
 
 - STM32 microcontroller in QFP64 package
 - Two types of extension resources:
-    - Arduino* Uno V3 connectivity
-    - ST morpho extension pin headers for full access to all STM32 I/Os
+
+  - Arduino* Uno V3 connectivity
+  - ST morpho extension pin headers for full access to all STM32 I/Os
+
 - ARM* mbed*
 - On-board ST-LINK/V2-1 debugger/programmer with SWD connector:
-    - Selection-mode switch to use the kit as a standalone ST-LINK/V2-1
+
+  - Selection-mode switch to use the kit as a standalone ST-LINK/V2-1
+
 - Flexible board power supply:
-    - USB VBUS or external source (3.3V, 5V, 7 - 12V)
-    - Power management access point
+
+  - USB VBUS or external source (3.3V, 5V, 7 - 12V)
+  - Power management access point
+
 - Three LEDs:
-    - USB communication (LD1), user LED (LD2), power LED (LD3)
+
+  - USB communication (LD1), user LED (LD2), power LED (LD3)
+
 - Two push-buttons: USER and RESET
 - USB re-enumeration capability. Three different interfaces supported on USB:
-    - Virtual COM port
-    - Mass storage
-    - Debug port
+
+  - Virtual COM port
+  - Mass storage
+  - Debug port
+
 - Support of wide choice of Integrated Development Environments (IDEs) including:
-    - IAR
-    - ARM Keil
-    - GCC-based IDEs
+
+  - IAR
+  - ARM Keil
+  - GCC-based IDEs
 
 More information about STM32F103RB can be found here:
-       - `STM32F103 reference manual`_
-       - `STM32F103 data sheet`_
+
+- `STM32F103 reference manual`_
+- `STM32F103 data sheet`_
 
 Supported Features
 ==================
@@ -98,13 +110,14 @@ capable except for analog inputs.
 Board connectors:
 -----------------
 .. image:: img/nucleo_f103rb_connectors.png
-     :width: 800px
-     :align: center
-     :height: 619px
-     :alt: Nucleo F103RB connectors
+   :width: 800px
+   :align: center
+   :height: 619px
+   :alt: Nucleo F103RB connectors
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------
+
 - UART_1_TX : PA9
 - UART_1_RX : PA10
 - UART_2_TX : PA2

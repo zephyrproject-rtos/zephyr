@@ -10,23 +10,26 @@ The Nucleo F411RE board features an ARM Cortex-M4 based STM32F411RE MCU
 with a wide range of connectivity support and configurations. Here are
 some highlights of the Nucleo F411RE board:
 
-
 - STM32 microcontroller in QFP64 package
 - Two types of extension resources:
-       - Arduino Uno V3 connectivity
-       - ST morpho extension pin headers for full access to all STM32 I/Os
+
+  - Arduino Uno V3 connectivity
+  - ST morpho extension pin headers for full access to all STM32 I/Os
+
 - On-board ST-LINK/V2-1 debugger/programmer with SWD connector
 - Flexible board power supply:
-       - USB VBUS or external source(3.3V, 5V, 7 - 12V)
-       - Power management access point
+
+  - USB VBUS or external source(3.3V, 5V, 7 - 12V)
+  - Power management access point
+
 - Three LEDs: USB communication (LD1), user LED (LD2), power LED (LD3)
 - Two push-buttons: USER and RESET
 
 .. image:: img/nucleo64_perf_logo_1024.png
-     :width: 720px
-     :align: center
-     :height: 720px
-     :alt: Nucleo F411RE
+   :width: 720px
+   :align: center
+   :height: 720px
+   :alt: Nucleo F411RE
 
 More information about the board can be found at the `Nucleo F411RE website`_.
 
@@ -56,8 +59,9 @@ Nucleo F411RE provides the following hardware components:
 - CRC calculation unit
 
 More information about STM32F411RE can be found here:
-       - `STM32F411RE on www.st.com`_
-       - `STM32F411 reference manual`_
+
+- `STM32F411RE on www.st.com`_
+- `STM32F411 reference manual`_
 
 Supported Features
 ==================
@@ -83,8 +87,7 @@ The Zephyr nucleo_f411re board configuration supports the following hardware fea
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in the defconfig file:
-
-	``boards/arm/nucleo_f411re/nucleo_f411re_defconfig``
+``boards/arm/nucleo_f411re/nucleo_f411re_defconfig``
 
 
 Connections and IOs
@@ -96,20 +99,21 @@ input/output, pull-up, etc.
 Available pins:
 ---------------
 .. image:: img/nucleo_f411re_arduino.png
-     :width: 720px
-     :align: center
-     :height: 540px
-     :alt: Nucleo F411RE Arduino connectors
+   :width: 720px
+   :align: center
+   :height: 540px
+   :alt: Nucleo F411RE Arduino connectors
 .. image:: img/nucleo_f411re_morpho.png
-     :width: 720px
-     :align: center
-     :height: 540px
-     :alt: Nucleo F411RE Morpho connectors
+   :width: 720px
+   :align: center
+   :height: 540px
+   :alt: Nucleo F411RE Morpho connectors
 
 For mode details please refer to `STM32 Nucleo-64 board User Manual`_.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------
+
 - UART_1_TX : PB6
 - UART_1_RX : PB7
 - UART_2_TX : PA2
