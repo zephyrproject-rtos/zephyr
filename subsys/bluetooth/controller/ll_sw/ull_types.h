@@ -63,3 +63,21 @@ struct node_rx_pdu {
 	struct node_rx_hdr hdr;
 	u8_t               pdu[0];
 };
+
+struct node_rx_cc {
+	struct node_rx_hdr hdr;
+
+	u8_t  status;
+	u8_t  role;
+	u8_t  peer_addr_type;
+	u8_t  peer_addr[BDADDR_SIZE];
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	u8_t  peer_rpa[BDADDR_SIZE];
+	u8_t  own_addr_type;
+	u8_t  own_addr[BDADDR_SIZE];
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+	u16_t interval;
+	u16_t latency;
+	u16_t timeout;
+	u8_t  mca;
+};

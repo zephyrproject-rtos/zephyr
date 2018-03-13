@@ -5,13 +5,11 @@
  */
 
 struct ll_adv_set {
-#if defined(CONFIG_BT_LL_SW_SPLIT)
 	struct ull_hdr ull;
 	struct lll_adv lll;
-	u8_t  is_enabled:1;
-#endif /* CONFIG_BT_LL_SW_SPLIT */
-
 	struct evt_hdr evt;
+
+	u8_t is_enabled:1;
 
 #if defined(CONFIG_BT_PERIPHERAL)
 	u8_t is_hdcd:1;
@@ -22,17 +20,9 @@ struct ll_adv_set {
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	u32_t interval;
-#if defined(CONFIG_BT_LL_SW)
-	u8_t  phy_p:3;
-#endif /* CONFIG_BT_LL_SW */
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
 	u16_t interval;
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
-
-#if defined(CONFIG_BT_LL_SW)
-	u8_t  chan_map:3;
-	u8_t  filter_policy:2;
-#endif /* CONFIG_BT_LL_SW */
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	u8_t  own_addr_type:2;

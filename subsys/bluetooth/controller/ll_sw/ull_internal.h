@@ -23,6 +23,10 @@ static inline void ull_hdr_init(void *param)
 	hdr->disabled_cb = hdr->disabled_param = NULL;
 }
 
+void *ll_rx_link_alloc(void);
+void *ll_rx_alloc(void);
+void ll_rx_put(memq_link_t *link, void *rx);
+void ll_rx_sched(void);
 void ull_ticker_status_give(u32_t status, void *param);
 u32_t ull_ticker_status_take(u32_t ret, u32_t volatile *ret_cb);
 int ull_disable(void *param);

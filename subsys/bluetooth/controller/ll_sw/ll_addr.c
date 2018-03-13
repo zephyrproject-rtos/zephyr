@@ -15,11 +15,10 @@
 
 #include "util/util.h"
 
-#include "ll_sw/pdu.h"
-#include "ll_sw/ctrl.h"
-/* TODO: remove end */
+#include "pdu.h"
 
-#include "ll_sw/ull_adv_internal.h"
+#include "ull_adv_internal.h"
+#include "ull_scan_internal.h"
 
 static u8_t pub_addr[BDADDR_SIZE];
 static u8_t rnd_addr[BDADDR_SIZE];

@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#include <toolchain.h>
 #include <zephyr/types.h>
 
 #if defined(CONFIG_BT_CTLR_DEBUG_PINS)
@@ -13,6 +14,8 @@
 #include "util/memq.h"
 
 #include "ticker/ticker.h"
+
+#include "pdu.h"
 
 #include "ull_types.h"
 

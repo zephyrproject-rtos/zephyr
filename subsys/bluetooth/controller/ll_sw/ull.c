@@ -6,6 +6,7 @@
 #include <soc.h>
 #include <device.h>
 #include <clock_control.h>
+#include <bluetooth/hci.h>
 
 #include "hal/cntr.h"
 #include "hal/ccm.h"
@@ -24,16 +25,16 @@
 
 #include "ticker/ticker.h"
 
-#include "ll_sw/lll.h"
-#include "ll_sw/lll_tmp.h"
+#include "pdu.h"
+#include "ll.h"
+
+#include "lll.h"
+#include "lll_tmp.h"
 
 #include "ull_types.h"
 #include "ull.h"
 #include "ull_internal.h"
 #include "ull_tmp_internal.h"
-
-#include <bluetooth/hci.h>
-#include "ll.h"
 
 #include "common/log.h"
 #include "hal/debug.h"
@@ -435,6 +436,16 @@ void ll_rx_mem_release(void **node_rx)
 	*node_rx = _node_rx;
 
 	_rx_alloc(UINT8_MAX);
+}
+
+void *ll_rx_link_alloc(void)
+{
+	return mem_acquire(&mem_link_rx.free);
+}
+
+void *ll_rx_alloc(void)
+{
+	return mem_acquire(&mem_pdu_rx.free);
 }
 
 void ll_rx_put(memq_link_t *link, void *rx)

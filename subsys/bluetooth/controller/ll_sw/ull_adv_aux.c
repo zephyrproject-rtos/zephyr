@@ -64,6 +64,9 @@ u8_t ll_adv_aux_ad_data_set(u8_t handle, u8_t op, u8_t frag_pref, u8_t len,
 	h = (void *)p->ext_hdr_adi_adv_data;
 
 	if (!h->aux_ptr) {
+		if (!len) {
+			return 0;
+		}
 	}
 
 	lll_adv_data_enqueue(&adv->lll, idx);

@@ -17,6 +17,8 @@
 #include "util/mayfly.h"
 #include "ticker/ticker.h"
 
+#include "pdu.h"
+
 #include "ll_sw/lll.h"
 #include "ll_sw/lll_tmp.h"
 
