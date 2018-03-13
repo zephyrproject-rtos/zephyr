@@ -42,6 +42,10 @@
 #include <stm32l0xx_ll_system.h>
 #endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 
+#ifdef CONFIG_I2C_STM32_V2
+#include <stm32l0xx_ll_i2c.h>
+#endif
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32L0_SOC_H_ */
