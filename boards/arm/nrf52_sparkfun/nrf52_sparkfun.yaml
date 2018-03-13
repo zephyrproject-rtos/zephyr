@@ -5,3 +5,5 @@ arch: arm
 toolchain:
   - zephyr
   - gccarmemb
+ram: 64
+flash: 512

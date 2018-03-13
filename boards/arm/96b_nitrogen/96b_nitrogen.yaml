@@ -7,3 +7,5 @@ toolchain:
   - gccarmemb
 supported:
   - ble
+ram: 64
+flash: 512
