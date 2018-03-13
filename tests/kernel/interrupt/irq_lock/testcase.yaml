@@ -1,0 +1,4 @@
+tests:
+  arch.interrupt:
+    arch_exclude: x86 posix riscv32
+    tags: interrupt irq_lock

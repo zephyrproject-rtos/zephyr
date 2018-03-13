@@ -1,0 +1,26 @@
+This test case intended to validate the irq_lock api.
+A thread may temporarily prevent all IRQ handling in the
+system using the irq_lock.
+
+The IRQ lock is thread-specific. If thread A locks out
+interrupts then performs an operation that allows thread B
+to run (e.g. giving a semaphore or sleeping for N milliseconds),
+the thread’s IRQ lock no longer applies once thread A is swapped out.
+This means that interrupts can be processed while thread B is running
+unless thread B has also locked out interrupts using its own IRQ lock.
+
+----------------------------------------------------------------------
+Sample Output:
+
+Running test suite test_irq_lock
+===================================================================
+starting test - test_prevent_interruption
+isr1 is executing
+PASS - test_prevent_interruption.
+===================================================================
+starting test - test_thread_specific_irq_prevention
+isr2 is executing
+PASS - test_thread_specific_irq_prevention.
+===================================================================
+===================================================================
+PROJECT EXECUTION SUCCESSFUL
