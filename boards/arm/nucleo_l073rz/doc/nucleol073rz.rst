@@ -88,6 +88,8 @@ The Zephyr nucleo_l073rz board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | CLOCK     | on-chip    | reset and clock control             |
 +-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c controller                      |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported in this Zephyr port.
 
@@ -117,6 +119,8 @@ Default Zephyr Peripheral Mapping:
 - UART_1_RX : PB7
 - UART_2_TX : PA2
 - UART_2_RX : PA3
+- I2C1_SCL : PB8
+- I2C1_SDA : PB9
 
 For mode details please refer to `STM32 Nucleo-64 board User Manual`_.
 

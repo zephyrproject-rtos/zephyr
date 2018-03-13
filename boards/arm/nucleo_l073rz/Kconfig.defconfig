@@ -17,4 +17,11 @@ config UART_STM32_PORT_2
 
 endif # UART_CONSOLE
 
+if I2C
+
+config I2C_1
+	default y
+
+endif
+
 endif # BOARD_NUCLEO_L073RZ
