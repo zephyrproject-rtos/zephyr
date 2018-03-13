@@ -15,7 +15,7 @@ config SOC_FAMILY
 	default "silabs_exx32"
 endif
 
-source "arch/arm/soc/silabs_exx32/*/Kconfig.soc"
+gsource "arch/arm/soc/silabs_exx32/*/Kconfig.soc"
 
 config SOC_PART_NUMBER
 	string

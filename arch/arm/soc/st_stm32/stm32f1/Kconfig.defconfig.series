@@ -7,7 +7,7 @@
 
 if SOC_SERIES_STM32F1X
 
-source "arch/arm/soc/st_stm32/stm32f1/Kconfig.defconfig.stm32f1*"
+gsource "arch/arm/soc/st_stm32/stm32f1/Kconfig.defconfig.stm32f1*"
 
 config SOC_SERIES
 	default stm32f1

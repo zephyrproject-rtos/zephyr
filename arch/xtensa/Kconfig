@@ -6,7 +6,7 @@
 choice
 	prompt "XTENSA core Selection"
 	depends on XTENSA
-	source "arch/xtensa/soc/*/Kconfig.soc"
+	gsource "arch/xtensa/soc/*/Kconfig.soc"
 endchoice
 
 menu "XTENSA Options"
@@ -109,7 +109,7 @@ config TOOLCHAIN_VARIANT
 	string
 	default RG-2016.4-linux
 
-source "arch/xtensa/soc/*/Kconfig"
+gsource "arch/xtensa/soc/*/Kconfig"
 
 endmenu
 

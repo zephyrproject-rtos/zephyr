@@ -7,7 +7,7 @@
 
 if SOC_SERIES_NRF51X
 
-source "arch/arm/soc/nordic_nrf5/nrf51/Kconfig.defconfig.nrf51*"
+gsource "arch/arm/soc/nordic_nrf5/nrf51/Kconfig.defconfig.nrf51*"
 
 config SOC_SERIES
 	default nrf51

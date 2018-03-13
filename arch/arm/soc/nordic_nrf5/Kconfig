@@ -16,4 +16,4 @@ config SOC_FAMILY
 	default nordic_nrf5
 endif
 
-source "arch/arm/soc/nordic_nrf5/*/Kconfig.soc"
+gsource "arch/arm/soc/nordic_nrf5/*/Kconfig.soc"
