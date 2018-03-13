@@ -175,6 +175,33 @@ config LSM6DSL_ENABLE_TEMP
 	help
 	  Enable/disable temperature
 
+config LSM6DSL_SENSORHUB
+	bool "Enable I2C sensorhub feature"
+	depends on LSM6DSL
+	default n
+	help
+	  Enable/disable internal sensorhub
+
+if LSM6DSL_SENSORHUB
+
+config LSM6DSL_ENABLE_INTERNAL_PULLUP
+	bool "Enabled internals pull-up resistors"
+	default y
+
+choice
+	prompt "External sensor 0"
+	default LSM6DSL_EXT0_LIS2MDL
+	help
+	  Choose the external sensor 0 connected to LSM6DS3.
+
+config LSM6DSL_EXT0_LIS2MDL
+	bool "LIS2MDL"
+config LSM6DSL_EXT0_LPS22HB
+	bool "LPS22HB"
+endchoice
+
+endif #LSM6DSL_SENSORHUB
+
 menu "Attributes"
 	depends on LSM6DSL
 
