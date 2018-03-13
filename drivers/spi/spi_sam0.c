@@ -145,6 +145,17 @@ static void spi_sam0_shift_master(SercomSpi *regs, struct spi_sam0_data *data)
 	spi_context_update_rx(&data->ctx, 1, 1);
 }
 
+/* Finish any ongoing writes and drop any remaining read data */
+static void spi_sam0_finish(SercomSpi *regs)
+{
+	while (!regs->INTFLAG.bit.TXC) {
+	}
+
+	while (regs->INTFLAG.bit.RXC) {
+		(void)regs->DATA.reg;
+	}
+}
+
 /* Fast path that transmits a buf */
 static void spi_sam0_fast_tx(SercomSpi *regs, const struct spi_buf *tx_buf)
 {
@@ -161,7 +172,7 @@ static void spi_sam0_fast_tx(SercomSpi *regs, const struct spi_buf *tx_buf)
 		regs->DATA.reg = ch;
 	}
 
-	/* Note that the RX buf is full and the transmit may be ongoing */
+	spi_sam0_finish(regs);
 }
 
 /* Fast path that reads into a buf */
@@ -175,15 +186,6 @@ static void spi_sam0_fast_rx(SercomSpi *regs, struct spi_buf *rx_buf)
 	}
 
 	/* See the comment in spi_sam0_fast_txrx re: interleaving. */
-
-	/* Ensure transmit is idle */
-	while (!regs->INTFLAG.bit.DRE) {
-	}
-
-	/* Flush the receive buffer */
-	while (regs->INTFLAG.bit.RXC) {
-		(void)regs->DATA.reg;
-	}
 
 	/* Write the first byte */
 	regs->DATA.reg = 0;
@@ -206,6 +208,8 @@ static void spi_sam0_fast_rx(SercomSpi *regs, struct spi_buf *rx_buf)
 	}
 
 	*rx = regs->DATA.reg;
+
+	spi_sam0_finish(regs);
 }
 
 /* Fast path that writes and reads bufs of the same length */
@@ -233,15 +237,6 @@ static void spi_sam0_fast_txrx(SercomSpi *regs, const struct spi_buf *tx_buf,
 	 * Receive the final byte
 	 */
 
-	/* Ensure transmit is idle */
-	while (!regs->INTFLAG.bit.DRE) {
-	}
-
-	/* Flush the receive buffer */
-	while (regs->INTFLAG.bit.RXC) {
-		(void)regs->DATA.reg;
-	}
-
 	/* Write the first byte */
 	regs->DATA.reg = *tx++;
 
@@ -264,17 +259,8 @@ static void spi_sam0_fast_txrx(SercomSpi *regs, const struct spi_buf *tx_buf,
 	}
 
 	*rx = regs->DATA.reg;
-}
 
-/* Finish any ongoing writes and drop any remaining read data */
-static void spi_sam0_finish(SercomSpi *regs)
-{
-	while (!regs->INTFLAG.bit.DRE) {
-	}
-
-	while (regs->INTFLAG.bit.RXC) {
-		(void)regs->DATA.reg;
-	}
+	spi_sam0_finish(regs);
 }
 
 /* Fast path where every overlapping tx and rx buffer is the same length */
@@ -307,8 +293,6 @@ static void spi_sam0_fast_transceive(struct spi_config *config,
 	for (; rx_count != 0; rx_count--) {
 		spi_sam0_fast_rx(regs, rx_bufs++);
 	}
-
-	spi_sam0_finish(regs);
 }
 
 /* Returns true if the request is suitable for the fast
