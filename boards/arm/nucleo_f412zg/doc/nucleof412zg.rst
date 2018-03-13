@@ -10,26 +10,29 @@ The Nucleo F412ZG board features an ARM Cortex-M4 based STM32F412ZG MCU
 with a wide range of connectivity support and configurations. Here are
 some highlights of the Nucleo F412ZG board:
 
-
 - STM32 microcontroller in LQFP144 package
 - Two types of extension resources:
-       - ST Zio connector including: support for Arduino* Uno V3 connectivity
-         (A0 to A5, D0 to D15) and additional signals exposing a wide range of
-         peripherals
-       - ST morpho extension pin headers for full access to all STM32 I/Os
+
+  - ST Zio connector including: support for Arduino* Uno V3 connectivity
+    (A0 to A5, D0 to D15) and additional signals exposing a wide range of
+    peripherals
+  - ST morpho extension pin headers for full access to all STM32 I/Os
+
 - On-board ST-LINK/V2-1 debugger/programmer with SWD connector
 - Flexible board power supply:
-       - 5 V from ST-LINK/V2-1 USB VBUS
-       - External power sources: 3.3 V and 7 - 12 V on ST Zio or ST morpho
-         connectors, 5 V on ST morpho connector
+
+  - 5 V from ST-LINK/V2-1 USB VBUS
+  - External power sources: 3.3 V and 7 - 12 V on ST Zio or ST morpho
+    connectors, 5 V on ST morpho connector
+
 - Three user LEDs
 - Two push-buttons: USER and RESET
 
 .. image:: img/Nucleo144_perf_logo_1024.png
-     :width: 720px
-     :align: center
-     :height: 720px
-     :alt: Nucleo F412ZG
+   :width: 720px
+   :align: center
+   :height: 720px
+   :alt: Nucleo F412ZG
 
 More information about the board can be found at the `Nucleo F412ZG website`_.
 
@@ -59,8 +62,9 @@ Nucleo F412ZG provides the following hardware components:
 - CRC calculation unit
 
 More information about STM32F412ZG can be found here:
-       - `STM32F412ZG on www.st.com`_
-       - `STM32F412 reference manual`_
+
+- `STM32F412ZG on www.st.com`_
+- `STM32F412 reference manual`_
 
 Supported Features
 ==================
@@ -89,8 +93,7 @@ The Zephyr nucleo_412zg board configuration supports the following hardware feat
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in the defconfig file:
-
-	``boards/arm/nucleo_f412zg/nucleo_f412zg_defconfig``
+``boards/arm/nucleo_f412zg/nucleo_f412zg_defconfig``
 
 
 Connections and IOs
@@ -102,30 +105,31 @@ input/output, pull-up, etc.
 Available pins:
 ---------------
 .. image:: img/nucleo_f412zg_zio_left.png
-     :width: 720px
-     :align: center
-     :height: 540px
-     :alt: Nucleo F412ZG ZIO connectors (left)
+   :width: 720px
+   :align: center
+   :height: 540px
+   :alt: Nucleo F412ZG ZIO connectors (left)
 .. image:: img/nucleo_f412zg_zio_right.png
-     :width: 720px
-     :align: center
-     :height: 540px
-     :alt: Nucleo F412ZG ZIO connectors (right)
+   :width: 720px
+   :align: center
+   :height: 540px
+   :alt: Nucleo F412ZG ZIO connectors (right)
 .. image:: img/nucleo_f412zg_morpho_left.png
-     :width: 720px
-     :align: center
-     :height: 540px
-     :alt: Nucleo F412ZG Morpho connectors (left)
+   :width: 720px
+   :align: center
+   :height: 540px
+   :alt: Nucleo F412ZG Morpho connectors (left)
 .. image:: img/nucleo_f412zg_morpho_right.png
-     :width: 720px
-     :align: center
-     :height: 540px
-     :alt: Nucleo F412ZG Morpho connectors (right)
+   :width: 720px
+   :align: center
+   :height: 540px
+   :alt: Nucleo F412ZG Morpho connectors (right)
 
 For more details please refer to `STM32 Nucleo-144 board User Manual`_.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------
+
 - UART_3_TX : PD8
 - UART_3_RX : PD9
 - PWM_2_CH1 : PA0

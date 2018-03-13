@@ -10,31 +10,32 @@ The Nucleo F429ZI board features an ARM Cortex-M4 based STM32F429ZI MCU
 with a wide range of connectivity support and configurations. Here are
 some highlights of the Nucleo F429ZI board:
 
-
 - STM32 microcontroller in LQFP144 package
 - LSE crystal: 32.768 kHz crystal oscillator
 - USB OTG
 - Ethernet compliant with IEEE-802.3-2002
 - Two types of extension resources:
 
-       - ST Zio connector including: support for Arduino* Uno V3 connectivity
-         (A0 to A5, D0 to D15) and additional signals exposing a wide range of
-         peripherals
-       - ST morpho extension pin headers for full access to all STM32 I/Os
+  - ST Zio connector including: support for Arduino* Uno V3 connectivity
+    (A0 to A5, D0 to D15) and additional signals exposing a wide range of
+    peripherals
+  - ST morpho extension pin headers for full access to all STM32 I/Os
+
 - On-board ST-LINK/V2-1 debugger/programmer with SWD connector
 - Flexible board power supply:
 
-       - 5 V from ST-LINK/V2-1 USB VBUS
-       - External power sources: 3.3 V and 7 - 12 V on ST Zio or ST morpho
-         connectors, 5 V on ST morpho connector
+  - 5 V from ST-LINK/V2-1 USB VBUS
+  - External power sources: 3.3 V and 7 - 12 V on ST Zio or ST morpho
+    connectors, 5 V on ST morpho connector
+
 - Three user LEDs
 - Two push-buttons: USER and RESET
 
 .. image:: img/Nucleo144_perf_logo_1024.png
-     :width: 720px
-     :align: center
-     :height: 720px
-     :alt: Nucleo F429ZI
+   :width: 720px
+   :align: center
+   :height: 720px
+   :alt: Nucleo F429ZI
 
 More information about the board can be found at the `Nucleo F429ZI website`_.
 
@@ -70,9 +71,10 @@ The Nucleo F429ZI provides the following hardware components:
 - DMA Controller
 
 More information about STM32F429ZI can be found here:
-       - `STM32F429ZI on www.st.com`_
-       - `STM32F429 reference manual`_
-       - `STM32F429 datasheet`_
+
+- `STM32F429ZI on www.st.com`_
+- `STM32F429 reference manual`_
+- `STM32F429 datasheet`_
 
 Supported Features
 ==================
@@ -102,8 +104,7 @@ The Zephyr nucleo_f249zi board configuration supports the following hardware fea
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in the defconfig file:
-
-	``boards/arm/nucleo_f429zi/nucleo_f429zi_defconfig``
+``boards/arm/nucleo_f429zi/nucleo_f429zi_defconfig``
 
 
 Connections and IOs
@@ -115,25 +116,25 @@ input/output, pull-up, etc.
 Available pins:
 ---------------
 .. image:: img/nucleo_f429zi_cn8.png
-     :width: 720px
-     :align: center
-     :height: 540px
-     :alt: Nucleo F429ZI ZIO connectors (left)
+   :width: 720px
+   :align: center
+   :height: 540px
+   :alt: Nucleo F429ZI ZIO connectors (left)
 .. image:: img/nucleo_f429zi_cn7.png
-     :width: 720px
-     :align: center
-     :height: 540px
-     :alt: Nucleo F429ZI ZIO connectors (right)
+   :width: 720px
+   :align: center
+   :height: 540px
+   :alt: Nucleo F429ZI ZIO connectors (right)
 .. image:: img/nucleo_f429zi_cn11.png
-     :width: 720px
-     :align: center
-     :height: 540px
-     :alt: Nucleo F429ZI Morpho connectors (left)
+   :width: 720px
+   :align: center
+   :height: 540px
+   :alt: Nucleo F429ZI Morpho connectors (left)
 .. image:: img/nucleo_f429zi_cn12.png
-     :width: 720px
-     :align: center
-     :height: 540px
-     :alt: Nucleo F429ZI Morpho connectors (right)
+   :width: 720px
+   :align: center
+   :height: 540px
+   :alt: Nucleo F429ZI Morpho connectors (right)
 
 For mode details please refer to `STM32 Nucleo-144 board User Manual`_.
 

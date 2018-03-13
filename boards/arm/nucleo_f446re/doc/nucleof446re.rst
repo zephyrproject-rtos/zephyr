@@ -10,25 +10,26 @@ The Nucleo F446RE board features an ARM Cortex-M4 based STM32F446RE MCU
 with a wide range of connectivity support and configurations. Here are
 some highlights of the Nucleo F446RE board:
 
-
 - STM32 microcontroller in QFP64 package
 - Two types of extension resources:
 
   - Arduino Uno V3 connectivity
   - ST morpho extension pin headers for full access to all STM32 I/Os
+
 - On-board ST-LINK/V2-1 debugger/programmer with SWD connector
 - Flexible board power supply:
 
   - USB VBUS or external source(3.3V, 5V, 7 - 12V)
   - Power management access point
+
 - Three LEDs: USB communication (LD1), user LED (LD2), power LED (LD3)
 - Two push-buttons: USER and RESET
 
 .. image:: img/nucleo64_perf_logo_1024.png
-     :width: 720px
-     :align: center
-     :height: 720px
-     :alt: Nucleo F446RE
+   :width: 720px
+   :align: center
+   :height: 720px
+   :alt: Nucleo F446RE
 
 More information about the board can be found at the `Nucleo F446RE website`_.
 
@@ -62,8 +63,6 @@ Nucleo F446RE provides the following hardware components:
 - 12-bit ADC(3) with 16 channels
 - 12-bit DAC with 2 channels
 
-
-
 More information about STM32F446RE can be found here:
 
 - `STM32F446RE on www.st.com`_
@@ -93,8 +92,7 @@ The Zephyr nucleo_f446re board configuration supports the following hardware fea
 Other hardware features are not yet supported on this Zephyr port.
 
 The default configuration can be found in the defconfig file:
-
-	``boards/arm/nucleo_f446re/nucleo_f446re_defconfig``
+``boards/arm/nucleo_f446re/nucleo_f446re_defconfig``
 
 
 Connections and IOs
@@ -106,30 +104,31 @@ input/output, pull-up, etc.
 Available pins:
 ---------------
 .. image:: img/nucleo_f446re_arduino_top_left.png
-     :width: 720px
-     :align: center
-     :height: 540px
-     :alt: Nucleo F446RE Arduino connectors (top left)
+   :width: 720px
+   :align: center
+   :height: 540px
+   :alt: Nucleo F446RE Arduino connectors (top left)
 .. image:: img/nucleo_f446re_arduino_top_right.png
-     :width: 720px
-     :align: center
-     :height: 540px
-     :alt: Nucleo F446RE Arduino connectors (top right)
+   :width: 720px
+   :align: center
+   :height: 540px
+   :alt: Nucleo F446RE Arduino connectors (top right)
 .. image:: img/nucleo_f446re_morpho_top_left.png
-     :width: 720px
-     :align: center
-     :height: 540px
-     :alt: Nucleo F446RE Morpho connectors (top left)
+   :width: 720px
+   :align: center
+   :height: 540px
+   :alt: Nucleo F446RE Morpho connectors (top left)
 .. image:: img/nucleo_f446re_morpho_top_right.png
-     :width: 720px
-     :align: center
-     :height: 540px
-     :alt: Nucleo F446RE Morpho connectors (top right)
+   :width: 720px
+   :align: center
+   :height: 540px
+   :alt: Nucleo F446RE Morpho connectors (top right)
 
 For mode details please refer to `STM32 Nucleo-64 board User Manual`_.
 
 Default Zephyr Peripheral Mapping:
 ----------------------------------
+
 - UART_1_TX : PB6
 - UART_1_RX : PB7
 - UART_2_TX : PA2
