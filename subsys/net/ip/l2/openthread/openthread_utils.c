@@ -117,7 +117,7 @@ void add_ipv6_addr_to_ot(struct openthread_context *context)
 		char buf[NET_IPV6_ADDR_LEN];
 
 		NET_DBG("Added %s", net_addr_ntop(AF_INET6,
-						  &laddr, buf,
+						  &addr.mAddress, buf,
 						  sizeof(buf)));
 	}
 #endif
@@ -145,7 +145,7 @@ void add_ipv6_maddr_to_ot(struct openthread_context *context)
 		char buf[NET_IPV6_ADDR_LEN];
 
 		NET_DBG("Added multicast %s",
-			net_addr_ntop(AF_INET6, &laddr,
+			net_addr_ntop(AF_INET6, &addr,
 				      buf, sizeof(buf)));
 	}
 #endif
