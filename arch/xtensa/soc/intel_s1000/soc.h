@@ -42,6 +42,9 @@
 #define CAVS_ICTL_3_IRQ				0x00000010
 #define CAVS_ICTL_3_IRQ_FLAGS			0
 
+#define IOAPIC_EDGE				0
+#define IOAPIC_HIGH				0
+
 /* DW interrupt controller */
 #define DW_ICTL_BASE_ADDR			0x00081800
 #define DW_ICTL_IRQ				0x00000706
@@ -117,6 +120,8 @@
 #define SUE_DSP_RES_ALLOC_REG_BASE		0x00071A60
 #define SUE_DSPIOPO_REG			(SUE_DSP_RES_ALLOC_REG_BASE + 0x08)
 #define I2S_OWNSEL(x)				(0x1 << (8 + (x)))
+#define USB_DW_BASE				0x000A0000
+#define USB_DW_IRQ				0x00000806
 
 extern void _soc_irq_enable(u32_t irq);
 extern void _soc_irq_disable(u32_t irq);
