@@ -52,21 +52,24 @@ config USB_DEVICE_PID
 
 config USB_DEVICE_MANUFACTURER
 	string
+	prompt "USB manufacturer name"
 	default "ZEPHYR"
 	help
-	  USB device Manufacturer string
+	  USB device Manufacturer string. MUST be configured by vendor.
 
 config USB_DEVICE_PRODUCT
 	string
+	prompt "USB product name"
 	default "USB-DEV"
 	help
-	  USB device Product string
+	  USB device Product string. MUST be configured by vendor.
 
 config USB_DEVICE_SN
 	string
+	prompt "USB serial number"
 	default "0.01"
 	help
-	  USB device SerialNumber string
+	  USB device SerialNumber string. MUST be configured by vendor.
 
 config USB_COMPOSITE_DEVICE
 	bool
