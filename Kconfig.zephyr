@@ -26,8 +26,6 @@ source "dts/Kconfig"
 
 source "drivers/Kconfig"
 
-source "net/Kconfig"
-
 source "misc/Kconfig"
 
 source "lib/Kconfig"
