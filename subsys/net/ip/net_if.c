@@ -18,6 +18,7 @@
 #include <net/net_if.h>
 #include <net/arp.h>
 #include <net/net_mgmt.h>
+#include <net/ethernet.h>
 
 #include "net_private.h"
 #include "ipv6.h"
@@ -1805,6 +1806,29 @@ void net_if_call_link_cb(struct net_if *iface, struct net_linkaddr *lladdr,
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&link_callbacks, link, tmp, node) {
 		link->cb(iface, lladdr, status);
 	}
+}
+
+static bool need_calc_checksum(struct net_if *iface, enum eth_hw_caps caps)
+{
+#if defined(CONFIG_NET_L2_ETHERNET)
+	if (iface->l2 != &NET_L2_GET_NAME(ETHERNET)) {
+		return true;
+	}
+
+	return !(net_eth_get_hw_capabilities(iface) & caps);
+#else
+	return true;
+#endif
+}
+
+bool net_if_need_calc_tx_checksum(struct net_if *iface)
+{
+	return need_calc_checksum(iface, ETH_HW_TX_CHKSUM_OFFLOAD);
+}
+
+bool net_if_need_calc_rx_checksum(struct net_if *iface)
+{
+	return need_calc_checksum(iface, ETH_HW_RX_CHKSUM_OFFLOAD);
 }
 
 struct net_if *net_if_get_by_index(u8_t index)

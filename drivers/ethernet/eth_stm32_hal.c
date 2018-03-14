@@ -15,6 +15,7 @@
 #include <stdbool.h>
 #include <net/net_pkt.h>
 #include <net/net_if.h>
+#include <net/ethernet.h>
 #include <soc.h>
 #include <misc/printk.h>
 #include <clock_control.h>
@@ -368,9 +369,9 @@ static void eth0_iface_init(struct net_if *iface)
 			     NET_LINK_ETHERNET);
 }
 
-static struct net_if_api eth0_api = {
-	.init	= eth0_iface_init,
-	.send	= eth_tx,
+static const struct ethernet_api eth0_api = {
+	.iface_api.init = eth0_iface_init,
+	.iface_api.send = eth_tx,
 };
 
 static struct device DEVICE_NAME_GET(eth0_stm32_hal);

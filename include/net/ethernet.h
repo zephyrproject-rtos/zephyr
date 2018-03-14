@@ -39,6 +39,25 @@ extern "C" {
 
 #define NET_ETH_MINIMAL_FRAME_SIZE	60
 
+enum eth_hw_caps {
+	/** TX Checksum offloading supported */
+	ETH_HW_TX_CHKSUM_OFFLOAD  = BIT(0),
+
+	/** RX Checksum offloading supported */
+	ETH_HW_RX_CHKSUM_OFFLOAD  = BIT(1),
+};
+
+struct ethernet_api {
+	/**
+	 * The net_if_api must be placed in first position in this
+	 * struct so that we are compatible with network interface API.
+	 */
+	struct net_if_api iface_api;
+
+	/** Get the device capabilities */
+	enum eth_hw_caps (*get_capabilities)(struct device *dev);
+} __packed;
+
 struct net_eth_addr {
 	u8_t addr[6];
 };
@@ -93,6 +112,26 @@ const struct net_eth_addr *net_eth_broadcast_addr(void);
  */
 void net_eth_ipv6_mcast_to_mac_addr(const struct in6_addr *ipv6_addr,
 				    struct net_eth_addr *mac_addr);
+
+/**
+ * @brief Return ethernet device hardware capability information.
+ *
+ * @param iface Network interface
+ *
+ * @return Hardware capabilities
+ */
+static inline
+enum eth_hw_caps net_eth_get_hw_capabilities(struct net_if *iface)
+{
+	const struct ethernet_api *eth =
+		net_if_get_device(iface)->driver_api;
+
+	if (!eth->get_capabilities) {
+		return 0;
+	}
+
+	return eth->get_capabilities(net_if_get_device(iface));
+}
 
 #ifdef __cplusplus
 }

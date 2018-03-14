@@ -601,9 +601,9 @@ static void eth_0_iface_init(struct net_if *iface)
 	context->iface = iface;
 }
 
-static struct net_if_api api_funcs_0 = {
-	.init	= eth_0_iface_init,
-	.send	= eth_tx,
+static const struct ethernet_api api_funcs_0 = {
+	.iface_api.init = eth_0_iface_init,
+	.iface_api.send = eth_tx,
 };
 
 static void eth_mcux_rx_isr(void *p)

@@ -283,15 +283,20 @@ static void setup_eth_header(struct net_if *iface, struct net_pkt *pkt,
 
 struct net_arp_context net_arp_context_data;
 
-static struct net_if_api net_arp_if_api = {
+#if defined(CONFIG_NET_ARP) && defined(CONFIG_NET_L2_ETHERNET)
+static const struct ethernet_api net_arp_if_api = {
+	.iface_api.init = net_arp_iface_init,
+	.iface_api.send = tester_send,
+};
+
+#define _ETH_L2_LAYER ETHERNET_L2
+#define _ETH_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(ETHERNET_L2)
+#else
+static const struct net_if_api net_arp_if_api = {
 	.init = net_arp_iface_init,
 	.send = tester_send,
 };
 
-#if defined(CONFIG_NET_ARP) && defined(CONFIG_NET_L2_ETHERNET)
-#define _ETH_L2_LAYER ETHERNET_L2
-#define _ETH_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(ETHERNET_L2)
-#else
 #define _ETH_L2_LAYER DUMMY_L2
 #define _ETH_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(DUMMY_L2)
 #endif

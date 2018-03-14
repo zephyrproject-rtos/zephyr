@@ -1262,6 +1262,29 @@ void net_if_call_link_cb(struct net_if *iface, struct net_linkaddr *lladdr,
 			 int status);
 
 /**
+ * @brief Check if received network packet checksum calculation can be avoided
+ * or not. For example many ethernet devices support network packet offloading
+ * in which case the IP stack does not need to calculate the checksum.
+ *
+ * @param iface Network interface
+ *
+ * @return True if checksum needs to be calculated, false otherwise.
+ */
+bool net_if_need_calc_rx_checksum(struct net_if *iface);
+
+/**
+ * @brief Check if network packet checksum calculation can be avoided or not
+ * when sending the packet. For example many ethernet devices support network
+ * packet offloading in which case the IP stack does not need to calculate the
+ * checksum.
+ *
+ * @param iface Network interface
+ *
+ * @return True if checksum needs to be calculated, false otherwise.
+ */
+bool net_if_need_calc_tx_checksum(struct net_if *iface);
+
+/**
  * @brief Get interface according to index
  *
  * @param index Interface index
