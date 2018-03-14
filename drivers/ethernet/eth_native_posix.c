@@ -228,9 +228,16 @@ static void eth_iface_init(struct net_if *iface)
 	}
 }
 
-static struct net_if_api eth_if_api = {
-	.init = eth_iface_init,
-	.send = eth_send,
+static enum eth_hw_caps eth_get_capabilities(struct device *dev)
+{
+	return 0;
+}
+
+static struct ethernet_api eth_if_api = {
+	.iface_api.init = eth_iface_init,
+	.iface_api.send = eth_send,
+
+	.get_capabilities = eth_get_capabilities,
 };
 
 NET_DEVICE_INIT(eth_native_posix, CONFIG_ETH_NATIVE_POSIX_DRV_NAME,
