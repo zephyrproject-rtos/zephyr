@@ -1,0 +1,24 @@
+/dts-v1/;
+
+#include <em7d.dtsi>
+
+/ {
+	model = "em_starterkit-em7";
+	compatible = "snps,em_starterkit-em7d", "snps,em_starterkit";
+
+	aliases {
+		uart_0 = &uart0;
+		uart_1 = &uart1;
+		uart_2 = &uart2;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart1;
+	};
+};
+
+&uart1 {
+	status = "ok";
+	current-speed = <115200>;
+};
