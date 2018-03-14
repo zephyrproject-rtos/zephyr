@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <generated_dts_board.h>
 #include <soc.h>
 #include <arch/arc/v2/mpu/arc_mpu.h>
 #include <linker/linker-defs.h>

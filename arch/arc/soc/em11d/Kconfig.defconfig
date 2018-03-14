@@ -29,31 +29,6 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config HARVARD
 	def_bool n
 
-config FLASH_BASE_ADDRESS
-	default 0x00000000
-
-config FLASH_SIZE
-	default 0
-	# em11d has no FLASH so size is 0.
-
-config SRAM_BASE_ADDRESS
-	default 0x10000000
-
-config SRAM_SIZE
-	default 131072
-
-config ICCM_BASE_ADDRESS
-	default 0x00000000
-
-config ICCM_SIZE
-	default 64
-
-config DCCM_BASE_ADDRESS
-	default 0x80000000
-
-config DCCM_SIZE
-	default 64
-
 config CACHE_FLUSHING
 	def_bool y
 
