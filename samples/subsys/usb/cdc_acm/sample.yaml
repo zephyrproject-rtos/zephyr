@@ -3,6 +3,6 @@ sample:
 tests:
   test_x86:
     depends_on: usb_device
-    platform_whitelist: arduino_101
+    platform_whitelist: arduino_101 nrf52840_pca10056
     tags: usb
     harness: console
