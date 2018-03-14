@@ -8,5 +8,5 @@ tests:
     extra_configs:
       - CONFIG_USB_DEVICE_VID=0xDEAD
       - CONFIG_USB_DEVICE_PID=0xBEEF
-    platform_whitelist: quark_se_c1000_devboard
+    platform_whitelist: quark_se_c1000_devboard nrf52840_pca10056
     tags: usb bluetooth

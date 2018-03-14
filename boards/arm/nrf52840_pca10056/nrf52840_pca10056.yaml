@@ -6,5 +6,6 @@ toolchain:
   - zephyr
   - gccarmemb
 supported:
+  - usb_device
   - ble
   - ieee802154
