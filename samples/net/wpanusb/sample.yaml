@@ -4,6 +4,7 @@ sample:
 tests:
   test_15_4:
     harness: net
+    platform_exclude: nrf52840_pca10056
     depends_on: ieee802154 usb_device
     extra_configs:
       - CONFIG_USB_DEVICE_VID=0xDEAD
