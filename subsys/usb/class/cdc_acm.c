@@ -286,7 +286,7 @@ static void cdc_acm_dev_status_cb(enum usb_dc_status_code status, u8_t *param)
 		SYS_LOG_DBG("USB device disconnected");
 		break;
 	case USB_DC_SUSPEND:
-		SYS_LOG_DBG("USB device supended");
+		SYS_LOG_DBG("USB device suspended");
 		break;
 	case USB_DC_RESUME:
 		SYS_LOG_DBG("USB device resumed");
