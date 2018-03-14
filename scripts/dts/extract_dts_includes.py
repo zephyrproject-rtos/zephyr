@@ -904,7 +904,8 @@ def main():
         load_defs['CONFIG_FLASH_LOAD_OFFSET'] = 0
         load_defs['CONFIG_FLASH_LOAD_SIZE'] = 0
 
-    insert_defs(chosen['zephyr,flash'], defs, load_defs, {})
+    if 'zephyr,flash' in chosen:
+        insert_defs(chosen['zephyr,flash'], defs, load_defs, {})
 
     # generate include file
     if args.keyvalue:
