@@ -144,7 +144,7 @@ struct usb_device_descriptor {
 	u8_t bNumConfigurations;
 } __packed;
 
-/** UNICODE String Descriptor */
+/** Unicode (UTF16LE) String Descriptor */
 struct usb_string_descriptor {
 	u8_t bLength;
 	u8_t bDescriptorType;

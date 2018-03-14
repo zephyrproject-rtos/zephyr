@@ -143,19 +143,19 @@ struct dev_common_descriptor {
 			u8_t bLength;
 			u8_t bDescriptorType;
 			u8_t bString[0x0C - 2];
-		} __packed unicode_mfr;
+		} __packed utf16le_mfr;
 
 		struct usb_product_descriptor {
 			u8_t bLength;
 			u8_t bDescriptorType;
 			u8_t bString[0x0E - 2];
-		} __packed unicode_product;
+		} __packed utf16le_product;
 
 		struct usb_sn_descriptor {
 			u8_t bLength;
 			u8_t bDescriptorType;
 			u8_t bString[0x0C - 2];
-		} __packed unicode_sn;
+		} __packed utf16le_sn;
 	} __packed string_descr;
 	struct usb_desc_header term_descr;
 } __packed;
@@ -328,20 +328,20 @@ static struct dev_common_descriptor webusb_serial_usb_description = {
 			.bString = sys_cpu_to_le16(0x0409),
 		},
 		/* Manufacturer String Descriptor */
-		.unicode_mfr = {
+		.utf16le_mfr = {
 			.bLength = 0x0C,
 			.bDescriptorType = USB_STRING_DESC,
 			.bString = {'I', 0, 'n', 0, 't', 0, 'e', 0, 'l', 0,},
 		},
 		/* Product String Descriptor */
-		.unicode_product = {
+		.utf16le_product = {
 			.bLength = 0x0E,
 			.bDescriptorType = USB_STRING_DESC,
 			.bString = {'W', 0, 'e', 0, 'b', 0, 'U', 0, 'S', 0,
 				    'B', 0,},
 		},
 		/* Serial Number String Descriptor */
-		.unicode_sn = {
+		.utf16le_sn = {
 			.bLength = 0x0C,
 			.bDescriptorType = USB_STRING_DESC,
 			.bString = {'0', 0, '0', 0, '.', 0, '0', 0, '1', 0,},
