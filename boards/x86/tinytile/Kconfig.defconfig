@@ -21,12 +21,6 @@ config USB_DW
 config USB_DEVICE_STACK
 	def_bool y
 
-config USB_DEVICE_VID
-	default 0x8087
-
-config USB_DEVICE_PID
-	default 0x0AB6
-
 if USB_UART_CONSOLE
 
 config UART_INTERRUPT_DRIVEN
