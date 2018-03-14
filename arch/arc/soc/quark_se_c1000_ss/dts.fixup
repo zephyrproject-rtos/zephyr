@@ -15,6 +15,6 @@
 #define FLASH_SIZE      		CONFIG_FLASH_SIZE
 
 #define CONFIG_DCCM_BASE_ADDRESS       ARC_DCCM_80000000_BASE_ADDRESS
-#define CONFIG_DCCM_SIZE               ARC_DCCM_80000000_SIZE
+#define CONFIG_DCCM_SIZE               (ARC_DCCM_80000000_SIZE >> 10)
 
 /* End of SoC Level DTS fixup file */
