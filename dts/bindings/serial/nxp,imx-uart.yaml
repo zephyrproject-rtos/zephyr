@@ -1,0 +1,54 @@
+#
+# Copyright (c) 2017, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: iMX Uart
+id: nxp,imx-uart
+version: 0.1
+
+description: >
+    This binding gives a base representation of the iMX UART
+
+inherits:
+    !include uart.yaml
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "nxp,imx-uart"
+
+    reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+    interrupts:
+      type: array
+      category: required
+      description: required interrupts
+      generation: define
+
+    pinctrl-\d+:
+      type: array
+      category: optional
+      description: pinmux information for RX, TX, CTS, RTS
+      generation: define
+
+    clocks:
+      type: array
+      category: required
+      description: Clock gate control information
+      generation: structures
+
+    modem-mode:
+     type: int
+     category: required
+     description: Set the UART Port to modem mode 0 (dce) 1 (dte)
+     generation: define
+
+...

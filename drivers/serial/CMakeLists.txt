@@ -1,4 +1,5 @@
 zephyr_sources_ifdef(CONFIG_UART_ALTERA_JTAG uart_altera_jtag_hal.c)
+zephyr_sources_if_kconfig(uart_imx.c)
 zephyr_sources_if_kconfig(uart_cc32xx.c)
 zephyr_sources_if_kconfig(uart_cmsdk_apb.c)
 zephyr_sources_if_kconfig(uart_esp32.c)
