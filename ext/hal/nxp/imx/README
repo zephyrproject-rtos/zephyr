@@ -1,0 +1,41 @@
+iMX7D Port
+#####################
+
+Origin:
+   iMX7D NXP FreeRTOS BSP Peripheral Driver
+   https://www.nxp.com/webapp/Download?colCode=FreeRTOS_iMX7D_1.0.1_LINUX&appType=license
+
+
+Status:
+   FreeRTOS_iMX7D_1.0.1
+
+Purpose:
+   The peripheral driver wrap the H/W
+
+Description:
+   This code component is used to add Zephyr support on iMX7 processors,
+   exclusively on Cortex M4 core, and to speed up the development process
+   it was decided to have it based on NXP FreeRTOS BSP implementation.
+
+   The source code was imported from the following folders:
+   FreeRTOS_BSP_1.0.1_iMX7D/platform/drivers
+   FreeRTOS_BSP_1.0.1_iMX7D/platform/devices
+
+Dependencies:
+   This source code depends on headers and sources from zephyr:
+   ext/hal/cmsis
+
+URL:
+   https://www.nxp.com/products/processors-and-microcontrollers/applications-processors/i.mx-applications-processors/i.mx-7-processors/i.mx-7dual-processors-heterogeneous-processing-with-dual-arm-cortex-a7-cores-and-cortex-m4-core:i.MX7D?tab=Design_Tools_Tab
+
+commit:
+   No commit hash
+
+Maintained-by:
+   External
+
+License:
+   BSD-3-Clause
+
+License Link:
+   https://www.nxp.com/webapp/sps/download/license.jsp?colCode=FreeRTOS_iMX7D_1.0.1_LINUX&appType=file1&DOWNLOAD_ID=null
