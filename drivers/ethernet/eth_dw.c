@@ -19,6 +19,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <sys_io.h>
+#include <net/ethernet.h>
 
 #include "eth_dw_priv.h"
 
@@ -372,9 +373,9 @@ static struct eth_runtime eth_0_runtime = {
 #endif
 };
 
-static struct net_if_api api_funcs = {
-	.init = eth_initialize,
-	.send = eth_tx,
+static const struct ethernet_api api_funcs = {
+	.iface_api.init = eth_initialize,
+	.iface_api.send = eth_tx,
 };
 
 NET_DEVICE_INIT(eth_dw_0, CONFIG_ETH_DW_0_NAME,
