@@ -43,10 +43,17 @@ static void write_data(struct device *dev, const char *buf, int len)
 {
 	uart_irq_tx_enable(dev);
 
-	data_transmitted = false;
-	uart_fifo_fill(dev, (const u8_t *)buf, len);
-	while (data_transmitted == false)
-		;
+	while (len) {
+		int written;
+
+		data_transmitted = false;
+		written = uart_fifo_fill(dev, (const u8_t *)buf, len);
+		while (data_transmitted == false)
+			;
+
+		len -= written;
+		buf += written;
+	}
 
 	uart_irq_tx_disable(dev);
 }
