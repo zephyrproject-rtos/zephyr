@@ -1,8 +1,8 @@
 /**************************************************************************//**
  * @file     cmsis_gcc.h
  * @brief    CMSIS compiler GCC header file
- * @version  V5.0.2
- * @date     13. February 2017
+ * @version  V5.0.3
+ * @date     16. January 2018
  ******************************************************************************/
 /*
  * Copyright (c) 2009-2017 ARM Limited. All rights reserved.
@@ -46,9 +46,9 @@
 #ifndef   __STATIC_INLINE
   #define __STATIC_INLINE                        static inline
 #endif
-#ifndef   __STATIC_FORCEINLINE
+#ifndef   __STATIC_FORCEINLINE                 
   #define __STATIC_FORCEINLINE                   __attribute__((always_inline)) static inline
-#endif
+#endif                                           
 #ifndef   __NO_RETURN
   #define __NO_RETURN                            __attribute__((__noreturn__))
 #endif
@@ -582,113 +582,175 @@ __STATIC_FORCEINLINE void __TZ_set_FAULTMASK_NS(uint32_t faultMask)
 
 /**
   \brief   Get Process Stack Pointer Limit
+  Devices without ARMv8-M Main Extensions (i.e. Cortex-M23) lack the non-secure
+  Stack Pointer Limit register hence zero is returned always in non-secure
+  mode.
+  
   \details Returns the current value of the Process Stack Pointer Limit (PSPLIM).
   \return               PSPLIM Register value
  */
 __STATIC_FORCEINLINE uint32_t __get_PSPLIM(void)
 {
+#if (!(defined (__ARM_ARCH_8M_MAIN__ ) && (__ARM_ARCH_8M_MAIN__ == 1)) && \
+    (!defined (__ARM_FEATURE_CMSE) || (__ARM_FEATURE_CMSE < 3)))
+    // without main extensions, the non-secure PSPLIM is RAZ/WI
+  return 0U;
+#else
   register uint32_t result;
-
   __ASM volatile ("MRS %0, psplim"  : "=r" (result) );
-  return(result);
+  return result;
+#endif
 }
 
-
-#if ((defined (__ARM_FEATURE_CMSE  ) && (__ARM_FEATURE_CMSE   == 3)) && \
-     (defined (__ARM_ARCH_8M_MAIN__) && (__ARM_ARCH_8M_MAIN__ == 1))    )
+#if (defined (__ARM_FEATURE_CMSE) && (__ARM_FEATURE_CMSE == 3))
 /**
   \brief   Get Process Stack Pointer Limit (non-secure)
+  Devices without ARMv8-M Main Extensions (i.e. Cortex-M23) lack the non-secure
+  Stack Pointer Limit register hence zero is returned always.
+
   \details Returns the current value of the non-secure Process Stack Pointer Limit (PSPLIM) when in secure state.
   \return               PSPLIM Register value
  */
 __STATIC_FORCEINLINE uint32_t __TZ_get_PSPLIM_NS(void)
 {
+#if (!(defined (__ARM_ARCH_8M_MAIN__ ) && (__ARM_ARCH_8M_MAIN__ == 1)))
+  // without main extensions, the non-secure PSPLIM is RAZ/WI
+  return 0U;
+#else
   register uint32_t result;
-
   __ASM volatile ("MRS %0, psplim_ns"  : "=r" (result) );
-  return(result);
+  return result;
+#endif
 }
 #endif
 
 
 /**
   \brief   Set Process Stack Pointer Limit
+  Devices without ARMv8-M Main Extensions (i.e. Cortex-M23) lack the non-secure
+  Stack Pointer Limit register hence the write is silently ignored in non-secure
+  mode.
+  
   \details Assigns the given value to the Process Stack Pointer Limit (PSPLIM).
   \param [in]    ProcStackPtrLimit  Process Stack Pointer Limit value to set
  */
 __STATIC_FORCEINLINE void __set_PSPLIM(uint32_t ProcStackPtrLimit)
 {
+#if (!(defined (__ARM_ARCH_8M_MAIN__ ) && (__ARM_ARCH_8M_MAIN__ == 1)) && \
+    (!defined (__ARM_FEATURE_CMSE) || (__ARM_FEATURE_CMSE < 3)))
+  // without main extensions, the non-secure PSPLIM is RAZ/WI
+  (void)ProcStackPtrLimit;
+#else
   __ASM volatile ("MSR psplim, %0" : : "r" (ProcStackPtrLimit));
+#endif
 }
 
 
-#if ((defined (__ARM_FEATURE_CMSE  ) && (__ARM_FEATURE_CMSE   == 3)) && \
-     (defined (__ARM_ARCH_8M_MAIN__) && (__ARM_ARCH_8M_MAIN__ == 1))    )
+#if (defined (__ARM_FEATURE_CMSE  ) && (__ARM_FEATURE_CMSE   == 3))
 /**
   \brief   Set Process Stack Pointer (non-secure)
+  Devices without ARMv8-M Main Extensions (i.e. Cortex-M23) lack the non-secure
+  Stack Pointer Limit register hence the write is silently ignored.
+
   \details Assigns the given value to the non-secure Process Stack Pointer Limit (PSPLIM) when in secure state.
   \param [in]    ProcStackPtrLimit  Process Stack Pointer Limit value to set
  */
 __STATIC_FORCEINLINE void __TZ_set_PSPLIM_NS(uint32_t ProcStackPtrLimit)
 {
+#if (!(defined (__ARM_ARCH_8M_MAIN__ ) && (__ARM_ARCH_8M_MAIN__ == 1)))
+  // without main extensions, the non-secure PSPLIM is RAZ/WI
+  (void)ProcStackPtrLimit;
+#else
   __ASM volatile ("MSR psplim_ns, %0\n" : : "r" (ProcStackPtrLimit));
+#endif
 }
 #endif
 
 
 /**
   \brief   Get Main Stack Pointer Limit
+  Devices without ARMv8-M Main Extensions (i.e. Cortex-M23) lack the non-secure
+  Stack Pointer Limit register hence zero is returned always in non-secure
+  mode.
+
   \details Returns the current value of the Main Stack Pointer Limit (MSPLIM).
   \return               MSPLIM Register value
  */
 __STATIC_FORCEINLINE uint32_t __get_MSPLIM(void)
 {
+#if (!(defined (__ARM_ARCH_8M_MAIN__ ) && (__ARM_ARCH_8M_MAIN__ == 1)) && \
+    (!defined (__ARM_FEATURE_CMSE) || (__ARM_FEATURE_CMSE < 3)))
+  // without main extensions, the non-secure MSPLIM is RAZ/WI
+  return 0U;
+#else
   register uint32_t result;
-
   __ASM volatile ("MRS %0, msplim" : "=r" (result) );
-
-  return(result);
+  return result;
+#endif
 }
 
 
-#if ((defined (__ARM_FEATURE_CMSE  ) && (__ARM_FEATURE_CMSE   == 3)) && \
-     (defined (__ARM_ARCH_8M_MAIN__) && (__ARM_ARCH_8M_MAIN__ == 1))    )
+#if (defined (__ARM_FEATURE_CMSE  ) && (__ARM_FEATURE_CMSE   == 3))
 /**
   \brief   Get Main Stack Pointer Limit (non-secure)
+  Devices without ARMv8-M Main Extensions (i.e. Cortex-M23) lack the non-secure
+  Stack Pointer Limit register hence zero is returned always.
+
   \details Returns the current value of the non-secure Main Stack Pointer Limit(MSPLIM) when in secure state.
   \return               MSPLIM Register value
  */
 __STATIC_FORCEINLINE uint32_t __TZ_get_MSPLIM_NS(void)
 {
+#if (!(defined (__ARM_ARCH_8M_MAIN__ ) && (__ARM_ARCH_8M_MAIN__ == 1)))
+  // without main extensions, the non-secure MSPLIM is RAZ/WI
+  return 0U;
+#else
   register uint32_t result;
-
   __ASM volatile ("MRS %0, msplim_ns" : "=r" (result) );
-  return(result);
+  return result;
+#endif
 }
 #endif
 
 
 /**
   \brief   Set Main Stack Pointer Limit
+  Devices without ARMv8-M Main Extensions (i.e. Cortex-M23) lack the non-secure
+  Stack Pointer Limit register hence the write is silently ignored in non-secure
+  mode.
+
   \details Assigns the given value to the Main Stack Pointer Limit (MSPLIM).
   \param [in]    MainStackPtrLimit  Main Stack Pointer Limit value to set
  */
 __STATIC_FORCEINLINE void __set_MSPLIM(uint32_t MainStackPtrLimit)
 {
+#if (!(defined (__ARM_ARCH_8M_MAIN__ ) && (__ARM_ARCH_8M_MAIN__ == 1)) && \
+    (!defined (__ARM_FEATURE_CMSE) || (__ARM_FEATURE_CMSE < 3)))
+  // without main extensions, the non-secure MSPLIM is RAZ/WI
+  (void)MainStackPtrLimit;
+#else
   __ASM volatile ("MSR msplim, %0" : : "r" (MainStackPtrLimit));
+#endif
 }
 
 
-#if ((defined (__ARM_FEATURE_CMSE  ) && (__ARM_FEATURE_CMSE   == 3)) && \
-     (defined (__ARM_ARCH_8M_MAIN__) && (__ARM_ARCH_8M_MAIN__ == 1))    )
+#if (defined (__ARM_FEATURE_CMSE  ) && (__ARM_FEATURE_CMSE   == 3))
 /**
   \brief   Set Main Stack Pointer Limit (non-secure)
+  Devices without ARMv8-M Main Extensions (i.e. Cortex-M23) lack the non-secure
+  Stack Pointer Limit register hence the write is silently ignored.
+
   \details Assigns the given value to the non-secure Main Stack Pointer Limit (MSPLIM) when in secure state.
   \param [in]    MainStackPtrLimit  Main Stack Pointer value to set
  */
 __STATIC_FORCEINLINE void __TZ_set_MSPLIM_NS(uint32_t MainStackPtrLimit)
 {
+#if (!(defined (__ARM_ARCH_8M_MAIN__ ) && (__ARM_ARCH_8M_MAIN__ == 1)))
+  // without main extensions, the non-secure MSPLIM is RAZ/WI
+  (void)MainStackPtrLimit;
+#else
   __ASM volatile ("MSR msplim_ns, %0" : : "r" (MainStackPtrLimit));
+#endif
 }
 #endif
 
@@ -949,7 +1011,7 @@ __STATIC_FORCEINLINE uint32_t __RBIT(uint32_t value)
   \param [in]  value  Value to count the leading zeros
   \return             number of leading zeros in value
  */
-#define __CLZ             __builtin_clz
+#define __CLZ             (uint8_t)__builtin_clz
 
 
 #if ((defined (__ARM_ARCH_7M__      ) && (__ARM_ARCH_7M__      == 1)) || \
@@ -1474,7 +1536,7 @@ __STATIC_FORCEINLINE uint32_t __STLEX(uint32_t value, volatile uint32_t *ptr)
   @{
 */
 
-#if (__ARM_FEATURE_DSP == 1)                             /* ToDo ARMCLANG: This should be ARCH >= ARMv7-M + SIMD */
+#if (defined (__ARM_FEATURE_DSP) && (__ARM_FEATURE_DSP == 1))
 
 __STATIC_FORCEINLINE uint32_t __SADD8(uint32_t op1, uint32_t op2)
 {

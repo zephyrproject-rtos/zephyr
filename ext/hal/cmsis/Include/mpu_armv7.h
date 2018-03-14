@@ -1,11 +1,11 @@
 /******************************************************************************
  * @file     mpu_armv7.h
- * @brief    CMSIS MPU API for ARMv7 MPU
- * @version  V5.0.3
- * @date     09. August 2017
+ * @brief    CMSIS MPU API for Armv7-M MPU
+ * @version  V5.0.4
+ * @date     10. January 2018
  ******************************************************************************/
 /*
- * Copyright (c) 2017 ARM Limited. All rights reserved.
+ * Copyright (c) 2017-2018 Arm Limited. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -21,13 +21,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+ 
 #if   defined ( __ICCARM__ )
   #pragma system_include         /* treat file as system include file for MISRA check */
 #elif defined (__clang__)
-  #pragma clang system_header   /* treat file as system include file */
+  #pragma clang system_header    /* treat file as system include file */
 #endif
-
+ 
 #ifndef ARM_MPU_ARMV7_H
 #define ARM_MPU_ARMV7_H
 
@@ -60,7 +60,7 @@
 #define ARM_MPU_REGION_SIZE_2GB      ((uint8_t)0x1EU)
 #define ARM_MPU_REGION_SIZE_4GB      ((uint8_t)0x1FU)
 
-#define ARM_MPU_AP_NONE 0U
+#define ARM_MPU_AP_NONE 0U 
 #define ARM_MPU_AP_PRIV 1U
 #define ARM_MPU_AP_URO  2U
 #define ARM_MPU_AP_FULL 3U
@@ -78,8 +78,8 @@
    (MPU_RBAR_VALID_Msk))
 
 /**
-* MPU Region Attribut and Size Register Value
-*
+* MPU Region Attribute and Size Register Value
+* 
 * \param DisableExec       Instruction access disable bit, 1= disable instruction fetches.
 * \param AccessPermission  Data access permissions, allows you to configure read/write access for User and Privileged mode.
 * \param TypeExtField      Type extension field, allows you to configure memory access type, for example strongly ordered, peripheral.
@@ -88,7 +88,7 @@
 * \param IsBufferable      Region is bufferable, i.e. using write-back caching. Cacheable but non-bufferable regions use write-through policy.
 * \param SubRegionDisable  Sub-region disable field.
 * \param Size              Region size of the region to be configured, for example 4K, 8K.
-*/
+*/                         
 #define ARM_MPU_RASR(DisableExec, AccessPermission, TypeExtField, IsShareable, IsCacheable, IsBufferable, SubRegionDisable, Size) \
   ((((DisableExec     ) << MPU_RASR_XN_Pos)     & MPU_RASR_XN_Msk)     | \
    (((AccessPermission) << MPU_RASR_AP_Pos)     & MPU_RASR_AP_Msk)     | \
@@ -104,11 +104,11 @@
 /**
 * Struct for a single MPU Region
 */
-typedef struct _ARM_MPU_Region_t {
+typedef struct {
   uint32_t RBAR; //!< The region base address register value (RBAR)
   uint32_t RASR; //!< The region attribute and size register value (RASR) \ref MPU_RASR
 } ARM_MPU_Region_t;
-
+    
 /** Enable the MPU.
 * \param MPU_Control Default access permissions for unconfigured regions.
 */
@@ -146,7 +146,7 @@ __STATIC_INLINE void ARM_MPU_ClrRegion(uint32_t rnr)
 /** Configure an MPU region.
 * \param rbar Value for RBAR register.
 * \param rsar Value for RSAR register.
-*/
+*/   
 __STATIC_INLINE void ARM_MPU_SetRegion(uint32_t rbar, uint32_t rasr)
 {
   MPU->RBAR = rbar;
@@ -157,7 +157,7 @@ __STATIC_INLINE void ARM_MPU_SetRegion(uint32_t rbar, uint32_t rasr)
 * \param rnr Region number to be configured.
 * \param rbar Value for RBAR register.
 * \param rsar Value for RSAR register.
-*/
+*/   
 __STATIC_INLINE void ARM_MPU_SetRegionEx(uint32_t rnr, uint32_t rbar, uint32_t rasr)
 {
   MPU->RNR = rnr;
@@ -173,7 +173,7 @@ __STATIC_INLINE void ARM_MPU_SetRegionEx(uint32_t rnr, uint32_t rbar, uint32_t r
 __STATIC_INLINE void orderedCpy(volatile uint32_t* dst, const uint32_t* __RESTRICT src, uint32_t len)
 {
   uint32_t i;
-  for (i = 0U; i < len; ++i)
+  for (i = 0U; i < len; ++i) 
   {
     dst[i] = src[i];
   }
@@ -183,7 +183,7 @@ __STATIC_INLINE void orderedCpy(volatile uint32_t* dst, const uint32_t* __RESTRI
 * \param table Pointer to the MPU configuration table.
 * \param cnt Amount of regions to be configured.
 */
-__STATIC_INLINE void ARM_MPU_Load(ARM_MPU_Region_t const* table, uint32_t cnt)
+__STATIC_INLINE void ARM_MPU_Load(ARM_MPU_Region_t const* table, uint32_t cnt) 
 {
   const uint32_t rowWordSize = sizeof(ARM_MPU_Region_t)/4U;
   while (cnt > MPU_TYPE_RALIASES) {
