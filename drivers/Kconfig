@@ -6,7 +6,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-
 menu "Device Drivers"
 
 source "drivers/bluetooth/Kconfig"
@@ -34,6 +33,8 @@ source "drivers/gpio/Kconfig"
 source "drivers/interrupt_controller/Kconfig.shared_irq"
 
 source "drivers/spi/Kconfig"
+
+source "drivers/w1/Kconfig"
 
 source "drivers/i2c/Kconfig"
 
@@ -86,3 +87,4 @@ source "drivers/audio/Kconfig"
 source "drivers/neural_net/Kconfig"
 
 endmenu
+

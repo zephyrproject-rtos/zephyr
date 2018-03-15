@@ -1,0 +1,69 @@
+#
+# Copyright (c) 2018 Roman Tataurov <diytronic@yandex.ru>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig DS18B20
+	bool
+	prompt "DS18B20 temperature sensor"
+	depends on W1
+	default n
+	help
+		Enable driver for DS18B20 1-Wire based temperature sensor.
+
+config DS18B20_NAME
+	string
+	prompt "Driver device name"
+	default "DS18B20"
+	depends on DS18B20
+	help
+		Device name with which the DS18B20 sensor is identified.
+
+config DS18B20_BUS_NAME
+	string
+	prompt "1-Wire bus device"
+	default "W1_0"
+	depends on DS18B20 && W1
+	help
+		The 1-Wire bus device name to which the DS18B20 is connected.
+
+config DS18B20_SINGLE_DEVICE
+	bool
+	prompt "Single bus device"
+	default y
+	depends on DS18B20
+	help
+		Choose this option if there is only single DS18B20 device connected to selected bus
+
+	config DS18B20_DEVICE_UID
+		string
+		prompt "DS18B20 device UID"
+		depends on DS18B20 && !DS18B20_SINGLE_DEVICE
+		help
+			If several devices connected to bus put required device UID here
+
+choice
+	prompt "Resolution"
+	depends on DS18B20
+	default DS18B20_RESOLUTION_9BIT
+	help
+		Resolution of the temperature-to-digital conversion.
+
+config DS18B20_RESOLUTION_9BIT
+	bool
+	prompt "9-bit"
+
+config DS18B20_RESOLUTION_10BIT
+	bool
+	prompt "10-bit"
+
+config DS18B20_RESOLUTION_11BIT
+	bool
+	prompt "11-bit"
+
+config DS18B20_RESOLUTION_12BIT
+	bool
+	prompt "12-bit"
+
+endchoice

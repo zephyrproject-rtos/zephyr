@@ -1,0 +1,38 @@
+# Kconfig - 1-Wire configuration options
+
+#
+# Copyright (c) 2018 Roman Tataurov <diytronic@yandex.ru>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+#
+# 1-Wire options
+#
+menuconfig W1
+	bool
+	prompt "Dallas's 1-wire support"
+	default n
+	help
+		Dallas's 1-wire bus is useful to connect slow 1-pin devices such as
+		iButtons and thermal sensors.
+
+if W1
+
+config W1_MASTER_GPIO
+	bool "GPIO 1-wire busmaster"
+	depends on W1
+	help
+		Say Y here if you want to communicate with your 1-wire devices using
+		GPIO pins.
+
+source "drivers/w1/Kconfig.gpio"
+
+config W1_INIT_PRIORITY
+	int
+	default 60
+	prompt "Init priority"
+	help
+		1-Wire device driver initialization priority.
+
+endif # W1

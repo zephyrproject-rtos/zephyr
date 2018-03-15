@@ -1,0 +1,44 @@
+#
+# Copyright (c) 2018 Roman Tataurov <diytronic@yandex.ru>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config W1_GPIO
+	bool "GPIO bit banging 1-Wire support"
+	depends on W1
+	select W1_MASTER_GPIO
+	default n
+	help
+	  Enable software driven (bit banging) 1-Wire support using GPIO pins
+
+# ---------- Port 0 ----------
+
+config W1_GPIO_0
+	bool "Enable GPIO 1-Wire device 0"
+	default n
+	depends on W1_GPIO
+	help
+	  This tells the driver to configure the 1-Wire device at boot, depending
+	  on the additional configuration options below.
+
+config W1_GPIO_0_NAME
+	string "GPIO Bit Bang 1-Wire device 0 device name"
+	default "W1_0"
+	depends on W1_GPIO_0
+	help
+	  This is the device name for the 1-Wire device, and is included in the
+	  device struct.
+
+config W1_GPIO_0_GPIO
+	string "Bit Bang 1-Wire device 0 GPIO name"
+	default "GPIO_0"
+	depends on W1_GPIO_0
+	help
+	  This is the name of the GPIO device that controls the 1-Wire lines.
+
+config W1_GPIO_0_DQ_PIN
+	int "Bit Bang 1-Wire device 0 GPIO pin number for DQ"
+	depends on W1_GPIO_0
+	help
+	  This is the GPIO pin number for the W1 DQ line

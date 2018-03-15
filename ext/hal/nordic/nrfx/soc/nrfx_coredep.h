@@ -32,6 +32,8 @@
 #ifndef NRFX_COREDEP_H__
 #define NRFX_COREDEP_H__
 
+#include <drivers/nrfx_common.h>
+
 /**
  * @defgroup nrfx_coredep Core-dependent functionality
  * @{
@@ -75,7 +77,7 @@
  *
  * @param time_us Number of microseconds to wait.
  */
-__STATIC_INLINE void nrfx_coredep_delay_us(uint32_t time_us);
+static inline void nrfx_coredep_delay_us(uint32_t time_us);
 
 /** @} */
 
@@ -87,7 +89,7 @@ __STATIC_INLINE void nrfx_coredep_delay_us(uint32_t time_us);
 #error "DWT unit not present in the SoC that is used."
 #endif
 
-__STATIC_INLINE void nrfx_coredep_delay_us(uint32_t time_us)
+static inline void nrfx_coredep_delay_us(uint32_t time_us)
 {
     if (time_us == 0)
     {
@@ -119,7 +121,7 @@ __STATIC_INLINE void nrfx_coredep_delay_us(uint32_t time_us)
 #else // NRFX_CHECK(NRFX_DELAY_DWT_BASED)
 
 
-__STATIC_INLINE void nrfx_coredep_delay_us(uint32_t time_us)
+static inline void nrfx_coredep_delay_us(uint32_t time_us)
 {
     if (time_us == 0)
     {
