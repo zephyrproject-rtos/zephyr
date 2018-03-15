@@ -125,6 +125,12 @@
 };
 #endif
 
+&usbd {
+	compatible = "nxp,kinetis-usbd";
+	status = "ok";
+	num-bidir-endpoints = <8>;
+};
+
 &flash0 {
 	/*
 	 * For more information, see:
