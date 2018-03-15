@@ -62,16 +62,6 @@ config COAP_EXTENDED_OPTIONS_LEN_VALUE
 	  COAP_EXTENDED_OPTIONS_LEN is enabled. Define the value according to
 	  user requirement.
 
-config COAP_MBEDTLS_SSL_MAX_CONTENT_LEN
-	int "CoAP MBEDTLS maximum content length value"
-	default 1500
-	range 256 16384
-	depends on MBEDTLS
-	help
-	  This option sets the value of the MBEDTLS_SSL_MAX_CONTENT_LEN option
-	  in ext/lib/crypto/mbedtls/configs/config-coap.h  For client/server
-	  communication to work these values need to be the same on both sides.
-
 config NET_DEBUG_COAP
 	bool "Debug COAP"
 	default n

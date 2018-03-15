@@ -91,15 +91,11 @@
 #define MBEDTLS_SSL_CIPHERSUITES  MBEDTLS_TLS_PSK_WITH_AES_128_CCM_8
 
 /*
- * Save RAM at the expense of interoperability: do this only if you control
- * both ends of the connection!  (See comments in "mbedtls/ssl.h".)
+ * Allow to save RAM at the expense of interoperability: do this only if you
+ * control both ends of the connection!  (See comments in "mbedtls/ssl.h".)
  * The optimal size here depends on the typical size of records.
  */
-#ifndef CONFIG_COAP_MBEDTLS_SSL_MAX_CONTENT_LEN
-#define MBEDTLS_SSL_MAX_CONTENT_LEN	1500
-#else
-#define MBEDTLS_SSL_MAX_CONTENT_LEN	CONFIG_COAP_MBEDTLS_SSL_MAX_CONTENT_LEN
-#endif
+#define MBEDTLS_SSL_MAX_CONTENT_LEN  CONFIG_MBEDTLS_SSL_MAX_CONTENT_LEN
 
 #include "mbedtls/check_config.h"
 
