@@ -304,7 +304,21 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 		timeout = K_NO_WAIT;
 	}
 
-	pkt = k_fifo_get(&ctx->recv_q, timeout);
+	if (flags & ZSOCK_MSG_PEEK) {
+		int res;
+
+		res = _k_fifo_wait_non_empty(&ctx->recv_q, timeout);
+		/* EAGAIN when timeout expired, EINTR when cancelled */
+		if (res && res != -EAGAIN && res != -EINTR) {
+			errno = -res;
+			return -1;
+		}
+
+		pkt = k_fifo_peek_head(&ctx->recv_q);
+	} else {
+		pkt = k_fifo_get(&ctx->recv_q, timeout);
+	}
+
 	if (!pkt) {
 		errno = EAGAIN;
 		return -1;
@@ -332,17 +346,21 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 		}
 	}
 
-	/* Remove packet header since we've handled src addr and port */
+	/* Set starting point behind packet header since we've
+	 * handled src addr and port.
+	 */
 	header_len = net_pkt_appdata(pkt) - pkt->frags->data;
-	net_buf_pull(pkt->frags, header_len);
 
 	recv_len = net_pkt_appdatalen(pkt);
 	if (recv_len > max_len) {
 		recv_len = max_len;
 	}
 
-	net_frag_linearize(buf, recv_len, pkt, 0, recv_len);
-	net_pkt_unref(pkt);
+	net_frag_linearize(buf, recv_len, pkt, header_len, recv_len);
+
+	if (!(flags & ZSOCK_MSG_PEEK)) {
+		net_pkt_unref(pkt);
+	}
 
 	return recv_len;
 }
@@ -406,24 +424,29 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 		/* Actually copy data to application buffer */
 		memcpy(buf, frag->data, recv_len);
 
-		if (recv_len != frag_len) {
-			net_buf_pull(frag, recv_len);
-		} else {
-			frag = net_pkt_frag_del(pkt, NULL, frag);
-			if (!frag) {
-				/* Finished processing head pkt in
-				 * the fifo. Drop it from there.
-				 */
-				k_fifo_get(&ctx->recv_q, K_NO_WAIT);
-				if (net_pkt_eof(pkt)) {
-					sock_set_eof(ctx);
+		if (!(flags & ZSOCK_MSG_PEEK)) {
+			if (recv_len != frag_len) {
+				net_buf_pull(frag, recv_len);
+			} else {
+				frag = net_pkt_frag_del(pkt, NULL, frag);
+				if (!frag) {
+					/* Finished processing head pkt in
+					 * the fifo. Drop it from there.
+					 */
+					k_fifo_get(&ctx->recv_q, K_NO_WAIT);
+					if (net_pkt_eof(pkt)) {
+						sock_set_eof(ctx);
+					}
+
+					net_pkt_unref(pkt);
 				}
-				net_pkt_unref(pkt);
 			}
 		}
 	} while (recv_len == 0);
 
-	net_context_update_recv_wnd(ctx, recv_len);
+	if (!(flags & ZSOCK_MSG_PEEK)) {
+		net_context_update_recv_wnd(ctx, recv_len);
+	}
 
 	return recv_len;
 }
