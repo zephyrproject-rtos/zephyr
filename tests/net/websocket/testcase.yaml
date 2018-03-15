@@ -1,5 +1,5 @@
 tests:
-  - test:
+  test:
       build_only: true
       min_ram: 46
       tags: net http websocket
