@@ -71,3 +71,20 @@ config CCS811_GPIO_WAKEUP_PIN_NUM
 	help
 	  The number of the GPIO pin on which the WAKE pin of CCS811
 	  is connected
+
+config CCS811_GPIO_RESET
+	bool
+	prompt "Enable GPIO Reset for CCS811"
+	default n
+	depends on CCS811
+	help
+	  Enable GPIO Reset support for CCS811
+
+config CCS811_GPIO_RESET_PIN_NUM
+	int
+	prompt "GPIO Reset pin number"
+	default 0
+	depends on CCS811 && CCS811_GPIO_RESET
+	help
+	  The number of the GPIO pin on which the RESET pin of CCS811
+	  is connected

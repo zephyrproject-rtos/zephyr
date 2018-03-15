@@ -162,18 +162,28 @@ int ccs811_init(struct device *dev)
 		return -EINVAL;
 	}
 
-	/*
-	 * Wakeup pin should be pulled low before initiating any I2C transfer.
-	 * If it has been tied to GND by default, skip this part.
-	 */
-#ifdef CONFIG_CCS811_GPIO_WAKEUP
+#if defined(CONFIG_CCS811_GPIO_WAKEUP) || defined(CONFIG_CCS811_GPIO_RESET)
 	drv_data->gpio = device_get_binding(CONFIG_CCS811_GPIO_DEV_NAME);
 	if (drv_data->gpio == NULL) {
 		SYS_LOG_ERR("Failed to get pointer to %s device!",
 			    CONFIG_CCS811_GPIO_DEV_NAME);
 		return -EINVAL;
 	}
+#endif
 
+#ifdef CONFIG_CCS811_GPIO_RESET
+	gpio_pin_configure(drv_data->gpio, CONFIG_CCS811_GPIO_RESET_PIN_NUM,
+			   GPIO_DIR_OUT);
+	gpio_pin_write(drv_data->gpio, CONFIG_CCS811_GPIO_RESET_PIN_NUM, 1);
+
+	k_sleep(1);
+#endif
+
+	/*
+	 * Wakeup pin should be pulled low before initiating any I2C transfer.
+	 * If it has been tied to GND by default, skip this part.
+	 */
+#ifdef CONFIG_CCS811_GPIO_WAKEUP
 	gpio_pin_configure(drv_data->gpio, CONFIG_CCS811_GPIO_WAKEUP_PIN_NUM,
 			   GPIO_DIR_OUT);
 	gpio_pin_write(drv_data->gpio, CONFIG_CCS811_GPIO_WAKEUP_PIN_NUM, 0);
