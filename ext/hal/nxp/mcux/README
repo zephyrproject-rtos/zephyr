@@ -1,39 +1,71 @@
-The NXP MCUXpresso Software Development Kit (MCUX) provides device header files
-and peripheral drivers for Kinetis, LPC, and i.MX SoCs.
+MCUXpresso SDK
+##############
 
-It was previously called the Kinetis Software Development Kit (KSDK), then
-renamed to include support for LPC and i.MX SoCs.
+Origin:
+   NXP MCUXpresso SDK
+   http://mcux.nxp.com
 
-The K64F, KW22D5, KW24D5 and KW41Z sources in this directory are imported
-from mcux.nxp.com.
+   NXP Kinetis Connectivity Software
+   https://www.nxp.com/webapp/Download?colCode=KW40Z-CONNECTIVITY-SOFTWARE&appType=license&Parent_nodeId=1432854896956716810497&Parent_pageType=product
+   https://www.nxp.com/webapp/Download?colCode=MKW2XD-MRC20A-CONNECTIVITY-SW&appType=license&Parent_nodeId=1425322332576706617013&Parent_pageType=productI
 
-MCUX for KW40Z is not yet deployed on mcux.nxp.com like most other devices,
-therefore the sources are imported from the KW40Z product pages on nxp.com:
+Status:
+   The MCUXpresso SDK is released on a per-SoC basis, therefore we have a mix
+   of versions:
 
-Kinetis KW40Z Connectivity Software(REV 1.0.1)
-https://www.nxp.com/webapp/Download?colCode=KW40Z-CONNECTIVITY-SOFTWARE&appType=license&Parent_nodeId=1432854896956716810497&Parent_pageType=product
+   SoC		Version (Release Date)		Tag
+   ----------------------------------------------------------------------------
+   LPC54114	KSDK 2.2.1
+   MIMXRT1051	KSDK 2.3.0
+   MIMXRT1052	KSDK 2.3.0
+   MK64F12	KSDK 2.2.0
+   MKL25Z4	KSDK 2.2.0 (2017-06-29)		REL6.GA.RC4.6_ISSDK1.6GAFIX.GEN
+   MKW21Z4	KSDK 2.2.0 (2018-01-19)		release_conn_ksdk_2.2_kw41z_1.0.4_stage_final
+   MKW22D5	KSDK 2.2.0 (2017-03-21)		REL_SDK_REL6_2.0.0_GA_RC4_6
+   MKW24D5	KSDK 2.2.0 (2017-03-21)		REL_SDK_REL6_2.0.0_GA_RC4_6
+   MKW31Z4	KSDK 2.2.0 (2018-01-19)		release_conn_ksdk_2.2_kw41z_1.0.4_stage_final
+   MKW41Z4	KSDK 2.2.0 (2018-01-19)		release_conn_ksdk_2.2_kw41z_1.0.4_stage_final
 
+   Some older Kinetis W family SoCs are not supported in MCUXpresso SDK, but
+   instead are supported by the Kinetis Connectivity Software. This
+   distribution is based on the same Kinetis SDK (ksdk) that MCUXpresso SDK
+   evolved from. These older SoCs have many of the same peripherals as KW41Z,
+   so we can reuse newer MCUXpresso SDK drivers from KW41Z, and import only the
+   SoC header files from the Kinetis Connectivity Software.
 
-The current version supported in Zephyr is MCUX 2.2. It currently supports the
-following SoCs:
-- MK64F12 (aka K64F)
-- MKW41Z4 (aka KW41Z)
-- MKW31Z4
-- MKW21Z4
-- MKL25Z4
-- MKW40Z4 (aka KW40Z)
-- MKW30Z4
-- MKW20Z4
-- MKW22D5
-- MKW24D5
-- MIMXRT1051
-- MIMXRT1052
-- LPC54114
+   SoC		Version (Release Date)		Tag
+   ----------------------------------------------------------------------------
+   MCR20A	1.0.0				N/A
+   MKW20Z4	1.0.1 (2015-12-10)		N/A
+   MKW30Z4	1.0.1 (2015-12-10)		N/A
+   MKW40Z4	1.0.1 (2015-12-10)		N/A
 
+Purpose:
+   Provides device header files and bare metal peripheral drivers for Kinetis,
+   LPC, and i.MX SoCs. Zephyr shim drivers are built on top of these imported
+   drivers to adapt the MCUXpresso SDK APIs to Zephyr APIs.
 
-Additionally, it provides the following components:
-- overwrites header file for MCR20 Register values
-  MCR20Overwrites.h (components/mcr20a/MCR20Overwrites.h)
-  Origin: Kinetis MKW2xD and MCR20A Connectivity Software
-  URL: https://www.nxp.com/webapp/Download?colCode=MKW2XD-MRC20A-CONNECTIVITY-SW&appType=license&Parent_nodeId=1425322332576706617013&Parent_pageType=productI
-  Revision: (REV 1.0.0)
+Description:
+   This package is an extract from the upstream MCUXpresso SDK that contains
+   only the files needed for Zephyr. Some directory structure changes are made
+   to facilitate driver code reuse across multiple SoCs.
+
+Dependencies:
+   CMSIS header files
+
+URL:
+   http://mcux.nxp.com
+   https://www.nxp.com/webapp/Download?colCode=KW40Z-CONNECTIVITY-SOFTWARE&appType=license&Parent_nodeId=1432854896956716810497&Parent_pageType=product
+   https://www.nxp.com/webapp/Download?colCode=MKW2XD-MRC20A-CONNECTIVITY-SW&appType=license&Parent_nodeId=1425322332576706617013&Parent_pageType=productI
+
+commit:
+   N/A
+
+Maintained-by:
+   External
+
+License:
+   BSD-3-Clause
+
+License Link:
+   https://spdx.org/licenses/BSD-3-Clause.html
