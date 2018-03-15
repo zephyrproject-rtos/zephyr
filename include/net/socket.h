@@ -40,6 +40,8 @@ struct zsock_pollfd {
 #define ZSOCK_POLLIN 1
 #define ZSOCK_POLLOUT 4
 
+#define ZSOCK_MSG_DONTWAIT 0x40
+
 struct zsock_addrinfo {
 	struct zsock_addrinfo *ai_next;
 	int ai_flags;
@@ -139,6 +141,8 @@ static inline int poll(struct zsock_pollfd *fds, int nfds, int timeout)
 #define pollfd zsock_pollfd
 #define POLLIN ZSOCK_POLLIN
 #define POLLOUT ZSOCK_POLLOUT
+
+#define MSG_DONTWAIT ZSOCK_MSG_DONTWAIT
 
 static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 			      size_t size)
