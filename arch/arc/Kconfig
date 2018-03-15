@@ -172,64 +172,6 @@ source "arch/arc/core/mpu/Kconfig"
 
 endmenu
 
-if !HAS_DTS
-config ICCM_SIZE
-	int "ICCM Size in kB"
-	help
-	  This option specifies the size of the ICCM in kB.  It is normally set by
-	  the board's defconfig file and the user should generally avoid modifying
-	  it via the menu configuration.
-
-config ICCM_BASE_ADDRESS
-	hex "ICCM Base Address"
-	help
-	  This option specifies the base address of the ICCM on the board.  It is
-	  normally set by the board's defconfig file and the user should generally
-	  avoid modifying it via the menu configuration.
-
-config DCCM_SIZE
-	int "DCCM Size in kB"
-	help
-	  This option specifies the size of the DCCM in kB.  It is normally set by
-	  the board's defconfig file and the user should generally avoid modifying
-	  it via the menu configuration.
-
-config DCCM_BASE_ADDRESS
-	hex "DCCM Base Address"
-	help
-	  This option specifies the base address of the DCCM on the board.  It is
-	  normally set by the board's defconfig file and the user should generally
-	  avoid modifying it via the menu configuration.
-
-config SRAM_SIZE
-	int "SRAM Size in kB"
-	help
-	  This option specifies the size of the SRAM in kB.  It is normally set by
-	  the board's defconfig file and the user should generally avoid modifying
-	  it via the menu configuration.
-
-config SRAM_BASE_ADDRESS
-	hex "SRAM Base Address"
-	help
-	  This option specifies the base address of the SRAM on the board.  It is
-	  normally set by the board's defconfig file and the user should generally
-	  avoid modifying it via the menu configuration.
-
-config FLASH_SIZE
-	int "Flash Size in kB"
-	help
-	  This option specifies the size of the flash in kB.  It is normally set by
-	  the board's defconfig file and the user should generally avoid modifying
-	  it via the menu configuration.
-
-config FLASH_BASE_ADDRESS
-	hex "Flash Base Address"
-	help
-	  This option specifies the base address of the flash on the board.  It is
-	  normally set by the board's defconfig file and the user should generally
-	  avoid modifying it via the menu configuration.
-endif
-
 config CACHE_LINE_SIZE_DETECT
 	bool
 	prompt "Detect d-cache line size at runtime"
