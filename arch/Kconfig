@@ -15,6 +15,7 @@ choice
 
 config ARC
 	bool "ARC architecture"
+	select HAS_DTS
 
 config ARM
 	bool "ARM architecture"
