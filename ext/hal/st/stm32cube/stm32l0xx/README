@@ -1,6 +1,49 @@
-The current version supported in Zephyr for STM32L0 Cube is V1.10.0
+STM32CubeL0
+###########
 
+Origin:
+   ST Microelectronics
+   http://www.st.com/en/embedded-software/stm32cubel0.html
+
+Status:
+   version 1.10.0
+
+Purpose:
+   ST Microelectronics official MCU package for STM32L0 series.
+
+Description:
+   This package is an extract of official STM32CubeL0 package written by ST Microelectronics.
+   It is composed of STM32Cube hardware abstraction layer (HAL) and low layer (LL) plus a set
+   of CMSIS headers files, one for each SoC in STM32L0 series.
+
+Dependencies:
+    None.
+
+URL:
+   http://www.st.com/en/embedded-software/stm32cubel0.html
+
+commit:
+   version 1.10.0
+
+Maintained-by:
+   External
+
+License:
+   BSD-3-Clause
+
+License Link:
+   http://www.st.com/resource/en/license_agreement/dm00218346.pdf
 
 Patch List:
-===========
-N/A
+
+   *Current implementation of LL_SPI_TransmitData16 on L0 family
+    generates following warning:
+    "warning: dereferencing type-punned pointer will break strict-aliasing
+    rules [-Wstrict-aliasing]"
+    Besides being forbidden by rule, this cast is not needed, as register is
+    16 bits wide. Modification has been tested on L0 SoC.
+    stm32yyxx_ll_spi.h being included in soc.h file, warning is generated
+    at each compiled object, this commit allows a clean build.
+    Impacted files:
+      drivers/include/stm32l0xx_ll_spi.h
+    ST Bug tracker ID: 12974
