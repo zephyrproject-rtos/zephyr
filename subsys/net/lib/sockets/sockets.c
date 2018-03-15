@@ -295,13 +295,12 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 				       struct sockaddr *src_addr,
 				       socklen_t *addrlen)
 {
-	ARG_UNUSED(flags);
 	size_t recv_len = 0;
 	s32_t timeout = K_FOREVER;
 	unsigned int header_len;
 	struct net_pkt *pkt;
 
-	if (sock_is_nonblock(ctx)) {
+	if ((flags & ZSOCK_MSG_DONTWAIT) || sock_is_nonblock(ctx)) {
 		timeout = K_NO_WAIT;
 	}
 
@@ -353,12 +352,11 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 					size_t max_len,
 					int flags)
 {
-	ARG_UNUSED(flags);
 	size_t recv_len = 0;
 	s32_t timeout = K_FOREVER;
 	int res;
 
-	if (sock_is_nonblock(ctx)) {
+	if ((flags & ZSOCK_MSG_DONTWAIT) || sock_is_nonblock(ctx)) {
 		timeout = K_NO_WAIT;
 	}
 
