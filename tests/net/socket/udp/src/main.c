@@ -86,6 +86,19 @@ static void test_sendto_recvfrom(int client_sock,
 	recved = recvfrom(server_sock,
 			  rx_buf,
 			  sizeof(rx_buf),
+			  MSG_PEEK,
+			  &addr,
+			  &addrlen);
+	zassert_true(recved > 0, "recvfrom fail");
+	zassert_equal(recved,
+		      strlen(TEST_STR_SMALL),
+		      "unexpected received bytes");
+	zassert_equal(strncmp(rx_buf, TEST_STR_SMALL, strlen(TEST_STR_SMALL)),
+		      0,
+		      "unexpected data");
+	recved = recvfrom(server_sock,
+			  rx_buf,
+			  sizeof(rx_buf),
 			  0,
 			  &addr,
 			  &addrlen);
@@ -285,6 +298,11 @@ void test_send_recv_2_sock(void)
 	connect(sock2, (struct sockaddr *)&conn_addr, sizeof(conn_addr));
 
 	send(sock2, BUF_AND_SIZE(TEST_STR_SMALL), 0);
+
+	len = recv(sock1, buf, sizeof(buf), MSG_PEEK);
+	zassert_equal(len, 4, "Invalid recv len");
+	cmp = memcmp(buf, TEST_STR_SMALL, STRLEN(TEST_STR_SMALL));
+	zassert_equal(cmp, 0, "Invalid recv data");
 
 	len = recv(sock1, buf, sizeof(buf), 0);
 	zassert_equal(len, 4, "Invalid recv len");
