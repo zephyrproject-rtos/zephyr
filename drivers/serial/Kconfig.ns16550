@@ -73,12 +73,14 @@ config UART_NS16550_PORT_0_NAME
 	  struct.
 endif
 
+if !HAS_DTS && !ARC
 config UART_NS16550_PORT_0_IRQ_PRI
 	int "Port 0 Interrupt Priority"
 	default 0
 	depends on UART_NS16550_PORT_0
 	help
 	  The interrupt priority for UART port.
+endif
 
 if !HAS_DTS
 config UART_NS16550_PORT_0_BAUD_RATE
@@ -132,12 +134,14 @@ config UART_NS16550_PORT_1_NAME
 	  struct.
 endif
 
+if !HAS_DTS && !ARC
 config UART_NS16550_PORT_1_IRQ_PRI
 	int "Port 1 Interrupt Priority"
 	default 0
 	depends on UART_NS16550_PORT_1
 	help
 	  The interrupt priority for UART port.
+endif
 
 if !HAS_DTS
 config UART_NS16550_PORT_1_BAUD_RATE
