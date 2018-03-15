@@ -494,7 +494,7 @@ static struct gpio_nrf5_data gpio_data_P0;
 
 DEVICE_AND_API_INIT(gpio_nrf5_P0, CONFIG_GPIO_NRF5_P0_DEV_NAME, gpio_nrf5_P0_init,
 		    &gpio_data_P0, &gpio_nrf5_P0_cfg,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
+		    POST_KERNEL, CONFIG_GPIO_NRF5_INIT_PRIORITY,
 		    &gpio_nrf5_drv_api_funcs);
 
 #endif /* CONFIG_GPIO_NRF5_P0 */

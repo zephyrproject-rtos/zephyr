@@ -13,6 +13,12 @@ menuconfig GPIO_NRF5
 
 if GPIO_NRF5
 
+config GPIO_NRF5_INIT_PRIORITY
+	int "nRF5 GPIO initialization priority"
+	default 40
+	help
+	  Initialization priority for nRF5 GPIO.
+
 config GPIO_NRF5_P0
 	bool "nRF5x GPIO Port P0"
 	help

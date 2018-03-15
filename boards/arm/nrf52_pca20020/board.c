@@ -41,12 +41,11 @@ static int pwr_ctrl_init(struct device *dev)
  * from the VDD power rail. Both of these power rails need to be enabled before
  * the sensor driver init can be performed. The VDD rail also has to be powered up
  * before the CCS_VDD rail. These checks are to enforce the power up sequence
- * constraits. The first check is against KERNEL_INIT_PRIORITY_DEFAULT, because
- * that's the initialization priority of the nRF5 GPIO controller.
+ * constraits.
  */
 
-#if CONFIG_BOARD_VDD_PWR_CTRL_INIT_PRIORITY <= CONFIG_KERNEL_INIT_PRIORITY_DEFAULT
-#error KERNEL_INIT_PRIORITY_DEFAULT must be lower than BOARD_VDD_PWR_CTRL_INIT_PRIORITY
+#if CONFIG_BOARD_VDD_PWR_CTRL_INIT_PRIORITY <= CONFIG_GPIO_NRF5_INIT_PRIORITY
+#error GPIO_NRF5_INIT_PRIORITY must be lower than BOARD_VDD_PWR_CTRL_INIT_PRIORITY
 #endif
 
 static const struct pwr_ctrl_cfg vdd_pwr_ctrl_cfg = {
