@@ -288,10 +288,72 @@ ssize_t zsock_sendto(int sock, const void *buf, size_t len, int flags,
 	return len;
 }
 
+static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
+				       void *buf,
+				       size_t max_len,
+				       int flags,
+				       struct sockaddr *src_addr,
+				       socklen_t *addrlen)
+{
+	ARG_UNUSED(flags);
+	size_t recv_len = 0;
+	s32_t timeout = K_FOREVER;
+	unsigned int header_len;
+	struct net_pkt *pkt;
+
+	if (sock_is_nonblock(ctx)) {
+		timeout = K_NO_WAIT;
+	}
+
+	pkt = k_fifo_get(&ctx->recv_q, timeout);
+	if (!pkt) {
+		errno = EAGAIN;
+		return -1;
+	}
+
+	if (src_addr && addrlen) {
+		int rv;
+
+		rv = net_pkt_get_src_addr(pkt, src_addr, *addrlen);
+		if (rv < 0) {
+			errno = rv;
+			return -1;
+		}
+
+		/* addrlen is a value-result argument, set to actual
+		 * size of source address
+		 */
+		if (src_addr->sa_family == AF_INET) {
+			*addrlen = sizeof(struct sockaddr_in);
+		} else if (src_addr->sa_family == AF_INET6) {
+			*addrlen = sizeof(struct sockaddr_in6);
+		} else {
+			errno = ENOTSUP;
+			return -1;
+		}
+	}
+
+	/* Remove packet header since we've handled src addr and port */
+	header_len = net_pkt_appdata(pkt) - pkt->frags->data;
+	net_buf_pull(pkt->frags, header_len);
+
+	recv_len = net_pkt_appdatalen(pkt);
+	if (recv_len > max_len) {
+		recv_len = max_len;
+	}
+
+	net_frag_linearize(buf, recv_len, pkt, 0, recv_len);
+	net_pkt_unref(pkt);
+
+	return recv_len;
+}
+
 static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 					void *buf,
-					size_t max_len)
+					size_t max_len,
+					int flags)
 {
+	ARG_UNUSED(flags);
 	size_t recv_len = 0;
 	s32_t timeout = K_FOREVER;
 	int res;
@@ -376,67 +438,18 @@ ssize_t zsock_recv(int sock, void *buf, size_t max_len, int flags)
 ssize_t zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
 		       struct sockaddr *src_addr, socklen_t *addrlen)
 {
-	ARG_UNUSED(flags);
 	struct net_context *ctx = INT_TO_POINTER(sock);
 	enum net_sock_type sock_type = net_context_get_type(ctx);
-	size_t recv_len = 0;
-	unsigned int header_len;
 
 	if (sock_type == SOCK_DGRAM) {
-
-		struct net_pkt *pkt;
-		s32_t timeout = K_FOREVER;
-
-		if (sock_is_nonblock(ctx)) {
-			timeout = K_NO_WAIT;
-		}
-
-		pkt = k_fifo_get(&ctx->recv_q, timeout);
-		if (!pkt) {
-			errno = EAGAIN;
-			return -1;
-		}
-
-		if (src_addr && addrlen) {
-			int rv;
-
-			rv = net_pkt_get_src_addr(pkt, src_addr, *addrlen);
-			if (rv < 0) {
-				errno = rv;
-				return -1;
-			}
-
-			/* addrlen is a value-result argument, set to actual
-			 * size of source address
-			 */
-			if (src_addr->sa_family == AF_INET) {
-				*addrlen = sizeof(struct sockaddr_in);
-			} else if (src_addr->sa_family == AF_INET6) {
-				*addrlen = sizeof(struct sockaddr_in6);
-			} else {
-				errno = ENOTSUP;
-				return -1;
-			}
-		}
-		/* Remove packet header since we've handled src addr and port */
-		header_len = net_pkt_appdata(pkt) - pkt->frags->data;
-		net_buf_pull(pkt->frags, header_len);
-
-		recv_len = net_pkt_appdatalen(pkt);
-		if (recv_len > max_len) {
-			recv_len = max_len;
-		}
-
-		net_frag_linearize(buf, recv_len, pkt, 0, recv_len);
-		net_pkt_unref(pkt);
-
+		return zsock_recv_dgram(ctx, buf, max_len, flags, src_addr, addrlen);
 	} else if (sock_type == SOCK_STREAM) {
-		return zsock_recv_stream(ctx, buf, max_len);
+		return zsock_recv_stream(ctx, buf, max_len, flags);
 	} else {
 		__ASSERT(0, "Unknown socket type");
 	}
 
-	return recv_len;
+	return 0;
 }
 
 /* As this is limited function, we don't follow POSIX signature, with
