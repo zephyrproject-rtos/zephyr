@@ -48,8 +48,9 @@ static void write_data(struct device *dev, const char *buf, int len)
 
 		data_transmitted = false;
 		written = uart_fifo_fill(dev, (const u8_t *)buf, len);
-		while (data_transmitted == false)
-			;
+		while (data_transmitted == false) {
+			k_yield();
+		}
 
 		len -= written;
 		buf += written;
