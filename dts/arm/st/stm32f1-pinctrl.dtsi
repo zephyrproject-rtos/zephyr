@@ -33,6 +33,12 @@
 					tx = <STM32_PIN_PB10 STM32_PIN_USART_TX>;
 				};
 			};
+			uart4_pins_a: uart4@0 {
+				rx_tx {
+					rx = <STM32_PIN_PC11 STM32_PIN_USART_RX>;
+					tx = <STM32_PIN_PC10 STM32_PIN_USART_TX>;
+				};
+			};
 		};
 	};
 };

@@ -5,3 +5,16 @@
  */
 
 #include <st/stm32f1.dtsi>
+
+/ {
+	soc {
+		uart4: serial@40004c00 {
+			compatible = "st,stm32-uart";
+			reg = <0x40004c00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00080000>;
+			interrupts = <52 0>;
+			status = "disabled";
+			label = "UART_4";
+		};
+	};
+};
