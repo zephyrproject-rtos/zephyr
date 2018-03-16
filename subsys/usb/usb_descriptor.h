@@ -87,7 +87,7 @@
 #define ECM_MAC_UC_IDX_MAX	(ECM_MAC_DESC_LENGTH - 3)
 #define ECM_STRING_IDX_MAX	(sizeof(CONFIG_USB_DEVICE_NETWORK_ECM_MAC) - 2)
 
-void usb_fix_unicode_string(int idx_max, int asci_idx_max, u8_t *buf);
+void ascii7_to_utf16le(int idx_max, int asci_idx_max, u8_t *buf);
 u8_t *usb_get_device_descriptor(void);
 
 #ifdef CONFIG_USB_DEVICE_HID
