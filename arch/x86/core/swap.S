@@ -393,7 +393,7 @@ time_read_not_needed:
 #endif
 	ret
 
-#if defined(CONFIG_X86_IAMCU)
+#ifdef _THREAD_WRAPPER_REQUIRED
 /**
  *
  * @brief Adjust stack/parameters before invoking thread entry function
@@ -465,5 +465,6 @@ SECTION_FUNC(TEXT, _x86_thread_entry_wrapper)
 	pop	%ecx
 	push	$0	 /* Null return address */
 #endif
+	movl	$0, (%esp)
 	jmp	*%edi
-#endif
+#endif /* _THREAD_WRAPPER_REQUIRED */

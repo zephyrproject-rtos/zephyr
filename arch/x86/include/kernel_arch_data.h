@@ -39,6 +39,13 @@
 #include <misc/dlist.h>
 #endif
 
+/* Some configurations require that the stack/registers be adjusted before
+ * _thread_entry. See discussion in swap.S for _x86_thread_entry_wrapper()
+ */
+#if defined(CONFIG_X86_IAMCU) || defined(CONFIG_DEBUG_INFO)
+#define _THREAD_WRAPPER_REQUIRED
+#endif
+
 
 /* increase to 16 bytes (or more?) to support SSE/SSE2 instructions? */
 
@@ -387,6 +394,11 @@
 #ifndef _ASMLANGUAGE
 
 #include <misc/util.h>
+
+#ifdef _THREAD_WRAPPER_REQUIRED
+extern void _x86_thread_entry_wrapper(k_thread_entry_t entry,
+				      void *p1, void *p2, void *p3);
+#endif /* _THREAD_WRAPPER_REQUIRED */
 
 #ifdef DEBUG
 #include <misc/printk.h>
