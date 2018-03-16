@@ -29,7 +29,7 @@ bool flash_stm32_valid_range(struct device *dev, off_t offset, u32_t len,
 
 static unsigned int get_page(off_t offset)
 {
-	return offset / CONFIG_FLASH_PAGE_SIZE;
+	return offset / FLASH_PAGE_SIZE;
 }
 
 static int write_hword(struct device *dev, off_t offset, u16_t val)
@@ -92,7 +92,7 @@ static int erase_page(struct device *dev, unsigned int page)
 	}
 
 	/* Calculate the flash page address */
-	page_address += page * CONFIG_FLASH_PAGE_SIZE;
+	page_address += page * FLASH_PAGE_SIZE;
 
 	/* Set the PER bit and select the page you wish to erase */
 	regs->cr |= FLASH_CR_PER;
