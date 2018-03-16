@@ -3,4 +3,3 @@ tests:
       build_only: true
       min_ram: 46
       tags: net http websocket
-      platform_exclude: qemu_xtensa
