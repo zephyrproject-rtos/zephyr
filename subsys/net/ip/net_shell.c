@@ -1581,14 +1581,75 @@ int net_shell_cmd_http(int argc, char *argv[])
 
 int net_shell_cmd_iface(int argc, char *argv[])
 {
-	ARG_UNUSED(argc);
-	ARG_UNUSED(argv);
+	int arg = 0;
 
+	if (strcmp(argv[arg], "iface") == 0) {
+		arg++;
+	}
+
+	if (argv[arg]) {
+		bool up = false;
+		struct net_if *iface;
+		char *endptr = NULL;
+		int idx, ret;
+
+		if (strcmp(argv[arg], "up") == 0) {
+			arg++;
+			up = true;
+		} else if (strcmp(argv[arg], "down") == 0) {
+			arg++;
+		}
+
+		if (!argv[arg]) {
+			printk("Usage: net iface [up|down] [index]\n");
+			return 0;
+		}
+
+		idx = strtol(argv[arg], &endptr, 10);
+		if (*endptr != '\0') {
+			printk("Invalid index %s\n", argv[arg]);
+			return 0;
+		}
+
+		if (idx < 0 || idx > 255) {
+			printk("Invalid index %d\n", idx);
+			return 0;
+		}
+
+		iface = net_if_get_by_index(idx);
+		if (!iface) {
+			printk("No such interface in index %d\n", idx);
+			return 0;
+		}
+
+		if (up) {
+			if (net_if_is_up(iface)) {
+				printk("Interface %d is already up.\n", idx);
+				return 0;
+			}
+
+			ret = net_if_up(iface);
+			if (ret) {
+				printk("Cannot take interface %d up (%d)\n",
+				       idx, ret);
+			} else {
+				printk("Interface %d is up\n", idx);
+			}
+		} else {
+			ret = net_if_down(iface);
+			if (ret) {
+				printk("Cannot take interface %d down (%d)\n",
+				       idx, ret);
+			} else {
+				printk("Interface %d is down\n", idx);
+			}
+		}
+	} else {
 #if defined(CONFIG_NET_HOSTNAME_ENABLE)
-	printk("Hostname: %s\n\n", net_hostname_get());
+		printk("Hostname: %s\n\n", net_hostname_get());
 #endif
-
-	net_if_foreach(iface_cb, NULL);
+		net_if_foreach(iface_cb, NULL);
+	}
 
 	return 0;
 }
@@ -2786,7 +2847,9 @@ static struct shell_cmd net_commands[] = {
 		"http monitor\n\tStart monitoring HTTP connections\n"
 		"http\n\tTurn off HTTP connection monitoring" },
 	{ "iface", net_shell_cmd_iface,
-		"\n\tPrint information about network interfaces" },
+		"\n\tPrint information about network interfaces\n"
+		"iface up [idx]\n\tTake network interface up\n"
+		"iface down [idx]\n\tTake network interface down" },
 	{ "mem", net_shell_cmd_mem,
 		"\n\tPrint information about network interfaces" },
 	{ "nbr", net_shell_cmd_nbr, "\n\tPrint neighbor information\n"
