@@ -31,6 +31,6 @@ config SOC_FLASH_NRF5
 
 endif # FLASH
 
-source "arch/arm/soc/nordic_nrf5/*/Kconfig.defconfig.series"
+gsource "arch/arm/soc/nordic_nrf5/*/Kconfig.defconfig.series"
 
 endif # SOC_FAMILY_NRF5

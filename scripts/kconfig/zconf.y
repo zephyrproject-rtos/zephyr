@@ -47,6 +47,7 @@ static struct menu *current_menu, *current_entry;
 %token <id>T_MENU
 %token <id>T_ENDMENU
 %token <id>T_SOURCE
+%token <id>T_GSOURCE
 %token <id>T_CHOICE
 %token <id>T_ENDCHOICE
 %token <id>T_COMMENT
@@ -129,6 +130,7 @@ common_stmt:
 	| config_stmt
 	| menuconfig_stmt
 	| source_stmt
+	| gsource_stmt
 ;
 
 option_error:
@@ -381,6 +383,12 @@ menu_block:
 source_stmt: T_SOURCE prompt T_EOL
 {
 	printd(DEBUG_PARSE, "%s:%d:source %s\n", zconf_curname(), zconf_lineno(), $2);
+	zconf_nextfile($2);
+};
+
+gsource_stmt: T_GSOURCE prompt T_EOL
+{
+	printd(DEBUG_PARSE, "%s:%d:gsource %s\n", zconf_curname(), zconf_lineno(), $2);
 	zconf_nextfiles($2);
 };
 

@@ -16,4 +16,4 @@ config SOC_FAMILY
 	default arm
 endif
 
-source "arch/arm/soc/arm/*/Kconfig.soc"
+gsource "arch/arm/soc/arm/*/Kconfig.soc"

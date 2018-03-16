@@ -32,7 +32,7 @@
 struct kconf_id;
 
 static const struct kconf_id *kconf_id_lookup(register const char *str, register unsigned int len);
-/* maximum key range = 71, duplicates = 0 */
+/* maximum key range = 70, duplicates = 0 */
 
 #ifdef __GNUC__
 __inline
@@ -46,32 +46,32 @@ kconf_id_hash (register const char *str, register unsigned int len)
 {
   static const unsigned char asso_values[] =
     {
-      73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
-      73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
-      73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
-      73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
-      73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
-      73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
-      73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
-      73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
-      73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
-      73, 73, 73, 73, 73, 73, 73,  5, 25, 25,
-       0,  0,  0,  5,  0,  0, 73, 73,  5,  0,
-      10,  5, 45, 73, 20, 20,  0, 15, 15, 73,
-      20,  5, 73, 73, 73, 73, 73, 73, 73, 73,
-      73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
-      73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
-      73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
-      73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
-      73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
-      73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
-      73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
-      73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
-      73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
-      73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
-      73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
-      73, 73, 73, 73, 73, 73, 73, 73, 73, 73,
-      73, 73, 73, 73, 73, 73
+      72, 72, 72, 72, 72, 72, 72, 72, 72, 72,
+      72, 72, 72, 72, 72, 72, 72, 72, 72, 72,
+      72, 72, 72, 72, 72, 72, 72, 72, 72, 72,
+      72, 72, 72, 72, 72, 72, 72, 72, 72, 72,
+      72, 72, 72, 72, 72, 72, 72, 72, 72, 72,
+      72, 72, 72, 72, 72, 72, 72, 72, 72, 72,
+      72, 72, 72, 72, 72, 72, 72, 72, 72, 72,
+      72, 72, 72, 72, 72, 72, 72, 72, 72, 72,
+      72, 72, 72, 72, 72, 72, 72, 72, 72, 72,
+      72, 72, 72, 72, 72, 72, 72,  5, 35, 35,
+       0,  0,  0, 20,  0,  0, 72, 72,  5,  0,
+      10,  5, 25, 72,  5, 20,  0, 15, 20, 72,
+      15,  5, 72, 72, 72, 72, 72, 72, 72, 72,
+      72, 72, 72, 72, 72, 72, 72, 72, 72, 72,
+      72, 72, 72, 72, 72, 72, 72, 72, 72, 72,
+      72, 72, 72, 72, 72, 72, 72, 72, 72, 72,
+      72, 72, 72, 72, 72, 72, 72, 72, 72, 72,
+      72, 72, 72, 72, 72, 72, 72, 72, 72, 72,
+      72, 72, 72, 72, 72, 72, 72, 72, 72, 72,
+      72, 72, 72, 72, 72, 72, 72, 72, 72, 72,
+      72, 72, 72, 72, 72, 72, 72, 72, 72, 72,
+      72, 72, 72, 72, 72, 72, 72, 72, 72, 72,
+      72, 72, 72, 72, 72, 72, 72, 72, 72, 72,
+      72, 72, 72, 72, 72, 72, 72, 72, 72, 72,
+      72, 72, 72, 72, 72, 72, 72, 72, 72, 72,
+      72, 72, 72, 72, 72, 72
     };
   register int hval = len;
 
@@ -101,28 +101,29 @@ struct kconf_id_strings_t
     char kconf_id_strings_str14[sizeof("defconfig_list")];
     char kconf_id_strings_str17[sizeof("on")];
     char kconf_id_strings_str18[sizeof("optional")];
+    char kconf_id_strings_str20[sizeof("range")];
     char kconf_id_strings_str21[sizeof("option")];
     char kconf_id_strings_str22[sizeof("endmenu")];
     char kconf_id_strings_str23[sizeof("mainmenu")];
-    char kconf_id_strings_str25[sizeof("menuconfig")];
     char kconf_id_strings_str27[sizeof("modules")];
     char kconf_id_strings_str28[sizeof("allnoconfig_y")];
     char kconf_id_strings_str29[sizeof("menu")];
     char kconf_id_strings_str31[sizeof("select")];
-    char kconf_id_strings_str32[sizeof("comment")];
-    char kconf_id_strings_str33[sizeof("env")];
-    char kconf_id_strings_str35[sizeof("range")];
-    char kconf_id_strings_str36[sizeof("choice")];
-    char kconf_id_strings_str39[sizeof("bool")];
+    char kconf_id_strings_str32[sizeof("gsource")];
+    char kconf_id_strings_str33[sizeof("hex")];
+    char kconf_id_strings_str34[sizeof("help")];
+    char kconf_id_strings_str36[sizeof("prompt")];
+    char kconf_id_strings_str40[sizeof("menuconfig")];
     char kconf_id_strings_str41[sizeof("source")];
-    char kconf_id_strings_str42[sizeof("visible")];
-    char kconf_id_strings_str43[sizeof("hex")];
-    char kconf_id_strings_str46[sizeof("config")];
-    char kconf_id_strings_str47[sizeof("boolean")];
+    char kconf_id_strings_str42[sizeof("comment")];
+    char kconf_id_strings_str43[sizeof("env")];
+    char kconf_id_strings_str46[sizeof("choice")];
+    char kconf_id_strings_str47[sizeof("visible")];
+    char kconf_id_strings_str49[sizeof("bool")];
     char kconf_id_strings_str51[sizeof("string")];
-    char kconf_id_strings_str54[sizeof("help")];
-    char kconf_id_strings_str56[sizeof("prompt")];
-    char kconf_id_strings_str72[sizeof("depends")];
+    char kconf_id_strings_str52[sizeof("depends")];
+    char kconf_id_strings_str57[sizeof("boolean")];
+    char kconf_id_strings_str71[sizeof("config")];
   };
 static const struct kconf_id_strings_t kconf_id_strings_contents =
   {
@@ -137,28 +138,29 @@ static const struct kconf_id_strings_t kconf_id_strings_contents =
     "defconfig_list",
     "on",
     "optional",
+    "range",
     "option",
     "endmenu",
     "mainmenu",
-    "menuconfig",
     "modules",
     "allnoconfig_y",
     "menu",
     "select",
-    "comment",
-    "env",
-    "range",
-    "choice",
-    "bool",
-    "source",
-    "visible",
+    "gsource",
     "hex",
-    "config",
-    "boolean",
-    "string",
     "help",
     "prompt",
-    "depends"
+    "menuconfig",
+    "source",
+    "comment",
+    "env",
+    "choice",
+    "visible",
+    "bool",
+    "string",
+    "depends",
+    "boolean",
+    "config"
   };
 #define kconf_id_strings ((const char *) &kconf_id_strings_contents)
 #ifdef __GNUC__
@@ -172,99 +174,99 @@ kconf_id_lookup (register const char *str, register unsigned int len)
 {
   enum
     {
-      TOTAL_KEYWORDS = 33,
+      TOTAL_KEYWORDS = 34,
       MIN_WORD_LENGTH = 2,
       MAX_WORD_LENGTH = 14,
       MIN_HASH_VALUE = 2,
-      MAX_HASH_VALUE = 72
+      MAX_HASH_VALUE = 71
     };
 
   static const struct kconf_id wordlist[] =
     {
       {-1}, {-1},
-#line 25 "scripts/kconfig/zconf.gperf"
+#line 26 "scripts/kconfig/zconf.gperf"
       {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str2,		T_IF,		TF_COMMAND|TF_PARAM},
-#line 36 "scripts/kconfig/zconf.gperf"
+#line 37 "scripts/kconfig/zconf.gperf"
       {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str3,		T_TYPE,		TF_COMMAND, S_INT},
       {-1},
-#line 26 "scripts/kconfig/zconf.gperf"
+#line 27 "scripts/kconfig/zconf.gperf"
       {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str5,		T_ENDIF,	TF_COMMAND},
       {-1},
-#line 29 "scripts/kconfig/zconf.gperf"
+#line 30 "scripts/kconfig/zconf.gperf"
       {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str7,	T_DEFAULT,	TF_COMMAND, S_UNKNOWN},
-#line 31 "scripts/kconfig/zconf.gperf"
+#line 32 "scripts/kconfig/zconf.gperf"
       {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str8,	T_TYPE,		TF_COMMAND, S_TRISTATE},
-#line 20 "scripts/kconfig/zconf.gperf"
+#line 21 "scripts/kconfig/zconf.gperf"
       {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str9,	T_ENDCHOICE,	TF_COMMAND},
       {-1}, {-1},
-#line 32 "scripts/kconfig/zconf.gperf"
+#line 33 "scripts/kconfig/zconf.gperf"
       {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str12,	T_DEFAULT,	TF_COMMAND, S_TRISTATE},
-#line 35 "scripts/kconfig/zconf.gperf"
+#line 36 "scripts/kconfig/zconf.gperf"
       {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str13,	T_DEFAULT,	TF_COMMAND, S_BOOLEAN},
-#line 45 "scripts/kconfig/zconf.gperf"
+#line 46 "scripts/kconfig/zconf.gperf"
       {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str14,	T_OPT_DEFCONFIG_LIST,TF_OPTION},
       {-1}, {-1},
-#line 43 "scripts/kconfig/zconf.gperf"
+#line 44 "scripts/kconfig/zconf.gperf"
       {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str17,		T_ON,		TF_PARAM},
-#line 28 "scripts/kconfig/zconf.gperf"
+#line 29 "scripts/kconfig/zconf.gperf"
       {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str18,	T_OPTIONAL,	TF_COMMAND},
-      {-1}, {-1},
-#line 42 "scripts/kconfig/zconf.gperf"
+      {-1},
+#line 41 "scripts/kconfig/zconf.gperf"
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str20,		T_RANGE,	TF_COMMAND},
+#line 43 "scripts/kconfig/zconf.gperf"
       {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str21,		T_OPTION,	TF_COMMAND},
 #line 17 "scripts/kconfig/zconf.gperf"
       {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str22,	T_ENDMENU,	TF_COMMAND},
 #line 15 "scripts/kconfig/zconf.gperf"
       {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str23,	T_MAINMENU,	TF_COMMAND},
-      {-1},
-#line 23 "scripts/kconfig/zconf.gperf"
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str25,	T_MENUCONFIG,	TF_COMMAND},
-      {-1},
-#line 44 "scripts/kconfig/zconf.gperf"
+      {-1}, {-1}, {-1},
+#line 45 "scripts/kconfig/zconf.gperf"
       {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str27,	T_OPT_MODULES,	TF_OPTION},
-#line 47 "scripts/kconfig/zconf.gperf"
+#line 48 "scripts/kconfig/zconf.gperf"
       {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str28,	T_OPT_ALLNOCONFIG_Y,TF_OPTION},
 #line 16 "scripts/kconfig/zconf.gperf"
       {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str29,		T_MENU,		TF_COMMAND},
       {-1},
-#line 39 "scripts/kconfig/zconf.gperf"
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str31,		T_SELECT,	TF_COMMAND},
-#line 21 "scripts/kconfig/zconf.gperf"
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str32,	T_COMMENT,	TF_COMMAND},
-#line 46 "scripts/kconfig/zconf.gperf"
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str33,		T_OPT_ENV,	TF_OPTION},
-      {-1},
 #line 40 "scripts/kconfig/zconf.gperf"
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str35,		T_RANGE,	TF_COMMAND},
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str31,		T_SELECT,	TF_COMMAND},
 #line 19 "scripts/kconfig/zconf.gperf"
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str36,		T_CHOICE,	TF_COMMAND},
-      {-1}, {-1},
-#line 33 "scripts/kconfig/zconf.gperf"
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str39,		T_TYPE,		TF_COMMAND, S_BOOLEAN},
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str32,	T_GSOURCE,	TF_COMMAND},
+#line 38 "scripts/kconfig/zconf.gperf"
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str33,		T_TYPE,		TF_COMMAND, S_HEX},
+#line 25 "scripts/kconfig/zconf.gperf"
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str34,		T_HELP,		TF_COMMAND},
       {-1},
+#line 31 "scripts/kconfig/zconf.gperf"
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str36,		T_PROMPT,	TF_COMMAND},
+      {-1}, {-1}, {-1},
+#line 24 "scripts/kconfig/zconf.gperf"
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str40,	T_MENUCONFIG,	TF_COMMAND},
 #line 18 "scripts/kconfig/zconf.gperf"
       {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str41,		T_SOURCE,	TF_COMMAND},
-#line 41 "scripts/kconfig/zconf.gperf"
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str42,	T_VISIBLE,	TF_COMMAND},
-#line 37 "scripts/kconfig/zconf.gperf"
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str43,		T_TYPE,		TF_COMMAND, S_HEX},
-      {-1}, {-1},
 #line 22 "scripts/kconfig/zconf.gperf"
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str46,		T_CONFIG,	TF_COMMAND},
-#line 34 "scripts/kconfig/zconf.gperf"
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str47,	T_TYPE,		TF_COMMAND, S_BOOLEAN},
-      {-1}, {-1}, {-1},
-#line 38 "scripts/kconfig/zconf.gperf"
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str51,		T_TYPE,		TF_COMMAND, S_STRING},
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str42,	T_COMMENT,	TF_COMMAND},
+#line 47 "scripts/kconfig/zconf.gperf"
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str43,		T_OPT_ENV,	TF_OPTION},
       {-1}, {-1},
-#line 24 "scripts/kconfig/zconf.gperf"
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str54,		T_HELP,		TF_COMMAND},
+#line 20 "scripts/kconfig/zconf.gperf"
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str46,		T_CHOICE,	TF_COMMAND},
+#line 42 "scripts/kconfig/zconf.gperf"
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str47,	T_VISIBLE,	TF_COMMAND},
       {-1},
-#line 30 "scripts/kconfig/zconf.gperf"
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str56,		T_PROMPT,	TF_COMMAND},
+#line 34 "scripts/kconfig/zconf.gperf"
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str49,		T_TYPE,		TF_COMMAND, S_BOOLEAN},
+      {-1},
+#line 39 "scripts/kconfig/zconf.gperf"
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str51,		T_TYPE,		TF_COMMAND, S_STRING},
+#line 28 "scripts/kconfig/zconf.gperf"
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str52,	T_DEPENDS,	TF_COMMAND},
+      {-1}, {-1}, {-1}, {-1},
+#line 35 "scripts/kconfig/zconf.gperf"
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str57,	T_TYPE,		TF_COMMAND, S_BOOLEAN},
       {-1}, {-1}, {-1}, {-1}, {-1}, {-1}, {-1}, {-1}, {-1},
-      {-1}, {-1}, {-1}, {-1}, {-1}, {-1},
-#line 27 "scripts/kconfig/zconf.gperf"
-      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str72,	T_DEPENDS,	TF_COMMAND}
+      {-1}, {-1}, {-1}, {-1},
+#line 23 "scripts/kconfig/zconf.gperf"
+      {(int)(long)&((struct kconf_id_strings_t *)0)->kconf_id_strings_str71,		T_CONFIG,	TF_COMMAND}
     };
 
   if (len <= MAX_WORD_LENGTH && len >= MIN_WORD_LENGTH)
@@ -285,5 +287,5 @@ kconf_id_lookup (register const char *str, register unsigned int len)
     }
   return 0;
 }
-#line 48 "scripts/kconfig/zconf.gperf"
+#line 49 "scripts/kconfig/zconf.gperf"
 

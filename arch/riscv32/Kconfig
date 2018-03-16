@@ -7,7 +7,7 @@
 choice
 	prompt "RISCV32 configuration selection"
 	depends on RISCV32
-	source "arch/riscv32/soc/*/Kconfig.soc"
+	gsource "arch/riscv32/soc/*/Kconfig.soc"
 endchoice
 
 menu "RISCV32 Options"
@@ -65,6 +65,6 @@ config GEN_IRQ_VECTOR_TABLE
 
 endmenu
 
-source "arch/riscv32/soc/*/Kconfig"
+gsource "arch/riscv32/soc/*/Kconfig"
 
 endmenu

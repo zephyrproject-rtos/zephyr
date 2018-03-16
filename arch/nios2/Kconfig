@@ -7,7 +7,7 @@
 choice
 	prompt "Nios II configuration selection"
 	depends on NIOS2
-	source "arch/nios2/soc/*/Kconfig.soc"
+	gsource "arch/nios2/soc/*/Kconfig.soc"
 endchoice
 
 menu "Nios II Options"
@@ -113,6 +113,6 @@ endchoice
 
 endmenu
 
-source "arch/nios2/soc/*/Kconfig"
+gsource "arch/nios2/soc/*/Kconfig"
 
 endmenu

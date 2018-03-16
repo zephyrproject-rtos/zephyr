@@ -15,4 +15,4 @@ config SOC_FAMILY
 
 endif
 
-source "arch/arm/soc/atmel_sam0/*/Kconfig.soc"
+gsource "arch/arm/soc/atmel_sam0/*/Kconfig.soc"
