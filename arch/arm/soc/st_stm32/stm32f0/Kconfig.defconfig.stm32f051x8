@@ -11,10 +11,6 @@ config SOC
 	string
 	default stm32f051x8
 
-config FLASH_PAGE_SIZE
-	hex
-	default 0x400
-
 config NUM_IRQS
 	int
 	default 29
