@@ -10,8 +10,6 @@
 /**
  * @brief Destroy semaphore.
  *
- * FIXME: EBUSY is not taken care as of now
- *
  * see IEEE 1003.1
  */
 int sem_destroy(sem_t *semaphore)
@@ -21,8 +19,12 @@ int sem_destroy(sem_t *semaphore)
 		return -1;
 	}
 
-	k_sem_reset(semaphore);
+	if (k_sem_count_get(semaphore)) {
+		errno = EBUSY;
+		return -1;
+	}
 
+	k_sem_reset(semaphore);
 	return 0;
 }
 
@@ -39,9 +41,6 @@ int sem_getvalue(sem_t *semaphore, int *value)
 /**
  * @brief Initialize semaphore.
  *
- * API only accepts 0 to share share semaphore among threads. Values
- * greater than 0 are invalid as zephyr does not support processes.
- *
  * See IEEE 1003.1
  */
 int sem_init(sem_t *semaphore, int pshared, unsigned int value)
@@ -51,10 +50,11 @@ int sem_init(sem_t *semaphore, int pshared, unsigned int value)
 		return -1;
 	}
 
-	if (pshared != 0) {
-		errno = ENOSYS;
-		return -1;
-	}
+	/*
+	 * Zephyr has no concept of process, so only thread shared
+	 * semaphore makes sense in here.
+	 */
+	__ASSERT(pshared == 0, "pshared should be 0");
 
 	k_sem_init(semaphore, value, CONFIG_SEM_VALUE_MAX);
 
@@ -77,36 +77,15 @@ int sem_post(sem_t *semaphore)
 	return 0;
 }
 
-static int take_and_convert(sem_t *semaphore, s32_t timeout)
-{
-	int temp, ret;
-
-	temp = k_sem_take(semaphore, timeout);
-
-	if (temp == -EBUSY) {
-		errno = EAGAIN;
-		ret = -1;
-	} else if (temp != 0) {
-		errno = ETIMEDOUT;
-		ret = -1;
-	} else {
-		ret = 0;
-	}
-
-	return ret;
-}
-
 /**
- * @brief Lock a sempahore.
+ * @brief Try time limited locking a semaphore.
  *
  * See IEEE 1003.1
  */
 int sem_timedwait(sem_t *semaphore, struct timespec *abstime)
 {
-	u32_t	timeout;
-	long	msecs = 0;
-	s64_t	current_ms;
-	s32_t	abstime_ms;
+	s32_t timeout;
+	s64_t current_ms, abstime_ms;
 
 	__ASSERT(abstime, "abstime pointer NULL");
 
@@ -115,21 +94,25 @@ int sem_timedwait(sem_t *semaphore, struct timespec *abstime)
 		return -1;
 	}
 
-	current_ms = k_uptime_get();
-	abstime_ms = _ts_to_ms(abstime);
-	msecs = abstime_ms - current_ms;
+	current_ms = (s64_t)k_uptime_get();
+	abstime_ms = (s64_t)_ts_to_ms(abstime);
 
 	if (abstime_ms <= current_ms) {
-		timeout = 0;
+		timeout = K_NO_WAIT;
 	} else {
-		timeout = _ms_to_ticks(msecs);
+		timeout = (s32_t)(abstime_ms - current_ms);
 	}
 
-	return take_and_convert(semaphore, timeout);
+	if (k_sem_take(semaphore, timeout)) {
+		errno = ETIMEDOUT;
+		return -1;
+	}
+
+	return 0;
 }
 
 /**
- * @brief Lock a sempahore.
+ * @brief Lock a semaphore if not taken.
  *
  * See IEEE 1003.1
  */
@@ -144,16 +127,12 @@ int sem_trywait(sem_t *semaphore)
 }
 
 /**
- * @brief Lock a sempahore.
+ * @brief Lock a semaphore.
  *
  * See IEEE 1003.1
  */
 int sem_wait(sem_t *semaphore)
 {
-	if (k_sem_take(semaphore, K_FOREVER) == -EBUSY) {
-		errno = EAGAIN;
-		return -1;
-	} else {
-		return 0;
-	}
+	k_sem_take(semaphore, K_FOREVER);
+	return 0;
 }
