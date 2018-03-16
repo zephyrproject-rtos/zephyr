@@ -411,14 +411,6 @@ bool ieee802154_validate_frame(u8_t *buf, u8_t length,
 	return validate_payload_and_mfr(mpdu, buf, p_buf, length);
 }
 
-bool ieee802154_is_ar_flag_set(struct net_pkt *pkt)
-{
-	struct ieee802154_fcf_seq *fs =
-		(struct ieee802154_fcf_seq *)net_pkt_ll(pkt);
-
-	return !!(fs->fc.ar);
-}
-
 u16_t ieee802154_compute_header_size(struct net_if *iface,
 				     struct in6_addr *dst)
 {
