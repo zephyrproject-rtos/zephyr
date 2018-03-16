@@ -1,0 +1,40 @@
+# Kconfig - iMX7 M4 core series
+#
+# Copyright (c) 2017, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_MCIMX7_M4
+
+config SOC
+	string
+	default mcimx7d
+
+config SYS_CLOCK_TICKS_PER_SEC
+	int
+	default 1000
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 200000000
+
+if CLOCK_CONTROL
+
+config CLOCK_CONTROL_IMX_CCM
+	def_bool y
+
+endif # CLOCK_CONTROL
+
+if SERIAL
+
+config UART_IMX
+	def_bool y
+
+endif # SERIAL
+
+config DOMAIN_ID
+	int
+	default 1
+
+endif # SOC_MCIMX7_M4

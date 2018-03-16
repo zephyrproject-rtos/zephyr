@@ -1,0 +1,17 @@
+# Kconfig - iMX7 M4 core series
+#
+# Copyright (c) 2017, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_SERIES_IMX7_M4
+	bool "i.MX7 M4 Core Series"
+	select CPU_CORTEX_M
+	select CPU_CORTEX_M4
+	select SOC_FAMILY_IMX
+	select CPU_HAS_SYSTICK
+	select CLOCK_CONTROL
+	select CPU_HAS_FPU
+	help
+	  Enable support for i.MX7 M4 MCU series

@@ -1,0 +1,145 @@
+/*
+ * Copyright (c) 2017, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv7-m.dtsi>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m4";
+			reg = <0>;
+		};
+	};
+
+	soc {
+
+		ddr_code: code@10000000 {
+			compatible = "nxp,imx-code-bus";
+			reg = <0x10000000 0xfff0000>;
+			label = "DDR CODE";
+		};
+
+		ddr_sys: memory@80000000 {
+			device_type = "memory";
+			compatible = "nxp,imx-sys-bus";
+			reg = <0x80000000 0x60000000>;
+			label = "DDR SYSTEM";
+		};
+
+		tcml_code: code@1fff8000 {
+			compatible = "nxp,imx-code-bus";
+			reg = <0x1fff8000 0x8000>;
+			label = "TCML CODE";
+		};
+
+		tcmu_sys: memory@20000000 {
+			device_type = "memory";
+			compatible = "nxp,imx-sys-bus";
+			reg = <0x20000000 0x8000>;
+			label = "TCMU SYSTEM";
+		};
+
+		ocram_code: code@00900000 {
+			compatible = "nxp,imx-code-bus";
+			reg = <0x00900000 0x20000>;
+			label = "OCRAM CODE";
+		};
+
+		ocram_sys: memory@20200000 {
+			device_type = "memory";
+			compatible = "nxp,imx-sys-bus";
+			reg = <0x20200000 0x20000>;
+			label = "OCRAM SYSTEM";
+		};
+
+		ocram_s_code: code@20180000 {
+			compatible = "nxp,imx-code-bus";
+			reg = <0x20180000 0x8000>;
+			label = "OCRAM_S CODE";
+		};
+
+		ocram_s_sys: memory@00180000 {
+			device_type = "memory";
+			compatible = "nxp,imx-sys-bus";
+			reg = <0x00180000 0x8000>;
+			label = "OCRAM_S SYSTEM";
+		};
+
+		gpio1: gpio@30200000 {
+			compatible = "nxp,imx-gpio";
+			reg = <0x30200000 0x10000>;
+			interrupts = <62 0>, <63 0>;
+			label = "GPIO_1";
+		};
+
+		/* For now only uart2 is supported and
+		 * tested with the serial driver
+		 */
+		uart1: uart@30860000 {
+			compatible = "nxp,imx-uart";
+			reg = <0x30860000 0x10000>;
+			interrupts = <26 3>;
+			label = "UART_1";
+			status = "disabled";
+		};
+
+		uart2: uart@30890000 {
+			compatible = "nxp,imx-uart";
+			reg = <0x30890000 0x10000>;
+			interrupts = <27 3>;
+			label = "UART_2";
+			status = "disabled";
+		};
+
+		uart3: uart@30880000 {
+			compatible = "nxp,imx-uart";
+			reg = <0x30880000 0x10000>;
+			interrupts = <28 3>;
+			label = "UART_3";
+			status = "disabled";
+		};
+
+		uart4: uart@30A60000 {
+			compatible = "nxp,imx-uart";
+			reg = <0x30A60000 0x10000>;
+			interrupts = <29 3>;
+			label = "UART_4";
+			status = "disabled";
+		};
+
+		uart5: uart@30A70000 {
+			compatible = "nxp,imx-uart";
+			reg = <0x30A70000 0x10000>;
+			interrupts = <30 3>;
+			label = "UART_5";
+			status = "disabled";
+		};
+
+		uart6: uart@30A80000 {
+			compatible = "nxp,imx-uart";
+			reg = <0x30A80000 0x10000>;
+			interrupts = <16 3>;
+			label = "UART_6";
+			status = "disabled";
+		};
+
+		uart7: uart@30A90000 {
+			compatible = "nxp,imx-uart";
+			reg = <0x30A90000 0x10000>;
+			interrupts = <126 3>;
+			label = "UART_7";
+			status = "disabled";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <4>;
+};
