@@ -189,12 +189,17 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 				 u16_t identifier,
 				 u16_t sequence)
 {
+	struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
 	const struct in_addr *src;
 	struct net_pkt *pkt;
 	struct net_buf *frag;
 
+	if (!ipv4) {
+		return -EINVAL;
+	}
+
 	/* Take the first address of the network interface */
-	src = &iface->ipv4.unicast[0].address.in_addr;
+	src = &ipv4->unicast[0].address.in_addr;
 
 	/* We cast to IPv6 address but that should be ok in this case
 	 * as IPv4 cannot be used in 802.15.4 where it is the reserve

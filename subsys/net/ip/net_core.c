@@ -62,7 +62,6 @@ NET_STACK_DEFINE(RX, rx_stack, CONFIG_NET_RX_STACK_SIZE,
 static struct k_thread rx_thread_data;
 static struct k_fifo rx_queue;
 static k_tid_t rx_tid;
-static K_SEM_DEFINE(startup_sync, 0, UINT_MAX);
 
 static inline enum net_verdict process_data(struct net_pkt *pkt,
 					    bool is_loopback)
@@ -151,9 +150,7 @@ static void net_rx_thread(void)
 	 * are only started fully when both are ready to receive or send
 	 * data.
 	 */
-	net_if_init(&startup_sync);
-
-	k_sem_take(&startup_sync, K_FOREVER);
+	net_if_init();
 
 	/* This will take the interface up and start everything. */
 	net_if_post_init();
@@ -340,7 +337,7 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 		return -ENODATA;
 	}
 
-	if (!atomic_test_bit(iface->flags, NET_IF_UP)) {
+	if (!atomic_test_bit(iface->if_dev->flags, NET_IF_UP)) {
 		return -ENETDOWN;
 	}
 

@@ -151,10 +151,13 @@ static inline struct in_addr *if_get_addr(struct net_if *iface)
 	int i;
 
 	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
-		if (iface->ipv4.unicast[i].is_used &&
-		    iface->ipv4.unicast[i].address.family == AF_INET &&
-		    iface->ipv4.unicast[i].addr_state == NET_ADDR_PREFERRED) {
-			return &iface->ipv4.unicast[i].address.in_addr;
+		if (iface->config.ip.ipv4->unicast[i].is_used &&
+		    iface->config.ip.ipv4->unicast[i].address.family ==
+								AF_INET &&
+		    iface->config.ip.ipv4->unicast[i].addr_state ==
+							NET_ADDR_PREFERRED) {
+			return
+			    &iface->config.ip.ipv4->unicast[i].address.in_addr;
 		}
 	}
 
@@ -403,11 +406,11 @@ void run_tests(void)
 	}
 
 	if (memcmp(net_pkt_ll(pkt2) + sizeof(struct net_eth_addr),
-		   iface->link_addr.addr,
+		   net_if_get_link_addr(iface)->addr,
 		   sizeof(struct net_eth_addr))) {
 		printk("ARP ETH source address invalid\n");
 		net_hexdump("ETH src correct",
-			    iface->link_addr.addr,
+			    net_if_get_link_addr(iface)->addr,
 			    sizeof(struct net_eth_addr));
 		net_hexdump("ETH src wrong  ",
 			    net_pkt_ll(pkt2) +	sizeof(struct net_eth_addr),
@@ -498,13 +501,14 @@ void run_tests(void)
 
 	arp_hdr = NET_ARP_HDR(pkt2);
 
-	if (!net_ipv4_addr_cmp(&arp_hdr->dst_ipaddr, &iface->ipv4.gw)) {
+	if (!net_ipv4_addr_cmp(&arp_hdr->dst_ipaddr,
+			       &iface->config.ip.ipv4->gw)) {
 		char out[sizeof("xxx.xxx.xxx.xxx")];
 
 		snprintk(out, sizeof(out), "%s",
 			 net_sprint_ipv4_addr(&arp_hdr->dst_ipaddr));
 		printk("ARP IP dst invalid %s, should be %s\n", out,
-			 net_sprint_ipv4_addr(&iface->ipv4.gw));
+			 net_sprint_ipv4_addr(&iface->config.ip.ipv4->gw));
 		zassert_true(0, "exiting");
 	}
 

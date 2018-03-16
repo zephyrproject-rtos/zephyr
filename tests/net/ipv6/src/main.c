@@ -244,6 +244,7 @@ static bool test_init(void)
 	struct net_if_mcast_addr *maddr;
 	struct net_if *iface = net_if_get_default();
 	struct net_if *iface2 = NULL;
+	struct net_if_ipv6 *ipv6;
 	int i;
 
 	if (!iface) {
@@ -257,12 +258,14 @@ static bool test_init(void)
 	 * manually in this special case so that subsequent tests can
 	 * pass.
 	 */
+	net_if_config_ipv6_get(iface, &ipv6);
+
 	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
-		if (iface->ipv6.unicast[i].is_used) {
+		if (iface->config.ip.ipv6->unicast[i].is_used) {
 			continue;
 		}
 
-		ifaddr = &iface->ipv6.unicast[i];
+		ifaddr = &iface->config.ip.ipv6->unicast[i];
 
 		ifaddr->is_used = true;
 		ifaddr->address.family = AF_INET6;

@@ -69,7 +69,8 @@ static bool received_dest_addr_matched(u8_t *rx_buffer)
 		if (memcmp(&rx_buffer[DEST_ADDR_OFFSET],
 			   BROADCAST_ADDRESS,
 			   SHORT_ADDRESS_SIZE) != 0 &&
-		    (upipe->iface->link_addr.len != SHORT_ADDRESS_SIZE ||
+		    (net_if_get_link_addr(upipe->iface)->len !=
+		     SHORT_ADDRESS_SIZE ||
 		     memcmp(&rx_buffer[DEST_ADDR_OFFSET],
 			    dev_short_addr,
 			    SHORT_ADDRESS_SIZE) != 0)) {
@@ -79,7 +80,8 @@ static bool received_dest_addr_matched(u8_t *rx_buffer)
 
 	case DEST_ADDR_TYPE_EXTENDED:
 		/* If not broadcast, check if lenght and address matches */
-		if (upipe->iface->link_addr.len != EXTENDED_ADDRESS_SIZE ||
+		if (net_if_get_link_addr(upipe->iface)->len !=
+		    EXTENDED_ADDRESS_SIZE ||
 		    memcmp(&rx_buffer[DEST_ADDR_OFFSET],
 			   dev_ext_addr, EXTENDED_ADDRESS_SIZE) != 0) {
 			return false;

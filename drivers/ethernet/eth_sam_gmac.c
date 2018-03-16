@@ -30,6 +30,7 @@
 #include <stdbool.h>
 #include <net/net_pkt.h>
 #include <net/net_if.h>
+#include <net/ethernet.h>
 #include <i2c.h>
 #include <soc.h>
 #include "phy_sam_gmac.h"
@@ -834,6 +835,8 @@ static void eth0_iface_init(struct net_if *iface)
 
 	/* Set up link parameters */
 	link_configure(cfg->regs, link_status);
+
+	ethernet_init(iface);
 }
 
 static struct net_if_api eth0_api = {

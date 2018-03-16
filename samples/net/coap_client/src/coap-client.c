@@ -283,7 +283,7 @@ void main(void)
 
 #if defined(CONFIG_NET_MGMT_EVENT)
 	/* Subscribe to NET_IF_UP if interface is not ready */
-	if (!atomic_test_bit(iface->flags, NET_IF_UP)) {
+	if (!atomic_test_bit(iface->if_dev->flags, NET_IF_UP)) {
 		net_mgmt_init_event_callback(&cb, event_iface_up,
 					     NET_EVENT_IF_UP);
 		net_mgmt_add_event_callback(&cb);

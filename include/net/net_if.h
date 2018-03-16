@@ -168,21 +168,170 @@ enum {
 struct net_offload;
 #endif /* CONFIG_NET_OFFLOAD */
 
+#if defined(CONFIG_NET_IPV6)
+#define NET_IF_MAX_IPV6_ADDR CONFIG_NET_IF_UNICAST_IPV6_ADDR_COUNT
+#define NET_IF_MAX_IPV6_MADDR CONFIG_NET_IF_MCAST_IPV6_ADDR_COUNT
+#define NET_IF_MAX_IPV6_PREFIX CONFIG_NET_IF_IPV6_PREFIX_COUNT
+
+struct net_if_ipv6 {
+	/** Unicast IP addresses */
+	struct net_if_addr unicast[NET_IF_MAX_IPV6_ADDR];
+
+	/** Multicast IP addresses */
+	struct net_if_mcast_addr mcast[NET_IF_MAX_IPV6_MADDR];
+
+	/** Prefixes */
+	struct net_if_ipv6_prefix prefix[NET_IF_MAX_IPV6_PREFIX];
+
+	/** Router solicitation timer */
+	struct k_delayed_work rs_timer;
+
+	/** Default reachable time (RFC 4861, page 52) */
+	u32_t base_reachable_time;
+
+	/** Reachable time (RFC 4861, page 20) */
+	u32_t reachable_time;
+
+	/** Retransmit timer (RFC 4861, page 52) */
+	u32_t retrans_timer;
+
+	/** IPv6 hop limit */
+	u8_t hop_limit;
+
+#if defined(CONFIG_NET_IPV6_DAD)
+	/** IPv6 current duplicate address detection count */
+	u8_t dad_count;
+#endif /* CONFIG_NET_IPV6_DAD */
+
+	/** RS count */
+	u8_t rs_count;
+};
+#endif /* CONFIG_NET_IPV6 */
+
+#if defined(CONFIG_NET_IPV4)
+#define NET_IF_MAX_IPV4_ADDR CONFIG_NET_IF_UNICAST_IPV4_ADDR_COUNT
+#define NET_IF_MAX_IPV4_MADDR CONFIG_NET_IF_MCAST_IPV4_ADDR_COUNT
+
+struct net_if_ipv4 {
+	/** Unicast IP addresses */
+	struct net_if_addr unicast[NET_IF_MAX_IPV4_ADDR];
+
+	/** Multicast IP addresses */
+	struct net_if_mcast_addr mcast[NET_IF_MAX_IPV4_MADDR];
+
+	/** Gateway */
+	struct in_addr gw;
+
+	/** Netmask */
+	struct in_addr netmask;
+
+	/** IPv4 time-to-live */
+	u8_t ttl;
+};
+#endif /* CONFIG_NET_IPV4 */
+
+#if defined(CONFIG_NET_DHCPV4)
+struct net_if_dhcpv4 {
+	u32_t xid;
+
+	/** IP address Lease time */
+	u32_t lease_time;
+
+	/** IP address Renewal time */
+	u32_t renewal_time;
+
+	/** IP address Rebinding time */
+	u32_t rebinding_time;
+
+	/** Server ID */
+	struct in_addr server_id;
+
+	/** Requested IP addr */
+	struct in_addr requested_ip;
+
+	/** Timer for DHCPv4 Client requests (DISCOVER, REQUEST or RENEWAL)
+	 */
+	struct k_delayed_work timer;
+
+	/** T1 (Renewal) timer */
+	struct k_delayed_work t1_timer;
+
+	/** T2 (Rebinding) timer */
+	struct k_delayed_work t2_timer;
+
+	/**
+	 *  DHCPv4 client state in the process of network
+	 *  address allocation.
+	 */
+	enum net_dhcpv4_state state;
+
+	/** Number of attempts made for REQUEST and RENEWAL messages */
+	u8_t attempts;
+};
+#endif /* CONFIG_NET_DHCPV4 */
+
+/* We always need to have at least one IP config */
+#define NET_IF_MAX_CONFIGS 1
 
 /**
- * @brief Network Interface structure
+ * @brief Network interface IP address configuration.
+ */
+struct net_if_ip {
+#if defined(CONFIG_NET_IPV6)
+	struct net_if_ipv6 *ipv6;
+#endif /* CONFIG_NET_IPV6 */
+
+#if defined(CONFIG_NET_IPV4)
+	struct net_if_ipv4 *ipv4;
+#endif /* CONFIG_NET_IPV4 */
+};
+
+/**
+ * @brief IP and other configuration related data for network interface.
+ */
+struct net_if_config {
+	/** IP address configuration setting */
+	struct net_if_ip ip;
+
+#if defined(CONFIG_NET_DHCPV4)
+	struct net_if_dhcpv4 dhcpv4;
+#endif /* CONFIG_NET_DHCPV4 */
+};
+
+/**
+ * @brief Network traffic class.
+ *
+ * These are used when sending data that is classified with different
+ * priorities. So some traffic can be marked as high priority and it will
+ * be sent first. There is always at least one work queue in the system.
+ * Each network packet that is transmitted goes through a work queue
+ * thread that will transmit it.
+ */
+struct net_traffic_class {
+	/** Work queue for handling this TX packet queue */
+	struct k_work_q work_q;
+
+	/** Stack for this work queue */
+	k_thread_stack_t *stack;
+
+	/** Traffic class value */
+	int tc;
+};
+
+/**
+ * @brief Network Interface Device structure
  *
  * Used to handle a network interface on top of a device driver instance.
- * There can be many net_if instance against the same device.
+ * There can be many net_if_dev instance against the same device.
  *
  * Such interface is mainly to be used by the link layer, but is also tight
  * to a network context: it then makes the relation with a network context
  * and the network device.
  *
  * Because of the strong relationship between a device driver and such
- * network interface, each net_if should be instantiated by
+ * network interface, each net_if_dev should be instantiated by
  */
-struct net_if {
+struct net_if_dev {
 	/** The actually device driver instance the net_if is related to */
 	struct device *dev;
 
@@ -198,9 +347,6 @@ struct net_if {
 	/** The hardware link address */
 	struct net_linkaddr link_addr;
 
-	/** Queue for outgoing packets from apps */
-	struct k_fifo tx_queue;
-
 	/** The hardware MTU */
 	u16_t mtu;
 
@@ -213,106 +359,27 @@ struct net_if {
 	struct net_offload *offload;
 #endif /* CONFIG_NET_OFFLOAD */
 
-#if defined(CONFIG_NET_IPV6)
-#define NET_IF_MAX_IPV6_ADDR CONFIG_NET_IF_UNICAST_IPV6_ADDR_COUNT
-#define NET_IF_MAX_IPV6_MADDR CONFIG_NET_IF_MCAST_IPV6_ADDR_COUNT
-#define NET_IF_MAX_IPV6_PREFIX CONFIG_NET_IF_IPV6_PREFIX_COUNT
-	struct {
-		/** Unicast IP addresses */
-		struct net_if_addr unicast[NET_IF_MAX_IPV6_ADDR];
+	/** Make sure we initialize TX queue only once. Multiple queue
+	 * inits might happen if we have multiple network interfaces
+	 * configured.
+	 */
+	bool tx_queue_init_done;
+} __net_if_align;
 
-		/** Multicast IP addresses */
-		struct net_if_mcast_addr mcast[NET_IF_MAX_IPV6_MADDR];
+/**
+ * @brief Network Interface structure
+ *
+ * Used to handle a network interface on top of a net_if_dev instance.
+ * There can be many net_if instance against the same net_if_dev instance.
+ *
+ */
+struct net_if {
+	/** The net_if_dev instance the net_if is related to */
+	struct net_if_dev *if_dev;
 
-		/** Prefixes */
-		struct net_if_ipv6_prefix prefix[NET_IF_MAX_IPV6_PREFIX];
+	/** Network interface instance configuration */
+	struct net_if_config config;
 
-		/** Router solicitation timer */
-		struct k_delayed_work rs_timer;
-
-		/** Default reachable time (RFC 4861, page 52) */
-		u32_t base_reachable_time;
-
-		/** Reachable time (RFC 4861, page 20) */
-		u32_t reachable_time;
-
-		/** Retransmit timer (RFC 4861, page 52) */
-		u32_t retrans_timer;
-
-		/** IPv6 hop limit */
-		u8_t hop_limit;
-
-#if defined(CONFIG_NET_IPV6_DAD)
-		/** IPv6 current duplicate address detection count */
-		u8_t dad_count;
-#endif /* CONFIG_NET_IPV6_DAD */
-
-		/** RS count */
-		u8_t rs_count;
-	} ipv6;
-#endif /* CONFIG_NET_IPV6 */
-
-#if defined(CONFIG_NET_IPV4)
-#define NET_IF_MAX_IPV4_ADDR CONFIG_NET_IF_UNICAST_IPV4_ADDR_COUNT
-#define NET_IF_MAX_IPV4_MADDR CONFIG_NET_IF_MCAST_IPV4_ADDR_COUNT
-	struct {
-		/** Unicast IP addresses */
-		struct net_if_addr unicast[NET_IF_MAX_IPV4_ADDR];
-
-		/** Multicast IP addresses */
-		struct net_if_mcast_addr mcast[NET_IF_MAX_IPV4_MADDR];
-
-		/** Gateway */
-		struct in_addr gw;
-
-		/** Netmask */
-		struct in_addr netmask;
-
-		/** IPv4 time-to-live */
-		u8_t ttl;
-	} ipv4;
-#endif /* CONFIG_NET_IPV4 */
-
-#if defined(CONFIG_NET_DHCPV4)
-	struct {
-		u32_t xid;
-
-		/** IP address Lease time */
-		u32_t lease_time;
-
-		/** IP address Renewal time */
-		u32_t renewal_time;
-
-		/** IP address Rebinding time */
-		u32_t rebinding_time;
-
-		/** Server ID */
-		struct in_addr server_id;
-
-		/** Requested IP addr */
-		struct in_addr requested_ip;
-
-		/** Timer for DHCPv4 Client requests (DISCOVER,
-		 * REQUEST or RENEWAL)
-		 */
-		struct k_delayed_work timer;
-
-		/** T1 (Renewal) timer */
-		struct k_delayed_work t1_timer;
-
-		/** T2 (Rebinding) timer */
-		struct k_delayed_work t2_timer;
-
-		/**
-		 *  DHCPv4 client state in the process of network
-		 *  address allocation.
-		 */
-		enum net_dhcpv4_state state;
-
-		/** Number of attempts made for REQUEST and RENEWAL messages */
-		u8_t attempts;
-	} dhcpv4;
-#endif
 } __net_if_align;
 
 /**
@@ -326,6 +393,18 @@ struct net_if {
 enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt);
 
 /**
+ * @brief Get a pointer to the interface L2
+ *
+ * @param iface a valid pointer to a network interface structure
+ *
+ * @return a pointer to the iface L2
+ */
+static inline const struct net_l2 * const net_if_l2(struct net_if *iface)
+{
+	return iface->if_dev->l2;
+}
+
+/**
  * @brief Input a packet through a net iface
  *
  * @param iface Pointer to a network interface structure
@@ -336,7 +415,7 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt);
 static inline enum net_verdict net_if_recv_data(struct net_if *iface,
 						struct net_pkt *pkt)
 {
-	return iface->l2->recv(iface, pkt);
+	return net_if_l2(iface)->recv(iface, pkt);
 }
 
 /**
@@ -351,7 +430,7 @@ static inline enum net_verdict net_if_recv_data(struct net_if *iface,
 static inline u16_t net_if_get_ll_reserve(struct net_if *iface,
 					  const struct in6_addr *dst_ip6)
 {
-	return iface->l2->reserve(iface, (void *)dst_ip6);
+	return net_if_l2(iface)->reserve(iface, (void *)dst_ip6);
 }
 
 /**
@@ -363,7 +442,7 @@ static inline u16_t net_if_get_ll_reserve(struct net_if *iface,
  */
 static inline void *net_if_l2_data(struct net_if *iface)
 {
-	return iface->l2_data;
+	return iface->if_dev->l2_data;
 }
 
 /**
@@ -375,7 +454,7 @@ static inline void *net_if_l2_data(struct net_if *iface)
  */
 static inline struct device *net_if_get_device(struct net_if *iface)
 {
-	return iface->dev;
+	return iface->if_dev->dev;
 }
 
 /**
@@ -384,10 +463,7 @@ static inline struct device *net_if_get_device(struct net_if *iface)
  * @param iface Pointer to a network interface structure
  * @param pkt Pointer to a net packet to queue
  */
-static inline void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt)
-{
-	k_fifo_put(&iface->tx_queue, pkt);
-}
+void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt);
 
 #if defined(CONFIG_NET_OFFLOAD)
 /**
@@ -399,7 +475,19 @@ static inline void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt)
  */
 static inline bool net_if_is_ip_offloaded(struct net_if *iface)
 {
-	return (iface->offload != NULL);
+	return (iface->if_dev->offload != NULL);
+}
+
+/**
+ * @brief Return the IP offload plugin
+ *
+ * @param iface Network interface
+ *
+ * @return NULL if there is no offload plugin defined, valid pointer otherwise
+ */
+static inline struct net_offload *net_if_offload(struct net_if *iface)
+{
+	return iface->if_dev->offload;
 }
 #endif
 
@@ -412,7 +500,19 @@ static inline bool net_if_is_ip_offloaded(struct net_if *iface)
  */
 static inline struct net_linkaddr *net_if_get_link_addr(struct net_if *iface)
 {
-	return &iface->link_addr;
+	return &iface->if_dev->link_addr;
+}
+
+/**
+ * @brief Return network configuration for this network interface
+ *
+ * @param iface Pointer to a network interface structure
+ *
+ * @return Pointer to configuration
+ */
+static inline struct net_if_config *net_if_get_config(struct net_if *iface)
+{
+	return &iface->config;
 }
 
 /**
@@ -447,13 +547,13 @@ static inline int net_if_set_link_addr(struct net_if *iface,
 				       u8_t *addr, u8_t len,
 				       enum net_link_type type)
 {
-	if (atomic_test_bit(iface->flags, NET_IF_UP)) {
+	if (atomic_test_bit(iface->if_dev->flags, NET_IF_UP)) {
 		return -EPERM;
 	}
 
-	iface->link_addr.addr = addr;
-	iface->link_addr.len = len;
-	iface->link_addr.type = type;
+	net_if_get_link_addr(iface)->addr = addr;
+	net_if_get_link_addr(iface)->len = len;
+	net_if_get_link_addr(iface)->type = type;
 
 	net_hostname_set_postfix(addr, len);
 
@@ -469,7 +569,7 @@ static inline int net_if_set_link_addr(struct net_if *iface,
  */
 static inline u16_t net_if_get_mtu(struct net_if *iface)
 {
-	return iface->mtu;
+	return iface->if_dev->mtu;
 }
 
 /**
@@ -481,7 +581,7 @@ static inline u16_t net_if_get_mtu(struct net_if *iface)
 static inline void net_if_set_mtu(struct net_if *iface,
 				  u16_t mtu)
 {
-	iface->mtu = mtu;
+	iface->if_dev->mtu = mtu;
 }
 
 /**
@@ -513,6 +613,18 @@ struct net_if *net_if_get_by_link_addr(struct net_linkaddr *ll_addr);
  * @return a valid struct net_if pointer on success, NULL otherwise
  */
 struct net_if *net_if_lookup_by_dev(struct device *dev);
+
+/**
+ * @brief Get network interface IP config
+ *
+ * @param iface Interface to use.
+ *
+ * @return NULL if not found or pointer to correct config settings.
+ */
+static inline struct net_if_config *net_if_config_get(struct net_if *iface)
+{
+	return &iface->config;
+}
 
 /**
  * @brief Remove a router from the system
@@ -558,6 +670,28 @@ static inline struct net_if *net_if_get_ieee802154(void)
 
 #if defined(CONFIG_NET_IPV6)
 /**
+ * @brief Allocate network interface IPv6 config.
+ *
+ * @details This function will allocate new IPv6 config.
+ *
+ * @param iface Interface to use.
+ * @param ipv6 Pointer to allocated IPv6 struct is returned to caller.
+ *
+ * @return 0 if ok, <0 if error
+ */
+int net_if_config_ipv6_get(struct net_if *iface,
+			   struct net_if_ipv6 **ipv6);
+
+/**
+ * @brief Release network interface IPv6 config.
+ *
+ * @param iface Interface to use.
+ *
+ * @return 0 if ok, <0 if error
+ */
+int net_if_config_ipv6_put(struct net_if *iface);
+
+/**
  * @brief Check if this IPv6 address belongs to one of the interfaces.
  *
  * @param addr IPv6 address
@@ -580,18 +714,24 @@ static inline
 struct net_if_addr *net_if_ipv6_addr_lookup_by_iface(struct net_if *iface,
 						     struct in6_addr *addr)
 {
+	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
 	int i;
 
+	if (!ipv6) {
+		return NULL;
+	}
+
 	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
-		if (!iface->ipv6.unicast[i].is_used ||
-		    iface->ipv6.unicast[i].address.family != AF_INET6) {
+		if (!ipv6->unicast[i].is_used ||
+		    ipv6->unicast[i].address.family != AF_INET6) {
 			continue;
 		}
 
-		if (net_is_ipv6_prefix(addr->s6_addr,
-			iface->ipv6.unicast[i].address.in6_addr.s6_addr,
-				       128)) {
-			return &iface->ipv6.unicast[i];
+		if (net_is_ipv6_prefix(
+			    addr->s6_addr,
+			    ipv6->unicast[i].address.in6_addr.s6_addr,
+			    128)) {
+			return &ipv6->unicast[i];
 		}
 	}
 
@@ -913,7 +1053,11 @@ bool net_if_ipv6_router_rm(struct net_if_router *router);
  */
 static inline u8_t net_if_ipv6_get_hop_limit(struct net_if *iface)
 {
-	return iface->ipv6.hop_limit;
+	if (!iface->config.ip.ipv6) {
+		return 0;
+	}
+
+	return iface->config.ip.ipv6->hop_limit;
 }
 
 /**
@@ -925,7 +1069,11 @@ static inline u8_t net_if_ipv6_get_hop_limit(struct net_if *iface)
 static inline void net_ipv6_set_hop_limit(struct net_if *iface,
 					  u8_t hop_limit)
 {
-	iface->ipv6.hop_limit = hop_limit;
+	if (!iface->config.ip.ipv6) {
+		return;
+	}
+
+	iface->config.ip.ipv6->hop_limit = hop_limit;
 }
 
 /**
@@ -935,9 +1083,13 @@ static inline void net_ipv6_set_hop_limit(struct net_if *iface,
  * @param reachable_time New reachable time
  */
 static inline void net_if_ipv6_set_base_reachable_time(struct net_if *iface,
-						    u32_t reachable_time)
+						       u32_t reachable_time)
 {
-	iface->ipv6.base_reachable_time = reachable_time;
+	if (!iface->config.ip.ipv6) {
+		return;
+	}
+
+	iface->config.ip.ipv6->base_reachable_time = reachable_time;
 }
 
 /**
@@ -949,27 +1101,31 @@ static inline void net_if_ipv6_set_base_reachable_time(struct net_if *iface,
  */
 static inline u32_t net_if_ipv6_get_reachable_time(struct net_if *iface)
 {
-	return iface->ipv6.reachable_time;
+	if (!iface->config.ip.ipv6) {
+		return 0;
+	}
+
+	return iface->config.ip.ipv6->reachable_time;
 }
 
 /**
  * @brief Calculate next reachable time value for IPv6 reachable time
  *
- * @param iface Network interface
+ * @param ipv6 IPv6 address configuration
  *
  * @return Reachable time
  */
-u32_t net_if_ipv6_calc_reachable_time(struct net_if *iface);
+u32_t net_if_ipv6_calc_reachable_time(struct net_if_ipv6 *ipv6);
 
 /**
  * @brief Set IPv6 reachable time for a given interface. This requires
  * that base reachable time is set for the interface.
  *
- * @param iface Network interface
+ * @param ipv6 IPv6 address configuration
  */
-static inline void net_if_ipv6_set_reachable_time(struct net_if *iface)
+static inline void net_if_ipv6_set_reachable_time(struct net_if_ipv6 *ipv6)
 {
-	iface->ipv6.reachable_time = net_if_ipv6_calc_reachable_time(iface);
+	ipv6->reachable_time = net_if_ipv6_calc_reachable_time(ipv6);
 }
 
 /**
@@ -981,7 +1137,11 @@ static inline void net_if_ipv6_set_reachable_time(struct net_if *iface)
 static inline void net_if_ipv6_set_retrans_timer(struct net_if *iface,
 						 u32_t retrans_timer)
 {
-	iface->ipv6.retrans_timer = retrans_timer;
+	if (!iface->config.ip.ipv6) {
+		return;
+	}
+
+	iface->config.ip.ipv6->retrans_timer = retrans_timer;
 }
 
 /**
@@ -993,7 +1153,11 @@ static inline void net_if_ipv6_set_retrans_timer(struct net_if *iface,
  */
 static inline u32_t net_if_ipv6_get_retrans_timer(struct net_if *iface)
 {
-	return iface->ipv6.retrans_timer;
+	if (!iface->config.ip.ipv6) {
+		return 0;
+	}
+
+	return iface->config.ip.ipv6->retrans_timer;
 }
 
 /**
@@ -1060,6 +1224,28 @@ struct in6_addr *net_if_ipv6_get_global_addr(struct net_if **iface);
 
 #if defined(CONFIG_NET_IPV4)
 /**
+ * @brief Allocate network interface IPv4 config.
+ *
+ * @details This function will allocate new IPv4 config.
+ *
+ * @param iface Interface to use.
+ * @param ipv4 Pointer to allocated IPv4 struct is returned to caller.
+ *
+ * @return 0 if ok, <0 if error
+ */
+int net_if_config_ipv4_get(struct net_if *iface,
+			   struct net_if_ipv4 **ipv4);
+
+/**
+ * @brief Release network interface IPv4 config.
+ *
+ * @param iface Interface to use.
+ *
+ * @return 0 if ok, <0 if error
+ */
+int net_if_config_ipv4_put(struct net_if *iface);
+
+/**
  * @brief Get IPv4 time-to-live value specified for a given interface
  *
  * @param iface Network interface
@@ -1068,7 +1254,11 @@ struct in6_addr *net_if_ipv6_get_global_addr(struct net_if **iface);
  */
 static inline u8_t net_if_ipv4_get_ttl(struct net_if *iface)
 {
-	return iface->ipv4.ttl;
+	if (!iface->config.ip.ipv4) {
+		return 0;
+	}
+
+	return iface->config.ip.ipv4->ttl;
 }
 
 /**
@@ -1180,6 +1370,17 @@ bool net_if_ipv4_addr_mask_cmp(struct net_if *iface,
 			       struct in_addr *addr);
 
 /**
+ * @brief Get a network interface that should be used when sending
+ * IPv4 network data to destination.
+ *
+ * @param dst IPv4 destination address
+ *
+ * @return Pointer to network interface to use, NULL if no suitable interface
+ * could be found.
+ */
+struct net_if *net_if_ipv4_select_src_iface(struct in_addr *dst);
+
+/**
  * @brief Set IPv4 netmask for an interface.
  *
  * @param iface Interface to use.
@@ -1188,7 +1389,15 @@ bool net_if_ipv4_addr_mask_cmp(struct net_if *iface,
 static inline void net_if_ipv4_set_netmask(struct net_if *iface,
 					   struct in_addr *netmask)
 {
-	net_ipaddr_copy(&iface->ipv4.netmask, netmask);
+	if (net_if_config_ipv4_get(iface, NULL) < 0) {
+		return;
+	}
+
+	if (!iface->config.ip.ipv4) {
+		return;
+	}
+
+	net_ipaddr_copy(&iface->config.ip.ipv4->netmask, netmask);
 }
 
 /**
@@ -1200,7 +1409,15 @@ static inline void net_if_ipv4_set_netmask(struct net_if *iface,
 static inline void net_if_ipv4_set_gw(struct net_if *iface,
 				      struct in_addr *gw)
 {
-	net_ipaddr_copy(&iface->ipv4.gw, gw);
+	if (net_if_config_ipv4_get(iface, NULL) < 0) {
+		return;
+	}
+
+	if (!iface->config.ip.ipv4) {
+		return;
+	}
+
+	net_ipaddr_copy(&iface->config.ip.ipv4->gw, gw);
 }
 
 #endif /* CONFIG_NET_IPV4 */
@@ -1317,7 +1534,7 @@ static inline bool net_if_is_up(struct net_if *iface)
 {
 	NET_ASSERT(iface);
 
-	return atomic_test_bit(iface->flags, NET_IF_UP);
+	return atomic_test_bit(iface->if_dev->flags, NET_IF_UP);
 }
 
 /**
@@ -1340,26 +1557,35 @@ struct net_if_api {
 #define NET_IF_DHCPV4_INIT
 #endif
 
+#define NET_IF_CONFIG_INIT				\
+	.config = {					\
+		.ip = {					\
+		},					\
+		NET_IF_DHCPV4_INIT			\
+	}
+
 #define NET_IF_GET_NAME(dev_name, sfx) (__net_if_##dev_name##_##sfx)
-#define NET_IF_EVENT_GET_NAME(dev_name, sfx)	\
-	(__net_if_event_##dev_name##_##sfx)
+#define NET_IF_DEV_GET_NAME(dev_name, sfx) (__net_if_dev_##dev_name##_##sfx)
 
 #define NET_IF_GET(dev_name, sfx)					\
 	((struct net_if *)&NET_IF_GET_NAME(dev_name, sfx))
 
-#define NET_IF_INIT(dev_name, sfx, _l2, _mtu)				\
-	static struct net_if (NET_IF_GET_NAME(dev_name, sfx)) __used	\
-	__attribute__((__section__(".net_if.data"))) = {		\
-		.dev = &(__device_##dev_name),				\
+#define NET_IF_INIT(dev_name, sfx, _l2, _mtu, _num_configs)		\
+	static struct net_if_dev (NET_IF_DEV_GET_NAME(dev_name, sfx))	\
+	__used __attribute__((__section__(".net_if_dev.data"))) = {	\
+		.dev = &(DEVICE_NAME_GET(dev_name)),			\
 		.l2 = &(NET_L2_GET_NAME(_l2)),				\
 		.l2_data = &(NET_L2_GET_DATA(dev_name, sfx)),		\
 		.mtu = _mtu,						\
-		NET_IF_DHCPV4_INIT					\
 	};								\
-	static struct k_poll_event					\
-	(NET_IF_EVENT_GET_NAME(dev_name, sfx)) __used			\
-		__attribute__((__section__(".net_if_event.data"))) = {}
-
+	static struct net_if						\
+	(NET_IF_GET_NAME(dev_name, sfx))[_num_configs] __used		\
+	__attribute__((__section__(".net_if.data"))) = {		\
+		[0 ... (_num_configs - 1)] = {				\
+			.if_dev = &(NET_IF_DEV_GET_NAME(dev_name, sfx)), \
+			NET_IF_CONFIG_INIT				\
+		}							\
+	}
 
 /* Network device initialization macros */
 
@@ -1369,7 +1595,7 @@ struct net_if_api {
 	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data,	\
 			    cfg_info, POST_KERNEL, prio, api);	\
 	NET_L2_DATA_INIT(dev_name, 0, l2_ctx_type);		\
-	NET_IF_INIT(dev_name, 0, l2, mtu)
+	NET_IF_INIT(dev_name, 0, l2, mtu, NET_IF_MAX_CONFIGS)
 
 /**
  * If your network device needs more than one instance of a network interface,
@@ -1382,7 +1608,7 @@ struct net_if_api {
 	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data,		\
 			    cfg_info, POST_KERNEL, prio, api);		\
 	NET_L2_DATA_INIT(dev_name, instance, l2_ctx_type);		\
-	NET_IF_INIT(dev_name, instance, l2, mtu)
+	NET_IF_INIT(dev_name, instance, l2, mtu, NET_IF_MAX_CONFIGS)
 
 #ifdef __cplusplus
 }

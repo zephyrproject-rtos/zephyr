@@ -43,6 +43,29 @@ config NET_SHELL
 	  Activate shell module that provides network commands like
 	  ping to the console.
 
+config NET_TC_COUNT
+	int "How many traffic classes to have for each network device"
+	default 1
+	range 1 8
+	help
+	  Define how many traffic classes (TX queues) the system should have
+	  when sending a network packet. The network packet priority can then
+	  be mapped to this traffic class so that higher prioritised packets
+	  can be processed before lower prioritised ones. Each queue is
+	  handled by a separate thread which will need RAM for stack space.
+	  Only increase the value from 1 if you really need this feature.
+	  The default value is 1 which means that all the network traffic is
+	  handled equally. In this implementation, the higher traffic class
+	  value corresponds to lower thread priority.
+
+config NET_TX_DEFAULT_PRIORITY
+	int "Default network packet priority if none have been set"
+	default 1
+	range 0 7
+	help
+	  What is the default network packet priority if user has not specified
+	  one. The value 0 means lowest priority and 7 is the highest.
+
 config NET_IP_ADDR_CHECK
 	bool "Check IP address validity before sending IP packet"
 	default y
@@ -261,6 +284,13 @@ config NET_CONTEXT_CHECK
 	help
 	  If you know that the options passed to net_context...() functions
 	  are ok, then you can disable the checks to save some memory.
+
+config NET_CONTEXT_PRIORITY
+	bool "Add priority support to net_context"
+	default n
+	help
+	  It is possible to prioritize network traffic. This requires
+	  also traffic class (CONFIG_NET_TC_COUNT) support to work as expected.
 
 config NET_TEST
 	bool "Network Testing"

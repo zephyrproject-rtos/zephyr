@@ -32,6 +32,9 @@
 extern "C" {
 #endif
 
+/* Specifying VLAN tag here in order to avoid circular dependencies */
+#define NET_VLAN_TAG_UNSPEC 0x0fff
+
 /** Protocol families */
 #define PF_UNSPEC	0	/* Unspecified.  */
 #define PF_INET		2	/* IP protocol family.  */
@@ -349,6 +352,7 @@ static inline bool net_is_ipv6_addr_mcast(const struct in6_addr *addr)
 }
 
 struct net_if;
+struct net_if_config;
 
 extern struct net_if_addr *net_if_ipv6_addr_lookup(const struct in6_addr *addr,
 						   struct net_if **iface);
@@ -931,6 +935,19 @@ static inline bool net_tcp_seq_greater(u32_t seq1, u32_t seq2)
 {
 	return net_tcp_seq_cmp(seq1, seq2) > 0;
 }
+
+/**
+ * @brief Convert a string of hex values to array of bytes.
+ *
+ * @details The syntax of the string is "ab:02:98:fa:42:01"
+ *
+ * @param buf Pointer to memory where the bytes are written.
+ * @param buf_len Length of the memory area.
+ * @param src String of bytes.
+ *
+ * @return 0 if ok, <0 if error
+ */
+int net_bytes_from_str(u8_t *buf, int buf_len, const char *src);
 
 #ifdef __cplusplus
 }
