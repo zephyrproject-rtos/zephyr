@@ -183,7 +183,7 @@ struct net_icmp_hdr *net_icmpv6_get_hdr(struct net_pkt *pkt,
 	frag = net_frag_read(frag, pos, &pos, sizeof(hdr->chksum),
 			     (u8_t *)&hdr->chksum);
 	if (!frag) {
-		NET_ASSERT(frag);
+		NET_ERR("Malformed ICMPv6 packet");
 		return NULL;
 	}
 
@@ -470,6 +470,9 @@ static enum net_verdict handle_echo_request(struct net_pkt *orig)
 
 	/* ICMPv6 fields */
 	icmp_hdr = net_icmpv6_get_hdr(pkt, &hdr);
+	if (!icmp_hdr) {
+		goto drop;
+	}
 	icmp_hdr->type = NET_ICMPV6_ECHO_REPLY;
 	icmp_hdr->code = 0;
 	icmp_hdr->chksum = 0;
