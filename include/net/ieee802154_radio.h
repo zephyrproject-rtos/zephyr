@@ -14,6 +14,7 @@
 
 #include <device.h>
 #include <net/net_if.h>
+#include <net/net_pkt.h>
 #include <net/ieee802154.h>
 
 #ifdef __cplusplus
@@ -94,14 +95,22 @@ struct ieee802154_radio_api {
 #endif /* CONFIG_NET_L2_IEEE802154_SUB_GHZ */
 } __packed;
 
+#define IEEE802154_AR_FLAG_SET (0x20)
+
 /**
  * @brief Check if AR flag is set on the frame inside given net_pkt
  *
- * @param pkt A valid pointer on a net_pkt structure, must not be NULL.
+ * @param pkt A valid pointer on a net_pkt structure, must not be NULL,
+ *        and its length should be at least made of 1 byte (ACK frames
+ *        are the smallest frames on 15.4 and made of 3 bytes, not
+ *        not counting the FCS part).
  *
  * @return True if AR flag is set, False otherwise
  */
-bool ieee802154_is_ar_flag_set(struct net_pkt *pkt);
+static inline bool ieee802154_is_ar_flag_set(struct net_pkt *pkt)
+{
+	return (*net_pkt_ll(pkt) & IEEE802154_AR_FLAG_SET);
+}
 
 #ifndef CONFIG_IEEE802154_RAW_MODE
 
