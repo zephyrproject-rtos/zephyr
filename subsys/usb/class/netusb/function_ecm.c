@@ -183,6 +183,7 @@ static void ecm_bulk_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 #if VERBOSE_DEBUG
 	SYS_LOG_DBG("EP 0x%x status %d", ep, ep_status);
 #endif
+	netusb_bulk_in(ep, ep_status);
 }
 
 /*
