@@ -1307,18 +1307,18 @@ static inline void handle_data_ep_idle_state_events(struct ep_usb_event *ev)
 	case EP_DATA_RECV:
 	{
 		struct nrf5_usbd_ctx *ctx = get_usbd_ctx();
+		u8_t addr = ep_ctx->cfg.addr;
 
 		/**
 		 * We have some OUT BULK/INTERRUT data received
 		 * into the USBD's local buffer. Let's grab it.
 		 */
-		nrf_usbd_ep_easydma_set(ep_ctx->cfg.addr,
-					(u32_t)ep_ctx->buf.data,
-					ep_ctx->cfg.max_sz);
+		nrf_usbd_ep_easydma_set(addr, (u32_t)ep_ctx->buf.data,
+					nrf_usbd_epout_size_get(addr));
 
 		/* Only one DMA can happen at a time */
 		k_sem_take(&ctx->dma_in_use, K_FOREVER);
-		start_epout_task(ep_ctx->cfg.addr);
+		start_epout_task(addr);
 	}
 		break;
 	case EP_WRITE_COMPLETE:
@@ -1413,6 +1413,7 @@ static inline void handle_iso_ep_idle_state_events(struct ep_usb_event *ev)
 	case EP_SOF:
 	{
 		struct nrf5_usbd_ctx *ctx = get_usbd_ctx();
+		u8_t addr = ep_ctx->cfg.addr;
 
 		if (NRF_USBD_EPOUT_CHECK(ep_ctx->cfg.addr)) {
 			/**
@@ -1426,18 +1427,21 @@ static inline void handle_iso_ep_idle_state_events(struct ep_usb_event *ev)
 			 * USB bus?
 			 */
 			if (ep_ctx->buf.len) {
-				nrf_usbd_ep_easydma_set(ep_ctx->cfg.addr,
+				u32_t maxcnt;
+
+				maxcnt = nrf_usbd_episoout_size_get(addr);
+				nrf_usbd_ep_easydma_set(addr,
 							(u32_t)ep_ctx->buf.data,
-							ep_ctx->cfg.max_sz);
+							maxcnt);
 
 				/* Only one DMA can happen at a time */
 				k_sem_take(&ctx->dma_in_use, K_FOREVER);
-				start_epout_task(ep_ctx->cfg.addr);
+				start_epout_task(addr);
 			}
 		} else {
 			/** Is buffer available? */
 			if (!ep_ctx->buf.len) {
-				nrf_usbd_ep_easydma_set(ep_ctx->cfg.addr,
+				nrf_usbd_ep_easydma_set(addr,
 							(u32_t)ep_ctx->buf.data,
 							ep_ctx->cfg.max_sz);
 
@@ -1449,7 +1453,7 @@ static inline void handle_iso_ep_idle_state_events(struct ep_usb_event *ev)
 				 * the sem back in ISR?
 				 */
 				k_sem_take(&ctx->dma_in_use, K_FOREVER);
-				start_epin_task(ep_ctx->cfg.addr);
+				start_epin_task(addr);
 			}
 		}
 	}
