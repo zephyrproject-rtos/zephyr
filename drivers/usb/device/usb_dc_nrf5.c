@@ -2208,3 +2208,19 @@ int usb_dc_set_status_callback(const usb_dc_status_callback cb)
 
 	return 0;
 }
+
+int usb_dc_ep_mps(const u8_t ep)
+{
+	struct nrf5_usbd_ep_ctx *ep_ctx;
+
+	if (!dev_attached()) {
+		return -ENODEV;
+	}
+
+	ep_ctx = endpoint_ctx(ep);
+	if (!ep_ctx) {
+		return -EINVAL;
+	}
+
+	return ep_ctx->cfg.max_sz;
+}
