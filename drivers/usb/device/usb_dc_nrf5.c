@@ -1422,11 +1422,8 @@ static inline void handle_iso_ep_idle_state_events(struct ep_usb_event *ev)
 			 * will transfer the OUT data anyway if DMA is set up.
 			 */
 
-			/**
-			 * Have anything in the ISO OUT buffer to write to
-			 * USB bus?
-			 */
-			if (ep_ctx->buf.len) {
+			/** Is buffer available? */
+			if (!ep_ctx->buf.len) {
 				u32_t maxcnt;
 
 				maxcnt = nrf_usbd_episoout_size_get(addr);
@@ -1439,8 +1436,11 @@ static inline void handle_iso_ep_idle_state_events(struct ep_usb_event *ev)
 				start_epout_task(addr);
 			}
 		} else {
-			/** Is buffer available? */
-			if (!ep_ctx->buf.len) {
+			/**
+			 * Have anything in the ISO IN buffer to write to
+			 * USB bus?
+			 */
+			if (ep_ctx->buf.len) {
 				nrf_usbd_ep_easydma_set(addr,
 							(u32_t)ep_ctx->buf.data,
 							ep_ctx->cfg.max_sz);
