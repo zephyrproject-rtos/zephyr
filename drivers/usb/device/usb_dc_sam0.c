@@ -526,3 +526,24 @@ int usb_dc_ep_set_callback(const u8_t ep, const usb_dc_ep_callback cb)
 
 	return 0;
 }
+
+int usb_dc_ep_mps(const u8_t ep)
+{
+	struct usb_sam0_data *data = usb_sam0_get_data();
+	u8_t for_in = ep & USB_EP_DIR_MASK;
+	u8_t ep_num = ep & ~USB_EP_DIR_MASK;
+	UsbDeviceDescriptor *desc = &data->descriptors[ep_num];
+	int size;
+
+	if (for_in) {
+		size = desc->DeviceDescBank[1].PCKSIZE.bit.SIZE;
+	} else {
+		size = desc->DeviceDescBank[0].PCKSIZE.bit.SIZE;
+	}
+
+	if (size >= 7) {
+		return 1023;
+	}
+	/* 0 -> 8, 1 -> 16, 2 -> 32 etc */
+	return 1 << (size + 3);
+}
