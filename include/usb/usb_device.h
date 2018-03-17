@@ -39,6 +39,10 @@
 #include <drivers/usb/usb_dc.h>
 #include <usb/usbstruct.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*************************************************************************
  *  USB configuration
  **************************************************************************/
@@ -362,5 +366,9 @@ int usb_transfer_sync(u8_t ep, u8_t *data, size_t dlen, unsigned int flags);
  * @return 0 on success, negative errno code on fail.
  */
 void usb_cancel_transfer(u8_t ep);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* USB_DEVICE_H_ */

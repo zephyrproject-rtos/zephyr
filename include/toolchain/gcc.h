@@ -13,11 +13,15 @@
  * Macros to abstract compiler capabilities for GCC toolchain.
  */
 
+/* C++11 has static_assert built in */
+#ifdef __cplusplus
+#define BUILD_ASSERT(EXPR) static_assert(EXPR, "")
+#define BUILD_ASSERT_MSG(EXPR, MSG) static_assert(EXPR, MSG)
 /*
  * GCC 4.6 and higher have _Static_assert built in, and its output is
  * easier to understand than the common BUILD_ASSERT macros.
  */
-#if __GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)
+#elif (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
 #define BUILD_ASSERT(EXPR) _Static_assert(EXPR, "")
 #define BUILD_ASSERT_MSG(EXPR, MSG) _Static_assert(EXPR, MSG)
 #endif

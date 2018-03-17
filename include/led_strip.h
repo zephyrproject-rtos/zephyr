@@ -18,6 +18,10 @@
 #include <zephyr/types.h>
 #include <device.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief Color value for a single RGB LED.
  *
@@ -86,7 +90,8 @@ struct led_strip_driver_api {
 static inline int led_strip_update_rgb(struct device *dev,
 				       struct led_rgb *pixels,
 				       size_t num_pixels) {
-	const struct led_strip_driver_api *api = dev->driver_api;
+	const struct led_strip_driver_api *api =
+		(const struct led_strip_driver_api *)dev->driver_api;
 
 	return api->update_rgb(dev, pixels, num_pixels);
 }
@@ -111,9 +116,14 @@ static inline int led_strip_update_rgb(struct device *dev,
 static inline int led_strip_update_channels(struct device *dev,
 					    u8_t *channels,
 					    size_t num_channels) {
-	const struct led_strip_driver_api *api = dev->driver_api;
+	const struct led_strip_driver_api *api =
+		(const struct led_strip_driver_api *)dev->driver_api;
 
 	return api->update_channels(dev, channels, num_channels);
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif	/* _ZEPHYR_LED_STRIP_H */

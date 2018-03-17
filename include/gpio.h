@@ -20,15 +20,16 @@
 #include <stddef.h>
 #include <device.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @brief GPIO Driver APIs
  * @defgroup gpio_interface GPIO Driver APIs
  * @ingroup io_interfaces
  * @{
  */
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /** @cond INTERNAL_HIDDEN */
 #define GPIO_ACCESS_BY_PIN 0
@@ -269,7 +270,8 @@ __syscall int gpio_config(struct device *port, int access_op, u32_t pin,
 static inline int _impl_gpio_config(struct device *port, int access_op,
 				    u32_t pin, int flags)
 {
-	const struct gpio_driver_api *api = port->driver_api;
+	const struct gpio_driver_api *api =
+		(const struct gpio_driver_api *)port->driver_api;
 
 	return api->config(port, access_op, pin, flags);
 }
@@ -280,7 +282,8 @@ __syscall int gpio_write(struct device *port, int access_op, u32_t pin,
 static inline int _impl_gpio_write(struct device *port, int access_op,
 				   u32_t pin, u32_t value)
 {
-	const struct gpio_driver_api *api = port->driver_api;
+	const struct gpio_driver_api *api =
+		(const struct gpio_driver_api *)port->driver_api;
 
 	return api->write(port, access_op, pin, value);
 }
@@ -291,7 +294,8 @@ __syscall int gpio_read(struct device *port, int access_op, u32_t pin,
 static inline int _impl_gpio_read(struct device *port, int access_op,
 				  u32_t pin, u32_t *value)
 {
-	const struct gpio_driver_api *api = port->driver_api;
+	const struct gpio_driver_api *api =
+		(const struct gpio_driver_api *)port->driver_api;
 
 	return api->read(port, access_op, pin, value);
 }
@@ -302,7 +306,8 @@ __syscall int gpio_enable_callback(struct device *port, int access_op,
 static inline int _impl_gpio_enable_callback(struct device *port,
 					     int access_op, u32_t pin)
 {
-	const struct gpio_driver_api *api = port->driver_api;
+	const struct gpio_driver_api *api =
+		(const struct gpio_driver_api *)port->driver_api;
 
 	return api->enable_callback(port, access_op, pin);
 }
@@ -313,7 +318,8 @@ __syscall int gpio_disable_callback(struct device *port, int access_op,
 static inline int _impl_gpio_disable_callback(struct device *port,
 					      int access_op, u32_t pin)
 {
-	const struct gpio_driver_api *api = port->driver_api;
+	const struct gpio_driver_api *api =
+		(const struct gpio_driver_api *)port->driver_api;
 
 	return api->disable_callback(port, access_op, pin);
 }
@@ -391,7 +397,8 @@ static inline void gpio_init_callback(struct gpio_callback *callback,
 static inline int gpio_add_callback(struct device *port,
 				    struct gpio_callback *callback)
 {
-	const struct gpio_driver_api *api = port->driver_api;
+	const struct gpio_driver_api *api =
+		(const struct gpio_driver_api *)port->driver_api;
 
 	__ASSERT(callback, "Callback pointer should not be NULL");
 
@@ -410,7 +417,8 @@ static inline int gpio_add_callback(struct device *port,
 static inline int gpio_remove_callback(struct device *port,
 				       struct gpio_callback *callback)
 {
-	const struct gpio_driver_api *api = port->driver_api;
+	const struct gpio_driver_api *api =
+		(const struct gpio_driver_api *)port->driver_api;
 
 	__ASSERT(callback, "Callback pointer should not be NULL");
 
@@ -569,14 +577,14 @@ struct gpio_pin_config {
 #define GPIO_GET_CONTROLLER(_conf)	GPIO_GET_CONTROLLER_IDX(, _conf)
 #define GPIO_GET_PIN(_conf)		GPIO_GET_PIN_IDX(, _conf)
 
-#ifdef __cplusplus
-}
-#endif
-
 /**
  * @}
  */
 
 #include <syscalls/gpio.h>
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __GPIO_H__ */

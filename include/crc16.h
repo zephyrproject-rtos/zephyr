@@ -14,6 +14,10 @@
 #include <stdbool.h>
 #include <stddef.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @defgroup checksum Checksum
  */
@@ -110,4 +114,9 @@ static inline u16_t crc16_ansi(const u8_t *src, size_t len)
 /**
  * @}
  */
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif
