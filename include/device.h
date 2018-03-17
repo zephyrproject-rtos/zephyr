@@ -216,7 +216,7 @@ struct device;
  * @param config_info address of driver instance config information
  */
 struct device_config {
-	char    *name;
+	const char *name;
 	int (*init)(struct device *device);
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	int (*device_pm_control)(struct device *device, u32_t command,

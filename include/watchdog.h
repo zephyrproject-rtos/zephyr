@@ -74,14 +74,16 @@ struct wdt_driver_api {
 
 static inline void wdt_enable(struct device *dev)
 {
-	const struct wdt_driver_api *api = dev->driver_api;
+	const struct wdt_driver_api *api =
+		(const struct wdt_driver_api *)dev->driver_api;
 
 	api->enable(dev);
 }
 
 static inline void wdt_disable(struct device *dev)
 {
-	const struct wdt_driver_api *api = dev->driver_api;
+	const struct wdt_driver_api *api =
+		(const struct wdt_driver_api *)dev->driver_api;
 
 	api->disable(dev);
 }
@@ -89,7 +91,8 @@ static inline void wdt_disable(struct device *dev)
 static inline void wdt_get_config(struct device *dev,
 				  struct wdt_config *config)
 {
-	const struct wdt_driver_api *api = dev->driver_api;
+	const struct wdt_driver_api *api =
+		(const struct wdt_driver_api *)dev->driver_api;
 
 	api->get_config(dev, config);
 }
@@ -97,14 +100,16 @@ static inline void wdt_get_config(struct device *dev,
 static inline int wdt_set_config(struct device *dev,
 				 struct wdt_config *config)
 {
-	const struct wdt_driver_api *api = dev->driver_api;
+	const struct wdt_driver_api *api =
+		(const struct wdt_driver_api *)dev->driver_api;
 
 	return api->set_config(dev, config);
 }
 
 static inline void wdt_reload(struct device *dev)
 {
-	const struct wdt_driver_api *api = dev->driver_api;
+	const struct wdt_driver_api *api =
+		(const struct wdt_driver_api *)dev->driver_api;
 
 	api->reload(dev);
 }

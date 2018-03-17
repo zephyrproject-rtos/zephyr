@@ -17,6 +17,10 @@
 #ifndef __USB_HID_H__
 #define __USB_HID_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct usb_hid_class_subdescriptor {
 	u8_t bDescriptorType;
 	u16_t wDescriptorLength;
@@ -152,5 +156,9 @@ void usb_hid_register_device(const u8_t *desc, size_t size,
 
 /* Initialize USB HID */
 int usb_hid_init(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* __USB_HID_H__ */
