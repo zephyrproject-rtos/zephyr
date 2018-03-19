@@ -13,9 +13,9 @@
 #include <shell/shell.h>
 #include <misc/printk.h>
 
-#if defined(CONFIG_SOC_FAMILY_NRF5)
+#if defined(CONFIG_SOC_FAMILY_NRF)
 #include "../controller/hal/nrf5/ticker.h"
-#endif /* CONFIG_SOC_FAMILY_NRF5 */
+#endif /* CONFIG_SOC_FAMILY_NRF */
 
 #include "../controller/util/memq.h"
 #include "../controller/util/mayfly.h"

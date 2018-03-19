@@ -9,7 +9,7 @@
 
 config I2C_NRF5
 	bool "NRF5 I2C driver"
-	depends on SOC_FAMILY_NRF5
+	depends on SOC_FAMILY_NRF
 	select GPIO
 	select HAS_DTS_I2C
 	default n

@@ -1,0 +1,19 @@
+# Kconfig - Nordic Semiconductor nRFx MCU line
+#
+# Copyright (c) 2018 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_FAMILY_NRF
+	bool
+	# omit prompt to signify a "hidden" option
+	default n
+
+if SOC_FAMILY_NRF
+config SOC_FAMILY
+	string
+	default nordic_nrf
+endif
+
+source "arch/arm/soc/nordic_nrf/*/Kconfig.soc"

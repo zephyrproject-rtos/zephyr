@@ -17,10 +17,10 @@
 
 #include "ll.h"
 
-#if defined(CONFIG_SOC_FAMILY_NRF5)
+#if defined(CONFIG_SOC_FAMILY_NRF)
 #include "hal/nrf5/ticker.h"
 #include <drivers/entropy/nrf5_entropy.h>
-#endif /* CONFIG_SOC_FAMILY_NRF5 */
+#endif /* CONFIG_SOC_FAMILY_NRF */
 
 #include "hal/cpu.h"
 #include "hal/ecb.h"

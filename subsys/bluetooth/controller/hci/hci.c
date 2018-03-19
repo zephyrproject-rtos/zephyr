@@ -1833,7 +1833,7 @@ static void vs_read_static_addrs(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_rp_vs_read_static_addrs *rp;
 
-#if defined(CONFIG_SOC_FAMILY_NRF5)
+#if defined(CONFIG_SOC_FAMILY_NRF)
 	/* Read address from nRF5-specific storage
 	 * Non-initialized FICR values default to 0xFF, skip if no address
 	 * present. Also if a public address lives in FICR, do not use in this
@@ -1862,7 +1862,7 @@ static void vs_read_static_addrs(struct net_buf *buf, struct net_buf **evt)
 
 		return;
 	}
-#endif /* CONFIG_SOC_FAMILY_NRF5 */
+#endif /* CONFIG_SOC_FAMILY_NRF */
 
 	rp = cmd_complete(evt, sizeof(*rp));
 	rp->status = 0x00;
@@ -1877,7 +1877,7 @@ static void vs_read_key_hierarchy_roots(struct net_buf *buf,
 	rp = cmd_complete(evt, sizeof(*rp));
 	rp->status = 0x00;
 
-#if defined(CONFIG_SOC_FAMILY_NRF5)
+#if defined(CONFIG_SOC_FAMILY_NRF)
 	/* Fill in IR if present */
 	if ((NRF_FICR->IR[0] != UINT32_MAX) &&
 	    (NRF_FICR->IR[1] != UINT32_MAX) &&
@@ -1912,7 +1912,7 @@ static void vs_read_key_hierarchy_roots(struct net_buf *buf,
 	memset(rp->ir, 0x00, sizeof(rp->ir));
 	/* Mark ER as invalid */
 	memset(rp->er, 0x00, sizeof(rp->er));
-#endif /* CONFIG_SOC_FAMILY_NRF5 */
+#endif /* CONFIG_SOC_FAMILY_NRF */
 }
 
 #endif /* CONFIG_BT_HCI_VS_EXT */
