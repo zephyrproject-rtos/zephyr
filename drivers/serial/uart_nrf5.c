@@ -122,58 +122,58 @@ static int baudrate_set(struct device *dev,
 	/* Use the common nRF5 macros */
 	switch (baudrate) {
 	case 300:
-		divisor = NRF5_UART_BAUDRATE_300;
+		divisor = NRF_UART_BAUDRATE_300;
 		break;
 	case 600:
-		divisor = NRF5_UART_BAUDRATE_600;
+		divisor = NRF_UART_BAUDRATE_600;
 		break;
 	case 1200:
-		divisor = NRF5_UART_BAUDRATE_1200;
+		divisor = NRF_UART_BAUDRATE_1200;
 		break;
 	case 2400:
-		divisor = NRF5_UART_BAUDRATE_2400;
+		divisor = NRF_UART_BAUDRATE_2400;
 		break;
 	case 4800:
-		divisor = NRF5_UART_BAUDRATE_4800;
+		divisor = NRF_UART_BAUDRATE_4800;
 		break;
 	case 9600:
-		divisor = NRF5_UART_BAUDRATE_9600;
+		divisor = NRF_UART_BAUDRATE_9600;
 		break;
 	case 14400:
-		divisor = NRF5_UART_BAUDRATE_14400;
+		divisor = NRF_UART_BAUDRATE_14400;
 		break;
 	case 19200:
-		divisor = NRF5_UART_BAUDRATE_19200;
+		divisor = NRF_UART_BAUDRATE_19200;
 		break;
 	case 28800:
-		divisor = NRF5_UART_BAUDRATE_28800;
+		divisor = NRF_UART_BAUDRATE_28800;
 		break;
 	case 38400:
-		divisor = NRF5_UART_BAUDRATE_38400;
+		divisor = NRF_UART_BAUDRATE_38400;
 		break;
 	case 57600:
-		divisor = NRF5_UART_BAUDRATE_57600;
+		divisor = NRF_UART_BAUDRATE_57600;
 		break;
 	case 76800:
-		divisor = NRF5_UART_BAUDRATE_76800;
+		divisor = NRF_UART_BAUDRATE_76800;
 		break;
 	case 115200:
-		divisor = NRF5_UART_BAUDRATE_115200;
+		divisor = NRF_UART_BAUDRATE_115200;
 		break;
 	case 230400:
-		divisor = NRF5_UART_BAUDRATE_230400;
+		divisor = NRF_UART_BAUDRATE_230400;
 		break;
 	case 250000:
-		divisor = NRF5_UART_BAUDRATE_250000;
+		divisor = NRF_UART_BAUDRATE_250000;
 		break;
 	case 460800:
-		divisor = NRF5_UART_BAUDRATE_460800;
+		divisor = NRF_UART_BAUDRATE_460800;
 		break;
 	case 921600:
-		divisor = NRF5_UART_BAUDRATE_921600;
+		divisor = NRF_UART_BAUDRATE_921600;
 		break;
 	case 1000000:
-		divisor = NRF5_UART_BAUDRATE_1000000;
+		divisor = NRF_UART_BAUDRATE_1000000;
 		break;
 	default:
 		return -EINVAL;
