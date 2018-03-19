@@ -38,7 +38,8 @@
 /*
  * Verify Kconfig configuration
  */
-
+/* No need to verify things for unit tests */
+#if !defined(CONFIG_NET_TEST)
 #if CONFIG_NET_BUF_DATA_SIZE * CONFIG_ETH_SAM_GMAC_BUF_RX_COUNT \
 	< GMAC_FRAME_SIZE_MAX
 #error CONFIG_NET_BUF_DATA_SIZE * CONFIG_ETH_SAM_GMAC_BUF_RX_COUNT is \
@@ -63,6 +64,7 @@
 #pragma message "CONFIG_NET_BUF_DATA_SIZE should be a multiple of 64 bytes " \
 	"due to the granularity of RX DMA"
 #endif
+#endif /* !CONFIG_NET_TEST */
 
 /* RX descriptors list */
 static struct gmac_desc rx_desc_que0[MAIN_QUEUE_RX_DESC_COUNT]
