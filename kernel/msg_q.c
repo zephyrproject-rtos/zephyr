@@ -136,6 +136,25 @@ _SYSCALL_HANDLER(k_msgq_put, msgq_p, data, timeout)
 }
 #endif
 
+void _impl_k_msgq_get_attrs(struct k_msgq *q, struct k_msgq_attrs *attrs)
+{
+	attrs->msg_size = q->msg_size;
+	attrs->max_msgs = q->max_msgs;
+	attrs->used_msgs = q->used_msgs;
+}
+
+#ifdef CONFIG_USERSPACE
+_SYSCALL_HANDLER(k_msgq_get_attrs, msgq_p, attrs)
+{
+	struct k_msgq *q = (struct k_msgq *)msgq_p;
+
+	_SYSCALL_OBJ(q, K_OBJ_MSGQ);
+	_SYSCALL_MEMORY_WRITE(attrs, sizeof(struct k_msgq_attrs));
+	_impl_k_msgq_get_attrs(q, (struct k_msgq_attrs *) attrs);
+	return 0;
+}
+#endif
+
 int _impl_k_msgq_get(struct k_msgq *q, void *data, s32_t timeout)
 {
 	__ASSERT(!_is_in_isr() || timeout == K_NO_WAIT, "");

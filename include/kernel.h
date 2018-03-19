@@ -2865,6 +2865,12 @@ struct k_msgq {
 
 #define K_MSGQ_INITIALIZER DEPRECATED_MACRO _K_MSGQ_INITIALIZER
 
+struct k_msgq_attrs {
+	size_t msg_size;
+	u32_t max_msgs;
+	u32_t used_msgs;
+};
+
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -2984,6 +2990,19 @@ __syscall void k_msgq_purge(struct k_msgq *q);
  * @return Number of unused ring buffer entries.
  */
 __syscall u32_t k_msgq_num_free_get(struct k_msgq *q);
+
+/**
+ * @brief Get basic attributes of a message queue.
+ *
+ * This routine fetches basic attributes of message queue into attr argument.
+ *
+ * @param q Address of the message queue.
+ * @param attrs pointer to message queue attribute structure.
+ *
+ * @return N/A
+ */
+__syscall void  k_msgq_get_attrs(struct k_msgq *q, struct k_msgq_attrs *attrs);
+
 
 static inline u32_t _impl_k_msgq_num_free_get(struct k_msgq *q)
 {
