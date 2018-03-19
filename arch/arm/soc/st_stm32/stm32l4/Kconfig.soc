@@ -22,4 +22,7 @@ config SOC_STM32L432XC
 config SOC_STM32L475XG
 	bool "STM32L475XG"
 
+config SOC_STM32L4R5ZI
+	bool "STM32L4R5ZI"
+
 endchoice
