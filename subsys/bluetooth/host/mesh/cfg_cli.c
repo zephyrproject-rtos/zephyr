@@ -479,7 +479,7 @@ const struct bt_mesh_model_op bt_mesh_cfg_cli_op[] = {
 	BT_MESH_MODEL_OP_END,
 };
 
-static int check_cli(void)
+static int cli_prepare(void *param, u32_t op)
 {
 	if (!cli) {
 		BT_ERR("No available Configuration Client context!");
@@ -491,20 +491,25 @@ static int check_cli(void)
 		return -EBUSY;
 	}
 
-	return 0;
-}
-
-static int cli_wait(void *param, u32_t op)
-{
-	int err;
-
 	cli->op_param = param;
 	cli->op_pending = op;
 
-	err = k_sem_take(&cli->op_sync, msg_timeout);
+	return 0;
+}
 
+static void cli_reset(void)
+{
 	cli->op_pending = 0;
 	cli->op_param = NULL;
+}
+
+static int cli_wait(void)
+{
+	int err;
+
+	err = k_sem_take(&cli->op_sync, msg_timeout);
+
+	cli_reset();
 
 	return err;
 }
@@ -525,7 +530,7 @@ int bt_mesh_cfg_comp_data_get(u16_t net_idx, u16_t addr, u8_t page,
 	};
 	int err;
 
-	err = check_cli();
+	err = cli_prepare(&param, OP_DEV_COMP_DATA_STATUS);
 	if (err) {
 		return err;
 	}
@@ -536,10 +541,11 @@ int bt_mesh_cfg_comp_data_get(u16_t net_idx, u16_t addr, u8_t page,
 	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		BT_ERR("model_send() failed (err %d)", err);
+		cli_reset();
 		return err;
 	}
 
-	return cli_wait(&param, OP_DEV_COMP_DATA_STATUS);
+	return cli_wait();
 }
 
 static int get_state_u8(u16_t net_idx, u16_t addr, u32_t op, u32_t rsp,
@@ -554,7 +560,7 @@ static int get_state_u8(u16_t net_idx, u16_t addr, u32_t op, u32_t rsp,
 	};
 	int err;
 
-	err = check_cli();
+	err = cli_prepare(val, rsp);
 	if (err) {
 		return err;
 	}
@@ -564,10 +570,11 @@ static int get_state_u8(u16_t net_idx, u16_t addr, u32_t op, u32_t rsp,
 	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		BT_ERR("model_send() failed (err %d)", err);
+		cli_reset();
 		return err;
 	}
 
-	return cli_wait(val, rsp);
+	return cli_wait();
 }
 
 static int set_state_u8(u16_t net_idx, u16_t addr, u32_t op, u32_t rsp,
@@ -582,7 +589,7 @@ static int set_state_u8(u16_t net_idx, u16_t addr, u32_t op, u32_t rsp,
 	};
 	int err;
 
-	err = check_cli();
+	err = cli_prepare(val, rsp);
 	if (err) {
 		return err;
 	}
@@ -593,10 +600,11 @@ static int set_state_u8(u16_t net_idx, u16_t addr, u32_t op, u32_t rsp,
 	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		BT_ERR("model_send() failed (err %d)", err);
+		cli_reset();
 		return err;
 	}
 
-	return cli_wait(val, rsp);
+	return cli_wait();
 }
 
 int bt_mesh_cfg_beacon_get(u16_t net_idx, u16_t addr, u8_t *status)
@@ -664,7 +672,7 @@ int bt_mesh_cfg_relay_get(u16_t net_idx, u16_t addr, u8_t *status,
 	};
 	int err;
 
-	err = check_cli();
+	err = cli_prepare(&param, OP_RELAY_STATUS);
 	if (err) {
 		return err;
 	}
@@ -674,10 +682,11 @@ int bt_mesh_cfg_relay_get(u16_t net_idx, u16_t addr, u8_t *status,
 	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		BT_ERR("model_send() failed (err %d)", err);
+		cli_reset();
 		return err;
 	}
 
-	return cli_wait(&param, OP_RELAY_STATUS);
+	return cli_wait();
 }
 
 int bt_mesh_cfg_relay_set(u16_t net_idx, u16_t addr, u8_t new_relay,
@@ -696,7 +705,7 @@ int bt_mesh_cfg_relay_set(u16_t net_idx, u16_t addr, u8_t new_relay,
 	};
 	int err;
 
-	err = check_cli();
+	err = cli_prepare(&param, OP_RELAY_STATUS);
 	if (err) {
 		return err;
 	}
@@ -708,10 +717,11 @@ int bt_mesh_cfg_relay_set(u16_t net_idx, u16_t addr, u8_t new_relay,
 	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		BT_ERR("model_send() failed (err %d)", err);
+		cli_reset();
 		return err;
 	}
 
-	return cli_wait(&param, OP_RELAY_STATUS);
+	return cli_wait();
 }
 
 int bt_mesh_cfg_net_key_add(u16_t net_idx, u16_t addr, u16_t key_net_idx,
@@ -730,7 +740,7 @@ int bt_mesh_cfg_net_key_add(u16_t net_idx, u16_t addr, u16_t key_net_idx,
 	};
 	int err;
 
-	err = check_cli();
+	err = cli_prepare(&param, OP_NET_KEY_STATUS);
 	if (err) {
 		return err;
 	}
@@ -742,14 +752,16 @@ int bt_mesh_cfg_net_key_add(u16_t net_idx, u16_t addr, u16_t key_net_idx,
 	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		BT_ERR("model_send() failed (err %d)", err);
+		cli_reset();
 		return err;
 	}
 
 	if (!status) {
+		cli_reset();
 		return 0;
 	}
 
-	return cli_wait(&param, OP_NET_KEY_STATUS);
+	return cli_wait();
 }
 
 int bt_mesh_cfg_app_key_add(u16_t net_idx, u16_t addr, u16_t key_net_idx,
@@ -770,7 +782,7 @@ int bt_mesh_cfg_app_key_add(u16_t net_idx, u16_t addr, u16_t key_net_idx,
 	};
 	int err;
 
-	err = check_cli();
+	err = cli_prepare(&param, OP_APP_KEY_STATUS);
 	if (err) {
 		return err;
 	}
@@ -782,14 +794,16 @@ int bt_mesh_cfg_app_key_add(u16_t net_idx, u16_t addr, u16_t key_net_idx,
 	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		BT_ERR("model_send() failed (err %d)", err);
+		cli_reset();
 		return err;
 	}
 
 	if (!status) {
+		cli_reset();
 		return 0;
 	}
 
-	return cli_wait(&param, OP_APP_KEY_STATUS);
+	return cli_wait();
 }
 
 static int mod_app_bind(u16_t net_idx, u16_t addr, u16_t elem_addr,
@@ -812,7 +826,7 @@ static int mod_app_bind(u16_t net_idx, u16_t addr, u16_t elem_addr,
 	};
 	int err;
 
-	err = check_cli();
+	err = cli_prepare(&param, OP_MOD_APP_STATUS);
 	if (err) {
 		return err;
 	}
@@ -830,14 +844,16 @@ static int mod_app_bind(u16_t net_idx, u16_t addr, u16_t elem_addr,
 	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		BT_ERR("model_send() failed (err %d)", err);
+		cli_reset();
 		return err;
 	}
 
 	if (!status) {
+		cli_reset();
 		return 0;
 	}
 
-	return cli_wait(&param, OP_MOD_APP_STATUS);
+	return cli_wait();
 }
 
 int bt_mesh_cfg_mod_app_bind(u16_t net_idx, u16_t addr, u16_t elem_addr,
@@ -878,7 +894,7 @@ static int mod_sub(u32_t op, u16_t net_idx, u16_t addr, u16_t elem_addr,
 	};
 	int err;
 
-	err = check_cli();
+	err = cli_prepare(&param, OP_MOD_SUB_STATUS);
 	if (err) {
 		return err;
 	}
@@ -896,14 +912,16 @@ static int mod_sub(u32_t op, u16_t net_idx, u16_t addr, u16_t elem_addr,
 	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		BT_ERR("model_send() failed (err %d)", err);
+		cli_reset();
 		return err;
 	}
 
 	if (!status) {
+		cli_reset();
 		return 0;
 	}
 
-	return cli_wait(&param, OP_MOD_SUB_STATUS);
+	return cli_wait();
 }
 
 int bt_mesh_cfg_mod_sub_add(u16_t net_idx, u16_t addr, u16_t elem_addr,
@@ -983,7 +1001,7 @@ static int mod_sub_va(u32_t op, u16_t net_idx, u16_t addr, u16_t elem_addr,
 	};
 	int err;
 
-	err = check_cli();
+	err = cli_prepare(&param, OP_MOD_SUB_STATUS);
 	if (err) {
 		return err;
 	}
@@ -1005,14 +1023,16 @@ static int mod_sub_va(u32_t op, u16_t net_idx, u16_t addr, u16_t elem_addr,
 	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		BT_ERR("model_send() failed (err %d)", err);
+		cli_reset();
 		return err;
 	}
 
 	if (!status) {
+		cli_reset();
 		return 0;
 	}
 
-	return cli_wait(&param, OP_MOD_SUB_STATUS);
+	return cli_wait();
 }
 
 int bt_mesh_cfg_mod_sub_va_add(u16_t net_idx, u16_t addr, u16_t elem_addr,
@@ -1097,7 +1117,7 @@ static int mod_pub_get(u16_t net_idx, u16_t addr, u16_t elem_addr,
 	};
 	int err;
 
-	err = check_cli();
+	err = cli_prepare(&param, OP_MOD_PUB_STATUS);
 	if (err) {
 		return err;
 	}
@@ -1115,14 +1135,16 @@ static int mod_pub_get(u16_t net_idx, u16_t addr, u16_t elem_addr,
 	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		BT_ERR("model_send() failed (err %d)", err);
+		cli_reset();
 		return err;
 	}
 
 	if (!status) {
+		cli_reset();
 		return 0;
 	}
 
-	return cli_wait(&param, OP_MOD_PUB_STATUS);
+	return cli_wait();
 }
 
 int bt_mesh_cfg_mod_pub_get(u16_t net_idx, u16_t addr, u16_t elem_addr,
@@ -1164,7 +1186,7 @@ static int mod_pub_set(u16_t net_idx, u16_t addr, u16_t elem_addr,
 	};
 	int err;
 
-	err = check_cli();
+	err = cli_prepare(&param, OP_MOD_PUB_STATUS);
 	if (err) {
 		return err;
 	}
@@ -1187,14 +1209,16 @@ static int mod_pub_set(u16_t net_idx, u16_t addr, u16_t elem_addr,
 	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		BT_ERR("model_send() failed (err %d)", err);
+		cli_reset();
 		return err;
 	}
 
 	if (!status) {
+		cli_reset();
 		return 0;
 	}
 
-	return cli_wait(&param, OP_MOD_PUB_STATUS);
+	return cli_wait();
 }
 
 int bt_mesh_cfg_mod_pub_set(u16_t net_idx, u16_t addr, u16_t elem_addr,
@@ -1232,7 +1256,7 @@ int bt_mesh_cfg_hb_sub_set(u16_t net_idx, u16_t addr,
 	};
 	int err;
 
-	err = check_cli();
+	err = cli_prepare(&param, OP_HEARTBEAT_SUB_STATUS);
 	if (err) {
 		return err;
 	}
@@ -1245,14 +1269,16 @@ int bt_mesh_cfg_hb_sub_set(u16_t net_idx, u16_t addr,
 	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		BT_ERR("model_send() failed (err %d)", err);
+		cli_reset();
 		return err;
 	}
 
 	if (!status) {
+		cli_reset();
 		return 0;
 	}
 
-	return cli_wait(&param, OP_HEARTBEAT_SUB_STATUS);
+	return cli_wait();
 }
 
 int bt_mesh_cfg_hb_sub_get(u16_t net_idx, u16_t addr,
@@ -1271,7 +1297,7 @@ int bt_mesh_cfg_hb_sub_get(u16_t net_idx, u16_t addr,
 	};
 	int err;
 
-	err = check_cli();
+	err = cli_prepare(&param, OP_HEARTBEAT_SUB_STATUS);
 	if (err) {
 		return err;
 	}
@@ -1281,14 +1307,16 @@ int bt_mesh_cfg_hb_sub_get(u16_t net_idx, u16_t addr,
 	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		BT_ERR("model_send() failed (err %d)", err);
+		cli_reset();
 		return err;
 	}
 
 	if (!status) {
+		cli_reset();
 		return 0;
 	}
 
-	return cli_wait(&param, OP_HEARTBEAT_SUB_STATUS);
+	return cli_wait();
 }
 
 int bt_mesh_cfg_hb_pub_set(u16_t net_idx, u16_t addr,
@@ -1306,7 +1334,7 @@ int bt_mesh_cfg_hb_pub_set(u16_t net_idx, u16_t addr,
 	};
 	int err;
 
-	err = check_cli();
+	err = cli_prepare(&param, OP_HEARTBEAT_PUB_STATUS);
 	if (err) {
 		return err;
 	}
@@ -1322,14 +1350,16 @@ int bt_mesh_cfg_hb_pub_set(u16_t net_idx, u16_t addr,
 	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		BT_ERR("model_send() failed (err %d)", err);
+		cli_reset();
 		return err;
 	}
 
 	if (!status) {
+		cli_reset();
 		return 0;
 	}
 
-	return cli_wait(&param, OP_HEARTBEAT_PUB_STATUS);
+	return cli_wait();
 }
 
 int bt_mesh_cfg_hb_pub_get(u16_t net_idx, u16_t addr,
@@ -1348,7 +1378,7 @@ int bt_mesh_cfg_hb_pub_get(u16_t net_idx, u16_t addr,
 	};
 	int err;
 
-	err = check_cli();
+	err = cli_prepare(&param, OP_HEARTBEAT_PUB_STATUS);
 	if (err) {
 		return err;
 	}
@@ -1358,14 +1388,16 @@ int bt_mesh_cfg_hb_pub_get(u16_t net_idx, u16_t addr,
 	err = bt_mesh_model_send(cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		BT_ERR("model_send() failed (err %d)", err);
+		cli_reset();
 		return err;
 	}
 
 	if (!status) {
+		cli_reset();
 		return 0;
 	}
 
-	return cli_wait(&param, OP_HEARTBEAT_PUB_STATUS);
+	return cli_wait();
 }
 
 s32_t bt_mesh_cfg_cli_timeout_get(void)
