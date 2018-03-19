@@ -318,7 +318,9 @@ static void mod_pub_status(struct bt_mesh_model *model,
 		return;
 	}
 
-	*param->status = status;
+	if (param->status) {
+		*param->status = status;
+	}
 
 	if (param->pub) {
 		param->pub->addr = net_buf_simple_pull_le16(buf);
@@ -383,7 +385,9 @@ static void mod_sub_status(struct bt_mesh_model *model,
 		*param->sub_addr = sub_addr;
 	}
 
-	*param->status = status;
+	if (param->status) {
+		*param->status = status;
+	}
 
 	k_sem_give(&cli->op_sync);
 }
