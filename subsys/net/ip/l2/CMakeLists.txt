@@ -13,6 +13,7 @@ if(CONFIG_NET_L2_BT OR
   zephyr_library_sources_ifdef(CONFIG_NET_L2_BT_SHELL bluetooth_shell.c)
   zephyr_library_sources_ifdef(CONFIG_NET_L2_DUMMY    dummy.c)
   zephyr_library_sources_ifdef(CONFIG_NET_L2_WIFI_MGMT wifi_mgmt.c)
+  zephyr_library_sources_ifdef(CONFIG_NET_L2_WIFI_SHELL wifi_shell.c)
 
 endif()
 
