@@ -13,7 +13,7 @@
 
 #ifndef _ASMLANGUAGE
 
-#include <nrf5_common.h>
+#include <nrf_common.h>
 #include <nrf.h>
 #include <device.h>
 #include <misc/util.h>

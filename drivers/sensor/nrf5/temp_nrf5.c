@@ -13,7 +13,7 @@
 #include <logging/sys_log.h>
 
 #include "nrf.h"
-#include "nrf5_common.h"
+#include "nrf_common.h"
 
 
 /* The nRF5 temperature device returns measurements in 0.25C

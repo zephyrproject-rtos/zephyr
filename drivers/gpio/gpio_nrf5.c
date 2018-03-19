@@ -16,7 +16,7 @@
 #include <soc.h>
 #include <sys_io.h>
 #include <nrf_gpiote.h>
-#include "nrf5_common.h"
+#include "nrf_common.h"
 #include "gpio_utils.h"
 
 #if defined(CONFIG_SOC_SERIES_NRF51X)
