@@ -259,8 +259,6 @@ void _ztest_run_test_suite(const char *name, struct unit_test *suite)
 	test_status = (test_status || fail) ? 1 : 0;
 }
 
-void test_main(void);
-
 #ifndef KERNEL
 int main(void)
 {
