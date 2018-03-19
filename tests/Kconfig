@@ -32,4 +32,14 @@ config COVERAGE
 	  This option will build your application with the -coverage option
 	  which will generate data that can be used to create coverage reports.
 	  Currently this is fully supported only on the native POSIX port.
+
+config TEST_USERSPACE
+	bool "Enable userspace if available"
+	depends on ARCH_HAS_USERSPACE
+	select USERSPACE
+	select APPLICATION_MEMORY
+	default n
+	help
+	  This option will help test the userspace mode. This can be enabled
+	  only when CONFIG_HAS_USERSPACE is set.
 endmenu
