@@ -167,7 +167,7 @@ const struct bt_mesh_model_op bt_mesh_health_cli_op[] = {
 	BT_MESH_MODEL_OP_END,
 };
 
-static int check_cli(void)
+static int cli_prepare(void *param, u32_t op)
 {
 	if (!health_cli) {
 		BT_ERR("No available Health Client context!");
@@ -179,20 +179,25 @@ static int check_cli(void)
 		return -EBUSY;
 	}
 
-	return 0;
-}
-
-static int cli_wait(void *param, u32_t op)
-{
-	int err;
-
 	health_cli->op_param = param;
 	health_cli->op_pending = op;
 
-	err = k_sem_take(&health_cli->op_sync, msg_timeout);
+	return 0;
+}
 
+static void cli_reset(void)
+{
 	health_cli->op_pending = 0;
 	health_cli->op_param = NULL;
+}
+
+static int cli_wait(void)
+{
+	int err;
+
+	err = k_sem_take(&health_cli->op_sync, msg_timeout);
+
+	cli_reset();
 
 	return err;
 }
@@ -212,7 +217,7 @@ int bt_mesh_health_attention_get(u16_t net_idx, u16_t addr, u16_t app_idx,
 	};
 	int err;
 
-	err = check_cli();
+	err = cli_prepare(&param, OP_ATTENTION_STATUS);
 	if (err) {
 		return err;
 	}
@@ -222,10 +227,11 @@ int bt_mesh_health_attention_get(u16_t net_idx, u16_t addr, u16_t app_idx,
 	err = bt_mesh_model_send(health_cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		BT_ERR("model_send() failed (err %d)", err);
+		cli_reset();
 		return err;
 	}
 
-	return cli_wait(&param, OP_ATTENTION_STATUS);
+	return cli_wait();
 }
 
 int bt_mesh_health_attention_set(u16_t net_idx, u16_t addr, u16_t app_idx,
@@ -243,7 +249,7 @@ int bt_mesh_health_attention_set(u16_t net_idx, u16_t addr, u16_t app_idx,
 	};
 	int err;
 
-	err = check_cli();
+	err = cli_prepare(&param, OP_ATTENTION_STATUS);
 	if (err) {
 		return err;
 	}
@@ -259,14 +265,16 @@ int bt_mesh_health_attention_set(u16_t net_idx, u16_t addr, u16_t app_idx,
 	err = bt_mesh_model_send(health_cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		BT_ERR("model_send() failed (err %d)", err);
+		cli_reset();
 		return err;
 	}
 
 	if (!updated_attention) {
+		cli_reset();
 		return 0;
 	}
 
-	return cli_wait(&param, OP_ATTENTION_STATUS);
+	return cli_wait();
 }
 
 int bt_mesh_health_period_get(u16_t net_idx, u16_t addr, u16_t app_idx,
@@ -284,7 +292,7 @@ int bt_mesh_health_period_get(u16_t net_idx, u16_t addr, u16_t app_idx,
 	};
 	int err;
 
-	err = check_cli();
+	err = cli_prepare(&param, OP_HEALTH_PERIOD_STATUS);
 	if (err) {
 		return err;
 	}
@@ -294,10 +302,11 @@ int bt_mesh_health_period_get(u16_t net_idx, u16_t addr, u16_t app_idx,
 	err = bt_mesh_model_send(health_cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		BT_ERR("model_send() failed (err %d)", err);
+		cli_reset();
 		return err;
 	}
 
-	return cli_wait(&param, OP_HEALTH_PERIOD_STATUS);
+	return cli_wait();
 }
 
 int bt_mesh_health_period_set(u16_t net_idx, u16_t addr, u16_t app_idx,
@@ -315,7 +324,7 @@ int bt_mesh_health_period_set(u16_t net_idx, u16_t addr, u16_t app_idx,
 	};
 	int err;
 
-	err = check_cli();
+	err = cli_prepare(&param, OP_HEALTH_PERIOD_STATUS);
 	if (err) {
 		return err;
 	}
@@ -331,14 +340,16 @@ int bt_mesh_health_period_set(u16_t net_idx, u16_t addr, u16_t app_idx,
 	err = bt_mesh_model_send(health_cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		BT_ERR("model_send() failed (err %d)", err);
+		cli_reset();
 		return err;
 	}
 
 	if (!updated_divisor) {
+		cli_reset();
 		return 0;
 	}
 
-	return cli_wait(&param, OP_HEALTH_PERIOD_STATUS);
+	return cli_wait();
 }
 
 int bt_mesh_health_fault_test(u16_t net_idx, u16_t addr, u16_t app_idx,
@@ -360,7 +371,7 @@ int bt_mesh_health_fault_test(u16_t net_idx, u16_t addr, u16_t app_idx,
 	};
 	int err;
 
-	err = check_cli();
+	err = cli_prepare(&param, OP_HEALTH_FAULT_STATUS);
 	if (err) {
 		return err;
 	}
@@ -377,14 +388,16 @@ int bt_mesh_health_fault_test(u16_t net_idx, u16_t addr, u16_t app_idx,
 	err = bt_mesh_model_send(health_cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		BT_ERR("model_send() failed (err %d)", err);
+		cli_reset();
 		return err;
 	}
 
 	if (!faults) {
+		cli_reset();
 		return 0;
 	}
 
-	return cli_wait(&param, OP_HEALTH_FAULT_STATUS);
+	return cli_wait();
 }
 
 int bt_mesh_health_fault_clear(u16_t net_idx, u16_t addr, u16_t app_idx,
@@ -406,7 +419,7 @@ int bt_mesh_health_fault_clear(u16_t net_idx, u16_t addr, u16_t app_idx,
 	};
 	int err;
 
-	err = check_cli();
+	err = cli_prepare(&param, OP_HEALTH_FAULT_STATUS);
 	if (err) {
 		return err;
 	}
@@ -422,14 +435,16 @@ int bt_mesh_health_fault_clear(u16_t net_idx, u16_t addr, u16_t app_idx,
 	err = bt_mesh_model_send(health_cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		BT_ERR("model_send() failed (err %d)", err);
+		cli_reset();
 		return err;
 	}
 
 	if (!test_id) {
+		cli_reset();
 		return 0;
 	}
 
-	return cli_wait(&param, OP_HEALTH_FAULT_STATUS);
+	return cli_wait();
 }
 
 int bt_mesh_health_fault_get(u16_t net_idx, u16_t addr, u16_t app_idx,
@@ -451,7 +466,7 @@ int bt_mesh_health_fault_get(u16_t net_idx, u16_t addr, u16_t app_idx,
 	};
 	int err;
 
-	err = check_cli();
+	err = cli_prepare(&param, OP_HEALTH_FAULT_STATUS);
 	if (err) {
 		return err;
 	}
@@ -462,10 +477,11 @@ int bt_mesh_health_fault_get(u16_t net_idx, u16_t addr, u16_t app_idx,
 	err = bt_mesh_model_send(health_cli->model, &ctx, &msg, NULL, NULL);
 	if (err) {
 		BT_ERR("model_send() failed (err %d)", err);
+		cli_reset();
 		return err;
 	}
 
-	return cli_wait(&param, OP_HEALTH_FAULT_STATUS);
+	return cli_wait();
 }
 
 s32_t bt_mesh_health_cli_timeout_get(void)
