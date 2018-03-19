@@ -88,7 +88,12 @@
 #define EXC_RETURN_RETURN_STACK_Secure EXC_RETURN_RETURN_STACK_Msk
 
 /* Integrity signature for an ARMv8-M implementation */
+#if defined(CONFIG_ARMV7_M_ARMV8_M_FP)
+#define INTEGRITY_SIGNATURE_STD 0xFEFA125BUL
+#define INTEGRITY_SIGNATURE_EXT 0xFEFA125AUL
+#else
 #define INTEGRITY_SIGNATURE 0xFEFA125BUL
+#endif /* CONFIG_ARMV7_M_ARMV8_M_FP */
 /* Size (in words) of the additional state context that is pushed
  * to the Secure stack during a Non-Secure exception entry.
  */
@@ -600,7 +605,12 @@ void _Fault(const NANO_ESF *esf, u32_t exc_return)
 		 */
 		u32_t *top_of_sec_stack = (u32_t *)esf;
 		u32_t sec_ret_addr;
+#if defined(CONFIG_ARMV7_M_ARMV8_M_FP)
+		if ((*top_of_sec_stack == INTEGRITY_SIGNATURE_STD) ||
+			(*top_of_sec_stack == INTEGRITY_SIGNATURE_EXT)) {
+#else
 		if (*top_of_sec_stack == INTEGRITY_SIGNATURE) {
+#endif /* CONFIG_ARMV7_M_ARMV8_M_FP */
 			/* Secure state interrupted by a Non-Secure exception.
 			 * The return address after the additional state
 			 * context, stacked by the Secure code upon
