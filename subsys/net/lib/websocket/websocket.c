@@ -344,7 +344,7 @@ static bool check_ws_headers(struct http_ctx *ctx, struct http_parser *parser,
 static struct net_pkt *prepare_reply(struct http_ctx *ctx,
 				     int ws_sec_key, int host, int subprotocol)
 {
-	char key_accept[32 + sizeof(WS_MAGIC) - 1];
+	char key_accept[32 + sizeof(WS_MAGIC)];
 	char accept[20];
 	struct net_pkt *pkt;
 	char tmp[64];
@@ -378,11 +378,11 @@ static struct net_pkt *prepare_reply(struct http_ctx *ctx,
 		goto fail;
 	}
 
-	olen = min(sizeof(key_accept),
+	olen = min(sizeof(key_accept) - 1,
 		   ctx->http.field_values[ws_sec_key].value_len);
 	strncpy(key_accept, ctx->http.field_values[ws_sec_key].value, olen);
 
-	olen = min(sizeof(key_accept) -
+	olen = min(sizeof(key_accept) - 1 -
 		   ctx->http.field_values[ws_sec_key].value_len,
 		   sizeof(WS_MAGIC) - 1);
 	strncpy(key_accept + ctx->http.field_values[ws_sec_key].value_len,
