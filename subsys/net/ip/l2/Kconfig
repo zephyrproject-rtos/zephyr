@@ -114,4 +114,12 @@ config NET_DEBUG_L2_WIFI_MGMT
 	help
 	Enables WiFi management interface to output debug messages
 
+config NET_L2_WIFI_SHELL
+	bool "Enable WiFi shell module"
+	default n
+	select NET_L2_WIFI_MGMT
+	help
+	  This can be used for controlling WiFi through the console via
+	  exposing a shell module named "wifi".
+
 endmenu
