@@ -1,0 +1,5 @@
+tests:
+  test:
+    arch_exclude: posix
+    build_only: true
+    tags: cpp
