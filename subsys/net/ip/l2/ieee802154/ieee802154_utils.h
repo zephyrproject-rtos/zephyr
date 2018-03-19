@@ -84,9 +84,9 @@ static inline void ieee802154_filter_ieee_addr(struct net_if *iface,
 
 		filter.ieee_addr = ieee_addr;
 
-		if (radio->set_filter(net_if_get_device(iface),
-				      IEEE802154_FILTER_TYPE_IEEE_ADDR,
-				      &filter) != 0) {
+		if (radio->filter(net_if_get_device(iface), true,
+				  IEEE802154_FILTER_TYPE_IEEE_ADDR,
+				  &filter) != 0) {
 			NET_WARN("Could not apply IEEE address filter");
 		}
 	}
@@ -104,9 +104,9 @@ static inline void ieee802154_filter_short_addr(struct net_if *iface,
 
 		filter.short_addr = short_addr;
 
-		if (radio->set_filter(net_if_get_device(iface),
-				      IEEE802154_FILTER_TYPE_SHORT_ADDR,
-				      &filter) != 0) {
+		if (radio->filter(net_if_get_device(iface), true,
+				  IEEE802154_FILTER_TYPE_SHORT_ADDR,
+				  &filter) != 0) {
 			NET_WARN("Could not apply short address filter");
 		}
 	}
@@ -124,10 +124,90 @@ static inline void ieee802154_filter_pan_id(struct net_if *iface,
 
 		filter.pan_id = pan_id;
 
-		if (radio->set_filter(net_if_get_device(iface),
-				      IEEE802154_FILTER_TYPE_PAN_ID,
-				      &filter) != 0) {
+		if (radio->filter(net_if_get_device(iface), true,
+				  IEEE802154_FILTER_TYPE_PAN_ID,
+				  &filter) != 0) {
 			NET_WARN("Could not apply PAN ID filter");
+		}
+	}
+}
+
+static inline void ieee802154_filter_src_ieee_addr(struct net_if *iface,
+						   u8_t *ieee_addr)
+{
+	const struct ieee802154_radio_api *radio =
+		net_if_get_device(iface)->driver_api;
+
+	if (radio->get_capabilities(net_if_get_device(iface)) &
+	    IEEE802154_HW_FILTER) {
+		struct ieee802154_filter filter;
+
+		filter.ieee_addr = ieee_addr;
+
+		if (radio->filter(net_if_get_device(iface), true,
+				  IEEE802154_FILTER_TYPE_SRC_IEEE_ADDR,
+				  &filter) != 0) {
+			NET_WARN("Could not apply SRC IEEE address filter");
+		}
+	}
+}
+
+static inline void ieee802154_filter_src_short_addr(struct net_if *iface,
+						    u16_t short_addr)
+{
+	const struct ieee802154_radio_api *radio =
+		net_if_get_device(iface)->driver_api;
+
+	if (radio->get_capabilities(net_if_get_device(iface)) &
+	    IEEE802154_HW_FILTER) {
+		struct ieee802154_filter filter;
+
+		filter.short_addr = short_addr;
+
+		if (radio->filter(net_if_get_device(iface), true,
+				  IEEE802154_FILTER_TYPE_SRC_SHORT_ADDR,
+				  &filter) != 0) {
+			NET_WARN("Could not apply SRC short address filter");
+		}
+	}
+}
+
+static inline void ieee802154_remove_src_ieee_addr(struct net_if *iface,
+						   u8_t *ieee_addr)
+{
+	const struct ieee802154_radio_api *radio =
+		net_if_get_device(iface)->driver_api;
+
+	if (radio->get_capabilities(net_if_get_device(iface)) &
+	    IEEE802154_HW_FILTER) {
+		struct ieee802154_filter filter;
+
+		filter.ieee_addr = ieee_addr;
+
+		if (radio->filter(net_if_get_device(iface), false,
+				  IEEE802154_FILTER_TYPE_SRC_IEEE_ADDR,
+				  &filter) != 0) {
+			NET_WARN("Could not remove SRC IEEE address filter");
+		}
+	}
+}
+
+static inline void ieee802154_remove_src_short_addr(struct net_if *iface,
+						    u16_t short_addr)
+{
+	const struct ieee802154_radio_api *radio =
+		net_if_get_device(iface)->driver_api;
+
+	if (radio->get_capabilities(net_if_get_device(iface)) &
+	    IEEE802154_HW_FILTER) {
+		struct ieee802154_filter filter;
+
+		filter.short_addr = short_addr;
+
+		if (radio->filter(net_if_get_device(iface), true,
+				  IEEE802154_FILTER_TYPE_SRC_SHORT_ADDR,
+				  &filter) != 0) {
+			NET_WARN("Could not remove SRC short address filter");
 		}
 	}
 }

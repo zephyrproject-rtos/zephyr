@@ -216,9 +216,9 @@ static int set_ieee_addr(void *data, int len)
 
 		filter.ieee_addr = (u8_t *)&req->ieee_addr;
 
-		return radio_api->set_filter(ieee802154_dev,
-					     IEEE802154_FILTER_TYPE_IEEE_ADDR,
-					     &filter);
+		return radio_api->filter(ieee802154_dev, true,
+					 IEEE802154_FILTER_TYPE_IEEE_ADDR,
+					 &filter);
 	}
 
 	return 0;
@@ -237,9 +237,9 @@ static int set_short_addr(void *data, int len)
 
 		filter.short_addr = req->short_addr;
 
-		return radio_api->set_filter(ieee802154_dev,
-					     IEEE802154_FILTER_TYPE_SHORT_ADDR,
-					     &filter);
+		return radio_api->filter(ieee802154_dev, true,
+					 IEEE802154_FILTER_TYPE_SHORT_ADDR,
+					 &filter);
 	}
 
 	return 0;
@@ -257,9 +257,9 @@ static int set_pan_id(void *data, int len)
 
 		filter.pan_id = req->pan_id;
 
-		return radio_api->set_filter(ieee802154_dev,
-					     IEEE802154_FILTER_TYPE_PAN_ID,
-					     &filter);
+		return radio_api->filter(ieee802154_dev, true,
+					 IEEE802154_FILTER_TYPE_PAN_ID,
+					 &filter);
 	}
 
 	return 0;
