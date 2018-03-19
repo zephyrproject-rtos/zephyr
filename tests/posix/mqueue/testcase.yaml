@@ -1,0 +1,4 @@
+tests:
+  posix.mqueue:
+    min_ram: 16
+    tags: core
