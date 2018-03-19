@@ -742,11 +742,16 @@ static int cc2520_set_channel(struct device *dev, u16_t channel)
 	return 0;
 }
 
-static int cc2520_set_filter(struct device *dev,
-			     enum ieee802154_filter_type type,
-			     const struct ieee802154_filter *filter)
+static int cc2520_filter(struct device *dev,
+			 bool set,
+			 enum ieee802154_filter_type type,
+			 const struct ieee802154_filter *filter)
 {
 	SYS_LOG_DBG("Applying filter %u", type);
+
+	if (!set) {
+		return -ENOTSUP;
+	}
 
 	if (type == IEEE802154_FILTER_TYPE_IEEE_ADDR) {
 		return _cc2520_set_ieee_addr(dev, filter->ieee_addr);
@@ -756,7 +761,7 @@ static int cc2520_set_filter(struct device *dev,
 		return _cc2520_set_pan_id(dev, filter->pan_id);
 	}
 
-	return -EINVAL;
+	return -ENOTSUP;
 }
 
 static int cc2520_set_txpower(struct device *dev, s16_t dbm)
@@ -1084,7 +1089,7 @@ static struct ieee802154_radio_api cc2520_radio_api = {
 	.get_capabilities	= cc2520_get_capabilities,
 	.cca			= cc2520_cca,
 	.set_channel		= cc2520_set_channel,
-	.set_filter		= cc2520_set_filter,
+	.filter			= cc2520_filter,
 	.set_txpower		= cc2520_set_txpower,
 	.start			= cc2520_start,
 	.stop			= cc2520_stop,

@@ -40,6 +40,8 @@ enum ieee802154_filter_type {
 	IEEE802154_FILTER_TYPE_IEEE_ADDR,
 	IEEE802154_FILTER_TYPE_SHORT_ADDR,
 	IEEE802154_FILTER_TYPE_PAN_ID,
+	IEEE802154_FILTER_TYPE_SRC_IEEE_ADDR,
+	IEEE802154_FILTER_TYPE_SRC_SHORT_ADDR,
 };
 
 struct ieee802154_filter {
@@ -70,10 +72,11 @@ struct ieee802154_radio_api {
 	/** Set current channel */
 	int (*set_channel)(struct device *dev, u16_t channel);
 
-	/** Set address filters (for IEEE802154_HW_FILTER ) */
-	int (*set_filter)(struct device *dev,
-			  enum ieee802154_filter_type type,
-			  const struct ieee802154_filter *filter);
+	/** Set/Unset filters (for IEEE802154_HW_FILTER ) */
+	int (*filter)(struct device *dev,
+		      bool set,
+		      enum ieee802154_filter_type type,
+		      const struct ieee802154_filter *filter);
 
 	/** Set TX power level in dbm */
 	int (*set_txpower)(struct device *dev, s16_t dbm);

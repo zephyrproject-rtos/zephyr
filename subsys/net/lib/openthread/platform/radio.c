@@ -140,8 +140,8 @@ void otPlatRadioSetPanId(otInstance *aInstance, u16_t aPanId)
 {
 	ARG_UNUSED(aInstance);
 
-	radio_api->set_filter(radio_dev, IEEE802154_FILTER_TYPE_PAN_ID,
-			      (struct ieee802154_filter *) &aPanId);
+	radio_api->filter(radio_dev, true, IEEE802154_FILTER_TYPE_PAN_ID,
+			  (struct ieee802154_filter *) &aPanId);
 }
 
 void otPlatRadioSetExtendedAddress(otInstance *aInstance,
@@ -149,16 +149,16 @@ void otPlatRadioSetExtendedAddress(otInstance *aInstance,
 {
 	ARG_UNUSED(aInstance);
 
-	radio_api->set_filter(radio_dev, IEEE802154_FILTER_TYPE_IEEE_ADDR,
-			      (struct ieee802154_filter *) &aExtAddress);
+	radio_api->filter(radio_dev, true, IEEE802154_FILTER_TYPE_IEEE_ADDR,
+			  (struct ieee802154_filter *) &aExtAddress);
 }
 
 void otPlatRadioSetShortAddress(otInstance *aInstance, u16_t aShortAddress)
 {
 	ARG_UNUSED(aInstance);
 
-	radio_api->set_filter(radio_dev, IEEE802154_FILTER_TYPE_SHORT_ADDR,
-			      (struct ieee802154_filter *) &aShortAddress);
+	radio_api->filter(radio_dev, true, IEEE802154_FILTER_TYPE_SHORT_ADDR,
+			  (struct ieee802154_filter *) &aShortAddress);
 }
 
 bool otPlatRadioIsEnabled(otInstance *aInstance)
