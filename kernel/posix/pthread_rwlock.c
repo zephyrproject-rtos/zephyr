@@ -13,7 +13,7 @@
 
 #define CONCURRENT_READER_LIMIT  (CONFIG_MAX_PTHREAD_COUNT + 1)
 
-static s64_t calculate_timeout(const struct timespec *abstime);
+s64_t timespec_to_timeoutms(const struct timespec *abstime);
 static u32_t read_lock_acquire(pthread_rwlock_t *rwlock, s32_t timeout);
 static u32_t write_lock_acquire(pthread_rwlock_t *rwlock, s32_t timeout);
 
@@ -93,7 +93,7 @@ int pthread_rwlock_timedrdlock(pthread_rwlock_t *rwlock,
 		return EINVAL;
 	}
 
-	timeout = (s32_t) calculate_timeout(abstime);
+	timeout = (s32_t) timespec_to_timeoutms(abstime);
 
 	if (read_lock_acquire(rwlock, timeout) != 0) {
 		ret = ETIMEDOUT;
@@ -155,7 +155,7 @@ int pthread_rwlock_timedwrlock(pthread_rwlock_t *rwlock,
 		return EINVAL;
 	}
 
-	timeout = (s32_t) calculate_timeout(abstime);
+	timeout = (s32_t) timespec_to_timeoutms(abstime);
 
 	if (write_lock_acquire(rwlock, timeout) != 0) {
 		ret = ETIMEDOUT;
@@ -254,34 +254,4 @@ static u32_t write_lock_acquire(pthread_rwlock_t *rwlock, s32_t timeout)
 	return ret;
 }
 
-static s64_t calculate_timeout(const struct timespec *abstime)
-{
-	s64_t milli_secs;
-	s32_t secs;
-	struct timespec curtime;
-
-	/* FIXME: Zephyr does have CLOCK_REALTIME to get time.
-	 * As per POSIX standard time should be calculated wrt CLOCK_REALTIME.
-	 * Zephyr deviates from POSIX 1003.1 standard on this aspect.
-	 */
-	clock_gettime(CLOCK_MONOTONIC, &curtime);
-	secs = abstime->tv_sec - curtime.tv_sec;
-
-	if (abstime->tv_sec < curtime.tv_sec ||
-	    (secs == 0 && abstime->tv_nsec <= curtime.tv_nsec)) {
-		milli_secs = K_NO_WAIT;
-	} else {
-		milli_secs = (abstime->tv_nsec - curtime.tv_nsec) /
-			      NSEC_PER_MSEC;
-
-		if (milli_secs < 0) {
-			milli_secs += MSEC_PER_SEC;
-			secs -= 1;
-		}
-
-		milli_secs += (long)secs * MSEC_PER_SEC;
-	}
-
-	return milli_secs;
-}
 
