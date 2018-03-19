@@ -96,6 +96,17 @@ struct ieee802154_radio_api {
 	/** Get the available amount of Sub-GHz channels */
 	u16_t (*get_subg_channel_count)(struct device *dev);
 #endif /* CONFIG_NET_L2_IEEE802154_SUB_GHZ */
+
+#ifdef CONFIG_NET_L2_OPENTHREAD
+	/** Run an energy detection scan.
+	 * Note: channel must be set prior to request this function.
+	 * duration parameter is in ms.
+	 */
+	int (*ed_scan)(struct device *dev,
+		       u16_t duration,
+		       void (*done_cb)(struct device *dev,
+				       s16_t max_ed));
+#endif /* CONFIG_NET_L2_OPENTHREAD */
 } __packed;
 
 #define IEEE802154_AR_FLAG_SET (0x20)
