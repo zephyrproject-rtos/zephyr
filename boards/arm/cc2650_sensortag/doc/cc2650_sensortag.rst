@@ -206,10 +206,10 @@ TI CC2650 datasheet:
   http://www.ti.com/lit/ds/symlink/cc2650.pdf
 
 CC2650 reference manual:
-  http://www.ti.com/lit/ug/swcu117g/swcu117g.pdf
+  http://www.ti.com/lit/ug/swcu117h/swcu117h.pdf
 
 Uniflash 3.4 release notes:
   http://processors.wiki.ti.com/index.php/CCS_UniFlash_v3.4.1_Release_Notes
 
 .. _CC2650 reference manual:
-  http://www.ti.com/lit/ug/swcu117g/swcu117g.pdf
+  http://www.ti.com/lit/ug/swcu117h/swcu117h.pdf
