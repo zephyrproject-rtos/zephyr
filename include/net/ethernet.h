@@ -45,6 +45,9 @@ enum eth_hw_caps {
 
 	/** RX Checksum offloading supported */
 	ETH_HW_RX_CHKSUM_OFFLOAD  = BIT(1),
+
+	/** Promiscuous mode supported */
+	ETH_HW_PROMISCUOUS_MODE  = BIT(2),
 };
 
 struct ethernet_api {
