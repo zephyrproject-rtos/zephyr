@@ -116,6 +116,8 @@ int lll_prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 				   TICKER_NULL_SLOT,
 				   _preempt_ticker_cb, NULL,
 				   NULL, NULL);
+		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+			  (ret == TICKER_STATUS_BUSY));
 
 		return -EINPROGRESS;
 	}
@@ -130,8 +132,6 @@ int lll_prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 void lll_disable(void *param)
 {
 	if (param == event.curr.param) {
-		LL_ASSERT(event.curr.abort_cb);
-
 		event.curr.abort_cb(NULL, event.curr.param);
 	} else if (param == event.next.prepare_param.param) {
 		/* TODO: implement prepare pipeline and search in it */
@@ -153,6 +153,7 @@ int lll_done(void *param)
 		event.curr.abort_cb = NULL;
 
 		param = event.curr.param;
+		event.curr.param = NULL;
 
 		DEBUG_RADIO_CLOSE(0);
 	}
@@ -212,8 +213,6 @@ int lll_clk_off(void)
 		DEBUG_RADIO_XTAL(0);
 	} else if (err == -EBUSY) {
 		DEBUG_RADIO_XTAL(1);
-	} else {
-		LL_ASSERT(0);
 	}
 
 	return err;
@@ -238,7 +237,8 @@ static void _preempt_ticker_cb(u32_t ticks_at_expire, u32_t remainder,
 
 static void _preempt(void *param)
 {
-	if (!event.curr.is_abort_cb(event.next.prio, event.curr.param)) {
+	if (!event.curr.is_abort_cb(event.next.prepare_param.param,
+				    event.next.prio, event.curr.param)) {
 		/* Cancel next prepare */
 		event.next.prepare_cb = NULL;
 

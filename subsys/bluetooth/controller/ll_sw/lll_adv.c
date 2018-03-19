@@ -3,21 +3,12 @@
 
 #include <zephyr/types.h>
 
-#if defined(CONFIG_BT_CTLR_DEBUG_PINS)
-#if defined(CONFIG_PRINTK)
-#undef CONFIG_PRINTK
-#endif
-#endif
-
 #include <toolchain.h>
 #include <bluetooth/hci.h>
 
-#if defined(CONFIG_SOC_FAMILY_NRF)
-#include "hal/nrf5/ticker.h"
-#endif /* CONFIG_SOC_FAMILY_NRF */
-
 #include "hal/ccm.h"
 #include "hal/radio.h"
+#include "hal/nrf5/ticker.h"
 
 #include "util/util.h"
 #include "util/memq.h"
@@ -36,28 +27,15 @@
 #include "lll_chan_internal.h"
 #include "lll_adv_internal.h"
 
+#include "lll_filter.h"
+
 #include "common/log.h"
 #include <soc.h>
 #include "hal/debug.h"
 
-/*******************************************************************************
- * FIXME: Remove from here
- * NOTE: copied from ll_filter.c
- */
-#define WL_SIZE 8
-#define FILTER_IDX_NONE 0xFF
-struct ll_filter {
-	u8_t  enable_bitmask;
-	u8_t  addr_type_bitmask;
-	u8_t  bdaddr[WL_SIZE][BDADDR_SIZE];
-};
-
-struct ll_filter *ctrl_filter_get(bool whitelist);
-/******************************************************************************/
-
 static int init_reset(void);
 static int prepare_cb(struct lll_prepare_param *prepare_param);
-static int is_abort_cb(int prio, void *param);
+static int is_abort_cb(void *next, int prio, void *curr);
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
 static void isr_tx(void *param);
 static void isr_rx(void *param);
@@ -109,14 +87,11 @@ void lll_adv_prepare(void *param)
 	struct lll_prepare_param *p = param;
 	int err;
 
-	printk("\t\tlll_adv_prepare (%p) enter.\n", p->param);
-
 	err = lll_clk_on();
-	printk("\t\tlll_clk_on: %d.\n", err);
+	LL_ASSERT(!err || err == -EINPROGRESS);
 
 	err = lll_prepare(is_abort_cb, abort_cb, prepare_cb, 0, p);
-
-	printk("\t\tlll_adv_prepare (%p) exit (%d).\n", p->param, err);
+	LL_ASSERT(!err || err == -EINPROGRESS);
 }
 
 static int init_reset(void)
@@ -127,16 +102,13 @@ static int init_reset(void)
 static int prepare_cb(struct lll_prepare_param *prepare_param)
 {
 	struct lll_adv *lll = prepare_param->param;
-	u32_t ticks_at_event;
 	u32_t aa = 0x8e89bed6;
+	u32_t ticks_at_event;
 	u32_t remainder_us;
 	u32_t remainder;
 	int err = 0;
 
-	printk("\t\t_prepare (%p) enter: expected %u, actual %u.\n",
-	       prepare_param->param, prepare_param->ticks_at_expire,
-	       ticker_ticks_now_get());
-	DEBUG_RADIO_PREPARE_A(1);
+	DEBUG_RADIO_START_A(1);
 
 	radio_reset();
 	/* TODO: other Tx Power settings */
@@ -233,17 +205,20 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 #endif
 	}
 
-
-	DEBUG_RADIO_PREPARE_A(1);
-	printk("\t\t_prepare (%p) exit (%d).\n", prepare_param->param, err);
+	DEBUG_RADIO_START_A(1);
 
 	return err;
 }
 
-static int is_abort_cb(int prio, void *param)
+static int is_abort_cb(void *next, int prio, void *curr)
 {
-	struct lll_adv *lll = param;
+	struct lll_adv *lll = curr;
 	struct pdu_adv *pdu;
+
+	/* TODO: prio check */
+	if (next != curr) {
+		return 1;
+	}
 
 	pdu = lll_adv_data_curr_get(lll);
 	if (pdu->type == PDU_ADV_TYPE_DIRECT_IND) {
@@ -258,8 +233,6 @@ static int is_abort_cb(int prio, void *param)
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 {
 	int err;
-
-	printk("\t\t_abort (%p) enter.\n", param);
 
 	/* NOTE: This is not a prepare being cancelled */
 	if (!prepare_param) {
@@ -276,12 +249,9 @@ static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
 	 * currently in preparation pipeline.
 	 */
 	err = lll_clk_off();
-	printk("\t\tlll_clk_off: %d.\n", err);
+	LL_ASSERT(!err || err == -EBUSY);
 
 	lll_done(param);
-	printk("\t\tlll_done (%p).\n", param);
-
-	printk("\t\t_abort (%p) exit.\n", param);
 }
 
 static void isr_tx(void *param)
@@ -503,6 +473,8 @@ static void isr_done(void *param)
 
 static void isr_abort(void *param)
 {
+	radio_filter_disable();
+
 	isr_cleanup(param);
 }
 
@@ -514,10 +486,9 @@ static void isr_cleanup(void *param)
 	radio_tmr_stop();
 
 	err = lll_clk_off();
-	printk("\t\tlll_clk_off: %d.\n", err);
+	LL_ASSERT(!err || err == -EBUSY);
 
 	lll_done(NULL);
-	printk("\t\tlll_done.\n");
 }
 
 static void isr_race(void *param)
@@ -563,8 +534,6 @@ static void chan_prepare(struct lll_adv *lll)
 
 	chan = find_lsb_set(lll->chan_map_curr);
 	LL_ASSERT(chan);
-
-	printk("\t\tchan = %u.\n", chan);
 
 	lll->chan_map_curr &= (lll->chan_map_curr - 1);
 

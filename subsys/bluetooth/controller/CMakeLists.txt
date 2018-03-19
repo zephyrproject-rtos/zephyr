@@ -45,7 +45,8 @@ endif()
 
 zephyr_library_sources_ifdef(
   CONFIG_BT_OBSERVER
-  ll_sw/ll_scan.c
+  ll_sw/ull_scan.c
+  ll_sw/lll_scan.c
   )
 
 zephyr_library_sources_ifdef(

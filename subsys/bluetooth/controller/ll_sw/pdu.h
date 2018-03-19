@@ -16,6 +16,31 @@
 			 PDU_AC_PAYLOAD_SIZE_MAX)
 #define PDU_EM_SIZE_MAX offsetof(struct pdu_data, lldata)
 
+/* Extra bytes for enqueued node_rx metadata: rssi (always), resolving
+ * index, directed adv report, and mesh channel and instant.
+ */
+#define PDU_AC_SZ_RSSI 1
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+#define PDU_AC_SZ_PRIV 1
+#else
+#define PDU_AC_SZ_PRIV 0
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+#if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
+#define PDU_AC_SZ_SCFP 1
+#else
+#define PDU_AC_SZ_SCFP 0
+#endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+#define PDU_AC_SZ_MESH 5
+#else
+#define PDU_AC_SZ_MESH 0
+#endif /* CONFIG_BT_HCI_MESH_EXT */
+
+#define PDU_AC_SZ_EXTRA (PDU_AC_SZ_RSSI + \
+			 PDU_AC_SZ_PRIV + \
+			 PDU_AC_SZ_SCFP + \
+			 PDU_AC_SZ_MESH)
+
 struct pdu_adv_adv_ind {
 	u8_t addr[BDADDR_SIZE];
 	u8_t data[31];

@@ -294,31 +294,6 @@ struct pdu_data_q_tx {
 	struct radio_pdu_node_tx *node_tx;
 };
 
-/* Extra bytes for enqueued rx_node metadata: rssi (always), resolving
- * index, directed adv report, and mesh channel and instant.
- */
-#define PDU_AC_SZ_RSSI 1
-#if defined(CONFIG_BT_CTLR_PRIVACY)
-#define PDU_AC_SZ_PRIV 1
-#else
-#define PDU_AC_SZ_PRIV 0
-#endif /* CONFIG_BT_CTLR_PRIVACY */
-#if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
-#define PDU_AC_SZ_SCFP 1
-#else
-#define PDU_AC_SZ_SCFP 0
-#endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
-#if defined(CONFIG_BT_HCI_MESH_EXT)
-#define PDU_AC_SZ_MESH 5
-#else
-#define PDU_AC_SZ_MESH 0
-#endif /* CONFIG_BT_HCI_MESH_EXT */
-
-#define PDU_AC_SIZE_EXTRA (PDU_AC_SZ_RSSI + \
-			   PDU_AC_SZ_PRIV + \
-			   PDU_AC_SZ_SCFP + \
-			   PDU_AC_SZ_MESH)
-
 /* Minimum Rx Data allocation size */
 #define PACKET_RX_DATA_SIZE_MIN \
 			MROUND(offsetof(struct node_rx_pdu, pdu) + \

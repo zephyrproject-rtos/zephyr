@@ -7,28 +7,19 @@
 
 #include <string.h>
 
-#if defined(CONFIG_BT_CTLR_DEBUG_PINS)
-#if defined(CONFIG_PRINTK)
-#undef CONFIG_PRINTK
-#endif
-#endif
-
 #include <zephyr.h>
 #include <bluetooth/hci.h>
 
-#if defined(CONFIG_SOC_FAMILY_NRF)
 #include "hal/nrf5/ticker.h"
-#endif /* CONFIG_SOC_FAMILY_NRF */
 
 #include "util/util.h"
-
-#include "pdu.h"
-#include "ll.h"
-
 #include "util/memq.h"
 #include "util/mayfly.h"
 
 #include "ticker/ticker.h"
+
+#include "pdu.h"
+#include "ll.h"
 
 #include "lll.h"
 #include "lll_adv.h"
@@ -49,7 +40,6 @@
 static struct ll_adv_set ll_adv[CONFIG_BT_ADV_MAX];
 
 inline struct ll_adv_set *ull_adv_set_get(u16_t handle);
-inline struct ll_adv_set *ull_adv_is_enabled_get(u16_t handle);
 static inline struct ll_adv_set *is_disabled_get(u16_t handle);
 static void ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 		      void *param);
@@ -422,7 +412,7 @@ u32_t ll_adv_enable(u8_t enable)
 	u16_t const handle = 0;
 	u32_t ticks_anchor;
 #endif /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_HCI_MESH_EXT */
-	u32_t volatile ret_cb = TICKER_STATUS_BUSY;
+	volatile u32_t ret_cb = TICKER_STATUS_BUSY;
 	u8_t   rl_idx = FILTER_IDX_NONE;
 	struct pdu_adv *pdu_scan;
 	struct pdu_adv *pdu_adv;
@@ -867,8 +857,6 @@ static void ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 	u32_t ret;
 	u8_t ref;
 
-	printk("\tticker_cb (%p) enter: %u, %u, %u.\n", param,
-	       ticks_at_expire, remainder, lazy);
 	DEBUG_RADIO_PREPARE_A(1);
 
 	/* Increment prepare reference count */
@@ -906,13 +894,13 @@ static void ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 				    TICKER_USER_ID_ULL_HIGH,
 				    TICKER_ID_ADV_BASE + handle_get(adv),
 				    HAL_TICKER_US_TO_TICKS(random_delay * 1000),
-				    0, 0, 0, 0, 0, ticker_op_update_cb, adv);
+				    0, 0, 0, 0, 0,
+				    ticker_op_update_cb, (void *)__LINE__);
 		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 			  (ret == TICKER_STATUS_BUSY));
 	}
 
 	DEBUG_RADIO_PREPARE_A(1);
-	printk("\tticker_cb (%p) exit.\n", param);
 }
 
 static void ticker_op_update_cb(u32_t status, void *param)
@@ -1022,7 +1010,7 @@ static void disabled_cb(void *param)
 
 static inline u8_t disable(u16_t handle)
 {
-	u32_t volatile ret_cb = TICKER_STATUS_BUSY;
+	volatile u32_t ret_cb = TICKER_STATUS_BUSY;
 	struct ll_adv_set *adv;
 	u32_t ret;
 

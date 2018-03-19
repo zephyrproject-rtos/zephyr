@@ -19,8 +19,9 @@
 
 #include "pdu.h"
 
-#include "ll_sw/lll.h"
-#include "ll_sw/lll_tmp.h"
+#include "lll.h"
+#include "lll_conn.h"
+#include "lll_tmp.h"
 
 #include "ull_types.h"
 #include "ull.h"
@@ -53,7 +54,7 @@ struct tmp {
 
 static struct tmp tmp_inst[CONFIG_BT_TMP_MAX];
 
-static MFIFO_DEFINE(tmp_tx, sizeof(struct tmp_tx),
+static MFIFO_DEFINE(tmp_tx, sizeof(struct lll_tx),
 		    CONFIG_BT_TMP_TX_COUNT_MAX);
 
 static struct {
@@ -200,8 +201,8 @@ int ull_tmp_disable(u16_t handle)
 
 int ull_tmp_data_send(u16_t handle, u8_t size, u8_t *data)
 {
-	struct tmp_tx *tx;
-	struct tmp_node_tx *node_tx;
+	struct lll_tx *tx;
+	struct node_tx *node_tx;
 	struct tmp *inst;
 	u8_t idx;
 
@@ -231,7 +232,7 @@ int ull_tmp_data_send(u16_t handle, u8_t size, u8_t *data)
 	tx->handle = handle;
 
 	node_tx = tx->node;
-	memcpy(node_tx->data, data, size);
+	memcpy(node_tx->pdu, data, size);
 
 	MFIFO_ENQUEUE(tmp_tx, idx);
 
@@ -294,7 +295,7 @@ static void _ticker_cb(u32_t ticks_at_expire, u32_t remainder,
 
 static void _tx_demux(void)
 {
-	struct tmp_tx *tx;
+	struct lll_tx *tx;
 
 	tx = MFIFO_DEQUEUE_GET(tmp_tx);
 	while (tx) {

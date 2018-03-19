@@ -20,6 +20,7 @@
 #include "ull_types.h"
 
 #include "lll.h"
+#include "lll_conn.h"
 #include "lll_tmp.h"
 
 #include "lll_internal.h"
@@ -28,12 +29,12 @@
 #include <soc.h>
 #include "hal/debug.h"
 
-static MFIFO_DEFINE(tmp_ack, sizeof(struct tmp_tx),
+static MFIFO_DEFINE(tmp_ack, sizeof(struct lll_tx),
 		    CONFIG_BT_TMP_TX_COUNT_MAX);
 
 static int _init_reset(void);
 static int _prepare_cb(struct lll_prepare_param *prepare_param);
-static int _is_abort_cb(int prio, void *param);
+static int _is_abort_cb(void *next, int prio, void *curr);
 static void _abort_cb(struct lll_prepare_param *prepare_param, void *param);
 static int _emulate_tx_rx(void *param);
 
@@ -83,9 +84,9 @@ u8_t lll_tmp_ack_last_idx_get(void)
 	return mfifo_tmp_ack.l;
 }
 
-memq_link_t *lll_tmp_ack_peek(u16_t *handle, struct tmp_node_tx **node_tx)
+memq_link_t *lll_tmp_ack_peek(u16_t *handle, struct node_tx **node_tx)
 {
-	struct tmp_tx *tx;
+	struct lll_tx *tx;
 
 	tx = MFIFO_DEQUEUE_GET(tmp_ack);
 	if (!tx) {
@@ -99,9 +100,9 @@ memq_link_t *lll_tmp_ack_peek(u16_t *handle, struct tmp_node_tx **node_tx)
 }
 
 memq_link_t *lll_tmp_ack_by_last_peek(u8_t last, u16_t *handle,
-				      struct tmp_node_tx **node_tx)
+				      struct node_tx **node_tx)
 {
-	struct tmp_tx *tx;
+	struct lll_tx *tx;
 
 	tx = mfifo_dequeue_get(mfifo_tmp_ack.m, mfifo_tmp_ack.s,
 			       mfifo_tmp_ack.f, last);
@@ -142,7 +143,7 @@ static int _prepare_cb(struct lll_prepare_param *prepare_param)
 	return err;
 }
 
-static int _is_abort_cb(int prio, void *param)
+static int _is_abort_cb(void *next, int prio, void *curr)
 {
 	static u8_t toggle;
 
@@ -184,7 +185,7 @@ static int _emulate_tx_rx(void *param)
 {
 	struct lll_prepare_param *prepare_param = param;
 	struct lll_tmp *tmp = prepare_param->param;
-	struct tmp_node_tx *node_tx;
+	struct node_tx *node_tx;
 	bool is_ull_rx = false;
 	memq_link_t *link;
 	void *free;
@@ -192,7 +193,7 @@ static int _emulate_tx_rx(void *param)
 	/* Tx */
 	link = memq_dequeue(tmp->memq_tx.tail, &tmp->memq_tx.head, (void **)&node_tx);
 	while (link) {
-		struct tmp_tx *tx;
+		struct lll_tx *tx;
 		u8_t idx;
 
 		idx = MFIFO_ENQUEUE_GET(tmp_ack, (void **)&tx);

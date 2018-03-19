@@ -29,6 +29,7 @@
 #include "ll.h"
 
 #include "lll.h"
+#include "lll_conn.h"
 #include "lll_tmp.h"
 
 #include "ull_types.h"
@@ -51,6 +52,12 @@
 #define BT_ADV_TICKER_NODES 0
 #endif
 
+#if defined(CONFIG_BT_OBSERVER)
+#define BT_SCAN_TICKER_NODES ((TICKER_ID_SCAN_LAST) - (TICKER_ID_SCAN_STOP) + 1)
+#else
+#define BT_SCAN_TICKER_NODES 0
+#endif
+
 #if defined(CONFIG_BT_TMP)
 #define BT_TMP_TICKER_NODES ((TICKER_ID_TMP_LAST) - (TICKER_ID_TMP_BASE) + 1)
 #else
@@ -67,6 +74,7 @@
 
 #define TICKER_NODES              (TICKER_ID_ULL_BASE + \
 				   BT_ADV_TICKER_NODES + \
+				   BT_SCAN_TICKER_NODES + \
 				   BT_TMP_TICKER_NODES + \
 				   FLASH_TICKER_NODES)
 #define TICKER_USER_APP_OPS       (TICKER_USER_THREAD_OPS + \
@@ -96,8 +104,8 @@ static struct k_sem *sem_recv;
 static struct device *dev_entropy;
 
 /* Rx memq configuration defines */
-#define TODO_PDU_RX_SIZE_MIN  16
-#define TODO_PDU_RX_SIZE_MAX  32
+#define TODO_PDU_RX_SIZE_MIN  64
+#define TODO_PDU_RX_SIZE_MAX  64
 #define TODO_PDU_RX_COUNT_MAX 10
 #define TODO_PDU_RX_POOL_SIZE ((TODO_PDU_RX_SIZE_MAX) * \
 			       (TODO_PDU_RX_COUNT_MAX))
@@ -123,7 +131,7 @@ static struct {
 } mem_pdu_rx;
 
 static struct {
-	u8_t quota_data;
+	u8_t quota_pdu;
 
 	void *free;
 	u8_t pool[sizeof(memq_link_t) * TODO_LINK_RX_COUNT_MAX];
@@ -137,7 +145,7 @@ static inline void _rx_alloc(u8_t max);
 static void _rx_demux(void *param);
 #if defined(CONFIG_BT_TMP)
 static inline void _rx_demux_tx_ack(u16_t handle, memq_link_t *link,
-			     struct tmp_node_tx *node_tx);
+			     struct node_tx *node_tx);
 #endif /* CONFIG_BT_TMP */
 static inline void _rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx);
 static inline void _rx_demux_event_done(memq_link_t *link,
@@ -333,8 +341,16 @@ void ll_rx_dequeue(void)
 
 	/* handle object specific clean up */
 	switch (node_rx->type) {
-#if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY) || \
+	case NODE_RX_TYPE_REPORT:
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT) || \
+    defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY) || \
     defined(CONFIG_BT_CTLR_ADV_INDICATION)
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	case NODE_RX_TYPE_EXT_1M_REPORT:
+	case NODE_RX_TYPE_EXT_CODED_REPORT:
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+
 #if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
 	case NODE_RX_TYPE_SCAN_REQ:
 #endif /* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY */
@@ -342,9 +358,9 @@ void ll_rx_dequeue(void)
 #if defined(CONFIG_BT_CTLR_ADV_INDICATION)
 	case NODE_RX_TYPE_ADV_INDICATION:
 #endif /* CONFIG_BT_CTLR_ADV_INDICATION */
-		LL_ASSERT(mem_link_rx.quota_data < TODO_PDU_RX_COUNT_MAX);
+		LL_ASSERT(mem_link_rx.quota_pdu < TODO_PDU_RX_COUNT_MAX);
 
-		mem_link_rx.quota_data++;
+		mem_link_rx.quota_pdu++;
 		break;
 #endif /* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY ||
 	  CONFIG_BT_CTLR_ADV_INDICATION */
@@ -586,7 +602,7 @@ static inline int _init_reset(void)
 	event.link_done_free = &event.link_done;
 
 	/* Allocate rx free buffers */
-	mem_link_rx.quota_data = TODO_PDU_RX_COUNT_MAX;
+	mem_link_rx.quota_pdu = TODO_PDU_RX_COUNT_MAX;
 	_rx_alloc(UINT8_MAX);
 
 	return 0;
@@ -596,8 +612,8 @@ static inline void _rx_alloc(u8_t max)
 {
 	u8_t idx;
 
-	if (max > mem_link_rx.quota_data) {
-		max = mem_link_rx.quota_data;
+	if (max > mem_link_rx.quota_pdu) {
+		max = mem_link_rx.quota_pdu;
 	}
 
 	while ((max--) && MFIFO_ENQUEUE_IDX_GET(pdu_rx_free, &idx)) {
@@ -619,7 +635,7 @@ static inline void _rx_alloc(u8_t max)
 
 		MFIFO_BY_IDX_ENQUEUE(pdu_rx_free, idx, rx);
 
-		mem_link_rx.quota_data--;
+		mem_link_rx.quota_pdu--;
 	}
 }
 
@@ -634,7 +650,7 @@ static void _rx_demux(void *param)
 				 (void **)&rx);
 		if (link) {
 #if defined(CONFIG_BT_TMP)
-			struct tmp_node_tx *node_tx;
+			struct node_tx *node_tx;
 			memq_link_t *link_tx;
 			u16_t handle;
 
@@ -650,7 +666,7 @@ static void _rx_demux(void *param)
 #if defined(CONFIG_BT_TMP)
 			}
 		} else {
-			struct tmp_node_tx *node_tx;
+			struct node_tx *node_tx;
 			u16_t handle;
 
 			link = lll_tmp_ack_peek(&handle, &node_tx);
@@ -664,7 +680,7 @@ static void _rx_demux(void *param)
 
 #if defined(CONFIG_BT_TMP)
 static inline void _rx_demux_tx_ack(u16_t handle, memq_link_t *link,
-			     struct tmp_node_tx *node_tx)
+			     struct node_tx *node_tx)
 {
 	lll_tmp_ack_dequeue();
 
@@ -692,8 +708,16 @@ static inline void _rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 		}
 		break;
 
-#if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY) || \
+		case NODE_RX_TYPE_REPORT:
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT) || \
+    defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY) || \
     defined(CONFIG_BT_CTLR_ADV_INDICATION)
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+		case NODE_RX_TYPE_EXT_1M_REPORT:
+		case NODE_RX_TYPE_EXT_CODED_REPORT:
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+
 #if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
 		case NODE_RX_TYPE_SCAN_REQ:
 #endif /* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY */

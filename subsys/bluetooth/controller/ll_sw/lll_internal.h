@@ -1,6 +1,6 @@
 /* NOTE: Definitions used internal to LLL implementations */
 
-typedef int (*lll_is_abort_cb_t)(int prio, void *param);
+typedef int (*lll_is_abort_cb_t)(void *next, int prio, void *curr);
 typedef void (*lll_abort_cb_t)(struct lll_prepare_param *prepare_param,
 			       void *param);
 typedef int (*lll_prepare_cb_t)(struct lll_prepare_param *prepare_param);
