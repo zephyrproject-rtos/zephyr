@@ -556,6 +556,123 @@ Both commands execute the :abbr:`gdb (GNU Debugger)`. The command name might
 change depending on the toolchain you are using and your cross-development
 tools.
 
+Eclipse Debugging
+*****************
+
+Overview
+========
+
+CMake supports generating a project description file that can be imported into
+the Eclipse Integrated Development Environment (IDE) and used for graphical
+debugging.
+
+The `GNU MCU Eclipse plug-ins`_ provide a mechanism to debug ARM projects in
+Eclipse with pyOCD, Segger J-Link, and OpenOCD debugging tools.
+
+The following tutorial demonstrates how to debug a Zephyr application in
+Eclipse with pyOCD in Windows. It assumes you have already installed the GCC
+ARM Embedded toolchain and pyOCD.
+
+Set Up the Eclipse Development Environment
+==========================================
+
+#. Download and install `Eclipse IDE for C/C++ Developers`_.
+
+#. In Eclipse, install the GNU MCU Eclipse plug-ins by opening the menu
+   ``Window->Eclipse Marketplace...``, searching for ``GNU MCU Eclipse``, and
+   clicking ``Install`` on the matching result.
+
+#. Configure the path to the pyOCD GDB server by opening the menu
+   ``Window->Preferences``, navigating to ``MCU``, and setting the ``Global
+   pyOCD Path``.
+
+Generate and Import an Eclipse Project
+======================================
+
+#. At a command line, configure your environment to use the GCC ARM Embedded
+   compiler as shown in :ref:`third_party_x_compilers`.
+
+#. Navigate to a folder outside of the Zephyr tree to build your application.
+
+   .. code-block:: console
+
+      # On Windows
+      cd %userprofile%
+
+   .. note::
+      If the build directory is a subdirectory of the source directory, as is
+      usually done in Zephyr, CMake will warn:
+
+      "The build directory is a subdirectory of the source directory.
+
+      This is not supported well by Eclipse.  It is strongly recommended to use
+      a build directory which is a sibling of the source directory."
+
+#. Configure your application with CMake and build it with ninja. Note the
+   different CMake generator specified by the ``-G"Eclipse CDT4 - Ninja"``
+   argument. This will generate an Eclipse project description file,
+   :file:`.project`, in addition to the usual ninja build files.
+
+   .. code-block:: console
+
+      # On Windows
+      mkdir build && cd build
+      cmake -G"Eclipse CDT4 - Ninja" -DBOARD=frdm_k64f %ZEPHYR_BASE%\samples\synchronization
+      ninja
+
+#. In Eclipse, import your generated project by opening the menu
+   ``File->Import...`` and selecting the option ``Existing Projects into
+   Workspace``. Browse to your application build directory in the choice,
+   ``Select root directory:``. Check the box for your project in the list of
+   projects found and click the ``Finish`` button.
+
+Create a Debugger Configuration
+===============================
+
+#. Open the menu ``Run->Debug Configurations...``.
+
+#. Select ``GDB PyOCD Debugging``, click the ``New`` button, and configure the
+   following options:
+
+   - In the Main tab:
+
+     - Project: NONE@build
+     - C/C++ Application: :file:`zephyr/zephyr.elf`
+
+   - In the Debugger tab:
+
+     - pyOCD Setup
+
+       - Executable path: :file:`${pyocd_path}\${pyocd_executable}`
+       - Uncheck "Allocate console for semihosting"
+
+     - Board Setup
+
+       - Bus speed: 8000000 Hz
+       - Uncheck "Enable semihosting"
+
+     - GDB Client Setup
+
+       - Executable path: :file:`C:\gcc-arm-none-eabi-6_2017-q2-update\bin\arm-none-eabi-gdb.exe`
+
+   - In the SVD Path tab:
+
+     - File path: :file:`<zephyr base>\ext\hal\nxp\mcux\devices\MK64F12\MK64F12.xml`
+
+     .. note::
+	This is optional. It provides the SoC's memory-mapped register
+	addresses and bitfields to the debugger.
+
+#. Click the ``Debug`` button to start debugging.
+
+RTOS Awareness
+==============
+
+Experimental support for Zephyr RTOS awareness is implemented in `pyOCD PR
+#333`_. It is compatible with GDB PyOCD Debugging in Eclipse, but you must
+download this pull request and build pyOCD from source. You must also enable
+CONFIG_OPENOCD_SUPPORT=y in your application.
+
 CMake Details
 *************
 
@@ -1061,3 +1178,7 @@ third-party build system.
 
 :file:`samples/application_development/external_lib` is a sample
 project that demonstrates some of these features.
+
+.. _Eclipse IDE for C/C++ Developers: https://www.eclipse.org/downloads/packages/eclipse-ide-cc-developers/oxygen2
+.. _GNU MCU Eclipse plug-ins: https://gnu-mcu-eclipse.github.io/plugins/install/
+.. _pyOCD PR #333: https://github.com/mbedmicro/pyOCD/pull/333
