@@ -214,9 +214,7 @@ static void ws_received(struct http_ctx *ctx,
 
 		http_send_flush(ctx, user_data);
 
-		if (pkt) {
-			net_pkt_unref(pkt);
-		}
+		net_pkt_unref(pkt);
 
 	} else {
 		NET_ERR("Receive error (%d)", status);
