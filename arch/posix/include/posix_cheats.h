@@ -41,6 +41,11 @@
 #define sigevent	       zap_sigevent
 #define pthread_rwlock_obj     zap_pthread_rwlock_obj
 #define pthread_rwlockattr_t   zap_pthread_rwlockattr_t
+#define mqueue_object	       zap_mqueue_object
+#define mqueue_desc	       zap_mqueue_desc
+#define mqd_t		       zap_mqd_t
+#define mq_attr		       zap_mq_attr
+
 /* Condition variables */
 
 #define pthread_cond_init(...)        zap_pthread_cond_init(__VA_ARGS__)
@@ -146,6 +151,17 @@
 		zap_pthread_rwlock_trywrlock(__VA_ARGS__)
 #define pthread_rwlockattr_destroy(...)\
 		zap_pthread_rwlockattr_destroy(__VA_ARGS__)
+
+/* message queue */
+#define mq_open(...)	zap_mq_open(__VA_ARGS__)
+#define mq_close(...)	zap_mq_close(__VA_ARGS__)
+#define mq_unlink(...)	zap_mq_unlink(__VA_ARGS__)
+#define mq_getattr(...)	zap_mq_getattr(__VA_ARGS__)
+#define mq_receive(...)	zap_mq_receive(__VA_ARGS__)
+#define mq_send(...)	zap_mq_send(__VA_ARGS__)
+#define mq_setattr(...)	zap_mq_setattr(__VA_ARGS__)
+#define mq_timedreceive(...)	zap_mq_timedreceive(__VA_ARGS__)
+#define mq_timedsend(...)	zap_mq_timedsend(__VA_ARGS__)
 
 #endif /* CONFIG_PTHREAD_IPC */
 

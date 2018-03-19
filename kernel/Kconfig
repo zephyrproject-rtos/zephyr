@@ -371,7 +371,8 @@ config NUM_PIPE_ASYNC_MSGS
 config HEAP_MEM_POOL_SIZE
 	int
 	prompt "Heap memory pool size (in bytes)"
-	default 0
+	default 0 if !POSIX_MQUEUE
+	default 1024 if POSIX_MQUEUE
 	help
 	  This option specifies the size of the heap memory pool used when
 	  dynamically allocating memory using k_malloc(). Supported values
@@ -520,6 +521,39 @@ config MAX_TIMER_COUNT
 	range 0 255
 	help
 	  Mention maximum number of timers in POSIX compliant application.
+
+config POSIX_MQUEUE
+	bool
+	prompt "Enable POSIX message queue"
+	default n
+	help
+	  This enabled POSIX message queue related APIs.
+
+if POSIX_MQUEUE
+config	MSG_COUNT_MAX
+	int
+	prompt "Maximum number of messages in message queue"
+	default 16
+	help
+	  Mention maximum number of messages in message queue in POSIX compliant
+	  application.
+
+config	MSG_SIZE_MAX
+	int
+	prompt "Maximum size of a message"
+	default 16
+	help
+	  Mention maximum size of message in bytes.
+
+config	MQUEUE_NAMELEN_MAX
+	int
+	prompt "Maximum size of a name length"
+	default 16
+	range 2 255
+	help
+	  Mention length of message queue name in number of characters.
+
+endif
 endif
 endmenu
 
