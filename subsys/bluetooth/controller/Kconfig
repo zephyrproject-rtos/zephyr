@@ -24,8 +24,8 @@ choice
 config BT_LL_SW
 	bool "Software-based BLE Link Layer"
 	select ENTROPY_GENERATOR
-	select ENTROPY_NRF5_RNG if SOC_FAMILY_NRF5
-	select ENTROPY_NRF5_BIAS_CORRECTION if SOC_FAMILY_NRF5
+	select ENTROPY_NRF5_RNG if SOC_FAMILY_NRF
+	select ENTROPY_NRF5_BIAS_CORRECTION if SOC_FAMILY_NRF
 	select ENTROPY_DEVICE_RANDOM_GENERATOR
 	help
 	  Use Zephyr software BLE Link Layer implementation.
@@ -168,7 +168,7 @@ config BT_CTLR_RL_SIZE
 	depends on BT_CTLR_PRIVACY
 	int
 	default 8
-	range 1 8 if SOC_FAMILY_NRF5
+	range 1 8 if SOC_FAMILY_NRF
 	help
 	  Set the size of the Resolving List for LE Controller-based Privacy.
 	  On nRF5x-based controllers, the hardware imposes a limit of 8 devices.
@@ -486,7 +486,7 @@ endif # BT_CTLR_GPIO_LNA
 
 config BT_CTLR_PA_LNA_GPIOTE_CHAN
 	# Hidden "nRF5 GPIO PA/LNA GPIOTE Channel"
-	depends on SOC_FAMILY_NRF5 && (BT_CTLR_GPIO_PA || BT_CTLR_GPIO_LNA)
+	depends on SOC_FAMILY_NRF && (BT_CTLR_GPIO_PA || BT_CTLR_GPIO_LNA)
 	int
 	default 3
 	help

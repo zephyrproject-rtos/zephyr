@@ -1,9 +1,0 @@
-# Kconfig.soc - Nordic Semiconductor nRF5 MCU line
-#
-# Copyright (c) 2016 Nordic Semiconductor ASA
-#
-# SPDX-License-Identifier: Apache-2.0
-#
-
-source "arch/arm/soc/nordic_nrf5/*/Kconfig.series"
-

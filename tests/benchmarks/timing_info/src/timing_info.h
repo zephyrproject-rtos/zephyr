@@ -161,11 +161,11 @@ extern u64_t __end_tick_time;
  * NOTE: Needed only when reading value from end of swap operation
  */
 #if CONFIG_ARM
-#if defined(CONFIG_SOC_FAMILY_NRF5)
+#if defined(CONFIG_SOC_FAMILY_NRF)
 #define SUBTRACT_CLOCK_CYCLES(val) (val)
 #else
 #define SUBTRACT_CLOCK_CYCLES(val) (SysTick->LOAD - (u32_t) val)
-#endif /* CONFIG_SOC_FAMILY_NRF5 */
+#endif /* CONFIG_SOC_FAMILY_NRF */
 #else
 #define SUBTRACT_CLOCK_CYCLES(val) (val)
 #endif /* CONFIG_ARM */

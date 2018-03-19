@@ -1,13 +1,14 @@
-# Kconfig.defconfig.series - Nordic Semiconductor nRF5 MCU line
+# Kconfig.defconfig.series - Nordic Semiconductor nRF51 MCU line
 #
 # Copyright (c) 2016 Linaro Limited
+# Copyright (c) 2018 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 
 if SOC_SERIES_NRF51X
 
-source "arch/arm/soc/nordic_nrf5/nrf51/Kconfig.defconfig.nrf51*"
+source "arch/arm/soc/nordic_nrf/nrf51/Kconfig.defconfig.nrf51*"
 
 config SOC_SERIES
 	default nrf51

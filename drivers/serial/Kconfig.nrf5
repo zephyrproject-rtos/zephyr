@@ -10,7 +10,7 @@ menuconfig UART_NRF5
 	default n
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
-	depends on SOC_FAMILY_NRF5
+	depends on SOC_FAMILY_NRF
 	select GPIO_NRF5
 	help
 	  This option enables the UART driver for Nordic Semiconductor nRF5

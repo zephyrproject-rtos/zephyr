@@ -22,7 +22,7 @@ extern atomic_t hci_state_mask;
 #define HCI_CLASS_EVT_CONNECTION  2
 #define HCI_CLASS_ACL_DATA        3
 
-#if defined(CONFIG_SOC_FAMILY_NRF5)
+#if defined(CONFIG_SOC_FAMILY_NRF)
 #define BT_HCI_VS_HW_PLAT BT_HCI_VS_HW_PLAT_NORDIC
 #if defined(CONFIG_SOC_SERIES_NRF51X)
 #define BT_HCI_VS_HW_VAR  BT_HCI_VS_HW_VAR_NORDIC_NRF51X;
@@ -32,7 +32,7 @@ extern atomic_t hci_state_mask;
 #else
 #define BT_HCI_VS_HW_PLAT 0
 #define BT_HCI_VS_HW_VAR  0
-#endif /* CONFIG_SOC_FAMILY_NRF5 */
+#endif /* CONFIG_SOC_FAMILY_NRF */
 
 void hci_init(struct k_poll_signal *signal_host_buf);
 struct net_buf *hci_cmd_handle(struct net_buf *cmd);
