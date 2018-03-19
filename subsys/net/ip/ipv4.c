@@ -69,6 +69,9 @@ struct net_pkt *net_ipv4_create(struct net_context *context,
 				const struct in_addr *src,
 				const struct in_addr *dst)
 {
+	struct net_if_ipv4 *ipv4 = net_pkt_iface(pkt)->config.ip.ipv4;
+
+	NET_ASSERT(ipv4);
 	NET_ASSERT(((struct sockaddr_in_ptr *)&context->local)->sin_addr);
 
 	if (!src) {
@@ -77,7 +80,7 @@ struct net_pkt *net_ipv4_create(struct net_context *context,
 
 	if (net_is_ipv4_addr_unspecified(src)
 	    || net_is_ipv4_addr_mcast(src)) {
-		src = &net_pkt_iface(pkt)->ipv4.unicast[0].address.in_addr;
+		src = &ipv4->unicast[0].address.in_addr;
 	}
 
 	return net_ipv4_create_raw(pkt,
@@ -100,15 +103,18 @@ int net_ipv4_finalize_raw(struct net_pkt *pkt, u8_t next_header)
 	NET_IPV4_HDR(pkt)->len[1] = total_len & 0xff;
 
 	NET_IPV4_HDR(pkt)->chksum = 0;
-	NET_IPV4_HDR(pkt)->chksum = ~net_calc_chksum_ipv4(pkt);
 
 #if defined(CONFIG_NET_UDP)
-	if (next_header == IPPROTO_UDP) {
+	if (next_header == IPPROTO_UDP &&
+	    net_if_need_calc_tx_checksum(net_pkt_iface(pkt))) {
+		NET_IPV4_HDR(pkt)->chksum = ~net_calc_chksum_ipv4(pkt);
 		net_udp_set_chksum(pkt, pkt->frags);
 	}
 #endif
 #if defined(CONFIG_NET_TCP)
-	if (next_header == IPPROTO_TCP) {
+	if (next_header == IPPROTO_TCP &&
+	    net_if_need_calc_tx_checksum(net_pkt_iface(pkt))) {
+		NET_IPV4_HDR(pkt)->chksum = ~net_calc_chksum_ipv4(pkt);
 		net_tcp_set_chksum(pkt, pkt->frags);
 	}
 #endif

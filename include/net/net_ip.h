@@ -32,6 +32,9 @@
 extern "C" {
 #endif
 
+/* Specifying VLAN tag here in order to avoid circular dependencies */
+#define NET_VLAN_TAG_UNSPEC 0x0fff
+
 /** Protocol families */
 #define PF_UNSPEC	0	/* Unspecified.  */
 #define PF_INET		2	/* IP protocol family.  */
@@ -58,8 +61,10 @@ enum net_sock_type {
 
 #define ntohs(x) sys_be16_to_cpu(x)
 #define ntohl(x) sys_be32_to_cpu(x)
+#define ntohll(x) sys_be64_to_cpu(x)
 #define htons(x) sys_cpu_to_be16(x)
 #define htonl(x) sys_cpu_to_be32(x)
+#define htonll(x) sys_cpu_to_be64(x)
 
 /** IPv6 address structure */
 struct in6_addr {
@@ -187,6 +192,18 @@ extern const struct in6_addr in6addr_loopback;
 #define NET_IPV6_NEXTHDR_ROUTING     43
 #define NET_IPV6_NEXTHDR_FRAG        44
 #define NET_IPV6_NEXTHDR_NONE        59
+
+/** Network packet priority settings described in IEEE 802.1Q Annex I.1 */
+enum net_priority {
+	NET_PRIORITY_BK = 0, /* Background (lowest)                */
+	NET_PRIORITY_BE = 1, /* Best effort (default)              */
+	NET_PRIORITY_EE = 2, /* Excellent effort                   */
+	NET_PRIORITY_CA = 3, /* Critical applications (highest)    */
+	NET_PRIORITY_VI = 4, /* Video, < 100 ms latency and jitter */
+	NET_PRIORITY_VO = 5, /* Voice, < 10 ms latency and jitter  */
+	NET_PRIORITY_IC = 6, /* Internetwork control               */
+	NET_PRIORITY_NC = 7  /* Network control                    */
+};
 
 /** IPv6/IPv4 network connection tuple */
 struct net_tuple {
@@ -349,6 +366,7 @@ static inline bool net_is_ipv6_addr_mcast(const struct in6_addr *addr)
 }
 
 struct net_if;
+struct net_if_config;
 
 extern struct net_if_addr *net_if_ipv6_addr_lookup(const struct in6_addr *addr,
 						   struct net_if **iface);
@@ -944,6 +962,40 @@ static inline bool net_tcp_seq_greater(u32_t seq1, u32_t seq2)
  * @return 0 if ok, <0 if error
  */
 int net_bytes_from_str(u8_t *buf, int buf_len, const char *src);
+
+/**
+ * @brief Convert Tx network packet priority to traffic class so we can place
+ * the packet into correct Tx queue.
+ *
+ * @param prio Network priority
+ *
+ * @return Tx traffic class that handles that priority network traffic.
+ */
+int net_tx_priority2tc(enum net_priority prio);
+
+/**
+ * @brief Convert Rx network packet priority to traffic class so we can place
+ * the packet into correct Rx queue.
+ *
+ * @param prio Network priority
+ *
+ * @return Rx traffic class that handles that priority network traffic.
+ */
+int net_rx_priority2tc(enum net_priority prio);
+
+/**
+ * @brief Convert network packet VLAN priority to network packet priority so we
+ * can place the packet into correct queue.
+ *
+ * @param vlan_prio VLAN priority
+ *
+ * @return Network priority
+ */
+static inline enum net_priority net_vlan2priority(u8_t priority)
+{
+	/* Currently this is 1:1 mapping */
+	return priority;
+}
 
 #ifdef __cplusplus
 }

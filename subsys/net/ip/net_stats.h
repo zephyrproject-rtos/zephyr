@@ -390,6 +390,96 @@ static inline void net_stats_update_ipv6_mld_drop(void)
 #define net_stats_update_ipv6_mld_drop()
 #endif /* CONFIG_NET_STATISTICS_MLD */
 
+#if (NET_TC_COUNT > 1) && defined(CONFIG_NET_STATISTICS)
+static inline void net_stats_update_tc_sent_pkt(u8_t tc)
+{
+	net_stats.tc.sent[tc].pkts++;
+}
+
+static inline void net_stats_update_tc_sent_bytes(u8_t tc, size_t bytes)
+{
+	net_stats.tc.sent[tc].bytes += bytes;
+}
+
+static inline void net_stats_update_tc_sent_priority(u8_t tc, u8_t priority)
+{
+	net_stats.tc.sent[tc].priority = priority;
+}
+
+static inline void net_stats_update_tc_recv_pkt(u8_t tc)
+{
+	net_stats.tc.recv[tc].pkts++;
+}
+
+static inline void net_stats_update_tc_recv_bytes(u8_t tc, size_t bytes)
+{
+	net_stats.tc.recv[tc].bytes += bytes;
+}
+
+static inline void net_stats_update_tc_recv_priority(u8_t tc, u8_t priority)
+{
+	net_stats.tc.recv[tc].priority = priority;
+}
+#else
+#define net_stats_update_tc_sent_pkt(tc)
+#define net_stats_update_tc_sent_bytes(tc, bytes)
+#define net_stats_update_tc_sent_priority(tc, priority)
+#define net_stats_update_tc_recv_pkt(tc)
+#define net_stats_update_tc_recv_bytes(tc, bytes)
+#define net_stats_update_tc_recv_priority(tc, priority)
+#endif /* NET_TC_COUNT > 1 */
+
+#if defined(CONFIG_NET_PKT_TIMESTAMP) && defined(CONFIG_NET_STATISTICS)
+#define _NET_STATS_AVG_SAMPLES 100
+
+static inline
+void _net_stats_update_pkt_timestamp(struct net_stats_ts_data *data,
+				     u32_t ts)
+{
+	if (ts == UINT32_MAX || ts == 0) {
+		return;
+	}
+
+	/* Do not calculate highest or lowest number into rolling average */
+
+	if (ts < data->low || data->low == 0) {
+		data->low = ts;
+		return;
+	}
+
+	if (ts > data->high) {
+		data->high = ts;
+		return;
+	}
+
+	if (data->average) {
+		if (ts > (10 * data->average)) {
+			/* If the time is too large, just skip it */
+			return;
+		}
+
+		data->average = (data->average *
+				 (_NET_STATS_AVG_SAMPLES - 1) + ts) /
+			_NET_STATS_AVG_SAMPLES;
+	} else {
+		data->average = ts;
+	}
+}
+
+static inline void net_stats_update_pkt_tx_timestamp(u8_t tc, u32_t ts)
+{
+	_net_stats_update_pkt_timestamp(&net_stats.ts.tx[tc].time, ts);
+}
+
+static inline void net_stats_update_pkt_rx_timestamp(u8_t tc, u32_t ts)
+{
+	_net_stats_update_pkt_timestamp(&net_stats.ts.rx[tc].time, ts);
+}
+#else
+#define net_stats_update_pkt_tx_timestamp(ts)
+#define net_stats_update_pkt_rx_timestamp(ts)
+#endif /* CONFIG_NET_PKT_TIMESTAMP */
+
 #if defined(CONFIG_NET_STATISTICS_PERIODIC_OUTPUT)
 /* A simple periodic statistic printer, used only in net core */
 void net_print_statistics(void);

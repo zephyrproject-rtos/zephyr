@@ -92,15 +92,21 @@ void add_ipv6_addr_to_ot(struct openthread_context *context)
 {
 	struct net_if *iface = context->iface;
 	struct otNetifAddress addr;
+	struct net_if_ipv6 *ipv6;
 	int i;
 
 	memset(&addr, 0, sizeof(addr));
 
+	if (net_if_config_ipv6_get(iface, &ipv6) < 0) {
+		NET_DBG("Cannot allocate IPv6 address");
+		return;
+	}
+
 	/* save the last added IP address for this interface */
 	for (i = NET_IF_MAX_IPV6_ADDR - 1; i >= 0; i--) {
-		if (iface->ipv6.unicast[i].is_used) {
+		if (ipv6->unicast[i].is_used) {
 			memcpy(&addr.mAddress,
-			       &iface->ipv6.unicast[i].address.in6_addr,
+			       &ipv6->unicast[i].address.in6_addr,
 			       sizeof(addr.mAddress));
 			break;
 		}
@@ -126,13 +132,19 @@ void add_ipv6_addr_to_ot(struct openthread_context *context)
 void add_ipv6_maddr_to_ot(struct openthread_context *context)
 {
 	struct otIp6Address addr;
+	struct net_if_ipv6 *ipv6;
 	int i;
+
+	if (net_if_config_ipv6_get(context->iface, &ipv6) < 0) {
+		NET_DBG("Cannot allocate IPv6 address");
+		return;
+	}
 
 	/* save the last added IP address for this interface */
 	for (i = NET_IF_MAX_IPV6_MADDR - 1; i >= 0; i--) {
-		if (context->iface->ipv6.mcast[i].is_used) {
+		if (ipv6->mcast[i].is_used) {
 			memcpy(&addr,
-			       &context->iface->ipv6.mcast[i].address.in6_addr,
+			       &ipv6->mcast[i].address.in6_addr,
 			       sizeof(addr));
 			break;
 		}
@@ -174,13 +186,19 @@ void rm_ipv6_addr_from_zephyr(struct openthread_context *context)
 {
 	struct in6_addr *ot_addr;
 	struct net_if_addr *zephyr_addr;
+	struct net_if_ipv6 *ipv6;
 	int i;
+
+	if (net_if_config_ipv6_get(context->iface, &ipv6) < 0) {
+		NET_DBG("Cannot find IPv6 address");
+		return;
+	}
 
 	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
 		const otNetifAddress *address;
 		bool used = false;
 
-		zephyr_addr = &context->iface->ipv6.unicast[i];
+		zephyr_addr = &ipv6->unicast[i];
 		if (!zephyr_addr->is_used) {
 			continue;
 		}
@@ -215,13 +233,19 @@ void rm_ipv6_maddr_from_zephyr(struct openthread_context *context)
 {
 	struct in6_addr *ot_addr;
 	struct net_if_mcast_addr *zephyr_addr;
+	struct net_if_ipv6 *ipv6;
 	int i;
+
+	if (net_if_config_ipv6_get(context->iface, &ipv6) < 0) {
+		NET_DBG("Cannot find IPv6 address");
+		return;
+	}
 
 	for (i = 0; i < NET_IF_MAX_IPV6_MADDR; i++) {
 		const otNetifMulticastAddress *maddress;
 		bool used = false;
 
-		zephyr_addr = &context->iface->ipv6.mcast[i];
+		zephyr_addr = &ipv6->mcast[i];
 		if (!zephyr_addr->is_used) {
 			continue;
 		}

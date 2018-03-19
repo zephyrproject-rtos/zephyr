@@ -16,13 +16,32 @@
 #include <net/net_pkt.h>
 
 extern void net_pkt_init(void);
-extern void net_if_init(struct k_sem *startup_sync);
+extern void net_if_init(void);
 extern void net_if_post_init(void);
 extern void net_if_carrier_down(struct net_if *iface);
 extern void net_context_init(void);
 enum net_verdict net_ipv4_process_pkt(struct net_pkt *pkt);
 enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt);
 extern void net_ipv6_init(void);
+
+#if defined(CONFIG_NET_GPTP)
+/**
+ * @brief Initialize Precision Time Protocol Layer.
+ */
+void net_gptp_init(void);
+
+/**
+ * @brief Process a ptp message.
+ *
+ * @param buf Buffer with a valid PTP Ethernet type.
+ *
+ * @return Return the policy for network buffer.
+ */
+enum net_verdict net_gptp_recv(struct net_if *iface, struct net_pkt *pkt);
+#else
+#define net_gptp_init()
+#define net_gptp_recv(iface, pkt)
+#endif /* CONFIG_NET_GPTP */
 
 #if defined(CONFIG_NET_IPV6_FRAGMENT)
 int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,

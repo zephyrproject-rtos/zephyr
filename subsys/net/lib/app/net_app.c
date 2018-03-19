@@ -265,8 +265,8 @@ out:
 	return ret;
 }
 
-int _net_app_set_local_addr(struct sockaddr *addr, const char *myaddr,
-			    u16_t port)
+int _net_app_set_local_addr(struct net_app_ctx *ctx, struct sockaddr *addr,
+			    const char *myaddr, u16_t port)
 {
 	if (myaddr) {
 		void *inaddr;
@@ -299,18 +299,21 @@ int _net_app_set_local_addr(struct sockaddr *addr, const char *myaddr,
 #if defined(CONFIG_NET_IPV6)
 		net_ipaddr_copy(&net_sin6(addr)->sin6_addr,
 				net_if_ipv6_select_src_addr(NULL,
-					(struct in6_addr *)
-					net_ipv6_unspecified_address()));
+				     &net_sin6(&ctx->ipv6.remote)->sin6_addr));
 #else
 		return -EPFNOSUPPORT;
 #endif
 	} else if (addr->sa_family == AF_INET) {
 #if defined(CONFIG_NET_IPV4)
-		struct net_if *iface = net_if_get_default();
+		struct net_if *iface =
+			net_if_ipv4_select_src_iface(
+				&net_sin(&ctx->ipv4.remote)->sin_addr);
+
+		NET_ASSERT(iface->config.ip.ipv4);
 
 		/* For IPv4 we take the first address in the interface */
 		net_ipaddr_copy(&net_sin(addr)->sin_addr,
-				&iface->ipv4.unicast[0].address.in_addr);
+			   &iface->config.ip.ipv4->unicast[0].address.in_addr);
 #else
 		return -EPFNOSUPPORT;
 #endif

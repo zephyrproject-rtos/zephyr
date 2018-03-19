@@ -22,6 +22,21 @@ config NET_L2_ETHERNET
 	  If NET_SLIP_TAP is selected, NET_L2_ETHERNET will enable to fully
 	  simulate Ethernet through SLIP.
 
+config NET_VLAN
+	bool "Enable virtual lan support"
+	default n
+	depends on NET_L2_ETHERNET
+	help
+	  Enables virtual lan (VLAN) support for Ethernet.
+
+config NET_VLAN_COUNT
+	int "Max VLAN tags supported in the system"
+	default 1
+	range 1 255
+	depends on NET_VLAN
+	help
+	  How many VLAN tags can be configured.
+
 config NET_DEBUG_L2_ETHERNET
 	bool "Debug Ethernet L2 layer"
 	default n
@@ -108,6 +123,8 @@ config NET_L2_BT_SHELL
 	  console via a shell module named "net_bt".
 
 source "subsys/net/ip/l2/ieee802154/Kconfig"
+
+source "subsys/net/ip/l2/gptp/Kconfig"
 
 config NET_ARP
 	bool "Enable ARP"

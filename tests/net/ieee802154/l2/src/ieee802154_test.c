@@ -284,7 +284,7 @@ static bool initialize_test_environment(void)
 
 	NET_INFO("Fake IEEE 802.15.4 network interface ready\n");
 
-	ieee_addr_hexdump(iface->link_addr.addr, 8);
+	ieee_addr_hexdump(net_if_get_link_addr(iface)->addr, 8);
 
 	return true;
 }

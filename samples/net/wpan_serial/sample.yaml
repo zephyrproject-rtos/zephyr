@@ -8,5 +8,8 @@ tests:
     extra_configs:
       - CONFIG_USB_DEVICE_VID=0xDEAD
       - CONFIG_USB_DEVICE_PID=0xBEEF
+      # Use all the RAM and ROM for x86 core
+      - CONFIG_RAM_SIZE=79
+      - CONFIG_ROM_SIZE=296
     platform_whitelist: quark_se_c1000_devboard
     tags: usb

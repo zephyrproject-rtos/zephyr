@@ -329,7 +329,8 @@ static int sender_iface(struct net_if *iface, struct net_pkt *pkt)
 	}
 
 	if (test_started) {
-		struct net_if_test *data = iface->dev->driver_data;
+		struct net_if_test *data =
+			net_if_get_device(iface)->driver_data;
 
 		DBG("Sending at iface %d %p\n", net_if_get_by_iface(iface),
 		    iface);
@@ -452,8 +453,8 @@ static void setup(void)
 	iface1 = net_if_get_by_index(0);
 	iface2 = net_if_get_by_index(1);
 
-	((struct net_if_test *)iface1->dev->driver_data)->idx = 0;
-	((struct net_if_test *)iface2->dev->driver_data)->idx = 1;
+	((struct net_if_test *)net_if_get_device(iface1)->driver_data)->idx = 0;
+	((struct net_if_test *)net_if_get_device(iface2)->driver_data)->idx = 1;
 
 	idx = net_if_get_by_iface(iface1);
 	zassert_equal(idx, 0, "Invalid index iface1");

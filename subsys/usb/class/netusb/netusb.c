@@ -23,6 +23,8 @@
 #include <usb_common.h>
 #include <class/usb_cdc.h>
 
+#include <net/ethernet.h>
+
 #include "../../usb_descriptor.h"
 #include "../../composite.h"
 #include "netusb.h"

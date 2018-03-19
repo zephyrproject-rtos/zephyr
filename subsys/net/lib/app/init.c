@@ -50,7 +50,8 @@ static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
 	}
 
 	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
-		struct net_if_addr *if_addr = &iface->ipv4.unicast[i];
+		struct net_if_addr *if_addr =
+					&iface->config.ip.ipv4->unicast[i];
 
 		if (if_addr->addr_type != NET_ADDR_DHCP || !if_addr->is_used) {
 			continue;
@@ -60,12 +61,14 @@ static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
 		NET_INFO("IPv4 address: %s",
 			 net_addr_ntop(AF_INET, &if_addr->address.in_addr,
 				       hr_addr, NET_IPV4_ADDR_LEN));
-		NET_INFO("Lease time: %u seconds", iface->dhcpv4.lease_time);
+		NET_INFO("Lease time: %u seconds",
+			 iface->config.dhcpv4.lease_time);
 		NET_INFO("Subnet: %s",
-			 net_addr_ntop(AF_INET, &iface->ipv4.netmask,
+			 net_addr_ntop(AF_INET,
+				       &iface->config.ip.ipv4->netmask,
 				       hr_addr, NET_IPV4_ADDR_LEN));
 		NET_INFO("Router: %s",
-			 net_addr_ntop(AF_INET, &iface->ipv4.gw,
+			 net_addr_ntop(AF_INET, &iface->config.ip.ipv4->gw,
 				       hr_addr, NET_IPV4_ADDR_LEN));
 #endif
 		break;
@@ -176,14 +179,19 @@ static struct in6_addr laddr;
 static void ipv6_event_handler(struct net_mgmt_event_callback *cb,
 			       u32_t mgmt_event, struct net_if *iface)
 {
+	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
 	int i;
+
+	if (!ipv6) {
+		return;
+	}
 
 	if (mgmt_event == NET_EVENT_IPV6_ADDR_ADD) {
 		/* save the last added IP address for this interface */
 		for (i = NET_IF_MAX_IPV6_ADDR - 1; i >= 0; i--) {
-			if (iface->ipv6.unicast[i].is_used) {
+			if (ipv6->unicast[i].is_used) {
 				memcpy(&laddr,
-				       &iface->ipv6.unicast[i].address.in6_addr,
+				       &ipv6->unicast[i].address.in6_addr,
 				       sizeof(laddr));
 			}
 		}
