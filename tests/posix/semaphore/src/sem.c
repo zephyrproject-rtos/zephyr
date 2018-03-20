@@ -18,8 +18,7 @@ static K_THREAD_STACK_DEFINE(stack, STACK_SIZE);
 
 static void *foo_func(void *p1)
 {
-	zassert_false(sem_wait(&sema), "sem_wait failed\n");
-	printk("Print me after taking semaphore!\n");
+	printk("Child thread running\n");
 	zassert_false(sem_post(&sema), "sem_post failed\n");
 	return NULL;
 }
@@ -39,26 +38,19 @@ static void test_sema(void)
 	pthread_attr_setschedpolicy(&attr, schedpolicy);
 	pthread_attr_setschedparam(&attr, &schedparam);
 
-	zassert_equal(sem_init(&sema, 1, 1), -1, "pshared is not 0\n");
-	zassert_equal(errno, ENOSYS, NULL);
-
 	zassert_equal(sem_init(&sema, 0, (CONFIG_SEM_VALUE_MAX + 1)), -1,
 		      "value larger than %d\n", CONFIG_SEM_VALUE_MAX);
 	zassert_equal(errno, EINVAL, NULL);
 
-	zassert_false(sem_init(&sema, 0, 1), "sem_init failed\n");
+	zassert_false(sem_init(&sema, 0, 0), "sem_init failed\n");
 
 	zassert_equal(sem_getvalue(&sema, &val), 0, NULL);
-	zassert_equal(val, 1, NULL);
+	zassert_equal(val, 0, NULL);
 
 	pthread_create(&newthread, &attr, foo_func, NULL);
+	zassert_false(sem_wait(&sema), "sem_wait failed\n");
 
-	printk("after releasing sem\n");
-	zassert_false(sem_trywait(&sema), "sem_wait failed\n");
-	printk("After taking semaphore second time\n");
-
-	zassert_false(sem_post(&sema), "sem_post failed\n");
-
+	printk("Parent thread unlocked\n");
 	zassert_false(sem_destroy(&sema), "sema is not destroyed\n");
 }
 
