@@ -316,10 +316,16 @@ setup_hdr:
 
 		hdr = (struct net_eth_hdr *)(frag->data -
 					     net_pkt_ll_reserve(pkt));
-		memcpy(&hdr->dst, net_pkt_ll_dst(pkt)->addr,
-		       sizeof(struct net_eth_addr));
-		memcpy(&hdr->src, net_pkt_ll_src(pkt)->addr,
-		       sizeof(struct net_eth_addr));
+		if ((u8_t *)&hdr->dst != net_pkt_ll_dst(pkt)->addr) {
+			memcpy(&hdr->dst, net_pkt_ll_dst(pkt)->addr,
+			       sizeof(struct net_eth_addr));
+		}
+
+		if ((u8_t *)&hdr->src != net_pkt_ll_src(pkt)->addr) {
+			memcpy(&hdr->src, net_pkt_ll_src(pkt)->addr,
+			       sizeof(struct net_eth_addr));
+		}
+
 		hdr->type = ptype;
 		print_ll_addrs(pkt, ntohs(hdr->type), frag->len);
 
