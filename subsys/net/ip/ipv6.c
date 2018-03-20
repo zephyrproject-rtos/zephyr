@@ -2149,6 +2149,10 @@ int net_ipv6_send_ns(struct net_if *iface,
 		if (!nbr) {
 			NET_DBG("Could not create new neighbor %s",
 				net_sprint_ipv6_addr(&ns_hdr->tgt));
+			if (pending) {
+				net_pkt_unref(pending);
+			}
+
 			goto drop;
 		}
 	}
