@@ -8,6 +8,7 @@ usage: checkconfig.py [-h] [-k KCONFIG] [-c] [-e EXCLUDE]
 
 """
 
+import locale
 import sys
 import os
 import re
@@ -42,6 +43,10 @@ It will send to output:
     When a subdirectory is given it will be appended to defaut exclude dirs list.
     Default exclude dirs are: "doc", "sanity-out" and "outdir"
 """
+
+# See https://github.com/ulfalizer/Kconfiglib/pull/41 for a detailed
+# discussion about explicitly decoding as UTF-8.
+locale.setlocale(locale.LC_CTYPE, "C.UTF-8")
 
 #the genrest dir contains kconfiglib.py
 zephyrbase = os.environ.get('ZEPHYR_BASE')
