@@ -6,14 +6,8 @@
  */
 
 /**
- * @brief Driver for UART port on STM32F10x family processor.
+ * @brief Driver for UART port on STM32 family processor.
  *
- * Based on reference manual:
- *   STM32F101xx, STM32F102xx, STM32F103xx, STM32F105xx and STM32F107xx
- *   advanced ARM ® -based 32-bit MCUs
- *
- * Chapter 27: Universal synchronous asynchronous receiver
- *             transmitter (USART)
  */
 
 #include <kernel.h>
