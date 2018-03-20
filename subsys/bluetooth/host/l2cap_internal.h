@@ -163,10 +163,9 @@ struct bt_l2cap_le_conn_req {
 	u16_t credits;
 } __packed;
 
+/* valid results in conn response on LE */
 #define BT_L2CAP_SUCCESS		0x0000
-#define BT_L2CAP_PENDING		0x0001
 #define BT_L2CAP_ERR_PSM_NOT_SUPP	0x0002
-#define BT_L2CAP_ERR_SEC_BLOCK		0x0003
 #define BT_L2CAP_ERR_NO_RESOURCES	0x0004
 #define BT_L2CAP_ERR_AUTHENTICATION	0x0005
 #define BT_L2CAP_ERR_AUTHORIZATION	0x0006
@@ -174,6 +173,7 @@ struct bt_l2cap_le_conn_req {
 #define BT_L2CAP_ERR_ENCRYPTION		0x0008
 #define BT_L2CAP_ERR_INVALID_SCID	0x0009
 #define BT_L2CAP_ERR_SCID_IN_USE	0x000A
+#define BT_L2CAP_ERR_UNACCEPT_PARAMS	0x000B
 
 #define BT_L2CAP_LE_CONN_RSP		0x15
 struct bt_l2cap_le_conn_rsp {
