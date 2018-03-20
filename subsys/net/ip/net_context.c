@@ -1962,29 +1962,16 @@ static int send_data(struct net_context *context,
 	context->user_data = user_data;
 	net_pkt_set_token(pkt, token);
 
-	if (net_context_get_ip_proto(context) == IPPROTO_UDP) {
+	switch (net_context_get_ip_proto(context)) {
+	case IPPROTO_UDP:
 		return net_send_data(pkt);
+
+	case IPPROTO_TCP:
+		return net_tcp_send_data(context, cb, token, user_data);
+
+	default:
+		return -EPROTONOSUPPORT;
 	}
-
-#if defined(CONFIG_NET_TCP)
-	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
-		int ret = net_tcp_send_data(context);
-
-		/* Just make the callback synchronously even if it didn't
-		 * go over the wire.  In theory it would be nice to track
-		 * specific ACK locations in the stream and make the
-		 * callback at that time, but there's nowhere to store the
-		 * potentially-separate token/user_data values right now.
-		 */
-		if (cb) {
-			cb(context, ret, token, user_data);
-		}
-
-		return ret;
-	}
-#endif
-
-	return -EPROTONOSUPPORT;
 }
 
 #if defined(CONFIG_NET_UDP)

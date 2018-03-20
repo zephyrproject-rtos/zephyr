@@ -329,10 +329,14 @@ void net_tcp_foreach(net_tcp_cb_t cb, void *user_data);
  * @brief Send available queued data over TCP connection
  *
  * @param context TCP context
+ * @param cb TCP callback function
+ * @param token TCP token
+ * @param user_data User specified data
  *
  * @return 0 if ok, < 0 if error
  */
-int net_tcp_send_data(struct net_context *context);
+int net_tcp_send_data(struct net_context *context, net_context_send_cb_t cb,
+		      void *token, void *user_data);
 
 /**
  * @brief Enqueue a single packet for transmission
@@ -551,9 +555,15 @@ static inline void net_tcp_foreach(net_tcp_cb_t cb, void *user_data)
 	ARG_UNUSED(user_data);
 }
 
-static inline int net_tcp_send_data(struct net_context *context)
+static inline int net_tcp_send_data(struct net_context *context,
+				    net_context_send_cb_t cb, void *token,
+				    void *user_data)
 {
 	ARG_UNUSED(context);
+	ARG_UNUSED(cb);
+	ARG_UNUSED(token);
+	ARG_UNUSED(user_data);
+
 	return 0;
 }
 
