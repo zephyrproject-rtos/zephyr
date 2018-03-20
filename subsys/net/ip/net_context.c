@@ -2214,7 +2214,6 @@ int net_context_sendto(struct net_pkt *pkt,
 		       void *token,
 		       void *user_data)
 {
-#if defined(CONFIG_NET_TCP)
 	struct net_context *context = net_pkt_context(pkt);
 
 	NET_ASSERT(PART_OF_ARRAY(contexts, context));
@@ -2223,7 +2222,6 @@ int net_context_sendto(struct net_pkt *pkt,
 		/* Match POSIX behavior and ignore dst_address and addrlen */
 		return net_context_send(pkt, cb, timeout, token, user_data);
 	}
-#endif /* CONFIG_NET_TCP */
 
 	return sendto(pkt, dst_addr, addrlen, cb, timeout, token, user_data);
 }
