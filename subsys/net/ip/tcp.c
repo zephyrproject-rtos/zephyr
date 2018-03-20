@@ -762,6 +762,17 @@ int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 
 	NET_DBG("[%p] Queue %p len %zd", context->tcp, pkt, data_len);
 
+	if (net_context_get_state(context) != NET_CONTEXT_CONNECTED) {
+		return -ENOTCONN;
+	}
+
+	NET_ASSERT(context->tcp);
+	if (context->tcp->flags & NET_TCP_IS_SHUTDOWN) {
+		return -ESHUTDOWN;
+	}
+
+	net_pkt_set_appdatalen(pkt, net_pkt_get_len(pkt));
+
 	/* Set PSH on all packets, our window is so small that there's
 	 * no point in the remote side trying to finesse things and
 	 * coalesce packets.

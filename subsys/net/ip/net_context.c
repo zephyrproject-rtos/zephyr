@@ -2068,41 +2068,9 @@ static int sendto(struct net_pkt *pkt,
 		return -EBADF;
 	}
 
-#if defined(CONFIG_NET_TCP)
-	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
-		if (net_context_get_state(context) != NET_CONTEXT_CONNECTED) {
-			return -ENOTCONN;
-		}
-
-		NET_ASSERT(context->tcp);
-		if (context->tcp->flags & NET_TCP_IS_SHUTDOWN) {
-			return -ESHUTDOWN;
-		}
-	}
-#endif /* CONFIG_NET_TCP */
-
-#if defined(CONFIG_NET_UDP)
-	/* Bind default address and port only if UDP */
-	if (net_context_get_ip_proto(context) == IPPROTO_UDP) {
-		ret = bind_default(context);
-		if (ret) {
-			return ret;
-		}
-	}
-#endif /* CONFIG_NET_UDP */
-
 	if (!dst_addr) {
 		return -EDESTADDRREQ;
 	}
-
-#if defined(CONFIG_NET_OFFLOAD)
-	if (net_if_is_ip_offloaded(net_pkt_iface(pkt))) {
-		return net_offload_sendto(
-			net_pkt_iface(pkt),
-			pkt, dst_addr, addrlen,
-			cb, timeout, token, user_data);
-	}
-#endif /* CONFIG_NET_OFFLOAD */
 
 #if defined(CONFIG_NET_IPV6)
 	if (net_pkt_family(pkt) == AF_INET6) {
@@ -2136,26 +2104,45 @@ static int sendto(struct net_pkt *pkt,
 		return -EINVAL;
 	}
 
-#if defined(CONFIG_NET_UDP)
-	if (net_context_get_ip_proto(context) == IPPROTO_UDP) {
-		ret = create_udp_packet(context, pkt, dst_addr, &pkt);
-	} else
-#endif /* CONFIG_NET_UDP */
+#if defined(CONFIG_NET_OFFLOAD)
+	if (net_if_is_ip_offloaded(net_pkt_iface(pkt))) {
+		return net_offload_sendto(
+			net_pkt_iface(pkt),
+			pkt, dst_addr, addrlen,
+			cb, timeout, token, user_data);
+	}
+#endif /* CONFIG_NET_OFFLOAD */
 
-#if defined(CONFIG_NET_TCP)
-	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
-		net_pkt_set_appdatalen(pkt, net_pkt_get_len(pkt));
+	switch (net_context_get_ip_proto(context)) {
+	case IPPROTO_UDP:
+#if defined(CONFIG_NET_UDP)
+		/* Bind default address and port only if UDP */
+		ret = bind_default(context);
+		if (ret) {
+			return ret;
+		}
+
+		ret = create_udp_packet(context, pkt, dst_addr, &pkt);
+#endif /* CONFIG_NET_UDP */
+		break;
+
+	case IPPROTO_TCP:
 		ret = net_tcp_queue_data(context, pkt);
-	} else
-#endif /* CONFIG_NET_TCP */
-	{
-		NET_DBG("Unknown protocol while sending packet: %d",
-			net_context_get_ip_proto(context));
-		return -EPROTONOSUPPORT;
+		break;
+
+	default:
+		ret = -EPROTONOSUPPORT;
 	}
 
 	if (ret < 0) {
-		NET_DBG("Could not create network packet to send (%d)", ret);
+		if (ret == -EPROTONOSUPPORT) {
+			NET_DBG("Unknown protocol while sending packet: %d",
+				net_context_get_ip_proto(context));
+		} else {
+			NET_DBG("Could not create network packet to send (%d)",
+				ret);
+		}
+
 		return ret;
 	}
 
