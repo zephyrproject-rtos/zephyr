@@ -500,6 +500,19 @@ int tcp_hdr_len(struct net_pkt *pkt);
 int net_tcp_recv(struct net_context *context, net_context_recv_cb_t cb,
 		 void *user_data);
 
+
+/**
+ * @brief Queue a TCP FIN packet if needed to close the socket
+ *
+ * @param context Network context
+ *
+ * @return 0 on success where a TCP FIN packet has been queueed, -ENOTCONN
+ *         in case the socket was not connected or listening, -EOPNOTSUPP
+ *         in case it was not a TCP socket or -EPROTONOSUPPORT if TCP is not
+ *         supported
+ */
+int net_tcp_put(struct net_context *context);
+
 #else
 static inline struct net_tcp *net_tcp_alloc(struct net_context *context)
 {
@@ -663,6 +676,12 @@ static inline int net_tcp_recv(struct net_context *context,
 	return -EPROTOTYPE;
 }
 
+static inline int net_tcp_put(struct net_context *context)
+{
+	ARG_UNUSED(context);
+
+	return -EPROTONOSUPPORT;
+}
 #endif
 
 #if defined(CONFIG_NET_TCP)

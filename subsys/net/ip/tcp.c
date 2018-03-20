@@ -52,6 +52,8 @@ static struct net_tcp tcp_context[NET_MAX_TCP_CONTEXT];
 #define TIME_WAIT_MS K_SECONDS(2 * 2 * 60)
 #endif
 
+#define FIN_TIMEOUT K_SECONDS(1)
+
 struct tcp_segment {
 	u32_t seq;
 	u32_t ack;
@@ -1394,4 +1396,41 @@ int net_tcp_recv(struct net_context *context, net_context_recv_cb_t cb,
 	context->tcp->recv_user_data = user_data;
 
 	return 0;
+}
+
+static void queue_fin(struct net_context *ctx)
+{
+	struct net_pkt *pkt = NULL;
+	int ret;
+
+	ret = net_tcp_prepare_segment(ctx->tcp, NET_TCP_FIN, NULL, 0,
+				      NULL, &ctx->remote, &pkt);
+	if (ret || !pkt) {
+		return;
+	}
+
+	ret = net_tcp_send_pkt(pkt);
+	if (ret < 0) {
+		net_pkt_unref(pkt);
+	}
+}
+
+int net_tcp_put(struct net_context *context)
+{
+	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
+		if ((net_context_get_state(context) == NET_CONTEXT_CONNECTED ||
+		     net_context_get_state(context) == NET_CONTEXT_LISTENING)
+		    && !context->tcp->fin_rcvd) {
+			NET_DBG("TCP connection in active close, not "
+				"disposing yet (waiting %dms)", FIN_TIMEOUT);
+			k_delayed_work_submit(&context->tcp->fin_timer,
+					      FIN_TIMEOUT);
+			queue_fin(context);
+			return 0;
+		}
+
+		return -ENOTCONN;
+	}
+
+	return -EOPNOTSUPP;
 }
