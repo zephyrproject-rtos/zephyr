@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016 Linaro Ltd.
- * Copyright (c) 2018 Nordic Semiconductor ASA
+ * Copyright (c) 2016-2018 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
