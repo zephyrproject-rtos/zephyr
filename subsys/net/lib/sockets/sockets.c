@@ -243,9 +243,7 @@ ssize_t zsock_sendto(int sock, const void *buf, size_t len, int flags,
 	s32_t timeout = K_FOREVER;
 	struct net_context *ctx = INT_TO_POINTER(sock);
 
-	ARG_UNUSED(flags);
-
-	if (sock_is_nonblock(ctx)) {
+	if ((flags & ZSOCK_MSG_DONTWAIT) || sock_is_nonblock(ctx)) {
 		timeout = K_NO_WAIT;
 	}
 
