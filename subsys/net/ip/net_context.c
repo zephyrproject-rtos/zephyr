@@ -574,26 +574,6 @@ int net_context_get(sa_family_t family,
 	return ret;
 }
 
-#if defined(CONFIG_NET_TCP)
-static void queue_fin(struct net_context *ctx)
-{
-	struct net_pkt *pkt = NULL;
-	int ret;
-
-	ret = net_tcp_prepare_segment(ctx->tcp, NET_TCP_FIN, NULL, 0,
-				      NULL, &ctx->remote, &pkt);
-	if (ret || !pkt) {
-		return;
-	}
-
-	ret = net_tcp_send_pkt(pkt);
-	if (ret < 0) {
-		net_pkt_unref(pkt);
-	}
-}
-
-#endif /* CONFIG_NET_TCP */
-
 int net_context_ref(struct net_context *context)
 {
 	int old_rc = atomic_inc(&context->refcount);
@@ -668,20 +648,9 @@ int net_context_put(struct net_context *context)
 	context->recv_cb = NULL;
 	context->send_cb = NULL;
 
-#if defined(CONFIG_NET_TCP)
-	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
-		if ((net_context_get_state(context) == NET_CONTEXT_CONNECTED ||
-		     net_context_get_state(context) == NET_CONTEXT_LISTENING)
-		    && !context->tcp->fin_rcvd) {
-			NET_DBG("TCP connection in active close, not "
-				"disposing yet (waiting %dms)", FIN_TIMEOUT);
-			k_delayed_work_submit(&context->tcp->fin_timer,
-					      FIN_TIMEOUT);
-			queue_fin(context);
-			return 0;
-		}
+	if (net_tcp_put(context) >= 0) {
+		return 0;
 	}
-#endif /* CONFIG_NET_TCP */
 
 	net_context_unref(context);
 	return 0;
