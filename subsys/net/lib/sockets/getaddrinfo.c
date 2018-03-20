@@ -84,16 +84,18 @@ int zsock_getaddrinfo(const char *host, const char *service,
 		      struct zsock_addrinfo **res)
 {
 	int family = AF_UNSPEC;
-	long int port;
+	long int port = 0;
 	int st1 = DNS_EAI_ADDRFAMILY, st2 = DNS_EAI_ADDRFAMILY;
 
 	if (hints) {
 		family = hints->ai_family;
 	}
 
-	port = strtol(service, NULL, 10);
-	if (port < 1 || port > 65535) {
-		return DNS_EAI_NONAME;
+	if (service) {
+		port = strtol(service, NULL, 10);
+		if (port < 1 || port > 65535) {
+			return DNS_EAI_NONAME;
+		}
 	}
 
 	ai_state.hints = hints;
