@@ -1743,7 +1743,6 @@ NET_CONN_CB(tcp_syn_rcvd)
 	 */
 	if (NET_TCP_FLAGS(tcp_hdr) == NET_TCP_ACK) {
 		struct net_context *new_context;
-		struct net_tcp *new_tcp;
 		socklen_t addrlen;
 		int ret;
 
@@ -1806,8 +1805,6 @@ NET_CONN_CB(tcp_syn_rcvd)
 		 * was used to establish this connection. The old TCP
 		 * must be listening to accept other connections.
 		 */
-		new_tcp = new_context->tcp;
-		new_tcp->accept_cb = NULL;
 		copy_pool_vars(new_context, context);
 
 		net_tcp_change_state(tcp, NET_TCP_LISTEN);
