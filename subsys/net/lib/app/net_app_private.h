@@ -50,8 +50,8 @@ void _net_app_received(struct net_context *net_ctx,
 		       struct net_pkt *pkt,
 		       int status,
 		       void *user_data);
-int _net_app_set_local_addr(struct sockaddr *addr, const char *myaddr,
-			    u16_t port);
+int _net_app_set_local_addr(struct net_app_ctx *ctx, struct sockaddr *addr,
+			    const char *myaddr, u16_t port);
 int _net_app_set_net_ctx(struct net_app_ctx *ctx,
 			 struct net_context *net_ctx,
 			 struct sockaddr *addr,

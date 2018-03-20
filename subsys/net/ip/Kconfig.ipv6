@@ -15,6 +15,14 @@ menuconfig NET_IPV6
 
 if NET_IPV6
 
+config NET_IF_MAX_IPV6_COUNT
+	int "Max number of IPv6 network interfaces in the system"
+	default 1
+	default NET_VLAN_COUNT if NET_VLAN
+	help
+	This tells how many network interfaces there will be in the system
+	that will have IPv6 enabled.
+
 config NET_IF_UNICAST_IPV6_ADDR_COUNT
 	int "Max number of unicast IPv6 addresses per network interface"
 	default 2

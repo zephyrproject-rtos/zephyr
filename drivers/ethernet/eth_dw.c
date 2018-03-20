@@ -15,10 +15,12 @@
 #include <misc/__assert.h>
 #include <net/net_core.h>
 #include <net/net_pkt.h>
+#include <net/ethernet.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys_io.h>
+#include <net/ethernet.h>
 
 #include "eth_dw_priv.h"
 
@@ -326,6 +328,8 @@ static void eth_initialize(struct net_if *iface)
 	if (r < 0) {
 		SYS_LOG_ERR("Could not initialize ethernet device: %d", r);
 	}
+
+	ethernet_init(iface);
 }
 
 /* Bindings to the plaform */
@@ -372,9 +376,16 @@ static struct eth_runtime eth_0_runtime = {
 #endif
 };
 
-static struct net_if_api api_funcs = {
-	.init = eth_initialize,
-	.send = eth_tx,
+static enum eth_hw_caps eth_dw_get_capabilities(struct device *dev)
+{
+	return 0;
+}
+
+static struct ethernet_api api_funcs = {
+	.iface_api.init = eth_initialize,
+	.iface_api.send = eth_tx,
+
+	.get_capabilities = eth_dw_get_capabilities,
 };
 
 NET_DEVICE_INIT(eth_dw_0, CONFIG_ETH_DW_0_NAME,

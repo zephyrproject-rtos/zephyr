@@ -318,6 +318,12 @@ struct net_pkt *net_pkt_get_reserve(struct k_mem_slab *slab,
 	pkt->ref = 1;
 	pkt->slab = slab;
 
+#if defined(CONFIG_NET_TX_DEFAULT_PRIORITY) && (NET_TC_COUNT > 1)
+	net_pkt_set_priority(pkt, CONFIG_NET_TX_DEFAULT_PRIORITY);
+#endif
+
+	net_pkt_set_vlan_tag(pkt, NET_VLAN_TAG_UNSPEC);
+
 #if defined(CONFIG_NET_DEBUG_NET_PKT)
 	net_pkt_alloc_add(pkt, true, caller, line);
 
@@ -528,6 +534,17 @@ static struct net_pkt *net_pkt_get(struct k_mem_slab *slab,
 	net_pkt_set_iface(pkt, iface);
 	family = net_context_get_family(context);
 	net_pkt_set_family(pkt, family);
+
+#if defined(CONFIG_NET_CONTEXT_PRIORITY) && (NET_TC_COUNT > 1)
+	{
+		u8_t prio;
+
+		if (net_context_get_option(context, NET_OPT_PRIORITY, &prio,
+					   NULL) == 0) {
+			net_pkt_set_priority(pkt, prio);
+		}
+	}
+#endif /* CONFIG_NET_CONTEXT_PRIORITY */
 
 	if (slab != &rx_pkts) {
 		uint16_t iface_len, data_len = 0;
@@ -1992,6 +2009,7 @@ struct net_pkt *net_pkt_clone(struct net_pkt *pkt, s32_t timeout)
 
 	net_pkt_set_next_hdr(clone, NULL);
 	net_pkt_set_ip_hdr_len(clone, net_pkt_ip_hdr_len(pkt));
+	net_pkt_set_vlan_tag(clone, net_pkt_vlan_tag(pkt));
 
 	net_pkt_set_family(clone, net_pkt_family(pkt));
 

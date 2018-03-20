@@ -57,12 +57,12 @@
 #define CONFIG_NET_RX_STACK_SIZE 1024
 #endif
 
-NET_STACK_DEFINE(RX, rx_stack, CONFIG_NET_RX_STACK_SIZE,
-		 CONFIG_NET_RX_STACK_SIZE + CONFIG_NET_RX_STACK_RPL);
-static struct k_thread rx_thread_data;
-static struct k_fifo rx_queue;
-static k_tid_t rx_tid;
-static K_SEM_DEFINE(startup_sync, 0, UINT_MAX);
+NET_STACK_ARRAY_DEFINE(RX, rx_stack,
+		       CONFIG_NET_RX_STACK_SIZE,
+		       CONFIG_NET_RX_STACK_SIZE + CONFIG_NET_RX_STACK_RPL,
+		       NET_TC_RX_COUNT);
+
+static struct net_traffic_class classes[NET_TC_RX_COUNT];
 
 static inline enum net_verdict process_data(struct net_pkt *pkt,
 					    bool is_loopback)
@@ -138,12 +138,120 @@ static void processing_data(struct net_pkt *pkt, bool is_loopback)
 	}
 }
 
-static void net_rx_thread(void)
+/* Things to setup after we are able to RX and TX */
+static void net_post_init(void)
 {
-	struct net_pkt *pkt;
+}
 
-	NET_DBG("Starting RX thread (stack %zu bytes)",
-		K_THREAD_STACK_SIZEOF(rx_stack));
+/* Convert traffic class to thread priority */
+static int tc2thread(int tc)
+{
+	/* Initial implementation just maps the traffic class to certain queue.
+	 * If there are less queues than classes, then map them into
+	 * some specific queue. In order to make this work same way as before,
+	 * the thread priority 7 is used to map the default traffic class so
+	 * this system works same way as before when RX thread default priority
+	 * was 7.
+	 *
+	 * Lower value in this table means higher thread priority. The
+	 * value is used as a parameter to K_PRIO_COOP() which converts it
+	 * to actual thread priority.
+	 *
+	 * Higher traffic class value means higher priority queue. This means
+	 * that thread_priorities[7] value should contain the highest priority
+	 * for the RX queue handling thread.
+	 */
+	static const int thread_priorities[] = {
+#if NET_TC_RX_COUNT == 1
+		7
+#endif
+#if NET_TC_RX_COUNT == 2
+		8, 7
+#endif
+#if NET_TC_RX_COUNT == 3
+		8, 7, 6
+#endif
+#if NET_TC_RX_COUNT == 4
+		8, 7, 6, 5
+#endif
+#if NET_TC_RX_COUNT == 5
+		8, 7, 6, 5, 4
+#endif
+#if NET_TC_RX_COUNT == 6
+		8, 7, 6, 5, 4, 3
+#endif
+#if NET_TC_RX_COUNT == 7
+		8, 7, 6, 5, 4, 3, 2
+#endif
+#if NET_TC_RX_COUNT == 8
+		8, 7, 6, 5, 4, 3, 2, 1
+#endif
+	};
+
+	BUILD_ASSERT_MSG(NET_TC_RX_COUNT <= CONFIG_NUM_COOP_PRIORITIES,
+			 "Too many traffic classes");
+
+	NET_ASSERT(tc < sizeof(thread_priorities));
+
+	return thread_priorities[tc];
+}
+
+#if defined(CONFIG_NET_SHELL)
+#define RX_STACK(idx) NET_STACK_GET_NAME(RX, rx_stack, 0)[idx].stack
+#else
+#define RX_STACK(idx) NET_STACK_GET_NAME(RX, rx_stack, 0)[idx]
+#endif
+
+#if defined(CONFIG_NET_STATISTICS)
+/* Fixup the traffic class statistics so that "net stats" shell command will
+ * print output correctly.
+ */
+static void tc_stats_priority_setup(void)
+{
+	int i;
+
+	for (i = 0; i < 8; i++) {
+		net_stats_update_tc_recv_priority(net_rx_priority2tc(i), i);
+	}
+}
+#endif
+
+static void init_rx_queues(void)
+{
+	int i;
+
+	BUILD_ASSERT(NET_TC_RX_COUNT > 0);
+
+#if defined(CONFIG_NET_STATISTICS)
+	tc_stats_priority_setup();
+#endif
+
+	for (i = 0; i < NET_TC_RX_COUNT; i++) {
+		u8_t thread_priority;
+
+		thread_priority = tc2thread(i);
+		classes[i].tc = thread_priority;
+
+#if defined(CONFIG_NET_SHELL)
+		/* Fix the thread start address so that "net stacks"
+		 * command will print correct stack information.
+		 */
+		NET_STACK_GET_NAME(RX, rx_stack, 0)[i].stack = rx_stack[i];
+		NET_STACK_GET_NAME(RX, rx_stack, 0)[i].prio = thread_priority;
+		NET_STACK_GET_NAME(RX, rx_stack, 0)[i].idx = i;
+#endif
+
+		NET_DBG("[%d] Starting RX queue %p stack %p size %zd "
+			"prio %d (%d)", i,
+			&classes[i].work_q.queue, RX_STACK(i),
+			K_THREAD_STACK_SIZEOF(rx_stack[i]),
+			thread_priority, K_PRIO_COOP(thread_priority));
+
+		k_work_q_start(&classes[i].work_q,
+			       rx_stack[i],
+			       K_THREAD_STACK_SIZEOF(rx_stack[i]),
+			       K_PRIO_COOP(thread_priority));
+	}
 
 	/* Starting TX side. The ordering is important here and the TX
 	 * can only be started when RX side is ready to receive packets.
@@ -151,48 +259,13 @@ static void net_rx_thread(void)
 	 * are only started fully when both are ready to receive or send
 	 * data.
 	 */
-	net_if_init(&startup_sync);
-
-	k_sem_take(&startup_sync, K_FOREVER);
+	net_if_init();
 
 	/* This will take the interface up and start everything. */
 	net_if_post_init();
 
-	while (1) {
-#if defined(CONFIG_NET_STATISTICS) || defined(CONFIG_NET_DEBUG_CORE)
-		size_t pkt_len;
-#endif
-
-		pkt = k_fifo_get(&rx_queue, K_FOREVER);
-
-		net_analyze_stack("RX thread", K_THREAD_STACK_BUFFER(rx_stack),
-				  K_THREAD_STACK_SIZEOF(rx_stack));
-
-#if defined(CONFIG_NET_STATISTICS) || defined(CONFIG_NET_DEBUG_CORE)
-		pkt_len = net_pkt_get_len(pkt);
-#endif
-		NET_DBG("Received pkt %p len %zu", pkt, pkt_len);
-
-		net_stats_update_bytes_recv(pkt_len);
-
-		processing_data(pkt, false);
-
-		net_print_statistics();
-		net_pkt_print();
-
-		k_yield();
-	}
-}
-
-static void init_rx_queue(void)
-{
-	k_fifo_init(&rx_queue);
-
-	rx_tid = k_thread_create(&rx_thread_data, rx_stack,
-				 K_THREAD_STACK_SIZEOF(rx_stack),
-				 (k_thread_entry_t)net_rx_thread,
-				 NULL, NULL, NULL, K_PRIO_COOP(8),
-				 K_ESSENTIAL, K_NO_WAIT);
+	/* Things to init after network interface is working */
+	net_post_init();
 }
 
 /* If loopback driver is enabled, then direct packets to it so the address
@@ -330,6 +403,58 @@ int net_send_data(struct net_pkt *pkt)
 	return 0;
 }
 
+static void net_rx(struct net_if *iface, struct net_pkt *pkt)
+{
+#if defined(CONFIG_NET_STATISTICS) || defined(CONFIG_NET_DEBUG_CORE)
+	size_t pkt_len;
+#if defined(CONFIG_NET_STATISTICS)
+	pkt_len = pkt->total_pkt_len;
+#else
+	pkt_len = net_pkt_get_len(pkt);
+#endif
+#endif
+
+	NET_DBG("Received pkt %p len %zu", pkt, pkt_len);
+
+	net_stats_update_bytes_recv(pkt_len);
+
+	processing_data(pkt, false);
+
+	net_print_statistics();
+	net_pkt_print();
+}
+
+static void process_rx_packet(struct k_work *work)
+{
+	struct net_pkt *pkt;
+
+	pkt = CONTAINER_OF(work, struct net_pkt, work);
+
+	net_rx(net_pkt_iface(pkt), pkt);
+}
+
+static void net_queue_rx(struct net_if *iface, struct net_pkt *pkt)
+{
+	u8_t prio = net_pkt_priority(pkt);
+	u8_t tc = net_rx_priority2tc(prio);
+
+	k_work_init(net_pkt_work(pkt), process_rx_packet);
+
+#if defined(CONFIG_NET_STATISTICS)
+	pkt->total_pkt_len = net_pkt_get_len(pkt);
+
+	net_stats_update_tc_recv_pkt(tc);
+	net_stats_update_tc_recv_bytes(tc, pkt->total_pkt_len);
+	net_stats_update_tc_recv_priority(tc, prio);
+#endif
+
+#if NET_TC_RX_COUNT > 1
+	NET_DBG("TC %d with prio %d pkt %p", tc, prio, pkt);
+#endif
+
+	k_work_submit_to_queue(&classes[tc].work_q, net_pkt_work(pkt));
+}
+
 /* Called by driver when an IP packet has been received */
 int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 {
@@ -340,12 +465,12 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 		return -ENODATA;
 	}
 
-	if (!atomic_test_bit(iface->flags, NET_IF_UP)) {
+	if (!atomic_test_bit(iface->if_dev->flags, NET_IF_UP)) {
 		return -ENETDOWN;
 	}
 
-	NET_DBG("fifo %p iface %p pkt %p len %zu", &rx_queue, iface, pkt,
-		net_pkt_get_len(pkt));
+	NET_DBG("prio %d iface %p pkt %p len %zu", net_pkt_priority(pkt),
+		iface, pkt, net_pkt_get_len(pkt));
 
 	if (IS_ENABLED(CONFIG_NET_ROUTING)) {
 		net_pkt_set_orig_iface(pkt, iface);
@@ -353,7 +478,7 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 
 	net_pkt_set_iface(pkt, iface);
 
-	k_fifo_put(&rx_queue, pkt);
+	net_queue_rx(iface, pkt);
 
 	return 0;
 }
@@ -401,7 +526,7 @@ static int net_init(struct device *unused)
 
 	net_mgmt_event_init();
 
-	init_rx_queue();
+	init_rx_queues();
 
 #if CONFIG_NET_DHCPV4
 	status = dhcpv4_init();
