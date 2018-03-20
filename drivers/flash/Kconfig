@@ -138,18 +138,18 @@ config SOC_FLASH_QMSI_API_REENTRANCY
 	help
 	 Enable support for QMSI flash driver API reentrancy.
 
-config SOC_FLASH_NRF5
-	bool "Nordic Semiconductor nRF5X flash driver"
+config SOC_FLASH_NRF
+	bool "Nordic Semiconductor nRF flash driver"
 	depends on FLASH && SOC_FAMILY_NRF
 	default n
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
 	help
-	  Enables Nordic Semiconductor nRF5X flash driver.
+	  Enables Nordic Semiconductor nRF flash driver.
 
-config SOC_FLASH_NRF5_RADIO_SYNC
-	bool "Nordic nRF5x flash driver synchronized with radio"
-	depends on SOC_FLASH_NRF5 && BT_CTLR
+config SOC_FLASH_NRF_RADIO_SYNC
+	bool "Nordic nRFx flash driver synchronized with radio"
+	depends on SOC_FLASH_NRF && BT_CTLR
 	default y
 	help
 	  Enable synchronization between flash memory driver and radio.

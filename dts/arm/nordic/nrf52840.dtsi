@@ -21,11 +21,11 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			label="NRF5_FLASH_DRV_NAME";
+			label="NRF_FLASH_DRV_NAME";
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
-				label = "NRF5_FLASH";
+				label = "NRF_FLASH";
 				reg = <0x00000000 DT_FLASH_SIZE>;
 				write-block-size = <4>;
 			};
