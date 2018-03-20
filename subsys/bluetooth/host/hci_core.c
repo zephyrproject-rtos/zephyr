@@ -4727,15 +4727,7 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 
 		set_param.type = BT_LE_ADV_IND;
 	} else {
-		if (param->own_addr) {
-			/* Only NRPA is allowed */
-			if (!BT_ADDR_IS_NRPA(param->own_addr)) {
-				return -EINVAL;
-			}
-
-			err = set_random_address(param->own_addr);
-			set_param.own_addr_type = BT_ADDR_LE_RANDOM;
-		} else if (param->options & BT_LE_ADV_OPT_USE_IDENTITY) {
+		if (param->options & BT_LE_ADV_OPT_USE_IDENTITY) {
 			if (atomic_test_bit(bt_dev.flags,
 					    BT_DEV_ID_STATIC_RANDOM)) {
 				err = set_random_address(&bt_dev.id_addr.a);

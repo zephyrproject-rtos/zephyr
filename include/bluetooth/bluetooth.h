@@ -133,12 +133,6 @@ struct bt_le_adv_param {
 
 	/** Maximum Advertising Interval (N * 0.625) */
 	u16_t interval_max;
-
-	/** Optional predefined (random) own address. Currently
-	 *  the only permitted use of this is for NRPA with
-	 *  non-connectable advertising.
-	 */
-	const bt_addr_t *own_addr;
 };
 
 /** Helper to declare advertising parameters inline
