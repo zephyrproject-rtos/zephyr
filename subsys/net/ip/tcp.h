@@ -513,6 +513,16 @@ int net_tcp_recv(struct net_context *context, net_context_recv_cb_t cb,
  */
 int net_tcp_put(struct net_context *context);
 
+/**
+ * @brief Set TCP socket into listening state
+ *
+ * @param context Network context
+ *
+ * @return 0 if successful, -EOPNOTSUPP if the context was not for TCP,
+ *         -EPROTONOSUPPORT if TCP is not supported
+ */
+int net_tcp_listen(struct net_context *context);
+
 #else
 static inline struct net_tcp *net_tcp_alloc(struct net_context *context)
 {
@@ -677,6 +687,13 @@ static inline int net_tcp_recv(struct net_context *context,
 }
 
 static inline int net_tcp_put(struct net_context *context)
+{
+	ARG_UNUSED(context);
+
+	return -EPROTONOSUPPORT;
+}
+
+static inline int net_tcp_listen(struct net_context *context)
 {
 	ARG_UNUSED(context);
 
