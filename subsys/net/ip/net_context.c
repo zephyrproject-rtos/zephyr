@@ -2353,6 +2353,7 @@ int net_context_recv(struct net_context *context,
 		     s32_t timeout,
 		     void *user_data)
 {
+	int ret;
 	NET_ASSERT(context);
 
 	if (!net_context_is_used(context)) {
@@ -2367,32 +2368,24 @@ int net_context_recv(struct net_context *context,
 	}
 #endif /* CONFIG_NET_OFFLOAD */
 
+	switch (net_context_get_ip_proto(context)) {
 #if defined(CONFIG_NET_UDP)
-	if (net_context_get_ip_proto(context) == IPPROTO_UDP) {
-		int ret = recv_udp(context, cb, timeout, user_data);
-		if (ret < 0) {
-			return ret;
-		}
-	} else
+	case IPPROTO_UDP:
+		ret = recv_udp(context, cb, timeout, user_data);
+		break;
 #endif /* CONFIG_NET_UDP */
 
-#if defined(CONFIG_NET_TCP)
-	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
-		NET_ASSERT(context->tcp);
+	case IPPROTO_TCP:
+		ret = net_tcp_recv(context, cb, user_data);
+		break;
 
-		if (context->tcp->flags & NET_TCP_IS_SHUTDOWN) {
-			return -ESHUTDOWN;
-		} else if (net_context_get_state(context)
-			   != NET_CONTEXT_CONNECTED) {
-			return -ENOTCONN;
-		}
+	default:
+		ret = -EPROTOTYPE;
+		break;
+	}
 
-		context->recv_cb = cb;
-		context->tcp->recv_user_data = user_data;
-	} else
-#endif /* CONFIG_NET_TCP */
-	{
-		return -EPROTOTYPE;
+	if (ret < 0) {
+		return ret;
 	}
 
 #if defined(CONFIG_NET_CONTEXT_SYNC_RECV)
