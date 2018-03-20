@@ -484,6 +484,18 @@ int net_tcp_parse_opts(struct net_pkt *pkt, int opt_totlen,
  */
 int tcp_hdr_len(struct net_pkt *pkt);
 
+/**
+ * @brief TCP receive function
+ *
+ * @param context Network context
+ * @param cb TCP receive callback function
+ * @param user_data TCP receive callback user data
+ *
+ * @return 0 if no erro, < 0 in case of error
+ */
+int net_tcp_recv(struct net_context *context, net_context_recv_cb_t cb,
+		 void *user_data);
+
 #else
 static inline struct net_tcp *net_tcp_alloc(struct net_context *context)
 {
@@ -629,6 +641,16 @@ static inline int tcp_hdr_len(struct net_pkt *pkt)
 	ARG_UNUSED(pkt);
 
 	return 0;
+}
+
+static inline int net_tcp_recv(struct net_context *context,
+			       net_context_recv_cb_t cb, void *user_data)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(cb);
+	ARG_UNUSED(user_data);
+
+	return -EPROTOTYPE;
 }
 
 #endif

@@ -1367,3 +1367,20 @@ int tcp_hdr_len(struct net_pkt *pkt)
 
 	return 0;
 }
+
+int net_tcp_recv(struct net_context *context, net_context_recv_cb_t cb,
+		 void *user_data)
+{
+	NET_ASSERT(context->tcp);
+
+	if (context->tcp->flags & NET_TCP_IS_SHUTDOWN) {
+		return -ESHUTDOWN;
+	} else if (net_context_get_state(context) != NET_CONTEXT_CONNECTED) {
+		return -ENOTCONN;
+	}
+
+	context->recv_cb = cb;
+	context->tcp->recv_user_data = user_data;
+
+	return 0;
+}
