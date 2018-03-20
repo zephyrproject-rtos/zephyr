@@ -541,8 +541,8 @@ struct net_buf *net_pkt_get_reserve_data_debug(struct net_buf_pool *pool,
 					       int line);
 
 #define net_pkt_get_reserve_data(pool, reserve_head, timeout)		\
-	net_pkt_get_reserve_debug(pool, reserve_head, timeout,		\
-				  __func__, __LINE__)
+	net_pkt_get_reserve_data_debug(pool, reserve_head, timeout,	\
+				       __func__, __LINE__)
 
 struct net_pkt *net_pkt_get_rx_debug(struct net_context *context,
 				     s32_t timeout,
