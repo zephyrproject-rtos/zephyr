@@ -1352,11 +1352,9 @@ int net_context_connect(struct net_context *context,
 			s32_t timeout,
 			void *user_data)
 {
-#if defined(CONFIG_NET_TCP)
 	struct sockaddr *laddr = NULL;
 	struct sockaddr local_addr;
 	u16_t lport, rport;
-#endif
 	int ret;
 
 	NET_ASSERT(addr);
@@ -1409,11 +1407,10 @@ int net_context_connect(struct net_context *context,
 			return -EINVAL;
 		}
 
-#if defined(CONFIG_NET_TCP)
-		if (net_is_ipv6_addr_mcast(&addr6->sin6_addr)) {
+		if (net_context_get_ip_proto(context) == IPPROTO_TCP &&
+		    net_is_ipv6_addr_mcast(&addr6->sin6_addr)) {
 			return -EADDRNOTAVAIL;
 		}
-#endif /* CONFIG_NET_TCP */
 
 		memcpy(&addr6->sin6_addr, &net_sin6(addr)->sin6_addr,
 		       sizeof(struct in6_addr));
@@ -1427,7 +1424,6 @@ int net_context_connect(struct net_context *context,
 			context->flags &= ~NET_CONTEXT_REMOTE_ADDR_SET;
 		}
 
-#if defined(CONFIG_NET_TCP)
 		rport = addr6->sin6_port;
 
 		net_sin6_ptr(&context->local)->sin6_family = AF_INET6;
@@ -1441,7 +1437,6 @@ int net_context_connect(struct net_context *context,
 
 			laddr = &local_addr;
 		}
-#endif
 	} else
 #endif /* CONFIG_NET_IPV6 */
 
@@ -1454,9 +1449,7 @@ int net_context_connect(struct net_context *context,
 			return -EINVAL;
 		}
 
-#if defined(CONFIG_NET_TCP)
 		/* FIXME - Add multicast and broadcast address check */
-#endif /* CONFIG_NET_TCP */
 
 		memcpy(&addr4->sin_addr, &net_sin(addr)->sin_addr,
 		       sizeof(struct in_addr));
@@ -1470,7 +1463,6 @@ int net_context_connect(struct net_context *context,
 			context->flags &= ~NET_CONTEXT_REMOTE_ADDR_SET;
 		}
 
-#if defined(CONFIG_NET_TCP)
 		rport = addr4->sin_port;
 
 		net_sin_ptr(&context->local)->sin_family = AF_INET;
@@ -1484,7 +1476,6 @@ int net_context_connect(struct net_context *context,
 
 			laddr = &local_addr;
 		}
-#endif
 	} else
 #endif /* CONFIG_NET_IPV4 */
 
