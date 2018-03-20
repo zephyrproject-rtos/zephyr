@@ -115,6 +115,12 @@ enum {
 	 *  occur.
 	 */
 	BT_LE_ADV_OPT_ONE_TIME = BIT(1),
+
+	/** Advertise using the identity address as the own address.
+	 *  @warning This will compromise the privacy of the device, so care
+	 *           must be taken when using this option.
+	 */
+	BT_LE_ADV_OPT_USE_IDENTITY = BIT(2),
 };
 
 /** LE Advertising Parameters. */

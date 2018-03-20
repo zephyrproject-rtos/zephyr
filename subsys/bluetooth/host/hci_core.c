@@ -4697,7 +4697,8 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 	set_param.channel_map  = 0x07;
 
 	if (param->options & BT_LE_ADV_OPT_CONNECTABLE) {
-		if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
+		if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
+		    !(param->options & BT_LE_ADV_OPT_USE_IDENTITY)) {
 			err = le_set_private_addr();
 			if (err) {
 				return err;
@@ -4733,15 +4734,22 @@ int bt_le_adv_start(const struct bt_le_adv_param *param,
 			}
 
 			err = set_random_address(param->own_addr);
+			set_param.own_addr_type = BT_ADDR_LE_RANDOM;
+		} else if (param->options & BT_LE_ADV_OPT_USE_IDENTITY) {
+			if (atomic_test_bit(bt_dev.flags,
+					    BT_DEV_ID_STATIC_RANDOM)) {
+				err = set_random_address(&bt_dev.id_addr.a);
+			}
+
+			set_param.own_addr_type = bt_dev.id_addr.type;
 		} else {
 			err = le_set_private_addr();
+			set_param.own_addr_type = BT_ADDR_LE_RANDOM;
 		}
 
 		if (err) {
 			return err;
 		}
-
-		set_param.own_addr_type = BT_ADDR_LE_RANDOM;
 
 		if (sd) {
 			set_param.type = BT_LE_ADV_SCAN_IND;
