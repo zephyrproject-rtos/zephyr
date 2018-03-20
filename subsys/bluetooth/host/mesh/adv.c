@@ -118,7 +118,6 @@ static inline void adv_send(struct net_buf *buf)
 	param.options = 0;
 	param.interval_min = ADV_SCAN_UNIT(adv_int);
 	param.interval_max = param.interval_min;
-	param.own_addr = NULL;
 
 	err = bt_le_adv_start(&param, &ad, 1, NULL, 0);
 	net_buf_unref(buf);

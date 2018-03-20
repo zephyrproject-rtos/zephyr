@@ -710,7 +710,6 @@ static int cmd_advertise(int argc, char *argv[])
 		return 0;
 	}
 
-	param.own_addr = NULL;
 	param.interval_min = BT_GAP_ADV_FAST_INT_MIN_2;
 	param.interval_max = BT_GAP_ADV_FAST_INT_MAX_2;
 
