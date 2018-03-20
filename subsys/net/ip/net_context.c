@@ -2208,17 +2208,20 @@ static void set_appdata_values(struct net_pkt *pkt, enum net_ip_protocol proto)
 	struct net_buf *frag;
 	u16_t offset;
 
+	switch (proto) {
+	case IPPROTO_UDP:
 #if defined(CONFIG_NET_UDP)
-	if (proto == IPPROTO_UDP) {
 		proto_len = sizeof(struct net_udp_hdr);
-	}
 #endif /* CONFIG_NET_UDP */
+		break;
 
-#if defined(CONFIG_NET_TCP)
-	if (proto == IPPROTO_TCP) {
+	case IPPROTO_TCP:
 		proto_len = tcp_hdr_len(pkt);
+		break;
+
+	default:
+		return;
 	}
-#endif /* CONFIG_NET_TCP */
 
 	frag = net_frag_get_pos(pkt, net_pkt_ip_hdr_len(pkt) +
 				net_pkt_ipv6_ext_len(pkt) +
