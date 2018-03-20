@@ -757,7 +757,7 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, u8_t ident,
 	/* Reply on connection request as acceptor */
 	l2cap_br_conn_req_reply(chan, result);
 
-	if (result != BT_L2CAP_SUCCESS) {
+	if (result != BT_L2CAP_BR_SUCCESS) {
 		/* Disconnect link when security rules were violated */
 		if (result == BT_L2CAP_BR_ERR_SEC_BLOCK) {
 			bt_conn_disconnect(conn,
@@ -1440,7 +1440,7 @@ static void l2cap_br_conn_pend(struct bt_l2cap_chan *chan, u8_t status)
 	 * For incoming connection state send confirming outstanding
 	 * response and initiate configuration request.
 	 */
-	if (l2cap_br_conn_req_reply(chan, BT_L2CAP_SUCCESS) == 0) {
+	if (l2cap_br_conn_req_reply(chan, BT_L2CAP_BR_SUCCESS) == 0) {
 		bt_l2cap_chan_set_state(chan, BT_L2CAP_CONFIG);
 		/*
 		 * Initialize config request since remote needs to know
