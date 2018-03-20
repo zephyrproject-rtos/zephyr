@@ -2357,27 +2357,8 @@ int net_context_recv(struct net_context *context,
 }
 
 int net_context_update_recv_wnd(struct net_context *context,
-				s32_t delta)
-{
-#if defined(CONFIG_NET_TCP)
-	s32_t new_win;
-
-	if (!context->tcp) {
-		NET_ERR("context->tcp == NULL");
-		return -EPROTOTYPE;
-	}
-
-	new_win = context->tcp->recv_wnd + delta;
-	if (new_win < 0 || new_win > UINT16_MAX) {
-		return -EINVAL;
-	}
-
-	context->tcp->recv_wnd = new_win;
-
-	return 0;
-#else
-	return -EPROTOTYPE;
-#endif
+				s32_t delta) {
+	return net_tcp_update_recv_wnd(context, delta);
 }
 
 static int set_context_priority(struct net_context *context,

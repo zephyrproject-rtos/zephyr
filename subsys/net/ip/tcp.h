@@ -523,6 +523,18 @@ int net_tcp_put(struct net_context *context);
  */
 int net_tcp_listen(struct net_context *context);
 
+/**
+ * @brief Update TCP receive window
+ *
+ * @param context Network context
+ * @param delta Receive window delta
+ *
+ * @return 0 on success, -EPROTOTYPE if there is no TCP context, -EINVAL
+ *         if the receive window delta is out of bounds, -EPROTONOSUPPORT
+ *         if TCP is not supported
+ */
+int net_tcp_update_recv_wnd(struct net_context *context, s32_t delta);
+
 #else
 static inline struct net_tcp *net_tcp_alloc(struct net_context *context)
 {
@@ -699,6 +711,16 @@ static inline int net_tcp_listen(struct net_context *context)
 
 	return -EPROTONOSUPPORT;
 }
+
+static inline int net_tcp_update_recv_wnd(struct net_context *context,
+					  s32_t delta)
+{
+	ARG_UNUSED(context);
+	ARG_UNUSED(delta);
+
+	return -EPROTONOSUPPORT;
+}
+
 #endif
 
 #if defined(CONFIG_NET_TCP)

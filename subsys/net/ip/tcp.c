@@ -1446,3 +1446,22 @@ int net_tcp_listen(struct net_context *context)
 
 	return -EOPNOTSUPP;
 }
+
+int net_tcp_update_recv_wnd(struct net_context *context, s32_t delta)
+{
+	s32_t new_win;
+
+	if (!context->tcp) {
+		NET_ERR("context->tcp == NULL");
+		return -EPROTOTYPE;
+	}
+
+	new_win = context->tcp->recv_wnd + delta;
+	if (new_win < 0 || new_win > UINT16_MAX) {
+		return -EINVAL;
+	}
+
+	context->tcp->recv_wnd = new_win;
+
+	return 0;
+}
