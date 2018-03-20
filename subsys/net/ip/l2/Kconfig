@@ -100,6 +100,9 @@ source "subsys/net/ip/l2/openthread/Kconfig"
 config NET_L2_WIFI_MGMT
 	bool "Enable WiFi Management support"
 	default n
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	select NET_MGMT_EVENT_INFO
 	help
 	Add support for WiFi Management interface.
 
