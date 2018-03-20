@@ -1434,3 +1434,15 @@ int net_tcp_put(struct net_context *context)
 
 	return -EOPNOTSUPP;
 }
+
+int net_tcp_listen(struct net_context *context)
+{
+	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
+		net_tcp_change_state(context->tcp, NET_TCP_LISTEN);
+		net_context_set_state(context, NET_CONTEXT_LISTENING);
+
+		return 0;
+	}
+
+	return -EOPNOTSUPP;
+}
