@@ -1111,18 +1111,6 @@ static int send_reset(struct net_context *context,
 	return ret;
 }
 
-static int tcp_hdr_len(struct net_pkt *pkt)
-{
-	struct net_tcp_hdr hdr, *tcp_hdr;
-
-	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
-	if (tcp_hdr) {
-		return NET_TCP_HDR_LEN(tcp_hdr);
-	}
-
-	return 0;
-}
-
 /* This is called when we receive data after the connection has been
  * established. The core TCP logic is located here.
  */
