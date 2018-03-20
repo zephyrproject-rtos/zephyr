@@ -164,6 +164,11 @@ static inline int getaddrinfo(const char *host, const char *service,
 	return zsock_getaddrinfo(host, service, hints, res);
 }
 
+static inline void freeaddrinfo(struct zsock_addrinfo *ai)
+{
+	ARG_UNUSED(ai);
+}
+
 #define addrinfo zsock_addrinfo
 #define EAI_BADFLAGS DNS_EAI_BADFLAGS
 #define EAI_NONAME DNS_EAI_NONAME
