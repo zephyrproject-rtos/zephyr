@@ -2,11 +2,26 @@
 # Modified from: https://github.com/ulfalizer/Kconfiglib/blob/master/examples/merge_config.py
 from kconfiglib import Kconfig, Symbol, BOOL, STRING, TRISTATE, TRI_TO_STR
 import sys
+import locale
 
 if len(sys.argv) < 5:
     print('usage: {} Kconfig dotconfig autoconf conf1 [conf2 ...]'
           .format(sys.argv[0]))
     sys.exit(1)
+
+# Decode Kconfig sources as UTF-8 instead of decoding them according
+# to the system locale (which might be ascii-only).
+#
+# Usually this has no effect because the norm is to have a system
+# locale that covers the UTF-8 character set. Also, it is rare (but
+# not forbidden) for Kconfig sources to have non-ascii characters. But
+# using UTF-8 in Kconfig comments (for instance '# Author: Sebastian
+# Bøe') is supported, and this will cause a crash when a user has
+# configured his system ($ export LANG=C) to decode as ascii.
+#
+# See https://github.com/ulfalizer/Kconfiglib/pull/41 for a detailed
+# discussion about explicitly decoding as UTF-8.
+locale.setlocale(locale.LC_CTYPE, "C.UTF-8")
 
 print("Parsing Kconfig tree in {}".format(sys.argv[1]))
 kconf = Kconfig(sys.argv[1])
