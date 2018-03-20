@@ -475,6 +475,15 @@ u16_t net_tcp_get_chksum(struct net_pkt *pkt, struct net_buf *frag);
 int net_tcp_parse_opts(struct net_pkt *pkt, int opt_totlen,
 		       struct net_tcp_options *opts);
 
+/**
+ * @brief Get TCP header length
+ *
+ * @param pkt Network packet
+ *
+ * @return TCP header length
+ */
+int tcp_hdr_len(struct net_pkt *pkt);
+
 #else
 static inline struct net_tcp *net_tcp_alloc(struct net_context *context)
 {
@@ -614,6 +623,14 @@ static inline struct net_tcp_hdr *net_tcp_set_hdr(struct net_pkt *pkt,
 	ARG_UNUSED(hdr);
 	return NULL;
 }
+
+static inline int tcp_hdr_len(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return 0;
+}
+
 #endif
 
 #if defined(CONFIG_NET_TCP)
