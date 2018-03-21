@@ -53,6 +53,7 @@ inline struct ll_adv_set *ull_adv_is_enabled_get(u16_t handle);
 static inline struct ll_adv_set *is_disabled_get(u16_t handle);
 static void ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 		      void *param);
+static void ticker_op_update_cb(u32_t status, void *params);
 
 #if defined(CONFIG_BT_PERIPHERAL)
 static void ticker_stop_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
@@ -714,9 +715,9 @@ u32_t ll_adv_enable(u8_t enable)
 #endif /* !CONFIG_BT_HCI_MESH_EXT */
 
 	/* High Duty Cycle Directed Advertising if interval is 0. */
-	if ((pdu_adv->type == PDU_ADV_TYPE_DIRECT_IND) &&
-	    !interval) {
 #if defined(CONFIG_BT_PERIPHERAL)
+	adv->is_hdcd = !interval && (pdu_adv->type == PDU_ADV_TYPE_DIRECT_IND);
+	if (adv->is_hdcd) {
 		ret = ticker_start(TICKER_INSTANCE_ID_CTLR,
 				   TICKER_USER_ID_THREAD,
 				   (TICKER_ID_ADV_BASE + handle),
@@ -742,10 +743,9 @@ u32_t ll_adv_enable(u8_t enable)
 				   TICKER_NULL_LAZY, TICKER_NULL_SLOT,
 				   ticker_stop_cb, adv,
 				   ull_ticker_status_give, (void *)&ret_cb);
-#else /* !CONFIG_BT_PERIPHERAL */
-		goto failure_cleanup;
+	} else
 #endif /* !CONFIG_BT_PERIPHERAL */
-	} else {
+	{
 		ret = ticker_start(TICKER_INSTANCE_ID_CTLR,
 				   TICKER_USER_ID_THREAD,
 				   (TICKER_ID_ADV_BASE + handle),
@@ -877,12 +877,44 @@ static void ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 	p.param = &adv->lll;
 	_mfy.param = &p;
 
+	/* Kick LLL prepare */
 	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL,
 			     0, &_mfy);
 	LL_ASSERT(!ret);
 
+	/* Apply adv random delay */
+#if defined(CONFIG_BT_PERIPHERAL)
+	if (!adv->is_hdcd)
+#endif /* CONFIG_BT_PERIPHERAL */
+	{
+		u8_t random_delay;
+		u32_t ret;
+
+		ull_entropy_get(sizeof(random_delay), &random_delay);
+		random_delay %= 10;
+		random_delay += 1;
+
+		/* TODO: check and handle race with ticker_stop called by
+		 *       disable or directed adv timeout.
+		 */
+		ret = ticker_update(TICKER_INSTANCE_ID_CTLR,
+				    TICKER_USER_ID_ULL_HIGH,
+				    TICKER_ID_ADV_BASE + handle_get(adv),
+				    HAL_TICKER_US_TO_TICKS(random_delay * 1000),
+				    0, 0, 0, 0, 0, ticker_op_update_cb, adv);
+		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+			  (ret == TICKER_STATUS_BUSY));
+	}
+
 	DEBUG_RADIO_PREPARE_A(1);
 	printk("\tticker_cb (%p) exit.\n", param);
+}
+
+static void ticker_op_update_cb(u32_t status, void *param)
+{
+	ARG_UNUSED(param);
+
+	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
 }
 
 #if defined(CONFIG_BT_PERIPHERAL)

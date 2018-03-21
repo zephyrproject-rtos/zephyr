@@ -13,6 +13,13 @@ struct ll_adv_set {
 
 	struct evt_hdr evt;
 
+#if defined(CONFIG_BT_PERIPHERAL)
+	u8_t is_hdcd:1;
+
+	memq_link_t       *link_cc_free;
+	struct node_rx_cc *node_rx_cc_free;
+#endif /* CONFIG_BT_PERIPHERAL */
+
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	u32_t interval;
 #if defined(CONFIG_BT_LL_SW)

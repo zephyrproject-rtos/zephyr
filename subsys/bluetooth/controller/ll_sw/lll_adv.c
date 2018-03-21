@@ -459,16 +459,17 @@ static void isr_done(void *param)
 
 		return;
 	} else {
+		struct ll_adv_set *ull = lll->hdr.parent;
 		struct node_rx_hdr *node_rx;
-		struct pdu_adv *pdu;
 
 		radio_filter_disable();
 
-		pdu = lll_adv_data_curr_get(lll);
-		if (pdu->type != PDU_ADV_TYPE_DIRECT_IND) {
-			u8_t random_delay;
-			u32_t ret;
-
+#if defined(CONFIG_BT_PERIPHERAL)
+		if (!ull->is_hdcd)
+#else /* !CONFIG_BT_PERIPHERAL */
+		ARG_UNUSED(ull);
+#endif /* !CONFIG_BT_PERIPHERAL */
+		{
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 			if (_radio.advertiser.is_mesh) {
 				u32_t err;
@@ -479,33 +480,6 @@ static void isr_done(void *param)
 				}
 			}
 #endif /* CONFIG_BT_HCI_MESH_EXT */
-
-#if defined(CONFIG_BT_CTLR_LL_SW)
-			rand_isr_get(sizeof(random_delay), &random_delay);
-			random_delay %= 10;
-			random_delay += 1;
-
-			/* Call to ticker_update can fail under the race
-			 * condition where in the Adv role is being stopped but
-			 * at the same time it is preempted by Adv event that
-			 * gets into close state. Accept failure when Adv role
-			 * is being stopped.
-			 */
-			ret = ticker_update(RADIO_TICKER_INSTANCE_ID_RADIO,
-					RADIO_TICKER_USER_ID_WORKER,
-					RADIO_TICKER_ID_ADV,
-					HAL_TICKER_US_TO_TICKS(random_delay *
-							       1000),
-					0, 0, 0, 0, 0, ticker_update_adv_assert,
-					(void *)__LINE__);
-			LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
-				  (ticker_status == TICKER_STATUS_BUSY) ||
-				  (_radio.ticker_id_stop ==
-				   RADIO_TICKER_ID_ADV));
-#else /* !CONFIG_BT_CTLR_LL_SW */
-			ARG_UNUSED(random_delay);
-			ARG_UNUSED(ret);
-#endif /* !CONFIG_BT_CTLR_LL_SW */
 		}
 
 #if defined(CONFIG_BT_CTLR_ADV_INDICATION)
