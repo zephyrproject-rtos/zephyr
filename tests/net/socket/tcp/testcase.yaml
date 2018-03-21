@@ -1,7 +1,4 @@
 tests:
   test:
-    extra_configs:
-      - CONFIG_NET_TEST=y
-      - CONFIG_NET_LOOPBACK=y
     min_ram: 32
     tags: net
