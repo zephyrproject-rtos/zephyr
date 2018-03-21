@@ -4,6 +4,7 @@ file(STRINGS
   ${AUTOCONF_H}
   CONFIG_LIST
   REGEX "^#define CONFIG_"
+  ENCODING "UTF-8"
   )
 foreach (CONFIG ${CONFIG_LIST})
   string(REGEX REPLACE "#define (CONFIG_[A-Z|_|0-9]*) (.*)" "GEN_ABSOLUTE_SYM(\\1, \\2)" CONFIG ${CONFIG})
