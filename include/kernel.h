@@ -249,6 +249,14 @@ static inline void _impl_k_object_access_revoke(void *object,
 	ARG_UNUSED(thread);
 }
 
+static inline s32_t _impl_k_object_access_check(void *object,
+						struct k_thread *thread)
+{
+	ARG_UNUSED(object);
+	ARG_UNUSED(thread);
+	return 0;
+}
+
 static inline void k_object_access_all_grant(void *object)
 {
 	ARG_UNUSED(object);
@@ -297,6 +305,19 @@ __syscall void k_object_access_revoke(void *object, struct k_thread *thread);
  * @param object Address of kernel object
  */
 void k_object_access_all_grant(void *object);
+
+/**
+ * Check thread access to a kernel object
+ *
+ * This API checks if the thread has the permission for the kernel object.
+ *
+ * @param object Address of kernel object
+ * @param thread Thread whose permissions need to be checked.
+ *
+ * @retval 0 Thread has the permissions.
+ * @retval -EPERM Thread has no permissions for the given object.
+ */
+__syscall s32_t k_object_access_check(void *object, struct k_thread *thread);
 
 /* Using typedef deliberately here, this is quite intended to be an opaque
  * type. K_THREAD_STACK_BUFFER() should be used to access the data within.

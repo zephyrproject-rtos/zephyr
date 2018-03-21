@@ -209,6 +209,30 @@ void _dump_object_error(int retval, void *obj, struct _k_object *ko,
 	}
 }
 
+s32_t _impl_k_object_access_check(void *object, struct k_thread *thread)
+{
+	int index;
+	s32_t permission = -EPERM;
+	struct _k_object *ko = _k_object_find(object);
+
+	if (ko) {
+
+		index = thread_index_get(thread);
+		if (index != -1) {
+			permission =
+				(
+				 sys_bitfield_test_bit((mem_addr_t)&ko->perms,
+						      index) == 0) ? -EPERM : 0;
+		}
+
+		if (ko->flags & K_OBJ_FLAG_PUBLIC) {
+			permission = 0;
+		}
+	}
+
+	return permission;
+}
+
 void _impl_k_object_access_grant(void *object, struct k_thread *thread)
 {
 	struct _k_object *ko = _k_object_find(object);
