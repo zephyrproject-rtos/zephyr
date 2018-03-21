@@ -638,6 +638,7 @@ function(import_kconfig config_file)
     ${config_file}
     DOT_CONFIG_LIST
     REGEX "^CONFIG_"
+    ENCODING "UTF-8"
   )
 
   foreach (CONFIG ${DOT_CONFIG_LIST})
