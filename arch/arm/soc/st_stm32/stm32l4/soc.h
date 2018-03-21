@@ -62,6 +62,12 @@
 #include <stm32l4xx_ll_rng.h>
 #endif
 
+#ifdef CONFIG_RTC_STM32
+#include <stm32l4xx_ll_rtc.h>
+#include <stm32l4xx_ll_exti.h>
+#include <stm32l4xx_ll_pwr.h>
+#endif
+
 #ifdef CONFIG_USB
 /* Required to remove USB transceiver supply isolation */
 #include <stm32l4xx_ll_pwr.h>

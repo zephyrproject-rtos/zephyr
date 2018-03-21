@@ -27,4 +27,11 @@ config ENTROPY_STM32_RNG
 
 endif # ENTROPY_GENERATOR
 
+if RTC
+
+config RTC_STM32
+	default y
+
+endif # RTC
+
 endif # SOC_SERIES_STM32L4X
