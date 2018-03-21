@@ -3,11 +3,6 @@
 
 import kconfiglib
 import sys
-import locale
-
-# See https://github.com/ulfalizer/Kconfiglib/pull/41 for a detailed
-# discussion about explicitly decoding as UTF-8.
-locale.setlocale(locale.LC_CTYPE, "C.UTF-8")
 
 # Integers representing symbol types
 UNKNOWN, BOOL, TRISTATE, STRING, HEX, INT = range(6)
