@@ -54,6 +54,8 @@
 
 #define FIN_TIMEOUT K_SECONDS(1)
 
+#define BUF_ALLOC_TIMEOUT MSEC(200)
+
 /* Declares a wrapper function for a net_conn callback that refs the
  * context around the invocation (to protect it from premature
  * deletion).  Long term would be nice to see this feature be part of
@@ -592,6 +594,191 @@ static void queue_fin(struct net_context *ctx)
 	}
 }
 
+/* Split the packet into MSS size units */
+static int queue_pkt(struct net_context *ctx, struct net_pkt *pkt)
+{
+	size_t pkt_len = net_pkt_get_len(pkt);
+	struct net_buf *frag_to_send = NULL;
+	struct net_buf *frag_remaining = NULL;
+	struct net_buf *frag, *prev, *orig;
+	struct net_pkt *new_pkt;
+	int ret, new_len;
+	size_t mss;
+
+	/* FIXME: use mss for sending length instead of the recv one */
+	mss = net_tcp_get_recv_mss(ctx->tcp);
+	if (pkt_len <= mss) {
+		NET_DBG("[%p] Queueing %zd bytes pkt %p (tcp %p)", ctx,
+			pkt_len, pkt, ctx->tcp);
+
+		net_pkt_set_appdatalen(pkt, pkt_len);
+		return net_tcp_queue_data(ctx, pkt);
+	}
+
+	/* Large packet, split it into smaller pieces */
+
+	/* There should not be any protocol headers in fragments
+	 * but if there is, then skip them when setting appdatalen
+	 * value.
+	 */
+	NET_ASSERT_INFO((pkt_len - net_pkt_appdatalen(pkt)) <= pkt->frags->len,
+			"Header %zd is longer than first fragment %d",
+			pkt_len - net_pkt_appdatalen(pkt), pkt->frags->len);
+
+	NET_DBG("[%p] splitting pkt %p to smaller %zd long pieces", ctx,
+		pkt, mss);
+
+	/* For cloning pkt, we do not want to clone the fragments at this
+	 * point.
+	 */
+	frag = pkt->frags;
+	pkt->frags = NULL;
+
+	orig = frag;
+	new_len = 0;
+	prev = NULL;
+
+	while (frag) {
+		int fit_len, appdata_len;
+
+		new_len += frag->len;
+
+		if (new_len <= mss) {
+			prev = frag;
+			frag = frag->frags;
+
+			continue;
+		}
+
+		fit_len = mss - (new_len - frag->len);
+		appdata_len = new_len - frag->len + fit_len;
+
+		new_pkt = net_pkt_clone(pkt, BUF_ALLOC_TIMEOUT);
+		if (!new_pkt) {
+			NET_DBG("Cannot clone pkt %p", new_pkt);
+
+			if (frag_to_send) {
+				net_buf_unref(frag_to_send);
+			}
+
+			if (frag_remaining) {
+				net_buf_unref(frag_remaining);
+			}
+
+			pkt->frags = frag;
+			return -ENOMEM;
+		}
+
+		NET_DBG("[%p] cloned pkt %p %d bytes", ctx, new_pkt,
+			appdata_len);
+
+		ret = net_pkt_split(new_pkt, frag, fit_len,
+				    &frag_to_send, &frag_remaining,
+				    BUF_ALLOC_TIMEOUT);
+		if (ret < 0) {
+			NET_DBG("Cannot split %p from offset %d", frag,
+				fit_len);
+
+			net_pkt_unref(new_pkt);
+			pkt->frags = frag;
+			return -ENOMEM;
+		}
+
+		NET_DBG("[%p] frag %p split to %p and %p", ctx, frag,
+			frag_to_send, frag_remaining);
+
+		if (prev) {
+			prev->frags = frag_to_send;
+		} else {
+			new_pkt->frags = frag_to_send;
+		}
+
+		frag_to_send->frags = NULL;
+
+		new_pkt->frags = orig;
+		new_len = net_pkt_get_len(new_pkt);
+
+		prev = NULL;
+
+		frag_remaining->frags = frag->frags;
+
+		frag->frags = NULL;
+		net_buf_unref(frag);
+
+		/* Add room for the link layer header in fragment. */
+		if (net_buf_headroom(frag_remaining) == 0) {
+			ret = net_pkt_insert(new_pkt, frag_remaining,
+					     0, pkt->ll_reserve, NULL,
+					     BUF_ALLOC_TIMEOUT);
+			if (!ret) {
+				goto fail;
+			}
+
+			net_buf_pull(frag_remaining, pkt->ll_reserve);
+		}
+
+		orig = frag = frag_remaining;
+
+		NET_DBG("[%p] frag %p headroom %zd", ctx, frag,
+			net_buf_headroom(frag));
+
+		/* Now send the new_pkt which contains max number of bytes that
+		 * we can send.
+		 */
+
+		/* Note that we do not need to set the appdata pointer as the
+		 * TCP code does not use it for anything.
+		 */
+		net_pkt_set_appdatalen(new_pkt, appdata_len);
+
+		NET_DBG("[%p] Queueing %d bytes for pkt %p (tcp %p)",
+			ctx, new_len, new_pkt, ctx->tcp);
+
+		ret = net_tcp_queue_data(ctx, new_pkt);
+		if (ret < 0) {
+			NET_DBG("[%p] Cannot queue %p (%d)",
+				ctx, new_pkt, ret);
+			goto fail;
+		}
+
+		new_len = 0;
+	}
+
+	if (!frag_remaining) {
+		NET_DBG("[%p] All fragments sent for pkt %p", ctx, pkt);
+		return 0;
+	}
+
+	pkt->frags = frag_remaining;
+	pkt_len = net_pkt_get_len(pkt);
+
+	/* Gets rid of any zero length fragments */
+	net_pkt_compact(pkt);
+
+	if (net_buf_headroom(frag_remaining) == 0) {
+		ret = net_pkt_insert(pkt, frag_remaining,
+				     0, pkt->ll_reserve, NULL,
+				     BUF_ALLOC_TIMEOUT);
+		if (!ret) {
+			return -ENOMEM;
+		}
+
+		net_buf_pull(frag_remaining, pkt->ll_reserve);
+	}
+
+	NET_DBG("[%p] Remaining %zd bytes in %p chain",
+		ctx, pkt_len, pkt);
+
+	net_pkt_set_appdatalen(pkt, pkt_len);
+
+	return net_tcp_queue_data(ctx, pkt);
+
+fail:
+	net_pkt_unref(new_pkt);
+
+	/* Caller should delete the remaining frags */
+	return ret;
+}
 #endif /* CONFIG_NET_TCP */
 
 int net_context_ref(struct net_context *context)
@@ -2144,8 +2331,8 @@ static int sendto(struct net_pkt *pkt,
 
 #if defined(CONFIG_NET_TCP)
 	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
-		net_pkt_set_appdatalen(pkt, net_pkt_get_len(pkt));
-		ret = net_tcp_queue_data(context, pkt);
+		/* Split the data to be sent to MSS size chunks */
+		ret = queue_pkt(context, pkt);
 	} else
 #endif /* CONFIG_NET_TCP */
 	{
