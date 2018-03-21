@@ -25,6 +25,11 @@
 #include <nffs/config.h>
 #include <nffs/queue.h>
 
+#if __ZEPHYR__
+#include <zephyr/types.h>
+#include <stats.h>
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -284,6 +289,36 @@ struct nffs_dir {
     struct nffs_dirent nd_dirent;
 };
 
+#ifdef STATS_SECT_START
+/* Mynewt team can enable statistic once they
+ * start building this codebase.
+ */
+STATS_SECT_START(nffs_stats)
+    STATS_SECT_ENTRY(nffs_hashcnt_ins)
+    STATS_SECT_ENTRY(nffs_hashcnt_rm)
+    STATS_SECT_ENTRY(nffs_object_count)
+    STATS_SECT_ENTRY(nffs_iocnt_read)
+    STATS_SECT_ENTRY(nffs_iocnt_write)
+    STATS_SECT_ENTRY(nffs_gccnt)
+    STATS_SECT_ENTRY(nffs_readcnt_data)
+    STATS_SECT_ENTRY(nffs_readcnt_block)
+    STATS_SECT_ENTRY(nffs_readcnt_crc)
+    STATS_SECT_ENTRY(nffs_readcnt_copy)
+    STATS_SECT_ENTRY(nffs_readcnt_format)
+    STATS_SECT_ENTRY(nffs_readcnt_gccollate)
+    STATS_SECT_ENTRY(nffs_readcnt_inode)
+    STATS_SECT_ENTRY(nffs_readcnt_inodeent)
+    STATS_SECT_ENTRY(nffs_readcnt_rename)
+    STATS_SECT_ENTRY(nffs_readcnt_update)
+    STATS_SECT_ENTRY(nffs_readcnt_filename)
+    STATS_SECT_ENTRY(nffs_readcnt_object)
+    STATS_SECT_ENTRY(nffs_readcnt_detect)
+STATS_SECT_END;
+extern STATS_SECT_DECL(nffs_stats) nffs_stats;
+#else
+#define STATS_INC(sectvarname, var)
+#endif
+
 extern void *nffs_file_mem;
 extern void *nffs_block_entry_mem;
 extern void *nffs_inode_mem;
@@ -527,7 +562,6 @@ int nffs_write_to_file(struct nffs_file *file, const void *data, int len);
 #define NFFS_LOG(lvl, ...)
 #define MYNEWT_VAL(val) 0
 #define ASSERT_IF_TEST(cond)
-#define STATS_INC(sectvarname, var)
 
 #else
 
