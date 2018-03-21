@@ -1,0 +1,16 @@
+# Kconfig - STM32 RTC configuration options
+#
+# Copyright (c) 2018 Workaround GmbH
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config RTC_STM32
+	bool "STM32 RTC Driver"
+	depends on SOC_FAMILY_STM32
+	default n
+	select USE_STM32_HAL_RTC
+	select USE_STM32_HAL_RTC_EX
+	select USE_STM32_HAL_RCC_EX
+	help
+	  Build STM32 RTC driver (tested on STM32L4xx).
