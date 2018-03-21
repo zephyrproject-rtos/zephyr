@@ -428,6 +428,8 @@ u32_t ll_adv_enable(u8_t enable)
 	struct pdu_adv *pdu_adv;
 	u32_t ticks_slot_offset;
 	struct ll_adv_set *adv;
+	struct ll_conn *conn;
+	struct lll_adv *lll;
 	u16_t interval;
 	u32_t slot_us;
 	u8_t chan_map;
@@ -446,8 +448,9 @@ u32_t ll_adv_enable(u8_t enable)
 	/* remember addr to use and also update the addr in
 	 * both adv and scan response PDUs.
 	 */
-	pdu_adv = lll_adv_data_peek(&adv->lll);
-	pdu_scan = lll_adv_scan_rsp_peek(&adv->lll);
+	lll = &adv->lll;
+	pdu_adv = lll_adv_data_peek(lll);
+	pdu_scan = lll_adv_scan_rsp_peek(lll);
 
 	if (0) {
 
@@ -474,7 +477,7 @@ u32_t ll_adv_enable(u8_t enable)
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 		/* Prepare whitelist and optionally resolving list */
-		ll_filters_adv_update(adv->filter_policy);
+		ll_filters_adv_update(lll->filter_policy);
 
 		if (adv->own_addr_type == BT_ADDR_LE_PUBLIC_ID ||
 		    adv->own_addr_type == BT_ADDR_LE_RANDOM_ID) {
@@ -519,16 +522,16 @@ u32_t ll_adv_enable(u8_t enable)
 	    (pdu_adv->type == PDU_ADV_TYPE_DIRECT_IND)) {
 		void *link;
 
-		if (adv->conn) {
+		if (lll->conn) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 
-		link = mem_acquire(&_radio.link_rx_free);
+		link = ll_rx_link_alloc();
 		if (!link) {
 			return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 		}
 
-		conn = mem_acquire(&_radio.conn_free);
+		conn = ll_rx_alloc();
 		if (!conn) {
 			mem_release(link, &_radio.link_rx_free);
 
@@ -634,7 +637,9 @@ u32_t ll_adv_enable(u8_t enable)
 	} else {
 		conn = NULL;
 	}
-#endif /* CONFIG_BT_PERIPHERAL */
+#else /* !CONFIG_BT_PERIPHERAL */
+	ARG_UNUSED(conn);
+#endif /* !CONFIG_BT_PERIPHERAL */
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	_radio.advertiser.rl_idx = rl_idx;
@@ -643,7 +648,7 @@ u32_t ll_adv_enable(u8_t enable)
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
 	interval = adv->interval;
-	chan_map = adv->lll.chan_map;
+	chan_map = lll->chan_map;
 	chan_cnt = util_ones_count_get(&chan_map, sizeof(chan_map));
 
 	/* TODO: use adv data len in slot duration calculation, instead of
@@ -693,7 +698,7 @@ u32_t ll_adv_enable(u8_t enable)
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
 	ull_hdr_init(adv);
-	lll_hdr_init(&adv->lll, adv);
+	lll_hdr_init(lll, adv);
 
 	/* TODO: active_to_start feature port */
 	adv->evt.ticks_active_to_start = 0;
