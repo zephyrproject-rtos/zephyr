@@ -17,6 +17,8 @@
 #include <misc/slist.h>
 #include <net/net_mgmt.h>
 
+#include "net_private.h"
+
 struct mgmt_event_entry {
 	u32_t event;
 	struct net_if *iface;
