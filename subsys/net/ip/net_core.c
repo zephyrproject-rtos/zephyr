@@ -336,8 +336,9 @@ static void net_queue_rx(struct net_if *iface, struct net_pkt *pkt)
 /* Called by driver when an IP packet has been received */
 int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 {
-	NET_ASSERT(pkt && pkt->frags);
-	NET_ASSERT(iface);
+	if (!pkt || !iface) {
+		return -EINVAL;
+	}
 
 	if (!pkt->frags) {
 		return -ENODATA;
