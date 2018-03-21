@@ -71,6 +71,10 @@ support systems:
   https://zephyrproject.org/doc.  Additional documentation is maintained in
   the `Zephyr GitHub wiki`_.
 
+* **Cross-reference**: Source code cross-reference for the Zephyr
+  kernel and samples code is available at
+  https://elixir.bootlin.com/zephyr/latest/source.
+
 * **Issue Reporting and Tracking**: Requirements and Issue tracking is done in
   the Github issues system: https://github.com/zephyrproject-rtos/zephyr/issues.
   You can browse through the reported issues and submit issues of your own.
