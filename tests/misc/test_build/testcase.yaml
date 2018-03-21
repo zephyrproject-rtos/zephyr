@@ -21,3 +21,8 @@ tests:
     platform_whitelist: nrf51_pca10028 nrf52_pca10040
     extra_configs:
       - CONFIG_BOOTLOADER_MCUBOOT=y
+  test_utf8_in_kconfig_values:
+    build_only: true
+    tags: apps
+    extra_configs:
+      - CONFIG_KERNEL_BIN_NAME="A_kconfig_value_with_a_utf8_char_in_it_Bøe_"
