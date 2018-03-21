@@ -388,6 +388,14 @@ config BT_MESH_DEBUG
 
 if BT_MESH_DEBUG
 
+config BT_MESH_DEBUG_USE_ID_ADDR
+	bool "Use identity address for all advertising"
+	help
+	  This option forces the usage of the local identity address for
+	  all advertising. This can be a help for debugging (analyzing
+	  traces), however it should never be enabled for a production
+	  build as it compromises the privacy of the device.
+
 config BT_MESH_DEBUG_NET
 	bool "Network layer debug"
 	help

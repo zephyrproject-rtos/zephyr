@@ -44,14 +44,21 @@
 
 #define CLIENT_BUF_SIZE 68
 
+#if defined(CONFIG_BT_MESH_DEBUG_USE_ID_ADDR)
+#define ADV_OPT (BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_ONE_TIME | \
+		 BT_LE_ADV_OPT_USE_IDENTITY)
+#else
+#define ADV_OPT (BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_ONE_TIME)
+#endif
+
 static const struct bt_le_adv_param slow_adv_param = {
-	.options = (BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_ONE_TIME),
+	.options = ADV_OPT,
 	.interval_min = BT_GAP_ADV_SLOW_INT_MIN,
 	.interval_max = BT_GAP_ADV_SLOW_INT_MAX,
 };
 
 static const struct bt_le_adv_param fast_adv_param = {
-	.options = (BT_LE_ADV_OPT_CONNECTABLE | BT_LE_ADV_OPT_ONE_TIME),
+	.options = ADV_OPT,
 	.interval_min = BT_GAP_ADV_FAST_INT_MIN_2,
 	.interval_max = BT_GAP_ADV_FAST_INT_MAX_2,
 };

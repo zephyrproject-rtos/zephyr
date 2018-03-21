@@ -115,7 +115,12 @@ static inline void adv_send(struct net_buf *buf)
 	ad.data_len = buf->len;
 	ad.data = buf->data;
 
-	param.options = 0;
+	if (IS_ENABLED(CONFIG_BT_MESH_DEBUG_USE_ID_ADDR)) {
+		param.options = BT_LE_ADV_OPT_USE_IDENTITY;
+	} else {
+		param.options = 0;
+	}
+
 	param.interval_min = ADV_SCAN_UNIT(adv_int);
 	param.interval_max = param.interval_min;
 
