@@ -7,7 +7,6 @@
 
 #include <entropy.h>
 #include <atomic.h>
-#include <nrf_rng.h>
 #include <soc.h>
 
 struct rand {
