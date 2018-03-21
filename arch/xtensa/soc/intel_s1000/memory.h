@@ -7,8 +7,6 @@
 #define __INC_MEMORY_H
 
 /* L2 HP SRAM */
-#define L2_SRAM_BASE				0xBE000000
-#define L2_SRAM_SIZE				0x00300000
 #define L2_VECTOR_SIZE				0x1000
 
 /* The reset vector address in SRAM and its size */

@@ -1,0 +1,23 @@
+/dts-v1/;
+
+#include "intel_s1000.dtsi"
+
+/ {
+	model = "intel_s1000_crb";
+	compatible = "intel,s1000";
+
+	aliases {
+		uart_0 = &uart0;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart0;
+	};
+};
+
+&uart0 {
+	status = "ok";
+	current-speed = <115200>;
+};
+
