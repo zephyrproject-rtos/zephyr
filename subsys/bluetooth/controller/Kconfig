@@ -252,6 +252,14 @@ config BT_CTLR_ADV_EXT
 	  Enable support for Bluetooth 5.0 LE Advertising Extensions in the
 	  Controller.
 
+config BT_ADV_MAX
+	prompt "LE Advertising Extensions Sets"
+	depends on BT_CTLR_ADV_EXT
+	int
+	default 1
+	help
+	  Maximum supported advertising sets.
+
 config BT_CTLR_DTM
 	bool
 	help

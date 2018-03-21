@@ -32,4 +32,5 @@ u8_t ll_rl_find(u8_t id_addr_type, u8_t *id_addr, u8_t *free);
 bool ctrl_rl_addr_allowed(u8_t id_addr_type, u8_t *id_addr, u8_t *rl_idx);
 bool ctrl_rl_addr_resolve(u8_t id_addr_type, u8_t *id_addr, u8_t rl_idx);
 bool ctrl_rl_idx_allowed(u8_t irkmatch_ok, u8_t rl_idx);
-void ll_rl_pdu_adv_update(u8_t idx, struct pdu_adv *pdu);
+void ll_rl_pdu_adv_update(struct ll_adv_set *ll_adv, u8_t idx,
+			  struct pdu_adv *pdu);

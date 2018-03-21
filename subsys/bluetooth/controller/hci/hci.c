@@ -949,22 +949,32 @@ static void le_set_adv_data(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_set_adv_data *cmd = (void *)buf->data;
 	struct bt_hci_evt_cc_status *ccst;
+	u8_t status;
 
-	ll_adv_data_set(cmd->len, &cmd->data[0]);
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	status = ll_adv_data_set(0, cmd->len, &cmd->data[0]);
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
+	status = ll_adv_data_set(cmd->len, &cmd->data[0]);
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
 
 	ccst = cmd_complete(evt, sizeof(*ccst));
-	ccst->status = 0x00;
+	ccst->status = status;
 }
 
 static void le_set_scan_rsp_data(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_le_set_scan_rsp_data *cmd = (void *)buf->data;
 	struct bt_hci_evt_cc_status *ccst;
+	u8_t status;
 
-	ll_scan_data_set(cmd->len, &cmd->data[0]);
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	status = ll_adv_scan_rsp_set(0, cmd->len, &cmd->data[0]);
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
+	status = ll_adv_scan_rsp_set(cmd->len, &cmd->data[0]);
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
 
 	ccst = cmd_complete(evt, sizeof(*ccst));
-	ccst->status = 0x00;
+	ccst->status = status;
 }
 
 static void le_set_adv_enable(struct net_buf *buf, struct net_buf **evt)
@@ -973,11 +983,15 @@ static void le_set_adv_enable(struct net_buf *buf, struct net_buf **evt)
 	struct bt_hci_evt_cc_status *ccst;
 	u32_t status;
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT) || defined(CONFIG_BT_HCI_MESH_EXT)
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 	status = ll_adv_enable(0, cmd->enable, 0, 0, 0, 0, 0);
 #else /* !CONFIG_BT_HCI_MESH_EXT */
-	status = ll_adv_enable(cmd->enable);
+	status = ll_adv_enable(0, cmd->enable);
 #endif /* !CONFIG_BT_HCI_MESH_EXT */
+#else /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_HCI_MESH_EXT */
+	status = ll_adv_enable(cmd->enable);
+#endif /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_HCI_MESH_EXT */
 
 	ccst = cmd_complete(evt, sizeof(*ccst));
 	ccst->status = (!status) ? 0x00 : BT_HCI_ERR_CMD_DISALLOWED;

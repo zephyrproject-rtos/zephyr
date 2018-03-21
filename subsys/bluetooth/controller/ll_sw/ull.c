@@ -51,6 +51,12 @@
 #define TICKER_USER_ULL_LOW_OPS  (1 + 1)
 #define TICKER_USER_THREAD_OPS   (1 + 1)
 
+#if defined(CONFIG_BT_BROADCASTER)
+#define BT_ADV_TICKER_NODES ((TICKER_ID_ADV_LAST) - (TICKER_ID_ADV_STOP) + 1)
+#else
+#define BT_ADV_TICKER_NODES 0
+#endif
+
 #if defined(CONFIG_BT_TMP)
 #define BT_TMP_TICKER_NODES ((TICKER_ID_TMP_LAST) - (TICKER_ID_TMP_BASE) + 1)
 #else
@@ -66,6 +72,7 @@
 #endif
 
 #define TICKER_NODES              (TICKER_ID_ULL_BASE + \
+				   BT_ADV_TICKER_NODES + \
 				   BT_TMP_TICKER_NODES + \
 				   FLASH_TICKER_NODES)
 #define TICKER_USER_APP_OPS       (TICKER_USER_THREAD_OPS + \

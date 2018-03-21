@@ -1,0 +1,1018 @@
+/*
+ * Copyright (c) 2016-2018 Nordic Semiconductor ASA
+ * Copyright (c) 2016 Vinayak Kariappa Chettimada
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <string.h>
+
+#if defined(CONFIG_BT_CTLR_DEBUG_PINS)
+#if defined(CONFIG_PRINTK)
+#undef CONFIG_PRINTK
+#endif
+#endif
+
+#include <zephyr.h>
+#include <bluetooth/hci.h>
+
+#if defined(CONFIG_SOC_FAMILY_NRF)
+#include "hal/nrf5/ticker.h"
+#endif /* CONFIG_SOC_FAMILY_NRF */
+
+#include "util/util.h"
+
+#include "pdu.h"
+#include "ll.h"
+
+#include "util/memq.h"
+#include "util/mayfly.h"
+
+#include "ticker/ticker.h"
+
+#include "lll.h"
+#include "lll_adv.h"
+
+#include "ull_types.h"
+#include "ull.h"
+#include "ull_internal.h"
+
+#include "ull_adv_types.h"
+#include "ull_adv_internal.h"
+
+#include "ll_filter.h"
+
+#include "common/log.h"
+#include <soc.h>
+#include "hal/debug.h"
+
+static struct ll_adv_set ll_adv[CONFIG_BT_ADV_MAX];
+
+inline struct ll_adv_set *ull_adv_set_get(u16_t handle);
+inline struct ll_adv_set *ull_adv_is_enabled_get(u16_t handle);
+static inline struct ll_adv_set *is_disabled_get(u16_t handle);
+static void ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
+		      void *param);
+
+#if defined(CONFIG_BT_PERIPHERAL)
+static void ticker_stop_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
+			   void *param);
+static void ticker_op_stop_cb(u32_t status, void *params);
+static void disabled_cb(void *param);
+#endif /* CONFIG_BT_PERIPHERAL */
+
+static inline u8_t disable(u16_t handle);
+static inline u16_t handle_get(struct ll_adv_set *adv);
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+u8_t ll_adv_params_set(u8_t handle, u16_t evt_prop, u32_t interval,
+		       u8_t adv_type, u8_t own_addr_type,
+		       u8_t direct_addr_type, u8_t const *const direct_addr,
+		       u8_t chan_map, u8_t filter_policy, u8_t *tx_pwr,
+		       u8_t phy_p, u8_t skip, u8_t phy_s, u8_t sid, u8_t sreq)
+{
+	u8_t const pdu_adv_type[] = {PDU_ADV_TYPE_ADV_IND,
+				     PDU_ADV_TYPE_DIRECT_IND,
+				     PDU_ADV_TYPE_SCAN_IND,
+				     PDU_ADV_TYPE_NONCONN_IND,
+				     PDU_ADV_TYPE_DIRECT_IND,
+				     PDU_ADV_TYPE_EXT_IND};
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
+u8_t ll_adv_params_set(u16_t interval, u8_t adv_type,
+		       u8_t own_addr_type, u8_t direct_addr_type,
+		       u8_t const *const direct_addr, u8_t chan_map,
+		       u8_t filter_policy)
+{
+	u8_t const pdu_adv_type[] = {PDU_ADV_TYPE_ADV_IND,
+				     PDU_ADV_TYPE_DIRECT_IND,
+				     PDU_ADV_TYPE_SCAN_IND,
+				     PDU_ADV_TYPE_NONCONN_IND,
+				     PDU_ADV_TYPE_DIRECT_IND};
+	u16_t const handle = 0;
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
+
+	struct ll_adv_set *adv;
+	struct pdu_adv *pdu;
+
+	adv = is_disabled_get(handle);
+	if (!adv) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	/* TODO: check and fail (0x12, invalid HCI cmd param) if invalid
+	 * evt_prop bits.
+	 */
+
+	adv->lll.phy_p = BIT(0);
+
+	/* extended */
+	if (adv_type > 0x04) {
+		/* legacy */
+		if (evt_prop & BIT(4)) {
+			u8_t const leg_adv_type[] = { 0x03, 0x04, 0x02, 0x00};
+
+			adv_type = leg_adv_type[evt_prop & 0x03];
+
+			/* high duty cycle directed */
+			if (evt_prop & BIT(3)) {
+				adv_type = 0x01;
+			}
+		} else {
+			/* - Connectable and scannable not allowed;
+			 * - High duty cycle directed connectable not allowed
+			 */
+			if (((evt_prop & 0x03) == 0x03) ||
+			    ((evt_prop & 0x0C) == 0x0C)) {
+				return 0x12; /* invalid HCI cmd param */
+			}
+
+			adv_type = 0x05; /* PDU_ADV_TYPE_EXT_IND */
+
+			adv->lll.phy_p = phy_p;
+		}
+	}
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+
+	/* remember params so that set adv/scan data and adv enable
+	 * interface can correctly update adv/scan data in the
+	 * double buffer between caller and controller context.
+	 */
+	/* Set interval for Undirected or Low Duty Cycle Directed Advertising */
+	if (adv_type != 0x01) {
+		adv->interval = interval;
+	} else {
+		adv->interval = 0;
+	}
+	adv->lll.chan_map = chan_map;
+	adv->lll.filter_policy = filter_policy;
+
+	/* update the "current" primary adv data */
+	pdu = lll_adv_data_peek(&adv->lll);
+	pdu->type = pdu_adv_type[adv_type];
+	pdu->rfu = 0;
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2) &&
+	    ((pdu->type == PDU_ADV_TYPE_ADV_IND) ||
+	     (pdu->type == PDU_ADV_TYPE_DIRECT_IND))) {
+		pdu->chan_sel = 1;
+	} else {
+		pdu->chan_sel = 0;
+	}
+
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	adv->own_addr_type = own_addr_type;
+	if (adv->own_addr_type == BT_ADDR_LE_PUBLIC_ID ||
+	    adv->own_addr_type == BT_ADDR_LE_RANDOM_ID) {
+		adv->id_addr_type = direct_addr_type;
+		memcpy(&adv->id_addr, direct_addr, BDADDR_SIZE);
+	}
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+	pdu->tx_addr = own_addr_type & 0x1;
+	pdu->rx_addr = 0;
+	if (pdu->type == PDU_ADV_TYPE_DIRECT_IND) {
+		pdu->rx_addr = direct_addr_type;
+		memcpy(&pdu->direct_ind.tgt_addr[0], direct_addr, BDADDR_SIZE);
+		pdu->len = sizeof(struct pdu_adv_direct_ind);
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	} else if (pdu->type == PDU_ADV_TYPE_EXT_IND) {
+		struct pdu_adv_com_ext_adv *p;
+		struct ext_adv_hdr _h, *h;
+		u8_t *_ptr, *ptr;
+		u8_t len;
+
+		p = (void *)&pdu->adv_ext_ind;
+		h = (void *)p->ext_hdr_adi_adv_data;
+		ptr = (u8_t *)h + sizeof(*h);
+		_ptr = ptr;
+
+		/* No ACAD and no AdvData */
+		p->ext_hdr_len = 0;
+		p->adv_mode = evt_prop & 0x03;
+
+		/* Zero-init header flags */
+		*(u8_t *)&_h = *(u8_t *)h;
+		*(u8_t *)h = 0;
+
+		/* AdvA flag */
+		if (_h.adv_addr) {
+			_ptr += BDADDR_SIZE;
+		}
+		if (!p->adv_mode &&
+		    (!_h.aux_ptr ||
+		     (!(evt_prop & BIT(5)) && (phy_p != BIT(2))))) {
+			/* TODO: optional on 1M with Aux Ptr */
+			h->adv_addr = 1;
+
+			/* NOTE: AdvA is filled at enable */
+			ptr += BDADDR_SIZE;
+		}
+
+		/* TODO: TargetA flag */
+
+		/* ADI flag */
+		if (_h.adi) {
+			h->adi = 1;
+			ptr += sizeof(struct ext_adv_adi);
+		}
+
+		/* AuxPtr flag */
+		if (_h.aux_ptr) {
+			h->aux_ptr = 1;
+			ptr += sizeof(struct ext_adv_aux_ptr);
+		}
+
+		/* No SyncInfo flag in primary channel PDU */
+
+		/* Tx Power flag */
+		if (evt_prop & BIT(6) &&
+		    (!_h.aux_ptr || (phy_p != BIT(2)))) {
+			h->tx_pwr = 1;
+			ptr++;
+		}
+
+		/* Calc primary PDU len */
+		len = ptr - (u8_t *)p;
+		if (len > (offsetof(struct pdu_adv_com_ext_adv,
+				    ext_hdr_adi_adv_data) + sizeof(*h))) {
+			p->ext_hdr_len = len -
+				offsetof(struct pdu_adv_com_ext_adv,
+					 ext_hdr_adi_adv_data);
+			pdu->len = len;
+		} else {
+			pdu->len = offsetof(struct pdu_adv_com_ext_adv,
+					    ext_hdr_adi_adv_data);
+		}
+
+		/* Start filling primary PDU payload based on flags */
+
+		/* No AdvData in primary channel PDU */
+
+		/* No ACAD in primary channel PDU */
+
+		/* Tx Power */
+		if (h->tx_pwr) {
+			u8_t _tx_pwr;
+
+			_tx_pwr = 0;
+			if (tx_pwr) {
+				if (*tx_pwr != 0x7F) {
+					_tx_pwr = *tx_pwr;
+				} else {
+					*tx_pwr = _tx_pwr;
+				}
+			}
+
+			ptr--;
+			*ptr = _tx_pwr;
+		}
+
+		/* No SyncInfo in primary channel PDU */
+
+		/* AuxPtr */
+		if (h->aux_ptr) {
+			struct ext_adv_aux_ptr *aux;
+
+			ptr -= sizeof(struct ext_adv_aux_ptr);
+
+			/* NOTE: Channel Index, CA, Offset Units and AUX Offset
+			 * will be set in Advertiser Event.
+			 */
+			aux = (void *)ptr;
+			aux->phy = find_lsb_set(phy_s);
+		}
+
+		/* ADI */
+		if (h->adi) {
+			struct ext_adv_adi *adi;
+
+			ptr -= sizeof(struct ext_adv_adi);
+			/* NOTE: memcpy shall handle overlapping buffers */
+			memcpy(ptr, _ptr, sizeof(struct ext_adv_adi));
+
+			adi = (void *)ptr;
+			adi->sid = sid;
+		}
+
+		/* NOTE: TargetA, filled at enable and RPA timeout */
+
+		/* NOTE: AdvA, filled at enable and RPA timeout */
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+
+	} else if (pdu->len == 0) {
+		pdu->len = BDADDR_SIZE;
+	}
+
+	/* update the current scan data */
+	pdu = lll_adv_scan_rsp_peek(&adv->lll);
+	pdu->type = PDU_ADV_TYPE_SCAN_RSP;
+	pdu->rfu = 0;
+	pdu->chan_sel = 0;
+	pdu->tx_addr = own_addr_type & 0x1;
+	pdu->rx_addr = 0;
+	if (pdu->len == 0) {
+		pdu->len = BDADDR_SIZE;
+	}
+
+	return 0;
+}
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+u8_t ll_adv_data_set(u16_t handle, u8_t len, u8_t const *const data)
+{
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
+u8_t ll_adv_data_set(u8_t len, u8_t const *const data)
+{
+	const u16_t handle = 0;
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
+	struct ll_adv_set *adv;
+	struct pdu_adv *prev;
+	struct pdu_adv *pdu;
+	u8_t idx;
+
+	adv = ull_adv_set_get(handle);
+	if (!adv) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	/* Dont update data if directed or extended advertising. */
+	prev = lll_adv_data_peek(&adv->lll);
+	if ((prev->type == PDU_ADV_TYPE_DIRECT_IND) ||
+	    (IS_ENABLED(CONFIG_BT_CTLR_ADV_EXT) &&
+	     (prev->type == PDU_ADV_TYPE_EXT_IND))) {
+		/* TODO: remember data, to be used if type is changed using
+		 * parameter set function ll_adv_params_set afterwards.
+		 */
+		return 0;
+	}
+
+	/* update adv pdu fields. */
+	pdu = lll_adv_data_alloc(&adv->lll, &idx);
+	pdu->type = prev->type;
+	pdu->rfu = 0;
+
+	if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
+		pdu->chan_sel = prev->chan_sel;
+	} else {
+		pdu->chan_sel = 0;
+	}
+
+	pdu->tx_addr = prev->tx_addr;
+	pdu->rx_addr = prev->rx_addr;
+	memcpy(&pdu->adv_ind.addr[0], &prev->adv_ind.addr[0], BDADDR_SIZE);
+	memcpy(&pdu->adv_ind.data[0], data, len);
+	pdu->len = BDADDR_SIZE + len;
+
+	lll_adv_data_enqueue(&adv->lll, idx);
+
+	return 0;
+}
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+u8_t ll_adv_scan_rsp_set(u16_t handle, u8_t len, u8_t const *const data)
+{
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
+u8_t ll_adv_scan_rsp_set(u8_t len, u8_t const *const data)
+{
+	const u16_t handle = 0;
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
+	struct ll_adv_set *adv;
+	struct pdu_adv *prev;
+	struct pdu_adv *pdu;
+	u8_t idx;
+
+	adv = ull_adv_set_get(handle);
+	if (!adv) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	/* update scan pdu fields. */
+	prev = lll_adv_scan_rsp_peek(&adv->lll);
+	pdu = lll_adv_scan_rsp_alloc(&adv->lll, &idx);
+	pdu->type = PDU_ADV_TYPE_SCAN_RSP;
+	pdu->rfu = 0;
+	pdu->chan_sel = 0;
+	pdu->tx_addr = prev->tx_addr;
+	pdu->rx_addr = 0;
+	pdu->len = BDADDR_SIZE + len;
+	memcpy(&pdu->scan_rsp.addr[0], &prev->scan_rsp.addr[0], BDADDR_SIZE);
+	memcpy(&pdu->scan_rsp.data[0], data, len);
+
+	lll_adv_scan_rsp_enqueue(&adv->lll, idx);
+
+	return 0;
+}
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT) || defined(CONFIG_BT_HCI_MESH_EXT)
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+u32_t ll_adv_enable(u16_t handle, u8_t enable,
+		    u8_t at_anchor, u32_t ticks_anchor, u8_t retry,
+		    u8_t scan_window, u8_t scan_delay)
+{
+#else /* !CONFIG_BT_HCI_MESH_EXT */
+u32_t ll_adv_enable(u16_t handle, u8_t enable)
+{
+	u32_t ticks_anchor;
+#endif /* !CONFIG_BT_HCI_MESH_EXT */
+#else /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_HCI_MESH_EXT */
+u32_t ll_adv_enable(u8_t enable)
+{
+	u16_t const handle = 0;
+	u32_t ticks_anchor;
+#endif /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_HCI_MESH_EXT */
+	u32_t volatile ret_cb = TICKER_STATUS_BUSY;
+	u8_t   rl_idx = FILTER_IDX_NONE;
+	struct pdu_adv *pdu_scan;
+	struct pdu_adv *pdu_adv;
+	u32_t ticks_slot_offset;
+	struct ll_adv_set *adv;
+	u16_t interval;
+	u32_t slot_us;
+	u8_t chan_map;
+	u8_t chan_cnt;
+	u32_t ret;
+
+	if (!enable) {
+		return disable(handle);
+	} else {
+		adv = is_disabled_get(handle);
+		if (!adv) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+	}
+
+	/* remember addr to use and also update the addr in
+	 * both adv and scan response PDUs.
+	 */
+	pdu_adv = lll_adv_data_peek(&adv->lll);
+	pdu_scan = lll_adv_scan_rsp_peek(&adv->lll);
+
+	if (0) {
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	} else if (pdu_adv->type == PDU_ADV_TYPE_EXT_IND) {
+		struct pdu_adv_com_ext_adv *p;
+		struct ext_adv_hdr *h;
+		u8_t *ptr;
+
+		p = (void *)&pdu_adv->adv_ext_ind;
+		h = (void *)p->ext_hdr_adi_adv_data;
+		ptr = (u8_t *)h + sizeof(*h);
+
+		/* AdvA, fill here at enable */
+		if (h->adv_addr) {
+			memcpy(ptr, ll_addr_get(pdu_adv->tx_addr, NULL),
+			       BDADDR_SIZE);
+		}
+
+		/* TODO: TargetA, fill here at enable */
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+	} else {
+		bool priv = false;
+
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+		/* Prepare whitelist and optionally resolving list */
+		ll_filters_adv_update(adv->filter_policy);
+
+		if (adv->own_addr_type == BT_ADDR_LE_PUBLIC_ID ||
+		    adv->own_addr_type == BT_ADDR_LE_RANDOM_ID) {
+			/* Look up the resolving list */
+			rl_idx = ll_rl_find(adv->id_addr_type, adv->id_addr,
+					    NULL);
+
+			if (rl_idx != FILTER_IDX_NONE) {
+				/* Generate RPAs if required */
+				ll_rl_rpa_update(false);
+			}
+
+			ll_rl_pdu_adv_update(adv, rl_idx, pdu_adv);
+			ll_rl_pdu_adv_update(adv, rl_idx, pdu_scan);
+			priv = true;
+		}
+#endif /* !CONFIG_BT_CTLR_PRIVACY */
+
+		if (!priv) {
+			memcpy(&pdu_adv->adv_ind.addr[0],
+			       ll_addr_get(pdu_adv->tx_addr, NULL),
+			       BDADDR_SIZE);
+			memcpy(&pdu_scan->scan_rsp.addr[0],
+			       ll_addr_get(pdu_adv->tx_addr, NULL),
+			       BDADDR_SIZE);
+		}
+	}
+
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+	if (scan_delay) {
+		if (_radio.scanner.is_enabled) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+
+		_radio.advertiser.is_mesh = 1;
+	}
+#endif /* CONFIG_BT_HCI_MESH_EXT */
+
+#if defined(CONFIG_BT_PERIPHERAL)
+	/* prepare connectable advertising */
+	if ((pdu_adv->type == PDU_ADV_TYPE_ADV_IND) ||
+	    (pdu_adv->type == PDU_ADV_TYPE_DIRECT_IND)) {
+		void *link;
+
+		if (adv->conn) {
+			return BT_HCI_ERR_CMD_DISALLOWED;
+		}
+
+		link = mem_acquire(&_radio.link_rx_free);
+		if (!link) {
+			return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+		}
+
+		conn = mem_acquire(&_radio.conn_free);
+		if (!conn) {
+			mem_release(link, &_radio.link_rx_free);
+
+			return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
+		}
+
+		conn->handle = 0xFFFF;
+		conn->llcp_features = RADIO_BLE_FEAT;
+		conn->data_chan_sel = 0;
+		conn->data_chan_use = 0;
+		conn->event_counter = 0;
+		conn->latency_prepare = 0;
+		conn->latency_event = 0;
+
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+		conn->default_tx_octets = _radio.default_tx_octets;
+		conn->max_tx_octets = RADIO_LL_LENGTH_OCTETS_RX_MIN;
+		conn->max_rx_octets = RADIO_LL_LENGTH_OCTETS_RX_MIN;
+
+#if defined(CONFIG_BT_CTLR_PHY)
+		conn->default_tx_time = _radio.default_tx_time;
+		conn->max_tx_time =
+			RADIO_PKT_TIME(RADIO_LL_LENGTH_OCTETS_RX_MIN, 0);
+		conn->max_rx_time =
+			RADIO_PKT_TIME(RADIO_LL_LENGTH_OCTETS_RX_MIN, 0);
+#endif /* CONFIG_BT_CTLR_PHY */
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+
+#if defined(CONFIG_BT_CTLR_PHY)
+		conn->phy_pref_tx = _radio.default_phy_tx;
+		conn->phy_tx = BIT(0);
+		conn->phy_pref_flags = 0;
+		conn->phy_flags = 0;
+		conn->phy_tx_time = BIT(0);
+		conn->phy_pref_rx = _radio.default_phy_rx;
+		conn->phy_rx = BIT(0);
+#endif /* CONFIG_BT_CTLR_PHY */
+
+		conn->role = 1;
+		conn->connect_expire = 6;
+		conn->common.fex_valid = 0;
+		conn->slave.latency_enabled = 0;
+		conn->slave.latency_cancel = 0;
+		conn->slave.window_widening_prepare_us = 0;
+		conn->slave.window_widening_event_us = 0;
+		conn->slave.ticks_to_offset = 0;
+		conn->supervision_expire = 0;
+		conn->procedure_expire = 0;
+
+#if defined(CONFIG_BT_CTLR_LE_PING)
+		conn->apto_expire = 0;
+		conn->appto_expire = 0;
+#endif /* CONFIG_BT_CTLR_LE_PING */
+
+		conn->llcp_req = 0;
+		conn->llcp_ack = 0;
+		conn->llcp_version.tx = 0;
+		conn->llcp_version.rx = 0;
+		conn->llcp_terminate.req = 0;
+		conn->llcp_terminate.ack = 0;
+		conn->llcp_terminate.reason_peer = 0;
+		conn->llcp_terminate.radio_pdu_node_rx.hdr.onion.link = link;
+
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+		conn->llcp_conn_param.req = 0;
+		conn->llcp_conn_param.ack = 0;
+		conn->llcp_conn_param.disabled = 0;
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+		conn->llcp_length.req = 0;
+		conn->llcp_length.ack = 0;
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+
+#if defined(CONFIG_BT_CTLR_PHY)
+		conn->llcp_phy.req = 0;
+		conn->llcp_phy.ack = 0;
+#endif /* CONFIG_BT_CTLR_PHY */
+
+		conn->sn = 0;
+		conn->nesn = 0;
+		conn->pause_rx = 0;
+		conn->pause_tx = 0;
+		conn->enc_rx = 0;
+		conn->enc_tx = 0;
+		conn->refresh = 0;
+		conn->empty = 0;
+		conn->pkt_tx_head = NULL;
+		conn->pkt_tx_ctrl = NULL;
+		conn->pkt_tx_ctrl_last = NULL;
+		conn->pkt_tx_data = NULL;
+		conn->pkt_tx_last = NULL;
+		conn->packet_tx_head_len = 0;
+		conn->packet_tx_head_offset = 0;
+
+#if defined(CONFIG_BT_CTLR_CONN_RSSI)
+		conn->rssi_latest = 0x7F;
+		conn->rssi_reported = 0x7F;
+		conn->rssi_sample_count = 0;
+#endif /* CONFIG_BT_CTLR_CONN_RSSI */
+
+		_radio.advertiser.conn = conn;
+	} else {
+		conn = NULL;
+	}
+#endif /* CONFIG_BT_PERIPHERAL */
+
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	_radio.advertiser.rl_idx = rl_idx;
+#else
+	ARG_UNUSED(rl_idx);
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+
+	interval = adv->interval;
+	chan_map = adv->lll.chan_map;
+	chan_cnt = util_ones_count_get(&chan_map, sizeof(chan_map));
+
+	/* TODO: use adv data len in slot duration calculation, instead of
+	 * hardcoded max. numbers used below.
+	 */
+	if (pdu_adv->type == PDU_ADV_TYPE_DIRECT_IND) {
+		/* Max. chain is DIRECT_IND * channels + CONNECT_IND */
+		slot_us = ((EVENT_OVERHEAD_START_US + 176 + 152 + 40) *
+			   chan_cnt) - 40 + 352;
+	} else if (pdu_adv->type == PDU_ADV_TYPE_NONCONN_IND) {
+		slot_us = (EVENT_OVERHEAD_START_US + 376) * chan_cnt;
+	} else {
+		/* Max. chain is ADV/SCAN_IND + SCAN_REQ + SCAN_RESP */
+		slot_us = (EVENT_OVERHEAD_START_US + 376 + 152 + 176 +
+			   152 + 376) * chan_cnt;
+	}
+
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+	if (_radio.advertiser.is_mesh) {
+		u16_t interval_min_us;
+
+		_radio.advertiser.retry = retry;
+		_radio.advertiser.scan_delay_ms = scan_delay;
+		_radio.advertiser.scan_window_ms = scan_window;
+
+		interval_min_us = slot_us + (scan_delay + scan_window) * 1000;
+		if ((interval * 625) < interval_min_us) {
+			interval = (interval_min_us + (625 - 1)) / 625;
+		}
+
+		/* passive scanning */
+		_radio.scanner.type = 0;
+
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+		/* TODO: Coded PHY support */
+		_radio.scanner.phy = 0;
+#endif /* CONFIG_BT_CTLR_ADV_EXT */
+
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+		/* TODO: Privacy support */
+		_radio.scanner.rpa_gen = 0;
+		_radio.scanner.rl_idx = rl_idx;
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+
+		_radio.scanner.filter_policy = filter_policy;
+	}
+#endif /* CONFIG_BT_HCI_MESH_EXT */
+
+	ull_hdr_init(adv);
+	lll_hdr_init(&adv->lll, adv);
+
+	/* TODO: active_to_start feature port */
+	adv->evt.ticks_active_to_start = 0;
+	adv->evt.ticks_xtal_to_start =
+		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
+	adv->evt.ticks_preempt_to_start =
+		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
+	adv->evt.ticks_slot = HAL_TICKER_US_TO_TICKS(slot_us);
+
+	ticks_slot_offset = max(adv->evt.ticks_active_to_start,
+				adv->evt.ticks_xtal_to_start);
+
+#if !defined(CONFIG_BT_HCI_MESH_EXT)
+	ticks_anchor = ticker_ticks_now_get();
+#else /* CONFIG_BT_HCI_MESH_EXT */
+	if (!at_anchor) {
+		ticks_anchor = ticker_ticks_now_get();
+	}
+#endif /* !CONFIG_BT_HCI_MESH_EXT */
+
+	/* High Duty Cycle Directed Advertising if interval is 0. */
+	if ((pdu_adv->type == PDU_ADV_TYPE_DIRECT_IND) &&
+	    !interval) {
+#if defined(CONFIG_BT_PERIPHERAL)
+		ret = ticker_start(TICKER_INSTANCE_ID_CTLR,
+				   TICKER_USER_ID_THREAD,
+				   (TICKER_ID_ADV_BASE + handle),
+				   ticks_anchor, 0,
+				   adv->evt.ticks_slot,
+				   TICKER_NULL_REMAINDER, TICKER_NULL_LAZY,
+				   adv->evt.ticks_slot,
+				   ticker_cb, adv,
+				   ull_ticker_status_give, (void *)&ret_cb);
+
+		ret = ull_ticker_status_take(ret, &ret_cb);
+		if (ret != TICKER_STATUS_SUCCESS) {
+			goto failure_cleanup;
+		}
+
+		ret_cb = TICKER_STATUS_BUSY;
+		ret = ticker_start(TICKER_INSTANCE_ID_CTLR,
+				   TICKER_USER_ID_THREAD,
+				   TICKER_ID_ADV_STOP, ticks_anchor,
+				   HAL_TICKER_US_TO_TICKS(ticks_slot_offset +
+							  (1280 * 1000)),
+				   TICKER_NULL_PERIOD, TICKER_NULL_REMAINDER,
+				   TICKER_NULL_LAZY, TICKER_NULL_SLOT,
+				   ticker_stop_cb, adv,
+				   ull_ticker_status_give, (void *)&ret_cb);
+#else /* !CONFIG_BT_PERIPHERAL */
+		goto failure_cleanup;
+#endif /* !CONFIG_BT_PERIPHERAL */
+	} else {
+		ret = ticker_start(TICKER_INSTANCE_ID_CTLR,
+				   TICKER_USER_ID_THREAD,
+				   (TICKER_ID_ADV_BASE + handle),
+				   ticks_anchor, 0,
+				   HAL_TICKER_US_TO_TICKS((u64_t)interval *
+							  625),
+				   TICKER_NULL_REMAINDER, TICKER_NULL_LAZY,
+				   adv->evt.ticks_slot,
+				   ticker_cb, adv,
+				   ull_ticker_status_give, (void *)&ret_cb);
+	}
+
+	ret = ull_ticker_status_take(ret, &ret_cb);
+	if (ret != TICKER_STATUS_SUCCESS) {
+		goto failure_cleanup;
+	}
+
+	adv->is_enabled = 1;
+
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+	if (_radio.advertiser.is_mesh) {
+		_radio.scanner.is_enabled = 1;
+
+		ll_adv_scan_state_cb(BIT(0) | BIT(1));
+	}
+#else /* !CONFIG_BT_HCI_MESH_EXT */
+	/* FIXME:
+
+	if (!_radio.scanner.is_enabled) {
+		ll_adv_scan_state_cb(BIT(0));
+	}
+	*/
+#endif /* !CONFIG_BT_HCI_MESH_EXT */
+
+	return 0;
+
+failure_cleanup:
+
+#if defined(CONFIG_BT_PERIPHERAL)
+	if (conn) {
+		mem_release(conn->llcp_terminate.radio_pdu_node_rx.hdr.
+			    onion.link, &_radio.link_rx_free);
+		mem_release(conn, &_radio.conn_free);
+	}
+#endif /* CONFIG_BT_PERIPHERAL */
+
+	return BT_HCI_ERR_CMD_DISALLOWED;
+}
+
+#if defined(CONFIG_BT_LL_SW)
+inline struct ll_adv_set *ull_adv_set_get(u16_t handle)
+{
+	return &ll_adv[0];
+}
+
+inline struct ll_adv_set *ull_adv_is_enabled_get(u16_t handle)
+{
+	if (!ull_adv_is_enabled(0)) {
+		return NULL;
+	}
+
+	return &ll_adv[0];
+}
+
+static inline struct ll_adv_set *is_disabled_get(u16_t handle)
+{
+	if (ull_adv_is_enabled(0)) {
+		return NULL;
+	}
+
+	return &ll_adv[0];
+}
+#else
+inline struct ll_adv_set *ull_adv_set_get(u16_t handle)
+{
+	if (handle >= CONFIG_BT_ADV_MAX) {
+		return NULL;
+	}
+
+	return &ll_adv[handle];
+}
+
+inline struct ll_adv_set *ull_adv_is_enabled_get(u16_t handle)
+{
+	struct ll_adv_set *adv;
+
+	adv = ull_adv_set_get(handle);
+	if (!adv || !adv->is_enabled) {
+		return NULL;
+	}
+
+	return adv;
+}
+
+static inline struct ll_adv_set *is_disabled_get(u16_t handle)
+{
+	struct ll_adv_set *adv;
+
+	adv = ull_adv_set_get(handle);
+	if (!adv || adv->is_enabled) {
+		return NULL;
+	}
+
+	return adv;
+}
+
+static void ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
+		      void *param)
+{
+	static memq_link_t _link;
+	static struct mayfly _mfy = {0, 0, &_link, NULL, lll_adv_prepare};
+	static struct lll_prepare_param p;
+	struct ll_adv_set *adv = param;
+	u32_t ret;
+	u8_t ref;
+
+	printk("\tticker_cb (%p) enter: %u, %u, %u.\n", param,
+	       ticks_at_expire, remainder, lazy);
+	DEBUG_RADIO_PREPARE_A(1);
+
+	/* Increment prepare reference count */
+	ref = ull_ref_inc(&adv->ull);
+	LL_ASSERT(ref);
+
+	/* Append timing parameters */
+	p.ticks_at_expire = ticks_at_expire;
+	p.remainder = remainder;
+	p.lazy = lazy;
+	p.param = &adv->lll;
+	_mfy.param = &p;
+
+	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL,
+			     0, &_mfy);
+	LL_ASSERT(!ret);
+
+	DEBUG_RADIO_PREPARE_A(1);
+	printk("\tticker_cb (%p) exit.\n", param);
+}
+
+#if defined(CONFIG_BT_PERIPHERAL)
+static void ticker_stop_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
+			   void *param)
+{
+	u16_t handle;
+	u32_t ret;
+
+	/* NOTE: abort the event, so as to permit ticker_job execution, if
+	 *       disabled inside events.
+	 */
+	if (((struct ull_hdr *)param)->ref) {
+		static memq_link_t _link;
+		static struct mayfly _mfy = {0, 0, &_link, NULL, lll_disable};
+
+		_mfy.param = &((struct ll_adv_set *)param)->lll;
+		ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
+				     TICKER_USER_ID_LLL, 0, &_mfy);
+		LL_ASSERT(!ret);
+	}
+
+	handle = handle_get(param);
+	LL_ASSERT(handle < CONFIG_BT_ADV_MAX);
+
+	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
+			  TICKER_ID_ADV_BASE + handle,
+			  ticker_op_stop_cb, param);
+	LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+		  (ret == TICKER_STATUS_BUSY));
+}
+
+static void ticker_op_stop_cb(u32_t status, void *param)
+{
+	static memq_link_t _link;
+	static struct mayfly _mfy = {0, 0, &_link, NULL, NULL};
+	struct ull_hdr *hdr;
+	u32_t ret;
+
+	/* Ignore if race between thread and ULL */
+	if (status != TICKER_STATUS_SUCCESS) {
+		/* TODO: detect race */
+
+		return;
+	}
+
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+	/* FIXME: why is this here for Mesh commands? */
+	if (params) {
+		return;
+	}
+#endif /* CONFIG_BT_HCI_MESH_EXT */
+
+	hdr = param;
+	_mfy.param = &((struct ll_adv_set *)param)->lll;
+	if (hdr->ref) {
+		LL_ASSERT(!hdr->disabled_cb);
+		hdr->disabled_cb = disabled_cb;
+
+		_mfy.fp = lll_disable;
+		ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
+				     TICKER_USER_ID_LLL, 0, &_mfy);
+		LL_ASSERT(!ret);
+	} else {
+		_mfy.fp = disabled_cb;
+		ret = mayfly_enqueue(TICKER_USER_ID_ULL_LOW,
+				     TICKER_USER_ID_ULL_HIGH, 0, &_mfy);
+		LL_ASSERT(!ret);
+	}
+
+	/* TODO: generate the connection complete event with adv timeout */
+}
+
+static void disabled_cb(void *param)
+{
+	struct ll_adv_set *adv;
+	struct node_rx_cc *cc;
+	memq_link_t *link;
+
+	adv = ((struct lll_hdr *)param)->parent;
+
+	LL_ASSERT(adv->link_cc_free);
+	link = adv->link_cc_free;
+	adv->link_cc_free = NULL;
+
+	LL_ASSERT(adv->node_rx_cc_free);
+	cc = adv->node_rx_cc_free;
+	adv->node_rx_cc_free = NULL;
+
+	memset(cc, 0x00, sizeof(struct node_rx_cc));
+
+	cc->hdr.type = NODE_RX_TYPE_CONNECTION;
+	cc->hdr.handle = 0xffff;
+	cc->status = 0x3c;
+
+	ll_rx_put(link, cc);
+	ll_rx_sched();
+}
+#endif /* CONFIG_BT_PERIPHERAL */
+
+static inline u8_t disable(u16_t handle)
+{
+	u32_t volatile ret_cb = TICKER_STATUS_BUSY;
+	struct ll_adv_set *adv;
+	u32_t ret;
+
+	adv = ull_adv_is_enabled_get(handle);
+	if (!adv) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
+			  TICKER_ID_ADV_BASE + handle,
+			  ull_ticker_status_give, (void *)&ret_cb);
+
+	ret = ull_ticker_status_take(ret, &ret_cb);
+	if (ret) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	ret = ull_disable(&adv->lll);
+	LL_ASSERT(!ret);
+
+	adv->is_enabled = 0;
+
+	return 0;
+}
+
+static inline u16_t handle_get(struct ll_adv_set *adv)
+{
+	return ((u8_t *)adv - (u8_t *)ll_adv) / sizeof(*adv);
+}
+#endif

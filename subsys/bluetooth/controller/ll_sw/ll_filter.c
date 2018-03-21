@@ -416,7 +416,7 @@ void ll_filters_scan_update(u8_t scan_fp)
 	/* Clear before populating rl filter */
 	filter_clear(&rl_filter);
 
-	if (rl_enable && !ll_adv_is_enabled()) {
+	if (rl_enable && !ll_adv_is_enabled(LL_ADV_SET_MAX)) {
 		/* rl not in use, update resolving list LUT */
 		filter_rl_update();
 	}
@@ -516,13 +516,12 @@ bool ctrl_rl_enabled(void)
 }
 
 #if defined(CONFIG_BT_BROADCASTER)
-void ll_rl_pdu_adv_update(u8_t idx, struct pdu_adv *pdu)
+void ll_rl_pdu_adv_update(struct ll_adv_set *adv, u8_t idx,
+			  struct pdu_adv *pdu)
 {
 	u8_t *adva = pdu->type == PDU_ADV_TYPE_SCAN_RSP ?
 				  &pdu->scan_rsp.addr[0] :
 				  &pdu->adv_ind.addr[0];
-
-	struct ll_adv_set *ll_adv = ll_adv_set_get();
 
 	/* AdvA */
 	if (idx < ARRAY_SIZE(rl) && rl[idx].lirk) {
@@ -530,8 +529,8 @@ void ll_rl_pdu_adv_update(u8_t idx, struct pdu_adv *pdu)
 		pdu->tx_addr = 1;
 		memcpy(adva, rl[idx].local_rpa->val, BDADDR_SIZE);
 	} else {
-		pdu->tx_addr = ll_adv->own_addr_type & 0x1;
-		ll_addr_get(ll_adv->own_addr_type & 0x1, adva);
+		pdu->tx_addr = adv->own_addr_type & 0x1;
+		ll_addr_get(adv->own_addr_type & 0x1, adva);
 	}
 
 	/* TargetA */
@@ -541,26 +540,23 @@ void ll_rl_pdu_adv_update(u8_t idx, struct pdu_adv *pdu)
 			memcpy(&pdu->direct_ind.tgt_addr[0],
 			       rl[idx].peer_rpa.val, BDADDR_SIZE);
 		} else {
-			pdu->rx_addr = ll_adv->id_addr_type;
+			pdu->rx_addr = adv->id_addr_type;
 			memcpy(&pdu->direct_ind.tgt_addr[0],
-			       ll_adv->id_addr, BDADDR_SIZE);
+			       adv->id_addr, BDADDR_SIZE);
 		}
 	}
 }
 
-static void rpa_adv_refresh(void)
+static void rpa_adv_refresh(struct ll_adv_set *adv)
 {
 	struct radio_adv_data *radio_adv_data;
-	struct ll_adv_set *ll_adv;
 	struct pdu_adv *prev;
 	struct pdu_adv *pdu;
 	u8_t last;
 	u8_t idx;
 
-	ll_adv = ll_adv_set_get();
-
-	if (ll_adv->own_addr_type != BT_ADDR_LE_PUBLIC_ID &&
-	    ll_adv->own_addr_type != BT_ADDR_LE_RANDOM_ID) {
+	if (adv->own_addr_type != BT_ADDR_LE_PUBLIC_ID &&
+	    adv->own_addr_type != BT_ADDR_LE_RANDOM_ID) {
 		return;
 	}
 
@@ -587,9 +583,9 @@ static void rpa_adv_refresh(void)
 		pdu->chan_sel = 0;
 	}
 
-	idx = ll_rl_find(ll_adv->id_addr_type, ll_adv->id_addr, NULL);
+	idx = ll_rl_find(adv->id_addr_type, adv->id_addr, NULL);
 	LL_ASSERT(idx < ARRAY_SIZE(rl));
-	ll_rl_pdu_adv_update(idx, pdu);
+	ll_rl_pdu_adv_update(adv, idx, pdu);
 
 	memcpy(&pdu->adv_ind.data[0], &prev->adv_ind.data[0],
 	       prev->len - BDADDR_SIZE);
@@ -618,7 +614,8 @@ static int rl_access_check(bool check_ar)
 		}
 	}
 
-	return (ll_adv_is_enabled() || ll_scan_is_enabled()) ? 0 : 1;
+	return (ll_adv_is_enabled(LL_ADV_SET_MAX) ||
+		ll_scan_is_enabled()) ? 0 : 1;
 }
 
 void ll_rl_rpa_update(bool timeout)
@@ -667,8 +664,12 @@ void ll_rl_rpa_update(bool timeout)
 
 	if (timeout) {
 #if defined(CONFIG_BT_BROADCASTER)
-		if (ll_adv_is_enabled()) {
-			rpa_adv_refresh();
+		struct ll_adv_set *adv;
+
+		/* TODO: foreach adv set */
+		adv = ll_adv_is_enabled_get(0);
+		if (adv) {
+			rpa_adv_refresh(adv);
 		}
 #endif
 	}

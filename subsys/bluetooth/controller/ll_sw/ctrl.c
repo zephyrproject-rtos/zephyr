@@ -40,6 +40,7 @@
 #include "ctrl.h"
 #include "ctrl_internal.h"
 
+#include "ll_adv.h"
 #include "ll_filter.h"
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
@@ -10466,7 +10467,7 @@ u32_t radio_adv_disable(void)
 	return status ? BT_HCI_ERR_CMD_DISALLOWED : 0;
 }
 
-u32_t ll_adv_is_enabled(void)
+u32_t ll_adv_is_enabled(u16_t handle)
 {
 	return _radio.advertiser.is_enabled;
 }

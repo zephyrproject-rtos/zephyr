@@ -9,12 +9,17 @@
 
 #include <zephyr/types.h>
 #include <bluetooth/hci.h>
+
+/* TODO: remove begin, dependency on ctrl.h when having ll_scan.h interface */
 #include <misc/slist.h>
 
 #include "util/util.h"
 
 #include "ll_sw/pdu.h"
 #include "ll_sw/ctrl.h"
+/* TODO: remove end */
+
+#include "ll_sw/ull_adv_internal.h"
 
 static u8_t pub_addr[BDADDR_SIZE];
 static u8_t rnd_addr[BDADDR_SIZE];
@@ -43,7 +48,7 @@ u8_t *ll_addr_get(u8_t addr_type, u8_t *bdaddr)
 u32_t ll_addr_set(u8_t addr_type, u8_t const *const bdaddr)
 {
 	if (IS_ENABLED(CONFIG_BT_BROADCASTER) &&
-	    ll_adv_is_enabled()) {
+	    ull_adv_is_enabled(0xFFFF)) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
@@ -62,7 +67,7 @@ u32_t ll_addr_set(u8_t addr_type, u8_t const *const bdaddr)
 }
 
 /* TODO: Delete below weak functions when porting to ULL/LLL. */
-u32_t __weak ll_adv_is_enabled(void)
+u32_t __weak ull_adv_is_enabled(u16_t handle)
 {
 	return 0;
 }

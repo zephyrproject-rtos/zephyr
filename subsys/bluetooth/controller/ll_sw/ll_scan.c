@@ -9,10 +9,21 @@
 #include <bluetooth/hci.h>
 
 #include "util/util.h"
+#include "util/memq.h"
 
 #include "pdu.h"
 #include "ctrl.h"
 #include "ll.h"
+
+#include "lll.h"
+#include "lll_adv.h"
+
+#include "ull_types.h"
+#include "ull.h"
+#include "ull_internal.h"
+
+#include "ull_adv_types.h"
+
 #include "ll_filter.h"
 
 static struct {

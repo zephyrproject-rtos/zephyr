@@ -13,6 +13,7 @@
 #include "pdu.h"
 #include "ctrl.h"
 #include "ll.h"
+#include "ll_adv.h"
 #include "ll_filter.h"
 
 u32_t ll_create_connection(u16_t scan_interval, u16_t scan_window,

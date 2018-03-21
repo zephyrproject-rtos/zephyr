@@ -225,12 +225,6 @@
 /*****************************************************************************
  * Controller Interface Structures
  ****************************************************************************/
-struct radio_adv_data {
-	u8_t data[DOUBLE_BUFFER_SIZE][PDU_AC_SIZE_MAX];
-	u8_t first;
-	u8_t last;
-};
-
 struct radio_pdu_node_tx {
 	void *next;
 	u8_t pdu_data[1];
@@ -370,7 +364,6 @@ u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 #endif /* !CONFIG_BT_HCI_MESH_EXT */
 
 u32_t radio_adv_disable(void);
-u32_t ll_adv_is_enabled(void);
 u32_t radio_adv_filter_pol_get(void);
 /* Downstream - Scanner */
 u32_t radio_scan_enable(u8_t type, u8_t init_addr_type, u8_t *init_addr,
