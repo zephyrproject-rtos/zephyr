@@ -1,0 +1,44 @@
+#include "skeleton.dtsi"
+
+#define __SIZE_K(x) (x * 1024)
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "LX6";
+			reg = <0>;
+		};
+
+		cpu@1 {
+			device_type = "cpu";
+			compatible = "LX6";
+			reg = <1>;
+		};
+
+	};
+
+	sram0: memory@0xbe000000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0xbe000000 0x300000>;
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		ranges;
+
+		uart0: uart@80800 {
+			compatible = "ns16550";
+			reg = <0x80800 0x400>;
+			label = "UART_0";
+
+			status = "disabled";
+		};
+	};
+};
