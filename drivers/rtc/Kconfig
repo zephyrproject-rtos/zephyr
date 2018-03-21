@@ -27,5 +27,6 @@ comment "RTC drivers"
 
 source "drivers/rtc/Kconfig.qmsi"
 source "drivers/rtc/Kconfig.mcux_rtc"
+source "drivers/rtc/Kconfig.stm32_rtc"
 
 endif # RTC
