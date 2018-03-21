@@ -190,9 +190,9 @@ struct connection {
 		u8_t reason_own;
 		u8_t reason_peer;
 		struct {
-			struct radio_pdu_node_rx_hdr hdr;
+			struct node_rx_hdr hdr;
 			u8_t reason;
-		} radio_pdu_node_rx;
+		} node_rx;
 	} llcp_terminate;
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
@@ -321,7 +321,7 @@ struct pdu_data_q_tx {
 
 /* Minimum Rx Data allocation size */
 #define PACKET_RX_DATA_SIZE_MIN \
-			MROUND(offsetof(struct radio_pdu_node_rx, pdu_data) + \
+			MROUND(offsetof(struct node_rx_pdu, pdu) + \
 			(PDU_AC_SIZE_MAX + PDU_AC_SIZE_EXTRA))
 
 /* Minimum Tx Ctrl allocation size */
@@ -340,8 +340,7 @@ struct pdu_data_q_tx {
 #define LL_MEM_TXQ (sizeof(struct pdu_data_q_tx) * \
 		    (RADIO_PACKET_COUNT_TX_MAX + 2))
 
-#define LL_MEM_RX_POOL_SZ (MROUND(offsetof(struct radio_pdu_node_rx, \
-					   pdu_data) + \
+#define LL_MEM_RX_POOL_SZ (MROUND(offsetof(struct radio_pdu_node_rx, pdu) + \
 				  max((PDU_AC_SIZE_MAX + PDU_AC_SIZE_EXTRA), \
 				      (offsetof(struct pdu_data, lldata) + \
 				       RADIO_LL_LENGTH_OCTETS_RX_MAX))) * \

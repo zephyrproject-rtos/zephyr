@@ -33,11 +33,16 @@
 
 #include "util/util.h"
 #include "util/memq.h"
+
 #include "hal/ccm.h"
 #include "hal/radio.h"
+
 #include "ll_sw/pdu.h"
 #include "ll_sw/ull_types.h"
 #include "ll.h"
+
+#include "ll_sw/ctrl.h"
+
 #include "hci_internal.h"
 
 #include "hal/debug.h"

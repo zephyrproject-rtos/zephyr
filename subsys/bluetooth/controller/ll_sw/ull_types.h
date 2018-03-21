@@ -65,8 +65,6 @@ struct node_rx_pdu {
 };
 
 struct node_rx_cc {
-	struct node_rx_hdr hdr;
-
 	u8_t  status;
 	u8_t  role;
 	u8_t  peer_addr_type;
@@ -80,4 +78,21 @@ struct node_rx_cc {
 	u16_t latency;
 	u16_t timeout;
 	u8_t  mca;
+};
+
+struct node_rx_cu {
+	u8_t  status;
+	u16_t interval;
+	u16_t latency;
+	u16_t timeout;
+};
+
+struct node_rx_cs {
+	u8_t csa;
+};
+
+struct node_rx_pu {
+	u8_t status;
+	u8_t tx;
+	u8_t rx;
 };

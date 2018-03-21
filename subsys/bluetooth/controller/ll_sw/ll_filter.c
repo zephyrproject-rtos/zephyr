@@ -11,12 +11,19 @@
 #include <bluetooth/hci.h>
 
 #include "util/util.h"
-#include "util/mem.h"
+#include "util/memq.h"
 
 #include "pdu.h"
-#include "ctrl.h"
 #include "ll.h"
-#include "ll_adv.h"
+
+#include "lll.h"
+#include "lll_adv.h"
+#include "ull_types.h"
+#include "ull_internal.h"
+#include "ull_adv_types.h"
+#include "ull_adv_internal.h"
+
+#include "ctrl.h"
 #include "ll_filter.h"
 
 #define ADDR_TYPE_ANON 0xFF
@@ -295,9 +302,17 @@ u32_t ll_wl_size_get(void)
 
 u32_t ll_wl_clear(void)
 {
-	if (radio_adv_filter_pol_get() || (radio_scan_filter_pol_get() & 0x1)) {
+#if defined(CONFIG_BT_BROADCASTER)
+	if (ull_adv_filter_pol_get(0)) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
+#endif /* CONFIG_BT_BROADCASTER */
+
+#if defined(CONFIG_BT_OBSERVER)
+	if (ll_scan_filter_pol_get() & 0x1) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+#endif /* CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	wl_clear();
@@ -311,9 +326,17 @@ u32_t ll_wl_clear(void)
 
 u32_t ll_wl_add(bt_addr_le_t *addr)
 {
-	if (radio_adv_filter_pol_get() || (radio_scan_filter_pol_get() & 0x1)) {
+#if defined(CONFIG_BT_BROADCASTER)
+	if (ull_adv_filter_pol_get(0)) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
+#endif /* CONFIG_BT_BROADCASTER */
+
+#if defined(CONFIG_BT_OBSERVER)
+	if (ll_scan_filter_pol_get() & 0x1) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+#endif /* CONFIG_BT_OBSERVER */
 
 	if (addr->type == ADDR_TYPE_ANON) {
 		wl_anon = 1;
@@ -329,9 +352,17 @@ u32_t ll_wl_add(bt_addr_le_t *addr)
 
 u32_t ll_wl_remove(bt_addr_le_t *addr)
 {
-	if (radio_adv_filter_pol_get() || (radio_scan_filter_pol_get() & 0x1)) {
+#if defined(CONFIG_BT_BROADCASTER)
+	if (ull_adv_filter_pol_get(0)) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
+#endif /* CONFIG_BT_BROADCASTER */
+
+#if defined(CONFIG_BT_OBSERVER)
+	if (ll_scan_filter_pol_get() & 0x1) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+#endif /* CONFIG_BT_OBSERVER */
 
 	if (addr->type == ADDR_TYPE_ANON) {
 		wl_anon = 0;
@@ -388,7 +419,7 @@ void ll_filters_adv_update(u8_t adv_fp)
 	filter_clear(&wl_filter);
 
 	/* enabling advertising */
-	if (adv_fp && !(radio_scan_filter_pol_get() & 0x1)) {
+	if (adv_fp && !(ll_scan_filter_pol_get() & 0x1)) {
 		/* whitelist not in use, update whitelist */
 		filter_wl_update();
 	}
@@ -408,7 +439,7 @@ void ll_filters_scan_update(u8_t scan_fp)
 	filter_clear(&wl_filter);
 
 	/* enabling advertising */
-	if ((scan_fp & 0x1) && !radio_adv_filter_pol_get()) {
+	if ((scan_fp & 0x1) && !ull_adv_filter_pol_get(0)) {
 		/* whitelist not in use, update whitelist */
 		filter_wl_update();
 	}
