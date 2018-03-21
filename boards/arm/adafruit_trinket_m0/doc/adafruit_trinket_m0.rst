@@ -81,10 +81,10 @@ SERCOM2 is available on pins 2 (RX) and 0 (TX).
 SPI Port
 ========
 
-The SAMD21 MCU has 6 SERCOM based SPIs.  On the Trinket, SPI1 is used
-to drive the DotStar RGB LED.  SERCOM0 can be put into SPI mode and
-used to connect to devices over pin 2 (MISO), pin 4 (MOSI), and pin 3
-(SCK).
+The SAMD21 MCU has 6 SERCOM based SPIs.  On the Trinket, SERCOM1 is
+used to drive the DotStar RGB LED.  SERCOM0 can be put into SPI mode
+and used to connect to devices over pin 2 (MISO), pin 4 (MOSI), and
+pin 3 (SCK).
 
 USB Device Port
 ===============

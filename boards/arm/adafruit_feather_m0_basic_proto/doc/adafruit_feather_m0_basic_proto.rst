@@ -82,7 +82,7 @@ SPI Port
 ========
 
 The SAMD21 MCU has 6 SERCOM based SPIs.  On the Adafruit Feather M0
-Basic Proto, SPI4 is available on pin 22 (MISO), pin 23 (MOSI), and
+Basic Proto, SERCOM4 is available on pin 22 (MISO), pin 23 (MOSI), and
 pin 24 (SCK).
 
 USB Device Port

@@ -81,8 +81,8 @@ SERCOM0 is available on the D0/D1 pins.
 SPI Port
 ========
 
-The SAMD21 MCU has 6 SERCOM based SPIs.  On the Arduino Zero, SPI4 is
-available on the 6 pin connector at the edge of the board.
+The SAMD21 MCU has 6 SERCOM based SPIs.  On the Arduino Zero, SERCOM4
+is available on the 6 pin connector at the edge of the board.
 
 USB Device Port
 ===============
