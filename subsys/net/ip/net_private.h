@@ -15,6 +15,8 @@
 #include <net/net_context.h>
 #include <net/net_pkt.h>
 
+#include "connection.h"
+
 extern void net_pkt_init(void);
 extern void net_if_init(void);
 extern void net_if_post_init(void);
@@ -93,6 +95,13 @@ struct net_tcp_hdr *net_tcp_header_fits(struct net_pkt *pkt,
 
 	return NULL;
 }
+
+void net_context_set_appdata_values(struct net_pkt *pkt,
+				    enum net_ip_protocol proto);
+
+enum net_verdict net_context_packet_received(struct net_conn *conn,
+					     struct net_pkt *pkt,
+					     void *user_data);
 
 #if defined(CONFIG_NET_IPV4)
 extern u16_t net_calc_chksum_ipv4(struct net_pkt *pkt);
