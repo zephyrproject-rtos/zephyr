@@ -21,8 +21,8 @@ compatible API implementation for Zephyr:
   names.
 
 BSD Sockets compatible API is enabled using :option:`CONFIG_NET_SOCKETS`
-config option and implements the following operations: ``socket()``,
-``close()``, ``recv()``, ``send()``, ``connect()``, ``bind()``,
+config option and implements the following operations: ``socket()``, ``close()``,
+``recv()``, ``recvfrom()``, ``send()``, ``sendto()``, ``connect()``, ``bind()``,
 ``listen()``, ``fcntl()`` (to set non-blocking mode), ``poll()``.
 
 Based on the namespacing requirements above, these operations are by
