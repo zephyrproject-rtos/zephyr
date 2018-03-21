@@ -705,9 +705,16 @@ static void eth_enc28j60_iface_init_0(struct net_if *iface)
 	context->iface = iface;
 }
 
-static struct net_if_api api_funcs_0 = {
-	.init			= eth_enc28j60_iface_init_0,
-	.send			= eth_net_tx,
+static enum eth_hw_caps eth_enc28j60_get_capabilities(struct device *dev)
+{
+	return 0;
+}
+
+static struct ethernet_api api_funcs_0 = {
+	.iface_api.init		= eth_enc28j60_iface_init_0,
+	.iface_api.send		= eth_net_tx,
+
+	.get_capabilities	= eth_enc28j60_get_capabilities,
 };
 
 static struct eth_enc28j60_runtime eth_enc28j60_0_runtime;

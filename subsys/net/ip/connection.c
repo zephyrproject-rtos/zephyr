@@ -907,7 +907,8 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 		 * If the checksum calculation fails, then discard the message.
 		 */
 		if (IS_ENABLED(CONFIG_NET_UDP_CHECKSUM) &&
-		    proto == IPPROTO_UDP) {
+		    proto == IPPROTO_UDP &&
+		    net_if_need_calc_rx_checksum(net_pkt_iface(pkt))) {
 			u16_t chksum_calc;
 
 			net_udp_set_chksum(pkt, pkt->frags);
@@ -922,7 +923,8 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 			}
 
 		} else if (IS_ENABLED(CONFIG_NET_TCP_CHECKSUM) &&
-			   proto == IPPROTO_TCP) {
+			   proto == IPPROTO_TCP &&
+			   net_if_need_calc_rx_checksum(net_pkt_iface(pkt))) {
 			u16_t chksum_calc;
 
 			net_tcp_set_chksum(pkt, pkt->frags);

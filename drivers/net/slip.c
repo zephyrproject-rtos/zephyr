@@ -27,6 +27,7 @@
 #include <net/net_if.h>
 #include <net/net_core.h>
 #include <console/uart_pipe.h>
+#include <net/ethernet.h>
 
 #define SLIP_END     0300
 #define SLIP_ESC     0333
@@ -464,18 +465,31 @@ use_random_mac:
 			     NET_LINK_ETHERNET);
 }
 
+static struct slip_context slip_context_data;
+
+#if defined(CONFIG_SLIP_TAP) && defined(CONFIG_NET_L2_ETHERNET)
+static enum eth_hw_caps slip_get_capabilities(struct device *dev)
+{
+	return 0;
+}
+
+static struct ethernet_api slip_if_api = {
+	.iface_api.init = slip_iface_init,
+	.iface_api.send = slip_send,
+
+	.get_capabilities = slip_get_capabilities,
+};
+
+#define _SLIP_L2_LAYER ETHERNET_L2
+#define _SLIP_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(ETHERNET_L2)
+#define _SLIP_MTU 1500
+#else
+
 static struct net_if_api slip_if_api = {
 	.init = slip_iface_init,
 	.send = slip_send,
 };
 
-static struct slip_context slip_context_data;
-
-#if defined(CONFIG_SLIP_TAP) && defined(CONFIG_NET_L2_ETHERNET)
-#define _SLIP_L2_LAYER ETHERNET_L2
-#define _SLIP_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(ETHERNET_L2)
-#define _SLIP_MTU 1500
-#else
 #define _SLIP_L2_LAYER DUMMY_L2
 #define _SLIP_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(DUMMY_L2)
 #define _SLIP_MTU 576
