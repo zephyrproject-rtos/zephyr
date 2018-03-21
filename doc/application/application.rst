@@ -643,7 +643,7 @@ Create a Debugger Configuration
 
      - pyOCD Setup
 
-       - Executable path: :file:`${pyocd_path}\${pyocd_executable}`
+       - Executable path: :file:`${pyocd_path}\\${pyocd_executable}`
        - Uncheck "Allocate console for semihosting"
 
      - Board Setup
@@ -653,11 +653,13 @@ Create a Debugger Configuration
 
      - GDB Client Setup
 
-       - Executable path: :file:`C:\gcc-arm-none-eabi-6_2017-q2-update\bin\arm-none-eabi-gdb.exe`
+       - Executable path:
+         :file:`C:\\gcc-arm-none-eabi-6_2017-q2-update\\bin\\arm-none-eabi-gdb.exe`
 
    - In the SVD Path tab:
 
-     - File path: :file:`<zephyr base>\ext\hal\nxp\mcux\devices\MK64F12\MK64F12.xml`
+     - File path: :file:`<zephyr
+       base>\\ext\\hal\\nxp\\mcux\\devices\\MK64F12\\MK64F12.xml`
 
      .. note::
 	This is optional. It provides the SoC's memory-mapped register
