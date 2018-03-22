@@ -11,7 +11,7 @@
 #include <crc16.h>
 #include <misc/byteorder.h>
 #include <net/buf.h>
-#include <mbedtls/base64.h>
+#include <base64.h>
 #include <mgmt/buf.h>
 #include <mgmt/serial.h>
 
@@ -62,7 +62,7 @@ static int mcumgr_serial_decode_frag(struct mcumgr_serial_rx_ctxt *rx_ctxt,
 	int dec_len;
 	int rc;
 
-	rc = mbedtls_base64_decode(rx_ctxt->nb->data + rx_ctxt->nb->len,
+	rc = base64_decode(rx_ctxt->nb->data + rx_ctxt->nb->len,
 				   net_buf_tailroom(rx_ctxt->nb), &dec_len,
 				   frag, frag_len);
 	if (rc != 0) {
@@ -166,7 +166,7 @@ static int mcumgr_serial_tx_small(const void *data, int len,
 	size_t dst_len;
 	int rc;
 
-	rc = mbedtls_base64_encode(b64, sizeof(b64), &dst_len, data, len);
+	rc = base64_encode(b64, sizeof(b64), &dst_len, data, len);
 	assert(rc == 0);
 	assert(dst_len == 4);
 

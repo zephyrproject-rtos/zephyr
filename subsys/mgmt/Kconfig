@@ -24,7 +24,7 @@ config MCUMGR_SMP_SHELL
 	select MCUMGR
 	select UART_CONSOLE_MCUMGR
 	select CONSOLE_SHELL
-	select MBEDTLS
+	select BASE64
 	default n
 	help
 	  Enables handling of SMP commands received over shell.  This allows
@@ -47,7 +47,7 @@ config MCUMGR_SMP_UART
 	prompt "UART mcumgr SMP transport"
 	select MCUMGR
 	select UART_MCUMGR
-	select MBEDTLS
+	select BASE64
 	default n
 	help
 	  Enables handling of SMP commands received over UART.  This is a
