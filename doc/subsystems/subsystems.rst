@@ -18,3 +18,4 @@ to applications.
    shell
    test/index
    usb/usb.rst
+   settings/settings.rst
