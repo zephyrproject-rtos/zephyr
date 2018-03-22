@@ -24,10 +24,14 @@
 #define _NET_BT_EVENT	(_NET_BT_BASE | NET_MGMT_EVENT_BIT)
 
 enum net_request_bt_cmd {
-	NET_REQUEST_BT_CMD_ADVERTISE = 1,
-	NET_REQUEST_BT_CMD_CONNECT,
-	NET_REQUEST_BT_CMD_SCAN,
-	NET_REQUEST_BT_CMD_DISCONNECT,
+	/*
+	 * Minimize bit overlap between these values. See comment
+	 * above enum net_event_if_cmd for details.
+	 */
+	NET_REQUEST_BT_CMD_ADVERTISE	= BIT(0),
+	NET_REQUEST_BT_CMD_CONNECT	= BIT(1),
+	NET_REQUEST_BT_CMD_SCAN	= BIT(2),
+	NET_REQUEST_BT_CMD_DISCONNECT	= BIT(3),
 };
 
 #define NET_REQUEST_BT_ADVERTISE				\
