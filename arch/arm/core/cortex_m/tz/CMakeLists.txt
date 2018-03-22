@@ -1,0 +1,1 @@
+zephyr_sources_ifdef(CONFIG_ARM_SECURE_FIRMWARE arm_core_tz.c)
