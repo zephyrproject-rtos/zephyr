@@ -1,0 +1,4 @@
+tests:
+  libraries.encoding:
+    filter: not CONFIG_NEWLIB_LIBC
+    tags: base64
