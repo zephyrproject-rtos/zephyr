@@ -203,7 +203,7 @@ static inline int _get_ready_q_prio_bmap_index(int prio)
 /* find out the prio bit for a given prio */
 static inline int _get_ready_q_prio_bit(int prio)
 {
-	return (1 << ((prio + _NUM_COOP_PRIO) & 0x1f));
+	return (1u << ((prio + _NUM_COOP_PRIO) & 0x1f));
 }
 
 /* find out the ready queue array index for a given prio */
