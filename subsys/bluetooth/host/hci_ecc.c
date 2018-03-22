@@ -169,10 +169,14 @@ static void emulate_le_generate_dhkey(void)
 	ret = uECC_valid_public_key(ecc.pk, &curve_secp256r1);
 	if (ret < 0) {
 		BT_ERR("public key is not valid (ret %d)", ret);
-		ret = TC_CRYPTO_FAIL;
+		ret = BT_HCI_ERR_INVALID_PARAM;
 	} else {
-		ret = uECC_shared_secret(ecc.pk, ecc.private_key, ecc.dhkey,
-					 &curve_secp256r1);
+		if (uECC_shared_secret(ecc.pk, ecc.private_key, ecc.dhkey,
+				       &curve_secp256r1) == TC_CRYPTO_FAIL) {
+			ret = BT_HCI_ERR_UNSPECIFIED;
+		} else {
+			ret = BT_HCI_ERR_SUCCESS;
+		}
 	}
 
 	buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
@@ -185,12 +189,10 @@ static void emulate_le_generate_dhkey(void)
 	meta->subevent = BT_HCI_EVT_LE_GENERATE_DHKEY_COMPLETE;
 
 	evt = net_buf_add(buf, sizeof(*evt));
-
-	if (ret == TC_CRYPTO_FAIL) {
-		evt->status = BT_HCI_ERR_UNSPECIFIED;
+	evt->status = ret;
+	if (evt->status) {
 		memset(evt->dhkey, 0, sizeof(evt->dhkey));
 	} else {
-		evt->status = 0;
 		/* Convert from big-endian (provided by crypto API) to
 		 * little-endian HCI.
 		 */
