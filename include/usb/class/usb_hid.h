@@ -82,6 +82,8 @@ struct hid_ops {
 
 /* HID Local Items tags */
 #define ITEM_TAG_USAGE		0x0
+#define ITEM_TAG_USAGE_MIN	0x1
+#define ITEM_TAG_USAGE_MAX	0x2
 
 #define HID_ITEM(bTag, bType, bSize)	(((bTag & 0xF) << 4) | \
 					 ((bType & 0x3) << 2) | (bSize & 0x3))
@@ -109,14 +111,31 @@ struct hid_ops {
 							1)
 
 #define HID_LI_USAGE			HID_LOCAL_ITEM(ITEM_TAG_USAGE, 1)
+#define HID_LI_USAGE_MIN(size)		HID_LOCAL_ITEM(ITEM_TAG_USAGE_MIN, \
+						       size)
+#define HID_LI_USAGE_MAX(size)		HID_LOCAL_ITEM(ITEM_TAG_USAGE_MAX, \
+						       size)
 
 /* Defined in Universal Serial Bus HID Usage Tables version 1.11 */
 #define USAGE_GEN_DESKTOP		0x01
+#define USAGE_GEN_KEYBOARD		0x07
+#define USAGE_GEN_LEDS			0x08
+#define USAGE_GEN_BUTTON		0x09
 
 /* Generic Desktop Page usages */
 #define USAGE_GEN_DESKTOP_UNDEFINED	0x00
+#define USAGE_GEN_DESKTOP_POINTER	0x01
+#define USAGE_GEN_DESKTOP_MOUSE		0x02
+#define USAGE_GEN_DESKTOP_JOYSTICK	0x04
+#define USAGE_GEN_DESKTOP_GAMEPAD	0x05
+#define USAGE_GEN_DESKTOP_KEYBOARD	0x06
+#define USAGE_GEN_DESKTOP_KEYPAD	0x07
+#define USAGE_GEN_DESKTOP_X		0x30
+#define USAGE_GEN_DESKTOP_Y		0x31
+#define USAGE_GEN_DESKTOP_WHEEL		0x38
 
 /* Collection types */
+#define COLLECTION_PHYSICAL		0x00
 #define COLLECTION_APPLICATION		0x01
 
 /* Register HID device */
