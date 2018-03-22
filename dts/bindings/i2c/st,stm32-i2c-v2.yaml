@@ -1,3 +1,8 @@
+#
+# Copyright (c) 2017 I-SENSE group of ICCS
+#
+# SPDX-License-Identifier: Apache-2.0
+#
 ---
 title: STM32 I2C V2
 id: st,stm32-i2c-v2

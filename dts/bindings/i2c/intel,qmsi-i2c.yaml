@@ -1,15 +1,15 @@
 #
-# Copyright (c) 2017 Piotr Mienkowski
+# Copyright (c) 2018 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 ---
-title: Atmel SAM Family I2C (TWI) node
-id: atmel,sam-i2c-twi
+title: Intel QMSI i2c
+id: intel,qmsi-i2c
 version: 0.1
 
 description: >
-    This is a representation of the Atmel SAM Family I2C (TWI) node
+    This binding gives a base representation of the Intel QMSI i2c
 
 inherits:
     !include i2c.yaml
@@ -19,7 +19,7 @@ properties:
       type: string
       category: required
       description: compatible strings
-      constraint: "atmel,sam-i2c-twi"
+      constraint: "intel,qmsi-i2c"
 
     reg:
       type: array
@@ -33,9 +33,4 @@ properties:
       description: required interrupts
       generation: define
 
-    peripheral-id:
-      type: int
-      description: peripheral ID
-      generation: define
-      category: required
 ...

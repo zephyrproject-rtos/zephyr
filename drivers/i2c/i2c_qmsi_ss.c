@@ -13,6 +13,8 @@
 #include "qm_ss_isr.h"
 #include "ss_clk.h"
 
+#include "i2c-priv.h"
+
 /* Convenient macros to get the controller instance and the driver data. */
 #define GET_CONTROLLER_INSTANCE(dev) \
 	(((const struct i2c_qmsi_ss_config_info *) \
@@ -22,7 +24,7 @@
 
 struct i2c_qmsi_ss_config_info {
 	qm_ss_i2c_t instance; /* Controller instance. */
-	u32_t default_cfg;
+	u32_t bitrate;
 	void (*irq_cfg)(void);
 };
 
@@ -113,7 +115,7 @@ static void i2c_qmsi_ss_config_irq_0(void);
 
 static const struct i2c_qmsi_ss_config_info config_info_0 = {
 	.instance = QM_SS_I2C_0,
-	.default_cfg = CONFIG_I2C_SS_0_DEFAULT_CFG,
+	.bitrate = CONFIG_I2C_SS_0_BITRATE,
 	.irq_cfg = i2c_qmsi_ss_config_irq_0,
 };
 
@@ -146,19 +148,19 @@ static void i2c_qmsi_ss_config_irq_0(void)
 	sys_write32(mask, SCSS_REGISTER_BASE + I2C_SS_0_STOP_MASK);
 
 	/* Connect the IRQs to ISR */
-	IRQ_CONNECT(I2C_SS_0_ERR_VECTOR, 1, qm_ss_i2c_0_error_isr,
-		    DEVICE_GET(i2c_ss_0), 0);
-	IRQ_CONNECT(I2C_SS_0_RX_VECTOR, 1, qm_ss_i2c_0_rx_avail_isr,
-		    DEVICE_GET(i2c_ss_0), 0);
-	IRQ_CONNECT(I2C_SS_0_TX_VECTOR, 1, qm_ss_i2c_0_tx_req_isr,
-		    DEVICE_GET(i2c_ss_0), 0);
-	IRQ_CONNECT(I2C_SS_0_STOP_VECTOR, 1, qm_ss_i2c_0_stop_det_isr,
-		    DEVICE_GET(i2c_ss_0), 0);
+	IRQ_CONNECT(CONFIG_I2C_SS_0_ERR_IRQ, CONFIG_I2C_SS_0_ERR_IRQ_PRI,
+		    qm_ss_i2c_0_error_isr, DEVICE_GET(i2c_ss_0), 0);
+	IRQ_CONNECT(CONFIG_I2C_SS_0_RX_IRQ, CONFIG_I2C_SS_0_RX_IRQ_PRI,
+		    qm_ss_i2c_0_rx_avail_isr, DEVICE_GET(i2c_ss_0), 0);
+	IRQ_CONNECT(CONFIG_I2C_SS_0_TX_IRQ, CONFIG_I2C_SS_0_TX_IRQ_PRI,
+		    qm_ss_i2c_0_tx_req_isr, DEVICE_GET(i2c_ss_0), 0);
+	IRQ_CONNECT(CONFIG_I2C_SS_0_STOP_IRQ, CONFIG_I2C_SS_0_STOP_IRQ_PRI,
+		    qm_ss_i2c_0_stop_det_isr, DEVICE_GET(i2c_ss_0), 0);
 
-	irq_enable(I2C_SS_0_ERR_VECTOR);
-	irq_enable(I2C_SS_0_RX_VECTOR);
-	irq_enable(I2C_SS_0_TX_VECTOR);
-	irq_enable(I2C_SS_0_STOP_VECTOR);
+	irq_enable(CONFIG_I2C_SS_0_ERR_IRQ);
+	irq_enable(CONFIG_I2C_SS_0_RX_IRQ);
+	irq_enable(CONFIG_I2C_SS_0_TX_IRQ);
+	irq_enable(CONFIG_I2C_SS_0_STOP_IRQ);
 }
 #endif /* CONFIG_I2C_SS_0 */
 
@@ -170,7 +172,7 @@ static void i2c_qmsi_ss_config_irq_1(void);
 
 static const struct i2c_qmsi_ss_config_info config_info_1 = {
 	.instance = QM_SS_I2C_1,
-	.default_cfg = CONFIG_I2C_SS_1_DEFAULT_CFG,
+	.bitrate = CONFIG_I2C_SS_1_BITRATE,
 	.irq_cfg = i2c_qmsi_ss_config_irq_1,
 };
 
@@ -203,19 +205,19 @@ static void i2c_qmsi_ss_config_irq_1(void)
 	sys_write32(mask, SCSS_REGISTER_BASE + I2C_SS_1_STOP_MASK);
 
 	/* Connect the IRQs to ISR */
-	IRQ_CONNECT(I2C_SS_1_ERR_VECTOR, 1, qm_ss_i2c_1_error_isr,
-		    DEVICE_GET(i2c_ss_1), 0);
-	IRQ_CONNECT(I2C_SS_1_RX_VECTOR, 1, qm_ss_i2c_1_rx_avail_isr,
-		    DEVICE_GET(i2c_ss_1), 0);
-	IRQ_CONNECT(I2C_SS_1_TX_VECTOR, 1, qm_ss_i2c_1_tx_req_isr,
-		    DEVICE_GET(i2c_ss_1), 0);
-	IRQ_CONNECT(I2C_SS_1_STOP_VECTOR, 1, qm_ss_i2c_1_stop_det_isr,
-		    DEVICE_GET(i2c_ss_1), 0);
+	IRQ_CONNECT(CONFIG_I2C_SS_1_ERR_IRQ, CONFIG_I2C_SS_1_ERR_IRQ_PRI,
+		    qm_ss_i2c_1_error_isr, DEVICE_GET(i2c_ss_1), 0);
+	IRQ_CONNECT(CONFIG_I2C_SS_1_RX_IRQ, CONFIG_I2C_SS_1_RX_IRQ_PRI,
+		    qm_ss_i2c_1_rx_avail_isr, DEVICE_GET(i2c_ss_1), 0);
+	IRQ_CONNECT(CONFIG_I2C_SS_1_TX_IRQ, CONFIG_I2C_SS_1_TX_IRQ_PRI,
+		    qm_ss_i2c_1_tx_req_isr, DEVICE_GET(i2c_ss_1), 0);
+	IRQ_CONNECT(CONFIG_I2C_SS_1_STOP_IRQ, CONFIG_I2C_SS_1_STOP_IRQ_PRI,
+		    qm_ss_i2c_1_stop_det_isr, DEVICE_GET(i2c_ss_1), 0);
 
-	irq_enable(I2C_SS_1_ERR_VECTOR);
-	irq_enable(I2C_SS_1_RX_VECTOR);
-	irq_enable(I2C_SS_1_TX_VECTOR);
-	irq_enable(I2C_SS_1_STOP_VECTOR);
+	irq_enable(CONFIG_I2C_SS_1_ERR_IRQ);
+	irq_enable(CONFIG_I2C_SS_1_RX_IRQ);
+	irq_enable(CONFIG_I2C_SS_1_TX_IRQ);
+	irq_enable(CONFIG_I2C_SS_1_STOP_IRQ);
 }
 #endif /* CONFIG_I2C_SS_1 */
 
@@ -345,6 +347,7 @@ static int i2c_qmsi_ss_init(struct device *dev)
 	struct i2c_qmsi_ss_driver_data *driver_data = GET_DRIVER_DATA(dev);
 	const struct i2c_qmsi_ss_config_info *config = dev->config->config_info;
 	qm_ss_i2c_t instance = GET_CONTROLLER_INSTANCE(dev);
+	u32_t bitrate_cfg;
 	int err;
 
 	config->irq_cfg();
@@ -352,7 +355,9 @@ static int i2c_qmsi_ss_init(struct device *dev)
 
 	k_sem_init(&driver_data->sem, 1, UINT_MAX);
 
-	err = i2c_qmsi_ss_configure(dev, config->default_cfg);
+	bitrate_cfg = _i2c_map_dt_bitrate(config->bitrate);
+
+	err = i2c_qmsi_ss_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
 
 	if (err < 0) {
 		return err;

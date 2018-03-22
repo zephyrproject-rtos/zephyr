@@ -55,13 +55,12 @@
 #define INT_ENABLE_ARC_BIT_POS			(8)
 
 /* I2C */
-/* I2C_0 is on Pmod2 connector */
-#define I2C_DW_0_BASE_ADDR			0xF0004000
+#define CONFIG_I2C_0_BASE_ADDR			0xF0004000
+#define CONFIG_I2C_0_IRQ_FLAGS			0
 
 /* I2C_1 is on Pmod4 connector */
-#define I2C_DW_1_BASE_ADDR			0xF0005000
-
-#define I2C_DW_IRQ_FLAGS			0
+#define CONFIG_I2C_1_BASE_ADDR			0xF0005000
+#define CONFIG_I2C_1_IRQ_FLAGS			0
 
 /* GPIO */
 #define GPIO_DW_0_BASE_ADDR			0xF0002000 /* GPIO 0 : PORTA */
@@ -119,8 +118,8 @@
  */
 #ifdef CONFIG_BOARD_EM_STARTERKIT_R23
 #define GPIO_DW_0_IRQ				24
-#define I2C_DW_0_IRQ				25
-#define I2C_DW_1_IRQ				26
+#define CONFIG_I2C_0_IRQ			25
+#define CONFIG_I2C_1_IRQ			26
 #define SPI_DW_PORT_0_IRQ			27
 #define SPI_DW_PORT_1_IRQ			28
 #define UART_NS16550_PORT_0_IRQ			29
@@ -128,8 +127,8 @@
 #define UART_NS16550_PORT_2_IRQ			31
 #else /* CONFIG_BOARD_EM_STARTERKIT_R23 */
 #define GPIO_DW_0_IRQ				22
-#define I2C_DW_0_IRQ				23
-#define I2C_DW_1_IRQ				24
+#define CONFIG_I2C_0_IRQ			23
+#define CONFIG_I2C_1_IRQ			24
 #define SPI_DW_PORT_0_IRQ			25
 #define SPI_DW_PORT_1_IRQ			26
 #define UART_NS16550_PORT_0_IRQ			27
