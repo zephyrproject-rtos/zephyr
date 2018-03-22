@@ -16,6 +16,9 @@ extern "C" {
 #ifdef CONFIG_PTHREAD_IPC
 #include <kernel.h>
 
+/* Permissions */
+typedef int mode_t;
+
 /* Thread attributes */
 typedef struct pthread_attr_t {
 	int priority;
