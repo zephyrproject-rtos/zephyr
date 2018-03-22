@@ -5,9 +5,7 @@
 # and currently provided by the Zephyr SDK. Those tools will need to be
 # provided for different OSes and sepearately from the toolchain.
 
-if(DEFINED ENV{ZEPHYR_SDK_INSTALL_DIR})
-  set_ifndef(ZEPHYR_SDK_INSTALL_DIR $ENV{ZEPHYR_SDK_INSTALL_DIR})
-endif()
+set_ifndef(ZEPHYR_SDK_INSTALL_DIR "$ENV{ZEPHYR_SDK_INSTALL_DIR}")
 set(ZEPHYR_SDK_INSTALL_DIR ${ZEPHYR_SDK_INSTALL_DIR} CACHE PATH "Zephyr SDK install directory")
 
 if(NOT ZEPHYR_SDK_INSTALL_DIR)

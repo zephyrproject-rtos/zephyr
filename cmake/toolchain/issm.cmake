@@ -4,7 +4,7 @@
 # https://software.intel.com/en-us/articles/issm-toolchain-only-download
 #
 
-set_ifndef(ISSM_INSTALLATION_PATH $ENV{ISSM_INSTALLATION_PATH})
+set_ifndef(ISSM_INSTALLATION_PATH "$ENV{ISSM_INSTALLATION_PATH}")
 set(       ISSM_INSTALLATION_PATH    ${ISSM_INSTALLATION_PATH} CACHE PATH "")
 assert(    ISSM_INSTALLATION_PATH     "ISSM_INSTALLATION_PATH is not set")
 
