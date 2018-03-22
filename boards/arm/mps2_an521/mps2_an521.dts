@@ -22,100 +22,100 @@
 
 	sram0: memory {
 		compatible = "mmio-sram";
-		reg = <0x30000000 0x20000>;
+		reg = <0x28100000 0x100000>;
 	};
 
 	flash0: flash {
-		reg = <0x10000000 0x200000>;
+		reg = <0x00100000 0x1ffc00>;
 	};
 
 	soc {
-		timer0: timer@50000000 {
+		timer0: timer@40000000 {
 			compatible = "arm,cmsdk-timer";
-			reg = <0x50000000 0x1000>;
+			reg = <0x40000000 0x1000>;
 			interrupts = <3 3>;
 		};
 
-		timer1: timer@50001000 {
+		timer1: timer@40001000 {
 			compatible = "arm,cmsdk-timer";
-			reg = <0x50001000 0x1000>;
+			reg = <0x40001000 0x1000>;
 			interrupts = <4 3>;
 		};
 
-		dtimer0: dtimer@50002000 {
+		dtimer0: dtimer@40002000 {
 			compatible = "arm,cmsdk-dtimer";
-			reg = <0x50002000 0x1000>;
+			reg = <0x40002000 0x1000>;
 			interrupts = <5 3>;
 		};
 
-		gpio0: gpio@50100000 {
+		gpio0: gpio@40100000 {
 			compatible = "arm,cmsdk-gpio";
-			reg = <0x50100000 0x1000>;
+			reg = <0x40100000 0x1000>;
 			interrupts = <68 3>;
 		};
 
-		gpio1: gpio@50101000 {
+		gpio1: gpio@40101000 {
 			compatible = "arm,cmsdk-gpio";
-			reg = <0x50101000 0x1000>;
+			reg = <0x40101000 0x1000>;
 			interrupts = <69 3>;
 		};
 
-		gpio2: gpio@50102000 {
+		gpio2: gpio@40102000 {
 			compatible = "arm,cmsdk-gpio";
-			reg = <0x50102000 0x1000>;
+			reg = <0x40102000 0x1000>;
 			interrupts = <70 3>;
 		};
 
-		gpio3: gpio@50103000 {
+		gpio3: gpio@40103000 {
 			compatible = "arm,cmsdk-gpio";
-			reg = <0x50103000 0x1000>;
+			reg = <0x40103000 0x1000>;
 			interrupts = <71 3>;
 		};
 
-		wdog0: wdog@50081000 {
+		wdog0: wdog@40081000 {
 			compatible = "arm,cmsdk-watchdog";
-			reg = <0x50081000 0x1000>;
+			reg = <0x40081000 0x1000>;
 		};
 
-		uart0: uart@50200000 {
+		uart0: uart@40200000 {
 			compatible = "arm,cmsdk-uart";
-			reg = <0x50200000 0x1000>;
+			reg = <0x40200000 0x1000>;
 			interrupts = <33 3 32 3>;
 			interrupt-names = "tx", "rx";
 			current-speed = <115200>;
 			label = "UART_0";
 		};
 
-		uart1: uart@50201000 {
+		uart1: uart@40201000 {
 			compatible = "arm,cmsdk-uart";
-			reg = <0x50201000 0x1000>;
+			reg = <0x40201000 0x1000>;
 			interrupts = <35 3 34 3>;
 			interrupt-names = "tx", "rx";
 			current-speed = <115200>;
 			label = "UART_1";
 		};
 
-		uart2: uart@50202000 {
+		uart2: uart@40202000 {
 			compatible = "arm,cmsdk-uart";
-			reg = <0x50202000 0x1000>;
+			reg = <0x40202000 0x1000>;
 			interrupts = <37 3 36 3>;
 			interrupt-names = "tx", "rx";
 			current-speed = <115200>;
 			label = "UART_2";
 		};
 
-		uart3: uart@50203000 {
+		uart3: uart@40203000 {
 			compatible = "arm,cmsdk-uart";
-			reg = <0x50203000 0x1000>;
+			reg = <0x40203000 0x1000>;
 			interrupts = <39 3 38 3>;
 			interrupt-names = "tx", "rx";
 			current-speed = <115200>;
 			label = "UART_3";
 		};
 
-		uart4: uart@50204000 {
+		uart4: uart@40204000 {
 			compatible = "arm,cmsdk-uart";
-			reg = <0x50204000 0x1000>;
+			reg = <0x40204000 0x1000>;
 			interrupts = <41 3 40 3>;
 			interrupt-names = "tx", "rx";
 			current-speed = <115200>;
