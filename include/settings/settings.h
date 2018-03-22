@@ -17,7 +17,7 @@ extern "C" {
 #endif
 
 /**
- * @defgroup settings system
+ * @defgroup settings Settings subsystem
  * @{
  */
 
