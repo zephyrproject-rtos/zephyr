@@ -1,0 +1,4 @@
+tests:
+  kernel.semaphore:
+    min_ram: 32
+    tags: kernel userspace
