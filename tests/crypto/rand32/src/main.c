@@ -1,15 +1,16 @@
 /* test random number generator APIs */
 
 /*
- * Copyright (c) 2015 Wind River Systems, Inc.
+ * Copyright (c) 2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /*
- * This module tests the following random number routines:
+ * This tests the following random number routines:
  * u32_t sys_rand32_get(void);
  */
+
 
 #include <ztest.h>
 #include <logging/sys_log.h>
@@ -56,4 +57,14 @@ void test_rand32(void)
 		zassert_false((equal_count > N_VALUES / 2),
 		"random numbers returned same value with high probability");
 	}
+}
+
+
+void test_main(void)
+{
+	ztest_test_suite(common_test,
+			 ztest_unit_test(test_rand32)
+			 );
+
+	ztest_run_test_suite(common_test);
 }
