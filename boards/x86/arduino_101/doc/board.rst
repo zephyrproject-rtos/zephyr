@@ -281,7 +281,7 @@ by the Zephyr project, so you need to flash a new one onto it.
 
 Luckily, starting with Zephyr 1.6, Zephyr itself is able to act as the firmware
 for the controller. The application you need is ``samples/bluetooth/hci_uart`` and
-the target board is called ``arduino_101_ble``.
+the target board is called ``curie_ble``.
 
 To build the Bluetooth controller image and flash it using ``dfu-util``, first
 set ``ZEPHYR_FLASH_OVER_DFU=y`` in the environment as described above, then
@@ -289,7 +289,7 @@ run:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/bluetooth/hci_uart
-   :board: arduino_101_ble
+   :board: curie_ble
    :goals: build flash
 
 After successfully completing these steps your Arduino 101 should now have a HCI

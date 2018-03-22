@@ -76,11 +76,11 @@ tests:
   test_controller:
     extra_args: CONF_FILE=prj_controller.conf
     platform_whitelist: nrf52840_pca10056 nrf52_pca10040
-      nrf51_pca10028 arduino_101_ble 96b_nitrogen
+      nrf51_pca10028 96b_nitrogen
   test_controller_4_0:
     extra_args: CONF_FILE=prj_controller_4_0.conf
     platform_whitelist: nrf52840_pca10056 nrf52_pca10040
-      nrf51_pca10028 arduino_101_ble
+      nrf51_pca10028
   test_controller_dbg:
     extra_args: CONF_FILE=prj_controller_dbg.conf
     platform_whitelist: nrf52840_pca10056 nrf52_pca10040
