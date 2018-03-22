@@ -17,7 +17,6 @@ extern void test_intmath(void);
 extern void test_printk(void);
 extern void test_slist(void);
 extern void test_dlist(void);
-extern void test_rand32(void);
 extern void test_timeout_order(void);
 extern void test_clock_cycle(void);
 extern void test_clock_uptime(void);
@@ -51,7 +50,6 @@ void test_main(void)
 #endif
 			 ztest_unit_test(test_slist),
 			 ztest_unit_test(test_dlist),
-			 ztest_unit_test(test_rand32),
 			 ztest_unit_test(test_intmath),
 			 ztest_unit_test(test_timeout_order),
 			 ztest_unit_test(test_clock_uptime),
