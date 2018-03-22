@@ -245,8 +245,7 @@ static int gpio_nrf5_config(struct device *dev,
 			/*@todo: use SENSE for this? */
 			return -ENOTSUP;
 		}
-		if (__builtin_popcount(gpiote_chan_mask) ==
-				GPIOTE_CHAN_COUNT) {
+		if (popcount(gpiote_chan_mask) == GPIOTE_CHAN_COUNT) {
 			return -EIO;
 		}
 
@@ -255,7 +254,7 @@ static int gpio_nrf5_config(struct device *dev,
 
 		if (i < 0) {
 			/* allocate a GPIOTE channel */
-			i = __builtin_ffs(~gpiote_chan_mask) - 1;
+			i = find_lsb_set(~gpiote_chan_mask) - 1;
 		}
 
 		gpiote_chan_mask |= BIT(i);
