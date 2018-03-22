@@ -146,7 +146,15 @@ static inline void mgmt_rebuild_global_event_mask(void)
 
 static inline bool mgmt_is_event_handled(u32_t mgmt_event)
 {
-	return ((mgmt_event & global_event_mask) == mgmt_event);
+	return (((NET_MGMT_GET_LAYER(mgmt_event) &
+		  NET_MGMT_GET_LAYER(global_event_mask)) ==
+		 NET_MGMT_GET_LAYER(mgmt_event)) &&
+		((NET_MGMT_GET_LAYER_CODE(mgmt_event) &
+		  NET_MGMT_GET_LAYER_CODE(global_event_mask)) ==
+		 NET_MGMT_GET_LAYER_CODE(mgmt_event)) &&
+		((NET_MGMT_GET_COMMAND(mgmt_event) &
+		  NET_MGMT_GET_COMMAND(global_event_mask)) ==
+		 NET_MGMT_GET_COMMAND(mgmt_event)));
 }
 
 static inline void mgmt_run_callbacks(struct mgmt_event_entry *mgmt_event)
