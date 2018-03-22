@@ -42,7 +42,7 @@ config NET_MGMT_EVENT_THREAD_PRIO
 config NET_MGMT_EVENT_QUEUE_SIZE
 	int "Size of event queue"
 	default 2
-	range 1 8
+	range 1 1024
 	help
 	  Numbers of events which can be queued at same time. Note that if a
 	  3rd event comes in, the first will be removed without generating any

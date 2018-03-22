@@ -41,48 +41,47 @@ static struct k_thread mgmt_thread_data;
 static struct mgmt_event_entry events[CONFIG_NET_MGMT_EVENT_QUEUE_SIZE];
 static u32_t global_event_mask;
 static sys_slist_t event_callbacks;
-static u16_t in_event;
-static u16_t out_event;
+static s16_t in_event;
+static s16_t out_event;
 
 static inline void mgmt_push_event(u32_t mgmt_event, struct net_if *iface,
 				   void *info, size_t length)
 {
-	k_sem_take(&net_mgmt_lock, K_FOREVER);
+	s16_t i_idx;
 
-#ifdef CONFIG_NET_MGMT_EVENT_INFO
-	/* Let's put the info length to 0 by default as it will be the most
-	 * common case. Also, it makes code a bit cleaner below as there is
-	 * to need of this line as an else or on error
-	 */
-	events[in_event].info_length = 0;
-
-	if (info && length) {
-		if (length <= NET_EVENT_INFO_MAX_SIZE) {
-			memcpy(events[in_event].info, info, length);
-			events[in_event].info_length = length;
-		} else {
-			NET_ERR("Event info length %u > max size %u",
-				length, NET_EVENT_INFO_MAX_SIZE);
-			k_sem_give(&net_mgmt_lock);
-			return;
-		}
-	}
-
-#else
+#ifndef CONFIG_NET_MGMT_EVENT_INFO
 	ARG_UNUSED(info);
 	ARG_UNUSED(length);
 #endif /* CONFIG_NET_MGMT_EVENT_INFO */
 
-	events[in_event].event = mgmt_event;
-	events[in_event].iface = iface;
+	k_sem_take(&net_mgmt_lock, K_FOREVER);
 
-	in_event++;
-
-	if (in_event == CONFIG_NET_MGMT_EVENT_QUEUE_SIZE) {
-		in_event = 0;
+	i_idx = in_event + 1;
+	if (i_idx == CONFIG_NET_MGMT_EVENT_QUEUE_SIZE) {
+		i_idx = 0;
 	}
 
-	if (in_event == out_event) {
+#ifdef CONFIG_NET_MGMT_EVENT_INFO
+	if (info && length) {
+		if (length <= NET_EVENT_INFO_MAX_SIZE) {
+			memcpy(events[i_idx].info, info, length);
+			events[i_idx].info_length = length;
+		} else {
+			NET_ERR("Event info length %u > max size %u",
+				length, NET_EVENT_INFO_MAX_SIZE);
+			k_sem_give(&net_mgmt_lock);
+
+			return;
+		}
+	} else {
+		events[i_idx].info_length = 0;
+	}
+#endif /* CONFIG_NET_MGMT_EVENT_INFO */
+
+	events[i_idx].event = mgmt_event;
+	events[i_idx].iface = iface;
+
+	if (i_idx == out_event) {
 		u16_t o_idx = out_event + 1;
 
 		if (o_idx == CONFIG_NET_MGMT_EVENT_QUEUE_SIZE) {
@@ -92,16 +91,20 @@ static inline void mgmt_push_event(u32_t mgmt_event, struct net_if *iface,
 		if (events[o_idx].event) {
 			out_event = o_idx;
 		}
+	} else if (out_event < 0) {
+		out_event = i_idx;
 	}
+
+	in_event = i_idx;
 
 	k_sem_give(&net_mgmt_lock);
 }
 
 static inline struct mgmt_event_entry *mgmt_pop_event(void)
 {
-	u16_t o_idx;
+	s16_t o_idx;
 
-	if (!events[out_event].event) {
+	if (out_event < 0 || !events[out_event].event) {
 		k_sem_give(&net_mgmt_lock);
 		return NULL;
 	}
@@ -109,7 +112,10 @@ static inline struct mgmt_event_entry *mgmt_pop_event(void)
 	o_idx = out_event;
 	out_event++;
 
-	if (out_event == CONFIG_NET_MGMT_EVENT_QUEUE_SIZE) {
+	if (o_idx == in_event) {
+		in_event = -1;
+		out_event = -1;
+	} else if (out_event == CONFIG_NET_MGMT_EVENT_QUEUE_SIZE) {
 		out_event = 0;
 	}
 
@@ -358,8 +364,8 @@ void net_mgmt_event_init(void)
 	sys_slist_init(&event_callbacks);
 	global_event_mask = 0;
 
-	in_event = 0;
-	out_event = 0;
+	in_event = -1;
+	out_event = -1;
 
 	memset(events, 0,
 	       CONFIG_NET_MGMT_EVENT_QUEUE_SIZE *
