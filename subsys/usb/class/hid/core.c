@@ -118,9 +118,15 @@ static int hid_custom_handle_req(struct usb_setup_packet *setup,
 		switch (setup->wValue) {
 		case 0x2200:
 			SYS_LOG_DBG("Return Report Descriptor");
-			if (*len > hid_device.report_size) {
-				SYS_LOG_ERR("Trying to read too much");
-				return -ENODATA;
+
+			/* Some buggy system may be pass a larger wLength when
+			 * it try read HID report descriptor, although we had
+			 * already tell it the right descriptor size.
+			 * So truncated wLength if it doesn't match. */
+			if (*len != hid_device.report_size) {
+				SYS_LOG_WRN("len %d doesn't match"
+					    "Report Descriptor size", *len);
+				*len = min(*len, hid_device.report_size);
 			}
 			*data = (u8_t *)hid_device.report_desc;
 			break;
