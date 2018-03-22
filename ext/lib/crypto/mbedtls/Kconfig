@@ -42,6 +42,21 @@ config MBEDTLS_LIBRARY
 
 endchoice
 
+config MBEDTLS_BASE64
+	bool "Enable mbedTLS base64 conversion"
+	default y
+	depends on MBEDTLS_BUILTIN
+	help
+	  Enable only the base64 conversion library in mbedTLS
+
+config MBEDTLS_CRYPTO
+	bool "Enable mbedTLS crypto libraries"
+	default n
+	select MBEDTLS_BASE64
+	depends on MBEDTLS_BUILTIN
+	help
+	  Enable the cryptographic functionality of mbedTLS
+
 config MBEDTLS_CFG_FILE
 	string "mbed TLS configuration file"
 	depends on MBEDTLS_BUILTIN
