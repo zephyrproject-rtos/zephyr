@@ -1,9 +1,0 @@
-# Kconfig - Arduino 101 BLE (nRF51822) configuration
-#
-# Copyright (c) 2016 Intel Corporation
-#
-# SPDX-License-Identifier: Apache-2.0
-
-config BOARD_ARDUINO_101_BLE
-	bool "Arduino 101 BLE"
-	depends on SOC_NRF51822_QFAA
