@@ -1,6 +1,6 @@
 # Kconfig.nrf5 - Nordic Semiconductor nRF5X GPIO configuration options
 #
-# Copyright (c) 2016 Nordic Semiconductor ASA
+# Copyright (c) 2016-2018 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -30,9 +30,10 @@ config GPIO_NRF5_P0_DEV_NAME
 config GPIO_NRF5_PORT_P0_PRI
 	int "GPIOTE P0 interrupt priority"
 	depends on GPIO_NRF5_P0
-	range 0 1 if SOC_SERIES_NRF51X
+	range 0 2 if SOC_SERIES_NRF51X
 	range 0 5 if SOC_SERIES_NRF52X
-	default 1
+	default 2 if SOC_SERIES_NRF51X
+	default 5 if SOC_SERIES_NRF52X
 	help
 	  nRF5X Port P0 IRQ priority.
 
