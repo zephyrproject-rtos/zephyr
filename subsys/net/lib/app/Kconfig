@@ -99,6 +99,7 @@ config NET_APP_TLS
 	default n
 	depends on NET_TCP
 	select MBEDTLS
+	select MBEDTLS_CRYPTO
 	help
 	  Enables net app library to use TLS for encrypted communication.
 
@@ -106,6 +107,7 @@ config NET_APP_DTLS
 	bool "Enable DTLS support for UDP applications"
 	depends on NET_UDP
 	select MBEDTLS
+	select MBEDTLS_CRYPTO
 	default n
 	help
 	  Enables net app library to use DTLS for encrypted UDP communication.
