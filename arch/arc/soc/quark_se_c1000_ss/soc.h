@@ -132,6 +132,10 @@
 #define I2C_SS_1_STOP_VECTOR				29
 #define I2C_SS_1_STOP_MASK				0x42C
 
+#define CONFIG_I2C_0_IRQ_FLAGS			(IOAPIC_LEVEL | IOAPIC_HIGH)
+#define CONFIG_I2C_1_IRQ_FLAGS			(IOAPIC_LEVEL | IOAPIC_HIGH)
+
+
 /*
  * GPIO
  */
@@ -155,6 +159,9 @@
 #define GPIO_DW_1_IRQ_FLAGS			0
 #endif
 
+#define CONFIG_GPIO_QMSI_0_IRQ_FLAGS		(IOAPIC_EDGE | IOAPIC_HIGH)
+#define CONFIG_GPIO_QMSI_1_IRQ_FLAGS		(IOAPIC_EDGE | IOAPIC_HIGH)
+
 /*
  * UART
  */
@@ -170,6 +177,9 @@
 #define UART_NS16550_PORT_1_IRQ				42
 #define UART_NS16550_PORT_1_CLK_FREQ			SYSCLK_DEFAULT_IOSC_HZ
 #define UART_NS16550_PORT_1_INT_MASK			0x464
+
+#define CONFIG_UART_QMSI_0_IRQ_FLAGS                     0
+#define CONFIG_UART_QMSI_1_IRQ_FLAGS                     0
 
 /*
  * SPI
@@ -187,6 +197,13 @@
 #define SPI_DW_PORT_1_TX_INT_MASK			(SCSS_REGISTER_BASE + 0x444)
 
 #define SPI_DW_IRQ_FLAGS				0
+
+/*
+ * RTC
+ */
+
+#define CONFIG_RTC_0_IRQ_FLAGS			(IOAPIC_EDGE | IOAPIC_HIGH)
+
 
 static inline void _quark_se_ss_ready(void)
 {

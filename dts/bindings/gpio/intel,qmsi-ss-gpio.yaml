@@ -1,28 +1,25 @@
 #
-# Copyright (c) 2017 Piotr Mienkowski
+# Copyright (c) 2018 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 ---
-title: Atmel SAM Family I2C (TWI) node
-id: atmel,sam-i2c-twi
+title: Intel QMSI SS GPIO
+id: intel,qmsi-ss-gpio
 version: 0.1
 
 description: >
-    This is a representation of the Atmel SAM Family I2C (TWI) node
-
-inherits:
-    !include i2c.yaml
+    This is a representation of the Intel QMSI SS GPIO nodes
 
 properties:
     compatible:
       type: string
       category: required
       description: compatible strings
-      constraint: "atmel,sam-i2c-twi"
+      constraint: "intel,qmsi-ss-gpio"
 
     reg:
-      type: array
+      type: int
       description: mmio register space
       generation: define
       category: required
@@ -33,9 +30,15 @@ properties:
       description: required interrupts
       generation: define
 
-    peripheral-id:
-      type: int
-      description: peripheral ID
-      generation: define
+    label:
+      type: string
       category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+
+cell_string: GPIO
+
+"#cells":
+  - pin
+  - flags
 ...

@@ -373,8 +373,8 @@ static void irq_config_func_0(struct device *dev)
 
 	IRQ_CONNECT(CONFIG_UART_QMSI_0_IRQ,
 		    CONFIG_UART_QMSI_0_IRQ_PRI, uart_qmsi_isr,
-		    DEVICE_GET(uart_0), UART_IRQ_FLAGS);
-	irq_enable(IRQ_GET_NUMBER(QM_IRQ_UART_0_INT));
+		    DEVICE_GET(uart_0), CONFIG_UART_QMSI_0_IRQ_FLAGS);
+	irq_enable(CONFIG_UART_QMSI_0_IRQ);
 	QM_IR_UNMASK_INTERRUPTS(QM_INTERRUPT_ROUTER->uart_0_int_mask);
 }
 #endif /* CONFIG_UART_QMSI_0 */
@@ -386,8 +386,8 @@ static void irq_config_func_1(struct device *dev)
 
 	IRQ_CONNECT(CONFIG_UART_QMSI_1_IRQ,
 		    CONFIG_UART_QMSI_1_IRQ_PRI, uart_qmsi_isr,
-		    DEVICE_GET(uart_1), UART_IRQ_FLAGS);
-	irq_enable(IRQ_GET_NUMBER(QM_IRQ_UART_1_INT));
+		    DEVICE_GET(uart_1), CONFIG_UART_QMSI_1_IRQ_FLAGS);
+	irq_enable(CONFIG_UART_QMSI_1_IRQ);
 	QM_IR_UNMASK_INTERRUPTS(QM_INTERRUPT_ROUTER->uart_1_int_mask);
 }
 #endif /* CONFIG_UART_QMSI_1 */

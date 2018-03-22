@@ -16,6 +16,8 @@
 #include "clk.h"
 #include "soc.h"
 
+#include "i2c-priv.h"
+
 /* Convenient macros to get the controller instance and the driver data. */
 #define GET_CONTROLLER_INSTANCE(dev) \
 	(((const struct i2c_qmsi_config_info *) \
@@ -25,7 +27,7 @@
 
 struct i2c_qmsi_config_info {
 	qm_i2c_t instance; /* Controller instance. */
-	u32_t default_cfg;
+	u32_t bitrate;
 	clk_periph_t clock_gate;
 };
 
@@ -113,7 +115,7 @@ static struct i2c_qmsi_driver_data driver_data_0;
 
 static const struct i2c_qmsi_config_info config_info_0 = {
 	.instance = QM_I2C_0,
-	.default_cfg = CONFIG_I2C_0_DEFAULT_CFG,
+	.bitrate = CONFIG_I2C_0_BITRATE,
 	.clock_gate = CLK_PERIPH_I2C_M0_REGISTER | CLK_PERIPH_CLK,
 };
 
@@ -129,7 +131,7 @@ static struct i2c_qmsi_driver_data driver_data_1;
 
 static const struct i2c_qmsi_config_info config_info_1 = {
 	.instance = QM_I2C_1,
-	.default_cfg = CONFIG_I2C_1_DEFAULT_CFG,
+	.bitrate = CONFIG_I2C_1_BITRATE,
 	.clock_gate = CLK_PERIPH_I2C_M1_REGISTER | CLK_PERIPH_CLK,
 };
 
@@ -258,6 +260,7 @@ static int i2c_qmsi_init(struct device *dev)
 	struct i2c_qmsi_driver_data *driver_data = GET_DRIVER_DATA(dev);
 	const struct i2c_qmsi_config_info *config = dev->config->config_info;
 	qm_i2c_t instance = GET_CONTROLLER_INSTANCE(dev);
+	u32_t bitrate_cfg;
 	int err;
 
 	k_sem_init(&driver_data->device_sync_sem, 0, UINT_MAX);
@@ -268,20 +271,20 @@ static int i2c_qmsi_init(struct device *dev)
 		/* Register interrupt handler, unmask IRQ and route it
 		 * to Lakemont core.
 		 */
-		IRQ_CONNECT(IRQ_GET_NUMBER(QM_IRQ_I2C_0_INT),
+		IRQ_CONNECT(CONFIG_I2C_0_IRQ,
 			    CONFIG_I2C_0_IRQ_PRI, qm_i2c_0_irq_isr, NULL,
-			    (IOAPIC_LEVEL | IOAPIC_HIGH));
-		irq_enable(IRQ_GET_NUMBER(QM_IRQ_I2C_0_INT));
+			    CONFIG_I2C_0_IRQ_FLAGS);
+		irq_enable(CONFIG_I2C_0_IRQ);
 		QM_IR_UNMASK_INTERRUPTS(
 				QM_INTERRUPT_ROUTER->i2c_master_0_int_mask);
 		break;
 
 #ifdef CONFIG_I2C_1
 	case QM_I2C_1:
-		IRQ_CONNECT(IRQ_GET_NUMBER(QM_IRQ_I2C_1_INT),
+		IRQ_CONNECT(CONFIG_I2C_1_IRQ,
 			    CONFIG_I2C_1_IRQ_PRI, qm_i2c_1_irq_isr, NULL,
-			    (IOAPIC_LEVEL | IOAPIC_HIGH));
-		irq_enable(IRQ_GET_NUMBER(QM_IRQ_I2C_1_INT));
+			    CONFIG_I2C_1_IRQ_FLAGS);
+		irq_enable(CONFIG_I2C_1_IRQ);
 		QM_IR_UNMASK_INTERRUPTS(
 				QM_INTERRUPT_ROUTER->i2c_master_1_int_mask);
 		break;
@@ -293,7 +296,9 @@ static int i2c_qmsi_init(struct device *dev)
 
 	clk_periph_enable(config->clock_gate);
 
-	err = i2c_qmsi_configure(dev, config->default_cfg);
+	bitrate_cfg = _i2c_map_dt_bitrate(config->bitrate);
+
+	err = i2c_qmsi_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
 	if (err < 0) {
 		return err;
 	}

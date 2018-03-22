@@ -1,5 +1,12 @@
+/*
+ * Copyright (c) 2017 Intel Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 #include "skeleton.dtsi"
 #include <dt-bindings/interrupt-controller/intel-ioapic.h>
+#include <dt-bindings/i2c/i2c.h>
 
 #define __SIZE_K(x) (x * 1024)
 
@@ -24,7 +31,7 @@
 			compatible = "intel,ioapic";
 			reg = <0xfec00000 0x100000>;
 			interrupt-controller;
-			#interrupt-cells = <2>;
+			#interrupt-cells = <3>;
 		};
 	};
 
@@ -51,17 +58,17 @@
 		rtc: rtc@b0000400 {
 			compatible = "intel,qmsi-rtc";
 			reg = <0xb0000400 0x400>;
-			interrupts = <11  IRQ_TYPE_EDGE_RISING>;
-			interrupt-parent = <&intc>;
-
 			clock-frequency = <32768>;
+			interrupts = <11 IRQ_TYPE_EDGE_RISING 2>;
+			interrupt-parent = <&intc>;
+			label = "RTC_0";
 		};
 
 		uart0: uart@b0002000 {
 			compatible = "intel,qmsi-uart";
 			reg = <0xb0002000 0x400>;
 			label = "UART_0";
-			interrupts = <5 IRQ_TYPE_LEVEL_HIGH>;
+			interrupts = <5 IRQ_TYPE_LEVEL_HIGH 3>;
 			interrupt-parent = <&intc>;
 
 			status = "disabled";
@@ -71,18 +78,29 @@
 			compatible = "intel,qmsi-uart";
 			reg = <0xb0002400 0x400>;
 			label = "UART_1";
-			interrupts = <6 IRQ_TYPE_LEVEL_HIGH>;
+			interrupts = <6 IRQ_TYPE_LEVEL_HIGH 3>;
 			interrupt-parent = <&intc>;
-
 
 			status = "disabled";
 		};
 
-		gpio: gpio@b000c000 {
+		gpio0: gpio@b0000c00 {
 			compatible = "intel,qmsi-gpio";
-			reg = <0xb00c00 0x400>;
-			interrupts = <8 IRQ_TYPE_LEVEL_HIGH>;
+			reg = <0xb0000c00 0x400>;
+			interrupts = <8 IRQ_TYPE_LEVEL_HIGH 2>;
 			interrupt-parent = <&intc>;
+			label = "GPIO_0";
+
+			gpio-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpio1: gpio@b0800b00 {
+			compatible = "intel,qmsi-gpio";
+			reg = <0xb0800b00 0x400>;
+			interrupts = <31 IRQ_TYPE_LEVEL_HIGH 2>;
+			interrupt-parent = <&intc>;
+			label = "GPIO_1";
 
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -91,6 +109,32 @@
 		usb_cdc: virtualcom@0 {
 			compatible = "intel,qmsi-usb";
 			label = "CDC_ACM";
+		};
+
+		i2c0: i2c@b0002800 {
+			compatible = "intel,qmsi-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0xb0002800 0x400>;
+			interrupts = <36 IRQ_TYPE_LEVEL_HIGH 2>;
+			interrupt-parent = <&intc>;
+			label = "I2C_0";
+
+			status = "disabled";
+		};
+
+		i2c1: i2c@b0002c00 {
+			compatible = "intel,qmsi-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0xb0002c00 0x400>;
+			interrupts = <37 IRQ_TYPE_LEVEL_HIGH 2>;
+			interrupt-parent = <&intc>;
+			label = "I2C_1";
+
+			status = "disabled";
 		};
 	};
 };
