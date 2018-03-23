@@ -20,7 +20,7 @@
 #include <net/net_ip.h>
 #include <net/websocket.h>
 
-#include <mbedtls/base64.h>
+#include <base64.h>
 #include <mbedtls/sha1.h>
 
 #define BUF_ALLOC_TIMEOUT 100
@@ -395,12 +395,12 @@ static struct net_pkt *prepare_reply(struct http_ctx *ctx,
 
 	snprintk(tmp, sizeof(tmp), "Sec-WebSocket-Accept: ");
 
-	ret = mbedtls_base64_encode(tmp + sizeof("Sec-WebSocket-Accept: ") - 1,
-				    sizeof(tmp) -
-				    (sizeof("Sec-WebSocket-Accept: ") - 1),
-				    &olen, accept, sizeof(accept));
+	ret = base64_encode(tmp + sizeof("Sec-WebSocket-Accept: ") - 1,
+			    sizeof(tmp) -
+			    (sizeof("Sec-WebSocket-Accept: ") - 1),
+			    &olen, accept, sizeof(accept));
 	if (ret) {
-		if (ret == MBEDTLS_ERR_BASE64_BUFFER_TOO_SMALL) {
+		if (ret == -ENOMEM) {
 			NET_DBG("[%p] Too short buffer olen %zd", ctx, olen);
 		}
 
