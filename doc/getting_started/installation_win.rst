@@ -135,8 +135,7 @@ packages from their respective websites.
       set GCCARMEMB_TOOLCHAIN_PATH=c:\gccarmemb
 
    To use the same toolchain in new sessions in the future you can set the
-   variables in a ``.cmd`` file and run that every time you open a new
-   Command Prompt.
+   variables in the file :file:`%userprofile%\\zephyrrc.cmd`.
 
    And for either, run the :file:`zephyr-env.cmd` file in order to set the
    :makevar:`ZEPHYR_BASE` environment variable:
