@@ -178,6 +178,24 @@ void tz_nbanked_exception_target_state_set(int secure_state);
  */
 void tz_sau_configure(int enable, int allns);
 
+/**
+ *
+ * @brief Get number of SAU regions
+ *
+ * Get the number of regions implemented by the Security Attribution Unit,
+ * indicated by SAU_TYPE.SREGION (read-only) register field.
+ *
+ * Notes:
+ *
+ * The SREGION field reads as an IMPLEMENTATION DEFINED value.
+ *
+ * This function shall only be called from Secure state, otherwise the
+ * Non-Secure instance of SAU_TYPE register is RAZ.
+ *
+ * @return The number of configured SAU regions.
+ */
+u32_t tz_sau_number_of_regions_get(void);
+
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus
