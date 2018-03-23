@@ -103,3 +103,8 @@ void tz_sau_configure(int enable, int allns)
 		}
 	}
 }
+
+u32_t tz_sau_number_of_regions_get(void)
+{
+	return SAU->TYPE & SAU_TYPE_SREGION_Msk;
+}
