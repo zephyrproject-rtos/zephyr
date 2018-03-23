@@ -41,8 +41,10 @@
 #define sigevent	       zap_sigevent
 #define pthread_rwlock_obj     zap_pthread_rwlock_obj
 #define pthread_rwlockattr_t   zap_pthread_rwlockattr_t
-/* Condition variables */
+#define sem_t                  zap_sem_t
+#define mode_t                 zap_mode_t
 
+/* Condition variables */
 #define pthread_cond_init(...)        zap_pthread_cond_init(__VA_ARGS__)
 #define pthread_cond_destroy(...)     zap_pthread_cond_destroy(__VA_ARGS__)
 #define pthread_cond_signal(...)      zap_pthread_cond_signal(__VA_ARGS__)
@@ -60,6 +62,10 @@
 #define sem_timedwait(...)	      zap_sem_timedwait(__VA_ARGS__)
 #define sem_trywait(...)	      zap_sem_trywait(__VA_ARGS__)
 #define sem_wait(...)		      zap_sem_wait(__VA_ARGS__)
+#define sem_open(...)		      zap_sem_open(__VA_ARGS__)
+#define sem_close(...)		      zap_sem_close(__VA_ARGS__)
+#define sem_unlink(...)		      zap_sem_unlink(__VA_ARGS__)
+
 
 /* Mutex */
 #define pthread_mutex_init(...)       zap_pthread_mutex_init(__VA_ARGS__)
