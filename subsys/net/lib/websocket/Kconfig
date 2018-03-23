@@ -8,6 +8,7 @@ menuconfig WEBSOCKET
 	default n
 	depends on HTTP
 	select NET_TCP
+	select BASE64
 	help
 	This option enables the websocket library.
 
