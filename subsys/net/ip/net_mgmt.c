@@ -105,7 +105,6 @@ static inline struct mgmt_event_entry *mgmt_pop_event(void)
 	s16_t o_idx;
 
 	if (out_event < 0 || !events[out_event].event) {
-		k_sem_give(&net_mgmt_lock);
 		return NULL;
 	}
 
