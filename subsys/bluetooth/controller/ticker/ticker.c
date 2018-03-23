@@ -9,10 +9,7 @@
 #include <soc.h>
 
 #include "hal/cntr.h"
-
-#if defined(CONFIG_SOC_FAMILY_NRF)
-#include "hal/nrf5/ticker.h"
-#endif /* CONFIG_SOC_FAMILY_NRF */
+#include "hal/ticker.h"
 
 #include "ticker.h"
 

@@ -18,7 +18,6 @@
 #include "ll.h"
 
 #if defined(CONFIG_SOC_FAMILY_NRF)
-#include "hal/nrf5/ticker.h"
 #include <drivers/entropy/nrf5_entropy.h>
 #endif /* CONFIG_SOC_FAMILY_NRF */
 
@@ -26,6 +25,7 @@
 #include "hal/ecb.h"
 #include "hal/ccm.h"
 #include "hal/radio.h"
+#include "hal/ticker.h"
 #include "hal/debug.h"
 
 #include "util/util.h"
