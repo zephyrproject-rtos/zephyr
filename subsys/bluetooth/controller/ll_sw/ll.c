@@ -23,11 +23,8 @@
 #include "hal/cntr.h"
 #include "hal/ccm.h"
 #include "hal/radio.h"
+#include "hal/ticker.h"
 #include "hal/debug.h"
-
-#if defined(CONFIG_SOC_FAMILY_NRF)
-#include "hal/nrf5/ticker.h"
-#endif /* CONFIG_SOC_FAMILY_NRF */
 
 #include "util/util.h"
 #include "util/mem.h"
