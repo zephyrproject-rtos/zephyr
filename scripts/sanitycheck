@@ -784,6 +784,11 @@ class MakeGenerator:
 \t\t{verb} {make_args}\\
 \t\t>>{logfile} 2>&1
 """
+    MAKE_RULE_TMPL_RUN = """\t@echo sanity_test_{phase} {goal} >&2
+\t{generator_cmd} -C {outdir}\\
+\t\t{verb} {make_args}\\
+\t\t>>{logfile} 2>&1
+"""
 
     GOAL_FOOTER_TMPL = "\t@echo sanity_test_finished {goal} >&2\n\n"
 
@@ -839,20 +844,31 @@ class MakeGenerator:
             generator_cmd = "$(MAKE)"
             verb = "VERBOSE=1" if VERBOSE else "VERBOSE=0"
 
-        return MakeGenerator.MAKE_RULE_TMPL.format(
-            generator=generator,
-            generator_cmd=generator_cmd,
-            phase=phase,
-            goal=name,
-            outdir=outdir,
-            cflags=cflags,
-            ldflags=ldflags,
-            directory=workdir,
-            verb=verb,
-            args=args,
-            logfile=logfile,
-            make_args=make_args
-        )
+        if phase == 'running':
+            return MakeGenerator.MAKE_RULE_TMPL_RUN.format(
+                generator_cmd=generator_cmd,
+                phase=phase,
+                goal=name,
+                outdir=outdir,
+                verb=verb,
+                logfile=logfile,
+                make_args=make_args
+            )
+        else:
+            return MakeGenerator.MAKE_RULE_TMPL.format(
+                generator=generator,
+                generator_cmd=generator_cmd,
+                phase=phase,
+                goal=name,
+                outdir=outdir,
+                cflags=cflags,
+                ldflags=ldflags,
+                directory=workdir,
+                verb=verb,
+                args=args,
+                logfile=logfile,
+                make_args=make_args
+            )
 
     def _get_rule_footer(self, name):
         return MakeGenerator.GOAL_FOOTER_TMPL.format(goal=name)
