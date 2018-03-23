@@ -66,6 +66,35 @@ typedef struct tz_nonsecure_setup_conf {
  */
 void tz_nonsecure_state_setup(const tz_nonsecure_setup_conf_t *p_ns_conf);
 
+/**
+ *
+ * @brief Configure SAU
+ *
+ * Configure (enable or disable) the ARMv8-M Security Attribution Unit.
+ *
+ * @param enable SAU enable flag: 1 if SAU is to be enabled, 0 if SAU is
+ *               to be disabled.
+ * @param allns SAU_CTRL.ALLNS flag: select 1 to set SAU_CTRL.ALLNS, 0
+ *               to clear SAU_CTRL.ALLNS.
+ *
+ * Notes:
+ *
+ * SAU_CTRL.ALLNS bit: All Non-secure. When SAU_CTRL.ENABLE is 0
+ *  this bit controls if the memory is marked as Non-secure or Secure.
+ *  Values:
+ *  Secure (not Non-Secure Callable): 0
+ *  Non-Secure: 1
+ *
+ * This function shall only be called from Secure state, otherwise the
+ * Non-Secure instance of SAU_CTRL register is RAZ/WI.
+ *
+ * This function shall be called before the Secure Firmware may transition
+ * to Non-Secure state.
+ *
+ * @return N/A
+ */
+void tz_sau_configure(int enable, int allns);
+
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus

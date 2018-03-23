@@ -50,3 +50,17 @@ void tz_nonsecure_state_setup(const tz_nonsecure_setup_conf_t *p_ns_conf)
 	configure_nonsecure_control(p_ns_conf->control_ns.spsel,
 		p_ns_conf->control_ns.npriv);
 }
+
+void tz_sau_configure(int enable, int allns)
+{
+	if (enable) {
+		TZ_SAU_Enable();
+	} else {
+		TZ_SAU_Disable();
+		if (allns) {
+			SAU->CTRL |= SAU_CTRL_ALLNS_Msk;
+		} else {
+			SAU->CTRL &= ~(SAU_CTRL_ALLNS_Msk);
+		}
+	}
+}
