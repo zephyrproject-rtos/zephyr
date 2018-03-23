@@ -65,7 +65,7 @@ void main(void)
 
 		sensor_channel_get(dev, SENSOR_CHAN_ACCEL_XYZ, accel);
 		sensor_channel_get(dev, SENSOR_CHAN_MAGN_XYZ, magn);
-		sensor_channel_get(dev, SENSOR_CHAN_TEMP, &temp);
+		sensor_channel_get(dev, SENSOR_CHAN_DIE_TEMP, &temp);
 
 		/* Print accel x,y,z and mag x,y,z data */
 		printf("AX=%10.6f AY=%10.6f AZ=%10.6f "

@@ -23,7 +23,7 @@ int tmp007_attr_set(struct device *dev,
 	s64_t value;
 	u8_t reg;
 
-	if (chan != SENSOR_CHAN_TEMP) {
+	if (chan != SENSOR_CHAN_AMBIENT_TEMP) {
 		return -ENOTSUP;
 	}
 

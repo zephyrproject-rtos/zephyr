@@ -120,7 +120,7 @@ static int sht3xd_channel_get(struct device *dev,
 	 * See datasheet "Conversion of Signal Output" section
 	 * for more details on processing sample data.
 	 */
-	if (chan == SENSOR_CHAN_TEMP) {
+	if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
 		/* val = -45 + 175 * sample / (2^16 -1) */
 		tmp = 175 * (u64_t)drv_data->t_sample;
 		val->val1 = (s32_t)(tmp / 0xFFFF) - 45;

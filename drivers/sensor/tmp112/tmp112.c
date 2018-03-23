@@ -81,7 +81,7 @@ static int tmp112_attr_set(struct device *dev,
 	s64_t value;
 	u16_t cr;
 
-	if (chan != SENSOR_CHAN_TEMP) {
+	if (chan != SENSOR_CHAN_AMBIENT_TEMP) {
 		return -ENOTSUP;
 	}
 
@@ -153,7 +153,7 @@ static int tmp112_sample_fetch(struct device *dev, enum sensor_channel chan)
 	struct tmp112_data *drv_data = dev->driver_data;
 	u16_t val;
 
-	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_TEMP);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_AMBIENT_TEMP);
 
 	if (tmp112_reg_read(drv_data, TMP112_REG_TEMPERATURE, &val) < 0) {
 		return -EIO;
@@ -175,7 +175,7 @@ static int tmp112_channel_get(struct device *dev,
 	struct tmp112_data *drv_data = dev->driver_data;
 	s32_t uval;
 
-	if (chan != SENSOR_CHAN_TEMP) {
+	if (chan != SENSOR_CHAN_AMBIENT_TEMP) {
 		return -ENOTSUP;
 	}
 

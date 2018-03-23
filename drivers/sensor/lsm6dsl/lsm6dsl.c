@@ -170,7 +170,7 @@ static int lsm6dsl_sample_fetch(struct device *dev, enum sensor_channel chan)
 		lsm6dsl_sample_fetch_gyro(dev);
 		break;
 #if defined(CONFIG_LSM6DSL_ENABLE_TEMP)
-	case SENSOR_CHAN_TEMP:
+	case SENSOR_CHAN_DIE_TEMP:
 		lsm6dsl_sample_fetch_temp(dev);
 		break;
 #endif
@@ -315,7 +315,7 @@ static int lsm6dsl_channel_get(struct device *dev,
 		lsm6dsl_gyro_channel_get(chan, val, data);
 		break;
 #if defined(CONFIG_LSM6DSL_ENABLE_TEMP)
-	case SENSOR_CHAN_TEMP:
+	case SENSOR_CHAN_DIE_TEMP:
 		lsm6dsl_gyro_channel_get_temp(val, data);
 		break;
 #endif

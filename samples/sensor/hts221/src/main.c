@@ -26,7 +26,7 @@ void main(void)
 			return;
 		}
 
-		if (sensor_channel_get(dev, SENSOR_CHAN_TEMP, &temp) < 0) {
+		if (sensor_channel_get(dev, SENSOR_CHAN_AMBIENT_TEMP, &temp) < 0) {
 			printf("Cannot read HTS221 temperature channel\n");
 			return;
 		}

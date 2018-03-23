@@ -62,7 +62,7 @@ int mcp9808_attr_set(struct device *dev, enum sensor_channel chan,
 	u8_t reg_addr;
 	s32_t val2;
 
-	__ASSERT_NO_MSG(chan == SENSOR_CHAN_TEMP);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_AMBIENT_TEMP);
 
 	val2 = val->val2;
 	while (val2 > 0) {

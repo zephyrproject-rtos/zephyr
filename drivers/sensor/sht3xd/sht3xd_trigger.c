@@ -38,7 +38,7 @@ int sht3xd_attr_set(struct device *dev,
 	u16_t set_cmd, clear_cmd, reg_val, temp, rh;
 
 	if (attr == SENSOR_ATTR_LOWER_THRESH) {
-		if (chan == SENSOR_CHAN_TEMP) {
+		if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
 			drv_data->t_low = sht3xd_temp_processed_to_raw(val);
 		} else if (chan == SENSOR_CHAN_HUMIDITY) {
 			drv_data->rh_low = sht3xd_rh_processed_to_raw(val);
@@ -51,7 +51,7 @@ int sht3xd_attr_set(struct device *dev,
 		temp = drv_data->t_low;
 		rh = drv_data->rh_low;
 	} else if (attr == SENSOR_ATTR_UPPER_THRESH) {
-		if (chan == SENSOR_CHAN_TEMP) {
+		if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
 			drv_data->t_high = sht3xd_temp_processed_to_raw(val);
 		} else if (chan == SENSOR_CHAN_HUMIDITY) {
 			drv_data->rh_high = sht3xd_rh_processed_to_raw(val);

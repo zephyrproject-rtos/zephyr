@@ -44,7 +44,7 @@ void main(void)
 		struct sensor_value temp;
 
 		sensor_sample_fetch(dev);
-		sensor_channel_get(dev, SENSOR_CHAN_TEMP, &temp);
+		sensor_channel_get(dev, SENSOR_CHAN_AMBIENT_TEMP, &temp);
 #ifdef CONFIG_GROVE_LCD_RGB
 		char row[16];
 

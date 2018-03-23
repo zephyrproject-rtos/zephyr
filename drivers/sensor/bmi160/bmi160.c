@@ -793,7 +793,7 @@ static int bmi160_channel_get(struct device *dev,
 		bmi160_acc_channel_get(dev, chan, val);
 		return 0;
 #endif
-	case SENSOR_CHAN_TEMP:
+	case SENSOR_CHAN_DIE_TEMP:
 		return bmi160_temp_channel_get(dev, val);
 	default:
 		SYS_LOG_DBG("Channel not supported.");

@@ -20,14 +20,14 @@ static int hts221_channel_get(struct device *dev,
 	struct hts221_data *drv_data = dev->driver_data;
 	s32_t conv_val;
 
-	__ASSERT_NO_MSG(chan == SENSOR_CHAN_TEMP ||
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_AMBIENT_TEMP ||
 			chan == SENSOR_CHAN_HUMIDITY);
 
 	/*
 	 * see "Interpreting humidity and temperature readings" document
 	 * for more details
 	 */
-	if (chan == SENSOR_CHAN_TEMP) {
+	if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
 		conv_val = (s32_t)(drv_data->t1_degc_x8 -
 				     drv_data->t0_degc_x8) *
 			   (drv_data->t_sample - drv_data->t0_out) /

@@ -33,7 +33,7 @@ void main(void)
 			break;
 		}
 
-		r = sensor_channel_get(temp_dev, SENSOR_CHAN_TEMP,
+		r = sensor_channel_get(temp_dev, SENSOR_CHAN_AMBIENT_TEMP,
 				       &temp_value);
 		if (r) {
 			printf("sensor_channel_get failed return: %d\n", r);
