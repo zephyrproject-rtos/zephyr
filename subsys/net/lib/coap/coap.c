@@ -787,9 +787,7 @@ void coap_reply_init(struct coap_reply *reply,
 
 void coap_reply_clear(struct coap_reply *reply)
 {
-	reply->id = 0;
-	reply->tkl = 0;
-	reply->reply = NULL;
+	memset(reply, 0, sizeof(*reply));
 }
 
 int coap_resource_notify(struct coap_resource *resource)
