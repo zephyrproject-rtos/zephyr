@@ -40,6 +40,10 @@
 /* length of time in milliseconds to wait for buffer allocations */
 #define BUF_ALLOC_TIMEOUT K_SECONDS(1)
 
+/* coap reply status */
+#define COAP_REPLY_STATUS_NONE		0
+#define COAP_REPLY_STATUS_ERROR		1
+
 struct lwm2m_message;
 
 /* Establish a message timeout callback */
