@@ -20,7 +20,7 @@ static int amg88xx_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct amg88xx_data *drv_data = dev->driver_data;
 
-	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_TEMP);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_AMBIENT_TEMP);
 
 	if (i2c_burst_read(drv_data->i2c, CONFIG_AMG88XX_I2C_ADDR,
 			   AMG88XX_OUTPUT_BASE,
@@ -39,7 +39,7 @@ static int amg88xx_channel_get(struct device *dev,
 	struct amg88xx_data *drv_data = dev->driver_data;
 	size_t len = ARRAY_SIZE(drv_data->sample);
 
-	if (chan != SENSOR_CHAN_TEMP) {
+	if (chan != SENSOR_CHAN_AMBIENT_TEMP) {
 		return -ENOTSUP;
 	}
 

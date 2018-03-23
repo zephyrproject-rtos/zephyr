@@ -26,7 +26,7 @@ int amg88xx_attr_set(struct device *dev,
 	u8_t intl_reg;
 	u8_t inth_reg;
 
-	if (chan != SENSOR_CHAN_TEMP) {
+	if (chan != SENSOR_CHAN_AMBIENT_TEMP) {
 		return -ENOTSUP;
 	}
 

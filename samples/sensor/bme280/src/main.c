@@ -19,7 +19,7 @@ void main(void)
 		struct sensor_value temp, press, humidity;
 
 		sensor_sample_fetch(dev);
-		sensor_channel_get(dev, SENSOR_CHAN_TEMP, &temp);
+		sensor_channel_get(dev, SENSOR_CHAN_AMBIENT_TEMP, &temp);
 		sensor_channel_get(dev, SENSOR_CHAN_PRESS, &press);
 		sensor_channel_get(dev, SENSOR_CHAN_HUMIDITY, &humidity);
 

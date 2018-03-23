@@ -23,7 +23,7 @@ struct channel_info {
 
 /* change device names if you want to use different sensors */
 static struct channel_info info[] = {
-	{ SENSOR_CHAN_TEMP, "TH02" },
+	{ SENSOR_CHAN_AMBIENT_TEMP, "TH02" },
 	{ SENSOR_CHAN_HUMIDITY, "TH02" },
 };
 

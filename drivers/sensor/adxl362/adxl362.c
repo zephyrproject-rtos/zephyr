@@ -468,7 +468,7 @@ static int adxl362_channel_get(struct device *dev,
 		val->val1 = data->acc_z / 1000;
 		val->val2 = (data->acc_z % 1000) * 1000;
 		break;
-	case SENSOR_CHAN_TEMP: /* Temperature in degrees Celsius. */
+	case SENSOR_CHAN_DIE_TEMP: /* Temperature in degrees Celsius. */
 		val->val1 = data->temp / 1000;
 		val->val2 = (data->temp % 1000) * 1000;
 		break;

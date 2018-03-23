@@ -216,7 +216,7 @@ static int fxos8700_channel_get(struct device *dev, enum sensor_channel chan,
 			ret = 0;
 		}
 #ifdef CONFIG_FXOS8700_TEMP
-		if (chan == SENSOR_CHAN_TEMP) {
+		if (chan == SENSOR_CHAN_DIE_TEMP) {
 			fxos8700_temp_convert(val, data->temp);
 			ret = 0;
 		}

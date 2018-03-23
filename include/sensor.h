@@ -96,8 +96,12 @@ enum sensor_channel {
 	 * Magnetic field on any axis.
 	 */
 	SENSOR_CHAN_MAGN_ANY = SENSOR_CHAN_MAGN_XYZ,
-	/** Temperature in degrees Celsius. */
+	/** Temperature in degrees Celsius. (deprecated) */
 	SENSOR_CHAN_TEMP,
+	/** Device die temperature in degrees Celsius. */
+	SENSOR_CHAN_DIE_TEMP,
+	/** Ambient temperature in degrees Celsius. */
+	SENSOR_CHAN_AMBIENT_TEMP,
 	/** Pressure in kilopascal. */
 	SENSOR_CHAN_PRESS,
 	/**

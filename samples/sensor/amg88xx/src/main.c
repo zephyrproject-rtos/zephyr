@@ -65,7 +65,7 @@ void main(void)
 		.val2 = 0,
 	};
 
-	if (sensor_attr_set(dev, SENSOR_CHAN_TEMP,
+	if (sensor_attr_set(dev, SENSOR_CHAN_AMBIENT_TEMP,
 			    SENSOR_ATTR_UPPER_THRESH, &attr)) {
 		printk("Could not set threshold\n");
 		return;
@@ -73,7 +73,7 @@ void main(void)
 
 	struct sensor_trigger trig = {
 		.type = SENSOR_TRIG_THRESHOLD,
-		.chan = SENSOR_CHAN_TEMP,
+		.chan = SENSOR_CHAN_AMBIENT_TEMP,
 	};
 
 	if (sensor_trigger_set(dev, &trig, trigger_handler)) {
@@ -94,7 +94,7 @@ void main(void)
 			return;
 		}
 
-		ret = sensor_channel_get(dev, SENSOR_CHAN_TEMP,
+		ret = sensor_channel_get(dev, SENSOR_CHAN_AMBIENT_TEMP,
 					 (struct sensor_value *)temp_value);
 		if (ret) {
 			printk("Failed to get sensor values, %d\n", ret);

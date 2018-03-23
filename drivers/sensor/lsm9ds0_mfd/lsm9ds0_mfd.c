@@ -371,7 +371,7 @@ static int lsm9ds0_mfd_sample_fetch(struct device *dev,
 		return lsm9ds0_mfd_sample_fetch_magn(dev);
 #endif
 #if !defined(LSM9DS0_MFD_TEMP_DISABLED)
-	case SENSOR_CHAN_TEMP:
+	case SENSOR_CHAN_DIE_TEMP:
 		return lsm9ds0_mfd_sample_fetch_temp(dev);
 #endif
 	case SENSOR_CHAN_ALL:
@@ -569,7 +569,7 @@ static int lsm9ds0_mfd_channel_get(struct device *dev,
 		return lsm9ds0_mfd_get_magn(dev, chan, val);
 #endif
 #if !defined(LSM9DS0_MFD_TEMP_DISABLED)
-	case SENSOR_CHAN_TEMP:
+	case SENSOR_CHAN_DIE_TEMP:
 		val->val1 = data->sample_temp;
 		val->val2 = 0;
 		return 0;

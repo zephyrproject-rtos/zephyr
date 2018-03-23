@@ -99,7 +99,7 @@ static void sensor_ipm_callback(void *context, u32_t id, volatile void *data)
 	volatile struct sensor_value *val = data;
 
 	switch (id) {
-	case SENSOR_CHAN_TEMP:
+	case SENSOR_CHAN_AMBIENT_TEMP:
 		/* resolution of 0.01 degrees Celsius */
 		temp_value = val->val1 * 100 + val->val2 / 10000;
 		break;

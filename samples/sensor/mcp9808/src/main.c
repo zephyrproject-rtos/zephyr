@@ -15,7 +15,7 @@ static void trigger_handler(struct device *dev, struct sensor_trigger *trig)
 	struct sensor_value temp;
 
 	sensor_sample_fetch(dev);
-	sensor_channel_get(dev, SENSOR_CHAN_TEMP, &temp);
+	sensor_channel_get(dev, SENSOR_CHAN_AMBIENT_TEMP, &temp);
 
 	printf("trigger fired, temp %d.%06d\n", temp.val1, temp.val2);
 }
@@ -42,11 +42,11 @@ void main(void)
 	val.val1 = 26;
 	val.val2 = 0;
 
-	sensor_attr_set(dev, SENSOR_CHAN_TEMP,
+	sensor_attr_set(dev, SENSOR_CHAN_AMBIENT_TEMP,
 			SENSOR_ATTR_UPPER_THRESH, &val);
 
 	trig.type = SENSOR_TRIG_THRESHOLD;
-	trig.chan = SENSOR_CHAN_TEMP;
+	trig.chan = SENSOR_CHAN_AMBIENT_TEMP;
 
 	sensor_trigger_set(dev, &trig, trigger_handler);
 #endif
@@ -61,7 +61,7 @@ void main(void)
 			break;
 		}
 
-		rc = sensor_channel_get(dev, SENSOR_CHAN_TEMP, &temp);
+		rc = sensor_channel_get(dev, SENSOR_CHAN_AMBIENT_TEMP, &temp);
 		if (rc != 0) {
 			printf("sensor_channel_get error: %d\n", rc);
 			break;

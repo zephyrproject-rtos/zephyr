@@ -27,7 +27,7 @@ struct channel_info {
 
 /* change device names if you want to use different sensors */
 static struct channel_info info[] = {
-	{SENSOR_CHAN_TEMP, "HDC1008"},
+	{SENSOR_CHAN_AMBIENT_TEMP, "HDC1008"},
 	{SENSOR_CHAN_HUMIDITY, "HDC1008"},
 	{SENSOR_CHAN_PRESS, "BMP280"},
 };

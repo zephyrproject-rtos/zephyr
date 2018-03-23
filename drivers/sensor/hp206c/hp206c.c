@@ -256,7 +256,7 @@ static int hp206c_channel_get(struct device *dev,
 			      struct sensor_value *val)
 {
 	switch (chan) {
-	case SENSOR_CHAN_TEMP:
+	case SENSOR_CHAN_AMBIENT_TEMP:
 		return hp206c_temperature_get(dev, val);
 
 	case SENSOR_CHAN_PRESS:

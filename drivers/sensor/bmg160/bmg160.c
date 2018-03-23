@@ -213,7 +213,7 @@ static void bmg160_to_fixed_point(struct bmg160_device_data *bmg160,
 				  enum sensor_channel chan, s16_t raw,
 				  struct sensor_value *val)
 {
-	if (chan == SENSOR_CHAN_TEMP) {
+	if (chan == SENSOR_CHAN_DIE_TEMP) {
 		val->val1 = 23 + (raw / 2);
 		val->val2 = (raw % 2) * 500000;
 	} else {
@@ -248,7 +248,7 @@ static int bmg160_channel_get(struct device *dev, enum sensor_channel chan,
 
 		return 0;
 
-	case SENSOR_CHAN_TEMP:
+	case SENSOR_CHAN_DIE_TEMP:
 		bmg160_to_fixed_point(bmg160, chan, bmg160->raw_temp, val);
 		return 0;
 

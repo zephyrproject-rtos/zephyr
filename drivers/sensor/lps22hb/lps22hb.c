@@ -76,7 +76,7 @@ static int lps22hb_channel_get(struct device *dev,
 
 	if (chan == SENSOR_CHAN_PRESS) {
 		lps22hb_press_convert(val, data->sample_press);
-	} else if (chan == SENSOR_CHAN_TEMP) {
+	} else if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
 		lps22hb_temp_convert(val, data->sample_temp);
 	} else {
 		return -ENOTSUP;

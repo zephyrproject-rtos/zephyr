@@ -36,7 +36,7 @@ static void print_temp_data(struct device *bmg160)
 {
 	struct sensor_value val;
 
-	if (sensor_channel_get(bmg160, SENSOR_CHAN_TEMP, &val) < 0) {
+	if (sensor_channel_get(bmg160, SENSOR_CHAN_DIE_TEMP, &val) < 0) {
 		printf("Temperature channel read error.\n");
 		return;
 	}

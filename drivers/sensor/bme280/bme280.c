@@ -186,7 +186,7 @@ static int bme280_channel_get(struct device *dev,
 	struct bme280_data *data = dev->driver_data;
 
 	switch (chan) {
-	case SENSOR_CHAN_TEMP:
+	case SENSOR_CHAN_AMBIENT_TEMP:
 		/*
 		 * data->comp_temp has a resolution of 0.01 degC.  So
 		 * 5123 equals 51.23 degC.

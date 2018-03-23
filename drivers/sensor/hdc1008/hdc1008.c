@@ -67,7 +67,7 @@ static int hdc1008_channel_get(struct device *dev,
 	 * Register" sections for more details on processing
 	 * sample data.
 	 */
-	if (chan == SENSOR_CHAN_TEMP) {
+	if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
 		/* val = -40 + 165 * sample / 2^16 */
 		tmp = 165 * (u64_t)drv_data->t_sample;
 		val->val1 = (s32_t)(tmp >> 16) - 40;
