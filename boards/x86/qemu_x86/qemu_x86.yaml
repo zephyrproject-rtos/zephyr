@@ -9,4 +9,4 @@ supported:
   - pci
   - netif:slip
 testing:
-        default: true
+  default: true
