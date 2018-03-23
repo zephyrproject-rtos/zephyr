@@ -308,6 +308,9 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 		/* restore main firmware block context */
 		memcpy(&firmware_block_ctx, &received_block_ctx,
 		       sizeof(firmware_block_ctx));
+
+		/* set reply->user_data to error to avoid releasing */
+		reply->user_data = (void *)COAP_REPLY_STATUS_ERROR;
 		return 0;
 	}
 
