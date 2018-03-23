@@ -105,6 +105,12 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt);
  */
 int net_send_data(struct net_pkt *pkt);
 
+/*
+ * The net_stack_info struct needs to be aligned to 32 byte boundary,
+ * otherwise the __net_stack_end will point to wrong location and looping
+ * through net_stack section will go wrong.
+ * So this alignment is a workaround and should eventually be removed.
+ */
 struct net_stack_info {
 	k_thread_stack_t *stack;
 	const char *pretty_name;
@@ -113,7 +119,7 @@ struct net_stack_info {
 	size_t size;
 	int prio;
 	int idx;
-};
+} __aligned(32);
 
 #if defined(CONFIG_NET_SHELL)
 #define NET_STACK_GET_NAME(pretty, name, sfx) \
