@@ -327,16 +327,12 @@ struct pdu_data_q_tx {
 #define LL_MEM_TXQ (sizeof(struct pdu_data_q_tx) * \
 		    (RADIO_PACKET_COUNT_TX_MAX + 2))
 
-#define LL_MEM_RX_POOL_SZ (MROUND(offsetof(struct radio_pdu_node_rx,\
-				pdu_data) + ((\
-			(PDU_AC_SIZE_MAX + PDU_AC_SIZE_EXTRA) < \
-			 (offsetof(struct pdu_data, lldata) + \
-			  RADIO_LL_LENGTH_OCTETS_RX_MAX)) ? \
-		      (offsetof(struct pdu_data, lldata) + \
-		      RADIO_LL_LENGTH_OCTETS_RX_MAX) \
-			: \
-		      (PDU_AC_SIZE_MAX + PDU_AC_SIZE_EXTRA))) * \
-			(RADIO_PACKET_COUNT_RX_MAX + 3))
+#define LL_MEM_RX_POOL_SZ (MROUND(offsetof(struct radio_pdu_node_rx, \
+					   pdu_data) + \
+				  max((PDU_AC_SIZE_MAX + PDU_AC_SIZE_EXTRA), \
+				      (offsetof(struct pdu_data, lldata) + \
+				       RADIO_LL_LENGTH_OCTETS_RX_MAX))) * \
+			   (RADIO_PACKET_COUNT_RX_MAX + 3))
 
 #define LL_MEM_RX_LINK_POOL (sizeof(void *) * 2 * ((RADIO_PACKET_COUNT_RX_MAX +\
 				4) + RADIO_CONNECTION_CONTEXT_MAX))
