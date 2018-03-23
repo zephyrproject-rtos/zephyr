@@ -10,6 +10,7 @@ int lll_prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort,
 		struct lll_prepare_param *prepare_param);
 int lll_done(void *param);
 int lll_clk_on(void);
+int lll_clk_on_wait(void);
 int lll_clk_off(void);
 
 extern void *ull_pdu_rx_alloc_peek(u8_t count);

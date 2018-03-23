@@ -196,6 +196,19 @@ int lll_clk_on(void)
 	return err;
 }
 
+int lll_clk_on_wait(void)
+{
+	int err;
+
+	/* turn on radio clock in blocking mode. */
+	err = clock_control_on(lll.clk_hf, (void *)1);
+	if (!err || err == -EINPROGRESS) {
+		DEBUG_RADIO_XTAL(1);
+	}
+
+	return err;
+}
+
 int lll_clk_off(void)
 {
 	int err;
