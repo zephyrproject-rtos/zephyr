@@ -46,7 +46,6 @@
 #define IOAPIC_HIGH				0
 
 /* DW interrupt controller */
-#define DW_ICTL_BASE_ADDR			0x00081800
 #define DW_ICTL_IRQ				0x00000706
 #define DW_ICTL_IRQ_CAVS_OFFSET			CAVS_IRQ_NUMBER(DW_ICTL_IRQ)
 #define DW_ICTL_NUM_IRQS			9

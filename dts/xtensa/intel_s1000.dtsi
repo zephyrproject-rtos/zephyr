@@ -20,6 +20,13 @@
 			reg = <1>;
 		};
 
+		core_intc: core_intc@0 {
+			compatible = "xtensa,core-intc";
+			reg = <0x00 0x400>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+		};
+
 	};
 
 	sram0: memory@0xbe000000 {
@@ -33,6 +40,46 @@
 		#size-cells = <1>;
 		compatible = "simple-bus";
 		ranges;
+
+		cavs0: cavs@78800  {
+			compatible = "intel,cavs-intc";
+			reg = <0x78800 0x10>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			interrupts = <6 0>;
+			interrupt-parent = <&core_intc>;
+		};
+
+		cavs1: cavs@78810  {
+			compatible = "intel,cavs-intc";
+			reg = <0x78810 0x10>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+		};
+
+		cavs2: cavs@78820  {
+			compatible = "intel,cavs-intc";
+			reg = <0x78820 0x10>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+		};
+
+		cavs3: cavs@78830  {
+			compatible = "intel,cavs-intc";
+			reg = <0x78830 0x10>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+		};
+
+		dw_intc: intc@81800  {
+			compatible = "snps,designware-intc";
+			reg = <0x00081800 0x400>;
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			interrupts = <7 0>;
+			interrupt-parent = <&cavs0>;
+		};
+
 
 		uart0: uart@80800 {
 			compatible = "ns16550";
@@ -49,7 +96,7 @@
 			#size-cells = <0>;
 			reg = <0x80400 0x400>;
 			interrupts = <2 0>;
-			interrupt-parent = <&intc>;
+			interrupt-parent = <&dw_intc>;
 			label = "I2C_0";
 
 			status = "disabled";
