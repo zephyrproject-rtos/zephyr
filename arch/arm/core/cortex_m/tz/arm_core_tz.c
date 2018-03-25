@@ -39,6 +39,18 @@ static void configure_nonsecure_control(u32_t spsel_ns, u32_t npriv_ns)
 	__TZ_set_CONTROL_NS(control_ns);
 }
 
+#if defined(CONFIG_ARMV8_M_MAINLINE)
+void tz_nonsecure_msplim_set(u32_t val)
+{
+	__TZ_set_MSPLIM_NS(val);
+}
+
+void tz_nonsecure_psplim_set(u32_t val)
+{
+	__TZ_set_PSPLIM_NS(val);
+}
+#endif /* CONFIG_ARMV8_M_MAINLINE */
+
 void tz_nonsecure_state_setup(const tz_nonsecure_setup_conf_t *p_ns_conf)
 {
 	configure_nonsecure_vtor_offset(p_ns_conf->vtor_ns);
