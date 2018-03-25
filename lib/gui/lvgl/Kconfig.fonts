@@ -1,0 +1,189 @@
+#
+# Copyright (c) 2018 Jan Van Winkel <jan.van_winkel@dxplore.eu>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menu "Fonts"
+
+config LVGL_BUILD_IN_FONTS
+	bool "Enable build-in fonts"
+	default y
+	help
+	  Enable build-in font support
+
+if LVGL_BUILD_IN_FONTS
+
+config LVGL_BUILD_IN_FONT_10
+	bool "Enable build-in 10px fonts"
+	help
+	  Enable build-in font support, size 10 pixels
+
+if LVGL_BUILD_IN_FONT_10
+
+config LVGL_BUILD_IN_FONT_10_ASCII_BPP
+	int "ASCII character set BPP"
+	default 0
+	help
+	  Bits per pixel (1,2,4,8) for font, 0 will disable font
+
+config LVGL_BUILD_IN_FONT_10_LATIN_SUP_BPP
+	int "Latin supplement character set BPP"
+	default 0
+	help
+	  Bits per pixel (1,2,4,8) for font, 0 will disable font
+
+config LVGL_BUILD_IN_FONT_10_CYRILLIC_BPP
+	int "Cyrillic character set BPP"
+	default 0
+	help
+	  Bits per pixel (1,2,4,8) for font, 0 will disable font
+
+config LVGL_BUILD_IN_FONT_10_SYMBOL_BPP
+	int "Symbol character set BPP"
+	default 0
+	help
+	  Bits per pixel (1,2,4,8) for font, 0 will disable font
+
+endif
+
+config LVGL_BUILD_IN_FONT_20
+	bool "Enable build-in 20px fonts"
+	default y
+	help
+	  Enable build-in font support, size 20 pixels
+
+if LVGL_BUILD_IN_FONT_20
+
+config LVGL_BUILD_IN_FONT_20_ASCII_BPP
+	int "ASCII character set BPP"
+	default 4
+	help
+	  Bits per pixel (1,2,4,8) for font, 0 will disable font
+
+config LVGL_BUILD_IN_FONT_20_LATIN_SUP_BPP
+	int "Latin supplement character set BPP"
+	default 0
+	help
+	  Bits per pixel (1,2,4,8) for font, 0 will disable font
+
+config LVGL_BUILD_IN_FONT_20_CYRILLIC_BPP
+	int "Cyrillic character set BPP"
+	default 0
+	help
+	  Bits per pixel (1,2,4,8) for font, 0 will disable font
+
+config LVGL_BUILD_IN_FONT_20_SYMBOL_BPP
+	int "Symbol character set BPP"
+	default 4
+	help
+	  Bits per pixel (1,2,4,8) for font, 0 will disable font
+
+endif
+
+config LVGL_BUILD_IN_FONT_30
+	bool "Enable build-in 30px fonts"
+	help
+	  Enable build-in font support, size 30 pixels
+
+if LVGL_BUILD_IN_FONT_30
+
+config LVGL_BUILD_IN_FONT_30_ASCII_BPP
+	int "ASCII character set BPP"
+	default 0
+	help
+	  Bits per pixel (1,2,4,8) for font, 0 will disable font
+
+config LVGL_BUILD_IN_FONT_30_LATIN_SUP_BPP
+	int "Latin supplement character set BPP"
+	default 0
+	help
+	  Bits per pixel (1,2,4,8) for font, 0 will disable font
+
+config LVGL_BUILD_IN_FONT_30_CYRILLIC_BPP
+	int "Cyrillic character set BPP"
+	default 0
+	help
+	  Bits per pixel (1,2,4,8) for font, 0 will disable font
+
+config LVGL_BUILD_IN_FONT_30_SYMBOL_BPP
+	int "Symbol character set BPP"
+	default 0
+	help
+	  Bits per pixel (1,2,4,8) for font, 0 will disable font
+
+endif
+
+config LVGL_BUILD_IN_FONT_40
+	bool "Enable build-in 40px fonts"
+	help
+	  Enable build-in font support, size 40 pixels
+
+if LVGL_BUILD_IN_FONT_40
+
+config LVGL_BUILD_IN_FONT_40_ASCII_BPP
+	int "ASCII character set BPP"
+	default 0
+	help
+	  Bits per pixel (1,2,4,8) for font, 0 will disable font
+
+config LVGL_BUILD_IN_FONT_40_LATIN_SUP_BPP
+	int "Latin supplement character set BPP"
+	default 0
+	help
+	  Bits per pixel (1,2,4,8) for font, 0 will disable font
+
+config LVGL_BUILD_IN_FONT_40_CYRILLIC_BPP
+	int "Cyrillic character set BPP"
+	default 0
+	help
+	  Bits per pixel (1,2,4,8) for font, 0 will disable font
+
+config LVGL_BUILD_IN_FONT_40_SYMBOL_BPP
+	int "Symbol character set BPP"
+	default 0
+	help
+	  Bits per pixel (1,2,4,8) for font, 0 will disable font
+
+endif
+
+endif
+
+config LVGL_BUILD_IN_FONT_MONOSPACE
+	bool "Enable build-in monospace font"
+	help
+	  Enable build-in monospace font support
+
+choice
+	prompt "Default LVGL font"
+	default LVGL_DEFAULT_FONT_BUILD_IN_20_ASCII
+
+	config LVGL_DEFAULT_FONT_BUILD_IN_10_ASCII
+		bool "Build-in ASCII font 10"
+		depends on LVGL_BUILD_IN_FONT_10 && LVGL_BUILD_IN_FONT_10_ASCII_BPP != 0
+
+	config LVGL_DEFAULT_FONT_BUILD_IN_20_ASCII
+		bool "Build-in ASCII font 20"
+		depends on LVGL_BUILD_IN_FONT_20 && LVGL_BUILD_IN_FONT_20_ASCII_BPP != 0
+
+	config LVGL_DEFAULT_FONT_BUILD_IN_30_ASCII
+		bool "Build-in ASCII font 30"
+		depends on LVGL_BUILD_IN_FONT_30 && LVGL_BUILD_IN_FONT_30_ASCII_BPP != 0
+
+	config LVGL_DEFAULT_FONT_BUILD_IN_40_ASCII
+		bool "Build-in ASCII font 40"
+		depends on LVGL_BUILD_IN_FONT_40 && LVGL_BUILD_IN_FONT_40_ASCII_BPP != 0
+
+	config LVGL_DEFAULT_FONT_BUILD_IN_MONOSPACE
+		bool "Build-in monospace font"
+		depends on LVGL_BUILD_IN_FONT_MONOSPACE
+
+	config LVGL_DEFAULT_FONT_CUSTOM
+		bool "Custom font"
+		help
+		  Use a none build-in font as default font. A pointer named lv_default_font_custom_ptr
+		  should exists as a global variable and pint yo a valid font structure
+
+endchoice
+
+endmenu

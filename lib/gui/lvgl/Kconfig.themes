@@ -1,0 +1,59 @@
+#
+# Copyright (c) 2018 Jan Van Winkel <jan.van_winkel@dxplore.eu>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menu "Themes"
+
+config LVGL_THEMES
+	bool "Enable build-in themes"
+	help
+	  Enable build-in themes
+
+if LVGL_THEMES
+
+config LVGL_THEME_LIVE_UPDATE
+	bool "Enable runtime theme switching"
+	help
+	  Enable runtime theme switching, this will consume 8 to 10kB of RAM.
+
+config LVGL_THEME_DEFAULT
+	bool "Enable default theme support"
+	help
+	  Enable default theme support.
+	  Low RAM footprint theme.
+
+config LVGL_THEME_ALIEN
+	bool "Enable alien theme support"
+	help
+	  Enable alien theme, dark futuristic, support
+
+config LVGL_THEME_NIGHT
+	bool "Enable night theme support"
+	help
+	  Enable night theme, dark elegant, support
+
+config LVGL_THEME_MONO
+	bool "Enable mono theme support"
+	help
+	  Enable mono theme, monochrome, support
+
+config LVGL_THEME_MATERIAL
+	bool "Enable material theme support"
+	help
+	  Enable material theme, flat theme with bold colors and light shadow, support
+
+config LVGL_THEME_ZEN
+	bool "Enable zen theme support"
+	help
+	  Enable zen theme, peaceful light theme, support
+
+config LVGL_THEME_NEMO
+	bool "Enable nemo theme support"
+	help
+	  Enable water-like theme based on the movie "Finding Nemo"
+
+endif
+
+endmenu
