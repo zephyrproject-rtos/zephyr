@@ -66,6 +66,44 @@ typedef struct tz_nonsecure_setup_conf {
  */
 void tz_nonsecure_state_setup(const tz_nonsecure_setup_conf_t *p_ns_conf);
 
+#if defined(CONFIG_ARMV8_M_MAINLINE)
+
+/**
+ *
+ * @brief Setup Non-Secure Main Stack Pointer limit register
+ *
+ * Configure the Non-Secure instance of the MSPLIM register.
+ *
+ * @param val value to configure the MSPLIM_NS register with.
+ *
+ * Notes:
+ *
+ * This function shall only be called from Secure state.
+ * Only ARMv8-M Mainline implementations have Non-Secure MSPLIM instance.
+ *
+ * @return N/A
+ */
+void tz_nonsecure_msplim_set(u32_t val);
+
+/**
+ *
+ * @brief Setup Non-Secure Process Stack Pointer limit register
+ *
+ * Configure the Non-Secure instance of the PSPLIM register.
+ *
+ * @param val value to configure the PSPLIM_NS register with.
+ *
+ * Notes:
+ *
+ * This function shall only be called from Secure state.
+ * Only ARMv8-M Mainline implementations have Non-Secure PSPLIM instance.
+ *
+ * @return N/A
+ */
+void tz_nonsecure_psplim_set(u32_t val);
+
+#endif /* CONFIG_ARMV8_M_MAINLINE */
+
 /**
  *
  * @brief Configure SAU
