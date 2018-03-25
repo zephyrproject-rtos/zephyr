@@ -129,6 +129,12 @@ static int http_response(struct http_ctx *ctx, const char *header,
 		return ret;
 	}
 
+	ret = http_send_chunk(ctx, NULL, 0, dst, NULL);
+	if (ret < 0) {
+		NET_ERR("Cannot send data to peer (%d)", ret);
+		return ret;
+	}
+
 	return http_send_flush(ctx, str);
 }
 
