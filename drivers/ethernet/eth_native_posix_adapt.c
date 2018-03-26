@@ -115,7 +115,7 @@ int eth_wait_data(int fd)
 	FD_SET(fd, &rset);
 
 	timeout.tv_sec = 0;
-	timeout.tv_usec = USEC(50);
+	timeout.tv_usec = 0;
 
 	ret = select(fd + 1, &rset, NULL, NULL, &timeout);
 	if (ret < 0 && errno != EINTR) {
