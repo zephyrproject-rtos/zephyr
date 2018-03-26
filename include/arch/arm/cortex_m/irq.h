@@ -99,7 +99,7 @@ extern void _irq_priority_set(unsigned int irq, unsigned int prio,
 	irq_p; \
 })
 
-/* FIXME prefer these inline, but see ZEP-1595 */
+/* FIXME prefer these inline, but see GH-3056 */
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
 extern void _arch_isr_direct_pm(void);
 #define _ARCH_ISR_DIRECT_PM() _arch_isr_direct_pm()

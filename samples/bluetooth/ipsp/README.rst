@@ -185,4 +185,4 @@ test both TCP and UDP echo, you can use Zephyr's helper tool in the GitHub
 .. note::
 
    For hosts using kernels released before 4.12 CONFIG_NET_L2_BT_ZEP1656
-   shall be selected: https://jira.zephyrproject.org/browse/ZEP-1656
+   shall be selected: https://github.com/zephyrproject-rtos/zephyr/issues/3111

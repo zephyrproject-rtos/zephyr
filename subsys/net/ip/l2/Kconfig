@@ -68,7 +68,7 @@ config NET_L2_BT_ZEP1656
 	  it might not be compliant with RFC 7668 as it cause the stack to skip
 	  Neighbor Discovery cache causing the destination link address to be
 	  omitted. For more details why this is needed see:
-	  https://jira.zephyrproject.org/browse/ZEP-1656
+	  https://github.com/zephyrproject-rtos/zephyr/issues/3111
 
 config NET_L2_BT_SEC_LEVEL
 	int "Security level of Bluetooth Link"

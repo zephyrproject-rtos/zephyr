@@ -47,7 +47,7 @@ void _init_mock(void)
 
 /*
  * FIXME: move to sys_io.h once the argument signature for bitmap has
- * been fixed to void* or similar ZEP-1347
+ * been fixed to void* or similar GH-2825
  */
 #define BITS_PER_UL (8 * sizeof(unsigned long int))
 #define DEFINE_BITFIELD(name, bits)					\

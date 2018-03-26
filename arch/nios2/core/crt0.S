@@ -72,7 +72,7 @@ SECTION_FUNC(reset, __reset)
 SECTION_FUNC(TEXT, __start)
 
 	/* TODO if shadow register sets enabled, ensure we are in set 0
-	 * ZEP-258
+	 * GH-1821
 	 */
 
 	/* Initialize the data cache if booting from bare metal. If
@@ -136,7 +136,7 @@ SECTION_FUNC(TEXT, __start)
 
 	/* TODO if shadow register sets enabled, interate through them to set
 	 * up. Need to clear r0, write gp, set the execption stack pointer
-	 * ZEP-258
+	 * GH-1821
 	 */
 
 	/* Jump into C domain. _PrepC zeroes BSS, copies rw data into RAM,
