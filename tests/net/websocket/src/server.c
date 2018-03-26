@@ -143,7 +143,7 @@ static void ws_connected(struct http_ctx *ctx,
 			 void *user_data)
 {
 	char url[32];
-	int len = min(sizeof(url), ctx->http.url_len);
+	int len = min(sizeof(url) - 1, ctx->http.url_len);
 
 	memcpy(url, ctx->http.url, len);
 	url[len] = '\0';
