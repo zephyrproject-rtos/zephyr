@@ -12,11 +12,12 @@ from .core import ZephyrBinaryRunner, RunnerCaps
 class NrfJprogBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for nrfjprog.'''
 
-    def __init__(self, hex_, family, softreset, debug=False):
+    def __init__(self, hex_, family, softreset, erase=False, debug=False):
         super(NrfJprogBinaryRunner, self).__init__(debug=debug)
         self.hex_ = hex_
         self.family = family
         self.softreset = softreset
+        self.erase = erase
 
     @classmethod
     def name(cls):
@@ -34,11 +35,14 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
         parser.add_argument('--softreset', required=False,
                             action='store_true',
                             help='use reset instead of pinreset')
+        parser.add_argument('--erase', action='store_true',
+                            help='if given, mass erase flash before loading')
 
     @classmethod
     def create_from_args(cls, args):
         return NrfJprogBinaryRunner(args.kernel_hex, args.nrf_family,
-                                    args.softreset, debug=args.verbose)
+                                    args.softreset, erase=args.erase,
+                                    debug=args.verbose)
 
     def get_board_snr_from_user(self):
         snrs = self.check_output(['nrfjprog', '--ids'])
@@ -70,14 +74,25 @@ class NrfJprogBinaryRunner(ZephyrBinaryRunner):
         return snrs[value - 1]
 
     def do_run(self, command, **kwargs):
+        commands = []
         board_snr = self.get_board_snr_from_user()
+        program_cmd = ['nrfjprog', '--program', self.hex_, '-f', self.family,
+                       '--snr', board_snr]
 
         print('Flashing file: {}'.format(self.hex_))
-        commands = [
-            ['nrfjprog', '--eraseall', '-f', self.family, '--snr', board_snr],
-            ['nrfjprog', '--program', self.hex_, '-f', self.family, '--snr',
-             board_snr],
-        ]
+
+        if self.erase:
+            commands.extend([
+                ['nrfjprog', '--eraseall', '-f', self.family,
+                 '--snr', board_snr],
+                program_cmd
+                ])
+        else:
+            if self.family == 'NRF51':
+                commands.append(program_cmd + ['--sectorerase'])
+            else:
+                commands.append(program_cmd + ['--sectoranduicrerase'])
+
         if self.family == 'NRF52' and self.softreset == False:
             commands.extend([
                 # Enable pin reset
