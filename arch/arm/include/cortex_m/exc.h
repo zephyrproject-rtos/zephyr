@@ -122,7 +122,10 @@ static ALWAYS_INLINE void _ExcSetup(void)
 	 * NMI and Bus Faults targeting the Secure state will
 	 * escalate to a SecureFault or SecureHardFault.
 	 */
-	SCB->AIRCR |= SCB_AIRCR_BFHFNMINS_Msk;
+	SCB->AIRCR =
+		(SCB->AIRCR & (~(SCB_AIRCR_VECTKEY_Msk)))
+		| SCB_AIRCR_BFHFNMINS_Msk
+		| ((0x5FAUL << SCB_AIRCR_VECTKEY_Pos) & SCB_AIRCR_VECTKEY_Msk);
 	/* Note: Fault conditions that would generate a SecureFault
 	 * in a PE with the Main Extension instead generate a
 	 * SecureHardFault in a PE without the Main Extension.
