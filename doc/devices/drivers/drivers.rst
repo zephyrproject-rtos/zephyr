@@ -5,9 +5,8 @@ Device Drivers and Device Model
 
 Introduction
 ************
-The Zephyr kernel supports a variety of device drivers. The specific set of
-device drivers available for an application's board configuration varies
-according to the associated hardware components and device driver software.
+The Zephyr kernel supports a variety of device drivers. Whether a
+driver is available depends on the board and the driver.
 
 The Zephyr device model provides a consistent device model for configuring the
 drivers that are part of a system. The device model is responsible
@@ -109,7 +108,7 @@ build time. The next section describes this in more detail.
 Subsystems and API Structures
 *****************************
 
-Most drivers will be targeting a device-independent subsystem API.
+Most drivers will be implementing a device-independent subsystem API.
 Applications can simply program to that generic API, and application
 code is not specific to any particular driver implementation.
 
