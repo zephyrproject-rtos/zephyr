@@ -27,8 +27,8 @@ extern "C" {
 #define _SYS_INIT_LEVEL_APPLICATION	3
 
 
-/* Counter use to avoid issues if two or more system devices are declared
- * in the same C file with the same init function
+/* A counter is used to avoid issues when two or more system devices
+ * are declared in the same C file with the same init function.
  */
 #define _SYS_NAME(init_fn) _CONCAT(_CONCAT(sys_init_, init_fn), __COUNTER__)
 
