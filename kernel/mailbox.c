@@ -285,8 +285,7 @@ static int mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 			 * synchronous send: pend current thread (unqueued)
 			 * until the receiver consumes the message
 			 */
-			_remove_thread_from_ready_q(_current);
-			_mark_thread_as_pending(_current);
+			_pend_current_thread(NULL, K_FOREVER);
 			return _Swap(key);
 		}
 	}

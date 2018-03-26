@@ -203,6 +203,10 @@ void _pend_thread(struct k_thread *thread, _wait_q_t *wait_q, s32_t timeout)
 	sys_dlist_t *wait_q_list = (sys_dlist_t *)wait_q;
 	struct k_thread *pending;
 
+	if (!wait_q_list) {
+		goto inserted;
+	}
+
 	SYS_DLIST_FOR_EACH_CONTAINER(wait_q_list, pending, base.k_q_node) {
 		if (_is_t1_higher_prio_than_t2(thread, pending)) {
 			sys_dlist_insert_before(wait_q_list,
