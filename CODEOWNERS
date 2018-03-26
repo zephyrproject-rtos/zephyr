@@ -171,7 +171,8 @@ samples/subsys/usb                       @youvedeep @andyross
 scripts/expr_parser.py                   @andrewboie
 scripts/sanity_chk/*                     @andrewboie
 scripts/sanitycheck                      @andrewboie @nashif
-scripts/support/runner/*                 @mbolivar
+scripts/runner/*                         @mbolivar
+scripts/zephyr_flash_debug.py            @mbolivar
 subsys/bluetooth/*                       @sjanc @jhedberg @Vudentz
 subsys/bluetooth/controller/*            @carlescufi @cvinayak
 subsys/fs/*                              @nashif
