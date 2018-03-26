@@ -81,6 +81,10 @@ static const int _INIT_LEVEL_APPLICATION = 1;
  * expressions are *not* permitted
  * (e.g. CONFIG_KERNEL_INIT_PRIORITY_DEFAULT + 5).
  */
+#define DEVICE_INIT(dev_name, drv_name, init_fn, data, cfg_info, level, prio) \
+	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info,      \
+			    level, prio, NULL)
+
 
 /**
  * @def DEVICE_AND_API_INIT
@@ -94,11 +98,9 @@ static const int _INIT_LEVEL_APPLICATION = 1;
  * @details The driver api is also set here, eliminating the need to do that
  * during initialization.
  */
-
 #ifndef CONFIG_DEVICE_POWER_MANAGEMENT
 #define DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info,  \
 			    level, prio, api)				  \
-									  \
 	static struct device_config _CONCAT(__config_, dev_name) __used	  \
 	__attribute__((__section__(".devconfig.init"))) = {		  \
 		.name = drv_name, .init = (init_fn),			  \
@@ -110,39 +112,7 @@ static const int _INIT_LEVEL_APPLICATION = 1;
 		.driver_api = api,					  \
 		.driver_data = data					  \
 	}
-
-
-#define DEVICE_DEFINE(dev_name, drv_name, init_fn, pm_control_fn,	 \
-		      data, cfg_info, level, prio, api)			 \
-	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info, \
-			    level, prio, api)
 #else
-
-/**
- * @def DEVICE_DEFINE
- *
- * @brief Create device object and set it up for boot time initialization,
- * with the option to device_pm_control.
- *
- * @copydetails DEVICE_AND_API_INIT
- * @param pm_control_fn Pointer to device_pm_control function.
- * Can be empty function (device_pm_control_nop) if not implemented.
- */
-#define DEVICE_DEFINE(dev_name, drv_name, init_fn, pm_control_fn,	  \
-		      data, cfg_info, level, prio, api)			  \
-									  \
-	static struct device_config _CONCAT(__config_, dev_name) __used	  \
-	__attribute__((__section__(".devconfig.init"))) = {		  \
-		.name = drv_name, .init = (init_fn),			  \
-		.device_pm_control = (pm_control_fn),			  \
-		.config_info = (cfg_info)				  \
-	};								  \
-	static struct device _CONCAT(__device_, dev_name) __used	  \
-	__attribute__((__section__(".init_" #level STRINGIFY(prio)))) = { \
-		.config = &_CONCAT(__config_, dev_name),		  \
-		.driver_api = api,					  \
-		.driver_data = data					  \
-	}
 /*
  * Use the default device_pm_control for devices that do not call the
  * DEVICE_DEFINE macro so that caller of hook functions
@@ -155,9 +125,37 @@ static const int _INIT_LEVEL_APPLICATION = 1;
 		      prio, api)
 #endif
 
-#define DEVICE_INIT(dev_name, drv_name, init_fn, data, cfg_info, level, prio) \
-	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info,      \
-			    level, prio, NULL)
+/**
+ * @def DEVICE_DEFINE
+ *
+ * @brief Create device object and set it up for boot time initialization,
+ * with the option to device_pm_control.
+ *
+ * @copydetails DEVICE_AND_API_INIT
+ * @param pm_control_fn Pointer to device_pm_control function.
+ * Can be empty function (device_pm_control_nop) if not implemented.
+ */
+#ifndef CONFIG_DEVICE_POWER_MANAGEMENT
+#define DEVICE_DEFINE(dev_name, drv_name, init_fn, pm_control_fn,	 \
+		      data, cfg_info, level, prio, api)			 \
+	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info, \
+			    level, prio, api)
+#else
+#define DEVICE_DEFINE(dev_name, drv_name, init_fn, pm_control_fn,	  \
+		      data, cfg_info, level, prio, api)			  \
+	static struct device_config _CONCAT(__config_, dev_name) __used	  \
+	__attribute__((__section__(".devconfig.init"))) = {		  \
+		.name = drv_name, .init = (init_fn),			  \
+		.device_pm_control = (pm_control_fn),			  \
+		.config_info = (cfg_info)				  \
+	};								  \
+	static struct device _CONCAT(__device_, dev_name) __used	  \
+	__attribute__((__section__(".init_" #level STRINGIFY(prio)))) = { \
+		.config = &_CONCAT(__config_, dev_name),		  \
+		.driver_api = api,					  \
+		.driver_data = data					  \
+	}
+#endif
 
 /**
  * @def DEVICE_NAME_GET
