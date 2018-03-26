@@ -590,7 +590,7 @@ static inline void flush_ep_usb_events(void)
 }
 
 /** Interrupt mask to event register map */
-#define USBD_INT_CNT 26
+#define USBD_INT_CNT 25
 
 static const u32_t event_map[USBD_INT_CNT] = {
 	NRF_USBD_EVENT_USBRESET,
@@ -618,7 +618,6 @@ static const u32_t event_map[USBD_INT_CNT] = {
 	NRF_USBD_EVENT_USBEVENT,
 	NRF_USBD_EVENT_EP0SETUP,
 	NRF_USBD_EVENT_DATAEP,
-	NRF_USBD_EVENT_ACCESSFAULT,
 };
 
 static void usb_reset_handler(u32_t pos)
@@ -844,13 +843,6 @@ static void epdata_handler(u32_t pos)
 	enqueue_ep_usb_event(ev);
 }
 
-static void access_fault_handler(u32_t pos)
-{
-	ARG_UNUSED(pos);
-	SYS_LOG_ERR("USBD Access Fault!");
-	__ASSERT_NO_MSG(0);
-}
-
 typedef void (*isr_event_handler_t)(u32_t pos);
 
 static const isr_event_handler_t isr_event_handlers[USBD_INT_CNT] = {
@@ -879,7 +871,6 @@ static const isr_event_handler_t isr_event_handlers[USBD_INT_CNT] = {
 	usb_event_handler,
 	ep0setup_handler,
 	epdata_handler,
-	access_fault_handler,
 };
 
 /** Process interrupts that are enabled */
@@ -957,7 +948,6 @@ static void usbd_enable_interrupts(void)
 
 	ctx->enable_mask = NRF_USBD_INT_USBRESET_MASK |
 			   NRF_USBD_INT_USBEVENT_MASK |
-			   NRF_USBD_INT_ACCESSFAULT_MASK |
 			   NRF_USBD_INT_DATAEP_MASK;
 
 	nrf_usbd_int_enable(ctx->enable_mask);
