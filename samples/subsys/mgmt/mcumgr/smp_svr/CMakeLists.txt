@@ -7,17 +7,9 @@
 # This provides a basic application structure suitable for communication using
 # mcumgr.  It can be used as a starting point for new applications.
 
-# Zephyr uses Device Tree (DT) to describe some board hardware configuration.
-#
-# See the Zephyr documentation for more information on DT:
-# http://docs.zephyrproject.org/devices/dts/device_tree.html
-set(DTC_OVERLAY_FILE "${CMAKE_CURRENT_SOURCE_DIR}/dts.overlay")
-
 # Standard Zephyr application boilerplate.
 include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
 project(NONE)
-
-assert_exists(DTC_OVERLAY_FILE)
 
 target_sources(app PRIVATE
     src/main.c
