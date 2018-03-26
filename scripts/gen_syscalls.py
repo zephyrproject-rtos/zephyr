@@ -29,6 +29,8 @@ list_template = """
 
 #ifndef _ASMLANGUAGE
 
+#include <zephyr/types.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
