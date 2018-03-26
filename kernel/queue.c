@@ -68,13 +68,10 @@ static void prepare_thread_to_run(struct k_thread *thread, void *data)
 }
 #endif /* CONFIG_POLL */
 
-/* returns 1 if a reschedule must take place, 0 otherwise */
-static inline int handle_poll_events(struct k_queue *queue, u32_t state)
+static inline void handle_poll_events(struct k_queue *queue, u32_t state)
 {
 #ifdef CONFIG_POLL
-	return _handle_obj_poll_events(&queue->poll_events, state);
-#else
-	return 0;
+	_handle_obj_poll_events(&queue->poll_events, state);
 #endif
 }
 
@@ -88,19 +85,12 @@ void k_queue_cancel_wait(struct k_queue *queue)
 
 	if (first_pending_thread) {
 		prepare_thread_to_run(first_pending_thread, NULL);
-		if (!_is_in_isr() && _must_switch_threads()) {
-			(void)_Swap(key);
-			return;
-		}
 	}
 #else
-	if (handle_poll_events(queue, K_POLL_STATE_NOT_READY)) {
-		(void)_Swap(key);
-		return;
-	}
+	handle_poll_events(queue, K_POLL_STATE_NOT_READY);
 #endif /* !CONFIG_POLL */
 
-	irq_unlock(key);
+	_reschedule_noyield(key);
 }
 
 void k_queue_insert(struct k_queue *queue, void *prev, void *data)
@@ -113,11 +103,7 @@ void k_queue_insert(struct k_queue *queue, void *prev, void *data)
 
 	if (first_pending_thread) {
 		prepare_thread_to_run(first_pending_thread, data);
-		if (!_is_in_isr() && _must_switch_threads()) {
-			(void)_Swap(key);
-			return;
-		}
-		irq_unlock(key);
+		_reschedule_noyield(key);
 		return;
 	}
 #endif /* !CONFIG_POLL */
@@ -125,13 +111,10 @@ void k_queue_insert(struct k_queue *queue, void *prev, void *data)
 	sys_slist_insert(&queue->data_q, prev, data);
 
 #if defined(CONFIG_POLL)
-	if (handle_poll_events(queue, K_POLL_STATE_DATA_AVAILABLE)) {
-		(void)_Swap(key);
-		return;
-	}
+	handle_poll_events(queue, K_POLL_STATE_DATA_AVAILABLE);
 #endif /* CONFIG_POLL */
 
-	irq_unlock(key);
+	_reschedule_noyield(key);
 }
 
 void k_queue_append(struct k_queue *queue, void *data)
@@ -148,7 +131,6 @@ void k_queue_append_list(struct k_queue *queue, void *head, void *tail)
 {
 	__ASSERT(head && tail, "invalid head or tail");
 
-	int need_sched = 0;
 	unsigned int key = irq_lock();
 #if !defined(CONFIG_POLL)
 	struct k_thread *thread;
@@ -156,7 +138,6 @@ void k_queue_append_list(struct k_queue *queue, void *head, void *tail)
 	while (head && ((thread = _unpend_first_thread(&queue->wait_q)))) {
 		prepare_thread_to_run(thread, head);
 		head = *(void **)head;
-		need_sched = 1;
 	}
 
 	if (head) {
@@ -165,18 +146,10 @@ void k_queue_append_list(struct k_queue *queue, void *head, void *tail)
 
 #else
 	sys_slist_append_list(&queue->data_q, head, tail);
-	if (handle_poll_events(queue, K_POLL_STATE_DATA_AVAILABLE)) {
-		(void)_Swap(key);
-		return;
-	}
+	handle_poll_events(queue, K_POLL_STATE_DATA_AVAILABLE);
 #endif /* !CONFIG_POLL */
 
-	if (need_sched) {
-		_reschedule_threads(key);
-		return;
-	} else {
-		irq_unlock(key);
-	}
+	_reschedule_noyield(key);
 }
 
 void k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list)

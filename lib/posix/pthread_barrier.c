@@ -24,14 +24,9 @@ int pthread_barrier_wait(pthread_barrier_t *b)
 		while (!sys_dlist_is_empty(&b->wait_q)) {
 			ready_one_thread(&b->wait_q);
 		}
-
-		if (!__must_switch_threads()) {
-			irq_unlock(key);
-			return 0;
-		}
 	} else {
 		_pend_current_thread(&b->wait_q, K_FOREVER);
 	}
 
-	return _Swap(key);
+	return _reschedule_noyield(key);
 }

@@ -21,13 +21,13 @@ extern k_tid_t const _idle_thread;
 
 extern void _add_thread_to_ready_q(struct k_thread *thread);
 extern void _remove_thread_from_ready_q(struct k_thread *thread);
-extern void _reschedule_threads(int key);
+extern int _reschedule_noyield(int key);
+extern int _reschedule_yield(int key);
 extern void k_sched_unlock(void);
 extern void _pend_thread(struct k_thread *thread,
 			 _wait_q_t *wait_q, s32_t timeout);
 extern void _pend_current_thread(_wait_q_t *wait_q, s32_t timeout);
 extern void _move_thread_to_end_of_prio_q(struct k_thread *thread);
-extern int __must_switch_threads(void);
 extern int _is_thread_time_slicing(struct k_thread *thread);
 extern void _update_time_slice_before_swap(void);
 #ifdef _NON_OPTIMIZED_TICKS_PER_SEC
@@ -261,15 +261,6 @@ static inline int _get_highest_ready_prio(void)
 	return abs_prio - _NUM_COOP_PRIO;
 }
 #endif
-
-/*
- * Checks if current thread must be context-switched out. The caller must
- * already know that the execution context is a thread.
- */
-static inline int _must_switch_threads(void)
-{
-	return _is_preempt(_current) && __must_switch_threads();
-}
 
 /*
  * Called directly by other internal kernel code.

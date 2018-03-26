@@ -135,23 +135,34 @@ void _remove_thread_from_ready_q(struct k_thread *thread)
 #endif
 }
 
-/* reschedule threads if the scheduler is not locked */
-/* not callable from ISR */
-/* must be called with interrupts locked */
-void _reschedule_threads(int key)
+/* Releases the irq_lock and swaps to a higher priority thread if one
+ * is available, returning the _Swap() return value, otherwise zero.
+ * Does not swap away from a thread at a cooperative (unpreemptible)
+ * priority unless "yield" is true.
+ */
+static int resched(int key, int yield)
 {
-#ifdef CONFIG_PREEMPT_ENABLED
 	K_DEBUG("rescheduling threads\n");
 
-	if (_must_switch_threads()) {
+	if (!_is_in_isr() &&
+	    (yield || _is_preempt(_current)) &&
+	    _is_prio_higher(_get_highest_ready_prio(), _current->base.prio)) {
 		K_DEBUG("context-switching out %p\n", _current);
-		_Swap(key);
+		return _Swap(key);
 	} else {
 		irq_unlock(key);
+		return 0;
 	}
-#else
-	irq_unlock(key);
-#endif
+}
+
+int _reschedule_noyield(int key)
+{
+	return resched(key, 0);
+}
+
+int _reschedule_yield(int key)
+{
+	return resched(key, 1);
 }
 
 void k_sched_lock(void)
@@ -174,7 +185,7 @@ void k_sched_unlock(void)
 	K_DEBUG("scheduler unlocked (%p:%d)\n",
 		_current, _current->base.sched_locked);
 
-	_reschedule_threads(key);
+	_reschedule_noyield(key);
 #endif
 }
 
@@ -237,43 +248,6 @@ void _pend_current_thread(_wait_q_t *wait_q, s32_t timeout)
 	_pend_thread(_current, wait_q, timeout);
 }
 
-#if defined(CONFIG_PREEMPT_ENABLED) && defined(CONFIG_KERNEL_DEBUG)
-/* debug aid */
-static void dump_ready_q(void)
-{
-	K_DEBUG("bitmaps: ");
-	for (int bitmap = 0; bitmap < K_NUM_PRIO_BITMAPS; bitmap++) {
-		K_DEBUG("%x", _ready_q.prio_bmap[bitmap]);
-	}
-	K_DEBUG("\n");
-	for (int prio = 0; prio < K_NUM_PRIORITIES; prio++) {
-		K_DEBUG("prio: %d, head: %p\n",
-			prio - _NUM_COOP_PRIO,
-			sys_dlist_peek_head(&_ready_q.q[prio]));
-	}
-}
-#endif  /* CONFIG_PREEMPT_ENABLED && CONFIG_KERNEL_DEBUG */
-
-/*
- * Check if there is a thread of higher prio than the current one. Should only
- * be called if we already know that the current thread is preemptible.
- */
-int __must_switch_threads(void)
-{
-#ifdef CONFIG_PREEMPT_ENABLED
-	K_DEBUG("current prio: %d, highest prio: %d\n",
-		_current->base.prio, _get_highest_ready_prio());
-
-#ifdef CONFIG_KERNEL_DEBUG
-	dump_ready_q();
-#endif  /* CONFIG_KERNEL_DEBUG */
-
-	return _is_prio_higher(_get_highest_ready_prio(), _current->base.prio);
-#else
-	return 0;
-#endif
-}
-
 int _impl_k_thread_priority_get(k_tid_t thread)
 {
 	return thread->base.prio;
@@ -297,7 +271,7 @@ void _impl_k_thread_priority_set(k_tid_t tid, int prio)
 	int key = irq_lock();
 
 	_thread_priority_set(thread, prio);
-	_reschedule_threads(key);
+	_reschedule_noyield(key);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -431,7 +405,7 @@ void _impl_k_wakeup(k_tid_t thread)
 	if (_is_in_isr()) {
 		irq_unlock(key);
 	} else {
-		_reschedule_threads(key);
+		_reschedule_noyield(key);
 	}
 }
 
