@@ -1,0 +1,13 @@
+# Kconfig - nRF52840 PCA10056 board configuration
+#
+# Copyright (c) 2016 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NRF52840_PCA10056
+
+config GPIO_AS_PINRESET
+	bool "GPIO as pin reset (reset button)"
+	default y
+
+endif # BOARD_NRF52840_PCA10056
