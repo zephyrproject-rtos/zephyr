@@ -20,7 +20,7 @@ extern "C" {
  *
  * See IEEE 1003.1
  */
-static inline int sleep(unsigned int seconds)
+static inline unsigned sleep(unsigned int seconds)
 {
 	k_sleep(K_SECONDS(seconds));
 	return 0;
