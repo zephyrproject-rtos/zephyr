@@ -368,7 +368,7 @@ Each time you execute the run command, your application is rebuilt and run
 again.
 
 .. _application_debugging:
-
+.. _custom_board_definition:
 
 Custom Board Definition
 ***********************
