@@ -1,6 +1,9 @@
 assert_not(FLASH_SCRIPT "FLASH_SCRIPT has been removed; use BOARD_FLASH_RUNNER")
 assert_not(DEBUG_SCRIPT "DEBUG_SCRIPT has been removed; use BOARD_DEBUG_RUNNER")
 
+get_property(RUNNERS GLOBAL PROPERTY ZEPHYR_RUNNERS)
+
+# These arguments are common to all runners.
 set(RUNNER_ARGS_COMMON
   # Required:
   "--board-dir=${BOARD_DIR}"
@@ -21,9 +24,37 @@ else()
   set(RUNNER_VERBOSE)
 endif()
 
-foreach(target flash debug debugserver)
-  string(TOUPPER "${target}" target_upper)
+# Persist the runner-related state in the cache.  Everything except
+# the list of available runners is configurable, but the set of
+# pre-configured runners is internal, since they must be configured through
+# the board files.
+#
+# Everything is marked with FORCE so that re-running CMake updates the
+# configuration if the board files change.
+if(RUNNERS)
+  set(ZEPHYR_RUNNERS ${RUNNERS} CACHE INTERNAL "Available runners")
+  set(ZEPHYR_RUNNER_ARGS_COMMON ${RUNNER_ARGS_COMMON} CACHE STRING
+    "Common arguments to all runners" FORCE)
+  foreach(runner ${RUNNERS})
+    string(MAKE_C_IDENTIFIER ${runner} runner_id)
+    # E.g. args = BOARD_RUNNER_ARGS_openocd, BOARD_RUNNER_ARGS_dfu_util, etc.
+    get_property(runner_args GLOBAL PROPERTY "BOARD_RUNNER_ARGS_${runner_id}")
+    set(ZEPHYR_RUNNER_ARGS_${runner_id} ${runner_args} CACHE STRING
+      "Runner-specific arguments for ${runner}" FORCE)
+  endforeach()
+endif()
+if(BOARD_FLASH_RUNNER)
+  set(ZEPHYR_BOARD_FLASH_RUNNER ${BOARD_FLASH_RUNNER} CACHE STRING
+    "Default runner for flashing binaries" FORCE)
+endif()
+if(BOARD_DEBUG_RUNNER)
+  set(ZEPHYR_BOARD_DEBUG_RUNNER ${BOARD_DEBUG_RUNNER} CACHE STRING
+    "Default runner for debugging" FORCE)
+endif()
 
+# Generate the flash, debug, debugserver targets within the build
+# system itself.
+foreach(target flash debug debugserver)
   if(target STREQUAL flash)
     set(comment "Flashing ${BOARD}")
     set(runner "${BOARD_FLASH_RUNNER}")
