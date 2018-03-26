@@ -1,0 +1,8 @@
+sample:
+  description: 'WLAN Command shell for CC3220SF_LAUNCHXL'
+  name: WLAN command shell example
+tests:
+  test:
+    build_only: true
+    platform_whitelist: cc3220sf_launchxl
+    tags: samples simplelink_shell

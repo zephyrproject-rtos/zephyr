@@ -1,0 +1,51 @@
+/*
+ * Copyright (c) 2018, Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+#ifndef __SIMPLELINK_SUPPORT_H__
+#define __SIMPLELINK_SUPPORT_H__
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+
+#include <net/wifi_mgmt.h>
+
+#define SSID_LEN_MAX	 (32)
+#define BSSID_LEN_MAX	 (6)
+
+struct sl_connect_state {
+	u32_t gateway_ip;
+	u8_t ssid[SSID_LEN_MAX + 1];
+	u8_t bssid[BSSID_LEN_MAX];
+	u32_t ip_addr;
+	u32_t sta_ip;
+	u32_t ipv6_addr[4];
+	s16_t error;
+};
+
+/* Callback from SimpleLink Event Handlers: */
+typedef void (*simplelink_wifi_cb_t)(u32_t mgmt_event,
+				     struct sl_connect_state *conn);
+
+extern int _simplelink_scan(void);
+extern void _simplelink_get_scan_result(int index,
+					struct wifi_scan_result *scan_result);
+extern void _simplelink_get_mac(unsigned char *mac);
+extern int _simplelink_init(simplelink_wifi_cb_t wifi_cb);
+extern int _simplelink_connect(struct wifi_connect_req_params *params);
+extern int _simplelink_disconnect(void);
+
+#ifdef __cplusplus
+}
+#endif
+
+/**
+ * @}
+ */
+
+#endif /* __SIMPLELINK_SUPPORT_H__ */

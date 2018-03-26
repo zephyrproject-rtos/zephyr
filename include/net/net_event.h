@@ -183,12 +183,6 @@ struct net_event_ipv6_route {
 	u8_t prefix_len;
 };
 
-/* Maximum size of "struct net_event_ipv6_addr" or
- * "struct net_event_ipv6_nbr" or "struct net_event_ipv6_route".
- * NOTE: Update comments here and calculate which struct occupies max size.
- */
-#define NET_EVENT_INFO_MAX_SIZE sizeof(struct net_event_ipv6_route)
-
 #endif
 
 #ifdef __cplusplus
