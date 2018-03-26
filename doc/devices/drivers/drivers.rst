@@ -140,17 +140,6 @@ A subsystem API definition typically looks like this:
         api->do_that(device, foo, bar);
   }
 
-In general, it's best to use ``__ASSERT()`` macros instead of
-propagating return values unless the failure is expected to occur during
-the normal course of operation (such as a storage device full). Bad
-parameters, programming errors, consistency checks, pathological/unrecoverable
-failures, etc., should be handled by assertions.
-
-When it is appropriate to return error conditions for the caller to check, 0
-should be returned on success and a POSIX errno.h code returned on failure.
-See https://github.com/zephyrproject-rtos/zephyr/wiki/Naming-Conventions#return-codes for
-details about this.
-
 A driver implementing a particular subsystem will define the real implementation
 of these APIs, and populate an instance of subsystem_api structure:
 
@@ -317,3 +306,20 @@ For ``SYS_INIT_PM()`` you can obtain pointers by name, see
 :c:func:`SYS_INIT()`
 
 :c:func:`SYS_INIT_PM()`
+
+Error handling
+**************
+
+In general, it's best to use ``__ASSERT()`` macros instead of
+propagating return values unless the failure is expected to occur
+during the normal course of operation (such as a storage device
+full). Bad parameters, programming errors, consistency checks,
+pathological/unrecoverable failures, etc., should be handled by
+assertions.
+
+When it is appropriate to return error conditions for the caller to
+check, 0 should be returned on success and a POSIX errno.h code
+returned on failure.  See
+https://github.com/zephyrproject-rtos/zephyr/wiki/Naming-Conventions#return-codes
+for details about this.
+
