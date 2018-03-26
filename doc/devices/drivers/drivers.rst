@@ -91,6 +91,13 @@ split into read-only and runtime-mutable parts. At a high level we have:
         void *driver_data;
   };
 
+  struct device_config {
+	char    *name;
+	int (*init)(struct device *device);
+	const void *config_info;
+    [...]
+  };
+
 The ``config`` member is for read-only configuration data set at build time. For
 example, base memory mapped IO addresses, IRQ line numbers, or other fixed
 physical characteristics of the device. This is the ``config_info`` structure
