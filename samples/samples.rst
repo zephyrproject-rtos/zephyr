@@ -18,6 +18,7 @@ Samples and Demos
    boards/*
    mpu/*
    drivers/drivers.rst
+   application_development/*
 
 
 To add a new sample document, please use the template available under
