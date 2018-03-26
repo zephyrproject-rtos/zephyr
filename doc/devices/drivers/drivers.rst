@@ -300,19 +300,19 @@ leading zeroes or sign (e.g. 32), or an equivalent symbolic name (e.g.
 System Drivers
 **************
 
-In some cases you may just need to run a function at boot. Special ``SYS_INIT``
-macros exist that map to ``DEVICE_INIT()`` or ``DEVICE_INIT_PM()`` calls.
+In some cases you may just need to run a function at boot. Special ``SYS_*``
+macros exist that map to ``DEVICE_*INIT()`` calls.
 For ``SYS_INIT()`` there are no config or runtime data structures and there
 isn't a way
 to later get a device pointer by name. The same policies for initialization
 level and priority apply.
 
-For ``SYS_INIT_PM()`` you can obtain pointers by name, see
+For ``SYS_DEVICE_DEFINE()`` you can obtain pointers by name, see
 :ref:`power management <power_management>` section.
 
 :c:func:`SYS_INIT()`
 
-:c:func:`SYS_INIT_PM()`
+:c:func:`SYS_DEVICE_DEFINE()`
 
 Error handling
 **************
