@@ -27,12 +27,59 @@ that's used to initialize Bluetooth and then :c:func:`bt_le_adv_start()`
 that's used to start advertising a specific combination of advertising
 and scan response data.
 
+.. _bluetooth_bluez:
+
+Using BlueZ with Zephyr
+***********************
+
+The Linux Bluetooth Protocol Stack, BlueZ, comes with a very useful set of
+tools that can be used to debug and interact with Zephyr's BLE Host and
+Controller. In order to benefit from these tools you will need to make sure
+that you are running a recent version of the Linux Kernel and BlueZ:
+
+* Linux Kernel 4.10+
+* BlueZ 4.45+
+
+Additionally, some of the BlueZ tools might not be bundled by default by your
+Linux distribution. If you need to build BlueZ from scratch to update to a
+recent version or to obtain all of its tools you can follow the steps below:
+
+.. code-block:: console
+
+   git clone git://git.kernel.org/pub/scm/bluetooth/bluez.git
+   cd bluez
+   ./bootstrap-configure --disable-android --disable-midi
+   make
+
+You can then find :file:`btattach`, :file:`btmgt` and :file:`btproxy` in the
+:file:`tools/` folder and :file:`btmon` in the :file:`monitor/` folder.
+
+You'll need to enable BlueZ's experimental features so you can access its
+most recent BLE functionality. Do this by editing the file
+:file:`/lib/systemd/system/bluetooth.service`
+and making sure to include the :literal:`-E` option in the daemon's execution
+start line:
+
+.. code-block:: console
+
+   ExecStart=/usr/libexec/bluetooth/bluetoothd -E
+
+Finally you can reload and restart the daemon:
+
+.. code-block:: console
+
+   sudo systemctl daemon-reload
+   sudo systemctl restart bluetooth
+
+.. _bluetooth_qemu:
+
 Testing with QEMU
 *****************
 
 It's possible to test Bluetooth applications using QEMU. In order to do
 so, a Bluetooth controller needs to be exported from the host OS (Linux)
-to the emulator.
+to the emulator. For this purpose you will need some tools described in the
+:ref:`bluetooth_bluez` section.
 
 Using Host System Bluetooth Controller in QEMU
 ==============================================
@@ -52,8 +99,11 @@ through a so-called user channel for QEMU to use:
 
    .. code-block:: console
 
-      sudo tools/btproxy -u
+      sudo tools/btproxy -u -i 0
       Listening on /tmp/bt-server-bredr
+
+   You might need to replace :literal:`-i 0` with the index of the Controller
+   you wish to proxy.
 
 #. Choose one of the Bluetooth sample applications located in
    :literal:`samples/bluetooth`.
@@ -70,3 +120,24 @@ through a so-called user channel for QEMU to use:
 Running QEMU now results in a connection with the second serial line to
 the :literal:`bt-server-bredr` UNIX socket, letting the application
 access the Bluetooth controller.
+
+.. _bluetooth_ctlr_bluez:
+
+Testing Zephyr-based Controllers with BlueZ
+*******************************************
+
+If you want to test a Zephyr-powered BLE Controller using BlueZ's Bluetooth
+Host, you will need a few tools described in the :ref:`bluetooth_bluez` section.
+Once you have installed the tools you can then use them to interact with your
+Zephry-based controller:
+
+   .. code-block:: console
+
+      sudo btmgmt --index 0
+      [hci0]# auto-power
+      [hci0]# find -l
+
+You might need to replace :literal:`--index 0` with the index of the Controller
+you wish to manage.
+Additional information aobut :file:`btmgmt` can be found in its manual pages.
+
