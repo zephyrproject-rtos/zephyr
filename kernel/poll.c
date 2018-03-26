@@ -267,11 +267,8 @@ int k_poll(struct k_poll_event *events, int num_events, s32_t timeout)
 }
 
 /* must be called with interrupts locked */
-static int signal_poll_event(struct k_poll_event *event, u32_t state,
-			      int *must_reschedule)
+static int signal_poll_event(struct k_poll_event *event, u32_t state)
 {
-	*must_reschedule = 0;
-
 	if (!event->poller) {
 		goto ready_event;
 	}
@@ -300,26 +297,20 @@ static int signal_poll_event(struct k_poll_event *event, u32_t state,
 	}
 
 	_ready_thread(thread);
-	*must_reschedule = !_is_in_isr() && _must_switch_threads();
 
 ready_event:
 	set_event_ready(event, state);
 	return 0;
 }
 
-/* returns 1 if a reschedule must take place, 0 otherwise */
-int _handle_obj_poll_events(sys_dlist_t *events, u32_t state)
+void _handle_obj_poll_events(sys_dlist_t *events, u32_t state)
 {
 	struct k_poll_event *poll_event;
-	int must_reschedule;
 
 	poll_event = (struct k_poll_event *)sys_dlist_get(events);
-	if (!poll_event) {
-		return 0;
+	if (poll_event) {
+		(void) signal_poll_event(poll_event, state);
 	}
-
-	(void) signal_poll_event(poll_event, state, &must_reschedule);
-	return must_reschedule;
 }
 
 void k_poll_signal_init(struct k_poll_signal *signal)
@@ -333,7 +324,6 @@ int k_poll_signal(struct k_poll_signal *signal, int result)
 {
 	unsigned int key = irq_lock();
 	struct k_poll_event *poll_event;
-	int must_reschedule;
 
 	signal->result = result;
 	signal->signaled = 1;
@@ -344,14 +334,8 @@ int k_poll_signal(struct k_poll_signal *signal, int result)
 		return 0;
 	}
 
-	int rc = signal_poll_event(poll_event, K_POLL_STATE_SIGNALED,
-				    &must_reschedule);
+	int rc = signal_poll_event(poll_event, K_POLL_STATE_SIGNALED);
 
-	if (must_reschedule) {
-		(void)_Swap(key);
-	} else {
-		irq_unlock(key);
-	}
-
+	_reschedule_noyield(key);
 	return rc;
 }

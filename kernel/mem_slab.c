@@ -123,15 +123,11 @@ void k_mem_slab_free(struct k_mem_slab *slab, void **mem)
 		_set_thread_return_value_with_data(pending_thread, 0, *mem);
 		_abort_thread_timeout(pending_thread);
 		_ready_thread(pending_thread);
-		if (_must_switch_threads()) {
-			_Swap(key);
-			return;
-		}
 	} else {
 		**(char ***)mem = slab->free_list;
 		slab->free_list = *(char **)mem;
 		slab->num_used--;
 	}
 
-	irq_unlock(key);
+	_reschedule_noyield(key);
 }

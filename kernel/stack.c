@@ -86,17 +86,14 @@ void _impl_k_stack_push(struct k_stack *stack, u32_t data)
 
 		_set_thread_return_value_with_data(first_pending_thread,
 						   0, (void *)data);
-
-		if (!_is_in_isr() && _must_switch_threads()) {
-			(void)_Swap(key);
-			return;
-		}
+		_reschedule_noyield(key);
+		return;
 	} else {
 		*(stack->next) = data;
 		stack->next++;
+		irq_unlock(key);
 	}
 
-	irq_unlock(key);
 }
 
 #ifdef CONFIG_USERSPACE

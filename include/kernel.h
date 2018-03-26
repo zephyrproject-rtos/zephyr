@@ -3948,7 +3948,7 @@ extern int k_poll_signal(struct k_poll_signal *signal, int result);
 /**
  * @internal
  */
-extern int _handle_obj_poll_events(sys_dlist_t *events, u32_t state);
+extern void _handle_obj_poll_events(sys_dlist_t *events, u32_t state);
 
 /** @} */
 

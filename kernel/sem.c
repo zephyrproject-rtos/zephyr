@@ -82,15 +82,10 @@ _SYSCALL_HANDLER(k_sem_init, sem, initial_count, limit)
 }
 #endif
 
-/* returns 1 if a reschedule must take place, 0 otherwise */
-static inline int handle_poll_events(struct k_sem *sem)
+static inline void handle_poll_events(struct k_sem *sem)
 {
 #ifdef CONFIG_POLL
-	u32_t state = K_POLL_STATE_SEM_AVAILABLE;
-
-	return _handle_obj_poll_events(&sem->poll_events, state);
-#else
-	return 0;
+	_handle_obj_poll_events(&sem->poll_events, K_POLL_STATE_SEM_AVAILABLE);
 #endif
 }
 
@@ -99,20 +94,18 @@ static inline void increment_count_up_to_limit(struct k_sem *sem)
 	sem->count += (sem->count != sem->limit);
 }
 
-/* returns 1 if _Swap() will need to be invoked, 0 otherwise */
-static int do_sem_give(struct k_sem *sem)
+static void do_sem_give(struct k_sem *sem)
 {
 	struct k_thread *thread = _unpend_first_thread(&sem->wait_q);
 
-	if (!thread) {
+	if (thread) {
+		(void)_abort_thread_timeout(thread);
+		_ready_thread(thread);
+		_set_thread_return_value(thread, 0);
+	} else {
 		increment_count_up_to_limit(sem);
-		return handle_poll_events(sem);
+		handle_poll_events(sem);
 	}
-	(void)_abort_thread_timeout(thread);
-	_ready_thread(thread);
-	_set_thread_return_value(thread, 0);
-
-	return !_is_in_isr() && _must_switch_threads();
 }
 
 /*
@@ -140,15 +133,10 @@ void _sem_give_non_preemptible(struct k_sem *sem)
 
 void _impl_k_sem_give(struct k_sem *sem)
 {
-	unsigned int key;
+	unsigned int key = irq_lock();
 
-	key = irq_lock();
-
-	if (do_sem_give(sem)) {
-		_Swap(key);
-	} else {
-		irq_unlock(key);
-	}
+	do_sem_give(sem);
+	_reschedule_noyield(key);
 }
 
 #ifdef CONFIG_USERSPACE

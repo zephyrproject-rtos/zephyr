@@ -173,7 +173,7 @@ void _impl_k_timer_stop(struct k_timer *timer)
 	if (_is_in_isr()) {
 		irq_unlock(key);
 	} else {
-		_reschedule_threads(key);
+		_reschedule_noyield(key);
 	}
 }
 
