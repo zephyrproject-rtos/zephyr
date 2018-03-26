@@ -26,7 +26,7 @@ extern int _reschedule_yield(int key);
 extern void k_sched_unlock(void);
 extern void _pend_thread(struct k_thread *thread,
 			 _wait_q_t *wait_q, s32_t timeout);
-extern void _pend_current_thread(_wait_q_t *wait_q, s32_t timeout);
+extern int _pend_current_thread(int key, _wait_q_t *wait_q, s32_t timeout);
 extern void _move_thread_to_end_of_prio_q(struct k_thread *thread);
 extern int _is_thread_time_slicing(struct k_thread *thread);
 extern void _update_time_slice_before_swap(void);

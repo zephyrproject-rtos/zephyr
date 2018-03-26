@@ -246,9 +246,7 @@ int k_poll(struct k_poll_event *events, int num_events, s32_t timeout)
 
 	_wait_q_t wait_q = _WAIT_Q_INIT(&wait_q);
 
-	_pend_current_thread(&wait_q, timeout);
-
-	int swap_rc = _Swap(key);
+	int swap_rc = _pend_current_thread(key, &wait_q, timeout);
 
 	/*
 	 * Clear all event registrations. If events happen while we're in this

@@ -529,8 +529,7 @@ int _k_pipe_put_internal(struct k_pipe *pipe, struct k_pipe_async *async_desc,
 		 */
 		key = irq_lock();
 		_sched_unlock_no_reschedule();
-		_pend_current_thread(&pipe->wait_q.writers, timeout);
-		_Swap(key);
+		_pend_current_thread(key, &pipe->wait_q.writers, timeout);
 	} else {
 		k_sched_unlock();
 	}
@@ -672,8 +671,7 @@ int _impl_k_pipe_get(struct k_pipe *pipe, void *data, size_t bytes_to_read,
 		_current->base.swap_data = &pipe_desc;
 		key = irq_lock();
 		_sched_unlock_no_reschedule();
-		_pend_current_thread(&pipe->wait_q.readers, timeout);
-		_Swap(key);
+		_pend_current_thread(key, &pipe->wait_q.readers, timeout);
 	} else {
 		k_sched_unlock();
 	}

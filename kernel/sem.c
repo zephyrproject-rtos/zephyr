@@ -160,9 +160,7 @@ int _impl_k_sem_take(struct k_sem *sem, s32_t timeout)
 		return -EBUSY;
 	}
 
-	_pend_current_thread(&sem->wait_q, timeout);
-
-	return _Swap(key);
+	return _pend_current_thread(key, &sem->wait_q, timeout);
 }
 
 #ifdef CONFIG_USERSPACE

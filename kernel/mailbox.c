@@ -285,8 +285,8 @@ static int mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 			 * synchronous send: pend current thread (unqueued)
 			 * until the receiver consumes the message
 			 */
-			_pend_current_thread(NULL, K_FOREVER);
-			return _Swap(key);
+			return _pend_current_thread(key, NULL, K_FOREVER);
+
 		}
 	}
 
@@ -306,8 +306,7 @@ static int mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 #endif
 
 	/* synchronous send: sender waits on tx queue for receiver or timeout */
-	_pend_current_thread(&mbox->tx_msg_queue, timeout);
-	return _Swap(key);
+	return _pend_current_thread(key, &mbox->tx_msg_queue, timeout);
 }
 
 int k_mbox_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg, s32_t timeout)
@@ -461,9 +460,8 @@ int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
 	}
 
 	/* wait until a matching sender appears or a timeout occurs */
-	_pend_current_thread(&mbox->rx_msg_queue, timeout);
 	_current->base.swap_data = rx_msg;
-	result = _Swap(key);
+	result = _pend_current_thread(key, &mbox->rx_msg_queue, timeout);
 
 	/* consume message data immediately, if needed */
 	if (result == 0) {

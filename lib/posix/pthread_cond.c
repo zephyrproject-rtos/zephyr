@@ -20,9 +20,7 @@ static int cond_wait(pthread_cond_t *cv, pthread_mutex_t *mut, int timeout)
 
 	mut->sem->count = 1;
 	ready_one_thread(&mut->sem->wait_q);
-	_pend_current_thread(&cv->wait_q, timeout);
-
-	ret = _reschedule_yield(key);
+	ret = _pend_current_thread(&cv->wait_q, timeout);
 
 	/* FIXME: this extra lock (and the potential context switch it
 	 * can cause) could be optimized out.  At the point of the
