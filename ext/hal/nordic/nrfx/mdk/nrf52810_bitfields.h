@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2010 - 2017, Nordic Semiconductor ASA All rights reserved.
+Copyright (c) 2010 - 2018, Nordic Semiconductor ASA All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -1661,10 +1661,14 @@ POSSIBILITY OF SUCH DAMAGE.
 /* Bits 31..0 : Part variant, hardware version and production configuration, encoded as ASCII */
 #define FICR_INFO_VARIANT_VARIANT_Pos (0UL) /*!< Position of VARIANT field. */
 #define FICR_INFO_VARIANT_VARIANT_Msk (0xFFFFFFFFUL << FICR_INFO_VARIANT_VARIANT_Pos) /*!< Bit mask of VARIANT field. */
+#define FICR_INFO_VARIANT_VARIANT_AAA0 (0x41414130UL) /*!< AAA0 */
 #define FICR_INFO_VARIANT_VARIANT_AAAA (0x41414141UL) /*!< AAAA */
-#define FICR_INFO_VARIANT_VARIANT_AAAB (0x41414142UL) /*!< AAAB */
+#define FICR_INFO_VARIANT_VARIANT_AAB0 (0x41414230UL) /*!< AAB0 */
 #define FICR_INFO_VARIANT_VARIANT_AABA (0x41414241UL) /*!< AABA */
 #define FICR_INFO_VARIANT_VARIANT_AABB (0x41414242UL) /*!< AABB */
+#define FICR_INFO_VARIANT_VARIANT_AAC0 (0x41414330UL) /*!< AAC0 */
+#define FICR_INFO_VARIANT_VARIANT_AACA (0x41414341UL) /*!< AACA */
+#define FICR_INFO_VARIANT_VARIANT_AACB (0x41414342UL) /*!< AACB */
 #define FICR_INFO_VARIANT_VARIANT_Unspecified (0xFFFFFFFFUL) /*!< Unspecified */
 
 /* Register: FICR_INFO_PACKAGE */
@@ -5159,7 +5163,7 @@ POSSIBILITY OF SUCH DAMAGE.
 
 
 /* Peripheral: PWM */
-/* Description: Pulse Width Modulation Unit */
+/* Description: Pulse width modulation unit */
 
 /* Register: PWM_TASKS_STOP */
 /* Description: Stops PWM pulse generation on all channels at the end of current PWM period, and stops sequence playback */
@@ -5169,14 +5173,14 @@ POSSIBILITY OF SUCH DAMAGE.
 #define PWM_TASKS_STOP_TASKS_STOP_Msk (0x1UL << PWM_TASKS_STOP_TASKS_STOP_Pos) /*!< Bit mask of TASKS_STOP field. */
 
 /* Register: PWM_TASKS_SEQSTART */
-/* Description: Description collection[0]:  Loads the first PWM value on all enabled channels from sequence 0, and starts playing that sequence at the rate defined in SEQ[0]REFRESH and/or DECODER.MODE. Causes PWM generation to start it was not running. */
+/* Description: Description collection[0]:  Loads the first PWM value on all enabled channels from sequence 0, and starts playing that sequence at the rate defined in SEQ[0]REFRESH and/or DECODER.MODE. Causes PWM generation to start if not running. */
 
 /* Bit 0 :   */
 #define PWM_TASKS_SEQSTART_TASKS_SEQSTART_Pos (0UL) /*!< Position of TASKS_SEQSTART field. */
 #define PWM_TASKS_SEQSTART_TASKS_SEQSTART_Msk (0x1UL << PWM_TASKS_SEQSTART_TASKS_SEQSTART_Pos) /*!< Bit mask of TASKS_SEQSTART field. */
 
 /* Register: PWM_TASKS_NEXTSTEP */
-/* Description: Steps by one value in the current sequence on all enabled channels if DECODER.MODE=NextStep. Does not cause PWM generation to start it was not running. */
+/* Description: Steps by one value in the current sequence on all enabled channels if DECODER.MODE=NextStep. Does not cause PWM generation to start if not running. */
 
 /* Bit 0 :   */
 #define PWM_TASKS_NEXTSTEP_TASKS_NEXTSTEP_Pos (0UL) /*!< Position of TASKS_NEXTSTEP field. */
@@ -5411,23 +5415,23 @@ POSSIBILITY OF SUCH DAMAGE.
 /* Register: PWM_MODE */
 /* Description: Selects operating mode of the wave counter */
 
-/* Bit 0 : Selects up or up and down as wave counter mode */
+/* Bit 0 : Selects up mode or up-and-down mode for the counter */
 #define PWM_MODE_UPDOWN_Pos (0UL) /*!< Position of UPDOWN field. */
 #define PWM_MODE_UPDOWN_Msk (0x1UL << PWM_MODE_UPDOWN_Pos) /*!< Bit mask of UPDOWN field. */
-#define PWM_MODE_UPDOWN_Up (0UL) /*!< Up counter - edge aligned PWM duty-cycle */
-#define PWM_MODE_UPDOWN_UpAndDown (1UL) /*!< Up and down counter - center aligned PWM duty cycle */
+#define PWM_MODE_UPDOWN_Up (0UL) /*!< Up counter, edge-aligned PWM duty cycle */
+#define PWM_MODE_UPDOWN_UpAndDown (1UL) /*!< Up and down counter, center-aligned PWM duty cycle */
 
 /* Register: PWM_COUNTERTOP */
 /* Description: Value up to which the pulse generator counter counts */
 
-/* Bits 14..0 : Value up to which the pulse generator counter counts. This register is ignored when DECODER.MODE=WaveForm and only values from RAM will be used. */
+/* Bits 14..0 : Value up to which the pulse generator counter counts. This register is ignored when DECODER.MODE=WaveForm and only values from RAM are used. */
 #define PWM_COUNTERTOP_COUNTERTOP_Pos (0UL) /*!< Position of COUNTERTOP field. */
 #define PWM_COUNTERTOP_COUNTERTOP_Msk (0x7FFFUL << PWM_COUNTERTOP_COUNTERTOP_Pos) /*!< Bit mask of COUNTERTOP field. */
 
 /* Register: PWM_PRESCALER */
 /* Description: Configuration for PWM_CLK */
 
-/* Bits 2..0 : Pre-scaler of PWM_CLK */
+/* Bits 2..0 : Prescaler of PWM_CLK */
 #define PWM_PRESCALER_PRESCALER_Pos (0UL) /*!< Position of PRESCALER field. */
 #define PWM_PRESCALER_PRESCALER_Msk (0x7UL << PWM_PRESCALER_PRESCALER_Pos) /*!< Bit mask of PRESCALER field. */
 #define PWM_PRESCALER_PRESCALER_DIV_1 (0UL) /*!< Divide by   1 (16MHz) */
@@ -5457,32 +5461,32 @@ POSSIBILITY OF SUCH DAMAGE.
 #define PWM_DECODER_LOAD_WaveForm (3UL) /*!< 1st half word (16-bit) in ch.0; 2nd in ch.1; ...; 4th in COUNTERTOP */
 
 /* Register: PWM_LOOP */
-/* Description: Amount of playback of a loop */
+/* Description: Number of playbacks of a loop */
 
-/* Bits 15..0 : Amount of playback of pattern cycles */
+/* Bits 15..0 : Number of playbacks of pattern cycles */
 #define PWM_LOOP_CNT_Pos (0UL) /*!< Position of CNT field. */
 #define PWM_LOOP_CNT_Msk (0xFFFFUL << PWM_LOOP_CNT_Pos) /*!< Bit mask of CNT field. */
 #define PWM_LOOP_CNT_Disabled (0UL) /*!< Looping disabled (stop at the end of the sequence) */
 
 /* Register: PWM_SEQ_PTR */
-/* Description: Description cluster[0]:  Beginning address in Data RAM of this sequence */
+/* Description: Description cluster[0]:  Beginning address in RAM of this sequence */
 
-/* Bits 31..0 : Beginning address in Data RAM of this sequence */
+/* Bits 31..0 : Beginning address in RAM of this sequence */
 #define PWM_SEQ_PTR_PTR_Pos (0UL) /*!< Position of PTR field. */
 #define PWM_SEQ_PTR_PTR_Msk (0xFFFFFFFFUL << PWM_SEQ_PTR_PTR_Pos) /*!< Bit mask of PTR field. */
 
 /* Register: PWM_SEQ_CNT */
-/* Description: Description cluster[0]:  Amount of values (duty cycles) in this sequence */
+/* Description: Description cluster[0]:  Number of values (duty cycles) in this sequence */
 
-/* Bits 14..0 : Amount of values (duty cycles) in this sequence */
+/* Bits 14..0 : Number of values (duty cycles) in this sequence */
 #define PWM_SEQ_CNT_CNT_Pos (0UL) /*!< Position of CNT field. */
 #define PWM_SEQ_CNT_CNT_Msk (0x7FFFUL << PWM_SEQ_CNT_CNT_Pos) /*!< Bit mask of CNT field. */
 #define PWM_SEQ_CNT_CNT_Disabled (0UL) /*!< Sequence is disabled, and shall not be started as it is empty */
 
 /* Register: PWM_SEQ_REFRESH */
-/* Description: Description cluster[0]:  Amount of additional PWM periods between samples loaded into compare register */
+/* Description: Description cluster[0]:  Number of additional PWM periods between samples loaded into compare register */
 
-/* Bits 23..0 : Amount of additional PWM periods between samples loaded into compare register (load every REFRESH.CNT+1 PWM periods) */
+/* Bits 23..0 : Number of additional PWM periods between samples loaded into compare register (load every REFRESH.CNT+1 PWM periods) */
 #define PWM_SEQ_REFRESH_CNT_Pos (0UL) /*!< Position of CNT field. */
 #define PWM_SEQ_REFRESH_CNT_Msk (0xFFFFFFUL << PWM_SEQ_REFRESH_CNT_Pos) /*!< Bit mask of CNT field. */
 #define PWM_SEQ_REFRESH_CNT_Continuous (0UL) /*!< Update every PWM period */
@@ -7945,16 +7949,16 @@ POSSIBILITY OF SUCH DAMAGE.
 /* Register: SPIM_RXD_MAXCNT */
 /* Description: Maximum number of bytes in receive buffer */
 
-/* Bits 7..0 : Maximum number of bytes in receive buffer */
+/* Bits 9..0 : Maximum number of bytes in receive buffer */
 #define SPIM_RXD_MAXCNT_MAXCNT_Pos (0UL) /*!< Position of MAXCNT field. */
-#define SPIM_RXD_MAXCNT_MAXCNT_Msk (0xFFUL << SPIM_RXD_MAXCNT_MAXCNT_Pos) /*!< Bit mask of MAXCNT field. */
+#define SPIM_RXD_MAXCNT_MAXCNT_Msk (0x3FFUL << SPIM_RXD_MAXCNT_MAXCNT_Pos) /*!< Bit mask of MAXCNT field. */
 
 /* Register: SPIM_RXD_AMOUNT */
 /* Description: Number of bytes transferred in the last transaction */
 
-/* Bits 7..0 : Number of bytes transferred in the last transaction */
+/* Bits 9..0 : Number of bytes transferred in the last transaction */
 #define SPIM_RXD_AMOUNT_AMOUNT_Pos (0UL) /*!< Position of AMOUNT field. */
-#define SPIM_RXD_AMOUNT_AMOUNT_Msk (0xFFUL << SPIM_RXD_AMOUNT_AMOUNT_Pos) /*!< Bit mask of AMOUNT field. */
+#define SPIM_RXD_AMOUNT_AMOUNT_Msk (0x3FFUL << SPIM_RXD_AMOUNT_AMOUNT_Pos) /*!< Bit mask of AMOUNT field. */
 
 /* Register: SPIM_RXD_LIST */
 /* Description: EasyDMA list type */
@@ -7975,16 +7979,16 @@ POSSIBILITY OF SUCH DAMAGE.
 /* Register: SPIM_TXD_MAXCNT */
 /* Description: Maximum number of bytes in transmit buffer */
 
-/* Bits 7..0 : Maximum number of bytes in transmit buffer */
+/* Bits 9..0 : Maximum number of bytes in transmit buffer */
 #define SPIM_TXD_MAXCNT_MAXCNT_Pos (0UL) /*!< Position of MAXCNT field. */
-#define SPIM_TXD_MAXCNT_MAXCNT_Msk (0xFFUL << SPIM_TXD_MAXCNT_MAXCNT_Pos) /*!< Bit mask of MAXCNT field. */
+#define SPIM_TXD_MAXCNT_MAXCNT_Msk (0x3FFUL << SPIM_TXD_MAXCNT_MAXCNT_Pos) /*!< Bit mask of MAXCNT field. */
 
 /* Register: SPIM_TXD_AMOUNT */
 /* Description: Number of bytes transferred in the last transaction */
 
-/* Bits 7..0 : Number of bytes transferred in the last transaction */
+/* Bits 9..0 : Number of bytes transferred in the last transaction */
 #define SPIM_TXD_AMOUNT_AMOUNT_Pos (0UL) /*!< Position of AMOUNT field. */
-#define SPIM_TXD_AMOUNT_AMOUNT_Msk (0xFFUL << SPIM_TXD_AMOUNT_AMOUNT_Pos) /*!< Bit mask of AMOUNT field. */
+#define SPIM_TXD_AMOUNT_AMOUNT_Msk (0x3FFUL << SPIM_TXD_AMOUNT_AMOUNT_Pos) /*!< Bit mask of AMOUNT field. */
 
 /* Register: SPIM_TXD_LIST */
 /* Description: EasyDMA list type */
@@ -8805,6 +8809,12 @@ POSSIBILITY OF SUCH DAMAGE.
 #define TWIM_SHORTS_LASTRX_STOP_Msk (0x1UL << TWIM_SHORTS_LASTRX_STOP_Pos) /*!< Bit mask of LASTRX_STOP field. */
 #define TWIM_SHORTS_LASTRX_STOP_Disabled (0UL) /*!< Disable shortcut */
 #define TWIM_SHORTS_LASTRX_STOP_Enabled (1UL) /*!< Enable shortcut */
+
+/* Bit 11 : Shortcut between LASTRX event and SUSPEND task */
+#define TWIM_SHORTS_LASTRX_SUSPEND_Pos (11UL) /*!< Position of LASTRX_SUSPEND field. */
+#define TWIM_SHORTS_LASTRX_SUSPEND_Msk (0x1UL << TWIM_SHORTS_LASTRX_SUSPEND_Pos) /*!< Bit mask of LASTRX_SUSPEND field. */
+#define TWIM_SHORTS_LASTRX_SUSPEND_Disabled (0UL) /*!< Disable shortcut */
+#define TWIM_SHORTS_LASTRX_SUSPEND_Enabled (1UL) /*!< Enable shortcut */
 
 /* Bit 10 : Shortcut between LASTRX event and STARTTX task */
 #define TWIM_SHORTS_LASTRX_STARTTX_Pos (10UL) /*!< Position of LASTRX_STARTTX field. */

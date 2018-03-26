@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2010 - 2017, Nordic Semiconductor ASA All rights reserved.
+Copyright (c) 2010 - 2018, Nordic Semiconductor ASA All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -35,7 +35,7 @@ POSSIBILITY OF SUCH DAMAGE.
 
 /* MDK version */
 #define MDK_MAJOR_VERSION   8
-#define MDK_MINOR_VERSION   15
+#define MDK_MINOR_VERSION   16
 #define MDK_MICRO_VERSION   0
 
 /* Redefine "old" too-generic name NRF52 to NRF52832_XXAA to keep backwards compatibility. */

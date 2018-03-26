@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015 - 2017, Nordic Semiconductor ASA
+ * Copyright (c) 2015 - 2018, Nordic Semiconductor ASA
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -12,14 +12,14 @@
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
  * 
- * 3. Neither the name of Nordic Semiconductor ASA nor the names of its
+ * 3. Neither the name of the copyright holder nor the names of its
  *    contributors may be used to endorse or promote products derived from this
  *    software without specific prior written permission.
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY, AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL NORDIC SEMICONDUCTOR ASA OR CONTRIBUTORS BE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
  * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
@@ -35,7 +35,6 @@
 
 #include <nrfx_i2s.h>
 #include <hal/nrf_gpio.h>
-#include <string.h>
 
 #define NRFX_LOG_MODULE I2S
 #include <nrfx_log.h>
@@ -52,15 +51,19 @@ typedef struct
     nrfx_i2s_data_handler_t handler;
     nrfx_drv_state_t        state;
 
-    bool       synchronized_mode : 1;
-    bool       rx_ready          : 1;
-    bool       tx_ready          : 1;
-    bool       just_started      : 1;
-    uint16_t   buffer_half_size;
-    uint32_t * p_rx_buffer;
-    uint32_t * p_tx_buffer;
+    bool use_rx         : 1;
+    bool use_tx         : 1;
+    bool rx_ready       : 1;
+    bool tx_ready       : 1;
+    bool buffers_needed : 1;
+    bool buffers_reused : 1;
+
+    uint16_t            buffer_size;
+    nrfx_i2s_buffers_t  next_buffers;
+    nrfx_i2s_buffers_t  current_buffers;
 } i2s_control_block_t;
 static i2s_control_block_t m_cb;
+
 
 static void configure_pins(nrfx_i2s_config_t const * p_config)
 {
@@ -115,8 +118,12 @@ static void configure_pins(nrfx_i2s_config_t const * p_config)
         sdin_pin = NRF_I2S_PIN_NOT_CONNECTED;
     }
 
-    nrf_i2s_pins_set(NRF_I2S, p_config->sck_pin, p_config->lrck_pin,
-        mck_pin, sdout_pin, sdin_pin);
+    nrf_i2s_pins_set(NRF_I2S,
+                     p_config->sck_pin,
+                     p_config->lrck_pin,
+                     mck_pin,
+                     sdout_pin,
+                     sdin_pin);
 }
 
 
@@ -137,13 +144,14 @@ nrfx_err_t nrfx_i2s_init(nrfx_i2s_config_t const * p_config,
         return err_code;
     }
 
-    if (!nrf_i2s_configure(NRF_I2S, p_config->mode,
-                                    p_config->format,
-                                    p_config->alignment,
-                                    p_config->sample_width,
-                                    p_config->channels,
-                                    p_config->mck_setup,
-                                    p_config->ratio))
+    if (!nrf_i2s_configure(NRF_I2S,
+                           p_config->mode,
+                           p_config->format,
+                           p_config->alignment,
+                           p_config->sample_width,
+                           p_config->channels,
+                           p_config->mck_setup,
+                           p_config->ratio))
     {
         err_code = NRFX_ERROR_INVALID_PARAM;
         NRFX_LOG_WARNING("Function: %s, error code: %s.",
@@ -160,9 +168,8 @@ nrfx_err_t nrfx_i2s_init(nrfx_i2s_config_t const * p_config,
 
     m_cb.state = NRFX_DRV_STATE_INITIALIZED;
 
-    err_code = NRFX_SUCCESS;
-    NRFX_LOG_INFO("Function: %s, error code: %s.", __func__, NRFX_LOG_ERROR_STRING_GET(err_code));
-    return err_code;
+    NRFX_LOG_INFO("Initialized.");
+    return NRFX_SUCCESS;
 }
 
 
@@ -174,29 +181,44 @@ void nrfx_i2s_uninit(void)
 
     NRFX_IRQ_DISABLE(I2S_IRQn);
 
+    nrf_i2s_pins_set(NRF_I2S,
+                     NRF_I2S_PIN_NOT_CONNECTED,
+                     NRF_I2S_PIN_NOT_CONNECTED,
+                     NRF_I2S_PIN_NOT_CONNECTED,
+                     NRF_I2S_PIN_NOT_CONNECTED,
+                     NRF_I2S_PIN_NOT_CONNECTED);
+
     m_cb.state = NRFX_DRV_STATE_UNINITIALIZED;
-    NRFX_LOG_INFO("Initialized.");
+    NRFX_LOG_INFO("Uninitialized.");
 }
 
 
-nrfx_err_t nrfx_i2s_start(uint32_t * p_rx_buffer,
-                          uint32_t * p_tx_buffer,
-                          uint16_t   buffer_size,
-                          uint8_t    flags)
+nrfx_err_t nrfx_i2s_start(nrfx_i2s_buffers_t const * p_initial_buffers,
+                          uint16_t                   buffer_size,
+                          uint8_t                    flags)
 {
-    NRFX_ASSERT((p_rx_buffer != NULL) || (p_tx_buffer != NULL));
-
-    uint16_t buffer_half_size = buffer_size / 2;
-    NRFX_ASSERT(buffer_half_size != 0);
-
-    if (m_cb.state != NRFX_DRV_STATE_INITIALIZED)
-    {
-        return NRFX_ERROR_INVALID_STATE;
-    }
+    NRFX_ASSERT(p_initial_buffers != NULL);
+    NRFX_ASSERT(p_initial_buffers->p_rx_buffer != NULL ||
+                p_initial_buffers->p_tx_buffer != NULL);
+    NRFX_ASSERT(buffer_size != 0);
+    (void)(flags);
 
     nrfx_err_t err_code;
 
-    if ((p_rx_buffer != NULL) && !nrfx_is_in_ram(p_rx_buffer))
+    if (m_cb.state != NRFX_DRV_STATE_INITIALIZED)
+    {
+        err_code = NRFX_ERROR_INVALID_STATE;
+        NRFX_LOG_WARNING("Function: %s, error code: %s.",
+                         __func__,
+                         NRFX_LOG_ERROR_STRING_GET(err_code));
+        return err_code;
+    }
+
+    if (((p_initial_buffers->p_rx_buffer != NULL)
+         && !nrfx_is_in_ram(p_initial_buffers->p_rx_buffer))
+        ||
+        ((p_initial_buffers->p_tx_buffer != NULL)
+         && !nrfx_is_in_ram(p_initial_buffers->p_tx_buffer)))
     {
         err_code = NRFX_ERROR_INVALID_ADDR;
         NRFX_LOG_WARNING("Function: %s, error code: %s.",
@@ -205,68 +227,86 @@ nrfx_err_t nrfx_i2s_start(uint32_t * p_rx_buffer,
         return err_code;
     }
 
-    if ((p_tx_buffer != NULL) && !nrfx_is_in_ram(p_tx_buffer))
-    {
-        err_code = NRFX_ERROR_INVALID_ADDR;
-        NRFX_LOG_WARNING("Function: %s, error code: %s.",
-                         __func__,
-                         NRFX_LOG_ERROR_STRING_GET(err_code));
-        return err_code;
-    }
+    m_cb.use_rx         = (p_initial_buffers->p_rx_buffer != NULL);
+    m_cb.use_tx         = (p_initial_buffers->p_tx_buffer != NULL);
+    m_cb.rx_ready       = false;
+    m_cb.tx_ready       = false;
+    m_cb.buffers_needed = false;
+    m_cb.buffer_size    = buffer_size;
 
-    // Initially we set up the peripheral to use the first half of each buffer,
-    // then in 'nrfx_i2s_irq_handler' we will switch to the second half.
-    nrf_i2s_transfer_set(NRF_I2S, buffer_half_size, p_rx_buffer, p_tx_buffer);
+    // Set the provided initial buffers as next, they will become the current
+    // ones after the IRQ handler is called for the first time, what will occur
+    // right after the START task is triggered.
+    m_cb.next_buffers = *p_initial_buffers;
+    m_cb.current_buffers.p_rx_buffer = NULL;
+    m_cb.current_buffers.p_tx_buffer = NULL;
 
-    m_cb.p_rx_buffer      = p_rx_buffer;
-    m_cb.p_tx_buffer      = p_tx_buffer;
-    m_cb.buffer_half_size = buffer_half_size;
-    m_cb.just_started     = true;
-
-    if ((flags & NRFX_I2S_FLAG_SYNCHRONIZED_MODE) &&
-        // [synchronized mode makes sense only when both RX and TX are enabled]
-        (m_cb.p_rx_buffer != NULL) && (m_cb.p_tx_buffer != NULL))
-    {
-        m_cb.synchronized_mode = true;
-        m_cb.rx_ready          = false;
-        m_cb.tx_ready          = false;
-    }
-    else
-    {
-        m_cb.synchronized_mode = false;
-    }
+    nrf_i2s_transfer_set(NRF_I2S,
+                         m_cb.buffer_size,
+                         m_cb.next_buffers.p_rx_buffer,
+                         m_cb.next_buffers.p_tx_buffer);
 
     nrf_i2s_enable(NRF_I2S);
 
     m_cb.state = NRFX_DRV_STATE_POWERED_ON;
 
-    if (m_cb.p_tx_buffer != NULL)
-    {
-        // Get from the application the first portion of data to be sent - we
-        // need to have it in the transmit buffer before we start the transfer.
-        // Unless the synchronized mode is active. In this mode we must wait
-        // with this until the first portion of data is received, so here we
-        // just make sure that there will be silence on the SDOUT line prior
-        // to that moment.
-        if (m_cb.synchronized_mode)
-        {
-            memset(m_cb.p_tx_buffer, 0, m_cb.buffer_half_size * sizeof(uint32_t));
-        }
-        else
-        {
-            m_cb.handler(NULL, m_cb.p_tx_buffer, m_cb.buffer_half_size);
-        }
-    }
-
     nrf_i2s_event_clear(NRF_I2S, NRF_I2S_EVENT_RXPTRUPD);
     nrf_i2s_event_clear(NRF_I2S, NRF_I2S_EVENT_TXPTRUPD);
-    nrf_i2s_int_enable(NRF_I2S,
-        NRF_I2S_INT_RXPTRUPD_MASK | NRF_I2S_INT_TXPTRUPD_MASK);
+    nrf_i2s_event_clear(NRF_I2S, NRF_I2S_EVENT_STOPPED);
+    nrf_i2s_int_enable(NRF_I2S, (m_cb.use_rx ? NRF_I2S_INT_RXPTRUPD_MASK : 0) |
+                                (m_cb.use_tx ? NRF_I2S_INT_TXPTRUPD_MASK : 0) |
+                                NRF_I2S_INT_STOPPED_MASK);
     nrf_i2s_task_trigger(NRF_I2S, NRF_I2S_TASK_START);
 
-    err_code = NRFX_SUCCESS;
-    NRFX_LOG_INFO("Function: %s, error code: %s.", __func__, NRFX_LOG_ERROR_STRING_GET(err_code));
-    return err_code;
+    NRFX_LOG_INFO("Started.");
+    return NRFX_SUCCESS;
+}
+
+
+nrfx_err_t nrfx_i2s_next_buffers_set(nrfx_i2s_buffers_t const * p_buffers)
+{
+    NRFX_ASSERT(m_cb.state == NRFX_DRV_STATE_POWERED_ON);
+    NRFX_ASSERT(p_buffers);
+
+    nrfx_err_t err_code;
+
+    if (!m_cb.buffers_needed)
+    {
+        err_code = NRFX_ERROR_INVALID_STATE;
+        NRFX_LOG_WARNING("Function: %s, error code: %s.",
+                         __func__,
+                         NRFX_LOG_ERROR_STRING_GET(err_code));
+        return err_code;
+    }
+
+    if (((p_buffers->p_rx_buffer != NULL)
+         && !nrfx_is_in_ram(p_buffers->p_rx_buffer))
+        ||
+        ((p_buffers->p_tx_buffer != NULL)
+         && !nrfx_is_in_ram(p_buffers->p_tx_buffer)))
+    {
+        err_code = NRFX_ERROR_INVALID_ADDR;
+        NRFX_LOG_WARNING("Function: %s, error code: %s.",
+                         __func__,
+                         NRFX_LOG_ERROR_STRING_GET(err_code));
+        return err_code;
+    }
+
+    if (m_cb.use_tx)
+    {
+        NRFX_ASSERT(p_buffers->p_tx_buffer != NULL);
+        nrf_i2s_tx_buffer_set(NRF_I2S, p_buffers->p_tx_buffer);
+    }
+    if (m_cb.use_rx)
+    {
+        NRFX_ASSERT(p_buffers->p_rx_buffer != NULL);
+        nrf_i2s_rx_buffer_set(NRF_I2S, p_buffers->p_rx_buffer);
+    }
+
+    m_cb.next_buffers   = *p_buffers;
+    m_cb.buffers_needed = false;
+
+    return NRFX_SUCCESS;
 }
 
 
@@ -274,150 +314,98 @@ void nrfx_i2s_stop(void)
 {
     NRFX_ASSERT(m_cb.state != NRFX_DRV_STATE_UNINITIALIZED);
 
+    m_cb.buffers_needed = false;
+
     // First disable interrupts, then trigger the STOP task, so no spurious
-    // RXPTRUPD and TXPTRUPD events (see FTPAN-55) will be processed.
-    nrf_i2s_int_disable(NRF_I2S, NRF_I2S_INT_RXPTRUPD_MASK | NRF_I2S_INT_TXPTRUPD_MASK);
-
+    // RXPTRUPD and TXPTRUPD events (see nRF52 anomaly 55) are processed.
+    nrf_i2s_int_disable(NRF_I2S, NRF_I2S_INT_RXPTRUPD_MASK |
+                                 NRF_I2S_INT_TXPTRUPD_MASK);
     nrf_i2s_task_trigger(NRF_I2S, NRF_I2S_TASK_STOP);
-
-    nrf_i2s_disable(NRF_I2S);
-
-    m_cb.state = NRFX_DRV_STATE_INITIALIZED;
-
-    NRFX_LOG_INFO("Disabled.");
 }
 
 
 void nrfx_i2s_irq_handler(void)
 {
-    uint32_t const * p_data_received = NULL;
-    uint32_t       * p_data_to_send  = NULL;
-
     if (nrf_i2s_event_check(NRF_I2S, NRF_I2S_EVENT_TXPTRUPD))
     {
         nrf_i2s_event_clear(NRF_I2S, NRF_I2S_EVENT_TXPTRUPD);
-        NRFX_LOG_DEBUG("Event: %s.", EVT_TO_STR(NRF_I2S_EVENT_TXPTRUPD));
-
-        // If transmission is not enabled, but for some reason the TXPTRUPD
-        // event has been generated, just ignore it.
-        if (m_cb.p_tx_buffer != NULL)
+        m_cb.tx_ready = true;
+        if (m_cb.use_tx && m_cb.buffers_needed)
         {
-            uint32_t * p_tx_buffer_next;
-            if (nrf_i2s_tx_buffer_get(NRF_I2S) == m_cb.p_tx_buffer)
-            {
-                p_tx_buffer_next = m_cb.p_tx_buffer + m_cb.buffer_half_size;
-            }
-            else
-            {
-                p_tx_buffer_next = m_cb.p_tx_buffer;
-            }
-            nrf_i2s_tx_buffer_set(NRF_I2S, p_tx_buffer_next);
-
-            m_cb.tx_ready = true;
-
-            // Now the part of the buffer that we've configured as "next" should
-            // be filled by the application with proper data to be sent;
-            // the peripheral is sending data from the other part of the buffer
-            // (but it will finish soon...).
-            p_data_to_send = p_tx_buffer_next;
-
+            m_cb.buffers_reused = true;
         }
     }
-
     if (nrf_i2s_event_check(NRF_I2S, NRF_I2S_EVENT_RXPTRUPD))
     {
         nrf_i2s_event_clear(NRF_I2S, NRF_I2S_EVENT_RXPTRUPD);
-        NRFX_LOG_DEBUG("Event: %s.", EVT_TO_STR(NRF_I2S_EVENT_RXPTRUPD));
-
-        // If reception is not enabled, but for some reason the RXPTRUPD event
-        // has been generated, just ignore it.
-        if (m_cb.p_rx_buffer != NULL)
+        m_cb.rx_ready = true;
+        if (m_cb.use_rx && m_cb.buffers_needed)
         {
-            uint32_t * p_rx_buffer_next;
-            if (nrf_i2s_rx_buffer_get(NRF_I2S) == m_cb.p_rx_buffer)
-            {
-                p_rx_buffer_next = m_cb.p_rx_buffer + m_cb.buffer_half_size;
-            }
-            else
-            {
-                p_rx_buffer_next = m_cb.p_rx_buffer;
-            }
-            nrf_i2s_rx_buffer_set(NRF_I2S, p_rx_buffer_next);
-
-            m_cb.rx_ready = true;
-
-            // The RXPTRUPD event is generated for the first time right after
-            // the transfer is started. Since there is no data received yet at
-            // this point we only update the buffer pointer (it is done above),
-            // there is no callback to the application.
-            // [for synchronized mode this has to be handled differently -
-            //  see below]
-            if (m_cb.just_started && !m_cb.synchronized_mode)
-            {
-                m_cb.just_started = false;
-            }
-            else
-            {
-                // The RXPTRUPD event indicates that from now on the peripheral
-                // will be filling the part of the buffer that was pointed at
-                // the time the event has been generated, hence now we can let
-                // the application process the data stored in the other part of
-                // the buffer - the one that we've just set to be filled next.
-                p_data_received = p_rx_buffer_next;
-            }
+            m_cb.buffers_reused = true;
         }
     }
 
-    // Call the data handler passing received data to the application and/or
-    // requesting data to be sent.
-    if (!m_cb.synchronized_mode)
+    if (nrf_i2s_event_check(NRF_I2S, NRF_I2S_EVENT_STOPPED))
     {
-        if ((p_data_received != NULL) || (p_data_to_send != NULL))
-        {
-            if (p_data_received != NULL)
-            {
-                NRFX_LOG_DEBUG("Rx data:");
-                NRFX_LOG_HEXDUMP_DEBUG((uint8_t *)p_data_received,
-                                       m_cb.buffer_half_size * sizeof(p_data_received[0]));
-            }
-            m_cb.handler(p_data_received, p_data_to_send,
-                m_cb.buffer_half_size);
-            if (p_data_to_send != NULL)
-            {
-                NRFX_LOG_DEBUG("Tx data:");
-                NRFX_LOG_HEXDUMP_DEBUG((uint8_t *)p_data_to_send,
-                                       m_cb.buffer_half_size * sizeof(p_data_to_send[0]));
-            }
-        }
+        nrf_i2s_event_clear(NRF_I2S, NRF_I2S_EVENT_STOPPED);
+        nrf_i2s_int_disable(NRF_I2S, NRF_I2S_INT_STOPPED_MASK);
+        nrf_i2s_disable(NRF_I2S);
+
+        // When stopped, release all buffers, including these scheduled for
+        // the next transfer.
+        m_cb.handler(&m_cb.current_buffers, 0);
+        m_cb.handler(&m_cb.next_buffers, 0);
+
+        m_cb.state = NRFX_DRV_STATE_INITIALIZED;
+        NRFX_LOG_INFO("Stopped.");
     }
-    // In the synchronized mode wait until the events for both RX and TX occur.
-    // And ignore the initial occurrences of these events, since they only
-    // indicate that the transfer has started - no data is received yet at
-    // that moment, so we have got nothing to pass to the application.
     else
     {
-        if (m_cb.rx_ready && m_cb.tx_ready)
+        // Check if the requested transfer has been completed:
+        // - full-duplex mode
+        if ((m_cb.use_tx && m_cb.use_rx && m_cb.tx_ready && m_cb.rx_ready) ||
+            // - TX only mode
+            (!m_cb.use_rx && m_cb.tx_ready) ||
+            // - RX only mode
+            (!m_cb.use_tx && m_cb.rx_ready))
         {
-            m_cb.rx_ready = false;
             m_cb.tx_ready = false;
+            m_cb.rx_ready = false;
 
-            if (m_cb.just_started)
+            // If the application did not supply the buffers for the next
+            // part of the transfer until this moment, the current buffers
+            // cannot be released, since the I2S peripheral already started
+            // using them. Signal this situation to the application by
+            // passing NULL instead of the structure with released buffers.
+            if (m_cb.buffers_reused)
             {
-                m_cb.just_started = false;
+                m_cb.buffers_reused = false;
+                // This will most likely be set at this point. However, there is
+                // a small time window between TXPTRUPD and RXPTRUPD events,
+                // and it is theoretically possible that next buffers will be
+                // set in this window, so to be sure this flag is set to true,
+                // set it explicitly.
+                m_cb.buffers_needed = true;
+                m_cb.handler(NULL,
+                             NRFX_I2S_STATUS_NEXT_BUFFERS_NEEDED);
             }
             else
             {
-                NRFX_LOG_DEBUG("Rx data:");
-                NRFX_LOG_HEXDUMP_DEBUG((uint8_t *)nrf_i2s_rx_buffer_get(NRF_I2S),
-                                       m_cb.buffer_half_size * sizeof(p_data_received[0]));
-                m_cb.handler(nrf_i2s_rx_buffer_get(NRF_I2S),
-                             nrf_i2s_tx_buffer_get(NRF_I2S),
-                             m_cb.buffer_half_size);
-                NRFX_LOG_DEBUG("Tx data:");
-                NRFX_LOG_HEXDUMP_DEBUG((uint8_t *)nrf_i2s_tx_buffer_get(NRF_I2S),
-                                       m_cb.buffer_half_size * sizeof(p_data_to_send[0]));
+                // Buffers that have been used by the I2S peripheral (current)
+                // are now released and will be returned to the application,
+                // and the ones scheduled to be used as next become the current
+                // ones.
+                nrfx_i2s_buffers_t released_buffers = m_cb.current_buffers;
+                m_cb.current_buffers = m_cb.next_buffers;
+                m_cb.next_buffers.p_rx_buffer = NULL;
+                m_cb.next_buffers.p_tx_buffer = NULL;
+                m_cb.buffers_needed = true;
+                m_cb.handler(&released_buffers,
+                             NRFX_I2S_STATUS_NEXT_BUFFERS_NEEDED);
             }
+
         }
     }
 }
+
 #endif // NRFX_CHECK(NRFX_I2S_ENABLED)

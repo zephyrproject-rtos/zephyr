@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2010 - 2017, Nordic Semiconductor ASA All rights reserved.
+Copyright (c) 2010 - 2018, Nordic Semiconductor ASA All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -136,6 +136,10 @@ POSSIBILITY OF SUCH DAMAGE.
 
 #define SPIM0_FEATURE_HARDWARE_CSN_PRESENT  0
 
+#define SPIM0_FEATURE_DCX_PRESENT  0
+
+#define SPIM0_FEATURE_RXDELAY_PRESENT  0
+
 #define SPIM0_EASYDMA_MAXCNT_SIZE 10
 
 /* Serial Peripheral Interface Slave with DMA*/
@@ -171,6 +175,8 @@ POSSIBILITY OF SUCH DAMAGE.
 #define SAADC_COUNT 1
 
 #define SAADC_EASYDMA_MAXCNT_SIZE 15
+
+#define SAADC_CH_NUM 8
 
 /* GPIO Tasks and Events */
 #define GPIOTE_PRESENT

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015 - 2017, Nordic Semiconductor ASA
+ * Copyright (c) 2015 - 2018, Nordic Semiconductor ASA
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -12,14 +12,14 @@
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
  * 
- * 3. Neither the name of Nordic Semiconductor ASA nor the names of its
+ * 3. Neither the name of the copyright holder nor the names of its
  *    contributors may be used to endorse or promote products derived from this
  *    software without specific prior written permission.
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY, AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL NORDIC SEMICONDUCTOR ASA OR CONTRIBUTORS BE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
  * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
@@ -55,15 +55,13 @@ typedef enum
     NRFX_ADC_EVT_SAMPLE,  ///< Event generated when the requested channel is sampled.
 } nrfx_adc_evt_type_t;
 
-
-
 /**
  * @brief Analog-to-digital converter driver DONE event.
  */
 typedef struct
 {
-    nrf_adc_value_t *        p_buffer; ///< Pointer to buffer with converted samples.
-    uint16_t                 size;     ///< Number of samples in the buffer.
+    nrf_adc_value_t * p_buffer; ///< Pointer to the buffer with converted samples.
+    uint16_t          size;     ///< Number of samples in the buffer.
 } nrfx_adc_done_evt_t;
 
 /**
@@ -88,28 +86,17 @@ typedef struct
 } nrfx_adc_evt_t;
 
 /**@brief Macro for initializing the ADC channel with the default configuration. */
-#define NRFX_ADC_DEFAULT_CHANNEL(analog_input)             \
- {{{                                                       \
-    .resolution = NRF_ADC_CONFIG_RES_10BIT,                \
-    .input      = NRF_ADC_CONFIG_SCALING_INPUT_FULL_SCALE, \
-    .reference  = NRF_ADC_CONFIG_REF_VBG,                  \
-    .ain        = (analog_input)                           \
- }}, NULL}
-
-/**
- * @brief ADC channel configuration.
- *
- * @note The bit fields reflect bit fields in the ADC CONFIG register.
- */
-typedef struct
-{
-    uint32_t resolution        :2; ///< 8 - 10 bit resolution.
-    uint32_t input             :3; ///< Input selection and scaling.
-    uint32_t reference         :2; ///< Reference source.
-    uint32_t reserved          :1; ///< Unused bit fields.
-    uint32_t ain               :8; ///< Analog input.
-    uint32_t external_reference:2; ///< Eternal reference source.
-}nrfx_adc_channel_config_t;
+#define NRFX_ADC_DEFAULT_CHANNEL(analog_input)                 \
+ {                                                             \
+     NULL,                                                     \
+     {                                                         \
+        .resolution = NRF_ADC_CONFIG_RES_10BIT,                \
+        .scaling    = NRF_ADC_CONFIG_SCALING_INPUT_FULL_SCALE, \
+        .reference  = NRF_ADC_CONFIG_REF_VBG,                  \
+        .input      = (analog_input),                          \
+        .extref     = NRF_ADC_CONFIG_EXTREFSEL_NONE            \
+     }                                                         \
+ }
 
 // Forward declaration of the nrfx_adc_channel_t type.
 typedef struct nrfx_adc_channel_s nrfx_adc_channel_t;
@@ -122,12 +109,8 @@ typedef struct nrfx_adc_channel_s nrfx_adc_channel_t;
  */
 struct nrfx_adc_channel_s
 {
-    union
-    {
-        nrfx_adc_channel_config_t config; ///< Channel configuration.
-        uint32_t data;                    ///< Raw value.
-    } config;
-    nrfx_adc_channel_t      * p_next;     ///< Pointer to the next enabled channel (for internal use).
+    nrfx_adc_channel_t * p_next; ///< Pointer to the next enabled channel (for internal use).
+    nrf_adc_config_t     config; ///< ADC configuration for the current channel.
 };
 
 /**
@@ -135,7 +118,7 @@ struct nrfx_adc_channel_s
  */
 typedef struct
 {
-    uint8_t interrupt_priority;              ///< Priority of ADC interrupt.
+    uint8_t interrupt_priority; ///< Priority of ADC interrupt.
 } nrfx_adc_config_t;
 
 /** @brief ADC default configuration. */
@@ -182,8 +165,7 @@ void nrfx_adc_uninit(void);
  * called, all channels that have been enabled with this function are sampled.
  *
  * @note The channel instance variable @p p_channel is used by the driver as an item
- *       in a list. Therefore, it cannot be an automatic variable, and an assertion fails if it is
- *       an automatic variable (if asserts are enabled).
+ *       in a list. Therefore, it cannot be an automatic variable that is located on the stack.
  */
 void nrfx_adc_channel_enable(nrfx_adc_channel_t * const p_channel);
 
@@ -206,7 +188,7 @@ void nrfx_adc_sample(void);
  * This function selects the desired input and starts a single conversion. If a valid pointer
  * is provided for the result, the function blocks until the conversion is completed. Otherwise, the
  * function returns when the conversion is started, and the result is provided in an event (driver
- * must be initialized in non-blocking mode otherwise an assertion will fail). The function will
+ * must be initialized in non-blocking mode, otherwise an assertion will fail). The function will
  * fail if ADC is busy. The channel does not need to be enabled to perform a single conversion.
  *
  * @param[in]  p_channel Channel.
@@ -236,6 +218,7 @@ nrfx_err_t nrfx_adc_sample_convert(nrfx_adc_channel_t const * const p_channel,
  * a single START task will trigger conversion on all enabled channels. For example:
  * If 3 channels are enabled and the user requests 6 samples, the completion event
  * handler will be called after 2 START tasks.
+ *
  * @note The application must adjust the sampling frequency. The maximum frequency
  * depends on the sampling timer and the maximum latency of the ADC interrupt. If
  * an interrupt is not handled before the next sampling is triggered, the sample

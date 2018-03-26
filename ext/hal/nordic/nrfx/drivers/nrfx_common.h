@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2017, Nordic Semiconductor ASA
+ * Copyright (c) 2017 - 2018, Nordic Semiconductor ASA
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -12,14 +12,14 @@
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
  * 
- * 3. Neither the name of Nordic Semiconductor ASA nor the names of its
+ * 3. Neither the name of the copyright holder nor the names of its
  *    contributors may be used to endorse or promote products derived from this
  *    software without specific prior written permission.
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY, AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL NORDIC SEMICONDUCTOR ASA OR CONTRIBUTORS BE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
  * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
@@ -130,6 +130,27 @@ extern "C" {
     (((length1) < (1U << NRFX_CONCAT_2(peripheral, _EASYDMA_MAXCNT_SIZE))) && \
      ((length2) < (1U << NRFX_CONCAT_2(peripheral, _EASYDMA_MAXCNT_SIZE))))
 
+/**@brief Macro for waiting until condition is met.
+ *
+ * @param[in]  condition Condition to meet.
+ * @param[in]  attempts  Maximum number of condition checks. Must not be 0.
+ * @param[in]  delay_us  Delay between consecutive checks, in microseconds.
+ * @param[out] result    Boolean variable to store the result of the wait process.
+ *                       Set to true if the condition is met or false otherwise.
+ */
+#define NRFX_WAIT_FOR(condition, attempts, delay_us, result) \
+do {                                                         \
+    result =  false;                                         \
+    uint32_t remaining_attempts = (attempts);                \
+    do {                                                     \
+           if (condition)                                    \
+           {                                                 \
+               result =  true;                               \
+               break;                                        \
+           }                                                 \
+           NRFX_DELAY_US(delay_us);                          \
+    } while (--remaining_attempts);                          \
+} while(0)
 
 /**
  * @brief IRQ handler type.
@@ -201,6 +222,7 @@ __STATIC_INLINE uint32_t nrfx_bitpos_to_event(uint32_t bit);
  * @sa nrfx_bitpos_to_event
  */
 __STATIC_INLINE uint32_t nrfx_event_to_bitpos(uint32_t event);
+
 
 #ifndef SUPPRESS_INLINE_IMPLEMENTATION
 

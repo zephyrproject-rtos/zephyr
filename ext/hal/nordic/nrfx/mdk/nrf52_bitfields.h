@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2010 - 2017, Nordic Semiconductor ASA All rights reserved.
+Copyright (c) 2010 - 2018, Nordic Semiconductor ASA All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -1383,7 +1383,7 @@ POSSIBILITY OF SUCH DAMAGE.
 #define COMP_PSEL_PSEL_AnalogInput7 (7UL) /*!< AIN7 selected as analog input */
 
 /* Register: COMP_REFSEL */
-/* Description: Reference source select */
+/* Description: Reference source select for single-ended mode */
 
 /* Bits 2..0 : Reference select */
 #define COMP_REFSEL_REFSEL_Pos (0UL) /*!< Position of REFSEL field. */
@@ -1397,11 +1397,17 @@ POSSIBILITY OF SUCH DAMAGE.
 /* Register: COMP_EXTREFSEL */
 /* Description: External reference select */
 
-/* Bit 0 : External analog reference select */
+/* Bits 2..0 : External analog reference select */
 #define COMP_EXTREFSEL_EXTREFSEL_Pos (0UL) /*!< Position of EXTREFSEL field. */
-#define COMP_EXTREFSEL_EXTREFSEL_Msk (0x1UL << COMP_EXTREFSEL_EXTREFSEL_Pos) /*!< Bit mask of EXTREFSEL field. */
+#define COMP_EXTREFSEL_EXTREFSEL_Msk (0x7UL << COMP_EXTREFSEL_EXTREFSEL_Pos) /*!< Bit mask of EXTREFSEL field. */
 #define COMP_EXTREFSEL_EXTREFSEL_AnalogReference0 (0UL) /*!< Use AIN0 as external analog reference */
 #define COMP_EXTREFSEL_EXTREFSEL_AnalogReference1 (1UL) /*!< Use AIN1 as external analog reference */
+#define COMP_EXTREFSEL_EXTREFSEL_AnalogReference2 (2UL) /*!< Use AIN2 as external analog reference */
+#define COMP_EXTREFSEL_EXTREFSEL_AnalogReference3 (3UL) /*!< Use AIN3 as external analog reference */
+#define COMP_EXTREFSEL_EXTREFSEL_AnalogReference4 (4UL) /*!< Use AIN4 as external analog reference */
+#define COMP_EXTREFSEL_EXTREFSEL_AnalogReference5 (5UL) /*!< Use AIN5 as external analog reference */
+#define COMP_EXTREFSEL_EXTREFSEL_AnalogReference6 (6UL) /*!< Use AIN6 as external analog reference */
+#define COMP_EXTREFSEL_EXTREFSEL_AnalogReference7 (7UL) /*!< Use AIN7 as external analog reference */
 
 /* Register: COMP_TH */
 /* Description: Threshold configuration for hysteresis unit */
@@ -1417,18 +1423,18 @@ POSSIBILITY OF SUCH DAMAGE.
 /* Register: COMP_MODE */
 /* Description: Mode configuration */
 
-/* Bit 8 : Main operation mode */
+/* Bit 8 : Main operation modes */
 #define COMP_MODE_MAIN_Pos (8UL) /*!< Position of MAIN field. */
 #define COMP_MODE_MAIN_Msk (0x1UL << COMP_MODE_MAIN_Pos) /*!< Bit mask of MAIN field. */
-#define COMP_MODE_MAIN_SE (0UL) /*!< Single ended mode */
+#define COMP_MODE_MAIN_SE (0UL) /*!< Single-ended mode */
 #define COMP_MODE_MAIN_Diff (1UL) /*!< Differential mode */
 
-/* Bits 1..0 : Speed and power mode */
+/* Bits 1..0 : Speed and power modes */
 #define COMP_MODE_SP_Pos (0UL) /*!< Position of SP field. */
 #define COMP_MODE_SP_Msk (0x3UL << COMP_MODE_SP_Pos) /*!< Bit mask of SP field. */
-#define COMP_MODE_SP_Low (0UL) /*!< Low power mode */
+#define COMP_MODE_SP_Low (0UL) /*!< Low-power mode */
 #define COMP_MODE_SP_Normal (1UL) /*!< Normal mode */
-#define COMP_MODE_SP_High (2UL) /*!< High speed mode */
+#define COMP_MODE_SP_High (2UL) /*!< High-speed mode */
 
 /* Register: COMP_HYST */
 /* Description: Comparator hysteresis enable */

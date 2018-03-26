@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2009-2017 ARM Limited. All rights reserved.
+Copyright (c) 2009-2018 ARM Limited. All rights reserved.
 
     SPDX-License-Identifier: Apache-2.0
 
@@ -186,28 +186,46 @@ void SystemInit(void)
 
 static bool errata_36(void)
 {
-    if ((*(uint32_t *)0x10000130ul == 0x8ul) && (*(uint32_t *)0x10000134ul == 0x0ul)){
-        return true;
+    if (*(uint32_t *)0x10000130ul == 0x8ul){
+        if (*(uint32_t *)0x10000134ul == 0x0ul){
+            return true;
+        }
+        if (*(uint32_t *)0x10000134ul == 0x1ul){
+            return true;
+        }
+        if (*(uint32_t *)0x10000134ul == 0x2ul){
+            return true;
+        }
     }
     
-    return false;
+    return true;
 }
 
 
 static bool errata_66(void)
 {
-    if ((*(uint32_t *)0x10000130ul == 0x8ul) && (*(uint32_t *)0x10000134ul == 0x0ul)){
-        return true;
+    if (*(uint32_t *)0x10000130ul == 0x8ul){
+        if (*(uint32_t *)0x10000134ul == 0x0ul){
+            return true;
+        }
+        if (*(uint32_t *)0x10000134ul == 0x1ul){
+            return true;
+        }
+        if (*(uint32_t *)0x10000134ul == 0x2ul){
+            return true;
+        }
     }
     
-    return false;
+    return true;
 }
 
 
 static bool errata_98(void)
 {
-    if ((*(uint32_t *)0x10000130ul == 0x8ul) && (*(uint32_t *)0x10000134ul == 0x0ul)){
-        return true;
+    if (*(uint32_t *)0x10000130ul == 0x8ul){
+        if (*(uint32_t *)0x10000134ul == 0x0ul){
+            return true;
+        }
     }
     
     return false;
@@ -216,8 +234,10 @@ static bool errata_98(void)
 
 static bool errata_103(void)
 {
-    if ((*(uint32_t *)0x10000130ul == 0x8ul) && (*(uint32_t *)0x10000134ul == 0x0ul)){
-        return true;
+    if (*(uint32_t *)0x10000130ul == 0x8ul){
+        if (*(uint32_t *)0x10000134ul == 0x0ul){
+            return true;
+        }
     }
     
     return false;
@@ -226,8 +246,10 @@ static bool errata_103(void)
 
 static bool errata_115(void)
 {
-    if ((*(uint32_t *)0x10000130ul == 0x8ul) && (*(uint32_t *)0x10000134ul == 0x0ul)){
-        return true;
+    if (*(uint32_t *)0x10000130ul == 0x8ul){
+        if (*(uint32_t *)0x10000134ul == 0x0ul){
+            return true;
+        }
     }
     
     return false;
@@ -236,8 +258,10 @@ static bool errata_115(void)
 
 static bool errata_120(void)
 {
-    if ((*(uint32_t *)0x10000130ul == 0x8ul) && (*(uint32_t *)0x10000134ul == 0x0ul)){
-        return true;
+    if (*(uint32_t *)0x10000130ul == 0x8ul){
+        if (*(uint32_t *)0x10000134ul == 0x0ul){
+            return true;
+        }
     }
     
     return false;
@@ -246,11 +270,19 @@ static bool errata_120(void)
 
 static bool errata_136(void)
 {
-    if ((*(uint32_t *)0x10000130ul == 0x8ul) && (*(uint32_t *)0x10000134ul == 0x0ul)){
-        return true;
+    if (*(uint32_t *)0x10000130ul == 0x8ul){
+        if (*(uint32_t *)0x10000134ul == 0x0ul){
+            return true;
+        }
+        if (*(uint32_t *)0x10000134ul == 0x1ul){
+            return true;
+        }
+        if (*(uint32_t *)0x10000134ul == 0x2ul){
+            return true;
+        }
     }
     
-    return false;
+    return true;
 }
 
 /*lint --flb "Leave library region" */

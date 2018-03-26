@@ -6,12 +6,12 @@
  *           nrf52810 from Nordic Semiconductor.
  *
  * @version  V1
- * @date     3. October 2017
+ * @date     8. March 2018
  *
  * @note     Generated with SVDConv V2.81d 
  *           from CMSIS SVD File 'nrf52810.svd' Version 1,
  *
- * @par      Copyright (c) 2010 - 2017, Nordic Semiconductor ASA All rights reserved.
+ * @par      Copyright (c) 2010 - 2018, Nordic Semiconductor ASA All rights reserved.
  *           
  *           Redistribution and use in source and binary forms, with or without
  *           modification, are permitted provided that the following conditions are met:
@@ -311,11 +311,10 @@ typedef struct {
 } QDEC_PSEL_Type;
 
 typedef struct {
-  __IO uint32_t  PTR;                               /*!< Description cluster[0]: Beginning address in Data RAM of this
+  __IO uint32_t  PTR;                               /*!< Description cluster[0]: Beginning address in RAM of this sequence     */
+  __IO uint32_t  CNT;                               /*!< Description cluster[0]: Number of values (duty cycles) in this
                                                          sequence                                                              */
-  __IO uint32_t  CNT;                               /*!< Description cluster[0]: Amount of values (duty cycles) in this
-                                                         sequence                                                              */
-  __IO uint32_t  REFRESH;                           /*!< Description cluster[0]: Amount of additional PWM periods between
+  __IO uint32_t  REFRESH;                           /*!< Description cluster[0]: Number of additional PWM periods between
                                                          samples loaded into compare register                                  */
   __IO uint32_t  ENDDELAY;                          /*!< Description cluster[0]: Time added after the sequence                 */
   __I  uint32_t  RESERVED1[4];
@@ -1303,7 +1302,7 @@ typedef struct {                                    /*!< EGU Structure          
 
 
 /**
-  * @brief Pulse Width Modulation Unit (PWM)
+  * @brief Pulse width modulation unit (PWM)
   */
 
 typedef struct {                                    /*!< PWM Structure                                                         */
@@ -1313,10 +1312,10 @@ typedef struct {                                    /*!< PWM Structure          
   __O  uint32_t  TASKS_SEQSTART[2];                 /*!< Description collection[0]: Loads the first PWM value on all
                                                          enabled channels from sequence 0, and starts playing that sequence
                                                           at the rate defined in SEQ[0]REFRESH and/or DECODER.MODE. Causes
-                                                          PWM generation to start it was not running.                          */
+                                                          PWM generation to start if not running.                              */
   __O  uint32_t  TASKS_NEXTSTEP;                    /*!< Steps by one value in the current sequence on all enabled channels
                                                          if DECODER.MODE=NextStep. Does not cause PWM generation to start
-                                                          it was not running.                                                  */
+                                                          if not running.                                                      */
   __I  uint32_t  RESERVED1[60];
   __IO uint32_t  EVENTS_STOPPED;                    /*!< Response to STOP task, emitted when PWM pulses are no longer
                                                          generated                                                             */
@@ -1339,7 +1338,7 @@ typedef struct {                                    /*!< PWM Structure          
   __IO uint32_t  COUNTERTOP;                        /*!< Value up to which the pulse generator counter counts                  */
   __IO uint32_t  PRESCALER;                         /*!< Configuration for PWM_CLK                                             */
   __IO uint32_t  DECODER;                           /*!< Configuration of the decoder                                          */
-  __IO uint32_t  LOOP;                              /*!< Amount of playback of a loop                                          */
+  __IO uint32_t  LOOP;                              /*!< Number of playbacks of a loop                                         */
   __I  uint32_t  RESERVED5[2];
   PWM_SEQ_Type SEQ[2];                              /*!< Unspecified                                                           */
   PWM_PSEL_Type PSEL;                               /*!< Unspecified                                                           */

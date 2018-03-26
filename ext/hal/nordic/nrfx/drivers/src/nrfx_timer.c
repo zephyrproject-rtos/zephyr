@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015 - 2017, Nordic Semiconductor ASA
+ * Copyright (c) 2015 - 2018, Nordic Semiconductor ASA
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -12,14 +12,14 @@
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
  * 
- * 3. Neither the name of Nordic Semiconductor ASA nor the names of its
+ * 3. Neither the name of the copyright holder nor the names of its
  *    contributors may be used to endorse or promote products derived from this
  *    software without specific prior written permission.
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY, AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL NORDIC SEMICONDUCTOR ASA OR CONTRIBUTORS BE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
  * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
@@ -63,21 +63,13 @@ nrfx_err_t nrfx_timer_init(nrfx_timer_t const * const  p_instance,
     NRFX_ASSERT(p_instance->p_reg != NRF_TIMER0);
 #endif
     NRFX_ASSERT(p_config);
+    NRFX_ASSERT(timer_event_handler);
 
     nrfx_err_t err_code;
 
     if (p_cb->state != NRFX_DRV_STATE_UNINITIALIZED)
     {
         err_code = NRFX_ERROR_INVALID_STATE;
-        NRFX_LOG_WARNING("Function: %s, error code: %s.",
-                         __func__,
-                         NRFX_LOG_ERROR_STRING_GET(err_code));
-        return err_code;
-    }
-
-    if (timer_event_handler == NULL)
-    {
-        err_code = NRFX_ERROR_INVALID_PARAM;
         NRFX_LOG_WARNING("Function: %s, error code: %s.",
                          __func__,
                          NRFX_LOG_ERROR_STRING_GET(err_code));
@@ -102,7 +94,7 @@ nrfx_err_t nrfx_timer_init(nrfx_timer_t const * const  p_instance,
     for (i = 0; i < p_instance->cc_channel_count; ++i)
     {
         nrf_timer_event_clear(p_instance->p_reg,
-            nrf_timer_compare_event_get(i));
+                              nrf_timer_compare_event_get(i));
     }
 
     NRFX_IRQ_PRIORITY_SET(nrfx_get_irq_number(p_instance->p_reg),
@@ -131,10 +123,7 @@ void nrfx_timer_uninit(nrfx_timer_t const * const p_instance)
     nrf_timer_int_disable(p_instance->p_reg, DISABLE_ALL);
     #undef DISABLE_ALL
 
-    if (m_cb[p_instance->instance_id].state == NRFX_DRV_STATE_POWERED_ON)
-    {
-        nrfx_timer_disable(p_instance);
-    }
+    nrfx_timer_disable(p_instance);
 
     m_cb[p_instance->instance_id].state = NRFX_DRV_STATE_UNINITIALIZED;
     NRFX_LOG_INFO("Uninitialized instance: %d.", p_instance->instance_id);
@@ -150,7 +139,7 @@ void nrfx_timer_enable(nrfx_timer_t const * const p_instance)
 
 void nrfx_timer_disable(nrfx_timer_t const * const p_instance)
 {
-    NRFX_ASSERT(m_cb[p_instance->instance_id].state == NRFX_DRV_STATE_POWERED_ON);
+    NRFX_ASSERT(m_cb[p_instance->instance_id].state != NRFX_DRV_STATE_UNINITIALIZED);
     nrf_timer_task_trigger(p_instance->p_reg, NRF_TIMER_TASK_SHUTDOWN);
     m_cb[p_instance->instance_id].state = NRFX_DRV_STATE_INITIALIZED;
     NRFX_LOG_INFO("Disabled instance: %d.", p_instance->instance_id);
@@ -164,14 +153,14 @@ bool nrfx_timer_is_enabled(nrfx_timer_t const * const p_instance)
 
 void nrfx_timer_resume(nrfx_timer_t const * const p_instance)
 {
-    NRFX_ASSERT(m_cb[p_instance->instance_id].state == NRFX_DRV_STATE_POWERED_ON);
+    NRFX_ASSERT(m_cb[p_instance->instance_id].state != NRFX_DRV_STATE_UNINITIALIZED);
     nrf_timer_task_trigger(p_instance->p_reg, NRF_TIMER_TASK_START);
     NRFX_LOG_INFO("Resumed instance: %d.", p_instance->instance_id);
 }
 
 void nrfx_timer_pause(nrfx_timer_t const * const p_instance)
 {
-    NRFX_ASSERT(m_cb[p_instance->instance_id].state == NRFX_DRV_STATE_POWERED_ON);
+    NRFX_ASSERT(m_cb[p_instance->instance_id].state != NRFX_DRV_STATE_UNINITIALIZED);
     nrf_timer_task_trigger(p_instance->p_reg, NRF_TIMER_TASK_STOP);
     NRFX_LOG_INFO("Paused instance: %d.", p_instance->instance_id);
 }
@@ -184,7 +173,7 @@ void nrfx_timer_clear(nrfx_timer_t const * const p_instance)
 
 void nrfx_timer_increment(nrfx_timer_t const * const p_instance)
 {
-    NRFX_ASSERT(m_cb[p_instance->instance_id].state == NRFX_DRV_STATE_POWERED_ON);
+    NRFX_ASSERT(m_cb[p_instance->instance_id].state != NRFX_DRV_STATE_UNINITIALIZED);
     NRFX_ASSERT(nrf_timer_mode_get(p_instance->p_reg) != NRF_TIMER_MODE_TIMER);
 
     nrf_timer_task_trigger(p_instance->p_reg, NRF_TIMER_TASK_COUNT);
@@ -219,7 +208,7 @@ void nrfx_timer_compare(nrfx_timer_t const * const p_instance,
     }
 
     nrf_timer_cc_write(p_instance->p_reg, cc_channel, cc_value);
-    NRFX_LOG_INFO("Timer id: %d, capture value set: %d, channel: %d.",
+    NRFX_LOG_INFO("Timer id: %d, capture value set: %lu, channel: %d.",
                   p_instance->instance_id,
                   cc_value,
                   cc_channel);
@@ -241,7 +230,7 @@ void nrfx_timer_extended_compare(nrfx_timer_t const * const p_instance,
                        cc_channel,
                        cc_value,
                        enable_int);
-    NRFX_LOG_INFO("Timer id: %d, capture value set: %d, channel: %d.",
+    NRFX_LOG_INFO("Timer id: %d, capture value set: %lu, channel: %d.",
                   p_instance->instance_id,
                   cc_value,
                   cc_channel);

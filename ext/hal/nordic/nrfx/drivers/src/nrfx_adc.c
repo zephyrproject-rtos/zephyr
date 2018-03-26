@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015 - 2017, Nordic Semiconductor ASA
+ * Copyright (c) 2015 - 2018, Nordic Semiconductor ASA
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -12,14 +12,14 @@
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
  * 
- * 3. Neither the name of Nordic Semiconductor ASA nor the names of its
+ * 3. Neither the name of the copyright holder nor the names of its
  *    contributors may be used to endorse or promote products derived from this
  *    software without specific prior written permission.
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY, AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL NORDIC SEMICONDUCTOR ASA OR CONTRIBUTORS BE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
  * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
@@ -46,8 +46,8 @@ typedef struct
     nrfx_adc_channel_t     * p_head;
     nrfx_adc_channel_t     * p_current_conv;
     nrf_adc_value_t        * p_buffer;
-    uint8_t                  size;
-    uint8_t                  idx;
+    uint16_t                 size;
+    uint16_t                 idx;
     nrfx_drv_state_t         state;
 } adc_cb_t;
 
@@ -94,7 +94,6 @@ void nrfx_adc_uninit(void)
 
 void nrfx_adc_channel_enable(nrfx_adc_channel_t * const p_channel)
 {
-    NRFX_ASSERT(!is_address_from_stack(p_channel));
     NRFX_ASSERT(!nrfx_adc_is_busy());
 
     p_channel->p_next = NULL;
@@ -144,8 +143,8 @@ void nrfx_adc_channel_disable(nrfx_adc_channel_t * const p_channel)
 void nrfx_adc_sample(void)
 {
     NRFX_ASSERT(m_cb.state != NRFX_DRV_STATE_UNINITIALIZED);
-    NRFX_ASSERT(!nrf_adc_is_busy());
-    nrf_adc_start();
+    NRFX_ASSERT(!nrf_adc_busy_check());
+    nrf_adc_task_trigger(NRF_ADC_TASK_START);
 }
 
 nrfx_err_t nrfx_adc_sample_convert(nrfx_adc_channel_t const * const p_channel,
@@ -166,10 +165,10 @@ nrfx_err_t nrfx_adc_sample_convert(nrfx_adc_channel_t const * const p_channel,
     {
         m_cb.state = NRFX_DRV_STATE_POWERED_ON;
 
-        nrf_adc_config_set(p_channel->config.data);
+        nrf_adc_init(&p_channel->config);
         nrf_adc_enable();
         nrf_adc_int_disable(NRF_ADC_INT_END_MASK);
-        nrf_adc_start();
+        nrf_adc_task_trigger(NRF_ADC_TASK_START);
         if (p_value)
         {
             while (!nrf_adc_event_check(NRF_ADC_EVENT_END)) {}
@@ -211,11 +210,10 @@ static bool adc_sample_process()
             m_cb.p_current_conv = m_cb.p_current_conv->p_next;
             task_trigger = true;
         }
-        nrf_adc_config_set(m_cb.p_current_conv->config.data);
+        nrf_adc_init(&m_cb.p_current_conv->config);
         nrf_adc_enable();
         if (task_trigger)
         {
-            //nrf_adc_start();
             nrf_adc_task_trigger(NRF_ADC_TASK_START);
         }
         return false;
@@ -249,7 +247,7 @@ nrfx_err_t nrfx_adc_buffer_convert(nrf_adc_value_t * buffer, uint16_t size)
         m_cb.size           = size;
         m_cb.idx            = 0;
         m_cb.p_buffer       = buffer;
-        nrf_adc_config_set(m_cb.p_current_conv->config.data);
+        nrf_adc_init(&m_cb.p_current_conv->config);
         nrf_adc_event_clear(NRF_ADC_EVENT_END);
         nrf_adc_enable();
         if (m_cb.event_handler)

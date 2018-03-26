@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015 - 2017, Nordic Semiconductor ASA
+ * Copyright (c) 2015 - 2018, Nordic Semiconductor ASA
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -12,14 +12,14 @@
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
  * 
- * 3. Neither the name of Nordic Semiconductor ASA nor the names of its
+ * 3. Neither the name of the copyright holder nor the names of its
  *    contributors may be used to endorse or promote products derived from this
  *    software without specific prior written permission.
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY, AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL NORDIC SEMICONDUCTOR ASA OR CONTRIBUTORS BE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
  * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
@@ -54,11 +54,11 @@ extern "C" {
 typedef enum
 {
     /*lint -save -e30*/
-    NRF_UARTE_TASK_STARTRX   = offsetof(NRF_UARTE_Type, TASKS_STARTRX),///< Start UART receiver.
-    NRF_UARTE_TASK_STOPRX    = offsetof(NRF_UARTE_Type, TASKS_STOPRX), ///< Stop UART receiver.
-    NRF_UARTE_TASK_STARTTX   = offsetof(NRF_UARTE_Type, TASKS_STARTTX),///< Start UART transmitter.
-    NRF_UARTE_TASK_STOPTX    = offsetof(NRF_UARTE_Type, TASKS_STOPTX), ///< Stop UART transmitter.
-    NRF_UARTE_TASK_FLUSHRX   = offsetof(NRF_UARTE_Type, TASKS_FLUSHRX) ///< Flush RX FIFO in RX buffer.
+    NRF_UARTE_TASK_STARTRX   = offsetof(NRF_UARTE_Type, TASKS_STARTRX), ///< Start UART receiver.
+    NRF_UARTE_TASK_STOPRX    = offsetof(NRF_UARTE_Type, TASKS_STOPRX),  ///< Stop UART receiver.
+    NRF_UARTE_TASK_STARTTX   = offsetof(NRF_UARTE_Type, TASKS_STARTTX), ///< Start UART transmitter.
+    NRF_UARTE_TASK_STOPTX    = offsetof(NRF_UARTE_Type, TASKS_STOPTX),  ///< Stop UART transmitter.
+    NRF_UARTE_TASK_FLUSHRX   = offsetof(NRF_UARTE_Type, TASKS_FLUSHRX)  ///< Flush RX FIFO in RX buffer.
     /*lint -restore*/
 } nrf_uarte_task_t;
 
@@ -69,15 +69,17 @@ typedef enum
 typedef enum
 {
     /*lint -save -e30*/
-    NRF_UARTE_EVENT_CTS       = offsetof(NRF_UARTE_Type, EVENTS_CTS),      ///< CTS is activated.
-    NRF_UARTE_EVENT_NCTS      = offsetof(NRF_UARTE_Type, EVENTS_NCTS),     ///< CTS is deactivated.
-    NRF_UARTE_EVENT_ENDRX     = offsetof(NRF_UARTE_Type, EVENTS_ENDRX),    ///< Receive buffer is filled up.
-    NRF_UARTE_EVENT_ENDTX     = offsetof(NRF_UARTE_Type, EVENTS_ENDTX),    ///< Last TX byte transmitted.
-    NRF_UARTE_EVENT_ERROR     = offsetof(NRF_UARTE_Type, EVENTS_ERROR),    ///< Error detected.
-    NRF_UARTE_EVENT_RXTO      = offsetof(NRF_UARTE_Type, EVENTS_RXTO),     ///< Receiver timeout.
-    NRF_UARTE_EVENT_RXSTARTED = offsetof(NRF_UARTE_Type, EVENTS_RXSTARTED),///< Receiver has started.
-    NRF_UARTE_EVENT_TXSTARTED = offsetof(NRF_UARTE_Type, EVENTS_TXSTARTED),///< Transmitter has started.
-    NRF_UARTE_EVENT_TXSTOPPED = offsetof(NRF_UARTE_Type, EVENTS_TXSTOPPED) ///< Transmitted stopped.
+    NRF_UARTE_EVENT_CTS       = offsetof(NRF_UARTE_Type, EVENTS_CTS),       ///< CTS is activated.
+    NRF_UARTE_EVENT_NCTS      = offsetof(NRF_UARTE_Type, EVENTS_NCTS),      ///< CTS is deactivated.
+    NRF_UARTE_EVENT_RXDRDY    = offsetof(NRF_UARTE_Type, EVENTS_RXDRDY),    ///< Data received in RXD (but potentially not yet transferred to Data RAM).
+    NRF_UARTE_EVENT_ENDRX     = offsetof(NRF_UARTE_Type, EVENTS_ENDRX),     ///< Receive buffer is filled up.
+    NRF_UARTE_EVENT_TXDDY     = offsetof(NRF_UARTE_Type, EVENTS_TXDRDY),    ///< Data sent from TXD.
+    NRF_UARTE_EVENT_ENDTX     = offsetof(NRF_UARTE_Type, EVENTS_ENDTX),     ///< Last TX byte transmitted.
+    NRF_UARTE_EVENT_ERROR     = offsetof(NRF_UARTE_Type, EVENTS_ERROR),     ///< Error detected.
+    NRF_UARTE_EVENT_RXTO      = offsetof(NRF_UARTE_Type, EVENTS_RXTO),      ///< Receiver timeout.
+    NRF_UARTE_EVENT_RXSTARTED = offsetof(NRF_UARTE_Type, EVENTS_RXSTARTED), ///< Receiver has started.
+    NRF_UARTE_EVENT_TXSTARTED = offsetof(NRF_UARTE_Type, EVENTS_TXSTARTED), ///< Transmitter has started.
+    NRF_UARTE_EVENT_TXSTOPPED = offsetof(NRF_UARTE_Type, EVENTS_TXSTOPPED)  ///< Transmitted stopped.
     /*lint -restore*/
 } nrf_uarte_event_t;
 
@@ -86,8 +88,8 @@ typedef enum
  */
 typedef enum
 {
-    NRF_UARTE_SHORT_ENDRX_STARTRX = UARTE_SHORTS_ENDRX_STARTRX_Msk,///< Shortcut between ENDRX event and STARTRX task.
-    NRF_UARTE_SHORT_ENDRX_STOPRX  = UARTE_SHORTS_ENDRX_STOPRX_Msk, ///< Shortcut between ENDRX event and STOPRX task.
+    NRF_UARTE_SHORT_ENDRX_STARTRX = UARTE_SHORTS_ENDRX_STARTRX_Msk, ///< Shortcut between ENDRX event and STARTRX task.
+    NRF_UARTE_SHORT_ENDRX_STOPRX  = UARTE_SHORTS_ENDRX_STOPRX_Msk   ///< Shortcut between ENDRX event and STOPRX task.
 } nrf_uarte_short_t;
 
 
@@ -97,15 +99,17 @@ typedef enum
  */
 typedef enum
 {
-    NRF_UARTE_INT_CTS_MASK       = UARTE_INTENSET_CTS_Msk,      ///< Interrupt on CTS event.
-    NRF_UARTE_INT_NCTSRX_MASK    = UARTE_INTENSET_NCTS_Msk,     ///< Interrupt on NCTS event.
-    NRF_UARTE_INT_ENDRX_MASK     = UARTE_INTENSET_ENDRX_Msk,    ///< Interrupt on ENDRX event.
-    NRF_UARTE_INT_ENDTX_MASK     = UARTE_INTENSET_ENDTX_Msk,    ///< Interrupt on ENDTX event.
-    NRF_UARTE_INT_ERROR_MASK     = UARTE_INTENSET_ERROR_Msk,    ///< Interrupt on ERROR event.
-    NRF_UARTE_INT_RXTO_MASK      = UARTE_INTENSET_RXTO_Msk,     ///< Interrupt on RXTO event.
-    NRF_UARTE_INT_RXSTARTED_MASK = UARTE_INTENSET_RXSTARTED_Msk,///< Interrupt on RXSTARTED event.
-    NRF_UARTE_INT_TXSTARTED_MASK = UARTE_INTENSET_TXSTARTED_Msk,///< Interrupt on TXSTARTED event.
-    NRF_UARTE_INT_TXSTOPPED_MASK = UARTE_INTENSET_TXSTOPPED_Msk ///< Interrupt on TXSTOPPED event.
+    NRF_UARTE_INT_CTS_MASK       = UARTE_INTENSET_CTS_Msk,       ///< Interrupt on CTS event.
+    NRF_UARTE_INT_NCTS_MASK      = UARTE_INTENSET_NCTS_Msk,      ///< Interrupt on NCTS event.
+    NRF_UARTE_INT_RXDRDY_MASK    = UARTE_INTENSET_RXDRDY_Msk,    ///< Interrupt on RXDRDY event.
+    NRF_UARTE_INT_ENDRX_MASK     = UARTE_INTENSET_ENDRX_Msk,     ///< Interrupt on ENDRX event.
+    NRF_UARTE_INT_TXDRDY_MASK    = UARTE_INTENSET_TXDRDY_Msk,    ///< Interrupt on TXDRDY event.
+    NRF_UARTE_INT_ENDTX_MASK     = UARTE_INTENSET_ENDTX_Msk,     ///< Interrupt on ENDTX event.
+    NRF_UARTE_INT_ERROR_MASK     = UARTE_INTENSET_ERROR_Msk,     ///< Interrupt on ERROR event.
+    NRF_UARTE_INT_RXTO_MASK      = UARTE_INTENSET_RXTO_Msk,      ///< Interrupt on RXTO event.
+    NRF_UARTE_INT_RXSTARTED_MASK = UARTE_INTENSET_RXSTARTED_Msk, ///< Interrupt on RXSTARTED event.
+    NRF_UARTE_INT_TXSTARTED_MASK = UARTE_INTENSET_TXSTARTED_Msk, ///< Interrupt on TXSTARTED event.
+    NRF_UARTE_INT_TXSTOPPED_MASK = UARTE_INTENSET_TXSTOPPED_Msk  ///< Interrupt on TXSTOPPED event.
 } nrf_uarte_int_mask_t;
 
 /**
@@ -131,7 +135,7 @@ typedef enum
     NRF_UARTE_BAUDRATE_250000  = UARTE_BAUDRATE_BAUDRATE_Baud250000, ///< 250000 baud.
     NRF_UARTE_BAUDRATE_460800  = UARTE_BAUDRATE_BAUDRATE_Baud460800, ///< 460800 baud.
     NRF_UARTE_BAUDRATE_921600  = UARTE_BAUDRATE_BAUDRATE_Baud921600, ///< 921600 baud.
-    NRF_UARTE_BAUDRATE_1000000 = UARTE_BAUDRATE_BAUDRATE_Baud1M,     ///< 1000000 baud.
+    NRF_UARTE_BAUDRATE_1000000 = UARTE_BAUDRATE_BAUDRATE_Baud1M      ///< 1000000 baud.
 } nrf_uarte_baudrate_t;
 
 /**
@@ -140,10 +144,10 @@ typedef enum
  */
 typedef enum
 {
-    NRF_UARTE_ERROR_OVERRUN_MASK = UARTE_ERRORSRC_OVERRUN_Msk,   ///< Overrun error.
-    NRF_UARTE_ERROR_PARITY_MASK  = UARTE_ERRORSRC_PARITY_Msk,    ///< Parity error.
-    NRF_UARTE_ERROR_FRAMING_MASK = UARTE_ERRORSRC_FRAMING_Msk,   ///< Framing error.
-    NRF_UARTE_ERROR_BREAK_MASK   = UARTE_ERRORSRC_BREAK_Msk,     ///< Break error.
+    NRF_UARTE_ERROR_OVERRUN_MASK = UARTE_ERRORSRC_OVERRUN_Msk, ///< Overrun error.
+    NRF_UARTE_ERROR_PARITY_MASK  = UARTE_ERRORSRC_PARITY_Msk,  ///< Parity error.
+    NRF_UARTE_ERROR_FRAMING_MASK = UARTE_ERRORSRC_FRAMING_Msk, ///< Framing error.
+    NRF_UARTE_ERROR_BREAK_MASK   = UARTE_ERRORSRC_BREAK_Msk    ///< Break error.
 } nrf_uarte_error_mask_t;
 
 /**
@@ -153,7 +157,7 @@ typedef enum
 typedef enum
 {
     NRF_UARTE_PARITY_EXCLUDED = UARTE_CONFIG_PARITY_Excluded << UARTE_CONFIG_PARITY_Pos, ///< Parity excluded.
-    NRF_UARTE_PARITY_INCLUDED = UARTE_CONFIG_PARITY_Included << UARTE_CONFIG_PARITY_Pos, ///< Parity included.
+    NRF_UARTE_PARITY_INCLUDED = UARTE_CONFIG_PARITY_Included << UARTE_CONFIG_PARITY_Pos  ///< Parity included.
 } nrf_uarte_parity_t;
 
 /**
@@ -163,7 +167,7 @@ typedef enum
 typedef enum
 {
     NRF_UARTE_HWFC_DISABLED = UARTE_CONFIG_HWFC_Disabled << UARTE_CONFIG_HWFC_Pos, ///< HW flow control disabled.
-    NRF_UARTE_HWFC_ENABLED  = UARTE_CONFIG_HWFC_Enabled  << UARTE_CONFIG_HWFC_Pos, ///< HW flow control enabled.
+    NRF_UARTE_HWFC_ENABLED  = UARTE_CONFIG_HWFC_Enabled  << UARTE_CONFIG_HWFC_Pos  ///< HW flow control enabled.
 } nrf_uarte_hwfc_t;
 
 

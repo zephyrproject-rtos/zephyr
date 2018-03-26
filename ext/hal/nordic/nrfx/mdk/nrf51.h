@@ -6,12 +6,12 @@
  *           nrf51 from Nordic Semiconductor.
  *
  * @version  V522
- * @date     3. October 2017
+ * @date     8. March 2018
  *
  * @note     Generated with SVDConv V2.81d 
  *           from CMSIS SVD File 'nrf51.svd' Version 522,
  *
- * @par      Copyright (c) 2010 - 2017, Nordic Semiconductor ASA All rights reserved.
+ * @par      Copyright (c) 2010 - 2018, Nordic Semiconductor ASA All rights reserved.
  *           
  *           Redistribution and use in source and binary forms, with or without
  *           modification, are permitted provided that the following conditions are met:
