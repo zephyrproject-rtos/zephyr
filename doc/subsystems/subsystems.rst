@@ -11,7 +11,9 @@ to applications.
 
    bluetooth/bluetooth.rst
    c_library
+   dfu
    logging/index
+   mgmt
    networking/networking.rst
    power_management.rst
    sensor
