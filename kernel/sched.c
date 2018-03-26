@@ -240,12 +240,15 @@ inserted:
 #endif
 }
 
-/* pend the current thread */
-/* must be called with interrupts locked */
-void _pend_current_thread(_wait_q_t *wait_q, s32_t timeout)
+/* Block the current thread and swap to the next.  Releases the
+ * irq_lock, does a _Swap and returns the return value set at wakeup
+ * time
+ */
+int _pend_current_thread(int key, _wait_q_t *wait_q, s32_t timeout)
 {
 	_remove_thread_from_ready_q(_current);
 	_pend_thread(_current, wait_q, timeout);
+	return _Swap(key);
 }
 
 int _impl_k_thread_priority_get(k_tid_t thread)

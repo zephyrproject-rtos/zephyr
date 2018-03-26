@@ -158,9 +158,7 @@ int _impl_k_mutex_lock(struct k_mutex *mutex, s32_t timeout)
 		adjust_owner_prio(mutex, new_prio);
 	}
 
-	_pend_current_thread(&mutex->wait_q, timeout);
-
-	int got_mutex = _Swap(key);
+	int got_mutex = _pend_current_thread(key, &mutex->wait_q, timeout);
 
 	K_DEBUG("on mutex %p got_mutex value: %d\n", mutex, got_mutex);
 

@@ -101,8 +101,7 @@ int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem, s32_t timeout)
 		result = -ENOMEM;
 	} else {
 		/* wait for a free block or timeout */
-		_pend_current_thread(&slab->wait_q, timeout);
-		result = _Swap(key);
+		result = _pend_current_thread(key, &slab->wait_q, timeout);
 		if (result == 0) {
 			*mem = _current->base.swap_data;
 		}

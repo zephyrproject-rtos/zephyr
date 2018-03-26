@@ -112,9 +112,8 @@ int _impl_k_msgq_put(struct k_msgq *q, void *data, s32_t timeout)
 		result = -ENOMSG;
 	} else {
 		/* wait for put message success, failure, or timeout */
-		_pend_current_thread(&q->wait_q, timeout);
 		_current->base.swap_data = data;
-		return _reschedule_yield(key);
+		return _pend_current_thread(key, &q->wait_q, timeout);
 	}
 
 	irq_unlock(key);
@@ -195,9 +194,8 @@ int _impl_k_msgq_get(struct k_msgq *q, void *data, s32_t timeout)
 		result = -ENOMSG;
 	} else {
 		/* wait for get message success or timeout */
-		_pend_current_thread(&q->wait_q, timeout);
 		_current->base.swap_data = data;
-		return _Swap(key);
+		return _pend_current_thread(key, &q->wait_q, timeout);
 	}
 
 	irq_unlock(key);

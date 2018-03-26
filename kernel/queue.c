@@ -224,8 +224,8 @@ void *k_queue_get(struct k_queue *queue, s32_t timeout)
 	return k_queue_poll(queue, timeout);
 
 #else
-	_pend_current_thread(&queue->wait_q, timeout);
+	int ret = _pend_current_thread(key, &queue->wait_q, timeout);
 
-	return _Swap(key) ? NULL : _current->base.swap_data;
+	return ret ? NULL : _current->base.swap_data;
 #endif /* CONFIG_POLL */
 }
