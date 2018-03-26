@@ -279,7 +279,7 @@ extern void _arch_irq_direct_pm(void);
 #define _ARCH_ISR_DIRECT_HEADER() _arch_isr_direct_header()
 #define _ARCH_ISR_DIRECT_FOOTER(swap) _arch_isr_direct_footer(swap)
 
-/* FIXME prefer these inline, but see ZEP-1595 */
+/* FIXME prefer these inline, but see GH-3056 */
 extern void _arch_isr_direct_header(void);
 extern void _arch_isr_direct_footer(int maybe_swap);
 

@@ -45,7 +45,7 @@ void *__attribute__((section(".spurNoErrIsr")))
  * future iteration will resolve this.
  * We have a similar issue with the k_event_logger functions.
  *
- * See https://jira.zephyrproject.org/browse/ZEP-1595
+ * See https://github.com/zephyrproject-rtos/zephyr/issues/3056
  */
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT

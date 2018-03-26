@@ -1039,7 +1039,7 @@ ignore_frag_error:
 #endif /* CONFIG_NET_IPV6_FRAGMENT */
 
 	/* Workaround Linux bug, see:
-	 * https://jira.zephyrproject.org/browse/ZEP-1656
+	 * https://github.com/zephyrproject-rtos/zephyr/issues/3111
 	 */
 	if (atomic_test_bit(net_pkt_iface(pkt)->flags, NET_IF_POINTOPOINT)) {
 		/* Update RPL header */

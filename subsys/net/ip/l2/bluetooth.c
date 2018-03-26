@@ -260,7 +260,7 @@ static void bt_iface_init(struct net_if *iface)
 
 #if defined(CONFIG_NET_L2_BT_ZEP1656)
 	/* Workaround Linux bug, see:
-	 * https://jira.zephyrproject.org/browse/ZEP-1656
+	 * https://github.com/zephyrproject-rtos/zephyr/issues/3111
 	 */
 	atomic_set_bit(iface->flags, NET_IF_POINTOPOINT);
 #endif

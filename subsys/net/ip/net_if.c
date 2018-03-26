@@ -277,7 +277,7 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
 	/* If the ll address is not set at all, then we must set
 	 * it here.
 	 * Workaround Linux bug, see:
-	 * https://jira.zephyrproject.org/browse/ZEP-1656
+	 * https://github.com/zephyrproject-rtos/zephyr/issues/3111
 	 */
 	if (!atomic_test_bit(iface->flags, NET_IF_POINTOPOINT) &&
 	    !net_pkt_ll_src(pkt)->addr) {

@@ -414,7 +414,7 @@ static int cdc_acm_fifo_fill(struct device *dev,
 	/* FIXME: On Quark SE Family processor, restrict writing more than
 	 * 4 bytes into TX USB Endpoint. When more than 4 bytes are written,
 	 * sometimes (freq ~1/3000) first 4 bytes are  repeated.
-	 * (example: abcdef prints as abcdabcdef) (refer Jira ZEP-2074).
+	 * (example: abcdef prints as abcdabcdef) (refer Jira GH-3515).
 	 * Application should handle partial data transfer while writing
 	 * into USB TX Endpoint.
 	 */

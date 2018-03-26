@@ -19,7 +19,7 @@
 #define _STM32F0_SOC_IRQ_H_
 
 /* FIXME: Remove when use of enum line number in IRQ_CONNECT is
- * made possible by ZEP-1165.
+ * made possible by GH-2657.
  * soc_irq.h, once it is possible, should be removed.
  */
 
