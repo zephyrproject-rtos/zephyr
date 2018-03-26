@@ -77,6 +77,19 @@ void tz_nbanked_exception_target_state_set(int secure_state)
 		| aircr_payload;
 }
 
+void tz_nonsecure_exception_prio_config(int secure_boost)
+{
+	u32_t aircr_payload = SCB->AIRCR & (~(SCB_AIRCR_VECTKEY_Msk));
+	if (secure_boost) {
+		aircr_payload |= SCB_AIRCR_PRIS_Msk;
+	} else {
+		aircr_payload &= ~(SCB_AIRCR_PRIS_Msk);
+	}
+	SCB->AIRCR = ((AIRCR_VECT_KEY_PERMIT_WRITE << SCB_AIRCR_VECTKEY_Pos)
+			& SCB_AIRCR_VECTKEY_Msk)
+		| aircr_payload;
+}
+
 void tz_sau_configure(int enable, int allns)
 {
 	if (enable) {
