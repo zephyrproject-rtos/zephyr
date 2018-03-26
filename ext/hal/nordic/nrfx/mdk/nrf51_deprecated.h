@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2010 - 2017, Nordic Semiconductor ASA All rights reserved.
+Copyright (c) 2010 - 2018, Nordic Semiconductor ASA All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
 modification, are permitted provided that the following conditions are met:
@@ -432,7 +432,11 @@ POSSIBILITY OF SUCH DAMAGE.
 #define PPI_CHG3_CH0_Pos        PPI_CHG_CH0_Pos             
 #define PPI_CHG3_CH0_Msk        PPI_CHG_CH0_Msk             
 #define PPI_CHG3_CH0_Excluded   PPI_CHG_CH0_Excluded        
-#define PPI_CHG3_CH0_Included   PPI_CHG_CH0_Included        
+#define PPI_CHG3_CH0_Included   PPI_CHG_CH0_Included      
+
+/* SPIS */
+/* nRF51 devices do not have an SPIS0, only SPIS1. SPIS0_EASYDMA_MAXCNT_SIZE was therefore renamed. */
+#define SPIS0_EASYDMA_MAXCNT_SIZE SPIS1_EASYDMA_MAXCNT_SIZE  
 
 
 

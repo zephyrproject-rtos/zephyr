@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2016 - 2017, Nordic Semiconductor ASA
+ * Copyright (c) 2016 - 2018, Nordic Semiconductor ASA
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -12,14 +12,14 @@
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
  * 
- * 3. Neither the name of Nordic Semiconductor ASA nor the names of its
+ * 3. Neither the name of the copyright holder nor the names of its
  *    contributors may be used to endorse or promote products derived from this
  *    software without specific prior written permission.
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY, AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL NORDIC SEMICONDUCTOR ASA OR CONTRIBUTORS BE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
  * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
@@ -48,9 +48,15 @@
  */
 #define QSPI_MEM_STATUSREG_WIP_Pos 0x01
 
-#define QSPI_WAIT_READY() do {                                         \
-        while (!nrf_qspi_event_check(NRF_QSPI, NRF_QSPI_EVENT_READY)); \
-    } while(0)
+/**
+ * @brief Default time used in timeout function.
+ */
+#define QSPI_DEF_WAIT_TIME_US 10
+
+/**
+ * @brief Default number of tries in timeout function.
+ */
+#define QSPI_DEF_WAIT_ATTEMPTS 100
 
 /**
   * @brief Control block - driver instance local data.
@@ -85,7 +91,8 @@ static nrfx_err_t qspi_task_perform(nrf_qspi_task_t task)
 
     if (m_cb.handler == NULL)
     {
-        QSPI_WAIT_READY();
+        while (!nrf_qspi_event_check(NRF_QSPI, NRF_QSPI_EVENT_READY))
+        {};
     }
     return NRFX_SUCCESS;
 }
@@ -147,7 +154,16 @@ nrfx_err_t nrfx_qspi_init(nrfx_qspi_config_t const * p_config,
     nrf_qspi_task_trigger(NRF_QSPI, NRF_QSPI_TASK_ACTIVATE);
 
     // Waiting for the peripheral to activate
-    QSPI_WAIT_READY();
+    bool result;
+    NRFX_WAIT_FOR(nrf_qspi_event_check(NRF_QSPI, NRF_QSPI_EVENT_READY),
+                  QSPI_DEF_WAIT_ATTEMPTS,
+                  QSPI_DEF_WAIT_TIME_US,
+                  result);
+
+    if (!result)
+    {
+        return NRFX_ERROR_TIMEOUT;
+    }
 
     return NRFX_SUCCESS;
 }
@@ -175,7 +191,21 @@ nrfx_err_t nrfx_qspi_cinstr_xfer(nrf_qspi_cinstr_conf_t const * p_config,
 
     nrf_qspi_cinstr_transfer_start(NRF_QSPI, p_config);
 
-    QSPI_WAIT_READY();
+    bool result;
+    NRFX_WAIT_FOR(nrf_qspi_event_check(NRF_QSPI, NRF_QSPI_EVENT_READY),
+                  QSPI_DEF_WAIT_ATTEMPTS,
+                  QSPI_DEF_WAIT_TIME_US,
+                  result);
+
+    if (!result)
+    {
+        // This timeout should never occur when WIPWAIT is not active, since in this
+        // case the QSPI peripheral should send the command immediately, without any
+        // waiting for previous write to complete.
+        NRFX_ASSERT(p_config->wipwait);
+
+        return NRFX_ERROR_TIMEOUT;
+    }
     nrf_qspi_event_clear(NRF_QSPI, NRF_QSPI_EVENT_READY);
     nrf_qspi_int_enable(NRF_QSPI, NRF_QSPI_INT_READY_MASK);
 
@@ -225,6 +255,11 @@ void nrfx_qspi_uninit(void)
     nrf_qspi_int_disable(NRF_QSPI, NRF_QSPI_INT_READY_MASK);
 
     nrf_qspi_disable(NRF_QSPI);
+
+    nrf_qspi_task_trigger(NRF_QSPI, NRF_QSPI_TASK_DEACTIVATE);
+
+    // Workaround for nRF52840 anomaly 122: Current consumption is too high.
+    *(volatile uint32_t *)0x40029054ul = 1ul;
 
     NRFX_IRQ_DISABLE(QSPI_IRQn);
 

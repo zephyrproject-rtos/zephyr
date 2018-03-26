@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015 - 2017, Nordic Semiconductor ASA
+ * Copyright (c) 2015 - 2018, Nordic Semiconductor ASA
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -12,14 +12,14 @@
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
  * 
- * 3. Neither the name of Nordic Semiconductor ASA nor the names of its
+ * 3. Neither the name of the copyright holder nor the names of its
  *    contributors may be used to endorse or promote products derived from this
  *    software without specific prior written permission.
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY, AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL NORDIC SEMICONDUCTOR ASA OR CONTRIBUTORS BE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
  * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
@@ -101,6 +101,7 @@ typedef struct
     //  are not concurrently used in IRQ handlers and main line code]
     bool            ss_active_high;
     uint8_t         ss_pin;
+    uint8_t         miso_pin;
     uint8_t         orc;
 
 #if NRFX_CHECK(NRFX_SPIM_NRF52_ANOMALY_109_WORKAROUND_ENABLED)
@@ -109,6 +110,47 @@ typedef struct
 #endif
 } spim_control_block_t;
 static spim_control_block_t m_cb[NRFX_SPIM_ENABLED_COUNT];
+
+#if NRFX_CHECK(NRFX_SPIM3_NRF52840_ANOMALY_198_WORKAROUND_ENABLED)
+
+// Workaround for nRF52840 anomaly 198: SPIM3 transmit data might be corrupted.
+
+static uint32_t m_anomaly_198_preserved_value;
+
+static void anomaly_198_enable(uint8_t const * p_buffer, size_t buf_len)
+{
+    m_anomaly_198_preserved_value = *((volatile uint32_t *)0x40000E00);
+
+    if (buf_len == 0)
+    {
+        return;
+    }
+    uint32_t buffer_end_addr = ((uint32_t)p_buffer) + buf_len;
+    uint32_t block_addr      = ((uint32_t)p_buffer) & ~0x1FFF;
+    uint32_t block_flag      = (1UL << ((block_addr >> 13) & 0xFFFF));
+    uint32_t occupied_blocks = 0;
+
+    if (block_addr >= 0x20010000)
+    {
+        occupied_blocks = (1UL << 8);
+    }
+    else
+    {
+        do {
+            occupied_blocks |= block_flag;
+            block_flag <<= 1;
+            block_addr  += 0x2000;
+        } while ((block_addr < buffer_end_addr) && (block_addr < 0x20012000));
+    }
+
+    *((volatile uint32_t *)0x40000E00) = occupied_blocks;
+}
+
+static void anomaly_198_disable(void)
+{
+    *((volatile uint32_t *)0x40000E00) = m_anomaly_198_preserved_value;
+}
+#endif // NRFX_CHECK(NRFX_SPIM3_NRF52840_ANOMALY_198_WORKAROUND_ENABLED)
 
 nrfx_err_t nrfx_spim_init(nrfx_spim_t  const * const p_instance,
                           nrfx_spim_config_t const * p_config,
@@ -219,6 +261,7 @@ nrfx_err_t nrfx_spim_init(nrfx_spim_t  const * const p_instance,
     {
         miso_pin = NRF_SPIM_PIN_NOT_CONNECTED;
     }
+    m_cb[p_instance->drv_inst_idx].miso_pin = p_config->miso_pin;
     // - Slave Select (optional) - output with initial value 1 (inactive).
     if (p_config->ss_pin != NRFX_SPIM_PIN_NOT_USED)
     {
@@ -261,11 +304,8 @@ nrfx_err_t nrfx_spim_init(nrfx_spim_t  const * const p_instance,
 
 
     nrf_spim_pins_set(p_spim, p_config->sck_pin, mosi_pin, miso_pin);
-    nrf_spim_frequency_set(p_spim,
-        (nrf_spim_frequency_t)p_config->frequency);
-    nrf_spim_configure(p_spim,
-        (nrf_spim_mode_t)p_config->mode,
-        (nrf_spim_bit_order_t)p_config->bit_order);
+    nrf_spim_frequency_set(p_spim, p_config->frequency);
+    nrf_spim_configure(p_spim, p_config->mode, p_config->bit_order);
 
     nrf_spim_orc_set(p_spim, p_config->orc);
 
@@ -314,6 +354,11 @@ void nrfx_spim_uninit(nrfx_spim_t const * const p_instance)
             p_cb->transfer_in_progress = false;
         }
     }
+
+    if (p_cb->miso_pin != NRFX_SPIM_PIN_NOT_USED)
+    {
+        nrf_gpio_cfg_default(p_cb->miso_pin);
+    }
     nrf_spim_disable(p_spim);
 
 #if NRFX_CHECK(NRFX_PRS_ENABLED)
@@ -329,7 +374,7 @@ nrfx_err_t nrfx_spim_xfer_dcx(nrfx_spim_t const * const     p_instance,
                               uint32_t                      flags,
                               uint8_t                       cmd_length)
 {
-    ASSERT(cmd_length <= NRF_SPIM_DCX_CNT_ALL_CMD)
+    NRFX_ASSERT(cmd_length <= NRF_SPIM_DCX_CNT_ALL_CMD);
     nrf_spim_dcx_cnt_set((NRF_SPIM_Type *)p_instance->p_reg, cmd_length);
     return nrfx_spim_xfer(p_instance, p_xfer_desc, 0);
 }
@@ -423,6 +468,13 @@ static nrfx_err_t spim_xfer(NRF_SPIM_Type               * p_spim,
     nrf_spim_tx_buffer_set(p_spim, p_xfer_desc->p_tx_buffer, p_xfer_desc->tx_length);
     nrf_spim_rx_buffer_set(p_spim, p_xfer_desc->p_rx_buffer, p_xfer_desc->rx_length);
 
+#if NRFX_CHECK(NRFX_SPIM3_NRF52840_ANOMALY_198_WORKAROUND_ENABLED)
+    if (p_spim == NRF_SPIM3)
+    {
+        anomaly_198_enable(p_xfer_desc->p_tx_buffer, p_xfer_desc->tx_length);
+    }
+#endif
+
     nrf_spim_event_clear(p_spim, NRF_SPIM_EVENT_END);
 
     spim_list_enable_handle(p_spim, flags);
@@ -446,6 +498,13 @@ static nrfx_err_t spim_xfer(NRF_SPIM_Type               * p_spim,
     if (!p_cb->handler)
     {
         while (!nrf_spim_event_check(p_spim, NRF_SPIM_EVENT_END)){}
+
+#if NRFX_CHECK(NRFX_SPIM3_NRF52840_ANOMALY_198_WORKAROUND_ENABLED)
+        if (p_spim == NRF_SPIM3)
+        {
+            anomaly_198_disable();
+        }
+#endif
         if (p_cb->ss_pin != NRFX_SPIM_PIN_NOT_USED)
         {
 #if NRFX_CHECK(NRFX_SPIM_EXTENDED_ENABLED)
@@ -576,6 +635,12 @@ static void irq_handler(NRF_SPIM_Type * p_spim, spim_control_block_t * p_cb)
 
     if (nrf_spim_event_check(p_spim, NRF_SPIM_EVENT_END))
     {
+#if NRFX_CHECK(NRFX_SPIM3_NRF52840_ANOMALY_198_WORKAROUND_ENABLED)
+        if (p_spim == NRF_SPIM3)
+        {
+            anomaly_198_disable();
+        }
+#endif
         nrf_spim_event_clear(p_spim, NRF_SPIM_EVENT_END);
         NRFX_ASSERT(p_cb->handler);
         NRFX_LOG_DEBUG("Event: NRF_SPIM_EVENT_END.");

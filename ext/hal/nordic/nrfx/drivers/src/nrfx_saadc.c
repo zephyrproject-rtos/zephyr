@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015 - 2017, Nordic Semiconductor ASA
+ * Copyright (c) 2015 - 2018, Nordic Semiconductor ASA
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -12,14 +12,14 @@
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
  * 
- * 3. Neither the name of Nordic Semiconductor ASA nor the names of its
+ * 3. Neither the name of the copyright holder nor the names of its
  *    contributors may be used to endorse or promote products derived from this
  *    software without specific prior written permission.
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY, AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL NORDIC SEMICONDUCTOR ASA OR CONTRIBUTORS BE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
  * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
@@ -203,19 +203,12 @@ nrfx_err_t nrfx_saadc_init(nrfx_saadc_config_t const * p_config,
                            nrfx_saadc_event_handler_t  event_handler)
 {
     NRFX_ASSERT(p_config);
+    NRFX_ASSERT(event_handler);
     nrfx_err_t err_code;
 
     if (m_cb.state != NRFX_DRV_STATE_UNINITIALIZED)
     {
         err_code = NRFX_ERROR_INVALID_STATE;
-        NRFX_LOG_WARNING("Function: %s, error code: %s.",
-                         __func__,
-                         NRFX_LOG_ERROR_STRING_GET(err_code));
-        return err_code;
-    }
-    if (event_handler == NULL)
-    {
-        err_code = NRFX_ERROR_INVALID_PARAM;
         NRFX_LOG_WARNING("Function: %s, error code: %s.",
                          __func__,
                          NRFX_LOG_ERROR_STRING_GET(err_code));
@@ -262,13 +255,9 @@ void nrfx_saadc_uninit(void)
     nrf_saadc_task_trigger(NRF_SAADC_TASK_STOP);
 
     // Wait for ADC being stopped.
-    uint32_t timeout = HW_TIMEOUT;
-
-    while (nrf_saadc_event_check(NRF_SAADC_EVENT_STOPPED) == 0 && timeout > 0)
-    {
-        --timeout;
-    }
-    NRFX_ASSERT(timeout > 0);
+    bool result;
+    NRFX_WAIT_FOR(nrf_saadc_event_check(NRF_SAADC_EVENT_STOPPED), HW_TIMEOUT, 0, result);
+    NRFX_ASSERT(result);
 
     nrf_saadc_disable();
     m_cb.adc_state = NRF_SAADC_STATE_IDLE;
@@ -277,7 +266,8 @@ void nrfx_saadc_uninit(void)
     {
         if (m_cb.psel[channel].pselp != NRF_SAADC_INPUT_DISABLED)
         {
-            (void)nrfx_saadc_channel_uninit(channel);
+            nrfx_err_t err_code = nrfx_saadc_channel_uninit(channel);
+            NRFX_ASSERT(err_code == NRFX_SUCCESS);
         }
     }
 
@@ -317,7 +307,7 @@ nrfx_err_t nrfx_saadc_channel_init(uint8_t                                  chan
     }
 #endif //NRF52_PAN_74
 
-    if (!m_cb.psel[channel].pselp)
+    if (m_cb.psel[channel].pselp == NRF_SAADC_INPUT_DISABLED)
     {
         ++m_cb.active_channels;
     }
@@ -343,7 +333,7 @@ nrfx_err_t nrfx_saadc_channel_init(uint8_t                                  chan
 
 nrfx_err_t nrfx_saadc_channel_uninit(uint8_t channel)
 {
-    NRFX_ASSERT(channel < NRF_SAADC_CHANNEL_COUNT)
+    NRFX_ASSERT(channel < NRF_SAADC_CHANNEL_COUNT);
     NRFX_ASSERT(m_cb.state != NRFX_DRV_STATE_UNINITIALIZED);
 
     nrfx_err_t err_code;
@@ -358,7 +348,7 @@ nrfx_err_t nrfx_saadc_channel_uninit(uint8_t channel)
         return err_code;
     }
 
-    if (m_cb.psel[channel].pselp)
+    if (m_cb.psel[channel].pselp != NRF_SAADC_INPUT_DISABLED)
     {
         --m_cb.active_channels;
     }
@@ -407,12 +397,10 @@ nrfx_err_t nrfx_saadc_sample_convert(uint8_t channel, nrf_saadc_value_t * p_valu
     nrf_saadc_task_trigger(NRF_SAADC_TASK_START);
     nrf_saadc_task_trigger(NRF_SAADC_TASK_SAMPLE);
 
-    uint32_t timeout = HW_TIMEOUT;
+    bool result;
+    NRFX_WAIT_FOR(nrf_saadc_event_check(NRF_SAADC_EVENT_END), HW_TIMEOUT, 0, result);
+    NRFX_ASSERT(result);
 
-    while (0 == nrf_saadc_event_check(NRF_SAADC_EVENT_END) && timeout > 0)
-    {
-        timeout--;
-    }
     nrf_saadc_event_clear(NRF_SAADC_EVENT_STARTED);
     nrf_saadc_event_clear(NRF_SAADC_EVENT_END);
 
@@ -497,7 +485,7 @@ nrfx_err_t nrfx_saadc_buffer_convert(nrf_saadc_value_t * p_buffer, uint16_t size
     m_cb.buffer_size        = size;
     m_cb.p_secondary_buffer = NULL;
 
-    NRFX_LOG_INFO("Function: %d, buffer length: %d, active channels: %d.",
+    NRFX_LOG_INFO("Function: %s, buffer length: %d, active channels: %d.",
                   __func__,
                   size,
                   m_cb.active_channels);
@@ -582,6 +570,7 @@ void nrfx_saadc_abort(void)
     if (nrfx_saadc_is_busy())
     {
         nrf_saadc_event_clear(NRF_SAADC_EVENT_STOPPED);
+        nrf_saadc_int_enable(NRF_SAADC_INT_STOPPED);
         nrf_saadc_task_trigger(NRF_SAADC_TASK_STOP);
 
         if (m_cb.adc_state == NRF_SAADC_STATE_CALIBRATION)
@@ -591,14 +580,12 @@ void nrfx_saadc_abort(void)
         else
         {
             // Wait for ADC being stopped.
-            uint32_t timeout = HW_TIMEOUT;
-
-            while ((m_cb.adc_state != NRF_SAADC_STATE_IDLE) && (timeout > 0))
-            {
-                --timeout;
-            }
-            NRFX_ASSERT(timeout > 0);
+            bool result;
+            NRFX_WAIT_FOR((m_cb.adc_state != NRF_SAADC_STATE_IDLE), HW_TIMEOUT, 0, result);
+            NRFX_ASSERT(result);
         }
+
+        nrf_saadc_int_disable(NRF_SAADC_INT_STOPPED);
 
         m_cb.p_buffer           = 0;
         m_cb.p_secondary_buffer = 0;

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2016 - 2017, Nordic Semiconductor ASA
+ * Copyright (c) 2016 - 2018, Nordic Semiconductor ASA
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -12,14 +12,14 @@
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
  * 
- * 3. Neither the name of Nordic Semiconductor ASA nor the names of its
+ * 3. Neither the name of the copyright holder nor the names of its
  *    contributors may be used to endorse or promote products derived from this
  *    software without specific prior written permission.
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY, AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL NORDIC SEMICONDUCTOR ASA OR CONTRIBUTORS BE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
  * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
@@ -117,13 +117,25 @@ typedef void (*nrfx_qspi_handler_t)(nrfx_qspi_evt_t event, void * p_context);
 /**
  * @brief Function for initializing the QSPI driver instance.
  *
+ * This function configures the peripheral and its interrupts and activates it. During the 
+ * activation process, the internal clocks are started and the QSPI peripheral tries to read 
+ * the status byte to read the busy bit. Reading the status byte is done in a simple poll and wait
+ * mechanism.
+ * If the busy bit is 1, this indicates issues with the external memory device. As a result,
+ * @ref nrfx_qspi_init returns NRFX_ERROR_TIMEOUT.
+ *
+ * In case of issues:
+ * - Check the connection.
+ * - Make sure that the memory device does not perform other operations like erasing or writing.
+ * - Check if there is a short circuit.
+ *
  * @param[in] p_config   Pointer to the structure with initial configuration.
  * @param[in] handler    Event handler provided by the user. If NULL, transfers
  *                       will be performed in blocking mode.
  * @param[in] p_context  Pointer to context. Use in interrupt handler.
  *
- *
  * @retval NRFX_SUCCESS             If initialization was successful.
+ * @retval NRFX_ERROR_TIMEOUT       If the peripheral cannot connect with external memory.
  * @retval NRFX_ERROR_INVALID_STATE If the driver was already initialized.
  * @retval NRFX_ERROR_INVALID_PARAM If the pin configuration was incorrect.
  */
@@ -241,6 +253,7 @@ nrfx_err_t nrfx_qspi_mem_busy_check(void);
  * @param[out] p_rx_buffer Pointer to the array for data to receive. Can be NULL if there is nothing to receive.
  *
  * @retval NRFX_SUCCESS            If the operation was successful.
+ * @retval NRFX_ERROR_TIMEOUT      If the external memory is busy or there are connection issues.
  * @retval NRFX_ERROR_BUSY         If the driver currently handles other operation.
  */
 nrfx_err_t nrfx_qspi_cinstr_xfer(nrf_qspi_cinstr_conf_t const * p_config,

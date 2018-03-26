@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2014 - 2017, Nordic Semiconductor ASA
+ * Copyright (c) 2014 - 2018, Nordic Semiconductor ASA
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -12,14 +12,14 @@
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
  * 
- * 3. Neither the name of Nordic Semiconductor ASA nor the names of its
+ * 3. Neither the name of the copyright holder nor the names of its
  *    contributors may be used to endorse or promote products derived from this
  *    software without specific prior written permission.
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY, AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL NORDIC SEMICONDUCTOR ASA OR CONTRIBUTORS BE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
  * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
@@ -88,9 +88,6 @@ enum {
 #if NRFX_CHECK(NRFX_RTC2_ENABLED)
     NRFX_RTC2_INST_IDX,
 #endif
-#if NRFX_CHECK(NRFX_RTC3_ENABLED)
-    NRFX_RTC3_INST_IDX,
-#endif
     NRFX_RTC_ENABLED_COUNT
 };
 
@@ -120,13 +117,13 @@ typedef void (*nrfx_rtc_handler_t)(nrfx_rtc_int_type_t int_type);
  *
  * After initialization, the instance is in power off state.
  *
- * @param[in]  p_instance         Pointer to the driver instance structure.
- * @param[in]  p_config           Pointer to the structure with initial configuration.
- * @param[in]  handler            User's event handler.
+ * @param[in]  p_instance   Pointer to the driver instance structure.
+ * @param[in]  p_config     Pointer to the structure with initial configuration.
+ * @param[in]  handler      Event handler provided by the user.
+ *                          Must not be NULL.
  *
- * @retval     NRFX_SUCCESS               If successfully initialized.
- * @retval     NRFX_ERROR_INVALID_PARAM   If no handler was provided.
- * @retval     NRFX_ERROR_INVALID_STATE   If the instance is already initialized.
+ * @retval     NRFX_SUCCESS             If successfully initialized.
+ * @retval     NRFX_ERROR_INVALID_STATE If the instance is already initialized.
  */
 nrfx_err_t nrfx_rtc_init(nrfx_rtc_t const * const  p_instance,
                          nrfx_rtc_config_t const * p_config,

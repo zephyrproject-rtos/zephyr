@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2015 - 2017, Nordic Semiconductor ASA
+ * Copyright (c) 2015 - 2018, Nordic Semiconductor ASA
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without
@@ -12,14 +12,14 @@
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
  * 
- * 3. Neither the name of Nordic Semiconductor ASA nor the names of its
+ * 3. Neither the name of the copyright holder nor the names of its
  *    contributors may be used to endorse or promote products derived from this
  *    software without specific prior written permission.
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY, AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL NORDIC SEMICONDUCTOR ASA OR CONTRIBUTORS BE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
  * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
@@ -50,10 +50,11 @@ extern "C" {
 /**@brief Input pin configuration. */
 typedef struct
 {
-    nrf_gpiote_polarity_t sense;      /**< Transition that triggers interrupt. */
-    nrf_gpio_pin_pull_t   pull;       /**< Pulling mode. */
-    bool                  is_watcher; /**< True when the input pin is tracking an output pin. */
-    bool                  hi_accuracy;/**< True when high accuracy (IN_EVENT) is used. */
+    nrf_gpiote_polarity_t sense;               /**< Transition that triggers interrupt. */
+    nrf_gpio_pin_pull_t   pull;                /**< Pulling mode. */
+    bool                  is_watcher      : 1; /**< True when the input pin is tracking an output pin. */
+    bool                  hi_accuracy     : 1; /**< True when high accuracy (IN_EVENT) is used. */
+    bool                  skip_gpio_setup : 1; /**< Do not change GPIO configuration */
 } nrfx_gpiote_in_config_t;
 
 /**@brief Macro for configuring a pin to use a GPIO IN or PORT EVENT to detect low-to-high transition.
@@ -85,6 +86,43 @@ typedef struct
         .pull = NRF_GPIO_PIN_NOPULL,                \
         .sense = NRF_GPIOTE_POLARITY_TOGGLE,        \
     }
+
+/**@brief Macro for configuring a pin to use a GPIO IN or PORT EVENT to detect low-to-high transition.
+ * @details Set hi_accu to true to use IN_EVENT.
+ * @note This macro prepares configuration that skips GPIO setup. */
+#define NRFX_GPIOTE_RAW_CONFIG_IN_SENSE_LOTOHI(hi_accu) \
+    {                                               \
+        .is_watcher = false,                        \
+        .hi_accuracy = hi_accu,                     \
+        .pull = NRF_GPIO_PIN_NOPULL,                \
+        .sense = NRF_GPIOTE_POLARITY_LOTOHI,        \
+        .skip_gpio_setup = true,                    \
+    }
+
+/**@brief Macro for configuring a pin to use a GPIO IN or PORT EVENT to detect high-to-low transition.
+ * @details Set hi_accu to true to use IN_EVENT.
+ * @note This macro prepares configuration that skips GPIO setup. */
+#define NRFX_GPIOTE_RAW_CONFIG_IN_SENSE_HITOLO(hi_accu) \
+    {                                               \
+        .is_watcher = false,                        \
+        .hi_accuracy = hi_accu,                     \
+        .pull = NRF_GPIO_PIN_NOPULL,                \
+        .sense = NRF_GPIOTE_POLARITY_HITOLO,        \
+        .skip_gpio_setup = true,                    \
+    }
+
+/**@brief Macro for configuring a pin to use a GPIO IN or PORT EVENT to detect any change on the pin.
+ * @details Set hi_accu to true to use IN_EVENT.
+ * @note This macro prepares configuration that skips GPIO setup. */
+#define NRFX_GPIOTE_RAW_CONFIG_IN_SENSE_TOGGLE(hi_accu) \
+    {                                               \
+        .is_watcher = false,                        \
+        .hi_accuracy = hi_accu,                     \
+        .pull = NRF_GPIO_PIN_NOPULL,                \
+        .sense = NRF_GPIOTE_POLARITY_TOGGLE,        \
+        .skip_gpio_setup = true,                    \
+    }
+
 
 /**@brief Output pin configuration. */
 typedef struct

@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2009-2017 ARM Limited. All rights reserved.
+Copyright (c) 2009-2018 ARM Limited. All rights reserved.
 
     SPDX-License-Identifier: Apache-2.0
 
@@ -42,6 +42,7 @@ static bool errata_57(void);
 static bool errata_66(void);
 static bool errata_108(void);
 static bool errata_136(void);
+static bool errata_182(void);
 
 
 #if defined ( __CC_ARM )
@@ -160,6 +161,12 @@ void SystemInit(void)
         if (NRF_POWER->RESETREAS & POWER_RESETREAS_RESETPIN_Msk){
             NRF_POWER->RESETREAS =  ~POWER_RESETREAS_RESETPIN_Msk;
         }
+    }
+    
+    /* Workaround for Errata 182 "RADIO: Fixes for anomalies #102, #106, and #107 do not take effect" found at the Errata document
+       for your device located at https://infocenter.nordicsemi.com/  */
+    if (errata_182()){
+        *(volatile uint32_t *) 0x4000173C |= (0x1 << 10);
     }
     
     /* Enable the FPU if the compiler used floating point unit instructions. __FPU_USED is a MACRO defined by the
@@ -343,6 +350,18 @@ static bool errata_136(void)
             return true;
         }
         if (((*(uint32_t *)0xF0000FE8) & 0x000000F0) == 0x50){
+            return true;
+        }
+    }
+
+    return false;
+}
+
+
+static bool errata_182(void)
+{
+    if (*(uint32_t *)0x10000130ul == 0x6ul){
+        if (*(uint32_t *)0x10000134ul == 0x6ul){
             return true;
         }
     }

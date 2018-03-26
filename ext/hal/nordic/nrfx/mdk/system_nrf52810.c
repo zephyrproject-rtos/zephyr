@@ -1,6 +1,6 @@
 /*
 
-Copyright (c) 2009-2017 ARM Limited. All rights reserved.
+Copyright (c) 2009-2018 ARM Limited. All rights reserved.
 
     SPDX-License-Identifier: Apache-2.0
 
@@ -46,6 +46,7 @@ static bool errata_32(void);
 static bool errata_37(void);
 static bool errata_57(void);
 static bool errata_108(void);
+static bool errata_182(void);
 #endif
 
 #if defined ( __CC_ARM )
@@ -183,6 +184,14 @@ void SystemInit(void)
             NRF_POWER->RESETREAS =  ~POWER_RESETREAS_RESETPIN_Msk;
         }
     }
+    
+    #if defined (DEVELOP_IN_NRF52832)
+    /* Workaround for Errata 182 "RADIO: Fixes for anomalies #102, #106, and #107 do not take effect" found at the Errata document
+       for your device located at https://infocenter.nordicsemi.com/  */
+    if (errata_182()){
+        *(volatile uint32_t *) 0x4000173C |= (0x1 << 10);
+    }
+    #endif
 
     /* Configure GPIO pads as pPin Reset pin if Pin Reset capabilities desired. If CONFIG_GPIO_AS_PINRESET is not
       defined, pin reset will not be available. One GPIO (see Product Specification to see which one) will then be
@@ -389,6 +398,19 @@ static bool errata_136(void)
     
     return true;
 }
+
+#if defined (DEVELOP_IN_NRF52832)
+static bool errata_182(void)
+{
+    if (*(uint32_t *)0x10000130ul == 0x6ul){
+        if (*(uint32_t *)0x10000134ul == 0x6ul){
+            return true;
+        }
+    }
+
+    return false;
+}
+#endif
 
 
 /*lint --flb "Leave library region" */
