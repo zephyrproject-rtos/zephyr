@@ -104,6 +104,35 @@ void tz_nonsecure_psplim_set(u32_t val);
 
 #endif /* CONFIG_ARMV8_M_MAINLINE */
 
+
+/**
+ * @brief Set target state for exceptions not banked between security states
+ *
+ *  Function sets the security state (Secure or Non-Secure) target
+ *  for ARMv8-M HardFault, NMI, and BusFault exception.
+ *
+ * @param secure_state 1 if target state is Secure, 0 if target state
+ *                      is Non-Secure.
+ *
+ * Secure state: BusFault, HardFault, and NMI are Secure.
+ * Non-Secure state: BusFault and NMI are Non-Secure and exceptions can
+ * target Non-Secure HardFault.
+ *
+ * Notes:
+ *
+ * - This function shall only be called from Secure state.
+ * - NMI and BusFault are not banked between security states; they
+ * shall either target Secure or Non-Secure state based on user selection.
+ * - HardFault exception generated through escalation will target the
+ * security state of the original fault before its escalation to HardFault.
+ * - If secure_state is set to 1 (Secure), all Non-Secure HardFaults are
+ * escalated to Secure HardFaults.
+ * - BusFault is present only if the Main Extension is implemented.
+ *
+ * @return N/A
+ */
+void tz_nbanked_exception_target_state_set(int secure_state);
+
 /**
  *
  * @brief Configure SAU
