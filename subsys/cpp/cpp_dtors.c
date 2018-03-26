@@ -12,7 +12,7 @@
 
 #include <toolchain.h>
 
-void *__dso_handle = 0;
+__weak void *__dso_handle;
 
 /**
  * @brief Register destructor for a global object
