@@ -570,7 +570,8 @@ endfunction()
 #   board_finalize_runner_args(runner)
 #
 # This ensures the build system captures all arguments added in any
-# board_runner_args() calls.
+# board_runner_args() calls, and otherwise finishes registering a
+# runner for use.
 #
 # Extended usage:
 #   board_runner_args(runner "--some-arg=default-value")
@@ -598,6 +599,9 @@ function(board_finalize_runner_args runner)
     # last, so they take precedence.
     ${explicit}
     )
+
+  # Add the finalized runner to the global property list.
+  set_property(GLOBAL APPEND PROPERTY ZEPHYR_RUNNERS ${runner})
 endfunction()
 
 # 1.5. Misc.
