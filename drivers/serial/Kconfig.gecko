@@ -48,4 +48,38 @@ config UART_GECKO_1_GPIO_LOC
 
 endif # UART_GECKO_1
 
+menuconfig USART_GECKO_0
+	bool "USART 0"
+	default n
+	help
+	  Enable USART 0.
+
+if USART_GECKO_0
+
+config USART_GECKO_0_GPIO_LOC
+	int "Pin Locations"
+	range 0 3
+	depends on UART_GECKO
+	help
+	  The GPIO pins to use.
+
+endif # USART_GECKO_0
+
+menuconfig USART_GECKO_1
+	bool "USART 1"
+	default n
+	help
+	  Enable USART 1.
+
+if USART_GECKO_1
+
+config USART_GECKO_1_GPIO_LOC
+	int "Pin Locations"
+	range 0 3
+	depends on UART_GECKO
+	help
+	  The GPIO pins to use.
+
+endif # USART_GECKO_1
+
 endif # UART_GECKO
