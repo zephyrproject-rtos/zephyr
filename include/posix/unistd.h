@@ -10,39 +10,16 @@
 extern "C" {
 #endif
 
-#include_next <unistd.h>
-
-#ifdef CONFIG_PTHREAD_IPC
 #include "sys/types.h"
 
-/**
- * @brief Sleep for a specified number of seconds.
- *
- * See IEEE 1003.1
- */
-static inline unsigned sleep(unsigned int seconds)
-{
-	k_sleep(K_SECONDS(seconds));
-	return 0;
-}
-/**
- * @brief Suspend execution for microsecond intervals.
- *
- * See IEEE 1003.1
- */
-static inline int usleep(useconds_t useconds)
-{
-	if (useconds < USEC_PER_MSEC) {
-		k_busy_wait(useconds);
-	} else {
-		k_sleep(useconds / USEC_PER_MSEC);
-	}
+#ifndef __ZEPHYR__
+#include_next <unistd.h>
+#endif
 
-	return 0;
-}
+unsigned sleep(unsigned int seconds);
+int usleep(useconds_t useconds);
 
 #endif
 #ifdef __cplusplus
 }
-#endif
 #endif	/* __POSIX_UNISTD_H__ */
