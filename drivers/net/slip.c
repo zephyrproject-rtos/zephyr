@@ -508,23 +508,19 @@ use_random_mac:
 
 static struct slip_context slip_context_data;
 
-#if defined(CONFIG_NET_VLAN)
 static enum eth_hw_caps eth_capabilities(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
 	return ETH_HW_VLAN;
 }
-#endif
 
 #if defined(CONFIG_SLIP_TAP) && defined(CONFIG_NET_L2_ETHERNET)
 static const struct ethernet_api slip_if_api = {
 	.iface_api.init = slip_iface_init,
 	.iface_api.send = slip_send,
 
-#if defined(CONFIG_NET_VLAN)
 	.get_capabilities = eth_capabilities,
-#endif
 };
 
 #define _SLIP_L2_LAYER ETHERNET_L2
