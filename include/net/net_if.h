@@ -374,7 +374,7 @@ struct net_if {
 
 	/** Network interface instance configuration */
 	struct net_if_config config;
-};
+} __net_if_align;
 
 /**
  * @brief Send a packet through a net iface
