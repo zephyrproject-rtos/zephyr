@@ -1,0 +1,51 @@
+# Kconfig - EFR32 SLWSTK6061A board
+#
+# Copyright (c) 2018, Christian Taedcke
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_EFR32_SLWSTK6061A
+
+config BOARD
+	default "efr32_slwstk6061a"
+
+config CMU_HFXO_FREQ
+	default 38400000
+
+config CMU_LFXO_FREQ
+	default 32768
+
+if GPIO_GECKO
+
+config GPIO_GECKO_PORTA
+	def_bool y
+
+config GPIO_GECKO_PORTB
+	def_bool y
+
+config GPIO_GECKO_PORTC
+	def_bool y
+
+config GPIO_GECKO_PORTD
+	def_bool y
+
+config GPIO_GECKO_PORTE
+	def_bool n
+
+config GPIO_GECKO_PORTF
+	def_bool y
+
+endif # GPIO_GECKO
+
+if UART_GECKO
+
+config USART_GECKO_0
+	def_bool y
+
+config USART_GECKO_0_GPIO_LOC
+	default 0
+
+endif # UART_GECKO
+
+endif # BOARD_EFR32_SLWSTK6061A
