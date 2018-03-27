@@ -172,7 +172,7 @@ scripts/expr_parser.py                   @andrewboie
 scripts/sanity_chk/*                     @andrewboie
 scripts/sanitycheck                      @andrewboie @nashif
 scripts/runner/*                         @mbolivar
-scripts/zephyr_flash_debug.py            @mbolivar
+scripts/zephyr_run.py                    @mbolivar
 subsys/bluetooth/*                       @sjanc @jhedberg @Vudentz
 subsys/bluetooth/controller/*            @carlescufi @cvinayak
 subsys/fs/*                              @nashif
