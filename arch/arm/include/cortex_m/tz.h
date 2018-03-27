@@ -24,7 +24,8 @@ extern "C" {
 
 #else
 
-#include <stdint.h>
+#include <arm_cmse.h>
+#include <zephyr/types.h>
 
 /**
  *
@@ -195,6 +196,59 @@ void tz_sau_configure(int enable, int allns);
  * @return The number of configured SAU regions.
  */
 u32_t tz_sau_number_of_regions_get(void);
+
+
+/**
+ * @brief Non-Secure function type
+ *
+ * Defines a function pointer type to implement a non-secure function call,
+ * i.e. a function call that switches state from Secure to Non-secure.
+ *
+ * Note:
+ *
+ * A non-secure function call can only happen through function pointers.
+ * This is a consequence of separating secure and non-secure code into
+ * separate executable files.
+ */
+typedef void __attribute__((cmse_nonsecure_call)) (*tz_ns_func_ptr_t) (void);
+
+/* Required for C99 compilation */
+#define typeof  __typeof__
+
+/**
+ * @brief Declare a pointer of non-secure function type
+ *
+ * Note:
+ *
+ * A non-secure function type must only be used as a base type of pointer.
+ */
+#define TZ_NONSECURE_FUNC_PTR_DECLARE(fptr) tz_ns_func_ptr_t fptr
+
+/**
+ * @brief Define a non-secure function pointer
+ *
+ * A non-secure function pointer is a function pointer that has its LSB unset.
+ * The macro uses the CMSE intrinsic: cmse_nsfptr_create(p) to return the
+ * value of a pointer with its LSB cleared.
+ */
+#define TZ_NONSECURE_FUNC_PTR_CREATE(fptr) \
+	((tz_ns_func_ptr_t)(cmse_nsfptr_create(fptr)))
+
+/**
+ * @brief  Check if pointer can be of non-secure function type
+ *
+ * A non-secure function pointer is a function pointer that has its LSB unset.
+ * The macro uses the CMSE intrinsic: cmse_is_nsfptr(p) to evaluate whether
+ * the supplied pointer has its LSB cleared and, thus, can be of non-secure
+ * function type.
+ *
+ * @param fptr supplied ointer to be checked
+ *
+ * @return non-zero if pointer can be of non-secure function type
+ *         (i.e. with LSB unset), zero otherwise.
+ */
+#define TZ_NONSECURE_FUNC_PTR_IS_NS(fptr) \
+	cmse_is_nsfptr(fptr)
 
 #endif /* _ASMLANGUAGE */
 
