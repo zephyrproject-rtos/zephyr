@@ -17,7 +17,8 @@ gsource "arch/arm/soc/silabs_exx32/*/Kconfig.soc"
 
 config SOC_PART_NUMBER
 	string
-	default SOC_PART_NUMBER_EXX32_EFM32WG if SOC_SERIES_EFM32WG
+	default SOC_PART_NUMBER_EXX32_EFM32WG   if SOC_SERIES_EFM32WG
+	default SOC_PART_NUMBER_EXX32_EFR32FG1P if SOC_SERIES_EFR32FG1P
 	help
 	  This string holds the full part number of the SoC. It is a hidden option
 	  that you should not set directly. The part number selection choice defines
