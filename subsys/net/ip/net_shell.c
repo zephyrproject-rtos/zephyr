@@ -501,120 +501,134 @@ static const char *priority2str(enum net_priority priority)
 }
 #endif
 
-static inline void net_shell_print_statistics(void)
+static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 {
+	ARG_UNUSED(user_data);
+
+	if (iface) {
+		const char *extra;
+
+		printk("\nInterface %p (%s) [%d]\n", iface,
+		       iface2str(iface, &extra),
+		       net_if_get_by_iface(iface));
+		printk("===========================%s\n", extra);
+	} else {
+		printk("\nGlobal statistics\n");
+		printk("=================\n");
+	}
+
 #if defined(CONFIG_NET_IPV6)
 	printk("IPv6 recv      %d\tsent\t%d\tdrop\t%d\tforwarded\t%d\n",
-	       GET_STAT(ipv6.recv),
-	       GET_STAT(ipv6.sent),
-	       GET_STAT(ipv6.drop),
-	       GET_STAT(ipv6.forwarded));
+	       GET_STAT(iface, ipv6.recv),
+	       GET_STAT(iface, ipv6.sent),
+	       GET_STAT(iface, ipv6.drop),
+	       GET_STAT(iface, ipv6.forwarded));
 #if defined(CONFIG_NET_IPV6_ND)
 	printk("IPv6 ND recv   %d\tsent\t%d\tdrop\t%d\n",
-	       GET_STAT(ipv6_nd.recv),
-	       GET_STAT(ipv6_nd.sent),
-	       GET_STAT(ipv6_nd.drop));
+	       GET_STAT(iface, ipv6_nd.recv),
+	       GET_STAT(iface, ipv6_nd.sent),
+	       GET_STAT(iface, ipv6_nd.drop));
 #endif /* CONFIG_NET_IPV6_ND */
 #if defined(CONFIG_NET_STATISTICS_MLD)
 	printk("IPv6 MLD recv  %d\tsent\t%d\tdrop\t%d\n",
-	       GET_STAT(ipv6_mld.recv),
-	       GET_STAT(ipv6_mld.sent),
-	       GET_STAT(ipv6_mld.drop));
+	       GET_STAT(iface, ipv6_mld.recv),
+	       GET_STAT(iface, ipv6_mld.sent),
+	       GET_STAT(iface, ipv6_mld.drop));
 #endif /* CONFIG_NET_STATISTICS_MLD */
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
 	printk("IPv4 recv      %d\tsent\t%d\tdrop\t%d\tforwarded\t%d\n",
-	       GET_STAT(ipv4.recv),
-	       GET_STAT(ipv4.sent),
-	       GET_STAT(ipv4.drop),
-	       GET_STAT(ipv4.forwarded));
+	       GET_STAT(iface, ipv4.recv),
+	       GET_STAT(iface, ipv4.sent),
+	       GET_STAT(iface, ipv4.drop),
+	       GET_STAT(iface, ipv4.forwarded));
 #endif /* CONFIG_NET_IPV4 */
 
 	printk("IP vhlerr      %d\thblener\t%d\tlblener\t%d\n",
-	       GET_STAT(ip_errors.vhlerr),
-	       GET_STAT(ip_errors.hblenerr),
-	       GET_STAT(ip_errors.lblenerr));
+	       GET_STAT(iface, ip_errors.vhlerr),
+	       GET_STAT(iface, ip_errors.hblenerr),
+	       GET_STAT(iface, ip_errors.lblenerr));
 	printk("IP fragerr     %d\tchkerr\t%d\tprotoer\t%d\n",
-	       GET_STAT(ip_errors.fragerr),
-	       GET_STAT(ip_errors.chkerr),
-	       GET_STAT(ip_errors.protoerr));
+	       GET_STAT(iface, ip_errors.fragerr),
+	       GET_STAT(iface, ip_errors.chkerr),
+	       GET_STAT(iface, ip_errors.protoerr));
 
 	printk("ICMP recv      %d\tsent\t%d\tdrop\t%d\n",
-	       GET_STAT(icmp.recv),
-	       GET_STAT(icmp.sent),
-	       GET_STAT(icmp.drop));
+	       GET_STAT(iface, icmp.recv),
+	       GET_STAT(iface, icmp.sent),
+	       GET_STAT(iface, icmp.drop));
 	printk("ICMP typeer    %d\tchkerr\t%d\n",
-	       GET_STAT(icmp.typeerr),
-	       GET_STAT(icmp.chkerr));
+	       GET_STAT(iface, icmp.typeerr),
+	       GET_STAT(iface, icmp.chkerr));
 
 #if defined(CONFIG_NET_UDP)
 	printk("UDP recv       %d\tsent\t%d\tdrop\t%d\n",
-	       GET_STAT(udp.recv),
-	       GET_STAT(udp.sent),
-	       GET_STAT(udp.drop));
+	       GET_STAT(iface, udp.recv),
+	       GET_STAT(iface, udp.sent),
+	       GET_STAT(iface, udp.drop));
 	printk("UDP chkerr     %d\n",
-	       GET_STAT(udp.chkerr));
+	       GET_STAT(iface, udp.chkerr));
 #endif
 
 #if defined(CONFIG_NET_STATISTICS_TCP)
 	printk("TCP bytes recv %u\tsent\t%d\n",
-	       GET_STAT(tcp.bytes.received),
-	       GET_STAT(tcp.bytes.sent));
+	       GET_STAT(iface, tcp.bytes.received),
+	       GET_STAT(iface, tcp.bytes.sent));
 	printk("TCP seg recv   %d\tsent\t%d\tdrop\t%d\n",
-	       GET_STAT(tcp.recv),
-	       GET_STAT(tcp.sent),
-	       GET_STAT(tcp.drop));
+	       GET_STAT(iface, tcp.recv),
+	       GET_STAT(iface, tcp.sent),
+	       GET_STAT(iface, tcp.drop));
 	printk("TCP seg resent %d\tchkerr\t%d\tackerr\t%d\n",
-	       GET_STAT(tcp.resent),
-	       GET_STAT(tcp.chkerr),
-	       GET_STAT(tcp.ackerr));
+	       GET_STAT(iface, tcp.resent),
+	       GET_STAT(iface, tcp.chkerr),
+	       GET_STAT(iface, tcp.ackerr));
 	printk("TCP seg rsterr %d\trst\t%d\tre-xmit\t%d\n",
-	       GET_STAT(tcp.rsterr),
-	       GET_STAT(tcp.rst),
-	       GET_STAT(tcp.rexmit));
+	       GET_STAT(iface, tcp.rsterr),
+	       GET_STAT(iface, tcp.rst),
+	       GET_STAT(iface, tcp.rexmit));
 	printk("TCP conn drop  %d\tconnrst\t%d\n",
-	       GET_STAT(tcp.conndrop),
-	       GET_STAT(tcp.connrst));
+	       GET_STAT(iface, tcp.conndrop),
+	       GET_STAT(iface, tcp.connrst));
 #endif
 
 #if defined(CONFIG_NET_STATISTICS_RPL)
 	printk("RPL DIS recv   %d\tsent\t%d\tdrop\t%d\n",
-	       GET_STAT(rpl.dis.recv),
-	       GET_STAT(rpl.dis.sent),
-	       GET_STAT(rpl.dis.drop));
+	       GET_STAT(iface, rpl.dis.recv),
+	       GET_STAT(iface, rpl.dis.sent),
+	       GET_STAT(iface, rpl.dis.drop));
 	printk("RPL DIO recv   %d\tsent\t%d\tdrop\t%d\n",
-	       GET_STAT(rpl.dio.recv),
-	       GET_STAT(rpl.dio.sent),
-	       GET_STAT(rpl.dio.drop));
+	       GET_STAT(iface, rpl.dio.recv),
+	       GET_STAT(iface, rpl.dio.sent),
+	       GET_STAT(iface, rpl.dio.drop));
 	printk("RPL DAO recv   %d\tsent\t%d\tdrop\t%d\tforwarded\t%d\n",
-	       GET_STAT(rpl.dao.recv),
-	       GET_STAT(rpl.dao.sent),
-	       GET_STAT(rpl.dao.drop),
-	      GET_STAT(rpl.dao.forwarded));
+	       GET_STAT(iface, rpl.dao.recv),
+	       GET_STAT(iface, rpl.dao.sent),
+	       GET_STAT(iface, rpl.dao.drop),
+	      GET_STAT(iface, rpl.dao.forwarded));
 	printk("RPL DAOACK rcv %d\tsent\t%d\tdrop\t%d\n",
-	       GET_STAT(rpl.dao_ack.recv),
-	       GET_STAT(rpl.dao_ack.sent),
-	       GET_STAT(rpl.dao_ack.drop));
+	       GET_STAT(iface, rpl.dao_ack.recv),
+	       GET_STAT(iface, rpl.dao_ack.sent),
+	       GET_STAT(iface, rpl.dao_ack.drop));
 	printk("RPL overflows  %d\tl-repairs\t%d\tg-repairs\t%d\n",
-	       GET_STAT(rpl.mem_overflows),
-	       GET_STAT(rpl.local_repairs),
-	       GET_STAT(rpl.global_repairs));
+	       GET_STAT(iface, rpl.mem_overflows),
+	       GET_STAT(iface, rpl.local_repairs),
+	       GET_STAT(iface, rpl.global_repairs));
 	printk("RPL malformed  %d\tresets   \t%d\tp-switch\t%d\n",
-	       GET_STAT(rpl.malformed_msgs),
-	       GET_STAT(rpl.resets),
-	       GET_STAT(rpl.parent_switch));
+	       GET_STAT(iface, rpl.malformed_msgs),
+	       GET_STAT(iface, rpl.resets),
+	       GET_STAT(iface, rpl.parent_switch));
 	printk("RPL f-errors   %d\tl-errors\t%d\tl-warnings\t%d\n",
-	       GET_STAT(rpl.forward_errors),
-	       GET_STAT(rpl.loop_errors),
-	       GET_STAT(rpl.loop_warnings));
+	       GET_STAT(iface, rpl.forward_errors),
+	       GET_STAT(iface, rpl.loop_errors),
+	       GET_STAT(iface, rpl.loop_warnings));
 	printk("RPL r-repairs  %d\n",
-	       GET_STAT(rpl.root_repairs));
+	       GET_STAT(iface, rpl.root_repairs));
 #endif
 
-	printk("Bytes received %u\n", GET_STAT(bytes.received));
-	printk("Bytes sent     %u\n", GET_STAT(bytes.sent));
-	printk("Processing err %d\n", GET_STAT(processing_error));
+	printk("Bytes received %u\n", GET_STAT(iface, bytes.received));
+	printk("Bytes sent     %u\n", GET_STAT(iface, bytes.sent));
+	printk("Processing err %d\n", GET_STAT(iface, processing_error));
 
 #if NET_TC_COUNT > 1
 	{
@@ -626,10 +640,11 @@ static inline void net_shell_print_statistics(void)
 
 		for (i = 0; i < NET_TC_TX_COUNT; i++) {
 			printk("[%d] %s (%d)\t%d\t\t%d\n", i,
-			       priority2str(GET_STAT(tc.sent[i].priority)),
-			       GET_STAT(tc.sent[i].priority),
-			       GET_STAT(tc.sent[i].pkts),
-			       GET_STAT(tc.sent[i].bytes));
+			       priority2str(GET_STAT(iface,
+						    tc.sent[i].priority)),
+			       GET_STAT(iface, tc.sent[i].priority),
+			       GET_STAT(iface, tc.sent[i].pkts),
+			       GET_STAT(iface, tc.sent[i].bytes));
 		}
 #endif
 
@@ -639,10 +654,11 @@ static inline void net_shell_print_statistics(void)
 
 		for (i = 0; i < NET_TC_RX_COUNT; i++) {
 			printk("[%d] %s (%d)\t%d\t\t%d\n", i,
-			       priority2str(GET_STAT(tc.recv[i].priority)),
-			       GET_STAT(tc.recv[i].priority),
-			       GET_STAT(tc.recv[i].pkts),
-			       GET_STAT(tc.recv[i].bytes));
+			       priority2str(GET_STAT(iface,
+						    tc.recv[i].priority)),
+			       GET_STAT(iface, tc.recv[i].priority),
+			       GET_STAT(iface, tc.recv[i].pkts),
+			       GET_STAT(iface, tc.recv[i].bytes));
 		}
 	}
 #endif
@@ -2371,14 +2387,59 @@ int net_shell_cmd_stacks(int argc, char *argv[])
 	return 0;
 }
 
+#if defined(CONFIG_NET_STATISTICS_PER_INTERFACE)
+static void net_shell_print_statistics_all(void)
+{
+	net_if_foreach(net_shell_print_statistics, NULL);
+}
+#endif
+
 int net_shell_cmd_stats(int argc, char *argv[])
 {
+#if defined(CONFIG_NET_STATISTICS)
+	int arg = 0;
+
+	if (strcmp(argv[arg], "stats") == 0) {
+		arg++;
+	}
+
+	if (!argv[arg]) {
+		/* Print global network statistics */
+		net_shell_print_statistics(NULL, NULL);
+		return 0;
+	}
+
+#if defined(CONFIG_NET_STATISTICS_PER_INTERFACE)
+	if (strcmp(argv[arg], "all") == 0) {
+		/* Print information about all network interfaces */
+		net_shell_print_statistics_all();
+	} else {
+		struct net_if *iface;
+		char *endptr = NULL;
+		int idx;
+
+		idx = strtol(argv[arg], &endptr, 10);
+		if (*endptr != '\0') {
+			printk("Invalid index %s\n", argv[arg]);
+			return 0;
+		}
+
+		iface = net_if_get_by_index(idx);
+		if (!iface) {
+			printk("No such interface in index %d\n", idx);
+			return 0;
+		}
+
+		net_shell_print_statistics(iface, NULL);
+	}
+#else
+	printk("Per network interface statistics not collected.\n");
+	printk("Please enable CONFIG_NET_STATISTICS_PER_INTERFACE\n");
+#endif /* CONFIG_NET_STATISTICS_PER_INTERFACE */
+#else
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-#if defined(CONFIG_NET_STATISTICS)
-	net_shell_print_statistics();
-#else
 	printk("Network statistics not compiled in.\n");
 #endif
 
@@ -2860,7 +2921,12 @@ static struct shell_cmd net_commands[] = {
 	{ "rpl", net_shell_cmd_rpl, "\n\tShow RPL mesh routing status" },
 	{ "stacks", net_shell_cmd_stacks,
 		"\n\tShow network stacks information" },
-	{ "stats", net_shell_cmd_stats, "\n\tShow network statistics" },
+	{ "stats", net_shell_cmd_stats,
+		"\n\tShow network statistics\n"
+		"stats all\n\tShow network statistics for all network "
+						"interfaces\n"
+		"stats <idx>\n\tShow network statistics for one specific "
+						"network interfaces\n" },
 	{ "tcp", net_shell_cmd_tcp, "connect <ip> port\n\tConnect to TCP peer\n"
 		"tcp send <data>\n\tSend data to peer using TCP\n"
 		"tcp close\n\tClose TCP connection" },

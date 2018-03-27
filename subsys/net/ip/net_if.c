@@ -106,12 +106,12 @@ static inline void net_context_send_cb(struct net_context *context,
 
 #if defined(CONFIG_NET_UDP)
 	if (net_context_get_ip_proto(context) == IPPROTO_UDP) {
-		net_stats_update_udp_sent();
+		net_stats_update_udp_sent(net_context_get_iface(context));
 	} else
 #endif
 #if defined(CONFIG_NET_TCP)
 	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
-		net_stats_update_tcp_seg_sent();
+		net_stats_update_tcp_seg_sent(net_context_get_iface(context));
 	} else
 #endif
 	{
@@ -156,7 +156,7 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 
 		net_pkt_unref(pkt);
 	} else {
-		net_stats_update_bytes_sent(pkt->total_pkt_len);
+		net_stats_update_bytes_sent(iface, pkt->total_pkt_len);
 	}
 
 	if (context) {
@@ -192,9 +192,9 @@ void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt)
 #if defined(CONFIG_NET_STATISTICS)
 	pkt->total_pkt_len = net_pkt_get_len(pkt);
 
-	net_stats_update_tc_sent_pkt(tc);
-	net_stats_update_tc_sent_bytes(tc, pkt->total_pkt_len);
-	net_stats_update_tc_sent_priority(tc, prio);
+	net_stats_update_tc_sent_pkt(iface, tc);
+	net_stats_update_tc_sent_bytes(iface, tc, pkt->total_pkt_len);
+	net_stats_update_tc_sent_priority(iface, tc, prio);
 #endif
 
 #if NET_TC_TX_COUNT > 1

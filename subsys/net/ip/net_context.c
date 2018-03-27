@@ -776,7 +776,6 @@ int net_context_connect(struct net_context *context,
 
 	default:
 		return -ENOTSUP;
-
 	}
 
 	return 0;
@@ -1119,7 +1118,8 @@ enum net_verdict net_context_packet_received(struct net_conn *conn,
 		/* TCP packets get appdata earlier in tcp_established(). */
 		net_context_set_appdata_values(pkt, IPPROTO_UDP);
 	} else {
-		net_stats_update_tcp_recv(net_pkt_appdatalen(pkt));
+		net_stats_update_tcp_recv(net_pkt_iface(pkt),
+					  net_pkt_appdatalen(pkt));
 	}
 
 	NET_DBG("Set appdata %p to len %u (total %zu)",

@@ -27,6 +27,7 @@
 #include <net/net_linkaddr.h>
 #include <net/net_ip.h>
 #include <net/net_l2.h>
+#include <net/net_stats.h>
 
 #if defined(CONFIG_NET_DHCPV4)
 #include <net/dhcpv4.h>
@@ -370,6 +371,11 @@ struct net_if_dev {
 struct net_if {
 	/** The net_if_dev instance the net_if is related to */
 	struct net_if_dev *if_dev;
+
+#if defined(CONFIG_NET_STATISTICS_PER_INTERFACE)
+	/** Network statistics related to this network interface */
+	struct net_stats stats;
+#endif /* CONFIG_NET_STATISTICS_PER_INTERFACE */
 
 	/** Network interface instance configuration */
 	struct net_if_config config;

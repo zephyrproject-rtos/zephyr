@@ -486,7 +486,7 @@ static enum net_verdict handle_echo_request(struct net_pkt *orig)
 	}
 
 	net_pkt_unref(orig);
-	net_stats_update_icmp_sent();
+	net_stats_update_icmp_sent(iface);
 
 	return NET_OK;
 
@@ -494,7 +494,7 @@ drop:
 	net_pkt_unref(pkt);
 
 drop_no_pkt:
-	net_stats_update_icmp_drop();
+	net_stats_update_icmp_drop(iface);
 
 	return NET_DROP;
 }
@@ -504,7 +504,7 @@ int net_icmpv6_send_error(struct net_pkt *orig, u8_t type, u8_t code,
 {
 	struct net_pkt *pkt;
 	struct net_buf *frag;
-	struct net_if *iface;
+	struct net_if *iface = net_pkt_iface(orig);
 	size_t extra_len, reserve;
 	int err = -EIO;
 
@@ -518,8 +518,6 @@ int net_icmpv6_send_error(struct net_pkt *orig, u8_t type, u8_t code,
 			goto drop_no_pkt;
 		}
 	}
-
-	iface = net_pkt_iface(orig);
 
 	pkt = net_pkt_get_reserve_tx(0, PKT_WAIT_TIME);
 	if (!pkt) {
@@ -613,7 +611,7 @@ int net_icmpv6_send_error(struct net_pkt *orig, u8_t type, u8_t code,
 #endif /* CONFIG_NET_DEBUG_ICMPV6 */
 
 	if (net_send_data(pkt) >= 0) {
-		net_stats_update_icmp_sent();
+		net_stats_update_icmp_sent(iface);
 		return 0;
 	}
 
@@ -621,7 +619,7 @@ drop:
 	net_pkt_unref(pkt);
 
 drop_no_pkt:
-	net_stats_update_icmp_drop();
+	net_stats_update_icmp_drop(iface);
 
 	return err;
 }
@@ -673,13 +671,13 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 #endif /* CONFIG_NET_DEBUG_ICMPV6 */
 
 	if (net_send_data(pkt) >= 0) {
-		net_stats_update_icmp_sent();
+		net_stats_update_icmp_sent(iface);
 		return 0;
 	}
 
 drop:
 	net_pkt_unref(pkt);
-	net_stats_update_icmp_drop();
+	net_stats_update_icmp_drop(iface);
 
 	return -EIO;
 }
@@ -689,7 +687,7 @@ enum net_verdict net_icmpv6_input(struct net_pkt *pkt,
 {
 	struct net_icmpv6_handler *cb;
 
-	net_stats_update_icmp_recv();
+	net_stats_update_icmp_recv(net_pkt_iface(pkt));
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&handlers, cb, node) {
 		if (cb->type == type && (cb->code == code || cb->code == 0)) {
@@ -697,7 +695,7 @@ enum net_verdict net_icmpv6_input(struct net_pkt *pkt,
 		}
 	}
 
-	net_stats_update_icmp_drop();
+	net_stats_update_icmp_drop(net_pkt_iface(pkt));
 
 	return NET_DROP;
 }
