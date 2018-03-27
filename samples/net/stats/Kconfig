@@ -1,0 +1,23 @@
+# Kconfig - Private config options for network statistics sample app
+
+#
+# Copyright (c) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+mainmenu "Network statistics sample application"
+
+config ZEPHYR_BASE
+	string
+	option env="ZEPHYR_BASE"
+
+source "$ZEPHYR_BASE/Kconfig.zephyr"
+
+config SAMPLE_PERIOD
+	int "How often to print statistics (in seconds)"
+	default 30
+	range 1 3600
+	depends on NET_STATISTICS
+	help
+	  Print statistics after every n. seconds
