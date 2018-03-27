@@ -905,6 +905,18 @@ macro(list_append_ifdef feature_toggle list)
   endif()
 endmacro()
 
+# Checks if a feature is enabled and then does the same operation as
+# zephyr_library. If it finds that the feature is not set it will not
+# create a new library and will stop processing the rest of
+# the CMakeFile.txt
+macro(zephyr_library_ifdef feature_toggle)
+    if(${${feature_toggle}})
+      zephyr_library()
+      else()
+      return()
+    endif()
+  endmacro()
+
 # 3.2. *_ifndef
 # See 3.1 *_ifdef
 function(set_ifndef variable value)
