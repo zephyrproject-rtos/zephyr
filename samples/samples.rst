@@ -22,6 +22,7 @@ Samples and Demos
    display/*
    shields/*
    portability/*
+   gui/*
 
 To add a new sample document, please use the template available under
 :file:`doc/templates/sample.tmpl`
