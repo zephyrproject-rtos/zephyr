@@ -216,6 +216,19 @@ typedef void __attribute__((cmse_nonsecure_call)) (*tz_ns_func_ptr_t) (void);
 #define typeof  __typeof__
 
 /**
+ * @brief Non-Secure entry function attribute.
+ *
+ * Declares a non-secure entry function that may be called from Non-Secure
+ * or from Secure state using the CMSE _cmse_nonsecure_entry intrinsic.
+ *
+ * Note:
+ *
+ * The function must reside in Non-Secure Callable memory region.
+ */
+#define __TZ_NONSECURE_ENTRY_FUNC \
+	__attribute__((cmse_nonsecure_entry, noinline))
+
+/**
  * @brief Declare a pointer of non-secure function type
  *
  * Note:
@@ -242,7 +255,7 @@ typedef void __attribute__((cmse_nonsecure_call)) (*tz_ns_func_ptr_t) (void);
  * the supplied pointer has its LSB cleared and, thus, can be of non-secure
  * function type.
  *
- * @param fptr supplied ointer to be checked
+ * @param fptr supplied pointer to be checked
  *
  * @return non-zero if pointer can be of non-secure function type
  *         (i.e. with LSB unset), zero otherwise.
