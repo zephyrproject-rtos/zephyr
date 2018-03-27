@@ -1,0 +1,19 @@
+# Kconfig - EFR32 SLWSTK6061A board configuration
+#
+# Copyright (c) 2018 Christian Taedcke
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_EFR32_SLWSTK6061A
+
+config BOARD_INIT_PRIORITY
+	int
+
+	# omit prompt to signify a "hidden" option
+	default KERNEL_INIT_PRIORITY_DEFAULT
+	depends on GPIO
+	help
+	  Board initialization priority. This must be bigger than
+	  GPIO_GECKO_COMMON_INIT_PRIORITY.
+
+endif # BOARD_EFR32_SLWSTK6061A
