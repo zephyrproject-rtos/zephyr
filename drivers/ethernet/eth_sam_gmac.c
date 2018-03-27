@@ -899,22 +899,18 @@ static void eth0_iface_init(struct net_if *iface)
 	init_done = true;
 }
 
-#if defined(CONFIG_NET_VLAN)
-static enum eth_hw_caps eth_capabilities(struct device *dev)
+static enum eth_hw_caps eth_sam_gmac_get_capabilities(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return ETH_HW_VLAN;
+	return ETH_HW_VLAN | ETH_LINK_10BASE_T | ETH_LINK_100BASE_T;
 }
-#endif
 
-static const struct ethernet_api eth0_api = {
+static const struct ethernet_api eth_api = {
 	.iface_api.init = eth0_iface_init,
 	.iface_api.send = eth_tx,
 
-#if defined(CONFIG_NET_VLAN)
-	.get_capabilities = eth_capabilities,
-#endif
+	.get_capabilities = eth_sam_gmac_get_capabilities,
 };
 
 static struct device DEVICE_NAME_GET(eth0_sam_gmac);
@@ -992,4 +988,4 @@ static struct eth_sam_dev_data eth0_data = {
 
 ETH_NET_DEVICE_INIT(eth0_sam_gmac, CONFIG_ETH_SAM_GMAC_NAME, eth_initialize,
 		    &eth0_data, &eth0_config, CONFIG_ETH_INIT_PRIORITY,
-		    &eth0_api, GMAC_MTU);
+		    &eth_api, GMAC_MTU);

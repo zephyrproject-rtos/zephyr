@@ -306,7 +306,7 @@ static void generate_mac(u8_t *mac_addr)
 }
 #endif
 
-static void eth0_iface_init(struct net_if *iface)
+static void eth_iface_init(struct net_if *iface)
 {
 	struct device *dev;
 	struct eth_stm32_hal_dev_data *dev_data;
@@ -369,9 +369,18 @@ static void eth0_iface_init(struct net_if *iface)
 			     NET_LINK_ETHERNET);
 }
 
-static const struct ethernet_api eth0_api = {
-	.iface_api.init = eth0_iface_init,
+static enum eth_hw_caps eth_stm32_hal_get_capabilities(struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return ETH_LINK_10BASE_T | ETH_LINK_100BASE_T;
+}
+
+static const struct ethernet_api eth_api = {
+	.iface_api.init = eth_iface_init,
 	.iface_api.send = eth_tx,
+
+	.get_capabilities = eth_stm32_hal_get_capabilities,
 };
 
 static struct device DEVICE_NAME_GET(eth0_stm32_hal);
@@ -420,5 +429,5 @@ static struct eth_stm32_hal_dev_data eth0_data = {
 };
 
 NET_DEVICE_INIT(eth0_stm32_hal, CONFIG_ETH_STM32_HAL_NAME, eth_initialize,
-	&eth0_data, &eth0_config, CONFIG_ETH_INIT_PRIORITY, &eth0_api,
+	&eth0_data, &eth0_config, CONFIG_ETH_INIT_PRIORITY, &eth_api,
 	ETHERNET_L2, NET_L2_GET_CTX_TYPE(ETHERNET_L2), ETH_STM32_HAL_MTU);

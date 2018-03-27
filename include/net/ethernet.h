@@ -45,13 +45,28 @@ extern "C" {
 
 enum eth_hw_caps {
 	/** TX Checksum offloading supported */
-	ETH_HW_TX_CHKSUM_OFFLOAD  = BIT(0),
+	ETH_HW_TX_CHKSUM_OFFLOAD	= BIT(0),
 
 	/** RX Checksum offloading supported */
-	ETH_HW_RX_CHKSUM_OFFLOAD  = BIT(1),
+	ETH_HW_RX_CHKSUM_OFFLOAD	= BIT(1),
 
 	/** VLAN supported */
-	ETH_HW_VLAN  = BIT(2),
+	ETH_HW_VLAN			= BIT(2),
+
+	/** Enabling/disabling auto negotiation supported */
+	ETH_AUTO_NEGOTIATION_SET	= BIT(3),
+
+	/** 10 Mbits link supported */
+	ETH_LINK_10BASE_T		= BIT(4),
+
+	/** 100 Mbits link supported */
+	ETH_LINK_100BASE_T		= BIT(5),
+
+	/** 1 Gbits link supported */
+	ETH_LINK_1000BASE_T		= BIT(6),
+
+	/** Changing duplex (half/full) supported */
+	ETH_DUPLEX_SET			= BIT(7),
 };
 
 struct ethernet_api {

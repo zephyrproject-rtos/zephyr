@@ -269,22 +269,18 @@ static void eth_iface_init(struct net_if *iface)
 	}
 }
 
-#if defined(CONFIG_NET_VLAN)
-static enum eth_hw_caps eth_capabilities(struct device *dev)
+static enum eth_hw_caps eth_posix_native_get_capabilities(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
 	return ETH_HW_VLAN;
 }
-#endif
 
 static const struct ethernet_api eth_if_api = {
 	.iface_api.init = eth_iface_init,
 	.iface_api.send = eth_send,
 
-#if defined(CONFIG_NET_VLAN)
-	.get_capabilities = eth_capabilities,
-#endif
+	.get_capabilities = eth_posix_native_get_capabilities,
 };
 
 ETH_NET_DEVICE_INIT(eth_native_posix, CONFIG_ETH_NATIVE_POSIX_DRV_NAME,

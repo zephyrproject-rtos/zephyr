@@ -220,9 +220,16 @@ static enum eth_hw_caps eth_offloading_enabled(struct device *dev)
 		ETH_HW_RX_CHKSUM_OFFLOAD;
 }
 
+static enum eth_hw_caps eth_offloading_disabled(struct device *dev)
+{
+	return 0;
+}
+
 static struct ethernet_api api_funcs_offloading_disabled = {
 	.iface_api.init = eth_iface_init,
 	.iface_api.send = eth_tx_offloading_disabled,
+
+	.get_capabilities = eth_offloading_disabled,
 };
 
 static struct ethernet_api api_funcs_offloading_enabled = {

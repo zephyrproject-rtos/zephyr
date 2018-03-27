@@ -764,6 +764,13 @@ static int eth_net_tx(struct net_if *iface, struct net_pkt *pkt)
 	return ret;
 }
 
+static enum eth_hw_caps eth_enc28j60_get_capabilities(struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return ETH_LINK_10BASE_T;
+}
+
 #ifdef CONFIG_ETH_ENC28J60_0
 
 static u8_t mac_address_0[6] = { MICROCHIP_OUI_B0,
@@ -773,7 +780,7 @@ static u8_t mac_address_0[6] = { MICROCHIP_OUI_B0,
 				    CONFIG_ETH_ENC28J60_0_MAC4,
 				    CONFIG_ETH_ENC28J60_0_MAC5 };
 
-static void eth_enc28j60_iface_init_0(struct net_if *iface)
+static void eth_enc28j60_iface_init(struct net_if *iface)
 {
 	struct device *dev = net_if_get_device(iface);
 	struct eth_enc28j60_runtime *context = dev->driver_data;
@@ -785,9 +792,11 @@ static void eth_enc28j60_iface_init_0(struct net_if *iface)
 	context->iface = iface;
 }
 
-static const struct ethernet_api api_funcs_0 = {
-	.iface_api.init		= eth_enc28j60_iface_init_0,
+static const struct ethernet_api api_funcs = {
+	.iface_api.init		= eth_enc28j60_iface_init,
 	.iface_api.send		= eth_net_tx,
+
+	.get_capabilities	= eth_enc28j60_get_capabilities,
 };
 
 static struct eth_enc28j60_runtime eth_enc28j60_0_runtime;
@@ -808,7 +817,7 @@ static const struct eth_enc28j60_config eth_enc28j60_0_config = {
 
 NET_DEVICE_INIT(enc28j60_0, CONFIG_ETH_ENC28J60_0_NAME,
 		eth_enc28j60_init, &eth_enc28j60_0_runtime,
-		&eth_enc28j60_0_config, CONFIG_ETH_INIT_PRIORITY, &api_funcs_0,
+		&eth_enc28j60_0_config, CONFIG_ETH_INIT_PRIORITY, &api_funcs,
 		ETHERNET_L2, NET_L2_GET_CTX_TYPE(ETHERNET_L2), 1500);
 
 #endif /* CONFIG_ETH_ENC28J60_0 */

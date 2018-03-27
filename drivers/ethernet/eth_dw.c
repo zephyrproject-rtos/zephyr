@@ -329,6 +329,20 @@ static void eth_initialize(struct net_if *iface)
 	}
 }
 
+static enum eth_hw_caps eth_dw_get_capabilities(struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return ETH_LINK_10BASE_T | ETH_LINK_100BASE_T;
+}
+
+static const struct ethernet_api api_funcs = {
+	.iface_api.init = eth_initialize,
+	.iface_api.send = eth_tx,
+
+	.get_capabilities = eth_dw_get_capabilities,
+};
+
 /* Bindings to the plaform */
 #if CONFIG_ETH_DW_0
 static void eth_config_0_irq(struct device *port)
@@ -371,11 +385,6 @@ static struct eth_runtime eth_0_runtime = {
 	.pci_dev.function	= ETH_DW_0_PCI_FUNCTION,
 	.pci_dev.bar		= ETH_DW_0_PCI_BAR,
 #endif
-};
-
-static const struct ethernet_api api_funcs = {
-	.iface_api.init = eth_initialize,
-	.iface_api.send = eth_tx,
 };
 
 NET_DEVICE_INIT(eth_dw_0, CONFIG_ETH_DW_0_NAME,
