@@ -1,0 +1,9 @@
+sample:
+  description: Test network statistics functionality
+  name: Network statistics sample app
+tests:
+  test:
+    harness: net
+    min_ram: 64
+    tags: net statistics
+    depends_on: netif
