@@ -154,13 +154,21 @@ static int gpio_gecko_write(struct device *dev,
 			 * Writing zeros to the other bits leaves the data
 			 * output unchanged for the other pins.
 			 */
+#if defined(_GPIO_P_DOUTSET_MASK)
 			gpio_base->DOUTSET = BIT(pin);
+#else
+			BUS_RegBitWrite(&gpio_base->DOUT, pin, 1);
+#endif
 		} else {
 			/* Clear the data output for the corresponding pin.
 			 * Writing zeros to the other bits leaves the data
 			 * output unchanged for the other pins.
 			 */
+#if defined(_GPIO_P_DOUTCLR_MASK)
 			gpio_base->DOUTCLR = BIT(pin);
+#else
+			BUS_RegBitWrite(&gpio_base->DOUT, pin, 0);
+#endif
 		}
 	} else { /* GPIO_ACCESS_BY_PORT */
 		/* Write the data output for all the pins */
