@@ -56,7 +56,7 @@ struct ethernet_api {
 
 	/** Get the device capabilities */
 	enum eth_hw_caps (*get_capabilities)(struct device *dev);
-} __packed;
+};
 
 struct net_eth_addr {
 	u8_t addr[6];
