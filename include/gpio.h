@@ -36,6 +36,12 @@ extern "C" {
 #define GPIO_ACCESS_BY_PORT 1
 /** @endcond */
 
+/**
+ * @name GPIO direction flags
+ * The `GPIO_DIR_*` flags are used with `gpio_pin_configure` or `gpio_port_configure`,
+ * to specify whether a GPIO pin will be used for input or output.
+ * @{
+ */
 /** GPIO pin to be input. */
 #define GPIO_DIR_IN		(0 << 0)
 
@@ -45,7 +51,14 @@ extern "C" {
 /** @cond INTERNAL_HIDDEN */
 #define GPIO_DIR_MASK		0x1
 /** @endcond */
+/** @} */
 
+/**
+ * @name GPIO interrupt flags
+ * The `GPIO_INT_*` flags are used with `gpio_pin_configure` or `gpio_port_configure`,
+ * to specify how input GPIO pins will trigger interrupts.
+ * @{
+ */
 /** GPIO pin to trigger interrupt. */
 #define GPIO_INT		(1 << 1)
 
@@ -69,11 +82,14 @@ extern "C" {
 
 /** Interrupt triggers on both rising and falling edge. */
 #define GPIO_INT_DOUBLE_EDGE	(1 << 6)
+/** @} */
 
-/*
- * GPIO_POL_* define the polarity of the GPIO (1 bit).
+/**
+ * @name GPIO polarity flags
+ * The `GPIO_POL_*` flags are used with `gpio_pin_configure` or `gpio_port_configure`,
+ * to specify the polarity of a GPIO pin.
+ * @{
  */
-
 /** @cond INTERNAL_HIDDEN */
 #define GPIO_POL_POS		7
 /** @endcond */
@@ -87,16 +103,20 @@ extern "C" {
 /** @cond INTERNAL_HIDDEN */
 #define GPIO_POL_MASK		(1 << GPIO_POL_POS)
 /** @endcond */
+/** @} */
 
-/*
- * GPIO_PUD_* are related to pull-up/pull-down.
+
+/**
+ * @name GPIO pull flags
+ * The `GPIO_PUD_*` flags are used with `gpio_pin_configure` or `gpio_port_configure`,
+ * to specify the pull-up or pull-down electrical configuration of a GPIO pin.
+ * @{
  */
-
 /** @cond INTERNAL_HIDDEN */
 #define GPIO_PUD_POS		8
 /** @endcond */
 
-/** GPIO pin to have no pull-up or pull-down. */
+/** Pin is neither pull-up nor pull-down. */
 #define GPIO_PUD_NORMAL		(0 << GPIO_PUD_POS)
 
 /** Enable GPIO pin pull-up. */
@@ -108,39 +128,49 @@ extern "C" {
 /** @cond INTERNAL_HIDDEN */
 #define GPIO_PUD_MASK		(3 << GPIO_PUD_POS)
 /** @endcond */
+/** @} */
 
-/** Deprecated, do not use - Enable GPIO pin. */
+/**
+ * @deprecated
+ * Deprecated. Formerly used to enable a GPIO pin.
+ */
 #define GPIO_PIN_ENABLE		(0 __DEPRECATED_MACRO)
 
-/** Deprecated, do not use - Disable GPIO pin. */
+/**
+ * @deprecated
+ * Deprecated. Formerly used to disable a GPIO pin.
+ */
 #define GPIO_PIN_DISABLE	(0 __DEPRECATED_MACRO)
 
-/* GPIO_DS_* are for pin drive strength configuration.
+/**
+ * @name GPIO drive strength flags
+ * The `GPIO_DS_*` flags are used with `gpio_pin_configure` or `gpio_port_configure`,
+ * to specify the drive strength configuration of a GPIO pin.
  *
  * The drive strength of individual pins can be configured
  * independently for when the pin output is low and high.
  *
- * The GPIO_DS_*_LOW enumerations define the drive strength of a pin
+ * The `GPIO_DS_*_LOW` enumerations define the drive strength of a pin
  * when output is low.
 
- * The GPIO_DS_*_HIGH enumerations define the drive strength of a pin
+ * The `GPIO_DS_*_HIGH` enumerations define the drive strength of a pin
  * when output is high.
  *
- * The DISCONNECT drive strength indicates that the pin is placed in a
+ * The `DISCONNECT` drive strength indicates that the pin is placed in a
  * high impedance state and not driven, this option is used to
  * configure hardware that supports a open collector drive mode.
  *
  * The interface supports two different drive strengths:
- * DFLT - The lowest drive strength supported by the HW
- * ALT - The highest drive strength supported by the HW
+ * `DFLT` - The lowest drive strength supported by the HW
+ * `ALT` - The highest drive strength supported by the HW
  *
  * On hardware that supports only one standard drive strength, both
- * DFLT and ALT have the same behavior.
+ * `DFLT` and `ALT` have the same behavior.
  *
- * On hardware that does not support a disconnect mode, DISCONNECT
- * will behave the same as DFLT.
+ * On hardware that does not support a disconnect mode, `DISCONNECT`
+ * will behave the same as `DFLT`.
+ * @{
  */
-
 /** @cond INTERNAL_HIDDEN */
 #define GPIO_DS_LOW_POS 12
 #define GPIO_DS_LOW_MASK (0x3 << GPIO_DS_LOW_POS)
@@ -182,6 +212,7 @@ extern "C" {
  * drive strength.
  */
 #define GPIO_DS_DISCONNECT_HIGH (0x3 << GPIO_DS_HIGH_POS)
+/** @} */
 
 struct gpio_callback;
 
