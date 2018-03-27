@@ -915,7 +915,7 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 			chksum_calc = net_udp_get_chksum(pkt, pkt->frags);
 
 			if (chksum != chksum_calc) {
-				net_stats_update_udp_chkerr();
+				net_stats_update_udp_chkerr(net_pkt_iface(pkt));
 				NET_DBG("UDP checksum mismatch "
 					"expected 0x%04x got 0x%04x, dropping packet.",
 					ntohs(chksum_calc), ntohs(chksum));
@@ -931,7 +931,8 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 			chksum_calc = net_tcp_get_chksum(pkt, pkt->frags);
 
 			if (chksum != chksum_calc) {
-				net_stats_update_tcp_seg_chkerr();
+				net_stats_update_tcp_seg_chkerr(
+							net_pkt_iface(pkt));
 				NET_DBG("TCP checksum mismatch "
 					"expected 0x%04x got 0x%04x, dropping packet.",
 					ntohs(chksum_calc), ntohs(chksum));
@@ -963,7 +964,7 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 			goto drop;
 		}
 
-		net_stats_update_per_proto_recv(proto);
+		net_stats_update_per_proto_recv(net_pkt_iface(pkt), proto);
 
 		return NET_OK;
 	}
@@ -991,12 +992,12 @@ enum net_verdict net_conn_input(enum net_ip_protocol proto, struct net_pkt *pkt)
 		send_icmp_error(pkt);
 
 		if (IS_ENABLED(CONFIG_NET_TCP) && proto == IPPROTO_TCP) {
-			net_stats_update_tcp_seg_connrst();
+			net_stats_update_tcp_seg_connrst(net_pkt_iface(pkt));
 		}
 	}
 
 drop:
-	net_stats_update_per_proto_drop(proto);
+	net_stats_update_per_proto_drop(net_pkt_iface(pkt), proto);
 
 	return NET_DROP;
 }

@@ -1359,13 +1359,13 @@ int net_ipv6_send_na(struct net_if *iface, const struct in6_addr *src,
 		goto drop;
 	}
 
-	net_stats_update_ipv6_nd_sent();
+	net_stats_update_ipv6_nd_sent(net_pkt_iface(pkt));
 
 	return 0;
 
 drop:
+	net_stats_update_ipv6_nd_drop(net_pkt_iface(pkt));
 	net_pkt_unref(pkt);
-	net_stats_update_ipv6_nd_drop();
 
 	return -EINVAL;
 }
@@ -1412,7 +1412,7 @@ static enum net_verdict handle_ns_input(struct net_pkt *pkt)
 			  &NET_IPV6_HDR(pkt)->dst,
 			  &ns_hdr->tgt);
 
-	net_stats_update_ipv6_nd_recv();
+	net_stats_update_ipv6_nd_recv(net_pkt_iface(pkt));
 
 	if ((total_len < (sizeof(struct net_ipv6_hdr) +
 			  sizeof(struct net_icmp_hdr) +
@@ -1641,7 +1641,7 @@ send_na:
 	return NET_DROP;
 
 drop:
-	net_stats_update_ipv6_nd_drop();
+	net_stats_update_ipv6_nd_drop(net_pkt_iface(pkt));
 
 	return NET_DROP;
 }
@@ -1963,7 +1963,7 @@ static enum net_verdict handle_na_input(struct net_pkt *pkt)
 			  &NET_IPV6_HDR(pkt)->dst,
 			  &na_hdr->tgt);
 
-	net_stats_update_ipv6_nd_recv();
+	net_stats_update_ipv6_nd_recv(net_pkt_iface(pkt));
 
 	if ((total_len < (sizeof(struct net_ipv6_hdr) +
 			  sizeof(struct net_icmp_hdr) +
@@ -2042,12 +2042,12 @@ static enum net_verdict handle_na_input(struct net_pkt *pkt)
 
 	net_pkt_unref(pkt);
 
-	net_stats_update_ipv6_nd_sent();
+	net_stats_update_ipv6_nd_sent(net_pkt_iface(pkt));
 
 	return NET_OK;
 
 drop:
-	net_stats_update_ipv6_nd_drop();
+	net_stats_update_ipv6_nd_drop(net_pkt_iface(pkt));
 
 	return NET_DROP;
 }
@@ -2193,13 +2193,13 @@ int net_ipv6_send_ns(struct net_if *iface,
 		goto drop;
 	}
 
-	net_stats_update_ipv6_nd_sent();
+	net_stats_update_ipv6_nd_sent(net_pkt_iface(pkt));
 
 	return 0;
 
 drop:
+	net_stats_update_ipv6_nd_drop(net_pkt_iface(pkt));
 	net_pkt_unref(pkt);
-	net_stats_update_ipv6_nd_drop();
 
 	return -EINVAL;
 }
@@ -2269,13 +2269,13 @@ int net_ipv6_send_rs(struct net_if *iface)
 		goto drop;
 	}
 
-	net_stats_update_ipv6_nd_sent();
+	net_stats_update_ipv6_nd_sent(net_pkt_iface(pkt));
 
 	return 0;
 
 drop:
+	net_stats_update_ipv6_nd_drop(net_pkt_iface(pkt));
 	net_pkt_unref(pkt);
-	net_stats_update_ipv6_nd_drop();
 
 	return -EINVAL;
 }
@@ -2581,7 +2581,7 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt)
 		      &NET_IPV6_HDR(pkt)->src,
 		      &NET_IPV6_HDR(pkt)->dst);
 
-	net_stats_update_ipv6_nd_recv();
+	net_stats_update_ipv6_nd_recv(net_pkt_iface(pkt));
 
 	if ((total_len < (sizeof(struct net_ipv6_hdr) +
 			  sizeof(struct net_icmp_hdr) +
@@ -2769,7 +2769,7 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt)
 	return NET_OK;
 
 drop:
-	net_stats_update_ipv6_nd_drop();
+	net_stats_update_ipv6_nd_drop(net_pkt_iface(pkt));
 
 	return NET_DROP;
 }
@@ -2864,15 +2864,16 @@ static int send_mldv2_raw(struct net_if *iface, struct net_buf *frags)
 		goto drop;
 	}
 
-	net_stats_update_icmp_sent();
-	net_stats_update_ipv6_mld_sent();
+	net_stats_update_icmp_sent(net_pkt_iface(pkt));
+	net_stats_update_ipv6_mld_sent(net_pkt_iface(pkt));
 
 	return 0;
 
 drop:
+	net_stats_update_icmp_drop(net_pkt_iface(pkt));
+	net_stats_update_ipv6_mld_drop(net_pkt_iface(pkt));
+
 	net_pkt_unref(pkt);
-	net_stats_update_icmp_drop();
-	net_stats_update_ipv6_mld_drop();
 
 	return ret;
 }
@@ -2999,7 +3000,7 @@ static enum net_verdict handle_mld_query(struct net_pkt *pkt)
 		      &NET_IPV6_HDR(pkt)->src,
 		      &NET_IPV6_HDR(pkt)->dst);
 
-	net_stats_update_ipv6_mld_recv();
+	net_stats_update_ipv6_mld_recv(net_pkt_iface(pkt));
 
 	/* offset tells now where the ICMPv6 header is starting */
 	frag = net_frag_get_pos(pkt,
@@ -3044,7 +3045,7 @@ static enum net_verdict handle_mld_query(struct net_pkt *pkt)
 	send_mld_report(net_pkt_iface(pkt));
 
 drop:
-	net_stats_update_ipv6_mld_drop();
+	net_stats_update_ipv6_mld_drop(net_pkt_iface(pkt));
 
 	return NET_DROP;
 }
@@ -4158,7 +4159,7 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt)
 
 	if (real_len != pkt_len) {
 		NET_DBG("IPv6 packet size %d pkt len %d", pkt_len, real_len);
-		net_stats_update_ipv6_drop();
+		net_stats_update_ipv6_drop(net_pkt_iface(pkt));
 		goto drop;
 	}
 
@@ -4175,7 +4176,7 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt)
 
 	if (net_is_ipv6_addr_mcast(&hdr->src)) {
 		NET_DBG("Dropping src multicast packet");
-		net_stats_update_ipv6_drop();
+		net_stats_update_ipv6_drop(net_pkt_iface(pkt));
 		goto drop;
 	}
 
@@ -4194,7 +4195,7 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt)
 		NET_DBG("IPv6 packet in pkt %p not for me", pkt);
 #endif /* CONFIG_NET_ROUTE */
 
-		net_stats_update_ipv6_drop();
+		net_stats_update_ipv6_drop(net_pkt_iface(pkt));
 		goto drop;
 	}
 
@@ -4209,7 +4210,7 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt)
 					      &hdr->dst)) {
 		no_route_info(pkt, &hdr->src, &hdr->dst);
 
-		net_stats_update_ipv6_drop();
+		net_stats_update_ipv6_drop(net_pkt_iface(pkt));
 		goto drop;
 	}
 
@@ -4349,7 +4350,7 @@ bad_hdr:
 			      offset - 1);
 
 	NET_DBG("Unknown next header type");
-	net_stats_update_ip_errors_protoerr();
+	net_stats_update_ip_errors_protoerr(net_pkt_iface(pkt));
 
 	return NET_DROP;
 }

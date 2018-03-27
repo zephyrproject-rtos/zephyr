@@ -593,8 +593,8 @@ int net_rpl_dio_send(struct net_if *iface,
 			dst ? "unicast" : "multicast",
 			instance->current_dag->rank, iface);
 
-		net_stats_update_icmp_sent();
-		net_stats_update_rpl_dio_sent();
+		net_stats_update_icmp_sent(iface);
+		net_stats_update_rpl_dio_sent(iface);
 
 		return 0;
 	}
@@ -710,7 +710,7 @@ static void net_rpl_dio_reset_timer(struct net_rpl_instance *instance)
 		new_dio_interval(instance);
 	}
 
-	net_stats_update_rpl_resets();
+	net_stats_update_rpl_resets(instance->iface);
 }
 
 static inline void send_dis_all_interfaces(struct net_if *iface,
@@ -774,8 +774,8 @@ int net_rpl_dis_send(struct in6_addr *dst, struct net_if *iface)
 			dst ? "unicast" : "multicast",
 			net_sprint_ipv6_addr(dst_addr), iface);
 
-		net_stats_update_icmp_sent();
-		net_stats_update_rpl_dis_sent();
+		net_stats_update_icmp_sent(iface);
+		net_stats_update_rpl_dis_sent(iface);
 	} else {
 		net_pkt_unref(pkt);
 	}
@@ -1080,19 +1080,24 @@ static struct net_rpl_instance *net_rpl_alloc_instance(u8_t instance_id)
 	return NULL;
 }
 
-static struct net_rpl_dag *alloc_dag(u8_t instance_id,
+static struct net_rpl_dag *alloc_dag(struct net_if *iface,
+				     u8_t instance_id,
 				     struct in6_addr *dag_id)
 {
 	struct net_rpl_instance *instance;
 	struct net_rpl_dag *dag;
 	int i;
 
+#if !defined(CONFIG_NET_STATISTICS)
+	ARG_UNUSED(iface);
+#endif
+
 	instance = net_rpl_get_instance(instance_id);
 	if (!instance) {
 		instance = net_rpl_alloc_instance(instance_id);
 		if (!instance) {
 			NET_ERR("Cannot allocate instance id %d", instance_id);
-			net_stats_update_rpl_mem_overflows();
+			net_stats_update_rpl_mem_overflows(iface);
 
 			return NULL;
 		}
@@ -1285,7 +1290,7 @@ static void net_rpl_reset_dio_timer(struct net_rpl_instance *instance)
 		new_dio_interval(instance);
 	}
 
-	net_stats_update_rpl_resets();
+	net_stats_update_rpl_resets(instance->iface);
 }
 
 struct net_rpl_dag *net_rpl_set_root_with_version(struct net_if *iface,
@@ -1324,7 +1329,7 @@ struct net_rpl_dag *net_rpl_set_root_with_version(struct net_if *iface,
 		}
 	}
 
-	dag = alloc_dag(instance_id, dag_id);
+	dag = alloc_dag(iface, instance_id, dag_id);
 	if (!dag) {
 		NET_DBG("Failed to allocate a DAG");
 		return NULL;
@@ -1912,7 +1917,7 @@ struct net_rpl_dag *net_rpl_select_dag(struct net_if *iface,
 		NET_DBG("Changed preferred parent, rank changed from %u to %u",
 			old_rank, best_dag->rank);
 
-		net_stats_update_rpl_parent_switch();
+		net_stats_update_rpl_parent_switch(iface);
 
 		if (instance->mop != NET_RPL_MOP_NO_DOWNWARD_ROUTES) {
 			if (last_parent) {
@@ -1983,7 +1988,7 @@ static void net_rpl_local_repair(struct net_if *iface,
 
 	net_rpl_reset_dio_timer(instance);
 
-	net_stats_update_rpl_local_repairs();
+	net_stats_update_rpl_local_repairs(iface);
 }
 
 /* Return true if parent is kept, false if it is dropped */
@@ -2060,7 +2065,7 @@ bool net_rpl_repair_root(u8_t instance_id)
 		return false;
 	}
 
-	net_stats_update_rpl_root_repairs();
+	net_stats_update_rpl_root_repairs(instance->iface);
 
 	net_rpl_lollipop_increment(&instance->current_dag->version);
 	net_rpl_lollipop_increment(&instance->dtsn);
@@ -2136,7 +2141,7 @@ static void global_repair(struct net_if *iface,
 	NET_DBG("Participating in a global repair version %d rank %d",
 		dag->version, dag->rank);
 
-	net_stats_update_rpl_global_repairs();
+	net_stats_update_rpl_global_repairs(iface);
 }
 
 #define net_rpl_print_parent_info(parent, instance)			\
@@ -2205,7 +2210,7 @@ static void net_rpl_join_instance(struct net_if *iface,
 	struct net_rpl_parent *parent;
 	struct net_rpl_dag *dag;
 
-	dag = alloc_dag(dio->instance_id, &dio->dag_id);
+	dag = alloc_dag(iface, dio->instance_id, &dio->dag_id);
 	if (!dag) {
 		NET_DBG("Failed to allocate a DAG object!");
 		return;
@@ -2450,7 +2455,7 @@ static void net_rpl_add_dag(struct net_if *iface,
 	struct net_rpl_dag *dag, *previous_dag;
 	struct net_rpl_parent *parent = NULL;
 
-	dag = alloc_dag(dio->instance_id, &dio->dag_id);
+	dag = alloc_dag(iface, dio->instance_id, &dio->dag_id);
 	if (!dag) {
 		NET_DBG("Failed to allocate a DAG object!");
 		return;
@@ -2849,7 +2854,7 @@ static enum net_verdict handle_dio(struct net_pkt *pkt)
 			break;
 		} else if (!frag && pos == 0xffff) {
 			NET_DBG("Invalid DIO packet");
-			net_stats_update_rpl_malformed_msgs();
+			net_stats_update_rpl_malformed_msgs(net_pkt_iface(pkt));
 			return NET_DROP;
 		}
 
@@ -2870,7 +2875,8 @@ static enum net_verdict handle_dio(struct net_pkt *pkt)
 		case NET_RPL_OPTION_DAG_METRIC_CONTAINER:
 			if (len < 6) {
 				NET_DBG("Invalid DAG MC len %d", len);
-				net_stats_update_rpl_malformed_msgs();
+				net_stats_update_rpl_malformed_msgs(
+					net_pkt_iface(pkt));
 				goto out;
 			}
 
@@ -2904,7 +2910,8 @@ static enum net_verdict handle_dio(struct net_pkt *pkt)
 			if (len < 9) {
 				NET_DBG("Invalid destination prefix "
 					"option len %d", len);
-				net_stats_update_rpl_malformed_msgs();
+				net_stats_update_rpl_malformed_msgs(
+					net_pkt_iface(pkt));
 				goto out;
 			}
 
@@ -2923,7 +2930,8 @@ static enum net_verdict handle_dio(struct net_pkt *pkt)
 			} else {
 				NET_DBG("Invalid route info option len %d",
 					len);
-				net_stats_update_rpl_malformed_msgs();
+				net_stats_update_rpl_malformed_msgs(
+					net_pkt_iface(pkt));
 				goto out;
 			}
 
@@ -2932,7 +2940,8 @@ static enum net_verdict handle_dio(struct net_pkt *pkt)
 			if (len != 16) {
 				NET_DBG("Invalid DAG configuration option "
 					"len %d", len);
-				net_stats_update_rpl_malformed_msgs();
+				net_stats_update_rpl_malformed_msgs(
+					net_pkt_iface(pkt));
 				goto out;
 			}
 
@@ -2965,7 +2974,8 @@ static enum net_verdict handle_dio(struct net_pkt *pkt)
 			if (len != 32) {
 				NET_DBG("Invalid DAG prefix info len %d != 32",
 					len);
-				net_stats_update_rpl_malformed_msgs();
+				net_stats_update_rpl_malformed_msgs(
+					net_pkt_iface(pkt));
 				goto out;
 			}
 
@@ -3113,8 +3123,8 @@ int net_rpl_dao_send(struct net_if *iface,
 	if (ret >= 0) {
 		net_rpl_dao_info(pkt, src, dst, prefix);
 
-		net_stats_update_icmp_sent();
-		net_stats_update_rpl_dao_sent();
+		net_stats_update_icmp_sent(iface);
+		net_stats_update_rpl_dao_sent(iface);
 	} else {
 		net_pkt_unref(pkt);
 	}
@@ -3166,8 +3176,8 @@ static inline int dao_forward(struct net_if *iface,
 
 	ret = net_send_data(pkt);
 	if (ret >= 0) {
-		net_stats_update_icmp_sent();
-		net_stats_update_rpl_dao_forwarded();
+		net_stats_update_icmp_sent(iface);
+		net_stats_update_rpl_dao_forwarded(iface);
 	} else {
 		net_pkt_unref(pkt);
 	}
@@ -3216,8 +3226,8 @@ static int dao_ack_send(struct in6_addr *src,
 		net_rpl_dao_ack_info(pkt, src, dst, instance->instance_id,
 				     sequence);
 
-		net_stats_update_icmp_sent();
-		net_stats_update_rpl_dao_ack_sent();
+		net_stats_update_icmp_sent(iface);
+		net_stats_update_rpl_dao_ack_sent(iface);
 	} else {
 		net_pkt_unref(pkt);
 	}
@@ -3393,7 +3403,7 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 		} else if (!frag && pos == 0xffff) {
 			/* Read error */
 			NET_DBG("Invalid DAO packet");
-			net_stats_update_rpl_malformed_msgs();
+			net_stats_update_rpl_malformed_msgs(net_pkt_iface(pkt));
 			return NET_DROP;
 		}
 
@@ -3560,7 +3570,7 @@ static enum net_verdict handle_dao(struct net_pkt *pkt)
 	route = net_rpl_add_route(dag, net_pkt_iface(pkt),
 				  &addr, target_len, dao_sender);
 	if (!route) {
-		net_stats_update_rpl_mem_overflows();
+		net_stats_update_rpl_mem_overflows(net_pkt_iface(pkt));
 
 		NET_DBG("Could not add a route after receiving a DAO");
 		return NET_DROP;
@@ -3676,7 +3686,7 @@ static enum net_verdict handle_dao_ack(struct net_pkt *pkt)
 		return NET_DROP;
 	}
 
-	net_stats_update_rpl_dao_ack_recv();
+	net_stats_update_rpl_dao_ack_recv(net_pkt_iface(pkt));
 
 	net_pkt_unref(pkt);
 
@@ -3825,7 +3835,7 @@ struct net_buf *net_rpl_verify_header(struct net_pkt *pkt, struct net_buf *frag,
 			net_route_del(route);
 		}
 
-		net_stats_update_rpl_forward_errors();
+		net_stats_update_rpl_forward_errors(net_pkt_iface(pkt));
 
 		/* Trigger DAO retransmission */
 		net_rpl_reset_dio_timer(instance);
@@ -3860,7 +3870,7 @@ struct net_buf *net_rpl_verify_header(struct net_pkt *pkt, struct net_buf *frag,
 			sender_closer);
 
 		if (flags & NET_RPL_HDR_OPT_RANK_ERR) {
-			net_stats_update_rpl_loop_errors();
+			net_stats_update_rpl_loop_errors(net_pkt_iface(pkt));
 
 			NET_DBG("Rank error signalled in RPL option!");
 
@@ -3874,7 +3884,7 @@ struct net_buf *net_rpl_verify_header(struct net_pkt *pkt, struct net_buf *frag,
 		}
 
 		NET_DBG("Single error tolerated.");
-		net_stats_update_rpl_loop_warnings();
+		net_stats_update_rpl_loop_warnings(net_pkt_iface(pkt));
 
 		/* FIXME: Handle (NET_RPL_HDR_OPT_RANK_ERR) errors properly */
 		*result = true;

@@ -270,22 +270,40 @@ static u8_t rx_tc2thread(u8_t tc)
 /* Fixup the traffic class statistics so that "net stats" shell command will
  * print output correctly.
  */
-static void tc_tx_stats_priority_setup(void)
+static void tc_tx_stats_priority_setup(struct net_if *iface)
 {
 	int i;
 
 	for (i = 0; i < 8; i++) {
-		net_stats_update_tc_sent_priority(net_tx_priority2tc(i), i);
+		net_stats_update_tc_sent_priority(iface, net_tx_priority2tc(i),
+						  i);
 	}
 }
 
-static void tc_rx_stats_priority_setup(void)
+static void tc_rx_stats_priority_setup(struct net_if *iface)
 {
 	int i;
 
 	for (i = 0; i < 8; i++) {
-		net_stats_update_tc_recv_priority(net_rx_priority2tc(i), i);
+		net_stats_update_tc_recv_priority(iface, net_rx_priority2tc(i),
+						  i);
 	}
+}
+
+static void net_tc_tx_stats_priority_setup(struct net_if *iface,
+					   void *user_data)
+{
+	ARG_UNUSED(user_data);
+
+	tc_tx_stats_priority_setup(iface);
+}
+
+static void net_tc_rx_stats_priority_setup(struct net_if *iface,
+					   void *user_data)
+{
+	ARG_UNUSED(user_data);
+
+	tc_rx_stats_priority_setup(iface);
 }
 #endif
 
@@ -300,7 +318,7 @@ void net_tc_tx_init(void)
 	BUILD_ASSERT(NET_TC_TX_COUNT > 0);
 
 #if defined(CONFIG_NET_STATISTICS)
-	tc_tx_stats_priority_setup();
+	net_if_foreach(net_tc_tx_stats_priority_setup, NULL);
 #endif
 
 	for (i = 0; i < NET_TC_TX_COUNT; i++) {
@@ -340,7 +358,7 @@ void net_tc_rx_init(void)
 	BUILD_ASSERT(NET_TC_RX_COUNT > 0);
 
 #if defined(CONFIG_NET_STATISTICS)
-	tc_rx_stats_priority_setup();
+	net_if_foreach(net_tc_rx_stats_priority_setup, NULL);
 #endif
 
 	for (i = 0; i < NET_TC_RX_COUNT; i++) {

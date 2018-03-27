@@ -14,6 +14,12 @@ menuconfig NET_STATISTICS
 
 if NET_STATISTICS
 
+config NET_STATISTICS_PER_INTERFACE
+	bool "Collect statistics per network interface"
+	default y
+	help
+	  Collect statistics also for each network interface.
+
 config NET_STATISTICS_USER_API
 	bool "Expose statistics through NET MGMT API"
 	select NET_MGMT

@@ -70,7 +70,7 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 	/* If there is no data, then drop the packet. */
 	if (!pkt->frags) {
 		NET_DBG("Corrupted packet (frags %p)", pkt->frags);
-		net_stats_update_processing_error();
+		net_stats_update_processing_error(net_pkt_iface(pkt));
 
 		return NET_DROP;
 	}
@@ -80,7 +80,8 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 		if (ret != NET_CONTINUE) {
 			if (ret == NET_DROP) {
 				NET_DBG("Packet %p discarded by L2", pkt);
-				net_stats_update_processing_error();
+				net_stats_update_processing_error(
+							net_pkt_iface(pkt));
 			}
 
 			return ret;
@@ -91,13 +92,13 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 	switch (NET_IPV6_HDR(pkt)->vtc & 0xf0) {
 #if defined(CONFIG_NET_IPV6)
 	case 0x60:
-		net_stats_update_ipv6_recv();
+		net_stats_update_ipv6_recv(net_pkt_iface(pkt));
 		net_pkt_set_family(pkt, PF_INET6);
 		return net_ipv6_process_pkt(pkt);
 #endif
 #if defined(CONFIG_NET_IPV4)
 	case 0x40:
-		net_stats_update_ipv4_recv();
+		net_stats_update_ipv4_recv(net_pkt_iface(pkt));
 		net_pkt_set_family(pkt, PF_INET);
 		return net_ipv4_process_pkt(pkt);
 #endif
@@ -105,8 +106,8 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 
 	NET_DBG("Unknown IP family packet (0x%x)",
 		NET_IPV6_HDR(pkt)->vtc & 0xf0);
-	net_stats_update_ip_errors_protoerr();
-	net_stats_update_ip_errors_vhlerr();
+	net_stats_update_ip_errors_protoerr(net_pkt_iface(pkt));
+	net_stats_update_ip_errors_vhlerr(net_pkt_iface(pkt));
 
 	return NET_DROP;
 }
@@ -254,10 +255,10 @@ int net_send_data(struct net_pkt *pkt)
 #if defined(CONFIG_NET_STATISTICS)
 	switch (net_pkt_family(pkt)) {
 	case AF_INET:
-		net_stats_update_ipv4_sent();
+		net_stats_update_ipv4_sent(net_pkt_iface(pkt));
 		break;
 	case AF_INET6:
-		net_stats_update_ipv6_sent();
+		net_stats_update_ipv6_sent(net_pkt_iface(pkt));
 		break;
 	}
 #endif
@@ -294,7 +295,7 @@ static void net_rx(struct net_if *iface, struct net_pkt *pkt)
 
 	NET_DBG("Received pkt %p len %zu", pkt, pkt_len);
 
-	net_stats_update_bytes_recv(pkt_len);
+	net_stats_update_bytes_recv(iface, pkt_len);
 
 	processing_data(pkt, false);
 
@@ -321,9 +322,9 @@ static void net_queue_rx(struct net_if *iface, struct net_pkt *pkt)
 #if defined(CONFIG_NET_STATISTICS)
 	pkt->total_pkt_len = net_pkt_get_len(pkt);
 
-	net_stats_update_tc_recv_pkt(tc);
-	net_stats_update_tc_recv_bytes(tc, pkt->total_pkt_len);
-	net_stats_update_tc_recv_priority(tc, prio);
+	net_stats_update_tc_recv_pkt(iface, tc);
+	net_stats_update_tc_recv_bytes(iface, tc, pkt->total_pkt_len);
+	net_stats_update_tc_recv_priority(iface, tc, prio);
 #endif
 
 #if NET_TC_RX_COUNT > 1

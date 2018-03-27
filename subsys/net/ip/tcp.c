@@ -246,7 +246,8 @@ static void tcp_retry_expired(struct k_work *work)
 				tcp->retry_timeout_shift, tcp, pkt);
 			if (IS_ENABLED(CONFIG_NET_STATISTICS_TCP) &&
 			    !is_6lo_technology(pkt)) {
-				net_stats_update_tcp_seg_rexmit();
+				net_stats_update_tcp_seg_rexmit(
+							net_pkt_iface(pkt));
 			}
 		}
 	} else if (IS_ENABLED(CONFIG_NET_TCP_TIME_WAIT)) {
@@ -831,7 +832,7 @@ int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 
 	context->tcp->send_seq += data_len;
 
-	net_stats_update_tcp_sent(data_len);
+	net_stats_update_tcp_sent(net_pkt_iface(pkt), data_len);
 
 	sys_slist_append(&context->tcp->sent_list, &pkt->sent_list);
 
@@ -929,7 +930,8 @@ int net_tcp_send_pkt(struct net_pkt *pkt)
 			if (ret < 0) {
 				net_pkt_unref(new_pkt);
 			} else {
-				net_stats_update_tcp_seg_rexmit();
+				net_stats_update_tcp_seg_rexmit(
+							net_pkt_iface(pkt));
 			}
 
 			return ret;
@@ -1016,7 +1018,7 @@ bool net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 
 	if (net_tcp_seq_greater(ack, ctx->tcp->send_seq)) {
 		NET_ERR("ctx %p: ACK for unsent data", ctx);
-		net_stats_update_tcp_seg_ackerr();
+		net_stats_update_tcp_seg_ackerr(net_context_get_iface(ctx));
 		/* RFC 793 doesn't say that invalid ack sequence is an error
 		 * in the general case, but we implement tighter checking,
 		 * and consider entire packet invalid.
@@ -1980,11 +1982,11 @@ NET_CONN_CB(tcp_established)
 	if (tcp_flags & NET_TCP_RST) {
 		/* We only accept RST packet that has valid seq field. */
 		if (!net_tcp_validate_seq(context->tcp, pkt)) {
-			net_stats_update_tcp_seg_rsterr();
+			net_stats_update_tcp_seg_rsterr(net_pkt_iface(pkt));
 			return NET_DROP;
 		}
 
-		net_stats_update_tcp_seg_rst();
+		net_stats_update_tcp_seg_rst(net_pkt_iface(pkt));
 
 		net_tcp_print_recv_info("RST", pkt, tcp_hdr->src_port);
 
@@ -2123,11 +2125,11 @@ NET_CONN_CB(tcp_synack_received)
 	if (NET_TCP_FLAGS(tcp_hdr) & NET_TCP_RST) {
 		/* We only accept RST packet that has valid seq field. */
 		if (!net_tcp_validate_seq(context->tcp, pkt)) {
-			net_stats_update_tcp_seg_rsterr();
+			net_stats_update_tcp_seg_rsterr(net_pkt_iface(pkt));
 			return NET_DROP;
 		}
 
-		net_stats_update_tcp_seg_rst();
+		net_stats_update_tcp_seg_rst(net_pkt_iface(pkt));
 
 		if (context->connect_cb) {
 			context->connect_cb(context, -ECONNREFUSED,
@@ -2345,11 +2347,11 @@ NET_CONN_CB(tcp_syn_rcvd)
 	if (NET_TCP_FLAGS(tcp_hdr) == NET_TCP_RST) {
 
 		if (tcp_backlog_rst(pkt) < 0) {
-			net_stats_update_tcp_seg_rsterr();
+			net_stats_update_tcp_seg_rsterr(net_pkt_iface(pkt));
 			return NET_DROP;
 		}
 
-		net_stats_update_tcp_seg_rst();
+		net_stats_update_tcp_seg_rst(net_pkt_iface(pkt));
 
 		net_tcp_print_recv_info("RST", pkt, tcp_hdr->src_port);
 
@@ -2455,7 +2457,7 @@ NET_CONN_CB(tcp_syn_rcvd)
 	return NET_DROP;
 
 conndrop:
-	net_stats_update_tcp_seg_conndrop();
+	net_stats_update_tcp_seg_conndrop(net_pkt_iface(pkt));
 
 reset:
 	send_reset(tcp->context, &local_addr, &remote_addr);

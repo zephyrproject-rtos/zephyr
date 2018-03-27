@@ -218,6 +218,6 @@ enum net_verdict net_ipv4_process_pkt(struct net_pkt *pkt)
 	}
 
 drop:
-	net_stats_update_ipv4_drop();
+	net_stats_update_ipv4_drop(net_pkt_iface(pkt));
 	return NET_DROP;
 }
