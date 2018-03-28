@@ -60,8 +60,6 @@ static void eth_enc28j60_set_bank(struct device *dev, u16_t reg_addr)
 	u8_t rx_buf[2];
 	int ret;
 
-	k_sem_take(&context->spi_sem, K_FOREVER);
-
 	tx_buf[0] = ENC28J60_SPI_RCR | ENC28J60_REG_ECON1;
 	tx_buf[1] = 0x0;
 
@@ -81,8 +79,6 @@ static void eth_enc28j60_set_bank(struct device *dev, u16_t reg_addr)
 	} else {
 		SYS_LOG_DBG("Failure while setting bank to %d", reg_addr);
 	}
-
-	k_sem_give(&context->spi_sem);
 }
 
 static void eth_enc28j60_write_reg(struct device *dev, u16_t reg_addr,
@@ -101,13 +97,10 @@ static void eth_enc28j60_write_reg(struct device *dev, u16_t reg_addr,
 		.count = ARRAY_SIZE(tx_bufs)
 	};
 
-	k_sem_take(&context->spi_sem, K_FOREVER);
-
 	tx_buf[0] = ENC28J60_SPI_WCR | (reg_addr & 0xFF);
 	tx_buf[1] = value;
 
 	spi_write(context->spi, &context->spi_cfg, &tx);
-	k_sem_give(&context->spi_sem);
 }
 
 static void eth_enc28j60_read_reg(struct device *dev, u16_t reg_addr,
@@ -138,8 +131,6 @@ static void eth_enc28j60_read_reg(struct device *dev, u16_t reg_addr,
 	u8_t rx_size = 2;
 	int ret;
 
-	k_sem_take(&context->spi_sem, K_FOREVER);
-
 	if (reg_addr & 0xF000) {
 		rx_size = 3;
 	}
@@ -156,8 +147,6 @@ static void eth_enc28j60_read_reg(struct device *dev, u16_t reg_addr,
 		SYS_LOG_DBG("Failure while reading register %d", reg_addr);
 		*value = 0;
 	}
-
-	k_sem_give(&context->spi_sem);
 }
 
 static void eth_enc28j60_set_eth_reg(struct device *dev, u16_t reg_addr,
@@ -176,14 +165,10 @@ static void eth_enc28j60_set_eth_reg(struct device *dev, u16_t reg_addr,
 		.count = ARRAY_SIZE(tx_bufs)
 	};
 
-	k_sem_take(&context->spi_sem, K_FOREVER);
-
 	tx_buf[0] = ENC28J60_SPI_BFS | (reg_addr & 0xFF);
 	tx_buf[1] = value;
 
 	spi_write(context->spi, &context->spi_cfg, &tx);
-
-	k_sem_give(&context->spi_sem);
 }
 
 
@@ -203,14 +188,10 @@ static void eth_enc28j60_clear_eth_reg(struct device *dev, u16_t reg_addr,
 		.count = ARRAY_SIZE(tx_bufs)
 	};
 
-	k_sem_take(&context->spi_sem, K_FOREVER);
-
 	tx_buf[0] = ENC28J60_SPI_BFC | (reg_addr & 0xFF);
 	tx_buf[1] = value;
 
 	spi_write(context->spi, &context->spi_cfg, &tx);
-
-	k_sem_give(&context->spi_sem);
 }
 
 static void eth_enc28j60_write_mem(struct device *dev, u8_t *data_buffer,
@@ -230,8 +211,6 @@ static void eth_enc28j60_write_mem(struct device *dev, u8_t *data_buffer,
 	num_segments = buf_len / MAX_BUFFER_LENGTH;
 	num_remaining = buf_len - MAX_BUFFER_LENGTH * num_segments;
 
-	k_sem_take(&context->spi_sem, K_FOREVER);
-
 	for (int i = 0; i < num_segments;
 	     ++i, index_buf += MAX_BUFFER_LENGTH) {
 		context->mem_buf[0] = ENC28J60_SPI_WBM;
@@ -250,8 +229,6 @@ static void eth_enc28j60_write_mem(struct device *dev, u8_t *data_buffer,
 
 		spi_write(context->spi, &context->spi_cfg, &tx);
 	}
-
-	k_sem_give(&context->spi_sem);
 }
 
 static void eth_enc28j60_read_mem(struct device *dev, u8_t *data_buffer,
@@ -269,8 +246,6 @@ static void eth_enc28j60_read_mem(struct device *dev, u8_t *data_buffer,
 
 	num_segments = buf_len / MAX_BUFFER_LENGTH;
 	num_remaining = buf_len - MAX_BUFFER_LENGTH * num_segments;
-
-	k_sem_take(&context->spi_sem, K_FOREVER);
 
 	for (int i = 0; i < num_segments;
 	     ++i, data_buffer += MAX_BUFFER_LENGTH) {
@@ -306,8 +281,6 @@ static void eth_enc28j60_read_mem(struct device *dev, u8_t *data_buffer,
 			SYS_LOG_DBG("Failed to read memory");
 		}
 	}
-
-	k_sem_give(&context->spi_sem);
 }
 
 static void eth_enc28j60_write_phy(struct device *dev, u16_t reg_addr,
@@ -451,8 +424,6 @@ static int eth_enc28j60_init(struct device *dev)
 {
 	const struct eth_enc28j60_config *config = dev->config->config_info;
 	struct eth_enc28j60_runtime *context = dev->driver_data;
-
-	k_sem_init(&context->spi_sem, 1, UINT_MAX);
 
 	/* SPI config */
 	context->spi_cfg.operation = SPI_WORD_SET(8);
