@@ -115,11 +115,17 @@ static struct device *dev_entropy;
 #define TODO_LINK_RX_COUNT_MAX ((TODO_PDU_RX_COUNT_MAX) + \
 				(TODO_ULL_RX_COUNT_MAX))
 
+static MFIFO_DEFINE(done, sizeof(void *), EVENT_PIPELINE_MAX);
+
 static struct {
-	memq_link_t               link_done;
-	memq_link_t		  *link_done_free;
-	struct node_rx_event_done done;
-} event;
+	void *free;
+	u8_t pool[sizeof(struct node_rx_event_done) * EVENT_PIPELINE_MAX];
+} mem_done;
+
+static struct {
+	void *free;
+	u8_t pool[sizeof(memq_link_t) * EVENT_PIPELINE_MAX];
+} mem_link_done;
 
 static MFIFO_DEFINE(pdu_rx_free, sizeof(void *), TODO_PDU_RX_COUNT_MAX);
 
@@ -141,6 +147,7 @@ static MEMQ_DECLARE(ull_rx);
 static MEMQ_DECLARE(ll_rx);
 
 static inline int _init_reset(void);
+static inline void _done_alloc(void);
 static inline void _rx_alloc(u8_t max);
 static void _rx_demux(void *param);
 #if defined(CONFIG_BT_TMP)
@@ -296,6 +303,9 @@ void ll_reset(void)
 #endif /* CONFIG_BT_TMP */
 
 	/* Re-initialize ULL internals */
+
+	/* Re-initialize the free done mfifo */
+	MFIFO_INIT(done);
 
 	/* Re-initialize the free rx mfifo */
 	MFIFO_INIT(pdu_rx_free);
@@ -556,20 +566,26 @@ void ull_rx_sched(void)
 	mayfly_enqueue(TICKER_USER_ID_LLL, TICKER_USER_ID_ULL_HIGH, 1, &_mfy);
 }
 
-void ull_event_done(void *param)
+void *ull_event_done(void *param)
 {
+	struct node_rx_event_done *done;
 	memq_link_t *link;
 
-	LL_ASSERT(event.link_done_free);
+	done = MFIFO_DEQUEUE(done);
+	if (!done) {
+		return NULL;
+	}
 
-	link = event.link_done_free;
-	event.link_done_free = NULL;
+	link = done->hdr.link;
+	done->hdr.link = NULL;
 
-	event.done.hdr.type = NODE_RX_TYPE_EVENT_DONE;
-	event.done.param = param;
+	done->hdr.type = NODE_RX_TYPE_EVENT_DONE;
+	done->param = param;
 
-	ull_rx_put(link, &event.done);
+	ull_rx_put(link, done);
 	ull_rx_sched();
+
+	return done;
 }
 
 u8_t ull_entropy_get(u8_t len, u8_t *rand)
@@ -581,14 +597,25 @@ static inline int _init_reset(void)
 {
 	memq_link_t *link;
 
+	/* Initialize done pool. */
+	mem_init(mem_done.pool, sizeof(struct node_rx_event_done),
+		 EVENT_PIPELINE_MAX, &mem_done.free);
+
+	/* Initialize done link pool. */
+	mem_init(mem_link_done.pool, sizeof(memq_link_t), EVENT_PIPELINE_MAX,
+		 &mem_link_done.free);
+
+	/* Allocate done buffers */
+	_done_alloc();
+
 	/* Initialize rx pool. */
 	mem_pdu_rx.size = TODO_PDU_RX_SIZE_MIN;
 	mem_init(mem_pdu_rx.pool, mem_pdu_rx.size, TODO_PDU_RX_COUNT_MAX,
 		 &mem_pdu_rx.free);
 
 	/* Initialize rx link pool. */
-	mem_init(mem_link_rx.pool, sizeof(memq_link_t),
-		 TODO_LINK_RX_COUNT_MAX, &mem_link_rx.free);
+	mem_init(mem_link_rx.pool, sizeof(memq_link_t), TODO_LINK_RX_COUNT_MAX,
+		 &mem_link_rx.free);
 
 	/* Acquire a link to initialize rx memq */
 	link = mem_acquire(&mem_link_rx.free);
@@ -598,14 +625,52 @@ static inline int _init_reset(void)
 	MEMQ_INIT(ull_rx, link);
 	MEMQ_INIT(ll_rx, link);
 
-	/* Initialize the link required for event done rx type */
-	event.link_done_free = &event.link_done;
-
 	/* Allocate rx free buffers */
 	mem_link_rx.quota_pdu = TODO_PDU_RX_COUNT_MAX;
 	_rx_alloc(UINT8_MAX);
 
 	return 0;
+}
+
+static inline void _done_alloc(void)
+{
+	u8_t idx;
+
+	while (MFIFO_ENQUEUE_IDX_GET(done, &idx)) {
+		memq_link_t *link;
+		struct node_rx_hdr *rx;
+
+		link = mem_acquire(&mem_link_done.free);
+		if (!link) {
+			break;
+		}
+
+		rx = mem_acquire(&mem_done.free);
+		if (!rx) {
+			mem_release(link, &mem_link_done.free);
+			break;
+		}
+
+		rx->link = link;
+
+		MFIFO_BY_IDX_ENQUEUE(done, idx, rx);
+	}
+}
+
+static inline void *_done_release(memq_link_t *link,
+				  struct node_rx_event_done *done)
+{
+	u8_t idx;
+
+	done->hdr.link = link;
+
+	if (!MFIFO_ENQUEUE_IDX_GET(done, &idx)) {
+		return NULL;
+	}
+
+	MFIFO_BY_IDX_ENQUEUE(done, idx, done);
+
+	return done;
 }
 
 static inline void _rx_alloc(u8_t max)
@@ -744,14 +809,21 @@ static inline void _rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 static inline void _rx_demux_event_done(memq_link_t *link,
 					struct node_rx_hdr *rx)
 {
+	struct node_rx_event_done *done = (void *)rx;
 	struct ull_hdr *ull_hdr;
 
-	/* release link for next event done */
-	LL_ASSERT(!event.link_done_free);
-	event.link_done_free = link;
+	/* Get the ull instance */
+	ull_hdr = done->param;
+
+	/* release done */
+	_done_release(link, done);
+
+	/* ull instance will resume, dont decrement ref */
+	if (!ull_hdr) {
+		return;
+	}
 
 	/* Decrement prepare reference */
-	ull_hdr = ((struct node_rx_event_done *)rx)->param;
 	LL_ASSERT(ull_hdr->ref);
 	ull_hdr->ref--;
 

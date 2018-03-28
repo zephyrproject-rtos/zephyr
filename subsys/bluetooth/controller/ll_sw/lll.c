@@ -9,6 +9,7 @@
 #define CLOCK_CONTROL_DRV_NAME CONFIG_CLOCK_CONTROL_NRF5_M16SRC_DRV_NAME
 #endif /* CONFIG_SOC_FAMILY_NRF */
 
+#include "util/mem.h"
 #include "util/memq.h"
 
 #include "util/mayfly.h"
@@ -21,6 +22,16 @@
 #include <soc.h>
 #include "hal/debug.h"
 
+struct event_next {
+	void			 *next;
+	struct lll_prepare_param prepare_param;
+	lll_prepare_cb_t         prepare_cb;
+	lll_is_abort_cb_t        is_abort_cb;
+	lll_abort_cb_t           abort_cb;
+	int                      prio;
+	u8_t                     is_resume:1;
+};
+
 static struct {
 	struct {
 		void              *param;
@@ -29,11 +40,13 @@ static struct {
 	} curr;
 
 	struct {
-		int                      prio;
-		struct lll_prepare_param prepare_param;
-		lll_prepare_cb_t         prepare_cb;
-		lll_is_abort_cb_t        is_abort_cb;
-		lll_abort_cb_t           abort_cb;
+		struct {
+			void *free;
+			u8_t pool[sizeof(struct event_next) *
+				  EVENT_PIPELINE_MAX];
+		} mem;
+		void *head;
+		void *tail;
 	} next;
 } event;
 
@@ -42,6 +55,12 @@ static struct {
 } lll;
 
 static int _init_reset(void);
+static int prepare_enqueue(struct lll_prepare_param *prepare_param,
+			   lll_prepare_cb_t prepare_cb,
+			   lll_is_abort_cb_t is_abort_cb,
+			   lll_abort_cb_t abort_cb,
+			   int prio);
+static void *prepare_dequeue(struct event_next *next);
 static void _preempt_ticker_cb(u32_t ticks_at_expire, u32_t remainder,
 			       u16_t lazy, void *param);
 static void _preempt(void *param);
@@ -52,7 +71,9 @@ int lll_init(void)
 
 	/* Initialise LLL internals */
 	event.curr.abort_cb = NULL;
-	event.next.prepare_cb = NULL;
+	mem_init(event.next.mem.pool, sizeof(struct event_next),
+		 EVENT_PIPELINE_MAX, &event.next.mem.free);
+	event.next.head = event.next.tail = NULL;
 
 	/* Initialize HF CLK */
 	lll.clk_hf = device_get_binding(CLOCK_CONTROL_DRV_NAME);
@@ -84,21 +105,16 @@ int lll_prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 		lll_prepare_cb_t prepare_cb, int prio,
 		struct lll_prepare_param *prepare_param)
 {
-	/* Assert if a deferred prepare is pending */
-	LL_ASSERT(!event.next.prepare_cb);
-
 	if (event.curr.abort_cb) {
 		u32_t preempt_anchor;
 		u32_t preempt_to;
 		int ret;
 
 		/* Store the next prepare for deferred call */
-		event.next.prio = prio;
-		memcpy(&event.next.prepare_param, prepare_param,
-		       sizeof(event.next.prepare_param));
-		event.next.prepare_cb = prepare_cb;
-		event.next.is_abort_cb = is_abort_cb;
-		event.next.abort_cb = abort_cb;
+		ret = prepare_enqueue(prepare_param, prepare_cb,
+				      is_abort_cb, abort_cb,
+				      prio);
+		LL_ASSERT(!ret);
 
 		/* Calc the preempt timeout */
 		preempt_anchor = prepare_param->ticks_at_expire;
@@ -131,24 +147,35 @@ int lll_prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 
 void lll_disable(void *param)
 {
-	if (param == event.curr.param) {
-		event.curr.abort_cb(NULL, event.curr.param);
-	} else if (param == event.next.prepare_param.param) {
-		/* TODO: implement prepare pipeline and search in it */
-		event.next.abort_cb(&event.next.prepare_param,
-				    event.next.prepare_param.param);
+	if (!param || param == event.curr.param) {
+		if (event.curr.abort_cb && event.curr.param) {
+			event.curr.abort_cb(NULL, event.curr.param);
+		} else {
+			LL_ASSERT(!param);
+		}
 	} else {
-		LL_ASSERT(0);
+		struct event_next *next = event.next.head;
+
+		/* TODO:  search inside the pipeline */
+		if (next && param == next->prepare_param.param) {
+			next->abort_cb(&next->prepare_param,
+				       next->prepare_param.param);
+		} else {
+			LL_ASSERT(0);
+		}
 	}
 }
 
 int lll_done(void *param)
 {
+	struct event_next *next = event.next.head;
+
 	/* Assert if param supplied without a pending prepare to cancel. */
-	LL_ASSERT(!param || event.next.abort_cb);
+	LL_ASSERT(!param || next);
 
 	/* check if current LLL event is done */
 	if (!param) {
+		/* Reset current event instance */
 		LL_ASSERT(event.curr.abort_cb);
 		event.curr.abort_cb = NULL;
 
@@ -156,22 +183,28 @@ int lll_done(void *param)
 		event.curr.param = NULL;
 
 		DEBUG_RADIO_CLOSE(0);
+	} else {
+		/* dequeue aborted next prepare */
+		next = prepare_dequeue(next);
 	}
 
 	/* Let ULL know about LLL event done */
 	ull_event_done(((struct lll_hdr *)param)->parent);
 
 	/* Call the pending next prepare's bottom half */
-	if (event.next.prepare_cb) {
-		lll_prepare_cb_t prepare_cb = event.next.prepare_cb;
+	if (next) {
+		lll_prepare_cb_t prepare_cb = next->prepare_cb;
+		int ret;
 
-		event.next.prepare_cb = NULL;
+		event.curr.is_abort_cb = next->is_abort_cb;
+		event.curr.abort_cb = next->abort_cb;
+		event.curr.param = next->prepare_param.param;
 
-		event.curr.is_abort_cb = event.next.is_abort_cb;
-		event.curr.abort_cb = event.next.abort_cb;
-		event.curr.param = event.next.prepare_param.param;
+		ret = prepare_cb(&next->prepare_param);
 
-		return prepare_cb(&event.next.prepare_param);
+		prepare_dequeue(next);
+
+		return ret;
 	}
 
 	return 0;
@@ -229,6 +262,55 @@ static int _init_reset(void)
 	return 0;
 }
 
+static int prepare_enqueue(struct lll_prepare_param *prepare_param,
+			   lll_prepare_cb_t prepare_cb,
+			   lll_is_abort_cb_t is_abort_cb,
+			   lll_abort_cb_t abort_cb,
+			   int prio)
+{
+	struct event_next *next;
+
+	/* allocate */
+	next = mem_acquire(&event.next.mem.free);
+	if (!next) {
+		return -ENOBUFS;
+	}
+
+	/* setup */
+	memcpy(&next->prepare_param, prepare_param,
+	       sizeof(next->prepare_param));
+	next->prepare_cb = prepare_cb;
+	next->is_abort_cb = is_abort_cb;
+	next->abort_cb = abort_cb;
+	next->prio = prio;
+
+	/* enqueue */
+	next->next = NULL;
+	if (!event.next.head) {
+		event.next.head = event.next.tail = next;
+	} else {
+		((struct event_next *)event.next.tail)->next = next;
+		event.next.tail = next;
+	}
+
+	return 0;
+}
+
+static void *prepare_dequeue(struct event_next *next)
+{
+	LL_ASSERT(event.next.head == next);
+
+	event.next.head = next->next;
+	if (!event.next.head) {
+		event.next.tail = event.next.head;
+	}
+
+	/* release event_next struct */
+	mem_release(next, &event.next.mem.free);
+
+	return event.next.head;
+}
+
 static void _preempt_ticker_cb(u32_t ticks_at_expire, u32_t remainder,
 			       u16_t lazy, void *param)
 {
@@ -243,14 +325,16 @@ static void _preempt_ticker_cb(u32_t ticks_at_expire, u32_t remainder,
 
 static void _preempt(void *param)
 {
-	if (!event.curr.is_abort_cb(event.next.prepare_param.param,
-				    event.next.prio, event.curr.param)) {
-		/* Cancel next prepare */
-		event.next.prepare_cb = NULL;
+	struct event_next *next = event.next.head;
 
+	if (!next || !event.curr.abort_cb || !event.curr.param) {
+		return;
+	}
+
+	if (!event.curr.is_abort_cb(next->prepare_param.param, next->prio,
+				    event.curr.param)) {
 		/* Let LLL know about the cancelled prepare */
-		event.next.abort_cb(&event.next.prepare_param,
-				    event.next.prepare_param.param);
+		next->abort_cb(&next->prepare_param, next->prepare_param.param);
 
 		return;
 	}

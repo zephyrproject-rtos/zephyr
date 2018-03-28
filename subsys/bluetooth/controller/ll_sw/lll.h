@@ -13,6 +13,8 @@
 #define EVENT_OVERHEAD_START_US       300
 #define EVENT_JITTER_US               16
 
+#define EVENT_PIPELINE_MAX            2
+
 enum {
 	TICKER_ID_LLL_PREEMPT = 0,
 
