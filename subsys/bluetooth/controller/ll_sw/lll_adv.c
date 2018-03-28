@@ -192,18 +192,10 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 
 	{
-		/* Ticker Job Silence */
-		/* FIXME:*/
-#if 0 && (RADIO_TICKER_USER_ID_WORKER_PRIO == RADIO_TICKER_USER_ID_JOB_PRIO)
-		u32_t ticker_status;
+		u32_t ret;
 
-		ticker_status =
-		    ticker_job_idle_get(RADIO_TICKER_INSTANCE_ID_RADIO,
-					RADIO_TICKER_USER_ID_WORKER,
-					ticker_job_disable, NULL);
-		LL_ASSERT((ticker_status == TICKER_STATUS_SUCCESS) ||
-			  (ticker_status == TICKER_STATUS_BUSY));
-#endif
+		ret = lll_prepare_done(lll);
+		LL_ASSERT(!ret);
 	}
 
 	DEBUG_RADIO_START_A(1);

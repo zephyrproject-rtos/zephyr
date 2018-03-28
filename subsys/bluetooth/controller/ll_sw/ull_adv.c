@@ -414,6 +414,7 @@ u32_t ll_adv_enable(u8_t enable)
 #endif /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_HCI_MESH_EXT */
 	volatile u32_t ret_cb = TICKER_STATUS_BUSY;
 	u8_t   rl_idx = FILTER_IDX_NONE;
+	u32_t ticks_slot_overhead;
 	struct pdu_adv *pdu_scan;
 	struct pdu_adv *pdu_adv;
 	u32_t ticks_slot_offset;
@@ -701,6 +702,12 @@ u32_t ll_adv_enable(u8_t enable)
 	ticks_slot_offset = max(adv->evt.ticks_active_to_start,
 				adv->evt.ticks_xtal_to_start);
 
+	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
+		ticks_slot_overhead = ticks_slot_offset;
+	} else {
+		ticks_slot_overhead = 0;
+	}
+
 #if !defined(CONFIG_BT_HCI_MESH_EXT)
 	ticks_anchor = ticker_ticks_now_get();
 #else /* CONFIG_BT_HCI_MESH_EXT */
@@ -719,7 +726,7 @@ u32_t ll_adv_enable(u8_t enable)
 				   ticks_anchor, 0,
 				   adv->evt.ticks_slot,
 				   TICKER_NULL_REMAINDER, TICKER_NULL_LAZY,
-				   adv->evt.ticks_slot,
+				   (adv->evt.ticks_slot + ticks_slot_overhead),
 				   ticker_cb, adv,
 				   ull_ticker_status_give, (void *)&ret_cb);
 
@@ -748,7 +755,7 @@ u32_t ll_adv_enable(u8_t enable)
 				   HAL_TICKER_US_TO_TICKS((u64_t)interval *
 							  625),
 				   TICKER_NULL_REMAINDER, TICKER_NULL_LAZY,
-				   adv->evt.ticks_slot,
+				   (adv->evt.ticks_slot + ticks_slot_overhead),
 				   ticker_cb, adv,
 				   ull_ticker_status_give, (void *)&ret_cb);
 	}

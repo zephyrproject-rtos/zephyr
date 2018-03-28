@@ -423,6 +423,17 @@ config BT_CTLR_LOWEST_PRIO
 	default 0
 	help
 	  The interrupt priority for RNG and other non-critical functions.
+
+config BT_CTLR_LOW_LAT
+	prompt "Low latency non-negotiating event pre-emption"
+	bool
+	default y if SOC_SERIES_NRF51X
+	help
+	  Use low latency non-negotiating event pre-emption. This reduces
+	  Radio ISR latencies by the controller event scheduling framework.
+	  Consequently, this reduces on-air radio utilization due to redundant
+	  radio state switches.
+
 endif # BT_LL_SW_SPLIT
 
 config BT_CTLR_RADIO_ENABLE_FAST

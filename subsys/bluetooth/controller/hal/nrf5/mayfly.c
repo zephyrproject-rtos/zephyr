@@ -65,16 +65,26 @@ u32_t mayfly_is_enabled(u8_t caller_id, u8_t callee_id)
 
 u32_t mayfly_prio_is_equal(u8_t caller_id, u8_t callee_id)
 {
-#if (RADIO_TICKER_USER_ID_WORKER_PRIO == RADIO_TICKER_USER_ID_JOB_PRIO)
 	return (caller_id == callee_id) ||
+#if (CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_HIGH_PRIO)
+	       ((caller_id == MAYFLY_CALL_ID_LLL) &&
+		(callee_id == MAYFLY_CALL_ID_WORKER)) ||
+	       ((caller_id == MAYFLY_CALL_ID_WORKER) &&
+		(callee_id == MAYFLY_CALL_ID_LLL)) ||
+#endif
+#if (CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
+	       ((caller_id == MAYFLY_CALL_ID_LLL) &&
+		(callee_id == MAYFLY_CALL_ID_JOB)) ||
+	       ((caller_id == MAYFLY_CALL_ID_JOB) &&
+		(callee_id == MAYFLY_CALL_ID_LLL)) ||
+#endif
+#if (CONFIG_BT_CTLR_ULL_HIGH_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
 	       ((caller_id == MAYFLY_CALL_ID_WORKER) &&
 		(callee_id == MAYFLY_CALL_ID_JOB)) ||
 	       ((caller_id == MAYFLY_CALL_ID_JOB) &&
-		(callee_id == MAYFLY_CALL_ID_WORKER));
-#else
-	/* TODO: check Kconfig set priorities */
-	return caller_id == callee_id;
+		(callee_id == MAYFLY_CALL_ID_WORKER)) ||
 #endif
+	       0;
 }
 
 void mayfly_pend(u8_t caller_id, u8_t callee_id)

@@ -90,6 +90,7 @@ u32_t ll_scan_params_set(u8_t type, u16_t interval, u16_t window,
 u32_t ll_scan_enable(u8_t enable)
 {
 	volatile u32_t ret_cb = TICKER_STATUS_BUSY;
+	u32_t ticks_slot_overhead;
 	struct ll_scan_set *scan;
 	u32_t ticks_slot_offset;
 	struct lll_scan *lll;
@@ -152,6 +153,12 @@ u32_t ll_scan_enable(u8_t enable)
 	ticks_slot_offset = max(scan->evt.ticks_active_to_start,
 				scan->evt.ticks_xtal_to_start);
 
+	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
+		ticks_slot_overhead = ticks_slot_offset;
+	} else {
+		ticks_slot_overhead = 0;
+	}
+
 	ticks_anchor = ticker_ticks_now_get();
 
 #if defined(CONFIG_BT_CONN) && defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
@@ -178,7 +185,8 @@ u32_t ll_scan_enable(u8_t enable)
 			   TICKER_USER_ID_THREAD, TICKER_ID_SCAN_BASE,
 			   ticks_anchor, 0, ticks_interval,
 			   HAL_TICKER_REMAINDER((u64_t)scan->interval * 625),
-			   TICKER_NULL_LAZY, scan->evt.ticks_slot,
+			   TICKER_NULL_LAZY,
+			   (scan->evt.ticks_slot + ticks_slot_overhead),
 			   ticker_cb, scan,
 			   ull_ticker_status_give, (void *)&ret_cb);
 

@@ -206,31 +206,31 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 		radio_disable();
 	} else
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
-	if (lll->ticks_window) {
+	{
 		u32_t ret;
 
-		/* start window close timeout */
-		ret = ticker_start(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_LLL,
-				   TICKER_ID_SCAN_STOP, ticks_at_event,
-				   lll->ticks_window, TICKER_NULL_PERIOD,
-				   TICKER_NULL_REMAINDER, TICKER_NULL_LAZY,
-				   TICKER_NULL_SLOT, ticker_stop_cb, lll,
-				   ticker_op_start_cb, (void *)__LINE__);
-		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
-			  (ret == TICKER_STATUS_BUSY));
+		if (lll->ticks_window) {
+			/* start window close timeout */
+			ret = ticker_start(TICKER_INSTANCE_ID_CTLR,
+					   TICKER_USER_ID_LLL,
+					   TICKER_ID_SCAN_STOP,
+					   ticks_at_event, lll->ticks_window,
+					   TICKER_NULL_PERIOD,
+					   TICKER_NULL_REMAINDER,
+					   TICKER_NULL_LAZY, TICKER_NULL_SLOT,
+					   ticker_stop_cb, lll,
+					   ticker_op_start_cb,
+					   (void *)__LINE__);
+			LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
+				  (ret == TICKER_STATUS_BUSY));
+		}
 
-		/* Ticker Job Silence */
-#if 0 && (TICKER_USER_ID_LLL_PRIO == TICKER_USER_ID_ULL_LOW_PRIO)
-		ret = ticker_job_idle_get(TICKER_INSTANCE_ID_CTLR,
-					  TICKER_USER_ID_LLL,
-					  ticker_job_disable, NULL);
-
-		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
-			  (ret == TICKER_STATUS_BUSY));
-#endif
+		ret = lll_prepare_done(lll);
+		LL_ASSERT(!ret);
 	}
 
 	DEBUG_RADIO_START_O(1);
+
 	return 0;
 }
 
