@@ -29,6 +29,7 @@
 #include <net/ethernet.h>
 
 #include "eth_native_posix_priv.h"
+#include "ethernet/eth_stats.h"
 
 #if defined(CONFIG_NET_L2_ETHERNET)
 #define _ETH_MTU 1500
@@ -52,6 +53,10 @@ struct eth_context {
 	int dev_fd;
 	bool init_done;
 	bool status;
+
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+	struct net_stats_eth stats;
+#endif
 };
 
 NET_STACK_DEFINE(RX_ZETH, eth_rx_stack,
@@ -86,11 +91,25 @@ static int eth_send(struct net_if *iface, struct net_pkt *pkt)
 		frag = frag->frags;
 	}
 
-	net_pkt_unref(pkt);
+	eth_stats_update_bytes_tx(iface, count);
+	eth_stats_update_pkts_tx(iface);
+
+	if (IS_ENABLED(CONFIG_NET_STATISTICS_ETHERNET)) {
+		if (net_eth_is_addr_broadcast(
+			    &((struct net_eth_hdr *)NET_ETH_HDR(pkt))->dst)) {
+			eth_stats_update_broadcast_tx(iface);
+		} else if (net_eth_is_addr_multicast(
+				   &((struct net_eth_hdr *)
+						NET_ETH_HDR(pkt))->dst)) {
+			eth_stats_update_multicast_tx(iface);
+		}
+	}
 
 	SYS_LOG_DBG("Send pkt %p len %d", pkt, count);
 
 	eth_write_data(ctx->dev_fd, ctx->send, count);
+
+	net_pkt_unref(pkt);
 
 	return 0;
 }
@@ -131,8 +150,10 @@ static inline struct net_if *get_iface(struct eth_context *ctx,
 static int read_data(struct eth_context *ctx, int fd)
 {
 	u16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
+	struct net_if *iface;
 	struct net_pkt *pkt;
 	struct net_buf *frag;
+	u32_t pkt_len;
 	int ret;
 
 	ret = eth_read_data(fd, ctx->recv, sizeof(ctx->recv));
@@ -176,9 +197,26 @@ static int read_data(struct eth_context *ctx, int fd)
 	}
 #endif
 
-	SYS_LOG_DBG("Recv pkt %p len %d", pkt, net_pkt_get_len(pkt));
+	iface = get_iface(ctx, vlan_tag);
+	pkt_len = net_pkt_get_len(pkt);
 
-	if (net_recv_data(get_iface(ctx, vlan_tag), pkt) < 0) {
+	eth_stats_update_bytes_rx(iface, pkt_len);
+	eth_stats_update_pkts_rx(iface);
+
+	if (IS_ENABLED(CONFIG_NET_STATISTICS_ETHERNET)) {
+		if (net_eth_is_addr_broadcast(
+			    &((struct net_eth_hdr *)NET_ETH_HDR(pkt))->dst)) {
+			eth_stats_update_broadcast_rx(iface);
+		} else if (net_eth_is_addr_multicast(
+				   &((struct net_eth_hdr *)
+				    NET_ETH_HDR(pkt))->dst)) {
+			eth_stats_update_multicast_rx(iface);
+		}
+	}
+
+	SYS_LOG_DBG("Recv pkt %p len %d", pkt, pkt_len);
+
+	if (net_recv_data(iface, pkt) < 0) {
 		net_pkt_unref(pkt);
 	}
 
@@ -282,6 +320,10 @@ static const struct ethernet_api eth_if_api = {
 	.iface_api.send = eth_send,
 
 	.get_capabilities = eth_posix_native_get_capabilities,
+
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+	.stats = &eth_context_data.stats,
+#endif
 };
 
 ETH_NET_DEVICE_INIT(eth_native_posix, CONFIG_ETH_NATIVE_POSIX_DRV_NAME,

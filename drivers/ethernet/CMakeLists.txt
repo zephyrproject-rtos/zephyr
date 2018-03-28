@@ -1,3 +1,5 @@
+zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/ip/l2)
+
 zephyr_sources_ifdef(CONFIG_ETH_SAM_GMAC
 	eth_sam_gmac.c
 	phy_sam_gmac.c
