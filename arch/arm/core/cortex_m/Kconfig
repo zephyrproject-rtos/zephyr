@@ -166,6 +166,12 @@ config CPU_CORTEX_M0_HAS_VECTOR_TABLE_REMAP
 	  This option signifies the Cortex-M0 has some mechanisms that can map
 	  the vector table to SRAM
 
+config CPU_CORTEX_M_HAS_CMSE
+	bool
+	default n
+	help
+	  This option signifies the Cortex-M CPU has the CMSE intrinsics.
+
 config ARMV6_M_ARMV8_M_BASELINE
 	bool
 	# Omit prompt to signify "hidden" option
