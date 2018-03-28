@@ -25,7 +25,6 @@ struct mcr20a_context {
 	struct gpio_callback irqb_cb;
 	struct device *spi;
 	struct spi_config spi_cfg;
-	struct k_sem spi_sem;
 #if defined(CONFIG_IEEE802154_MCR20A_GPIO_SPI_CS)
 	struct spi_cs_control cs_ctrl;
 #endif
