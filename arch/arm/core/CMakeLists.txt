@@ -23,3 +23,4 @@ zephyr_library_sources_ifdef(CONFIG_USERSPACE userspace.S)
 
 add_subdirectory_ifdef(CONFIG_CPU_CORTEX_M cortex_m)
 add_subdirectory_ifdef(CONFIG_CPU_HAS_MPU  cortex_m/mpu)
+add_subdirectory_ifdef(CONFIG_CPU_CORTEX_M_HAS_CMSE cortex_m/cmse)
