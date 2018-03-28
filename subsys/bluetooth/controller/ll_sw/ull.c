@@ -3,13 +3,6 @@
 #include <errno.h>
 
 #include <zephyr/types.h>
-
-#if defined(CONFIG_BT_CTLR_DEBUG_PINS)
-#if defined(CONFIG_PRINTK)
-#undef CONFIG_PRINTK
-#endif
-#endif
-
 #include <soc.h>
 #include <device.h>
 #include <clock_control.h>
@@ -623,8 +616,6 @@ static void _rx_demux(void *param)
 {
 	memq_link_t *link;
 
-	printk("\t_rx_demux\n");
-
 	do {
 		struct node_rx_hdr *rx;
 
@@ -664,8 +655,6 @@ static void _rx_demux(void *param)
 static inline void _rx_demux_tx_ack(u16_t handle, memq_link_t *link,
 			     struct tmp_node_tx *node_tx)
 {
-	printk("\tlll_tmp_ack_peek: h= %u, n= %p.\n", handle, node_tx);
-
 	lll_tmp_ack_dequeue();
 
 	ull_tmp_link_tx_release(link);
@@ -674,8 +663,6 @@ static inline void _rx_demux_tx_ack(u16_t handle, memq_link_t *link,
 
 static inline void _rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 {
-	printk("\tlink (%p), rx (%p), type %d.\n", link, rx, rx->type);
-
 	/* NOTE: dequeue before releasing resources */
 	memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
 

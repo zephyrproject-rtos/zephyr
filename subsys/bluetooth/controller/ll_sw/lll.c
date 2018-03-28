@@ -1,13 +1,6 @@
 #include <errno.h>
 
 #include <zephyr/types.h>
-
-#if defined(CONFIG_BT_CTLR_DEBUG_PINS)
-#if defined(CONFIG_PRINTK)
-#undef CONFIG_PRINTK
-#endif
-#endif
-
 #include <device.h>
 #include <clock_control.h>
 
@@ -238,14 +231,9 @@ static void _preempt_ticker_cb(u32_t ticks_at_expire, u32_t remainder,
 	static struct mayfly _mfy = {0, 0, &_link, NULL, _preempt};
 	u32_t ret;
 
-	printk("\t_preempt_ticker_cb (%p) enter: %u, %u, %u.\n", param,
-	       ticks_at_expire, remainder, lazy);
-
 	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL,
 			     0, &_mfy);
 	LL_ASSERT(!ret);
-
-	printk("\t_preempt_ticker_cb (%p) exit.\n", param);
 }
 
 static void _preempt(void *param)
