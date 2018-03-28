@@ -14,10 +14,6 @@
 #include <soc.h>
 #include <board.h>
 
-#if defined(CONFIG_SPI_LEGACY_API)
-#error "This driver does not support the SPI legacy API."
-#endif
-
 /* Device constant configuration parameters */
 struct spi_sam0_config {
 	SercomSpi *regs;
