@@ -1,33 +1,35 @@
-zephyr_sources_ifdef(CONFIG_SPI_FLASH_W25QXXDV spi_flash_w25qxxdv.c)
-zephyr_sources_ifdef(CONFIG_SOC_FLASH_QMSI soc_flash_qmsi.c)
-zephyr_sources_ifdef(CONFIG_SOC_FLASH_NRF soc_flash_nrf.c)
-zephyr_sources_ifdef(CONFIG_SOC_FLASH_MCUX soc_flash_mcux.c)
-zephyr_sources_ifdef(CONFIG_FLASH_PAGE_LAYOUT flash_page_layout.c)
-zephyr_sources_ifdef(CONFIG_USERSPACE flash_handlers.c)
-zephyr_sources_ifdef(CONFIG_SOC_FLASH_SAM0 flash_sam0.c)
-zephyr_sources_ifdef(CONFIG_SOC_FLASH_NIOS2_QSPI soc_flash_nios2_qspi.c)
+zephyr_library_ifdef(CONFIG_FLASH_HAS_DRIVER_ENABLED)
+
+zephyr_library_sources_ifdef(CONFIG_SPI_FLASH_W25QXXDV spi_flash_w25qxxdv.c)
+zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_QMSI soc_flash_qmsi.c)
+zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_NRF soc_flash_nrf.c)
+zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_MCUX soc_flash_mcux.c)
+zephyr_library_sources_ifdef(CONFIG_FLASH_PAGE_LAYOUT flash_page_layout.c)
+zephyr_library_sources_ifdef(CONFIG_USERSPACE flash_handlers.c)
+zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_SAM0 flash_sam0.c)
+zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_NIOS2_QSPI soc_flash_nios2_qspi.c)
 
 if(CONFIG_SOC_SERIES_STM32F0X)
-zephyr_sources_ifdef(CONFIG_SOC_FLASH_STM32
+zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_STM32
 	flash_stm32.c
 	flash_stm32f0x.c
 	)
 endif()
 
 if(CONFIG_SOC_SERIES_STM32F3X)
-zephyr_sources_ifdef(CONFIG_SOC_FLASH_STM32 flash_stm32f3x.c)
-zephyr_sources_ifdef(CONFIG_SOC_FLASH_STM32 flash_stm32f3x_priv.c)
+zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_STM32 flash_stm32f3x.c)
+zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_STM32 flash_stm32f3x_priv.c)
 endif()
 
 if(CONFIG_SOC_SERIES_STM32F4X)
-zephyr_sources_ifdef(CONFIG_SOC_FLASH_STM32
+zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_STM32
 	flash_stm32.c
 	flash_stm32f4x.c
 	)
 endif()
 
 if(CONFIG_SOC_SERIES_STM32L4X)
-zephyr_sources_ifdef(CONFIG_SOC_FLASH_STM32
+zephyr_library_sources_ifdef(CONFIG_SOC_FLASH_STM32
 	flash_stm32.c
 	flash_stm32l4x.c
 	)
