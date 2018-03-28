@@ -29,7 +29,6 @@ struct event_next {
 	lll_is_abort_cb_t        is_abort_cb;
 	lll_abort_cb_t           abort_cb;
 	int                      prio;
-	u8_t                     is_resume:1;
 };
 
 static struct {
@@ -55,11 +54,10 @@ static struct {
 } lll;
 
 static int _init_reset(void);
-static int prepare_enqueue(struct lll_prepare_param *prepare_param,
-			   lll_prepare_cb_t prepare_cb,
-			   lll_is_abort_cb_t is_abort_cb,
+static int prepare_enqueue(lll_is_abort_cb_t is_abort_cb,
 			   lll_abort_cb_t abort_cb,
-			   int prio);
+			   struct lll_prepare_param *prepare_param,
+			   lll_prepare_cb_t prepare_cb, int prio);
 static void *prepare_dequeue(struct event_next *next);
 static void _preempt_ticker_cb(u32_t ticks_at_expire, u32_t remainder,
 			       u16_t lazy, void *param);
@@ -111,9 +109,8 @@ int lll_prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 		int ret;
 
 		/* Store the next prepare for deferred call */
-		ret = prepare_enqueue(prepare_param, prepare_cb,
-				      is_abort_cb, abort_cb,
-				      prio);
+		ret = prepare_enqueue(is_abort_cb, abort_cb,
+				      prepare_param, prepare_cb, prio);
 		LL_ASSERT(!ret);
 
 		/* Calc the preempt timeout */
@@ -169,6 +166,7 @@ void lll_disable(void *param)
 int lll_done(void *param)
 {
 	struct event_next *next = event.next.head;
+	struct ull_hdr *ull = NULL;
 
 	/* Assert if param supplied without a pending prepare to cancel. */
 	LL_ASSERT(!param || next);
@@ -182,14 +180,22 @@ int lll_done(void *param)
 		param = event.curr.param;
 		event.curr.param = NULL;
 
+		if (param) {
+			ull = ((struct lll_hdr *)param)->parent;
+		}
+
 		DEBUG_RADIO_CLOSE(0);
 	} else {
+		LL_ASSERT(param == next->prepare_param.param);
+
+		ull = ((struct lll_hdr *)param)->parent;
+
 		/* dequeue aborted next prepare */
 		next = prepare_dequeue(next);
 	}
 
 	/* Let ULL know about LLL event done */
-	ull_event_done(((struct lll_hdr *)param)->parent);
+	ull_event_done(ull);
 
 	/* Call the pending next prepare's bottom half */
 	if (next) {
@@ -262,11 +268,10 @@ static int _init_reset(void)
 	return 0;
 }
 
-static int prepare_enqueue(struct lll_prepare_param *prepare_param,
-			   lll_prepare_cb_t prepare_cb,
-			   lll_is_abort_cb_t is_abort_cb,
+static int prepare_enqueue(lll_is_abort_cb_t is_abort_cb,
 			   lll_abort_cb_t abort_cb,
-			   int prio)
+			   struct lll_prepare_param *prepare_param,
+			   lll_prepare_cb_t prepare_cb, int prio)
 {
 	struct event_next *next;
 
@@ -326,13 +331,18 @@ static void _preempt_ticker_cb(u32_t ticks_at_expire, u32_t remainder,
 static void _preempt(void *param)
 {
 	struct event_next *next = event.next.head;
+	lll_prepare_cb_t resume_cb;
+	int resume_prio;
+	int ret;
 
 	if (!next || !event.curr.abort_cb || !event.curr.param) {
 		return;
 	}
 
-	if (!event.curr.is_abort_cb(next->prepare_param.param, next->prio,
-				    event.curr.param)) {
+	ret = event.curr.is_abort_cb(next->prepare_param.param, next->prio,
+				     event.curr.param,
+				     &resume_cb, &resume_prio);
+	if (!ret) {
 		/* Let LLL know about the cancelled prepare */
 		next->abort_cb(&next->prepare_param, next->prepare_param.param);
 
@@ -340,4 +350,19 @@ static void _preempt(void *param)
 	}
 
 	event.curr.abort_cb(NULL, event.curr.param);
+
+	if (ret == -EAGAIN) {
+		struct lll_prepare_param prepare_param;
+
+		prepare_param.param = event.curr.param;
+		event.curr.param = NULL;
+
+		ret = prepare_enqueue(event.curr.is_abort_cb,
+				      event.curr.abort_cb,
+				      &prepare_param,
+				      resume_cb, resume_prio);
+		LL_ASSERT(!ret);
+	} else {
+		LL_ASSERT(ret == -ECANCELED);
+	}
 }

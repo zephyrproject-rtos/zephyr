@@ -34,7 +34,8 @@ static MFIFO_DEFINE(tmp_ack, sizeof(struct lll_tx),
 
 static int _init_reset(void);
 static int _prepare_cb(struct lll_prepare_param *prepare_param);
-static int _is_abort_cb(void *next, int prio, void *curr);
+static int _is_abort_cb(void *next, int prio, void *curr,
+			lll_prepare_cb_t *resume_cb, int *resume_prio);
 static void _abort_cb(struct lll_prepare_param *prepare_param, void *param);
 static int _emulate_tx_rx(void *param);
 
@@ -143,7 +144,8 @@ static int _prepare_cb(struct lll_prepare_param *prepare_param)
 	return err;
 }
 
-static int _is_abort_cb(void *next, int prio, void *curr)
+static int _is_abort_cb(void *next, int prio, void *curr,
+			lll_prepare_cb_t *resume_cb, int *resume_prio)
 {
 	static u8_t toggle;
 

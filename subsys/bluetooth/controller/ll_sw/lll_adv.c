@@ -35,7 +35,8 @@
 
 static int init_reset(void);
 static int prepare_cb(struct lll_prepare_param *prepare_param);
-static int is_abort_cb(void *next, int prio, void *curr);
+static int is_abort_cb(void *next, int prio, void *curr,
+		       lll_prepare_cb_t *resume_cb, int *resume_prio);
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param);
 static void isr_tx(void *param);
 static void isr_rx(void *param);
@@ -210,14 +211,15 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	return err;
 }
 
-static int is_abort_cb(void *next, int prio, void *curr)
+static int is_abort_cb(void *next, int prio, void *curr,
+		       lll_prepare_cb_t *resume_cb, int *resume_prio)
 {
 	struct lll_adv *lll = curr;
 	struct pdu_adv *pdu;
 
 	/* TODO: prio check */
 	if (next != curr) {
-		return 1;
+		return -ECANCELED;
 	}
 
 	pdu = lll_adv_data_curr_get(lll);
@@ -227,7 +229,7 @@ static int is_abort_cb(void *next, int prio, void *curr)
 		return 0;
 	}
 
-	return 1;
+	return -ECANCELED;
 }
 
 static void abort_cb(struct lll_prepare_param *prepare_param, void *param)
