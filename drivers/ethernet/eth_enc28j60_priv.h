@@ -240,7 +240,6 @@ struct eth_enc28j60_runtime {
 	u8_t  rx_rsv[RSV_SIZE];
 	struct k_sem tx_rx_sem;
 	struct k_sem int_sem;
-	struct k_sem spi_sem;
 };
 
 #endif /*_ENC28J60_*/
