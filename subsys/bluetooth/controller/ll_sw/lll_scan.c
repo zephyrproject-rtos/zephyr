@@ -497,6 +497,10 @@ static void isr_cleanup(void *param)
 	struct lll_scan *lll = param;
 	int err;
 
+	if (lll_is_done(param)) {
+		return;
+	}
+
 	radio_filter_disable();
 
 	if (++lll->chan == 3) {

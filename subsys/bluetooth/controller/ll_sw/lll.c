@@ -159,7 +159,7 @@ int lll_done(void *param)
 	}
 
 	/* Let ULL know about LLL event done */
-	ull_event_done(param);
+	ull_event_done(((struct lll_hdr *)param)->parent);
 
 	/* Call the pending next prepare's bottom half */
 	if (event.next.prepare_cb) {
@@ -175,6 +175,12 @@ int lll_done(void *param)
 	}
 
 	return 0;
+}
+
+bool lll_is_done(void *param)
+{
+	/* FIXME: use param to check */
+	return !event.curr.abort_cb;
 }
 
 int lll_clk_on(void)

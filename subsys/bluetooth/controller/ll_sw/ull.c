@@ -502,7 +502,7 @@ int ull_disable(void *lll)
 	u32_t ret;
 
 	hdr = ((struct lll_hdr *)lll)->parent;
-	if (!hdr->ref) {
+	if (!hdr || !hdr->ref) {
 		return ULL_STATUS_SUCCESS;
 	}
 
@@ -744,7 +744,6 @@ static inline void _rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 static inline void _rx_demux_event_done(memq_link_t *link,
 					struct node_rx_hdr *rx)
 {
-	struct lll_hdr *lll_hdr;
 	struct ull_hdr *ull_hdr;
 
 	/* release link for next event done */
@@ -752,8 +751,7 @@ static inline void _rx_demux_event_done(memq_link_t *link,
 	event.link_done_free = link;
 
 	/* Decrement prepare reference */
-	lll_hdr = (void *)((struct node_rx_event_done *)rx)->param;
-	ull_hdr = lll_hdr->parent;
+	ull_hdr = ((struct node_rx_event_done *)rx)->param;
 	LL_ASSERT(ull_hdr->ref);
 	ull_hdr->ref--;
 
