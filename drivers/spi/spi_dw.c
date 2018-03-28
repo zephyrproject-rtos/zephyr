@@ -335,12 +335,6 @@ static int transceive(struct device *dev,
 	u32_t reg_data;
 	int ret;
 
-	/* Check status */
-	if (test_bit_ssienr(info->regs) || test_bit_sr_busy(info->regs)) {
-		SYS_LOG_ERR("Controller is busy");
-		return -EBUSY;
-	}
-
 	spi_context_lock(&spi->ctx, asynchronous, signal);
 
 	/* Configure */
@@ -461,12 +455,10 @@ static int spi_dw_transceive_async(struct device *dev,
 
 static int spi_dw_release(struct device *dev, const struct spi_config *config)
 {
-	const struct spi_dw_config *info = dev->config->config_info;
 	struct spi_dw_data *spi = dev->driver_data;
 
-	if (!spi_context_configured(&spi->ctx, config) ||
-	    test_bit_ssienr(info->regs) || test_bit_sr_busy(info->regs)) {
-		return -EBUSY;
+	if (!spi_context_configured(&spi->ctx, config)) {
+		return -EINVAL;
 	}
 
 	spi_context_unlock_unconditionally(&spi->ctx);
