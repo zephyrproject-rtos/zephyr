@@ -93,4 +93,13 @@ config NET_STATISTICS_MLD
 	help
 	  Keep track of MLD related statistics
 
+config NET_STATISTICS_ETHERNET
+	bool "Ethernet statistics"
+	depends on NET_L2_ETHERNET
+	default y
+	help
+	  Keep track of Ethernet related statistics. Note that this
+	  requires support from the ethernet driver. The driver needs
+	  to collect the statistics.
+
 endif # NET_STATISTICS

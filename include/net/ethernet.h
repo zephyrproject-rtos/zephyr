@@ -104,6 +104,14 @@ struct ethernet_api {
 	 */
 	struct net_if_api iface_api;
 
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+	/** Collect optional ethernet specific statistics. This pointer
+	 * should be set by driver if statistics needs to be collected
+	 * for that driver.
+	 */
+	struct net_stats_eth *stats;
+#endif
+
 	/** Get the device capabilities */
 	enum ethernet_hw_caps (*get_capabilities)(struct device *dev);
 
