@@ -169,15 +169,11 @@ u8_t _mcr20a_read_reg(struct mcr20a_context *dev, bool dreg, u8_t addr)
 		.count = 1
 	};
 
-	k_sem_take(&dev->spi_sem, K_FOREVER);
-
 	if (spi_transceive(dev->spi, &dev->spi_cfg, &tx, &rx) == 0) {
-		k_sem_give(&dev->spi_sem);
 		return cmd_buf[len - 1];
 	}
 
 	SYS_LOG_ERR("Failed");
-	k_sem_give(&dev->spi_sem);
 
 	return 0;
 }
@@ -200,15 +196,8 @@ bool _mcr20a_write_reg(struct mcr20a_context *dev, bool dreg, u8_t addr,
 		.buffers = &buf,
 		.count = 1
 	};
-	bool retval;
 
-	k_sem_take(&dev->spi_sem, K_FOREVER);
-
-	retval = (spi_write(dev->spi, &dev->spi_cfg, &tx) == 0);
-
-	k_sem_give(&dev->spi_sem);
-
-	return retval;
+	return (spi_write(dev->spi, &dev->spi_cfg, &tx) == 0);
 }
 
 /* Write multiple bytes to direct or indirect register */
@@ -234,15 +223,8 @@ bool _mcr20a_write_burst(struct mcr20a_context *dev, bool dreg, u16_t addr,
 		.buffers = bufs,
 		.count = 2
 	};
-	bool retval;
 
-	k_sem_take(&dev->spi_sem, K_FOREVER);
-
-	retval = (spi_write(dev->spi, &dev->spi_cfg, &tx) == 0);
-
-	k_sem_give(&dev->spi_sem);
-
-	return retval;
+	return (spi_write(dev->spi, &dev->spi_cfg, &tx) == 0);
 }
 
 /* Read multiple bytes from direct or indirect register */
@@ -272,15 +254,8 @@ bool _mcr20a_read_burst(struct mcr20a_context *dev, bool dreg, u16_t addr,
 		.buffers = bufs,
 		.count = 2
 	};
-	bool retval;
 
-	k_sem_take(&dev->spi_sem, K_FOREVER);
-
-	retval = (spi_transceive(dev->spi, &dev->spi_cfg, &tx, &rx) == 0);
-
-	k_sem_give(&dev->spi_sem);
-
-	return retval;
+	return (spi_transceive(dev->spi, &dev->spi_cfg, &tx, &rx) == 0);
 }
 
 /* Mask (msk is true) or unmask all interrupts from asserting IRQ_B */
@@ -555,16 +530,10 @@ static inline bool read_rxfifo_content(struct mcr20a_context *dev,
 		.buffers = bufs,
 		.count = 2
 	};
-	bool retval;
 
-	k_sem_take(&dev->spi_sem, K_FOREVER);
-
-	retval = (spi_transceive(dev->spi, &dev->spi_cfg, &tx, &rx) == 0);
-	if (retval) {
+	if (spi_transceive(dev->spi, &dev->spi_cfg, &tx, &rx) == 0) {
 		net_buf_add(buf, len);
 	}
-
-	k_sem_give(&dev->spi_sem);
 
 	return true;
 }
@@ -1109,20 +1078,13 @@ static inline bool write_txfifo_content(struct mcr20a_context *dev,
 		.buffers = bufs,
 		.count = 2
 	};
-	bool retval;
 
 	if (payload_len > MCR20A_PSDU_LENGTH) {
 		SYS_LOG_ERR("Payload too long");
 		return 0;
 	}
 
-	k_sem_take(&dev->spi_sem, K_FOREVER);
-
-	retval = (spi_write(dev->spi, &dev->spi_cfg, &tx) == 0);
-
-	k_sem_give(&dev->spi_sem);
-
-	return retval;
+	return (spi_write(dev->spi, &dev->spi_cfg, &tx) == 0);
 }
 
 static int mcr20a_tx(struct device *dev,
@@ -1444,8 +1406,6 @@ static inline int configure_spi(struct device *dev)
 static int mcr20a_init(struct device *dev)
 {
 	struct mcr20a_context *mcr20a = dev->driver_data;
-
-	k_sem_init(&mcr20a->spi_sem, 1, 1);
 
 	k_mutex_init(&mcr20a->phy_mutex);
 	k_sem_init(&mcr20a->isr_sem, 0, 1);
