@@ -55,7 +55,18 @@
 #define SPI_MAX_MSG_LEN         255
 
 static u8_t rxmsg[SPI_MAX_MSG_LEN];
+static struct spi_buf rx;
+const static struct spi_buf_set rx_bufs = {
+	.buffers = &rx,
+	.count = 1,
+};
+
 static u8_t txmsg[SPI_MAX_MSG_LEN];
+static struct spi_buf tx;
+const static struct spi_buf_set tx_bufs = {
+	.buffers = &tx,
+	.count = 1,
+};
 
 /* HCI buffer pools */
 #define CMD_BUF_SIZE BT_BUF_RX_SIZE
@@ -83,6 +94,9 @@ NET_BUF_POOL_DEFINE(acl_tx_pool, TX_BUF_COUNT, BT_BUF_ACL_SIZE,
 		    BT_BUF_USER_DATA_MIN, NULL);
 
 static struct device *spi_hci_dev;
+static struct spi_config spi_cfg = {
+	.operation = SPI_WORD_SET(8),
+};
 static struct device *gpio_dev;
 static BT_STACK_NOINIT(bt_tx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
 static struct k_thread bt_tx_thread_data;
@@ -92,10 +106,11 @@ static K_SEM_DEFINE(sem_spi_tx, 0, 1);
 
 static inline int spi_send(struct net_buf *buf)
 {
-	u8_t header_master[5] = { 0 };
-	u8_t header_slave[5] = { READY_NOW, SANITY_CHECK,
-				 0x00, 0x00, 0x00 };
 	int ret;
+
+	txmsg[0] = READY_NOW;
+	txmsg[1] = SANITY_CHECK;
+	txmsg[2] = 0x00;
 
 	SYS_LOG_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf),
 		    buf->len);
@@ -118,22 +133,30 @@ static inline int spi_send(struct net_buf *buf)
 		net_buf_unref(buf);
 		return -EINVAL;
 	}
-	header_slave[STATUS_HEADER_TOREAD] = buf->len;
+
+	txmsg[STATUS_HEADER_TOREAD] = buf->len;
+	txmsg[4] = 0x00;
+
+	tx.buf = txmsg;
+	tx.len = 5;
+	rx.buf = rxmsg;
+	rx.len = 5;
 
 	gpio_pin_write(gpio_dev, GPIO_IRQ_PIN, 1);
 
 	/* Coordinate transfer lock with the spi rx thread */
 	k_sem_take(&sem_spi_tx, K_FOREVER);
 	do {
-		ret = spi_transceive(spi_hci_dev, header_slave, 5,
-				     header_master, 5);
+		ret = spi_transceive(spi_hci_dev, &spi_cfg, &tx_bufs, &rx_bufs);
 		if (ret < 0) {
 			SYS_LOG_ERR("SPI transceive error: %d", ret);
 		}
-	} while (header_master[STATUS_HEADER_READY] != SPI_READ);
+	} while (rxmsg[STATUS_HEADER_READY] != SPI_READ);
 
-	ret = spi_transceive(spi_hci_dev, buf->data, buf->len,
-			     &rxmsg, buf->len);
+	tx.buf = buf->data;
+	tx.len = buf->len;
+
+	ret = spi_write(spi_hci_dev, &spi_cfg, &tx_bufs);
 	if (ret < 0) {
 		SYS_LOG_ERR("SPI transceive error: %d", ret);
 	}
@@ -159,12 +182,17 @@ static void bt_tx_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
-	memset(&txmsg, 0xFF, SPI_MAX_MSG_LEN);
+	memset(txmsg, 0xFF, SPI_MAX_MSG_LEN);
 
 	while (1) {
+		tx.buf = header_slave;
+		tx.len = 5;
+		rx.buf = header_master;
+		rx.len = 5;
+
 		do {
-			ret = spi_transceive(spi_hci_dev, header_slave, 5,
-					     header_master, 5);
+			ret = spi_transceive(spi_hci_dev, &spi_cfg,
+					     &tx_bufs, &rx_bufs);
 			if (ret < 0) {
 				SYS_LOG_ERR("SPI transceive error: %d", ret);
 			}
@@ -178,9 +206,14 @@ static void bt_tx_thread(void *p1, void *p2, void *p3)
 			continue;
 		}
 
+		tx.buf = txmsg;
+		tx.len = SPI_MAX_MSG_LEN;
+		rx.buf = rxmsg;
+		rx.len = SPI_MAX_MSG_LEN;
+
 		/* Receiving data from the SPI Host */
-		ret = spi_transceive(spi_hci_dev, &txmsg, SPI_MAX_MSG_LEN,
-				     &rxmsg, SPI_MAX_MSG_LEN);
+		ret = spi_transceive(spi_hci_dev, &spi_cfg,
+				     &tx_bufs, &rx_bufs);
 		if (ret < 0) {
 			SYS_LOG_ERR("SPI transceive error: %d", ret);
 			continue;
@@ -240,20 +273,12 @@ static void bt_tx_thread(void *p1, void *p2, void *p3)
 
 static int hci_spi_init(struct device *unused)
 {
-	static struct spi_config btspi_config = {
-		.config = SPI_WORD(8),
-	};
-
 	ARG_UNUSED(unused);
 
 	SYS_LOG_DBG("");
 
 	spi_hci_dev = device_get_binding(SPI_HCI_DEV_NAME);
 	if (!spi_hci_dev) {
-		return -EINVAL;
-	}
-
-	if (spi_configure(spi_hci_dev, &btspi_config) < 0) {
 		return -EINVAL;
 	}
 
