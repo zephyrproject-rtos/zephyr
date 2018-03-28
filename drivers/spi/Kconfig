@@ -288,14 +288,6 @@ config SPI_5_OP_MODES
 	  2 is SLAVE mode only
 	  3 is both modes are available.
 
-if SPI_LEGACY_API
-
-source "drivers/spi/Kconfig.nrf5_legacy"
-
-endif # SPI_LEGACY_API
-
-if !SPI_LEGACY_API
-
 config SPI_INTEL
 	bool "Intel SPI controller driver"
 	depends on CPU_MINUTEIA
@@ -314,7 +306,5 @@ source "drivers/spi/Kconfig.mcux_dspi"
 source "drivers/spi/Kconfig.sam0"
 
 source "drivers/spi/Kconfig.nrfx"
-
-endif # !SPI_LEGACY_API
 
 endif # SPI
