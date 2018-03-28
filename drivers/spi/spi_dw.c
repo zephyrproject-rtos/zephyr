@@ -50,7 +50,7 @@ static inline bool spi_dw_is_slave(struct spi_dw_data *spi)
 		spi_context_is_slave(&spi->ctx));
 }
 
-static void completed(struct device *dev, u8_t error)
+static void completed(struct device *dev, int error)
 {
 	const struct spi_dw_config *info = dev->config->config_info;
 	struct spi_dw_data *spi = dev->driver_data;
@@ -79,7 +79,7 @@ out:
 	SYS_LOG_DBG("SPI transaction completed %s error",
 		    error ? "with" : "without");
 
-	spi_context_complete(&spi->ctx, error ? -EIO : 0);
+	spi_context_complete(&spi->ctx, error);
 }
 
 static void push_data(struct device *dev)
@@ -478,7 +478,7 @@ void spi_dw_isr(struct device *dev)
 {
 	const struct spi_dw_config *info = dev->config->config_info;
 	u32_t int_status;
-	u8_t error;
+	int error;
 
 	int_status = read_isr(info->regs);
 
@@ -486,7 +486,7 @@ void spi_dw_isr(struct device *dev)
 		    int_status, read_txflr(info->regs), read_rxflr(info->regs));
 
 	if (int_status & DW_SPI_ISR_ERRORS_MASK) {
-		error = 1;
+		error = -EIO;
 		goto out;
 	}
 
