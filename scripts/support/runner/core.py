@@ -182,6 +182,10 @@ class RunnerCaps:
         self.commands = commands
         self.flash_addr = bool(flash_addr)
 
+    def __str__(self):
+        return 'RunnerCaps(commands={}, flash_addr={})'.format(
+            self.commands, self.flash_addr)
+
 
 _YN_CHOICES = ['Y', 'y', 'N', 'n', 'yes', 'no', 'YES', 'NO']
 
