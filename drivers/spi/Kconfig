@@ -17,13 +17,6 @@ menuconfig SPI
 
 if SPI
 
-config SPI_LEGACY_API
-	bool "Use legacy SPI API (soon to be deprecated)"
-	default n
-	help
-	  Driver and user API implements/use the legacy SPI API.
-	  If unselected, the new API will be used (default).
-
 config SPI_ASYNC
 	bool "Enable Asynchronous call support"
 	default n
@@ -64,11 +57,6 @@ config SYS_LOG_SPI_LEVEL
 
 	    - 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
 
-config SPI_CS_GPIO
-	bool "SPI port CS pin is controlled via a GPIO port"
-	depends on GPIO && SPI_LEGACY_API
-	default n
-
 config	SPI_0
 	bool "SPI port 0"
 	default n
@@ -95,14 +83,6 @@ config SPI_0_OP_MODES
 
 config SPI_0_IRQ_PRI
 	int "Port 0 interrupt priority"
-
-config SPI_0_DEFAULT_CFG
-	hex "Port 0 default configuration"
-	default 0x80
-
-config SPI_0_DEFAULT_BAUD_RATE
-	int "Port 0 default baud rate"
-	default 500000
 
 config SPI_0_CS_GPIO_PORT
 	string "The GPIO port which is used to control CS"
@@ -144,14 +124,6 @@ config SPI_1_IRQ_PRI
 	int "Port 0 interrupt priority"
 	depends on !HAS_DTS_SPI
 
-config SPI_1_DEFAULT_CFG
-	hex "Port 1 default configuration"
-	default 0x80
-
-config SPI_1_DEFAULT_BAUD_RATE
-	int "Port 1 default baud rate"
-	default 500000
-
 config SPI_1_CS_GPIO_PORT
 	string "The GPIO port which is used to control CS"
 	depends on SPI_CS_GPIO
@@ -191,14 +163,6 @@ config SPI_2_OP_MODES
 config SPI_2_IRQ_PRI
 	int "Port 2 interrupt priority"
 	depends on !HAS_DTS_SPI
-
-config SPI_2_DEFAULT_CFG
-	hex "Port 2 default configuration"
-	default 0x80
-
-config SPI_2_DEFAULT_BAUD_RATE
-	int "Port 2 default baud rate"
-	default 500000
 
 config SPI_2_CS_GPIO_PORT
 	string "The GPIO port which is used to control CS"

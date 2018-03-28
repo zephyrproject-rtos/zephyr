@@ -7,7 +7,6 @@
 #include <spi.h>
 #include <syscall_handler.h>
 
-#ifndef CONFIG_SPI_LEGACY_API
 static void verify_spi_buf_array(const struct spi_buf *bufs, size_t len,
 				 int writable, void *ssf)
 {
@@ -75,4 +74,3 @@ _SYSCALL_HANDLER(spi_release, dev, config_p)
 	_SYSCALL_OBJ(dev, K_OBJ_DRIVER_SPI);
 	return _impl_spi_release((struct device *)dev, config);
 }
-#endif

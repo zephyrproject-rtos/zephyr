@@ -9,16 +9,6 @@
  * @brief Public API for SPI drivers and applications
  */
 
-#if defined(CONFIG_SPI_LEGACY_API)
-
-/*
- * This is the default, and will be the way until the new API below
- * will be enforced everywhere.
- */
-#include <spi_legacy.h>
-
-#else
-
 #ifndef __SPI_H__
 #define __SPI_H__
 
@@ -427,4 +417,3 @@ static inline int _impl_spi_release(struct device *dev,
 #include <syscalls/spi.h>
 
 #endif /* __SPI_H__ */
-#endif /* CONFIG_SPI_LEGACY_API */
