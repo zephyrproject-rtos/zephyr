@@ -72,7 +72,6 @@ config CRYPTO_MBEDTLS_SHIM
 	bool "Enable mbedTLS shim driver [EXPERIMENTAL] "
 	default n
 	select MBEDTLS
-	select MBEDTLS_BUILTIN
 	select MBEDTLS_ENABLE_HEAP
 	help
 	  Enable mbedTLS shim layer compliant with crypto APIs. You will need

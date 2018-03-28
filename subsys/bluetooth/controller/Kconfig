@@ -26,7 +26,6 @@ config BT_LL_SW
 	select ENTROPY_GENERATOR
 	select ENTROPY_NRF5_RNG if SOC_FAMILY_NRF
 	select ENTROPY_NRF5_BIAS_CORRECTION if SOC_FAMILY_NRF
-	select ENTROPY_DEVICE_RANDOM_GENERATOR
 	help
 	  Use Zephyr software BLE Link Layer implementation.
 
