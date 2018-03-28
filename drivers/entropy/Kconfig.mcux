@@ -9,7 +9,6 @@ menuconfig ENTROPY_MCUX_RNGA
 	depends on ENTROPY_GENERATOR && HAS_MCUX_RNGA
 	default n
 	select ENTROPY_HAS_DRIVER
-	select ENTROPY_DEVICE_RANDOM_GENERATOR
 	help
 	  This option enables the random number generator accelerator (RNGA)
 	  driver based on the MCUX RNGA driver.
@@ -19,7 +18,6 @@ menuconfig ENTROPY_MCUX_TRNG
 	depends on ENTROPY_GENERATOR && HAS_MCUX_TRNG
 	default n
 	select ENTROPY_HAS_DRIVER
-	select ENTROPY_DEVICE_RANDOM_GENERATOR
 	help
 	  This option enables the true random number generator (TRNG)
 	  driver based on the MCUX TRNG driver.

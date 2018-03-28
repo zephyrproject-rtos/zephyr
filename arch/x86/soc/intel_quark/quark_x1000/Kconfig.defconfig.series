@@ -119,7 +119,6 @@ if GPIO_DW
 
 config GPIO_DW_0
 	def_bool y
-	select GPIO_DW_0_IRQ_SHARED if SHARED_IRQ
 
 if GPIO_DW_0
 

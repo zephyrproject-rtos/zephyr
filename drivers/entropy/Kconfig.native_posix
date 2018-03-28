@@ -4,7 +4,6 @@ menuconfig ENTROPY_NATIVE_POSIX
 	depends on ENTROPY_GENERATOR && ARCH_POSIX
 	default n
 	select ENTROPY_HAS_DRIVER
-	select ENTROPY_DEVICE_RANDOM_GENERATOR
 	help
 	  This option enables the random number generator for the
 	  native_posix board (ARCH_POSIX). This is based on the host random() API.
