@@ -9,6 +9,7 @@
 #include <st/mem.h>
 #include <dt-bindings/clock/stm32_clock.h>
 #include <dt-bindings/i2c/i2c.h>
+#include <dt-bindings/gpio/gpio.h>
 
 / {
 	cpus {
@@ -59,7 +60,52 @@
 			compatible = "st,stm32-pinmux";
 			#address-cells = <1>;
 			#size-cells = <1>;
-			reg = <0x48000000 0x1800>;
+			reg = <0x50000000 0x2000>;
+
+			gpioa: gpio@50000000 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x50000000 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_IOP 0x00000001>;
+				label = "GPIOA";
+			};
+
+			gpiob: gpio@50000400 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x50000400 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_IOP 0x00000002>;
+				label = "GPIOB";
+			};
+
+			gpioc: gpio@50000800 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x50000800 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_IOP 0x00000004>;
+				label = "GPIOC";
+			};
+
+			gpiod: gpio@50000c00 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x50000c00 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_IOP 0x00000008>;
+				label = "GPIOD";
+			};
+
+			gpioh: gpio@50001c00 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x50001c00 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_IOP 0x00000080>;
+				label = "GPIOH";
+			};
 		};
 
 		usart1: serial@40013800 {
