@@ -73,7 +73,9 @@ content: scripts/extract_content.py
 	$(Q)$<
 
 kconfig: scripts/genrest/genrest.py
-	$(Q)srctree=../ ENV_VAR_BOARD_DIR=boards/*/*/ ENV_VAR_ARCH=* KERNELVERSION=1.9.99 SRCARCH=x86 python3 $< ../Kconfig reference/kconfig/
+	$(Q)PYTHONPATH="${ZEPHYR_BASE}/scripts/kconfig:${PYTHONPATH}" \
+	    srctree=../ ENV_VAR_BOARD_DIR=boards/*/*/ ENV_VAR_ARCH=* KERNELVERSION=1.9.99 SRCARCH=x86 \
+	    python3 $< ../Kconfig reference/kconfig/
 
 
 prep: doxy content kconfig
