@@ -1,3 +1,5 @@
+add_definitions(-D__ZEPHYR_SUPERVISOR__)
+
 add_subdirectory(console)
 add_subdirectory(display)
 add_subdirectory(interrupt_controller)
