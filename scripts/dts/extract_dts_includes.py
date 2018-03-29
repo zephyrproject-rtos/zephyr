@@ -18,7 +18,6 @@ import collections
 from devicetree import parse_file
 from extract.globals import *
 
-
 class Loader(yaml.Loader):
     def __init__(self, stream):
         self._root = os.path.realpath(stream.name)
@@ -127,6 +126,12 @@ def extract_interrupts(node_address, yaml, y_key, names, defs, def_label):
                 alias_list = l_base + l_cell_prefix + name + l_cell_name
                 prop_alias['_'.join(alias_list)] = l_fqn
 
+            if node_address in aliases:
+                for i in aliases[node_address]:
+                    alias_label = convert_string_to_label(i)
+                    alias_list = [alias_label] + l_cell_prefix + name + l_cell_name
+                    prop_alias['_'.join(alias_list)] = l_fqn
+
         index += 1
         insert_defs(node_address, defs, prop_def, prop_alias)
 
@@ -189,6 +194,15 @@ def extract_reg_prop(node_address, names, defs, def_label, div, post_label):
             if size_cells:
                 prop_alias['_'.join(l_base + l_size)] = l_size_fqn
 
+        # generate defs for node aliases
+        if node_address in aliases:
+            for i in aliases[node_address]:
+                alias_label = convert_string_to_label(i)
+                alias_addr = [alias_label] + l_addr
+                alias_size = [alias_label] + l_size
+                prop_alias['_'.join(alias_addr)] = '_'.join(l_base + l_addr)
+                prop_alias['_'.join(alias_size)] = '_'.join(l_base + l_size)
+
         insert_defs(node_address, defs, prop_def, prop_alias)
 
         # increment index for definition creation
@@ -238,6 +252,13 @@ def extract_cells(node_address, yaml, y_key, names, index, prefix, defs,
 
                 if index == 0:
                     prop_alias['_'.join(label[:-1])] = '_'.join(label)
+
+                # generate defs for node aliases
+                if node_address in aliases:
+                    for i in aliases[node_address]:
+                        alias_label = convert_string_to_label(i)
+                        alias = [alias_label] + label[1:-1]
+                        prop_alias['_'.join(alias)] = '_'.join(label[:-1])
 
         insert_defs(node_address, defs, prop_def, prop_alias)
 
@@ -294,6 +315,7 @@ def extract_pinctrl(node_address, yaml, pinconf, names, index, defs,
 def extract_single(node_address, yaml, prop, key, prefix, defs, def_label):
 
     prop_def = {}
+    prop_alias = {}
 
     if isinstance(prop, list):
         for i, p in enumerate(prop):
@@ -313,11 +335,14 @@ def extract_single(node_address, yaml, prop, key, prefix, defs, def_label):
             prop = "\"" + prop + "\""
         prop_def[label] = prop
 
-    if node_address in defs:
-        defs[node_address].update(prop_def)
-    else:
-        defs[node_address] = prop_def
+        # generate defs for node aliases
+        if node_address in aliases:
+            for i in aliases[node_address]:
+                alias_label = convert_string_to_label(i)
+                alias = alias_label + '_' + k
+                prop_alias[alias] = label
 
+    insert_defs(node_address, defs, prop_def, prop_alias)
 
 def extract_string_prop(node_address, yaml, key, label, defs):
 
@@ -368,6 +393,12 @@ def extract_property(node_compat, yaml, node_address, y_key, y_val, names,
                         " bus master but " + str(parent_address) +
                         " configured as " + str(parent_bus) +
                         " bus master")
+
+            # Generate alias definition if parent has any alias
+            if parent_address in aliases:
+                for i in aliases[parent_address]:
+                    node_alias = i + '_' + def_label
+                    aliases[node_address].append(node_alias)
 
             # Use parent label to generate label
             parent_label = get_node_label(
