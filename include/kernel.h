@@ -1430,7 +1430,6 @@ static inline void *_impl_k_timer_user_data_get(struct k_timer *timer)
  */
 __syscall s64_t k_uptime_get(void);
 
-#ifdef CONFIG_TICKLESS_KERNEL
 /**
  * @brief Enable clock always on in tickless kernel
  *
@@ -1441,6 +1440,7 @@ __syscall s64_t k_uptime_get(void);
  *
  * @retval prev_status Previous status of always on flag
  */
+#ifdef CONFIG_TICKLESS_KERNEL
 static inline int k_enable_sys_clock_always_on(void)
 {
 	int prev_status = _sys_clock_always_on;
@@ -1450,6 +1450,9 @@ static inline int k_enable_sys_clock_always_on(void)
 
 	return prev_status;
 }
+#else
+#define k_enable_sys_clock_always_on() do { } while ((0))
+#endif
 
 /**
  * @brief Disable clock always on in tickless kernel
@@ -1459,12 +1462,12 @@ static inline int k_enable_sys_clock_always_on(void)
  * scheduling. To save power, this routine should be called
  * immediately when clock is not used to track time.
  */
+#ifdef CONFIG_TICKLESS_KERNEL
 static inline void k_disable_sys_clock_always_on(void)
 {
 	_sys_clock_always_on = 0;
 }
 #else
-#define k_enable_sys_clock_always_on() do { } while ((0))
 #define k_disable_sys_clock_always_on() do { } while ((0))
 #endif
 
