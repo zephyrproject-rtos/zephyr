@@ -27,6 +27,7 @@ extern "C" {
 #include <arm_cmse.h>
 #include <stdint.h>
 
+
 /*
  * Address information retrieval based on the TT instructions.
  *
@@ -213,6 +214,116 @@ int arm_cmse_addr_range_readwrite_ok(u32_t addr, u32_t size, int force_npriv);
  */
 #define ARM_CMSE_OBJECT_UNPRIV_READWRITE_OK(p_obj) \
 	cmse_check_pointed_object(p_obj, CMSE_MPU_UNPRIV | CMSE_MPU_READWRITE)
+
+#if defined(CONFIG_ARM_SECURE_FIRMWARE)
+
+/**
+ * @brief Get the MPU (Non-Secure) region number of an address
+ *
+ * Return the non-negative MPU (Non-Secure) region that the address maps to,
+ * or -EINVAL to indicate that an invalid MPU region was retrieved.
+ *
+ * Note:
+ * Obtained region is valid only if:
+ * - the function is called from Secure state
+ * - the MPU is implemented and enabled
+ * - the given address matches a single, enabled MPU region
+ *
+ * @param addr The address for which the MPU region is requested
+ *
+ * @return a valid MPU region number or -EINVAL
+  */
+int arm_cmse_mpu_nonsecure_region_get(u32_t addr);
+
+/**
+ * @brief Get the SAU region number of an address
+ *
+ * Return the non-negative SAU (Non-Secure) region that the address maps to,
+ * or -EINVAL to indicate that an invalid SAU region was retrieved.
+ *
+ * Note:
+ * Obtained region is valid only if:
+ * - the function is called from Secure state
+ * - the SAU is implemented and enabled
+ * - the given address is not exempt from the secure memory attribution
+ *
+ * @param addr The address for which the SAU region is requested
+ *
+ * @return a valid SAU region number or -EINVAL
+  */
+int arm_cmse_sau_region_get(u32_t addr);
+
+/**
+ * @brief Get the IDAU region number of an address
+ *
+ * Return the non-negative IDAU (Non-Secure) region that the address maps to,
+ * or -EINVAL to indicate that an invalid IDAU region was retrieved.
+ *
+ * Note:
+ * Obtained region is valid only if:
+ * - the function is called from Secure state
+ * - the IDAU can provide a region number
+ * - the given address is not exempt from the secure memory attribution
+ *
+ * @param addr The address for which the IDAU region is requested
+ *
+ * @return a valid IDAU region number or -EINVAL
+  */
+int arm_cmse_idau_region_get(u32_t addr);
+
+/**
+ * @brief Security attribution of an address
+ *
+ * Evaluates whether a specified memory location belongs to a Secure region.
+ * This function shall always return zero if executed from Non-Secure state.
+ *
+ * @param addr The address for which the security attribution is requested
+ *
+ * @return 1 if address is Secure, 0 otherwise.
+ */
+int arm_cmse_addr_is_secure(u32_t addr);
+
+/**
+ * @brief Non-Secure Read accessibility of an address
+ *
+ * Evaluates whether a specified memory location can be read from Non-Secure
+ * state according to the permissions of the Non-Secure state MPU and the
+ * specified operation mode.
+ *
+ * This function shall always return zero:
+ * - if executed from Non-Secure state
+ * - if the address matches multiple MPU regions.
+ *
+ * @param addr The address for which the readability is requested
+ * @param force_npriv Instruct to return the readability of the address
+ *                    for unprivileged access, regardless of whether the current
+ *                    mode is privileged or unprivileged.
+ *
+ * @return 1 if address is readable from Non-Secure state, 0 otherwise.
+ */
+int arm_cmse_addr_nonsecure_read_ok(u32_t addr, int force_npriv);
+
+/**
+ * @brief Non-Secure Read and Write accessibility of an address
+ *
+ * Evaluates whether a specified memory location can be read/written from
+ * Non-Secure state according to the permissions of the Non-Secure state MPU
+ * and the specified operation mode.
+ *
+ * This function shall always return zero:
+ * - if executed from Non-Secure  mode,
+ * - if the address matches multiple MPU regions.
+ *
+ * @param addr The address for which the RW ability is requested
+ * @param force_npriv Instruct to return the RW ability of the address
+ *                    for unprivileged access, regardless of whether the current
+ *                    mode is privileged or unprivileged.
+ *
+ * @return 1 if address is Read and Writable from Non-Secure state, 0 otherwise
+ */
+int arm_cmse_addr_nonsecure_read_write_ok(u32_t addr, int force_npriv);
+
+#endif /* CONFIG_ARM_SECURE_FIRMWARE */
 
 #endif /* _ASMLANGUAGE */
 
