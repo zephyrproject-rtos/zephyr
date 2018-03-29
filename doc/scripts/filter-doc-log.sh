@@ -28,7 +28,7 @@ else
     green='\e[32m'
 fi
 
-if [ -s "${LOG_FILE}" ]; then
+if [ -e "${LOG_FILE}" ]; then
    $KI_SCRIPT --config-dir ${CONFIG_DIR} ${LOG_FILE} > doc.warnings 2>&1
    if [ -s doc.warnings ]; then
 	   echo
