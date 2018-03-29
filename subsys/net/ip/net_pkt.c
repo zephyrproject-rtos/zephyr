@@ -1957,6 +1957,11 @@ struct net_tcp_hdr *net_pkt_tcp_data(struct net_pkt *pkt)
 		return NULL;
 	}
 
+	if (!frag->data) {
+		NET_ERR("NULL fragment data!");
+		return NULL;
+	}
+
 	return (struct net_tcp_hdr *)(frag->data + offset);
 }
 
