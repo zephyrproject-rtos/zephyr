@@ -70,3 +70,70 @@ int arm_cmse_addr_range_readwrite_ok(u32_t addr, u32_t size, int force_npriv)
 	return arm_cmse_addr_range_read_write_ok(addr, size, force_npriv, 1);
 }
 
+#if defined(CONFIG_ARM_SECURE_FIRMWARE)
+
+int arm_cmse_mpu_nonsecure_region_get(u32_t addr)
+{
+	cmse_address_info_t addr_info =	cmse_TTA((void *)addr);
+
+	if (addr_info.flags.mpu_region_valid) {
+		return  addr_info.flags.mpu_region;
+	}
+
+	return -EINVAL;
+}
+
+int arm_cmse_sau_region_get(u32_t addr)
+{
+	cmse_address_info_t addr_info =	cmse_TT((void *)addr);
+
+	if (addr_info.flags.sau_region_valid) {
+		return addr_info.flags.sau_region;
+	}
+
+	return -EINVAL;
+}
+
+int arm_cmse_idau_region_get(u32_t addr)
+{
+	cmse_address_info_t addr_info =	cmse_TT((void *)addr);
+
+	if (addr_info.flags.idau_region_valid) {
+		return addr_info.flags.idau_region;
+	}
+
+	return -EINVAL;
+}
+
+int arm_cmse_addr_is_secure(u32_t addr)
+{
+	cmse_address_info_t addr_info =	cmse_TT((void *)addr);
+
+	return addr_info.flags.secure;
+}
+
+static int arm_cmse_addr_nonsecure_read_write_ok(u32_t addr,
+	int force_npriv, int rw)
+{
+	cmse_address_info_t addr_info;
+	if (force_npriv) {
+		addr_info = cmse_TTAT((void *)addr);
+	} else {
+		addr_info = cmse_TTA((void *)addr);
+	}
+
+	return rw ? addr_info.flags.nonsecure_readwrite_ok :
+		addr_info.flags.nonsecure_read_ok;
+}
+
+int arm_cmse_addr_nonsecure_read_ok(u32_t addr, int force_npriv)
+{
+	return arm_cmse_addr_nonsecure_read_write_ok(addr, force_npriv, 0);
+}
+
+int arm_cmse_addr_nonsecure_read_write_ok(u32_t addr, int force_npriv)
+{
+	return arm_cmse_addr_nonsecure_read_write_ok(addr, force_npriv, 1);
+}
+
+#endif /* CONFIG_ARM_SECURE_FIRMWARE */
