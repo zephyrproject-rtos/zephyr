@@ -1914,7 +1914,7 @@ struct k_fifo {
  * @brief Peek element at the head of a FIFO queue.
  *
  * Return element from the head of FIFO queue without removing it. A usecase
- * for this is if elements of the FIF object are themselves containers. Then
+ * for this is if elements of the FIFO object are themselves containers. Then
  * on each iteration of processing, a head container will be peeked,
  * and some data processed out of it, and only if the container is empty,
  * it will be completely remove from the FIFO queue.
