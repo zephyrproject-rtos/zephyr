@@ -67,6 +67,10 @@ def get_aliases(root):
             for k, v in root['children']['aliases']['props'].items():
                 aliases[v].append(k)
 
+    # Treat alternate names as aliases
+    for k in reduced.keys():
+        if reduced[k].get('alt_name', None) is not None:
+            aliases[k].append(reduced[k]['alt_name'])
 
 def get_compat(node_address):
     compat = None
