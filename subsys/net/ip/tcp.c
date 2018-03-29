@@ -1211,6 +1211,11 @@ struct net_tcp_hdr *net_tcp_get_hdr(struct net_pkt *pkt,
 	u16_t pos;
 
 	tcp_hdr = net_pkt_tcp_data(pkt);
+	if (!tcp_hdr) {
+		NET_ERR("NULL TCP header!");
+		return NULL;
+	}
+
 	if (net_tcp_header_fits(pkt, tcp_hdr)) {
 		return tcp_hdr;
 	}
