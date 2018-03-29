@@ -69,7 +69,7 @@
 #define BT_TMP_TICKER_NODES 0
 #endif
 
-#if defined(CONFIG_SOC_FLASH_NRF5_RADIO_SYNC)
+#if defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC)
 #define FLASH_TICKER_NODES        1 /* No. of tickers reserved for flashing */
 #define FLASH_TICKER_USER_APP_OPS 1 /* No. of additional ticker operations */
 #else
@@ -490,6 +490,29 @@ void ll_rx_put(memq_link_t *link, void *rx)
 void ll_rx_sched(void)
 {
 	k_sem_give(sem_recv);
+}
+
+void ll_timeslice_ticker_id_get(u8_t * const instance_index,
+				u8_t * const user_id)
+{
+	*instance_index = TICKER_INSTANCE_ID_CTLR;
+	*user_id = (TICKER_NODES - FLASH_TICKER_NODES);
+}
+
+void ll_radio_state_abort(void)
+{
+	static memq_link_t _link;
+	static struct mayfly _mfy = {0, 0, &_link, NULL, lll_disable};
+	u32_t ret;
+
+	ret = mayfly_enqueue(TICKER_USER_ID_THREAD, TICKER_USER_ID_LLL, 0,
+			     &_mfy);
+	LL_ASSERT(!ret);
+}
+
+u32_t ll_radio_state_is_idle(void)
+{
+	return radio_is_idle();
 }
 
 void ull_ticker_status_give(u32_t status, void *param)
