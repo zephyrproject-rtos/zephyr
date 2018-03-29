@@ -153,6 +153,11 @@ used, the following command should be run as root:
 
 Additionally, IPv4 forwarding should be enabled on host, and you may need to
 check that other firewall (iptables) rules don't interfere with masquerading.
+To enable IPv4 forwarding the following command should be run as root:
+
+.. code-block:: console
+
+   sysctl -w net.ipv4.ip_forward=1
 
 Network connection between two QEMU VMs
 ***************************************
