@@ -5,9 +5,11 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+from collections import defaultdict
+
 # globals
 phandles = {}
-aliases = {}
+aliases = defaultdict(list)
 chosen = {}
 reduced = {}
 
@@ -62,7 +64,7 @@ def get_aliases(root):
     if 'children' in root:
         if 'aliases' in root['children']:
             for k, v in root['children']['aliases']['props'].items():
-                aliases[v] = k
+                aliases[v].append(k)
 
 
 def get_compat(node):
