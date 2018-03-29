@@ -438,7 +438,8 @@ class ZephyrBinaryRunner(abc.ABC):
         try:
             subprocess.check_call(cmd)
         except subprocess.CalledProcessError:
-            print('Error running {}'.format(quote_sh_list(cmd)))
+            if self.debug:
+                print('Error running {}'.format(quote_sh_list(cmd)))
             raise
 
     def check_output(self, cmd):
@@ -457,7 +458,8 @@ class ZephyrBinaryRunner(abc.ABC):
         try:
             return subprocess.check_output(cmd)
         except subprocess.CalledProcessError:
-            print('Error running {}'.format(quote_sh_list(cmd)))
+            if self.debug:
+                print('Error running {}'.format(quote_sh_list(cmd)))
             raise
 
     def popen_ignore_int(self, cmd):
