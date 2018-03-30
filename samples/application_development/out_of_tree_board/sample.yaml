@@ -1,4 +1,7 @@
 sample:
   description: Sample that uses an out-of-tree board
   name: Out-of-tree board
-  platform_whitelist: nrf52840_pca10056
+tests:
+  boards.out_of_tree:
+    tags: out_of_tree
+    platform_whitelist: nrf52840_pca10056
