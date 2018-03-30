@@ -1,0 +1,4 @@
+tests:
+  test:
+    min_ram: 21
+    tags: net
