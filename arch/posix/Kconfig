@@ -23,8 +23,6 @@ config ARCH_DEFCONFIG
 	string
 	default "arch/posix/defconfig"
 
-source "arch/posix/core/Kconfig"
-
 config ARCH_POSIX_RECOMMENDED_STACK_SIZE
 	int
 	depends on ARCH_POSIX
