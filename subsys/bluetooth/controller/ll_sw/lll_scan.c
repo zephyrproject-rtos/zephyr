@@ -517,6 +517,7 @@ static void isr_abort(void *param)
 static void isr_cleanup(void *param)
 {
 	struct lll_scan *lll = param;
+	struct node_rx_hdr *node_rx;
 	int err;
 
 	if (lll_is_done(param)) {
@@ -535,6 +536,21 @@ static void isr_cleanup(void *param)
 		mayfly_mesh_stop(NULL);
 	}
 #endif /* CONFIG_BT_HCI_MESH_EXT */
+
+#if defined(CONFIG_BT_CTLR_SCAN_INDICATION)
+	node_rx = ull_pdu_rx_alloc_peek(3);
+	if (node_rx) {
+		ull_pdu_rx_alloc();
+
+		/* TODO: add other info by defining a payload struct */
+		node_rx->type = NODE_RX_TYPE_SCAN_INDICATION;
+
+		ull_rx_put(node_rx->link, node_rx);
+		ull_rx_sched();
+	}
+#else /* !CONFIG_BT_CTLR_SCAN_INDICATION */
+	ARG_UNUSED(node_rx);
+#endif /* !CONFIG_BT_CTLR_SCAN_INDICATION */
 
 	radio_isr_set(isr_race, param);
 	radio_tmr_stop();

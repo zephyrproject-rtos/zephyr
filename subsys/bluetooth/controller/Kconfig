@@ -502,6 +502,11 @@ config BT_CTLR_SCAN_REQ_RSSI
 	help
 	  Measure RSSI of the on air scan requests received.
 
+config BT_CTLR_SCAN_INDICATION
+	bool "Scanner indications"
+	help
+	  Generate events indicating on air scanner events.
+
 endmenu
 
 comment "BLE Controller hardware configuration"

@@ -3002,6 +3002,12 @@ static void encode_control(struct node_rx_pdu *node_rx,
 		return;
 #endif /* CONFIG_BT_CTLR_ADV_INDICATION */
 
+#if defined(CONFIG_BT_CTLR_SCAN_INDICATION)
+	case NODE_RX_TYPE_SCAN_INDICATION:
+		BT_INFO("Scanned.");
+		return;
+#endif /* CONFIG_BT_CTLR_SCAN_INDICATION */
+
 #if defined(CONFIG_BT_CTLR_PROFILE_ISR)
 	case NODE_RX_TYPE_PROFILE:
 		BT_INFO("l: %d, %d, %d; t: %d, %d, %d.",
@@ -3325,6 +3331,9 @@ s8_t hci_get_class(struct node_rx_pdu *node_rx)
 #endif /* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY */
 #if defined(CONFIG_BT_CTLR_ADV_INDICATION)
 		case NODE_RX_TYPE_ADV_INDICATION:
+#endif
+#if defined(CONFIG_BT_CTLR_SCAN_INDICATION)
+		case NODE_RX_TYPE_SCAN_INDICATION:
 #endif
 #if defined(CONFIG_BT_CTLR_PROFILE_ISR)
 		case NODE_RX_TYPE_PROFILE:

@@ -356,11 +356,14 @@ void ll_rx_dequeue(void)
 
 	/* handle object specific clean up */
 	switch (node_rx->type) {
-	case NODE_RX_TYPE_REPORT:
-
-#if defined(CONFIG_BT_CTLR_ADV_EXT) || \
+#if defined(CONFIG_BT_OBSERVER) || \
     defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY) || \
-    defined(CONFIG_BT_CTLR_ADV_INDICATION)
+    defined(CONFIG_BT_CTLR_ADV_INDICATION) || \
+    defined(CONFIG_BT_CTLR_SCAN_INDICATION)
+#if defined(CONFIG_BT_OBSERVER)
+	case NODE_RX_TYPE_REPORT:
+#endif /* CONFIG_BT_OBSERVER */
+
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	case NODE_RX_TYPE_EXT_1M_REPORT:
 	case NODE_RX_TYPE_EXT_CODED_REPORT:
@@ -373,12 +376,18 @@ void ll_rx_dequeue(void)
 #if defined(CONFIG_BT_CTLR_ADV_INDICATION)
 	case NODE_RX_TYPE_ADV_INDICATION:
 #endif /* CONFIG_BT_CTLR_ADV_INDICATION */
+
+#if defined(CONFIG_BT_CTLR_SCAN_INDICATION)
+	case NODE_RX_TYPE_SCAN_INDICATION:
+#endif /* CONFIG_BT_CTLR_SCAN_INDICATION */
 		LL_ASSERT(mem_link_rx.quota_pdu < TODO_PDU_RX_COUNT_MAX);
 
 		mem_link_rx.quota_pdu++;
 		break;
-#endif /* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY ||
-	  CONFIG_BT_CTLR_ADV_INDICATION */
+#endif /* CONFIG_BT_OBSERVER ||
+	  CONFIG_BT_CTLR_SCAN_REQ_NOTIFY ||
+	  CONFIG_BT_CTLR_ADV_INDICATION ||
+	  CONFIG_BT_CTLR_SCAN_INDICATION */
 
 	default:
 		LL_ASSERT(0);
@@ -435,6 +444,10 @@ void ll_rx_mem_release(void **node_rx)
 #if defined(CONFIG_BT_CTLR_ADV_INDICATION)
 		case NODE_RX_TYPE_ADV_INDICATION:
 #endif /* CONFIG_BT_CTLR_ADV_INDICATION */
+
+#if defined(CONFIG_BT_CTLR_SCAN_INDICATION)
+		case NODE_RX_TYPE_SCAN_INDICATION:
+#endif /* CONFIG_BT_CTLR_SCAN_INDICATION */
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 		case NODE_RX_TYPE_MESH_ADV_CPLT:
@@ -801,11 +814,14 @@ static inline void _rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 		}
 		break;
 
-		case NODE_RX_TYPE_REPORT:
-
-#if defined(CONFIG_BT_CTLR_ADV_EXT) || \
+#if defined(CONFIG_BT_OBSERVER) || \
     defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY) || \
-    defined(CONFIG_BT_CTLR_ADV_INDICATION)
+    defined(CONFIG_BT_CTLR_ADV_INDICATION) || \
+    defined(CONFIG_BT_CTLR_SCAN_INDICATION)
+#if defined(CONFIG_BT_OBSERVER)
+		case NODE_RX_TYPE_REPORT:
+#endif /* CONFIG_BT_OBSERVER */
+
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 		case NODE_RX_TYPE_EXT_1M_REPORT:
 		case NODE_RX_TYPE_EXT_CODED_REPORT:
@@ -818,13 +834,19 @@ static inline void _rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 #if defined(CONFIG_BT_CTLR_ADV_INDICATION)
 		case NODE_RX_TYPE_ADV_INDICATION:
 #endif /* CONFIG_BT_CTLR_ADV_INDICATION */
+
+#if defined(CONFIG_BT_CTLR_SCAN_INDICATION)
+		case NODE_RX_TYPE_SCAN_INDICATION:
+#endif /* CONFIG_BT_CTLR_SCAN_INDICATION */
 		{
 			ll_rx_put(link, rx);
 			ll_rx_sched();
 		}
 		break;
-#endif /* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY ||
-	  CONFIG_BT_CTLR_ADV_INDICATION */
+#endif /* CONFIG_BT_OBSERVER ||
+	  CONFIG_BT_CTLR_SCAN_REQ_NOTIFY ||
+	  CONFIG_BT_CTLR_ADV_INDICATION ||
+	  CONFIG_BT_CTLR_SCAN_INDICATION */
 
 		default:
 		{
