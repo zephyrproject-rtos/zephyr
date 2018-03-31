@@ -126,7 +126,11 @@ static int hid_custom_handle_req(struct usb_setup_packet *setup,
 
 static void hid_int_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
-	SYS_LOG_DBG("ep %x status %d", ep, ep_status);
+	if (ep_status != USB_DC_EP_DATA_IN ||
+	    hid_device.ops->int_in_ready == NULL) {
+		return;
+	}
+	hid_device.ops->int_in_ready();
 }
 
 /* Describe Endpoints configuration */
