@@ -1,5 +1,5 @@
 tests:
-  test_aio:
-    build_only: true
+  peripheral.aio:
     depends_on: aio
-    tags: drivers
+    harness: aio
+    tags: aio

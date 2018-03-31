@@ -1,5 +1,5 @@
 tests:
-  test_spi_loopback:
+  periphera.spi:
     depends_on: spi
     tags: drivers spi
     harness: loopback
