@@ -1,4 +1,4 @@
 tests:
-  test:
+  peripheral.adc:
     depends_on: adc
     tags: driver adc

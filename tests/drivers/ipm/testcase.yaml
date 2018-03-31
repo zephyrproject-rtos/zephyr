@@ -1,5 +1,5 @@
 tests:
-  test:
+  peripheral.mailbox:
     filter: not CONFIG_SOC_QUARK_SE_C1000_SS
     arch_exclude: posix
     tags: drivers ipc

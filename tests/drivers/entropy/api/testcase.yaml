@@ -1,4 +1,4 @@
 tests:
-  test_get_entropy:
+  peripheral.entropy:
     filter: CONFIG_ENTROPY_HAS_DRIVER
     tags: driver

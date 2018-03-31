@@ -1,5 +1,5 @@
 tests:
-  test_pinmux:
+  peripheral.pinmux:
     platform_whitelist: quark_se_c1000_devboard quark_d2000_crb
     tags: drivers
     harness: loopback

@@ -1,4 +1,4 @@
 tests:
-  test:
+  peripheral.i2s.speed:
     depends_on: i2s
-    tags: drivers
+    tags: drivers i2s

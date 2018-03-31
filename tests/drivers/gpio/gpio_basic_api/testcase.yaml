@@ -1,5 +1,5 @@
 tests:
-  test_gpio:
+  peripheral.gpio:
     tags: drivers gpio
     depends_on: gpio
     # FIXME: code is board specific, it should be generalised

@@ -1,30 +1,25 @@
 common:
-  tags: drivers adc
+  tags: peripheral adc
 tests:
-  test:
+  peripheral.adc:
     depends_on: adc
-  test_poll_mode:
+  peripheral.adc.poll_mode:
     extra_configs:
       - CONFIG_ADC_QMSI_POLL=y
     platform_whitelist: quark_se_c1000_ss_devboard
-    tags: hwtest
-  test_resolution_10:
+  peripheral.adc.resolution_10:
     extra_configs:
       - CONFIG_ADC_QMSI_SAMPLE_WIDTH=10
     platform_whitelist: quark_se_c1000_ss_devboard
-    tags: hwtest
-  test_resolution_12:
+  peripheral.adc.resolution_12:
     extra_configs:
       - CONFIG_ADC_QMSI_SAMPLE_WIDTH=12
     platform_whitelist: quark_se_c1000_ss_devboard
-    tags: hwtest
-  test_resolution_6:
+  peripheral.adc.resolution_6:
     extra_configs:
       - CONFIG_ADC_QMSI_SAMPLE_WIDTH=6
     platform_whitelist: quark_se_c1000_ss_devboard
-    tags: hwtest
-  test_resolution_8:
+  peripheral.adc.resolution_8:
     extra_configs:
       - CONFIG_ADC_QMSI_SAMPLE_WIDTH=8
     platform_whitelist: quark_se_c1000_ss_devboard
-    tags: hwtest
