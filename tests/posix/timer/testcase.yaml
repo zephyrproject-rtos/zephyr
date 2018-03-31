@@ -1,3 +1,3 @@
 tests:
   posix.timer:
-    tags: core
+    tags: posix

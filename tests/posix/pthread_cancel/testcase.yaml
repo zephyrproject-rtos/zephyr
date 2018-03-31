@@ -1,4 +1,4 @@
 tests:
-  posix.pthread_cancel:
+  posix.pthread:
     min_ram: 16
-    tags: core
+    tags: posix
