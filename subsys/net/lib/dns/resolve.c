@@ -265,9 +265,9 @@ static int dns_read(struct dns_resolve_context *ctx,
 		    struct net_pkt *pkt,
 		    struct net_buf *dns_data,
 		    u16_t *dns_id,
-		    struct net_buf *dns_cname,
-		    struct dns_addrinfo *info)
+		    struct net_buf *dns_cname)
 {
+	struct dns_addrinfo info = { 0 };
 	/* Helper struct to track the dns msg received from the server */
 	struct dns_msg_t dns_msg;
 	u32_t ttl; /* RR ttl, so far it is not passed to caller */
@@ -333,10 +333,10 @@ static int dns_read(struct dns_resolve_context *ctx,
 
 	if (ctx->queries[query_idx].query_type == DNS_QUERY_TYPE_A) {
 		address_size = DNS_IPV4_LEN;
-		addr = (u8_t *)&net_sin(&info->ai_addr)->sin_addr;
-		info->ai_family = AF_INET;
-		info->ai_addr.sa_family = AF_INET;
-		info->ai_addrlen = sizeof(struct sockaddr_in);
+		addr = (u8_t *)&net_sin(&info.ai_addr)->sin_addr;
+		info.ai_family = AF_INET;
+		info.ai_addr.sa_family = AF_INET;
+		info.ai_addrlen = sizeof(struct sockaddr_in);
 	} else if (ctx->queries[query_idx].query_type == DNS_QUERY_TYPE_AAAA) {
 		/* We cannot resolve IPv6 address if IPv6 is disabled. The reason
 		 * being that "struct sockaddr" does not have enough space for
@@ -344,10 +344,10 @@ static int dns_read(struct dns_resolve_context *ctx,
 		 */
 #if defined(CONFIG_NET_IPV6)
 		address_size = DNS_IPV6_LEN;
-		addr = (u8_t *)&net_sin6(&info->ai_addr)->sin6_addr;
-		info->ai_family = AF_INET6;
-		info->ai_addr.sa_family = AF_INET6;
-		info->ai_addrlen = sizeof(struct sockaddr_in6);
+		addr = (u8_t *)&net_sin6(&info.ai_addr)->sin6_addr;
+		info.ai_family = AF_INET6;
+		info.ai_addr.sa_family = AF_INET6;
+		info.ai_addrlen = sizeof(struct sockaddr_in6);
 #else
 		ret = DNS_EAI_FAMILY;
 		goto quit;
@@ -380,7 +380,7 @@ static int dns_read(struct dns_resolve_context *ctx,
 
 			memcpy(addr, src, address_size);
 
-			ctx->queries[query_idx].cb(DNS_EAI_INPROGRESS, info,
+			ctx->queries[query_idx].cb(DNS_EAI_INPROGRESS, &info,
 					ctx->queries[query_idx].user_data);
 			items++;
 			break;
@@ -429,14 +429,13 @@ static int dns_read(struct dns_resolve_context *ctx,
 		ret = DNS_EAI_ALLDONE;
 	}
 
-	/* Marks the end of the results */
-	ctx->queries[query_idx].cb(ret, NULL,
-				   ctx->queries[query_idx].user_data);
-
 	if (k_delayed_work_remaining_get(&ctx->queries[query_idx].timer) > 0) {
 		k_delayed_work_cancel(&ctx->queries[query_idx].timer);
 	}
 
+	/* Marks the end of the results */
+	ctx->queries[query_idx].cb(ret, NULL,
+				   ctx->queries[query_idx].user_data);
 	ctx->queries[query_idx].cb = NULL;
 
 	net_pkt_unref(pkt);
@@ -458,7 +457,6 @@ static void cb_recv(struct net_context *net_ctx,
 		    void *user_data)
 {
 	struct dns_resolve_context *ctx = user_data;
-	struct dns_addrinfo info = { 0 };
 	struct net_buf *dns_cname = NULL;
 	struct net_buf *dns_data = NULL;
 	u16_t dns_id = 0;
@@ -483,7 +481,7 @@ static void cb_recv(struct net_context *net_ctx,
 		goto quit;
 	}
 
-	ret = dns_read(ctx, pkt, dns_data, &dns_id, dns_cname, &info);
+	ret = dns_read(ctx, pkt, dns_data, &dns_id, dns_cname);
 	if (!ret) {
 		/* We called the callback already in dns_read() if there
 		 * was no errors.
@@ -534,7 +532,8 @@ quit:
 		k_delayed_work_cancel(&ctx->queries[i].timer);
 	}
 
-	ctx->queries[i].cb(ret, &info, ctx->queries[i].user_data);
+	/* Marks the end of the results */
+	ctx->queries[i].cb(ret, NULL, ctx->queries[i].user_data);
 	ctx->queries[i].cb = NULL;
 
 free_buf:
