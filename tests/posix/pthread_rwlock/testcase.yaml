@@ -1,3 +1,3 @@
 tests:
-  posix.pthread_rwlock:
-    tags: core
+  posix.pthread:
+    tags: posix

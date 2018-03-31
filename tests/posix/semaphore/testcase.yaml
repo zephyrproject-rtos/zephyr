@@ -1,4 +1,4 @@
 tests:
   posix.semaphore:
-    tags: core
+    tags: posix
 
