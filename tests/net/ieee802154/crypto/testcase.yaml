@@ -1,4 +1,5 @@
 tests:
-  test:
+  net.ieee802154.crypto:
+    tags: net crypto
     platform_whitelist: quark_se_c1000_devboard
-    tags: net
+    depends_on: ieee802154

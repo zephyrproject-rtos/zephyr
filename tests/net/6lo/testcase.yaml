@@ -1,4 +1,5 @@
 tests:
-  test:
-    arch_whitelist: x86
-    tags: net
+  net.6lo:
+    tags: net 6loWPAN
+    min_ram: 32
+    depends_on: netif

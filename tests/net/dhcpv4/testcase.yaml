@@ -1,4 +1,3 @@
 tests:
-  test:
-    arch_whitelist: x86
-    tags: net
+  net.dhcp:
+    tags: net dhcpv4

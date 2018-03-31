@@ -1,5 +1,5 @@
 tests:
-  test:
+  net.offload:
     min_ram: 16
     tags: net checksum_offload
     depends_on: netif

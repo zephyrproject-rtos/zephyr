@@ -1,4 +1,5 @@
 tests:
-  test:
+  net.iface:
     min_ram: 16
-    tags: net
+    tags: net iface
+    depends_on: netif
