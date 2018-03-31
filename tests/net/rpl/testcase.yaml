@@ -1,4 +1,4 @@
 tests:
-  test:
+  net.rpl:
     min_ram: 16
-    tags: net
+    tags: net rpl

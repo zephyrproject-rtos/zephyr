@@ -1,4 +1,4 @@
 tests:
   kernel.memory_protection.app_memory:
-    arch_whitelist: x86 arm
-    tags: core security
+    arch_whitelist: x86 arm arc
+    tags: memory_protection

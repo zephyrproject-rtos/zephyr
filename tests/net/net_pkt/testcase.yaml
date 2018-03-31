@@ -1,5 +1,5 @@
 tests:
-  test:
+  net.packet:
     depends_on: netif
     min_ram: 20
     tags: net

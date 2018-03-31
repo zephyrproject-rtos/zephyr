@@ -3,7 +3,7 @@ common:
   harness: net
   depends_on: netif
 tests:
-  test:
+  net.mqtt:
     min_ram: 16
   net.mqtt.tls:
     platform_whitelist: frdm_k64f qemu_x86
