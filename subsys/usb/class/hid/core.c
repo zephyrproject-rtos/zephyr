@@ -90,6 +90,12 @@ static int hid_class_handle_req(struct usb_setup_packet *setup,
 								data);
 			}
 			break;
+		case HID_SET_REPORT:
+			if (hid_device.ops->set_report == NULL) {
+				SYS_LOG_ERR("set_report not implemented");
+				return -EINVAL;
+			}
+			return hid_device.ops->set_report(setup, len, data);
 		default:
 			SYS_LOG_ERR("Unhandled request 0x%x", setup->bRequest);
 			break;
