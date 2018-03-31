@@ -1,3 +1,4 @@
 tests:
   net.ieee802154.fragment:
     tags: net ieee802154 fragment
+    depends_on: ieee802154
