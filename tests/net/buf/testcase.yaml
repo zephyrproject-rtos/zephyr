@@ -1,5 +1,5 @@
 tests:
-  test:
+  net.buf:
     filter: not CONFIG_BT
     min_ram: 16
-    tags: buf
+    tags: net buf

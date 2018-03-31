@@ -1,11 +1,4 @@
 tests:
-  test:
-    filter: not CONFIG_BT
-    min_ram: 12
-    platform_exclude: qemu_xtensa
-    tags: net
-  test_with_bt:
-    filter: CONFIG_BT
+  net.arp:
     min_ram: 16
-    platform_exclude: qemu_xtensa
-    tags: net
+    tags: net arp
