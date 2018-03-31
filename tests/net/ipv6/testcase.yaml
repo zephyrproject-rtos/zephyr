@@ -1,4 +1,4 @@
 tests:
-  test:
-    arch_whitelist: x86
-    tags: net
+  net.ipv6:
+    tags: net ipv6
+    depends_on: netif
