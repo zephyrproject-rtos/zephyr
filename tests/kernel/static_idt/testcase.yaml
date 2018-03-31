@@ -1,4 +1,4 @@
 tests:
-  kernel.interrupt:
+  arch.x86.interrupt:
     arch_whitelist: x86
-    tags: bat_commit core ignore_faults
+    tags: ignore_faults interrupt idt
