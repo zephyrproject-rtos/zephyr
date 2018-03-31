@@ -1,15 +1,12 @@
-/* test.h - XIP test header */
-
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/*
-DESCRIPTION
-This header contains defines, externs etc. for the XIP
-regression test.
+/**
+ * This header contains defines, externs etc. for the XIP
+ * regression test.
  */
 
 

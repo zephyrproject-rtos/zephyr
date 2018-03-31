@@ -1,4 +1,3 @@
-/* test_xip_helper.c - XIP helper module */
 
 /*
  * Copyright (c) 2014 Wind River Systems, Inc.
@@ -7,9 +6,10 @@
  */
 
 /*
-DESCRIPTION
-This module contains support code for the XIP regression
-test.
+ * @file XIP helper module
+ *
+ * This module contains support code for the XIP regression
+ * test.
  */
 
 #include <zephyr.h>
