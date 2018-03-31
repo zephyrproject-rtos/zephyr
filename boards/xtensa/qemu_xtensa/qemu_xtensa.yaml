@@ -7,3 +7,6 @@ toolchain:
   - zephyr
 testing:
   default: true
+  ignore_tags:
+     - net
+     - bluetooth
