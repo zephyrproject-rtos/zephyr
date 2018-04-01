@@ -115,10 +115,7 @@ static struct device *dev_entropy;
 #define TODO_PDU_RX_POOL_SIZE ((TODO_PDU_RX_SIZE_MAX) * \
 			       (TODO_PDU_RX_COUNT_MAX))
 
-#define TODO_ULL_RX_COUNT_MAX 1
-
-#define TODO_LINK_RX_COUNT_MAX ((TODO_PDU_RX_COUNT_MAX) + \
-				(TODO_ULL_RX_COUNT_MAX))
+#define TODO_LINK_RX_COUNT_MAX ((TODO_PDU_RX_COUNT_MAX) + 2)
 
 static MFIFO_DEFINE(done, sizeof(void *), EVENT_PIPELINE_MAX);
 
@@ -683,12 +680,18 @@ static inline int _init_reset(void)
 	mem_init(mem_link_rx.pool, sizeof(memq_link_t), TODO_LINK_RX_COUNT_MAX,
 		 &mem_link_rx.free);
 
-	/* Acquire a link to initialize rx memq */
+	/* Acquire a link to initialize ull rx memq */
 	link = mem_acquire(&mem_link_rx.free);
 	LL_ASSERT(link);
 
-	/* Initialize rx memq */
+	/* Initialize ull rx memq */
 	MEMQ_INIT(ull_rx, link);
+
+	/* Acquire a link to initialize ll rx memq */
+	link = mem_acquire(&mem_link_rx.free);
+	LL_ASSERT(link);
+
+	/* Initialize ll rx memq */
 	MEMQ_INIT(ll_rx, link);
 
 	/* Allocate rx free buffers */
