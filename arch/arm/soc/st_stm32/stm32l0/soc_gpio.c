@@ -135,6 +135,15 @@ int stm32_gpio_enable_int(int port, int pin)
 		return -EINVAL;
 	}
 
+	/*
+	 * Ports F and G are not present on some STM32L0 parts, so
+	 * for these parts port H external interrupt should be enabled
+	 * by writing value 0x5 instead of 0x7.
+	 */
+	if (port == STM32_PORTH) {
+		port = LL_SYSCFG_EXTI_PORTH;
+	}
+
 	shift = 4 * (pin % 4);
 
 	exticr->val &= ~(0xf << shift);
