@@ -902,7 +902,7 @@ static void ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 				    TICKER_ID_ADV_BASE + handle_get(adv),
 				    HAL_TICKER_US_TO_TICKS(random_delay * 1000),
 				    0, 0, 0, 0, 0,
-				    ticker_op_update_cb, (void *)__LINE__);
+				    ticker_op_update_cb, adv);
 		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 			  (ret == TICKER_STATUS_BUSY));
 	}
@@ -912,9 +912,8 @@ static void ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 
 static void ticker_op_update_cb(u32_t status, void *param)
 {
-	ARG_UNUSED(param);
-
-	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
+	LL_ASSERT(status == TICKER_STATUS_SUCCESS ||
+		  param == ull_disable_mark_get());
 }
 
 #if defined(CONFIG_BT_PERIPHERAL)
@@ -1019,12 +1018,16 @@ static inline u8_t disable(u16_t handle)
 {
 	volatile u32_t ret_cb = TICKER_STATUS_BUSY;
 	struct ll_adv_set *adv;
+	void *mark;
 	u32_t ret;
 
 	adv = ull_adv_is_enabled_get(handle);
 	if (!adv) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
+
+	mark = ull_disable_mark(adv);
+	LL_ASSERT(mark == adv);
 
 	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_THREAD,
 			  TICKER_ID_ADV_BASE + handle,
@@ -1037,6 +1040,9 @@ static inline u8_t disable(u16_t handle)
 
 	ret = ull_disable(&adv->lll);
 	LL_ASSERT(!ret);
+
+	mark = ull_disable_unmark(adv);
+	LL_ASSERT(mark == adv);
 
 	adv->is_enabled = 0;
 

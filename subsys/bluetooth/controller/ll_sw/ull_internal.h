@@ -29,5 +29,8 @@ void ll_rx_put(memq_link_t *link, void *rx);
 void ll_rx_sched(void);
 void ull_ticker_status_give(u32_t status, void *param);
 u32_t ull_ticker_status_take(u32_t ret, u32_t volatile *ret_cb);
+void *ull_disable_mark(void *param);
+void *ull_disable_unmark(void *param);
+void *ull_disable_mark_get(void);
 int ull_disable(void *param);
 u8_t ull_entropy_get(u8_t len, u8_t *rand);

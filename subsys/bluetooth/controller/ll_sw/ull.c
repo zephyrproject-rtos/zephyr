@@ -151,6 +151,8 @@ static struct {
 static MEMQ_DECLARE(ull_rx);
 static MEMQ_DECLARE(ll_rx);
 
+static void *mark;
+
 static inline int _init_reset(void);
 static inline void _done_alloc(void);
 static inline void _rx_alloc(u8_t max);
@@ -542,6 +544,29 @@ u32_t ull_ticker_status_take(u32_t ret, u32_t volatile *ret_cb)
 	}
 
 	return *ret_cb;
+}
+
+void *ull_disable_mark(void *param)
+{
+	if (!mark) {
+		mark = param;
+	}
+
+	return mark;
+}
+
+void *ull_disable_unmark(void *param)
+{
+	if (mark && mark == param) {
+		mark = NULL;
+	}
+
+	return param;
+}
+
+void *ull_disable_mark_get(void)
+{
+	return mark;
 }
 
 int ull_disable(void *lll)
