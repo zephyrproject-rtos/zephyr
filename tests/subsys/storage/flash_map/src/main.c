@@ -96,7 +96,7 @@ void flash_map_test_case_2(void)
 
 }
 
-void test_main(void *p1, void *p2, void *p3)
+void test_main(void)
 {
 	ztest_test_suite(test_flash_map,
 			 ztest_unit_test(flash_map_test_case_2));

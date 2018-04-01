@@ -138,7 +138,7 @@ void test_write_confirm(void)
 	zassert_equal(1, readout[0] & 0xff, "confirmation error");
 }
 
-void test_main(void *p1, void *p2, void *p3)
+void test_main(void)
 {
 	ztest_test_suite(test_mcuboot_interface,
 			 ztest_unit_test(test_bank_erase),

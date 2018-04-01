@@ -143,7 +143,7 @@ void fcb_test_rotate(void);
 void fcb_test_multi_scratch(void);
 void fcb_test_last_of_n(void);
 
-void test_main(void *p1, void *p2, void *p3)
+void test_main(void)
 {
 	ztest_test_suite(test_fcb,
 			 ztest_unit_test_setup_teardown(fcb_test_len,

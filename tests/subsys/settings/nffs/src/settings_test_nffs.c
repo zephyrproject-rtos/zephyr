@@ -208,7 +208,7 @@ void test_config_save_in_file(void);
 void test_config_save_one_file(void);
 void test_config_compress_file(void);
 
-void test_main(void *p1, void *p2, void *p3)
+void test_main(void)
 {
 	ztest_test_suite(test_config_fcb,
 			 /* Config tests */
