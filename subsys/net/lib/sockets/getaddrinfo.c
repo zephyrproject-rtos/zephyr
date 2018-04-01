@@ -116,6 +116,7 @@ int zsock_getaddrinfo(const char *host, const char *service,
 		st1 = ai_state.status;
 	}
 
+#if defined(CONFIG_NET_IPV6)
 	/* Execute if AF_UNSPEC or AF_INET6 */
 	if (family != AF_INET) {
 		dns_get_addr_info(host, DNS_QUERY_TYPE_AAAA, NULL,
@@ -125,6 +126,7 @@ int zsock_getaddrinfo(const char *host, const char *service,
 								htons(port);
 		st2 = ai_state.status;
 	}
+#endif
 
 	/* If both attempts failed, it's error */
 	if (st1 && st2) {
