@@ -4,5 +4,7 @@ type: native
 arch: posix
 toolchain:
   - zephyr
+supported:
+  - netif:eth
 testing:
   default: true
