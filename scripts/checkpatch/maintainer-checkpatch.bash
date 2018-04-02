@@ -24,7 +24,7 @@ checkpatch_switches="\
 "
 ignore_list=BRACES,PRINTK_WITHOUT_KERN_LEVEL,SPLIT_STRING,FILE_PATH_CHANGES,GERRIT_CHANGE_ID
 
-timestamp_bin=${ZEPHYR_BASE}/scripts/timestamp
+timestamp_bin=${ZEPHYR_BASE}/scripts/checkpatch/timestamp
 timestamp="${timestamp_bin} -u"
 checkpatch_bin=${ZEPHYR_BASE}/scripts/checkpatch.pl
 checkpatch="${checkpatch_bin} ${checkpatch_switches} --ignore ${ignore_list}"

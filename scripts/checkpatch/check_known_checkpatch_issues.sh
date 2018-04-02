@@ -15,8 +15,8 @@
 
 exe_name=$(basename $0)
 
-do_checkpatch_bin=${ZEPHYR_BASE}/scripts/do_checkpatch.sh
-timestamp_bin=${ZEPHYR_BASE}/scripts/timestamp
+do_checkpatch_bin=${ZEPHYR_BASE}/scripts/checkpatch/do_checkpatch.sh
+timestamp_bin=${ZEPHYR_BASE}/scripts/checkpatch/timestamp
 
 declare update=n
 declare quiet=n
