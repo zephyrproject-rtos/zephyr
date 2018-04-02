@@ -42,4 +42,14 @@ config TEST_USERSPACE
 	help
 	  This option will help test the userspace mode. This can be enabled
 	  only when CONFIG_HAS_USERSPACE is set.
+
+config TEST_FLASH_DRIVERS
+	bool "Test flash drivers"
+	depends on BOARD_QEMU_X86
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	default n
+	help
+	  This option will help test the flash drivers. This should be enabled
+	  only when using qemu_x86.
 endmenu
