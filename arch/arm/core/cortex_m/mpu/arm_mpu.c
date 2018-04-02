@@ -29,7 +29,7 @@ static inline u32_t _get_region_attr(u32_t xn, u32_t ap, u32_t tex,
 				     u32_t srd, u32_t size)
 {
 	return ((xn << 28) | (ap) | (tex << 19) | (s << 18)
-		| (c << 17) | (b << 16) | (srd << 5) | (size));
+		| (c << 17) | (b << 16) | (srd << 8) | (size));
 }
 
 /**
