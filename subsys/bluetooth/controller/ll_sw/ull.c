@@ -574,7 +574,7 @@ int ull_disable(void *lll)
 	struct k_sem sem;
 	u32_t ret;
 
-	hdr = ((struct lll_hdr *)lll)->parent;
+	hdr = ULL_HDR(((struct lll_hdr *)lll)->parent);
 	if (!hdr || !hdr->ref) {
 		return ULL_STATUS_SUCCESS;
 	}

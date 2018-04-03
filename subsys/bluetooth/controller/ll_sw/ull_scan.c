@@ -125,7 +125,7 @@ u32_t ll_scan_enable(u8_t enable)
 	lll->init_addr_type = scan->own_addr_type;
 	ll_addr_get(lll->init_addr_type, lll->init_addr);
 
-	ull_hdr_init(scan);
+	ull_hdr_init(&scan->ull);
 	lll_hdr_init(lll, scan);
 
 	ticks_interval = HAL_TICKER_US_TO_TICKS((u64_t)scan->interval * 625);

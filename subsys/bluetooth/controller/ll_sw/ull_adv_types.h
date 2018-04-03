@@ -5,9 +5,9 @@
  */
 
 struct ll_adv_set {
+	struct evt_hdr evt;
 	struct ull_hdr ull;
 	struct lll_adv lll;
-	struct evt_hdr evt;
 
 	u8_t is_enabled:1;
 

@@ -15,6 +15,8 @@
 
 #define EVENT_PIPELINE_MAX            2
 
+#define ULL_HDR(p) ((void *)((u8_t *)p + sizeof(struct evt_hdr)))
+
 enum {
 	TICKER_ID_LLL_PREEMPT = 0,
 
@@ -59,15 +61,21 @@ enum ull_status {
 	ULL_STATUS_BUSY,
 };
 
-struct lll_hdr {
-	void *parent;
-};
-
 struct evt_hdr {
 	u32_t ticks_xtal_to_start;
 	u32_t ticks_active_to_start;
 	u32_t ticks_preempt_to_start;
 	u32_t ticks_slot;
+};
+
+struct ull_hdr {
+	u8_t ref;
+	void (*disabled_cb)(void *param);
+	void *disabled_param;
+};
+
+struct lll_hdr {
+	void *parent;
 };
 
 struct lll_prepare_param {

@@ -688,7 +688,7 @@ u32_t ll_adv_enable(u8_t enable)
 	}
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
-	ull_hdr_init(adv);
+	ull_hdr_init(&adv->ull);
 	lll_hdr_init(lll, adv);
 
 	/* TODO: active_to_start feature port */

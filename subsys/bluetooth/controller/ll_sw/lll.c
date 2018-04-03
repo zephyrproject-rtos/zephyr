@@ -114,6 +114,7 @@ int lll_prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 	if (event.curr.abort_cb) {
 #if !defined(CONFIG_BT_CTLR_LOW_LAT)
 		u32_t preempt_anchor;
+		struct evt_hdr *evt;
 		u32_t preempt_to;
 #else /* CONFIG_BT_CTLR_LOW_LAT */
 		lll_prepare_cb_t resume_cb;
@@ -136,8 +137,11 @@ int lll_prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 
 #if !defined(CONFIG_BT_CTLR_LOW_LAT)
 		/* Calc the preempt timeout */
+		evt = (void *)((struct lll_hdr *)prepare_param->param)->parent;
 		preempt_anchor = prepare_param->ticks_at_expire;
-		preempt_to = HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_US);
+		preempt_to = max(evt->ticks_active_to_start,
+				 evt->ticks_xtal_to_start) -
+				 evt->ticks_preempt_to_start;
 
 		/* Setup pre empt timeout */
 		ret = ticker_start(TICKER_INSTANCE_ID_CTLR,
@@ -240,7 +244,7 @@ int lll_done(void *param)
 		event.curr.param = NULL;
 
 		if (param) {
-			ull = ((struct lll_hdr *)param)->parent;
+			ull = ULL_HDR(((struct lll_hdr *)param)->parent);
 		}
 
 #if defined(CONFIG_BT_CTLR_LOW_LAT) && \
@@ -252,7 +256,7 @@ int lll_done(void *param)
 	} else {
 		LL_ASSERT(param == next->prepare_param.param);
 
-		ull = ((struct lll_hdr *)param)->parent;
+		ull = ULL_HDR(((struct lll_hdr *)param)->parent);
 
 		/* dequeue aborted next prepare */
 		next = prepare_dequeue(next);

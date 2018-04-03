@@ -5,9 +5,9 @@
  */
 
 struct ll_scan_set {
+	struct evt_hdr  evt;
 	struct ull_hdr  ull;
 	struct lll_scan lll;
-	struct evt_hdr  evt;
 
 	u8_t is_enabled:1;
 	u8_t own_addr_type:2;
