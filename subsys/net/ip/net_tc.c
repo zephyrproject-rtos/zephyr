@@ -63,7 +63,7 @@ int net_tx_priority2tc(enum net_priority prio)
 	 *  7                NC        Network control
 	 */
 	/* Priority is the index to this array */
-	static const int tc[] = {
+	static const u8_t tc[] = {
 #if NET_TC_TX_COUNT == 1
 		0, 0, 0, 0, 0, 0, 0, 0
 #endif
@@ -117,7 +117,7 @@ int net_rx_priority2tc(enum net_priority prio)
 	 *  7                NC        Network control
 	 */
 	/* Priority is the index to this array */
-	static const int tc[] = {
+	static const u8_t tc[] = {
 #if NET_TC_RX_COUNT == 1
 		0, 0, 0, 0, 0, 0, 0, 0
 #endif
@@ -153,7 +153,7 @@ int net_rx_priority2tc(enum net_priority prio)
 }
 
 /* Convert traffic class to thread priority */
-static int tx_tc2thread(int tc)
+static u8_t tx_tc2thread(u8_t tc)
 {
 	/* Initial implementation just maps the traffic class to certain queue.
 	 * If there are less queues than classes, then map them into
@@ -170,7 +170,7 @@ static int tx_tc2thread(int tc)
 	 * that thread_priorities[7] value should contain the highest priority
 	 * for the TX queue handling thread.
 	 */
-	static const int thread_priorities[] = {
+	static const u8_t thread_priorities[] = {
 #if NET_TC_TX_COUNT == 1
 		7
 #endif
@@ -206,7 +206,7 @@ static int tx_tc2thread(int tc)
 }
 
 /* Convert traffic class to thread priority */
-static int rx_tc2thread(int tc)
+static u8_t rx_tc2thread(u8_t tc)
 {
 	/* Initial implementation just maps the traffic class to certain queue.
 	 * If there are less queues than classes, then map them into
@@ -223,7 +223,7 @@ static int rx_tc2thread(int tc)
 	 * that thread_priorities[7] value should contain the highest priority
 	 * for the RX queue handling thread.
 	 */
-	static const int thread_priorities[] = {
+	static const u8_t thread_priorities[] = {
 #if NET_TC_RX_COUNT == 1
 		7
 #endif
