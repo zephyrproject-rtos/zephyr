@@ -49,7 +49,7 @@ config CPU_CORTEX_M23
 	bool
 	select CPU_CORTEX_M
 	# Omit prompt to signify "hidden" option
-	select ARMV6_M_ARMV8_M_BASELINE
+	select ARMV8_M_BASELINE
 	help
 	  This option signifies the use of a Cortex-M23 CPU
 
@@ -168,6 +168,7 @@ config CPU_CORTEX_M0_HAS_VECTOR_TABLE_REMAP
 
 config CPU_CORTEX_M_HAS_CMSE
 	bool
+	depends on ARMV8_M_BASELINE || ARMV8_M_MAINLINE
 	default n
 	help
 	  This option signifies the Cortex-M CPU has the CMSE intrinsics.
@@ -190,6 +191,19 @@ config ARMV6_M_ARMV8_M_BASELINE
 	  registers, and features, of a Mainline implementation.
 	  - ARMv6-M compatibility is provided by all ARMv8-M
 	  implementations.
+
+config ARMV8_M_BASELINE
+	bool
+	# Omit prompt to signify "hidden" option
+	default n
+	select ARMV6_M_ARMV8_M_BASELINE
+	select CPU_CORTEX_M_HAS_CMSE
+	help
+	  This option signifies the use of an ARMv8-M processor
+	  implementation.
+
+	  ARMv8-M Baseline includes additional features
+	  not present in the ARMv6-M architecture.
 
 config ARMV7_M_ARMV8_M_MAINLINE
 	bool
@@ -220,6 +234,7 @@ config ARMV8_M_MAINLINE
 	# Omit prompt to signify "hidden" option
 	select ARMV7_M_ARMV8_M_MAINLINE
 	select CPU_CORTEX_M_HAS_SPLIM
+	select CPU_CORTEX_M_HAS_CMSE
 	help
 	  This option signifies the use of an ARMv8-M processor
 	  implementation, supporting the Main Extension.
