@@ -154,7 +154,9 @@ static void health_attention_status(struct bt_mesh_model *model,
 
 	param = health_cli->op_param;
 
-	*param->attention = net_buf_simple_pull_u8(buf);
+	if (param->attention) {
+		*param->attention = net_buf_simple_pull_u8(buf);
+	}
 
 	k_sem_give(&health_cli->op_sync);
 }
