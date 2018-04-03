@@ -256,25 +256,44 @@ static void schedule_new_thread(struct k_thread *thread, s32_t delay)
 }
 #endif
 
-void _setup_new_thread(struct k_thread *new_thread,
-		       k_thread_stack_t *stack, size_t stack_size,
-		       k_thread_entry_t entry,
-		       void *p1, void *p2, void *p3,
-		       int prio, u32_t options)
+#if !CONFIG_STACK_POINTER_RANDOM
+static inline size_t adjust_stack_size(size_t stack_size)
 {
-#if CONFIG_STACK_POINTER_RANDOM
-#if defined(CONFIG_STACK_GROWS_UP)
-	/* This is so rare not bothering for now */
-#error "Stack pointer randomization not implemented for upward growing stacks"
-#endif
+	return stack_size;
+}
+#else
+static inline size_t adjust_stack_size(size_t stack_size)
+{
 	/* Don't need to worry about alignment of the size here, _new_thread()
 	 * is required to do it
 	 *
 	 * FIXME: Not the best way to get a random number in a range.
 	 * See #6493
 	 */
-	stack_size -= sys_rand32_get() % CONFIG_STACK_POINTER_RANDOM;
+	const size_t fuzz = sys_rand32_get() % CONFIG_STACK_POINTER_RANDOM;
+
+	if (unlikely(fuzz * 2 > stack_size)) {
+		return stack_size;
+	}
+
+	return stack_size - fuzz;
+}
+
+#if defined(CONFIG_STACK_GROWS_UP)
+	/* This is so rare not bothering for now */
+#error "Stack pointer randomization not implemented for upward growing stacks"
+#endif /* CONFIG_STACK_GROWS_UP */
+
 #endif /* CONFIG_STACK_POINTER_RANDOM */
+
+void _setup_new_thread(struct k_thread *new_thread,
+		       k_thread_stack_t *stack, size_t stack_size,
+		       k_thread_entry_t entry,
+		       void *p1, void *p2, void *p3,
+		       int prio, u32_t options)
+{
+	stack_size = adjust_stack_size(stack_size);
+
 	_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3,
 		    prio, options);
 #ifdef CONFIG_USERSPACE
