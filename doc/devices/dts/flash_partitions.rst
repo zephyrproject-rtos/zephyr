@@ -176,6 +176,8 @@ macro names. Other simple conversions to ensure it is a valid C
 identifier, such as converting "-" to "_", are also performed. The
 offsets and sizes are available as well.
 
+.. _mcuboot_partitions:
+
 MCUboot Partitions
 ******************
 
