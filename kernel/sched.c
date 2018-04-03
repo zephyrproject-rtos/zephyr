@@ -140,12 +140,12 @@ void _remove_thread_from_ready_q(struct k_thread *thread)
  * Does not swap away from a thread at a cooperative (unpreemptible)
  * priority unless "yield" is true.
  */
-static int resched(int key, int yield)
+int _reschedule(int key)
 {
 	K_DEBUG("rescheduling threads\n");
 
 	if (!_is_in_isr() &&
-	    (yield || _is_preempt(_current)) &&
+	    _is_preempt(_current) &&
 	    _is_prio_higher(_get_highest_ready_prio(), _current->base.prio)) {
 		K_DEBUG("context-switching out %p\n", _current);
 		return _Swap(key);
@@ -153,16 +153,6 @@ static int resched(int key, int yield)
 		irq_unlock(key);
 		return 0;
 	}
-}
-
-int _reschedule_noyield(int key)
-{
-	return resched(key, 0);
-}
-
-int _reschedule_yield(int key)
-{
-	return resched(key, 1);
 }
 
 void k_sched_lock(void)
@@ -185,7 +175,7 @@ void k_sched_unlock(void)
 	K_DEBUG("scheduler unlocked (%p:%d)\n",
 		_current, _current->base.sched_locked);
 
-	_reschedule_noyield(key);
+	_reschedule(key);
 #endif
 }
 
@@ -274,7 +264,7 @@ void _impl_k_thread_priority_set(k_tid_t tid, int prio)
 	int key = irq_lock();
 
 	_thread_priority_set(thread, prio);
-	_reschedule_noyield(key);
+	_reschedule(key);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -408,7 +398,7 @@ void _impl_k_wakeup(k_tid_t thread)
 	if (_is_in_isr()) {
 		irq_unlock(key);
 	} else {
-		_reschedule_noyield(key);
+		_reschedule(key);
 	}
 }
 

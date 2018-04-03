@@ -228,7 +228,7 @@ void _impl_k_thread_start(struct k_thread *thread)
 
 	_mark_thread_as_started(thread);
 	_ready_thread(thread);
-	_reschedule_noyield(key);
+	_reschedule(key);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -484,7 +484,7 @@ void _impl_k_thread_resume(struct k_thread *thread)
 
 	_k_thread_single_resume(thread);
 
-	_reschedule_noyield(key);
+	_reschedule(key);
 }
 
 #ifdef CONFIG_USERSPACE

@@ -333,6 +333,6 @@ int k_poll_signal(struct k_poll_signal *signal, int result)
 
 	int rc = signal_poll_event(poll_event, K_POLL_STATE_SIGNALED);
 
-	_reschedule_noyield(key);
+	_reschedule(key);
 	return rc;
 }

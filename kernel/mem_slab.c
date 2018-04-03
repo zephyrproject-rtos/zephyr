@@ -127,5 +127,5 @@ void k_mem_slab_free(struct k_mem_slab *slab, void **mem)
 		slab->num_used--;
 	}
 
-	_reschedule_noyield(key);
+	_reschedule(key);
 }

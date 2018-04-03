@@ -135,7 +135,7 @@ void _impl_k_sem_give(struct k_sem *sem)
 	unsigned int key = irq_lock();
 
 	do_sem_give(sem);
-	_reschedule_noyield(key);
+	_reschedule(key);
 }
 
 #ifdef CONFIG_USERSPACE

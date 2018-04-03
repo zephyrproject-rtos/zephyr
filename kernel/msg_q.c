@@ -94,7 +94,7 @@ int _impl_k_msgq_put(struct k_msgq *q, void *data, s32_t timeout)
 			_set_thread_return_value(pending_thread, 0);
 			_abort_thread_timeout(pending_thread);
 			_ready_thread(pending_thread);
-			_reschedule_noyield(key);
+			_reschedule(key);
 			return 0;
 		} else {
 			/* put message in queue */
@@ -184,7 +184,7 @@ int _impl_k_msgq_get(struct k_msgq *q, void *data, s32_t timeout)
 			_set_thread_return_value(pending_thread, 0);
 			_abort_thread_timeout(pending_thread);
 			_ready_thread(pending_thread);
-			_reschedule_noyield(key);
+			_reschedule(key);
 			return 0;
 		}
 		result = 0;
@@ -229,7 +229,7 @@ void _impl_k_msgq_purge(struct k_msgq *q)
 	q->used_msgs = 0;
 	q->read_ptr = q->write_ptr;
 
-	_reschedule_noyield(key);
+	_reschedule(key);
 }
 
 #ifdef CONFIG_USERSPACE

@@ -218,7 +218,7 @@ static void mbox_message_dispose(struct k_mbox_msg *rx_msg)
 	_set_thread_return_value(sending_thread, 0);
 	_mark_thread_as_not_pending(sending_thread);
 	_ready_thread(sending_thread);
-	_reschedule_noyield(key);
+	_reschedule(key);
 }
 
 /**
@@ -275,7 +275,7 @@ static int mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 			 * until the receiver consumes the message
 			 */
 			if (sending_thread->base.thread_state & _THREAD_DUMMY) {
-				_reschedule_noyield(key);
+				_reschedule(key);
 				return 0;
 			}
 #endif

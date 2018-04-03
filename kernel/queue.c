@@ -89,7 +89,7 @@ void k_queue_cancel_wait(struct k_queue *queue)
 	handle_poll_events(queue, K_POLL_STATE_NOT_READY);
 #endif /* !CONFIG_POLL */
 
-	_reschedule_noyield(key);
+	_reschedule(key);
 }
 
 void k_queue_insert(struct k_queue *queue, void *prev, void *data)
@@ -102,7 +102,7 @@ void k_queue_insert(struct k_queue *queue, void *prev, void *data)
 
 	if (first_pending_thread) {
 		prepare_thread_to_run(first_pending_thread, data);
-		_reschedule_noyield(key);
+		_reschedule(key);
 		return;
 	}
 #endif /* !CONFIG_POLL */
@@ -113,7 +113,7 @@ void k_queue_insert(struct k_queue *queue, void *prev, void *data)
 	handle_poll_events(queue, K_POLL_STATE_DATA_AVAILABLE);
 #endif /* CONFIG_POLL */
 
-	_reschedule_noyield(key);
+	_reschedule(key);
 }
 
 void k_queue_append(struct k_queue *queue, void *data)
@@ -148,7 +148,7 @@ void k_queue_append_list(struct k_queue *queue, void *head, void *tail)
 	handle_poll_events(queue, K_POLL_STATE_DATA_AVAILABLE);
 #endif /* !CONFIG_POLL */
 
-	_reschedule_noyield(key);
+	_reschedule(key);
 }
 
 void k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list)
