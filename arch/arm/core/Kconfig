@@ -93,6 +93,38 @@ config ARM_NONSECURE_FIRMWARE
 	  resources of the Cortex-M MCU, and, therefore, it shall avoid
 	  accessing them.
 
+menu "ARM Secure Firmware Options"
+depends on ARM_SECURE_FIRMWARE
+
+config ARM_FIRMWARE_HAS_SECURE_ENTRY_FUNCS
+	bool "Secure Firmware has Secure Entry functions"
+	depends on ARM_SECURE_FIRMWARE
+	default n
+	help
+	  Option indicates that ARM Secure Firmware contains
+	  Secure Entry functions that may be called from
+	  Non-Secure state. Secure Entry functions must be
+	  located in Non-Secure Callable memory regions.
+
+config ARM_NSC_REGION_BASE_ADDRESS
+	hex "ARM Non-Secure Callable Region base address"
+	depends on ARM_FIRMWARE_HAS_SECURE_ENTRY_FUNCS
+	default 0
+	help
+	  Start address of Non-Secure Callable section.
+
+	  Notes:
+	  - The default value (i.e. when the user does not configure
+	  the option explicitly) instructs the linker script to
+	  place the Non-Secure Callable section, automatically,
+	  inside the .text area.
+	  - Certain requirements/restrictions may apply regarding
+	  the size and the alignment of the starting address for
+	  a Non-Secure Callable section, depending on the available
+	  security atttribution unit (SAU or IDAU) for a given SOC.
+
+endmenu
+
 menu "Architecture Floating Point Options"
 depends on CPU_HAS_FPU
 

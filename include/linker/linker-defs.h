@@ -263,6 +263,15 @@ extern char __ccm_noinit_end[];
 extern char __ccm_end[];
 #endif /* CONFIG_CCM_BASE_ADDRESS */
 
+/* Used by the Security Attribution Unit to configure the
+ * Non-Secure Callable region.
+ */
+#ifdef CONFIG_ARM_FIRMWARE_HAS_SECURE_ENTRY_FUNCS
+extern char __sg_start[];
+extern char __sg_end[];
+extern char __sg_size[];
+#endif /* CONFIG_ARM_FIRMWARE_HAS_SECURE_ENTRY_FUNCS */
+
 
 #endif /* ! _ASMLANGUAGE */
 
