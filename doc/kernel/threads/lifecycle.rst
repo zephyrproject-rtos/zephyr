@@ -289,7 +289,6 @@ The following thread APIs are provided by :file:`kernel.h`:
 
 * :c:macro:`K_THREAD_DEFINE`
 * :cpp:func:`k_thread_create()`
-* :cpp:func:`k_thread_cancel()`
 * :cpp:func:`k_thread_abort()`
 * :cpp:func:`k_thread_suspend()`
 * :cpp:func:`k_thread_resume()`

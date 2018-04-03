@@ -37,63 +37,6 @@ static void thread_entry_abort(void *p1, void *p2, void *p3)
 	zassert_true(1 == 0, NULL);
 }
 
-/*test cases*/
-void test_threads_cancel_undelayed(void)
-{
-	int cur_prio = k_thread_priority_get(k_current_get());
-
-	/* spawn thread with lower priority */
-	int spawn_prio = cur_prio + 1;
-
-	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
-				      thread_entry, NULL, NULL, NULL,
-				      spawn_prio, K_USER, 0);
-
-	/**TESTPOINT: check cancel retcode when thread is not delayed*/
-	int cancel_ret = k_thread_cancel(tid);
-
-	zassert_equal(cancel_ret, -EINVAL, NULL);
-	k_thread_abort(tid);
-}
-
-void test_threads_cancel_started(void)
-{
-	int cur_prio = k_thread_priority_get(k_current_get());
-
-	/* spawn thread with lower priority */
-	int spawn_prio = cur_prio + 1;
-
-	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
-				      thread_entry, NULL, NULL, NULL,
-				      spawn_prio, K_USER, 0);
-
-	k_sleep(50);
-	/**TESTPOINT: check cancel retcode when thread is started*/
-	int cancel_ret = k_thread_cancel(tid);
-
-	zassert_equal(cancel_ret, -EINVAL, NULL);
-	k_thread_abort(tid);
-}
-
-void test_threads_cancel_delayed(void)
-{
-	int cur_prio = k_thread_priority_get(k_current_get());
-
-	/* spawn thread with lower priority */
-	int spawn_prio = cur_prio + 1;
-
-	k_tid_t tid = k_thread_create(&tdata, tstack, STACK_SIZE,
-				      thread_entry, NULL, NULL, NULL,
-				      spawn_prio, K_USER, 100);
-
-	k_sleep(50);
-	/**TESTPOINT: check cancel retcode when thread is started*/
-	int cancel_ret = k_thread_cancel(tid);
-
-	zassert_equal(cancel_ret, 0, NULL);
-	k_thread_abort(tid);
-}
-
 void test_threads_abort_self(void)
 {
 	execute_flag = 0;

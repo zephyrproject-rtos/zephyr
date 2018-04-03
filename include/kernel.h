@@ -717,8 +717,10 @@ __syscall k_tid_t k_current_get(void);
  *
  * @retval 0 Thread spawning canceled.
  * @retval -EINVAL Thread has already started executing.
+ *
+ * @deprecated This API is deprecated.  Use k_thread_abort().
  */
-__syscall int k_thread_cancel(k_tid_t thread);
+__deprecated __syscall int k_thread_cancel(k_tid_t thread);
 
 /**
  * @brief Abort a thread.
