@@ -90,7 +90,7 @@ int net_tx_priority2tc(enum net_priority prio)
 #endif
 	};
 
-	if (prio >= sizeof(tc)) {
+	if (prio >= ARRAY_SIZE(tc)) {
 		/* Use default value suggested in 802.1Q */
 		prio = NET_PRIORITY_BE;
 	}
@@ -144,7 +144,7 @@ int net_rx_priority2tc(enum net_priority prio)
 #endif
 	};
 
-	if (prio >= sizeof(tc)) {
+	if (prio >= ARRAY_SIZE(tc)) {
 		/* Use default value suggested in 802.1Q */
 		prio = NET_PRIORITY_BE;
 	}
@@ -200,7 +200,7 @@ static int tx_tc2thread(int tc)
 	BUILD_ASSERT_MSG(NET_TC_TX_COUNT <= CONFIG_NUM_COOP_PRIORITIES,
 			 "Too many traffic classes");
 
-	NET_ASSERT(tc < sizeof(thread_priorities));
+	NET_ASSERT(tc < ARRAY_SIZE(thread_priorities));
 
 	return thread_priorities[tc];
 }
@@ -253,7 +253,7 @@ static int rx_tc2thread(int tc)
 	BUILD_ASSERT_MSG(NET_TC_RX_COUNT <= CONFIG_NUM_COOP_PRIORITIES,
 			 "Too many traffic classes");
 
-	NET_ASSERT(tc < sizeof(thread_priorities));
+	NET_ASSERT(tc < ARRAY_SIZE(thread_priorities));
 
 	return thread_priorities[tc];
 }
