@@ -23,6 +23,16 @@ config USB_DEVICE_NETWORK_ECM
 	  Ethernet Control Model (ECM) is a part of  Communications Device
 	  Class (CDC) USB protocol specified by USB-IF.
 
+config USB_DEVICE_NETWORK_EEM
+	bool
+	prompt "USB Ethernet Emulation Model (EEM) Networking device"
+	select USB_DEVICE_NETWORK
+	default n
+	help
+	  Ethernet Emulation Model (EEM) is part of  Communications Device
+	  Class (CDC) USB protocol and can be used to encapsulate Ethernet
+	  frames for transport over USB.
+
 config USB_DEVICE_NETWORK_RNDIS
 	bool
 	prompt "USB Remote NDIS (RNDIS) Networking device"
@@ -78,6 +88,24 @@ config USB_DEVICE_NETWORK_ECM_MAC
 	  default MAC.
 
 endif # USB_DEVICE_NETWORK_ECM
+
+if USB_DEVICE_NETWORK_EEM
+
+config CDC_EEM_OUT_EP_ADDR
+	hex "CDC EEM BULK OUT Endpoint address"
+	default 0x01
+	range 0x01 0x0F
+
+config CDC_EEM_IN_EP_ADDR
+	hex "CDC EEM BULK IN Endpoint address"
+	default 0x82
+	range 0x81 0x8F
+
+config CDC_EEM_BULK_EP_MPS
+	int
+	default 64
+
+endif #USB_DEVICE_NETWORK_EEM
 
 if USB_DEVICE_NETWORK_RNDIS
 

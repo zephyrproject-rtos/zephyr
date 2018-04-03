@@ -242,6 +242,8 @@ static void netusb_init(struct net_if *iface)
 	netusb.func = &ecm_function;
 #elif defined(CONFIG_USB_DEVICE_NETWORK_RNDIS)
 	netusb.func = &rndis_function;
+#elif defined(CONFIG_USB_DEVICE_NETWORK_EEM)
+	netusb.func = &eem_function;
 #else
 #error Unknown USB Device Networking function
 #endif
