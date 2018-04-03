@@ -20,9 +20,6 @@ extern void test_threads_spawn_forever(void);
 extern void test_thread_start(void);
 extern void test_threads_suspend_resume_cooperative(void);
 extern void test_threads_suspend_resume_preemptible(void);
-extern void test_threads_cancel_undelayed(void);
-extern void test_threads_cancel_delayed(void);
-extern void test_threads_cancel_started(void);
 extern void test_threads_abort_self(void);
 extern void test_threads_abort_others(void);
 extern void test_threads_abort_repeat(void);
@@ -52,9 +49,6 @@ void test_main(void)
 			 ztest_unit_test(test_threads_suspend_resume_cooperative),
 			 ztest_unit_test(test_threads_suspend_resume_preemptible),
 			 ztest_unit_test(test_threads_priority_set),
-			 ztest_user_unit_test(test_threads_cancel_undelayed),
-			 ztest_user_unit_test(test_threads_cancel_delayed),
-			 ztest_user_unit_test(test_threads_cancel_started),
 			 ztest_user_unit_test(test_threads_abort_self),
 			 ztest_user_unit_test(test_threads_abort_others),
 			 ztest_unit_test(test_threads_abort_repeat),
