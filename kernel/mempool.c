@@ -103,7 +103,6 @@ void k_mem_pool_free_id(struct k_mem_block_id *id)
 		struct k_thread *th = (void *)sys_dlist_peek_head(&p->wait_q);
 
 		_unpend_thread(th);
-		_abort_thread_timeout(th);
 		_ready_thread(th);
 		need_sched = 1;
 	}

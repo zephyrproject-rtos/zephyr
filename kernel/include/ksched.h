@@ -489,26 +489,26 @@ _find_first_thread_to_unpend(_wait_q_t *wait_q, struct k_thread *from)
 
 /* Unpend a thread from the wait queue it is on. Thread must be pending. */
 /* must be called with interrupts locked */
-static inline void _unpend_thread(struct k_thread *thread)
-{
-	__ASSERT(thread->base.thread_state & _THREAD_PENDING, "");
+void _unpend_thread(struct k_thread *thread);
 
-	sys_dlist_remove(&thread->base.k_q_node);
-	_mark_thread_as_not_pending(thread);
-}
+/* Same, but does not abort current timeout */
+void _unpend_thread_no_timeout(struct k_thread *thread);
 
 /* unpend the first thread from a wait queue */
 /* must be called with interrupts locked */
-static inline struct k_thread *_unpend_first_thread(_wait_q_t *wait_q)
+struct k_thread *_unpend_first_thread(_wait_q_t *wait_q);
+
+static inline struct k_thread *_unpend1_no_timeout(_wait_q_t *wait_q)
 {
 	struct k_thread *thread = _find_first_thread_to_unpend(wait_q, NULL);
 
 	if (thread) {
-		_unpend_thread(thread);
+		_unpend_thread_no_timeout(thread);
 	}
 
 	return thread;
 }
+
 
 #ifdef CONFIG_USERSPACE
 /**

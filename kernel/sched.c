@@ -230,6 +230,31 @@ inserted:
 #endif
 }
 
+void _unpend_thread_no_timeout(struct k_thread *thread)
+{
+	__ASSERT(thread->base.thread_state & _THREAD_PENDING, "");
+
+	sys_dlist_remove(&thread->base.k_q_node);
+	_mark_thread_as_not_pending(thread);
+}
+
+void _unpend_thread(struct k_thread *thread)
+{
+	_unpend_thread_no_timeout(thread);
+	_abort_thread_timeout(thread);
+}
+
+struct k_thread *_unpend_first_thread(_wait_q_t *wait_q)
+{
+	struct k_thread *t = _unpend1_no_timeout(wait_q);
+
+	if (t) {
+		_abort_thread_timeout(t);
+	}
+
+	return t;
+}
+
 /* Block the current thread and swap to the next.  Releases the
  * irq_lock, does a _Swap and returns the return value set at wakeup
  * time

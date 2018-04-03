@@ -119,7 +119,6 @@ void k_mem_slab_free(struct k_mem_slab *slab, void **mem)
 
 	if (pending_thread) {
 		_set_thread_return_value_with_data(pending_thread, 0, *mem);
-		_abort_thread_timeout(pending_thread);
 		_ready_thread(pending_thread);
 	} else {
 		**(char ***)mem = slab->free_list;
