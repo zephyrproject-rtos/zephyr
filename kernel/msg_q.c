@@ -92,7 +92,6 @@ int _impl_k_msgq_put(struct k_msgq *q, void *data, s32_t timeout)
 			       q->msg_size);
 			/* wake up waiting thread */
 			_set_thread_return_value(pending_thread, 0);
-			_abort_thread_timeout(pending_thread);
 			_ready_thread(pending_thread);
 			_reschedule(key);
 			return 0;
@@ -182,7 +181,6 @@ int _impl_k_msgq_get(struct k_msgq *q, void *data, s32_t timeout)
 
 			/* wake up waiting thread */
 			_set_thread_return_value(pending_thread, 0);
-			_abort_thread_timeout(pending_thread);
 			_ready_thread(pending_thread);
 			_reschedule(key);
 			return 0;
@@ -222,7 +220,6 @@ void _impl_k_msgq_purge(struct k_msgq *q)
 	/* wake up any threads that are waiting to write */
 	while ((pending_thread = _unpend_first_thread(&q->wait_q)) != NULL) {
 		_set_thread_return_value(pending_thread, -ENOMSG);
-		_abort_thread_timeout(pending_thread);
 		_ready_thread(pending_thread);
 	}
 

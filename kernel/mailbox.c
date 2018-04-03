@@ -260,7 +260,6 @@ static int mbox_message_put(struct k_mbox *mbox, struct k_mbox_msg *tx_msg,
 		if (mbox_message_match(tx_msg, rx_msg) == 0) {
 			/* take receiver out of rx queue */
 			_unpend_thread(receiving_thread);
-			_abort_thread_timeout(receiving_thread);
 
 			/* ready receiver for execution */
 			_set_thread_return_value(receiving_thread, 0);
@@ -441,7 +440,6 @@ int k_mbox_get(struct k_mbox *mbox, struct k_mbox_msg *rx_msg, void *buffer,
 		if (mbox_message_match(tx_msg, rx_msg) == 0) {
 			/* take sender out of mailbox's tx queue */
 			_unpend_thread(sending_thread);
-			_abort_thread_timeout(sending_thread);
 
 			irq_unlock(key);
 

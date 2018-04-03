@@ -80,12 +80,11 @@ void _impl_k_stack_push(struct k_stack *stack, u32_t data)
 	first_pending_thread = _unpend_first_thread(&stack->wait_q);
 
 	if (first_pending_thread) {
-		_abort_thread_timeout(first_pending_thread);
 		_ready_thread(first_pending_thread);
 
 		_set_thread_return_value_with_data(first_pending_thread,
 						   0, (void *)data);
-		_reschedule_noyield(key);
+		_reschedule(key);
 		return;
 	} else {
 		*(stack->next) = data;

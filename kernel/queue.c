@@ -61,7 +61,6 @@ void k_queue_init(struct k_queue *queue)
 #if !defined(CONFIG_POLL)
 static void prepare_thread_to_run(struct k_thread *thread, void *data)
 {
-	_abort_thread_timeout(thread);
 	_ready_thread(thread);
 	_set_thread_return_value_with_data(thread, 0, data);
 }

@@ -75,13 +75,14 @@ void _timer_expiration_handler(struct _timeout *t)
 	}
 
 	/*
-	 * Interrupts _DO NOT_ have to be locked in this specific instance of
-	 * calling _unpend_thread() because a) this is the only place a thread
-	 * can be taken off this pend queue, and b) the only place a thread
-	 * can be put on the pend queue is at thread level, which of course
-	 * cannot interrupt the current context.
+	 * Interrupts _DO NOT_ have to be locked in this specific
+	 * instance of thread unpending because a) this is the only
+	 * place a thread can be taken off this pend queue, and b) the
+	 * only place a thread can be put on the pend queue is at
+	 * thread level, which of course cannot interrupt the current
+	 * context.
 	 */
-	_unpend_thread(thread);
+	_unpend_thread_no_timeout(thread);
 
 	key = irq_lock();
 	_ready_thread(thread);
@@ -163,7 +164,7 @@ void _impl_k_timer_stop(struct k_timer *timer)
 	}
 
 	key = irq_lock();
-	struct k_thread *pending_thread = _unpend_first_thread(&timer->wait_q);
+	struct k_thread *pending_thread = _unpend1_no_timeout(&timer->wait_q);
 
 	if (pending_thread) {
 		_ready_thread(pending_thread);

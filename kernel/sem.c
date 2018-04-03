@@ -98,7 +98,6 @@ static void do_sem_give(struct k_sem *sem)
 	struct k_thread *thread = _unpend_first_thread(&sem->wait_q);
 
 	if (thread) {
-		(void)_abort_thread_timeout(thread);
 		_ready_thread(thread);
 		_set_thread_return_value(thread, 0);
 	} else {
@@ -121,7 +120,7 @@ void _sem_give_non_preemptible(struct k_sem *sem)
 {
 	struct k_thread *thread;
 
-	thread = _unpend_first_thread(&sem->wait_q);
+	thread = _unpend1_no_timeout(&sem->wait_q);
 	if (!thread) {
 		increment_count_up_to_limit(sem);
 		return;

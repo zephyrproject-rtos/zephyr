@@ -501,7 +501,7 @@ void _k_thread_single_abort(struct k_thread *thread)
 		_remove_thread_from_ready_q(thread);
 	} else {
 		if (_is_thread_pending(thread)) {
-			_unpend_thread(thread);
+			_unpend_thread_no_timeout(thread);
 		}
 		if (_is_thread_timeout_active(thread)) {
 			_abort_thread_timeout(thread);
