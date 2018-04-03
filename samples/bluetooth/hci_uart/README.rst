@@ -53,6 +53,8 @@ For example, to build for the nRF52832 Development Kit:
    :board: nrf52_pca10040
    :goals: build flash
 
+.. _bluetooth-hci-uart-qemu:
+
 Using the controller with QEMU
 ==============================
 
@@ -79,6 +81,8 @@ Linux kernel identifies the attached controller.
 
 Once the controller is attached follow the instructions in the
 :ref:`bluetooth_qemu` section to use QEMU with it.
+
+.. _bluetooth-hci-uart-bluez:
 
 Using the controller with BlueZ
 ===============================
