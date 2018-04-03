@@ -21,8 +21,7 @@ extern k_tid_t const _idle_thread;
 
 extern void _add_thread_to_ready_q(struct k_thread *thread);
 extern void _remove_thread_from_ready_q(struct k_thread *thread);
-extern int _reschedule_noyield(int key);
-extern int _reschedule_yield(int key);
+extern int _reschedule(int key);
 extern void k_sched_unlock(void);
 extern void _pend_thread(struct k_thread *thread,
 			 _wait_q_t *wait_q, s32_t timeout);

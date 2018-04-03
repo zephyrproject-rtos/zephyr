@@ -109,7 +109,7 @@ void k_mem_pool_free_id(struct k_mem_block_id *id)
 	}
 
 	if (need_sched && !_is_in_isr()) {
-		_reschedule_noyield(key);
+		_reschedule(key);
 	} else {
 		irq_unlock(key);
 	}

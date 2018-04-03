@@ -23,7 +23,7 @@ int pthread_barrier_wait(pthread_barrier_t *b)
 		while (!sys_dlist_is_empty(&b->wait_q)) {
 			ready_one_thread(&b->wait_q);
 		}
-		return _reschedule_noyield(key);
+		return _reschedule(key);
 	} else {
 		return _pend_current_thread(key, &b->wait_q, K_FOREVER);
 	}

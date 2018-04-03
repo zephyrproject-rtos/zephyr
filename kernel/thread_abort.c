@@ -46,7 +46,7 @@ void _impl_k_thread_abort(k_tid_t thread)
 		}
 
 		/* The abort handler might have altered the ready queue. */
-		_reschedule_noyield(key);
+		_reschedule(key);
 	}
 }
 #endif
