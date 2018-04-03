@@ -19,7 +19,6 @@
 #include <misc/dlist.h>
 #include <init.h>
 #include <syscall_handler.h>
-#include <kswap.h>
 
 struct k_pipe_desc {
 	unsigned char *buffer;           /* Position in src/dest buffer */

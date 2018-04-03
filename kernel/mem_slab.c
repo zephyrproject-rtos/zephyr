@@ -13,7 +13,6 @@
 #include <misc/dlist.h>
 #include <ksched.h>
 #include <init.h>
-#include <kswap.h>
 
 extern struct k_mem_slab _k_mem_slab_list_start[];
 extern struct k_mem_slab _k_mem_slab_list_end[];
