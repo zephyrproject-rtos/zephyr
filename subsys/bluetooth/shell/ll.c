@@ -189,7 +189,7 @@ int cmd_advx(int argc, char *argv[])
 	}
 
 	printk("adv param set...");
-	err = ll_adv_params_set(0x00, evt_prop, adv_interval, adv_type,
+	err = ll_adv_params_set(0x01, evt_prop, adv_interval, adv_type,
 				OWN_ADDR_TYPE, PEER_ADDR_TYPE, PEER_ADDR,
 				ADV_CHAN_MAP, FILTER_POLICY, ADV_TX_PWR,
 				phy_p, ADV_SEC_SKIP, ADV_PHY_S, ADV_SID,
@@ -199,7 +199,7 @@ int cmd_advx(int argc, char *argv[])
 	}
 
 	printk("ad data set...");
-	err = ll_adv_aux_ad_data_set(0x00, AD_OP, AD_FRAG_PREF, AD_LEN,
+	err = ll_adv_aux_ad_data_set(0x01, AD_OP, AD_FRAG_PREF, AD_LEN,
 				     AD_DATA);
 	if (err) {
 		goto exit;
@@ -207,15 +207,11 @@ int cmd_advx(int argc, char *argv[])
 
 disable:
 	printk("adv enable (%u)...", enable);
-#if defined(CONFIG_BT_CTLR_ADV_EXT) || defined(CONFIG_BT_HCI_MESH_EXT)
 #if defined(CONFIG_BT_HCI_MESH_EXT)
-	err = ll_adv_enable(0, enable, 0, 0, 0, 0, 0);
+	err = ll_adv_enable(0x01, enable, 0, 0, 0, 0, 0);
 #else /* !CONFIG_BT_HCI_MESH_EXT */
-	err = ll_adv_enable(0, enable);
+	err = ll_adv_enable(0x01, enable);
 #endif /* !CONFIG_BT_HCI_MESH_EXT */
-#else /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_HCI_MESH_EXT */
-	err = ll_adv_enable(enable);
-#endif /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_HCI_MESH_EXT */
 	if (err) {
 		goto exit;
 	}

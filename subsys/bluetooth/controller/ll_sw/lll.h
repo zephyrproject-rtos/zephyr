@@ -15,6 +15,15 @@
 
 #define EVENT_PIPELINE_MAX            2
 
+#if defined(CONFIG_BT_BROADCASTER)
+#if defined(CONFIG_BT_ADV_SET)
+#define CONFIG_BT_ADV_MAX (CONFIG_BT_ADV_SET + 1)
+#else /* !CONFIG_BT_ADV_SET */
+#define CONFIG_BT_ADV_MAX 1
+#define TICKER_ID_ADV_LAST TICKER_ID_ADV_BASE
+#endif /* !CONFIG_BT_ADV_SET */
+#endif /* CONFIG_BT_BROADCASTER */
+
 #define ULL_HDR(p) ((void *)((u8_t *)p + sizeof(struct evt_hdr)))
 
 enum {
@@ -47,13 +56,6 @@ enum {
 };
 
 #define TICKER_ID_ULL_BASE ((TICKER_ID_LLL_PREEMPT) + 1)
-
-#if defined(CONFIG_BT_BROADCASTER)
-#if !defined(CONFIG_BT_ADV_MAX)
-#define CONFIG_BT_ADV_MAX 1
-#define TICKER_ID_ADV_LAST TICKER_ID_ADV_BASE
-#endif /* !CONFIG_BT_ADV_MAX */
-#endif /* CONFIG_BT_BROADCASTER */
 
 enum ull_status {
 	ULL_STATUS_SUCCESS,
