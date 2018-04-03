@@ -17,7 +17,6 @@
 #include <wait_q.h>
 #include <misc/dlist.h>
 #include <init.h>
-#include <kswap.h>
 
 #if (CONFIG_NUM_MBOX_ASYNC_MSGS > 0)
 
