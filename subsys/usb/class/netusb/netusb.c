@@ -82,23 +82,26 @@ static int netusb_disconnect_media(void)
 	return netusb.func->connect_media(false);
 }
 
-static void netusb_status_interface(u8_t *iface)
+static inline void netusb_status_interface(u8_t *iface)
 {
-	SYS_LOG_INF("Enable interface %u", *iface);
-
-#if defined(CONFIG_USB_COMPOSITE_DEVICE)
-	if (*iface == NETUSB_IFACE_IDX) {
-#else
-	if (*iface == 1) {
-#endif
-		netusb.enabled = true;
-		net_if_up(netusb.iface);
-		netusb_connect_media();
-	} else {
-		netusb.enabled = false;
-		netusb_disconnect_media();
-		net_if_down(netusb.iface);
+	if (*iface != NETUSB_IFACE_IDX) {
+		return;
 	}
+
+	netusb.enabled = true;
+	net_if_up(netusb.iface);
+	netusb_connect_media();
+}
+
+static inline void netusb_status_disconnected(void)
+{
+	if (!netusb.enabled) {
+		return;
+	}
+
+	netusb.enabled = false;
+	netusb_disconnect_media();
+	net_if_down(netusb.iface);
 }
 
 static void netusb_status_cb(enum usb_dc_status_code status, u8_t *param)
@@ -119,6 +122,7 @@ static void netusb_status_cb(enum usb_dc_status_code status, u8_t *param)
 		break;
 	case USB_DC_DISCONNECTED:
 		SYS_LOG_DBG("USB device disconnected");
+		netusb_status_disconnected();
 		break;
 	case USB_DC_SUSPEND:
 		SYS_LOG_DBG("USB device suspended");
