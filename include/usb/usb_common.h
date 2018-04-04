@@ -104,7 +104,6 @@
 
 /* Sub-classes */
 #define ACM_SUBCLASS			0x02
-#define CDC_ECM_SUBCLASS		0x06
 #define CDC_NCM_SUBCLASS		0x0d
 #define BOOT_INTERFACE_SUBCLASS		0x01
 #define SCSI_TRANSPARENT_SUBCLASS	0x06
