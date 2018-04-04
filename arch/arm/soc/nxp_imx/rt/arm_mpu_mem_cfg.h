@@ -22,6 +22,10 @@
 #define REGION_FLASH_SIZE REGION_1M
 #elif CONFIG_FLASH_SIZE == 2048
 #define REGION_FLASH_SIZE REGION_2M
+#elif CONFIG_FLASH_SIZE == 8192
+#define REGION_FLASH_SIZE REGION_8M
+#elif CONFIG_FLASH_SIZE == 65536
+#define REGION_FLASH_SIZE REGION_64M
 #else
 #error "Unsupported configuration"
 #endif
@@ -35,6 +39,8 @@
 #define REGION_SRAM_0_SIZE REGION_128K
 #elif CONFIG_SRAM_SIZE == 256
 #define REGION_SRAM_0_SIZE REGION_256K
+#elif CONFIG_SRAM_SIZE == 32768
+#define REGION_SRAM_0_SIZE REGION_32M
 #else
 #error "Unsupported configuration"
 #endif
