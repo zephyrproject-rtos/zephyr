@@ -19,7 +19,7 @@ static int cond_wait(pthread_cond_t *cv, pthread_mutex_t *mut, int timeout)
 
 	mut->sem->count = 1;
 	ready_one_thread(&mut->sem->wait_q);
-	ret = _pend_current_thread(&cv->wait_q, timeout);
+	ret = _pend_current_thread(key, &cv->wait_q, timeout);
 
 	/* FIXME: this extra lock (and the potential context switch it
 	 * can cause) could be optimized out.  At the point of the
@@ -50,7 +50,7 @@ int pthread_cond_signal(pthread_cond_t *cv)
 	int key = irq_lock();
 
 	ready_one_thread(&cv->wait_q);
-	reschedule_yield(key);
+	_reschedule(key);
 
 	return 0;
 }
@@ -63,7 +63,7 @@ int pthread_cond_broadcast(pthread_cond_t *cv)
 		ready_one_thread(&cv->wait_q);
 	}
 
-	reschedule_yield(key);
+	_reschedule(key);
 
 	return 0;
 }
