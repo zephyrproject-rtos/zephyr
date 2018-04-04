@@ -31,7 +31,7 @@ _SYSCALL_HANDLER(spi_transceive, dev, config_p, tx_bufs, rx_bufs)
 	const struct spi_config *config = (const struct spi_config *)config_p;
 
 	_SYSCALL_MEMORY_READ(config, sizeof(*config));
-	_SYSCALL_OBJ(dev, K_OBJ_DRIVER_SPI);
+	_SYSCALL_DRIVER_SPI(dev, transceive);
 
 	/* ssf is implicit system call stack frame parameter, used by
 	 * _SYSCALL_* APIs when something goes wrong.
@@ -71,6 +71,6 @@ _SYSCALL_HANDLER(spi_release, dev, config_p)
 	const struct spi_config *config = (const struct spi_config *)config_p;
 
 	_SYSCALL_MEMORY_READ(config, sizeof(*config));
-	_SYSCALL_OBJ(dev, K_OBJ_DRIVER_SPI);
+	_SYSCALL_DRIVER_SPI(dev, release);
 	return _impl_spi_release((struct device *)dev, config);
 }

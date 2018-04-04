@@ -9,7 +9,7 @@
 
 _SYSCALL_HANDLER(entropy_get_entropy, dev, buffer, len)
 {
-	_SYSCALL_OBJ(dev, K_OBJ_DRIVER_ENTROPY);
+	_SYSCALL_DRIVER_ENTROPY(dev, get_entropy);
 	_SYSCALL_MEMORY_WRITE(buffer, len);
 	return _impl_entropy_get_entropy((struct device *)dev, (u8_t *)buffer,
 					 len);
