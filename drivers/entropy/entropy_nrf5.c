@@ -9,6 +9,59 @@
 #include <atomic.h>
 #include <soc.h>
 
+/*
+ * The nRF5 RNG HW has several characteristics that need to be taken
+ * into account by the driver to achieve energy efficient generation
+ * of entropy.
+ *
+ * The RNG does not support continuously DMA'ing entropy into RAM,
+ * values must be read out by the CPU byte-by-byte. But once started,
+ * it will continue to generate bytes until stopped.
+ *
+ * The generation time for byte 0 after starting generation (with BIAS
+ * correction) is:
+ *
+ * nRF51822 - 677us
+ * nRF52810 - 248us
+ * nRF52840 - 248us
+ *
+ * The generation time for byte N >= 1 after starting generation (with
+ * BIAS correction) is:
+ *
+ * nRF51822 - 677us
+ * nRF52810 - 120us
+ * nRF52840 - 120us
+ *
+ * Due to the first byte in a stream of bytes being more costly on
+ * some platforms a "water system" inspired algorithm is used to
+ * ammortize the cost of the first byte.
+ *
+ * The algorithm will delay generation of entropy until the amount of
+ * bytes goes below THRESHOLD, at which point it will generate entropy
+ * until the BUF_LEN limit is reached.
+ *
+ * The entropy level is checked at the end of every consumption of
+ * entropy.
+ *
+ * The algorithm and HW together has these characteristics:
+ *
+ * Setting a low threshold will highly ammortize the extra 120us cost
+ * of the first byte on nRF52.
+ *
+ * Setting a high threshold will minimize the time spent waiting for
+ * entropy.
+ *
+ * To minimize power consumption the threshold should either be set
+ * low or high depending on the HFCLK-usage pattern of other
+ * components.
+ *
+ * If the threshold is set close to the BUF_LEN, and the system
+ * happens to anyway be using the HFCLK for several hundred us after
+ * entropy is requested there will be no extra current-consumption for
+ * keeping clocks running for entropy generation.
+ *
+ */
+
 struct rand {
 	u8_t count;
 	u8_t threshold;
