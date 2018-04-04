@@ -826,18 +826,34 @@ static void ascii7_to_utf16le(void *descriptor)
 	}
 }
 
+static void usb_fix_descriptor(struct usb_desc_header *head)
+{
+	u8_t str_descr_idx = 0;
+
+	while (head->bLength) {
+		switch (head->bDescriptorType) {
+		case USB_STRING_DESC:
+			SYS_LOG_DBG("String descriptor %p idx %d",
+				    head, str_descr_idx);
+			if (str_descr_idx) {
+				ascii7_to_utf16le(head);
+			}
+
+			str_descr_idx += 1;
+			break;
+		default:
+			break;
+		}
+
+		/* Move to next descriptor */
+		head = (struct usb_desc_header *)((u8_t *)head + head->bLength);
+	}
+}
+
+
 u8_t *usb_get_device_descriptor(void)
 {
-	ascii7_to_utf16le(&common_desc.string_descr.utf16le_mfr);
-
-	ascii7_to_utf16le(&common_desc.string_descr.utf16le_product);
-
-	ascii7_to_utf16le(&common_desc.string_descr.utf16le_sn);
-
-#ifdef CONFIG_USB_DEVICE_NETWORK_ECM
-	ascii7_to_utf16le(&common_desc.string_descr.utf16le_mac);
-#endif
-
+	usb_fix_descriptor((struct usb_desc_header *)(&common_desc));
 	return (u8_t *) &common_desc;
 }
 
