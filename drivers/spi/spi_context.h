@@ -44,6 +44,10 @@ struct spi_context {
 	size_t tx_len;
 	u8_t *rx_buf;
 	size_t rx_len;
+
+#ifdef CONFIG_SPI_SLAVE
+	int recv_frames;
+#endif /* CONFIG_SPI_SLAVE */
 };
 
 #define SPI_CONTEXT_INIT_LOCK(_data, _ctx_name)				\
@@ -77,10 +81,12 @@ static inline void spi_context_lock(struct spi_context *ctx,
 
 static inline void spi_context_release(struct spi_context *ctx, int status)
 {
-	if (!status &&
+#ifdef CONFIG_SPI_SLAVE
+	if (status >= 0 &&
 	    (ctx->config->operation & (SPI_LOCK_ON | SPI_OP_MODE_SLAVE))) {
 		return;
 	}
+#endif /* CONFIG_SPI_SLAVE */
 
 #ifdef CONFIG_SPI_ASYNC
 	if (!ctx->asynchronous || status) {
@@ -110,6 +116,13 @@ static inline int spi_context_wait_for_completion(struct spi_context *ctx)
 	k_sem_take(&ctx->sync, K_FOREVER);
 	status = ctx->sync_status;
 #endif /* CONFIG_SPI_ASYNC */
+
+#ifdef CONFIG_SPI_SLAVE
+	if (spi_context_is_slave(ctx) && !status) {
+		return ctx->recv_frames;
+	}
+#endif /* CONFIG_SPI_SLAVE */
+
 	return status;
 }
 
@@ -221,6 +234,10 @@ void spi_context_buffers_setup(struct spi_context *ctx,
 
 	ctx->sync_status = 0;
 
+#ifdef CONFIG_SPI_SLAVE
+	ctx->recv_frames = 0;
+#endif /* CONFIG_SPI_SLAVE */
+
 	SYS_LOG_DBG("current_tx %p (%zu), current_rx %p (%zu),"
 		    " tx buf/len %p/%zu, rx buf/len %p/%zu",
 		    ctx->current_tx, ctx->tx_count,
@@ -272,6 +289,13 @@ bool spi_context_tx_buf_on(struct spi_context *ctx)
 static ALWAYS_INLINE
 void spi_context_update_rx(struct spi_context *ctx, u8_t dfs, u32_t len)
 {
+#ifdef CONFIG_SPI_SLAVE
+	if (spi_context_is_slave(ctx)) {
+		ctx->recv_frames += len;
+	}
+
+#endif /* CONFIG_SPI_SLAVE */
+
 	if (!ctx->rx_len) {
 		return;
 	}
