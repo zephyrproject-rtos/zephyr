@@ -21,6 +21,7 @@ below.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/eth_native_posix
+   :host-os: unix
    :board: native_posix
    :conf: <config file to use>
    :goals: build
