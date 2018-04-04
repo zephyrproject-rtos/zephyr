@@ -9,7 +9,7 @@ set(ARCH_FOR_cortex-m33    armv8-m.main)
 
 set_property(GLOBAL PROPERTY E_KERNEL_ENTRY  -e${CONFIG_KERNEL_ENTRY})
 
-if(${ARCH_FOR_${GCC_M_CPU}})
+if(ARCH_FOR_${GCC_M_CPU})
     set(ARCH_FLAG -march=${ARCH_FOR_${GCC_M_CPU}})
 endif()
 
