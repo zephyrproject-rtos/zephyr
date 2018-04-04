@@ -244,7 +244,9 @@ struct spi_driver_api {
  * @param rx_bufs Buffer array where data to be read will be written to,
  *        or NULL if none.
  *
- * @retval 0 If successful, negative errno code otherwise.
+ * @retval 0 If successful, negative errno code otherwise. In case of slave
+ *         transaction: if successful it will return the amount of frames
+ *         received, negative errno code otherwise.
  */
 __syscall int spi_transceive(struct device *dev,
 			     const struct spi_config *config,
@@ -318,7 +320,9 @@ static inline int spi_write(struct device *dev,
  *        notify the end of the transaction, and whether it went
  *        successfully or not).
  *
- * @retval 0 If successful, negative errno code otherwise.
+ * @retval 0 If successful, negative errno code otherwise. In case of slave
+ *         transaction: if successful it will return the amount of frames
+ *         received, negative errno code otherwise.
  */
 static inline int spi_transceive_async(struct device *dev,
 				       const struct spi_config *config,
