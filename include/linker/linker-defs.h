@@ -111,8 +111,8 @@
 
 #ifndef NUM_KERNEL_OBJECT_FILES
 #error "Expected NUM_KERNEL_OBJECT_FILES to be defined"
-#elif NUM_KERNEL_OBJECT_FILES > 19
-#error "Max supported kernel objects is 19."
+#elif NUM_KERNEL_OBJECT_FILES > 32
+#error "Max supported kernel objects is 32."
 /* TODO: Using the preprocessor to do this was a mistake. Rewrite to
    scale better. e.g. by aggregating the kernel objects into two
    archives like KBuild did.*/
