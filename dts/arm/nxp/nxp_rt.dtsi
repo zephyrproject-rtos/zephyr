@@ -41,6 +41,24 @@
 			};
 		};
 
+		flexspi0: flexspi0@402a8000 {
+			compatible = "nxp,imx-flexspi";
+			reg = <0x402a8000 0x4000>;
+			interrupts = <108 0>;
+			label = "FLEXSPI0";
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
+		semc0: semc0@402f0000 {
+			compatible = "nxp,imx-semc";
+			reg = <0x402f0000 0x4000>;
+			interrupts = <109 0>;
+			label = "SEMC0";
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+
 		ccm: ccm@400fc000 {
 			compatible = "nxp,imx-ccm";
 			reg = <0x400fc000 0x4000>;
