@@ -36,7 +36,7 @@ static int temp_nrf5_sample_fetch(struct device *dev, enum sensor_channel chan)
 
 	SYS_LOG_DBG("");
 
-	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_AMBIENT_TEMP) {
+	if (chan != SENSOR_CHAN_ALL && chan != SENSOR_CHAN_DIE_TEMP) {
 		return -ENOTSUP;
 	}
 
@@ -69,7 +69,7 @@ static int temp_nrf5_channel_get(struct device *dev,
 
 	SYS_LOG_DBG("");
 
-	if (chan != SENSOR_CHAN_AMBIENT_TEMP) {
+	if (chan != SENSOR_CHAN_DIE_TEMP) {
 		return -ENOTSUP;
 	}
 
