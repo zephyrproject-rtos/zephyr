@@ -7,9 +7,7 @@
 #
 
 menuconfig SPI_DW
-	bool
-	prompt "Designware SPI controller driver"
-	depends on SPI
+	bool "Designware SPI controller driver"
 	default n
 	help
 	  Enable support for Designware's SPI controllers.
@@ -25,34 +23,6 @@ config SPI_DW_ARC_AUX_REGS
 	  registers and thus their access is different than memory
 	  mapped registers.
 
-
-choice
-depends on SPI_DW
-prompt "DesignWare SPI interrupt management logic"
-default SPI_DW_INTERRUPT_SINGLE_LINE
-
-config SPI_DW_INTERRUPT_SINGLE_LINE
-	bool "Single interrupt line for all interrupts"
-	help
-	  Only one line is used to trigger interrupts: RX, TX and ERROR
-	  interrupt go all through that line, undifferentiated.
-config SPI_DW_INTERRUPT_SEPARATED_LINES
-	bool "One line per-interrupt type (RX, TX and ERROR)"
-	help
-	  Each interrupt gets a dedicated line
-endchoice
-
-config SPI_DW_CLOCK_GATE
-	bool "Enable clock gating"
-	depends on SPI_DW && SOC_QUARK_SE_C1000
-	select CLOCK_CONTROL
-	default n
-
-config	SPI_DW_CLOCK_GATE_DRV_NAME
-	string
-	depends on SPI_DW_CLOCK_GATE
-	default ""
-
 config SPI_DW_FIFO_DEPTH
 	int "RX and TX FIFO Depth"
 	help
@@ -60,14 +30,109 @@ config SPI_DW_FIFO_DEPTH
 	  SSI_RX_FIFO_DEPTH of the DesignWare Synchronous
 	  Serial Interface. Depth ranges from 2-256.
 
+if SPI_0
+
+config SPI_DW_PORT_0_INTERRUPT_SINGLE_LINE
+	bool "Single interrupt line for all interrupts"
+	default y
+	help
+	  Only one line is used to trigger interrupts: RX, TX and ERROR
+	  interrupt go all through that line, undifferentiated.
+
+config SPI_DW_PORT_0_CLOCK_GATE
+	bool "Enable clock gating"
+	depends on CLOCK_CONTROL
+	default n
+
+if SPI_DW_PORT_0_CLOCK_GATE
+
+config SPI_DW_PORT_0_CLOCK_GATE_DRV_NAME
+	string
+	default ""
+
 config SPI_DW_PORT_0_CLOCK_GATE_SUBSYS
 	int "Clock controller's subsystem"
-	depends on SPI_DW_CLOCK_GATE
 
+endif # SPI_DW_PORT_0_CLOCK_GATE
+
+endif # SPI_0
+
+if SPI_1
+
+config SPI_DW_PORT_1_INTERRUPT_SINGLE_LINE
+	bool "Single interrupt line for all interrupts"
+	default y
+
+config SPI_DW_PORT_1_CLOCK_GATE
+	bool "Enable clock gating"
+	depends on CLOCK_CONTROL
+	default n
+
+if SPI_DW_PORT_1_CLOCK_GATE
+
+config SPI_DW_PORT_1_CLOCK_GATE_DRV_NAME
+	string
+	default ""
 
 config SPI_DW_PORT_1_CLOCK_GATE_SUBSYS
 	int "Clock controller's subsystem"
-	depends on SPI_DW_CLOCK_GATE
 
+endif # SPI_DW_PORT_1_CLOCK_GATE
+
+endif # SPI_1
+
+if SPI_2
+
+config SPI_DW_PORT_2_INTERRUPT_SINGLE_LINE
+	bool "Single interrupt line for all interrupts"
+	default y
+	help
+	  Only one line is used to trigger interrupts: RX, TX and ERROR
+	  interrupt go all through that line, undifferentiated.
+
+config SPI_DW_PORT_2_CLOCK_GATE
+	bool "Enable clock gating"
+	depends on CLOCK_CONTROL
+	default n
+
+if SPI_DW_PORT_2_CLOCK_GATE
+
+config SPI_DW_PORT_2_CLOCK_GATE_DRV_NAME
+	string
+	default ""
+
+config SPI_DW_PORT_2_CLOCK_GATE_SUBSYS
+	int "Clock controller's subsystem"
+
+endif # SPI_DW_PORT_2_CLOCK_GATE
+
+endif # SPI_2
+
+if SPI_3
+
+config SPI_DW_PORT_3_INTERRUPT_SINGLE_LINE
+	bool "Single interrupt line for all interrupts"
+	default y
+	help
+	  Only one line is used to trigger interrupts: RX, TX and ERROR
+	  interrupt go all through that line, undifferentiated.
+
+config SPI_DW_PORT_3_CLOCK_GATE
+	bool "Enable clock gating"
+	depends on CLOCK_CONTROL
+	default n
+
+if SPI_DW_PORT_3_CLOCK_GATE
+
+config SPI_DW_PORT_3_CLOCK_GATE_DRV_NAME
+	string
+	default ""
+
+config SPI_DW_PORT_3_CLOCK_GATE_SUBSYS
+	int "Clock controller's subsystem"
+
+endif # SPI_DW_PORT_3_CLOCK_GATE
+
+endif # SPI_3
 
 endif # SPI_DW

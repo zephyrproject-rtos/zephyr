@@ -1,5 +1,0 @@
-tests:
-  test_spi:
-    platform_whitelist: quark_se_c1000_devboard quark_d2000_crb
-      galileo frdm_k64f
-    tags: apps

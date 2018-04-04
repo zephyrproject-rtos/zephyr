@@ -20,43 +20,25 @@ typedef void (*spi_dw_config_t)(void);
 /* Private structures */
 struct spi_dw_config {
 	u32_t regs;
-#ifdef CONFIG_SPI_DW_CLOCK_GATE
+#ifdef CONFIG_CLOCK_CONTROL
+	const char *clock_name;
 	void *clock_data;
-#endif /* CONFIG_SPI_DW_CLOCK_GATE */
+#endif /* CONFIG_CLOCK_CONTROL */
 	spi_dw_config_t config_func;
+	u8_t op_modes;
 };
-
-#if defined(CONFIG_SPI_LEGACY_API)
-struct spi_dw_data {
-	struct k_sem device_sync_sem;
-	u32_t error:1;
-	u32_t dfs:3; /* dfs in bytes: 1,2 or 4 */
-	u32_t slave:17; /* up 16 slaves */
-	u32_t fifo_diff:9; /* cannot be bigger than FIFO depth */
-	u32_t last_tx:1;
-	u32_t _unused:1;
-#ifdef CONFIG_SPI_DW_CLOCK_GATE
-	struct device *clock;
-#endif /* CONFIG_SPI_DW_CLOCK_GATE */
-	const u8_t *tx_buf;
-	u32_t tx_buf_len;
-	u8_t *rx_buf;
-	u32_t rx_buf_len;
-};
-#else
 
 #include "spi_context.h"
 
 struct spi_dw_data {
-#ifdef CONFIG_SPI_DW_CLOCK_GATE
+#ifdef CONFIG_CLOCK_CONTROL
 	struct device *clock;
-#endif /* CONFIG_SPI_DW_CLOCK_GATE */
+#endif /* CONFIG_CLOCK_CONTROL */
 	struct spi_context ctx;
 	u8_t dfs;	/* dfs in bytes: 1,2 or 4 */
 	u8_t fifo_diff;	/* cannot be bigger than FIFO depth */
 	u16_t _unused;
 };
-#endif /* CONFIG_SPI_LEGACY_API */
 
 /* Helper macros */
 
@@ -123,6 +105,15 @@ struct spi_dw_data {
 #define DW_SPI_CTRLR0_SCPH		BIT(DW_SPI_CTRLR0_SCPH_BIT)
 #define DW_SPI_CTRLR0_SCPOL		BIT(DW_SPI_CTRLR0_SCPOL_BIT)
 #define DW_SPI_CTRLR0_SRL		BIT(DW_SPI_CTRLR0_SRL_BIT)
+
+#define DW_SPI_CTRLR0_SLV_OE_BIT	(10)
+#define DW_SPI_CTRLR0_SLV_OE		BIT(DW_SPI_CTRLR0_SLV_OE_BIT)
+
+#define DW_SPI_CTRLR0_TMOD_SHIFT	(8)
+#define DW_SPI_CTRLR0_TMOD_TX_RX	(0)
+#define DW_SPI_CTRLR0_TMOD_TX		(1 << DW_SPI_CTRLR0_TMOD_SHIFT)
+#define DW_SPI_CTRLR0_TMOD_RX		(2 << DW_SPI_CTRLR0_TMOD_SHIFT)
+#define DW_SPI_CTRLR0_TMOD_EEPROM	(3 << DW_SPI_CTRLR0_TMOD_SHIFT)
 
 #define DW_SPI_CTRLR0_DFS_16(__bpw)	((__bpw) - 1)
 #define DW_SPI_CTRLR0_DFS_32(__bpw)	(((__bpw) - 1) << 16)
@@ -208,47 +199,11 @@ struct spi_dw_data {
 #include "spi_dw_quark_se_ss_regs.h"
 #else
 #include "spi_dw_regs.h"
+
+#define _extra_clock_on(...)
+#define _extra_clock_off(...)
+
 #endif
-
-/* GPIO used to emulate CS */
-#if defined(CONFIG_SPI_LEGACY_API)
-#ifdef CONFIG_SPI_DW_CS_GPIO
-
-#include <gpio.h>
-
-static inline void _spi_config_cs(struct device *dev)
-{
-	const struct spi_dw_config *info = dev->config->config_info;
-	struct spi_dw_data *spi = dev->driver_data;
-	struct device *gpio;
-
-	gpio = device_get_binding(info->cs_gpio_name);
-	if (!gpio) {
-		spi->cs_gpio_port = NULL;
-		return;
-	}
-
-	gpio_pin_configure(gpio, info->cs_gpio_pin, GPIO_DIR_OUT);
-	/* Default CS line to high (idling) */
-	gpio_pin_write(gpio, info->cs_gpio_pin, 1);
-
-	spi->cs_gpio_port = gpio;
-}
-
-static inline void _spi_control_cs(struct device *dev, int on)
-{
-	const struct spi_dw_config *info = dev->config->config_info;
-	struct spi_dw_data *spi = dev->driver_data;
-
-	if (spi->cs_gpio_port) {
-		gpio_pin_write(spi->cs_gpio_port, info->cs_gpio_pin, !on);
-	}
-}
-#else
-#define _spi_control_cs(...)
-#define _spi_config_cs(...)
-#endif /* CONFIG_SPI_DW_CS_GPIO */
-#endif /* CONFIG_SPI_LEGACY_API */
 
 /* Interrupt mask
  * SoC SPECIFIC!
@@ -271,12 +226,66 @@ DEFINE_MM_REG_WRITE(baudr, DW_SPI_REG_BAUDR, 16)
 DEFINE_MM_REG_READ(txflr, DW_SPI_REG_TXFLR, 32)
 DEFINE_MM_REG_READ(rxflr, DW_SPI_REG_RXFLR, 32)
 DEFINE_MM_REG_WRITE(imr, DW_SPI_REG_IMR, 8)
+DEFINE_MM_REG_READ(imr, DW_SPI_REG_IMR, 8)
 DEFINE_MM_REG_READ(isr, DW_SPI_REG_ISR, 8)
 
 DEFINE_SET_BIT_OP(ssienr, DW_SPI_REG_SSIENR, DW_SPI_SSIENR_SSIEN_BIT)
 DEFINE_CLEAR_BIT_OP(ssienr, DW_SPI_REG_SSIENR, DW_SPI_SSIENR_SSIEN_BIT)
 DEFINE_TEST_BIT_OP(ssienr, DW_SPI_REG_SSIENR, DW_SPI_SSIENR_SSIEN_BIT)
 DEFINE_TEST_BIT_OP(sr_busy, DW_SPI_REG_SR, DW_SPI_SR_BUSY_BIT)
+
+#ifdef CONFIG_CLOCK_CONTROL
+
+#include <string.h>
+
+static inline int _clock_config(struct device *dev)
+{
+	const struct spi_dw_config *info = dev->config->config_info;
+	struct spi_dw_data *spi = dev->driver_data;
+
+	if (!info->clock_name || strlen(info->clock_name) == 0) {
+		spi->clock = NULL;
+		return 0;
+	}
+
+	spi->clock = device_get_binding(info->clock_name);
+	if (!spi->clock) {
+		return -ENODEV;
+	}
+
+	return 0;
+}
+
+static inline void _clock_on(struct device *dev)
+{
+	struct spi_dw_data *spi = dev->driver_data;
+
+	if (spi->clock) {
+		const struct spi_dw_config *info = dev->config->config_info;
+
+		clock_control_on(spi->clock, info->clock_data);
+	}
+
+	_extra_clock_on(dev);
+}
+
+static inline void _clock_off(struct device *dev)
+{
+	struct spi_dw_data *spi = dev->driver_data;
+
+	if (spi->clock) {
+		const struct spi_dw_config *info = dev->config->config_info;
+
+		clock_control_off(spi->clock, info->clock_data);
+	}
+
+	_extra_clock_off(dev);
+}
+#else
+#define _clock_config(...)
+#define _clock_on(...)
+#define _clock_off(...)
+#endif /* CONFIG_CLOCK_CONTROL */
 
 #ifdef __cplusplus
 }

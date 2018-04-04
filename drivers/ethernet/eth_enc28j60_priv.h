@@ -217,6 +217,8 @@ struct eth_enc28j60_config {
 	const char *gpio_port;
 	u8_t gpio_pin;
 	const char *spi_port;
+	u8_t spi_cs_pin;
+	const char *spi_cs_port;
 	u32_t spi_freq;
 	u8_t spi_slave;
 	u8_t full_duplex;
@@ -230,13 +232,14 @@ struct eth_enc28j60_runtime {
 	struct k_thread thread;
 	struct device *gpio;
 	struct device *spi;
+	struct spi_cs_control spi_cs;
+	struct spi_config spi_cfg;
 	struct gpio_callback gpio_cb;
 	u8_t mem_buf[MAX_BUFFER_LENGTH + 1];
 	u8_t  tx_tsv[TSV_SIZE];
 	u8_t  rx_rsv[RSV_SIZE];
 	struct k_sem tx_rx_sem;
 	struct k_sem int_sem;
-	struct k_sem spi_sem;
 };
 
 #endif /*_ENC28J60_*/

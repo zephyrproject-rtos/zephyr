@@ -10,8 +10,40 @@
 #include <misc/byteorder.h>
 #include <misc/__assert.h>
 
+#if defined(CONFIG_LIS2DH_BUS_SPI)
+int lis2dh_spi_access(struct lis2dh_data *ctx, u8_t cmd,
+		      void *data, size_t length)
+{
+	const struct spi_buf buf[2] = {
+		{
+			.buf = &cmd,
+			.len = 1
+		},
+		{
+			.buf = data,
+			.len = length
+		}
+	};
+	const struct spi_buf_set tx = {
+		.buffers = buf,
+		.count = 2
+	};
+
+	if (cmd & LIS2DH_SPI_READ_BIT) {
+		const struct spi_buf_set rx = {
+			.buffers = buf,
+			.count = 2
+		};
+
+		return spi_transceive(ctx->spi, &ctx->spi_cfg, &tx, &rx);
+	}
+
+	return spi_write(ctx->spi, &ctx->spi_cfg, &tx);
+}
+#endif
+
 #if defined(CONFIG_LIS2DH_TRIGGER) || defined(CONFIG_LIS2DH_ACCEL_RANGE_RUNTIME)
-int lis2dh_reg_field_update(struct device *bus, u8_t reg_addr,
+int lis2dh_reg_field_update(struct device *dev, u8_t reg_addr,
 			    u8_t pos, u8_t mask, u8_t val)
 {
 	int status;
@@ -20,12 +52,12 @@ int lis2dh_reg_field_update(struct device *bus, u8_t reg_addr,
 	/* just to remove gcc warning */
 	old_val = 0;
 
-	status = lis2dh_reg_read_byte(bus, reg_addr, &old_val);
+	status = lis2dh_reg_read_byte(dev, reg_addr, &old_val);
 	if (status < 0) {
 		return status;
 	}
 
-	return lis2dh_reg_write_byte(bus, reg_addr,
+	return lis2dh_reg_write_byte(dev, reg_addr,
 				     (old_val & ~mask) | ((val << pos) & mask));
 }
 #endif
@@ -98,7 +130,7 @@ static int lis2dh_sample_fetch(struct device *dev, enum sensor_channel chan)
 	 * since status and all accel data register addresses are consecutive,
 	 * a burst read can be used to read all the samples
 	 */
-	status = lis2dh_burst_read(lis2dh->bus, LIS2DH_REG_STATUS,
+	status = lis2dh_burst_read(dev, LIS2DH_REG_STATUS,
 				   lis2dh->sample.raw,
 				   sizeof(lis2dh->sample.raw));
 	if (status < 0) {
@@ -161,7 +193,7 @@ static int lis2dh_acc_odr_set(struct device *dev, u16_t freq)
 		return odr;
 	}
 
-	status = lis2dh_reg_read_byte(lis2dh->bus, LIS2DH_REG_CTRL1, &value);
+	status = lis2dh_reg_read_byte(dev, LIS2DH_REG_CTRL1, &value);
 	if (status < 0) {
 		return status;
 	}
@@ -176,7 +208,7 @@ static int lis2dh_acc_odr_set(struct device *dev, u16_t freq)
 		odr--;
 	}
 
-	return lis2dh_reg_write_byte(lis2dh->bus, LIS2DH_REG_CTRL1,
+	return lis2dh_reg_write_byte(dev, LIS2DH_REG_CTRL1,
 				  (value & ~LIS2DH_ODR_MASK) |
 				  LIS2DH_ODR_RATE(odr));
 }
@@ -216,7 +248,7 @@ static int lis2dh_acc_range_set(struct device *dev, s32_t range)
 
 	lis2dh->scale = LIS2DH_ACCEL_SCALE(range);
 
-	return lis2dh_reg_field_update(lis2dh->bus, LIS2DH_REG_CTRL4,
+	return lis2dh_reg_field_update(dev, LIS2DH_REG_CTRL4,
 				       LIS2DH_FS_SHIFT,
 				       LIS2DH_FS_MASK,
 				       fs);
@@ -282,17 +314,8 @@ int lis2dh_init(struct device *dev)
 	int status;
 	u8_t raw[LIS2DH_DATA_OFS + 6];
 
-	lis2dh->bus = device_get_binding(LIS2DH_BUS_DEV_NAME);
-	if (lis2dh->bus == NULL) {
-		SYS_LOG_ERR("Could not get pointer to %s device",
-			    LIS2DH_BUS_DEV_NAME);
-		return -EINVAL;
-	}
-
-	/* configure bus, e.g. spi clock and format */
-	status = lis2dh_bus_configure(lis2dh->bus);
+	status = lis2dh_bus_configure(dev);
 	if (status < 0) {
-		SYS_LOG_ERR("Failed to configure bus (spi, i2c)");
 		return status;
 	}
 
@@ -304,7 +327,7 @@ int lis2dh_init(struct device *dev)
 	memset(raw, 0, sizeof(raw));
 	raw[LIS2DH_DATA_OFS] = LIS2DH_ACCEL_EN_BITS;
 
-	status = lis2dh_burst_write(lis2dh->bus, LIS2DH_REG_CTRL1, raw,
+	status = lis2dh_burst_write(dev, LIS2DH_REG_CTRL1, raw,
 				    sizeof(raw));
 	if (status < 0) {
 		SYS_LOG_ERR("Failed to reset ctrl registers.");
@@ -313,7 +336,7 @@ int lis2dh_init(struct device *dev)
 
 	/* set full scale range and store it for later conversion */
 	lis2dh->scale = LIS2DH_ACCEL_SCALE(1 << (LIS2DH_FS_IDX + 1));
-	status = lis2dh_reg_write_byte(lis2dh->bus, LIS2DH_REG_CTRL4,
+	status = lis2dh_reg_write_byte(dev, LIS2DH_REG_CTRL4,
 				       LIS2DH_FS_BITS);
 	if (status < 0) {
 		SYS_LOG_ERR("Failed to set full scale ctrl register.");
@@ -333,7 +356,7 @@ int lis2dh_init(struct device *dev)
 		    LIS2DH_ODR_IDX, (u8_t)LIS2DH_LP_EN_BIT, lis2dh->scale);
 
 	/* enable accel measurements and set power mode and data rate */
-	return lis2dh_reg_write_byte(lis2dh->bus, LIS2DH_REG_CTRL1,
+	return lis2dh_reg_write_byte(dev, LIS2DH_REG_CTRL1,
 				     LIS2DH_ACCEL_EN_BITS | LIS2DH_LP_EN_BIT |
 				     LIS2DH_ODR_BITS);
 }

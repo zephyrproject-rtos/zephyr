@@ -105,10 +105,17 @@ static void _pinmux_defaults(u32_t base)
 	u32_t mux_config[PINMUX_MAX_REGISTERS] = { 0, 0, 0, 0, 0};
 	int i = 0;
 
+#if defined(CONFIG_SPI_2)
+	PIN_CONFIG(mux_config,  0, PINMUX_FUNC_C);
+	PIN_CONFIG(mux_config,  1, PINMUX_FUNC_C);
+	PIN_CONFIG(mux_config,  2, PINMUX_FUNC_C);
+	PIN_CONFIG(mux_config,  3, PINMUX_FUNC_C);
+#else
 	PIN_CONFIG(mux_config,  0, PINMUX_FUNC_B);
 	PIN_CONFIG(mux_config,  1, PINMUX_FUNC_B);
 	PIN_CONFIG(mux_config,  2, PINMUX_FUNC_B);
 	PIN_CONFIG(mux_config,  3, PINMUX_FUNC_B);
+#endif
 	PIN_CONFIG(mux_config,  8, PINMUX_FUNC_C);
 	PIN_CONFIG(mux_config,  9, PINMUX_FUNC_C);
 	PIN_CONFIG(mux_config, 16, PINMUX_FUNC_C);

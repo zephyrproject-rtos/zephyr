@@ -147,128 +147,121 @@ static const u16_t pll_frac_lt[16] = {
 #define _usleep(usec) k_busy_wait(usec)
 
 /* Read direct (dreg is true) or indirect register (dreg is false) */
-u8_t _mcr20a_read_reg(struct mcr20a_spi *spi, bool dreg, u8_t addr)
+u8_t _mcr20a_read_reg(struct mcr20a_context *dev, bool dreg, u8_t addr)
 {
+	u8_t cmd_buf[3] = {
+		dreg ? (MCR20A_REG_READ | addr) :
+		(MCR20A_IAR_INDEX | MCR20A_REG_WRITE),
+		dreg ? 0 : (addr | MCR20A_REG_READ),
+		0
+	};
 	u8_t len = dreg ? 2 : 3;
+	const struct spi_buf buf = {
+		.buf = cmd_buf,
+		.len = len
+	};
+	const struct spi_buf_set tx = {
+		.buffers = &buf,
+		.count = 1
+	};
+	const struct spi_buf_set rx = {
+		.buffers = &buf,
+		.count = 1
+	};
 
-	k_sem_take(&spi->spi_sem, K_FOREVER);
-
-	spi->cmd_buf[0] = dreg ? (MCR20A_REG_READ | addr) :
-				 (MCR20A_IAR_INDEX | MCR20A_REG_WRITE);
-	spi->cmd_buf[1] = dreg ? 0 : (addr | MCR20A_REG_READ);
-	spi->cmd_buf[2] = 0;
-
-	spi_slave_select(spi->dev, spi->slave);
-
-	if (spi_transceive(spi->dev, spi->cmd_buf, len,
-			   spi->cmd_buf, len) == 0) {
-		k_sem_give(&spi->spi_sem);
-		return spi->cmd_buf[len - 1];
+	if (spi_transceive(dev->spi, &dev->spi_cfg, &tx, &rx) == 0) {
+		return cmd_buf[len - 1];
 	}
 
 	SYS_LOG_ERR("Failed");
-	k_sem_give(&spi->spi_sem);
 
 	return 0;
 }
 
 /* Write direct (dreg is true) or indirect register (dreg is false) */
-bool _mcr20a_write_reg(struct mcr20a_spi *spi, bool dreg, u8_t addr,
+bool _mcr20a_write_reg(struct mcr20a_context *dev, bool dreg, u8_t addr,
 		       u8_t value)
 {
-	u8_t len = dreg ? 2 : 3;
-	bool retval;
+	u8_t cmd_buf[3] = {
+		dreg ? (MCR20A_REG_WRITE | addr) :
+		(MCR20A_IAR_INDEX | MCR20A_REG_WRITE),
+		dreg ? value : (addr | MCR20A_REG_WRITE),
+		dreg ? 0 : value
+	};
+	const struct spi_buf buf = {
+		.buf = cmd_buf,
+		.len = dreg ? 2 : 3
+	};
+	const struct spi_buf_set tx = {
+		.buffers = &buf,
+		.count = 1
+	};
 
-	k_sem_take(&spi->spi_sem, K_FOREVER);
-
-	spi->cmd_buf[0] = dreg ? (MCR20A_REG_WRITE | addr) :
-				 (MCR20A_IAR_INDEX | MCR20A_REG_WRITE);
-	spi->cmd_buf[1] = dreg ? value : (addr | MCR20A_REG_WRITE);
-	spi->cmd_buf[2] = dreg ? 0 : value;
-
-	spi_slave_select(spi->dev, spi->slave);
-	retval = (spi_write(spi->dev, spi->cmd_buf, len) == 0);
-
-	k_sem_give(&spi->spi_sem);
-
-	return retval;
+	return (spi_write(dev->spi, &dev->spi_cfg, &tx) == 0);
 }
 
 /* Write multiple bytes to direct or indirect register */
-bool _mcr20a_write_burst(struct mcr20a_spi *spi, bool dreg, u16_t addr,
+bool _mcr20a_write_burst(struct mcr20a_context *dev, bool dreg, u16_t addr,
 			 u8_t *data_buf, u8_t len)
 {
-	bool retval;
+	u8_t cmd_buf[2] = {
+		dreg ? MCR20A_REG_WRITE | addr :
+		MCR20A_IAR_INDEX | MCR20A_REG_WRITE,
+		dreg ? 0 : addr | MCR20A_REG_WRITE
+	};
+	struct spi_buf bufs[2] = {
+		{
+			.buf = cmd_buf,
+			.len = dreg ? 1 : 2
+		},
+		{
+			.buf = data_buf,
+			.len = len
+		}
+	};
+	const struct spi_buf_set tx = {
+		.buffers = bufs,
+		.count = 2
+	};
 
-	if ((len + 2) > sizeof(spi->cmd_buf)) {
-		SYS_LOG_ERR("cmd buffer too small");
-		return false;
-	}
-
-	k_sem_take(&spi->spi_sem, K_FOREVER);
-
-	if (dreg) {
-		spi->cmd_buf[0] = MCR20A_REG_WRITE | addr;
-		memcpy(&spi->cmd_buf[1], data_buf, len);
-		len += 1;
-	} else {
-		spi->cmd_buf[0] = MCR20A_IAR_INDEX | MCR20A_REG_WRITE;
-		spi->cmd_buf[1] = addr | MCR20A_REG_WRITE;
-		memcpy(&spi->cmd_buf[2], data_buf, len);
-		len += 2;
-	}
-
-	spi_slave_select(spi->dev, spi->slave);
-	retval = (spi_write(spi->dev, spi->cmd_buf, len) == 0);
-
-	k_sem_give(&spi->spi_sem);
-
-	return retval;
+	return (spi_write(dev->spi, &dev->spi_cfg, &tx) == 0);
 }
 
 /* Read multiple bytes from direct or indirect register */
-bool _mcr20a_read_burst(struct mcr20a_spi *spi, bool dreg, u16_t addr,
+bool _mcr20a_read_burst(struct mcr20a_context *dev, bool dreg, u16_t addr,
 			u8_t *data_buf, u8_t len)
 {
-	if ((len + 2) > sizeof(spi->cmd_buf)) {
-		SYS_LOG_ERR("cmd buffer too small");
-		return false;
-	}
+	u8_t cmd_buf[2] = {
+		dreg ? MCR20A_REG_READ | addr :
+		MCR20A_IAR_INDEX | MCR20A_REG_WRITE,
+		dreg ? 0 : addr | MCR20A_REG_READ
+	};
+	struct spi_buf bufs[2] = {
+		{
+			.buf = cmd_buf,
+			.len = dreg ? 1 : 2
+		},
+		{
+			.buf = data_buf,
+			.len = len
+		}
+	};
+	const struct spi_buf_set tx = {
+		.buffers = bufs,
+		.count = 1
+	};
+	const struct spi_buf_set rx = {
+		.buffers = bufs,
+		.count = 2
+	};
 
-	k_sem_take(&spi->spi_sem, K_FOREVER);
-
-	if (dreg) {
-		spi->cmd_buf[0] = MCR20A_REG_READ | addr;
-		len += 1;
-	} else {
-		spi->cmd_buf[0] = MCR20A_IAR_INDEX | MCR20A_REG_WRITE;
-		spi->cmd_buf[1] = addr | MCR20A_REG_READ;
-		len += 2;
-	}
-
-	spi_slave_select(spi->dev, spi->slave);
-
-	if (spi_transceive(spi->dev, spi->cmd_buf, len,
-			   spi->cmd_buf, len) != 0) {
-		k_sem_give(&spi->spi_sem);
-		return false;
-	}
-
-	if (dreg) {
-		memcpy(data_buf, &spi->cmd_buf[1], len - 1);
-	} else {
-		memcpy(data_buf, &spi->cmd_buf[2], len - 2);
-	}
-
-	k_sem_give(&spi->spi_sem);
-
-	return true;
+	return (spi_transceive(dev->spi, &dev->spi_cfg, &tx, &rx) == 0);
 }
 
 /* Mask (msk is true) or unmask all interrupts from asserting IRQ_B */
 static bool mcr20a_mask_irqb(struct mcr20a_context *dev, bool msk)
 {
-	u8_t ctrl4 = read_reg_phy_ctrl4(&dev->spi);
+	u8_t ctrl4 = read_reg_phy_ctrl4(dev);
 
 	if (msk) {
 		ctrl4 |= MCR20A_PHY_CTRL4_TRCV_MSK;
@@ -276,7 +269,7 @@ static bool mcr20a_mask_irqb(struct mcr20a_context *dev, bool msk)
 		ctrl4 &= ~MCR20A_PHY_CTRL4_TRCV_MSK;
 	}
 
-	return write_reg_phy_ctrl4(&dev->spi, ctrl4);
+	return write_reg_phy_ctrl4(dev, ctrl4);
 }
 
 /** Set an timeout value for the given compare register */
@@ -288,7 +281,7 @@ static int mcr20a_timer_set(struct mcr20a_context *mcr20a,
 	u32_t next;
 	bool retval;
 
-	if (!read_burst_event_timer(&mcr20a->spi, (u8_t *)&now)) {
+	if (!read_burst_event_timer(mcr20a, (u8_t *)&now)) {
 		goto error;
 	}
 
@@ -299,16 +292,16 @@ static int mcr20a_timer_set(struct mcr20a_context *mcr20a,
 
 	switch (cmp_reg) {
 	case 1:
-		retval = write_burst_t1cmp(&mcr20a->spi, (u8_t *)&next);
+		retval = write_burst_t1cmp(mcr20a, (u8_t *)&next);
 		break;
 	case 2:
-		retval = write_burst_t2cmp(&mcr20a->spi, (u8_t *)&next);
+		retval = write_burst_t2cmp(mcr20a, (u8_t *)&next);
 		break;
 	case 3:
-		retval = write_burst_t3cmp(&mcr20a->spi, (u8_t *)&next);
+		retval = write_burst_t3cmp(mcr20a, (u8_t *)&next);
 		break;
 	case 4:
-		retval = write_burst_t4cmp(&mcr20a->spi, (u8_t *)&next);
+		retval = write_burst_t4cmp(mcr20a, (u8_t *)&next);
 		break;
 	default:
 		goto error;
@@ -331,18 +324,18 @@ static int mcr20a_timer_init(struct device *dev, u8_t tb)
 	u8_t buf[3] = {0, 0, 0};
 	u8_t ctrl4;
 
-	if (!write_reg_tmr_prescale(&mcr20a->spi,
+	if (!write_reg_tmr_prescale(mcr20a,
 				    set_bits_tmr_prescale(tb))) {
 		goto error;
 	}
 
-	if (!write_burst_t1cmp(&mcr20a->spi, buf)) {
+	if (!write_burst_t1cmp(mcr20a, buf)) {
 		goto error;
 	}
 
-	ctrl4 = read_reg_phy_ctrl4(&mcr20a->spi);
+	ctrl4 = read_reg_phy_ctrl4(mcr20a);
 	ctrl4 |= MCR20A_PHY_CTRL4_TMRLOAD;
-	if (!write_reg_phy_ctrl4(&mcr20a->spi, ctrl4)) {
+	if (!write_reg_phy_ctrl4(mcr20a, ctrl4)) {
 		goto error;
 	}
 
@@ -366,16 +359,16 @@ static int mcr20a_t4cmp_set(struct mcr20a_context *mcr20a,
 	}
 
 	/* enable and clear irq for the timer 4 */
-	irqsts3 = read_reg_irqsts3(&mcr20a->spi);
+	irqsts3 = read_reg_irqsts3(mcr20a);
 	irqsts3 &= ~MCR20A_IRQSTS3_TMR4MSK;
 	irqsts3 |= MCR20A_IRQSTS3_TMR4IRQ;
-	if (!write_reg_irqsts3(&mcr20a->spi, irqsts3)) {
+	if (!write_reg_irqsts3(mcr20a, irqsts3)) {
 		goto error;
 	}
 
-	ctrl3 = read_reg_phy_ctrl3(&mcr20a->spi);
+	ctrl3 = read_reg_phy_ctrl3(mcr20a);
 	ctrl3 |= MCR20A_PHY_CTRL3_TMR4CMP_EN;
-	if (!write_reg_phy_ctrl3(&mcr20a->spi, ctrl3)) {
+	if (!write_reg_phy_ctrl3(mcr20a, ctrl3)) {
 		goto error;
 	}
 
@@ -392,15 +385,15 @@ static int mcr20a_t4cmp_clear(struct mcr20a_context *mcr20a)
 	u8_t irqsts3;
 	u8_t ctrl3;
 
-	ctrl3 = read_reg_phy_ctrl3(&mcr20a->spi);
+	ctrl3 = read_reg_phy_ctrl3(mcr20a);
 	ctrl3 &= ~MCR20A_PHY_CTRL3_TMR4CMP_EN;
-	if (!write_reg_phy_ctrl3(&mcr20a->spi, ctrl3)) {
+	if (!write_reg_phy_ctrl3(mcr20a, ctrl3)) {
 		goto error;
 	}
 
-	irqsts3 = read_reg_irqsts3(&mcr20a->spi);
+	irqsts3 = read_reg_irqsts3(mcr20a);
 	irqsts3 |= MCR20A_IRQSTS3_TMR4IRQ;
-	if (!write_reg_irqsts3(&mcr20a->spi, irqsts3)) {
+	if (!write_reg_irqsts3(mcr20a, irqsts3)) {
 		goto error;
 	}
 
@@ -417,7 +410,7 @@ static inline void _xcvseq_wait_until_idle(struct mcr20a_context *mcr20a)
 	u8_t retries = MCR20A_GET_SEQ_STATE_RETRIES;
 
 	do {
-		state = read_reg_seq_state(&mcr20a->spi);
+		state = read_reg_seq_state(mcr20a);
 		retries--;
 	} while ((state & MCR20A_SEQ_STATE_MASK) && retries);
 
@@ -431,7 +424,7 @@ static inline int mcr20a_abort_sequence(struct mcr20a_context *mcr20a,
 {
 	u8_t ctrl1;
 
-	ctrl1 = read_reg_phy_ctrl1(&mcr20a->spi);
+	ctrl1 = read_reg_phy_ctrl1(mcr20a);
 	SYS_LOG_DBG("CTRL1 0x%02x", ctrl1);
 
 	if (((ctrl1 & MCR20A_PHY_CTRL1_XCVSEQ_MASK) == MCR20A_XCVSEQ_TX) ||
@@ -443,14 +436,14 @@ static inline int mcr20a_abort_sequence(struct mcr20a_context *mcr20a,
 
 	/* Abort ongoing sequence */
 	ctrl1 &= ~MCR20A_PHY_CTRL1_XCVSEQ_MASK;
-	if (!write_reg_phy_ctrl1(&mcr20a->spi, ctrl1)) {
+	if (!write_reg_phy_ctrl1(mcr20a, ctrl1)) {
 		return -1;
 	}
 
 	_xcvseq_wait_until_idle(mcr20a);
 
 	/* Clear relevant interrupt flags */
-	if (!write_reg_irqsts1(&mcr20a->spi, MCR20A_IRQSTS1_IRQ_MASK)) {
+	if (!write_reg_irqsts1(mcr20a, MCR20A_IRQSTS1_IRQ_MASK)) {
 		return -1;
 	}
 
@@ -464,7 +457,7 @@ static inline int mcr20a_set_sequence(struct mcr20a_context *mcr20a,
 	u8_t ctrl1 = 0;
 
 	seq = set_bits_phy_ctrl1_xcvseq(seq);
-	ctrl1 = read_reg_phy_ctrl1(&mcr20a->spi);
+	ctrl1 = read_reg_phy_ctrl1(mcr20a);
 	ctrl1 &= ~MCR20A_PHY_CTRL1_XCVSEQ_MASK;
 
 	if ((seq == MCR20A_XCVSEQ_TX_RX) &&
@@ -475,7 +468,7 @@ static inline int mcr20a_set_sequence(struct mcr20a_context *mcr20a,
 	}
 
 	ctrl1 |= seq;
-	if (!write_reg_phy_ctrl1(&mcr20a->spi, ctrl1)) {
+	if (!write_reg_phy_ctrl1(mcr20a, ctrl1)) {
 		return -EIO;
 	}
 
@@ -515,30 +508,32 @@ static inline u8_t *get_mac(struct device *dev)
 	return mcr20a->mac_addr;
 }
 
-static inline bool read_rxfifo_content(struct mcr20a_spi *spi,
+static inline bool read_rxfifo_content(struct mcr20a_context *dev,
 				       struct net_buf *buf, u8_t len)
 {
-	u8_t data[1 + MCR20A_PSDU_LENGTH];
+	u8_t cmd = MCR20A_BUF_READ;
+	struct spi_buf bufs[2] = {
+		{
+			.buf = &cmd,
+			.len = 1
+		},
+		{
+			.buf = buf->data,
+			.len = len
+		}
+	};
+	const struct spi_buf_set tx = {
+		.buffers = bufs,
+		.count = 1
+	};
+	const struct spi_buf_set rx = {
+		.buffers = bufs,
+		.count = 2
+	};
 
-	if (len  > MCR20A_PSDU_LENGTH) {
-		SYS_LOG_ERR("Packet length too large");
-		return false;
+	if (spi_transceive(dev->spi, &dev->spi_cfg, &tx, &rx) == 0) {
+		net_buf_add(buf, len);
 	}
-
-	k_sem_take(&spi->spi_sem, K_FOREVER);
-
-	data[0] = MCR20A_BUF_READ;
-	spi_slave_select(spi->dev, spi->slave);
-
-	if (spi_transceive(spi->dev, data, len+1, data, len+1) != 0) {
-		k_sem_give(&spi->spi_sem);
-		return false;
-	}
-
-	memcpy(buf->data, &data[1], len);
-	net_buf_add(buf, len);
-
-	k_sem_give(&spi->spi_sem);
 
 	return true;
 }
@@ -565,7 +560,7 @@ static inline void mcr20a_rx(struct mcr20a_context *mcr20a, u8_t len)
 
 	net_pkt_frag_insert(pkt, frag);
 
-	if (!read_rxfifo_content(&mcr20a->spi, frag, pkt_len)) {
+	if (!read_rxfifo_content(mcr20a, frag, pkt_len)) {
 		SYS_LOG_ERR("No content read");
 		goto out;
 	}
@@ -575,7 +570,7 @@ static inline void mcr20a_rx(struct mcr20a_context *mcr20a, u8_t len)
 		goto out;
 	}
 
-	net_pkt_set_ieee802154_lqi(pkt, read_reg_lqi_value(&mcr20a->spi));
+	net_pkt_set_ieee802154_lqi(pkt, read_reg_lqi_value(mcr20a));
 	net_pkt_set_ieee802154_rssi(pkt, mcr20a_get_rssi(
 					    net_pkt_ieee802154_lqi(pkt)));
 
@@ -738,7 +733,7 @@ static void mcr20a_thread_main(void *arg)
 		}
 
 		/* Read the register from IRQSTS1 until CTRL4 */
-		if (!read_burst_irqsts1_ctrl4(&mcr20a->spi, dregs)) {
+		if (!read_burst_irqsts1_ctrl4(mcr20a, dregs)) {
 			SYS_LOG_ERR("Failed to read register");
 			goto unmask_irqb;
 		}
@@ -765,17 +760,17 @@ static void mcr20a_thread_main(void *arg)
 		if (set_new_seq) {
 			/* Reset sequence manager */
 			ctrl1 &= ~MCR20A_PHY_CTRL1_XCVSEQ_MASK;
-			if (!write_reg_phy_ctrl1(&mcr20a->spi, ctrl1)) {
+			if (!write_reg_phy_ctrl1(mcr20a, ctrl1)) {
 				SYS_LOG_ERR("Failed to reset SEQ manager");
 			}
 
 			_xcvseq_wait_until_idle(mcr20a);
 
-			if (!write_burst_irqsts1_ctrl1(&mcr20a->spi, dregs)) {
+			if (!write_burst_irqsts1_ctrl1(mcr20a, dregs)) {
 				SYS_LOG_ERR("Failed to write CTRL1");
 			}
 		} else {
-			if (!write_burst_irqsts1_irqsts3(&mcr20a->spi, dregs)) {
+			if (!write_burst_irqsts1_irqsts3(mcr20a, dregs)) {
 				SYS_LOG_ERR("Failed to write IRQSTS3");
 			}
 		}
@@ -835,11 +830,11 @@ static int mcr20a_set_cca_mode(struct device *dev, u8_t mode)
 	struct mcr20a_context *mcr20a = dev->driver_data;
 	u8_t ctrl4;
 
-	ctrl4 = read_reg_phy_ctrl4(&mcr20a->spi);
+	ctrl4 = read_reg_phy_ctrl4(mcr20a);
 	ctrl4 &= ~MCR20A_PHY_CTRL4_CCATYPE_MASK;
 	ctrl4 |= set_bits_phy_ctrl4_ccatype(mode);
 
-	if (!write_reg_phy_ctrl4(&mcr20a->spi, ctrl4)) {
+	if (!write_reg_phy_ctrl4(mcr20a, ctrl4)) {
 		SYS_LOG_ERR("Failed");
 		return -EIO;
 	}
@@ -922,7 +917,7 @@ static int mcr20a_set_channel(struct device *dev, u16_t channel)
 		goto out;
 	}
 
-	ctrl1 = read_reg_phy_ctrl1(&mcr20a->spi);
+	ctrl1 = read_reg_phy_ctrl1(mcr20a);
 
 	if (mcr20a_abort_sequence(mcr20a, true)) {
 		SYS_LOG_ERR("Failed to reset XCV sequence");
@@ -935,7 +930,7 @@ static int mcr20a_set_channel(struct device *dev, u16_t channel)
 	buf[1] = (u8_t)pll_frac_lt[channel];
 	buf[2] = (u8_t)(pll_frac_lt[channel] >> 8);
 
-	if (!write_burst_pll_int0(&mcr20a->spi, buf)) {
+	if (!write_burst_pll_int0(mcr20a, buf)) {
 		SYS_LOG_ERR("Failed to set PLL");
 		goto out;
 	}
@@ -965,7 +960,7 @@ static int mcr20a_set_pan_id(struct device *dev, u16_t pan_id)
 	pan_id = sys_le16_to_cpu(pan_id);
 	k_mutex_lock(&mcr20a->phy_mutex, K_FOREVER);
 
-	if (!write_burst_pan_id(&mcr20a->spi, (u8_t *) &pan_id)) {
+	if (!write_burst_pan_id(mcr20a, (u8_t *) &pan_id)) {
 		SYS_LOG_ERR("Failed");
 		k_mutex_unlock(&mcr20a->phy_mutex);
 		return -EIO;
@@ -984,7 +979,7 @@ static int mcr20a_set_short_addr(struct device *dev, u16_t short_addr)
 	short_addr = sys_le16_to_cpu(short_addr);
 	k_mutex_lock(&mcr20a->phy_mutex, K_FOREVER);
 
-	if (!write_burst_short_addr(&mcr20a->spi, (u8_t *) &short_addr)) {
+	if (!write_burst_short_addr(mcr20a, (u8_t *) &short_addr)) {
 		SYS_LOG_ERR("Failed");
 		k_mutex_unlock(&mcr20a->phy_mutex);
 		return -EIO;
@@ -1002,7 +997,7 @@ static int mcr20a_set_ieee_addr(struct device *dev, const u8_t *ieee_addr)
 
 	k_mutex_lock(&mcr20a->phy_mutex, K_FOREVER);
 
-	if (!write_burst_ext_addr(&mcr20a->spi, (void *)ieee_addr)) {
+	if (!write_burst_ext_addr(mcr20a, (void *)ieee_addr)) {
 		SYS_LOG_ERR("Failed");
 		k_mutex_unlock(&mcr20a->phy_mutex);
 		return -EIO;
@@ -1047,7 +1042,7 @@ static int mcr20a_set_txpower(struct device *dev, s16_t dbm)
 	}
 
 	pwr = pow_lt[dbm - MCR20A_OUTPUT_POWER_MIN];
-	if (!write_reg_pa_pwr(&mcr20a->spi, set_bits_pa_pwr_val(pwr))) {
+	if (!write_reg_pa_pwr(mcr20a, set_bits_pa_pwr_val(pwr))) {
 		goto error;
 	}
 
@@ -1060,40 +1055,36 @@ error:
 	return -EIO;
 }
 
-static inline bool write_txfifo_content(struct mcr20a_spi *spi,
+static inline bool write_txfifo_content(struct mcr20a_context *dev,
 					struct net_pkt *pkt,
 					struct net_buf *frag)
 {
-	u8_t cmd[2 + MCR20A_PSDU_LENGTH];
-	u8_t payload_len = net_pkt_ll_reserve(pkt) + frag->len;
-	u8_t *payload = frag->data - net_pkt_ll_reserve(pkt);
-	bool retval;
-
-	k_sem_take(&spi->spi_sem, K_FOREVER);
-
-	cmd[0] = MCR20A_BUF_WRITE;
-	/**
-	 * The length of the packet (PSDU + FSC),
-	 * is stored at index 0, followed by the PSDU.
-	 * Note: maximum FRAME_LEN is 125 + MCR20A_FCS_LENGTH
-	 */
-	cmd[1] = payload_len + MCR20A_FCS_LENGTH;
+	size_t payload_len = net_pkt_ll_reserve(pkt) + frag->len;
+	u8_t cmd_buf[2] = {
+		MCR20A_BUF_WRITE,
+		payload_len + MCR20A_FCS_LENGTH
+	};
+	const struct spi_buf bufs[2] = {
+		{
+			.buf = cmd_buf,
+			.len = 2
+		},
+		{
+			.buf = frag->data - net_pkt_ll_reserve(pkt),
+			.len = payload_len
+		}
+	};
+	const struct spi_buf_set tx = {
+		.buffers = bufs,
+		.count = 2
+	};
 
 	if (payload_len > MCR20A_PSDU_LENGTH) {
 		SYS_LOG_ERR("Payload too long");
 		return 0;
 	}
-	memcpy(&cmd[2], payload, payload_len);
 
-	spi_slave_select(spi->dev, spi->slave);
-
-	retval = (spi_transceive(spi->dev,
-		  cmd, (2 + payload_len),
-		  cmd, (2 + payload_len)) == 0);
-
-	k_sem_give(&spi->spi_sem);
-
-	return retval;
+	return (spi_write(dev->spi, &dev->spi_cfg, &tx) == 0);
 }
 
 static int mcr20a_tx(struct device *dev,
@@ -1120,7 +1111,7 @@ static int mcr20a_tx(struct device *dev,
 		goto error;
 	}
 
-	if (!write_txfifo_content(&mcr20a->spi, pkt, frag)) {
+	if (!write_txfifo_content(mcr20a, pkt, frag)) {
 		SYS_LOG_ERR("Did not write properly into TX FIFO");
 		goto error;
 	}
@@ -1162,7 +1153,7 @@ static int mcr20a_start(struct device *dev)
 	k_mutex_lock(&mcr20a->phy_mutex, K_FOREVER);
 	enable_irqb_interrupt(mcr20a, false);
 
-	if (!write_reg_pwr_modes(&mcr20a->spi, MCR20A_PM_AUTODOZE)) {
+	if (!write_reg_pwr_modes(mcr20a, MCR20A_PM_AUTODOZE)) {
 		SYS_LOG_ERR("Error starting MCR20A");
 		goto error;
 	}
@@ -1170,7 +1161,7 @@ static int mcr20a_start(struct device *dev)
 	do {
 		_usleep(50);
 		timeout--;
-		status = read_reg_pwr_modes(&mcr20a->spi);
+		status = read_reg_pwr_modes(mcr20a);
 	} while (!(status & MCR20A_PWR_MODES_XTAL_READY) && timeout);
 
 	if (!(status & MCR20A_PWR_MODES_XTAL_READY)) {
@@ -1179,10 +1170,10 @@ static int mcr20a_start(struct device *dev)
 	}
 
 	/* Clear all interrupt flags */
-	write_reg_irqsts1(&mcr20a->spi, MCR20A_IRQSTS1_IRQ_MASK);
-	write_reg_irqsts2(&mcr20a->spi, MCR20A_IRQSTS2_IRQ_MASK);
-	write_reg_irqsts3(&mcr20a->spi, MCR20A_IRQSTS3_IRQ_MASK |
-					MCR20A_IRQSTS3_TMR_MASK);
+	write_reg_irqsts1(mcr20a, MCR20A_IRQSTS1_IRQ_MASK);
+	write_reg_irqsts2(mcr20a, MCR20A_IRQSTS2_IRQ_MASK);
+	write_reg_irqsts3(mcr20a, MCR20A_IRQSTS3_IRQ_MASK |
+			  MCR20A_IRQSTS3_TMR_MASK);
 
 	if (mcr20a_abort_sequence(mcr20a, true)) {
 		SYS_LOG_ERR("Failed to reset XCV sequence");
@@ -1236,7 +1227,7 @@ static int mcr20a_stop(struct device *dev)
 		power_mode = MCR20A_PM_HIBERNATE;
 	}
 
-	if (!write_reg_pwr_modes(&mcr20a->spi, power_mode)) {
+	if (!write_reg_pwr_modes(mcr20a, power_mode)) {
 		goto error;
 	}
 
@@ -1253,31 +1244,20 @@ error:
 
 static int mcr20a_update_overwrites(struct mcr20a_context *dev)
 {
-	struct mcr20a_spi *spi = &dev->spi;
-
-	if (!write_reg_overwrite_ver(spi, overwrites_direct[0].data)) {
+	if (!write_reg_overwrite_ver(dev, overwrites_direct[0].data)) {
 		goto error;
 	}
-
-	k_sem_take(&spi->spi_sem, K_FOREVER);
 
 	for (u8_t i = 0;
 	     i < sizeof(overwrites_indirect) / sizeof(overwrites_t);
 	     i++) {
 
-		spi->cmd_buf[0] = MCR20A_IAR_INDEX | MCR20A_REG_WRITE;
-		spi->cmd_buf[1] = overwrites_indirect[i].address;
-		spi->cmd_buf[2] = overwrites_indirect[i].data;
-
-		spi_slave_select(spi->dev, spi->slave);
-
-		if (spi_write(spi->dev, spi->cmd_buf, 3)) {
-			k_sem_give(&spi->spi_sem);
+		if (_mcr20a_write_reg(dev, true,
+				      overwrites_indirect[i].address,
+				      overwrites_indirect[i].data)) {
 			goto error;
 		}
 	}
-
-	k_sem_give(&spi->spi_sem);
 
 	return 0;
 
@@ -1313,18 +1293,18 @@ static int power_on_and_setup(struct device *dev)
 	}
 
 	tmp = MCR20A_CLK_OUT_CONFIG | MCR20A_CLK_OUT_EXTEND;
-	write_reg_clk_out_ctrl(&mcr20a->spi, tmp);
+	write_reg_clk_out_ctrl(mcr20a, tmp);
 
-	if (read_reg_clk_out_ctrl(&mcr20a->spi) != tmp) {
+	if (read_reg_clk_out_ctrl(mcr20a) != tmp) {
 		SYS_LOG_ERR("Failed to get device up");
 		return -EIO;
 	}
 
 	/* Clear all interrupt flags */
-	write_reg_irqsts1(&mcr20a->spi, MCR20A_IRQSTS1_IRQ_MASK);
-	write_reg_irqsts2(&mcr20a->spi, MCR20A_IRQSTS2_IRQ_MASK);
-	write_reg_irqsts3(&mcr20a->spi, MCR20A_IRQSTS3_IRQ_MASK |
-					MCR20A_IRQSTS3_TMR_MASK);
+	write_reg_irqsts1(mcr20a, MCR20A_IRQSTS1_IRQ_MASK);
+	write_reg_irqsts2(mcr20a, MCR20A_IRQSTS2_IRQ_MASK);
+	write_reg_irqsts3(mcr20a, MCR20A_IRQSTS3_IRQ_MASK |
+			  MCR20A_IRQSTS3_TMR_MASK);
 
 	mcr20a_update_overwrites(mcr20a);
 	mcr20a_timer_init(dev, MCR20A_TIMEBASE_62500HZ);
@@ -1332,17 +1312,17 @@ static int power_on_and_setup(struct device *dev)
 	mcr20a_set_txpower(dev, MCR20A_DEFAULT_TX_POWER);
 	mcr20a_set_channel(dev, MCR20A_DEFAULT_CHANNEL);
 	mcr20a_set_cca_mode(dev, 1);
-	write_reg_rx_wtr_mark(&mcr20a->spi, 8);
+	write_reg_rx_wtr_mark(mcr20a, 8);
 
 	/* Configure PHY behaviour */
 	tmp = MCR20A_PHY_CTRL1_CCABFRTX |
 	      MCR20A_PHY_CTRL1_AUTOACK |
 	      MCR20A_PHY_CTRL1_RXACKRQD;
-	write_reg_phy_ctrl1(&mcr20a->spi, tmp);
+	write_reg_phy_ctrl1(mcr20a, tmp);
 
 	/* Enable Sequence-end interrupt */
 	tmp = MCR20A_PHY_CTRL2_SEQMSK;
-	write_reg_phy_ctrl2(&mcr20a->spi, ~tmp);
+	write_reg_phy_ctrl2(mcr20a, ~tmp);
 
 	setup_gpio_callbacks(mcr20a);
 
@@ -1386,30 +1366,39 @@ static inline int configure_gpios(struct device *dev)
 static inline int configure_spi(struct device *dev)
 {
 	struct mcr20a_context *mcr20a = dev->driver_data;
-	struct spi_config spi_conf = {
-		.config = SPI_WORD(8),
-		.max_sys_freq = CONFIG_IEEE802154_MCR20A_SPI_FREQ,
-	};
 
-	mcr20a->spi.dev = device_get_binding(
+	mcr20a->spi = device_get_binding(
 			CONFIG_IEEE802154_MCR20A_SPI_DRV_NAME);
-	if (!mcr20a->spi.dev) {
+	if (!mcr20a->spi) {
 		SYS_LOG_ERR("Unable to get SPI device");
 		return -ENODEV;
 	}
 
-	mcr20a->spi.slave = CONFIG_IEEE802154_MCR20A_SPI_SLAVE;
-
-	if (spi_configure(mcr20a->spi.dev, &spi_conf) != 0 ||
-	    spi_slave_select(mcr20a->spi.dev,
-			     mcr20a->spi.slave) != 0) {
-		mcr20a->spi.dev = NULL;
-		return -EIO;
+#if defined(CONFIG_IEEE802154_MCR20A_GPIO_SPI_CS)
+	mcr20a->cs_ctrl.gpio_dev = device_get_binding(
+		CONFIG_IEEE802154_MCR20A_GPIO_SPI_CS_DRV_NAME);
+	if (!mcr20a->cs_ctrl.gpio_dev) {
+		SYS_LOG_ERR("Unable to get GPIO SPI CS device");
+		return -ENODEV;
 	}
 
+	mcr20a->cs_ctrl.gpio_pin = CONFIG_IEEE802154_MCR20A_GPIO_SPI_CS_PIN;
+	mcr20a->cs_ctrl.delay = 0;
+
+	mcr20a->spi_cfg.cs = &mcr20a->cs_ctrl;
+
+	SYS_LOG_DBG("SPI GPIO CS configured on %s:%u",
+		    CONFIG_IEEE802154_MCR20A_GPIO_SPI_CS_DRV_NAME,
+		    CONFIG_IEEE802154_MCR20A_GPIO_SPI_CS_PIN);
+#endif /* CONFIG_IEEE802154_MCR20A_GPIO_SPI_CS */
+
+	mcr20a->spi_cfg.frequency = CONFIG_IEEE802154_MCR20A_SPI_FREQ;
+	mcr20a->spi_cfg.operation = SPI_WORD_SET(8);
+	mcr20a->spi_cfg.slave = CONFIG_IEEE802154_MCR20A_SPI_SLAVE;
+
 	SYS_LOG_DBG("SPI configured %s, %d",
-				CONFIG_IEEE802154_MCR20A_SPI_DRV_NAME,
-				CONFIG_IEEE802154_MCR20A_SPI_SLAVE);
+		    CONFIG_IEEE802154_MCR20A_SPI_DRV_NAME,
+		    CONFIG_IEEE802154_MCR20A_SPI_SLAVE);
 
 	return 0;
 }
@@ -1417,8 +1406,6 @@ static inline int configure_spi(struct device *dev)
 static int mcr20a_init(struct device *dev)
 {
 	struct mcr20a_context *mcr20a = dev->driver_data;
-
-	k_sem_init(&mcr20a->spi.spi_sem, 1, UINT_MAX);
 
 	k_mutex_init(&mcr20a->phy_mutex);
 	k_sem_init(&mcr20a->isr_sem, 0, 1);

@@ -56,9 +56,6 @@ if SPI && (SPI_1 || SPI_2 || SPI_3)
 config SPI_STM32
 	def_bool y
 
-config SPI_LEGACY_API
-	def_bool n
-
 endif # SPI
 
 if I2C && (I2C_1 || I2C_2 || I2C_3)

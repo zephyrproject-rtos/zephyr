@@ -51,7 +51,7 @@ static void to_display_format(const u8_t *src, size_t size, char *dst)
 	}
 }
 
-struct spi_config spi_slow = {
+struct spi_config spi_cfg_slow = {
 	.frequency = SLOW_FREQ,
 	.operation = SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
 	SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE,
@@ -59,7 +59,7 @@ struct spi_config spi_slow = {
 	.cs = SPI_CS,
 };
 
-struct spi_config spi_fast = {
+struct spi_config spi_cfg_fast = {
 	.frequency = FAST_FREQ,
 	.operation = SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
 	SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE,
@@ -67,21 +67,20 @@ struct spi_config spi_fast = {
 	.cs = SPI_CS,
 };
 
-static int cs_ctrl_gpio_config(struct spi_cs_control *cs)
+#if defined(CONFIG_SPI_LOOPBACK_CS_GPIO)
+static int cs_ctrl_gpio_config(void)
 {
-	if (cs) {
-		cs->gpio_dev = device_get_binding(CS_CTRL_GPIO_DRV_NAME);
-		if (!cs->gpio_dev) {
-			SYS_LOG_ERR("Cannot find %s!\n",
-				    CS_CTRL_GPIO_DRV_NAME);
-			return -1;
-		}
+	spi_cs.gpio_dev = device_get_binding(CS_CTRL_GPIO_DRV_NAME);
+	if (!spi_cs.gpio_dev) {
+		SYS_LOG_ERR("Cannot find %s!", CS_CTRL_GPIO_DRV_NAME);
+		return -1;
 	}
 
 	return 0;
 }
+#endif /* CONFIG_SPI_LOOPBACK_CS_GPIO */
 
-static int spi_complete_loop(struct spi_config *spi_conf)
+static int spi_complete_loop(struct device *dev, struct spi_config *spi_conf)
 {
 	const struct spi_buf tx_bufs[] = {
 		{
@@ -89,18 +88,26 @@ static int spi_complete_loop(struct spi_config *spi_conf)
 			.len = BUF_SIZE,
 		},
 	};
-	struct spi_buf rx_bufs[] = {
+	const struct spi_buf rx_bufs[] = {
 		{
 			.buf = buffer_rx,
 			.len = BUF_SIZE,
 		},
 	};
+	const struct spi_buf_set tx = {
+		.buffers = tx_bufs,
+		.count = ARRAY_SIZE(tx_bufs)
+	};
+	const struct spi_buf_set rx = {
+		.buffers = rx_bufs,
+		.count = ARRAY_SIZE(rx_bufs)
+	};
+
 	int ret;
 
 	SYS_LOG_INF("Start");
 
-	ret = spi_transceive(spi_conf, tx_bufs, ARRAY_SIZE(tx_bufs),
-			     rx_bufs, ARRAY_SIZE(rx_bufs));
+	ret = spi_transceive(dev, spi_conf, &tx, &rx);
 	if (ret) {
 		SYS_LOG_ERR("Code %d", ret);
 		return ret;
@@ -121,7 +128,7 @@ static int spi_complete_loop(struct spi_config *spi_conf)
 	return 0;
 }
 
-static int spi_rx_half_start(struct spi_config *spi_conf)
+static int spi_rx_half_start(struct device *dev, struct spi_config *spi_conf)
 {
 	const struct spi_buf tx_bufs[] = {
 		{
@@ -129,11 +136,19 @@ static int spi_rx_half_start(struct spi_config *spi_conf)
 			.len = BUF_SIZE,
 		},
 	};
-	struct spi_buf rx_bufs[] = {
+	const struct spi_buf rx_bufs[] = {
 		{
 			.buf = buffer_rx,
 			.len = 8,
 		},
+	};
+	const struct spi_buf_set tx = {
+		.buffers = tx_bufs,
+		.count = ARRAY_SIZE(tx_bufs)
+	};
+	const struct spi_buf_set rx = {
+		.buffers = rx_bufs,
+		.count = ARRAY_SIZE(rx_bufs)
 	};
 	int ret;
 
@@ -141,8 +156,7 @@ static int spi_rx_half_start(struct spi_config *spi_conf)
 
 	memset(buffer_rx, 0, BUF_SIZE);
 
-	ret = spi_transceive(spi_conf, tx_bufs, ARRAY_SIZE(tx_bufs),
-			     rx_bufs, ARRAY_SIZE(rx_bufs));
+	ret = spi_transceive(dev, spi_conf, &tx, &rx);
 	if (ret) {
 		SYS_LOG_ERR("Code %d", ret);
 		return -1;
@@ -163,7 +177,7 @@ static int spi_rx_half_start(struct spi_config *spi_conf)
 	return 0;
 }
 
-static int spi_rx_half_end(struct spi_config *spi_conf)
+static int spi_rx_half_end(struct device *dev, struct spi_config *spi_conf)
 {
 	const struct spi_buf tx_bufs[] = {
 		{
@@ -171,7 +185,7 @@ static int spi_rx_half_end(struct spi_config *spi_conf)
 			.len = BUF_SIZE,
 		},
 	};
-	struct spi_buf rx_bufs[] = {
+	const struct spi_buf rx_bufs[] = {
 		{
 			.buf = NULL,
 			.len = 8,
@@ -181,14 +195,21 @@ static int spi_rx_half_end(struct spi_config *spi_conf)
 			.len = 8,
 		},
 	};
+	const struct spi_buf_set tx = {
+		.buffers = tx_bufs,
+		.count = ARRAY_SIZE(tx_bufs)
+	};
+	const struct spi_buf_set rx = {
+		.buffers = rx_bufs,
+		.count = ARRAY_SIZE(rx_bufs)
+	};
 	int ret;
 
 	SYS_LOG_INF("Start");
 
 	memset(buffer_rx, 0, BUF_SIZE);
 
-	ret = spi_transceive(spi_conf, tx_bufs, ARRAY_SIZE(tx_bufs),
-			     rx_bufs, ARRAY_SIZE(rx_bufs));
+	ret = spi_transceive(dev, spi_conf, &tx, &rx);
 	if (ret) {
 		SYS_LOG_ERR("Code %d", ret);
 		return -1;
@@ -209,7 +230,7 @@ static int spi_rx_half_end(struct spi_config *spi_conf)
 	return 0;
 }
 
-static int spi_rx_every_4(struct spi_config *spi_conf)
+static int spi_rx_every_4(struct device *dev, struct spi_config *spi_conf)
 {
 	const struct spi_buf tx_bufs[] = {
 		{
@@ -217,7 +238,7 @@ static int spi_rx_every_4(struct spi_config *spi_conf)
 			.len = BUF_SIZE,
 		},
 	};
-	struct spi_buf rx_bufs[] = {
+	const struct spi_buf rx_bufs[] = {
 		{
 			.buf = NULL,
 			.len = 4,
@@ -235,14 +256,21 @@ static int spi_rx_every_4(struct spi_config *spi_conf)
 			.len = 4,
 		},
 	};
+	const struct spi_buf_set tx = {
+		.buffers = tx_bufs,
+		.count = ARRAY_SIZE(tx_bufs)
+	};
+	const struct spi_buf_set rx = {
+		.buffers = rx_bufs,
+		.count = ARRAY_SIZE(rx_bufs)
+	};
 	int ret;
 
 	SYS_LOG_INF("Start");
 
 	memset(buffer_rx, 0, BUF_SIZE);
 
-	ret = spi_transceive(spi_conf, tx_bufs, ARRAY_SIZE(tx_bufs),
-			     rx_bufs, ARRAY_SIZE(rx_bufs));
+	ret = spi_transceive(dev, spi_conf, &tx, &rx);
 	if (ret) {
 		SYS_LOG_ERR("Code %d", ret);
 		return -1;
@@ -298,7 +326,7 @@ static void spi_async_call_cb(struct k_poll_event *async_evt,
 	}
 }
 
-static int spi_async_call(struct spi_config *spi_conf)
+static int spi_async_call(struct device *dev, struct spi_config *spi_conf)
 {
 	const struct spi_buf tx_bufs[] = {
 		{
@@ -306,18 +334,25 @@ static int spi_async_call(struct spi_config *spi_conf)
 			.len = BUF_SIZE,
 		},
 	};
-	struct spi_buf rx_bufs[] = {
+	const struct spi_buf rx_bufs[] = {
 		{
 			.buf = buffer_rx,
 			.len = BUF_SIZE,
 		},
 	};
+	const struct spi_buf_set tx = {
+		.buffers = tx_bufs,
+		.count = ARRAY_SIZE(tx_bufs)
+	};
+	const struct spi_buf_set rx = {
+		.buffers = rx_bufs,
+		.count = ARRAY_SIZE(rx_bufs)
+	};
 	int ret;
 
 	SYS_LOG_INF("Start");
 
-	ret = spi_transceive_async(spi_conf, tx_bufs, ARRAY_SIZE(tx_bufs),
-				   rx_bufs, ARRAY_SIZE(rx_bufs), &async_sig);
+	ret = spi_transceive_async(dev, spi_conf, &tx, &rx, &async_sig);
 	if (ret == -ENOTSUP) {
 		SYS_LOG_DBG("Not supported");
 		return 0;
@@ -340,21 +375,23 @@ static int spi_async_call(struct spi_config *spi_conf)
 	return 0;
 }
 
-static int spi_resource_lock_test(struct spi_config *spi_conf_lock,
-				   struct spi_config *spi_conf_try)
+static int spi_resource_lock_test(struct device *lock_dev,
+				  struct spi_config *spi_conf_lock,
+				  struct device *try_dev,
+				  struct spi_config *spi_conf_try)
 {
 	spi_conf_lock->operation |= SPI_LOCK_ON;
 
-	if (spi_complete_loop(spi_conf_lock)) {
+	if (spi_complete_loop(lock_dev, spi_conf_lock)) {
 		return -1;
 	}
 
-	if (spi_release(spi_conf_lock)) {
+	if (spi_release(lock_dev, spi_conf_lock)) {
 		SYS_LOG_ERR("Deadlock now?");
 		return -1;
 	}
 
-	if (spi_complete_loop(spi_conf_try)) {
+	if (spi_complete_loop(try_dev, spi_conf_try)) {
 		return -1;
 	}
 
@@ -365,44 +402,48 @@ void main(void)
 {
 	struct k_thread async_thread;
 	k_tid_t async_thread_id;
+	struct device *spi_slow;
+	struct device *spi_fast;
 
 	SYS_LOG_INF("SPI test on buffers TX/RX %p/%p", buffer_tx, buffer_rx);
 
-	if (cs_ctrl_gpio_config(spi_slow.cs) ||
-	    cs_ctrl_gpio_config(spi_fast.cs)) {
+#if defined(CONFIG_SPI_LOOPBACK_CS_GPIO)
+	if (cs_ctrl_gpio_config()) {
 		return;
 	}
+#endif /* CONFIG_SPI_LOOPBACK_CS_GPIO */
 
-	spi_slow.dev = device_get_binding(SPI_DRV_NAME);
-	if (!spi_slow.dev) {
+	spi_slow = device_get_binding(SPI_DRV_NAME);
+	if (!spi_slow) {
 		SYS_LOG_ERR("Cannot find %s!\n", SPI_DRV_NAME);
 		return;
 	}
 
-	spi_fast.dev = spi_slow.dev;
+	spi_fast = spi_slow;
 
 	async_thread_id = k_thread_create(&async_thread, spi_async_stack, 256,
 					  (k_thread_entry_t)spi_async_call_cb,
 					  &async_evt, &caller, NULL,
 					  K_PRIO_COOP(7), 0, 0);
 
-	if (spi_complete_loop(&spi_slow) ||
-	    spi_rx_half_start(&spi_slow) ||
-	    spi_rx_half_end(&spi_slow) ||
-	    spi_rx_every_4(&spi_slow) ||
-	    spi_async_call(&spi_slow)) {
+	if (spi_complete_loop(spi_slow, &spi_cfg_slow) ||
+	    spi_rx_half_start(spi_slow, &spi_cfg_slow) ||
+	    spi_rx_half_end(spi_slow, &spi_cfg_slow) ||
+	    spi_rx_every_4(spi_slow, &spi_cfg_slow) ||
+	    spi_async_call(spi_slow, &spi_cfg_slow)) {
 		goto end;
 	}
 
-	if (spi_complete_loop(&spi_fast) ||
-	    spi_rx_half_start(&spi_fast) ||
-	    spi_rx_half_end(&spi_fast) ||
-	    spi_rx_every_4(&spi_fast) ||
-	    spi_async_call(&spi_fast)) {
+	if (spi_complete_loop(spi_fast, &spi_cfg_fast) ||
+	    spi_rx_half_start(spi_fast, &spi_cfg_fast) ||
+	    spi_rx_half_end(spi_fast, &spi_cfg_fast) ||
+	    spi_rx_every_4(spi_fast, &spi_cfg_fast) ||
+	    spi_async_call(spi_fast, &spi_cfg_fast)) {
 		goto end;
 	}
 
-	if (spi_resource_lock_test(&spi_slow, &spi_fast)) {
+	if (spi_resource_lock_test(spi_slow, &spi_cfg_slow,
+				   spi_fast, &spi_cfg_fast)) {
 		goto end;
 	}
 

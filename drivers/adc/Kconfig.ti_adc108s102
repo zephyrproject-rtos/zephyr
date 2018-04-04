@@ -22,17 +22,11 @@ config ADC_TI_ADC108S102_SPI_PORT_NAME
 	help
 	  Master SPI port name through which adc108s102 chip is accessed.
 
-config ADC_TI_ADC108S102_SPI_CONFIGURATION
-	hex "Master SPI port configuration"
-	default 0x0
+config ADC_TI_ADC108S102_SPI_FREQ
+	int "Master SPI port max frequency"
+	default 0
 	help
-	  Master SPI port configuration flags used to access adc108s102 chip.
-
-config ADC_TI_ADC108S102_SPI_MAX_FREQ
-	hex "Master SPI port max frequency"
-	default 0x0
-	help
-	  Master SPI port maximum frequency used to access adc108s102 chip.
+	  Master SPI port frequency used to access adc108s102 chip.
 
 config ADC_TI_ADC108S102_SPI_SLAVE
 	int "SPI slave slot"

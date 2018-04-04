@@ -141,7 +141,7 @@ endif
 
 
 if SPI
-config SPI_QMSI
+config SPI_DW
 	def_bool y
 
 config SPI_0
@@ -156,11 +156,21 @@ config SPI_1
 config SPI_1_IRQ_PRI
 	default 2
 
-config SPI_DW
-	def_bool n
-
 config SPI_DW_FIFO_DEPTH
 	default 7
+
+if SPI_SLAVE
+
+config SPI_2
+	def_bool y
+
+config SPI_2_OP_MODES
+	default 2
+
+config SPI_2_IRQ_PRI
+	default 2
+
+endif # SPI_SLAVE
 
 endif # SPI
 

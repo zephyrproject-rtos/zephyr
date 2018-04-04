@@ -59,11 +59,23 @@ extern "C" {
  * *_b function only used for creating proper ser one
  */
 DEFINE_MM_REG_READ(ctrlr0_b, DW_SPI_REG_CTRLR0, 16)
+static inline u32_t read_ctrlr0(u32_t addr)
+{
+	return read_ctrlr0_b(addr);
+}
+
 DEFINE_MM_REG_WRITE(ctrlr0_b, DW_SPI_REG_CTRLR0, 16)
 static inline void write_ctrlr0(u32_t data, u32_t addr)
 {
 	write_ctrlr0_b((read_ctrlr0_b(addr) & DW_SPI_CTRLR0_CLK_ENA_MASK) |
 								data, addr);
+}
+
+DEFINE_MM_REG_READ(ctrlr1_b, DW_SPI_REG_CTRLR0, 32)
+DEFINE_MM_REG_WRITE(ctrlr1_b, DW_SPI_REG_CTRLR0, 32)
+static inline void write_ctrlr1(u32_t data, u32_t addr)
+{
+	write_ctrlr1_b((read_ctrlr1_b(addr) & (data << 16)), addr);
 }
 
 DEFINE_MM_REG_READ(ssienr_b, DW_SPI_REG_SSIENR, 8)
@@ -120,16 +132,14 @@ static inline u32_t read_dr(u32_t addr)
 DEFINE_SET_BIT_OP(clk_ena, DW_SPI_REG_CTRLR0, DW_SPI_CTRLR0_CLK_ENA_BIT)
 DEFINE_CLEAR_BIT_OP(clk_ena, DW_SPI_REG_CTRLR0, DW_SPI_CTRLR0_CLK_ENA_BIT)
 
-#define _clock_config(...)
-
-static inline void _clock_on(struct device *dev)
+static inline void _extra_clock_on(struct device *dev)
 {
 	const struct spi_dw_config *info = dev->config->config_info;
 
 	set_bit_clk_ena(info->regs);
 }
 
-static inline void _clock_off(struct device *dev)
+static inline void _extra_clock_off(struct device *dev)
 {
 	const struct spi_dw_config *info = dev->config->config_info;
 

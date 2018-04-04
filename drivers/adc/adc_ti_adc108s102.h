@@ -32,13 +32,6 @@ extern "C" {
 #define ADC108S102_RESULT(_res_)		\
 			(sys_be16_to_cpu(_res_) & ADC108S102_RESULT_MASK)
 
-struct ti_adc108s102_config {
-	const char *spi_port;
-	u32_t spi_config_flags;
-	u32_t spi_freq;
-	u32_t spi_slave;
-};
-
 struct ti_adc108s102_chan {
 	u32_t buf_idx;
 };
@@ -47,6 +40,7 @@ struct ti_adc108s102_data {
 	u16_t cmd_buffer[ADC108S102_CMD_BUFFER_SIZE];
 	u16_t sampling_buffer[ADC108S102_SAMPLING_BUFFER_SIZE];
 	struct device *spi;
+	struct spi_config spi_cfg;
 	struct ti_adc108s102_chan chans[ADC108S102_CHANNELS];
 	struct adc_seq_table *seq_table;
 

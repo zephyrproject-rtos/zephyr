@@ -9,16 +9,6 @@
  * @brief Public API for SPI drivers and applications
  */
 
-#if defined(CONFIG_SPI_LEGACY_API)
-
-/*
- * This is the default, and will be the way until the new API below
- * will be enforced everywhere.
- */
-#include <spi_legacy.h>
-
-#else
-
 #ifndef __SPI_H__
 #define __SPI_H__
 
@@ -96,12 +86,13 @@ extern "C" {
 /**
  * @brief SPI MISO lines
  *
- * Some controllers support dual or quad MISO lines connected to slaves.
+ * Some controllers support dual, quad or octal MISO lines connected to slaves.
  * Default is single, which is the case most of the time.
  */
-#define SPI_LINES_SINGLE	(0)
-#define SPI_LINES_DUAL		BIT(11)
-#define SPI_LINES_QUAD		BIT(12)
+#define SPI_LINES_SINGLE	(0 << 11)
+#define SPI_LINES_DUAL		(1 << 11)
+#define SPI_LINES_QUAD		(2 << 11)
+#define SPI_LINES_OCTAL		(3 << 11)
 
 #define SPI_LINES_MASK		(0x3 << 11)
 
@@ -116,11 +107,15 @@ extern "C" {
  * properly called.
  */
 #define SPI_LOCK_ON		BIT(14)
-/* Select EEPROM read mode on master controller.
- * If not supported by the controller, the driver will have to emulate
- * the mode and thus should never return -EINVAL on that configuration)
+
+/* Active high logic on CS - Usually, and by default, CS logic is active
+ * low. However, some devices may require the reverse logic: active high.
+ * This bit will request the controller to use that logic. Note that not
+ * all controllers are able to handle that natively. In this case deferring
+ * the CS control to a gpio line through struct spi_cs_control would be
+ * the solution.
  */
-#define SPI_EEPROM_MODE		BIT(15)
+#define SPI_CS_ACTIVE_HIGH	BIT(15)
 
 /**
  * @brief SPI Chip Select control structure
@@ -152,25 +147,23 @@ struct spi_cs_control {
  *     mode                [ 1 : 3 ]   - Polarity, phase and loop mode.
  *     transfer            [ 4 ]       - LSB or MSB first.
  *     word_size           [ 5 : 10 ]  - Size of a data frame in bits.
- *     lines               [ 11 : 12 ] - MISO lines: Single/Dual/Quad.
+ *     lines               [ 11 : 12 ] - MISO lines: Single/Dual/Quad/Octal.
  *     cs_hold             [ 13 ]      - Hold on the CS line if possible.
  *     lock_on             [ 14 ]      - Keep resource locked for the caller.
- *     eeprom              [ 15 ]      - EEPROM mode.
+ *     cs_active_high      [ 15 ]      - Active high CS logic.
  * @param slave is the slave number from 0 to host controller slave limit.
  * @param cs is a valid pointer on a struct spi_cs_control is CS line is
  *    emulated through a gpio line, or NULL otherwise.
  *
- * @note cs_hold, lock_on and eeprom_rx can be changed between consecutive
- * transceive call.
+ * @note Only cs_hold and lock_on can be changed between consecutive
+ * transceive call. Rest of the attributes are not meant to be tweaked.
  */
 struct spi_config {
-	struct device	*dev;
-
 	u32_t		frequency;
 	u16_t		operation;
 	u16_t		slave;
 
-	struct spi_cs_control *cs;
+	const struct spi_cs_control *cs;
 };
 
 /**
@@ -187,26 +180,35 @@ struct spi_buf {
 };
 
 /**
+ * @brief SPI buffer array structure
+ *
+ * @param buffers is a valid pointer on an array of spi_buf, or NULL.
+ * @param count is the length of the array pointed by buffers.
+ */
+struct spi_buf_set {
+	const struct spi_buf *buffers;
+	size_t count;
+};
+
+/**
  * @typedef spi_api_io
  * @brief Callback API for I/O
  * See spi_transceive() for argument descriptions
  */
-typedef int (*spi_api_io)(struct spi_config *config,
-			  const struct spi_buf *tx_bufs,
-			  size_t tx_count,
-			  struct spi_buf *rx_bufs,
-			  size_t rx_count);
+typedef int (*spi_api_io)(struct device *dev,
+			  const struct spi_config *config,
+			  const struct spi_buf_set *tx_bufs,
+			  const struct spi_buf_set *rx_bufs);
 
 /**
  * @typedef spi_api_io
  * @brief Callback API for asynchronous I/O
  * See spi_transceive_async() for argument descriptions
  */
-typedef int (*spi_api_io_async)(struct spi_config *config,
-				const struct spi_buf *tx_bufs,
-				size_t tx_count,
-				struct spi_buf *rx_bufs,
-				size_t rx_count,
+typedef int (*spi_api_io_async)(struct device *dev,
+				const struct spi_config *config,
+				const struct spi_buf_set *tx_bufs,
+				const struct spi_buf_set *rx_bufs,
 				struct k_poll_signal *async);
 
 /**
@@ -214,7 +216,8 @@ typedef int (*spi_api_io_async)(struct spi_config *config,
  * @brief Callback API for unlocking SPI device.
  * See spi_release() for argument descriptions
  */
-typedef int (*spi_api_release)(struct spi_config *config);
+typedef int (*spi_api_release)(struct device *dev,
+			       const struct spi_config *config);
 
 
 /**
@@ -223,9 +226,9 @@ typedef int (*spi_api_release)(struct spi_config *config);
  */
 struct spi_driver_api {
 	spi_api_io transceive;
-#ifdef CONFIG_POLL
+#ifdef CONFIG_SPI_ASYNC
 	spi_api_io_async transceive_async;
-#endif
+#endif /* CONFIG_SPI_ASYNC */
 	spi_api_release release;
 };
 
@@ -234,31 +237,28 @@ struct spi_driver_api {
  *
  * Note: This function is synchronous.
  *
+ * @param dev Pointer to the device structure for the driver instance
  * @param config Pointer to a valid spi_config structure instance.
  * @param tx_bufs Buffer array where data to be sent originates from,
  *        or NULL if none.
- * @param tx_count Number of element in the tx_bufs array.
  * @param rx_bufs Buffer array where data to be read will be written to,
  *        or NULL if none.
- * @param rx_count Number of element in the rx_bufs array.
  *
  * @retval 0 If successful, negative errno code otherwise.
  */
-__syscall int spi_transceive(struct spi_config *config,
-			     const struct spi_buf *tx_bufs,
-			     size_t tx_count,
-			     struct spi_buf *rx_bufs,
-			     size_t rx_count);
+__syscall int spi_transceive(struct device *dev,
+			     const struct spi_config *config,
+			     const struct spi_buf_set *tx_bufs,
+			     const struct spi_buf_set *rx_bufs);
 
-static inline int _impl_spi_transceive(struct spi_config *config,
-				       const struct spi_buf *tx_bufs,
-				       size_t tx_count,
-				       struct spi_buf *rx_bufs,
-				       size_t rx_count)
+static inline int _impl_spi_transceive(struct device *dev,
+				       const struct spi_config *config,
+				       const struct spi_buf_set *tx_bufs,
+				       const struct spi_buf_set *rx_bufs)
 {
-	const struct spi_driver_api *api = config->dev->driver_api;
+	const struct spi_driver_api *api = dev->driver_api;
 
-	return api->transceive(config, tx_bufs, tx_count, rx_bufs, rx_count);
+	return api->transceive(dev, config, tx_bufs, rx_bufs);
 }
 
 /**
@@ -266,17 +266,19 @@ static inline int _impl_spi_transceive(struct spi_config *config,
  *
  * Note: This function is synchronous.
  *
+ * @param dev Pointer to the device structure for the driver instance
  * @param config Pointer to a valid spi_config structure instance.
  * @param rx_bufs Buffer array where data to be read will be written to.
- * @param rx_count Number of element in the rx_bufs array.
  *
  * @retval 0 If successful, negative errno code otherwise.
+ *
+ * @note This function is an helper function calling spi_transceive.
  */
-static inline int spi_read(struct spi_config *config,
-			   struct spi_buf *rx_bufs,
-			   size_t rx_count)
+static inline int spi_read(struct device *dev,
+			   const struct spi_config *config,
+			   const struct spi_buf_set *rx_bufs)
 {
-	return spi_transceive(config, NULL, 0, rx_bufs, rx_count);
+	return spi_transceive(dev, config, NULL, rx_bufs);
 }
 
 /**
@@ -284,32 +286,33 @@ static inline int spi_read(struct spi_config *config,
  *
  * Note: This function is synchronous.
  *
+ * @param dev Pointer to the device structure for the driver instance
  * @param config Pointer to a valid spi_config structure instance.
  * @param tx_bufs Buffer array where data to be sent originates from.
- * @param tx_count Number of element in the tx_bufs array.
  *
  * @retval 0 If successful, negative errno code otherwise.
+ *
+ * @note This function is an helper function calling spi_transceive.
  */
-static inline int spi_write(struct spi_config *config,
-			    const struct spi_buf *tx_bufs,
-			    size_t tx_count)
+static inline int spi_write(struct device *dev,
+			    const struct spi_config *config,
+			    const struct spi_buf_set *tx_bufs)
 {
-	return spi_transceive(config, tx_bufs, tx_count, NULL, 0);
+	return spi_transceive(dev, config, tx_bufs, NULL);
 }
 
-#ifdef CONFIG_POLL
+#ifdef CONFIG_SPI_ASYNC
 /**
  * @brief Read/write the specified amount of data from the SPI driver.
  *
  * Note: This function is asynchronous.
  *
+ * @param dev Pointer to the device structure for the driver instance
  * @param config Pointer to a valid spi_config structure instance.
  * @param tx_bufs Buffer array where data to be sent originates from,
  *        or NULL if none.
- * @param tx_count Number of element in the tx_bufs array.
  * @param rx_bufs Buffer array where data to be read will be written to,
  *        or NULL if none.
- * @param rx_count Number of element in the rx_bufs array.
  * @param async A pointer to a valid and ready to be signaled
  *        struct k_poll_signal. (Note: if NULL this function will not
  *        notify the end of the transaction, and whether it went
@@ -317,17 +320,15 @@ static inline int spi_write(struct spi_config *config,
  *
  * @retval 0 If successful, negative errno code otherwise.
  */
-static inline int spi_transceive_async(struct spi_config *config,
-				       const struct spi_buf *tx_bufs,
-				       size_t tx_count,
-				       struct spi_buf *rx_bufs,
-				       size_t rx_count,
+static inline int spi_transceive_async(struct device *dev,
+				       const struct spi_config *config,
+				       const struct spi_buf_set *tx_bufs,
+				       const struct spi_buf_set *rx_bufs,
 				       struct k_poll_signal *async)
 {
-	const struct spi_driver_api *api = config->dev->driver_api;
+	const struct spi_driver_api *api = dev->driver_api;
 
-	return api->transceive_async(config, tx_bufs, tx_count,
-				     rx_bufs, rx_count, async);
+	return api->transceive_async(dev, config, tx_bufs, rx_bufs, async);
 }
 
 /**
@@ -335,25 +336,24 @@ static inline int spi_transceive_async(struct spi_config *config,
  *
  * Note: This function is asynchronous.
  *
+ * @param dev Pointer to the device structure for the driver instance
  * @param config Pointer to a valid spi_config structure instance.
  * @param rx_bufs Buffer array where data to be read will be written to.
- * @param rx_count Number of element in the rx_bufs array.
  * @param async A pointer to a valid and ready to be signaled
  *        struct k_poll_signal. (Note: if NULL this function will not
  *        notify the end of the transaction, and whether it went
  *        successfully or not).
  *
  * @retval 0 If successful, negative errno code otherwise.
+ *
+ * @note This function is an helper function calling spi_transceive_async.
  */
-static inline int spi_read_async(struct spi_config *config,
-				 struct spi_buf *rx_bufs,
-				 size_t rx_count,
+static inline int spi_read_async(struct device *dev,
+				 const struct spi_config *config,
+				 const struct spi_buf_set *rx_bufs,
 				 struct k_poll_signal *async)
 {
-	const struct spi_driver_api *api = config->dev->driver_api;
-
-	return api->transceive_async(config, NULL, 0,
-				     rx_bufs, rx_count, async);
+	return spi_transceive_async(dev, config, NULL, rx_bufs, async);
 }
 
 /**
@@ -361,27 +361,26 @@ static inline int spi_read_async(struct spi_config *config,
  *
  * Note: This function is asynchronous.
  *
+ * @param dev Pointer to the device structure for the driver instance
  * @param config Pointer to a valid spi_config structure instance.
  * @param tx_bufs Buffer array where data to be sent originates from.
- * @param tx_count Number of element in the tx_bufs array.
  * @param async A pointer to a valid and ready to be signaled
  *        struct k_poll_signal. (Note: if NULL this function will not
  *        notify the end of the transaction, and whether it went
  *        successfully or not).
  *
  * @retval 0 If successful, negative errno code otherwise.
+ *
+ * @note This function is an helper function calling spi_transceive_async.
  */
-static inline int spi_write_async(struct spi_config *config,
-				  const struct spi_buf *tx_bufs,
-				  size_t tx_count,
+static inline int spi_write_async(struct device *dev,
+				  const struct spi_config *config,
+				  const struct spi_buf_set *tx_bufs,
 				  struct k_poll_signal *async)
 {
-	const struct spi_driver_api *api = config->dev->driver_api;
-
-	return api->transceive_async(config, tx_bufs, tx_count,
-				     NULL, 0, async);
+	return spi_transceive_async(dev, config, tx_bufs, NULL, async);
 }
-#endif /* CONFIG_POLL */
+#endif /* CONFIG_SPI_ASYNC */
 
 /**
  * @brief Release the SPI device locked on by the current config
@@ -393,15 +392,18 @@ static inline int spi_write_async(struct spi_config *config,
  *       This can be used if the caller needs to keep its hand on the SPI
  *       device for consecutive transactions.
  *
+ * @param dev Pointer to the device structure for the driver instance
  * @param config Pointer to a valid spi_config structure instance.
  */
-__syscall int spi_release(struct spi_config *config);
+__syscall int spi_release(struct device *dev,
+			  const struct spi_config *config);
 
-static inline int _impl_spi_release(struct spi_config *config)
+static inline int _impl_spi_release(struct device *dev,
+				    const struct spi_config *config)
 {
-	const struct spi_driver_api *api = config->dev->driver_api;
+	const struct spi_driver_api *api = dev->driver_api;
 
-	return api->release(config);
+	return api->release(dev, config);
 }
 
 #ifdef __cplusplus
@@ -415,4 +417,3 @@ static inline int _impl_spi_release(struct spi_config *config)
 #include <syscalls/spi.h>
 
 #endif /* __SPI_H__ */
-#endif /* CONFIG_SPI_LEGACY_API */

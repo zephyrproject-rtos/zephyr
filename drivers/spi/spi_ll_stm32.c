@@ -19,11 +19,11 @@
 
 #include "spi_ll_stm32.h"
 
-#define CONFIG_CFG(cfg)						\
-((const struct spi_stm32_config * const)(cfg)->dev->config->config_info)
+#define DEV_CFG(dev)						\
+(const struct spi_stm32_config * const)(dev->config->config_info)
 
-#define CONFIG_DATA(cfg)					\
-((struct spi_stm32_data * const)(cfg)->dev->driver_data)
+#define DEV_DATA(dev)					\
+(struct spi_stm32_data * const)(dev->driver_data)
 
 /*
  * Check for SPI_SR_FRE to determine support for TI mode frame format
@@ -222,10 +222,11 @@ static void spi_stm32_isr(void *arg)
 }
 #endif
 
-static int spi_stm32_configure(struct spi_config *config)
+static int spi_stm32_configure(struct device *dev,
+			       const struct spi_config *config)
 {
-	const struct spi_stm32_config *cfg = CONFIG_CFG(config);
-	struct spi_stm32_data *data = CONFIG_DATA(config);
+	const struct spi_stm32_config *cfg = DEV_CFG(dev);
+	struct spi_stm32_data *data = DEV_DATA(dev);
 	const u32_t scaler[] = {
 		LL_SPI_BAUDRATEPRESCALER_DIV2,
 		LL_SPI_BAUDRATEPRESCALER_DIV4,
@@ -340,26 +341,28 @@ static int spi_stm32_configure(struct spi_config *config)
 	return 0;
 }
 
-static int spi_stm32_release(struct spi_config *config)
+static int spi_stm32_release(struct device *dev,
+			     const struct spi_config *config)
 {
-	struct spi_stm32_data *data = CONFIG_DATA(config);
+	struct spi_stm32_data *data = DEV_DATA(dev);
 
 	spi_context_unlock_unconditionally(&data->ctx);
 
 	return 0;
 }
 
-static int transceive(struct spi_config *config,
-		      const struct spi_buf *tx_bufs, u32_t tx_count,
-		      struct spi_buf *rx_bufs, u32_t rx_count,
+static int transceive(struct device *dev,
+		      const struct spi_config *config,
+		      const struct spi_buf_set *tx_bufs,
+		      const struct spi_buf_set *rx_bufs,
 		      bool asynchronous, struct k_poll_signal *signal)
 {
-	const struct spi_stm32_config *cfg = CONFIG_CFG(config);
-	struct spi_stm32_data *data = CONFIG_DATA(config);
+	const struct spi_stm32_config *cfg = DEV_CFG(dev);
+	struct spi_stm32_data *data = DEV_DATA(dev);
 	SPI_TypeDef *spi = cfg->spi;
 	int ret;
 
-	if (!tx_count && !rx_count) {
+	if (!tx_bufs && !rx_bufs) {
 		return 0;
 	}
 
@@ -371,14 +374,13 @@ static int transceive(struct spi_config *config,
 
 	spi_context_lock(&data->ctx, asynchronous, signal);
 
-	ret = spi_stm32_configure(config);
+	ret = spi_stm32_configure(dev, config);
 	if (ret) {
 		return ret;
 	}
 
 	/* Set buffers info */
-	spi_context_buffers_setup(&data->ctx, tx_bufs, tx_count,
-				  rx_bufs, rx_count, 1);
+	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
 
 #if defined(CONFIG_SPI_STM32_HAS_FIFO)
 	/* Flush RX buffer */
@@ -419,30 +421,28 @@ static int transceive(struct spi_config *config,
 	return ret ? -EIO : 0;
 }
 
-static int spi_stm32_transceive(struct spi_config *config,
-				const struct spi_buf *tx_bufs, u32_t tx_count,
-				struct spi_buf *rx_bufs, u32_t rx_count)
+static int spi_stm32_transceive(struct device *dev,
+				const struct spi_config *config,
+				const struct spi_buf_set *tx_bufs,
+				const struct spi_buf_set *rx_bufs)
 {
-	return transceive(config, tx_bufs, tx_count,
-			  rx_bufs, rx_count, false, NULL);
+	return transceive(dev, config, tx_bufs, rx_bufs, false, NULL);
 }
 
-#ifdef CONFIG_POLL
-static int spi_stm32_transceive_async(struct spi_config *config,
-				      const struct spi_buf *tx_bufs,
-				      size_t tx_count,
-				      struct spi_buf *rx_bufs,
-				      size_t rx_count,
+#ifdef CONFIG_SPI_ASYNC
+static int spi_stm32_transceive_async(struct device *dev,
+				      const struct spi_config *config,
+				      const struct spi_buf_set *tx_bufs,
+				      const struct spi_buf_set *rx_bufs,
 				      struct k_poll_signal *async)
 {
-	return transceive(config, tx_bufs, tx_count,
-			  rx_bufs, rx_count, true, async);
+	return transceive(dev, config, tx_bufs, rx_bufs, true, async);
 }
-#endif /* CONFIG_POLL */
+#endif /* CONFIG_SPI_ASYNC */
 
 static const struct spi_driver_api api_funcs = {
 	.transceive = spi_stm32_transceive,
-#ifdef CONFIG_POLL
+#ifdef CONFIG_SPI_ASYNC
 	.transceive_async = spi_stm32_transceive_async,
 #endif
 	.release = spi_stm32_release,
