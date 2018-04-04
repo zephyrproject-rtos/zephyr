@@ -1,0 +1,6 @@
+if BOARD_HIFIVE1
+
+config BOARD
+	default "hifive1"
+
+endif
