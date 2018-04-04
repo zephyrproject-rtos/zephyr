@@ -84,6 +84,16 @@ void test_arm_irq_vector_table(void)
 			 */
 		NVIC_SetPendingIRQ(ii);
 #else
+#if defined(CONFIG_SOC_SERIES_NRF52X)
+		/* The customized solution for nRF52X-based platforms
+		 * requires that the RTC1 IRQ line equals 17 and is larger
+		 * than the CONFIG_NUM_IRQS.
+		 */
+		__ASSERT(RTC1_IRQn == 17,
+		"RTC1_IRQn != 17. Consider rework manual vector table.");
+		__ASSERT(RTC1_IRQn >= CONFIG_NUM_IRQS,
+		"RTC1_IRQn < NUM_IRQs. Consider rework manual vector table.");
+#endif /* CONFIG_SOC_SERIES_NRF52X */
 		NVIC->STIR = ii;
 #endif
 	}
@@ -94,7 +104,22 @@ void test_arm_irq_vector_table(void)
 
 }
 
+#if defined(CONFIG_SOC_SERIES_NRF52X)
+/* nRF52X-based platforms employ a Hardware RTC peripheral
+ * to implement the Kernel system timer, instead of the ARM Cortex-M
+ * SysTick. Therefore, a pointer to the timer ISR needs to be added in
+ * the custom vector table to handle the timer "tick" interrupts.
+ */
+void rtc1_nrf5_isr(void);
+typedef void (*vth)(void); /* Vector Table Handler */
+vth __irq_vector_table _irq_vector_table[RTC1_IRQn+1] = {
+	isr0, isr1, isr2,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	rtc1_nrf5_isr
+};
+#else
 typedef void (*vth)(void); /* Vector Table Handler */
 vth __irq_vector_table _irq_vector_table[CONFIG_NUM_IRQS] = {
 	isr0, isr1, isr2
 };
+#endif /* CONFIG_SOC_SERIES_NRF52X */
