@@ -3,7 +3,7 @@ Title: Installation of ISRs Directly in the Vector Table (ARM Only)
 Description:
 
 Verify a project can install ISRs directly in the vector table. Only for
-ARM Cortex-M3/4 targets.
+ARM Cortex-M3/4/7/33 targets.
 
 ---------------------------------------------------------------------------
 
