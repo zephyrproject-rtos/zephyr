@@ -292,6 +292,9 @@ Several macros exist to validate arguments:
   a message parameter, instead printing the expression tested if it
   fails. The latter should only be used for the most obvious of tests.
 
+* :c:macro:`_SYSCALL_DRIVER_OP()` checks at runtime if a driver
+  instance is capable of performing a particular operation.
+
 If any check fails, a kernel oops will be triggered which will kill the
 calling thread. This is done instead of returning some error condition to
 keep the APIs the same when calling from supervisor mode.

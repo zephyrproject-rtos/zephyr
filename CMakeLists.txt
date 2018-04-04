@@ -364,6 +364,19 @@ add_custom_command(OUTPUT include/generated/syscall_dispatch.c ${syscall_list_h}
   DEPENDS ${syscalls_json}
   )
 
+set(DRV_VALIDATION ${PROJECT_BINARY_DIR}/include/generated/driver-validation.h)
+add_custom_command(
+  OUTPUT ${DRV_VALIDATION}
+  COMMAND
+  ${PYTHON_EXECUTABLE}
+  ${ZEPHYR_BASE}/scripts/gen_kobject_list.py
+  --validation-output ${DRV_VALIDATION}
+  $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
+  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  )
+add_custom_target(driver_validation_h_target DEPENDS ${DRV_VALIDATION})
+
+
 # Generate offsets.c.obj from offsets.c
 # Generate offsets.h     from offsets.c.obj
 
@@ -376,6 +389,7 @@ target_link_libraries(offsets zephyr_interface)
 add_dependencies(     offsets
   syscall_list_h_target
   syscall_macros_h_target
+  driver_validation_h_target
   )
 
 add_custom_command(
@@ -782,7 +796,7 @@ if(CONFIG_USERSPACE)
     ${PYTHON_EXECUTABLE}
     ${GEN_KOBJ_LIST}
     --kernel $<TARGET_FILE:zephyr_prebuilt>
-    --output ${OBJ_LIST}
+    --gperf-output ${OBJ_LIST}
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
     DEPENDS zephyr_prebuilt
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}

@@ -13,13 +13,13 @@
 
 _SYSCALL_HANDLER(dma_start, dev, channel)
 {
-	_SYSCALL_OBJ(dev, K_OBJ_DRIVER_DMA);
+	_SYSCALL_DRIVER_DMA(dev, start);
 	return _impl_dma_start((struct device *)dev, channel);
 }
 
 _SYSCALL_HANDLER(dma_stop, dev, channel)
 {
-	_SYSCALL_OBJ(dev, K_OBJ_DRIVER_DMA);
+	_SYSCALL_DRIVER_DMA(dev, stop);
 	return _impl_dma_stop((struct device *)dev, channel);
 }
 

@@ -117,6 +117,30 @@ def write_gperf_table(fp, eh, objs, static_begin, static_end):
     fp.write(footer)
 
 
+driver_macro_tpl = """
+#define _SYSCALL_DRIVER_%(driver_upper)s(ptr, op) _SYSCALL_DRIVER_GEN(ptr, op, %(driver_lower)s, %(driver_upper)s)
+"""
+
+def write_validation_output(fp):
+    fp.write("#ifndef __DRIVER_VALIDATION_GEN_H__\n")
+    fp.write("#define __DRIVER_VALIDATION_GEN_H__\n")
+
+    fp.write("""#define _SYSCALL_DRIVER_GEN(ptr, op, driver_lower_case, driver_upper_case) \\
+	do { \\
+		_SYSCALL_OBJ(ptr, K_OBJ_DRIVER_##driver_upper_case); \\
+		_SYSCALL_DRIVER_OP(ptr, driver_lower_case##_driver_api, op); \\
+	} while (0)\n\n""");
+
+    for subsystem in subsystems:
+        subsystem = subsystem.replace("_driver_api", "")
+
+        fp.write(driver_macro_tpl % {
+            "driver_lower": subsystem.lower(),
+            "driver_upper": subsystem.upper(),
+        })
+
+    fp.write("#endif /* __DRIVER_VALIDATION_GEN_H__ */\n")
+
 def parse_args():
     global args
 
@@ -124,11 +148,14 @@ def parse_args():
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    parser.add_argument("-k", "--kernel", required=True,
+    parser.add_argument("-k", "--kernel", required=False,
                         help="Input zephyr ELF binary")
     parser.add_argument(
-        "-o", "--output", required=True,
+        "-g", "--gperf-output", required=False,
         help="Output list of kernel object addresses for gperf use")
+    parser.add_argument(
+        "-V", "--validation-output", required=False,
+        help="Output driver validation macros")
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="Print extra debugging information")
     args = parser.parse_args()
@@ -139,20 +166,26 @@ def parse_args():
 def main():
     parse_args()
 
-    eh = ElfHelper(args.kernel, args.verbose, kobjects, subsystems)
-    syms = eh.get_symbols()
-    max_threads = syms["CONFIG_MAX_THREAD_BYTES"] * 8
-    objs = eh.find_kobjects(syms)
+    if args.gperf_output:
+        eh = ElfHelper(args.kernel, args.verbose, kobjects, subsystems)
+        syms = eh.get_symbols()
+        max_threads = syms["CONFIG_MAX_THREAD_BYTES"] * 8
+        objs = eh.find_kobjects(syms)
 
-    if eh.get_thread_counter() > max_threads:
-        sys.stderr.write("Too many thread objects (%d)\n" % thread_counter)
-        sys.stderr.write("Increase CONFIG_MAX_THREAD_BYTES to %d\n",
-                         -(-thread_counter // 8))
-        sys.exit(1)
+        if eh.get_thread_counter() > max_threads:
+            sys.stderr.write("Too many thread objects (%d)\n" % thread_counter)
+            sys.stderr.write("Increase CONFIG_MAX_THREAD_BYTES to %d\n",
+                             -(-thread_counter // 8))
+            sys.exit(1)
 
-    with open(args.output, "w") as fp:
-        write_gperf_table(fp, eh, objs, syms["_static_kernel_objects_begin"],
-                          syms["_static_kernel_objects_end"])
+        with open(args.gperf_output, "w") as fp:
+            write_gperf_table(fp, eh, objs,
+                              syms["_static_kernel_objects_begin"],
+                              syms["_static_kernel_objects_end"])
+
+    if args.validation_output:
+        with open(args.validation_output, "w") as fp:
+            write_validation_output(fp)
 
 
 if __name__ == "__main__":

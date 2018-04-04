@@ -262,6 +262,25 @@ static inline int _obj_validation_check(struct _k_object *ko,
 				   type, init), "access denied")
 
 /**
+ * @brief Runtime check driver object pointer for presence of operation
+ *
+ * Validates if the driver object is capable of performing a certain operation.
+ *
+ * @param ptr Untrusted device instance object pointer
+ * @param api_struct Name of the driver API struct (e.g. gpio_driver_api)
+ * @param op Driver operation (e.g. manage_callback)
+ */
+#define _SYSCALL_DRIVER_OP(ptr, api_name, op) \
+	do { \
+		struct api_name *__device__ = (struct api_name *) \
+			((struct device *)ptr)->driver_api; \
+		_SYSCALL_VERIFY_MSG(__device__->op != NULL, \
+				    "Operation %s not defined for driver " \
+				    "instance %p", \
+				    # op, __device__); \
+	} while (0)
+
+/**
  * @brief Runtime check kernel object pointer for non-init functions
  *
  * Calls _k_object_validate and triggers a kernel oops if the check files.
@@ -424,6 +443,8 @@ static inline int _obj_validation_check(struct _k_object *ko,
 		_impl_ ## name_(); \
 		return 0; \
 	}
+
+#include <driver-validation.h>
 
 #endif /* _ASMLANGUAGE */
 

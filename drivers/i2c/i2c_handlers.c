@@ -10,7 +10,7 @@
 
 _SYSCALL_HANDLER(i2c_configure, dev, dev_config)
 {
-	_SYSCALL_OBJ(dev, K_OBJ_DRIVER_I2C);
+	_SYSCALL_DRIVER_I2C(dev, configure);
 	return _impl_i2c_configure((struct device *)dev, dev_config);
 }
 
