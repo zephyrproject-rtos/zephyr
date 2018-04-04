@@ -105,9 +105,21 @@
 
 #define FE310_PLIC_MAX_PRIORITY      7
 
+/* Clock controller. */
+#define PRCI_BASE_ADDR               0x10008000
+
 /* Timer configuration */
 #define RISCV_MTIME_BASE             0x0200BFF8
 #define RISCV_MTIMECMP_BASE          0x02004000
+
+/* Always ON Domain */
+#define FE310_PMUIE		     0x10000140
+#define FE310_PMUCAUSE		     0x10000144
+#define FE310_PMUSLEEP		     0x10000148
+#define FE310_PMUKEY		     0x1000014C
+#define FE310_SLEEP_KEY_VAL	     0x0051F15E
+
+#define FE310_BACKUP_REG_BASE	     0x10000080
 
 /* lib-c hooks required RAM defined variables */
 #define RISCV_RAM_BASE               CONFIG_RISCV_RAM_BASE_ADDR
