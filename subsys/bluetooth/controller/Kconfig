@@ -316,27 +316,6 @@ config BT_CTLR_PHY_CODED
 	help
 	  Enable support for Bluetooth 5.0 Coded PHY in the Controller.
 
-if BT_LL_SW
-config BT_CTLR_WORKER_PRIO
-	prompt "Radio and Ticker's Worker IRQ priority"
-	int
-	range 0 3 if SOC_SERIES_NRF51X
-	range 0 6 if SOC_SERIES_NRF52X
-	default 0
-	help
-	  The interrupt priority for event preparation and radio IRQ. This value
-	  shall be less than or equal to the Ticker's Job priority value.
-
-config BT_CTLR_JOB_PRIO
-	prompt "Ticker's JOB IRQ priority"
-	int
-	range BT_CTLR_WORKER_PRIO 3 if SOC_SERIES_NRF51X
-	range BT_CTLR_WORKER_PRIO 6 if SOC_SERIES_NRF52X
-	default 0
-	help
-	  The interrupt priority for Ticker's Job (SWI4) IRQ. This value shall
-	  be greater than or equal to the Ticker's Worker IRQ priority value.
-
 config BT_CTLR_XTAL_ADVANCED
 	bool "Advanced event preparation"
 	default y
@@ -386,7 +365,6 @@ config BT_CTLR_SCHED_ADVANCED
 
 	  Disabling this feature will lead to overlapping role in timespace
 	  leading to skipped events amongst active roles.
-endif # BT_LL_SW
 
 if BT_LL_SW_SPLIT
 config BT_CTLR_LLL_PRIO

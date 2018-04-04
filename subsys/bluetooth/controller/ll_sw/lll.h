@@ -10,10 +10,17 @@
 #define EVENT_OVERHEAD_PREEMPT_US     0    /* if <= min, then dynamic preempt */
 #define EVENT_OVERHEAD_PREEMPT_MIN_US 0
 #define EVENT_OVERHEAD_PREEMPT_MAX_US EVENT_OVERHEAD_XTAL_US
-#define EVENT_OVERHEAD_START_US       150
+#define EVENT_OVERHEAD_START_US       200
 #define EVENT_JITTER_US               16
 
 #define EVENT_PIPELINE_MAX            2
+
+#define ULL_HDR(p) ((void *)((u8_t *)(p) + sizeof(struct evt_hdr)))
+#define EVT_HDR(lll) ((void *)((struct lll_hdr *)(lll))->parent)
+
+#if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
+#define XON_BITMASK BIT(31) /* XTAL has been retained from previous prepare */
+#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 
 #if defined(CONFIG_BT_BROADCASTER)
 #if defined(CONFIG_BT_ADV_SET)
@@ -23,8 +30,6 @@
 #define TICKER_ID_ADV_LAST TICKER_ID_ADV_BASE
 #endif /* !CONFIG_BT_ADV_SET */
 #endif /* CONFIG_BT_BROADCASTER */
-
-#define ULL_HDR(p) ((void *)((u8_t *)p + sizeof(struct evt_hdr)))
 
 enum {
 	TICKER_ID_LLL_PREEMPT = 0,
@@ -96,3 +101,6 @@ static inline void lll_hdr_init(void *lll, void *parent)
 
 int lll_init(void);
 void lll_disable(void *param);
+u32_t lll_evt_offset_get(struct evt_hdr *evt);
+u32_t lll_preempt_calc(struct evt_hdr *evt, u8_t ticker_id,
+		       u32_t ticks_at_event);

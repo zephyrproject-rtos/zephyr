@@ -112,6 +112,7 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	struct node_rx_pdu *node_rx;
 	u32_t aa = 0x8e89bed6;
 	u32_t ticks_at_event;
+	struct evt_hdr *evt;
 	u32_t remainder_us;
 	u32_t remainder;
 
@@ -172,11 +173,11 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	}
 #endif /* CONFIG_BT_CTLR_FILTER */
 
-	/* FIXME: use prepare to start ticks */
-	/* TODO: kill the use of EVENT_OVERHEAD_START_US */
-	ticks_at_event = prepare_param->ticks_at_expire +
-			 HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US +
-						EVENT_OVERHEAD_START_US);
+	ticks_at_event = prepare_param->ticks_at_expire;
+	evt = EVT_HDR(lll);
+	ticks_at_event += lll_evt_offset_get(evt);
+	ticks_at_event += HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US);
+
 	remainder = prepare_param->remainder;
 	remainder_us = radio_tmr_start(0, ticks_at_event, remainder);
 
@@ -197,12 +198,11 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	ARG_UNUSED(remainder_us);
 #endif /* !CONFIG_BT_CTLR_GPIO_LNA_PIN */
 
-#if (0 && defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
-     (EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US))
+#if defined(CONFIG_BT_CTLR_XTAL_ADVANCED) && \
+    (EVENT_OVERHEAD_PREEMPT_US <= EVENT_OVERHEAD_PREEMPT_MIN_US)
 	/* check if preempt to start has changed */
-	if (preempt_calc(&_radio.scanner.hdr, TICKER_ID_SCAN_BASE,
-			 ticks_at_expire) != 0) {
-		_radio.state = STATE_STOP;
+	if (lll_preempt_calc(evt, TICKER_ID_SCAN_BASE, ticks_at_event)) {
+		radio_isr_set(isr_abort, lll);
 		radio_disable();
 	} else
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
@@ -236,8 +236,9 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 
 static int resume_prepare_cb(struct lll_prepare_param *p)
 {
-	p->ticks_at_expire = ticker_ticks_now_get() -
-			     HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
+	struct evt_hdr *evt = EVT_HDR(p->param);
+
+	p->ticks_at_expire = ticker_ticks_now_get() - lll_evt_offset_get(evt);
 	p->remainder = 0;
 	p->lazy = 0;
 

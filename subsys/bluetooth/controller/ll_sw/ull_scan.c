@@ -270,7 +270,7 @@ static void ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 			     0, &_mfy);
 	LL_ASSERT(!ret);
 
-#if defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
+#if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_SCHED_ADVANCED)
 	/* calc next group in us for the anchor where first connection event
 	 * to be placed
 	 */
@@ -304,7 +304,7 @@ static void ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 				&s_mfy_sched_after_mstr_free_offset_get);
 		LL_ASSERT(!retval);
 	}
-#endif /* CONFIG_BT_CTLR_SCHED_ADVANCED */
+#endif /* CONFIG_BT_CENTRAL && CONFIG_BT_CTLR_SCHED_ADVANCED */
 
 	DEBUG_RADIO_PREPARE_O(1);
 }

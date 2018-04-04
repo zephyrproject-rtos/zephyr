@@ -137,7 +137,7 @@ int lll_prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 
 #if !defined(CONFIG_BT_CTLR_LOW_LAT)
 		/* Calc the preempt timeout */
-		evt = (void *)((struct lll_hdr *)prepare_param->param)->parent;
+		evt = EVT_HDR(prepare_param->param);
 		preempt_anchor = prepare_param->ticks_at_expire;
 		preempt_to = max(evt->ticks_active_to_start,
 				 evt->ticks_xtal_to_start) -
@@ -329,6 +329,27 @@ int lll_clk_off(void)
 	}
 
 	return err;
+}
+
+u32_t lll_evt_offset_get(struct evt_hdr *evt)
+{
+	if (0) {
+#if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
+	} else if (evt->ticks_xtal_to_start & XON_BITMASK) {
+		return max(evt->ticks_active_to_start,
+			   evt->ticks_preempt_to_start);
+#endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
+	} else {
+		return max(evt->ticks_active_to_start,
+			   evt->ticks_xtal_to_start);
+	}
+}
+
+u32_t lll_preempt_calc(struct evt_hdr *evt, u8_t ticker_id,
+		       u32_t ticks_at_event)
+{
+	/* TODO: */
+	return 0;
 }
 
 static int _init_reset(void)
