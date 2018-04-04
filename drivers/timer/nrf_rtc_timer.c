@@ -452,7 +452,7 @@ void _timer_idle_exit(void)
  * this example. The ISR will then announce the number of sys ticks it was
  * delayed (2), and schedule the next sys tick (5) at 500.
  */
-static void rtc1_nrf5_isr(void *arg)
+void rtc1_nrf5_isr(void *arg)
 {
 
 	ARG_UNUSED(arg);
