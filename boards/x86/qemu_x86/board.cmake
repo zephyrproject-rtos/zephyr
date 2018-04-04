@@ -17,8 +17,6 @@ set(QEMU_FLAGS_${ARCH}
   -clock dynticks
   -no-acpi
   -balloon none
-  -L ${QEMU_BIOS}
-  -bios bios.bin
   -machine type=pc-0.14
   )
 
