@@ -59,6 +59,7 @@ Structure containing the USB endpoint configuration.
       USB_DC_DISCONNECTED,
       USB_DC_SUSPEND,
       USB_DC_RESUME,
+      USB_DC_INTERFACE,
       USB_DC_UNKNOWN
    };
 
@@ -70,6 +71,7 @@ Status codes reported by the registered device status callback.
    * USB_DC_DISCONNECTED: USB connection lost.
    * USB_DC_SUSPEND: USB connection suspended by the HOST.
    * USB_DC_RESUME: USB connection resumed by the HOST.
+   * USB_DC_INTERFACE: USB Interface selected by the HOST.
    * USB_DC_UNKNOWN: Initial USB connection status.
 
 .. code-block:: c
@@ -154,6 +156,21 @@ The following APIs are provided by the device controller driver:
    This function sets callback function for notification of data received
    and available to application or transmit done on the selected endpoint.
    The callback status code is described by usb_dc_ep_cb_status_code.
+
+:c:func:`usb_dc_ep_read_wait()`
+   This function is similar to usb_dc_ep_read, the difference being that, it
+   doesn't clear the endpoint NAKs so that the consumer is not bogged down by
+   further upcalls till he is done with the processing of the data. The caller
+   should reactivate ep by invoking usb_dc_ep_read_continue() do so.
+
+:c:func:`usb_dc_ep_read_continue()`
+   Clear the endpoint NAK and enable the endpoint to accept more data from the
+   host. Usually called after usb_dc_ep_read_wait() when the consumer is fine
+   to accept more data. Thus these calls together acts as flow control
+   mechanism.
+
+:c:func:`usb_dc_ep_mps()`
+   Get endpoint max packet size.
 
 USB device core layer
 *********************
@@ -282,6 +299,14 @@ APIs
    interrupt has been received for that EP. The application must only call
    this function through the supplied usb_ep_callback function.
 
+:c:func:`usb_transfer()`
+   This asynchronous function starts a usb transfer from/to a specified buffer.
+   A callback can be provided and will be called on transfer completion.
+   This function can be used in IRQ context.
+
+:c:func:`usb_transfer_sync()`
+   This function is the synchronous version of the usb_transfer function,
+   waiting for transfer completion before returning.
 
 USB device class drivers
 ************************
@@ -525,18 +550,28 @@ class requests:
       return 0;
    }
 
-The class driver should wait for the USB_DC_CONFIGURED device status code
+The class driver should wait for the USB_DC_INTERFACE device status code
 before transmitting any data.
+
+There are two ways to transmit data, using the 'low' level read/write API or
+the 'high' level transfer API.
+
+low level API:
 
 To transmit data to the host, the class driver should call usb_write().
 Upon completion the registered endpoint callback will be called. Before
 sending another packet the class driver should wait for the completion of
-the previous transfer.
+the previous write. When data is received, the registered endpoint callback
+is called. usb_read() should be used for retrieving the received data.
+For CDC ACM sample driver this happens via the OUT bulk endpoint handler
+(cdc_acm_bulk_out) mentioned in the endpoint array (cdc_acm_ep_data).
 
-When data is received, the registered endpoint callback is called.
-usb_read() should be used for retrieving the received data. It must
-always be called through the registered endpoint callback. For CDC ACM
-sample driver this happens via the OUT bulk endpoint handler (cdc_acm_bulk_out)
-mentioned in the endpoint array (cdc_acm_ep_data).
+high level API:
 
-Only CDC ACM and DFU class driver examples are provided for now.
+The usb_transfer method can be used to transfer data to/from the host. The
+transfer API will automatically split the data transmission into one or more
+USB transaction(s), depending endpoint max packet size. The class driver does
+not have to implement endpoint callback and should set this callback to the
+generic usb_transfer_ep_callback.
+
+
