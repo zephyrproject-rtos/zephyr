@@ -4,8 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
-#include <tc_util.h>
+#include <ztest.h>
 #include <zephyr.h>
 
 #define STACKSIZE       2048
@@ -37,11 +36,15 @@ void alternate_thread(void)
 K_THREAD_STACK_DEFINE(alt_thread_stack_area, STACKSIZE);
 static struct k_thread alt_thread_data;
 
-void main(void)
+void test_stack_pt_randomization(void)
 {
-	int i, ret = TC_FAIL;
+	int i;
+	int old_prio = k_thread_priority_get(k_current_get());
 
-	TC_START("Test Stack pointer randomization\n");
+	/* Set preemptable priority */
+	k_thread_priority_set(k_current_get(), K_PRIO_PREEMPT(1));
+
+	printk("Test Stack pointer randomization\n");
 
 	/* Start thread */
 	for (i = 0; i < THREAD_COUNT; i++) {
@@ -54,10 +57,15 @@ void main(void)
 	printk("stack pointer changed %d times out of %d tests\n",
 	       changed, THREAD_COUNT);
 
-	if (changed) {
-		ret = TC_PASS;
-	}
+	zassert_not_equal(changed, 0, "Stack pointer is not randomized");
 
-	TC_END_RESULT(ret);
-	TC_END_REPORT(ret);
+	/* Restore priority */
+	k_thread_priority_set(k_current_get(), old_prio);
+}
+
+void test_main(void)
+{
+	ztest_test_suite(stack_pointer_randomness,
+			ztest_unit_test(test_stack_pt_randomization));
+	ztest_run_test_suite(stack_pointer_randomness);
 }
