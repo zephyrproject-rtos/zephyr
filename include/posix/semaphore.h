@@ -10,8 +10,8 @@
 extern "C" {
 #endif
 
+#include <posix/time.h>
 #include "sys/types.h"
-#include <time.h>
 
 int sem_destroy(sem_t *semaphore);
 int sem_getvalue(sem_t *restrict semaphore, int *restrict value);

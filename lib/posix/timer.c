@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <kernel.h>
-#include <time.h>
 #include <errno.h>
 #include <string.h>
 #include <misc/printk.h>
+#include <posix/time.h>
 
 #define ACTIVE 1
 #define NOT_ACTIVE 0

@@ -10,9 +10,6 @@
 extern "C" {
 #endif
 
-#ifdef CONFIG_NEWLIB_LIBC
-#include_next <time.h>
-#else
 struct timespec {
 	signed int  tv_sec;
 	signed int  tv_nsec;
@@ -22,7 +19,6 @@ struct itimerspec {
 	struct timespec it_interval;  /* Timer interval */
 	struct timespec it_value;     /* Timer expiration */
 };
-#endif /* CONFIG_NEWLIB_LIBC */
 
 #include <kernel.h>
 #include <errno.h>

@@ -5,9 +5,9 @@
  */
 
 #include <kernel.h>
-#include <pthread.h>
-#include "ksched.h"
-#include "wait_q.h"
+#include <ksched.h>
+#include <wait_q.h>
+#include <posix/pthread.h>
 
 int pthread_mutex_trylock(pthread_mutex_t *m)
 {
