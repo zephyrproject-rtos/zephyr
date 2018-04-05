@@ -141,6 +141,51 @@ def write_validation_output(fp):
 
     fp.write("#endif /* __DRIVER_VALIDATION_GEN_H__ */\n")
 
+
+def write_kobj_types_output(fp):
+    fp.write("/* Core kernel objects */\n")
+    for kobj in kobjects:
+        if kobj == "device":
+            continue
+
+        if kobj.startswith("k_"):
+            kobj = kobj[2:]
+        elif kobj.startswith("_k_"):
+            kobj = kobj[2:]
+
+        fp.write("K_OBJ_%s,\n" % kobj.upper())
+
+    fp.write("/* Driver subsystems */\n")
+    for subsystem in subsystems:
+        subsystem = subsystem.replace("_driver_api", "").upper()
+        fp.write("K_OBJ_DRIVER_%s,\n" % subsystem)
+
+
+def write_kobj_otype_output(fp):
+    fp.write("/* Core kernel objects */\n")
+    for kobj in kobjects:
+        if kobj == "device":
+            continue
+
+        if kobj.startswith("k_"):
+            kobj = kobj[2:]
+        elif kobj.startswith("_k_"):
+            kobj = kobj[2:]
+
+        fp.write('case K_OBJ_%s: return "%s";\n' % (
+            kobj.upper(),
+            kobj
+        ))
+
+    fp.write("/* Driver subsystems */\n")
+    for subsystem in subsystems:
+        subsystem = subsystem.replace("_driver_api", "")
+        fp.write('case K_OBJ_DRIVER_%s: return "%s driver";\n' % (
+            subsystem.upper(),
+            subsystem
+        ))
+
+
 def parse_args():
     global args
 
@@ -156,6 +201,12 @@ def parse_args():
     parser.add_argument(
         "-V", "--validation-output", required=False,
         help="Output driver validation macros")
+    parser.add_argument(
+        "-K", "--kobj-types-output", required=False,
+        help="Output k_object enum values")
+    parser.add_argument(
+        "-S", "--kobj-otype-output", required=False,
+        help="Output case statements for otype_to_str()")
     parser.add_argument("-v", "--verbose", action="store_true",
                         help="Print extra debugging information")
     args = parser.parse_args()
@@ -187,6 +238,13 @@ def main():
         with open(args.validation_output, "w") as fp:
             write_validation_output(fp)
 
+    if args.kobj_types_output:
+        with open(args.kobj_types_output, "w") as fp:
+            write_kobj_types_output(fp)
+
+    if args.kobj_otype_output:
+        with open(args.kobj_otype_output, "w") as fp:
+            write_kobj_otype_output(fp)
 
 if __name__ == "__main__":
     main()

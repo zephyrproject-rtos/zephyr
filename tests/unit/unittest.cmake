@@ -18,17 +18,22 @@ if(NOT SOURCES)
   set(SOURCES main.c)
 endif()
 
+add_executable(testbinary ${SOURCES})
+
+include($ENV{ZEPHYR_BASE}/cmake/kobj.cmake)
+add_dependencies(testbinary kobj_types_h_target)
+gen_kobj(KOBJ_GEN_DIR)
+
 list(APPEND INCLUDE
   tests/ztest/include
   tests/include
   include
   .
-  )
-
-add_executable(testbinary ${SOURCES})
+)
 
 target_compile_options(testbinary PRIVATE
   -Wall
+  -I ${KOBJ_GEN_DIR}
   ${EXTRA_CPPFLAGS_AS_LIST}
   ${EXTRA_CFLAGS_AS_LIST}
   $<$<COMPILE_LANGUAGE:CXX>:${EXTRA_CXXFLAGS_AS_LIST}>

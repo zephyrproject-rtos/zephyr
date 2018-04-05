@@ -376,6 +376,8 @@ add_custom_command(
   )
 add_custom_target(driver_validation_h_target DEPENDS ${DRV_VALIDATION})
 
+include($ENV{ZEPHYR_BASE}/cmake/kobj.cmake)
+gen_kobj(KOBJ_INCLUDE_PATH)
 
 # Generate offsets.c.obj from offsets.c
 # Generate offsets.h     from offsets.c.obj
@@ -390,6 +392,7 @@ add_dependencies(     offsets
   syscall_list_h_target
   syscall_macros_h_target
   driver_validation_h_target
+  kobj_types_h_target
   )
 
 add_custom_command(

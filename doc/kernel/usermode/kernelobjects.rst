@@ -211,13 +211,6 @@ Creating New Core Kernel Objects
 
 * In ``scripts/gen_kobject_list.py``, add the name of the struct to the
   :py:data:`kobjects` list.
-* The name of the enumerated type is derived from the name of the struct.
-  Take the name of the struct, remove the first two characters, convert to
-  uppercase, and prepend ``K_OBJ_`` to it. Add the enum to
-  :cpp:enum:`k_objects` in include/kernel.h. For example, ``struct k_foo``
-  should be enumerated as ``K_OBJ_FOO``.
-* Add a string representation for the enum to the
-  :c:func:`otype_to_str()` function in kernel/userspace.c
 
 Instances of the new struct should now be tracked.
 
@@ -229,13 +222,6 @@ what API struct they are set to.
 
 * In ``scripts/gen_kobject_list.py``, add the name of the API struct for the
   new subsystem to the :py:data:`subsystems` list.
-* Take the name of the API struct, remove the trailing "_driver_api" from its
-  name, convert to uppercase, and prepend ``K_OBJ_DRIVER_`` to it. This is
-  the name of the enumerated type, which should be added to
-  :cpp:enum:`k_objects` in include/kernel.h. For example, ``foo_driver_api``
-  should be enumerated as ``K_OBJ_DRIVER_FOO``.
-* Add a string representation for the enum to the
-  :c:func:`otype_to_str()` function in ``kernel/userspace.c``
 
 Driver instances of the new subsystem should now be tracked.
 
