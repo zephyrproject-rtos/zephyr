@@ -10,6 +10,7 @@
 #define SYS_LOG_DOMAIN "usb/hid"
 #include <logging/sys_log.h>
 
+#include <misc/byteorder.h>
 #include <usb_device.h>
 #include <usb_common.h>
 
@@ -19,6 +20,58 @@
 #ifdef CONFIG_USB_COMPOSITE_DEVICE
 #include <composite.h>
 #endif
+
+struct usb_hid_config {
+	struct usb_if_descriptor if0;
+	struct usb_hid_descriptor if0_hid;
+	struct usb_ep_descriptor if0_int_ep;
+} __packed;
+
+USBD_CLASS_DESCR_DEFINE(primary) struct usb_hid_config hid_cfg = {
+	/* Interface descriptor */
+	.if0 = {
+		.bLength = sizeof(struct usb_if_descriptor),
+		.bDescriptorType = USB_INTERFACE_DESC,
+		.bInterfaceNumber = FIRST_IFACE_HID,
+		.bAlternateSetting = 0,
+		.bNumEndpoints = 1,
+		.bInterfaceClass = HID_CLASS,
+		.bInterfaceSubClass = 0,
+		.bInterfaceProtocol = 0,
+		.iInterface = 0,
+	},
+	.if0_hid = {
+		.bLength = sizeof(struct usb_hid_descriptor),
+		.bDescriptorType = USB_HID_DESC,
+		.bcdHID = sys_cpu_to_le16(USB_1_1),
+		.bCountryCode = 0,
+		.bNumDescriptors = 1,
+		.subdesc[0] = {
+			.bDescriptorType = USB_HID_REPORT_DESC,
+			/*
+			 * descriptor length needs to be set
+			 * after initialization
+			 */
+			.wDescriptorLength = 0,
+		},
+	},
+	.if0_int_ep = {
+		.bLength = sizeof(struct usb_ep_descriptor),
+		.bDescriptorType = USB_ENDPOINT_DESC,
+		.bEndpointAddress = CONFIG_HID_INT_EP_ADDR,
+		.bmAttributes = USB_DC_EP_INTERRUPT,
+		.wMaxPacketSize =
+			sys_cpu_to_le16(
+			CONFIG_HID_INTERRUPT_EP_MPS),
+		.bInterval = 0x09,
+	},
+};
+
+static void usb_set_hid_report_size(u16_t report_desc_size)
+{
+	hid_cfg.if0_hid.subdesc[0].wDescriptorLength =
+		sys_cpu_to_le16(report_desc_size);
+}
 
 static struct hid_device_info {
 	const u8_t *report_desc;

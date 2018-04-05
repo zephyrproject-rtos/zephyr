@@ -36,6 +36,7 @@
 #include <init.h>
 #include <errno.h>
 #include <string.h>
+#include <misc/byteorder.h>
 #include <misc/__assert.h>
 #include <disk_access.h>
 #include <usb/class/usb_msc.h>
@@ -58,6 +59,47 @@
 #define THREAD_OP_READ_QUEUED		1
 #define THREAD_OP_WRITE_QUEUED		3
 #define THREAD_OP_WRITE_DONE		4
+
+struct usb_mass_config {
+	struct usb_if_descriptor if0;
+	struct usb_ep_descriptor if0_in_ep;
+	struct usb_ep_descriptor if0_out_ep;
+} __packed;
+
+USBD_CLASS_DESCR_DEFINE(primary) struct usb_mass_config mass_cfg = {
+	/* Interface descriptor */
+	.if0 = {
+		.bLength = sizeof(struct usb_if_descriptor),
+		.bDescriptorType = USB_INTERFACE_DESC,
+		.bInterfaceNumber = FIRST_IFACE_MASS_STORAGE,
+		.bAlternateSetting = 0,
+		.bNumEndpoints = 2,
+		.bInterfaceClass = MASS_STORAGE_CLASS,
+		.bInterfaceSubClass = SCSI_TRANSPARENT_SUBCLASS,
+		.bInterfaceProtocol = BULK_ONLY_PROTOCOL,
+		.iInterface = 0,
+	},
+	/* First Endpoint IN */
+	.if0_in_ep = {
+		.bLength = sizeof(struct usb_ep_descriptor),
+		.bDescriptorType = USB_ENDPOINT_DESC,
+		.bEndpointAddress = CONFIG_MASS_STORAGE_IN_EP_ADDR,
+		.bmAttributes = USB_DC_EP_BULK,
+		.wMaxPacketSize =
+			sys_cpu_to_le16(CONFIG_MASS_STORAGE_BULK_EP_MPS),
+		.bInterval = 0x00,
+	},
+	/* Second Endpoint OUT */
+	.if0_out_ep = {
+		.bLength = sizeof(struct usb_ep_descriptor),
+		.bDescriptorType = USB_ENDPOINT_DESC,
+		.bEndpointAddress = CONFIG_MASS_STORAGE_OUT_EP_ADDR,
+		.bmAttributes = USB_DC_EP_BULK,
+		.wMaxPacketSize =
+			sys_cpu_to_le16(CONFIG_MASS_STORAGE_BULK_EP_MPS),
+		.bInterval = 0x00,
+	},
+};
 
 static volatile int thread_op;
 static K_THREAD_STACK_DEFINE(mass_thread_stack, DISK_THREAD_STACK_SZ);

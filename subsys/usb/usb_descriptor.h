@@ -122,8 +122,4 @@
 
 u8_t *usb_get_device_descriptor(void);
 
-#ifdef CONFIG_USB_DEVICE_HID
-void usb_set_hid_report_size(u16_t report_desc_size);
-#endif
-
 #endif /* __USB_DESCRIPTOR_H__ */
