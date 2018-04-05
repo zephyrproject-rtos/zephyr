@@ -32,7 +32,7 @@ Caveats
   :option:`CONFIG_FS_NFFS_FLASH_DEV_NAME` setting in :file:`prj.conf` accordingly.
 
 * The MCUboot bootloader is required for ``img_mgmt`` to function
-  properly. More information about the Device Firmware Upgrade subystem and
+  properly. More information about the Device Firmware Upgrade subsystem and
   MCUboot can be found in :ref:`mcuboot`.
 
 * The :file:`mcumgr` command-line tool only works with Bluetooth Low Energy (BLE)
