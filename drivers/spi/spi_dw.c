@@ -256,9 +256,9 @@ static int spi_dw_configure(const struct spi_dw_config *info,
 	spi_context_cs_configure(&spi->ctx);
 
 	if (spi_dw_is_slave(spi)) {
-		SYS_LOG_DBG("Installed slave config %p: slave_cb %p,"
+		SYS_LOG_DBG("Installed slave config %p:"
 			    " ws/dfs %u/%u, mode %u/%u/%u",
-			    config, config->slave_cb,
+			    config,
 			    SPI_WORD_SIZE_GET(config->operation), spi->dfs,
 			    (SPI_MODE_GET(config->operation) &
 			     SPI_MODE_CPOL) ? 1 : 0,
@@ -366,7 +366,6 @@ static int transceive(struct device *dev,
 		write_ctrlr1(0, info->regs);
 	}
 
-
 	if (spi_dw_is_slave(spi)) {
 		/* Enabling MISO line relevantly */
 		if (tmod == DW_SPI_CTRLR0_TMOD_RX) {
@@ -377,7 +376,11 @@ static int transceive(struct device *dev,
 	}
 
 	/* Updating TMOD in CTRLR0 register */
-	write_ctrlr0(read_ctrlr0(info->regs) | tmod, info->regs);
+	reg_data = read_ctrlr0(info->regs);
+	reg_data &= ~DW_SPI_CTRLR0_TMOD_RESET;
+	reg_data |= tmod;
+
+	write_ctrlr0(reg_data, info->regs);
 
 	/* Set buffers info */
 	spi_context_buffers_setup(&spi->ctx, tx_bufs, rx_bufs, spi->dfs);

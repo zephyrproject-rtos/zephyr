@@ -114,6 +114,7 @@ struct spi_dw_data {
 #define DW_SPI_CTRLR0_TMOD_TX		(1 << DW_SPI_CTRLR0_TMOD_SHIFT)
 #define DW_SPI_CTRLR0_TMOD_RX		(2 << DW_SPI_CTRLR0_TMOD_SHIFT)
 #define DW_SPI_CTRLR0_TMOD_EEPROM	(3 << DW_SPI_CTRLR0_TMOD_SHIFT)
+#define DW_SPI_CTRLR0_TMOD_RESET	(3 << DW_SPI_CTRLR0_TMOD_SHIFT)
 
 #define DW_SPI_CTRLR0_DFS_16(__bpw)	((__bpw) - 1)
 #define DW_SPI_CTRLR0_DFS_32(__bpw)	(((__bpw) - 1) << 16)
