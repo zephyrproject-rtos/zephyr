@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <ztest.h>
 #include <time.h>
 #include <pthread.h>
-#include <ztest.h>
 
 #define SECS_TO_SLEEP 2
 #define DURATION_SECS 1
