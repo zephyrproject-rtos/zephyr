@@ -57,11 +57,11 @@ Install tools to build Zephyr binaries:
 
 .. code-block:: console
 
-   brew install cmake ninja dfu-util doxygen qemu dtc python3 gperf
-   curl -O 'https://bootstrap.pypa.io/get-pip.py'
-   ./get-pip.py
-   rm get-pip.py
+   brew install cmake ninja dfu-util doxygen qemu dtc python3 python2 gperf
    cd ~/zephyr   # or to the folder where you cloned the zephyr repo
+
+   # install various python dependencies using pip tool
+
    pip3 install --user -r scripts/requirements.txt
 
 If you require pyocd, an open source python2 library for programming and
@@ -73,26 +73,11 @@ Source :file:`zephyr-env.sh` wherever you have cloned the Zephyr Git repository:
 
 .. code-block:: console
 
-   unset ZEPHYR_SDK_INSTALL_DIR
    cd <zephyr git clone location>
    source zephyr-env.sh
 
-Build Kconfig in :file:`$ZEPHYR_BASE/build` and add it to path
-
-.. code-block:: console
-
-   cd $ZEPHYR_BASE
-   mkdir build && cd build
-   cmake $ZEPHYR_BASE/scripts
-   make
-   echo "export PATH=$PWD/kconfig:\$PATH" >> $HOME/.zephyrrc
-   source $ZEPHYR_BASE/zephyr-env.sh
-
-.. note::
-
-   You only need to do this once after cloning the git repository.
-
-Finally, assuming you are using a 3rd-party toolchain you can try building the :ref:`hello_world` sample to check things out.
+Finally, assuming you are using a 3rd-party toolchain you can try building the
+:ref:`hello_world` sample to check things out.
 
 To build for the ARM-based Nordic nRF52 Development Kit:
 
