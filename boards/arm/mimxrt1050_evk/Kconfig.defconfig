@@ -36,4 +36,12 @@ config UART_MCUX_LPUART_1
 
 endif # UART_MCUX_LPUART
 
+if CODE_HYPERFLASH || CODE_QSPI
+
+# Reserve space for the IVT
+config TEXT_SECTION_OFFSET
+	default 0x2000
+
+endif
+
 endif # BOARD_MIMXRT1050_EVK
