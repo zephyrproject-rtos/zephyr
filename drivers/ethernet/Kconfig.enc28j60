@@ -84,7 +84,7 @@ config ETH_ENC28J60_0_SLAVE
 	  ENC28J60C chip select pin.
 
 config ETH_ENC28J60_0_GPIO_SPI_CS
-	bool "Manage SPI CS throug a GPIO pin"
+	bool "Manage SPI CS through a GPIO pin"
 	default n
 	help
 	This option is useful if one needs to manage SPI CS through a GPIO

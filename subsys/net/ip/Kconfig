@@ -50,8 +50,8 @@ config NET_TC_TX_COUNT
 	help
 	  Define how many Tx traffic classes (queues) the system should have
 	  when sending a network packet. The network packet priority can then
-	  be mapped to this traffic class so that higher prioritised packets
-	  can be processed before lower prioritised ones. Each queue is handled
+	  be mapped to this traffic class so that higher prioritized packets
+	  can be processed before lower prioritized ones. Each queue is handled
 	  by a separate thread which will need RAM for stack space.
 	  Only increase the value from 1 if you really need this feature.
 	  The default value is 1 which means that all the network traffic is
@@ -65,8 +65,8 @@ config NET_TC_RX_COUNT
 	help
 	  Define how many Rx traffic classes (queues) the system should have
 	  when receiving a network packet. The network packet priority can then
-	  be mapped to this traffic class so that higher prioritised packets
-	  can be processed before lower prioritised ones. Each queue is handled
+	  be mapped to this traffic class so that higher prioritized packets
+	  can be processed before lower prioritized ones. Each queue is handled
 	  by a separate thread which will need RAM for stack space.
 	  Only increase the value from 1 if you really need this feature.
 	  The default value is 1 which means that all the network traffic is
