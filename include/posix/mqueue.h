@@ -8,7 +8,7 @@
 #define __MQUEUE_H__
 
 #include <kernel.h>
-#include <time.h>
+#include <posix/time.h>
 #include "sys/types.h"
 
 #ifdef __cplusplus

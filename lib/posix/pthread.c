@@ -5,11 +5,11 @@
  */
 
 #include <kernel.h>
-#include <pthread.h>
 #include <stdio.h>
 #include <atomic.h>
-#include "ksched.h"
-#include "wait_q.h"
+#include <ksched.h>
+#include <wait_q.h>
+#include <posix/pthread.h>
 
 #define PTHREAD_INIT_FLAGS	PTHREAD_CANCEL_ENABLE
 #define PTHREAD_CANCELED	((void *) -1)

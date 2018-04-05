@@ -4,8 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <kernel.h>
-#include <time.h>
 #include <errno.h>
+#include <posix/time.h>
+#include <posix/sys/types.h>
 
 /**
  * @brief Get clock time specified by clock_id.

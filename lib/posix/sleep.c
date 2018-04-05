@@ -3,7 +3,9 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <unistd.h>
+
+#include <kernel.h>
+#include <posix/unistd.h>
 
 /**
  * @brief Sleep for a specified number of seconds.

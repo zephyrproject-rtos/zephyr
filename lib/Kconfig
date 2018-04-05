@@ -31,4 +31,7 @@ config BASE64
 	default n
 	help
 	  Enable base64 encoding and decoding functionality
+
+source "lib/posix/Kconfig"
+
 endmenu

@@ -5,10 +5,10 @@
  */
 
 #include <kernel.h>
-#include <pthread.h>
-#include "ksched.h"
-#include "wait_q.h"
-#include "time.h"
+#include <ksched.h>
+#include <wait_q.h>
+#include <posix/pthread.h>
+#include <posix/time.h>
 
 void ready_one_thread(_wait_q_t *wq)
 {

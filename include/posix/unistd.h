@@ -12,10 +12,6 @@ extern "C" {
 
 #include "sys/types.h"
 
-#ifndef __ZEPHYR__
-#include_next <unistd.h>
-#endif
-
 unsigned sleep(unsigned int seconds);
 int usleep(useconds_t useconds);
 

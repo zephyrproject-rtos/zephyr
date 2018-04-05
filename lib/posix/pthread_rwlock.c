@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <kernel.h>
-#include <time.h>
 #include <errno.h>
-#include <sys/types.h>
+#include <posix/time.h>
+#include <posix/sys/types.h>
 
 #define INITIALIZED 1
 #define NOT_INITIALIZED 0

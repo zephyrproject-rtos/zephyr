@@ -5,9 +5,9 @@
  */
 
 #include <kernel.h>
-#include <pthread.h>
-#include "ksched.h"
-#include "wait_q.h"
+#include <posix/pthread.h>
+#include <ksched.h>
+#include <wait_q.h>
 #include <kswap.h>
 
 void ready_one_thread(_wait_q_t *wq);

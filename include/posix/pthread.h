@@ -8,10 +8,10 @@
 #define __PTHREAD_H__
 
 #include <kernel.h>
-#include <time.h>
+#include <posix/time.h>
+#include <posix/unistd.h>
 #include "sys/types.h"
 #include "posix_sched.h"
-#include "unistd.h"
 
 enum pthread_state {
 	/* The thread is running and joinable. */
