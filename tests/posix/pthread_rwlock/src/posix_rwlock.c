@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <ztest.h>
 #include <pthread.h>
-#include "ztest.h"
 
 #define N_THR 3
 #define STACKSZ 1024
