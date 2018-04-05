@@ -10,11 +10,6 @@
 #include <zephyr/types.h>
 #include <bluetooth/hci.h>
 
-/* TODO: remove begin, dependency on ctrl.h when having ll_scan.h interface */
-#include <misc/slist.h>
-
-#include "util/util.h"
-
 #include "pdu.h"
 
 #include "ull_adv_internal.h"
@@ -52,7 +47,7 @@ u32_t ll_addr_set(u8_t addr_type, u8_t const *const bdaddr)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_OBSERVER) &&
-	    (ll_scan_is_enabled() & (BIT(1) | BIT(2)))) {
+	    (ull_scan_is_enabled(0) & (BIT(1) | BIT(2)))) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
@@ -62,16 +57,5 @@ u32_t ll_addr_set(u8_t addr_type, u8_t const *const bdaddr)
 		memcpy(pub_addr, bdaddr, BDADDR_SIZE);
 	}
 
-	return 0;
-}
-
-/* TODO: Delete below weak functions when porting to ULL/LLL. */
-u32_t __weak ull_adv_is_enabled(u16_t handle)
-{
-	return 0;
-}
-
-u32_t __weak ll_scan_is_enabled(void)
-{
 	return 0;
 }

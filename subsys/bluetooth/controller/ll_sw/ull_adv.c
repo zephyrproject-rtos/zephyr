@@ -23,6 +23,7 @@
 
 #include "lll.h"
 #include "lll_adv.h"
+#include "lll_filter.h"
 
 #include "ull_types.h"
 #include "ull.h"
@@ -31,7 +32,7 @@
 #include "ull_adv_types.h"
 #include "ull_adv_internal.h"
 
-#include "ll_filter.h"
+#include "ull_scan_internal.h"
 
 #include "common/log.h"
 #include <soc.h>
@@ -767,6 +768,7 @@ u32_t ll_adv_enable(u8_t enable)
 
 	adv->is_enabled = 1;
 
+#if defined(CONFIG_BT_CTLR_PRIVACY)
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 	if (_radio.advertiser.is_mesh) {
 		_radio.scanner.is_enabled = 1;
@@ -774,13 +776,11 @@ u32_t ll_adv_enable(u8_t enable)
 		ll_adv_scan_state_cb(BIT(0) | BIT(1));
 	}
 #else /* !CONFIG_BT_HCI_MESH_EXT */
-	/* FIXME:
-
-	if (!_radio.scanner.is_enabled) {
+	if (!ull_scan_is_enabled_get(0)) {
 		ll_adv_scan_state_cb(BIT(0));
 	}
-	*/
 #endif /* !CONFIG_BT_HCI_MESH_EXT */
+#endif /* CONFIG_BT_CTLR_PRIVACY */
 
 	return 0;
 
@@ -797,30 +797,6 @@ failure_cleanup:
 	return BT_HCI_ERR_CMD_DISALLOWED;
 }
 
-#if defined(CONFIG_BT_LL_SW)
-inline struct ll_adv_set *ull_adv_set_get(u16_t handle)
-{
-	return &ll_adv[0];
-}
-
-inline struct ll_adv_set *ull_adv_is_enabled_get(u16_t handle)
-{
-	if (!ull_adv_is_enabled(0)) {
-		return NULL;
-	}
-
-	return &ll_adv[0];
-}
-
-static inline struct ll_adv_set *is_disabled_get(u16_t handle)
-{
-	if (ull_adv_is_enabled(0)) {
-		return NULL;
-	}
-
-	return &ll_adv[0];
-}
-#else
 inline struct ll_adv_set *ull_adv_set_get(u16_t handle)
 {
 	if (handle >= CONFIG_BT_ADV_MAX) {
@@ -840,6 +816,30 @@ inline struct ll_adv_set *ull_adv_is_enabled_get(u16_t handle)
 	}
 
 	return adv;
+}
+
+u32_t ull_adv_is_enabled(u16_t handle)
+{
+	struct ll_adv_set *adv;
+
+	adv = ull_adv_is_enabled_get(handle);
+	if (!adv) {
+		return 0;
+	}
+
+	return BIT(0);
+}
+
+u32_t ull_adv_filter_pol_get(u16_t handle)
+{
+	struct ll_adv_set *adv;
+
+	adv = ull_adv_is_enabled_get(handle);
+	if (!adv) {
+		return 0;
+	}
+
+	return adv->lll.filter_policy;
 }
 
 static inline struct ll_adv_set *is_disabled_get(u16_t handle)
@@ -1053,4 +1053,3 @@ static inline u16_t handle_get(struct ll_adv_set *adv)
 {
 	return ((u8_t *)adv - (u8_t *)ll_adv) / sizeof(*adv);
 }
-#endif

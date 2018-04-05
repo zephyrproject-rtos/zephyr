@@ -22,6 +22,7 @@
 #include "lll.h"
 #include "lll_adv.h"
 #include "lll_scan.h"
+#include "lll_filter.h"
 
 #include "ull_types.h"
 #include "ull.h"
@@ -32,8 +33,6 @@
 
 #include "ull_scan_types.h"
 #include "ull_scan_internal.h"
-
-#include "ll_filter.h"
 
 #include "common/log.h"
 #include <soc.h>
@@ -197,14 +196,14 @@ u32_t ll_scan_enable(u8_t enable)
 
 	scan->is_enabled = 1;
 
-/* FIXME:
+#if defined(CONFIG_BT_CTLR_PRIVACY)
 #if defined(CONFIG_BT_BROADCASTER)
-	if (!_radio.advertiser.is_enabled)
+	if (!ull_adv_is_enabled_get(0))
 #endif
 	{
 		ll_adv_scan_state_cb(BIT(1));
 	}
-*/
+#endif
 
 	return 0;
 }
@@ -228,6 +227,38 @@ inline struct ll_scan_set *ull_scan_is_enabled_get(u16_t handle)
 	}
 
 	return scan;
+}
+
+u32_t ull_scan_is_enabled(u16_t handle)
+{
+	struct ll_scan_set *scan;
+
+	scan = ull_scan_is_enabled_get(handle);
+	if (!scan) {
+		return 0;
+	}
+
+	/* NOTE: BIT(0) - passive scanning enabled
+	 *       BIT(1) - active scanning enabled
+	 *       BIT(2) - initiator enabled
+	 */
+	return (((u32_t)scan->is_enabled << scan->lll.type) |
+#if defined(CONFIG_BT_CENTRAL)
+		(scan->lll.conn ? BIT(2) : 0
+#endif
+		0);
+}
+
+u32_t ull_scan_filter_pol_get(u16_t handle)
+{
+	struct ll_scan_set *scan;
+
+	scan = ull_scan_is_enabled_get(handle);
+	if (!scan) {
+		return 0;
+	}
+
+	return scan->lll.filter_policy;
 }
 
 static inline struct ll_scan_set *is_disabled_get(u16_t handle)

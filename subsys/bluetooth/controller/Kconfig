@@ -53,12 +53,6 @@ config BT_CTLR_RX_PRIO
 	int
 	default 6
 
-config BT_CTLR_FILTER
-	# Hidden option to enable controller whitelist feature
-	depends on BT_LL_SW
-	bool
-	default y
-
 config BT_CTLR_HCI_VS_BUILD_INFO
 	string "Zephyr HCI VS Build Info string"
 	default ""
@@ -184,6 +178,7 @@ config BT_CTLR_PRIVACY
 	bool "LE Controller-based Privacy"
 	depends on !SOC_SERIES_NRF51X
 	default y
+	select BT_CTLR_FILTER
 	select BT_RPA
 	help
 	  Enable support for Bluetooth v4.2 LE Controller-based Privacy feature
@@ -281,6 +276,13 @@ config BT_CTLR_ADVANCED_FEATURES
 
 menu "Advanced features"
 	visible if BT_CTLR_ADVANCED_FEATURES
+
+config BT_CTLR_FILTER
+	prompt "Device Whitelist Support"
+	bool
+	default y
+	help
+	  Enable support for controller device whitelist feature
 
 config BT_CTLR_DATA_LENGTH_CLEAR
 	bool "Data Length Support (Cleartext only)"

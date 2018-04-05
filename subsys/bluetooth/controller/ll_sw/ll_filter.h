@@ -4,21 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define WL_SIZE        8
-
-#define FILTER_IDX_NONE    0xFF
-
-struct ll_filter {
-	u8_t  enable_bitmask;
-	u8_t  addr_type_bitmask;
-	u8_t  bdaddr[WL_SIZE][BDADDR_SIZE];
-};
-
 void ll_filter_reset(bool init);
 void ll_filters_adv_update(u8_t adv_fp);
 void ll_filters_scan_update(u8_t scan_fp);
 
-struct ll_filter *ctrl_filter_get(bool whitelist);
 bt_addr_t *ctrl_lrpa_get(u8_t rl_idx);
 u8_t *ctrl_irks_get(u8_t *count);
 u8_t ctrl_rl_idx(bool whitelist, u8_t devmatch_id);
