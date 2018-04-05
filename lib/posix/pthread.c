@@ -213,6 +213,7 @@ int pthread_setcancelstate(int state, int *oldstate)
 int pthread_cancel(pthread_t pthread)
 {
 	struct posix_thread *thread = (struct posix_thread *) pthread;
+	int cancel_state;
 
 	if (thread == NULL || thread->state == PTHREAD_TERMINATED) {
 		return ESRCH;
@@ -220,23 +221,21 @@ int pthread_cancel(pthread_t pthread)
 
 	pthread_mutex_lock(&thread->cancel_lock);
 	thread->cancel_pending = 1;
+	cancel_state = thread->cancel_state;
+	pthread_mutex_unlock(&thread->cancel_lock);
 
-	if (thread->cancel_state == PTHREAD_CANCEL_ENABLE) {
+	if (cancel_state == PTHREAD_CANCEL_ENABLE) {
+		pthread_mutex_lock(&thread->state_lock);
 		if (thread->state == PTHREAD_DETACHED) {
 			thread->state = PTHREAD_TERMINATED;
-			pthread_mutex_unlock(&thread->cancel_lock);
 		} else {
 			thread->retval = PTHREAD_CANCELED;
-			pthread_mutex_unlock(&thread->cancel_lock);
-			pthread_mutex_lock(&thread->state_lock);
 			thread->state = PTHREAD_EXITED;
 			pthread_cond_broadcast(&thread->state_cond);
-			pthread_mutex_unlock(&thread->state_lock);
 		}
+		pthread_mutex_unlock(&thread->state_lock);
 
 		k_thread_abort((k_tid_t) thread);
-	} else {
-		pthread_mutex_unlock(&thread->cancel_lock);
 	}
 
 	return 0;
