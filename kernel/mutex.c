@@ -256,5 +256,12 @@ void _impl_k_mutex_unlock(struct k_mutex *mutex)
 }
 
 #ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER1_SIMPLE_VOID(k_mutex_unlock, K_OBJ_MUTEX, struct k_mutex *);
+_SYSCALL_HANDLER(k_mutex_unlock, mutex)
+{
+	_SYSCALL_OBJ(mutex, K_OBJ_MUTEX);
+	_SYSCALL_VERIFY(((struct k_mutex *)mutex)->lock_count > 0);
+	_SYSCALL_VERIFY(((struct k_mutex *)mutex)->owner == _current);
+	_impl_k_mutex_unlock((struct k_mutex *)mutex);
+	return 0;
+}
 #endif
