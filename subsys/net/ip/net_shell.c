@@ -501,6 +501,24 @@ static const char *priority2str(enum net_priority priority)
 }
 #endif
 
+#if defined(CONFIG_NET_STATISTICS_ETHERNET) && \
+					defined(CONFIG_NET_STATISTICS_USER_API)
+static void print_eth_stats(struct net_if *iface, struct net_stats_eth *data)
+{
+	printk("Statistics for Ethernet interface %p [%d]\n", iface,
+	       net_if_get_by_iface(iface));
+
+	printk("Bytes received   : %u\n", data->bytes.received);
+	printk("Bytes sent       : %u\n", data->bytes.sent);
+	printk("Packets received : %u\n", data->pkts.rx);
+	printk("Packets sent     : %u\n", data->pkts.tx);
+	printk("Bcast received   : %u\n", data->broadcast.rx);
+	printk("Bcast sent       : %u\n", data->broadcast.tx);
+	printk("Mcast received   : %u\n", data->multicast.rx);
+	printk("Mcast sent       : %u\n", data->multicast.tx);
+}
+#endif /* CONFIG_NET_STATISTICS_ETHERNET && CONFIG_NET_STATISTICS_USER_API */
+
 static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 {
 	ARG_UNUSED(user_data);
@@ -663,6 +681,20 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 	}
 #endif
 #endif /* NET_TC_COUNT > 1 */
+
+#if defined(CONFIG_NET_STATISTICS_ETHERNET) && \
+					defined(CONFIG_NET_STATISTICS_USER_API)
+	if (iface && net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
+		struct net_stats_eth eth_data;
+		int ret;
+
+		ret = net_mgmt(NET_REQUEST_STATS_GET_ETHERNET, iface,
+			       &eth_data, sizeof(eth_data));
+		if (!ret) {
+			print_eth_stats(iface, &eth_data);
+		}
+	}
+#endif /* CONFIG_NET_STATISTICS_ETHERNET && CONFIG_NET_STATISTICS_USER_API */
 }
 #endif /* CONFIG_NET_STATISTICS */
 
