@@ -45,8 +45,8 @@
 #include <usb/class/usb_cdc.h>
 #include <usb/usb_device.h>
 #include <usb/usb_common.h>
-#include "../usb_descriptor.h"
-#include "../composite.h"
+#include <usb_descriptor.h>
+#include <composite.h>
 
 #ifndef CONFIG_UART_INTERRUPT_DRIVEN
 #error "CONFIG_UART_INTERRUPT_DRIVEN must be set for CDC ACM driver"
@@ -72,6 +72,130 @@
 
 /* Serial state notification timeout */
 #define CDC_CONTROL_SERIAL_STATE_TIMEOUT_US 100000
+
+struct usb_cdc_acm_config {
+#ifdef CONFIG_USB_COMPOSITE_DEVICE
+	struct usb_association_descriptor iad_cdc;
+#endif
+	struct usb_if_descriptor if0;
+	struct cdc_header_descriptor if0_header;
+	struct cdc_cm_descriptor if0_cm;
+	struct cdc_acm_descriptor if0_acm;
+	struct cdc_union_descriptor if0_union;
+	struct usb_ep_descriptor if0_int_ep;
+
+	struct usb_if_descriptor if1;
+	struct usb_ep_descriptor if1_in_ep;
+	struct usb_ep_descriptor if1_out_ep;
+} __packed;
+
+USBD_CLASS_DESCR_DEFINE(primary) struct usb_cdc_acm_config cdc_acm_cfg = {
+#ifdef CONFIG_USB_COMPOSITE_DEVICE
+	.iad_cdc = {
+		.bLength = sizeof(struct usb_association_descriptor),
+		.bDescriptorType = USB_ASSOCIATION_DESC,
+		.bFirstInterface = FIRST_IFACE_CDC_ACM,
+		.bInterfaceCount = 0x02,
+		.bFunctionClass = COMMUNICATION_DEVICE_CLASS,
+		.bFunctionSubClass = ACM_SUBCLASS,
+		.bFunctionProtocol = 0,
+		.iFunction = 0,
+	},
+#endif
+	/* Interface descriptor */
+	.if0 = {
+		.bLength = sizeof(struct usb_if_descriptor),
+		.bDescriptorType = USB_INTERFACE_DESC,
+		.bInterfaceNumber = FIRST_IFACE_CDC_ACM,
+		.bAlternateSetting = 0,
+		.bNumEndpoints = 1,
+		.bInterfaceClass = COMMUNICATION_DEVICE_CLASS,
+		.bInterfaceSubClass = ACM_SUBCLASS,
+		.bInterfaceProtocol = 0,
+		.iInterface = 0,
+	},
+	/* Header Functional Descriptor */
+	.if0_header = {
+		.bFunctionLength = sizeof(struct cdc_header_descriptor),
+		.bDescriptorType = CS_INTERFACE,
+		.bDescriptorSubtype = HEADER_FUNC_DESC,
+		.bcdCDC = sys_cpu_to_le16(USB_1_1),
+	},
+	/* Call Management Functional Descriptor */
+	.if0_cm = {
+		.bFunctionLength = sizeof(struct cdc_cm_descriptor),
+		.bDescriptorType = CS_INTERFACE,
+		.bDescriptorSubtype = CALL_MANAGEMENT_FUNC_DESC,
+		.bmCapabilities = 0x02,
+		.bDataInterface = 1,
+	},
+	/* ACM Functional Descriptor */
+	.if0_acm = {
+		.bFunctionLength = sizeof(struct cdc_acm_descriptor),
+		.bDescriptorType = CS_INTERFACE,
+		.bDescriptorSubtype = ACM_FUNC_DESC,
+		/* Device supports the request combination of:
+		 *	Set_Line_Coding,
+		 *	Set_Control_Line_State,
+		 *	Get_Line_Coding
+		 *	and the notification Serial_State
+		 */
+		.bmCapabilities = 0x02,
+	},
+	/* Union Functional Descriptor */
+	.if0_union = {
+		.bFunctionLength = sizeof(struct cdc_union_descriptor),
+		.bDescriptorType = CS_INTERFACE,
+		.bDescriptorSubtype = UNION_FUNC_DESC,
+		.bControlInterface = 0,
+		.bSubordinateInterface0 = 1,
+	},
+	/* Endpoint INT */
+	.if0_int_ep = {
+		.bLength = sizeof(struct usb_ep_descriptor),
+		.bDescriptorType = USB_ENDPOINT_DESC,
+		.bEndpointAddress = CONFIG_CDC_ACM_INT_EP_ADDR,
+		.bmAttributes = USB_DC_EP_INTERRUPT,
+		.wMaxPacketSize =
+			sys_cpu_to_le16(
+			CONFIG_CDC_ACM_INTERRUPT_EP_MPS),
+		.bInterval = 0x0A,
+	},
+	/* Interface descriptor */
+	.if1 = {
+		.bLength = sizeof(struct usb_if_descriptor),
+		.bDescriptorType = USB_INTERFACE_DESC,
+		.bInterfaceNumber = FIRST_IFACE_CDC_ACM + 1,
+		.bAlternateSetting = 0,
+		.bNumEndpoints = 2,
+		.bInterfaceClass = COMMUNICATION_DEVICE_CLASS_DATA,
+		.bInterfaceSubClass = 0,
+		.bInterfaceProtocol = 0,
+		.iInterface = 0,
+	},
+	/* First Endpoint IN */
+	.if1_in_ep = {
+		.bLength = sizeof(struct usb_ep_descriptor),
+		.bDescriptorType = USB_ENDPOINT_DESC,
+		.bEndpointAddress = CONFIG_CDC_ACM_IN_EP_ADDR,
+		.bmAttributes = USB_DC_EP_BULK,
+		.wMaxPacketSize =
+			sys_cpu_to_le16(
+			CONFIG_CDC_ACM_BULK_EP_MPS),
+		.bInterval = 0x00,
+	},
+	/* Second Endpoint OUT */
+	.if1_out_ep = {
+		.bLength = sizeof(struct usb_ep_descriptor),
+		.bDescriptorType = USB_ENDPOINT_DESC,
+		.bEndpointAddress = CONFIG_CDC_ACM_OUT_EP_ADDR,
+		.bmAttributes = USB_DC_EP_BULK,
+		.wMaxPacketSize =
+			sys_cpu_to_le16(
+			CONFIG_CDC_ACM_BULK_EP_MPS),
+		.bInterval = 0x00,
+	},
+};
 
 struct device *cdc_acm_dev;
 
@@ -366,6 +490,7 @@ static int cdc_acm_init(struct device *dev)
 	}
 #else
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
+
 	cdc_acm_config.interface.payload_data = dev_data->interface_data;
 	cdc_acm_config.usb_device_description = usb_get_device_descriptor();
 	/* Initialize the USB driver with the right configuration */
