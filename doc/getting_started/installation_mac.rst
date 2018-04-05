@@ -50,24 +50,40 @@ installation instructions on the site.
 To complete the Homebrew installation, you might be prompted to install some
 missing dependency. If so, follow please follow the instructions provided.
 
-After Homebrew was successfully installed, install the following tools using
+After Homebrew is successfully installed, install the following tools using
 the brew command line.
+
+.. note::
+   Zephyr requires Python 3 in order to be built. Since macOS comes bundled
+   only with Python 2, we will need to install Python 3 with Homebrew. After
+   installing it you should have the macOS-bundled Python 2 in ``/usr/bin/``
+   and the Homebrew-provided Python 3 in ``/usr/local/bin``.
 
 Install tools to build Zephyr binaries:
 
 .. code-block:: console
 
    brew install cmake ninja dfu-util doxygen qemu dtc python3 gperf
-   curl -O 'https://bootstrap.pypa.io/get-pip.py'
-   ./get-pip.py
-   rm get-pip.py
    cd ~/zephyr   # or to the folder where you cloned the zephyr repo
    pip3 install --user -r scripts/requirements.txt
 
-If you require pyocd, an open source python2 library for programming and
-debugging ARM Cortex-M microcontrollers, use this command::
+.. note::
+   If ``pip3`` does not seem to have been installed correctly use
+   ``brew reinstall python3`` in order to reinstall it.
 
-   pip2 install --user -r scripts/py2-requirements.txt
+If you require pyocd, an open source Python 2 library for programming and
+debugging ARM Cortex-M microcontrollers, use this command to install it using
+the macOS-bundled Python 2:
+
+.. code-block:: console
+
+   pip install --user -r scripts/py2-requirements.txt
+
+If pip for the macOS-bundled Python 2 is not installed, you can install it with:
+
+.. code-block:: console
+
+   sudo python -m ensurepip
 
 Source :file:`zephyr-env.sh` wherever you have cloned the Zephyr Git repository:
 
@@ -116,26 +132,12 @@ Install tools needed for building the toolchain (if needed):
    brew install grep --with-default-names
 
 
-To build the toolchain, you will need the latest version of crosstool-ng (1.23).
-This version was not available via brew when writing this documentation, you can
-however try and see if you get 1.23 installed:
+To build the toolchain, you will need crosstool-ng version 1.23 or higher.
+Install it by using Homebrew:
 
 .. code-block:: console
 
    brew install crosstool-ng
-
-Alternatively you can install the latest version of :program:`crosstool-ng`
-from source. Download the latest version from the `crosstool-ng site`_. The
-latest version usually supports the latest released compilers.
-
-.. code-block:: console
-
-   wget http://crosstool-ng.org/download/crosstool-ng/crosstool-ng-1.23.0.tar.bz2
-   tar xvf crosstool-ng-1.23.0.tar.bz2
-   cd crosstool-ng-1.23.0/
-   ./configure
-   make
-   make install
 
 Creating a Case-sensitive File System
 =====================================
