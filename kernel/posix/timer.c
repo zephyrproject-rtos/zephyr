@@ -103,7 +103,7 @@ int timer_gettime(timer_t timerid, struct itimerspec *its)
 		remaining = k_timer_remaining_get(&timer->ztimer);
 		secs =  remaining / MSEC_PER_SEC;
 		leftover = remaining - (secs * MSEC_PER_SEC);
-		nsecs = leftover * NSEC_PER_MSEC;
+		nsecs = (s64_t)leftover * NSEC_PER_MSEC;
 		its->it_value.tv_sec = (s32_t) secs;
 		its->it_value.tv_nsec = (s32_t) nsecs;
 	} else {
