@@ -225,6 +225,8 @@ void _impl_k_mutex_unlock(struct k_mutex *mutex)
 
 	struct k_thread *new_owner = _unpend_first_thread(&mutex->wait_q);
 
+	mutex->owner = new_owner;
+
 	K_DEBUG("new owner of mutex %p: %p (prio: %d)\n",
 		mutex, new_owner, new_owner ? new_owner->base.prio : -1000);
 
@@ -241,13 +243,11 @@ void _impl_k_mutex_unlock(struct k_mutex *mutex)
 		 * waiter since the wait queue is priority-based: no need to
 		 * ajust its priority
 		 */
-		mutex->owner = new_owner;
 		mutex->lock_count++;
 		mutex->owner_orig_prio = new_owner->base.prio;
-	} else {
-		irq_unlock(key);
-		mutex->owner = NULL;
 	}
+
+	irq_unlock(key);
 
 	k_sched_unlock();
 }
