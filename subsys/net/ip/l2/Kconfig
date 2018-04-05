@@ -6,45 +6,6 @@
 
 menu "Link layer options"
 
-config NET_L2_DUMMY
-	bool "Enable dummy l2 layer"
-	default n
-	default y if !NET_L2_ETHERNET && NET_TEST
-	help
-	  Add a dummy L2 layer driver. This is usually only needed when
-	  simulating a network interface when running network stack inside QEMU.
-
-config NET_L2_ETHERNET
-	bool "Enable Ethernet support"
-	default n
-	help
-	  Add support for Ethernet, enabling selecting relevant hardware drivers.
-	  If NET_SLIP_TAP is selected, NET_L2_ETHERNET will enable to fully
-	  simulate Ethernet through SLIP.
-
-config NET_VLAN
-	bool "Enable virtual lan support"
-	default n
-	depends on NET_L2_ETHERNET
-	help
-	  Enables virtual lan (VLAN) support for Ethernet.
-
-config NET_VLAN_COUNT
-	int "Max VLAN tags supported in the system"
-	default 1
-	range 1 255
-	depends on NET_VLAN
-	help
-	  How many VLAN tags can be configured.
-
-config NET_DEBUG_L2_ETHERNET
-	bool "Debug Ethernet L2 layer"
-	default n
-	default y if NET_LOG_GLOBAL
-	depends on NET_LOG
-	help
-	  Enables Ethernet L2 output debug messages
-
 config NET_OFFLOAD
 	bool "Offload IP stack [EXPERIMENTAL]"
 	default n
@@ -59,6 +20,14 @@ config NET_DEBUG_NET_OFFLOAD
 	depends on NET_OFFLOAD
 	help
 	  Enables offload TCP/IP stack output debug messages.
+
+config NET_L2_DUMMY
+	bool "Enable dummy l2 layer"
+	default n
+	default y if !NET_L2_ETHERNET && NET_TEST
+	help
+	  Add a dummy L2 layer driver. This is usually only needed when
+	  simulating a network interface when running network stack inside QEMU.
 
 config NET_L2_BT
 	bool "Enable Bluetooth support"
@@ -122,30 +91,9 @@ config NET_L2_BT_SHELL
 	  This can be used for testing Bluetooth management commands through the
 	  console via a shell module named "net_bt".
 
+source "subsys/net/ip/l2/ethernet/Kconfig"
+
 source "subsys/net/ip/l2/ieee802154/Kconfig"
-
-config NET_ARP
-	bool "Enable ARP"
-	default y
-	depends on NET_IPV4 && NET_L2_ETHERNET
-	help
-	  Enable ARP support. This is necessary on hardware that requires it to
-	  get IPv4 working (like Ethernet devices).
-
-config NET_ARP_TABLE_SIZE
-	int "Number of entries in ARP table."
-	depends on NET_ARP
-	default 2
-	help
-	  Each entry in the ARP table consumes 22 bytes of memory.
-
-config NET_DEBUG_ARP
-	bool "Debug IPv4 ARP"
-	depends on NET_ARP && NET_LOG
-	default n
-	default y if NET_LOG_GLOBAL
-	help
-	  Enables core ARP code part to output debug messages
 
 source "subsys/net/ip/l2/openthread/Kconfig"
 
