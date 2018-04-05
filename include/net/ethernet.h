@@ -79,12 +79,15 @@ struct ethernet_api {
 	/** Get the device capabilities */
 	enum eth_hw_caps (*get_capabilities)(struct device *dev);
 
+#if defined(CONFIG_NET_VLAN)
 	/** The IP stack will call this function when a VLAN tag is enabled
 	 * or disabled. If enable is set to true, then the VLAN tag was added,
 	 * if it is false then the tag was removed. The driver can utilize
 	 * this information if needed.
 	 */
-	int (*vlan_setup)(struct net_if *iface, u16_t tag, bool enable);
+	int (*vlan_setup)(struct device *dev, struct net_if *iface,
+			  u16_t tag, bool enable);
+#endif /* CONFIG_NET_VLAN */
 };
 
 struct net_eth_addr {

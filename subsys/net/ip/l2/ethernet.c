@@ -700,7 +700,8 @@ int net_eth_vlan_enable(struct net_if *iface, u16_t tag)
 		enable_vlan_iface(ctx, iface);
 
 		if (eth->vlan_setup) {
-			eth->vlan_setup(iface, tag, true);
+			eth->vlan_setup(net_if_get_device(iface),
+					iface, tag, true);
 		}
 
 		ctx->vlan_enabled++;
@@ -741,7 +742,7 @@ int net_eth_vlan_disable(struct net_if *iface, u16_t tag)
 	disable_vlan_iface(ctx, iface);
 
 	if (eth->vlan_setup) {
-		eth->vlan_setup(iface, tag, false);
+		eth->vlan_setup(net_if_get_device(iface), iface, tag, false);
 	}
 
 	ctx->vlan_enabled--;
