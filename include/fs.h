@@ -220,7 +220,7 @@ int fs_unlink(const char *path);
  * must contain a full filename path, rather than just the new parent
  * directory.  If an object already exists at the specified destination path,
  * this function causes it to be unlinked prior to the rename (i.e., the
- * estination gets clobbered).
+ * destination gets clobbered).
  *
  * @param from The source path.
  * @param to The destination path.

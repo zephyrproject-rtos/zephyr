@@ -48,7 +48,7 @@ u16_t crc16(const u8_t *src, size_t len, u16_t polynomial,
  * See ITU-T Recommendation V.41 (November 1988).  Uses 0x1021 as the
  * polynomial, reflects the input, and reflects the output.
  *
- * To calculate the CRC across non-contigious blocks use the return
+ * To calculate the CRC across non-contiguous blocks use the return
  * value from block N-1 as the seed for block N.
  *
  * For CRC-16/CCITT, use 0 as the initial seed.  Other checksums in
@@ -73,7 +73,7 @@ u16_t crc16_ccitt(u16_t seed, const u8_t *src, size_t len);
  * The MSB first version of ITU-T Recommendation V.41 (November 1988).
  * Uses 0x1021 as the polynomial with no reflection.
  *
- * To calculate the CRC across non-contigious blocks use the return
+ * To calculate the CRC across non-contiguous blocks use the return
  * value from block N-1 as the seed for block N.
  *
  * For CRC-16/XMODEM, use 0 as the initial seed.  Other checksums in

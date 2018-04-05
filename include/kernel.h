@@ -4315,7 +4315,7 @@ __syscall void k_str_out(char *c, size_t n);
  * startup is running on CPU zero, other processors are numbered
  * sequentially.  On return from this function, the CPU is known to
  * have begun operating and will enter the provided function.  Its
- * interrupts will be initialied but disabled such that irq_unlock()
+ * interrupts will be initialized but disabled such that irq_unlock()
  * with the provided key will work to enable them.
  *
  * Normally, in SMP mode this function will be called by the kernel

@@ -318,7 +318,7 @@ int stats_group_walk(stats_group_walk_fn *walk_cb, void *arg);
 /**
  * @brief Retrieves the next registered statistics group.
  *
- * @param cur                   The group whose sucessor is being retrieved, or
+ * @param cur                   The group whose successor is being retrieved, or
  *                                  NULL to retrieve the first group.
  *
  * @return                      Pointer to the retrieved group on success;
