@@ -27,7 +27,7 @@ below.
    :goals: build
    :compact:
 
-Normally one needs extra priviliges to create and configure the TAP device in
+Normally one needs extra privileges to create and configure the TAP device in
 the host system. Use sudo to execute the Zephyr process with admin privileges,
 like this:
 

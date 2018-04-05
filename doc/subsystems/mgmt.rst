@@ -21,7 +21,7 @@ over the following transports:
 
 The management subsystem is based on the Simple Management Protocol (SMP)
 provided by `MCUmgr`_, an open source project that provides a
-management subystem that is portable across multiple real-time operating
+management subsystem that is portable across multiple real-time operating
 systems.
 
 The management subsystem is split in two different locations in the Zephyr tree:

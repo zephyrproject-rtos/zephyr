@@ -129,7 +129,7 @@ Testing Zephyr-based Controllers with BlueZ
 If you want to test a Zephyr-powered BLE Controller using BlueZ's Bluetooth
 Host, you will need a few tools described in the :ref:`bluetooth_bluez` section.
 Once you have installed the tools you can then use them to interact with your
-Zephry-based controller:
+Zephyr-based controller:
 
    .. code-block:: console
 
@@ -139,5 +139,5 @@ Zephry-based controller:
 
 You might need to replace :literal:`--index 0` with the index of the Controller
 you wish to manage.
-Additional information aobut :file:`btmgmt` can be found in its manual pages.
+Additional information about :file:`btmgmt` can be found in its manual pages.
 
