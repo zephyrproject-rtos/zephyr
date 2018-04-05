@@ -231,13 +231,21 @@ without the Zephyr SDK`_ for details.
    and extract it on your file system. This example assumes the compiler was
    extracted to: :file:`<user folder>/gcc-arm-none-eabi-5_3-2016q1/`.
 
+   On macOS, the toolchain can also be installed using brew::
+
+      $ brew tap osx-cross/arm
+      $ brew install arm-gcc-bin
+
 #. Build the example :ref:`hello_world` project, enter:
 
    .. code-block:: console
 
       # On Linux/macOS
+      # if you installed using brew on macOS, path would be /usr/local
+
       export GCCARMEMB_TOOLCHAIN_PATH="~/gcc-arm-none-eabi-5_3-2016q1/"
       export ZEPHYR_TOOLCHAIN_VARIANT=gccarmemb
+
       # On Windows
       set GCCARMEMB_TOOLCHAIN_PATH="%userprofile%\gcc-arm-none-eabi-5_3-2016q1\"
       set ZEPHYR_TOOLCHAIN_VARIANT=gccarmemb
