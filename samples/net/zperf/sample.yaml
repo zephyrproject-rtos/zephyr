@@ -11,6 +11,14 @@ tests:
     extra_args: CONF_FILE="prj_netusb.conf"
     platform_whitelist: quark_se_c1000_devboard 96b_carbon
     tags: samples usb net
+  test_netusb_eem:
+    harness: net
+    extra_args: CONF_FILE="prj_netusb.conf"
+    extra_configs:
+      - CONFIG_USB_DEVICE_NETWORK_ECM=n
+      - CONFIG_USB_DEVICE_NETWORK_EEM=y
+    platform_whitelist: quark_se_c1000_devboard 96b_carbon
+    tags: samples usb net
   test_netusb_rndis:
     harness: net
     extra_args: CONF_FILE="prj_netusb.conf"
