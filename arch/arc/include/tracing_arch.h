@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 Intel Corporation
+ * Copyright (c) 2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,14 +9,13 @@
  * @brief Kernel event logger support for ARM
  */
 
-#ifndef __KERNEL_EVENT_LOGGER_ARCH_H__
-#define __KERNEL_EVENT_LOGGER_ARCH_H__
+#ifndef __KERNEL_TRACING_H__
+#define __KERNEL_TRACING_H__
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "arch/arm/cortex_m/cmsis.h"
 /**
  * @brief Get the identification of the current interrupt.
  *
@@ -27,11 +26,11 @@ extern "C" {
  */
 int _sys_current_irq_key_get(void)
 {
-	return __get_IPSR();
+	return _INTERRUPT_CAUSE();
 }
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __KERNEL_EVENT_LOGGER_ARCH_H__ */
+#endif /* __KERNEL_TRACING_H__ */

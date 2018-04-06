@@ -13,7 +13,7 @@ GTEXT(__swap)
 GTEXT(_thread_entry_wrapper)
 
 /* imports */
-GTEXT(_sys_k_event_logger_context_switch)
+GTEXT(sys_trace_thread_switched_in)
 GTEXT(_k_neg_eagain)
 
 /* unsigned int __swap(unsigned int key)
@@ -84,8 +84,8 @@ SECTION_FUNC(exception.other, __swap)
 	ldw   r4, (r5)
 	stw   r4, _thread_offset_to_retval(r11)
 
-#if CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
-	call _sys_k_event_logger_context_switch
+#if CONFIG_TRACING
+	call sys_trace_thread_switched_in
 	/* restore caller-saved r10 */
 	movhi r10, %hi(_kernel)
 	ori   r10, r10, %lo(_kernel)

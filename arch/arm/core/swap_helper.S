@@ -53,7 +53,7 @@ SECTION_FUNC(TEXT, __pendsv)
 #else
     pop {lr}
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
-#endif /* CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH  */
+#endif /* CONFIG_TRACING */
 
     /* protect the kernel state while we play with the thread lists */
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)

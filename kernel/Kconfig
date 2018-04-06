@@ -670,8 +670,6 @@ config MP_NUM_CPUS
 
 endmenu
 
-source "kernel/Kconfig.event_logger"
-
 source "kernel/Kconfig.power_mgmt"
 
 endmenu

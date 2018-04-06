@@ -50,9 +50,7 @@ unsigned int __swap(unsigned int key)
 	_kernel.current->callee_saved.retval = -EAGAIN;
 	/* retval may be modified with a call to _set_thread_return_value() */
 
-#if CONFIG_KERNEL_EVENT_LOGGER_CONTEXT_SWITCH
-	_sys_k_event_logger_context_switch();
-#endif
+	sys_trace_thread_switched_in();
 
 	posix_thread_status_t *ready_thread_ptr =
 		(posix_thread_status_t *)
