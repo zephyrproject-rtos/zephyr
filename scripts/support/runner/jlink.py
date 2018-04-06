@@ -124,15 +124,18 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         lines.append('g') # Start the CPU
         lines.append('q') # Close the connection and quit
 
-        with tempfile.NamedTemporaryFile(suffix='.jlink') as f:
-            f.writelines(bytes(line + '\n', 'utf-8') for line in lines)
-            f.flush()
+        # Don't use NamedTemporaryFile: the resulting file can't be
+        # opened again on Windows.
+        with tempfile.TemporaryDirectory(suffix='jlink') as d:
+            fname = os.path.join(d, 'runner.jlink')
+            with open(fname, 'wb') as f:
+                f.writelines(bytes(line + '\n', 'utf-8') for line in lines)
 
             cmd = ([self.commander] +
                    ['-if', self.iface,
                     '-speed', self.speed,
                     '-device', self.device,
-                    '-CommanderScript', f.name])
+                    '-CommanderScript', fname])
 
             print('Flashing Target Device')
             self.check_call(cmd)
