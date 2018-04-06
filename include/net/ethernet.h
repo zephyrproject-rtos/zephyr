@@ -43,30 +43,30 @@ extern "C" {
 
 #define NET_ETH_MINIMAL_FRAME_SIZE	60
 
-enum eth_hw_caps {
+enum ethernet_hw_caps {
 	/** TX Checksum offloading supported */
-	ETH_HW_TX_CHKSUM_OFFLOAD	= BIT(0),
+	ETHERNET_HW_TX_CHKSUM_OFFLOAD	= BIT(0),
 
 	/** RX Checksum offloading supported */
-	ETH_HW_RX_CHKSUM_OFFLOAD	= BIT(1),
+	ETHERNET_HW_RX_CHKSUM_OFFLOAD	= BIT(1),
 
 	/** VLAN supported */
-	ETH_HW_VLAN			= BIT(2),
+	ETHERNET_HW_VLAN		= BIT(2),
 
 	/** Enabling/disabling auto negotiation supported */
-	ETH_AUTO_NEGOTIATION_SET	= BIT(3),
+	ETHERNET_AUTO_NEGOTIATION_SET	= BIT(3),
 
 	/** 10 Mbits link supported */
-	ETH_LINK_10BASE_T		= BIT(4),
+	ETHERNET_LINK_10BASE_T		= BIT(4),
 
 	/** 100 Mbits link supported */
-	ETH_LINK_100BASE_T		= BIT(5),
+	ETHERNET_LINK_100BASE_T		= BIT(5),
 
 	/** 1 Gbits link supported */
-	ETH_LINK_1000BASE_T		= BIT(6),
+	ETHERNET_LINK_1000BASE_T	= BIT(6),
 
 	/** Changing duplex (half/full) supported */
-	ETH_DUPLEX_SET			= BIT(7),
+	ETHERNET_DUPLEX_SET		= BIT(7),
 };
 
 struct ethernet_api {
@@ -77,7 +77,7 @@ struct ethernet_api {
 	struct net_if_api iface_api;
 
 	/** Get the device capabilities */
-	enum eth_hw_caps (*get_capabilities)(struct device *dev);
+	enum ethernet_hw_caps (*get_capabilities)(struct device *dev);
 
 #if defined(CONFIG_NET_VLAN)
 	/** The IP stack will call this function when a VLAN tag is enabled
@@ -217,7 +217,7 @@ void net_eth_ipv6_mcast_to_mac_addr(const struct in6_addr *ipv6_addr,
  * @return Hardware capabilities
  */
 static inline
-enum eth_hw_caps net_eth_get_hw_capabilities(struct net_if *iface)
+enum ethernet_hw_caps net_eth_get_hw_capabilities(struct net_if *iface)
 {
 	const struct ethernet_api *eth =
 		net_if_get_device(iface)->driver_api;

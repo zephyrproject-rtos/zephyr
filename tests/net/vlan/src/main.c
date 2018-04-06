@@ -134,9 +134,9 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 	return 0;
 }
 
-static enum eth_hw_caps eth_capabilities(struct device *dev)
+static enum ethernet_hw_caps eth_capabilities(struct device *dev)
 {
-	return ETH_HW_VLAN;
+	return ETHERNET_HW_VLAN;
 }
 
 static struct ethernet_api api_funcs = {

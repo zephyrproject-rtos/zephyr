@@ -508,11 +508,11 @@ use_random_mac:
 
 static struct slip_context slip_context_data;
 
-static enum eth_hw_caps eth_capabilities(struct device *dev)
+static enum ethernet_hw_caps eth_capabilities(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return ETH_HW_VLAN;
+	return ETHERNET_HW_VLAN;
 }
 
 #if defined(CONFIG_SLIP_TAP) && defined(CONFIG_NET_L2_ETHERNET)
