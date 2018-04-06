@@ -285,18 +285,18 @@ static void send_coap_request(u8_t method)
 		return;
 	}
 
-	r = coap_packet_append_payload_marker(&request);
-	if (r) {
-		net_pkt_unref(pkt);
-		printk("Unable to append payload marker\n");
-		return;
-	}
-
 	switch (method) {
 	case COAP_METHOD_GET:
 		break;
 
 	case COAP_METHOD_PUT:
+		r = coap_packet_append_payload_marker(&request);
+		if (r) {
+			net_pkt_unref(pkt);
+			printk("Unable to append payload marker\n");
+			return;
+		}
+
 		r = coap_packet_append_payload(&request, (u8_t *)put_payload,
 				strlen(put_payload));
 		if (r < 0) {
@@ -307,6 +307,13 @@ static void send_coap_request(u8_t method)
 		break;
 
 	case COAP_METHOD_POST:
+		r = coap_packet_append_payload_marker(&request);
+		if (r) {
+			net_pkt_unref(pkt);
+			printk("Unable to append payload marker\n");
+			return;
+		}
+
 		r = coap_packet_append_payload(&request, (u8_t *)post_payload,
 				strlen(post_payload));
 		if (r < 0) {
