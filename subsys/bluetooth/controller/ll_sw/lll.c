@@ -230,6 +230,7 @@ int lll_done(void *param)
 {
 	struct event_next *next = event.next.head;
 	struct ull_hdr *ull = NULL;
+	int ret = 0;
 
 	/* Assert if param supplied without a pending prepare to cancel. */
 	LL_ASSERT(!param || next);
@@ -262,13 +263,9 @@ int lll_done(void *param)
 		next = prepare_dequeue(next);
 	}
 
-	/* Let ULL know about LLL event done */
-	ull_event_done(ull);
-
 	/* Call the pending next prepare's bottom half */
 	if (next) {
 		lll_prepare_cb_t prepare_cb = next->prepare_cb;
-		int ret;
 
 		event.curr.is_abort_cb = next->is_abort_cb;
 		event.curr.abort_cb = next->abort_cb;
@@ -277,11 +274,12 @@ int lll_done(void *param)
 		ret = prepare_cb(&next->prepare_param);
 
 		prepare_dequeue(next);
-
-		return ret;
 	}
 
-	return 0;
+	/* Let ULL know about LLL event done */
+	ull_event_done(ull);
+
+	return ret;
 }
 
 bool lll_is_done(void *param)
