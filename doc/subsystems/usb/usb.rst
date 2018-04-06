@@ -1,5 +1,13 @@
+USB device stack
+################
+
+The USB device stack is split into three layers:
+   * USB Device Controller drivers (hardware dependent)
+   * USB device core driver (hardware independent)
+   * USB device class drivers (hardware independent)
+
 USB Vendor and Product identifiers
-##################################
+**********************************
 
 The USB Vendor ID for the Zephyr project is 0x2FE3. The default USB Product
 ID for the Zephyr project is 0x100. The USB bcdDevice Device Release Number
@@ -12,14 +20,6 @@ Vendor ID of the Zephyr project.
 The USB maintainer, if one is assigned, or otherwise the Zephyr Technical
 Steering Committee, may allocate other USB Product IDs based on well-motivated
 and documented requests.
-
-USB device stack
-################
-
-The USB device stack is split into three layers:
-   * USB Device Controller drivers (hardware dependent)
-   * USB device core driver (hardware independent)
-   * USB device class drivers (hardware independent)
 
 USB device controller drivers
 *****************************
