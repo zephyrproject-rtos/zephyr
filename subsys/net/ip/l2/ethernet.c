@@ -763,7 +763,7 @@ void ethernet_init(struct net_if *iface)
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 	int i;
 
-	if (!(net_eth_get_hw_capabilities(iface) & ETH_HW_VLAN)) {
+	if (!(net_eth_get_hw_capabilities(iface) & ETHERNET_HW_VLAN)) {
 		return;
 	}
 

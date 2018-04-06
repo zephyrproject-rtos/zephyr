@@ -2010,7 +2010,7 @@ void net_if_call_link_cb(struct net_if *iface, struct net_linkaddr *lladdr,
 	}
 }
 
-static bool need_calc_checksum(struct net_if *iface, enum eth_hw_caps caps)
+static bool need_calc_checksum(struct net_if *iface, enum ethernet_hw_caps caps)
 {
 #if defined(CONFIG_NET_L2_ETHERNET)
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
@@ -2025,12 +2025,12 @@ static bool need_calc_checksum(struct net_if *iface, enum eth_hw_caps caps)
 
 bool net_if_need_calc_tx_checksum(struct net_if *iface)
 {
-	return need_calc_checksum(iface, ETH_HW_TX_CHKSUM_OFFLOAD);
+	return need_calc_checksum(iface, ETHERNET_HW_TX_CHKSUM_OFFLOAD);
 }
 
 bool net_if_need_calc_rx_checksum(struct net_if *iface)
 {
-	return need_calc_checksum(iface, ETH_HW_RX_CHKSUM_OFFLOAD);
+	return need_calc_checksum(iface, ETHERNET_HW_RX_CHKSUM_OFFLOAD);
 }
 
 struct net_if *net_if_get_by_index(u8_t index)

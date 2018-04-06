@@ -369,11 +369,11 @@ static void eth_iface_init(struct net_if *iface)
 			     NET_LINK_ETHERNET);
 }
 
-static enum eth_hw_caps eth_stm32_hal_get_capabilities(struct device *dev)
+static enum ethernet_hw_caps eth_stm32_hal_get_capabilities(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return ETH_LINK_10BASE_T | ETH_LINK_100BASE_T;
+	return ETHERNET_LINK_10BASE_T | ETHERNET_LINK_100BASE_T;
 }
 
 static const struct ethernet_api eth_api = {

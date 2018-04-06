@@ -899,11 +899,12 @@ static void eth0_iface_init(struct net_if *iface)
 	init_done = true;
 }
 
-static enum eth_hw_caps eth_sam_gmac_get_capabilities(struct device *dev)
+static enum ethernet_hw_caps eth_sam_gmac_get_capabilities(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return ETH_HW_VLAN | ETH_LINK_10BASE_T | ETH_LINK_100BASE_T;
+	return ETHERNET_HW_VLAN | ETHERNET_LINK_10BASE_T |
+		ETHERNET_LINK_100BASE_T;
 }
 
 static const struct ethernet_api eth_api = {

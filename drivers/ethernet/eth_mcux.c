@@ -664,11 +664,12 @@ static void eth_iface_init(struct net_if *iface)
 	ethernet_init(iface);
 }
 
-static enum eth_hw_caps eth_mcux_get_capabilities(struct device *dev)
+static enum ethernet_hw_caps eth_mcux_get_capabilities(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return ETH_HW_VLAN | ETH_LINK_10BASE_T | ETH_LINK_100BASE_T;
+	return ETHERNET_HW_VLAN | ETHERNET_LINK_10BASE_T |
+		ETHERNET_LINK_100BASE_T;
 }
 
 static const struct ethernet_api api_funcs = {

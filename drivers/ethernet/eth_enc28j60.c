@@ -764,11 +764,11 @@ static int eth_net_tx(struct net_if *iface, struct net_pkt *pkt)
 	return ret;
 }
 
-static enum eth_hw_caps eth_enc28j60_get_capabilities(struct device *dev)
+static enum ethernet_hw_caps eth_enc28j60_get_capabilities(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	return ETH_LINK_10BASE_T;
+	return ETHERNET_LINK_10BASE_T;
 }
 
 #ifdef CONFIG_ETH_ENC28J60_0
