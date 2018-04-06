@@ -183,6 +183,12 @@ _thread_irq_disabled:
     orr r3, r0
     msr CONTROL, r3
 
+    /* ISB is not strictly necessary here (stack pointer is not being
+     * touched), but it's recommended to avoid executing pre-fetched
+     * instructions with the previous privilege.
+     */
+    isb
+
     /* r2 contains k_thread */
     add r0, r2, #0
     push {r2, lr}
@@ -386,6 +392,12 @@ valid_syscall_id:
     /* set mode to privileged, r2 still contains value from CONTROL */
     bic r2, #1
     msr CONTROL, r2
+
+    /* ISB is not strictly necessary here (stack pointer is not being
+     * touched), but it's recommended to avoid executing pre-fetched
+     * instructions with the previous privilege.
+     */
+    isb
 
     /* return from SVC to the modified LR - _arm_do_syscall */
     bx lr

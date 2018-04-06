@@ -94,6 +94,12 @@ SECTION_FUNC(TEXT,_arm_userspace_enter)
     orrs ip, ip, #1
     msr CONTROL, ip
 
+    /* ISB is not strictly necessary here (stack pointer is not being
+     * touched), but it's recommended to avoid executing pre-fetched
+     * instructions with the previous privilege.
+     */
+    isb
+
     /* jump to _thread_entry entry */
     ldr ip, =_thread_entry
     bx ip
@@ -172,6 +178,12 @@ dispatch_syscall:
     mrs ip, CONTROL
     orrs ip, ip, #1
     msr CONTROL, ip
+
+    /* ISB is not strictly necessary here (stack pointer is not being
+     * touched), but it's recommended to avoid executing pre-fetched
+     * instructions with the previous privilege.
+     */
+    isb
 
     /*
      * return back to original function that called SVC, add 1 to force thumb
