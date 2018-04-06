@@ -4,9 +4,3 @@ tests:
     platform_exclude: tinytile
     tags: power
     depends_on: rtc
-  power_management.power_states.socwatch:
-    extra_args: CONF_FILE="prj_socwatch.conf"
-    filter: CONFIG_SOC_QUARK_SE_C1000
-    platform_exclude: tinytile
-    tags: power
-    depends_on: rtc

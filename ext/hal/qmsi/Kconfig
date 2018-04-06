@@ -41,10 +41,4 @@ config QMSI_INSTALL_PATH
 	  installed. Make sure this option is properly set when QMSI_LIBRARY
 	  is enabled otherwise the build will fail.
 
-config SOC_WATCH
-	bool "Enable SoCWatch drivers and related instrumentation"
-	depends on KERNEL_EVENT_LOGGER
-	help
-	  This option enables the SoCWatch driver and related instrumentation.
-
 endif

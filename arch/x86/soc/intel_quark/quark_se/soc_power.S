@@ -21,7 +21,7 @@ SECTION_FUNC(TEXT, save_cpu_context)
 
 	pushf				/* save flags */
 	pusha				/* save GPRs */
-#if defined (CONFIG_DEBUG) || defined (CONFIG_SOC_WATCH)
+#if defined (CONFIG_DEBUG)
 	/* save the debug registers */
 	movl %dr0, %edx
 	pushl %edx
@@ -47,7 +47,7 @@ SECTION_FUNC(TEXT, _power_restore_cpu_context)
 	lgdtl _pm_save_gdtr		/* restore gdtr */
 	lidtl _pm_save_idtr		/* restore idtr */
 	movl _pm_save_esp, %esp		/* restore saved stack ptr */
-#if defined (CONFIG_DEBUG) || defined (CONFIG_SOC_WATCH)
+#if defined (CONFIG_DEBUG)
 	/* restore the debug registers */
 	popl %edx
 	movl %edx, %dr7
