@@ -453,6 +453,32 @@ int usb_dc_ep_get_read_count(u8_t ep, u32_t *read_bytes)
 	return 0;
 }
 
+int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
+{
+	u8_t ep_idx = EP_IDX(cfg->ep_addr);
+
+	SYS_LOG_ERR("ep %x, mps %d, type %d", cfg->ep_addr, cfg->ep_mps,
+		    cfg->ep_type);
+
+	if ((cfg->ep_type == USB_DC_EP_CONTROL) && ep_idx) {
+		SYS_LOG_ERR("invalid endpoint configuration");
+		return -1;
+	}
+
+	if (EP_IS_IN(cfg->ep_addr) && (ep_idx > CONFIG_USB_NUM_IN_ENDPOINTS)) {
+		SYS_LOG_ERR("IN endpoint index/address out of range");
+		return -1;
+	}
+
+	if (EP_IS_OUT(cfg->ep_addr) &&
+	    (ep_idx > CONFIG_USB_NUM_OUT_ENDPOINTS)) {
+		SYS_LOG_ERR("OUT endpoint index/address out of range");
+		return -1;
+	}
+
+	return 0;
+}
+
 int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const ep_cfg)
 {
 	u8_t ep = ep_cfg->ep_addr;

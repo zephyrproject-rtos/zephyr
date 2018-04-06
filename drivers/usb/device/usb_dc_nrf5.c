@@ -1816,6 +1816,32 @@ int usb_dc_set_address(const u8_t addr)
 	return 0;
 }
 
+int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
+{
+	u8_t ep_idx = NRF_USBD_EP_NR_GET(cfg->ep_addr);
+
+	SYS_LOG_DBG("ep %x, mps %d, type %d", cfg->ep_addr, cfg->ep_mps,
+		    cfg->ep_type);
+
+	if ((cfg->ep_type == USB_DC_EP_CONTROL) && ep_idx) {
+		SYS_LOG_ERR("invalid endpoint configuration");
+		return -1;
+	}
+
+	if (!NRF_USBD_EP_VALIDATE(cfg->ep_addr)) {
+		SYS_LOG_ERR("invalid endpoint index/address");
+		return -1;
+	}
+
+	if ((cfg->ep_type == USB_DC_EP_ISOCHRONOUS) &&
+	    (!NRF_USBD_EPISO_CHECK(cfg->ep_addr))) {
+		SYS_LOG_WRN("invalid endpoint type");
+		return -1;
+	}
+
+	return 0;
+}
+
 int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const ep_cfg)
 {
 	struct nrf5_usbd_ep_ctx *ep_ctx;
