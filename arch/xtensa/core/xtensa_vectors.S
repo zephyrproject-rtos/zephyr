@@ -166,28 +166,18 @@
     #endif
     #endif
 
-#ifdef CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT
+#ifdef CONFIG_TRACING
     /*
      * Register the interrupt.
      * We just saved all registers.
      */
 #ifdef __XTENSA_CALL0_ABI__
-    call0 _sys_k_event_logger_interrupt
+    call0 sys_trace_isr_enter
 #else
-    call4 _sys_k_event_logger_interrupt
+    call4 sys_trace_isr_enter
 #endif
 #endif
 
-#ifdef CONFIG_KERNEL_EVENT_LOGGER_SLEEP
-    /*
-     * Register the sleep enter.
-     * We just saved all registers.
-     */
-#ifdef __XTENSA_CALL0_ABI__
-    call0 _sys_k_event_logger_exit_sleep
-#else
-    call4 _sys_k_event_logger_exit_sleep
-#endif
 #endif
     #ifdef XT_INTEXC_HOOKS
     /* Call interrupt hook if present to (pre)handle interrupts. */

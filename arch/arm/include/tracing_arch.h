@@ -1,23 +1,22 @@
 /*
- * Copyright (c) 2016 Intel Corporation
+ * Copyright (c) 2015 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /**
  * @file
- * @brief Kernel event logger support for Nios II
+ * @brief Kernel event logger support for ARM
  */
 
-#ifndef __KERNEL_EVENT_LOGGER_ARCH_H__
-#define __KERNEL_EVENT_LOGGER_ARCH_H__
-
-#include <arch/cpu.h>
+#ifndef __KERNEL_TRACING_H__
+#define __KERNEL_TRACING_H__
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+#include "arch/arm/cortex_m/cmsis.h"
 /**
  * @brief Get the identification of the current interrupt.
  *
@@ -26,16 +25,13 @@ extern "C" {
  *
  * @return The key of the interrupt that is currently being processed.
  */
-static inline int _sys_current_irq_key_get(void)
+int _sys_current_irq_key_get(void)
 {
-	u32_t ipending;
-
-	ipending = _nios2_creg_read(NIOS2_CR_IPENDING);
-	return find_lsb_set(ipending) - 1;
+	return __get_IPSR();
 }
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __KERNEL_EVENT_LOGGER_ARCH_H__ */
+#endif /* __KERNEL_TRACING_H__ */

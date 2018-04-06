@@ -8,10 +8,6 @@
 #define _ksched__h_
 
 #include <kernel_structs.h>
-
-#ifdef CONFIG_KERNEL_EVENT_LOGGER
-#include <logging/kernel_event_logger.h>
-#endif /* CONFIG_KERNEL_EVENT_LOGGER */
 #include <tracing.h>
 
 #ifdef CONFIG_MULTITHREADING
@@ -228,9 +224,6 @@ static inline void _ready_thread(struct k_thread *thread)
 
 	sys_trace_thread_ready(thread);
 
-#ifdef CONFIG_KERNEL_EVENT_LOGGER_THREAD
-	_sys_k_event_logger_thread_ready(thread);
-#endif
 }
 
 static inline void _ready_one_thread(_wait_q_t *wq)

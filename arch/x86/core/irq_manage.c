@@ -20,7 +20,7 @@
 #include <misc/__assert.h>
 #include <misc/printk.h>
 #include <irq.h>
-#include <logging/kernel_event_logger.h>
+#include <tracing.h>
 #include <kswap.h>
 
 extern void _SpuriousIntHandler(void *);
@@ -43,7 +43,6 @@ void *__attribute__((section(".spurNoErrIsr")))
  * arch/cpu.h and kernel_structs.h; the inline functions typically need to
  * perform operations on _kernel.  For now, leave as regular functions, a
  * future iteration will resolve this.
- * We have a similar issue with the k_event_logger functions.
  *
  * See https://github.com/zephyrproject-rtos/zephyr/issues/3056
  */
@@ -64,8 +63,6 @@ void _arch_isr_direct_header(void)
 {
 	_int_latency_start();
 	sys_trace_isr_enter();
-	_sys_k_event_logger_interrupt();
-	_sys_k_event_logger_exit_sleep();
 
 	/* We're not going to unlock IRQs, but we still need to increment this
 	 * so that _is_in_isr() works

@@ -18,7 +18,7 @@
 #include "board_soc.h"
 #include "sw_isr_table.h"
 #include "soc.h"
-#include "logging/kernel_event_logger.h"
+#include <tracing.h>
 
 typedef void (*normal_irq_f_ptr)(void *);
 typedef int (*direct_irq_f_ptr)(void);
@@ -35,7 +35,8 @@ static inline void vector_to_irq(int irq_nbr, int *may_swap)
 	 * it is a bit senseless to call _int_latency_start/stop()
 	 */
 	/* _int_latency_start(); */
-	_sys_k_event_logger_interrupt();
+
+	sys_trace_isr_enter();
 
 	if (irq_vector_table[irq_nbr].func == NULL) { /* LCOV_EXCL_BR_LINE */
 		/* LCOV_EXCL_START */
@@ -85,8 +86,6 @@ void posix_irq_handler(void)
 	}
 
 	_kernel.nested++;
-
-	_sys_k_event_logger_exit_sleep();
 
 	while ((irq_nbr = hw_irq_ctrl_get_highest_prio_irq()) != -1) {
 		int last_current_running_prio = hw_irq_ctrl_get_cur_prio();

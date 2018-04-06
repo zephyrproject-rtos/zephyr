@@ -505,10 +505,8 @@ void _timer_int_handler(void *params)
 	SET_TIMER_FIRE_TIME(GET_TIMER_CURRENT_TIME() + _xt_tick_divisor);
 #endif
 
-#ifdef CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT
 	extern void _sys_k_event_logger_interrupt(void);
-	_sys_k_event_logger_interrupt();
-#endif
+	sys_trace_isr_enter();
 
 #ifdef CONFIG_SMP
 	/* The timer infractructure isn't prepared to handle
