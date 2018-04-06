@@ -1,16 +1,18 @@
 /*
- * Copyright (c) 2016 Intel Corporation
+ * Copyright (c) 2015 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /**
  * @file
- * @brief Kernel event logger support for ARM
+ * @brief Kernel event logger support for x86
  */
 
-#ifndef __KERNEL_EVENT_LOGGER_ARCH_H__
-#define __KERNEL_EVENT_LOGGER_ARCH_H__
+#ifndef __KERNEL_TRACING_H__
+#define __KERNEL_TRACING_H__
+
+#include <arch/x86/irq_controller.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,13 +26,13 @@ extern "C" {
  *
  * @return The key of the interrupt that is currently being processed.
  */
-int _sys_current_irq_key_get(void)
+static inline int _sys_current_irq_key_get(void)
 {
-	return _INTERRUPT_CAUSE();
+	return _irq_controller_isr_vector_get();
 }
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __KERNEL_EVENT_LOGGER_ARCH_H__ */
+#endif /* __KERNEL_TRACING_H__ */

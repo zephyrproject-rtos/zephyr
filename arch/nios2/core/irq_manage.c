@@ -17,9 +17,9 @@
 #include <irq.h>
 #include <misc/printk.h>
 #include <sw_isr_table.h>
-#include <logging/kernel_event_logger.h>
 #include <ksched.h>
 #include <kswap.h>
+#include <tracing.h>
 
 void _irq_spurious(void *unused)
 {
@@ -81,15 +81,14 @@ void _enter_irq(u32_t ipending)
 	while (ipending) {
 		struct _isr_table_entry *ite;
 
-#ifdef CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT
-		_sys_k_event_logger_interrupt();
-#endif
+		sys_trace_isr_enter();
 
 		index = find_lsb_set(ipending) - 1;
 		ipending &= ~(1 << index);
 
 		ite = &_sw_isr_table[index];
 		ite->isr(ite->arg);
+		sys_trace_isr_exit();
 	}
 
 	_kernel.nested--;

@@ -220,10 +220,6 @@ void _timer_int_handler(void *unused)
 	read_timer_start_of_tick_handler();
 #endif
 
-#ifdef CONFIG_KERNEL_EVENT_LOGGER_INTERRUPT
-	extern void _sys_k_event_logger_interrupt(void);
-	_sys_k_event_logger_interrupt();
-#endif
 	extern void sys_trace_isr_enter(void);
 	sys_trace_isr_enter();
 

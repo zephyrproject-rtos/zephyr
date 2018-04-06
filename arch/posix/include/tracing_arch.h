@@ -10,8 +10,8 @@
  * @brief Kernel event logger support for ARM
  */
 
-#ifndef __KERNEL_EVENT_LOGGER_ARCH_H__
-#define __KERNEL_EVENT_LOGGER_ARCH_H__
+#ifndef __KERNEL_TRACING_H__
+#define __KERNEL_TRACING_H__
 
 #include "posix_soc_if.h"
 
@@ -36,4 +36,4 @@ static inline int _sys_current_irq_key_get(void)
 }
 #endif
 
-#endif /* __KERNEL_EVENT_LOGGER_ARCH_H__ */
+#endif /* __KERNEL_TRACING_H__ */

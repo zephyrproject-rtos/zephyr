@@ -8,13 +8,12 @@
 #include <irq.h>
 #include <soc.h>
 
-#include <logging/kernel_event_logger.h>
+#include <tracing.h>
 
 static ALWAYS_INLINE void pulpino_idle(unsigned int key)
 {
-#ifdef CONFIG_KERNEL_EVENT_LOGGER_SLEEP
-	_sys_k_event_logger_enter_sleep();
-#endif
+	sys_trace_idle();
+
 	/* unlock interrupts */
 	irq_unlock(key);
 
