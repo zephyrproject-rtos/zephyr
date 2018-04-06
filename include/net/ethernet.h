@@ -34,6 +34,10 @@ extern "C" {
  * @{
  */
 
+struct net_eth_addr {
+	u8_t addr[6];
+};
+
 #define NET_ETH_HDR(pkt) ((struct net_eth_hdr *)net_pkt_ll(pkt))
 
 #define NET_ETH_PTYPE_ARP		0x0806
@@ -69,6 +73,30 @@ enum ethernet_hw_caps {
 	ETHERNET_DUPLEX_SET		= BIT(7),
 };
 
+enum ethernet_config_type {
+	ETHERNET_CONFIG_TYPE_AUTO_NEG,
+	ETHERNET_CONFIG_TYPE_LINK,
+	ETHERNET_CONFIG_TYPE_DUPLEX,
+	ETHERNET_CONFIG_TYPE_MAC_ADDRESS,
+};
+
+struct ethernet_config {
+/** @cond ignore */
+	union {
+		bool auto_negotiation;
+		bool full_duplex;
+
+		struct {
+			bool link_10bt;
+			bool link_100bt;
+			bool link_1000bt;
+		} l;
+
+		struct net_eth_addr mac_address;
+	};
+/* @endcond */
+};
+
 struct ethernet_api {
 	/**
 	 * The net_if_api must be placed in first position in this
@@ -79,6 +107,11 @@ struct ethernet_api {
 	/** Get the device capabilities */
 	enum ethernet_hw_caps (*get_capabilities)(struct device *dev);
 
+	/** Set specific hardware configuration */
+	int (*set_config)(struct device *dev,
+			  enum ethernet_config_type type,
+			  const struct ethernet_config *config);
+
 #if defined(CONFIG_NET_VLAN)
 	/** The IP stack will call this function when a VLAN tag is enabled
 	 * or disabled. If enable is set to true, then the VLAN tag was added,
@@ -88,10 +121,6 @@ struct ethernet_api {
 	int (*vlan_setup)(struct device *dev, struct net_if *iface,
 			  u16_t tag, bool enable);
 #endif /* CONFIG_NET_VLAN */
-};
-
-struct net_eth_addr {
-	u8_t addr[6];
 };
 
 struct net_eth_hdr {
