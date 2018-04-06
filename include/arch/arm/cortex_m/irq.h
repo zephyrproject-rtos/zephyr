@@ -116,7 +116,7 @@ extern void _arch_isr_direct_header(void);
 extern void _IntExit(void);
 
 #ifdef CONFIG_TRACING
-extern void sys_trace_isr_exit_to_scheduler(void);
+extern void z_sys_trace_isr_exit_to_scheduler(void);
 #endif
 
 static inline void _arch_isr_direct_footer(int maybe_swap)
@@ -124,7 +124,7 @@ static inline void _arch_isr_direct_footer(int maybe_swap)
 	if (maybe_swap) {
 
 #ifdef CONFIG_TRACING
-		sys_trace_isr_exit_to_scheduler();
+		z_sys_trace_isr_exit_to_scheduler();
 #endif
 		_IntExit();
 	}

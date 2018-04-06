@@ -172,9 +172,9 @@
      * We just saved all registers.
      */
 #ifdef __XTENSA_CALL0_ABI__
-    call0 sys_trace_isr_enter
+    call0 z_sys_trace_isr_enter
 #else
-    call4 sys_trace_isr_enter
+    call4 z_sys_trace_isr_enter
 #endif
 #endif
 

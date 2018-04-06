@@ -333,13 +333,13 @@ rirq_path:
 #endif
 
 #if defined(CONFIG_TRACING)
-GTEXT(sys_trace_isr_enter)
+GTEXT(z_sys_trace_isr_enter)
 
 .macro log_interrupt_k_event
 	clri r0 /* do not interrupt event logger operations */
 	push_s r0
 	push_s blink
-	jl sys_trace_isr_enter
+	jl z_sys_trace_isr_enter
 	pop_s blink
 	pop_s r0
 	seti r0

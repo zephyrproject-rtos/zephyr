@@ -45,7 +45,7 @@ extern u64_t __idle_time_stamp;  /* timestamp when CPU went idle */
 void k_cpu_idle(void)
 {
 	_int_latency_stop();
-	sys_trace_idle();
+	z_sys_trace_idle();
 #if defined(CONFIG_BOOT_TIME_MEASUREMENT)
 	__idle_time_stamp = (u64_t)k_cycle_get_32();
 #endif
@@ -76,7 +76,7 @@ void k_cpu_idle(void)
 void k_cpu_atomic_idle(unsigned int imask)
 {
 	_int_latency_stop();
-	sys_trace_idle();
+	z_sys_trace_idle();
 
 	__asm__ volatile (
 	    "sti\n\t"

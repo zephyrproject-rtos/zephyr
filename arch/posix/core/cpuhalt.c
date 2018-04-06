@@ -35,7 +35,7 @@
  */
 void k_cpu_idle(void)
 {
-	sys_trace_idle();
+	z_sys_trace_idle();
 	posix_irq_full_unlock();
 	posix_halt_cpu();
 }
@@ -62,6 +62,6 @@ void k_cpu_idle(void)
 
 void k_cpu_atomic_idle(unsigned int imask)
 {
-	sys_trace_idle();
+	z_sys_trace_idle();
 	posix_atomic_halt_cpu(imask);
 }

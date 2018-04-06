@@ -78,9 +78,9 @@ __swap:
 #ifdef CONFIG_TRACING
 	/* Register the context switch */
 #ifdef __XTENSA_CALL0_ABI__
-	call0 sys_trace_thread_switched_in
+	call0 z_sys_trace_thread_switched_in
 #else
-	call4 sys_trace_thread_switched_in
+	call4 z_sys_trace_thread_switched_in
 #endif
 #endif
 	/* _thread := _kernel.ready_q.cache */

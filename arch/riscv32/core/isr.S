@@ -22,8 +22,8 @@ GTEXT(_is_next_thread_current)
 GTEXT(_get_next_ready_thread)
 
 #ifdef CONFIG_TRACING
-GTEXT(sys_trace_thread_switched_in)
-GTEXT(sys_trace_isr_enter)
+GTEXT(z_sys_trace_thread_switched_in)
+GTEXT(z_sys_trace_isr_enter)
 #endif
 
 #ifdef CONFIG_IRQ_OFFLOAD
@@ -225,7 +225,7 @@ on_irq_stack:
 
 call_irq:
 #ifdef CONFIG_TRACING
-	call sys_trace_isr_enter
+	call z_sys_trace_isr_enter
 #endif
 
 	/* Get IRQ causing interrupt */
@@ -300,7 +300,7 @@ reschedule:
 	call _update_time_slice_before_swap
 #endif
 #if CONFIG_TRACING
-	call sys_trace_thread_switched_in
+	call z_sys_trace_thread_switched_in
 #endif
 	/* Get reference to _kernel */
 	la t0, _kernel

@@ -48,7 +48,7 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 #endif
 
 #ifdef CONFIG_TRACING
-	bl sys_trace_isr_enter
+	bl z_sys_trace_isr_enter
 #endif
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT

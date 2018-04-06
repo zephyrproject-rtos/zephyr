@@ -152,7 +152,7 @@ SECTION_FUNC(TEXT, _interrupt_enter)
 	call	_int_latency_start
 #endif
 
-	call	sys_trace_isr_enter
+	call	z_sys_trace_isr_enter
 
 	popl	%edx
 	popl	%eax
