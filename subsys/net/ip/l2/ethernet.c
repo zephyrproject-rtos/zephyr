@@ -545,11 +545,19 @@ static inline int ethernet_enable(struct net_if *iface, bool state)
 struct net_if *net_eth_get_vlan_iface(struct net_if *iface, u16_t tag)
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);
+	struct net_if *first_non_vlan_iface = NULL;
 	int i;
 
 	for (i = 0; i < CONFIG_NET_VLAN_COUNT; i++) {
-		if (ctx->vlan[i].tag == NET_VLAN_TAG_UNSPEC ||
-		    ctx->vlan[i].tag != tag) {
+		if (ctx->vlan[i].tag == NET_VLAN_TAG_UNSPEC) {
+			if (!first_non_vlan_iface) {
+				first_non_vlan_iface = ctx->vlan[i].iface;
+			}
+
+			continue;
+		}
+
+		if (ctx->vlan[i].tag != tag) {
 			continue;
 		}
 
@@ -559,7 +567,7 @@ struct net_if *net_eth_get_vlan_iface(struct net_if *iface, u16_t tag)
 		return ctx->vlan[i].iface;
 	}
 
-	return NULL;
+	return first_non_vlan_iface;
 }
 
 static bool enable_vlan_iface(struct ethernet_context *ctx,
