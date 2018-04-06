@@ -120,3 +120,30 @@ Board
 A board implements an SoC with all its features, together with peripherals
 available on the board that differentiates the board with additional interfaces
 and features not available in the SoC.
+
+Default board configuration
+***************************
+
+When porting Zephyr to a board, you must provide the board's default
+Kconfig configuration, which is used in application builds unless explicitly
+overridden.
+
+In order to provide consistency across the various boards and ease the work of
+users providing applications that are not board specific, the following
+guidelines should be followed when porting a board:
+
+- Provide pin and driver configuration that matches the board's valuable
+  components such as sensors, buttons or LEDs, and communication interfaces
+  such as USB, Ethernet connector, or Bluetooth/WiFi chip.
+
+- When a well-known connector is present (such as used on an Arduino or
+  96board), configure pins to fit this connector.
+
+- Configure components that enable the use of these pins, such as
+  configuring and SPI instance for Arduino SPI.
+
+- Configure an output for the console.
+
+- Propose and configure a default network interface.
+
+- Enable all GPIO ports.
