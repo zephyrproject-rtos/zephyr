@@ -1,7 +1,7 @@
 .. _dfu:
 
-Device Firmware Upgrade Subsystem
-#################################
+Device Firmware Upgrade
+#######################
 
 Overview
 ********

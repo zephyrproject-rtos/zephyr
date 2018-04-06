@@ -1,7 +1,7 @@
 .. _mgmt:
 
-Management Subsystem
-####################
+Management
+##########
 
 Overview
 ********
