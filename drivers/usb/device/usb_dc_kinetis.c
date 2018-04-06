@@ -268,6 +268,35 @@ int usb_dc_set_address(const u8_t addr)
 	return 0;
 }
 
+int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
+{
+	u8_t ep_idx = EP_ADDR2IDX(cfg->ep_addr);
+
+	if ((cfg->ep_type == USB_DC_EP_CONTROL) && ep_idx) {
+		SYS_LOG_ERR("invalid endpoint configuration");
+		return -1;
+	}
+
+	if (ep_idx > NUM_OF_EP_MAX) {
+		SYS_LOG_ERR("endpoint index/address out of range");
+		return -1;
+	}
+
+	if (ep_idx & BIT(0)) {
+		if (EP_ADDR2DIR(cfg->ep_addr) != USB_EP_DIR_IN) {
+			SYS_LOG_INF("pre-selected as IN endpoint");
+			return -1;
+		}
+	} else {
+		if (EP_ADDR2DIR(cfg->ep_addr) != USB_EP_DIR_OUT) {
+			SYS_LOG_INF("pre-selected as OUT endpoint");
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
 int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const cfg)
 {
 	u8_t idx_even = get_bdt_idx(cfg->ep_addr, 0);
