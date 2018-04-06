@@ -100,8 +100,6 @@ zephyr_compile_options(
 )
 
 zephyr_compile_options(
-  $<$<COMPILE_LANGUAGE:C>:-std=c99>
-
   $<$<COMPILE_LANGUAGE:CXX>:-std=c++11>
   $<$<COMPILE_LANGUAGE:CXX>:-fcheck-new>
   $<$<COMPILE_LANGUAGE:CXX>:-ffunction-sections>
@@ -211,7 +209,17 @@ zephyr_compile_options(${CONFIG_COMPILER_OPT})
 
 # TODO: This Clang check is broken
 if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
+  set(ENABLE_QUADMATH 1)
   zephyr_cc_option(
+    #FIXME: need to fix all of those
+    -Wno-sometimes-uninitialized
+    -Wno-shift-overflow
+    -Wno-missing-braces
+    -Wno-self-assign
+    -Wno-address-of-packed-member
+    -Wno-unused-function
+    -Wno-initializer-overrides
+    -Wno-section
     -Wno-unknown-warning-option
     -Wno-unused-variable
     -Wno-format-invalid-specifier
@@ -219,7 +227,13 @@ if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
     # comparison of unsigned expression < 0 is always false
     -Wno-tautological-compare
     )
+  zephyr_compile_options(
+    $<$<COMPILE_LANGUAGE:C>:-std=c11>
+  )
 else() # GCC assumed
+  zephyr_compile_options(
+    $<$<COMPILE_LANGUAGE:C>:-std=c99>
+  )
   zephyr_cc_option(
     -Wno-unused-but-set-variable
     -fno-reorder-functions
