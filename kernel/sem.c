@@ -58,6 +58,7 @@ void _impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 		      unsigned int limit)
 {
 	__ASSERT(limit != 0, "limit cannot be zero");
+	__ASSERT(initial_count <= limit, "count cannot be greater than limit");
 
 	sem->count = initial_count;
 	sem->limit = limit;
@@ -75,7 +76,7 @@ void _impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 _SYSCALL_HANDLER(k_sem_init, sem, initial_count, limit)
 {
 	_SYSCALL_OBJ_INIT(sem, K_OBJ_SEM);
-	_SYSCALL_VERIFY(limit != 0);
+	_SYSCALL_VERIFY(limit != 0 && initial_count <= limit);
 	_impl_k_sem_init((struct k_sem *)sem, initial_count, limit);
 	return 0;
 }
