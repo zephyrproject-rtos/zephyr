@@ -589,7 +589,7 @@ class Kconfig(object):
         self.const_syms = {}
         self.defined_syms = []
         self.named_choices = {}
-        # Used for quickly invalidating all choices
+        # List containing all choices. Not sure it's helpful to expose this.
         self._choices = []
 
         for nmy in "n", "m", "y":
@@ -668,6 +668,17 @@ class Kconfig(object):
 
         # Do various post-processing of the menu tree
         _finalize_tree(self.top_node)
+
+
+        # Do sanity checks. Some of these depend on everything being
+        # finalized.
+
+        for sym in self.defined_syms:
+            _check_sym_sanity(sym)
+
+        for choice in self._choices:
+            _check_choice_sanity(choice)
+
 
         # Build Symbol._dependents for all symbols
         self._build_dep()
@@ -4540,8 +4551,6 @@ def _finalize_tree(node):
             node.next = cur.next
             cur.next = None
 
-        _check_sym_sanity(node.item)
-
 
     if node.list:
         # We have a node with child nodes where the child nodes are now
@@ -4553,7 +4562,6 @@ def _finalize_tree(node):
     # Empty choices (node.list None) are possible, so this needs to go outside
     if isinstance(node.item, Choice):
         _finalize_choice(node)
-        _check_choice_sanity(node.item)
 
 def _check_sym_sanity(sym):
     # Checks various symbol properties that are handiest to check after
