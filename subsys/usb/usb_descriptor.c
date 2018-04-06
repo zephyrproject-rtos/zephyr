@@ -22,27 +22,20 @@
 #include <logging/sys_log.h>
 
 /*
- * The USB Unicode bString is encoded in UTF16LE, which means it takes up
- * twice the amount of bytes than the same string encoded in ASCII7.
- *
- * without null character:
- *   utf16_length = (sizeof(initializer_string) - 1) * 2
- * or:
- *   utf16_length = sizeof(initializer_string) * 2 - 2
- * the last index of the bString is:
- *   idx_max = sizeof(initializer_string) * 2 - 2 - 1
- * and the last index of the initializer_string without null character is:
- *   asci_idx_max = sizeof(initializer_string) - 1 - 1
- *
- *
- * The length of the string descriptor is calculated from the
- * size of the two octets bLength and bDescriptorType plus the
- * length of the UTF16LE string:
- *   descr_length = 2 + utf16_length
- *   descr_length = 2 + sizeof(initializer-string) * 2 - 2
- *   descr_length = sizeof(initializer-string) * 2
- *
+ * The last index of the initializer_string without null character is:
+ *   ascii_idx_max = bLength / 2 - 2
+ * Use this macro to determine the last index of ASCII7 string.
  */
+#define USB_BSTRING_ASCII_IDX_MAX(n)	(n / 2 - 2)
+
+/*
+ * The last index of the bString is:
+ *   utf16le_idx_max = sizeof(initializer_string) * 2 - 2 - 1
+ *   utf16le_idx_max = bLength - 2 - 1
+ * Use this macro to determine the last index of UTF16LE string.
+ */
+#define USB_BSTRING_UTF16LE_IDX_MAX(n)	(n - 3)
+
 
 /* Structure representing the global USB description */
 struct dev_common_descriptor {
@@ -143,25 +136,28 @@ struct dev_common_descriptor {
 		struct usb_mfr_descriptor {
 			u8_t bLength;
 			u8_t bDescriptorType;
-			u8_t bString[MFR_DESC_LENGTH - 2];
+			u8_t bString[USB_BSTRING_LENGTH(
+					CONFIG_USB_DEVICE_MANUFACTURER)];
 		} __packed utf16le_mfr;
 
 		struct usb_product_descriptor {
 			u8_t bLength;
 			u8_t bDescriptorType;
-			u8_t bString[PRODUCT_DESC_LENGTH - 2];
+			u8_t bString[USB_BSTRING_LENGTH(
+					CONFIG_USB_DEVICE_PRODUCT)];
 		} __packed utf16le_product;
 
 		struct usb_sn_descriptor {
 			u8_t bLength;
 			u8_t bDescriptorType;
-			u8_t bString[SN_DESC_LENGTH - 2];
+			u8_t bString[USB_BSTRING_LENGTH(CONFIG_USB_DEVICE_SN)];
 		} __packed utf16le_sn;
 #ifdef CONFIG_USB_DEVICE_NETWORK_ECM
 		struct usb_cdc_ecm_mac_descriptor {
 			u8_t bLength;
 			u8_t bDescriptorType;
-			u8_t bString[ECM_MAC_DESC_LENGTH - 2];
+			u8_t bString[USB_BSTRING_LENGTH(
+					CONFIG_USB_DEVICE_NETWORK_ECM_MAC)];
 		} __packed utf16le_mac;
 #endif /* CONFIG_USB_DEVICE_NETWORK_ECM */
 	} __packed string_descr;
@@ -768,25 +764,29 @@ static struct dev_common_descriptor common_desc = {
 		},
 		/* Manufacturer String Descriptor */
 		.utf16le_mfr = {
-			.bLength = MFR_DESC_LENGTH,
+			.bLength = USB_STRING_DESCRIPTOR_LENGTH(
+					CONFIG_USB_DEVICE_MANUFACTURER),
 			.bDescriptorType = USB_STRING_DESC,
 			.bString = CONFIG_USB_DEVICE_MANUFACTURER,
 		},
 		/* Product String Descriptor */
 		.utf16le_product = {
-			.bLength = PRODUCT_DESC_LENGTH,
+			.bLength = USB_STRING_DESCRIPTOR_LENGTH(
+					CONFIG_USB_DEVICE_PRODUCT),
 			.bDescriptorType = USB_STRING_DESC,
 			.bString = CONFIG_USB_DEVICE_PRODUCT,
 		},
 		/* Serial Number String Descriptor */
 		.utf16le_sn = {
-			.bLength = SN_DESC_LENGTH,
+			.bLength = USB_STRING_DESCRIPTOR_LENGTH(
+					CONFIG_USB_DEVICE_SN),
 			.bDescriptorType = USB_STRING_DESC,
 			.bString = CONFIG_USB_DEVICE_SN,
 		},
 #ifdef CONFIG_USB_DEVICE_NETWORK_ECM
 		.utf16le_mac = {
-			.bLength = ECM_MAC_DESC_LENGTH,
+			.bLength = USB_STRING_DESCRIPTOR_LENGTH(
+					CONFIG_USB_DEVICE_NETWORK_ECM_MAC),
 			.bDescriptorType = USB_STRING_DESC,
 			.bString = CONFIG_USB_DEVICE_NETWORK_ECM_MAC
 		},
@@ -800,38 +800,42 @@ static struct dev_common_descriptor common_desc = {
 
 
 /*
- * Utility function: Inline conversion an ASCII-7 string of length asci_idx_max
- * into a UTF16-LE string of idx_max bytes.
+ * This function fixes bString by transforming the ASCII-7 string
+ * into a UTF16-LE during runtime.
  */
-void ascii7_to_utf16le(int idx_max, int asci_idx_max, u8_t *buf)
+static void ascii7_to_utf16le(void *descriptor)
 {
+	struct usb_string_descriptor *str_descr = descriptor;
+	int idx_max = USB_BSTRING_UTF16LE_IDX_MAX(str_descr->bLength);
+	int ascii_idx_max = USB_BSTRING_ASCII_IDX_MAX(str_descr->bLength);
+	u8_t *buf = (u8_t *)&str_descr->bString;
+
+	SYS_LOG_DBG("idx_max %d, ascii_idx_max %d, buf %x",
+		    idx_max, ascii_idx_max, (u32_t)buf);
+
 	for (int i = idx_max; i >= 0; i -= 2) {
 		SYS_LOG_DBG("char %c : %x, idx %d -> %d",
-			    buf[asci_idx_max],
-			    buf[asci_idx_max],
-			    asci_idx_max, i);
-		__ASSERT(buf[asci_idx_max] > 0x1F && buf[asci_idx_max] < 0x7F,
+			    buf[ascii_idx_max],
+			    buf[ascii_idx_max],
+			    ascii_idx_max, i);
+		__ASSERT(buf[ascii_idx_max] > 0x1F && buf[ascii_idx_max] < 0x7F,
 			 "Only printable ascii-7 characters are allowed in USB "
 			 "string descriptors");
 		buf[i] = 0;
-		buf[i - 1] = buf[asci_idx_max--];
+		buf[i - 1] = buf[ascii_idx_max--];
 	}
 }
 
 u8_t *usb_get_device_descriptor(void)
 {
-	ascii7_to_utf16le(MFR_UC_IDX_MAX, MFR_STRING_IDX_MAX,
-		(u8_t *)common_desc.string_descr.utf16le_mfr.bString);
+	ascii7_to_utf16le(&common_desc.string_descr.utf16le_mfr);
 
-	ascii7_to_utf16le(PRODUCT_UC_IDX_MAX, PRODUCT_STRING_IDX_MAX,
-		(u8_t *)common_desc.string_descr.utf16le_product.bString);
+	ascii7_to_utf16le(&common_desc.string_descr.utf16le_product);
 
-	ascii7_to_utf16le(SN_UC_IDX_MAX, SN_STRING_IDX_MAX,
-		(u8_t *)common_desc.string_descr.utf16le_sn.bString);
+	ascii7_to_utf16le(&common_desc.string_descr.utf16le_sn);
 
 #ifdef CONFIG_USB_DEVICE_NETWORK_ECM
-	ascii7_to_utf16le(ECM_MAC_UC_IDX_MAX, ECM_STRING_IDX_MAX,
-		(u8_t *)common_desc.string_descr.utf16le_mac.bString);
+	ascii7_to_utf16le(&common_desc.string_descr.utf16le_mac);
 #endif
 
 	return (u8_t *) &common_desc;
