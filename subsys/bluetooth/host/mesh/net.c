@@ -481,8 +481,7 @@ int bt_mesh_net_create(u16_t idx, u8_t flags, const u8_t key[16],
 	sub->net_idx = idx;
 
 	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
-		sub->node_id = BT_MESH_NODE_IDENTITY_RUNNING;
-		sub->node_id_start = k_uptime_get_32();
+		sub->node_id = BT_MESH_NODE_IDENTITY_STOPPED;
 	} else {
 		sub->node_id = BT_MESH_NODE_IDENTITY_NOT_SUPPORTED;
 	}
