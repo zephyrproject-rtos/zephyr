@@ -14,3 +14,5 @@ config SEGGER_SYSTEMVIEW
 	default n
 	depends on HAS_SEGGER_RTT
 	select RTT_CONSOLE
+	select THREAD_MONITOR
+	select TRACING

@@ -115,6 +115,11 @@ config FORCE_NO_ASSERT
 	  CFLAGS and not Kconfig.  Added solely to be able to work
 	  around compiler bugs for specific tests.
 
+config TRACING
+	bool "Enable Tracing"
+	help
+	  Enable tracing.
+
 config OBJECT_TRACING
 	bool
 	prompt "Kernel object tracing"
