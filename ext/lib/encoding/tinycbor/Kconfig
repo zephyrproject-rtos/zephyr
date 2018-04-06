@@ -61,19 +61,19 @@ config CBOR_PARSER_NO_STRICT_CHECKS
 	help
 	  This option enables the strict parser checks.
 
-config CBOR_NO_FLOATING_POINT
+config CBOR_FLOATING_POINT
 	bool
 	select NEWLIB_LIBC
-	prompt "No Floating point support"
-	default y
+	prompt "Floating point support"
+	default n
 	help
 	  This option enables floating point support.
 
-config CBOR_NO_HALF_FLOAT_TYPE
+config CBOR_HALF_FLOAT_TYPE
 	bool
 	select NEWLIB_LIBC
-	prompt "No Half float type support"
-	default y
+	prompt "Half float type support"
+	default n
 	help
 	  This option enables half float type support.
 

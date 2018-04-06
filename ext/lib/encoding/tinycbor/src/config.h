@@ -46,13 +46,13 @@
 #endif
 
 /** This option enables floating point support **/
-#ifdef CONFIG_CBOR_NO_FLOATING_POINT
-#define CBOR_NO_FLOATING_POINT CONFIG_CBOR_NO_FLOATING_POINT
+#ifndef CONFIG_CBOR_FLOATING_POINT
+#define CBOR_NO_FLOATING_POINT 1
 #endif
 
 /** This option enables half float type support **/
-#ifdef CONFIG_CBOR_NO_HALF_FLOAT_TYPE
-#define CBOR_NO_HALF_FLOAT_TYPE CONFIG_CBOR_NO_HALF_FLOAT_TYPE
+#ifndef CONFIG_CBOR_HALF_FLOAT_TYPE
+#define CBOR_NO_HALF_FLOAT_TYPE 1
 #endif
 
 /** This option enables open memstream support **/
