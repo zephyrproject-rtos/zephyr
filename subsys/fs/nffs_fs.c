@@ -31,6 +31,9 @@ static struct k_mutex nffs_lock;
  */
 static struct device *flash_dev;
 
+/* nffs flash area descriptors */
+static struct nffs_area_desc descs[CONFIG_NFFS_FILESYSTEM_MAX_AREAS + 1];
+
 K_MEM_SLAB_DEFINE(nffs_file_pool,		sizeof(struct nffs_file),
 		  CONFIG_FS_NFFS_NUM_FILES,		4);
 K_MEM_SLAB_DEFINE(nffs_dir_pool,		sizeof(struct nffs_dir),
@@ -516,14 +519,13 @@ static int nffs_rename(struct fs_mount_t *mountp, const char *from,
 
 static int nffs_mount(struct fs_mount_t *mountp)
 {
-	struct nffs_area_desc descs[CONFIG_NFFS_FILESYSTEM_MAX_AREAS + 1];
 	struct nffs_flash_desc *flash_desc =
 				(struct nffs_flash_desc *)mountp->fs_data;
 	int cnt;
 	int rc;
 
 	/* Set flash device */
-	flash_dev = mountp->storage_dev;
+	flash_dev = (struct device *)mountp->storage_dev;
 
 	/* Set flash descriptor fields */
 	flash_desc->id = 0;

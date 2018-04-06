@@ -58,7 +58,7 @@ struct fs_mount_t {
 	enum fs_type type;
 	const char *mnt_point;
 	void *fs_data;
-	struct device *storage_dev;
+	void *storage_dev;
 	/* fields filled by file system core */
 	size_t mountp_len;
 	const struct fs_file_system_t *fs;
