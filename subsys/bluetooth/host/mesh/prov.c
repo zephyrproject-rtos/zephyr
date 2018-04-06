@@ -1057,6 +1057,15 @@ static void prov_data(const u8_t *data)
 	link.expect = 0;
 
 	bt_mesh_provision(pdu, net_idx, flags, iv_index, 0, addr, dev_key);
+
+#if defined(CONFIG_BT_MESH_PB_GATT) && defined(CONFIG_BT_MESH_GATT_PROXY)
+	/* After PB-GATT provisioning we should start advertising
+	 * using Node Identity.
+	 */
+	if (link.conn) {
+		bt_mesh_proxy_identity_enable();
+	}
+#endif
 }
 
 static void prov_complete(const u8_t *data)
