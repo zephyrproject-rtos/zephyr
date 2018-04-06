@@ -41,7 +41,7 @@ extern "C" {
 #  include <assert.h>
 #endif
 #include <float.h>
-#ifndef CBOR_NO_FLOATING_TYPE
+#ifndef CBOR_NO_HALF_FLOAT_TYPE
 #include <math.h>
 #endif
 #include <stddef.h>
