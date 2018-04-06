@@ -566,14 +566,14 @@ static void vlan_disable_test(void)
 	eth_ctx = net_if_l2_data(eth_interfaces[0]);
 
 	iface = net_eth_get_vlan_iface(eth_interfaces[0], VLAN_TAG_1);
-	zassert_equal_ptr(iface, NULL,
+	zassert_equal_ptr(iface, eth_interfaces[0],
 			  "Invalid interface for tag %d (%p vs %p)\n",
-			  VLAN_TAG_1, iface, NULL);
+			  VLAN_TAG_1, iface, eth_interfaces[0]);
 
 	iface = net_eth_get_vlan_iface(eth_interfaces[0], VLAN_TAG_2);
-	zassert_equal_ptr(iface, NULL,
+	zassert_equal_ptr(iface, eth_interfaces[0],
 			  "Invalid interface for tag %d (%p vs %p)\n",
-			  VLAN_TAG_2, iface, NULL);
+			  VLAN_TAG_2, iface, eth_interfaces[0]);
 
 	ret = net_eth_is_vlan_enabled(eth_ctx, eth_interfaces[0]);
 	zassert_equal(ret, false, "VLAN enabled for interface 0\n");
