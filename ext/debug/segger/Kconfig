@@ -12,6 +12,9 @@ if HAS_SEGGER_RTT
 config SEGGER_SYSTEMVIEW
 	bool "Segger SystemView support"
 	select RTT_CONSOLE
+	select THREAD_MONITOR
+	select THREAD_STACK_INFO
+	select TRACING
 
 config SEGGER_RTT_MAX_NUM_UP_BUFFERS
 	int "Maximum number of up-buffers"

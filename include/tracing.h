@@ -25,6 +25,10 @@ void z_sys_trace_isr_exit_to_scheduler(void);
 void z_sys_trace_thread_switched_in(void);
 #endif
 
+#ifdef CONFIG_SEGGER_SYSTEMVIEW
+#include "tracing_sysview.h"
+#else
+
 /**
  * @brief Called before a thread has been selected to run
  */
@@ -118,4 +122,5 @@ void z_sys_trace_thread_switched_in(void);
 
 #define z_sys_trace_thread_switched_in()
 
+#endif
 #endif

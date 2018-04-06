@@ -13,7 +13,7 @@
 
 static ALWAYS_INLINE void riscv_idle(unsigned int key)
 {
-	sys_trace_idle();
+	z_sys_trace_idle();
 	/* unlock interrupts */
 	irq_unlock(key);
 

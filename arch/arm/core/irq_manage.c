@@ -179,7 +179,7 @@ void _arch_isr_direct_pm(void)
 
 void _arch_isr_direct_header(void)
 {
-	sys_trace_isr_enter();
+	z_sys_trace_isr_enter();
 }
 
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)

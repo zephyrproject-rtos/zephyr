@@ -62,7 +62,7 @@ void _arch_irq_direct_pm(void)
 void _arch_isr_direct_header(void)
 {
 	_int_latency_start();
-	sys_trace_isr_enter();
+	z_sys_trace_isr_enter();
 
 	/* We're not going to unlock IRQs, but we still need to increment this
 	 * so that _is_in_isr() works

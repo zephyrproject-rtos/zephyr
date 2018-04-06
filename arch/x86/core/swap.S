@@ -144,7 +144,7 @@ SECTION_FUNC(TEXT, __swap)
 #ifdef CONFIG_TRACING
 	/* Register the context switch */
 	push %edx
-	call	sys_trace_thread_switched_in
+	call	z_sys_trace_thread_switched_in
 	pop %edx
 #endif
 	movl	_kernel_offset_to_ready_q_cache(%edi), %eax

@@ -15,6 +15,11 @@ config DEBUG
 	  only disables optimization, more debugging variants can be selected
 	  from here to allow more debugging.
 
+config TRACING
+	bool "Enabling Tracing"
+	help
+	  Enable system tracing. This requires a backend such as SEGGER
+	  Systemview to be enabled as well.
 config ASAN
 	bool "Build with address sanitizer"
 	depends on ARCH_POSIX

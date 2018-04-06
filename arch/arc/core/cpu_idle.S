@@ -37,7 +37,7 @@ SECTION_FUNC(TEXT, k_cpu_idle)
 
 #ifdef CONFIG_TRACING
 	push_s blink
-	jl    sys_trace_idle
+	jl    z_sys_trace_idle
 	pop_s blink
 #endif
 
@@ -58,7 +58,7 @@ SECTION_FUNC(TEXT, k_cpu_atomic_idle)
 
 #ifdef CONFIG_TRACING
 	push_s blink
-	jl    sys_trace_idle
+	jl    z_sys_trace_idle
 	pop_s blink
 #endif
 

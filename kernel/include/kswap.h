@@ -32,10 +32,6 @@ extern void _check_stack_sentinel(void);
 void _smp_reacquire_global_lock(struct k_thread *thread);
 void _smp_release_global_lock(struct k_thread *thread);
 
-#ifdef CONFIG_TRACING
-extern void sys_trace_thread_switched_out(void);
-#endif
-
 /* context switching and scheduling-related routines */
 #ifdef CONFIG_USE_SWITCH
 

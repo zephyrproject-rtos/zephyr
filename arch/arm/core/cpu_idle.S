@@ -115,7 +115,7 @@ SECTION_FUNC(TEXT, _NanoIdleValClear)
 SECTION_FUNC(TEXT, k_cpu_idle)
 #ifdef CONFIG_TRACING
 	push {lr}
-	bl    sys_trace_idle
+	bl    z_sys_trace_idle
 	pop {r0}
 	mov lr, r0
 #endif
@@ -159,7 +159,7 @@ SECTION_FUNC(TEXT, k_cpu_idle)
 SECTION_FUNC(TEXT, k_cpu_atomic_idle)
 #ifdef CONFIG_TRACING
 	push {lr}
-	bl    sys_trace_idle
+	bl    z_sys_trace_idle
 	pop {r1}
 	mov lr, r1
 #endif

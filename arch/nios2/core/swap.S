@@ -13,7 +13,7 @@ GTEXT(__swap)
 GTEXT(_thread_entry_wrapper)
 
 /* imports */
-GTEXT(sys_trace_thread_switched_in)
+GTEXT(z_sys_trace_thread_switched_in)
 GTEXT(_k_neg_eagain)
 
 /* unsigned int __swap(unsigned int key)
@@ -85,7 +85,7 @@ SECTION_FUNC(exception.other, __swap)
 	stw   r4, _thread_offset_to_retval(r11)
 
 #if CONFIG_TRACING
-	call sys_trace_thread_switched_in
+	call z_sys_trace_thread_switched_in
 	/* restore caller-saved r10 */
 	movhi r10, %hi(_kernel)
 	ori   r10, r10, %lo(_kernel)
