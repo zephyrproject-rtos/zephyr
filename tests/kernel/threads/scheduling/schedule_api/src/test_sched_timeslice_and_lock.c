@@ -203,6 +203,7 @@ void test_lock_preemptible(void)
 	}
 	/* restore environment */
 	teardown_threads();
+	k_sched_unlock();
 }
 
 void test_unlock_preemptible(void)
