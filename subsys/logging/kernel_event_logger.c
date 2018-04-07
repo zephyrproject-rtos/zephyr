@@ -65,7 +65,7 @@ SYS_INIT(_sys_k_event_logger_init,
  * to point to an application-defined routine.
  *
  */
-sys_k_timer_func_t _sys_k_get_time = k_cycle_get_32;
+sys_k_timer_func_t _sys_k_get_time = _timer_cycle_get_32;
 #endif /* CONFIG_KERNEL_EVENT_LOGGER_CUSTOM_TIMESTAMP */
 
 void sys_k_event_logger_put_timed(u16_t event_id)
