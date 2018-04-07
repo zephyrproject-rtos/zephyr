@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2017, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_imx7d_m4.dtsi>
+
+/ {
+	model = "TORADEX Colibri IMX7D board";
+	compatible = "nxp,mcimx7d_m4";
+
+	aliases {
+		gpio_1= &gpio1;
+		uart_2 = &uart2;
+	};
+
+	chosen {
+#if defined(CONFIG_XIP)
+		zephyr,flash = &tcml_code;
+#endif
+		zephyr,sram = &tcmu_sys;
+		zephyr,console = &uart2;
+	};
+};
+
+&uart2 {
+	status = "ok";
+	current-speed = <115200>;
+	modem-mode = <1>;
+};

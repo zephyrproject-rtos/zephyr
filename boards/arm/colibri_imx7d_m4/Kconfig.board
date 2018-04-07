@@ -1,0 +1,11 @@
+# Kconfig - Colibri iMX7D M4 board
+#
+# Copyright (c) 2017, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BOARD_COLIBRI_IMX7D_M4
+	bool "Toradex Colibri iMX7 Dual"
+	depends on SOC_SERIES_IMX7_M4
+	select SOC_PART_NUMBER_MCIMX7D5EVM10SC

@@ -1,0 +1,20 @@
+# Kconfig - Colibri iMX7D M4 board
+#
+# Copyright (c) 2017, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_COLIBRI_IMX7D_M4
+
+config BOARD
+	default colibri_imx7d_m4
+
+if UART_IMX
+
+config UART_IMX_UART_2
+	def_bool y
+
+endif # UART_IMX
+
+endif # BOARD_COLIBRI_IMX7D_M4
