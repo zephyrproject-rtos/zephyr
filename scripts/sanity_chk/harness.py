@@ -54,7 +54,7 @@ class Test(Harness):
     RUN_FAILED = "PROJECT EXECUTION FAILED"
 
     def handle(self, line):
-        result = re.compile("(PASS|FAIL) - test_(.*).")
+        result = re.compile("(PASS|FAIL) - test_(.*)")
         match = result.match(line)
         if match:
             self.tests[match.group(2)] = match.group(1)
