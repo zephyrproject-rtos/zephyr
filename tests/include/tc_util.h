@@ -80,11 +80,11 @@
 #define _TC_END_RESULT(result, func)					\
 	do {								\
 		if ((result) == TC_PASS) {				\
-			TC_END(result, "%s - %s.\n", PASS, func);	\
+			TC_END(result, "%s - %s\n", PASS, func);	\
 		} else if ((result) == TC_FAIL) {			\
-			TC_END(result, "%s - %s.\n", FAIL, func);	\
+			TC_END(result, "%s - %s\n", FAIL, func);	\
 		} else {						\
-			TC_END(result, "%s - %s.\n", SKIP, func);	\
+			TC_END(result, "%s - %s\n", SKIP, func);	\
 		}							\
 		PRINT_LINE;						\
 	} while (0)
