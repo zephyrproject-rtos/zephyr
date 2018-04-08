@@ -342,7 +342,11 @@ class DeviceHandler(Handler):
         log_out_fp = open(self.handler_log, "wt")
 
         while ser.isOpen():
-            serial_line = ser.readline()
+            try:
+                serial_line = ser.readline()
+            except TypeError:
+                pass
+
             if serial_line:
                 sl = serial_line.decode('utf-8', 'ignore')
                 verbose("DEVICE: {0}".format(sl.rstrip()))
@@ -386,7 +390,10 @@ class DeviceHandler(Handler):
         t = threading.Thread(target=self.monitor_serial, args=(ser, harness))
         t.start()
 
-        subprocess.check_output(command, stderr=subprocess.PIPE)
+        try:
+            subprocess.check_output(command, stderr=subprocess.PIPE)
+        except subprocess.CalledProcessError:
+            pass
 
         t.join(self.timeout)
         if t.is_alive():
@@ -400,9 +407,8 @@ class DeviceHandler(Handler):
             for c in self.instance.test.cases:
                 if c not in harness.tests:
                     harness.tests[c] = "BLOCK"
-            self.instance.results = harness.tests
-        else:
-            self.instance.results = harness.tests
+
+        self.instance.results = harness.tests
 
         if harness.state:
             self.set_state(harness.state, {})
@@ -1666,6 +1672,7 @@ class TestSuite:
                     filename = 'testcase.yaml'
                 else:
                     continue
+
                 verbose("Found possible test case in " + dirpath)
                 dirnames[:] = []
                 yaml_path = os.path.join(dirpath, filename)
@@ -2155,26 +2162,27 @@ class TestSuite:
                     passes += 1
                 elif ti.results[k] == 'BLOCK':
                     errors += 1
+                elif ti.results[k] == 'SKIP':
+                    skips += 1
                 else:
                     fails += 1
-
 
         eleTestsuites = ET.Element('testsuites')
         eleTestsuite = ET.SubElement(eleTestsuites, 'testsuite',
                                      name=run, time="%d" % duration,
                                      tests="%d" % (errors + passes + fails),
                                      failures="%d" % fails,
-                                     errors="%d" % errors, skip="%d" %skips)
+                                     errors="%d" % errors, skipped="%d" %skips)
 
         handler_time = "0"
+
         # print out test results
         for identifier, ti in self.instances.items():
             for k in ti.results.keys():
-                tname = os.path.basename(ti.test.name)  + "." + k
 
                 eleTestcase = ET.SubElement(
                         eleTestsuite, 'testcase', classname="%s:%s" %(ti.platform.name, os.path.basename(ti.test.name)),
-                        name="%s" % (tname), time=handler_time)
+                        name="%s" % (k), time=handler_time)
                 if ti.results[k] in ['FAIL', 'BLOCK']:
                     el = None
 
@@ -2197,6 +2205,11 @@ class TestSuite:
                         with open(bl, "rb") as f:
                             log = f.read().decode("utf-8")
                             el.text = self.encode_for_xml(log)
+
+                elif ti.results[k] == 'SKIP':
+                    el = ET.SubElement(
+                        eleTestcase,
+                        'skipped')
 
         result = ET.tostring(eleTestsuites)
         f = open(report_file, 'wb')
