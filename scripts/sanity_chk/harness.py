@@ -10,9 +10,11 @@ class Harness:
         self.ordered = True
         self.repeat = 1
         self.tests = {}
+        self.id = None
 
     def configure(self, instance):
         config = instance.test.harness_config
+        self.id = instance.test.id
         if config:
             self.type = config.get('type', None)
             self.regex = config.get('regex', [] )
@@ -54,10 +56,11 @@ class Test(Harness):
     RUN_FAILED = "PROJECT EXECUTION FAILED"
 
     def handle(self, line):
-        result = re.compile("(PASS|FAIL) - test_(.*)")
+        result = re.compile("(PASS|FAIL|SKIP) - (test_)?(.*)")
         match = result.match(line)
         if match:
-            self.tests[match.group(2)] = match.group(1)
+            name = "{}.{}".format(self.id, match.group(3))
+            self.tests[name] = match.group(1)
 
         if self.RUN_PASSED in line:
             self.state = "passed"
