@@ -1821,7 +1821,6 @@ class TestSuite:
                                 tc.tc_filter)
                             continue
 
-                    instance.create_overlay()
                     instance_list.append(instance)
 
                 if not instance_list:
@@ -1843,6 +1842,10 @@ class TestSuite:
                         discards[instance] = "Not a default test platform"
                 else:
                     self.add_instances(instance_list)
+
+                for name, case in self.instances.items():
+                    case.create_overlay()
+
         self.discards = discards
         return discards
 
