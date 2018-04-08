@@ -31,9 +31,22 @@ extern "C" {
 				 NET_MGMT_LAYER(_NET_IF_LAYER) |	\
 				 NET_MGMT_LAYER_CODE(_NET_IF_CORE_CODE))
 
+/*
+ * These aren't really bitfields (command codes are just
+ * numeric values), but the net_mgmt core internally ORs them
+ * together to form event masks. The possibility of false
+ * positives within a layer when an incoming event is tested
+ * against this mask is eliminated if the values don't have
+ * overlapping bits.
+ *
+ * Even in cases where there are more events than separate
+ * bits in an event code, the number of conflicting pairs of
+ * events is still smaller if the bit overlap between command
+ * codes is minimized.
+ */
 enum net_event_if_cmd {
-	NET_EVENT_IF_CMD_DOWN = 1,
-	NET_EVENT_IF_CMD_UP,
+	NET_EVENT_IF_CMD_DOWN	= BIT(0),
+	NET_EVENT_IF_CMD_UP	= BIT(1),
 };
 
 #define NET_EVENT_IF_DOWN				\
@@ -51,22 +64,26 @@ enum net_event_if_cmd {
 				 NET_MGMT_LAYER_CODE(_NET_IPV6_CORE_CODE))
 
 enum net_event_ipv6_cmd {
-	NET_EVENT_IPV6_CMD_ADDR_ADD	= 1,
-	NET_EVENT_IPV6_CMD_ADDR_DEL,
-	NET_EVENT_IPV6_CMD_MADDR_ADD,
-	NET_EVENT_IPV6_CMD_MADDR_DEL,
-	NET_EVENT_IPV6_CMD_PREFIX_ADD,
-	NET_EVENT_IPV6_CMD_PREFIX_DEL,
-	NET_EVENT_IPV6_CMD_MCAST_JOIN,
-	NET_EVENT_IPV6_CMD_MCAST_LEAVE,
-	NET_EVENT_IPV6_CMD_ROUTER_ADD,
-	NET_EVENT_IPV6_CMD_ROUTER_DEL,
-	NET_EVENT_IPV6_CMD_ROUTE_ADD,
-	NET_EVENT_IPV6_CMD_ROUTE_DEL,
-	NET_EVENT_IPV6_CMD_DAD_SUCCEED,
-	NET_EVENT_IPV6_CMD_DAD_FAILED,
-	NET_EVENT_IPV6_CMD_NBR_ADD,
-	NET_EVENT_IPV6_CMD_NBR_DEL,
+	/*
+	 * Minimize bit overlap between these values. See comment
+	 * above enum net_event_if_cmd for details.
+	 */
+	NET_EVENT_IPV6_CMD_ADDR_ADD	= BIT(0),
+	NET_EVENT_IPV6_CMD_ADDR_DEL	= BIT(1),
+	NET_EVENT_IPV6_CMD_MADDR_ADD	= BIT(2),
+	NET_EVENT_IPV6_CMD_MADDR_DEL	= BIT(3),
+	NET_EVENT_IPV6_CMD_PREFIX_ADD	= BIT(4),
+	NET_EVENT_IPV6_CMD_PREFIX_DEL	= BIT(5),
+	NET_EVENT_IPV6_CMD_MCAST_JOIN	= BIT(6),
+	NET_EVENT_IPV6_CMD_MCAST_LEAVE	= BIT(7),
+	NET_EVENT_IPV6_CMD_ROUTER_ADD	= BIT(8),
+	NET_EVENT_IPV6_CMD_ROUTER_DEL	= BIT(9),
+	NET_EVENT_IPV6_CMD_ROUTE_ADD	= BIT(10),
+	NET_EVENT_IPV6_CMD_ROUTE_DEL	= BIT(11),
+	NET_EVENT_IPV6_CMD_DAD_SUCCEED	= BIT(12),
+	NET_EVENT_IPV6_CMD_DAD_FAILED	= BIT(13),
+	NET_EVENT_IPV6_CMD_NBR_ADD	= BIT(14),
+	NET_EVENT_IPV6_CMD_NBR_DEL	= BIT(15),
 };
 
 #define NET_EVENT_IPV6_ADDR_ADD					\
@@ -126,9 +143,13 @@ enum net_event_ipv6_cmd {
 				 NET_MGMT_LAYER_CODE(_NET_IPV4_CORE_CODE))
 
 enum net_event_ipv4_cmd {
-	NET_EVENT_IPV4_CMD_ADDR_ADD	= 1,
-	NET_EVENT_IPV4_CMD_ADDR_DEL,
-	NET_EVENT_IPV4_CMD_ROUTER_ADD,
+	/*
+	 * Minimize bit overlap between these values. See comment
+	 * above enum net_event_if_cmd for details.
+	 */
+	NET_EVENT_IPV4_CMD_ADDR_ADD	= BIT(0),
+	NET_EVENT_IPV4_CMD_ADDR_DEL	= BIT(1),
+	NET_EVENT_IPV4_CMD_ROUTER_ADD	= BIT(2),
 };
 
 #define NET_EVENT_IPV4_ADDR_ADD					\
