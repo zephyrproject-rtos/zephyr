@@ -1,8 +1,11 @@
 sample:
   name: CDC ACM USB
 tests:
-  test_x86:
+  usb.cdc-acm:
     depends_on: usb_device
-    platform_whitelist: arduino_101 nrf52840_pca10056
     tags: usb
     harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Wait for DTR"

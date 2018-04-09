@@ -5,3 +5,8 @@ tests:
   boards.out_of_tree:
     tags: out_of_tree
     platform_whitelist: nrf52840_pca10056
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Hello World! (.*)"
