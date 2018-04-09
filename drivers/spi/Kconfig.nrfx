@@ -29,7 +29,7 @@ config SPI_0_NRF_SPI
 
 config SPI_0_NRF_SPIM
 	bool "nRF SPIM 0"
-	depends on SOC_SERIES_NRF52X
+	depends on SOC_NRF52840
 	select NRFX_SPIM
 	help
 	  Enable nRF SPI Master with EasyDMA on port 0
@@ -94,7 +94,7 @@ config SPI_1_NRF_SPI
 
 config SPI_1_NRF_SPIM
 	bool "nRF SPIM 1"
-	depends on SOC_SERIES_NRF52X
+	depends on SOC_NRF52840
 	select NRFX_SPIM
 	help
 	  Enable nRF SPI Master with EasyDMA on port 1
@@ -158,7 +158,7 @@ config SPI_2_NRF_SPI
 
 config SPI_2_NRF_SPIM
 	bool "nRF SPIM 2"
-	depends on SOC_SERIES_NRF52X
+	depends on SOC_NRF52840
 	select NRFX_SPIM
 	help
 	  Enable nRF SPI Master with EasyDMA on port 2
@@ -206,5 +206,74 @@ config SPI_2_NRF_ORC
 endif # SPI_2_NRF_SPI || SPI_2_NRF_SPIM || SPI_2_NRF_SPIS
 
 endif # SPI_2
+
+if SPI_3
+
+config SPI_3_NRF_SPIM
+	bool
+	depends on SOC_NRF52840
+	select NRFX_SPIM
+	default y
+
+if SPI_3_NRF_SPIM
+
+config SPI_3_NRF_SCK_PIN
+	int "SCK pin number"
+	range 0 47 if SOC_NRF52840_QIAA
+	range 0 31
+	help
+	  GPIO pin number to use for SCK
+
+config SPI_3_NRF_MOSI_PIN
+	int "MOSI pin number"
+	range 0 47 if SOC_NRF52840_QIAA
+	range 0 31
+	help
+	  GPIO pin number to use for MOSI
+
+config SPI_3_NRF_MISO_PIN
+	int "MISO pin number"
+	range 0 47 if SOC_NRF52840_QIAA
+	range 0 31
+	help
+	  GPIO pin number to use for MISO
+
+config SPI_3_NRF_ORC
+	hex "Over-read Character"
+	range 0x00 0xff
+	default 0xff
+	help
+	  Over-read character. Character clocked out after an over-read
+	  of the transmit buffer.
+
+config SPI_3_NRF_RX_DELAY
+	int "MISO sampling delay"
+	range 0 7
+	default 0
+	help
+	  Number of 64 MHz clock cycles (15.625 ns) delay from the sampling
+	  edge of SCK (leading or trailing, depending on the CPHA setting used)
+	  until the input serial data on MISO is actually sampled.
+
+endif # SPI_3_NRF_SPIM
+
+endif # SPI_3
+
+if NRFX_SPIM
+
+config SPI_NRFX_RAM_BUFFER_SIZE
+	int "Size of RAM buffer"
+	default 0
+	help
+	  SPIM peripherals cannot transmit data directly from flash. Therefore,
+	  a buffer in RAM needs to be provided for each instance of SPI driver
+	  using SPIM peripheral, so that the driver can copy there a chunk of
+	  data from flash and transmit it.
+	  The size is specified in bytes. A size of 0 means that this feature
+	  should be disabled, and the application must then take care of not
+	  supplying buffers located in flash to the driver, otherwise such
+	  transfers will fail.
+
+endif # NRFX_SPIM
 
 endif # SPI_NRFX

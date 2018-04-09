@@ -1746,8 +1746,8 @@
 // <q> NRFX_SPIM_EXTENDED_ENABLED  - Enable extended SPIM features
 
 
-#ifndef NRFX_SPIM_EXTENDED_ENABLED
-#define NRFX_SPIM_EXTENDED_ENABLED 0
+#ifdef CONFIG_SPI_3_NRF_SPIM
+#define NRFX_SPIM_EXTENDED_ENABLED 1
 #endif
 
 // <o> NRFX_SPIM_MISO_PULL_CFG  - MISO pin pull configuration.
