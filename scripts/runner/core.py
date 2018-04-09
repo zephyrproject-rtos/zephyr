@@ -182,6 +182,10 @@ class RunnerCaps:
         self.commands = commands
         self.flash_addr = bool(flash_addr)
 
+    def __str__(self):
+        return 'RunnerCaps(commands={}, flash_addr={})'.format(
+            self.commands, self.flash_addr)
+
 
 _YN_CHOICES = ['Y', 'y', 'N', 'n', 'yes', 'no', 'YES', 'NO']
 
@@ -434,7 +438,8 @@ class ZephyrBinaryRunner(abc.ABC):
         try:
             subprocess.check_call(cmd)
         except subprocess.CalledProcessError:
-            print('Error running {}'.format(quote_sh_list(cmd)))
+            if self.debug:
+                print('Error running {}'.format(quote_sh_list(cmd)))
             raise
 
     def check_output(self, cmd):
@@ -453,7 +458,8 @@ class ZephyrBinaryRunner(abc.ABC):
         try:
             return subprocess.check_output(cmd)
         except subprocess.CalledProcessError:
-            print('Error running {}'.format(quote_sh_list(cmd)))
+            if self.debug:
+                print('Error running {}'.format(quote_sh_list(cmd)))
             raise
 
     def popen_ignore_int(self, cmd):

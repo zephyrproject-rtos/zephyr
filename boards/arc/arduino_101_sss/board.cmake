@@ -7,8 +7,7 @@ endif()
 set(BOARD_DEBUG_RUNNER openocd)
 
 board_runner_args(dfu-util "--pid=8087:0aba" "--alt=sensor_core")
-set(PRE_LOAD targets 1)
-board_runner_args(openocd "--cmd-pre-load=\"${PRE_LOAD}\"" "--gdb-port=3334")
+board_runner_args(openocd --cmd-pre-load "targets 1" "--gdb-port=3334")
 
 include(${ZEPHYR_BASE}/boards/common/dfu-util.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/openocd.board.cmake)
