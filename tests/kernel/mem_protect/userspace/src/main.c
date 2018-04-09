@@ -21,10 +21,24 @@
 #define PIPE_LEN 1
 #define BYTES_TO_READ_WRITE 1
 
+#if defined(CONFIG_ARM)
+#define MEM_REGION_ALLOC (32)
+#elif defined(CONFIG_X86)
+#define MEM_REGION_ALLOC (4096)
+#else
+#error "Test suite not compatible for the given architecture"
+#endif
+
+#define MEM_DOMAIN_ALIGNMENT __aligned(MEM_REGION_ALLOC)
+
+#define MEM_DOMAIN_STACK_SIZE CONFIG_MAIN_STACK_SIZE
+#define SEM_TIMEOUT 2
+
 K_SEM_DEFINE(uthread_start_sem, 0, 1);
 K_SEM_DEFINE(uthread_end_sem, 0, 1);
 K_SEM_DEFINE(test_revoke_sem, 0, 1);
 K_SEM_DEFINE(expect_fault_sem, 0, 1);
+K_SEM_DEFINE(sync_sem, 0, 1);
 
 static volatile bool give_uthread_end_sem;
 static volatile bool expect_fault;
@@ -296,7 +310,6 @@ static void write_priv_stack(void)
 	zassert_unreachable("Write to privileged stack did not fault\n");
 }
 
-
 static struct k_sem sem;
 
 static void pass_user_object(void)
@@ -355,6 +368,21 @@ static void uthread_body(void)
 	give_uthread_end_sem = true;
 	/* Wait until notified by the fault handler or by the creator. */
 	k_sem_take(&uthread_end_sem, K_FOREVER);
+}
+
+static void start_essential_thread(void)
+{
+	expect_fault = true;
+	expected_reason = REASON_KERNEL_OOPS;
+	BARRIER();
+
+	/* Try to start essential thread */
+	k_thread_create(&uthread_thread, uthread_stack, STACKSIZE,
+			(k_thread_entry_t)uthread_body, NULL, NULL, NULL,
+			-1, K_USER | K_ESSENTIAL, K_NO_WAIT);
+
+	zassert_unreachable(" Creating a essential user thread"
+			" from user mode did not fault\n");
 }
 
 static void read_other_stack(void)
@@ -530,6 +558,168 @@ extern u8_t *_k_priv_stack_find(void *obj);
 extern k_thread_stack_t ztest_thread_stack[];
 #endif
 
+static void high_prio_uthread(void)
+{
+	u8_t new_prio;
+
+	expect_fault = true;
+	expected_reason = REASON_KERNEL_OOPS;
+	BARRIER();
+	/* Get the priority of current thread and get higher
+	 * priority value
+	 */
+	new_prio = k_thread_priority_get(k_current_get()) - 2;
+
+	/* Create a user thread with priority greater than current
+	 * thread
+	 */
+	k_thread_create(&uthread_thread, uthread_stack, STACKSIZE,
+			(k_thread_entry_t)thread_body, NULL, NULL, NULL,
+			new_prio, K_USER | K_INHERIT_PERMS,
+			K_NO_WAIT);
+
+	/* This part of the code should not be reached */
+	zassert_unreachable("Create higher priority user thread greater"
+			" than current thread did not fault\n");
+}
+
+struct k_mem_domain app0_domain;
+u8_t MEM_DOMAIN_ALIGNMENT app0_buf0[MEM_REGION_ALLOC];
+u8_t MEM_DOMAIN_ALIGNMENT app0_buf1[MEM_REGION_ALLOC];
+
+K_MEM_PARTITION_DEFINE(app0_part0, app0_buf0, sizeof(app0_buf0),
+		K_MEM_PARTITION_P_RW_U_RW);
+
+K_MEM_PARTITION_DEFINE(app0_part1, app0_buf1, sizeof(app0_buf1),
+		K_MEM_PARTITION_P_RW_U_RW);
+
+struct k_mem_partition *app0_parts[] = {
+	&app0_part0,
+	&app0_part1
+};
+
+struct k_mem_domain app1_domain;
+u8_t MEM_DOMAIN_ALIGNMENT app1_buf0[MEM_REGION_ALLOC];
+u8_t MEM_DOMAIN_ALIGNMENT app1_buf1[MEM_REGION_ALLOC];
+
+K_MEM_PARTITION_DEFINE(app1_part0, app1_buf0, sizeof(app1_buf0),
+		K_MEM_PARTITION_P_RW_U_RW);
+
+K_MEM_PARTITION_DEFINE(app1_part1, app1_buf1, sizeof(app1_buf1),
+		K_MEM_PARTITION_P_RW_U_RW);
+
+struct k_mem_partition *app1_parts[] = {
+	&app1_part0,
+	&app1_part1
+};
+
+__kernel struct k_thread utid, ktid;
+K_THREAD_STACK_DEFINE(ustack, MEM_DOMAIN_STACK_SIZE);
+K_THREAD_STACK_DEFINE(kstack, MEM_DOMAIN_STACK_SIZE);
+
+/***************************************************************************/
+static void kthread_entry(void *p1, void *p2, void *p3)
+{
+	/* Add current thread to memory domain app0_domain*/
+	k_mem_domain_add_thread(&app0_domain, k_current_get());
+
+	/* Add current thread to another memory domain app1_domain
+	 * This should cause a assertion failure, provided CONFIG_ASSERT=y
+	 * Cannot add a thread to two memory domains
+	 */
+	k_mem_domain_add_thread(&app1_domain, k_current_get());
+
+		/* These lines of code should not be reached */
+	zassert_unreachable("Adding a thread to multiple memory domains"
+			" did not fault\n");
+}
+
+/* Verify that a thread can belong to a single memory domain
+ * at any point of time
+ * Try to add a thread to two memory domains at a time
+ */
+static void thread_in_multiple_domains(void)
+{
+	k_mem_domain_init(&app0_domain, ARRAY_SIZE(app0_parts), app0_parts);
+	k_mem_domain_init(&app1_domain, ARRAY_SIZE(app1_parts), app1_parts);
+
+	k_tid_t thread = k_thread_create(&kthread_thread, kthread_stack,
+			STACKSIZE, (k_thread_entry_t)kthread_entry, NULL, NULL,
+			NULL, K_PRIO_PREEMPT(1), 0, K_NO_WAIT);
+
+	k_sem_take(&sync_sem, SEM_TIMEOUT);
+
+	zassert_true(thread->mem_domain_info.mem_domain == &app0_domain &&
+			thread->mem_domain_info.mem_domain != &app1_domain,
+			"Adding a thread to 2 memory domains didnot fault");
+}
+
+/**************************************************************************/
+/* Test to validate that Threads in the same memory domain have
+ * the same access permissions to the memory partitions
+ * belonging to the memory domain
+ */
+struct k_mem_domain app_domain;
+u8_t MEM_DOMAIN_ALIGNMENT app_buf[MEM_REGION_ALLOC];
+K_MEM_PARTITION_DEFINE(app_part, app_buf, sizeof(app_buf),
+		K_MEM_PARTITION_P_RO_U_RO);
+struct k_mem_partition *app_parts[] = {
+	    &app_part
+};
+
+static void kentry(void)
+{
+	printk("Read the partition app_buf[0]=%d\n", app_buf[0]);
+
+	/* Write to the partition, this should generate fault */
+	app_buf[0] = 10;
+
+	/* These lines of code should not be reached */
+	zassert_unreachable("Both the threads should have same "
+			"permissions to the domain which they belong to\n");
+}
+
+static void check_access_perms(void)
+{
+	/* The following should cause a fault */
+	expect_fault = true;
+	expected_reason = REASON_HW_EXCEPTION;
+	BARRIER();
+
+	/* Initialize the memory domain */
+	k_mem_domain_init(&app_domain, ARRAY_SIZE(app_parts),
+			app_parts);
+
+	k_mem_domain_add_thread(&app_domain, k_current_get());
+
+	/* Create a user thread */
+	k_thread_create(&utid, ustack, MEM_DOMAIN_STACK_SIZE,
+			(k_thread_entry_t)kentry, NULL, NULL, NULL,
+			10, K_USER, K_NO_WAIT);
+
+	k_sem_take(&sync_sem, SEM_TIMEOUT);
+}
+
+/***********************************************************************/
+/* Validate k_mem_domain_destroy API */
+
+static void destroy_mem_domain(void)
+{
+	k_mem_domain_init(&app0_domain, ARRAY_SIZE(app0_parts), app0_parts);
+
+	k_mem_domain_add_thread(&app0_domain, k_current_get());
+
+	if (_current->mem_domain_info.mem_domain == &app0_domain) {
+		k_mem_domain_destroy(&app0_domain);
+		zassert_true(_current->mem_domain_info.mem_domain !=
+				&app0_domain, "The thread has reference to"
+				" memory domain which is already destroyed");
+	} else {
+		zassert_unreachable("k_mem_domain_add_thread() failed\n");
+	}
+}
+
+/***********************************************************************/
 void test_main(void)
 {
 #if defined(CONFIG_ARM)
@@ -556,6 +746,7 @@ void test_main(void)
 			 ztest_user_unit_test(pass_user_object),
 			 ztest_user_unit_test(pass_noperms_object),
 			 ztest_user_unit_test(start_kernel_thread),
+			 ztest_user_unit_test(start_essential_thread),
 			 ztest_user_unit_test(read_other_stack),
 			 ztest_user_unit_test(write_other_stack),
 			 ztest_user_unit_test(revoke_noperms_object),
@@ -563,7 +754,12 @@ void test_main(void)
 			 ztest_user_unit_test(revoke_other_thread),
 			 ztest_unit_test(user_mode_enter),
 			 ztest_user_unit_test(write_kobject_user_pipe),
-			 ztest_user_unit_test(read_kobject_user_pipe)
-		);
+			 ztest_user_unit_test(read_kobject_user_pipe),
+			 ztest_user_unit_test(high_prio_uthread),
+			 ztest_unit_test(check_access_perms),
+			 ztest_unit_test(thread_in_multiple_domains),
+			 ztest_unit_test(destroy_mem_domain)
+			);
+
 	ztest_run_test_suite(test_userspace);
 }
