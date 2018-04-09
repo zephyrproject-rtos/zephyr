@@ -91,8 +91,8 @@ static int configure(struct device *dev,
 		return 0;
 	}
 
-	if (spi_cfg->operation & SPI_OP_MODE_SLAVE) {
-		SYS_LOG_ERR("Slave mode is not supported for %s",
+	if (SPI_OP_MODE_GET(spi_cfg->operation) != SPI_OP_MODE_MASTER) {
+		SYS_LOG_ERR("Slave mode is not supported on %s",
 			    dev->config->name);
 		return -EINVAL;
 	}
@@ -139,16 +139,16 @@ static void transfer_next_chunk(struct device *dev)
 	size_t chunk_len = spi_context_longest_current_buf(ctx);
 
 	if (chunk_len > 0) {
-		const nrfx_spi_xfer_desc_t xfer_desc = {
-			.p_tx_buffer = ctx->tx_buf,
-			.tx_length = spi_context_tx_buf_on(ctx) ? chunk_len : 0,
-			.p_rx_buffer = ctx->rx_buf,
-			.rx_length = spi_context_rx_buf_on(ctx) ? chunk_len : 0,
-		};
-		dev_data->chunk_len = chunk_len;
-		nrfx_err_t result = nrfx_spi_xfer(&get_dev_config(dev)->spi,
-						  &xfer_desc, 0);
+		nrfx_spim_xfer_desc_t xfer;
+		nrfx_err_t result;
 
+		dev_data->chunk_len = chunk_len;
+
+		xfer.p_tx_buffer = ctx->tx_buf;
+		xfer.tx_length   = spi_context_tx_buf_on(ctx) ? chunk_len : 0;
+		xfer.p_rx_buffer = ctx->rx_buf;
+		xfer.rx_length   = spi_context_rx_buf_on(ctx) ? chunk_len : 0;
+		result = nrfx_spi_xfer(&get_dev_config(dev)->spi, &xfer, 0);
 		if (result == NRFX_SUCCESS) {
 			return;
 		}
