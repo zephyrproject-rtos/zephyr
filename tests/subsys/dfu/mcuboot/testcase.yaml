@@ -1,4 +1,5 @@
 tests:
-  test:
+  usb.device.dfu:
+    depends_on: usb_device
     platform_whitelist: nrf52840_pca10056
     tags: dfu_mcuboot

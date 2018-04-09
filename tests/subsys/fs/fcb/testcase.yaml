@@ -1,4 +1,4 @@
 tests:
-  test:
+  filesystem.fcb:
     platform_whitelist: nrf52840_pca10056 nrf52_pca10040 nrf51_pca10028
     tags: flash_circural_buffer

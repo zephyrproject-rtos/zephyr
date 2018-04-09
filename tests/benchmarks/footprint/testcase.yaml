@@ -1,21 +1,21 @@
 tests:
-  footprint-float:
+  benchmark.footprint.float:
     arch_whitelist: x86 arm
     build_only: true
     extra_args: TEST=float
     filter: CONFIG_FLOAT
     tags: footprint
-  footprint-max:
+  benchmark.footprint.max:
     arch_whitelist: x86 arm
     build_only: true
     extra_args: TEST=max
     min_ram: 8
     tags: footprint
-  footprint-min:
+  benchmark.footprint.min:
     build_only: true
     extra_args: TEST=min
     tags: footprint
-  footprint-reg:
+  benchmark.footprint.regular:
     arch_whitelist: x86 arm
     build_only: true
     extra_args: TEST=reg

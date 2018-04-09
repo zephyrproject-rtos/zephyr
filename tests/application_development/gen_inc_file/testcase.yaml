@@ -1,3 +1,3 @@
 tests:
-  test:
+  buildsystem.include_file:
     tags: gen_inc_file

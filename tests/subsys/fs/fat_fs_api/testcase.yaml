@@ -1,4 +1,4 @@
 tests:
-  test:
+  filesystem.fat:
     platform_whitelist: arduino_101
-    tags: fs
+    tags: filesystem
