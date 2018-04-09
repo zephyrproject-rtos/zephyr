@@ -270,24 +270,12 @@ static int init_spi(struct device *dev, const nrfx_spi_config_t *config)
 	return 0;
 }
 
-static void spi_isr(void *irq_handler)
-{
-	((nrfx_irq_handler_t)irq_handler)();
-}
-
-/* In Nordic SoCs the IRQ number assigned to a peripheral is equal to the ID
- * of the block of 0x1000 bytes in the peripheral address space assigned to
- * this peripheral. See the chapter "Peripheral interface" (sections "Peripheral
- * ID" and "Interrupts") in the product specification of a given SoC.
- */
-#define NRF_SPI_IRQ_NUMBER(idx)  (uint8_t)((uint32_t)NRF_SPI##idx >> 12u)
-
 #define SPI_NRFX_SPI_DEVICE(idx)					\
 	static int spi_##idx##_init(struct device *dev)			\
 	{								\
-		IRQ_CONNECT(NRF_SPI_IRQ_NUMBER(idx),			\
+		IRQ_CONNECT(NRFX_IRQ_NUMBER_GET(NRF_SPI##idx),		\
 			    CONFIG_SPI_##idx##_IRQ_PRI,			\
-			    spi_isr, nrfx_spi_##idx##_irq_handler, 0);	\
+			    nrfx_isr, nrfx_spi_##idx##_irq_handler, 0);	\
 		const nrfx_spi_config_t config = {			\
 			.sck_pin   = CONFIG_SPI_##idx##_NRF_SCK_PIN,	\
 			.mosi_pin  = CONFIG_SPI_##idx##_NRF_MOSI_PIN,	\
