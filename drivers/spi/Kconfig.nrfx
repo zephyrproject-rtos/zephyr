@@ -37,9 +37,12 @@ config SPI_0_NRF_SPIM
 config SPI_0_NRF_SPIS
 	bool "nRF SPIS 0"
 	depends on SOC_SERIES_NRF52X
+	select SPI_SLAVE
 	select NRFX_SPIS
 	help
-	  Enable nRF SPI Slave with EasyDMA on port 0
+	  Enable nRF SPI Slave with EasyDMA on port 0.
+	  Due to hardware limitations the implementation supports only simple
+	  buffers (consisting of one part) located in RAM.
 
 endchoice
 
@@ -76,6 +79,25 @@ config SPI_0_NRF_ORC
 
 endif # SPI_0_NRF_SPI || SPI_0_NRF_SPIM || SPI_0_NRF_SPIS
 
+if SPI_0_NRF_SPIS
+
+config SPI_0_NRF_CSN_PIN
+	int "CSN pin number"
+	range 0 47 if SOC_NRF52840_QIAA
+	range 0 31
+	help
+	  GPIO pin number to use for Chip Select.
+
+config SPI_0_NRF_DEF
+	hex "Default Character"
+	range 0x00 0xff
+	default 0xff
+	help
+	  Default character. Character clocked out when the slave was not
+	  provided with buffers and is ignoring the transaction.
+
+endif # SPI_0_NRF_SPIS
+
 endif # SPI_0 && !I2C_0
 
 # Nordic TWIx1 and SPIx1 instances can not be used at the same time
@@ -102,9 +124,12 @@ config SPI_1_NRF_SPIM
 config SPI_1_NRF_SPIS
 	bool "nRF SPIS 1"
 	depends on SOC_SERIES_NRF52X || SOC_SERIES_NRF51X
+	select SPI_SLAVE
 	select NRFX_SPIS
 	help
-	  Enable nRF SPI Slave with EasyDMA on port 1
+	  Enable nRF SPI Slave with EasyDMA on port 1.
+	  Due to hardware limitations the implementation supports only simple
+	  buffers (consisting of one part) located in RAM.
 
 endchoice
 
@@ -141,6 +166,25 @@ config SPI_1_NRF_ORC
 
 endif # SPI_1_NRF_SPI || SPI_1_NRF_SPIM || SPI_1_NRF_SPIS
 
+if SPI_1_NRF_SPIS
+
+config SPI_1_NRF_CSN_PIN
+	int "CSN pin number"
+	range 0 47 if SOC_NRF52840_QIAA
+	range 0 31
+	help
+	  GPIO pin number to use for Chip Select.
+
+config SPI_1_NRF_DEF
+	hex "Default Character"
+	range 0x00 0xff
+	default 0xff
+	help
+	  Default character. Character clocked out when the slave was not
+	  provided with buffers and is ignoring the transaction.
+
+endif # SPI_1_NRF_SPIS
+
 endif # SPI_1 && !I2C_1
 
 if SPI_2
@@ -166,9 +210,12 @@ config SPI_2_NRF_SPIM
 config SPI_2_NRF_SPIS
 	bool "nRF SPIS 2"
 	depends on SOC_SERIES_NRF52X
+	select SPI_SLAVE
 	select NRFX_SPIS
 	help
-	  Enable nRF SPI Slave with EasyDMA on port 2
+	  Enable nRF SPI Slave with EasyDMA on port 2.
+	  Due to hardware limitations the implementation supports only simple
+	  buffers (consisting of one part) located in RAM.
 
 endchoice
 
@@ -204,6 +251,25 @@ config SPI_2_NRF_ORC
 	  of the transmit buffer.
 
 endif # SPI_2_NRF_SPI || SPI_2_NRF_SPIM || SPI_2_NRF_SPIS
+
+if SPI_2_NRF_SPIS
+
+config SPI_2_NRF_CSN_PIN
+	int "CSN pin number"
+	range 0 47 if SOC_NRF52840_QIAA
+	range 0 31
+	help
+	  GPIO pin number to use for Chip Select.
+
+config SPI_2_NRF_DEF
+	hex "Default Character"
+	range 0x00 0xff
+	default 0xff
+	help
+	  Default character. Character clocked out when the slave was not
+	  provided with buffers and is ignoring the transaction.
+
+endif # SPI_2_NRF_SPIS
 
 endif # SPI_2
 
