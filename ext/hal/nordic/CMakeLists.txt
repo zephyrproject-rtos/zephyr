@@ -11,6 +11,8 @@ if(CONFIG_HAS_NRFX)
   zephyr_include_directories(nrfx/mdk)
   zephyr_include_directories(.)
 
+  zephyr_sources_ifdef(CONFIG_HAS_NRFX   nrfx_glue.c)
+
   zephyr_sources_ifdef(CONFIG_NRFX_PRS   nrfx/drivers/prs/nrfx_prs.c)
 
   zephyr_sources_ifdef(CONFIG_NRFX_ADC   nrfx/drivers/src/nrfx_adc.c)

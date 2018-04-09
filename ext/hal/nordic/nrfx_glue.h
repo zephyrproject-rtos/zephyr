@@ -176,6 +176,37 @@ extern "C" {
  */
 #define NRFX_TIMERS_USED        0
 
+//------------------------------------------------------------------------------
+
+/**
+ * @brief Macro for getting the interrupt number assigned to a specific
+ *        peripheral.
+ *
+ * In Nordic SoCs the IRQ number assigned to a peripheral is equal to the ID
+ * of this peripheral, and there is a direct relationship between this ID and
+ * the peripheral base address, i.e. the address of a fixed block of 0x1000
+ * bytes of address space assigned to this peripheral.
+ * See the chapter "Peripheral interface" (sections "Peripheral ID" and
+ * "Interrupts") in the product specification of a given SoC.
+ *
+ * @param[in] base_addr  Peripheral base address.
+ *
+ * @return Interrupt number associated with the specified peripheral.
+ */
+/* TODO - this macro should become a part of <nrfx_common.h> */
+#define NRFX_IRQ_NUMBER_GET(base_addr)  (uint8_t)((uint32_t)(base_addr) >> 12)
+
+/**
+ * @brief Function helping to integrate nrfx IRQ handlers with IRQ_CONNECT.
+ *
+ * This function simply calls the nrfx IRQ handler supplied as the parameter.
+ * It is intended to be used in the following way:
+ * IRQ_CONNECT(IRQ_NUM, IRQ_PRI, nrfx_isr, nrfx_..._irq_handler, 0);
+ *
+ * @param[in] irq_handler  Pointer to the nrfx IRQ handler to be called.
+ */
+void nrfx_isr(void *irq_handler);
+
 /** @} */
 
 #ifdef __cplusplus
