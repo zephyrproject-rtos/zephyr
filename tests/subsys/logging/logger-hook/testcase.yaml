@@ -1,5 +1,5 @@
 tests:
-  test:
+  system.logging:
     tags: samples
     harness: console
     harness_config:

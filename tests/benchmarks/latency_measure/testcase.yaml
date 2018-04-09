@@ -1,5 +1,5 @@
 tests:
-  test:
+  benchmark.latency:
     arch_whitelist: x86 arm posix
     filter: CONFIG_PRINTK
     tags: benchmark

@@ -1,4 +1,4 @@
 tests:
-  test:
+  benchmark.timing:
     arch_whitelist: x86 arm
     tags: benchmark

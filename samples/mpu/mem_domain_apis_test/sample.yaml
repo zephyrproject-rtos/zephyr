@@ -1,7 +1,7 @@
 sample:
   name: Memory Domain APIs Test
 tests:
-  test:
+  kernel.memory_protection.memory_domains:
     filter: CONFIG_ARCH_HAS_USERSPACE
     tags: samples
     harness: console

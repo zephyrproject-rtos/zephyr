@@ -1,5 +1,5 @@
 tests:
-  test:
+  benchmark.application:
     arch_whitelist: x86 arm
     min_ram: 32
     tags: benchmark
