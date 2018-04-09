@@ -1,7 +1,8 @@
 sample:
   name: USB HID mouse sample
 tests:
-  test_hid:
-    platform_exclude: arduino_101 96b_carbon tinytile
+  usb.hid-mouse:
     depends_on: usb_device
+    platform_exclude: arduino_101 96b_carbon tinytile
+    harness: button
     tags: usb
