@@ -21,7 +21,8 @@
  * GCC 4.6 and higher have _Static_assert built in, and its output is
  * easier to understand than the common BUILD_ASSERT macros.
  */
-#elif (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6))
+#elif (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 6)) && \
+	(__STDC_VERSION__) > 199901L
 #define BUILD_ASSERT(EXPR) _Static_assert(EXPR, "")
 #define BUILD_ASSERT_MSG(EXPR, MSG) _Static_assert(EXPR, MSG)
 #endif
