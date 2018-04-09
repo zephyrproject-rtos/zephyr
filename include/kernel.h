@@ -3301,11 +3301,11 @@ struct k_pipe {
  *                         or zero if no ring buffer is used.
  * @param pipe_align Alignment of the pipe's ring buffer (power of 2).
  */
-#define K_PIPE_DEFINE(name, pipe_buffer_size, pipe_align)     \
-	static unsigned char __noinit __aligned(pipe_align)   \
-		_k_pipe_buf_##name[pipe_buffer_size];         \
-	struct k_pipe name                                    \
-		__in_section(_k_pipe, static, name) =    \
+#define K_PIPE_DEFINE(name, pipe_buffer_size, pipe_align)		\
+	static unsigned char __kernel_noinit __aligned(pipe_align)	\
+		_k_pipe_buf_##name[pipe_buffer_size];			\
+	struct k_pipe name						\
+		__in_section(_k_pipe, static, name) =			\
 		_K_PIPE_INITIALIZER(name, _k_pipe_buf_##name, pipe_buffer_size)
 
 /**
@@ -3321,8 +3321,7 @@ struct k_pipe {
  *
  * @return N/A
  */
-__syscall void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer,
-			   size_t size);
+void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size);
 
 /**
  * @brief Write data to a pipe.

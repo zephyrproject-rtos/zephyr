@@ -17,9 +17,10 @@
  */
 
 #include <ztest.h>
+#include "test_pipe.h"
 
 #define STACK_SIZE 1024
-#define PIPE_LEN 16
+
 #define BYTES_TO_WRITE 4
 #define BYTES_TO_READ BYTES_TO_WRITE
 K_MEM_POOL_DEFINE(mpool, BYTES_TO_WRITE, PIPE_LEN, 1, BYTES_TO_WRITE);
@@ -120,7 +121,6 @@ void test_pipe_thread2thread(void)
 {
 	/**TESTPOINT: test k_pipe_init pipe*/
 
-	k_pipe_init(&pipe, data, PIPE_LEN);
 	tpipe_thread_thread(&pipe);
 
 	/**TESTPOINT: test K_PIPE_DEFINE pipe*/
