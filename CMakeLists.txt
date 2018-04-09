@@ -99,6 +99,7 @@ zephyr_compile_options(
   -Wformat
   -Wformat-security
   -Wno-format-zero-length
+  -Wno-unused-local-typedefs
   -imacros ${AUTOCONF_H}
   -ffreestanding
   -Wno-main
