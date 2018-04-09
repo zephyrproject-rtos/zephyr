@@ -219,10 +219,12 @@ config BOOT_DELAY
 
 config BUILD_TIMESTAMP
 	bool
-	default y
+	default n
 	prompt "Build Timestamp"
 	help
-	  Build timestamp and add it to the boot banner.
+	  Record a timestamp from the build and add it to the boot banner.
+	  Note that this will make the build unreproducible: building
+	  Zephyr twice will result in different binaries.
 
 config INT_LATENCY_BENCHMARK
 	bool
