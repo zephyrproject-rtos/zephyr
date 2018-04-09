@@ -28,7 +28,7 @@ requirement for a UNIX tool that is not available on Windows, we strongly
 recommend you use the Windows Command Prompt for performance and minimal
 dependency set.
 
-Using Windows Command Prompt (Recommended, fastest)
+Option 1: Windows Command Prompt
 ===================================================
 
 The easiest way to install the dependencies natively on Microsoft Windows is
@@ -168,11 +168,12 @@ packages from their respective websites.
 This should check that all the tools and toolchain are set up correctly for
 your own Zephyr development.
 
-Using MSYS2
-===========
+Option 2: MSYS2
+===============
 
-The Zephyr development environment on Windows relies on MSYS2, a modern UNIX
-environment for Windows. Follow the steps below to set it up:
+Alternatively, one can set up the Zephyr development environment with
+MSYS2, a modern UNIX environment for Windows. Follow the steps below
+to set it up:
 
 #. Download and install :program:`MSYS2`. Download the appropriate (32 or
    64-bit) MSYS2 installer from the `MSYS2 website`_ and execute it. On the
@@ -339,8 +340,8 @@ To build for the ARM-based Nordic nRF52 Development Kit:
 This should check that all the tools and toolchain are set up correctly for
 your own Zephyr development.
 
-Using Windows 10 WSL (Windows Subsystem for Linux)
-==================================================
+Option 3: Windows 10 WSL (Windows Subsystem for Linux)
+======================================================
 
 If you are running a recent version of Windows 10 you can make use of the
 built-in functionality to natively run Ubuntu binaries directly on a standard
