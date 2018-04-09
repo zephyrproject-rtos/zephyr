@@ -120,7 +120,10 @@
 
 #ifndef BUILD_ASSERT
 /* compile-time assertion that makes the build fail */
-#define BUILD_ASSERT(EXPR) typedef char __build_assert_failure[(EXPR) ? 1 : -1]
+#define BUILD_ASSERT(EXPR) \
+	enum _CONCAT(__build_assert_enum, __COUNTER__) { \
+		_CONCAT(__build_assert, __COUNTER__) = 1 / !!(EXPR) \
+	}
 #endif
 #ifndef BUILD_ASSERT_MSG
 /* build assertion with message -- common implementation swallows message. */
