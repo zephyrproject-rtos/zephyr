@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define SYS_LOG_LEVEL 3
+#define SYS_LOG_LEVEL SYS_LOG_LEVEL_DEBUG
 #define SYS_LOG_DOMAIN "wpanusb"
 #include <logging/sys_log.h>
 
