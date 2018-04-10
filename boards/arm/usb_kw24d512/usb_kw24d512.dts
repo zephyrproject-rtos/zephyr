@@ -7,18 +7,18 @@
 	compatible = "nxp,usb-kw24d512", "nxp,kw24d512", "nxp,kw2xd";
 
 	aliases {
-		uart_0 = &uart0;
-		pinmux_a = &pinmux_a;
-		pinmux_b = &pinmux_b;
-		pinmux_c = &pinmux_c;
-		pinmux_d = &pinmux_d;
-		pinmux_e = &pinmux_e;
-		gpio_a = &gpioa;
-		gpio_b = &gpiob;
-		gpio_c = &gpioc;
-		gpio_d = &gpiod;
-		gpio_e = &gpioe;
-		i2c_0 = &i2c0;
+		uart-0 = &uart0;
+		pinmux-a = &pinmux_a;
+		pinmux-b = &pinmux_b;
+		pinmux-c = &pinmux_c;
+		pinmux-d = &pinmux_d;
+		pinmux-e = &pinmux_e;
+		gpio-a = &gpioa;
+		gpio-b = &gpiob;
+		gpio-c = &gpioc;
+		gpio-d = &gpiod;
+		gpio-e = &gpioe;
+		i2c-0 = &i2c0;
 	};
 
 	chosen {

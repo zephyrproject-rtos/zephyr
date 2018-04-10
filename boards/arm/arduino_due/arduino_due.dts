@@ -7,9 +7,9 @@
 	compatible = "arduino,due", "atmel,sam3x8e", "atmel,sam3x";
 
 	aliases {
-		uart_0 = &uart0;
-		i2c_0 = &i2c0;
-		i2c_1 = &i2c1;
+		uart-0 = &uart0;
+		i2c-0 = &i2c0;
+		i2c-1 = &i2c1;
 	};
 
 	chosen {

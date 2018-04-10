@@ -9,11 +9,11 @@
 	compatible = "ti,cc2650";
 
 	aliases {
-		gpio_a = &gpioa;
-		pinmux_a = &pinmux_a;
+		gpio-a = &gpioa;
+		pinmux-a = &pinmux_a;
 		prcm0 = &prcm0;
 		trng0 = &trng0;
-		uart_0 = &uart0;
+		uart-0 = &uart0;
 	};
 
 	chosen {

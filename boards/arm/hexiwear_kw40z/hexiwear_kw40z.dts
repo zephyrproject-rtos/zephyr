@@ -7,16 +7,16 @@
 	compatible = "nxp,kw40z", "nxp,mkw40z4";
 
 	aliases {
-		adc_0 = &adc0;
-		lpuart_0 = &lpuart0;
-		pinmux_a = &pinmux_a;
-		pinmux_b = &pinmux_b;
-		pinmux_c = &pinmux_c;
-		gpio_a = &gpioa;
-		gpio_b = &gpiob;
-		gpio_c = &gpioc;
-		i2c_0 = &i2c0;
-		i2c_1 = &i2c1;
+		adc-0 = &adc0;
+		lpuart-0 = &lpuart0;
+		pinmux-a = &pinmux_a;
+		pinmux-b = &pinmux_b;
+		pinmux-c = &pinmux_c;
+		gpio-a = &gpioa;
+		gpio-b = &gpiob;
+		gpio-c = &gpioc;
+		i2c-0 = &i2c0;
+		i2c-1 = &i2c1;
 	};
 
 	chosen {

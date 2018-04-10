@@ -8,7 +8,7 @@
 						"ti,msp432p4xx";
 
 	aliases {
-		uart_0 = &uart0;
+		uart-0 = &uart0;
 	};
 
 	chosen {

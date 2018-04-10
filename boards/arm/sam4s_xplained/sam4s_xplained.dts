@@ -12,8 +12,8 @@
 	compatible = "atmel,sam4s_xplained", "atmel,sam4s16c", "atmel,sam4s";
 
 	aliases {
-		i2c_0 = &i2c0;
-		i2c_1 = &i2c1;
+		i2c-0 = &i2c0;
+		i2c-1 = &i2c1;
 	};
 
 	chosen {

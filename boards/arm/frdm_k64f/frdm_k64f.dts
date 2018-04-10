@@ -7,27 +7,27 @@
 	compatible = "nxp,mk64f12", "nxp,k64f", "nxp,k6x";
 
 	aliases {
-		adc_0 = &adc0;
-		adc_1 = &adc1;
-		pwm_0 = &pwm0;
-		pwm_1 = &pwm1;
-		pwm_2 = &pwm2;
-		pwm_3 = &pwm3;
-		uart_0 = &uart0;
-		uart_3 = &uart3;
-		pinmux_a = &pinmux_a;
-		pinmux_b = &pinmux_b;
-		pinmux_c = &pinmux_c;
-		pinmux_d = &pinmux_d;
-		pinmux_e = &pinmux_e;
-		gpio_a = &gpioa;
-		gpio_b = &gpiob;
-		gpio_c = &gpioc;
-		gpio_d = &gpiod;
-		gpio_e = &gpioe;
-		i2c_0 = &i2c0;
-		i2c_1 = &i2c1;
-		i2c_2 = &i2c2;
+		adc-0 = &adc0;
+		adc-1 = &adc1;
+		pwm-0 = &pwm0;
+		pwm-1 = &pwm1;
+		pwm-2 = &pwm2;
+		pwm-3 = &pwm3;
+		uart-0 = &uart0;
+		uart-3 = &uart3;
+		pinmux-a = &pinmux_a;
+		pinmux-b = &pinmux_b;
+		pinmux-c = &pinmux_c;
+		pinmux-d = &pinmux_d;
+		pinmux-e = &pinmux_e;
+		gpio-a = &gpioa;
+		gpio-b = &gpiob;
+		gpio-c = &gpioc;
+		gpio-d = &gpiod;
+		gpio-e = &gpioe;
+		i2c-0 = &i2c0;
+		i2c-1 = &i2c1;
+		i2c-2 = &i2c2;
 	};
 
 	chosen {

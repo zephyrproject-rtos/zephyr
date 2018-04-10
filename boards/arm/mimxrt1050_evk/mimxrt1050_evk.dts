@@ -13,12 +13,12 @@
 	compatible = "nxp,mimxrt1052";
 
 	aliases {
-		gpio_1= &gpio1;
-		gpio_2= &gpio2;
-		gpio_3= &gpio3;
-		gpio_4= &gpio4;
-		gpio_5= &gpio5;
-		uart_1 = &uart1;
+		gpio-1= &gpio1;
+		gpio-2= &gpio2;
+		gpio-3= &gpio3;
+		gpio-4= &gpio4;
+		gpio-5= &gpio5;
+		uart-1 = &uart1;
 	};
 
 	chosen {

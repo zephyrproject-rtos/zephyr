@@ -7,9 +7,9 @@
 	compatible = "ti,cc3220sf-launchxl", "ti,cc3220sf", "ti,cc32xx";
 
 	aliases {
-		uart_0 = &uart0;
-		uart_1 = &uart1;
-		i2c_0 = &i2c0;
+		uart-0 = &uart0;
+		uart-1 = &uart1;
+		i2c-0 = &i2c0;
 	};
 
 	chosen {
