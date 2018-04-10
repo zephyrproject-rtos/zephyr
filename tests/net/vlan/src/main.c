@@ -324,7 +324,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	ud->total_if_count++;
 }
 
-static void vlan_setup(void)
+static void test_vlan_setup(void)
 {
 	struct user_data ud = { 0 };
 
@@ -348,7 +348,7 @@ static void vlan_setup(void)
 			  &NET_L2_GET_NAME(ETHERNET));
 }
 
-static void address_setup(void)
+static void test_address_setup(void)
 {
 	struct net_if_addr *ifaddr;
 	struct net_if *iface1, *iface2, *iface3;
@@ -411,7 +411,7 @@ static void address_setup(void)
 	test_failed = false;
 }
 
-static void vlan_tci_test(void)
+static void test_vlan_tci(void)
 {
 	struct net_pkt *pkt;
 	u16_t tci;
@@ -507,7 +507,7 @@ static void vlan_tci_test(void)
 
 /* Enable two VLAN tags and verity that proper interfaces are enabled.
  */
-static void vlan_enable_test(void)
+static void test_vlan_enable(void)
 {
 	struct ethernet_context *eth_ctx;
 	struct net_if *iface;
@@ -552,7 +552,7 @@ static void vlan_enable_test(void)
 		      VLAN_TAG_1);
 }
 
-static void vlan_disable_test(void)
+static void test_vlan_disable(void)
 {
 	struct ethernet_context *eth_ctx;
 	struct net_if *iface;
@@ -597,7 +597,7 @@ static void vlan_disable_test(void)
 		      VLAN_TAG_1);
 }
 
-static void vlan_enable_all_test(void)
+static void test_vlan_enable_all(void)
 {
 	struct ethernet_context *eth_ctx;
 	struct net_if *iface;
@@ -636,7 +636,7 @@ static void vlan_enable_all_test(void)
 	zassert_equal(ret, -EINVAL, "Wrong iface type (%d)\n", ret);
 }
 
-static void vlan_disable_all_test(void)
+static void test_vlan_disable_all(void)
 {
 	struct ethernet_context *eth_ctx;
 	struct net_if *iface;
@@ -703,7 +703,7 @@ static bool add_neighbor(struct net_if *iface, struct in6_addr *addr)
 	return true;
 }
 
-static void vlan_send_data_test(void)
+static void test_vlan_send_data(void)
 {
 	struct ethernet_context *eth_ctx; /* This is L2 context */
 	struct eth_context *ctx; /* This is interface context */
@@ -721,7 +721,7 @@ static void vlan_send_data_test(void)
 	};
 
 	/* Setup the interfaces */
-	vlan_enable_test();
+	test_vlan_enable();
 
 	ret = net_context_get(AF_INET6, SOCK_DGRAM, IPPROTO_UDP,
 			      &udp_v6_ctx);
@@ -783,14 +783,14 @@ static void vlan_send_data_test(void)
 void test_main(void)
 {
 	ztest_test_suite(net_vlan_test,
-			 ztest_unit_test(vlan_setup),
-			 ztest_unit_test(address_setup),
-			 ztest_unit_test(vlan_tci_test),
-			 ztest_unit_test(vlan_enable_test),
-			 ztest_unit_test(vlan_disable_test),
-			 ztest_unit_test(vlan_enable_all_test),
-			 ztest_unit_test(vlan_disable_all_test),
-			 ztest_unit_test(vlan_send_data_test)
+			 ztest_unit_test(test_vlan_setup),
+			 ztest_unit_test(test_address_setup),
+			 ztest_unit_test(test_vlan_tci),
+			 ztest_unit_test(test_vlan_enable),
+			 ztest_unit_test(test_vlan_disable),
+			 ztest_unit_test(test_vlan_enable_all),
+			 ztest_unit_test(test_vlan_disable_all),
+			 ztest_unit_test(test_vlan_send_data)
 			 );
 
 	ztest_run_test_suite(net_vlan_test);
