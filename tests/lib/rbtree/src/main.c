@@ -149,6 +149,8 @@ void check_tree(int size)
 	/* Make sure all tree bits properly reflect the set of nodes we found */
 	ni = 0;
 	for (i = 0; i < MAX_NODES; i++) {
+		CHECK(get_node_mask(i) == rb_contains(&tree, &nodes[i]));
+
 		if (get_node_mask(i)) {
 			CHECK(node_index(walked_nodes[ni++]) == i);
 		}
