@@ -11,7 +11,7 @@
 #define CHECK(n) \
 	zassert_true(!!(n), "Tree check failed: [ " #n " ] @%d", __LINE__)
 
-#define MAX_NODES 2048
+#define MAX_NODES 256
 
 static struct rbtree tree;
 
