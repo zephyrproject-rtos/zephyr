@@ -1,5 +1,6 @@
 tests:
   crypto.ecc_dsa:
+    min_flash: 45
     min_ram: 16
     tags: crypto ecc dsa
     timeout: 180
