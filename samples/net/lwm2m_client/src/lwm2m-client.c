@@ -36,13 +36,17 @@
 
 #define ENDPOINT_LEN		32
 
-#if defined(LED0_GPIO_PORT)
-#define LED_GPIO_PORT	LED0_GPIO_PORT
-#define LED_GPIO_PIN	LED0_GPIO_PIN
+#ifndef LED0_GPIO_CONTROLLER
+#ifdef LED0_GPIO_PORT
+#define LED0_GPIO_CONTROLLER 	LED0_GPIO_PORT
 #else
-#define LED_GPIO_PORT	"(fail)"
-#define LED_GPIO_PIN	0
+#define LED0_GPIO_CONTROLLER "(fail)"
+#define LED0_GPIO_PIN 0
 #endif
+#endif
+
+#define LED_GPIO_PORT LED0_GPIO_CONTROLLER
+#define LED_GPIO_PIN LED0_GPIO_PIN
 
 static int pwrsrc_bat;
 static int pwrsrc_usb;

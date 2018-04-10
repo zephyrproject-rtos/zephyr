@@ -19,7 +19,7 @@ have defined the LED0\_* variables in :file:`board.h`.
 
 The :file:`board.h` must define the following variables:
 
-- LED0_GPIO_PORT
+- LED0_GPIO_NAME (or LED0_GPIO_CONTROLLER)
 - LED0_GPIO_PIN
 
 
