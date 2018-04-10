@@ -84,6 +84,17 @@ static inline struct rbnode *rb_get_max(struct rbtree *tree)
 }
 
 /**
+ * @brief Returns true if the given node is part of the tree
+ *
+ * Note that this does not internally dereference the node pointer
+ * (though the tree's lessthan callback might!), it just tests it for
+ * equality with items in the tree.  So it's feasible to use this to
+ * implement a "set" construct by simply testing the pointer value
+ * itself.
+ */
+int rb_contains(struct rbtree *tree, struct rbnode *node);
+
+/**
  * @brief Walk/enumerate a rbtree
  *
  * Very simple recursive enumeration implementation.  A rather more
