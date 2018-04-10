@@ -10,12 +10,4 @@
 
 #include <soc.h>
 
-/* LD2 green LED */
-#define LD2_GPIO_PORT	"GPIOB"
-#define LD2_GPIO_PIN	13
-
-/* Create aliases to make the basic samples work */
-#define LED0_GPIO_PORT	LD2_GPIO_PORT
-#define LED0_GPIO_PIN	LD2_GPIO_PIN
-
 #endif /* __INC_BOARD_H */
