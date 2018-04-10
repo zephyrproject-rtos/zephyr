@@ -59,8 +59,11 @@ static struct in_addr in4addr_my = { { { 192, 0, 2, 1 } } };
 static struct in_addr in4addr_dst = { { { 192, 168, 1, 1 } } };
 static struct in_addr in4addr_my2 = { { { 192, 0, 42, 1 } } };
 
-/* Keep track of all ethernet interfaces */
-static struct net_if *eth_interfaces[2];
+/* Keep track of all ethernet interfaces. For native_posix board, we need
+ * to increase the count as it has one extra network interface defined in
+ * eth_native_posix driver.
+ */
+static struct net_if *eth_interfaces[2 + IS_ENABLED(CONFIG_ETH_NATIVE_POSIX)];
 
 static struct net_context *udp_v6_ctx_1;
 static struct net_context *udp_v6_ctx_2;

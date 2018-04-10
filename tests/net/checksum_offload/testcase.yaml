@@ -3,5 +3,3 @@ tests:
     min_ram: 16
     tags: net checksum_offload
     depends_on: netif
-    # FIXME
-    platform_exclude: native_posix
