@@ -1,0 +1,36 @@
+# Kconfig - Inventek WiFi driver options
+
+# Copyright (c) 2017 STMicroelectronics
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig WIFI_ISM43362_M3G_L44
+	bool
+	prompt "Use Inventek ism43362_m3G_l44 wifi component"
+	default n
+	select HAS_INVENTEK_WIFI
+	help
+	  To be used if Inventek ism43362_m3G_l44 wifi component is on the board
+
+if WIFI_ISM43362_M3G_L44
+
+config HAS_INVENTEK_WIFI
+	bool
+
+config WIFI_ISM43362_M3G_L44_SPI_DEV_NAME
+	string
+	prompt "SPI used for wifi"
+	default "SPI_3"
+	help
+	  The device name of the SPI device to which the Inventek wifi is connected.
+
+config WIFI_ISM43362_M3G_L44_SPI_CLK_FREQ
+	int
+	prompt "SPI frequency to be used"
+	default 2000000
+	help
+	  SPI frequency to be used.
+
+endif # WIFI_ISM43362_M3G_L44
+
+

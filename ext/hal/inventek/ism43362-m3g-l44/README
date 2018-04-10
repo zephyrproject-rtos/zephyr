@@ -1,0 +1,44 @@
+INVENTEK ISM43362-M3G-L44
+#########################
+
+Origin:
+   Wifi example from ST Microelectronics (L4 cube FW, B-L475E-IOT01 example)
+   http://www.st.com/content/st_com/en/products/embedded-software/mcus-embedded-software/stm32-embedded-software/stm32cube-embedded-software/stm32cubel4.html
+
+Status:
+   version STM32Cube_FW_L4_V1.10.0STM32Cube_FW_L4_V1.10.0
+
+Purpose:
+   library to use the Inventek Ism43362-m3g-l44 wifi component
+
+Description:
+   This library written by STMicroelectronics is dedicated to Inventek Ism43362-m3g-l44 wifi component.
+
+   This library can be called from the wifi driver or directly from a sample application.
+   The adaptation to Zephyr platform (spi and gpio) is made in es_wifi_io.c file.
+
+   In order to use this library, you have to :
+      * define CONFIG_WIFI_ISM43362_M3G_L44, CONFIG_WIFI_SPI_DEV_NAME and CONFIG_WIFI_SPI_CLK_FREQ
+      * include wifi.h
+
+Dependencies:
+   This package depends on Zephyr SPI and GPIO implementations and is linked statically.
+   This library will be used by a standard Zephyr driver or by applications.
+
+URL:
+   http://www.st.com/content/st_com/en/products/embedded-software/mcus-embedded-software/stm32-embedded-software/stm32cube-embedded-software/stm32cubel4.html
+
+commit:
+   version STM32Cube_FW_L4_V1.10.0STM32Cube_FW_L4_V1.10.0
+
+Maintained-by:
+   External
+
+License:
+   BSD-3-Clause
+
+License Link:
+   https://my.st.com/content/my_st_com/en/products/embedded-software/mcus-embedded-software/stm32-embedded-software/stm32cube-embedded-software/stm32cubel4.license%3d1510907975013.product%3dSTM32CubeL4.html
+
+
+

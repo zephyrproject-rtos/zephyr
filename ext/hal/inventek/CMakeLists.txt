@@ -1,0 +1,1 @@
+add_subdirectory_ifdef(CONFIG_HAS_INVENTEK_WIFI ism43362-m3g-l44)
