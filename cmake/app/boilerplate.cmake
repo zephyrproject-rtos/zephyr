@@ -236,10 +236,13 @@ DTC_OVERLAY_FILE=\"dts1.overlay dts2.overlay\"")
 set(CMAKE_C_COMPILER_FORCED   1)
 set(CMAKE_CXX_COMPILER_FORCED 1)
 
+include(${ZEPHYR_BASE}/cmake/GetGitRevisionDescription.cmake)
 include(${ZEPHYR_BASE}/cmake/version.cmake)
 include(${ZEPHYR_BASE}/cmake/host-tools.cmake)
 include(${ZEPHYR_BASE}/cmake/kconfig.cmake)
 include(${ZEPHYR_BASE}/cmake/toolchain.cmake)
+
+git_describe(BUILD_VERSION)
 
 set(SOC_NAME ${CONFIG_SOC})
 set(SOC_SERIES ${CONFIG_SOC_SERIES})

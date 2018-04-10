@@ -62,6 +62,12 @@ zephyr_compile_definitions(
 )
 endif()
 
+if(BUILD_VERSION)
+  zephyr_compile_definitions(
+    BUILD_VERSION=${BUILD_VERSION}
+  )
+endif()
+
 # We need to set an optimization level.
 # Default to -Os
 # unless CONFIG_NO_OPTIMIZATIONS is set, then it is -O0
