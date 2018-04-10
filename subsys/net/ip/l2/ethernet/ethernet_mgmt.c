@@ -30,8 +30,8 @@ static int ethernet_set_config(u32_t mgmt_request,
 	struct ethernet_req_params *params = (struct ethernet_req_params *)data;
 	struct device *dev = net_if_get_device(iface);
 	const struct ethernet_api *api = dev->driver_api;
+	struct ethernet_config config = { 0 };
 	enum ethernet_config_type type;
-	struct ethernet_config config;
 
 	if (!api->set_config) {
 		return -ENOTSUP;

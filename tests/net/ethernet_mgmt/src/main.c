@@ -200,7 +200,7 @@ static void test_change_to_same_auto_neg(void)
 static void test_change_link(void)
 {
 	struct net_if *iface = net_if_get_default();
-	struct ethernet_req_params params;
+	struct ethernet_req_params params = { 0 };
 	int ret;
 
 	params.l.link_100bt = true;
@@ -214,7 +214,7 @@ static void test_change_link(void)
 static void test_change_same_link(void)
 {
 	struct net_if *iface = net_if_get_default();
-	struct ethernet_req_params params;
+	struct ethernet_req_params params = { 0 };
 	int ret;
 
 	params.l.link_100bt = true;
@@ -228,7 +228,7 @@ static void test_change_same_link(void)
 static void test_change_unsupported_link(void)
 {
 	struct net_if *iface = net_if_get_default();
-	struct ethernet_req_params params;
+	struct ethernet_req_params params = { 0 };
 	int ret;
 
 	params.l.link_1000bt = true;
