@@ -94,10 +94,10 @@ static const u8_t dfu_runtime_usb_description[] = {
 	0x00,                           /* SubClass - Interface specific */
 	0x00,                           /* Protocol - Interface specific */
 	MAX_PACKET_SIZE0,               /* EP0 Max Packet Size */
-	LOW_BYTE(DFU_VENDOR_ID),
-	HIGH_BYTE(DFU_VENDOR_ID),       /* Vendor Id */
-	LOW_BYTE(DFU_PRODUCT_ID),
-	HIGH_BYTE(DFU_PRODUCT_ID),      /* Product Id */
+	LOW_BYTE(CONFIG_USB_DEVICE_VID),
+	HIGH_BYTE(CONFIG_USB_DEVICE_VID),/* Vendor Id */
+	LOW_BYTE(CONFIG_USB_DEVICE_PID),
+	HIGH_BYTE(CONFIG_USB_DEVICE_PID),/* Product Id */
 	LOW_BYTE(BCDDEVICE_RELNUM),
 	HIGH_BYTE(BCDDEVICE_RELNUM),    /* Device Release Number */
 	/* Index of Manufacturer String Descriptor */
@@ -179,10 +179,10 @@ static const u8_t dfu_mode_usb_description[] = {
 	0x00,                           /* SubClass - Interface specific */
 	0x00,                           /* Protocol - Interface specific */
 	MAX_PACKET_SIZE0,               /* EP0 Max Packet Size */
-	LOW_BYTE(DFU_VENDOR_ID),
-	HIGH_BYTE(DFU_VENDOR_ID),       /* Vendor Id */
-	LOW_BYTE(DFU_PRODUCT_ID),
-	HIGH_BYTE(DFU_PRODUCT_ID),      /* Product Id */
+	LOW_BYTE(CONFIG_USB_DEVICE_VID),
+	HIGH_BYTE(CONFIG_USB_DEVICE_VID),/* Vendor Id */
+	LOW_BYTE(CONFIG_USB_DEVICE_PID),
+	HIGH_BYTE(CONFIG_USB_DEVICE_PID),/* Product Id */
 	LOW_BYTE(BCDDEVICE_RELNUM),
 	HIGH_BYTE(BCDDEVICE_RELNUM),    /* Device Release Number */
 	/* Index of Manufacturer String Descriptor */
