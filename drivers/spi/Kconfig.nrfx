@@ -13,7 +13,7 @@ menuconfig SPI_NRFX
 
 if SPI_NRFX
 
-# Nordic TWIx0 and SPIx0 instances can not be used at the same time
+# Nordic TWIx0 and SPIx0 instances can not be used at the same time.
 if SPI_0 && !I2C_0
 
 choice
@@ -25,14 +25,14 @@ config SPI_0_NRF_SPI
 	depends on SOC_SERIES_NRF52X || SOC_SERIES_NRF51X
 	select NRFX_SPI
 	help
-	  Enable nRF SPI Master without EasyDMA on port 0
+	  Enable nRF SPI Master without EasyDMA on port 0.
 
 config SPI_0_NRF_SPIM
 	bool "nRF SPIM 0"
 	depends on SOC_NRF52840
 	select NRFX_SPIM
 	help
-	  Enable nRF SPI Master with EasyDMA on port 0
+	  Enable nRF SPI Master with EasyDMA on port 0.
 
 config SPI_0_NRF_SPIS
 	bool "nRF SPIS 0"
@@ -53,21 +53,21 @@ config SPI_0_NRF_SCK_PIN
 	range 0 47 if SOC_NRF52840_QIAA
 	range 0 31
 	help
-	  GPIO pin number to use for SCK
+	  GPIO pin number to use for SCK.
 
 config SPI_0_NRF_MOSI_PIN
 	int "MOSI pin number"
 	range 0 47 if SOC_NRF52840_QIAA
 	range 0 31
 	help
-	  GPIO pin number to use for MOSI
+	  GPIO pin number to use for MOSI.
 
 config SPI_0_NRF_MISO_PIN
 	int "MISO pin number"
 	range 0 47 if SOC_NRF52840_QIAA
 	range 0 31
 	help
-	  GPIO pin number to use for MISO
+	  GPIO pin number to use for MISO.
 
 config SPI_0_NRF_ORC
 	hex "Over-read Character"
@@ -100,7 +100,7 @@ endif # SPI_0_NRF_SPIS
 
 endif # SPI_0 && !I2C_0
 
-# Nordic TWIx1 and SPIx1 instances can not be used at the same time
+# Nordic TWIx1 and SPIx1 instances can not be used at the same time.
 if SPI_1 && !I2C_1
 
 choice
@@ -112,14 +112,14 @@ config SPI_1_NRF_SPI
 	depends on SOC_SERIES_NRF52X || SOC_SERIES_NRF51X
 	select NRFX_SPI
 	help
-	  Enable nRF SPI Master without EasyDMA on port 1
+	  Enable nRF SPI Master without EasyDMA on port 1.
 
 config SPI_1_NRF_SPIM
 	bool "nRF SPIM 1"
 	depends on SOC_NRF52840
 	select NRFX_SPIM
 	help
-	  Enable nRF SPI Master with EasyDMA on port 1
+	  Enable nRF SPI Master with EasyDMA on port 1.
 
 config SPI_1_NRF_SPIS
 	bool "nRF SPIS 1"
@@ -140,21 +140,21 @@ config SPI_1_NRF_SCK_PIN
 	range 0 47 if SOC_NRF52840_QIAA
 	range 0 31
 	help
-	  GPIO pin number to use for SCK
+	  GPIO pin number to use for SCK.
 
 config SPI_1_NRF_MOSI_PIN
 	int "MOSI pin number"
 	range 0 47 if SOC_NRF52840_QIAA
 	range 0 31
 	help
-	  GPIO pin number to use for MOSI
+	  GPIO pin number to use for MOSI.
 
 config SPI_1_NRF_MISO_PIN
 	int "MISO pin number"
 	range 0 47 if SOC_NRF52840_QIAA
 	range 0 31
 	help
-	  GPIO pin number to use for MISO
+	  GPIO pin number to use for MISO.
 
 config SPI_1_NRF_ORC
 	hex "Over-read Character"
@@ -198,14 +198,14 @@ config SPI_2_NRF_SPI
 	depends on SOC_SERIES_NRF52X
 	select NRFX_SPI
 	help
-	  Enable nRF SPI Master without EasyDMA on port 2
+	  Enable nRF SPI Master without EasyDMA on port 2.
 
 config SPI_2_NRF_SPIM
 	bool "nRF SPIM 2"
 	depends on SOC_NRF52840
 	select NRFX_SPIM
 	help
-	  Enable nRF SPI Master with EasyDMA on port 2
+	  Enable nRF SPI Master with EasyDMA on port 2.
 
 config SPI_2_NRF_SPIS
 	bool "nRF SPIS 2"
@@ -226,21 +226,21 @@ config SPI_2_NRF_SCK_PIN
 	range 0 47 if SOC_NRF52840_QIAA
 	range 0 31
 	help
-	  GPIO pin number to use for SCK
+	  GPIO pin number to use for SCK.
 
 config SPI_2_NRF_MOSI_PIN
 	int "MOSI pin number"
 	range 0 47 if SOC_NRF52840_QIAA
 	range 0 31
 	help
-	  GPIO pin number to use for MOSI
+	  GPIO pin number to use for MOSI.
 
 config SPI_2_NRF_MISO_PIN
 	int "MISO pin number"
 	range 0 47 if SOC_NRF52840_QIAA
 	range 0 31
 	help
-	  GPIO pin number to use for MISO
+	  GPIO pin number to use for MISO.
 
 config SPI_2_NRF_ORC
 	hex "Over-read Character"
