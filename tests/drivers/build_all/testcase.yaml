@@ -6,6 +6,7 @@ tests:
   test_build_ethernet:
     build_only: true
     extra_args: CONF_FILE=ethernet.conf
+    min_flash: 42
     min_ram: 32
     platform_exclude: zedboard_pulpino
     tags: drivers footprint
@@ -18,6 +19,7 @@ tests:
   test_build_sensors_a_m:
     build_only: true
     extra_args: CONF_FILE=sensors_a_m.conf
+    min_flash: 44
     min_ram: 32
     platform_exclude: zedboard_pulpino
     tags: drivers footprint

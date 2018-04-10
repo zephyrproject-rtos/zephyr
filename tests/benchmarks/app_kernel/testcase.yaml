@@ -1,6 +1,7 @@
 tests:
   benchmark.application:
     arch_whitelist: x86 arm
+    min_flash: 34
     min_ram: 32
     tags: benchmark
     slow: true

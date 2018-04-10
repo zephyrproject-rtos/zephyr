@@ -1,5 +1,6 @@
 tests:
   crypto.ecc_dh:
+    min_flash: 35
     min_ram: 16
     slow: true
     tags: crypto ecc dh
