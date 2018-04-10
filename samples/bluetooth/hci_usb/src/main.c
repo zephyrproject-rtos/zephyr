@@ -38,8 +38,6 @@
 /* Max Bluetooth command data size */
 #define BTUSB_CLASS_MAX_DATA_SIZE	100
 
-#define INTEL_VENDOR_ID			0x8086
-#define PRODUCT_ID			0xFF02 /* TODO: Find better ID */
 #define DEVICE_RELNUM			0x0100
 
 #define BTUSB_NUM_CONF			1
@@ -106,10 +104,10 @@ static const u8_t btusb_desc[] = {
 	RF_SUBCLASS,			/* SubClass - Interface specific */
 	BLUETOOTH_PROTOCOL,		/* Protocol - Interface specific */
 	MAX_PACKET_SIZE0,		/* Max Packet Size */
-	LOW_BYTE(INTEL_VENDOR_ID),
-	HIGH_BYTE(INTEL_VENDOR_ID),	/* Vendor Id */
-	LOW_BYTE(PRODUCT_ID),
-	HIGH_BYTE(PRODUCT_ID),		/* Product Id */
+	LOW_BYTE(CONFIG_USB_DEVICE_VID),
+	HIGH_BYTE(CONFIG_USB_DEVICE_VID),/* Vendor Id */
+	LOW_BYTE(CONFIG_USB_DEVICE_PID),
+	HIGH_BYTE(CONFIG_USB_DEVICE_PID),/* Product Id */
 	LOW_BYTE(DEVICE_RELNUM),
 	HIGH_BYTE(DEVICE_RELNUM),	/* Device Release Number */
 	/* Index of Manufacturer String Descriptor */
