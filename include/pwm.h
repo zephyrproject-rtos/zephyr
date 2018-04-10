@@ -114,24 +114,17 @@ static inline int _impl_pwm_get_cycles_per_sec(struct device *dev, u32_t pwm,
 static inline int pwm_pin_set_usec(struct device *dev, u32_t pwm,
 				   u32_t period, u32_t pulse)
 {
-	u64_t period_cycles, pulse_cycles, cycles_per_sec;
+	u64_t cycles_per_sec;
+	u32_t period_cycles, pulse_cycles;
 
 	if (pwm_get_cycles_per_sec(dev, pwm, &cycles_per_sec) != 0) {
 		return -EIO;
 	}
 
-	period_cycles = (period * cycles_per_sec) / USEC_PER_SEC;
-	if (period_cycles >= ((u64_t)1 << 32)) {
-		return -ENOTSUP;
-	}
+	period_cycles = ((u32_t)cycles_per_sec / USEC_PER_SEC) * period;
+	pulse_cycles = ((u32_t)cycles_per_sec / USEC_PER_SEC) * pulse;
 
-	pulse_cycles = (pulse * cycles_per_sec) / USEC_PER_SEC;
-	if (pulse_cycles >= ((u64_t)1 << 32)) {
-		return -ENOTSUP;
-	}
-
-	return pwm_pin_set_cycles(dev, pwm, (u32_t)period_cycles,
-				  (u32_t)pulse_cycles);
+	return pwm_pin_set_cycles(dev, pwm, period_cycles, pulse_cycles);
 }
 
 #ifdef __cplusplus
