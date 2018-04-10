@@ -7,10 +7,10 @@
 	compatible = "nxp,frdm-kl25z", "nxp,kl25z", "nxp,mkl25z4";
 
 	aliases {
-		adc_0 = &adc0;
-		uart_0 = &uart0;
-		i2c_0 = &i2c0;
-		i2c_1 = &i2c1;
+		adc-0 = &adc0;
+		uart-0 = &uart0;
+		i2c-0 = &i2c0;
+		i2c-1 = &i2c1;
 	};
 
 	chosen {

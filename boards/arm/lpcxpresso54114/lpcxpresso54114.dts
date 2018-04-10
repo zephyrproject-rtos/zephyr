@@ -13,7 +13,7 @@
 	compatible = "nxp,lpc54xxx", "nxp,lpc";
 
 	aliases{
-		usart_0 = &usart0;
+		usart-0 = &usart0;
 	};
 
 	chosen {

@@ -7,9 +7,9 @@
 	compatible = "ti,lm3s6965evb-qemu", "ti,lm3s6965";
 
 	aliases {
-		uart_0 = &uart0;
-		uart_1 = &uart1;
-		uart_2 = &uart2;
+		uart-0 = &uart0;
+		uart-1 = &uart1;
+		uart-2 = &uart2;
 	};
 
 	chosen {

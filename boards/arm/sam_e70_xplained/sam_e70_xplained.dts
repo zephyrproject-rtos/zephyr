@@ -14,9 +14,9 @@
 	compatible = "atmel,sam_e70_xplained", "atmel,same70q21", "atmel,same70";
 
 	aliases {
-		i2c_0 = &i2c0;
-		i2c_1 = &i2c1;
-		i2c_2 = &i2c2;
+		i2c-0 = &i2c0;
+		i2c-1 = &i2c1;
+		i2c-2 = &i2c2;
 	};
 
 	chosen {

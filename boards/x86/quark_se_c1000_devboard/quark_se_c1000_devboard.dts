@@ -10,8 +10,8 @@
 	compatible = "intel,quark_se_c1000_devboard", "intel,quark_se_c1000";
 
 	aliases {
-		uart_0 = &uart0;
-		uart_1 = &uart1;
+		uart-0 = &uart0;
+		uart-1 = &uart1;
 	};
 
 	chosen {
