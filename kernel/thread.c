@@ -346,8 +346,9 @@ _SYSCALL_HANDLER(k_thread_create,
 {
 	int prio;
 	u32_t options, delay;
+	u32_t total_size;
 #ifndef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
-	u32_t guard_size, total_size;
+	u32_t guard_size;
 #endif
 	struct _k_object *stack_object;
 	struct k_thread *new_thread = (struct k_thread *)new_thread_p;
