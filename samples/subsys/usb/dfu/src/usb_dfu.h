@@ -43,12 +43,6 @@
 #include <device.h>
 #include <usb/usb_common.h>
 
-/* Intel vendor ID */
-#define DFU_VENDOR_ID   0x8086
-
-/* Product Id, random value */
-#define DFU_PRODUCT_ID  0x48FC
-
 #define DFU_MAX_XFER_SIZE 256
 
 #define DFU_NUM_CONF    0x01   /* Number of configurations for the USB Device */
