@@ -10,7 +10,11 @@
 #include <gpio.h>
 
 /* Change this if you have an LED connected to a custom port */
-#define LED_PORT	LED0_GPIO_PORT
+#ifndef LED0_GPIO_CONTROLLER
+#define LED0_GPIO_CONTROLLER 	LED0_GPIO_PORT
+#endif
+
+#define LED_PORT LED0_GPIO_CONTROLLER
 
 /* Change this if you have an LED connected to a custom pin */
 #define LED	LED0_GPIO_PIN

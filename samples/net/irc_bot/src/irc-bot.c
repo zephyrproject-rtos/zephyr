@@ -34,13 +34,18 @@ static u16_t cmd_len;
 static char nick_buf[NICK_BUFFER_SIZE];
 
 /* LED */
-#if defined(LED0_GPIO_PORT)
-#define LED_GPIO_NAME LED0_GPIO_PORT
-#define LED_PIN LED0_GPIO_PIN
+#ifndef LED0_GPIO_CONTROLLER
+#ifdef LED0_GPIO_PORT
+#define LED0_GPIO_CONTROLLER 	LED0_GPIO_PORT
 #else
-#define LED_GPIO_NAME "(fail)"
-#define LED_PIN 0
+#define LED0_GPIO_CONTROLLER "(fail)"
+#define LED0_GPIO_PIN 0
 #endif
+#endif
+
+#define LED_GPIO_NAME LED0_GPIO_CONTROLLER
+#define LED_PIN LED0_GPIO_PIN
+
 
 static struct device *led0;
 static bool fake_led;
