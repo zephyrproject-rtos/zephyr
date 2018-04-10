@@ -224,9 +224,14 @@ CI is run on the ``shippable`` cloud service and it uses the same tools
 described in the `Contribution Tools`_ section.
 The CI results must be green indicating "All checks have passed" before
 the Pull Request can be merged.  CI is run when the PR is created, and
-again every time the PR is modified with a commit.  You can also force
-the CI system to recheck a PR by adding a comment to the PR saying
-simply ``retest`` in the message (helpful if the CI system fails unexpectedly).
+again every time the PR is modified with a commit.
+
+.. note::
+
+   You can also force
+   the CI system to recheck a PR by adding a comment to the PR saying
+   simply ``recheck`` in the message (helpful if the CI system fails
+   unexpectedly).
 
 The current status of the CI run can always be found at the bottom of the
 GitHub PR page, below the review status. Depending on the success or failure
