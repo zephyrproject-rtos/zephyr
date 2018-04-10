@@ -1476,6 +1476,7 @@ class TestSuite:
         self.goals = None
         self.discards = None
         self.coverage = coverage
+        self.load_errors = 0
 
         for testcase_root in testcase_roots:
             testcase_root = os.path.abspath(testcase_root)
@@ -1509,6 +1510,7 @@ class TestSuite:
 
                 except Exception as e:
                     error("E: %s: can't load (skipping): %s" % (yaml_path, e))
+                    self.load_errors += 1
 
 
         for board_root in board_root_list:
@@ -1524,6 +1526,7 @@ class TestSuite:
                     self.platforms.append(platform)
                 except RuntimeError as e:
                     error("E: %s: can't load: %s" % (fn, e))
+                    self.load_errors += 1
 
         arches = []
         for p in self.platforms:
@@ -2423,6 +2426,9 @@ def main():
 
     ts = TestSuite(options.board_root, options.testcase_root,
                    options.outdir, options.coverage)
+
+    if ts.load_errors:
+        sys.exit(1)
 
     if options.list_tags:
         tags = set()
