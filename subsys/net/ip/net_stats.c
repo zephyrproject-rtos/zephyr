@@ -241,7 +241,7 @@ static int net_stats_get(u32_t mgmt_request, struct net_if *iface,
 		return -EINVAL;
 	}
 
-	memcpy(src, data, len);
+	memcpy(data, src, len);
 
 	return 0;
 }
