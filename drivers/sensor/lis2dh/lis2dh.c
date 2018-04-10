@@ -121,18 +121,19 @@ static int lis2dh_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct lis2dh_data *lis2dh = dev->driver_data;
 	size_t i;
-	int status;
+	int status = 0;
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL ||
 			chan == SENSOR_CHAN_ACCEL_XYZ);
 
 	/*
-	 * since status and all accel data register addresses are consecutive,
-	 * a burst read can be used to read all the samples
+	 * Burst mode cannot be used with this sensor.
 	 */
-	status = lis2dh_burst_read(dev, LIS2DH_REG_STATUS,
-				   lis2dh->sample.raw,
-				   sizeof(lis2dh->sample.raw));
+	for(i = 0; i < sizeof(lis2dh->sample.raw); i++) {
+		status |= lis2dh_reg_read_byte(lis2dh->bus,
+			LIS2DH_REG_STATUS + i, &lis2dh->sample.raw[i]);
+	}
+
 	if (status < 0) {
 		SYS_LOG_WRN("Could not read accel axis data");
 		return status;
