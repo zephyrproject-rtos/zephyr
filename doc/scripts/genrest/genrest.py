@@ -159,23 +159,17 @@ def write_sym_rst(sym, out_dir):
             # Writes a link for each selecting symbol (if 'expr' is
             # sym.rev_dep) or each implying symbol (if 'expr' is
             # sym.weak_rev_dep)
-            #
-            # This relies on Kconfiglib using the following format for
-            # select/imply expressions:
-            #
-            #   (OR, (OR, (OR, <expr 1>, <expr 2>), <expr 3>), <expr 4>)
 
-            def write_select_imply_entry(select):
-                # 'select A if B' turns into A && B in sym.(weak_)rev_dep
+            # The reverse dependencies from each select/imply are ORed together
+            for select in kconfiglib.split_expr(expr, kconfiglib.OR):
+                # - 'select/imply A if B' turns into A && B
+                # - 'select/imply A' just turns into A
+                #
+                # In both cases, we can split on AND and pick the first
+                # operand.
                 sym_rst.write(" - :option:`CONFIG_{}`\n".format(
-                    select[1].name if isinstance(select, tuple)
-                    else select.name))
+                    kconfiglib.split_expr(select, kconfiglib.AND)[0].name))
 
-            while isinstance(expr, tuple) and expr[0] == kconfiglib.OR:
-                write_select_imply_entry(expr[2])
-                expr = expr[1]
-
-            write_select_imply_entry(expr)
             sym_rst.write("\n")
 
         if sym.rev_dep is not kconf.n:
