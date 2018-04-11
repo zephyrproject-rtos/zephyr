@@ -1,0 +1,54 @@
+# Kconfig - Gecko SDK UART
+#
+# Copyright (c) 2017, Christian Taedcke
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig USART_GECKO
+	bool "Gecko usart driver"
+	depends on HAS_SILABS_GECKO
+	depends on GPIO_GECKO
+	default n
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  Enable the Gecko usart driver.
+
+if USART_GECKO
+
+menuconfig USART_GECKO_0
+	bool "USART 0"
+	default n
+	help
+	  Enable USART 0.
+
+if USART_GECKO_0
+
+config USART_GECKO_0_GPIO_LOC
+	int "Pin Locations"
+	range 0 31
+	depends on USART_GECKO
+	help
+	  The GPIO pins to use.
+
+endif # USART_GECKO_0
+
+menuconfig USART_GECKO_1
+	bool "USART 1"
+	default n
+	help
+	  Enable USART 1.
+
+if USART_GECKO_1
+
+config USART_GECKO_1_GPIO_LOC
+	int "Pin Locations"
+	range 0 31
+	depends on USART_GECKO
+	help
+	  The GPIO pins to use.
+
+endif # USART_GECKO_1
+
+endif # USART_GECKO
