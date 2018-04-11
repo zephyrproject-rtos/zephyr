@@ -1,0 +1,62 @@
+# Kconfig - EFM32PG STK3402A board
+#
+# Copyright (c) 2018, Christian Taedcke
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_EFM32PG_STK3402A
+
+config BOARD
+	default "efm32pg_stk3402a"
+
+config CMU_HFXO_FREQ
+	default 40000000
+
+config CMU_LFXO_FREQ
+	default 32768
+
+if GPIO_GECKO
+
+config GPIO_GECKO_PORTA
+	default y
+
+config GPIO_GECKO_PORTB
+	default y
+
+config GPIO_GECKO_PORTC
+	default n
+
+config GPIO_GECKO_PORTD
+	default y
+
+config GPIO_GECKO_PORTE
+	default n
+
+config GPIO_GECKO_PORTF
+	default y
+
+endif # GPIO_GECKO
+
+if UART_GECKO
+
+config USART_GECKO_0
+	default y
+
+endif # UART_GECKO
+
+if LEUART_GECKO
+
+config LEUART_GECKO_0
+	default y
+
+endif # LEUART_GECKO
+
+if I2C_GECKO
+
+config I2C_0
+	default y
+
+endif # I2C_GECKO
+
+endif # BOARD_EFM32PG_STK3402A
