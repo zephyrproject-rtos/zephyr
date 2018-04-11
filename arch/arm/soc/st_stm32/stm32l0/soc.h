@@ -35,6 +35,7 @@
 
 #ifdef CONFIG_SERIAL_HAS_DRIVER
 #include <stm32l0xx_ll_usart.h>
+#include <stm32l0xx_ll_lpuart.h>
 #endif
 
 #ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE

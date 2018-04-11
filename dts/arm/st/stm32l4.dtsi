@@ -127,6 +127,15 @@
 			label = "UART_3";
 		};
 
+		lpuart1: serial@40008000 {
+			compatible = "st,stm32-lpuart", "st,stm32-uart";
+			reg = <0x40008000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1_2 0x00000001>;
+			interrupts = <70 0>;
+			status = "disabled";
+			label = "LPUART_1";
+		};
+
 		i2c1: i2c@40005400 {
 			compatible = "st,stm32-i2c-v2";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
