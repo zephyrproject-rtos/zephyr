@@ -10,15 +10,6 @@
 #include <posix/pthread.h>
 #include <posix/time.h>
 
-void ready_one_thread(_wait_q_t *wq)
-{
-	struct k_thread *th = _unpend_first_thread(wq);
-
-	if (th) {
-		_ready_thread(th);
-	}
-}
-
 s64_t timespec_to_timeoutms(const struct timespec *abstime)
 {
 	s64_t milli_secs;

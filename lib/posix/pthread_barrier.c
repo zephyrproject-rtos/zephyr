@@ -9,8 +9,6 @@
 #include <ksched.h>
 #include <wait_q.h>
 
-void ready_one_thread(_wait_q_t *wq);
-
 int pthread_barrier_wait(pthread_barrier_t *b)
 {
 	int key = irq_lock();
@@ -21,7 +19,7 @@ int pthread_barrier_wait(pthread_barrier_t *b)
 		b->count = 0;
 
 		while (!sys_dlist_is_empty(&b->wait_q)) {
-			ready_one_thread(&b->wait_q);
+			_ready_one_thread(&b->wait_q);
 		}
 		return _reschedule(key);
 	} else {

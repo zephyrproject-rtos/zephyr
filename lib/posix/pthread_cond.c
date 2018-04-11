@@ -9,8 +9,6 @@
 #include <wait_q.h>
 #include <posix/pthread.h>
 
-void ready_one_thread(_wait_q_t *wq);
-
 static int cond_wait(pthread_cond_t *cv, pthread_mutex_t *mut, int timeout)
 {
 	__ASSERT(mut->sem->count == 0, "");
@@ -18,7 +16,7 @@ static int cond_wait(pthread_cond_t *cv, pthread_mutex_t *mut, int timeout)
 	int ret, key = irq_lock();
 
 	mut->sem->count = 1;
-	ready_one_thread(&mut->sem->wait_q);
+	_ready_one_thread(&mut->sem->wait_q);
 	ret = _pend_current_thread(key, &cv->wait_q, timeout);
 
 	/* FIXME: this extra lock (and the potential context switch it
@@ -49,7 +47,7 @@ int pthread_cond_signal(pthread_cond_t *cv)
 {
 	int key = irq_lock();
 
-	ready_one_thread(&cv->wait_q);
+	_ready_one_thread(&cv->wait_q);
 	_reschedule(key);
 
 	return 0;
@@ -60,7 +58,7 @@ int pthread_cond_broadcast(pthread_cond_t *cv)
 	int key = irq_lock();
 
 	while (!sys_dlist_is_empty(&cv->wait_q)) {
-		ready_one_thread(&cv->wait_q);
+		_ready_one_thread(&cv->wait_q);
 	}
 
 	_reschedule(key);

@@ -509,6 +509,14 @@ static inline struct k_thread *_unpend1_no_timeout(_wait_q_t *wait_q)
 	return thread;
 }
 
+static inline void _ready_one_thread(_wait_q_t *wq)
+{
+	struct k_thread *th = _unpend_first_thread(wq);
+
+	if (th) {
+		_ready_thread(th);
+	}
+}
 
 #ifdef CONFIG_USERSPACE
 /**
