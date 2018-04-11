@@ -2013,8 +2013,6 @@ NET_CONN_CB(tcp_established)
 
 		if (net_tcp_get_state(context->tcp)
 			   == NET_TCP_FIN_WAIT_1) {
-			/* Received FIN on FIN_WAIT1, so cancel the timer */
-			k_delayed_work_cancel(&context->tcp->fin_timer);
 			/* Active close: step to FIN_WAIT_2 */
 			net_tcp_change_state(context->tcp, NET_TCP_FIN_WAIT_2);
 		} else if (net_tcp_get_state(context->tcp)
@@ -2041,6 +2039,8 @@ NET_CONN_CB(tcp_established)
 					      ACK_TIMEOUT);
 		} else if (net_tcp_get_state(context->tcp)
 			   == NET_TCP_FIN_WAIT_2) {
+			/* Received FIN on FIN_WAIT_2, so cancel the timer */
+			k_delayed_work_cancel(&context->tcp->fin_timer);
 			/* Active close: step to TIME_WAIT */
 			net_tcp_change_state(context->tcp, NET_TCP_TIME_WAIT);
 		}
