@@ -2,6 +2,8 @@ identifier: nrf52_pca20020
 name: nRF52-PCA20020
 type: mcu
 arch: arm
+ram: 64
+flash: 512
 toolchain:
   - zephyr
   - gccarmemb
