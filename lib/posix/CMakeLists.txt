@@ -15,6 +15,7 @@ zephyr_library_sources(sleep.c)
 zephyr_library_sources(timer.c)
 zephyr_library_sources(pthread_rwlock.c)
 zephyr_library_sources(semaphore.c)
+zephyr_library_sources(pthread_key.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_MQUEUE mqueue.c)
 zephyr_library_sources_ifdef(CONFIG_POSIX_FS fs.c)
 

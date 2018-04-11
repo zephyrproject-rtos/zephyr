@@ -47,9 +47,10 @@
 #define mq_attr		       zap_mq_attr
 #define dirent		       zap_dirent
 #define DIR		       zap_DIR
+#define pthread_once_t	       zap_pthread_once_t
+#define pthread_key_t	       zap_pthread_key_t
 
 /* Condition variables */
-
 #define pthread_cond_init(...)        zap_pthread_cond_init(__VA_ARGS__)
 #define pthread_cond_destroy(...)     zap_pthread_cond_destroy(__VA_ARGS__)
 #define pthread_cond_signal(...)      zap_pthread_cond_signal(__VA_ARGS__)
@@ -97,6 +98,7 @@
 #define pthread_equal(...)		zap_pthread_equal(__VA_ARGS__)
 #define pthread_self(...)		zap_pthread_self(__VA_ARGS__)
 #define pthread_getschedparam(...)	zap_pthread_getschedparam(__VA_ARGS__)
+#define pthread_once(...)		zap_pthread_once(__VA_ARGS__)
 #define pthread_exit(...)		zap_pthread_exit(__VA_ARGS__)
 #define pthread_join(...)		zap_pthread_join(__VA_ARGS__)
 #define pthread_detach(...)		zap_pthread_detach(__VA_ARGS__)
@@ -153,6 +155,12 @@
 		zap_pthread_rwlock_trywrlock(__VA_ARGS__)
 #define pthread_rwlockattr_destroy(...)\
 		zap_pthread_rwlockattr_destroy(__VA_ARGS__)
+
+/* Pthread key */
+#define pthread_key_create(...)		zap_pthread_key_create(__VA_ARGS__)
+#define pthread_key_delete(...)		zap_pthread_key_delete(__VA_ARGS__)
+#define pthread_setspecific(...)	zap_pthread_setspecific(__VA_ARGS__)
+#define pthread_getspecific(...)	zap_pthread_getspecific(__VA_ARGS__)
 
 /* message queue */
 #define mq_open(...)	zap_mq_open(__VA_ARGS__)
