@@ -2,6 +2,8 @@ identifier: arduino_due
 name: Arduino Due
 type: mcu
 arch: arm
+ram: 96
+flash: 512
 toolchain:
   - zephyr
   - gccarmemb
