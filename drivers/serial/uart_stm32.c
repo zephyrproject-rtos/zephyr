@@ -247,6 +247,37 @@ static const struct uart_driver_api uart_stm32_driver_api = {
 #endif	/* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
+static void uart_stm32_usart_set_baud_rate(struct device *dev,
+					   u32_t clock_rate, u32_t baud_rate)
+{
+	USART_TypeDef *UartInstance = UART_STRUCT(dev);
+
+	LL_USART_SetBaudRate(UartInstance,
+			     clock_rate,
+#ifdef USART_PRESC_PRESCALER
+			     LL_USART_PRESCALER_DIV1,
+#endif
+#ifdef USART_CR1_OVER8
+			     LL_USART_OVERSAMPLING_16,
+#endif
+			     baud_rate);
+}
+
+#if defined(CONFIG_SOC_SERIES_STM32L0X) || defined(CONFIG_SOC_SERIES_STM32L4X)
+static void uart_stm32_lpuart_set_baud_rate(struct device *dev,
+					    u32_t clock_rate, u32_t baud_rate)
+{
+	USART_TypeDef *UartInstance = UART_STRUCT(dev);
+
+	LL_LPUART_SetBaudRate(UartInstance,
+			      clock_rate,
+#ifdef USART_PRESC_PRESCALER
+			      LL_USART_PRESCALER_DIV1,
+#endif
+			      baud_rate);
+}
+#endif
+
 /**
  * @brief Initialize UART channel
  *
@@ -263,6 +294,7 @@ static int uart_stm32_init(struct device *dev)
 	struct uart_stm32_data *data = DEV_DATA(dev);
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
 
+	u32_t baud_rate = config->baud_rate;
 	u32_t clock_rate;
 
 	__uart_stm32_get_clock(dev);
@@ -287,15 +319,15 @@ static int uart_stm32_init(struct device *dev)
 			       (clock_control_subsys_t *)&config->pclken,
 			       &clock_rate);
 
-	LL_USART_SetBaudRate(UartInstance,
-			     clock_rate,
-#ifdef USART_PRESC_PRESCALER
-			     LL_USART_PRESCALER_DIV1,
+#if defined(CONFIG_SOC_SERIES_STM32L0X) || defined(CONFIG_SOC_SERIES_STM32L4X)
+	if (IS_LPUART_INSTANCE(UartInstance)) {
+		uart_stm32_lpuart_set_baud_rate(dev, clock_rate, baud_rate);
+	} else {
+		uart_stm32_usart_set_baud_rate(dev, clock_rate, baud_rate);
+	}
+#else
+	uart_stm32_usart_set_baud_rate(dev, clock_rate, baud_rate);
 #endif
-#ifdef USART_CR1_OVER8
-			     LL_USART_OVERSAMPLING_16,
-#endif
-			     config->baud_rate);
 
 	LL_USART_Enable(UartInstance);
 
@@ -417,6 +449,10 @@ STM32_UART_INIT(USART_4, STM32_CLOCK_BUS_APB1, LL_APB1_GRP1_PERIPH_USART4)
 STM32_UART_INIT(USART_5, STM32_CLOCK_BUS_APB1, LL_APB1_GRP1_PERIPH_USART5)
 #endif /* CONFIG_UART_STM32_PORT_5 */
 
+#ifdef CONFIG_UART_STM32_LPUART_1
+STM32_UART_INIT(LPUART_1, STM32_CLOCK_BUS_APB1, LL_APB1_GRP1_PERIPH_LPUART1)
+#endif /* CONFIG_UART_STM32_LPUART_1 */
+
 #else
 
 #ifdef CONFIG_UART_STM32_PORT_1
@@ -458,5 +494,11 @@ STM32_UART_INIT(UART_9, STM32_CLOCK_BUS_APB2, LL_APB2_GRP1_PERIPH_UART9)
 #ifdef CONFIG_UART_STM32_PORT_10
 STM32_UART_INIT(UART_10, STM32_CLOCK_BUS_APB2, LL_APB2_GRP1_PERIPH_UART10)
 #endif /* CONFIG_UART_STM32_PORT_10 */
+
+#ifdef CONFIG_SOC_SERIES_STM32L4X
+#ifdef CONFIG_UART_STM32_LPUART_1
+STM32_UART_INIT(LPUART_1, STM32_CLOCK_BUS_APB1_2, LL_APB1_GRP2_PERIPH_LPUART1)
+#endif /* CONFIG_UART_STM32_LPUART_1 */
+#endif /* CONFIG_SOC_SERIES_STM32L4X */
 
 #endif
