@@ -1,7 +1,47 @@
-Silabs Gecko SDK
-----------------
+Silicon Labs Gecko HAL
+######################
 
-Downloaded from https://github.com/SiliconLabs/Gecko_SDK
+Origin:
+   Silicon Labs Gecko SDK
+   https://github.com/SiliconLabs/Gecko_SDK
+
+Version:
+   v5.1.2
+
+Purpose:
+   Add support for Silicon Labs EXX32 SoCs
+
+Description:
+   This code component is used to add Zephyr support for Silicon Labs EXX32 SoCs.
+   To speed up the development process it is based on the Silicon Labs HAL.
+
+   The Silicon Labs HAL is split into SoC specific folders. They share the 
+   Peripheral Support library.
+
+   The following folders are imported:
+   platform/Device/SiliconLabs/$(GECKO_DEVICE)
+   platform/emlib
+
+Dependencies:
+   This source code depends on headers and sources from Zephyr:
+   ext/hal/cmsis
+
+URL:
+   https://github.com/SiliconLabs/Gecko_SDK
+
+commit:
+   938464c68e6c3b2237388a692f767bb0767ec010
+
+Maintained-by:
+   External
+
+License:
+   Zlib
+
+License Link:
+   https://github.com/SiliconLabs/Gecko_SDK/blob/e8c70a3d4fda8ee09688d6c6cf2a2bafc5f649e9/platform/emlib/ReadMe_emlib.txt#L51-L54
+   https://github.com/SiliconLabs/Gecko_SDK/blob/e8c70a3d4fda8ee09688d6c6cf2a2bafc5f649e9/platform/Device/ReadMe-Device.txt#L91
+
 
 How to update
 +++++++++++++
@@ -9,7 +49,7 @@ How to update
   * Downloaded current version from https://github.com/SiliconLabs/Gecko_SDK
   * Extract
   * Replace the necessary files in ext/hal/silabs/gecko/Device and ext/hal/silabs/gecko/emlib
-  * Ensure that the Makfile and Kbuild-file match the new version of the Gecko SDK
+  * Ensure that the CMakeLists and Kconfig files match the new version of the Gecko SDK
 
 The following folders are used in this HAL:
 
