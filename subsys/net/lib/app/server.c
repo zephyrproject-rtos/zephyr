@@ -215,9 +215,11 @@ int net_app_init_server(struct net_app_ctx *ctx,
 
 #if defined(CONFIG_NET_IPV4)
 	memset(&ctx->ipv4.local, 0, sizeof(ctx->ipv4.local));
+	ctx->ipv4.local.sa_family = AF_INET;
 #endif
 #if defined(CONFIG_NET_IPV6)
 	memset(&ctx->ipv6.local, 0, sizeof(ctx->ipv6.local));
+	ctx->ipv6.local.sa_family = AF_INET6;
 #endif
 
 	if (server_addr) {
@@ -256,11 +258,9 @@ int net_app_init_server(struct net_app_ctx *ctx,
 		}
 
 #if defined(CONFIG_NET_IPV4)
-		ctx->ipv4.local.sa_family = AF_INET;
 		net_sin(&ctx->ipv4.local)->sin_port = htons(port);
 #endif
 #if defined(CONFIG_NET_IPV6)
-		ctx->ipv6.local.sa_family = AF_INET6;
 		net_sin6(&ctx->ipv6.local)->sin6_port = htons(port);
 #endif
 	}
