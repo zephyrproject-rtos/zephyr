@@ -67,4 +67,4 @@ config NET_DEBUG_ARP
 	help
 	  Enables core ARP code part to output debug messages
 
-endif # NET_L2_ETHERNET
+endif # NET_L2_ETHERNET\n
