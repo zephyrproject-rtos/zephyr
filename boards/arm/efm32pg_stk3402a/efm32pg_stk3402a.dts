@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2017 Christian Taedcke
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/efm32pg12b.dtsi>
+
+/ {
+	model = "Silicon Labs EFM32PG STK3402A board";
+	compatible = "silabs,efm32pg_stk3402a", "silabs,efm32pg12b";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+};
+
+&uart0 {
+	current-speed = <115200>;
+	status = "ok";
+};
