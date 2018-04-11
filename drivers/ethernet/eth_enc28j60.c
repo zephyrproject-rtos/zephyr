@@ -517,13 +517,13 @@ static int eth_enc28j60_rx(struct device *dev)
 		struct net_buf *pkt_buf = NULL;
 		struct net_buf *last_buf = NULL;
 		u16_t frm_len = 0;
+		u8_t info[RSV_SIZE];
 		struct net_pkt *pkt;
 		u16_t next_packet;
-		u8_t np[2];
 
 		/* Read address for next packet */
-		eth_enc28j60_read_mem(dev, np, 2);
-		next_packet = np[0] | (u16_t)np[1] << 8;
+		eth_enc28j60_read_mem(dev, info, 2);
+		next_packet = info[0] | (u16_t)info[1] << 8;
 
 		/* Errata 14. Even values in ERXRDPT
 		 * may corrupt receive buffer.
@@ -535,12 +535,12 @@ static int eth_enc28j60_rx(struct device *dev)
 		}
 
 		/* Read reception status vector */
-		eth_enc28j60_read_mem(dev, context->rx_rsv, 4);
+		eth_enc28j60_read_mem(dev, info, 4);
 
 		/* Get the frame length from the rx status vector,
 		 * minus CRC size at the end which is always present
 		 */
-		frm_len = (context->rx_rsv[1] << 8) | (context->rx_rsv[0] - 4);
+		frm_len = (info[1] << 8) | (info[0] - 4);
 		lengthfr = frm_len;
 
 		/* Get the frame from the buffer */

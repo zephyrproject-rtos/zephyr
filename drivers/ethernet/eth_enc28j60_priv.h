@@ -236,8 +236,6 @@ struct eth_enc28j60_runtime {
 	struct spi_cs_control spi_cs;
 	struct spi_config spi_cfg;
 	struct gpio_callback gpio_cb;
-	u8_t  tx_tsv[TSV_SIZE];
-	u8_t  rx_rsv[RSV_SIZE];
 	struct k_sem tx_rx_sem;
 	struct k_sem int_sem;
 };
