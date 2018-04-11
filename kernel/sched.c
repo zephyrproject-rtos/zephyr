@@ -16,6 +16,88 @@
 /* the only struct _kernel instance */
 struct _kernel _kernel = {0};
 
+#ifndef CONFIG_SMP
+extern k_tid_t const _idle_thread;
+#endif
+
+static inline int _is_thread_dummy(struct k_thread *thread)
+{
+	return _is_thread_state_set(thread, _THREAD_DUMMY);
+}
+
+static inline int _is_preempt(struct k_thread *thread)
+{
+#ifdef CONFIG_PREEMPT_ENABLED
+	/* explanation in kernel_struct.h */
+	return thread->base.preempt <= _PREEMPT_THRESHOLD;
+#else
+	return 0;
+#endif
+}
+
+static inline void _mark_thread_as_pending(struct k_thread *thread)
+{
+	thread->base.thread_state |= _THREAD_PENDING;
+
+#ifdef CONFIG_KERNEL_EVENT_LOGGER_THREAD
+	_sys_k_event_logger_thread_pend(thread);
+#endif
+}
+
+static inline int _is_idle_thread_ptr(k_tid_t thread)
+{
+#ifdef CONFIG_SMP
+	return thread->base.is_idle;
+#else
+	return thread == _idle_thread;
+#endif
+}
+
+static inline int _get_ready_q_q_index(int prio)
+{
+	return prio + _NUM_COOP_PRIO;
+}
+
+static inline int _get_ready_q_prio_bmap_index(int prio)
+{
+	return (prio + _NUM_COOP_PRIO) >> 5;
+}
+
+static inline int _get_ready_q_prio_bit(int prio)
+{
+	return (1u << ((prio + _NUM_COOP_PRIO) & 0x1f));
+}
+
+#ifdef CONFIG_SMP
+int _get_highest_ready_prio(void);
+#else
+static inline int _get_highest_ready_prio(void)
+{
+	int bitmap = 0;
+	u32_t ready_range;
+
+#if (K_NUM_PRIORITIES <= 32)
+	ready_range = _ready_q.prio_bmap[0];
+#else
+	for (;; bitmap++) {
+
+		__ASSERT(bitmap < K_NUM_PRIO_BITMAPS, "prio out-of-range\n");
+
+		if (_ready_q.prio_bmap[bitmap]) {
+			ready_range = _ready_q.prio_bmap[bitmap];
+			break;
+		}
+	}
+#endif
+
+	int abs_prio = (find_lsb_set(ready_range) - 1) + (bitmap << 5);
+
+	__ASSERT(abs_prio < K_NUM_PRIORITIES, "prio out-of-range\n");
+
+	return abs_prio - _NUM_COOP_PRIO;
+}
+#endif
+
 /* set the bit corresponding to prio in ready q bitmap */
 #if defined(CONFIG_MULTITHREADING) && !defined(CONFIG_SMP)
 static void set_ready_q_prio_bit(int prio)
@@ -575,3 +657,44 @@ void *_get_next_switch_handle(void *interrupted)
 	return ret;
 }
 #endif
+
+void _thread_priority_set(struct k_thread *thread, int prio)
+{
+	if (_is_thread_ready(thread)) {
+		_remove_thread_from_ready_q(thread);
+		thread->base.prio = prio;
+		_add_thread_to_ready_q(thread);
+	} else {
+		thread->base.prio = prio;
+	}
+}
+
+struct k_thread *_find_first_thread_to_unpend(_wait_q_t *wait_q,
+					      struct k_thread *from)
+{
+#ifdef CONFIG_SYS_CLOCK_EXISTS
+	extern volatile int _handling_timeouts;
+
+	if (_handling_timeouts) {
+		sys_dlist_t *q = (sys_dlist_t *)wait_q;
+		sys_dnode_t *cur = from ? &from->base.k_q_node : NULL;
+
+		/* skip threads that have an expired timeout */
+		SYS_DLIST_ITERATE_FROM_NODE(q, cur) {
+			struct k_thread *thread = (struct k_thread *)cur;
+
+			if (_is_thread_timeout_expired(thread)) {
+				continue;
+			}
+
+			return thread;
+		}
+		return NULL;
+	}
+#else
+	ARG_UNUSED(from);
+#endif
+
+	return (struct k_thread *)sys_dlist_peek_head(wait_q);
+
+}
