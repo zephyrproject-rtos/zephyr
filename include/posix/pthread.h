@@ -13,6 +13,7 @@
 #include <posix/unistd.h>
 #include "sys/types.h"
 #include "posix_sched.h"
+#include <posix/pthread_key.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -29,6 +30,9 @@ enum pthread_state {
 
 struct posix_thread {
 	struct k_thread thread;
+
+	/* List of keys that thread has called pthread_setspecific() on */
+	sys_slist_t key_list;
 
 	/* Exit status */
 	void *retval;
@@ -52,6 +56,9 @@ struct posix_thread {
 #define _PTHREAD_CANCEL_POS	0
 #define PTHREAD_CANCEL_ENABLE	(0 << _PTHREAD_CANCEL_POS)
 #define PTHREAD_CANCEL_DISABLE	(1 << _PTHREAD_CANCEL_POS)
+
+/* Passed to pthread_once */
+#define PTHREAD_ONCE_INIT 1
 
 /**
  * @brief Declare a pthread condition variable
@@ -480,6 +487,7 @@ int pthread_attr_getstack(const pthread_attr_t *attr,
 			  void **stackaddr, size_t *stacksize);
 int pthread_attr_setstack(pthread_attr_t *attr, void *stackaddr,
 			  size_t stacksize);
+int pthread_once(pthread_once_t *once, void (*initFunc)(void));
 void pthread_exit(void *retval);
 int pthread_join(pthread_t thread, void **status);
 int pthread_cancel(pthread_t pthread);
@@ -503,5 +511,10 @@ int pthread_rwlock_tryrdlock(pthread_rwlock_t *rwlock);
 int pthread_rwlock_trywrlock(pthread_rwlock_t *rwlock);
 int pthread_rwlock_unlock(pthread_rwlock_t *rwlock);
 int pthread_rwlock_wrlock(pthread_rwlock_t *rwlock);
+int pthread_key_create(pthread_key_t *key,
+		void (*destructor)(void *));
+int pthread_key_delete(pthread_key_t key);
+int pthread_setspecific(pthread_key_t key, const void *value);
+void *pthread_getspecific(pthread_key_t key);
 
 #endif /* __PTHREAD_H__ */

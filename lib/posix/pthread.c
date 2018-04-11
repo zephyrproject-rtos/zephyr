@@ -10,11 +10,14 @@
 #include <ksched.h>
 #include <wait_q.h>
 #include <posix/pthread.h>
+#include <misc/slist.h>
 
 #define PTHREAD_INIT_FLAGS	PTHREAD_CANCEL_ENABLE
 #define PTHREAD_CANCELED	((void *) -1)
 
 #define LOWEST_POSIX_THREAD_PRIORITY 1
+
+PTHREAD_MUTEX_DEFINE(pthread_key_lock);
 
 static const pthread_attr_t init_pthread_attrs = {
 	.priority = LOWEST_POSIX_THREAD_PRIORITY,
@@ -162,6 +165,7 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
 	pthread_mutex_init(&thread->state_lock, NULL);
 	pthread_mutex_init(&thread->cancel_lock, NULL);
 	pthread_cond_init(&thread->state_cond, &cond_attr);
+	sys_slist_init(&thread->key_list);
 
 	*newthread = (pthread_t) k_thread_create(&thread->thread, attr->stack,
 						 attr->stacksize,
@@ -300,6 +304,28 @@ int pthread_getschedparam(pthread_t pthread, int *policy,
 }
 
 /**
+ * @brief Dynamic package initialization
+ *
+ * See IEEE 1003.1
+ */
+int pthread_once(pthread_once_t *once, void (*init_func)(void))
+{
+	pthread_mutex_lock(&pthread_key_lock);
+
+	if (*once == PTHREAD_ONCE_INIT) {
+		pthread_mutex_unlock(&pthread_key_lock);
+		return 0;
+	}
+
+	init_func();
+	*once = PTHREAD_ONCE_INIT;
+
+	pthread_mutex_unlock(&pthread_key_lock);
+
+	return 0;
+}
+
+/**
  * @brief Terminate calling thread.
  *
  * See IEEE 1003.1
@@ -307,6 +333,9 @@ int pthread_getschedparam(pthread_t pthread, int *policy,
 void pthread_exit(void *retval)
 {
 	struct posix_thread *self = (struct posix_thread *)pthread_self();
+	pthread_key_obj *key_obj;
+	pthread_thread_data *thread_spec_data;
+	sys_snode_t *node_l;
 
 	/* Make a thread as cancelable before exiting */
 	pthread_mutex_lock(&self->cancel_lock);
@@ -324,6 +353,14 @@ void pthread_exit(void *retval)
 		pthread_cond_broadcast(&self->state_cond);
 	} else {
 		self->state = PTHREAD_TERMINATED;
+	}
+
+	SYS_SLIST_FOR_EACH_NODE(&self->key_list, node_l) {
+		thread_spec_data = (pthread_thread_data *)node_l;
+		key_obj = thread_spec_data->key;
+		if ((key_obj->destructor != NULL) && (thread_spec_data != NULL)) {
+			(key_obj->destructor)(thread_spec_data->spec_data);
+		}
 	}
 
 	pthread_mutex_unlock(&self->state_lock);
