@@ -177,36 +177,41 @@ static void eth_enc28j60_write_mem(struct device *dev, u8_t *data_buffer,
 				   u16_t buf_len)
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
-	struct spi_buf tx_buf = {
-		.buf = context->mem_buf
+	u8_t buf[1] = { ENC28J60_SPI_WBM };
+	struct spi_buf tx_buf[2] = {
+		{
+			.buf = buf,
+			.len = 1
+		},
 	};
 	const struct spi_buf_set tx = {
-		.buffers = &tx_buf,
-		.count = 1
+		.buffers = tx_buf,
+		.count = 2
 	};
-	u8_t *index_buf;
 	u16_t num_segments;
 	u16_t num_remaining;
+	int i;
 
-	index_buf = data_buffer;
 	num_segments = buf_len / MAX_BUFFER_LENGTH;
 	num_remaining = buf_len - MAX_BUFFER_LENGTH * num_segments;
 
-	for (int i = 0; i < num_segments;
-	     ++i, index_buf += MAX_BUFFER_LENGTH) {
-		context->mem_buf[0] = ENC28J60_SPI_WBM;
-		memcpy(context->mem_buf + 1, index_buf, MAX_BUFFER_LENGTH);
-		tx_buf.len = MAX_BUFFER_LENGTH + 1;
+	for (i = 0; i < num_segments; i++, data_buffer += MAX_BUFFER_LENGTH) {
+		tx_buf[1].buf = data_buffer;
+		tx_buf[1].len = MAX_BUFFER_LENGTH;
 
-		spi_write(context->spi, &context->spi_cfg, &tx);
+		if (spi_write(context->spi, &context->spi_cfg, &tx)) {
+			SYS_LOG_ERR("Failed to write memory");
+			return;
+		}
 	}
 
 	if (num_remaining > 0) {
-		context->mem_buf[0] = ENC28J60_SPI_WBM;
-		memcpy(context->mem_buf + 1, index_buf, num_remaining);
-		tx_buf.len = num_remaining + 1;
+		tx_buf[1].buf = data_buffer;
+		tx_buf[1].len = num_remaining;
 
-		spi_write(context->spi, &context->spi_cfg, &tx);
+		if (spi_write(context->spi, &context->spi_cfg, &tx)) {
+			SYS_LOG_ERR("Failed to write memory");
+		}
 	}
 }
 
@@ -214,50 +219,49 @@ static void eth_enc28j60_read_mem(struct device *dev, u8_t *data_buffer,
 				  u16_t buf_len)
 {
 	struct eth_enc28j60_runtime *context = dev->driver_data;
-	struct spi_buf tx_buf = {
-		.buf = context->mem_buf
+	u8_t buf[1] = { ENC28J60_SPI_RBM };
+	const struct spi_buf tx_buf = {
+		.buf = buf,
+		.len = 1
 	};
 	const struct spi_buf_set tx = {
 		.buffers = &tx_buf,
 		.count = 1
 	};
+	struct spi_buf rx_buf[2] = {
+		{
+			.buf = NULL,
+			.len = 1
+		},
+	};
+	const struct spi_buf_set rx = {
+		.buffers = rx_buf,
+		.count = 2
+	};
 	u16_t num_segments;
 	u16_t num_remaining;
-	int ret;
+	int i;
 
 	num_segments = buf_len / MAX_BUFFER_LENGTH;
 	num_remaining = buf_len - MAX_BUFFER_LENGTH * num_segments;
 
-	for (int i = 0; i < num_segments;
-	     ++i, data_buffer += MAX_BUFFER_LENGTH) {
-		context->mem_buf[0] = ENC28J60_SPI_RBM;
+	for (i = 0; i < num_segments; i++, data_buffer += MAX_BUFFER_LENGTH) {
 
-		tx_buf.len = MAX_BUFFER_LENGTH + 1;
+		rx_buf[1].buf = data_buffer;
+		rx_buf[1].len = MAX_BUFFER_LENGTH;
 
-		ret = spi_transceive(context->spi, &context->spi_cfg, &tx, &tx);
-		if (!ret) {
-			if (data_buffer) {
-				memcpy(data_buffer, context->mem_buf + 1,
-				       MAX_BUFFER_LENGTH);
-			}
-		} else {
-			SYS_LOG_DBG("Failed to read memory");
+		if (spi_transceive(context->spi, &context->spi_cfg, &tx, &rx)) {
+			SYS_LOG_ERR("Failed to read memory");
+			return;
 		}
 	}
 
 	if (num_remaining > 0) {
-		context->mem_buf[0] = ENC28J60_SPI_RBM;
+		rx_buf[1].buf = data_buffer;
+		rx_buf[1].len = num_remaining;
 
-		tx_buf.len = num_remaining + 1;
-
-		ret = spi_transceive(context->spi, &context->spi_cfg, &tx, &tx);
-		if (!ret) {
-			if (data_buffer) {
-				memcpy(data_buffer, context->mem_buf + 1,
-				       num_remaining);
-			}
-		} else {
-			SYS_LOG_DBG("Failed to read memory");
+		if (spi_transceive(context->spi, &context->spi_cfg, &tx, &rx)) {
+			SYS_LOG_ERR("Failed to read memory");
 		}
 	}
 }
