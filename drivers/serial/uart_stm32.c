@@ -291,7 +291,7 @@ static int uart_stm32_init(struct device *dev)
 #ifdef USART_CR1_OVER8
 			     LL_USART_OVERSAMPLING_16,
 #endif
-			     data->huart.Init.BaudRate);
+			     config->baud_rate);
 
 	LL_USART_Enable(UartInstance);
 
@@ -342,14 +342,10 @@ static const struct uart_stm32_config uart_stm32_dev_cfg_##n = {	\
 		STM32_UART_IRQ_HANDLER_FUNC(n)				\
 	},								\
 	STM32_CLOCK_UART(clock_bus, clock_enr),				\
+	.baud_rate = CONFIG_UART_STM32_PORT_ ## n ## _BAUD_RATE		\
 };									\
 									\
 static struct uart_stm32_data uart_stm32_dev_data_##n = {		\
-	.huart = {							\
-		.Init = {						\
-			.BaudRate = CONFIG_UART_STM32_PORT_##n##_BAUD_RATE     \
-		}							\
-	}								\
 };									\
 									\
 DEVICE_AND_API_INIT(uart_stm32_##n, CONFIG_UART_STM32_PORT_##n##_NAME,	\
