@@ -3391,53 +3391,36 @@ class Symbol(object):
         # unsatisfied direct dependencies (dependencies from 'depends on', ifs,
         # and menus) is selected by some other symbol
 
-        def check_select(select):
-            # Returns a warning string if 'select' is actually selecting us,
-            # and the empty string otherwise. nonlocal would be handy for
-            # appending to warn_msg directly, but it's Python 3 only.
+        msg = "{} has unsatisfied direct dependencies ({}), but is " \
+              "currently being selected by the following symbols:" \
+              .format(_name_and_loc(self), expr_str(self.direct_dep))
 
+        # The reverse dependencies from each select are ORed together
+        for select in split_expr(self.rev_dep, OR):
             select_val = expr_value(select)
             if not select_val:
                 # Only include selects that are not n
-                return ""
+                continue
 
-            if isinstance(select, tuple):
-                # (AND, <sym>, <condition>)
-                selecting_sym = select[1]
-            else:
-                # <sym>
-                selecting_sym = select
+            # - 'select A if B' turns into A && B
+            # - 'select A' just turns into A
+            #
+            # In both cases, we can split on AND and pick the first operand
+            selecting_sym = split_expr(select, AND)[0]
 
-            msg = "\n - {}, with value {}, direct dependencies {} " \
-                  "(value: {})" \
-                  .format(_name_and_loc(selecting_sym),
-                          selecting_sym.str_value,
-                          expr_str(selecting_sym.direct_dep),
-                          TRI_TO_STR[expr_value(selecting_sym.direct_dep)])
+            msg += "\n - {}, with value {}, direct dependencies {} " \
+                   "(value: {})" \
+                   .format(_name_and_loc(selecting_sym),
+                           selecting_sym.str_value,
+                           expr_str(selecting_sym.direct_dep),
+                           TRI_TO_STR[expr_value(selecting_sym.direct_dep)])
 
             if isinstance(select, tuple):
                 msg += ", and select condition {} (value: {})" \
                        .format(expr_str(select[2]),
                                TRI_TO_STR[expr_value(select[2])])
 
-            return msg
-
-        warn_msg = "{} has unsatisfied direct dependencies ({}), but is " \
-                   "currently being selected by the following symbols:" \
-                   .format(_name_and_loc(self), expr_str(self.direct_dep))
-
-        # This relies on us using the following format for the select
-        # expression:
-        #
-        #   (OR, (OR, (OR, <expr 1>, <expr 2>), <expr 3>), <expr 4>)
-        expr = self.rev_dep
-        while isinstance(expr, tuple) and expr[0] == OR:
-            warn_msg += check_select(expr[2])
-            # Go to next select
-            expr = expr[1]
-        warn_msg += check_select(expr)
-
-        self.kconfig._warn(warn_msg)
+        self.kconfig._warn(msg)
 
 class Choice(object):
     """
@@ -4160,6 +4143,50 @@ def expr_str(expr):
                              _REL_TO_STR[expr[0]],
                              expr_str(expr[2]))
 
+def split_expr(expr, op):
+    """
+    Returns a list containing the top-level AND or OR operands in the
+    expression 'expr', in the same (left-to-right) order as they appear in
+    the expression.
+
+    This can be handy e.g. for splitting (weak) reverse dependencies
+    from 'select' and 'imply' into individual selects/implies.
+
+    op:
+      Either AND to get AND operands, or OR to get OR operands.
+
+      (Having this as an operand might be more future-safe than having two
+      hardcoded functions.)
+
+
+    Pseudo-code examples:
+
+      split_expr( A                    , OR  )  ->  [A]
+      split_expr( A && B               , OR  )  ->  [A && B]
+      split_expr( A || B               , OR  )  ->  [A, B]
+      split_expr( A || B               , AND )  ->  [A || B]
+      split_expr( A || B || (C && D)   , OR  )  ->  [A, B, C && D]
+
+      # Second || is not at the top level
+      split_expr( A || (B && (C || D)) , OR )  ->  [A, B && (C || D)]
+
+      # Parentheses don't matter as long as we stay at the top level (don't
+      # encounter any non-'op' nodes)
+      split_expr( (A || B) || C        , OR )  ->  [A, B, C]
+      split_expr( A || (B || C)        , OR )  ->  [A, B, C]
+    """
+    res = []
+
+    def rec(subexpr):
+        if isinstance(subexpr, tuple) and subexpr[0] == op:
+            rec(subexpr[1])
+            rec(subexpr[2])
+        else:
+            res.append(subexpr)
+
+    rec(expr)
+    return res
+
 def escape(s):
     r"""
     Escapes the string 's' in the same fashion as is done for display in
@@ -4698,15 +4725,11 @@ def _warn_choice_select_imply(sym, expr, expr_type):
     msg = "the choice symbol {} is {} by the following symbols, which has " \
           "no effect: ".format(_name_and_loc(sym), expr_type)
 
-    while isinstance(expr, tuple) and expr[0] == OR:
-        msg += _select_imply_str(expr[2])
-        expr = expr[1]
+    # si = select/imply
+    for si in split_expr(expr, OR):
+        msg += "\n - " + _name_and_loc(split_expr(si, AND)[0])
 
-    sym.kconfig._warn(msg + _select_imply_str(expr))
-
-def _select_imply_str(select):
-    return "\n - " + \
-        _name_and_loc(select[1] if isinstance(select, tuple) else select)
+    sym.kconfig._warn(msg)
 
 #
 # Public global constants
