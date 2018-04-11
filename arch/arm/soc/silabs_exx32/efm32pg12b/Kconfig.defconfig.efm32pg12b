@@ -1,0 +1,32 @@
+# Kconfig - Silicon Labs EFM32PG-STK3402A platform configuration options
+
+#
+# Copyright (c) 2017 Christian Taedcke
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_EFM32PG12B
+
+config SOC
+	string
+	default efm32pg12b
+
+config GPIO
+	def_bool y
+
+if GPIO
+
+config GPIO_GECKO
+	def_bool y
+
+endif # GPIO
+
+if SERIAL
+
+config USART_GECKO
+	def_bool y
+
+endif # SERIAL
+
+endif # SOC_EFM32
