@@ -1,0 +1,11 @@
+identifier: hifive1
+name: SiFive HiFive1
+type: mcu
+arch: riscv32
+toolchain:
+  - zephyr
+ram: 16
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
