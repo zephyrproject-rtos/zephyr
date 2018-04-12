@@ -82,14 +82,13 @@ static inline void spi_context_lock(struct spi_context *ctx,
 static inline void spi_context_release(struct spi_context *ctx, int status)
 {
 #ifdef CONFIG_SPI_SLAVE
-	if (status >= 0 &&
-	    (ctx->config->operation & (SPI_LOCK_ON | SPI_OP_MODE_SLAVE))) {
+	if (status >= 0 && (ctx->config->operation & SPI_LOCK_ON)) {
 		return;
 	}
 #endif /* CONFIG_SPI_SLAVE */
 
 #ifdef CONFIG_SPI_ASYNC
-	if (!ctx->asynchronous || status) {
+	if (!ctx->asynchronous || (status < 0)) {
 		k_sem_give(&ctx->lock);
 	}
 #else
@@ -137,8 +136,7 @@ static inline void spi_context_complete(struct spi_context *ctx, int status)
 			k_poll_signal(ctx->signal, status);
 		}
 
-		if (!(ctx->config->operation & (SPI_LOCK_ON |
-						SPI_OP_MODE_SLAVE))) {
+		if (!(ctx->config->operation & SPI_LOCK_ON)) {
 			k_sem_give(&ctx->lock);
 		}
 	}
