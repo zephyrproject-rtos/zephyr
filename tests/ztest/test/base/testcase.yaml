@@ -1,13 +1,13 @@
 tests:
-  test:
+  testing.ztest:
     tags: test_framework
     type: unit
-  test_verbose_0:
+  testing.ztest.verbose_0:
     extra_args: CONF_FILE=prj_verbose_0.conf
     tags: test_framework
-  test_verbose_1:
+  testing.ztest.verbose_1:
     extra_args: CONF_FILE=prj_verbose_1.conf
     tags: test_framework
-  test_verbose_2:
+  testing.ztest.verbose_2:
     extra_args: CONF_FILE=prj_verbose_2.conf
     tags: test_framework
