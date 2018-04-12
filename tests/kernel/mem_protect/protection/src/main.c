@@ -22,14 +22,14 @@
  * and immediately fires upon completing the exception path; the faulting
  * thread is never run again.
  */
-#ifndef CONFIG_ARM
+#if !(defined(CONFIG_ARM) || defined(CONFIG_ARC))
 FUNC_NORETURN
 #endif
 void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
 {
 	INFO("Caught system error -- reason %d\n", reason);
 	ztest_test_pass();
-#ifndef CONFIG_ARM
+#if !(defined(CONFIG_ARM) || defined(CONFIG_ARC))
 	CODE_UNREACHABLE;
 #endif
 }
