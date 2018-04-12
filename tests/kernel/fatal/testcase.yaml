@@ -4,6 +4,5 @@ tests:
     filter: CONFIG_ARCH_HAS_STACK_PROTECTION
     tags: core ignore_faults
   kernel.fatal.stack_sentinel:
-    arch_exclude: arc
     extra_args: CONF_FILE=sentinel.conf
     tags: core ignore_faults

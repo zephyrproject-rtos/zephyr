@@ -48,7 +48,7 @@ static volatile int crash_reason;
  * In both cases the thread is guaranteed never to run again once we
  * return from the _SysFatalErrorHandler().
  */
-#if !(defined(CONFIG_ARM) || defined(CONFIG_XTENSA_ASM2))
+#if !(defined(CONFIG_ARM) || defined(CONFIG_XTENSA_ASM2) || defined(CONFIG_ARC))
 #define ERR_IS_NORETURN 1
 #endif
 

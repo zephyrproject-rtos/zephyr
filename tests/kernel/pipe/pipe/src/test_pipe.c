@@ -695,7 +695,7 @@ void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
 	} else {
 		ztest_test_fail();
 	}
-#ifndef CONFIG_ARM
+#if !(defined(CONFIG_ARM) || defined(CONFIG_ARC))
 	CODE_UNREACHABLE;
 #endif
 

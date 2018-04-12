@@ -56,7 +56,7 @@ static volatile unsigned int expected_reason;
  * and immediately fires upon completing the exception path; the faulting
  * thread is never run again.
  */
-#ifndef CONFIG_ARM
+#if !(defined(CONFIG_ARM) || defined(CONFIG_ARC))
 FUNC_NORETURN
 #endif
 void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
@@ -79,7 +79,7 @@ void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
 	} else {
 		zassert_unreachable("Unexpected fault during test\n");
 	}
-#ifndef CONFIG_ARM
+#if !(defined(CONFIG_ARM) || defined(CONFIG_ARC))
 	CODE_UNREACHABLE;
 #endif
 }
