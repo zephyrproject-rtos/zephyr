@@ -133,6 +133,14 @@ static inline void spi_context_complete(struct spi_context *ctx, int status)
 		k_sem_give(&ctx->sync);
 	} else {
 		if (ctx->signal) {
+#ifdef CONFIG_SPI_SLAVE
+			if (spi_context_is_slave(ctx) && !status) {
+				/* Let's update the status so it tells
+				 * about number of received frames.
+				 */
+				status = ctx->recv_frames;
+			}
+#endif /* CONFIG_SPI_SLAVE */
 			k_poll_signal(ctx->signal, status);
 		}
 
