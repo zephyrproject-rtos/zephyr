@@ -238,6 +238,9 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 
 	_init_static_threads();
 
+#ifdef CONFIG_SMP
+	smp_init();
+#endif
 
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
 	/* record timestamp for kernel's _main() function */
@@ -439,10 +442,6 @@ FUNC_NORETURN void _Cstart(void)
 	/* initialize stack canaries */
 #ifdef CONFIG_STACK_CANARIES
 	__stack_chk_guard = (void *)sys_rand32_get();
-#endif
-
-#ifdef CONFIG_SMP
-	smp_init();
 #endif
 
 	/* display boot banner */
