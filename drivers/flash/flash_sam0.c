@@ -46,10 +46,12 @@ struct flash_sam0_data {
 	struct k_sem sem;
 };
 
+#if CONFIG_FLASH_PAGE_LAYOUT
 static const struct flash_pages_layout flash_sam0_pages_layout = {
 	.pages_count = CONFIG_FLASH_SIZE * 1024 / ROW_SIZE,
 	.pages_size = ROW_SIZE,
 };
+#endif
 
 static inline void flash_sam0_sem_take(struct device *dev)
 {
@@ -336,6 +338,7 @@ done:
 	return err;
 }
 
+#if CONFIG_FLASH_PAGE_LAYOUT
 void flash_sam0_page_layout(struct device *dev,
 			    const struct flash_pages_layout **layout,
 			    size_t *layout_size)
@@ -343,6 +346,7 @@ void flash_sam0_page_layout(struct device *dev,
 	*layout = &flash_sam0_pages_layout;
 	*layout_size = 1;
 }
+#endif
 
 static int flash_sam0_init(struct device *dev)
 {
