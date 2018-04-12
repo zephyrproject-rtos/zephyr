@@ -83,6 +83,8 @@ The Zephyr nucleo_f411re board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
+| USB       | on-chip    | usb                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -127,6 +129,8 @@ Default Zephyr Peripheral Mapping:
 - I2C2_SCL : PB10
 - I2C3_SDA : PB4
 - I2C3_SCL : PA8
+- USB DM : PA11
+- USB DP : PA12
 
 System Clock
 ------------
@@ -140,6 +144,11 @@ Serial Port
 
 Nucleo F411RE board has 3 UARTs. The Zephyr console output is assigned to UART2.
 Default settings are 115200 8N1.
+
+Network Interface
+-----------------
+
+Ethernet over USB is configured as the default network interface
 
 
 Programming and Debugging
