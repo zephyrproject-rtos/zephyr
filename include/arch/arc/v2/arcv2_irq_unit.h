@@ -48,7 +48,8 @@ extern "C" {
  * @return N/A
  */
 
-static inline void _arc_v2_irq_unit_irq_enable_set(
+static ALWAYS_INLINE
+void _arc_v2_irq_unit_irq_enable_set(
 	int irq,
 	unsigned char enable
 	)
@@ -65,7 +66,8 @@ static inline void _arc_v2_irq_unit_irq_enable_set(
  * @return N/A
  */
 
-static inline void _arc_v2_irq_unit_int_enable(int irq)
+static ALWAYS_INLINE
+void _arc_v2_irq_unit_int_enable(int irq)
 {
 	_arc_v2_irq_unit_irq_enable_set(irq, _ARC_V2_INT_ENABLE);
 }
@@ -78,7 +80,8 @@ static inline void _arc_v2_irq_unit_int_enable(int irq)
  * @return N/A
  */
 
-static inline void _arc_v2_irq_unit_int_disable(int irq)
+static ALWAYS_INLINE
+void _arc_v2_irq_unit_int_disable(int irq)
 {
 	_arc_v2_irq_unit_irq_enable_set(irq, _ARC_V2_INT_DISABLE);
 }
@@ -91,7 +94,8 @@ static inline void _arc_v2_irq_unit_int_disable(int irq)
  * @return N/A
  */
 
-static inline void _arc_v2_irq_unit_prio_set(int irq, unsigned char prio)
+static ALWAYS_INLINE
+void _arc_v2_irq_unit_prio_set(int irq, unsigned char prio)
 {
 	_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
 #ifdef CONFIG_ARC_HAS_SECURE
@@ -114,10 +118,31 @@ static inline void _arc_v2_irq_unit_prio_set(int irq, unsigned char prio)
  * @return N/A
  */
 
-static inline void _arc_v2_irq_unit_sensitivity_set(int irq, int s)
+static ALWAYS_INLINE
+void _arc_v2_irq_unit_sensitivity_set(int irq, int s)
 {
 	_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
 	_arc_v2_aux_reg_write(_ARC_V2_IRQ_TRIGGER, s);
+}
+
+/*
+ * @brief Check whether processor in interrupt/exception state
+ *
+ * Check whether processor in interrupt/exception state
+ *
+ * @return N/A
+ */
+static ALWAYS_INLINE
+int _arc_v2_irq_unit_is_in_isr(void)
+{
+	unsigned int act = _arc_v2_aux_reg_read(_ARC_V2_AUX_IRQ_ACT);
+
+	/* in exception ?*/
+	if (_arc_v2_aux_reg_read(_ARC_V2_STATUS32) & _ARC_V2_STATUS32_AE) {
+		return 1;
+	}
+
+	return ((act & 0xffff) != 0);
 }
 
 /*

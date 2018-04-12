@@ -29,7 +29,7 @@
  *
  * @return This function does not return.
  */
-void _Fault(void)
+void _Fault(const NANO_ESF *esf)
 {
 	u32_t vector, code, parameter;
 	u32_t exc_addr = _arc_v2_aux_reg_read(_ARC_V2_EFA);
@@ -47,8 +47,9 @@ void _Fault(void)
 	 * check violation
 	 */
 	if (vector == 6 && parameter == 2) {
-		_NanoFatalErrorHandler(_NANO_ERR_STACK_CHK_FAIL, &_default_esf);
+		_NanoFatalErrorHandler(_NANO_ERR_STACK_CHK_FAIL, esf);
+		return;
 	}
 #endif
-	_NanoFatalErrorHandler(_NANO_ERR_HW_EXCEPTION, &_default_esf);
+	_NanoFatalErrorHandler(_NANO_ERR_HW_EXCEPTION, esf);
 }
