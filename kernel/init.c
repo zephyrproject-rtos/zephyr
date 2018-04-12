@@ -425,6 +425,8 @@ FUNC_NORETURN void _Cstart(void)
 	 */
 	char dummy_thread_memory[sizeof(struct k_thread)];
 	struct k_thread *dummy_thread = (struct k_thread *)&dummy_thread_memory;
+
+	memset(dummy_thread_memory, 0, sizeof(dummy_thread_memory));
 #endif
 
 	/*
