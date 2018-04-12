@@ -143,7 +143,10 @@ void *k_malloc(size_t size)
 	 * get a block large enough to hold an initial (hidden) block
 	 * descriptor, as well as the space the caller requested
 	 */
-	size += sizeof(struct k_mem_block_id);
+	if (__builtin_add_overflow(size, sizeof(struct k_mem_block_id),
+				   &size)) {
+		return NULL;
+	}
 	if (k_mem_pool_alloc(_HEAP_MEM_POOL, &block, size, K_NO_WAIT) != 0) {
 		return NULL;
 	}
