@@ -17,9 +17,8 @@
  * will not set ret to TC_FAIL.
  */
 
-#include <tc_util.h>
-
 #include <zephyr.h>
+#include <ztest.h>
 
 
 #define STACKSIZE       2048
@@ -113,23 +112,20 @@ static struct k_thread alt_thread_data;
  * @return N/A
  */
 
-void main(void)
+void test_stackprot(void)
 {
-	TC_START("Test Stack Protection Canary\n");
-	TC_PRINT("Starts %s\n", __func__);
+	zassert_true(ret == TC_PASS, NULL);
+	print_loop(__func__);
+}
 
+void test_main(void)
+{
 	/* Start thread */
 	k_thread_create(&alt_thread_data, alt_thread_stack_area, STACKSIZE,
 			(k_thread_entry_t)alternate_thread, NULL, NULL, NULL,
 			K_PRIO_PREEMPT(PRIORITY), 0, K_NO_WAIT);
 
-	if (ret == TC_FAIL) {
-		goto errorExit;
-	}
-
-	print_loop(__func__);
-
-errorExit:
-	TC_END_RESULT(ret);
-	TC_END_REPORT(ret);
+	ztest_test_suite(stackprot,
+			 ztest_unit_test(test_stackprot));
+	ztest_run_test_suite(stackprot);
 }
