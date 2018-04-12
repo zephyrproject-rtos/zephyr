@@ -644,13 +644,23 @@ void *_get_next_switch_handle(void *interrupted)
 	}
 
 	int key = irq_lock();
+	struct k_thread *new_thread = _get_next_ready_thread();
 
-	_current->switch_handle = interrupted;
-	_current = _get_next_ready_thread();
-
-	void *ret = _current->switch_handle;
+#ifdef CONFIG_SMP
+	_current->base.active = 0;
+	new_thread->base.active = 1;
+#endif
 
 	irq_unlock(key);
+
+	_current->switch_handle = interrupted;
+	_current = new_thread;
+
+	void *ret = new_thread->switch_handle;
+
+#ifdef CONFIG_SMP
+	_smp_reacquire_global_lock(_current);
+#endif
 
 	_check_stack_sentinel();
 

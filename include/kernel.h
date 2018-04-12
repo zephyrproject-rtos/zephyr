@@ -420,6 +420,9 @@ struct _thread_base {
 
 	/* CPU index on which thread was last run */
 	u8_t cpu;
+
+	/* Recursive count of irq_lock() calls */
+	u8_t global_lock_count;
 #endif
 
 	/* data returned by APIs */

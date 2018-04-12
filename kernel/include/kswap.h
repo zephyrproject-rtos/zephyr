@@ -23,6 +23,16 @@ extern void _check_stack_sentinel(void);
 
 extern void _sys_k_event_logger_context_switch(void);
 
+/* In SMP, the irq_lock() is a spinlock which is implicitly released
+ * and reacquired on context switch to preserve the existing
+ * semantics.  This means that whenever we are about to return to a
+ * thread (via either _Swap() or interrupt/exception return!) we need
+ * to restore the lock state to whatever the thread's counter
+ * expects.
+ */
+void _smp_reacquire_global_lock(struct k_thread *thread);
+void _smp_release_global_lock(struct k_thread *thread);
+
 /* context switching and scheduling-related routines */
 #ifdef CONFIG_USE_SWITCH
 
@@ -54,6 +64,8 @@ static inline unsigned int _Swap(unsigned int key)
 	new_thread->base.active = 1;
 
 	new_thread->base.cpu = _arch_curr_cpu()->id;
+
+	_smp_release_global_lock(new_thread);
 #endif
 
 	_current = new_thread;

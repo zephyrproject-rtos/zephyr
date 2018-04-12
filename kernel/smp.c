@@ -10,46 +10,56 @@
 #include <kswap.h>
 #include <kernel_internal.h>
 
-static struct k_spinlock global_spinlock;
-
-static volatile int recursive_count;
-
-/* FIXME: this value of key works on all known architectures as an
- * "invalid state" that will never be legitimately returned from
- * _arch_irq_lock().  But we should force the architecture code to
- * define something for us.
- */
-#define KEY_RECURSIVE 0xffffffff
+#ifdef CONFIG_SMP
+static atomic_t global_lock;
 
 unsigned int _smp_global_lock(void)
 {
-	/* OK to test this outside the lock.  If it's non-zero, then
-	 * we hold the lock by definition
-	 */
-	if (recursive_count) {
-		recursive_count++;
+	int key = _arch_irq_lock();
 
-		return KEY_RECURSIVE;
+	if (!_current->base.global_lock_count) {
+		while (!atomic_cas(&global_lock, 0, 1)) {
+		}
 	}
 
-	unsigned int k = k_spin_lock(&global_spinlock).key;
+	_current->base.global_lock_count++;
 
-	recursive_count = 1;
-	return k;
+	return key;
 }
 
 void _smp_global_unlock(unsigned int key)
 {
-	if (key == KEY_RECURSIVE) {
-		recursive_count--;
-		return;
+	if (_current->base.global_lock_count) {
+		_current->base.global_lock_count--;
+
+		if (!_current->base.global_lock_count) {
+			atomic_clear(&global_lock);
+		}
 	}
 
-	k_spinlock_key_t sk = { .key = key };
-
-	recursive_count = 0;
-	k_spin_unlock(&global_spinlock, sk);
+	_arch_irq_unlock(key);
 }
+
+void _smp_reacquire_global_lock(struct k_thread *thread)
+{
+	if (thread->base.global_lock_count) {
+		_arch_irq_lock();
+
+		while (!atomic_cas(&global_lock, 0, 1)) {
+		}
+	}
+}
+
+
+/* Called from within _Swap(), so assumes lock already held */
+void _smp_release_global_lock(struct k_thread *thread)
+{
+	if (!thread->base.global_lock_count) {
+		atomic_clear(&global_lock);
+	}
+}
+
+#endif
 
 extern k_thread_stack_t _interrupt_stack1[];
 extern k_thread_stack_t _interrupt_stack2[];
@@ -73,8 +83,8 @@ static void smp_init_top(int key, void *arg)
 		.base.thread_state = _THREAD_DUMMY,
 	};
 
-	int k = irq_lock();
 	_arch_curr_cpu()->current = &dummy_thread;
+	int k = irq_lock();
 	smp_timer_init();
 	_Swap(k);
 
