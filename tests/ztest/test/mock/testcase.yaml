@@ -1,7 +1,7 @@
 tests:
-  test:
+  testing.ztest.mock:
     arch_exclude: arm
     tags: test_framework
-  test_unit:
+  testing.ztest.unit:
     tags: test_framework
     type: unit
