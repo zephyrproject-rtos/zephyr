@@ -22,8 +22,7 @@ extern "C" {
 
 #ifndef _ASMLANGUAGE
 #include <toolchain/gcc.h>
-extern FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int,
-						 const NANO_ESF*);
+extern void _NanoFatalErrorHandler(unsigned int, const NANO_ESF*);
 extern void _SysFatalErrorHandler(unsigned int cause, const NANO_ESF *esf);
 #endif
 
@@ -37,6 +36,28 @@ extern void _SysFatalErrorHandler(unsigned int cause, const NANO_ESF *esf);
 #define _TRAP_S_SCALL_IRQ_OFFLOAD		1
 #define _TRAP_S_CALL_RUNTIME_EXCEPT		2
 #define _TRAP_S_CALL_SYSTEM_CALL		3
+
+/*
+ * the exception caused by kernel will be handled in interrupt context
+ * when the processor is already in interrupt context, no need to raise
+ * a new exception; when the processor is in thread context, the exception
+ * will be raised
+ */
+#define _ARCH_EXCEPT(reason_p)	do { \
+	if (_arc_v2_irq_unit_is_in_isr()) { \
+		printk("@ %s:%d:\n", __FILE__,  __LINE__); \
+		_NanoFatalErrorHandler(reason_p, 0); \
+	} else {\
+		__asm__ volatile ( \
+		"mov r0, %[reason]\n\t" \
+		"trap_s %[id]\n\t" \
+		: \
+		: [reason] "i" (reason_p), \
+		[id] "i" (_TRAP_S_CALL_RUNTIME_EXCEPT) \
+		: "memory"); \
+		CODE_UNREACHABLE; \
+	} \
+	} while (0)
 
 #ifdef __cplusplus
 }

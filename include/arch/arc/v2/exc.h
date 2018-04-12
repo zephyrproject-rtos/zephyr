@@ -20,13 +20,7 @@ extern "C" {
 
 #ifdef _ASMLANGUAGE
 #else
-struct __esf {
-	/* XXX - not defined yet */
-	int placeholder;
-};
-
-typedef struct __esf NANO_ESF;
-extern const NANO_ESF _default_esf;
+typedef struct  _irq_stack_frame NANO_ESF;
 #endif
 
 #ifdef __cplusplus
