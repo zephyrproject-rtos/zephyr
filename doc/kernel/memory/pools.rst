@@ -151,10 +151,15 @@ since that is the closest matching size supported by the memory pool.
         printf("Memory allocation time-out");
     }
 
+Memory blocks may also be allocated with :cpp:func:`malloc()`-like semantics
+using :cpp:func:`k_mem_pool_malloc()`. Such allocations must be freed with
+:cpp:func:`k_free()`.
+
 Releasing a Memory Block
 ========================
 
-A memory block is released by calling :cpp:func:`k_mem_pool_free()`.
+A memory block is released by calling either :cpp:func:`k_mem_pool_free()`
+or :cpp:func:`k_free()`, depending on how it was allocated.
 
 The following code builds on the example above, and allocates a 75 byte
 memory block, then releases it once it is no longer needed. (A 256 byte
@@ -184,3 +189,5 @@ The following memory pool APIs are provided by :file:`kernel.h`:
 * :c:macro:`K_MEM_POOL_DEFINE`
 * :cpp:func:`k_mem_pool_alloc()`
 * :cpp:func:`k_mem_pool_free()`
+* :cpp:func:`k_mem_pool_malloc()`
+* :cpp:func:`k_free()`

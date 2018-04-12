@@ -119,6 +119,40 @@ void k_mem_pool_free(struct k_mem_block *block)
 	k_mem_pool_free_id(&block->id);
 }
 
+void *k_mem_pool_malloc(struct k_mem_pool *pool, size_t size)
+{
+	struct k_mem_block block;
+
+	/*
+	 * get a block large enough to hold an initial (hidden) block
+	 * descriptor, as well as the space the caller requested
+	 */
+	if (__builtin_add_overflow(size, sizeof(struct k_mem_block_id),
+				   &size)) {
+		return NULL;
+	}
+	if (k_mem_pool_alloc(pool, &block, size, K_NO_WAIT) != 0) {
+		return NULL;
+	}
+
+	/* save the block descriptor info at the start of the actual block */
+	memcpy(block.data, &block.id, sizeof(struct k_mem_block_id));
+
+	/* return address of the user area part of the block to the caller */
+	return (char *)block.data + sizeof(struct k_mem_block_id);
+}
+
+void k_free(void *ptr)
+{
+	if (ptr != NULL) {
+		/* point to hidden block descriptor at start of block */
+		ptr = (char *)ptr - sizeof(struct k_mem_block_id);
+
+		/* return block to the heap memory pool */
+		k_mem_pool_free_id(ptr);
+	}
+}
+
 #if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
 
 /*
@@ -133,37 +167,7 @@ K_MEM_POOL_DEFINE(_heap_mem_pool, 64, CONFIG_HEAP_MEM_POOL_SIZE, 1, 4);
 
 void *k_malloc(size_t size)
 {
-	struct k_mem_block block;
-
-	/*
-	 * get a block large enough to hold an initial (hidden) block
-	 * descriptor, as well as the space the caller requested
-	 */
-	if (__builtin_add_overflow(size, sizeof(struct k_mem_block_id),
-				   &size)) {
-		return NULL;
-	}
-	if (k_mem_pool_alloc(_HEAP_MEM_POOL, &block, size, K_NO_WAIT) != 0) {
-		return NULL;
-	}
-
-	/* save the block descriptor info at the start of the actual block */
-	memcpy(block.data, &block.id, sizeof(struct k_mem_block_id));
-
-	/* return address of the user area part of the block to the caller */
-	return (char *)block.data + sizeof(struct k_mem_block_id);
-}
-
-
-void k_free(void *ptr)
-{
-	if (ptr != NULL) {
-		/* point to hidden block descriptor at start of block */
-		ptr = (char *)ptr - sizeof(struct k_mem_block_id);
-
-		/* return block to the heap memory pool */
-		k_mem_pool_free_id(ptr);
-	}
+	return k_mem_pool_malloc(_HEAP_MEM_POOL, size);
 }
 
 void *k_calloc(size_t nmemb, size_t size)

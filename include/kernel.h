@@ -3653,6 +3653,17 @@ extern int k_mem_pool_alloc(struct k_mem_pool *pool, struct k_mem_block *block,
 			    size_t size, s32_t timeout);
 
 /**
+ * @brief Allocate memory from a memory pool with malloc() semantics
+ *
+ * Such memory must be released using k_free().
+ *
+ * @param pool Address of the memory pool.
+ * @param size Amount of memory to allocate (in bytes).
+ * @return Address of the allocated memory if successful, otherwise NULL
+ */
+extern void *k_mem_pool_malloc(struct k_mem_pool *pool, size_t size);
+
+/**
  * @brief Free memory allocated from a memory pool.
  *
  * This routine releases a previously allocated memory block back to its
@@ -3702,7 +3713,8 @@ extern void *k_malloc(size_t size);
  * @brief Free memory allocated from heap.
  *
  * This routine provides traditional free() semantics. The memory being
- * returned must have been allocated from the heap memory pool.
+ * returned must have been allocated from the heap memory pool or
+ * k_mem_pool_malloc().
  *
  * If @a ptr is NULL, no operation is performed.
  *
