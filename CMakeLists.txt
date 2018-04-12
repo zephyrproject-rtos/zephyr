@@ -265,11 +265,9 @@ zephyr_ld_options(
 
 if(CONFIG_HAVE_CUSTOM_LINKER_SCRIPT)
   set(LINKER_SCRIPT ${APPLICATION_SOURCE_DIR}/${CONFIG_CUSTOM_LINKER_SCRIPT})
-  if(NOT EXISTS LINKER_SCRIPT)
+  if(NOT EXISTS ${LINKER_SCRIPT})
     set(LINKER_SCRIPT ${CONFIG_CUSTOM_LINKER_SCRIPT})
-    if(NOT EXISTS LINKER_SCRIPT)
-      message(FATAL_ERROR "CONFIG_HAVE_CUSTOM_LINKER_SCRIPT was set, but no linker script was found at '${CONFIG_CUSTOM_LINKER_SCRIPT}'")
-    endif()
+    assert_exists(CONFIG_CUSTOM_LINKER_SCRIPT)
   endif()
 else()
   # Try a board specific linker file
