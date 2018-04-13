@@ -258,6 +258,9 @@ static void unref_check(struct _k_object *ko)
 	 * specifically needs to happen depends on the object type.
 	 */
 	switch (ko->type) {
+	case K_OBJ_PIPE:
+		k_pipe_cleanup((struct k_pipe *)ko->name);
+		break;
 	default:
 		break;
 	}

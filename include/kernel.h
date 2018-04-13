@@ -3347,6 +3347,8 @@ extern int k_mbox_data_block_get(struct k_mbox_msg *rx_msg,
  * @cond INTERNAL_HIDDEN
  */
 
+#define K_PIPE_FLAG_ALLOC	BIT(0)	/* Buffer was allocated */
+
 struct k_pipe {
 	unsigned char *buffer;          /* Pipe buffer: may be NULL */
 	size_t         size;            /* Buffer size */
@@ -3360,6 +3362,7 @@ struct k_pipe {
 	} wait_q;
 
 	_OBJECT_TRACING_NEXT_PTR(k_pipe);
+	u8_t	       flags;		/* Flags */
 };
 
 #define _K_PIPE_INITIALIZER(obj, pipe_buffer, pipe_buffer_size)        \
@@ -3398,11 +3401,11 @@ struct k_pipe {
  *                         or zero if no ring buffer is used.
  * @param pipe_align Alignment of the pipe's ring buffer (power of 2).
  */
-#define K_PIPE_DEFINE(name, pipe_buffer_size, pipe_align)     \
-	static unsigned char __noinit __aligned(pipe_align)   \
-		_k_pipe_buf_##name[pipe_buffer_size];         \
-	struct k_pipe name                                    \
-		__in_section(_k_pipe, static, name) =    \
+#define K_PIPE_DEFINE(name, pipe_buffer_size, pipe_align)		\
+	static unsigned char __kernel_noinit __aligned(pipe_align)	\
+		_k_pipe_buf_##name[pipe_buffer_size];			\
+	struct k_pipe name						\
+		__in_section(_k_pipe, static, name) =			\
 		_K_PIPE_INITIALIZER(name, _k_pipe_buf_##name, pipe_buffer_size)
 
 /**
@@ -3418,8 +3421,35 @@ struct k_pipe {
  *
  * @return N/A
  */
-__syscall void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer,
-			   size_t size);
+void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size);
+
+/**
+ * @brief Release a pipe's allocated buffer
+ *
+ * If a pipe object was given a dynamically allocated buffer via
+ * k_pipe_alloc_init(), this will free it. This function does nothing
+ * if the buffer wasn't dynamically allocated.
+ *
+ * @param pipe Address of the pipe.
+ */
+void k_pipe_cleanup(struct k_pipe *pipe);
+
+/**
+ * @brief Initialize a pipe and allocate a buffer for it
+ *
+ * Storage for the buffer region will be allocated from the calling thread's
+ * resource pool. This memory will be released if k_pipe_cleanup() is called,
+ * or userspace is enabled and the pipe object loses all references to it.
+ *
+ * This function should only be called on uninitialized pipe objects.
+ *
+ * @param pipe Address of the pipe.
+ * @param size Size of the pipe's ring buffer (in bytes), or zero if no ring
+ *             buffer is used.
+ * @retval 0 on success
+ * @retval -ENOMEM if memory couln't be allocated
+ */
+__syscall int k_pipe_alloc_init(struct k_pipe *pipe, size_t size);
 
 /**
  * @brief Write data to a pipe.

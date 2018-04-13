@@ -19,6 +19,7 @@
 #include <misc/dlist.h>
 #include <init.h>
 #include <syscall_handler.h>
+#include <misc/__assert.h>
 
 struct k_pipe_desc {
 	unsigned char *buffer;           /* Position in src/dest buffer */
@@ -127,30 +128,62 @@ SYS_INIT(init_pipes_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 #endif /* CONFIG_NUM_PIPE_ASYNC_MSGS or CONFIG_OBJECT_TRACING */
 
-void _impl_k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
+void k_pipe_init(struct k_pipe *pipe, unsigned char *buffer, size_t size)
 {
 	pipe->buffer = buffer;
 	pipe->size = size;
 	pipe->bytes_used = 0;
 	pipe->read_index = 0;
 	pipe->write_index = 0;
+	pipe->flags = 0;
 	sys_dlist_init(&pipe->wait_q.writers);
 	sys_dlist_init(&pipe->wait_q.readers);
 	SYS_TRACING_OBJ_INIT(k_pipe, pipe);
 	_k_object_init(pipe);
 }
 
-#ifdef CONFIG_USERSPACE
-_SYSCALL_HANDLER(k_pipe_init, pipe, buffer, size)
+int _impl_k_pipe_alloc_init(struct k_pipe *pipe, size_t size)
 {
-	_SYSCALL_OBJ_INIT(pipe, K_OBJ_PIPE);
-	_SYSCALL_MEMORY_WRITE(buffer, size);
+	void *buffer;
+	int ret;
 
-	_impl_k_pipe_init((struct k_pipe *)pipe, (unsigned char *)buffer,
-			  size);
-	return 0;
+	if (size) {
+		buffer = z_thread_malloc(size);
+		if (buffer) {
+			k_pipe_init(pipe, buffer, size);
+			pipe->flags = K_PIPE_FLAG_ALLOC;
+			ret = 0;
+		} else {
+			ret = -ENOMEM;
+		}
+	} else {
+		k_pipe_init(pipe, NULL, 0);
+		ret = 0;
+	}
+
+	return ret;
+}
+
+#ifdef CONFIG_USERSPACE
+_SYSCALL_HANDLER(k_pipe_alloc_init, pipe, size)
+{
+	_SYSCALL_OBJ_NEVER_INIT(pipe, K_OBJ_PIPE);
+
+	return _impl_k_pipe_alloc_init((struct k_pipe *)pipe, size);
 }
 #endif
+
+void k_pipe_cleanup(struct k_pipe *pipe)
+{
+	__ASSERT_NO_MSG(sys_dlist_is_empty(&pipe->wait_q.readers));
+	__ASSERT_NO_MSG(sys_dlist_is_empty(&pipe->wait_q.writers));
+
+	if (pipe->flags & K_PIPE_FLAG_ALLOC) {
+		k_free(pipe->buffer);
+		pipe->buffer = NULL;
+		pipe->flags &= ~K_PIPE_FLAG_ALLOC;
+	}
+}
 
 /**
  * @brief Copy bytes from @a src to @a dest
