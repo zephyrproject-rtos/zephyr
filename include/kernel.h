@@ -524,6 +524,7 @@ struct k_thread {
 	/* Context handle returned via _arch_switch() */
 	void *switch_handle;
 #endif
+	struct k_mem_pool *resource_pool;
 
 	/* arch-specifics: must always be at the end */
 	struct _thread_arch arch;
@@ -699,6 +700,41 @@ extern FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
  */
 extern void __attribute__((sentinel))
 	k_thread_access_grant(struct k_thread *thread, ...);
+
+/**
+ * @brief Assign a resource memory pool to a thread
+ *
+ * By default, threads have no resource pool assigned unless their parent
+ * thread has a resource pool, in which case it is inherited. Multiple
+ * threads may be assigned to the same memory pool.
+ *
+ * Changing a thread's resource pool will not migrate allocations from the
+ * previous pool.
+ *
+ * @param thread Target thread to assign a memory pool for resource requests,
+ *               or NULL if the thread should no longer have a memory pool.
+ * @param pool Memory pool to use for resources.
+ */
+static inline void k_thread_resource_pool_assign(struct k_thread *thread,
+						 struct k_mem_pool *pool)
+{
+	thread->resource_pool = pool;
+}
+
+#if (CONFIG_HEAP_MEM_POOL_SIZE > 0)
+/**
+ * @brief Assign the system heap as a thread's resource pool
+ *
+ * Similar to k_thread_resource_pool_assign(), but the thread will use
+ * the kernel heap to draw memory.
+ *
+ * Use with caution, as a malicious thread could perform DoS attacks on the
+ * kernel heap.
+ *
+ * @param thread Target thread to assign the system heap for resource requests
+ */
+void k_thread_system_pool_assign(struct k_thread *thread);
+#endif /* (CONFIG_HEAP_MEM_POOL_SIZE > 0) */
 
 /**
  * @brief Put the current thread to sleep.
