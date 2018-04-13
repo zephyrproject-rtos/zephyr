@@ -181,10 +181,11 @@ static struct dev_common_descriptor common_desc = {
 	.cfg_descr = {
 		.bLength = sizeof(struct usb_cfg_descriptor),
 		.bDescriptorType = USB_CONFIGURATION_DESC,
-		.wTotalLength = sizeof(struct dev_common_descriptor)
-			      - sizeof(struct usb_device_descriptor)
-			      - sizeof(struct usb_string_desription)
-			      - sizeof(struct usb_desc_header),
+		.wTotalLength = sys_cpu_to_le16(
+			sizeof(struct dev_common_descriptor)
+			- sizeof(struct usb_device_descriptor)
+			- sizeof(struct usb_string_desription)
+			- sizeof(struct usb_desc_header)),
 		.bNumInterfaces = NUMOF_IFACES,
 		.bConfigurationValue = 1,
 		.iConfiguration = 0,
