@@ -162,9 +162,6 @@ static inline u8_t get(struct rand *rng, u8_t octets, u8_t *rand)
 
 	if (remaining < rng->threshold) {
 		NRF_RNG->TASKS_START = 1;
-#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
-		NRF_RNG_regw_sideeffects();
-#endif
 	}
 
 	return octets;
@@ -229,9 +226,6 @@ static void isr_rand(void *arg)
 
 		if (ret != -EBUSY) {
 			NRF_RNG->TASKS_STOP = 1;
-#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
-			NRF_RNG_regw_sideeffects();
-#endif
 		}
 	}
 }
@@ -308,9 +302,6 @@ static int entropy_nrf5_init(struct device *device)
 	NRF_RNG->INTENSET = RNG_INTENSET_VALRDY_Msk;
 
 	NRF_RNG->TASKS_START = 1;
-#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
-	NRF_RNG_regw_sideeffects();
-#endif
 
 	IRQ_CONNECT(NRF5_IRQ_RNG_IRQn, CONFIG_ENTROPY_NRF5_PRI, isr_rand,
 		    DEVICE_GET(entropy_nrf5), 0);
