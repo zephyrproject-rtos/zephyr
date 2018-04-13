@@ -296,7 +296,6 @@ int mq_timedreceive(mqd_t mqdes, char *msg_ptr, size_t msg_len,
 int mq_getattr(mqd_t mqdes, struct mq_attr *mqstat)
 {
 	mqueue_desc *mqd = (mqueue_desc *)mqdes;
-	mqueue_object  *msg_queue = mqd->mqueue;
 	struct k_msgq_attrs attrs;
 
 	if (mqd == NULL) {
@@ -305,7 +304,7 @@ int mq_getattr(mqd_t mqdes, struct mq_attr *mqstat)
 	}
 
 	k_sem_take(&mq_sem, K_FOREVER);
-	k_msgq_get_attrs(&msg_queue->queue, &attrs);
+	k_msgq_get_attrs(&mqd->mqueue->queue, &attrs);
 	mqstat->mq_flags = mqd->flags;
 	mqstat->mq_maxmsg = attrs.max_msgs;
 	mqstat->mq_msgsize = attrs.msg_size;
