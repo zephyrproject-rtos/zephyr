@@ -11,7 +11,9 @@
 #include <device.h>
 #include <clock_control.h>
 #include <misc/__assert.h>
+#if !defined(CONFIG_ARCH_POSIX)
 #include <arch/arm/cortex_m/cmsis.h>
+#endif
 #if defined(CONFIG_USB) && defined(CONFIG_SOC_NRF52840)
 #include <nrf_power.h>
 #include <drivers/clock_control/nrf5_clock_control.h>
@@ -63,6 +65,9 @@ static int _m16src_start(struct device *dev, clock_control_subsys_t sub_system)
 		NRF_CLOCK->INTENSET = CLOCK_INTENSET_HFCLKSTARTED_Msk;
 
 		NRF_CLOCK->TASKS_HFCLKSTART = 1;
+#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
+		NRF_CLOCK_regw_sideeffects();
+#endif
 
 		while (NRF_CLOCK->EVENTS_HFCLKSTARTED == 0) {
 			__WFE();
@@ -74,6 +79,9 @@ static int _m16src_start(struct device *dev, clock_control_subsys_t sub_system)
 
 		if (!(intenset & CLOCK_INTENSET_HFCLKSTARTED_Msk)) {
 			NRF_CLOCK->INTENCLR = CLOCK_INTENCLR_HFCLKSTARTED_Msk;
+#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
+			NRF_CLOCK_reqw_sideeffects_INTENCLR();
+#endif
 		}
 
 		NVIC_ClearPendingIRQ(POWER_CLOCK_IRQn);
@@ -83,6 +91,9 @@ static int _m16src_start(struct device *dev, clock_control_subsys_t sub_system)
 		NRF_CLOCK->EVENTS_HFCLKSTARTED = 0;
 
 		NRF_CLOCK->TASKS_HFCLKSTART = 1;
+#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
+		NRF_CLOCK_TASKS_HFCLKSTART();
+#endif
 	}
 
 	/* release resource guard */
@@ -135,6 +146,9 @@ static int _m16src_stop(struct device *dev, clock_control_subsys_t sub_system)
 	/* re-entrancy and mult-context safe, and reference count is zero, */
 
 	NRF_CLOCK->TASKS_HFCLKSTOP = 1;
+#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
+	NRF_CLOCK_TASKS_HFCLKSTOP();
+#endif
 
 	/* release resource guard */
 	m16src_grd = 0;
@@ -184,6 +198,9 @@ static int _k32src_start(struct device *dev, clock_control_subsys_t sub_system)
 	/* Start and spin-wait until clock settles */
 	NRF_CLOCK->TASKS_LFCLKSTART = 1;
 
+#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
+	NRF_CLOCK_regw_sideeffects();
+#endif
 	while (NRF_CLOCK->EVENTS_LFCLKSTARTED == 0) {
 		__WFE();
 		__SEV();
@@ -194,6 +211,9 @@ static int _k32src_start(struct device *dev, clock_control_subsys_t sub_system)
 
 	if (!(intenset & CLOCK_INTENSET_LFCLKSTARTED_Msk)) {
 		NRF_CLOCK->INTENCLR = CLOCK_INTENCLR_LFCLKSTARTED_Msk;
+#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
+		NRF_CLOCK_reqw_sideeffects_INTENCLR();
+#endif
 	}
 
 	NVIC_ClearPendingIRQ(POWER_CLOCK_IRQn);
@@ -204,6 +224,9 @@ static int _k32src_start(struct device *dev, clock_control_subsys_t sub_system)
 	 * calibrations.
 	 */
 	NRF_CLOCK->INTENCLR = CLOCK_INTENCLR_DONE_Msk | CLOCK_INTENCLR_CTTO_Msk;
+#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
+	NRF_CLOCK_reqw_sideeffects_INTENCLR();
+#endif
 	NRF_CLOCK->EVENTS_DONE = 0;
 	NRF_CLOCK->EVENTS_CTTO = 0;
 
@@ -216,6 +239,9 @@ static int _k32src_start(struct device *dev, clock_control_subsys_t sub_system)
 		/* Enable DONE and CTTO IRQs */
 		NRF_CLOCK->INTENSET =
 		    CLOCK_INTENSET_DONE_Msk | CLOCK_INTENSET_CTTO_Msk;
+#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
+		NRF_CLOCK_reqw_sideeffects_INTENSET();
+#endif
 
 		/* Start HF clock, if already started then explicitly
 		 * assert IRQ.
@@ -223,6 +249,9 @@ static int _k32src_start(struct device *dev, clock_control_subsys_t sub_system)
 		 * calibration in ISR.
 		 */
 		NRF_CLOCK->INTENSET = CLOCK_INTENSET_HFCLKSTARTED_Msk;
+#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
+		NRF_CLOCK_reqw_sideeffects_INTENSET();
+#endif
 
 		err = _m16src_start(dev, false);
 		if (!err) {
@@ -231,6 +260,10 @@ static int _k32src_start(struct device *dev, clock_control_subsys_t sub_system)
 			__ASSERT_NO_MSG(err == -EINPROGRESS);
 		}
 	}
+
+#if defined(CONFIG_BOARD_NRFXX_NWTSIM)
+	NRF_CLOCK_regw_sideeffects();
+#endif
 
 lf_already_started:
 	if (NRF_CLOCK->LFCLKSTAT & CLOCK_LFCLKSTAT_STATE_Msk) {
